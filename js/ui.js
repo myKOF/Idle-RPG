@@ -5522,7 +5522,7 @@ function equipRunePanelHTML(it, gemsSnapshot) {
     icons.push('<button type="button" class="equip-material-icon rune-icon" data-rune-socket="' + rune.id + '"' + (full ? ' disabled' : '') +
       ' style="--c:' + rune.color + '" data-tip="' +
       esc(rune.name + '符文（第 ' + rune.tier + ' 階）×' + rn + '｜鑲在這件裝備：' + rwRuneStatLine(it, rune.id) + (full ? '｜符文孔已滿' : '｜鑲入第一個空符文孔')) + '">' +
-      rune.glyph + '<span class="socket-gem-level">' + rune.tier + '</span><span class="socket-gem-count">×' + fmt(rn) + '</span></button>');
+      runeStoneHTML(rune.id, 'rs-icon') + '<span class="socket-gem-level">' + rune.tier + '</span><span class="socket-gem-count">×' + fmt(rn) + '</span></button>');
   }
   return '<div class="equip-material-section">' +
     '<div class="equip-material-title">🔷 可用符文（點擊鑲入）</div>' +
@@ -7798,13 +7798,13 @@ function inventoryViewItems(snapshot) {
    面板每次回應都是新的一份深拷貝、參考永遠不相等，於是 1208 件裝備要跑 2416 次
    JSON.stringify——只為了確認兩個空陣列一樣。實測光這支就要 4.3 ms，而它在戰鬥中
    每秒被呼叫數次。 */
-/* 格子角標：鑲了符文就顯示第一顆的字形（多顆加 ×N）；成形符文真言用金色。取代附魔角標的位置。 */
+/* 格子角標：鑲了符文就顯示第一顆的符文石（多顆加 ×N）；成形符文真言用金色。取代附魔角標的位置。 */
 function itemRuneBadgeHTML(it) {
   if (typeof rwHasRune !== 'function' || !rwHasRune(it)) return '';
   var ids = it.runes.filter(Boolean);
   var first = RUNE_BY_ID[ids[0]];
   if (!first) return '';
-  return '<span class="ic-rune' + (rwActiveWord(it) ? ' is-word' : '') + '">' + first.glyph + (ids.length > 1 ? '×' + ids.length : '') + '</span>';
+  return '<span class="ic-rune' + (rwActiveWord(it) ? ' is-word' : '') + '">' + runeStoneHTML(first.id, 'rs-badge') + (ids.length > 1 ? '×' + ids.length : '') + '</span>';
 }
 
 /* 格子的符文孔比對：只看鑲了哪些符文（角標用）。 */

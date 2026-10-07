@@ -102,13 +102,11 @@
 #tab-runes .rx-card.is-sel { border-color: var(--c); background: #1d1a15; box-shadow: inset 0 0 14px -6px var(--c); }
 #tab-runes .rx-card.is-empty { opacity: .5; }
 
-#tab-runes .rx-glyph {
-  font-size: 28px;
-  line-height: 34px;
-  color: var(--c);
-  text-shadow: 0 0 10px var(--c);
-  font-family: 'Segoe UI Historic', 'Segoe UI Symbol', 'Noto Sans Runic', 'Noto Sans Symbols', serif;
-}
+/* 符文石圖（images/runes，js/item.js runeStoneHTML）：各處只定尺寸，圖本身自帶品質色與光暈 */
+.rune-stone { display: block; flex: 0 0 auto; object-fit: contain; pointer-events: none; user-select: none; -webkit-user-drag: none; }
+#tab-runes .rx-glyph { display: flex; align-items: center; justify-content: center; height: 66px; }
+#tab-runes .rx-glyph .rs-card { width: 64px; height: 64px; filter: drop-shadow(0 2px 3px #0009); }
+#tab-runes .rx-card.is-empty .rune-stone { filter: grayscale(.65) brightness(.75); }
 
 #tab-runes .rx-card-name { font-size: 13px; }
 #tab-runes .rx-card-tier { font-size: 10px; color: #8d887c; }
@@ -132,16 +130,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 54px;
-  height: 54px;
-  border: 1px solid var(--c);
-  border-radius: 8px;
-  background: #0c0d10;
-  box-shadow: inset 0 0 16px -6px var(--c);
-  color: var(--c);
-  font-size: 34px;
-  font-family: 'Segoe UI Historic', 'Segoe UI Symbol', 'Noto Sans Runic', 'Noto Sans Symbols', serif;
+  width: 64px;
+  height: 64px;
 }
+
+#tab-runes .rx-focus-glyph .rs-focus { width: 64px; height: 64px; filter: drop-shadow(0 2px 4px #000a); }
 
 #tab-runes .rx-focus-name { font-size: 18px; color: #f2ead8; font-family: var(--af-serif); }
 #tab-runes .rx-focus-name small { margin-left: 8px; font-size: 12px; color: var(--c); font-family: inherit; }
@@ -253,7 +246,8 @@
 }
 
 #tab-runes .rx-chip.has { border-color: var(--c); color: #ece6d8; }
-#tab-runes .rx-chip-g { color: var(--c); font-size: 15px; font-family: 'Segoe UI Historic', 'Segoe UI Symbol', 'Noto Sans Runic', serif; }
+#tab-runes .rx-chip-g { display: inline-flex; align-items: center; color: var(--c); }
+#tab-runes .rx-chip-g .rs-chip { width: 24px; height: 24px; margin: -3px 0; }
 #tab-runes .rx-chip i { font-style: normal; font-size: 10px; color: #c7ae79; }
 
 /* 未激活的配方符文：保留品質色外框，內容只有問號（不可點） */
@@ -274,12 +268,14 @@
 
 /* ---- 裝備詳情：符文孔與符文真言橫幅（js/item.js itemRuneHTML；取代原本附魔欄位的位置）---- */
 .it-sockets .socket.rune-socket .sk-name { color: #d8c9a0; }
+.it-sockets .socket.rune-socket .rs-row { display: inline-block; width: 20px; height: 20px; margin: -4px 2px -4px 0; vertical-align: middle; }
 .it-sockets .socket.runeword-socket { box-shadow: inset 0 0 0 1px #7a6440; }
 /* 符文面板開啟時，已鑲的符文可點擊取下（比照附魔的 .it-enchant.removable） */
 .it-sockets .socket.rune-socket.removable { cursor: pointer; }
 .it-sockets .socket.rune-socket.removable:hover { background: #2a1e2e; border-color: var(--bad, #f87171); text-decoration: line-through; }
 /* 背包格角標：鑲了符文（取代附魔角標），成形符文真言為金色 */
-.ic-rune { position: absolute; bottom: 1px; right: 3px; font-size: 10px; color: #d8c9a0; }
+.ic-rune { position: absolute; bottom: 1px; right: 3px; display: inline-flex; align-items: center; gap: 1px; font-size: 10px; color: #d8c9a0; }
+.ic-rune .rs-badge { width: 18px; height: 18px; margin: -3px 0; filter: drop-shadow(0 1px 1px #000c); }
 .ic-rune.is-word { color: #f5c542; text-shadow: 0 0 4px #f5c54288; }
 
 .it-runeword {
@@ -295,7 +291,8 @@
 .it-runeword-line { margin-top: 2px; font-size: 12px; color: #d5d1c4; }
 .it-runeword-hint { margin-top: 6px; font-size: 12px; color: #c7ae79; }
 
-.equip-material-icon.rune-icon { color: var(--c); border-color: var(--c); font-size: 18px; }
+.equip-material-icon.rune-icon { color: var(--c); border-color: var(--c); font-size: 18px; display: flex; align-items: center; justify-content: center; }
+.equip-material-icon.rune-icon .rs-icon { width: 32px; height: 32px; }
 
 @media (max-width: 900px) {
   #tab-runes .rx-lib { grid-template-columns: 1fr; }

@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## Claude｜符文石圖示：33 顆符文各一張刻了字的石頭（RUNE-STONES-20261007）
+
+- Owner：Claude；Done。依賴 RUNEWORD-REVEAL-20261007。使用者要求「將所有符文加上類似符文石或石碑的圖案，根據品質有不同的顏色與外型，圖做好先給我預覽、同意才上」。預覽共四輪，皆被使用者退件後才通過：①向量幾何（太簡單、像素風）②高度圖光照的華麗版（形狀太怪：水晶簇、皇冠、光環；字像貼上去的）③簡單卵石＋刻痕（藍的長方、橘的水滴、金的拱碑「太規整或不像符石」）④藍／橘／金改成使用者給的參考圖那種粗切多邊形立石，通過。
+- 需求分析：使用者要的是「一塊簡單的石頭，上面刻著符文」，品質靠石頭顏色與外形區分；字必須像刻進去而不是浮貼。不是華麗的圖示。
+- 技術決策：①程序化繪製（高度圖＋逐像素光照，字形遮罩扣進高度圖，礦脈只填溝槽底部），工具 `tools/rune-stones/`，與技能圖示同一流程；§8.7 優先的 RPG Mote Studio 是手繪網頁軟體，不適合 33 顆風格一致、字形依資料表自動刻的批次產圖，所以沿用程序化。②6 個色帶（每 6 階）各一種外形，同色帶外形一致。③遊戲用 160×160（最大顯示 64px，2 倍螢幕夠用，33 張約 1.2MB），256px 母圖與產生器收進素材庫。④圖入口集中在 `runeStoneHTML／runeStoneSrc`，各處只定尺寸 class；查詢字串 `RUNE_STONE_VER` 破快取。⑤**隱藏規則不變**：未激活的配方標籤仍是「品質色外框＋？」，不露出任何石頭圖。
+- 修改：新增 images/runes/stone-r01～r33.png、tools/rune-stones/（產生器五支）；js/runeword_data.js（`RUNE_STONE_VER、runeStoneSrc`）、js/item.js（`runeStoneHTML`、裝備詳情符文孔列）、js/ui-runeword.js（符文庫格子／選中大圖／配方標籤）、js/ui.js（裝備符文面板、背包角標）、css/runeword.css、index.html（5 個快取版號）、docs/RUNEWORD_DESIGN.md（§7.6）、tests/runeword-ui.test.cjs（新增 5 項）。**沒有改 Worker 檔與 WORKER_ASSET_VERSION**：新函式只在主執行緒用，Worker 載到舊版 item.js／runeword_data.js 行為相同。
+- 預檢：`.claude/check-conflicts.ps1` 退出碼 2（ai/codex 未合併的 c0ae3ca7、297fc04d 動了 index.html／docs/AI_TASKS.md）；三方合併試跑 index.html 0 衝突（他們改 936／945／951／972 行、我改 14／923／947／958／959 行），使用者同意後才改這兩個檔。另：我上一個 commit d65296c5 的 `js/bridge.js`（WORKER_ASSET_VERSION）與 `js/worker/sim.worker.js`（importScripts 版號行）已經會與 ai/codex 衝突（`git merge-tree` 實測），合併時兩行版號要手動擇一（保留較新的 token 即可，內容無語意衝突）。
+- 測試：tests/runeword-ui.test.cjs 21 項、runeword 其他測試與 worker-protocol 全過；`npm run build` 467 檔通過。實機（獨立埠 8399、真 Worker）：符文庫 227 張圖全部載入無破圖；裝備頁鑲兩顆符文後符文孔列、符文面板 33 顆、背包角標都是石頭圖；Console 無錯誤。
+- 素材雙倉庫：素材庫 `claude-authored/rune-stones`（256px 母圖 33 張＋產生器副本＋SOURCE.md）Commit `4151cfe`；遊戲專案 Commit 為本紀錄所在提交。素材庫未推送。
+- 風險／注意：①藍、橘在 24px 的字形比其他色帶弱（藍面窄、橘棕底對比低），15px 以下只剩剪影與顏色。②橘的輪廓上方有個雜訊造成的小凹口，不是刻意的。③石頭圖不隨裝備等級變化；若之後要做「已激活／未激活」的石頭外觀差異需另案。④圖檔沒有版本字尾，換圖要 +1 `RUNE_STONE_VER`。
+- 建議驗證（Antigravity）：docs/RUNEWORD_DESIGN.md §8 新增的「符文石圖」那條（各處都是石頭圖、無破圖、縮放不變形、沒持有的格子變暗、未激活配方不露圖）。
+
 ## Claude｜符文真言改名、圖鑑隱藏機制與內測開關（RUNEWORD-REVEAL-20261007）
 
 - Owner：Claude；Done（符文石圖示另案：使用者看過預覽退件，重畫中，尚未整合）。使用者要求：①「符文之語」全改「符文真言」，頁面大標題只叫「符文」②符文頁頁首加「詳細說明」開關，關閉時圖鑑只顯示名稱／品質／孔數／適用裝備／風味，配方符文只留品質色外框（內容問號）、每條效果 8 個問號 ③品質沿用裝備品質（白普通綠精良藍稀有紫史詩橘傳說）④符文庫「用在這些符文真言」同樣問號（真言品質色）⑤開關只在內測版，正式版沒有且永遠問號 ⑥符文石圖先預覽再上。

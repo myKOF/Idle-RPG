@@ -103,7 +103,7 @@ function runeUiChipHTML(id, snapshot, need) {
   var enough = have >= (need || 1);
   return '<button type="button" class="rx-chip' + (enough ? ' has' : '') + '" data-rune-goto="' + id + '" style="--c:' + r.color +
     '" data-tip="' + esc(r.name + '符文（第 ' + r.tier + ' 階）｜持有 ' + have + (need > 1 ? '，此配方需要 ' + need : '') + '｜點擊查看') + '">' +
-    '<span class="rx-chip-g">' + r.glyph + '</span>' + esc(r.name) + (need > 1 ? '<i>×' + need + '</i>' : '') + '</button>';
+    '<span class="rx-chip-g">' + runeStoneHTML(id, 'rs-chip') + '</span>' + esc(r.name) + (need > 1 ? '<i>×' + need + '</i>' : '') + '</button>';
 }
 
 function runeUiLibraryHTML(snapshot, sel) {
@@ -113,7 +113,7 @@ function runeUiLibraryHTML(snapshot, sel) {
     var n = runesViewCount(snapshot, r.id);
     h += '<button type="button" class="rx-card' + (r.id === sel ? ' is-sel' : '') + (n ? '' : ' is-empty') +
       '" data-rune-pick="' + r.id + '" style="--c:' + r.color + '">' +
-      '<span class="rx-glyph">' + r.glyph + '</span>' +
+      '<span class="rx-glyph">' + runeStoneHTML(r.id, 'rs-card') + '</span>' +
       '<span class="rx-card-name">' + esc(r.name) + '</span>' +
       '<span class="rx-card-tier">第 ' + r.tier + ' 階</span>' +
       '<span class="rx-card-count">×' + fmt(n) + '</span></button>';
@@ -136,7 +136,7 @@ function runeUiFocusHTML(snapshot, id) {
   var next = r.tier < RUNES.length ? RUNES[r.tier] : null;
   var lower = r.tier > 1 ? RUNES[r.tier - 2] : null;
   var h = '<div class="rx-focus-head" style="--c:' + r.color + '">' +
-    '<span class="rx-focus-glyph">' + r.glyph + '</span>' +
+    '<span class="rx-focus-glyph">' + runeStoneHTML(r.id, 'rs-focus') + '</span>' +
     '<div><div class="rx-focus-name">' + esc(r.name) + '符文<small>第 ' + r.tier + ' 階</small></div>' +
     '<div class="rx-focus-sub">持有 <b>' + fmt(n) + '</b> 顆</div></div></div>';
   h += '<div class="rx-stats">' +

@@ -400,6 +400,12 @@ var RUNEWORD_TIER_COLORS = RUNEWORD_TIER_RARITY.map(function (ri, t) {
   return (ri >= 0 && typeof RARITIES !== 'undefined' && RARITIES[ri]) ? RARITIES[ri].color : RUNEWORD_TIER_FALLBACK[t][1];
 });
 
+/* 符文石圖：images/runes/stone-<符文id>.png（160×160 透明背景，33 張）。
+   由 tools/rune-stones 程序化繪製（高度圖＋光照，符文刻進石面）；256px 原圖與產生器收在素材庫
+   claude-authored/rune-stones。換圖時 +1 RUNE_STONE_VER（圖檔沒有版本字尾，靠查詢字串破快取）。 */
+var RUNE_STONE_VER = 1;
+function runeStoneSrc(id) { return 'images/runes/stone-' + id + '.png?v=' + RUNE_STONE_VER; }
+
 /* 符文名稱（含階數）。未知 id 回傳 id 本身，避免畫面上出現 undefined。 */
 function runeName(id) {
   var r = RUNE_BY_ID[id];

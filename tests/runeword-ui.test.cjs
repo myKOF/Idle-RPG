@@ -263,7 +263,7 @@ test('內測版：預設全部攤開；「詳細說明」開關可切換、記�
   assert.equal(c.store['idle-rpg.runeDetail.v1'], '0');
   const list = c.els['runeword-list'].innerHTML;
   assert.match(list, /rx-unknown/);
-  assert.doesNotMatch(list, /rx-chip-g">ᚠ/);
+  assert.doesNotMatch(list, /rune-stone/, '關掉開關後連石頭圖也不能露出來');
   assert.equal(c.UI.dirty.equip, true, '裝備詳情的配方提示也要重畫');
   btn.listeners.click();
   assert.equal(c.store['idle-rpg.runeDetail.v1'], '1');
@@ -339,4 +339,79 @@ test('接線：gems 面板帶 runewordSeen、協議 v48、快取版號已 bump',
   assert.match(worker, /protocol\.js\?v=48/);
   assert.match(worker, /'\.\.\/runeword\.js\?v=20261007-rune-seen'/);
   assert.match(fs.readFileSync(path.join(root, 'js/bridge.js'), 'utf8'), /WORKER_ASSET_VERSION = '20261007-rune-seen'/);
+});
+
+/* ============ 符文石圖（2026-10-07，images/runes）：每顆符文都有一張刻了字的石頭圖 ============ */
+test('符文石圖檔：33 顆符文各一張 160×160 透明 PNG，runeStoneSrc 指到真的檔案，版本字尾可破快取', () => {
+  const c = mount();
+  assert.equal(c.RUNES.length, 33);
+  c.RUNES.forEach((r) => {
+    const src = c.runeStoneSrc(r.id);
+    assert.match(src, new RegExp('^images/runes/stone-' + r.id + '\\.png\\?v=\\d+$'));
+    const file = path.join(root, src.split('?')[0]);
+    assert.ok(fs.existsSync(file), file + ' 不存在');
+    const b = fs.readFileSync(file);
+    assert.equal(b.slice(0, 8).toString('hex'), '89504e470d0a1a0a', r.id + ' 不是 PNG');
+    assert.equal(b.readUInt32BE(16), 160, r.id + ' 寬度');
+    assert.equal(b.readUInt32BE(20), 160, r.id + ' 高度');
+    assert.equal(b[25], 6, r.id + ' 要有透明通道（RGBA）');
+    assert.ok(b.length < 80 * 1024, r.id + ' 檔案過大：' + b.length);
+  });
+  assert.equal(fs.readdirSync(path.join(root, 'images', 'runes')).filter((f) => /\.png$/.test(f)).length, 33, '資料夾裡沒有多餘的圖');
+});
+
+test('runeStoneHTML：未知符文回空字串；有圖時帶 class 與 alt 空字串、不可拖曳', () => {
+  const c = mount();
+  assert.equal(c.runeStoneHTML('zz', 'rs-card'), '');
+  const h = c.runeStoneHTML('r05', 'rs-chip');
+  assert.match(h, /^<img class="rune-stone rs-chip" src="images\/runes\/stone-r05\.png\?v=\d+" alt="" draggable="false"/);
+});
+
+test('符文庫與圖鑑：格子、選中大圖、攤開的配方標籤用石頭圖；問號標籤與未激活的用途沒有任何圖', () => {
+  const c = mount({ internal: false });
+  c.setPanels({ gems: {}, fusedGems: [], runes: { r06: 1, r08: 1 }, runewordSeen: { rw_viperkiss: 1 } });
+  c.renderRunes();
+  const grid = c.els['rune-grid'].innerHTML;
+  assert.equal((grid.match(/<img class="rune-stone rs-card"/g) || []).length, 33);
+  assert.doesNotMatch(grid, /ᚠ|ᚢ/, '格子裡不再有 Unicode 字形');
+  assert.match(grid, /stone-r01\.png/);
+  assert.match(c.els['rune-focus'].innerHTML, /rx-focus-glyph"><img class="rune-stone rs-focus" src="images\/runes\/stone-r01\.png/);
+  const list = c.els['runeword-list'].innerHTML;
+  const viper = wordBlock(list, 'rw_viperkiss', 'rw_minorthunder');
+  assert.equal((viper.match(/<img class="rune-stone rs-chip"/g) || []).length, 2, '蛇吻已激活：兩顆配方符文都是石頭圖');
+  assert.match(viper, /stone-r06\.png/);
+  assert.match(viper, /stone-r08\.png/);
+  const thunder = wordBlock(list, 'rw_minorthunder', 'rw_lightguard');
+  assert.doesNotMatch(thunder, /<img|stone-r/, '未激活的配方不得露出任何石頭圖（會洩漏是哪幾顆）');
+  assert.match(thunder, /rx-chip is-unknown/);
+  c.selectRune('r28');
+  assert.doesNotMatch(c.els['rune-focus'].innerHTML.split('rx-uses')[1], /<img/, '未激活的用途不得有圖');
+});
+
+test('裝備詳情的符文孔、符文面板、背包角標都用石頭圖', () => {
+  const c = mount();
+  c.setPanels({ gems: {}, fusedGems: [], runes: { r13: 2, r25: 1 }, runewordSeen: {} });
+  const it = { id: 'w', slot: 'weapon', weaponType: 'sword1h', rarity: 5, level: 100, sockets: [], runes: ['r13', 'r25', null, null], affixes: [] };
+  const detail = c.itemRuneHTML(it);
+  assert.equal((detail.match(/<img class="rune-stone rs-row"/g) || []).length, 2);
+  assert.match(detail, /stone-r13\.png/);
+  assert.match(detail, /stone-r25\.png/);
+  const panel = c.equipRunePanelHTML(it, c.uiGemsPanelSnapshot());
+  assert.equal((panel.match(/<img class="rune-stone rs-icon"/g) || []).length, 2, '只列出持有的符文');
+  assert.match(panel, /data-rune-socket="r25"[^>]*>\s*<img/);
+  const badge = c.itemRuneBadgeHTML(it);
+  assert.match(badge, /<img class="rune-stone rs-badge" src="images\/runes\/stone-r13\.png/);
+  assert.match(badge, /×2/);
+});
+
+test('符文石圖的接線：index.html 引用的 css／js 版號與快取、素材來源記錄', () => {
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  assert.match(html, /css\/runeword\.css\?v=1\.0\.3/);
+  assert.match(html, /js\/ui-runeword\.js\?v=1\.0\.4/);
+  const css = fs.readFileSync(path.join(root, 'css/runeword.css'), 'utf8');
+  ['rs-card', 'rs-focus', 'rs-chip', 'rs-row', 'rs-icon', 'rs-badge'].forEach((k) => assert.match(css, new RegExp('\\.' + k + '\\b'), '缺 ' + k + ' 的尺寸樣式'));
+  assert.match(css, /\.rune-stone \{[^}]*pointer-events: none/);
+  const data = fs.readFileSync(path.join(root, 'js/runeword_data.js'), 'utf8');
+  assert.match(data, /var RUNE_STONE_VER = \d+;/);
+  assert.ok(fs.existsSync(path.join(root, 'tools/rune-stones/rune-stone-painter.js')), '產生器要隨專案保存');
 });

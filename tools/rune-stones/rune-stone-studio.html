@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>符文石工作站（預覽）</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; padding: 16px; background: #121418; color: #ddd6c8; font: 13px/1.5 system-ui, "Microsoft JhengHei", sans-serif; }
+  h1 { font-size: 16px; margin: 0 0 4px; }
+  .bar { display: flex; gap: 8px; align-items: center; margin: 10px 0 16px; flex-wrap: wrap; }
+  button { background: #2a2c34; color: #eee; border: 1px solid #4a4d58; border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+  button:hover { border-color: #c9a45a; }
+  #log { color: #9ab; white-space: pre-wrap; }
+  .row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+<h1>符文石工作站（預覽，未整合進遊戲）</h1>
+<div>改 <code>rune-stone-painter.js</code> 後重新整理；輸出只寫到伺服器的 --preview-dir，不會動遊戲目錄。</div>
+<div class="bar">
+  <button id="btn-all">輸出全部預覽圖</button>
+  <button id="btn-grid">在頁面顯示 33 顆</button>
+  <span id="log"></span>
+</div>
+<div id="grid"></div>
+
+<script src="/js/runeword_data.js"></script>
+<script src="rune-stone-core.js"></script>
+<script src="rune-stone-painter.js"></script>
+<script src="rune-stone-bands.js"></script>
+<script>
+  var P = window.RuneStonePainter;
+  var BG = '#121418';
+  var FONTUI = '"Microsoft JhengHei", "Segoe UI", sans-serif';
+  var log = document.getElementById('log');
+
+  function bandOf(i) { return Math.min(5, Math.floor(i / 6)); }
+  function stone(i, size) { var r = RUNES[i]; return P.paint(bandOf(i), r.glyph, RUNE_TIER_COLORS[bandOf(i)], size); }
+  function cv(w, h, bg) {
+    var c = document.createElement('canvas'); c.width = w; c.height = h;
+    var x = c.getContext('2d');
+    if (bg) { x.fillStyle = bg; x.fillRect(0, 0, w, h); }
+    return c;
+  }
+  function post(name, sub, canvas) {
+    var q = '/preview?name=' + name + (sub ? '&sub=' + sub : '');
+    return fetch(q, { method: 'POST', body: canvas.toDataURL('image/png') }).then(function (r) {
+      if (!r.ok) throw new Error(q + ' → ' + r.status);
+      return r.text();
+    });
+  }
+
+  /* 1 色帶代表圖：每個色帶取一顆，256px 並排 */
+  var REP = [2, 8, 14, 20, 26, 32];
+  function bandsLarge() {
+    var c = cv(6 * 256 + 7 * 10, 256 + 20, BG), x = c.getContext('2d');
+    REP.forEach(function (i, k) { x.drawImage(stone(i, 256), 10 + k * 266, 10); });
+    return c;
+  }
+  /* 1b 細節大圖：6 個色帶各一顆 512px，3×2 排列 */
+  function bandCloseup() {
+    var c = cv(3 * 512 + 40, 2 * 512 + 30, BG), x = c.getContext('2d');
+    REP.forEach(function (i, k) { x.drawImage(P.paint(bandOf(i), RUNES[i].glyph, RUNE_TIER_COLORS[bandOf(i)], 512), 10 + (k % 3) * 522, 10 + Math.floor(k / 3) * 522); });
+    return c;
+  }
+  /* 2 33 顆總覽：每列一個色帶（6 欄），128px */
+  function all33() {
+    var cell = 128, gap = 8, cols = 6, rows = 6;
+    var c = cv(cols * cell + (cols + 1) * gap, rows * cell + (rows + 1) * gap, BG), x = c.getContext('2d');
+    for (var i = 0; i < RUNES.length; i++) {
+      var col = i % 6, row = Math.floor(i / 6);
+      x.drawImage(stone(i, 128), gap + col * (cell + gap), gap + row * (cell + gap));
+    }
+    return c;
+  }
+  /* 3 使用情境：深色面板＋卡片，104 / 54 / 34 / 24 px */
+  function inContext(scale) {
+    scale = scale || 1;
+    var W = 760, H = 470, c = cv(W * scale, H * scale, '#0b0c0f'), x = c.getContext('2d');
+    x.scale(scale, scale);
+    function card(px, py, w, h, bg) { x.fillStyle = bg || '#14161a'; x.strokeStyle = '#2a2d33'; x.lineWidth = 1; x.beginPath(); x.roundRect(px + 0.5, py + 0.5, w, h, 8); x.fill(); x.stroke(); }
+    function text(t, px, py, size, col, align) { x.font = size + 'px ' + FONTUI; x.fillStyle = col || '#a39d90'; x.textAlign = align || 'left'; x.textBaseline = 'alphabetic'; x.fillText(t, px, py); }
+    function draw(i, px, py, size) { x.imageSmoothingQuality = 'high'; x.drawImage(stone(i, Math.round(size * scale)), px, py, size, size); }
+    /* 庫存格子 104px：每個色帶一顆，帶名稱與數量 */
+    text('庫存格子 104px', 16, 24, 12);
+    var inv = [1, 7, 13, 19, 25, 31];
+    inv.forEach(function (i, k) {
+      var px = 16 + k * 120, py = 34; card(px, py, 108, 138);
+      draw(i, px + 2, py + 6, 104);
+      text(RUNES[i].name, px + 54, py + 124, 13, '#e6dfcf', 'center');
+      text('x' + (k * 3 + 2), px + 100, py + 18, 11, '#f0cf86', 'right');
+    });
+    /* 選中符文大圖 54px＋名稱階數＋說明文字 */
+    text('選中符文大圖 54px', 16, 206, 12);
+    [[5, 0], [12, 1], [21, 2]].forEach(function (s, k) {
+      var px = 16 + k * 244, py = 216; card(px, py, 232, 76);
+      draw(s[0], px + 10, py + 11, 54);
+      text(RUNES[s[0]].name + '符文', px + 76, py + 32, 17, '#f2ead8');
+      text('第 ' + RUNES[s[0]].tier + ' 階', px + 76, py + 50, 12, RUNE_TIER_COLORS[bandOf(s[0])]);
+      text('武器：+攻擊  防具：+防禦', px + 76, py + 66, 11, '#8d887c');
+    });
+    /* 34px 與 24px：配方標籤 */
+    text('34px（符文孔）／24px（配方小標籤）', 16, 322, 12);
+    var rows = [[0, 6, 12, 18], [3, 9, 15, 21], [24, 27, 30, 32]];
+    rows.forEach(function (row, r) {
+      var py = 332 + r * 42;
+      row.forEach(function (i, k) { var px = 16 + k * 44; card(px, py, 38, 38); draw(i, px + 2, py + 2, 34); });
+      /* 配方標籤：24px 圖＋名稱 */
+      var chips = row.map(function (i) { return i; });
+      chips.forEach(function (i, k) {
+        var px = 200 + k * 116; card(px, py + 4, 108, 30, '#111317');
+        draw(i, px + 4, py + 7, 24);
+        text(RUNES[i].name, px + 34, py + 24, 12, '#d5d1c4');
+        if (k < 3) text('›', px + 112, py + 24, 12, '#5c5f66', 'center');
+      });
+    });
+    /* 15px 配方極小標籤（只有圖示） */
+    text('15px', 690, 322, 12);
+    for (var j = 0; j < 6; j++) draw(j * 6 + 2, 690 + j * 20 - (j > 2 ? 60 : 0), 332 + (j > 2 ? 22 : 0), 15);
+    return c;
+  }
+
+  /* 重心：回傳 256 母圖的實體外框中心（alpha≥0.5）、實體 alpha 重心、亮度×alpha 重心，皆為相對畫面中心的偏移；
+     |dx|、|dy| 以 10 以內為合格（使用者常抱怨偏左偏上） */
+  function centroid(i) {
+    var r = RUNES[i], cvs = P.paint(bandOf(i), r.glyph, RUNE_TIER_COLORS[bandOf(i)], 256), n = 256;
+    var d = cvs.getContext('2d').getImageData(0, 0, n, n).data;
+    var minx = n, maxx = 0, miny = n, maxy = 0, sa = 0, sax = 0, say = 0, sl = 0, slx = 0, sly = 0;
+    for (var y = 0; y < n; y++) for (var x = 0; x < n; x++) {
+      var j = (y * n + x) * 4, a = d[j + 3] / 255;
+      var lum = (0.2126 * d[j] + 0.7152 * d[j + 1] + 0.0722 * d[j + 2]) / 255 * a;
+      sl += lum; slx += lum * x; sly += lum * y;
+      if (a < 0.5) continue;
+      if (x < minx) minx = x; if (x > maxx) maxx = x; if (y < miny) miny = y; if (y > maxy) maxy = y;
+      sa += 1; sax += x; say += y;
+    }
+    return {
+      id: r.id, bbox: [minx, miny, maxx, maxy],
+      bboxDx: Math.round((minx + maxx) / 2 - 127.5), bboxDy: Math.round((miny + maxy) / 2 - 127.5),
+      alphaDx: Math.round(sax / sa - 127.5), alphaDy: Math.round(say / sa - 127.5),
+      lumDx: Math.round(slx / sl - 127.5), lumDy: Math.round(sly / sl - 127.5)
+    };
+  }
+  function centroids(ids) {
+    ids = ids || REP;
+    return ids.map(centroid);
+  }
+
+  /* 小尺寸可讀性：33 顆各畫 34px 與 24px 兩列（放大 3 倍，方便目視） */
+  function smallSizes() {
+    var Z = 3, perRow = 11, W = perRow * 44 * Z + 16, H = 3 * 2 * 44 * Z + 16;
+    var c = cv(W, H, '#14161a'); var x = c.getContext('2d'); x.imageSmoothingEnabled = false;
+    [34, 24].forEach(function (size, si) {
+      for (var i = 0; i < RUNES.length; i++) {
+        var col = i % perRow, row = Math.floor(i / perRow), small = stone(i, size);
+        /* 先真實縮到目標尺寸，再用最近鄰放大 3 倍檢視 */
+        x.drawImage(small, 8 + col * 44 * Z, 8 + (si * 3 + row) * 44 * Z, size * Z, size * Z);
+      }
+    });
+    return c;
+  }
+  function exportAll() {
+    var out = [];
+    var steps = [
+      function () { return post('bands-large', '', bandsLarge()); },
+      function () { return post('band-closeup', '', bandCloseup()); },
+      function () { return post('all-33', '', all33()); },
+      function () { return post('in-context', '', inContext(1)); },
+      function () { return post('in-context-2x', '', inContext(2)); },
+      function () { return post('small-sizes-3x', '', smallSizes()); }
+    ];
+    for (var i = 0; i < RUNES.length; i++) (function (k) {
+      steps.push(function () { return post('stone-' + RUNES[k].id, 'singles', stone(k, 256)); });
+    })(i);
+    var p = Promise.resolve();
+    steps.forEach(function (s, k) { p = p.then(s).then(function (f) { out.push(f); log.textContent = '已輸出 ' + (k + 1) + '/' + steps.length; }); });
+    return p.then(function () { log.textContent = '完成：' + steps.length + ' 張'; return out.length; });
+  }
+  /* 檢視用：把指定的 [色帶, 字形] 以 512px 原圖並排（深色底），存成預覽檔 */
+  function show(name, items, size) {
+    var sz = size || 512, c = cv(items.length * sz, sz, '#14161a'), x = c.getContext('2d');
+    items.forEach(function (it, k) { x.drawImage(P.paint(it[0], it[1], it[2], sz), k * sz, 0); });
+    return post(name, '', c);
+  }
+  window.RS = { bandCloseup: bandCloseup, show: show, smallSizes: smallSizes, bandsLarge: bandsLarge, all33: all33, inContext: inContext, centroid: centroid, centroids: centroids, exportAll: exportAll, post: post, stone: stone };
+  document.getElementById('btn-all').onclick = function () { exportAll().catch(function (e) { log.textContent = '失敗：' + e.message; }); };
+
+  /* 頁面上顯示 33 顆（按鈕觸發；每顆約 0.5 秒，所以不在載入時自動畫） */
+  function showGrid() {
+    var g = document.getElementById('grid'), rowEl, t0 = performance.now();
+    g.innerHTML = '';
+    for (var i = 0; i < RUNES.length; i++) {
+      if (i % 6 === 0) { rowEl = document.createElement('div'); rowEl.className = 'row'; g.appendChild(rowEl); }
+      var s = stone(i, 128); s.style.width = '128px'; s.style.height = '128px'; rowEl.appendChild(s);
+    }
+    log.textContent = '33 顆繪製 ' + Math.round(performance.now() - t0) + 'ms';
+  }
+  document.getElementById('btn-grid').onclick = showGrid;
+</script>
+</body>
+</html>

@@ -713,6 +713,13 @@ function itemSocketHTML(it, mode) {
   return h + '</div>';
 }
 
+/* 符文石圖（js/runeword_data.js 的 runeStoneSrc）。cls＝各處用來定尺寸與位置的 class。
+   主執行緒的符文頁、裝備符文面板、背包角標與裝備詳情共用這一個入口。 */
+function runeStoneHTML(id, cls) {
+  if (!RUNE_BY_ID[id]) return '';
+  return '<img class="rune-stone' + (cls ? ' ' + cls : '') + '" src="' + runeStoneSrc(id) + '" alt="" draggable="false" decoding="async">';
+}
+
 /* 符文孔區塊（取代原本附魔欄位的位置；符文與符文真言 → js/runeword.js）。
    純函式（不讀 G、不改 it）。opts.rune.active＝符文面板開啟：已鑲的符文可點擊取下（data-rune-remove）。
    符文真言成形時列出名稱與全部效果；未成形時提示「再放入哪幾顆符文就會成形」——但那組真言還沒激活過
@@ -736,7 +743,7 @@ function itemRuneHTML(it, opts) {
     }
     var attrs = canRemove ? ' data-rune-remove="' + i + '" data-tip="點擊取下（符文退回符文庫）"' : '';
     h += '<span class="socket filled rune-socket' + (inWord ? ' runeword-socket' : '') + (canRemove ? ' removable' : '') + '"' + attrs + '>' +
-      '<span class="sk-name">' + (i + 1) + '. ' + RUNE_BY_ID[id].glyph + ' ' + esc(runeLabel(id)) + '</span>' +
+      '<span class="sk-name">' + (i + 1) + '. ' + runeStoneHTML(id, 'rs-row') + ' ' + esc(runeLabel(id)) + '</span>' +
       '<span class="sk-val">' + esc(rwRuneStatLine(it, id)) + '</span></span>';
   }
   if (rwAct) {
