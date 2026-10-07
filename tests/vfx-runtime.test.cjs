@@ -385,6 +385,7 @@ function recordingBackend(log, tag) {
     updateNode(node, t) {
       if (!t || t.visible === false) return;
       node.transforms.push({ x: t.x, y: t.y, rotation: t.rotation, scaleX: t.scaleX, scaleY: t.scaleY, alpha: t.alpha, frame: t.frame, sortY: t.sortY, deformation: t.deformation ? {...t.deformation} : null });
+      for (const key of ['tint','perspective','cameraDepth','motionAngle','anchorX','anchorY']) node.transforms.at(-1)[key] = t[key];
       if (t.skewX) node.transforms[node.transforms.length - 1].skewX = t.skewX;
       log.updates.push({ tag, x: t.x, y: t.y, rotation: t.rotation, scaleX: t.scaleX, scaleY: t.scaleY });
     },
@@ -536,6 +537,53 @@ test('CLEAVE-FACING 原地及飛行圓形刀波沿事件面敵角旋轉，尺寸
   assert.ok(Math.abs(t.y-(40+24*Math.sin(angle)))<1e-8);
   assert.equal(t.rotation,angle);assert.equal(t.scaleX,1.2);assert.equal(t.scaleY,1.2);
   adapter.update(.71);assert.equal(adapter.stats().fx.activeEffects,0);
+ }
+});
+
+test('FACING-TILT 正式迴旋斬與飛行刀波八向只改內部朝向，不旋轉橢圓外框',()=>{
+ const matrix=t=>[Math.cos(t.rotation)*t.scaleX,Math.sin(t.rotation)*t.scaleX,
+  -Math.sin(t.rotation-(t.skewX||0))*t.scaleY,Math.cos(t.rotation-(t.skewX||0))*t.scaleY];
+ const near=(a,b)=>assert.ok(Math.abs(a-b)<1e-7,`${a} != ${b}`);
+ for(const name of ['slash-cleave-ring-warm','proj-cleave-ring-tricolor-09']){
+  const preset=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/'+name+'.json'),'utf8'));
+  const unchanged=JSON.stringify(preset), role=name.startsWith('proj-')?'projectile':'attack';
+  const play=angle=>{
+   const {adapter,log}=makeAdapter([preset]);
+   adapter.tryPlay({fxKind:role==='attack'?'slash':'projectile',variant:'cleave-ring',angle,
+    area:{x:30,y:40,r:120},travelMs:[420],hit:false,vfx:{[role]:name}});
+   adapter.update(.14); const transforms=log.nodes.map(n=>({...n.transforms.at(-1)}));
+   adapter.update(.3); assert.equal(adapter.stats().fx.activeEffects,0);
+   return transforms;
+  };
+  const zero=play(0);assert.equal(zero.length,preset.layers.length);
+  for(let d=0;d<8;d++){
+   const angle=d*Math.PI/4, current=play(angle);
+   current.forEach((t,i)=>{
+    const o=preset.layers[i].outerScale, inner=Math.atan2(Math.sin(angle)/o.y,Math.cos(angle)/o.x);
+    const c=Math.cos(inner),s=Math.sin(inner),base=zero[i],b=matrix(base),m=matrix(t);
+    near(m[0],c*b[0]-s*o.x/o.y*b[1]);near(m[1],s*o.y/o.x*b[0]+c*b[1]);
+    near(m[2],c*b[2]-s*o.x/o.y*b[3]);near(m[3],s*o.y/o.x*b[2]+c*b[3]);
+    near(t.x-30,c*(base.x-30)-s*o.x/o.y*(base.y-40));
+    near(t.y-40,s*o.y/o.x*(base.x-30)+c*(base.y-40));
+    for(const key of ['alpha','tint','perspective','cameraDepth','motionAngle','frame','anchorX','anchorY','sortY'])assert.equal(t[key],base[key],key);
+   });
+  }
+  assert.equal(JSON.stringify(preset),unchanged,'正式素材不修改');
+ }
+});
+
+test('FACING-TILT 逐目標立即及延後播放同樣保留outerScale，受擊仍用原方向',()=>{
+ for(const delay of [0,200]){
+  const p=unitPreset('aim-flat');p.layers[0].outerScale={x:1,y:.6};
+  const hit=JSON.parse(JSON.stringify(p));hit.id='hit-flat';hit.layers[0].assetId='test/hit-flat.png';
+  const {adapter,log}=makeAdapter([p,hit],{ctx:{playerPos:()=>({x:0,y:0}),footOf:id=>id==='pv-float'?{x:0,y:0}:{x:100,y:100},posOf:()=>({x:100,y:100})}});
+  adapter.tryPlay({fxKind:'slash',targets:['a'],travelMs:[delay],vfx:{attack:p.id,hit:hit.id}});
+  adapter.update(delay/1000+.01);
+  const attack=log.nodes.find(n=>n.spec.assetUrl.includes('aim-flat')).transforms.at(-1);
+  assert.ok(Math.abs(attack.rotation-Math.PI/4)<1e-8,JSON.stringify({delay,attack}));
+  assert.ok(Math.abs(attack.scaleX-Math.sqrt(2/(1+1/.36)))<1e-8);
+  const impact=log.nodes.find(n=>n.spec.assetUrl.includes('hit-flat'));
+  assert.ok(impact);assert.equal(impact.transforms.at(-1).rotation,0);
  }
 });
 

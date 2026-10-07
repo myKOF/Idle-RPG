@@ -795,7 +795,7 @@ var VFXRuntime = (function () {
         if (delaySec > 0) {
           pending.push({ at: clock + delaySec, rt: rt, presetId: presetId, targetId: ids[i], scale: scale,
             authoredSize: authoredSize, groundFoot: groundFoot, chainTargets: chainTargets, hitClass: !!hitClass,
-            rotation: aimAttack ? attackFacing(spec,presetId,ids[i]) : undefined });
+            rotation: aimAttack ? attackFacing(spec,presetId,ids[i]) : undefined, facingBeforeOuterScale: !!aimAttack });
           any = true;
           continue;
         }
@@ -810,7 +810,7 @@ var VFXRuntime = (function () {
         if (spec.variant === 'pillar' && presetId === 'pillar-light' && num(spec.dur, 0) > 0) {
           params.timeScale = presetDurations[presetId] / spec.dur;
         }
-        if (aimAttack) params.rotation = attackFacing(spec,presetId,ids[i]);
+        if (aimAttack) { params.rotation = attackFacing(spec,presetId,ids[i]); params.facingBeforeOuterScale = true; }
         else if (spec.sourceId) {
           var src = ctx.posOf(spec.sourceId);
           params.rotation = Math.atan2(p.y - src.y, p.x - src.x);
@@ -847,7 +847,7 @@ var VFXRuntime = (function () {
       if (!spec.area) return false;
       var params = areaScaleParams(spec.area, presetId);
       params.position = areaCentre(spec.area);
-      if (aimAttack && !isNum(spec.area.a)) params.rotation = attackFacing(spec,presetId);
+      if (aimAttack && !isNum(spec.area.a)) { params.rotation = attackFacing(spec,presetId); params.facingBeforeOuterScale = true; }
       return !!play(rt, presetId, params, profile.areaScale);
     }
 
@@ -900,6 +900,7 @@ var VFXRuntime = (function () {
         var duration = Math.max(0.05,travelSecAt(spec,0) || num(spec.dur,0.42));
         return !!play(rt,presetId,Object.assign({position:areaCentre(spec.area),
           rotation:attackFacing(spec,presetId),
+          facingBeforeOuterScale:true,
           timeScale:presetDurations[presetId]/duration},ringSize));
       }
       var origin = ctx.playerPos();
@@ -1778,6 +1779,7 @@ var VFXRuntime = (function () {
             moonParams.position = spec.targets && spec.targets.length ? ctx.posOf(spec.targets[0]) : areaCentre(spec.area);
             // 以製作時的正右方為朝前，保留圖層自身旋轉動畫。
             moonParams.rotation = attackFacing(spec,presetId);
+            moonParams.facingBeforeOuterScale = true;
             ok = !!play(rtFx, presetId, moonParams);
           } else if (/^cleave(?:-|$)/.test(spec.variant || '')) {
             ok = playCleave(rtFx, presetId, spec);
@@ -1909,6 +1911,7 @@ var VFXRuntime = (function () {
           { position: job.groundFoot ? footOf(job.targetId) : ctx.posOf(job.targetId),
             depthY: footOf(job.targetId).y });
         if (isNum(job.rotation)) jobParams.rotation = job.rotation;
+        if (job.facingBeforeOuterScale) jobParams.facingBeforeOuterScale = true;
         if (job.hitClass) { var jd = hitDensity(); if (jd) { jobParams.density = jd; counters.thinned++; } }
         var jobRef = play(job.rt, job.presetId, jobParams, job.authoredSize ? 1 : undefined);
         if (jobRef && job.hitClass) noteHit(job.presetId, job.targetId);

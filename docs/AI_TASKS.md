@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## ATTACK-VFX-FACING-TILT-20261007 — 攻擊特效只轉朝向、保留製作傾角
+
+- Owner：Codex；Done，單一開發者。使用者澄清只改面敵方向，傾角、FOV與其它製作參數維持原樣；修正上一版將已壓扁橢圓整體旋轉的錯誤。
+- 範圍：Core可選的投影前朝向、Runtime本次攻擊朝向接線、相關Core／Runtime回歸、Adapter說明、主頁／Editor必要快取及此段。禁止修改Preset／素材／技能數值／傷害／Worker協議／Excel／其他聊天的場景工作，不合併／推送。
+- 衝突預檢：Core／Runtime／兩項測試／Adapter／Editor乾淨；index與本紀錄仍為Claude b6bb1c63寶石及8b0c89b2符文來源，沿用使用者已核准的分段修改授權，只更新本次VFX快取與此段。保留同副本進行中SCENE-REBUILD-ALL的全部內容，由原聊天提交。
+- 驗收：正式warm與飛行刀波八方向維持原outerScale投影軸、旋轉曲線／大小／alpha／傾角／FOV；事件方向仍對準目標、延遲保存角度；既有projection路徑及未啟用此選項的Editor／其它用途保持原輸出。必要回歸、正式渲染與Build後提交。
+- 完成：攻擊播放啟用Core內部facingBeforeOuterScale，原outerScale的固定外框不隨面敵角轉動；以原外框反投影畫面面敵角，再在外框壓扁之前旋轉，原本已壓扁的局部位置以O·R·O^-1換算。只改根Sprite的朝向順序，明確projection沿用原流程，未啟用選項的Editor／受擊／場域等用途維持舊rotation契約；followDirection:false保留圖層锁定方向，零軸外框保留原退化路徑以避免除零。沒有修改Preset、outerScale、FOV／perspective／cameraDepth、曲線、尺寸、速度、時長、傷害、判定或Worker事件。
+- 修改8檔：js/vfx-core.js、js/vfx-runtime.js、tests/vfx-core.test.cjs、tests/vfx-runtime.test.cjs、docs/vfx/VFX_RUNTIME_ADAPTER.md、index.html、tools/vfx/editor/index.html、本紀錄。主頁與Editor Core20261007-facing-keep-tilt／Runtime1.0.180；Worker未修改、Asset版本與協議48沿用。唯讀檢查但未修改AI規範、skills2、PixiBackend、場景Renderer、正式warm／tricolor-09／真空迴旋等Preset及素材索引；無素材變更或素材庫Commit。
+- 測試：`node --test --test-name-pattern='FACING|GALE|POISON-SPREAD|WIND-CHASER' tests/vfx-core.test.cjs tests/vfx-runtime.test.cjs tests/cleave-rework.test.cjs`13/13；`node --test tests/vfx-core.test.cjs tests/vfx-duration.test.cjs tests/vfx-load-shedding.test.cjs tests/vfx-editor-guard.test.cjs`187/187，含Editor舊頁程式更新拒絕覆寫、備份及重啟保護。新增兩項Core及兩項Runtime回歸，正式warm與tricolor-09逐層八方向核對矩陣、位置及原鏡頭旗標，延遲攻擊保持相同外框、受擊方向不变。
+- 基線／Build：Runtime＋cleave完整回歸146項／137通過／9失敗；唯讀記憶體載入HEAD原Core／Runtime及原測試144項／135通過／同9失敗，失敗名称集合相同，新增失敗0，未降低既有斷言。`npm.cmd run build`468檔及`git diff --check`通過。首次新夾具把玩家與目標腳點都設同座標，修正夾具後方向測試通過；基線runner改用環境旗標避免Node test丟棄命令尾參數。
+- 正式渲染：隔離headless Edge／隨機Port唯讀HTTP／新Context，載入正式Pixi／Core／Runtime／Backend、warm及tricolor-09真貼圖，五方向共130圖層，最大矩陣／位置差5.69e-14；原固定橢圓外框保持水平，alpha／tint／鏡頭旗標與右方基準一致，到期active0，Console error／warning0。首次測試頁favicon404已補測試頁data圖示後重驗；沒有修改產品配合測試。未操作真人存檔或真人長時間戰鬥；服務／瀏覽器已關閉，臨時runner／日誌／截圖清除。
+- 提交／交付：本紀錄所在`[Codex] fix: 攻擊特效只轉朝向並保留原傾角`，只提交此8檔及共用檔本次片段，場景修改完整保留由原聊天提交。未完成項目無，可審查合併；9項既有回歸失敗仍待獨立任務，不合併／推送。下一步重載遊戲確認；Editor有未存內容先下載備份／另存，再重啟重載，勿用舊頁覆蓋。
+
 ## ATTACK-VFX-FACING-20261007 — 攻擊特效以正右方基準對準目標
 
 - Owner：Codex；Done。使用者觀測攻擊特效沿用Editor方向，要求以正右方90度作面敵基準。單一開發者；製作+X就是朝前，內部atan2以右方0偏轉、上方-π/2，避免多加90度。

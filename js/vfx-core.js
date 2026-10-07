@@ -1511,6 +1511,7 @@ var VFXCore = (function () {
         depthY: null,
         rotation: 0,
         motionFacing: false,
+        facingBeforeOuterScale: false,
         scale: 1, scaleX: 1, scaleY: 1, opacity: 1,
         seed: (p.seed === undefined ? (nextEffectId * 2654435761) : p.seed) >>> 0,
         layers: [],
@@ -1594,6 +1595,7 @@ var VFXCore = (function () {
       if (p.opacity !== undefined) effect.opacity = Math.max(0, Math.min(1, transformNumber(p.opacity, 'opacity')));
       if (p.rotation !== undefined) effect.rotation = transformNumber(p.rotation, 'rotation');
       if (p.motionFacing !== undefined) effect.motionFacing = p.motionFacing === true;
+      if (p.facingBeforeOuterScale !== undefined) effect.facingBeforeOuterScale = p.facingBeforeOuterScale === true;
       if (p.projectionRotation !== undefined) effect.projectionRotation = transformNumber(p.projectionRotation, 'projectionRotation');
       var hasScale = p.scale !== undefined;
       var hasAxis = p.scaleX !== undefined || p.scaleY !== undefined;
@@ -1824,11 +1826,25 @@ var VFXCore = (function () {
          那些 preset 的外觀是照著「簡單路徑」調出來的。把它們一併改成分解路徑
          會靜靜改掉既有畫面，所以維持原本的 sizing 條件不動，只多加 outerScale 這一條。 */
       var outerSquash = !!d.outerScale && d.outerScale.x !== d.outerScale.y;
+      /* 攻擊朝向放在作者的固定壓扁之前；rotation 是畫面面敵角，先反投影成內部角。
+         局部位置原本已按 outerScale 製作，因此位置用 O · R · O^-1，避免再次壓扁。
+         不修改 Preset，也不改未啟用選項的 Editor／其它播放用途。 */
+      var facingInside = effect.facingBeforeOuterScale && outerSquash && d.outerScale.x !== 0 && d.outerScale.y !== 0;
+      var facingAngle = 0;
+      if (facingInside) {
+        facingAngle = Math.atan2(Math.sin(effect.rotation) / d.outerScale.y, Math.cos(effect.rotation) / d.outerScale.x);
+        var fc = Math.cos(facingAngle), fs = Math.sin(facingAngle);
+        var px = d.position.x + (offX === null ? 0 : offX);
+        var py = d.position.y + (offY === null ? 0 : offY);
+        t.x = effect.origin.x + effect.scaleX * (fc * px - fs * py * d.outerScale.x / d.outerScale.y);
+        t.y = effect.origin.y + effect.scaleY * (fs * px * d.outerScale.y / d.outerScale.x + fc * py);
+      }
       if ((effect.preset.sizing && effect.scaleX !== effect.scaleY) || outerSquash) {
         /* M = S_outer · R(localAngle) · S_local。Pixi 的節點只吃
            rotation／scale／skew，所以要把這個 2×2 矩陣分解回那三個值——
            非等比縮放套在旋轉後會產生切變，少了 skew 就畫不出來。 */
         var localAngle = d.rotation + (rotK === null ? 0 : rotK) + d.rotationSpeed * Math.max(0, effect.totalTime - d.delay);
+        if (facingInside && d.followDirection !== false) localAngle += facingAngle;
         var ca = Math.cos(localAngle), sa = Math.sin(localAngle);
         var qx = d.scale.x * (scaleKX === null ? 1 : scaleKX) * flipX;
         var qy = d.scale.y * (scaleKY === null ? 1 : scaleKY) * flipY;
@@ -1836,7 +1852,7 @@ var VFXCore = (function () {
         var bx = -outerX * sa * qy, by = outerY * ca * qy;
         var angleX = Math.atan2(ay, ax);
         var angleY = Math.atan2(-bx, by);
-        t.rotation = dirRot + angleX;
+        t.rotation = (facingInside ? 0 : dirRot) + angleX;
         t.scaleX = Math.sqrt(ax * ax + ay * ay);
         t.scaleY = Math.sqrt(bx * bx + by * by);
         t.skewX = angleX - angleY;
