@@ -80,10 +80,12 @@ test('建立 xlsx 的腳本走 Excel COM：不手拼 XML、不覆蓋既有檔、
 
 /* ---- 套用時的檢查：打錯一格要整次中止並指出位置 ---- */
 
-test('設定檢查：孔數超過上限、隨稀有度變少、最高稀有度放不滿、拆解會賺、缺設定列都被擋下', () => {
-  assert.throws(() => rebuildFrom(mutate((rows, c) => { findRow(rows, '設定', 'slots_legendary')[c('設定值')] = '5'; })), /符文孔數：傳說.*0~4/);
+test('設定檢查：孔數超過上限、隨稀有度變少、雙手加成超過上限、拆解會賺、缺設定列都被擋下', () => {
+  assert.throws(() => rebuildFrom(mutate((rows, c) => { findRow(rows, '設定', 'slots_legendary')[c('設定值')] = '6'; })), /符文孔數：傳說.*0~5/);
   assert.throws(() => rebuildFrom(mutate((rows, c) => { findRow(rows, '設定', 'slots_epic')[c('設定值')] = '4'; findRow(rows, '設定', 'slots_legendary')[c('設定值')] = '3'; })), /不可隨稀有度變少/);
-  assert.throws(() => rebuildFrom(mutate((rows, c) => { findRow(rows, '設定', 'maxSlots')[c('設定值')] = '5'; })), /最高稀有度必須放得滿/);
+  assert.throws(() => rebuildFrom(mutate((rows, c) => { findRow(rows, '設定', 'twoHandBonusSlots')[c('設定值')] = '2'; })), /雙手加成 2 超過符文孔數上限 5/);
+  assert.throws(() => rebuildFrom(mutate((rows, c) => { findRow(rows, '設定', 'twoHandBonusSlots')[c('設定值')] = '-1'; })), /雙手武器額外符文孔數必須是 ≥0/);
+  assert.doesNotThrow(() => rebuildFrom(mutate((rows, c) => { findRow(rows, '設定', 'twoHandBonusSlots')[c('設定值')] = '1'; })), '雙手加成 1 合法（之後把雙手武器調到 5 孔就是改這格）');
   assert.throws(() => rebuildFrom(mutate((rows, c) => { findRow(rows, '設定', 'dismantleYield')[c('設定值')] = '3'; })), /拆解產出必須/);
   assert.throws(() => rebuildFrom(mutate((rows) => { rows.splice(rows.indexOf(findRow(rows, '設定', 'statScale')), 1); })), /缺少設定列「statScale」/);
   assert.throws(() => rebuildFrom(mutate((rows, c) => { findRow(rows, '設定', 'drop_tierSpread')[c('設定值')] = '1.2'; })), /小於 1/);
@@ -102,7 +104,9 @@ test('符文檢查：詞條不存在、倍率非正、列順序被改（階與 i
 
 test('符文真言檢查：配方（太長／太短／不是符文／重複）、裝備標記、屬性鍵、效果鍵、被動鍵、傳奇特效、事件觸發 JSON 都被擋下', () => {
   const word = (rows) => findRow(rows, '符文真言', 'rw_viperkiss');
-  assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('配方')] = '微光;餘燼;霜痕;風語;巖心'; })), /5 顆符文，超過符文孔數上限 4/);
+  assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('配方')] = '微光;餘燼;霜痕;風語;巖心;毒牙'; })), /6 顆符文，超過符文孔數上限 5/);
+  assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('配方')] = '微光;餘燼;霜痕;風語;巖心'; })), /超過一般裝備最多 4 孔；只有「適用裝備」全是雙手武器/);
+  assert.doesNotThrow(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('配方')] = '微光;餘燼;霜痕;風語;巖心'; word(rows)[c('適用裝備')] = 'twoHand;staff2h'; })), '5 顆符文只要適用裝備全是雙手武器就合法');
   assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('配方')] = '微光'; })), /至少要 2 顆/);
   assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('配方')] = '微光;不存在的符文'; })), /不是符文/);
   assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('配方')] = findRow(rows, '符文真言', 'rw_firstcry')[c('配方')]; })), /配方與別的符文真言完全相同/);

@@ -5511,7 +5511,7 @@ function equipRunePanelHTML(it, gemsSnapshot) {
   var slots = rwSlots(it);
   if (!slots.length) {
     return '<div class="equip-material-section"><div class="equip-material-title">🔷 符文</div>' +
-      '<div class="equip-material-empty">這件裝備沒有符文孔（精良以上才有符文孔，孔數隨稀有度增加，最多 ' + RUNE_SETTINGS.maxSlots + ' 孔）。</div></div>';
+      '<div class="equip-material-empty">這件裝備沒有符文孔（精良以上才有符文孔，孔數隨稀有度增加，最多 ' + Math.max.apply(null, RUNE_SETTINGS.slotsByRarity) + ' 孔，雙手武器可能更多）。</div></div>';
   }
   var filled = slots.filter(Boolean).length;
   var full = filled >= slots.length;

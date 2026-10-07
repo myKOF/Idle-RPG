@@ -61,7 +61,7 @@ test('socketRune：扣庫存、鑲進第一個空符文孔；庫存不足／已�
   assert.equal(c.runeCount('r01'), 1, '沒有符文孔時不扣庫存');
 });
 
-test('符文孔放滿：第 5 顆被拒；孔數隨稀有度，最多 4 孔', () => {
+test('符文孔放滿：放不下的被拒；孔數隨稀有度，一般裝備最多 4 孔', () => {
   const c = loadRuneEnv();
   c.addRune('r01', 9);
   const it = makeItem(c, { rarity: 3 });                    // 獨特：2 孔
@@ -72,7 +72,8 @@ test('符文孔放滿：第 5 顆被拒；孔數隨稀有度，最多 4 孔', ()
   assert.equal(c.runeCount('r01'), 7);
   const counts = c.RARITIES.map((r, i) => c.runeSlotCountFor({ rarity: i }));
   assert.deepEqual(plain(counts), plain(c.RUNE_SETTINGS.slotsByRarity));
-  assert.ok(Math.max(...counts) <= 4 && Math.max(...counts) === c.RUNE_SETTINGS.maxSlots);
+  assert.equal(Math.max(...counts), 4, '一般裝備最多 4 孔（雙手武器之後才會到 5，見 twoHandBonusSlots）');
+  assert.ok(Math.max(...counts) <= c.RUNE_SETTINGS.maxSlots);
   assert.ok(counts.every((n, i) => i === 0 || n >= counts[i - 1]), '稀有度越高孔數不減');
 });
 

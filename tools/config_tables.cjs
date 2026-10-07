@@ -1471,7 +1471,8 @@ const RUNEWORD_KINDS = ['符文真言', '符文之語'];
 const RUNE_TABLE_HEADER = ['類型', 'id', '名稱', '階／級距', '武器詞條', '武器倍率', '防具詞條', '防具倍率',
   '配方', '適用裝備', '屬性加成', '被動', '傳奇特效', '靜態效果', '事件觸發(JSON)', '風味文字', '設定值', '備註'];
 const RUNE_SETTING_NOTES = {
-  maxSlots: '符文孔數的硬上限，也是符文真言最多能有幾顆符文。',
+  maxSlots: '符文孔數的硬上限，也是符文真言最多能有幾顆符文。目前 5：一般裝備最多 4 孔，5 顆符文的真言是為「雙手武器之後最多 5 孔」預留的。',
+  twoHandBonusSlots: '雙手武器的符文孔比一般裝備多幾個（0＝一樣多）。設成 1，傳說以上的雙手武器就有 5 孔，5 顆符文的真言（只能用在雙手武器）才做得出來。',
   composeCount: '合成：同種符文幾顆合成下一階 1 顆。',
   composeMaxTier: '能合成到第幾階；更高階的符文只能靠擊殺與封魔塔掉落。',
   dismantleYield: '拆解 1 顆得到低一階符文幾顆；必須小於合成所需顆數。≥2 會讓一顆高階符文拆出指數倍的低階符文、破壞稀有度，所以預設 1（只能降階頂替、不會變多）。',
@@ -1494,8 +1495,9 @@ const RUNE_GLOSSARY_ROWS = [
   ['符文真言：符文組合與其全部能力。可以新增列（id 以 rw_ 開頭、英數字、不重複）、刪除列、修改任何欄位。'],
   [''],
   ['── 設定列 ──'],
-  ['maxSlots：符文孔數上限，同時也是符文真言最多能有幾顆符文（設計上限 4）。'],
-  ['slots_<稀有度>：該稀有度裝備的符文孔數；0～上限，不可隨稀有度變少，最高稀有度必須等於上限。符文孔取代原本的附魔欄位，與寶石鑲孔分開，雙手武器沒有額外加成。'],
+  ['maxSlots：符文孔數上限，同時也是符文真言最多能有幾顆符文。目前 5：一般裝備最多 4 孔，5 顆符文的真言是為「雙手武器之後最多 5 孔」預留的（它們只能用在雙手武器，現在還做不出來）。'],
+  ['twoHandBonusSlots：雙手武器的符文孔比一般裝備多幾個（0＝一樣多）。把它設成 1，傳說以上的雙手武器就有 5 孔，5 顆符文的真言就做得出來。'],
+  ['slots_<稀有度>：該稀有度裝備的符文孔數；0～上限，不可隨稀有度變少；最高稀有度的孔數加上雙手加成不得超過上限。符文孔取代原本的附魔欄位，與寶石鑲孔分開，雙手武器沒有額外加成。'],
   ['composeCount／composeMaxTier／dismantleYield：合成（同種幾顆→下一階 1 顆）、最高合成階（更高階只能掉落）、拆解產出（必須小於合成所需顆數；預設 1＝只能降階頂替、不會變多）。'],
   ['statScale：全域屬性縮放，符文與符文真言的屬性加成一律乘此值（平衡用旋鈕，1＝不縮放）。'],
   ['drop_*：掉落。basePct 野外每次擊殺的基礎掉落率(%)（再乘掉寶率與地圖獎勵倍率）、towerBossPct 封魔塔通關的基礎掉落率(%)、tierSpread 階數稀有度（相鄰兩階的機率比，0~1，越小高階越稀有）、progressPerTier 每 +1 進度對應的最高掉落階增量。'],
@@ -1575,6 +1577,7 @@ function runeTableRarities() {
 function runeSettingDefs(rarities) {
   const defs = [['maxSlots', '符文孔數上限', s => s.maxSlots]];
   rarities.forEach((r, i) => defs.push(['slots_' + r.key, '符文孔數：' + r.name, s => s.slotsByRarity[i]]));
+  defs.push(['twoHandBonusSlots', '雙手武器額外符文孔數', s => s.twoHandBonusSlots || 0]);
   defs.push(['composeCount', '合成所需顆數', s => s.composeCount]);
   defs.push(['composeMaxTier', '最高合成階', s => s.composeMaxTier]);
   defs.push(['dismantleYield', '拆解產出顆數', s => s.dismantleYield]);
@@ -1602,6 +1605,7 @@ function runeTableVocab() {
     affix: new Set(Object.keys(lit(dataSrc, 'AFFIX_POOL'))),
     passivePool: lit(dataSrc, 'PASSIVE_POOL'),
     weaponTypes: new Set(Object.keys(lit(dataSrc, 'WEAPON_TYPES'))),
+    twoHandTypes: new Set(Object.entries(lit(dataSrc, 'WEAPON_TYPES')).filter(e => e[1].cat === 'twoHand').map(e => e[0])),
     baseTokens: new Set(lit(runeSrc, 'RW_BASE_TOKENS')),
     fxKeys: new Set(lit(runeSrc, 'RW_FX_KEYS')),
     passiveKeys: new Set(lit(runeSrc, 'RW_PASSIVE_KEYS')),
@@ -1677,7 +1681,9 @@ SCHEMAS.Runes = {
       if (!isInt(n) || n < 0 || n > maxSlots) fail('Runes 表：「符文孔數：' + rarities[i].name + '」必須是 0~' + maxSlots + ' 的整數（符文孔數上限），目前是 ' + n);
       if (i && n < slots[i - 1]) fail('Runes 表：符文孔數不可隨稀有度變少（' + rarities[i - 1].name + ' ' + slots[i - 1] + ' → ' + rarities[i].name + ' ' + n + '）');
     });
-    if (slots[slots.length - 1] !== maxSlots) fail('Runes 表：最高稀有度必須放得滿符文孔數上限（' + maxSlots + '）');
+    const bonus = val.twoHandBonusSlots;
+    if (!isInt(bonus) || bonus < 0) fail('Runes 表：雙手武器額外符文孔數必須是 ≥0 的整數');
+    if (slots[slots.length - 1] + bonus > maxSlots) fail('Runes 表：最高稀有度的孔數 ' + slots[slots.length - 1] + ' ＋雙手加成 ' + bonus + ' 超過符文孔數上限 ' + maxSlots);
     if (!isInt(val.composeMaxTier) || val.composeMaxTier < 1) fail('Runes 表：最高合成階必須是 ≥1 的整數');
     if (!isInt(val.composeCount) || val.composeCount < 2) fail('Runes 表：合成所需顆數必須是 ≥2 的整數');
     if (!isInt(val.dismantleYield) || val.dismantleYield < 1 || val.dismantleYield >= val.composeCount) fail('Runes 表：拆解產出必須是 1~（合成所需顆數-1）的整數，否則拆解會賺');
@@ -1724,6 +1730,9 @@ SCHEMAS.Runes = {
       });
       if (recipe.length < 2) fail(w + '：配方至少要 2 顆符文');
       if (recipe.length > maxSlots) fail(w + '：配方有 ' + recipe.length + ' 顆符文，超過符文孔數上限 ' + maxSlots);
+      const regularMax = Math.max.apply(null, slots);
+      const twoHandOnly = splitList(get(it.r, '適用裝備')).length > 0 && splitList(get(it.r, '適用裝備')).every(b => b === 'twoHand' || V.twoHandTypes.has(b));
+      if (recipe.length > regularMax && !twoHandOnly) fail(w + '：配方有 ' + recipe.length + ' 顆符文，超過一般裝備最多 ' + regularMax + ' 孔；只有「適用裝備」全是雙手武器（twoHand 或雙手武器類型）的真言才能超過');
       const key = recipe.join(',');
       if (recipes.has(key)) fail(w + '：配方與別的符文真言完全相同');
       recipes.add(key);
@@ -1768,6 +1777,7 @@ SCHEMAS.Runes = {
     const settingsText = 'var RUNE_SETTINGS = {\n' +
       '  maxSlots: ' + numStr(maxSlots) + ',\n' +
       '  slotsByRarity: ' + jsLit(slots) + ',\n' +
+      '  twoHandBonusSlots: ' + numStr(bonus) + ',\n' +
       '  composeCount: ' + numStr(val.composeCount) + ',\n' +
       '  composeMaxTier: ' + numStr(val.composeMaxTier) + ',\n' +
       '  dismantleYield: ' + numStr(val.dismantleYield) + ',\n' +

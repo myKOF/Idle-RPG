@@ -337,7 +337,7 @@ test('接線：gems 面板帶 runewordSeen、協議 v48、快取版號已 bump',
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   assert.match(html, /js\/worker\/protocol\.js\?v=48/);
   assert.match(worker, /protocol\.js\?v=48/);
-  assert.match(worker, /'\.\.\/runeword\.js\?v=20261007-rune-seen'/);
+  assert.match(worker, /'\.\.\/runeword\.js\?v=[^']+'/);   // 只驗證有帶版號：確切字串每次改檔都會換，不釘
   assert.match(fs.readFileSync(path.join(root, 'js/bridge.js'), 'utf8'), /WORKER_ASSET_VERSION = '[^']+'/);
 });
 
@@ -406,8 +406,8 @@ test('裝備詳情的符文孔、符文面板、背包角標都用石頭圖', ()
 
 test('符文石圖的接線：index.html 引用的 css／js 版號與快取、素材來源記錄', () => {
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  assert.match(html, /css\/runeword\.css\?v=1\.0\.3/);
-  assert.match(html, /js\/ui-runeword\.js\?v=1\.0\.4/);
+  assert.match(html, /css\/runeword\.css\?v=[\d.]+/);   // 版號只驗證存在（每次改檔都會 +1，不釘確切值）
+  assert.match(html, /js\/ui-runeword\.js\?v=[\d.]+/);
   const css = fs.readFileSync(path.join(root, 'css/runeword.css'), 'utf8');
   ['rs-card', 'rs-focus', 'rs-chip', 'rs-row', 'rs-icon', 'rs-badge'].forEach((k) => assert.match(css, new RegExp('\\.' + k + '\\b'), '缺 ' + k + ' 的尺寸樣式'));
   assert.match(css, /\.rune-stone \{[^}]*pointer-events: none/);

@@ -24,25 +24,58 @@ test('符文 33 種，id 連號、階數遞增，兩側屬性都是合法且未�
   assert.equal(new Set(RUNES.map((r) => r.glyph)).size, 33, '符文字形不得重複');
 });
 
-test('符文真言至少 40 組，四個強度級距數量接近，id／名稱／配方都唯一', () => {
+test('符文真言至少 40 組，前三級數量接近、傳說級不少於主技能數，id／名稱／配方都唯一', () => {
   assert.ok(WORDS.length >= 40, '至少 40 組，實際 ' + WORDS.length);
   const byTier = [0, 0, 0, 0, 0];
   WORDS.forEach((w) => { byTier[w.tier]++; });
   for (let t = 1; t <= 4; t++) assert.ok(byTier[t] >= 10, `第 ${t} 級只有 ${byTier[t]} 組`);
-  const spread = Math.max(...byTier.slice(1)) - Math.min(...byTier.slice(1));
-  assert.ok(spread <= 2, '四級數量應大約平均：' + byTier.slice(1).join('/'));
+  const spread = Math.max(...byTier.slice(1, 4)) - Math.min(...byTier.slice(1, 4));
+  assert.ok(spread <= 2, '前三級數量應大約平均：' + byTier.slice(1, 4).join('/'));
+  // 傳說級（第 4 級）每個主技能至少要有一組帶它的傳奇特效，所以數量不得少於主技能數（23）
+  assert.ok(byTier[4] >= Object.keys(c.SKILLS2).length, `傳說級 ${byTier[4]} 組，少於主技能數 ${Object.keys(c.SKILLS2).length}`);
   assert.equal(new Set(WORDS.map((w) => w.id)).size, WORDS.length);
   assert.equal(new Set(WORDS.map((w) => w.name)).size, WORDS.length);
   assert.equal(new Set(WORDS.map((w) => w.runes.join(','))).size, WORDS.length, '配方（符文序列）不得重複');
 });
 
 test('每組的符文數與強度級距相稱、不超過符文孔上限，且所有符文 id 存在', () => {
-  const range = { 1: [2, 3], 2: [3, 4], 3: [3, 4], 4: [4, 4] };
+  const range = { 1: [2, 3], 2: [3, 4], 3: [3, 4], 4: [3, 5] };
   WORDS.forEach((w) => {
     assert.ok(w.runes.length <= c.RUNE_SETTINGS.maxSlots, `${w.id} 的符文數 ${w.runes.length} 超過符文孔上限 ${c.RUNE_SETTINGS.maxSlots}`);
     const [lo, hi] = range[w.tier];
     assert.ok(w.runes.length >= lo && w.runes.length <= hi, `${w.id}（第 ${w.tier} 級）符文數 ${w.runes.length} 不在 ${lo}~${hi}`);
     w.runes.forEach((id) => assert.ok(c.RUNE_BY_ID[id], `${w.id} 引用不存在的符文 ${id}`));
+  });
+});
+
+test('符文數分佈：2／3／4 顆各有足夠數量，3 顆不少於 4 顆，5 顆只給雙手武器且都是傳說級', () => {
+  const n = {};
+  WORDS.forEach((w) => { n[w.runes.length] = (n[w.runes.length] || 0) + 1; });
+  [2, 3, 4].forEach((k) => assert.ok(n[k] >= 10, `${k} 顆的真言只有 ${n[k] || 0} 組：` + JSON.stringify(n)));
+  assert.ok(n[3] >= n[4], '3 顆的數量應不少於 4 顆：' + JSON.stringify(n));
+  Object.keys(n).forEach((k) => assert.ok(n[k] / WORDS.length <= 0.55, `${k} 顆佔了 ${Math.round(100 * n[k] / WORDS.length)}%：` + JSON.stringify(n)));
+  assert.ok(n[5] >= 6, '至少 6 組 5 顆符文的真言（為雙手武器之後最多 5 孔預留）');
+  WORDS.filter((w) => w.runes.length === 5).forEach((w) => {
+    assert.equal(w.tier, 4, w.id + ' 5 顆符文的真言應為傳說級');
+    assert.ok(c.rwWordTwoHandOnly(w), w.id + ' 5 顆符文的真言只能用在雙手武器');
+  });
+});
+
+test('傳說級（第 4 級）每組至少帶一個傳奇特效，且 23 個主技能的傳奇特效平均分佈', () => {
+  const groups = Object.keys(c.SKILLS2);
+  const used = {};
+  groups.forEach((g) => { used[g] = []; });
+  WORDS.filter((w) => w.tier === 4).forEach((w) => {
+    assert.ok((w.legend || []).length >= 1, w.id + '（傳說級）沒有傳奇特效');
+    w.legend.forEach((k) => {
+      const p = c.PASSIVE_POOL[k];
+      assert.ok(p && p.legendary && used[p.relatedSkill], `${w.id} 的傳奇特效 ${k} 不屬於任何主技能`);
+      used[p.relatedSkill].push(w.id);
+    });
+  });
+  groups.forEach((g) => {
+    assert.ok(used[g].length >= 1, `主技能 ${g} 沒有任何傳說級真言帶它的傳奇特效`);
+    assert.ok(used[g].length <= 2, `主技能 ${g} 被 ${used[g].length} 組傳說級真言使用，不夠平均：` + used[g].join('、'));
   });
 });
 
@@ -105,12 +138,14 @@ test('stats／passives／legend／fx／procs 只用已實作的詞彙', () => {
 test('RUNE_SETTINGS：孔數表長度對得上稀有度、單調不減、不超過上限；合成／掉落常數合理', () => {
   const s = c.RUNE_SETTINGS;
   assert.equal(s.slotsByRarity.length, c.RARITIES.length);
-  assert.equal(s.maxSlots, 4, '設計上限：符文最多 4 孔');
+  assert.equal(s.maxSlots, 5, '設計上限：配方最長 5 顆（一般裝備最多 4 孔，第 5 孔為雙手武器預留）');
   s.slotsByRarity.forEach((n, i) => {
     assert.ok(Number.isInteger(n) && n >= 0 && n <= s.maxSlots, `稀有度 ${i} 的孔數 ${n} 不合法`);
     if (i) assert.ok(n >= s.slotsByRarity[i - 1], '稀有度越高孔數不減');
   });
-  assert.equal(s.slotsByRarity[s.slotsByRarity.length - 1], s.maxSlots, '最高稀有度要能放滿上限');
+  assert.equal(Math.max(...s.slotsByRarity), 4, '一般裝備最多 4 孔');
+  assert.ok(Number.isInteger(s.twoHandBonusSlots) && s.twoHandBonusSlots >= 0, 'twoHandBonusSlots');
+  assert.ok(s.slotsByRarity[s.slotsByRarity.length - 1] + s.twoHandBonusSlots <= s.maxSlots, '雙手加成不得超過上限');
   assert.ok(Number.isInteger(s.composeCount) && s.composeCount >= 2);
   assert.ok(Number.isInteger(s.composeMaxTier) && s.composeMaxTier >= 1 && s.composeMaxTier <= c.RUNES.length);
   assert.ok(Number.isInteger(s.dismantleYield) && s.dismantleYield >= 1 && s.dismantleYield < s.composeCount, '拆解不得賺：產出須小於合成所需');
@@ -124,12 +159,41 @@ test('RUNE_SETTINGS：孔數表長度對得上稀有度、單調不減、不超�
   assert.equal(c.RUNE_DROP, s.drop);
 });
 
-test('每一組符文真言在遊戲裡都做得出來：存在稀有度的符文孔數足夠', () => {
+test('每一組符文真言在遊戲裡都做得出來：存在稀有度的符文孔數足夠；5 顆的真言要等雙手武器加孔', () => {
   WORDS.forEach((w) => {
     const i = c.rwMinRarity(w);
-    assert.ok(i >= 0, `${w.id} 需要 ${w.runes.length} 孔，最高稀有度也不夠`);
-    assert.ok(c.runeSlotCountFor({ rarity: i }) >= w.runes.length);
+    if (w.runes.length <= Math.max(...c.RUNE_SETTINGS.slotsByRarity)) {
+      assert.ok(i >= 0, `${w.id} 需要 ${w.runes.length} 孔，最高稀有度也不夠`);
+      assert.ok(c.rwSlotCountAt(i, c.rwWordTwoHandOnly(w)) >= w.runes.length);
+    } else {
+      assert.equal(i, -1, w.id + ' 目前還沒有裝備有這麼多孔');
+      assert.match(c.rwSocketNeedText(w), /雙手武器・目前沒有裝備有這麼多孔/);
+    }
   });
+});
+
+test('雙手武器加孔（twoHandBonusSlots = 1）之後：雙手武器傳說以上有 5 孔、5 顆符文的真言做得出來並能成形；其他裝備不受影響', () => {
+  const { makeItem, fillRunes } = require('./helpers/runeword-env.cjs');
+  const e = require('./helpers/runeword-env.cjs').loadRuneEnv();
+  const axe = makeItem(e, { rarity: 5, weaponType: 'axe2h' }), sword = makeItem(e, { rarity: 5, weaponType: 'sword1h' });
+  assert.equal(e.runeSlotCountFor(axe), 4);
+  require('node:vm').runInContext('RUNE_SETTINGS.twoHandBonusSlots = 1;', e);
+  assert.equal(e.runeSlotCountFor(axe), 5, '雙手武器 +1 孔');
+  assert.equal(e.runeSlotCountFor(sword), 4, '單手武器不變');
+  assert.equal(e.runeSlotCountFor(makeItem(e, { rarity: 5, slot: 'chest', weaponType: undefined })), 4);
+  assert.equal(e.runeSlotCountFor(makeItem(e, { rarity: 3, weaponType: 'axe2h' })), 3, '獨特雙手 2+1');
+  const five = e.RUNEWORDS.filter((w) => w.runes.length === 5);
+  assert.ok(five.length >= 6);
+  five.forEach((w) => {
+    assert.ok(e.rwMinRarity(w) >= 0, w.id + ' 加孔後應做得出來');
+    const wt = w.bases.includes('staff2h') ? 'staff2h' : 'axe2h';
+    const it = fillRunes(makeItem(e, { rarity: 5, weaponType: wt }), w.runes);
+    assert.equal(e.rwActiveWord(it).word.id, w.id, w.id + ' 在雙手武器上成形');
+  });
+  e.addRune('r01', 5);
+  const full = makeItem(e, { rarity: 5, weaponType: 'axe2h' });
+  for (let k = 0; k < 5; k++) assert.equal(e.socketRune(full, 'r01'), null);
+  assert.match(e.socketRune(full, 'r01'), /已滿/, '第 6 顆放不下');
 });
 
 test('配方的說明文字能由資料產生，不含 undefined', () => {
