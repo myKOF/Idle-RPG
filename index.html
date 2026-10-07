@@ -11,7 +11,8 @@
   <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.59">
   <link rel="stylesheet" href="css/ashen-forge-flat.css?v=1.0.3">
   <link rel="stylesheet" href="css/battle-hud.css?v=1.0.6">
-  <link rel="stylesheet" href="css/runeword.css?v=1.0.3">
+  <link rel="stylesheet" href="css/runeword.css?v=1.0.4">
+  <link rel="stylesheet" href="css/gems.css?v=1.0.0">
 </head>
 
 <body>
@@ -618,7 +619,7 @@
                 +5% 成功率，等級 150+ 敵人與封魔塔 BOSS 掉落；神鑄失敗額外獲得 1 個魔塵）。6 件創世鑄造成功可得「神鑄創世」：屬性上限 1.5 倍、必帶 2 條專屬特效（龍血/神力/天罰/不朽…共 12
                 種），無法再入爐。</p>
               <p><b>🏭 熔爐：</b>掉落裝備自動進入熔爐佇列，依各熔爐勾選的品質送入傳送帶拆解（未勾選＝保留入包）。拆解依裝備品質與零件加成產出碎片、金幣與附魔精華，不會產出寶石。熔爐數量與轉生連動（0 轉 2 座、每轉 +1、上限 12），每爐零件格可用金幣解鎖至 8 格。</p>
-              <p><b>🔷 符文：</b>符文取代了原本的附魔（附魔功能已關閉）。符文從野外擊殺與封魔塔通關掉落，同種數顆可合成為下一階。在「裝備」分頁點選裝備 → 按「符文」→ 點符文即可鑲入符文孔（最多 4 孔，孔數依品質），點擊已鑲的符文可取下。
+              <p><b>🔷 符文：</b>符文取代了原本的附魔（附魔功能已關閉）。符文從野外擊殺與封魔塔通關掉落，同種數顆可合成為下一階。在「裝備」分頁點選裝備 → 按「符文」→ 點符文即可鑲入符文孔（孔數依品質，一般裝備最多 4 孔），點擊已鑲的符文可取下。
                 把指定的符文依指定順序鑲滿，且裝備類型符合，就會成形為「符文真言」，獲得額外屬性與特殊威能。配方與效果記在「符文」分頁的圖鑑裡，成形過一次才會顯示。</p>
               <p><b>🧠 技能：</b>54 個技能以五系技能樹呈現（每階需在該系投入點數解鎖）。每升 1 級獲得 1 技能點，技能上限 Lv.10 — 前期升級加基礎數值，Lv.4 解鎖附加狀態、Lv.8
                 強化該狀態。裝載欄初始 2 格，每 20 級再 +1 格，最多 20 格；戰鬥中依順序自動施放；治療/護盾類會等血量偏低才施放；被動學會即永久生效。</p>
@@ -919,11 +920,12 @@
          special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/util.js?v=1.0.3"></script>
   <script src="js/ui-scale.js?v=1.0.1"></script>
-  <script src="js/data.js?v=1.0.61"></script>
+  <script src="js/data.js?v=1.0.64"></script>
+  <script src="js/elite_data.js?v=1.0.0"></script>
   <script src="js/status.js?v=1.0.30"></script>
-  <script src="js/runeword_data.js?v=1.0.6"></script>
-  <script src="js/formula.js?v=1.0.47"></script>
-  <script src="js/battlefield.js?v=1.4.3"></script>
+  <script src="js/runeword_data.js?v=1.0.8"></script>
+  <script src="js/formula.js?v=1.0.48"></script>
+  <script src="js/battlefield.js?v=1.4.5"></script>
   <script src="js/vfx.js?v=1.0.79"></script>
   <!-- PixiJS（本地 vendor，零建置專案不用 CDN）＋ Canvas 戰鬥渲染器。
        渲染器只在主執行緒跑，模擬層與 Worker 完全不知道它存在。 -->
@@ -934,7 +936,7 @@
   <script src="js/vfx-water-tornado.js?v=1.0.4"></script>
   <script src="js/vfx-core.js?v=20261003-layer-duration"></script>
   <script src="js/vfx-pixi-backend.js?v=20261006-alpha-cull"></script>
-  <script src="js/vfx-runtime.js?v=1.0.174"></script>
+  <script src="js/vfx-runtime.js?v=1.0.175"></script>
   <!-- 高塔的第二個 Pixi 疊層：卡片版面沒有座標，尺寸規則也另立一組（見檔頭）。 -->
   <script src="js/vfx-tower.js?v=1.0.2"></script>
   <!-- 戰場地形裝飾（地面色塊／擺件／天氣）：battle-renderer 的 init() 會建立它。
@@ -943,21 +945,22 @@
   <script src="js/battle-decor.js?v=1.0.9"></script>
   <!-- 封魔塔魔王祭壇（BOSS 戰專用場景）：沿用 battle-decor 的繪圖工具，battle-renderer 的 init() 會建立它。 -->
   <script src="js/battle-arena.js?v=1.0.2"></script>
-  <script src="js/battle-renderer.js?v=1.6.174"></script>
-  <script src="js/stats.js?v=1.0.3"></script>
-  <script src="js/item.js?v=1.0.15"></script>
-  <script src="js/runeword.js?v=1.0.3"></script>
+  <script src="js/battle-elite.js?v=1.0.0"></script>
+  <script src="js/battle-renderer.js?v=1.6.175"></script>
+  <script src="js/stats.js?v=1.0.4"></script>
+  <script src="js/item.js?v=1.0.17"></script>
+  <script src="js/runeword.js?v=1.0.5"></script>
   <script src="js/skills.js?v=1.0.41"></script>
   <!-- 新版主動技能系統（2026-08-13 技能改造第一批）：定義表＋引擎＋純函式說明 -->
   <script src="js/skills2.js?v=1.0.287"></script>
   <script src="js/talents.js?v=1.0.4"></script>
   <script src="js/player.js?v=1.0.12"></script>
-  <script src="js/combat.js?v=1.0.72"></script>
+  <script src="js/combat.js?v=1.0.73"></script>
   <script src="js/potential.js?v=1.0.9"></script>
   <script src="js/tower.js?v=1.0.23"></script>
   <script src="js/save.js?v=1.0.13"></script>
-  <script src="js/ui.js?v=1.0.139"></script>
-  <script src="js/ui-runeword.js?v=1.0.4"></script>
+  <script src="js/ui.js?v=1.0.142"></script>
+  <script src="js/ui-runeword.js?v=1.0.6"></script>
   <script src="js/param_autoreload.js"></script>
   <!-- GM 面板。指令執行層在 js/gm_exec.js，由 Worker importScripts 載入 -->
   <script src="js/gm.js?v=1.0.1"></script>
@@ -970,7 +973,7 @@
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
-  <script src="js/bridge.js?v=1.0.231"></script>
+  <script src="js/bridge.js?v=1.0.234"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->

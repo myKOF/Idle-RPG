@@ -61,7 +61,7 @@ test('socketRune：扣庫存、鑲進第一個空符文孔；庫存不足／已�
   assert.equal(c.runeCount('r01'), 1, '沒有符文孔時不扣庫存');
 });
 
-test('符文孔放滿：第 5 顆被拒；孔數隨稀有度，最多 4 孔', () => {
+test('符文孔放滿：放不下的被拒；孔數隨稀有度（RARITIES.runeSlots，配置表 game_parameters 的參數g）', () => {
   const c = loadRuneEnv();
   c.addRune('r01', 9);
   const it = makeItem(c, { rarity: 3 });                    // 獨特：2 孔
@@ -71,8 +71,8 @@ test('符文孔放滿：第 5 顆被拒；孔數隨稀有度，最多 4 孔', ()
   assert.match(c.socketRune(it, 'r01'), /已滿/);
   assert.equal(c.runeCount('r01'), 7);
   const counts = c.RARITIES.map((r, i) => c.runeSlotCountFor({ rarity: i }));
-  assert.deepEqual(plain(counts), plain(c.RUNE_SETTINGS.slotsByRarity));
-  assert.ok(Math.max(...counts) <= 4 && Math.max(...counts) === c.RUNE_SETTINGS.maxSlots);
+  assert.deepEqual(plain(counts), plain(c.RARITIES.map((r) => r.runeSlots)), '一般裝備的孔數就是稀有度表的 runeSlots');
+  assert.ok(Math.max(...counts) <= c.RUNE_SETTINGS.maxSlots);
   assert.ok(counts.every((n, i) => i === 0 || n >= counts[i - 1]), '稀有度越高孔數不減');
 });
 
@@ -197,7 +197,7 @@ test('單顆符文依武器／防具各給一條屬性，數值＝詞條基準�
   assert.equal(c.rwItemStatEntries(shield)[0].key, 'hpPct', '副手視同防具側');
 });
 
-test('強化倍率套用在符文屬性上；雙手武器不吃雙手詞條 ×2，也沒有額外符文孔', () => {
+test('強化倍率套用在符文屬性上；雙手武器不吃雙手詞條 ×2；符文孔只多 twoHandBonusSlots 個（加法）', () => {
   const c = loadRuneEnv();
   const one = fillRunes(makeItem(c, { rarity: 5, level: 100 }), ['r10']);
   const up = fillRunes(makeItem(c, { rarity: 5, level: 100, upgrade: 10 }), ['r10']);
@@ -205,7 +205,7 @@ test('強化倍率套用在符文屬性上；雙手武器不吃雙手詞條 ×2�
   const v = (it) => c.rwItemStatEntries(it)[0].val;
   assert.ok(v(up) > v(one) * 1.4, '+10 約 ×1.5');
   assert.equal(v(two), v(one), '雙手武器的符文屬性與單手相同');
-  assert.equal(c.runeSlotCountFor(two), c.runeSlotCountFor(one), '雙手武器的符文孔數與單手相同');
+  assert.equal(c.runeSlotCountFor(two), c.runeSlotCountFor(one) + c.RUNE_SETTINGS.twoHandBonusSlots, '雙手武器的符文孔數＝單手 + twoHandBonusSlots');
 });
 
 test('computeStats：符文真言屬性併入面板；拆下一顆就失效', () => {
@@ -662,14 +662,15 @@ test('符文孔 HTML：符文顯示字形與實際數值；成形時列出符文
   assert.match(html, /毒牙符文/);
   assert.match(html, /符文孔 2（空）/);
   assert.match(html, /再鑲入「暗影」即可成形【蛇吻】/);
-  assert.doesNotMatch(html, /data-rune-remove/, '符文面板沒開時不可取下');
+  assert.doesNotMatch(html, /data-rune-remove|data-socket-pick/, '不在符文鑲嵌頁時唯讀，沒有選孔也不可取下');
   it.runes[1] = 'r08';
   html = c.itemRuneHTML(it, null);
   assert.match(html, /符文真言【蛇吻】/);
   assert.match(html, /runeword-socket/);
   assert.match(html, /普通攻擊命中時有 15% 機率/);
   assert.doesNotMatch(html, /再鑲入/);
-  assert.match(c.itemRuneHTML(it, { rune: { active: true } }), /data-rune-remove="0"[\s\S]*data-rune-remove="1"/, '符文面板開啟時已鑲的符文可點擊取下');
+  assert.match(c.itemRuneHTML(it, { selIdx: -1, pending: false }), /data-rune-remove="0"[\s\S]*data-rune-remove="1"/, '符文鑲嵌頁每個已鑲的符文右側有「卸下」');
+  assert.match(c.itemRuneHTML(it, { selIdx: 2, pending: false }), /data-socket-pick="2" aria-pressed="true"/, '符文鑲嵌頁每孔都能選取，選中的孔 aria-pressed');
   assert.doesNotMatch(c.itemSocketHTML(it, null), /符文|runeword/, '寶石鑲孔區塊不含符文');
   assert.equal(c.itemRuneHTML(makeItem(c, { rarity: 0 }), null), '', '沒有符文孔的裝備不輸出符文區塊');
   // 完整詳情把符文區塊接在附魔原本的位置（寶石鑲孔之前）

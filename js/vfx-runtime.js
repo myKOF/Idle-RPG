@@ -2168,6 +2168,8 @@ var VFXRuntime = (function () {
       for (var st in STATUS) take(STATUS[st] && STATUS[st].vfx);
     }
     if (typeof VFX_COMBAT_DEFAULTS !== 'undefined') takeDeep(VFX_COMBAT_DEFAULTS);
+    // 菁英詞條的預警／爆發／彈體（js/elite_data.js）：寫死的對應，登記在 docs/vfx/VFX_PRESET_USAGE_OUTSIDE_TABLES.md
+    if (typeof ELITE_VFX_PRESETS !== 'undefined') takeDeep(ELITE_VFX_PRESETS);
     return Object.keys(ids);
   }
 

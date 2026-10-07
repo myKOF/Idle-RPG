@@ -489,6 +489,7 @@ BOSS 裝備實際機率 = 表值 × `(1 + 有效掉寶率% / 100)`；每個品�
   - **副手武器**（只能裝在副手）：盾牌、法器、魔法書、水晶球。
 - 佔用規則（`equipItem` → js/player.js）：裝上雙手武器時副手裝備自動退回背包；主手為雙手武器時改裝副手，雙手武器自動退回背包（退回走背包滿載既有規則）。
 - **雙手補償（2026-08-05 調整）**：雙手武器佔兩格，數值與數量整包補償——**詞條數值 ×2**（`TWO_HAND_AFFIX_VALUE_MULT`，原 1.8）、**傳奇特效／神鑄特效數值 ×2**（`TWO_HAND_EFFECT_VALUE_MULT`）、**詞條數 +1**、**附魔欄位 +1**、**寶石鑲孔數 ×1.75 後捨去**（獨特 2→3、史詩 3→5、傳說 4→7、神話 5→8、創世/神鑄創世 6→10、神鑄混沌 7→12；常數皆在 js/data.js）。數值倍率為讀取時當場套用（`affixValue`／`passiveValue`／`godPassiveValue`）；數量加成套用於產出（`makeEquipment`）、附魔欄（`enchantCapFor`）、鑲孔（`socketCountFor`）與詞條硬上限（`maxAffixesFor` = `MAX_AFFIXES`+1）。**舊存檔的既有雙手武器於載入時補齊**詞條與鑲孔數（`normalizeTwoHandItemCounts` → js/item.js，由 `migrateSave` 逐件呼叫；冪等、只補不刪，補的詞條照一般產出擲骰且必為非太古）。
+- **符文孔（2026-10-07）**：各稀有度的孔數在 `game_parameters`「表-稀有度」的參數g（編號 321～331，寫回 `RARITIES[i].runeSlots`）；雙手武器**只加 1 孔**（`RUNE_SETTINGS.twoHandBonusSlots`，加法、不是 ×1.75 或加倍），且只加在本來就有符文孔的稀有度上，總數不超過 `RUNE_SETTINGS.maxSlots`（`rwSlotCountAt` → js/runeword.js）。與寶石鑲孔（×1.75 捨去）是兩套獨立的孔。
 - 詞條：**暫沿用**現行 weapon 部位詞條池，所有武器類型相同（分類型詞條待後續改造）。
 - 武器專屬特殊能力：**僅預留架構**——裝備欄位 `weaponAbility`（目前一律 `null`）＋能力池 `WEAPON_ABILITY_POOL`（目前為空，待設計後填入）。
 - 舊存檔相容：載入時武器補 `weaponType`——預設 `'sword1h'`（單手劍，僅主手）；**裝在副手欄**的舊武器改補 `'dagger1h'`（單手匕首，唯一可雙持類型），保持原裝備位置合法、不強制卸下。

@@ -6050,6 +6050,9 @@ var BattleRenderer = (function () {
       s.fill = '#9aa5b1'; s.size = 13; s.life = 0.62;
       return s;
     }
+    // 菁英詞條（js/elite.js）：施放時頭上浮出「圖示＋技能名」；治療／回血字樣
+    if (cls.indexOf('elite-cast') >= 0) { s.fill = '#f0c8ff'; s.size = 17; s.rise = 54; s.life = 1.25; return s; }
+    if (cls.indexOf('elite-heal') >= 0) { s.fill = '#6dfb8f'; s.size = 14; s.rise = 40; return s; }
     var isSkillDamage = cls.indexOf('enemy-skill') >= 0;
     var isAttackDamage = cls.indexOf('enemy-attack') >= 0;
     if (isSkillDamage) { s.fill = '#ffd75e'; s.size = 17; }
@@ -6410,6 +6413,9 @@ var BattleRenderer = (function () {
       p.reviveText.x = revivePt.x;
       p.reviveText.y = revivePt.y;
     }
+
+    // 菁英標記：群組環、詞條圖示、狀態光環、生命鏈結連線（js/battle-elite.js）
+    if (S.elite && dt > 0) S.elite.update(S.entities, dt, t);
 
     /* 敵人 */
     for (var id in S.entities) {
@@ -7435,6 +7441,17 @@ var BattleRenderer = (function () {
   }
 
   /* 地形裝飾（js/battle-decor.js）：建立失敗只少了裝飾，戰鬥畫面照常；?decor=0 關閉 */
+  /* 菁英敵人的畫面標記（js/battle-elite.js）：建立失敗只少了標記，戰鬥畫面照常 */
+  function initElite() {
+    try {
+      S.elite = (typeof BattleElite !== 'undefined')
+        ? BattleElite.create({ PIXI: PIXI, layer: S.layers.entity }) : null;
+    } catch (e) {
+      S.elite = null;
+      console.warn('[battle-renderer] 菁英標記初始化失敗，戰場照常顯示', e);
+    }
+  }
+
   function initDecor() {
     try {
       S.decor = BattleDecor.create({
@@ -7510,6 +7527,7 @@ var BattleRenderer = (function () {
       buildScene();
       initDecor();
       initArena();
+      initElite();
       initIris(host);
       makePlayer();
       subscribe();

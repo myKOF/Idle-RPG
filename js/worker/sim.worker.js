@@ -12,17 +12,17 @@
 
 importScripts('protocol.js?v=48', 'shim.js?v=11');
 importScripts(
-  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261007-runes4', '../runeword_data.js?v=20261007-rune-seen', '../status.js?v=20261005-cc-decay-count', '../formula.js?v=20261007-runes4', '../battlefield.js?v=20261005-cc-decay-count', '../stats.js?v=20261003-rename-weineng',
-  '../item.js?v=20261007-rune-seen', '../runeword.js?v=20261007-rune-seen',
+  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261008-elite-groups', '../elite_data.js?v=20261008-elite-groups', '../runeword_data.js?v=20261008-rune-slots', '../status.js?v=20261005-cc-decay-count', '../formula.js?v=20261008-elite-groups', '../battlefield.js?v=20261008-bf-push-hoist', '../stats.js?v=20261003-rename-weineng',
+  '../item.js?v=20261008-rune-slots', '../runeword.js?v=20261008-rune-slots',
   '../skills.js?v=20261007-runes4', '../skills2.js?v=20261006-wind-chaser-target-vfx', '../talents.js?v=20261003-rename-weineng',
   '../player.js?v=20261007-rune-seen', '../special_rules.js',
-  '../combat.js?v=20261007-rune-seen', '../legendary.js?v=20261007-runes4', '../potential.js?v=20261005-cc-decay-count', '../tower.js?v=20261007-rune-seen',
+  '../combat.js?v=20261008-elite-groups', '../elite.js?v=20261008-elite-groups', '../legendary.js?v=20261007-runes4', '../potential.js?v=20261005-cc-decay-count', '../tower.js?v=20261007-rune-seen',
   '../factory.js?v=20261007-runes4', '../newforge.js', '../forge.js?v=20261007-runes4', '../save.js?v=20261007-rune-seen',
   '../tasks.js?v=20261007-runes4'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
    它自己會擋非本機 hostname；Worker 的 location 是本檔的 URL，判定結果與主執行緒一致。 */
-importScripts('../gm_exec.js?v=20261007-rune-seen');
+importScripts('../gm_exec.js?v=20261008-elite-groups');
 
 /* ---- 決定論測試模式（只在本機、只在網址帶 ?seed=N 時啟用）----
    存在的唯一理由：讓瀏覽器實機跑出來的結果，能和 headless 模擬器

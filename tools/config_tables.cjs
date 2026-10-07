@@ -1471,7 +1471,8 @@ const RUNEWORD_KINDS = ['符文真言', '符文之語'];
 const RUNE_TABLE_HEADER = ['類型', 'id', '名稱', '階／級距', '武器詞條', '武器倍率', '防具詞條', '防具倍率',
   '配方', '適用裝備', '屬性加成', '被動', '傳奇特效', '靜態效果', '事件觸發(JSON)', '風味文字', '設定值', '備註'];
 const RUNE_SETTING_NOTES = {
-  maxSlots: '符文孔數的硬上限，也是符文真言最多能有幾顆符文。',
+  maxSlots: '符文孔數的硬上限，也是符文真言最多能有幾顆符文。各稀有度的符文孔數不在這張表：在 game_parameters.xlsx「表-稀有度」各列的參數g。',
+  twoHandBonusSlots: '雙手武器的符文孔比一般裝備多幾個（加法，不是倍數；0＝一樣多）。只加在本來就有符文孔的稀有度上（孔數 0 的稀有度，雙手武器也沒有符文孔）；最多孔稀有度的孔數加上它不得超過符文孔數上限。',
   composeCount: '合成：同種符文幾顆合成下一階 1 顆。',
   composeMaxTier: '能合成到第幾階；更高階的符文只能靠擊殺與封魔塔掉落。',
   dismantleYield: '拆解 1 顆得到低一階符文幾顆；必須小於合成所需顆數。≥2 會讓一顆高階符文拆出指數倍的低階符文、破壞稀有度，所以預設 1（只能降階頂替、不會變多）。',
@@ -1494,8 +1495,9 @@ const RUNE_GLOSSARY_ROWS = [
   ['符文真言：符文組合與其全部能力。可以新增列（id 以 rw_ 開頭、英數字、不重複）、刪除列、修改任何欄位。'],
   [''],
   ['── 設定列 ──'],
-  ['maxSlots：符文孔數上限，同時也是符文真言最多能有幾顆符文（設計上限 4）。'],
-  ['slots_<稀有度>：該稀有度裝備的符文孔數；0～上限，不可隨稀有度變少，最高稀有度必須等於上限。符文孔取代原本的附魔欄位，與寶石鑲孔分開，雙手武器沒有額外加成。'],
+  ['maxSlots：符文孔數上限，同時也是符文真言最多能有幾顆符文。'],
+  ['各稀有度的符文孔數：不在這張表。在 config/Excel/game_parameters.xlsx 的「表-稀有度」各列（編號 321～331）的「參數g」；0～上限，不可隨稀有度變少。符文孔取代原本的附魔欄位，與寶石鑲孔分開。'],
+  ['twoHandBonusSlots：雙手武器的符文孔比一般裝備多幾個（加法，不是倍數；0＝一樣多）。只加在本來就有符文孔的稀有度上；最多孔稀有度的孔數加上它不得超過上限。5 顆符文的真言只能用在雙手武器，要靠這一格才做得出來。'],
   ['composeCount／composeMaxTier／dismantleYield：合成（同種幾顆→下一階 1 顆）、最高合成階（更高階只能掉落）、拆解產出（必須小於合成所需顆數；預設 1＝只能降階頂替、不會變多）。'],
   ['statScale：全域屬性縮放，符文與符文真言的屬性加成一律乘此值（平衡用旋鈕，1＝不縮放）。'],
   ['drop_*：掉落。basePct 野外每次擊殺的基礎掉落率(%)（再乘掉寶率與地圖獎勵倍率）、towerBossPct 封魔塔通關的基礎掉落率(%)、tierSpread 階數稀有度（相鄰兩階的機率比，0~1，越小高階越稀有）、progressPerTier 每 +1 進度對應的最高掉落階增量。'],
@@ -1567,6 +1569,22 @@ function annotateRuneRows(rows) {
 }
 const RUNE_TABLE_WIDTHS = [8, 18, 14, 9, 14, 9, 14, 9, 24, 24, 40, 14, 22, 36, 60, 36, 10, 50];
 
+/* 各稀有度的符文孔數：配置表 game_parameters「表-稀有度」的參數g（apply_params 寫回 data.js 的 RARITIES.runeSlots）。
+   Runes 表的檢查（配方長度與孔數）要用到它。套用參數.bat 先把 xlsx 轉成 CSV 再跑這裡，所以讀 CSV 就是 Excel 最新的值；
+   測試可用環境變數 GAME_PARAMETERS_CSV 指到暫存檔。 */
+function runeRaritySlots(rarities) {
+  const file = process.env.GAME_PARAMETERS_CSV || path.join(CSV_DIR, 'game_parameters.csv');
+  if (!fs.existsSync(file)) throw new Error('找不到 ' + file + '（Runes 表檢查要讀 game_parameters「表-稀有度」的符文孔數）');
+  const rows = csvParse(readUtf8(file)).filter(r => r.length > 1);
+  const head = rows[0], cCat = head.indexOf('系統分類'), cName = head.indexOf('名稱'), cSlots = head.indexOf('參數g');
+  if (cCat < 0 || cName < 0 || cSlots < 0) throw new Error('game_parameters.csv 表頭缺少「系統分類」「名稱」或「參數g」');
+  return rarities.map(r => {
+    const row = rows.find(x => x[cCat] === '表-稀有度' && x[cName] === r.name);
+    if (!row) throw new Error('game_parameters.csv 找不到「表-稀有度／' + r.name + '」這一列');
+    const raw = String(row[cSlots] == null ? '' : row[cSlots]).trim();
+    return raw === '' ? NaN : Number(raw);
+  });
+}
 function runeTableRarities() {
   const RARITIES = evalLiteral(extractLiteral(readUtf8(JS.data), 'RARITIES').literal);
   return RARITIES.map(r => ({ key: r.key, name: r.name }));
@@ -1574,7 +1592,7 @@ function runeTableRarities() {
 // 設定列：[[settingKey, 說明, 取值函式(settings)]]
 function runeSettingDefs(rarities) {
   const defs = [['maxSlots', '符文孔數上限', s => s.maxSlots]];
-  rarities.forEach((r, i) => defs.push(['slots_' + r.key, '符文孔數：' + r.name, s => s.slotsByRarity[i]]));
+  defs.push(['twoHandBonusSlots', '雙手武器額外符文孔數', s => s.twoHandBonusSlots || 0]);
   defs.push(['composeCount', '合成所需顆數', s => s.composeCount]);
   defs.push(['composeMaxTier', '最高合成階', s => s.composeMaxTier]);
   defs.push(['dismantleYield', '拆解產出顆數', s => s.dismantleYield]);
@@ -1602,6 +1620,7 @@ function runeTableVocab() {
     affix: new Set(Object.keys(lit(dataSrc, 'AFFIX_POOL'))),
     passivePool: lit(dataSrc, 'PASSIVE_POOL'),
     weaponTypes: new Set(Object.keys(lit(dataSrc, 'WEAPON_TYPES'))),
+    twoHandTypes: new Set(Object.entries(lit(dataSrc, 'WEAPON_TYPES')).filter(e => e[1].cat === 'twoHand').map(e => e[0])),
     baseTokens: new Set(lit(runeSrc, 'RW_BASE_TOKENS')),
     fxKeys: new Set(lit(runeSrc, 'RW_FX_KEYS')),
     passiveKeys: new Set(lit(runeSrc, 'RW_PASSIVE_KEYS')),
@@ -1626,7 +1645,7 @@ SCHEMAS.Runes = {
     const mk = (kind, obj) => { const row = RUNE_TABLE_HEADER.map(() => ''); row[col['類型']] = kind; Object.keys(obj).forEach(k => { row[col[k]] = obj[k] == null ? '' : String(obj[k]); }); return row; };
     const rows = [];
     runeSettingDefs(runeTableRarities()).forEach(([key, label, get]) => {
-      rows.push(mk('設定', { id: key, 名稱: label, 設定值: numStr(get(settings)), 備註: RUNE_SETTING_NOTES[key] || (key.indexOf('slots_') === 0 ? '該稀有度的裝備有幾個符文孔（不得超過符文孔數上限）。' : '') }));
+      rows.push(mk('設定', { id: key, 名稱: label, 設定值: numStr(get(settings)), 備註: RUNE_SETTING_NOTES[key] || '' }));
     });
     RUNES.forEach((r, i) => {
       rows.push(mk('符文', { id: r.id, 名稱: r.name, '階／級距': String(i + 1), 武器詞條: r.w[0], 武器倍率: numStr(r.w[1]), 防具詞條: r.a[0], 防具倍率: numStr(r.a[1]) }));
@@ -1672,12 +1691,15 @@ SCHEMAS.Runes = {
     const isInt = n => Number.isInteger(n);
     const maxSlots = val.maxSlots;
     if (!isInt(maxSlots) || maxSlots < 1 || maxSlots > 8) fail('Runes 表：符文孔數上限必須是 1~8 的整數');
-    const slots = rarities.map(r => val['slots_' + r.key]);
+    const slots = runeRaritySlots(rarities);
     slots.forEach((n, i) => {
-      if (!isInt(n) || n < 0 || n > maxSlots) fail('Runes 表：「符文孔數：' + rarities[i].name + '」必須是 0~' + maxSlots + ' 的整數（符文孔數上限），目前是 ' + n);
-      if (i && n < slots[i - 1]) fail('Runes 表：符文孔數不可隨稀有度變少（' + rarities[i - 1].name + ' ' + slots[i - 1] + ' → ' + rarities[i].name + ' ' + n + '）');
+      if (!isInt(n) || n < 0 || n > maxSlots) fail('game_parameters「表-稀有度」「' + rarities[i].name + '」的參數g（符文孔數）必須是 0~' + maxSlots + ' 的整數（Runes 表的符文孔數上限），目前是 ' + n);
+      if (i && n < slots[i - 1]) fail('game_parameters「表-稀有度」：符文孔數（參數g）不可隨稀有度變少（' + rarities[i - 1].name + ' ' + slots[i - 1] + ' → ' + rarities[i].name + ' ' + n + '）');
     });
-    if (slots[slots.length - 1] !== maxSlots) fail('Runes 表：最高稀有度必須放得滿符文孔數上限（' + maxSlots + '）');
+    if (!(Math.max.apply(null, slots) >= 1)) fail('game_parameters「表-稀有度」的參數g（符文孔數）全是 0，沒有任何裝備能鑲符文');
+    const bonus = val.twoHandBonusSlots;
+    if (!isInt(bonus) || bonus < 0) fail('Runes 表：雙手武器額外符文孔數必須是 ≥0 的整數');
+    if (slots[slots.length - 1] + bonus > maxSlots) fail('Runes 表：最高稀有度的孔數 ' + slots[slots.length - 1] + '（game_parameters 參數g）＋雙手加成 ' + bonus + ' 超過符文孔數上限 ' + maxSlots);
     if (!isInt(val.composeMaxTier) || val.composeMaxTier < 1) fail('Runes 表：最高合成階必須是 ≥1 的整數');
     if (!isInt(val.composeCount) || val.composeCount < 2) fail('Runes 表：合成所需顆數必須是 ≥2 的整數');
     if (!isInt(val.dismantleYield) || val.dismantleYield < 1 || val.dismantleYield >= val.composeCount) fail('Runes 表：拆解產出必須是 1~（合成所需顆數-1）的整數，否則拆解會賺');
@@ -1724,6 +1746,9 @@ SCHEMAS.Runes = {
       });
       if (recipe.length < 2) fail(w + '：配方至少要 2 顆符文');
       if (recipe.length > maxSlots) fail(w + '：配方有 ' + recipe.length + ' 顆符文，超過符文孔數上限 ' + maxSlots);
+      const regularMax = Math.max.apply(null, slots);
+      const twoHandOnly = splitList(get(it.r, '適用裝備')).length > 0 && splitList(get(it.r, '適用裝備')).every(b => b === 'twoHand' || V.twoHandTypes.has(b));
+      if (recipe.length > regularMax && !twoHandOnly) fail(w + '：配方有 ' + recipe.length + ' 顆符文，超過一般裝備最多 ' + regularMax + ' 孔；只有「適用裝備」全是雙手武器（twoHand 或雙手武器類型）的真言才能超過');
       const key = recipe.join(',');
       if (recipes.has(key)) fail(w + '：配方與別的符文真言完全相同');
       recipes.add(key);
@@ -1767,7 +1792,7 @@ SCHEMAS.Runes = {
     /* ---- 輸出 ---- */
     const settingsText = 'var RUNE_SETTINGS = {\n' +
       '  maxSlots: ' + numStr(maxSlots) + ',\n' +
-      '  slotsByRarity: ' + jsLit(slots) + ',\n' +
+      '  twoHandBonusSlots: ' + numStr(bonus) + ',\n' +
       '  composeCount: ' + numStr(val.composeCount) + ',\n' +
       '  composeMaxTier: ' + numStr(val.composeMaxTier) + ',\n' +
       '  dismantleYield: ' + numStr(val.dismantleYield) + ',\n' +

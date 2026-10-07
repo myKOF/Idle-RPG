@@ -2,7 +2,7 @@
 /* ============ 符文真言：執行層 ============
    資料表在 js/runeword_data.js（符文、符文真言、效果詞彙）。本檔負責：
      §1 符文庫存與合成／拆解     （G.player.runes = { 符文id: 數量 }，隨存檔）
-     §2 符文孔、鑲嵌與符文真言判定（符文孔 it.runes = [符文id|null, …]，最多 4 孔，與寶石鑲孔 it.sockets 分開；
+     §2 符文孔、鑲嵌與符文真言判定（符文孔 it.runes = [符文id|null, …]，孔數依稀有度（RARITIES.runeSlots，雙手武器再加 twoHandBonusSlots），與寶石鑲孔 it.sockets 分開；
                                     符文真言是當場判定的衍生狀態，不存檔；唯一存檔的是「成形過哪幾組」
                                     G.player.runewordSeen，圖鑑靠它決定要不要顯示配方與效果）
      §3 屬性聚合                 （computeStats 呼叫 rwNewAggregate／rwAddItem／rwFinishAggregate）
@@ -77,11 +77,24 @@ function dismantleRune(id) {
 /* ============================================================
    §2 符文孔、鑲嵌與符文真言判定
    ============================================================ */
-/* 符文孔數：由稀有度決定（RUNE_SETTINGS.slotsByRarity），不超過 maxSlots；沒有雙手加成。 */
+/* 符文孔數：由稀有度決定（RARITIES[i].runeSlots，配置表 game_parameters「表-稀有度」的參數g），
+   雙手武器在原本就有符文孔的稀有度上再加 RUNE_SETTINGS.twoHandBonusSlots（是加法，不是倍數；0 孔的稀有度仍是 0），不超過 maxSlots。 */
+function rwSlotCountAt(rarityIndex, twoHand) {
+  var def = RARITIES[rarityIndex];
+  var base = Math.floor(Number(def && def.runeSlots) || 0);
+  if (twoHand && base > 0) base += Math.floor(Number(RUNE_SETTINGS.twoHandBonusSlots) || 0);
+  return clamp(base, 0, RUNE_SETTINGS.maxSlots);
+}
+/* 一般（非雙手武器）裝備最多有幾個符文孔＝各稀有度孔數的最大值；說明文字與配置檢查用。 */
+function rwRegularMaxSlots() {
+  var best = 0;
+  for (var i = 0; i < RARITIES.length; i++) best = Math.max(best, rwSlotCountAt(i, false));
+  return best;
+}
 function runeSlotCountFor(it) {
   if (!it) return 0;
   var r = clamp(Math.floor(Number(it.rarity) || 0), 0, RARITIES.length - 1);
-  return clamp(Math.floor(Number(RUNE_SETTINGS.slotsByRarity[r]) || 0), 0, RUNE_SETTINGS.maxSlots);
+  return rwSlotCountAt(r, typeof isTwoHandItem === 'function' && isTwoHandItem(it));
 }
 /* 這件裝備的符文孔內容（純讀取，不改動裝備）：[符文id|null, …]。
    長度＝孔數；但已鑲在更後面孔位的符文不會因設定調降孔數而消失（仍會列出、可取下）。 */
@@ -112,7 +125,7 @@ function rwHasRune(it) {
 function socketRune(it, runeId, index) {
   if (!it) return '找不到裝備';
   if (!RUNE_BY_ID[runeId]) return '沒有這種符文';
-  if (!runeSlotCountFor(it)) return '這件裝備沒有符文孔（精良以上才有）';
+  if (!runeSlotCountFor(it)) return '這件裝備沒有符文孔';
   var slots = ensureRuneSlots(it);
   var idx = index == null ? slots.indexOf(null) : index;
   if (index == null && idx < 0) return '符文孔已滿（點擊已鑲的符文可取下）';
@@ -964,16 +977,29 @@ function rwDescribeLines(word, it) {
   }
   return lines;
 }
-/* 這組符文真言最少要什麼稀有度才有足夠的符文孔（RUNE_SETTINGS.slotsByRarity）。-1＝做不出來。 */
+/* 這組真言的適用裝備是否「只有雙手武器」（雙手武器的符文孔數可以比一般裝備多）。 */
+function rwWordTwoHandOnly(word) {
+  if (!word.bases || !word.bases.length) return false;
+  for (var i = 0; i < word.bases.length; i++) {
+    var b = word.bases[i];
+    var wt = (typeof WEAPON_TYPES !== 'undefined') ? WEAPON_TYPES[b] : null;
+    if (!(b === 'twoHand' || (wt && wt.cat === 'twoHand'))) return false;
+  }
+  return true;
+}
+/* 這組符文真言最少要什麼稀有度才有足夠的符文孔（rwSlotCountAt，只限雙手武器的真言另計 twoHandBonusSlots）。
+   -1＝目前沒有任何裝備有這麼多孔（例如孔數設定調低後，配方比最多孔的裝備還長）。 */
 function rwMinRarity(word) {
+  var twoHand = rwWordTwoHandOnly(word);
   for (var i = 0; i < RARITIES.length; i++) {
-    if (Number(RUNE_SETTINGS.slotsByRarity[i]) >= word.runes.length) return i;
+    if (rwSlotCountAt(i, twoHand) >= word.runes.length) return i;
   }
   return -1;
 }
 function rwSocketNeedText(word) {
   var i = rwMinRarity(word);
-  return '需要 ' + word.runes.length + ' 個符文孔（' + (i >= 0 ? RARITIES[i].name + '以上' : '無法達成') + '）';
+  var tail = i >= 0 ? RARITIES[i].name + '以上' : '目前沒有裝備有這麼多孔，符文孔設定調高後才做得出來';
+  return '需要 ' + word.runes.length + ' 個符文孔（' + (rwWordTwoHandOnly(word) ? '雙手武器・' : '') + tail + '）';
 }
 /* 配方文字：「微光 → 餘燼」。 */
 function rwRecipeText(word) {

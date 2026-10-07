@@ -29,21 +29,21 @@ function isForgeableEquipmentRarity(rarity) {
 /* ============ 遊戲資料定義 ============ */
 
 /* ---- 稀有度（11 階）----
-   affix: 固定詞條數（上下限相同）｜sockets: 寶石鑲孔數｜enchants: 附魔欄位數
+   affix: 固定詞條數（上下限相同）｜sockets: 寶石鑲孔數｜enchants: 附魔欄位數｜runeSlots: 符文孔數（js/runeword.js；雙手武器另加 RUNE_SETTINGS.twoHandBonusSlots）
    godforged（神鑄創世）：僅能由神鑄系統以 6 件創世鑄造獲得，不自然掉落、
    不可由熔爐合成升階；mult = 創世 × 1.5（詞條數值與洗煉上限同步 1.5 倍）。 */
 var RARITIES = [
-  { key: 'common', name: '普通', color: '#9aa5b1', mult: 1.0, affix: [1, 1], sockets: 0, enchants: 0, salv: 1.0 },
-  { key: 'uncommon', name: '精良', color: '#4ade80', mult: 1.35, affix: [2, 2], sockets: 1, enchants: 1, salv: 1.7 },
-  { key: 'rare', name: '稀有', color: '#38bdf8', mult: 1.75, affix: [2, 2], sockets: 1, enchants: 1, salv: 2.8 },
-  { key: 'unique', name: '獨特', color: '#ffd700', mult: 2.3, affix: [3, 3], sockets: 1, enchants: 1, salv: 4.5 },
-  { key: 'epic', name: '史詩', color: '#c084fc', mult: 3.0, affix: [4, 4], sockets: 2, enchants: 2, salv: 7.5 },
-  { key: 'legendary', name: '傳說', color: '#fb923c', mult: 4.0, affix: [5, 5], sockets: 2, enchants: 2, salv: 12 },
-  { key: 'mythic', name: '神話', color: '#f87171', mult: 5.2, affix: [6, 6], sockets: 2, enchants: 2, salv: 19 },
-  { key: 'genesis', name: '創世', color: '#b8860b', mult: 6.8, affix: [7, 7], sockets: 3, enchants: 3, salv: 30 },
-  { key: 'godforged', name: '神鑄創世', color: '#f5c542', mult: 10.2, affix: [8, 8], sockets: 3, enchants: 3, salv: 45 },
-  { key: 'chaos', name: '混沌', color: '#c084fc', mult: 15.3, affix: [9, 9], sockets: 4, enchants: 3, salv: 67.5 },
-  { key: 'chaosGodforged', name: '神鑄混沌', color: '#ff6bcb', mult: 22.95, affix: [10, 10], sockets: 4, enchants: 3, salv: 101.25 }
+  { key: 'common', name: '普通', color: '#9aa5b1', mult: 1.0, affix: [1, 1], sockets: 0, enchants: 0, runeSlots: 0, salv: 1.0 },
+  { key: 'uncommon', name: '精良', color: '#4ade80', mult: 1.35, affix: [2, 2], sockets: 1, enchants: 1, runeSlots: 1, salv: 1.7 },
+  { key: 'rare', name: '稀有', color: '#38bdf8', mult: 1.75, affix: [2, 2], sockets: 1, enchants: 1, runeSlots: 1, salv: 2.8 },
+  { key: 'unique', name: '獨特', color: '#ffd700', mult: 2.3, affix: [3, 3], sockets: 1, enchants: 1, runeSlots: 2, salv: 4.5 },
+  { key: 'epic', name: '史詩', color: '#c084fc', mult: 3.0, affix: [4, 4], sockets: 2, enchants: 2, runeSlots: 3, salv: 7.5 },
+  { key: 'legendary', name: '傳說', color: '#fb923c', mult: 4.0, affix: [5, 5], sockets: 2, enchants: 2, runeSlots: 4, salv: 12 },
+  { key: 'mythic', name: '神話', color: '#f87171', mult: 5.2, affix: [6, 6], sockets: 2, enchants: 2, runeSlots: 4, salv: 19 },
+  { key: 'genesis', name: '創世', color: '#b8860b', mult: 6.8, affix: [7, 7], sockets: 3, enchants: 3, runeSlots: 4, salv: 30 },
+  { key: 'godforged', name: '神鑄創世', color: '#f5c542', mult: 10.2, affix: [8, 8], sockets: 3, enchants: 3, runeSlots: 4, salv: 45 },
+  { key: 'chaos', name: '混沌', color: '#c084fc', mult: 15.3, affix: [9, 9], sockets: 4, enchants: 3, runeSlots: 4, salv: 67.5 },
+  { key: 'chaosGodforged', name: '神鑄混沌', color: '#ff6bcb', mult: 22.95, affix: [10, 10], sockets: 4, enchants: 3, runeSlots: 4, salv: 101.25 }
 ];
 var PASSIVE_MIN_RARITY = 5; // 傳說級（含）以上附帶傳奇特效
 var MAX_AFFIXES = 10; // 單件裝備詞條數安全硬上限（目前稀有度表最高 10 條）
@@ -296,6 +296,47 @@ var FIELD_MONSTER_GROWTH = {
 };
 /* 野外菁英倍率（相對同階段普通怪）。BOSS 用的是同區的 FIELD_BOSS_*。 */
 var FIELD_ELITE = { hpMult: 4, atkMult: 2, rewardMult: 2, dodgeAdd: 1.5, aspd: 1 };
+/* ---- 菁英群組（參數表「4-菁英群組」；整個物件由 apply_params 重建，註解請寫在物件外）----
+   菁英不再單隻出現，而是成「群」：每群數隻，可能全是菁英、也可能由菁英帶著小兵。
+   出現時機有兩種：
+     菁英關（階段為 10 的倍數）  每一波都是菁英群，群數沿用 FIELD_ELITE_COUNT_TABLE* 那幾張權重表
+     普通關                       每一波有 normalChance% 的機率改成菁英群，群數看 normalGroupCount
+   各表的區間欄位寫法 [最低關, 最高關, …]；找不到對應地圖就用 other。
+     normalChance[地圖]  [最低關, 最高關, 每波變菁英群的機率%]
+     sizeWeights[地圖]   [最低關, 最高關, 群內隻數, 權重]
+     pureChance[地圖]    [最低關, 最高關, 全員菁英的機率%]（其餘為「菁英帶小兵」）
+     normalGroupCount    [群數, 權重]（普通關遇到菁英時一次出幾群）
+     skillCountWeights   [最低關, 最高關, 1個詞條權重, 2個詞條權重, 3個詞條權重]
+   leaders＝混合群的帶隊菁英數；minionHp／minionAtk／minionReward＝小兵相對普通怪的倍率。
+   skillDmgPct／cdPct＝菁英技能的傷害與冷卻倍率（%）；firstCastMax＝進場後第一次施放最久等幾秒；
+   maxZones＝同時存在的場域上限；summonCap＝每隻菁英一生最多召喚幾隻；linkBeam＝0 時不畫鏈結線。 */
+var ELITE_GROUP = {
+  normalChance: {
+    desert: [[1, 10, 1], [11, 50, 3], [51, 100, 5], [101, 9999, 7]],
+    Icefield: [[1, 100, 6], [101, 9999, 9]],
+    swamp: [[1, 100, 8], [101, 9999, 11]],
+    undead_mountains: [[1, 200, 10], [201, 9999, 13]],
+    other: [[1, 9999, 12]]
+  },
+  sizeWeights: {
+    desert: [[1, 100, 2, 60], [1, 100, 3, 30], [1, 100, 4, 10], [101, 9999, 2, 40], [101, 9999, 3, 40], [101, 9999, 4, 20]],
+    Icefield: [[1, 9999, 2, 50], [1, 9999, 3, 35], [1, 9999, 4, 15]],
+    swamp: [[1, 9999, 2, 40], [1, 9999, 3, 40], [1, 9999, 4, 20]],
+    undead_mountains: [[1, 9999, 2, 30], [1, 9999, 3, 40], [1, 9999, 4, 30]],
+    other: [[1, 9999, 2, 25], [1, 9999, 3, 40], [1, 9999, 4, 35]]
+  },
+  pureChance: {
+    desert: [[1, 100, 15], [101, 9999, 30]],
+    Icefield: [[1, 100, 25], [101, 9999, 35]],
+    swamp: [[1, 9999, 35]],
+    undead_mountains: [[1, 9999, 45]],
+    other: [[1, 9999, 55]]
+  },
+  normalGroupCount: [[1, 75], [2, 22], [3, 3]],
+  skillCountWeights: [[1, 100, 70, 28, 2], [101, 300, 45, 45, 10], [301, 9999, 25, 50, 25]],
+  leaders: 1, minionHp: 1, minionAtk: 1, minionReward: 1,
+  skillDmgPct: 100, cdPct: 100, firstCastMax: 3.5, maxZones: 24, summonCap: 6, linkBeam: 1
+};
 var MONSTER_DEFAULT_HIT = 100;   // 怪物固定命中（怪物資料未提供 hit 時的預設；參數表「3-戰鬥核心／怪物固定戰鬥值」）
 var FIELD_MONSTER_DODGE_BASE = 5;
 var FIELD_MONSTER_DODGE_GROWTH = [{ min: 1, max: 49, rate: 0.5 },
@@ -2278,6 +2319,16 @@ var GEM_TYPES = {
   wardWind: { name: '風抗寶石', emoji: '🍃', stat: 'resWind', statName: '疾風抗性%', base: 5, pct: true, linear: true },
   wardAll: { name: '全屬性抗性寶石', emoji: '🌈', stat: 'resAll', statName: '全屬性抗性%', base: 1, pct: true, linear: true }
 };
+/* 寶石圖：images/gems/gem-<key>-<階>.png（80×80 透明 PNG，48 種 × 10 階）。
+   階數決定外形（碎塊→…→圓形多邊，刻面與星芒隨階數增加）、種類決定顏色與材質；
+   元素類另有家族記號：「核」寶石內部有發光核心，「抗」寶石後方有一片柔和光暈。
+   程式產生（tools/gems），原稿在素材庫 claude-authored/gems。換圖時 +1 GEM_ICON_VER
+   （檔名沒有版本字尾，靠查詢字串破快取）。顯示入口是 js/item.js 的 gemIconHTML。 */
+var GEM_ICON_VER = 1;
+function gemIconSrc(type, level) {
+  var lv = Math.max(1, Math.min(GEM_FORGE_MAX_LEVEL, Math.floor(level) || 1));
+  return 'images/gems/gem-' + type + '-' + (lv < 10 ? '0' : '') + lv + '.png?v=' + GEM_ICON_VER;
+}
 // 寶石數值/插槽/附魔欄位公式（gemStatValue、socketCountFor、enchantCapFor）→ js/formula.js §8
 // 寶石合成：3 顆「同種類、同等級」→ 1 顆同種類下一級；UI 另支援全部類型逐種類合成
 var GEM_TYPE_ALL = '__all__';

@@ -1,5 +1,39 @@
 # AI_TASKS.md
 
+## Claude｜菁英敵人改造：成群出現、普通關也會遇到、47 個詞條技能（ELITE-GROUPS-20261008）
+
+- Owner：Claude；Done。使用者要求：①菁英也會在普通關出現，每 10 關固定的菁英照常 ②菁英成群（每群 2～4 隻，全員菁英或菁英帶小兵）③參數寫進 game_parameters ④每隻菁英放 1～3 種技能、總數至少 30 個，特效要一眼看出放了什麼 ⑤授權不中止做到完成，需詢問的先用建議做法、問題列在總結。
+- 需求分析：真正要的是「菁英有辨識度與壓力，且玩家看得懂」——不是只把數值加強。所以①群組與機率全在參數表；②每個技能必須有預警圈／爆發／彈體／場域等看得見的 Preset 表現，傷害判定與畫面共用同一組座標與半徑（AI_RULES 8.3）；③詞條數量與組合靠權重與互斥組控制，避免同一隻抽到互相打架的技能。
+- 技術決策：①群組出怪在 `combat.js spawnEliteWave`，擲骰在 `formula.js planEliteWave`（表在 `data.js ELITE_GROUP`，`apply_params` 整物件重建、錨點綁物件名）；普通關每波依「地圖×關卡區間」機率改出菁英群；菁英關的「菁英 數量權重」改當群數；過關配額＝群組總隻數。②詞條資料表 `js/elite_data.js`（主執行緒＋Worker 都載）＋引擎 `js/elite.js`（只在 Worker，同 legendary.js）；行為用 18 種原型參數化（多點落下、單點爆發、地面場域、彈體、光束、電弧、衝鋒、瞬移、連斬、漩渦、護盾、反射、群體無敵／治療、召喚、獻祭、詛咒、吸取）＋ 12 種常駐／被動，47 個詞條都是資料列。③傷害一律走 `resolveHit`（玩家減傷、抗性、格擋、反震照常），範圍技能 sure＝已給過預警不靠命中率；受傷管線在 `resolveHit`／`applyEnemyHpDamage` 各掛兩個 typeof 守衛的 hook（減傷／無敵／鏈結分攤、受傷反應）。④視覺全部用既有 Preset 事件（`variant: elite-*`、`presetOnly`），預載靠 `ELITE_VFX_PRESETS`；畫面標記（群組環、詞條圖示、狀態光環、生命鏈結連線）在新檔 `js/battle-elite.js`，battle-renderer 只加三處小掛勾。⑤詞條引擎沒載入的環境（既有單元測試）維持舊行為，所以既有測試零改動。
+- 修改：新增 js/elite_data.js、js/elite.js、js/battle-elite.js、tools/gen_elite_doc.cjs、docs/ELITE_AFFIXES.md、tests/{elite-data,elite-groups,elite-engine,elite-params,battle-elite}.test.cjs、tests/helpers/elite-env.cjs；修改 js/data.js（`ELITE_GROUP`）、formula.js（群組擲骰、兩個 hook）、combat.js（`makeFieldEnemy` 抽出、`spawnEliteWave`／召喚／分裂、`fieldTick` 掛 `eliteTick`、鎖定與死亡鉤子、玩家 atkDown／defDown 生效、GM `gmArenaSpawnElite`）、battlefield.js（施法中不逼近）、gm_exec.js（`elite` 指令）、battle-renderer.js、vfx-runtime.js（預載）、worker/sim.worker.js、bridge.js、index.html、tools/apply_params.cjs、config/Excel+CSV game_parameters（新增「4-菁英群組」19 列、6 列說明補註，由 Excel COM 寫入）、docs/vfx/VFX_PRESET_USAGE_OUTSIDE_TABLES.md（60 列登記）、GM_command.md。
+- 預檢：`.claude/check-conflicts.ps1` 退出碼 2——js/battle-renderer.js（ai/codex 未提交修改）、js/ui.js（ai/antigravity 一筆 commit，本次未改 ui.js）、index.html／js/bridge.js／js/worker/sim.worker.js／docs/AI_TASKS.md（ai/codex）。依使用者「需詢問者用建議做法先做、列在總結」授權繼續；三方合併試跑：battle-renderer.js 0 衝突，index.html 3／bridge.js 1／sim.worker.js 1／AI_TASKS.md 1 個衝突組，全是兩邊都加版號 token 的同一類（合併時取較大版號並保留兩邊的 token 即可）。
+- 測試：全庫 4068 項／257 失敗，乾淨 HEAD 副本 258 失敗；**失敗名稱差集：新增 0 條**。新增 5 支測試檔共 ~65 項（資料表接線、群組出怪規則、引擎行為、參數表一致與壞格擋下、畫面標記）；`apply_params` 549 項一致、錨點問題 0、`--check-anchors` 全通過；`npm run build` 478 檔通過。
+- 實機（獨立埠 8331，真 Worker＋真 Pixi，隱藏面板手動推幀抽圖）：逐一驗過隕石雨、雷霆風暴、熔岩爆裂、冰霜新星、毒雲、暴風雪、水牢、電磁牆、火焰鎖鏈、秘法光束、虛空漩渦、衝鋒、瞬影、旋風斬、各種彈體、護盾／無敵／治療的施放與預警→結算時序；抓到並修掉：圓形彈體沒給直徑會被放大成巨球（`lineWidth`）、光束預警改成沿路徑排圈、電磁牆改走顯示層既有的雷柱、連鎖閃電改走既有的追蹤電弧事件。
+- 風險／平衡：①所有詞條數值（傷害倍率、冷卻、半徑）與「4-菁英群組」的預設機率都是我先訂的，沒有對任何階段做過 DPS 平衡；總傷害與冷卻倍率在「菁英技能全域設定」可一鍵縮放。②群組讓菁英數量變多（菁英關群數沿用原本的數量表，每群再 2～4 隻），菁英關會比以前吃力，要減輕先調群數表與成員數表。③敵人在棋盤 100 隻時 `bfTickApproach` 的互斥推擠是 O(n²)（實測佔單步 6 成以上，與本次改動無關但群組會讓場上更容易滿），菁英引擎本身 24 隻只有約 2.6ms／步。④玩家身上的 `atkDown`／`defDown` 以前沒有任何效果，現在【衰弱詛咒】會讓 playerAtkCfg／playerDefCfg 生效（下限 10%）。⑤?canvas=0 的舊 DOM 戰鬥畫面不畫菁英技能特效（`presetOnly`），判定照常。⑥Excel 是用 Excel COM 追加列並重開驗證（未手工改 XML）；CSV 已由 xlsx 重轉。
+- 建議驗證（Antigravity）：GM `elite list`／`elite 1 <詞條> 2 1000000` 逐個詞條看預警圈→結算（離開範圍不受傷）；普通關連續推進時會遇到菁英群（機率看參數表）、菁英關每波都是菁英群；改「4-菁英群組」任一格後套用參數，行為跟著變；詞條 `lifelink`／`phoenix`／`bomber`／`splitter`／`summoner` 的死亡與分攤邊界；玩家死亡後場上沒有殘留預警或場域。
+
+## Claude｜符文鑲嵌頁改成寶石版型、符文孔數改由 game_parameters 配置、雙手武器 +1 孔（RUNE-SLOTS-UI-20261008）
+
+- Owner：Claude；Done。使用者要求：①符文鑲嵌界面改成與寶石鑲嵌同版型（上方符文孔與能力、下方所有符文），操作邏輯一併照寶石 ②裝備的符文孔數在 game_parameters 編號 321～331 加參數讓使用者配置 ③雙手武器的符文孔比單手多 +1，不是加倍。
+- 需求分析：①只動 UI（`rune.socket` 協議本來就有 `index`，不改協議）；②孔數原本在 Runes 表設定列 `slots_*`，使用者要的是和寶石孔、附魔孔同一張的稀有度表；③雙手武器的寶石孔是 ×1.75、附魔孔是 +1，符文孔要照附魔孔走加法。
+- 技術決策：①符文頁沿用寶石頁的容器與選孔狀態（`equipSlotModeFor`），鑲入與跳孔共用 `sendSlotSocketCommand`，右側素材面板不再使用；寶石格抽成 `equipGemGridHTML`。②孔數單一來源＝game_parameters「表-稀有度」的參數g → `RARITIES[i].runeSlots`（apply_params 新錨點），移除 `RUNE_SETTINGS.slotsByRarity` 與 Runes 表 11 列 `slots_*`，避免兩處都能配；Runes 表的配方長度檢查改讀 game_parameters.csv。③`twoHandBonusSlots` 預設改 1，只加在孔數 >0 的稀有度（普通的雙手武器仍 0 孔）——待確認：普通雙手武器是否也要給 1 孔。
+- 修改：js/ui.js、item.js（`itemRuneHTML` 支援選孔／卸下模式）、runeword.js（`rwSlotCountAt`、新增 `rwRegularMaxSlots`）、runeword_data.js、ui-runeword.js、data.js（`RARITIES.runeSlots`）、css/runeword.css；tools/apply_params.cjs、config_tables.cjs；config/Excel/game_parameters.xlsx（計算表 321～331 列的參數g 與說明欄）、Runes.xlsx（刪 11 列 `slots_*`、雙手加成 1、備註與欄位說明頁）與對應 CSV（Excel 皆以 Excel COM 寫入並重開驗證）；tests（新增 rune-slots-config，更新 equip-socket-ui／runeword-ui／runeword-engine／runeword-data／config-runes-table）；docs/RUNEWORD_DESIGN.md、game_formula.md、GM_command.md。
+- 預檢：`.claude/check-conflicts.ps1`：其餘檔案退出碼 0；index.html／js/bridge.js／js/worker/sim.worker.js／docs/AI_TASKS.md 有 ai/codex 的未提交修改，已用 `git merge-file` 試跑三方合併並取得使用者同意才改：這四個檔案和 codex 本來就各有 1～2 處衝突（雙方 bump 同幾行版號／檔頭各加紀錄），我的改動只落在既有的衝突區塊內，沒有新增衝突組；合併 develop 時這些區塊要人工取兩邊較新的版號。
+- 測試：全庫與乾淨 HEAD 比對失敗名稱差集，新增失敗 0 條；`config_tables --apply` 語意變更 0、`apply_params` 548 項一致、錨點問題 0；實機（瀏覽器）驗證鑲嵌、跳孔、卸下、鑲滿鎖定、符文真言成形、寶石⇄符文互切。
+- 風險：①套用參數時 Runes 表檢查會讀 game_parameters.csv（`套用參數.bat` 的順序保證它已是最新）；孔數全 0 或隨稀有度變少會中止並指出格子。②Worker 載入 data.js／runeword_data.js／item.js／runeword.js，已 bump `WORKER_ASSET_VERSION` 與 sim.worker.js 的對應 token；合併時兩邊的 token 要取同一個新值。③5 顆符文的真言現在做得出來（傳說以上雙手武器 5 孔），第 5 孔的符文頁排版已實測可用。
+- 建議驗證（Antigravity）：傳說以上雙手武器有 5 孔、單手與防具 4 孔；Excel 改 321～331 的參數g 後套用參數，孔數與符文頁說明跟著變；把參數g 調成 0 的稀有度沒有符文孔；符文頁選孔／鑲入／卸下／鑲滿；5 顆真言（滅世等）能鑲出並成形。
+
+## Claude｜符文真言：3 顆符文補量、新增 5 顆符文的真言、傳說級全帶傳奇特效（RUNEWORD-SPREAD-20261008）
+
+- Owner：Claude；Done。使用者要求：①2 顆與 4 顆的符文真言佔 9 成以上、3 顆太少，把至少一半的 4 顆改為 3 顆，效果與組合重新調整 ②新增 6 組需要 5 顆符文的真言（為「雙手武器之後最多 5 孔」預留）③這 6 組為傳說級，並且所有傳說級真言至少帶一個傳說特效（例：萬軍的裂空飛斬），傳說特效要在 23 個主技能間平均，傳說級至少 23 組，不夠自行補。
+- 需求分析：①是配方長度分佈與難度／強度的重排；②是第一個超過「一般裝備孔數上限」的配方，需要「現在做不出來、設定一改就開放」的機制，而不是寫死；③是把借用傳奇特效（`legend`）從少數幾組擴大成傳說級的標準配備，並用「23 個主技能各剛好一組」當平均的定義。
+- 技術決策：①36 組 4 顆中 18 組改 3 顆（精良 4、史詩 7、傳說 7），拿掉最不貼題的符文並把最高階拉回難度區間；少一顆符文的真言屬性略降（探針約 -6～-18%）。結果 2 顆 11／3 顆 30／4 顆 18／5 顆 6（3 顆最多）。②`RUNE_SETTINGS.maxSlots` 4 → 5（配方長度上限），新增設定 `twoHandBonusSlots`（雙手武器額外孔數，預設 0；設 1 → 傳說以上雙手有 5 孔）；5 顆的真言只能用在雙手武器（`rwWordTwoHandOnly`），`rwMinRarity` 與 `rwSocketNeedText` 依雙手孔數計，現在圖鑑標示「雙手武器・目前沒有裝備有這麼多孔」；配置表檢查：配方超過一般裝備最多孔數者，適用裝備必須全是雙手武器。③傳說級 20 → 23 組（新增永凍、冰川、潮汐），23 個主技能（SKILLS2 群組）各剛好一組帶它的傳奇特效（萬軍留裂空飛斬、劍舞者留殺千刀，其餘各借 1 個）；3 組原本是史詩的 5 顆真言（地裂、風暴之眼、血祭）升為傳說並重配最高階與強度。④強度用探針校準：5 顆真言地裂 ×11.3 → ×7.6、滅世 ×14 → ×9.2、雷帝 ×12.9 → ×9.1，血祭／永凍／星門偏弱的上修（星門、永凍、武庫是技能向，普攻探針會低估）；取得難度：最高階拉高後傳說級 26.9～145.7 小時（目標 30～150）。
+- 修改：js/runeword_data.js（`maxSlots`、`twoHandBonusSlots`、65 組配方與傳奇特效，由表整塊寫回）、runeword.js（`rwSlotCountAt`／`rwWordTwoHandOnly`／孔數計算）、ui.js、ui-runeword.js（說明文字不再寫死 4 孔）、index.html／bridge.js／sim.worker.js（版號）；config/Excel/Runes.xlsx、config/CSV/Runes.csv（新增設定列與 9 組真言，備註欄中文說明重生；Excel 以 Excel 原生 API 更新並重開驗證）、tools/config_tables.cjs（設定與檢查）；tests/runeword-data、runeword-engine、config-runes-table、runeword-ui（版號改為只驗存在）；docs/RUNEWORD_DESIGN.md（符文數分佈、傳說級傳奇特效對照表、取得難度表）。
+- 預檢：`.claude/check-conflicts.ps1` 對 runeword_data.js、runeword.js、Runes.csv／xlsx、RUNEWORD_DESIGN.md、runeword-data 測試、rw_econ_probe.cjs 退出碼 0。
+- 測試：全庫 4009 項；與乾淨 HEAD 副本（3997 項／258 失敗）比對失敗名稱差集，本次改動造成的只有 2 條釘死快取版號的測試（已改為只驗證版號存在）；其餘失敗（CLEAVE 系列、雙刀、兩條釘死雙手武器附魔數的測試等）在乾淨 HEAD 就是紅的，與本次無關。新增：符文數分佈、傳說級傳奇特效平均（23 個主技能各 1～2 組）、5 顆真言只給雙手武器且為傳說級、雙手加孔後 5 顆真言能做出來並成形、配置表對 twoHandBonusSlots 與 5 顆配方的檢查。`config_tables --apply` 語意變更 0；build_check 467 檔通過。
+- 風險／平衡：①5 顆符文的真言目前沒有任何裝備做得出來（刻意，等雙手武器加孔，改 `twoHandBonusSlots` 一格即可開放）；開放前請確認第 5 孔的符文面板與詳情排版。②借用的傳奇特效仍需配戴對應主技能才有感；為了平均，萬軍、劍舞者少借了原本的 1～2 個。③傳說級的探針數字是普攻近似：星門、永凍、武庫、時之沙等技能／冷卻向的真言被低估。④取得難度小時數是估算（每小時 3000 次擊殺、掉寶 ×2）。
+- 建議驗證（Antigravity）：圖鑑中 5 顆真言的需求文字；傳說級每組詳情都列出傳奇特效；把設定 `twoHandBonusSlots` 改 1 後雙手武器有 5 孔並能鑲出滅世等；改 Excel 一格（某真言的配方／傳奇特效）後套用參數；故意把 5 顆配方的適用裝備改成單手武器應被擋下。
+
 ## Claude｜符文石圖示：33 顆符文各一張刻了字的石頭（RUNE-STONES-20261007）
 
 - Owner：Claude；Done。依賴 RUNEWORD-REVEAL-20261007。使用者要求「將所有符文加上類似符文石或石碑的圖案，根據品質有不同的顏色與外型，圖做好先給我預覽、同意才上」。預覽共四輪，皆被使用者退件後才通過：①向量幾何（太簡單、像素風）②高度圖光照的華麗版（形狀太怪：水晶簇、皇冠、光環；字像貼上去的）③簡單卵石＋刻痕（藍的長方、橘的水滴、金的拱碑「太規整或不像符石」）④藍／橘／金改成使用者給的參考圖那種粗切多邊形立石，通過。
@@ -34,6 +68,18 @@
 - 測試：`node --test tests/skill-cooldown-display.test.cjs tests/worker-protocol.test.cjs tests/earthguard-revival.test.cjs tests/battle-skill-summary.test.cjs tests/battle-skill-hover.test.cjs tests/cooldown-repaint.test.cjs`33/33通過。`node --test tests/skill2-ult-evolution.test.cjs tests/skill2-earth.test.cjs tests/skill-cooldown-death.test.cjs tests/worker-shim.test.cjs`120項、82通過／38既有失敗；以修改前備份skills2.js重導唯讀載入做同檔測試基線，120／82／38且失敗名稱集合完全相同，新增失敗0，未降低原斷言。`npm.cmd run build`466檔檢查通過；`git diff --check`通過。
 - 實機：隔離headless Edge／隨機Port唯讀HTTP／全新Context／seed=9拋棄式角色、正式Worker47成功BOOT；使用原生引擎buildPanel的快照驗正式UI，在1920×1080與1280×720皆確認天霸1.5/3秒、天地15/30秒、不屈30/60秒，各遮罩180deg；兩種技能列相符、受擊風刃無CD／無魔標籤、復活就緒無CD、凍結1秒後天霸仍1.5秒。Console error／warning均0。精確排程、實際扣魔、自動施放、死亡與活著倒地、首觸發／充能、移除失效效果、高塔來源由新增引擎測試驗證；無真人存檔變動，服務／瀏覽器已關閉。
 - 交付：Commit為本紀錄所在`[Codex] fix: 同步技能列定時施放與觸發冷卻`提交；同副本逐風者與強化洗煉一秒任務期間已各自提交，本次僅提交上述10檔自己的變更。無本次未完成項目，既有38項回歸失敗保留，可審查合併，未合併／推送。下一步使用者重載遊戲驗收；未做長時間真人操作。
+
+## Claude｜寶石圖示：48 種寶石 × 10 階全部重做並接進遊戲（GEM-ICONS-20261007）
+
+- Owner：Claude；Done。使用者要求「將遊戲的寶石圖片全部重新製作」並給了三張參考圖（暗黑風寶石等級表、多色水晶圖示表、8 色 × 10 階切工寶石表）。原本遊戲裡**沒有任何寶石圖**，48 種寶石全是 emoji，所以是從零做一整套。預覽兩輪：第一輪使用者退回兩點——①抗性寶石的護盾泡「像寶石被包在泡泡裡」，改成光暈（A 柔光環／B 純光暈兩版給他選，選 B）；②「每種寶石都要不同顏色，不夠就用雙色或三色混搭」。核准後「接入遊戲吧」。
+- 需求分析：要的是一整套看得出「階數」與「種類」的寶石圖，不是單張華麗圖。階數 = 外形，種類 = 顏色與材質，元素類再用家族記號分開。
+- 技術決策：①程序化渲染（純 Node、確定性、無外部套件）：寶石是「一組平面取最小值」的凸多面體高度場，逐像素打光，工具 `tools/gems/`（沿用符文石的流程，但不需要瀏覽器 Canvas）。②10 階共用外形：薄片→碎塊→圓塊→六邊→菱形→長方→八方→星六→尖底→圓多邊。③48 種各有外觀表（`gem-defs.cjs`）；撞色就加第二色（漸層／中心／外緣／部分刻面）。④元素類三家族：一般／核（內部發光核心）／抗（後方純光暈），同一元素色系相近、主色與核心／光暈色不同。⑤**撞色檢查做成工具與測試**（CIELAB 3 群聚類的調色盤距離，`gem-audit.cjs`；測試量實際 80px 檔），而不是靠眼睛：第一輪就抓出 9 對太像並拉開。⑥輸出 80px（介面最大的圖示格也只有 46～72px），480 張約 4MB，按需載入；入口 `gemIconSrc`（data.js）／`gemIconHTML`／`fusedGemIconHTML`（item.js），各處只定尺寸 class（`css/gems.css`）。⑦融合寶石是兩種屬性的合體，用兩顆 5 階寶石圖斜疊成一個圖示。
+- 修改：新增 images/gems/（480 張）、tools/gems/（產生器 core／defs／palette／build／audit）、css/gems.css、tests/gem-icons.test.cjs（8 項）；js/data.js（`GEM_ICON_VER`、`gemIconSrc`）、js/item.js（`gemIconHTML`、`fusedGemIconHTML`、裝備詳情鑲孔列）、js/stats.js（統計卡片寶石列）、js/ui.js（約 20 處：裝備鑲嵌面板、自動放入清單、神鑄槽／結果／寶石格、寶石庫列表與焦點、合成配方槽、轉換九宮格與池、拆解／融合小格、商店）；tests/stats-panel.test.cjs（載入 item.js、斷言改為寶石圖）；index.html（掛 css/gems.css、data／stats／item／ui 四個版號）。純文字位置（資源列提示、下拉選項、戰鬥記錄、`gemLabel`）保留 emoji，測試把 ui.js 剩下的 emoji 位置釘成 2 處白名單。
+- 預檢：`.claude/check-conflicts.ps1` 退出碼 2——index.html／docs/AI_TASKS.md 被 ai/codex 的修改碰到（先是未提交、後來 codex 提交 d21067f2）。三方合併試跑：index.html 0 衝突（對方改 vfx-runtime／skills2／bridge 三行版號，我改 css 掛載與 data／stats／item／ui 四行）；AI_TASKS.md 本來就有 1 處（codex 檔頭段落與 8b0c89b2 重疊，codex 已記錄），我的段落放在較後面不增加。使用者選「兩支都改」後才動。**Worker 與 bridge.js 沒動**：`itemSocketHTML` 只由主執行緒 ui.js 呼叫、Worker 不產生 HTML，所以不必 bump `sim.worker.js` 的 importScripts 版號與 `WORKER_ASSET_VERSION`（也避開與 codex 同一行的衝突）。
+- 測試：tests/gem-icons.test.cjs 8 項全過（圖檔規格與透明角、gemIconSrc、融合斜疊、鑲孔列、ui.js 圖示位置白名單、CSS、48 種兩兩顏色距離、外觀表對應 GEM_TYPES）；`npm run build` 468 檔通過；完整測試 4017 項、失敗 258（基準 278，皆為既有失敗：技能／特效類；基準那份沒有 images 資料夾，圖檔類測試在基準也是紅的），**只在我這邊紅的有 0 項**。實機（埠 8331、真 Worker）：寶石庫列表／焦點、合成、轉換、拆解、融合、商店全部是圖，裝備鑲嵌面板 26 顆全是圖、鑲上後鑲孔列顯示圖與名稱；寶石請求全部 200、無破圖；Console 的 3 個 404 與寶石無關（沒有任何 /images/gems 404）。
+- 素材雙倉庫：素材庫 `claude-authored/gems`（480 張 256px 母圖、產生器副本、SOURCE.md 含重現指令與雜湊）Commit `5ead763`；遊戲專案 Commit 為本紀錄所在提交。素材庫未推送。
+- 風險／注意：①第 7～10 階在 48px 以下差異不大，主要靠刻面細節與星芒，靠階數徽章區分。②不透明石材（瑪瑙、綠松石、孔雀石、虎眼、日光石）紋理偏重，看起來比透明寶石更像圓盤。③「全部類型寶石」（合成配方的 `__all__`）沒有對應圖，維持 💎。④融合寶石只畫 5 階（`fg.level`）。⑤圖檔沒有版本字尾，換圖要 +1 `GEM_ICON_VER`；改色階後要跑 `node tools/gems/gem-audit.cjs`。⑥顏色距離門檻 12（產生器）／10（80px 實際檔）是我訂的，相近色系（如 amethyst 與 coreDark）靠家族記號區分，若使用者覺得仍太像再逐一調。
+- 建議驗證（Antigravity）：寶石頁六個分頁（合成／轉換／拆解／融合／商店／庫）圖示無破圖、尺寸不超出格子；裝備鑲嵌面板與詳情鑲孔列；神鑄頁寶石格與法陣槽（需解鎖）；融合寶石（兩種屬性斜疊）在融合池、轉換池、拆解池與鑲嵌面板；統計卡片的寶石列；高階（第 8～10 階）與抗性寶石的光暈在深色格子邊緣沒有方形截斷；縮放 50%／100%／150% 不變形。
 
 ## EQUIP-ACTION-ONE-SECOND-20261006 — 強化洗煉切頁冷卻改為一秒
 
