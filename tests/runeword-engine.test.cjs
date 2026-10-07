@@ -663,14 +663,15 @@ test('符文孔 HTML：符文顯示字形與實際數值；成形時列出符文
   assert.match(html, /毒牙符文/);
   assert.match(html, /符文孔 2（空）/);
   assert.match(html, /再鑲入「暗影」即可成形【蛇吻】/);
-  assert.doesNotMatch(html, /data-rune-remove/, '符文面板沒開時不可取下');
+  assert.doesNotMatch(html, /data-rune-remove|data-socket-pick/, '不在符文鑲嵌頁時唯讀，沒有選孔也不可取下');
   it.runes[1] = 'r08';
   html = c.itemRuneHTML(it, null);
   assert.match(html, /符文真言【蛇吻】/);
   assert.match(html, /runeword-socket/);
   assert.match(html, /普通攻擊命中時有 15% 機率/);
   assert.doesNotMatch(html, /再鑲入/);
-  assert.match(c.itemRuneHTML(it, { rune: { active: true } }), /data-rune-remove="0"[\s\S]*data-rune-remove="1"/, '符文面板開啟時已鑲的符文可點擊取下');
+  assert.match(c.itemRuneHTML(it, { selIdx: -1, pending: false }), /data-rune-remove="0"[\s\S]*data-rune-remove="1"/, '符文鑲嵌頁每個已鑲的符文右側有「卸下」');
+  assert.match(c.itemRuneHTML(it, { selIdx: 2, pending: false }), /data-socket-pick="2" aria-pressed="true"/, '符文鑲嵌頁每孔都能選取，選中的孔 aria-pressed');
   assert.doesNotMatch(c.itemSocketHTML(it, null), /符文|runeword/, '寶石鑲孔區塊不含符文');
   assert.equal(c.itemRuneHTML(makeItem(c, { rarity: 0 }), null), '', '沒有符文孔的裝備不輸出符文區塊');
   // 完整詳情把符文區塊接在附魔原本的位置（寶石鑲孔之前）

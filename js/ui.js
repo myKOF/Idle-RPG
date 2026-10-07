@@ -1321,7 +1321,7 @@ function bindWorkerUiState() {
       UI.dirty.equip = false;
     }
     releaseUiPendingByPanel(msg.name);
-    if (msg.name === 'gems' && UI.tab === 'equip' && equipSocketModeFor(findSelItem())) renderDetail();
+    if (msg.name === 'gems' && UI.tab === 'equip' && equipSlotPageModeFor(findSelItem())) renderDetail();
     if (UI_WORKER_STATE.panelQueued[msg.name]) {
       var queuedParams = UI_WORKER_STATE.panelQueued[msg.name];
       delete UI_WORKER_STATE.panelQueued[msg.name];
@@ -5422,10 +5422,17 @@ function selectEquipRerollAffix(it, idx) {
   UI.equipRerollMode = { itemId: it.id, selIdx: idx };
 }
 
-function equipSocketModeFor(it) {
+/* 鑲嵌頁（UI.equipMatMode）有兩種：寶石 'socket'（孔＝it.sockets）、符文 'rune'（孔＝符文孔，js/runeword.js）。
+   兩種的選孔、自動跳下一個空孔與 pending 鎖定走同一套，差別只在孔的來源與送出的指令。 */
+function equipSlotsOf(it, kind) {
+  if (kind === 'rune') return typeof rwSlots === 'function' ? rwSlots(it) : [];
+  return it.sockets || [];
+}
+
+function equipSlotModeFor(it, kind) {
   var mode = UI.equipMatMode;
-  if (!it || !mode || mode.itemId !== it.id || mode.mode !== 'socket') return null;
-  var sockets = it.sockets || [];
+  if (!it || !mode || mode.itemId !== it.id || mode.mode !== kind) return null;
+  var sockets = equipSlotsOf(it, kind);
   if (mode.advanceFrom !== undefined && sockets[mode.advanceFrom]) {
     var from = mode.advanceFrom;
     mode.selIdx = sockets.length ? (from + 1) % sockets.length : -1;
@@ -5442,32 +5449,42 @@ function equipSocketModeFor(it) {
   return mode;
 }
 
-function socketSelectedGem(type, level, fusedId) {
-  var it = findSelItem(), mode = equipSocketModeFor(it);
-  if (!mode || isUiCommandPending(itemPendingKey(it.id)) || mode.selIdx < 0 || it.sockets[mode.selIdx]) return;
+function equipSocketModeFor(it) { return equipSlotModeFor(it, 'socket'); }
+
+function equipRuneModeFor(it) { return equipSlotModeFor(it, 'rune'); }
+
+/* 目前開著的鑲嵌頁（寶石或符文）；兩者互斥，都沒開回 null。 */
+function equipSlotPageModeFor(it) { return equipSocketModeFor(it) || equipRuneModeFor(it); }
+
+/* 對鑲嵌頁選中的空孔送出鑲嵌指令；成功（回覆 null）後游標跳到下一個空孔。
+   args 由呼叫端備好（index 在這裡補）。換了模式或換了裝備後才到的回覆不影響新狀態。 */
+function sendSlotSocketCommand(it, mode, command, args, failLabel) {
   var idx = mode.selIdx;
-  var command = fusedId ? 'gem.socketFused' : 'gem.socket';
-  var args = fusedId ? { itemId: it.id, fusedId: fusedId, index: idx } : { itemId: it.id, type: type, index: idx, level: level };
+  args.index = idx;
   sendUiCommand(command, args, { keys: [itemPendingKey(it.id)], panels: ['inv', 'equip', 'gems', 'header'] }).then(function (result) {
     if (result !== null || UI.equipMatMode !== mode || !UI.sel || UI.sel.id !== it.id) return;
     mode.advanceFrom = idx;
     renderDetail();
   }).catch(function (error) {
-    reportUiCommandFailure('鑲嵌寶石', error, ['inv', 'equip', 'gems', 'header']);
+    reportUiCommandFailure(failLabel, error, ['inv', 'equip', 'gems', 'header']);
   });
 }
 
-/* 鑲入符文（js/runeword.js）：符文面板（UI.equipMatMode.mode === 'rune'）點符文圖示 → 放進第一個空的符文孔。
-   符文孔與寶石鑲孔分開，沒有「選孔」這一步。 */
+function socketSelectedGem(type, level, fusedId) {
+  var it = findSelItem(), mode = equipSocketModeFor(it);
+  if (!mode || isUiCommandPending(itemPendingKey(it.id)) || mode.selIdx < 0 || it.sockets[mode.selIdx]) return;
+  if (fusedId) sendSlotSocketCommand(it, mode, 'gem.socketFused', { itemId: it.id, fusedId: fusedId }, '鑲嵌寶石');
+  else sendSlotSocketCommand(it, mode, 'gem.socket', { itemId: it.id, type: type, level: level }, '鑲嵌寶石');
+}
+
+/* 鑲入符文（js/runeword.js）：符文鑲嵌頁（UI.equipMatMode.mode === 'rune'）點符文圖示 → 放進選中的符文孔，操作與寶石相同。 */
 function socketRuneToSelected(runeId) {
-  var it = findSelItem();
-  if (!it || isUiCommandPending(itemPendingKey(it.id))) return;
-  sendUiCommand('rune.socket', { itemId: it.id, runeId: runeId }, { keys: [itemPendingKey(it.id)], panels: ['inv', 'equip', 'gems', 'header'] }).catch(function (error) {
-    reportUiCommandFailure('鑲嵌符文', error, ['inv', 'equip', 'gems', 'header']);
-  });
+  var it = findSelItem(), mode = equipRuneModeFor(it);
+  if (!mode || isUiCommandPending(itemPendingKey(it.id)) || mode.selIdx < 0 || rwSlots(it)[mode.selIdx]) return;
+  sendSlotSocketCommand(it, mode, 'rune.socket', { itemId: it.id, runeId: runeId }, '鑲嵌符文');
 }
 
-/* 選孔與 pending 只更新現有控制項，保留寶石節點及捲動位置。 */
+/* 選孔與 pending 只更新現有控制項，保留素材節點及捲動位置。 */
 function syncEquipSocketControls(it, mode) {
   var pane = $id('detail-pane');
   if (!pane || !pane.querySelectorAll || !pane.querySelector) return false;
@@ -5482,15 +5499,15 @@ function syncEquipSocketControls(it, mode) {
     button.parentNode.classList.toggle('is-socket-selected', selected);
     if (button.disabled !== pending) button.disabled = pending;
   });
-  holes.querySelectorAll('[data-socket-remove]').forEach(function (button) {
+  holes.querySelectorAll('[data-socket-remove], [data-rune-remove]').forEach(function (button) {
     if (button.disabled !== pending) button.disabled = pending;
   });
-  var disabled = pending || mode.selIdx < 0 || !!it.sockets[mode.selIdx];
+  var disabled = pending || mode.selIdx < 0 || !!equipSlotsOf(it, mode.mode)[mode.selIdx];
   var gems = pane.querySelector('.equip-socket-gems');
-  // 同為空孔或同為已鑲孔時，寶石可用狀態不變，不再掃整份庫存。
+  // 同為空孔或同為已鑲孔時，寶石／符文可用狀態不變，不再掃整份庫存。
   // 清單內容替換後會清除此記錄，新的按鈕仍須同步 pending／孔位狀態。
   if (gems && gems._equipSocketDisabled !== disabled) {
-    gems.querySelectorAll('[data-gem-socket], [data-gem-socket-fused]').forEach(function (button) {
+    gems.querySelectorAll('[data-gem-socket], [data-gem-socket-fused], [data-rune-socket]').forEach(function (button) {
       if (button.disabled !== disabled) button.disabled = disabled;
     });
     gems._equipSocketDisabled = disabled;
@@ -5501,34 +5518,44 @@ function syncEquipSocketControls(it, mode) {
 
 function syncEquipSocketPending() {
   if (UI.tab !== 'equip') return;
-  var it = findSelItem(), mode = equipSocketModeFor(it);
+  var it = findSelItem(), mode = equipSlotPageModeFor(it);
   if (mode) syncEquipSocketControls(it, mode);
 }
 
-/* 右側「符文」素材面板：列出符文庫存（高階在前），點圖示鑲進第一個空的符文孔（js/runeword.js）。 */
-function equipRunePanelHTML(it, gemsSnapshot) {
-  if (typeof RUNE_SETTINGS === 'undefined' || typeof rwSlots !== 'function') return '';
-  var slots = rwSlots(it);
-  if (!slots.length) {
-    return '<div class="equip-material-section"><div class="equip-material-title">🔷 符文</div>' +
-      '<div class="equip-material-empty">這件裝備沒有符文孔（精良以上才有符文孔，孔數隨稀有度增加，最多 ' + Math.max.apply(null, RUNE_SETTINGS.slotsByRarity) + ' 孔，雙手武器可能更多）。</div></div>';
+/* 鑲嵌頁下方的寶石格：每類寶石只列持有的最高階，再接融合寶石。 */
+function equipGemGridHTML(gemsSnapshot) {
+  var gemIcons = [];
+  for (var gt in GEM_TYPES) {
+    var gdef = GEM_TYPES[gt];
+    for (var lv = GEM_FORGE_MAX_LEVEL; lv >= 1; lv--) {
+      var n = gemsViewCount(gemsSnapshot, gt, lv);
+      if (!n) continue;
+      var gv = gdef.pct ? pctStr(gemStatValue(gt, lv)) : fmt(gemStatValue(gt, lv));
+      gemIcons.push('<button type="button" class="equip-material-icon" data-gem-socket="' + gt + '" data-gem-level="' + lv + '" data-tip="' +
+        esc(GEM_NAMES[lv] + gdef.name + ' ×' + n + '｜' + gdef.statName.replace('%', '') + ' +' + gv + '｜鑲入選中孔位') + '">' +
+        gemIconHTML(gt, lv, 'gi-socket') + '<span class="socket-gem-level">' + lv + '</span><span class="socket-gem-count">×' + fmt(n) + '</span></button>');
+      break;
+    }
   }
-  var filled = slots.filter(Boolean).length;
-  var full = filled >= slots.length;
+  gemsViewFused(gemsSnapshot).forEach(function (fg) {
+    gemIcons.push('<button type="button" class="equip-material-icon" data-gem-socket-fused="' + esc(fg.id) + '" data-tip="' +
+      esc(fusedGemLabel(fg) + '｜鑲入選中孔位') + '">' + fusedGemIconHTML(fg, 'gi-socket') + '<span class="socket-gem-count">×1</span></button>');
+  });
+  return gemIcons.length ? '<div class="equip-socket-gem-grid">' + gemIcons.join('') + '</div>' : '<div class="equip-material-empty">尚無寶石庫存</div>';
+}
+
+/* 鑲嵌頁下方的符文格：列出符文庫存（高階在前），點圖示鑲進選中的符文孔（js/runeword.js）。 */
+function equipRuneGridHTML(it, gemsSnapshot) {
   var icons = [];
   for (var ri = RUNES.length - 1; ri >= 0; ri--) {
     var rune = RUNES[ri], rn = (typeof runesViewCount === 'function') ? runesViewCount(gemsSnapshot, rune.id) : 0;
     if (!rn) continue;
-    icons.push('<button type="button" class="equip-material-icon rune-icon" data-rune-socket="' + rune.id + '"' + (full ? ' disabled' : '') +
+    icons.push('<button type="button" class="equip-material-icon rune-icon" data-rune-socket="' + rune.id + '"' +
       ' style="--c:' + rune.color + '" data-tip="' +
-      esc(rune.name + '符文（第 ' + rune.tier + ' 階）×' + rn + '｜鑲在這件裝備：' + rwRuneStatLine(it, rune.id) + (full ? '｜符文孔已滿' : '｜鑲入第一個空符文孔')) + '">' +
+      esc(rune.name + '符文（第 ' + rune.tier + ' 階）×' + rn + '｜鑲在這件裝備：' + rwRuneStatLine(it, rune.id) + '｜鑲入選中孔位') + '">' +
       runeStoneHTML(rune.id, 'rs-icon') + '<span class="socket-gem-level">' + rune.tier + '</span><span class="socket-gem-count">×' + fmt(rn) + '</span></button>');
   }
-  return '<div class="equip-material-section">' +
-    '<div class="equip-material-title">🔷 可用符文（點擊鑲入）</div>' +
-    '<div class="equip-material-subtitle">符文孔 ' + filled + '／' + slots.length + (full ? '｜已滿，點擊詳情中已鑲的符文可取下' : '｜依序放入指定的符文可組成符文真言（配方見符文頁）') + '</div>' +
-    (icons.length ? '<div class="equip-material-grid">' + icons.join('') + '</div>' : '<div class="equip-material-empty">尚無符文（擊殺與封魔塔會掉落，符文頁可合成）</div>') +
-    '</div>';
+  return icons.length ? '<div class="equip-socket-gem-grid">' + icons.join('') + '</div>' : '<div class="equip-material-empty">尚無符文（擊殺與封魔塔會掉落，符文頁可合成）</div>';
 }
 
 function renderDetail() {
@@ -5588,39 +5615,42 @@ function renderDetail() {
   }
   var rerollMode = equipRerollModeFor(it);
   var socketMode = !rerollMode && equipSocketModeFor(it);
+  var runeMode = !rerollMode && equipRuneModeFor(it);
+  var slotMode = socketMode || runeMode;   // 鑲嵌頁（寶石或符文）：標題＋孔列＋下方素材格，取代一般詳情
   var matMode = !rerollMode && UI.equipMatMode && UI.equipMatMode.itemId === it.id ? UI.equipMatMode.mode : null;
   syncEquipActionCooldown(it, rerollMode ? 'reroll-affix' : (matMode || 'upgrade'));
-  var socketHeaderHtml = socketMode ? itemHeaderHTML(it, { justUpgraded: justUpgraded }) : null;
-  var socketHolesHtml = socketMode ? itemSocketHTML(it, { selIdx: -1, pending: false }) : null;
-  var h = socketMode ? '<div class="equip-socket-header">' + socketHeaderHtml + '</div><div class="equip-socket-page">' + socketHolesHtml + '</div>' : itemDetailHTML(it, null, {
-    gold: player && player.gold,
-    essence: player && player.essence,
-    justUpgraded: justUpgraded,
-    rune: matMode === 'rune' ? { active: true } : null,
-    reroll: rerollMode ? {
-      active: true,
-      selIdx: rerollMode.selIdx
-    } : null,
-    socket: socketMode ? { active: true, selIdx: socketMode.selIdx, pending: isUiCommandPending(itemPendingKey(it.id)) } : null
-  });
+  var slotHeaderHtml = slotMode ? itemHeaderHTML(it, { justUpgraded: justUpgraded }) : null;
+  var slotHolesHtml = slotMode ? (socketMode ? itemSocketHTML(it, { selIdx: -1, pending: false }) : itemRuneHTML(it, { selIdx: -1, pending: false })) : null;
+  var slotStockHtml = slotMode ? (socketMode ? equipGemGridHTML(gemsSnapshot) : equipRuneGridHTML(it, gemsSnapshot)) : null;
+  var h = slotMode ?
+    '<div class="equip-socket-header">' + slotHeaderHtml + '</div><div class="equip-socket-page">' + slotHolesHtml + '</div><div class="equip-socket-gems">' + slotStockHtml + '</div>' :
+    itemDetailHTML(it, null, {
+      gold: player && player.gold,
+      essence: player && player.essence,
+      justUpgraded: justUpgraded,
+      reroll: rerollMode ? {
+        active: true,
+        selIdx: rerollMode.selIdx
+      } : null
+    });
   /* 操作列（2026-10 裝備頁改造）：一個主按鈕（背包裝備＝「裝備」，身上裝備＝「強化」）＋次按鈕，
-     卸下縮成最右側的圖示。「鑲嵌／符文」改為開關右側素材面板：面板平常不顯示，
-     按下才出現對應的寶石或符文；換選別件裝備時自動收起（UI.equipMatMode 記著是哪一件）。
+     卸下縮成最右側的圖示。「鑲嵌／符文」是兩個鑲嵌頁：按下後詳情區換成「標題＋孔列＋下方的寶石或符文庫存格」，
+     點孔選取、點庫存格鑲入選中的孔、孔右側「卸下」取下；按「強化」或換選別件裝備時退出（UI.equipMatMode 記著是哪一件）。
      「符文」取代了原本「附魔」按鈕的位置（附魔功能已關閉，data.js ENCHANT_ENABLED）。 */
   var actionsHtml = '';
   var pendingKey = itemPendingKey(it.id);
   var fromInv = UI.sel.source === 'inv';
   /* 洗煉模式時紅色主按鈕移到「洗煉」，表示目前是洗煉分頁；裝備／強化退回次按鈕 */
   if (fromInv) {
-    actionsHtml += '<button class="btn' + (rerollMode || socketMode ? '' : ' btn-primary') + '" data-act="equip"' + pendingUiButtonAttributes(pendingKey) + '>裝備</button>';
+    actionsHtml += '<button class="btn' + (rerollMode || slotMode ? '' : ' btn-primary') + '" data-act="equip"' + pendingUiButtonAttributes(pendingKey) + '>裝備</button>';
   }
   var enoughUpGold = player && player.gold >= cost.gold;
   var enoughUpScrap = player && player.scrap >= cost.scrap;
   var upGoldHtml = '<span' + (enoughUpGold ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_gold.png" class="res-icon"> ' + fmt(cost.gold) + '</span>';
   var upScrapHtml = '<span' + (enoughUpScrap ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_scrap.png" class="res-icon"> ' + fmt(cost.scrap) + '</span>';
   var upTip = '需要：' + upGoldHtml + ' &nbsp;' + upScrapHtml;
-  actionsHtml += '<button class="btn' + (fromInv || rerollMode || socketMode ? '' : ' btn-primary') + ' act-btn-tooltip" data-act="upgrade" data-tip="' +
-    esc(rerollMode || socketMode ? '回到強化（再按一次才強化）' : upTip) + '"' + pendingUiButtonAttributes(pendingKey) + '>強化</button>';
+  actionsHtml += '<button class="btn' + (fromInv || rerollMode || slotMode ? '' : ' btn-primary') + ' act-btn-tooltip" data-act="upgrade" data-tip="' +
+    esc(rerollMode || slotMode ? '回到強化（再按一次才強化）' : upTip) + '"' + pendingUiButtonAttributes(pendingKey) + '>強化</button>';
 
   var rrAttrs = '';
   if (rerollMode) {
@@ -5638,67 +5668,44 @@ function renderDetail() {
   }
   actionsHtml += '<button class="btn' + (rerollMode ? ' btn-primary act-btn-tooltip' : '') + '" data-act="' + (rerollMode ? 'reroll-affix' : 'toggle-reroll') + '"' + rrAttrs + '>洗煉</button>';
   actionsHtml += '<button class="btn' + (socketMode ? ' btn-primary' : '') + '" data-act="toggle-socket" aria-pressed="' + (matMode === 'socket') + '">鑲嵌</button>';
-  actionsHtml += '<button class="btn' + (matMode === 'rune' ? ' btn-primary' : '') + '" data-act="toggle-rune" aria-pressed="' + (matMode === 'rune') + '">符文</button>';
+  actionsHtml += '<button class="btn' + (runeMode ? ' btn-primary' : '') + '" data-act="toggle-rune" aria-pressed="' + (matMode === 'rune') + '">符文</button>';
   if (!fromInv) {
     actionsHtml += '<button class="btn btn-icon act-btn-tooltip" data-act="unequip" aria-label="卸下" data-tip="卸下"' +
       pendingUiButtonAttributes(pendingKey) + '>' + EQUIP_UNEQUIP_ICON + '</button>';
   }
-  // 右側素材面板：只顯示目前開啟的那一類（寶石或符文）；小圖示的完整名稱、數值與持有量由滑鼠提示顯示
-  var matHtml = '';
-  var socketGemsHtml = null;
-  if (socketMode) {
-    var gemIcons = [];
-    for (var gt in GEM_TYPES) {
-      var gdef = GEM_TYPES[gt];
-      for (var lv = GEM_FORGE_MAX_LEVEL; lv >= 1; lv--) {
-        var n = gemsViewCount(gemsSnapshot, gt, lv);
-        if (!n) continue;
-        var gv = gdef.pct ? pctStr(gemStatValue(gt, lv)) : fmt(gemStatValue(gt, lv));
-        gemIcons.push('<button type="button" class="equip-material-icon" data-gem-socket="' + gt + '" data-gem-level="' + lv + '" data-tip="' +
-          esc(GEM_NAMES[lv] + gdef.name + ' ×' + n + '｜' + gdef.statName.replace('%', '') + ' +' + gv + '｜鑲入選中孔位') + '">' +
-          gemIconHTML(gt, lv, 'gi-socket') + '<span class="socket-gem-level">' + lv + '</span><span class="socket-gem-count">×' + fmt(n) + '</span></button>');
-        break;
-      }
-    }
-    gemsViewFused(gemsSnapshot).forEach(function (fg) {
-      gemIcons.push('<button type="button" class="equip-material-icon" data-gem-socket-fused="' + esc(fg.id) + '" data-tip="' +
-        esc(fusedGemLabel(fg) + '｜鑲入選中孔位') + '">' + fusedGemIconHTML(fg, 'gi-socket') + '<span class="socket-gem-count">×1</span></button>');
-    });
-    socketGemsHtml = gemIcons.length ? '<div class="equip-socket-gem-grid">' + gemIcons.join('') + '</div>' : '<div class="equip-material-empty">尚無寶石庫存</div>';
-    h += '<div class="equip-socket-gems">' + socketGemsHtml + '</div>';
-  }
-  if (matMode === 'rune') matHtml += equipRunePanelHTML(it, gemsSnapshot);
   var oldGems = pane.querySelector && pane.querySelector('.equip-socket-gems');
   var oldHoles = pane.querySelector && pane.querySelector('.equip-socket-page');
   var oldHeader = pane.querySelector && pane.querySelector('.equip-socket-header');
   var gemsScroll = oldGems ? oldGems.scrollTop : 0;
   var holesScroll = oldHoles ? oldHoles.scrollTop : 0;
   var previousSocket = pane._equipSocketRender;
-  if (socketMode && previousSocket && previousSocket.itemId === it.id && oldHeader && oldHoles && oldGems) {
-    if (previousSocket.header !== socketHeaderHtml) oldHeader.innerHTML = socketHeaderHtml;
-    if (previousSocket.holes !== socketHolesHtml) oldHoles.innerHTML = socketHolesHtml;
-    if (previousSocket.gems !== socketGemsHtml) {
-      oldGems.innerHTML = socketGemsHtml;
+  // 同一件裝備、同一種鑲嵌頁才就地更新；寶石⇄符文互切要整頁重建，孔列與素材格的節點才不會混用
+  if (slotMode && previousSocket && previousSocket.itemId === it.id && previousSocket.kind === slotMode.mode && oldHeader && oldHoles && oldGems) {
+    if (previousSocket.header !== slotHeaderHtml) oldHeader.innerHTML = slotHeaderHtml;
+    if (previousSocket.holes !== slotHolesHtml) oldHoles.innerHTML = slotHolesHtml;
+    if (previousSocket.gems !== slotStockHtml) {
+      oldGems.innerHTML = slotStockHtml;
       delete oldGems._equipSocketDisabled;
     }
   } else {
     pane.innerHTML = h;
   }
-  pane._equipSocketRender = socketMode ? { itemId: it.id, header: socketHeaderHtml, holes: socketHolesHtml, gems: socketGemsHtml } : null;
+  pane._equipSocketRender = slotMode ? { itemId: it.id, kind: slotMode.mode, header: slotHeaderHtml, holes: slotHolesHtml, gems: slotStockHtml } : null;
   pane.classList.add('has-detail');
-  if (!socketMode) pane.classList.remove('is-socket-page');
-  if (socketMode) {
+  if (!slotMode) pane.classList.remove('is-socket-page');
+  if (slotMode) {
     pane.classList.add('is-socket-page');
     if (pane.querySelector) {
       pane.querySelector('.equip-socket-gems').scrollTop = gemsScroll;
       var holes = pane.querySelector('.equip-socket-page');
       holes.scrollTop = holesScroll;
-      syncEquipSocketControls(it, socketMode);
+      syncEquipSocketControls(it, slotMode);
     }
-    socketMode.renderedIdx = socketMode.selIdx;
+    slotMode.renderedIdx = slotMode.selIdx;
   }
+  /* 右側素材面板（#equip-material-panel）：寶石與符文都改在詳情區內鑲嵌，目前沒有內容；保留元素並清空，避免殘留舊內容 */
   var matPanel = $id('equip-material-panel');
-  if (matPanel) matPanel.innerHTML = matHtml;
+  if (matPanel) matPanel.innerHTML = '';
   var actionBar = $id('equip-action-bar');
   if (actionBar) {
     actionBar.innerHTML = actionsHtml;
@@ -12853,9 +12860,9 @@ function initUI() {
     // 洗煉模式：點詞條只切換選取，執行入口在下方紅色按鈕。
     var socketPick = e.target.closest('#detail-pane [data-socket-pick]');
     if (socketPick) {
-      var socketIt = findSelItem(), socketMode = equipSocketModeFor(socketIt);
+      var socketIt = findSelItem(), socketMode = equipSlotPageModeFor(socketIt);
       var socketIdx = parseInt(socketPick.getAttribute('data-socket-pick'), 10);
-      if (socketMode && !isUiCommandPending(itemPendingKey(socketIt.id)) && socketIdx >= 0 && socketIdx < socketIt.sockets.length) {
+      if (socketMode && !isUiCommandPending(itemPendingKey(socketIt.id)) && socketIdx >= 0 && socketIdx < equipSlotsOf(socketIt, socketMode.mode).length) {
         socketMode.selIdx = socketIdx;
         delete socketMode.advanceFrom;
         if (!syncEquipSocketControls(socketIt, socketMode)) renderDetail();
@@ -12883,9 +12890,8 @@ function initUI() {
         UI.equipRerollMode = null;
         var wantMode = act === 'toggle-socket' ? 'socket' : 'rune';
         var curMode = UI.equipMatMode && UI.equipMatMode.itemId === matIt.id ? UI.equipMatMode.mode : null;
-        UI.equipMatMode = wantMode === 'socket' && curMode === 'socket' ? UI.equipMatMode :
-          (curMode === wantMode ? null : { itemId: matIt.id, mode: wantMode });
-        equipSocketModeFor(matIt);
+        UI.equipMatMode = curMode === wantMode ? UI.equipMatMode : { itemId: matIt.id, mode: wantMode };
+        equipSlotModeFor(matIt, wantMode);
         hideTooltip();
         renderDetail();
         return;
@@ -12983,7 +12989,7 @@ function initUI() {
       );
       return;
     }
-    // 符文鑲嵌（符文面板點符文圖示）／取下（符文面板開啟時點詳情裡已鑲的符文）
+    // 符文鑲嵌（符文鑲嵌頁點符文圖示，鑲進選中的孔）／取下（孔右側的「卸下」）
     var rsk = e.target.closest('[data-rune-socket]');
     if (rsk) {
       if (!rsk.disabled) socketRuneToSelected(rsk.getAttribute('data-rune-socket'));
@@ -12992,8 +12998,8 @@ function initUI() {
     var rrm = e.target.closest('[data-rune-remove]');
     if (rrm) {
       var rmIt = findSelItem();
-      if (rmIt && UI.tab === 'equip' && !equipRerollModeFor(rmIt) && UI.equipMatMode && UI.equipMatMode.itemId === rmIt.id && UI.equipMatMode.mode === 'rune') {
-        if (isUiCommandPending(itemPendingKey(rmIt.id))) return;
+      if (rmIt && UI.tab === 'equip' && equipRuneModeFor(rmIt)) {
+        if (rrm.disabled || isUiCommandPending(itemPendingKey(rmIt.id))) return;
         sendUiCommand('rune.unsocket', { itemId: rmIt.id, index: parseInt(rrm.getAttribute('data-rune-remove'), 10) }, {
           keys: [itemPendingKey(rmIt.id)],
           panels: ['inv', 'equip', 'gems', 'header']

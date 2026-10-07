@@ -142,13 +142,13 @@ test('index.html 與 ui.js 的接線：分頁、script／css、面板訂閱、so
   const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
   assert.match(ui, /runes: \['gems', 'equip', 'header'\]/);
   assert.match(ui, /data-rune-socket/);
-  assert.match(ui, /sendUiCommand\('rune\.socket'/);
-  // 符文取代附魔的位置：裝備頁操作列是「符文」、不再有「附魔」按鈕；符文面板與取下都走符文孔指令
+  assert.match(ui, /sendSlotSocketCommand\(it, mode, 'rune\.socket'/);
+  // 符文取代附魔的位置：裝備頁操作列是「符文」、不再有「附魔」按鈕；符文鑲嵌頁的鑲入與取下都走符文孔指令
   assert.match(ui, /data-act="toggle-rune"/);
   assert.doesNotMatch(ui, /data-act="toggle-enchant"/);
   assert.match(ui, /sendUiCommand\('rune\.unsocket'/);
-  assert.match(ui, /equipRunePanelHTML/);
-  assert.doesNotMatch(ui, /socketSelectedRune/, '符文不再走寶石鑲孔的選孔流程');
+  assert.match(ui, /equipRuneGridHTML/);
+  assert.match(ui, /socketRuneToSelected/, '符文鑲嵌頁：選孔後點符文鑲進該孔（與寶石同一套選孔流程）');
   const worker = fs.readFileSync(path.join(root, 'js/worker/sim.worker.js'), 'utf8');
   assert.match(worker, /runeword_data\.js\?v=/);
   assert.match(worker, /'\.\.\/runeword\.js\?v=/);
@@ -388,7 +388,7 @@ test('符文庫與圖鑑：格子、選中大圖、攤開的配方標籤用石�
   assert.doesNotMatch(c.els['rune-focus'].innerHTML.split('rx-uses')[1], /<img/, '未激活的用途不得有圖');
 });
 
-test('裝備詳情的符文孔、符文面板、背包角標都用石頭圖', () => {
+test('裝備詳情的符文孔、符文鑲嵌頁的符文格、背包角標都用石頭圖', () => {
   const c = mount();
   c.setPanels({ gems: {}, fusedGems: [], runes: { r13: 2, r25: 1 }, runewordSeen: {} });
   const it = { id: 'w', slot: 'weapon', weaponType: 'sword1h', rarity: 5, level: 100, sockets: [], runes: ['r13', 'r25', null, null], affixes: [] };
@@ -396,7 +396,7 @@ test('裝備詳情的符文孔、符文面板、背包角標都用石頭圖', ()
   assert.equal((detail.match(/<img class="rune-stone rs-row"/g) || []).length, 2);
   assert.match(detail, /stone-r13\.png/);
   assert.match(detail, /stone-r25\.png/);
-  const panel = c.equipRunePanelHTML(it, c.uiGemsPanelSnapshot());
+  const panel = c.equipRuneGridHTML(it, c.uiGemsPanelSnapshot());
   assert.equal((panel.match(/<img class="rune-stone rs-icon"/g) || []).length, 2, '只列出持有的符文');
   assert.match(panel, /data-rune-socket="r25"[^>]*>\s*<img/);
   const badge = c.itemRuneBadgeHTML(it);

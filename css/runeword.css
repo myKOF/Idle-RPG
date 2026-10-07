@@ -266,13 +266,11 @@
 #tab-runes .rx-lines .rx-unknown { color: var(--c); opacity: .7; letter-spacing: .08em; }
 #tab-runes .rx-flavor { font-size: 11px; color: #7f7a70; font-style: italic; }
 
-/* ---- 裝備詳情：符文孔與符文真言橫幅（js/item.js itemRuneHTML；取代原本附魔欄位的位置）---- */
+/* ---- 裝備詳情：符文孔與符文真言橫幅（js/item.js itemRuneHTML；取代原本附魔欄位的位置）----
+   符文鑲嵌頁的孔列、選取框、「卸下」鈕與下方的格子，沿用寶石鑲嵌頁的樣式（css/ashen-forge.css 的 .socket-row／.equip-socket-gem-grid）。 */
 .it-sockets .socket.rune-socket .sk-name { color: #d8c9a0; }
 .it-sockets .socket.rune-socket .rs-row { display: inline-block; width: 20px; height: 20px; margin: -4px 2px -4px 0; vertical-align: middle; }
 .it-sockets .socket.runeword-socket { box-shadow: inset 0 0 0 1px #7a6440; }
-/* 符文面板開啟時，已鑲的符文可點擊取下（比照附魔的 .it-enchant.removable） */
-.it-sockets .socket.rune-socket.removable { cursor: pointer; }
-.it-sockets .socket.rune-socket.removable:hover { background: #2a1e2e; border-color: var(--bad, #f87171); text-decoration: line-through; }
 /* 背包格角標：鑲了符文（取代附魔角標），成形符文真言為金色 */
 .ic-rune { position: absolute; bottom: 1px; right: 3px; display: inline-flex; align-items: center; gap: 1px; font-size: 10px; color: #d8c9a0; }
 .ic-rune .rs-badge { width: 18px; height: 18px; margin: -3px 0; filter: drop-shadow(0 1px 1px #000c); }
