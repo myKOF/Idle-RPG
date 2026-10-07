@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## WINDCHASER-SPIN-RADIUS6-20261007 — 逐風者真空迴旋特效半徑6米
+
+- Owner：Codex；Done。使用者要求縮小逐風者追加真空迴旋的特效至半徑6米；單一開發者。保留四段單體傷害、觸發率、增傷與事件時長，不改真空斬技能本體。
+- 範圍：js/vfx-runtime.js、既有Runtime回歸測試、docs/vfx/VFX_RUNTIME_ADAPTER.md、主頁／Editor Runtime快取及本次紀錄。Preset已宣告radiusM=6、authored.radius=272，本次修正忽略尺寸宣告的逐風者播放分支，不修改Excel／CSV／技能模擬／Worker／共用Preset／素材。
+- 預檢：Runtime／測試／Adapter說明／Editor無衝突；index與本紀錄涉及Claude b6bb1c63寶石、8b0c89b2符文及同副本進行中場景接線。使用者已同意分段，只改Runtime快取與新增此段，完整保留其他內容；場景工作由原聊天提交。
+- 驗收：正式Preset宣告6米換算、逐敵人跟隨中尺寸不被重設、事件時長／回收與舊追加斬擊相容；定向回歸、Build、隔離正式Renderer檢視與diff查核後提交。禁止合併／推送、改其他副本或真人存檔。
+- 使用者修改一併提交：處理期間Skills2.xlsx另有使用者儲存的施法消耗、連斬與神諭參數／說明共13格差異。依先前「包含我改的一起commit」，原樣保留工作簿並只同步Skills2 CSV／JS及必要主端／Worker快取；不改config_tables工具或其他表。技能／CSV無衝突；bridge／sim.worker仍只有先前已獲准分段修改的Claude8b0c89b2快取與符文引用，沿用授權保留符文內容。
+- 完成：逐風者旋轉本體改由defaultSize換算Preset宣告的radiusM=6及authored.radius=272，以1米10世界單位得到60／272等比縮放（原先scale1約27.2米）。逐敵人播放及移動跟隨中維持該尺寸；四段傷害、20%觸發率、事件0.8秒與受擊特效不变。舊追加斬擊與其他技能共用Preset播放分支未改，不新增寫死特效來源或素材。
+- 使用者Excel保留：最終已關閉活頁簿／CSV逐格及序列化位元一致；Skills2讀表回寫後語意變更0。突刺各階／超神消耗、虛空碎裂斬次數與增傷、天霸風神斬間隔成長及簡化說明原樣同步，並補齊Excel原已為12米但JS仍8米的迴旋斬本體範圍。該範圍的掃波測試改用10.5米敵人，保持「前緣到達前不命中、每道一次」驗收及明確12米期望值，沒有更改最高權威資料配合舊斷言。Skills2.xlsx未由本次工具改寫。
+- 修改12檔：js/vfx-runtime.js、tests/vfx-runtime.test.cjs、tests/cleave-rework.test.cjs、docs/vfx/VFX_RUNTIME_ADAPTER.md、index.html、tools/vfx/editor/index.html、config/Excel/Skills2.xlsx、config/CSV/Skills2.csv、js/skills2.js、js/bridge.js、js/worker/sim.worker.js、本紀錄。主頁／Editor Runtime1.0.178、skills2 1.0.289、bridge1.0.233；Worker Asset與skills2 import token為20261007-wind-chaser-radius6，協議48不變。檢查但未修改AI規範、config_tables、Core／PixiBackend／battlefield米制、正式slash-wind-spin／shipped-assets與素材庫；同副本場景修改及符文／寶石內容保留。
+- 測試指令：`node --test --test-name-pattern='WIND-CHASER' tests/vfx-runtime.test.cjs`2/2；`node --test tests/skill2-wind-chaser.test.cjs tests/vfx-load-shedding.test.cjs tests/vfx-duration.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs tests/skills2-vfx-schema.test.cjs tests/skills2-vfx-usage.test.cjs`77/77；`node --test tests/vfx-runtime.test.cjs tests/cleave-rework.test.cjs`140项、131通過／9既有失敗（與上一輪相同名稱：cleave5項及FIELD／CATALOG-3／CHAIN／STARFALL-TAIL）。`node tools/config_tables.cjs --apply Skills2`語意變更0、`npm.cmd run build`468檔與`git diff --check`通過。
+- 正式渲染：隔離headless Edge／隨機Port唯讀HTTP、新Context載入正式Pixi／Core／Backend／Preset及160素材索引；確認貼圖載入後對照d21067f2原Adapter，逐敵人移動後可見尺寸兩軸均為原先60／272、半徑宣告6米，0.4秒active1、0.9秒active0，Console error／warning0。首輪夾具在Core建節點前等待貼圖，量到空貼圖邊界；改在首幀後等待真貼圖並加入實際尺寸門檻，重驗通過，產品程式無另改。未讀寫真人存檔，服務／瀏覽器已關閉，臨時腳本及日誌刪除。
+- 提交／交付：Commit為本紀錄所在`[Codex] fix: 逐風者真空迴旋特效縮至6米`，包含使用者Excel及其同源同步。Preset／素材庫無修改、無素材Commit。本次無未完成項目，可審查合併；9項既有回歸失敗保留，未驗收長時間真人戰鬥。同副本進行中場景內容依使用者授權保留未提交，由原聊天交付，不合併／推送。下一步重載遊戲驗收；Editor未儲存內容先另存備份再重載，勿直接覆蓋新版。
+
 ## WINDCHASER-SPIN4-20261007 — 逐風者真空迴旋四段
 
 - Owner：Codex；Done。使用者指定觸發真空迴旋，4段各100%風系傷害、每級+10%；保留當前Excel自行調整的20%觸發率與迴旋斬增傷，單一開發者。逐敵人判定，原敵人連續4段、每段0.2秒，不新增傷害範圍或借用真空斬技能樹加成。

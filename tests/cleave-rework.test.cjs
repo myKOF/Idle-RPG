@@ -71,11 +71,14 @@ test('CLEAVE 第六階實際引用的藍色刀光已套用尺寸修正',()=>{
  assert(preset.layers.filter(l=>l.id.startsWith('blade-glow-')).every(l=>l.alpha<=.08));
 });
 test('CLEAVE 圓形刀波向四周擴張、到達才命中且每道只打一次',()=>{
- const h=setup();h.cast();assert.equal(h.hits.length,0);h.tick(.1);assert.equal(h.hits.length,0);
+ const h=setup();
+ // 表定本體半徑12米；敵人放在10.5米，驗證前緣抵達前不會提前命中。
+ h.enemies[0].pos.x=105;h.enemies[1].pos.x=-105;h.enemies[2].pos.y=105;
+ h.cast();assert.equal(h.hits.length,0);h.tick(.1);assert.equal(h.hits.length,0);
  for(let i=11;i<=80;i++)h.tick(i/100);
  assert.deepEqual(h.hits.map(x=>x.e.name).sort(),['back','front','side']);
  assert(h.hits.every(x=>x.dmg===2200));assert.equal(h.c.SKILL2_RT.projectiles.length,0);
- assert.equal(h.events[0].vfx.attack,'slash-cleave-ring-warm');assert.equal(h.events[0].area.r,80);
+ assert.equal(h.events[0].vfx.attack,'slash-cleave-ring-warm');assert.equal(h.events[0].area.r,120);
 });
 test('CLEAVE 連斬與七階相加、每波延遲及範圍一致，無四方重複',()=>{
  const h=setup([1,1,1,1,1,1,1]);h.cast();

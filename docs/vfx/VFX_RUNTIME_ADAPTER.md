@@ -487,7 +487,7 @@ Pixi 後端寫入 1.1、Pixi 渲染約 2.1）。滾雪球的是 `burst-icearrow-
 | sgCastThrust 1919 | thrust／-parallel／-pierce／-octagonal | `vfxTier: octagonal?7 : pierce?6 : parallel?4 : 1` |
 | sgCastCleave 2144 | cleave／-shockwave／-cross-shockwave | `vfxTier: cross?7 : isFlying?6 : 1` |
 | sgCleaveWhirlwind 2010 | wind-spin | `vfxGid:'vacuumslash', vfxTier:4` |
-| sgCleaveOnHit（逐風者） | wind-chaser-spin | `vfxUlt:'windChaser'`，每個觸發敵人各播一次表定 attack，旋轉本體跟隨該敵人、原尺寸並對齊四段總時長；每段命中獨立派送 hit，MISS不播放hit，不建立龍捲場域或增加傷害範圍 |
+| sgCleaveOnHit（逐風者） | wind-chaser-spin | `vfxUlt:'windChaser'`，每個觸發敵人各播一次表定 attack，旋轉本體跟隨該敵人、依 Preset 米制尺寸（目前半徑6米）換算並對齊四段總時長；每段命中獨立派送 hit，MISS不播放hit，不建立龍捲場域或增加傷害範圍 |
 | sgSpawnGround 'gale' 2519（windtornado，傳奇風捲殘雲） | — | cfg `vfxGid:'cleave', vfxUlt:'windChaser'` |
 | sgKnifeBounceChain 2308 | knife-bounce／knife-soulhunter | bounce `vfxTier:3`；soulhunter `vfxUlt:'soulhunterBlade'` |
 | sgKnifeSplit 2339 | knife-bounce | `vfxTier:3` |

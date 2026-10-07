@@ -437,8 +437,12 @@ test('WIND-CHASER 追加斬擊與受擊特效逐敵人播放，保留配置尺�
   }
 });
 
-test('WIND-CHASER-SPIN 四段旋轉本體只播一次，逐敵人跟隨且維持原尺寸與事件時長', () => {
+test('WIND-CHASER-SPIN 四段旋轉本體逐敵人跟隨，維持表定6米半徑與事件時長', () => {
+  const sizing=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/slash-wind-spin.json'),'utf8')).sizing;
+  assert.equal(sizing.radiusM,6);assert.equal(sizing.authored.radius,272);
+  for(const authoredSizing of [null,sizing]) {
   const preset=unitPreset('configured-chaser-spin',.2), pos={a:{x:90,y:40},b:{x:220,y:70}};
+  if(authoredSizing)preset.sizing=authoredSizing;
   const {adapter,log}=makeAdapter([preset],{profile:{scale:.3},ctx:{
     posOf:id=>({...pos[id]}),playerPos:()=>({x:0,y:0}),chainPoint:id=>pos[id]}});
   adapter.tryPlay({fxKind:'slash',variant:'wind-chaser-spin',dur:.8,
@@ -447,8 +451,11 @@ test('WIND-CHASER-SPIN 四段旋轉本體只播一次，逐敵人跟隨且維持
   pos.a={x:120,y:45};adapter.update(.2);
   assert.equal(adapter.stats().fx.activeEffects,2);
   assert.deepEqual(log.nodes.map(n=>({x:n.transforms.at(-1).x,y:n.transforms.at(-1).y})),[pos.a,pos.b]);
-  for(const node of log.nodes)assert.equal(node.transforms.at(-1).scaleX,1);
+  for(const node of log.nodes)for(const axis of ['scaleX','scaleY'])
+    assert.ok(Math.abs(node.transforms.at(-1)[axis]-(authoredSizing ? .22058823529411764 : 1))<1e-9,
+      '跟隨更新保留60世界單位半徑，不受場景倍率或原繪製尺寸影響');
   adapter.update(.51);assert.equal(adapter.stats().fx.activeEffects,0);
+  }
 });
 
 test('THUNDER-FLASH 光束原點、100×10米矩形與方向取自事件，伸展時間同步且不受場景倍率改變',()=>{

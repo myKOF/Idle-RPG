@@ -1685,14 +1685,16 @@ var VFXRuntime = (function () {
           break;
         case 'attack':
           if (spec.variant === 'wind-chaser-slash' || spec.variant === 'wind-chaser-spin') {
-            // 追加斬擊以本次命中敵人為原點，沿用配置原尺寸與模擬方向。
+            // 追加斬擊以命中敵人為原點；真空迴旋依配置的米制尺寸換算。
             var chaserIds = spec.targets || [];
             for (var ci = 0; ci < chaserIds.length; ci++) {
               var chaserParams = {
-                scaleX: 1, scaleY: 1, position: ctx.posOf(chaserIds[ci]),
+                position: ctx.posOf(chaserIds[ci]),
                 depthY: footOf(chaserIds[ci]).y,
                 rotation: planePresets[presetId] && isNum(spec._planeAngle) ? spec._planeAngle : num(spec.angle, 0)
               };
+              Object.assign(chaserParams, spec.variant === 'wind-chaser-spin'
+                ? defaultSize(presetId) : {scaleX:1, scaleY:1});
               if (spec.variant === 'wind-chaser-spin' && spec.dur > 0) chaserParams.timeScale = presetDurations[presetId] / spec.dur;
               var chaserRef = play(fxRtFor(presetId), presetId, chaserParams, 1);
               if (chaserRef) {

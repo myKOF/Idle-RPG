@@ -14,7 +14,7 @@ importScripts('protocol.js?v=48', 'shim.js?v=11');
 importScripts(
   '../util.js?v=20260922-firegod-formation', '../data.js?v=20261007-runes4', '../runeword_data.js?v=20261007-rune-seen', '../status.js?v=20261005-cc-decay-count', '../formula.js?v=20261007-runes4', '../battlefield.js?v=20261005-cc-decay-count', '../stats.js?v=20261003-rename-weineng',
   '../item.js?v=20261007-rune-seen', '../runeword.js?v=20261007-rune-seen',
-  '../skills.js?v=20261007-runes4', '../skills2.js?v=20261007-wind-chaser-spin4', '../talents.js?v=20261003-rename-weineng',
+  '../skills.js?v=20261007-runes4', '../skills2.js?v=20261007-wind-chaser-radius6', '../talents.js?v=20261003-rename-weineng',
   '../player.js?v=20261007-rune-seen', '../special_rules.js',
   '../combat.js?v=20261007-rune-seen', '../legendary.js?v=20261007-runes4', '../potential.js?v=20261005-cc-decay-count', '../tower.js?v=20261007-rune-seen',
   '../factory.js?v=20261007-runes4', '../newforge.js', '../forge.js?v=20261007-runes4', '../save.js?v=20261007-rune-seen',
