@@ -15,12 +15,13 @@ self.document = {
   createElement: function () { return new OffscreenCanvas(1, 1); }
 };
 
-importScripts('../decor-sculpt.js?v=1.0.0', '../decor-nature.js?v=1.0.0', '../battle-decor.js?v=1.0.10');
+importScripts('../decor-sculpt.js?v=1.0.0', '../decor-nature.js?v=1.0.6', '../battle-decor.js?v=1.0.16');
 
-self.onmessage = function (e) {
+self.onmessage = async function (e) {
   var m = e.data || {};
   var key = (m.kitKey || '') + (m.deep ? '#deep' : '');
   try {
+    await DecorNature.loadImages(new URL('../../',self.location.href).href);
     var plan = BattleDecor.buildAtlas(m.kitKey, !!m.deep);
     var bitmap = plan.canvas.transferToImageBitmap();
     self.postMessage({ id: m.id, key: plan.key, bitmap: bitmap }, [bitmap]);

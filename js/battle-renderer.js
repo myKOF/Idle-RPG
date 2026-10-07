@@ -1231,20 +1231,20 @@ var BattleRenderer = (function () {
         g.fill();
       }
     }
-    g.strokeStyle = 'rgba(0,0,0,0.18)';
-    g.lineWidth = 1;
-    g.strokeRect(0.5, 0.5, 95, 95);
+    // 備援材質也不描貼圖邊框，避免圖檔尚未就緒時露出方格。
     return PIXI.Texture.from(c);
   }
   var _groundTexCache = {};
+  var GROUND_ASSET_VERSION = '20261007-scene-rebuild';
   function loadGroundTexture(zoneKey) {
     var name = zoneKey ? ('ground_' + zoneKey) : 'ground_default';
     if (_groundTexCache[name] === 'failed') return;
     if (_groundTexCache[name]) { applyGroundTexture(_groundTexCache[name]); return; }
     _groundTexCache[name] = 'loading';
-    PIXI.Assets.load('images/ground/' + name + '.png').then(function (tex) {
+    PIXI.Assets.load('images/ground/' + name + '.png?v=' + GROUND_ASSET_VERSION).then(function (tex) {
       _groundTexCache[name] = tex;
-      if (S.zoneKey === zoneKey || name === 'ground_default') applyGroundTexture(tex);
+      // 通用貼圖晚到不可蓋掉已選地貌，只在該地貌載入失敗時作後備。
+      if (S.zoneKey === zoneKey || name === 'ground_default' && _groundTexCache['ground_' + S.zoneKey] === 'failed') applyGroundTexture(tex);
     }).catch(function () {
       _groundTexCache[name] = 'failed';
       if (name !== 'ground_default') loadGroundTexture(null);   // 退回通用底圖
@@ -1263,7 +1263,7 @@ var BattleRenderer = (function () {
      貼圖是可四方連續的，所以取一個週期的餘數就好。角色的世界座標會隨著推進一路長大
      （一場下來幾十萬），直接丟給 tilePosition 會踩到 float32 的精度上限，地板開始抖；
      取餘數之後畫面完全一樣，數值永遠是小數。圖樣轉過 GROUND_TILE_ROTATION，
-     週期是邊長 × GROUND_TILE_PERIOD（貼圖必須是正方形，images/ground/*.png 都是 128×128）。 */
+     週期是邊長 × GROUND_TILE_PERIOD（貼圖必須是正方形，images/ground/*.png 都是 256×256）。 */
   function syncGroundScroll(cam, shx, shy) {
     var g = S.groundTile;
     if (!g) return;
@@ -7491,6 +7491,7 @@ var BattleRenderer = (function () {
       eventFeatures: { move: false, globalMove: false, click: false, wheel: false }
     }).then(function () {
       return Promise.all([
+        DecorNature.loadImages(),
         /* 2026-09-22 主角換成 8 方向的騎士（Clarice 的 player.png／player.json 留在原處沒刪）。
            圖集與幀定義由 tools/build_character_sprites.cjs 從素材庫 characters/knight-hd 產生。 */
         loadSheet('player', 'images/sprites/knight/knight', { outline: true }),

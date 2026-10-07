@@ -2,7 +2,7 @@
 """可無縫拼接的地板貼圖產生器。
 
 輸出 images/ground/*.png，由 js/battle-renderer.js 以 TilingSprite 平鋪。
-正式美術圖到位後直接替換同名檔案即可（維持可四方連續、建議 128×128 或其倍數）。
+256×256 原創材質，不畫規則磚縫；所有輸出均保存於素材庫。
 
 刻意做得「淡」：地板只是襯底，對比太高會蓋過敵人與傷害數字。
 所有花紋以模數運算繞回，保證上下左右接縫連續。
@@ -16,7 +16,7 @@ import random
 from PIL import Image, ImageDraw, ImageFilter
 
 OUT_DIR = os.path.join(os.path.dirname(__file__), '..', 'images', 'ground')
-SIZE = 128
+SIZE = 256
 
 
 def blend(base, over, a):
@@ -45,13 +45,13 @@ def seamless_noise(size, seed, scale, low, high):
     return grid
 
 
-def make_tile(name, base_rgb, speckle_rgb, seed, grout=True, crack=True):
+def make_tile(name, base_rgb, speckle_rgb, seed, grout=False, crack=True):
     img = Image.new('RGB', (SIZE, SIZE), base_rgb)
     px = img.load()
     rnd = random.Random(seed)
 
     # 大面積明暗起伏：避免整片死板的純色
-    noise = seamless_noise(SIZE, seed, 1, -0.05, 0.05)
+    noise = seamless_noise(SIZE, seed, 1, -0.07, 0.07)
     for y in range(SIZE):
         for x in range(SIZE):
             k = 1 + noise[y][x]
@@ -61,7 +61,7 @@ def make_tile(name, base_rgb, speckle_rgb, seed, grout=True, crack=True):
 
     # 接縫線（磚縫）：位置固定在邊界上，四方連續必定接得起來
     if grout:
-        line = blend(base_rgb, (0, 0, 0), 0.28)
+        line = blend(base_rgb, (0, 0, 0), 0.015)
         d.line([(0, SIZE // 2), (SIZE, SIZE // 2)], fill=line, width=1)
         d.line([(SIZE // 2, 0), (SIZE // 2, SIZE // 2)], fill=line, width=1)
         d.line([(0, 0), (SIZE, 0)], fill=line, width=1)
@@ -69,8 +69,8 @@ def make_tile(name, base_rgb, speckle_rgb, seed, grout=True, crack=True):
 
     # 細裂紋：用模數包裝，跨邊界時自動接回另一側
     if crack:
-        crack_col = blend(base_rgb, (0, 0, 0), 0.18)
-        for _ in range(6):
+        crack_col = blend(base_rgb, (0, 0, 0), 0.08)
+        for _ in range(4):
             cx, cy = rnd.randrange(SIZE), rnd.randrange(SIZE)
             ang = rnd.random() * math.tau
             for _ in range(rnd.randint(12, 26)):
@@ -88,7 +88,12 @@ def make_tile(name, base_rgb, speckle_rgb, seed, grout=True, crack=True):
         x, y = rnd.randrange(SIZE), rnd.randrange(SIZE)
         px[x, y] = blend(px[x, y], (0, 0, 0), rnd.uniform(0.05, 0.18))
 
-    img = img.filter(ImageFilter.SMOOTH)
+    # 先鋪九份再平滑並裁中央，濾波同樣環繞，避免貼圖邊緣出現一像素接縫。
+    wrapped = Image.new('RGB', (SIZE * 3, SIZE * 3))
+    for ty in range(3):
+        for tx in range(3):
+            wrapped.paste(img, (tx * SIZE, ty * SIZE))
+    img = wrapped.filter(ImageFilter.SMOOTH).crop((SIZE, SIZE, SIZE * 2, SIZE * 2))
     os.makedirs(os.path.abspath(OUT_DIR), exist_ok=True)
     path = os.path.join(os.path.abspath(OUT_DIR), name + '.png')
     img.save(path)
@@ -97,14 +102,14 @@ def make_tile(name, base_rgb, speckle_rgb, seed, grout=True, crack=True):
 
 def main():
     # 一張通用底圖 + 各地圖色調。渲染器找不到地圖專屬圖時退回 ground_default。
-    make_tile('ground_default', (58, 58, 66), (150, 152, 165), 20260812)
-    make_tile('ground_desert', (86, 72, 48), (198, 176, 128), 1001)
-    make_tile('ground_Icefield', (60, 76, 92), (176, 206, 228), 1002)
-    make_tile('ground_swamp', (54, 70, 54), (150, 184, 140), 1003)
-    make_tile('ground_undead_mountains', (64, 56, 72), (168, 152, 186), 1004)
-    make_tile('ground_god_battlefield', (74, 58, 78), (200, 168, 206), 1005)
-    make_tile('ground_god_chaos', (66, 52, 84), (186, 158, 214), 1006)
-    make_tile('ground_god_sanctuary', (58, 66, 84), (170, 186, 216), 1007)
+    make_tile('ground_default', (58, 58, 63), (146, 147, 154), 20260812, crack=False)
+    make_tile('ground_desert', (104, 82, 53), (185, 153, 102), 1001, crack=False)
+    make_tile('ground_Icefield', (71, 90, 103), (188, 213, 226), 1002)
+    make_tile('ground_swamp', (46, 63, 46), (138, 166, 115), 1003, crack=False)
+    make_tile('ground_undead_mountains', (53, 49, 59), (129, 124, 139), 1004)
+    make_tile('ground_god_battlefield', (66, 54, 45), (151, 130, 105), 1005)
+    make_tile('ground_god_chaos', (52, 42, 66), (143, 119, 164), 1006)
+    make_tile('ground_god_sanctuary', (98, 96, 83), (189, 184, 158), 1007)
 
 
 if __name__ == '__main__':

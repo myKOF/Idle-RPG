@@ -3,6 +3,29 @@
  * 不讀外部素材，地表／地下配色由 BattleDecor 的地圖組合傳入。 */
 var DecorNature = (function () {
   'use strict';
+  var SPRITE_FILES={willow:'willow',deadTree:'burnt-tree',pine:'snow-pine',giantBones:'beast-bones',cactus:'cactus',ice:'ice-cluster',void:'void-crystal',log:'fallen-log',stump:'swamp-stump',runeStone:'rune-stele',pillar:'stone-column',arch:'ruined-arch',ruinWall:'ruined-wall',rubble:'fallen-masonry',urn:'weathered-urn',grave:'old-gravestone'};
+  var sprites={},loading=null;
+  var scriptRoot=typeof document!=='undefined'&&document.currentScript?new URL('../',document.currentScript.src).href:null;
+  function registerImages(images){Object.keys(images).forEach(function(key){sprites[key]=images[key];});}
+  function loadImages(base,loader){
+    if(Object.keys(SPRITE_FILES).every(function(key){return !!sprites[key];}))return Promise.resolve();
+    if(loading)return loading;
+    base=base||scriptRoot||(typeof location!=='undefined'?new URL('./',location.href).href:'');
+    loader=loader||function(url){
+      if(typeof createImageBitmap==='function')return fetch(url).then(function(response){if(!response.ok)throw new Error('Scene sprite HTTP '+response.status+': '+url);return response.blob();}).then(function(blob){return createImageBitmap(blob);});
+      return new Promise(function(resolve,reject){var image=new Image();image.onload=function(){resolve(image);};image.onerror=function(){reject(new Error('Scene sprite load: '+url));};image.src=url;});
+    };
+    loading=Promise.all(Object.keys(SPRITE_FILES).map(function(key){
+      if(sprites[key])return;
+      return loader(new URL('images/scene/'+SPRITE_FILES[key]+'.png?v=20261007-simple-art',base).href).then(function(image){sprites[key]=image;});
+    })).then(function(){loading=null;},function(error){loading=null;throw error;});
+    return loading;
+  }
+  function wholeSprite(g,key,w,h){
+    var image=sprites[key];if(!image)throw new Error('完整場景素材尚未載入：'+key);
+    var k=Math.min(w/image.width,h/image.height),dw=image.width*k,dh=image.height*k;
+    g.drawImage(image,-dw/2,-dh,dw,dh);
+  }
   function rng(seed) {
     return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0;
       var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
@@ -150,7 +173,8 @@ var DecorNature = (function () {
     }
     moss(g,r,0,3,w*.4,4,35);
   }
-  function wood(g,r,w,h,fallen) {
+  function wood(g,r,w,h,fallen,style) {
+    style=style||DEFAULT_STYLE;
     var top=fallen?-h*.4:-h*.78;
     var left=fallen?-w*.46:-w*.25,right=fallen?w*.36:w*.27;
     if(!fallen) {
@@ -169,9 +193,12 @@ var DecorNature = (function () {
     ellipse(g,cx,cy,rx,ry,'#3a392b');ellipse(g,cx-1,cy-1,rx*.88,ry*.84,'#a49b72');
     for(var ring=1;ring<5;ring++){g.strokeStyle='#6b674a';g.lineWidth=.7;g.beginPath();g.ellipse(cx-2,cy-1,rx*ring/5,ry*ring/5,0,0,Math.PI*2);g.stroke();}
     stroke(g,[[cx-rx*.7,cy-ry*.55],[cx-rx*.12,cy+ry*.1],[cx+rx*.6,cy+ry*.3]],'#4b4b36',.8);
-    moss(g,r,fallen?-w*.13:-w*.17,top*.48,w*.28,h*.13,80);
-    moss(g,r,0,3,w*.41,5,60);grass(g,r,-w*.43,3,w*.3,12);
-    mushrooms(g,rng(Math.floor(r()*100000)),w*.26,h*.45);
+    if(style.moss){
+      moss(g,r,fallen?-w*.13:-w*.17,top*.48,w*.28,h*.13,80);
+      moss(g,r,0,3,w*.41,5,60);grass(g,r,-w*.43,3,w*.3,12);
+      mushrooms(g,rng(Math.floor(r()*100000)),w*.26,h*.45);
+    }
+    if(style.snow){ellipse(g,cx,cy-2,rx*.95,ry*.75,'#cedbd6');wash(g,0,3,w*.38,5,'rgba(197,217,218,.65)');}
   }
   function puddle(g,r,w,h) {
     var p=contour(r,0,0,w*.5,h*.5,28);
@@ -194,18 +221,86 @@ var DecorNature = (function () {
     for(var i=0;i<6;i++){var x=(r()-.5)*w,y=(r()-.5)*h;stroke(g,[[-w*.4,0],[x*.5,y*.4],[x,y]],'#252f23',5);stroke(g,[[-w*.4,-1],[x*.5,y*.4-1],[x,y-1]],'#626848',1.8);}
     if(style.moss){moss(g,r,-w*.25,-1,w*.25,h*.3,70);grass(g,r,-w*.32,2,w*.34,18);}
   }
+  /* 地貌造型：曲線樹皮、植被群落、風化雕刻與裂晶。全部原創路徑。 */
+  function shrub(g,r,w,h,style,dry) {
+    var chaos=style.theme==='god_chaos';
+    var colors=dry?(chaos?['#514341','#71605b','#917565']:['#746650','#948366','#b39a70']):chaos?['#403547','#665063','#8a635a']:style.snow?['#52746b','#77948a','#b8cec5']:style.theme==='god_sanctuary'?['#456652','#688565','#9caf86']:['#3d5e40','#5f754a','#8b965f'];
+    if(dry){for(var blade=0;blade<64;blade++){var bx=(r()-.5)*w*.6,by=-h*(.22+r()*.62),lean=(r()-.4)*w*.24;stroke(g,[[bx*.6,1],[bx+lean*.4,by*.5],[bx+lean,by]],colors[blade%3],.5+r()*.65);}return;}
+    for(var i=0;i<18;i++){
+      var x=(r()-.5)*w*.9,y=-h*(.2+r()*.65);
+      stroke(g,[[0,1],[x*.55,y*.55],[x,y]],chaos?'#493b43':dry?'#6f6048':'#3a4935',1+r());
+      for(var k=0;k<4;k++){
+        var t=.4+k*.15;g.save();g.translate(x*t,y*t);g.rotate((i%2?1:-1)*.6);
+        ellipse(g,0,0,1.5+r()*3,dry?2.5+r()*2:3.5+r()*3,colors[(i+k)%3]);g.restore();
+      }
+      if(style.theme==='god_sanctuary'||style.theme==='Icefield'||chaos&&i%3===0){
+        ellipse(g,x,y,2.2,1.7,chaos?'#9e4350':style.snow?'#c9e4ee':'#d9d0e1');ellipse(g,x-1,y-.6,.9,.7,chaos?'#c0886a':'#f2ecd0');
+      }
+    }
+  }
+  function block(g,r,x,y,w,h,style) {
+    var edge=w*.16;
+    var p=[[x-w*.5,y],[x-w*.5,y-h*.85],[x-w*.4,y-h],[x+w*.43,y-h*.94],[x+w*.5,y-h*.75],[x+w*.5,y-edge*.1],[x+w*.28,y+1]];
+    var gr=g.createLinearGradient(x-w*.5,y-h,x+w*.5,y);gr.addColorStop(0,style.light);gr.addColorStop(.48,style.stone);gr.addColorStop(1,style.dark);
+    poly(g,p);g.fillStyle=gr;g.fill();poly(g,[p[3],p[4],p[5],[x+w*.24,y],[x+w*.24,y-h*.9]]);g.fillStyle=mix(style.stone,style.dark,.5);g.fill();
+    stroke(g,[p[1],p[2],p[3]],mix(style.light,'#ffffff',.1),.9);
+    g.save();poly(g,p);g.clip();
+    for(var k=0;k<w*h*.08;k++)ellipse(g,x+(r()-.5)*w,y-r()*h,.3+r(),.3+r()*.6,r()<.5?'rgba(255,255,235,.11)':'rgba(0,0,0,.15)');
+    for(var j=0;j<4;j++){var cx=x+(r()-.5)*w*.75,cy=y-r()*h*.85;stroke(g,[[cx,cy],[cx-2,cy+4],[cx+3,cy+7]],mix(style.dark,'#000000',.15),.7);}
+    g.restore();
+  }
+  function relic(g,r,w,h,style,type) {
+    if(type==='banner'){
+      stroke(g,[[0,1],[w*.02,-h*.93]],'#2a2d2a',3);stroke(g,[[-1,0],[w*.02-1,-h*.93]],'#8a8b77',.9);
+      var p=[[0,-h*.9],[w*.44,-h*.87],[w*.41,-h*.65],[w*.28,-h*.57],[w*.33,-h*.72],[w*.15,-h*.61],[w*.12,-h*.72],[0,-h*.66]];
+      var gr=g.createLinearGradient(0,-h,w*.4,0);gr.addColorStop(0,'#936655');gr.addColorStop(.6,'#5f4540');gr.addColorStop(1,'#302e2d');poly(g,p);g.fillStyle=gr;g.fill();
+      stroke(g,[[w*.14,-h*.84],[w*.26,-h*.72],[w*.14,-h*.7],[w*.2,-h*.81]],'#b69b6c',.9);
+    }else{
+      g.save();g.rotate(-.17);block(g,r,0,0,w*.6,h*.2,style);poly(g,[[-w*.06,-h*.08],[-w*.055,-h*.74],[0,-h*.92],[w*.055,-h*.75],[w*.045,-h*.06]]);g.fillStyle='#7c8b89';g.fill();
+      stroke(g,[[0,-h*.14],[0,-h*.86]],'#bdc8bf',1.2);stroke(g,[[-w*.24,-h*.24],[w*.24,-h*.24]],'#8e7850',h*.045);g.restore();
+    }
+  }
+  function spire(g,r,w,h,style) {
+    for(var i=0;i<3;i++)boulder(g,r,(i-1)*w*.17,0,w*(.36+r()*.12),h*(i===1?.95:.65),style);
+    for(var j=0;j<6;j++)stroke(g,[[-w*.27,-h*(.15+j*.1)],[w*.16,-h*(.14+j*.1)]],mix(style.stone,style.light,.28),.7);
+  }
+
+  function drawArenaFloor(g,pal,seed,size) {
+    var r=rng(seed),S=size;
+    g.fillStyle=pal.floor;g.fillRect(0,0,S,S);
+    function wrap(fn){for(var dx=-S;dx<=S;dx+=S)for(var dy=-S;dy<=S;dy+=S){g.save();g.translate(dx,dy);fn();g.restore();}}
+    // 不規則火山岩雲紋與灰屑，可四向接續，不生成行列石板。
+    for(var i=0;i<38;i++){
+      var x=r()*S,y=r()*S,rx=20+r()*56,ry=12+r()*37,col=i%3?'rgba(0,0,0,.13)':'rgba(139,127,116,.04)';
+      wrap(function(){wash(g,x,y,rx,ry,col);});
+    }
+    for(var j=0;j<430;j++){
+      var px=r()*S,py=r()*S,sz=.2+r()*1.1,c=j%3?'rgba(0,0,0,.23)':'rgba(183,160,140,.08)';
+      wrap(function(){ellipse(g,px,py,sz,sz*.6,c);});
+    }
+    for(var k=0;k<4;k++){
+      var pts=[[r()*S,r()*S]];
+      for(var t=0;t<6;t++)pts.push([pts[t][0]+(r()-.3)*22,pts[t][1]+(r()-.5)*26]);
+      wrap(function(){stroke(g,pts,'rgba(0,0,0,.4)',1.5);});
+    }
+  }
   function drawBody(g,type,x,y,w,h,seed,style) {
     style=style||DEFAULT_STYLE;
     var r=rng(seed);g.save();g.translate(x,y);
-    if(type==='rock')rock(g,r,w,h,style);
+    if(type==='skullPile')wholeSprite(g,'giantBones',w,h);
+    else if(SPRITE_FILES[type]&&(type!=='stump'||!style.snow))wholeSprite(g,type,w,h);
+    else if(type==='crystals'||type==='spire'&&(style.theme==='Icefield'||style.theme==='god_chaos'))wholeSprite(g,style.theme==='Icefield'?'ice':'void',w,h);
+    else if(type==='rock')rock(g,r,w,h,style);
     else if(type==='fern')fern(g,r,w,h);
     else if(type==='reeds')reeds(g,r,w,h);
-    else if(type==='stump')wood(g,r,w,h,false);
-    else if(type==='log')wood(g,r,w,h,true);
+    else if(type==='stump')wood(g,r,w,h,false,style);
     else if(type==='mushrooms')mushrooms(g,r,w,h,style);
     else if(type==='puddle')puddle(g,r,w,h);
     else if(type==='roots')roots(g,r,w,h,style);
     else if(type==='grass')grass(g,r,0,0,w,35);
+    else if(type==='shrub'||type==='dryGrass')shrub(g,r,w,h,style,type==='dryGrass');
+    else if(type==='spire')spire(g,r,w,h,style);
+    else if(type==='banner'||type==='sword')relic(g,r,w,h,style,type);
     else throw new Error('Unknown nature prop: '+type);
     g.restore();
   }
@@ -226,5 +321,5 @@ var DecorNature = (function () {
     } else throw new Error('Unknown nature ground: '+type);
     g.restore();
   }
-  return { drawBody:drawBody, drawContact:drawContact, drawSurface:drawSurface };
+  return { drawBody:drawBody, drawContact:drawContact, drawSurface:drawSurface, drawArenaFloor:drawArenaFloor, loadImages:loadImages, registerImages:registerImages, spriteFiles:SPRITE_FILES };
 })();
