@@ -23,13 +23,12 @@ function makeGemInventory(gemTypes) {
   return gems;
 }
 
-test('寶石合成選單提供全部類型寶石，且不會混合不同種類', () => {
+test('全部類型合成：逐種類處理、不會混合不同種類；合成頁改用獨立的「全部類型合成」按鈕', () => {
   const root = path.resolve(__dirname, '..');
   const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
   const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  assert.match(ui, /fillGemTypeSelect\(\$id\('fuse-type'\), true\)/);
-  assert.match(ui, /GEM_TYPE_ALL/);
-  assert.match(index, /id="fuse-type"/);
+  assert.match(index, /id="fuse-alltypes-btn"/);
+  assert.match(ui, /\$id\('fuse-alltypes-btn'\)[\s\S]*?gem\.composeAll[\s\S]*?type: GEM_TYPE_ALL/);
 
   const context = loadGameContext();
   const gems = makeGemInventory(context.GEM_TYPES);
@@ -57,19 +56,55 @@ test('寶石合成改為 3 合 1，兩顆不足且不扣除資源', () => {
   assert.equal(context.G.player.gold, context.FUSE_GOLD_COST[1]);
 });
 
-test('寶石合成選單將全部類型寶石置頂、標黃並預設選中', () => {
+test('合成頁沒有種類與等級下拉：種類取自寶石庫的選擇，階級取自十階列的點擊', () => {
   const root = path.resolve(__dirname, '..');
   const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
-  const fillBody = ui.match(/function fillGemTypeSelect\(sel, includeAll\) \{([\s\S]*?)\n\}/);
+  const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  assert.doesNotMatch(index, /id="fuse-type"|id="fuse-level"/, '合成頁不該再有種類／等級下拉');
+  assert.doesNotMatch(ui, /\$id\('fuse-type'\)|\$id\('fuse-level'\)/);
+  // 下拉選單的「全部類型寶石」選項已移除（轉換目標與拆解的種類下拉不需要它）
+  const fillBody = ui.match(/function fillGemTypeSelect\(sel\) \{([\s\S]*?)\n\}/);
   assert.ok(fillBody, '找不到 fillGemTypeSelect');
+  assert.doesNotMatch(fillBody[1], /GEM_TYPE_ALL/);
+  // 十階列：每階一個按鈕，附這一階的寶石圖；點了呼叫 setGemFuseLevel
+  assert.match(ui, /data-gem-lv="' \+ lv \+ '"/);
+  assert.match(ui, /gemIconHTML\(type, lv, 'gi-curve'\)/);
+  assert.match(ui, /t\.closest\('\[data-gem-lv\]'\)[\s\S]*?setGemFuseLevel\(/);
+  // 合成指令取自 UI.gemBrowse.sel／fuseLv
+  assert.match(ui, /function fuseTarget\(\) \{ return \{ t: UI\.gemBrowse\.sel, lv: UI\.gemBrowse\.fuseLv \|\| 1 \}; \}/);
+});
 
-  const body = fillBody[1];
-  const allOption = body.indexOf('GEM_TYPE_ALL');
-  const gemTypeLoop = body.indexOf('for (var t in GEM_TYPES)');
-  assert.ok(allOption >= 0, '找不到全部類型寶石選項');
-  assert.ok(allOption < gemTypeLoop, '全部類型寶石應排在所有寶石種類前面');
-  assert.match(body, /style="color:#f5c542;font-weight:bold"/);
-  assert.match(body, /selected>💎 全部類型寶石/);
+test('合成配方：1～4 階 3 合 1，五階以上顯示「×6 神鑄」並升到下一階，十階是最高階', () => {
+  const root = path.resolve(__dirname, '..');
+  const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
+  const context = loadGameContext();
+  context.esc = (v) => String(v);
+  context.fmt = (v) => String(v);
+  context.GEM_TIER_COLORS = { 1: '#9aa5b1', 2: '#4ade80', 3: '#38bdf8', 4: '#c084fc', 5: '#ffd700', 6: '#fb923c', 7: '#f87171', 8: '#b8860b', 9: '#f5c542', 10: '#7df9ff' };
+  const grab = (name) => {
+    const m = ui.match(new RegExp('function ' + name + '\\([^)]*\\) \\{[\\s\\S]*?\\n\\}'));
+    assert.ok(m, '找不到 ' + name);
+    return m[0];
+  };
+  vm.runInContext(grab('gemSocketHTML') + '\n' + grab('fuseRecipeHTML'), context);
+  const count = (h, re) => (h.match(re) || []).length;
+
+  const r1 = context.fuseRecipeHTML('ruby', 1);
+  assert.equal(count(r1, /gx-socket"/g) + count(r1, /gx-socket /g), 4, '3 顆原料＋1 顆成品');
+  assert.match(r1, /gem-ruby-01\.png/);
+  assert.match(r1, /gem-ruby-02\.png/);
+  assert.match(r1, /gx-recipe-cost"><img[^>]*>100/, '一級升二級的金幣');
+
+  const r5 = context.fuseRecipeHTML('ruby', 5);
+  assert.match(r5, /gem-ruby-05\.png/);
+  assert.match(r5, /gem-ruby-06\.png/, '五級升六級');
+  assert.match(r5, /gx-recipe-mult">×6</, '神鑄要 6 顆');
+  assert.match(r5, /gx-recipe-cost">神鑄</);
+
+  const r10 = context.fuseRecipeHTML('ruby', 10);
+  assert.match(r10, /gem-ruby-10\.png/);
+  assert.match(r10, /已是最高階/);
+  assert.doesNotMatch(r10, /gx-recipe-arrow|gx-recipe-mult/, '十級不能再鑄，沒有箭頭也沒有 ×6');
 });
 
 test('全部類型寶石全部合成時會逐種類處理可合成庫存', () => {
@@ -104,7 +139,7 @@ test('寶石合成介面與紀錄使用共用 3 合 1參數', () => {
   const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
   const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 
-  assert.match(ui, /Math\.floor\(allCount \/ GEM_COMPOSE_INPUT_COUNT\)/);
+  assert.match(ui, /Math\.floor\(gemsViewCount\(gemsSnapshot, allType, lv\) \/ GEM_COMPOSE_INPUT_COUNT\)/);
   assert.match(ui, /Math\.floor\(n \/ GEM_COMPOSE_INPUT_COUNT\)/);
   assert.match(ui, /GEM_COMPOSE_INPUT_COUNT[\s\S]*sendGemUiCommand\(\s*['"]gem\.composeAll['"]/);
   assert.match(index, /消耗 3 顆「同種類、同等級」寶石/);

@@ -2323,10 +2323,10 @@ var GEM_TYPES = {
 };
 /* 寶石圖：images/gems/gem-<key>-<階>.png（80×80 透明 PNG，48 種 × 10 階）。
    階數決定外形（碎塊→…→圓形多邊，刻面與星芒隨階數增加）、種類決定顏色與材質；
-   元素類另有家族記號：「核」寶石內部有發光核心，「抗」寶石後方有一片柔和光暈。
+   光暈只看階數：1～5 階沒有，6 階起淡淡出現、10 階最濃；元素類另有「核」寶石內部有發光核心的記號。
    程式產生（tools/gems），原稿在素材庫 claude-authored/gems。換圖時 +1 GEM_ICON_VER
    （檔名沒有版本字尾，靠查詢字串破快取）。顯示入口是 js/item.js 的 gemIconHTML。 */
-var GEM_ICON_VER = 1;
+var GEM_ICON_VER = 3;
 function gemIconSrc(type, level) {
   var lv = Math.max(1, Math.min(GEM_FORGE_MAX_LEVEL, Math.floor(level) || 1));
   return 'images/gems/gem-' + type + '-' + (lv < 10 ? '0' : '') + lv + '.png?v=' + GEM_ICON_VER;

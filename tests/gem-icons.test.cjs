@@ -119,10 +119,30 @@ test('48 種寶石各有自己的顏色：實際打包的圖檔兩兩調色盤�
     const sigs = {};
     for (const k of keys) {
       const img = decodePng(fs.readFileSync(path.join(dir, 'gem-' + k + '-' + String(tier).padStart(2, '0') + '.png')));
-      sigs[k] = palette.signature(img.rgba);
+      sigs[k] = palette.signature(img.rgba, img.width);
     }
     const bad = palette.closestPairs(sigs).filter((p) => p.d < 10).map((p) => p.a + '~' + p.b + ' ' + p.d.toFixed(1));
     assert.deepEqual(bad, [], '第 ' + tier + ' 階有看起來一樣的寶石');
+  }
+});
+
+test('光暈只看階數：1～5 階的圖外圍沒有柔光，6 階起淡淡出現並逐階加濃，10 階最濃', () => {
+  /* 使用者規定：5 級寶石沒有光暈，6 級起輕微的淡淡光暈、隨等級加強、10 級最濃。
+     量法：圖中半透明像素（alpha 7～234）的 alpha 總和——寶石邊緣抗鋸齒與星芒只有一點點，光暈才會讓它大幅上升。 */
+  const soft = (k, lv) => {
+    const img = decodePng(fs.readFileSync(path.join(dir, 'gem-' + k + '-' + String(lv).padStart(2, '0') + '.png')));
+    let sum = 0;
+    for (let i = 3; i < img.rgba.length; i += 4) if (img.rgba[i] > 6 && img.rgba[i] < 235) sum += img.rgba[i];
+    return sum;
+  };
+  const LINE = 35000;
+  for (const k of keys) {
+    const v = [];
+    for (let lv = 1; lv <= maxLv; lv++) v.push(soft(k, lv));
+    v.slice(0, 5).forEach((x, i) => assert.ok(x < LINE, k + ' 第 ' + (i + 1) + ' 階不該有光暈（' + x + '）'));
+    assert.ok(v[5] > LINE, k + ' 第 6 階要看得到淡淡的光暈（' + v[5] + '）');
+    for (let i = 6; i < 10; i++) assert.ok(v[i] > v[i - 1], k + ' 第 ' + (i + 1) + ' 階的光暈要比上一階濃');
+    assert.ok(v[9] > v[5] * 2, k + ' 第 10 階要明顯比第 6 階濃');
   }
 });
 

@@ -10176,7 +10176,7 @@ function toggleAffixPool(anchorEl) {
 
 /* ---- 寶石分頁 ---- */
 /* ---- 寶石頁：左寶石庫（分類＋只看持有）、右工坊（合成／轉換／拆解／融合／商店一次只顯示一個） ---- */
-UI.gemBrowse = { sel: null, filter: 'all', ownedOnly: true, tool: 'compose' };
+UI.gemBrowse = { sel: null, filter: 'all', ownedOnly: true, tool: 'compose', fuseLv: 1 };
 
 var GEM_LIB_FILTERS = [
   { id: 'all', label: '全部' },
@@ -10246,10 +10246,16 @@ function gemFocusHTML(gemsSnapshot, type, total) {
   var cells = '';
   for (var lv = 1; lv <= GEM_FORGE_MAX_LEVEL; lv++) {
     var n = gemsViewCount(gemsSnapshot, type, lv);
-    cells += '<span class="gx-curve-cell' + (n ? ' has' : '') + (lv > GEM_MAX_LEVEL ? ' is-forge' : '') + '" style="--c:' + GEM_TIER_COLORS[lv] + '">' +
+    /* 每一階一個按鈕：圖＝這一階的樣子，點了選這一階（合成頁的「幾級升幾級」跟著走）。
+       is-sel 不分工具一律標在目前選的階上，是否畫出來由 CSS 依 data-gem-tool 決定
+       （切工具不會重畫這一區，所以不能在這裡判斷工具）。 */
+    cells += '<button type="button" class="gx-curve-cell' + (n ? ' has' : '') + (lv > GEM_MAX_LEVEL ? ' is-forge' : '') +
+      (UI.gemBrowse.fuseLv === lv ? ' is-sel' : '') + '" data-gem-lv="' + lv + '" style="--c:' + GEM_TIER_COLORS[lv] + '"' +
+      ' data-tip="' + esc(GEM_NAMES[lv] + gt.name + '｜' + gemAbilityText(type, lv) + (n ? '｜持有 ' + fmtFull(n) + ' 顆' : '｜尚未持有')) + '">' +
+      gemIconHTML(type, lv, 'gi-curve') +
       '<span class="gx-curve-lv">' + GEM_NAMES[lv] + '</span>' +
       '<span class="gx-curve-val">' + gemValueText(type, lv) + '</span>' +
-      '<span class="gx-curve-n">' + (n ? '×' + fmt(n) : '—') + '</span></span>';
+      '<span class="gx-curve-n">' + (n ? '×' + fmt(n) : '—') + '</span></button>';
   }
   var catLabel = '';
   GEM_LIB_FILTERS.forEach(function (f) { if (f.id === gemCategoryOf(type)) catLabel = f.label; });
@@ -10265,11 +10271,19 @@ function gemFocusHTML(gemsSnapshot, type, total) {
 function selectGemType(type) {
   if (!GEM_TYPES[type]) return;
   UI.gemBrowse.sel = type;
-  // 點寶石庫＝把這顆寶石帶進合成與拆解；要逐種類合成全部，再從下拉選回「全部類型寶石」。
-  var fuseType = $id('fuse-type');
-  if (fuseType) fuseType.value = type;
+  // 點寶石庫＝把這顆寶石帶進合成（合成頁沒有種類選單，直接用這裡選的）與拆解
   var disType = $id('gdis-type');
   if (disType) disType.value = type;
+  renderGems();
+}
+
+/* 點十階列的某一階：合成頁以它為「這一階升下一階」；拆解頁的等級下拉跟著走（沒有這個選項就不動） */
+function setGemFuseLevel(lv) {
+  lv = Math.floor(Number(lv));
+  if (!(lv >= 1 && lv <= GEM_FORGE_MAX_LEVEL)) return;
+  UI.gemBrowse.fuseLv = lv;
+  var disLevel = $id('gdis-level');
+  if (disLevel && disLevel.querySelector && disLevel.querySelector('option[value="' + lv + '"]')) disLevel.value = String(lv);
   renderGems();
 }
 
@@ -10328,7 +10342,6 @@ function renderGems() {
   var focusH = gemFocusHTML(gemsSnapshot, st.sel, totals[st.sel] || 0);
   if (focus && focus._lastH !== focusH) { focus._lastH = focusH; focus.innerHTML = focusH; }
 
-  fillGemTypeSelect($id('fuse-type'), true);
   fillGemTypeSelect($id('gconv-target'));
   fillGemTypeSelect($id('gdis-type'));
   renderFuseInfo(gemsSnapshot);
@@ -10355,13 +10368,10 @@ function gemAbilityText(type, lv) {
   return gt.statName.replace(/%/g, '') + ' +' + (gt.pct ? pctStr(val) : fmt(val));
 }
 
-// 寶石種類下拉選單（18 種；只填一次，保留玩家選擇）
-function fillGemTypeSelect(sel, includeAll) {
+// 寶石種類下拉選單（只填一次，保留玩家選擇；轉換目標與拆解用，合成頁沒有種類選單）
+function fillGemTypeSelect(sel) {
   if (!sel || sel.options.length) return;
   var h = '';
-  if (includeAll) {
-    h += '<option value="' + GEM_TYPE_ALL + '" style="color:#f5c542;font-weight:bold" selected>💎 全部類型寶石</option>';
-  }
   for (var t in GEM_TYPES) {
     h += '<option value="' + t + '">' + GEM_TYPES[t].emoji + ' ' + esc(GEM_TYPES[t].name) + '（' + esc(GEM_TYPES[t].statName.replace('%', '')) + '）</option>';
   }
@@ -10375,41 +10385,51 @@ function gemSocketHTML(type, lv, extraClass) {
     '<span class="gx-socket-lv">' + (GEM_NAMES[lv] || '') + '</span></span>';
 }
 
+/* 配方：lv 階 → lv+1 階。五階以上不能在這裡合成（要到神鑄用 FORGE_SLOTS 顆同階寶石鑄造），
+   但仍顯示「五級 → 六級」讓玩家看得到下一步在哪；十階是最高階，沒有下一階。 */
 function fuseRecipeHTML(type, lv) {
-  var ins = '';
-  for (var i = 0; i < GEM_COMPOSE_INPUT_COUNT; i++) ins += gemSocketHTML(type, lv, '');
+  var ins = '', mid;
+  if (lv < GEM_MAX_LEVEL) {
+    for (var i = 0; i < GEM_COMPOSE_INPUT_COUNT; i++) ins += gemSocketHTML(type, lv, '');
+    mid = '<span class="gx-recipe-cost"><img src="images/icon_gold.png" class="res-icon">' + fmt(FUSE_GOLD_COST[lv]) + '</span>';
+  } else {
+    ins = gemSocketHTML(type, lv, '') + (lv < GEM_FORGE_MAX_LEVEL ? '<span class="gx-recipe-mult">×' + FORGE_SLOTS + '</span>' : '');
+    mid = '<span class="gx-recipe-cost">神鑄</span>';
+  }
+  var out = lv < GEM_FORGE_MAX_LEVEL ? gemSocketHTML(type, lv + 1, ' is-out') : '<span class="gx-recipe-max">已是最高階</span>';
   return '<span class="gx-recipe-in">' + ins + '</span>' +
-    '<span class="gx-recipe-arrow"><span class="gx-recipe-cost"><img src="images/icon_gold.png" class="res-icon">' + fmt(FUSE_GOLD_COST[lv]) + '</span></span>' +
-    gemSocketHTML(type, lv + 1, ' is-out');
+    (lv < GEM_FORGE_MAX_LEVEL ? '<span class="gx-recipe-arrow">' + mid + '</span>' : '') + out;
 }
 
+/* 合成頁：種類＝寶石庫目前選的那顆（UI.gemBrowse.sel），階級＝點十階列選的那一階（UI.gemBrowse.fuseLv） */
 function renderFuseInfo(gemsSnapshot) {
-  var selT = $id('fuse-type'), selL = $id('fuse-level');
   var info = $id('fuse-info');
-  if (!selT || !selL || !info) return;
+  if (!info) return;
   gemsSnapshot = resolveGemsPanelSnapshot(gemsSnapshot);
   if (!gemsSnapshot) return;
-  var t = selT.value, lv = parseInt(selL.value, 10) || 1;
+  var t = UI.gemBrowse.sel, lv = UI.gemBrowse.fuseLv || 1;
+  if (!GEM_TYPES[t]) return;
+  var canCompose = lv < GEM_MAX_LEVEL;
   var recipe = $id('fuse-recipe');
   var recipeH = fuseRecipeHTML(t, lv);
   if (recipe && recipe._lastH !== recipeH) { recipe._lastH = recipeH; recipe.innerHTML = recipeH; }
-  if (t === GEM_TYPE_ALL) {
-    var total = 0, available = 0;
-    for (var allType in GEM_TYPES) {
-      var allCount = gemsViewCount(gemsSnapshot, allType, lv);
-      total += allCount;
-      available += Math.floor(allCount / GEM_COMPOSE_INPUT_COUNT);
-    }
-    info.innerHTML = '「💎 全部類型寶石」' + GEM_NAMES[lv] + '庫存總計 ' + fmt(total) +
-      ' 顆｜每次消耗同種類 ' + GEM_COMPOSE_INPUT_COUNT + ' 顆＋<img src="images/icon_gold.png" class="res-icon">' + fmt(FUSE_GOLD_COST[lv]) +
-      ' → 1 顆下一階寶石｜目前可合成 ' + available + ' 次';
+  ['fuse-btn', 'fuse-all-btn', 'fuse-alltypes-btn'].forEach(function (id) {
+    var b = $id(id);
+    if (b && b.disabled !== !canCompose) b.disabled = !canCompose;
+  });
+  var n = gemsViewCount(gemsSnapshot, t, lv);
+  var head = '「' + gemIconHTML(t, lv, 'gi-inline') + esc(GEM_NAMES[lv] + GEM_TYPES[t].name) + '」庫存 ' + fmt(n) + ' 顆';
+  if (!canCompose) {
+    info.innerHTML = head + (lv >= GEM_FORGE_MAX_LEVEL
+      ? '｜十級已是最高階，無法再升階'
+      : '｜' + GEM_NAMES[GEM_MAX_LEVEL] + '以上不能在這裡合成：到「神鑄」用 ' + FORGE_SLOTS + ' 顆同種同階寶石鑄造（基礎成功率 ' + (FORGE_GEM_BASE_RATE[lv] || 0) + '%，魔塵可提高）');
     return;
   }
-  if (!GEM_TYPES[t]) return;
-  var n = gemsViewCount(gemsSnapshot, t, lv);
-  info.innerHTML = '「' + gemIconHTML(t, lv, 'gi-inline') + esc(GEM_NAMES[lv] + GEM_TYPES[t].name) + '」庫存 ' + fmt(n) +
-    ' 顆｜每次消耗 ' + GEM_COMPOSE_INPUT_COUNT + ' 顆＋<img src="images/icon_gold.png" class="res-icon">' + fmt(FUSE_GOLD_COST[lv]) +
-    ' → 1 顆' + esc(GEM_NAMES[lv + 1] + GEM_TYPES[t].name) + '｜目前可合成 ' + Math.floor(n / GEM_COMPOSE_INPUT_COUNT) + ' 次';
+  var allTypes = 0;
+  for (var allType in GEM_TYPES) allTypes += Math.floor(gemsViewCount(gemsSnapshot, allType, lv) / GEM_COMPOSE_INPUT_COUNT);
+  info.innerHTML = head + '｜每次消耗 ' + GEM_COMPOSE_INPUT_COUNT + ' 顆＋<img src="images/icon_gold.png" class="res-icon">' + fmt(FUSE_GOLD_COST[lv]) +
+    ' → 1 顆' + esc(GEM_NAMES[lv + 1] + GEM_TYPES[t].name) + '｜目前可合成 ' + Math.floor(n / GEM_COMPOSE_INPUT_COUNT) + ' 次' +
+    '｜全部類型合計可合成 ' + allTypes + ' 次';
 }
 
 /* ---- 寶石轉換（九宮格；UI.convertSlots = [{type,lv,n}]，轉換時才實際扣庫存） ---- */
@@ -12373,39 +12393,34 @@ function initUI() {
     }
   });
 
-  // 寶石合成（3 顆同種同級 → 同種下一階）
+  // 寶石合成（3 顆同種同級 → 同種下一階）：種類與階級都來自寶石庫與十階列的選擇，沒有下拉選單
+  function fuseTarget() { return { t: UI.gemBrowse.sel, lv: UI.gemBrowse.fuseLv || 1 }; }
   var fuseBtn = $id('fuse-btn');
   if (fuseBtn) {
     fuseBtn.addEventListener('click', function () {
-      var t = $id('fuse-type').value;
-      var lv = parseInt($id('fuse-level').value, 10) || 1;
-
+      var g = fuseTarget(), t = g.t, lv = g.lv;
+      if (!GEM_TYPES[t] || lv >= GEM_MAX_LEVEL) return;
       sendGemUiCommand(
         'gem.compose',
         { type: t, level: lv },
         'gem-compose:' + t + ':' + lv,
         ['gems'],
         function () {
-          blog('💎 寶石合成：' + (t === GEM_TYPE_ALL ? '全部類型寶石' : gemLabel(t, lv)) + ' ×' + GEM_COMPOSE_INPUT_COUNT + ' → ' +
-            (t === GEM_TYPE_ALL ? GEM_NAMES[lv + 1] + '同類型寶石' : gemLabel(t, lv + 1)), 'info', 'factory');
+          blog('💎 寶石合成：' + gemLabel(t, lv) + ' ×' + GEM_COMPOSE_INPUT_COUNT + ' → ' + gemLabel(t, lv + 1), 'info', 'factory');
         }
       );
-      return;
     });
     $id('fuse-all-btn').addEventListener('click', function () {
-      var t = $id('fuse-type').value;
-      var lv = parseInt($id('fuse-level').value, 10) || 1;
-
-      sendGemUiCommand(
-        'gem.composeAll',
-        { type: t, level: lv },
-        'gem-compose:' + t + ':' + lv,
-        ['gems', 'header']
-      );
-      return;
+      var g = fuseTarget(), t = g.t, lv = g.lv;
+      if (!GEM_TYPES[t] || lv >= GEM_MAX_LEVEL) return;
+      sendGemUiCommand('gem.composeAll', { type: t, level: lv }, 'gem-compose:' + t + ':' + lv, ['gems', 'header']);
     });
-    $id('fuse-level').addEventListener('change', renderFuseInfo);
-    $id('fuse-type').addEventListener('change', renderFuseInfo);
+    // 這一階所有種類逐種合成（原本「種類」下拉的「全部類型寶石」選項，改成獨立按鈕）
+    $id('fuse-alltypes-btn').addEventListener('click', function () {
+      var lv = fuseTarget().lv;
+      if (lv >= GEM_MAX_LEVEL) return;
+      sendGemUiCommand('gem.composeAll', { type: GEM_TYPE_ALL, level: lv }, 'gem-compose:' + GEM_TYPE_ALL + ':' + lv, ['gems', 'header']);
+    });
   }
 
   // 符文頁（符文真言）：由 js/ui-runeword.js 綁定
@@ -12421,6 +12436,11 @@ function initUI() {
       if (chip) {
         UI.gemBrowse.filter = chip.getAttribute('data-gem-filter');
         renderGems();
+        return;
+      }
+      var lvBtn = t.closest('[data-gem-lv]');
+      if (lvBtn) {
+        setGemFuseLevel(lvBtn.getAttribute('data-gem-lv'));
         return;
       }
       var pick = t.closest('[data-gem-pick]');

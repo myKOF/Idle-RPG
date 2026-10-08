@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="css/ashen-forge-flat.css?v=1.0.3">
   <link rel="stylesheet" href="css/battle-hud.css?v=1.0.6">
   <link rel="stylesheet" href="css/runeword.css?v=1.0.6">
-  <link rel="stylesheet" href="css/gems.css?v=1.0.0">
+  <link rel="stylesheet" href="css/gems.css?v=1.0.2">
 </head>
 
 <body>
@@ -356,23 +356,13 @@
               </div>
 
               <div class="gx-panel" data-gem-panel="compose">
-                <div class="hint">消耗 3 顆「同種類、同等級」寶石＋金幣 → 1 顆同種類的<b>下一階</b>寶石；選「全部類型寶石」會逐種類合成。</div>
-                <div class="flt-row gx-row">
-                  <span>種類</span>
-                  <select id="fuse-type"></select>
-                  <span>等級</span>
-                  <select id="fuse-level">
-                    <option value="1">一級 → 二級</option>
-                    <option value="2">二級 → 三級</option>
-                    <option value="3">三級 → 四級</option>
-                    <option value="4">四級 → 五級</option>
-                  </select>
-                </div>
+                <div class="hint">消耗 3 顆「同種類、同等級」寶石＋金幣 → 1 顆同種類的<b>下一階</b>寶石。種類就是左邊選的寶石，階級<b>點上方的寶石圖</b>選擇（例如點五級，下面就是五級升六級；五級以上要到神鑄）。</div>
                 <div id="fuse-recipe" class="gx-recipe"></div>
                 <div class="node-info" id="fuse-info"></div>
                 <div class="gx-actions">
                   <button id="fuse-btn" class="btn">合成一次</button>
                   <button id="fuse-all-btn" class="btn">全部合成</button>
+                  <button id="fuse-alltypes-btn" class="btn" data-tip="這一階的所有寶石種類逐種合成">全部類型合成</button>
                 </div>
               </div>
 
@@ -920,10 +910,10 @@
          special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/util.js?v=1.0.3"></script>
   <script src="js/ui-scale.js?v=1.0.1"></script>
-  <script src="js/data.js?v=1.0.65"></script>
+  <script src="js/data.js?v=1.0.67"></script>
   <script src="js/elite_data.js?v=1.0.0"></script>
   <script src="js/status.js?v=1.0.30"></script>
-  <script src="js/runeword_data.js?v=1.0.12"></script>
+  <script src="js/runeword_data.js?v=1.0.13"></script>
   <script src="js/formula.js?v=1.0.50"></script>
   <script src="js/battlefield.js?v=1.4.6"></script>
   <script src="js/vfx.js?v=1.0.80"></script>
@@ -950,7 +940,7 @@
   <script src="js/battle-renderer.js?v=1.6.179"></script>
   <script src="js/stats.js?v=1.0.4"></script>
   <script src="js/item.js?v=1.0.19"></script>
-  <script src="js/runeword.js?v=1.0.8"></script>
+  <script src="js/runeword.js?v=1.0.9"></script>
   <script src="js/skills.js?v=1.0.41"></script>
   <!-- 新版主動技能系統（2026-08-13 技能改造第一批）：定義表＋引擎＋純函式說明 -->
   <script src="js/skills2.js?v=1.0.294"></script>
@@ -960,8 +950,8 @@
   <script src="js/potential.js?v=1.0.9"></script>
   <script src="js/tower.js?v=1.0.24"></script>
   <script src="js/save.js?v=1.0.13"></script>
-  <script src="js/ui.js?v=1.0.151"></script>
-  <script src="js/ui-runeword.js?v=1.0.8"></script>
+  <script src="js/ui.js?v=1.0.152"></script>
+  <script src="js/ui-runeword.js?v=1.0.9"></script>
   <script src="js/param_autoreload.js"></script>
   <!-- GM 面板。指令執行層在 js/gm_exec.js，由 Worker importScripts 載入 -->
   <script src="js/gm.js?v=1.0.1"></script>
@@ -974,7 +964,7 @@
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
-  <script src="js/bridge.js?v=1.0.248"></script>
+  <script src="js/bridge.js?v=1.0.249"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->

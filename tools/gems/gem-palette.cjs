@@ -13,10 +13,23 @@ function lab(r, g, b) {
 }
 function de(a, b) { return Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]); }
 
-/* px：straight RGBA（每像素 4 個 byte）。 */
-function signature(px) {
+/* px：straight RGBA（每像素 4 個 byte）；width 給了就扣掉貼近輪廓的像素（寬度的 1/40，80px 圖＝2px）。
+   低階寶石本體只有一點點像素，一圈深色輪廓就占了大半，不扣的話兩顆明明不同的寶石會因為輪廓都是暗色而被量成很近。 */
+function signature(px, width) {
   const pts = [];
-  for (let i = 0; i < px.length; i += 4) if (px[i + 3] > 250) pts.push(lab(px[i], px[i + 1], px[i + 2]));
+  const e = width ? Math.max(1, Math.round(width / 40)) : 0, h = width ? px.length / 4 / width : 0;
+  function solid(x, y) { return x >= 0 && y >= 0 && x < width && y < h && px[(y * width + x) * 4 + 3] > 250; }
+  for (let i = 0; i < px.length; i += 4) {
+    if (px[i + 3] <= 250) continue;
+    if (e) {
+      const x = (i / 4) % width, y = Math.floor(i / 4 / width);
+      let inner = true;
+      for (let dy = -e; dy <= e && inner; dy++) for (let dx = -e; dx <= e; dx++) if (!solid(x + dx, y + dy)) { inner = false; break; }
+      if (!inner) continue;
+    }
+    pts.push(lab(px[i], px[i + 1], px[i + 2]));
+  }
+  if (!pts.length) throw new Error('沒有寶石本體的像素可以量');
   const mean = [0, 0, 0];
   pts.forEach(function (p) { mean[0] += p[0]; mean[1] += p[1]; mean[2] += p[2]; });
   mean[0] /= pts.length; mean[1] /= pts.length; mean[2] /= pts.length;
