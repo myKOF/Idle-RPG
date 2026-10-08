@@ -262,7 +262,8 @@ test('DECOR-8 渲染器接線：地面平面在地板與暗角之間、天氣層
   assert.ok(plane > 0, '地面裝飾平面要在地板之後');
   assert.ok(plane < bg.children.indexOf(S.vignette), '地面裝飾平面要在暗角之前（暗角蓋在裝飾上面）');
   assert.equal(L.decorPlane.scale.y, Number(/var GROUND_Y_SCALE = ([0-9.]+);/.exec(renderer)[1]));
-  const stage = S.app.stage.children;
+  const stage = S.cameraStage.children;
+  assert.equal(S.cameraStage.parent, S.app.stage, '場景與天氣一起受鏡頭缩放');
   assert.ok(stage.indexOf(L.decorAmbient) > stage.indexOf(S.sceneRoot));
   assert.ok(stage.indexOf(L.decorAmbient) < stage.indexOf(L.airBack));
   assert.match(renderer, /propLayer: S\.layers\.entity/);

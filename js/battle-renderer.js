@@ -147,6 +147,7 @@ var BattleRenderer = (function () {
     vfxLoading: false, pendingVfx: [], // Preset 尚在載入時，不先畫舊版效果
     layers: null,             // ground / zone / entity / fx / float / overlay
     W: 0, H: 0,
+    canvasW: 0, canvasH: 0, cameraScale: 1, cameraStage: null,
     /* 正在畫的場景：'field'＝野外，'tower:<BOSS 生成時刻>'＝某一場魔王戰（見 sceneKeyOf）。
        模擬層換場景是瞬間的，畫面要先跑完黑圈收合才真的換（phase：closing → black → opening）。 */
     scene: { key: 'field', phase: '', t: 0 },
@@ -342,6 +343,18 @@ var BattleRenderer = (function () {
   /* 0.5 ≒ 相機仰角 30°。2026-09-22 先做了 0.7（≒ 44°，仍接近正上方俯視，跟 3/4 視角畫的騎士對不起來），
      使用者看過 0.7／0.5／0.4 同一格畫面的並排比較後選 0.5；示意圖量出來的地磚菱形也是 0.46～0.52。 */
   var GROUND_Y_SCALE = 0.5;
+  /* game_parameters：100＝原距離，125＝拉遠25%。只改顯示，不改世界座標與戰鬥判定。 */
+  var BATTLE_CAMERA_DISTANCE_PERCENT = 125;
+  function cameraZoom() {
+    var distance = Number(BATTLE_CAMERA_DISTANCE_PERCENT);
+    return 100 / (isFinite(distance) && distance > 0 ? distance : 125);
+  }
+  function setCameraViewport(w, h) {
+    S.canvasW = w; S.canvasH = h;
+    S.cameraScale = cameraZoom();
+    S.W = w / S.cameraScale; S.H = h / S.cameraScale;
+    if (S.cameraStage) S.cameraStage.scale.set(S.cameraScale);
+  }
   /* 地磚在世界平面裡的鋪法：正方形轉 45°（菱形鋪法），再由同一個 GROUND_Y_SCALE 投影成 1 : GROUND_Y_SCALE 的菱形。
      只壓縮不轉的話，正方形只會變成扁長方形，看起來像平鋪的長方形地磚，沒有斜視感。
      轉的是地板圖樣、不是投影，所以貼地特效的圓照樣是正的 1 : GROUND_Y_SCALE 橢圓。
@@ -367,8 +380,8 @@ var BattleRenderer = (function () {
     var cols = (typeof BF_COLS === 'number' && BF_COLS > 0) ? BF_COLS : 4;
     var rows = (typeof BF_ROWS === 'number' && BF_ROWS > 0) ? BF_ROWS : 4;
     var c = playerPos();
-    var rx = Math.max(90, S.W * 0.5 - 52);
-    var ry = Math.max(72, Math.min(S.H * 0.5 - 62, rx * 0.74));
+    var rx = Math.max(90, (S.canvasW || S.W) * 0.5 - 52);
+    var ry = Math.max(72, Math.min((S.canvasH || S.H) * 0.5 - 62, rx * 0.74));
     return { cols: cols, rows: rows, cx: c.x, cy: c.y, rx: rx, ry: ry };
   }
   /* 名目格尺寸：只拿來決定精靈與血條大小，不參與定位 */
@@ -1514,7 +1527,7 @@ var BattleRenderer = (function () {
     label.anchor.set(0.5, 0);
     label.y = -22;
     c.addChild(g); c.addChild(label);
-    c.x = S.W / 2; c.y = BOSS_BAR_Y;
+    c.x = (S.canvasW || S.W) / 2; c.y = BOSS_BAR_Y;
     S.layers.overlay.addChild(c);
     S.bossBar = { root: c, g: g, label: label, forId: ent.id };
     /* 建立當下就畫：實體的腳下血條早在 makeEnemy 畫過了，drawHpBar 之後要等血量變動才會再進來，
@@ -1525,7 +1538,7 @@ var BattleRenderer = (function () {
     var bar = S.bossBar;
     if (!bar || bar.forId !== ent.id) return;
     var d = ent.data;
-    var w = S.W * 0.56, h = 13;
+    var w = (S.canvasW || S.W) * 0.56, h = 13;
     var pct = Math.max(0, Math.min(1, d.hp / Math.max(1, d.maxHp)));
     bar.g.clear();
     bar.g.roundRect(-w / 2 - 2, -2, w + 4, h + 4, 4).fill({ color: 0x000000, alpha: 0.7 })
@@ -1770,7 +1783,8 @@ var BattleRenderer = (function () {
     var tier = BossArena.tierOf(b);
     var floor = (panel.tower && panel.tower.floor) || 0;
     S.arena.enter({
-      cx: (pp.x + bp.x) / 2, cy: (pp.y + bp.y) / 2, tier: tier, element:BossArena.elementOf(b), W: S.W, H: S.H,
+      cx: (pp.x + bp.x) / 2, cy: (pp.y + bp.y) / 2, tier: tier, element:BossArena.elementOf(b),
+      W: S.canvasW || S.W, H: S.canvasH || S.H,
       title: String(b.name || '').replace(/^第\d+層・/, ''),
       subtitle: '封魔塔　第 ' + floor + ' 層　·　' + BossArena.paletteFor(tier,BossArena.elementOf(b)).name
     });
@@ -6412,7 +6426,7 @@ var BattleRenderer = (function () {
     }
     if (p && p.reviveText && p.reviveText.visible) {
       /* reviveText 在 overlay 上，跟著鏡頭中的玩家位置更新但永遠保持水平；開了透視要換到變形後的螢幕位置。 */
-      var revivePt = perspScreenPoint(world.x + p.root.x, world.y + p.root.y - 104);
+      var revivePt = worldToScreenPoint(p.root.x, p.root.y - 104);
       p.reviveText.x = revivePt.x;
       p.reviveText.y = revivePt.y;
     }
@@ -6691,19 +6705,24 @@ var BattleRenderer = (function () {
     var sceneRoot = new PIXI.Container();
     sceneRoot.addChild(bg);
     sceneRoot.addChild(world);
-    app.stage.addChild(sceneRoot);
+    /* 場景、空中角色與特效共用鏡頭；HUD留在實際畫布座標。 */
+    var cameraStage = new PIXI.Container();
+    cameraStage.scale.set(S.cameraScale || 1);
+    app.stage.addChild(cameraStage);
+    cameraStage.addChild(sceneRoot);
+    S.cameraStage = cameraStage;
     /* 天氣粒子（飄沙、落雪、螢火蟲…）：螢幕座標、不跟著透視變形，在場景之上、所有戰鬥表現之下。 */
     var decorAmbient = new PIXI.Container();
-    app.stage.addChild(decorAmbient);
+    cameraStage.addChild(decorAmbient);
     /* 魔王祭壇的灰燼、火星與心跳光暈：螢幕座標，與天氣粒子同一層級 */
     var arenaAmbient = new PIXI.Container();
-    app.stage.addChild(arenaAmbient);
+    cameraStage.addChild(arenaAmbient);
     /* 傷害浮字與玩家 HUD 在場景外的螢幕層：不跟著透視變形（字不會被拉歪、上面縮小下面放大），
        每幀只把位置換到透視後的落點（worldToScreenPoint）。順序仍是 場景 < 浮字 < 玩家 HUD < overlay。 */
-    app.stage.addChild(airBack);
-    app.stage.addChild(airPlayer);
-    app.stage.addChild(airFx);
-    app.stage.addChild(enemyAir);
+    cameraStage.addChild(airBack);
+    cameraStage.addChild(airPlayer);
+    cameraStage.addChild(airFx);
+    cameraStage.addChild(enemyAir);
     app.stage.addChild(floatLayer);
     app.stage.addChild(playerHud);
     app.stage.addChild(overlay);
@@ -6815,6 +6834,9 @@ var BattleRenderer = (function () {
   }
   function layoutScene() {
     if (!S.layers) return;
+    var W = S.canvasW || S.W, H = S.canvasH || S.H;
+    /* 祭壇以虛擬視野鋪天氣；標題留在HUD，抵銷其虛擬視野置中位置。 */
+    if (S.layers.arenaTitle) S.layers.arenaTitle.position.set((W - S.W) / 2, (H - S.H) * 0.3);
     syncPerspective();
     /* 要畫出來的範圍（平行投影的畫面座標）：沒開透視就是畫布，開了是離屏貼圖涵蓋的那一塊（見 perspectiveLayout）。 */
     var R = sceneDrawRect();
@@ -6830,19 +6852,19 @@ var BattleRenderer = (function () {
     }
     syncVignette(R);
     if (S.deathFog) {
-      var fogSize = Math.max(S.W, S.H);
+      var fogSize = Math.max(W, H);
       S.deathFog.width = fogSize;
       S.deathFog.height = fogSize;
-      S.deathFog.x = (S.W - fogSize) / 2;
-      S.deathFog.y = (S.H - fogSize) / 2;
+      S.deathFog.x = (W - fogSize) / 2;
+      S.deathFog.y = (H - fogSize) / 2;
     }
-    if (S.emptyText) { S.emptyText.x = S.W * 0.62; S.emptyText.y = S.H * 0.5; }
+    if (S.emptyText) { S.emptyText.x = W * 0.62; S.emptyText.y = H * 0.5; }
     if (S.pauseVeil) {
       S.pauseVeil.bg.clear();
-      S.pauseVeil.bg.rect(0, 0, S.W, S.H).fill({ color: 0x000000, alpha: 0.45 });
-      S.pauseVeil.text.x = S.W / 2; S.pauseVeil.text.y = S.H / 2;
+      S.pauseVeil.bg.rect(0, 0, W, H).fill({ color: 0x000000, alpha: 0.45 });
+      S.pauseVeil.text.x = W / 2; S.pauseVeil.text.y = H / 2;
     }
-    if (S.bossBar) { S.bossBar.root.x = S.W / 2; S.bossBar.root.y = BOSS_BAR_Y; }
+    if (S.bossBar) { S.bossBar.root.x = W / 2; S.bossBar.root.y = BOSS_BAR_Y; }
     /* 槽位每幀由 tickWorld 依玩家位置重算，這裡不需要再覆寫實體座標 */
   }
 
@@ -6904,7 +6926,9 @@ var BattleRenderer = (function () {
      位置用這個換；字與狀態條的大小照舊。 */
   function worldToScreenPoint(x, y) {
     var w = S.layers && S.layers.world;
-    return perspScreenPoint((w ? w.x : 0) + x, (w ? w.y : 0) + y);
+    var p = perspScreenPoint((w ? w.x : 0) + x, (w ? w.y : 0) + y);
+    var zoom = S.cameraScale || 1;
+    return { x: p.x * zoom, y: p.y * zoom };
   }
   /* NPC 與牠的血條／名字是直立的貼圖：只吃遠近縮放，不跟著整片場景的透視被拉歪
      （2026-09-29 使用者：「不要扭曲或仰斜」）。它們必須留在場景層才能與特效維持前後遮擋，
@@ -7131,6 +7155,7 @@ var BattleRenderer = (function () {
   function syncPerspective() {
     var app = S.app, root = S.sceneRoot;
     if (!app || !root) return;
+    var camera = S.cameraStage || app.stage;
     var top = perspectiveTopScale();
     var P = S.persp;
     if (top >= 1) {
@@ -7140,12 +7165,13 @@ var BattleRenderer = (function () {
         if (P.vigTex) { if (S.vignette) S.vignette.texture = vignetteTexture(); P.vigTex.destroy(true); }
         S.persp = null;
       }
-      if (root.parent !== app.stage) app.stage.addChildAt(root, 0);
+      if (root.parent !== camera) camera.addChildAt(root, 0);
       root.position.set(0, 0);
       return;
     }
     var lay = perspectiveLayout(S.W, S.H, top);
-    var res = app.renderer.resolution;
+    /* 虛擬視野變大時，貼圖解析度反向調整，保持與實際畫布相同的像素密度。 */
+    var res = app.renderer.resolution * (S.cameraScale || 1);
     if (!P) P = S.persp = { rt: null, mesh: null, res: 0, layout: null, vigTex: null, vigKey: '' };
     if (!P.rt || P.rt.width !== lay.width || P.rt.height !== lay.height || P.res !== res) {
       if (P.mesh) { P.mesh.destroy(); P.mesh = null; }
@@ -7156,7 +7182,7 @@ var BattleRenderer = (function () {
     }
     if (!P.mesh) {
       P.mesh = new PIXI.PerspectiveMesh({ texture: P.rt, verticesX: PERSPECTIVE_MESH_VERTS, verticesY: PERSPECTIVE_MESH_VERTS });
-      app.stage.addChildAt(P.mesh, 0);
+      camera.addChildAt(P.mesh, 0);
     }
     var c = lay.corners;
     P.mesh.setCorners(c[0].x, c[0].y, c[1].x, c[1].y, c[2].x, c[2].y, c[3].x, c[3].y);
@@ -7225,8 +7251,8 @@ var BattleRenderer = (function () {
     if (!S.app || !S.host) return;
     var w = S.host.clientWidth, h = S.host.clientHeight;
     if (w < 40 || h < 40) return;
-    if (w === S.W && h === S.H && S._lastRes === currentResolution()) return;
-    S.W = w; S.H = h;
+    if (w === S.canvasW && h === S.canvasH && S.cameraScale === cameraZoom() && S._lastRes === currentResolution()) return;
+    setCameraViewport(w, h);
     S._lastRes = currentResolution();
     try {
       S.app.renderer.resolution = S._lastRes;
@@ -7540,8 +7566,7 @@ var BattleRenderer = (function () {
       S.app = app;
       app.canvas.className = 'battle-canvas';
       host.insertBefore(app.canvas, host.firstChild || null);
-      S.W = Math.max(64, host.clientWidth || 640);
-      S.H = Math.max(64, host.clientHeight || 480);
+      setCameraViewport(Math.max(64, host.clientWidth || 640), Math.max(64, host.clientHeight || 480));
       buildScene();
       initDecor();
       initArena();

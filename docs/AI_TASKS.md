@@ -9586,3 +9586,17 @@ Worker 存活且頁面正常完成載入。
 - 驗證：新增三項測試在修正前全部失敗（進場仍提前扣秒），修正後 `node --test tests/tower-scene-intro.test.cjs tests/boss-display-state.test.cjs tests/tower-battlefield.test.cjs tests/battle-arena.test.cjs tests/tower-head-layout.test.cjs tests/tower-auto-result.test.cjs tests/combat-pause.test.cjs` 29/29 通過；包含真實 startTowerFight／towerTick 進場不移動、不出手、不計時。`npm.cmd run build` 483 檔通過；`git diff --check` 通過。
 - 瀏覽器：隔離 headless Edge／全新頁面，以正式 UI 計時函式與 DOM／requestAnimationFrame 驗進場等待 2.7 秒後兩處仍為 60.0s、introCd 歸零但尚無開戰快照再等 0.25 秒仍不扣秒；elapsed 首次推進後兩處平滑降至 59.6s。Console error／warning 0；未載入真人存檔，瀏覽器已關閉、臨時腳本已刪除。
 - 交付：Commit 為本紀錄所在 `[Codex] fix: BOSS 倒數等正式開戰才開始顯示`。本次無未完成項目或已知新增風險，可審查合併；未合併／推送。限制：未做完整真人長時間戰鬥，既有模擬與場景轉場時序不變。下一步重載遊戲，確認轉場顯示 60.0s、開戰後才倒數。
+
+## CODEX-BATTLE-CAMERA-20261008 — 戰鬥鏡頭拉遠並接入參數表
+
+- Owner：Codex；Done。使用者要求鏡頭距離增加25%，並可在 game_parameters 調整；單一開發者，前置為現有 Pixi 戰場與參數套用管線。2026-10-09使用者關閉Excel後完成正式表寫回、驗證及Commit。
+- 範圍：js/battle-renderer.js、tools/apply_params.cjs、config/Excel/game_parameters.xlsx、config/CSV/game_parameters.csv、index.html、新增鏡頭回歸測試、battle-decor／enemy-attack-vfx-lifecycle／player-event-float／vfx-projectile-perspective既有鏡頭相關測試、本紀錄。禁止修改戰鬥判定、Worker協議、其他副本與無關功能。
+- 預檢：鏡頭與參數表無衝突；index.html／本紀錄有 Claude 寶石與符文的未合併來源。使用者已同意「保留並追加本次修改」，保留目前內容，只追加本輪快取與紀錄。
+- 決策：鏡頭距離預設125%，原距離為100%；畫面縮放100÷距離。野外及BOSS共同套用，HUD維持原尺寸；Excel為權威，CSV重轉、名稱綁定scalar錨點。
+- 驗收：鏡頭／透視回歸、參數乾跑與錨點檢查、完整測試與既有失敗比對、Build、Excel正常重開及瀏覽器畫面。完成Commit後交使用者審查整合，不合併／推送。
+- 實作：共用cameraStage縮放場景、空中特效及天氣，虛擬視野為實際畫布÷縮放；精靈與祭壇名目尺寸仍取實際畫布，避免抵銷縮放。浮字／復活倒數位置套同一投影，字級及頂部BOSS血條不縮放；祭壇標題保留畫布置中，透視貼圖解析度反向調整以維持像素密度。主頁renderer快取1.6.180。
+- 參數：新增編號352／8-戰鬥畫面／戰鬥鏡頭距離，參數a=125；計算表G353及主表鏡像G337。Artifact Tool試作匯出改動無關F96，未採用；改以Excel原生API只追加新列，兩次正常模式重開，既有兩表的全部資料／公式／物件數／篩選及主要欄寬比較通過。CSV重轉只多鏡頭一列。使用者關閉後原xlsx SHA256仍為1cc0b23eb1457944d2ed9c2a81269e62a076f9321b543938dd19b5e8769805cb，未另存新內容，已寫回驗證過的新表；正式檔正常模式重開成功，兩處參數均125。
+- 已驗證：node tools/apply_params.cjs：550一致、0變更、0錨點問題（原549）；--check-anchors擾動501數值、550錨點全通過。node --test tests/battle-camera-distance.test.cjs tests/battle-arena.test.cjs tests/battle-perspective.test.cjs tests/elite-params.test.cjs：38/38。額外圖層與復活UI回歸44項43通過，剩餘1項是既有的飛行物／billboard變形矩陣測試；於未修改HEAD副本相同44項43通過1失敗。npm.cmd run build：489檔及git diff --check通過。
+- 完整回歸：node --test --test-reporter=tap --test-concurrency=4 "tests/*.test.cjs"；最終4161項／3885通過／274失敗／2略過。乾淨HEAD副本4156項／3879通過／275失敗／2略過，失敗名稱差集新增0；既有「雙刀逐刀目標與傷害飄字共用0.2秒」本次通過，未宣稱修復該時序問題。原來直掛stage的三個舊斷言同步為共用鏡頭與實際繪製順序，沒有降低層順序、字級、死亡距離或特效生命週期要求。正式表寫回後重跑轉CSV、apply_params、--check-anchors與node --test tests/battle-camera-distance.test.cjs tests/elite-params.test.cjs，9/9通過、550錨點全通過，無程式變更，沿用先前全庫及Build結果。
+- 瀏覽器：獨立Edge上下文、真Worker／Pixi／Preset，野外及塔戰均可啟動、頁面錯誤0；852×936實際畫布在125%時視野1065×1170、cameraScale0.8。100／125的BOSS血條均x426/y68/寬483.12/scale1；最後125%祭壇名目rx391.92與原版一致、經鏡頭縮小，標題容器抵銷虛擬視野偏移。無新素材、無模擬或存檔改動；不以軟體WebGL的測試FPS作正式效能結論。
+- 交接：修改js/battle-renderer.js、tools/apply_params.cjs、config/Excel/game_parameters.xlsx、config/CSV/game_parameters.csv、index.html、上述5檔測試及本紀錄。唯讀檢查js/battle-arena.js、js/tower.js、js/worker/protocol.js、tests/helpers/battle-scene.cjs、tools/xlsx_to_csv.cjs、套用參數.bat、AI規範。Commit見本紀錄所在提交；已知風險為274項既有失敗，本次新增0。功能無未完成項目，可供使用者審查合併，未自行合併或推送。下一步重新載入遊戲；調整「8-戰鬥畫面／戰鬥鏡頭距離」的參數a，儲存並執行套用參數.bat後重載；100原距離、125拉遠25%，數值越大視野越廣。收尾例外：清理C:/Users/user/AppData/Local/Temp/codex-battle-camera-20261008遭自動審核拒絕（僅回傳blocked by policy，未提供細節），已移除所有暫存junction本身，餘下暫存檔保留於系統Temp、不納入提交；工作區無暫存產物。
