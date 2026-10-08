@@ -40,7 +40,7 @@ function makeContext(opts) {
     UI_WORKER_VISUAL_EVENT_QUEUE: opts.queue || [],
     uiNowMs: () => clock.now,
     uiTick: opts.uiTick || (() => { ticks.n++; clock.now += opts.tickMs || 0; }),
-    WorkerBridge: { status: () => ({ silentMs: opts.silentMs === undefined ? 100 : opts.silentMs }) },
+    WorkerBridge: { status: () => Object.assign({ silentMs: opts.silentMs === undefined ? 100 : opts.silentMs }, opts.status || {}) },
     console: { error: (...a) => errors.push(a) }
   };
   vm.runInNewContext(SOURCE, context);
@@ -272,4 +272,17 @@ test('SD-16 main.js 週期重繪掛的是 uiTickGuarded（不是裸的 uiTick）
 
 test('SD-17 FPS 計數器把 uiStallDiagText 接在 uiVisualDiagText 後面', () => {
   assert.match(ui, /'FPS: ' \+ fps \+ uiVisualDiagText\(now\) \+ uiStallDiagText\(now\)/);
+});
+
+test('SD-LAG 模擬落後 ≥3 秒才顯示；存檔 60 秒沒落地或從未落地才顯示（對應重新整理後的離線獎勵）', () => {
+  const quiet = makeContext({ status: { catchupSec: 2, upTimeSec: 500, persistAgeSec: 20 } });
+  assert.equal(quiet.context.uiStallDiagText(quiet.clock.now), '');
+  const lag = makeContext({ status: { catchupSec: 12, upTimeSec: 500, persistAgeSec: 20 } });
+  assert.match(lag.context.uiStallDiagText(lag.clock.now), /模擬落後 12 秒/);
+  const stale = makeContext({ status: { catchupSec: 0, upTimeSec: 500, persistAgeSec: 130 } });
+  assert.match(stale.context.uiStallDiagText(stale.clock.now), /存檔已 130 秒沒落地/);
+  const never = makeContext({ status: { catchupSec: 0, upTimeSec: 500, persistAgeSec: null } });
+  assert.match(never.context.uiStallDiagText(never.clock.now), /存檔從未落地/);
+  const fresh = makeContext({ status: { catchupSec: 0, upTimeSec: 30, persistAgeSec: null } });
+  assert.equal(fresh.context.uiStallDiagText(fresh.clock.now), '');
 });

@@ -11193,6 +11193,13 @@ function uiStallDiagText(now) {
     for (var phk in slow.ph) if (slow.ph[phk] > topMs) { topMs = slow.ph[phk]; top = phk; }
     text += ' ⚠ Worker 慢 ' + slow.ms + 'ms（' + top + ' ' + topMs + '，' + slow.steps + ' 步）';
   }
+  /* 模擬落後／存檔沒落地：重新整理時跳出的「離線獎勵」就是這兩者造成的——
+     存檔時間戳＝現實時間扣掉補進度欠帳，所以「模擬追不上現實」與「存檔一直沒寫成功」都會讓時間戳變舊。 */
+  var ws = (typeof WorkerBridge !== 'undefined' && WorkerBridge.status) ? WorkerBridge.status() : null;
+  if (ws && ws.catchupSec >= 3) text += ' ⏳ 模擬落後 ' + ws.catchupSec + ' 秒';
+  if (ws && ws.upTimeSec > 60 && (ws.persistAgeSec === null || ws.persistAgeSec > 60)) {
+    text += ' ⚠ 存檔' + (ws.persistAgeSec === null ? '從未落地' : '已 ' + ws.persistAgeSec + ' 秒沒落地');
+  }
   var head = UI_WORKER_VISUAL_EVENT_QUEUE[0];
   if (head && head._qAt && now - head._qAt > UI_VISUAL_WAIT_MS) {
     text += ' ⚠ 特效佇列等 ' + ((now - head._qAt) / 1000).toFixed(1) + ' 秒（' + UI_WORKER_VISUAL_EVENT_QUEUE.length + ' 件）';
