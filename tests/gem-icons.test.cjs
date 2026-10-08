@@ -119,7 +119,7 @@ test('48 種寶石各有自己的顏色：實際打包的圖檔兩兩調色盤�
     const sigs = {};
     for (const k of keys) {
       const img = decodePng(fs.readFileSync(path.join(dir, 'gem-' + k + '-' + String(tier).padStart(2, '0') + '.png')));
-      sigs[k] = palette.signature(img.rgba);
+      sigs[k] = palette.signature(img.rgba, img.width);
     }
     const bad = palette.closestPairs(sigs).filter((p) => p.d < 10).map((p) => p.a + '~' + p.b + ' ' + p.d.toFixed(1));
     assert.deepEqual(bad, [], '第 ' + tier + ' 階有看起來一樣的寶石');
@@ -135,7 +135,7 @@ test('光暈只看階數：1～5 階的圖外圍沒有柔光，6 階起淡淡出
     for (let i = 3; i < img.rgba.length; i += 4) if (img.rgba[i] > 6 && img.rgba[i] < 235) sum += img.rgba[i];
     return sum;
   };
-  const LINE = 22000;
+  const LINE = 35000;
   for (const k of keys) {
     const v = [];
     for (let lv = 1; lv <= maxLv; lv++) v.push(soft(k, lv));

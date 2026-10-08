@@ -14,6 +14,7 @@
    ============================================================ */
 
 const SS = 2;               // 超取樣倍率
+const BODY = 0.84;          // 寶石本體相對 TIERS.size 的比例：留出外圈給光暈（小尺寸下光暈要看得見，就得有地方畫）
 const OUT = 256;            // 母圖解析度
 const S = OUT * SS;         // 工作解析度
 
@@ -145,15 +146,15 @@ const TIERS = [
   { name: '菱形', size: 82, rot: 0, poly: [[0, -1], [0.86, 0], [0, 1], [-0.86, 0]], cut: 0.07, cap: 0.15,
     profile: [[0, 0], [0.22, 0.30], [0.50, 0.46]], stars: [{ rf: 0.80, h0: 0.14, slope: 1.0, ring: 1 }], glow: 0, spark: 2 },
   { name: '長方', size: 84, rot: -8, poly: [[-0.80, -1], [0.80, -1], [0.80, 1], [-0.80, 1]], cut: 0.20,
-    profile: [[0, 0], [0.14, 0.20], [0.30, 0.34], [0.54, 0.46]], stars: [{ rf: 0.88, h0: 0.16, slope: 1.0, ring: 1 }], glow: 0.12, spark: 2 },
+    profile: [[0, 0], [0.14, 0.20], [0.30, 0.34], [0.54, 0.46]], stars: [{ rf: 0.88, h0: 0.16, slope: 1.0, ring: 1 }], glow: 0.2, spark: 2 },
   { name: '八方', size: 86, rot: 0, ngon: [8, 22.5],
-    profile: [[0, 0], [0.12, 0.18], [0.26, 0.32], [0.46, 0.46]], stars: [{ rf: 0.90, h0: 0.14, slope: 1.1, ring: 1 }, { rf: 0.62, h0: 0.30, slope: 0.9, ring: 2 }], glow: 0.24, spark: 3 },
+    profile: [[0, 0], [0.12, 0.18], [0.26, 0.32], [0.46, 0.46]], stars: [{ rf: 0.90, h0: 0.14, slope: 1.1, ring: 1 }, { rf: 0.62, h0: 0.30, slope: 0.9, ring: 2 }], glow: 0.38, spark: 3 },
   { name: '星六', size: 88, rot: 0, ngon: [6, -90], cut: 0.12, cap: 0.13,
-    profile: [[0, 0], [0.10, 0.16], [0.22, 0.28], [0.40, 0.42]], stars: [{ rf: 0.90, h0: 0.14, slope: 1.1, ring: 1 }, { rf: 0.64, h0: 0.28, slope: 0.9, ring: 2 }], glow: 0.38, spark: 3 },
+    profile: [[0, 0], [0.10, 0.16], [0.22, 0.28], [0.40, 0.42]], stars: [{ rf: 0.90, h0: 0.14, slope: 1.1, ring: 1 }, { rf: 0.64, h0: 0.28, slope: 0.9, ring: 2 }], glow: 0.56, spark: 3 },
   { name: '尖底', size: 89, rot: 0, ngon: [5, 90], cut: 0.10, cap: 0.13,
-    profile: [[0, 0], [0.09, 0.15], [0.20, 0.27], [0.36, 0.40], [0.52, 0.48]], stars: [{ rf: 0.90, h0: 0.14, slope: 1.15, ring: 1 }, { rf: 0.66, h0: 0.28, slope: 0.95, ring: 2 }], glow: 0.54, spark: 3 },
+    profile: [[0, 0], [0.09, 0.15], [0.20, 0.27], [0.36, 0.40], [0.52, 0.48]], stars: [{ rf: 0.90, h0: 0.14, slope: 1.15, ring: 1 }, { rf: 0.66, h0: 0.28, slope: 0.95, ring: 2 }], glow: 0.76, spark: 3 },
   { name: '圓多邊', size: 91, rot: 0, ngon: [9, -90], cut: 0.10, cap: 0.12,
-    profile: [[0, 0], [0.08, 0.14], [0.18, 0.25], [0.32, 0.37], [0.48, 0.48]], stars: [{ rf: 0.92, h0: 0.12, slope: 1.2, ring: 1 }, { rf: 0.70, h0: 0.24, slope: 1.0, ring: 2 }, { rf: 0.46, h0: 0.38, slope: 0.8, ring: 3 }], glow: 0.72, spark: 4 }
+    profile: [[0, 0], [0.08, 0.14], [0.18, 0.25], [0.32, 0.37], [0.48, 0.48]], stars: [{ rf: 0.92, h0: 0.12, slope: 1.2, ring: 1 }, { rf: 0.70, h0: 0.24, slope: 1.0, ring: 2 }, { rf: 0.46, h0: 0.38, slope: 0.8, ring: 3 }], glow: 1, spark: 4 }
 ];
 
 function tierVerts(T) {
@@ -269,7 +270,7 @@ function texture(def, X, Y, R, nx, ny, id, seed) {
 /* ---------------- 單張渲染 ---------------- */
 function shadeGem(def, tier, seed) {
   const T = TIERS[tier];
-  const R = T.size * SS;
+  const R = T.size * SS * BODY;
   const planes = tierGeometry(tier, R), P = planes.length;
   const A = new Float32Array(P), BX = new Float32Array(P), BY = new Float32Array(P), GM = new Float32Array(P);
   for (let i = 0; i < P; i++) { A[i] = planes[i].a; BX[i] = planes[i].bx; BY[i] = planes[i].by; GM[i] = Math.hypot(BX[i], BY[i]); }
@@ -373,23 +374,6 @@ function downAndCenter(buf) {
   return r;
 }
 
-function boxBlur(src, w, h, r) {
-  const tmp = new Float32Array(w * h), out = new Float32Array(w * h);
-  const k = 1 / (2 * r + 1);
-  for (let y = 0; y < h; y++) {
-    let s = 0;
-    for (let x = -r; x <= r; x++) s += src[y * w + clamp(x, 0, w - 1)];
-    for (let x = 0; x < w; x++) { tmp[y * w + x] = s * k; s += src[y * w + clamp(x + r + 1, 0, w - 1)] - src[y * w + clamp(x - r, 0, w - 1)]; }
-  }
-  for (let x = 0; x < w; x++) {
-    let s = 0;
-    for (let y = -r; y <= r; y++) s += tmp[clamp(y, 0, h - 1) * w + x];
-    for (let y = 0; y < h; y++) { out[y * w + x] = s * k; s += tmp[clamp(y + r + 1, 0, h - 1) * w + x] - tmp[clamp(y - r, 0, h - 1) * w + x]; }
-  }
-  return out;
-}
-function gauss(src, w, h, r) { let a = src; for (let i = 0; i < 3; i++) a = boxBlur(a, w, h, r); return a; }
-
 /* premultiplied over：dst ← src(color,a) over dst */
 function overPx(d, o, col, a) {
   const ia = 1 - a;
@@ -421,22 +405,21 @@ function renderGem(def, tier, seed) {
   const N = OUT * OUT;
   const d = new Float32Array(N * 4);
   const ctr = OUT / 2;
-  const rGem = T.size;
+  const rGem = T.size * BODY;
 
-  // 光暈：1～5 階沒有，6 階起淡淡出現，隨階數加濃，10 階最濃（強度表在 TIERS.glow）
-  const mask = new Float32Array(N);
-  for (let i = 0; i < N; i++) mask[i] = layer[i * 4 + 3];
+  // 光暈：1～5 階沒有；6 階起用同一條大光暈曲線逐階加濃，10 階 = 1（強度表 TIERS.glow）。
+  // 形狀是寶石後方的一片圓形柔光（沒有環線、沒有邊界），顏色由 def.glow 決定。
   const glowK = T.glow * (def.glowW === undefined ? 1 : def.glowW);
   if (glowK > 0.005) {
-    const g1 = gauss(mask, OUT, OUT, 7), g2 = gauss(mask, OUT, OUT, 20);
+    const Rh = rGem * 1.26 + 2;
     const gc = def.glow || def.pal.glow, rainbow = !!(def.tex && def.tex.kind === 'rainbow');
-    for (let i = 0; i < N; i++) {
-      const a = clamp((g1[i] * 0.9 + g2[i] * 1.5) * glowK, 0, 0.92);
-      if (a > 0.003) {
-        const hot = clamp((a - 0.45) * 1.4, 0, 0.55);
-        const base = rainbow ? hsl(Math.atan2(((i / OUT) | 0) - ctr, (i % OUT) - ctr) * 180 / Math.PI + 90, 0.85, 0.68) : gc;
-        overPx(d, i * 4, mix3(base, def.pal.hi, hot), a);
-      }
+    for (let y = 0; y < OUT; y++) for (let x = 0; x < OUT; x++) {
+      const dx = x + 0.5 - ctr, dy = y + 0.5 - ctr, dd = Math.hypot(dx, dy);
+      const ring = Math.exp(-Math.pow((dd - Rh * 0.8) / 26, 2)) * 0.8;
+      const a = clamp(ring + Math.exp(-dd / (Rh * 0.7)) * 0.3, 0, 0.92) * glowK;
+      if (a < 0.004) continue;
+      const col = rainbow ? hsl(Math.atan2(dy, dx) * 180 / Math.PI + 90, 0.85, 0.68) : gc;
+      overPx(d, (y * OUT + x) * 4, mix3(col, [1, 1, 1], clamp(ring - 0.3, 0, 0.6) * glowK), a);
     }
   }
   // 寶石本體

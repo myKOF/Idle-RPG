@@ -48,7 +48,7 @@
 .gem-ico-fused.is-pair .gem-ico-part:last-child { left: auto; right: 0; top: auto; bottom: 0; }
 
 /* 寶石頁十階列：每一階一個按鈕（圖＋階名＋數值＋持有量）。合成工具下，目前選的那一階描亮。 */
-.gi-curve { width: 34px; height: 34px; margin-bottom: 1px; }
+.gi-curve { width: 40px; height: 40px; margin-bottom: 1px; }
 
 #tab-gems button.gx-curve-cell {
   font-family: inherit;

@@ -2326,7 +2326,7 @@ var GEM_TYPES = {
    光暈只看階數：1～5 階沒有，6 階起淡淡出現、10 階最濃；元素類另有「核」寶石內部有發光核心的記號。
    程式產生（tools/gems），原稿在素材庫 claude-authored/gems。換圖時 +1 GEM_ICON_VER
    （檔名沒有版本字尾，靠查詢字串破快取）。顯示入口是 js/item.js 的 gemIconHTML。 */
-var GEM_ICON_VER = 2;
+var GEM_ICON_VER = 3;
 function gemIconSrc(type, level) {
   var lv = Math.max(1, Math.min(GEM_FORGE_MAX_LEVEL, Math.floor(level) || 1));
   return 'images/gems/gem-' + type + '-' + (lv < 10 ? '0' : '') + lv + '.png?v=' + GEM_ICON_VER;

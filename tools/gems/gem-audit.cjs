@@ -13,7 +13,7 @@ function arg(n, d) { const i = args.indexOf(n); return i >= 0 && args[i + 1] !==
 const tier = +arg('--tier', 8), top = +arg('--top', 24), limit = +arg('--limit', palette.PALETTE_MIN_DISTANCE);
 
 const sigs = {};
-Object.keys(defs).forEach(function (k) { sigs[k] = palette.signature(core.renderGem(defs[k], tier, 1)); });
+Object.keys(defs).forEach(function (k) { sigs[k] = palette.signature(core.renderGem(defs[k], tier, 1), core.OUT); });
 const pairs = palette.closestPairs(sigs);
 console.log('第 ' + tier + ' 階，' + Object.keys(sigs).length + ' 種；最像的 ' + top + ' 對（調色盤距離 / 平均色 ΔE）：');
 pairs.slice(0, top).forEach(function (p) { console.log((p.d < limit ? '✗ ' : '  ') + p.a + ' ~ ' + p.b + '  ' + p.d.toFixed(1) + ' / ' + p.m.toFixed(1)); });
