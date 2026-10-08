@@ -217,6 +217,7 @@ var SKILLS2 = {
    重置時機：開戰／死亡／讀檔／塔戰進出。 */
 var SKILL2_RT = null;
 function resetSkill2RT() {
+  SG_CHAIN_ACTIVE = 0;   // 排程被清掉就沒有任何鏈會再「結束」，計數必須一併歸零（見 SG_CHAIN_MAX_ACTIVE）
   if (SKILL2_RT && SKILL2_RT.flyThunder) sgEndFlyingThunder(SKILL2_RT.flyThunder);
   if (SKILL2_RT && SKILL2_RT.lastStand && SKILL2_RT.lastStand.pEnt) delete SKILL2_RT.lastStand.pEnt._sgRevival;
   if (SKILL2_RT && SKILL2_RT.earthguardRevival && SKILL2_RT.earthguardRevival.pEnt) delete SKILL2_RT.earthguardRevival.pEnt._sgRevival;
@@ -7461,6 +7462,9 @@ function sgCastChainlightning(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   };
   var bolts = lvs[6] > 0 ? Math.max(1, Math.floor(Number(t[6].fx.count) || 3)) : 1;
   bolts += sgLegendCount(lg.chainBoltAdd);           // 傳奇【電擊】
+  /* 自我修復：場上已經沒有任何閃電鏈的待命命中時，計數不可能還大於 0（例如某條鏈的結束回呼因故沒被呼叫），
+     歸零，免得上限被殘留計數永久占滿。 */
+  if (SG_CHAIN_ACTIVE > 0 && !SKILL2_RT.meteors.some(function (m) { return m.gid === 'chainlightning'; })) SG_CHAIN_ACTIVE = 0;
   var starts = sgChainStarts(primary, pool, bolts);
   /* 【雷電暴風】：每次彈射有機率排入一條從該彈射目標起手的獨立閃電鏈。
      生成鏈也沿用相同規則，因此每條鏈的彈射都能再次觸發；上限只作為極端
@@ -7471,6 +7475,7 @@ function sgCastChainlightning(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   cfg.maxChains = 64;
   for (var i = 0; i < bolts; i++) {
     if (cfg.chainCount >= cfg.maxChains) break;
+    if (i > 0 && SG_CHAIN_ACTIVE + cfg.spawnQueue.length >= SG_CHAIN_MAX_ACTIVE) break;   // 第一條永遠放行
     cfg.spawnQueue.push(starts[i % starts.length]);
     cfg.chainCount++;
   }
@@ -7502,6 +7507,13 @@ function sgChainNextTarget(from, pool, visited, hopPx) {
 
 // 每次施放由表格取得世界速度，各次彈射與衍生鏈共用，不依目標距離校準。
 var SG_CHAIN_SERIAL = 0;
+/* 全場同時存活的閃電鏈上限（所有施放合計）。雷電暴風「每次彈射 20% 生成新鏈」的繁殖係數大於 1，
+   天地雷鎖陣又每秒重施，無畫面實測 150 隻敵人時每秒新增約 110 條鏈、同時在飛約 170 條，
+   單步成本壓過 100ms，遊戲時間追不上現實時間（使用者畫面落後 14 分鐘且持續增加）。
+   與臨界雷劫雷球同一個做法：硬上限，且檢查放在擲骰之前，所以未達上限時行為（含亂數消耗）與沒有上限完全相同。
+   每次施放的第一條鏈永遠放行（技能不會因為場上有別人的鏈就打不出來）。 */
+var SG_CHAIN_MAX_ACTIVE = 96;
+var SG_CHAIN_ACTIVE = 0;
 function sgQueueChainHit(cfg, target, dmg, at, pool, isBounce, continueChain, cancelIf, onCancel, homing) {
   sgQueueMeteor(cfg.pEnt, cfg.st, dmg, target, pool, 0, null, cfg.floatSel, cfg.out, at, {
     gid: 'chainlightning', variant: 'lightning-chain-hit',
@@ -7537,9 +7549,11 @@ function sgChainlightningBolt(pEnt, st, cfg, start, pool, floatSel, out) {
   var visited = [], remaining = Math.min(64, cfg.links), bounces = 0;
   var chainId = 'chain-' + (++SG_CHAIN_SERIAL), ended = false;
   var speed = cfg.speedPx;
+  SG_CHAIN_ACTIVE++;
   function endChain() {
     if (ended) return;
     ended = true;
+    if (SG_CHAIN_ACTIVE > 0) SG_CHAIN_ACTIVE--;
     sgEmitVfx('chainlightning', [], floatSel, {
       fxKind:'chain', variant:'lightning-chain-end', hit:false, vfxRoles:{}, area:{chainId:chainId}
     });
@@ -7565,7 +7579,7 @@ function sgChainlightningBolt(pEnt, st, cfg, start, pool, floatSel, out) {
       if (!next) { endChain(); return; }
       bounces++;
       launch(target, next, currentPool);
-      if (cfg.spawnChance > 0 && cfg.chainCount < cfg.maxChains && chance(cfg.spawnChance)) {
+      if (cfg.spawnChance > 0 && cfg.chainCount < cfg.maxChains && SG_CHAIN_ACTIVE < SG_CHAIN_MAX_ACTIVE && chance(cfg.spawnChance)) {
         cfg.chainCount++;
         sgChainlightningBolt(pEnt, st, cfg, next, currentPool, floatSel, out);
       }
@@ -7583,6 +7597,8 @@ function sgChainlightningBolt(pEnt, st, cfg, start, pool, floatSel, out) {
     }, endChain, origin && end ? {position:{x:origin.x,y:origin.y},previousTarget:{x:end.x,y:end.y},speed:speed,lastAt:GT} : null);
   }
   launch(null, start, pool);
+  // 一發都沒射出去（施放者已倒下等）就不會有結束回呼，這裡補扣，免得計數殘留
+  if (!visited.length && !ended) { ended = true; if (SG_CHAIN_ACTIVE > 0) SG_CHAIN_ACTIVE--; }
 }
 
 /* 傳奇【過載】：同一個敵人被閃電鏈打滿 N 次就在牠身上炸開一次，計數隨即歸零重算。
