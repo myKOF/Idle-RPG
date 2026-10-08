@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## Claude｜符文抹除的幣種與費用接進 Excel 配置表（RUNE-ERASE-CONFIG-20261008）
+
+- Owner：Claude；Done。使用者要求：抹除所消耗的幣種及費用接進 Excel 配置表。
+- 技術決策：放在 Runes 表設定列（沿用既有 Runes → runeword_data.js 管線），新增 `erase_scrapPerTier`／`erase_essencePerTier`／`erase_goldPerTier` 三列＝裝備碎片／附魔精華／金幣各自的每階單價，**0＝不收這種幣**（預設 15／1／0，與先前行為相同、金幣預設不收）。取代原本寫死的 `RUNE_ERASE`；`RUNE_SETTINGS.erase` 由表整塊寫回。`runeEraseCost` 多回 gold，新增 `runeEraseCostText`／`runeEraseAffordable` 讓提示、材料不足判定與 Worker 扣款同一個來源。
+- 修改：js/runeword_data.js、runeword.js、item.js、ui.js；tools/config_tables.cjs（設定列、檢查 ≥0、欄位說明）；tools/excel-update-sheets.ps1 新增 `insertRowsAfterKey`（Excel 原生插入列）；config/Excel/Runes.xlsx（在 twoHandBonusSlots 下插 3 列、欄位說明頁換新，Excel COM 寫入並重開驗證）與 Runes.csv；tests/runeword-engine；docs；index.html／bridge.js／sim.worker.js 版號。
+- 測試：`config_tables --apply` 語意變更 0、`apply_params` 549 項一致；新增幣種／單價／金幣不足／全免的測試；全庫無我造成的新增失敗。
+- 風險：金幣單價 >0 時，抹除會被金幣不足擋下（錯誤訊息列出需要的幣種）。
+
 ## Codex｜狂暴化依敵人數累積（ENEMY-FRENZY-COUNT-20261008）
 
 - Owner：Codex；Done。每次滿秒增加1%×（1＋場上存活敵人數／100），出生10秒寬限不變、無上限；保留歷史累積，不因敵人減少回扣。包含進場／寬限中的存活敵人，高塔只計當場BOSS。

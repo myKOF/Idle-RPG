@@ -61,6 +61,29 @@ test('socketRune：扣庫存、鑲進第一個空符文孔；庫存不足／已�
   assert.equal(c.runeCount('r01'), 1, '沒有符文孔時不扣庫存');
 });
 
+test('抹除費用的幣種與單價來自配置表（RUNE_SETTINGS.erase）：0＝不收這種幣，金幣可選，費用文字只列要收的', () => {
+  const c = loadRuneEnv();
+  const it = makeItem(c, { rarity: 5 });
+  assert.deepEqual(plain(Object.keys(c.RUNE_SETTINGS.erase)), ['scrapPerTier', 'essencePerTier', 'goldPerTier']);
+  const tier = c.RUNE_BY_ID.r05.tier, mult = c.RARITIES[5].mult;
+  c.RUNE_SETTINGS.erase.goldPerTier = 100;
+  const cost = c.runeEraseCost(it, 'r05');
+  assert.equal(cost.gold, Math.ceil(100 * tier * mult));
+  assert.equal(cost.scrap, Math.ceil(c.RUNE_SETTINGS.erase.scrapPerTier * tier * mult));
+  assert.match(c.runeEraseCostText(cost), /金幣 .*裝備碎片 .*附魔精華 /);
+  c.addRune('r05', 1); c.socketRune(it, 'r05');
+  Object.assign(c.G.player, { gold: cost.gold - 1, scrap: 1e9, essence: 1e9 });
+  assert.match(c.eraseRune(it, 0), /資源不足.*金幣/, '金幣不夠就擋下');
+  c.G.player.gold = cost.gold + 7;
+  assert.equal(c.eraseRune(it, 0), null);
+  assert.equal(c.G.player.gold, 7, '金幣被扣');
+  c.RUNE_SETTINGS.erase = { scrapPerTier: 0, essencePerTier: 0, goldPerTier: 0 };
+  assert.deepEqual(plain(c.runeEraseCost(it, 'r05')), { gold: 0, scrap: 0, essence: 0 });
+  assert.equal(c.runeEraseCostText(c.runeEraseCost(it, 'r05')), '免費');
+  c.RUNE_SETTINGS.erase = { scrapPerTier: 0, essencePerTier: 3, goldPerTier: 0 };
+  assert.equal(c.runeEraseCostText(c.runeEraseCost(it, 'r05')), '附魔精華 ' + c.fmt(Math.ceil(3 * tier * mult)), '只收精華時只列精華');
+});
+
 test('抹除費用：符文階數越高、裝備稀有度越高越貴，一律是正整數', () => {
   const c = loadRuneEnv();
   const at = (rarity, rune) => c.runeEraseCost({ rarity }, rune);

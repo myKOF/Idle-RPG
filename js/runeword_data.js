@@ -96,6 +96,8 @@ var RUNE_BY_ID = (function () {
    maxSlots       符文孔數的硬上限（符文真言最多幾顆符文）。各稀有度的孔數不在這裡：在 game_parameters「表-稀有度」的參數g（寫回 RARITIES.runeSlots）
    twoHandBonusSlots  雙手武器額外多幾個符文孔（加法；0＝與一般裝備相同；只加在本來就有符文孔的稀有度上）。
                   最多孔稀有度的孔數＋此值不得超過 maxSlots
+   erase          抹除已刻印符文的費用（符文不退還、孔恢復為空）：每階單價（scrapPerTier 裝備碎片／essencePerTier 附魔精華／goldPerTier 金幣；0＝不收這種幣）
+                  × 符文階數 × 裝備稀有度倍率（RARITIES.mult），無條件進位
    composeCount   合成：同種符文幾顆 → 下一階 1 顆
    composeMaxTier 能合成到第幾階（更高階只能靠掉落）
    dismantleYield 拆解 1 顆 → 低一階符文幾顆；必須小於 composeCount。≥2 會讓一顆高階符文拆出指數倍的低階符文、把低階稀有度整個破壞，
@@ -116,16 +118,13 @@ var RUNE_BY_ID = (function () {
 var RUNE_SETTINGS = {
   maxSlots: 5,
   twoHandBonusSlots: 1,
+  erase: { scrapPerTier: 15, essencePerTier: 1, goldPerTier: 0 },
   composeCount: 3,
   composeMaxTier: 20,
   dismantleYield: 1,
   statScale: 1,
   drop: { basePct: 0.3, towerBossPct: 35, tierSpread: 0.74, progressPerTier: 4.6 }
 };
-/* 抹除已刻印的符文要付的費用（符文不退還、孔恢復為空）。不在配置表：這兩個數字直接改這裡。
-   費用 = 每階單價 × 符文階數 × 裝備稀有度倍率（RARITIES.mult）；scrap＝裝備碎片、essence＝附魔精華。 */
-var RUNE_ERASE = { scrapPerTier: 15, essencePerTier: 1 };
-
 /* 既有程式使用的具名常數：全部由上面的設定衍生（唯一來源），不要在別處另寫數字。 */
 var RUNE_MAX_SLOTS = RUNE_SETTINGS.maxSlots;
 var RUNE_COMPOSE_COUNT = RUNE_SETTINGS.composeCount;

@@ -1530,6 +1530,9 @@ const RUNE_TABLE_HEADER = ['類型', 'id', '名稱', '階／級距', '武器詞�
 const RUNE_SETTING_NOTES = {
   maxSlots: '符文孔數的硬上限，也是符文真言最多能有幾顆符文。各稀有度的符文孔數不在這張表：在 game_parameters.xlsx「表-稀有度」各列的參數g。',
   twoHandBonusSlots: '雙手武器的符文孔比一般裝備多幾個（加法，不是倍數；0＝一樣多）。只加在本來就有符文孔的稀有度上（孔數 0 的稀有度，雙手武器也沒有符文孔）；最多孔稀有度的孔數加上它不得超過符文孔數上限。',
+  erase_scrapPerTier: '抹除已刻印的符文要付的裝備碎片：每階單價（0＝不收這種幣）。實付＝單價 × 符文階數 × 裝備稀有度倍率（RARITIES 的詞條數值倍率），無條件進位。符文抹除後直接消失、不退還。',
+  erase_essencePerTier: '抹除已刻印的符文要付的附魔精華：每階單價（0＝不收這種幣）。算法同裝備碎片。',
+  erase_goldPerTier: '抹除已刻印的符文要付的金幣：每階單價（0＝不收這種幣；預設不收）。算法同裝備碎片。',
   composeCount: '合成：同種符文幾顆合成下一階 1 顆。',
   composeMaxTier: '能合成到第幾階；更高階的符文只能靠擊殺與封魔塔掉落。',
   dismantleYield: '拆解 1 顆得到低一階符文幾顆；必須小於合成所需顆數。≥2 會讓一顆高階符文拆出指數倍的低階符文、破壞稀有度，所以預設 1（只能降階頂替、不會變多）。',
@@ -1555,6 +1558,7 @@ const RUNE_GLOSSARY_ROWS = [
   ['maxSlots：符文孔數上限，同時也是符文真言最多能有幾顆符文。'],
   ['各稀有度的符文孔數：不在這張表。在 config/Excel/game_parameters.xlsx 的「表-稀有度」各列（編號 321～331）的「參數g」；0～上限，不可隨稀有度變少。符文孔取代原本的附魔欄位，與寶石鑲孔分開。'],
   ['twoHandBonusSlots：雙手武器的符文孔比一般裝備多幾個（加法，不是倍數；0＝一樣多）。只加在本來就有符文孔的稀有度上；最多孔稀有度的孔數加上它不得超過上限。5 顆符文的真言只能用在雙手武器，要靠這一格才做得出來。'],
+  ['erase_scrapPerTier／erase_essencePerTier／erase_goldPerTier：抹除已刻印符文的費用（裝備碎片／附魔精華／金幣各自的每階單價，0＝不收這種幣）。實付＝單價 × 符文階數 × 裝備稀有度倍率，無條件進位；符文抹除後消失、不退還。'],
   ['composeCount／composeMaxTier／dismantleYield：合成（同種幾顆→下一階 1 顆）、最高合成階（更高階只能掉落）、拆解產出（必須小於合成所需顆數；預設 1＝只能降階頂替、不會變多）。'],
   ['statScale：全域屬性縮放，符文與符文真言的屬性加成一律乘此值（平衡用旋鈕，1＝不縮放）。'],
   ['drop_*：掉落。basePct 野外每次擊殺的基礎掉落率(%)（再乘掉寶率與地圖獎勵倍率）、towerBossPct 封魔塔通關的基礎掉落率(%)、tierSpread 階數稀有度（相鄰兩階的機率比，0~1，越小高階越稀有）、progressPerTier 每 +1 進度對應的最高掉落階增量。'],
@@ -1650,6 +1654,9 @@ function runeTableRarities() {
 function runeSettingDefs(rarities) {
   const defs = [['maxSlots', '符文孔數上限', s => s.maxSlots]];
   defs.push(['twoHandBonusSlots', '雙手武器額外符文孔數', s => s.twoHandBonusSlots || 0]);
+  defs.push(['erase_scrapPerTier', '抹除費用：裝備碎片(每階)', s => s.erase.scrapPerTier]);
+  defs.push(['erase_essencePerTier', '抹除費用：附魔精華(每階)', s => s.erase.essencePerTier]);
+  defs.push(['erase_goldPerTier', '抹除費用：金幣(每階)', s => s.erase.goldPerTier]);
   defs.push(['composeCount', '合成所需顆數', s => s.composeCount]);
   defs.push(['composeMaxTier', '最高合成階', s => s.composeMaxTier]);
   defs.push(['dismantleYield', '拆解產出顆數', s => s.dismantleYield]);
@@ -1757,6 +1764,7 @@ SCHEMAS.Runes = {
     const bonus = val.twoHandBonusSlots;
     if (!isInt(bonus) || bonus < 0) fail('Runes 表：雙手武器額外符文孔數必須是 ≥0 的整數');
     if (slots[slots.length - 1] + bonus > maxSlots) fail('Runes 表：最高稀有度的孔數 ' + slots[slots.length - 1] + '（game_parameters 參數g）＋雙手加成 ' + bonus + ' 超過符文孔數上限 ' + maxSlots);
+    ['erase_scrapPerTier', 'erase_essencePerTier', 'erase_goldPerTier'].forEach(k => { if (!(val[k] >= 0)) fail('Runes 表：「' + k + '」必須是 ≥0 的數字（0＝不收這種幣）'); });
     if (!isInt(val.composeMaxTier) || val.composeMaxTier < 1) fail('Runes 表：最高合成階必須是 ≥1 的整數');
     if (!isInt(val.composeCount) || val.composeCount < 2) fail('Runes 表：合成所需顆數必須是 ≥2 的整數');
     if (!isInt(val.dismantleYield) || val.dismantleYield < 1 || val.dismantleYield >= val.composeCount) fail('Runes 表：拆解產出必須是 1~（合成所需顆數-1）的整數，否則拆解會賺');
@@ -1850,6 +1858,7 @@ SCHEMAS.Runes = {
     const settingsText = 'var RUNE_SETTINGS = {\n' +
       '  maxSlots: ' + numStr(maxSlots) + ',\n' +
       '  twoHandBonusSlots: ' + numStr(bonus) + ',\n' +
+      '  erase: ' + jsLit({ scrapPerTier: val.erase_scrapPerTier, essencePerTier: val.erase_essencePerTier, goldPerTier: val.erase_goldPerTier }) + ',\n' +
       '  composeCount: ' + numStr(val.composeCount) + ',\n' +
       '  composeMaxTier: ' + numStr(val.composeMaxTier) + ',\n' +
       '  dismantleYield: ' + numStr(val.dismantleYield) + ',\n' +

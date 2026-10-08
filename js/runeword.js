@@ -169,23 +169,37 @@ function rwSeenFromItem(seen, it) {
   return 1;
 }
 
-/* 抹除一顆已刻印符文的費用：{ scrap, essence }。純函式（UI 顯示與 Worker 扣款共用同一個算式）。
-   符文階數越高、裝備稀有度越高越貴（RUNE_ERASE 的每階單價 × 階數 × 稀有度倍率）。 */
+/* 抹除一顆已刻印符文的費用：{ gold, scrap, essence }（配置表 Runes 設定列 erase_*，0＝不收）。純函式（UI 顯示與 Worker 扣款共用同一個算式）。
+   符文階數越高、裝備稀有度越高越貴（每階單價 × 階數 × 稀有度倍率）。 */
 function runeEraseCost(it, runeId) {
   var rune = RUNE_BY_ID[runeId];
   var rar = RARITIES[clamp(Math.floor(Number(it && it.rarity) || 0), 0, RARITIES.length - 1)];
   var k = (rune ? rune.tier : 0) * (rar ? rar.mult : 1);
-  return { scrap: Math.ceil(RUNE_ERASE.scrapPerTier * k), essence: Math.ceil(RUNE_ERASE.essencePerTier * k) };
+  var E = RUNE_SETTINGS.erase;
+  return { gold: Math.ceil(E.goldPerTier * k), scrap: Math.ceil(E.scrapPerTier * k), essence: Math.ceil(E.essencePerTier * k) };
 }
 
-/* 抹除指定符文孔的符文：扣裝備碎片與附魔精華，符文直接消失（不退還），孔恢復為空。成功回 null，失敗回錯誤字串。 */
+/* 費用文字（只列要收的幣種）：「金幣 1,200、裝備碎片 360、附魔精華 24」；全免回「免費」。 */
+function runeEraseCostText(cost) {
+  var parts = [];
+  if (cost.gold > 0) parts.push('金幣 ' + fmt(cost.gold));
+  if (cost.scrap > 0) parts.push('裝備碎片 ' + fmt(cost.scrap));
+  if (cost.essence > 0) parts.push('附魔精華 ' + fmt(cost.essence));
+  return parts.length ? parts.join('、') : '免費';
+}
+
+/* 玩家付不付得起這筆抹除費用（player 要有 gold／scrap／essence）。 */
+function runeEraseAffordable(player, cost) {
+  return !!player && (player.gold || 0) >= cost.gold && (player.scrap || 0) >= cost.scrap && (player.essence || 0) >= cost.essence;
+}
+
+/* 抹除指定符文孔的符文：扣設定的幣種（預設裝備碎片與附魔精華），符文直接消失（不退還），孔恢復為空。成功回 null，失敗回錯誤字串。 */
 function eraseRune(it, idx) {
   if (!it || !Array.isArray(it.runes) || !Number.isInteger(idx) || !it.runes[idx]) return '這個符文孔沒有符文';
   var cost = runeEraseCost(it, it.runes[idx]);
   var P = G.player;
-  if ((P.scrap || 0) < cost.scrap || (P.essence || 0) < cost.essence) {
-    return '資源不足（抹除需要 裝備碎片 ' + fmt(cost.scrap) + '、附魔精華 ' + fmt(cost.essence) + '）';
-  }
+  if (!runeEraseAffordable(P, cost)) return '資源不足（抹除需要 ' + runeEraseCostText(cost) + '）';
+  P.gold -= cost.gold;
   P.scrap -= cost.scrap;
   P.essence -= cost.essence;
   it.runes[idx] = null;

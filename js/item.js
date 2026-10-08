@@ -771,7 +771,7 @@ function itemRuneHTML(it, mode) {
     if (id) {
       var cost = runeEraseCost(it, id);
       h += '<button type="button" class="socket-remove" data-rune-erase="' + i + '" aria-label="抹除符文孔 ' + (i + 1) + ' 的符文" data-tip="' +
-        esc('抹除：消耗 裝備碎片 ' + fmt(cost.scrap) + '、附魔精華 ' + fmt(cost.essence) + '；符文不會退還，孔恢復為空') + '"' +
+        esc('抹除：消耗 ' + runeEraseCostText(cost) + '；符文不會退還，孔恢復為空') + '"' +
         (mode.pending ? ' disabled' : '') + '>抹除</button>';
     } else if (draftId) {
       h += '<button type="button" class="socket-remove" data-rune-undraft="' + i + '" aria-label="取消符文孔 ' + (i + 1) + ' 的暫放符文"' +

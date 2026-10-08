@@ -8,6 +8,7 @@ $ErrorActionPreference='Stop'
    deleteColumns／deleteRows（2026-09-29 新增）：用 Excel 的刪除整欄／整列（格式、篩選範圍、凍結窗格由 Excel 自己調整），
    deleteColumns＝要刪的表頭名稱（比對表頭第一行文字）、deleteRows＝要刪的列號（1 起、以「刪除前」的工作表為準）、
    deleteRowKeys＝{ columns: [表頭名稱...], keys: [[值...], ...] } 以鍵欄位的值找出要刪的列（找不到就中止，不會靜默略過）；
+   insertRowsAfterKey＝{ columns, key, count } 在鍵命中的那列下面插入 count 個空列（刪列之後、插入欄之前執行）；
    三者都在插入欄與逐格比對之前執行，之後 rows 必須是刪完之後的完整目標內容。
    先改暫存副本，正常模式重開逐格驗證、繪圖物件數不變、再存一次重開仍不變，才覆蓋來源；
    來源 hash 在過程中被改動（使用者剛存檔）就停止，不覆蓋。
@@ -89,6 +90,29 @@ try {
   }
   foreach($rn in ($delRows|Sort-Object {[int]$_} -Descending)){
    $ws.Rows.Item([int]$rn).Delete()|Out-Null
+  }
+  # insertRowsAfterKey（2026-10-08 新增）：{ columns: [表頭名稱...], key: [值...], count: N } 在鍵命中的那一列下面用 Excel 的插入列加 N 列空列
+  # （格式承襲上一列）；之後 rows 必須是插入後的完整目標內容，空列由逐格比對寫入。鍵必須剛好命中 1 列；不可重跑（重跑會再插一次，驗證不符時中止、不覆蓋來源）。
+  if($sheet.insertRowsAfterKey){
+   $spec=$sheet.insertRowsAfterKey
+   $lastCol=$ws.UsedRange.Column+$ws.UsedRange.Columns.Count-1
+   $colIdx=@()
+   foreach($kc in @($spec.columns)){
+    $ci=0
+    for($c=1;$c -le $lastCol;$c++){ if(([string]$ws.Cells.Item(1,$c).Value2).Split([char]10)[0].Trim() -eq [string]$kc){$ci=$c;break} }
+    if($ci -eq 0){throw "找不到鍵欄位「$kc」"}
+    $colIdx+=$ci
+   }
+   $lastRow=$ws.UsedRange.Row+$ws.UsedRange.Rows.Count-1
+   $hit=0;$at=0
+   for($r=2;$r -le $lastRow;$r++){
+    $ok=$true
+    for($k=0;$k -lt $colIdx.Count;$k++){ if([string]$ws.Cells.Item($r,$colIdx[$k]).Value2 -ne [string]@($spec.key)[$k]){$ok=$false;break} }
+    if($ok){$hit++;$at=$r}
+   }
+   if($hit -ne 1){throw "插入鍵「$(@($spec.key) -join '|')」命中 $hit 列（必須剛好 1 列）"}
+   $n=[int]$spec.count
+   $ws.Range($ws.Rows.Item($at+1),$ws.Rows.Item($at+$n)).Insert(-4121)|Out-Null
   }
   foreach($ins in @($sheet.insertColumns)){
    if(-not $ins){continue}
