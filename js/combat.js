@@ -384,19 +384,23 @@ function spawnEliteWave(append, eliteStage) {
         var leaders = g.pure ? g.size : Math.min(g.size, leadersCfg);
         var affixes = (typeof eliteRollAffixes === 'function') ? eliteRollAffixes(s, rollEliteSkillCount(s)) : [];
         var enterCd = FIELD_ENEMY_ENTER_DELAY + gi * FIELD_ENEMY_ENTER_STAGGER * 2;
+        var shown = [];   // 這一群實際帶的詞條（含 NPC 表指定的固定技能），給戰鬥日誌用
         for (var k = 0; k < g.size; k++) {
             var isElite = k < leaders;
-            var e = makeFieldEnemy(pickZoneMonsterType(zn), isElite ? eliteBase : normalBase, zn, s, {
+            var mt = pickZoneMonsterType(zn);
+            var e = makeFieldEnemy(mt, isElite ? eliteBase : normalBase, zn, s, {
                 elite: isElite, enterCd: enterCd + k * 0.03,
                 hpMult: isElite ? 1 : ELITE_GROUP.minionHp, atkMult: isElite ? 1 : ELITE_GROUP.minionAtk,
                 rewardMult: isElite ? 1 : ELITE_GROUP.minionReward
             });
             e._gid = gid;
             e._gRole = isElite ? (k === 0 ? 'leader' : 'elite') : 'minion';
-            if (isElite && typeof eliteEquip === 'function') eliteEquip(e, affixes);
+            /* NPC 表替這種菁英指定了固定技能就用固定的；沒指定才用整群共用的隨機詞條。 */
+            if (isElite && typeof eliteEquip === 'function') eliteEquip(e, (mt.eliteSkills && mt.eliteSkills.length) ? mt.eliteSkills : affixes);
+            (e.affixes || []).forEach(function (id) { if (shown.indexOf(id) < 0) shown.push(id); });
             enemies.push(e);
         }
-        summary.push({ affixes: affixes, size: g.size, pure: g.pure });
+        summary.push({ affixes: shown, size: g.size, pure: g.pure });
     }
     if (enemies.length > room) enemies.length = Math.max(0, Math.floor(room));   // 放不下就從最後一群的尾端（小兵）砍起
     if (!enemies.length) return [];

@@ -41,7 +41,8 @@ const JS = {
   skills: path.join(ROOT, 'js', 'skills.js'),
   skills2: path.join(ROOT, 'js', 'skills2.js'),
   status: path.join(ROOT, 'js', 'status.js'),
-  runes: path.join(ROOT, 'js', 'runeword_data.js')
+  runes: path.join(ROOT, 'js', 'runeword_data.js'),
+  elite: path.join(ROOT, 'js', 'elite_data.js')
 };
 const WRITE = process.argv.includes('--write');
 
@@ -373,19 +374,58 @@ const NPC_POOL_DEFS = [
   { zone: 'god_sanctuary', varName: 'GOD_SANCTUARY_POOL' }
 ];
 
+/* 「類型」欄（2026-10-08）：normal／elite／boss，每個 NPC 各一列。
+   - 基本資料（名稱、屬性、外觀、移動攻擊、權重）只讀 normal 列；elite／boss 列的這些欄位是複製品，改了不會生效。
+   - 「技能」欄：elite 列填詞條 id（用「;」分隔，最多 3 個，id 見 js/elite_data.js 的 ELITE_AFFIXES）＝這種菁英固定使用這些技能，
+     留白＝沿用「同群隨機抽 1～3 個」。normal 列沒有技能；boss 列目前不支援專屬技能（填了會被忽略並提示）。
+   - 「技能特效」「備註」是唯讀說明（由詞條資料自動產生），套用時不讀；改了技能後執行
+     node tools/config_tables.cjs --gen NPC 可重新產生。 */
+const NPC_TYPES = ['normal', 'elite', 'boss'];
+function npcSkillDefs() {
+  if (!fs.existsSync(JS.elite)) return {};
+  return evalLiteral(extractLiteral(readUtf8(JS.elite), 'ELITE_AFFIXES').literal);
+}
+function npcSkillVfx(def, presets) {
+  const out = [];
+  (function walk(v) {
+    if (typeof v === 'string') { if (presets.has(v) && out.indexOf(v) < 0) out.push(v); }
+    else if (v && typeof v === 'object') Object.keys(v).forEach(k => walk(v[k]));
+  })(def);
+  return out;
+}
+function npcPresetSet() {
+  const dir = path.join(ROOT, 'vfx', 'presets');
+  return new Set(fs.existsSync(dir) ? fs.readdirSync(dir).filter(f => /\.json$/i.test(f)).map(f => f.replace(/\.json$/i, '')) : []);
+}
 SCHEMAS.NPC = {
   name: 'NPC', jsFile: 'data', sheet: 'NPC', vars: NPC_POOL_DEFS.map(d => d.varName),
-  header: ['NPC識別碼', 'NPC名稱', '所屬地圖識別碼', '屬性', '外觀', '移動速度(米/秒)', '攻擊速度(次/秒)', '攻擊距離(米)', '魔法型（1是／0否）', '出現權重'],
+  header: ['NPC識別碼', 'NPC名稱', '所屬地圖識別碼', '類型', '屬性', '外觀', '移動速度(米/秒)', '攻擊速度(次/秒)', '攻擊距離(米)', '魔法型（1是／0否）', '出現權重',
+    '技能', '技能特效', '備註'],
   extract(src) {
     const rows = [];
+    const defs = npcSkillDefs();
+    const presets = npcPresetSet();
     NPC_POOL_DEFS.forEach(def => {
       const pool = evalLiteral(extractLiteral(src, def.varName).literal);
       pool.forEach((entry, index) => {
         const id = entry.id || (def.zone + '_' + (index + 1));
-        rows.push([id, entry.name, def.zone, entry.attr || '', entry.appearance || entry.emoji || '',
+        const base = [entry.attr || '', entry.appearance || entry.emoji || '',
           numStr(entry.runSpeed == null ? '' : entry.runSpeed), numStr(entry.atkSpeed == null ? '' : entry.atkSpeed),
           numStr(entry.atkRange == null ? '' : entry.atkRange),
-          entry.magic ? '1' : '0', numStr(entry.weight == null ? 1 : entry.weight)]);
+          entry.magic ? '1' : '0', numStr(entry.weight == null ? 1 : entry.weight)];
+        const skills = (Array.isArray(entry.eliteSkills) ? entry.eliteSkills : []).filter(k => defs[k]);
+        NPC_TYPES.forEach(type => {
+          let skill = '', vfx = '', note = '';
+          if (type === 'normal') note = '普通攻擊，沒有特殊技能。';
+          else if (type === 'boss') note = '尚未設計專屬技能（此欄填了也不會生效）。';
+          else if (!skills.length) note = '未指定固定技能：每群隨機抽 1～3 個詞條（全部詞條見 docs/ELITE_AFFIXES.md）。';
+          else {
+            skill = skills.join(';');
+            vfx = skills.map(k => defs[k].name + '：' + npcSkillVfx(defs[k], presets).join('、')).join('；');
+            note = skills.map(k => defs[k].name + '：' + (defs[k].desc || '')).join('；');
+          }
+          rows.push([id, entry.name, def.zone, type].concat(base, [skill, vfx, note]));
+        });
       });
     });
     return rows;
@@ -405,9 +445,22 @@ SCHEMAS.NPC = {
         oldById[id] = entry;
       });
     });
+    const eliteDefs = npcSkillDefs();
+    const eliteSkillsById = {};
     dataRows.forEach((row, index) => {
+      const type = get(row, '類型').trim().toLowerCase();
       const id = get(row, 'NPC識別碼').trim();
       if (id === '') return;
+      if (type !== '' && NPC_TYPES.indexOf(type) < 0) throw new Error('NPC 第 ' + (index + 2) + ' 列的「類型」只能是 normal／elite／boss：' + type);
+      if (type === 'boss' && get(row, '技能').trim() !== '') console.warn('  ⚠ NPC 第 ' + (index + 2) + ' 列（' + id + ' boss）填了技能，但 BOSS 專屬技能尚未支援，已忽略');
+      if (type === 'elite') {
+        const ids = get(row, '技能').split(/[;；,，\s]+/).map(t => t.trim()).filter(Boolean);
+        ids.forEach(k => { if (!eliteDefs[k]) throw new Error('NPC 第 ' + (index + 2) + ' 列的技能「' + k + '」不存在（可用詞條見 docs/ELITE_AFFIXES.md）'); });
+        if (ids.length > 3) throw new Error('NPC 第 ' + (index + 2) + ' 列的技能超過 3 個：' + ids.join(';'));
+        if (new Set(ids).size !== ids.length) throw new Error('NPC 第 ' + (index + 2) + ' 列的技能重複：' + ids.join(';'));
+        eliteSkillsById[id] = ids;
+      }
+      if (type === 'elite' || type === 'boss') return;   // 基本資料只認 normal 列
       const zone = get(row, '所屬地圖識別碼').trim();
       if (!defByZone[zone]) throw new Error('NPC 第 ' + (index + 2) + ' 列的地圖識別碼不存在：' + zone);
       const old = oldById[id];
@@ -436,8 +489,12 @@ SCHEMAS.NPC = {
         o[pair[1]] = v;
       });
       delete o.aspdMult;
+      delete o.eliteSkills;
       rowsByZone[zone].push(o);
     });
+    NPC_POOL_DEFS.forEach(def => rowsByZone[def.zone].forEach(o => {
+      if (eliteSkillsById[o.id] && eliteSkillsById[o.id].length) o.eliteSkills = eliteSkillsById[o.id];
+    }));
     return NPC_POOL_DEFS.reduce((out, def) => {
       if (!rowsByZone[def.zone].length) throw new Error('NPC 缺少地圖資料：' + def.zone);
       out[def.varName] = 'var ' + def.varName + ' = [\n' +

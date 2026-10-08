@@ -159,7 +159,9 @@ test('NPC 表有實際帶地屬性標籤的敵人，且 attr 一律是合法元�
   }
   // CSV 是給人看的鏡像，與 JS 的 attr 必須一致（xlsx 才是來源，CSV 由它產生）
   const csv = fs.readFileSync(path.join(root, 'config/CSV/NPC.csv'), 'utf8').replace(/^﻿/, '').trim().split(/\r?\n/);
-  const csvAttr = new Map(csv.slice(1).map((line) => { const f = line.split(','); return [f[0], f[3]]; }));
+  const hd = csv[0].split(',');
+  const iId = hd.indexOf('NPC識別碼'), iType = hd.indexOf('類型'), iAttr = hd.indexOf('屬性');
+  const csvAttr = new Map(csv.slice(1).map((line) => line.split(',')).filter((f) => f[iType] === 'normal').map((f) => [f[iId], f[iAttr]]));
   for (const [id, npc] of Object.entries(c.NPC_CONFIG_TABLE)) {
     assert.equal(csvAttr.get(id), npc.attr, `NPC.csv 的 ${id} 屬性與 js/data.js 不一致`);
   }

@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## Claude｜NPC 表加「類型／技能／技能特效／備註」，菁英可固定技能（NPC-ELITE-SKILLS-20261008）
+
+- Owner：Claude；Done。使用者在 NPC.xlsx 加了「類型」欄（normal／elite／boss，每個 NPC 三列），要求表後面再補 NPC 的技能、技能用到的特效名與給人讀的備註。
+- 決策（使用者選「每種菁英 NPC 配固定詞條」）：elite 列的「技能」欄填詞條 id（`;` 分隔、最多 3 個、不可重複）＝這種菁英固定使用；留白＝沿用同群隨機。84 種菁英已依屬性與名稱主題各配 1～3 個，互斥組不衝突（數值與搭配都是我先訂的，沒有平衡）。normal 列寫「普通攻擊」，boss 列寫「尚未設計專屬技能」（填了會被忽略並提示）。「技能特效」「備註」由詞條資料自動產生，改了技能後需重新產生（見 tests NPC-SKILL-3）。
+- 修改：`tools/config_tables.cjs`（NPC 結構改 14 欄、只讀 normal 列的基本資料、檢查技能存在與數量與類型、elite 列技能寫回 `eliteSkills`）、`js/data.js`（84 筆 pool 加 `eliteSkills`、`registerNpcPool` 帶入）、`js/combat.js`（`spawnEliteWave` 優先用 NPC 的固定技能，戰鬥日誌顯示實際詞條）、`config/Excel/NPC.xlsx`（原生 Excel API 更新）、`config/CSV/NPC.csv`、`tools/參數表使用說明.md`、`index.html`／`sim.worker.js`／`bridge.js` 版號，測試 `tests/npc-elite-skills.test.cjs`（5 項）並修正 `earth-element`／`stage-rework`／`elite-groups` 三支舊測試對 NPC.csv 欄位與群組共用詞條的假設。
+- 影響：混合群的成員可能是不同種 NPC，所以同群菁英不再一定共用同一組詞條（有固定技能的用自己的）。GM 的 `elite` 指令仍用指定或隨機詞條，不吃 NPC 表。固定技能不檢查 `minStage`（高階詞條配給低階 NPC 會提早出現）。
+- 驗證：全庫測試失敗名稱與乾淨 HEAD 比對，新增 0、少 2（原本紅的 NPC CSV 筆數與 apply_params 預設列兩項因而轉綠）；`--apply NPC` 語意變更 0；Excel 轉出 CSV 與現有 CSV 位元相同。
+
 ## Claude｜菁英敵人改造：成群出現、普通關也會遇到、47 個詞條技能（ELITE-GROUPS-20261008）
 
 - Owner：Claude；Done。使用者要求：①菁英也會在普通關出現，每 10 關固定的菁英照常 ②菁英成群（每群 2～4 隻，全員菁英或菁英帶小兵）③參數寫進 game_parameters ④每隻菁英放 1～3 種技能、總數至少 30 個，特效要一眼看出放了什麼 ⑤授權不中止做到完成，需詢問的先用建議做法、問題列在總結。
