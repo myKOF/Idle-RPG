@@ -11185,6 +11185,14 @@ function uiStallDiagText(now) {
   if (silent !== null && silent > UI_WORKER_SILENT_MS) {
     text += ' ⚠ Worker 靜默 ' + (silent / 1000).toFixed(1) + ' 秒';
   }
+  /* Worker 慢單步：最近 30 秒內最慢的一次 loop 與耗時最大的階段（forge／field／tower／factory／newForge／emit／persist）。
+     「Worker 靜默」只說得出卡住，這行說得出卡在哪一段。 */
+  var slow = (typeof WorkerBridge !== 'undefined' && WorkerBridge.status) ? WorkerBridge.status().slowLoop : null;
+  if (slow && Date.now() - slow.at <= 30000) {
+    var top = '', topMs = -1;
+    for (var phk in slow.ph) if (slow.ph[phk] > topMs) { topMs = slow.ph[phk]; top = phk; }
+    text += ' ⚠ Worker 慢 ' + slow.ms + 'ms（' + top + ' ' + topMs + '，' + slow.steps + ' 步）';
+  }
   var head = UI_WORKER_VISUAL_EVENT_QUEUE[0];
   if (head && head._qAt && now - head._qAt > UI_VISUAL_WAIT_MS) {
     text += ' ⚠ 特效佇列等 ' + ((now - head._qAt) / 1000).toFixed(1) + ' 秒（' + UI_WORKER_VISUAL_EVENT_QUEUE.length + ' 件）';

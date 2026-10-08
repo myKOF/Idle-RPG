@@ -161,6 +161,7 @@ var WorkerBridge = (function () {
         stats.lastView = msg.view;
         stats.lastDirty = msg.dirty || [];
         stats.lastDiag = msg.diag || null;
+        if (msg.slow) stats.lastSlow = msg.slow;   // 最近一次 ≥100ms 的 Worker loop 與各階段耗時
         if (msg.measure) stats.lastMeasure = msg.measure;
         stats.events += (msg.events || []).length;
         break;
@@ -459,6 +460,7 @@ var WorkerBridge = (function () {
       safeMode: safeMode(),
       restarts: _restartCount,
       maxRestarts: MAX_RESTARTS,
+      slowLoop: stats.lastSlow || null,
       silentMs: _lastMessageAt ? (Date.now() - _lastMessageAt) : null,
       upTimeSec: stats.bootedAt ? Math.round((Date.now() - stats.bootedAt) / 1000) : 0,
       ticks: stats.ticks,
