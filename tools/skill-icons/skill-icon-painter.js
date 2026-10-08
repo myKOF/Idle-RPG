@@ -435,7 +435,8 @@
   /* 突刺：只取刀身前半段——刀身從左下畫外伸入，刀尖在畫面中央偏右上，衝擊波紋＋閃光是主角 */
   PAINTERS.thrust = function (c, R) {
     background(c, R, Object.assign({ cx: 150, cy: 106 }, PAL.steel));
-    var tx = 156, ty = 96;  /* 量出重心偏右 11，往左補 */
+    /* 刀尖位置按「形狀重心」（不加權）置中：亮閃光會讓加權重心看似置中，但劍身與後方大環其實偏左下 */
+    var tx = 166, ty = 86;
     var ang = Math.atan2(-1, 1), dx = Math.cos(ang), dy = Math.sin(ang), nx = -dy, ny = dx;
     /* 速度線（短、集中在刀身周圍） */
     add(c);
@@ -446,20 +447,31 @@
         rgba('#a8d0ff', range(R, 0.15, 0.4)));
     }
     normal(c);
-    /* 衝擊波紋：沿刺擊方向排開的橢圓環，越前越大越淡（畫在刀身後，刀尖穿過它們） */
-    add(c);
-    for (var k = 0; k < 4; k++) {
-      var d = -26 + k * 20;
+    /* 衝擊波紋：套在整段劍身上的一串環，刀尖最小、往後一圈比一圈大、越淡
+       （像音爆錐往後擴散；使用者指定由小漸大，不能反過來）。
+       每圈拆兩半：後半圈畫在劍身底下、前半圈蓋在劍身上，看起來才是「套在劍上」。 */
+    var RINGS = 8;
+    var ring = function (k, front) {
+      var t = k / (RINGS - 1);
+      var d = 14 - k * 24;
       c.save(); c.translate(tx + dx * d, ty + dy * d); c.rotate(ang);
-      c.strokeStyle = rgba('#bfe0ff', 0.85 - k * 0.17); c.lineWidth = 3.2 - k * 0.5;
-      c.shadowBlur = 12; c.shadowColor = '#7fb8ff';
-      c.beginPath(); c.ellipse(0, 0, 7 + k * 3, 22 + k * 13, 0, 0, TAU); c.stroke();
+      c.strokeStyle = rgba('#bfe0ff', lerp(0.9, 0.22, t)); c.lineWidth = lerp(3, 1.3, t);
+      c.shadowBlur = 10; c.shadowColor = '#7fb8ff';
+      c.beginPath();
+      if (front) c.ellipse(0, 0, lerp(6, 14, t), lerp(16, 50, t), 0, -Math.PI / 2, Math.PI / 2);
+      else c.ellipse(0, 0, lerp(6, 14, t), lerp(16, 50, t), 0, Math.PI / 2, Math.PI * 1.5);
+      c.stroke();
       c.restore();
-    }
+    };
+    add(c);
+    for (var k = 0; k < RINGS; k++) ring(k, false);
     normal(c);
     /* 刀身前半段：寬，往刀尖收 */
     var bx = tx - dx * 190, by = ty - dy * 190;
     bladeAlong(c, linePts(bx, by, tx, ty, 26), 19, STEEL, { wFn: function (t) { return t > 0.4 ? Math.pow((1 - t) / 0.6, 0.75) : 1; } });
+    add(c);
+    for (var k2 = 0; k2 < RINGS; k2++) ring(k2, true);
+    normal(c);
     /* 中央血槽 */
     add(c);
     strokePts(c, linePts(bx + dx * 10, by + dy * 10, tx - dx * 70, ty - dy * 70, 2), 2.4, 'rgba(220,235,255,0.45)');

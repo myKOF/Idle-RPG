@@ -3655,7 +3655,7 @@ function battleSkillSlotKey(state) {
 /* 技能圖示：skills2 群組用畫好的圖（images/skills/<群組id>.png，由 tools/skill-icons/ 產生），
    潛力技能等其餘技能沿用 emoji。entry 可為 'sg:<群組id>' 或群組 id；
    圖載入失敗（例如新群組還沒出圖）時退回 emoji。重新出圖後要把 SKILL_ICON_VER +1，否則玩家會看到快取的舊圖。 */
-var SKILL_ICON_VER = '4';
+var SKILL_ICON_VER = '7';
 function skillIconGid(entry) {
   if (typeof entry !== 'string' || typeof SKILLS2 === 'undefined') return '';
   var gid = entry.indexOf('sg:') === 0 ? entry.slice(3) : entry;
@@ -11184,6 +11184,14 @@ function uiStallDiagText(now) {
   var silent = (typeof WorkerBridge !== 'undefined' && WorkerBridge.status) ? WorkerBridge.status().silentMs : null;
   if (silent !== null && silent > UI_WORKER_SILENT_MS) {
     text += ' ⚠ Worker 靜默 ' + (silent / 1000).toFixed(1) + ' 秒';
+  }
+  /* Worker 慢單步：最近 30 秒內最慢的一次 loop 與耗時最大的階段（forge／field／tower／factory／newForge／emit／persist）。
+     「Worker 靜默」只說得出卡住，這行說得出卡在哪一段。 */
+  var slow = (typeof WorkerBridge !== 'undefined' && WorkerBridge.status) ? WorkerBridge.status().slowLoop : null;
+  if (slow && Date.now() - slow.at <= 30000) {
+    var top = '', topMs = -1;
+    for (var phk in slow.ph) if (slow.ph[phk] > topMs) { topMs = slow.ph[phk]; top = phk; }
+    text += ' ⚠ Worker 慢 ' + slow.ms + 'ms（' + top + ' ' + topMs + '，' + slow.steps + ' 步）';
   }
   var head = UI_WORKER_VISUAL_EVENT_QUEUE[0];
   if (head && head._qAt && now - head._qAt > UI_VISUAL_WAIT_MS) {

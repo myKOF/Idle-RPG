@@ -799,27 +799,44 @@ var VFXCore = (function () {
   }
 
   // 共用的特效區域座標變形：同一座標永遠得到相同位移，不拆散拼接圖層。
-  function deformPoint(w, x, y, out, centerAcross) {
-    var c=w.config, along=c.axis==='x'?x:y, across=c.axis==='x'?y:x;
-    var q=Math.max(0,Math.min(1,(along-c.start)/(c.end-c.start)));
+  /* 逐頂點的常數（欄位預設值查表、封包參數）與座標無關：一個網格幾十到上百個頂點共用，
+     所以先攤平成純數字，deformPrepared 只做算術。deformPoint 仍是單點入口，內部走同一份
+     公式，兩條路徑結果逐位元相同。 */
+  function deformPrepare(w) {
+    var c=w.config;
+    return {
+      axisX:c.axis==='x', start:c.start, span:c.end-c.start,
+      mix:deformationValue(c,'secondaryWeight'), pivot:deformationValue(c,'pivot'),
+      amplitude:w.motionKey===undefined?c.amplitude:deformationValue(c,'motionAmplitude'),
+      freq:deformationValue(c,'frequency'), freq2:deformationValue(c,'secondaryFrequency'),
+      phase:w.phase, phase2:w.phase*deformationValue(c,'phaseCoupling'),
+      strength:w.bendStrength===undefined?1:w.bendStrength,
+      mirror:w.mirror, width:w.width, taper:deformationValue(c,'tipTaper')
+    };
+  }
+  function deformPrepared(P, x, y, out, centerAcross) {
+    var axisX=P.axisX, along=axisX?x:y, across=axisX?y:x;
+    var q=Math.max(0,Math.min(1,(along-P.start)/P.span));
     var envelope=Math.sin(Math.PI*q);
-    var mix=deformationValue(c,'secondaryWeight'), pivot=deformationValue(c,'pivot');
-    var amplitude=w.motionKey===undefined?c.amplitude:deformationValue(c,'motionAmplitude');
-    var displacement=envelope*amplitude*(Math.sin(q*deformationValue(c,'frequency')+w.phase)*(1-mix)+
-      Math.sin(q*deformationValue(c,'secondaryFrequency')+w.phase*deformationValue(c,'phaseCoupling'))*mix);
+    var mix=P.mix, pivot=P.pivot;
+    var displacement=envelope*P.amplitude*(Math.sin(q*P.freq+P.phase)*(1-mix)+
+      Math.sin(q*P.freq2+P.phase2)*mix);
     // Strength bends the authored centreline and the added wave together. The
     // distance from that centreline stays intact, so a straight bolt keeps its width.
-    var strength=w.bendStrength===undefined?1:w.bendStrength;
+    var strength=P.strength;
     var center=centerAcross===undefined?across:centerAcross;
-    across=pivot+((center-pivot)*strength+(across-center))*w.mirror*w.width+displacement*strength;
-    var taper=deformationValue(c,'tipTaper');
+    across=pivot+((center-pivot)*strength+(across-center))*P.mirror*P.width+displacement*strength;
+    var taper=P.taper;
     if(taper>0){
       var tip=Math.max(0,Math.min(1,q/taper,(1-q)/taper));
       across=pivot+(across-pivot)*tip*tip*(3-2*tip);
     }
-    out.x=c.axis==='x'?along:across;
-    out.y=c.axis==='x'?across:along;
+    out.x=axisX?along:across;
+    out.y=axisX?across:along;
     return out;
+  }
+  function deformPoint(w, x, y, out, centerAcross) {
+    return deformPrepared(deformPrepare(w), x, y, out, centerAcross);
   }
   // Birth and every refresh share exactly the same shape distribution. A refresh
   // replaces the complete electrical shape; it never interpolates mirror through 0.
@@ -2543,6 +2560,8 @@ var VFXCore = (function () {
     DEFAULT_BUDGET: DEFAULT_BUDGET,
     VELOCITY_EPSILON: VELOCITY_EPSILON,
     deformPoint: deformPoint,
+    deformPrepare: deformPrepare,
+    deformPrepared: deformPrepared,
     validatePreset: validatePreset,
     serialisePreset: serialisePreset,
     derivePresetDuration: derivePresetDuration,

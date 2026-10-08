@@ -301,17 +301,46 @@ function checkForgeUnlockNotice() {
    所以兩次執行只要從同一份存檔開機，它就是同一條刻度。 */
 var SIM_T = 0;
 
+/* 慢單步診斷：Worker 一旦被某段同步工作塞住，主執行緒只看得到「Worker 靜默 N 秒」，
+   看不出是哪一段。這裡記下「最近 30 秒內最慢的一次 loop」與它各階段的耗時，隨 tick 的 diag 帶出，
+   平常（<100ms）不帶，所以不增加訊息量。階段只計五個 tick 函式與 emit／persist，成本是每步 7 次計時。 */
+var SLOW_LOOP_MS = 100, SLOW_KEEP_MS = 30000;
+var _slowWorst = null;       // { ms, at, ph:{forge,field,tower,factory,newForge,emit,persist}, steps }
+var _stepPh = { forge: 0, field: 0, tower: 0, factory: 0, newForge: 0 };
+var _loopPh = { forge: 0, field: 0, tower: 0, factory: 0, newForge: 0, emit: 0, persist: 0 };
+function _phNow() { return performance.now(); }
 function simStep(dt) {
   SIM_T += dt;
   var combatPaused = typeof isCombatPaused === 'function' && isCombatPaused();
   if (!combatPaused) GT += dt;
+  var t0 = _phNow(), t1;
   if (typeof forgeTick === 'function') forgeTick(Date.now());
+  t1 = _phNow(); _loopPh.forge += t1 - t0; t0 = t1;
   if (!combatPaused) {
     if (typeof fieldTick === 'function') fieldTick(dt);
+    t1 = _phNow(); _loopPh.field += t1 - t0; t0 = t1;
     if (typeof towerTick === 'function') towerTick(dt);
+    t1 = _phNow(); _loopPh.tower += t1 - t0; t0 = t1;
   }
   if (typeof factoryTick === 'function') factoryTick(dt);
+  t1 = _phNow(); _loopPh.factory += t1 - t0; t0 = t1;
   if (typeof newForgeTick === 'function') newForgeTick(dt);
+  _loopPh.newForge += _phNow() - t0;
+}
+function slowLoopBegin() { for (var k in _loopPh) _loopPh[k] = 0; return _phNow(); }
+function slowLoopEnd(t0, steps) {
+  var ms = _phNow() - t0;
+  if (ms < SLOW_LOOP_MS) return;
+  var now = Date.now();
+  if (_slowWorst && now - _slowWorst.at <= SLOW_KEEP_MS && _slowWorst.ms >= ms) return;
+  var ph = {};
+  for (var k in _loopPh) ph[k] = Math.round(_loopPh[k]);
+  _slowWorst = { ms: Math.round(ms), at: now, ph: ph, steps: steps };
+}
+function slowLoopSnapshot() {
+  if (!_slowWorst) return null;
+  if (Date.now() - _slowWorst.at > SLOW_KEEP_MS) { _slowWorst = null; return null; }
+  return _slowWorst;
 }
 
 /* 決定論測試模式的迴圈：每次計時器只走**一整步**，維護區塊固定每 N 步跑一次。
@@ -355,6 +384,7 @@ function deterministicLoop() {
 function loop() {
   if (!_booted) return;
   if (DETERMINISTIC_STEPS) { deterministicLoop(); return; }
+  var _lt0 = slowLoopBegin();
   try {
     var now = Date.now();
     /* 經過時間一律進欠帳，不截斷——截斷等於把背景降頻期間的時間送給瀏覽器。
@@ -381,6 +411,7 @@ function loop() {
 
     /* 一律以 now（真實時間）判斷，`stepped` 只用來推進模擬，不參與節流——見宣告處的說明。
        補進度期間 UI 照樣 5Hz 更新、自動存檔照樣 15 秒一次，與正常遊玩完全相同。 */
+    var _tp = _phNow();
     if (now - _lastEmitAt >= TICK_EMIT_MS) {
       _lastEmitAt = now;
       updateShownRes();
@@ -389,6 +420,8 @@ function loop() {
       markCombatDirty();
       emitTick();
     }
+    var _te = _phNow();
+    _loopPh.emit = _te - _tp;
 
     if (now - _lastAutoAt >= AUTOSAVE_SEC * 1000) {
       _lastAutoAt = now;
@@ -399,9 +432,11 @@ function loop() {
       _lastFolderAt = now;
       requestPersist(PERSIST_KINDS.FOLDER);
     }
+    _loopPh.persist = _phNow() - _te;
   } catch (e) {
     reportError('loop', e);
   }
+  slowLoopEnd(_lt0, steps);
 }
 
 /* ---- 高頻視圖 ----
@@ -458,6 +493,7 @@ function emitTick() {
     dirty: shimDrainDirty(),
     events: shimDrainEvents(),
     diag: shimDiagSnapshot(),
+    slow: slowLoopSnapshot(),
     measure: measureSnapshot(),
     // 一個數字，成本可忽略；主執行緒靠它判斷 Worker 是「忙著補進度」還是「死了」
     catchup: _catchupDebt > CATCHUP_REPORT_MIN_SEC ? Math.round(_catchupDebt) : 0
