@@ -61,6 +61,14 @@ test('socketRune：扣庫存、鑲進第一個空符文孔；庫存不足／已�
   assert.equal(c.runeCount('r01'), 1, '沒有符文孔時不扣庫存');
 });
 
+test('抹除費用：符文階數越高、裝備稀有度越高越貴，一律是正整數', () => {
+  const c = loadRuneEnv();
+  const at = (rarity, rune) => c.runeEraseCost({ rarity }, rune);
+  assert.ok(at(5, 'r20').scrap > at(5, 'r05').scrap && at(5, 'r20').essence > at(5, 'r05').essence, '階數越高越貴');
+  assert.ok(at(9, 'r05').scrap > at(1, 'r05').scrap && at(9, 'r05').essence > at(1, 'r05').essence, '稀有度越高越貴');
+  c.RUNES.forEach((r) => c.RARITIES.forEach((_, i) => { const x = at(i, r.id); assert.ok(Number.isInteger(x.scrap) && x.scrap >= 1 && Number.isInteger(x.essence) && x.essence >= 1); }));
+});
+
 test('符文孔放滿：放不下的被拒；孔數隨稀有度（RARITIES.runeSlots，配置表 game_parameters 的參數g）', () => {
   const c = loadRuneEnv();
   c.addRune('r01', 9);
@@ -76,16 +84,25 @@ test('符文孔放滿：放不下的被拒；孔數隨稀有度（RARITIES.runeS
   assert.ok(counts.every((n, i) => i === 0 || n >= counts[i - 1]), '稀有度越高孔數不減');
 });
 
-test('unsocketRune 取下符文回庫存；分解裝備時鑲著的符文自動取回；寶石鑲孔的操作不碰符文', () => {
+test('eraseRune 抹除符文：扣碎片與精華、符文不退還、孔恢復為空、資源不足被擋；分解裝備時鑲著的符文自動取回；寶石鑲孔的操作不碰符文', () => {
   const c = loadRuneEnv();
   const it = makeItem(c, { rarity: 5 });
   c.addRune('r05', 1);
   c.socketRune(it, 'r05');
   assert.equal(c.runeCount('r05'), 0);
-  assert.equal(c.unsocketRune(it, 0), true);
-  assert.equal(c.runeCount('r05'), 1);
-  assert.equal(it.runes[0], null);
-  assert.equal(c.unsocketRune(it, 0), false, '空孔取下回 false');
+  const cost = c.runeEraseCost(it, 'r05');
+  assert.ok(cost.scrap > 0 && cost.essence > 0);
+  c.G.player.scrap = cost.scrap - 1; c.G.player.essence = cost.essence;
+  assert.match(c.eraseRune(it, 0), /資源不足/);
+  assert.equal(it.runes[0], 'r05', '資源不足不抹除');
+  c.G.player.scrap = cost.scrap + 5;
+  assert.equal(c.eraseRune(it, 0), null);
+  assert.equal(c.G.player.scrap, 5);
+  assert.equal(c.G.player.essence, 0);
+  assert.equal(c.runeCount('r05'), 0, '符文不退還');
+  assert.equal(it.runes[0], null, '孔恢復為空');
+  assert.match(c.eraseRune(it, 0), /沒有符文/, '空孔不能抹除');
+  c.addRune('r05', 1);
   c.socketRune(it, 'r05');
   assert.equal(c.unsocketGem(it, 0), false, 'unsocketGem 只管寶石鑲孔');
   assert.equal(c.runeCount('r05'), 0);
@@ -661,15 +678,20 @@ test('符文孔 HTML：符文顯示字形與實際數值；成形時列出符文
   assert.match(html, /符文孔 1／4/);
   assert.match(html, /毒牙符文/);
   assert.match(html, /符文孔 2（空）/);
-  assert.match(html, /再鑲入「暗影」即可成形【蛇吻】/);
-  assert.doesNotMatch(html, /data-rune-remove|data-socket-pick/, '不在符文鑲嵌頁時唯讀，沒有選孔也不可取下');
+  assert.doesNotMatch(html, /再鑲入|即可成形/, '沒成形時不給任何提示（玩家自己探索）');
+  assert.doesNotMatch(html, /data-rune-erase|data-socket-pick/, '不在符文鑲嵌頁時唯讀，沒有選孔也不可抹除');
   it.runes[1] = 'r08';
   html = c.itemRuneHTML(it, null);
   assert.match(html, /符文真言【蛇吻】/);
   assert.match(html, /runeword-socket/);
   assert.match(html, /普通攻擊命中時有 15% 機率/);
   assert.doesNotMatch(html, /再鑲入/);
-  assert.match(c.itemRuneHTML(it, { selIdx: -1, pending: false }), /data-rune-remove="0"[\s\S]*data-rune-remove="1"/, '符文鑲嵌頁每個已鑲的符文右側有「卸下」');
+  assert.match(c.itemRuneHTML(it, { selIdx: -1, pending: false }), /data-rune-erase="0"[\s\S]*data-rune-erase="1"/, '符文鑲嵌頁每個已刻印的符文右側有「抹除」');
+  assert.match(c.itemRuneHTML(it, { selIdx: -1, pending: false }), /rs-halo[\s\S]*rs-halo/, '構成符文真言的符文圖示有旋轉光暈');
+  assert.match(c.itemRuneHTML(it, null), /rs-halo/, '唯讀顯示也有光暈');
+  const drafted = c.itemRuneHTML(makeItem(c, { rarity: 5 }), { selIdx: 0, pending: false, draft: { 1: 'r05' } });
+  assert.match(drafted, /is-draft[\s\S]*data-rune-undraft="1"/, '暫放的符文列有「取消」');
+  assert.doesNotMatch(drafted, /data-rune-erase|rs-halo/, '暫放的符文不能抹除、也不發光');
   assert.match(c.itemRuneHTML(it, { selIdx: 2, pending: false }), /data-socket-pick="2" aria-pressed="true"/, '符文鑲嵌頁每孔都能選取，選中的孔 aria-pressed');
   assert.doesNotMatch(c.itemSocketHTML(it, null), /符文|runeword/, '寶石鑲孔區塊不含符文');
   assert.equal(c.itemRuneHTML(makeItem(c, { rarity: 0 }), null), '', '沒有符文孔的裝備不輸出符文區塊');
@@ -735,7 +757,7 @@ test('任務：runeSocketCount 計累計鑲入次數，rune 獎勵發符文；�
   c.addRune('r01', 2);
   c.socketRune(it, 'r01'); c.socketRune(it, 'r01');
   assert.equal(c.taskProgressFor({ type: 'runeSocketCount' }), 2, '每次成功鑲入各計 1 次');
-  c.unsocketRune(it, 0); c.socketRune(it, 'r01');
+  it.runes[0] = null; c.addRune('r01', 1); c.socketRune(it, 'r01');
   assert.equal(c.taskProgressFor({ type: 'runeSocketCount' }), 3, '拆下再鑲會再計一次');
   assert.match(c.socketRune(it, 'zz'), /沒有這種符文/);
   assert.equal(c.taskProgressFor({ type: 'runeSocketCount' }), 3, '失敗不計');

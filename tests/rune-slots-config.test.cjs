@@ -88,12 +88,13 @@ test('雙手武器的符文孔＝同稀有度一般裝備 + twoHandBonusSlots（
   assert.equal(slotsOf(3, 'axe2h'), 3, '加成 0＝與一般裝備一樣');
 });
 
-test('裝備上已鑲的符文不會因為孔數設定調低而消失：仍列出、可取下', () => {
+test('裝備上已鑲的符文不會因為孔數設定調低而消失：仍列出、可抹除', () => {
   const e = loadRuneEnv();
   const it = makeItem(e, { rarity: 5, slot: 'chest', weaponType: undefined });
   it.runes = ['r01', 'r02', 'r03', 'r04'];
   run(e, 'RARITIES[5].runeSlots = 2;');
   assert.equal(e.runeSlotCountFor(it), 2);
   assert.equal(e.rwSlots(it).length, 4, '已鑲在後面孔位的符文仍會列出');
-  assert.equal(e.unsocketRune(it, 3), true);
+  e.G.player.scrap = 1e9; e.G.player.essence = 1e9;
+  assert.equal(e.eraseRune(it, 3), null);
 });

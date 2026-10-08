@@ -15,7 +15,7 @@ var WorkerBridge = (function () {
   /* Worker 與其模擬層不是由 bundler 產生，瀏覽器可能把舊的 Worker
      腳本留在快取裡。每次修改 Worker 啟動／核心邏輯時更新這個鍵，避免
      使用者刷新後仍執行舊版升級公式。 */
-  var WORKER_ASSET_VERSION = '20261008-merge-codex-scene';
+  var WORKER_ASSET_VERSION = '20261008-chain-quiet';
 
   /* ---- 量測模式（P4 用，預設關閉）----
      網址帶 ?measure=1 時，Worker 與主執行緒兩側都會統計訊息規模與耗時。
@@ -181,6 +181,7 @@ var WorkerBridge = (function () {
         _pendingWrites++;
         SaveStorage.persist(msg.kind, msg.payload.json, msg.payload.meta, function (err) {
           _pendingWrites--;
+          if (!err) stats.lastPersistOkAt = Date.now();   // 診斷：存檔是否真的落地（寫入卡死時後續存檔會被合併擋住）
           if (err) {
             stats.persistErrors++;
             stats.lastError = { where: 'persist:' + msg.kind, message: err.message || String(err) };
@@ -461,6 +462,7 @@ var WorkerBridge = (function () {
       restarts: _restartCount,
       maxRestarts: MAX_RESTARTS,
       slowLoop: stats.lastSlow || null,
+      persistAgeSec: stats.lastPersistOkAt ? Math.round((Date.now() - stats.lastPersistOkAt) / 1000) : null,
       silentMs: _lastMessageAt ? (Date.now() - _lastMessageAt) : null,
       upTimeSec: stats.bootedAt ? Math.round((Date.now() - stats.bootedAt) / 1000) : 0,
       ticks: stats.ticks,

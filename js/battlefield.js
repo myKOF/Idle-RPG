@@ -391,12 +391,26 @@ function bfRandomOthers(from, enemies, count, maxGapPx, visited) {
   if (!(count > 0)) return [];
   var useGap = from && bfPos(from);
   var cands = [];
+  /* 距離與體型半徑在迴圈外取一次：每個候選各查一次全域常數（bfNum）佔了連鎖技能單步成本的一成多。
+     算式與 bfEntityGap／bfEntityDistance 逐項相同（先減第一個半徑再減第二個），結果逐位元一致。 */
+  var bodyR = 0, bossR = 0, fromR = 0, fromPos = null, cPos = null;
+  if (maxGapPx > 0) {
+    // 半徑只取決於是不是 BOSS（bfEntityRadius 的定義），所以每種體型各問一次；仍經過 bfEntityRadius，測試與外部可照常替換它。
+    bodyR = bfEntityRadius(null); bossR = bfEntityRadius({ isBoss: true });
+    if (useGap) { fromPos = bfPos(from); fromR = bfEntityRadius(from); }
+    else cPos = bfPlayerPos();
+  }
   for (var i = 0; i < live.length; i++) {
     var ent = live[i];
     if (ent === from) continue;
     if (visited && visited.indexOf(ent) >= 0) continue;
     if (maxGapPx > 0) {
-      var d = useGap ? bfEntityGap(from, ent) : bfEntityDistance(ent);
+      var pe = bfPos(ent), d;
+      if (useGap) {
+        if (!pe) d = Infinity;
+        else { var gx = fromPos.x - pe.x, gy = fromPos.y - pe.y; d = Math.max(0, Math.sqrt(gx * gx + gy * gy) - fromR - (ent.isBoss ? bossR : bodyR)); }
+      } else if (!pe) d = Infinity;
+      else { var dx = pe.x - cPos.x, dy = pe.y - cPos.y; d = Math.max(0, Math.sqrt(dx * dx + dy * dy) - (ent.isBoss ? bossR : bodyR)); }
       if (d > maxGapPx) continue;
     }
     cands.push(ent);

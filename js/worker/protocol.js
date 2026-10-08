@@ -78,9 +78,11 @@
    新增 rune.unsocket(itemId, index)（取下符文，原本借用 gem.unsocket 的分流作廢），指令數 92 → 93。
    附魔指令（item.enchant／item.removeEnchant）保留但附魔功能已關閉（data.js ENCHANT_ENABLED），呼叫會回「附魔功能已關閉」。 */
 /* v47：battle.skillTimers 投影技能列的權威時鐘；不改 skillCds 或存檔。 */
+/* v49（2026-10-08 符文刻印／抹除）：rune.unsocket 改為 rune.erase(itemId, index)——抹除已刻印的符文：扣裝備碎片與附魔精華，符文消失不退還，孔恢復為空。指令數不變（93）。
+   「刻印」沒有新指令：UI 先在本機暫存要放的符文，按刻印才逐顆送 rune.socket(itemId, runeId, index)。 */
 /* v48（2026-10-07 符文真言隱藏）：gems 面板新增 runewordSeen = { 真言id: 1 }（G.player.runewordSeen，成形過的符文真言）。
    主執行緒據此決定圖鑑顯示配方與效果或問號；舊快照缺欄時一律視為都沒激活。指令數不變。 */
-var WORKER_PROTOCOL_VERSION = 48;
+var WORKER_PROTOCOL_VERSION = 49;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -327,9 +329,9 @@ var COMMANDS = {
   'gem.fuse':              { fn: 'fuseGemsV2',       args: { ref1: 'ref', ref2: 'ref' },          dirty: ['gems'] },
   /* -- 符文（符文真言；js/runeword.js）--
      符文是 { 符文id: 數量 } 的計數，沒有實例 id，所以用 runeId（符文 id 字串）定位。
-     符文鑲在裝備專屬的符文孔 it.runes（v46 起，與寶石鑲孔分開）：鑲嵌 rune.socket、取下 rune.unsocket。 */
+     符文鑲在裝備專屬的符文孔 it.runes（v46 起，與寶石鑲孔分開）：鑲嵌 rune.socket、抹除 rune.erase（v49）。 */
   'rune.socket':           { fn: 'socketRune',       args: { itemId: 'id', runeId: 'str', index: 'int?' }, limit: { index: { min: 0 } }, resolve: ['itemId'], dirty: ['inv', 'equip', 'gems', 'header'] },
-  'rune.unsocket':         { fn: 'unsocketRune',     args: { itemId: 'id', index: 'int' }, limit: { index: { min: 0 } }, resolve: ['itemId'], dirty: ['inv', 'equip', 'gems', 'header'] },
+  'rune.erase':            { fn: 'eraseRune',        args: { itemId: 'id', index: 'int' }, limit: { index: { min: 0 } }, resolve: ['itemId'], dirty: ['inv', 'equip', 'gems', 'header'] },
   'rune.compose':          { fn: 'composeRune',      args: { runeId: 'str' },                      dirty: ['gems'] },
   'rune.composeAll':       { fn: null,               args: { runeId: 'str' },                      dirty: ['gems', 'header'] },
   'rune.dismantle':        { fn: 'dismantleRune',    args: { runeId: 'str' },                      dirty: ['gems', 'header'] },

@@ -1,5 +1,22 @@
 # AI_TASKS.md
 
+## Claude｜符文鑲嵌二次改造：暫放→刻印、卸下改抹除（付費、不退還）、真言光暈、移除成形提示（RUNE-ENGRAVE-20261008）
+
+- Owner：Claude；Done。使用者要求：①放上符文後「符文」鈕變「刻印」，按下才真的鑲上 ②「卸下」改「抹除」，消耗材料與附魔精華（費用由我依裝備與符文品質定）③抹除後符文消失不退還、孔恢復為空 ④刻印後若成形，在符文孔下方顯示符文真言能力 ⑤構成真言的符文圖示底下有緩慢旋轉的發散光暈（貼圖示外約 4px）⑥移除「再鑲入…即可成形」提示（真言讓玩家自己探索）。
+- 技術決策：暫放只存在本機（`UI.equipMatMode.draft`），不扣庫存、不送指令；刻印才依孔位順序逐顆送既有的 `rune.socket`，逐顆之間等指令鎖釋放。抹除新增 `rune.erase`（取代 `rune.unsocket`，協議 v49，指令數不變）：費用＝`RUNE_ERASE` 每階單價（碎片 15、精華 1）× 符文階數 × 裝備稀有度倍率（`RARITIES.mult`），例：傳說裝備抹第 6 階符文＝碎片 360／精華 24；抹除要連按兩次確認。費用數字放在 runeword_data.js 的 `RUNE_ERASE`，**沒有接配置表**（要調請直接改該常數，或之後再接 game_parameters）。
+- 修改：js/ui.js、item.js、runeword.js、runeword_data.js、ui-runeword.js（移除已無人用的 `runeUiWordRevealed`）、worker/protocol.js、css/runeword.css；index.html／bridge.js／sim.worker.js 版號（含協議 v49）；tests（equip-socket-ui 重寫符文頁、runeword-engine／ui／seen、rune-slots-config、worker-protocol）；docs/RUNEWORD_DESIGN.md、WORKER_PROTOCOL.md。
+- 測試：全庫與乾淨 HEAD 比對，我的改動沒有新增失敗（另有 1 條連鎖閃電的差異來自同工作樹他人未提交的 battlefield.js）；實機驗證暫放不送指令、一次刻印兩顆、橫幅與光暈在刻印後才出現、抹除精準扣 480 碎片＋32 精華且符文不退還。
+- 風險：①抹除不退還，誤按成本高，所以連按兩次；②舊分頁若快取舊 protocol.js 會被協議版本檢查擋下，需重新整理；③光暈為純 CSS 動畫（尊重 prefers-reduced-motion）。
+- 建議驗證（Antigravity）：暫放／取消／刻印／抹除各流程；材料不足時抹除顯示「材料不足」；刻印中途失敗時未送出的仍留暫放；成形後兩顆以上符文都有光暈、拆掉一顆就消失；沒有任何成形提示。
+
+## Claude｜NPC 表加「類型／技能／技能特效／備註」，菁英可固定技能（NPC-ELITE-SKILLS-20261008）
+
+- Owner：Claude；Done。使用者在 NPC.xlsx 加了「類型」欄（normal／elite／boss，每個 NPC 三列），要求表後面再補 NPC 的技能、技能用到的特效名與給人讀的備註。
+- 決策（使用者選「每種菁英 NPC 配固定詞條」）：elite 列的「技能」欄填詞條 id（`;` 分隔、最多 3 個、不可重複）＝這種菁英固定使用；留白＝沿用同群隨機。84 種菁英已依屬性與名稱主題各配 1～3 個，互斥組不衝突（數值與搭配都是我先訂的，沒有平衡）。normal 列寫「普通攻擊」，boss 列寫「尚未設計專屬技能」（填了會被忽略並提示）。「技能特效」「備註」由詞條資料自動產生，改了技能後需重新產生（見 tests NPC-SKILL-3）。
+- 修改：`tools/config_tables.cjs`（NPC 結構改 14 欄、只讀 normal 列的基本資料、檢查技能存在與數量與類型、elite 列技能寫回 `eliteSkills`）、`js/data.js`（84 筆 pool 加 `eliteSkills`、`registerNpcPool` 帶入）、`js/combat.js`（`spawnEliteWave` 優先用 NPC 的固定技能，戰鬥日誌顯示實際詞條）、`config/Excel/NPC.xlsx`（原生 Excel API 更新）、`config/CSV/NPC.csv`、`tools/參數表使用說明.md`、`index.html`／`sim.worker.js`／`bridge.js` 版號，測試 `tests/npc-elite-skills.test.cjs`（5 項）並修正 `earth-element`／`stage-rework`／`elite-groups` 三支舊測試對 NPC.csv 欄位與群組共用詞條的假設。
+- 影響：混合群的成員可能是不同種 NPC，所以同群菁英不再一定共用同一組詞條（有固定技能的用自己的）。GM 的 `elite` 指令仍用指定或隨機詞條，不吃 NPC 表。固定技能不檢查 `minStage`（高階詞條配給低階 NPC 會提早出現）。
+- 驗證：全庫測試失敗名稱與乾淨 HEAD 比對，新增 0、少 2（原本紅的 NPC CSV 筆數與 apply_params 預設列兩項因而轉綠）；`--apply NPC` 語意變更 0；Excel 轉出 CSV 與現有 CSV 位元相同。
+
 ## Claude｜菁英敵人改造：成群出現、普通關也會遇到、47 個詞條技能（ELITE-GROUPS-20261008）
 
 - Owner：Claude；Done。使用者要求：①菁英也會在普通關出現，每 10 關固定的菁英照常 ②菁英成群（每群 2～4 隻，全員菁英或菁英帶小兵）③參數寫進 game_parameters ④每隻菁英放 1～3 種技能、總數至少 30 個，特效要一眼看出放了什麼 ⑤授權不中止做到完成，需詢問的先用建議做法、問題列在總結。

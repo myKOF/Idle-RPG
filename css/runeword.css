@@ -287,7 +287,6 @@
 .it-runeword-name { font-size: 14px; color: var(--rw-c, #f0cf86); font-weight: 600; }
 .it-runeword-tier { margin-left: 8px; padding: 0 6px; border: 1px solid var(--rw-c); border-radius: 999px; font-size: 10px; font-weight: 400; }
 .it-runeword-line { margin-top: 2px; font-size: 12px; color: #d5d1c4; }
-.it-runeword-hint { margin-top: 6px; font-size: 12px; color: #c7ae79; }
 
 .equip-material-icon.rune-icon { color: var(--c); border-color: var(--c); font-size: 18px; display: flex; align-items: center; justify-content: center; }
 .equip-material-icon.rune-icon .rs-icon { width: 32px; height: 32px; }
@@ -297,3 +296,27 @@
   #tab-runes .rx-focus { position: static; }
   #tab-runes .rx-list { grid-template-columns: 1fr; }
 }
+
+/* 構成目前符文真言的符文：圖示外約 4px 一圈發散的光暈（柔光＋放射光芒），緩慢旋轉（js/item.js itemRuneHTML 的 .rs-halo） */
+.it-sockets .socket.rune-socket .rs-halo { position: relative; display: inline-block; width: 20px; height: 20px; margin: -4px 5px -4px 3px; vertical-align: middle; }
+.it-sockets .socket.rune-socket .rs-halo::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background:
+    repeating-conic-gradient(from 0deg, rgba(255, 232, 160, .75) 0deg 7deg, rgba(255, 232, 160, 0) 7deg 30deg),
+    radial-gradient(circle, rgba(255, 214, 110, .9) 0%, rgba(255, 180, 70, .55) 55%, rgba(255, 160, 50, 0) 100%);
+  -webkit-mask: radial-gradient(circle, #000 52%, transparent 74%);
+  mask: radial-gradient(circle, #000 52%, transparent 74%);
+  filter: blur(.6px);
+  animation: rs-halo-spin 10s linear infinite;
+  pointer-events: none;
+}
+.it-sockets .socket.rune-socket .rs-halo .rs-row { position: relative; margin: 0; }
+@keyframes rs-halo-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .it-sockets .socket.rune-socket .rs-halo::before { animation: none; } }
+
+/* 還沒刻印的暫放符文：虛線框，提醒按下方「刻印」才算數 */
+.it-sockets .socket.is-draft { border-style: dashed; border-color: #7a6440; }
+.it-sockets .socket.is-draft .sk-name { opacity: .85; }

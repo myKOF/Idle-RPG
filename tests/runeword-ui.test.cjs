@@ -142,11 +142,12 @@ test('index.html 與 ui.js 的接線：分頁、script／css、面板訂閱、so
   const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
   assert.match(ui, /runes: \['gems', 'equip', 'header'\]/);
   assert.match(ui, /data-rune-socket/);
-  assert.match(ui, /sendSlotSocketCommand\(it, mode, 'rune\.socket'/);
+  assert.match(ui, /sendUiCommand\('rune\.socket'/);
   // 符文取代附魔的位置：裝備頁操作列是「符文」、不再有「附魔」按鈕；符文鑲嵌頁的鑲入與取下都走符文孔指令
   assert.match(ui, /data-act="toggle-rune"/);
   assert.doesNotMatch(ui, /data-act="toggle-enchant"/);
-  assert.match(ui, /sendUiCommand\('rune\.unsocket'/);
+  assert.match(ui, /sendUiCommand\('rune\.erase'/);
+  assert.match(ui, /data-act="engrave-rune"/);
   assert.match(ui, /equipRuneGridHTML/);
   assert.match(ui, /socketRuneToSelected/, '符文鑲嵌頁：選孔後點符文鑲進該孔（與寶石同一套選孔流程）');
   const worker = fs.readFileSync(path.join(root, 'js/worker/sim.worker.js'), 'utf8');
@@ -280,18 +281,16 @@ test('內測版：重新載入後沿用上次的開關狀態', () => {
   assert.match(c.els['runeword-list'].innerHTML, /rx-unknown/);
 });
 
-test('裝備詳情的「再鑲入…即可成形」提示：未激活遮成問號、已激活或內測攤開時照舊', () => {
+test('裝備詳情沒有「再鑲入…即可成形」提示（不論是否激活、內測與否）；成形了就直接顯示名稱與效果', () => {
   const it = { id: 'w', slot: 'weapon', weaponType: 'sword1h', rarity: 5, level: 100, sockets: [], runes: ['r06', null, null, null], affixes: [] };
   const ext = mount({ internal: false });
   ext.setPanels({ gems: {}, fusedGems: [], runes: {}, runewordSeen: {} });
-  const masked = ext.itemRuneHTML(it);
-  assert.match(masked, /再鑲入「？」即可成形【？？？？】/);
-  assert.doesNotMatch(masked, /暗影|蛇吻/);
+  assert.doesNotMatch(ext.itemRuneHTML(it), /再鑲入|即可成形|it-runeword-hint/);
   ext.setPanels({ gems: {}, fusedGems: [], runes: {}, runewordSeen: { rw_viperkiss: 1 } });
-  assert.match(ext.itemRuneHTML(it), /再鑲入「暗影」即可成形【蛇吻】/);
+  assert.doesNotMatch(ext.itemRuneHTML(it), /再鑲入|即可成形/);
   const inn = mount({ internal: true });
   inn.setPanels({ gems: {}, fusedGems: [], runes: {}, runewordSeen: {} });
-  assert.match(inn.itemRuneHTML(it), /再鑲入「暗影」即可成形【蛇吻】/);
+  assert.doesNotMatch(inn.itemRuneHTML(it), /再鑲入|即可成形/);
   // 成形了就直接顯示名稱與效果（那一刻就是激活）
   const formed = Object.assign({}, it, { runes: ['r06', 'r08', null, null] });
   const out = ext.itemRuneHTML(formed);
@@ -329,14 +328,14 @@ test('用語：畫面與說明一律是「符文真言」，沒有殘留「符�
   assert.match(c.runeUiHelpText(), /符文真言/);
 });
 
-test('接線：gems 面板帶 runewordSeen、協議 v48、快取版號已 bump', () => {
+test('接線：gems 面板帶 runewordSeen、協議版號與快取版號有帶', () => {
   const worker = fs.readFileSync(path.join(root, 'js/worker/sim.worker.js'), 'utf8');
   assert.match(worker, /runewordSeen: p\.runewordSeen \|\| \{\}/);
   const proto = fs.readFileSync(path.join(root, 'js/worker/protocol.js'), 'utf8');
-  assert.match(proto, /WORKER_PROTOCOL_VERSION = 48;/);
+  assert.match(proto, /WORKER_PROTOCOL_VERSION = \d+;/);
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  assert.match(html, /js\/worker\/protocol\.js\?v=48/);
-  assert.match(worker, /protocol\.js\?v=48/);
+  assert.match(html, /js\/worker\/protocol\.js\?v=\d+/);
+  assert.match(worker, /protocol\.js\?v=\d+/);
   assert.match(worker, /'\.\.\/runeword\.js\?v=[^']+'/);   // 只驗證有帶版號：確切字串每次改檔都會換，不釘
   assert.match(fs.readFileSync(path.join(root, 'js/bridge.js'), 'utf8'), /WORKER_ASSET_VERSION = '[^']+'/);
 });

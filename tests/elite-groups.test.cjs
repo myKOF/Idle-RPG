@@ -56,7 +56,13 @@ test('ELITE-GROUP-2 全員菁英或「菁英帶小兵」；詞條只在菁英身
         '混合群的菁英數＝帶隊數，實際 ' + elites.length + '/' + g.length);
       elites.forEach((e) => {
         assert.ok(Array.isArray(e.affixes) && e.affixes.length >= 1 && e.affixes.length <= 3, '每隻菁英 1~3 個詞條');
-        assert.deepEqual(Array.from(e.affixes), Array.from(elites[0].affixes), '同一群共用同一組詞條');
+        /* NPC 表替這種菁英指定了固定技能就用固定的；沒指定的才共用整群的隨機詞條 */
+        const fixed = c.NPC_CONFIG_TABLE[e.npcId].eliteSkills;
+        if (fixed.length) assert.deepEqual(Array.from(e.affixes), Array.from(fixed), '固定技能');
+        else {
+          const first = elites.find((x) => !c.NPC_CONFIG_TABLE[x.npcId].eliteSkills.length);
+          assert.deepEqual(Array.from(e.affixes), Array.from(first.affixes), '沒固定技能的同群共用同一組詞條');
+        }
         assert.ok(e._el && e._fx, '詞條引擎狀態');
       });
       minions.forEach((e) => {

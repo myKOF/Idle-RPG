@@ -29,7 +29,7 @@ function pane() {
 function mount(){
   const elements=Object.fromEntries(['detail-pane','equip-action-bar','equip-material-panel'].map(id=>[id,{innerHTML:'',style:{},classList:{add(){},remove(){}}}]));
   elements['detail-pane']=pane();
-  const c={console,document:{addEventListener(){},querySelectorAll(){return[];},getElementById(id){return elements[id]||null;}}};c.window=c;vm.createContext(c);
+  const c={console,setTimeout(){return 0;},document:{addEventListener(){},querySelectorAll(){return[];},getElementById(id){return elements[id]||null;}}};c.window=c;vm.createContext(c);
   for(const name of ['util','data','runeword_data','status','formula','item','runeword','ui','ui-runeword'])vm.runInContext(fs.readFileSync(path.join(root,'js',name+'.js'),'utf8'),c);
   c.it={id:'gear',slot:'weapon',name:'劍',level:50,rarity:5,affixes:[{key:'str',roll:1}],sockets:[null,null,null,null],enchants:[{key:'fire',gemLv:1}],runes:['r01',null,null,null],upgrade:0};
   c.findSelItem=()=>c.it;c.uiHeaderPanelSnapshot=()=>({player:{gold:1e12,scrap:1e12,essence:1e12}});c.uiInventoryPanelSnapshot=()=>null;
@@ -50,16 +50,18 @@ function mount(){
   }}};c.areaClick(event);c.runeClick(event);c.enchantClick(event);};c.elements=elements;c.renderDetail();return c;
 }
 
-test('一般詳情只展示寶石與符文孔（附魔已關閉不顯示），取下只能在對應功能頁且防止連送',()=>{
+test('一般詳情只展示寶石與符文孔（附魔已關閉不顯示）；寶石卸下與符文抹除只能在對應功能頁、防止連送；抹除要連按兩次確認',()=>{
   const c=mount();c.it.sockets[0]={type:'ruby',level:5};c.renderDetail();
-  const h=c.elements['detail-pane'].innerHTML;assert.match(h,/符文孔 1／4/);assert.match(h,/五級紅寶石/);assert.doesNotMatch(h,/it-enchant|data-socket-remove|data-enchant-remove|data-rune-remove|點擊取下/);
-  c.click({'socket-remove':'0'});c.click({'rune-remove':'0'});assert.equal(c.commands.length,0);
-  c.click({act:'toggle-socket'});c.click({'rune-remove':'0'});assert.equal(c.commands.length,0);
+  const h=c.elements['detail-pane'].innerHTML;assert.match(h,/符文孔 1／4/);assert.match(h,/五級紅寶石/);assert.doesNotMatch(h,/it-enchant|data-socket-remove|data-enchant-remove|data-rune-erase|data-rune-undraft|點擊取下/);
+  c.click({'socket-remove':'0'});c.click({'rune-erase':'0'});assert.equal(c.commands.length,0);
+  c.click({act:'toggle-socket'});c.click({'rune-erase':'0'});c.click({'rune-erase':'0'});assert.equal(c.commands.length,0);
   c.click({'socket-remove':'0'});assert.equal(c.commands[0].name,'gem.unsocket');c.pending.clear();
-  c.click({act:'toggle-rune'});assert.match(c.elements['detail-pane'].innerHTML,/data-rune-remove="0"/);assert.doesNotMatch(c.elements['detail-pane'].innerHTML,/data-socket-remove/);
-  c.click({'socket-remove':'0'});assert.equal(c.commands.length,1);c.click({'rune-remove':'0'});assert.deepEqual(c.commands[1],{name:'rune.unsocket',args:{itemId:'gear',index:0}});
-  c.click({'rune-remove':'0'});assert.equal(c.commands.length,2);c.pending.clear();
-  c.UI.equipMatMode.itemId='other';c.click({'rune-remove':'0'});assert.equal(c.commands.length,2);
+  c.click({act:'toggle-rune'});const html=c.elements['detail-pane'].innerHTML;assert.match(html,/data-rune-erase="0"/);assert.match(html,/>抹除</);assert.doesNotMatch(html,/data-socket-remove|卸下/);
+  c.click({'socket-remove':'0'});assert.equal(c.commands.length,1);
+  c.click({'rune-erase':'0'});assert.equal(c.commands.length,1,'第一次只是預備（按鈕變「確定抹除？」）');
+  c.click({'rune-erase':'0'});assert.deepEqual(c.commands[1],{name:'rune.erase',args:{itemId:'gear',index:0}});
+  c.click({'rune-erase':'0'});c.click({'rune-erase':'0'});assert.equal(c.commands.length,2,'等待中不重送');c.pending.clear();
+  c.UI.equipMatMode.itemId='other';c.click({'rune-erase':'0'});c.click({'rune-erase':'0'});assert.equal(c.commands.length,2);
 });
 test('符文鑲嵌頁：標題＋符文孔列＋下方符文格（高階在前），只有符文鈕紅色且重按不退出，右側素材面板不再使用',()=>{
   const c=mount(),stock={gems:{},fusedGems:[],runes:{r01:2,r10:3}};c.uiGemsPanelSnapshot=()=>stock;
@@ -68,30 +70,50 @@ test('符文鑲嵌頁：標題＋符文孔列＋下方符文格（高階在前�
   c.click({act:'toggle-rune'});
   assert.equal((bar().match(/btn-primary/g)||[]).length,1);assert.match(bar(),/btn btn-primary" data-act="toggle-rune"/);assert.equal(panel(),'');
   const h=p.innerHTML;assert.match(h,/it-name/);assert.match(h,/it-sub/);assert.doesNotMatch(h,/it-affixes|it-enchant|data-gem-socket|data-socket-remove/);
-  assert.equal((p.holes.innerHTML.match(/data-socket-pick=/g)||[]).length,4,'四個符文孔都能選');assert.match(p.holes.innerHTML,/data-rune-remove="0"/);
+  assert.equal((p.holes.innerHTML.match(/data-socket-pick=/g)||[]).length,4,'四個符文孔都能選');assert.match(p.holes.innerHTML,/data-rune-erase="0"/);
   assert.ok(p.gems.innerHTML.indexOf('data-rune-socket="r10"')>0&&p.gems.innerHTML.indexOf('data-rune-socket="r10"')<p.gems.innerHTML.indexOf('data-rune-socket="r01"'),'高階在前');
   assert.equal(c.UI.equipMatMode.selIdx,1,'預設選第一個空孔');
   const mode=c.UI.equipMatMode;c.click({act:'toggle-rune'});assert.equal(c.UI.equipMatMode,mode);assert.equal(c.commands.length,0);
   c.click({act:'upgrade'});assert.equal(c.UI.equipMatMode,null);assert.doesNotMatch(p.innerHTML,/data-rune-socket/);
 });
-test('符文鑲嵌：選哪孔就鑲哪孔、等待中鎖定、成功後跳下一個空孔；已鑲孔不能鑲入、孔滿全部鎖定',async()=>{
-  const c=mount(),stock={gems:{},fusedGems:[],runes:{r01:2,r10:3}};c.uiGemsPanelSnapshot=()=>stock;c.click({act:'toggle-rune'});
-  const p=c.elements['detail-pane'];
-  c.click({'socket-pick':'3'});c.click({'rune-socket':'r10'});assert.deepEqual(c.commands,[{name:'rune.socket',args:{itemId:'gear',runeId:'r10',index:3}}]);
-  c.click({'socket-pick':'2'});c.click({'rune-socket':'r10'});assert.equal(c.UI.equipMatMode.selIdx,3,'等待中不能換孔');assert.equal(c.commands.length,1);
-  c.it.runes[3]='r10';c.finish(null);await Promise.resolve();assert.equal(c.UI.equipMatMode.selIdx,1,'成功後回到最前面的空孔');
-  c.click({'socket-pick':'0'});assert.ok(p.gems.buttons.every(b=>b.disabled),'選到已鑲的孔，符文格全鎖');c.click({'rune-socket':'r10'});assert.equal(c.commands.length,1);
-  c.it.runes=['r01','r02','r03','r04'];c.renderDetail();assert.ok(p.gems.buttons.every(b=>b.disabled));assert.equal((p.holes.innerHTML.match(/class="socket-remove"/g)||[]).length,4);
-  c.it.runes=['r01',null,null,null];c.renderDetail();c.click({'socket-pick':'1'});assert.ok(p.gems.buttons.every(b=>!b.disabled));
+const tick=()=>new Promise(r=>setImmediate(r));
+test('符文暫放與刻印：點符文只暫放（不送指令、庫存格先扣）、符文鈕變「刻印」，按刻印才依孔位順序逐顆送 rune.socket；可取消暫放',async()=>{
+  const c=mount(),stock={gems:{},fusedGems:[],runes:{r01:1,r10:3}};c.uiGemsPanelSnapshot=()=>stock;c.click({act:'toggle-rune'});
+  const p=c.elements['detail-pane'],bar=()=>c.elements['equip-action-bar'].innerHTML;
+  c.click({'socket-pick':'3'});c.click({'rune-socket':'r10'});
+  assert.equal(c.commands.length,0,'只是暫放，沒送任何指令');
+  assert.match(bar(),/data-act="engrave-rune"[^>]*>刻印</);assert.doesNotMatch(bar(),/toggle-rune/);
+  assert.match(p.holes.innerHTML,/is-draft/);assert.match(p.holes.innerHTML,/data-rune-undraft="3"/);assert.doesNotMatch(p.holes.innerHTML,/data-rune-erase="3"/);
+  assert.match(p.gems.innerHTML,/data-rune-socket="r10"[\s\S]*?×2</,'r10 庫存格 ×3 → ×2');
+  assert.equal(c.UI.equipMatMode.selIdx,1,'暫放後跳到下一個空孔');
+  c.click({'rune-socket':'r01'});c.click({'rune-socket':'r01'});
+  assert.deepEqual(Object.keys(c.UI.equipMatMode.draft),['1','3'],'r01 只有 1 顆，第二次放不進去');
+  assert.doesNotMatch(p.gems.innerHTML,/data-rune-socket="r01"/,'暫放完的符文不再列出');
+  c.click({'rune-undraft':'1'});assert.deepEqual(Object.keys(c.UI.equipMatMode.draft),['3']);assert.match(p.gems.innerHTML,/data-rune-socket="r01"/);
+  c.click({'socket-pick':'1'});c.click({'rune-socket':'r01'});
+  c.click({act:'engrave-rune'});await tick();
+  assert.deepEqual(c.commands,[{name:'rune.socket',args:{itemId:'gear',runeId:'r01',index:1}}],'由小到大逐顆送，先送孔 1');
+  c.it.runes[1]='r01';c.finish(null);await tick();
+  assert.deepEqual(c.commands[1],{name:'rune.socket',args:{itemId:'gear',runeId:'r10',index:3}});
+  c.it.runes[3]='r10';c.finish(null);await tick();
+  assert.deepEqual(Object.keys(c.UI.equipMatMode.draft),[],'刻印完暫放清空');assert.match(bar(),/data-act="toggle-rune"/);
 });
-test('符文孔失敗不跳孔；沒有符文孔時說明原因且符文格鎖定；寶石⇄符文互切整頁重建',async()=>{
+test('刻印中途失敗就停：沒送的符文仍留在暫放',async()=>{
+  const c=mount(),stock={gems:{},fusedGems:[],runes:{r01:2,r10:3}};c.uiGemsPanelSnapshot=()=>stock;c.click({act:'toggle-rune'});
+  c.click({'rune-socket':'r01'});c.click({'rune-socket':'r10'});assert.deepEqual(Object.keys(c.UI.equipMatMode.draft),['1','2']);
+  c.click({act:'engrave-rune'});await tick();assert.equal(c.commands.length,1);c.finish('符文不足');await tick();
+  assert.equal(c.commands.length,1,'第一顆失敗就不再送後面的');assert.deepEqual(Object.keys(c.UI.equipMatMode.draft),['1','2']);
+});
+test('已刻印的孔不能暫放；換件裝備或按強化退出，暫放就丟掉；沒有符文孔時說明原因；寶石⇄符文互切整頁重建',()=>{
   const c=mount(),stock={gems:{ruby:{5:1}},fusedGems:[],runes:{r01:2}};c.uiGemsPanelSnapshot=()=>stock;const p=c.elements['detail-pane'];
-  c.click({act:'toggle-rune'});c.click({'rune-socket':'r01'});c.finish('符文不足');await Promise.resolve();assert.equal(c.UI.equipMatMode.selIdx,1);
+  c.click({act:'toggle-rune'});c.click({'socket-pick':'0'});c.click({'rune-socket':'r01'});assert.deepEqual(Object.keys(c.UI.equipMatMode.draft),[],'孔 1 已刻印，不能暫放');
+  c.click({'socket-pick':'1'});c.click({'rune-socket':'r01'});assert.equal(Object.keys(c.UI.equipMatMode.draft).length,1);
   const holes=p.holes;c.click({act:'toggle-socket'});assert.notEqual(p.holes,holes);assert.match(p.gems.innerHTML,/data-gem-socket="ruby"/);assert.doesNotMatch(p.gems.innerHTML,/data-rune-socket/);
   const sockHoles=p.holes;c.click({act:'toggle-rune'});assert.notEqual(p.holes,sockHoles);assert.match(p.gems.innerHTML,/data-rune-socket/);assert.doesNotMatch(p.gems.innerHTML,/data-gem-socket/);
+  assert.deepEqual(Object.keys(c.UI.equipMatMode.draft),[],'離開符文頁後暫放不留');
   c.it.rarity=0;c.it.runes=[];c.renderDetail();
   assert.match(p.holes.innerHTML,/沒有符文孔/);assert.doesNotMatch(p.holes.innerHTML,/data-socket-pick/);assert.ok(p.gems.buttons.length>0&&p.gems.buttons.every(b=>b.disabled));
-  const sent=c.commands.length;c.socketRuneToSelected('r01');assert.equal(c.commands.length,sent,'沒有符文孔時不送指令');
+  c.socketRuneToSelected('r01');assert.equal(Object.keys(c.UI.equipMatMode.draft).length,0,'沒有符文孔時暫放不了');assert.equal(c.commands.length,0);
 });
 test('鑲嵌頁有標題、孔及每類最高級寶石與數量，只有鑲嵌紅色且重按不退出',()=>{
   const c=mount();c.click({act:'toggle-socket'});

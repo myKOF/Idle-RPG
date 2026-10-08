@@ -122,6 +122,10 @@ var RUNE_SETTINGS = {
   statScale: 1,
   drop: { basePct: 0.3, towerBossPct: 35, tierSpread: 0.74, progressPerTier: 4.6 }
 };
+/* 抹除已刻印的符文要付的費用（符文不退還、孔恢復為空）。不在配置表：這兩個數字直接改這裡。
+   費用 = 每階單價 × 符文階數 × 裝備稀有度倍率（RARITIES.mult）；scrap＝裝備碎片、essence＝附魔精華。 */
+var RUNE_ERASE = { scrapPerTier: 15, essencePerTier: 1 };
+
 /* 既有程式使用的具名常數：全部由上面的設定衍生（唯一來源），不要在別處另寫數字。 */
 var RUNE_MAX_SLOTS = RUNE_SETTINGS.maxSlots;
 var RUNE_COMPOSE_COUNT = RUNE_SETTINGS.composeCount;

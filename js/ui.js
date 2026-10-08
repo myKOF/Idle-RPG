@@ -5434,6 +5434,13 @@ function equipSlotModeFor(it, kind) {
   var mode = UI.equipMatMode;
   if (!it || !mode || mode.itemId !== it.id || mode.mode !== kind) return null;
   var sockets = equipSlotsOf(it, kind);
+  if (kind === 'rune') {
+    /* 符文頁：mode.draft = { 孔索引: 符文id } 是還沒刻印的暫放符文，只存在本機；已被真正鑲上或超出孔數的就清掉，
+       選孔與自動跳孔把暫放的孔當成已佔用。 */
+    var draft = mode.draft || (mode.draft = {});
+    Object.keys(draft).forEach(function (k) { if (!(Number(k) < sockets.length) || sockets[k]) delete draft[k]; });
+    sockets = sockets.map(function (id, i) { return id || draft[i] || null; });
+  }
   if (mode.advanceFrom !== undefined && sockets[mode.advanceFrom]) {
     var from = mode.advanceFrom;
     mode.selIdx = sockets.length ? (from + 1) % sockets.length : -1;
@@ -5478,11 +5485,56 @@ function socketSelectedGem(type, level, fusedId) {
   else sendSlotSocketCommand(it, mode, 'gem.socket', { itemId: it.id, type: type, level: level }, '鑲嵌寶石');
 }
 
-/* 鑲入符文（js/runeword.js）：符文鑲嵌頁（UI.equipMatMode.mode === 'rune'）點符文圖示 → 放進選中的符文孔，操作與寶石相同。 */
+/* 暫放符文（js/runeword.js）：符文鑲嵌頁（UI.equipMatMode.mode === 'rune'）點符文圖示 → 先放進選中的符文孔當暫放，
+   還沒真的鑲上、也不扣庫存；下方按鈕變「刻印」，按下去才送出（engraveRuneDrafts）。庫存格的數量已扣掉暫放的顆數，不能超放。 */
 function socketRuneToSelected(runeId) {
   var it = findSelItem(), mode = equipRuneModeFor(it);
   if (!mode || isUiCommandPending(itemPendingKey(it.id)) || mode.selIdx < 0 || rwSlots(it)[mode.selIdx]) return;
-  sendSlotSocketCommand(it, mode, 'rune.socket', { itemId: it.id, runeId: runeId }, '鑲嵌符文');
+  var left = runesViewCount(uiGemsPanelSnapshot(), runeId) - runeDraftCount(mode.draft, runeId) + (mode.draft[mode.selIdx] === runeId ? 1 : 0);
+  if (left < 1) return;
+  mode.draft[mode.selIdx] = runeId;
+  mode.advanceFrom = mode.selIdx;
+  renderDetail();
+}
+
+function runeDraftCount(draft, runeId) {
+  var n = 0;
+  for (var k in (draft || {})) if (draft[k] === runeId) n++;
+  return n;
+}
+
+/* 等這件裝備的指令鎖釋放（上一顆的回覆已到、面板已更新）才送下一顆；鎖還在時再送會被當成連送擋掉。最多等約 3 秒。 */
+function waitUiCommandIdle(key, tries) {
+  if (!isUiCommandPending(key) || tries <= 0) return Promise.resolve();
+  return new Promise(function (resolve) { setTimeout(resolve, 50); }).then(function () { return waitUiCommandIdle(key, tries - 1); });
+}
+
+/* 刻印：把暫放的符文依孔位順序逐顆送 rune.socket；任何一顆失敗就停（沒送的仍留在暫放，已鑲上的不會回頭）。 */
+function engraveRuneDrafts() {
+  var it = findSelItem(), mode = equipRuneModeFor(it);
+  if (!mode || isUiCommandPending(itemPendingKey(it.id))) return;
+  var picks = Object.keys(mode.draft).map(Number).sort(function (a, b) { return a - b; });
+  if (!picks.length) return;
+  var panels = ['inv', 'equip', 'gems', 'header'];
+  var chain = Promise.resolve(true);
+  picks.forEach(function (idx) {
+    chain = chain.then(function (ok) {
+      if (!ok || UI.equipMatMode !== mode || !UI.sel || UI.sel.id !== it.id) return false;
+      return waitUiCommandIdle(itemPendingKey(it.id), 60).then(function () {
+        if (UI.equipMatMode !== mode || !mode.draft[idx]) return false;
+        return sendUiCommand('rune.socket', { itemId: it.id, runeId: mode.draft[idx], index: idx }, { keys: [itemPendingKey(it.id)], panels: panels });
+      }).then(function (result) {
+        if (result !== null) return false;
+        delete mode.draft[idx];
+        return true;
+      });
+    });
+  });
+  chain.then(function () {
+    if (UI.equipMatMode === mode) { equipRuneModeFor(it); renderDetail(); }
+  }).catch(function (error) {
+    reportUiCommandFailure('刻印符文', error, panels);
+  });
 }
 
 /* 選孔與 pending 只更新現有控制項，保留素材節點及捲動位置。 */
@@ -5546,11 +5598,11 @@ function equipGemGridHTML(gemsSnapshot) {
 }
 
 /* 鑲嵌頁下方的符文格：列出符文庫存（高階在前），點圖示鑲進選中的符文孔（js/runeword.js）。 */
-function equipRuneGridHTML(it, gemsSnapshot) {
+function equipRuneGridHTML(it, gemsSnapshot, draft) {
   var icons = [];
   for (var ri = RUNES.length - 1; ri >= 0; ri--) {
-    var rune = RUNES[ri], rn = (typeof runesViewCount === 'function') ? runesViewCount(gemsSnapshot, rune.id) : 0;
-    if (!rn) continue;
+    var rune = RUNES[ri], rn = (typeof runesViewCount === 'function') ? runesViewCount(gemsSnapshot, rune.id) - runeDraftCount(draft, rune.id) : 0;
+    if (rn < 1) continue;   // 暫放的也先扣掉：數量是「還能再放幾顆」
     icons.push('<button type="button" class="equip-material-icon rune-icon" data-rune-socket="' + rune.id + '"' +
       ' style="--c:' + rune.color + '" data-tip="' +
       esc(rune.name + '符文（第 ' + rune.tier + ' 階）×' + rn + '｜鑲在這件裝備：' + rwRuneStatLine(it, rune.id) + '｜鑲入選中孔位') + '">' +
@@ -5621,8 +5673,8 @@ function renderDetail() {
   var matMode = !rerollMode && UI.equipMatMode && UI.equipMatMode.itemId === it.id ? UI.equipMatMode.mode : null;
   syncEquipActionCooldown(it, rerollMode ? 'reroll-affix' : (matMode || 'upgrade'));
   var slotHeaderHtml = slotMode ? itemHeaderHTML(it, { justUpgraded: justUpgraded }) : null;
-  var slotHolesHtml = slotMode ? (socketMode ? itemSocketHTML(it, { selIdx: -1, pending: false }) : itemRuneHTML(it, { selIdx: -1, pending: false })) : null;
-  var slotStockHtml = slotMode ? (socketMode ? equipGemGridHTML(gemsSnapshot) : equipRuneGridHTML(it, gemsSnapshot)) : null;
+  var slotHolesHtml = slotMode ? (socketMode ? itemSocketHTML(it, { selIdx: -1, pending: false }) : itemRuneHTML(it, { selIdx: -1, pending: false, draft: runeMode.draft })) : null;
+  var slotStockHtml = slotMode ? (socketMode ? equipGemGridHTML(gemsSnapshot) : equipRuneGridHTML(it, gemsSnapshot, runeMode.draft)) : null;
   var h = slotMode ?
     '<div class="equip-socket-header">' + slotHeaderHtml + '</div><div class="equip-socket-page">' + slotHolesHtml + '</div><div class="equip-socket-gems">' + slotStockHtml + '</div>' :
     itemDetailHTML(it, null, {
@@ -5669,7 +5721,12 @@ function renderDetail() {
   }
   actionsHtml += '<button class="btn' + (rerollMode ? ' btn-primary act-btn-tooltip' : '') + '" data-act="' + (rerollMode ? 'reroll-affix' : 'toggle-reroll') + '"' + rrAttrs + '>洗煉</button>';
   actionsHtml += '<button class="btn' + (socketMode ? ' btn-primary' : '') + '" data-act="toggle-socket" aria-pressed="' + (matMode === 'socket') + '">鑲嵌</button>';
-  actionsHtml += '<button class="btn' + (runeMode ? ' btn-primary' : '') + '" data-act="toggle-rune" aria-pressed="' + (matMode === 'rune') + '">符文</button>';
+  if (runeMode && Object.keys(runeMode.draft).length) {
+    /* 有暫放的符文：「符文」鈕變「刻印」，按下才真的鑲上 */
+    actionsHtml += '<button class="btn btn-primary act-btn-tooltip" data-act="engrave-rune" data-tip="' + esc('刻印：把暫放的 ' + Object.keys(runeMode.draft).length + ' 顆符文鑲上（鑲上後要抹除才能取下，抹除需要費用）') + '"' + pendingUiButtonAttributes(pendingKey) + '>刻印</button>';
+  } else {
+    actionsHtml += '<button class="btn' + (runeMode ? ' btn-primary' : '') + '" data-act="toggle-rune" aria-pressed="' + (matMode === 'rune') + '">符文</button>';
+  }
   if (!fromInv) {
     actionsHtml += '<button class="btn btn-icon act-btn-tooltip" data-act="unequip" aria-label="卸下" data-tip="卸下"' +
       pendingUiButtonAttributes(pendingKey) + '>' + EQUIP_UNEQUIP_ICON + '</button>';
@@ -11193,6 +11250,13 @@ function uiStallDiagText(now) {
     for (var phk in slow.ph) if (slow.ph[phk] > topMs) { topMs = slow.ph[phk]; top = phk; }
     text += ' ⚠ Worker 慢 ' + slow.ms + 'ms（' + top + ' ' + topMs + '，' + slow.steps + ' 步）';
   }
+  /* 模擬落後／存檔沒落地：重新整理時跳出的「離線獎勵」就是這兩者造成的——
+     存檔時間戳＝現實時間扣掉補進度欠帳，所以「模擬追不上現實」與「存檔一直沒寫成功」都會讓時間戳變舊。 */
+  var ws = (typeof WorkerBridge !== 'undefined' && WorkerBridge.status) ? WorkerBridge.status() : null;
+  if (ws && ws.catchupSec >= 3) text += ' ⏳ 模擬落後 ' + ws.catchupSec + ' 秒';
+  if (ws && ws.upTimeSec > 60 && (ws.persistAgeSec === null || ws.persistAgeSec > 60)) {
+    text += ' ⚠ 存檔' + (ws.persistAgeSec === null ? '從未落地' : '已 ' + ws.persistAgeSec + ' 秒沒落地');
+  }
   var head = UI_WORKER_VISUAL_EVENT_QUEUE[0];
   if (head && head._qAt && now - head._qAt > UI_VISUAL_WAIT_MS) {
     text += ' ⚠ 特效佇列等 ' + ((now - head._qAt) / 1000).toFixed(1) + ' 秒（' + UI_WORKER_VISUAL_EVENT_QUEUE.length + ' 件）';
@@ -12928,6 +12992,7 @@ function initUI() {
     if (actBtn) {
       if (actBtn.disabled) return;
       var act = actBtn.getAttribute('data-act');
+      if (act === 'engrave-rune') { engraveRuneDrafts(); return; }
       if (act === 'toggle-socket' || act === 'toggle-rune') {
         var matIt = findSelItem();
         if (!matIt) return;
@@ -13033,22 +13098,47 @@ function initUI() {
       );
       return;
     }
-    // 符文鑲嵌（符文鑲嵌頁點符文圖示，鑲進選中的孔）／取下（孔右側的「卸下」）
+    // 符文鑲嵌（符文鑲嵌頁點符文圖示，鑲進選中的孔）／取消暫放／抹除（孔右側的按鈕）
     var rsk = e.target.closest('[data-rune-socket]');
     if (rsk) {
       if (!rsk.disabled) socketRuneToSelected(rsk.getAttribute('data-rune-socket'));
       return;
     }
-    var rrm = e.target.closest('[data-rune-remove]');
+    var rud = e.target.closest('[data-rune-undraft]');
+    if (rud) {
+      var udIt = findSelItem(), udMode = udIt && equipRuneModeFor(udIt);
+      if (udMode && !rud.disabled) {
+        delete udMode.draft[parseInt(rud.getAttribute('data-rune-undraft'), 10)];
+        renderDetail();
+      }
+      return;
+    }
+    var rrm = e.target.closest('[data-rune-erase]');
     if (rrm) {
       var rmIt = findSelItem();
       if (rmIt && UI.tab === 'equip' && equipRuneModeFor(rmIt)) {
         if (rrm.disabled || isUiCommandPending(itemPendingKey(rmIt.id))) return;
-        sendUiCommand('rune.unsocket', { itemId: rmIt.id, index: parseInt(rrm.getAttribute('data-rune-remove'), 10) }, {
+        var eraseIdx = parseInt(rrm.getAttribute('data-rune-erase'), 10);
+        /* 抹除不可逆（符文不退還），要連按兩次：第一次按鈕變「確定抹除？」，3 秒內再按才送出 */
+        var armKey = rmIt.id + ':' + eraseIdx;
+        if (!UI._eraseArm || UI._eraseArm.key !== armKey || uiNowMs() > UI._eraseArm.until) {
+          UI._eraseArm = { key: armKey, until: uiNowMs() + 3000 };
+          rrm.textContent = '確定抹除？';
+          setTimeout(function () { if (UI._eraseArm && UI._eraseArm.key === armKey) { UI._eraseArm = null; rrm.textContent = '抹除'; } }, 3000);
+          return;
+        }
+        UI._eraseArm = null;
+        var eraseCost = runeEraseCost(rmIt, rwSlots(rmIt)[eraseIdx]);
+        var erasePlayer = (uiHeaderPanelSnapshot() || {}).player;
+        if (erasePlayer && ((erasePlayer.scrap || 0) < eraseCost.scrap || (erasePlayer.essence || 0) < eraseCost.essence)) {
+          showFloatingText(rrm, '材料不足', '#fca5a5');
+          return;
+        }
+        sendUiCommand('rune.erase', { itemId: rmIt.id, index: eraseIdx }, {
           keys: [itemPendingKey(rmIt.id)],
           panels: ['inv', 'equip', 'gems', 'header']
         }).catch(function (error) {
-          reportUiCommandFailure('取下符文', error, ['inv', 'equip', 'gems', 'header']);
+          reportUiCommandFailure('抹除符文', error, ['inv', 'equip', 'gems', 'header']);
         });
       }
       return;

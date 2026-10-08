@@ -733,11 +733,11 @@ function runeStoneHTML(id, cls) {
 }
 
 /* 符文孔區塊（取代原本附魔欄位的位置；符文與符文真言 → js/runeword.js）。
-   純函式（不讀 G、不改 it）。mode＝符文鑲嵌頁（與 itemSocketHTML 的 mode 同形，{ selIdx, pending }）：
-   每孔變成可選取的列（data-socket-pick），已鑲的符文右側多一顆「卸下」（data-rune-remove）；省略時只是唯讀顯示。
-   符文真言成形時列出名稱與全部效果；未成形時提示「再放入哪幾顆符文就會成形」——但那組真言還沒激活過
-   （圖鑑上是問號）的話，提示裡的符文與名稱也一併遮成問號（只告訴玩家「方向對了」），
-   是否已激活由主執行緒的 runeUiWordRevealed 回答（js/ui-runeword.js；Worker 端沒有這個函式，一律視為已激活）。
+   純函式（不讀 G、不改 it）。mode＝符文鑲嵌頁（與 itemSocketHTML 的 mode 同形，{ selIdx, pending, draft }）：
+   每孔變成可選取的列（data-socket-pick）；已刻印的符文右側是「抹除」（data-rune-erase，提示列出費用，符文不退還）；
+   draft＝{ 孔索引: 符文id }，還沒刻印的暫放符文，列上是「取消」（data-rune-undraft），按下方「刻印」才真的鑲上；省略 mode 時只是唯讀顯示。
+   構成目前符文真言的那幾顆，圖示底下有旋轉光暈（.rs-halo）。
+   符文真言成形時列出名稱與全部效果；未成形時不給任何提示（不說差哪幾顆，讓玩家自己探索）。
    沒有符文孔的裝備（普通品質）：唯讀顯示不輸出任何東西；鑲嵌頁輸出一行說明。 */
 function itemRuneHTML(it, mode) {
   if (typeof rwSlots !== 'function') return '';
@@ -751,12 +751,16 @@ function itemRuneHTML(it, mode) {
   var h = '<div class="it-sockets it-runes">' + (mode ? '' : '<div class="it-sockets-title">符文孔 ' + filled + '／' + slots.length + '</div>');
   for (var i = 0; i < slots.length; i++) {
     var id = slots[i];
-    var inWord = !!rwAct && i >= rwAct.start && i < rwAct.start + rwAct.word.runes.length;
-    var text = id
-      ? '<span class="sk-name">' + (i + 1) + '. ' + runeStoneHTML(id, 'rs-row') + ' ' + esc(runeLabel(id)) + '</span>' +
-        '<span class="sk-val">' + esc(rwRuneStatLine(it, id)) + '</span>'
+    var draftId = (!id && mode && mode.draft && mode.draft[i] && RUNE_BY_ID[mode.draft[i]]) ? mode.draft[i] : null;
+    var shown = id || draftId;
+    var inWord = !!id && !!rwAct && i >= rwAct.start && i < rwAct.start + rwAct.word.runes.length;
+    var icon = runeStoneHTML(shown, 'rs-row');
+    if (inWord) icon = '<span class="rs-halo">' + icon + '</span>';
+    var text = shown
+      ? '<span class="sk-name">' + (i + 1) + '. ' + icon + ' ' + esc(runeLabel(shown)) + '</span>' +
+        '<span class="sk-val">' + esc(rwRuneStatLine(it, shown)) + '</span>'
       : '◇ 符文孔 ' + (i + 1) + '（空）';
-    var cls = 'socket ' + (id ? 'filled rune-socket' + (inWord ? ' runeword-socket' : '') : 'empty');
+    var cls = 'socket ' + (shown ? 'filled rune-socket' + (inWord ? ' runeword-socket' : '') + (draftId ? ' is-draft' : '') : 'empty');
     if (!mode) {
       h += '<span class="' + cls + '">' + text + '</span>';
       continue;
@@ -764,8 +768,15 @@ function itemRuneHTML(it, mode) {
     h += '<div class="' + cls + ' socket-row' + (mode.selIdx === i ? ' is-socket-selected' : '') + '">' +
       '<button type="button" class="socket-pick" data-socket-pick="' + i + '" aria-pressed="' + (mode.selIdx === i) + '"' +
       (mode.pending ? ' disabled' : '') + '>' + text + '</button>';
-    if (id) h += '<button type="button" class="socket-remove" data-rune-remove="' + i + '" aria-label="卸下符文孔 ' + (i + 1) + ' 的符文"' +
-      (mode.pending ? ' disabled' : '') + '>卸下</button>';
+    if (id) {
+      var cost = runeEraseCost(it, id);
+      h += '<button type="button" class="socket-remove" data-rune-erase="' + i + '" aria-label="抹除符文孔 ' + (i + 1) + ' 的符文" data-tip="' +
+        esc('抹除：消耗 裝備碎片 ' + fmt(cost.scrap) + '、附魔精華 ' + fmt(cost.essence) + '；符文不會退還，孔恢復為空') + '"' +
+        (mode.pending ? ' disabled' : '') + '>抹除</button>';
+    } else if (draftId) {
+      h += '<button type="button" class="socket-remove" data-rune-undraft="' + i + '" aria-label="取消符文孔 ' + (i + 1) + ' 的暫放符文"' +
+        (mode.pending ? ' disabled' : '') + '>取消</button>';
+    }
     h += '</div>';
   }
   if (rwAct) {
@@ -774,15 +785,7 @@ function itemRuneHTML(it, mode) {
       esc(RUNEWORD_TIER_NAMES[rwAct.word.tier]) + '</span></div>';
     rwDescribeLines(rwAct.word, it).forEach(function (line) { h += '<div class="it-runeword-line">' + esc(line) + '</div>'; });
     h += '</div>';
-  } else {
-    var cand = rwCandidates(it);
-    if (cand.length) {
-      var near = cand.sort(function (a, b) { return a.missing.length - b.missing.length; })[0];
-      var hintRevealed = (typeof runeUiWordRevealed !== 'function') || runeUiWordRevealed(near.word.id);
-      h += '<div class="it-runeword-hint">再鑲入「' + esc(hintRevealed ? near.missing.map(runeName).join('、') : near.missing.map(function () { return '？'; }).join('、')) +
-        '」即可成形【' + esc(hintRevealed ? near.word.name : '？？？？') + '】</div>';
-    }
-  }
+  }   // 沒成形時不給任何提示：符文真言要玩家自己探索
   return h + '</div>';
 }
 
