@@ -15,7 +15,7 @@ var WorkerBridge = (function () {
   /* Worker 與其模擬層不是由 bundler 產生，瀏覽器可能把舊的 Worker
      腳本留在快取裡。每次修改 Worker 啟動／核心邏輯時更新這個鍵，避免
      使用者刷新後仍執行舊版升級公式。 */
-  var WORKER_ASSET_VERSION = '20261008-rune-word-cut';
+  var WORKER_ASSET_VERSION = '20261008-hit-direct';
 
   /* ---- 量測模式（P4 用，預設關閉）----
      網址帶 ?measure=1 時，Worker 與主執行緒兩側都會統計訊息規模與耗時。
@@ -161,6 +161,7 @@ var WorkerBridge = (function () {
         stats.lastView = msg.view;
         stats.lastDirty = msg.dirty || [];
         stats.lastDiag = msg.diag || null;
+        stats.hitRate = msg.hitRate || 0;   // 每遊戲秒的玩家傷害計算次數（FPS 疊層顯示）
         if (msg.slow) stats.lastSlow = msg.slow;   // 最近一次 ≥100ms 的 Worker loop 與各階段耗時
         if (msg.measure) stats.lastMeasure = msg.measure;
         stats.events += (msg.events || []).length;
@@ -462,6 +463,7 @@ var WorkerBridge = (function () {
       restarts: _restartCount,
       maxRestarts: MAX_RESTARTS,
       slowLoop: stats.lastSlow || null,
+      hitRate: stats.hitRate || 0,
       persistAgeSec: stats.lastPersistOkAt ? Math.round((Date.now() - stats.lastPersistOkAt) / 1000) : null,
       silentMs: _lastMessageAt ? (Date.now() - _lastMessageAt) : null,
       upTimeSec: stats.bootedAt ? Math.round((Date.now() - stats.bootedAt) / 1000) : 0,

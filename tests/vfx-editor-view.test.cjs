@@ -582,3 +582,145 @@ test('VIEW-28 輸入框與箭頭鈕走同一條開啟路徑', function () {
   assert.ok(!/openCombo\(''\)/.test(toggle),
     "箭頭鈕不得用 openCombo('')：那會把剛篩好的清單換成未篩選的全部");
 });
+
+/* ============================================================
+   飛行預覽（2026-10-08）：特效以 N 米/秒往右飛，看拖尾在遊戲裡的樣子
+   ============================================================ */
+
+/* 從 editor.js 原文抽出一個頂層函式（大括號配對；本檔要測的幾個函式裡沒有字串大括號）。 */
+function extractFn(src, name) {
+  const at = src.indexOf('function ' + name + '(');
+  assert.ok(at >= 0, '找不到 function ' + name);
+  let depth = 0;
+  for (let i = src.indexOf('{', at); i < src.length; i++) {
+    if (src[i] === '{') depth++;
+    else if (src[i] === '}' && --depth === 0) return src.slice(at, i + 1);
+  }
+  throw new Error(name + ' 的大括號沒有配對');
+}
+
+/* 假的視窗狀態＋假的 Core runtime，跑真的 advanceFlight／playPreview。 */
+function flightSandbox() {
+  const vm = require('node:vm');
+  const calls = [];
+  const state = {
+    flightSpeed: 0, flightX: 0, handle: 7, effectRoot: { x: 0 }, deformationSeed: 0,
+    preset: { id: 'proj-test', deformation: null },
+    runtime: {
+      ended: false,
+      timeOf(h) { return this.ended ? null : 1; },
+      setTransform(h, p) { calls.push({ h, p: JSON.parse(JSON.stringify(p)) }); return true; },
+      play() { return 9; }
+    }
+  };
+  const ctx = { state, VFXViewModel: V, PREVIEW_SEED: 12345 };
+  vm.createContext(ctx);
+  const src = editorSrc();
+  vm.runInContext(extractFn(src, 'advanceFlight') + '\n' + extractFn(src, 'playPreview'), ctx);
+  return { state, calls, advanceFlight: ctx.advanceFlight, playPreview: ctx.playPreview };
+}
+
+test('VIEW-36 10 米/秒＝每秒往右 100px，走的是遊戲同一條 setTransform', function () {
+  const s = flightSandbox();
+  s.state.flightSpeed = 10;
+  s.advanceFlight(0.5);
+  s.advanceFlight(0.5);
+  assert.strictEqual(s.state.flightX, 100, '1 米 = 10px：10 米/秒飛 1 秒是 100px');
+  assert.deepStrictEqual(s.calls.map(c => c.p), [
+    { position: { x: 50, y: 0 } }, { position: { x: 100, y: 0 } }
+  ], '每幀把特效原點推到新位置（往右，y 不動）');
+  assert.ok(s.calls.every(c => c.h === 7), '推的是這一格正在播的那一個');
+  /* 鏡頭跟著特效走：effectRoot 反向平移同一段，特效留在畫面中央、Gizmo 的框對得上。 */
+  assert.strictEqual(s.state.effectRoot.x, -100);
+});
+
+test('VIEW-36B 速度 0、沒在播、已經播完都不動', function () {
+  const s = flightSandbox();
+  s.advanceFlight(1);
+  assert.strictEqual(s.calls.length, 0, '預設 0＝原地播放，連 setTransform 都不叫');
+  s.state.flightSpeed = 10;
+  s.state.handle = null;
+  s.advanceFlight(1);
+  assert.strictEqual(s.calls.length, 0, '沒有在播的特效');
+  s.state.handle = 7;
+  s.state.runtime.ended = true;
+  s.advanceFlight(1);
+  assert.strictEqual(s.calls.length, 0, '播完（等預覽循環重來）時不要對著空白一直捲');
+  assert.strictEqual(s.state.flightX, 0);
+  assert.strictEqual(s.state.effectRoot.x, 0);
+});
+
+test('VIEW-36C 每次重播都從原點起飛，鏡頭歸位', function () {
+  const s = flightSandbox();
+  s.state.flightSpeed = 10;
+  s.advanceFlight(2);
+  assert.strictEqual(s.state.flightX, 200);
+  s.playPreview(0);
+  assert.strictEqual(s.state.handle, 9);
+  assert.strictEqual(s.state.flightX, 0);
+  assert.strictEqual(s.state.effectRoot.x, 0);
+  assert.strictEqual(s.state.flightSpeed, 10, '速度是檢視設定，重播不歸零');
+});
+
+test('VIEW-37 飛行中地面往後退、軸線留在特效原點上', function () {
+  /* 不給 latticeX 時與原本一模一樣：沒在飛的時候格線一條都不能動。
+     原點刻意取 317（不是 60 的倍數）：取 300 的話「預設對齊 0」也剛好對得上，測不出來。 */
+  const still = { width: 600, height: 400, originX: 317, originY: 200, zoom: 1 };
+  assert.deepStrictEqual(V.gridSpec(still), V.gridSpec(Object.assign({ latticeX: 317 }, still)));
+  assert.ok(V.gridSpec(still).majorX.indexOf(317 + 60) >= 0, '格子仍然對齊特效原點');
+
+  const base = { width: 600, height: 400, originX: 300, originY: 200, zoom: 1 };
+
+  /* 飛了 25px：格子整組往左 25px，但軸線還在 300（特效原點）。 */
+  const s = V.gridSpec(Object.assign({ latticeX: 275 }, base));
+  assert.strictEqual(s.axisX, 300, '軸線標的是特效原點，不跟著地面走');
+  assert.ok(s.majorX.indexOf(275 + 60) >= 0 && s.majorX.indexOf(275 - 60) >= 0, '大格以 latticeX 為準');
+  assert.ok(s.minorX.indexOf(285) >= 0 && s.minorX.indexOf(295) >= 0, '小格也是');
+  assert.strictEqual(s.majorX.indexOf(300), -1);
+  assert.ok(s.minorX.every(x => Math.abs(((x - 275) / 60) - Math.round((x - 275) / 60)) > 1e-6),
+    '小格不得與（移動後的）大格重疊');
+  assert.ok(s.majorX.concat(s.minorX).every(x => x !== 300), '不與軸線重疊');
+  /* 橫線不受水平飛行影響。 */
+  assert.deepStrictEqual(s.majorY, V.gridSpec(base).majorY);
+  assert.deepStrictEqual(s.minorY, V.gridSpec(base).minorY);
+});
+
+test('VIEW-38 drawGrid 用飛行距離換算 latticeX，且列入「條件變了才重畫」', function () {
+  const fn = extractFn(stripped(), 'drawGrid');
+  assert.ok(/var lx = ox - \(state\.flightX \|\| 0\) \* state\.zoom;/.test(fn),
+    '格子對齊位置＝原點往左退「飛行距離 × 縮放」');
+  assert.ok(/last\.lx === lx/.test(fn), '沒列入比對的話，飛行中格線不會動');
+  assert.ok(/latticeX: lx/.test(fn));
+});
+
+test('VIEW-39 每一幀先飛、再畫格線、最後 update', function () {
+  /* 順序錯了，新粒子會在舊原點出生（拖尾斷一格），格線也會晚一幀而抖。 */
+  const fn = extractFn(stripped(), 'tickPane');
+  const fly = fn.indexOf('advanceFlight(dt)');
+  const draw = fn.indexOf('drawGrid()');
+  const upd = fn.indexOf('state.runtime.update(dt)');
+  assert.ok(fly >= 0 && draw >= 0 && upd >= 0);
+  assert.ok(fly < draw && draw < upd);
+  assert.ok(/if \(running\) advanceFlight\(dt\)/.test(fn), '暫停時不飛');
+});
+
+test('VIEW-40 飛行速度只是檢視設定：不進 preset、不進歷史、負數與亂打退成 0', function () {
+  const src = stripped();
+  const snap = extractFn(src, 'historySnapshot');
+  assert.ok(!/flight/.test(snap), '歷史快照不該包含飛行狀態');
+  ['advanceFlight', 'setFlightSpeed', 'syncFlightSpeed'].forEach(function (name) {
+    assert.ok(!/state\.preset\b/.test(extractFn(src, name)), name + ' 不得碰 preset');
+  });
+
+  const vm = require('node:vm');
+  const ctx = { state: { flightSpeed: 0 }, $: () => null, ctx: {}, document: {} };
+  vm.createContext(ctx);
+  vm.runInContext(extractFn(src, 'setFlightSpeed') + '\n' + extractFn(src, 'syncFlightSpeed'), ctx);
+  [['12.5', 12.5], ['-5', 0], ['', 0], ['abc', 0], ['Infinity', 0], ['0', 0]].forEach(function (c) {
+    ctx.setFlightSpeed(c[0]);
+    assert.strictEqual(ctx.state.flightSpeed, c[1], JSON.stringify(c[0]));
+  });
+
+  const html = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/index.html'), 'utf8');
+  assert.ok(/id="flight-speed"[^>]*value="0"/.test(html), '預設 0');
+});

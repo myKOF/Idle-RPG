@@ -28,7 +28,8 @@ const SOURCE = [
   functionSource(ui, 'uiTickNoteError'),
   functionSource(ui, 'uiTickStep'),
   functionSource(ui, 'uiTickGuarded'),
-  functionSource(ui, 'uiStallDiagText')
+  functionSource(ui, 'uiStallDiagText'),
+  functionSource(ui, 'uiHitRateText')
 ].join('\n');
 
 function makeContext(opts) {
@@ -271,7 +272,7 @@ test('SD-16 main.js 週期重繪掛的是 uiTickGuarded（不是裸的 uiTick）
 });
 
 test('SD-17 FPS 計數器把 uiStallDiagText 接在 uiVisualDiagText 後面', () => {
-  assert.match(ui, /'FPS: ' \+ fps \+ uiVisualDiagText\(now\) \+ uiStallDiagText\(now\)/);
+  assert.match(ui, /'FPS: ' \+ fps \+ uiHitRateText\(\) \+ uiVisualDiagText\(now\) \+ uiStallDiagText\(now\)/);
 });
 
 test('SD-LAG 模擬落後 ≥3 秒才顯示；存檔 60 秒沒落地或從未落地才顯示（對應重新整理後的離線獎勵）', () => {
@@ -285,4 +286,15 @@ test('SD-LAG 模擬落後 ≥3 秒才顯示；存檔 60 秒沒落地或從未落
   assert.match(never.context.uiStallDiagText(never.clock.now), /存檔從未落地/);
   const fresh = makeContext({ status: { catchupSec: 0, upTimeSec: 30, persistAgeSec: null } });
   assert.equal(fresh.context.uiStallDiagText(fresh.clock.now), '');
+});
+
+test('SD-HIT 命中次數顯示到小數一位；取不到時不顯示', () => {
+  const a = makeContext({ status: { hitRate: 3138.04 } });
+  assert.equal(a.context.uiHitRateText(), ' 命中 3138.0/s');
+  const b = makeContext({ status: { hitRate: 0 } });
+  assert.equal(b.context.uiHitRateText(), ' 命中 0.0/s');
+  const c = makeContext({ status: { hitRate: 12.35 } });
+  assert.match(c.context.uiHitRateText(), /^ 命中 12\.[34]\/s$/);
+  const d = makeContext({ status: { hitRate: undefined } });
+  assert.equal(d.context.uiHitRateText(), '');
 });
