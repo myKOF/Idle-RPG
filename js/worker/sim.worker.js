@@ -16,7 +16,7 @@ importScripts(
   '../item.js?v=20261008-rune-erase', '../runeword.js?v=20261008-rune-erase',
   '../skills.js?v=20261007-runes4', '../skills2.js?v=20261008-chain-quiet', '../talents.js?v=20261003-rename-weineng',
   '../player.js?v=20261007-rune-seen', '../special_rules.js',
-  '../combat.js?v=20261008-dps-merge', '../elite.js?v=20261008-elite-groups', '../legendary.js?v=20261007-runes4', '../potential.js?v=20261005-cc-decay-count', '../tower.js?v=20261007-rune-seen',
+  '../combat.js?v=20261008-enemy-frenzy-count', '../elite.js?v=20261008-elite-groups', '../legendary.js?v=20261007-runes4', '../potential.js?v=20261005-cc-decay-count', '../tower.js?v=20261008-enemy-frenzy-count',
   '../factory.js?v=20261007-runes4', '../newforge.js', '../forge.js?v=20261007-runes4', '../save.js?v=20261007-rune-seen',
   '../tasks.js?v=20261007-runes4'
 );

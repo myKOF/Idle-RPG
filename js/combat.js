@@ -1219,11 +1219,29 @@ function playerDefCfg(pEnt) {
 var ENEMY_FRENZY_DELAY_SEC = 10;
 var ENEMY_FRENZY_INTERVAL_SEC = 1;
 var ENEMY_FRENZY_STEP_PCT = 1;
+var ENEMY_FRENZY_COUNT_DIVISOR = 100;
 
 function enemyFrenzyPct(m, now) {
-    if (!m || !Number.isFinite(m._spawnAt)) return 0;
-    var age = Math.max(0, now - m._spawnAt - ENEMY_FRENZY_DELAY_SEC);
-    return Math.floor(age / ENEMY_FRENZY_INTERVAL_SEC + 1e-9) * ENEMY_FRENZY_STEP_PCT;
+    return m && Number.isFinite(m._frenzyPct) ? m._frenzyPct : 0;
+}
+
+function tickEnemyFrenzy(enemies, now) {
+    var count = 0;
+    for (var i = 0; i < enemies.length; i++) {
+        if (enemies[i] && enemies[i].hp > 0) count++;
+    }
+    var increment = ENEMY_FRENZY_STEP_PCT * (1 + count / ENEMY_FRENZY_COUNT_DIVISOR);
+    for (var j = 0; j < enemies.length; j++) {
+        var m = enemies[j];
+        if (!m || m.hp <= 0 || !Number.isFinite(m._spawnAt)) continue;
+        var age = Math.max(0, now - m._spawnAt - ENEMY_FRENZY_DELAY_SEC);
+        var steps = Math.floor(age / ENEMY_FRENZY_INTERVAL_SEC + 1e-9);
+        var previous = m._frenzySteps || 0;
+        if (steps > previous) {
+            m._frenzyPct = enemyFrenzyPct(m, now) + (steps - previous) * increment;
+            m._frenzySteps = steps;
+        }
+    }
 }
 
 function enemyFrenzyAverage(enemies, now) {
@@ -1725,6 +1743,7 @@ function combatDebugAuditFieldDeaths(snapshot, phase) {
 /* ---- 野外主迴圈 ---- */
 function fieldTick(dt) {
     if (G.tower.active) return; // 高塔戰鬥期間野外暫停
+    tickEnemyFrenzy(fieldEnemyList(), GT);
     var st = getStats();
     if (!FIELD.player) initFieldPlayer();
     var p = FIELD.player;

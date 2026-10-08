@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## Codex｜狂暴化依敵人數累積（ENEMY-FRENZY-COUNT-20261008）
+
+- Owner：Codex；Done。每次滿秒增加1%×（1＋場上存活敵人數／100），出生10秒寬限不變、無上限；保留歷史累積，不因敵人減少回扣。包含進場／寬限中的存活敵人，高塔只計當場BOSS。
+- 前置：既有狂暴化與GT；預檢無衝突。允許combat／tower、主頁／Worker必要快取、狂暴化測試與本紀錄；禁止修改其他技能、素材、配置或其他副本。不新增訊息欄位，既有完整實體快照同步累積值。驗收數量變動、逐秒邊界、物理／魔法／元素、UI平均及顏色、暫停與Build；完成提交交使用者整合，不合併／推送。
+- 修改：js/combat.js、js/tower.js、index.html、js/bridge.js、js/worker/sim.worker.js、tests/enemy-frenzy.test.cjs、本紀錄。檢查未改：js/ui.js、js/formula.js、js/worker/protocol.js、prompts/codex.md、既有戰場／高塔測試。每Tick兩次線性掃描、不配置新陣列或新增Timer；Worker累積值經完整實體快照供UI與攻擊共同讀取，不回推歷史倍率。
+- 驗證：node --test tests/enemy-frenzy.test.cjs tests/combat-pause.test.cjs tests/enemy-projectile-retaliation.test.cjs tests/enemy-hit.test.cjs tests/tower-auto-result.test.cjs，19/19；後補真實fieldTick／towerTick案例，狂暴化專項6/6。node --test tests/battlefield.test.cjs tests/multi-enemy.test.cjs tests/purgatory-tower.test.cjs tests/tower-xp.test.cjs tests/tower-cost.test.cjs，63/63。node tools/build_check.cjs，482檔通過；git diff --check通過。
+- 限制／交付：未執行瀏覽器實戰與Console驗收；無素材或配置變更、無必要素材庫提交。沒有未完成功能，可交使用者整合；Commit見本紀錄所在提交，未自行合併或推送。建議重載遊戲確認長戰鬥與敵人減少後的增傷速率。
+
 ## Claude｜符文鑲嵌二次改造：暫放→刻印、卸下改抹除（付費、不退還）、真言光暈、移除成形提示（RUNE-ENGRAVE-20261008）
 
 - Owner：Claude；Done。使用者要求：①放上符文後「符文」鈕變「刻印」，按下才真的鑲上 ②「卸下」改「抹除」，消耗材料與附魔精華（費用由我依裝備與符文品質定）③抹除後符文消失不退還、孔恢復為空 ④刻印後若成形，在符文孔下方顯示符文真言能力 ⑤構成真言的符文圖示底下有緩慢旋轉的發散光暈（貼圖示外約 4px）⑥移除「再鑲入…即可成形」提示（真言讓玩家自己探索）。

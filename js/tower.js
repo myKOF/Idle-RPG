@@ -155,6 +155,7 @@ function towerTick(dt) {
     return;
   }
   if (!G.tower.active || TOWER.showingResult) return;
+  tickEnemyFrenzy(TOWER.boss ? [TOWER.boss] : [], GT);
   // 登場：轉場黑圈還沒展開，計時、冷卻、雙方行動全部不動
   if (TOWER.introCd > 0) { TOWER.introCd = Math.max(0, TOWER.introCd - dt); return; }
   var st = getStats();
