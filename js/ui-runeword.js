@@ -12,7 +12,7 @@
      圖鑑卡片    名稱、品質、需要的孔數、適用裝備、風味文字照常顯示；配方的符文只留品質色外框、內容是「？」；
                  每條效果換成一行 8 個問號；材料齊全的提示也不給（否則等於洩漏配方）
      符文庫      「用在這些符文真言」的名稱換成問號，顏色是該真言的品質色，也不能點進圖鑑
-     裝備詳情    「再鑲入…即可成形」的提示同樣遮起來（js/item.js 透過 runeUiWordRevealed 詢問）
+     裝備詳情    沒有「再鑲入…即可成形」的提示（2026-10-08 移除，真言讓玩家自己探索）
    內測版（isInternalServer）頁首有一顆「詳細說明」開關：開＝全部攤開（改版前的樣子）、關＝與正式版相同；
    正式版沒有開關，永遠是「關」。開關只管畫面，不影響存檔裡的激活記錄。 */
 
@@ -49,10 +49,6 @@ function runeUiRevealed(snapshot, wordId) {
   if (runeUiDetailOn()) return true;
   var seen = snapshot && snapshot.runewordSeen;
   return !!(seen && seen[wordId]);
-}
-/* 給 js/item.js 的配方提示用（那邊沒有快照可讀）；快照還沒到時一律當作未激活。 */
-function runeUiWordRevealed(wordId) {
-  return runeUiRevealed((typeof uiGemsPanelSnapshot === 'function') ? uiGemsPanelSnapshot() : null, wordId);
 }
 
 function runesViewCount(snapshot, id) {

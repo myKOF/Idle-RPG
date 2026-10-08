@@ -169,14 +169,29 @@ function rwSeenFromItem(seen, it) {
   return 1;
 }
 
-/* 取下指定符文孔的符文回庫存。成功回 true。 */
-function unsocketRune(it, idx) {
-  if (!it || !Array.isArray(it.runes) || !Number.isInteger(idx) || !it.runes[idx]) return false;
-  addRune(it.runes[idx], 1);
+/* 抹除一顆已刻印符文的費用：{ scrap, essence }。純函式（UI 顯示與 Worker 扣款共用同一個算式）。
+   符文階數越高、裝備稀有度越高越貴（RUNE_ERASE 的每階單價 × 階數 × 稀有度倍率）。 */
+function runeEraseCost(it, runeId) {
+  var rune = RUNE_BY_ID[runeId];
+  var rar = RARITIES[clamp(Math.floor(Number(it && it.rarity) || 0), 0, RARITIES.length - 1)];
+  var k = (rune ? rune.tier : 0) * (rar ? rar.mult : 1);
+  return { scrap: Math.ceil(RUNE_ERASE.scrapPerTier * k), essence: Math.ceil(RUNE_ERASE.essencePerTier * k) };
+}
+
+/* 抹除指定符文孔的符文：扣裝備碎片與附魔精華，符文直接消失（不退還），孔恢復為空。成功回 null，失敗回錯誤字串。 */
+function eraseRune(it, idx) {
+  if (!it || !Array.isArray(it.runes) || !Number.isInteger(idx) || !it.runes[idx]) return '這個符文孔沒有符文';
+  var cost = runeEraseCost(it, it.runes[idx]);
+  var P = G.player;
+  if ((P.scrap || 0) < cost.scrap || (P.essence || 0) < cost.essence) {
+    return '資源不足（抹除需要 裝備碎片 ' + fmt(cost.scrap) + '、附魔精華 ' + fmt(cost.essence) + '）';
+  }
+  P.scrap -= cost.scrap;
+  P.essence -= cost.essence;
   it.runes[idx] = null;
   if (typeof markStatsDirty === 'function') markStatsDirty();
   if (typeof UI !== 'undefined' && UI.dirty) { UI.dirty.equip = true; UI.dirty.inv = true; UI.dirty.header = true; }
-  return true;
+  return null;
 }
 
 /* 取回這件裝備上所有符文（分解、神鑄、熔爐取回素材時共用）。回傳取回的顆數。 */

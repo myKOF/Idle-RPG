@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## Claude｜符文鑲嵌二次改造：暫放→刻印、卸下改抹除（付費、不退還）、真言光暈、移除成形提示（RUNE-ENGRAVE-20261008）
+
+- Owner：Claude；Done。使用者要求：①放上符文後「符文」鈕變「刻印」，按下才真的鑲上 ②「卸下」改「抹除」，消耗材料與附魔精華（費用由我依裝備與符文品質定）③抹除後符文消失不退還、孔恢復為空 ④刻印後若成形，在符文孔下方顯示符文真言能力 ⑤構成真言的符文圖示底下有緩慢旋轉的發散光暈（貼圖示外約 4px）⑥移除「再鑲入…即可成形」提示（真言讓玩家自己探索）。
+- 技術決策：暫放只存在本機（`UI.equipMatMode.draft`），不扣庫存、不送指令；刻印才依孔位順序逐顆送既有的 `rune.socket`，逐顆之間等指令鎖釋放。抹除新增 `rune.erase`（取代 `rune.unsocket`，協議 v49，指令數不變）：費用＝`RUNE_ERASE` 每階單價（碎片 15、精華 1）× 符文階數 × 裝備稀有度倍率（`RARITIES.mult`），例：傳說裝備抹第 6 階符文＝碎片 360／精華 24；抹除要連按兩次確認。費用數字放在 runeword_data.js 的 `RUNE_ERASE`，**沒有接配置表**（要調請直接改該常數，或之後再接 game_parameters）。
+- 修改：js/ui.js、item.js、runeword.js、runeword_data.js、ui-runeword.js（移除已無人用的 `runeUiWordRevealed`）、worker/protocol.js、css/runeword.css；index.html／bridge.js／sim.worker.js 版號（含協議 v49）；tests（equip-socket-ui 重寫符文頁、runeword-engine／ui／seen、rune-slots-config、worker-protocol）；docs/RUNEWORD_DESIGN.md、WORKER_PROTOCOL.md。
+- 測試：全庫與乾淨 HEAD 比對，我的改動沒有新增失敗（另有 1 條連鎖閃電的差異來自同工作樹他人未提交的 battlefield.js）；實機驗證暫放不送指令、一次刻印兩顆、橫幅與光暈在刻印後才出現、抹除精準扣 480 碎片＋32 精華且符文不退還。
+- 風險：①抹除不退還，誤按成本高，所以連按兩次；②舊分頁若快取舊 protocol.js 會被協議版本檢查擋下，需重新整理；③光暈為純 CSS 動畫（尊重 prefers-reduced-motion）。
+- 建議驗證（Antigravity）：暫放／取消／刻印／抹除各流程；材料不足時抹除顯示「材料不足」；刻印中途失敗時未送出的仍留暫放；成形後兩顆以上符文都有光暈、拆掉一顆就消失；沒有任何成形提示。
+
 ## Claude｜NPC 表加「類型／技能／技能特效／備註」，菁英可固定技能（NPC-ELITE-SKILLS-20261008）
 
 - Owner：Claude；Done。使用者在 NPC.xlsx 加了「類型」欄（normal／elite／boss，每個 NPC 三列），要求表後面再補 NPC 的技能、技能用到的特效名與給人讀的備註。

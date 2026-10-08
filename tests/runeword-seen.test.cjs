@@ -24,7 +24,7 @@ test('成形的那一刻記下；之後拆掉符文記錄仍在', () => {
   assert.equal(c.socketRune(it, 'r08'), null);
   assert.deepEqual(seenIds(c), ['rw_viperkiss']);
   assert.equal(c.rwHasSeen('rw_viperkiss'), true);
-  assert.equal(c.unsocketRune(it, 1), true);
+  it.runes[1] = null;
   assert.equal(c.rwActiveWord(it), null, '拆掉就不再成形');
   assert.deepEqual(seenIds(c), ['rw_viperkiss'], '記錄只增不減');
 });
