@@ -13,6 +13,14 @@
 - 驗證：npm.cmd run build 488檔通過；node --check js/bridge.js、git diff --check、git diff --cached --check 均通過。node tools/vfx/export-assets.cjs --check --root D:/MyGame/Asset：244 Preset／161素材引用匯出最新；node tools/scene-renewal/export-source.cjs --check：场景來源与圖檔SHA256一致。素材庫status乾淨、既有HEAD c999cf0，合併沿用已提交素材，无新素材Commit。
 - 交付：本紀錄所在 [Codex] merge: 解決與 Claude 的快取衝突並整合 Codex 修改 完成原 develop 合併，父提交348bc794與4a2cb466；無未完成衝突，不推送。已知風險為上述7項既有失敗，本輪未重做瀏覽器／Console／真人長戰驗收。下一步使用者重新載入遊戲；VFX Editor未儲存內容先另存再重載。整合已完成，可供使用者審查及自行推送。
 
+## Claude｜符文頁文字整理：真言屬性寫法與符文一致、符文改寫描述、拆解說明精簡（RUNE-TEXT-CLEANUP-20261008）
+
+- Owner：Claude；Done。使用者要求：①符文真言的屬性行寫法與符文一致，用「基礎值 ×N」②符文庫詳情下方每顆都一樣的制式說明不要，改成形容這顆符文的文字（例：風語＝風的聲息稍縱即逝，發出嘆息之悲鳴）③合成說明的拆解只寫「可獲得 1 顆前一階符文」，括號裡的合成／降階頂替整串拿掉。
+- 技術決策：①為了「基礎值」在符文與真言是同一個意思，真言的 stats 也改成以「詞條可能範圍的下限」為 1 倍（`rwStatValue` 多乘 `strengthMult(0)`），仍不乘雙手倍率；表上倍率不動，所以真言屬性實際再降約 20%；「基礎值」的定義放進屬性行的提示（data-tip），畫面不再重複大段說明。②符文描述存在配置表 Runes 的「風味文字」欄（符文列原本空白），`RUNES` 多一個 `flavor` 欄；33 顆都寫了一句。③只改 `runeUiFocusHTML` 的文字。
+- 修改：js/runeword.js、js/runeword_data.js（RUNES 加 flavor）、js/ui-runeword.js、tools/config_tables.cjs（符文列讀寫風味文字、說明頁）、config/CSV/Runes.csv、config/Excel/Runes.xlsx（Excel 原生 API 更新並重開驗證）、docs/RUNEWORD_DESIGN.md、tests/runeword-ui、runeword-data；版號 runeword_data 1.0.13、runeword 1.0.9、ui-runeword 1.0.9、bridge 1.0.249、WORKER_ASSET_VERSION 20261008-rune-base-unify。
+- 風險／平衡：真言屬性因口徑統一再降約 20%（探針傳說品質：第 1 級 ×1.1～1.4、第 2 級 ×1.1～1.9、第 3 級 ×1.6～2.6、第 4 級 ×1.4～4.7）。
+- 建議驗證：符文庫任一符文的描述、屬性行「基礎值 ×N」、拆解文字；圖鑑真言的屬性行；改 Excel 某符文的風味文字後套用參數能生效。
+
 ## Claude｜符文真言的屬性依級距削弱 50%～70%（RUNEWORD-STATS-CUT-20261008）
 
 - Owner：Claude；Done。使用者要求：符文真言的能力也同比降低 50%～70%（同上一輪單顆符文的削弱）。

@@ -1576,7 +1576,7 @@ const RUNE_GLOSSARY_ROWS = [
   ['配方：符文名稱依序用「;」分隔（也可填 id）。至少 2 顆、最多＝符文孔數上限；順序不同就是不同配方，不得與別的符文真言完全相同。成形條件＝依序放進連續的符文孔，且裝備類型符合。'],
   ['適用裝備：用「;」分隔，多項為「或」。標記：any 任意、armor 八件防具、jewelry 戒指＋項鍊、mainHand 主手與雙手武器、twoHand 雙手武器、oneHand 單手武器、offHand 副手、melee 近戰武器、caster 施法類武器／副手；'],
   ['　　也可填裝備欄位（weapon、helmet、shoulder、chest、belt、gloves、wrist、legs、boots、ring、amulet）或武器類型鍵（sword1h、dagger1h、staff2h、shield、focus… 見 data.js WEAPON_TYPES）。'],
-  ['屬性加成：「詞條鍵:倍率」用「;」分隔，例如 atkPct:1.2;critRate:1。倍率＝同裝備等級、稀有度「詞條基準值」（詞條範圍的中間值，等於符文倍率 1 的 1.25 倍）的幾倍，不乘雙手倍率；負數＝代價。同一組符文真言穿在多件裝備上時，各件的屬性都計。'],
+  ['屬性加成：「詞條鍵:倍率」用「;」分隔，例如 atkPct:1.2;critRate:1。倍率＝「基礎值」（同符文列：詞條可能範圍的下限）的幾倍，與符文不同的是不乘雙手倍率（雙手武器的優勢是 5 孔）；負數＝代價。同一組符文真言穿在多件裝備上時，各件的屬性都計。'],
   ['被動：「鍵:數值」用「;」分隔，鍵限 thorns（反震）、smite（天罰）、undying（不朽）、sunder（破甲）、trueDmg（真傷）、omniDrain（萬象汲取）、soulEater、annihilate、sanctuary、godWrath；並入既有被動。'],
   ['傳奇特效：借用既有傳奇特效（Equipment_Affix 表傳奇特效池的 id，用「;」分隔），不受該特效原本的武器類型限制，但仍需要配戴對應技能才有感。'],
   ['靜態效果：「鍵:數值」用「;」分隔，數字固定、不隨稀有度成長。可用鍵：'],
@@ -1588,7 +1588,7 @@ const RUNE_GLOSSARY_ROWS = [
   ['　　觸發 on：hit 普攻命中、crit 普攻暴擊、kill 擊殺、hurt 受傷、block 格擋、cast 施放技能、tick 每 every 秒、lowhp 生命低於 below%。'],
   ['　　動作 act：dmg {pct, elem?, type?(magic/phys), to?(target/all/rand/attacker), n?}、heal {pctMax}、shield {pctMax, sec}、mana {pctMax}、buff {sid, val, sec, max?}、buffRandom {sec, from:[{sid,val}]}、stun {sec, to?}、slow {sec, to?}、'],
   ['　　dot {pct, sec, name(poison/burn/bleed/corrode), to?}、cdr {sec}、refresh {n?}、recast、castRandom、invuln {sec}、execute {hpBelow}、cleanse。elem 可填 fire/ice/lightning/poison/light/dark/earth/wind/random。'],
-  ['風味文字：圖鑑與詳情顯示的一句話，可留空。效果說明文字由資料自動產生，不需要另外寫。'],
+  ['風味文字：圖鑑與詳情顯示的一句話，可留空。符文列＝符文庫詳情裡形容這顆符文的文字；符文真言列＝圖鑑裡那組真言的一句話。效果說明文字由資料自動產生，不需要另外寫。'],
   ['備註：設定列＝該設定的說明；符文列＝兩側屬性的中文名稱與倍率；符文真言列＝屬性中文名稱與倍率，加上被動／靜態效果／事件觸發／借用傳奇特效的中文說明（與遊戲內圖鑑同一份文字）。'],
   ['　　備註是自動產生的參考，不進遊戲、不影響套用；你改了能力之後，備註不會自動更新（請 AI 重新產生），以左邊各欄實際內容為準。']
 ];
@@ -1713,7 +1713,7 @@ SCHEMAS.Runes = {
       rows.push(mk('設定', { id: key, 名稱: label, 設定值: numStr(get(settings)), 備註: RUNE_SETTING_NOTES[key] || '' }));
     });
     RUNES.forEach((r, i) => {
-      rows.push(mk('符文', { id: r.id, 名稱: r.name, '階／級距': String(i + 1), 武器詞條: r.w[0], 武器倍率: numStr(r.w[1]), 防具詞條: r.a[0], 防具倍率: numStr(r.a[1]) }));
+      rows.push(mk('符文', { id: r.id, 名稱: r.name, '階／級距': String(i + 1), 武器詞條: r.w[0], 武器倍率: numStr(r.w[1]), 防具詞條: r.a[0], 防具倍率: numStr(r.a[1]), 風味文字: r.flavor || '' }));
     });
     WORDS.forEach(w => {
       rows.push(mk('符文真言', {
@@ -1790,7 +1790,10 @@ SCHEMAS.Runes = {
         if (!(mult > 0)) fail(where(it, '符文') + '：「' + mc + '」必須大於 0');
         return [key, mult];
       };
-      return { id: it.id, name: it.name, w: side('武器詞條', '武器倍率'), a: side('防具詞條', '防具倍率') };
+      const rune = { id: it.id, name: it.name, w: side('武器詞條', '武器倍率'), a: side('防具詞條', '防具倍率') };
+      const rf = get(it.r, '風味文字').trim();
+      if (rf) rune.flavor = rf;
+      return rune;
     });
 
     /* ---- 符文真言 ---- */

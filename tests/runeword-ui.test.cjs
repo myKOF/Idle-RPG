@@ -71,6 +71,13 @@ test('符文庫：33 格、持有量與選中符文的合成／拆解狀態', ()
   const f5 = c.els['rune-focus'].innerHTML;
   assert.match(f5, /data-rune-act="compose" disabled/);
   assert.match(f5, /data-rune-act="dismantle"(?![^>]*disabled)/);
+  // 符文庫詳情：寫法與真言一致用「基礎值 ×N」；下方是形容這顆符文的文字（不是每顆都一樣的制式說明）；拆解只寫獲得哪一顆
+  c.selectRune('r04');
+  const f4 = c.els['rune-focus'].innerHTML;
+  assert.match(f4, /基礎值 ×0[.]3/);
+  assert.match(f4, /rx-flavor[^>]*>「風的聲息稍縱即逝，發出嘆息之悲鳴。」/);
+  assert.doesNotMatch(f4, /rx-stat-note|與詞條同一套算法|只能降階頂替/);
+  assert.match(f4, /拆解：可獲得 [0-9]+ 顆「霜痕」/);
   // 第 20 階起只能掉落
   c.setPanels({ gems: {}, fusedGems: [], runes: { r21: 9 } });
   c.selectRune('r21');

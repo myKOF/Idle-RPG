@@ -117,10 +117,13 @@ function runeUiLibraryHTML(snapshot, sel) {
   return h;
 }
 
+/* 「基礎值」的定義：只放在提示裡，畫面上不再每顆符文重複一大段說明。 */
+var RUNE_BASE_TIP = '基礎值＝裝備詳情提示裡「可能出現的詞條」範圍的下限（例如 [2828 ~ 4241] 的 2828）；數值隨裝備等級、稀有度與強化成長。雙手武器的詞條本身 ×2，單顆符文也跟著 ×2；組成符文真言時另有符文真言加成。';
+
 function runeUiStatLine(side, spec) {
   var def = AFFIX_POOL[spec[0]];
   var name = def ? def.name.replace(/%$/, '') : spec[0];
-  return '<div class="rx-stat"><b>' + side + '</b>' + esc(name) + '<span>（基礎值 ×' + spec[1] + '）</span></div>';
+  return '<div class="rx-stat"><b>' + side + '</b>' + esc(name) + '<span data-tip="' + esc(RUNE_BASE_TIP) + '">（基礎值 ×' + spec[1] + '）</span></div>';
 }
 
 function runeUiFocusHTML(snapshot, id) {
@@ -137,7 +140,7 @@ function runeUiFocusHTML(snapshot, id) {
     '<div class="rx-focus-sub">持有 <b>' + fmt(n) + '</b> 顆</div></div></div>';
   h += '<div class="rx-stats">' +
     runeUiStatLine('⚔ 鑲在武器', r.w) + runeUiStatLine('🛡 鑲在防具・飾品・副手', r.a) +
-    '<div class="rx-stat-note">數值隨裝備等級、稀有度與強化成長（與詞條同一套算法）；單獨鑲著就有效，組成符文真言時另有符文真言加成。「基礎值」就是裝備詳情提示裡「可能出現的詞條」範圍的下限（例如 [2828 ~ 4241] 的 2828）；雙手武器的詞條本身 ×2，符文也跟著 ×2。</div></div>';
+    (r.flavor ? '<div class="rx-flavor">「' + esc(r.flavor) + '」</div>' : '') + '</div>';
   h += '<div class="rx-actions">' +
     '<button type="button" class="btn" data-rune-act="compose"' + (canCompose ? '' : ' disabled') + '>合成（' + RUNE_COMPOSE_COUNT + ' → 1）</button>' +
     '<button type="button" class="btn" data-rune-act="composeAll"' + (canCompose ? '' : ' disabled') + '>全部合成</button>' +
@@ -145,7 +148,7 @@ function runeUiFocusHTML(snapshot, id) {
   var note = [];
   if (next && r.tier < RUNE_COMPOSE_MAX_TIER) note.push('合成：' + RUNE_COMPOSE_COUNT + ' 顆「' + r.name + '」→ 1 顆「' + next.name + '」');
   else if (r.tier >= RUNE_COMPOSE_MAX_TIER) note.push('第 ' + RUNE_COMPOSE_MAX_TIER + ' 階以上的符文無法合成，只能靠擊殺與封魔塔掉落');
-  if (lower) note.push('拆解：1 顆 → ' + RUNE_DISMANTLE_YIELD + ' 顆「' + lower.name + '」（合成 ' + RUNE_COMPOSE_COUNT + ' → 1、拆解 1 → ' + RUNE_DISMANTLE_YIELD + '：只能降階頂替、不會變多）');
+  if (lower) note.push('拆解：可獲得 ' + RUNE_DISMANTLE_YIELD + ' 顆「' + lower.name + '」');
   h += '<div class="rx-note">' + esc(note.join('；')) + '</div>';
   var uses = [];
   for (var i = 0; i < RUNEWORDS.length; i++) {

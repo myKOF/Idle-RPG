@@ -315,14 +315,14 @@ function rwCandidates(it) {
 /* ============================================================
    §3 屬性聚合
    ============================================================ */
-/* 符文真言單條 stats 的數值＝ 詞條基準值(詞條, 裝備等級, 稀有度) × mult × 強化倍率。
-   與詞條同源（affixBaseValue／affixRoundValue → js/formula.js §6），隨裝備成長。
-   不吃雙手倍率（TWO_HAND_AFFIX_VALUE_MULT），也不吃區間下限 80%：符文真言的口徑維持原樣，
-   只有「單顆符文自己的屬性」走 rwRuneStatValue（下限 × 雙手倍率）。 */
+/* 符文真言單條 stats 的數值＝ 「基礎值」(詞條可能範圍的下限＝基準值 × 80%) × mult × 強化倍率。
+   與符文同一個「基礎值」口徑（與詞條同源：affixBaseValue／affixRoundValue → js/formula.js §6），隨裝備成長。
+   不吃雙手倍率（TWO_HAND_AFFIX_VALUE_MULT）：雙手武器的優勢是能有 5 孔、組 5 顆真言；
+   只有「單顆符文自己的屬性」走 rwRuneStatValue（多乘雙手倍率）。 */
 function rwStatValue(it, key, mult) {
   if (!AFFIX_POOL[key] || !it) return 0;
   var um = (typeof upgradeMult === 'function') ? upgradeMult(it) : 1;
-  var base = affixBaseValue(key, it.level, it.rarity);
+  var base = affixBaseValue(key, it.level, it.rarity) * strengthMult(0);
   return affixRoundValue(key, base * (Number(mult) || 0) * um * RW_STAT_SCALE);
 }
 
@@ -330,7 +330,7 @@ function rwStatValue(it, key, mult) {
    口徑對齊詞條可能範圍提示（getAffixLimits）的「下限」：裝備詳情裡「可能出現的詞條」寫 [2828 ~ 4241]，
    2828 就是 1 倍；符文表的倍率是這個下限的幾倍，不再另外乘 1.2。
    雙手武器的詞條本身 ×TWO_HAND_AFFIX_VALUE_MULT，符文跟著乘，所以雙手武器上的符文與詞條維持同一比例。
-   符文真言的 stats（rwStatValue）不走這條：它們的口徑維持詞條基準值 × mult，不吃區間下限與雙手倍率。 */
+   符文真言的 stats（rwStatValue）同樣以這個下限為 1 倍，但不乘雙手倍率。 */
 function rwRuneStatValue(it, key, mult) {
   if (!AFFIX_POOL[key] || !it) return 0;
   var um = (typeof upgradeMult === 'function') ? upgradeMult(it) : 1;
@@ -998,7 +998,7 @@ function rwDescribeLines(word, it) {
     var def = AFFIX_POOL[st[i][0]];
     var name = def ? def.name.replace(/%$/, '') : st[i][0];
     if (it) lines.push(rwFormatStat(st[i][0], rwStatValue(it, st[i][0], st[i][1])));
-    else lines.push(name + (st[i][1] < 0 ? '（代價：-' : '（約 ') + Math.abs(st[i][1]) + ' 條詞條的份量）');
+    else lines.push(name + (st[i][1] < 0 ? '（代價：基礎值 ×-' : '（基礎值 ×') + Math.abs(st[i][1]) + '）');
   }
   var ps = word.passives || {};
   var psNames = { thorns: '反震', smite: '天罰', undying: '不朽', sunder: '破甲', trueDmg: '真傷', omniDrain: '萬象汲取' };

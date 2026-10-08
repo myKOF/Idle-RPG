@@ -19,8 +19,7 @@
    符文（RUNES 的 w／a）的數值＝ 詞條可能範圍的下限 × mult × 雙手倍率：
      下限＝ affixBaseValue(詞條, 裝備等級, 稀有度) × 80%（就是裝備詳情提示「可能出現的詞條 [下限 ~ 上限]」的下限）；
      雙手武器的詞條本身 ×2，符文跟著 ×2。倍率 1 ＝ 一條詞條的下限值。
-   符文真言（RUNEWORDS）stats 的數值＝ affixBaseValue(詞條, 裝備等級, 稀有度) × mult：
-     即「該裝備上一條基準值（區間中位數）詞條」的 mult 倍，不吃區間下限與雙手倍率。因此隨裝備等級與稀有度自動成長，
+   符文真言（RUNEWORDS）stats 的數值＝ 同一個下限（基礎值）× mult，不乘雙手倍率。因此隨裝備等級與稀有度自動成長，
      與詞條系統同源，不另建第二套數值（AI_RULES §7）。mult 可為負數（＝代價）。
    fx／procs 的數字是固定值（不隨稀有度成長）——它們是機制，不是屬性。
 
@@ -45,39 +44,39 @@
    w＝武器類（主手、雙手）鑲入時的加成；a＝防具、飾品、副手鑲入時的加成。
    [詞條鍵, mult]；詞條鍵必須是 AFFIX_POOL 的鍵（all_lock 的鎖定詞條不可用）。 */
 var RUNES = [
-  { id: 'r01', name: '微光', w: ['hit', 1], a: ['evasion', 0.3] },
-  { id: 'r02', name: '餘燼', w: ['atkFlat', 1], a: ['defFlat', 0.3] },
-  { id: 'r03', name: '霜痕', w: ['elemDmgIce', 0.3], a: ['resIce', 0.15] },
-  { id: 'r04', name: '風語', w: ['aspd', 0.3], a: ['evasion', 0.35] },
-  { id: 'r05', name: '巖心', w: ['pPen', 0.06], a: ['defPct', 0.29] },
-  { id: 'r06', name: '毒牙', w: ['elemDmgPoison', 0.29], a: ['resPoison', 0.14] },
-  { id: 'r07', name: '雷鳴', w: ['elemDmgLightning', 0.28], a: ['resLightning', 0.14] },
-  { id: 'r08', name: '暗影', w: ['lifesteal', 0.33], a: ['hpRegen', 0.33] },
-  { id: 'r09', name: '聖輝', w: ['elemDmgLight', 0.28], a: ['resLight', 0.14] },
-  { id: 'r10', name: '血誓', w: ['atkPct', 0.32], a: ['hpPct', 0.32] },
-  { id: 'r11', name: '鋼魄', w: ['critDmg', 0.36], a: ['pRes', 0.09] },
-  { id: 'r12', name: '靈泉', w: ['matkPct', 0.31], a: ['mpFlat', 0.4] },
-  { id: 'r13', name: '疾影', w: ['critRate', 0.35], a: ['hit', 0.39] },
-  { id: 'r14', name: '磐石', w: ['eliteDmg', 0.34], a: ['blockRate', 0.38] },
-  { id: 'r15', name: '曙光', w: ['mPen', 0.06], a: ['mRes', 0.08] },
-  { id: 'r16', name: '夜幕', w: ['elemDmgDark', 0.33], a: ['resDark', 0.17] },
-  { id: 'r17', name: '烈陽', w: ['elemDmgFire', 0.33], a: ['resFire', 0.16] },
-  { id: 'r18', name: '寒月', w: ['cdr', 0.36], a: ['mdefPct', 0.36] },
-  { id: 'r19', name: '驚蟄', w: ['aspd', 0.39], a: ['tenacity', 0.39] },
-  { id: 'r20', name: '嵐', w: ['elemDmgWind', 0.39], a: ['resWind', 0.19] },
-  { id: 'r21', name: '蒼穹', w: ['bossDmg', 0.42], a: ['shieldEff', 0.42] },
-  { id: 'r22', name: '厚土', w: ['elemDmgEarth', 0.41], a: ['hpPct', 0.45] },
-  { id: 'r23', name: '熔岩', w: ['atkPct', 0.48], a: ['globalDmgRed', 0.4] },
-  { id: 'r24', name: '冰魄', w: ['critDmg', 0.5], a: ['resAll', 0.22] },
-  { id: 'r25', name: '雷霆', w: ['matkPct', 0.49], a: ['blockDmgRed', 0.49] },
-  { id: 'r26', name: '虛空', w: ['aoeDmg', 0.52], a: ['ccRed', 0.42] },
-  { id: 'r27', name: '星辰', w: ['critRate', 0.54], a: ['luck', 0.54] },
-  { id: 'r28', name: '命運', w: ['normalDmg', 0.57], a: ['evasion', 0.57] },
-  { id: 'r29', name: '輪迴', w: ['lifesteal', 0.59], a: ['hpRegen', 0.59] },
-  { id: 'r30', name: '永恆', w: ['atkPct', 0.61], a: ['hpPct', 0.61] },
-  { id: 'r31', name: '混沌', w: ['matkPct', 0.63], a: ['resAll', 0.28] },
-  { id: 'r32', name: '創生', w: ['critDmg', 0.67], a: ['shieldEff', 0.61] },
-  { id: 'r33', name: '終焉', w: ['bossDmg', 0.75], a: ['globalDmgRed', 0.54] }
+  { id: 'r01', name: '微光', w: ['hit', 1], a: ['evasion', 0.3], flavor: '黑暗裡最先亮起的一點微光，指引落點，也教人閃身而過。' },
+  { id: 'r02', name: '餘燼', w: ['atkFlat', 1], a: ['defFlat', 0.3], flavor: '火熄之後仍未冷去的餘燼，餘溫裡藏著再燃的力量。' },
+  { id: 'r03', name: '霜痕', w: ['elemDmgIce', 0.3], a: ['resIce', 0.15], flavor: '霜在石上留下的細痕，一碰便是刺骨的寒意。' },
+  { id: 'r04', name: '風語', w: ['aspd', 0.3], a: ['evasion', 0.35], flavor: '風的聲息稍縱即逝，發出嘆息之悲鳴。' },
+  { id: 'r05', name: '巖心', w: ['pPen', 0.06], a: ['defPct', 0.29], flavor: '埋在山腹最深處的石心，千年不碎，也能穿透一切。' },
+  { id: 'r06', name: '毒牙', w: ['elemDmgPoison', 0.29], a: ['resPoison', 0.14], flavor: '蛇牙上的一滴毒，無聲，卻比刀更準。' },
+  { id: 'r07', name: '雷鳴', w: ['elemDmgLightning', 0.28], a: ['resLightning', 0.14], flavor: '遠方的悶雷滾過天際，下一瞬便落在腳邊。' },
+  { id: 'r08', name: '暗影', w: ['lifesteal', 0.33], a: ['hpRegen', 0.33], flavor: '影子貼著傷口低語，它拿走的，總會以別的方式還回來。' },
+  { id: 'r09', name: '聖輝', w: ['elemDmgLight', 0.28], a: ['resLight', 0.14], flavor: '清晨第一道穿雲的光，照亮之處，黑暗無處容身。' },
+  { id: 'r10', name: '血誓', w: ['atkPct', 0.32], a: ['hpPct', 0.32], flavor: '以血立下的誓言，不收回，也不能背棄。' },
+  { id: 'r11', name: '鋼魄', w: ['critDmg', 0.36], a: ['pRes', 0.09], flavor: '千錘百鍊的鋼，折不彎，亦藏著致命的鋒芒。' },
+  { id: 'r12', name: '靈泉', w: ['matkPct', 0.31], a: ['mpFlat', 0.4], flavor: '山間不竭的靈泉，一掬便潤澤乾涸的心神。' },
+  { id: 'r13', name: '疾影', w: ['critRate', 0.35], a: ['hit', 0.39], flavor: '快到只剩殘影，旁人看見時，一切已成定局。' },
+  { id: 'r14', name: '磐石', w: ['eliteDmg', 0.34], a: ['blockRate', 0.38], flavor: '立在洪流中央的巨岩，任它如何沖刷，不退半步。' },
+  { id: 'r15', name: '曙光', w: ['mPen', 0.06], a: ['mRes', 0.08], flavor: '長夜將盡時的一線曙光，刺破最厚的迷障。' },
+  { id: 'r16', name: '夜幕', w: ['elemDmgDark', 0.33], a: ['resDark', 0.17], flavor: '夜幕降下，所有未說出口的恐懼都在其中蠕動。' },
+  { id: 'r17', name: '烈陽', w: ['elemDmgFire', 0.33], a: ['resFire', 0.16], flavor: '正午的烈陽毫不留情，所到之處皆成焦土。' },
+  { id: 'r18', name: '寒月', w: ['cdr', 0.36], a: ['mdefPct', 0.36], flavor: '寒月高懸，時間在它的清輝下緩緩凝滯。' },
+  { id: 'r19', name: '驚蟄', w: ['aspd', 0.39], a: ['tenacity', 0.39], flavor: '春雷一響，蟄伏的萬物同時驚醒。' },
+  { id: 'r20', name: '嵐', w: ['elemDmgWind', 0.39], a: ['resWind', 0.19], flavor: '山間升起的嵐氣，輕柔地纏上來，又在轉身間化為利刃。' },
+  { id: 'r21', name: '蒼穹', w: ['bossDmg', 0.42], a: ['shieldEff', 0.42], flavor: '穹頂之上的目光，俯視一切傲慢的巨影。' },
+  { id: 'r22', name: '厚土', w: ['elemDmgEarth', 0.41], a: ['hpPct', 0.45], flavor: '大地沉默地承載萬物，也沉默地回報。' },
+  { id: 'r23', name: '熔岩', w: ['atkPct', 0.48], a: ['globalDmgRed', 0.4], flavor: '地底湧出的熔岩，緩慢，卻吞沒前路上的一切。' },
+  { id: 'r24', name: '冰魄', w: ['critDmg', 0.5], a: ['resAll', 0.22], flavor: '萬年玄冰中凝成的魂魄，連時間都被它凍結。' },
+  { id: 'r25', name: '雷霆', w: ['matkPct', 0.49], a: ['blockDmgRed', 0.49], flavor: '天怒所化的雷霆，一道便足以裁決。' },
+  { id: 'r26', name: '虛空', w: ['aoeDmg', 0.52], a: ['ccRed', 0.42], flavor: '注視虛空太久，虛空也在注視著你。' },
+  { id: 'r27', name: '星辰', w: ['critRate', 0.54], a: ['luck', 0.54], flavor: '夜空裡每一顆星都是一次機緣，抬頭，便能撞見自己的那一顆。' },
+  { id: 'r28', name: '命運', w: ['normalDmg', 0.57], a: ['evasion', 0.57], flavor: '命運之線纏繞所有人，唯有敢於撥動它的人，才看得見盡頭。' },
+  { id: 'r29', name: '輪迴', w: ['lifesteal', 0.59], a: ['hpRegen', 0.59], flavor: '生滅不息，終點即是起點，傷口在輪迴中癒合。' },
+  { id: 'r30', name: '永恆', w: ['atkPct', 0.61], a: ['hpPct', 0.61], flavor: '在時間之外靜止的片刻，沒有終結，也沒有退讓。' },
+  { id: 'r31', name: '混沌', w: ['matkPct', 0.63], a: ['resAll', 0.28], flavor: '萬物未成形之前的原初混沌，秩序在其中碎裂重組。' },
+  { id: 'r32', name: '創生', w: ['critDmg', 0.67], a: ['shieldEff', 0.61], flavor: '第一縷光與第一聲息的源頭，一切由此而起。' },
+  { id: 'r33', name: '終焉', w: ['bossDmg', 0.75], a: ['globalDmgRed', 0.54], flavor: '所有故事的最後一頁，闔上之後，再無下文。' }
 ];
 
 /* 符文字形：Unicode 符文區塊（長老弗薩克 24 個＋盎格魯撒克遜補 9 個），純文字字元、不是素材圖。 */

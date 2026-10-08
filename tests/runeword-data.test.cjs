@@ -195,6 +195,7 @@ test('配方的說明文字能由資料產生，不含 undefined', () => {
   WORDS.forEach((w) => {
     const lines = c.rwDescribeLines(w);
     assert.ok(lines.length >= 1, w.id + ' 沒有任何說明');
+    lines.slice(0, (w.stats || []).length).forEach((l) => assert.match(l, /（基礎值 ×[0-9.]+）$|（代價：基礎值 ×-/, w.id + '：屬性行要用「基礎值 ×N」，與符文同一寫法'));
     lines.concat([c.rwRecipeText(w), c.rwBasesText(w)]).forEach((l) => assert.doesNotMatch(l, /undefined|NaN/, w.id + '：' + l));
   });
 });
