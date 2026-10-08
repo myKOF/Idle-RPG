@@ -203,13 +203,14 @@
       "assetId": "particle-pack/png-black-background/fire_01.png",
       "zIndex": 3,
       "scale": {
-        "x": 0.2,
+        "x": 0.2236,
         "y": 0.2
       },
       "alpha": 0.5,
       "tint": "#ff6c0c",
       "blendMode": "add",
       "duration": 1,
+      "rotationSpeed": 0.5235987755982988,
       "alphaOverLife": [
         [
           0,
@@ -227,16 +228,6 @@
           1,
           0.8
         ]
-      ],
-      "rotationOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          1,
-          0.5
-        ]
       ]
     },
     {
@@ -246,7 +237,7 @@
       "assetId": "light-masks-1.0/default/circle_b_noise.png",
       "zIndex": 4,
       "scale": {
-        "x": 0.1443,
+        "x": 0.1613,
         "y": 0.1443
       },
       "alpha": 1,
@@ -275,7 +266,7 @@
       "assetId": "new_materials/orb/sphere_23.png",
       "zIndex": 5,
       "scale": {
-        "x": 0.127,
+        "x": 0.142,
         "y": 0.127
       },
       "alpha": 0.95,
@@ -289,7 +280,7 @@
       "assetId": "light-masks-1.0/default/circle_b_noise.png",
       "zIndex": 11,
       "scale": {
-        "x": 0.1898,
+        "x": 0.2122,
         "y": 0.1898
       },
       "alpha": 0.45,

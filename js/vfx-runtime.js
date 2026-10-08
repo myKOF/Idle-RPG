@@ -1087,8 +1087,8 @@ var VFXRuntime = (function () {
       var params = Object.assign({ position: startPoint ? {x:startPoint.x,y:startPoint.y*groundScale} : from, rotation: facing }, dimensions);
       params.motionFacing = /^wind-blade(?:-|$)/.test(spec.variant||'');
       if (flightOrbit) params.particleOrigin = {x:flightOrbit.origin.x,y:flightOrbit.origin.y*groundScale};
-      // 風刃的動畫壽命隨權威飛行時間伸縮，避免飛出場景前先消失。
-      if ((flightOrbit || presetId === 'proj-wind-crescent' || knifeFlight || holyFlight || /^knife(?:-|$)/.test(spec.variant || '')) && travel > 0) params.timeScale = presetDurations[presetId] / travel;
+      // 飛行動畫壽命隨權威飛行時間伸縮，避免抵達之前先消失。
+      if ((flightOrbit || presetId === 'proj-wind-crescent' || knifeFlight || holyFlight || (fixedLanding && spec.variant === 'fireball-small') || /^knife(?:-|$)/.test(spec.variant || '')) && travel > 0) params.timeScale = presetDurations[presetId] / travel;
       // 敵方出手的彈體不降：那是玩家要看清楚的威脅。
       if (spec.fxKind !== 'enemy-attack') {
         var td = trailDensity();

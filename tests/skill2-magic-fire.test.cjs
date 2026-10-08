@@ -345,8 +345,12 @@ test('火球術·爆燃：燃燒結束時對我方 12 米內 2 個敵人造成�
 
   c.castSkill2(p, [burned], 'fireball', 'mv-float');
   finishFireball(c, p, enemies);
+  // 分裂可命中原目標及後來進入爆點範圍的敵人；先完成飛行，避免跳到燃燒過期時才補命中。
+  finishFireball(c, p, enemies, 2);
+  // 本例只驗一份燃燒的自然爆燃，其它敵人的分裂燃燒另由分裂測試驗收。
+  for (const other of [near1, near2, far]) { other.dots.length = 0; other._sgBurnWatch = null; }
   const dot = c.sgFindDot(burned, 'sgBurn');
-  const total = dot.dps * (dot.until - c.GT);
+  const total = dot.dps * 5; // 整段燃燒，不能以觀測當下的剩餘秒數代替。
 
   // 讓燃燒自然結束（DoT 實例過期），節拍器應在下一個 tick 引爆
   const before = [near1.hp, near2.hp, far.hp];

@@ -12,6 +12,20 @@
 - 素材提交：49e8260（D:/MyGame/Asset），已先提交；遊戲Commit為本紀錄所在提交（回覆列出編號）。四PNG共1,293,080 bytes、單份解碼RGBA合計3,534,848 bytes，不含Worker副本與GPU圖集。
 - 風險／未完：功能無未完成項；未量測GPU時間、長時間大量技能FPS。依來源圖固定的正規化附著點，未來更換或重裁貼圖需同步調整。可交使用者Review／合併，需保留已同意的共用檔分段內容；未自行合併或推送。建議重載遊戲檢視其他樓層及三塔風格。預覽與實測記錄保留於Codex visualizations的boss-arena-upgrade，不納入正式素材。
 
+## FIREBALL-SPLIT-FLIGHT-20261008 — 火球爆裂從爆點拋射縮小火球
+
+- Owner：Codex；Done，單一開發者。先查核技能是否生效：正式Worker引擎可生成分裂火球，但起點誤用玩家、未縮小／未帶弧高，爆點事件又攜帶投射物。使用者要求沿用原火球特效縮小，從爆點彈向20米內任意目標，拋物線高度為飛行距離三分之一；最新指示取代先前重複選敵答案：每名敵人最多分配一顆、不足仍發射且其餘在20米範圍內隨機落點；例如1名敵人＝1顆敵人座標＋2顆隨機座標，全部途中不追蹤。
+- 允許：skills2分裂選敵／投射／事件、Runtime必要的既有拋物線接線、分裂飛行測試、主頁／bridge／Worker必要快取及本紀錄；禁止改傷害倍率、其他技能、Preset／素材／存檔／協議與他人场景內容。skills2已有使用者配置表生成差異，完整保留。不合併／推送。
+- 預檢：skills2／Runtime／本紀錄／新測試無其他來源修改。index／bridge／sim.worker與Claude d9f624c4命中率功能及快取重疊；已提供具體內容並獲使用者「同意分段修改」，僅更新本次快取，保留命中率及另一本聊天場景內容，由原聊天提交。
+- 驗收：一般火球及殞石於實際爆炸／落地後再選存活目標，三顆從爆點發射、範圍20米、逐敵人固定落點＋不足補隨機座標；原火球Preset線性縮小、每顆獨立距離／弧高／抵達時間，抵達才查該固定座標是否碰到存活敵人體型，移走不追蹤且不再必命中。無命中仍播放落地爆點一次、不重射火球。主端與Worker共用事件，來源死亡不回退到玩家；測試、正式渲染及Build後Commit。
+- 完成：爆點當下取得ctx.getEnemies存活名單，洗牌後逐敵人分配，不足用平方根半徑在20米圓內均勻抽樣；固定座標飛行／抵達判定與VFX共用source、travelMs、arcM，線性縮半、弧高為各顆距離1/3，短Preset完整活到抵達。抵達才檢查固定落點上的敵人體型，最多命中一名；原敵移開可避開，新敵進入可受傷，空場仍發射。一般火球與逐顆殞石都適用，爆點只送命中特效，不重播本體投射物。未改傷害倍率、原傾角、FOV、協議50或存檔。
+- 修改：js/skills2.js、vfx-runtime.js、bridge.js、worker/sim.worker.js、index.html、tools/vfx/editor/index.html、docs/vfx/VFX_RUNTIME_ADAPTER.md、本紀錄、新增tests/fireball-split-flight.test.cjs、tests/skill2-magic-fire.test.cjs。舊爆燃測試先完成小火球飛行，再隔離一份燃燒驗自然爆燃，以完整5秒燃燒算式釘住原傷害，避免跳到到期時才補命中刷新燃燒；未降低斷言。快取Runtime1.0.182、skills2 1.0.293、bridge1.0.246、Worker及skills2 import為20261008-fireball-split-fixed。場景工作已獨立提交04814b45，完整保留。
+- 檢查未改：js/battlefield.js、data.js、worker/shim.js、worker/protocol.js、vfx-core.js、vfx-pixi-backend.js、tools/config_tables.cjs、scripts/sim/engine.js及既有火系／Runtime／殞石測試；不改命中率、符文與場景內容。
+- 使用者修改一起提交：Skills2.csv／Skills2.xlsx與生成的skills2字面值（地爆天星normal=80、天火流星名稱及balls=10/+1、pct=100/+10）；Excel全部10列火球與CSV逐格一致，`node tools/config_tables.cjs --apply Skills2`唯讀試跑語意變更0。使用者新儲存proj-dragon-devour tint、proj-meteor-inferno橫向縮放／旋轉Speed也原樣保留，兩Preset通過Core.validatePreset；素材庫保存兩Preset及原殞石layout，逐份SHA256一致，未引入外部素材。素材Commit：c999cf0（D:/MyGame/Asset），先於遊戲提交。
+- 驗證：`node --test tests/fireball-split-flight.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs tests/starfall-vfx.test.cjs tests/vfx-duration.test.cjs tests/vfx-editor-guard.test.cjs`60/60通過（分裂專項8/8，使用正式Worker引擎及白名單）。`node --test --test-name-pattern='火球術·爆燃' tests/skill2-magic-fire.test.cjs`通過。`npm.cmd run build`486檔通過；git diff --check通過。另跑magic-fire／fire-legendary／skill2-vfx／vfx-runtime／meteor-impact-timing共216測試，193通過、23失敗；在唯讀HEAD基線保留相同使用者資料與測試，以原skills2／Runtime重跑亦193/23，失敗名稱完全相同，未新增回歸（既有殞石fixture／旧素材契約等）。未修任務外失敗。
+- 正式渲染：隔離headless Edge載入正式Pixi／Core／Backend／Runtime及proj-dragon-devour素材，三顆事件建立三個飛行物；目標座標故意在ctx換成錯誤位置，105次root變換仍符合固定落點拋物線，最大誤差1.21e-13。原火球貼圖可正常渲染，抵達後activeEffects／projectiles皆0，Console error／warning0；臨時伺服器／瀏覽器已关闭，腳本／log／截圖清除，未讀寫真人存檔。
+- 交付：功能無未完成項，可交使用者Review／合併；遊戲Commit為本紀錄所在提交，未自行合併／推送。已知限制：未以真人存檔長時間戰鬥；範圍選敵沿用既有敵人體型相交規則。建議先備份VFX編輯器尚未儲存內容，再重新整理遊戲與編輯器驗一名敵人／敵人移動時的分裂落點。
+
 ## Codex｜BOSS 戰保留左側資訊並鎖定配置（BOSS-INFO-DURING-FIGHT-20261008）
 
 - Owner：Codex；Done。使用者要求開戰後左側維持樓層列表、BOSS 資訊及通關獎勵，挑戰／連挑置灰停用，追加技能、換裝、寶石、符文、威能與裝備四個功能的配置限制。單一開發者；前置既有右側 Canvas BOSS 戰與左側瀏覽頁已完成，工作區於開始時乾淨且衝突預檢無其他來源修改。

@@ -195,7 +195,7 @@ var SKILLS2 = {
   dualdance: { name: '雙刀亂舞', emoji: '⚔️', range: '', cd: 8, cost: 25, tiers: [{ name: '雙刀亂舞', unlock: { reinc: 0, lv: 250 }, cost: 25, fx: { pct: 300, pctPer: 25, count: 2 }, goldBase: 100000, goldGrow: 1.5, desc: '在當前攻擊範圍內隨機選敵斬擊 {count} 次，每次造成 {pct}% 物理傷害；可重複選中同一目標，只有 1 個敵人時全部斬擊打向它', vfx: { attack: 'slash-dual' } }, { name: '疾風亂舞', unlock: { reinc: 0, lv: 300 }, cost: 50, fx: { add: 1, addPer: 0.2 }, goldBase: 200000, goldGrow: 1.5, desc: '額外增加 {add} 次斬擊，每次從當前攻擊範圍內隨機選敵，可重複選中同一目標（不足 1 次的部分以機率觸發）' }, { name: '強化雙刀', unlock: { reinc: 0, lv: 350 }, cost: 100, fx: { pct: 25, pctPer: 5 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化雙刀傷害，額外 +{pct}% 物理傷害' }, { name: '狂暴之舞', unlock: { reinc: 0, lv: 400 }, cost: 200, fx: { cr: 100, crPer: 10, add: 1, addPer: 0.1, sec: 6 }, goldBase: 800000, goldGrow: 1.5, desc: '讓你的暴擊率 +{cr}%、連擊數 +{add}，持續 {sec} 秒', status: { self: [{ id: 'sgFrenzyCr' }] } }, { name: '鐵血之舞', unlock: { reinc: 0, lv: 450 }, cost: 300, fx: { pct: 1, pctPer: 0.1, sec: 3, gap: 0.35, m: 5 }, goldBase: 1500000, goldGrow: 1.5, desc: '施放雙刀亂舞時使你以及附近 {m} 米內的所有敵人流血：每 {gap} 秒造成最大生命值 {pct}% 傷害，持續 {sec} 秒', vfx: { attack: 'slash-dual-red' }, status: { self: [{ id: 'sgIronBleed' }], enemy: [{ id: 'sgIronBleed' }] } }, { name: '嗜血狂化', unlock: { reinc: 0, lv: 500 }, cost: 500, fx: { pct: 0.25, pctPer: 0.025, sec: 6 }, goldBase: 3000000, goldGrow: 1.5, desc: '施放雙刀亂舞後 {sec} 秒內，生命值或護盾每減少 1%，獲得 {pct}% 技能傷害提升' }, { name: '暴風亂舞', unlock: { reinc: 0, lv: 550 }, cost: 1000, fx: { sec: 3, secPer: 0.3, gap: 0.35 }, goldBase: 5000000, goldGrow: 1.5, desc: '化身暴風在敵人間穿梭 {sec} 秒：每 {gap} 秒自動施放 1 次雙刀亂舞；期間可以普攻及施放技能', vfx: { attack: 'slash-dual' }, status: { self: [{ id: 'sgStorm' }] } }], ult: [{ id: 'doomDance', name: '毀滅之舞', cost: 5000, fx: { hpPct: 10, hpPctPer: -0.5, pct: 200, pctPer: 20, add: 3 }, goldBase: 10000000, goldGrow: 1.5, desc: '每施放 1 次雙刀亂舞就失去當下 {hpPct}% 生命值（不會致死），但雙刀亂舞的傷害提高 {pct}%，且額外 +{add} 個攻擊目標（每刀在當前攻擊範圍內隨機選敵，可重複命中同一目標）', vfx: { attack: 'slash-dual-08' } }, { id: 'flameKagura', name: '火之神樂', cost: 5000, fx: { pct: 20, pctPer: 2, dur: 10, maxStacks: 20, gap: 0.5 }, goldBase: 10000000, goldGrow: 1.5, desc: '雙刀亂舞附加火焰：每次命中堆疊 1 層【神樂灼焰】，每層每 {gap} 秒造成 {pct}% 火屬性傷害，最多 {maxStacks} 層，持續 {dur} 秒', vfx: { attack: 'slash-dual-fire-09' }, status: { enemy: [{ id: 'sgKagura' }] } }, { id: 'asuraDance', name: '修羅亂舞', cost: 5000, fx: { pct: 20, pctPer: 2 }, goldBase: 10000000, goldGrow: 1.5, desc: '讓你可以同時裝備兩把雙手武器（主手與副手各一把），且雙手武器的詞條效果提升 {pct}%', vfx: { attack: 'slash-dual-10' } }] },
   counter: { name: '反擊', emoji: '🛡️', range: '', cd: 0, cost: 25, tiers: [{ name: '反擊', unlock: { reinc: 0, lv: 300 }, cost: 25, fx: { chance: 35, pct: 50, pctPer: 5 }, goldBase: 100000, goldGrow: 1.5, desc: '被動：受到傷害時有 {chance}% 機率對攻擊者反擊，造成 {pct}% 普攻傷害', vfx: { projectile: 'proj-counter-ripple', hit: 'hit-phys' } }, { name: '招架', unlock: { reinc: 0, lv: 350 }, cost: 50, fx: { mult: 300, multPer: 30 }, goldBase: 200000, goldGrow: 1.5, desc: '格擋時必定對敵人反擊，造成「格擋減傷值 × {mult}%」的普攻傷害' }, { name: '強化反擊', unlock: { reinc: 0, lv: 400 }, cost: 100, fx: { pct: 30, pctPer: 5 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步提升反擊傷害，額外 +{pct}% 反擊普攻傷害' }, { name: '反擊盾', unlock: { reinc: 0, lv: 450 }, cost: 200, fx: { pct: 1, pctPer: 0.1 }, goldBase: 800000, goldGrow: 1.5, desc: '觸發反擊時，回復自身最大生命 {pct}% 的護盾' }, { name: '破甲擊', unlock: { reinc: 0, lv: 500 }, cost: 300, fx: { chance: 35, def: 15, sec: 4, secPer: 0.4, max: 4 }, goldBase: 1500000, goldGrow: 1.5, desc: '格擋時有 {chance}% 機率造成破甲：防禦 -{def}%，持續 {sec} 秒，最多疊 {max} 層（疊層時重置時間）', vfx: { hit: 'hit-earth' }, status: { enemy: [{ id: 'sgArmorBrk' }] } }, { name: '二次反擊', unlock: { reinc: 0, lv: 550 }, cost: 500, fx: { chance: 25, chancePer: 2.5, count: 1 }, goldBase: 3000000, goldGrow: 1.5, desc: '反擊時有 {chance}% 機率再追加 {count} 次反擊（追加反擊不會再觸發反擊）' }, { name: '狂化反殺', unlock: { reinc: 0, lv: 600 }, cost: 1000, fx: { pct: 50, pctPer: 5, count: 1, m: 80 }, goldBase: 5000000, goldGrow: 1.5, desc: '每次反擊時，額外對 {m} 米內隨機 {count} 個敵人反擊，造成 {pct}% 普攻傷害（不會再觸發反擊）' }], ult: [{ id: 'holyBody', name: '神聖之體', cost: 5000, fx: { count: 10, pct: 300, pctPer: 30, m: 8 }, goldBase: 10000000, goldGrow: 1.5, desc: '每 {count} 次反擊後朝目標射出一顆光彈，對其周圍 {m} 米內的敵人造成 {pct}% 神聖傷害', triggerVfx: { attack: 'burst-holy', projectile: 'proj-light-orb' } }, { id: 'indomitable', name: '不屈鬥魂', cost: 5000, fx: { pct: 2000, pctPer: 200, sec: 5, cd: 60, gap: 0.5, m: 30 }, goldBase: 10000000, goldGrow: 1.5, desc: '反擊系列所有傷害轉為地屬性；受到致命傷害時保持站姿升空，在 {sec} 秒內無敵且生命由 0 逐漸回滿；每 {gap} 秒對 {m} 米內敵人造成一次地系傷害，期間總傷害為（物攻＋魔攻）的 {pct}%；不算死亡、不清場，結束後繼續戰鬥；冷卻 {cd} 秒', vfx: { attack: 'burst-earth', hit: 'hit-earth' }, triggerVfx: { ground: 'pillar-indomitable' }, status: { self: [{ id: 'invuln' }] } }, { id: 'warGodBody', name: '戰神體', cost: 5000, fx: { sec: 2, hpPct: 1, mult: 2, gap: 0.5 }, goldBase: 10000000, goldGrow: 1.5, desc: '你每 {gap} 秒流失最大生命的 {hpPct}%；每 {sec} 秒累計損失的生命百分比，以 {mult} 倍加成套用至接下來 {sec} 秒內的反擊傷害' }] },
   bloodrage: { name: '嗜血狂怒', emoji: '💢', range: '', cd: 40, cost: 25, tiers: [{ name: '嗜血狂怒', unlock: { reinc: 0, lv: 400 }, cost: 25, fx: { pct: 20, pctPer: 2, sec: 8 }, goldBase: 100000, goldGrow: 1.5, desc: '攻速額外 +{pct}%（乘算，不受攻速上限限制），持續 {sec} 秒', triggerVfx: { attack: 'burst-detonate' }, status: { self: [{ id: 'sgBloodrage' }] } }, { name: '狂暴', unlock: { reinc: 0, lv: 450 }, cost: 50, fx: { pct: 20, pctPer: 2 }, goldBase: 200000, goldGrow: 1.5, desc: '狂怒期間爆擊傷害額外 +{pct}%（乘算）', triggerVfx: {  } }, { name: '狂怒', unlock: { reinc: 0, lv: 500 }, cost: 100, fx: { pct: 20, pctPer: 2 }, goldBase: 400000, goldGrow: 1.5, desc: '狂怒期間總傷害額外 +{pct}%（乘算）', triggerVfx: {  } }, { name: '狂化連殺', unlock: { reinc: 0, lv: 550 }, cost: 200, fx: { add: 0.5, addPer: 0.1, kill: 0.1, killMax: 5 }, goldBase: 800000, goldGrow: 1.5, desc: '狂怒期間基礎連擊數 +{add}，且每擊殺 1 個敵人再 +{kill}（累計上限 +{killMax}；不足 1 次的部分以機率觸發）', triggerVfx: {  } }, { name: '嗜血反震', unlock: { reinc: 0, lv: 600 }, cost: 300, fx: { pct: 20, pctPer: 2 }, goldBase: 1500000, goldGrow: 1.5, desc: '狂怒期間反震傷害提高 {pct}%（乘算，可與其它反震加成疊加）', triggerVfx: {  } }, { name: '血飲術', unlock: { reinc: 0, lv: 650 }, cost: 500, fx: { pct: 30, pctPer: 3, self: 1, m: 80 }, goldBase: 3000000, goldGrow: 1.5, desc: '狂怒期間傷害額外提高 {pct}%（乘算），但 {m} 米內的敵人每次受傷都會使你損失最大生命 {self}%（直接扣血，無法被護盾吸收）', triggerVfx: {  } }, { name: '狂血盛宴', unlock: { reinc: 0, lv: 700 }, cost: 1000, fx: { sec: 0.5, pct: 1, pctPer: 0.1, count: 1 }, goldBase: 5000000, goldGrow: 1.5, desc: '狂怒期間每擊殺 1 個敵人，持續時間延長 {sec} 秒；且生命值每減少 1%，傷害額外 +{pct}%（乘算，無限疊加），每 1 連擊數使普攻可同時攻擊 1 個敵人（無限疊加）', triggerVfx: { attack: 'burst-detonate-phys' } }], ult: [{ id: 'slayerAdvent', name: '殺神降臨', cost: 5000, fx: { pct: 100, pctPer: 10, m: 8 }, goldBase: 10000000, goldGrow: 1.5, desc: '狂怒期間普攻傷害 +{pct}%，且同時對目標周圍 {m} 米內的所有敵人造成傷害', triggerVfx: { attack: 'burst-detonate-phys-08' } }, { id: 'warGodRoll', name: '戰神屠錄', cost: 5000, fx: { pct: 2, pctPer: 0.2, maxStacks: 200, drain: 100, drainPer: 10 }, goldBase: 10000000, goldGrow: 1.5, desc: '狂怒期間你無法獲得護盾，但每殺死 1 個敵人使你造成的所有傷害 +{pct}%，最多 {maxStacks} 層；施放狂怒後吸血效果提升 {drain}%（與當前吸血乘算，不隨擊殺疊層），增傷層數與吸血加成持續到你死亡為止', triggerVfx: { attack: 'burst-detonate-dark-09' }, status: { self: [{ id: 'sgWarGodKill' }] } }, { id: 'asuraFist', name: '阿修羅霸王拳', cost: 5000, fx: { pct: 500, pctPer: 50, sec: 1.5, secPer: 0.15, killSec: 0.2, gap: 10 }, goldBase: 10000000, goldGrow: 1.5, desc: '每 {gap} 秒，你造成的所有傷害 +{pct}%，持續 {sec} 秒；效果期間每擊殺 1 個敵人，持續時間延長 {killSec} 秒', triggerVfx: { attack: 'burst-detonate-dark' }, status: { self: [{ id: 'sgAsuraFist' }] } }] },
-  fireball: { name: '火球術', emoji: '🔥', range: '', dmgType: 'magic', elem: 'fire', cd: 8, cost: 25, tiers: [{ name: '火球術', unlock: { reinc: 0, lv: 1 }, cost: 25, fx: { pct: 150, pctPer: 15, castM: 30, speed: 65.52, m: 6 }, goldBase: 100000, goldGrow: 1.5, desc: '射出一顆火球（射程 {castM} 米），命中時爆炸，對目標及 {m} 米內的敵人造成 {pct}% 火焰傷害', vfx: { cast: 'cast-magic', attack: 'hit-fireball-rupture', projectile: 'proj-dragon-devour' } }, { name: '燃燒', unlock: { reinc: 0, lv: 1 }, cost: 50, fx: { dotPct: 20, dotPctPer: 2, dotSec: 5, dotGap: 0.5 }, goldBase: 200000, goldGrow: 1.5, desc: '被火球擊中的敵人陷入燃燒：每 {dotGap} 秒造成技能傷害 {dotPct}% 的火焰傷害，持續 {dotSec} 秒', status: { enemy: [{ id: 'sgBurn' }] } }, { name: '火球爆裂', unlock: { reinc: 0, lv: 50 }, cost: 100, fx: { pct: 30, pctPer: 3, count: 3, m: 20 }, goldBase: 400000, goldGrow: 1.5, desc: '火球爆炸後分裂出 {count} 個小火球，射向目標 {m} 米內的敵人，每個造成原始火球 {pct}% 的傷害', vfx: { attack: 'hit-fireball-rupture', projectile: 'proj-dragon-devour', hit: 'hit-fireball-rupture' } }, { name: '強化燃燒', unlock: { reinc: 0, lv: 100 }, cost: 200, fx: { gap: 0.4, gapPer: -0.015 }, goldBase: 800000, goldGrow: 1.5, desc: '燃燒的作用間隔縮短至 {gap} 秒（跳得更快＝總傷更高）' }, { name: '爆燃', unlock: { reinc: 0, lv: 150 }, cost: 300, fx: { pct: 50, pctPer: 5, count: 2, m: 12 }, goldBase: 1500000, goldGrow: 1.5, desc: '燃燒結束或敵人死亡時爆炸，對我方 {m} 米內的 {count} 個敵人造成該敵人整段燃燒累積傷害 {pct}% 的傷害', vfx: { attack: 'burst-fire', hit: 'hit-fire' } }, { name: '火焰增幅', unlock: { reinc: 0, lv: 200 }, cost: 500, fx: { pct: 0.25, pctPer: 0.025, sec: 4, m: 20 }, goldBase: 3000000, goldGrow: 1.5, desc: '我方 {m} 米內每有 1 次燃燒作用，你的火焰傷害 +{pct}%，持續 {sec} 秒（無限疊加，每次疊加時重置時間）', status: { self: [{ id: 'sgFireAmp' }] } }, { name: '殞石術', unlock: { reinc: 0, lv: 250 }, cost: 1000, fx: { pct: 250, pctPer: 25, count: 3, castM: 20, speed: 36, m: 15 }, goldBase: 5000000, goldGrow: 1.5, desc: '改為召喚 {count} 顆巨大火殞石從天而降（射程 {castM} 米），每顆對目標 {m} 米內的敵人造成 {pct}% 火焰傷害，且殞石造成的燃燒傷害為 2 倍（第 2~6 階效果仍然生效）', vfx: { attack: 'burst-fire', projectile: 'proj-meteor-inferno', hit: 'burst-meteor-inferno', ground: 'mark-red' } }], ult: [{ id: 'meteorFall', name: '火殞天落', cost: 5000, fx: { count: 8, size: 30, pct: 50, pctPer: 5 }, goldBase: 10000000, goldGrow: 1.5, desc: '殞石的體積 +{size}%、造成的傷害 +{pct}%，且每次施放額外連續落下 {count} 顆巨大殞石' }, { id: 'starfallCataclysm', name: '地爆天星', cost: 5000, fx: { normal: 90, elite: 40, boss: 20, gap: 50, gapPer: -3 }, goldBase: 10000000, goldGrow: 1.5, desc: '每 {gap} 秒，天空落下一顆超巨型殞石：普通敵人 -{normal}% 生命、菁英 -{elite}% 生命、BOSS -{boss}% 生命', vfx: { projectile: 'proj-starfall', hit: 'burst-fire', ground: 'ground-starfall-shadow' }, triggerVfx: { attack: 'burst-fire-shockwave' }, status: { self: [{ id: 'sgStarfall' }] } }, { id: 'phoenixPrairie', name: '火鳳遼原', cost: 5000, fx: { count: 1, balls: 3, ballsPer: 0.3, pct: 30, pctPer: 3 }, goldBase: 10000000, goldGrow: 1.5, desc: '殞石數量 +{count} 顆，且每顆殞石落下時伴隨 {balls} 顆火球一同落下；火球與殞石造成的傷害 +{pct}%', vfx: { projectile: 'proj-dragon-devour', hit: 'hit-fire-explosion' } }] },
+  fireball: { name: '火球術', emoji: '🔥', range: '', dmgType: 'magic', elem: 'fire', cd: 8, cost: 25, tiers: [{ name: '火球術', unlock: { reinc: 0, lv: 1 }, cost: 25, fx: { pct: 150, pctPer: 15, castM: 30, speed: 65.52, m: 6 }, goldBase: 100000, goldGrow: 1.5, desc: '射出一顆火球（射程 {castM} 米），命中時爆炸，對目標及 {m} 米內的敵人造成 {pct}% 火焰傷害', vfx: { cast: 'cast-magic', attack: 'hit-fireball-rupture', projectile: 'proj-dragon-devour' } }, { name: '燃燒', unlock: { reinc: 0, lv: 1 }, cost: 50, fx: { dotPct: 20, dotPctPer: 2, dotSec: 5, dotGap: 0.5 }, goldBase: 200000, goldGrow: 1.5, desc: '被火球擊中的敵人陷入燃燒：每 {dotGap} 秒造成技能傷害 {dotPct}% 的火焰傷害，持續 {dotSec} 秒', status: { enemy: [{ id: 'sgBurn' }] } }, { name: '火球爆裂', unlock: { reinc: 0, lv: 50 }, cost: 100, fx: { pct: 30, pctPer: 3, count: 3, m: 20 }, goldBase: 400000, goldGrow: 1.5, desc: '火球爆炸後分裂出 {count} 個小火球，射向目標 {m} 米內的敵人，每個造成原始火球 {pct}% 的傷害', vfx: { attack: 'hit-fireball-rupture', projectile: 'proj-dragon-devour', hit: 'hit-fireball-rupture' } }, { name: '強化燃燒', unlock: { reinc: 0, lv: 100 }, cost: 200, fx: { gap: 0.4, gapPer: -0.015 }, goldBase: 800000, goldGrow: 1.5, desc: '燃燒的作用間隔縮短至 {gap} 秒（跳得更快＝總傷更高）' }, { name: '爆燃', unlock: { reinc: 0, lv: 150 }, cost: 300, fx: { pct: 50, pctPer: 5, count: 2, m: 12 }, goldBase: 1500000, goldGrow: 1.5, desc: '燃燒結束或敵人死亡時爆炸，對我方 {m} 米內的 {count} 個敵人造成該敵人整段燃燒累積傷害 {pct}% 的傷害', vfx: { attack: 'burst-fire', hit: 'hit-fire' } }, { name: '火焰增幅', unlock: { reinc: 0, lv: 200 }, cost: 500, fx: { pct: 0.25, pctPer: 0.025, sec: 4, m: 20 }, goldBase: 3000000, goldGrow: 1.5, desc: '我方 {m} 米內每有 1 次燃燒作用，你的火焰傷害 +{pct}%，持續 {sec} 秒（無限疊加，每次疊加時重置時間）', status: { self: [{ id: 'sgFireAmp' }] } }, { name: '殞石術', unlock: { reinc: 0, lv: 250 }, cost: 1000, fx: { pct: 250, pctPer: 25, count: 3, castM: 20, speed: 36, m: 15 }, goldBase: 5000000, goldGrow: 1.5, desc: '改為召喚 {count} 顆巨大火殞石從天而降（射程 {castM} 米），每顆對目標 {m} 米內的敵人造成 {pct}% 火焰傷害，且殞石造成的燃燒傷害為 2 倍（第 2~6 階效果仍然生效）', vfx: { attack: 'burst-fire', projectile: 'proj-meteor-inferno', hit: 'burst-meteor-inferno', ground: 'mark-red' } }], ult: [{ id: 'meteorFall', name: '火殞天落', cost: 5000, fx: { count: 8, size: 30, pct: 50, pctPer: 5 }, goldBase: 10000000, goldGrow: 1.5, desc: '殞石的體積 +{size}%、造成的傷害 +{pct}%，且每次施放額外連續落下 {count} 顆巨大殞石' }, { id: 'starfallCataclysm', name: '地爆天星', cost: 5000, fx: { normal: 80, elite: 40, boss: 20, gap: 50, gapPer: -3 }, goldBase: 10000000, goldGrow: 1.5, desc: '每 {gap} 秒，天空落下一顆超巨型殞石：普通敵人 -{normal}% 生命、菁英 -{elite}% 生命、BOSS -{boss}% 生命', vfx: { projectile: 'proj-starfall', hit: 'burst-fire', ground: 'ground-starfall-shadow' }, triggerVfx: { attack: 'burst-fire-shockwave' }, status: { self: [{ id: 'sgStarfall' }] } }, { id: 'phoenixPrairie', name: '天火流星', cost: 5000, fx: { count: 1, balls: 10, ballsPer: 1, pct: 100, pctPer: 10 }, goldBase: 10000000, goldGrow: 1.5, desc: '殞石數量 +{count} 顆，且每顆殞石落下時伴隨 {balls} 顆火球一同落下；火球與殞石造成的傷害 +{pct}%', vfx: { projectile: 'proj-dragon-devour', hit: 'hit-fire-explosion' } }] },
   firepillar: { name: '火龍捲', emoji: '🌋', range: '', dmgType: 'magic', elem: 'fire', cd: 8, cost: 25, tiers: [{ name: '火龍捲', unlock: { reinc: 0, lv: 50 }, cost: 25, fx: { pct: 60, pctPer: 6, hits: 6, sec: 3, castM: 30, m: 3 }, goldBase: 100000, goldGrow: 1.5, desc: '在敵人腳下召喚一道火柱（射程 {castM} 米），對目標 {m} 米內的敵人連續造成 {hits} 段傷害，每段 {pct}% 火焰傷害（全程約 {sec} 秒）', vfx: { hit: 'hit-fire', field: 'fire-tornado-inferno' } }, { name: '龍捲噴發', unlock: { reinc: 0, lv: 100 }, cost: 50, fx: { pct: 10, pctPer: 2 }, goldBase: 200000, goldGrow: 1.5, desc: '火柱的傷害範圍擴大 {pct}%' }, { name: '雙重龍捲', unlock: { reinc: 0, lv: 150 }, cost: 100, fx: { count: 2, pct: 20, pctPer: 2, m: 20 }, goldBase: 400000, goldGrow: 1.5, desc: '可同時對 {m} 米內的 {count} 個目標施放火柱，且火焰傷害額外 +{pct}%' }, { name: '燃燒', unlock: { reinc: 0, lv: 200 }, cost: 200, fx: { chance: 20, chancePer: 2, dotPct: 20, dotSec: 4, dotGap: 0.5 }, goldBase: 800000, goldGrow: 1.5, desc: '火柱每次作用時有 {chance}% 機率使敵人燃燒：每 {dotGap} 秒造成技能傷害 {dotPct}% 的火焰傷害，持續 {dotSec} 秒', status: { enemy: [{ id: 'sgBurn' }] } }, { name: '烈焰衝擊', unlock: { reinc: 0, lv: 250 }, cost: 300, fx: { pct: 100, pctPer: 10, m: 12 }, goldBase: 1500000, goldGrow: 1.5, desc: '火龍捲消失時，對周圍 {m} 米內的敵人造成 {pct}% 火焰傷害', vfx: { hit: 'hit-fire' }, triggerVfx: { attack: 'burst-fire-shockwave', hit: 'hit-fire' } }, { name: '重生', unlock: { reinc: 0, lv: 300 }, cost: 500, fx: { chance: 25, chancePer: 2.5, m: 20 }, goldBase: 3000000, goldGrow: 1.5, desc: '火柱消失後有 {chance}% 機率在我方 {m} 米內的敵人身上重生' }, { name: '無限火龍', unlock: { reinc: 0, lv: 350 }, cost: 1000, fx: { hitsAdd: 6, pct: 100, pctPer: 10, respawn: 1, sec: 6, speed: 6 }, goldBase: 5000000, goldGrow: 1.5, desc: '火龍捲持續 {sec} 秒，傷害段數 +{hitsAdd} 段，每段 {pct}% 火焰傷害；以每秒 {speed} 米持續隨機追敵，單一敵人時在其附近移動；消散後再召喚 {respawn} 次（再召喚不可連鎖），火焰轉為暗紅色', vfx: { hit: 'hit-fire', field: 'fire-tornado-infinite' } }], ult: [{ id: 'infernoTempest', name: '烈焰暴風', cost: 5000, fx: { pct: 200, pctPer: 20, count: 1, m: 6, searchM: 36, gap: 0.33, speed: 36 }, goldBase: 10000000, goldGrow: 1.5, desc: '火龍捲每 {gap} 秒向 {searchM} 米內每次重新隨機選取最多 {count} 名敵人發射追蹤必中火球，命中後爆炸，對周圍 {m} 米內的敵人造成 {pct}% 火焰傷害', triggerVfx: { attack: 'burst-fire', projectile: 'proj-dragon-devour' } }, { id: 'eternalInferno', name: '永劫火獄', cost: 5000, fx: { pct: 200, pctPer: 20, sec: 6, gap: 0.5, m: 20 }, goldBase: 10000000, goldGrow: 1.5, desc: '火龍捲會在附近 {m} 米內隨機游走，並在移動軌跡上留下火池：每 {gap} 秒造成 {pct}% 火焰傷害，持續 {sec} 秒', triggerVfx: { ground: 'ground-mire-lava' } }, { id: 'dragonDevour', name: '融火之心', cost: 5000, fx: { pct: 200, pctPer: 20, sec: 8, ballPct: 400, ballM: 6, ballMin: 2, ballMax: 4, ballSec: 0.9, m: 15, pullM: 35, ballRange: 20, arcM: 12, gap: 0.35 }, goldBase: 10000000, goldGrow: 1.5, desc: '改為召喚一個半徑 {m} 米的巨型火漩渦（新施放取代舊漩渦），每 {gap} 秒造成 {pct}% 火焰傷害，持續聚攏 {pullM} 米內的敵人，持續 {sec} 秒。每秒隨機噴出 {ballMin}～{ballMax} 顆小火球，以拋物線飛向 {ballRange} 米內的隨機地面，落地對半徑 {ballM} 米造成 {ballPct}% 火焰傷害。', vfx: { projectile: 'proj-dragon-devour', field: 'field-dragon-devour' }, triggerVfx: { attack: 'burst-dragon-devour' } }] },
   firehunt: { name: '火狩', emoji: '☄️', range: '3*3', dmgType: 'magic', elem: 'fire', cd: 8, cost: 25, tiers: [{ name: '火狩', unlock: { reinc: 0, lv: 100 }, cost: 25, fx: { pct: 100, pctPer: 10, count: 2, sec: 4, rps: 0.455, castM: 8, m: 8 }, goldBase: 100000, goldGrow: 1.5, desc: '召喚 {count} 團火狩環繞自身（環繞半徑 {m} 米、每秒 {rps} 圈），碰到敵人即命中一次，每次造成 {pct}% 火焰傷害，持續 {sec} 秒', vfx: { attack: 'burst-fire', projectile: 'orb-firehunt', hit: 'hit-fire-explosion', ground: 'ground-orbit-ring-fire' }, status: { self: [{ id: 'sgFirehunt' }] } }, { name: '強化火狩', unlock: { reinc: 0, lv: 150 }, cost: 50, fx: { pct: 15, pctPer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '火狩的體積與環繞範圍同步擴大 {pct}%' }, { name: '伴生火狩', unlock: { reinc: 0, lv: 200 }, cost: 100, fx: { chance: 20, chancePer: 2, m: 1 }, goldBase: 400000, goldGrow: 1.5, desc: '火狩命中時有 {chance}% 機率在母體外緣後方留 {m} 米間隙伴生一團火狩（每團只能伴生一次，伴生出的不再伴生）', triggerVfx: { projectile: 'orb-firehunt-companion' } }, { name: '三重火狩', unlock: { reinc: 0, lv: 250 }, cost: 200, fx: { count: 3, pct: 120, pctPer: 12, sec: 4 }, goldBase: 800000, goldGrow: 1.5, desc: '改為召喚 {count} 團火狩，每團造成 {pct}% 火焰傷害，持續 {sec} 秒' }, { name: '極速火狩', unlock: { reinc: 0, lv: 300 }, cost: 300, fx: { pct: 25, pctPer: 2.5 }, goldBase: 1500000, goldGrow: 1.5, desc: '火狩的旋轉速度 +{pct}%' }, { name: '再生', unlock: { reinc: 0, lv: 350 }, cost: 500, fx: { sec: 0.4, secPer: 0.04 }, goldBase: 3000000, goldGrow: 1.5, desc: '火狩每擊殺 1 個敵人，全部火狩的持續時間延長 {sec} 秒' }, { name: '狩神之舞', unlock: { reinc: 0, lv: 400 }, cost: 1000, fx: { rings: 2, pct: 150, pctPer: 15, sec: 6, m: 6 }, goldBase: 5000000, goldGrow: 1.5, desc: '改為一次施放 {rings} 道火狩（外圈距內圈 {m} 米、兩道旋轉方向相反），每團造成 {pct}% 火焰傷害、出現時自帶伴生，持續 {sec} 秒' }], ult: [{ id: 'solarRing', name: '烈陽星環', cost: 5000, fx: { count: 1, grow: 60, growSec: 4, spin: 30, pct: 50, pctPer: 10 }, goldBase: 10000000, goldGrow: 1.5, desc: '火狩數量 +{count} 團，體積在 {growSec} 秒內逐漸增大最多 {grow}%，環繞速度 +{spin}%，且造成傷害 +{pct}%', vfx: { projectile: 'orb-firehunt-solar' }, triggerVfx: { projectile: 'orb-firehunt-solar-companion' } }, { id: 'infiniteRing', name: '無限星環', cost: 5000, fx: { count: 10, countPer: 1, m: 40 }, goldBase: 10000000, goldGrow: 1.5, desc: '火狩改為從自身中心呈螺旋狀向外擴散（在 {m} 米處達到最外圈），並於持續時間內不斷放出火狩，最多額外 +{count} 團', triggerVfx: { projectile: 'orb-firehunt-companion' } }, { id: 'fireGodDescend', name: '火神降臨', cost: 5000, fx: { pct: 300, pctPer: 30, orbs: 3, orbsPer: 0.3, rps: 0.5, gap: 0.5, speed: 24, m: 6, flyM: 50, orbitM: 8 }, goldBase: 10000000, goldGrow: 1.5, desc: '你的身體被火焰包裹：每 {gap} 秒對周圍 {m} 米內的敵人造成 {pct}% 火焰傷害；普攻同時朝目標射出 {orbs} 顆火狩星環，以半徑 {orbitM} 米組成圓環，每秒順時針旋轉 {rps} 圈，整組以 {speed} 米／秒貫穿飛行 {flyM} 米', vfx: { projectile: 'proj-firehunt-ring', hit: 'hit-fire' }, triggerVfx: { projectile: 'orb-firehunt-firegod-companion' }, status: { self: [{ id: 'sgFireGodBody' }] } }] },
   rockarmor: { name: '岩甲術', emoji: '🪨', range: '', dmgType: 'magic', elem: 'earth', cd: 8, cost: 25, tiers: [{ name: '岩甲術', unlock: { reinc: 0, lv: 150 }, cost: 25, fx: { pct: 30, pctPer: 3, sec: 10, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '施放岩甲強化自身，獲得最大生命值 {pct}% 的岩甲護盾，持續 {sec} 秒', vfx: { ground: 'aura-earth-reversal' }, status: { self: [{ id: 'shield' }, { id: 'sgRockArmor' }] } }, { name: '強化岩甲', unlock: { reinc: 0, lv: 200 }, cost: 50, fx: { pct: 20, pctPer: 2 }, goldBase: 200000, goldGrow: 1.5, desc: '進一步強化岩甲，額外獲得最大生命值 {pct}% 的岩甲護盾（與第 1 階累加）' }, { name: '岩甲尖刺', unlock: { reinc: 0, lv: 250 }, cost: 100, fx: { pct: 5, pctPer: 0.5 }, goldBase: 400000, goldGrow: 1.5, desc: '岩甲護盾存在期間，攻擊你的敵人會遭受你最大生命值 {pct}% 的地系傷害（獨立於反震，兩者各自結算）', vfx: { hit: 'hit-earth' } }, { name: '護盾增幅', unlock: { reinc: 0, lv: 300 }, cost: 200, fx: { pct: 15, pctPer: 1.5 }, goldBase: 800000, goldGrow: 1.5, desc: '主動型被動（裝配到技能列即恆時生效）：你獲得的所有護盾效率額外 +{pct}%（乘算）' }, { name: '岩之再生', unlock: { reinc: 0, lv: 350 }, cost: 300, fx: { pct: 0.5, pctPer: 0.05 }, goldBase: 1500000, goldGrow: 1.5, desc: '岩甲護盾存在期間，你每減少 1% 生命值即獲得最大生命 {pct}% 的護盾' }, { name: '岩甲增幅', unlock: { reinc: 0, lv: 400 }, cost: 500, fx: { pct: 0.5, pctPer: 0.05, max: 30, sec: 3 }, goldBase: 3000000, goldGrow: 1.5, desc: '岩甲護盾存在期間，你每減少 1% 護盾即獲得 {pct}% 傷害增幅（乘算），最多疊 {max} 層，持續 {sec} 秒', status: { self: [{ id: 'sgRockAmp' }] } }, { name: '天地逆返', unlock: { reinc: 0, lv: 450 }, cost: 1000, fx: { pct: 30, pctPer: 3 }, goldBase: 5000000, goldGrow: 1.5, desc: '岩甲護盾存在期間，護盾剩餘量越低則傷害減免越高，護盾歸零時最高額外 +{pct}% 傷害減免（乘算）', vfx: { ground: 'aura-rockarmor-stone' } }], ult: [{ id: 'superRockArt', name: '超重岩之術', cost: 5000, fx: { sec: 4, pct: 400, pctPer: 40, m: 12 }, goldBase: 10000000, goldGrow: 1.5, desc: '施放時將巨岩之力壓縮到極致，使 {m} 米內的敵人石化 {sec} 秒：無法行動，且受到的土系傷害額外 +{pct}%', vfx: { attack: 'burst-rock-petrify', hit: 'hit-earth', ground: 'aura-rockarmor-stone-08' }, status: { self: [{ id: 'sgPetrifyDomain' }], enemy: [{ id: 'stun' }, { id: 'sgPetrify' }] } }, { id: 'adamantBody', name: '金剛不壞', cost: 5000, fx: { red: 40, redPer: 5, hp: 50, hpPer: 5, spike: 100 }, goldBase: 10000000, goldGrow: 1.5, desc: '岩甲護盾存在期間額外獲得 +{red}% 傷害減免（乘算），生命上限與岩甲護盾 +{hp}%，且【岩甲尖刺】的效果額外提高 {spike}%', vfx: { ground: 'aura-rockarmor-stone-09' } }, { id: 'gravityField', name: '超重力場', cost: 5000, fx: { pct: 300, pctPer: 30, stiff: 65, stiffSec: 5, m: 12 }, goldBase: 10000000, goldGrow: 1.5, desc: '施放岩甲術時同時扭曲 {m} 米內的重力場，使敵人僵化（移動、攻速與傷害 -{stiff}%，持續 {stiffSec} 秒）；岩甲護盾存在期間你的土系傷害額外 +{pct}%', vfx: { attack: 'burst-gravity', hit: 'hit-earth', ground: 'aura-rockarmor-stone-10' }, status: { self: [{ id: 'sgGravityDomain' }], enemy: [{ id: 'sgStiffen' }] } }] },
@@ -2125,6 +2125,7 @@ function sgEmitVfx(gid, targets, floatSel, extra) {
   /* 拋物線投射物的離地最高點（米，水流彈）：弧高是模擬層的表定值，
      顯示層不得自己另外挑一個固定值（AI_RULES 8.3：計算層與表現層共用同一個語意參數）。 */
   if (extra && extra.arcM > 0) spec.arcM = Number(extra.arcM);
+  if (extra && extra.sizeMult > 0) spec.sizeMult = Number(extra.sizeMult);
   /* 空角色表也必須送出，表示繼承鏈沒有特效，禁止顯示層自行補舊畫法。 */
   var roles = sgVfxRoles(gid, extra);
   if (roles) spec.vfx = roles;
@@ -2177,7 +2178,8 @@ function sgQueueFlyingProjectile(pEnt, st, gid, dmgVal, origin, angle, length, f
        貫穿段的每一次命中都要拿得到，因此掛在飛行物上而不是每次重算。 */
     iceSpec: extra && extra.iceSpec || null,
     victims: extra && extra.victims || null,
-    splitTargets: extra && extra.splitTargets || null,
+    splitSpec: extra && extra.splitSpec || null,
+    fireballSplitLanding: extra && extra.fireballSplitLanding || null,
     splitDmgVal: extra && Number(extra.splitDmgVal) > 0 ? Number(extra.splitDmgVal) : 0,
     spreadPct: extra && extra.spreadPct || 0,
     spreadCount: extra && extra.spreadCount || 0,
@@ -2341,6 +2343,14 @@ function sgTickFlyingProjectiles(dt, ctx) {
   var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
   for (var pi = list.length - 1; pi >= 0; pi--) {
     var projectile = list[pi];
+    if (projectile.fireballSplitLanding) {
+      if (now >= projectile.endAt) {
+        list.splice(pi,1);
+        sgResolveFireballSplitLanding(projectile,ctx,enemies);
+        sgFinishSkillCastFloat(projectile.out);
+      }
+      continue;
+    }
     if (projectile.tempestFlight) {
       var arrived=false, targetPoint=bfPos(projectile.target);
       if(projectile.position && targetPoint){
@@ -4194,17 +4204,22 @@ function sgMeteorTargetBag(primary, pool, radius) {
 /* ===========================================================================
    火球術（fireball）
    ---------------------------------------------------------------------------
-   一般火球仍在施放當下結算，只有第 7 階殞石術使用逐顆落地排程。
+   一般火球抵達後結算，第 7 階殞石術使用逐顆落地排程；分裂皆從爆點拋射。
    第 7 階殞石術依設計文檔「改為」召喚三顆殞石：本體傷害%與範圍改讀第 7 階，
    第 2~6 階的進化效果照舊生效。
    =========================================================================== */
 var SG_FIREBALL_SPEED_MULT = 1.3;
-function sgFireballProjectilePlan(target) {
+var SG_FIREBALL_SPLIT_SCALE = 0.5;
+var SG_FIREBALL_SPLIT_ARC_RATIO = 1 / 3;
+function sgFireballProjectilePlan(target, source) {
   var geomOk = (typeof bfPos === 'function') && !!bfPos(target) &&
     (typeof bfPlayerPos === 'function') && (typeof bfTravelDistance === 'function');
-  var origin = geomOk ? bfPlayerPos() : null;
-  var length = geomOk ? Math.max(1, bfTravelDistance(target)) : 1;
-  var angle = geomOk && typeof bfAngleTo === 'function' ? bfAngleTo(target) : 0;
+  var origin = geomOk ? (source || bfPlayerPos()) : null;
+  var point = geomOk && source ? bfPos(target) : null;
+  var length = point ? Math.max(1, Math.hypot(point.x-origin.x,point.y-origin.y))
+    : geomOk ? Math.max(1, bfTravelDistance(target)) : 1;
+  var angle = point ? Math.atan2(point.y-origin.y,point.x-origin.x)
+    : geomOk && typeof bfAngleTo === 'function' ? bfAngleTo(target) : 0;
   /* 火球以普通遠程投射物為基準加速，飛行時間與模擬速度使用同一倍率。 */
   var travelMs = geomOk && typeof bfTravelSeconds === 'function'
     ? Math.round(bfTravelSeconds(target) * 1000)
@@ -4212,46 +4227,70 @@ function sgFireballProjectilePlan(target) {
   var nominalSpeed = VFX_PROJECTILE_SPEED_CELLS * bfUnit();
   var configuredSpeed = sgConfiguredFlightSpeed('fireball', 1, nominalSpeed * SG_FIREBALL_SPEED_MULT);
   travelMs = Math.max(1, Math.round(travelMs * nominalSpeed / configuredSpeed));
+  if (point) travelMs = Math.max(50, Math.round(length / configuredSpeed * 1000));
   var speed = geomOk && travelMs > 0 ? length / (travelMs / 1000) : SG_FLYING_PROJECTILE_SPEED * SG_FIREBALL_SPEED_MULT;
   return { origin: origin, length: length, angle: angle, travelMs: travelMs,
     speed: speed, waitForEnd: !geomOk };
 }
 
+/* 爆炸當下鎖定不同敵人的座標；不足的彈體均勻散落在爆點周圍，不追蹤。 */
+function sgFireballSplitLandings(source, pool, count, radius) {
+  var origin = (typeof bfPos === 'function' ? bfPos(source) : null) || bfPlayerPos();
+  var live = (pool || []).filter(function(e) { return e && e.hp > 0; });
+  var candidates = origin && typeof bfEnemiesInArea === 'function'
+    ? bfEnemiesInArea({x:origin.x,y:origin.y,r:radius},live) : live;
+  for (var i=candidates.length-1;i>0;i--) {
+    var j=Math.floor(Math.random()*(i+1)),swap=candidates[i];candidates[i]=candidates[j];candidates[j]=swap;
+  }
+  var landings = [];
+  for (var si=0;si<count;si++) {
+    var target=si<candidates.length ? candidates[si] : null;
+    var p=target ? bfPos(target) : null;
+    if (!p) {
+      var angle=Math.random()*Math.PI*2,r=Math.sqrt(Math.random())*radius;
+      p={x:origin.x+Math.cos(angle)*r,y:origin.y+Math.sin(angle)*r};
+    }
+    landings.push({target:target,point:{x:p.x,y:p.y}});
+  }
+  return landings;
+}
+
 /* 火球爆裂的共用投射佇列：一般火球在本體命中後呼叫，殞石則在落地回呼中呼叫。
    兩者都必須先建立飛行物，不能在爆炸／落地的同一拍直接結算小火球傷害。 */
-function sgQueueFireballSplitProjectiles(pEnt, st, splitTargets, splitDmgVal,
-  floatSel, out, burnSpec, burnBonusPct) {
-  if (!Array.isArray(splitTargets) || !(splitDmgVal > 0)) return;
-  for (var si = 0; si < splitTargets.length; si++) {
-    var target = splitTargets[si];
-    if (!target) continue;
-    var plan = sgFireballProjectilePlan(target);
-    sgEmitVfx('fireball', [target], floatSel, {
+function sgQueueFireballSplitProjectiles(pEnt, st, landings, splitDmgVal,
+  floatSel, out, burnSpec, burnBonusPct, source) {
+  if (!Array.isArray(landings) || !(splitDmgVal > 0)) return;
+  source=source || bfPlayerPos();
+  for (var si = 0; si < landings.length; si++) {
+    var landing=landings[si],target=landing.target,point=landing.point;
+    var plan = sgFireballProjectilePlan({pos:point},source);
+    var roles = sgVfxRoles('fireball',{vfxTier:1,vfxBase:true});
+    sgEmitVfx('fireball', target ? [target] : [], floatSel, {
       fxKind: 'projectile', variant: 'fireball-small', elem: 'fire', count: 1,
-      travelMs: [plan.travelMs], projectile: true,
-      vfxTier: 3
-    });
-    sgEmitVfx('fireball', [target], floatSel, {
-      fxKind: 'burst', variant: 'fire-explosion', elem: 'fire', delayMs: plan.travelMs,
-      vfxTier: 3
+      travelMs: [plan.travelMs], projectile: true, hit:false,
+      sizeMult:SG_FIREBALL_SPLIT_SCALE,
+      arcM:plan.length * SG_FIREBALL_SPLIT_ARC_RATIO / bfMeterPx(1),
+      area:{x:point.x,y:point.y,sourceX:source.x,sourceY:source.y,fixedLanding:true},
+      vfxRoles:roles.projectile ? {projectile:roles.projectile} : {}
     });
     sgQueueFlyingProjectile(pEnt, st, 'fireball', splitDmgVal,
-      plan.origin, plan.angle, plan.length, floatSel, [target], {
+      plan.origin, plan.angle, plan.length, floatSel, target ? [target] : [], {
         singleHit: true, targetOnly: true, waitForEnd: plan.waitForEnd,
         travelMs: plan.travelMs, speed: plan.speed, hitFn: sgFireballSplitProjectileHit,
+        fireballSplitLanding:{x:point.x,y:point.y},
         burnSpec: burnSpec, burnBonusPct: burnBonusPct
       }, out);
   }
 }
 
 /* 殞石落地後才挑選附近目標，避免把分裂目標在施法當下鎖死。 */
-function sgFireballMeteorSplit(meteor, spec, burnBonusPct) {
+function sgFireballMeteorSplit(meteor, spec, burnBonusPct, ctx) {
   if (!meteor || !spec || !(spec.count > 0) || !(spec.radius > 0) ||
-      !(spec.dmgVal > 0) || typeof bfRandomOthers !== 'function') return;
-  var targets = bfRandomOthers(meteor.target, meteor.pool || [],
-    spec.count, spec.radius, null);
+      !(spec.dmgVal > 0)) return;
+  var pool=ctx && ctx.getEnemies ? ctx.getEnemies() : meteor.pool;
+  var targets = sgFireballSplitLandings(meteor.target, pool, spec.count, spec.radius);
   sgQueueFireballSplitProjectiles(meteor.pEnt, meteor.st, targets, spec.dmgVal,
-    meteor.floatSel, meteor.out, meteor.burnSpec, burnBonusPct);
+    meteor.floatSel, meteor.out, meteor.burnSpec, burnBonusPct, bfPos(meteor.target));
 }
 
 function sgFireballSplitProjectileHit(projectile, target, ctx) {
@@ -4260,6 +4299,17 @@ function sgFireballSplitProjectileHit(projectile, target, ctx) {
     'fireball', projectile.floatSel, projectile.out, 0, sgFireballBurnBonus(projectile, target));
   if (res && !res.miss && projectile.burnSpec) sgApplyBurn(target, projectile.burnSpec);
   if (ctx.onDamage && projectile.out.dmg > before) ctx.onDamage(projectile.out.dmg - before);
+}
+
+function sgResolveFireballSplitLanding(projectile,ctx,enemies) {
+  var point=projectile.fireballSplitLanding;
+  var touched=bfEnemiesInArea({x:point.x,y:point.y,r:0},(enemies || []).filter(function(e){return e && e.hp>0;}));
+  var intended=projectile.fallbackTargets[0];
+  var target=touched.indexOf(intended)>=0 ? intended : touched[0];
+  if (target) sgProjectileHit(projectile,target,ctx);
+  var roles=sgVfxRoles('fireball',{vfxTier:3,vfxBase:true}),impact=roles.hit || roles.attack;
+  sgEmitVfx('fireball',target ? [target] : [],projectile.floatSel,{fxKind:'burst',variant:'fireball-split-impact',
+    elem:'fire',area:{x:point.x,y:point.y},hit:false,preserveDeadTargets:true,vfxRoles:impact ? {attack:impact} : {}});
 }
 
 /* 傳奇【烈焰之心】：對正在燃燒的敵人的額外總傷加成%。走 sgHitOne 的總傷參數，
@@ -4294,10 +4344,11 @@ function sgFireballProjectileHit(projectile, target, ctx) {
   }
 
   /* 火球爆裂必須在本體飛到並爆炸後才生成下一批一般小火球。 */
-  var splits = projectile.splitTargets || [];
+  var split = projectile.splitSpec;
+  var splits = split ? sgFireballSplitLandings(target,ctx.getEnemies ? ctx.getEnemies() : split.pool,split.count,split.radius) : [];
   sgQueueFireballSplitProjectiles(projectile.pEnt, projectile.st, splits,
     projectile.splitDmgVal, projectile.floatSel, projectile.out, projectile.burnSpec,
-    projectile.burnBonusPct);
+    projectile.burnBonusPct, typeof bfPos === 'function' ? bfPos(target) : null);
 }
 
 /* 超神【火鳳遼原】：每顆殞石落下時，附近伴隨數顆火球一同落下。
@@ -4388,8 +4439,8 @@ function sgCastFireball(pEnt, st, g, lvs, pool, primary, floatSel, out) {
       (1 + sgUltVal(ultPhoenix, 'pct') / 100)
   } : null;
   /* 落地後的附加效果全部收在同一支（迴圈不變量，因此整批共用一個閉包）。 */
-  var onMeteorImpact = (meteorSplitSpec || poolSpec || phoenixSpec) ? function (m) {
-    if (meteorSplitSpec) sgFireballMeteorSplit(m, meteorSplitSpec, burnBonusPct);
+  var onMeteorImpact = (meteorSplitSpec || poolSpec || phoenixSpec) ? function (m, victims, impactCtx) {
+    if (meteorSplitSpec) sgFireballMeteorSplit(m, meteorSplitSpec, burnBonusPct, impactCtx);
     if (poolSpec) sgSpawnFirePool(m.pEnt, m.st, 'fireball', poolSpec, m.floatSel, m.target, null);
     if (phoenixSpec) sgFireballPhoenixBalls(m, phoenixSpec, poolSpec);
   } : null;
@@ -4428,20 +4479,19 @@ function sgCastFireball(pEnt, st, g, lvs, pool, primary, floatSel, out) {
       sgQueueMeteor(pEnt, st, dmgVal, meteorTarget, pool, radius, burnSpec, floatSel, out,
         GT + hitDelay / 1000, meteorExtra);
     } else {
-      var splitTargets = [];
+      var splitSpec = null;
       var splitDmgVal = 0;
       if (lvs[2] > 0) {
         var splitFxPlan = t[2].fx;
         // 「射向目標 m 米內的敵人」沒有指定最近＝範圍內隨機
-        splitTargets = bfRandomOthers(primary, pool, splitCount,
-          bfMeterPx(sgGeometryNumber(splitFxPlan, 'm') || 20), null);
+        splitSpec = {pool:pool,count:splitCount,radius:bfMeterPx(sgGeometryNumber(splitFxPlan,'m') || 20)};
         splitDmgVal = dmgVal * sgVal(splitFxPlan, 'pct', lvs[2]) / 100;
       }
       sgQueueFlyingProjectile(pEnt, st, 'fireball', dmgVal,
         fireballPlan.origin, fireballPlan.angle, fireballPlan.length, floatSel, [primary], {
           singleHit: true, targetOnly: true, waitForEnd: fireballPlan.waitForEnd,
           travelMs: fireballPlan.travelMs, speed: fireballPlan.speed, hitFn: sgFireballProjectileHit,
-          victims: victims, blastRadius: radius, splitTargets: splitTargets, splitDmgVal: splitDmgVal, burnSpec: burnSpec,
+          victims: victims, blastRadius: radius, splitSpec: splitSpec, splitDmgVal: splitDmgVal, burnSpec: burnSpec,
           burnBonusPct: burnBonusPct, poolSpec: poolSpec
         }, out);
     }
