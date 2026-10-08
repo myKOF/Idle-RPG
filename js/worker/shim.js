@@ -42,6 +42,7 @@ var _shimEvents = [];
    一件是幾十個欄位的小物件，512 件的訊息仍是微秒到毫秒等級；真正的保護是下面的「滿了先丟刷新」。 */
 var SHIM_URGENT_VISUAL_CAP = 512;
 var _shimUrgentVisualEvents = [];
+var _shimEvictFrom = 0;        // shimEvictForUrgent 的掃描游標（見該函式）
 /* 持續場域「最近一次送出」的步序，用來認出「場域的第一則事件」（誕生）：
    誕生事件掉了，顯示層就整個場域不建，要等下一拍的刷新才補得回來（剛裝上的技能看起來像沒特效）。 */
 var _shimSustainSeenAt = {};
@@ -124,11 +125,15 @@ function shimEndVisualBatch() {
 function shimEvictForUrgent(incoming, incomingIsBirth) {
   var q = _shimUrgentVisualEvents;
   if (shimIsSustainVisualEvent(incoming) && !incomingIsBirth) return false;
-  for (var i = 0; i < q.length; i++) {
-    if (shimIsSustainVisualEvent(q[i]) && !_shimBirthSet.has(q[i])) { q.splice(i, 1); return true; }
+  /* 游標：q[0.._shimEvictFrom) 已確認沒有可擠掉的刷新。佇列只會尾端新增、從中間或頭部移除，
+     所以這段前綴之後仍然不可擠，不必每進一件事件就重掃一遍（連鎖技能滿場時每步上千件，
+     重掃佔了 Worker 單步成本約五分之一）。結果與逐次從頭掃描完全相同。 */
+  for (var i = _shimEvictFrom; i < q.length; i++) {
+    if (shimIsSustainVisualEvent(q[i]) && !_shimBirthSet.has(q[i])) { q.splice(i, 1); _shimEvictFrom = i; return true; }
   }
   var dropped = q.shift();
   if (dropped) _shimBirthSet.delete(dropped);
+  _shimEvictFrom = q.length;   // 剛掃完整條都沒有可擠的，丟掉最舊的之後剩下的也都不可擠
   return true;
 }
 
@@ -171,6 +176,7 @@ function shimPushEvent(kind, data) {
 function shimDrainUrgentVisualEvents() {
   var out = _shimUrgentVisualEvents;
   _shimUrgentVisualEvents = [];
+  _shimEvictFrom = 0;
   shimEndVisualBatch();
   return out;
 }
@@ -181,6 +187,7 @@ function shimDrainEvents() {
   if (_shimUrgentVisualEvents.length) {
     out = _shimUrgentVisualEvents.concat(out);
     _shimUrgentVisualEvents = [];
+    _shimEvictFrom = 0;
     shimEndVisualBatch();
   }
   if (!_shimBackground && _shimLatestBackgroundFloat) {

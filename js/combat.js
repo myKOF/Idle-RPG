@@ -1682,8 +1682,13 @@ function fieldMonsterAttack(m, p) {
 }
 
 function trackDps(dmg) {
-    FIELD.dpsWindow.push([GT, dmg]);
-    while (FIELD.dpsWindow.length && FIELD.dpsWindow[0][0] < GT - 10) FIELD.dpsWindow.shift();
+    /* 同一個遊戲時刻的傷害併成一筆：連鎖類技能每步上千次命中，逐筆 push 再逐筆 shift，
+       視窗會長到數萬筆、每次 shift 都是 O(n)（實測占天地雷鎖陣單步成本約 16%）。
+       currentDps 只加總視窗內的傷害，併筆不改變總和（僅浮點加總次序不同）。 */
+    var win = FIELD.dpsWindow, last = win.length ? win[win.length - 1] : null;
+    if (last && last[0] === GT) last[1] += dmg;
+    else win.push([GT, dmg]);
+    while (win.length && win[0][0] < GT - 10) win.shift();
 }
 function currentDps() {
     var sum = 0;
