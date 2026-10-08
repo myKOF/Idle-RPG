@@ -12,6 +12,17 @@
 - 測試：`node --test tests/fireball-split-flight.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs tests/starfall-vfx.test.cjs tests/vfx-duration.test.cjs tests/vfx-editor-guard.test.cjs`61/61通過（分裂9/9）；`node --test --test-name-pattern='火球術·爆燃|火球術·火球爆裂' tests/skill2-magic-fire.test.cjs`2/2通過；`npm.cmd run build`487檔通過，`git diff --check`通過。正式Worker引擎、事件白名單與Core／Runtime真函式驗收速度、抵達判定及兩軸60%尺寸，包含同Preset的rain落下火球作比較；未讀寫真人存檔。
 - 交付：無未完成項，可Review／合併；Commit為本紀錄所在提交，未合併／推送。未做長時間真人戰鬥；另一本聊天的殞石飛入點程式／測試及快取保留未提交，由原聊天處理。建議重新整理遊戲驗收，20米飛行約0.61秒，飛回同一爆點的極近距離為0.10秒。
 
+## METEOR-ENTRY-20261008 — 殞石術與雷殞石從畫面上方隨機飛入
+
+- Owner：Codex；Done，單一開發者。使用者要求殞石術及雷殞石的飛入起點在截圖畫面上方紅框內隨機，不再固定左上；實際落點／傷害判定／飛行時間保持事件權威值。上方區域依畫布寬高比例適配，鏡頭／透視需反算。
+- 允許Runtime起點選取、battle-renderer正式ctx與legacy起點、DOM legacy相容、必要快取、定向測試與Adapter文件及本紀錄；不改Preset／素材／配置／技能／Worker／Protocol／傷害／真人存檔、不合併或推送。相關檔已預檢；主index Claude d9f624c4／0e0bdee1修改formula／ui／bridge快取，Editor副本未提交飛行控制UI及Backend／view-model／editor載入版本；使用者已同意只分段更新本次快取。
+- 保留同副本FIREBALL-SPLIT-FLIGHT與使用者既有未提交修改，僅提交本次分段。驗收每顆獨立起點、紅框比例界限、各視窗／透視／鏡頭位置、正式Worker→Runtime落點與抵達扣血時序不變、分裂小火球及地爆天星垂直落下不受影響；定向／回歸／正式渲染／Build後Commit。
+- 完成：每顆從畫布X的12%～86%、Y的0%～12%獨立抽點一次；Renderer反算透視與鏡頭位移，Runtime依meteor／thunder-fall事件接線，素材換名仍適用，航向跟隨飛行方向。舊Canvas／DOM相容畫法同步起點；沒有視窗回呼時維持Preset原角度，高塔、明確來源座標與地爆天星不套用。既有落點、傷害、travelMs、延遲及分裂規則保持。
+- 修改8檔：js/vfx-runtime.js、js/battle-renderer.js、js/vfx.js、index.html、tools/vfx/editor/index.html、tests/meteor-entry-origin.test.cjs、docs/vfx/VFX_RUNTIME_ADAPTER.md及本紀錄。快取Runtime兩頁1.0.183、renderer1.6.179、vfx1.0.80。檢查未改：js/skills2.js、Worker引擎／shim／protocol、Core／PixiBackend、殞石與雷殞Preset／素材索引、分裂及地爆天星測試；其他聊天後完成5239802f／1cddd43c，完整保留。沒有新增或修改素材，素材庫無本次必要變更、不建立空Commit。
+- 測試：`node --test tests/meteor-entry-origin.test.cjs tests/fireball-split-flight.test.cjs tests/starfall-vfx.test.cjs tests/vfx-editor-code-controls.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs`62/62通過，新增7/7。正式Worker引擎同時驗收飛行事件、抵達前不扣血、抵達才扣血及Runtime相同時刻落地；27種畫布／透視／鏡頭組合與抽樣邊界通過。`npm.cmd run build`487檔通過；`git diff --check`通過。
+- 正式渲染：隔離headless Edge載入正式遊戲、Pixi／Core／Backend／Runtime及兩種Preset；920×760與390×760視窗，以正式Worker發射事件建立3顆殞石＋2顆雷殞石的驗收場景。鏡頭位移130／-80後，每顆投影起點仍在指定橫帶、無重複起點，素材可見且飛行結束projectiles／activeEffects皆0，Console error／warning0。臨時測試hook僅在HTTP回應加入，未寫正式原始碼；未讀寫真人存檔。臨時伺服器／瀏覽器已关闭，測試腳本／log／截圖清除。
+- 既有問題／交付：另加跑skills2-flight-speed及vfx-editor-cache-versions，共69項67通過／2失敗；用唯讀HEAD來源重跑這兩檔亦5/7，失敗相同：舊冰箭fixture預期立即呼叫傷害，以及Editor的PixiBackend快取20260930-bend-strength落後主頁20261007-deform-prep。本次Runtime快取兩頁一致；Backend欄位屬Claude進行中修改且不在使用者限定授權內，保留交整合時處理。無本次未完成項，可Review／合併；Commit為本紀錄所在提交，未合併／推送。建議重載遊戲驗收連續殞石與雷殞石；未做真人長時間戰鬥與GPU效能量測。
+
 ## Codex｜BOSS 擺件融合與屬性場景燈光（BOSS-ARENA-ELEMENT-20261008）
 
 - Owner：Codex；Done，單一開發者；使用者已確認本融合修正版「比較有感覺」。使用者要求優化 BOSS 祭壇邊緣物件，依 BOSS 正式屬性決定燈光；追加要求物件融入地板，避免生硬貼上。保留已確認的簡化手繪程度，母圖≤1024×1024、正式素材≤512×512。

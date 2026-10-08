@@ -628,3 +628,13 @@ Core 將每顆球的中心放入各節點的 `sortY`；球體、光暈與電弧�
 滿階／超神的本體欄位繼承也可能令 `thunder-orbit`／`thunder-fall` 另播 `field` 雷球，
 這兩條事件的 `field` 同樣走球心投影；三種雷球事件的非環繞 `projectile` 亦使用 billboard。
 `ground` 預警與雷殞衝擊的 `attack`／`hit` 保留原本場景／地板投影，避免貼地圈被改成立面。
+
+### 殞石術與雷殞石的天空飛入點
+
+`fxKind: rain` 且 `variant: meteor`／`thunder-fall`，每顆透過可選的 `ctx.skyEntryPoint()`
+取得畫面上方獨立隨機起點。共用 `sampleSkyEntry(width,height,rng)` 抽取畫布X的12%～86%、Y的0%～12%；
+正式Canvas反解FOV及world鏡頭偏移，回傳Adapter使用的平行投影座標，legacy Canvas再還原groundScale，DOM直接使用螢幕座標。
+抽樣只使用表現層亂數，事件`area`落點、目標、半徑、`travelMs`／傷害時刻不變；每顆只抽一次、不逐幀重抽，
+飛行朝向跟隨移動方向，空中圖層另沿用航向的FOV校正。依variant判定，配置更換Preset仍生效；明確`sourceX/sourceY`起點優先。
+沒有viewport回呼的編輯器／headless環境保留Preset的fallHeight／fallAngle；無效回呼也維持原行為。
+地爆天星`meteor-starfall`的垂直落下、落雷、菁英殞石及從爆點拋出的`fireball-small`不套此規則。
