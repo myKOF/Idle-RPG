@@ -12,7 +12,7 @@
 
 importScripts('protocol.js?v=49', 'shim.js?v=12');
 importScripts(
-  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261008-npc-elite-skills', '../elite_data.js?v=20261008-elite-groups', '../runeword_data.js?v=20261008-rune-word-cut', '../status.js?v=20261005-cc-decay-count', '../formula.js?v=20261008-elite-groups', '../battlefield.js?v=20261008-rand-others-hoist', '../stats.js?v=20261003-rename-weineng',
+  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261008-npc-elite-skills', '../elite_data.js?v=20261008-elite-groups', '../runeword_data.js?v=20261008-rune-word-cut', '../status.js?v=20261005-cc-decay-count', '../formula.js?v=20261008-hit-rate', '../battlefield.js?v=20261008-rand-others-hoist', '../stats.js?v=20261003-rename-weineng',
   '../item.js?v=20261008-rune-erase-cfg', '../runeword.js?v=20261008-rune-stat-floor',
   '../skills.js?v=20261007-runes4', '../skills2.js?v=20261008-chain-quiet', '../talents.js?v=20261003-rename-weineng',
   '../player.js?v=20261007-rune-seen', '../special_rules.js',
@@ -487,8 +487,21 @@ function buildView() {
   };
 }
 
+/* 每遊戲秒的玩家傷害計算次數：取最近約 1 遊戲秒的視窗，除以視窗內走過的模擬時間。
+   以遊戲時間計而不是現實時間——平衡看的是「每遊戲秒幾次」，模擬落後時兩者會不同。 */
+var _hitWin = [];
+function hitRateSnapshot() {
+  if (typeof HIT_CALLS === 'undefined') return 0;
+  _hitWin.push([SIM_T, HIT_CALLS]);
+  while (_hitWin.length > 2 && SIM_T - _hitWin[1][0] >= 1) _hitWin.shift();
+  var a = _hitWin[0], b = _hitWin[_hitWin.length - 1];
+  var span = b[0] - a[0];
+  return span > 0.05 ? (b[1] - a[1]) / span : 0;
+}
+
 function emitTick() {
   post(MSG_OUT.TICK, {
+    hitRate: hitRateSnapshot(),
     view: buildView(),
     dirty: shimDrainDirty(),
     events: shimDrainEvents(),

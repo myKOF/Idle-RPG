@@ -771,7 +771,11 @@ function applyEnemyHpDamage(ent, damage, drainHits) {
   }
   return amount;
 }
+/* 玩家發出的傷害計算累計次數（含未命中）：FPS 疊層的「命中 N/s」讀它（Worker 以遊戲秒換算）。
+   平衡調整要看的是「每秒算了幾次傷害」，連鎖類技能一秒上千次，這是 Worker 單步成本的主要來源。 */
+var HIT_CALLS = 0;
 function resolveHit(attacker, defender, aCfg, dCfg) {
+  if (aCfg && aCfg.isPlayer) HIT_CALLS++;
   var defenderWasAlive = defender.hp > 0;
   var out = { dmg: 0, crit: false, miss: false, blocked: false, killed: false, thorns: 0, heal: 0, shield: 0, absorbed: 0, manaShield: 0, procs: [] };
   // 命中率 = clamp(攻擊者命中 - 防守者閃避, 下限, 上限)；玩家命中已含基礎值。
