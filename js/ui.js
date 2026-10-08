@@ -3655,7 +3655,7 @@ function battleSkillSlotKey(state) {
 /* 技能圖示：skills2 群組用畫好的圖（images/skills/<群組id>.png，由 tools/skill-icons/ 產生），
    潛力技能等其餘技能沿用 emoji。entry 可為 'sg:<群組id>' 或群組 id；
    圖載入失敗（例如新群組還沒出圖）時退回 emoji。重新出圖後要把 SKILL_ICON_VER +1，否則玩家會看到快取的舊圖。 */
-var SKILL_ICON_VER = '4';
+var SKILL_ICON_VER = '5';
 function skillIconGid(entry) {
   if (typeof entry !== 'string' || typeof SKILLS2 === 'undefined') return '';
   var gid = entry.indexOf('sg:') === 0 ? entry.slice(3) : entry;

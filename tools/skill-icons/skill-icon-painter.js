@@ -446,10 +446,10 @@
         rgba('#a8d0ff', range(R, 0.15, 0.4)));
     }
     normal(c);
-    /* 衝擊波紋：沿刺擊方向排開的橢圓環，越前越大越淡（畫在刀身後，刀尖穿過它們） */
+    /* 衝擊波紋：刀尖最小，沿刀身往後一圈比一圈大、越淡（像音爆錐往後擴散；使用者指定由小漸大，不能反過來） */
     add(c);
     for (var k = 0; k < 4; k++) {
-      var d = -26 + k * 20;
+      var d = 14 - k * 20;
       c.save(); c.translate(tx + dx * d, ty + dy * d); c.rotate(ang);
       c.strokeStyle = rgba('#bfe0ff', 0.85 - k * 0.17); c.lineWidth = 3.2 - k * 0.5;
       c.shadowBlur = 12; c.shadowColor = '#7fb8ff';
