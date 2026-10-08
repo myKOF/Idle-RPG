@@ -97,12 +97,14 @@ test('天地再造紫光柱沿空中保形路徑播放，尺寸為玩家復活�
 });
 test('空中層位於場景網格外、HUD 之下，Preset 與 legacy 使用独立子容器',()=>{
   const s=buildSceneTree(source),layers=s.layers,stage=s.app.stage;
-  assert.equal(layers.airFx.parent,stage);assert.equal(layers.presetAir.parent,layers.airFx);
-  assert.equal(layers.airBack.parent,stage);
-  assert.ok(stage.children.indexOf(layers.airBack)<stage.children.indexOf(layers.airPlayer));
-  assert.ok(stage.children.indexOf(layers.airPlayer)<stage.children.indexOf(layers.airFx));
-  assert.ok(stage.children.indexOf(layers.airFx)>stage.children.indexOf(s.sceneRoot));
-  assert.ok(stage.children.indexOf(layers.airFx)<stage.children.indexOf(layers.playerHud));
+  const camera=s.cameraStage;
+  assert.equal(camera.parent,stage);
+  assert.equal(layers.airFx.parent,camera);assert.equal(layers.presetAir.parent,layers.airFx);
+  assert.equal(layers.airBack.parent,camera);
+  assert.ok(camera.children.indexOf(layers.airBack)<camera.children.indexOf(layers.airPlayer));
+  assert.ok(camera.children.indexOf(layers.airPlayer)<camera.children.indexOf(layers.airFx));
+  assert.ok(camera.children.indexOf(layers.airFx)>camera.children.indexOf(s.sceneRoot));
+  assert.ok(stage.children.indexOf(camera)<stage.children.indexOf(layers.playerHud));
   assert.notEqual(layers.presetAir,layers.airFx);
 });
 test('空中效果跨過玩家腳點會切換前後；地面受擊效果與角色共用深度排序',()=>{

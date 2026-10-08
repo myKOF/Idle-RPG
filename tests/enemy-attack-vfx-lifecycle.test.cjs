@@ -60,7 +60,11 @@ test('敵方子彈走專用後端，玩家子彈仍走原層，飛行260ms與位
 function extract(src,name){const start=src.indexOf('function '+name+'(');assert.ok(start>=0);let depth=0;for(let i=src.indexOf('{',start);i<src.length;i++){if(src[i]==='{')depth++;if(src[i]==='}'&&--depth===0)return src.slice(start,i+1);}throw Error(name);}
 test('Canvas專用層在技能之上／浮字HUD之下；legacy子彈投影仍留在威脅層',()=>{
   const src=fs.readFileSync(path.join(root,'js/battle-renderer.js'),'utf8');
-  const order=['airFx','enemyAir','floatLayer','playerHud','overlay'].map(id=>src.indexOf('app.stage.addChild('+id+')'));
+  const {buildSceneTree,drawOrder}=require('./helpers/battle-scene.cjs');
+  const scene=buildSceneTree(src),nodes=drawOrder(scene.app.stage);
+  assert.equal(scene.layers.enemyAir.parent,scene.cameraStage);
+  assert.equal(scene.layers.float.parent,scene.app.stage);
+  const order=['airFx','enemyAir','float','playerHud','overlay'].map(id=>nodes.indexOf(scene.layers[id]));
   assert.ok(order.every((v,i)=>v>=0&&(!i||v>order[i-1])));
   class Container{constructor(){this.children=[];this.scale={set(){}};this.position={set(){}};}addChild(n){if(n.parent)n.parent.children.splice(n.parent.children.indexOf(n),1);this.children.push(n);n.parent=this;}}
   const layers={airFx:new Container(),enemyAir:new Container(),airBack:new Container()};

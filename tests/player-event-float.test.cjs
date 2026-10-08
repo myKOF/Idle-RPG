@@ -144,8 +144,8 @@ test('血條與死亡倒數的畫面間距及字級符合死亡 UI 規格', () =
   assert.doesNotMatch(renderer, /PLAYER_VITALS_Y|drawPlayerVitals/);
   assert.match(reviveHud, /fontSize:\s*24/);
   assert.match(reviveHud, /reviveText\.y\s*=\s*-104/);
-  /* 倒數在螢幕層，開了輕微透視（2026-09-22）要先換到變形後的螢幕位置，高度仍是角色腳底上方 104 */
-  assert.match(renderer, /perspScreenPoint\(world\.x\s*\+\s*p\.root\.x,\s*world\.y\s*\+\s*p\.root\.y\s*-\s*104\)/);
+  /* 倒數在螢幕層，角色腳底上方104世界單位，位置同時套透視及鏡頭縮放，字級保持24。 */
+  assert.match(renderer, /worldToScreenPoint\(p\.root\.x,\s*p\.root\.y\s*-\s*104\)/);
   assert.match(renderer, /p\.reviveText\.y\s*=\s*revivePt\.y/);
 });
 

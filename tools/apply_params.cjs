@@ -24,7 +24,7 @@ const FILES = {
   data: path.join(ROOT, 'js', 'data.js'), formula: path.join(ROOT, 'js', 'formula.js'),
   combat: path.join(ROOT, 'js', 'combat.js'), item: path.join(ROOT, 'js', 'item.js'),
   skills: path.join(ROOT, 'js', 'skills.js'), player: path.join(ROOT, 'js', 'player.js'),
-  save: path.join(ROOT, 'js', 'save.js')
+  save: path.join(ROOT, 'js', 'save.js'), renderer: path.join(ROOT, 'js', 'battle-renderer.js')
 };
 const WRITE = process.argv.includes('--write');
 
@@ -344,6 +344,7 @@ Object.keys(PART_KEYS).forEach(nm => {
 // 場景倍率改由 config/CSV/Zones.csv 管理；game_parameters 不再是地圖倍率來源。
 // 新遊戲／重新開局的初始資源（由參數表「0-遊戲預設」控制）。
 scalar('player', 'INITIAL_GOLD', '0-遊戲預設', '開場金幣', 0);
+scalar('renderer', 'BATTLE_CAMERA_DISTANCE_PERCENT', '8-戰鬥畫面', '戰鬥鏡頭距離', 0);
 scalar('player', 'INITIAL_SCRAP', '0-遊戲預設', '開場裝備碎片', 0);
 scalar('player', 'INITIAL_ESSENCE', '0-遊戲預設', '開場附魔精華', 0);
 
