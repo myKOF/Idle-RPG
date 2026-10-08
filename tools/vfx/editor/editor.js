@@ -770,7 +770,7 @@
   /* 視窗本身（不隨換一份特效而重來）：畫布、預覽 runtime、播放狀態、鏡頭、狀態列訊息。 */
   var PANE_FIELDS = ['app', 'stageRoot', 'bgSolid', 'checker', 'syncCanvasSize', 'effectRoot',
     'backend', 'runtime', 'handle', 'playing', 'previewLoop', 'zoom', 'panX', 'panY', 'pan',
-    'previewPending', 'saveStatus', 'validation', 'dirtyFlag', 'deformationSeed'];
+    'flightSpeed', 'flightX', 'previewPending', 'saveStatus', 'validation', 'dirtyFlag', 'deformationSeed'];
 
   DOC_FIELDS.forEach(function (key) {
     Object.defineProperty(state, key, {
@@ -2043,18 +2043,21 @@
     if (!g || !state.stageRoot) return;
     var w = state.app.renderer.width, h = state.app.renderer.height;
     var ox = state.stageRoot.x, oy = state.stageRoot.y;
+    /* 飛行預覽時地面往後退（見 advanceFlight）。只有真的在飛的那幾幀會變，
+       所以「條件沒變就不重畫」在平常完全照舊；飛行中這一格每幀重畫一次。 */
+    var lx = ox - (state.flightX || 0) * state.zoom;
     var last = grid.last;
-    if (last && last.w === w && last.h === h && last.ox === ox && last.oy === oy &&
+    if (last && last.w === w && last.h === h && last.ox === ox && last.oy === oy && last.lx === lx &&
         last.zoom === state.zoom && last.on === state.gridOn && last.bg === state.background) {
       return;
     }
-    grid.last = { w: w, h: h, ox: ox, oy: oy, zoom: state.zoom,
+    grid.last = { w: w, h: h, ox: ox, oy: oy, lx: lx, zoom: state.zoom,
                   on: state.gridOn, bg: state.background };
     g.clear();
     if (!state.gridOn) return;
 
     var spec = VFXViewModel.gridSpec({
-      width: w, height: h, originX: ox, originY: oy, zoom: state.zoom
+      width: w, height: h, originX: ox, originY: oy, zoom: state.zoom, latticeX: lx
     });
     var pal = VFXViewModel.gridPalette(state.background);
     strokeGridLines(g, spec.minorX, spec.minorY, w, h, pal.colour, pal.minorAlpha);
@@ -2154,6 +2157,7 @@
 
   function updateViewReadout() {
     if (!ctx || state.inBackground) return;   // 讀數是焦點視窗的鏡頭
+    syncFlightSpeed();                        // 飛行速度也是這一格的鏡頭
     var btn = $('zoom-reset');
     if (btn) btn.textContent = '縮放 ' + Math.round(state.zoom * 100) + '%';
     var note = $('grid-scale');
@@ -4461,6 +4465,49 @@
       seed: state.deformationSeed || PREVIEW_SEED,
       startTime: startTime || 0
     });
+    /* 每一次重播都從原點起飛：舊的拖尾已經跟著 stopAll 收掉，鏡頭也回到原位。 */
+    state.flightX = 0;
+    if (state.effectRoot) state.effectRoot.x = 0;
+  }
+
+  /* ---------------- 飛行預覽（2026-10-08 使用者要求） ----------------
+
+     子彈的拖尾長什麼樣子，原地播放是看不出來的：世界座標的粒子（worldSpace，
+     預設就是）出生後留在原地，特效原點往前飛，兩者拉開的距離才是拖尾。
+     所以這裡照遊戲的做法推特效：vfx-runtime 的飛行物每幀用 setTransform 改
+     position（見 playProjectile 後面那段逐幀前進），Core 再讓新粒子從新原點出生、
+     舊粒子留在原地——用的是同一個 Core、同一條 setTransform，不另寫一套位移。
+
+     鏡頭跟著特效走（effectRoot 反向平移同一段距離），而不是讓特效飛出畫面：
+       ① loop 的投射物會一直飛，飛出去就看不到了，得另外做「繞回來」
+       ② Gizmo 的框是用 preset 座標畫在原點上的，特效留在畫面中央，框才對得上，
+          飛行中照樣可以拖、可以改參數
+     速度感交給格線：地面往後退（drawGrid 的 latticeX），軸線留在特效原點上。
+     方向固定往右（rotation 0），也就是遊戲裡往右飛的那一發——preset 本來就是朝右畫的。 */
+  function advanceFlight(dt) {
+    if (!(state.flightSpeed > 0)) return;
+    if (state.handle === null || state.handle === undefined) return;
+    /* 播完了（非 loop、預覽循環關著）就停在原地，不要對著空白畫面一直捲格線。 */
+    if (state.runtime.timeOf(state.handle) === null) return;
+    state.flightX += state.flightSpeed * VFXViewModel.PX_PER_METRE * dt;
+    state.runtime.setTransform(state.handle, { position: { x: state.flightX, y: 0 } });
+    state.effectRoot.x = -state.flightX;
+  }
+
+  /* 工具列的「飛行 __ 米/秒」。作用在焦點視窗，和縮放一樣是那一格自己的鏡頭。
+     負數不收：往左飛要把特效轉 180°，那會讓 Gizmo 的框與畫面左右相反。 */
+  function setFlightSpeed(value) {
+    var v = Number(value);
+    state.flightSpeed = isFinite(v) && v > 0 ? v : 0;
+    syncFlightSpeed();
+  }
+
+  function syncFlightSpeed() {
+    var input = $('flight-speed');
+    if (!input || !ctx) return;
+    /* 正在打字的那一格不要蓋掉：打到「1」時改寫成「1」沒差，打「0.」時會被吃成「0」。 */
+    if (document.activeElement === input) return;
+    input.value = String(state.flightSpeed || 0);
   }
 
   /* 預覽循環：這一輪播完就從頭再來，調參數時不必一直去按 ⟲。
@@ -5831,6 +5878,11 @@
       panX: 0,
       panY: 0,
       pan: null,
+      /* 飛行預覽（見 advanceFlight）：速度是米／秒，0＝原地播放；flightX 是特效目前飛到的
+         世界座標（px）。一樣是檢視狀態，不進 preset、不進歷史、不記 cookie——
+         隔天打開特效自己在跑，會以為是 preset 被改了。 */
+      flightSpeed: 0,
+      flightX: 0,
       gizmo: {
         overlay: null,          // PIXI.Container，掛在 stageRoot 之後
         gfx: null,              // PIXI.Graphics
@@ -5985,10 +6037,15 @@
   function tickPane(ticker) {
     /* 在 playing 判斷之前：暫停時改變視窗大小，畫布一樣要跟上 */
     state.syncCanvasSize();
+    var running = state.playing && state.runtime;
+    var dt = Math.min(ticker.deltaMS, 100) / 1000;
+    /* 先往前飛、再畫格線、最後 update：這一幀新出生的粒子從新原點出來，
+       格線與拖尾也是同一個位置，不會差一幀而抖動。 */
+    if (running) advanceFlight(dt);
     drawGrid();                          // 兩者都只在條件變了才真的重畫
     drawGizmo();
-    if (!state.playing || !state.runtime) return;
-    state.runtime.update(Math.min(ticker.deltaMS, 100) / 1000);
+    if (!running) return;
+    state.runtime.update(dt);
     tickPreviewLoop();                   // 播完就重來（純預覽，不碰 preset.loop）
     /* 工具列不再顯示 effects／particles／pooled／dropped 的計數（2026-09-16 使用者要求：
        那一串把「關閉編輯器」擠到第二行）。要看數字時，主控台打 __vfxEditor.runtime.stats()。 */
@@ -6553,6 +6610,13 @@
       if (e.target.files[0]) loadPresetFromFile(e.target.files[0]);
     };
     $('btn-add-pane').onclick = addPane;
+    /* input：打字當下就生效（調速度時要即時看拖尾拉長縮短）；change：離開欄位時把
+       打壞的字（空白、負數）改回實際生效的值。 */
+    $('flight-speed').oninput = function () { setFlightSpeed($('flight-speed').value); };
+    $('flight-speed').onchange = function () {
+      setFlightSpeed($('flight-speed').value);
+      $('flight-speed').value = String(state.flightSpeed);
+    };
     $('btn-add-layer').onclick = function () { addLayer($('new-layer-type').value); };
     $('btn-add-asset').onclick = openPickerForNewLayer;
     $('btn-group').onclick = groupSelection;

@@ -123,6 +123,10 @@
       <!-- 新增視窗：預覽區再切出一格（最多四格，十字切開），每格各開一份特效同時編輯。
            點哪一格焦點就到哪裡，Ctrl+點擊可以多選，播放／暫停與預覽循環一起套用。 -->
       <button id="btn-add-pane" class="add-pane" type="button">＋ 新增視窗</button>
+      <!-- 飛行預覽：特效以這個速度往右飛，看拖尾在遊戲裡實際拉出來的樣子（只影響預覽）。 -->
+      <label class="flight-speed" title="預覽用：特效以這個速度往右飛（1 米 = 10px，與遊戲同比例）。&#10;鏡頭跟著特效走、格線往後退，世界座標的粒子留在原地，拉出來的就是遊戲裡的拖尾。&#10;0 = 原地播放。作用在焦點視窗，不存進 Preset。">
+        <span>飛行</span><input type="number" id="flight-speed" min="0" step="1" value="0"><span>米/秒</span>
+      </label>
       <span id="bg-current" class="bg-current"></span>
       <span class="sep"></span>
       <!-- 格線與縮放同屬「怎麼看」，所以跟背景色放同一列，離預覽區最近。 -->
@@ -274,14 +278,14 @@
 <script src="/js/vfx-water-tornado.js?v=1.0.4"></script>
 <script src="/__vfx_version.js"></script>
 <script src="/js/vfx-core.js?v=20261007-deform-prep"></script>
-<script src="/js/vfx-pixi-backend.js?v=20260930-bend-strength"></script>
+<script src="/js/vfx-pixi-backend.js?v=20261007-deform-prep"></script>
 <script src="/js/util.js?v=1.0.3"></script>
 <script src="/js/vfx-runtime.js?v=1.0.181"></script>
 <script src="/tools/vfx/editor/runtime-preview.js?v=20260929-code-controls"></script>
 <script src="/tools/vfx/vfx-semantic-vocab.cjs"></script>
 <script src="/tools/vfx/preset-cost.cjs?v=20261001-pane-cost"></script>
 <script src="/tools/vfx/editor/preset-id-policy.js"></script>
-<script src="/tools/vfx/editor/view-model.js"></script>
+<script src="/tools/vfx/editor/view-model.js?v=20261008-flight"></script>
 <script src="/tools/vfx/editor/layout-schema.js"></script>
 <script src="/tools/vfx/editor/layer-model.js?v=20260929-code-controls"></script>
 <script src="/tools/vfx/editor/multi-edit-model.js"></script>
@@ -295,6 +299,6 @@
 <script src="/tools/vfx/editor/history.js"></script>
 <script src="/tools/vfx/editor/spine-ref.js"></script>
 <script src="/tools/vfx/editor/save-guard.js?v=20260930-precise-guard"></script>
-<script src="/tools/vfx/editor/editor.js?v=20261003-layer-duration"></script>
+<script src="/tools/vfx/editor/editor.js?v=20261008-flight"></script>
 </body>
 </html>

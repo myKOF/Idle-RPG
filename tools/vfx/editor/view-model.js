@@ -88,8 +88,12 @@
     return function (v) { return Math.abs(v - origin) > 1e-6; };
   }
 
-  /* opts = { width, height, originX, originY, zoom }，全部是畫布上的 CSS 像素。
-     originX/originY 是特效原點（0,0）在畫布上的位置。 */
+  /* opts = { width, height, originX, originY, zoom, latticeX }，全部是畫布上的 CSS 像素。
+     originX/originY 是特效原點（0,0）在畫布上的位置。
+
+     latticeX（可省略，預設＝originX）是「直線那一組格子」對齊的位置。飛行預覽時
+     鏡頭跟著特效走，地面（格子）要往後退，軸線卻要留在特效原點上——兩者因此分家：
+     軸線看 originX，格子看 latticeX。 */
   function gridSpec(opts) {
     var o = opts || {};
     var zoom = clampZoom(o.zoom);
@@ -97,6 +101,7 @@
     var h = Math.max(0, Number(o.height) || 0);
     var ox = Number(o.originX) || 0;
     var oy = Number(o.originY) || 0;
+    var lx = o.latticeX === undefined ? ox : (Number(o.latticeX) || 0);
     var minorPx = PX_PER_METRE * METRES_PER_MINOR * zoom;
     var majorPx = PX_PER_METRE * METRES_PER_CELL * zoom;
 
@@ -113,12 +118,12 @@
     };
 
     if (majorPx >= MIN_MAJOR_PX) {
-      spec.majorX = gridTicks(ox, w, majorPx).filter(notAt(ox));
+      spec.majorX = gridTicks(lx, w, majorPx).filter(notAt(ox));
       spec.majorY = gridTicks(oy, h, majorPx).filter(notAt(oy));
     }
     if (minorPx >= MIN_MINOR_PX) {
-      spec.minorX = gridTicks(ox, w, minorPx)
-        .filter(notAt(ox)).filter(notMultipleOf(ox, majorPx));
+      spec.minorX = gridTicks(lx, w, minorPx)
+        .filter(notAt(ox)).filter(notMultipleOf(lx, majorPx));
       spec.minorY = gridTicks(oy, h, minorPx)
         .filter(notAt(oy)).filter(notMultipleOf(oy, majorPx));
     }

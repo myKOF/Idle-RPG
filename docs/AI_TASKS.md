@@ -9468,3 +9468,15 @@ Worker 存活且頁面正常完成載入。
 - 實機：隔離headless Edge／隨機Port唯讀HTTP／新Context，正式Pixi、Core、Adapter、Backend與Preset素材播放1.4秒原刀波；非循環、0.5秒時仍有1份效果、1.5秒時已回收，Console error／warning為0。沒有連入真人存檔，瀏覽器與服務已關閉，臨時驗證腳本清除。
 - 雙倉庫提交：素材庫286dcea已由amend替換為`44f8746`，保留父提交4151cfe；保存Preset及原樣layout並逐位元核對遊戲檔（Preset SHA256：3844aa33c22702ca2805f640602ba8c44d2020c0a63885f1a6b851d2228b00a1）。遊戲bde74dee以本紀錄所在`[Codex] fix: 恢復原刀波並將旋轉速度提高20%`替換，保留父提交f951e6e9，舊循環提交不再位於兩條分支歷史。未合併／推送。
 - 交付：本次無未完成項目，可審查合併；完整回歸的9項既有失敗保留，未做長時間真人戰鬥。下一步先另存備份Editor未儲存內容，再重載Editor與遊戲驗收，勿將舊頁內容直接覆蓋新版。
+
+## Claude｜VFX 編輯器飛行預覽：特效以 N 米/秒往右飛（VFX-FLIGHT-PREVIEW-20261008）
+
+- Owner：Claude；Done。使用者要求：在編輯器加入飛行速度，預設 0，輸入 10 就是每秒往右飛 10 米，用來看飛行子彈在遊戲裡的實際飛行姿態（拖尾）。
+- 做法：預覽區上方「＋ 新增視窗」右邊新增「飛行 __ 米/秒」。每幀照遊戲的做法用 Core 的 `setTransform` 推特效原點（`js/vfx-runtime.js` 的飛行物就是這樣逐幀前進），世界座標的粒子留在原地，拉出來的就是遊戲裡的拖尾——同一個 Core、同一條路，不另寫位移公式。1 米 = 10px，與格線同一把尺。
+- 鏡頭跟著特效走（`effectRoot` 反向平移），格線往後退、軸線留在特效原點：loop 的投射物會一直飛，不必做「飛出畫面再繞回來」；Gizmo 的框仍對得上，飛行中照樣能拖、能改參數。`view-model.js` 的 `gridSpec` 新增可省略的 `latticeX`（格子對齊位置），不給時與原本完全相同。
+- 只是檢視設定：作用在焦點視窗、不進 preset、不進歷史、不記 cookie；負數／亂打退成 0（往左飛要轉 180°，Gizmo 會左右相反）。每次重播從原點起飛；非 loop 特效播完就停，不對著空白捲格線。速度 0 時格線完全不重畫，飛行中只有那一格每幀重畫。
+- 順手修正：編輯器頁的 `js/vfx-pixi-backend.js` 版號落後主頁（我 b752014e 漏升，CV-1 紅），改成 `20261007-deform-prep`。
+- 修改 `tools/vfx/editor/editor.js`、`view-model.js`、`index.html`（新欄位＋三個版號）、`editor.css`、`tests/vfx-editor-view.test.cjs`（VIEW-36／36B／36C／37／38／39／40）。沒有動到 preset、配置表或遊戲程式。
+- 驗證：新增測試跑真函式（假 runtime 收 setTransform：10 米/秒 1 秒＝100px、鏡頭反向、播完不動、重播歸零、亂打退 0；格子跟 latticeX、軸線不動、大小格不重疊）。10 個突變全部抓到（第一輪 M10「預設對齊 0」活下來——原點 300 剛好是 60 的倍數，改用 317 後抓到）。編輯器＋preset 測試 483 項中 6 項失敗，其中 CV-1 已由本次修好；其餘 CAP-2、HISTORY-42、16b canonical 為既有基線，LAYOUT-1（`pillar-indomitable` 缺 layout）與 LAYOUT-3（`bolt-sky-purple` 等多群組）是 preset 資料，非本次範圍。build_check 483 檔通過、diff check 通過。
+- 實機（本機編輯器 28362，`proj-dragon-devour`）：在工具列輸入 10，手動推 2 秒 60fps 實測飛了 200px；格線每幀後退 1.67px、軸線固定、速度改 0 後零重畫；30 米/秒時火焰拖尾明顯拉長、Gizmo 框留在彈體上；主控台無新錯誤。
+- 衝突預檢：`ai/codex`／`ai/antigravity`／`develop` 都沒有比 HEAD 新、動到 `tools/vfx/editor/` 的提交。未合併／推送。
