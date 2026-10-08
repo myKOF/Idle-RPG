@@ -11264,7 +11264,7 @@ function uiStallDiagText(now) {
   return text;
 }
 
-/* FPS 右側的「命中 N/s」：每遊戲秒的玩家傷害計算次數（含未命中），顯示到小數一位。
+/* FPS 右側的「命中 N/s」：每遊戲秒的玩家傷害計算次數（含未命中與衍生／持續傷害），顯示到小數一位。
    Worker 單步成本幾乎正比於它，調整平衡時以它為準。取不到（Worker 未開機）就不顯示。 */
 function uiHitRateText() {
   var st = (typeof WorkerBridge !== 'undefined' && WorkerBridge.status) ? WorkerBridge.status() : null;

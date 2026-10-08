@@ -738,6 +738,7 @@ function gmMpLockActive(ent) {
 }
 // 非 resolveHit 的直接傷害也必須經過同一個高塔 BOSS 上限。
 function applyEnemyHpDamage(ent, damage, drainHits) {
+  HIT_DIRECT++;
   var wasAlive = ent && ent.hp > 0;
   var amount = Math.max(0, Number(damage) || 0);
   if (ent && ent.maxHp > 0 && typeof skill2AbyssDamageTakenMultiplier === 'function') {
@@ -771,9 +772,12 @@ function applyEnemyHpDamage(ent, damage, drainHits) {
   }
   return amount;
 }
-/* 玩家發出的傷害計算累計次數（含未命中）：FPS 疊層的「命中 N/s」讀它（Worker 以遊戲秒換算）。
-   平衡調整要看的是「每秒算了幾次傷害」，連鎖類技能一秒上千次，這是 Worker 單步成本的主要來源。 */
+/* 玩家對敵人的傷害計算累計次數：FPS 疊層的「命中 N/s」讀 HIT_CALLS＋HIT_DIRECT（Worker 以遊戲秒換算）。
+   平衡調整要看的是「每秒算了幾次傷害」，連鎖類技能一秒上千次，這是 Worker 單步成本的主要來源。
+   HIT_CALLS＝進 resolveHit 的玩家攻擊（含未命中）；HIT_DIRECT＝不經 resolveHit 的直接傷害，
+   一律從 applyEnemyHpDamage 出去（衍生傷害、持續傷害跳段、傳奇、潛能、符文真言），兩者不重複。 */
 var HIT_CALLS = 0;
+var HIT_DIRECT = 0;
 function resolveHit(attacker, defender, aCfg, dCfg) {
   if (aCfg && aCfg.isPlayer) HIT_CALLS++;
   var defenderWasAlive = defender.hp > 0;
