@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## Codex｜BOSS 倒數等正式開戰才顯示（BOSS-TIMER-INTRO-20261008）
+
+- Owner：Codex；Done。使用者要求 BOSS 戰 60 秒倒數從進場完成、雙方正式開打起算。單一開發者；實際 towerTick 已於 introCd 期間凍結計時／行動，本次修正 UI 在 elapsed=0 時仍自行插值的問題。
+- 前置：使用者已完成 Claude 符文提交合併；本副本 ai/codex 乾淨，ui／index／本紀錄／新增測試衝突預檢無其他來源修改。允許 js/ui.js 倒數、index.html 對應快取、tests/tower-scene-intro.test.cjs 及本紀錄；禁止改戰鬥數值、Worker 協議、存檔、素材與其他副本。
+- 驗收：兩處倒數於登場及首個開戰快照前保持完整限時，正式 elapsed 推進後才插值；連挑清除舊錨點、暫停維持不動。測試同時覆蓋實際模擬層登場與畫面計時、相關回歸及 Build；完成後 Commit 交使用者審查整合，不合併／推送。
+- 完成：renderTowerTimerFrame 在 introCd>0 或 elapsed 尚未推進時清除插值錨點，戰場頂端／封魔塔分頁讀同一份權威計時；正式開戰後維持原逐幀插值。修改 js/ui.js、index.html（ui 1.0.149→1.0.150）、新增 tests/tower-scene-intro.test.cjs 及本紀錄。檢查未改 AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、js/tower.js／battle-renderer.js／bridge.js／worker/sim.worker.js／protocol.js 與相關既有測試。無素材變更、無必要素材庫 Commit，Worker 與協議不變。
+- 驗證：新增三項測試在修正前全部失敗（進場仍提前扣秒），修正後 `node --test tests/tower-scene-intro.test.cjs tests/boss-display-state.test.cjs tests/tower-battlefield.test.cjs tests/battle-arena.test.cjs tests/tower-head-layout.test.cjs tests/tower-auto-result.test.cjs tests/combat-pause.test.cjs` 29/29 通過；包含真實 startTowerFight／towerTick 進場不移動、不出手、不計時。`npm.cmd run build` 483 檔通過；`git diff --check` 通過。
+- 瀏覽器：隔離 headless Edge／全新頁面，以正式 UI 計時函式與 DOM／requestAnimationFrame 驗進場等待 2.7 秒後兩處仍為 60.0s、introCd 歸零但尚無開戰快照再等 0.25 秒仍不扣秒；elapsed 首次推進後兩處平滑降至 59.6s。Console error／warning 0；未載入真人存檔，瀏覽器已關閉、臨時腳本已刪除。
+- 交付：Commit 為本紀錄所在 `[Codex] fix: BOSS 倒數等正式開戰才開始顯示`。本次無未完成項目或已知新增風險，可審查合併；未合併／推送。限制：未做完整真人長時間戰鬥，既有模擬與場景轉場時序不變。下一步重載遊戲，確認轉場顯示 60.0s、開戰後才倒數。
+
 ## Claude｜符文真言的屬性依級距削弱 50%～70%（RUNEWORD-STATS-CUT-20261008）
 
 - Owner：Claude；Done。使用者要求：符文真言的能力也同比降低 50%～70%（同上一輪單顆符文的削弱）。

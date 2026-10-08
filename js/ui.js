@@ -7223,6 +7223,8 @@ function renderTowerTimerFrame() {
   var view = viewState();
   var paused = !!(view && view.paused);
   if (paused) UI.towerTimerAnchor = null;
+  // 登場期間與首個開戰快照前不插值；計時從模擬層 elapsed 正式推進才開始。
+  if (runtime.introCd > 0 || !(runtime.elapsed > 0)) UI.towerTimerAnchor = null;
   var anchor = UI.towerTimerAnchor;
   var remain = !paused && anchor
     ? Math.max(0, towerTimeLimitWithTalents(runtime.floor) - (anchor.elapsed + (towerTimerNow() - anchor.at) / 1000))
