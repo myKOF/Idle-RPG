@@ -2,7 +2,9 @@
 /* 寶石種類表：GEM_TYPES 的每個 key 對應一份外觀。
    規則：48 種各有自己的顏色，不允許兩種長得一樣。顏色撞了就加第二色（acc）：
      acc＋accMode：grad 斜向漸層／center 中心換色／rim 外緣換色／facet 部分刻面換色。
-   家族：plain 一般刻面；core 內部有發光核心（元素傷害提升「核」）；ward 寶石後方有一大片柔和的光暈（元素抗性「抗」）。
+   家族：plain 一般刻面；core 內部有發光核心（元素傷害提升「核」）；ward 元素抗性（「抗」，沒有專屬造型）。
+   光暈（寶石外圍的柔光）只看階數：1～5 階沒有、6 階起淡淡出現、10 階最濃（強度表 gem-core.cjs TIERS.glow）；
+   glow 欄位只決定光暈「顏色」，抗性寶石的光暈色與本體色相不同，所以 6 階起仍認得出。
    同一元素的三個家族色系相近（玩家記得住元素），但主色、第二色、核心光／光暈色都不同。
    改完請跑 node tools/gems/gem-audit.cjs 檢查兩兩顏色距離。 */
 const { hsl } = require('./gem-core.cjs');
@@ -72,15 +74,15 @@ def('coreDark', { family: 'core', pal: pal(286, 0.56, { lb: 0.2, ld: 0.04, ll: 0
 def('coreEarth', { family: 'core', pal: pal(42, 0.6, { lb: 0.26, ld: 0.07, ll: 0.46, core: hsl(42, 0.96, 0.76) }), acc: pal(32, 0.95, { lb: 0.5 }), accMode: 'center', glow: hsl(36, 0.9, 0.48) });
 def('coreWind', { family: 'core', pal: pal(178, 0.72, { lb: 0.32, ld: 0.07, ll: 0.56, core: hsl(158, 0.85, 0.95) }), acc: pal(152, 0.6, { lb: 0.72, ll: 0.9 }), accMode: 'center', glow: hsl(165, 0.8, 0.55) });
 
-// ---- 元素抗性（ward）：寶石本體＋後方光暈，光暈色與本體色相不同 ----
-def('wardFire', { family: 'ward', pal: pal(26, 0.82, { dh1: -12, lb: 0.36, ld: 0.08, ll: 0.58 }), acc: pal(46, 1, { lb: 0.52, ll: 0.76 }), accMode: 'center', halo: hsl(46, 1, 0.64), glow: hsl(40, 1, 0.5) });
-def('wardIce', { family: 'ward', pal: pal(214, 0.78, { lb: 0.5, ld: 0.14, ll: 0.76 }), acc: pal(190, 0.6, { lb: 0.84, ll: 0.95 }), accMode: 'center', halo: hsl(194, 0.95, 0.86), glow: hsl(196, 0.9, 0.7) });
-def('wardLightning', { family: 'ward', pal: pal(57, 0.96, { lb: 0.5 }), acc: pal(285, 0.7, { lb: 0.4 }), accMode: 'rim', halo: hsl(272, 0.85, 0.78), glow: hsl(270, 0.8, 0.6) });
-def('wardPoison', { family: 'ward', pal: pal(125, 0.76, { lb: 0.34, ld: 0.08, ll: 0.56 }), acc: pal(70, 0.9, { lb: 0.5 }), accMode: 'center', halo: hsl(86, 0.95, 0.58), glow: hsl(86, 0.9, 0.45) });
-def('wardDark', { family: 'ward', pal: pal(268, 0.62, { lb: 0.4, ld: 0.09, ll: 0.62 }), acc: pal(236, 0.5, { lb: 0.3, ld: 0.06 }), accMode: 'rim', halo: hsl(296, 0.6, 0.78), glow: hsl(290, 0.6, 0.55) });
-def('wardLight', { family: 'ward', pal: pal(20, 0.42, { lb: 0.78, ld: 0.36, ll: 0.9, lh: 1 }), acc: pal(40, 0.95, { lb: 0.55 }), accMode: 'rim', halo: hsl(50, 1, 0.84), glow: hsl(48, 1, 0.7) });
-def('wardEarth', { family: 'ward', pal: pal(32, 0.7, { lb: 0.38, ld: 0.1, ll: 0.58 }), acc: pal(100, 0.5, { lb: 0.34, ll: 0.56 }), accMode: 'rim', halo: hsl(96, 0.6, 0.56), glow: hsl(90, 0.55, 0.45) });
-def('wardWind', { family: 'ward', pal: pal(202, 0.5, { lb: 0.6, ld: 0.22, ll: 0.82 }), acc: pal(178, 0.55, { lb: 0.78, ll: 0.94 }), accMode: 'grad', accAngle: 0.9, halo: hsl(176, 0.7, 0.9), glow: hsl(176, 0.7, 0.7) });
+// ---- 元素抗性（ward）：光暈色（glow）與本體色相不同 ----
+def('wardFire', { family: 'ward', pal: pal(26, 0.82, { dh1: -12, lb: 0.36, ld: 0.08, ll: 0.58 }), acc: pal(46, 1, { lb: 0.52, ll: 0.76 }), accMode: 'center', glow: hsl(46, 1, 0.64) });
+def('wardIce', { family: 'ward', pal: pal(214, 0.78, { lb: 0.5, ld: 0.14, ll: 0.76 }), acc: pal(190, 0.6, { lb: 0.84, ll: 0.95 }), accMode: 'center', glow: hsl(194, 0.95, 0.86) });
+def('wardLightning', { family: 'ward', pal: pal(57, 0.96, { lb: 0.5 }), acc: pal(285, 0.7, { lb: 0.4 }), accMode: 'rim', glow: hsl(272, 0.85, 0.78) });
+def('wardPoison', { family: 'ward', pal: pal(125, 0.76, { lb: 0.34, ld: 0.08, ll: 0.56 }), acc: pal(70, 0.9, { lb: 0.5 }), accMode: 'center', glow: hsl(86, 0.95, 0.58) });
+def('wardDark', { family: 'ward', pal: pal(268, 0.62, { lb: 0.4, ld: 0.09, ll: 0.62 }), acc: pal(236, 0.5, { lb: 0.3, ld: 0.06 }), accMode: 'rim', glow: hsl(296, 0.6, 0.78) });
+def('wardLight', { family: 'ward', pal: pal(20, 0.42, { lb: 0.78, ld: 0.36, ll: 0.9, lh: 1 }), acc: pal(40, 0.95, { lb: 0.55 }), accMode: 'rim', glow: hsl(50, 1, 0.84) });
+def('wardEarth', { family: 'ward', pal: pal(32, 0.7, { lb: 0.38, ld: 0.1, ll: 0.58 }), acc: pal(100, 0.5, { lb: 0.34, ll: 0.56 }), accMode: 'rim', glow: hsl(96, 0.6, 0.56) });
+def('wardWind', { family: 'ward', pal: pal(202, 0.5, { lb: 0.6, ld: 0.22, ll: 0.82 }), acc: pal(178, 0.55, { lb: 0.78, ll: 0.94 }), accMode: 'grad', accAngle: 0.9, glow: hsl(176, 0.7, 0.9) });
 def('wardAll', { family: 'ward', pal: pal(200, 0.2, { lb: 0.74, ld: 0.34, ll: 0.9, lh: 1 }), tex: { kind: 'rainbow' }, glow: hsl(280, 0.5, 0.78) });
 
 module.exports = D;

@@ -46,3 +46,45 @@
 
 .gem-ico-fused.is-pair .gem-ico-part:first-child { left: 0; top: 0; }
 .gem-ico-fused.is-pair .gem-ico-part:last-child { left: auto; right: 0; top: auto; bottom: 0; }
+
+/* 寶石頁十階列：每一階一個按鈕（圖＋階名＋數值＋持有量）。合成工具下，目前選的那一階描亮。 */
+.gi-curve { width: 34px; height: 34px; margin-bottom: 1px; }
+
+#tab-gems button.gx-curve-cell {
+  font-family: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: border-color .12s, background .12s, box-shadow .12s;
+}
+
+#tab-gems button.gx-curve-cell:hover {
+  border-color: color-mix(in srgb, var(--c) 70%, transparent);
+  background: #14161b;
+}
+
+#tab-gems[data-gem-tool="compose"] button.gx-curve-cell.is-sel {
+  border-color: var(--c);
+  background: color-mix(in srgb, var(--c) 14%, #0c0d10);
+  box-shadow: 0 0 0 1px var(--c), 0 0 10px -2px var(--c);
+}
+
+/* 合成配方：五階以上顯示「×6 → 神鑄」，十階只有一格＋「已是最高階」 */
+#tab-gems .gx-recipe-mult {
+  align-self: center;
+  margin-left: 4px;
+  font-size: 15px;
+  font-weight: bold;
+  color: #d9c9a0;
+}
+
+#tab-gems .gx-recipe-max {
+  align-self: center;
+  margin-left: 10px;
+  font-size: 13px;
+  color: #a39d90;
+}
+
+#tab-gems .gx-actions .btn:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}

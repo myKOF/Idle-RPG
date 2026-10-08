@@ -7,10 +7,10 @@
    每個像素落在哪個平面，就是哪個刻面；法線是常數，所以刻面邊界是乾淨的直線。
    上色：法線 → 漫射＋環境反射（幾個軟光箱）＋鏡面 → 色階（暗／基／亮／高光）。
    材質（不透明石的條紋、紋路、閃點…）在刻面色上疊一層程序化紋理。
-   最後在 256×256 上疊光暈、核心光、抗性光暈、星芒。
+   最後在 256×256 上疊光暈（6 階起）、核心光、星芒。
 
    同一階的外形對所有種類一致（碎塊 → 圓石 → 水滴 → 三角 → 方 → 菱 → 五邊 → 六邊），
-   種類只改顏色、材質與「家族」（plain／core 發光核心／ward 後方柔光）。
+   種類只改顏色、材質與「家族」（plain／core 發光核心／ward 光暈色與本體色相不同）。
    ============================================================ */
 
 const SS = 2;               // 超取樣倍率
@@ -135,25 +135,25 @@ function planesFromPolygon(verts, profile, stars, R, cap) {
 const TIERS = [
   null,
   { name: '薄片', size: 56, rot: -12, poly: [[-0.42, -0.98], [0.70, -0.74], [0.46, 0.98], [-0.72, 0.72]],
-    profile: [[0, 0], [0.50, 0.44]], stars: [], glow: 0.00, spark: 1 },
+    profile: [[0, 0], [0.50, 0.44]], stars: [], glow: 0, spark: 1 },
   { name: '碎塊', size: 62, rot: -22, poly: [[-0.78, -0.14], [-0.30, -0.92], [0.46, -0.84], [0.84, 0.04], [0.30, 0.94], [-0.52, 0.72]],
-    profile: [[0, 0], [0.34, 0.30], [0.62, 0.40]], stars: [], glow: 0.03, spark: 1 },
+    profile: [[0, 0], [0.34, 0.30], [0.62, 0.40]], stars: [], glow: 0, spark: 1 },
   { name: '圓塊', size: 70, rot: -20, ngon: [5, -90], cut: 0.18, jitter: [0.05, 0.09, 0.03, 0.08, 0.04],
-    profile: [[0, 0], [0.30, 0.30], [0.58, 0.44]], stars: [], glow: 0.07, spark: 1 },
+    profile: [[0, 0], [0.30, 0.30], [0.58, 0.44]], stars: [], glow: 0, spark: 1 },
   { name: '六邊', size: 76, rot: 0, ngon: [6, 0], cut: 0.10, sx: 0.94, jitter: [0.05, 0.06, 0.03, 0.05, 0.06, 0.04],
-    profile: [[0, 0], [0.22, 0.28], [0.54, 0.44]], stars: [{ rf: 0.84, h0: 0.18, slope: 0.95, ring: 1 }], glow: 0.11, spark: 1 },
+    profile: [[0, 0], [0.22, 0.28], [0.54, 0.44]], stars: [{ rf: 0.84, h0: 0.18, slope: 0.95, ring: 1 }], glow: 0, spark: 1 },
   { name: '菱形', size: 82, rot: 0, poly: [[0, -1], [0.86, 0], [0, 1], [-0.86, 0]], cut: 0.07, cap: 0.15,
-    profile: [[0, 0], [0.22, 0.30], [0.50, 0.46]], stars: [{ rf: 0.80, h0: 0.14, slope: 1.0, ring: 1 }], glow: 0.15, spark: 2 },
+    profile: [[0, 0], [0.22, 0.30], [0.50, 0.46]], stars: [{ rf: 0.80, h0: 0.14, slope: 1.0, ring: 1 }], glow: 0, spark: 2 },
   { name: '長方', size: 84, rot: -8, poly: [[-0.80, -1], [0.80, -1], [0.80, 1], [-0.80, 1]], cut: 0.20,
-    profile: [[0, 0], [0.14, 0.20], [0.30, 0.34], [0.54, 0.46]], stars: [{ rf: 0.88, h0: 0.16, slope: 1.0, ring: 1 }], glow: 0.20, spark: 2 },
+    profile: [[0, 0], [0.14, 0.20], [0.30, 0.34], [0.54, 0.46]], stars: [{ rf: 0.88, h0: 0.16, slope: 1.0, ring: 1 }], glow: 0.12, spark: 2 },
   { name: '八方', size: 86, rot: 0, ngon: [8, 22.5],
-    profile: [[0, 0], [0.12, 0.18], [0.26, 0.32], [0.46, 0.46]], stars: [{ rf: 0.90, h0: 0.14, slope: 1.1, ring: 1 }, { rf: 0.62, h0: 0.30, slope: 0.9, ring: 2 }], glow: 0.26, spark: 3 },
+    profile: [[0, 0], [0.12, 0.18], [0.26, 0.32], [0.46, 0.46]], stars: [{ rf: 0.90, h0: 0.14, slope: 1.1, ring: 1 }, { rf: 0.62, h0: 0.30, slope: 0.9, ring: 2 }], glow: 0.24, spark: 3 },
   { name: '星六', size: 88, rot: 0, ngon: [6, -90], cut: 0.12, cap: 0.13,
-    profile: [[0, 0], [0.10, 0.16], [0.22, 0.28], [0.40, 0.42]], stars: [{ rf: 0.90, h0: 0.14, slope: 1.1, ring: 1 }, { rf: 0.64, h0: 0.28, slope: 0.9, ring: 2 }], glow: 0.32, spark: 3 },
+    profile: [[0, 0], [0.10, 0.16], [0.22, 0.28], [0.40, 0.42]], stars: [{ rf: 0.90, h0: 0.14, slope: 1.1, ring: 1 }, { rf: 0.64, h0: 0.28, slope: 0.9, ring: 2 }], glow: 0.38, spark: 3 },
   { name: '尖底', size: 89, rot: 0, ngon: [5, 90], cut: 0.10, cap: 0.13,
-    profile: [[0, 0], [0.09, 0.15], [0.20, 0.27], [0.36, 0.40], [0.52, 0.48]], stars: [{ rf: 0.90, h0: 0.14, slope: 1.15, ring: 1 }, { rf: 0.66, h0: 0.28, slope: 0.95, ring: 2 }], glow: 0.36, spark: 3 },
+    profile: [[0, 0], [0.09, 0.15], [0.20, 0.27], [0.36, 0.40], [0.52, 0.48]], stars: [{ rf: 0.90, h0: 0.14, slope: 1.15, ring: 1 }, { rf: 0.66, h0: 0.28, slope: 0.95, ring: 2 }], glow: 0.54, spark: 3 },
   { name: '圓多邊', size: 91, rot: 0, ngon: [9, -90], cut: 0.10, cap: 0.12,
-    profile: [[0, 0], [0.08, 0.14], [0.18, 0.25], [0.32, 0.37], [0.48, 0.48]], stars: [{ rf: 0.92, h0: 0.12, slope: 1.2, ring: 1 }, { rf: 0.70, h0: 0.24, slope: 1.0, ring: 2 }, { rf: 0.46, h0: 0.38, slope: 0.8, ring: 3 }], glow: 0.40, spark: 4 }
+    profile: [[0, 0], [0.08, 0.14], [0.18, 0.25], [0.32, 0.37], [0.48, 0.48]], stars: [{ rf: 0.92, h0: 0.12, slope: 1.2, ring: 1 }, { rf: 0.70, h0: 0.24, slope: 1.0, ring: 2 }, { rf: 0.46, h0: 0.38, slope: 0.8, ring: 3 }], glow: 0.72, spark: 4 }
 ];
 
 function tierVerts(T) {
@@ -267,9 +267,9 @@ function texture(def, X, Y, R, nx, ny, id, seed) {
 }
 
 /* ---------------- 單張渲染 ---------------- */
-function shadeGem(def, tier, seed, fit) {
+function shadeGem(def, tier, seed) {
   const T = TIERS[tier];
-  const R = T.size * SS * fit;
+  const R = T.size * SS;
   const planes = tierGeometry(tier, R), P = planes.length;
   const A = new Float32Array(P), BX = new Float32Array(P), BY = new Float32Array(P), GM = new Float32Array(P);
   for (let i = 0; i < P; i++) { A[i] = planes[i].a; BX[i] = planes[i].bx; BY[i] = planes[i].by; GM[i] = Math.hypot(BX[i], BY[i]); }
@@ -417,36 +417,26 @@ function drawStar(d, cx, cy, len, thick, col, amt) {
 function renderGem(def, tier, seed) {
   const T = TIERS[tier];
   seed = seed || 1;
-  const fitK = def.family === 'ward' ? 0.84 : 1;            // 光暈要留出外圈
-  const layer = downAndCenter(shadeGem(def, tier, seed, fitK));
+  const layer = downAndCenter(shadeGem(def, tier, seed));
   const N = OUT * OUT;
   const d = new Float32Array(N * 4);
   const ctr = OUT / 2;
-  const rGem = T.size * fitK;
+  const rGem = T.size;
 
-  // 光暈
+  // 光暈：1～5 階沒有，6 階起淡淡出現，隨階數加濃，10 階最濃（強度表在 TIERS.glow）
   const mask = new Float32Array(N);
   for (let i = 0; i < N; i++) mask[i] = layer[i * 4 + 3];
-  const glowK = T.glow * (def.glowW === undefined ? 1 : def.glowW) * (def.family === 'core' ? 1.25 : 1);
+  const glowK = T.glow * (def.glowW === undefined ? 1 : def.glowW);
   if (glowK > 0.005) {
     const g1 = gauss(mask, OUT, OUT, 7), g2 = gauss(mask, OUT, OUT, 20);
-    const gc = def.glow || def.pal.glow;
+    const gc = def.glow || def.pal.glow, rainbow = !!(def.tex && def.tex.kind === 'rainbow');
     for (let i = 0; i < N; i++) {
       const a = clamp((g1[i] * 0.9 + g2[i] * 1.5) * glowK, 0, 0.92);
-      if (a > 0.003) { const hot = clamp((a - 0.45) * 1.4, 0, 0.55); const c = mix3(gc, def.pal.hi, hot); overPx(d, i * 4, c, a); }
-    }
-  }
-  // 光暈（ward 家族）：寶石後方一大片柔光，色相與本體不同；沒有環線、沒有邊界
-  if (def.family === 'ward') {
-    const Rh = rGem * 1.26 + 2;
-    const hc = def.halo || def.pal.light;
-    for (let y = 0; y < OUT; y++) for (let x = 0; x < OUT; x++) {
-      const dx = x + 0.5 - ctr, dy = y + 0.5 - ctr, dd = Math.hypot(dx, dy);
-      const ring = Math.exp(-Math.pow((dd - Rh * 0.8) / 26, 2)) * 0.8;
-      const a = clamp(ring + Math.exp(-dd / (Rh * 0.7)) * 0.3, 0, 0.92);
-      if (a < 0.004) continue;
-      const col = def.tex && def.tex.kind === 'rainbow' ? hsl(Math.atan2(dy, dx) * 180 / Math.PI + 90, 0.85, 0.68) : hc;
-      overPx(d, (y * OUT + x) * 4, mix3(col, [1, 1, 1], clamp(ring - 0.3, 0, 0.6)), a);
+      if (a > 0.003) {
+        const hot = clamp((a - 0.45) * 1.4, 0, 0.55);
+        const base = rainbow ? hsl(Math.atan2(((i / OUT) | 0) - ctr, (i % OUT) - ctr) * 180 / Math.PI + 90, 0.85, 0.68) : gc;
+        overPx(d, i * 4, mix3(base, def.pal.hi, hot), a);
+      }
     }
   }
   // 寶石本體
