@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## FIREBALL-SPLIT-SPEED-SIZE-20261008 — 小火球速度減半、尺寸改為60%
+
+- Owner：Codex；Done，單一開發者。使用者反映小火球難以看見，要求「速度降低50%，並且體積為落下的火球的60%」。分裂速度為原火球表定速度×0.5（65.52→32.76米／秒），尺寸沿用既有線性倍率改為0.6，最短飛行50→100ms同步減速；不增加先前建議但未採用的0.3秒下限。
+- 允許／修改：js/skills2.js、tests/fireball-split-flight.test.cjs、index.html的skills2／bridge快取、js/bridge.js／worker/sim.worker.js必要快取、docs/vfx/VFX_RUNTIME_ADAPTER.md本段及本紀錄。禁止修改其他技能、Preset、素材、Excel／CSV、傷害倍率、協議、存檔及他人殞石起點工作；不合併／推送。
+- 預檢／授權：skills2／測試無其他來源；快取有Claude 0e0bdee1／d9f624c4命中統計與快取，任務紀錄有612604d6飛行預覽，另一本聊天METEOR-ENTRY在同副本修改Runtime／renderer／vfx及快取、Adapter文件。已說明具體重疊並取得使用者「同意分段修改」，本次只改／提交小火球段，完整保留他人內容。
+- 驗收：分裂飛行速度／事件travelMs／模擬抵達時刻一致，5／10／20米各153／305／611ms；原火球速度保留，原三顆、固定座標、20米隨機補足、弧高1/3及抵達判定不變。正式Worker事件與Runtime使用0.6縮放，與同Preset落下火球比較兩軸尺寸皆為60%；測試及Build後提交。
+- 完成：SG_FIREBALL_SPLIT_SCALE=0.6、SG_FIREBALL_SPLIT_SPEED_MULT=0.5，只在明確爆點起飛的分裂計畫套用減速，計算層與顯示事件同讀travelMs；近距離下限也依倍率延長。快取skills2 1.0.294、bridge1.0.247、Worker及skills2 import為20261008-fireball-split-half-speed。修改共上述7檔；共用index、Adapter文件與本紀錄僅分段提交。
+- 使用者修改一起提交：提交前Skills2.xlsx再儲存並自動同步CSV／skills2：血飲術self由1改0.1、火球第1階cast-magic清空。依既有「包含我改的一起commit」授權，保留兩筆資料及Excel／CSV（總共9檔），非AI主動改表；兩檔追加預檢無其他來源。唯讀核對Excel／CSV逐格一致，`node tools/config_tables.cjs --apply Skills2`試跑語意變更0，火球表定速度65.52不變。
+- 檢查未改：js/vfx-runtime.js的defaultSize／playProjectile與rain尺寸、js/worker/shim.js／protocol.js、js/battlefield.js、proj-dragon-devour.json及原分裂／爆燃測試；不改Preset或素材，素材庫無本次必要變更、不建立空Commit。
+- 測試：`node --test tests/fireball-split-flight.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs tests/starfall-vfx.test.cjs tests/vfx-duration.test.cjs tests/vfx-editor-guard.test.cjs`61/61通過（分裂9/9）；`node --test --test-name-pattern='火球術·爆燃|火球術·火球爆裂' tests/skill2-magic-fire.test.cjs`2/2通過；`npm.cmd run build`487檔通過，`git diff --check`通過。正式Worker引擎、事件白名單與Core／Runtime真函式驗收速度、抵達判定及兩軸60%尺寸，包含同Preset的rain落下火球作比較；未讀寫真人存檔。
+- 交付：無未完成項，可Review／合併；Commit為本紀錄所在提交，未合併／推送。未做長時間真人戰鬥；另一本聊天的殞石飛入點程式／測試及快取保留未提交，由原聊天處理。建議重新整理遊戲驗收，20米飛行約0.61秒，飛回同一爆點的極近距離為0.10秒。
+
 ## Codex｜BOSS 擺件融合與屬性場景燈光（BOSS-ARENA-ELEMENT-20261008）
 
 - Owner：Codex；Done，單一開發者；使用者已確認本融合修正版「比較有感覺」。使用者要求優化 BOSS 祭壇邊緣物件，依 BOSS 正式屬性決定燈光；追加要求物件融入地板，避免生硬貼上。保留已確認的簡化手繪程度，母圖≤1024×1024、正式素材≤512×512。
