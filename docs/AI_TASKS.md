@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## Codex｜BOSS 擺件融合與屬性場景燈光（BOSS-ARENA-ELEMENT-20261008）
+
+- Owner：Codex；Done，單一開發者；使用者已確認本融合修正版「比較有感覺」。使用者要求優化 BOSS 祭壇邊緣物件，依 BOSS 正式屬性決定燈光；追加要求物件融入地板，避免生硬貼上。保留已確認的簡化手繪程度，母圖≤1024×1024、正式素材≤512×512。
+- 允許／修改：js/battle-arena.js、js/battle-renderer.js、js/decor-nature.js、js/battle-decor.js、js/worker/decor-atlas.worker.js、images/scene/arena-{gate,brazier,spire,candles}.png、index.html 場景載入快取段、tools/{scene-preview.html,decor-preview.html,scene-renewal/export-source.cjs}、tests/{battle-arena,battle-decor,battle-perspective}.test.cjs、docs/SCENE_NATURE.md 與本紀錄；素材庫 codex-authored/scene-nature 13檔。禁止改傷害、碰撞、技能、模擬／協議、存檔或他人內容。
+- 預檢／授權：既有及新檔逐一預檢；index／bridge有 Claude d9f624c4 命中率／快取來源，同副本有 BOSS 配置鎖定工作。已指出具體內容並取得使用者「同意分段修改並保留其他內容」。鎖定工作後完成47b349e9；後續 FIREBALL-SPLIT-FLIGHT 同副本變更全部保留，index只提交場景四個版本，AI_TASKS只提交本段；bridge與模擬Worker快取由火球工作處理、不納入本次提交。Atlas Worker有獨立URL快取8及Nature7／Decor17載入版本。
+- 完成：四份完整原創AI魔門、石雕火盆、黑曜石尖柱及燭台；生成候選、完整提示詞、SHA256、裁切／尺寸紀錄齊全，未使用或輸入第三方圖像。底部source-atop漸暗、深色塵土／碎石接觸區擴大並固定脚點；物件乘色承接環境色，光暈加寬並調淡，後排小尖柱縮小內移。門洞／眼光、四盆火、十二道小燭火的正規化附著點跟隨等比縮放、翻面與billboard，不再拼湊物件本體。
+- 屬性：優先讀boss.elem，無已知elem時讀attr；毒綠、聖黃白、火橙紅、冰藍白、雷淡紫、暗紫、土琥珀、風青綠。無已知屬性保留三塔原色；法陣、門光、火焰、環境光、火星及邊緣同步。中性本體跨塔／屬性共用，每元素只增加60×84火焰貼圖；19擺件、6局部霧及原46粒子固定上限，退出回收。
+- 檢查但未改：js/data.js（BOSS_LIST）、js/tower.js（elem／attr）、js/worker/sim.worker.js（直接投影TOWER）、js/worker/protocol.js、js/bridge.js、js/ui.js、GM_command.md；他人的配置CSV／Excel、skills2與Runtime修改未納入。
+- 驗證：node --test tests/battle-arena.test.cjs tests/battle-decor.test.cjs tests/battle-perspective.test.cjs，47/47；新增正式elem／attr傳入、同塔八元素換色、不污染預設、共用大型貼圖、環境乘色、腳點接觸區及退出零洩漏案例。node tools/scene-renewal/export-source.cjs --check，30份匯出SHA一致。npm run build，486檔通過；git diff --check通過。瀏覽器14圖集alpha／預乘RGB差均0，無error／warn；正式獨立origin挑戰第35層劇毒之母，BOSS屬性自動綠光、HUD與物件顯示正常，保存實戰畫面。920×760毒／聖／冰／暗預覽使用正式Renderer，切屬性經正常轉場；窄390×760亦可載入（左右邊界物件隨鏡頭裁切）。
+- 素材提交：49e8260（D:/MyGame/Asset），已先提交；遊戲Commit為本紀錄所在提交（回覆列出編號）。四PNG共1,293,080 bytes、單份解碼RGBA合計3,534,848 bytes，不含Worker副本與GPU圖集。
+- 風險／未完：功能無未完成項；未量測GPU時間、長時間大量技能FPS。依來源圖固定的正規化附著點，未來更換或重裁貼圖需同步調整。可交使用者Review／合併，需保留已同意的共用檔分段內容；未自行合併或推送。建議重載遊戲檢視其他樓層及三塔風格。預覽與實測記錄保留於Codex visualizations的boss-arena-upgrade，不納入正式素材。
+
 ## Codex｜BOSS 戰保留左側資訊並鎖定配置（BOSS-INFO-DURING-FIGHT-20261008）
 
 - Owner：Codex；Done。使用者要求開戰後左側維持樓層列表、BOSS 資訊及通關獎勵，挑戰／連挑置灰停用，追加技能、換裝、寶石、符文、威能與裝備四個功能的配置限制。單一開發者；前置既有右側 Canvas BOSS 戰與左側瀏覽頁已完成，工作區於開始時乾淨且衝突預檢無其他來源修改。

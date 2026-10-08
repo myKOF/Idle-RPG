@@ -75,6 +75,49 @@ function makeArena(BossArena, P) {
   return { arena, layers };
 }
 
+test('ARENA-ELEMENT 正式 BOSS 屬性優先，未知或物理屬性保留塔色', () => {
+  const {BossArena}=loadArena();
+  assert.equal(BossArena.elementOf({elem:'poison',attr:'light',hell:true}),'poison');
+  assert.equal(BossArena.elementOf({elem:null,attr:'light'}),'light');
+  assert.equal(BossArena.elementOf({elem:'physical',attr:'unknown'}),null);
+  assert.equal(BossArena.elementOf({elem:'toString'}),null);
+  assert.equal(BossArena.paletteFor('hell',null),BossArena.TIERS.hell);
+  const green=BossArena.paletteFor('hell','poison'),holy=BossArena.paletteFor('hell','light');
+  assert.equal(green.glow,'#79df48');assert.equal(holy.glow,'#ffe8a0');
+  assert.equal(holy.fire2,'#ffffff');assert.notEqual(green.light,holy.light);
+  assert.equal(BossArena.TIERS.hell.glow,'#ff8a14','元素不能污染塔別預設');
+});
+
+test('ARENA-ELEMENT 同塔連挑換屬性會換全場光色，共用法陣及物件，退出回收', () => {
+  const {BossArena,warnings}=loadArena(),P=fakePixi();
+  const {arena,layers}=makeArena(BossArena,P),baseline=P.alive();
+  let ring,prop,flame,count;
+  for(const element of Object.keys(BossArena.ELEMENT_LIGHTS)) {
+    arena.enter({cx:0,cy:0,tier:'trial',element,W:800,H:800});
+    arena.update({W:800,H:800,dt:1,playerX:0,playerScreenY:0});
+    const pal=BossArena.paletteFor('trial',element);
+    assert.equal(arena.stats().element,element);assert.equal(arena.stats().lightColor,pal.glow);
+    assert.ok(layers.glow.children.filter(s=>!s._cracks).every(s=>s.tint===pal.light));
+    const body=layers.prop.children.find(s=>!s._bbParent),fire=layers.prop.children.find(s=>s._sc);
+    const bodies=layers.prop.children.filter(s=>s._w);
+    assert.ok(bodies.every(s=>s.tint===pal.material),'石材必須承接 BOSS 的環境色');
+    assert.ok(bodies.every(s=>layers.base.children.some(f=>f.x===s.x&&f.y*.5===s.y&&f.width>s._w&&f.tint===s.tint)),'每件物件的地面過渡跟隨腳點、覆蓋本體並承接同色');
+    if(ring){assert.equal(layers.glow.children[0].texture,ring);assert.equal(body.texture,prop);assert.notEqual(fire.texture,flame);assert.equal(P.alive(),count);}
+    ring=layers.glow.children[0].texture;prop=body.texture;flame=fire.texture;count=P.alive();
+    assert.equal(layers.prop.children.filter(s=>s._sc).length,16,'四盆火＋十二道燭火');
+  }
+  arena.exit();assert.equal(P.alive(),baseline);assert.deepEqual(warnings,[]);
+});
+
+test('ARENA-ELEMENT Renderer 接收 Worker 塔戰實體 elem／attr 並傳入祭壇', () => {
+  const source=read('js/battle-renderer.js'),{BossArena}=loadArena(),calls=[];
+  const c={S:{W:800,H:800,arena:{enter:o=>calls.push(o),floorTexture:()=>null}},BossArena,isFinite,String};
+  vm.createContext(c);vm.runInContext(extractFunction(source,'towerFieldView')+'\n'+extractFunction(source,'enterArena'),c);
+  const panel={tower:{boss:{name:'第35層・劇毒之母',elem:'poison',attr:'poison',hell:true,pos:{x:20,y:30}},player:{hp:100},playerPos:{x:0,y:0},floor:35}};
+  c.enterArena(c.towerFieldView(panel),panel);assert.equal(calls[0].element,'poison');assert.equal(calls[0].tier,'hell');
+  panel.tower.boss.elem=null;panel.tower.boss.attr='light';c.enterArena(c.towerFieldView(panel),panel);assert.equal(calls[1].element,'light');
+});
+
 test('ARENA-1 三座塔的貼圖都畫得出來，畫法不拋例外', () => {
   const { BossArena, warnings } = loadArena();
   const P = fakePixi();

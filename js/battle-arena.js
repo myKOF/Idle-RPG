@@ -4,18 +4,18 @@
      野外＝無邊際、依區塊無限長出來的地形（js/battle-decor.js）；
      祭壇＝一座**封閉的圓形競技場**，戰鬥就在場中央打，四周是黑暗。
 
-   組成（全部執行期 Canvas 程序化畫，不讀圖檔；畫風沿用 battle-decor 的低多邊形分面筆觸）：
-     地板    黑曜石石板，石縫透出塔色微光（取代野外的地磚，渲染器換 TilingSprite 的貼圖）
+   組成（完整原創 AI 擺件＋執行期 Canvas 光效；簡化手繪筆觸）：
+     地板    黑曜石石板，低對比深色石紋（取代野外的地磚，渲染器換 TilingSprite 的貼圖）
      法陣    場中央的召喚法陣：外圈符文帶（慢慢旋轉）＋五芒星與魔王之眼（呼吸發光），
              雙方都站在法陣裡。刻痕（暗色）與光（加色）分兩層，光的亮度跟著狂暴變化
-     裂隙    法陣外緣向外放射的熔裂光痕
+     裂隙    法陣外緣的深色裂痕
      深淵    圓場外整片壓黑，邊界外看不到東西＝「被關在祭壇裡」
      擺件    圓場邊緣一圈：黑曜石尖刺、角獸頭骨火盆、前排燭台；BOSS 身後一座帶角的魔門，
              門上兩隻眼睛會亮
      氣氛    灰燼飄落、火星上升、畫面四周隨心跳脈動（狂暴時心跳變快、變重）
      登場    BOSS 名字的標題卡
 
-   三座塔各一套配色：試煉之塔＝血月（紅）、地獄之塔＝熔獄（金橙）、煉獄之塔＝冥火（綠）。
+   BOSS 元素決定法陣、門光、火焰與環境光；無元素時沿用三塔原色。
 
    純表現：模擬層一行不動。坐標系同 battle-decor：
      planeBase／planeGlow  地面平面（scale.y＝groundScale，子節點用世界座標）
@@ -60,6 +60,37 @@ var BossArena = (function () {
     return 'trial';
   }
 
+  // 使用 BOSS 的正式屬性，不依名稱、樓層或塔別猜測。無元素時保留各塔原色。
+  var ELEMENT_LIGHTS = {
+    fire: ['焰火', '#ff7138', '#ffe2b0', '#ff4d22', '#fff2ce', '#a72e16'],
+    ice: ['冰霜', '#76ccff', '#edfaff', '#7cd5ff', '#ffffff', '#255783'],
+    lightning: ['雷霆', '#b7a0ff', '#f7edff', '#ac8eff', '#fff2b9', '#614095'],
+    poison: ['毒霧', '#79df48', '#e1ffc1', '#65dc38', '#edffd4', '#356f22'],
+    light: ['聖光', '#ffe8a0', '#fffdf0', '#ffe7a4', '#ffffff', '#96805a'],
+    dark: ['暗影', '#b684ef', '#e5c7ff', '#a46adb', '#edd7ff', '#593574'],
+    earth: ['大地', '#d1a46a', '#ffebc0', '#ca965b', '#fff2d1', '#765638'],
+    wind: ['疾風', '#78dfc4', '#e0fff3', '#77d7bb', '#f1fff7', '#347566']
+  };
+  // 乘色讓石材受到場景環境光影響；共用原貼圖，不逐元素複製大型圖片。
+  var MATERIAL_TINT = {fire:0xac8d7c,ice:0x8cacc0,lightning:0xa092ba,
+    poison:0x8ba477,light:0xc0b69a,dark:0x9b84b0,earth:0xae987c,wind:0x84aaa0};
+  function elementOf(boss) {
+    if (boss && Object.prototype.hasOwnProperty.call(ELEMENT_LIGHTS, boss.elem)) return boss.elem;
+    if (boss && Object.prototype.hasOwnProperty.call(ELEMENT_LIGHTS, boss.attr)) return boss.attr;
+    return null;
+  }
+  function paletteFor(tier, element) {
+    var base = TIERS[tier] || TIERS.trial, colors = Object.prototype.hasOwnProperty.call(ELEMENT_LIGHTS,element) ? ELEMENT_LIGHTS[element] : null;
+    if (!colors) return base;
+    var pal = Object.assign({}, base);
+    pal.name = colors[0] + '祭壇'; pal.glow = colors[1]; pal.glowHi = colors[2];
+    pal.fire = colors[3]; pal.fire2 = colors[4]; pal.portal = colors[5];
+    pal.light = parseInt(colors[1].slice(1), 16); pal.ember = pal.light;
+    pal.edge = parseInt(colors[5].slice(1), 16);
+    pal.material = MATERIAL_TINT[element];
+    return pal;
+  }
+
   function art() {
     if (!ART) throw new Error('BossArena 需要先載入 js/battle-decor.js（共用繪圖工具）');
     return ART;
@@ -72,12 +103,13 @@ var BossArena = (function () {
   }
 
   function environmentStyle(pal) {
-    return {stone:pal.stone.base,light:pal.stone.light,dark:pal.stone.dark,soil:'#3f3832',moss:false,snow:false,
+    return {stone:'#39333e',light:pal.stone.light,dark:pal.stone.dark,soil:'#26222b',moss:false,snow:false,
       theme:pal===TIERS.purgatory?'god_chaos':'undead_mountains',accent:pal.glow};
   }
   function drawRelic(g,w,h,r,pal) {
     var kind=pal===TIERS.trial?'grave':pal===TIERS.hell?'deadTree':'crystals';
     DecorNature.drawBody(g,kind,w/2,h-FOOT,w*.88,h-FOOT,Math.floor(r()*1e9),environmentStyle(pal));
+    settleBase(g,w,h);
   }
 
   /* ============ 法陣（白色線稿；由精靈 tint 上色，刻痕版與發光版共用） ============ */
@@ -256,261 +288,35 @@ var BossArena = (function () {
   }
 
   /* ============ 直立擺件（座標是邏輯像素；腳底在 (w/2, h - FOOT)） ============ */
-  // 黑曜石尖刺：一根主刺＋兩根副刺，刺面有塔色的發光裂紋
-  function drawSpike(g, w, h, r, pal) {
-    var A = art(), fy = h - FOOT, cx = w / 2;
-    A.shadowEllipse(g, cx + 4, fy, w * 0.42, w * 0.11, 0.55);
-    function shard(bx, bw, sh, lean) {
-      var tip = [bx + lean, fy - sh];
-      var left = [bx - bw / 2, fy], right = [bx + bw / 2, fy];
-      var mid = [bx + lean * 0.35 + A.range(r, -bw * 0.1, bw * 0.1), fy - sh * A.range(r, 0.15, 0.3)];
-      A.pathPoly(g, [left, tip, mid]);
-      var gl = g.createLinearGradient(left[0], fy, tip[0], tip[1]);
-      gl.addColorStop(0, A.shade(pal.stone.base, -0.2)); gl.addColorStop(1, pal.stone.light);
-      g.fillStyle = gl; g.fill();
-      A.pathPoly(g, [mid, tip, right]);
-      var grr = g.createLinearGradient(mid[0], fy, right[0], tip[1]);
-      grr.addColorStop(0, pal.stone.dark); grr.addColorStop(1, A.shade(pal.stone.base, -0.15));
-      g.fillStyle = grr; g.fill();
-      A.pathPoly(g, [left, tip, right]);
-      g.strokeStyle = 'rgba(0,0,0,0.75)'; g.lineWidth = 1; g.stroke();
-      // 稜線受光
-      g.strokeStyle = A.rgba(pal.glowHi, 0.18); g.lineWidth = 1.2;
-      g.beginPath(); g.moveTo(mid[0], mid[1]); g.lineTo(tip[0], tip[1]); g.stroke();
-      // 發光裂紋
-      g.save();
-      g.shadowColor = pal.glow; g.shadowBlur = 8;
-      g.strokeStyle = A.rgba(pal.glow, 0.85); g.lineWidth = 1.4;
-      g.beginPath();
-      var x = bx + A.range(r, -bw * 0.15, bw * 0.15), y = fy - 4;
-      g.moveTo(x, y);
-      for (var s = 0; s < 5; s++) { x += A.range(r, -4, 4) + lean * 0.08; y -= sh * A.range(r, 0.08, 0.14); g.lineTo(x, y); }
-      g.stroke();
-      g.restore();
-    }
-    shard(cx - w * 0.22, w * 0.3, h * A.range(r, 0.45, 0.55), -w * 0.12);
-    shard(cx + w * 0.24, w * 0.26, h * A.range(r, 0.38, 0.5), w * 0.1);
-    shard(cx, w * 0.42, h - FOOT - 4, A.range(r, -w * 0.08, w * 0.08));
-    // 底部碎石
-    for (var i = 0; i < 5; i++) {
-      var px = cx + A.range(r, -w * 0.4, w * 0.4), pw = A.range(r, 5, 10);
-      A.pathPoly(g, [[px - pw, fy], [px, fy - pw * 0.9], [px + pw, fy]]);
-      g.fillStyle = A.shade(pal.stone.base, -0.3); g.fill();
-    }
+  // 地面遮蔭逐漸壓暗本體底部，只覆蓋原圖 alpha，避免整齊矩形或漂浮腳點。
+  function settleBase(g,w,h) {
+    g.save();g.globalCompositeOperation='source-atop';
+    var shade=g.createLinearGradient(0,h*.55,0,h-FOOT);
+    shade.addColorStop(0,'rgba(11,9,16,0)');shade.addColorStop(.55,'rgba(11,9,16,.12)');
+    shade.addColorStop(1,'rgba(11,9,16,.60)');g.fillStyle=shade;g.fillRect(0,0,w,h);g.restore();
   }
-
-  // 角獸頭骨火盆：疊石底座＋上翹的角＋頭骨碗（眼窩透光）；火焰另外一張
-  function drawDemonBrazier(g, w, h, r, pal) {
-    var A = art(), fy = h - FOOT, cx = w / 2;
-    A.shadowEllipse(g, cx + 4, fy, w * 0.4, w * 0.1, 0.5);
-    // 底座三層
-    var blocks = [[w * 0.62, h * 0.12], [w * 0.46, h * 0.3], [w * 0.56, h * 0.08]];
-    var y = fy;
-    blocks.forEach(function (b, i) {
-      var bw = b[0], bh = b[1];
-      var gr = g.createLinearGradient(cx - bw / 2, 0, cx + bw / 2, 0);
-      gr.addColorStop(0, A.shade(pal.stone.base, 0.15)); gr.addColorStop(0.4, pal.stone.base); gr.addColorStop(1, pal.stone.dark);
-      g.fillStyle = gr;
-      g.fillRect(cx - bw / 2, y - bh, bw, bh);
-      g.fillStyle = A.rgba(pal.stone.light, 0.6);
-      g.fillRect(cx - bw / 2, y - bh, bw, 2);
-      g.strokeStyle = 'rgba(0,0,0,0.7)'; g.lineWidth = 1;
-      g.strokeRect(cx - bw / 2 + 0.5, y - bh + 0.5, bw - 1, bh - 1);
-      if (i === 1) {   // 中段刻一道塔色符紋
-        g.save(); g.shadowColor = pal.glow; g.shadowBlur = 6;
-        g.strokeStyle = A.rgba(pal.glow, 0.7); g.lineWidth = 1.3;
-        g.beginPath(); g.moveTo(cx, y - bh * 0.2); g.lineTo(cx, y - bh * 0.8);
-        g.moveTo(cx - bw * 0.18, y - bh * 0.55); g.lineTo(cx + bw * 0.18, y - bh * 0.55); g.stroke();
-        g.restore();
-      }
-      y -= bh;
-    });
-    var bowlY = y;            // 頭骨碗口
-    var sw = w * 0.5;
-    // 角：從頭骨兩側往上翹
-    [-1, 1].forEach(function (side) {
-      g.beginPath();
-      g.moveTo(cx + side * sw * 0.32, bowlY - 2);
-      g.quadraticCurveTo(cx + side * sw * 1.05, bowlY - 2, cx + side * sw * 0.86, bowlY - h * 0.2);
-      g.quadraticCurveTo(cx + side * sw * 0.8, bowlY - h * 0.08, cx + side * sw * 0.48, bowlY + 6);
-      g.closePath();
-      var hg = g.createLinearGradient(cx, bowlY, cx + side * sw, bowlY - h * 0.2);
-      hg.addColorStop(0, '#5a4a40'); hg.addColorStop(1, '#d8ccb4');
-      g.fillStyle = hg; g.fill();
-      g.strokeStyle = 'rgba(0,0,0,0.6)'; g.lineWidth = 1; g.stroke();
-    });
-    // 頭骨（正面）
-    g.beginPath();
-    g.moveTo(cx - sw * 0.42, bowlY);
-    g.quadraticCurveTo(cx - sw * 0.46, bowlY + h * 0.1, cx - sw * 0.2, bowlY + h * 0.13);
-    g.lineTo(cx + sw * 0.2, bowlY + h * 0.13);
-    g.quadraticCurveTo(cx + sw * 0.46, bowlY + h * 0.1, cx + sw * 0.42, bowlY);
-    g.closePath();
-    var sg = g.createLinearGradient(cx - sw / 2, bowlY, cx + sw / 2, bowlY + h * 0.12);
-    sg.addColorStop(0, '#e2d8c2'); sg.addColorStop(1, '#6e6252');
-    g.fillStyle = sg; g.fill();
-    g.strokeStyle = 'rgba(10,6,4,0.8)'; g.lineWidth = 1.1; g.stroke();
-    // 眼窩透光
-    g.save();
-    g.shadowColor = pal.glow; g.shadowBlur = 8; g.fillStyle = pal.glow;
-    [-1, 1].forEach(function (side) {
-      g.beginPath(); g.ellipse(cx + side * sw * 0.16, bowlY + h * 0.05, sw * 0.08, sw * 0.06, 0, 0, Math.PI * 2); g.fill();
-    });
-    g.restore();
-    // 碗口炭火
-    var coal = g.createRadialGradient(cx, bowlY, 0, cx, bowlY, sw * 0.42);
-    coal.addColorStop(0, pal.fire2); coal.addColorStop(0.5, pal.fire); coal.addColorStop(1, '#200606');
-    g.fillStyle = coal;
-    g.beginPath(); g.ellipse(cx, bowlY, sw * 0.42, sw * 0.1, 0, 0, Math.PI * 2); g.fill();
+  // 四份完整原創 AI 素材；造型只在載入時畫入貼圖，動態光獨立疊加。
+  function wholeProp(g,key,w,h,pal) {
+    DecorNature.drawBody(g,key,w/2,h-FOOT,w*.96,h-FOOT,0,environmentStyle(pal));
+    settleBase(g,w,h);
   }
-
-  // 燭台：一小堆骨頭上插著高低不一的蠟燭，燭火是塔色
-  function drawCandles(g, w, h, r, pal) {
-    var A = art(), fy = h - FOOT, cx = w / 2;
-    A.shadowEllipse(g, cx + 3, fy, w * 0.42, w * 0.12, 0.45);
-    // 骨堆
-    for (var b = 0; b < 4; b++) {
-      var bx = cx + A.range(r, -w * 0.3, w * 0.3), by = fy - A.range(r, 0, 5);
-      g.save(); g.translate(bx, by); g.rotate(A.range(r, -0.5, 0.5));
-      g.fillStyle = '#b8ac94';
-      g.fillRect(-w * 0.16, -1.6, w * 0.32, 3.2);
-      g.beginPath(); g.arc(-w * 0.16, 0, 2.6, 0, Math.PI * 2); g.arc(w * 0.16, 0, 2.6, 0, Math.PI * 2); g.fill();
-      g.restore();
-    }
-    var n = 4 + Math.floor(r() * 3);
-    var candles = [];
-    for (var i = 0; i < n; i++) {
-      candles.push({ x: cx + A.range(r, -w * 0.32, w * 0.32), hgt: A.range(r, h * 0.25, h * 0.62), wd: A.range(r, 4.5, 7) });
-    }
-    candles.sort(function (a, b2) { return a.hgt - b2.hgt; });
-    candles.forEach(function (c2) {
-      var top = fy - 3 - c2.hgt;
-      var wg = g.createLinearGradient(c2.x - c2.wd / 2, 0, c2.x + c2.wd / 2, 0);
-      wg.addColorStop(0, '#e8dcc0'); wg.addColorStop(1, '#7a6a52');
-      g.fillStyle = wg;
-      g.fillRect(c2.x - c2.wd / 2, top, c2.wd, c2.hgt);
-      // 蠟淚
-      g.fillStyle = '#efe4cc';
-      g.fillRect(c2.x - c2.wd / 2, top, c2.wd, 2.5);
-      g.fillRect(c2.x - c2.wd / 2 + A.range(r, 0, c2.wd - 1.5), top, 1.5, A.range(r, 4, 10));
-      // 燭火（小，靜態；整體的光暈另由地面光圈負責）
-      g.save();
-      g.shadowColor = pal.fire; g.shadowBlur = 8;
-      g.fillStyle = pal.fire;
-      g.beginPath(); g.ellipse(c2.x, top - 5, 2.6, 5.5, 0, 0, Math.PI * 2); g.fill();
-      g.fillStyle = pal.fire2;
-      g.beginPath(); g.ellipse(c2.x, top - 4, 1.2, 2.8, 0, 0, Math.PI * 2); g.fill();
-      g.restore();
-    });
-  }
-
-  // 魔門：BOSS 身後的巨大門框，門楣是一張帶角的魔王臉，門內是塔色的深淵漩渦
-  function drawGate(g, w, h, r, pal) {
-    var A = art(), fy = h - FOOT, cx = w / 2;
-    A.shadowEllipse(g, cx, fy, w * 0.52, w * 0.09, 0.6);
-    var pw = w * 0.17;                 // 柱寬
-    var inner = w * 0.5;               // 門洞寬
-    var archTop = fy - h * 0.72;       // 門洞頂
-    // 門洞：深淵漩渦
-    g.save();
-    g.beginPath();
-    g.moveTo(cx - inner / 2, fy);
-    g.lineTo(cx - inner / 2, archTop + inner * 0.3);
-    g.quadraticCurveTo(cx, archTop - inner * 0.25, cx + inner / 2, archTop + inner * 0.3);
-    g.lineTo(cx + inner / 2, fy);
-    g.closePath();
-    g.clip();
-    var pg = g.createRadialGradient(cx, fy - h * 0.38, 0, cx, fy - h * 0.38, h * 0.5);
-    pg.addColorStop(0, pal.glowHi); pg.addColorStop(0.18, pal.glow); pg.addColorStop(0.5, pal.portal); pg.addColorStop(1, '#000000');
-    g.fillStyle = pg;
-    g.fillRect(cx - inner, archTop - inner, inner * 2, h);
-    g.strokeStyle = A.rgba(pal.glowHi, 0.25);
-    g.lineWidth = 2;
-    for (var sp = 0; sp < 5; sp++) {   // 漩渦線
-      g.beginPath();
-      for (var t = 0; t <= 40; t++) {
-        var a = t / 40 * Math.PI * 3 + sp * 1.26, rad = t / 40 * inner * 0.7;
-        var x = cx + Math.cos(a) * rad, y = fy - h * 0.38 + Math.sin(a) * rad * 1.2;
-        if (t === 0) g.moveTo(x, y); else g.lineTo(x, y);
-      }
-      g.stroke();
-    }
-    g.restore();
-    // 兩根柱子（帶尖刺）
-    [-1, 1].forEach(function (side) {
-      var x0 = cx + side * (inner / 2 + pw / 2);
-      var gr = g.createLinearGradient(x0 - pw / 2, 0, x0 + pw / 2, 0);
-      if (side < 0) { gr.addColorStop(0, pal.stone.light); gr.addColorStop(1, pal.stone.dark); }
-      else { gr.addColorStop(0, pal.stone.base); gr.addColorStop(1, pal.stone.dark); }
-      g.fillStyle = gr;
-      A.pathPoly(g, [[x0 - pw / 2, fy], [x0 - pw * 0.42, archTop - h * 0.05], [x0 + pw * 0.42, archTop - h * 0.05], [x0 + pw / 2, fy]]);
-      g.fill();
-      g.strokeStyle = 'rgba(0,0,0,0.75)'; g.lineWidth = 1.2; g.stroke();
-      for (var k = 0; k < 3; k++) {   // 柱身外側的尖刺
-        var sy = fy - h * (0.18 + k * 0.17), sx = x0 + side * pw / 2;
-        A.pathPoly(g, [[sx, sy], [sx + side * pw * 0.55, sy - pw * 0.25], [sx, sy - pw * 0.35]]);
-        g.fillStyle = A.shade(pal.stone.base, -0.2); g.fill();
-        g.strokeStyle = 'rgba(0,0,0,0.6)'; g.stroke();
-      }
-      // 柱上的發光符文
-      g.save(); g.shadowColor = pal.glow; g.shadowBlur = 8; g.strokeStyle = A.rgba(pal.glow, 0.8); g.lineWidth = 1.6;
-      for (var q = 0; q < 3; q++) {
-        g.save(); g.translate(x0, fy - h * (0.2 + q * 0.15)); rune(g, r, pw * 0.5, pw * 0.5); g.restore();
-      }
-      g.restore();
-    });
-    // 門楣：帶角的魔王臉
-    var fyTop = archTop - h * 0.04, faceW = w * 0.56, faceH = h * 0.2;
-    [-1, 1].forEach(function (side) {   // 大角
-      g.beginPath();
-      g.moveTo(cx + side * faceW * 0.3, fyTop - faceH * 0.5);
-      g.bezierCurveTo(cx + side * faceW * 0.95, fyTop - faceH * 0.6, cx + side * w * 0.52, fyTop - faceH * 1.2, cx + side * w * 0.46, fyTop - faceH * 1.75);
-      g.bezierCurveTo(cx + side * w * 0.42, fyTop - faceH * 1.2, cx + side * faceW * 0.62, fyTop - faceH * 0.55, cx + side * faceW * 0.32, fyTop - faceH * 0.15);
-      g.closePath();
-      var hg = g.createLinearGradient(cx, fyTop, cx + side * w * 0.5, fyTop - faceH * 1.7);
-      hg.addColorStop(0, '#3a2e2a'); hg.addColorStop(0.7, '#a89880'); hg.addColorStop(1, '#efe6d2');
-      g.fillStyle = hg; g.fill();
-      g.strokeStyle = 'rgba(0,0,0,0.7)'; g.lineWidth = 1.2; g.stroke();
-    });
-    // 臉（倒梯形＋顴骨分面）
-    var face = [[cx - faceW / 2, fyTop - faceH * 0.6], [cx + faceW / 2, fyTop - faceH * 0.6], [cx + faceW * 0.3, fyTop + faceH * 0.35], [cx, fyTop + faceH * 0.55], [cx - faceW * 0.3, fyTop + faceH * 0.35]];
-    A.pathPoly(g, face);
-    var fg = g.createLinearGradient(cx - faceW / 2, fyTop - faceH, cx + faceW / 2, fyTop + faceH * 0.5);
-    fg.addColorStop(0, pal.stone.light); fg.addColorStop(0.5, pal.stone.base); fg.addColorStop(1, pal.stone.dark);
-    g.fillStyle = fg; g.fill();
-    g.strokeStyle = 'rgba(0,0,0,0.8)'; g.lineWidth = 1.3; g.stroke();
-    g.strokeStyle = 'rgba(0,0,0,0.45)'; g.lineWidth = 1;
-    g.beginPath(); g.moveTo(cx, fyTop - faceH * 0.6); g.lineTo(cx, fyTop + faceH * 0.55); g.stroke();
-    // 眉骨與眼窩（眼睛的亮光另外一張精靈做脈動）
-    [-1, 1].forEach(function (side) {
-      A.pathPoly(g, [[cx + side * faceW * 0.06, fyTop - faceH * 0.18], [cx + side * faceW * 0.36, fyTop - faceH * 0.36], [cx + side * faceW * 0.3, fyTop - faceH * 0.02]]);
-      g.fillStyle = '#000000'; g.fill();
-    });
-    // 獠牙
-    g.fillStyle = '#d8ccb4';
-    [-1, 1].forEach(function (side) {
-      A.pathPoly(g, [[cx + side * faceW * 0.08, fyTop + faceH * 0.3], [cx + side * faceW * 0.14, fyTop + faceH * 0.75], [cx + side * faceW * 0.19, fyTop + faceH * 0.22]]);
-      g.fill();
-    });
-    // 門檻
-    g.fillStyle = A.shade(pal.stone.base, -0.1);
-    g.fillRect(cx - w * 0.44, fy - h * 0.035, w * 0.88, h * 0.035);
-    g.fillStyle = A.rgba(pal.stone.light, 0.6);
-    g.fillRect(cx - w * 0.44, fy - h * 0.035, w * 0.88, 1.5);
-  }
+  function drawSpike(g,w,h,r,pal) { wholeProp(g,'arenaSpire',w,h,pal); }
+  function drawDemonBrazier(g,w,h,r,pal) { wholeProp(g,'arenaBrazier',w,h,pal); }
+  function drawCandles(g,w,h,r,pal) { wholeProp(g,'arenaCandles',w,h,pal); }
+  function drawGate(g,w,h,r,pal) { wholeProp(g,'arenaGate',w,h,pal); }
 
   /* 擺件規格：[種類, 寬, 高]（邏輯像素） */
   var PROP_SPECS = {
     relic: {draw:drawRelic,w:112,h:156,variants:2},
-    spike: { draw: drawSpike, w: 96, h: 168, variants: 3 },
-    spikeSmall: { draw: drawSpike, w: 64, h: 104, variants: 2 },
-    brazier: { draw: drawDemonBrazier, w: 72, h: 120, variants: 1 },
-    candles: { draw: drawCandles, w: 60, h: 58, variants: 2 },
+    spike: { draw: drawSpike, w: 96, h: 168, variants: 1 },
+    spikeSmall: { draw: drawSpike, w: 64, h: 104, variants: 1 },
+    brazier: { draw: drawDemonBrazier, w: 90, h: 116, variants: 1 },
+    candles: { draw: drawCandles, w: 60, h: 58, variants: 1 },
     gate: { draw: drawGate, w: 300, h: 330, variants: 1 }
   };
 
   /* ============ 貼圖（每座塔一份，第一次進場時畫，之後重用） ============ */
-  var _texCache = {};
+  var _texCache = {}, _lightCache = {}, _propCache = {};
   function canvasOf(w, h) {
     var c = document.createElement('canvas');
     c.width = w; c.height = h;
@@ -542,6 +348,7 @@ var BossArena = (function () {
     }));
     Object.keys(PROP_SPECS).forEach(function (key) {
       var spec = PROP_SPECS[key];
+      if (key !== 'relic' && _propCache[key]) { T.props[key] = _propCache[key]; return; }
       T.props[key] = [];
       for (var v = 0; v < spec.variants; v++) {
         var c = paint(Math.ceil(spec.w * TEX_SCALE), Math.ceil(spec.h * TEX_SCALE), function (g) {
@@ -552,8 +359,21 @@ var BossArena = (function () {
         T.props[key].push(tex(c));
       }
     });
+      // 中性完整物件跨塔別／屬性共用，避免建立 3×8 組大型貼圖。
+    Object.keys(T.props).forEach(function(key){if(key!=='relic')_propCache[key]=T.props[key];});
     _texCache[tierKey] = T;
     return T;
+  }
+
+  function lightingTextures(PIXI,tier,element) {
+    var base=buildTextures(PIXI,tier),pal=paletteFor(tier,element);
+    if(!ELEMENT_LIGHTS[element])return base;
+    if(!_lightCache[element]) {
+      var c=canvasOf(Math.ceil(40*TEX_SCALE),Math.ceil(56*TEX_SCALE)),g=c.getContext('2d');
+      g.scale(TEX_SCALE,TEX_SCALE);art().drawFlame(g,40,56,art().mulberry(4081),{fire:pal.fire,fire2:pal.fire2});
+      _lightCache[element]=new PIXI.Texture({source:new PIXI.CanvasSource({resource:c,autoGenerateMipmaps:true,scaleMode:'linear'})});
+    }
+    return Object.assign({},base,{pal:pal,flame:_lightCache[element]});
   }
 
   /* 法陣外緣在裂隙貼圖上的半徑比例（裂隙從這裡往外長） */
@@ -596,8 +416,9 @@ var BossArena = (function () {
       if (!enabled) return false;
       clearAll();
       var tierKey = TIERS[o.tier] ? o.tier : 'trial';
-      var T = buildTextures(PIXI, tierKey);
-      R.on = true; R.tier = tierKey; R.T = T;
+      var element=elementOf({elem:o.element,attr:o.attr});
+      var T = lightingTextures(PIXI, tierKey, element);
+      R.on = true; R.tier = tierKey; R.element = element; R.T = T;
       R.cx = o.cx; R.cy = o.cy;
       R.time = 0; R.ignite = 0; R.enraged = false; R.enrageFlash = 0;
       R.rng = A.mulberry(A.strHash(tierKey + ':' + Math.round(o.cx) + ':' + Math.round(o.cy)));
@@ -660,9 +481,11 @@ var BossArena = (function () {
         s._bbX = s.scale.x; s._bbY = s.scale.y;   // 貼圖自己的縮放；每幀的透視抵銷以它為底（見 update）
         s.x = wx; s.y = wy * groundScale; s.zIndex = s.y;
         s._h = spec.h * sc; s._w = spec.w * sc;
+        s.tint=T.pal.material||({trial:0xa18a90,hell:0xac937e,purgatory:0x8ba07e}[R.tier]);
         R.props.push(s);
         var foot=sprite(T.contact,opts.planeBase);foot.anchor.set(.5);foot.x=wx;foot.y=wy;
-        foot.width=spec.w*sc*1.15;foot.height=spec.w*sc*.38/groundScale;foot.alpha=.6;R.base.push(foot);
+        foot.width=spec.w*sc*1.5;foot.height=spec.w*sc*.50/groundScale;
+        foot.tint=s.tint;foot.alpha=.85;R.base.push(foot);
         if(key==='relic')for(var n=0;n<3;n++){
           var fog=sprite(T.fog,layer);fog.anchor.set(.5);fog.tint=parseInt(T.pal.glowHi.slice(1),16);fog._arenaLocal=true;
           R.local.push({s:fog,parent:s,sc:sc,index:n,phase:r(),height:spec.h*.6*sc});
@@ -688,26 +511,23 @@ var BossArena = (function () {
       var headroom = Math.max(95, R.viewH * 0.12);
       var gateMul = Math.max(0.45, Math.min(1.15, (gateFootY - headroom) / (PROP_SPECS.gate.h * 0.8))) / k;
       var gate = put('gate', -90 * D, gateMul, gateOffset / R.ry);
-      /* 門上的兩隻眼睛：位置對應 drawGate 的眼窩——門楣臉的中線在腳底上方 0.76 × 高，
-         眼窩再往上 0.18 張臉高（臉高 0.2 × 高）、左右各 0.19 張臉寬（臉寬 0.56 × 寬）。 */
-      var gs = gate.spec, gsc = gate.sc;
-      [-1, 1].forEach(function (side) {
-        var eye = sprite(T.dot, layer);
-        eye.anchor.set(0.5);
-        eye.tint = parseInt(T.pal.glow.slice(1), 16);
-        eye.blendMode = 'add';
-        eye.width = 34 * gsc; eye.height = 18 * gsc;
-        eye._bbX = eye.scale.x; eye._bbY = eye.scale.y;
-        /* 眼睛是門的零件：位移相對門腳底，跟著門的抵銷矩陣走（見 update 的 billboardSprite） */
-        eye._bbParent = gate.s;
-        eye._bbOffX = side * gs.w * 0.56 * 0.19 * gsc;
-        eye._bbOffY = -gs.h * (0.76 + 0.2 * 0.18) * gsc;
-        eye.x = gate.s.x + eye._bbOffX;
-        eye.y = gate.s.y + eye._bbOffY;
-        eye.zIndex = gate.s.zIndex + 1;
-        R.eyes.push(eye);
-      });
-      groundLight(gate.wx, gate.wy + 30, 420 * k, 0.5);
+      // 附著點以匯出完整圖片的可見範圍正規化；等比縮放／翻面／透視均跟隨本體。
+      function bodySize(b,key) {
+        var size=DecorNature.spriteSize(key),fit=Math.min(b.spec.w*.96/size.width,(b.spec.h-FOOT)/size.height);
+        return {w:size.width*fit*b.sc,h:size.height*fit*b.sc};
+      }
+      function attachedGlow(b,size,x,y,w,h,alpha) {
+        var glow=sprite(T.dot,layer);glow.anchor.set(.5);glow.tint=T.pal.light;glow.blendMode='add';
+        glow.width=size.w*w;glow.height=size.h*h;glow._bbX=glow.scale.x;glow._bbY=glow.scale.y;
+        glow._bbParent=b.s;glow._bbOffX=(x-.5)*size.w*(b.s._bbX<0?-1:1);glow._bbOffY=-(1-y)*size.h;
+        glow.x=b.s.x+glow._bbOffX;glow.y=b.s.y+glow._bbOffY;glow.alpha=0;
+        glow.zIndex=b.s.zIndex+.2;glow._intensity=alpha;R.eyes.push(glow);
+      }
+      var gateSize=bodySize(gate,'arenaGate');
+      attachedGlow(gate,gateSize,.53,.62,.30,.46,.7);
+      attachedGlow(gate,gateSize,.475,.21,.065,.027,.9);
+      attachedGlow(gate,gateSize,.615,.205,.065,.027,.9);
+      groundLight(gate.wx, gate.wy + 30, 420 * k, 0.32);
       // 火盆：四個斜角
       [-145, -35, 145, 35].forEach(function (deg) {
         var b = put('brazier', deg * D, 1);
@@ -715,23 +535,30 @@ var BossArena = (function () {
         fl.anchor.set(0.5, 1);
         fl.scale.set(b.sc / TEX_SCALE);
         fl.x = b.s.x;
-        // 碗口在腳底上方 (0.12 + 0.3 + 0.08) × 高（見 drawDemonBrazier 的三層底座），火焰底部埋進碗裡一點
-        fl.y = b.s.y - b.spec.h * 0.5 * b.sc + 3 * b.sc;
+        // 完整火盆圖片的碗內中心 y=.24；不要套用舊程序物件的高度。
+        fl.y = b.s.y - bodySize(b,'arenaBrazier').h*.76;
         fl._bbParent = b.s; fl._bbOffX = 0; fl._bbOffY = fl.y - b.s.y;   // 跟著火盆的矩陣走
         fl.zIndex = b.s.zIndex + 0.5;
-        fl._phase = r() * 10; fl._sc = b.sc;
+        fl._phase = r() * 10; fl._sc = b.sc*.7;
         R.flames.push(fl);
-        groundLight(b.wx, b.wy, 300 * k, 0.55);
+        groundLight(b.wx, b.wy, 340 * k, 0.32);
       });
       // 尖刺：上半圈與兩側
       [-120, -60, -168, -12, 168, 12, -100, -80].forEach(function (deg, i) {
-        put(i===2||i===3?'relic':i >= 6 ? 'spikeSmall' : 'spike', (deg + A.range(r, -5, 5)) * D, A.range(r, 0.85, 1.1), i >= 6 ? 1.18 : A.range(r, 0.98, 1.06));
+        put(i===2||i===3?'relic':i >= 6 ? 'spikeSmall' : 'spike', (deg + A.range(r, -5, 5)) * D, i >= 6 ? .7 : A.range(r, 0.85, 1.1), i >= 6 ? .95 : A.range(r, 0.98, 1.06));
       });
       // 下半圈（離鏡頭近、會擋視線的一側）只放矮的：小尖刺與燭台
       [118, 62].forEach(function (deg) { put('spikeSmall', deg * D, A.range(r, 0.8, 0.95)); });
       [100, 80, 140, 40].forEach(function (deg) {
         var c = put('candles', (deg + A.range(r, -4, 4)) * D, A.range(r, 0.9, 1.1), 0.94);
-        groundLight(c.wx, c.wy, 150 * k, 0.4);
+        var size=bodySize(c,'arenaCandles');
+        [[.245,.32],[.485,.025],[.73,.22]].forEach(function(point){
+          var flame=sprite(T.flame,layer);flame.anchor.set(.5,1);flame._sc=c.sc*.15;
+          flame._bbParent=c.s;flame._bbOffX=(point[0]-.5)*size.w*(c.s._bbX<0?-1:1);flame._bbOffY=-(1-point[1])*size.h;
+          flame.x=c.s.x+flame._bbOffX;flame.y=c.s.y+flame._bbOffY;
+          flame._phase=r()*10;flame.zIndex=c.s.zIndex+.3;R.flames.push(flame);
+        });
+        groundLight(c.wx, c.wy, 170 * k, 0.23);
       });
     }
 
@@ -876,7 +703,7 @@ var BossArena = (function () {
       // 魔門的眼睛：慢慢睜開，跟著心跳亮
       var beatPeriod = R.enraged ? 0.72 : 1.25;
       var beat = heartbeat(t, beatPeriod);
-      for (var e = 0; e < R.eyes.length; e++) R.eyes[e].alpha = ign * (0.55 + 0.45 * beat) * (R.enraged ? 1 : 0.85);
+      for (var e = 0; e < R.eyes.length; e++) R.eyes[e].alpha = (R.eyes[e]._intensity||1) * ign * (0.55 + 0.45 * beat) * (R.enraged ? 1 : 0.85);
       // 心跳光暈（螢幕四周）
       if (R.edge) {
         R.edge.width = view.W; R.edge.height = view.H;
@@ -918,7 +745,7 @@ var BossArena = (function () {
 
     function stats() {
       return {
-        enabled: enabled, on: R.on, tier: R.tier, props: R.props.length, glow: R.glow.length,
+        enabled: enabled, on: R.on, tier: R.tier, element:R.element||null, lightColor:R.T?R.T.pal.glow:null, props: R.props.length, glow: R.glow.length,
         localParticles:R.local.length, particles: R.particles.length, title: !!R.title, enraged: R.enraged,
         center: R.on ? { x: R.cx, y: R.cy, rx: R.rx, ry: R.ry, sigilR: R.sigilR } : null
       };
@@ -927,7 +754,7 @@ var BossArena = (function () {
     return { enter: enter, exit: exit, update: update, floorTexture: floorTexture, active: function () { return R.on; }, stats: stats, enabled: enabled };
   }
 
-  return { create: create, TIERS: TIERS, tierOf: tierOf, PROP_SPECS: PROP_SPECS, _draw: {
+  return { create: create, TIERS: TIERS, tierOf: tierOf, elementOf:elementOf, paletteFor:paletteFor, ELEMENT_LIGHTS:ELEMENT_LIGHTS, PROP_SPECS: PROP_SPECS, _draw: {
     floor: drawFloor, sigilRing: drawSigilRing, sigilCore: drawSigilCore, cracks: drawCracks,
     spike: drawSpike, brazier: drawDemonBrazier, candles: drawCandles, gate: drawGate
   } };

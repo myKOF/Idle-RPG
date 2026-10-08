@@ -1770,9 +1770,9 @@ var BattleRenderer = (function () {
     var tier = BossArena.tierOf(b);
     var floor = (panel.tower && panel.tower.floor) || 0;
     S.arena.enter({
-      cx: (pp.x + bp.x) / 2, cy: (pp.y + bp.y) / 2, tier: tier, W: S.W, H: S.H,
+      cx: (pp.x + bp.x) / 2, cy: (pp.y + bp.y) / 2, tier: tier, element:BossArena.elementOf(b), W: S.W, H: S.H,
       title: String(b.name || '').replace(/^第\d+層・/, ''),
-      subtitle: '封魔塔　第 ' + floor + ' 層　·　' + BossArena.TIERS[tier].name
+      subtitle: '封魔塔　第 ' + floor + ' 層　·　' + BossArena.paletteFor(tier,BossArena.elementOf(b)).name
     });
     var ft = S.arena.floorTexture();
     if (ft && S.groundTile && !S.groundTile.destroyed) { S.groundTile.texture = ft; S.groundTile.tint = 0xffffff; }

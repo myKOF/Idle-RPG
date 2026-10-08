@@ -10,7 +10,7 @@ const sourceRoot = path.join(resolveLibraryRoot({ libraryId: 'effects-materials'
 // 兩個倉庫的 core.autocrlf 可以不同，程序來源一律以 UTF-8／LF 核對。
 const read = file => fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
 const hash = (file, binary) => crypto.createHash('sha256').update(binary ? fs.readFileSync(file) : read(file)).digest('hex');
-const sprites = {willow:'willow',burnt:'burnt-tree',pine:'snow-pine',bones:'beast-bones',cactus:'cactus',ice:'ice-cluster',void:'void-crystal',log:'fallen-log',stump:'swamp-stump',monolith:'rune-stele',pillar:'stone-column',arch:'ruined-arch',wall:'ruined-wall',rubble:'fallen-masonry',urn:'weathered-urn',grave:'old-gravestone'};
+const sprites = {willow:'willow',burnt:'burnt-tree',pine:'snow-pine',bones:'beast-bones',cactus:'cactus',ice:'ice-cluster',void:'void-crystal',log:'fallen-log',stump:'swamp-stump',monolith:'rune-stele',pillar:'stone-column',arch:'ruined-arch',wall:'ruined-wall',rubble:'fallen-masonry',urn:'weathered-urn',grave:'old-gravestone',arenaGate:'arena-gate',arenaBrazier:'arena-brazier',arenaSpire:'arena-spire',arenaCandles:'arena-candles'};
 async function main(){
   if(mode==='--make-sprites'){
     // 標準素材匯出：只裁透明留白／等比縮小，不重畫或修改AI素材的造型。

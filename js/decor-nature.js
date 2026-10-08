@@ -3,7 +3,7 @@
  * 不讀外部素材，地表／地下配色由 BattleDecor 的地圖組合傳入。 */
 var DecorNature = (function () {
   'use strict';
-  var SPRITE_FILES={willow:'willow',deadTree:'burnt-tree',pine:'snow-pine',giantBones:'beast-bones',cactus:'cactus',ice:'ice-cluster',void:'void-crystal',log:'fallen-log',stump:'swamp-stump',runeStone:'rune-stele',pillar:'stone-column',arch:'ruined-arch',ruinWall:'ruined-wall',rubble:'fallen-masonry',urn:'weathered-urn',grave:'old-gravestone'};
+  var SPRITE_FILES={willow:'willow',deadTree:'burnt-tree',pine:'snow-pine',giantBones:'beast-bones',cactus:'cactus',ice:'ice-cluster',void:'void-crystal',log:'fallen-log',stump:'swamp-stump',runeStone:'rune-stele',pillar:'stone-column',arch:'ruined-arch',ruinWall:'ruined-wall',rubble:'fallen-masonry',urn:'weathered-urn',grave:'old-gravestone',arenaGate:'arena-gate',arenaBrazier:'arena-brazier',arenaSpire:'arena-spire',arenaCandles:'arena-candles'};
   var sprites={},loading=null;
   var scriptRoot=typeof document!=='undefined'&&document.currentScript?new URL('../',document.currentScript.src).href:null;
   function registerImages(images){Object.keys(images).forEach(function(key){sprites[key]=images[key];});}
@@ -17,7 +17,7 @@ var DecorNature = (function () {
     };
     loading=Promise.all(Object.keys(SPRITE_FILES).map(function(key){
       if(sprites[key])return;
-      return loader(new URL('images/scene/'+SPRITE_FILES[key]+'.png?v=20261007-simple-art',base).href).then(function(image){sprites[key]=image;});
+      return loader(new URL('images/scene/'+SPRITE_FILES[key]+'.png?v=20261008-boss-arena',base).href).then(function(image){sprites[key]=image;});
     })).then(function(){loading=null;},function(error){loading=null;throw error;});
     return loading;
   }
@@ -321,5 +321,5 @@ var DecorNature = (function () {
     } else throw new Error('Unknown nature ground: '+type);
     g.restore();
   }
-  return { drawBody:drawBody, drawContact:drawContact, drawSurface:drawSurface, drawArenaFloor:drawArenaFloor, loadImages:loadImages, registerImages:registerImages, spriteFiles:SPRITE_FILES };
+  return { drawBody:drawBody, drawContact:drawContact, drawSurface:drawSurface, drawArenaFloor:drawArenaFloor, loadImages:loadImages, registerImages:registerImages, spriteSize:function(key){var image=sprites[key];if(!image)throw new Error("Scene sprite not loaded: "+key);return {width:image.width,height:image.height};}, spriteFiles:SPRITE_FILES };
 })();
