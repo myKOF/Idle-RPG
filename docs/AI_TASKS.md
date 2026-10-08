@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## Claude｜單顆符文屬性口徑改為「詞條下限」、雙手武器符文 ×2、全體削弱 50%～70%（RUNE-STAT-FLOOR-20261008）
+
+- Owner：Claude；Done。使用者要求：①符文能力對標裝備詳情「可能出現的詞條 [2828 ~ 4241]」的 2828（下限），不再隱含 ×1.2，餘燼的說明應是「基礎值 ×1」②雙手武器詞條 ×2，符文跟著 ×2 ③所有符文能力削弱，第 1 階 −50%、高階 −70%，目前太強。
+- 技術決策：新增 `rwRuneStatValue`（詞條基準值 × strengthMult(0)＝80% × mult × 雙手倍率 × 強化倍率 × statScale），只用在單顆符文（`rwRuneStatLine`、`rwItemStatEntries` 的 rune 段）；符文真言自己的 stats 仍走 `rwStatValue`（基準值 × mult，不吃下限與雙手倍率）。表值：第 1～3 階 −50%、第 33 階 −70%、中間線性，2 位小數（餘燼 2 → 1、終焉 2.5 → 0.75）；因為同時換了口徑（×0.8），實際單顆數值約為舊值的 40%～24%。
+- 修改：js/runeword.js、js/runeword_data.js（RUNES 33 列、口徑說明）、js/ui-runeword.js（「基礎值 ×N」與說明）、config/CSV/Runes.csv、config/Excel/Runes.xlsx（Excel 原生 API 更新，重開驗證）、tools/config_tables.cjs（說明頁與備註文字）、tools/gen_runeword_doc.cjs、docs/RUNEWORD_DESIGN.md、tests/runeword-engine.test.cjs、tests/config-runes-table.test.cjs；版號：runeword_data 1.0.11、runeword 1.0.8、ui-runeword 1.0.8、bridge 1.0.242、WORKER_ASSET_VERSION 20261008-rune-stat-floor。
+- 風險／平衡：符文真言的 stats 沒動，只有單顆符文屬性下降，所以各真言的整體強度跟著降（探針傳說：第 1 級 ×1.2～1.7、第 2 級 ×1.3～2.7、第 3 級 ×2.4～4.3、第 4 級 ×2.2～7.3，原本 ×1.3～1.8／1.4～3.1／2.9～5.2／2.7～9.3）；雙手武器的符文真言 stats 是否也 ×2 待使用者決定。
+- 建議驗證：雙手武器鑲餘燼＝提示下限（Lv200 傳說 2828）、單手 1414；圖鑑符文頁顯示「基礎值 ×1」；改 Excel 一格符文倍率後套用參數能生效。
+
 ## Claude｜符文抹除的幣種與費用接進 Excel 配置表（RUNE-ERASE-CONFIG-20261008）
 
 - Owner：Claude；Done。使用者要求：抹除所消耗的幣種及費用接進 Excel 配置表。

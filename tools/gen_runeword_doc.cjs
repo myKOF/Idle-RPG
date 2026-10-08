@@ -33,7 +33,7 @@ function generate() {
     const uses = c.RUNEWORDS.filter((w) => w.runes.includes(r.id)).length;
     return [r.tier, r.id, `${r.glyph} ${r.name}`, side(r.w), side(r.a), uses,
       r.tier < c.RUNE_COMPOSE_MAX_TIER ? '可合成' : '只能掉落'];
-  }), ['階', 'id', '符文', '武器側屬性（詞條基準倍數）', '防具／飾品／副手側屬性', '用於幾組', '取得']));
+  }), ['階', 'id', '符文', '武器側屬性（詞條下限倍數）', '防具／飾品／副手側屬性', '用於幾組', '取得']));
   L.push('');
   const counts = [0, 0, 0, 0, 0];
   c.RUNEWORDS.forEach((w) => counts[w.tier]++);

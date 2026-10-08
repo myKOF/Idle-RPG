@@ -12,8 +12,8 @@
 
 importScripts('protocol.js?v=49', 'shim.js?v=12');
 importScripts(
-  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261008-npc-elite-skills', '../elite_data.js?v=20261008-elite-groups', '../runeword_data.js?v=20261008-rune-erase-cfg', '../status.js?v=20261005-cc-decay-count', '../formula.js?v=20261008-elite-groups', '../battlefield.js?v=20261008-rand-others-hoist', '../stats.js?v=20261003-rename-weineng',
-  '../item.js?v=20261008-rune-erase-cfg', '../runeword.js?v=20261008-rune-erase-cfg',
+  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261008-npc-elite-skills', '../elite_data.js?v=20261008-elite-groups', '../runeword_data.js?v=20261008-rune-stat-floor', '../status.js?v=20261005-cc-decay-count', '../formula.js?v=20261008-elite-groups', '../battlefield.js?v=20261008-rand-others-hoist', '../stats.js?v=20261003-rename-weineng',
+  '../item.js?v=20261008-rune-erase-cfg', '../runeword.js?v=20261008-rune-stat-floor',
   '../skills.js?v=20261007-runes4', '../skills2.js?v=20261008-chain-quiet', '../talents.js?v=20261003-rename-weineng',
   '../player.js?v=20261007-rune-seen', '../special_rules.js',
   '../combat.js?v=20261008-enemy-frenzy-count', '../elite.js?v=20261008-elite-groups', '../legendary.js?v=20261007-runes4', '../potential.js?v=20261005-cc-decay-count', '../tower.js?v=20261008-enemy-frenzy-count',

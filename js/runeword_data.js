@@ -16,8 +16,11 @@
    4. 每顆符文單獨鑲著也有加成（武器／防具各一條），符文真言生效時兩者並存。
 
    ---- 數值口徑（單一權威）----
-   所有 stats 的數值＝ affixBaseValue(詞條, 裝備等級, 稀有度) × mult：
-     即「該裝備上一條滿刻度中位數詞條」的 mult 倍。因此隨裝備等級與稀有度自動成長，
+   符文（RUNES 的 w／a）的數值＝ 詞條可能範圍的下限 × mult × 雙手倍率：
+     下限＝ affixBaseValue(詞條, 裝備等級, 稀有度) × 80%（就是裝備詳情提示「可能出現的詞條 [下限 ~ 上限]」的下限）；
+     雙手武器的詞條本身 ×2，符文跟著 ×2。倍率 1 ＝ 一條詞條的下限值。
+   符文真言（RUNEWORDS）stats 的數值＝ affixBaseValue(詞條, 裝備等級, 稀有度) × mult：
+     即「該裝備上一條基準值（區間中位數）詞條」的 mult 倍，不吃區間下限與雙手倍率。因此隨裝備等級與稀有度自動成長，
      與詞條系統同源，不另建第二套數值（AI_RULES §7）。mult 可為負數（＝代價）。
    fx／procs 的數字是固定值（不隨稀有度成長）——它們是機制，不是屬性。
 
@@ -42,39 +45,39 @@
    w＝武器類（主手、雙手）鑲入時的加成；a＝防具、飾品、副手鑲入時的加成。
    [詞條鍵, mult]；詞條鍵必須是 AFFIX_POOL 的鍵（all_lock 的鎖定詞條不可用）。 */
 var RUNES = [
-  { id: 'r01', name: '微光', w: ['hit', 2], a: ['evasion', 0.6] },
-  { id: 'r02', name: '餘燼', w: ['atkFlat', 2], a: ['defFlat', 0.6] },
-  { id: 'r03', name: '霜痕', w: ['elemDmgIce', 0.6], a: ['resIce', 0.3] },
-  { id: 'r04', name: '風語', w: ['aspd', 0.6], a: ['evasion', 0.7] },
-  { id: 'r05', name: '巖心', w: ['pPen', 0.12], a: ['defPct', 0.6] },
-  { id: 'r06', name: '毒牙', w: ['elemDmgPoison', 0.6], a: ['resPoison', 0.3] },
-  { id: 'r07', name: '雷鳴', w: ['elemDmgLightning', 0.6], a: ['resLightning', 0.3] },
-  { id: 'r08', name: '暗影', w: ['lifesteal', 0.7], a: ['hpRegen', 0.7] },
-  { id: 'r09', name: '聖輝', w: ['elemDmgLight', 0.6], a: ['resLight', 0.3] },
-  { id: 'r10', name: '血誓', w: ['atkPct', 0.7], a: ['hpPct', 0.7] },
-  { id: 'r11', name: '鋼魄', w: ['critDmg', 0.8], a: ['pRes', 0.2] },
-  { id: 'r12', name: '靈泉', w: ['matkPct', 0.7], a: ['mpFlat', 0.9] },
-  { id: 'r13', name: '疾影', w: ['critRate', 0.8], a: ['hit', 0.9] },
-  { id: 'r14', name: '磐石', w: ['eliteDmg', 0.8], a: ['blockRate', 0.9] },
-  { id: 'r15', name: '曙光', w: ['mPen', 0.15], a: ['mRes', 0.2] },
-  { id: 'r16', name: '夜幕', w: ['elemDmgDark', 0.8], a: ['resDark', 0.4] },
-  { id: 'r17', name: '烈陽', w: ['elemDmgFire', 0.8], a: ['resFire', 0.4] },
-  { id: 'r18', name: '寒月', w: ['cdr', 0.9], a: ['mdefPct', 0.9] },
-  { id: 'r19', name: '驚蟄', w: ['aspd', 1], a: ['tenacity', 1] },
-  { id: 'r20', name: '嵐', w: ['elemDmgWind', 1], a: ['resWind', 0.5] },
-  { id: 'r21', name: '蒼穹', w: ['bossDmg', 1.1], a: ['shieldEff', 1.1] },
-  { id: 'r22', name: '厚土', w: ['elemDmgEarth', 1.1], a: ['hpPct', 1.2] },
-  { id: 'r23', name: '熔岩', w: ['atkPct', 1.3], a: ['globalDmgRed', 1.1] },
-  { id: 'r24', name: '冰魄', w: ['critDmg', 1.4], a: ['resAll', 0.6] },
-  { id: 'r25', name: '雷霆', w: ['matkPct', 1.4], a: ['blockDmgRed', 1.4] },
-  { id: 'r26', name: '虛空', w: ['aoeDmg', 1.5], a: ['ccRed', 1.2] },
-  { id: 'r27', name: '星辰', w: ['critRate', 1.6], a: ['luck', 1.6] },
-  { id: 'r28', name: '命運', w: ['normalDmg', 1.7], a: ['evasion', 1.7] },
-  { id: 'r29', name: '輪迴', w: ['lifesteal', 1.8], a: ['hpRegen', 1.8] },
-  { id: 'r30', name: '永恆', w: ['atkPct', 1.9], a: ['hpPct', 1.9] },
-  { id: 'r31', name: '混沌', w: ['matkPct', 2], a: ['resAll', 0.9] },
-  { id: 'r32', name: '創生', w: ['critDmg', 2.2], a: ['shieldEff', 2] },
-  { id: 'r33', name: '終焉', w: ['bossDmg', 2.5], a: ['globalDmgRed', 1.8] }
+  { id: 'r01', name: '微光', w: ['hit', 1], a: ['evasion', 0.3] },
+  { id: 'r02', name: '餘燼', w: ['atkFlat', 1], a: ['defFlat', 0.3] },
+  { id: 'r03', name: '霜痕', w: ['elemDmgIce', 0.3], a: ['resIce', 0.15] },
+  { id: 'r04', name: '風語', w: ['aspd', 0.3], a: ['evasion', 0.35] },
+  { id: 'r05', name: '巖心', w: ['pPen', 0.06], a: ['defPct', 0.29] },
+  { id: 'r06', name: '毒牙', w: ['elemDmgPoison', 0.29], a: ['resPoison', 0.14] },
+  { id: 'r07', name: '雷鳴', w: ['elemDmgLightning', 0.28], a: ['resLightning', 0.14] },
+  { id: 'r08', name: '暗影', w: ['lifesteal', 0.33], a: ['hpRegen', 0.33] },
+  { id: 'r09', name: '聖輝', w: ['elemDmgLight', 0.28], a: ['resLight', 0.14] },
+  { id: 'r10', name: '血誓', w: ['atkPct', 0.32], a: ['hpPct', 0.32] },
+  { id: 'r11', name: '鋼魄', w: ['critDmg', 0.36], a: ['pRes', 0.09] },
+  { id: 'r12', name: '靈泉', w: ['matkPct', 0.31], a: ['mpFlat', 0.4] },
+  { id: 'r13', name: '疾影', w: ['critRate', 0.35], a: ['hit', 0.39] },
+  { id: 'r14', name: '磐石', w: ['eliteDmg', 0.34], a: ['blockRate', 0.38] },
+  { id: 'r15', name: '曙光', w: ['mPen', 0.06], a: ['mRes', 0.08] },
+  { id: 'r16', name: '夜幕', w: ['elemDmgDark', 0.33], a: ['resDark', 0.17] },
+  { id: 'r17', name: '烈陽', w: ['elemDmgFire', 0.33], a: ['resFire', 0.16] },
+  { id: 'r18', name: '寒月', w: ['cdr', 0.36], a: ['mdefPct', 0.36] },
+  { id: 'r19', name: '驚蟄', w: ['aspd', 0.39], a: ['tenacity', 0.39] },
+  { id: 'r20', name: '嵐', w: ['elemDmgWind', 0.39], a: ['resWind', 0.19] },
+  { id: 'r21', name: '蒼穹', w: ['bossDmg', 0.42], a: ['shieldEff', 0.42] },
+  { id: 'r22', name: '厚土', w: ['elemDmgEarth', 0.41], a: ['hpPct', 0.45] },
+  { id: 'r23', name: '熔岩', w: ['atkPct', 0.48], a: ['globalDmgRed', 0.4] },
+  { id: 'r24', name: '冰魄', w: ['critDmg', 0.5], a: ['resAll', 0.22] },
+  { id: 'r25', name: '雷霆', w: ['matkPct', 0.49], a: ['blockDmgRed', 0.49] },
+  { id: 'r26', name: '虛空', w: ['aoeDmg', 0.52], a: ['ccRed', 0.42] },
+  { id: 'r27', name: '星辰', w: ['critRate', 0.54], a: ['luck', 0.54] },
+  { id: 'r28', name: '命運', w: ['normalDmg', 0.57], a: ['evasion', 0.57] },
+  { id: 'r29', name: '輪迴', w: ['lifesteal', 0.59], a: ['hpRegen', 0.59] },
+  { id: 'r30', name: '永恆', w: ['atkPct', 0.61], a: ['hpPct', 0.61] },
+  { id: 'r31', name: '混沌', w: ['matkPct', 0.63], a: ['resAll', 0.28] },
+  { id: 'r32', name: '創生', w: ['critDmg', 0.67], a: ['shieldEff', 0.61] },
+  { id: 'r33', name: '終焉', w: ['bossDmg', 0.75], a: ['globalDmgRed', 0.54] }
 ];
 
 /* 符文字形：Unicode 符文區塊（長老弗薩克 24 個＋盎格魯撒克遜補 9 個），純文字字元、不是素材圖。 */

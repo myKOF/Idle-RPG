@@ -224,27 +224,31 @@ test('rwCandidates：列出差幾顆就成形的配方，並說明缺哪幾顆',
 
 /* ---------------- 屬性聚合 ---------------- */
 
-test('單顆符文依武器／防具各給一條屬性，數值＝詞條基準值 × mult', () => {
+test('單顆符文依武器／防具各給一條屬性，數值＝詞條下限（基準值 × 80%）× mult', () => {
   const c = loadRuneEnv();
   const weapon = fillRunes(makeItem(c, { rarity: 5, level: 100 }), ['r10']);
   const chest = fillRunes(makeItem(c, { rarity: 5, level: 100, slot: 'chest', weaponType: undefined }), ['r10']);
   const we = c.rwItemStatEntries(weapon), ce = c.rwItemStatEntries(chest);
   assert.equal(we[0].key, 'atkPct');
   assert.equal(ce[0].key, 'hpPct');
-  const expectW = c.affixRoundValue('atkPct', c.affixBaseValue('atkPct', 100, 5) * 0.7);
+  const mult = c.RUNE_BY_ID.r10.w[1];
+  const expectW = c.affixRoundValue('atkPct', c.affixBaseValue('atkPct', 100, 5) * 0.8 * mult);
   assert.equal(we[0].val, expectW);
+  // 與裝備詳情「可能出現的詞條 [下限 ~ 上限]」的下限同口徑：倍率 1 ＝ 下限
+  assert.equal(c.rwRuneStatValue(weapon, 'atkPct', 1), c.getAffixLimits('atkPct', 100, 5, weapon).min);
   const shield = fillRunes(makeItem(c, { rarity: 5, weaponType: 'shield' }), ['r10']);
   assert.equal(c.rwItemStatEntries(shield)[0].key, 'hpPct', '副手視同防具側');
 });
 
-test('強化倍率套用在符文屬性上；雙手武器不吃雙手詞條 ×2；符文孔只多 twoHandBonusSlots 個（加法）', () => {
+test('強化倍率套用在符文屬性上；雙手武器的符文跟詞條一樣 ×2；符文孔只多 twoHandBonusSlots 個（加法）', () => {
   const c = loadRuneEnv();
   const one = fillRunes(makeItem(c, { rarity: 5, level: 100 }), ['r10']);
   const up = fillRunes(makeItem(c, { rarity: 5, level: 100, upgrade: 10 }), ['r10']);
   const two = fillRunes(makeItem(c, { rarity: 5, level: 100, weaponType: 'axe2h' }), ['r10']);
   const v = (it) => c.rwItemStatEntries(it)[0].val;
   assert.ok(v(up) > v(one) * 1.4, '+10 約 ×1.5');
-  assert.equal(v(two), v(one), '雙手武器的符文屬性與單手相同');
+  assert.equal(v(two), c.affixRoundValue('atkPct', c.affixBaseValue('atkPct', 100, 5) * 0.8 * c.RUNE_BY_ID.r10.w[1] * c.TWO_HAND_AFFIX_VALUE_MULT), '雙手武器的符文屬性 ×TWO_HAND_AFFIX_VALUE_MULT（與詞條同比例）');
+  assert.equal(c.rwRuneStatValue(two, 'atkFlat', 1), c.getAffixLimits('atkFlat', 100, 5, two).min, '雙手武器上倍率 1 ＝ 提示裡的下限（2828 那種數字）');
   assert.equal(c.runeSlotCountFor(two), c.runeSlotCountFor(one) + c.RUNE_SETTINGS.twoHandBonusSlots, '雙手武器的符文孔數＝單手 + twoHandBonusSlots');
 });
 
