@@ -1,13 +1,13 @@
 'use strict';
 /* ============================================================
-   skill2-chainlightning-active-cap.test.cjs — 閃電鏈的全場同時存活上限（2026-10-08）
+   skill2-chainlightning-active-cap.test.cjs — 閃電鏈的「表演」上限（2026-10-08）
 
-   使用者畫面：「模擬落後 14 分鐘且持續增加」，Worker 單步 0.7~3.6 秒。無畫面引擎量測
-   （Lv.700、連鎖閃電超神【天地雷鎖陣】、150 隻打不死的敵人）：雷電暴風「每次彈射 20% 生成新鏈」
-   的繁殖係數大於 1，天地雷鎖陣又每秒重施，每秒新增約 110 條鏈、同時在飛約 170~250 條，
-   每步 130~260ms，超過一步 100ms 的現實時間，遊戲時間追不上現實。
-   做法與臨界雷劫雷球相同：全場硬上限 SG_CHAIN_MAX_ACTIVE（96）；檢查在擲骰之前，
-   所以未達上限時行為（含亂數消耗）與沒有上限完全相同；每次施放的第一條鏈永遠放行。
+   使用者定案的原則：特效上限只決定前端的表演，傷害照樣要算。
+   雷電暴風「每次彈射 20% 生成新鏈」的繁殖係數大於 1，天地雷鎖陣又每秒重施，
+   150 隻打不死的敵人下同時在飛的鏈可達 170~250 條，前端畫不了那麼多。
+   做法：同時存活超過 SG_CHAIN_VISIBLE_MAX（96）之後出生的鏈變成「靜默鏈」——
+   照常彈射、照常算傷害、照常擲骰，只是不送飛行與命中的特效事件。
+   所以：傷害與亂數序列和沒有這個上限完全相同；只有特效事件變少。
    ============================================================ */
 
 const test = require('node:test');
@@ -18,44 +18,64 @@ const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 const { createEngine } = require(path.join(root, 'scripts/sim/engine'));
 
-function scenario(seconds, cap, enemies) {
+function scenario(seconds, visibleMax, enemies) {
   const eng = createEngine({ seed: 20261008 }).boot(null);
   const gm = (l) => eng.cmd('gm.exec', { line: l });
   ['level 700', 'MP_lock', 'sglv chainlightning max', 'sgult chainlightning 1', 'god 1'].forEach(gm);
   eng.state().player.loadout = ['sg:chainlightning'];
   vm.runInContext("gmArenaSpawn(" + enemies + ",'small',1000000)", eng.ctx);
-  if (cap !== undefined) vm.runInContext('SG_CHAIN_MAX_ACTIVE = ' + cap, eng.ctx);
+  if (visibleMax !== undefined) vm.runInContext('SG_CHAIN_VISIBLE_MAX = ' + visibleMax, eng.ctx);
+  const ctx = eng.ctx;
+  const counts = { travel: 0, hit: 0, end: 0 };
+  const origEmit = ctx.sgEmitVfx;
+  ctx.sgEmitVfx = function (gid, targets, sel, spec) {
+    if (gid === 'chainlightning' && spec) {
+      if (spec.variant === 'lightning-chain') counts.travel++;
+      else if (spec.variant === 'lightning-chain-hit') counts.hit++;
+      else if (spec.variant === 'lightning-chain-end') counts.end++;
+    }
+    return origEmit.apply(this, arguments);
+  };
   const per = Math.round(1 / eng.dt);
   let peak = 0;
   for (let s = 0; s < seconds; s++) {
     for (let i = 0; i < per; i++) {
       eng.step(1);
-      peak = Math.max(peak, vm.runInContext('SG_CHAIN_ACTIVE', eng.ctx));
+      peak = Math.max(peak, vm.runInContext('SG_CHAIN_ACTIVE', ctx));
     }
   }
-  return { eng, peak, read: (e) => vm.runInContext(e, eng.ctx) };
+  const read = (e) => vm.runInContext(e, ctx);
+  return { peak, counts, read, hp: read('FIELD.monsters.map(function(m){return m.hp}).join(",")'),
+           serial: read('SG_CHAIN_SERIAL'), dmg: read('G.player.totalDamage||0') };
 }
 
-test('CHAIN-CAP-1 預設上限 96；同時存活的鏈不會越過它太多（每次施放的第一條永遠放行）', () => {
+test('CHAIN-VIS-1 預設表演上限 96；情境確實把鏈堆到遠超 96', () => {
   const r = scenario(12, undefined, 150);
-  assert.equal(r.read('SG_CHAIN_MAX_ACTIVE'), 96);
-  assert.ok(r.peak >= 60, '情境要真的把鏈堆起來才算測到上限，peak=' + r.peak);
-  assert.ok(r.peak <= 96 + 8, '同時存活鏈數 ' + r.peak + ' 超過上限太多');
-});
-
-test('CHAIN-CAP-2 沒有上限時同一情境會堆到遠超 96（證明上限真的在咬）', () => {
-  const r = scenario(12, 1e9, 150);
+  assert.equal(r.read('SG_CHAIN_VISIBLE_MAX'), 96);
   assert.ok(r.peak > 140, 'peak=' + r.peak);
 });
 
-test('CHAIN-CAP-3 上限以下行為完全相同：敵人少、鏈堆不到上限時，有無上限的結果逐位元一致', () => {
-  const hp = (r) => r.read('FIELD.monsters.map(function(m){return m.hp}).join(",")');
-  const a = scenario(8, undefined, 3), b = scenario(8, 1e9, 3);
-  assert.ok(a.peak < 96, 'peak=' + a.peak);
-  assert.equal(hp(a), hp(b));
+test('CHAIN-VIS-2 傷害照算：表演上限 96 與不設上限，敵人血量與鏈的總數逐位元一致', () => {
+  const capped = scenario(12, 96, 150), open = scenario(12, 1e9, 150);
+  assert.equal(capped.hp, open.hp, '表演上限不得影響傷害');
+  assert.equal(capped.serial, open.serial, '鏈的總數（繁殖）不得受表演上限影響');
 });
 
-test('CHAIN-CAP-4 重設技能狀態時計數歸零（排程被清掉就沒有結束回呼）', () => {
+test('CHAIN-VIS-3 表演上限只減少特效事件：飛行與命中事件變少，結束事件跟著少', () => {
+  const capped = scenario(12, 96, 150), open = scenario(12, 1e9, 150);
+  assert.ok(capped.counts.travel < open.counts.travel * 0.8, capped.counts.travel + ' vs ' + open.counts.travel);
+  assert.ok(capped.counts.hit < open.counts.hit * 0.8, capped.counts.hit + ' vs ' + open.counts.hit);
+  assert.ok(capped.counts.end < open.counts.end * 0.8, capped.counts.end + ' vs ' + open.counts.end);
+});
+
+test('CHAIN-VIS-4 敵人少、鏈堆不到上限時完全沒有靜默鏈：特效事件數與不設上限一致', () => {
+  const a = scenario(8, 96, 3), b = scenario(8, 1e9, 3);
+  assert.ok(a.peak < 96, 'peak=' + a.peak);
+  assert.deepEqual(a.counts, b.counts);
+  assert.equal(a.hp, b.hp);
+});
+
+test('CHAIN-VIS-5 重設技能狀態時計數歸零（排程被清掉就沒有結束回呼）', () => {
   const r = scenario(6, undefined, 150);
   assert.ok(r.read('SG_CHAIN_ACTIVE') > 0);
   r.read('resetSkill2RT()');
