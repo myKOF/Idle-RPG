@@ -13130,7 +13130,7 @@ function initUI() {
         UI._eraseArm = null;
         var eraseCost = runeEraseCost(rmIt, rwSlots(rmIt)[eraseIdx]);
         var erasePlayer = (uiHeaderPanelSnapshot() || {}).player;
-        if (erasePlayer && ((erasePlayer.scrap || 0) < eraseCost.scrap || (erasePlayer.essence || 0) < eraseCost.essence)) {
+        if (erasePlayer && !runeEraseAffordable(erasePlayer, eraseCost)) {
           showFloatingText(rrm, '材料不足', '#fca5a5');
           return;
         }

@@ -2,7 +2,7 @@
 
 > 協議版本：`WORKER_PROTOCOL_VERSION = 49`　最後更新：2026-10-08
 
-v49（2026-10-08 符文刻印／抹除）：`rune.unsocket` 改為 `rune.erase(itemId, index)`——抹除已刻印的符文：扣裝備碎片與附魔精華（費用＝`runeEraseCost`：符文階數 × 裝備稀有度倍率 × `RUNE_ERASE` 每階單價），符文消失不退還，孔恢復為空；資源不足回錯誤字串。指令數不變（93）。「刻印」沒有新指令：UI 先在本機暫存要放的符文，按下刻印才依孔位順序逐顆送 `rune.socket(itemId, runeId, index)`。
+v49（2026-10-08 符文刻印／抹除）：`rune.unsocket` 改為 `rune.erase(itemId, index)`——抹除已刻印的符文：扣設定的幣種（預設裝備碎片與附魔精華；費用＝`runeEraseCost`：符文階數 × 裝備稀有度倍率 × `RUNE_SETTINGS.erase` 每階單價，幣種可含金幣），符文消失不退還，孔恢復為空；資源不足回錯誤字串。指令數不變（93）。「刻印」沒有新指令：UI 先在本機暫存要放的符文，按下刻印才依孔位順序逐顆送 `rune.socket(itemId, runeId, index)`。
 
 v48（2026-10-07 符文真言隱藏）：`gems` 面板新增 `runewordSeen = { 真言id: 1 }`，即 `G.player.runewordSeen`（成形過的符文真言，隨存檔；`rwMarkSeen` 在 `socketRune` 成形時寫入，`save.js` 讀檔時對目前已成形的裝備補記）。主執行緒的符文頁據此決定圖鑑與符文庫顯示配方與效果、或只顯示問號；舊快照缺欄時視為全部未激活。指令數不變（93）；存檔新增 `player.runewordSeen`（缺欄＝空）。
 

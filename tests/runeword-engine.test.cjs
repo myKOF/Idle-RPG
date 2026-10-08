@@ -61,6 +61,29 @@ test('socketRune：扣庫存、鑲進第一個空符文孔；庫存不足／已�
   assert.equal(c.runeCount('r01'), 1, '沒有符文孔時不扣庫存');
 });
 
+test('抹除費用的幣種與單價來自配置表（RUNE_SETTINGS.erase）：0＝不收這種幣，金幣可選，費用文字只列要收的', () => {
+  const c = loadRuneEnv();
+  const it = makeItem(c, { rarity: 5 });
+  assert.deepEqual(plain(Object.keys(c.RUNE_SETTINGS.erase)), ['scrapPerTier', 'essencePerTier', 'goldPerTier']);
+  const tier = c.RUNE_BY_ID.r05.tier, mult = c.RARITIES[5].mult;
+  c.RUNE_SETTINGS.erase.goldPerTier = 100;
+  const cost = c.runeEraseCost(it, 'r05');
+  assert.equal(cost.gold, Math.ceil(100 * tier * mult));
+  assert.equal(cost.scrap, Math.ceil(c.RUNE_SETTINGS.erase.scrapPerTier * tier * mult));
+  assert.match(c.runeEraseCostText(cost), /金幣 .*裝備碎片 .*附魔精華 /);
+  c.addRune('r05', 1); c.socketRune(it, 'r05');
+  Object.assign(c.G.player, { gold: cost.gold - 1, scrap: 1e9, essence: 1e9 });
+  assert.match(c.eraseRune(it, 0), /資源不足.*金幣/, '金幣不夠就擋下');
+  c.G.player.gold = cost.gold + 7;
+  assert.equal(c.eraseRune(it, 0), null);
+  assert.equal(c.G.player.gold, 7, '金幣被扣');
+  c.RUNE_SETTINGS.erase = { scrapPerTier: 0, essencePerTier: 0, goldPerTier: 0 };
+  assert.deepEqual(plain(c.runeEraseCost(it, 'r05')), { gold: 0, scrap: 0, essence: 0 });
+  assert.equal(c.runeEraseCostText(c.runeEraseCost(it, 'r05')), '免費');
+  c.RUNE_SETTINGS.erase = { scrapPerTier: 0, essencePerTier: 3, goldPerTier: 0 };
+  assert.equal(c.runeEraseCostText(c.runeEraseCost(it, 'r05')), '附魔精華 ' + c.fmt(Math.ceil(3 * tier * mult)), '只收精華時只列精華');
+});
+
 test('抹除費用：符文階數越高、裝備稀有度越高越貴，一律是正整數', () => {
   const c = loadRuneEnv();
   const at = (rarity, rune) => c.runeEraseCost({ rarity }, rune);
@@ -201,27 +224,31 @@ test('rwCandidates：列出差幾顆就成形的配方，並說明缺哪幾顆',
 
 /* ---------------- 屬性聚合 ---------------- */
 
-test('單顆符文依武器／防具各給一條屬性，數值＝詞條基準值 × mult', () => {
+test('單顆符文依武器／防具各給一條屬性，數值＝詞條下限（基準值 × 80%）× mult', () => {
   const c = loadRuneEnv();
   const weapon = fillRunes(makeItem(c, { rarity: 5, level: 100 }), ['r10']);
   const chest = fillRunes(makeItem(c, { rarity: 5, level: 100, slot: 'chest', weaponType: undefined }), ['r10']);
   const we = c.rwItemStatEntries(weapon), ce = c.rwItemStatEntries(chest);
   assert.equal(we[0].key, 'atkPct');
   assert.equal(ce[0].key, 'hpPct');
-  const expectW = c.affixRoundValue('atkPct', c.affixBaseValue('atkPct', 100, 5) * 0.7);
+  const mult = c.RUNE_BY_ID.r10.w[1];
+  const expectW = c.affixRoundValue('atkPct', c.affixBaseValue('atkPct', 100, 5) * 0.8 * mult);
   assert.equal(we[0].val, expectW);
+  // 與裝備詳情「可能出現的詞條 [下限 ~ 上限]」的下限同口徑：倍率 1 ＝ 下限
+  assert.equal(c.rwRuneStatValue(weapon, 'atkPct', 1), c.getAffixLimits('atkPct', 100, 5, weapon).min);
   const shield = fillRunes(makeItem(c, { rarity: 5, weaponType: 'shield' }), ['r10']);
   assert.equal(c.rwItemStatEntries(shield)[0].key, 'hpPct', '副手視同防具側');
 });
 
-test('強化倍率套用在符文屬性上；雙手武器不吃雙手詞條 ×2；符文孔只多 twoHandBonusSlots 個（加法）', () => {
+test('強化倍率套用在符文屬性上；雙手武器的符文跟詞條一樣 ×2；符文孔只多 twoHandBonusSlots 個（加法）', () => {
   const c = loadRuneEnv();
   const one = fillRunes(makeItem(c, { rarity: 5, level: 100 }), ['r10']);
   const up = fillRunes(makeItem(c, { rarity: 5, level: 100, upgrade: 10 }), ['r10']);
   const two = fillRunes(makeItem(c, { rarity: 5, level: 100, weaponType: 'axe2h' }), ['r10']);
   const v = (it) => c.rwItemStatEntries(it)[0].val;
   assert.ok(v(up) > v(one) * 1.4, '+10 約 ×1.5');
-  assert.equal(v(two), v(one), '雙手武器的符文屬性與單手相同');
+  assert.equal(v(two), c.affixRoundValue('atkPct', c.affixBaseValue('atkPct', 100, 5) * 0.8 * c.RUNE_BY_ID.r10.w[1] * c.TWO_HAND_AFFIX_VALUE_MULT), '雙手武器的符文屬性 ×TWO_HAND_AFFIX_VALUE_MULT（與詞條同比例）');
+  assert.equal(c.rwRuneStatValue(two, 'atkFlat', 1), c.getAffixLimits('atkFlat', 100, 5, two).min, '雙手武器上倍率 1 ＝ 提示裡的下限（2828 那種數字）');
   assert.equal(c.runeSlotCountFor(two), c.runeSlotCountFor(one) + c.RUNE_SETTINGS.twoHandBonusSlots, '雙手武器的符文孔數＝單手 + twoHandBonusSlots');
 });
 

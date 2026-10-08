@@ -194,7 +194,8 @@ test('備註欄有能力中文名稱說明：符文列＝兩側屬性中文名�
   assert.equal(runes, 33);
   assert.equal(words, lit(dataSrc, 'RUNEWORDS').length);
   const r10 = rows.find((r) => r[1] === 'r10');
-  assert.match(r10[note], /物理攻擊%?×0\.7|物理攻擊×0\.7/, '血誓：武器側物理攻擊 ×0.7');
+  const r10w = String(lit(dataSrc, 'RUNES').find((x) => x.id === 'r10').w[1]);
+  assert.ok(r10[note].includes('物理攻擊%×' + r10w) || r10[note].includes('物理攻擊×' + r10w), '血誓：武器側物理攻擊 ×' + r10w);
   // 重新註解是冪等的，且依該列「目前」的數值產生（使用者改了倍率，備註跟著新數字）
   assert.deepEqual(cfg.annotateRuneRows(rows), rows);
   const edited = rows.map((r) => r.slice());

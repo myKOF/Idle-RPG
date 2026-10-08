@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "id": "runes-icon",
+  "duration": 1,
+  "loop": false,
+  "layers": [
+    {
+      "id": "sprite-1",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/star_05.png",
+      "rotation": -0.156656,
+      "scale": {
+        "x": 0.1241,
+        "y": 0.1241
+      },
+      "tint": "#ffbb00",
+      "blendMode": "add",
+      "loop": true,
+      "rotationSpeed": 0.3490658503988659,
+      "perspective": false,
+      "cameraDepth": false,
+      "followDirection": false,
+      "followStretch": false
+    },
+    {
+      "id": "sprite-1-copy",
+      "type": "sprite",
+      "assetId": "new_materials/flare/flare_30.png",
+      "rotation": 0.328771,
+      "scale": {
+        "x": 0.0802,
+        "y": 0.0802
+      },
+      "tint": "#e6ee7c",
+      "blendMode": "screen",
+      "loop": true,
+      "rotationSpeed": 0.3490658503988659,
+      "perspective": false,
+      "cameraDepth": false,
+      "followDirection": false,
+      "followStretch": false
+    }
+  ]
+}

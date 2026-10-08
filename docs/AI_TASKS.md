@@ -1,5 +1,29 @@
 # AI_TASKS.md
 
+## Claude｜符文真言的屬性依級距削弱 50%～70%（RUNEWORD-STATS-CUT-20261008）
+
+- Owner：Claude；Done。使用者要求：符文真言的能力也同比降低 50%～70%（同上一輪單顆符文的削弱）。
+- 技術決策：只削「屬性加成」（stats 的 mult），依真言級距：第 1 級 −50%、第 2 級 −57%、第 3 級 −63%、第 4 級 −70%，2 位小數；機制（fx／事件觸發／被動／傳奇特效的數字）不動，因為那是規則而不是數值包，砍 50%～70% 會讓復活、冷卻、觸發機率等機制失去意義。口徑不變（基準值 × mult，不吃區間下限與雙手倍率）。
+- 修改：config/CSV/Runes.csv、config/Excel/Runes.xlsx（Excel 原生 API 更新）、js/runeword_data.js（RUNEWORDS 65 組）、docs/RUNEWORD_DESIGN.md；版號 runeword_data 1.0.12、bridge 1.0.243、WORKER_ASSET_VERSION 20261008-rune-word-cut。
+- 風險／平衡：探針（傳說品質）第 1 級 ×1.1～1.5、第 2 級 ×1.2～2.0、第 3 級 ×1.7～2.7、第 4 級 ×1.5～4.9（上一輪 ×1.2～1.7／1.3～2.7／2.4～4.3／2.2～7.3）。機制強度沒降，所以靠機制取勝的真言（萬軍 ×4.9、屠龍者 ×3.5、滅世 ×3.9）相對屬性包型真言更突出；若覺得機制也要降，要逐組調觸發機率與傷害％。
+- 建議驗證：圖鑑任一真言的屬性顯示變小；改 Excel 一組真言的屬性加成後套用參數能生效。
+
+## Claude｜單顆符文屬性口徑改為「詞條下限」、雙手武器符文 ×2、全體削弱 50%～70%（RUNE-STAT-FLOOR-20261008）
+
+- Owner：Claude；Done。使用者要求：①符文能力對標裝備詳情「可能出現的詞條 [2828 ~ 4241]」的 2828（下限），不再隱含 ×1.2，餘燼的說明應是「基礎值 ×1」②雙手武器詞條 ×2，符文跟著 ×2 ③所有符文能力削弱，第 1 階 −50%、高階 −70%，目前太強。
+- 技術決策：新增 `rwRuneStatValue`（詞條基準值 × strengthMult(0)＝80% × mult × 雙手倍率 × 強化倍率 × statScale），只用在單顆符文（`rwRuneStatLine`、`rwItemStatEntries` 的 rune 段）；符文真言自己的 stats 仍走 `rwStatValue`（基準值 × mult，不吃下限與雙手倍率）。表值：第 1～3 階 −50%、第 33 階 −70%、中間線性，2 位小數（餘燼 2 → 1、終焉 2.5 → 0.75）；因為同時換了口徑（×0.8），實際單顆數值約為舊值的 40%～24%。
+- 修改：js/runeword.js、js/runeword_data.js（RUNES 33 列、口徑說明）、js/ui-runeword.js（「基礎值 ×N」與說明）、config/CSV/Runes.csv、config/Excel/Runes.xlsx（Excel 原生 API 更新，重開驗證）、tools/config_tables.cjs（說明頁與備註文字）、tools/gen_runeword_doc.cjs、docs/RUNEWORD_DESIGN.md、tests/runeword-engine.test.cjs、tests/config-runes-table.test.cjs；版號：runeword_data 1.0.11、runeword 1.0.8、ui-runeword 1.0.8、bridge 1.0.242、WORKER_ASSET_VERSION 20261008-rune-stat-floor。
+- 風險／平衡：符文真言的 stats 沒動，只有單顆符文屬性下降，所以各真言的整體強度跟著降（探針傳說：第 1 級 ×1.2～1.7、第 2 級 ×1.3～2.7、第 3 級 ×2.4～4.3、第 4 級 ×2.2～7.3，原本 ×1.3～1.8／1.4～3.1／2.9～5.2／2.7～9.3）；雙手武器的符文真言 stats 是否也 ×2 待使用者決定。
+- 建議驗證：雙手武器鑲餘燼＝提示下限（Lv200 傳說 2828）、單手 1414；圖鑑符文頁顯示「基礎值 ×1」；改 Excel 一格符文倍率後套用參數能生效。
+
+## Claude｜符文抹除的幣種與費用接進 Excel 配置表（RUNE-ERASE-CONFIG-20261008）
+
+- Owner：Claude；Done。使用者要求：抹除所消耗的幣種及費用接進 Excel 配置表。
+- 技術決策：放在 Runes 表設定列（沿用既有 Runes → runeword_data.js 管線），新增 `erase_scrapPerTier`／`erase_essencePerTier`／`erase_goldPerTier` 三列＝裝備碎片／附魔精華／金幣各自的每階單價，**0＝不收這種幣**（預設 15／1／0，與先前行為相同、金幣預設不收）。取代原本寫死的 `RUNE_ERASE`；`RUNE_SETTINGS.erase` 由表整塊寫回。`runeEraseCost` 多回 gold，新增 `runeEraseCostText`／`runeEraseAffordable` 讓提示、材料不足判定與 Worker 扣款同一個來源。
+- 修改：js/runeword_data.js、runeword.js、item.js、ui.js；tools/config_tables.cjs（設定列、檢查 ≥0、欄位說明）；tools/excel-update-sheets.ps1 新增 `insertRowsAfterKey`（Excel 原生插入列）；config/Excel/Runes.xlsx（在 twoHandBonusSlots 下插 3 列、欄位說明頁換新，Excel COM 寫入並重開驗證）與 Runes.csv；tests/runeword-engine；docs；index.html／bridge.js／sim.worker.js 版號。
+- 測試：`config_tables --apply` 語意變更 0、`apply_params` 549 項一致；新增幣種／單價／金幣不足／全免的測試；全庫無我造成的新增失敗。
+- 風險：金幣單價 >0 時，抹除會被金幣不足擋下（錯誤訊息列出需要的幣種）。
+
 ## Codex｜狂暴化依敵人數累積（ENEMY-FRENZY-COUNT-20261008）
 
 - Owner：Codex；Done。每次滿秒增加1%×（1＋場上存活敵人數／100），出生10秒寬限不變、無上限；保留歷史累積，不因敵人減少回扣。包含進場／寬限中的存活敵人，高塔只計當場BOSS。

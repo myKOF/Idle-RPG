@@ -169,23 +169,37 @@ function rwSeenFromItem(seen, it) {
   return 1;
 }
 
-/* 抹除一顆已刻印符文的費用：{ scrap, essence }。純函式（UI 顯示與 Worker 扣款共用同一個算式）。
-   符文階數越高、裝備稀有度越高越貴（RUNE_ERASE 的每階單價 × 階數 × 稀有度倍率）。 */
+/* 抹除一顆已刻印符文的費用：{ gold, scrap, essence }（配置表 Runes 設定列 erase_*，0＝不收）。純函式（UI 顯示與 Worker 扣款共用同一個算式）。
+   符文階數越高、裝備稀有度越高越貴（每階單價 × 階數 × 稀有度倍率）。 */
 function runeEraseCost(it, runeId) {
   var rune = RUNE_BY_ID[runeId];
   var rar = RARITIES[clamp(Math.floor(Number(it && it.rarity) || 0), 0, RARITIES.length - 1)];
   var k = (rune ? rune.tier : 0) * (rar ? rar.mult : 1);
-  return { scrap: Math.ceil(RUNE_ERASE.scrapPerTier * k), essence: Math.ceil(RUNE_ERASE.essencePerTier * k) };
+  var E = RUNE_SETTINGS.erase;
+  return { gold: Math.ceil(E.goldPerTier * k), scrap: Math.ceil(E.scrapPerTier * k), essence: Math.ceil(E.essencePerTier * k) };
 }
 
-/* 抹除指定符文孔的符文：扣裝備碎片與附魔精華，符文直接消失（不退還），孔恢復為空。成功回 null，失敗回錯誤字串。 */
+/* 費用文字（只列要收的幣種）：「金幣 1,200、裝備碎片 360、附魔精華 24」；全免回「免費」。 */
+function runeEraseCostText(cost) {
+  var parts = [];
+  if (cost.gold > 0) parts.push('金幣 ' + fmt(cost.gold));
+  if (cost.scrap > 0) parts.push('裝備碎片 ' + fmt(cost.scrap));
+  if (cost.essence > 0) parts.push('附魔精華 ' + fmt(cost.essence));
+  return parts.length ? parts.join('、') : '免費';
+}
+
+/* 玩家付不付得起這筆抹除費用（player 要有 gold／scrap／essence）。 */
+function runeEraseAffordable(player, cost) {
+  return !!player && (player.gold || 0) >= cost.gold && (player.scrap || 0) >= cost.scrap && (player.essence || 0) >= cost.essence;
+}
+
+/* 抹除指定符文孔的符文：扣設定的幣種（預設裝備碎片與附魔精華），符文直接消失（不退還），孔恢復為空。成功回 null，失敗回錯誤字串。 */
 function eraseRune(it, idx) {
   if (!it || !Array.isArray(it.runes) || !Number.isInteger(idx) || !it.runes[idx]) return '這個符文孔沒有符文';
   var cost = runeEraseCost(it, it.runes[idx]);
   var P = G.player;
-  if ((P.scrap || 0) < cost.scrap || (P.essence || 0) < cost.essence) {
-    return '資源不足（抹除需要 裝備碎片 ' + fmt(cost.scrap) + '、附魔精華 ' + fmt(cost.essence) + '）';
-  }
+  if (!runeEraseAffordable(P, cost)) return '資源不足（抹除需要 ' + runeEraseCostText(cost) + '）';
+  P.gold -= cost.gold;
   P.scrap -= cost.scrap;
   P.essence -= cost.essence;
   it.runes[idx] = null;
@@ -301,15 +315,28 @@ function rwCandidates(it) {
 /* ============================================================
    §3 屬性聚合
    ============================================================ */
-/* 單條 stats 的數值＝ 詞條基準值(詞條, 裝備等級, 稀有度) × mult × 強化倍率。
+/* 符文真言單條 stats 的數值＝ 詞條基準值(詞條, 裝備等級, 稀有度) × mult × 強化倍率。
    與詞條同源（affixBaseValue／affixRoundValue → js/formula.js §6），隨裝備成長。
-   不吃雙手倍率（TWO_HAND_AFFIX_VALUE_MULT）：雙手武器已經靠 ×1.75 的鑲孔數拿到補償
-   （更多符文屬性＋更容易湊出長配方），再 ×2 會讓雙手符文真言整整領先一個級距。 */
+   不吃雙手倍率（TWO_HAND_AFFIX_VALUE_MULT），也不吃區間下限 80%：符文真言的口徑維持原樣，
+   只有「單顆符文自己的屬性」走 rwRuneStatValue（下限 × 雙手倍率）。 */
 function rwStatValue(it, key, mult) {
   if (!AFFIX_POOL[key] || !it) return 0;
   var um = (typeof upgradeMult === 'function') ? upgradeMult(it) : 1;
   var base = affixBaseValue(key, it.level, it.rarity);
   return affixRoundValue(key, base * (Number(mult) || 0) * um * RW_STAT_SCALE);
+}
+
+/* 單顆符文的數值（符文單獨鑲著的屬性）＝ 詞條基準值 × 區間下限（80%）× mult × 雙手倍率 × 強化倍率。
+   口徑對齊詞條可能範圍提示（getAffixLimits）的「下限」：裝備詳情裡「可能出現的詞條」寫 [2828 ~ 4241]，
+   2828 就是 1 倍；符文表的倍率是這個下限的幾倍，不再另外乘 1.2。
+   雙手武器的詞條本身 ×TWO_HAND_AFFIX_VALUE_MULT，符文跟著乘，所以雙手武器上的符文與詞條維持同一比例。
+   符文真言的 stats（rwStatValue）不走這條：它們的口徑維持詞條基準值 × mult，不吃區間下限與雙手倍率。 */
+function rwRuneStatValue(it, key, mult) {
+  if (!AFFIX_POOL[key] || !it) return 0;
+  var um = (typeof upgradeMult === 'function') ? upgradeMult(it) : 1;
+  var two = (typeof isTwoHandItem === 'function' && isTwoHandItem(it)) ? TWO_HAND_AFFIX_VALUE_MULT : 1;
+  var base = affixBaseValue(key, it.level, it.rarity) * strengthMult(0);
+  return affixRoundValue(key, base * (Number(mult) || 0) * two * um * RW_STAT_SCALE);
 }
 
 /* 符文單獨鑲著的加成類別：主手／雙手武器用 w，其餘（防具、飾品、副手）用 a。 */
@@ -330,7 +357,7 @@ function rwRuneStatLine(it, runeId) {
   var r = RUNE_BY_ID[runeId];
   if (!r) return '';
   var spec = r[rwRuneSide(it)];
-  return rwFormatStat(spec[0], rwStatValue(it, spec[0], spec[1]));
+  return rwFormatStat(spec[0], rwRuneStatValue(it, spec[0], spec[1]));
 }
 
 /* 一件裝備上符文與符文真言提供的所有屬性：[{ key, val, src }]。 */
@@ -342,7 +369,7 @@ function rwItemStatEntries(it) {
   for (var i = 0; i < slots.length; i++) {
     if (!slots[i]) continue;
     var spec = RUNE_BY_ID[slots[i]][side];
-    var v = rwStatValue(it, spec[0], spec[1]);
+    var v = rwRuneStatValue(it, spec[0], spec[1]);
     if (v) out.push({ key: spec[0], val: v, src: 'rune' });
   }
   var act = rwActiveWord(it);

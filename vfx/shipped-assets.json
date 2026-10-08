@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 160,
+  "assetCount": 161,
   "assets": [
     {
       "assetId": "claude-authored/dragon-devour/vortex-ring.png",
@@ -922,6 +922,13 @@
       "package": "particle-pack",
       "contentHash": "sha256:4c8429d19fb97165a3702ac7ff7e7b41d292c8fb9956d674db7028243d86c8f3",
       "fileSize": 21740
+    },
+    {
+      "assetId": "particle-pack/png-black-background/star_05.png",
+      "relativePath": "particle-pack/PNG (Black background)/star_05.png",
+      "package": "particle-pack",
+      "contentHash": "sha256:3c017dd5e0d6f81b6a18ca5541de30216398aaaec1929cbfbf235497a5eb91aa",
+      "fileSize": 39630
     },
     {
       "assetId": "particle-pack/png-black-background/star_08.png",
