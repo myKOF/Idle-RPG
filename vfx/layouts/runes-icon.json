@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "runes-icon",
+  "groups": [
+    {
+      "id": "runes-icon",
+      "name": "runes-icon",
+      "layerIds": [
+        "sprite-1",
+        "sprite-1-copy"
+      ]
+    }
+  ],
+  "order": [
+    "group:runes-icon"
+  ]
+}
