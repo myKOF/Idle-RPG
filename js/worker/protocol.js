@@ -82,7 +82,9 @@
    「刻印」沒有新指令：UI 先在本機暫存要放的符文，按刻印才逐顆送 rune.socket(itemId, runeId, index)。 */
 /* v48（2026-10-07 符文真言隱藏）：gems 面板新增 runewordSeen = { 真言id: 1 }（G.player.runewordSeen，成形過的符文真言）。
    主執行緒據此決定圖鑑顯示配方與效果或問號；舊快照缺欄時一律視為都沒激活。指令數不變。 */
-var WORKER_PROTOCOL_VERSION = 49;
+/* v50（2026-10-08 BOSS 配置鎖）：UI／Worker 共用 bossFightBlocksCommand；
+   戰中拒絕配置變更，沿用既有錯誤封包，指令數／參數／快照與存檔格式不變。 */
+var WORKER_PROTOCOL_VERSION = 50;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -567,6 +569,19 @@ function resolveKeys(name) {
   return (spec && spec.resolve) ? spec.resolve : [];
 }
 
+/* BOSS 戰配置限制共用來源；純瀏覽與庫存素材合成仍可操作。 */
+function bossFightBlocksCommand(name) {
+  return [
+    'skill.equipLoadout', 'skill.unequipLoadout', 'skill.reorderLoadout',
+    'skill2.downgrade', 'skill2.delete', 'skill2.ultPick', 'skill2.ultSwitch',
+    'item.equip', 'item.unequip', 'player.switchEquipSet',
+    'item.upgrade', 'item.rerollAffix', 'item.enchant', 'item.removeEnchant',
+    'gem.socket', 'gem.socketFused', 'gem.unsocket', 'rune.socket', 'rune.erase',
+    'talent.upgrade', 'talent.max', 'talent.downgrade', 'talent.delete',
+    'talent.potentialUpgrade', 'talent.potentialMax', 'talent.potentialDowngrade', 'talent.potentialDelete'
+  ].indexOf(name) !== -1;
+}
+
 function isPanelKey(name) {
   return PANEL_KEYS.indexOf(name) !== -1;
 }
@@ -588,6 +603,7 @@ if (typeof module !== 'undefined' && module.exports) {
     isValidCommand: isValidCommand,
     validateCommand: validateCommand,
     resolveKeys: resolveKeys,
+    bossFightBlocksCommand: bossFightBlocksCommand,
     isPanelKey: isPanelKey
   };
 }

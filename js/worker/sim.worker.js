@@ -10,12 +10,12 @@
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-importScripts('protocol.js?v=49', 'shim.js?v=12');
+importScripts('protocol.js?v=50', 'shim.js?v=12');
 importScripts(
   '../util.js?v=20260922-firegod-formation', '../data.js?v=20261008-npc-elite-skills', '../elite_data.js?v=20261008-elite-groups', '../runeword_data.js?v=20261008-rune-word-cut', '../status.js?v=20261005-cc-decay-count', '../formula.js?v=20261008-elite-groups', '../battlefield.js?v=20261008-rand-others-hoist', '../stats.js?v=20261003-rename-weineng',
   '../item.js?v=20261008-rune-erase-cfg', '../runeword.js?v=20261008-rune-stat-floor',
   '../skills.js?v=20261007-runes4', '../skills2.js?v=20261008-chain-quiet', '../talents.js?v=20261003-rename-weineng',
-  '../player.js?v=20261007-rune-seen', '../special_rules.js',
+  '../player.js?v=20261008-boss-config-lock', '../special_rules.js',
   '../combat.js?v=20261008-enemy-frenzy-count', '../elite.js?v=20261008-elite-groups', '../legendary.js?v=20261007-runes4', '../potential.js?v=20261005-cc-decay-count', '../tower.js?v=20261008-enemy-frenzy-count',
   '../factory.js?v=20261007-runes4', '../newforge.js', '../forge.js?v=20261007-runes4', '../save.js?v=20261007-rune-seen',
   '../tasks.js?v=20261007-runes4'
@@ -1684,6 +1684,9 @@ function runCommand(name, args) {
   if (!spec) return { ok: false, error: 'unknown command: ' + name };
   var invalid = validateCommand(name, args);
   if (invalid) return { ok: false, error: invalid };
+  if (G && G.tower && G.tower.active && bossFightBlocksCommand(name)) {
+    return { ok: false, error: 'BOSS 戰中不可變更戰鬥配置' };
+  }
   if (COMMAND_IMPL[name]) {
     try {
       return { ok: true, result: COMMAND_IMPL[name](args) };

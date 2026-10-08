@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## Codex｜BOSS 戰保留左側資訊並鎖定配置（BOSS-INFO-DURING-FIGHT-20261008）
+
+- Owner：Codex；Done。使用者要求開戰後左側維持樓層列表、BOSS 資訊及通關獎勵，挑戰／連挑置灰停用，追加技能、換裝、寶石、符文、威能與裝備四個功能的配置限制。單一開發者；前置既有右側 Canvas BOSS 戰與左側瀏覽頁已完成，工作區於開始時乾淨且衝突預檢無其他來源修改。
+- 允許 js/ui.js 高塔顯示／按鈕與點擊守門、index.html 對應快取、新增 tests/tower-info-during-fight.test.cjs、本紀錄；追加使用者要求 BOSS 戰不可更換技能，包含技能裝上／卸下／排序的 UI 與 Worker runCommand 守門、js/bridge.js／worker/sim.worker.js 必要快取、新增 tests/boss-skill-lock.test.cjs。追加三檔預檢無衝突。禁止改傷害規則、Worker 協議、存檔、素材、其他副本。不合併／推送。
+- 驗收：Canvas 戰鬥中左側仍顯示原資訊、挑戰／連挑 disabled 且不因 pending 解除被啟用，退出後恢復；開戰時瀏覽其他樓層也不可重新挑戰。保留無 Canvas 的既有 DOM 戰鬥與撤退，前輪倒數修正及連挑回歸不受影響。相關測試、瀏覽器 DOM／樣式／Console、Build 通過後 Commit，交使用者審查整合。
+- 追加範圍／驗收：使用者追加禁止換裝備、寶石、符文、威能，並鎖住裝備強化／洗煉／鑲嵌／符文四個入口。允許 js/player.js 暫停戰中自動穿裝、js/worker/protocol.js 共用限制清單與 v50、docs/WORKER_PROTOCOL.md、tests/worker-protocol.test.cjs；四檔衝突預檢無其他來源修改，取代前述禁止改協議限制。BOSS 登場／暫停／結算未退出期間，UI 與 Worker 均拒絕配置變更，含裝載排序、超神進化更換／重置、裝備套組、寶石鑲卸／融合寶石、符文刻印／抹除、威能升降／刪除與潛力配置；裝備四個入口置灰，pending 解除不能解鎖。退出恢復，純瀏覽與素材合成保留；一般技能升級數值不限制。
+- 完成：Canvas 開戰仍顯示原樓層列表／BOSS 卡／獎勵；挑戰、連挑停用且點擊守門。UI 配置按鈕置灰、捕獲階段防止草稿變更、中央送指令與 Worker runCommand 共用 27 條指令限制，在物件解析／扣資源前拒絕。TICK／FULL 切換戰鬥狀態時同步按鈕並標記面板重繪；技能詳情快取將戰鬥鎖納入更新條件，退出仍可解除。工廠自動穿裝戰中暫停，退出恢復。
+- 修改檔案：js/ui.js、player.js、worker/protocol.js、worker/sim.worker.js、bridge.js、index.html、docs/WORKER_PROTOCOL.md、本紀錄、tests/worker-protocol.test.cjs；新增 tests/tower-info-during-fight.test.cjs、boss-skill-lock.test.cjs（後者涵蓋全部配置鎖）。快取 ui 1.0.151、player 1.0.13、bridge 1.0.244、Worker 20261008-boss-config-lock；協議 49→50，指令仍 93 條，封包／存檔格式不變。未改但檢查：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、tower.js、skills.js、skills2.js、talents.js、item.js、runeword.js、newforge.js 及相關測試。無素材變更，無必要素材庫 Commit。
+- 測試：`node --test --test-timeout=15000 tests/boss-skill-lock.test.cjs tests/tower-info-during-fight.test.cjs tests/tower-scene-intro.test.cjs tests/tower-head-layout.test.cjs tests/boss-display-state.test.cjs tests/tower-auto-result.test.cjs tests/init-ui-smoke.test.cjs tests/ui-worker-events.test.cjs tests/inventory-command-pending.test.cjs tests/skill-loadout.test.cjs tests/worker-protocol.test.cjs tests/battle-skill-summary.test.cjs tests/equip-socket-ui.test.cjs tests/equip-reroll-ui.test.cjs tests/equip-set-preview-stats.test.cjs tests/skill2-ult-switch.test.cjs tests/talent-transcendence.test.cjs` 88/88 通過；先前同批含 tests/equip-no-duplicate.test.cjs，該檔 5/5 通過。`npm.cmd run build` 485 檔通過；`git diff --check` 通過。
+- 瀏覽器：全新隔離 headless Edge，正式 UI／樣式驗四功能與卸下 disabled、opacity 0.45／grayscale 0.8；原已開啟的寶石鑲卸、符文暫放／抹除、裝備套切換、威能四操作、技能裝載／重置於進場與重畫保持鎖定，pending 釋放不解鎖，退出全部恢復；快取技能詳情也恢復。另驗左側 BOSS／獎勵原卡維持、挑戰／連挑 opacity 0.42 且灰階、退出可挑戰。Console error／warning 0，臨時伺服器／瀏覽器已關閉；未載入正式存檔或長跑完整遊戲實戰。
+- 提交前預檢：開發期間 ai/claude 新增 d9f624c4「FPS 右側加命中 N/s」，共用 js/ui.js、worker/sim.worker.js、bridge.js、index.html。實作位置分開（uiHitRateText／initBattleFPS、hitRateSnapshot／emitTick、bridge 命中率統計），快取版本字串重疊。依 AI_RULES 3.2 已詢問使用者；使用者本輪明確要求 commit，授權獨立提交本次 BOSS 修改，後續整合保留雙方功能與最新快取版號。工作區另出現 battle-arena.js、battle-renderer.js、tests/battle-decor.test.cjs、tools/scene-renewal/export-source.cjs 的場景素材修改，均非本次修改，不納入提交。
+- 交付：功能與驗證完成，可交使用者整合；Commit 見本紀錄所在提交，未合併／推送。建議整合保留雙方功能與新快取版號，重新整理讓主頁與 Worker 同時載入 v50，再驗一次正式 BOSS 進場、切換各面板、撤退恢復。無素材變更、無必要素材庫 Commit。
+
 ## Codex｜BOSS 倒數等正式開戰才顯示（BOSS-TIMER-INTRO-20261008）
 
 - Owner：Codex；Done。使用者要求 BOSS 戰 60 秒倒數從進場完成、雙方正式開打起算。單一開發者；實際 towerTick 已於 introCd 期間凍結計時／行動，本次修正 UI 在 elapsed=0 時仍自行插值的問題。
