@@ -120,7 +120,7 @@ function runeUiLibraryHTML(snapshot, sel) {
 function runeUiStatLine(side, spec) {
   var def = AFFIX_POOL[spec[0]];
   var name = def ? def.name.replace(/%$/, '') : spec[0];
-  return '<div class="rx-stat"><b>' + side + '</b>' + esc(name) + '<span>（約一條滿值詞條的 ' + Math.round(spec[1] * 100) + '%）</span></div>';
+  return '<div class="rx-stat"><b>' + side + '</b>' + esc(name) + '<span>（詞條基準值的 ' + Math.round(spec[1] * 100) + '%）</span></div>';
 }
 
 function runeUiFocusHTML(snapshot, id) {
@@ -137,7 +137,7 @@ function runeUiFocusHTML(snapshot, id) {
     '<div class="rx-focus-sub">持有 <b>' + fmt(n) + '</b> 顆</div></div></div>';
   h += '<div class="rx-stats">' +
     runeUiStatLine('⚔ 鑲在武器', r.w) + runeUiStatLine('🛡 鑲在防具・飾品・副手', r.a) +
-    '<div class="rx-stat-note">數值隨裝備等級、稀有度與強化成長（與詞條同一套算法）；單獨鑲著就有效，組成符文真言時另有符文真言加成。</div></div>';
+    '<div class="rx-stat-note">數值隨裝備等級、稀有度與強化成長（與詞條同一套算法）；單獨鑲著就有效，組成符文真言時另有符文真言加成。「詞條基準值」是同等級、同稀有度詞條的中間值（詞條實際會在基準值 80%～120% 間浮動）；雙手武器的詞條本身有 ×2，符文沒有，所以在雙手武器上看起來會比一般詞條少一半。</div></div>';
   h += '<div class="rx-actions">' +
     '<button type="button" class="btn" data-rune-act="compose"' + (canCompose ? '' : ' disabled') + '>合成（' + RUNE_COMPOSE_COUNT + ' → 1）</button>' +
     '<button type="button" class="btn" data-rune-act="composeAll"' + (canCompose ? '' : ' disabled') + '>全部合成</button>' +
