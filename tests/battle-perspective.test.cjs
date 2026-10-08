@@ -387,7 +387,7 @@ test('PERSP-14 接線：地形擺件與魔王祭壇都吃 opts.billboard；每�
   assert.match(decor, /animateFlames\(dt\);\s*\n\s*billboardChunks\(\);/, '火焰縮放算完才抵銷');
   assert.match(decor, /fl\._bbParent = ps;/, '火焰跟著火盆走');
   assert.doesNotMatch(decor.slice(decor.indexOf('function animateFlames')), /f\.scale\.(x|y) =/, '火焰縮放不可繞過抵銷直接寫 sprite');
-  assert.match(arena, /eye\._bbParent = gate\.s;/, '魔門的眼睛跟著門走');
+  assert.match(arena, /glow\._bbParent=b\.s;/, '完整魔門的門光與眼光跟著本體走');
   assert.match(arena, /fl\._bbParent = b\.s;/, '祭壇火焰跟著火盆走');
   assert.doesNotMatch(arena.slice(arena.indexOf('火焰閃爍')), /fl\.scale\.(x|y) =/, '祭壇火焰縮放不可繞過抵銷');
 });

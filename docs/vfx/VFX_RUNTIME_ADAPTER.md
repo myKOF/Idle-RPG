@@ -1,5 +1,13 @@
 # VFX_RUNTIME_ADAPTER.md
 
+## 火球爆裂固定落點（2026-10-08）
+
+一般火球爆炸及每顆殞石落地後才選取爆點20米內的存活敵人，每名敵人最多分配一顆，包含原目標。數量不足時，剩餘火球以平方根半徑抽樣在同一圓內均勻產生隨機座標，仍保留完整表定數量；例如1名敵人＝1顆敵人座標＋2顆隨機座標。全部在分裂當下鎖定落點，不追蹤途中移動的敵人。
+
+只從火球術第1階的原projectile欄讀取素材，不受殞石或超神本體繼承覆蓋；以線性sizeMult縮小至落下火球的60%，不修改Preset。事件area.fixedLanding帶完整sourceX／sourceY與x／y，travelMs依原火球速度的50%計算（目前65.52→32.76米／秒），原50ms最短飛行也同比延長為100ms；arcM為各顆世界飛行距離的三分之一。Runtime以既有固定落點及拋物線路徑播放、壽命對齊抵達時刻，來源死亡或目標消失也不回退到玩家。
+
+模擬於抵達時才檢查固定落點是否落在當時存活敵人體型內，原目標移開可避開，新進入該座標的敵人可以被命中。每顆最多命中一名敵人，不增加爆炸傷害半徑；傷害倍率、燃燒及傳奇增傷沿用原火球爆裂設定。落地事件只播放第3階配置的爆點，不重新派送cast或projectile，沒有命中也播放一次。沿用既有Worker area／arcM／sizeMult欄位及協議，不新增素材或第三種特效來源。
+
 ## 攻擊朝向的製作基準（2026-10-07）
 
 使用者指定正右方90度為面敵基準；即Editor的+X方向為「朝前」。遊戲內的角度採atan2弧度，正右方旋轉偏移0、向下+π/2、向左π、向上-π/2，不能再額外加90度。只改面敵朝向，作者的傾角、FOV、局部位置、縮放、角度與旋轉曲線仍完整保留。
@@ -620,3 +628,13 @@ Core 將每顆球的中心放入各節點的 `sortY`；球體、光暈與電弧�
 滿階／超神的本體欄位繼承也可能令 `thunder-orbit`／`thunder-fall` 另播 `field` 雷球，
 這兩條事件的 `field` 同樣走球心投影；三種雷球事件的非環繞 `projectile` 亦使用 billboard。
 `ground` 預警與雷殞衝擊的 `attack`／`hit` 保留原本場景／地板投影，避免貼地圈被改成立面。
+
+### 殞石術與雷殞石的天空飛入點
+
+`fxKind: rain` 且 `variant: meteor`／`thunder-fall`，每顆透過可選的 `ctx.skyEntryPoint()`
+取得畫面上方獨立隨機起點。共用 `sampleSkyEntry(width,height,rng)` 抽取畫布X的12%～86%、Y的0%～12%；
+正式Canvas反解FOV及world鏡頭偏移，回傳Adapter使用的平行投影座標，legacy Canvas再還原groundScale，DOM直接使用螢幕座標。
+抽樣只使用表現層亂數，事件`area`落點、目標、半徑、`travelMs`／傷害時刻不變；每顆只抽一次、不逐幀重抽，
+飛行朝向跟隨移動方向，空中圖層另沿用航向的FOV校正。依variant判定，配置更換Preset仍生效；明確`sourceX/sourceY`起點優先。
+沒有viewport回呼的編輯器／headless環境保留Preset的fallHeight／fallAngle；無效回呼也維持原行為。
+地爆天星`meteor-starfall`的垂直落下、落雷、菁英殞石及從爆點拋出的`fireball-small`不套此規則。

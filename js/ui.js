@@ -625,7 +625,7 @@ function peekUiPanelData(key) {
 
 function applyUiSnapshot(snapshot) {
   if (!snapshot) return;
-  if (snapshot.view) UI_WORKER_STATE.view = snapshot.view;
+  if (snapshot.view) applyUiBossFightView(snapshot.view);
   uiSyncGameTime(snapshot.view);
 }
 
@@ -1051,7 +1051,7 @@ function syncUiPendingControls(key) {
   var controls = document.querySelectorAll('[data-ui-pending-key="' + selectorKey + '"]');
   var pending = isUiCommandPending(key);
   for (var i = 0; i < controls.length; i++) {
-    controls[i].disabled = pending;
+    controls[i].disabled = pending || (bossFightConfigLocked() && controls[i].matches(bossConfigControlsSelector()));
   }
 }
 
@@ -1162,7 +1162,44 @@ function acquireUiPending(commandName, options) {
   return { entry: entry };
 }
 
+function bossFightConfigLocked() {
+  var view = viewState();
+  // view 一直有訂閱；離開塔分頁後，不用可能過期的 tower 面板覆蓋它。
+  return view ? !!view.towerActive : towerViewActive(uiTowerPanelSnapshot());
+}
+
+function bossConfigControlsSelector() {
+  return '#eqset-confirm, [data-act="equip"], [data-act="unequip"], [data-act="upgrade"], ' +
+    '[data-act="reroll-affix"], [data-act="toggle-reroll"], [data-act="toggle-socket"], [data-act="toggle-rune"], [data-act="engrave-rune"], ' +
+    '[data-gem-socket], [data-gem-socket-fused], [data-socket-remove], [data-rune-socket], [data-rune-erase], [data-enchant-remove], ' +
+    '[data-skill-equip], [data-skill-unequip], [data-skill2-downgrade], [data-skill2-delete], [data-skill2-ultpick], [data-skill2-ultswitch], ' +
+    '[data-skill-learn], [data-skill-max], [data-skill-downgrade], [data-skill-delete], ' +
+    '[data-talent-up], [data-talent-max], [data-talent-down], [data-talent-delete]';
+}
+
+function syncBossConfigControls() {
+  if (!bossFightConfigLocked() || typeof document === 'undefined') return;
+  document.querySelectorAll(bossConfigControlsSelector()).forEach(function (button) { button.disabled = true; });
+}
+
+function applyUiBossFightView(view) {
+  var changed = !!view.towerActive !== !!(UI_WORKER_STATE.view && UI_WORKER_STATE.view.towerActive);
+  UI_WORKER_STATE.view = view;
+  if (!changed) return;
+  ['equip', 'inv', 'skills', 'talents', 'gems', 'tower'].forEach(function (key) { UI.dirty[key] = true; });
+  syncBossConfigControls();
+}
+
+function skillLoadoutButtonAttributes(key) {
+  return bossFightConfigLocked()
+    ? ' disabled data-tip="BOSS 戰中不可更換技能"'
+    : pendingUiButtonAttributes(key);
+}
+
 function sendUiCommand(commandName, args, options) {
+  if (bossFightBlocksCommand(commandName) && bossFightConfigLocked()) {
+    return Promise.reject(new Error('BOSS 戰中不可變更戰鬥配置'));
+  }
   if (typeof WorkerBridge.send !== 'function') {
     return Promise.reject(new Error('worker UI state is not enabled'));
   }
@@ -1247,7 +1284,7 @@ function bindWorkerUiState() {
     applyUiSnapshot(msg.snapshot);
   });
   WorkerBridge.on(MSG_OUT.TICK, function (msg) {
-    if (msg.view) UI_WORKER_STATE.view = msg.view;
+    if (msg.view) applyUiBossFightView(msg.view);
     uiSyncGameTime(msg.view); // 對時：讓畫面上的倒數與狀態到期判定有正確基準
     handleWorkerUiEvents(msg.events);
     if (UI_WORKER_STATE.viewSubscribed) {
@@ -4971,6 +5008,7 @@ function renderEquipSetTabs(equipSnapshot, headerSnapshot) {
       (same ? '目前使用中' : ('確定切換到「' + esc(viewLabel) + '」')) + '</button>';
   }
   box.innerHTML = h;
+  syncBossConfigControls();
 }
 
 // 為某一套裝備改名稱（留空恢復預設「第X套」）；用遊戲通用彈窗（帶輸入框）
@@ -5488,6 +5526,7 @@ function socketSelectedGem(type, level, fusedId) {
 /* 暫放符文（js/runeword.js）：符文鑲嵌頁（UI.equipMatMode.mode === 'rune'）點符文圖示 → 先放進選中的符文孔當暫放，
    還沒真的鑲上、也不扣庫存；下方按鈕變「刻印」，按下去才送出（engraveRuneDrafts）。庫存格的數量已扣掉暫放的顆數，不能超放。 */
 function socketRuneToSelected(runeId) {
+  if (bossFightConfigLocked()) return;
   var it = findSelItem(), mode = equipRuneModeFor(it);
   if (!mode || isUiCommandPending(itemPendingKey(it.id)) || mode.selIdx < 0 || rwSlots(it)[mode.selIdx]) return;
   var left = runesViewCount(uiGemsPanelSnapshot(), runeId) - runeDraftCount(mode.draft, runeId) + (mode.draft[mode.selIdx] === runeId ? 1 : 0);
@@ -5511,6 +5550,7 @@ function waitUiCommandIdle(key, tries) {
 
 /* 刻印：把暫放的符文依孔位順序逐顆送 rune.socket；任何一顆失敗就停（沒送的仍留在暫放，已鑲上的不會回頭）。 */
 function engraveRuneDrafts() {
+  if (bossFightConfigLocked()) return;
   var it = findSelItem(), mode = equipRuneModeFor(it);
   if (!mode || isUiCommandPending(itemPendingKey(it.id))) return;
   var picks = Object.keys(mode.draft).map(Number).sort(function (a, b) { return a - b; });
@@ -5552,10 +5592,11 @@ function syncEquipSocketControls(it, mode) {
     button.parentNode.classList.toggle('is-socket-selected', selected);
     if (button.disabled !== pending) button.disabled = pending;
   });
-  holes.querySelectorAll('[data-socket-remove], [data-rune-remove]').forEach(function (button) {
-    if (button.disabled !== pending) button.disabled = pending;
+  var mutationPending = pending || bossFightConfigLocked();
+  holes.querySelectorAll('[data-socket-remove], [data-rune-remove], [data-rune-erase]').forEach(function (button) {
+    if (button.disabled !== mutationPending) button.disabled = mutationPending;
   });
-  var disabled = pending || mode.selIdx < 0 || !!equipSlotsOf(it, mode.mode)[mode.selIdx];
+  var disabled = mutationPending || mode.selIdx < 0 || !!equipSlotsOf(it, mode.mode)[mode.selIdx];
   var gems = pane.querySelector('.equip-socket-gems');
   // 同為空孔或同為已鑲孔時，寶石／符文可用狀態不變，不再掃整份庫存。
   // 清單內容替換後會清除此記錄，新的按鈕仍須同步 pending／孔位狀態。
@@ -5782,6 +5823,7 @@ function renderDetail() {
       }
     }
   }
+  syncBossConfigControls();
 }
 
 function equipSlotType(slot) {
@@ -7069,12 +7111,14 @@ function towerDetailHTML(fl, highest) {
     '</div>';
 }
 
-function towerActionsHTML(fl, highest, gold) {
+function towerActionsHTML(fl, highest, gold, active) {
   if (fl > highest + 1) return '<span class="twx-locked-note">🔒 需先通關第 ' + (highest + 1) + ' 層</span>';
   var cost = towerChallengeCost(fl);
-  return '<button class="btn twx-go" data-tower-floor="' + fl + '"' + pendingUiButtonAttributes(nodePendingKey('tower')) + '>挑戰第 ' + fl + ' 層' +
+  // 戰鬥停用不綁 pending key，避免指令鎖解除時重新啟用。
+  var buttonAttrs = active ? ' disabled' : pendingUiButtonAttributes(nodePendingKey('tower'));
+  return '<button class="btn twx-go" data-tower-floor="' + fl + '"' + buttonAttrs + '>挑戰第 ' + fl + ' 層' +
       '<span class="twx-cost' + (gold >= cost ? '' : ' is-poor') + '"><img src="images/icon_gold.png" class="res-icon" alt="">' + fmt(cost) + '</span></button>' +
-    '<button class="btn twx-auto" data-tower-auto="' + fl + '"' + pendingUiButtonAttributes(nodePendingKey('tower')) +
+    '<button class="btn twx-auto" data-tower-auto="' + fl + '"' + buttonAttrs +
       ' data-tip="連續挑戰此層：金幣不足或次數用完自動停止並回到野外（戰鬥中按「撤退」可中止）">🔁 連挑</button>';
 }
 
@@ -7101,7 +7145,7 @@ function renderTower() {
   var towerState = snapshot.tower || {};
   var runtime = snapshot.runtime || {};
   var player = headerSnapshot.player || {};
-  if (towerState.active) {
+  if (towerState.active && !towerCanvasHudActive()) {
     fightBox.style.display = '';
     listBox.style.display = 'none';
     // 動態部分由 renderTowerFight 處理
@@ -7144,7 +7188,7 @@ function renderTower() {
       bindTowerBossImageFallback(detail);
     }
     var actions = $id('tower-actions');
-    var actionsH = towerActionsHTML(st.sel, highest, player.gold || 0);
+    var actionsH = towerActionsHTML(st.sel, highest, player.gold || 0, towerState.active);
     if (actions && actions._lastH !== actionsH) { actions._lastH = actionsH; actions.innerHTML = actionsH; }
 
     // 上次結果
@@ -7223,6 +7267,8 @@ function renderTowerTimerFrame() {
   var view = viewState();
   var paused = !!(view && view.paused);
   if (paused) UI.towerTimerAnchor = null;
+  // 登場期間與首個開戰快照前不插值；計時從模擬層 elapsed 正式推進才開始。
+  if (runtime.introCd > 0 || !(runtime.elapsed > 0)) UI.towerTimerAnchor = null;
   var anchor = UI.towerTimerAnchor;
   var remain = !paused && anchor
     ? Math.max(0, towerTimeLimitWithTalents(runtime.floor) - (anchor.elapsed + (towerTimerNow() - anchor.at) / 1000))
@@ -8515,6 +8561,7 @@ function renderTalentModal() {
   else h += '<div></div><div></div>';
   h += '</div>';
   body.innerHTML = h;
+  syncBossConfigControls();
 }
 
 /* ---- 天賦頁（2026-10）：上排轉數分頁，中間把該轉天賦排成星盤（環上節點＝天賦、外圈進度＝等級），右側列出本轉目前加成。
@@ -8811,7 +8858,7 @@ function renderSkills() {
   var lo = skillViewLoadout(skillsSnapshot);
   var cap = skillViewLoadoutSize(skillsSnapshot);
   var loadoutPendingKey = nodePendingKey('skill-loadout');
-  var loadoutPending = isUiCommandPending(loadoutPendingKey);
+  var loadoutPending = isUiCommandPending(loadoutPendingKey) || bossFightConfigLocked();
   var equippedCount = lo.filter(Boolean).length;
   $id('loadout-cap').textContent = equippedCount + '/' + cap + ' 格' + (reincarnations >= 1 ? '（1 轉已解鎖全部上限）' : '（依參數表成長）');
   var lh = '';
@@ -8865,7 +8912,7 @@ function renderSkills() {
       (isSelected ? ' selected' : '');
 
     var removeBtn = isSelected
-      ? '<button class="bss-remove-btn" data-skill-unequip="' + esc(id0) + '" title="卸下技能">×</button>'
+      ? '<button class="bss-remove-btn" data-skill-unequip="' + esc(id0) + '" title="卸下技能"' + skillLoadoutButtonAttributes(loadoutPendingKey) + '>×</button>'
       : '';
 
     lh += '<div class="' + slotCls + '" draggable="' + (loadoutPending ? 'false' : 'true') + '" data-index="' + i + '" data-slot-index="' + i + '" data-sk="' + esc(id0) + '" data-skill-id="' + esc(id0) + '" data-loadout-slot-index="' + i + '" data-tt-title="' + esc(d0.name) + ' Lv.' + loadoutLevel + '" data-tt-desc="' + esc(d0.desc || '') + '">' +
@@ -8903,6 +8950,7 @@ function renderSkills() {
 
   renderSkillModal(skillsSnapshot, talentSnapshot, headerSnapshot);
   if (typeof UIContainmentManager !== 'undefined') UIContainmentManager.apply();
+  syncBossConfigControls();
 }
 
 /* ---- 技能升級彈窗 ---- */
@@ -9293,7 +9341,7 @@ function sgbDetailHTML(gid, skillsSnapshot, headerSnapshot) {
   if (elemInfo) tags += '<span class="skill-tag skill-tag-element skill-tag-' + g.elem + '">' + esc(elemInfo.emoji + (elemInfo.short || elemInfo.name) + '系') + '</span>';
   if (isPassiveGroup) tags += '<span class="skill-tag skill-tag-passive">主動型被動·需裝配</span>';
 
-  var equipPendingAttrs = pendingUiButtonAttributes(nodePendingKey('skill:' + ref));
+  var equipPendingAttrs = skillLoadoutButtonAttributes(nodePendingKey('skill:' + ref));
   var equipBtn;
   if (inLoadout) {
     equipBtn = '<button class="btn sgb-btn-quiet" data-skill-unequip="' + ref + '"' + equipPendingAttrs + '>卸下</button>';
@@ -9353,7 +9401,13 @@ function renderSkillBrowser(treesBox, skillsSnapshot, headerSnapshot) {
   var detail = $id('sgb-detail');
   if (UI.tooltipAnchor && detail.contains(UI.tooltipAnchor)) hideTooltip();
   var detailH = gid ? sgbDetailHTML(gid, skillsSnapshot, headerSnapshot) : '<div class="hint">沒有技能</div>';
-  if (detail._lastH !== detailH) { detail.innerHTML = detailH; detail._lastH = detailH; }
+  var fightLocked = bossFightConfigLocked();
+  if (detail._lastH !== detailH || detail._bossFightLocked !== fightLocked) {
+    detail.innerHTML = detailH;
+    detail._lastH = detailH;
+    detail._bossFightLocked = fightLocked;
+  }
+  syncBossConfigControls();
 }
 
 function openSkillModal(id) {
@@ -9465,9 +9519,10 @@ function renderSkillModal() {
   }
 
   if (canEquip && lv > 0) {
+    var loadoutAttrs = skillLoadoutButtonAttributes(nodePendingKey(loadoutRef));
     h += inLoadout
-      ? '<button class="btn sm warn" data-skill-unequip="' + loadoutRef + '"' + pendingAttrs + '>卸下</button>'
-      : '<button class="btn sm" data-skill-equip="' + loadoutRef + '"' + pendingAttrs + '>⚔️ 裝備</button>';
+      ? '<button class="btn sm warn" data-skill-unequip="' + loadoutRef + '"' + loadoutAttrs + '>卸下</button>'
+      : '<button class="btn sm" data-skill-equip="' + loadoutRef + '"' + loadoutAttrs + '>⚔️ 裝備</button>';
   } else if (!canEquip && lv > 0) {
     h += '<button class="btn sm" disabled data-tip="被動潛力技能學會即常駐生效">🌀 常駐</button>';
   } else {
@@ -9484,6 +9539,7 @@ function renderSkillModal() {
 
   h += '</div>';
   body.innerHTML = h;
+  syncBossConfigControls();
 }
 
 /* 提示框定位（技能／新版技能群組共用）：優先顯示在圖示右側，貼邊時翻到左側/上方。 */
@@ -11440,6 +11496,13 @@ if (typeof window !== 'undefined') {
 }
 
 function initUI() {
+  // 捕獲階段先守門，避免已開啟的面板或晚到的點擊改動本機配置草稿。
+  document.addEventListener('click', function (e) {
+    if (bossFightConfigLocked() && e.target.closest(bossConfigControlsSelector())) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    }
+  }, true);
   ensureUpgradePopStyle();
   if (typeof UIContainmentManager !== 'undefined') UIContainmentManager.init();
   bindWorkerUiState();
@@ -12044,6 +12107,7 @@ function initUI() {
 
   // 技能拖曳排序 / 位置置換 helper
   function handleSkillLoadoutSwap(fromIndex, toIndex) {
+    if (bossFightConfigLocked()) return;
     var pendingKey = nodePendingKey('skill-loadout');
     if (isUiCommandPending(pendingKey)) return;
     var skillsSnapshot = uiSkillsPanelSnapshot();
@@ -12104,6 +12168,7 @@ function initUI() {
   var draggedSlotIndex = null;
 
   document.addEventListener('dragstart', function (e) {
+    if (bossFightConfigLocked()) { draggedSlotIndex = null; e.preventDefault(); return; }
     var slot = e.target.closest('.battle-skill-slot.equipped, .loadout-slot.filled');
     if (!slot) {
       // 遊戲只支援技能排序；取消圖片／文字的原生拖曳，避免禁止游標。
@@ -13194,6 +13259,7 @@ function initUI() {
     }
     var tf = e.target.closest('[data-tower-floor]');
     if (tf) {
+      if (tf.disabled || towerViewActive(uiTowerPanelSnapshot()) || (viewState() || {}).towerActive) return;
       var towerFloor = parseInt(tf.getAttribute('data-tower-floor'), 10);
       sendUiCommand('tower.start', { floor: towerFloor }, {
         keys: [nodePendingKey('tower')],
@@ -13207,6 +13273,7 @@ function initUI() {
     // 高塔連續挑戰（次數取自 #tw-auto-count 輸入框）
     var ta = e.target.closest('[data-tower-auto]');
     if (ta) {
+      if (ta.disabled || towerViewActive(uiTowerPanelSnapshot()) || (viewState() || {}).towerActive) return;
       var taInput = $id('tw-auto-count');
       var autoFloor = parseInt(ta.getAttribute('data-tower-auto'), 10);
       var autoCount = taInput ? parseInt(taInput.value, 10) : 0;

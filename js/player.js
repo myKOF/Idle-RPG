@@ -404,6 +404,7 @@ function equipItem(it, slotKey, eq) {
 // 自動穿裝：只填補空的裝備部位；已有裝備後不再自動替換。
 // 雙手武器需主副手皆空才自動穿；副手欄被雙手武器佔用時視同已有裝備。
 function tryAutoEquip(it) {
+  if (G.tower && G.tower.active) return false;
   var cands = equipSlotsForItem(it);
   for (var i = 0; i < cands.length; i++) {
     var key = cands[i];

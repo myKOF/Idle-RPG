@@ -1770,9 +1770,9 @@ var BattleRenderer = (function () {
     var tier = BossArena.tierOf(b);
     var floor = (panel.tower && panel.tower.floor) || 0;
     S.arena.enter({
-      cx: (pp.x + bp.x) / 2, cy: (pp.y + bp.y) / 2, tier: tier, W: S.W, H: S.H,
+      cx: (pp.x + bp.x) / 2, cy: (pp.y + bp.y) / 2, tier: tier, element:BossArena.elementOf(b), W: S.W, H: S.H,
       title: String(b.name || '').replace(/^第\d+層・/, ''),
-      subtitle: '封魔塔　第 ' + floor + ' 層　·　' + BossArena.TIERS[tier].name
+      subtitle: '封魔塔　第 ' + floor + ' 層　·　' + BossArena.paletteFor(tier,BossArena.elementOf(b)).name
     });
     var ft = S.arena.floorTexture();
     if (ft && S.groundTile && !S.groundTile.destroyed) { S.groundTile.texture = ft; S.groundTile.tint = 0xffffff; }
@@ -4656,9 +4656,10 @@ var BattleRenderer = (function () {
         }
         var tx = rect.x + Math.random() * rect.w;
         var ty = rect.y + Math.random() * rect.h;
-        /* 起點在目標正上方（世界座標）：鏡頭會移動，不能再用「畫面頂端」當天空 */
-        var sky = ty - S.H * 0.6;
-        node.x = tx + 40; node.y = sky;
+        /* 雷殞石反算螢幕上方起點；其餘雨落仍使用目標上方的世界座標。 */
+        var from = spec.variant === 'thunder-fall' ? skyEntryPoint() : null;
+        from = from ? { x: from.x, y: screenToGroundY(from.y) } : { x: tx + 40, y: ty - S.H * 0.6 };
+        node.x = from.x; node.y = from.y;
         attachAirFx(node);
         var t = -(idx * 0.08), dur = 0.5;
         addFx({
@@ -4667,8 +4668,8 @@ var BattleRenderer = (function () {
             t += dt;
             if (t < 0) return true;
             var k = Math.min(1, t / dur);
-            node.x = lerp(tx + 40, tx, k);
-            node.y = lerp(sky, ty, k);
+            node.x = lerp(from.x, tx, k);
+            node.y = lerp(from.y, ty, k);
             if (k >= 1) { spawnImpact(tx, ty, spec, false); return false; }
             return true;
           }
@@ -4748,7 +4749,8 @@ var BattleRenderer = (function () {
       ? VFX_METEOR_DROP_RUN : 180;
     var rise = run * Math.tan(
       (typeof VFX_METEOR_DROP_ANGLE_RAD === 'number') ? VFX_METEOR_DROP_ANGLE_RAD : Math.PI / 3);
-    var mainFrom = { x: cx + run, y: cy - rise };
+    var skyFrom = skyEntryPoint();
+    var mainFrom = skyFrom ? { x: skyFrom.x, y: screenToGroundY(skyFrom.y) } : { x: cx + run, y: cy - rise };
     var meteorTravel = (spec.travelMs && spec.travelMs[0]) || 500;
     /* 與 DOM vfxMeteor、技能傷害浮字相同：殞石固定慢 30%。 */
     var dur = Math.min(1.15, Math.max(0.7, meteorTravel / 1000 / VFX_METEOR_SPEED_MULTIPLIER));
@@ -4766,7 +4768,8 @@ var BattleRenderer = (function () {
     var smallTheme = { c1: '#ef4b16', c2: '#ffd166', glow: '#ff7a1a' };
     for (var si = 0; si < smallOffsets.length; si++) {
       var ratio = 0.78 + si * 0.12;
-      var smallFrom = {
+      var smallSky = skyEntryPoint();
+      var smallFrom = smallSky ? { x: smallSky.x, y: screenToGroundY(smallSky.y) } : {
         x: cx + run * ratio,
         y: cy - rise * ratio + smallOffsets[si] * run
       };
@@ -6945,6 +6948,19 @@ var BattleRenderer = (function () {
     p.scale = L ? 1 / Math.max(0.1, 1 - L.beta * (py - L.cy)) : 1;
     return p;
   }
+  // 螢幕上方抽點後反解透視與鏡頭；返回Runtime使用的平行投影座標。
+  function skyEntryPoint() {
+    if (typeof VFXRuntime === 'undefined') return null;
+    var p = VFXRuntime.sampleSkyEntry(S.W, S.H);
+    if (!p) return null;
+    var L = S.persp && S.persp.layout;
+    if (L) {
+      var w = 1 / (1 + L.beta * (p.y - L.cy));
+      p = { x: L.cx + (p.x - L.cx) * w, y: L.cy + (p.y - L.cy) * w };
+    }
+    var world = S.layers && S.layers.world;
+    return { x: p.x - (world ? world.x : 0), y: p.y - (world ? world.y : 0) };
+  }
   /* 變形圖層（閃電那種沿路徑彎折的）的節點位置、旋轉與縮放**不是**從 transform 來的：
      後端的 updateWarp 會用變形矩陣裡的 originX／originY／rotation／scaleX／scaleY 蓋掉節點的
      transform（網格頂點是在特效座標裡算的，節點只負責把整份擺到特效原點上）。
@@ -7353,6 +7369,7 @@ var BattleRenderer = (function () {
       groundScale: GROUND_Y_SCALE,
       ctx: {
         posOf: screenPosOf,
+        skyEntryPoint: skyEntryPoint,
         targetAlive: chainTargetAlive,
         chainPoint: function (id) {
           var ent = id === 'pv-float' ? S.player : S.entities[id];

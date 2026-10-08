@@ -20,6 +20,13 @@
    ============================================================ */
 
 var VFXRuntime = (function () {
+
+  /* 截圖紅框：畫布上方橫帶。每顆抽一次，抽樣只影響演出，不使用模擬亂數。 */
+  function sampleSkyEntry(width, height, random) {
+    if (!(width > 0 && height > 0 && isFinite(width) && isFinite(height))) return null;
+    var rng = random || Math.random;
+    return { x: width * (0.12 + 0.74 * rng()), y: height * 0.12 * rng() };
+  }
   var homingStep = typeof projectileHomingStep === 'function' ? projectileHomingStep
     : (typeof require === 'function' ? require('./util.js').projectileHomingStep : null);
 
@@ -1026,7 +1033,7 @@ var VFXRuntime = (function () {
       var fixedLanding = spec.area && spec.area.fixedLanding === true;
       if (!toId && !directed && !fixedLanding && !knifeFlight) return false;
       var travel = travelSecAt(spec, chained ? 1 : 0);
-      var from;
+      var from, skyEntry = null;
       /* 起點：連鎖段從前一個目標、敵方出手從攻擊者（sourceId）、天降從落點正上方，
          其餘才是從玩家。敵方投射物若用玩家當起點，會變成「從自己身上飛向自己」。 */
       if (chained) from = ctx.posOf(ids[0]);
@@ -1042,6 +1049,13 @@ var VFXRuntime = (function () {
           var fallAngle = typeof spec.angle === 'number' && isFinite(spec.angle) ? spec.angle : tuning(presetId,'fallAngle') * Math.PI / 180;
           from = { x: landing.x - Math.cos(fallAngle) * tuning(presetId,'fallHeight') * profile.skyScale,
             y: landing.y - Math.sin(fallAngle) * tuning(presetId,'fallHeight') * profile.skyScale };
+        }
+        // 依事件而非素材檔名：換色／複製Preset也保持相同的天空起點規則。
+        if ((spec.variant === 'meteor' || spec.variant === 'thunder-fall') && ctx.skyEntryPoint &&
+            !(spec.area && isNum(spec.area.sourceX) && isNum(spec.area.sourceY))) {
+          skyEntry = ctx.skyEntryPoint();
+          if (skyEntry && isNum(skyEntry.x) && isNum(skyEntry.y)) from = skyEntry;
+          else skyEntry = null;
         }
       } else from = ctx.playerPos();
       var to = fixedLanding ? {x:spec.area.x,y:spec.area.y} : directed
@@ -1085,10 +1099,10 @@ var VFXRuntime = (function () {
       if (flightOrbit) flightOrbit = Object.assign({}, flightOrbit, { origin: flightOrbit.origin || { x: from.x, y: from.y / groundScale } });
       var startPoint = flightOrbit ? orbitPoint(flightOrbit, 0) : null;
       var params = Object.assign({ position: startPoint ? {x:startPoint.x,y:startPoint.y*groundScale} : from, rotation: facing }, dimensions);
-      params.motionFacing = /^wind-blade(?:-|$)/.test(spec.variant||'');
+      params.motionFacing = !!skyEntry || /^wind-blade(?:-|$)/.test(spec.variant||'');
       if (flightOrbit) params.particleOrigin = {x:flightOrbit.origin.x,y:flightOrbit.origin.y*groundScale};
-      // 風刃的動畫壽命隨權威飛行時間伸縮，避免飛出場景前先消失。
-      if ((flightOrbit || presetId === 'proj-wind-crescent' || knifeFlight || holyFlight || /^knife(?:-|$)/.test(spec.variant || '')) && travel > 0) params.timeScale = presetDurations[presetId] / travel;
+      // 飛行動畫壽命隨權威飛行時間伸縮，避免抵達之前先消失。
+      if ((flightOrbit || presetId === 'proj-wind-crescent' || knifeFlight || holyFlight || (fixedLanding && spec.variant === 'fireball-small') || /^knife(?:-|$)/.test(spec.variant || '')) && travel > 0) params.timeScale = presetDurations[presetId] / travel;
       // 敵方出手的彈體不降：那是玩家要看清楚的威脅。
       if (spec.fxKind !== 'enemy-attack') {
         var td = trailDensity();
@@ -2270,6 +2284,7 @@ var VFXRuntime = (function () {
   }
 
   return {
+    sampleSkyEntry: sampleSkyEntry,
     create: create,
     createDensityGovernor: createDensityGovernor,
     DENSITY: DENSITY,

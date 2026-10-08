@@ -126,7 +126,7 @@ test('凍結的 Worker 指令表有 93 條且分類數量固定', () => {
   // v47：battle 新增技能列權威計時投影，指令數不變。
   // v48：gems 面板新增 runewordSeen（成形過的符文真言），指令數不變。
   // v49：rune.unsocket 改為 rune.erase（抹除符文，扣碎片與精華、不退還），指令數不變。
-  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 49);
+  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 50);
   assert.equal(protocol.MSG_OUT.VISUAL, 'visual');
   assert.equal(protocol.EVENT_KINDS.VFX, 'vfx');
   assert.equal(protocol.EVENT_KINDS.ACT, 'act');

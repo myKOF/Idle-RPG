@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## CODEX-CLAUDE-MERGE-20261008 — 解決 develop 整合衝突
+
+- Owner：Codex；Done。使用者明確要求解決與 Claude 在 develop 的衝突，授權接續主整合副本既有合併；原 HEAD 348bc794、MERGE_HEAD 4a2cb466。單一開發者，前置為兩側已提交成果；完成後交使用者重載驗收。
+- 範圍：index.html、js/bridge.js 的兩處快取衝突、本紀錄、既有合併提交與必要驗證。禁止改其他副本、擴大功能、覆蓋兩側內容或推送 develop。預檢只有待合併 Codex 已提交來源，其他副本乾淨；使用者本次解決衝突指示已授權。
+- 決策：bridge 使用全新 WORKER_ASSET_VERSION 20261008-codex-claude-integration，主頁 bridge 快取 1.0.248。保留 Claude 命中統計／formula import／編輯器飛行預覽，以及 Codex BOSS 配置鎖／協議50／場景／小火球／殞石演出；逐檔檢查自動合併與兩頁共用快取。
+- 驗收：Build、Worker／命中統計／BOSS與高塔／場景／小火球與殞石／VFX編輯器回歸、素材一致性與 diff check，確認衝突清零並完成原合併提交。
+
+- 完成：僅人工修改 index.html、js/bridge.js、本紀錄；其餘合併檔案保留 Git 三方合併結果。唯讀核對 js/worker/sim.worker.js 的完整合成結果；skills2／Runtime／renderer／player／protocol／Skills2 CSV 與 Codex 原分支逐位元一致，formula／Editor JS／CSS 與 Claude 既有 develop HEAD 逐位元一致。所有 staged 文字檔无衝突標記，unmerged清單空。
+- 回歸指令：node --test --test-reporter=dot tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/worker-bridge.test.cjs tests/hit-calls-counter.test.cjs tests/ui-stall-diag.test.cjs tests/boss-skill-lock.test.cjs tests/tower-info-during-fight.test.cjs tests/tower-scene-intro.test.cjs tests/battle-arena.test.cjs tests/battle-decor.test.cjs tests/battle-perspective.test.cjs tests/fireball-split-flight.test.cjs tests/skill2-magic-fire.test.cjs tests/meteor-entry-origin.test.cjs tests/meteor-impact-timing.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-editor-view.test.cjs tests/vfx-editor-guard.test.cjs。
+- 結果：18檔回歸，7項失敗全部屬既有：meteor-impact-timing 的火鳳遼原1項，skill2-magic-fire 的殞石4項與火柱2項。於未修改的 ai/codex 4a2cb466 用 node --test --test-reporter=tap tests/skill2-magic-fire.test.cjs tests/meteor-impact-timing.test.cjs 重跑24項17通過7失敗，失敗名稱相同；新增失敗0，未更改斷言或擴大修復。其餘16檔全通過，包含 Claude 命中統計、編輯器飛行預覽與共用快取。
+- 驗證：npm.cmd run build 488檔通過；node --check js/bridge.js、git diff --check、git diff --cached --check 均通過。node tools/vfx/export-assets.cjs --check --root D:/MyGame/Asset：244 Preset／161素材引用匯出最新；node tools/scene-renewal/export-source.cjs --check：场景來源与圖檔SHA256一致。素材庫status乾淨、既有HEAD c999cf0，合併沿用已提交素材，无新素材Commit。
+- 交付：本紀錄所在 [Codex] merge: 解決與 Claude 的快取衝突並整合 Codex 修改 完成原 develop 合併，父提交348bc794與4a2cb466；無未完成衝突，不推送。已知風險為上述7項既有失敗，本輪未重做瀏覽器／Console／真人長戰驗收。下一步使用者重新載入遊戲；VFX Editor未儲存內容先另存再重載。整合已完成，可供使用者審查及自行推送。
+
 ## Claude｜符文真言的屬性依級距削弱 50%～70%（RUNEWORD-STATS-CUT-20261008）
 
 - Owner：Claude；Done。使用者要求：符文真言的能力也同比降低 50%～70%（同上一輪單顆符文的削弱）。
@@ -9480,3 +9493,75 @@ Worker 存活且頁面正常完成載入。
 - 驗證：新增測試跑真函式（假 runtime 收 setTransform：10 米/秒 1 秒＝100px、鏡頭反向、播完不動、重播歸零、亂打退 0；格子跟 latticeX、軸線不動、大小格不重疊）。10 個突變全部抓到（第一輪 M10「預設對齊 0」活下來——原點 300 剛好是 60 的倍數，改用 317 後抓到）。編輯器＋preset 測試 483 項中 6 項失敗，其中 CV-1 已由本次修好；其餘 CAP-2、HISTORY-42、16b canonical 為既有基線，LAYOUT-1（`pillar-indomitable` 缺 layout）與 LAYOUT-3（`bolt-sky-purple` 等多群組）是 preset 資料，非本次範圍。build_check 483 檔通過、diff check 通過。
 - 實機（本機編輯器 28362，`proj-dragon-devour`）：在工具列輸入 10，手動推 2 秒 60fps 實測飛了 200px；格線每幀後退 1.67px、軸線固定、速度改 0 後零重畫；30 米/秒時火焰拖尾明顯拉長、Gizmo 框留在彈體上；主控台無新錯誤。
 - 衝突預檢：`ai/codex`／`ai/antigravity`／`develop` 都沒有比 HEAD 新、動到 `tools/vfx/editor/` 的提交。未合併／推送。
+
+## FIREBALL-SPLIT-SPEED-SIZE-20261008 — 小火球速度減半、尺寸改為60%
+
+- Owner：Codex；Done，單一開發者。使用者反映小火球難以看見，要求「速度降低50%，並且體積為落下的火球的60%」。分裂速度為原火球表定速度×0.5（65.52→32.76米／秒），尺寸沿用既有線性倍率改為0.6，最短飛行50→100ms同步減速；不增加先前建議但未採用的0.3秒下限。
+- 允許／修改：js/skills2.js、tests/fireball-split-flight.test.cjs、index.html的skills2／bridge快取、js/bridge.js／worker/sim.worker.js必要快取、docs/vfx/VFX_RUNTIME_ADAPTER.md本段及本紀錄。禁止修改其他技能、Preset、素材、Excel／CSV、傷害倍率、協議、存檔及他人殞石起點工作；不合併／推送。
+- 預檢／授權：skills2／測試無其他來源；快取有Claude 0e0bdee1／d9f624c4命中統計與快取，任務紀錄有612604d6飛行預覽，另一本聊天METEOR-ENTRY在同副本修改Runtime／renderer／vfx及快取、Adapter文件。已說明具體重疊並取得使用者「同意分段修改」，本次只改／提交小火球段，完整保留他人內容。
+- 驗收：分裂飛行速度／事件travelMs／模擬抵達時刻一致，5／10／20米各153／305／611ms；原火球速度保留，原三顆、固定座標、20米隨機補足、弧高1/3及抵達判定不變。正式Worker事件與Runtime使用0.6縮放，與同Preset落下火球比較兩軸尺寸皆為60%；測試及Build後提交。
+- 完成：SG_FIREBALL_SPLIT_SCALE=0.6、SG_FIREBALL_SPLIT_SPEED_MULT=0.5，只在明確爆點起飛的分裂計畫套用減速，計算層與顯示事件同讀travelMs；近距離下限也依倍率延長。快取skills2 1.0.294、bridge1.0.247、Worker及skills2 import為20261008-fireball-split-half-speed。修改共上述7檔；共用index、Adapter文件與本紀錄僅分段提交。
+- 使用者修改一起提交：提交前Skills2.xlsx再儲存並自動同步CSV／skills2：血飲術self由1改0.1、火球第1階cast-magic清空。依既有「包含我改的一起commit」授權，保留兩筆資料及Excel／CSV（總共9檔），非AI主動改表；兩檔追加預檢無其他來源。唯讀核對Excel／CSV逐格一致，`node tools/config_tables.cjs --apply Skills2`試跑語意變更0，火球表定速度65.52不變。
+- 檢查未改：js/vfx-runtime.js的defaultSize／playProjectile與rain尺寸、js/worker/shim.js／protocol.js、js/battlefield.js、proj-dragon-devour.json及原分裂／爆燃測試；不改Preset或素材，素材庫無本次必要變更、不建立空Commit。
+- 測試：`node --test tests/fireball-split-flight.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs tests/starfall-vfx.test.cjs tests/vfx-duration.test.cjs tests/vfx-editor-guard.test.cjs`61/61通過（分裂9/9）；`node --test --test-name-pattern='火球術·爆燃|火球術·火球爆裂' tests/skill2-magic-fire.test.cjs`2/2通過；`npm.cmd run build`487檔通過，`git diff --check`通過。正式Worker引擎、事件白名單與Core／Runtime真函式驗收速度、抵達判定及兩軸60%尺寸，包含同Preset的rain落下火球作比較；未讀寫真人存檔。
+- 交付：無未完成項，可Review／合併；Commit為本紀錄所在提交，未合併／推送。未做長時間真人戰鬥；另一本聊天的殞石飛入點程式／測試及快取保留未提交，由原聊天處理。建議重新整理遊戲驗收，20米飛行約0.61秒，飛回同一爆點的極近距離為0.10秒。
+
+## METEOR-ENTRY-20261008 — 殞石術與雷殞石從畫面上方隨機飛入
+
+- Owner：Codex；Done，單一開發者。使用者要求殞石術及雷殞石的飛入起點在截圖畫面上方紅框內隨機，不再固定左上；實際落點／傷害判定／飛行時間保持事件權威值。上方區域依畫布寬高比例適配，鏡頭／透視需反算。
+- 允許Runtime起點選取、battle-renderer正式ctx與legacy起點、DOM legacy相容、必要快取、定向測試與Adapter文件及本紀錄；不改Preset／素材／配置／技能／Worker／Protocol／傷害／真人存檔、不合併或推送。相關檔已預檢；主index Claude d9f624c4／0e0bdee1修改formula／ui／bridge快取，Editor副本未提交飛行控制UI及Backend／view-model／editor載入版本；使用者已同意只分段更新本次快取。
+- 保留同副本FIREBALL-SPLIT-FLIGHT與使用者既有未提交修改，僅提交本次分段。驗收每顆獨立起點、紅框比例界限、各視窗／透視／鏡頭位置、正式Worker→Runtime落點與抵達扣血時序不變、分裂小火球及地爆天星垂直落下不受影響；定向／回歸／正式渲染／Build後Commit。
+- 完成：每顆從畫布X的12%～86%、Y的0%～12%獨立抽點一次；Renderer反算透視與鏡頭位移，Runtime依meteor／thunder-fall事件接線，素材換名仍適用，航向跟隨飛行方向。舊Canvas／DOM相容畫法同步起點；沒有視窗回呼時維持Preset原角度，高塔、明確來源座標與地爆天星不套用。既有落點、傷害、travelMs、延遲及分裂規則保持。
+- 修改8檔：js/vfx-runtime.js、js/battle-renderer.js、js/vfx.js、index.html、tools/vfx/editor/index.html、tests/meteor-entry-origin.test.cjs、docs/vfx/VFX_RUNTIME_ADAPTER.md及本紀錄。快取Runtime兩頁1.0.183、renderer1.6.179、vfx1.0.80。檢查未改：js/skills2.js、Worker引擎／shim／protocol、Core／PixiBackend、殞石與雷殞Preset／素材索引、分裂及地爆天星測試；其他聊天後完成5239802f／1cddd43c，完整保留。沒有新增或修改素材，素材庫無本次必要變更、不建立空Commit。
+- 測試：`node --test tests/meteor-entry-origin.test.cjs tests/fireball-split-flight.test.cjs tests/starfall-vfx.test.cjs tests/vfx-editor-code-controls.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs`62/62通過，新增7/7。正式Worker引擎同時驗收飛行事件、抵達前不扣血、抵達才扣血及Runtime相同時刻落地；27種畫布／透視／鏡頭組合與抽樣邊界通過。`npm.cmd run build`487檔通過；`git diff --check`通過。
+- 正式渲染：隔離headless Edge載入正式遊戲、Pixi／Core／Backend／Runtime及兩種Preset；920×760與390×760視窗，以正式Worker發射事件建立3顆殞石＋2顆雷殞石的驗收場景。鏡頭位移130／-80後，每顆投影起點仍在指定橫帶、無重複起點，素材可見且飛行結束projectiles／activeEffects皆0，Console error／warning0。臨時測試hook僅在HTTP回應加入，未寫正式原始碼；未讀寫真人存檔。臨時伺服器／瀏覽器已关闭，測試腳本／log／截圖清除。
+- 既有問題／交付：另加跑skills2-flight-speed及vfx-editor-cache-versions，共69項67通過／2失敗；用唯讀HEAD來源重跑這兩檔亦5/7，失敗相同：舊冰箭fixture預期立即呼叫傷害，以及Editor的PixiBackend快取20260930-bend-strength落後主頁20261007-deform-prep。本次Runtime快取兩頁一致；Backend欄位屬Claude進行中修改且不在使用者限定授權內，保留交整合時處理。無本次未完成項，可Review／合併；Commit為本紀錄所在提交，未合併／推送。建議重載遊戲驗收連續殞石與雷殞石；未做真人長時間戰鬥與GPU效能量測。
+
+## Codex｜BOSS 擺件融合與屬性場景燈光（BOSS-ARENA-ELEMENT-20261008）
+
+- Owner：Codex；Done，單一開發者；使用者已確認本融合修正版「比較有感覺」。使用者要求優化 BOSS 祭壇邊緣物件，依 BOSS 正式屬性決定燈光；追加要求物件融入地板，避免生硬貼上。保留已確認的簡化手繪程度，母圖≤1024×1024、正式素材≤512×512。
+- 允許／修改：js/battle-arena.js、js/battle-renderer.js、js/decor-nature.js、js/battle-decor.js、js/worker/decor-atlas.worker.js、images/scene/arena-{gate,brazier,spire,candles}.png、index.html 場景載入快取段、tools/{scene-preview.html,decor-preview.html,scene-renewal/export-source.cjs}、tests/{battle-arena,battle-decor,battle-perspective}.test.cjs、docs/SCENE_NATURE.md 與本紀錄；素材庫 codex-authored/scene-nature 13檔。禁止改傷害、碰撞、技能、模擬／協議、存檔或他人內容。
+- 預檢／授權：既有及新檔逐一預檢；index／bridge有 Claude d9f624c4 命中率／快取來源，同副本有 BOSS 配置鎖定工作。已指出具體內容並取得使用者「同意分段修改並保留其他內容」。鎖定工作後完成47b349e9；後續 FIREBALL-SPLIT-FLIGHT 同副本變更全部保留，index只提交場景四個版本，AI_TASKS只提交本段；bridge與模擬Worker快取由火球工作處理、不納入本次提交。Atlas Worker有獨立URL快取8及Nature7／Decor17載入版本。
+- 完成：四份完整原創AI魔門、石雕火盆、黑曜石尖柱及燭台；生成候選、完整提示詞、SHA256、裁切／尺寸紀錄齊全，未使用或輸入第三方圖像。底部source-atop漸暗、深色塵土／碎石接觸區擴大並固定脚點；物件乘色承接環境色，光暈加寬並調淡，後排小尖柱縮小內移。門洞／眼光、四盆火、十二道小燭火的正規化附著點跟隨等比縮放、翻面與billboard，不再拼湊物件本體。
+- 屬性：優先讀boss.elem，無已知elem時讀attr；毒綠、聖黃白、火橙紅、冰藍白、雷淡紫、暗紫、土琥珀、風青綠。無已知屬性保留三塔原色；法陣、門光、火焰、環境光、火星及邊緣同步。中性本體跨塔／屬性共用，每元素只增加60×84火焰貼圖；19擺件、6局部霧及原46粒子固定上限，退出回收。
+- 檢查但未改：js/data.js（BOSS_LIST）、js/tower.js（elem／attr）、js/worker/sim.worker.js（直接投影TOWER）、js/worker/protocol.js、js/bridge.js、js/ui.js、GM_command.md；他人的配置CSV／Excel、skills2與Runtime修改未納入。
+- 驗證：node --test tests/battle-arena.test.cjs tests/battle-decor.test.cjs tests/battle-perspective.test.cjs，47/47；新增正式elem／attr傳入、同塔八元素換色、不污染預設、共用大型貼圖、環境乘色、腳點接觸區及退出零洩漏案例。node tools/scene-renewal/export-source.cjs --check，30份匯出SHA一致。npm run build，486檔通過；git diff --check通過。瀏覽器14圖集alpha／預乘RGB差均0，無error／warn；正式獨立origin挑戰第35層劇毒之母，BOSS屬性自動綠光、HUD與物件顯示正常，保存實戰畫面。920×760毒／聖／冰／暗預覽使用正式Renderer，切屬性經正常轉場；窄390×760亦可載入（左右邊界物件隨鏡頭裁切）。
+- 素材提交：49e8260（D:/MyGame/Asset），已先提交；遊戲Commit為本紀錄所在提交（回覆列出編號）。四PNG共1,293,080 bytes、單份解碼RGBA合計3,534,848 bytes，不含Worker副本與GPU圖集。
+- 風險／未完：功能無未完成項；未量測GPU時間、長時間大量技能FPS。依來源圖固定的正規化附著點，未來更換或重裁貼圖需同步調整。可交使用者Review／合併，需保留已同意的共用檔分段內容；未自行合併或推送。建議重載遊戲檢視其他樓層及三塔風格。預覽與實測記錄保留於Codex visualizations的boss-arena-upgrade，不納入正式素材。
+
+## FIREBALL-SPLIT-FLIGHT-20261008 — 火球爆裂從爆點拋射縮小火球
+
+- Owner：Codex；Done，單一開發者。先查核技能是否生效：正式Worker引擎可生成分裂火球，但起點誤用玩家、未縮小／未帶弧高，爆點事件又攜帶投射物。使用者要求沿用原火球特效縮小，從爆點彈向20米內任意目標，拋物線高度為飛行距離三分之一；最新指示取代先前重複選敵答案：每名敵人最多分配一顆、不足仍發射且其餘在20米範圍內隨機落點；例如1名敵人＝1顆敵人座標＋2顆隨機座標，全部途中不追蹤。
+- 允許：skills2分裂選敵／投射／事件、Runtime必要的既有拋物線接線、分裂飛行測試、主頁／bridge／Worker必要快取及本紀錄；禁止改傷害倍率、其他技能、Preset／素材／存檔／協議與他人场景內容。skills2已有使用者配置表生成差異，完整保留。不合併／推送。
+- 預檢：skills2／Runtime／本紀錄／新測試無其他來源修改。index／bridge／sim.worker與Claude d9f624c4命中率功能及快取重疊；已提供具體內容並獲使用者「同意分段修改」，僅更新本次快取，保留命中率及另一本聊天場景內容，由原聊天提交。
+- 驗收：一般火球及殞石於實際爆炸／落地後再選存活目標，三顆從爆點發射、範圍20米、逐敵人固定落點＋不足補隨機座標；原火球Preset線性縮小、每顆獨立距離／弧高／抵達時間，抵達才查該固定座標是否碰到存活敵人體型，移走不追蹤且不再必命中。無命中仍播放落地爆點一次、不重射火球。主端與Worker共用事件，來源死亡不回退到玩家；測試、正式渲染及Build後Commit。
+- 完成：爆點當下取得ctx.getEnemies存活名單，洗牌後逐敵人分配，不足用平方根半徑在20米圓內均勻抽樣；固定座標飛行／抵達判定與VFX共用source、travelMs、arcM，線性縮半、弧高為各顆距離1/3，短Preset完整活到抵達。抵達才檢查固定落點上的敵人體型，最多命中一名；原敵移開可避開，新敵進入可受傷，空場仍發射。一般火球與逐顆殞石都適用，爆點只送命中特效，不重播本體投射物。未改傷害倍率、原傾角、FOV、協議50或存檔。
+- 修改：js/skills2.js、vfx-runtime.js、bridge.js、worker/sim.worker.js、index.html、tools/vfx/editor/index.html、docs/vfx/VFX_RUNTIME_ADAPTER.md、本紀錄、新增tests/fireball-split-flight.test.cjs、tests/skill2-magic-fire.test.cjs。舊爆燃測試先完成小火球飛行，再隔離一份燃燒驗自然爆燃，以完整5秒燃燒算式釘住原傷害，避免跳到到期時才補命中刷新燃燒；未降低斷言。快取Runtime1.0.182、skills2 1.0.293、bridge1.0.246、Worker及skills2 import為20261008-fireball-split-fixed。場景工作已獨立提交04814b45，完整保留。
+- 檢查未改：js/battlefield.js、data.js、worker/shim.js、worker/protocol.js、vfx-core.js、vfx-pixi-backend.js、tools/config_tables.cjs、scripts/sim/engine.js及既有火系／Runtime／殞石測試；不改命中率、符文與場景內容。
+- 使用者修改一起提交：Skills2.csv／Skills2.xlsx與生成的skills2字面值（地爆天星normal=80、天火流星名稱及balls=10/+1、pct=100/+10）；Excel全部10列火球與CSV逐格一致，`node tools/config_tables.cjs --apply Skills2`唯讀試跑語意變更0。使用者新儲存proj-dragon-devour tint、proj-meteor-inferno橫向縮放／旋轉Speed也原樣保留，兩Preset通過Core.validatePreset；素材庫保存兩Preset及原殞石layout，逐份SHA256一致，未引入外部素材。素材Commit：c999cf0（D:/MyGame/Asset），先於遊戲提交。
+- 驗證：`node --test tests/fireball-split-flight.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs tests/starfall-vfx.test.cjs tests/vfx-duration.test.cjs tests/vfx-editor-guard.test.cjs`60/60通過（分裂專項8/8，使用正式Worker引擎及白名單）。`node --test --test-name-pattern='火球術·爆燃' tests/skill2-magic-fire.test.cjs`通過。`npm.cmd run build`486檔通過；git diff --check通過。另跑magic-fire／fire-legendary／skill2-vfx／vfx-runtime／meteor-impact-timing共216測試，193通過、23失敗；在唯讀HEAD基線保留相同使用者資料與測試，以原skills2／Runtime重跑亦193/23，失敗名稱完全相同，未新增回歸（既有殞石fixture／旧素材契約等）。未修任務外失敗。
+- 正式渲染：隔離headless Edge載入正式Pixi／Core／Backend／Runtime及proj-dragon-devour素材，三顆事件建立三個飛行物；目標座標故意在ctx換成錯誤位置，105次root變換仍符合固定落點拋物線，最大誤差1.21e-13。原火球貼圖可正常渲染，抵達後activeEffects／projectiles皆0，Console error／warning0；臨時伺服器／瀏覽器已关闭，腳本／log／截圖清除，未讀寫真人存檔。
+- 交付：功能無未完成項，可交使用者Review／合併；遊戲Commit為本紀錄所在提交，未自行合併／推送。已知限制：未以真人存檔長時間戰鬥；範圍選敵沿用既有敵人體型相交規則。建議先備份VFX編輯器尚未儲存內容，再重新整理遊戲與編輯器驗一名敵人／敵人移動時的分裂落點。
+
+## Codex｜BOSS 戰保留左側資訊並鎖定配置（BOSS-INFO-DURING-FIGHT-20261008）
+
+- Owner：Codex；Done。使用者要求開戰後左側維持樓層列表、BOSS 資訊及通關獎勵，挑戰／連挑置灰停用，追加技能、換裝、寶石、符文、威能與裝備四個功能的配置限制。單一開發者；前置既有右側 Canvas BOSS 戰與左側瀏覽頁已完成，工作區於開始時乾淨且衝突預檢無其他來源修改。
+- 允許 js/ui.js 高塔顯示／按鈕與點擊守門、index.html 對應快取、新增 tests/tower-info-during-fight.test.cjs、本紀錄；追加使用者要求 BOSS 戰不可更換技能，包含技能裝上／卸下／排序的 UI 與 Worker runCommand 守門、js/bridge.js／worker/sim.worker.js 必要快取、新增 tests/boss-skill-lock.test.cjs。追加三檔預檢無衝突。禁止改傷害規則、Worker 協議、存檔、素材、其他副本。不合併／推送。
+- 驗收：Canvas 戰鬥中左側仍顯示原資訊、挑戰／連挑 disabled 且不因 pending 解除被啟用，退出後恢復；開戰時瀏覽其他樓層也不可重新挑戰。保留無 Canvas 的既有 DOM 戰鬥與撤退，前輪倒數修正及連挑回歸不受影響。相關測試、瀏覽器 DOM／樣式／Console、Build 通過後 Commit，交使用者審查整合。
+- 追加範圍／驗收：使用者追加禁止換裝備、寶石、符文、威能，並鎖住裝備強化／洗煉／鑲嵌／符文四個入口。允許 js/player.js 暫停戰中自動穿裝、js/worker/protocol.js 共用限制清單與 v50、docs/WORKER_PROTOCOL.md、tests/worker-protocol.test.cjs；四檔衝突預檢無其他來源修改，取代前述禁止改協議限制。BOSS 登場／暫停／結算未退出期間，UI 與 Worker 均拒絕配置變更，含裝載排序、超神進化更換／重置、裝備套組、寶石鑲卸／融合寶石、符文刻印／抹除、威能升降／刪除與潛力配置；裝備四個入口置灰，pending 解除不能解鎖。退出恢復，純瀏覽與素材合成保留；一般技能升級數值不限制。
+- 完成：Canvas 開戰仍顯示原樓層列表／BOSS 卡／獎勵；挑戰、連挑停用且點擊守門。UI 配置按鈕置灰、捕獲階段防止草稿變更、中央送指令與 Worker runCommand 共用 27 條指令限制，在物件解析／扣資源前拒絕。TICK／FULL 切換戰鬥狀態時同步按鈕並標記面板重繪；技能詳情快取將戰鬥鎖納入更新條件，退出仍可解除。工廠自動穿裝戰中暫停，退出恢復。
+- 修改檔案：js/ui.js、player.js、worker/protocol.js、worker/sim.worker.js、bridge.js、index.html、docs/WORKER_PROTOCOL.md、本紀錄、tests/worker-protocol.test.cjs；新增 tests/tower-info-during-fight.test.cjs、boss-skill-lock.test.cjs（後者涵蓋全部配置鎖）。快取 ui 1.0.151、player 1.0.13、bridge 1.0.244、Worker 20261008-boss-config-lock；協議 49→50，指令仍 93 條，封包／存檔格式不變。未改但檢查：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、tower.js、skills.js、skills2.js、talents.js、item.js、runeword.js、newforge.js 及相關測試。無素材變更，無必要素材庫 Commit。
+- 測試：`node --test --test-timeout=15000 tests/boss-skill-lock.test.cjs tests/tower-info-during-fight.test.cjs tests/tower-scene-intro.test.cjs tests/tower-head-layout.test.cjs tests/boss-display-state.test.cjs tests/tower-auto-result.test.cjs tests/init-ui-smoke.test.cjs tests/ui-worker-events.test.cjs tests/inventory-command-pending.test.cjs tests/skill-loadout.test.cjs tests/worker-protocol.test.cjs tests/battle-skill-summary.test.cjs tests/equip-socket-ui.test.cjs tests/equip-reroll-ui.test.cjs tests/equip-set-preview-stats.test.cjs tests/skill2-ult-switch.test.cjs tests/talent-transcendence.test.cjs` 88/88 通過；先前同批含 tests/equip-no-duplicate.test.cjs，該檔 5/5 通過。`npm.cmd run build` 485 檔通過；`git diff --check` 通過。
+- 瀏覽器：全新隔離 headless Edge，正式 UI／樣式驗四功能與卸下 disabled、opacity 0.45／grayscale 0.8；原已開啟的寶石鑲卸、符文暫放／抹除、裝備套切換、威能四操作、技能裝載／重置於進場與重畫保持鎖定，pending 釋放不解鎖，退出全部恢復；快取技能詳情也恢復。另驗左側 BOSS／獎勵原卡維持、挑戰／連挑 opacity 0.42 且灰階、退出可挑戰。Console error／warning 0，臨時伺服器／瀏覽器已關閉；未載入正式存檔或長跑完整遊戲實戰。
+- 提交前預檢：開發期間 ai/claude 新增 d9f624c4「FPS 右側加命中 N/s」，共用 js/ui.js、worker/sim.worker.js、bridge.js、index.html。實作位置分開（uiHitRateText／initBattleFPS、hitRateSnapshot／emitTick、bridge 命中率統計），快取版本字串重疊。依 AI_RULES 3.2 已詢問使用者；使用者本輪明確要求 commit，授權獨立提交本次 BOSS 修改，後續整合保留雙方功能與最新快取版號。工作區另出現 battle-arena.js、battle-renderer.js、tests/battle-decor.test.cjs、tools/scene-renewal/export-source.cjs 的場景素材修改，均非本次修改，不納入提交。
+- 交付：功能與驗證完成，可交使用者整合；Commit 見本紀錄所在提交，未合併／推送。建議整合保留雙方功能與新快取版號，重新整理讓主頁與 Worker 同時載入 v50，再驗一次正式 BOSS 進場、切換各面板、撤退恢復。無素材變更、無必要素材庫 Commit。
+
+## Codex｜BOSS 倒數等正式開戰才顯示（BOSS-TIMER-INTRO-20261008）
+
+- Owner：Codex；Done。使用者要求 BOSS 戰 60 秒倒數從進場完成、雙方正式開打起算。單一開發者；實際 towerTick 已於 introCd 期間凍結計時／行動，本次修正 UI 在 elapsed=0 時仍自行插值的問題。
+- 前置：使用者已完成 Claude 符文提交合併；本副本 ai/codex 乾淨，ui／index／本紀錄／新增測試衝突預檢無其他來源修改。允許 js/ui.js 倒數、index.html 對應快取、tests/tower-scene-intro.test.cjs 及本紀錄；禁止改戰鬥數值、Worker 協議、存檔、素材與其他副本。
+- 驗收：兩處倒數於登場及首個開戰快照前保持完整限時，正式 elapsed 推進後才插值；連挑清除舊錨點、暫停維持不動。測試同時覆蓋實際模擬層登場與畫面計時、相關回歸及 Build；完成後 Commit 交使用者審查整合，不合併／推送。
+- 完成：renderTowerTimerFrame 在 introCd>0 或 elapsed 尚未推進時清除插值錨點，戰場頂端／封魔塔分頁讀同一份權威計時；正式開戰後維持原逐幀插值。修改 js/ui.js、index.html（ui 1.0.149→1.0.150）、新增 tests/tower-scene-intro.test.cjs 及本紀錄。檢查未改 AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、js/tower.js／battle-renderer.js／bridge.js／worker/sim.worker.js／protocol.js 與相關既有測試。無素材變更、無必要素材庫 Commit，Worker 與協議不變。
+- 驗證：新增三項測試在修正前全部失敗（進場仍提前扣秒），修正後 `node --test tests/tower-scene-intro.test.cjs tests/boss-display-state.test.cjs tests/tower-battlefield.test.cjs tests/battle-arena.test.cjs tests/tower-head-layout.test.cjs tests/tower-auto-result.test.cjs tests/combat-pause.test.cjs` 29/29 通過；包含真實 startTowerFight／towerTick 進場不移動、不出手、不計時。`npm.cmd run build` 483 檔通過；`git diff --check` 通過。
+- 瀏覽器：隔離 headless Edge／全新頁面，以正式 UI 計時函式與 DOM／requestAnimationFrame 驗進場等待 2.7 秒後兩處仍為 60.0s、introCd 歸零但尚無開戰快照再等 0.25 秒仍不扣秒；elapsed 首次推進後兩處平滑降至 59.6s。Console error／warning 0；未載入真人存檔，瀏覽器已關閉、臨時腳本已刪除。
+- 交付：Commit 為本紀錄所在 `[Codex] fix: BOSS 倒數等正式開戰才開始顯示`。本次無未完成項目或已知新增風險，可審查合併；未合併／推送。限制：未做完整真人長時間戰鬥，既有模擬與場景轉場時序不變。下一步重載遊戲，確認轉場顯示 60.0s、開戰後才倒數。

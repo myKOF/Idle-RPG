@@ -1541,7 +1541,12 @@ function vfxAreaRadius(rect, area) {
   return isFinite(w) && isFinite(h) ? Math.min(w, h) * 0.5 : 72;
 }
 
-/* 大隕石：右上方以 60° 斜線砸向範圍中心，並由幾顆較小火球伴隨進場。
+function vfxMeteorSkyPoint(layer, fallback) {
+  var p = typeof VFXRuntime !== 'undefined' ? VFXRuntime.sampleSkyEntry(layer.clientWidth, layer.clientHeight) : null;
+  return p || fallback;
+}
+
+/* 大隕石：從畫面上方橫帶隨機飛向範圍中心，並由幾顆較小火球伴隨進場。
    落地時刻＝travelMs（模擬層已把所有目標統一成同一個值，傷害數字同時跳）。 */
 function vfxMeteor(spec, layer, rect, targetIds, travelMs, baseDelay) {
   /* 先限制外部延遲與飛行時間，避免長時間運行後過期隕石集中補播。 */
@@ -1560,17 +1565,17 @@ function vfxMeteor(spec, layer, rect, targetIds, travelMs, baseDelay) {
   var diagonalRise = diagonalRun * Math.tan(
     (typeof VFX_METEOR_DROP_ANGLE_RAD === 'number') ? VFX_METEOR_DROP_ANGLE_RAD : Math.PI / 3);
   vfxTargetTelegraph(spec, layer, { x: cx, y: cy }, impactRadius, safeBaseDelay, fall);
-  var mainFrom = { x: cx + diagonalRun, y: cy - diagonalRise };
+  var mainFrom = vfxMeteorSkyPoint(layer, { x: cx + diagonalRun, y: cy - diagonalRise });
   vfxMeteorProjectile(spec, layer, mainFrom, { x: cx, y: cy }, safeBaseDelay, fall, false);
   /* 小火球總共 4 顆，透過略微不同的起點與延遲形成伴隨感，
      但將總飛行時間對齊主火球，避免小火球落地後才出現命中反饋。 */
   var smallOffsets = [-0.22, -0.04, 0.16, 0.32];
   for (var si = 0; si < smallOffsets.length; si++) {
     var ratio = 0.78 + si * 0.12;
-    var smallFrom = {
+    var smallFrom = vfxMeteorSkyPoint(layer, {
       x: cx + diagonalRun * ratio,
       y: cy - diagonalRise * ratio + smallOffsets[si] * diagonalRun
-    };
+    });
     var smallDelay = safeBaseDelay + 36 + si * 42;
     var smallFlight = Math.max(180, fall - 36 - si * 42);
     vfxMeteorProjectile(spec, layer, smallFrom, { x: cx, y: cy }, smallDelay, smallFlight, true);
@@ -2255,7 +2260,9 @@ function vfxSmite(spec, layer, pt, targetId, delayMs, travelMs) {
     var flight = Array.isArray(travelMs) ? travelMs[0] : travelMs;
     vfxTargetTelegraph(spec, layer, pt, radius, delayMs, flight, targetGuard);
   }
-  vfxBolt(spec, layer, { x: pt.x + 26, y: -50 }, pt, delayMs,
+  var sky = { x: pt.x + 26, y: -50 };
+  if (spec.variant === 'thunder-fall') sky = vfxMeteorSkyPoint(layer, sky);
+  vfxBolt(spec, layer, sky, pt, delayMs,
     { mega: true, purple: isPurple }, targetGuard);
   if (isPurple) {
     vfxLightningGroundImpact(spec, layer, pt, delayMs + 30, true, targetGuard);
