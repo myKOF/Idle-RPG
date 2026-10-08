@@ -134,10 +134,22 @@
     for (var i = 0; i < S * S; i++) lum[i] = 0.2126 * d[i * 4] + 0.7152 * d[i * 4 + 1] + 0.0722 * d[i * 4 + 2];
     var med = Array.prototype.slice.call(lum).sort(function (a, b) { return a - b; })[Math.floor(S * S / 2)];
     var sw = 0, sx = 0, sy = 0;
+    /* 形狀重心：只看「明顯比底色亮」的像素、不按亮度加權——一顆很亮的閃光會把加權重心拉走，
+       但人眼看的是整體形狀（10-08 突刺：加權量 (−3,5) 卻被指出偏左下）。外框中心另外回報。 */
+    var mn = 0, mx = 0, my = 0, x0 = S, y0 = S, x1 = 0, y1 = 0;
     for (var y = 10; y < S - 10; y++) for (var x = 10; x < S - 10; x++) {
-      var w = Math.max(0, lum[y * S + x] - med); sw += w; sx += w * x; sy += w * y;
+      var v = lum[y * S + x] - med;
+      var w = Math.max(0, v); sw += w; sx += w * x; sy += w * y;
+      if (v > 40) {
+        mn++; mx += x; my += y;
+        if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+      }
     }
-    return { gid: gid, dx: Math.round(sx / sw - S / 2), dy: Math.round(sy / sw - S / 2) };
+    return {
+      gid: gid, dx: Math.round(sx / sw - S / 2), dy: Math.round(sy / sw - S / 2),
+      shape: [Math.round(mx / mn - S / 2), Math.round(my / mn - S / 2)],
+      box: [Math.round((x0 + x1) / 2 - S / 2), Math.round((y0 + y1) / 2 - S / 2)]
+    };
   };
 
   document.getElementById('btn-sheet').onclick = function () {

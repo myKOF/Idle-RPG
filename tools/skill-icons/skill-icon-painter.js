@@ -435,7 +435,8 @@
   /* 突刺：只取刀身前半段——刀身從左下畫外伸入，刀尖在畫面中央偏右上，衝擊波紋＋閃光是主角 */
   PAINTERS.thrust = function (c, R) {
     background(c, R, Object.assign({ cx: 150, cy: 106 }, PAL.steel));
-    var tx = 156, ty = 96;  /* 量出重心偏右 11，往左補 */
+    /* 刀尖位置按「形狀重心」（不加權）置中：亮閃光會讓加權重心看似置中，但劍身與後方大環其實偏左下 */
+    var tx = 166, ty = 86;
     var ang = Math.atan2(-1, 1), dx = Math.cos(ang), dy = Math.sin(ang), nx = -dy, ny = dx;
     /* 速度線（短、集中在刀身周圍） */
     add(c);
