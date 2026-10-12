@@ -6,7 +6,7 @@
     "name": "asset-scanner",
     "version": "1.0.0"
   },
-  "assetCount": 2448,
+  "assetCount": 2449,
   "assets": [
     {
       "assetId": "antigravity-authored/ice/ice-arrow-spike.png",
@@ -1749,6 +1749,25 @@
           "v": 0.3418
         },
         "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "codex-authored/super-rock-art/assets/rock-pyramid.svg",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/super-rock-art/assets/rock-pyramid.svg",
+      "format": "svg",
+      "fileSize": 4966,
+      "contentHash": "sha256:b82fd2fc0fab8d74fd551382ec7dae2054f59e7fbcfae638a699f09d96127c6d",
+      "facts": {
+        "dimensions": {
+          "width": 128,
+          "height": 384
+        },
+        "dimensionsSource": "attributes",
+        "colorModel": null,
+        "bitDepth": null,
+        "hasAlphaChannel": null,
+        "pixelsAnalyzed": false
       }
     },
     {

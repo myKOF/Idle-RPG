@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="384" viewBox="0 0 128 384">
+  <!-- Original weathered rock cluster. Reference informs the silhouette only. -->
+  <defs>
+    <linearGradient id="stone" x1="0" y1="0" x2="1" y2=".35">
+      <stop stop-color="#c6bda5"/><stop offset=".46" stop-color="#a49a82"/>
+      <stop offset=".6" stop-color="#837a65"/><stop offset="1" stop-color="#625c4c"/>
+    </linearGradient>
+    <linearGradient id="light" x2=".8" y2="1">
+      <stop stop-color="#ddd4bd"/><stop offset="1" stop-color="#9a8f75"/>
+    </linearGradient>
+    <linearGradient id="shade" x2="1" y2="1">
+      <stop stop-color="#8c846e"/><stop offset="1" stop-color="#514d40"/>
+    </linearGradient>
+    <path id="main" d="M58 2 69 0 77 18 72 35 80 55 77 77 87 99 85 117 97 149 94 176 103 201 97 226 105 257 100 281 107 310 97 345 76 373 39 367 23 337 27 306 17 272 23 247 19 218 27 192 23 170 34 138 33 117 43 92 44 72 53 50 51 34 58 21Z"/>
+    <clipPath id="body"><use href="#main"/></clipPath>
+  </defs>
+  <!-- Rear root stones sit behind the main rock. -->
+  <path d="M8 352 5 317 14 286 25 272 34 291 38 324 33 366 16 375Z" fill="url(#shade)" stroke="#635e4d" stroke-width="2"/>
+  <path d="M14 286 25 272 26 321 16 359 8 352 11 317Z" fill="#b0a58b"/>
+  <path d="M96 355 94 308 102 275 114 263 120 283 117 312 126 339 120 365 105 377Z" fill="url(#shade)" stroke="#635e4d" stroke-width="2"/>
+  <path d="M102 275 114 263 111 309 116 333 105 364 98 353 102 314Z" fill="#a69b80"/>
+  <g transform="translate(64 0) scale(1.35 1) translate(-64 0)">
+  <use href="#main" fill="url(#stone)"/>
+  <g clip-path="url(#body)">
+    <!-- Broad fractured faces remain readable at native game size. -->
+    <path d="M58 0 66 28 58 60 65 92 48 125 55 159 40 198 49 234 33 274 42 313 32 354 17 384 0 384 0 0Z" fill="url(#light)"/>
+    <path d="M69 0 72 45 66 73 78 106 68 145 79 177 68 216 81 250 68 283 83 319 71 353 76 384 128 384 128 0Z" fill="url(#shade)"/>
+    <path d="M43 92 58 60 65 92 48 125 33 117Z" fill="#d2c7ae"/>
+    <path d="M55 159 68 145 79 177 52 188 40 198Z" fill="#bfb399"/>
+    <path d="M49 234 68 216 81 250 55 265 33 274Z" fill="#b6a98c"/>
+    <path d="M42 313 68 283 83 319 54 341 32 354Z" fill="#b8ad93"/>
+    <path d="M79 106 92 131 97 149 79 160 68 145Z" fill="#696451"/>
+    <path d="M81 250 105 257 100 281 68 283Z" fill="#635e4d"/>
+    <path d="M83 319 107 310 97 345 71 353Z" fill="#5c5747"/>
+    <g fill="none" stroke="#514e40" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M65 42 60 69 67 91 56 117 61 141 55 157" stroke-width="3"/>
+      <path d="M76 155 66 180 72 201 60 225 65 243 56 265 59 288 51 311" stroke-width="3.8"/>
+      <path d="M31 155 47 163 55 159 65 166" stroke-width="2.6"/>
+      <path d="M23 219 42 224 49 234 60 225 86 232" stroke-width="3"/>
+      <path d="M35 298 42 313 54 319 51 337 40 348" stroke-width="3"/>
+      <path d="M67 91 79 96 87 110 M72 201 85 196 96 202 M59 288 76 293 83 306" stroke-width="2"/>
+      <path d="M48 125 40 136 42 149 M55 265 45 270 42 286" stroke-width="2"/>
+    </g>
+    <g fill="none" stroke="#e3d6b9" stroke-linecap="round" opacity=".6">
+      <path d="M55 53 49 73 50 91 M37 139 31 166 35 179 M30 246 27 269 34 287 M36 315 31 336" stroke-width="3"/>
+      <path d="M62 72 69 91 59 115 M69 182 75 201 M45 225 51 230" stroke-width="1.8"/>
+    </g>
+    <g fill="#d8ccb0" opacity=".5">
+      <path d="M51 103 55 99 57 107 53 110Z M36 184 40 179 42 188 38 192Z M45 254 49 251 50 259 46 263Z M51 340 56 336 58 343 53 348Z"/>
+      <path d="M74 121 78 116 82 124 77 128Z M84 213 88 209 90 217 85 221Z M87 298 91 294 93 303 88 307Z"/>
+    </g>
+    <g fill="#625f4c" opacity=".6">
+      <path d="M45 143 50 139 51 147 46 151Z M35 277 40 274 42 281 37 285Z M71 333 76 330 77 337 72 341Z"/>
+      <path d="M71 62 75 59 77 65 72 68Z M85 173 89 170 92 179 87 182Z"/>
+    </g>
+  </g>
+  <!-- Chipped cap removes the needle point. -->
+  <path d="M58 2 69 0 77 18 65 25 58 21Z" fill="#d0c5ab"/>
+  <path d="M65 25 77 18 72 35 80 55 68 49Z" fill="#938b73"/>
+  <path d="M58 21 65 25 60 43 53 50 51 34Z" fill="#b9ad91"/>
+  </g>
+  <!-- Angular rubble overlaps the foot and grounds the central mass. -->
+  <path d="M3 357 13 335 26 329 33 347 30 376 18 383 0 375Z" fill="#8c826b"/>
+  <path d="M3 357 13 335 26 329 19 359 18 383 0 375Z" fill="#b5a98e"/>
+  <path d="M20 371 30 340 40 321 53 337 57 370 46 384 30 382Z" fill="url(#shade)"/>
+  <path d="M30 340 40 321 44 350 39 375 30 382 20 371Z" fill="#c1b498"/>
+  <path d="M77 379 81 349 91 322 105 334 110 369 99 382Z" fill="#7b735f"/>
+  <path d="M81 349 91 322 94 355 88 376 77 379Z" fill="#b4a78a"/>
+  <path d="M105 378 106 358 117 344 127 355 128 378 118 384Z" fill="#93876d"/>
+  <path d="M106 358 117 344 117 368 118 384 105 378Z" fill="#bfb195"/>
+  <g fill="none" stroke="#534f40" stroke-width="2" opacity=".8">
+    <path d="M9 362 19 359 25 364 M35 350 39 359 34 369 M88 360 94 355 101 359 M113 369 119 365 124 370"/>
+  </g>
+</svg>

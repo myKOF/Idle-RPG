@@ -1,5 +1,41 @@
 # AI_TASKS.md
 
+## ROCK-HOLD-PLUS2-20261012 — 岩柱停留時間增加兩秒
+
+- Owner：Codex；Done，單一開發者。前置岩簇造型已完成；使用者要求停留時間+2秒，由0秒調整為0.15秒升起／2秒完整停留／0.35秒消失，總長2.5秒。僅調整石體動畫曲線與Preset總長，起塵仍0.5秒；尺寸、造型、直立旗標、傷害與八波排程保持原樣。
+- 允許修改：vfx/presets/pillar-rock-spike.json、js/vfx-runtime.js資料版號、index.html與tools/vfx/editor/index.html快取、tests/super-rock-art.test.cjs時序驗收、本紀錄，以及素材庫對應Preset／SOURCE.md。禁止修改其他技能、配置表、Worker／Protocol／存檔與美術素材；相關檔案預檢無衝突，雙倉工作區乾淨。驗收正式Core完整停留邊界與技能32柱不變、既有方向／尺寸／配置回歸、Build、素材同步與diff check；素材庫先提交，交使用者整合，不合併／推送。
+- 完成：上述允許檔案均已修改；Runtime兩頁快取1.0.190、DATA_VERSION為20261012-rock-hold-plus2。唯讀檢查vfx-core、Skills2／Status表與JS（由既有回歸驗證）、素材匯出器；未修改戰鬥結算／Worker，岩柱停留是命中後純演出，不增加傷害段數。node --test tests/super-rock-art.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-runtime-screen-space.test.cjs，20/20；npm.cmd run build，494檔通過；node tools/vfx/export-assets.cjs --check，245份Preset／163項引用最新；雙倉Preset內容一致且diff check通過。沒有新增素材、未做瀏覽器目視；多波重疊柱體會按要求各自停留2秒。無未完成項，下一步重載遊戲確認停留，可供合併。
+- 提交：素材庫1da01a6；遊戲為本紀錄所在commit。未合併／推送。
+
+## ROCK-CLUSTER-DETAIL-20261012 — 岩柱細化與參考圖形狀
+
+- Owner：Codex；Done，單一開發者。使用者認為岩柱過於簡陋／尖細，提供參考圖要求參考形狀。沿用SVG原創繪製中央主岩柱與根部碎岩簇，主岩體加厚、頂部改為有寬度的破損鈍面，不規則多面岩體加上大塊岩層／分岔裂紋／風化斑點與陰影。只參考主岩柱＋根部岩塊輪廓，不匯入、描摹或複製參考圖像素；向量路徑與材質細節均原創。維持128×384貼圖、2.6×7.8米、0.15秒升起／0停留／0.35秒消失與直立不受FOV影響，技能傷害／波次／石化未變。
+- 修改：images/vfx/assets/codex-authored/super-rock-art/assets/rock-pyramid.svg、vfx/asset-index.json、vfx/shipped-assets.json、js/vfx-runtime.js僅資料版號、index.html與tools/vfx/editor/index.html僅Runtime快取，以及本紀錄。素材庫修改同一路徑SVG及SOURCE.md；不改Preset、技能配置、Worker、Protocol／存檔。預檢無衝突，原素材ID保留以相容Editor／表定引用；Runtime兩頁1.0.189，資料版本20261012-rock-cluster。由既有scanner增量更新該一項事實記錄，再以正式export-assets匯出；沒有加入特效第三來源。
+- 唯讀檢查：vfx/presets/pillar-rock-spike.json、js/vfx-core.js的hash快取與Resolver、js/vfx-pixi-backend.js、js/battle-renderer.js、tools/scene-preview.html、tests/super-rock-art.test.cjs、素材scanner／exporter與SOURCE。原圖層數／Sprite數維持，不新增程序濾鏡或持續粒子；SVG總長4966 bytes。XML解析、兩份索引SHA及兩倉素材SHA一致。
+- 驗證：node --test tests/super-rock-art.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-runtime-screen-space.test.cjs，20/20通過；npm.cmd run build，494檔通過；node tools/vfx/export-assets.cjs --check，245份Preset／163項引用最新。雙倉diff check通過。正式Core／Pixi／Runtime／BattleRenderer隔離預覽於荒漠與沼澤檢視四個方位，SVG帶裂紋／漸層／clipPath正常載入，岩簇於遊戲尺度可辨識且保持直立；console無warn/error。僅外觀預覽及補幀定格，不宣稱真人實戰／幀率量測。沒有必要新增映射實作的美術測試。
+- 預覽保存：C:/Users/user/.codex/visualizations/2026/10/05/01a10b8b-e3ad-7f13-ae9f-4ed9a9be903d/super-rock/rock-cluster-detail.png（素材細節）、rock-cluster-scene.png（正式渲染器四方位）、rock-cluster-full.jpg（完整畫面）。臨時伺服器／診斷腳本及分頁已清理，viewport已還原。無未完成項，可供使用者合併；下一步重載遊戲載入新素材。先素材庫再遊戲提交，不合併／推送。
+
+- 提交：素材庫2bc415a；遊戲提交為本紀錄所在commit。無其他待提交使用者修改；兩倉提交後確認乾淨。
+
+## ROCK-PYRAMID-20261012 — 直立三角錐岩柱與尺寸／時間調整
+
+- Owner：Codex；Done，單一開發者。岩柱改為原創SVG三角錐，一個錐頂、三個地面底點與兩個可見明暗三角面；寬高各放大30%，2×6米改為2.6×7.8米。Preset所有可畫層關閉透視與鏡頭遠近尺寸變化，area攻擊尊重既有billboard旗標；只投影底座落點，柱身保持垂直與原作尺寸。停留時間減2秒＝原2秒改0，0.15秒升起後立即0.35秒縮回淡出，總長0.5秒；起塵隨整體放大。傷害／波次／石化未改，其他技能的旗標、投影及全域FOV均未修改。相關Preset、Runtime、兩頁快取、專項、索引／匯出與本紀錄預檢無衝突，不合併／推送。
+- 修改：vfx/presets/pillar-rock-spike.json、js/vfx-runtime.js、index.html、tools/vfx/editor/index.html、tests/super-rock-art.test.cjs、vfx/asset-index.json、vfx/shipped-assets.json、新images/vfx/assets/codex-authored/super-rock-art/assets/rock-pyramid.svg及本紀錄。素材庫保存SVG、Preset與SOURCE.md，無新增外部素材。Runtime兩頁快取1.0.188、Preset／匯出索引資料版本20261012-rock-pyramid；未改模擬／Worker／Protocol／存檔。
+- 唯讀檢查：js/battle-renderer.js的projectBillboardTransform／depthScaleOf、js/vfx-core.js、js/vfx-pixi-backend.js、tools/vfx/asset-scanner.cjs／vfx-image-facts.cjs／export-assets.cjs／vfx-library-root.cjs、tools/scene-preview.html、正式Skills2超重岩表定triggerVfx與既有幾何。由既有scanner產生新SVG事實記錄，只增量加入一項索引，避免混入共享素材庫其他來源；經正式export-assets匯出，SVG與Preset兩倉逐位元一致。
+- 驗證：node --test tests/super-rock-art.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/battle-perspective.test.cjs tests/vfx-editor-cache-versions.test.cjs，35/35通過；node --test --test-name-pattern='BILLBOARD|PLACE|TABLE|GALE|THUNDER|FACING' tests/vfx-runtime.test.cjs，25/25通過，共60項。涵蓋原尺寸增加30%、無停留時序、三組FOV／五個畫面方位／鏡頭偏移後柱身矩陣不變、底座投影、真實billboard後端路由、0／null尺寸相容與傷害32柱波次不變。npm.cmd run build：494檔通過；node tools/vfx/export-assets.cjs --check：245份Preset、163項素材引用最新；兩倉diff check通過。
+- 目視：隔離場景預覽載入正式BattleRenderer／Core／Pixi／Runtime與表定岩柱，四方位三角錐保持直立，Preset實際落在billboard層；console無warn/error。臨時補幀定格僅供外觀檢視，非真人戰鬥或即時幀率驗收。預覽裁圖C:/Users/user/.codex/visualizations/2026/10/05/01a10b8b-e3ad-7f13-ae9f-4ed9a9be903d/super-rock/rock-pyramid-preview.png，完整畫面rock-pyramid-preview-full.jpg。臨時伺服器／掃描輸出／診斷腳本及分頁已清理，viewport已還原。無未完成項；可供使用者合併，下一步重新載入遊戲確認造型。
+
+- 提交：素材庫0629370先完成；遊戲提交為本紀錄所在commit。雙倉庫只提交本次必要九檔／三檔，沒有待提交的使用者修改；未推送或合併。
+
+## ROCK-PILLAR-HOLD-20261012 — 岩柱升起後停留兩秒與遊戲截圖
+
+- Owner：Codex；Done。岩柱於0.15秒升起，完整停留2秒，再於0.35秒內縮回／淡出，總長2.5秒；起塵仍0.5秒。傷害維持每0.5秒四柱、4秒八波，尺寸、顏色、朝向及投影保持原設定。單一開發者；相關Preset、Runtime、兩頁快取、專項、本紀錄及Worker快取預檢無其他來源，不合併／推送。
+- 修正不可見根因：js/worker/shim.js把未指定sizeMult序列化為0，Runtime的area攻擊路徑原本把這個0乘入整體縮放。js/vfx-runtime.js改以正倍率才覆寫，0／null／缺省均沿用原尺寸；回歸涵蓋八方向、原尺寸、0／null及明示1.5倍。未修改Worker協議或shim。主頁／Editor Runtime快取1.0.187、Preset資料版本20261012-rock-pillar-hold；使用者Skills2生成內容快取1.0.297、bridge1.0.252、Worker啟動與skills2 import版本20261012-super-rock-art-hold。
+- 修改：pillar-rock-spike.json、js/vfx-runtime.js、index.html、tools/vfx/editor/index.html、js/bridge.js、js/worker/sim.worker.js、tests/super-rock-art.test.cjs及本紀錄。依使用者既有指示一併保留並提交Skills2 Excel／CSV／JS的連鎖閃電數值／名稱／說明、ground-domain-earth與bolt-chain-lightning的編輯器保存內容。唯讀檢查js/battle-renderer.js、js/vfx-core.js、js/vfx-pixi-backend.js、js/worker/shim.js、js/battlefield.js及js/param_autoreload.js。
+- 驗證：node --test tests/super-rock-art.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-runtime-screen-space.test.cjs，19/19通過；Excel／CSV一致、實際resolveHit、32柱傷害波次及柱體生命週期通過。npm run build：494檔通過；素材export-assets --check：245份Preset、162項引用已是最新。正式index／Worker／BattleRenderer獨立測試來源以GM啟用超重岩並施放，修正前實際Pixi scaleX/Y為0，修正後為0.052／0.156且柱體可見，console無warn/error。IAB背景rAF只有1Hz，僅在隔離測試頁使用臨時按鈕補進0.4秒正式Pixi ticker以取清晰定格；未修改正式遊戲計時。實際戰場裁圖保存於C:/Users/user/.codex/visualizations/2026/10/05/01a10b8b-e3ad-7f13-ae9f-4ed9a9be903d/super-rock/game-rock-hold.png，保留完整原截圖game-rock-hold-full.jpg。素材庫同步上述三份Preset及岩柱SOURCE.md；無新增外部素材。已知限制：2秒精確時間由Core回歸確認，背景瀏覽器截圖不作即時幀率驗收；無待辦，可交使用者整合。
+
+- 素材提交：8f97057；遊戲提交見本紀錄所在commit。隔離測試分頁、viewport覆寫、臨時伺服器與診斷腳本於驗收後清理；正式測試服及其他聊天不受影響。
+
 ## SUPER-ROCK-ART-20261012 — 超重岩之術石化轉地與四秒岩柱
 
 - Owner：Codex；Done，單一開發者。24米內施放時石化2秒、每級+0.2秒，石化期間無法行動並轉地屬性；4秒內每0.5秒升起4道岩柱，各200%地傷、每級+20%。每波最多選4名不同敵人，不足以範圍內隨機空地補足，不重複打同一敵人。首波於0.5秒、最後一波4秒，共8波32柱；每波依玩家當下位置及存活敵群重新選取。
