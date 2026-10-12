@@ -17,6 +17,16 @@ function setup(lv=1){
 }
 function enemy(id,x=40,y=0){return {name:'e'+id,hp:1e9,maxHp:1e9,atk:10,matk:10,def:0,mdef:0,level:1,attr:'wind',resist:{},ctrlRes:0,effects:{},buffs:{},dots:[],pos:{x,y}}}
 const pillars=h=>h.events.filter(s=>s.variant==='rock-pillar');
+test('岩柱：快速升起後完整停留兩秒，再淡出並結束',()=>{
+ const preset=JSON.parse(fs.readFileSync(path.join(root,'vfx/presets/pillar-rock-spike.json')));
+ const nodes=[],rt=Core.createRuntime({resolver:{resolve:id=>id},backend:{createNode(s){const n={s};nodes.push(n);return n},updateNode(n,t){n.t={...t}},destroyNode(n){n.dead=true}}});
+ rt.registerPreset(preset);const ref=rt.play(preset.id);
+ rt.update(.15);const stone=nodes.find(n=>n.s.layerId==='stone')||nodes[1],grown={...stone.t};
+ assert.ok(grown.alpha>.99);assert.ok(grown.scaleY>0);
+ rt.update(2);assert.equal(stone.t.scaleY,grown.scaleY);assert.equal(stone.t.alpha,grown.alpha);assert.notEqual(rt.timeOf(ref),null);
+ rt.update(.175);assert.ok(stone.t.alpha<grown.alpha);rt.update(.176);assert.equal(rt.timeOf(ref),null);rt.destroy();
+ const h=setup();h.cast([enemy(1)]);for(let i=1;i<=8;i++)h.tick(i*.5);assert.equal(pillars(h).length,32);assert.equal(h.hits.length,8);
+});
 test('超重岩：24米邊界、每級石化時間與轉地到期還原，取消舊易傷',()=>{
  for(const lv of [1,5,10]){
   const h=setup(lv),{c}=h,r=c.bfMeterPx(24)+c.bfEntityRadius(null),near=enemy(1,r),far=enemy(2,r+.01);
@@ -82,7 +92,12 @@ test('超重岩：正式岩柱在八方精確座標保留直立方向與原尺�
   const a=Runtime.create({core,resolver:{has:()=>true,resolve:id=>id},fxBackend:{createNode:s=>({s}),updateNode(){},destroyNode(){},destroy(){}},ctx:{playerPos:()=>({x:0,y:0}),posOf:()=>({x:0,y:0}),footOf:()=>({x:0,y:0})}});a.registerPresets([preset]);
   const area={x:100*Math.cos(i*Math.PI/4),y:100*Math.sin(i*Math.PI/4)};a.tryPlay({fxKind:'burst',variant:'rock-pillar',area,targets:[],vfx:{attack:preset.id}});
   assert.equal(calls.length,1);assert.equal(calls[0].params.rotation,0);assert.deepEqual(calls[0].params.position,area);assert.equal(calls[0].params.radius,undefined);
-  a.tryPlay({fxKind:'burst',variant:'rock-pillar',area,vfx:{}});assert.equal(calls.length,1);a.destroy();
+  const original=calls[0].params;assert.equal(original.scaleX,1);assert.equal(original.scaleY,1);
+  for(const sizeMult of [0,null,1.5]){
+   a.tryPlay({fxKind:'burst',variant:'rock-pillar',area,targets:[],sizeMult,vfx:{attack:preset.id}});
+   const params=calls.at(-1).params;assert.equal(params.scaleX,sizeMult>0?sizeMult:1);assert.equal(params.scaleY,sizeMult>0?sizeMult:1);
+  }
+  a.tryPlay({fxKind:'burst',variant:'rock-pillar',area,vfx:{}});assert.equal(calls.length,4);a.destroy();
  }
 });
 test('超重岩：Excel／CSV／JS接線一致，幾何欄與觸發角色完整且Worker快取同步',()=>{

@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## ROCK-PILLAR-HOLD-20261012 — 岩柱升起後停留兩秒與遊戲截圖
+
+- Owner：Codex；Done。岩柱於0.15秒升起，完整停留2秒，再於0.35秒內縮回／淡出，總長2.5秒；起塵仍0.5秒。傷害維持每0.5秒四柱、4秒八波，尺寸、顏色、朝向及投影保持原設定。單一開發者；相關Preset、Runtime、兩頁快取、專項、本紀錄及Worker快取預檢無其他來源，不合併／推送。
+- 修正不可見根因：js/worker/shim.js把未指定sizeMult序列化為0，Runtime的area攻擊路徑原本把這個0乘入整體縮放。js/vfx-runtime.js改以正倍率才覆寫，0／null／缺省均沿用原尺寸；回歸涵蓋八方向、原尺寸、0／null及明示1.5倍。未修改Worker協議或shim。主頁／Editor Runtime快取1.0.187、Preset資料版本20261012-rock-pillar-hold；使用者Skills2生成內容快取1.0.297、bridge1.0.252、Worker啟動與skills2 import版本20261012-super-rock-art-hold。
+- 修改：pillar-rock-spike.json、js/vfx-runtime.js、index.html、tools/vfx/editor/index.html、js/bridge.js、js/worker/sim.worker.js、tests/super-rock-art.test.cjs及本紀錄。依使用者既有指示一併保留並提交Skills2 Excel／CSV／JS的連鎖閃電數值／名稱／說明、ground-domain-earth與bolt-chain-lightning的編輯器保存內容。唯讀檢查js/battle-renderer.js、js/vfx-core.js、js/vfx-pixi-backend.js、js/worker/shim.js、js/battlefield.js及js/param_autoreload.js。
+- 驗證：node --test tests/super-rock-art.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-runtime-screen-space.test.cjs，19/19通過；Excel／CSV一致、實際resolveHit、32柱傷害波次及柱體生命週期通過。npm run build：494檔通過；素材export-assets --check：245份Preset、162項引用已是最新。正式index／Worker／BattleRenderer獨立測試來源以GM啟用超重岩並施放，修正前實際Pixi scaleX/Y為0，修正後為0.052／0.156且柱體可見，console無warn/error。IAB背景rAF只有1Hz，僅在隔離測試頁使用臨時按鈕補進0.4秒正式Pixi ticker以取清晰定格；未修改正式遊戲計時。實際戰場裁圖保存於C:/Users/user/.codex/visualizations/2026/10/05/01a10b8b-e3ad-7f13-ae9f-4ed9a9be903d/super-rock/game-rock-hold.png，保留完整原截圖game-rock-hold-full.jpg。素材庫同步上述三份Preset及岩柱SOURCE.md；無新增外部素材。已知限制：2秒精確時間由Core回歸確認，背景瀏覽器截圖不作即時幀率驗收；無待辦，可交使用者整合。
+
+- 素材提交：8f97057；遊戲提交見本紀錄所在commit。隔離測試分頁、viewport覆寫、臨時伺服器與診斷腳本於驗收後清理；正式測試服及其他聊天不受影響。
+
 ## SUPER-ROCK-ART-20261012 — 超重岩之術石化轉地與四秒岩柱
 
 - Owner：Codex；Done，單一開發者。24米內施放時石化2秒、每級+0.2秒，石化期間無法行動並轉地屬性；4秒內每0.5秒升起4道岩柱，各200%地傷、每級+20%。每波最多選4名不同敵人，不足以範圍內隨機空地補足，不重複打同一敵人。首波於0.5秒、最後一波4秒，共8波32柱；每波依玩家當下位置及存活敵群重新選取。
