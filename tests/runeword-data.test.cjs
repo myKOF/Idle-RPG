@@ -168,25 +168,26 @@ test('每一組符文真言都有對應的稀有度可以做出來；比一般�
   });
 });
 
-test('雙手武器比同稀有度的一般裝備多 twoHandBonusSlots 孔：傳說以上有 5 孔、5 顆符文的真言做得出來並能成形；其他裝備不受影響', () => {
-  const { makeItem, fillRunes } = require('./helpers/runeword-env.cjs');
+test('雙手武器比同稀有度的一般裝備多 twoHandBonusSlots 孔：雙手有 5 孔的稀有度，5 顆符文的真言做得出來並能成形；其他裝備不受影響', () => {
+  const { makeItem, fillRunes, rarityForSlots } = require('./helpers/runeword-env.cjs');
   const e = require('./helpers/runeword-env.cjs').loadRuneEnv();
-  const axe = makeItem(e, { rarity: 5, weaponType: 'axe2h' }), sword = makeItem(e, { rarity: 5, weaponType: 'sword1h' });
+  const R5 = rarityForSlots(e, 5, true);                    // 雙手武器剛好 5 孔的最低稀有度（孔數來自配置表）
+  const axe = makeItem(e, { rarity: R5, weaponType: 'axe2h' }), sword = makeItem(e, { rarity: R5, weaponType: 'sword1h' });
   assert.equal(e.RUNE_SETTINGS.twoHandBonusSlots, 1, '雙手武器 +1 孔');
   assert.equal(e.runeSlotCountFor(axe), e.runeSlotCountFor(sword) + 1, '雙手武器 +1 孔');
   assert.equal(e.runeSlotCountFor(axe), 5);
-  assert.equal(e.runeSlotCountFor(makeItem(e, { rarity: 5, slot: 'chest', weaponType: undefined })), e.runeSlotCountFor(sword), '防具不受雙手加成影響');
+  assert.equal(e.runeSlotCountFor(makeItem(e, { rarity: R5, slot: 'chest', weaponType: undefined })), e.runeSlotCountFor(sword), '防具不受雙手加成影響');
   assert.equal(e.runeSlotCountFor(makeItem(e, { rarity: 3, weaponType: 'axe2h' })), e.RARITIES[3].runeSlots + 1, '獨特雙手 2+1（加法，不是加倍）');
   const five = e.RUNEWORDS.filter((w) => w.runes.length === 5);
   assert.ok(five.length >= 6);
   five.forEach((w) => {
     assert.ok(e.rwMinRarity(w) >= 0, w.id + ' 加孔後應做得出來');
     const wt = w.bases.includes('staff2h') ? 'staff2h' : 'axe2h';
-    const it = fillRunes(makeItem(e, { rarity: 5, weaponType: wt }), w.runes);
+    const it = fillRunes(makeItem(e, { rarity: R5, weaponType: wt }), w.runes);
     assert.equal(e.rwActiveWord(it).word.id, w.id, w.id + ' 在雙手武器上成形');
   });
   e.addRune('r01', 5);
-  const full = makeItem(e, { rarity: 5, weaponType: 'axe2h' });
+  const full = makeItem(e, { rarity: R5, weaponType: 'axe2h' });
   for (let k = 0; k < 5; k++) assert.equal(e.socketRune(full, 'r01'), null);
   assert.match(e.socketRune(full, 'r01'), /已滿/, '第 6 顆放不下');
 });

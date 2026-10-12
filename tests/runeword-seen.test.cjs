@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { loadRuneEnv, makeItem, fillRunes } = require('./helpers/runeword-env.cjs');
+const { loadRuneEnv, makeItem, fillRunes, rarityForSlots } = require('./helpers/runeword-env.cjs');
 
 /* 符文真言「已激活」記錄（G.player.runewordSeen，js/runeword.js §2）：
    圖鑑要靠它決定配方與效果顯示或問號，所以規則必須固定：
@@ -47,7 +47,7 @@ test('不同裝備上的多組符文真言各自記錄，互不影響', () => {
   const it = makeItem(c, { slot: 'weapon', weaponType: 'wand1h' });   // 施法武器：霜語（霜痕→風語）
   ['r03', 'r04'].forEach((id) => { c.addRune(id, 1); c.socketRune(it, id); });
   assert.deepEqual(seenIds(c), ['rw_frostwhisper']);
-  const dawn = makeItem(c, { slot: 'helmet', weaponType: undefined });   // 旭日之冠：曙光→聖輝→靈泉
+  const dawn = makeItem(c, { slot: 'helmet', weaponType: undefined, rarity: rarityForSlots(c, 3) });   // 旭日之冠：曙光→聖輝→靈泉
   ['r15', 'r09', 'r12'].forEach((id) => { c.addRune(id, 1); c.socketRune(dawn, id); });
   assert.deepEqual(seenIds(c), ['rw_dawncrown', 'rw_frostwhisper']);
 });

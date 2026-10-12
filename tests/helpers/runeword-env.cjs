@@ -81,5 +81,12 @@ function slotFor(c, it) {
   const wd = c.weaponDef(it);
   return wd && wd.cat === 'offHand' ? 'weapon2' : 'weapon';
 }
+/* 剛好有 n 個符文孔的最低稀有度索引（孔數來自 RARITIES.runeSlots＝配置表 game_parameters 的參數g，使用者隨時會調；
+   測試一律用它挑稀有度，不要寫死「傳說＝4 孔」這類假設）。twoHand 為真時看雙手武器的孔數。找不到就丟錯。 */
+function rarityForSlots(c, n, twoHand) {
+  for (let i = 0; i < c.RARITIES.length; i++) if (c.rwSlotCountAt(i, !!twoHand) >= n) return i;
+  throw new Error('設定裡沒有任何稀有度有 ' + n + ' 個符文孔' + (twoHand ? '（雙手武器）' : ''));
+}
+module.exports.rarityForSlots = rarityForSlots;
 module.exports.wordItem = wordItem;
 module.exports.slotFor = slotFor;
