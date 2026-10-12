@@ -112,7 +112,7 @@ test('千鳥同時提高爆散目標數與係數，額外傷害只乘一次，�
   const main=2700*6.5*damage,scatter=2700*damage*factor;
   const near=(a,b)=>Math.abs(a-b)<1e-7;
   const mainHits=h.hits.filter(x=>near(x.d,main)),extraHits=h.hits.filter(x=>near(x.d,scatter));
-  assert.equal(mainHits.length,3*enemies.length);
+  assert.equal(mainHits.length,3*Math.min(5,enemies.length));
   assert.equal(extraHits.length,3*Math.floor(2*factor));
   assert.equal(h.events.filter(e=>e.targets.length===1).length,extraHits.length);
   for(let i=1;i<extraHits.length;i++)assert.ok(Math.abs(extraHits[i].at-extraHits[i-1].at-.2)<1e-8);
@@ -124,13 +124,13 @@ test('千鳥目標數先乘倍率再擲骰；無其他目標仍按強化後次�
  h.c.chance=p=>{rolls.push(p);return p>50;};
  h.cast();for(let i=1;i<=8;i++)h.tick(i*.2);
  assert.equal(rolls.length,3);assert.ok(rolls.every(p=>Math.abs(p-70.5)<1e-7));
- const extras=h.events.filter(e=>e.targets.length===1);assert.equal(extras.length,6);
+ const extras=h.events.filter(e=>e.variant==='gale-burst'&&e.targets.length===1);assert.equal(extras.length,6);
  assert.ok(extras.every(e=>e.targets[0]==='primary'));
 });
 
 test('千鳥爆散加成與額外傷害各自讀取表格，不互相代用',()=>{
  const h=setup(10,true),def=h.c.SKILLS2.gale.ult.find(u=>u.id==='chidori');
- def.fx={pct:20,pctPer:0,scatterPct:50,scatterPctPer:0};
+ def.fx={pct:20,pctPer:0,scatterPct:50,scatterPctPer:0,count:5,m:30};
  h.c.sgUlt=(gid,id)=>id==='chidori'?{def,lv:1}:null;
  h.setPool([h.primary,h.enemy(20,'a'),h.enemy(40,'b'),h.enemy(60,'c')]);
  h.cast();for(let i=1;i<=12;i++)h.tick(i*.2);

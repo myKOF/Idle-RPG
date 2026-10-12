@@ -1118,32 +1118,36 @@ test('【霹靂一閃】：最後一擊觸發多道貫穿雷電，每道逐目�
   assert.ok(bolts.every(k=>k.atk===c.getStats().atk*c.sgUltVal(c.sgUlt('gale','thunderFlash'),'pct')/100));
 });
 
-test('【雷神斬】：每次斬擊命中都附加一道落雷（閃電傷害）', () => {
+test('【雷神之怒】：成功命中依表定機率附加落雷（閃電傷害）', () => {
   const c = loadContext(['js/legendary.js']);
   const calls = stubHits(c); const specs = stubVfx(c);
-  forceRolls(c, 0.999);
+  forceRolls(c, 0);
   maxLevels(c, 'gale'); equip(c, 'gale');
   const p = playerEnt(); c.FIELD = { player: p };
 
   setUlt(c, 'gale', 'thunderGodSlash');
+  p.mp = 1e9; // 此案例驗證命中機制，提供足夠表定超神施放消耗。
   c.castSkill2(p, [enemy(1e12, 3 * M, 0)], 'gale', 'mv-float');
   const bolts = calls.filter((k) => k.elem === 'lightning');
-  assert.ok(bolts.length >= 2, '每次斬擊都要有落雷');
+  const strikes = calls.filter((k) => k.elem !== 'lightning');
+  assert.ok(strikes.length > 0);
+  assert.equal(bolts.length, strikes.length, '擲骰成功時每次本體／爆散命中各有一道落雷');
   assert.ok(specs.some((s) => s.variant === 'thunder-strike'), '落雷要有畫面');
 });
 
-test('【千鳥】：月牙斬不再均分傷害，每個敵人都吃完整傷害且再額外提高', () => {
+test('【千鳥】：隨機目標各受完整傷害，保留月牙與超神傷害加成', () => {
   const c = loadContext(['js/legendary.js']);
   const calls = stubHits(c); stubVfx(c);
   forceRolls(c, 0.999);
   maxLevels(c, 'gale'); equip(c, 'gale');
-  const p = playerEnt(); c.FIELD = { player: p };
+  const p = playerEnt(); p.mp = 1e9; c.FIELD = { player: p };
   const mk = () => [enemy(1e12, 3 * M, 0), enemy(1e12, 3 * M, 1 * M)];
 
   c.castSkill2(p, mk(), 'gale', 'mv-float');
   const shared = Math.max.apply(null, calls.map((k) => k.atk));
 
   setUlt(c, 'gale', 'chidori');
+  p.mp = 1e9; p.skillCds = {}; // 清除前一次月牙施放的冷卻並補足超神消耗。
   calls.length = 0;
   c.castSkill2(p, mk(), 'gale', 'mv-float');
   const full = Math.max.apply(null, calls.map((k) => k.atk));

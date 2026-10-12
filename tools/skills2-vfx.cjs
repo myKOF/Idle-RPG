@@ -44,7 +44,7 @@ const events = {
   'counter.indomitable': {roles:['ground'], note:'復甦開始時於玩家位置播放天降光束，持續至復甦結束，不在每個敵人身上播放。'},
   'cleave.windChaser': {roles:['attack','hit','ground','field'], note:'迴旋斬命中時機率對該敵人觸發真空迴旋，依表定次數與間隔逐段造成風系傷害；旋轉本體讀觸發特效、每段成功命中讀觸發命中特效，維持原尺寸。地板／持續場域欄僅供疾風迅雷傳奇風捲殘雲借用，不在真空迴旋播放。'},
   'gale.thunderFlash': {roles:['attack'], note:'本體最後一擊後，按次數與間隔重新選敵並播放貫穿雷電；沿玩家與目標連線，匹配雷電長度及寬度。'},
-  'gale.thunderGodSlash': {roles:['attack','hit'], note:'本體及爆散每次命中，在該敵人位置落雷；依落雷傷害範圍縮放。'},
+  'gale.thunderGodSlash': {roles:['attack','hit'], note:'本體及爆散命中時依效果JSON的chance機率，在該敵人位置落雷；依落雷傷害範圍縮放後，再乘sizeMult視覺倍率，傷害半徑不變。'},
   'bloodblade.5': {roles:['projectile','hit'], note:'中毒每次作用時機率感染；由中毒敵人向每個受感染者發射，抵達後感染並播放命中特效；單體維持原尺寸。'},
   'bloodblade.6': {roles:['attack'], note:'流血或中毒敵人死亡時，在死亡位置播放屍爆；選取周邊受害者的距離不是特效縮放範圍。'},
   'bloodblade.7': {roles:['attack'], note:'每次持續傷害機率提前結算剩餘傷害時，在該敵人位置播放；傳染搜尋距離不是傷害範圍，維持原尺寸。'},

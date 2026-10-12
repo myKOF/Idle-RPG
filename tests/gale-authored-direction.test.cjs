@@ -14,7 +14,7 @@ function setup(preset,point={x:100,y:80}){
 }
 const read=id=>JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets',id+'.json'),'utf8'));
 test('GALE 本體、爆散、月牙閃、千鳥與雷神之怒在八方目標均保留製作方向、範圍與局部動畫',()=>{
- for(const [id,variant] of [['hit-gale-burst','gale-burst'],['hit-gale-burst-diffusion','gale-burst'],['hit-gale-burst-07-moon','gale-moon'],['hit-gale-burst-10-bird','gale-moon'],['bolt-sky-purple','thunder-strike']]){
+ for(const [id,variant] of [['hit-gale-burst','gale-burst'],['hit-gale-burst-diffusion','gale-burst'],['hit-gale-burst-07-moon','gale-moon'],['hit-gale-burst-10-bird','gale-moon'],['hit-gale-burst-10-bird','gale-chidori'],['bolt-sky-purple','thunder-strike']]){
   const preset=read(id);let baseline;
   for(let i=0;i<8;i++){
    const point={x:100*Math.cos(i*Math.PI/4),y:100*Math.sin(i*Math.PI/4)},h=setup(preset,point);

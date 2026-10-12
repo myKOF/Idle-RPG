@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "ground-mire",
-  "duration": 2.1,
+  "duration": 3.5,
   "loop": true,
   "layers": [
     {
@@ -14,13 +14,14 @@
         "y": 0
       },
       "scale": {
-        "x": 0.4438,
-        "y": 0.4438
+        "x": 0.4889,
+        "y": 0.4889
       },
       "alpha": 0.8,
       "tint": "#fa1900",
       "blendMode": "add",
       "duration": 2.1,
+      "loop": true,
       "alphaOverLife": [
         [
           0,
@@ -50,13 +51,14 @@
         "y": 0
       },
       "scale": {
-        "x": 0.4438,
-        "y": 0.4438
+        "x": 0.4889,
+        "y": 0.4889
       },
       "alpha": 0.55,
       "tint": "#7d6533",
       "blendMode": "add",
       "duration": 2.1,
+      "loop": true,
       "alphaOverLife": [
         [
           0,
@@ -86,13 +88,14 @@
         "y": 0
       },
       "scale": {
-        "x": 0.4438,
-        "y": 0.4438
+        "x": 0.4889,
+        "y": 0.4889
       },
       "alpha": 0.45,
       "tint": "#fa0000",
       "blendMode": "add",
       "duration": 2.1,
+      "loop": true,
       "alphaOverLife": [
         [
           0,
@@ -140,14 +143,15 @@
         "y": 0
       },
       "scale": {
-        "x": 0.4438,
-        "y": 0.4438
+        "x": 0.4889,
+        "y": 0.4889
       },
       "alpha": 0.4,
       "tint": "#fa0000",
       "blendMode": "add",
       "delay": 0.7,
       "duration": 2.1,
+      "loop": true,
       "alphaOverLife": [
         [
           0,
@@ -195,14 +199,15 @@
         "y": 0
       },
       "scale": {
-        "x": 0.4438,
-        "y": 0.4438
+        "x": 0.4889,
+        "y": 0.4889
       },
       "alpha": 0.35,
       "tint": "#fa0000",
       "blendMode": "add",
       "delay": 1.4,
       "duration": 2.1,
+      "loop": true,
       "alphaOverLife": [
         [
           0,
@@ -251,6 +256,7 @@
       },
       "tint": "#c16afb",
       "blendMode": "normal",
+      "duration": 2.1,
       "emission": {
         "mode": "rate",
         "rate": 3
@@ -260,19 +266,19 @@
         1.4
       ],
       "spawn": {
-        "height": 102.267,
+        "height": 112.6676,
         "shape": "box",
-        "width": 204.534
+        "width": 225.3351
       },
       "speed": [
-        4.5452,
-        15.9082
+        5.0074,
+        17.5261
       ],
       "direction": -90,
       "spread": 60,
       "startScale": [
-        0.0156,
-        0.0289
+        0.0172,
+        0.0318
       ],
       "alphaOverLife": [
         [
@@ -304,6 +310,42 @@
       ],
       "projection": {
         "upright": true,
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "sprite-7",
+      "type": "sprite",
+      "assetId": "new_materials/arcane-ring/spiral_28.png",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.4286,
+        "y": 0.4286
+      },
+      "alpha": 0.3,
+      "tint": "#ff9999",
+      "blendMode": "add",
+      "loop": true,
+      "rotationSpeed": 0.3490658503988659,
+      "alphaOverLife": [
+        [
+          0,
+          0.801596
+        ],
+        [
+          0.5154,
+          0.555851
+        ],
+        [
+          0.9877,
+          0.813298
+        ]
+      ],
+      "outerScale": {
         "x": 1,
         "y": 0.5
       }

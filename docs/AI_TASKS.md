@@ -1,5 +1,27 @@
 # AI_TASKS.md
 
+## GROUND-NO-GRID-20261012 — 全場景隱藏地板格子感
+
+- Owner：Codex；InProgress，單一開發者。使用者要求隱藏全部地板格線。既有野外底圖沒有磚縫，但週期性正弦明暗在旋轉平鋪後仍形成菱形格子感；移除這層規律明暗與舊磚縫繪製入口，保留細砂點、自然裂紋及場景不規則地面色塊。BOSS地板唯讀核對。
+- 範圍：素材庫codex-authored/scene-nature的地板產生器／八張PNG／SOURCE，經既有匯出同步tools/gen_ground_tiles.py與images/ground；Renderer地板素材版本、index及預覽Renderer快取、SCENE_NATURE與本紀錄。預檢全部無其他副本／分支衝突；本副本疾風迅雷進行中修改原樣保留，共用index／AI_TASKS僅提交本任務段落。禁止改戰鬥／技能／存檔／地板投影及其他素材。不合併或推送。
+- 驗收：八張地板檢視、荒漠及另一野外場景／BOSS正式Renderer預覽、場景回歸、匯出SHA核對與Build；先素材庫再遊戲提交。此為既有程序材質生成器調整，維持可重現的批次像素輸出，無需手工繪圖工具或新AI美術。
+
+## GALE-ULTIMATE-ADJUSTMENTS-20261012 — 雷神之怒機率／尺寸與千鳥隨機五目標
+
+- Owner：Codex；Done，單一開發者。使用者要求雷神之怒觸發落雷35%、特效縮小30%；千鳥每次隨機打擊30米內5個敵人。千鳥以玩家當下位置為搜敵中心，每段重新選最多5名不同存活敵人，數量不足全選、不重複補打；沿用現有傷害倍率與爆散加成，不將30米搜敵半徑當傷害或特效尺寸。
+- 範圍：skills2的機率、視覺倍率事件與千鳥逐段選敵；Skills2 Excel／CSV及生成字面值；geometry／VFX用途說明接線；Runtime消費既有sizeMult；主頁／Editor及Worker必要快取；相關測試及本紀錄／Adapter文件。禁止更動其他技能參數、落雷傷害半徑、Preset原檔、Core／FOV／傾角、協議／存檔或其他副本；不合併／推送。
+- 前置：既有疾風迅雷逐段排程、配置表與sizeMult協議均已存在。所有計畫檔案衝突預檢乾淨。Skills2.xlsx起初鎖定，使用者已保存並關閉；採Excel原生API更新與正常重開驗證，保留其他儲存內容。必要驗收包含35%機率邊界、未命中不觸發、不遞迴落雷、縮放70%而傷害半徑不變、千鳥逐段最新位置／敵群／隨機／不足5／零目標、表格往返／Worker／Runtime回歸與Build。
+- 完成：雷神之怒每次成功命中獨立判定fx.chance＝35，落雷事件帶fx.sizeMult＝0.7；Runtime在原有範圍縮放後乘倍率，敵身立即／延後及既有落雷專用路徑皆支援。傷害半徑8米與傷害倍率不變，落雷不回頭觸發自己。千鳥fx.count＝5、搜敵m＝30，每段以最新玩家位置／敵群不重複隨機選取，gale-chidori只帶實際受擊名單，在逐敵位置播放原尺寸、作者方向的表定本體，不再沿用原主目標區域對全群結算；本體及爆散的倍率／成長不變。其他群組及疾風普通階級字面值與1e193a3f逐項完全相同。
+- 修改檔案：js/skills2.js、js/vfx-runtime.js、config/CSV/Skills2.csv、config/Excel/Skills2.xlsx、tools/skills2-geometry.cjs、tools/skills2-vfx.cjs；index.html、js/bridge.js、js/worker/sim.worker.js、tools/vfx/editor/index.html快取；tests/gale-ultimate-adjustments.test.cjs、tests/gale-rework.test.cjs、tests/gale-authored-direction.test.cjs、tests/skill2-ult-evolution.test.cjs及本紀錄／docs/vfx/VFX_RUNTIME_ADAPTER.md。舊超神測試補足表定消耗所需MP、清除比較前一次施放的冷卻，雷神之怒檢查每次成功命中對應一雷，不降低斷言。
+- 快取：skills2 1.0.295、Runtime兩頁1.0.185、bridge 1.0.250；WORKER_ASSET_VERSION及skills2 import均20261012-gale-ultimate-adjustments。既有shim已傳sizeMult與targets／variant，無協議欄位變更，Protocol不換版。
+- Excel：只更新兩列必要11格，Excel正常模式重開／再存再重開驗證；另以原生API比較原檔與結果的11個受影響儲存格，NumberFormat、WrapText、行高、欄寬、對齊、字型、底色保留。既有更新工具會將變動的LEN快取結果當常數寫回，已用Excel原生API恢復原C51的兩條=LEN(AW40)／=LEN(AW41)與格式，再存並正常重開確認公式結果；無手工XML修改。Excel／CSV全表一致，config_tables --apply Skills2語意變更0。
+- 測試：node --test tests/gale-ultimate-adjustments.test.cjs tests/gale-rework.test.cjs tests/gale-thunder-flash.test.cjs tests/gale-authored-direction.test.cjs tests/skills2-geometry.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-editor-guard.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs（81項80通過1既有失敗）；node --test --test-name-pattern="GALE|FACING|THUNDER|PLACE-|facing|朝向|攻擊方向|傾角" tests/vfx-runtime.test.cjs（23／23）；node --test --test-name-pattern="雷神|千鳥|疾風|霹靂|風捲殘雲|神速斬|雙影" tests/skill2-ult-evolution.test.cjs（4項3通過1既有失敗）。共108項106通過；新增專項8／8，無新增失敗。
+- 既有失敗：skills2-geometry的連鎖閃電速度固定18/.244斷言，及skill2-ult-evolution的霹靂一閃舊fixture（0道而期望6道）。以Git HEAD 1e193a3f的原測試、skills2.js、Skills2 CSV／Excel唯讀快照重跑，兩項同樣失敗，未改其斷言或擴大修復。npm.cmd run build（491檔）、相關node --check與git diff --check通過。
+- 使用者修改：執行中使用者保存ground-mire Preset／layout及其匯出索引；依既有一起Commit偏好保留原樣，另預檢無衝突。新增匯出spiral_28.png來自素材庫已追蹤的new_materials/arcane-ring原檔，SHA256一致；Preset合法。素材庫55a2933先保存codex-authored/ground-projection/presets及layouts/ground-mire.json，與遊戲逐位元相同；export-assets --check確認244 Preset／162素材引用已最新。無新外部素材或第三種特效來源。遊戲Preset並非本次AI改寫，雷神之怒／千鳥Preset不修改。
+- 唯讀檢查：js/battlefield.js隨機／體型邊緣距離、js/vfx-core.js縮放、js/worker/shim.js與protocol.js傳遞、tools/config_tables.cjs生成／往返、tools/excel-update-sheets.ps1原生驗證、正式落雷／千鳥Preset與素材庫來源；本輪臨時快照、JSON及原生Excel檢查腳本全部清除。
+- 提交隔離：收尾時另一聊天「改造戰鬥場景地形與裝飾」新增八份images/ground圖檔、battle-renderer地板版本20261012-no-grid、gen_ground_tiles.py與scene-preview.html修改及主頁battle-renderer 1.6.181快取。沿用使用者先前同意的分段提交與場景由原聊天提交指示，只提交index本次Runtime／skills2／bridge三處快取；工作檔保留1.6.181，場景檔案與該快取不納入本Commit。其餘本次與使用者沼澤保存皆已提交，工作區剩餘場景修改屬進行中工作。
+- 交付：遊戲Commit為本紀錄所在 [Codex] feat: 調整雷神之怒與千鳥技能效果；素材Commit 55a2933。無未完成實作，可供合併；本輪不合併／推送。已知限制為上述2項既有失敗與尚未重做實機目視；下一步使用者重載遊戲驗收。Editor未儲存內容先備份／另存再重載，既有防過期覆寫回歸通過。
+
 ## GALE-AUTHORED-DIRECTION-20261012 — 疾風迅雷及三個超神保留製作方向
 
 - Owner：Codex；Done，單一開發者。使用者發現疾風迅雷在遊戲從各方向發出，而Editor為由上往下，追加要求涵蓋霹靂一閃、雷神之怒、千鳥三個超神。原因為先前共用attackFacing把敵身爆發及落雷也按玩家→目標旋轉；圖層followDirection不控制外層播放旋轉。
