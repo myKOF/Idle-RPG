@@ -1,5 +1,17 @@
 # PATCH.md
 
+## 彈窗關閉按鈕 .modal-x 層級提升與觸碰熱區擴展（Antigravity 2026-10-12）
+
+- **關閉按鈕層級防遮擋（`css/style.css`）**：
+  - 任務總覽彈窗（`#quest-modal`）等對話框中的 `.modal-x` 關閉按鈕原本未設定 `z-index`（預設 auto），而同層的標題元素 `.sec-title` 具有 `position: relative` 且在 DOM 樹中排在按鈕後方，導致 `.sec-title` 區域覆蓋了關閉按鈕左下側約 70% 的面積，玩家實際只能點擊到最右上角未被標題遮擋的微小邊角。
+  - 為 `.modal-x` 顯式設定 `z-index: 10;`，確保關閉按鈕永遠置於標題與內嵌裝飾上方，全按鈕區域 100% 均可正常響應點擊與觸碰。
+  - 同步設定 `display: inline-flex; align-items: center; justify-content: center; padding: 0; box-sizing: border-box;`，避免不同瀏覽器預設按鈕內距影響文字與圖示對齊。
+- **觸控與點擊熱區擴展（`css/style.css`）**：
+  - 新增 `.modal-x::before` 偽元素熱區，設置 `inset: -6px;`，使點擊判定範圍擴充至 38px × 38px，大幅提升桌面與行動裝置的點擊舒適度與容錯率。
+  - 將 `.battle-info-drawer-head .modal-x` 調整為 `position: relative;`，在維持抽屜標頭 flex 排版的前提下正確局限熱區邊界。
+- **單元測試（`tests/modal-close-hitbox.test.cjs`）**：
+  - 新增專屬測試，驗證 `.modal-x` 具有明確的 `z-index >= 10`、`cursor: pointer`，驗證 `::before` 熱區擴展存在，並確保標頭關閉按鈕具備正確的定位上下文。
+
 ## 裝備詞條提示浮層長度自適應與底部延伸滾動（Antigravity 2026-10-07）
 
 - **詞條池樣式上限解除（`css/style.css`）**：
