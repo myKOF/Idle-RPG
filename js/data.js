@@ -2270,6 +2270,8 @@ var GEM_TYPES = {
   garnet: { name: '石榴石', emoji: '🟠', stat: 'critDmg', statName: '暴擊傷害%', base: 5, pct: true },
   opal: { name: '蛋白石', emoji: '🩵', stat: 'aspd', statName: '攻擊速度%', base: 1.5, pct: true },
   onyx: { name: '黑曜石', emoji: '⚫', stat: 'lifesteal', statName: '吸血', base: 1, pct: false },
+  /* 吸魔（吸血寶石的對位）：效果為黑曜石的 1/3，每次對敵人造成傷害回復的法力定值。linear：1~5 階 0.5/1/1.5/2/2.5、6 階起每階 ×2（5/10/20/40/80）。 */
+  manastone: { name: '魔晶石', emoji: '🟪', stat: 'manaSteal', statName: '吸魔', base: 0.5, pct: false, linear: true },
   moonstone: { name: '月光石', emoji: '🌙', stat: 'evasion', statName: '閃避率%', base: 1, pct: true },
   /* 命中（月光石的對位）：命中與閃避是 1:1 相抵的一對（resolveHit 取 clamp(命中−閃避, 5, 100)），
      但玩家命中基礎已有 100%、敵人閃避從 5% 起隨等級成長，所以同樣 1 點的命中價值低於閃避。
@@ -2326,7 +2328,7 @@ var GEM_TYPES = {
    光暈只看階數：1～5 階沒有，6 階起淡淡出現、10 階最濃；元素類另有「核」寶石內部有發光核心的記號。
    程式產生（tools/gems），原稿在素材庫 claude-authored/gems。換圖時 +1 GEM_ICON_VER
    （檔名沒有版本字尾，靠查詢字串破快取）。顯示入口是 js/item.js 的 gemIconHTML。 */
-var GEM_ICON_VER = 3;
+var GEM_ICON_VER = 4;
 function gemIconSrc(type, level) {
   var lv = Math.max(1, Math.min(GEM_FORGE_MAX_LEVEL, Math.floor(level) || 1));
   return 'images/gems/gem-' + type + '-' + (lv < 10 ? '0' : '') + lv + '.png?v=' + GEM_ICON_VER;
