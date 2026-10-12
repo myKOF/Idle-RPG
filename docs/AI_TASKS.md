@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## SCENE-STARTUP-READY-20261012 — 當前場景物件備妥才關閉 Loading
+
+- Owner：Codex；Done，單一開發者。使用者回報重整後空場、戰鬥數秒後物件才出現，要求至少載完當前場景再進遊戲。已將Loading門檻延伸至當前底圖、物件圖集及可見區塊全部就緒；其他地貌／階段背景預建不阻塞。
+- 允許：js/main.js的啟動Loading門檻、js/battle-renderer.js唯讀場景就緒狀態、tests/loading-screen.test.cjs及新增tests/scene-startup-ready.test.cjs、index與tools/scene-preview.html必要快取及本紀錄。禁止修改戰鬥模擬、技能、存檔、素材、Protocol、其他工作內容；僅等待當前場景，其他地貌／階段背景預建不阻塞。全檔預檢無其他副本／分支衝突；保留同副本冰箭／不屈鬥魂工作，共用檔分段提交。
+- 驗收：先重現Canvas先完成但圖集／可見物件／底圖晚到仍不能揭幕，首畫需先觸發場景載入而非死鎖，背景預建不阻塞、塔戰等正確場景完成、最後揭幕前場景再變須續等；專用底圖失敗等通用後備、DOM／關閉裝飾／Worker失效沿既有備援。相關回歸、Build與隔離瀏覽器實測後提交，不合併或推送；後續使用者重載驗收。
+- 完成：Renderer新增唯讀sceneReady狀態，檢查當前面板／地貌、轉場、底圖與圖集區塊；塔戰僅等待對應祭壇。main先同步首畫觸發載入，再檢查就緒，最後揭幕幀重新確認場景、前景及面板資料；Worker失效不重複揭幕。專用底圖失敗仍等待通用後備、兩者失敗沿既有底色；Canvas失敗沿DOM備援，圖集Worker失敗沿主執行緒分段建圖。未改模擬進程或其他場景預載策略。
+- 修改檔案：js/main.js、js/battle-renderer.js、tests/loading-screen.test.cjs、新tests/scene-startup-ready.test.cjs、index.html、tools/scene-preview.html及本段；只更新Renderer／main快取。檢查但未修改：js/battle-decor.js、js/battle-arena.js、js/ui.js、底圖載入與既有測試輔助器。無素材變動，無素材庫提交；保留冰箭既有提交與不屈鬥魂預覽未提交內容。
+- 測試：新增9項先失敗再通過；`node --test tests/loading-screen.test.cjs tests/scene-startup-ready.test.cjs` 18/18通過；`node --test tests/loading-screen.test.cjs tests/scene-startup-ready.test.cjs tests/battle-decor.test.cjs tests/battle-arena.test.cjs tests/battle-perspective.test.cjs tests/tab-lock.test.cjs` 75/75通過；`npm.cmd run build` 497檔通過。另跑tests/vfx-startup-loading.test.cjs有6項skyEntryPoint未定義；以未修改HEAD的Renderer重跑仍6項同錯，為既有測試抽取缺少輔助函式，未修改其他任務測試。git diff --check通過。
+- 瀏覽器實測：隔離headless Edge新儲存空間，實際延遲圖集Worker與desert底圖；Canvas先完成時Loading維持，圖集與區塊完成但底圖未到仍維持，全部備妥才揭幕，首畫78物件／28區塊，Console error／warning均0。再以Worker回應503重載，主執行緒備援建圖完成78物件後正常揭幕，0 error，僅預期備援warning。證據在本聊天visualizations/scene-startup-20261012的loading-waiting.png及scene-ready.png。
+- Commit：本紀錄所在提交。風險／限制：首次載入較慢時Loading會延長；不等待全部其他場景，未做效能壓測。未完成項目：無本次範圍內待辦；前述既有VFX測試問題獨立處理。可合併，尚未合併／推送；建議重新整理驗收首次場景。
+
 ## ICEARROW-TARGET-LOSS-20261012 — 寒冰箭失去目標沿原方向飛行
 
 - Owner：Codex；Done，單一開發者。使用者要求空場或敵人死亡後失去目標的寒冰箭沿當下方向飛出畫面，不在原地消失。前置為既有追蹤場域與連續補間，後續使用者驗收。
