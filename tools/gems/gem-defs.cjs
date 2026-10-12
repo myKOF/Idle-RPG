@@ -41,6 +41,7 @@ def('amethyst', { pal: pal(278, 0.7, { lb: 0.52, ll: 0.76, dh2: -8 }), acc: pal(
 def('garnet', { pal: pal(350, 0.72, { lb: 0.3, ld: 0.07, ll: 0.47, dh1: -14, dh2: -6 }), acc: pal(22, 0.85, { lb: 0.34, ld: 0.1, ll: 0.52 }), accMode: 'center' });
 def('opal', { pal: pal(44, 0.4, { dh1: -14, lb: 0.8, ld: 0.5, ll: 0.92, lh: 1, glow: hsl(40, 0.6, 0.75) }), trans: 0.55, tex: { kind: 'patches' } });
 def('onyx', { pal: pal(250, 0.14, { lb: 0.13, ld: 0.03, ll: 0.36, lh: 0.82, glow: hsl(255, 0.3, 0.3) }), trans: 0.2, shin: 70, glowW: 0.7 });
+def('manastone', { pal: pal(190, 0.78, { lb: 0.3, ld: 0.08, ll: 0.5, dh1: 8, dh2: -10 }), acc: pal(268, 0.6, { lb: 0.34, ll: 0.56 }), accMode: 'center', trans: 0.3, shin: 60 });
 def('moonstone', { pal: pal(228, 0.5, { lb: 0.62, ld: 0.34, ll: 0.82, lh: 0.98 }), trans: 0.45, tex: { kind: 'sheen', alt: hsl(210, 0.9, 0.86), w: 0.34, add: 0.3 } });
 def('catseye', { pal: pal(72, 0.74, { lb: 0.4, ld: 0.12, ll: 0.58, dh2: -12 }), acc: pal(108, 0.7, { lb: 0.36, ll: 0.56 }), accMode: 'grad', accAngle: 0.4, trans: 0.45, tex: { kind: 'slit', alt: hsl(62, 0.95, 0.9) } });
 def('sunstone', { pal: pal(10, 0.66, { lb: 0.6, ld: 0.28, ll: 0.78, dh1: -8, dh2: 18, glow: hsl(14, 0.85, 0.6) }), trans: 0.6, tex: { kind: 'glitter', amt: 0.9 } });
