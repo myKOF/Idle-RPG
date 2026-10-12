@@ -126,14 +126,14 @@ test('updateCharCoreSummary 正確計算 (物傷+魔傷)/2 與 (物承+魔承)/2
   assert.equal(atkTile.attributes['data-tt-title'], '綜合攻擊力 (攻擊)');
   const atkDesc = atkTile.attributes['data-tt-desc'];
   assert.ok(atkDesc.includes('角色的綜合攻擊能力，包含了物理、魔法、攻速、暴擊及元素等綜合的攻擊強度評價'));
-  assert.ok(atkDesc.includes('(物傷 + 魔傷) / 2'));
+  assert.ok(!atkDesc.includes('計算公式：'), '攻擊 Tips 不應包含計算公式行');
 
   // 2. 驗證堅韌：減傷後承傷平均值
   assert.ok(toughnessVal.textContent.length > 0, '堅韌應有顯示值');
   assert.equal(toughnessTile.attributes['data-tt-title'], '綜合生存能力 (堅韌)');
   const toughnessDesc = toughnessTile.attributes['data-tt-desc'];
   assert.ok(toughnessDesc.includes('角色的綜合生存能力，包含了物防、法防、生命及各類抗性、減傷的綜合評價'));
-  assert.ok(toughnessDesc.includes('(物承 + 魔承) / 2'));
+  assert.ok(!toughnessDesc.includes('計算公式：'), '堅韌 Tips 不應包含計算公式行');
 });
 
 test('戰鬥扣血時 updateCharCoreSummary 能動態實時更新堅韌值', () => {
