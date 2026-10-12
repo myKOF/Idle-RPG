@@ -1,0 +1,235 @@
+{
+  "schemaVersion": 1,
+  "id": "pillar-indomitable-white",
+  "duration": 2,
+  "loop": false,
+  "sizing": {
+    "authored": {
+      "width": 90,
+      "height": 460
+    },
+    "widthM": 9,
+    "heightM": 46,
+    "shape": "custom"
+  },
+  "layers": [
+    {
+      "id": "sky-glow",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/cone_b.png",
+      "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": -460
+      },
+      "scale": {
+        "x": 0.32,
+        "y": 0.89844
+      },
+      "tint": "#e8efff",
+      "alpha": 0.28,
+      "blendMode": "add",
+      "duration": 2,
+      "perspective": false,
+      "cameraDepth": false,
+      "anchor": {
+        "x": 0.5,
+        "y": 0
+      },
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          1
+        ],
+        [
+          0.55,
+          0.95
+        ],
+        [
+          0.8,
+          0.5
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleYOverLife": [
+        [
+          0,
+          0.03
+        ],
+        [
+          0.1,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "white-beam",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/streaks_composed_d.png",
+      "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": -460
+      },
+      "scale": {
+        "x": 0.125,
+        "y": 0.89844
+      },
+      "tint": "#ffffff",
+      "alpha": 0.9,
+      "blendMode": "add",
+      "duration": 2,
+      "perspective": false,
+      "cameraDepth": false,
+      "anchor": {
+        "x": 0.5,
+        "y": 0
+      },
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          1
+        ],
+        [
+          0.55,
+          0.95
+        ],
+        [
+          0.8,
+          0.5
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleYOverLife": [
+        [
+          0,
+          0.03
+        ],
+        [
+          0.1,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "white-core",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/streaks_composed_b.png",
+      "zIndex": 2,
+      "position": {
+        "x": 0,
+        "y": -460
+      },
+      "scale": {
+        "x": 0.035,
+        "y": 0.89844
+      },
+      "tint": "#ffffff",
+      "alpha": 1,
+      "blendMode": "add",
+      "duration": 2,
+      "perspective": false,
+      "cameraDepth": false,
+      "anchor": {
+        "x": 0.5,
+        "y": 0
+      },
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          1
+        ],
+        [
+          0.55,
+          0.95
+        ],
+        [
+          0.8,
+          0.5
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleYOverLife": [
+        [
+          0,
+          0.03
+        ],
+        [
+          0.1,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "foot-light",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/circle_b.png",
+      "zIndex": 3,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.1758,
+        "y": 0.0508
+      },
+      "tint": "#f5f8ff",
+      "alpha": 0.7,
+      "blendMode": "add",
+      "duration": 2,
+      "perspective": false,
+      "cameraDepth": false,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.15,
+          0.75
+        ],
+        [
+          0.6,
+          0.5
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    }
+  ]
+}

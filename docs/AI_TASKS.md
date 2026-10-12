@@ -11,6 +11,19 @@
 - 瀏覽器實測：隔離headless Edge新儲存空間，實際延遲圖集Worker與desert底圖；Canvas先完成時Loading維持，圖集與區塊完成但底圖未到仍維持，全部備妥才揭幕，首畫78物件／28區塊，Console error／warning均0。再以Worker回應503重載，主執行緒備援建圖完成78物件後正常揭幕，0 error，僅預期備援warning。證據在本聊天visualizations/scene-startup-20261012的loading-waiting.png及scene-ready.png。
 - Commit：本紀錄所在提交。風險／限制：首次載入較慢時Loading會延長；不等待全部其他場景，未做效能壓測。未完成項目：無本次範圍內待辦；前述既有VFX測試問題獨立處理。可合併，尚未合併／推送；建議重新整理驗收首次場景。
 
+## INDOMITABLE-GOLD-PREVIEW-20261012 — 不屈鬥魂金色護罩／白光與30米擊退
+
+- Owner：Codex；Done，單一開發者。使用者要求金黃色直立橢圓無敵護罩、發動時白光由上方照下約2秒、擊退距離5→30米；預覽交付後已明確要求直接接入並提交需要的檔案。前置已完成，後續使用者驗收。
+- 允許：新vfx/presets/st-indomitable-gold.json及pillar-indomitable-white.json、本紀錄與隔離預覽；Skills2 Excel／CSV／js、tools/skills2-vfx.cjs、Runtime資料版號與必要接線、主頁／Editor／bridge／Worker快取、兩項不屈專項及素材庫Preset／SOURCE。禁止其他技能數值、共用Status外觀、Protocol／存檔與外部素材匯入。預檢全部無其他副本／分支衝突，保留既有其他任務提交。
+- 驗收：護罩色彩／橢圓輪廓／人物可辨、白光落下與2秒消失、護罩跟人與無敵同時結束、30米連續擊退及既有範圍／暈眩／免死保留、表格與快取、正式Core／Runtime／Pixi預覽、Excel正常原生重開、回歸與Build、雙倉素材提交。參考圖僅參考色彩與包覆感，沿專案已在用素材組成原創特效，不複製參考圖。
+- 完成：Skills2的pushM改30，維持30米控制範圍、0.25秒連續擊退、3秒暈眩與既有免死／冷卻規則。觸發地板欄指定st-indomitable-gold，觸發命中欄指定pillar-indomitable-white；程式按表取值，白光以貼身事件送至ground播放，lightSec=2。護罩／白光跟隨野外或高塔角色腳底，保持預覽作者尺寸；Runtime護罩精確維持至無敵結束，白光獨立播放2秒後回收，不套地板續命緩衝或場景尺寸倍率。沒有新增特效第三種來源。
+- 修改14檔：config/Excel/Skills2.xlsx、config/CSV/Skills2.csv、js/skills2.js、js/vfx-runtime.js、tools/skills2-vfx.cjs、index.html、js/bridge.js、js/worker/sim.worker.js、tools/vfx/editor/index.html、tests/indomitable-revival.test.cjs、新tests/indomitable-vfx.test.cjs、上述兩份Preset及本紀錄。主頁skills2 1.0.303／Runtime 1.0.191／bridge 1.0.258，Editor Runtime同步；Worker入口與skills2 import、Preset資料版號均20261012-indomitable-gold。Protocol50及存檔不變。
+- Excel：原生Excel API只更新不屈鬥魂列6格，原生正常重開RepairMode=false；230條公式與其他格資料保留。唯讀XML稽核確認既有格style索引、styles.xml、公式、欄寬／行屬性／視圖／合併／資料驗證／篩選不變；原空白AP70填入白光Preset後建立新格，使用既有style 1。Excel／CSV逐位元往返一致，`node tools/config_tables.cjs --apply Skills2`語意變更0，未手工寫XML。
+- 素材：兩份正式Preset皆為沿專案既有已匯出光罩素材組合的原創特效；參考圖僅參考外觀，未匯入或複製圖片。金色橢圓光膜／雙邊光環loop維持；白光自上而下落至腳底，2秒非循環。素材庫D:/MyGame/Asset的codex-authored/indomitable-gold保存相同Preset及SOURCE.md，先提交`6e24969`（[Codex] feat: 保存不屈鬥魂金色護罩與天降白光）；遊戲兩份Preset與素材庫副本逐位元一致。舊pillar-indomitable素材仍保留，無關素材未刪。
+- 測試指令：`node --test --test-reporter=tap tests/indomitable-revival.test.cjs tests/indomitable-vfx.test.cjs tests/earthguard-revival.test.cjs tests/death-revive-restore.test.cjs tests/field-death-retreat.test.cjs tests/skill-cooldown-death.test.cjs tests/hall-of-radiance.test.cjs tests/worker-protocol.test.cjs tests/vfx-core.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/vfx-editor-cache-versions.test.cjs`，189/189通過。其中不屈專項13/13驗30米連續擊退、HP1／MP保留／戰鬥持續、等級與冷卻、表格／文字，以及正式Core／Runtime的作者尺寸、腳底跟隨、高塔、不同場景倍率、白光2秒／護罩按無敵時間回收與可配置白光時長。`npm.cmd run build` 498檔通過；素材匯出唯讀check與git diff --check通過。
+- 瀏覽器實測：隔離隨機埠HTTP／全新headless Edge／真Worker及正式BattleRenderer／Runtime／Core／Pixi；Lv10致命傷後HP1、MP7、無敵5秒，0.125秒擊退150單位、0.25秒達300單位（30米）。真Worker三個VFX事件交正式Renderer播放，金色罩與白光同時出現，2秒後僅留護罩、5秒後全部回收，Console error／warning均0。預覽PNG／5.6秒GIF與接線截圖indomitable-integrated.png留在本聊天visualizations/indomitable；臨時腳本、日誌及重複預覽刪除，隔離伺服器／瀏覽器已關閉。
+- 唯讀檢查：AI規範／prompts/codex.md、combat／tower／battlefield／formula、Worker Protocol／shim、sim engine、VFX Core／Pixi後端／BattleRenderer、配置及原生Excel工具；上述未修改。交付：遊戲Commit為本紀錄所在[Codex] feat提交；素材庫Commit如上。無本次未完成項，可供審查合併，尚未合併／推送。已知限制：BOSS仍沿既有免控規則，未做真人長時間戰鬥或FPS壓測；下一步重載遊戲驗收。
+
 ## ICEARROW-TARGET-LOSS-20261012 — 寒冰箭失去目標沿原方向飛行
 
 - Owner：Codex；Done，單一開發者。使用者要求空場或敵人死亡後失去目標的寒冰箭沿當下方向飛出畫面，不在原地消失。前置為既有追蹤場域與連續補間，後續使用者驗收。
