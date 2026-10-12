@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## ROCK-CLUSTER-DETAIL-20261012 — 岩柱細化與參考圖形狀
+
+- Owner：Codex；Done，單一開發者。使用者認為岩柱過於簡陋／尖細，提供參考圖要求參考形狀。沿用SVG原創繪製中央主岩柱與根部碎岩簇，主岩體加厚、頂部改為有寬度的破損鈍面，不規則多面岩體加上大塊岩層／分岔裂紋／風化斑點與陰影。只參考主岩柱＋根部岩塊輪廓，不匯入、描摹或複製參考圖像素；向量路徑與材質細節均原創。維持128×384貼圖、2.6×7.8米、0.15秒升起／0停留／0.35秒消失與直立不受FOV影響，技能傷害／波次／石化未變。
+- 修改：images/vfx/assets/codex-authored/super-rock-art/assets/rock-pyramid.svg、vfx/asset-index.json、vfx/shipped-assets.json、js/vfx-runtime.js僅資料版號、index.html與tools/vfx/editor/index.html僅Runtime快取，以及本紀錄。素材庫修改同一路徑SVG及SOURCE.md；不改Preset、技能配置、Worker、Protocol／存檔。預檢無衝突，原素材ID保留以相容Editor／表定引用；Runtime兩頁1.0.189，資料版本20261012-rock-cluster。由既有scanner增量更新該一項事實記錄，再以正式export-assets匯出；沒有加入特效第三來源。
+- 唯讀檢查：vfx/presets/pillar-rock-spike.json、js/vfx-core.js的hash快取與Resolver、js/vfx-pixi-backend.js、js/battle-renderer.js、tools/scene-preview.html、tests/super-rock-art.test.cjs、素材scanner／exporter與SOURCE。原圖層數／Sprite數維持，不新增程序濾鏡或持續粒子；SVG總長4966 bytes。XML解析、兩份索引SHA及兩倉素材SHA一致。
+- 驗證：node --test tests/super-rock-art.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-runtime-screen-space.test.cjs，20/20通過；npm.cmd run build，494檔通過；node tools/vfx/export-assets.cjs --check，245份Preset／163項引用最新。雙倉diff check通過。正式Core／Pixi／Runtime／BattleRenderer隔離預覽於荒漠與沼澤檢視四個方位，SVG帶裂紋／漸層／clipPath正常載入，岩簇於遊戲尺度可辨識且保持直立；console無warn/error。僅外觀預覽及補幀定格，不宣稱真人實戰／幀率量測。沒有必要新增映射實作的美術測試。
+- 預覽保存：C:/Users/user/.codex/visualizations/2026/10/05/01a10b8b-e3ad-7f13-ae9f-4ed9a9be903d/super-rock/rock-cluster-detail.png（素材細節）、rock-cluster-scene.png（正式渲染器四方位）、rock-cluster-full.jpg（完整畫面）。臨時伺服器／診斷腳本及分頁已清理，viewport已還原。無未完成項，可供使用者合併；下一步重載遊戲載入新素材。先素材庫再遊戲提交，不合併／推送。
+
+- 提交：素材庫2bc415a；遊戲提交為本紀錄所在commit。無其他待提交使用者修改；兩倉提交後確認乾淨。
+
 ## ROCK-PYRAMID-20261012 — 直立三角錐岩柱與尺寸／時間調整
 
 - Owner：Codex；Done，單一開發者。岩柱改為原創SVG三角錐，一個錐頂、三個地面底點與兩個可見明暗三角面；寬高各放大30%，2×6米改為2.6×7.8米。Preset所有可畫層關閉透視與鏡頭遠近尺寸變化，area攻擊尊重既有billboard旗標；只投影底座落點，柱身保持垂直與原作尺寸。停留時間減2秒＝原2秒改0，0.15秒升起後立即0.35秒縮回淡出，總長0.5秒；起塵隨整體放大。傷害／波次／石化未改，其他技能的旗標、投影及全域FOV均未修改。相關Preset、Runtime、兩頁快取、專項、索引／匯出與本紀錄預檢無衝突，不合併／推送。
