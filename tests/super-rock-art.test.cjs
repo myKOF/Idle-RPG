@@ -17,13 +17,15 @@ function setup(lv=1){
 }
 function enemy(id,x=40,y=0){return {name:'e'+id,hp:1e9,maxHp:1e9,atk:10,matk:10,def:0,mdef:0,level:1,attr:'wind',resist:{},ctrlRes:0,effects:{},buffs:{},dots:[],pos:{x,y}}}
 const pillars=h=>h.events.filter(s=>s.variant==='rock-pillar');
-test('岩柱：寬高增加30%，升起後不再停留，0.5秒內消失',()=>{
+test('岩柱：寬高增加30%，升起後完整停留2秒，2.5秒內消失',()=>{
  const preset=JSON.parse(fs.readFileSync(path.join(root,'vfx/presets/pillar-rock-spike.json')));
  const nodes=[],rt=Core.createRuntime({resolver:{resolve:id=>id},backend:{createNode(s){const n={s};nodes.push(n);return n},updateNode(n,t){n.t={...t}},destroyNode(n){n.dead=true}}});
  rt.registerPreset(preset);const ref=rt.play(preset.id);
  rt.update(.15);const stone=nodes.find(n=>n.s.layerId==='stone')||nodes[1],grown={...stone.t};
  assert.ok(grown.alpha>.99);assert.ok(grown.scaleY>0);
  assert.equal(grown.scaleX*128,26);assert.equal(grown.scaleY*384,78);
+ rt.update(1);assert.equal(stone.t.alpha,grown.alpha);assert.equal(stone.t.scaleY,grown.scaleY);
+ rt.update(1);assert.equal(stone.t.alpha,grown.alpha);assert.equal(stone.t.scaleY,grown.scaleY);
  rt.update(.175);assert.ok(stone.t.alpha<grown.alpha);assert.ok(stone.t.scaleY<grown.scaleY);
  rt.update(.176);assert.equal(rt.timeOf(ref),null);rt.destroy();
  const h=setup();h.cast([enemy(1)]);for(let i=1;i<=8;i++)h.tick(i*.5);assert.equal(pillars(h).length,32);assert.equal(h.hits.length,8);

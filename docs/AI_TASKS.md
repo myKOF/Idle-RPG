@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## ROCK-HOLD-PLUS2-20261012 — 岩柱停留時間增加兩秒
+
+- Owner：Codex；Done，單一開發者。前置岩簇造型已完成；使用者要求停留時間+2秒，由0秒調整為0.15秒升起／2秒完整停留／0.35秒消失，總長2.5秒。僅調整石體動畫曲線與Preset總長，起塵仍0.5秒；尺寸、造型、直立旗標、傷害與八波排程保持原樣。
+- 允許修改：vfx/presets/pillar-rock-spike.json、js/vfx-runtime.js資料版號、index.html與tools/vfx/editor/index.html快取、tests/super-rock-art.test.cjs時序驗收、本紀錄，以及素材庫對應Preset／SOURCE.md。禁止修改其他技能、配置表、Worker／Protocol／存檔與美術素材；相關檔案預檢無衝突，雙倉工作區乾淨。驗收正式Core完整停留邊界與技能32柱不變、既有方向／尺寸／配置回歸、Build、素材同步與diff check；素材庫先提交，交使用者整合，不合併／推送。
+- 完成：上述允許檔案均已修改；Runtime兩頁快取1.0.190、DATA_VERSION為20261012-rock-hold-plus2。唯讀檢查vfx-core、Skills2／Status表與JS（由既有回歸驗證）、素材匯出器；未修改戰鬥結算／Worker，岩柱停留是命中後純演出，不增加傷害段數。node --test tests/super-rock-art.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-runtime-screen-space.test.cjs，20/20；npm.cmd run build，494檔通過；node tools/vfx/export-assets.cjs --check，245份Preset／163項引用最新；雙倉Preset內容一致且diff check通過。沒有新增素材、未做瀏覽器目視；多波重疊柱體會按要求各自停留2秒。無未完成項，下一步重載遊戲確認停留，可供合併。
+- 提交：素材庫1da01a6；遊戲為本紀錄所在commit。未合併／推送。
+
 ## ROCK-CLUSTER-DETAIL-20261012 — 岩柱細化與參考圖形狀
 
 - Owner：Codex；Done，單一開發者。使用者認為岩柱過於簡陋／尖細，提供參考圖要求參考形狀。沿用SVG原創繪製中央主岩柱與根部碎岩簇，主岩體加厚、頂部改為有寬度的破損鈍面，不規則多面岩體加上大塊岩層／分岔裂紋／風化斑點與陰影。只參考主岩柱＋根部岩塊輪廓，不匯入、描摹或複製參考圖像素；向量路徑與材質細節均原創。維持128×384貼圖、2.6×7.8米、0.15秒升起／0停留／0.35秒消失與直立不受FOV影響，技能傷害／波次／石化未變。
