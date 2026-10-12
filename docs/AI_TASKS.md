@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## ROCK-PYRAMID-20261012 — 直立三角錐岩柱與尺寸／時間調整
+
+- Owner：Codex；Done，單一開發者。岩柱改為原創SVG三角錐，一個錐頂、三個地面底點與兩個可見明暗三角面；寬高各放大30%，2×6米改為2.6×7.8米。Preset所有可畫層關閉透視與鏡頭遠近尺寸變化，area攻擊尊重既有billboard旗標；只投影底座落點，柱身保持垂直與原作尺寸。停留時間減2秒＝原2秒改0，0.15秒升起後立即0.35秒縮回淡出，總長0.5秒；起塵隨整體放大。傷害／波次／石化未改，其他技能的旗標、投影及全域FOV均未修改。相關Preset、Runtime、兩頁快取、專項、索引／匯出與本紀錄預檢無衝突，不合併／推送。
+- 修改：vfx/presets/pillar-rock-spike.json、js/vfx-runtime.js、index.html、tools/vfx/editor/index.html、tests/super-rock-art.test.cjs、vfx/asset-index.json、vfx/shipped-assets.json、新images/vfx/assets/codex-authored/super-rock-art/assets/rock-pyramid.svg及本紀錄。素材庫保存SVG、Preset與SOURCE.md，無新增外部素材。Runtime兩頁快取1.0.188、Preset／匯出索引資料版本20261012-rock-pyramid；未改模擬／Worker／Protocol／存檔。
+- 唯讀檢查：js/battle-renderer.js的projectBillboardTransform／depthScaleOf、js/vfx-core.js、js/vfx-pixi-backend.js、tools/vfx/asset-scanner.cjs／vfx-image-facts.cjs／export-assets.cjs／vfx-library-root.cjs、tools/scene-preview.html、正式Skills2超重岩表定triggerVfx與既有幾何。由既有scanner產生新SVG事實記錄，只增量加入一項索引，避免混入共享素材庫其他來源；經正式export-assets匯出，SVG與Preset兩倉逐位元一致。
+- 驗證：node --test tests/super-rock-art.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/battle-perspective.test.cjs tests/vfx-editor-cache-versions.test.cjs，35/35通過；node --test --test-name-pattern='BILLBOARD|PLACE|TABLE|GALE|THUNDER|FACING' tests/vfx-runtime.test.cjs，25/25通過，共60項。涵蓋原尺寸增加30%、無停留時序、三組FOV／五個畫面方位／鏡頭偏移後柱身矩陣不變、底座投影、真實billboard後端路由、0／null尺寸相容與傷害32柱波次不變。npm.cmd run build：494檔通過；node tools/vfx/export-assets.cjs --check：245份Preset、163項素材引用最新；兩倉diff check通過。
+- 目視：隔離場景預覽載入正式BattleRenderer／Core／Pixi／Runtime與表定岩柱，四方位三角錐保持直立，Preset實際落在billboard層；console無warn/error。臨時補幀定格僅供外觀檢視，非真人戰鬥或即時幀率驗收。預覽裁圖C:/Users/user/.codex/visualizations/2026/10/05/01a10b8b-e3ad-7f13-ae9f-4ed9a9be903d/super-rock/rock-pyramid-preview.png，完整畫面rock-pyramid-preview-full.jpg。臨時伺服器／掃描輸出／診斷腳本及分頁已清理，viewport已還原。無未完成項；可供使用者合併，下一步重新載入遊戲確認造型。
+
+- 提交：素材庫0629370先完成；遊戲提交為本紀錄所在commit。雙倉庫只提交本次必要九檔／三檔，沒有待提交的使用者修改；未推送或合併。
+
 ## ROCK-PILLAR-HOLD-20261012 — 岩柱升起後停留兩秒與遊戲截圖
 
 - Owner：Codex；Done。岩柱於0.15秒升起，完整停留2秒，再於0.35秒內縮回／淡出，總長2.5秒；起塵仍0.5秒。傷害維持每0.5秒四柱、4秒八波，尺寸、顏色、朝向及投影保持原設定。單一開發者；相關Preset、Runtime、兩頁快取、專項、本紀錄及Worker快取預檢無其他來源，不合併／推送。

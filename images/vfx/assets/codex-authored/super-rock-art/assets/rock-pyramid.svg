@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="384" viewBox="0 0 128 384">
+  <!-- Original triangular pyramid: one apex and three vertices on the ground. -->
+  <path d="M64 0 0 352 128 346Z" fill="#594837"/>
+  <path d="M64 0 0 352 68 384Z" fill="#ba9670"/>
+  <path d="M64 0 68 384 128 346Z" fill="#6c5540"/>
+  <path d="M64 0 68 384" stroke="#d1ad83" stroke-width="2" opacity=".55"/>
+</svg>

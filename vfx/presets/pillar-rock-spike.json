@@ -1,15 +1,15 @@
 {
   "schemaVersion": 1,
   "id": "pillar-rock-spike",
-  "duration": 2.5,
+  "duration": 0.5,
   "loop": false,
   "sizing": {
     "shape": "custom",
-    "widthM": 2,
-    "heightM": 6,
+    "widthM": 2.6,
+    "heightM": 7.8,
     "authored": {
-      "width": 20,
-      "height": 60
+      "width": 26,
+      "height": 78
     }
   },
   "layers": [
@@ -19,11 +19,11 @@
       "assetId": "particle-pack/png-transparent/smoke_04.png",
       "position": {
         "x": 0,
-        "y": -2
+        "y": -2.6
       },
       "scale": {
-        "x": 0.075,
-        "y": 0.035
+        "x": 0.0975,
+        "y": 0.045500000000000006
       },
       "tint": "#b89568",
       "alpha": 0.55,
@@ -52,23 +52,25 @@
           1,
           1.5
         ]
-      ]
+      ],
+      "perspective": false,
+      "cameraDepth": false
     },
     {
       "id": "stone",
       "type": "sprite",
-      "assetId": "new_materials/mask-shape/dingbats-366.png",
+      "assetId": "codex-authored/super-rock-art/assets/rock-pyramid.svg",
       "anchor": {
         "x": 0.5,
         "y": 1
       },
       "scale": {
-        "x": 0.052,
-        "y": 0.156
+        "x": 0.203125,
+        "y": 0.203125
       },
-      "tint": "#6c5540",
+      "tint": "#ffffff",
       "alpha": 1,
-      "duration": 2.5,
+      "duration": 0.5,
       "blendMode": "normal",
       "scaleOverLife": [
         [
@@ -76,11 +78,7 @@
           0.02
         ],
         [
-          0.06,
-          1
-        ],
-        [
-          0.86,
+          0.3,
           1
         ],
         [
@@ -94,75 +92,20 @@
           0
         ],
         [
-          0.032,
+          0.16,
           1
         ],
         [
-          0.86,
+          0.3,
           1
         ],
         [
           1,
           0
-        ]
-      ]
-    },
-    {
-      "id": "lit-face",
-      "type": "sprite",
-      "assetId": "new_materials/mask-shape/dingbats-366.png",
-      "anchor": {
-        "x": 0.5,
-        "y": 1
-      },
-      "position": {
-        "x": -2,
-        "y": 0
-      },
-      "scale": {
-        "x": 0.027,
-        "y": 0.151
-      },
-      "tint": "#ba9670",
-      "alpha": 0.9,
-      "duration": 2.5,
-      "blendMode": "normal",
-      "scaleOverLife": [
-        [
-          0,
-          0.02
-        ],
-        [
-          0.06,
-          1
-        ],
-        [
-          0.86,
-          1
-        ],
-        [
-          1,
-          0.02
         ]
       ],
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.032,
-          1
-        ],
-        [
-          0.86,
-          1
-        ],
-        [
-          1,
-          0
-        ]
-      ]
+      "perspective": false,
+      "cameraDepth": false
     }
   ]
 }

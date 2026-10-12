@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 162,
+  "assetCount": 163,
   "assets": [
     {
       "assetId": "claude-authored/dragon-devour/vortex-ring.png",
@@ -131,6 +131,13 @@
       "package": "codex-authored",
       "contentHash": "sha256:f5f3abd18c3b6f4b8583c2ee962c4b76f15bae003d45be24ad8d3b96bcef62ea",
       "fileSize": 7611
+    },
+    {
+      "assetId": "codex-authored/super-rock-art/assets/rock-pyramid.svg",
+      "relativePath": "codex-authored/super-rock-art/assets/rock-pyramid.svg",
+      "package": "codex-authored",
+      "contentHash": "sha256:42bc57726838033eb7b2227de808203d4a1e13fa98dda977968ca97a2a004031",
+      "fileSize": 403
     },
     {
       "assetId": "codex-authored/thrust/thrust_lance.png",

@@ -1825,7 +1825,7 @@ var VFXRuntime = (function () {
             delete poisonSpec.sourceId;
             ok = playOnTargets(rtFx, presetId, poisonSpec, 1, 0, true, false, true);
           } else if (spec.variant === 'lightning-chain' && spec.fxKind === 'chain') ok = playBeam(rtFx, presetId, spec);
-          else if (spec.area) ok = playOnArea(rtFx, presetId, spec, true);
+          else if (spec.area) ok = playOnArea(fxRtFor(presetId), presetId, spec, true);
           else if (isFinite(spec.angle) && num(spec.lineLength, 0) > 0) ok = playDirectional(rtFx, presetId, spec);
           else if (spec.fxKind === 'beam' || spec.fxKind === 'chain') ok = playBeam(rtFx, presetId, spec);
           /* 整份都標了 perspective: false 的（例如天地再造的直立光柱）只投影落點並等比縮放，
@@ -2237,7 +2237,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20261012-rock-pillar-hold';
+  var DATA_VERSION = '20261012-rock-pyramid';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

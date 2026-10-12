@@ -17,15 +17,34 @@ function setup(lv=1){
 }
 function enemy(id,x=40,y=0){return {name:'e'+id,hp:1e9,maxHp:1e9,atk:10,matk:10,def:0,mdef:0,level:1,attr:'wind',resist:{},ctrlRes:0,effects:{},buffs:{},dots:[],pos:{x,y}}}
 const pillars=h=>h.events.filter(s=>s.variant==='rock-pillar');
-test('岩柱：快速升起後完整停留兩秒，再淡出並結束',()=>{
+test('岩柱：寬高增加30%，升起後不再停留，0.5秒內消失',()=>{
  const preset=JSON.parse(fs.readFileSync(path.join(root,'vfx/presets/pillar-rock-spike.json')));
  const nodes=[],rt=Core.createRuntime({resolver:{resolve:id=>id},backend:{createNode(s){const n={s};nodes.push(n);return n},updateNode(n,t){n.t={...t}},destroyNode(n){n.dead=true}}});
  rt.registerPreset(preset);const ref=rt.play(preset.id);
  rt.update(.15);const stone=nodes.find(n=>n.s.layerId==='stone')||nodes[1],grown={...stone.t};
  assert.ok(grown.alpha>.99);assert.ok(grown.scaleY>0);
- rt.update(2);assert.equal(stone.t.scaleY,grown.scaleY);assert.equal(stone.t.alpha,grown.alpha);assert.notEqual(rt.timeOf(ref),null);
- rt.update(.175);assert.ok(stone.t.alpha<grown.alpha);rt.update(.176);assert.equal(rt.timeOf(ref),null);rt.destroy();
+ assert.equal(grown.scaleX*128,26);assert.equal(grown.scaleY*384,78);
+ rt.update(.175);assert.ok(stone.t.alpha<grown.alpha);assert.ok(stone.t.scaleY<grown.scaleY);
+ rt.update(.176);assert.equal(rt.timeOf(ref),null);rt.destroy();
  const h=setup();h.cast([enemy(1)]);for(let i=1;i<=8;i++)h.tick(i*.5);assert.equal(pillars(h).length,32);assert.equal(h.hits.length,8);
+});
+test('岩柱：正式area事件走billboard，各方位／FOV不改柱身大小或垂直角度',()=>{
+ const preset=JSON.parse(fs.readFileSync(path.join(root,'vfx/presets/pillar-rock-spike.json'))),nodes=[];
+ const backend=kind=>({createNode:s=>({s,kind}),updateNode(n,t){nodes.push({kind,t:{...t}})},destroyNode(){},destroy(){}});
+ const a=Runtime.create({core:Core,resolver:{has:()=>true,resolve:id=>id},fxBackend:backend('scene'),billboardBackend:backend('billboard'),ctx:{playerPos:()=>({x:0,y:0}),posOf:()=>({x:0,y:0})}});
+ a.registerPresets([preset]);a.tryPlay({fxKind:'burst',variant:'rock-pillar',area:{x:200,y:100},sizeMult:0,targets:[],vfx:{attack:preset.id}});a.update(.15);
+ assert.ok(nodes.length>0);assert.ok(nodes.every(n=>n.kind==='billboard'));
+ const {extractFunction}=require('./helpers/battle-scene.cjs'),source=fs.readFileSync(path.join(root,'js/battle-renderer.js'),'utf8');
+ const c={Math,Object,isFinite,S:{layers:{world:{x:-20,y:40}}}};vm.createContext(c);
+ for(const name of ['perspectiveLayout','airScreenPose','projectedWarp','depthScaleOf','projectBillboardTransform'])vm.runInContext(extractFunction(source,name),c);
+ const stone=nodes.find(n=>n.t.tint===0xffffff).t;assert.equal(stone.perspective,false);assert.equal(stone.cameraDepth,false);
+ for(const top of [.6,.82,1])for(const [x,y] of [[100,100],[700,100],[100,700],[700,700],[400,400]]){
+  c.S.persp={layout:c.perspectiveLayout(800,800,top)};
+  const out=c.projectBillboardTransform({...stone,x,y,sortY:y}),foot=c.airScreenPose(x,y);
+  assert.equal(out.x,foot.x);assert.equal(out.y,foot.y);assert.equal(out.rotation,0);assert.equal(out.skewX,0);
+  assert.equal(out.scaleX*128,26);assert.equal(out.scaleY*384,78);
+ }
+ a.destroy();
 });
 test('超重岩：24米邊界、每級石化時間與轉地到期還原，取消舊易傷',()=>{
  for(const lv of [1,5,10]){
