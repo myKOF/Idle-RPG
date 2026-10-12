@@ -43,6 +43,11 @@ function mount(opts) {
     vm.runInContext(fs.readFileSync(path.join(root, 'js', f), 'utf8'), c, { filename: 'js/' + f });
   });
   c.isInternalServer = () => internal;   // ui.js 的版本在 vm 裡讀不到 location，直接蓋掉
+  c.confirmHistory = [];
+  c.showConfirmDialog = (msg, ok, opts) => {
+    c.confirmHistory.push({ msg, opts });
+    if (ok) ok();
+  };
   c.els = els;
   c.setPanels = (gems, equip) => {
     c.UI_WORKER_STATE.panels.gems = gems;
@@ -61,16 +66,17 @@ test('符文庫：33 格、持有量與選中符文的合成／拆解狀態', ()
   assert.equal((grid.match(/data-rune-pick=/g) || []).length, 33);
   assert.match(grid, /×7/);
   assert.equal(c.els['rune-total'].textContent, '8');
-  // 預設選第 1 階：可合成（7 ≥ 3）、不可拆解（第 1 階）
+  // 預設選第 1 階：可合成（7 ≥ 3）、不可拆解（第 1 階）；合成按鈕顯示下一階「餘燼」、拆解純顯示「拆解」
   const focus = c.els['rune-focus'].innerHTML;
-  assert.match(focus, /data-rune-act="compose"(?![^>]*disabled)/);
-  assert.match(focus, /data-rune-act="dismantle" disabled/);
+  assert.match(focus, /data-rune-act="compose"(?![^>]*disabled)>合成「餘燼」</);
+  assert.match(focus, /data-rune-act="composeAll"(?![^>]*disabled)>全部合成</);
+  assert.match(focus, /data-rune-act="dismantle" disabled>拆解</);
   assert.match(focus, /用在這些符文真言/);
-  // 選第 5 階（持有 1）：不可合成、可拆解
+  // 選第 5 階（持有 1）：不可合成、可拆解；合成按鈕顯示下一階「毒牙」
   c.selectRune('r05');
   const f5 = c.els['rune-focus'].innerHTML;
-  assert.match(f5, /data-rune-act="compose" disabled/);
-  assert.match(f5, /data-rune-act="dismantle"(?![^>]*disabled)/);
+  assert.match(f5, /data-rune-act="compose" disabled>合成「毒牙」</);
+  assert.match(f5, /data-rune-act="dismantle"(?![^>]*disabled)>拆解</);
   // 符文庫詳情：寫法與真言一致用「基礎值 ×N」；下方是形容這顆符文的文字（不是每顆都一樣的制式說明）；拆解只寫獲得哪一顆
   c.selectRune('r04');
   const f4 = c.els['rune-focus'].innerHTML;
@@ -78,10 +84,10 @@ test('符文庫：33 格、持有量與選中符文的合成／拆解狀態', ()
   assert.match(f4, /rx-flavor[^>]*>「風的聲息稍縱即逝，發出嘆息之悲鳴。」/);
   assert.doesNotMatch(f4, /rx-stat-note|與詞條同一套算法|只能降階頂替/);
   assert.match(f4, /拆解：可獲得 [0-9]+ 顆「霜痕」/);
-  // 第 20 階起只能掉落
+  // 第 20 階起只能掉落：合成按鈕退回「合成」且 disabled
   c.setPanels({ gems: {}, fusedGems: [], runes: { r21: 9 } });
   c.selectRune('r21');
-  assert.match(c.els['rune-focus'].innerHTML, /data-rune-act="compose" disabled/);
+  assert.match(c.els['rune-focus'].innerHTML, /data-rune-act="compose" disabled>合成</);
   assert.match(c.els['rune-focus'].innerHTML, /只能靠擊殺與封魔塔掉落/);
 });
 
@@ -123,15 +129,47 @@ test('圖鑑篩選：級距與「只看材料齊全」', () => {
   assert.match(c.els['rune-codex-count'].textContent, new RegExp('顯示 1 / ' + c.RUNEWORDS.length));
 });
 
-test('按鈕送出對應的符文指令', () => {
+test('按鈕送出對應的符文指令與二次確認彈窗邏輯', () => {
   const c = mount();
-  c.setPanels({ gems: {}, fusedGems: [], runes: { r02: 5 } });
+  c.setPanels({ gems: {}, fusedGems: [], runes: { r02: 5, r19: 1 } });
   c.selectRune('r02');
+  // 1. 單次合成：直接送出，不彈窗
   c.runeUiAction('compose');
+  assert.equal(c.confirmHistory.length, 0);
+  // 2. 全部合成：彈出二次確認，載明合成數量、下一階名稱與消耗當前所有符文
   c.runeUiAction('composeAll');
+  assert.equal(c.confirmHistory.length, 1);
+  assert.match(c.confirmHistory[0].msg, /確定要全部合成嗎？/);
+  assert.match(c.confirmHistory[0].msg, /將合成 1 個「霜痕」符文/);
+  assert.match(c.confirmHistory[0].msg, /並且會消耗所有當前「餘燼」符文/);
+  // 3. 低階（第 2 階，普通）拆解：直接送出，不彈窗
   c.runeUiAction('dismantle');
-  assert.deepEqual(c.sent.map((s) => s.name), ['rune.compose', 'rune.composeAll', 'rune.dismantle']);
-  c.sent.forEach((s) => assert.deepEqual(s.args, { runeId: 'r02' }));
+  assert.equal(c.confirmHistory.length, 1);
+  // 4. 史詩/紫色符文（第 19 階驚蟄）：拆解彈出二次確認
+  c.selectRune('r19');
+  c.runeUiAction('dismantle');
+  assert.equal(c.confirmHistory.length, 2);
+  assert.match(c.confirmHistory[1].msg, /確定要拆解「驚蟄」符文嗎？/);
+  assert.match(c.confirmHistory[1].msg, /此符文為史詩或以上品質/);
+
+  // 指令都成功送出
+  assert.deepEqual(c.sent.map((s) => s.name), ['rune.compose', 'rune.composeAll', 'rune.dismantle', 'rune.dismantle']);
+  assert.deepEqual(c.sent[0].args, { runeId: 'r02' });
+  assert.deepEqual(c.sent[1].args, { runeId: 'r02' });
+  assert.deepEqual(c.sent[2].args, { runeId: 'r02' });
+  assert.deepEqual(c.sent[3].args, { runeId: 'r19' });
+});
+
+test('全部合成與史詩拆解：取消時不送出指令', () => {
+  const c = mount();
+  c.setPanels({ gems: {}, fusedGems: [], runes: { r02: 5, r20: 2 } });
+  c.showConfirmDialog = (msg, ok) => { /* 玩家點擊取消，不呼叫 ok() */ };
+  c.selectRune('r02');
+  c.runeUiAction('composeAll');
+  assert.equal(c.sent.length, 0, '全部合成取消後不送指令');
+  c.selectRune('r20');
+  c.runeUiAction('dismantle');
+  assert.equal(c.sent.length, 0, '史詩符文拆解取消後不送指令');
 });
 
 test('index.html 與 ui.js 的接線：分頁、script／css、面板訂閱、socket 模式符文圖示', () => {
