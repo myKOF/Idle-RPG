@@ -3,6 +3,7 @@
 const columns = [['觸發特效','attack'],['觸發子彈','projectile'],['觸發命中特效','hit'],['觸發地板特效','ground'],['觸發持續場域特效','field']];
 const noteColumn = '特效作用說明';
 const events = {
+  'rockarmor.superRockArt': {roles:['attack','hit'],note:'施放時本體爆發只播石化；四秒內每0.5秒升起4道岩柱，每波最多選4名不同敵人，不足以24米內隨機空地補足。觸發特效在每道岩柱的精確腳底座標播放、保持原尺寸與直立方向；觸發命中特效只播實際命中，不以24米搜敵範圍放大單柱。'},
   'windblade.4': {roles:['projectile','hit'],note:'額外直射小型風刃只讀本階觸發子彈及命中特效；保留主風刃的外觀、航向及各波發射時間。'},
   'windblade.5': {roles:['ground','hit'],note:'追跡小風刃只讀本階觸發地板與命中特效；沿權威位置及轉速持續播放，不另發射直線大風刃。'},
   'windblade.6': {roles:['attack','hit'],note:'大型風刃沿途脈衝只讀本階觸發與命中特效，匹配脈衝半徑；主刃及小風刃不繼承爆點。'},
