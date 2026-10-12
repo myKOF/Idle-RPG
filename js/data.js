@@ -2268,6 +2268,8 @@ var GEM_TYPES = {
   garnet: { name: '石榴石', emoji: '🟠', stat: 'critDmg', statName: '暴擊傷害%', base: 5, pct: true },
   opal: { name: '蛋白石', emoji: '🩵', stat: 'aspd', statName: '攻擊速度%', base: 1.5, pct: true },
   onyx: { name: '黑曜石', emoji: '⚫', stat: 'lifesteal', statName: '吸血', base: 1, pct: false },
+  /* 吸魔（吸血寶石的對位）：效果為黑曜石的 1/3，每次對敵人造成傷害回復的法力定值。linear：1~5 階 0.5/1/1.5/2/2.5、6 階起每階 ×2（5/10/20/40/80）。 */
+  manastone: { name: '魔晶石', emoji: '🟪', stat: 'manaSteal', statName: '吸魔', base: 0.5, pct: false, linear: true },
   moonstone: { name: '月光石', emoji: '🌙', stat: 'evasion', statName: '閃避率%', base: 1, pct: true },
   catseye: { name: '貓眼石', emoji: '👁️', stat: 'hit', statName: '命中率%', base: 1.5, pct: true },
   sunstone: { name: '太陽石', emoji: '☀️', stat: 'luck', statName: '幸運值', base: 1.5, pct: false },
