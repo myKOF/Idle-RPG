@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { loadRuneEnv, makeItem, fillRunes, wordItem } = require('./helpers/runeword-env.cjs');
+const { loadRuneEnv, makeItem, fillRunes, wordItem, rarityForSlots } = require('./helpers/runeword-env.cjs');
 // vm 內建立的物件原型與測試端不同，deepStrictEqual 會因此誤判；一律先轉成純 JSON 再比
 const plain = (x) => JSON.parse(JSON.stringify(x));
 
@@ -41,7 +41,7 @@ function vmSet(c, name, value) { require('node:vm').runInContext(name + ' = ' + 
 
 test('socketRune：扣庫存、鑲進第一個空符文孔；庫存不足／已有符文／孔位不合法／沒有符文孔一律拒絕且不扣', () => {
   const c = loadRuneEnv();
-  const it = makeItem(c, { rarity: 5 });
+  const it = makeItem(c, { rarity: rarityForSlots(c, 4) });      // 剛好 4 孔的最低稀有度
   assert.equal(c.runeSlotCountFor(it), 4);
   assert.equal(c.socketRune(it, 'r01'), '符文不足');
   c.addRune('r01', 2);
@@ -95,7 +95,7 @@ test('抹除費用：符文階數越高、裝備稀有度越高越貴，一律�
 test('符文孔放滿：放不下的被拒；孔數隨稀有度（RARITIES.runeSlots，配置表 game_parameters 的參數g）', () => {
   const c = loadRuneEnv();
   c.addRune('r01', 9);
-  const it = makeItem(c, { rarity: 3 });                    // 獨特：2 孔
+  const it = makeItem(c, { rarity: rarityForSlots(c, 2) });    // 剛好 2 孔的最低稀有度
   assert.equal(c.runeSlotCountFor(it), 2);
   assert.equal(c.socketRune(it, 'r01'), null);
   assert.equal(c.socketRune(it, 'r01'), null);
@@ -144,7 +144,8 @@ test('神鑄素材取回（forgeReclaimSockets）同樣退回符文', () => {
 
 test('舊版（符文與寶石共用鑲孔）的存檔：rwMigrateSocketRunes 把符文搬進符文孔，放不下的退回庫存，冪等', () => {
   const c = loadRuneEnv();
-  const it = makeItem(c, { rarity: 3 });                    // 2 個符文孔
+  const it = makeItem(c, { rarity: rarityForSlots(c, 2) });  // 2 個符文孔
+  assert.equal(c.runeSlotCountFor(it), 2);
   it.sockets = [{ rune: 'r01' }, { rune: 'r02' }, { rune: 'r03' }, { type: 'ruby', level: 1 }];
   assert.equal(c.rwMigrateSocketRunes(it), true);
   assert.deepEqual(plain(it.runes), ['r01', 'r02']);
@@ -201,9 +202,9 @@ test('符文真言：多組同時符合時取符文數最多者；符文孔不�
   const c = loadRuneEnv();
   // 創造一組臨時的長配方，包含「初啼」r01→r02 作為前綴
   c.RUNEWORDS.push({ id: 'rw_test_long', name: '測試長配方', tier: 1, runes: ['r01', 'r02', 'r03'], bases: ['mainHand'], stats: [['atkFlat', 1]] });
-  const it = fillRunes(makeItem(c, { rarity: 5 }), ['r01', 'r02', 'r03']);
+  const it = fillRunes(makeItem(c, { rarity: rarityForSlots(c, 3) }), ['r01', 'r02', 'r03']);
   assert.equal(c.rwActiveWord(it).word.id, 'rw_test_long');
-  const small = makeItem(c, { rarity: 3 });                              // 獨特＝2 孔
+  const small = makeItem(c, { rarity: rarityForSlots(c, 2) });           // 2 孔
   c.addRune('r01', 1); c.addRune('r02', 1); c.addRune('r03', 1);
   ['r01', 'r02', 'r03'].forEach((id) => c.socketRune(small, id));
   assert.equal(c.rwActiveWord(small).word.id, 'rw_firstcry', '第 3 顆放不下，只成形 2 顆的配方');
@@ -699,7 +700,7 @@ test('野外掉落：符文入庫並回報字串；符文掉落率加成會放�
 
 test('符文孔 HTML：符文顯示字形與實際數值；成形時列出符文真言全部效果；差一顆時提示配方；寶石鑲孔不再混入符文', () => {
   const c = loadRuneEnv();
-  const it = makeItem(c, { rarity: 5 });
+  const it = makeItem(c, { rarity: rarityForSlots(c, 4) });
   it.runes[0] = 'r06';
   let html = c.itemRuneHTML(it, null);
   assert.match(html, /符文孔 1／4/);
