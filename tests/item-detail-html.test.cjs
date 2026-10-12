@@ -136,8 +136,8 @@ test('一般詳情寶石逐孔純顯示，切到鑲嵌才有原取下索引', ()
   const html = c.itemDetailHTML(it, null, {});
   assert.match(html, /寶石鑲孔/);
   assert.equal((html.match(/class="socket /g) || []).length, 4);
-  assert.match(html, /鑲孔 1（空）/);
-  assert.match(html, /鑲孔 4（空）/);
+  assert.match(html, /寶石鑲孔 1（空）/);
+  assert.match(html, /寶石鑲孔 4（空）/);
   assert.doesNotMatch(html, /data-socket-remove|點擊取下/);
   const mode = c.itemDetailHTML(it, null, { socket: { active: true, selIdx: 0 } });
   assert.deepEqual(mode.match(/data-socket-remove="\d+"/g), ['data-socket-remove="1"', 'data-socket-remove="2"']);

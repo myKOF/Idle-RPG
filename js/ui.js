@@ -5686,7 +5686,7 @@ function renderDetail() {
       actionBar.innerHTML =
         '<button class="btn btn-primary" disabled>強化</button>' +
         '<button class="btn" disabled>洗煉</button>' +
-        '<button class="btn" disabled>鑲嵌</button>' +
+        '<button class="btn" disabled>寶石</button>' +
         '<button class="btn" disabled>符文</button>' +
         '<button class="btn btn-icon" disabled aria-label="卸下">' + EQUIP_UNEQUIP_ICON + '</button>';
       actionBar.style.display = 'flex';
@@ -5761,7 +5761,7 @@ function renderDetail() {
     rrAttrs += pendingUiButtonAttributes(pendingKey);
   }
   actionsHtml += '<button class="btn' + (rerollMode ? ' btn-primary act-btn-tooltip' : '') + '" data-act="' + (rerollMode ? 'reroll-affix' : 'toggle-reroll') + '"' + rrAttrs + '>洗煉</button>';
-  actionsHtml += '<button class="btn' + (socketMode ? ' btn-primary' : '') + '" data-act="toggle-socket" aria-pressed="' + (matMode === 'socket') + '">鑲嵌</button>';
+  actionsHtml += '<button class="btn' + (socketMode ? ' btn-primary' : '') + '" data-act="toggle-socket" aria-pressed="' + (matMode === 'socket') + '">寶石</button>';
   if (runeMode && Object.keys(runeMode.draft).length) {
     /* 有暫放的符文：「符文」鈕變「刻印」，按下才真的鑲上 */
     actionsHtml += '<button class="btn btn-primary act-btn-tooltip" data-act="engrave-rune" data-tip="' + esc('刻印：把暫放的 ' + Object.keys(runeMode.draft).length + ' 顆符文鑲上（鑲上後要抹除才能取下，抹除需要費用）') + '"' + pendingUiButtonAttributes(pendingKey) + '>刻印</button>';
