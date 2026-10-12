@@ -708,13 +708,13 @@ function itemSocketHTML(it, mode) {
       text = '<span class="sk-name">' + (si + 1) + '. ' + gemIconHTML(g.type, g.level, 'gi-inline') + ' ' + esc(GEM_NAMES[g.level] + gt.name) + '</span>' +
         '<span class="sk-val">' + esc(gt.statName.replace('%', '')) + ' +' +
         (gt.pct ? pctStr(gemStatValue(g.type, g.level)) : fmt(gemStatValue(g.type, g.level))) + '</span>';
-    } else text = '◇ 鑲孔 ' + (si + 1) + '（空）';
+    } else text = '◇ 寶石鑲孔 ' + (si + 1) + '（空）';
     var cls = 'socket ' + (g ? 'filled' + (g.fused ? ' fused-socket' : '') : 'empty');
     if (mode) {
       h += '<div class="' + cls + ' socket-row' + (mode.selIdx === si ? ' is-socket-selected' : '') + '">' +
         '<button type="button" class="socket-pick" data-socket-pick="' + si + '" aria-pressed="' + (mode.selIdx === si) + '"' +
         (mode.pending ? ' disabled' : '') + '>' + text + '</button>';
-      if (g) h += '<button type="button" class="socket-remove" data-socket-remove="' + si + '" aria-label="卸下鑲孔 ' + (si + 1) + ' 的寶石"' +
+      if (g) h += '<button type="button" class="socket-remove" data-socket-remove="' + si + '" aria-label="卸下寶石鑲孔 ' + (si + 1) + ' 的寶石"' +
         (mode.pending ? ' disabled' : '') + '>卸下</button>';
       h += '</div>';
     } else {

@@ -8,8 +8,11 @@
 - **裝備詳情面板寶石鑲孔高度縮短（`css/ashen-forge.css`）**：
   - 在 `#tab-equip #detail-pane .it-sockets:not(.it-runes) .socket:not(.socket-row)` 設定 `padding: 1.5px 8px; line-height: 18px;`，行內寶石圖標微調為 `width: 1.35em; height: 1.35em; vertical-align: -0.32em;`，使唯讀檢視下的寶石列高度由 28px 精確縮短 3px 至 25px。
   - 明確排除 `.socket-row`，確保點擊「鑲嵌」切換至寶石鑲嵌介面（圖 3）時，按鈕列維持原有 `min-height: 30px;`、`padding: 4px 8px;` 與「卸下」操作熱區不變。
+- **空孔描述與頁籤名稱統一（`js/item.js`、`js/ui.js`）**：
+  - 將未鑲嵌寶石之空孔標籤文字由「◇ 鑲孔 N（空）」改為「◇ 寶石鑲孔 N（空）」，卸下按鈕之無障礙說明同步更新為「卸下寶石鑲孔 N 的寶石」，與上方的「◇ 符文孔 N（空）」格式保持對稱統一。
+  - 將裝備詳情操作列底部的鑲嵌切換按鈕文字由「鑲嵌」改為「寶石」，與相鄰的「符文」按鈕風格對齊一致。
 - **單元測試（`tests/gem-socket-height-compact.test.cjs`）**：
-  - 新增專屬單元測試，驗證裝備 tips 與裝備詳情之緊湊樣式規則、排除 `.it-runes` 與 `.socket-row` 之選擇器精確度，以及鑲嵌介面操作行之尺寸完整性。
+  - 新增專屬單元測試，驗證裝備 tips 與裝備詳情之緊湊樣式規則、排除 `.it-runes` 與 `.socket-row` 之選擇器精確度、空孔「◇ 寶石鑲孔」標籤文字，以及操作列「寶石」按鈕命名。
 
 ## 彈窗關閉按鈕 .modal-x 層級提升與觸碰熱區擴展（Antigravity 2026-10-12）
 
