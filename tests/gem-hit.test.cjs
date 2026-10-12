@@ -40,10 +40,9 @@ test('命中寶石存在，且與月光石（閃避）成對', () => {
   assert.ok(gem, '缺少命中寶石');
   assert.equal(gem.stat, 'hit');
   assert.equal(gem.pct, true);
-  // 與對位的閃避寶石維持同一種成長曲線（非 linear），只有基礎值不同
-  assert.equal(!!gem.linear, !!context.GEM_TYPES.moonstone.linear);
-  assert.ok(gem.base > context.GEM_TYPES.moonstone.base,
-    '命中每點價值低於閃避（玩家命中基礎已有 100%），基礎值應高於月光石');
+  // 命中每點價值低於閃避（玩家命中基礎已有 100%），1 階數值應高於月光石
+  assert.ok(gem.values[0] > context.GEM_TYPES.moonstone.values[0],
+    '命中每點價值低於閃避，1 階數值應高於月光石');
 });
 
 test('鑲上命中寶石會實際提高 st.hit，數值等於該階級的寶石值', () => {

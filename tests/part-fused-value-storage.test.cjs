@@ -103,11 +103,11 @@ test('素材倍率：5 階＝1 倍，每高 1 階 ×2', () => {
   assert.equal(c.fusedStatValue(m7.stats[0]), c.gemStatValue('topaz', 7));
 });
 
-test('調整寶石 base 後，融合寶石數值等比跟著變（gemAttrDmgBaseV1 那類遷移不再需要）', () => {
+test('調整寶石 5 階數值後，融合寶石數值等比跟著變（gemAttrDmgBaseV1 那類遷移不再需要）', () => {
   const c = loadContext();
   const fg = { id: 'f1', level: 5, fusions: 1, leaves: 2, stats: [{ type: 'topaz', mult: 1.6 }] };
   const before = c.fusedStatValue(fg.stats[0]);
-  c.GEM_TYPES.topaz.base *= 0.4;               // 模擬 base 下修（0.5 → 0.2 那次的縮放比）
+  c.GEM_TYPES.topaz.values[c.GEM_MAX_LEVEL - 1] *= 0.4; // 模擬 5 階數值下修
   assert.equal(c.fusedStatValue(fg.stats[0]), Math.round(before * 0.4 * 100) / 100);
   assert.equal(fg.stats[0].mult, 1.6, '倍率不因參數調整而變動');
 });

@@ -53,7 +53,7 @@ test('寶石：黑曜石是定值吸血，數值沿用舊百分比、顯示不�
   assert.equal(g.stat, 'lifesteal');
   assert.equal(g.pct, false);
   assert.doesNotMatch(g.statName, /%/);
-  assert.equal(g.base, 1);
+  assert.equal(g.values[0], 1);
   c.G.equipment.chest = item([], { sockets: [{ type: 'onyx', level: 3 }] });
   assert.equal(c.computeStats().lifesteal, c.gemStatValue('onyx', 3));
 });

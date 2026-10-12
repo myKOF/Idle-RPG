@@ -49,13 +49,11 @@ test('穿透寶石存在，物穿／魔穿各一，走線性曲線', () => {
     assert.ok(gem, '缺少' + g.name);
     assert.equal(gem.stat, g.stat);
     assert.equal(gem.pct, true);
-    assert.equal(gem.linear, true, '穿透寶石走 linear 曲線，不是一般寶石的超線性曲線');
-    assert.equal(gem.base, 10);
+    assert.deepEqual(Array.from(gem.values), [10, 20, 30, 40, 50, 100, 200, 400, 800, 1600]);
   });
   // 兩顆是對位關係：除了 stat 之外的數值設定必須完全一致
   const p = context.GEM_TYPES.piercePhys, m = context.GEM_TYPES.pierceMagic;
-  assert.equal(p.base, m.base);
-  assert.equal(p.linear, m.linear);
+  assert.deepEqual(Array.from(p.values), Array.from(m.values));
 });
 
 test('1~10 階數值 = 10/20/30/40/50/100/200/400/800/1600（需求指定值）', () => {
@@ -120,6 +118,6 @@ test('穿透寶石納入戰力評分，並自動進入掉落／商店／合成�
 test('Gems 表已同步兩列，套用參數時不會把寶石洗掉', () => {
   const csv = fs.readFileSync(path.join(root, 'config/CSV/Gems.csv'), 'utf8');
   // config_tables --apply 會由這張表重建 GEM_TYPES；表裡沒有就等於刪掉
-  assert.match(csv, /^piercePhys,穿甲寶石,.*,pPen,物理穿透%,10,TRUE,TRUE$/m);
-  assert.match(csv, /^pierceMagic,穿魔寶石,.*,mPen,魔法穿透%,10,TRUE,TRUE$/m);
+  assert.match(csv, /^piercePhys,穿甲寶石,.*,pPen,物理穿透%,TRUE,10,20,30,40,50,100,200,400,800,1600\r?$/m);
+  assert.match(csv, /^pierceMagic,穿魔寶石,.*,mPen,魔法穿透%,TRUE,10,20,30,40,50,100,200,400,800,1600\r?$/m);
 });

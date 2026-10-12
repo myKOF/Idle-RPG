@@ -35,11 +35,10 @@ function loadSaveContext() {
   return context;
 }
 
-test('六種屬性傷害寶石 base 皆為 1', () => {
+test('六種屬性傷害寶石 1~10 階為 1/2/3/4/5/10/20/40/80/160', () => {
   const c = loadFormulaContext();
   for (const t of ['spinel', 'aquamarine', 'amazonite', 'peridot', 'citrine', 'tourmaline']) {
-    assert.equal(c.GEM_TYPES[t].base, 1, t + ' base 應為 1');
-    assert.equal(c.GEM_TYPES[t].linear, true);
+    assert.deepEqual(Array.from(c.GEM_TYPES[t].values), [1, 2, 3, 4, 5, 10, 20, 40, 80, 160], t);
   }
 });
 

@@ -1019,8 +1019,6 @@ scalar('formula', 'AFFIX_REROLL_UPPER_BASE_WEIGHT', '7-洗煉', '數值洗煉分
 scalar('formula', 'AFFIX_REROLL_BIAS_EXPONENT', '7-洗煉', '數值洗煉分段權重', 2);
 
 /* ---- §8 寶石 ---- */
-objFieldML('formula', 'GEM_VALUE = {', 'perLevel', '8-寶石', '能力數值(1~5階)', 0, '寶石每階增量');
-objFieldML('formula', 'GEM_VALUE = {', 'forgeBase', '8-寶石', '能力數值(6~10階神鑄)', 0, '寶石神鑄底');
 objFieldML('formula', 'FORGE_GEM_COST = {', 'base', '6-神鑄', '寶石神鑄金幣', 0, '寶石神鑄金-基');
 objFieldML('formula', 'FORGE_GEM_COST = {', 'perTier', '6-神鑄', '寶石神鑄金幣', 0, '寶石神鑄金-每階');
 /* 寶石商店升級費用改由 data.js 的三個具名常數承接（見上方 GEM_SHOP_UPGRADE_* 的 scalar），

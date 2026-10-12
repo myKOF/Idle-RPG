@@ -2265,25 +2265,12 @@ function salvageSlotUnlockCost(currentSlots) {
    §8 寶石
    ============================================================ */
 
-/* 寶石能力數值：
-   1~5 階（一般）= base × 等級 × (1 + 0.2 × (等級-1))
-   6~10 階（神鑄）= 五階數值 × 2^(階級-5)（每高 1 階能力 ×2）
-   linear 標記（對屬性敵人傷害／屬性傷害提升等寶石）：1~5 階 = base × 等級（線性，無超線性放大）；6 階起同樣每階 ×2 */
-/* 寶石能力數值：一般階 = 基底 × 階級 × (1 + 每階增量 × (階級-1))；
-   神鑄階（超過一般上限）以一般上限的值為底，每高一階乘以 forgeBase。 */
-var GEM_VALUE = { perLevel: 0.2, forgeBase: 2 };
+/* 寶石能力值：直接查 GEM_TYPES[type].values（1~10 階逐階寫在配置表 Gems 的「1級～10級」欄），
+   不再用基礎值／線性公式推算。階數夾在 1~10；values 缺項視為 0。 */
 function gemStatValue(type, level) {
-  var g = GEM_TYPES[type];
-  if (g.linear) {
-    var lin5 = g.base * GEM_MAX_LEVEL;
-    if (level > GEM_MAX_LEVEL) return Math.round(lin5 * Math.pow(2, level - GEM_MAX_LEVEL) * 100) / 100;
-    return Math.round(g.base * level * 100) / 100;
-  }
-  if (level > GEM_MAX_LEVEL) {
-    var base5 = g.base * GEM_MAX_LEVEL * (1 + GEM_VALUE.perLevel * (GEM_MAX_LEVEL - 1));
-    return Math.round(base5 * Math.pow(GEM_VALUE.forgeBase, level - GEM_MAX_LEVEL) * 10) / 10;
-  }
-  return Math.round(g.base * level * (1 + GEM_VALUE.perLevel * (level - 1)) * 10) / 10;
+  var vals = GEM_TYPES[type].values;
+  var lv = Math.max(1, Math.min(GEM_FORGE_MAX_LEVEL, Math.floor(level) || 1));
+  return Number(vals && vals[lv - 1]) || 0;
 }
 /* ---- 融合寶石的屬性數值 ----
    融合寶石的數值來自整條融合樹的隨機遞迴（每次融合取 rnd(較小值, 較大值×2)），

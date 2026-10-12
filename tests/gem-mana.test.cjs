@@ -43,18 +43,15 @@ test('法力寶石存在，且與生命側的黃玉／綠寶石成對', () => {
   assert.ok(mpRegen, '缺少法力恢復寶石');
   assert.equal(mp.stat, 'mpFlat');
   assert.equal(mpRegen.stat, 'mpRegen');
-  // 定值寶石（非百分比），與對位的黃玉／綠寶石維持同一種成長曲線（非 linear）
+  // 定值寶石（非百分比）
   assert.equal(mp.pct, false);
   assert.equal(mpRegen.pct, false);
-  assert.equal(!!mp.linear, !!context.GEM_TYPES.topaz.linear);
-  assert.equal(!!mpRegen.linear, !!context.GEM_TYPES.emerald.linear);
 });
 
 test('法力恢復寶石 Lv.1 至少為 1，且整體約為生命恢復寶石的三分之一', () => {
   const context = loadGameContext();
   const mpRegen = context.GEM_TYPES.kyanite;
   const hpRegen = context.GEM_TYPES.emerald;
-  assert.equal(mpRegen.base, 1);
   assert.equal(context.gemStatValue('kyanite', 1), 1);
   assert.equal(context.gemStatValue('kyanite', 10), 288);
   assert.equal(context.gemStatValue('emerald', 10), 864);
