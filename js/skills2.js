@@ -7464,7 +7464,9 @@ function sgTickEarthguardRevival(pEnt) {
     : Math.max(0, Math.min(1, (GT - r.startAt) / (r.endAt - r.startAt)));
   pEnt.hp = getStats().hp * progress;
   if (progress < 1) return true;
-  pEnt.hp = getStats().hp;
+  var st = getStats();
+  pEnt.hp = st.hp;
+  pEnt.mp = st.mp;
   delete pEnt._sgRevival;
   SKILL2_RT.earthguardRevival = null;
   sgApplySlot(pEnt, 'earthguard', '7', 'self', 0, { dur: r.invulnSec });

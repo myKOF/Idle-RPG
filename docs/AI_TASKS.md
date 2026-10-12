@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## REVIVE-FULL-MANA-20261012 — 死亡復活補滿法力
+
+- Owner：Codex；Done，單一開發者，使用者要求角色死亡復活時法力也補滿。野外一般復活與高塔戰敗返回野外已有補滿；補齊天地共生完成瞬間與符文輪迴。前置已完成，後續使用者驗收。
+- 允許：js/skills2.js、js/runeword.js、tests/earthguard-revival.test.cjs、tests/runeword-engine.test.cjs、index／bridge／Worker快取及本紀錄。禁止其他數值、配置、素材、Protocol／存檔。預檢無衝突、工作區乾淨；不屈鬥魂與其他免死不屬死亡復活，不補魔。
+- 驗收：原生死亡出口／野外／高塔、復甦倒數期間保留MP、完成時按當下上限補滿、不經溢出轉盾、冷卻拒絕時不補魔、Worker面板、既有免死保護。基線node --test（death-revive-restore、earthguard-revival、indomitable-revival、field-death-retreat、skill-cooldown-death、runeword-engine）60/60通過；Build與diff check。
+
+
+- 完成：天地共生在復甦完成時直接將MP設為當下st.mp；輪迴成功復活時直接補滿MP，失敗不變。一般野外／高塔戰敗原已補滿，未改；不屈鬥魂及其他免死不補魔。修改8檔為上述允許範圍；唯讀檢查combat／tower／formula／potential、死亡相關測試、Worker shim／Protocol，無素材或配置／存檔變更。
+- 驗證：上述六檔node --test共60/60，與修改前同為全通過；新斷言驗倒數中MP7／3不變、復活時補滿、輪迴冷卻拒絕保留MP3及再次成功補滿、野外／塔戰死亡出口與Worker面板。npm.cmd run build全檔通過，diff check通過。主頁skills2 1.0.301、runeword1.0.10、bridge1.0.256；Worker入口與兩份import同20261012-revive-full-mana，Protocol50不變。
+- 交付：本紀錄所在[Codex] fix提交，無未完成項、無已知新增風險，可供合併，未合併／推送；未做本輪瀏覽器真人長戰驗收。素材庫無本次變更、無需Commit。後續重新載入遊戲驗收。
+
 ## STORM-MOUNTAIN-HEAL-20261012 — 嵐之山擊殺改為直接回復生命
 
 - Owner：Codex；Done，單一開發者。使用者要求風刃擊殺敵人時由護盾改為直接回復生命；保留原最大生命比例與每級成長、雙屬性及風刃其他機制。前置已完成，後續使用者驗收／整合。

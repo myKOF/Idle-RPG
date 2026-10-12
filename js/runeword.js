@@ -842,6 +842,7 @@ function rwTryRevive(pEnt) {
   if (GT < rt.reviveReadyAt) return false;
   rt.reviveReadyAt = GT + (fx.reviveCdSec || 0);
   pEnt.hp = Math.max(1, st.hp * Math.min(100, fx.reviveHpPct) / 100);
+  pEnt.mp = st.mp;
   if (typeof cleanse === 'function') cleanse(pEnt);
   if (fx.reviveInvulnSec > 0) applyStatus(pEnt, 'invuln', { dur: fx.reviveInvulnSec });
   if (fx.reviveDmgPct > 0 && fx.reviveDmgSec > 0) {
