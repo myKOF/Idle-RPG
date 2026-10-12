@@ -1,5 +1,16 @@
 # PATCH.md
 
+## 裝備 tips 與裝備詳情之寶石鑲孔顯示高度與外框緊湊化（Antigravity 2026-10-12）
+
+- **裝備 tips 寶石鑲孔高度縮短（`css/ashen-forge.css`）**：
+  - 在 `#sk-tooltip .it-sockets:not(.it-runes) .socket` 與 `.equip-detail-card .it-sockets:not(.it-runes) .socket` 設定 `padding: 1px 8px; line-height: 18px;`，行內寶石圖標（單顆 `.gem-ico.gi-inline` 與融合 `.gem-ico-fused.gi-inline`）微調為 `width: 1.35em; height: 1.35em; vertical-align: -0.32em;`，使寶石效果行與外框整體高度由原本約 27.6px 縮短約 3.3px 至約 24.3px，節省提示卡片縱向空間。
+  - 透過 `:not(.it-runes)` 保留符文孔原有之尺寸與橫幅排版，不受此調整影響。
+- **裝備詳情面板寶石鑲孔高度縮短（`css/ashen-forge.css`）**：
+  - 在 `#tab-equip #detail-pane .it-sockets:not(.it-runes) .socket:not(.socket-row)` 設定 `padding: 1.5px 8px; line-height: 18px;`，行內寶石圖標微調為 `width: 1.35em; height: 1.35em; vertical-align: -0.32em;`，使唯讀檢視下的寶石列高度由 28px 精確縮短 3px 至 25px。
+  - 明確排除 `.socket-row`，確保點擊「鑲嵌」切換至寶石鑲嵌介面（圖 3）時，按鈕列維持原有 `min-height: 30px;`、`padding: 4px 8px;` 與「卸下」操作熱區不變。
+- **單元測試（`tests/gem-socket-height-compact.test.cjs`）**：
+  - 新增專屬單元測試，驗證裝備 tips 與裝備詳情之緊湊樣式規則、排除 `.it-runes` 與 `.socket-row` 之選擇器精確度，以及鑲嵌介面操作行之尺寸完整性。
+
 ## 彈窗關閉按鈕 .modal-x 層級提升與觸碰熱區擴展（Antigravity 2026-10-12）
 
 - **關閉按鈕層級防遮擋（`css/style.css`）**：

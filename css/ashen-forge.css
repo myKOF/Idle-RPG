@@ -1717,6 +1717,18 @@ html *::-webkit-scrollbar-corner {
 
 #tab-equip #detail-pane .it-sockets .socket.filled:not(.socket-row) { cursor: default; }
 
+/* 裝備詳情：寶石鑲孔顯示高度與外框縮短約 3px（唯讀檢視，不影響鑲嵌分頁 .socket-row） */
+#tab-equip #detail-pane .it-sockets:not(.it-runes) .socket:not(.socket-row) {
+  padding: 1.5px 8px;
+  line-height: 18px;
+}
+
+#tab-equip #detail-pane .it-sockets:not(.it-runes) .socket:not(.socket-row) :is(.gem-ico.gi-inline, .gem-ico-fused.gi-inline) {
+  width: 1.35em;
+  height: 1.35em;
+  vertical-align: -0.32em;
+}
+
 #tab-equip #detail-pane .sk-val {
   color: #d6d0c3;
 }
@@ -2034,6 +2046,20 @@ html *::-webkit-scrollbar-corner {
 
 .it-sockets .socket .sk-val {
   margin-left: .5em;
+}
+
+/* 裝備tips：寶石效果顯示高度與外框縮短約 3px */
+#sk-tooltip .it-sockets:not(.it-runes) .socket,
+.equip-detail-card .it-sockets:not(.it-runes) .socket {
+  padding: 1px 8px;
+  line-height: 18px;
+}
+
+#sk-tooltip .it-sockets:not(.it-runes) .socket :is(.gem-ico.gi-inline, .gem-ico-fused.gi-inline),
+.equip-detail-card .it-sockets:not(.it-runes) .socket :is(.gem-ico.gi-inline, .gem-ico-fused.gi-inline) {
+  width: 1.35em;
+  height: 1.35em;
+  vertical-align: -0.32em;
 }
 
 /* ==== 兩欄佈局（2026-10，照設計稿）：左側屬性欄收進「角色」分頁，分頁列改為面板左側的圖示導覽列 ====
