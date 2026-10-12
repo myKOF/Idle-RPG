@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## STORM-MOUNTAIN-HEAL-20261012 — 嵐之山擊殺改為直接回復生命
+
+- Owner：Codex；Done，單一開發者。使用者要求風刃擊殺敵人時由護盾改為直接回復生命；保留原最大生命比例與每級成長、雙屬性及風刃其他機制。前置已完成，後續使用者驗收／整合。
+- 允許修改：js/skills2.js、Skills2 Excel／CSV、tests/storm-mountain.test.cjs、index.html、js/bridge.js與Worker import快取、本紀錄；禁止其他技能數值、素材、Protocol／存檔。預檢無其他副本／分支來源；既有同副本修改依使用者保留授權分段提交。
+- 驗收：擊殺與非擊殺、Lv1／Lv10、滿血／接近滿血、護盾效率與禁盾不影響回復、停用／其他技能、重複擊殺保護、高塔飄字及正式Worker事件；保留獨立溢出轉換技能。Excel原生更新及正常重開、公式／格式保留，配置往返、回歸及Build。基線44項33通過／11失敗，記錄於臨時測試輸出供名稱比對。
+
+- 完成／修改8檔：上述程式、Skills2 Excel／CSV、快取、tests/storm-mountain.test.cjs與本紀錄。擊殺掛點改sgWindbladeKillHeal，使用healPlayer(...,{noShield:true})，只顯示實際增加生命的heal飄字及數值；非擊殺／重複命中死亡目標／未選超神／其他技能／死亡／復甦不回復。滿血不走一般治療溢出轉盾；光耀之堂等獨立溢出掛點保留。配置shieldPct／shieldPctPer改名healPct／healPctPer，原2／0.2不變，沿base＋per×level，Lv1為2.2%、Lv10為4%。雙屬性／傷害／數量／飛行演出不變。
+- Excel：工作檔及提交副本都由原生Excel API僅改本列3格，正常重開RepairMode=false；230條公式與其他格資料、修改格樣式及繪圖數不變。另唯讀檢查提交xlsx內全部儲存格style索引、styles.xml、公式、欄寬／行屬性／凍結視圖／合併／資料驗證／篩選均與HEAD一致；沒有手工寫XML。提交Excel與CSV逐位元往返一致，config_tables --apply Skills2語意變更0。
+- 測試指令：node --test tests/storm-mountain.test.cjs tests/hall-of-radiance.test.cjs tests/worker-protocol.test.cjs，33/33；其中嵐之山15/15。涵蓋Lv1／Lv10回血22／40、非擊殺不回復、接近滿血只顯示實際5點、滿血與既有盾不增加、禁盾及效率不干涉、其他技能／卸下／死亡／復甦、獨立overflow掛點與可調配置、正式sim engine的大小刃／追蹤刃／脈衝擊殺與Worker heal事件damageValue=22、既有Runtime位置／航向／尺寸與生命週期。以唯讀載入分段提交skills2副本重跑同33項全通過。
+- 擴大回歸：node --test --test-reporter=tap tests/storm-mountain.test.cjs tests/storm-myriad.test.cjs tests/skill2-windblade-vacuum-legendary.test.cjs，45項34通過／11既有失敗；修改前44項33通過／11失敗，失敗名稱差集0，主要為舊風刃／真空斬數值或機制期望，未放寬無關斷言。npm.cmd run build：496檔全通過；diff check通過。
+- 快取：skills2 1.0.300、bridge1.0.255；Worker入口與skills2 import同20261012-storm-mountain-heal，Protocol50不變。唯讀檢查AI規範／prompts/codex.md、js/formula.js／util.js／combat.js／ui.js、Worker shim／Protocol、sim engine、配置與Excel原生工具、其他風刃回歸檔；上述檔案未改。未進行本輪瀏覽器實機或真人長時間戰鬥驗收；計算與Worker飄字／正式Runtime皆已回歸。
+- 交付：本紀錄所在[Codex] fix提交即遊戲Commit，無本次未完成項，可供審查合併；不合併／推送。素材未改、素材庫無需Commit，無外部素材或特效新來源。使用者現有Gems／data／Skills2其他技能／岩柱調整原樣保留未提交；僅本次嵐之山分段staging。已知風險為上述11既有回歸失敗，下一步重新載入遊戲驗收擊殺回血。
 ## INDOMITABLE-GUARD-20261012 — 不屈鬥魂致命傷免死與擊退暈眩
 
 - Owner：Codex；Done，單一開發者。使用者要求面臨死亡時擊退30米內敵人並暈眩3秒、無敵護盾基礎2.5秒／每級+0.25秒，自身冷卻60秒／每級-2秒；觸發不算死亡，原戰鬥立即繼續。沿既有base＋per×level；保留1HP、不清場／退關／停戰，不再升空復甦、漸進回血、地傷爆發或反擊轉地。
