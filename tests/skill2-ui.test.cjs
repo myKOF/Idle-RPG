@@ -431,7 +431,39 @@ test('戰鬥快捷列：主動型被動帶 active-passive class，不套冷卻�
   assert.match(css, /prefers-reduced-motion[\s\S]*?\.battle-skill-slot\.active-passive::before\s*\{[\s\S]*?animation:\s*none/);
 });
 
+test('技能上方的mp消耗顯示當前最高階技能的mp（含超神進化、一般階級與手動瀏覽不同階級時）', () => {
+  const c = loadContext();
+  const progressMax = { level: 900, reinc: 1 };
+  // 1. 僅學第 1 階：顯示第 1 階消耗 (25 MP)
+  const snap1 = snapshot({ waterball: [1, 0, 0, 0, 0, 0, 0] }, { skills2: { levels: { waterball: [1, 0, 0, 0, 0, 0, 0] }, progress: progressMax } });
+  let h1 = c.sgbDetailHTML('waterball', snap1, { player: { gold: 1e15 } });
+  assert.match(h1, /<span class="sgb-meta"[^>]*>🔵 25 MP　⏱️ 8s<\/span>/);
+
+  // 2. 七階全滿但未點超神：顯示第 7 階消耗 (3000 MP)
+  const snap7 = snapshot({ waterball: Array(7).fill(10) }, { skills2: { levels: { waterball: Array(7).fill(10) }, progress: progressMax } });
+  let h7 = c.sgbDetailHTML('waterball', snap7, { player: { gold: 1e15 } });
+  assert.match(h7, /<span class="sgb-meta"[^>]*>🔵 3000 MP　⏱️ 8s<\/span>/);
+
+  // 3. 超神進化生效（水牢天瀑）：頂部標頭應顯示超神進化的消耗 (10000 MP)
+  const snapUlt = snapshot({ waterball: Array(7).fill(10) }, {
+    skills2: {
+      levels: { waterball: Array(7).fill(10) },
+      progress: progressMax,
+      ult: { waterball: { pick: 0, lv: 10 } }
+    }
+  });
+  let hUlt = c.sgbDetailHTML('waterball', snapUlt, { player: { gold: 1e15 } });
+  assert.match(hUlt, /<span class="sgb-meta"[^>]*>🔵 10000 MP　⏱️ 8s<\/span>/);
+
+  // 4. 手動點擊第 1 階瀏覽時，頂部標頭仍應維持當前最高階技能的消耗 (10000 MP)，不被 tierIdx 覆蓋
+  c.UI.sgBrowse.tier = 0;
+  c.UI.sgBrowse.focus = 'tier';
+  let hBrowse = c.sgbDetailHTML('waterball', snapUlt, { player: { gold: 1e15 } });
+  assert.match(hBrowse, /<span class="sgb-meta"[^>]*>🔵 10000 MP　⏱️ 8s<\/span>/);
+});
+
 test('資產版號存在', () => {
   assert.match(html, /css\/style\.css\?v=1\.0\.\d+/);
   assert.match(html, /js\/ui\.js\?v=1\.0\.\d+/);
 });
+
