@@ -9178,16 +9178,24 @@ function sgbNextLineHTML(text) {
   return '<div class="sgb-next" data-tip="' + esc('下一級：' + text) + '">下一級：' + text + '</div>';
 }
 
-/* 標頭的耗魔／冷卻：主動型被動顯示每次反擊的耗魔（以選中的階為準），其餘顯示施法耗魔與冷卻 */
-function sgbMetaText(gid, tierIdx) {
+/* 標頭的耗魔／冷卻：主動型被動顯示每次反擊的耗魔（以選中的階為準），其餘顯示當前最高階技能的耗魔與冷卻 */
+function sgbMetaText(gid, tierIdx, skillsSnapshot) {
   var g = SKILLS2[gid];
+  if (!g) return '';
   var isPassiveGroup = (typeof skills2IsPassive === 'function') && skills2IsPassive(gid);
   if (isPassiveGroup) {
     var tierMp = (typeof skills2TierTriggerMp === 'function') ? skills2TierTriggerMp(gid, tierIdx) : 0;
     return '🌀 被動' + (tierMp > 0 ? '　🔵 ' + tierMp + ' MP／次反擊（此階生效時）' +
       (tierIdx >= 5 ? '；本階追加效果觸發另扣 ' + tierMp + ' MP' : '') : '');
   }
-  return '🔵 ' + skills2TierManaCost(gid, tierIdx) + ' MP　⏱️ ' + g.cd + 's';
+  var lvs = (typeof sgUiLevels === 'function' && skillsSnapshot) ? sgUiLevels(skillsSnapshot, gid) : null;
+  var ultRaw = (typeof sgUiUltRaw === 'function' && skillsSnapshot) ? sgUiUltRaw(skillsSnapshot) : null;
+  var cost = (typeof skills2ManaCost === 'function') ? skills2ManaCost(gid, lvs, ultRaw) : 0;
+  if (cost <= 0 && typeof skills2TierManaCost === 'function') {
+    var fallbackTier = (typeof tierIdx === 'number' && tierIdx >= 0) ? tierIdx : 0;
+    cost = skills2TierManaCost(gid, fallbackTier);
+  }
+  return '🔵 ' + cost + ' MP　⏱️ ' + g.cd + 's';
 }
 
 /* 未解鎖階段在列上顯示的短門檻（完整原因在展開後的說明） */
@@ -9355,11 +9363,12 @@ function sgbDetailHTML(gid, skillsSnapshot, headerSnapshot) {
     ? '<button type="button" class="btn sgb-btn-quiet sgb-gm-max" data-sg-max-group="' + esc(gid) + '" data-tip="【內測專用】一鍵將「' + esc(g.name) + '」全階層升至滿級">MAX</button>'
     : '';
 
+  var metaText = sgbMetaText(gid, UI.sgBrowse.tier, skillsSnapshot);
   var h = '<div class="sgb-head" style="--elem:' + color + '">' +
     '<span class="sgb-head-icon" aria-hidden="true">' + skillIconHTML(gid, g.emoji) + '</span>' +
     '<div class="sgb-head-main">' +
     '<div class="sgb-head-title"><b>' + esc(g.name) + '</b><span>總 Lv.' + t.total + ' / ' + t.max + '</span></div>' +
-    '<div class="sgb-head-meta"><span class="skill-tags">' + tags + '</span><span class="sgb-meta" data-tip="' + esc(sgbMetaText(gid, UI.sgBrowse.tier)) + '">' + sgbMetaText(gid, UI.sgBrowse.tier) + '</span></div>' +
+    '<div class="sgb-head-meta"><span class="skill-tags">' + tags + '</span><span class="sgb-meta" data-tip="' + esc(metaText) + '">' + metaText + '</span></div>' +
     '</div><div class="sgb-head-actions">' + maxBtn + equipBtn + '</div></div>';
 
   h += '<div class="sgb-path">';
