@@ -18,12 +18,12 @@ test('裝配大地守護：回復三倍、汲取兩倍，展示等於戰鬥結�
  const projected=c.playerPanelStats(st);assert.ok(Math.abs(c.passivePanelElement(projected,'fire')-110)<1e-9);
  assert.equal(c.playerPanelStats(projected).passivePanel.hpRegen,p.hpRegen,'重複投影不重複乘算');
 });
-test('卸下及未學習都移除加成；光耀之堂只額外放大回復，失效後退回',()=>{
- const c=load(),st=base();c.G.player.skills2.ult.earthguard={pick:0,lv:10};
+test('卸下及未學習都移除加成；光耀之堂的定時回復不放大面板每秒回復',()=>{
+ const c=load(),st=base(),plain=c.playerPanelStats(st).passivePanel;c.G.player.skills2.ult.earthguard={pick:0,lv:10};
  const p=c.playerPanelStats(st).passivePanel;
- assert.equal(p.mpRegen,900);assert.equal(p.manaSteal,20);
+ assert.deepEqual(p,plain);
  c.G.player.skills2.levels.earthguard[6]=9;
- assert.equal(c.playerPanelStats(st).passivePanel.mpRegen,150);
+ assert.equal(c.playerPanelStats(st).passivePanel.mpRegen,plain.mpRegen);
  c.G.player.loadout=[];
  const off=c.playerPanelStats(st).passivePanel;assert.equal(off.mpRegen,50);assert.equal(off.manaSteal,10);assert.equal(off.damageRed,0);assert.equal(off.elemPct,0);
  c.G.player.loadout=['sg:earthguard'];c.G.player.skills2.levels.earthguard=Array(7).fill(0);

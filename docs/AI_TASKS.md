@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## HALL-RADIANCE-REGEN-20261012 — 光耀之堂定時回復與固定溢出轉盾
+
+- Owner：Codex；Done，單一開發者。使用者指定每2秒按生命／法力上限各回復2%，每級+0.2%；溢出轉生命護盾固定25%，不隨等級提高。遵循既有base＋per×level（Lv1為2.2%、Lv10為4%）。移除原本額外回復乘區，保留其他大地守護階段與傳奇機制。
+- 允許：js/skills2.js、Skills2 Excel／CSV、index.html、js/bridge.js、js/worker/sim.worker.js、tests/passive-stat-panel.test.cjs、tests/skill2-mire-earthguard-legendary.test.cjs、新tests/hall-of-radiance.test.cjs與本紀錄；禁止改其他技能數值、素材、協議／存檔及其他副本。前置依賴已滿足；fetch後預檢無衝突，保留工作區既有岩柱Preset／layout修改。
+- 驗收：2秒節拍、等級／最大生命法力比例、生命法力溢出各25%、回復倍率移除、卸裝／死亡／復甦／換場重置、面板及技能文字同源、Excel原生正常重開與公式／格式保留、表格往返、Worker快取、相關回歸／Build／diff check；完成獨立Commit，交使用者整合，不合併／推送。
+- 完成／修改：上述10檔，定時回復走healPlayer（noShield）／gainPlayerMana共用入口；只將各資源溢出量的25%交grantShield，沿用護盾效率／上限／封鎖。暈眩不擋被動回復；死亡、復甦、卸裝或進化失效清節拍，重新生效等完整間隔；換場沿既有resetSkill2RT重置。技能說明與結算共用sec／pct／conv，面板每秒回復不含定時技能。skills2快取1.0.298、bridge1.0.253、Worker入口與skills2 import皆20261012-hall-radiance；無協議／存檔變更。
+- 表格：Excel原生API逐格更新光耀之堂JSON、說明與唯讀說明三格，正常模式重開（RepairMode=false），保留230條公式、其他格資料、字型／對齊／欄寬／列高／格式及繪圖物件。Excel轉CSV逐位元一致，config_tables --apply Skills2語意變更0；未手工修改XML。期間另一作業更新火之神樂pct20→30、pctPer2→3、maxStacks20→10；使用者明確同意保留並分段作業，工作檔維持該改動，本次以分段staging僅提交光耀之堂，共用Excel提交副本由HEAD經同一原生API流程產生，不覆蓋使用者工作檔。Gems／data與岩柱Preset／layout修改保留給原作業，無本次素材修改或素材庫Commit。
+- 測試：node --test tests/hall-of-radiance.test.cjs新增9/9通過。node --test tests/hall-of-radiance.test.cjs tests/skill-cooldown-display.test.cjs tests/earthguard-revival.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs tests/passive-stat-panel.test.cjs tests/skill2-mire-earthguard-legendary.test.cjs共73項、63通過／10既有失敗。以HEAD原skills2及三檔原測試唯讀載入重跑37項、26通過／11失敗；10個失敗名稱全在基線，原光耀面板舊倍率案例改驗新需求後通過，未放寬其他既有斷言。既有失敗涉及天霸／不屈舊CD或耗魔、其他大地面板舊數值與泥沼機制；本次新增失敗0。npm.cmd run build：496檔通過；git diff --check通過。
+- 瀏覽器：獨立隨機埠唯讀HTTP、全新headless Edge context與真Worker；Lv10 HP9950／10000、MP1990／2000在1.999秒保持，2秒回滿且生命護盾105（350與70溢出各25%）。主端與Worker均顯示每2秒回復4%、轉盾25%，Console error／warning均0。非真人長時間實戰；分頁、瀏覽器、伺服器及本次臨時腳本／日誌／CSV驗證檔已清理。
+- 唯讀檢查：AI規範／prompts/codex.md、js/formula.js、js/combat.js、js/tower.js、js/skills.js、js/ui.js、js/worker/protocol.js、scripts/sim/engine.js、配置匯入／Excel原生工具。已知風險為上述10項既有回歸失敗；本次需求無未完成項。Commit為本紀錄所在[Codex] fix提交；可供審查合併，未合併／推送。下一步重載遊戲驗收技能，其他進行中修改由原作業處理。
+
 ## ROCK-HOLD-PLUS2-20261012 — 岩柱停留時間增加兩秒
 
 - Owner：Codex；Done，單一開發者。前置岩簇造型已完成；使用者要求停留時間+2秒，由0秒調整為0.15秒升起／2秒完整停留／0.35秒消失，總長2.5秒。僅調整石體動畫曲線與Preset總長，起塵仍0.5秒；尺寸、造型、直立旗標、傷害與八波排程保持原樣。
