@@ -141,10 +141,11 @@ function runeUiFocusHTML(snapshot, id) {
   h += '<div class="rx-stats">' +
     runeUiStatLine('⚔ 鑲在武器', r.w) + runeUiStatLine('🛡 鑲在防具・飾品・副手', r.a) +
     (r.flavor ? '<div class="rx-flavor">「' + esc(r.flavor) + '」</div>' : '') + '</div>';
+  var composeLabel = (next && r.tier < RUNE_COMPOSE_MAX_TIER) ? ('合成「' + esc(next.name) + '」') : '合成';
   h += '<div class="rx-actions">' +
-    '<button type="button" class="btn" data-rune-act="compose"' + (canCompose ? '' : ' disabled') + '>合成（' + RUNE_COMPOSE_COUNT + ' → 1）</button>' +
+    '<button type="button" class="btn" data-rune-act="compose"' + (canCompose ? '' : ' disabled') + '>' + composeLabel + '</button>' +
     '<button type="button" class="btn" data-rune-act="composeAll"' + (canCompose ? '' : ' disabled') + '>全部合成</button>' +
-    '<button type="button" class="btn warn" data-rune-act="dismantle"' + (canDismantle ? '' : ' disabled') + '>拆解（1 → ' + RUNE_DISMANTLE_YIELD + '）</button></div>';
+    '<button type="button" class="btn warn" data-rune-act="dismantle"' + (canDismantle ? '' : ' disabled') + '>拆解</button></div>';
   var note = [];
   if (next && r.tier < RUNE_COMPOSE_MAX_TIER) note.push('合成：' + RUNE_COMPOSE_COUNT + ' 顆「' + r.name + '」→ 1 顆「' + next.name + '」');
   else if (r.tier >= RUNE_COMPOSE_MAX_TIER) note.push('第 ' + RUNE_COMPOSE_MAX_TIER + ' 階以上的符文無法合成，只能靠擊殺與封魔塔掉落');
@@ -275,14 +276,52 @@ function runeUiAction(act) {
   var id = runeUiState().sel;
   var r = RUNE_BY_ID[id];
   if (!r) return;
-  var cmd = act === 'compose' ? 'rune.compose' : (act === 'composeAll' ? 'rune.composeAll' : 'rune.dismantle');
-  sendGemUiCommand(cmd, { runeId: id }, 'rune:' + id, ['gems', 'header'], function (result) {
-    if (act === 'compose') {
-      blog('🔷 符文合成：' + runeLabel(id) + ' ×' + RUNE_COMPOSE_COUNT + ' → ' + runeLabel(RUNES[r.tier].id), 'info', 'factory');
-    } else if (act === 'dismantle' && result && result.id) {
-      blog('🔷 符文拆解：' + runeLabel(id) + ' → ' + runeLabel(result.id) + ' ×' + result.n, 'info', 'factory');
+
+  var doSend = function () {
+    var cmd = act === 'compose' ? 'rune.compose' : (act === 'composeAll' ? 'rune.composeAll' : 'rune.dismantle');
+    sendGemUiCommand(cmd, { runeId: id }, 'rune:' + id, ['gems', 'header'], function (result) {
+      if (act === 'compose') {
+        blog('🔷 符文合成：' + runeLabel(id) + ' ×' + RUNE_COMPOSE_COUNT + ' → ' + runeLabel(RUNES[r.tier].id), 'info', 'factory');
+      } else if (act === 'dismantle' && result && result.id) {
+        blog('🔷 符文拆解：' + runeLabel(id) + ' → ' + runeLabel(result.id) + ' ×' + result.n, 'info', 'factory');
+      }
+    });
+  };
+
+  if (act === 'composeAll') {
+    var snapshot = (typeof uiGemsPanelSnapshot === 'function') ? uiGemsPanelSnapshot() : null;
+    var n = runesViewCount(snapshot, id);
+    if (!n && typeof runeCount === 'function') n = runeCount(id);
+    var next = r.tier < RUNES.length ? RUNES[r.tier] : null;
+    var makeCount = Math.floor(n / RUNE_COMPOSE_COUNT);
+    if (makeCount > 0 && next && r.tier < RUNE_COMPOSE_MAX_TIER) {
+      var msg = '確定要全部合成嗎？\n將合成 ' + fmt(makeCount) + ' 個「' + next.name + '」符文，並且會消耗所有當前「' + r.name + '」符文。';
+      if (typeof showConfirmDialog === 'function') {
+        showConfirmDialog(msg, doSend, { title: '全部合成確認' });
+      } else {
+        doSend();
+      }
+      return;
     }
-  });
+  }
+
+  if (act === 'dismantle') {
+    // 紫色及以上（史詩品質及以上）：每 6 階一個色帶，第 19 階起為紫色/史詩
+    var isEpicOrAbove = (r.tier >= 19);
+    if (isEpicOrAbove) {
+      var lower = r.tier > 1 ? RUNES[r.tier - 2] : null;
+      var lowerText = lower ? ('\n拆解後可獲得 ' + RUNE_DISMANTLE_YIELD + ' 顆「' + lower.name + '」符文。') : '';
+      var msg = '確定要拆解「' + r.name + '」符文嗎？' + lowerText + '\n此符文為史詩或以上品質，請再次確認。';
+      if (typeof showConfirmDialog === 'function') {
+        showConfirmDialog(msg, doSend, { title: '符文拆解確認', danger: true });
+      } else {
+        doSend();
+      }
+      return;
+    }
+  }
+
+  doSend();
 }
 
 /* 說明按鈕的文字：孔數與合成數量都讀設定（RARITIES.runeSlots、RUNE_SETTINGS），表一改說明就跟著變。 */
