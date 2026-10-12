@@ -155,6 +155,7 @@ test('STATUS-SLOT-7 我方附加條目在施放時套在自己身上；登記列
   setLevels(c, 'gale', [1, 1, 1, 1, 1, 0, 0]);
   setStatus(c, 'gale', '5', 'self', [{ id: 'sgGale' }, { id: 'defUp', val: 7, dur: 4 }]);
   const p = playerEnt();
+  p.mp = 1e9; // 狀態施加測試需足以支付使用者最新表定的當階消耗。
   c.castSkill2(p, [enemy(1e9)], 'gale', 'mv-float');
   assert.ok(p.buffs.sgGale, '第一格仍是技能原有的施加點');
   assert.equal(p.buffs.defUp && p.buffs.defUp.val, 7, '第二格是附加條目，施放時套上');

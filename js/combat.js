@@ -1277,7 +1277,7 @@ function monsterAtkCfg(m, mult) {
             ((typeof skill2WindRendHitFactor === 'function') ? skill2WindRendHitFactor(m) : 1),
         elemAtk: ea, globalDmgRed: m.globalDmgRed || 0,
         isElite: !!m.elite, isBoss: !!m.isBoss, // 攻擊者敵種：供玩家的敵種傷害抗性選值
-        attr: m.attr || null // 攻擊者屬性標籤：供玩家的對屬性敵人抗性選值
+        attr: ((typeof skill2ForcedAttr === 'function') ? skill2ForcedAttr(m) : '') || m.attr || null // 攻擊者屬性標籤（含石化轉地）
     };
 }
 function monsterDefCfg(m) {

@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## SUPER-ROCK-ART-20261012 — 超重岩之術石化轉地與四秒岩柱
+
+- Owner：Codex；Done，單一開發者。24米內施放時石化2秒、每級+0.2秒，石化期間無法行動並轉地屬性；4秒內每0.5秒升起4道岩柱，各200%地傷、每級+20%。每波最多選4名不同敵人，不足以範圍內隨機空地補足，不重複打同一敵人。首波於0.5秒、最後一波4秒，共8波32柱；每波依玩家當下位置及存活敵群重新選取。
+- 範圍：Skills2／Status Excel、CSV及生成JS、skills2的石化／岩柱排程、combat屬性出口、geometry／VFX接線、Runtime保留岩柱作者方向、主頁／Editor／Worker必要快取；新岩柱Preset（沿用已匯出素材）與素材庫保存／匯出索引、相關測試及本紀錄／Adapter文件。禁止修改其他技能效果、FOV／傾角、協議／存檔、其他副本及進行中工作。保留使用者最新Skills2消耗修改並一起提交。
+- 前置／驗收：現有石化拆為暈眩＋易傷，改為暈眩＋屬性標記並以實際控場時間同步，沿用BOSS免控／韌性／控場遞減；岩柱獨立持續4秒，不受岩甲護盾終止影響。預檢既有修改範圍無衝突。驗證等級、24米邊界、解除還原／免控、逐波數量／時序／傷害、空地不傷敵、死亡／換場／卸裝取消、特效座標／作者方向、表格原生重開／往返、Worker回歸與Build；完成先素材庫再遊戲提交，交使用者整合，不合併或推送。
+- 完成／修改：js/skills2.js／status.js／combat.js／vfx-runtime.js、Skills2與Status兩本Excel／CSV、tools/skills2-geometry.cjs／skills2-vfx.cjs；index.html、Editor頁、bridge／sim.worker快取；pillar-rock-spike Preset、tests/super-rock-art.test.cjs／skill2-firehunt-rock-legendary.test.cjs／skill2-status-slots.test.cjs、Adapter文件與本紀錄。移除舊石化易傷，石化轉地期限取ccLock實際控制長度；攻守兩端屬性出口同步。岩柱逐波不重複選敵，空地抽樣優先避開敵人體型，不設群體傷害半徑；成功命中才播命中特效。岩甲先到期不取消岩柱，死亡／卸裝／換場取消。超重力場保持舊行為。
+- 表格：使用Excel原生API只更新Skills2八格、Status五格，原生正常重開核對值、230條既有公式及儲存格格式（含欄寬／行高／字型／對齊），保留其餘工作表與使用者剛保存內容；全表Excel／CSV一致，config_tables --apply Skills2／Status語意變更0。遵循既有base＋per×level，Lv1石化2.2秒／每柱220%地傷，Lv10為4秒／400%。Excel固定格式匯出與既有Core預覽檢視；無手工XML修改。
+- 使用者修改：保存的Skills2.xlsx另外206列消耗調整原樣同步CSV／JS，唯讀語意比對確認除本超神外只有cost差異。收尾新增game_parameters Excel／CSV及data.js的六種稀有度符文孔數調整，依一起Commit偏好保留，另預檢乾淨；追加data快取。狀態專項舊fixture MP500不足最新疾風第五階消耗，僅補足該案例MP以測試原狀態機制，沒有放寬斷言。
+- 驗證：node --test tests/super-rock-art.test.cjs，11／11（含真實resolveHit扣血／地抗性、等級／邊界、控場免疫／遞減／歸零、屬性覆寫還原、八波32柱、隨機不同目標／最新位置、空地與MISS、護盾先到期／死亡／換場／卸裝、八方Runtime作者方向、表格／快取）。node --test --test-name-pattern="超重岩|超重力場|岩甲領域|五個新掛點" tests/skill2-firehunt-rock-legendary.test.cjs，6／6；較廣狀態／BOSS免控／Worker／疾風方向／Runtime畫面投影／Editor快取回歸除既有STATUS-VFX-4外通過。完整岩甲火狩29項26通過3既有失敗；geometry8項7通過1既有失敗；控場17項11通過6既有失敗。
+- 既有失敗核對：以HEAD f6f3c0c2的skills2／status／combat及原測試唯讀快照重跑，火神星環距離500≠400／星環貫穿1≠3、金剛不壞減傷、STATUS-VFX-4同樣失敗。控場六項為舊斷言仍期待每次5%、現配置10%，修改前重跑相同；geometry連鎖閃電18／.244固定斷言為前任務已驗證的既有差異。未修改這些數值或降低斷言。apply_params dry-run共550錨點、變更0／問題0，check-anchors擾動501值後550錨點均唯一；Build及diff檢查另於提交前通過。
+- 素材／快取：新Preset原創構圖使用已匯出白色形狀及煙霧，無新增外部圖檔；保存在素材庫codex-authored/super-rock-art，遊戲／素材庫SHA256完全相同。export-assets --check確認245 Preset／162素材引用已最新，無需改匯出索引。技能觸發欄為唯一來源，無新增寫死Preset。Runtime1.0.186兩頁、skills2 1.0.296、status1.0.31、combat1.0.77、bridge1.0.251、data1.0.68；DATA_VERSION／WORKER_ASSET_VERSION與Worker相關import均20261012-super-rock-art；無協議欄位／存檔變更。
+- 最終驗收：上述狀態／Worker／Runtime／Editor九檔回歸80項79通過、1項修改前相同的STATUS-VFX-4失敗；新增11項全部通過。刪除本輪三份暫存腳本／JSON及Excel預覽暫存，僅保留供使用者檢視的Core時序圖於Codex visualizations。最終Build、diff檢查通過。
+- 未改但檢查：js/formula.js控場／傷害管線、battlefield隨機／距離、vfx-core、worker/shim.js／protocol.js、config_tables及Excel原生API／素材匯出器。已知限制：未做正式遊戲長時間實戰目視，極端滿場無可用空地時取32個樣本中離敵人最遠處但仍不傷敵；上述既有回歸失敗。無未完成實作，可供合併；素材庫ec36c0d已先提交，遊戲Commit為本紀錄所在提交（交付回覆列出）。不合併／推送，下一步重載遊戲驗收。
+
 ## GROUND-NO-GRID-20261012 — 全場景隱藏地板格子感
 
 - Owner：Codex；Done，單一開發者。使用者要求隱藏全部地板格線。既有野外底圖沒有磚縫，但週期性正弦明暗在旋轉平鋪後仍形成菱形格子感；移除這層規律明暗與舊磚縫繪製入口，保留細砂點、自然裂紋及場景不規則地面色塊。BOSS地板唯讀核對。

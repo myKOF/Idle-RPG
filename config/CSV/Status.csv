@@ -77,7 +77,7 @@ sgWarGodKill,戰神屠錄,📜,buff,stat,sgWarGodKill,,,0,,0,4,99999,0,stack,100
 sgAsuraFist,阿修羅霸王拳,👊,buff,stat,sgAsuraFist,,,0,,0,500,1,0,refresh,1,,aura-bloodrage,,超神進化【阿修羅霸王拳】：每隔一段時間自動發動，短暫期間內你造成的所有傷害大幅提高。
 sgStarfall,地爆天星,☄️,buff,stat,sgStarfall,fire,,0,,0,0,60,0,refresh,1,,,,超神進化【地爆天星】：距離下一顆超巨型殞石落下還有多久（剩餘時間即倒數，效果值本身沒有意義；比照【暴風化身】【火狩】的純計時狀態）。
 sgBurnAmp,爆燃,🔥,debuff,stat,sgBurnAmp,fire,,0,,0,10,4,0,refresh,1,,,,傳奇特效【爆燃】：火龍捲每造成 1 段傷害就疊 1 層，使該敵人受到的燃燒傷害提高（效果值＝目前的總提高%）。設計文檔未設層數上限，因此比照【火焰增幅】由引擎累加成單一數值後「後蓋前」，不使用狀態表的疊層規則。
-sgPetrify,石化,🗿,debuff,stat,sgPetrify,earth,,0,,0,400,4,0,refresh,1,,,,超神進化【超重岩之術】：被壓縮的巨岩之力封住的敵人。行動限制本身由「暈眩」承擔（因此完整沿用 BOSS 控場免疫、韌性折減與控場遞減），本狀態只負責「受到的土系傷害額外提高」（效果值＝提高%）。
+sgPetrify,石化,🗿,debuff,stat,sgPetrify,earth,,0,,0,1,2,0,refresh,1,,,,超神進化【超重岩之術】：石化期間無法行動且屬性標籤轉為地。行動限制沿用暈眩、BOSS免控、韌性與控場遞減；石化標記及轉地與實際暈眩時間一致，結束後恢復原屬性。不再附加地系易傷。
 sgStiffen,僵化,🌐,debuff,stat,sgStiffen,earth,,0,,0,65,5,0,refresh,1,,,,超神進化【超重力場】：重力場扭曲造成的僵化。移動速度、攻速與造成的傷害同時下降（效果值＝三者共用的下降%）；比照【泥沼緩速】不吃控場遞減與韌性。
 sgMireBleed,泥沼裂傷,🩸,debuff,dot,,,skill,150,,0,0,5,0.5,strongest,1,,,,傳奇特效【侵蝕】：泥沼術附加的流血；每跳量與間隔由特效參數決定（引擎以 dps 覆寫）。比照【穿心裂血】採「取高並重新計時」，因此每一拍重塗不會把剩餘時間鎖死在滿值。
 sgPlague,惡疫,🦠,debuff,dot,,poison,skill,200,,0,0,8,0.35,strongest,1,,,,超神進化【惡疫魔沼】：沼澤塗上的毒性持續傷害；每跳量與間隔由超神進化參數決定（引擎以 dps 覆寫）。與泥沼的其他狀態不同，離開沼澤後仍會走完自己的持續時間，因此不採「只給兩跳」的重塗規則。
@@ -89,7 +89,7 @@ sgWindErode,風蝕,🌬️,debuff,stat,sgWindErode,wind,,0,,0,25,4,0,refresh,1,,
 sgSlayerDomain,殺神領域,⚰️,buff,stat,sgSlayerDomain,dark,,0,,0,0,99999,0,refresh,1,,ground-mire,,超神進化【殺神領域】：展開中的領域，跟著你移動；持續特效依領域半徑縮放。持續時間只是讓它一直掛著：領域在不在由超神進化與技能列裝配決定，卸下或換掉超神就移除。
 sgVenomDomain,萬毒血霧,☣️,buff,stat,sgVenomDomain,poison,,0,,0,0,99999,0,refresh,1,,ground-mire-poison,,超神進化【萬毒血霧】：展開中的毒霧領域，跟著你移動；持續特效依領域半徑縮放（領域內敵人身上的【萬毒侵蝕】另計）。持續時間只是讓它一直掛著：領域在不在由超神進化與技能列裝配決定，卸下或換掉超神就移除。
 sgFireGodBody,火神降臨,🔥,buff,stat,sgFireGodBody,fire,,0,,0,0,99999,0,refresh,1,,ground-domain-fire,,超神進化【火神降臨】：火焰纏身，定時灼燒周圍敵人；持續特效依作用半徑縮放、跟著你移動。持續時間只是讓它一直掛著：領域在不在由超神進化與技能列裝配決定，卸下或換掉超神就移除。
-sgPetrifyDomain,超重岩領域,🗿,buff,stat,sgPetrifyDomain,earth,,0,,0,0,10,0,refresh,1,,ground-domain-earth,,超神進化【超重岩之術】：岩甲護盾存在期間展開的領域，進入的敵人被石化；持續特效依領域半徑縮放、跟著你移動。持續到岩甲護盾結束（實際秒數由岩甲術給）。
+sgPetrifyDomain,超重岩領域,🗿,buff,stat,sgPetrifyDomain,earth,,0,,0,0,4,0,refresh,1,,ground-domain-earth,,超神進化【超重岩之術】：施放時石化24米內敵人，之後4秒每0.5秒升起4道岩柱。領域跟隨玩家、按24米半徑顯示；持續固定4秒，不依岩甲護盾時間，也不對新進入者重複石化。
 sgGravityDomain,超重力場,🌐,buff,stat,sgGravityDomain,earth,,0,,0,0,10,0,refresh,1,,ground-domain-earth-10,,超神進化【超重力場】：岩甲護盾存在期間展開的重力場，進入的敵人僵化；持續特效依領域半徑縮放、跟著你移動。持續到岩甲護盾結束（實際秒數由岩甲術給）。
 sgWaterPrisonDomain,水牢天瀑,🫧,buff,stat,sgWaterPrisonDomain,ice,,0,,0,0,6,0,refresh,1,,field-water-prison-dome,,超神進化【水牢天瀑】：周圍的水牢罩子（半徑依技能範圍，跟著玩家移動）；期間受到的遠程傷害降低，圈內敵人攻擊下降且受到傷害提高，水牢結束時撤除。
 sgAbyssDomain,海淵葬界,🌊,buff,stat,sgAbyssDomain,ice,,0,,0,0,99999,0,refresh,1,,ground-domain-ice,,超神進化【海淵葬界】：永久展開的寒冰領域，跟著你移動；持續特效依領域半徑縮放。持續時間只是讓它一直掛著：領域在不在由超神進化與技能列裝配決定，卸下或換掉超神就移除。

@@ -778,7 +778,7 @@ var VFXRuntime = (function () {
     function attackFacing(spec, presetId, targetId) {
       // 敵身爆發與垂直落雷保留作者方向；不套用近戰的正右方面敵基準。
       if (spec.variant === 'gale-burst' || spec.variant === 'gale-moon' || spec.variant === 'gale-chidori' ||
-          spec.variant === 'thunder-strike') return 0;
+          spec.variant === 'thunder-strike' || spec.variant === 'rock-pillar') return 0;
       if (planePresets[presetId] && isNum(spec._planeAngle)) return spec._planeAngle;
       if (isNum(spec.angle)) return spec.angle;
       var from = spec.sourceId ? footOf(spec.sourceId)
@@ -2235,7 +2235,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20261007-cleave-rotate20';
+  var DATA_VERSION = '20261012-super-rock-art';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

@@ -7,7 +7,7 @@
         無限星環（螺旋外擴＋持續放出）、火神降臨（常駐火焰領域＋普攻星環）
      3. 岩甲術五個傳奇：重岩甲（護盾）、輕飛甲（移速）、巨岩增幅（層數上限）、
         尖刺甲（尖刺傷害）、大地之心（護盾歸零給無敵，有內部冷卻）
-     4. 岩甲術三個超神：超重岩之術（石化＋土系易傷）、金剛不壞（減傷／生命／護盾／尖刺）、
+     4. 岩甲術三個超神：超重岩之術（石化轉地＋岩柱）、金剛不壞（減傷／生命／護盾／尖刺）、
         超重力場（僵化＋土系增傷）
 
    ⚠️ 本檔只驗「機制有沒有接上」，不驗「數字調校得對不對」（那是參數表的事）。 */
@@ -469,7 +469,7 @@ test('【大地之心】：護盾被打光的那一下給無敵，且 30 秒內�
    4) 岩甲術的三個超神進化
    =========================================================================== */
 
-test('【超重岩之術】：施放時石化範圍內的敵人（行動限制走暈眩、增傷走石化標記）', () => {
+test('【超重岩之術】：施放時石化轉地，取消原本地系易傷', () => {
   const c = loadContext();
   stubHits(c); stubVfx(c);
   maxLevels(c, 'rockarmor');
@@ -483,10 +483,10 @@ test('【超重岩之術】：施放時石化範圍內的敵人（行動限制�
   assert.equal(!!c.effectActive(near, 'stun'), true, '無法行動由暈眩承擔');
   assert.equal(c.buffVal(far, 'sgPetrify'), 0, '範圍外不受影響');
 
-  // 石化只放大土系那一段，不會連同一次攻擊的其他屬性一起放大
+  assert.equal(c.monsterDefCfg(near).attr, 'earth', '石化期間轉地');
+  // 新版石化取消舊易傷，不放大任何屬性段。
   const cfg = c.skill2VulnACfg({ totalDmgPct: 0 }, near);
-  assert.ok(cfg.skillElemAmp && cfg.skillElemAmp.earth > 1, '土系受傷增幅');
-  assert.equal(cfg.skillElemAmp.fire, undefined, '不碰其他屬性');
+  assert.equal(cfg.skillElemAmp, undefined, '取消舊地系易傷');
   assert.equal(cfg.totalDmgPct, 0, '不混進「所有傷害」乘區');
 });
 
@@ -758,7 +758,7 @@ test('【火神降臨】的星環會貫穿：沿途每個敵人都吃一次，�
   assert.equal(hitOf(behind), 0, '超過飛行距離的打不到');
 });
 
-test('岩甲領域：施放當下作用一次，之後**進入**範圍的敵人也立即受作用', () => {
+test('超重力場：施放當下作用一次，之後進入範圍的敵人也立即受作用', () => {
   /* 使用者決策 2026-08-26：兩個超神進化不是施放瞬間打一次就結束，
      而是在岩甲護盾存在期間持續成立的領域。 */
   function fieldRun(ultId, statusKey) {
@@ -784,7 +784,6 @@ test('岩甲領域：施放當下作用一次，之後**進入**範圍的敵人�
     assert.ok(c.buffVal(far, statusKey) > 0, '之後進入範圍的敵人立即受作用');
     return { c, p, near, far };
   }
-  fieldRun('superRockArt', 'sgPetrify');
   fieldRun('gravityField', 'sgStiffen');
 });
 
@@ -828,8 +827,9 @@ test('五個新掛點都接上了戰鬥主流程（不是只寫了函式沒人�
     '我方移動有兩個推進點（空場與追擊），兩個都要吃乘區');
   // ⑤ 超重力場的土系增傷：掛在屬性傷害提升的唯一收斂點
   assert.match(legendary, /skill2RockEarthDamageUpPct === 'function'/);
-  // 石化的單屬性受傷增幅：與寒冰逆轉同一條路（skill2VulnACfg）
-  assert.match(skills2, /if \(typeof skill2PetrifyACfg === 'function'\) aCfg = skill2PetrifyACfg\(aCfg, target\);/);
+  // 石化轉地沿用屬性唯一出口，岩柱確實進入Tick排程。
+  assert.match(skills2, /if \(sgRoleBuffActive\(ent, 'petrify'\)\) return 'earth';/);
+  assert.match(skills2, /sgTickRockPillars\(ctx\);/);
   // 三個新節拍要真的排進 tickSkill2，否則整組傳奇、火神降臨與岩甲領域都不會動
   assert.match(skills2, /sgTickFirehuntLegend\(ctx, dt\);\s*[\r\n]+\s*sgTickFireGod\(ctx, dt\);\s*[\r\n]+\s*sgTickRockField\(ctx, dt\);/);
 
