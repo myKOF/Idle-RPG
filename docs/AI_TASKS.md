@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## GALE-AUTHORED-DIRECTION-20261012 — 疾風迅雷及三個超神保留製作方向
+
+- Owner：Codex；Done，單一開發者。使用者發現疾風迅雷在遊戲從各方向發出，而Editor為由上往下，追加要求涵蓋霹靂一閃、雷神之怒、千鳥三個超神。原因為先前共用attackFacing把敵身爆發及落雷也按玩家→目標旋轉；圖層followDirection不控制外層播放旋轉。
+- 範圍：Runtime按gale-burst／gale-moon／thunder-strike事件保留Preset方向、專項及既有Runtime回歸、兩頁Runtime快取、Adapter文件與本紀錄；使用者既有hit-gale-burst／07-moon／10-bird儲存修改原樣保留，依既有一起Commit偏好同步素材庫。禁止更動傷害、位置、範圍、FOV、傾角、作者局部動畫、其他一般攻擊朝向、Worker／Protocol、存檔、合併或推送。
+- 預檢：Runtime、兩份測試、index、Editor頁、兩文件及三Preset皆無其他副本／分支來源；工作區起初僅使用者兩Preset修改，執行中新增07-moon保存，另做預檢通過。前置既有攻擊朝向及疾風迅雷事件已實作。
+- 完成：本體／爆散／疾風月牙閃／千鳥在八方目標保留作者方向；霹靂一閃、雷神之怒繼承的本體同樣適用；雷神之怒及同類thunder-strike落雷取消額外面敵旋轉。立即／延遲與範圍／敵身路徑皆適用。霹靂一閃的獨立貫穿雷電依area.a維持實際判定連線，其他近戰朝向不變。兩頁Runtime快取1.0.183→1.0.184；不需Worker或Protocol換版。
+- 修改檔案：js/vfx-runtime.js、index.html、tools/vfx/editor/index.html、docs/vfx/VFX_RUNTIME_ADAPTER.md、本紀錄、tests/gale-authored-direction.test.cjs、tests/vfx-runtime.test.cjs；另包含使用者的三份vfx/presets/hit-gale-burst*.json。舊GALE朝向斷言依本次新需求改為作者方向，保留原尺寸／位置／重播／局部旋轉驗收；新增正式Preset八方及立即／延遲回歸先重現兩項失敗，再修正通過。
+- 唯讀檢查：js/skills2.js的主打擊／爆散／月牙／千鳥／落雷／貫穿事件、js/vfx-core.js、tools/vfx/vfx-library-root.cjs、正式beam-gale-thunder-flash／bolt-sky-purple等Preset及三份原layout；計算與事件繼續使用原配置，無模擬／主執行緒語意參數差異。
+- 測試指令：node --test tests/gale-authored-direction.test.cjs tests/gale-rework.test.cjs tests/gale-thunder-flash.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-editor-guard.test.cjs（41項通過）；node --test --test-name-pattern="GALE|FACING|THUNDER|PLACE-|facing|朝向|攻擊方向|傾角" tests/vfx-runtime.test.cjs（23項通過）。共64項全通過；npm.cmd run build（490檔全通過）、node --check js/vfx-runtime.js及tests/vfx-runtime.test.cjs、git diff --check通過。
+- 素材：素材庫Commit 7c4d9bf，保存三份使用者Preset及原layout於codex-authored/gale-burst/{presets,layouts}，與遊戲檔案SHA256逐一相同，三Preset經Core.validatePreset全部合法。node tools/vfx/export-assets.cjs --check --root D:/MyGame/Asset確認244 Preset／161素材引用匯出已最新；無新增外部素材，無第三種特效來源。
+- 交付：本紀錄所在 [Codex] fix: 修正疾風迅雷及超神進化的特效方向 為遊戲Commit，雙倉庫皆提交必要檔案；無未完成實作，可合併但本輪不合併／推送。已知限制：本輪以正式Core與Runtime數值回歸驗證八方畫面轉換，未重做瀏覽器實機目視驗收。下一步使用者重新載入遊戲檢查四個技能；Editor若有未保存內容先保存再重載。
+
 ## CODEX-CLAUDE-MERGE-20261008 — 解決 develop 整合衝突
 
 - Owner：Codex；Done。使用者明確要求解決與 Claude 在 develop 的衝突，授權接續主整合副本既有合併；原 HEAD 348bc794、MERGE_HEAD 4a2cb466。單一開發者，前置為兩側已提交成果；完成後交使用者重載驗收。

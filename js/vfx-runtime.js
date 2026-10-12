@@ -776,6 +776,9 @@ var VFXRuntime = (function () {
     /* 作者的正右方（+X）為朝前；事件角優先，沒有才取攻擊者到目標的方向。
        地面層用判定平面角，由 Core 最後投影一次；直立層用畫面角。 */
     function attackFacing(spec, presetId, targetId) {
+      // 敵身爆發與垂直落雷保留作者方向；不套用近戰的正右方面敵基準。
+      if (spec.variant === 'gale-burst' || spec.variant === 'gale-moon' ||
+          spec.variant === 'thunder-strike') return 0;
       if (planePresets[presetId] && isNum(spec._planeAngle)) return spec._planeAngle;
       if (isNum(spec.angle)) return spec.angle;
       var from = spec.sourceId ? footOf(spec.sourceId)
@@ -1799,7 +1802,7 @@ var VFXRuntime = (function () {
           } else if (spec.variant === 'gale-moon') {
             var moonParams = sizeOf(presetId, { r: spec.area && spec.area.r }) || defaultSize(presetId, 1);
             moonParams.position = spec.targets && spec.targets.length ? ctx.posOf(spec.targets[0]) : areaCentre(spec.area);
-            // 以製作時的正右方為朝前，保留圖層自身旋轉動畫。
+            // 月牙閃與千鳥保留製作方向及圖層自身旋轉動畫。
             moonParams.rotation = attackFacing(spec,presetId);
             moonParams.facingBeforeOuterScale = true;
             ok = !!play(rtFx, presetId, moonParams);
