@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## INDOMITABLE-GUARD-20261012 — 不屈鬥魂致命傷免死與擊退暈眩
+
+- Owner：Codex；Done，單一開發者。使用者要求面臨死亡時擊退30米內敵人並暈眩3秒、無敵護盾基礎2.5秒／每級+0.25秒，自身冷卻60秒／每級-2秒；觸發不算死亡，原戰鬥立即繼續。沿既有base＋per×level；保留1HP、不清場／退關／停戰，不再升空復甦、漸進回血、地傷爆發或反擊轉地。
+- 允許：js/skills2.js、js/combat.js、js/tower.js、js/battlefield.js、js/legendary.js僅舊註釋同步、Skills2 Excel／CSV、tools/skills2-geometry.cjs／skills2-vfx.cjs、index／bridge／Worker快取、相關不屈鬥魂／反擊／冷卻／進化／GM回歸與新專項、本紀錄；禁止改其他技能數值／素材／協議與存檔。預檢無其他副本／分支修改；同副本火之神樂／Gems／data／岩柱未提交內容沿使用者前輪保留授權分段處理，不納本次Commit。前置依賴已滿足，後續使用者整合，不合併／推送。
+- 驗收：野外／高塔各致命來源免死、不記死亡、保留戰場與行動；30米邊界、3秒控場及既有抗性／BOSS免控、5米擊退以0.25秒連續位移（可配置）、零傷害、HP1且不清空施放／MP；不同等級無敵時長／冷卻、到期與重觸發、卸裝／降級、VFX範圍與持續時長、Excel原生重開／公式格式保留、表格往返／Worker快取、相關回歸與Build；分段Commit。
+- 完成／修改18檔：上述程式／配置／工具／快取與本紀錄，tests/indomitable-revival.test.cjs重寫為10項新規格專項、tests/skill2-counter-bloodrage.test.cjs同步移除地屬性、tests/skill-cooldown-display.test.cjs同步升級冷卻（Lv10為40秒）與既有10000耗魔、tests/skill2-ult-evolution.test.cjs／tests/gm-skill-test-tools.test.cjs將倒地暫停fixture改為真正仍會復甦的天地共生。移除舊lastStand Runtime／回血傷害排程及升空標記；野外／塔戰死亡出口優先免死，再輪到復活，重複死亡通知不誤結算已存活角色。致命來源普攻與DoT實跑，HP1不重設MP／施放，普攻及塔戰計時繼續；冷卻中真正死亡仍退10關並登記。
+- 範圍／表現：30米以既有體型邊緣判定，狀態欄接stun、基礎3秒，保留控抗／控場遞減及BOSS免控；bfKnockbackEnemies只在0.25秒內沿遠離玩家方向平滑推5米，不傷敵；原Render快照posTrack／posSolve共用座標補間。pushM／pushSec可在JSON調整。觸發特效表填burst-earth作範圍震波，st-shield作貼身無敵護盾，事件傳完整半徑／持續時間；不播pillar-indomitable，不新增素材或第三種特效來源。技能的控制範圍由原傷害欄移至控制欄，取消舊傷害節拍與反擊轉地；無敵使用既有invuln，並非可扣除的數值護盾。
+- Excel：使用者保存並關閉被鎖定的Skills2.xlsx後，原生API只更新本列12格；正常重開RepairMode=false，230條公式、其他格資料及既有字型／對齊／行高／欄寬／格式／繪圖保留。工作區保留使用者最新火之神樂、阿修羅霸王拳、地爆天星、雷電暴風、天地雷鎖陣與飛雷神調整並同步CSV／JS；本次分段staging僅含不屈鬥魂，提交Excel副本由HEAD經同一原生API流程產生、與提交CSV逐位元一致，未覆蓋工作檔。config_tables --apply Skills2語意變更0；未手工修改XML。
+- 驗證：node --test tests/indomitable-revival.test.cjs，10/10；擴大node --test（indomitable-revival、skill2-counter-bloodrage、skill-cooldown-display、earthguard-revival、skill2-ult-evolution、gm-skill-test-tools、skill2-status-slots、worker-shim、worker-protocol、hall-of-radiance、skills2-geometry）179項148通過／31既有失敗。修改前已記錄109項／32失敗；再以唯讀載入攔截還原修改前來源／原測試，172項138通過／34失敗，當前失敗名稱差集0。舊不屈CD案例及兩個倒地fixture更新後通過；未降低其他既有斷言。保留的失敗主要是其他技能舊數值／機制、反擊耗魔舊值、STATUS-VFX-4與連鎖閃電固定速度斷言。npm.cmd run build：496檔通過；diff check通過。
+- 提交內容另驗：唯讀重導skills2至分段提交副本，node --test tests/indomitable-revival.test.cjs tests/earthguard-revival.test.cjs tests/hall-of-radiance.test.cjs tests/worker-protocol.test.cjs，31/31通過；提交SKILLS2資料與重建表完全一致，只有不屈鬥魂一列異動，其他技能定義與HEAD相同。
+- 瀏覽器：隔離隨機埠HTTP／全新headless Edge／真Worker確認HP1、MP7、施放剩0.75秒不變、無復甦與倒地、無敵5秒／CD40秒／暈眩3秒、0.125秒擊退25單位。事件震波r300／dur0.25、護盾st-shield／dur5；主端與Worker文字一致，Preset可載入且loop=true，Console error／warning均0。非真人長時間實戰；臨時伺服器／瀏覽器已關閉，本次臨時腳本、快照／日誌／提交副本清理後提交。
+- 快取：battlefield1.4.7、skills2 1.0.299、combat1.0.78、tower1.0.25、bridge1.0.254；Worker入口及上述五份模擬檔（含legendary註釋更新）import均20261012-indomitable-guard；Protocol維持50、無存檔變更。唯讀檢查AI規範／prompts/codex.md、js/formula.js／status.js／skills.js／potential.js／elite.js／battle-renderer.js、Worker Protocol／shim、sim engine及原生Excel／配置匯入工具；其餘未修改。
+- 交付：Commit為本紀錄所在[Codex] fix提交；無本次功能未完成項，素材庫無本次變更／無需Commit。已知限制為既有31項回歸失敗及BOSS沿原有免控規則；擊退距離未由使用者指定，採已告知的可調5米。可供審查合併，未合併／推送；使用者其他進行中修改保持未提交。下一步重載遊戲驗收觸發、護盾及戰鬥持續。
+
 ## HALL-RADIANCE-REGEN-20261012 — 光耀之堂定時回復與固定溢出轉盾
 
 - Owner：Codex；Done，單一開發者。使用者指定每2秒按生命／法力上限各回復2%，每級+0.2%；溢出轉生命護盾固定25%，不隨等級提高。遵循既有base＋per×level（Lv1為2.2%、Lv10為4%）。移除原本額外回復乘區，保留其他大地守護階段與傳奇機制。

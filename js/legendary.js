@@ -637,8 +637,7 @@ function legendaryTickAutomaticSkills(ctx, pEnt, st, dt) {
 function legendaryTickFireSpirit(pEnt, st, dt) {
   var rt = legendaryEnsureRT();
   if (!legendaryHas(st, 'fireSpiritShield')) return;
-  /* 死亡／倒地期間不自損：【不屈鬥魂】倒地時生命被鎖在 1，若這裡照樣每秒扣，
-     會把「死了 5 秒之後原地復活」的保護一刀砍斷（扣到 0 之後下一次判死就是真死）。
+  /* 死亡／天地共生復甦期間不自損，避免干擾復甦的生命進度。
      節拍同樣往後推——補跳是 while 迴圈，單純 return 會在復活當下一次全灌下去。 */
   if (typeof skills2AutoCastBlocked === 'function' && skills2AutoCastBlocked(pEnt)) {
     if (rt.nextFireDrainAt > 0) rt.nextFireDrainAt += Math.max(0, Number(dt) || 0);

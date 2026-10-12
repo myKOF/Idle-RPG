@@ -83,11 +83,11 @@ test('天地共生觸發才冷卻，總長度不吃全域CDR；未觸發的逆�
 
 test('不屈鬥魂致命觸發後才起算自身冷卻，反擊法力門檻仍含超神', () => {
   const { c, p, timer } = setup('counter', 'indomitable');
-  assert.equal(timer().remaining, 0); assert.equal(timer().total, 60);
-  assert.equal(timer().cost, 5000);
+  assert.equal(timer().remaining, 0); assert.equal(timer().total, 40);
+  assert.equal(timer().cost, 10000);
   p.hp = 0; assert.equal(c.skills2TryLastStand(p), true);
-  assert.equal(timer().remaining, 60);
-  c.tickSkillCds(p, 30); assert.equal(timer().remaining / timer().total, .5);
+  assert.equal(timer().remaining, 40);
+  c.tickSkillCds(p, 20); assert.equal(timer().remaining / timer().total, .5);
 });
 
 test('天穹崩裂受擊被動無冷卻無耗魔，降級使進化失效後恢復主動時鐘', () => {
