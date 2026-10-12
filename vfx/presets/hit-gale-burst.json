@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "hit-gale-burst",
-  "duration": 0.27,
+  "duration": 0.271,
   "loop": false,
   "deformation": {
     "amplitude": 2.676,
@@ -72,7 +72,10 @@
           1.105851
         ]
       ],
-      "offsetXOverLife": 0
+      "offsetXOverLife": 0,
+      "perspective": false,
+      "followDirection": false,
+      "followStretch": false
     },
     {
       "id": "burst-spikes",
@@ -128,7 +131,8 @@
           1.053191
         ]
       ],
-      "offsetXOverLife": 0
+      "offsetXOverLife": 0,
+      "perspective": false
     },
     {
       "id": "cross-spikes",
@@ -184,7 +188,8 @@
           1.018085
         ]
       ],
-      "offsetXOverLife": 0
+      "offsetXOverLife": 0,
+      "perspective": false
     },
     {
       "id": "white-impact",
@@ -239,7 +244,8 @@
           1.000532
         ]
       ],
-      "offsetXOverLife": 0
+      "offsetXOverLife": 0,
+      "perspective": false
     },
     {
       "id": "hot-core",
@@ -294,7 +300,8 @@
           0.965426
         ]
       ],
-      "offsetXOverLife": 0
+      "offsetXOverLife": 0,
+      "perspective": false
     },
     {
       "id": "fracture-0",
@@ -333,7 +340,8 @@
           0
         ]
       ],
-      "offsetXOverLife": 0
+      "offsetXOverLife": 0,
+      "perspective": false
     },
     {
       "id": "fracture-1",
@@ -372,7 +380,8 @@
           0
         ]
       ],
-      "offsetXOverLife": 0
+      "offsetXOverLife": 0,
+      "perspective": false
     },
     {
       "id": "fracture-2",
@@ -411,7 +420,8 @@
           0
         ]
       ],
-      "offsetXOverLife": 0
+      "offsetXOverLife": 0,
+      "perspective": false
     },
     {
       "id": "fracture-3",
@@ -450,7 +460,8 @@
           0
         ]
       ],
-      "offsetXOverLife": 0
+      "offsetXOverLife": 0,
+      "perspective": false
     },
     {
       "id": "fracture-4",
@@ -489,7 +500,8 @@
           0
         ]
       ],
-      "offsetXOverLife": 0
+      "offsetXOverLife": 0,
+      "perspective": false
     },
     {
       "id": "sparks",
@@ -546,7 +558,8 @@
           1,
           0.15
         ]
-      ]
+      ],
+      "perspective": false
     },
     {
       "id": "sprite-12",
@@ -563,6 +576,7 @@
       "alpha": 0.8,
       "tint": "#fffcd6",
       "blendMode": "screen",
+      "duration": 0.27,
       "alphaOverLife": [
         [
           0,
@@ -600,7 +614,8 @@
           1,
           22.7881
         ]
-      ]
+      ],
+      "perspective": false
     },
     {
       "id": "sprite-13",
@@ -615,6 +630,7 @@
         "y": 0.0881
       },
       "tint": "#fefee1",
+      "duration": 0.27,
       "offsetYOverLife": [
         [
           0,
@@ -624,7 +640,8 @@
           0.9938,
           30.1391
         ]
-      ]
+      ],
+      "perspective": false
     },
     {
       "id": "hot-core-copy",
@@ -679,7 +696,8 @@
           0.965426
         ]
       ],
-      "offsetXOverLife": 0
+      "offsetXOverLife": 0,
+      "perspective": false
     }
   ],
   "sizing": {

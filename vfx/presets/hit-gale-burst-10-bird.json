@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "hit-gale-burst-10-bird",
-  "duration": 0.27,
+  "duration": 0.271,
   "loop": false,
   "deformation": {
     "amplitude": 2.403,
@@ -72,7 +72,10 @@
           1.105851
         ]
       ],
-      "offsetXOverLife": 0
+      "offsetXOverLife": 0,
+      "perspective": false,
+      "followDirection": false,
+      "followStretch": false
     },
     {
       "id": "burst-spikes",
@@ -128,7 +131,10 @@
           1.053191
         ]
       ],
-      "offsetXOverLife": 0
+      "offsetXOverLife": 0,
+      "perspective": false,
+      "followDirection": false,
+      "followStretch": false
     },
     {
       "id": "cross-spikes",
@@ -184,7 +190,10 @@
           1.018085
         ]
       ],
-      "offsetXOverLife": 0
+      "offsetXOverLife": 0,
+      "perspective": false,
+      "followDirection": false,
+      "followStretch": false
     },
     {
       "id": "white-impact",
@@ -239,7 +248,10 @@
           1.000532
         ]
       ],
-      "offsetXOverLife": 0
+      "offsetXOverLife": 0,
+      "perspective": false,
+      "followDirection": false,
+      "followStretch": false
     },
     {
       "id": "hot-core",
@@ -294,7 +306,10 @@
           0.965426
         ]
       ],
-      "offsetXOverLife": 0
+      "offsetXOverLife": 0,
+      "perspective": false,
+      "followDirection": false,
+      "followStretch": false
     },
     {
       "id": "fracture-0",
@@ -333,7 +348,8 @@
           0
         ]
       ],
-      "offsetXOverLife": 0
+      "offsetXOverLife": 0,
+      "perspective": false
     },
     {
       "id": "fracture-1",
@@ -372,7 +388,8 @@
           0
         ]
       ],
-      "offsetXOverLife": 0
+      "offsetXOverLife": 0,
+      "perspective": false
     },
     {
       "id": "fracture-2",
@@ -411,7 +428,8 @@
           0
         ]
       ],
-      "offsetXOverLife": 0
+      "offsetXOverLife": 0,
+      "perspective": false
     },
     {
       "id": "fracture-3",
@@ -450,7 +468,8 @@
           0
         ]
       ],
-      "offsetXOverLife": 0
+      "offsetXOverLife": 0,
+      "perspective": false
     },
     {
       "id": "fracture-4",
@@ -489,7 +508,8 @@
           0
         ]
       ],
-      "offsetXOverLife": 0
+      "offsetXOverLife": 0,
+      "perspective": false
     },
     {
       "id": "sparks",
@@ -546,7 +566,9 @@
           1,
           0.15
         ]
-      ]
+      ],
+      "perspective": false,
+      "followDirection": false
     },
     {
       "id": "sprite-12",
@@ -563,6 +585,7 @@
       "alpha": 0.8,
       "tint": "#a9fec3",
       "blendMode": "screen",
+      "duration": 0.27,
       "alphaOverLife": [
         [
           0,
@@ -600,7 +623,9 @@
           1,
           20.46612796106541
         ]
-      ]
+      ],
+      "perspective": false,
+      "followDirection": false
     },
     {
       "id": "sprite-13",
@@ -615,6 +640,7 @@
         "y": 0.0791
       },
       "tint": "#457e44",
+      "duration": 0.27,
       "offsetYOverLife": [
         [
           0,
@@ -624,7 +650,9 @@
           0.9938,
           27.06810472269941
         ]
-      ]
+      ],
+      "perspective": false,
+      "followDirection": false
     },
     {
       "id": "hot-core-copy",
@@ -679,7 +707,10 @@
           0.965426
         ]
       ],
-      "offsetXOverLife": 0
+      "offsetXOverLife": 0,
+      "perspective": false,
+      "followDirection": false,
+      "followStretch": false
     },
     {
       "id": "sprite-12-copy",
@@ -696,6 +727,7 @@
       "alpha": 0.8,
       "tint": "#61ff81",
       "blendMode": "screen",
+      "duration": 0.27,
       "alphaOverLife": [
         [
           0,
@@ -733,7 +765,9 @@
           1,
           20.46612796106541
         ]
-      ]
+      ],
+      "perspective": false,
+      "followDirection": false
     },
     {
       "id": "amber-halo-copy",
@@ -788,7 +822,10 @@
           1.105851
         ]
       ],
-      "offsetXOverLife": 0
+      "offsetXOverLife": 0,
+      "perspective": false,
+      "followDirection": false,
+      "followStretch": false
     },
     {
       "id": "sprite-12-copy-2",
@@ -805,6 +842,7 @@
       "alpha": 0.8,
       "tint": "#2bff00",
       "blendMode": "screen",
+      "duration": 0.27,
       "alphaOverLife": [
         [
           0,
@@ -842,7 +880,9 @@
           1,
           20.46612796106541
         ]
-      ]
+      ],
+      "perspective": false,
+      "followDirection": false
     },
     {
       "id": "amber-halo-copy-2",
@@ -894,7 +934,10 @@
           1.810091
         ]
       ],
-      "offsetXOverLife": 0
+      "offsetXOverLife": 0,
+      "perspective": false,
+      "followDirection": false,
+      "followStretch": false
     },
     {
       "id": "amber-halo-copy-3",
@@ -946,7 +989,10 @@
           1.810091
         ]
       ],
-      "offsetXOverLife": 0
+      "offsetXOverLife": 0,
+      "perspective": false,
+      "followDirection": false,
+      "followStretch": false
     }
   ],
   "sizing": {

@@ -292,21 +292,21 @@ test('GALE 月牙只在主目標播放，依半徑等比縮放、不壓扁或複
   const t=log.nodes[0].transforms.at(-1);
   assert.equal(t.x,100); assert.equal(t.y,50);
   assert.equal(t.scaleX,1.5); assert.equal(t.scaleY,1.5);
-  assert.equal(t.rotation,Math.atan2(50,100));
+  assert.equal(t.rotation,0);
   for (let repeat=0;repeat<2;repeat++) {
     adapter.tryPlay({fxKind:'slash',variant:'gale-moon',targets:['mv-float-1'],
       area:{x:100,y:50,r:75},vfx:{attack:'moon'}});
     adapter.update(.01);
-    assert.equal(log.nodes.at(-1).transforms.at(-1).rotation,Math.atan2(50,100));
+    assert.equal(log.nodes.at(-1).transforms.at(-1).rotation,0);
   }
   adapter.clear();
   adapter.tryPlay({fxKind:'slash',variant:'gale-moon',targets:['mv-float-1'],
     area:{x:100,y:50,r:75},vfx:{attack:'moon'}});
   adapter.update(.01);
-  assert.equal(log.updates.at(-1).rotation,Math.atan2(50,100));
+  assert.equal(log.updates.at(-1).rotation,0);
 });
 
-test('GALE 八方向與連續施放对準目標，保留局部角度，同座標用正右方', () => {
+test('GALE 八方向與連續施放皆保留作者局部角度，不套用面敵旋轉', () => {
   const preset=unitPreset('moon');preset.layers[0].rotation=.4;
   const {adapter,log}=makeAdapter([preset]);
   for (let i=0;i<8;i++) {
@@ -315,13 +315,13 @@ test('GALE 八方向與連續施放对準目標，保留局部角度，同座標
     const x=Math.cos(a)*100,y=Math.sin(a)*100;
     adapter.tryPlay({fxKind:'slash',variant:'gale-moon',targets:[],area:{x,y,r:50},vfx:{attack:'moon'}});
     adapter.update(.01);
-    const expected=Math.atan2(y,x)+.4;
+    const expected=.4;
     assert.ok(Math.abs(log.updates.at(-1).rotation-expected)<1e-9);
   }
   adapter.clear();
   adapter.tryPlay({fxKind:'slash',variant:'gale-moon',sourceId:'mv-float-2',targets:['mv-float-1'],vfx:{attack:'moon'}});
   adapter.update(.01);
-  assert.equal(log.updates.at(-1).rotation,Math.PI+.4);
+  assert.equal(log.updates.at(-1).rotation,.4);
   adapter.clear();
   adapter.tryPlay({fxKind:'slash',variant:'gale-moon',targets:[],area:{x:0,y:0,r:50},vfx:{attack:'moon'}});
   adapter.update(.01);

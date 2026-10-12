@@ -776,6 +776,9 @@ var VFXRuntime = (function () {
     /* 作者的正右方（+X）為朝前；事件角優先，沒有才取攻擊者到目標的方向。
        地面層用判定平面角，由 Core 最後投影一次；直立層用畫面角。 */
     function attackFacing(spec, presetId, targetId) {
+      // 敵身爆發與垂直落雷保留作者方向；不套用近戰的正右方面敵基準。
+      if (spec.variant === 'gale-burst' || spec.variant === 'gale-moon' || spec.variant === 'gale-chidori' ||
+          spec.variant === 'thunder-strike') return 0;
       if (planePresets[presetId] && isNum(spec._planeAngle)) return spec._planeAngle;
       if (isNum(spec.angle)) return spec.angle;
       var from = spec.sourceId ? footOf(spec.sourceId)
@@ -791,6 +794,7 @@ var VFXRuntime = (function () {
     /* 目標身上（受擊、詛咒、單體攻擊本體）。
        帶 sourceId 時（敵方近戰）把畫面轉向「攻擊者 → 目標」，爪痕才會朝著被打的人。 */
     function playOnTargets(rt, presetId, spec, scale, delaySec, authoredSize, hitClass, aimAttack) {
+      if (aimAttack && Number(spec.sizeMult) > 0) scale = Number(spec.sizeMult);
       var ids = Array.isArray(spec.targets) ? spec.targets.slice(0, 8) : [];
       if (!ids.length) return false;
       var any = false;
@@ -812,7 +816,7 @@ var VFXRuntime = (function () {
         if (hitClass && !hitAllowed(presetId, ids[i])) { counters.capped++; any = true; continue; }
         var p = groundFoot ? footOf(ids[i]) : ctx.posOf(ids[i]);
         // 單體攻擊沒有判定尺寸，保留作者尺寸，不套米制正規化或場景特效倍率。
-        var params = authoredSize ? { scaleX: 1, scaleY: 1 } : defaultSize(presetId, scale);
+        var params = authoredSize ? { scaleX: scale, scaleY: scale } : defaultSize(presetId, scale);
         params.position = p;
         params.depthY = footOf(ids[i]).y;
         if (spec.variant === 'pillar' && presetId === 'pillar-light' && num(spec.dur, 0) > 0) {
@@ -844,7 +848,7 @@ var VFXRuntime = (function () {
       var ids = Array.isArray(spec.targets) ? spec.targets : [];
       ids.forEach(function (id) {
         if (ctx.chainPoint && !ctx.chainPoint(id)) return;
-        var ref = play(rt, presetId, Object.assign(defaultSize(presetId), { position: footOf(id) }));
+        var ref = play(rt, presetId, Object.assign(defaultSize(presetId, num(spec.sizeMult, 1)), { position: footOf(id) }));
         if (ref) follows.push({ ref: ref, key: id, until: clock + presetDurations[presetId], requireVisible: true });
       });
       return true;
@@ -856,7 +860,7 @@ var VFXRuntime = (function () {
       var params = areaScaleParams(spec.area, presetId);
       params.position = areaCentre(spec.area);
       if (aimAttack && !isNum(spec.area.a)) { params.rotation = attackFacing(spec,presetId); params.facingBeforeOuterScale = true; }
-      return !!play(rt, presetId, params, profile.areaScale);
+      return !!play(rt, presetId, params, profile.areaScale * (aimAttack ? num(spec.sizeMult, 1) : 1));
     }
 
     /* 帶 angle 的方向型攻擊（突刺光槍、齊射的風刃）：從施法者身上沿該方位拉出去。
@@ -1799,7 +1803,7 @@ var VFXRuntime = (function () {
           } else if (spec.variant === 'gale-moon') {
             var moonParams = sizeOf(presetId, { r: spec.area && spec.area.r }) || defaultSize(presetId, 1);
             moonParams.position = spec.targets && spec.targets.length ? ctx.posOf(spec.targets[0]) : areaCentre(spec.area);
-            // 以製作時的正右方為朝前，保留圖層自身旋轉動畫。
+            // 月牙閃與千鳥保留製作方向及圖層自身旋轉動畫。
             moonParams.rotation = attackFacing(spec,presetId);
             moonParams.facingBeforeOuterScale = true;
             ok = !!play(rtFx, presetId, moonParams);
@@ -1929,7 +1933,7 @@ var VFXRuntime = (function () {
         if (job.hitClass && !hitAllowed(job.presetId, job.targetId)) { counters.capped++; continue; }
         var previousTargets = chainTargets;
         chainTargets = job.chainTargets || null;
-        var jobParams = Object.assign(job.authoredSize ? { scaleX: 1, scaleY: 1 } : defaultSize(job.presetId, job.scale),
+        var jobParams = Object.assign(job.authoredSize ? { scaleX: job.scale, scaleY: job.scale } : defaultSize(job.presetId, job.scale),
           { position: job.groundFoot ? footOf(job.targetId) : ctx.posOf(job.targetId),
             depthY: footOf(job.targetId).y });
         if (isNum(job.rotation)) jobParams.rotation = job.rotation;

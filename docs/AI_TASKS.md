@@ -1,5 +1,43 @@
 # AI_TASKS.md
 
+## GROUND-NO-GRID-20261012 — 全場景隱藏地板格子感
+
+- Owner：Codex；Done，單一開發者。使用者要求隱藏全部地板格線。既有野外底圖沒有磚縫，但週期性正弦明暗在旋轉平鋪後仍形成菱形格子感；移除這層規律明暗與舊磚縫繪製入口，保留細砂點、自然裂紋及場景不規則地面色塊。BOSS地板唯讀核對。
+- 範圍：素材庫codex-authored/scene-nature的地板產生器／八張PNG／SOURCE，經既有匯出同步tools/gen_ground_tiles.py與images/ground；Renderer地板素材版本、index及預覽Renderer快取、SCENE_NATURE與本紀錄。預檢全部無其他副本／分支衝突；本副本疾風迅雷進行中修改原樣保留，共用index／AI_TASKS僅提交本任務段落。禁止改戰鬥／技能／存檔／地板投影及其他素材。不合併或推送。
+- 驗收：八張地板檢視、荒漠及另一野外場景／BOSS正式Renderer預覽、場景回歸、匯出SHA核對與Build；先素材庫再遊戲提交。此為既有程序材質生成器調整，維持可重現的批次像素輸出，無需手工繪圖工具或新AI美術。
+- 完成／修改：八張原創PNG重建，256×256維持不變，合計145,135 bytes；產生器移除正弦明暗／磚縫程式，Renderer移除後備圖規律點陣。index與場景預覽Renderer1.6.181、地板圖片20261012-no-grid；素材庫SOURCE與SCENE_NATURE同步。完整修改範圍如上；未改但查核：js/battle-decor.js（既有不規則色塊及過濾tiles）、js/battle-arena.js與js/decor-nature.js（BOSS drawArenaFloor無規則格線）、匯出器及場景／投影測試；不改技能或判定。
+- 驗證指令／結果：node --test tests/battle-decor.test.cjs tests/battle-arena.test.cjs tests/battle-ground-projection.test.cjs tests/battle-perspective.test.cjs，58項中57通過、1項既有PROJ-9失敗（測試抽取bootVfxRuntime未帶skyEntryPoint）；唯讀攔截Renderer載入並重導至修改前HEAD，單跑PROJ-9得到完全相同ReferenceError，未改測試或放寬斷言。npm.cmd run build通過491檔；node tools/scene-renewal/export-source.cjs --check，30份來源SHA一致；git diff --check通過。八圖縮至8×8量低頻明暗範圍為0～1灰階，無大尺度週期格紋；PNG尺寸均256×256。
+- 瀏覽器：獨立localhost正式Renderer預覽荒漠／沼澤與試煉塔，地面無菱形格線、自然紋理與物件／動態保持，切塔與返回正常；重新載入後無error／warn，保存desert-no-grid.png於Codex visualizations/boss-arena-upgrade。本頁不讀真人存檔。圖集及BOSS光色未改，不重新量測效能。
+- 提交／交接：素材庫89cce52已先提交；遊戲Commit為本紀錄所在提交（交付回覆列出）。同副本疾風迅雷任務已完成ddb1c9b0，期間將本任務InProgress紀錄一起提交；本次補完紀錄並僅提交地板14檔，沒有混入技能修改。無本次未完成項；已知限制為上述既有VFX測試失敗、未做長時間戰鬥效能量測。可供審查合併，未合併／推送；下一步重載遊戲以載入新快取。
+
+## GALE-ULTIMATE-ADJUSTMENTS-20261012 — 雷神之怒機率／尺寸與千鳥隨機五目標
+
+- Owner：Codex；Done，單一開發者。使用者要求雷神之怒觸發落雷35%、特效縮小30%；千鳥每次隨機打擊30米內5個敵人。千鳥以玩家當下位置為搜敵中心，每段重新選最多5名不同存活敵人，數量不足全選、不重複補打；沿用現有傷害倍率與爆散加成，不將30米搜敵半徑當傷害或特效尺寸。
+- 範圍：skills2的機率、視覺倍率事件與千鳥逐段選敵；Skills2 Excel／CSV及生成字面值；geometry／VFX用途說明接線；Runtime消費既有sizeMult；主頁／Editor及Worker必要快取；相關測試及本紀錄／Adapter文件。禁止更動其他技能參數、落雷傷害半徑、Preset原檔、Core／FOV／傾角、協議／存檔或其他副本；不合併／推送。
+- 前置：既有疾風迅雷逐段排程、配置表與sizeMult協議均已存在。所有計畫檔案衝突預檢乾淨。Skills2.xlsx起初鎖定，使用者已保存並關閉；採Excel原生API更新與正常重開驗證，保留其他儲存內容。必要驗收包含35%機率邊界、未命中不觸發、不遞迴落雷、縮放70%而傷害半徑不變、千鳥逐段最新位置／敵群／隨機／不足5／零目標、表格往返／Worker／Runtime回歸與Build。
+- 完成：雷神之怒每次成功命中獨立判定fx.chance＝35，落雷事件帶fx.sizeMult＝0.7；Runtime在原有範圍縮放後乘倍率，敵身立即／延後及既有落雷專用路徑皆支援。傷害半徑8米與傷害倍率不變，落雷不回頭觸發自己。千鳥fx.count＝5、搜敵m＝30，每段以最新玩家位置／敵群不重複隨機選取，gale-chidori只帶實際受擊名單，在逐敵位置播放原尺寸、作者方向的表定本體，不再沿用原主目標區域對全群結算；本體及爆散的倍率／成長不變。其他群組及疾風普通階級字面值與1e193a3f逐項完全相同。
+- 修改檔案：js/skills2.js、js/vfx-runtime.js、config/CSV/Skills2.csv、config/Excel/Skills2.xlsx、tools/skills2-geometry.cjs、tools/skills2-vfx.cjs；index.html、js/bridge.js、js/worker/sim.worker.js、tools/vfx/editor/index.html快取；tests/gale-ultimate-adjustments.test.cjs、tests/gale-rework.test.cjs、tests/gale-authored-direction.test.cjs、tests/skill2-ult-evolution.test.cjs及本紀錄／docs/vfx/VFX_RUNTIME_ADAPTER.md。舊超神測試補足表定消耗所需MP、清除比較前一次施放的冷卻，雷神之怒檢查每次成功命中對應一雷，不降低斷言。
+- 快取：skills2 1.0.295、Runtime兩頁1.0.185、bridge 1.0.250；WORKER_ASSET_VERSION及skills2 import均20261012-gale-ultimate-adjustments。既有shim已傳sizeMult與targets／variant，無協議欄位變更，Protocol不換版。
+- Excel：只更新兩列必要11格，Excel正常模式重開／再存再重開驗證；另以原生API比較原檔與結果的11個受影響儲存格，NumberFormat、WrapText、行高、欄寬、對齊、字型、底色保留。既有更新工具會將變動的LEN快取結果當常數寫回，已用Excel原生API恢復原C51的兩條=LEN(AW40)／=LEN(AW41)與格式，再存並正常重開確認公式結果；無手工XML修改。Excel／CSV全表一致，config_tables --apply Skills2語意變更0。
+- 測試：node --test tests/gale-ultimate-adjustments.test.cjs tests/gale-rework.test.cjs tests/gale-thunder-flash.test.cjs tests/gale-authored-direction.test.cjs tests/skills2-geometry.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-editor-guard.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs（81項80通過1既有失敗）；node --test --test-name-pattern="GALE|FACING|THUNDER|PLACE-|facing|朝向|攻擊方向|傾角" tests/vfx-runtime.test.cjs（23／23）；node --test --test-name-pattern="雷神|千鳥|疾風|霹靂|風捲殘雲|神速斬|雙影" tests/skill2-ult-evolution.test.cjs（4項3通過1既有失敗）。共108項106通過；新增專項8／8，無新增失敗。
+- 既有失敗：skills2-geometry的連鎖閃電速度固定18/.244斷言，及skill2-ult-evolution的霹靂一閃舊fixture（0道而期望6道）。以Git HEAD 1e193a3f的原測試、skills2.js、Skills2 CSV／Excel唯讀快照重跑，兩項同樣失敗，未改其斷言或擴大修復。npm.cmd run build（491檔）、相關node --check與git diff --check通過。
+- 使用者修改：執行中使用者保存ground-mire Preset／layout及其匯出索引；依既有一起Commit偏好保留原樣，另預檢無衝突。新增匯出spiral_28.png來自素材庫已追蹤的new_materials/arcane-ring原檔，SHA256一致；Preset合法。素材庫55a2933先保存codex-authored/ground-projection/presets及layouts/ground-mire.json，與遊戲逐位元相同；export-assets --check確認244 Preset／162素材引用已最新。無新外部素材或第三種特效來源。遊戲Preset並非本次AI改寫，雷神之怒／千鳥Preset不修改。
+- 唯讀檢查：js/battlefield.js隨機／體型邊緣距離、js/vfx-core.js縮放、js/worker/shim.js與protocol.js傳遞、tools/config_tables.cjs生成／往返、tools/excel-update-sheets.ps1原生驗證、正式落雷／千鳥Preset與素材庫來源；本輪臨時快照、JSON及原生Excel檢查腳本全部清除。
+- 提交隔離：收尾時另一聊天「改造戰鬥場景地形與裝飾」新增八份images/ground圖檔、battle-renderer地板版本20261012-no-grid、gen_ground_tiles.py與scene-preview.html修改及主頁battle-renderer 1.6.181快取。沿用使用者先前同意的分段提交與場景由原聊天提交指示，只提交index本次Runtime／skills2／bridge三處快取；工作檔保留1.6.181，場景檔案與該快取不納入本Commit。其餘本次與使用者沼澤保存皆已提交，工作區剩餘場景修改屬進行中工作。
+- 交付：遊戲Commit為本紀錄所在 [Codex] feat: 調整雷神之怒與千鳥技能效果；素材Commit 55a2933。無未完成實作，可供合併；本輪不合併／推送。已知限制為上述2項既有失敗與尚未重做實機目視；下一步使用者重載遊戲驗收。Editor未儲存內容先備份／另存再重載，既有防過期覆寫回歸通過。
+
+## GALE-AUTHORED-DIRECTION-20261012 — 疾風迅雷及三個超神保留製作方向
+
+- Owner：Codex；Done，單一開發者。使用者發現疾風迅雷在遊戲從各方向發出，而Editor為由上往下，追加要求涵蓋霹靂一閃、雷神之怒、千鳥三個超神。原因為先前共用attackFacing把敵身爆發及落雷也按玩家→目標旋轉；圖層followDirection不控制外層播放旋轉。
+- 範圍：Runtime按gale-burst／gale-moon／thunder-strike事件保留Preset方向、專項及既有Runtime回歸、兩頁Runtime快取、Adapter文件與本紀錄；使用者既有hit-gale-burst／07-moon／10-bird儲存修改原樣保留，依既有一起Commit偏好同步素材庫。禁止更動傷害、位置、範圍、FOV、傾角、作者局部動畫、其他一般攻擊朝向、Worker／Protocol、存檔、合併或推送。
+- 預檢：Runtime、兩份測試、index、Editor頁、兩文件及三Preset皆無其他副本／分支來源；工作區起初僅使用者兩Preset修改，執行中新增07-moon保存，另做預檢通過。前置既有攻擊朝向及疾風迅雷事件已實作。
+- 完成：本體／爆散／疾風月牙閃／千鳥在八方目標保留作者方向；霹靂一閃、雷神之怒繼承的本體同樣適用；雷神之怒及同類thunder-strike落雷取消額外面敵旋轉。立即／延遲與範圍／敵身路徑皆適用。霹靂一閃的獨立貫穿雷電依area.a維持實際判定連線，其他近戰朝向不變。兩頁Runtime快取1.0.183→1.0.184；不需Worker或Protocol換版。
+- 修改檔案：js/vfx-runtime.js、index.html、tools/vfx/editor/index.html、docs/vfx/VFX_RUNTIME_ADAPTER.md、本紀錄、tests/gale-authored-direction.test.cjs、tests/vfx-runtime.test.cjs；另包含使用者的三份vfx/presets/hit-gale-burst*.json。舊GALE朝向斷言依本次新需求改為作者方向，保留原尺寸／位置／重播／局部旋轉驗收；新增正式Preset八方及立即／延遲回歸先重現兩項失敗，再修正通過。
+- 唯讀檢查：js/skills2.js的主打擊／爆散／月牙／千鳥／落雷／貫穿事件、js/vfx-core.js、tools/vfx/vfx-library-root.cjs、正式beam-gale-thunder-flash／bolt-sky-purple等Preset及三份原layout；計算與事件繼續使用原配置，無模擬／主執行緒語意參數差異。
+- 測試指令：node --test tests/gale-authored-direction.test.cjs tests/gale-rework.test.cjs tests/gale-thunder-flash.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-editor-guard.test.cjs（41項通過）；node --test --test-name-pattern="GALE|FACING|THUNDER|PLACE-|facing|朝向|攻擊方向|傾角" tests/vfx-runtime.test.cjs（23項通過）。共64項全通過；npm.cmd run build（490檔全通過）、node --check js/vfx-runtime.js及tests/vfx-runtime.test.cjs、git diff --check通過。
+- 素材：素材庫Commit 7c4d9bf，保存三份使用者Preset及原layout於codex-authored/gale-burst/{presets,layouts}，與遊戲檔案SHA256逐一相同，三Preset經Core.validatePreset全部合法。node tools/vfx/export-assets.cjs --check --root D:/MyGame/Asset確認244 Preset／161素材引用匯出已最新；無新增外部素材，無第三種特效來源。
+- 交付：本紀錄所在 [Codex] fix: 修正疾風迅雷及超神進化的特效方向 為遊戲Commit，雙倉庫皆提交必要檔案；無未完成實作，可合併但本輪不合併／推送。已知限制：本輪以正式Core與Runtime數值回歸驗證八方畫面轉換，未重做瀏覽器實機目視驗收。下一步使用者重新載入遊戲檢查四個技能；Editor若有未保存內容先保存再重載。
+
 ## CODEX-CLAUDE-MERGE-20261008 — 解決 develop 整合衝突
 
 - Owner：Codex；Done。使用者明確要求解決與 Claude 在 develop 的衝突，授權接續主整合副本既有合併；原 HEAD 348bc794、MERGE_HEAD 4a2cb466。單一開發者，前置為兩側已提交成果；完成後交使用者重載驗收。

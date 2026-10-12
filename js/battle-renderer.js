@@ -1236,19 +1236,11 @@ var BattleRenderer = (function () {
     var g = c.getContext('2d');
     g.fillStyle = '#3a3a42';
     g.fillRect(0, 0, 96, 96);
-    g.fillStyle = 'rgba(255,255,255,0.06)';
-    for (var y = 0; y < 4; y++) {
-      for (var x = 0; x < 4; x++) {
-        g.beginPath();
-        g.arc(x * 24 + ((y % 2) ? 12 : 0) + 6, y * 24 + 6, 1.7, 0, Math.PI * 2);
-        g.fill();
-      }
-    }
-    // 備援材質也不描貼圖邊框，避免圖檔尚未就緒時露出方格。
+    // 備援保持純底色，不畫邊框或規律點陣，載入前也不露出方格。
     return PIXI.Texture.from(c);
   }
   var _groundTexCache = {};
-  var GROUND_ASSET_VERSION = '20261007-scene-rebuild';
+  var GROUND_ASSET_VERSION = '20261012-no-grid';
   function loadGroundTexture(zoneKey) {
     var name = zoneKey ? ('ground_' + zoneKey) : 'ground_default';
     if (_groundTexCache[name] === 'failed') return;
