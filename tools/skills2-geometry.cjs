@@ -15,7 +15,7 @@ const columns=Object.values(labels);
 const routes={};
 function route(kind,rows){rows.split(/\s+/).filter(Boolean).forEach(id=>{if(routes[id])throw Error('重複範圍用途 '+id);routes[id]=kind;});}
 route('damage',`thrust/phantomOcta cleave/1 cleave/windChaser gale/1 gale/7 gale/thunderGodSlash
- bloodblade/venomDomain bloodblade/disintegrate counter/holyBody counter/indomitable bloodrage/slayerAdvent
+ bloodblade/venomDomain bloodblade/disintegrate counter/holyBody bloodrage/slayerAdvent
  fireball/1 fireball/7 firepillar/1 firepillar/5 firehunt/fireGodDescend mire/abyssInferno
  thunderstrike/7 thunderorb/1 thunderorb/7 icearrow/7 icearrow/tearsOfIce waterball/1 waterball/4
  waterball/7 waterball/ragingTide frostnova/1 frostnova/2 frostnova/crystalResonance frostnova/iceKingDomain windblade/6 vacuumslash/4 stormbarrier/2 stormbarrier/skyfallStars`);
@@ -23,7 +23,7 @@ route('search',`knife/3 knife/soulhunterBlade gale/4 gale/thunderFlash gale/chid
  fireball/3 fireball/5 firepillar/3 firepillar/6 mire/4 earthguard/6 chainlightning/1 chainlightning/5
  chainlightning/eternalSuperconductor thunderstrike/heavenTribulation
  thunderorb/thunderBurst waterball/5 vacuumslash/1 stormbarrier/5`);
-route('effect',`dualdance/5 rockarmor/superRockArt rockarmor/gravityField thunderstrike/5 waterball/waterPrisonFall waterball/abyssBurial`);
+route('effect',`counter/indomitable dualdance/5 rockarmor/superRockArt rockarmor/gravityField thunderstrike/5 waterball/waterPrisonFall waterball/abyssBurial`);
 route('damage','firepillar/dragonDevour firepillar/infernoTempest');
 route('trigger',`bloodblade/slayerDomain bloodrage/6 fireball/6`);
 route('travel',`cleave/6 icearrow/4 windblade/1`);
@@ -48,7 +48,7 @@ function bindings(gid,stage){
  const id=gid+'/'+stage, b=[];
  if(id==='rockarmor/superRockArt')b.push(['gap',['gap']]);
  if(id==='waterball/ragingTide')b.push(['gap',['gap']]);
- if(id==='counter/warGodBody'||id==='counter/indomitable')b.push(['gap',['gap']]);
+ if(id==='counter/warGodBody')b.push(['gap',['gap']]);
  if(id==='thunderorb/criticalThunderbolt')b.push(['speed',['speed']]);
  if(/^[1-7]$/.test(stage))b.push(['cast',['castM']]);
  for(const kind of Object.keys(commonRoutes))if(commonRoutes[kind].has(id))b.push([kind,[kind==='rangePct'?'range':kind]]);

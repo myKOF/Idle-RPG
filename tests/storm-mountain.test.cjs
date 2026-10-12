@@ -136,13 +136,15 @@ test('嵐之山：800%×75%＋500%×50%=850%，不歸一增傷係數、不重複
   assert.deepEqual(s.c.BASE_STATS.elemDmgUp,{wind:0,earth:0},'不污染角色的原始屬性表');
 });
 
-for(const lv of [1,10]) test(`嵐之山 Lv.${lv}：風地係數升級、擊殺回復最大生命比例護盾且只一次`,()=>{
+for(const lv of [1,10]) test(`嵐之山 Lv.${lv}：風地係數升級、擊殺直接回復生命且只一次`,()=>{
   const s=setup(lv),expected=lv===1?935:1700;
+  s.p.hp=500;
   const cfg=s.c.sgAtkCfg(s.p,s.c.BASE_STATS,100,s.m,0,'windblade');near(cfg.skillElemDmgUpPct,expected);
-  assert.equal(hit(s).dmg,100*(1+expected/100));assert.equal(s.p.shield,0,'未擊殺不回復擊殺護盾');
-  s.m.hp=1;assert.equal(hit(s).killed,true);near(s.p.shield,lv===1?22:40);
-  assert.equal(s.p.shieldMax,s.p.shield);assert.equal(s.floats.length,1);assert.equal(s.floats[0][0],'mv-float');
-  assert.equal(hit(s),null);near(s.p.shield,lv===1?22:40);assert.equal(s.floats.length,1);
+  assert.equal(hit(s).dmg,100*(1+expected/100));assert.equal(s.p.hp,500,'未擊殺不回復生命');
+  s.m.hp=1;assert.equal(hit(s).killed,true);near(s.p.hp,lv===1?522:540);
+  assert.equal(s.p.shield,0);assert.equal(s.p.shieldMax,0);assert.equal(s.floats.length,1);
+  assert.equal(s.floats[0][0],'mv-float');assert.equal(s.floats[0][2],'heal');near(s.floats[0][3],lv===1?22:40);
+  assert.equal(hit(s),null);near(s.p.hp,lv===1?522:540);assert.equal(s.floats.length,1);
 });
 
 test('嵐之山：風地抗性與風系外部乘區分別套用，無額外屬性傷害段',()=>{
@@ -158,17 +160,23 @@ test('嵐之山：風地抗性與風系外部乘區分別套用，無額外屬�
   assert.ok(procs.procs.includes('岩甲'),'地系分量參與既有屬性效果判定');
 });
 
-test('嵐之山擊殺盾：護盾效率、上限、禁盾、未擊殺／其他技能／卸下保護及高塔定址',()=>{
-  for(const mode of ['efficiency','cap','blocked','otherSkill','inactive','tower']) {
-    const s=setup();s.m.hp=1;
+test('嵐之山擊殺回血：護盾效率／禁盾不干涉、滿血不加盾、停用及高塔實際回血飄字',()=>{
+  for(const mode of ['efficiency','cap','blocked','otherSkill','inactive','tower','full','nearFull','dead','revival']) {
+    const s=setup();s.m.hp=1;s.p.hp=500;
     if(mode==='efficiency')s.c.BASE_STATS.shieldEff=100;
     if(mode==='cap'){s.p.shield=9995;s.p.shieldMax=9995;}
     if(mode==='blocked')s.c.skills2ShieldBlocked=()=>true;
     if(mode==='inactive')s.c.G.player.skills2.ult.windblade=null;
     if(mode==='tower')s.c.playerEventFloatTarget=()=> 'tp-float';
+    if(mode==='full')s.p.hp=1000;
+    if(mode==='nearFull')s.p.hp=995;
+    if(mode==='dead')s.p.hp=0;
+    if(mode==='revival')s.p._sgRevival=true;
     assert.equal(hit(s,mode==='otherSkill'?'vacuumslash':'windblade').killed,true);
-    const expected={efficiency:44,cap:10000,blocked:0,otherSkill:0,inactive:0,tower:22}[mode];
-    near(s.p.shield,expected);
+    const expected={efficiency:522,cap:522,blocked:522,otherSkill:500,inactive:500,tower:522,full:1000,nearFull:1000,dead:0,revival:500}[mode];
+    near(s.p.hp,expected);near(s.p.shield,mode==='cap'?9995:0);
+    if(['otherSkill','inactive','full','dead','revival'].includes(mode))assert.equal(s.floats.length,0);
+    else {assert.equal(s.floats.length,1);assert.equal(s.floats[0][2],'heal');near(s.floats[0][3],mode==='nearFull'?5:22);}
     if(mode==='tower')assert.equal(s.floats[0][0],'tp-float');
   }
 });
@@ -185,7 +193,20 @@ test('雙屬性歸屬相容：非法／未知權重退回單屬性，缺省保�
   assert.equal(hit(s).dmg,900,'沒有嵐之山時仍只吃完整風系提升');
 });
 
-test('正式Worker：大小刃／沿途脈衝皆使用加權雙屬性；事件尺寸數量正常且實際擊殺盾回復',()=>{
+test('嵐之山：回復比例由配置驅動，滿血溢出交給既有獨立資源轉換掛點',()=>{
+  const s=setup();s.p.hp=995;s.m.hp=1;
+  s.c.SKILLS2.windblade.ult[1].fx.healPct=10;
+  s.c.SKILLS2.windblade.ult[1].fx.healPctPer=0;
+  const overflow=[];s.c.skills2OnResourceOverflow=(p,st,kind,amount)=>overflow.push({p,kind,amount});
+  assert.equal(hit(s).killed,true);assert.equal(s.p.hp,1000);assert.equal(s.p.shield,0);
+  assert.equal(overflow.length,1);assert.equal(overflow[0].p,s.p);
+  assert.equal(overflow[0].kind,'hp');near(overflow[0].amount,95);
+  assert.equal(s.floats[0][3],5);
+  const u=s.c.SKILLS2.windblade.ult[1];assert.equal(u.fx.shieldPct,undefined);
+  assert.match(u.desc,/回復最大生命 \{healPct\}% 的生命值/);
+});
+
+test('正式Worker：大小刃／沿途脈衝皆使用加權雙屬性；事件尺寸數量正常且實際擊殺回血',()=>{
   const c=createEngine({seed:9}).boot(null).ctx;
   c.G.player.level=1000;c.G.player.skills2={levels:{windblade:Array(7).fill(10)},ult:{windblade:{pick:1,lv:1}}};c.G.player.loadout=['sg:windblade'];
   const stats={...h.loadContext().BASE_STATS,elemDmgUp:{wind:800,earth:500}};
@@ -201,9 +222,9 @@ test('正式Worker：大小刃／沿途脈衝皆使用加權雙屬性；事件�
   h.advance(c,p,[m],1.5);
   for(const damage of [5850,3510,2925])assert.ok(calls.some(a=>Math.abs(a.atk-damage)<1e-8),`本體／小刃／脈衝${damage}須實際命中`);
   for(const cfg of calls){near(cfg.skillElemDmgUpPct,935);near(c.skillElemMixOf(cfg).earth,.4);}
-  m.hp=1;const before=p.shield;
+  m.hp=1;p.hp=500;const before=p.hp;
   h.advance(c,p,[m],2);
-  assert.equal(m.hp,0);near(p.shield-before,22);
-  const shield=c.shimDrainEvents().find(e=>e.kind==='float'&&e.cls.includes('shield'));
-  assert.ok(shield,'正式Worker須產生護盾回復飄字');assert.equal(shield.elId,'pv-float');
+  assert.equal(m.hp,0);near(p.hp-before,22);assert.equal(p.shield,0);
+  const heal=c.shimDrainEvents().find(e=>e.kind==='float'&&e.cls.includes('heal'));
+  assert.ok(heal,'正式Worker須產生生命回復飄字');assert.equal(heal.elId,'pv-float');assert.equal(heal.damageValue,22);
 });

@@ -1776,9 +1776,6 @@ function fieldTick(dt) {
        兩者都走 formula.js 的入帳收斂點（healPlayer／gainPlayerMana）：夾在上限的行為與
        改版前完全相同（noShield ＝ 溢出不轉護盾），差別只在**溢出量**現在有地方可以接——
        大地守護的傳奇【生命滋養】【魔力滋養】與超神【光耀之堂】就吃這一份。 */
-    if (p._sgRevival && typeof sgTickLastStand === 'function') {
-        sgTickLastStand({ pEnt: p, getEnemies: combatFieldEnemies, floatSel: 'mv-float', onDeaths: onFieldDeaths });
-    }
     var hot = buffVal(p, 'hot');
     healPlayer(p, (playerHpRegenPerSec(st) + st.hp * hot / 100) * dt, st, { noShield: true });
     gainPlayerMana(p, playerMpRegenPerSec(st) * dt, st);
@@ -2185,17 +2182,17 @@ function fieldDeathRetreatStage(currentStage) {
 }
 
 function onPlayerFieldDeath() {
+    if (FIELD.player && FIELD.player.hp > 0) return;
+    // 不屈鬥魂先於復活類效果攔截致命傷；觸發後不進死亡統計或重置戰場。
+    if (typeof skills2TryLastStand === 'function' && FIELD.player &&
+        skills2TryLastStand(FIELD.player, combatFieldEnemies(), 'mv-float')) {
+        UI.dirty.battle = true;
+        return;
+    }
     /* 新版技能【天地共生】（大地守護 T7，js/skills2.js）：五秒復甦攔截。
        掛在這裡而不是 resolveHit 的致死分支，是因為野外有多條判死路徑
        （敵人攻擊、持續傷害、自傷技能、反震），這裡是它們唯一的共同出口。 */
     if (typeof skills2TryRebirth === 'function' && FIELD.player && skills2TryRebirth(FIELD.player)) {
-        UI.dirty.battle = true;
-        return;
-    }
-    /* 新版技能超神【不屈鬥魂】（反擊，js/skills2.js）：死亡時全屏地系爆發、倒地數秒後原地復活。
-       排在天地共生之後、不屈之誓之前；兩者都可用時先觸發天地共生。
-       而不屈鬥魂本身又嚴格優於不屈之誓（後者只是把死亡往後推，時間到還是真的死）。 */
-    if (typeof skills2TryLastStand === 'function' && FIELD.player && skills2TryLastStand(FIELD.player)) {
         UI.dirty.battle = true;
         return;
     }

@@ -229,6 +229,7 @@ function bfTickApproach(enemies, dt) {
     var ent = live[i];
     var p = bfPos(ent);
     if (!p) continue;
+    if (bfTickKnockback(ent)) continue;
     if (ent._enterCd > 0) continue;            // 還在進場：不參與逼近，也還不能被打
     // 菁英詞條施法／衝鋒中：原地不動（衝鋒的位移由 js/elite.js 自己推進）
     if (typeof eliteLocked === 'function' && eliteLocked(ent)) continue;
@@ -645,6 +646,34 @@ function bfNearestOthers(from, enemies, count, maxGapPx) {
     out.push(deco[j].ent);
   }
   return out;
+}
+
+/* 擊退沿遠離玩家的方向排程；沒有座標或免控的BOSS維持原位置。 */
+function bfKnockbackEnemies(enemies, distancePx, durationSec) {
+  var moved = [], home = bfPlayerPos();
+  if (!(distancePx > 0) || !(durationSec > 0)) return moved;
+  var live = bfLiveList(enemies);
+  for (var i = 0; i < live.length; i++) {
+    var ent = live[i], p = bfPos(ent);
+    if (!p || (typeof isBossControlImmune === 'function' && isBossControlImmune(ent))) continue;
+    var dx = p.x - home.x, dy = p.y - home.y, d = Math.sqrt(dx * dx + dy * dy);
+    if (!(d > 0)) { dx = 1; dy = 0; d = 1; }
+    ent._bfKnockback = { x: p.x, y: p.y, toX: p.x + dx / d * distancePx,
+      toY: p.y + dy / d * distancePx, startAt: GT, endAt: GT + durationSec };
+    moved.push(ent);
+  }
+  return moved;
+}
+
+/* 強制位移先於暈眩／逼近判定，逐Tick更新權威座標，畫面沿既有快照補間。 */
+function bfTickKnockback(ent) {
+  var k = ent && ent._bfKnockback, p = bfPos(ent);
+  if (!k || !p) return false;
+  var q = Math.max(0, Math.min(1, (GT - k.startAt) / (k.endAt - k.startAt)));
+  p.x = k.x + (k.toX - k.x) * q;
+  p.y = k.y + (k.toY - k.y) * q;
+  if (q >= 1) delete ent._bfKnockback;
+  return true;
 }
 
 /* ---- 拉近（傳奇特效【聚敵旋渦】）----

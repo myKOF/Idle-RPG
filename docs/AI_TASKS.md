@@ -1,5 +1,42 @@
 # AI_TASKS.md
 
+## STORM-MOUNTAIN-HEAL-20261012 — 嵐之山擊殺改為直接回復生命
+
+- Owner：Codex；Done，單一開發者。使用者要求風刃擊殺敵人時由護盾改為直接回復生命；保留原最大生命比例與每級成長、雙屬性及風刃其他機制。前置已完成，後續使用者驗收／整合。
+- 允許修改：js/skills2.js、Skills2 Excel／CSV、tests/storm-mountain.test.cjs、index.html、js/bridge.js與Worker import快取、本紀錄；禁止其他技能數值、素材、Protocol／存檔。預檢無其他副本／分支來源；既有同副本修改依使用者保留授權分段提交。
+- 驗收：擊殺與非擊殺、Lv1／Lv10、滿血／接近滿血、護盾效率與禁盾不影響回復、停用／其他技能、重複擊殺保護、高塔飄字及正式Worker事件；保留獨立溢出轉換技能。Excel原生更新及正常重開、公式／格式保留，配置往返、回歸及Build。基線44項33通過／11失敗，記錄於臨時測試輸出供名稱比對。
+
+- 完成／修改8檔：上述程式、Skills2 Excel／CSV、快取、tests/storm-mountain.test.cjs與本紀錄。擊殺掛點改sgWindbladeKillHeal，使用healPlayer(...,{noShield:true})，只顯示實際增加生命的heal飄字及數值；非擊殺／重複命中死亡目標／未選超神／其他技能／死亡／復甦不回復。滿血不走一般治療溢出轉盾；光耀之堂等獨立溢出掛點保留。配置shieldPct／shieldPctPer改名healPct／healPctPer，原2／0.2不變，沿base＋per×level，Lv1為2.2%、Lv10為4%。雙屬性／傷害／數量／飛行演出不變。
+- Excel：工作檔及提交副本都由原生Excel API僅改本列3格，正常重開RepairMode=false；230條公式與其他格資料、修改格樣式及繪圖數不變。另唯讀檢查提交xlsx內全部儲存格style索引、styles.xml、公式、欄寬／行屬性／凍結視圖／合併／資料驗證／篩選均與HEAD一致；沒有手工寫XML。提交Excel與CSV逐位元往返一致，config_tables --apply Skills2語意變更0。
+- 測試指令：node --test tests/storm-mountain.test.cjs tests/hall-of-radiance.test.cjs tests/worker-protocol.test.cjs，33/33；其中嵐之山15/15。涵蓋Lv1／Lv10回血22／40、非擊殺不回復、接近滿血只顯示實際5點、滿血與既有盾不增加、禁盾及效率不干涉、其他技能／卸下／死亡／復甦、獨立overflow掛點與可調配置、正式sim engine的大小刃／追蹤刃／脈衝擊殺與Worker heal事件damageValue=22、既有Runtime位置／航向／尺寸與生命週期。以唯讀載入分段提交skills2副本重跑同33項全通過。
+- 擴大回歸：node --test --test-reporter=tap tests/storm-mountain.test.cjs tests/storm-myriad.test.cjs tests/skill2-windblade-vacuum-legendary.test.cjs，45項34通過／11既有失敗；修改前44項33通過／11失敗，失敗名稱差集0，主要為舊風刃／真空斬數值或機制期望，未放寬無關斷言。npm.cmd run build：496檔全通過；diff check通過。
+- 快取：skills2 1.0.300、bridge1.0.255；Worker入口與skills2 import同20261012-storm-mountain-heal，Protocol50不變。唯讀檢查AI規範／prompts/codex.md、js/formula.js／util.js／combat.js／ui.js、Worker shim／Protocol、sim engine、配置與Excel原生工具、其他風刃回歸檔；上述檔案未改。未進行本輪瀏覽器實機或真人長時間戰鬥驗收；計算與Worker飄字／正式Runtime皆已回歸。
+- 交付：本紀錄所在[Codex] fix提交即遊戲Commit，無本次未完成項，可供審查合併；不合併／推送。素材未改、素材庫無需Commit，無外部素材或特效新來源。使用者現有Gems／data／Skills2其他技能／岩柱調整原樣保留未提交；僅本次嵐之山分段staging。已知風險為上述11既有回歸失敗，下一步重新載入遊戲驗收擊殺回血。
+## INDOMITABLE-GUARD-20261012 — 不屈鬥魂致命傷免死與擊退暈眩
+
+- Owner：Codex；Done，單一開發者。使用者要求面臨死亡時擊退30米內敵人並暈眩3秒、無敵護盾基礎2.5秒／每級+0.25秒，自身冷卻60秒／每級-2秒；觸發不算死亡，原戰鬥立即繼續。沿既有base＋per×level；保留1HP、不清場／退關／停戰，不再升空復甦、漸進回血、地傷爆發或反擊轉地。
+- 允許：js/skills2.js、js/combat.js、js/tower.js、js/battlefield.js、js/legendary.js僅舊註釋同步、Skills2 Excel／CSV、tools/skills2-geometry.cjs／skills2-vfx.cjs、index／bridge／Worker快取、相關不屈鬥魂／反擊／冷卻／進化／GM回歸與新專項、本紀錄；禁止改其他技能數值／素材／協議與存檔。預檢無其他副本／分支修改；同副本火之神樂／Gems／data／岩柱未提交內容沿使用者前輪保留授權分段處理，不納本次Commit。前置依賴已滿足，後續使用者整合，不合併／推送。
+- 驗收：野外／高塔各致命來源免死、不記死亡、保留戰場與行動；30米邊界、3秒控場及既有抗性／BOSS免控、5米擊退以0.25秒連續位移（可配置）、零傷害、HP1且不清空施放／MP；不同等級無敵時長／冷卻、到期與重觸發、卸裝／降級、VFX範圍與持續時長、Excel原生重開／公式格式保留、表格往返／Worker快取、相關回歸與Build；分段Commit。
+- 完成／修改18檔：上述程式／配置／工具／快取與本紀錄，tests/indomitable-revival.test.cjs重寫為10項新規格專項、tests/skill2-counter-bloodrage.test.cjs同步移除地屬性、tests/skill-cooldown-display.test.cjs同步升級冷卻（Lv10為40秒）與既有10000耗魔、tests/skill2-ult-evolution.test.cjs／tests/gm-skill-test-tools.test.cjs將倒地暫停fixture改為真正仍會復甦的天地共生。移除舊lastStand Runtime／回血傷害排程及升空標記；野外／塔戰死亡出口優先免死，再輪到復活，重複死亡通知不誤結算已存活角色。致命來源普攻與DoT實跑，HP1不重設MP／施放，普攻及塔戰計時繼續；冷卻中真正死亡仍退10關並登記。
+- 範圍／表現：30米以既有體型邊緣判定，狀態欄接stun、基礎3秒，保留控抗／控場遞減及BOSS免控；bfKnockbackEnemies只在0.25秒內沿遠離玩家方向平滑推5米，不傷敵；原Render快照posTrack／posSolve共用座標補間。pushM／pushSec可在JSON調整。觸發特效表填burst-earth作範圍震波，st-shield作貼身無敵護盾，事件傳完整半徑／持續時間；不播pillar-indomitable，不新增素材或第三種特效來源。技能的控制範圍由原傷害欄移至控制欄，取消舊傷害節拍與反擊轉地；無敵使用既有invuln，並非可扣除的數值護盾。
+- Excel：使用者保存並關閉被鎖定的Skills2.xlsx後，原生API只更新本列12格；正常重開RepairMode=false，230條公式、其他格資料及既有字型／對齊／行高／欄寬／格式／繪圖保留。工作區保留使用者最新火之神樂、阿修羅霸王拳、地爆天星、雷電暴風、天地雷鎖陣與飛雷神調整並同步CSV／JS；本次分段staging僅含不屈鬥魂，提交Excel副本由HEAD經同一原生API流程產生、與提交CSV逐位元一致，未覆蓋工作檔。config_tables --apply Skills2語意變更0；未手工修改XML。
+- 驗證：node --test tests/indomitable-revival.test.cjs，10/10；擴大node --test（indomitable-revival、skill2-counter-bloodrage、skill-cooldown-display、earthguard-revival、skill2-ult-evolution、gm-skill-test-tools、skill2-status-slots、worker-shim、worker-protocol、hall-of-radiance、skills2-geometry）179項148通過／31既有失敗。修改前已記錄109項／32失敗；再以唯讀載入攔截還原修改前來源／原測試，172項138通過／34失敗，當前失敗名稱差集0。舊不屈CD案例及兩個倒地fixture更新後通過；未降低其他既有斷言。保留的失敗主要是其他技能舊數值／機制、反擊耗魔舊值、STATUS-VFX-4與連鎖閃電固定速度斷言。npm.cmd run build：496檔通過；diff check通過。
+- 提交內容另驗：唯讀重導skills2至分段提交副本，node --test tests/indomitable-revival.test.cjs tests/earthguard-revival.test.cjs tests/hall-of-radiance.test.cjs tests/worker-protocol.test.cjs，31/31通過；提交SKILLS2資料與重建表完全一致，只有不屈鬥魂一列異動，其他技能定義與HEAD相同。
+- 瀏覽器：隔離隨機埠HTTP／全新headless Edge／真Worker確認HP1、MP7、施放剩0.75秒不變、無復甦與倒地、無敵5秒／CD40秒／暈眩3秒、0.125秒擊退25單位。事件震波r300／dur0.25、護盾st-shield／dur5；主端與Worker文字一致，Preset可載入且loop=true，Console error／warning均0。非真人長時間實戰；臨時伺服器／瀏覽器已關閉，本次臨時腳本、快照／日誌／提交副本清理後提交。
+- 快取：battlefield1.4.7、skills2 1.0.299、combat1.0.78、tower1.0.25、bridge1.0.254；Worker入口及上述五份模擬檔（含legendary註釋更新）import均20261012-indomitable-guard；Protocol維持50、無存檔變更。唯讀檢查AI規範／prompts/codex.md、js/formula.js／status.js／skills.js／potential.js／elite.js／battle-renderer.js、Worker Protocol／shim、sim engine及原生Excel／配置匯入工具；其餘未修改。
+- 交付：Commit為本紀錄所在[Codex] fix提交；無本次功能未完成項，素材庫無本次變更／無需Commit。已知限制為既有31項回歸失敗及BOSS沿原有免控規則；擊退距離未由使用者指定，採已告知的可調5米。可供審查合併，未合併／推送；使用者其他進行中修改保持未提交。下一步重載遊戲驗收觸發、護盾及戰鬥持續。
+
+## HALL-RADIANCE-REGEN-20261012 — 光耀之堂定時回復與固定溢出轉盾
+
+- Owner：Codex；Done，單一開發者。使用者指定每2秒按生命／法力上限各回復2%，每級+0.2%；溢出轉生命護盾固定25%，不隨等級提高。遵循既有base＋per×level（Lv1為2.2%、Lv10為4%）。移除原本額外回復乘區，保留其他大地守護階段與傳奇機制。
+- 允許：js/skills2.js、Skills2 Excel／CSV、index.html、js/bridge.js、js/worker/sim.worker.js、tests/passive-stat-panel.test.cjs、tests/skill2-mire-earthguard-legendary.test.cjs、新tests/hall-of-radiance.test.cjs與本紀錄；禁止改其他技能數值、素材、協議／存檔及其他副本。前置依賴已滿足；fetch後預檢無衝突，保留工作區既有岩柱Preset／layout修改。
+- 驗收：2秒節拍、等級／最大生命法力比例、生命法力溢出各25%、回復倍率移除、卸裝／死亡／復甦／換場重置、面板及技能文字同源、Excel原生正常重開與公式／格式保留、表格往返、Worker快取、相關回歸／Build／diff check；完成獨立Commit，交使用者整合，不合併／推送。
+- 完成／修改：上述10檔，定時回復走healPlayer（noShield）／gainPlayerMana共用入口；只將各資源溢出量的25%交grantShield，沿用護盾效率／上限／封鎖。暈眩不擋被動回復；死亡、復甦、卸裝或進化失效清節拍，重新生效等完整間隔；換場沿既有resetSkill2RT重置。技能說明與結算共用sec／pct／conv，面板每秒回復不含定時技能。skills2快取1.0.298、bridge1.0.253、Worker入口與skills2 import皆20261012-hall-radiance；無協議／存檔變更。
+- 表格：Excel原生API逐格更新光耀之堂JSON、說明與唯讀說明三格，正常模式重開（RepairMode=false），保留230條公式、其他格資料、字型／對齊／欄寬／列高／格式及繪圖物件。Excel轉CSV逐位元一致，config_tables --apply Skills2語意變更0；未手工修改XML。期間另一作業更新火之神樂pct20→30、pctPer2→3、maxStacks20→10；使用者明確同意保留並分段作業，工作檔維持該改動，本次以分段staging僅提交光耀之堂，共用Excel提交副本由HEAD經同一原生API流程產生，不覆蓋使用者工作檔。Gems／data與岩柱Preset／layout修改保留給原作業，無本次素材修改或素材庫Commit。
+- 測試：node --test tests/hall-of-radiance.test.cjs新增9/9通過。node --test tests/hall-of-radiance.test.cjs tests/skill-cooldown-display.test.cjs tests/earthguard-revival.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs tests/passive-stat-panel.test.cjs tests/skill2-mire-earthguard-legendary.test.cjs共73項、63通過／10既有失敗。以HEAD原skills2及三檔原測試唯讀載入重跑37項、26通過／11失敗；10個失敗名稱全在基線，原光耀面板舊倍率案例改驗新需求後通過，未放寬其他既有斷言。既有失敗涉及天霸／不屈舊CD或耗魔、其他大地面板舊數值與泥沼機制；本次新增失敗0。npm.cmd run build：496檔通過；git diff --check通過。
+- 瀏覽器：獨立隨機埠唯讀HTTP、全新headless Edge context與真Worker；Lv10 HP9950／10000、MP1990／2000在1.999秒保持，2秒回滿且生命護盾105（350與70溢出各25%）。主端與Worker均顯示每2秒回復4%、轉盾25%，Console error／warning均0。非真人長時間實戰；分頁、瀏覽器、伺服器及本次臨時腳本／日誌／CSV驗證檔已清理。
+- 唯讀檢查：AI規範／prompts/codex.md、js/formula.js、js/combat.js、js/tower.js、js/skills.js、js/ui.js、js/worker/protocol.js、scripts/sim/engine.js、配置匯入／Excel原生工具。已知風險為上述10項既有回歸失敗；本次需求無未完成項。Commit為本紀錄所在[Codex] fix提交；可供審查合併，未合併／推送。下一步重載遊戲驗收技能，其他進行中修改由原作業處理。
+
 ## ROCK-HOLD-PLUS2-20261012 — 岩柱停留時間增加兩秒
 
 - Owner：Codex；Done，單一開發者。前置岩簇造型已完成；使用者要求停留時間+2秒，由0秒調整為0.15秒升起／2秒完整停留／0.35秒消失，總長2.5秒。僅調整石體動畫曲線與Preset總長，起塵仍0.5秒；尺寸、造型、直立旗標、傷害與八波排程保持原樣。

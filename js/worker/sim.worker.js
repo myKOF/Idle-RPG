@@ -12,11 +12,11 @@
 
 importScripts('protocol.js?v=50', 'shim.js?v=12');
 importScripts(
-  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261012-super-rock-art', '../elite_data.js?v=20261008-elite-groups', '../runeword_data.js?v=20261008-rune-base-unify', '../status.js?v=20261012-super-rock-art', '../formula.js?v=20261008-hit-direct', '../battlefield.js?v=20261008-rand-others-hoist', '../stats.js?v=20261003-rename-weineng',
+  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261012-super-rock-art', '../elite_data.js?v=20261008-elite-groups', '../runeword_data.js?v=20261008-rune-base-unify', '../status.js?v=20261012-super-rock-art', '../formula.js?v=20261008-hit-direct', '../battlefield.js?v=20261012-indomitable-guard', '../stats.js?v=20261003-rename-weineng',
   '../item.js?v=20261008-rune-erase-cfg', '../runeword.js?v=20261008-rune-base-unify',
-  '../skills.js?v=20261007-runes4', '../skills2.js?v=20261012-super-rock-art-hold', '../talents.js?v=20261003-rename-weineng',
+  '../skills.js?v=20261007-runes4', '../skills2.js?v=20261012-storm-mountain-heal', '../talents.js?v=20261003-rename-weineng',
   '../player.js?v=20261008-boss-config-lock', '../special_rules.js',
-  '../combat.js?v=20261012-super-rock-art', '../elite.js?v=20261008-elite-groups', '../legendary.js?v=20261007-runes4', '../potential.js?v=20261005-cc-decay-count', '../tower.js?v=20261008-enemy-frenzy-count',
+  '../combat.js?v=20261012-indomitable-guard', '../elite.js?v=20261008-elite-groups', '../legendary.js?v=20261012-indomitable-guard', '../potential.js?v=20261005-cc-decay-count', '../tower.js?v=20261012-indomitable-guard',
   '../factory.js?v=20261007-runes4', '../newforge.js', '../forge.js?v=20261007-runes4', '../save.js?v=20261007-rune-seen',
   '../tasks.js?v=20261007-runes4'
 );

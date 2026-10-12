@@ -1988,35 +1988,25 @@ test('戰神體：排程補拍、死亡／卸下／重置與 GM 鎖血', () => {
   assert.equal(p.hp,1); assert.equal(c.sgCounterRT().warBody.collected,.4);
 });
 
-test('【不屈鬥魂】：五秒漸進回復，物攻加魔攻分十段地系傷害，保留戰場與冷卻', () => {
+test('【不屈鬥魂】：致命傷保留生命、控制近敵、不造成傷害且不中斷戰鬥', () => {
   const c = loadContext(['js/legendary.js']);
   const calls = stubHits(c); stubVfx(c);
   maxLevels(c, 'counter'); equip(c, 'counter');
-  const p = playerEnt(); p.mp = 1e9; p.hp = 0;
+  const p = playerEnt(); p.mp = 7; p.hp = 0;
   c.FIELD = { player: p };
   const near = enemy(1e12, 3 * M, 0), far = enemy(1e12, 100 * M, 0);
   c.combatFieldEnemies = () => [near, far];
   assert.equal(c.skills2TryLastStand(p), false);
   setUlt(c, 'counter', 'indomitable');
   assert.equal(c.skills2TryLastStand(p), true);
-  const ult = c.sgUlt('counter', 'indomitable');
-  assert.equal(calls.length, 0, '開始時不立刻爆發');
-  assert.equal(p.hp, 0);
-  assert.ok(c.skill2DownedActive());
-  assert.equal(c.skills2TryLastStand(p), true, '復甦期間重複判死必須攔截，不能退關');
-  c.healPlayer(p, 1e9, c.getStats()); assert.equal(p.hp, 0, '外部治療不能提前補滿');
-  run(c, p, [near, far], 2.5);
-  assert.equal(calls.length, 5);
-  assert.ok(Math.abs(p.hp / c.getStats().hp - 0.5) < 1e-8);
-  run(c, p, [near, far], 2.5);
-  assert.equal(calls.length, 10);
-  const total = (c.getStats().atk + c.getStats().matk) * c.sgUltVal(ult, 'pct') / 100;
-  assert.ok(Math.abs(calls.reduce((n,x)=>n+x.atk,0)-total)<1e-6);
-  assert.ok(calls.every(x=>x.elem==='earth' && x.ent===near));
-  assert.equal(p.hp, c.getStats().hp);
-  assert.equal(p._sgRevival, undefined);
-  assert.equal(c.skill2DownedActive(), false);
-  p.hp = 0; assert.equal(c.skills2TryLastStand(p), false, '冷卻不能重觸發');
+  assert.equal(calls.length, 0, '免死技能不輸出舊地系爆發');
+  assert.equal(p.hp, 1); assert.equal(p.mp, 7);
+  assert.equal(p._sgRevival, undefined); assert.equal(c.skill2DownedActive(), false);
+  assert.ok(c.effectActive(p, 'invuln'));
+  assert.ok(c.effectActive(near, 'stun')); assert.equal(c.effectActive(far, 'stun'), false);
+  assert.ok(near._bfKnockback); assert.equal(far._bfKnockback, undefined);
+  c.healPlayer(p, 10, c.getStats()); assert.equal(p.hp, 11, '治療立即正常生效');
+  p.hp = 0; assert.equal(c.skills2TryLastStand(p), false, '冷卻期間不能重觸發');
 });
 
 /* ---- 15) 自動施放的共同閘門（2026-08-24 使用者決策）----
@@ -2033,9 +2023,9 @@ test('自動施放閘門：死亡與倒地都擋，活著（含不屈之誓的�
      該特效的設計就是「延後死亡並在期間傷害 +100%」。 */
   p.hp = 1;
   assert.equal(c.skills2AutoCastBlocked(p), false, '鎖血 1 仍算活著');
-  c.SKILL2_RT.lastStand = { done: false, reviveAt: c.GT + 5, pEnt: p };
-  assert.equal(c.skills2AutoCastBlocked(p), true, '【不屈鬥魂】倒地期間＝擋');
-  c.SKILL2_RT.lastStand = null;
+  c.SKILL2_RT.earthguardRevival = { done: false, endAt: c.GT + 5, pEnt: p };
+  assert.equal(c.skills2AutoCastBlocked(p), true, '【天地共生】復甦期間＝擋');
+  c.SKILL2_RT.earthguardRevival = null;
   assert.equal(c.skills2AutoCastBlocked(p), false, '復活後恢復');
 });
 
@@ -2057,7 +2047,7 @@ test('【地爆天星】倒地期間不落下，倒數與狀態一起往後推',
   assert.ok(at0 > 0 && until0 > 0);
 
   // 倒地 10 秒（reviveAt 拉遠，本段不讓它復活）
-  c.SKILL2_RT.lastStand = { done: false, reviveAt: c.GT + 999, pEnt: p };
+  c.SKILL2_RT.earthguardRevival = { done: false, endAt: c.GT + 999, pEnt: p };
   run(c, p, [m], 10);
   assert.equal(derived.length, 0, '倒地期間不得落下');
   assert.ok(Math.abs((c.SKILL2_RT.starfall.at - at0) - 10) < 0.2, '排程往後推了倒地的時間');
@@ -2065,7 +2055,7 @@ test('【地爆天星】倒地期間不落下，倒數與狀態一起往後推',
   assert.ok(Math.abs((c.SKILL2_RT.starfall.at - c.GT) - (at0 - 0.05)) < 0.3, '剩餘時間完全沒變');
 
   // 復活後照常落下，而且不會把倒地期間累積的節拍一次補發
-  c.SKILL2_RT.lastStand = null;
+  c.SKILL2_RT.earthguardRevival = null;
   c.GT = c.SKILL2_RT.starfall.at + 0.05;
   c.tickSkill2(0.05, tickCtx(c, p, [m]));
   assert.equal(derived.length, 1, '復活後到期才落下，而且只落一發');
@@ -2084,7 +2074,7 @@ test('【天霸風神斬】與【阿修羅霸王拳】倒地期間不自動發�
   c.GT = 0;
   c.tickSkill2(0.05, tickCtx(c, p, [m]));      // 起算節拍
   const next0 = c.SKILL2_RT.ultAuto.cleave;
-  c.SKILL2_RT.lastStand = { done: false, reviveAt: c.GT + 999, pEnt: p };
+  c.SKILL2_RT.earthguardRevival = { done: false, endAt: c.GT + 999, pEnt: p };
   run(c, p, [m], next0 + 2);
   assert.equal(calls.length, 0, '倒地期間不得自動施放迴旋斬');
   assert.ok(c.SKILL2_RT.ultAuto.cleave > next0, '節拍往後推而不是停在過去（否則復活瞬間會連發）');
@@ -2101,7 +2091,7 @@ test('【天霸風神斬】與【阿修羅霸王拳】倒地期間不自動發�
   c2.GT = 0;
   c2.tickSkill2(0.05, tickCtx(c2, p2, [m2]));
   const fist0 = c2.SKILL2_RT.asuraFist;
-  c2.SKILL2_RT.lastStand = { done: false, reviveAt: c2.GT + 999, pEnt: p2 };
+  c2.SKILL2_RT.earthguardRevival = { done: false, endAt: c2.GT + 999, pEnt: p2 };
   run(c2, p2, [m2], fist0 + 2);
   assert.equal(p2.buffs.sgAsuraFist, undefined, '倒地期間不得發動阿修羅霸王拳');
   assert.ok(c2.SKILL2_RT.asuraFist > fist0, '節拍往後推');
@@ -2129,7 +2119,7 @@ test('傳奇自動觸發（光之碰撞）與火靈盾自損，倒地期間一�
     assert.equal(rt[key], undefined, key + ' 屬於已刪除的舊技能詞條，執行期狀態不該再有');
   });
 
-  c.SKILL2_RT.lastStand = { done: false, reviveAt: c.GT + 999, pEnt: p };
+  c.SKILL2_RT.earthguardRevival = { done: false, endAt: c.GT + 999, pEnt: p };
   const hpBefore = p.hp;
   for (let t = 0; t < 6; t += 0.05) { c.GT += 0.05; c.tickLegendaryEffects(0.05, ctx); }
   assert.equal(p.hp, hpBefore, '【火靈盾】倒地期間不得自損——那會把「死了 5 秒」的保護砍斷');

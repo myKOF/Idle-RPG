@@ -325,6 +325,10 @@ function towerTick(dt) {
 
 /* ---- 結算與失敗分析 ---- */
 function endTowerFight(win, reason) {
+  if (!win && reason === 'death' && TOWER.player && TOWER.player.hp > 0) return;
+  // 致命傷免死先於復活／挑戰結算，不清BOSS、不記死亡、不停止挑戰。
+  if (!win && reason === 'death' && typeof skills2TryLastStand === 'function' && TOWER.player &&
+      skills2TryLastStand(TOWER.player, TOWER.boss ? [TOWER.boss] : [], 'tb-float')) return;
   /* 新版技能【天地共生】（大地守護 T7，js/skills2.js）：死亡攔截。
      高塔有十來處 `p.hp <= 0 → endTowerFight(false, 'death')`，這裡是它們的共同出口；
      啟動五秒復甦演出後保留目前 BOSS 與挑戰；呼叫端 return，演出期間由 towerTick 暫停戰鬥。 */

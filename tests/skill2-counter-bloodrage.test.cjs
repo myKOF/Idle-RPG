@@ -60,7 +60,7 @@ function playerEnt(mp) {
 }
 const AMPLE_MP = 100000;
 
-test('不屈鬥魂：本體、招架與全部追加反擊轉地屬性，其他超神及退化不轉換', () => {
+test('不屈鬥魂：本體、招架與全部追加反擊保留原屬性', () => {
   for (const pick of [null, 0, 1, 2]) {
     const c = loadContext();
     c.GT = 0;
@@ -76,10 +76,10 @@ test('不屈鬥魂：本體、招架與全部追加反擊轉地屬性，其他�
     const calls = stubHits(c);
     c.skills2OnPlayerDamaged(m, p, 50, true, hitRes(), 'pv-float');
     assert.equal(calls.length, 8, '本體＋招架各帶二次反擊與狂化反殺');
-    for (const call of calls) assert.equal(call.aCfg.skillElem, pick === 1 ? 'earth' : undefined);
+    for (const call of calls) assert.equal(call.aCfg.skillElem, undefined);
     if (pick === 1) {
       const st = c.getStats();
-      assert.equal(c.sgAtkCfg(p, st, 100, m, 0, 'counter', 'wind').skillElem, 'earth', '反擊衍生傷害也轉換');
+      assert.equal(c.sgAtkCfg(p, st, 100, m, 0, 'counter', 'wind').skillElem, 'wind', '免死超神不覆寫反擊衍生傷害屬性');
       assert.equal(c.sgAtkCfg(p, st, 100, m, 0, 'windblade', 'wind').skillElem, 'wind', '其他技能不受影響');
       c.G.player.skills2.levels.counter[6] = 9;
       assert.equal(c.sgAtkCfg(p, st, 100, m, 0, 'counter', 'wind').skillElem, 'wind', '超神失效後不轉換');
@@ -87,7 +87,7 @@ test('不屈鬥魂：本體、招架與全部追加反擊轉地屬性，其他�
   }
 });
 
-test('不屈鬥魂：實際反擊傷害套用地屬性增傷與地抗', () => {
+test('不屈鬥魂：實際反擊保留無屬性，不受地增傷與地抗影響', () => {
   const c = loadContext();
   c.GT = 0;
   c.G.player.skills2.levels.counter = Array(7).fill(10);
@@ -103,8 +103,8 @@ test('不屈鬥魂：實際反擊傷害套用地屬性增傷與地抗', () => {
   }
   const base = damage(0, 0);
   assert.ok(base > 0);
-  assert.equal(damage(100, 0), base * 2);
-  assert.ok(damage(0, 1000) < base);
+  assert.equal(damage(100, 0), base);
+  assert.equal(damage(0, 1000), base);
 });
 /* 傷害管線替身：固定 100 傷並記錄 (defender, aCfg)——反擊的傷害倍率驗證吃 aCfg.atk。 */
 function stubHits(c, opts) {

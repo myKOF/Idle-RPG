@@ -117,7 +117,7 @@ test('HP_lock：不讓既有暈眩／倒地狀態卡住技能行動閘門；一�
   assert.equal(c.playerActionControlBlocked(p), false, 'HP_lock 下暈眩不應卡死技能列');
 
   p.effects.stun = 0;
-  c.SKILL2_RT.lastStand = { done: false, reviveAt: c.GT + 10, pEnt: p };
+  c.SKILL2_RT.earthguardRevival = { done: false, endAt: c.GT + 10, pEnt: p };
   assert.equal(c.playerActionControlBlocked(p), false, 'HP_lock 下倒地也不應卡死技能列');
   assert.equal(c.executeGMCommand('HP_lock').ok, true);
   assert.equal(c.playerActionControlBlocked(p), true, '解除 HP_lock 後倒地應恢復行動阻擋');

@@ -7,7 +7,7 @@
         深淵火獄（熔岩沼定期噴火龍捲 ＋ 屬性改寫）、黃泉沼（低血斬殺，機率累加）
      3. 大地守護五個傳奇：魔力滋養（溢出法力轉護盾）、生命滋養（溢出生命轉法力）、
         靈魂連結（反射多打一個）、地之心（擊殺縮短復活冷卻）、不滅意志（擊殺延長無敵）
-     4. 大地守護三個超神：光耀之堂（回復倍率＋溢出轉護盾）、天地再造（敵人重生）、
+     4. 大地守護三個超神：光耀之堂（定時回復＋溢出轉護盾）、天地再造（敵人重生）、
         逆轉乾坤（復活次數可累積）
 
    ⚠️ 本檔只驗「機制有沒有接上」，不驗「數字調校得對不對」（那是參數表的事）。 */
@@ -404,11 +404,11 @@ test('【不滅意志】：只延長【天地共生】給的那段無敵', () =>
    4) 大地守護的三個超神進化
    =========================================================================== */
 
-test('【光耀之堂】：回復倍率再乘一層，且溢出的生命與法力都轉成護盾', () => {
+test('【光耀之堂】：不再放大每秒回復，且溢出的生命與法力都轉成護盾', () => {
   const plain = earthguardCtx([]);
   const shine = earthguardCtx([], 'hallOfRadiance', 1);
-  assert.ok(shine.skill2RegenFactor('hp') > plain.skill2RegenFactor('hp'), '生命回復再放大');
-  assert.ok(shine.skill2RegenFactor('mp') > plain.skill2RegenFactor('mp'), '法力回復再放大');
+  assert.equal(shine.skill2RegenFactor('hp'), plain.skill2RegenFactor('hp'), '不改每秒生命回復');
+  assert.equal(shine.skill2RegenFactor('mp'), plain.skill2RegenFactor('mp'), '不改每秒法力回復');
   assert.equal(shine.skill2DrainFactor('hp'), plain.skill2DrainFactor('hp'), '吸血不受影響（設計文字只寫回復）');
 
   const p = playerEnt();
