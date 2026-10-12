@@ -2,9 +2,13 @@
 
 ## GROUND-NO-GRID-20261012 — 全場景隱藏地板格子感
 
-- Owner：Codex；InProgress，單一開發者。使用者要求隱藏全部地板格線。既有野外底圖沒有磚縫，但週期性正弦明暗在旋轉平鋪後仍形成菱形格子感；移除這層規律明暗與舊磚縫繪製入口，保留細砂點、自然裂紋及場景不規則地面色塊。BOSS地板唯讀核對。
+- Owner：Codex；Done，單一開發者。使用者要求隱藏全部地板格線。既有野外底圖沒有磚縫，但週期性正弦明暗在旋轉平鋪後仍形成菱形格子感；移除這層規律明暗與舊磚縫繪製入口，保留細砂點、自然裂紋及場景不規則地面色塊。BOSS地板唯讀核對。
 - 範圍：素材庫codex-authored/scene-nature的地板產生器／八張PNG／SOURCE，經既有匯出同步tools/gen_ground_tiles.py與images/ground；Renderer地板素材版本、index及預覽Renderer快取、SCENE_NATURE與本紀錄。預檢全部無其他副本／分支衝突；本副本疾風迅雷進行中修改原樣保留，共用index／AI_TASKS僅提交本任務段落。禁止改戰鬥／技能／存檔／地板投影及其他素材。不合併或推送。
 - 驗收：八張地板檢視、荒漠及另一野外場景／BOSS正式Renderer預覽、場景回歸、匯出SHA核對與Build；先素材庫再遊戲提交。此為既有程序材質生成器調整，維持可重現的批次像素輸出，無需手工繪圖工具或新AI美術。
+- 完成／修改：八張原創PNG重建，256×256維持不變，合計145,135 bytes；產生器移除正弦明暗／磚縫程式，Renderer移除後備圖規律點陣。index與場景預覽Renderer1.6.181、地板圖片20261012-no-grid；素材庫SOURCE與SCENE_NATURE同步。完整修改範圍如上；未改但查核：js/battle-decor.js（既有不規則色塊及過濾tiles）、js/battle-arena.js與js/decor-nature.js（BOSS drawArenaFloor無規則格線）、匯出器及場景／投影測試；不改技能或判定。
+- 驗證指令／結果：node --test tests/battle-decor.test.cjs tests/battle-arena.test.cjs tests/battle-ground-projection.test.cjs tests/battle-perspective.test.cjs，58項中57通過、1項既有PROJ-9失敗（測試抽取bootVfxRuntime未帶skyEntryPoint）；唯讀攔截Renderer載入並重導至修改前HEAD，單跑PROJ-9得到完全相同ReferenceError，未改測試或放寬斷言。npm.cmd run build通過491檔；node tools/scene-renewal/export-source.cjs --check，30份來源SHA一致；git diff --check通過。八圖縮至8×8量低頻明暗範圍為0～1灰階，無大尺度週期格紋；PNG尺寸均256×256。
+- 瀏覽器：獨立localhost正式Renderer預覽荒漠／沼澤與試煉塔，地面無菱形格線、自然紋理與物件／動態保持，切塔與返回正常；重新載入後無error／warn，保存desert-no-grid.png於Codex visualizations/boss-arena-upgrade。本頁不讀真人存檔。圖集及BOSS光色未改，不重新量測效能。
+- 提交／交接：素材庫89cce52已先提交；遊戲Commit為本紀錄所在提交（交付回覆列出）。同副本疾風迅雷任務已完成ddb1c9b0，期間將本任務InProgress紀錄一起提交；本次補完紀錄並僅提交地板14檔，沒有混入技能修改。無本次未完成項；已知限制為上述既有VFX測試失敗、未做長時間戰鬥效能量測。可供審查合併，未合併／推送；下一步重載遊戲以載入新快取。
 
 ## GALE-ULTIMATE-ADJUSTMENTS-20261012 — 雷神之怒機率／尺寸與千鳥隨機五目標
 

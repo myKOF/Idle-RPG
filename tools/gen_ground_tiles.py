@@ -13,7 +13,7 @@ import math
 import os
 import random
 
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image, ImageFilter
 
 OUT_DIR = os.path.join(os.path.dirname(__file__), '..', 'images', 'ground')
 SIZE = 256
@@ -23,49 +23,13 @@ def blend(base, over, a):
     return tuple(int(base[i] * (1 - a) + over[i] * a) for i in range(3))
 
 
-def seamless_noise(size, seed, scale, low, high):
-    """以正弦疊加做出可繞回的柔和雜訊（值域 0~1）。"""
-    rnd = random.Random(seed)
-    waves = []
-    for _ in range(5):
-        fx = rnd.choice([1, 2, 3, 4]) * scale
-        fy = rnd.choice([1, 2, 3, 4]) * scale
-        ph = rnd.random() * math.tau
-        amp = rnd.uniform(0.5, 1.0)
-        waves.append((fx, fy, ph, amp))
-    total_amp = sum(w[3] for w in waves)
-    grid = [[0.0] * size for _ in range(size)]
-    for y in range(size):
-        for x in range(size):
-            v = 0.0
-            for fx, fy, ph, amp in waves:
-                v += amp * math.sin(math.tau * fx * x / size + ph) * math.cos(math.tau * fy * y / size + ph)
-            v = (v / total_amp + 1) / 2
-            grid[y][x] = low + (high - low) * v
-    return grid
-
-
-def make_tile(name, base_rgb, speckle_rgb, seed, grout=False, crack=True):
+def make_tile(name, base_rgb, speckle_rgb, seed, crack=True):
     img = Image.new('RGB', (SIZE, SIZE), base_rgb)
     px = img.load()
     rnd = random.Random(seed)
 
-    # 大面積明暗起伏：避免整片死板的純色
-    noise = seamless_noise(SIZE, seed, 1, -0.07, 0.07)
-    for y in range(SIZE):
-        for x in range(SIZE):
-            k = 1 + noise[y][x]
-            px[x, y] = tuple(max(0, min(255, int(c * k))) for c in base_rgb)
-
-    d = ImageDraw.Draw(img)
-
-    # 接縫線（磚縫）：位置固定在邊界上，四方連續必定接得起來
-    if grout:
-        line = blend(base_rgb, (0, 0, 0), 0.015)
-        d.line([(0, SIZE // 2), (SIZE, SIZE // 2)], fill=line, width=1)
-        d.line([(SIZE // 2, 0), (SIZE // 2, SIZE // 2)], fill=line, width=1)
-        d.line([(0, 0), (SIZE, 0)], fill=line, width=1)
-        d.line([(0, 0), (0, SIZE)], fill=line, width=1)
+    # 底色不疊週期性正弦明暗，也不畫磚縫，避免旋轉平鋪後形成菱形格子。
+    # 大面積自然起伏由 battle-decor 的世界座標不規則色塊提供。
 
     # 細裂紋：用模數包裝，跨邊界時自動接回另一側
     if crack:
