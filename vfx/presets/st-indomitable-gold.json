@@ -1,0 +1,187 @@
+{
+  "schemaVersion": 1,
+  "id": "st-indomitable-gold",
+  "duration": 2,
+  "loop": true,
+  "sizing": {
+    "authored": {
+      "width": 157,
+      "height": 218.4
+    },
+    "widthM": 15.7,
+    "heightM": 21.84,
+    "shape": "custom"
+  },
+  "layers": [
+    {
+      "id": "halo",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/circle_b.png",
+      "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": -58
+      },
+      "scale": {
+        "x": 0.34174358974358976,
+        "y": 0.46511111111111114
+      },
+      "tint": "#ffae18",
+      "alpha": 0.28,
+      "blendMode": "add",
+      "duration": 2,
+      "perspective": false,
+      "cameraDepth": false,
+      "alphaOverLife": [
+        [
+          0,
+          0.22
+        ],
+        [
+          0.5,
+          0.34
+        ],
+        [
+          1,
+          0.22
+        ]
+      ]
+    },
+    {
+      "id": "membrane",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/circle_b_noise.png",
+      "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": -58
+      },
+      "scale": {
+        "x": 0.29048205128205123,
+        "y": 0.4107133333333333
+      },
+      "tint": "#ffbc30",
+      "alpha": 0.45,
+      "blendMode": "add",
+      "duration": 2,
+      "perspective": false,
+      "cameraDepth": false,
+      "alphaOverLife": [
+        [
+          0,
+          0.32
+        ],
+        [
+          0.5,
+          0.45
+        ],
+        [
+          1,
+          0.32
+        ]
+      ]
+    },
+    {
+      "id": "gold-rim",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/ring_a.png",
+      "zIndex": 2,
+      "position": {
+        "x": 0,
+        "y": -58
+      },
+      "scale": {
+        "x": 0.30616205128205126,
+        "y": 0.4264866666666666
+      },
+      "tint": "#ffc336",
+      "alpha": 0.95,
+      "blendMode": "add",
+      "duration": 2,
+      "perspective": false,
+      "cameraDepth": false,
+      "alphaOverLife": [
+        [
+          0,
+          0.82
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          0.82
+        ]
+      ]
+    },
+    {
+      "id": "inner-rim",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/ring_a.png",
+      "zIndex": 3,
+      "position": {
+        "x": 0,
+        "y": -58
+      },
+      "scale": {
+        "x": 0.2866625641025641,
+        "y": 0.39494
+      },
+      "tint": "#fff0a2",
+      "alpha": 0.5,
+      "blendMode": "add",
+      "duration": 2,
+      "perspective": false,
+      "cameraDepth": false,
+      "alphaOverLife": [
+        [
+          0,
+          0.38
+        ],
+        [
+          0.5,
+          0.6
+        ],
+        [
+          1,
+          0.38
+        ]
+      ]
+    },
+    {
+      "id": "surface-light",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/water_caustics_a.png",
+      "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": -58
+      },
+      "scale": {
+        "x": 0.19236143589743587,
+        "y": 0.2654166666666666
+      },
+      "tint": "#ffdb61",
+      "alpha": 0.15,
+      "blendMode": "add",
+      "duration": 2,
+      "perspective": false,
+      "cameraDepth": false,
+      "alphaOverLife": [
+        [
+          0,
+          0.08
+        ],
+        [
+          0.5,
+          0.15
+        ],
+        [
+          1,
+          0.08
+        ]
+      ]
+    }
+  ]
+}

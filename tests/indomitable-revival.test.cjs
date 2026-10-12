@@ -28,10 +28,10 @@ test('不屈鬥魂：30米體型邊緣內擊暈3秒，範圍外與死亡敵人�
  for(const i of [2,3]){assert.equal(enemies[i].effects.stun,undefined);assert.equal(enemies[i]._bfKnockback,undefined);}
  assert.deepEqual(enemies.slice(0,3).map(m=>m.hp),health.slice(0,3));
 });
-test('不屈鬥魂：暈眩中仍能在0.25秒內連續擊退5米',()=>{
+test('不屈鬥魂：暈眩中仍能在0.25秒內連續擊退30米',()=>{
  const {c,p,enemies}=setup(),m=enemies[0],x=m.pos.x;p.hp=0;c.onPlayerFieldDeath();near(m.pos.x,x);
- c.GT=.125;c.bfTickApproach([m],.125);near(m.pos.x,x+c.bfMeterPx(2.5));assert.ok(c.effectActive(m,'stun'));
- c.GT=.25;c.bfTickApproach([m],.125);near(m.pos.x,x+c.bfMeterPx(5));assert.equal(m._bfKnockback,undefined);
+ c.GT=.125;c.bfTickApproach([m],.125);near(m.pos.x,x+c.bfMeterPx(15));assert.ok(c.effectActive(m,'stun'));
+ c.GT=.25;c.bfTickApproach([m],.125);near(m.pos.x,x+c.bfMeterPx(30));assert.equal(m._bfKnockback,undefined);
  c.GT=.5;c.bfTickApproach([m],.25);assert.equal(m._bfKnockback,undefined);assert.ok(c.effectActive(m,'stun'));
 });
 test('不屈鬥魂：各級無敵與冷卻，到期可受傷、冷卻結束可重觸發',()=>{
@@ -82,12 +82,15 @@ test('不屈鬥魂：卸裝、切換、降級或冷卻中均不能免死，真�
   p.hp=0;assert.equal(c.skills2TryLastStand(p),false);c.onPlayerFieldDeath();assert.ok(c.FIELD.reviveCd>0);assert.equal(c.G.stage.current,111);assert.equal(deaths(),1);
  }
 });
-test('不屈鬥魂：VFX與計算同源，不播舊光束，配置／技能文字與畫面補間接線同步',()=>{
+test('不屈鬥魂：金色護罩與無敵同壽命，白光兩秒，配置／文字與30米擊退同步',()=>{
  const {c,p,events}=setup(1);p.hp=0;c.onPlayerFieldDeath();
  const wave=events.find(x=>x.variant==='indomitable-repel'),shield=events.find(x=>x.variant==='indomitable-guard');assert.ok(wave&&shield);
  near(wave.area.r,c.bfMeterPx(30));near(wave.dur,.25);assert.equal(wave.vfx.attack,'burst-earth');assert.equal(wave.hit,false);
- near(shield.dur,2.75);assert.equal(shield.vfx.ground,'st-shield');assert.equal(events.some(x=>Object.values(x.vfx||{}).includes('pillar-indomitable')),false);
+ near(shield.dur,2.75);assert.equal(shield.vfx.ground,'st-indomitable-gold');assert.equal(events.some(x=>Object.values(x.vfx||{}).includes('pillar-indomitable')),false);
+ const light=events.find(x=>x.variant==='indomitable-light');assert.ok(light);near(light.dur,2);assert.equal(light.vfx.ground,'pillar-indomitable-white');assert.deepEqual([...light.targets],['pv-float']);
  const row=table.row('counter','indomitable');assert.equal(row['傷害範圍（米）'],'');assert.equal(row['狀態／控制範圍（米）'],'30');assert.equal(row['敵方狀態'],'stun');
+ assert.equal(JSON.parse(row['效果參數(JSON)']).pushM,30);assert.equal(JSON.parse(row['效果參數(JSON)']).lightSec,2);
+ assert.equal(row['觸發命中特效'],'pillar-indomitable-white');assert.equal(row['觸發地板特效'],'st-indomitable-gold');
  for(const [lv,sec,cd] of [[1,2.75,58],[10,5,40]]){const desc=c.describeSkill2Ult('counter',1,lv).replace(/<[^>]+>/g,'');assert.ok(desc.includes(`${sec}秒的無敵護盾`));assert.ok(desc.includes(`${cd}秒冷卻時間`));assert.match(desc,/30米|3秒/);assert.doesNotMatch(desc,/升空|回滿|地屬性|總傷害/);}
  assert.match(fs.readFileSync('js/battle-renderer.js','utf8'),/if \(d\.pos && isFinite\(d\.pos\.x\)\) posTrack\(ent, d\.pos\.x, d\.pos\.y\)/);
 });

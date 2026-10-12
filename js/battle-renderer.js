@@ -7603,11 +7603,31 @@ var BattleRenderer = (function () {
      那是累積型問題，不是負載問題，而負載量測（scratch/_perf_bench2~5）
      全部顯示穩態成本很低。要抓這種東西只能看同一個數字隨時間的走勢，
      所以這裡把每個有嫌疑的集合都列出來，交給 js/lagprobe.js 做成長追蹤。 */
+  // Canvas 初始化完成只代表可繪圖；啟動揭幕還需等目前底圖、圖集及可見區塊。
+  function sceneAssetsReady() {
+    if (!S.ready || S.failed || !S.lastPanel || S.scene.phase) return false;
+    var key = sceneKeyOf(S.lastPanel);
+    if (key !== S.scene.key) return false;
+    if (key !== 'field' && S.arena) return S.arena.active();
+    var stage = S.lastPanel.stage || {};
+    if (S.zoneKey !== (stage.zone || '')) return false;
+    var name = S.zoneKey ? 'ground_' + S.zoneKey : 'ground_default';
+    var ground = _groundTexCache[name];
+    if (ground === 'failed' && name !== 'ground_default') ground = _groundTexCache.ground_default;
+    // 專用／通用圖都失敗時，沿用已畫好的純底色備援，不永久卡住 Loading。
+    if (!ground || ground === 'loading') return false;
+    if (S.decor) {
+      var decor = S.decor.stats();
+      if (!decor.ready || decor.building || !decor.chunks) return false;
+    }
+    return true;
+  }
+
   function status() {
     var L = S.layers || {};
     function kids(layer) { return (layer && layer.children) ? layer.children.length : 0; }
     return {
-      ready: S.ready, failed: S.failed,
+      ready: S.ready, failed: S.failed, sceneReady: sceneAssetsReady(),
       size: S.W + 'x' + S.H,
       entities: Object.keys(S.entities).length,
       fx: S.fx.length, floats: S.floats.length, floatEvicted: S.floatEvicted,

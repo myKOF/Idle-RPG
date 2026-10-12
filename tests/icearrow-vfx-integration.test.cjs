@@ -173,9 +173,8 @@ test('ICEARROW-T7-VFX: authoritative targetless snapshots update one arrow inste
  c.sgSpawnIcearrowHoming(p,c.getStats(),c.SKILLS2.icearrow.tiers[6].fx,null,100,null,'mv-float',{from:{x:30,y:50},moveAngle:Math.PI/2});
  const nodes=[],backend={createNode(spec){const n={spec};nodes.push(n);return n;},updateNode(n,t){n.t={...t};},destroyNode(n){n.t=null;}};
  const rt=Runtime.create({core:Core,resolver:{resolve:id=>id},fxBackend:backend,zoneBackend:backend,ctx:{playerPos:()=>({x:0,y:0}),posOf:()=>({x:0,y:0})}});rt.registerPresets([...presets,require('../vfx/presets/hit-ice.json')]);
- /* 搜敵圈（我方 30 米）內沒有活敵時追蹤冰箭會直接收掉（見 sgChaseHasPrey），所以要留一隻活敵；
-    它在我方後方 25 米，箭從 (30,50) 朝下飛，要先迴轉才碰得到——前幾拍的快照仍是「沒有目標」。 */
- const prey=h.enemy(1e9,-250,0,'prey'),es=[prey];let targetless=0;
+ // 真正空場：仍使用同一支箭的權威位置／航向續飛，不靠保留假目標來維持畫面。
+ const es=[];let targetless=0;
  for(let i=0;i<12;i++){
   specs.length=0;h.run(c,p,es,.15);
   const event=specs.find(s=>s.variant==='ice-arrow-homing');assert.ok(event);
@@ -185,6 +184,40 @@ test('ICEARROW-T7-VFX: authoritative targetless snapshots update one arrow inste
  assert.ok(targetless>=3,'至少前幾拍是沒有目標的快照（'+targetless+'）');
  assert.equal(nodes.filter(n=>n.spec.assetUrl==='codex-authored/icearrow/icicle.png').length,1,'無敵人仍有一支連續飛行的箭');
  rt.update(1);assert.equal(rt.stats().grounds,0);rt.destroy();
+});
+
+test('ICEARROW-TARGET-LOSS: dead or removed prey keeps one visible arrow moving along its final heading',()=>{
+ for(const removed of [false,true]) {
+  const h=simulation(),c=h.c;h.setLevels(c,'icearrow',[1,1,1,1,1,1,1]);h.equip(c,'icearrow');
+  const p=h.playerEnt();p.pos={x:0,y:0};c.FIELD.player=p;const specs=h.stubVfx(c),hits=h.stubHits(c);
+  const prey=h.enemy(1e9,-200,0,'prey');let es=[prey];
+  c.sgSpawnIcearrowHoming(p,c.getStats(),c.SKILLS2.icearrow.tiers[6].fx,prey,100,null,'mv-float',{from:{x:300,y:0},moveAngle:0});
+  const f=c.SKILL2_RT.grounds.at(-1),nodes=[];
+  const backend={createNode(){const n={};nodes.push(n);return n;},updateNode(n,t){n.t={...t};},destroyNode(n){n.t=null;}};
+  const rt=Runtime.create({groundScale:.45,core:Core,resolver:{resolve:id=>id},fxBackend:backend,zoneBackend:backend,
+   ctx:{playerPos:()=>({x:0,y:0}),posOf:()=>({x:0,y:0}),targetAlive:()=>false}});
+  rt.registerPresets([{schemaVersion:1,id:presets[0].id,duration:3,loop:true,layers:[{id:'marker',type:'sprite',assetId:'marker'}]}]);
+  h.run(c,p,es,.5);specs.filter(s=>s.variant==='ice-arrow-homing').forEach(s=>rt.tryPlay(s));rt.update(.01);
+  assert.equal(rt.stats().grounds,1);
+  const origin={...f.pos},heading=f.moveAngle,hitCount=hits.length;
+  if(removed)es=[];else prey.hp=0;
+  for(let tick=0;tick<15;tick++){
+   specs.length=0;h.run(c,p,es,.1);
+   const snapshots=specs.filter(s=>s.variant==='ice-arrow-homing');assert.ok(snapshots.length);
+   snapshots.forEach(s=>{
+    assert.equal(s.area.moveA,heading);assert.equal(s.area.turnRate,0);assert.equal(s.area.speed,585);
+    assert.equal(s.area.destX,undefined);assert.equal(s.targets.length,0);rt.tryPlay(s);
+   });
+   const before={...nodes[0].t};for(let frame=0;frame<6;frame++)rt.update(1/60);
+   assert.equal(rt.stats().grounds,1,'失去目標不能中止畫面');
+   assert.equal(nodes.length,1,'更新同一支箭，不重生新飛行物');
+   assert.ok(Math.hypot(nodes[0].t.x-before.x,nodes[0].t.y-before.y)>1,'快照間繼續飛行');
+  }
+  assert.equal(f.moveAngle,heading);assert.equal(f.dest,null);assert.equal(hits.length,hitCount,'死亡／移除敵人不再受傷');
+  assert.ok(Math.abs(f.pos.x-origin.x-Math.cos(heading)*585*1.5)<1e-6);
+  assert.ok(Math.abs(f.pos.y-origin.y-Math.sin(heading)*585*1.5)<1e-6);
+  h.run(c,p,es,2);assert.equal(c.SKILL2_RT.grounds.length,0);rt.update(1);assert.equal(rt.stats().grounds,0);rt.destroy();
+ }
 });
 test('icearrow ordinary, piercing, homing and rain mappings ship all approved assets',()=>{
  const src=fs.readFileSync(require.resolve('../js/skills2.js'),'utf8'),start=src.indexOf('var SKILLS2 ='),c={};vm.createContext(c);vm.runInContext(src.slice(start,start+src.slice(start).indexOf('\n};')+3),c);

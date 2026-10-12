@@ -24,7 +24,7 @@ function setup({ canvas = true } = {}) {
   const handlers = {};
   const log = [];
   const bridge = { booted: false };
-  const renderer = { ready: false, failed: false };
+  const renderer = { ready: false, failed: false, sceneReady: true };
   let granted;
   let canvasClass = false;
   const c = {
@@ -203,4 +203,38 @@ test('存檔來源確認後 BOOTED 恢復黑幕；進入遊戲後不重開 Loadi
   e.frame();
   e.emit('booted');
   assert.equal(e.log.at(-1), 'hide');
+});
+
+test('當前圖集與物件晚到時先同步首畫開始載入，持續 Loading 到場景就緒', () => {
+  const e = setup(); e.grant(); e.ready(); e.renderer.sceneReady = false;
+  e.frame(); e.frame(); e.frame();
+  assert.ok(e.log.includes('render'), '必須先讓正式首畫觸發目前場景建圖，不能等待尚未啟動的載入');
+  assert.ok(!e.log.includes('hide'), 'Canvas 初始化不能取代場景就緒');
+  e.renderer.sceneReady = true; e.frame(); e.frame();
+  assert.equal(e.log.at(-1), 'hide');
+});
+
+test('uiTick 更新當前場景後須重新讀就緒狀態，不能使用首畫前的舊值', () => {
+  const e = setup(); e.grant(); e.ready();
+  const render=e.c.uiTick;
+  e.c.uiTick=()=>{ render(); e.renderer.sceneReady=false; };
+  e.frame(); e.frame();
+  assert.ok(!e.log.includes('hide'));
+  e.c.uiTick=render; e.renderer.sceneReady=true; e.frame(); e.frame();
+  assert.equal(e.log.at(-1), 'hide');
+});
+
+test('揭幕前一幀場景又變或轉為背景，續等場景與前景而非露出空場', () => {
+  for(const reason of ['scene','hidden']) {
+    const e = setup(); e.grant(); e.ready(); e.frame();
+    if(reason==='scene') e.renderer.sceneReady=false; else e.c.document.hidden=true;
+    e.frame(); assert.ok(!e.log.includes('hide'),reason);
+    e.renderer.sceneReady=true; e.c.document.hidden=false; e.frame(); e.frame();
+    assert.equal(e.log.at(-1),'hide');
+  }
+});
+
+test('已安排揭幕時 Worker 失效不重複揭幕或恢復 Loading', () => {
+  const e=setup(); e.grant(); e.ready(); e.frame(); e.emit('workerDead'); e.frame();
+  assert.equal(e.log.filter(x=>x==='hide').length,1);
 });

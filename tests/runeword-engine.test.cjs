@@ -616,18 +616,22 @@ test('輪迴：死亡時復活、無敵、增傷、重置冷卻；冷卻期間�
   const st = c.getStats();
   p.hp = 0;
   p.skillCds = { 'sg:thrust': 20 };
+  p.mp = 7;
   c.GT = 100;
   assert.equal(c.rwTryRevive(p), true);
   assert.ok(Math.abs(p.hp - st.hp * 0.6) < 1);
+  assert.equal(p.mp, st.mp, '死亡復活時補滿法力');
   assert.ok(c.effectActive(p, 'invuln'));
   assert.equal(c.buffVal(p, 'allDmgUp'), 60);
   assert.equal(p.skillCds['sg:thrust'], 0);
-  p.hp = 0; c.GT = 150;
+  p.hp = 0; p.mp = 3; c.GT = 150;
   assert.equal(c.rwTryRevive(p), false, '180 秒冷卻內不能再復活');
+  assert.equal(p.mp, 3, '復活失敗不補魔');
   c.resetSkillRT();                                                // 進出高塔／開場都會重置戰鬥狀態
   assert.equal(c.rwTryRevive(p), false, '重置戰鬥不得洗掉復活冷卻');
   c.GT = 281;
   assert.equal(c.rwTryRevive(p), true);
+  assert.equal(p.mp, st.mp);
 });
 
 test('死亡出口接線：野外 onPlayerFieldDeath 與高塔 endTowerFight 都會先問輪迴', () => {
@@ -635,9 +639,10 @@ test('死亡出口接線：野外 onPlayerFieldDeath 與高塔 endTowerFight 都
   pin(c, 'rw_reincarnation', { fx: { reviveHpPct: 60, reviveCdSec: 180, reviveInvulnSec: 3, reviveDmgPct: 60, reviveDmgSec: 10, reviveRefresh: 1 } });
   equip(c, 'chest', wordItem(c, 'rw_reincarnation'));
   const p = setup(c);
-  p.hp = 0; c.GT = 10;
+  p.hp = 0; p.mp = 0; c.GT = 10;
   c.onPlayerFieldDeath();
   assert.ok(p.hp > 0, '野外：復活而不是退關');
+  assert.equal(p.mp, c.getStats().mp);
   assert.equal(c.FIELD.reviveCd > 0, false);
   // 高塔
   c.GT = 1000;
@@ -647,6 +652,7 @@ test('死亡出口接線：野外 onPlayerFieldDeath 與高塔 endTowerFight 都
   p.hp = 0;
   c.endTowerFight(false, 'death');
   assert.ok(p.hp > 0, '高塔：復活');
+  assert.equal(p.mp, c.getStats().mp);
   assert.notEqual(c.TOWER.showingResult, true, '復活後戰鬥繼續，不結算');
 });
 

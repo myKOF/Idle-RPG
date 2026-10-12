@@ -58,6 +58,11 @@ function waitForStartupUi() {
     // 讓既有的失效通知與重新載入按鈕可見，不被 Loading 蓋住。
     if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
   });
+  function sceneReady() {
+    if (typeof BattleRenderer === 'undefined' || !document.getElementById('battle-canvas-host')) return true;
+    var status = BattleRenderer.status();
+    return status.failed || status.sceneReady;
+  }
   function check() {
     if (finished) return;
     if (!uiRenderingSuspended() && WorkerBridge.status().booted && UI_WORKER_STATE.view) {
@@ -78,10 +83,16 @@ function waitForStartupUi() {
         }
         uiTick();
         rendered = true;
-        if (!UI.dirty.header && !UI.dirty.battle) {
-          finished = true;
+        // 先完成首畫，才會以目前面板啟動場景建圖；不可在 uiTick 前等待圖集。
+        if (!UI.dirty.header && !UI.dirty.battle && sceneReady()) {
           // 留一幀讓 Canvas 與 DOM 套用首次版面，再揭開黑幕。
           requestAnimationFrame(function () {
+            if (finished) return; // 等待這一幀時 Worker 可能已失效。
+            if (uiRenderingSuspended() || !sceneReady() || UI.dirty.header || UI.dirty.battle) {
+              requestAnimationFrame(check);
+              return;
+            }
+            finished = true;
             if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
           });
           return;

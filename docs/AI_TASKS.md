@@ -1,5 +1,51 @@
 # AI_TASKS.md
 
+## SCENE-STARTUP-READY-20261012 — 當前場景物件備妥才關閉 Loading
+
+- Owner：Codex；Done，單一開發者。使用者回報重整後空場、戰鬥數秒後物件才出現，要求至少載完當前場景再進遊戲。已將Loading門檻延伸至當前底圖、物件圖集及可見區塊全部就緒；其他地貌／階段背景預建不阻塞。
+- 允許：js/main.js的啟動Loading門檻、js/battle-renderer.js唯讀場景就緒狀態、tests/loading-screen.test.cjs及新增tests/scene-startup-ready.test.cjs、index與tools/scene-preview.html必要快取及本紀錄。禁止修改戰鬥模擬、技能、存檔、素材、Protocol、其他工作內容；僅等待當前場景，其他地貌／階段背景預建不阻塞。全檔預檢無其他副本／分支衝突；保留同副本冰箭／不屈鬥魂工作，共用檔分段提交。
+- 驗收：先重現Canvas先完成但圖集／可見物件／底圖晚到仍不能揭幕，首畫需先觸發場景載入而非死鎖，背景預建不阻塞、塔戰等正確場景完成、最後揭幕前場景再變須續等；專用底圖失敗等通用後備、DOM／關閉裝飾／Worker失效沿既有備援。相關回歸、Build與隔離瀏覽器實測後提交，不合併或推送；後續使用者重載驗收。
+- 完成：Renderer新增唯讀sceneReady狀態，檢查當前面板／地貌、轉場、底圖與圖集區塊；塔戰僅等待對應祭壇。main先同步首畫觸發載入，再檢查就緒，最後揭幕幀重新確認場景、前景及面板資料；Worker失效不重複揭幕。專用底圖失敗仍等待通用後備、兩者失敗沿既有底色；Canvas失敗沿DOM備援，圖集Worker失敗沿主執行緒分段建圖。未改模擬進程或其他場景預載策略。
+- 修改檔案：js/main.js、js/battle-renderer.js、tests/loading-screen.test.cjs、新tests/scene-startup-ready.test.cjs、index.html、tools/scene-preview.html及本段；只更新Renderer／main快取。檢查但未修改：js/battle-decor.js、js/battle-arena.js、js/ui.js、底圖載入與既有測試輔助器。無素材變動，無素材庫提交；保留冰箭既有提交與不屈鬥魂預覽未提交內容。
+- 測試：新增9項先失敗再通過；`node --test tests/loading-screen.test.cjs tests/scene-startup-ready.test.cjs` 18/18通過；`node --test tests/loading-screen.test.cjs tests/scene-startup-ready.test.cjs tests/battle-decor.test.cjs tests/battle-arena.test.cjs tests/battle-perspective.test.cjs tests/tab-lock.test.cjs` 75/75通過；`npm.cmd run build` 497檔通過。另跑tests/vfx-startup-loading.test.cjs有6項skyEntryPoint未定義；以未修改HEAD的Renderer重跑仍6項同錯，為既有測試抽取缺少輔助函式，未修改其他任務測試。git diff --check通過。
+- 瀏覽器實測：隔離headless Edge新儲存空間，實際延遲圖集Worker與desert底圖；Canvas先完成時Loading維持，圖集與區塊完成但底圖未到仍維持，全部備妥才揭幕，首畫78物件／28區塊，Console error／warning均0。再以Worker回應503重載，主執行緒備援建圖完成78物件後正常揭幕，0 error，僅預期備援warning。證據在本聊天visualizations/scene-startup-20261012的loading-waiting.png及scene-ready.png。
+- Commit：本紀錄所在提交。風險／限制：首次載入較慢時Loading會延長；不等待全部其他場景，未做效能壓測。未完成項目：無本次範圍內待辦；前述既有VFX測試問題獨立處理。可合併，尚未合併／推送；建議重新整理驗收首次場景。
+
+## INDOMITABLE-GOLD-PREVIEW-20261012 — 不屈鬥魂金色護罩／白光與30米擊退
+
+- Owner：Codex；Done，單一開發者。使用者要求金黃色直立橢圓無敵護罩、發動時白光由上方照下約2秒、擊退距離5→30米；預覽交付後已明確要求直接接入並提交需要的檔案。前置已完成，後續使用者驗收。
+- 允許：新vfx/presets/st-indomitable-gold.json及pillar-indomitable-white.json、本紀錄與隔離預覽；Skills2 Excel／CSV／js、tools/skills2-vfx.cjs、Runtime資料版號與必要接線、主頁／Editor／bridge／Worker快取、兩項不屈專項及素材庫Preset／SOURCE。禁止其他技能數值、共用Status外觀、Protocol／存檔與外部素材匯入。預檢全部無其他副本／分支衝突，保留既有其他任務提交。
+- 驗收：護罩色彩／橢圓輪廓／人物可辨、白光落下與2秒消失、護罩跟人與無敵同時結束、30米連續擊退及既有範圍／暈眩／免死保留、表格與快取、正式Core／Runtime／Pixi預覽、Excel正常原生重開、回歸與Build、雙倉素材提交。參考圖僅參考色彩與包覆感，沿專案已在用素材組成原創特效，不複製參考圖。
+- 完成：Skills2的pushM改30，維持30米控制範圍、0.25秒連續擊退、3秒暈眩與既有免死／冷卻規則。觸發地板欄指定st-indomitable-gold，觸發命中欄指定pillar-indomitable-white；程式按表取值，白光以貼身事件送至ground播放，lightSec=2。護罩／白光跟隨野外或高塔角色腳底，保持預覽作者尺寸；Runtime護罩精確維持至無敵結束，白光獨立播放2秒後回收，不套地板續命緩衝或場景尺寸倍率。沒有新增特效第三種來源。
+- 修改14檔：config/Excel/Skills2.xlsx、config/CSV/Skills2.csv、js/skills2.js、js/vfx-runtime.js、tools/skills2-vfx.cjs、index.html、js/bridge.js、js/worker/sim.worker.js、tools/vfx/editor/index.html、tests/indomitable-revival.test.cjs、新tests/indomitable-vfx.test.cjs、上述兩份Preset及本紀錄。主頁skills2 1.0.303／Runtime 1.0.191／bridge 1.0.258，Editor Runtime同步；Worker入口與skills2 import、Preset資料版號均20261012-indomitable-gold。Protocol50及存檔不變。
+- Excel：原生Excel API只更新不屈鬥魂列6格，原生正常重開RepairMode=false；230條公式與其他格資料保留。唯讀XML稽核確認既有格style索引、styles.xml、公式、欄寬／行屬性／視圖／合併／資料驗證／篩選不變；原空白AP70填入白光Preset後建立新格，使用既有style 1。Excel／CSV逐位元往返一致，`node tools/config_tables.cjs --apply Skills2`語意變更0，未手工寫XML。
+- 素材：兩份正式Preset皆為沿專案既有已匯出光罩素材組合的原創特效；參考圖僅參考外觀，未匯入或複製圖片。金色橢圓光膜／雙邊光環loop維持；白光自上而下落至腳底，2秒非循環。素材庫D:/MyGame/Asset的codex-authored/indomitable-gold保存相同Preset及SOURCE.md，先提交`6e24969`（[Codex] feat: 保存不屈鬥魂金色護罩與天降白光）；遊戲兩份Preset與素材庫副本逐位元一致。舊pillar-indomitable素材仍保留，無關素材未刪。
+- 測試指令：`node --test --test-reporter=tap tests/indomitable-revival.test.cjs tests/indomitable-vfx.test.cjs tests/earthguard-revival.test.cjs tests/death-revive-restore.test.cjs tests/field-death-retreat.test.cjs tests/skill-cooldown-death.test.cjs tests/hall-of-radiance.test.cjs tests/worker-protocol.test.cjs tests/vfx-core.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/vfx-editor-cache-versions.test.cjs`，189/189通過。其中不屈專項13/13驗30米連續擊退、HP1／MP保留／戰鬥持續、等級與冷卻、表格／文字，以及正式Core／Runtime的作者尺寸、腳底跟隨、高塔、不同場景倍率、白光2秒／護罩按無敵時間回收與可配置白光時長。`npm.cmd run build` 498檔通過；素材匯出唯讀check與git diff --check通過。
+- 瀏覽器實測：隔離隨機埠HTTP／全新headless Edge／真Worker及正式BattleRenderer／Runtime／Core／Pixi；Lv10致命傷後HP1、MP7、無敵5秒，0.125秒擊退150單位、0.25秒達300單位（30米）。真Worker三個VFX事件交正式Renderer播放，金色罩與白光同時出現，2秒後僅留護罩、5秒後全部回收，Console error／warning均0。預覽PNG／5.6秒GIF與接線截圖indomitable-integrated.png留在本聊天visualizations/indomitable；臨時腳本、日誌及重複預覽刪除，隔離伺服器／瀏覽器已關閉。
+- 唯讀檢查：AI規範／prompts/codex.md、combat／tower／battlefield／formula、Worker Protocol／shim、sim engine、VFX Core／Pixi後端／BattleRenderer、配置及原生Excel工具；上述未修改。交付：遊戲Commit為本紀錄所在[Codex] feat提交；素材庫Commit如上。無本次未完成項，可供審查合併，尚未合併／推送。已知限制：BOSS仍沿既有免控規則，未做真人長時間戰鬥或FPS壓測；下一步重載遊戲驗收。
+
+## ICEARROW-TARGET-LOSS-20261012 — 寒冰箭失去目標沿原方向飛行
+
+- Owner：Codex；Done，單一開發者。使用者要求空場或敵人死亡後失去目標的寒冰箭沿當下方向飛出畫面，不在原地消失。前置為既有追蹤場域與連續補間，後續使用者驗收。
+- 允許：js/skills2.js追蹤冰箭失去目標／起始快照、tests/icearrow-rift-budget.test.cjs、tests/icearrow-vfx-integration.test.cjs、必要新增回歸、index／bridge／Worker快取及本紀錄。禁止其他技能數值、素材、Protocol／存檔及復活任務內容；不合併／推送。預檢無其他副本或分支修改；同副本REVIVE-FULL-MANA進行中，使用者明確同意保留並分段修改與獨立提交。
+- 驗收：空場、圈外敵人、敵人死亡後保持位置／航向／速度連續，清除死亡落點、不產生幽靈傷害；畫面共用權威快照且不重生多箭，既有壽命最終回收與72支上限保持。修改前兩檔回歸24項18通過／6既有失敗；相關回歸、Build、diff check後提交。
+- 完成：sgGroundChaseStep不再因無存活目標歸零hitsLeft／expiresAt，改為清除舊落點並保留最後航向與速度；空場也從貫穿終點送追蹤起始快照，沿用同一支箭連續補間。壽命、搜敵範圍、傷害與72支上限不變。Runtime既有語意足夠，不需改動Runtime或Protocol50。
+- 修改：js/skills2.js、index.html、js/bridge.js、js/worker/sim.worker.js、tests/icearrow-rift-budget.test.cjs、tests/icearrow-vfx-integration.test.cjs、本紀錄。主頁skills2 1.0.302／bridge 1.0.257，Worker入口與skills2 import同20261012-icearrow-target-loss；保留已提交8379da00復活修正及runeword快取。
+- 驗證：node --test tests/icearrow-rift-budget.test.cjs tests/icearrow-vfx-integration.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs tests/vfx-hit-density.test.cjs，共71項65通過／6既有失敗，名稱與修改前基線相同；3項舊立即移除案例改為新需求，修正前3項皆失敗、修正後通過。追蹤專檔12/12；正式Worker四向快照飛行超過1000單位、空場無命中且最終回收，Console error／warning 0。正式Core／Runtime驗空場及目標死亡／移除後始終同一支箭、持續位移、最後回收。npm.cmd run build：496檔通過；git diff --check通過。
+- 唯讀檢查：js/vfx-runtime.js、scripts/sim/engine.js、tests/skill2-ice.test.cjs、Worker shim／Protocol及相關密度測試、AI規範／prompts/codex.md。素材無本次修改，無需素材庫Commit；不屈鬥魂兩份未追蹤預覽Preset與紀錄原樣保留，不納入本次提交。
+- 交付：本紀錄所在[Codex] fix提交（回覆列出編號），無本次實作未完成項，可供審查合併，未合併／推送。已知限制：6項既有回歸失敗、未做真人實機目視／長時間FPS量測；空場箭維持到既有壽命，數量仍受72支上限限制。下一步重載遊戲驗收。
+
+## REVIVE-FULL-MANA-20261012 — 死亡復活補滿法力
+
+- Owner：Codex；Done，單一開發者，使用者要求角色死亡復活時法力也補滿。野外一般復活與高塔戰敗返回野外已有補滿；補齊天地共生完成瞬間與符文輪迴。前置已完成，後續使用者驗收。
+- 允許：js/skills2.js、js/runeword.js、tests/earthguard-revival.test.cjs、tests/runeword-engine.test.cjs、index／bridge／Worker快取及本紀錄。禁止其他數值、配置、素材、Protocol／存檔。預檢無衝突、工作區乾淨；不屈鬥魂與其他免死不屬死亡復活，不補魔。
+- 驗收：原生死亡出口／野外／高塔、復甦倒數期間保留MP、完成時按當下上限補滿、不經溢出轉盾、冷卻拒絕時不補魔、Worker面板、既有免死保護。基線node --test（death-revive-restore、earthguard-revival、indomitable-revival、field-death-retreat、skill-cooldown-death、runeword-engine）60/60通過；Build與diff check。
+
+
+- 完成：天地共生在復甦完成時直接將MP設為當下st.mp；輪迴成功復活時直接補滿MP，失敗不變。一般野外／高塔戰敗原已補滿，未改；不屈鬥魂及其他免死不補魔。修改8檔為上述允許範圍；唯讀檢查combat／tower／formula／potential、死亡相關測試、Worker shim／Protocol，無素材或配置／存檔變更。
+- 驗證：上述六檔node --test共60/60，與修改前同為全通過；新斷言驗倒數中MP7／3不變、復活時補滿、輪迴冷卻拒絕保留MP3及再次成功補滿、野外／塔戰死亡出口與Worker面板。npm.cmd run build全檔通過，diff check通過。主頁skills2 1.0.301、runeword1.0.10、bridge1.0.256；Worker入口與兩份import同20261012-revive-full-mana，Protocol50不變。
+- 交付：本紀錄所在[Codex] fix提交，無未完成項、無已知新增風險，可供合併，未合併／推送；未做本輪瀏覽器真人長戰驗收。素材庫無本次變更、無需Commit。後續重新載入遊戲驗收。
+
 ## STORM-MOUNTAIN-HEAL-20261012 — 嵐之山擊殺改為直接回復生命
 
 - Owner：Codex；Done，單一開發者。使用者要求風刃擊殺敵人時由護盾改為直接回復生命；保留原最大生命比例與每級成長、雙屬性及風刃其他機制。前置已完成，後續使用者驗收／整合。

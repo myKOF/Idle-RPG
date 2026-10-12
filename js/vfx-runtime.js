@@ -1156,6 +1156,11 @@ var VFXRuntime = (function () {
         /* 沒有座標的版面（高塔）：釘在目標腳底，逐幀跟著它走。 */
         g.anchored = true;
         g.speed = 0; g.moveA = NaN; g.hasDest = false;
+        if (spec.variant === 'indomitable-guard' || spec.variant === 'indomitable-light') {
+          // 純演出護罩／白光保持預覽的作者尺寸，不套地板半徑或場景倍率。
+          g.uniform = false; g.tsx = 1; g.tsy = 1; g.trot = 0;
+          return;
+        }
         var fallbackSize = sizeOf(g.presetId, (isRockOrbitPreset(g.presetId) || g.iceArrowBody || g.presetId === 'proj-icearrow-frost') ? null : (o.profile && o.profile.groundR > 0 ? { r: profile.groundR } : null));
         g.uniform = !fallbackSize;
         g.tsx = fallbackSize ? fallbackSize.scaleX : profile.groundR / NOMINAL_RADIUS;
@@ -1328,7 +1333,8 @@ var VFXRuntime = (function () {
          自身增益光殼（沒有判定半徑可言）。兩種都畫在目標腳底並跟著它走，
          大小由 profile.groundR 這個名目半徑決定；0 才維持退回舊畫法。 */
       var noArea = !spec.area;
-      if (noArea && !(profile.groundR > 0)) return false;
+      var indomitableVisual = spec.variant === 'indomitable-guard' || spec.variant === 'indomitable-light';
+      if (noArea && !(profile.groundR > 0) && !indomitableVisual) return false;
       var anchor = noArea
         ? (Array.isArray(spec.targets) && spec.targets.length ? spec.targets[0] : 'pv-float')
         : 'pv-float';
@@ -1340,7 +1346,7 @@ var VFXRuntime = (function () {
       // 吞噬全場只保留一個：新施放立即移除舊畫面，並從新位置重新出生。
       if (spec.variant === 'dragon-devour') key = 'field:dragon-devour';
       // 吞噬與飛雷神只在出生派送一次完整壽命，不使用逐拍場域的續命緩衝。
-      var keep = (spec.variant === 'dragon-devour' || spec.variant === 'flying-thunder') ? Math.max(0, num(spec.dur, 0))
+      var keep = (spec.variant === 'dragon-devour' || spec.variant === 'flying-thunder' || indomitableVisual) ? Math.max(0, num(spec.dur, 0))
         : Math.max(GROUND_MIN_KEEP_SEC, num(spec.dur, 0.5) * GROUND_KEEP_TICKS);
       if ((spec.variant === 'water-tornado' || spec.variant === 'water-tide-merge') && spec.area && isFinite(spec.area.lifeSec)) {
         keep = Math.max(0, Number(spec.area.lifeSec));
@@ -1350,7 +1356,7 @@ var VFXRuntime = (function () {
       var curtainColumn = role === 'attack' && spec.variant === 'thunder-curtain';
       // 舊事件缺 variant 時沿用既有月牙辨識；新素材依追蹤事件語意判斷。
       var windBody = !staticVacuum && (spec.variant === 'wind-blade-homing' || presetId === 'ground-homing-wind-crescent');
-      var mult = curtainColumn || spec.variant === 'flying-thunder' ? 1 : noArea || spec.variant === 'ice-arrow-homing' || windBody || presetId === 'proj-icearrow-frost' ? profile.scale : profile.areaScale;
+      var mult = curtainColumn || spec.variant === 'flying-thunder' || indomitableVisual ? 1 : noArea || spec.variant === 'ice-arrow-homing' || windBody || presetId === 'proj-icearrow-frost' ? profile.scale : profile.areaScale;
       var live = grounds[key];
       if (live && live.presetId === presetId && spec.variant !== 'dragon-devour') {
         live.expireAt = clock + keep;
@@ -1368,7 +1374,7 @@ var VFXRuntime = (function () {
         smoothChase: spec.variant === 'ice-arrow-homing' || windBody,
         windBody: windBody,
         devour: spec.variant === 'dragon-devour',
-        fixedLifetime: spec.variant === 'flying-thunder' ? keep : 0,
+        fixedLifetime: spec.variant === 'flying-thunder' || spec.variant === 'indomitable-light' ? keep : 0,
         anchored: false, speed: 0, moveA: NaN, hasDest: false, destX: 0, destY: 0,
         bx: 0, by: 0, ox: 0, oy: 0,
         x: 0, y: 0, rot: 0, trot: 0, sx: 1, sy: 1, tsx: 1, tsy: 1, uniform: true
@@ -2237,7 +2243,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20261012-rock-hold-plus2';
+  var DATA_VERSION = '20261012-indomitable-gold';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

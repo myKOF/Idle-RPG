@@ -42,7 +42,7 @@ const events = {
   'firepillar.5': {roles:['attack','hit'],note:'每道火龍捲消失時播放一次範圍爆炸及受擊；不隨平時傷害跳動播放，不重播龍捲場域。'},
   'bloodrage.7': {roles:['attack','hit'], note:'狂怒期間每次普攻在主目標位置播放一次範圍爆炸，匹配多目標普攻半徑；實際命中的敵人各播放原尺寸小型命中特效，追加目標同時結算與播放。'},
   'counter.holyBody': {roles:['attack','projectile'], note:'反擊滿計數後發射一顆光彈；觸發子彈飛到本次鎖定的目標位置，抵達時結算範圍傷害並在落點播放一次觸發特效。爆炸匹配傷害半徑，不在每個受害者身上重播。'},
-  'counter.indomitable': {roles:['attack','ground'], note:'致命傷免死時於玩家位置播放控制範圍震波；護盾特效貼身持續至無敵結束，不播放復甦光束。'},
+  'counter.indomitable': {roles:['attack','hit','ground'], note:'致命傷免死時播放控制範圍震波；觸發命中特效為自上而下的白光，持續時間讀lightSec；觸發地板特效為貼身金色護罩，持續至無敵結束。兩者保持作者尺寸並跟隨角色。'},
   'cleave.windChaser': {roles:['attack','hit','ground','field'], note:'迴旋斬命中時機率對該敵人觸發真空迴旋，依表定次數與間隔逐段造成風系傷害；旋轉本體讀觸發特效、每段成功命中讀觸發命中特效，維持原尺寸。地板／持續場域欄僅供疾風迅雷傳奇風捲殘雲借用，不在真空迴旋播放。'},
   'gale.thunderFlash': {roles:['attack'], note:'本體最後一擊後，按次數與間隔重新選敵並播放貫穿雷電；沿玩家與目標連線，匹配雷電長度及寬度。'},
   'gale.thunderGodSlash': {roles:['attack','hit'], note:'本體及爆散命中時依效果JSON的chance機率，在該敵人位置落雷；依落雷傷害範圍縮放後，再乘sizeMult視覺倍率，傷害半徑不變。'},
