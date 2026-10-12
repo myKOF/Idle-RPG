@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "pillar-rock-spike",
+  "groups": [
+    {
+      "id": "pillar-rock-spike",
+      "name": "pillar-rock-spike",
+      "layerIds": [
+        "dust",
+        "stone"
+      ]
+    }
+  ],
+  "order": [
+    "group:pillar-rock-spike"
+  ]
+}

@@ -2260,8 +2260,6 @@ var GEM_TYPES = {
   sapphire: { name: '藍寶石', emoji: '🔵', stat: 'matkFlat', statName: '魔法攻擊', base: 6, pct: false },
   topaz: { name: '黃玉', emoji: '🟡', stat: 'hpFlat', statName: '生命值', base: 40, pct: false },
   emerald: { name: '綠寶石', emoji: '🟢', stat: 'hpRegen', statName: '生命恢復/秒', base: 3, pct: false },
-  /* 法力恢復寶石與生命恢復寶石共用同一成長曲線；基礎值 1 讓 Lv.1 至少顯示 1，
-     且約為綠寶石基礎值 3 的三分之一。 */
   iolite: { name: '堇青石', emoji: '🔮', stat: 'mpFlat', statName: '法力值', base: 25, pct: false },
   kyanite: { name: '藍晶石', emoji: '💧', stat: 'mpRegen', statName: '法力恢復/秒', base: 1, pct: false },
   diamond: { name: '鑽石', emoji: '⚪', stat: 'defFlat', statName: '物理防禦', base: 5, pct: false },
@@ -2270,29 +2268,17 @@ var GEM_TYPES = {
   garnet: { name: '石榴石', emoji: '🟠', stat: 'critDmg', statName: '暴擊傷害%', base: 5, pct: true },
   opal: { name: '蛋白石', emoji: '🩵', stat: 'aspd', statName: '攻擊速度%', base: 1.5, pct: true },
   onyx: { name: '黑曜石', emoji: '⚫', stat: 'lifesteal', statName: '吸血', base: 1, pct: false },
-  /* 吸魔（吸血寶石的對位）：效果為黑曜石的 1/3，每次對敵人造成傷害回復的法力定值。linear：1~5 階 0.5/1/1.5/2/2.5、6 階起每階 ×2（5/10/20/40/80）。 */
-  manastone: { name: '魔晶石', emoji: '🟪', stat: 'manaSteal', statName: '吸魔', base: 0.5, pct: false, linear: true },
   moonstone: { name: '月光石', emoji: '🌙', stat: 'evasion', statName: '閃避率%', base: 1, pct: true },
-  /* 命中（月光石的對位）：命中與閃避是 1:1 相抵的一對（resolveHit 取 clamp(命中−閃避, 5, 100)），
-     但玩家命中基礎已有 100%、敵人閃避從 5% 起隨等級成長，所以同樣 1 點的命中價值低於閃避。
-     base 取 1.5＝月光石的 1.5 倍，與詞條池同一對的比例一致（命中 base 3 / 閃避 base 2）。 */
   catseye: { name: '貓眼石', emoji: '👁️', stat: 'hit', statName: '命中率%', base: 1.5, pct: true },
   sunstone: { name: '太陽石', emoji: '☀️', stat: 'luck', statName: '幸運值', base: 1.5, pct: false },
-  /* === 穿透（2026-08-06 新增 2 種；linear 線性曲線）===
-     base=10 → L1~5：10/20/30/40/50%、L6~10：100/200/400/800/1600%。
-     穿透本身無上限，實際忽略防禦%走飽和曲線（formula.js §3），故高階數值可以放大而不會爆掉。
-     面板圖示沿用屬性列的 🗡️／🪄，讓寶石與對應屬性一眼對得上。 */
   piercePhys: { name: '穿甲寶石', emoji: '🗡️', stat: 'pPen', statName: '物理穿透%', base: 10, pct: true, linear: true },
   pierceMagic: { name: '穿魔寶石', emoji: '🪄', stat: 'mPen', statName: '魔法穿透%', base: 10, pct: true, linear: true },
-  // === 防禦類（2026-07-09 新增 6 種）===
   jade: { name: '翡翠', emoji: '🟩', stat: 'tenacity', statName: '韌性%', base: 1.5, pct: true },
   turquoise: { name: '綠松石', emoji: '🟦', stat: 'blockRate', statName: '格擋率%', base: 1, pct: true },
   agate: { name: '瑪瑙', emoji: '🟤', stat: 'blockDmgRed', statName: '格擋減傷%', base: 1.5, pct: true },
   pearl: { name: '珍珠', emoji: '🤍', stat: 'shieldEff', statName: '護盾效率%', base: 2, pct: true },
   malachite: { name: '孔雀石', emoji: '💚', stat: 'pRes', statName: '物理抗性%', base: 0.8, pct: true },
   fluorite: { name: '螢石', emoji: '💙', stat: 'mRes', statName: '魔法抗性%', base: 0.8, pct: true },
-  // === 對屬性敵人傷害（七大屬性；linear：1~5 階＝base×等級 線性、6 階起每階 ×2）===
-  // 低階段每級加上 base（線性），超過分界等級後改為前一級 ×2（指數）。
   spinel: { name: '尖晶石', emoji: '🔥', stat: 'dmgVsFire', statName: '對火屬性敵人傷害%', base: 1, pct: true, linear: true },
   aquamarine: { name: '海藍寶石', emoji: '❄️', stat: 'dmgVsIce', statName: '對冰屬性敵人傷害%', base: 1, pct: true, linear: true },
   amazonite: { name: '天河石', emoji: '⚡', stat: 'dmgVsLightning', statName: '對雷屬性敵人傷害%', base: 1, pct: true, linear: true },
@@ -2301,7 +2287,6 @@ var GEM_TYPES = {
   tourmaline: { name: '黑碧璽', emoji: '🌑', stat: 'dmgVsDark', statName: '對暗屬性敵人傷害%', base: 1, pct: true, linear: true },
   tigerEye: { name: '虎眼石', emoji: '🪨', stat: 'dmgVsEarth', statName: '對地屬性敵人傷害%', base: 1, pct: true, linear: true },
   moldavite: { name: '捷克隕石', emoji: '💨', stat: 'dmgVsWind', statName: '對風屬性敵人傷害%', base: 1, pct: true, linear: true },
-  // === 屬性傷害提升（七大屬性，2026-07-23 新增、2026-08-07 補地屬性；提升「自身」該屬性元素傷害輸出；linear 同上）===
   coreFire: { name: '焰核寶石', emoji: '🌋', stat: 'elemDmgFire', statName: '火屬性傷害提升%', base: 1, pct: true, linear: true },
   coreIce: { name: '冰核寶石', emoji: '🌨️', stat: 'elemDmgIce', statName: '冰屬性傷害提升%', base: 1, pct: true, linear: true },
   coreLightning: { name: '雷核寶石', emoji: '🌩️', stat: 'elemDmgLightning', statName: '雷屬性傷害提升%', base: 1, pct: true, linear: true },
@@ -2310,9 +2295,6 @@ var GEM_TYPES = {
   coreDark: { name: '暗核寶石', emoji: '🌚', stat: 'elemDmgDark', statName: '暗屬性傷害提升%', base: 1, pct: true, linear: true },
   coreEarth: { name: '地核寶石', emoji: '🏔️', stat: 'elemDmgEarth', statName: '地屬性傷害提升%', base: 1, pct: true, linear: true },
   coreWind: { name: '風核寶石', emoji: '🌪️', stat: 'elemDmgWind', statName: '風屬性傷害提升%', base: 1, pct: true, linear: true },
-  // === 元素抗性寶石（linear：1~5 階每級 +base%、6 階起每階 ×2）===
-  // 七系與全系共用同一條曲線，只有 base 不同：低階段線性、高階段逐級翻倍。
-  // 全系的效果同時套用到七大屬性。
   wardFire: { name: '火抗寶石', emoji: '🧯', stat: 'resFire', statName: '火焰抗性%', base: 5, pct: true, linear: true },
   wardIce: { name: '冰抗寶石', emoji: '🧊', stat: 'resIce', statName: '冰霜抗性%', base: 5, pct: true, linear: true },
   wardLightning: { name: '電抗寶石', emoji: '🔌', stat: 'resLightning', statName: '雷電抗性%', base: 5, pct: true, linear: true },
