@@ -3043,31 +3043,204 @@ function renderHeader() {
 
 /* ---- 「角色」分頁的 50+ 屬性面板（分組摺疊；2026-10 由左側欄搬進分頁） ---- */
 var _attrPanelBuilt = false;
-// 分頁頂端的核心屬性方塊：依 STAT_GROUPS 的列名對應（列名帶 emoji 前綴，用包含比對）
-var CHAR_CORE_STAT_NAMES = ['生命值', '法力值', '物理攻擊', '魔法攻擊', '暴擊率', '攻擊速度'];
+var _charCoreBuilt = false;
+var CHAR_CORE_STAT_NAMES = ['攻擊', '堅韌'];
 var _charCoreRows = null;
-// 數值為 0／未啟用的屬性列（勾選「隱藏數值為 0 的屬性」時收起來）
-function attrValueIsZero(html) {
-  var text = String(html).replace(/<[^>]+>/g, '').trim();
-  return text === '—' || /^\+?0(\.0+)?\s*(%|\/s|\/秒|次)?$/.test(text);
+
+function formatReductionPercentage(v, startDec) {
+  var dec = startDec || 4;
+  if (v >= 1) return '100%';
+  if (v <= 0) return (0).toFixed(dec) + '%';
+  var pct = v * 100;
+  var s = pct.toFixed(dec);
+  while (((parseFloat(s) >= 100 && v < 1) || /^99\.9+$/.test(s)) && dec < 15) {
+    dec++;
+    s = pct.toFixed(dec);
+  }
+  return s + '%';
+}
+
+function calculateCombatRatingSummary(st, headerSnapshot, battleSnapshot) {
+  headerSnapshot = headerSnapshot || uiHeaderPanelSnapshot() || {};
+  battleSnapshot = battleSnapshot || uiBattlePanelSnapshot() || {};
+  st = st || headerSnapshot.viewStats || headerSnapshot.stats || {};
+  var pEnt = combatPlayerOfBattleSnapshot(battleSnapshot);
+  var isActive = true;
+  var hp = (isActive && pEnt && typeof pEnt.hp === 'number') ? pEnt.hp : (st.hp || 0);
+  var shield = (isActive && pEnt && typeof pEnt.shield === 'number') ? pEnt.shield : 0;
+
+  // 輸出端物傷/魔傷計算（包含暴傷、總傷%、敵種加成與七系屬性加成）
+  var critMult = (st.critDmg || 150) / 100;
+  var totalDmgMult = 1 + (st.totalDmgPct || 0) / 100;
+  var maxEnemyDmg = Math.max(st.normalDmg || 0, st.eliteDmg || 0, st.bossDmg || 0);
+  var enemyDmgMult = 1 + maxEnemyDmg / 100;
+
+  // 1. 第一種屬性加成：對屬性敵人傷害% (取全系最大值)
+  var elemKeys = (typeof ELEMENTS !== 'undefined') ? ELEMENTS : ['fire', 'ice', 'lightning', 'poison', 'light', 'dark', 'earth'];
+  var maxVsElem = 0;
+  for (var i = 0; i < elemKeys.length; i++) {
+    var k1 = elemKeys[i];
+    var val1 = (st.dmgVsElem && typeof st.dmgVsElem[k1] === 'number')
+      ? st.dmgVsElem[k1]
+      : (Number(st['dmgVs' + k1.charAt(0).toUpperCase() + k1.slice(1)]) || 0);
+    if (val1 > maxVsElem) maxVsElem = val1;
+  }
+  var vsElemMult = 1 + maxVsElem / 100;
+
+  // 2. 第二種屬性加成：屬性傷害提升% (取全系最大值)
+  var maxElemUp = 0;
+  for (var j = 0; j < elemKeys.length; j++) {
+    var k2 = elemKeys[j];
+    var val2 = (st.elemDmgUp && typeof st.elemDmgUp[k2] === 'number')
+      ? st.elemDmgUp[k2]
+      : (Number(st['elemDmg' + k2.charAt(0).toUpperCase() + k2.slice(1)]) || 0);
+    if (val2 > maxElemUp) maxElemUp = val2;
+  }
+  var elemUpMult = 1 + maxElemUp / 100;
+
+  var physDmgVal = (st.atk || 0) * critMult * totalDmgMult * enemyDmgMult * vsElemMult * elemUpMult;
+  var magicDmgVal = (st.matk || 0) * critMult * totalDmgMult * enemyDmgMult * vsElemMult * elemUpMult;
+  var avgAtk = (physDmgVal + magicDmgVal) / 2;
+
+  var attackerLevel = st.level || 1;
+  var defMul = 1 + (isActive && pEnt && typeof buffVal === 'function' ? buffVal(pEnt, 'defUp') : 0) / 100;
+
+  // 各類減傷率
+  var rPhysDef = typeof defReduction === 'function' ? defReduction((st.def * defMul) || 0, attackerLevel) : 0;
+  var rMagicDef = typeof defReduction === 'function' ? defReduction((st.mdef * defMul) || 0, attackerLevel) : 0;
+  var rPhysRes = typeof physicalResistanceReduction === 'function' ? physicalResistanceReduction(st.pRes || 0, attackerLevel) : 0;
+  var rMagicRes = typeof magicResistanceReduction === 'function' ? magicResistanceReduction(st.mRes || 0, attackerLevel) : 0;
+  var dmgRedRaw = st.passives && st.passives.sanctuary ? st.passives.sanctuary : 0;
+  var rSanctuary = dmgRedRaw ? (clamp(dmgRedRaw, 0, 50) / 100) : 0;
+  var rGlobal = typeof globalDamageReduction === 'function' ? globalDamageReduction(st.globalDmgRed || 0) : 0;
+
+  var rNormal = typeof enemyTypeDamageReduction === 'function' ? enemyTypeDamageReduction(st.normalDmgRed || 0, attackerLevel) : 0;
+  var rElite = typeof enemyTypeDamageReduction === 'function' ? enemyTypeDamageReduction(st.eliteDmgRed || 0, attackerLevel) : 0;
+  var rBoss = typeof enemyTypeDamageReduction === 'function' ? enemyTypeDamageReduction(st.bossDmgRed || 0, attackerLevel) : 0;
+  var rTypeMax = Math.max(rNormal, rElite, rBoss);
+
+  var typeMaxLabel = '';
+  if (rTypeMax > 0) {
+    if (rTypeMax === rBoss) typeMaxLabel = ' (BOSS傷害抗性)';
+    else if (rTypeMax === rElite) typeMaxLabel = ' (菁英傷害抗性)';
+    else typeMaxLabel = ' (普通敵人傷害抗性)';
+  }
+
+  // 元素抗性減傷（全部元素取平均；除數跟著元素數走，加屬性不必回頭改分母）
+  var elems = elemKeys;
+  var elemRedSum = 0;
+  for (var ei = 0; ei < elems.length; ei++) {
+    var resVal = (st.resist && st.resist[elems[ei]]) || 0;
+    elemRedSum += typeof elementalResistanceReduction === 'function' ? elementalResistanceReduction(resVal, attackerLevel) : 0;
+  }
+  var rElemAvg = elems.length ? elemRedSum / elems.length : 0;
+
+  // 剩餘比例 (1 - 減傷)
+  var physMult = (1 - rPhysDef) * (1 - rPhysRes) * (1 - rSanctuary) * (1 - rGlobal) * (1 - rTypeMax) * (1 - rElemAvg);
+  var magicMult = (1 - rMagicDef) * (1 - rMagicRes) * (1 - rSanctuary) * (1 - rGlobal) * (1 - rTypeMax) * (1 - rElemAvg);
+
+  var physAbsorb = physMult > 0 ? (hp + shield) / physMult : Infinity;
+  var magicAbsorb = magicMult > 0 ? (hp + shield) / magicMult : Infinity;
+  var avgToughness = (physAbsorb === Infinity || magicAbsorb === Infinity) ? Infinity : ((physAbsorb + magicAbsorb) / 2);
+
+  return {
+    st: st,
+    hp: hp,
+    shield: shield,
+    critMult: critMult,
+    totalDmgMult: totalDmgMult,
+    maxEnemyDmg: maxEnemyDmg,
+    maxVsElem: maxVsElem,
+    maxElemUp: maxElemUp,
+    physDmgVal: physDmgVal,
+    magicDmgVal: magicDmgVal,
+    avgAtk: avgAtk,
+    rPhysDef: rPhysDef,
+    rMagicDef: rMagicDef,
+    rPhysRes: rPhysRes,
+    rMagicRes: rMagicRes,
+    rSanctuary: rSanctuary,
+    rGlobal: rGlobal,
+    rTypeMax: rTypeMax,
+    typeMaxLabel: typeMaxLabel,
+    rElemAvg: rElemAvg,
+    physAbsorb: physAbsorb,
+    magicAbsorb: magicAbsorb,
+    avgToughness: avgToughness
+  };
 }
 
 function buildCharCoreTiles() {
   var box = $id('char-core');
   if (!box) return;
-  _charCoreRows = [];
-  var h = '';
-  CHAR_CORE_STAT_NAMES.forEach(function (name, ci) {
-    STAT_GROUPS.some(function (g) {
-      return g.rows.some(function (row) {
-        if (String(row[0]).replace(/<[^>]+>/g, '').indexOf(name) < 0) return false;
-        _charCoreRows.push(row);
-        h += '<div class="char-core-tile"><span>' + esc(name) + '</span><b data-core="' + ci + '"></b></div>';
-        return true;
-      });
-    });
-  });
-  box.innerHTML = h;
+  box.innerHTML =
+    '<div class="char-core-tile" id="char-core-atk" style="cursor: pointer;">' +
+      '<span>⚔️ 攻擊</span>' +
+      '<b id="char-core-atk-val" data-core="0" style="color: #4ade80;">0</b>' +
+    '</div>' +
+    '<div class="char-core-tile" id="char-core-toughness" style="cursor: pointer;">' +
+      '<span>🛡️ 堅韌</span>' +
+      '<b id="char-core-toughness-val" data-core="1" style="color: #4ade80;">0</b>' +
+    '</div>';
+  _charCoreBuilt = true;
+}
+
+function updateCharCoreSummary(st, headerSnapshot, battleSnapshot) {
+  var atkEl = $id('char-core-atk-val');
+  var toughnessEl = $id('char-core-toughness-val');
+  if (!atkEl || !toughnessEl) return;
+
+  var summary = calculateCombatRatingSummary(st, headerSnapshot, battleSnapshot);
+  var currentSt = summary.st || {};
+
+  setTextIfChanged(atkEl, fmt(summary.avgAtk));
+  var atkParent = $id('char-core-atk') || atkEl.parentNode;
+  if (atkParent) {
+    setAttrIfChanged(atkParent, 'data-tt-title', '綜合攻擊力 (攻擊)');
+    var atkDesc = '角色的綜合攻擊能力，包含了物理、魔法、攻速、暴擊及元素等綜合的攻擊強度評價。<br><br>' +
+      '<span style="color:#ffd700">計算公式：</span>(物傷 + 魔傷) / 2<br>' +
+      '<span style="color:#4ade80">基礎物理攻擊：</span>' + fmtFull(currentSt.atk || 0) + '<br>' +
+      '<span style="color:#4ade80">基礎魔法攻擊：</span>' + fmtFull(currentSt.matk || 0) + '<br>' +
+      '<span style="color:#ffd700">暴擊傷害倍率：</span>' + Math.round(summary.critMult * 100) + '%<br>' +
+      '<span style="color:#ffd700">總傷害加成：</span>' + (currentSt.totalDmgPct || 0) + '%<br>' +
+      '<span style="color:#ffd700">敵種最大加成：</span>' + summary.maxEnemyDmg + '%<br>' +
+      '<span style="color:#ffd700">對屬性敵最大加成：</span>' + summary.maxVsElem.toFixed(1) + '%<br>' +
+      '<span style="color:#ffd700">屬性傷害最大提升：</span>' + summary.maxElemUp.toFixed(1) + '%<br><br>' +
+      '<span style="color:#4ade80">物理單次預期傷害 (物傷)：</span>' + fmtFull(summary.physDmgVal) + '<br>' +
+      '<span style="color:#4ade80">魔法單次預期傷害 (魔傷)：</span>' + fmtFull(summary.magicDmgVal) + '<br><br>' +
+      '<span style="color:#ffd700">綜合預期平均攻擊力：</span>' + fmtFull(summary.avgAtk);
+    setAttrIfChanged(atkParent, 'data-tt-desc', atkDesc);
+    removeAttrIfPresent(atkParent, 'title');
+  }
+
+  setTextIfChanged(toughnessEl, summary.avgToughness === Infinity ? '∞' : fmt(summary.avgToughness));
+  var toughnessParent = $id('char-core-toughness') || toughnessEl.parentNode;
+  if (toughnessParent) {
+    setAttrIfChanged(toughnessParent, 'data-tt-title', '綜合生存能力 (堅韌)');
+    var toughnessDesc = '角色的綜合生存能力，包含了物防、法防、生命及各類抗性、減傷的綜合評價。<br><br>' +
+      '<span style="color:#ffd700">計算公式：</span>(物承 + 魔承) / 2<br>' +
+      '<span style="color:#4ade80">當前血量：</span>' + fmtFull(summary.hp) + '<br>' +
+      '<span style="color:#4ade80">當前護盾：</span>' + fmtFull(summary.shield) + '<br>' +
+      '<span style="color:#ffd700">物理防禦減傷：</span>' + formatReductionPercentage(summary.rPhysDef) + '<br>' +
+      '<span style="color:#ffd700">魔法防禦減傷：</span>' + formatReductionPercentage(summary.rMagicDef) + '<br>' +
+      '<span style="color:#ffd700">物理抗性減傷：</span>' + formatReductionPercentage(summary.rPhysRes) + '<br>' +
+      '<span style="color:#ffd700">魔法抗性減傷：</span>' + formatReductionPercentage(summary.rMagicRes) + '<br>' +
+      '<span style="color:#ffd700">聖佑被動減傷：</span>' + formatReductionPercentage(summary.rSanctuary, 2) + '<br>' +
+      '<span style="color:#ffd700">全局減傷：</span>' + formatReductionPercentage(summary.rGlobal) + '<br>' +
+      '<span style="color:#ffd700">元素抗性減傷：</span>' + formatReductionPercentage(summary.rElemAvg) + '<br>' +
+      '<span style="color:#ffd700">敵種最大減傷：</span>' + formatReductionPercentage(summary.rTypeMax) + summary.typeMaxLabel + '<br><br>' +
+      '<span style="color:#4ade80">物理總承傷 (物承)：</span>' + (summary.physAbsorb === Infinity ? '無窮大' : fmtFull(summary.physAbsorb)) + '<br>' +
+      '<span style="color:#4ade80">魔法總承傷 (魔承)：</span>' + (summary.magicAbsorb === Infinity ? '無窮大' : fmtFull(summary.magicAbsorb)) + '<br><br>' +
+      '<span style="color:#ffd700">綜合預期平均堅韌：</span>' + (summary.avgToughness === Infinity ? '無窮大' : fmtFull(summary.avgToughness));
+    setAttrIfChanged(toughnessParent, 'data-tt-desc', toughnessDesc);
+    removeAttrIfPresent(toughnessParent, 'title');
+  }
+}
+
+// 數值為 0／未啟用的屬性列（勾選「隱藏數值為 0 的屬性」時收起來）
+function attrValueIsZero(html) {
+  var text = String(html).replace(/<[^>]+>/g, '').trim();
+  return text === '—' || /^\+?0(\.0+)?\s*(%|\/s|\/秒|次)?$/.test(text);
 }
 
 function initAttrHideZeroToggle() {
@@ -3093,13 +3266,8 @@ function initAttrHideZeroToggle() {
 function renderAttrPanel(st, headerSnapshot) {
   var panel = $id('attr-panel');
   if (!panel) return;
-  if (!_charCoreRows) buildCharCoreTiles();
-  if (_charCoreRows) {
-    _charCoreRows.forEach(function (row, ci) {
-      var coreEl = document.querySelector('#char-core [data-core="' + ci + '"]');
-      if (coreEl) setHtmlIfChanged(coreEl, row[1](st));
-    });
-  }
+  if (!_charCoreBuilt) buildCharCoreTiles();
+  updateCharCoreSummary(st, headerSnapshot);
   if (!_attrPanelBuilt) {
     // 首次建立骨架（前兩組預設展開）
     var h = '<div id="attr-preview-note" class="attr-preview-note" hidden></div>';
@@ -7592,6 +7760,9 @@ function uiTick() {
   if (isLocal) {
     updateDmgAbsorb();
   }
+  if (UI.tab === 'char') {
+    updateCharCoreSummary();
+  }
   refreshOpenStatTooltip();
 }
 
@@ -7606,136 +7777,48 @@ function updateDmgAbsorb() {
   var headerSnapshot = uiHeaderPanelSnapshot() || {};
   var battleSnapshot = uiBattlePanelSnapshot() || {};
   var st = headerSnapshot.viewStats || headerSnapshot.stats || {};
-  var pEnt = combatPlayerOfBattleSnapshot(battleSnapshot);
-  var isActive = true;
-  var hp = (isActive && pEnt && typeof pEnt.hp === 'number') ? pEnt.hp : st.hp;
-  var shield = (isActive && pEnt && typeof pEnt.shield === 'number') ? pEnt.shield : 0;
-
-  // 輸出端物傷/魔傷計算（包含暴傷、總傷%、敵種加成與六系屬性平均加成）
-  var critMult = (st.critDmg || 150) / 100;
-  var totalDmgMult = 1 + (st.totalDmgPct || 0) / 100;
-  var maxEnemyDmg = Math.max(st.normalDmg || 0, st.eliteDmg || 0, st.bossDmg || 0);
-  var enemyDmgMult = 1 + maxEnemyDmg / 100;
-
-  // 1. 第一種屬性加成：對屬性敵人傷害% (取全系最大值)
-  var elemKeys = (typeof ELEMENTS !== 'undefined') ? ELEMENTS : ['fire', 'ice', 'lightning', 'poison', 'light', 'dark', 'earth'];
-  var maxVsElem = 0;
-  for (var i = 0; i < elemKeys.length; i++) {
-    var k1 = elemKeys[i];
-    var val1 = (st.dmgVsElem && typeof st.dmgVsElem[k1] === 'number')
-      ? st.dmgVsElem[k1]
-      : (Number(st['dmgVs' + k1.charAt(0).toUpperCase() + k1.slice(1)]) || 0);
-    if (val1 > maxVsElem) maxVsElem = val1;
-  }
-  var vsElemMult = 1 + maxVsElem / 100;
-
-  // 2. 第二種屬性加成：屬性傷害提升% (取全系最大值)
-  var maxElemUp = 0;
-  for (var j = 0; j < elemKeys.length; j++) {
-    var k2 = elemKeys[j];
-    var val2 = (st.elemDmgUp && typeof st.elemDmgUp[k2] === 'number')
-      ? st.elemDmgUp[k2]
-      : (Number(st['elemDmg' + k2.charAt(0).toUpperCase() + k2.slice(1)]) || 0);
-    if (val2 > maxElemUp) maxElemUp = val2;
-  }
-  var elemUpMult = 1 + maxElemUp / 100;
-
-  var physDmgVal = (st.atk || 0) * critMult * totalDmgMult * enemyDmgMult * vsElemMult * elemUpMult;
-  var magicDmgVal = (st.matk || 0) * critMult * totalDmgMult * enemyDmgMult * vsElemMult * elemUpMult;
+  var summary = calculateCombatRatingSummary(st, headerSnapshot, battleSnapshot);
 
   if (physDmgEl) {
-    setTextIfChanged(physDmgEl, fmt(physDmgVal));
+    setTextIfChanged(physDmgEl, fmt(summary.physDmgVal));
     var physDmgParent = physDmgEl.parentNode;
     if (physDmgParent) {
       setAttrIfChanged(physDmgParent, 'data-tt-title', '物理單次預期傷害 (物傷)');
       var physDmgDesc = '角色單次物理傷害輸出（綜合極限水準）。<br>' +
         '公式：基礎物攻 × 暴傷倍率 × 總傷% × 敵種加成% × 對屬性敵最大% × 屬性提升最大%<br><br>' +
         '<span style="color:#4ade80">基礎物理攻擊：</span>' + fmtFull(st.atk || 0) + '<br>' +
-        '<span style="color:#ffd700">暴擊傷害倍率：</span>' + Math.round(st.critDmg || 150) + '%<br>' +
+        '<span style="color:#ffd700">暴擊傷害倍率：</span>' + Math.round(summary.critMult * 100) + '%<br>' +
         '<span style="color:#ffd700">總傷害加成：</span>' + (st.totalDmgPct || 0) + '%<br>' +
-        '<span style="color:#ffd700">敵種最大加成：</span>' + maxEnemyDmg + '%<br>' +
-        '<span style="color:#ffd700">對屬性敵最大加成：</span>' + maxVsElem.toFixed(1) + '%<br>' +
-        '<span style="color:#ffd700">屬性傷害最大提升：</span>' + maxElemUp.toFixed(1) + '%<br><br>' +
-        '<span style="color:#ffd700">物理單次預期傷害：</span>' + fmtFull(physDmgVal);
+        '<span style="color:#ffd700">敵種最大加成：</span>' + summary.maxEnemyDmg + '%<br>' +
+        '<span style="color:#ffd700">對屬性敵最大加成：</span>' + summary.maxVsElem.toFixed(1) + '%<br>' +
+        '<span style="color:#ffd700">屬性傷害最大提升：</span>' + summary.maxElemUp.toFixed(1) + '%<br><br>' +
+        '<span style="color:#ffd700">物理單次預期傷害：</span>' + fmtFull(summary.physDmgVal);
       setAttrIfChanged(physDmgParent, 'data-tt-desc', physDmgDesc);
       physDmgParent.removeAttribute('title');
     }
   }
   if (magicDmgEl) {
-    setTextIfChanged(magicDmgEl, fmt(magicDmgVal));
+    setTextIfChanged(magicDmgEl, fmt(summary.magicDmgVal));
     var magicDmgParent = magicDmgEl.parentNode;
     if (magicDmgParent) {
       setAttrIfChanged(magicDmgParent, 'data-tt-title', '魔法單次預期傷害 (魔傷)');
       var magicDmgDesc = '角色單次魔法傷害輸出（綜合極限水準）。<br>' +
         '公式：基礎魔攻 × 暴傷倍率 × 總傷% × 敵種加成% × 對屬性敵最大% × 屬性提升最大%<br><br>' +
         '<span style="color:#4ade80">基礎魔法攻擊：</span>' + fmtFull(st.matk || 0) + '<br>' +
-        '<span style="color:#ffd700">暴擊傷害倍率：</span>' + Math.round(st.critDmg || 150) + '%<br>' +
+        '<span style="color:#ffd700">暴擊傷害倍率：</span>' + Math.round(summary.critMult * 100) + '%<br>' +
         '<span style="color:#ffd700">總傷害加成：</span>' + (st.totalDmgPct || 0) + '%<br>' +
-        '<span style="color:#ffd700">敵種最大加成：</span>' + maxEnemyDmg + '%<br>' +
-        '<span style="color:#ffd700">對屬性敵最大加成：</span>' + maxVsElem.toFixed(1) + '%<br>' +
-        '<span style="color:#ffd700">屬性傷害最大提升：</span>' + maxElemUp.toFixed(1) + '%<br><br>' +
-        '<span style="color:#ffd700">魔法單次預期傷害：</span>' + fmtFull(magicDmgVal);
+        '<span style="color:#ffd700">敵種最大加成：</span>' + summary.maxEnemyDmg + '%<br>' +
+        '<span style="color:#ffd700">對屬性敵最大加成：</span>' + summary.maxVsElem.toFixed(1) + '%<br>' +
+        '<span style="color:#ffd700">屬性傷害最大提升：</span>' + summary.maxElemUp.toFixed(1) + '%<br><br>' +
+        '<span style="color:#ffd700">魔法單次預期傷害：</span>' + fmtFull(summary.magicDmgVal);
       setAttrIfChanged(magicDmgParent, 'data-tt-desc', magicDmgDesc);
       magicDmgParent.removeAttribute('title');
     }
   }
 
-  var attackerLevel = st.level || 1;
-  var defMul = 1 + (isActive && pEnt && typeof buffVal === 'function' ? buffVal(pEnt, 'defUp') : 0) / 100;
-
-  // 各類減傷率
-  var rPhysDef = defReduction((st.def * defMul) || 0, attackerLevel);
-  var rMagicDef = defReduction((st.mdef * defMul) || 0, attackerLevel);
-  var rPhysRes = physicalResistanceReduction(st.pRes || 0, attackerLevel);
-  var rMagicRes = magicResistanceReduction(st.mRes || 0, attackerLevel);
-  var dmgRedRaw = st.passives && st.passives.sanctuary ? st.passives.sanctuary : 0;
-  var rSanctuary = dmgRedRaw ? (clamp(dmgRedRaw, 0, 50) / 100) : 0;
-  var rGlobal = globalDamageReduction(st.globalDmgRed || 0);
-
-  var rNormal = enemyTypeDamageReduction(st.normalDmgRed || 0, attackerLevel);
-  var rElite = enemyTypeDamageReduction(st.eliteDmgRed || 0, attackerLevel);
-  var rBoss = enemyTypeDamageReduction(st.bossDmgRed || 0, attackerLevel);
-  var rTypeMax = Math.max(rNormal, rElite, rBoss);
-
-  var typeMaxLabel = '';
-  if (rTypeMax > 0) {
-    if (rTypeMax === rBoss) typeMaxLabel = ' (BOSS傷害抗性)';
-    else if (rTypeMax === rElite) typeMaxLabel = ' (菁英傷害抗性)';
-    else typeMaxLabel = ' (普通敵人傷害抗性)';
-  }
-
-  // 元素抗性減傷（全部元素取平均；除數跟著元素數走，加屬性不必回頭改分母）
-  var elems = elemKeys;
-  var elemRedSum = 0;
-  for (var i = 0; i < elems.length; i++) {
-    var resVal = (st.resist && st.resist[elems[i]]) || 0;
-    elemRedSum += typeof elementalResistanceReduction === 'function' ? elementalResistanceReduction(resVal, attackerLevel) : 0;
-  }
-  var rElemAvg = elems.length ? elemRedSum / elems.length : 0;
-
-  // 剩餘比例 (1 - 減傷)
-  var physMult = (1 - rPhysDef) * (1 - rPhysRes) * (1 - rSanctuary) * (1 - rGlobal) * (1 - rTypeMax) * (1 - rElemAvg);
-  var magicMult = (1 - rMagicDef) * (1 - rMagicRes) * (1 - rSanctuary) * (1 - rGlobal) * (1 - rTypeMax) * (1 - rElemAvg);
-
-  var physAbsorb = physMult > 0 ? (hp + shield) / physMult : Infinity;
-  var magicAbsorb = magicMult > 0 ? (hp + shield) / magicMult : Infinity;
-
   // 更新 UI：只顯示簡寫
-  setTextIfChanged(physEl, physAbsorb === Infinity ? '∞' : fmt(physAbsorb));
-  setTextIfChanged(magicEl, magicAbsorb === Infinity ? '∞' : fmt(magicAbsorb));
-
-  var formatRed = function (v, startDec) {
-    var dec = startDec || 4;
-    if (v >= 1) return '100%';
-    if (v <= 0) return (0).toFixed(dec) + '%';
-    var pct = v * 100;
-    var s = pct.toFixed(dec);
-    while (((parseFloat(s) >= 100 && v < 1) || /^99\.9+$/.test(s)) && dec < 15) {
-      dec++;
-      s = pct.toFixed(dec);
-    }
-    return s + '%';
-  };
+  setTextIfChanged(physEl, summary.physAbsorb === Infinity ? '∞' : fmt(summary.physAbsorb));
+  setTextIfChanged(magicEl, summary.magicAbsorb === Infinity ? '∞' : fmt(summary.magicAbsorb));
 
   // 更新 tooltip
   var physParent = physEl.parentNode;
@@ -7744,15 +7827,15 @@ function updateDmgAbsorb() {
     setAttrIfChanged(physParent, 'data-tt-title', '物理總承傷');
     var physDesc = '角色能承受的一次性最大物理傷害值。<br>' +
       '公式：(血量+護盾)/(1-各類減傷)<br><br>' +
-      '<span style="color:#4ade80">當前血量：</span>' + fmtFull(hp) + '<br>' +
-      '<span style="color:#4ade80">當前護盾：</span>' + fmtFull(shield) + '<br>' +
-      '<span style="color:#ffd700">物理防禦減傷：</span>' + formatRed(rPhysDef) + '<br>' +
-      '<span style="color:#ffd700">物理抗性減傷：</span>' + formatRed(rPhysRes) + '<br>' +
-      '<span style="color:#ffd700">聖佑被動減傷：</span>' + formatRed(rSanctuary, 2) + '<br>' +
-      '<span style="color:#ffd700">全局減傷：</span>' + formatRed(rGlobal) + '<br>' +
-      '<span style="color:#ffd700">元素抗性減傷：</span>' + formatRed(rElemAvg) + '<br>' +
-      '<span style="color:#ffd700">敵種最大減傷：</span>' + formatRed(rTypeMax) + typeMaxLabel + '<br><br>' +
-      '<span style="color:#ffd700">物理承傷總值：</span>' + (physAbsorb === Infinity ? '無窮大' : fmtFull(physAbsorb));
+      '<span style="color:#4ade80">當前血量：</span>' + fmtFull(summary.hp) + '<br>' +
+      '<span style="color:#4ade80">當前護盾：</span>' + fmtFull(summary.shield) + '<br>' +
+      '<span style="color:#ffd700">物理防禦減傷：</span>' + formatReductionPercentage(summary.rPhysDef) + '<br>' +
+      '<span style="color:#ffd700">物理抗性減傷：</span>' + formatReductionPercentage(summary.rPhysRes) + '<br>' +
+      '<span style="color:#ffd700">聖佑被動減傷：</span>' + formatReductionPercentage(summary.rSanctuary, 2) + '<br>' +
+      '<span style="color:#ffd700">全局減傷：</span>' + formatReductionPercentage(summary.rGlobal) + '<br>' +
+      '<span style="color:#ffd700">元素抗性減傷：</span>' + formatReductionPercentage(summary.rElemAvg) + '<br>' +
+      '<span style="color:#ffd700">敵種最大減傷：</span>' + formatReductionPercentage(summary.rTypeMax) + summary.typeMaxLabel + '<br><br>' +
+      '<span style="color:#ffd700">物理承傷總值：</span>' + (summary.physAbsorb === Infinity ? '無窮大' : fmtFull(summary.physAbsorb));
     setAttrIfChanged(physParent, 'data-tt-desc', physDesc);
     physParent.removeAttribute('title');
   }
@@ -7760,15 +7843,15 @@ function updateDmgAbsorb() {
     setAttrIfChanged(magicParent, 'data-tt-title', '魔法總承傷');
     var magicDesc = '角色能承受的一次性最大魔法傷害值。<br>' +
       '公式：(血量+護盾)/(1-各類減傷)<br><br>' +
-      '<span style="color:#4ade80">當前血量：</span>' + fmtFull(hp) + '<br>' +
-      '<span style="color:#4ade80">當前護盾：</span>' + fmtFull(shield) + '<br>' +
-      '<span style="color:#ffd700">魔法防禦減傷：</span>' + formatRed(rMagicDef) + '<br>' +
-      '<span style="color:#ffd700">魔法抗性減傷：</span>' + formatRed(rMagicRes) + '<br>' +
-      '<span style="color:#ffd700">聖佑被動減傷：</span>' + formatRed(rSanctuary, 2) + '<br>' +
-      '<span style="color:#ffd700">全局減傷：</span>' + formatRed(rGlobal) + '<br>' +
-      '<span style="color:#ffd700">元素抗性減傷：</span>' + formatRed(rElemAvg) + '<br>' +
-      '<span style="color:#ffd700">敵種最大減傷：</span>' + formatRed(rTypeMax) + typeMaxLabel + '<br><br>' +
-      '<span style="color:#ffd700">魔法承傷總值：</span>' + (magicAbsorb === Infinity ? '無窮大' : fmtFull(magicAbsorb));
+      '<span style="color:#4ade80">當前血量：</span>' + fmtFull(summary.hp) + '<br>' +
+      '<span style="color:#4ade80">當前護盾：</span>' + fmtFull(summary.shield) + '<br>' +
+      '<span style="color:#ffd700">魔法防禦減傷：</span>' + formatReductionPercentage(summary.rMagicDef) + '<br>' +
+      '<span style="color:#ffd700">魔法抗性減傷：</span>' + formatReductionPercentage(summary.rMagicRes) + '<br>' +
+      '<span style="color:#ffd700">聖佑被動減傷：</span>' + formatReductionPercentage(summary.rSanctuary, 2) + '<br>' +
+      '<span style="color:#ffd700">全局減傷：</span>' + formatReductionPercentage(summary.rGlobal) + '<br>' +
+      '<span style="color:#ffd700">元素抗性減傷：</span>' + formatReductionPercentage(summary.rElemAvg) + '<br>' +
+      '<span style="color:#ffd700">敵種最大減傷：</span>' + formatReductionPercentage(summary.rTypeMax) + summary.typeMaxLabel + '<br><br>' +
+      '<span style="color:#ffd700">魔法承傷總值：</span>' + (summary.magicAbsorb === Infinity ? '無窮大' : fmtFull(summary.magicAbsorb));
     setAttrIfChanged(magicParent, 'data-tt-desc', magicDesc);
     magicParent.removeAttribute('title');
   }
