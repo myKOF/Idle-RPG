@@ -5002,14 +5002,10 @@ function sgGroundTurnRadiusPx(f) {
 function sgGroundChaseStep(f, step, enemies) {
   var startAngle = f.moveAngle;
   f.turnRate = 0;
-  /* 搜敵圈內沒有任何活敵（追蹤冰箭）：沒有東西可追，直接收掉這支箭。
-     原本是沿最後航向直線飛到壽命結束——敵人被貫穿段殺光後 91% 的追擊拍都沒有落點，
-     3 秒內全部飛出畫面、再也回不來，卻每秒仍送 10 則事件、佔 6 秒的精靈。
-     收掉與原本的實際傷害相同（飛出去的箭本來就打不到任何東西），只是不再空轉。 */
+  /* 追蹤冰箭失去目標時清除舊落點，沿當下航向飛出畫面。
+     保留既有壽命與快照，畫面才能接續同一支箭，不能在原地消失或追著死亡座標轉圈。 */
   if (f.chaseAnchor === 'player' && !sgChaseHasPrey(f, enemies)) {
-    f.hitsLeft = 0;
-    f.expiresAt = 0;
-    return;
+    f.dest = null;
   }
   // 風刃沒有存活目標時清除舊落點，沿最後方向飛行，避免繞著已消失敵人的座標轉圈。
   if (f.kind === 'windblade' && !bfLiveList(enemies || []).length) f.dest = null;
@@ -5579,7 +5575,7 @@ function sgTickGrounds(dt, ctx) {
     }
     // 扇形直射接入追蹤時先交付原落點與航向，第一段圓弧才有補間起點。
     // 傷害仍在移動後按既有節拍結算。
-    if (f.kind === 'icearrow' && !f.flightVfxStarted && f.pos && sgChaseHasPrey(f, enemies)) {
+    if (f.kind === 'icearrow' && !f.flightVfxStarted && f.pos) {
       f.flightVfxStarted = true;
       sgEmitVfx(f.gid, [], f.floatSel, sgGroundVfxSpec(f));
     }

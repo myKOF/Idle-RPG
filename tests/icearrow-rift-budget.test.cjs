@@ -6,7 +6,7 @@
    ③放幾次之後 FPS 掉到 15。根因與量測見 docs/AI_TASKS.md 同日條目，這裡釘住修法：
 
      B  追擊冰箭的搜敵圈（文檔：「在 30 米內來回穿梭追擊」）以我方為圓心，而不是箭自己；
-        圈內沒有活敵就收掉場域（原本直線飛出畫面、空轉 6 秒）。風刃共用同一支 chase 步，行為不變。
+        圈內沒有活敵時沿原航向飛出畫面，按既有壽命回收。風刃共用同一支 chase 步，行為不變。
      C  追擊場域同時存活數量有硬上限；低於上限時行為與沒有上限完全相同。
      A  （傳輸層，另見 worker-shim.test.cjs／ui-containment-and-visual-flush.test.cjs）
         佇列滿了先丟持續刷新，一次性事件（發射、命中）優先保留。
@@ -93,23 +93,36 @@ test('RIFT-CHASE-3 風刃共用的追擊步不受影響：搜敵圈仍以場域�
   assert.ok(s.c.sgChaseHasPrey(f, [prey]) === false);
 });
 
-/* ---------------- B：沒有東西可追就收掉 ---------------- */
+/* ---------------- B：失去目標仍沿原航向飛行 ---------------- */
 
-test('RIFT-RETIRE-1 搜敵圈內沒有活敵：追擊場域在第一拍就收掉，不再送事件', () => {
+test('RIFT-RETIRE-1 空場仍沿原方向飛行並送出連續快照，壽命結束才回收', () => {
   const s = scene();
-  spawnArrow(s, { x: 300, y: 0 }, 0);
+  const f = spawnArrow(s, { x: 300, y: 0 }, 0);
   assert.equal(arrows(s).length, 1);
   s.specs.length = 0;
   s.h.run(s.c, s.p, [], 0.3);
-  assert.equal(arrows(s).length, 0, '沒有敵人＝沒有東西可追');
-  assert.equal(s.specs.filter((e) => e.variant === 'ice-arrow-homing').length, 0, '收掉之後不再送逐拍事件');
+  assert.equal(arrows(s).length, 1, '空場不能立即移除箭');
+  assert.ok(Math.abs(f.pos.x - (300 + 585 * 0.3)) < 1e-6);
+  assert.equal(f.pos.y, 0);
+  assert.equal(f.moveAngle, 0);
+  assert.equal(f.dest, null);
+  const events = s.specs.filter((e) => e.variant === 'ice-arrow-homing');
+  assert.ok(events.length >= 2);
+  assert.equal(events[0].area.x, 300, '首次快照從貫穿終點接續，不能跳一個Tick');
+  assert.ok(events.every(e => e.area.speed === 585 && e.area.moveA === 0 && e.area.turnRate === 0));
+  assert.ok(events.every(e => !e.targets.length));
+  s.h.run(s.c, s.p, [], 4);
+  assert.equal(arrows(s).length, 0, '保留既有壽命回收');
 });
 
-test('RIFT-RETIRE-2 敵人全在 30 米圈外也一樣收掉；圈內有活敵就繼續飛', () => {
+test('RIFT-RETIRE-2 敵人全在搜敵圈外時直飛；圈內有活敵仍繼續追擊', () => {
   const far = scene();
-  spawnArrow(far, { x: 300, y: 0 }, 0);
+  const f = spawnArrow(far, { x: 300, y: 0 }, 0);
   far.h.run(far.c, far.p, [far.h.enemy(1e9, 60 * far.M, 0, 'far')], 0.3);
-  assert.equal(arrows(far).length, 0, '60 米外的敵人不在搜敵圈內');
+  assert.equal(arrows(far).length, 1);
+  assert.ok(Math.abs(f.pos.x - (300 + 585 * 0.3)) < 1e-6);
+  assert.equal(f.moveAngle, 0);
+  assert.equal(f.dest, null, '圈外敵人不能使箭轉向');
 
   const near = scene();
   spawnArrow(near, { x: 300, y: 0 }, 0);
@@ -117,17 +130,26 @@ test('RIFT-RETIRE-2 敵人全在 30 米圈外也一樣收掉；圈內有活敵�
   assert.equal(arrows(near).length, 1, '圈內有活敵：箭繼續追');
 });
 
-test('RIFT-RETIRE-3 敵人被殺光的那一拍收掉：已經在飛的箭不會再空轉到壽命結束', () => {
+test('RIFT-RETIRE-3 敵人死亡後清除舊落點，沿最後航向等速飛行', () => {
   const s = scene();
   const prey = s.h.enemy(1e9, -20 * s.M, 0, 'prey');
-  spawnArrow(s, { x: 300, y: 0 }, 0);
+  const f = spawnArrow(s, { x: 300, y: 0 }, 0);
   s.h.run(s.c, s.p, [prey], 0.5);
   assert.equal(arrows(s).length, 1);
+  assert.ok(f.dest, '死亡前正在追擊目標');
+  const before = { ...f.pos }, angle = f.moveAngle;
   prey.hp = 0;
   s.specs.length = 0;
   s.h.run(s.c, s.p, [prey], 0.2);
-  assert.equal(arrows(s).length, 0);
-  assert.equal(s.specs.filter((e) => e.variant === 'ice-arrow-homing').length, 0);
+  assert.equal(arrows(s).length, 1);
+  assert.equal(f.dest, null, '不能繞著死亡落點轉圈');
+  assert.equal(f.moveAngle, angle);
+  assert.equal(f.turnRate, 0);
+  assert.ok(Math.abs(f.pos.x - before.x - Math.cos(angle) * 585 * 0.2) < 1e-6);
+  assert.ok(Math.abs(f.pos.y - before.y - Math.sin(angle) * 585 * 0.2) < 1e-6);
+  const events = s.specs.filter(e => e.variant === 'ice-arrow-homing');
+  assert.ok(events.length > 0);
+  assert.ok(events.every(e => !e.targets.length && e.area.turnRate === 0 && e.area.moveA === angle));
 });
 
 /* ---------------- C：數量上限 ---------------- */
@@ -201,6 +223,35 @@ function riftBattle(seconds) {
 }
 
 const battle = riftBattle(10);
+
+test('RIFT-WORKER-TARGET-LOSS 正式Worker的空場冰箭持續送出等速直線快照且最終回收', () => {
+  const { createEngine } = require(path.join(root, 'scripts/sim/engine'));
+  const eng = createEngine({ seed: 20261012 }).boot(null), c = eng.ctx;
+  const p = vm.runInContext('FIELD.player', c), messages = [], issues = [];
+  c.console = { ...console, error: (...args) => issues.push(args), warn: (...args) => issues.push(args) };
+  for (const angle of [0, Math.PI / 2, Math.PI, -Math.PI / 2]) {
+    c.sgSpawnIcearrowHoming(p, c.getStats(), c.SKILLS2.icearrow.tiers[6].fx, null, 100, null, 'mv-float',
+      { from: { x: 300, y: 0 }, moveAngle: angle });
+  }
+  c.shimDrainUrgentVisualEvents();
+  for (let tick = 0; tick < 35; tick++) {
+    vm.runInContext('GT += .1', c);
+    c.tickSkill2(.1, { pEnt: p, getEnemies: () => [], floatSel: 'mv-float' });
+    messages.push(...c.shimDrainUrgentVisualEvents().filter(e => e.kind === 'vfx' && e.variant === 'ice-arrow-homing'));
+  }
+  assert.equal(vm.runInContext("SKILL2_RT.grounds.filter(f => f.kind === 'icearrow').length", c), 0);
+  for (const angle of [0, Math.PI / 2, Math.PI, -Math.PI / 2]) {
+    const events = messages.filter(e => e.area.moveA === angle);
+    assert.ok(events.length >= 20, '不能在空場第一拍消失');
+    assert.ok(events.every(e => e.area.speed === 585 && e.area.turnRate === 0 && !e.targets.length));
+    const first = events[0].area, last = events.at(-1).area;
+    const dx = last.x - first.x, dy = last.y - first.y;
+    assert.ok(Math.hypot(dx, dy) > 1000, '箭實際飛離戰場中心');
+    assert.ok(Math.abs(dx * Math.sin(angle) - dy * Math.cos(angle)) < 1e-6, 'Worker快照保留原航向');
+    assert.ok(dx * Math.cos(angle) + dy * Math.sin(angle) > 0);
+  }
+  assert.deepEqual(issues, [], '正式Worker執行無新增error／warning');
+});
 
 test('RIFT-BATTLE-1 打不死的敵人下，追擊場域數永遠不超過上限（修正前 12 秒內漲到 1116）', () => {
   assert.ok(battle.casts >= 3, '情境要真的連續施放，實際 ' + battle.casts);

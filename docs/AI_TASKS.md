@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## ICEARROW-TARGET-LOSS-20261012 — 寒冰箭失去目標沿原方向飛行
+
+- Owner：Codex；Done，單一開發者。使用者要求空場或敵人死亡後失去目標的寒冰箭沿當下方向飛出畫面，不在原地消失。前置為既有追蹤場域與連續補間，後續使用者驗收。
+- 允許：js/skills2.js追蹤冰箭失去目標／起始快照、tests/icearrow-rift-budget.test.cjs、tests/icearrow-vfx-integration.test.cjs、必要新增回歸、index／bridge／Worker快取及本紀錄。禁止其他技能數值、素材、Protocol／存檔及復活任務內容；不合併／推送。預檢無其他副本或分支修改；同副本REVIVE-FULL-MANA進行中，使用者明確同意保留並分段修改與獨立提交。
+- 驗收：空場、圈外敵人、敵人死亡後保持位置／航向／速度連續，清除死亡落點、不產生幽靈傷害；畫面共用權威快照且不重生多箭，既有壽命最終回收與72支上限保持。修改前兩檔回歸24項18通過／6既有失敗；相關回歸、Build、diff check後提交。
+- 完成：sgGroundChaseStep不再因無存活目標歸零hitsLeft／expiresAt，改為清除舊落點並保留最後航向與速度；空場也從貫穿終點送追蹤起始快照，沿用同一支箭連續補間。壽命、搜敵範圍、傷害與72支上限不變。Runtime既有語意足夠，不需改動Runtime或Protocol50。
+- 修改：js/skills2.js、index.html、js/bridge.js、js/worker/sim.worker.js、tests/icearrow-rift-budget.test.cjs、tests/icearrow-vfx-integration.test.cjs、本紀錄。主頁skills2 1.0.302／bridge 1.0.257，Worker入口與skills2 import同20261012-icearrow-target-loss；保留已提交8379da00復活修正及runeword快取。
+- 驗證：node --test tests/icearrow-rift-budget.test.cjs tests/icearrow-vfx-integration.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs tests/vfx-hit-density.test.cjs，共71項65通過／6既有失敗，名稱與修改前基線相同；3項舊立即移除案例改為新需求，修正前3項皆失敗、修正後通過。追蹤專檔12/12；正式Worker四向快照飛行超過1000單位、空場無命中且最終回收，Console error／warning 0。正式Core／Runtime驗空場及目標死亡／移除後始終同一支箭、持續位移、最後回收。npm.cmd run build：496檔通過；git diff --check通過。
+- 唯讀檢查：js/vfx-runtime.js、scripts/sim/engine.js、tests/skill2-ice.test.cjs、Worker shim／Protocol及相關密度測試、AI規範／prompts/codex.md。素材無本次修改，無需素材庫Commit；不屈鬥魂兩份未追蹤預覽Preset與紀錄原樣保留，不納入本次提交。
+- 交付：本紀錄所在[Codex] fix提交（回覆列出編號），無本次實作未完成項，可供審查合併，未合併／推送。已知限制：6項既有回歸失敗、未做真人實機目視／長時間FPS量測；空場箭維持到既有壽命，數量仍受72支上限限制。下一步重載遊戲驗收。
+
 ## REVIVE-FULL-MANA-20261012 — 死亡復活補滿法力
 
 - Owner：Codex；Done，單一開發者，使用者要求角色死亡復活時法力也補滿。野外一般復活與高塔戰敗返回野外已有補滿；補齊天地共生完成瞬間與符文輪迴。前置已完成，後續使用者驗收。
