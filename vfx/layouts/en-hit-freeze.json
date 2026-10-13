@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-hit-freeze",
+  "groups": [
+    {
+      "id": "en-hit-freeze",
+      "name": "en-hit-freeze",
+      "layerIds": [
+        "cold-flash",
+        "ice-fragments",
+        "impact-frost"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-hit-freeze"
+  ]
+}

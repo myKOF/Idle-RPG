@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-gold-dome",
+  "groups": [
+    {
+      "id": "en-gold-dome",
+      "name": "en-gold-dome",
+      "layerIds": [
+        "glow",
+        "shell",
+        "rim",
+        "glints"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-gold-dome"
+  ]
+}

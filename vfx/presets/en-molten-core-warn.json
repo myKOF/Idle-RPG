@@ -1,0 +1,219 @@
+{
+  "schemaVersion": 1,
+  "id": "en-molten-core-warn",
+  "duration": 3,
+  "loop": false,
+  "layers": [
+    {
+      "id": "edge",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.3906
+      },
+      "alpha": 0.9,
+      "tint": "#ff3a3a",
+      "blendMode": "add",
+      "duration": 3,
+      "alphaOverLife": [
+        [
+          0,
+          0.5
+        ],
+        [
+          0.6,
+          0.9
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "fill",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/circle_b.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.3906
+      },
+      "alpha": 0.18,
+      "tint": "#ff4a2a",
+      "blendMode": "add",
+      "duration": 3,
+      "alphaOverLife": [
+        [
+          0,
+          0.05
+        ],
+        [
+          1,
+          0.4
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "grow",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_01.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.3906
+      },
+      "alpha": 0.9,
+      "tint": "#ffb06a",
+      "blendMode": "add",
+      "duration": 3,
+      "alphaOverLife": [
+        [
+          0,
+          0.2
+        ],
+        [
+          1,
+          0.9
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.1
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "core",
+      "type": "sprite",
+      "assetId": "new_materials/plasma/magic_particles_5.png",
+      "zIndex": 3,
+      "scale": {
+        "x": 0.1367,
+        "y": 0.1367
+      },
+      "alpha": 0.95,
+      "tint": "#ff6a2a",
+      "blendMode": "add",
+      "duration": 3,
+      "scaleOverLife": [
+        [
+          0,
+          0.5
+        ],
+        [
+          0.7,
+          1.1
+        ],
+        [
+          1,
+          1.9
+        ]
+      ]
+    },
+    {
+      "id": "hot",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 4,
+      "scale": {
+        "x": 0.1758,
+        "y": 0.1758
+      },
+      "alpha": 0.9,
+      "tint": "#fff0c0",
+      "blendMode": "add",
+      "duration": 3,
+      "alphaOverLife": [
+        [
+          0,
+          0.3
+        ],
+        [
+          0.8,
+          0.9
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.3
+        ],
+        [
+          1,
+          1.6
+        ]
+      ]
+    },
+    {
+      "id": "embers",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 5,
+      "alpha": 1,
+      "tint": "#ff8a3a",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 20
+      },
+      "lifetime": [
+        0.5,
+        1
+      ],
+      "spawn": {
+        "radius": 24,
+        "shape": "circle"
+      },
+      "speed": [
+        20,
+        60
+      ],
+      "direction": -90,
+      "spread": 90,
+      "startScale": [
+        0.0117,
+        0.0234
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "radius": 100
+    },
+    "shape": "circle"
+  }
+}

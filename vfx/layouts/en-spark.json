@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-spark",
+  "groups": [
+    {
+      "id": "en-spark",
+      "name": "en-spark",
+      "layerIds": [
+        "glow",
+        "star",
+        "core",
+        "zap"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-spark"
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-poison-cross",
+  "groups": [
+    {
+      "id": "en-poison-cross",
+      "name": "en-poison-cross",
+      "layerIds": [
+        "hub",
+        "rail0",
+        "ball0-0",
+        "ball0-1",
+        "ball0-2",
+        "ball0-3",
+        "rail1",
+        "ball1-0",
+        "ball1-1",
+        "ball1-2",
+        "ball1-3",
+        "rail2",
+        "ball2-0",
+        "ball2-1",
+        "ball2-2",
+        "ball2-3",
+        "rail3",
+        "ball3-0",
+        "ball3-1",
+        "ball3-2",
+        "ball3-3"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-poison-cross"
+  ]
+}

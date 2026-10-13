@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-mark-red",
+  "groups": [
+    {
+      "id": "en-mark-red",
+      "name": "en-mark-red",
+      "layerIds": [
+        "fill",
+        "edge"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-mark-red"
+  ]
+}

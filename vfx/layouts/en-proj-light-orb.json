@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-proj-light-orb",
+  "groups": [
+    {
+      "id": "en-proj-light-orb",
+      "name": "en-proj-light-orb",
+      "layerIds": [
+        "glow",
+        "body",
+        "core",
+        "star",
+        "trail"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-proj-light-orb"
+  ]
+}

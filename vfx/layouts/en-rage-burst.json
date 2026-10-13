@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-rage-burst",
+  "groups": [
+    {
+      "id": "en-rage-burst",
+      "name": "en-rage-burst",
+      "layerIds": [
+        "flash",
+        "ring",
+        "aura"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-rage-burst"
+  ]
+}

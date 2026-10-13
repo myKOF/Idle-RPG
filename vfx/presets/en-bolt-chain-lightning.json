@@ -1,0 +1,189 @@
+{
+  "schemaVersion": 1,
+  "id": "en-bolt-chain-lightning",
+  "duration": 0.32,
+  "loop": false,
+  "layers": [
+    {
+      "id": "glow",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/rotated/trace_06_rotated.png",
+      "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.7621,
+        "y": 0.2113
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0.5
+      },
+      "alpha": 0.3,
+      "tint": "#db3fff",
+      "blendMode": "add",
+      "duration": 0.32,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.08,
+          0.8
+        ],
+        [
+          0.6,
+          0.45
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "seg-a",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/spark_07.png",
+      "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.7621,
+        "y": 0.4613
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0.5
+      },
+      "alpha": 1,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "duration": 0.32,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.05,
+          1
+        ],
+        [
+          0.2,
+          0.35
+        ],
+        [
+          0.32,
+          1
+        ],
+        [
+          0.6,
+          0.5
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#ffffff"
+        ],
+        [
+          0.08,
+          "#f6b0ff"
+        ],
+        [
+          0.35,
+          "#c305f2"
+        ],
+        [
+          1,
+          "#4d006b"
+        ]
+      ]
+    },
+    {
+      "id": "seg-b",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/rotated/spark_06_rotated.png",
+      "zIndex": 2,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.7621,
+        "y": 0.3266
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0.5
+      },
+      "alpha": 0.8,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "duration": 0.32,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.04,
+          1
+        ],
+        [
+          0.22,
+          0.5
+        ],
+        [
+          0.3,
+          1
+        ],
+        [
+          0.55,
+          0.4
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#ffffff"
+        ],
+        [
+          0.08,
+          "#f6b0ff"
+        ],
+        [
+          0.35,
+          "#c305f2"
+        ],
+        [
+          1,
+          "#4d006b"
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "height": 30,
+      "width": 390.1952
+    },
+    "heightM": 3,
+    "shape": "custom",
+    "widthM": 20
+  }
+}

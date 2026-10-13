@@ -1,0 +1,202 @@
+{
+  "schemaVersion": 1,
+  "id": "en-proj-poison-drop",
+  "duration": 1.2,
+  "loop": false,
+  "layers": [
+    {
+      "id": "glow",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.1095,
+        "y": 0.1095
+      },
+      "alpha": 0.8,
+      "tint": "#b7d83b",
+      "blendMode": "add",
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.08,
+          0.9
+        ],
+        [
+          0.4352,
+          0.766489
+        ],
+        [
+          1,
+          0.520745
+        ]
+      ]
+    },
+    {
+      "id": "gloss",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 2,
+      "position": {
+        "x": -3.1162,
+        "y": -4.6743
+      },
+      "scale": {
+        "x": 0.0213,
+        "y": 0.0213
+      },
+      "alpha": 0.9,
+      "tint": "#f7ff8a",
+      "blendMode": "add",
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.06,
+          1
+        ],
+        [
+          0.9,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "trail",
+      "type": "particle",
+      "assetId": "new_materials/orb/sphere_28.png",
+      "zIndex": 4,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "tint": "#8baf2b",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 12
+      },
+      "lifetime": [
+        0.24,
+        0.4
+      ],
+      "spawn": {
+        "radius": 4.6743,
+        "shape": "circle"
+      },
+      "speed": [
+        15.581,
+        46.743
+      ],
+      "direction": 180,
+      "spread": 90,
+      "gravity": {
+        "x": 0,
+        "y": -62.324
+      },
+      "drag": 5,
+      "startScale": [
+        0.0153,
+        0.0274
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0.9
+        ],
+        [
+          0.5,
+          0.7
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#ffffff"
+        ],
+        [
+          0.5,
+          "#ffffff"
+        ],
+        [
+          1,
+          "#2a2a30"
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.35
+        ]
+      ]
+    },
+    {
+      "id": "glow-copy",
+      "type": "sprite",
+      "assetId": "new_materials/impact-ring/impact_7.png",
+      "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.0564,
+        "y": 0.0564
+      },
+      "alpha": 0.85,
+      "tint": "#b7d83b",
+      "blendMode": "add",
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.08,
+          0.9
+        ],
+        [
+          0.4352,
+          0.766489
+        ],
+        [
+          1,
+          0.520745
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "height": 17,
+      "width": 15
+    },
+    "heightM": 1.7,
+    "shape": "custom",
+    "widthM": 1.5
+  }
+}

@@ -1,0 +1,179 @@
+{
+  "schemaVersion": 1,
+  "id": "en-arcane-core",
+  "duration": 1.6,
+  "loop": true,
+  "layers": [
+    {
+      "id": "fill",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/circle_b.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.3906
+      },
+      "alpha": 0.22,
+      "tint": "#c850ff",
+      "blendMode": "add",
+      "duration": 1.6,
+      "scaleOverLife": [
+        [
+          0,
+          0.94
+        ],
+        [
+          0.5,
+          1.06
+        ],
+        [
+          1,
+          0.94
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "rune",
+      "type": "sprite",
+      "assetId": "new_materials/arcane-ring/dingbats-2.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.332,
+        "y": 0.332
+      },
+      "alpha": 0.6,
+      "tint": "#ee7bff",
+      "blendMode": "add",
+      "duration": 1.6,
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          1.5708
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "ring",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.3906
+      },
+      "alpha": 0.85,
+      "tint": "#ff7ad8",
+      "blendMode": "add",
+      "duration": 1.6,
+      "alphaOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          0.7
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "core",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 3,
+      "scale": {
+        "x": 0.1367,
+        "y": 0.1367
+      },
+      "alpha": 0.95,
+      "tint": "#ffd6ff",
+      "blendMode": "add",
+      "duration": 1.6,
+      "scaleOverLife": [
+        [
+          0,
+          0.88
+        ],
+        [
+          0.5,
+          1.12
+        ],
+        [
+          1,
+          0.88
+        ]
+      ]
+    },
+    {
+      "id": "motes",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 4,
+      "alpha": 0.9,
+      "tint": "#f3a6ff",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 12
+      },
+      "lifetime": [
+        0.6,
+        1.1
+      ],
+      "spawn": {
+        "radius": 60,
+        "shape": "circle"
+      },
+      "speed": [
+        10,
+        30
+      ],
+      "direction": -90,
+      "spread": 60,
+      "startScale": [
+        0.0117,
+        0.0234
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.3,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "radius": 100
+    },
+    "shape": "circle"
+  }
+}

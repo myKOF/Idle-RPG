@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-hit-ice",
+  "groups": [
+    {
+      "id": "en-hit-ice",
+      "name": "en-hit-ice",
+      "layerIds": [
+        "halo",
+        "ring",
+        "flash",
+        "sparks",
+        "glints"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-hit-ice"
+  ]
+}

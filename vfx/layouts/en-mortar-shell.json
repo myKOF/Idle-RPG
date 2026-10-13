@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-mortar-shell",
+  "groups": [
+    {
+      "id": "en-mortar-shell",
+      "name": "en-mortar-shell",
+      "layerIds": [
+        "rolling-flame-tail",
+        "ember-shell",
+        "molten-heart",
+        "surface-flames",
+        "trailing-embers",
+        "sprite-6",
+        "tail",
+        "sprite-6-copy"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-mortar-shell"
+  ]
+}

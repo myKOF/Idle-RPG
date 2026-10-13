@@ -1,0 +1,147 @@
+{
+  "schemaVersion": 1,
+  "id": "en-summon-circle",
+  "duration": 0.9,
+  "loop": false,
+  "layers": [
+    {
+      "id": "rune",
+      "type": "sprite",
+      "assetId": "new_materials/arcane-ring/dingbats-22.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.3711,
+        "y": 0.3711
+      },
+      "alpha": 0.85,
+      "tint": "#c07aff",
+      "blendMode": "add",
+      "duration": 0.9,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.15,
+          1
+        ],
+        [
+          0.7,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.6
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          1.88496
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "ring",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.3906
+      },
+      "alpha": 0.9,
+      "tint": "#e6b0ff",
+      "blendMode": "add",
+      "duration": 0.9,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.15,
+          1
+        ],
+        [
+          0.7,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "rise",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 2,
+      "alpha": 1,
+      "tint": "#e6b0ff",
+      "blendMode": "add",
+      "emission": {
+        "count": 18,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.5,
+        0.9
+      ],
+      "spawn": {
+        "radius": 60,
+        "shape": "circle"
+      },
+      "speed": [
+        30,
+        80
+      ],
+      "direction": -90,
+      "spread": 30,
+      "startScale": [
+        0.0117,
+        0.0234
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "radius": 100
+    },
+    "shape": "circle"
+  }
+}

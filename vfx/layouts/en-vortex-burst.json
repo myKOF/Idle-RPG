@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-vortex-burst",
+  "groups": [
+    {
+      "id": "en-vortex-burst",
+      "name": "en-vortex-burst",
+      "layerIds": [
+        "swirl-a",
+        "swirl-b",
+        "core",
+        "rim",
+        "pull"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-vortex-burst"
+  ]
+}

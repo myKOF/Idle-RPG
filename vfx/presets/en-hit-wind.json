@@ -1,0 +1,314 @@
+{
+  "schemaVersion": 1,
+  "id": "en-hit-wind",
+  "duration": 0.14,
+  "loop": false,
+  "layers": [
+    {
+      "id": "halo",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.1094,
+        "y": 0.1094
+      },
+      "alpha": 0.35,
+      "tint": "#f6edb9",
+      "blendMode": "screen",
+      "delay": 0,
+      "duration": 0.091,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          1
+        ],
+        [
+          0.35,
+          0.55
+        ],
+        [
+          0.7,
+          0.15
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.6
+        ],
+        [
+          0.3,
+          1
+        ],
+        [
+          1,
+          1.15
+        ]
+      ]
+    },
+    {
+      "id": "ring",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.0898,
+        "y": 0.0898
+      },
+      "alpha": 0.85,
+      "tint": "#efe086",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 0.105,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          1
+        ],
+        [
+          0.35,
+          0.55
+        ],
+        [
+          0.7,
+          0.15
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.33
+        ],
+        [
+          0.35,
+          0.8
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "flash",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/scorch_02.png",
+      "zIndex": 3,
+      "rotation": 0,
+      "scale": {
+        "x": 0.0664,
+        "y": 0.0664
+      },
+      "alpha": 0.85,
+      "tint": "#ffffff",
+      "blendMode": "screen",
+      "delay": 0,
+      "duration": 0.049,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.4,
+          0.45
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.5
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          1.15
+        ]
+      ]
+    },
+    {
+      "id": "sparks",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/trace_02.png",
+      "zIndex": 5,
+      "tint": "#efe086",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 0.14,
+      "emission": {
+        "count": 6,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.056,
+        0.091
+      ],
+      "spawn": {
+        "radius": 4,
+        "shape": "circle"
+      },
+      "speed": [
+        314.285714,
+        542.857143
+      ],
+      "direction": -90,
+      "spread": 360,
+      "gravity": {
+        "x": 0,
+        "y": 979.591837
+      },
+      "drag": 8.571429,
+      "startScale": [
+        0.0313,
+        0.0508
+      ],
+      "alignToVelocity": true,
+      "velocityRotationOffset": 1.5708,
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.2,
+          0.65
+        ],
+        [
+          0.6,
+          0.2
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#ffffff"
+        ],
+        [
+          0.5,
+          "#ffffff"
+        ],
+        [
+          1,
+          "#2a2a30"
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.5
+        ]
+      ]
+    },
+    {
+      "id": "sparks-white",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/trace_02.png",
+      "zIndex": 6,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 0.14,
+      "emission": {
+        "count": 4,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.042,
+        0.07
+      ],
+      "spawn": {
+        "radius": 4,
+        "shape": "circle"
+      },
+      "speed": [
+        400,
+        628.571429
+      ],
+      "direction": -90,
+      "spread": 360,
+      "gravity": {
+        "x": 0,
+        "y": 653.061224
+      },
+      "startScale": [
+        0.0195,
+        0.0313
+      ],
+      "alignToVelocity": true,
+      "velocityRotationOffset": 1.5708,
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.2,
+          0.65
+        ],
+        [
+          0.6,
+          0.2
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.4
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "height": 60,
+      "width": 60
+    },
+    "heightM": 6,
+    "shape": "custom",
+    "widthM": 6
+  }
+}

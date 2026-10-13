@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-lava-trail",
+  "groups": [
+    {
+      "id": "en-lava-trail",
+      "name": "en-lava-trail",
+      "layerIds": [
+        "fill",
+        "edge",
+        "ripple-a",
+        "ripple-b",
+        "ripple-c",
+        "bubbles",
+        "embers"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-lava-trail"
+  ]
+}

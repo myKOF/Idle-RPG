@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-missile-burst",
+  "groups": [
+    {
+      "id": "en-missile-burst",
+      "name": "en-missile-burst",
+      "layerIds": [
+        "ring",
+        "flash",
+        "bits"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-missile-burst"
+  ]
+}

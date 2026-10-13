@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-toxic-pool",
+  "groups": [
+    {
+      "id": "en-toxic-pool",
+      "name": "en-toxic-pool",
+      "layerIds": [
+        "flowing-earth-mud",
+        "sprite-4"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-toxic-pool"
+  ]
+}

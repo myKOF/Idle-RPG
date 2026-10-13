@@ -374,37 +374,66 @@ const NPC_POOL_DEFS = [
   { zone: 'god_sanctuary', varName: 'GOD_SANCTUARY_POOL' }
 ];
 
-/* 「類型」欄（2026-10-08）：normal／elite／boss，每個 NPC 各一列。
-   - 基本資料（名稱、屬性、外觀、移動攻擊、權重）只讀 normal 列；elite／boss 列的這些欄位是複製品，改了不會生效。
-   - 「技能」欄：elite 列填詞條 id（用「;」分隔，最多 3 個，id 見 js/elite_data.js 的 ELITE_AFFIXES）＝這種菁英固定使用這些技能，
-     留白＝沿用「同群隨機抽 1～3 個」。normal 列沒有技能；boss 列目前不支援專屬技能（填了會被忽略並提示）。
-   - 「技能特效」「備註」是唯讀說明（由詞條資料自動產生），套用時不讀；改了技能後執行
-     node tools/config_tables.cjs --gen NPC 可重新產生。 */
-const NPC_TYPES = ['normal', 'elite', 'boss'];
-function npcSkillDefs() {
-  if (!fs.existsSync(JS.elite)) return {};
-  return evalLiteral(extractLiteral(readUtf8(JS.elite), 'ELITE_AFFIXES').literal);
-}
-function npcSkillVfx(def, presets) {
-  const out = [];
-  (function walk(v) {
-    if (typeof v === 'string') { if (presets.has(v) && out.indexOf(v) < 0) out.push(v); }
-    else if (v && typeof v === 'object') Object.keys(v).forEach(k => walk(v[k]));
-  })(def);
+/* 「類型」欄（2026-10-13 菁英改造）：每個 NPC 四列 normal／elite／elite_adv／boss，另有封魔塔 BOSS 的 tower_boss 列。
+     normal      普通敵人（基本資料只讀這一列）
+     elite       菁英（體型 1.6 倍、淡藍光暈）
+     elite_adv   高級菁英（體型 2.2 倍、黃色光暈）
+     boss        野外 BOSS（體型 3.4 倍、光暈顏色隨屬性）
+     tower_boss  封魔塔 BOSS（所屬地圖識別碼＝tower；順序＝BOSS_LIST 的順序；體型 5~7 倍）
+   - 基本資料（名稱、屬性、外觀、移動／攻擊、權重）只讀 normal 列；其他類型的這些欄位是複製品，改了不會生效。
+     例外：tower_boss 列沒有 normal 列，名稱、屬性、外觀就讀它自己。
+   - 技能三欄（任何非 normal 類型都可填）：
+       專屬技能    Skills2 表「類別＝enemy」的群組ID（e_ 開頭），用「;」分隔；這種敵人一定會有的技能
+       隨機技能下限／上限  從「隨機技能池」（Skills2 敵人技能中 pool＝random 的那些）抽幾個（含頭尾）
+     （技能特效在 Skills2 表，這張表不再放特效欄。）
+   - 「備註」是唯讀說明（由 Skills2 的技能資料自動產生），套用時不讀。 */
+const NPC_TYPES = ['normal', 'elite', 'elite_adv', 'boss', 'tower_boss'];
+const NPC_SKILL_TYPES = ['elite', 'elite_adv', 'boss', 'tower_boss'];
+const NPC_TOWER_ZONE = 'tower';
+const NPC_TYPE_LABEL = { normal: '普通', elite: '菁英', elite_adv: '高級菁英', boss: '野外BOSS', tower_boss: '封魔塔BOSS' };
+/* 敵人技能目錄：優先讀 CSV（同一次套用若新增了技能，NPC 表可以直接引用），沒有 CSV 才讀 js/skills2.js。 */
+function enemySkillCatalog() {
+  const out = {};
+  try {
+    const rows = csvParse(readUtf8(csvPathOf('Skills2')));
+    const get = rowGetter(rows[0]);
+    rows.slice(1).forEach(r => {
+      if (get(r, '類別').trim() !== ENEMY_CLASS) return;
+      const id = get(r, '群組ID').trim();
+      if (!id) return;
+      let fx = {};
+      try { fx = JSON.parse(get(r, '效果參數(JSON)') || '{}'); } catch (e) { /* 由 Skills2 本身的檢查報錯 */ }
+      out[id] = { name: get(r, '群組名稱'), pool: fx.pool || '', desc: get(r, '效果說明模板') };
+    });
+    if (Object.keys(out).length) return out;
+  } catch (e) { /* 沒有 CSV */ }
+  if (fs.existsSync(JS.skills2)) {
+    const defs = evalLiteral(extractLiteral(readUtf8(JS.skills2), 'ENEMY_SKILLS2').literal);
+    Object.keys(defs).forEach(id => { out[id] = { name: defs[id].name, pool: (defs[id].fx || {}).pool || '', desc: defs[id].desc || '' }; });
+  }
   return out;
 }
-function npcPresetSet() {
-  const dir = path.join(ROOT, 'vfx', 'presets');
-  return new Set(fs.existsSync(dir) ? fs.readdirSync(dir).filter(f => /\.json$/i.test(f)).map(f => f.replace(/\.json$/i, '')) : []);
+function npcSkillNote(type, sk, catalog) {
+  if (type === 'normal') return '普通攻擊，沒有特殊技能。';
+  const parts = [];
+  const ex = (sk && sk.ex) || [];
+  if (ex.length) parts.push('專屬：' + ex.map(id => (catalog[id] ? catalog[id].name + '（' + catalog[id].desc + '）' : id)).join('；'));
+  const rnd = sk && sk.rnd;
+  if (rnd && rnd[1] > 0) parts.push('隨機：從隨機技能池抽 ' + (rnd[0] === rnd[1] ? rnd[0] : rnd[0] + '~' + rnd[1]) + ' 個');
+  return parts.length ? NPC_TYPE_LABEL[type] + '｜' + parts.join('｜') : NPC_TYPE_LABEL[type] + '｜沒有技能';
+}
+function npcSkillCells(sk) {
+  const ex = (sk && sk.ex) || [];
+  const rnd = (sk && sk.rnd) || [0, 0];
+  return [ex.join(';'), rnd[1] > 0 ? numStr(rnd[0]) : '', rnd[1] > 0 ? numStr(rnd[1]) : ''];
 }
 SCHEMAS.NPC = {
-  name: 'NPC', jsFile: 'data', sheet: 'NPC', vars: NPC_POOL_DEFS.map(d => d.varName),
+  name: 'NPC', jsFile: 'data', sheet: 'NPC', vars: NPC_POOL_DEFS.map(d => d.varName).concat(['BOSS_LIST']),
   header: ['NPC識別碼', 'NPC名稱', '所屬地圖識別碼', '類型', '屬性', '外觀', '移動速度(米/秒)', '攻擊速度(次/秒)', '攻擊距離(米)', '魔法型（1是／0否）', '出現權重',
-    '技能', '技能特效', '備註'],
+    '專屬技能', '隨機技能下限', '隨機技能上限', '備註'],
   extract(src) {
     const rows = [];
-    const defs = npcSkillDefs();
-    const presets = npcPresetSet();
+    const catalog = enemySkillCatalog();
     NPC_POOL_DEFS.forEach(def => {
       const pool = evalLiteral(extractLiteral(src, def.varName).literal);
       pool.forEach((entry, index) => {
@@ -413,20 +442,17 @@ SCHEMAS.NPC = {
           numStr(entry.runSpeed == null ? '' : entry.runSpeed), numStr(entry.atkSpeed == null ? '' : entry.atkSpeed),
           numStr(entry.atkRange == null ? '' : entry.atkRange),
           entry.magic ? '1' : '0', numStr(entry.weight == null ? 1 : entry.weight)];
-        const skills = (Array.isArray(entry.eliteSkills) ? entry.eliteSkills : []).filter(k => defs[k]);
-        NPC_TYPES.forEach(type => {
-          let skill = '', vfx = '', note = '';
-          if (type === 'normal') note = '普通攻擊，沒有特殊技能。';
-          else if (type === 'boss') note = '尚未設計專屬技能（此欄填了也不會生效）。';
-          else if (!skills.length) note = '未指定固定技能：每群隨機抽 1～3 個詞條（全部詞條見 docs/ELITE_AFFIXES.md）。';
-          else {
-            skill = skills.join(';');
-            vfx = skills.map(k => defs[k].name + '：' + npcSkillVfx(defs[k], presets).join('、')).join('；');
-            note = skills.map(k => defs[k].name + '：' + (defs[k].desc || '')).join('；');
-          }
-          rows.push([id, entry.name, def.zone, type].concat(base, [skill, vfx, note]));
+        ['normal', 'elite', 'elite_adv', 'boss'].forEach(type => {
+          const sk = type === 'normal' ? null : (entry.skills && entry.skills[type]) || null;
+          rows.push([id, entry.name, def.zone, type].concat(base, npcSkillCells(sk), [npcSkillNote(type, sk, catalog)]));
         });
       });
+    });
+    const bosses = evalLiteral(extractLiteral(src, 'BOSS_LIST').literal);
+    bosses.forEach((b, index) => {
+      const sk = (b.skills) || null;
+      rows.push([b.id || ('tower_boss_' + (index + 1)), b.name, NPC_TOWER_ZONE, 'tower_boss', b.attr || b.elem || '', b.emoji || '',
+        '', '', '', b.elem ? '1' : '0', ''].concat(npcSkillCells(sk), [npcSkillNote('tower_boss', sk, catalog)]));
     });
     return rows;
   },
@@ -445,24 +471,41 @@ SCHEMAS.NPC = {
         oldById[id] = entry;
       });
     });
-    const eliteDefs = npcSkillDefs();
-    const eliteSkillsById = {};
+    const oldBosses = evalLiteral(extractLiteral(existingSrc, 'BOSS_LIST').literal);
+    const catalog = enemySkillCatalog();
+    const randomPoolSize = Object.keys(catalog).filter(k => catalog[k].pool === 'random').length;
+    const skillsById = {};     // id → { type → { ex, rnd } }
+    const towerRows = [];
+    const seen = {};
+    const lineOf = index => '第 ' + (index + 2) + ' 列';
     dataRows.forEach((row, index) => {
-      const type = get(row, '類型').trim().toLowerCase();
       const id = get(row, 'NPC識別碼').trim();
       if (id === '') return;
-      if (type !== '' && NPC_TYPES.indexOf(type) < 0) throw new Error('NPC 第 ' + (index + 2) + ' 列的「類型」只能是 normal／elite／boss：' + type);
-      if (type === 'boss' && get(row, '技能').trim() !== '') console.warn('  ⚠ NPC 第 ' + (index + 2) + ' 列（' + id + ' boss）填了技能，但 BOSS 專屬技能尚未支援，已忽略');
-      if (type === 'elite') {
-        const ids = get(row, '技能').split(/[;；,，\s]+/).map(t => t.trim()).filter(Boolean);
-        ids.forEach(k => { if (!eliteDefs[k]) throw new Error('NPC 第 ' + (index + 2) + ' 列的技能「' + k + '」不存在（可用詞條見 docs/ELITE_AFFIXES.md）'); });
-        if (ids.length > 3) throw new Error('NPC 第 ' + (index + 2) + ' 列的技能超過 3 個：' + ids.join(';'));
-        if (new Set(ids).size !== ids.length) throw new Error('NPC 第 ' + (index + 2) + ' 列的技能重複：' + ids.join(';'));
-        eliteSkillsById[id] = ids;
+      const type = (get(row, '類型').trim().toLowerCase()) || 'normal';
+      if (NPC_TYPES.indexOf(type) < 0) throw new Error('NPC ' + lineOf(index) + '的「類型」只能是 ' + NPC_TYPES.join('／') + '：' + type);
+      if (seen[id + '|' + type]) throw new Error('NPC ' + lineOf(index) + '：' + id + ' 的 ' + type + ' 列重複');
+      seen[id + '|' + type] = true;
+      if (NPC_SKILL_TYPES.indexOf(type) >= 0) {
+        const where = 'NPC ' + lineOf(index) + '（' + id + ' ' + type + '）';
+        const ex = get(row, '專屬技能').split(/[;；,，\s]+/).map(t => t.trim()).filter(Boolean);
+        ex.forEach(k => { if (!catalog[k]) throw new Error(where + '的專屬技能「' + k + '」不是 Skills2 表的敵人技能（類別＝enemy）'); });
+        if (new Set(ex).size !== ex.length) throw new Error(where + '的專屬技能重複：' + ex.join(';'));
+        const loRaw = get(row, '隨機技能下限').trim(), hiRaw = get(row, '隨機技能上限').trim();
+        const lo = loRaw === '' ? 0 : toNum(loRaw), hi = hiRaw === '' ? lo : toNum(hiRaw);
+        if (!(lo >= 0) || !(hi >= lo) || lo !== Math.floor(lo) || hi !== Math.floor(hi)) throw new Error(where + '的隨機技能數量要是 0 或正整數，且上限不得小於下限（目前 ' + loRaw + '~' + hiRaw + '）');
+        if (hi > randomPoolSize) throw new Error(where + '的隨機技能上限 ' + hi + ' 超過隨機技能池的 ' + randomPoolSize + ' 種');
+        const entry = {};
+        if (ex.length) entry.ex = ex;
+        if (hi > 0) entry.rnd = [lo, hi];
+        if (type === 'tower_boss') towerRows.push({ id: id, row: row, index: index, skills: entry });
+        else {
+          if (!skillsById[id]) skillsById[id] = {};
+          if (Object.keys(entry).length) skillsById[id][type] = entry;
+        }
       }
-      if (type === 'elite' || type === 'boss') return;   // 基本資料只認 normal 列
+      if (type !== 'normal') return;   // 基本資料只認 normal 列（tower_boss 另行處理）
       const zone = get(row, '所屬地圖識別碼').trim();
-      if (!defByZone[zone]) throw new Error('NPC 第 ' + (index + 2) + ' 列的地圖識別碼不存在：' + zone);
+      if (!defByZone[zone]) throw new Error('NPC ' + lineOf(index) + '的地圖識別碼不存在：' + zone);
       const old = oldById[id];
       const o = old ? Object.assign({}, old) : {};
       o.id = id;
@@ -485,22 +528,41 @@ SCHEMAS.NPC = {
         const raw = get(row, pair[0]).trim();
         if (raw === '') { delete o[pair[1]]; return; }
         const v = toNum(raw);
-        if (!(v > 0)) throw new Error('NPC 第 ' + (index + 2) + ' 列「' + pair[0] + '」必須是大於 0 的數字：' + raw);
+        if (!(v > 0)) throw new Error('NPC ' + lineOf(index) + '「' + pair[0] + '」必須是大於 0 的數字：' + raw);
         o[pair[1]] = v;
       });
       delete o.aspdMult;
       delete o.eliteSkills;
+      delete o.skills;
       rowsByZone[zone].push(o);
     });
     NPC_POOL_DEFS.forEach(def => rowsByZone[def.zone].forEach(o => {
-      if (eliteSkillsById[o.id] && eliteSkillsById[o.id].length) o.eliteSkills = eliteSkillsById[o.id];
+      const sk = skillsById[o.id];
+      if (sk && Object.keys(sk).length) o.skills = sk;
     }));
-    return NPC_POOL_DEFS.reduce((out, def) => {
+    /* 封魔塔 BOSS：列的順序＝BOSS_LIST 的順序，名稱、屬性、外觀可改，圖檔與元素攻擊類型維持原樣。 */
+    if (towerRows.length !== oldBosses.length) {
+      throw new Error('NPC 表的 tower_boss 列要剛好 ' + oldBosses.length + ' 列（目前 ' + towerRows.length + '）：封魔塔 BOSS 清單由程式決定，這裡只能改它們的名稱、屬性、外觀與技能');
+    }
+    const bosses = oldBosses.map((old, i) => {
+      const t = towerRows[i];
+      const b = Object.assign({}, old);
+      b.id = 'tower_boss_' + (i + 1);
+      const name = get(t.row, 'NPC名稱'); if (name) b.name = name;
+      const emoji = get(t.row, '外觀'); if (emoji) b.emoji = emoji;
+      const attr = get(t.row, '屬性').trim(); if (attr) b.attr = attr;
+      delete b.skills;
+      if (Object.keys(t.skills).length) b.skills = t.skills;
+      return b;
+    });
+    const out = NPC_POOL_DEFS.reduce((acc, def) => {
       if (!rowsByZone[def.zone].length) throw new Error('NPC 缺少地圖資料：' + def.zone);
-      out[def.varName] = 'var ' + def.varName + ' = [\n' +
+      acc[def.varName] = 'var ' + def.varName + ' = [\n' +
         rowsByZone[def.zone].map(o => '  ' + jsLit(o)).join(',\n') + '\n];';
-      return out;
+      return acc;
     }, {});
+    out.BOSS_LIST = 'var BOSS_LIST = [\n' + bosses.map(o => '  ' + jsLit(o)).join(',\n') + '\n];';
+    return out;
   }
 };
 
@@ -765,12 +827,13 @@ function validateVfxTable(name, dataRows, header, options = {}) {
     const tier = get(row, '階數').trim(), stage = Number(tier) >= SKILLS2_ULT_ROW_BASE ? get(row, '超神ID').trim() : tier;
     const title = get(row, name === 'Skills2' ? '階段名稱' : '狀態名稱').trim() || id;
     const rowNumber = index + (options.startRow || 2);
+    const isEnemy = name === 'Skills2' && get(row, '類別').trim() === ENEMY_CLASS;   // 敵人專用技能：觸發欄當作次要角色，不看玩家技能的接線登記
     columns.forEach(([label, role]) => {
       const raw = get(row, label), preset = vfxIdFromCell(raw);
       if (!preset) return;
       const cell = excelColumn(labels.indexOf(label)) + rowNumber;
       const where = `${name}.xlsx 第${rowNumber}列「${title}」（${id}${name === 'Skills2' ? '/' + stage : ''}）\n    ${cell}「${label}」＝「${raw}」`;
-      const trigger = name === 'Skills2' && skills2Vfx.columns.some(c => c[0] === label);
+      const trigger = name === 'Skills2' && skills2Vfx.columns.some(c => c[0] === label) && !isEnemy;
       if (trigger) {
         const event = skills2Vfx.event(id, stage);
         if (!event || !event.roles.includes(role)) {
@@ -1320,8 +1383,79 @@ function skills2StatusHelpRows() {
 // 排在置頂的本體／觸發特效說明（skills2Vfx.help）之後：置頂那一段是既有的閱讀順序（tests/skills2-vfx-usage.test.cjs 守著）
 SKILLS2_GLOSSARY_ROWS.splice(SKILLS2_VFX_USAGE_HELP.length, 0, ...skills2StatusHelpRows());
 
+/* ---- 敵人專用技能（2026-10-13 菁英改造）----
+   Skills2 表新增「類別」欄：留白＝玩家技能（SKILLS2）；enemy＝敵人專用技能（ENEMY_SKILLS2，js/skills2.js）。
+   敵人列只有一階（階數＝1），沿用同一批欄位：
+     群組ID／群組名稱／群組圖標／傷害類型／傷害屬性／冷卻時間（單一數字，或「最短~最長」秒）／效果參數(JSON)／效果說明模板
+     十一個特效欄（本體六欄＋觸發五欄）＝這個技能各個畫面角色用的 Preset，角色語意見「欄位定義」頁。
+   JSON 內的距離一律用「米」、時間用「秒」（引擎換算成座標單位）。其餘欄位（解鎖、金幣、範圍用途欄、狀態欄）敵人列不使用。 */
+const ENEMY_CLASS = 'enemy';
+const ENEMY_VFX_ROLES = SKILL_VFX_COLUMNS.concat(skills2Vfx.columns);   // 本體六欄＋觸發五欄（敵人列全部可填，不受玩家技能接線限制）
+function parseEnemyCd(raw, where) {
+  const t = String(raw == null ? '' : raw).trim();
+  const m = /^([0-9]+(?:[.][0-9]+)?)(?:[ ]*[~～-][ ]*([0-9]+(?:[.][0-9]+)?))?$/.exec(t);
+  if (!m) throw new Error(where + '：冷卻時間要填數字或「最短~最長」，目前是「' + t + '」');
+  const a = Number(m[1]), b = m[2] === undefined ? a : Number(m[2]);
+  if (b < a) throw new Error(where + '：冷卻時間的最長不得小於最短');
+  return [a, b];
+}
+function enemyCdCell(cd) {
+  if (!Array.isArray(cd)) return '';
+  return cd[0] === cd[1] ? numStr(cd[0]) : numStr(cd[0]) + '~' + numStr(cd[1]);
+}
+function enemyRowFromDef(gid, d) {
+  const roles = SKILL_VFX_COLUMNS.map(c => (d.vfx && d.vfx[c[1]]) || '')
+    .concat(skills2Vfx.columns.map(c => (d.triggerVfx && d.triggerVfx[c[1]]) || ''));
+  return { gid, d, roles };
+}
+function enemyDefFromRow(get, r, gid) {
+  const where = 'Skills2 敵人技能「' + gid + '」';
+  const fxRaw = get(r, '效果參數(JSON)').trim();
+  let fx;
+  try { fx = fxRaw ? JSON.parse(fxRaw) : {}; }
+  catch (e) { throw new Error(where + '「效果參數(JSON)」解析失敗：' + e.message); }
+  if (!fx.arch) throw new Error(where + '「效果參數(JSON)」缺 arch（行為原型）');
+  if (fx.pool !== 'random' && fx.pool !== 'exclusive') throw new Error(where + '「效果參數(JSON)」的 pool 只能是 random（隨機技能池）或 exclusive（專屬技能）');
+  const dmgType = get(r, '傷害類型').trim();
+  if (dmgType && !/^(phys|magic)$/.test(dmgType)) throw new Error(where + '：傷害類型只能是 phys 或 magic');
+  const d = { name: get(r, '群組名稱'), emoji: get(r, '群組圖標') };
+  if (dmgType) d.dmgType = dmgType;
+  const elem = get(r, '傷害屬性').trim();
+  if (elem) d.elem = elem;
+  const cd = get(r, '冷卻時間').trim();
+  if (cd !== '') d.cd = parseEnemyCd(cd, where);
+  d.fx = fx;
+  /* fx.presets＝這個技能額外用到的 Preset（例如飛彈的四種顏色）：一樣要檢查檔案存在，並由預載清單帶進顯示層。 */
+  if (fx.presets !== undefined) {
+    if (!Array.isArray(fx.presets)) throw new Error(where + '：fx.presets 要是 Preset 名稱的陣列');
+    const have = new Set(fs.readdirSync(path.join(ROOT, 'vfx', 'presets')).filter(x => x.slice(-5) === '.json').map(x => x.slice(0, -5)));
+    fx.presets.forEach(id => { if (!have.has(id)) throw new Error(where + '：fx.presets 的「' + id + '」找不到 vfx/presets/' + id + '.json'); });
+  }
+  const vfx = vfxFromRow(get, r, SKILL_VFX_COLUMNS);
+  if (vfx) d.vfx = vfx;
+  const tv = vfxFromRow(get, r, skills2Vfx.columns);
+  if (tv) d.triggerVfx = tv;
+  d.desc = get(r, '效果說明模板');
+  return d;
+}
+
+/* 欄位定義頁的「敵人專用技能」說明（排在最後，不動前面既有的閱讀順序）。 */
+SKILLS2_GLOSSARY_ROWS.push(
+  [''],
+  ['── 敵人專用技能（2026-10-13；「類別」欄＝enemy 的列）──'],
+  ['類別留白＝玩家技能；填 enemy＝敵人專用技能，只給菁英、高級菁英、野外 BOSS、封魔塔 BOSS 使用，不會出現在玩家的技能欄。群組ID 一律 e_ 開頭，只有一階（階數＝1）。'],
+  ['敵人技能的來源與用法在 NPC 表：「專屬技能」填這裡的群組ID（這種敵人一定會有）；「隨機技能下限／上限」是從「隨機技能池」（效果參數 pool＝random 的那些）抽幾個。'],
+  ['冷卻時間：填一個秒數，或「最短~最長」（例 3~6＝每次施放後隨機等 3 到 6 秒）；被動技能留白。傷害類型 phys／magic、傷害屬性沿用玩家技能的寫法。'],
+  ['效果參數(JSON)：距離一律用「米」、時間用「秒」。共通鍵：pool（random 隨機技能池／exclusive 專屬）、arch（行為原型，程式裡有對應才有效）、kind（active 主動／passive 被動）、color（光環與日誌用色）、'],
+  ['　dmg（傷害倍率，乘敵人攻擊力）、warn（預警秒數）、r（傷害半徑）、repo（1＝施放前先跑位）、needs（group＝需要同群夥伴才有意義，單獨一隻的 BOSS 抽不到）。其餘鍵依 arch 而不同，見 js/elite.js 與 docs/ELITE_AFFIXES.md。'],
+  ['特效欄位（敵人列十一欄全可填，檢查只看 Preset 檔案存在）：施放特效＝施法者身上；攻擊特效＝爆發／落點；飛行子彈＝彈體本身；受擊特效＝玩家被打中；'],
+  ['　地板特效＝預警圈／地面標記；持續場域特效＝持續存在的場域本體；觸發特效／觸發子彈／觸發命中特效／觸發地板特效／觸發持續場域特效＝第二層（各技能怎麼用見該列「效果說明模板」與 docs/ELITE_AFFIXES.md）。'],
+  ['敵人技能的特效不要和玩家技能相同：同形態時也要換顏色（敵人專用 Preset 以 en- 開頭，見 tools/vfx/authoring/author/enemy-skills.cjs）。額外用到的 Preset（例如飛彈的四種顏色）填在效果參數的 presets 陣列。'],
+  ['這些列的解鎖、金幣、範圍用途欄、狀態欄不使用（留白）。']
+);
+
 SCHEMAS.Skills2 = {
-  name: 'Skills2', jsFile: 'skills2', sheet: 'Skills2', vars: ['SKILLS2'],
+  name: 'Skills2', jsFile: 'skills2', sheet: 'Skills2', vars: ['SKILLS2', 'ENEMY_SKILLS2'],
   extraSheets: [{ name: '欄位定義', rows: SKILLS2_GLOSSARY_ROWS }],
   /* 「階數」8／9／10 ＝ 超神進化（第 8 階）的三選一選項 1／2／3（2026-08-19）。
      它不是 tiers 的第 8~10 個元素，回寫時進 g.ult[0..2]（見 rebuild）；
@@ -1331,7 +1465,7 @@ SCHEMAS.Skills2 = {
     '效果參數(JSON)', '升級金幣基數', '升級金幣倍率', '效果說明模板']
     .concat(SKILL_VFX_COLUMNS.map(c => c[0])).concat(['超神ID'])
     .concat(skills2Geometry.columns).concat(['作用方式與距離用途（唯讀說明）']).concat(skills2Vfx.columns.map(c=>c[0])).concat([skills2Vfx.noteColumn])
-    .concat(SKILLS2_STATUS_COLUMNS.map(c => c[0])),
+    .concat(SKILLS2_STATUS_COLUMNS.map(c => c[0])).concat(['類別']),
   extract(src) {
     const SKILLS2 = evalLiteral(extractLiteral(src, 'SKILLS2').literal);
     const notes = skills2TierNoteMap();
@@ -1347,7 +1481,7 @@ SCHEMAS.Skills2 = {
           t.unlock ? (numStr(t.unlock.reinc || 0) + '|' + numStr(t.unlock.lv || 0)) : '', t.name,
           skills2OtherFx(t.fx || {}), numStr(t.goldBase || 0), numStr(t.goldGrow || 1), t.desc || '']
           .concat(vfxCells(t.vfx, SKILL_VFX_COLUMNS)).concat(['']).concat(skills2GeometryCells(gid,String(i+1),t,g.range)).concat(vfxCells(t.triggerVfx,skills2Vfx.columns)).concat([skills2Vfx.note(gid,String(i+1))])
-          .concat(SKILLS2_STATUS_COLUMNS.map(c => skills2StatusCell(t.status && t.status[c[1]]))));
+          .concat(SKILLS2_STATUS_COLUMNS.map(c => skills2StatusCell(t.status && t.status[c[1]]))).concat(['']));
       });
       // 超神進化三選一：階數固定接在各階之後（SKILLS2_ULT_ROW_BASE + 選項索引）
       (g.ult || []).forEach((o, i) => {
@@ -1358,8 +1492,19 @@ SCHEMAS.Skills2 = {
           '', o.name,
           skills2OtherFx(o.fx || {}), numStr(o.goldBase || 0), numStr(o.goldGrow || 1), o.desc || '']
           .concat(vfxCells(o.vfx, SKILL_VFX_COLUMNS)).concat([o.id || '']).concat(skills2GeometryCells(gid,o.id,o)).concat(vfxCells(o.triggerVfx,skills2Vfx.columns)).concat([skills2Vfx.note(gid,o.id)])
-          .concat(SKILLS2_STATUS_COLUMNS.map(c => skills2StatusCell(o.status && o.status[c[1]]))));
+          .concat(SKILLS2_STATUS_COLUMNS.map(c => skills2StatusCell(o.status && o.status[c[1]]))).concat(['']));
       });
+    });
+    let enemyDefs = {};
+    try { enemyDefs = evalLiteral(extractLiteral(src, 'ENEMY_SKILLS2').literal); } catch (e) { /* 尚未建立敵人技能表 */ }
+    const header = this.header;
+    Object.keys(enemyDefs).forEach(gid => {
+      const d = enemyDefs[gid];
+      const byName = { '群組ID': gid, '類別': ENEMY_CLASS, '群組名稱': d.name, '群組圖標': d.emoji, '傷害類型': d.dmgType || '', '傷害屬性': d.elem || '',
+        '冷卻時間': enemyCdCell(d.cd), '階數': '1', '效果參數(JSON)': JSON.stringify(d.fx || {}), '效果說明模板': d.desc || '' };
+      SKILL_VFX_COLUMNS.forEach(c => { byName[c[0]] = (d.vfx && d.vfx[c[1]]) || ''; });
+      skills2Vfx.columns.forEach(c => { byName[c[0]] = (d.triggerVfx && d.triggerVfx[c[1]]) || ''; });
+      rows.push(header.map(h => (byName[h] === undefined ? '' : byName[h])));
     });
     return rows;
   },
@@ -1376,8 +1521,19 @@ SCHEMAS.Skills2 = {
     const statusSlots = skills2StatusSlots();
     const catalog = statusCatalog();
     const seenSlotRows = {};
+    const enemyGroups = {};
+    const enemyOrder = [];
     dataRows.filter(r => get(r, '群組ID').trim() !== '').forEach(r => {
       const gid = get(r, '群組ID').trim();
+      const klass = get(r, '類別').trim();
+      if (klass !== '' && klass !== ENEMY_CLASS) throw new Error('Skills2 群組「' + gid + '」的「類別」只能留白（玩家技能）或 enemy（敵人專用）：' + klass);
+      if (klass === ENEMY_CLASS) {
+        if (enemyGroups[gid]) throw new Error('Skills2 敵人技能「' + gid + '」重複');
+        if (!/^e_[A-Za-z0-9_]+$/.test(gid)) throw new Error('Skills2 敵人技能的群組ID要以 e_ 開頭（例：e_firechain）：' + gid);
+        enemyGroups[gid] = enemyDefFromRow(get, r, gid);
+        enemyOrder.push(gid);
+        return;
+      }
       const tierIdx = Math.floor(toNum(get(r, '階數')));
       if (!(tierIdx >= 1)) throw new Error('Skills2 群組「' + gid + '」有一列缺「階數」');
       if (!groups[gid]) {
@@ -1510,7 +1666,11 @@ SCHEMAS.Skills2 = {
       });
     });
     const entries = order.map(gid => '  ' + (isIdentKey(gid) ? gid : quoteStr(gid)) + ': ' + jsLit(groups[gid]));
-    return { SKILLS2: 'var SKILLS2 = {\n' + entries.join(',\n') + '\n};' };
+    const enemyEntries = enemyOrder.map(gid => '  ' + (isIdentKey(gid) ? gid : quoteStr(gid)) + ': ' + jsLit(enemyGroups[gid]));
+    return {
+      SKILLS2: 'var SKILLS2 = {\n' + entries.join(',\n') + '\n};',
+      ENEMY_SKILLS2: 'var ENEMY_SKILLS2 = {\n' + enemyEntries.join(',\n') + '\n};'
+    };
   }
 };
 

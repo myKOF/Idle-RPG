@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-slash-wind-spin",
+  "groups": [
+    {
+      "id": "en-slash-wind-spin",
+      "name": "en-slash-wind-spin",
+      "layerIds": [
+        "cyclone-flow-1",
+        "cyclone-flow-0",
+        "orbit-0-halo",
+        "orbit-0-core",
+        "orbit-1-halo",
+        "orbit-1-core",
+        "orbit-2-halo",
+        "orbit-2-core"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-slash-wind-spin"
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-bolt-curtain-lightning",
+  "groups": [
+    {
+      "id": "en-bolt-curtain-lightning",
+      "name": "en-bolt-curtain-lightning",
+      "layerIds": [
+        "glow",
+        "col-a",
+        "col-b",
+        "jitter",
+        "ground",
+        "ground-glow"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-bolt-curtain-lightning"
+  ]
+}

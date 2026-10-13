@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "id": "en-wall-warn",
+  "duration": 0.8,
+  "loop": true,
+  "layers": [
+    {
+      "id": "fill",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/circle_b.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.4102,
+        "y": 0.1172
+      },
+      "alpha": 0.3,
+      "tint": "#b08cff",
+      "blendMode": "add",
+      "duration": 0.8,
+      "alphaOverLife": [
+        [
+          0,
+          0.2
+        ],
+        [
+          0.5,
+          0.45
+        ],
+        [
+          1,
+          0.2
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "line",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/rotated/trace_06_rotated.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.0273
+      },
+      "alpha": 0.9,
+      "tint": "#e0d0ff",
+      "blendMode": "add",
+      "duration": 0.8,
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "dust",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/dirt_01.png",
+      "zIndex": 2,
+      "alpha": 0.7,
+      "tint": "#c8b8e8",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 16
+      },
+      "lifetime": [
+        0.4,
+        0.7
+      ],
+      "spawn": {
+        "height": 6,
+        "shape": "box",
+        "width": 190
+      },
+      "speed": [
+        10,
+        30
+      ],
+      "direction": -90,
+      "spread": 60,
+      "startScale": [
+        0.0273,
+        0.043
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.3,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "height": 28,
+      "width": 200
+    },
+    "shape": "rectangle"
+  }
+}

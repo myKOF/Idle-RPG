@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "id": "en-spark",
+  "duration": 1.2,
+  "loop": false,
+  "layers": [
+    {
+      "id": "glow",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.1055,
+        "y": 0.1055
+      },
+      "alpha": 0.85,
+      "tint": "#34e0d0",
+      "blendMode": "add",
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.05,
+          1
+        ],
+        [
+          0.9,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "star",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/star_08.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.0742,
+        "y": 0.0742
+      },
+      "alpha": 1,
+      "tint": "#e8ffff",
+      "blendMode": "add",
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.05,
+          1
+        ],
+        [
+          0.9,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          12.56637
+        ]
+      ]
+    },
+    {
+      "id": "core",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.0273,
+        "y": 0.0273
+      },
+      "alpha": 1,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "duration": 1.2
+    },
+    {
+      "id": "zap",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/spark_02.png",
+      "zIndex": 3,
+      "alpha": 1,
+      "tint": "#b8fff6",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 18
+      },
+      "lifetime": [
+        0.1,
+        0.2
+      ],
+      "spawn": {
+        "radius": 6,
+        "shape": "circle"
+      },
+      "speed": [
+        20,
+        60
+      ],
+      "direction": 180,
+      "spread": 180,
+      "startScale": [
+        0.0195,
+        0.0352
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "radius": 10
+    },
+    "shape": "projectile-circle"
+  }
+}

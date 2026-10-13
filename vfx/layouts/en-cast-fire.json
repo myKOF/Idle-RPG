@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-cast-fire",
+  "groups": [
+    {
+      "id": "en-cast-fire",
+      "name": "en-cast-fire",
+      "layerIds": [
+        "ring",
+        "ring-inner",
+        "glow",
+        "flash",
+        "motes"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-cast-fire"
+  ]
+}

@@ -1,0 +1,387 @@
+{
+  "schemaVersion": 1,
+  "id": "en-ice-crystal",
+  "duration": 2.5,
+  "loop": false,
+  "layers": [
+    {
+      "id": "edge",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.3906
+      },
+      "alpha": 0.85,
+      "tint": "#e6fffb",
+      "blendMode": "add",
+      "duration": 2.5,
+      "alphaOverLife": [
+        [
+          0,
+          0.4
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "frost",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/circle_b.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.3906
+      },
+      "alpha": 0.2,
+      "tint": "#9ff5e8",
+      "blendMode": "add",
+      "duration": 2.5,
+      "alphaOverLife": [
+        [
+          0,
+          0.05
+        ],
+        [
+          1,
+          0.4
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "grow",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_01.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.3906
+      },
+      "alpha": 0.85,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "duration": 2.5,
+      "scaleOverLife": [
+        [
+          0,
+          0.15
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "crystal0",
+      "type": "sprite",
+      "assetId": "new_materials/mask-shape/dingbats-366.png",
+      "zIndex": 3,
+      "position": {
+        "x": 0,
+        "y": -8
+      },
+      "rotation": 0.1745,
+      "scale": {
+        "x": 0.082,
+        "y": 0.1367
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9
+      },
+      "alpha": 0.95,
+      "tint": "#d8fffa",
+      "blendMode": "add",
+      "duration": 2.5,
+      "alphaOverLife": [
+        [
+          0,
+          0.3
+        ],
+        [
+          0.5,
+          0.9
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.1
+        ],
+        [
+          0.5,
+          0.6
+        ],
+        [
+          1,
+          1.15
+        ]
+      ]
+    },
+    {
+      "id": "crystal1",
+      "type": "sprite",
+      "assetId": "new_materials/mask-shape/dingbats-366.png",
+      "zIndex": 4,
+      "position": {
+        "x": -34,
+        "y": 4
+      },
+      "rotation": -0.384,
+      "scale": {
+        "x": 0.0656,
+        "y": 0.1094
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9
+      },
+      "alpha": 0.95,
+      "tint": "#d8fffa",
+      "blendMode": "add",
+      "duration": 2.5,
+      "alphaOverLife": [
+        [
+          0,
+          0.3
+        ],
+        [
+          0.5,
+          0.9
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.1
+        ],
+        [
+          0.5,
+          0.6
+        ],
+        [
+          1,
+          1.15
+        ]
+      ]
+    },
+    {
+      "id": "crystal2",
+      "type": "sprite",
+      "assetId": "new_materials/mask-shape/dingbats-366.png",
+      "zIndex": 5,
+      "position": {
+        "x": 34,
+        "y": 6
+      },
+      "rotation": 0.4189,
+      "scale": {
+        "x": 0.0656,
+        "y": 0.1094
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9
+      },
+      "alpha": 0.95,
+      "tint": "#d8fffa",
+      "blendMode": "add",
+      "duration": 2.5,
+      "alphaOverLife": [
+        [
+          0,
+          0.3
+        ],
+        [
+          0.5,
+          0.9
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.1
+        ],
+        [
+          0.5,
+          0.6
+        ],
+        [
+          1,
+          1.15
+        ]
+      ]
+    },
+    {
+      "id": "crystal3",
+      "type": "sprite",
+      "assetId": "new_materials/mask-shape/dingbats-366.png",
+      "zIndex": 6,
+      "position": {
+        "x": -14,
+        "y": 22
+      },
+      "rotation": -0.1745,
+      "scale": {
+        "x": 0.0516,
+        "y": 0.0859
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9
+      },
+      "alpha": 0.95,
+      "tint": "#d8fffa",
+      "blendMode": "add",
+      "duration": 2.5,
+      "alphaOverLife": [
+        [
+          0,
+          0.3
+        ],
+        [
+          0.5,
+          0.9
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.1
+        ],
+        [
+          0.5,
+          0.6
+        ],
+        [
+          1,
+          1.15
+        ]
+      ]
+    },
+    {
+      "id": "crystal4",
+      "type": "sprite",
+      "assetId": "new_materials/mask-shape/dingbats-366.png",
+      "zIndex": 7,
+      "position": {
+        "x": 18,
+        "y": 24
+      },
+      "rotation": 0.2443,
+      "scale": {
+        "x": 0.0516,
+        "y": 0.0859
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9
+      },
+      "alpha": 0.95,
+      "tint": "#d8fffa",
+      "blendMode": "add",
+      "duration": 2.5,
+      "alphaOverLife": [
+        [
+          0,
+          0.3
+        ],
+        [
+          0.5,
+          0.9
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.1
+        ],
+        [
+          0.5,
+          0.6
+        ],
+        [
+          1,
+          1.15
+        ]
+      ]
+    },
+    {
+      "id": "glint",
+      "type": "sprite",
+      "assetId": "new_materials/flare/flare_16.png",
+      "zIndex": 9,
+      "scale": {
+        "x": 0.1758,
+        "y": 0.1758
+      },
+      "alpha": 0.7,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "duration": 2.5,
+      "alphaOverLife": [
+        [
+          0,
+          0.1
+        ],
+        [
+          1,
+          0.9
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.3
+        ],
+        [
+          1,
+          1.2
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "radius": 100
+    },
+    "shape": "circle"
+  }
+}

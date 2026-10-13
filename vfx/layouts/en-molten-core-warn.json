@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-molten-core-warn",
+  "groups": [
+    {
+      "id": "en-molten-core-warn",
+      "name": "en-molten-core-warn",
+      "layerIds": [
+        "edge",
+        "fill",
+        "grow",
+        "core",
+        "hot",
+        "embers"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-molten-core-warn"
+  ]
+}

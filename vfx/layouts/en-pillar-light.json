@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-pillar-light",
+  "groups": [
+    {
+      "id": "en-pillar-light",
+      "name": "en-pillar-light",
+      "layerIds": [
+        "glow",
+        "body",
+        "core",
+        "land",
+        "ring",
+        "motes",
+        "sprite-7",
+        "sprite-8"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-pillar-light"
+  ]
+}

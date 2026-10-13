@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-bolt-storm",
+  "groups": [
+    {
+      "id": "en-bolt-storm",
+      "name": "en-bolt-storm",
+      "layerIds": [
+        "glow",
+        "seg-a",
+        "seg-b",
+        "seg-c",
+        "branch",
+        "flash",
+        "seg-a-copy",
+        "seg-a-copy-2",
+        "flash-copy",
+        "blue-droplets",
+        "white-droplets",
+        "electric-fork-0",
+        "electric-fork-1",
+        "electric-fork-2",
+        "electric-fork-3",
+        "electric-fork-4",
+        "impact-core"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-bolt-storm"
+  ]
+}

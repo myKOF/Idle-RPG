@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-fire-chain",
+  "groups": [
+    {
+      "id": "en-fire-chain",
+      "name": "en-fire-chain",
+      "layerIds": [
+        "glow",
+        "band",
+        "core",
+        "links",
+        "embers",
+        "sparks"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-fire-chain"
+  ]
+}

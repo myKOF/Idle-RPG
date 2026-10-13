@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "en-toxic-pool",
+  "duration": 4,
+  "loop": true,
+  "layers": [
+    {
+      "id": "flowing-earth-mud",
+      "type": "sprite",
+      "assetId": "codex-authored/mire/mud-flow-venom.png",
+      "scale": {
+        "x": 0.46875,
+        "y": 0.46875
+      },
+      "alpha": 1,
+      "tint": "#a1ad71",
+      "blendMode": "add",
+      "duration": 4,
+      "projection": {
+        "rotation": 0.7853981633974483,
+        "x": 1,
+        "y": 0.5
+      },
+      "sheet": {
+        "columns": 8,
+        "count": 48,
+        "fps": 12,
+        "loop": true,
+        "mode": "fps",
+        "rows": 6
+      }
+    },
+    {
+      "id": "sprite-4",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/transparent/window_a_noise.png",
+      "rotation": 0.785398,
+      "scale": {
+        "x": 0.2757,
+        "y": 0.2757
+      },
+      "alpha": 0.2,
+      "tint": "#000000",
+      "blendMode": "add",
+      "scaleOverLife": 1,
+      "outerScale": {
+        "x": 1,
+        "y": 0.5
+      }
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "height": 120,
+      "width": 120
+    },
+    "heightM": 10,
+    "shape": "rectangle",
+    "widthM": 10
+  }
+}

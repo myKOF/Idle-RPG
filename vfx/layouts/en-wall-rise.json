@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-wall-rise",
+  "groups": [
+    {
+      "id": "en-wall-rise",
+      "name": "en-wall-rise",
+      "layerIds": [
+        "ring",
+        "dust"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-wall-rise"
+  ]
+}

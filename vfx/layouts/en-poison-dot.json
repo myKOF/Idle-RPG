@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-poison-dot",
+  "groups": [
+    {
+      "id": "en-poison-dot",
+      "name": "en-poison-dot",
+      "layerIds": [
+        "blob",
+        "ring",
+        "glint"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-poison-dot"
+  ]
+}

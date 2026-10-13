@@ -1,0 +1,241 @@
+{
+  "schemaVersion": 1,
+  "id": "en-fire-chain",
+  "duration": 1.2,
+  "loop": true,
+  "layers": [
+    {
+      "id": "glow",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/circle_b.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.4102,
+        "y": 0.1367
+      },
+      "alpha": 0.5,
+      "tint": "#ff4a12",
+      "blendMode": "add",
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          0.42
+        ],
+        [
+          0.5,
+          0.6
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "band",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/rotated/trace_06_rotated.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.0586
+      },
+      "alpha": 0.9,
+      "tint": "#ff7a1a",
+      "blendMode": "add",
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          0.8
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          0.8
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "core",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.0234
+      },
+      "alpha": 1,
+      "tint": "#fff0c8",
+      "blendMode": "add",
+      "duration": 1.2,
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "links",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 3,
+      "alpha": 0.9,
+      "tint": "#ffb04a",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 9
+      },
+      "lifetime": [
+        0.5,
+        0.9
+      ],
+      "spawn": {
+        "height": 4,
+        "shape": "box",
+        "width": 190
+      },
+      "speed": [
+        0,
+        6
+      ],
+      "startScale": [
+        0.0508,
+        0.0664
+      ],
+      "rotationStart": [
+        0,
+        360
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          0.8,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "embers",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 4,
+      "alpha": 0.8,
+      "tint": "#ff5a1a",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 24
+      },
+      "lifetime": [
+        0.35,
+        0.7
+      ],
+      "spawn": {
+        "height": 8,
+        "shape": "box",
+        "width": 190
+      },
+      "speed": [
+        18,
+        46
+      ],
+      "direction": -90,
+      "spread": 40,
+      "startScale": [
+        0.0352,
+        0.0586
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "sparks",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/star_04.png",
+      "zIndex": 5,
+      "alpha": 1,
+      "tint": "#fff2b0",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 14
+      },
+      "lifetime": [
+        0.25,
+        0.55
+      ],
+      "spawn": {
+        "height": 6,
+        "shape": "box",
+        "width": 190
+      },
+      "speed": [
+        30,
+        80
+      ],
+      "direction": -90,
+      "spread": 70,
+      "startScale": [
+        0.0156,
+        0.0313
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "height": 28,
+      "width": 200
+    },
+    "shape": "rectangle"
+  }
+}

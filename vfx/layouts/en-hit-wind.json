@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-hit-wind",
+  "groups": [
+    {
+      "id": "en-hit-wind",
+      "name": "en-hit-wind",
+      "layerIds": [
+        "halo",
+        "ring",
+        "flash",
+        "sparks",
+        "sparks-white"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-hit-wind"
+  ]
+}
