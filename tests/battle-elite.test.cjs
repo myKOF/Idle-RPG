@@ -132,6 +132,6 @@ test('BATTLE-ELITE-6 高級敵人（有 _tier）：環用光暈色；體型由 r
   const tags = vm.runInContext('BattleElite', c).skillTags(boss.data);
   assert.equal(tags.length, 1);
   assert.equal(tags[0].text, vm.runInContext('ELITE_AFFIXES.e_meteor.name', c), '血條下方的技能標籤是技能名稱');
-  assert.equal(tags[0].color, '#f08040', '火屬性技能標籤用橘色');
-  assert.equal(vm.runInContext("BattleElite.skillTags({ affixes: ['e_plague'] })[0].color", c), '#8fd46b', '毒屬性用綠色');
+  assert.equal(tags[0].color, '#e3b13a', '專屬技能標籤用亮暗金色');
+  assert.equal(vm.runInContext("BattleElite.skillTags({ affixes: ['e_plague'] })[0].color", c), '#8fd46b', '隨機技能（瘟疫）用毒屬性綠色');
 });
