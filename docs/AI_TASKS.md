@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## RUNE-ENGRAVE-FLICKER-20261013 — 修正刻印後裝備詳情閃爍
+
+- Owner：Codex；Done，單一開發者。使用者回報按刻印後詳情閃爍，無論是否形成真言；已重現並修正 ACK、逐顆刻印與面板快照不同步造成的空孔。
+- 允許：js/ui.js 的刻印／詳情刷新與操作鎖定、tests/equip-socket-ui.test.cjs 回歸、index.html 僅 ui.js 快取、本紀錄；禁止修改符文規則／數值、Worker／Protocol、存檔、素材與其他副本。既有刻印依賴已完成，工作區原乾淨、ai/codex；其餘預檢乾淨。index 有 Claude 進行中的戰鬥載入／快取修改，使用者已明確同意本副本只更新 ui.js 版本、保留其餘內容。
+- 驗收：ACK 先到、裝備／庫存分開抵達、連續多顆、形成／未形成真言均不呈現空孔或庫存跳動；失敗保留未送草稿、重複刻印與晚回覆不干擾新頁／新裝備。相關回歸、Build、隔離瀏覽器／Console 後 Commit；交使用者審查合併，不合併／推送。
+- 原因／完成：原流程在 rune.socket 成功 ACK 後立即刪除草稿，但裝備／庫存面板尚未回來，刷新便先畫空孔及退回庫存；每顆面板再來一次，反覆重建孔列。現以同一符文頁的 engraving 狀態保留整批刻印中的既有 DOM，各顆仍走原指令與 pending 面板屏障，最後一顆也等待全部面板到齊才一次刷新；草稿由最新裝備快照清理。整批期間鎖住刻印、選孔、暫放、取消與抹除控制；失敗／斷線／逾時停止後續刻印、解除整批鎖並保留未刻印草稿；換頁／換件後晚回覆不重畫新頁。
+- 修改4檔：js/ui.js、tests/equip-socket-ui.test.cjs（新增7項回歸）、index.html 僅 ui.js 1.0.152→1.0.153、本紀錄。唯讀檢查：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、js/item.js／runeword.js／ui-runeword.js／runeword_data.js／bridge.js／player.js、Worker sim.worker.js／protocol.js、css/runeword.css／ashen-forge.css 及相關測試；上述未改。無素材變更、無素材庫 Commit；規則、存檔、Worker／Protocol 不變。
+- 測試：新增 ACK／快照測試在修改前兩項均失敗於暫放符文變空孔；修改後含裝備先到／庫存先到、成形／未成形、部分成功後失敗／Promise rejection、換件與逾時全部通過。`node --test --test-reporter=tap tests/runeword-ui.test.cjs tests/runeword-engine.test.cjs tests/runeword-data.test.cjs tests/runeword-all-words.test.cjs tests/equip-socket-ui.test.cjs tests/equip-reroll-ui.test.cjs tests/inventory-command-pending.test.cjs tests/equipment-detail-layout.test.cjs tests/equipment-selection-border.test.cjs tests/boss-skill-lock.test.cjs tests/init-ui-smoke.test.cjs tests/ui-worker-events.test.cjs tests/runeword-seen.test.cjs tests/rune-slots-config.test.cjs tests/config-runes-table.test.cjs tests/worker-protocol.test.cjs` 238/238；`npm.cmd run build` 499檔通過；`git diff --check` 通過。
+- 瀏覽器：隔離隨機埠 HTTP／全新 headless Edge context，正式 UI／CSS／Bridge／真 Worker，拋棄式巨劍與符文，不讀真人存檔。刻意分別延遲 gems／inv／header／equip 回覆；舊 HEAD 在未成形／破軍成形時各重建孔列6次、38／35幀缺少應有符文；修正後各只更新1次、空孔幀數0，標題及素材容器保持原節點，3顆正確鑲入、庫存正確扣除，真言只在正確配方出現。四情境 Console error／warning 均0；臨時服務／瀏覽器關閉，暫存腳本清理。
+- 交付：遊戲 Commit 為本紀錄所在 `[Codex] fix: 消除符文刻印後裝備詳情閃爍`。本次無未完成項或已知新增風險，可供審查合併；未合併／推送。限制：瀏覽器驗證採拋棄式狀態與可控面板延遲，未操作真人存檔。下一步使用者整合後重新載入遊戲驗收刻印。
+
 ## CODEX-CLAUDE-MERGE-20261013 — 解決符文V2與天穹崩裂整合衝突
 
 - Owner：Codex；Done，單一開發者。使用者要求解決衝突，接續 develop 原有合併；原 HEAD b531b15f、MERGE_HEAD e059fd67。前置為雙方已提交成果，完成後交使用者重新載入驗收。
