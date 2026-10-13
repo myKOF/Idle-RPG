@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## CODEX-CLAUDE-MERGE-20261013 — 解決符文V2與天穹崩裂整合衝突
+
+- Owner：Codex；Done，單一開發者。使用者要求解決衝突，接續 develop 原有合併；原 HEAD b531b15f、MERGE_HEAD e059fd67。前置為雙方已提交成果，完成後交使用者重新載入驗收。
+- 允許：js/bridge.js、js/worker/sim.worker.js的快取衝突、index.html橋接快取及本紀錄；後續使用者指定輸入1快捷指令，另授權prompts/codex.md記錄偏好；完成既有合併提交與必要驗證。禁止改其他副本、功能／公式／配置值／素材／協議／存檔或推送。預檢只有本次待合併e059fd67來源，其他副本無未提交變更；本次解決衝突指示已授權。
+- 決策：保留Claude的runeword_data／runeword import token 20261013-rune-v2-parts，保留Codex的skills2 token 20261013-skyfall-fire-meteor；WORKER_ASSET_VERSION使用全新20261013-rune-v2-skyfall-merge，index橋接快取1.0.260。不整檔接受單方，保留符文三部位與火殞石配置。
+- 驗收：Worker／符文／天穹崩裂專項、相關回歸及既有失敗基線、Build、配置唯讀往返與diff check；確認衝突清零、雙方來源完整保留並完成原合併。
+- 完成：人工修改js/bridge.js、js/worker/sim.worker.js、index.html、本紀錄；另依本輪使用者指示，在prompts/codex.md記錄「單獨輸入1＝開始解決develop衝突」並完成無衝突預檢。其餘原合併內容保留。
+- 唯讀核對：Skills2 Excel／CSV／JS及wind-skill-audit測試逐位元等於Codex e059fd67；runeword／runeword_data／ui-runeword、Runes Excel／CSV與config_tables逐位元等於原develop b531b15f。Worker完整檔案等於原HEAD只更新skills2 import；bridge等於原HEAD只更新入口token。Protocol50、公式、存檔、Preset與素材未修改。
+- 測試指令：node --test --test-reporter=tap tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/runeword-data.test.cjs tests/runeword-engine.test.cjs tests/runeword-ui.test.cjs tests/runeword-all-words.test.cjs tests/runeword-seen.test.cjs tests/rune-slots-config.test.cjs tests/config-runes-table.test.cjs tests/meteor-entry-origin.test.cjs tests/meteor-impact-timing.test.cjs tests/wind-skill-audit.test.cjs tests/vfx-editor-cache-versions.test.cjs。255項236通過19失敗；失敗均來自wind-skill-audit的18項風系舊斷言及meteor-impact-timing伴生火球舊外觀1項。
+- 基線：於未修改ai/codex e059fd67執行node --test --test-reporter=tap tests/wind-skill-audit.test.cjs tests/meteor-impact-timing.test.cjs，56項37通過19失敗；自動比對排序後的失敗名稱集合完全相同，新增／減少0。其餘11檔全過，符文V2與Worker載入相關回歸通過；未降低斷言或修復範圍外問題。
+- 驗證：npm.cmd run build 499檔通過，兩支衝突JS的node --check及git diff --check／git diff --cached --check通過；node tools/config_tables.cjs --apply Skills2語意變更0。未手工改Excel或CSV，無新增／修改素材、無需素材庫新Commit。
+- 交付：本紀錄所在[Codex] merge提交接續完成原develop合併，父提交b531b15f與e059fd67；衝突清零、無本次未完成項、未推送。已知限制為19項既有測試失敗，本輪未重做瀏覽器Console／真人長時間戰鬥驗收。下一步使用者重新載入遊戲驗收，整合已完成可審查。
+
 ## CHAR-CORE-ATK-TOUGHNESS-20261012 — 角色面板置頂區整合為攻擊與堅韌雙數值顯示
 
 - Owner：Antigravity；Done，單一開發者。使用者要求角色面板置頂區原 6 格（生命值、法力值、物攻、魔攻、暴擊率、攻擊速度）因下方屬性清單皆已存在，精簡為僅顯示「攻擊」（物傷與魔傷平均值）與「堅韌」（物承與魔承平均值）2 格，並指定專用 Tips 文案。
@@ -68,6 +81,7 @@
 - 擴大回歸：node --test --test-reporter=tap tests/storm-mountain.test.cjs tests/storm-myriad.test.cjs tests/skill2-windblade-vacuum-legendary.test.cjs，45項34通過／11既有失敗；修改前44項33通過／11失敗，失敗名稱差集0，主要為舊風刃／真空斬數值或機制期望，未放寬無關斷言。npm.cmd run build：496檔全通過；diff check通過。
 - 快取：skills2 1.0.300、bridge1.0.255；Worker入口與skills2 import同20261012-storm-mountain-heal，Protocol50不變。唯讀檢查AI規範／prompts/codex.md、js/formula.js／util.js／combat.js／ui.js、Worker shim／Protocol、sim engine、配置與Excel原生工具、其他風刃回歸檔；上述檔案未改。未進行本輪瀏覽器實機或真人長時間戰鬥驗收；計算與Worker飄字／正式Runtime皆已回歸。
 - 交付：本紀錄所在[Codex] fix提交即遊戲Commit，無本次未完成項，可供審查合併；不合併／推送。素材未改、素材庫無需Commit，無外部素材或特效新來源。使用者現有Gems／data／Skills2其他技能／岩柱調整原樣保留未提交；僅本次嵐之山分段staging。已知風險為上述11既有回歸失敗，下一步重新載入遊戲驗收擊殺回血。
+
 ## INDOMITABLE-GUARD-20261012 — 不屈鬥魂致命傷免死與擊退暈眩
 
 - Owner：Codex；Done，單一開發者。使用者要求面臨死亡時擊退30米內敵人並暈眩3秒、無敵護盾基礎2.5秒／每級+0.25秒，自身冷卻60秒／每級-2秒；觸發不算死亡，原戰鬥立即繼續。沿既有base＋per×level；保留1HP、不清場／退關／停戰，不再升空復甦、漸進回血、地傷爆發或反擊轉地。
@@ -9793,3 +9807,15 @@ Worker 存活且頁面正常完成載入。
 - 完整回歸：node --test --test-reporter=tap --test-concurrency=4 "tests/*.test.cjs"；最終4161項／3885通過／274失敗／2略過。乾淨HEAD副本4156項／3879通過／275失敗／2略過，失敗名稱差集新增0；既有「雙刀逐刀目標與傷害飄字共用0.2秒」本次通過，未宣稱修復該時序問題。原來直掛stage的三個舊斷言同步為共用鏡頭與實際繪製順序，沒有降低層順序、字級、死亡距離或特效生命週期要求。正式表寫回後重跑轉CSV、apply_params、--check-anchors與node --test tests/battle-camera-distance.test.cjs tests/elite-params.test.cjs，9/9通過、550錨點全通過，無程式變更，沿用先前全庫及Build結果。
 - 瀏覽器：獨立Edge上下文、真Worker／Pixi／Preset，野外及塔戰均可啟動、頁面錯誤0；852×936實際畫布在125%時視野1065×1170、cameraScale0.8。100／125的BOSS血條均x426/y68/寬483.12/scale1；最後125%祭壇名目rx391.92與原版一致、經鏡頭縮小，標題容器抵銷虛擬視野偏移。無新素材、無模擬或存檔改動；不以軟體WebGL的測試FPS作正式效能結論。
 - 交接：修改js/battle-renderer.js、tools/apply_params.cjs、config/Excel/game_parameters.xlsx、config/CSV/game_parameters.csv、index.html、上述5檔測試及本紀錄。唯讀檢查js/battle-arena.js、js/tower.js、js/worker/protocol.js、tests/helpers/battle-scene.cjs、tools/xlsx_to_csv.cjs、套用參數.bat、AI規範。Commit見本紀錄所在提交；已知風險為274項既有失敗，本次新增0。功能無未完成項目，可供使用者審查合併，未自行合併或推送。下一步重新載入遊戲；調整「8-戰鬥畫面／戰鬥鏡頭距離」的參數a，儲存並執行套用參數.bat後重載；100原距離、125拉遠25%，數值越大視野越廣。收尾例外：清理C:/Users/user/AppData/Local/Temp/codex-battle-camera-20261008遭自動審核拒絕（僅回傳blocked by policy，未提供細節），已移除所有暫存junction本身，餘下暫存檔保留於系統Temp、不納入提交；工作區無暫存產物。
+
+## SKYFALL-FIRE-METEOR-VFX-20261013 — 天穹崩裂火隕石沿用殞石術外觀
+
+- Owner：Codex；Done，單一開發者。使用者回報暴風屏障超神天穹崩裂召喚的火殞石外觀錯誤，要求使用殞石術特效。
+- 允許：Skills2 Excel／CSV的stormbarrier.skyfallStars觸發子彈與命中特效、由表產生的js/skills2.js、index／bridge／Worker快取、tests/wind-skill-audit.test.cjs及本紀錄。禁止修改傷害、元素、數量、節拍、落點、範圍、其他星體或同名風刃超神、素材、Protocol及存檔。fetch後預檢無其他副本／分支衝突，工作區原乾淨。
+- 驗收：火星起飛與落地分別使用殞石術proj-meteor-inferno／burst-meteor-inferno，保留表定預警及額外落地震波；不提前傷害、移動目標不改落點、落地AOE及風／雷星保持。原生Excel正常重開並保存公式／格式，配置往返、正式Core／Runtime與Worker事件回歸、Build及Commit；不合併／推送。
+- 完成／修改8檔：config/Excel/Skills2.xlsx第230列AO230觸發子彈proj-meteor→proj-meteor-inferno，AP230觸發命中特效hit-fire-explosion→burst-meteor-inferno；同步config/CSV/Skills2.csv及由正式config_tables產生的js/skills2.js，沒有手改技能字面值。另更新index.html、js/bridge.js、js/worker/sim.worker.js快取、tests/wind-skill-audit.test.cjs與本紀錄。主頁skills2 1.0.304／bridge1.0.259，Worker入口及skills2 import同20261013-skyfall-fire-meteor；Protocol50不變。
+- Excel驗證：以原生Excel API只改2格，原生正常重開RepairMode=false，所有其他格資料／230條公式及繪圖數不變。唯讀XML稽核確認所有格style索引、styles.xml、公式、行屬性、欄寬、視圖、合併、驗證、篩選不變，未手工寫XML。正式xlsx_to_csv輸出CSV，與HEAD比對僅上述2格；`node tools/config_tables.cjs --apply Skills2`語意變更0。
+- 專項：先更新火星事件斷言，修改前失敗於舊proj-meteor，修正後通過；同時釘住殞石術第七階的彈體／預警／落地爆炸、起飛不播受擊及原有延後AOE。`node --test --test-name-pattern='天穹崩裂|天降風刃|永久風系' tests/wind-skill-audit.test.cjs` 5/5；`npm.cmd run build` 499檔通過；git diff --check通過。
+- 擴大回歸：`node --test --test-reporter=tap tests/wind-skill-audit.test.cjs tests/meteor-impact-timing.test.cjs tests/meteor-entry-origin.test.cjs tests/worker-protocol.test.cjs`修改前／後皆72項53通過19既有失敗、失敗名稱差集0；主要為其他風刃／真空斬／風切舊數值機制及伴生火球舊外觀。`node --test --test-reporter=tap tests/meteor-entry-origin.test.cjs tests/worker-protocol.test.cjs tests/vfx-runtime.test.cjs`148項144通過4既有失敗；唯讀攔截載入HEAD原skills2後相同148項144通過4失敗，名稱差集0。4項為FIELD地層、CATALOG根群組、CHAIN金色及STARFALL-TAIL拖尾既有斷言；未放寬無關測試。
+- 瀏覽器：隔離隨機埠唯讀HTTP／全新headless Edge context，真Worker觸發3顆火星，起飛均proj-meteor-inferno、落地均burst-meteor-inferno；落地前HP176384000000不變、落地後176383999637。將真Worker事件交正式BattleRenderer／Runtime／Core／Pixi播放，彈體及預警正常可見，落地爆點正常派送，Console error／warning均0。接線畫面保存在本聊天visualizations/skyfall-fire/meteor-in-game.png；臨時腳本／日誌／工作簿副本清理，瀏覽器與伺服器已關閉。
+- 唯讀檢查：AI規範／prompts/codex.md、tools/skills2-vfx.cjs、配置及Excel工具、js/vfx-runtime.js／battle-renderer.js／vfx-core.js／combat.js／formula.js、相關隕石及Worker測試；上述未修改。沿用既有已匯出素材，無新增或修改素材，素材庫無本次變更／無需Commit；未新增特效來源。遊戲Commit為本紀錄所在[Codex] fix提交。無本次未完成項，可供合併，未合併／推送；已知限制為上述23項既有失敗及未做真人長時間戰鬥驗收。下一步重新載入遊戲驗收。
