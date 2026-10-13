@@ -171,10 +171,10 @@ runeword 符文真言id|list （把該組配方的符文各發 1 顆；list 列�
 rune all 5 （33 種符文各發 5 顆）
 rune r28 2 （發放 2 顆第 28 階「命運」符文）
 runeword rw_viperkiss （發放「蛇吻」配方：毒牙、暗影）
-runeword list （列出 56 組符文真言 id）
+runeword list （列出全部符文真言 id）
 ```
 
-測試流程：`equipset legendary 100` 取得整套傳說裝備（每件 4 個符文孔）→ 裝備頁選裝備 → 「符文」→ 點符文孔選孔 → 點下方符文格鑲入（操作與「鑲嵌」寶石頁相同；孔右側「卸下」取下）。
+測試流程：`equipset legendary 100` 取得整套傳說裝備（符文孔數依稀有度，見 `docs/RUNEWORD_TEST_MATRIX.md` 第 1 節）→ 裝備頁選裝備 → 「符文」→ 點符文孔選孔 → 點下方符文格鑲入（操作與「鑲嵌」寶石頁相同；孔右側「卸下」取下）。
 符文取代了附魔的位置（2026-10-07）：符文孔與寶石鑲孔分開；孔數依稀有度，在 `config/Excel/game_parameters.xlsx` 的「表-稀有度」各列（編號 321～331）的「參數g」配置（目前 普通 0、精良／稀有 1、獨特 2、史詩 3、傳說以上 4）；雙手武器在有符文孔的稀有度上多 1 孔（加法），傳說以上的雙手武器有 5 孔。
 配方與數值見 `docs/RUNEWORD_DESIGN.md`；符文與符文真言的資料在配置表 `config/Excel/Runes.xlsx`。
 

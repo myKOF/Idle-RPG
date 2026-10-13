@@ -22,6 +22,7 @@ const mk = (over) => makeItem(c, Object.assign({ rarity: 5, level: 100 }, over))
 const one = mk({ weaponType: 'sword1h' });
 const two = mk({ weaponType: 'axe2h' });
 const chest = mk({ slot: 'chest', weaponType: undefined });
+const ring = mk({ slot: 'ring', weaponType: undefined });
 const num = (v) => (c.AFFIX_POOL ? String(v) : String(v));
 
 function table(header, rows) {
@@ -43,7 +44,7 @@ function generate() {
   L.push('# 符文系統測試對照表（自動產生）');
   L.push('');
   L.push('> 由 `node tools/gen_runeword_test_matrix.cjs` 依 `js/runeword_data.js` 與引擎產生，**請勿手改**。預期數值是遊戲引擎對「參考裝備」算出的值，與畫面同一份公式。');
-  L.push('> 參考裝備：Lv100、傳說（稀有度 5）、強化 +0。單手＝劍（sword1h）、雙手＝斧（axe2h）、防具＝胸甲（chest）。實際測試其他等級、稀有度時，請改用「詞條提示下限 × 倍率」自行換算（符文倍率 ×1 ＝ 裝備詳情「可能出現的詞條」的下限）。');
+  L.push('> 參考裝備：Lv100、傳說（稀有度 5）、強化 +0。單手＝劍（sword1h）、雙手＝斧（axe2h）、防具＝胸甲（chest）、飾品＝戒指（ring）。實際測試其他等級、稀有度時，請改用「詞條提示下限 × 倍率」自行換算（符文倍率 ×1 ＝ 裝備詳情「可能出現的詞條」的下限）。');
   L.push('');
 
   /* ---- 孔數 ---- */
@@ -57,15 +58,16 @@ function generate() {
   /* ---- 符文 ---- */
   L.push('## 2. 符文（33 顆）預期單顆數值');
   L.push('');
-  L.push('「鑲在武器」讀 `w`、「鑲在防具・飾品・副手」讀 `a`。雙手武器的單顆符文數值是單手的 2 倍（`TWO_HAND_AFFIX_VALUE_MULT`）。');
+  L.push('符文系統 V2 的三個部位：**武器**（主手、副手、雙手；讀 `w`）、**防具**（頭肩胸腰手腕腿靴八件；讀 `a`）、**飾品**（戒指、項鍊；讀 `j`）。副手（盾、法器、魔法書、水晶球）算武器部位。雙手武器的單顆符文數值是單手的 2 倍（`TWO_HAND_AFFIX_VALUE_MULT`），防具與飾品沒有這個倍數。');
   L.push('');
   const runeRows = c.RUNES.map((r, i) => [
     i + 1, r.id, r.name,
     affixName(r.w[0]) + ' ×' + r.w[1], c.rwRuneStatValue(one, r.w[0], r.w[1]), c.rwRuneStatValue(two, r.w[0], r.w[1]),
     affixName(r.a[0]) + ' ×' + r.a[1], c.rwRuneStatValue(chest, r.a[0], r.a[1]),
+    affixName(r.j[0]) + ' ×' + r.j[1], c.rwRuneStatValue(ring, r.j[0], r.j[1]),
     r.flavor || ''
   ]);
-  L.push(table(['階', 'id', '名稱', '武器側', '單手劍預期', '雙手斧預期', '防具側', '胸甲預期', '形容文字'], runeRows));
+  L.push(table(['階', 'id', '名稱', '武器側', '單手劍預期', '雙手斧預期', '防具側', '胸甲預期', '飾品側', '戒指預期', '形容文字'], runeRows));
   L.push('');
   L.push('合成：' + S.composeCount + ' 顆同階 → 1 顆高一階（最高合成到第 ' + S.composeMaxTier + ' 階）；拆解：1 顆 → ' + S.dismantleYield + ' 顆低一階（第 1 階不可拆解）。');
   L.push('');

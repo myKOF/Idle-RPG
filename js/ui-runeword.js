@@ -139,7 +139,7 @@ function runeUiFocusHTML(snapshot, id) {
     '<div><div class="rx-focus-name">' + esc(r.name) + '符文<small>第 ' + r.tier + ' 階</small></div>' +
     '<div class="rx-focus-sub">持有 <b>' + fmt(n) + '</b> 顆</div></div></div>';
   h += '<div class="rx-stats">' +
-    runeUiStatLine('⚔ 鑲在武器', r.w) + runeUiStatLine('🛡 鑲在防具・飾品・副手', r.a) +
+    runeUiStatLine('⚔ 鑲在武器', r.w) + runeUiStatLine('🛡 鑲在防具', r.a) + runeUiStatLine('💍 鑲在飾品', r.j) +
     (r.flavor ? '<div class="rx-flavor">「' + esc(r.flavor) + '」</div>' : '') + '</div>';
   var composeLabel = (next && r.tier < RUNE_COMPOSE_MAX_TIER) ? ('合成「' + esc(next.name) + '」') : '合成';
   h += '<div class="rx-actions">' +

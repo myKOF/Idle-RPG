@@ -194,6 +194,18 @@
 - 驗證：npm.cmd run build 488檔通過；node --check js/bridge.js、git diff --check、git diff --cached --check 均通過。node tools/vfx/export-assets.cjs --check --root D:/MyGame/Asset：244 Preset／161素材引用匯出最新；node tools/scene-renewal/export-source.cjs --check：场景來源与圖檔SHA256一致。素材庫status乾淨、既有HEAD c999cf0，合併沿用已提交素材，无新素材Commit。
 - 交付：本紀錄所在 [Codex] merge: 解決與 Claude 的快取衝突並整合 Codex 修改 完成原 develop 合併，父提交348bc794與4a2cb466；無未完成衝突，不推送。已知風險為上述7項既有失敗，本輪未重做瀏覽器／Console／真人長戰驗收。下一步使用者重新載入遊戲；VFX Editor未儲存內容先另存再重載。整合已完成，可供使用者審查及自行推送。
 
+## Claude｜符文系統改造 V2：單顆符文改為三個部位（武器／防具／飾品）（RUNE-PARTS-V2-20261013）
+
+- Owner：Claude；Done。使用者要求：符文原本分「主武器」與「防具・飾品・副手」兩側，改成三個部位——武器＝主手／副手／雙手、防具＝所有防具部位、飾品＝戒指與項鍊；效果由我編寫。
+- 需求分析：這是單顆符文「鑲在哪個部位得到什麼屬性」的規則改變，不碰符文真言（真言靠適用裝備標記，本來就分得出 armor／jewelry／offHand）；副手由防具側改為武器側是行為改變。
+- 架構分析：影響面很小——部位判定集中在 `rwRuneSide(it)`，資料是 `RUNES` 的 w／a 兩欄＋配置表 Runes 的 4 個欄位；沒有存檔欄位、協議、掉落、合成的改動。
+- 技術決策：①`RUNES` 每顆多一欄 `j`（飾品側，一條詞條＋倍率），`rwRuneSide` 依裝備欄位判定：weapon（含副手）→ w、ring／amulet → j、其餘八件 → a ②配置表 Runes 在「防具倍率」後插入「飾品詞條」「飾品倍率」兩欄（Excel 用原生插入整欄，驗證重開）；驗證與備註同步 ③飾品側 33 顆由我編寫：資源與機運（金幣／經驗／掉寶／幸運）、元素剋制（武器＝元素傷害提升、防具＝元素抗性、飾品＝對該元素敵人傷害）、三圍與複合輸出；倍率沿用各階既有量級，經濟類較低；不放詞條上限率、強化成功率、寶石效率等會改寫養成經濟的詞條 ④星辰的幸運值搬到飾品側，防具側改物理防禦% 0.5 ⑤符文頁顯示三行「⚔ 鑲在武器／🛡 鑲在防具／💍 鑲在飾品」。
+- 修改：js/runeword.js（rwRuneSide）、js/runeword_data.js（RUNES 加 j、檔頭說明）、js/ui-runeword.js、tools/config_tables.cjs（欄位、驗證、備註、說明頁）、config/CSV/Runes.csv、config/Excel/Runes.xlsx、tools/gen_runeword_doc.cjs、tools/gen_runeword_test_matrix.cjs、docs/RUNEWORD_DESIGN.md（新增 V2 一節）、docs/RUNEWORD_TEST_MATRIX.md、GM_command.md、tests（runeword-engine 新增部位判定與戒指／項鍊／副手實際進屬性、config-runes-table 加飾品欄驗證、runeword-ui）；版號 runeword_data 1.0.14、runeword 1.0.11、ui-runeword 1.0.10、bridge 1.0.259、WORKER_ASSET_VERSION 20261013-rune-v2-parts。
+- 預檢：`.claude/check-conflicts.ps1` 對上述檔案無其他副本修改。
+- 測試：符文相關 17 個檔 343 項全過；build_check 499 檔通過；`config_tables --apply Runes` 語意變更 0；xlsx 轉回 CSV 一致；文件總表與測試對照表為最新；強度探針不變（只動單顆符文，真言屬性未動）。實機：符文庫顯示三行、無 Console 錯誤。
+- 風險：①副手（盾等）鑲符文改拿武器側輸出屬性，防禦型副手不再拿防禦屬性；②飾品部位只有 3 件（戒指×2＋項鍊），總量比防具八件少，所以飾品側倍率沿用而非放大；③使用者若在 Excel 裡把某顆的飾品詞條留空或倍率填 0，套用時會被擋下。
+- 建議驗證（Antigravity）：戒指、項鍊、盾牌、法器、胸甲各鑲同一顆符文，面板屬性分別來自飾品／武器／防具側；符文頁三行文字；Excel 改飾品倍率後套用參數能生效；舊存檔載入不報錯、已鑲符文數值依新部位重算。
+
 ## Claude｜符文頁文字整理：真言屬性寫法與符文一致、符文改寫描述、拆解說明精簡（RUNE-TEXT-CLEANUP-20261008）
 
 - Owner：Claude；Done。使用者要求：①符文真言的屬性行寫法與符文一致，用「基礎值 ×N」②符文庫詳情下方每顆都一樣的制式說明不要，改成形容這顆符文的文字（例：風語＝風的聲息稍縱即逝，發出嘆息之悲鳴）③合成說明的拆解只寫「可獲得 1 顆前一階符文」，括號裡的合成／降階頂替整串拿掉。
