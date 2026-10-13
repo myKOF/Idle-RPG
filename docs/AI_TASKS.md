@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## SKYFALL-TELEGRAPH-20261013 — 天穹崩裂三色落點圈與物件尺寸同步
+
+- Owner：Codex；Done，單一開發者。使用者指定火殞石／雷殞石／大型風刃各用對應顏色的地板提示圈，圈大小符合落下物件。使用者已同意保留Claude及Antigravity在共用檔的工作，於Codex副本分段完成；不修改其他副本、不合併或推送。
+- 允許：js/skills2.js的skyfallStars事件、js/vfx-runtime.js的天降物件尺寸共用與提示圈播放、必要主頁／Editor／Worker快取、新mark-green Preset及素材庫副本／來源紀錄、寫死用途清單、本紀錄與新tests/skyfall-telegraph.test.cjs。禁止改傷害／判定半徑／元素／顆數／節拍、其他技能及Protocol／存檔／Excel配置。
+- 驗收：火橘紅／雷藍／風綠；圈直徑沿實際物件本體最大長寬及同一場景倍率；固定落點、獨立多顆、起飛出圈／落地回收；傷害仍用原AOE且僅落地結算。正式Core／Runtime與Worker事件測試、三色預覽、Build、用途與素材同步、先素材庫再遊戲Commit。
+- 完成／修改11檔：js/skills2.js新增SG_SKYFALL_MARKS選用藍圈／綠圈，火圈沿原表；天穹事件area附帶skyfallMark，Worker沿既有area透傳。js/vfx-runtime.js將彈體尺寸換算抽為共用函式，圈半徑由Preset作者本體長寬、事件尺寸與skyScale衍生，不改原事件AOE；每顆圈獨立識別與飛行壽命，抵達即回收。預載同步收錄SG_SKYFALL_MARKS。另改index.html、js/bridge.js、js/worker/sim.worker.js、tools/vfx/editor/index.html、用途清單、本紀錄，新tests/skyfall-telegraph.test.cjs、vfx/presets/mark-green.json及vfx/layouts/mark-green.json。主頁skills2 1.0.308／Runtime1.0.196／bridge1.0.265，Editor同步Runtime；Worker入口／skills2 import與Preset資料版號20261013-skyfall-telegraph。跳過其他分支已使用快取，保留其工作。
+- 測試：node --test --test-reporter=tap tests/skyfall-telegraph.test.cjs tests/meteor-entry-origin.test.cjs tests/worker-protocol.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/indomitable-vfx.test.cjs，59/59通過。新專項6項含真sim engine三種星體、不提前傷害、原8米判定、三種skyScale、固定落點／原事件不變、同點多顆／延遲分別回收、素材合法與正式預載。
+- 擴大：node --test --test-reporter=tap tests/meteor-impact-timing.test.cjs tests/vfx-runtime.test.cjs，134項129通過／5既有失敗；唯讀載入HEAD原skills2／Runtime重跑同134項129通過／5失敗，名稱差集0。為伴生火球、FIELD地層、CATALOG根群組、CHAIN顏色及STARFALL-TAIL既有斷言，未改其他測試。npm.cmd run build 501檔全過；node tools/vfx/export-assets.cjs --check最新（無需重匯出），git diff --check通過。
+- 素材與預覽：綠圈只將現有mark-blue兩層換為綠色並保留既有circle masks，沒有繪製或匯入新圖片，沿Preset流程編輯；同時建立合法單根群組layout。隔離headless Edge／正式Core／Runtime／Pixi預覽三色落下物與提示圈，3顆彈體／3圈，pageerror 0；圖片在本聊天visualizations/skyfall-colors.png，純文字檔名mark-green.json。程式提示圈來源登記於VFX_PRESET_USAGE_OUTSIDE_TABLES.md，沒有第三來源。素材庫codex-authored/skyfall-telegraph保存Preset／layout及SOURCE.md，先提交f0bd20b；與遊戲內容一致，沒有更動原藍圈／紅圈。臨時預覽腳本與測試日誌已清理。
+- 唯讀檢查：AI規範／prompts/codex.md、既有提示圈／三種彈體Preset、Worker shim／Protocol、battle-renderer、VFX Core／Pixi後端、素材解析器／匯出器及既有隕石回歸，未修改上述檔案。遊戲Commit為本紀錄所在[Codex] fix提交；無本次未完成項，可供合併，未合併／推送。已知限制：上述5項既有失敗、未做真人長時間戰鬥壓測。整合時保留其他分支共用檔及使用更新快取；重載遊戲與VFX Editor前先另存未儲存內容，勿用舊頁覆寫新版。
+
 ## RUNE-ASPD-STACKS-20261013 — 驚蟄與風暴之眼攻速疊層修正
 
 - Owner：Codex；Done，單一開發者。使用者要求疊層符合驚蟄最多3層、風暴之眼最多4層並補測試；前置為本分支既有符文V2，後續使用者審閱／整合。

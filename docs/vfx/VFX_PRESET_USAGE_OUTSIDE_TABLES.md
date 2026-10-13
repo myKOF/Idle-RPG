@@ -45,6 +45,8 @@ grep 找得到「哪裡寫死了這個 id」，寫不出「是誰在用」：下
 
 | preset id | 顯示標籤 | 用在哪裡 |
 | --- | --- | --- |
+| `mark-green` | 天穹崩裂風刃落點 | `js/skills2.js` 的暴風屏障skyfallStars巨大風刃；Runtime依落下物件本體尺寸繪製綠色提示圈，起飛顯示、落地回收，與傷害AOE分開。 |
+| `mark-blue` | 天穹崩裂雷殞石落點 | `js/skills2.js` 的暴風屏障skyfallStars雷星；Runtime依雷殞石本體尺寸繪製藍色提示圈，其他角色沿表借用雷球第七階。 |
 | `field-water-prison-dome` | 水牢天瀑罩子分層 | Status 表的水牢持續特效；`js/vfx-runtime.js` 將同一份 Preset 的地板和透明罩子拆為前後子部件播放，共用權威半徑及位置。 |
 | `hit-basic-irregular` | 普攻 | 我方普通攻擊的命中爆點（含連擊的額外段） |
 | `bolt-sky-lightning` | 天罰 | 神鑄特效【天罰】追加的落雷（`js/combat.js`） |
