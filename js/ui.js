@@ -5694,7 +5694,7 @@ function socketSelectedGem(type, level, fusedId) {
 function socketRuneToSelected(runeId) {
   if (bossFightConfigLocked()) return;
   var it = findSelItem(), mode = equipRuneModeFor(it);
-  if (!mode || isUiCommandPending(itemPendingKey(it.id)) || mode.selIdx < 0 || rwSlots(it)[mode.selIdx]) return;
+  if (!mode || mode.engraving || isUiCommandPending(itemPendingKey(it.id)) || mode.selIdx < 0 || rwSlots(it)[mode.selIdx]) return;
   var left = runesViewCount(uiGemsPanelSnapshot(), runeId) - runeDraftCount(mode.draft, runeId) + (mode.draft[mode.selIdx] === runeId ? 1 : 0);
   if (left < 1) return;
   mode.draft[mode.selIdx] = runeId;
@@ -5710,7 +5710,8 @@ function runeDraftCount(draft, runeId) {
 
 /* 等這件裝備的指令鎖釋放（上一顆的回覆已到、面板已更新）才送下一顆；鎖還在時再送會被當成連送擋掉。最多等約 3 秒。 */
 function waitUiCommandIdle(key, tries) {
-  if (!isUiCommandPending(key) || tries <= 0) return Promise.resolve();
+  if (!isUiCommandPending(key)) return Promise.resolve();
+  if (tries <= 0) return Promise.reject(new Error('等待裝備資料更新逾時'));
   return new Promise(function (resolve) { setTimeout(resolve, 50); }).then(function () { return waitUiCommandIdle(key, tries - 1); });
 }
 
@@ -5718,27 +5719,33 @@ function waitUiCommandIdle(key, tries) {
 function engraveRuneDrafts() {
   if (bossFightConfigLocked()) return;
   var it = findSelItem(), mode = equipRuneModeFor(it);
-  if (!mode || isUiCommandPending(itemPendingKey(it.id))) return;
+  if (!mode || mode.engraving || isUiCommandPending(itemPendingKey(it.id))) return;
   var picks = Object.keys(mode.draft).map(Number).sort(function (a, b) { return a - b; });
   if (!picks.length) return;
+  mode.engraving = true;
+  syncEquipSocketControls(it, mode);
+  var finish = function () {
+    mode.engraving = false;
+    if (UI.equipMatMode === mode && UI.sel && UI.sel.id === it.id) renderDetail();
+  };
   var panels = ['inv', 'equip', 'gems', 'header'];
   var chain = Promise.resolve(true);
   picks.forEach(function (idx) {
     chain = chain.then(function (ok) {
       if (!ok || UI.equipMatMode !== mode || !UI.sel || UI.sel.id !== it.id) return false;
       return waitUiCommandIdle(itemPendingKey(it.id), 60).then(function () {
-        if (UI.equipMatMode !== mode || !mode.draft[idx]) return false;
+        if (UI.equipMatMode !== mode || !UI.sel || UI.sel.id !== it.id || !mode.draft[idx]) return false;
         return sendUiCommand('rune.socket', { itemId: it.id, runeId: mode.draft[idx], index: idx }, { keys: [itemPendingKey(it.id)], panels: panels });
       }).then(function (result) {
         if (result !== null) return false;
-        delete mode.draft[idx];
-        return true;
+        // ACK 只表示指令成功；面板到齊前保留草稿，不把符文先畫成空孔。
+        // 真正鑲上的草稿由 equipRuneModeFor 依最新裝備快照清除。
+        return waitUiCommandIdle(itemPendingKey(it.id), 60).then(function () { return true; });
       });
     });
   });
-  chain.then(function () {
-    if (UI.equipMatMode === mode) { equipRuneModeFor(it); renderDetail(); }
-  }).catch(function (error) {
+  return chain.then(finish).catch(function (error) {
+    finish();
     reportUiCommandFailure('刻印符文', error, panels);
   });
 }
@@ -5749,7 +5756,7 @@ function syncEquipSocketControls(it, mode) {
   if (!pane || !pane.querySelectorAll || !pane.querySelector) return false;
   var holes = pane.querySelector('.equip-socket-page');
   if (!holes) return false;
-  var pending = isUiCommandPending(itemPendingKey(it.id));
+  var pending = !!mode.engraving || isUiCommandPending(itemPendingKey(it.id));
   holes.querySelectorAll('[data-socket-pick]').forEach(function (button) {
     var selected = Number(button.getAttribute('data-socket-pick')) === mode.selIdx;
     if (button.getAttribute('aria-pressed') !== String(selected)) {
@@ -5759,7 +5766,7 @@ function syncEquipSocketControls(it, mode) {
     if (button.disabled !== pending) button.disabled = pending;
   });
   var mutationPending = pending || bossFightConfigLocked();
-  holes.querySelectorAll('[data-socket-remove], [data-rune-remove], [data-rune-erase]').forEach(function (button) {
+  holes.querySelectorAll('[data-socket-remove], [data-rune-remove], [data-rune-erase], [data-rune-undraft]').forEach(function (button) {
     if (button.disabled !== mutationPending) button.disabled = mutationPending;
   });
   var disabled = mutationPending || mode.selIdx < 0 || !!equipSlotsOf(it, mode.mode)[mode.selIdx];
@@ -5773,6 +5780,9 @@ function syncEquipSocketControls(it, mode) {
     gems._equipSocketDisabled = disabled;
   }
   mode.renderedIdx = mode.selIdx;
+  var actionBar = $id('equip-action-bar');
+  var engrave = actionBar && actionBar.querySelector && actionBar.querySelector('[data-act="engrave-rune"]');
+  if (engrave) engrave.disabled = mutationPending;
   return true;
 }
 
@@ -5821,6 +5831,14 @@ function equipRuneGridHTML(it, gemsSnapshot, draft) {
 function renderDetail() {
   var pane = $id('detail-pane');
   var it = findSelItem();
+  // 逐顆刻印的裝備與庫存快照分開抵達；整批完成才更新目前符文頁，避免空孔及庫存跳動。
+  var engravingMode = UI.equipMatMode;
+  var renderedSocket = pane._equipSocketRender;
+  if (engravingMode && engravingMode.engraving && UI.sel && UI.sel.id === engravingMode.itemId &&
+      renderedSocket && renderedSocket.itemId === engravingMode.itemId && renderedSocket.kind === 'rune') {
+    if (it) syncEquipSocketControls(it, engravingMode);
+    return;
+  }
   /* 換裝的面板快照可能先收到背包摘要；等完整詳情才更新標題及孔位。 */
   if (it && !Array.isArray(it.affixes)) {
     requestPanelData('inv', true, { detailIds: [it.id] });
@@ -13154,7 +13172,7 @@ function initUI() {
     if (socketPick) {
       var socketIt = findSelItem(), socketMode = equipSlotPageModeFor(socketIt);
       var socketIdx = parseInt(socketPick.getAttribute('data-socket-pick'), 10);
-      if (socketMode && !isUiCommandPending(itemPendingKey(socketIt.id)) && socketIdx >= 0 && socketIdx < equipSlotsOf(socketIt, socketMode.mode).length) {
+      if (socketMode && !socketMode.engraving && !isUiCommandPending(itemPendingKey(socketIt.id)) && socketIdx >= 0 && socketIdx < equipSlotsOf(socketIt, socketMode.mode).length) {
         socketMode.selIdx = socketIdx;
         delete socketMode.advanceFrom;
         if (!syncEquipSocketControls(socketIt, socketMode)) renderDetail();
@@ -13291,7 +13309,7 @@ function initUI() {
     var rud = e.target.closest('[data-rune-undraft]');
     if (rud) {
       var udIt = findSelItem(), udMode = udIt && equipRuneModeFor(udIt);
-      if (udMode && !rud.disabled) {
+      if (udMode && !udMode.engraving && !isUiCommandPending(itemPendingKey(udIt.id)) && !rud.disabled) {
         delete udMode.draft[parseInt(rud.getAttribute('data-rune-undraft'), 10)];
         renderDetail();
       }

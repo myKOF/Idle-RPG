@@ -104,6 +104,92 @@ test('刻印中途失敗就停：沒送的符文仍留在暫放',async()=>{
   c.click({act:'engrave-rune'});await tick();assert.equal(c.commands.length,1);c.finish('符文不足');await tick();
   assert.equal(c.commands.length,1,'第一顆失敗就不再送後面的');assert.deepEqual(Object.keys(c.UI.equipMatMode.draft),['1','2']);
 });
+
+for (const stockFirst of [false, true]) for (const withWord of [false, true]) test('刻印等待 ACK 與分開的面板快照時保持詳情，整批完成才更新（真言='+withWord+'、庫存先到='+stockFirst+'）',async()=>{
+  const c=mount(),stock={gems:{},fusedGems:[],runes:{r01:3,r02:3,r10:3}};
+  c.setTimeout=setTimeout;c.uiGemsPanelSnapshot=()=>stock;
+  c.it.runes=[null,null,null,null];c.it.weaponType='sword1h';c.click({act:'toggle-rune'});
+  c.click({'rune-socket':'r01'});c.click({'rune-socket':withWord?'r02':'r10'});
+  const p=c.elements['detail-pane'],before=p.holes.innerHTML,stockBefore=p.gems.innerHTML,header=p.header;
+  const errors=[];c.reportUiCommandFailure=(...args)=>errors.push(args);
+  c.sendUiCommand=(name,args)=>{
+    c.commands.push({name,args:JSON.parse(JSON.stringify(args))});c.pending.add(c.itemPendingKey(c.it.id));c.syncEquipSocketPending();
+    return new Promise(resolve=>c.ack=resolve);
+  };
+  c.click({act:'engrave-rune'});await tick();
+  c.ack(null);await tick();c.renderDetail();
+  assert.equal(p.holes.innerHTML,before,'ACK 不代表裝備已回來，不得把暫放變空孔');
+  assert.equal(p.gems.innerHTML,stockBefore,'不得短暫退回暫放符文的庫存');
+  c.click({act:'engrave-rune'});c.click({'rune-undraft':'1'});c.click({'socket-pick':'3'});c.socketRuneToSelected('r10');
+  assert.equal(c.commands.length,1,'整批等待期間不得重送或更改草稿');
+  assert.equal(c.UI.equipMatMode.selIdx,2);assert.equal(c.UI.equipMatMode.draft[1],withWord?'r02':'r10');
+  for(let i=0;i<2;i++){
+    const args=c.commands[i].args;
+    if(stockFirst){stock.runes[args.runeId]--;c.renderDetail();assert.equal(p.gems.innerHTML,stockBefore);}
+    c.it=JSON.parse(JSON.stringify(c.it));c.it.runes[args.index]=args.runeId;c.renderDetail();
+    assert.equal(p.holes.innerHTML,before,'中間裝備快照不逐顆重建符文列');
+    if(!stockFirst)stock.runes[args.runeId]--;c.renderDetail();
+    assert.equal(p.gems.innerHTML,stockBefore,'庫存快照不造成中間跳動');
+    c.pending.clear();c.syncEquipSocketPending();
+    if(i===0){
+      await new Promise(r=>setTimeout(r,65));assert.equal(c.commands.length,2);c.ack(null);await tick();
+    }
+  }
+  await new Promise(r=>setTimeout(r,65));
+  assert.equal(p.header,header);assert.doesNotMatch(p.holes.innerHTML,/is-draft/);
+  assert.equal((p.holes.innerHTML.match(/data-rune-erase=/g)||[]).length,2);
+  assert.equal(/it-runeword-name/.test(p.holes.innerHTML),withWord);
+  assert.deepEqual(Object.keys(c.UI.equipMatMode.draft),[]);assert.equal(c.UI.equipMatMode.engraving,false);
+  assert.match(c.elements['equip-action-bar'].innerHTML,/data-act="toggle-rune"/);assert.deepEqual(errors,[]);
+});
+
+test('刻印第二顆失敗或傳輸失敗：已刻印的保留、未刻印的仍暫放並解除整批鎖',async()=>{
+  for(const reject of [false,true]){
+    const c=mount();c.uiGemsPanelSnapshot=()=>({runes:{r01:3,r10:3}});c.click({act:'toggle-rune'});
+    c.click({'rune-socket':'r01'});c.click({'rune-socket':'r10'});
+    const errors=[];c.reportUiCommandFailure=(...args)=>errors.push(args);
+    const send=c.sendUiCommand;
+    c.sendUiCommand=(name,args,opts)=>{
+      if(reject&&c.commands.length===1){c.commands.push({name,args});return Promise.reject(new Error('模擬斷線'));}
+      return send(name,args,opts);
+    };
+    const run=c.engraveRuneDrafts();await tick();c.it.runes[1]='r01';c.finish(null);await tick();
+    assert.equal(c.commands.length,2);
+    if(!reject)c.finish('符文不足');
+    await run;
+    assert.equal(c.UI.equipMatMode.engraving,false);assert.deepEqual(Object.keys(c.UI.equipMatMode.draft),['2']);
+    assert.match(c.elements['detail-pane'].holes.innerHTML,/data-rune-erase="1"/);
+    assert.match(c.elements['detail-pane'].holes.innerHTML,/data-rune-undraft="2"/);
+    assert.equal(c.commands.length,2);
+    if(reject)assert.match(errors[0][1].message,/模擬斷線/);
+  }
+});
+
+test('刻印晚到的 ACK 不清除新模式或新裝備；換頁後不再送下一顆',async()=>{
+  const c=mount();c.uiGemsPanelSnapshot=()=>({runes:{r01:3,r10:3}});c.click({act:'toggle-rune'});
+  c.click({'rune-socket':'r01'});c.click({'rune-socket':'r10'});
+  const oldMode=c.UI.equipMatMode,run=c.engraveRuneDrafts();await tick();
+  c.it={...c.it,id:'other',runes:[null,null,null,null]};c.UI.sel.id='other';c.click({act:'toggle-rune'});
+  const newMode=c.UI.equipMatMode,html=c.elements['detail-pane'].holes.innerHTML;
+  c.finish(null);await run;
+  assert.equal(oldMode.engraving,false);assert.equal(c.UI.equipMatMode,newMode);
+  assert.equal(c.elements['detail-pane'].holes.innerHTML,html);assert.equal(c.commands.length,1);
+});
+
+test('等待面板逾時停止後續刻印、保留草稿並回報；晚到快照仍能正常更新',async()=>{
+  const c=mount();c.uiGemsPanelSnapshot=()=>({runes:{r01:3,r10:3}});c.click({act:'toggle-rune'});
+  c.click({'rune-socket':'r01'});c.click({'rune-socket':'r10'});
+  const errors=[];c.reportUiCommandFailure=(...args)=>errors.push(args);
+  const wait=c.waitUiCommandIdle;c.waitUiCommandIdle=key=>wait(key,0);
+  c.sendUiCommand=(name,args)=>{c.commands.push({name,args});c.pending.add(c.itemPendingKey(c.it.id));return Promise.resolve(null);};
+  await c.engraveRuneDrafts();
+  assert.equal(c.commands.length,1);assert.equal(c.UI.equipMatMode.engraving,false);
+  assert.deepEqual(Object.keys(c.UI.equipMatMode.draft),['1','2']);assert.match(errors[0][1].message,/逾時/);
+  assert.match(c.elements['detail-pane'].holes.innerHTML,/data-rune-undraft="1"/);
+  c.it.runes[1]='r01';c.pending.clear();c.renderDetail();
+  assert.match(c.elements['detail-pane'].holes.innerHTML,/data-rune-erase="1"/);
+  assert.deepEqual(Object.keys(c.UI.equipMatMode.draft),['2']);
+});
 test('已刻印的孔不能暫放；換件裝備或按強化退出，暫放就丟掉；沒有符文孔時說明原因；寶石⇄符文互切整頁重建',()=>{
   const c=mount(),stock={gems:{ruby:{5:1}},fusedGems:[],runes:{r01:2}};c.uiGemsPanelSnapshot=()=>stock;const p=c.elements['detail-pane'];
   c.click({act:'toggle-rune'});c.click({'socket-pick':'0'});c.click({'rune-socket':'r01'});assert.deepEqual(Object.keys(c.UI.equipMatMode.draft),[],'孔 1 已刻印，不能暫放');
