@@ -39,15 +39,21 @@ var BattleElite = (function () {
     }
     return out;
   }
-  /* BOSS 血條下方的技能標籤：「熔火　瘟疫　火鏈」 */
-  function skillLabels(data) {
+  /* BOSS 血條下方的技能標籤：[{ text: '熔火', color: 0xf08040 }, …]。顏色用技能的屬性（同玩家技能頁的屬性色）；
+     無屬性的技能（護盾、再生…）用技能自己的光環色。 */
+  var ELEM_TAG_COLOR = {
+    phys: '#d6cfbf', fire: '#f08040', earth: '#c9a060', lightning: '#ecd050',
+    ice: '#6ec8ec', wind: '#78dca6', poison: '#8fd46b', light: '#f5df8a', dark: '#b48ae8'
+  };
+  function skillTags(data) {
     var ids = affixList(data);
     var out = [];
     for (var i = 0; i < ids.length; i++) {
       var def = (typeof ELITE_AFFIXES !== 'undefined') ? ELITE_AFFIXES[ids[i]] : null;
-      out.push(def ? def.name : ids[i]);
+      var css = def ? (ELEM_TAG_COLOR[def.elem] || def.color) : '#ffe9a8';
+      out.push({ text: def ? def.name : ids[i], color: css });
     }
-    return out.join('　');
+    return out;
   }
   function stateKey(data) {
     var fx = (data && Array.isArray(data._fx)) ? data._fx : [];
@@ -189,7 +195,7 @@ var BattleElite = (function () {
     return { update: update, destroy: destroy, _groupColor: groupColor };
   }
 
-  return { create: create, groupColor: groupColor, STATE_ICON: STATE_ICON, skillLabels: skillLabels };
+  return { create: create, groupColor: groupColor, STATE_ICON: STATE_ICON, skillTags: skillTags };
 })();
 
 if (typeof module !== 'undefined' && module.exports) module.exports = BattleElite;
