@@ -331,9 +331,13 @@ function spawnFieldMonster(append) {
     }
     var enemies = [];
     for (var i = 0; i < count; i++) {
-        enemies.push(makeFieldEnemy(pickZoneMonsterType(zn), base, zn, s, {
+        var mt0 = pickZoneMonsterType(zn);
+        var e0 = makeFieldEnemy(mt0, base, zn, s, {
             elite: elite, boss: boss, enterCd: FIELD_ENEMY_ENTER_DELAY + i * FIELD_ENEMY_ENTER_STAGGER
-        }));
+        });
+        /* 野外 BOSS：NPC 表的 boss 列（專屬技能＋隨機技能）、體型 3.4 倍、會跑位 */
+        if (boss) { e0._gid = ++FIELD_ELITE_GROUP_SEQ; equipEliteEnemy(e0, mt0, 'boss', count); }
+        enemies.push(e0);
     }
     return placeFieldWave(enemies, standing, append);
 }
@@ -357,9 +361,33 @@ function placeFieldWave(enemies, standing, append) {
 }
 
 var FIELD_ELITE_GROUP_SEQ = 0;
+/* 高級敵人的數值：相對「同階段普通怪」的倍率。
+   菁英＝FIELD_ELITE；高級菁英＝ELITE_GROUP.adv*（參數表「高級菁英倍率」）。
+   makeFieldEnemy 吃的是「相對 base 的額外倍率」，而 eliteBase 已經含菁英倍率，所以這裡換算成比例。 */
+function eliteAdvMults() {
+    var f = (typeof FIELD_ELITE !== 'undefined' && FIELD_ELITE) ? FIELD_ELITE : { hpMult: 4, atkMult: 2, rewardMult: 2 };
+    var g = ELITE_GROUP;
+    return {
+        hp: (Number(g.advHp) > 0 ? Number(g.advHp) : f.hpMult) / (f.hpMult || 1),
+        atk: (Number(g.advAtk) > 0 ? Number(g.advAtk) : f.atkMult) / (f.atkMult || 1),
+        reward: (Number(g.advReward) > 0 ? Number(g.advReward) : f.rewardMult) / (f.rewardMult || 1)
+    };
+}
+/* 替一隻已建好的敵人配技能與體型（技能由 NPC 表決定 → js/elite.js eliteRollSkills）。
+   tier：elite／elite_adv／boss；groupSize＝同群幾隻（單獨一隻抽不到火鏈、復仇這類要同伴的技能）。 */
+function equipEliteEnemy(e, mt, tier, groupSize, extra) {
+    if (typeof eliteEquip !== 'function') return e;
+    var range = Number(e.atkRange) > 0 ? Number(e.atkRange) : (typeof bfEnemyAttackRange === 'function' ? bfEnemyAttackRange(e) : 0);
+    var ids = (extra && extra.ids) ? extra.ids.slice() : eliteRollSkills(mt, tier, {
+        stage: G.stage.current, group: groupSize, tower: false, atkRange: range
+    });
+    eliteEquip(e, ids, { tier: tier });
+    return e;
+}
 /* 菁英波：依 planEliteWave 的計畫生成若干「群」。
    每群 size 隻；全員菁英，或前 leaders 隻是菁英、其餘是小兵（普通怪，數值乘 ELITE_GROUP.minion*）。
-   同一群共用一組詞條（讀起來是「這一群會放火鏈」），小兵沒有詞條。
+   每一隻菁英各自擲骰要不要升級成高級菁英（ELITE_GROUP.advChance：[普通關%, 菁英關%]），
+   各自依 NPC 表配技能（菁英 2 個隨機、高級菁英 3 個隨機）；小兵沒有技能。
    回傳站上場的敵人陣列。 */
 function spawnEliteWave(append, eliteStage) {
     var s = G.stage.current;
@@ -376,42 +404,63 @@ function spawnEliteWave(append, eliteStage) {
         if (room < 1) return [];
     }
     var leadersCfg = Math.max(1, Math.floor(Number(ELITE_GROUP.leaders) || 1));
+    var advPct = Array.isArray(ELITE_GROUP.advChance) ? Number(ELITE_GROUP.advChance[eliteStage ? 1 : 0]) || 0 : 0;
+    var adv = eliteAdvMults();
     var enemies = [];
     var summary = [];
     for (var gi = 0; gi < plan.length; gi++) {
         var g = plan[gi];
         var gid = ++FIELD_ELITE_GROUP_SEQ;
         var leaders = g.pure ? g.size : Math.min(g.size, leadersCfg);
-        var affixes = (typeof eliteRollAffixes === 'function') ? eliteRollAffixes(s, rollEliteSkillCount(s)) : [];
         var enterCd = FIELD_ENEMY_ENTER_DELAY + gi * FIELD_ENEMY_ENTER_STAGGER * 2;
-        var shown = [];   // 這一群實際帶的詞條（含 NPC 表指定的固定技能），給戰鬥日誌用
+        var shown = [];   // 這一群實際帶的技能，給戰鬥日誌用
+        var advCount = 0;
         for (var k = 0; k < g.size; k++) {
             var isElite = k < leaders;
+            var isAdv = isElite && chance(advPct);
             var mt = pickZoneMonsterType(zn);
             var e = makeFieldEnemy(mt, isElite ? eliteBase : normalBase, zn, s, {
                 elite: isElite, enterCd: enterCd + k * 0.03,
-                hpMult: isElite ? 1 : ELITE_GROUP.minionHp, atkMult: isElite ? 1 : ELITE_GROUP.minionAtk,
-                rewardMult: isElite ? 1 : ELITE_GROUP.minionReward
+                hpMult: isElite ? (isAdv ? adv.hp : 1) : ELITE_GROUP.minionHp,
+                atkMult: isElite ? (isAdv ? adv.atk : 1) : ELITE_GROUP.minionAtk,
+                rewardMult: isElite ? (isAdv ? adv.reward : 1) : ELITE_GROUP.minionReward
             });
             e._gid = gid;
             e._gRole = isElite ? (k === 0 ? 'leader' : 'elite') : 'minion';
-            /* NPC 表替這種菁英指定了固定技能就用固定的；沒指定才用整群共用的隨機詞條。 */
-            if (isElite && typeof eliteEquip === 'function') eliteEquip(e, (mt.eliteSkills && mt.eliteSkills.length) ? mt.eliteSkills : affixes);
-            (e.affixes || []).forEach(function (id) { if (shown.indexOf(id) < 0) shown.push(id); });
+            if (isElite) {
+                equipEliteEnemy(e, mt, isAdv ? 'elite_adv' : 'elite', g.size);
+                if (isAdv) advCount++;
+                (e.affixes || []).forEach(function (id) { if (shown.indexOf(id) < 0) shown.push(id); });
+            }
             enemies.push(e);
         }
-        summary.push({ affixes: shown, size: g.size, pure: g.pure });
+        summary.push({ affixes: shown, size: g.size, pure: g.pure, adv: advCount });
     }
     if (enemies.length > room) enemies.length = Math.max(0, Math.floor(room));   // 放不下就從最後一群的尾端（小兵）砍起
     if (!enemies.length) return [];
     var placed = placeFieldWave(enemies, standing, append);
     if (placed.length && typeof blog === 'function' && typeof eliteAffixLabel === 'function') {
         summary.forEach(function (sm) {
-            var names = (sm.affixes || []).map(eliteAffixLabel).join('、') || '（無詞條）';
-            blog('👿 菁英群出現：' + sm.size + ' 隻' + (sm.pure ? '（全員菁英）' : '（菁英帶小兵）') + '｜' + names, 'warn', 'combat');
+            var names = (sm.affixes || []).map(eliteAffixLabel).join('、') || '（無技能）';
+            blog('👿 菁英群出現：' + sm.size + ' 隻' + (sm.pure ? '（全員菁英）' : '（菁英帶小兵）') + (sm.adv ? '，含 ' + sm.adv + ' 隻高級菁英' : '') + '｜' + names, 'warn', 'combat');
         });
     }
     return placed;
+}
+/* 召喚用的怪：和召喚者同屬性（火屬性菁英只會召出火屬性普通敵人）；這張地圖沒有同屬性的才退回隨便一種。 */
+function pickSummonMonsterType(zn, owner) {
+    var attr = owner && owner.attr;
+    if (attr) {
+        var enemyTable = zn.enemyTable || [];
+        var pairs = enemyTable.map(function (entry) {
+            var t = NPC_CONFIG_TABLE && NPC_CONFIG_TABLE[entry.npcId];
+            return [t, Number(entry.weight) || 0];
+        }).filter(function (pair) { return pair[0] && pair[1] > 0 && pair[0].attr === attr; });
+        if (pairs.length) return wpick(pairs);
+        var same = (zn.pool || []).filter(function (t) { return t && t.attr === attr; });
+        if (same.length) return pick(same);
+    }
+    return pickZoneMonsterType(zn);
 }
 /* 召喚師：在 owner 身邊生出 n 隻小兵（同一群、不計過關配額、不掉寶、經驗極少）。 */
 function spawnEliteSummons(owner, n) {
@@ -421,13 +470,14 @@ function spawnEliteSummons(owner, n) {
     var home = owner.pos || bfPlayerPos();
     var made = [];
     for (var i = 0; i < n; i++) {
-        var e = makeFieldEnemy(pickZoneMonsterType(zn), base, zn, s, {
+        var e = makeFieldEnemy(pickSummonMonsterType(zn, owner), base, zn, s, {
             hpMult: ELITE_GROUP.minionHp, atkMult: ELITE_GROUP.minionAtk, rewardMult: 0.15, enterCd: 0.5
         });
         var ang = Math.random() * Math.PI * 2;
         e.pos = { x: home.x + Math.cos(ang) * 70, y: home.y + Math.sin(ang) * 70 };
         e._gid = owner._gid;
         e._gRole = 'summon';
+        e._summoner = owner;   // 召喚者死亡時，這些怪的最大生命會縮水（js/elite.js eliteOnAllyDeath）
         e._stage = -1;      // 召喚物不計入過關配額
         e._noDrop = true;
         made.push(e);
@@ -527,7 +577,8 @@ function gmArenaSpawn(count, kind, hpMult) {
 /* GM 演武場：菁英群。groups 群、每群 size 隻（全員菁英）、詞條指定或隨機。
    用來看某個詞條的施放與特效：elite 1 meteor；elite 2 all 3 1000（兩群、每群三隻、隨機詞條、千倍血）。
    敵人生成在我方前方不遠處，立刻參戰（不走進場動畫），數量不受自然同時上限約束。 */
-function gmArenaSpawnElite(groups, affixIds, size, hpMult) {
+function gmArenaSpawnElite(groups, affixIds, size, hpMult, tier) {
+    tier = (tier === 'elite_adv' || tier === 'boss') ? tier : 'elite';
     groups = Math.max(1, Math.floor(Number(groups) || 1));
     size = Math.max(1, Math.floor(Number(size) || 2));
     var mult = Number(hpMult) > 0 ? Number(hpMult) : 1;
@@ -538,16 +589,16 @@ function gmArenaSpawnElite(groups, affixIds, size, hpMult) {
     var enemies = [];
     for (var gi = 0; gi < groups; gi++) {
         var gid = ++FIELD_ELITE_GROUP_SEQ;
-        var ids = (affixIds && affixIds.length) ? affixIds.slice() : eliteRollAffixes(s, rollEliteSkillCount(s));
         var cx = home.x + 300 + Math.cos(gi * 2.1) * 120, cy = home.y + Math.sin(gi * 2.1) * 220;
         for (var k = 0; k < size; k++) {
-            var e = makeFieldEnemy(pickZoneMonsterType(zn), base, zn, s, { elite: true, enterCd: 0.2 });
+            var mt = pickZoneMonsterType(zn);
+            var e = makeFieldEnemy(mt, base, zn, s, { elite: tier !== 'boss', boss: tier === 'boss', enterCd: 0.2 });
             e.maxHp *= mult; e.hp = e.maxHp;
             e._gid = gid; e._gRole = k === 0 ? 'leader' : 'elite';
             e._stage = -1;
             var ang = Math.PI * 2 * k / size;
             e.pos = { x: cx + (k ? Math.cos(ang) * 58 : 0), y: cy + (k ? Math.sin(ang) * 58 : 0) };
-            eliteEquip(e, ids);
+            equipEliteEnemy(e, mt, tier, size, (affixIds && affixIds.length) ? { ids: affixIds } : null);
             enemies.push(e);
         }
     }

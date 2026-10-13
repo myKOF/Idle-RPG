@@ -24,14 +24,15 @@ function tempCsv(transform) {
   return file;
 }
 
-test('ELITE-PARAMS-1 參數表有「4-菁英群組」全部 19 列，且與 data.js 一致（apply_params 試跑不報變更）', () => {
+test('ELITE-PARAMS-1 參數表有「4-菁英群組」全部 23 列（含高級敵人 4 列），且與 data.js 一致（apply_params 試跑不報變更）', () => {
   const text = fs.readFileSync(CSV, 'utf8');
   const names = [];
   ['荒漠', '冰原', '沼澤', '亡靈山脈', '其他地圖'].forEach((z) => {
     names.push('普通關菁英機率(' + z + ')', '群組成員數權重(' + z + ')', '純菁英群機率(' + z + ')');
   });
   names.push('普通關菁英群數量權重', '菁英技能數量權重', '混合群與小兵', '菁英技能全域設定');
-  assert.equal(names.length, 19);
+  names.push('高級菁英機率', '高級菁英倍率', '敵人體型倍率', '跑位設定');
+  assert.equal(names.length, 23);
   names.forEach((n) => assert.ok(text.indexOf(',4-菁英群組,' + n + ',') >= 0, '參數表缺列：' + n));
   const r = runApply();
   assert.equal(r.code, 0, r.out.slice(-400));

@@ -306,10 +306,12 @@ var FIELD_ELITE = { hpMult: 4, atkMult: 2, rewardMult: 2, dodgeAdd: 1.5, aspd: 1
      sizeWeights[地圖]   [最低關, 最高關, 群內隻數, 權重]
      pureChance[地圖]    [最低關, 最高關, 全員菁英的機率%]（其餘為「菁英帶小兵」）
      normalGroupCount    [群數, 權重]（普通關遇到菁英時一次出幾群）
-     skillCountWeights   [最低關, 最高關, 1個詞條權重, 2個詞條權重, 3個詞條權重]
    leaders＝混合群的帶隊菁英數；minionHp／minionAtk／minionReward＝小兵相對普通怪的倍率。
    skillDmgPct／cdPct＝菁英技能的傷害與冷卻倍率（%）；firstCastMax＝進場後第一次施放最久等幾秒；
-   maxZones＝同時存在的場域上限；summonCap＝每隻菁英一生最多召喚幾隻；linkBeam＝0 時不畫鏈結線。 */
+   maxZones＝同時存在的場域上限；summonCap＝每隻怪物一生最多召喚幾隻；linkBeam＝0 時不畫鏈結線。
+   高級敵人（2026-10-13）：advChance＝[普通關%, 菁英關%]，每隻菁英升級成高級菁英的機率；advHp／advAtk／advReward＝高級菁英相對普通怪的生命／攻擊／金幣經驗倍率；
+   sizeElite／sizeAdv／sizeBoss／sizeTower[下限, 上限]＝體型倍率（封魔塔 BOSS 依順序從下限長到上限）；repoMin／repoMax＝跑位間隔（秒）。
+   每種敵人帶哪些技能不在這裡：NPC 表（專屬技能＋隨機技能數量）與 Skills2 表（類別＝enemy）。 */
 var ELITE_GROUP = {
   normalChance: {
     desert: [[1, 10, 1], [11, 50, 3], [51, 100, 5], [101, 9999, 7]],
@@ -2109,7 +2111,7 @@ var BOSS_LIST = [
   { name: '冰霜女皇', emoji: '❄️', elem: 'ice', attr: 'ice', img: 'boss_ice.png', id: 'tower_boss_2', skills: { ex: ['e_blizzard', 'e_frostnova'], rnd: [4, 6] } },
   { name: '雷霆巨獸', emoji: '⚡', elem: 'lightning', attr: 'lightning', img: 'boss_thunder.png', id: 'tower_boss_3', skills: { ex: ['e_thunderorb', 'e_chainlightning'], rnd: [4, 6] } },
   { name: '鋼鐵魔像', emoji: '🤖', elem: null, attr: 'lightning', img: 'boss_iron.png', id: 'tower_boss_4', skills: { ex: ['e_charge', 'e_shockwave'], rnd: [4, 6] } },
-  { name: '劇毒之母', emoji: '🕷️', elem: 'poison', attr: 'poison', img: 'boss_poison.png', id: 'tower_boss_5', skills: { ex: ['e_poisonspit', 'e_splitter'], rnd: [4, 6] } },
+  { name: '劇毒之母', emoji: '🕷️', elem: 'poison', attr: 'poison', img: 'boss_poison.png', id: 'tower_boss_5', skills: { ex: ['e_poisonspit', 'e_vampiric'], rnd: [4, 6] } },
   { name: '深淵領主', emoji: '😈', elem: 'dark', attr: 'dark', img: 'boss_abyss.png', id: 'tower_boss_6', skills: { ex: ['e_darkzone', 'e_darkorbs'], rnd: [4, 6] } },
   { name: '亡靈霜龍', emoji: '🐲', elem: 'ice', attr: 'ice', img: 'boss_dragon.png', id: 'tower_boss_7', skills: { ex: ['e_iceshards', 'e_waterprison'], rnd: [4, 6] } },
   { name: '聖焰審判官', emoji: '😇', elem: 'light', attr: 'light', img: 'boss_light.png', id: 'tower_boss_8', skills: { ex: ['e_fireball', 'e_heal'], rnd: [4, 6] } },

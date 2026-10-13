@@ -1500,7 +1500,7 @@ SCHEMAS.Skills2 = {
     const header = this.header;
     Object.keys(enemyDefs).forEach(gid => {
       const d = enemyDefs[gid];
-      const byName = { '群組ID': gid, '類別': ENEMY_CLASS, '群組名稱': d.name, '群組圖標': d.emoji, '傷害類型': d.dmgType || '', '傷害屬性': d.elem || '',
+      const byName = { '群組ID': gid, '類別': ENEMY_CLASS, '群組名稱': d.name, '階段名稱': d.name, '群組圖標': d.emoji, '傷害類型': d.dmgType || '', '傷害屬性': d.elem || '',
         '冷卻時間': enemyCdCell(d.cd), '階數': '1', '效果參數(JSON)': JSON.stringify(d.fx || {}), '效果說明模板': d.desc || '' };
       SKILL_VFX_COLUMNS.forEach(c => { byName[c[0]] = (d.vfx && d.vfx[c[1]]) || ''; });
       skills2Vfx.columns.forEach(c => { byName[c[0]] = (d.triggerVfx && d.triggerVfx[c[1]]) || ''; });

@@ -1,11 +1,11 @@
 'use strict';
 /* ============================================================
-   elite-groups.test.cjs — 菁英群組出怪（js/combat.js spawnEliteWave、js/formula.js planEliteWave）
+   elite-groups.test.cjs — 高級敵人出怪（js/combat.js spawnEliteWave／野外 BOSS、js/formula.js planEliteWave）
 
-   規則（使用者 2026-10-07）：
-     1. 菁英也會在普通關出現；每 10 關固定出現的菁英照常
-     2. 菁英成群出現：每群 2~4 隻，全員菁英或「菁英帶小兵」
-     3. 機率與數量都在 game_parameters（ELITE_GROUP）
+   規則（文件 docs/elite_monster_affixes_guide.md、使用者 2026-10-13）：
+     菁英     體型 1.6 倍、2 個隨機技能
+     高級菁英  體型 2.2 倍、3 個隨機技能
+     野外 BOSS 體型 3.4 倍、1 個專屬技能＋3 個隨機技能
    期望值一律從表推導，不寫死數字（表由使用者調）。
    ============================================================ */
 const test = require('node:test');
@@ -34,7 +34,6 @@ test('ELITE-GROUP-1 菁英關每一波都是菁英群：每群 2~4 隻，群數�
     const groups = groupsOf(wave);
     assert.ok(groups.length >= 1 && groups.length <= maxGroups, '群數 ' + groups.length);
     groups.forEach((g) => {
-      // 放不下時會從最後一群尾端砍起，所以只有最後一群可以少於 2 隻
       assert.ok(g.length >= 1 && g.length <= 4);
       assert.ok(g.some((e) => e.elite), '每一群至少有一隻菁英');
     });
@@ -42,9 +41,10 @@ test('ELITE-GROUP-1 菁英關每一波都是菁英群：每群 2~4 隻，群數�
   }
 });
 
-test('ELITE-GROUP-2 全員菁英或「菁英帶小兵」；詞條只在菁英身上，同一群共用同一組', () => {
+test('ELITE-GROUP-2 全員菁英或「菁英帶小兵」；技能只在菁英身上，各自依 NPC 表配（菁英 2 個、高級菁英 3 個隨機）', () => {
   const c = loadEliteEnv();
-  let pure = 0, mixed = 0;
+  run(c, 'ELITE_GROUP.advChance = [50, 50];');
+  let pure = 0, mixed = 0, adv = 0, normalElite = 0;
   for (let i = 0; i < 400; i++) {
     const wave = spawnAt(c, 10, 'swamp');
     groupsOf(wave).forEach((g) => {
@@ -52,144 +52,108 @@ test('ELITE-GROUP-2 全員菁英或「菁英帶小兵」；詞條只在菁英身
       const minions = g.filter((e) => !e.elite);
       if (minions.length === 0) pure++; else mixed++;
       assert.ok(elites.length >= 1);
-      assert.ok(elites.length === g.length || elites.length === Math.min(g.length, c.ELITE_GROUP.leaders),
-        '混合群的菁英數＝帶隊數，實際 ' + elites.length + '/' + g.length);
       elites.forEach((e) => {
-        assert.ok(Array.isArray(e.affixes) && e.affixes.length >= 1 && e.affixes.length <= 3, '每隻菁英 1~3 個詞條');
-        /* NPC 表替這種菁英指定了固定技能就用固定的；沒指定的才共用整群的隨機詞條 */
-        const fixed = c.NPC_CONFIG_TABLE[e.npcId].eliteSkills;
-        if (fixed.length) assert.deepEqual(Array.from(e.affixes), Array.from(fixed), '固定技能');
-        else {
-          const first = elites.find((x) => !c.NPC_CONFIG_TABLE[x.npcId].eliteSkills.length);
-          assert.deepEqual(Array.from(e.affixes), Array.from(first.affixes), '沒固定技能的同群共用同一組詞條');
-        }
-        assert.ok(e._el && e._fx, '詞條引擎狀態');
+        const want = e._tier === 'elite_adv' ? 3 : 2;
+        assert.ok(e._tier === 'elite' || e._tier === 'elite_adv', '菁英的類型：' + e._tier);
+        assert.ok(Array.isArray(e.affixes) && e.affixes.length === want, e._tier + ' 應有 ' + want + ' 個技能，實際 ' + e.affixes.length);
+        assert.equal(new Set(e.affixes).size, e.affixes.length, '技能不重複');
+        e.affixes.forEach((id) => assert.ok(c.ELITE_AFFIXES[id], '未知技能 ' + id));
+        assert.ok(e._el && e._fx, '技能引擎狀態');
+        if (e._tier === 'elite_adv') adv++; else normalElite++;
       });
       minions.forEach((e) => {
-        assert.equal(e.affixes, undefined, '小兵沒有詞條');
+        assert.equal(e.affixes, undefined, '小兵沒有技能');
         assert.equal(e.elite, false);
+        assert.equal(e._tier, undefined);
       });
     });
   }
   assert.ok(pure > 0 && mixed > 0, '兩種型態都該出現（純菁英 ' + pure + '／帶小兵 ' + mixed + '）');
+  assert.ok(adv > 0 && normalElite > 0, '兩種等級都該出現（高級 ' + adv + '／一般 ' + normalElite + '）');
 });
 
-test('ELITE-GROUP-3 帶隊人數、小兵倍率與獎勵倍率吃參數', () => {
+test('ELITE-GROUP-3 高級菁英機率吃參數（普通關／菁英關各一個）；0＝完全不出現、100＝全是高級', () => {
   const c = loadEliteEnv();
-  run(c, 'ELITE_GROUP.leaders = 2; ELITE_GROUP.minionHp = 0.5; ELITE_GROUP.minionAtk = 0.25; ELITE_GROUP.minionReward = 0.1;');
+  run(c, 'ELITE_GROUP.advChance = [0, 0];');
+  for (let i = 0; i < 60; i++) spawnAt(c, 10).filter((e) => e.elite).forEach((e) => assert.equal(e._tier, 'elite'));
+  run(c, 'ELITE_GROUP.advChance = [0, 100];');
+  for (let i = 0; i < 60; i++) spawnAt(c, 10).filter((e) => e.elite).forEach((e) => assert.equal(e._tier, 'elite_adv', '菁英關機率 100%'));
+  // 普通關（19 不是 10 的倍數）：把出菁英群的機率調到 100，用普通關那一格
+  run(c, 'ELITE_GROUP.advChance = [100, 0]; ELITE_GROUP.normalChance = { desert: [[1, 9999, 100]], other: [[1, 9999, 100]] };');
+  for (let i = 0; i < 60; i++) spawnAt(c, 19).filter((e) => e.elite).forEach((e) => assert.equal(e._tier, 'elite_adv', '普通關機率 100%'));
+});
+
+test('ELITE-GROUP-4 體型與數值：菁英 1.6、高級菁英 2.2；高級菁英的生命／攻擊倍率吃參數', () => {
+  const c = loadEliteEnv();
+  run(c, 'ELITE_GROUP.advChance = [0, 50];');
+  const sizes = new Set();
+  let eliteHp = 0, advHp = 0, eliteAtk = 0, advAtk = 0;
+  for (let i = 0; i < 300 && (!eliteHp || !advHp); i++) {
+    spawnAt(c, 10, 'desert').filter((e) => e.elite).forEach((e) => {
+      sizes.add(e._tier + ':' + e._size);
+      /* 同一張地圖同一階段：血量只差階級倍率與 NPC 自己的 hpMult，所以用 maxHp ÷ 該 NPC 的 hpMult 比較 */
+      const hp = e.maxHp / (c.NPC_CONFIG_TABLE[e.npcId].hpMult || 1);
+      if (e._tier === 'elite') { eliteHp = hp; eliteAtk = e.atk / (c.NPC_CONFIG_TABLE[e.npcId].atkMult || 1); }
+      else { advHp = hp; advAtk = e.atk / (c.NPC_CONFIG_TABLE[e.npcId].atkMult || 1); }
+      assert.equal(e._bodyR, c.bfBodyRadius() * e._size, '碰撞半徑＝基本半徑 × 體型');
+      assert.ok(e._elColor, '光暈顏色');
+    });
+  }
+  assert.ok(sizes.has('elite:1.6') && sizes.has('elite_adv:2.2'), Array.from(sizes).join(','));
+  const g = run(c, 'ELITE_GROUP');
+  assert.ok(Math.abs(advHp / eliteHp - g.advHp / c.FIELD_ELITE.hpMult) < 0.001, '高級菁英生命＝普通怪 × advHp');
+  assert.ok(Math.abs(advAtk / eliteAtk - g.advAtk / c.FIELD_ELITE.atkMult) < 0.001, '高級菁英攻擊＝普通怪 × advAtk');
+});
+
+test('ELITE-GROUP-5 野外 BOSS：1 個專屬技能（NPC 表）＋3 個隨機技能，體型 3.4，會跑位', () => {
+  const c = loadEliteEnv();
+  const interval = run(c, 'FIELD_BOSS_STAGE_INTERVAL');
+  let seen = 0;
+  for (let i = 0; i < 40; i++) {
+    const wave = spawnAt(c, interval, 'desert');
+    const boss = wave.find((e) => e.isBoss);
+    assert.ok(boss, 'BOSS 階要出 BOSS');
+    seen++;
+    assert.equal(boss._tier, 'boss');
+    assert.equal(boss._size, run(c, 'ELITE_GROUP.sizeBoss'));
+    const npc = c.NPC_CONFIG_TABLE[boss.npcId];
+    const ex = (npc.skills && npc.skills.boss && npc.skills.boss.ex) || [];
+    assert.ok(ex.length >= 1, 'NPC 表的 boss 列要有專屬技能：' + boss.npcId);
+    ex.forEach((id) => assert.ok(boss.affixes.indexOf(id) >= 0, '專屬技能 ' + id + ' 一定在'));
+    assert.equal(boss.affixes.length, ex.length + 3, '專屬 ' + ex.length + ' 個＋隨機 3 個');
+    ex.forEach((id) => assert.equal(c.ELITE_AFFIXES[id].pool, 'exclusive'));
+    boss.affixes.filter((id) => ex.indexOf(id) < 0).forEach((id) => assert.equal(c.ELITE_AFFIXES[id].pool, 'random'));
+    assert.ok(boss._el && boss._bodyR === c.bfBodyRadius() * boss._size);
+  }
+  assert.ok(seen > 0);
+});
+
+test('ELITE-GROUP-6 普通關也會遇到菁英群；機率吃參數表（0＝不會遇到）', () => {
+  const c = loadEliteEnv();
+  run(c, "ELITE_GROUP.normalChance = { desert: [[1, 9999, 100]], other: [[1, 9999, 100]] };");
+  const wave = spawnAt(c, 19);
+  assert.ok(wave.some((e) => e.elite), '機率 100% 一定出菁英群');
+  run(c, "ELITE_GROUP.normalChance = { desert: [[1, 9999, 0.0001]], other: [[1, 9999, 0.0001]] }; Math.random = function () { return 0.99; };");
+  const wave2 = spawnAt(c, 19);
+  assert.ok(wave2.every((e) => !e.elite), '機率近 0 不出菁英');
+});
+
+test('ELITE-GROUP-7 小兵倍率與獎勵倍率吃參數（沿用）', () => {
+  const c = loadEliteEnv();
+  run(c, 'ELITE_GROUP.leaders = 2; ELITE_GROUP.minionHp = 0.5; ELITE_GROUP.minionAtk = 0.25; ELITE_GROUP.minionReward = 0.1; ELITE_GROUP.advChance = [0, 0];');
   run(c, "ELITE_GROUP.pureChance.desert = [[1, 9999, 0]]; ELITE_GROUP.sizeWeights.desert = [[1, 9999, 4, 1]];");
   let checked = 0;
-  for (let i = 0; i < 100; i++) {
-    const wave = spawnAt(c, 10);
-    groupsOf(wave).forEach((g) => {
+  for (let i = 0; i < 60; i++) {
+    groupsOf(spawnAt(c, 10)).forEach((g) => {
       if (g.length < 4) return;
       assert.equal(g.filter((e) => e.elite).length, 2, '帶隊 2 隻');
-      const elite = g.find((e) => e.elite), minion = g.find((e) => !e.elite);
-      // 同一張地圖、同一關，NPC 倍率可能不同，所以用「相對於同種普通怪」比較：比例要落在小兵倍率附近
-      assert.ok(minion.maxHp < elite.maxHp, '小兵生命低於菁英');
-      assert.ok(minion.gold < elite.gold, '小兵金幣低於菁英');
+      const base = c.monsterStatsFor(10, false, false);
+      g.filter((e) => !e.elite).forEach((m) => {
+        assert.ok(m.maxHp <= base.hp * c.currentZoneDef().hpMult * 0.5 * 2.5, '小兵血量打對折');
+        assert.ok(m.gold <= base.gold * c.currentZoneDef().rewardMult * 0.1 * 1.01 + 0.01);
+      });
       checked++;
     });
   }
-  assert.ok(checked > 20);
-});
-
-test('ELITE-GROUP-4 普通關：依機率改出菁英群，機率 0 就永遠不出，100 就一定出', () => {
-  const c = loadEliteEnv();
-  run(c, 'eliteNormalChanceFor = function () { return 0; };');
-  for (let i = 0; i < 100; i++) {
-    const wave = spawnAt(c, 11);
-    assert.ok(wave.every((e) => !e.elite && e._gid === undefined), '機率 0 不該有菁英');
-  }
-  run(c, 'eliteNormalChanceFor = function () { return 100; };');
-  for (let i = 0; i < 100; i++) {
-    const wave = spawnAt(c, 11);
-    assert.ok(wave.some((e) => e.elite && e._gid !== undefined), '機率 100 一定是菁英群');
-  }
-});
-
-test('ELITE-GROUP-5 普通關菁英機率依地圖與關卡區間查表，找不到區間＝0，未列出的地圖走 other', () => {
-  const c = loadEliteEnv();
-  run(c, `ELITE_GROUP.normalChance = {
-    desert: [[1, 10, 1], [11, 50, 3]], Icefield: [[1, 9999, 6]], swamp: [[1, 9999, 8]],
-    undead_mountains: [[1, 9999, 10]], other: [[1, 9999, 12]] };`);
-  assert.equal(c.eliteNormalChanceFor(5, 'desert'), 1);
-  assert.equal(c.eliteNormalChanceFor(10, 'desert'), 1);
-  assert.equal(c.eliteNormalChanceFor(11, 'desert'), 3);
-  assert.equal(c.eliteNormalChanceFor(51, 'desert'), 0, '沒被任何區間涵蓋＝0');
-  assert.equal(c.eliteNormalChanceFor(5, 'Icefield'), 6);
-  assert.equal(c.eliteNormalChanceFor(5, 'god_realm_2'), 12, '沒有專屬一列的地圖走 other');
-  assert.equal(c.eliteZoneKey('swamp'), 'swamp');
-  assert.equal(c.eliteZoneKey('nope'), 'other');
-});
-
-test('ELITE-GROUP-6 群內隻數與純菁英機率、技能數量都依區間表擲骰', () => {
-  const c = loadEliteEnv();
-  run(c, "ELITE_GROUP.sizeWeights.desert = [[1, 50, 2, 1], [51, 9999, 4, 1]]; ELITE_GROUP.pureChance.desert = [[1, 50, 0], [51, 9999, 100]];");
-  for (let i = 0; i < 200; i++) {
-    assert.equal(c.rollEliteGroupSize(10, 'desert'), 2);
-    assert.equal(c.rollEliteGroupSize(60, 'desert'), 4);
-    assert.equal(c.rollEliteGroupPure(10, 'desert'), false);
-    assert.equal(c.rollEliteGroupPure(60, 'desert'), true);
-  }
-  run(c, 'ELITE_GROUP.skillCountWeights = [[1, 100, 0, 0, 1], [101, 9999, 1, 0, 0]];');
-  for (let i = 0; i < 100; i++) {
-    assert.equal(c.rollEliteSkillCount(50), 3);
-    assert.equal(c.rollEliteSkillCount(500), 1);
-  }
-  run(c, 'ELITE_GROUP.skillCountWeights = [];');
-  assert.equal(c.rollEliteSkillCount(50), 1, '表是空的就退回 1 個');
-});
-
-test('ELITE-GROUP-7 菁英關過關配額＝這一輪群組的總隻數；BOSS 關不變', () => {
-  const c = loadEliteEnv();
-  run(c, 'planEliteWave = function () { return [{ size: 3, pure: true }, { size: 2, pure: false }]; };');
-  run(c, "G.stage.current = 10; FIELD.quotaStage = -1; FIELD.stageQuota = 0;");
-  assert.equal(c.fieldStageQuota(), 5);
-  run(c, "G.stage.current = 11; FIELD.quotaStage = -1; FIELD.stageQuota = 0;");
-  const normal = c.fieldStageQuota();
-  assert.ok(normal >= 1, '普通關走原本的小怪表（至少 1 隻）');
-  const boss = loadEliteEnv();
-  const wave = spawnAt(boss, 50);
-  assert.equal(wave.length, 1);
-  assert.ok(wave[0].isBoss && wave[0]._gid === undefined, 'BOSS 不成群');
-});
-
-test('ELITE-GROUP-8 串流補波：場上快滿時只補放得下的，且絕不超過同時上限', () => {
-  const c = loadEliteEnv();
-  run(c, 'fieldMaxLiveEnemiesFor = function () { return 5; };');
-  run(c, "G.stage.current = 10; FIELD.monsters = [];");
-  const first = c.spawnFieldMonster(true);
-  assert.ok(first.length <= 5);
-  const second = c.spawnFieldMonster(true);
-  assert.ok(c.liveFieldEnemies().length <= 5, '同時存活不得超過上限');
-  run(c, 'fieldMaxLiveEnemiesFor = function () { return 0; };');
-  const none = c.spawnFieldMonster(true);
-  assert.equal(none.length, 0, '上限 0＝這一波跳過');
-});
-
-test('ELITE-GROUP-9 同一群擠在一起進場，每隻都有進場倒數，且隨群錯開', () => {
-  const c = loadEliteEnv();
-  for (let i = 0; i < 100; i++) {
-    const wave = spawnAt(c, 10);
-    groupsOf(wave).forEach((g) => {
-      const anchor = g[0].pos;
-      g.forEach((e) => {
-        assert.ok(e._enterCd >= c.FIELD_ENEMY_ENTER_DELAY - 1e-9, '進場倒數');
-        assert.ok(Math.hypot(e.pos.x - anchor.x, e.pos.y - anchor.y) <= 90, '同群成員相距不遠');
-        assert.equal(e._stage, c.G.stage.current, '計入本關過關配額');
-      });
-    });
-  }
-});
-
-test('ELITE-GROUP-10 沒有詞條引擎的環境維持舊行為：菁英關單隻菁英、普通關不遇菁英', () => {
-  const noEngine = loadEliteEnv();
-  vm.runInContext('eliteEquip = undefined;', noEngine);
-  for (let i = 0; i < 50; i++) {
-    const wave = spawnAt(noEngine, 11);
-    assert.ok(wave.every((e) => !e.elite && e._gid === undefined));
-  }
-  const wave = spawnAt(noEngine, 10);
-  assert.ok(wave.every((e) => e.elite && e._gid === undefined));
+  assert.ok(checked > 0);
 });

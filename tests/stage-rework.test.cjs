@@ -68,11 +68,12 @@ test('NPC 配置表與地圖權重表可選出亡靈山脈指定 NPC', () => {
 
 test('NPC CSV 集中所有地圖的基本資料，不重複存放公式倍率', () => {
   const lines = fs.readFileSync(path.join(root, 'config/CSV/NPC.csv'), 'utf8').replace(/^\uFEFF/, '').trim().split(/\r?\n/);
-  // 7 張圖 × 12 隻 × 3 種類型（normal／elite／boss，2026-10-08 起）＋標題列。
-  assert.equal(lines.length, 253);
+  // 7 張圖 × 12 隻 × 4 種類型（normal／elite／elite_adv／boss，2026-10-13 起）＋封魔塔 BOSS 10 列＋標題列。
+  assert.equal(lines.length, 347);
   assert.equal(lines[0].split(',').slice(0, 5).join(','), 'NPC識別碼,NPC名稱,所屬地圖識別碼,類型,屬性');
   assert.ok(lines.some((line) => line.startsWith('desert_1,史萊姆,desert,normal,')));
   assert.ok(lines.some((line) => line.startsWith('god_sanctuary_12,神聖執法官,god_sanctuary,boss,')));
+  assert.ok(lines.some((line) => line.startsWith('tower_boss_1,烈焰魔君,tower,tower_boss,')));
   assert.equal(Object.keys(load(['js/util.js', 'js/data.js']).NPC_CONFIG_TABLE).length, 84);
 });
 

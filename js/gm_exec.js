@@ -931,33 +931,39 @@
         '（血量 ×' + spawnHpx + '；自然出怪與過關結算已暫停，spawn off 恢復）' };
     }
     if (command === 'elite') {
-      // 菁英群演武場：elite list｜elite 群數 [詞條,詞條…|all] [每群隻數] [血量倍率]
+      // 高級敵人演武場：elite list｜elite 群數 [技能,技能…|all] [每群隻數] [血量倍率] [elite|adv|boss]
+      // 技能 id 是 Skills2 表敵人技能的群組ID（e_ 開頭，輸入時 e_ 可省略）；all＝依 NPC 表隨機配
       if (typeof ELITE_AFFIXES === 'undefined' || typeof gmArenaSpawnElite !== 'function') {
         return { ok: false, message: '菁英模組未載入（ELITE_AFFIXES／gmArenaSpawnElite）' };
       }
       if (String(args[0] || '').toLowerCase() === 'list') {
-        return { ok: true, message: '詞條（' + ELITE_AFFIX_ORDER.length + '）：' + ELITE_AFFIX_ORDER.map(function (id) {
-          return id + '＝' + ELITE_AFFIXES[id].name;
-        }).join('、') };
+        return { ok: true, message: '敵人技能（' + ELITE_AFFIX_ORDER.length + '，隨機池 ' + eliteSkillIds('random').length + '／專屬 ' + eliteSkillIds('exclusive').length + '）：' +
+          ELITE_AFFIX_ORDER.map(function (id) {
+            return id.replace(/^e_/, '') + '＝' + ELITE_AFFIXES[id].name + (ELITE_AFFIXES[id].pool === 'random' ? '（隨機池）' : '');
+          }).join('、') };
       }
       if (G.tower && G.tower.active) return { ok: false, message: '封魔塔戰鬥中不可使用演武場出怪' };
       var eliteGroups = args[0] === undefined ? 1 : gmNumber(args[0], 1, 8);
-      if (eliteGroups === null) return { ok: false, message: '格式：elite 群數(1~8) [詞條,詞條…|all] [每群隻數(1~6)] [血量倍率]｜elite list' };
+      if (eliteGroups === null) return { ok: false, message: '格式：elite 群數(1~8) [技能,技能…|all] [每群隻數(1~6)] [血量倍率] [elite|adv|boss]｜elite list' };
       var eliteIds = [];
       var eliteRaw = String(args[1] || 'all').trim();
       if (eliteRaw !== 'all') {
         var eliteWanted = eliteRaw.split(',');
         for (var ei = 0; ei < eliteWanted.length; ei++) {
-          if (!ELITE_AFFIXES[eliteWanted[ei]]) return { ok: false, message: '未知詞條：' + eliteWanted[ei] + '（elite list 看清單）' };
-          eliteIds.push(eliteWanted[ei]);
+          var eliteKey = ELITE_AFFIXES[eliteWanted[ei]] ? eliteWanted[ei] : 'e_' + eliteWanted[ei];
+          if (!ELITE_AFFIXES[eliteKey]) return { ok: false, message: '未知技能：' + eliteWanted[ei] + '（elite list 看清單）' };
+          eliteIds.push(eliteKey);
         }
       }
       var eliteSize = args[2] === undefined ? 2 : gmNumber(args[2], 1, 6);
       var eliteHpx = args[3] === undefined ? 1 : gmNumber(args[3], 0.01, 1e6);
       if (eliteSize === null || eliteHpx === null) return { ok: false, message: '每群隻數 1~6、血量倍率 0.01~1000000' };
-      var eliteSpawned = gmArenaSpawnElite(eliteGroups, eliteIds, eliteSize, eliteHpx);
-      return { ok: true, message: '演武場：生成 ' + eliteGroups + ' 群菁英共 ' + eliteSpawned + ' 隻（' +
-        (eliteIds.length ? eliteIds.map(eliteAffixLabel).join('、') : '隨機詞條') + '；自然出怪暫停，spawn off 恢復）' };
+      var eliteTierRaw = String(args[4] || 'elite').toLowerCase();
+      var eliteTier = { elite: 'elite', adv: 'elite_adv', elite_adv: 'elite_adv', boss: 'boss' }[eliteTierRaw];
+      if (!eliteTier) return { ok: false, message: '類型只能是 elite、adv 或 boss' };
+      var eliteSpawned = gmArenaSpawnElite(eliteGroups, eliteIds, eliteSize, eliteHpx, eliteTier);
+      return { ok: true, message: '演武場：生成 ' + eliteGroups + ' 群' + (eliteTier === 'boss' ? 'BOSS' : (eliteTier === 'elite_adv' ? '高級菁英' : '菁英')) + '共 ' + eliteSpawned + ' 隻（' +
+        (eliteIds.length ? eliteIds.map(eliteAffixLabel).join('、') : '依 NPC 表隨機配技能') + '；自然出怪暫停，spawn off 恢復）' };
     }
     if (command === 'sglv') {
       // 新版技能群組等級直設（測試用，不扣金幣；正規化沿用 sgEffectiveLevels 的循序解鎖規則）

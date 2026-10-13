@@ -32,7 +32,7 @@ class Text extends Container {
 function env() {
   const ctx = { console, PIXI: { Container, Graphics, Text }, module: { exports: {} } };
   vm.createContext(ctx);
-  ['js/data.js', 'js/elite_data.js'].forEach((f) => vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f }));
+  ['js/data.js', 'js/skills2.js', 'js/elite_data.js'].forEach((f) => vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f }));
   vm.runInContext(fs.readFileSync(path.join(root, 'js/battle-elite.js'), 'utf8'), ctx, { filename: 'js/battle-elite.js' });
   return ctx;
 }
@@ -44,12 +44,12 @@ test('BATTLE-ELITE-1 菁英：群組環、詞條圖示列；小兵：只有群�
   const c = env();
   const layer = new Container();
   const be = vm.runInContext('BattleElite', c).create({ PIXI: c.PIXI, layer });
-  const elite = ent('a', { elite: true, hp: 10, _gid: 3, affixes: ['meteor', 'lifelink'], _elColor: '#ff8a3d', _fx: [] });
+  const elite = ent('a', { elite: true, hp: 10, _gid: 3, affixes: ['e_meteor', 'e_lifelink'], _elColor: '#ff8a3d', _fx: [] });
   const minion = ent('b', { elite: false, hp: 10, _gid: 3 });
   const plain = ent('c', { elite: false, hp: 10 });
   be.update({ a: elite, b: minion, c: plain }, 0.016, 1000);
   assert.ok(elite.eliteDeco && elite.eliteDeco.badge, '菁英有詞條列');
-  assert.equal(elite.eliteDeco.badge.text, c.ELITE_AFFIXES.meteor.emoji + c.ELITE_AFFIXES.lifelink.emoji);
+  assert.equal(elite.eliteDeco.badge.text, c.ELITE_AFFIXES.e_meteor.emoji + c.ELITE_AFFIXES.e_lifelink.emoji);
   assert.ok(elite.eliteDeco.ring.ops.length > 0, '畫了群組環');
   assert.ok(minion.eliteDeco && !minion.eliteDeco.badge, '小兵沒有詞條列');
   assert.ok(minion.eliteDeco.ring.ops.length > 0, '小兵有群組環（看得出誰跟誰一夥）');
@@ -62,7 +62,7 @@ test('BATTLE-ELITE-1 菁英：群組環、詞條圖示列；小兵：只有群�
 test('BATTLE-ELITE-2 狀態旗標：無敵／護盾／反射／狂暴各有圖示與光環，消失時光環關掉', () => {
   const c = env();
   const be = vm.runInContext('BattleElite', c).create({ PIXI: c.PIXI, layer: new Container() });
-  const e = ent('a', { elite: true, hp: 10, _gid: 1, affixes: ['shield'], _fx: ['invuln', 'shield'] });
+  const e = ent('a', { elite: true, hp: 10, _gid: 1, affixes: ['e_shield'], _fx: ['invuln', 'shield'] });
   be.update({ a: e }, 0.016, 1000);
   assert.equal(e.eliteDeco.state.text, '🔰🛡️');
   assert.equal(e.eliteDeco.stateRing.visible, true);
@@ -78,7 +78,7 @@ test('BATTLE-ELITE-3 生命鏈結：同群帶鏈結的活成員兩兩連線；�
   const layer = new Container();
   const be = BE.create({ PIXI: c.PIXI, layer });
   const link = layer.children[0];
-  const mk = (id, gid, hp) => ent(id, { elite: true, hp, _gid: gid, affixes: ['lifelink'] });
+  const mk = (id, gid, hp) => ent(id, { elite: true, hp, _gid: gid, affixes: ['e_lifelink'] });
   const set = { a: mk('a', 1, 5), b: mk('b', 1, 5), c: mk('c', 1, 5), d: mk('d', 2, 5) };
   be.update(set, 0.016, 1000);
   assert.equal(link.ops.filter((o) => o === 'moveTo').length, 3 * 2, '3 隻兩兩連線＝3 條，每條畫兩層');
@@ -103,14 +103,30 @@ test('BATTLE-ELITE-4 資料缺欄位不炸：沒有 _fx、沒有 affixes、死�
   assert.ok(weird.eliteDeco.ring.alpha < 0.5, '死亡中環變淡');
 });
 
-test('BATTLE-ELITE-5 巨像在建立時放大本體一次，不會每幀累乘', () => {
+test('BATTLE-ELITE-5 復仇：體型加成 _grow 讓本體逐步放大到目標，不會每幀累乘；沒有 _grow 就不動', () => {
   const c = env();
   const be = vm.runInContext('BattleElite', c).create({ PIXI: c.PIXI, layer: new Container() });
-  const e = ent('a', { elite: true, hp: 10, _gid: 1, affixes: ['giant'] });
+  const e = ent('a', { elite: true, hp: 10, _gid: 1, affixes: ['e_avenger'] });
+  e.body.scale.set = function (v) { this.x = v; this.y = v; };
   be.update({ a: e }, 0.016, 1);
-  const k = c.ELITE_AFFIXES.giant.scale;
-  assert.equal(e.body.scale.x, k);
-  be.update({ a: e }, 0.016, 2);
-  be.update({ a: e }, 0.016, 3);
-  assert.equal(e.body.scale.x, k);
+  assert.equal(e.body.scale.x, 1, '沒有 _grow：維持原大小');
+  e.data._grow = 1.44;
+  for (let i = 0; i < 200; i++) be.update({ a: e }, 0.05, 100 + i);
+  assert.ok(Math.abs(e.body.scale.x - 1.44) < 0.01, '收斂到 1.44 倍：' + e.body.scale.x);
+  for (let i = 0; i < 50; i++) be.update({ a: e }, 0.05, 400 + i);
+  assert.ok(Math.abs(e.body.scale.x - 1.44) < 0.01, '之後不再累乘');
+});
+
+test('BATTLE-ELITE-6 高級敵人（有 _tier）：環用光暈色；體型由 renderer 依 _size 處理，這裡不再縮放本體', () => {
+  const c = env();
+  const be = vm.runInContext('BattleElite', c).create({ PIXI: c.PIXI, layer: new Container() });
+  const e = ent('t', { elite: true, hp: 10, _gid: 1, _tier: 'elite_adv', _size: 2.2, _elColor: '#ffd23a', affixes: ['e_shield', 'e_meteor'], _fx: [] });
+  e.visScale = 2.2;
+  be.update({ t: e }, 0.016, 1);
+  assert.ok(e.eliteDeco.ring.ops.some((o) => o === 'stroke:' + parseInt('0xffd23a')), '最外圈用光暈色');
+  assert.equal(e.body.scale.x, 1, '體型不在這裡處理');
+  const boss = ent('b', { elite: false, isBoss: true, hp: 10, _gid: 2, _tier: 'boss', _size: 3.4, _elColor: '#ff5a2a', affixes: ['e_meteor'], _fx: [] });
+  boss.visScale = 3.4;
+  be.update({ b: boss }, 0.016, 2);
+  assert.ok(boss.eliteDeco && boss.eliteDeco.badge, 'BOSS 也有技能圖示列');
 });

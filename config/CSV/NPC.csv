@@ -339,7 +339,7 @@ tower_boss_1,烈焰魔君,tower,tower_boss,fire,🔥,,,,1,,e_meteor;e_moltenblas
 tower_boss_2,冰霜女皇,tower,tower_boss,ice,❄️,,,,1,,e_blizzard;e_frostnova,4,6,封魔塔BOSS｜專屬：暴風雪（召來一片暴風雪籠罩你的位置，區域內持續受到寒冰傷害並被減速。）；冰霜新星（以自身為中心展開冰藍魔法陣，倒數結束後釋放寒冰新星，傷害並使你減速。）｜隨機：從隨機技能池抽 4~6 個
 tower_boss_3,雷霆巨獸,tower,tower_boss,lightning,⚡,,,,1,,e_thunderorb;e_chainlightning,4,6,封魔塔BOSS｜專屬：雷光球（釋放一顆追著你跑的雷光球，靠近就會被電擊並麻痺。）；連鎖閃電（一道電弧瞬間連到你身上，傷害並使你麻痺片刻。）｜隨機：從隨機技能池抽 4~6 個
 tower_boss_4,鋼鐵魔像,tower,tower_boss,lightning,🤖,,,,0,,e_charge;e_shockwave,4,6,封魔塔BOSS｜專屬：野蠻衝鋒（先在你身上標出紅圈，隨後高速衝撞過來，撞上會被擊退並短暫暈眩。）；震地衝擊（以自身為中心炸出環形衝擊波，被波及者會被推開一大段距離。）｜隨機：從隨機技能池抽 4~6 個
-tower_boss_5,劇毒之母,tower,tower_boss,poison,🕷️,,,,1,,e_poisonspit;e_splitter,4,6,封魔塔BOSS｜專屬：劇毒吐息（吐出數團毒液，命中的目標會中毒。）；分裂（死亡時分裂成數隻較弱的分身。）｜隨機：從隨機技能池抽 4~6 個
+tower_boss_5,劇毒之母,tower,tower_boss,poison,🕷️,,,,1,,e_poisonspit;e_vampiric,4,6,封魔塔BOSS｜專屬：劇毒吐息（吐出數團毒液，命中的目標會中毒。）；嗜血（每次擊中你都會把造成傷害的一部分吸成自己的生命。）｜隨機：從隨機技能池抽 4~6 個
 tower_boss_6,深淵領主,tower,tower_boss,dark,😈,,,,1,,e_darkzone;e_darkorbs,4,6,封魔塔BOSS｜專屬：褻瀆領域（在你腳下鋪開暗影領域，持續吞噬站在其中的生命。）；暗影彈幕（連續射出數顆暗影彈，逐發追向你。）｜隨機：從隨機技能池抽 4~6 個
 tower_boss_7,亡靈霜龍,tower,tower_boss,ice,🐲,,,,1,,e_iceshards;e_waterprison,4,6,封魔塔BOSS｜專屬：冰錐齊射（一口氣射出大量冰錐，命中使你減速。）；水牢（以水幕罩住你所在的位置，困在水牢中會持續受傷並被嚴重拖慢。）｜隨機：從隨機技能池抽 4~6 個
 tower_boss_8,聖焰審判官,tower,tower_boss,light,😇,,,,1,,e_fireball;e_heal,4,6,封魔塔BOSS｜專屬：烈焰火球（丟出一顆巨大的火球，落地炸開並點燃目標。）；神聖治癒（呼喚光柱治療整個群體（包含自己）一部分生命。）｜隨機：從隨機技能池抽 4~6 個

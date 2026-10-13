@@ -1,9 +1,11 @@
 'use strict';
 /* ============================================================
-   battle-elite.js — 菁英敵人的畫面標記（只在主執行緒載入，掛在 BattleRenderer 上）
+   battle-elite.js — 高級敵人（菁英／高級菁英／野外 BOSS／封魔塔 BOSS）的畫面標記（只在主執行緒載入，掛在 BattleRenderer 上）
    ------------------------------------------------------------
    模擬層（js/elite.js）把「這隻有哪些詞條、現在處於什麼狀態」放在敵人資料上：
-     data.affixes   詞條 id 陣列（只有菁英有）
+     data.affixes   技能 id 陣列（Skills2 表敵人技能；只有高級敵人有）
+     data._tier／_size／_elColor  敵人類型、體型倍率、光暈顏色（外層光暈與本體縮放在 battle-renderer.js makeEnemy）
+     data._grow     復仇疊出來的體型加成倍率（這裡動態縮放本體）
      data._fx       目前的狀態旗標：shield／invuln／reflect／enrage／rage
      data._gid      群組編號（同一群共用；小兵與召喚物也有）
      data._gRole    leader／elite／minion／summon／split
@@ -54,7 +56,7 @@ var BattleElite = (function () {
       var d = ent.data;
       var deco = { sig: '', stateSig: null, ring: null, stateRing: null, badge: null, state: null };
       var big = d.isBoss ? 1.6 : (d.elite ? 1.0 : 0.62);
-      deco.r = 30 * big * (ent.visScale || 1);
+      deco.r = d._size > 0 ? (20 * (ent.visScale || 1) + 10) : 30 * big * (ent.visScale || 1);
       var ring = new PIXI.Graphics();
       ring.y = 2;
       ent.view.addChildAt(ring, 0);
@@ -81,17 +83,6 @@ var BattleElite = (function () {
       ent.view.addChild(state);
       deco.state = state;
       drawStatic(ent, deco);
-      var scale = 1;
-      var ids = affixList(d);
-      for (var i = 0; i < ids.length; i++) {
-        var def = (typeof ELITE_AFFIXES !== 'undefined') ? ELITE_AFFIXES[ids[i]] : null;
-        if (def && def.arch === 'giant' && def.scale > 1) scale = Math.max(scale, def.scale);
-      }
-      if (scale > 1 && ent.body && ent.body.scale) {
-        ent.body.scale.x *= scale; ent.body.scale.y *= scale;
-        deco.giant = scale;
-        deco.r *= scale;
-      }
       return deco;
     }
     function drawStatic(ent, deco) {
@@ -100,10 +91,10 @@ var BattleElite = (function () {
       var r = deco.r;
       var g = deco.ring;
       g.clear();
-      var elite = !!d.elite;
+      var elite = !!d.elite || !!d._tier;
       g.ellipse(0, 0, r, r * 0.38).stroke({ color: elite ? cssToInt(d._elColor, gc) : gc, width: elite ? 2.5 : 1.5, alpha: elite ? 0.9 : 0.6 });
       if (elite) g.ellipse(0, 0, r * 0.82, r * 0.31).stroke({ color: gc, width: 1.5, alpha: 0.7 });
-      deco.sig = d._gid + '|' + d._elColor + '|' + (d.elite ? 1 : 0);
+      deco.sig = d._gid + '|' + d._elColor + '|' + (d.elite ? 1 : 0) + '|' + (d._tier || '');
     }
     function drawState(ent, deco, nowMs) {
       var d = ent.data;
@@ -141,16 +132,26 @@ var BattleElite = (function () {
         if (!interesting) continue;
         if (!ent.eliteDeco) ent.eliteDeco = build(ent);
         var deco = ent.eliteDeco;
-        var sig = d._gid + '|' + d._elColor + '|' + (d.elite ? 1 : 0);
+        var sig = d._gid + '|' + d._elColor + '|' + (d.elite ? 1 : 0) + '|' + (d._tier || '');
         if (sig !== deco.sig) drawStatic(ent, deco);
         if (deco.badge) {
           var txt = badgeText(d);
           if (deco.badge.text !== txt) deco.badge.text = txt;
         }
         drawState(ent, deco, nowMs);
+        /* 復仇：體型隨同伴陣亡一步步長大（本體縮放；陰影與血條不動） */
+        if (ent.body && ent.body.scale) {
+          if (deco.baseScale === undefined) deco.baseScale = ent.body.scale.x;
+          var wantScale = deco.baseScale * (Number(d._grow) > 0 ? Number(d._grow) : 1);
+          if (Math.abs(ent.body.scale.x - wantScale) > 0.001 && ent.body.scale.x === ent.body.scale.y) {
+            var cur = ent.body.scale.x;
+            var nxt = cur + (wantScale - cur) * Math.min(1, dt * 6);
+            ent.body.scale.set(nxt);
+          }
+        }
         var dead = ent.state === 'dying' || d.hp <= 0;
         deco.ring.alpha = dead ? 0.25 : 0.55 + 0.35 * (0.5 + 0.5 * Math.sin(nowMs / 420 + (d._gid || 0)));
-        if (!dead && affixList(d).indexOf('lifelink') >= 0) {
+        if (!dead && affixList(d).indexOf('e_lifelink') >= 0) {
           (groups || (groups = {}))[d._gid] = (groups[d._gid] || []);
           groups[d._gid].push(ent);
         }

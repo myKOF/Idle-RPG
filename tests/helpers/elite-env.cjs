@@ -4,8 +4,8 @@
 const { loadRuneEnv } = require('./runeword-env.cjs');
 
 const FILES = [
-  'util.js', 'data.js', 'elite_data.js', 'runeword_data.js', 'status.js', 'formula.js', 'battlefield.js', 'stats.js',
-  'item.js', 'runeword.js', 'skills.js', 'skills2.js', 'talents.js', 'player.js', 'special_rules.js',
+  'util.js', 'data.js', 'runeword_data.js', 'status.js', 'formula.js', 'battlefield.js', 'stats.js',
+  'item.js', 'runeword.js', 'skills.js', 'skills2.js', 'elite_data.js', 'talents.js', 'player.js', 'special_rules.js',
   'combat.js', 'elite.js', 'legendary.js', 'potential.js', 'tower.js', 'factory.js', 'newforge.js', 'forge.js', 'save.js', 'tasks.js'
 ];
 
@@ -25,7 +25,7 @@ function loadEliteEnv(opts) {
   return c;
 }
 
-/* 在 (x, y) 生一隻已進場的菁英（不經出怪流程，詞條由 ids 指定）。 */
+/* 在 (x, y) 生一隻已進場的菁英（不經出怪流程，技能由 ids 指定；over.tier＝elite／elite_adv／boss）。 */
 function makeElite(c, ids, over) {
   over = over || {};
   const zn = c.currentZoneDef();
@@ -36,7 +36,7 @@ function makeElite(c, ids, over) {
   m._gRole = 'leader';
   m._stage = -1;
   m.pos = { x: over.x === undefined ? 220 : over.x, y: over.y === undefined ? 0 : over.y };
-  if (ids && ids.length) c.eliteEquip(m, ids);
+  if (ids && ids.length) c.eliteEquip(m, ids, { tier: over.tier || 'elite' });
   if (over.hp) { m.maxHp = over.hp; m.hp = over.hp; }
   c.FIELD.monsters = c.FIELD.monsters.concat([m]);
   c.markFieldEnemyFloatTargets(c.FIELD.monsters);
