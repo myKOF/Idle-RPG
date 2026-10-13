@@ -613,7 +613,7 @@ function eliteCastSpots(m, d) {
     }
     if (d.v.attack2) {
       eliteFx({
-        fxKind: 'rain', variant: 'elite-bolt', elem: d.elem || null, count: 1, dur: 0.5, hit: false,
+        fxKind: 'rain', variant: 'heaven-tribulation-strike', elem: d.elem || null, count: 1, dur: 0.5, hit: false,
         delayMs: Math.round(warn * 1000), area: { x: x, y: y, r: d.r }, vfx: { attack: d.v.attack2 }
       });
     }
@@ -1064,11 +1064,10 @@ function eliteCastRotbeam(m, d) {
   var arms = eliteRandInt(rng[0], rng[1]);
   var warn = d.warn || 1, dur = d.dur || 6;
   eliteBusy(m, 0.6, false);
-  var core = eliteVisAdd({ id: eliteVisId('arcane'), preset: d.v.ground, x: cx, y: cy, r: 15, until: GT + warn + dur });
+  var core = eliteVisAdd({ id: eliteVisId('arcane'), preset: d.v.ground, x: cx, y: cy, r: 19.5, until: GT + warn + dur });
   eliteLater(warn, function () {
-    var preset = (arms >= 2 && d.v.field2) ? d.v.field2 : d.v.field;
     var b = { owner: m, def: d, x: cx, y: cy, t0: GT, until: GT + dur, arms: arms, nextTick: 0, core: core };
-    b.vis = eliteVisAdd({ id: eliteVisId('beam'), preset: preset, x: cx, y: cy, r: d.len, until: b.until });
+    b.vis = eliteVisAdd({ id: eliteVisId('beam'), preset: d.v.field, x: cx, y: cy, r: d.len, until: b.until });
     ELITE_RT.beams.push(b);
   });
 }

@@ -82,6 +82,10 @@ function forceNeutral(p, hex) {
     if (sat < 0.12) l.tint = hex;
   });
 }
+/* 透明度太低時整體加深：每個圖層的 alpha 乘上倍率（最高 1） */
+function boostAlpha(p, k) {
+  p.layers.forEach(l => { if (typeof l.alpha === 'number') l.alpha = Math.min(1, +(l.alpha * k).toFixed(3)); });
+}
 function recolor(srcId, newId, themeName, tweak) {
   const theme = THEMES[themeName];
   if (!theme) throw new Error('沒有這個配色：' + themeName);
@@ -114,7 +118,7 @@ const RECOLORS = [
   ['en-burst-detonate-phys', 'burst-detonate-phys', 'phys'], ['en-burst-blood', 'burst-blood', 'phys'],
   ['en-burst-holy', 'burst-holy', 'light'], ['en-burst-wind', 'burst-wind', 'wind'],
   ['en-burst-zero-infection', 'burst-zero-infection', 'poison'], ['en-burst-explosion-sheet', 'burst-explosion-sheet', 'fire', p => forceNeutral(p, '#ff4a8a')],
-  ['en-ice-burst', 'burst-frost-freeze', 'ice'], ['en-vortex-burst', 'burst-gravity', 'dark'],
+  ['en-ice-burst', 'burst-frost-freeze', 'ice'], ['en-vortex-burst', 'burst-gravity', 'dark', p => boostAlpha(p, 1.4)],
   ['en-molten-core-burst', 'burst-meteor-inferno', 'fire'],
   // 命中
   ['en-hit-fire', 'hit-fire', 'fire'], ['en-hit-dark', 'hit-dark', 'dark'], ['en-hit-ice', 'hit-ice', 'ice'],
@@ -127,7 +131,7 @@ const RECOLORS = [
   ['en-mortar-shell', 'proj-fireball-ember', 'fire'], ['en-spark', 'proj-thunder-orb-fall', 'lightning'],
   // 其他角色
   ['en-slash-phys-big', 'slash-phys-big', 'phys'], ['en-slash-wind-spin', 'slash-wind-spin', 'wind'], ['en-pillar-light', 'pillar-light', 'light'],
-  ['en-curse-dark', 'curse-dark', 'dark'], ['en-vortex', 'black-hole', 'dark', p => { p.sizing = { shape: 'circle', authored: { radius: 100 } }; }],
+  ['en-curse-dark', 'curse-dark', 'dark'], ['en-vortex', 'black-hole', 'dark', p => { p.sizing = { shape: 'circle', authored: { radius: 100 } }; boostAlpha(p, 1.7); }],
   ['en-cast-fire', 'cast-buff-phys', 'fire', p => forceNeutral(p, '#ff5a7a')], ['en-cast-poison', 'cast-buff-def', 'poison'], ['en-cast-arcane', 'cast-magic', 'light'],
   ['en-cast-gold', 'cast-buff-light', 'gold', p => forceNeutral(p, '#ffc24a')], ['en-cast-dark', 'cast-buff-dark', 'dark'],
   ['en-bolt-storm', 'bolt-sky-purple', 'storm'], ['en-burst-storm', 'burst-detonate-dark', 'storm'], ['en-mark-storm', 'mark-blue', 'storm']
@@ -211,7 +215,6 @@ function arcaneBeams(arms, dur, rot) {
   return { id, duration: dur, loop: false, sizing: circleSizing(100), layers };
 }
 NEW['en-arcane-beams-1'] = () => arcaneBeams(1, 6, 50);
-NEW['en-arcane-beams-2'] = () => arcaneBeams(2, 6, 50);
 
 /* 熔岩核心預警：死亡怪物原地的核心膨脹倒數（3 秒），外圈＝爆炸範圍。 */
 NEW['en-molten-core-warn'] = () => ({

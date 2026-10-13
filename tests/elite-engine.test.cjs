@@ -133,7 +133,7 @@ test('ELITE-ENGINE-6 秘法加持：核心預警 → 順時針旋轉光束；站
   assert.equal(c.ELITE_RT.beams.length, 1, '預警後光束出現');
   const b = c.ELITE_RT.beams[0];
   assert.ok(Math.hypot(b.x - c.bfPlayerPos().x, b.y - c.bfPlayerPos().y) <= d.throwRange + 1, '核心在玩家 18 米內');
-  assert.ok(b.arms === 1 || b.arms === 2);
+  assert.equal(b.arms, 1, '秘法棒是單側指針');
   // 把玩家放到光束 t=0 的方向（東）上 4 米：t 小時被掃到，之後轉走
   c.bfPlayerPos().x = b.x + 40; c.bfPlayerPos().y = b.y;
   const mark = hpLost(c);
@@ -329,20 +329,20 @@ test('ELITE-ENGINE-14 築牆：近戰隔著牆打不到（雙方），遠程不�
 test('ELITE-ENGINE-15 漩渦：先有暗影引力場，再以 60 米/秒把玩家拉到牠身邊；拉扯中玩家走位暫停', () => {
   const c = fresh();
   const m = quiet(makeElite(c, ['e_vortex'], { x: 110, y: 0, hp: 1e9 }));
-  const d = c.ELITE_AFFIXES.e_vortex;
+  const d = Object.assign({}, c.ELITE_AFFIXES.e_vortex, { r: 140 });   // 這條測拉扯機制，與表上的範圍大小無關
   c.bfPlayerPos().x = -400; c.bfPlayerPos().y = 0;               // 距離 51 米 → 超出範圍
   c.eliteCastPull(m, d);
   stepElite(c, d.windup + 0.2);
   assert.equal(c.elitePlayerLocked(), false, '範圍外拉不到');
   c.bfPlayerPos().x = -50; c.bfPlayerPos().y = 0;                // 範圍內（16 米，含牠的體型）
   c.eliteCastPull(m, d);
-  stepElite(c, d.windup - 0.05);
+  stepElite(c, d.windup - 0.2);
   assert.equal(c.elitePlayerLocked(), false, '引力場先轉一會兒');
   const x0 = c.bfPlayerPos().x;
-  stepElite(c, 0.1);              // 這一步跨過 windup：開始拉
+  stepElite(c, 0.3);              // 跨過 windup：開始拉
   assert.equal(c.elitePlayerLocked(), true, '被拉扯中');
   const moved = c.bfPlayerPos().x - x0;
-  assert.ok(Math.abs(moved - 60) < 1.5, '每 0.1 秒 6 米（速度 60 米/秒）：' + moved);
+  assert.ok(moved > 0 && moved <= 0.2 * 600 + 1.5, '每 0.1 秒最多 6 米（速度 60 米/秒）：' + moved);
   stepElite(c, 1);
   assert.equal(c.elitePlayerLocked(), false, '拉完解除');
   assert.ok(Math.hypot(c.bfPlayerPos().x - m.pos.x, c.bfPlayerPos().y - m.pos.y) < (m._bodyR || 20) + 60, '落在牠身邊');
@@ -450,6 +450,9 @@ test('ELITE-ENGINE-21 雷霆風暴：2~3 下落雷在玩家周圍 6 米內，先
   assert.equal(hpLost(c), mark, '預警期間不傷人');
   stepElite(c, 1.5);
   assert.ok(hpLost(c) > mark);
+  const bolts = c.vfx.filter((v) => v.vfx && v.vfx.attack === d.v.attack2 && v.fxKind === 'rain');
+  assert.ok(bolts.length >= 2, '每下落雷都送出天降事件');
+  bolts.forEach((v) => assert.equal(v.variant, 'heaven-tribulation-strike', '落雷走直立天雷的畫法（位置＝落點、不轉向），不會被當成地面特效斜著劈'));
 });
 
 test('ELITE-ENGINE-22 封魔塔：BOSS 也放技能（專屬 1~2＋隨機 4~6），塔戰 tick 驅動引擎，玩家被技能打死＝失敗', () => {

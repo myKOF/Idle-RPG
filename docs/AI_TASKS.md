@@ -287,6 +287,14 @@
 - 驗證：新增／重寫 6 支測試約 70 項；全庫測試失敗名稱與改造前 HEAD 比對，新增 0；實機（隱藏面板驅動）看過 arcane／poisoncross／frostburst／frostpulse／walls／vortex／electrified／plague／封魔塔 BOSS，並用離線渲染產生玩家 vs 敵人的特效對照預覽圖。
 - 已知：漩渦的拋物線高度沒有畫面（Canvas 沒有玩家離地高度）；任何一個 Preset 的素材不在發佈清單裡，整個 VFX Runtime 會靜默組裝失敗（所有特效消失），新增 Preset 後務必 `node tools/vfx/export-assets.cjs`。
 
+## Claude｜高級敵人預覽回饋修正：BOSS 技能標籤、落雷方向、漩渦、地板面積、秘法棒（ELITE-FEEDBACK-20261013）
+
+- Owner：Claude；Done（等使用者實機看）。使用者回饋：①BOSS 血條下方顯示技能標籤（專屬＝亮暗金色、隨機＝技能屬性色），頭頂不再放圖示列 ②雷霆風暴落雷會斜著從畫面某方向劈來，違反落雷邏輯 ③漩渦特效太大、太久、太透明 ④熔火、瘟疫等地板效果太小（至少 6×6 米）⑤秘法棒要單側指針、體積 +30%。
+- 修改：①`js/battle-renderer.js`（血條下方標籤列）、`js/battle-elite.js`（`skillTags`、BOSS 不建頭頂列）②`js/elite.js` 落雷事件改走 `heaven-tribulation-strike`（直立天雷畫法：位置＝落點、不轉向；原本 `elite-bolt` 走範圍攻擊路徑，會依「施放者→落點」方向轉向並被地面透視推斜）③漩渦範圍 14→8 米、前搖 0.9→0.7 秒、`en-vortex`／`en-vortex-burst` 透明度 ×1.7／×1.4（`boostAlpha`）④熔火火徑半徑 2.2→3.5 米（間距 3→4）、瘟疫水窪 4.5→6 米、迫擊 2.6→3 米⑤秘法加持 `arms` 改 1、光束長 8→10.4、寬 1.1→1.43、核心 15→19.5，移除 `en-arcane-beams-2`（Preset／layout／`field2` 欄）。
+- 資料：Skills2（Excel 原生寫入 7 格、CSV 同步、`js/skills2.js` 由 `--apply` 回寫）。
+- 注意：使用者在這段期間把 Skills2.xlsx 的「類別」欄移到第 4 欄（commit 3b4383ab）。改表前一定先 `--sync` 讓 CSV 跟上 Excel，再寫回；直接用舊 CSV 寫會把使用者調好的欄位順序蓋掉（這次寫了一次、已用 git 還原重做）。測試改成用表頭名稱找「類別」欄。
+- 驗證：elite-engine 25 項（落雷事件變體、單側光束、漩渦）、npc-elite-skills 7、vfx-preset-usage／elite-data／battle-elite 全過；全庫失敗名稱與改造前比對見提交說明。
+
 ## Claude｜NPC 表加「類型／技能／技能特效／備註」，菁英可固定技能（NPC-ELITE-SKILLS-20261008）
 
 - Owner：Claude；Done。使用者在 NPC.xlsx 加了「類型」欄（normal／elite／boss，每個 NPC 三列），要求表後面再補 NPC 的技能、技能用到的特效名與給人讀的備註。
