@@ -3198,7 +3198,6 @@ function updateCharCoreSummary(st, headerSnapshot, battleSnapshot) {
   if (atkParent) {
     setAttrIfChanged(atkParent, 'data-tt-title', '綜合攻擊力 (攻擊)');
     var atkDesc = '角色的綜合攻擊能力，包含了物理、魔法、攻速、暴擊及元素等綜合的攻擊強度評價。<br><br>' +
-      '<span style="color:#ffd700">計算公式：</span>(物傷 + 魔傷) / 2<br>' +
       '<span style="color:#4ade80">基礎物理攻擊：</span>' + fmtFull(currentSt.atk || 0) + '<br>' +
       '<span style="color:#4ade80">基礎魔法攻擊：</span>' + fmtFull(currentSt.matk || 0) + '<br>' +
       '<span style="color:#ffd700">暴擊傷害倍率：</span>' + Math.round(summary.critMult * 100) + '%<br>' +
@@ -3218,7 +3217,6 @@ function updateCharCoreSummary(st, headerSnapshot, battleSnapshot) {
   if (toughnessParent) {
     setAttrIfChanged(toughnessParent, 'data-tt-title', '綜合生存能力 (堅韌)');
     var toughnessDesc = '角色的綜合生存能力，包含了物防、法防、生命及各類抗性、減傷的綜合評價。<br><br>' +
-      '<span style="color:#ffd700">計算公式：</span>(物承 + 魔承) / 2<br>' +
       '<span style="color:#4ade80">當前血量：</span>' + fmtFull(summary.hp) + '<br>' +
       '<span style="color:#4ade80">當前護盾：</span>' + fmtFull(summary.shield) + '<br>' +
       '<span style="color:#ffd700">物理防禦減傷：</span>' + formatReductionPercentage(summary.rPhysDef) + '<br>' +

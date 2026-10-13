@@ -5,7 +5,7 @@
 - Owner：Antigravity；Done，單一開發者。使用者要求角色面板置頂區原 6 格（生命值、法力值、物攻、魔攻、暴擊率、攻擊速度）因下方屬性清單皆已存在，精簡為僅顯示「攻擊」（物傷與魔傷平均值）與「堅韌」（物承與魔承平均值）2 格，並指定專用 Tips 文案。
 - 允許：`js/ui.js`、`css/ashen-forge.css`、`tests/char-core-summary.test.cjs`、`PATCH.md`、`docs/AI_TASKS.md`。禁止修改數值公式、戰鬥模擬 Worker、Protocol、存檔與未授權檔案。
 - 驗收：2 欄大方塊排版、數值準確取用綜合輸出預期與承傷平均、專屬 Tips 文案與明細、扣血時實時刷新、單元測試全通與 build 檢查通過。
-- 完成：將 `#char-core` 調整為 2 欄佈局，抽離共用 `calculateCombatRatingSummary` 與 `formatReductionPercentage`，頂欄與角色置頂區共用計算；攻擊顯示綜合預期 `(物傷 + 魔傷) / 2`，堅韌顯示綜合承傷 `(物承 + 魔承) / 2`；設定使用者指定 Tips 文案與完整展開明細。
+- 完成：將 `#char-core` 調整為 2 欄佈局，抽離共用 `calculateCombatRatingSummary` 與 `formatReductionPercentage`，頂欄與角色置頂區共用計算；攻擊顯示綜合預期 `(物傷 + 魔傷) / 2`，堅韌顯示綜合承傷 `(物承 + 魔承) / 2`；設定使用者指定 Tips 文案與完整展開明細，並依指示移除 Tips 內的計算公式行。
 - 修改檔案：`js/ui.js`、`css/ashen-forge.css`、`tests/char-core-summary.test.cjs`、`PATCH.md`、`docs/AI_TASKS.md`。
 - 測試：`node --test tests/char-core-summary.test.cjs tests/elem-dmg-tooltip.test.cjs` 5/5 全數通過；`node tools/build_check.cjs` 499 檔語法檢查全數通過。
 - Commit：本紀錄所在提交。
