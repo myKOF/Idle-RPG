@@ -146,7 +146,13 @@ for(const kind of ['blade','thunder','fire'])test(`天穹崩裂 ${kind}：固定
  c.GT=meteor.at-.001;c.sgTickMeteors(ctx);assert.equal(captured.length,0);
  c.GT=meteor.at+.001;c.sgTickMeteors(ctx);assert.ok(captured.some(x=>x.target===arrival));assert.ok(!captured.some(x=>x.target===enemies[0]));
  assert.ok(captured.every(x=>x.elem===rain.elem));
- const roles=c.sgSkyfallVfxRoles(kind);if(kind==='blade')assert.equal(roles.projectile,'proj-wind-crescent');if(kind==='fire')assert.equal(roles.projectile,'proj-meteor');
+ const roles=c.sgSkyfallVfxRoles(kind);if(kind==='blade')assert.equal(roles.projectile,'proj-wind-crescent');if(kind==='fire'){
+  const meteorVfx=c.sgVfxRoles('fireball',{vfxTier:7,vfxBase:true});
+  assert.equal(roles.projectile,'proj-meteor-inferno');assert.equal(roles.hit,'burst-meteor-inferno');
+  assert.equal(rain.vfx.projectile,meteorVfx.projectile);assert.equal(rain.vfx.ground,meteorVfx.ground);
+  assert.equal(rain.hit,false);assert.equal(rain.vfx.hit,undefined);
+  const impact=events.find(e=>e.variant==='meteor-impact');assert.ok(impact);assert.equal(impact.vfx.hit,meteorVfx.hit);
+ }
  assert.ok(events.some(e=>e.variant==='skyfall-impact'&&e.vfx.attack===roles.attack));
 });
 

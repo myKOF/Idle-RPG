@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## SKYFALL-FIRE-METEOR-VFX-20261013 — 天穹崩裂火隕石沿用殞石術外觀
+
+- Owner：Codex；Done，單一開發者。使用者回報暴風屏障超神天穹崩裂召喚的火殞石外觀錯誤，要求使用殞石術特效。
+- 允許：Skills2 Excel／CSV的stormbarrier.skyfallStars觸發子彈與命中特效、由表產生的js/skills2.js、index／bridge／Worker快取、tests/wind-skill-audit.test.cjs及本紀錄。禁止修改傷害、元素、數量、節拍、落點、範圍、其他星體或同名風刃超神、素材、Protocol及存檔。fetch後預檢無其他副本／分支衝突，工作區原乾淨。
+- 驗收：火星起飛與落地分別使用殞石術proj-meteor-inferno／burst-meteor-inferno，保留表定預警及額外落地震波；不提前傷害、移動目標不改落點、落地AOE及風／雷星保持。原生Excel正常重開並保存公式／格式，配置往返、正式Core／Runtime與Worker事件回歸、Build及Commit；不合併／推送。
+- 完成／修改8檔：config/Excel/Skills2.xlsx第230列AO230觸發子彈proj-meteor→proj-meteor-inferno，AP230觸發命中特效hit-fire-explosion→burst-meteor-inferno；同步config/CSV/Skills2.csv及由正式config_tables產生的js/skills2.js，沒有手改技能字面值。另更新index.html、js/bridge.js、js/worker/sim.worker.js快取、tests/wind-skill-audit.test.cjs與本紀錄。主頁skills2 1.0.304／bridge1.0.259，Worker入口及skills2 import同20261013-skyfall-fire-meteor；Protocol50不變。
+- Excel驗證：以原生Excel API只改2格，原生正常重開RepairMode=false，所有其他格資料／230條公式及繪圖數不變。唯讀XML稽核確認所有格style索引、styles.xml、公式、行屬性、欄寬、視圖、合併、驗證、篩選不變，未手工寫XML。正式xlsx_to_csv輸出CSV，與HEAD比對僅上述2格；`node tools/config_tables.cjs --apply Skills2`語意變更0。
+- 專項：先更新火星事件斷言，修改前失敗於舊proj-meteor，修正後通過；同時釘住殞石術第七階的彈體／預警／落地爆炸、起飛不播受擊及原有延後AOE。`node --test --test-name-pattern='天穹崩裂|天降風刃|永久風系' tests/wind-skill-audit.test.cjs` 5/5；`npm.cmd run build` 499檔通過；git diff --check通過。
+- 擴大回歸：`node --test --test-reporter=tap tests/wind-skill-audit.test.cjs tests/meteor-impact-timing.test.cjs tests/meteor-entry-origin.test.cjs tests/worker-protocol.test.cjs`修改前／後皆72項53通過19既有失敗、失敗名稱差集0；主要為其他風刃／真空斬／風切舊數值機制及伴生火球舊外觀。`node --test --test-reporter=tap tests/meteor-entry-origin.test.cjs tests/worker-protocol.test.cjs tests/vfx-runtime.test.cjs`148項144通過4既有失敗；唯讀攔截載入HEAD原skills2後相同148項144通過4失敗，名稱差集0。4項為FIELD地層、CATALOG根群組、CHAIN金色及STARFALL-TAIL拖尾既有斷言；未放寬無關測試。
+- 瀏覽器：隔離隨機埠唯讀HTTP／全新headless Edge context，真Worker觸發3顆火星，起飛均proj-meteor-inferno、落地均burst-meteor-inferno；落地前HP176384000000不變、落地後176383999637。將真Worker事件交正式BattleRenderer／Runtime／Core／Pixi播放，彈體及預警正常可見，落地爆點正常派送，Console error／warning均0。接線畫面保存在本聊天visualizations/skyfall-fire/meteor-in-game.png；臨時腳本／日誌／工作簿副本清理，瀏覽器與伺服器已關閉。
+- 唯讀檢查：AI規範／prompts/codex.md、tools/skills2-vfx.cjs、配置及Excel工具、js/vfx-runtime.js／battle-renderer.js／vfx-core.js／combat.js／formula.js、相關隕石及Worker測試；上述未修改。沿用既有已匯出素材，無新增或修改素材，素材庫無本次變更／無需Commit；未新增特效來源。遊戲Commit為本紀錄所在[Codex] fix提交。無本次未完成項，可供合併，未合併／推送；已知限制為上述23項既有失敗及未做真人長時間戰鬥驗收。下一步重新載入遊戲驗收。
+
 ## CHAR-CORE-ATK-TOUGHNESS-20261012 — 角色面板置頂區整合為攻擊與堅韌雙數值顯示
 
 - Owner：Antigravity；Done，單一開發者。使用者要求角色面板置頂區原 6 格（生命值、法力值、物攻、魔攻、暴擊率、攻擊速度）因下方屬性清單皆已存在，精簡為僅顯示「攻擊」（物傷與魔傷平均值）與「堅韌」（物承與魔承平均值）2 格，並指定專用 Tips 文案。
