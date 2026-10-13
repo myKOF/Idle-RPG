@@ -783,7 +783,9 @@ function itemRuneHTML(it, mode) {
     h += '<div class="it-runeword" style="--rw-c:' + RUNEWORD_TIER_COLORS[rwAct.word.tier] + '">' +
       '<div class="it-runeword-name">✨ 符文真言【' + esc(rwAct.word.name) + '】<span class="it-runeword-tier">' +
       esc(RUNEWORD_TIER_NAMES[rwAct.word.tier]) + '</span></div>';
-    rwDescribeLines(rwAct.word, it).forEach(function (line) { h += '<div class="it-runeword-line">' + esc(line) + '</div>'; });
+    rwDescribeEntries(rwAct.word, it).forEach(function (e) {
+      h += '<div class="it-runeword-line"' + (e.color ? ' style="color:' + e.color + '"' : '') + '>' + esc(e.text) + '</div>';
+    });
     h += '</div>';
   }   // 沒成形時不給任何提示：符文真言要玩家自己探索
   return h + '</div>';

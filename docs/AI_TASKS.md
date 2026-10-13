@@ -208,6 +208,15 @@
 - 驗證：npm.cmd run build 488檔通過；node --check js/bridge.js、git diff --check、git diff --cached --check 均通過。node tools/vfx/export-assets.cjs --check --root D:/MyGame/Asset：244 Preset／161素材引用匯出最新；node tools/scene-renewal/export-source.cjs --check：场景來源与圖檔SHA256一致。素材庫status乾淨、既有HEAD c999cf0，合併沿用已提交素材，无新素材Commit。
 - 交付：本紀錄所在 [Codex] merge: 解決與 Claude 的快取衝突並整合 Codex 修改 完成原 develop 合併，父提交348bc794與4a2cb466；無未完成衝突，不推送。已知風險為上述7項既有失敗，本輪未重做瀏覽器／Console／真人長戰驗收。下一步使用者重新載入遊戲；VFX Editor未儲存內容先另存再重載。整合已完成，可供使用者審查及自行推送。
 
+## Claude｜符文真言新增「全屬性傷害提升」合成屬性、效果依品質分色（RUNE-ALL-ELEM-COLOR-20261013）
+
+- Owner：Claude；Done。使用者要求：①創世紀的八行元素傷害提升太長，新增一個「全屬性傷害提升」效果並讓創世紀使用 ②符文真言的效果分顏色，顏色與裝備詞條提示的品質色一致（例：史詩詞條紫色、傳奇特效橘色）。
+- 技術決策：①不新增真正的裝備詞條（會牽動 Equipment_Affix 表、掉落池與養成經濟），而是在符文系統內新增「合成屬性」`RW_STAT_ALIASES`（runeword_data.js）：`elemDmgAll`＝名稱「全屬性傷害提升%」、數值照 `elemDmgFire` 算、實際展開成火冰雷毒聖暗地風八種元素傷害提升各加同樣的值（`rwPushStat`）。符文列與真言的屬性加成都能填（配置表驗證放行）；創世紀 8 條改成 `elemDmgAll:0.45`，數值與原本逐條相同，強度不變。元素之環只有 5 種元素，維持逐條。②新增 `rwDescribeEntries(word, it)` 回傳 [{text, color, kind}]，`rwDescribeLines` 改為取它的文字（相容）。顏色規則：屬性行＝該詞條要求的最低稀有度色（與詞條提示「(史詩+)」同一個來源，沒有要求的詞條用預設文字色）；傳奇特效＝傳說色（橘）；被動／靜態效果／事件觸發＝該真言自己的品質色。圖鑑卡與裝備詳情的符文真言區塊都依此上色。
+- 修改：js/runeword_data.js、js/runeword.js、js/item.js、js/ui-runeword.js、tools/config_tables.cjs（驗證放行合成屬性、備註名稱、說明頁）、tools/gen_runeword_doc.cjs、config/CSV/Runes.csv、config/Excel/Runes.xlsx、docs/RUNEWORD_DESIGN.md、docs/RUNEWORD_TEST_MATRIX.md、tests（runeword-data／engine／ui）；版號 runeword_data 1.0.15、item 1.0.20、runeword 1.0.12、ui-runeword 1.0.11、bridge 1.0.263、WORKER_ASSET_VERSION 20261013-rune-all-elem-color。
+- 測試：符文相關 17 檔 353 項全過；build_check 499 檔通過；`config_tables --apply Runes` 語意變更 0；實機看過圖鑑卡的顏色。新增測試：合成屬性展開（八條、同值、文字一行、八種元素都加成）、顏色規則與文字版一致、裝備詳情與圖鑑卡的上色。
+- 風險：①「機制」類效果（被動／fx／觸發）用真言品質色，傳說真言的機制行與傳奇特效行同為橘色，要靠【傳奇特效】字樣區分；若想給機制另一個顏色，改 `rwDescribeEntries` 的 `mechColor` 一處即可 ②合成屬性只存在於符文系統，角色屬性面板仍是逐元素顯示。
+- 建議驗證（Antigravity）：圖鑑與裝備詳情的創世紀只有一行全屬性傷害提升；八種元素傷害提升實際都有加成；各品質詞條的顏色與詞條提示的「(史詩+)」「(獨特+)」一致；Excel 的屬性加成欄填 elemDmgAll 能套用，填錯鍵會被擋下。
+
 ## Claude｜符文系統改造 V2：單顆符文改為三個部位（武器／防具／飾品）（RUNE-PARTS-V2-20261013）
 
 - Owner：Claude；Done。使用者要求：符文原本分「主武器」與「防具・飾品・副手」兩側，改成三個部位——武器＝主手／副手／雙手、防具＝所有防具部位、飾品＝戒指與項鍊；效果由我編寫。

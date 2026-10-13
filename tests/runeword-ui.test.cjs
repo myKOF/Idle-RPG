@@ -105,6 +105,14 @@ test('圖鑑：全部配方、材料齊全旗標（含重複符文的數量需�
   assert.match(list, /id="rxw-rw_viperkiss"[^>]*>/);
   const viper = list.slice(list.indexOf('id="rxw-rw_viperkiss"'), list.indexOf('id="rxw-rw_minorthunder"'));
   assert.match(viper, /材料齊全/);
+  // 效果分色：創世紀的「全屬性傷害提升」（要求獨特以上）＝獨特色；傳奇特效＝傳說色；一行取代原本逐條列出的八種元素
+  const gen = list.slice(list.indexOf('id="rxw-rw_genesis"'));
+  const genEnd = gen.indexOf('rx-flavor');
+  const genLines = genEnd > 0 ? gen.slice(0, genEnd) : gen;
+  assert.equal((genLines.match(/全屬性傷害提升/g) || []).length, 1);
+  assert.doesNotMatch(genLines, /火屬性傷害提升|冰屬性傷害提升/);
+  assert.ok(genLines.includes('<li style="color:' + c.RARITIES[3].color + '">全屬性傷害提升'), '屬性行用詞條要求的稀有度色');
+  assert.ok(genLines.includes('<li style="color:' + c.RARITIES[c.PASSIVE_MIN_RARITY].color + '">傳奇特效【'), '傳奇特效用傳說色');
   // 凜冬使者需要 2 顆霜痕（r03）；只有 1 顆 → 不算齊全
   const winter = list.slice(list.indexOf('id="rxw-rw_winterherald"'), list.indexOf('id="rxw-rw_bloodgulp"'));
   assert.doesNotMatch(winter, /材料齊全/);

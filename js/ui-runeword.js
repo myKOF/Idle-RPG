@@ -121,7 +121,7 @@ function runeUiLibraryHTML(snapshot, sel) {
 var RUNE_BASE_TIP = '基礎值＝裝備詳情提示裡「可能出現的詞條」範圍的下限（例如 [2828 ~ 4241] 的 2828）；數值隨裝備等級、稀有度與強化成長。雙手武器的詞條本身 ×2，單顆符文也跟著 ×2；組成符文真言時另有符文真言加成。';
 
 function runeUiStatLine(side, spec) {
-  var def = AFFIX_POOL[spec[0]];
+  var def = rwStatDef(spec[0]);
   var name = def ? def.name.replace(/%$/, '') : spec[0];
   return '<div class="rx-stat"><b>' + side + '</b>' + esc(name) + '<span data-tip="' + esc(RUNE_BASE_TIP) + '">（基礎值 ×' + spec[1] + '）</span></div>';
 }
@@ -184,8 +184,8 @@ function runeUiWordHTML(w, snapshot, worn) {
   h += '</div>';
   h += '<div class="rx-bases">適用：' + esc(rwBasesText(w)) + '</div>';
   h += '<ul class="rx-lines">';
-  rwDescribeLines(w).forEach(function (l) {
-    h += revealed ? '<li>' + esc(l) + '</li>' : '<li class="rx-unknown">' + RUNE_UNKNOWN_LINE + '</li>';
+  rwDescribeEntries(w).forEach(function (e) {
+    h += revealed ? '<li' + (e.color ? ' style="color:' + e.color + '"' : '') + '>' + esc(e.text) + '</li>' : '<li class="rx-unknown">' + RUNE_UNKNOWN_LINE + '</li>';
   });
   h += '</ul>';
   if (w.flavor) h += '<div class="rx-flavor">「' + esc(w.flavor) + '」</div>';

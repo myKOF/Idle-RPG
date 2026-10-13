@@ -1744,6 +1744,7 @@ const RUNE_GLOSSARY_ROWS = [
   ['適用裝備：用「;」分隔，多項為「或」。標記：any 任意、armor 八件防具、jewelry 戒指＋項鍊、mainHand 主手與雙手武器、twoHand 雙手武器、oneHand 單手武器、offHand 副手、melee 近戰武器、caster 施法類武器／副手；'],
   ['　　也可填裝備欄位（weapon、helmet、shoulder、chest、belt、gloves、wrist、legs、boots、ring、amulet）或武器類型鍵（sword1h、dagger1h、staff2h、shield、focus… 見 data.js WEAPON_TYPES）。'],
   ['屬性加成：「詞條鍵:倍率」用「;」分隔，例如 atkPct:1.2;critRate:1。倍率＝「基礎值」（同符文列：詞條可能範圍的下限）的幾倍，與符文不同的是不乘雙手倍率（雙手武器的優勢是 5 孔）；負數＝代價。同一組符文真言穿在多件裝備上時，各件的屬性都計。'],
+  ['　　符文專用的合成屬性：elemDmgAll＝全屬性傷害提升（火冰雷毒聖暗地風八種元素傷害提升各加同樣的值；符文列與真言的屬性加成都能填）。'],
   ['被動：「鍵:數值」用「;」分隔，鍵限 thorns（反震）、smite（天罰）、undying（不朽）、sunder（破甲）、trueDmg（真傷）、omniDrain（萬象汲取）、soulEater、annihilate、sanctuary、godWrath；並入既有被動。'],
   ['傳奇特效：借用既有傳奇特效（Equipment_Affix 表傳奇特效池的 id，用「;」分隔），不受該特效原本的武器類型限制，但仍需要配戴對應技能才有感。'],
   ['靜態效果：「鍵:數值」用「;」分隔，數字固定、不隨稀有度成長。可用鍵：'],
@@ -1781,7 +1782,7 @@ function annotateRuneRows(rows) {
   const runes = evalLiteral(extractLiteral(rebuilt.RUNES, 'RUNES').literal);
   const words = evalLiteral(extractLiteral(rebuilt.RUNEWORDS, 'RUNEWORDS').literal);
   const env = runeNoteEnv();
-  const name = key => { const d = env && env.AFFIX_POOL[key]; return d ? d.name.replace(/%$/, '') : key; };
+  const name = key => { const d = env && env.rwStatDef(key); return d ? d.name.replace(/%$/, '') : key; };
   const notes = {};
   runes.forEach(r => {
     notes[r.id] = '武器：' + name(r.w[0]) + '×' + numStr(r.w[1]) + '｜防具：' + name(r.a[0]) + '×' + numStr(r.a[1]) + '｜飾品：' + name(r.j[0]) + '×' + numStr(r.j[1]) + '（×倍＝詞條可能範圍下限的倍數）';
@@ -1849,7 +1850,7 @@ function runeTableVocab() {
   const dataSrc = readUtf8(JS.data), runeSrc = readUtf8(JS.runes);
   const lit = (src, name) => evalLiteral(extractLiteral(src, name).literal);
   return {
-    affix: new Set(Object.keys(lit(dataSrc, 'AFFIX_POOL'))),
+    affix: new Set(Object.keys(lit(dataSrc, 'AFFIX_POOL')).concat(Object.keys(lit(runeSrc, 'RW_STAT_ALIASES')))),   // 詞條池＋符文專用的合成屬性（如 elemDmgAll）
     passivePool: lit(dataSrc, 'PASSIVE_POOL'),
     weaponTypes: new Set(Object.keys(lit(dataSrc, 'WEAPON_TYPES'))),
     twoHandTypes: new Set(Object.entries(lit(dataSrc, 'WEAPON_TYPES')).filter(e => e[1].cat === 'twoHand').map(e => e[0])),

@@ -319,11 +319,31 @@ function rwCandidates(it) {
    與符文同一個「基礎值」口徑（與詞條同源：affixBaseValue／affixRoundValue → js/formula.js §6），隨裝備成長。
    不吃雙手倍率（TWO_HAND_AFFIX_VALUE_MULT）：雙手武器的優勢是能有 5 孔、組 5 顆真言；
    只有「單顆符文自己的屬性」走 rwRuneStatValue（多乘雙手倍率）。 */
+/* 合成屬性（RW_STAT_ALIASES，例：全屬性傷害提升）：數值照 like 那條詞條算，rwDef 取顯示用的詞條定義。 */
+function rwStatBaseKey(key) { var al = RW_STAT_ALIASES[key]; return al ? al.like : key; }
+function rwStatDef(key) {
+  var al = RW_STAT_ALIASES[key];
+  if (!al) return AFFIX_POOL[key] || null;
+  var b = AFFIX_POOL[al.like];
+  if (!b) return null;
+  var d = {};
+  for (var k in b) d[k] = b[k];
+  d.name = al.name;
+  return d;
+}
+/* 把一條屬性加進條目清單；合成屬性展開成它實際作用的每一條詞條（數值相同）。 */
+function rwPushStat(out, key, val, src) {
+  var al = RW_STAT_ALIASES[key];
+  if (!al) { out.push({ key: key, val: val, src: src }); return; }
+  for (var i = 0; i < al.keys.length; i++) out.push({ key: al.keys[i], val: val, src: src });
+}
+
 function rwStatValue(it, key, mult) {
-  if (!AFFIX_POOL[key] || !it) return 0;
+  var bk = rwStatBaseKey(key);
+  if (!AFFIX_POOL[bk] || !it) return 0;
   var um = (typeof upgradeMult === 'function') ? upgradeMult(it) : 1;
-  var base = affixBaseValue(key, it.level, it.rarity) * strengthMult(0);
-  return affixRoundValue(key, base * (Number(mult) || 0) * um * RW_STAT_SCALE);
+  var base = affixBaseValue(bk, it.level, it.rarity) * strengthMult(0);
+  return affixRoundValue(bk, base * (Number(mult) || 0) * um * RW_STAT_SCALE);
 }
 
 /* 單顆符文的數值（符文單獨鑲著的屬性）＝ 詞條基準值 × 區間下限（80%）× mult × 雙手倍率 × 強化倍率。
@@ -332,11 +352,12 @@ function rwStatValue(it, key, mult) {
    雙手武器的詞條本身 ×TWO_HAND_AFFIX_VALUE_MULT，符文跟著乘，所以雙手武器上的符文與詞條維持同一比例。
    符文真言的 stats（rwStatValue）同樣以這個下限為 1 倍，但不乘雙手倍率。 */
 function rwRuneStatValue(it, key, mult) {
-  if (!AFFIX_POOL[key] || !it) return 0;
+  var bk = rwStatBaseKey(key);
+  if (!AFFIX_POOL[bk] || !it) return 0;
   var um = (typeof upgradeMult === 'function') ? upgradeMult(it) : 1;
   var two = (typeof isTwoHandItem === 'function' && isTwoHandItem(it)) ? TWO_HAND_AFFIX_VALUE_MULT : 1;
-  var base = affixBaseValue(key, it.level, it.rarity) * strengthMult(0);
-  return affixRoundValue(key, base * (Number(mult) || 0) * two * um * RW_STAT_SCALE);
+  var base = affixBaseValue(bk, it.level, it.rarity) * strengthMult(0);
+  return affixRoundValue(bk, base * (Number(mult) || 0) * two * um * RW_STAT_SCALE);
 }
 
 /* 符文單獨鑲著的加成類別（符文系統 V2，三個部位）：
@@ -350,7 +371,7 @@ function rwRuneSide(it) {
 
 /* 屬性顯示：「物理攻擊 +123」「暴擊率 +4.2%」；名稱去掉詞條名尾端的 %。 */
 function rwFormatStat(key, v) {
-  var def = AFFIX_POOL[key];
+  var def = rwStatDef(key);
   var name = def ? def.name.replace(/%$/, '') : key;
   var num = (def && def.pct) ? (Math.abs(v)) + '%' : fmt(Math.abs(v));
   return name + ' ' + (v < 0 ? '-' : '+') + num;
@@ -373,14 +394,14 @@ function rwItemStatEntries(it) {
     if (!slots[i]) continue;
     var spec = RUNE_BY_ID[slots[i]][side];
     var v = rwRuneStatValue(it, spec[0], spec[1]);
-    if (v) out.push({ key: spec[0], val: v, src: 'rune' });
+    if (v) rwPushStat(out, spec[0], v, 'rune');
   }
   var act = rwActiveWord(it);
   if (act && act.word.stats) {
     for (var j = 0; j < act.word.stats.length; j++) {
       var sp = act.word.stats[j];
       var wv = rwStatValue(it, sp[0], sp[1]);
-      if (wv) out.push({ key: sp[0], val: wv, src: 'word' });
+      if (wv) rwPushStat(out, sp[0], wv, 'word');
     }
   }
   return out;
@@ -994,34 +1015,50 @@ function rwProcText(p) {
   return text;
 }
 
-/* 符文真言的效果文字（陣列，一行一條）。it 有給時，屬性行會帶該裝備上實際算出的數值。 */
-function rwDescribeLines(word, it) {
-  var lines = [];
+/* 符文真言的效果（陣列，一行一條）：[{ text, color, kind }]。it 有給時，屬性行會帶該裝備上實際算出的數值。
+   顏色規則（與裝備詞條提示的品質色一致）：
+     屬性行 kind='stat'    ＝該詞條要求的最低稀有度的顏色（詞條提示裡「(史詩+)」那種；沒有限制的詞條回 ''，用預設文字色）
+     傳奇特效 kind='legend' ＝傳說品質色（橘色，PASSIVE_MIN_RARITY 那一階）
+     被動／靜態效果／事件觸發 kind='mech' ＝這組真言自己的品質色（RUNEWORD_TIER_COLORS） */
+function rwStatColor(key) {
+  var d = rwStatDef(key);
+  return (d && d.minR !== undefined && RARITIES[d.minR]) ? RARITIES[d.minR].color : '';
+}
+function rwDescribeEntries(word, it) {
+  var out = [];
+  var mechColor = RUNEWORD_TIER_COLORS[word.tier] || '';
   var st = word.stats || [];
   for (var i = 0; i < st.length; i++) {
-    var def = AFFIX_POOL[st[i][0]];
+    var def = rwStatDef(st[i][0]);
     var name = def ? def.name.replace(/%$/, '') : st[i][0];
-    if (it) lines.push(rwFormatStat(st[i][0], rwStatValue(it, st[i][0], st[i][1])));
-    else lines.push(name + (st[i][1] < 0 ? '（代價：基礎值 ×-' : '（基礎值 ×') + Math.abs(st[i][1]) + '）');
+    var text = it ? rwFormatStat(st[i][0], rwStatValue(it, st[i][0], st[i][1]))
+      : name + (st[i][1] < 0 ? '（代價：基礎值 ×-' : '（基礎值 ×') + Math.abs(st[i][1]) + '）';
+    out.push({ text: text, color: rwStatColor(st[i][0]), kind: 'stat' });
   }
+  var mech = function (t) { out.push({ text: t, color: mechColor, kind: 'mech' }); };
   var ps = word.passives || {};
   var psNames = { thorns: '反震', smite: '天罰', undying: '不朽', sunder: '破甲', trueDmg: '真傷', omniDrain: '萬象汲取' };
-  for (var pk in ps) lines.push((psNames[pk] || pk) + ' ' + ps[pk] + '%');
+  for (var pk in ps) mech((psNames[pk] || pk) + ' ' + ps[pk] + '%');
   var fx = word.fx || {};
   if (fx.reviveHpPct > 0) {
-    lines.push('死亡時以 ' + fx.reviveHpPct + '% 生命復活並淨化，無敵 ' + (fx.reviveInvulnSec || 0) + ' 秒，' +
+    mech('死亡時以 ' + fx.reviveHpPct + '% 生命復活並淨化，無敵 ' + (fx.reviveInvulnSec || 0) + ' 秒，' +
       (fx.reviveRefresh ? '所有技能冷卻重置，' : '') + (fx.reviveDmgPct ? '之後 ' + fx.reviveDmgSec + ' 秒內傷害 +' + fx.reviveDmgPct + '%，' : '') +
       '冷卻 ' + (fx.reviveCdSec || 0) + ' 秒');
   }
-  for (var fk in fx) if (RW_FX_TEXT[fk]) lines.push(RW_FX_TEXT[fk](fx[fk]));
+  for (var fk in fx) if (RW_FX_TEXT[fk]) mech(RW_FX_TEXT[fk](fx[fk]));
   var pr = word.procs || [];
-  for (var j = 0; j < pr.length; j++) lines.push(rwProcText(pr[j]));
+  for (var j = 0; j < pr.length; j++) mech(rwProcText(pr[j]));
   var lg = word.legend || [];
+  var legendColor = (typeof PASSIVE_MIN_RARITY !== 'undefined' && RARITIES[PASSIVE_MIN_RARITY]) ? RARITIES[PASSIVE_MIN_RARITY].color : '';
   for (var l = 0; l < lg.length; l++) {
     var pd = (typeof PASSIVE_POOL !== 'undefined') ? PASSIVE_POOL[lg[l]] : null;
-    if (pd) lines.push('傳奇特效【' + pd.name + '】：' + pd.desc);
+    if (pd) out.push({ text: '傳奇特效【' + pd.name + '】：' + pd.desc, color: legendColor, kind: 'legend' });
   }
-  return lines;
+  return out;
+}
+/* 純文字版（測試、配置表備註、文件用）：同一份內容，只取文字。 */
+function rwDescribeLines(word, it) {
+  return rwDescribeEntries(word, it).map(function (e) { return e.text; });
 }
 /* 這組真言的適用裝備是否「只有雙手武器」（雙手武器的符文孔數可以比一般裝備多）。 */
 function rwWordTwoHandOnly(word) {
