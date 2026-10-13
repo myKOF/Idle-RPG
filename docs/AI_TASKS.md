@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## RUNE-ASPD-STACKS-20261013 — 驚蟄與風暴之眼攻速疊層修正
+
+- Owner：Codex；Done，單一開發者。使用者要求疊層符合驚蟄最多3層、風暴之眼最多4層並補測試；前置為本分支既有符文V2，後續使用者審閱／整合。
+- 授權：使用者已明確同意分段修改並獨立提交；預檢runeword.js／bridge／Worker／index／本紀錄有Claude未合併變更及Worker未提交工作，index另有Antigravity未提交戰鬥日誌修改。僅在本ai/codex副本修改，保留既有版本，不碰其他副本，不合併／推送；日後整合需保留雙方快取及功能。
+- 允許：js/runeword.js、js/status.js、js/combat.js、新tests/runeword-aspd-stacks.test.cjs、index.html／js/bridge.js／js/worker/sim.worker.js必要快取及本紀錄。禁止改配置數值／Excel／CSV、其他技能、Protocol、存檔與素材。
+- 實作：以真言配置的max／val／sec與既有STATUS基底衍生來源獨立的疊層狀態；兩組不共用層數／倒數，普通aspdUp維持單層刷新。狀態列與攻速計算共用權威buff，不另建一套狀態或硬編碼倍率。
+- 驗收：逐暴擊疊層、3／4層封頂、刷新與到期重置、非暴擊／未命中不觸發、兩組與一般攻速並存、重複真言機制去重、實際攻速／狀態列／Worker快照一致；專項先紅後綠、符文／狀態／Worker回歸、Build、配置乾跑與diff check後獨立Commit。
+- 完成：新增來源獨立的rw疊層狀態，狀態定義由既有STATUS基底＋真言procs的max／val／sec純衍生；重用applyStatus／applyBuff／stackStep處理封頂與刷新，不修改表值。buffVal把同屬性來源加總，既有野外／塔戰／近戰動畫共用攻速；狀態列依不同sid顯示名稱、數值、層數及各自倒數，舊增益tooltip同時可讀。驚蟄3層+36%／3秒，風暴之眼4層+48%／4秒；同時滿層+84%，一般攻速增益獨立刷新。
+- 修改8檔：js/runeword.js、js/status.js、js/combat.js、tests/runeword-aspd-stacks.test.cjs、index.html、js/bridge.js、js/worker/sim.worker.js及本紀錄。主頁status1.0.32／runeword1.0.13／combat1.0.81／bridge1.0.264，Worker入口與上述三支import均20261013-rune-aspd-stacks；跳過Claude已用的runeword1.0.12／bridge1.0.263，避免快取重用。Protocol50及存檔不變。
+- 測試：新增專項初版8項，修正前1通過／7失敗，修正後8/8；補齊後15/15。node --test --test-reporter=tap tests/runeword-aspd-stacks.test.cjs tests/runeword-data.test.cjs tests/runeword-engine.test.cjs tests/runeword-ui.test.cjs tests/runeword-all-words.test.cjs tests/runeword-seen.test.cjs tests/rune-slots-config.test.cjs tests/config-runes-table.test.cjs tests/status-system.test.cjs tests/active-buffs-panel.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/tower-battlefield.test.cjs tests/vfx-editor-cache-versions.test.cjs：233/233通過，無失敗。
+- 驗證：npm.cmd run build，500檔全過；node tools/config_tables.cjs --apply Runes／--apply Status皆語意變更0；git diff --check通過。新增測試含正式Worker入口產生battle快照後在主端還原；正式UI的renderBattleBuffBar／battleBuffBadgeMarkup產生3／4層徽章、+36%／+48%提示與獨立到期移除（DOM寫入器以測試替身接收）；真towerTick驗普攻冷卻進度與野外攻速一致。測試未改舊斷言／接受錯誤現況。
+- 唯讀檢查：js/runeword_data.js、js/legendary.js、js/tower.js、js/ui.js、Worker Protocol／shim、scripts/sim/engine.js、tests/helpers/runeword-env.cjs、既有狀態／符文／Worker／塔戰／增益測試、AI規範與其他分支衝突diff；未修改上述檔案。Excel／CSV／素材未變，無素材庫Commit。先前MD審閱報告保留2f6a135d歷史快照，不覆寫當時觀察。
+- 交付：Commit為本紀錄所在[Codex] fix提交；本次無未完成項，可審查合併，未合併／推送。已知限制：未做真人瀏覽器目視／長時間戰鬥與效能壓測；與Claude的runeword屬性展開／分色與Worker補進度、Antigravity的index戰鬥日誌分開，未取代其副本；整合時共用快取與任務紀錄仍須保留雙方修改。下一步使用者整合後重新載入遊戲驗收疊層。
+
 ## CODEX-CLAUDE-MERGE-20261013 — 解決符文V2與天穹崩裂整合衝突
 
 - Owner：Codex；Done，單一開發者。使用者要求解決衝突，接續 develop 原有合併；原 HEAD b531b15f、MERGE_HEAD e059fd67。前置為雙方已提交成果，完成後交使用者重新載入驗收。
