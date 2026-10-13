@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-burst-blood",
+  "groups": [
+    {
+      "id": "en-burst-blood",
+      "name": "en-burst-blood",
+      "layerIds": [
+        "glow",
+        "rim",
+        "flash",
+        "drops"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-burst-blood"
+  ]
+}

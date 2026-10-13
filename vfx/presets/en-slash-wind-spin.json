@@ -1,0 +1,581 @@
+{
+  "schemaVersion": 1,
+  "id": "en-slash-wind-spin",
+  "duration": 1.5,
+  "loop": false,
+  "layers": [
+    {
+      "id": "cyclone-flow-1",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/twirl_03.png",
+      "zIndex": 0,
+      "position": {
+        "x": -6.5175,
+        "y": -8.1783
+      },
+      "rotation": 2.4,
+      "scale": {
+        "x": 0.6249,
+        "y": 0.6249
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "alpha": 0.2,
+      "tint": "#efaa51",
+      "blendMode": "add",
+      "duration": 1.5,
+      "rotationSpeed": 12.566370614359172,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.65,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.55
+        ],
+        [
+          0.3,
+          1
+        ],
+        [
+          1,
+          1.18
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          7.5
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "cyclone-flow-0",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/twirl_03.png",
+      "zIndex": 1,
+      "position": {
+        "x": -6.5175,
+        "y": -8.1783
+      },
+      "rotation": 0,
+      "scale": {
+        "x": 0.6994,
+        "y": 0.6994
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "alpha": 0.14,
+      "tint": "#f5d822",
+      "blendMode": "add",
+      "duration": 1.5,
+      "rotationSpeed": 12.566370614359172,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.65,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.55
+        ],
+        [
+          0.3,
+          1
+        ],
+        [
+          1,
+          1.18
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          7.5
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "orbit-0-halo",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_03.png",
+      "zIndex": 2,
+      "position": {
+        "x": -6.5175,
+        "y": -8.1783
+      },
+      "rotation": -0.2094,
+      "scale": {
+        "x": 0.8852,
+        "y": 0.8318
+      },
+      "anchor": {
+        "x": 0.31076681064521183,
+        "y": 0.510697036318065
+      },
+      "alpha": 0.9,
+      "tint": "#fff31e",
+      "blendMode": "screen",
+      "delay": 0,
+      "duration": 1.5,
+      "rotationSpeed": 12.566370614359172,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.65,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.65
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          1.16
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          -0.65
+        ],
+        [
+          1,
+          5.633185307179586
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "orbit-0-core",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_03.png",
+      "zIndex": 3,
+      "position": {
+        "x": -6.5175,
+        "y": -8.1783
+      },
+      "rotation": -0.2094,
+      "scale": {
+        "x": 0.7967,
+        "y": 0.7486
+      },
+      "anchor": {
+        "x": 0.31076681064521183,
+        "y": 0.510697036318065
+      },
+      "alpha": 0.9,
+      "tint": "#fff7d8",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 1.5,
+      "rotationSpeed": 12.566370614359172,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.65,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.65
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          1.16
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          -0.65
+        ],
+        [
+          1,
+          5.633185307179586
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "orbit-1-halo",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_03.png",
+      "zIndex": 4,
+      "position": {
+        "x": -6.5175,
+        "y": -8.1783
+      },
+      "rotation": 1.8406,
+      "scale": {
+        "x": 0.7259,
+        "y": 0.6821
+      },
+      "anchor": {
+        "x": 0.31076681064521183,
+        "y": 0.510697036318065
+      },
+      "alpha": 0.9,
+      "tint": "#fff31e",
+      "blendMode": "screen",
+      "delay": 0,
+      "duration": 1.5,
+      "rotationSpeed": 12.566370614359172,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.65,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.65
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          1.16
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          -0.65
+        ],
+        [
+          1,
+          5.633185307179586
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "orbit-1-core",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_03.png",
+      "zIndex": 5,
+      "position": {
+        "x": -6.5175,
+        "y": -8.1783
+      },
+      "rotation": 1.8406,
+      "scale": {
+        "x": 0.6533,
+        "y": 0.6139
+      },
+      "anchor": {
+        "x": 0.31076681064521183,
+        "y": 0.510697036318065
+      },
+      "alpha": 0.9,
+      "tint": "#fff7d8",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 1.5,
+      "rotationSpeed": 12.566370614359172,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.65,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.65
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          1.16
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          -0.65
+        ],
+        [
+          1,
+          5.633185307179586
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "orbit-2-halo",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_03.png",
+      "zIndex": 6,
+      "position": {
+        "x": -6.5175,
+        "y": -8.1783
+      },
+      "rotation": 4.2906,
+      "scale": {
+        "x": 1.029,
+        "y": 0.9669
+      },
+      "anchor": {
+        "x": 0.31076681064521183,
+        "y": 0.510697036318065
+      },
+      "alpha": 0.9,
+      "tint": "#fff31e",
+      "blendMode": "screen",
+      "delay": 0,
+      "duration": 1.5,
+      "rotationSpeed": 12.566370614359172,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.65,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.65
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          1.16
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          -0.65
+        ],
+        [
+          1,
+          5.633185307179586
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "orbit-2-core",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_03.png",
+      "zIndex": 7,
+      "position": {
+        "x": -6.5175,
+        "y": -8.1783
+      },
+      "rotation": 4.2906,
+      "scale": {
+        "x": 0.9261,
+        "y": 0.8702
+      },
+      "anchor": {
+        "x": 0.31076681064521183,
+        "y": 0.510697036318065
+      },
+      "alpha": 0.9,
+      "tint": "#fff7d8",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 1.5,
+      "rotationSpeed": 12.566370614359172,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.65,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.65
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          1.16
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          -0.65
+        ],
+        [
+          1,
+          5.633185307179586
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "radius": 272
+    },
+    "radiusM": 6,
+    "shape": "circle"
+  }
+}

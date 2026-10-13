@@ -1374,7 +1374,7 @@ function rollFieldEnemyCount(rank, stage, zone) {
 
 /* ---- 菁英群組（表本體與欄位語意 → data.js ELITE_GROUP）----
    這一組函式只負責「擲骰」：這一波要不要出菁英群、出幾群、每群幾隻、全員菁英還是帶小兵、
-   每隻帶幾個詞條。實際生成敵人在 js/combat.js spawnEliteWave，詞條內容在 js/elite_data.js。 */
+   每隻是菁英還是高級菁英由 combat.js spawnEliteWave 擲骰。技能與數量不在這裡：NPC 表決定（js/elite.js eliteRollSkills）。 */
 function eliteZoneKey(zone) {
   var z = zone == null && typeof G !== 'undefined' && G && G.stage ? G.stage.zone : zone;
   z = z || 'desert';
@@ -1426,17 +1426,6 @@ function rollEliteGroupCount(stage, zone, onEliteStage) {
   var pairs = [];
   for (var i = 0; i < (tbl || []).length; i++) if (tbl[i][1] > 0) pairs.push(tbl[i]);
   return pairs.length ? Math.max(1, Math.floor(wpick(pairs))) : 1;
-}
-/* 每隻菁英帶幾個詞條（1~3）。 */
-function rollEliteSkillCount(stage) {
-  var rows = eliteBandRows((typeof ELITE_GROUP !== 'undefined' && ELITE_GROUP) ? ELITE_GROUP.skillCountWeights : [], stage);
-  if (!rows.length) return 1;
-  var pairs = [];
-  for (var k = 0; k < 3; k++) {
-    var w = Number(rows[0][2 + k]);
-    if (w > 0) pairs.push([k + 1, w]);
-  }
-  return pairs.length ? wpick(pairs) : 1;
 }
 /* 一整個「菁英波」的計畫：[{ size, pure }, …]。
    過關配額（fieldStageQuota）與實際出怪共用這一支，所以配額算的隻數與場上出現的一致。 */

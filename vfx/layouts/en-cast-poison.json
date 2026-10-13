@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-cast-poison",
+  "groups": [
+    {
+      "id": "en-cast-poison",
+      "name": "en-cast-poison",
+      "layerIds": [
+        "ring",
+        "ring-inner",
+        "glow",
+        "flash",
+        "motes"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-cast-poison"
+  ]
+}

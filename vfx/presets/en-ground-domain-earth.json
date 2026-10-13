@@ -1,0 +1,278 @@
+{
+  "schemaVersion": 1,
+  "id": "en-ground-domain-earth",
+  "duration": 1.85,
+  "loop": true,
+  "layers": [
+    {
+      "id": "fill",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/circle_b.png",
+      "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.6416,
+        "y": 0.6593
+      },
+      "alpha": 0.1,
+      "tint": "#362e45",
+      "blendMode": "add",
+      "duration": 1.85,
+      "alphaOverLife": [
+        [
+          0,
+          0.1
+        ],
+        [
+          0.5,
+          0.14
+        ],
+        [
+          1,
+          0.1
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.96
+        ],
+        [
+          0.5,
+          1.04
+        ],
+        [
+          1,
+          0.96
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "edge",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/magic_02.png",
+      "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.6416,
+        "y": 0.6593
+      },
+      "alpha": 0.75,
+      "tint": "#665381",
+      "blendMode": "add",
+      "duration": 1.85,
+      "alphaOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          0.5,
+          0.9
+        ],
+        [
+          1,
+          0.7
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.96
+        ],
+        [
+          0.5,
+          1.04
+        ],
+        [
+          1,
+          0.96
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "inner",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/ring_a.png",
+      "zIndex": 2,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.4812,
+        "y": 0.4944
+      },
+      "alpha": 0.55,
+      "tint": "#775e9a",
+      "blendMode": "add",
+      "duration": 1.85,
+      "alphaOverLife": [
+        [
+          0,
+          0.5
+        ],
+        [
+          0.5,
+          0.7
+        ],
+        [
+          1,
+          0.5
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1.04
+        ],
+        [
+          0.5,
+          0.96
+        ],
+        [
+          1,
+          1.04
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "motes",
+      "type": "particle",
+      "assetId": "particle-pack/png-transparent/smoke_04.png",
+      "zIndex": 3,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "tint": "#775e9a",
+      "blendMode": "normal",
+      "emission": {
+        "mode": "rate",
+        "rate": 7
+      },
+      "lifetime": [
+        0.7,
+        1.1
+      ],
+      "spawn": {
+        "radius": 104.5776,
+        "shape": "circle"
+      },
+      "speed": [
+        33.3016,
+        83.2542
+      ],
+      "direction": -90,
+      "spread": 50,
+      "gravity": {
+        "x": 0,
+        "y": -84.3868
+      },
+      "startScale": [
+        0.039,
+        0.0715
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.25,
+          0.5
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.4
+        ]
+      ]
+    },
+    {
+      "id": "edge-copy",
+      "type": "sprite",
+      "assetId": "new_materials/impact-ring/impact_2.png",
+      "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.4008,
+        "y": 0.4118
+      },
+      "alpha": 0.2,
+      "tint": "#403949",
+      "blendMode": "add",
+      "duration": 1.85,
+      "alphaOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          0.5,
+          0.9
+        ],
+        [
+          1,
+          0.7
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.96
+        ],
+        [
+          0.5,
+          1.04
+        ],
+        [
+          1,
+          0.96
+        ]
+      ],
+      "offsetXOverLife": 0,
+      "offsetYOverLife": 0,
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "radius": 100
+    },
+    "shape": "circle"
+  }
+}

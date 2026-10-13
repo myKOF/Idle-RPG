@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-arcane-beams-1",
+  "groups": [
+    {
+      "id": "en-arcane-beams-1",
+      "name": "en-arcane-beams-1",
+      "layerIds": [
+        "halo",
+        "hub",
+        "beam0-glow",
+        "beam0-body",
+        "beam0-core"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-arcane-beams-1"
+  ]
+}

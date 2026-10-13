@@ -1,9 +1,7 @@
 'use strict';
 /* ============================================================
-   elite-data.test.cjs — 菁英詞條表（js/elite_data.js）與引擎（js/elite.js）的接線
-
-   受測：ELITE_AFFIXES 每一列都要接得上引擎、特效 preset 都真的存在、數字欄位齊全。
-   這條在表上多一列、改名一個欄位時最先紅——引擎讀不到欄位只會安靜地算出 NaN，畫面上看不出哪裡壞。
+   elite-data.test.cjs — 敵人專用技能的資料接線（Skills2「類別＝enemy」→ ENEMY_SKILLS2 → ELITE_AFFIXES）
+   對照文件：docs/elite_monster_affixes_guide.md（17 個隨機技能的冷卻、數量、距離、持續時間都逐項核對）
    ============================================================ */
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -12,136 +10,138 @@ const path = require('node:path');
 const { loadEliteEnv } = require('./helpers/elite-env.cjs');
 
 const root = path.resolve(__dirname, '..');
-const presetIds = new Set(fs.readdirSync(path.join(root, 'vfx', 'presets')).map((f) => f.replace(/\.json$/, '')));
+const PRESETS = new Set(fs.readdirSync(path.join(root, 'vfx/presets')).map((f) => f.replace(/\.json$/i, '')));
 
-/* 各原型必備的數字欄位：缺一個引擎就會讀到 undefined。 */
-const NEED = {
-  spots: ['n', 'spread', 'warn', 'step', 'r', 'dmg', 'warnPreset', 'burst'],
-  spot: ['r', 'warn', 'warnPreset', 'burst', 'dmg', 'at'],
-  zone: ['at', 'life', 'tick', 'preset', 'dmg'],
-  volley: ['n', 'gap', 'travel', 'proj', 'hit', 'dmg', 'hitR'],
-  beam: ['len', 'width', 'warn', 'warnPreset', 'beamPreset', 'dmg'],
-  bolt: ['bolt', 'hit', 'dmg'],
-  dash: ['warn', 'warnPreset', 'speed', 'hitR', 'impact', 'burst', 'dmg'],
-  blink: ['dist', 'warn', 'warnPreset', 'burst', 'r', 'dmg'],
-  spin: ['r', 'ticks', 'gap', 'warn', 'warnPreset', 'burst', 'dmg'],
-  vortex: ['r', 'life', 'pull', 'warn', 'warnPreset', 'preset', 'burst', 'dmg'],
-  shield: ['pct', 'dur', 'vfx'],
-  reflect: ['dur', 'pct', 'vfx'],
-  invuln: ['dur', 'vfx'],
-  heal: ['pct', 'vfx'],
-  summon: ['n', 'vfx'],
-  bloodsac: ['heal', 'atk', 'dur', 'vfx'],
-  curse: ['atkDown', 'defDown', 'dur', 'vfx', 'dmg'],
-  drain: ['mp', 'heal', 'proj', 'dmg'],
-  regen: ['pct', 'vfx'],
-  haste: ['aspd', 'run'],
-  giant: ['hp', 'red', 'scale'],
-  enrage: ['hpPct', 'atk', 'aspd', 'vfx'],
-  vampiric: ['pct', 'proj'],
-  thorns: ['pct', 'cap', 'hit'],
-  knockback: ['chance', 'dist', 'stun', 'vfx'],
-  lifelink: ['share'],
-  phoenix: ['hp', 'vfx', 'vfx2'],
-  bomber: ['delay', 'r', 'dmg', 'warnPreset', 'burst'],
-  splitter: ['n', 'hp', 'atk', 'vfx']
-};
+/* 文件列出的 17 個隨機技能 */
+const RANDOM_POOL = ['e_firechain', 'e_arcane', 'e_molten', 'e_plague', 'e_electrified', 'e_poisoncross', 'e_frostburst',
+  'e_frostpulse', 'e_mortar', 'e_walls', 'e_vortex', 'e_shield', 'e_vitality', 'e_avenger', 'e_summon', 'e_missile', 'e_thunderstorm'];
 
-test('ELITE-DATA-1 詞條總數至少 30 個，id 不重複', () => {
+test('ELITE-DATA-1 敵人技能都在 ELITE_AFFIXES 裡，arch 接得上引擎', () => {
   const c = loadEliteEnv();
   const ids = c.ELITE_AFFIX_ORDER;
-  assert.ok(ids.length >= 30, '詞條只有 ' + ids.length + ' 個');
-  assert.equal(new Set(ids).size, ids.length);
-  assert.deepEqual(Array.from(ids), Object.keys(c.ELITE_AFFIXES));
-});
-
-test('ELITE-DATA-2 每個詞條都有名稱、圖示、顏色、說明，且原型接得上引擎', () => {
-  const c = loadEliteEnv();
-  c.ELITE_AFFIX_ORDER.forEach((id) => {
+  assert.ok(ids.length >= 50, '技能數 ' + ids.length);
+  assert.equal(Object.keys(c.ENEMY_SKILLS2).length, ids.length);
+  const casters = Object.keys(c.ELITE_CASTERS);
+  ids.forEach((id) => {
     const d = c.ELITE_AFFIXES[id];
-    assert.ok(d.name && d.emoji && d.desc, id + ' 缺顯示欄位');
-    assert.match(d.color, /^#[0-9a-f]{6}$/i, id + ' 顏色格式');
+    assert.match(id, /^e_/, id);
+    assert.ok(d.name && d.emoji && d.desc, id + ' 要有名稱、圖示、說明');
     assert.ok(d.kind === 'active' || d.kind === 'passive', id + ' kind');
     if (d.kind === 'active') {
-      assert.equal(typeof c.ELITE_CASTERS[d.arch], 'function', id + ' 的原型 ' + d.arch + ' 沒有施放函式');
-      assert.ok(Array.isArray(d.cd) && d.cd.length === 2 && d.cd[0] > 0 && d.cd[1] >= d.cd[0], id + ' 冷卻 cd');
+      assert.ok(casters.indexOf(d.arch) >= 0, id + ' 的主動 arch「' + d.arch + '」沒有施放函式');
+      assert.ok(d.cd[0] > 0 && d.cd[1] >= d.cd[0], id + ' 主動技能要有冷卻');
     } else {
-      assert.ok(c.ELITE_PASSIVE_ARCHS.indexOf(d.arch) >= 0, id + ' 的被動原型 ' + d.arch + ' 沒有登記');
+      assert.ok(Array.from(c.ELITE_PASSIVE_ARCHS).indexOf(d.arch) >= 0, id + ' 的被動 arch「' + d.arch + '」未登記');
     }
-    assert.ok(NEED[d.arch], '測試的必備欄位表缺原型 ' + d.arch);
-    NEED[d.arch].forEach((k) => assert.ok(d[k] !== undefined && d[k] !== null && d[k] !== '', id + ' 缺欄位 ' + k));
-    assert.ok(d.w === undefined || d.w > 0, id + ' 權重');
+    assert.ok(d.pool === 'random' || d.pool === 'exclusive', id + ' pool');
   });
 });
 
-test('ELITE-DATA-3 表裡用到的 preset 全部存在，而且都在預載清單裡', () => {
+test('ELITE-DATA-2 隨機技能池剛好是文件的 17 種', () => {
   const c = loadEliteEnv();
-  const preload = new Set(c.ELITE_VFX_PRESETS);
-  const skip = { name: 1, emoji: 1, color: 1, kind: 1, arch: 1, grp: 1, desc: 1, elem: 1, at: 1 };
+  assert.deepEqual(Array.from(c.eliteSkillIds('random')).sort(), RANDOM_POOL.slice().sort());
+});
+
+test('ELITE-DATA-3 文件規則逐項核對（冷卻、數量、距離、持續）', () => {
+  const c = loadEliteEnv();
+  const A = c.ELITE_AFFIXES;
+  const cd = (id) => Array.from(A[id].cd);
+  assert.deepEqual(cd('e_arcane'), [3, 10]);
+  assert.deepEqual(cd('e_poisoncross'), [3, 10]);
+  assert.deepEqual(cd('e_frostburst'), [3, 6]);
+  assert.deepEqual(cd('e_frostpulse'), [4, 7]);
+  assert.deepEqual(cd('e_mortar'), [5, 10]);
+  assert.deepEqual(cd('e_walls'), [6, 10]);
+  assert.deepEqual(cd('e_vortex'), [7, 12]);
+  assert.deepEqual(cd('e_shield'), [8, 12]);
+  assert.deepEqual(cd('e_summon'), [10, 15]);
+  assert.deepEqual(cd('e_missile'), [5, 8]);
+  assert.deepEqual(cd('e_thunderstorm'), [6, 10]);
+  assert.deepEqual(cd('e_plague'), [3, 6]);
+  assert.deepEqual(cd('e_firechain'), [3, 6]);
+  // 距離單位：表上是米，載入後 ×10 變座標單位
+  assert.equal(A.e_arcane.throwRange, 180, '秘法棒丟到玩家 18 米內');
+  assert.equal(A.e_arcane.dur, 6, '秘法棒持續 6 秒');
+  assert.equal(A.e_poisoncross.dur, 6, '毒水球持續 6 秒');
+  assert.deepEqual(Array.from(A.e_frostburst.grow), [2, 3].map((v) => v), '冰晶膨脹 2~3 秒');
+  assert.equal(A.e_mortar.minRange, 140, '迫擊最小射程 14 米');
+  assert.equal(A.e_vortex.speed, 600, '漩渦拉扯速度 60 米/秒');
+  assert.equal(A.e_vortex.arcH, 30, '漩渦拋物線高度約 3 米');
+  assert.equal(A.e_shield.dur, 3, '護盾持續 3 秒');
+  assert.equal(A.e_vitality.hp, 1.5, '強命 +50% 生命');
+  assert.equal(A.e_avenger.size, 0.2); assert.equal(A.e_avenger.atk, 0.2); assert.equal(A.e_avenger.aspd, 0.2);
+  assert.equal(A.e_plague.life, 20, '毒水窪持續 20 秒');
+  assert.equal(A.e_molten.life, 10, '火徑持續 10 秒');
+  assert.equal(A.e_molten.coreDelay, 3, '熔岩核心約 3 秒後自爆');
+  assert.deepEqual(Array.from(A.e_summon.n), [2, 4], '召喚每次 2~4 隻');
+  assert.equal(A.e_summon.hpCut, 0.9, '召喚者死後小怪最大生命 −90%');
+  assert.deepEqual(Array.from(A.e_missile.n), [3, 5], '飛彈每次 3~5 枚');
+  assert.deepEqual(Array.from(A.e_thunderstorm.n), [2, 3], '落雷每次 2~3 下');
+  assert.equal(A.e_thunderstorm.spread, 60, '落雷在玩家周圍 6 米內');
+  assert.equal(A.e_thunderstorm.r, 80, '落雷傷害半徑 8 米');
+  assert.deepEqual(Array.from(A.e_electrified.n), [2, 4], '每次被擊中散出 2~4 個電火花');
+});
+
+test('ELITE-DATA-4 特效：每個引用的 Preset 都存在，而且全是敵人專用（en- 開頭），不與玩家技能共用', () => {
+  const c = loadEliteEnv();
+  const used = new Set();
   c.ELITE_AFFIX_ORDER.forEach((id) => {
     const d = c.ELITE_AFFIXES[id];
-    Object.keys(d).forEach((k) => {
-      const v = d[k];
-      if (typeof v !== 'string' || skip[k] || !/^[a-z0-9]+(?:-[a-z0-9]+)+$/.test(v)) return;
-      assert.ok(presetIds.has(v), id + '.' + k + ' 指到不存在的 preset ' + v);
-      assert.ok(preload.has(v), id + '.' + k + ' 的 ' + v + ' 沒進 ELITE_VFX_PRESETS（顯示層不會預載）');
+    Object.keys(d.v).forEach((role) => { used.add(d.v[role]); });
+    (d.presets || []).forEach((p) => used.add(p));
+  });
+  assert.ok(used.size > 40);
+  used.forEach((p) => {
+    assert.ok(PRESETS.has(p), 'vfx/presets 缺 ' + p);
+    assert.match(p, /^en-/, p + ' 不是敵人專用 Preset（使用者規則：敵人技能的特效不要和玩家技能一樣）');
+  });
+  // 玩家技能與狀態表用到的 Preset 一個都不能出現在敵人技能裡
+  const player = new Set();
+  Object.keys(c.SKILLS2).forEach((g) => {
+    const grp = c.SKILLS2[g];
+    (grp.tiers || []).concat(grp.ult || []).forEach((t) => {
+      [t.vfx, t.triggerVfx].forEach((v) => { if (v) Object.keys(v).forEach((k) => player.add(v[k])); });
     });
   });
-  c.ELITE_VFX_PRESETS.forEach((id) => assert.ok(presetIds.has(id), '預載清單裡的 ' + id + ' 不存在'));
+  used.forEach((p) => assert.ok(!player.has(p), p + ' 也被玩家技能使用'));
 });
 
-test('ELITE-DATA-4 每個預載 preset 都登記在 VFX_PRESET_USAGE_OUTSIDE_TABLES（AI_RULES 8.4）', () => {
-  const c = loadEliteEnv();
-  const doc = fs.readFileSync(path.join(root, 'docs', 'vfx', 'VFX_PRESET_USAGE_OUTSIDE_TABLES.md'), 'utf8');
-  c.ELITE_VFX_PRESETS.forEach((id) => {
-    const re = new RegExp('^\\| `' + id.replace(/[-]/g, '\\-') + '` \\| 菁英', 'm');
-    assert.ok(re.test(doc), id + ' 沒有「菁英…」開頭的登記列');
+test('ELITE-DATA-5 preset id 不寫在引擎程式裡（特效一律由 Skills2 表填入）', () => {
+  ['js/elite.js', 'js/elite_data.js', 'js/battle-elite.js'].forEach((f) => {
+    const src = fs.readFileSync(path.join(root, f), 'utf8');
+    const hits = (src.match(/['"](en-[a-z0-9-]+|mark-red|burst-[a-z-]+|hit-[a-z-]+|proj-[a-z-]+|ground-[a-z-]+)['"]/g) || []);
+    assert.deepEqual(hits, [], f + ' 內不得出現寫死的 preset id：' + hits.join(','));
   });
 });
 
-test('ELITE-DATA-5 互斥組：沒有任何詞條組合在抽取時會同時出現同一組', () => {
+test('ELITE-DATA-6 技能 id 的說明、顏色、表上欄位完整；被動技能沒有冷卻', () => {
   const c = loadEliteEnv();
-  for (let i = 0; i < 400; i++) {
-    const stage = 1 + Math.floor(Math.random() * 400);
-    const picked = c.eliteRollAffixes(stage, 3);
-    assert.ok(picked.length >= 1 && picked.length <= 3);
-    assert.equal(new Set(picked).size, picked.length, '同一個詞條不得重複');
-    const groups = picked.map((id) => c.ELITE_AFFIXES[id].grp).filter(Boolean);
-    assert.equal(new Set(groups).size, groups.length, '同一互斥組只能取一個：' + picked.join());
-    picked.forEach((id) => {
-      const d = c.ELITE_AFFIXES[id];
-      assert.ok(!d.minStage || stage >= d.minStage, id + ' 在第 ' + stage + ' 關不該出現（minStage ' + d.minStage + '）');
-    });
-  }
-});
-
-test('ELITE-DATA-6 每個主動詞條在全新環境下都能施放、不丟例外、至少送出一則 elite-* 特效事件', () => {
-  const c = loadEliteEnv({ stage: 120 });
-  const { makeElite, makeMinion, stepElite } = require('./helpers/elite-env.cjs');
-  c.ELITE_AFFIX_ORDER.filter((id) => c.ELITE_AFFIXES[id].kind === 'active').forEach((id) => {
-    c.vfx.length = 0;
-    c.vm = null;
-    require('node:vm').runInContext("FIELD.monsters = []; FIELD.reviveCd = 0; G.stage.current = 120; FIELD.player = newPlayerEntity(getStats()); bfResetPlayer(); eliteReset();", c);
-    const m = makeElite(c, [id]);
-    makeMinion(c, 1);                 // 血祭、治療、召喚需要同伴
-    m.hp = m.maxHp * 0.5;             // 治療需要有人受傷
+  c.ELITE_AFFIX_ORDER.forEach((id) => {
     const d = c.ELITE_AFFIXES[id];
-    m._el.cd[id] = 0;
-    stepElite(c, 0.2);
-    stepElite(c, 6);
-    const elite = c.vfx.filter((e) => /^elite-/.test(e.variant || ''));
-    assert.ok(elite.length >= 1, id + ' 沒有送出任何 elite-* 特效事件');
-    elite.forEach((e) => {
-      assert.equal(e.presetOnly, true, id + ' 的事件必須是 presetOnly');
-      assert.ok(e.vfx && typeof e.vfx === 'object', id + ' 的事件缺 vfx 角色表');
-    });
-    assert.ok(d.name);
-    assert.equal(c.ELITE_RT.errors, 0, id + ' 的施放過程丟了例外（eliteGuard 會吞掉，這裡看計數）');
+    assert.match(d.color, /^#[0-9a-fA-F]{6}$/, id + ' color');
+    assert.ok(d.desc.length >= 8, id + ' 說明太短');
+    if (d.kind === 'passive') assert.deepEqual(Array.from(d.cd), [0, 0], id + ' 被動技能沒有冷卻');
   });
 });
 
-test('ELITE-DATA-7 docs/ELITE_AFFIXES.md 的詞條總表與資料表同步（改了表就重跑 tools/gen_elite_doc.cjs）', () => {
-  const r = require('node:child_process').spawnSync(process.execPath,
-    [path.join(root, 'tools', 'gen_elite_doc.cjs'), '--check'], { encoding: 'utf8' });
-  assert.equal(r.status, 0, (r.stdout || '') + (r.stderr || ''));
+test('ELITE-DATA-7 要同伴才有意義的技能（火鏈、復仇…）有標 needs，單獨一隻抽不到', () => {
+  const c = loadEliteEnv();
+  assert.equal(c.ELITE_AFFIXES.e_firechain.needs, 'group');
+  assert.equal(c.ELITE_AFFIXES.e_avenger.needs, 'group');
+  const picked = new Set();
+  for (let i = 0; i < 400; i++) {
+    c.eliteRollSkills({ skills: { elite: { rnd: [6, 6] } } }, 'elite', { stage: 50, group: 1, tower: false, atkRange: 60 }).forEach((id) => picked.add(id));
+  }
+  assert.ok(!picked.has('e_firechain') && !picked.has('e_avenger'), '單獨一隻不該抽到需要同伴的技能');
+  assert.ok(!picked.has('e_mortar'), '射程 6 米的近戰怪抽不到最小射程 14 米的迫擊');
+  const withGroup = new Set();
+  for (let i = 0; i < 400; i++) {
+    c.eliteRollSkills({ skills: { elite: { rnd: [6, 6] } } }, 'elite', { stage: 50, group: 3, tower: false, atkRange: 240 }).forEach((id) => withGroup.add(id));
+  }
+  assert.ok(withGroup.has('e_firechain') && withGroup.has('e_avenger') && withGroup.has('e_mortar'), '同群、遠程怪抽得到');
+  const tower = new Set();
+  for (let i = 0; i < 400; i++) {
+    c.eliteRollSkills({ skills: { rnd: [6, 6] } }, 'tower', { stage: 50, group: 1, tower: true, atkRange: 0 }).forEach((id) => tower.add(id));
+  }
+  assert.ok(!tower.has('e_summon'), '封魔塔只有 BOSS 一隻，不抽召喚');
 });

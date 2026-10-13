@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-ice-pulse",
+  "groups": [
+    {
+      "id": "en-ice-pulse",
+      "name": "en-ice-pulse",
+      "layerIds": [
+        "wave",
+        "wave2",
+        "fill",
+        "frost"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-ice-pulse"
+  ]
+}

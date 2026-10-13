@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "id": "en-field-water-prison-dome",
+  "duration": 2,
+  "loop": true,
+  "layers": [
+    {
+      "id": "water-floor",
+      "type": "sprite",
+      "assetId": "new_materials/arcane-ring/dingbats-100.png",
+      "zIndex": 0,
+      "position": {
+        "x": 0.5547,
+        "y": -5.0825
+      },
+      "scale": {
+        "x": 0.5941,
+        "y": 0.5979
+      },
+      "alpha": 1,
+      "tint": "#5beebb",
+      "blendMode": "add",
+      "duration": 2,
+      "rotationSpeed": 0.17453292519943295,
+      "alphaOverLife": [
+        [
+          0,
+          0.187234
+        ],
+        [
+          0.5062,
+          0.362766
+        ],
+        [
+          1,
+          0.22234
+        ]
+      ],
+      "outerScale": {
+        "x": 1,
+        "y": 0.6
+      },
+      "perspective": false,
+      "cameraDepth": false,
+      "followDirection": false,
+      "followStretch": false
+    },
+    {
+      "id": "dome-shell",
+      "type": "sprite",
+      "assetId": "codex-authored/water-prison/water-dome.svg",
+      "zIndex": 2,
+      "position": {
+        "x": 0.2367,
+        "y": -52.1967
+      },
+      "scale": {
+        "x": 0.6595,
+        "y": 0.7507
+      },
+      "alpha": 0.3,
+      "tint": "#7fffd0",
+      "blendMode": "normal",
+      "duration": 2,
+      "alphaOverLife": [
+        [
+          0,
+          0.8
+        ],
+        [
+          0.5,
+          0.92
+        ],
+        [
+          1,
+          0.8
+        ]
+      ],
+      "outerScale": {
+        "x": 1,
+        "y": 1
+      },
+      "perspective": false,
+      "cameraDepth": false,
+      "followDirection": false,
+      "followStretch": false
+    },
+    {
+      "id": "water-floor-copy",
+      "type": "sprite",
+      "assetId": "new_materials/arcane-ring/dingbats-23.png",
+      "zIndex": 0,
+      "position": {
+        "x": 0.2367,
+        "y": -6.2565
+      },
+      "scale": {
+        "x": 0.247,
+        "y": 0.247
+      },
+      "alpha": 1,
+      "tint": "#16f392",
+      "blendMode": "add",
+      "duration": 2,
+      "rotationSpeed": 0.17453292519943295,
+      "alphaOverLife": [
+        [
+          0.0062,
+          0.269149
+        ],
+        [
+          0.4969,
+          0.561702
+        ],
+        [
+          1,
+          0.280851
+        ]
+      ],
+      "outerScale": {
+        "x": 1,
+        "y": 0.6
+      },
+      "perspective": false,
+      "cameraDepth": false,
+      "followDirection": false,
+      "followStretch": false
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "radius": 100
+    },
+    "shape": "circle"
+  }
+}

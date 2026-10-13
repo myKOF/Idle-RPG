@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-cast-arcane",
+  "groups": [
+    {
+      "id": "en-cast-arcane",
+      "name": "en-cast-arcane",
+      "layerIds": [
+        "circle",
+        "glow",
+        "glints"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-cast-arcane"
+  ]
+}

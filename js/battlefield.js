@@ -90,6 +90,7 @@ function bfResetPlayer() { BF_PLAYER.x = 0; BF_PLAYER.y = 0; BF_PLAYER_CHASING =
 
 /* 體型半徑：BOSS 比較大，所以「邊緣」比中心更早進入接觸距離。 */
 function bfEntityRadius(ent) {
+  if (ent && ent._bodyR > 0) return ent._bodyR;      // 菁英以上：體型倍率換算好的半徑（js/elite.js eliteEquip）
   return (ent && ent.isBoss) ? bfBossRadius() : bfBodyRadius();
 }
 
@@ -144,14 +145,26 @@ function bfStopDistance(ent) {
 function bfInAttackRange(ent) {
   if (!ent) return false;
   if (!bfPos(ent)) return true;                 // 沒有座標（高塔）＝沿用舊行為，不擋
-  return bfEntityDistance(ent) <= bfEnemyAttackRange(ent);
+  if (bfEntityDistance(ent) > bfEnemyAttackRange(ent)) return false;
+  return !bfWallBlocksMelee(ent);
+}
+/* 築牆：近戰攻擊不能隔著牆（遠程不受影響）。js/elite.js eliteWallBlocks 沒載入就恆為不擋。 */
+function bfWallBlocksMelee(ent) {
+  if (typeof eliteWallBlocks !== 'function' || bfEnemyIsRanged(ent)) return false;
+  var p = bfPos(ent), c = bfPlayerPos();
+  return !!p && eliteWallBlocks(p.x, p.y, c.x, c.y);
 }
 
 /* 我方能不能打到這個目標（普攻是近戰）。 */
 function bfPlayerCanReach(ent) {
   if (!ent) return false;
   if (!bfPos(ent)) return true;
-  return bfEntityDistance(ent) <= bfMeleeRange();
+  if (bfEntityDistance(ent) > bfMeleeRange()) return false;
+  if (typeof eliteWallBlocks === 'function') {      // 築牆：我方普攻也是近戰，隔著牆打不到
+    var p = bfPos(ent), c = bfPlayerPos();
+    if (eliteWallBlocks(p.x, p.y, c.x, c.y)) return false;
+  }
+  return true;
 }
 
 /* 投射物飛行距離／時間。速度沿用參數表的「每秒幾格」，換算成座標單位。 */
@@ -237,7 +250,19 @@ function bfTickApproach(enemies, dt) {
     var dx0 = p.x - home.x, dy0 = p.y - home.y;
     var d = Math.sqrt(dx0 * dx0 + dy0 * dy0);
     var stop = bfStopDistance(ent);
-    if (d > stop && d > 0.0001) {
+    var rp = ent._rp;
+    if (rp) {
+      /* 跑位（菁英以上，js/elite.js eliteRepoPick）：目標點是「相對我方的角度＋距離」，我方跑動時目標點跟著走。
+         到了就清掉並通知技能引擎（_rpDone），由它排下一次。 */
+      var tx = home.x + Math.cos(rp.ang) * rp.dist, ty = home.y + Math.sin(rp.ang) * rp.dist;
+      var rdx = tx - p.x, rdy = ty - p.y, rd = Math.sqrt(rdx * rdx + rdy * rdy);
+      if (rd <= 8) { ent._rp = null; ent._rpDone = true; }
+      else {
+        var rstep = Math.min(rd, bfEnemyRunSpeed(ent) * bfEnemySpeedFactor(ent) * dt);
+        p.x += (rdx / rd) * rstep;
+        p.y += (rdy / rd) * rstep;
+      }
+    } else if (d > stop && d > 0.0001) {
       var step = Math.min(d - stop, bfEnemyRunSpeed(ent) * bfEnemySpeedFactor(ent) * dt);
       p.x -= (dx0 / d) * step;
       p.y -= (dy0 / d) * step;
@@ -292,11 +317,14 @@ function bfTickPlayer(enemies, dt, preferred, pEnt) {
     return false;
   }
   if (!(dt > 0)) return false;
+  if (typeof elitePlayerLocked === 'function' && elitePlayerLocked()) { BF_PLAYER_CHASING = false; return false; }   // 被漩渦拉扯中
   var home = bfPlayerPos();
+  var ox0 = home.x, oy0 = home.y;
   var live = bfLiveList(enemies).filter(function (e) { return !!bfPos(e); });
   if (!live.length) {
     /* 空場：往前方（+x）推進，地板會跟著往後捲，不會呆站著等下一波。 */
     home.x += bfPlayerSpeed() * bfPlayerSpeedFactor(pEnt) * dt;
+    if (typeof eliteClampMove === 'function') eliteClampMove(ox0, oy0, home);
     BF_PLAYER_CHASING = true;
     return true;
   }
@@ -324,6 +352,7 @@ function bfTickPlayer(enemies, dt, preferred, pEnt) {
   var step = Math.min(gap, bfPlayerSpeed() * bfPlayerSpeedFactor(pEnt) * dt);
   home.x += (dx / len) * step;
   home.y += (dy / len) * step;
+  if (typeof eliteClampMove === 'function' && eliteClampMove(ox0, oy0, home)) { BF_PLAYER_CHASING = false; return false; }   // 撞牆
   /* 這一步就走到定位了：當下就解除追擊狀態，不要拖到下一個 tick——
      中間那一格空窗會讓「已經站定卻仍算在追」，遲滯就少了半拍。 */
   if (gap - step <= 0.0001) BF_PLAYER_CHASING = false;

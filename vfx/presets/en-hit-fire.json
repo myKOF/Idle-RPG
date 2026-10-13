@@ -1,0 +1,198 @@
+{
+  "schemaVersion": 1,
+  "id": "en-hit-fire",
+  "duration": 0.14,
+  "loop": false,
+  "layers": [
+    {
+      "id": "halo",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.1406,
+        "y": 0.1406
+      },
+      "alpha": 0.3,
+      "tint": "#ff2187",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 0.087111,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          1
+        ],
+        [
+          0.35,
+          0.55
+        ],
+        [
+          0.7,
+          0.15
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.6
+        ],
+        [
+          0.3,
+          1
+        ],
+        [
+          1,
+          1.15
+        ]
+      ]
+    },
+    {
+      "id": "sheet",
+      "type": "sprite",
+      "assetId": "spritemancer-vfx-256/30fps/effect_explosion2_1_256x256.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.2031,
+        "y": 0.2031
+      },
+      "alpha": 0.4,
+      "blendMode": "normal",
+      "delay": 0,
+      "duration": 0.14,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          1
+        ],
+        [
+          0.35,
+          0.55
+        ],
+        [
+          0.7,
+          0.15
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "sheet": {
+        "columns": 6,
+        "count": 27,
+        "loop": false,
+        "mode": "life",
+        "rows": 5
+      }
+    },
+    {
+      "id": "sparks",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 2,
+      "tint": "#ff3d69",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 0.14,
+      "emission": {
+        "count": 6,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.080889,
+        0.118222
+      ],
+      "spawn": {
+        "radius": 4,
+        "shape": "circle"
+      },
+      "speed": [
+        192.857143,
+        417.857143
+      ],
+      "direction": -90,
+      "spread": 240,
+      "gravity": {
+        "x": 0,
+        "y": -1446.428571
+      },
+      "drag": 9.642857,
+      "startScale": [
+        0.0078,
+        0.0156
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.2,
+          0.65
+        ],
+        [
+          0.6,
+          0.2
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#ffffff"
+        ],
+        [
+          0.18,
+          "#ff7e9e"
+        ],
+        [
+          0.45,
+          "#ff217f"
+        ],
+        [
+          0.75,
+          "#ba116d"
+        ],
+        [
+          1,
+          "#380822"
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.4
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "height": 60,
+      "width": 60
+    },
+    "heightM": 6,
+    "shape": "custom",
+    "widthM": 6
+  }
+}

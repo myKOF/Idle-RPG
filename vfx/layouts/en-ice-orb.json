@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-ice-orb",
+  "groups": [
+    {
+      "id": "en-ice-orb",
+      "name": "en-ice-orb",
+      "layerIds": [
+        "mist",
+        "glow",
+        "ball",
+        "snow",
+        "flakes"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-ice-orb"
+  ]
+}

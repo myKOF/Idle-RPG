@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-ice-crystal",
+  "groups": [
+    {
+      "id": "en-ice-crystal",
+      "name": "en-ice-crystal",
+      "layerIds": [
+        "edge",
+        "frost",
+        "grow",
+        "crystal0",
+        "crystal1",
+        "crystal2",
+        "crystal3",
+        "crystal4",
+        "glint"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-ice-crystal"
+  ]
+}

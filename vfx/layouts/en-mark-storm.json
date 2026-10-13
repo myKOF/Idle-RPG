@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-mark-storm",
+  "groups": [
+    {
+      "id": "en-mark-storm",
+      "name": "en-mark-storm",
+      "layerIds": [
+        "fill",
+        "edge"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-mark-storm"
+  ]
+}

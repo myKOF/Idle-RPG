@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-burst-storm",
+  "groups": [
+    {
+      "id": "en-burst-storm",
+      "name": "en-burst-storm",
+      "layerIds": [
+        "swirl",
+        "core",
+        "rim",
+        "flash",
+        "swirl-copy"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-burst-storm"
+  ]
+}

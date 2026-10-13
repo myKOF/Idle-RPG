@@ -269,6 +269,15 @@
 - 風險：①抹除不退還，誤按成本高，所以連按兩次；②舊分頁若快取舊 protocol.js 會被協議版本檢查擋下，需重新整理；③光暈為純 CSS 動畫（尊重 prefers-reduced-motion）。
 - 建議驗證（Antigravity）：暫放／取消／刻印／抹除各流程；材料不足時抹除顯示「材料不足」；刻印中途失敗時未送出的仍留暫放；成形後兩顆以上符文都有光暈、拆掉一顆就消失；沒有任何成形提示。
 
+## Claude｜高級敵人改造：菁英／高級菁英／野外 BOSS／封魔塔 BOSS 的技能、體型、跑位（ELITE-REWORK-20261013）
+
+- Owner：Claude；Done（等使用者看預覽圖與驗收）。使用者提供 `docs/elite_monster_affixes_guide.md`：①NPC 表補上封魔塔 BOSS、高級菁英 ②專屬技能填 Skills2 群組id、隨機技能填池子數量上下限，技能特效欄不再需要 ③敵人技能進 Skills2 並用新類別區分，參數與特效沿用該表 ④高級敵人會跑位 ⑤特效不得與玩家技能相同，做好先給預覽圖。
+- 架構：①Skills2 加「類別」欄（最後一欄，既有欄位位置不動），類別＝enemy 的 52 列回寫 `ENEMY_SKILLS2`（`js/skills2.js`），玩家技能一個不受影響 ②`js/elite_data.js` 改成讀 ENEMY_SKILLS2 的轉接層（距離米→座標單位、特效欄→角色）③`js/elite.js` 重寫：技能由資料驅動，野外與封魔塔共用同一套（eliteTowerOn／elitePlayer／eliteEnemies）④NPC 表五種類型、技能三欄，`BOSS_LIST` 一併回寫 ⑤`ELITE_GROUP` 新增 advChance／adv*／size*／repo*。
+- 修改：`tools/config_tables.cjs`（Skills2 敵人列分流、NPC 表重寫）、`tools/apply_params.cjs`、`tools/vfx/preset-usage.cjs`、`tools/gen_elite_doc.cjs`、`tools/vfx/authoring/author/enemy-skills.cjs`（85 份敵人專用 Preset：61 份換色＋24 份新作）、`js/{elite,elite_data,combat,battlefield,tower,formula,data,skills2,gm_exec,vfx-runtime,battle-renderer,battle-elite,bridge}.js`、`js/worker/sim.worker.js`、`index.html`、`config/Excel|CSV/{NPC,Skills2,game_parameters}`、docs 與測試。
+- 決策：現有 47 詞條中 35 個保留為專屬技能（反射護罩、瞬影、荊棘因文件列為「不實作」而移除，其餘 9 個被文件的 17 個隨機技能取代）；野外 BOSS 專屬技能依 NPC 主題各配 1 個、封魔塔 BOSS 各配 2 個（我先訂的）；高級菁英機率、倍率、體型、跑位間隔都進參數表（預設值未平衡）；固定技能不再整群共用，每隻菁英各自配。
+- 驗證：新增／重寫 6 支測試約 70 項；全庫測試失敗名稱與改造前 HEAD 比對，新增 0；實機（隱藏面板驅動）看過 arcane／poisoncross／frostburst／frostpulse／walls／vortex／electrified／plague／封魔塔 BOSS，並用離線渲染產生玩家 vs 敵人的特效對照預覽圖。
+- 已知：漩渦的拋物線高度沒有畫面（Canvas 沒有玩家離地高度）；任何一個 Preset 的素材不在發佈清單裡，整個 VFX Runtime 會靜默組裝失敗（所有特效消失），新增 Preset 後務必 `node tools/vfx/export-assets.cjs`。
+
 ## Claude｜NPC 表加「類型／技能／技能特效／備註」，菁英可固定技能（NPC-ELITE-SKILLS-20261008）
 
 - Owner：Claude；Done。使用者在 NPC.xlsx 加了「類型」欄（normal／elite／boss，每個 NPC 三列），要求表後面再補 NPC 的技能、技能用到的特效名與給人讀的備註。

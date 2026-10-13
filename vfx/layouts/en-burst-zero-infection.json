@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-burst-zero-infection",
+  "groups": [
+    {
+      "id": "en-burst-zero-infection",
+      "name": "en-burst-zero-infection",
+      "layerIds": [
+        "glow",
+        "rim",
+        "rim-core",
+        "flash",
+        "bubbles"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-burst-zero-infection"
+  ]
+}

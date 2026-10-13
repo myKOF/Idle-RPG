@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-proj-fireball",
+  "groups": [
+    {
+      "id": "en-proj-fireball",
+      "name": "en-proj-fireball",
+      "layerIds": [
+        "glow",
+        "tail",
+        "body",
+        "core",
+        "trail"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-proj-fireball"
+  ]
+}

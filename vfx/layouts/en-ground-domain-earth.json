@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-ground-domain-earth",
+  "groups": [
+    {
+      "id": "en-ground-domain-earth",
+      "name": "en-ground-domain-earth",
+      "layerIds": [
+        "fill",
+        "edge",
+        "inner",
+        "motes",
+        "edge-copy"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-ground-domain-earth"
+  ]
+}

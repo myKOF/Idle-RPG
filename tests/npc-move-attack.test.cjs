@@ -20,8 +20,9 @@ function readNpcCsv() {
     assert.ok(i >= 0, 'NPC.csv 缺少欄位：' + name);
     return i;
   };
-  const idx = { id: col('NPC識別碼'), move: col('移動速度(米/秒)'), aspd: col('攻擊速度(次/秒)'), range: col('攻擊距離(米)') };
-  return lines.slice(1).map((line) => {
+  const idx = { id: col('NPC識別碼'), move: col('移動速度(米/秒)'), aspd: col('攻擊速度(次/秒)'), range: col('攻擊距離(米)'), type: col('類型') };
+  /* 基本資料只認 normal 列（elite／elite_adv／boss 是複製品；tower_boss 列沒有移動攻擊欄） */
+  return lines.slice(1).filter((line) => line.split(',')[idx.type] === 'normal').map((line) => {
     const f = line.split(',');
     return { id: f[idx.id], move: Number(f[idx.move]), aspd: Number(f[idx.aspd]), range: Number(f[idx.range]) };
   });
@@ -60,7 +61,7 @@ test('NPC.csv 的移動速度／攻擊速度／攻擊距離與 NPC_CONFIG_TABLE 
 test('套用流程能無損回寫三欄（dry-run 語意變更 0）', () => {
   const result = spawnSync(process.execPath, ['tools/config_tables.cjs', '--apply', 'NPC'], { cwd: root, encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr || result.stdout);
-  assert.match(result.stdout, /重建字面值 7 個（語意變更 0）/);
+  assert.match(result.stdout, /重建字面值 8 個（語意變更 0）/);
 });
 
 test('npcCombatProfile：表格值換成座標單位（1 米 = 10 單位），攻速為絕對值', () => {

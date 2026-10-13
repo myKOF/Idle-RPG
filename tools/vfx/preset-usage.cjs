@@ -222,6 +222,18 @@ function scanTables(repoRoot) {
           });
         });
       });
+      /* 敵人專用技能（Skills2 類別＝enemy）額外用到的 Preset 填在「效果參數(JSON)」的 presets 陣列
+         （例：飛彈的四種顏色）——同樣是配置表填入，算在這一列的技能頭上。 */
+      const jsonAt = headerIndex(table.header, '效果參數(JSON)');
+      const classAt = headerIndex(table.header, '類別');
+      if (jsonAt >= 0 && classAt >= 0 && String(r.row[classAt] || '').trim() === 'enemy') {
+        let extra = [];
+        try { extra = (JSON.parse(r.row[jsonAt] || '{}').presets) || []; } catch (e) { extra = []; }
+        extra.forEach(function (id) {
+          if (typeof id !== 'string' || !id) return;
+          (out[id] = out[id] || []).push({ table: t.file, kind: t.label, name: r.name, group: r.group });
+        });
+      }
     });
   });
   return out;

@@ -1,0 +1,882 @@
+{
+  "schemaVersion": 1,
+  "id": "en-poison-cross",
+  "duration": 6,
+  "loop": false,
+  "layers": [
+    {
+      "id": "hub",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/circle_b.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.1172,
+        "y": 0.1172
+      },
+      "alpha": 0.7,
+      "tint": "#8cff2a",
+      "blendMode": "add",
+      "duration": 6,
+      "scaleOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          1,
+          1.5
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "rail0",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/rotated/trace_06_rotated.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.1953,
+        "y": 0.0156
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0.5
+      },
+      "alpha": 0.28,
+      "tint": "#7ee02a",
+      "blendMode": "add",
+      "duration": 6,
+      "scaleOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          1,
+          1.5
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          2.30383
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "ball0-0",
+      "type": "sprite",
+      "assetId": "new_materials/orb/sphere_28.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.0508,
+        "y": 0.0508
+      },
+      "anchor": {
+        "x": -0.46153846153846156,
+        "y": 0.5
+      },
+      "alpha": 0.95,
+      "tint": "#9dff3a",
+      "blendMode": "add",
+      "duration": 6,
+      "scaleOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          1,
+          1.5
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          2.30383
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "ball0-1",
+      "type": "sprite",
+      "assetId": "new_materials/orb/sphere_28.png",
+      "zIndex": 3,
+      "scale": {
+        "x": 0.0508,
+        "y": 0.0508
+      },
+      "anchor": {
+        "x": -1.4230769230769231,
+        "y": 0.5
+      },
+      "alpha": 0.95,
+      "tint": "#9dff3a",
+      "blendMode": "add",
+      "duration": 6,
+      "scaleOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          1,
+          1.5
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          2.30383
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "ball0-2",
+      "type": "sprite",
+      "assetId": "new_materials/orb/sphere_28.png",
+      "zIndex": 4,
+      "scale": {
+        "x": 0.0508,
+        "y": 0.0508
+      },
+      "anchor": {
+        "x": -2.3846153846153846,
+        "y": 0.5
+      },
+      "alpha": 0.95,
+      "tint": "#9dff3a",
+      "blendMode": "add",
+      "duration": 6,
+      "scaleOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          1,
+          1.5
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          2.30383
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "ball0-3",
+      "type": "sprite",
+      "assetId": "new_materials/orb/sphere_28.png",
+      "zIndex": 5,
+      "scale": {
+        "x": 0.0508,
+        "y": 0.0508
+      },
+      "anchor": {
+        "x": -3.3461538461538463,
+        "y": 0.5
+      },
+      "alpha": 0.95,
+      "tint": "#9dff3a",
+      "blendMode": "add",
+      "duration": 6,
+      "scaleOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          1,
+          1.5
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          2.30383
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "rail1",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/rotated/trace_06_rotated.png",
+      "zIndex": 6,
+      "scale": {
+        "x": 0.1953,
+        "y": 0.0156
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0.5
+      },
+      "alpha": 0.28,
+      "tint": "#7ee02a",
+      "blendMode": "add",
+      "duration": 6,
+      "scaleOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          1,
+          1.5
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          1.5708
+        ],
+        [
+          1,
+          3.87463
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "ball1-0",
+      "type": "sprite",
+      "assetId": "new_materials/orb/sphere_28.png",
+      "zIndex": 7,
+      "scale": {
+        "x": 0.0508,
+        "y": 0.0508
+      },
+      "anchor": {
+        "x": -0.46153846153846156,
+        "y": 0.5
+      },
+      "alpha": 0.95,
+      "tint": "#9dff3a",
+      "blendMode": "add",
+      "duration": 6,
+      "scaleOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          1,
+          1.5
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          1.5708
+        ],
+        [
+          1,
+          3.87463
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "ball1-1",
+      "type": "sprite",
+      "assetId": "new_materials/orb/sphere_28.png",
+      "zIndex": 8,
+      "scale": {
+        "x": 0.0508,
+        "y": 0.0508
+      },
+      "anchor": {
+        "x": -1.4230769230769231,
+        "y": 0.5
+      },
+      "alpha": 0.95,
+      "tint": "#9dff3a",
+      "blendMode": "add",
+      "duration": 6,
+      "scaleOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          1,
+          1.5
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          1.5708
+        ],
+        [
+          1,
+          3.87463
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "ball1-2",
+      "type": "sprite",
+      "assetId": "new_materials/orb/sphere_28.png",
+      "zIndex": 9,
+      "scale": {
+        "x": 0.0508,
+        "y": 0.0508
+      },
+      "anchor": {
+        "x": -2.3846153846153846,
+        "y": 0.5
+      },
+      "alpha": 0.95,
+      "tint": "#9dff3a",
+      "blendMode": "add",
+      "duration": 6,
+      "scaleOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          1,
+          1.5
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          1.5708
+        ],
+        [
+          1,
+          3.87463
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "ball1-3",
+      "type": "sprite",
+      "assetId": "new_materials/orb/sphere_28.png",
+      "zIndex": 10,
+      "scale": {
+        "x": 0.0508,
+        "y": 0.0508
+      },
+      "anchor": {
+        "x": -3.3461538461538463,
+        "y": 0.5
+      },
+      "alpha": 0.95,
+      "tint": "#9dff3a",
+      "blendMode": "add",
+      "duration": 6,
+      "scaleOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          1,
+          1.5
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          1.5708
+        ],
+        [
+          1,
+          3.87463
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "rail2",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/rotated/trace_06_rotated.png",
+      "zIndex": 11,
+      "scale": {
+        "x": 0.1953,
+        "y": 0.0156
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0.5
+      },
+      "alpha": 0.28,
+      "tint": "#7ee02a",
+      "blendMode": "add",
+      "duration": 6,
+      "scaleOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          1,
+          1.5
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          3.14159
+        ],
+        [
+          1,
+          5.44543
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "ball2-0",
+      "type": "sprite",
+      "assetId": "new_materials/orb/sphere_28.png",
+      "zIndex": 12,
+      "scale": {
+        "x": 0.0508,
+        "y": 0.0508
+      },
+      "anchor": {
+        "x": -0.46153846153846156,
+        "y": 0.5
+      },
+      "alpha": 0.95,
+      "tint": "#9dff3a",
+      "blendMode": "add",
+      "duration": 6,
+      "scaleOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          1,
+          1.5
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          3.14159
+        ],
+        [
+          1,
+          5.44543
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "ball2-1",
+      "type": "sprite",
+      "assetId": "new_materials/orb/sphere_28.png",
+      "zIndex": 13,
+      "scale": {
+        "x": 0.0508,
+        "y": 0.0508
+      },
+      "anchor": {
+        "x": -1.4230769230769231,
+        "y": 0.5
+      },
+      "alpha": 0.95,
+      "tint": "#9dff3a",
+      "blendMode": "add",
+      "duration": 6,
+      "scaleOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          1,
+          1.5
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          3.14159
+        ],
+        [
+          1,
+          5.44543
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "ball2-2",
+      "type": "sprite",
+      "assetId": "new_materials/orb/sphere_28.png",
+      "zIndex": 14,
+      "scale": {
+        "x": 0.0508,
+        "y": 0.0508
+      },
+      "anchor": {
+        "x": -2.3846153846153846,
+        "y": 0.5
+      },
+      "alpha": 0.95,
+      "tint": "#9dff3a",
+      "blendMode": "add",
+      "duration": 6,
+      "scaleOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          1,
+          1.5
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          3.14159
+        ],
+        [
+          1,
+          5.44543
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "ball2-3",
+      "type": "sprite",
+      "assetId": "new_materials/orb/sphere_28.png",
+      "zIndex": 15,
+      "scale": {
+        "x": 0.0508,
+        "y": 0.0508
+      },
+      "anchor": {
+        "x": -3.3461538461538463,
+        "y": 0.5
+      },
+      "alpha": 0.95,
+      "tint": "#9dff3a",
+      "blendMode": "add",
+      "duration": 6,
+      "scaleOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          1,
+          1.5
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          3.14159
+        ],
+        [
+          1,
+          5.44543
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "rail3",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/rotated/trace_06_rotated.png",
+      "zIndex": 16,
+      "scale": {
+        "x": 0.1953,
+        "y": 0.0156
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0.5
+      },
+      "alpha": 0.28,
+      "tint": "#7ee02a",
+      "blendMode": "add",
+      "duration": 6,
+      "scaleOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          1,
+          1.5
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          4.71239
+        ],
+        [
+          1,
+          7.01622
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "ball3-0",
+      "type": "sprite",
+      "assetId": "new_materials/orb/sphere_28.png",
+      "zIndex": 17,
+      "scale": {
+        "x": 0.0508,
+        "y": 0.0508
+      },
+      "anchor": {
+        "x": -0.46153846153846156,
+        "y": 0.5
+      },
+      "alpha": 0.95,
+      "tint": "#9dff3a",
+      "blendMode": "add",
+      "duration": 6,
+      "scaleOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          1,
+          1.5
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          4.71239
+        ],
+        [
+          1,
+          7.01622
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "ball3-1",
+      "type": "sprite",
+      "assetId": "new_materials/orb/sphere_28.png",
+      "zIndex": 18,
+      "scale": {
+        "x": 0.0508,
+        "y": 0.0508
+      },
+      "anchor": {
+        "x": -1.4230769230769231,
+        "y": 0.5
+      },
+      "alpha": 0.95,
+      "tint": "#9dff3a",
+      "blendMode": "add",
+      "duration": 6,
+      "scaleOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          1,
+          1.5
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          4.71239
+        ],
+        [
+          1,
+          7.01622
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "ball3-2",
+      "type": "sprite",
+      "assetId": "new_materials/orb/sphere_28.png",
+      "zIndex": 19,
+      "scale": {
+        "x": 0.0508,
+        "y": 0.0508
+      },
+      "anchor": {
+        "x": -2.3846153846153846,
+        "y": 0.5
+      },
+      "alpha": 0.95,
+      "tint": "#9dff3a",
+      "blendMode": "add",
+      "duration": 6,
+      "scaleOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          1,
+          1.5
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          4.71239
+        ],
+        [
+          1,
+          7.01622
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "ball3-3",
+      "type": "sprite",
+      "assetId": "new_materials/orb/sphere_28.png",
+      "zIndex": 20,
+      "scale": {
+        "x": 0.0508,
+        "y": 0.0508
+      },
+      "anchor": {
+        "x": -3.3461538461538463,
+        "y": 0.5
+      },
+      "alpha": 0.95,
+      "tint": "#9dff3a",
+      "blendMode": "add",
+      "duration": 6,
+      "scaleOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          1,
+          1.5
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          4.71239
+        ],
+        [
+          1,
+          7.01622
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "radius": 100
+    },
+    "shape": "circle"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-cast-gold",
+  "groups": [
+    {
+      "id": "en-cast-gold",
+      "name": "en-cast-gold",
+      "layerIds": [
+        "ring",
+        "ring-inner",
+        "glow",
+        "flash",
+        "motes"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-cast-gold"
+  ]
+}

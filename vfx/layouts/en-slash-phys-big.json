@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-slash-phys-big",
+  "groups": [
+    {
+      "id": "en-slash-phys-big",
+      "name": "en-slash-phys-big",
+      "layerIds": [
+        "arc",
+        "arc-inner",
+        "gleam",
+        "chips"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-slash-phys-big"
+  ]
+}

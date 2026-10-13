@@ -1,0 +1,161 @@
+{
+  "schemaVersion": 1,
+  "id": "en-cast-arcane",
+  "duration": 0.35,
+  "loop": false,
+  "layers": [
+    {
+      "id": "circle",
+      "type": "sprite",
+      "assetId": "new_materials/arcane-ring/dingbats-2.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.0938,
+        "y": 0.0938
+      },
+      "alpha": 0.9,
+      "tint": "#ff8ed5",
+      "blendMode": "add",
+      "duration": 0.3,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.15,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.4
+        ],
+        [
+          1,
+          1.25
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          4.71239
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "glow",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.0781,
+        "y": 0.0781
+      },
+      "alpha": 0.6,
+      "tint": "#ffa9df",
+      "blendMode": "add",
+      "duration": 0.3,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.15,
+          0.7
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.5
+        ],
+        [
+          1,
+          1.2
+        ]
+      ]
+    },
+    {
+      "id": "glints",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/star_04.png",
+      "zIndex": 2,
+      "tint": "#ffe6f7",
+      "blendMode": "add",
+      "emission": {
+        "count": 4,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.16,
+        0.28
+      ],
+      "spawn": {
+        "radius": 14,
+        "shape": "circle"
+      },
+      "speed": [
+        40,
+        90
+      ],
+      "direction": 0,
+      "spread": 360,
+      "startScale": [
+        0.0137,
+        0.0234
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.5
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "height": 60,
+      "width": 60
+    },
+    "heightM": 6,
+    "shape": "custom",
+    "widthM": 6
+  }
+}

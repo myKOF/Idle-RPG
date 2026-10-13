@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-proj-ice-shard",
+  "groups": [
+    {
+      "id": "en-proj-ice-shard",
+      "name": "en-proj-ice-shard",
+      "layerIds": [
+        "glow",
+        "body",
+        "edge",
+        "trail"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-proj-ice-shard"
+  ]
+}

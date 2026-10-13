@@ -1354,7 +1354,11 @@ var BattleRenderer = (function () {
     var isElite = !isBoss && !!data.elite;
     /* 密度縮放：棋盤格數越多，每隻可用的空間越小，整體跟著縮 */
     var dScale = densityScale();
-    var visScale = (isBoss ? 1 : (isElite ? 1.28 : 1)) * dScale;
+    /* 高級敵人（菁英／高級菁英／野外 BOSS／封魔塔 BOSS）的體型由模擬層給：data._size＝相對普通敵人的倍率
+       （參數表「敵人體型倍率」），光暈顏色 data._elColor。沒有 _size 的（舊事件、測試替身）維持原本的畫法。 */
+    var tierSize = Number(data._size) > 0 ? Number(data._size) : 0;
+    var tierName = data._tier || '';
+    var visScale = (tierSize || (isBoss ? 1 : (isElite ? 1.28 : 1))) * dScale;
 
     var root = new PIXI.Container();
     var sz = cellSize();
@@ -1365,20 +1369,33 @@ var BattleRenderer = (function () {
 
     /* 陰影 */
     var shadow = new PIXI.Graphics();
-    var shw = (isBoss ? sz.w * 1.4 : sz.w * 0.5) * 0.5;
+    var shw = (tierSize ? sz.w * 0.25 * Math.max(1, tierSize * 0.8) : (isBoss ? sz.w * 1.4 : sz.w * 0.5) * 0.5);
     shadow.ellipse(0, 0, shw, shw * 0.32).fill({ color: 0x000000, alpha: 0.35 });
     view.addChild(shadow);
 
-    /* 菁英光環：重疊時取各通道最大值，避免累積亮度。 */
-    if (isElite) {
+    /* 外層光暈：重疊時取各通道最大值，避免累積亮度。
+       菁英＝淡藍、高級菁英＝濃黃、BOSS＝隨屬性的顏色（較濃）；沒有 _size 的舊畫法維持原本的紫色菁英光環。 */
+    if (tierSize || isElite) {
       var glow = new PIXI.Sprite(glowTexture());
       glow.anchor.set(0.5);
-      glow.tint = 0xb17aff;
-      glow.alpha = 0.42;
-      glow.scale.set(1.65);
-      glow.y = -24;
-      glow.blendMode = 'max';
+      var glowCss = parseInt(String(data._elColor || '').replace('#', '0x'));
+      glow.tint = (tierSize && isFinite(glowCss)) ? glowCss : 0xb17aff;
+      glow.alpha = tierSize ? ({ elite: 0.42, elite_adv: 0.7, boss: 0.7, tower: 0.78 }[tierName] || 0.45) : 0.42;
+      glow.scale.set(tierSize ? 1.4 * visScale : 1.65);
+      glow.y = tierSize ? -19 * visScale : -24;
+      glow.blendMode = tierSize ? 'normal' : 'max';     // 一般混色：淺色地面上加法／max 混色會洗掉顏色，光暈看不出來
       view.addChild(glow);
+      if (tierSize && (tierName === 'elite_adv' || tierName === 'boss' || tierName === 'tower')) {
+        // 較濃的外層光暈：再疊一圈更大更淡的
+        var halo2 = new PIXI.Sprite(glowTexture());
+        halo2.anchor.set(0.5);
+        halo2.tint = glow.tint;
+        halo2.alpha = 0.34;
+        halo2.scale.set(1.9 * visScale);
+        halo2.y = -19 * visScale;
+        halo2.blendMode = 'normal';
+        view.addChild(halo2);
+      }
     }
 
     /* 本體（受擊抖動/縮放/旋轉都作用在 bodyWrap 上，陰影與血條不跟著晃） */
@@ -1388,7 +1405,7 @@ var BattleRenderer = (function () {
     if (isBoss && S.sheets.boss) {
       sheetName = 'boss';
       body = makeAnimSprite('boss', 'idle');
-      var targetH = sz.h * 2.1;
+      var targetH = tierSize ? 64 * visScale : sz.h * 2.1;     // 高級敵人：普通敵人（64px）的 N 倍
       body.scale.set(targetH / body.texture.height);
     } else {
       body = makeMobBody(data, visScale);
@@ -1408,7 +1425,7 @@ var BattleRenderer = (function () {
     }
 
     /* 血條 + 名字（在腳下，不干擾本體動作） */
-    var barW = isBoss ? sz.w * 1.5 : (isElite ? 60 : 48) * dScale;
+    var barW = tierSize ? Math.max(isBoss ? sz.w * 1.5 : 60 * dScale, 48 * dScale * Math.min(tierSize, 3.2)) : (isBoss ? sz.w * 1.5 : (isElite ? 60 : 48) * dScale);
     var hpBar = new PIXI.Graphics();
     hpBar.y = 7;
     view.addChild(hpBar);
@@ -1423,7 +1440,7 @@ var BattleRenderer = (function () {
       text: 'Lv.' + data.level + ' ' + elemEmoji + (data.name || ''),
       style: {
         fontFamily: 'sans-serif', fontSize: nameSize, fontWeight: 'bold',
-        fill: isBoss ? '#ffb3b3' : (isElite ? '#d9b3ff' : '#cfd6e4'),
+        fill: isBoss ? '#ffb3b3' : (tierName === 'elite_adv' ? '#ffe27a' : (isElite ? '#d9b3ff' : '#cfd6e4')),
         stroke: { color: '#000000', width: 3 }
       }
     });
@@ -1446,7 +1463,7 @@ var BattleRenderer = (function () {
       hpBar: hpBar, nameText: name, statusText: status,
       sheetName: sheetName, curAnim: sheetName ? 'idle' : '', baseAnim: 'idle',
       isBoss: isBoss, isElite: isElite, visScale: visScale,
-      barW: barW, hitHeight: isBoss ? sz.h * 1.9 : 64 * visScale,
+      barW: barW, hitHeight: tierSize ? 64 * visScale : (isBoss ? sz.h * 1.9 : 64 * visScale),
       wx: 0, wy: 0,                   // 畫面上的世界座標（內插後的結果）
       samples: null,                  // 模擬層座標的取樣緩衝（見 posTrack/posSolve）
       state: 'entering',              // entering → idle → dying → gone

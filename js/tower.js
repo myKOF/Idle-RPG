@@ -53,6 +53,11 @@ function makeBoss(floor) {
     elem: bd.elem, attr: bd.attr || bd.elem || null, elemAtk: null, resist: {}, stunCount: 0,
     shield: 0, buffs: {}, dots: []
   };
+  if (typeof eliteEquip === 'function' && typeof eliteRollSkills === 'function') {
+    var towerIdx = (floor - 1) % BOSS_LIST.length;
+    var towerIds = eliteRollSkills(bd, 'tower', { stage: floor, group: 1, tower: true, atkRange: 0 });
+    eliteEquip(b, towerIds, { tier: 'tower', towerIdx: towerIdx, towerCount: BOSS_LIST.length });
+  }
   if (bd.elem) {
     b.elemAtk = {};
     ELEMENTS.forEach(function (e) { b.elemAtk[e] = 0; });
@@ -84,6 +89,7 @@ function startTowerFight(floor) {
   TOWER.boss._spawnAt = GT;
   TOWER.player = newPlayerEntity(st);
   placeTowerCombatants(TOWER.boss);
+  if (typeof eliteReset === 'function') eliteReset();
   // 塔戰玩家實體全新建立＝新一場戰鬥，清空技能執行期狀態（比照 skillCds 全新重置）
   if (typeof resetSkillRT === 'function') resetSkillRT();
   TOWER.player.atkCd = 0.3;
@@ -205,6 +211,12 @@ function towerTick(dt) {
   if (towerPlayerDotDeath) { endTowerFight(false, 'death'); return; }
   if (towerBossDotDeath) { endTowerFight(true); return; }
 
+  /* 高級敵人技能（js/elite.js）：封魔塔 BOSS 與野外共用同一套引擎，這裡只負責「驅動它、處理它的後果」。
+     玩家被技能打死 → 失敗；BOSS 被反震等打死 → 勝利。 */
+  if (typeof eliteTick === 'function') {
+    if (eliteTick(dt)) { endTowerFight(false, 'death'); return; }
+    if (b.hp <= 0) { endTowerFight(true); return; }
+  }
   // 潛力【聖療逆轉】溢出傷害（持續效果）
   if (typeof tickPotentialRegen === 'function' && tickPotentialRegen(p, st, dt, [b], 'tb-float')) { endTowerFight(true); return; }
 
@@ -257,6 +269,7 @@ function towerTick(dt) {
   if (skillCastTick && skillCastTick.casting) playerMoveDt = 0;
   else if (skillCastTick && skillCastTick.completed) playerMoveDt = skillCastTick.remainingDt;
   if (!p._sgRevival && typeof bfTickPlayer === 'function') bfTickPlayer([b], playerMoveDt, b, p);
+  if (typeof eliteStepMotion === 'function') eliteStepMotion([b], dt);   // 衝鋒位移
   if (typeof bfTickApproach === 'function') bfTickApproach([b], dt);
 
   if (!playerActionControlBlocked(p, false) &&
@@ -294,7 +307,9 @@ function towerTick(dt) {
     var mult = TOWER.enraged ? bcfg.enrageMult : 1;
     b.atkCd -= dt * slowFactor(b);
     /* 打不到就不打（同野外 fieldMonsterAttack）：冷卻停在 ready，進射程當下出手。 */
-    var bossInRange = typeof bfInAttackRange !== 'function' || bfInAttackRange(b);
+    /* 技能施放中（js/elite.js eliteLocked）站著不普攻：當作還沒進射程，冷卻停在 ready，施放完立刻出手。 */
+    var bossInRange = (typeof bfInAttackRange !== 'function' || bfInAttackRange(b)) &&
+      !(typeof eliteLocked === 'function' && eliteLocked(b));
     if (b.atkCd <= 0 && !bossInRange) {
       b.atkCd = 0;
     } else if (b.atkCd <= 0) {
@@ -541,6 +556,7 @@ function stopTowerAutoFromResult() {
 function finishTowerFight() {
   TOWER.showingResult = false;
   G.tower.active = false;
+  if (typeof eliteReset === 'function') eliteReset();
   TOWER.boss = null;
   TOWER.player = null;
   TOWER.playerPos = null;

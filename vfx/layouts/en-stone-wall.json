@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-stone-wall",
+  "groups": [
+    {
+      "id": "en-stone-wall",
+      "name": "en-stone-wall",
+      "layerIds": [
+        "shadow",
+        "base",
+        "block0",
+        "block1",
+        "block2",
+        "block3",
+        "block4",
+        "block5",
+        "block6",
+        "block7",
+        "rim",
+        "dust"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-stone-wall"
+  ]
+}

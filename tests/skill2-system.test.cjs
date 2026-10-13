@@ -248,7 +248,10 @@ test('SKILLS2 與 config/CSV/Skills2.csv 完整往返（每階一列 ＋ 超神�
     // 超神進化（階數 8/9/10）＝三選一，每個選項一列
     tierTotal += (c.SKILLS2[gid].ult || []).length;
   });
-  assert.equal(rows.length - 1, tierTotal, 'CSV 列數應為每階一列（含超神進化選項）');
+  /* 敵人專用技能（類別＝enemy，ENEMY_SKILLS2）也在這張表，但不是玩家技能：不算進 SKILLS2 的階數 */
+  const enemyCount = Object.keys(c.ENEMY_SKILLS2 || {}).length;
+  assert.ok(enemyCount > 0, '應有敵人專用技能列');
+  assert.equal(rows.length - 1 - enemyCount, tierTotal, 'CSV 列數應為每階一列（含超神進化選項）加上敵人技能列');
   assert.match(rows[0], /群組ID/);
   for(const column of ['施放距離（米）','搜敵範圍（米）','傷害範圍（米）','飛行距離（米）']) assert.ok(table.headers.includes(column),column);
   assert.ok(!table.headers.includes('range'));
@@ -257,6 +260,8 @@ test('SKILLS2 與 config/CSV/Skills2.csv 完整往返（每階一列 ＋ 超神�
   const [header,...cells]=tools.csvParse(csv);
   const rebuilt=tools.evalLiteral(tools.extractLiteral(tools.SCHEMAS.Skills2.rebuild(cells,header).SKILLS2,'SKILLS2').literal);
   assert.deepEqual(plain(rebuilt),plain(c.SKILLS2),'CSV與執行資料逐列完整一致');
+  const rebuiltEnemy=tools.evalLiteral(tools.extractLiteral(tools.SCHEMAS.Skills2.rebuild(cells,header).ENEMY_SKILLS2,'ENEMY_SKILLS2').literal);
+  assert.deepEqual(plain(rebuiltEnemy),plain(c.ENEMY_SKILLS2),'敵人專用技能列與執行資料逐列完整一致');
   assert.match(rows[0], /效果參數\(JSON\)/);
   assert.match(rows[0], /超神ID/);
 });

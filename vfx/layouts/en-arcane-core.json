@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-arcane-core",
+  "groups": [
+    {
+      "id": "en-arcane-core",
+      "name": "en-arcane-core",
+      "layerIds": [
+        "fill",
+        "rune",
+        "ring",
+        "core",
+        "motes"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-arcane-core"
+  ]
+}

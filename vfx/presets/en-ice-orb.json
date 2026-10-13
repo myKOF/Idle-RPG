@@ -1,0 +1,159 @@
+{
+  "schemaVersion": 1,
+  "id": "en-ice-orb",
+  "duration": 2,
+  "loop": true,
+  "layers": [
+    {
+      "id": "mist",
+      "type": "sprite",
+      "assetId": "new_materials/smoke/smoke3_11.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.1953,
+        "y": 0.1953
+      },
+      "alpha": 0.5,
+      "tint": "#d8fff8",
+      "blendMode": "add",
+      "duration": 2,
+      "scaleOverLife": [
+        [
+          0,
+          0.9
+        ],
+        [
+          0.5,
+          1.1
+        ],
+        [
+          1,
+          0.9
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          -3.14159
+        ]
+      ]
+    },
+    {
+      "id": "glow",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.1563,
+        "y": 0.1563
+      },
+      "alpha": 0.8,
+      "tint": "#7ff0e0",
+      "blendMode": "add",
+      "duration": 2
+    },
+    {
+      "id": "ball",
+      "type": "sprite",
+      "assetId": "new_materials/orb/sphere_41.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.0859,
+        "y": 0.0859
+      },
+      "alpha": 0.95,
+      "tint": "#b8fff4",
+      "blendMode": "add",
+      "duration": 2,
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          6.28319
+        ]
+      ]
+    },
+    {
+      "id": "snow",
+      "type": "sprite",
+      "assetId": "new_materials/mask-shape/dingbats-459.png",
+      "zIndex": 3,
+      "scale": {
+        "x": 0.0977,
+        "y": 0.0977
+      },
+      "alpha": 0.9,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "duration": 2,
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          -6.28319
+        ]
+      ]
+    },
+    {
+      "id": "flakes",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/star_04.png",
+      "zIndex": 4,
+      "alpha": 0.9,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 14
+      },
+      "lifetime": [
+        0.5,
+        0.9
+      ],
+      "spawn": {
+        "radius": 30,
+        "shape": "circle"
+      },
+      "speed": [
+        10,
+        30
+      ],
+      "direction": -90,
+      "spread": 180,
+      "startScale": [
+        0.0117,
+        0.0234
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.3,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "radius": 24
+    },
+    "shape": "projectile-circle"
+  }
+}

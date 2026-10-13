@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-ground-domain-ice",
+  "groups": [
+    {
+      "id": "en-ground-domain-ice",
+      "name": "en-ground-domain-ice",
+      "layerIds": [
+        "fill",
+        "edge",
+        "inner",
+        "motes",
+        "edge-copy",
+        "edge-copy-2",
+        "edge-copy-3"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-ground-domain-ice"
+  ]
+}

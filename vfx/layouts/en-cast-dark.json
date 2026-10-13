@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-cast-dark",
+  "groups": [
+    {
+      "id": "en-cast-dark",
+      "name": "en-cast-dark",
+      "layerIds": [
+        "ring",
+        "ring-inner",
+        "glow",
+        "flash",
+        "motes"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-cast-dark"
+  ]
+}

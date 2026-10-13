@@ -2234,8 +2234,15 @@ var VFXRuntime = (function () {
       for (var st in STATUS) take(STATUS[st] && STATUS[st].vfx);
     }
     if (typeof VFX_COMBAT_DEFAULTS !== 'undefined') takeDeep(VFX_COMBAT_DEFAULTS);
-    // 菁英詞條的預警／爆發／彈體（js/elite_data.js）：寫死的對應，登記在 docs/vfx/VFX_PRESET_USAGE_OUTSIDE_TABLES.md
-    if (typeof ELITE_VFX_PRESETS !== 'undefined') takeDeep(ELITE_VFX_PRESETS);
+    // 敵人專用技能（Skills2 表類別＝enemy → ENEMY_SKILLS2）：本體與觸發兩組特效，以及 fx.presets 額外列的 Preset
+    if (typeof ENEMY_SKILLS2 !== 'undefined' && ENEMY_SKILLS2) {
+      for (var eid in ENEMY_SKILLS2) {
+        var es = ENEMY_SKILLS2[eid];
+        if (!es) continue;
+        take(es.vfx); take(es.triggerVfx);
+        if (es.fx && Array.isArray(es.fx.presets)) es.fx.presets.forEach(function (p) { if (p) ids[p] = true; });
+      }
+    }
     return Object.keys(ids);
   }
 
@@ -2243,7 +2250,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20261012-indomitable-gold';
+  var DATA_VERSION = '20261013-enemy-skills2';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

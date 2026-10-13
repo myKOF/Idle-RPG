@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-toxic-pool",
+  "groups": [
+    {
+      "id": "en-toxic-pool",
+      "name": "en-toxic-pool",
+      "layerIds": [
+        "sludge",
+        "murk",
+        "rim",
+        "pops",
+        "bubbles",
+        "fumes"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-toxic-pool"
+  ]
+}

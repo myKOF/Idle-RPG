@@ -1,0 +1,191 @@
+{
+  "schemaVersion": 1,
+  "id": "en-ground-mire-magma-10",
+  "duration": 4,
+  "loop": true,
+  "layers": [
+    {
+      "id": "flowing-earth-mud",
+      "type": "sprite",
+      "assetId": "codex-authored/mire/mud-flow-magma.png",
+      "scale": {
+        "x": 0.46875,
+        "y": 0.46875
+      },
+      "alpha": 1,
+      "tint": "#ffffff",
+      "blendMode": "multiply",
+      "duration": 4,
+      "projection": {
+        "rotation": 0.7853981633974483,
+        "x": 1,
+        "y": 0.5
+      },
+      "sheet": {
+        "columns": 8,
+        "count": 48,
+        "fps": 12,
+        "loop": true,
+        "mode": "fps",
+        "rows": 6
+      }
+    },
+    {
+      "id": "magma-flames",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 1,
+      "alpha": 0.216,
+      "tint": "#f91413",
+      "blendMode": "add",
+      "duration": 4,
+      "emission": {
+        "mode": "rate",
+        "rate": 9
+      },
+      "maxParticles": 14,
+      "lifetime": [
+        0.45,
+        0.9
+      ],
+      "spawn": {
+        "height": 100,
+        "shape": "box",
+        "width": 100
+      },
+      "speed": [
+        10,
+        22
+      ],
+      "direction": -90,
+      "spread": 8,
+      "startScale": [
+        0.0371,
+        0.0586
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.15,
+          1
+        ],
+        [
+          0.7,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.4
+        ],
+        [
+          0.3,
+          1
+        ],
+        [
+          1,
+          0.2
+        ]
+      ],
+      "projection": {
+        "rotation": 0.7853981633974483,
+        "upright": true,
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "magma-sparks",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/star_04.png",
+      "zIndex": 2,
+      "alpha": 0.24,
+      "tint": "#fb6a62",
+      "blendMode": "add",
+      "duration": 4,
+      "emission": {
+        "mode": "rate",
+        "rate": 5
+      },
+      "maxParticles": 8,
+      "lifetime": [
+        0.5,
+        1
+      ],
+      "spawn": {
+        "height": 90,
+        "shape": "box",
+        "width": 100
+      },
+      "speed": [
+        18,
+        32
+      ],
+      "direction": -90,
+      "spread": 15,
+      "startScale": [
+        0.0059,
+        0.0098
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.15,
+          1
+        ],
+        [
+          0.7,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "projection": {
+        "rotation": 0.7853981633974483,
+        "upright": true,
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "sprite-4",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/transparent/window_a_noise.png",
+      "rotation": 0.785398,
+      "scale": {
+        "x": 0.2757,
+        "y": 0.2757
+      },
+      "alpha": 0.8,
+      "tint": "#fb53d3",
+      "blendMode": "add",
+      "scaleOverLife": 1,
+      "outerScale": {
+        "x": 1,
+        "y": 0.5
+      }
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "height": 120,
+      "width": 120
+    },
+    "heightM": 10,
+    "shape": "rectangle",
+    "widthM": 10
+  }
+}

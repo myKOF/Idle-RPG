@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 1,
+  "id": "en-rage-burst",
+  "duration": 0.9,
+  "loop": false,
+  "layers": [
+    {
+      "id": "flash",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.2344,
+        "y": 0.2344
+      },
+      "alpha": 0.9,
+      "tint": "#ff2a2a",
+      "blendMode": "add",
+      "duration": 0.9,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.05,
+          1
+        ],
+        [
+          0.25,
+          0.7
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.4
+        ],
+        [
+          1,
+          1.5
+        ]
+      ]
+    },
+    {
+      "id": "ring",
+      "type": "sprite",
+      "assetId": "new_materials/impact-ring/impact_14.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.2148,
+        "y": 0.2148
+      },
+      "alpha": 0.9,
+      "tint": "#ff5a5a",
+      "blendMode": "add",
+      "duration": 0.9,
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.3
+        ],
+        [
+          1,
+          1.2
+        ]
+      ]
+    },
+    {
+      "id": "aura",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 2,
+      "alpha": 0.85,
+      "tint": "#ff3030",
+      "blendMode": "add",
+      "emission": {
+        "count": 20,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.5,
+        0.9
+      ],
+      "spawn": {
+        "radius": 16,
+        "shape": "circle"
+      },
+      "speed": [
+        30,
+        90
+      ],
+      "direction": -90,
+      "spread": 120,
+      "startScale": [
+        0.0391,
+        0.0781
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "height": 60,
+      "width": 60
+    },
+    "heightM": 6,
+    "shape": "custom",
+    "widthM": 6
+  }
+}

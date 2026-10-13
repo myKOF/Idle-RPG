@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-proj-meteor-small",
+  "groups": [
+    {
+      "id": "en-proj-meteor-small",
+      "name": "en-proj-meteor-small",
+      "layerIds": [
+        "glow",
+        "shell",
+        "body",
+        "core",
+        "rim",
+        "tail"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-proj-meteor-small"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-curse-dark",
+  "groups": [
+    {
+      "id": "en-curse-dark",
+      "name": "en-curse-dark",
+      "layerIds": [
+        "glow",
+        "ring",
+        "sigil"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-curse-dark"
+  ]
+}

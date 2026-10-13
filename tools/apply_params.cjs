@@ -687,12 +687,16 @@ function eliteGroupBody() {
     ',\n  sizeWeights: ' + byZone('群組成員數權重', 2) +
     ',\n  pureChance: ' + byZone('純菁英群機率', 1) +
     ',\n  normalGroupCount: [' + parseCountTuples(ELITE_GROUP_CAT, '普通關菁英群數量權重') + ']' +
-    ',\n  skillCountWeights: ' + parseEliteBandRows('菁英技能數量權重', 3) +
     ',\n  leaders: ' + n('混合群與小兵', 0) + ', minionHp: ' + n('混合群與小兵', 1) +
     ', minionAtk: ' + n('混合群與小兵', 2) + ', minionReward: ' + n('混合群與小兵', 3) +
     ',\n  skillDmgPct: ' + n('菁英技能全域設定', 0) + ', cdPct: ' + n('菁英技能全域設定', 1) +
     ', firstCastMax: ' + n('菁英技能全域設定', 2) + ', maxZones: ' + n('菁英技能全域設定', 3) +
-    ', summonCap: ' + n('菁英技能全域設定', 4) + ', linkBeam: ' + n('菁英技能全域設定', 5);
+    ', summonCap: ' + n('菁英技能全域設定', 4) + ', linkBeam: ' + n('菁英技能全域設定', 5) +
+    ',\n  advChance: [' + n('高級菁英機率', 0) + ', ' + n('高級菁英機率', 1) + ']' +
+    ', advHp: ' + n('高級菁英倍率', 0) + ', advAtk: ' + n('高級菁英倍率', 1) + ', advReward: ' + n('高級菁英倍率', 2) +
+    ',\n  sizeElite: ' + n('敵人體型倍率', 0) + ', sizeAdv: ' + n('敵人體型倍率', 1) + ', sizeBoss: ' + n('敵人體型倍率', 2) +
+    ', sizeTower: [' + n('敵人體型倍率', 3) + ', ' + n('敵人體型倍率', 4) + ']' +
+    ',\n  repoMin: ' + n('跑位設定', 0) + ', repoMax: ' + n('跑位設定', 1);
 }
 edits.push({
   file: 'data', scopeVar: 'ELITE_GROUP',

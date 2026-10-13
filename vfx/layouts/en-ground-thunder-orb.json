@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-ground-thunder-orb",
+  "groups": [
+    {
+      "id": "en-ground-thunder-orb",
+      "name": "en-ground-thunder-orb",
+      "layerIds": [
+        "outer",
+        "mid",
+        "core",
+        "web",
+        "arcs"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-ground-thunder-orb"
+  ]
+}
