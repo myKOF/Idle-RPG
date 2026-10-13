@@ -787,10 +787,21 @@ body {
 
 #summary-modal #summary-modal-box,
 #summary-modal .modal-box {
+  width: min(880px, 94vw);
   pointer-events: auto;
   cursor: default;
   touch-action: none;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.95), 0 0 20px rgba(0, 0, 0, 0.8), inset 0 0 15px rgba(0, 0, 0, 0.8);
+}
+
+#btn-summary-detail-log {
+  position: absolute;
+  top: 8px;
+  left: 10px;
+  z-index: 10;
+  padding: 3px 10px;
+  font-size: 12px;
+  cursor: pointer;
 }
 
 #summary-modal .summary-modal-header {
@@ -11060,7 +11071,13 @@ body.battle-canvas-mode #combat-area .battle-scene-wrapper > #btn-toggle-damage 
   background: rgba(120, 90, 50, 0.75);
 }
 
-/* ---- 戰況抽屜：原封收納綜合紀錄、統計、詳細日誌與篩選 ---- */
+/* 戰鬥區紀錄面版已由統計面板與詳細日誌彈窗取代，隱藏原面版 */
+#battle-area > .log-header,
+#battle-area > #battle-log {
+  display: none !important;
+}
+
+/* ---- 戰況抽屜：相容樣式保留 ---- */
 #battle-info-drawer {
   position: absolute;
   top: 0;

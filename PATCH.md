@@ -1,5 +1,18 @@
 # PATCH.md
 
+## 戰況資訊直開加寬統計面板、新增詳細日誌按鈕與移除戰鬥區右側面版（Antigravity 2026-10-13）
+
+- **戰況資訊直開統計面板與面板加寬 1 倍（`index.html`、`js/ui.js`、`css/style.css`）**：
+  - 戰鬥區域右上角「戰況資訊」按鈕（`#btn-battle-info`）調整為點擊直接開關統計面板（`#summary-modal`），並隨面板開啟狀態同步切換 `.active` 樣式。
+  - 統計面板（`#summary-modal-box`）寬度由原先的 `min(440px, 92vw)` 加倍擴充至 `min(880px, 94vw)`，給予基本統計、來源明細與即時戰鬥數據充足的水平排版與展示空間；同步更新置中定位計算與拖曳邊界判定。
+- **統計面板左上角新增「詳細日誌」按鈕（`index.html`、`js/ui.js`、`css/style.css`）**：
+  - 在統計面板左上方新增按鈕 `#btn-summary-detail-log`（文案「詳細日誌」），點擊後直接彈出詳細戰鬥日誌視窗（`#detail-log-modal`），並支援以 Esc 鍵優先關閉詳細日誌彈窗。
+- **移除戰鬥區右側抽屜面版（`index.html`、`js/ui.js`、`css/style.css`）**：
+  - 徹底移除戰鬥區右側的抽屜面版 DOM（`#battle-info-drawer`），野外 Canvas 戰鬥場景不再被側邊面板遮擋或壓縮。
+  - 原戰鬥區域下側的紀錄與日誌容器設定為 `display: none !important;`，所有戰況統計與即時詳細日誌統一集中於浮層彈窗中呈現。
+- **單元測試驗證（`tests/battle-log-ui-layout.test.cjs`）**：
+  - 新增專屬規格測試，驗證戰況資訊按鈕綁定、統計面板加倍寬度、詳細日誌按鈕定位與呼叫，以及舊抽屜面版之完全移除。
+
 ## NPC 改造計劃全量測試驗證與單元測試穩定度修復（Antigravity 2026-10-13）
 
 - **全量測試報告產出（`docs/ELITE_TEST_REPORT.md`）**：

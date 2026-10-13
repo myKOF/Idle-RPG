@@ -11338,31 +11338,15 @@ function initBattleCanvasMode() {
        DOM 的 #pv-hp／#pv-mp 留在隱藏的 .battle-scene 裡讓 renderBattle 照常寫、不再顯示。
        BUFF 狀態圖示直接於技能快捷列上方實時呈現。 */
 
-    /* 綜合紀錄 + 統計/日誌/篩選 → 側拉抽屜；暫停與迷你視窗按鈕 → 畫布右上角 */
-    var drawerBody = $id('battle-info-drawer-body');
-    var logHeader = document.querySelector('#battle-area > .log-header');
-    var battleLog = $id('battle-log');
-    if (drawerBody && logHeader && battleLog) {
-      drawerBody.appendChild(logHeader);
-      drawerBody.appendChild(battleLog);
-    }
+    /* 暫停按鈕 → 畫布右上角；戰況資訊 → 直接開關統計面板 */
     var btnRow = $id('battle-canvas-buttons');
     var pauseBtn = $id('btn-combat-pause');
     var infoBtn = $id('btn-battle-info');
-    if (btnRow) {
-      if (pauseBtn) btnRow.insertBefore(pauseBtn, infoBtn || null);
+    if (btnRow && pauseBtn) {
+      btnRow.insertBefore(pauseBtn, infoBtn || null);
     }
-    var drawer = $id('battle-info-drawer');
-    if (infoBtn && drawer) {
-      infoBtn.addEventListener('click', function () {
-        var open = drawer.classList.toggle('open');
-        infoBtn.classList.toggle('active', open);
-      });
-      var drawerClose = $id('battle-info-drawer-close');
-      if (drawerClose) drawerClose.addEventListener('click', function () {
-        drawer.classList.remove('open');
-        infoBtn.classList.remove('active');
-      });
+    if (infoBtn) {
+      infoBtn.addEventListener('click', toggleStatsPanel);
     }
     /* 版面大改後所有幾何快取作廢 */
     uiInvalidateFloatLayout();
@@ -11591,6 +11575,14 @@ function closeTopmostModalOrOverlay() {
   if (questModal && questModal.style.display !== 'none') {
     if (typeof closeQuestModal === 'function') closeQuestModal();
     else questModal.style.display = 'none';
+    return true;
+  }
+
+  // 11b. 詳細戰鬥日誌彈窗 (#detail-log-modal)
+  var detailLogModal = $id('detail-log-modal');
+  if (detailLogModal && detailLogModal.style.display !== 'none') {
+    if (typeof closeDetailLog === 'function') closeDetailLog();
+    else detailLogModal.style.display = 'none';
     return true;
   }
 
@@ -12851,8 +12843,9 @@ function initUI() {
     applyLogFilter(logFilter.value || 'all');
   }
 
-  // 迷你監控視窗
+  // 詳細戰鬥日誌視窗
   var detailLogBtn = $id('btn-detail-log');
+  var summaryDetailLogBtn = $id('btn-summary-detail-log');
   var detailLogModal = $id('detail-log-modal');
   var detailLogClose = $id('detail-log-close');
   var detailLogFilter = $id('detail-log-filter');
@@ -12862,14 +12855,17 @@ function initUI() {
     detailLogModal.style.display = 'none';
     detailLogModal.setAttribute('aria-hidden', 'true');
   }
-  if (detailLogBtn && detailLogModal) {
-    detailLogBtn.addEventListener('click', function () {
-      var mainFilter = $id('log-filter');
-      if (detailLogFilter) detailLogFilter.value = mainFilter ? mainFilter.value : 'all';
-      renderDetailLog();
-      detailLogModal.style.display = 'flex';
-      detailLogModal.setAttribute('aria-hidden', 'false');
-    });
+  function openDetailLog() {
+    if (!detailLogModal) return;
+    var mainFilter = $id('log-filter');
+    if (detailLogFilter) detailLogFilter.value = mainFilter ? mainFilter.value : 'all';
+    renderDetailLog();
+    detailLogModal.style.display = 'flex';
+    detailLogModal.setAttribute('aria-hidden', 'false');
+  }
+  if (detailLogModal) {
+    if (detailLogBtn) detailLogBtn.addEventListener('click', openDetailLog);
+    if (summaryDetailLogBtn) summaryDetailLogBtn.addEventListener('click', openDetailLog);
     if (detailLogClose) detailLogClose.addEventListener('click', closeDetailLog);
     detailLogModal.addEventListener('click', function (e) {
       if (e.target === detailLogModal) closeDetailLog();
@@ -14143,7 +14139,7 @@ var summaryBoxStartY = 0;
 
 function ensureSummaryBoxPosition(box) {
   if (!box) return;
-  var boxW = box.offsetWidth || 440;
+  var boxW = box.offsetWidth || 880;
   var boxH = box.offsetHeight || 500;
   if (summaryBoxPos.x === null || summaryBoxPos.y === null) {
     var initX = Math.max(12, Math.min(window.innerWidth - boxW - 12, Math.round((window.innerWidth - boxW) / 2)));
@@ -14199,7 +14195,7 @@ function initSummaryModalDrag() {
     var newX = summaryBoxStartX + dx;
     var newY = summaryBoxStartY + dy;
 
-    var boxW = box.offsetWidth || 440;
+    var boxW = box.offsetWidth || 880;
     var boxH = box.offsetHeight || 500;
     var minX = 0;
     var maxX = Math.max(0, window.innerWidth - boxW);
@@ -14239,6 +14235,8 @@ function openStatsPanel() {
     initSummaryModalDrag();
     if (box) ensureSummaryBoxPosition(box);
     startStatsPanelTimer();
+    var infoBtn = $id('btn-battle-info');
+    if (infoBtn) infoBtn.classList.add('active');
   }
 }
 
@@ -14247,6 +14245,8 @@ function closeStatsPanel() {
   if (modal) {
     modal.style.display = 'none';
     stopStatsPanelTimer();
+    var infoBtn = $id('btn-battle-info');
+    if (infoBtn) infoBtn.classList.remove('active');
   }
 }
 
