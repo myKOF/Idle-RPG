@@ -1,5 +1,13 @@
 # PATCH.md
 
+## 關卡標籤文案「階段」調整為「關」（Antigravity 2026-10-13）
+
+- **關卡列與標題文案統一為「第 N 關」（`index.html`、`js/ui.js`、`tests/stage-jump-ui.test.cjs`）**：
+  - 依使用者指示，將關卡控制列中原「第 N 階段」（例如 `第 210 階段`）全數改為「第 N 關」（如 `第 210 關`），與右側「最高 N 關」統一名稱用語。
+  - 同步更新迷你視窗（`miniSnapshot`）與分頁標題（`updateLiveTitle`）的野外地圖關卡字串為「第 N 關」。
+  - 更新 `index.html` 靜態占位符 `<span id="stage-label">第 1 關</span>` 與直達按鈕 tooltip（`最高關卡`）。
+  - 更新單元測試 `tests/stage-jump-ui.test.cjs` 加入格式斷言。
+
 ## 戰況資訊直開加寬統計面板、新增詳細日誌按鈕與移除戰鬥區右側面版（Antigravity 2026-10-13）
 
 - **戰況資訊直開統計面板與面板加寬 1 倍（`index.html`、`js/ui.js`、`css/style.css`）**：

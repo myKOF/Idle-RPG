@@ -4442,7 +4442,7 @@ function refreshStageDisplay(stageOverride) {
     : (UI.stageHold.active && typeof UI.stageHold.targetStage === 'number'
       ? UI.stageHold.targetStage
       : (_stagePendingStage !== null ? _stagePendingStage : stg.current));
-  setHtmlIfChanged(label, zoneIconHtml(stg.zone || 'desert', znd) + ' 第 ' + displayStage + ' 階段');
+  setHtmlIfChanged(label, zoneIconHtml(stg.zone || 'desert', znd) + ' 第 ' + displayStage + ' 關');
   setTextIfChanged(best, '最高' + stg.best + '關');
   // 切換在途時不要用舊快照蓋掉勾選狀態
   if (!isUiCommandPending(nodePendingKey('stage-auto'))) setCheckedIfChanged(auto, stg.autoAdvance);
@@ -10950,7 +10950,7 @@ function miniSnapshot() {
   } else {
     p = field.player; enemy = field.monster || (Array.isArray(field.monsters) ? field.monsters[0] : null);
     var zone = ZONES[stage.zone] || {};
-    s.stage = (zone.emoji || '') + (zone.name || '') + ' 第 ' + (stage.current || 0) + ' 階段';
+    s.stage = (zone.emoji || '') + (zone.name || '') + ' 第 ' + (stage.current || 0) + ' 關';
     s.info = '📈 DPS ' + fmt(header.dps || 0) + '　<img src="images/icon_gold.png" class="res-icon">' + fmt(view.gold || 0);
   }
   if (p) {
@@ -11034,7 +11034,7 @@ function updateLiveTitle() {
     var p = battle.field && battle.field.player;
     var hpPct = p ? Math.round(p.hp / st.hp * 100) : 100;
     var zone = ZONES[header.stage && header.stage.zone] || {};
-    t = (zone.emoji || '') + '第' + (header.stage && header.stage.current || 0) + '階段 Lv.' +
+    t = (zone.emoji || '') + '第' + (header.stage && header.stage.current || 0) + '關 Lv.' +
       (header.player && header.player.level || 1) + ' ❤️' + hpPct + '%';
   }
   document.title = t + '｜無限征途';
