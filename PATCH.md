@@ -1,5 +1,15 @@
 # PATCH.md
 
+## NPC 改造計劃全量測試驗證與單元測試穩定度修復（Antigravity 2026-10-13）
+
+- **全量測試報告產出（`docs/ELITE_TEST_REPORT.md`）**：
+  - 依照 `docs/ANTIGRAVITY_ELITE_TEST_CASES.md` 逐項完成 52 個技能（17 個隨機技能池 + 35 個專屬技能）實機 CDP 動態捕捉與外觀特效差異化評測。
+  - 完成核心系統測試：跑位機制（4~8 秒）、敵人類型外觀與體型倍率（1.6x / 2.2x / 3.4x）、封魔塔技能徽章列與失敗機制、狀態完全清除、高密度壓力測試（FPS 60 穩定）。
+  - 完成表格與防呆機制實測：BOSS 專屬技能替換、隨機技能數量調整、無效特效 Preset 檢測攔截；測試完成後還原配置檔案。
+- **單元測試穩定度修復（`tests/elite-groups.test.cjs`、`tests/npc-elite-skills.test.cjs`）**：
+  - `tests/elite-groups.test.cjs`：修正抽樣量測生命倍率時，過濾排除隨機詞條抽中 `e_vitality`（生命×1.5）的樣本，消除偶發之 flakiness。
+  - `tests/npc-elite-skills.test.cjs`：加入 CRLF/LF 換行符號正規化處理，消除 Windows 環境下 CSV 輸出與 Git 檢出差異導致的斷行比對問題。
+
 ## 角色面板置頂區整合為攻擊與堅韌雙數值顯示與提示優化（Antigravity 2026-10-12）
 
 - **角色面板置頂區改為「攻擊」與「堅韌」雙大方塊（`js/ui.js`、`css/ashen-forge.css`）**：
