@@ -39,6 +39,16 @@ var BattleElite = (function () {
     }
     return out;
   }
+  /* BOSS 血條下方的技能標籤：「熔火　瘟疫　火鏈」 */
+  function skillLabels(data) {
+    var ids = affixList(data);
+    var out = [];
+    for (var i = 0; i < ids.length; i++) {
+      var def = (typeof ELITE_AFFIXES !== 'undefined') ? ELITE_AFFIXES[ids[i]] : null;
+      out.push(def ? def.name : ids[i]);
+    }
+    return out.join('　');
+  }
   function stateKey(data) {
     var fx = (data && Array.isArray(data._fx)) ? data._fx : [];
     return fx.join(',');
@@ -66,7 +76,7 @@ var BattleElite = (function () {
       stateRing.visible = false;
       ent.view.addChildAt(stateRing, 1);
       deco.stateRing = stateRing;
-      if (affixList(d).length) {
+      if (affixList(d).length && !d.isBoss) {   // BOSS 的技能標籤改放在血條下方
         var badge = new PIXI.Text({
           text: badgeText(d), style: { fontSize: 15, fontFamily: 'sans-serif' }
         });
@@ -179,7 +189,7 @@ var BattleElite = (function () {
     return { update: update, destroy: destroy, _groupColor: groupColor };
   }
 
-  return { create: create, groupColor: groupColor, STATE_ICON: STATE_ICON };
+  return { create: create, groupColor: groupColor, STATE_ICON: STATE_ICON, skillLabels: skillLabels };
 })();
 
 if (typeof module !== 'undefined' && module.exports) module.exports = BattleElite;

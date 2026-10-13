@@ -128,5 +128,6 @@ test('BATTLE-ELITE-6 高級敵人（有 _tier）：環用光暈色；體型由 r
   const boss = ent('b', { elite: false, isBoss: true, hp: 10, _gid: 2, _tier: 'boss', _size: 3.4, _elColor: '#ff5a2a', affixes: ['e_meteor'], _fx: [] });
   boss.visScale = 3.4;
   be.update({ b: boss }, 0.016, 2);
-  assert.ok(boss.eliteDeco && boss.eliteDeco.badge, 'BOSS 也有技能圖示列');
+  assert.ok(boss.eliteDeco && !boss.eliteDeco.badge, 'BOSS 頭頂不放技能圖示列（改放血條下方）');
+  assert.equal(vm.runInContext('BattleElite', c).skillLabels(boss.data), vm.runInContext('ELITE_AFFIXES.e_meteor.name', c), '血條下方的技能標籤是技能名稱');
 });
