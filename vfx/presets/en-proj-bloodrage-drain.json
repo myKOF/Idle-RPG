@@ -18,7 +18,7 @@
         "y": 0.0215
       },
       "alpha": 0.45,
-      "tint": "#c52007",
+      "tint": "#553c9c",
       "blendMode": "add"
     },
     {
@@ -31,7 +31,7 @@
         "y": 0.0215
       },
       "alpha": 0.95,
-      "tint": "#f82c0e",
+      "tint": "#7257bf",
       "blendMode": "normal"
     },
     {
@@ -48,7 +48,7 @@
         "y": 0.0117
       },
       "alpha": 0.65,
-      "tint": "#ffbbac",
+      "tint": "#ddd3f2",
       "blendMode": "add"
     },
     {
@@ -61,7 +61,7 @@
         "y": 0
       },
       "alpha": 0.7,
-      "tint": "#f63216",
+      "tint": "#765dc0",
       "blendMode": "normal",
       "emission": {
         "mode": "rate",

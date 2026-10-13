@@ -18,7 +18,7 @@
         "y": 0.449
       },
       "alpha": 0.5,
-      "tint": "#4ddecb",
+      "tint": "#4ee3a8",
       "blendMode": "add",
       "duration": 3,
       "alphaOverLife": [
@@ -55,7 +55,7 @@
         "y": 0.7788
       },
       "alpha": 0.5,
-      "tint": "#36cdbb",
+      "tint": "#36d296",
       "blendMode": "add",
       "duration": 3,
       "alphaOverLife": [
@@ -92,7 +92,7 @@
         "y": 0.4124
       },
       "alpha": 0.5,
-      "tint": "#4ddecb",
+      "tint": "#4ee3a8",
       "blendMode": "add",
       "duration": 3,
       "alphaOverLife": [
@@ -129,7 +129,7 @@
         "y": 0.679
       },
       "alpha": 0.5,
-      "tint": "#36cdbb",
+      "tint": "#36d296",
       "blendMode": "add",
       "duration": 3,
       "alphaOverLife": [
@@ -166,7 +166,7 @@
         "y": 0.747
       },
       "alpha": 0.5,
-      "tint": "#4ddecb",
+      "tint": "#4ee3a8",
       "blendMode": "add",
       "duration": 3,
       "alphaOverLife": [
@@ -203,7 +203,7 @@
         "y": 0.7096
       },
       "alpha": 0.5,
-      "tint": "#36cdbb",
+      "tint": "#36d296",
       "blendMode": "add",
       "duration": 3,
       "alphaOverLife": [
@@ -240,7 +240,7 @@
         "y": 0.4824
       },
       "alpha": 0.5,
-      "tint": "#4ddecb",
+      "tint": "#4ee3a8",
       "blendMode": "add",
       "duration": 3,
       "alphaOverLife": [
@@ -274,7 +274,7 @@
         "y": -2.3042
       },
       "alpha": 0.26,
-      "tint": "#bdefe7",
+      "tint": "#c2f2dd",
       "blendMode": "normal",
       "emission": {
         "mode": "rate",
@@ -345,7 +345,7 @@
         "y": 71.8514
       },
       "alpha": 0.26,
-      "tint": "#bdefe7",
+      "tint": "#c2f2dd",
       "blendMode": "normal",
       "emission": {
         "mode": "rate",
@@ -416,7 +416,7 @@
         "y": 146.0068
       },
       "alpha": 0.26,
-      "tint": "#bdefe7",
+      "tint": "#c2f2dd",
       "blendMode": "normal",
       "emission": {
         "mode": "rate",
@@ -487,7 +487,7 @@
         "y": -215.9232
       },
       "alpha": 0.8,
-      "tint": "#e6fdf9",
+      "tint": "#eefef7",
       "blendMode": "add",
       "emission": {
         "mode": "rate",
@@ -546,7 +546,7 @@
         "y": -145.9263
       },
       "alpha": 0.8,
-      "tint": "#e6fdf9",
+      "tint": "#eefef7",
       "blendMode": "add",
       "emission": {
         "mode": "rate",
@@ -605,7 +605,7 @@
         "y": -128.0591
       },
       "alpha": 0.8,
-      "tint": "#e6fdf9",
+      "tint": "#eefef7",
       "blendMode": "add",
       "emission": {
         "mode": "rate",
@@ -669,7 +669,7 @@
         "y": -188.3251
       },
       "alpha": 0.75,
-      "tint": "#b3f9ee",
+      "tint": "#b8fbdf",
       "blendMode": "normal",
       "emission": {
         "mode": "rate",

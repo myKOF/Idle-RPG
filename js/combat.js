@@ -2128,7 +2128,8 @@ function completeFieldWave(st) {
 function onFieldKill(m) {
     if (!m || m._rewarded) return;
     // 菁英詞條：不死鳥重生（回 true＝沒真的死，不結算）；自爆與分裂在死後留下東西 → js/elite.js
-    if (m.affixes && typeof eliteOnDeath === 'function' && eliteOnDeath(m)) return;
+    // （小兵與召喚物也要通知：復仇看的是「同伴死了幾隻」，召喚師看的是「牠召喚的怪」）
+    if ((m.affixes || m._gid !== undefined || m._summoner) && typeof eliteOnDeath === 'function' && eliteOnDeath(m)) return;
     // 死亡屍爆等（js/skills2.js）：須在清理死亡實體前結算
     if (typeof skills2OnEnemyDeath === 'function') skills2OnEnemyDeath(m, combatFieldEnemies());
     m.hp = 0;

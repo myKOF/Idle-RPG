@@ -14,7 +14,7 @@
         "y": 0.1406
       },
       "alpha": 0.6,
-      "tint": "#ff245e",
+      "tint": "#ff217d",
       "blendMode": "add",
       "duration": 1.5,
       "alphaOverLife": [
@@ -72,7 +72,7 @@
         "y": 0.0664
       },
       "alpha": 0.85,
-      "tint": "#e51f68",
+      "tint": "#e51d83",
       "blendMode": "add",
       "duration": 1.5,
       "alphaOverLife": [
@@ -126,7 +126,7 @@
         "y": 0.0781
       },
       "alpha": 1,
-      "tint": "#e51f68",
+      "tint": "#e51d83",
       "blendMode": "add",
       "duration": 1.5,
       "alphaOverLife": [
@@ -168,7 +168,7 @@
         "y": 0.0391
       },
       "alpha": 1,
-      "tint": "#ff4042",
+      "tint": "#ff3d60",
       "blendMode": "add",
       "duration": 1.5,
       "alphaOverLife": [
@@ -217,7 +217,7 @@
       "type": "particle",
       "assetId": "particle-pack/png-black-background/flame_05.png",
       "zIndex": 4,
-      "tint": "#ff3761",
+      "tint": "#ff347e",
       "blendMode": "add",
       "emission": {
         "mode": "rate",

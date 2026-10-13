@@ -14,7 +14,7 @@
         "y": 0.0781
       },
       "alpha": 0.5,
-      "tint": "#8af6e1",
+      "tint": "#8ef9c9",
       "blendMode": "add",
       "duration": 1.2,
       "alphaOverLife": [
@@ -46,7 +46,7 @@
         "y": 0.0352
       },
       "alpha": 1,
-      "tint": "#60f2e4",
+      "tint": "#63f7c0",
       "blendMode": "normal",
       "duration": 1.2,
       "alphaOverLife": [
@@ -78,7 +78,7 @@
         "y": 0.0215
       },
       "alpha": 1,
-      "tint": "#f1fefb",
+      "tint": "#f0fef8",
       "blendMode": "add",
       "duration": 1.2,
       "alphaOverLife": [

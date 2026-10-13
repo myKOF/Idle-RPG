@@ -7,9 +7,16 @@
       "name": "en-stone-wall",
       "layerIds": [
         "shadow",
-        "body",
-        "top",
-        "blocks",
+        "base",
+        "block0",
+        "block1",
+        "block2",
+        "block3",
+        "block4",
+        "block5",
+        "block6",
+        "block7",
+        "rim",
         "dust"
       ]
     }

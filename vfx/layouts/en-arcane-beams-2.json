@@ -9,8 +9,10 @@
         "halo",
         "hub",
         "beam0-glow",
+        "beam0-body",
         "beam0-core",
         "beam1-glow",
+        "beam1-body",
         "beam1-core"
       ]
     }

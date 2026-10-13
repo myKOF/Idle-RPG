@@ -1222,7 +1222,7 @@ function eliteCastMortar(m, d) {
     var x = pp.x + Math.cos(ang) * dist, y = pp.y + Math.sin(ang) * dist;
     var warn = d.warn + i * d.step;
     eliteWarn(x, y, d.r, d.v.ground, warn, 'mortar');
-    eliteFlightFx(d.v.proj, mp.x, mp.y, x, y, Math.max(0.3, warn), { arcM: (d.arc || 60) / ELITE_METER, elem: d.elem });
+    eliteFlightFx(d.v.proj, mp.x, mp.y, x, y, Math.max(0.3, warn), { arcM: (d.arc || 60) / ELITE_METER, elem: d.elem, bodyD: d.bodyD });
     (function (px, py) {
       eliteLater(warn, function () {
         eliteBurstFx(px, py, d.r * 1.2, d.v.attack, 0, d.elem);
@@ -1392,13 +1392,13 @@ function eliteCastMissiles(m, d) {
         var back = d.back || 32;
         var bx = mp.x + ax * back - ay * back * side, by = mp.y + ay * back + ax * back * side;
         var leg1 = d.leg1 || 0.55, leg2 = d.leg2 || 0.38;
-        eliteFlightFx(preset, mp.x, mp.y, bx, by, leg1, { ctrl: { x: mp.x + ax * back * 0.5, y: mp.y + ay * back * 0.5 } });
+        eliteFlightFx(preset, mp.x, mp.y, bx, by, leg1, { ctrl: { x: mp.x + ax * back * 0.5, y: mp.y + ay * back * 0.5 }, bodyD: d.bodyD });
         eliteLater(leg1, function () {
           if (!(m.hp > 0) || !elitePlayerAlive()) return;
           var tp = elitePos();
           var lx = tp.x, ly = tp.y;                           // 轉彎的當下鎖定落點：走位就躲得掉
           var mx = (bx + lx) / 2 - (ly - by) * 0.25 * side, my = (by + ly) / 2 + (lx - bx) * 0.25 * side;
-          eliteFlightFx(preset, bx, by, lx, ly, leg2, { ctrl: { x: mx, y: my } });
+          eliteFlightFx(preset, bx, by, lx, ly, leg2, { ctrl: { x: mx, y: my }, bodyD: d.bodyD });
           eliteLater(leg2, function () {
             eliteBurstFx(lx, ly, d.r * 1.3, d.v.attack, 0, d.elem);
             if (!eliteInCircle(lx, ly, d.r)) return;
@@ -1424,7 +1424,7 @@ function eliteSparksOnHit(m, d) {
     var ang = Math.random() * Math.PI * 2;
     var vx = Math.cos(ang) * spd, vy = Math.sin(ang) * spd;
     ELITE_RT.sparks.push({ owner: m, def: d, x: mp.x, y: mp.y, vx: vx, vy: vy, until: GT + life, r: d.r || 12 });
-    eliteFlightFx(d.v.proj, mp.x, mp.y, mp.x + vx * life, mp.y + vy * life, life, { elem: d.elem });
+    eliteFlightFx(d.v.proj, mp.x, mp.y, mp.x + vx * life, mp.y + vy * life, life, { elem: d.elem, bodyD: d.bodyD });
   }
 }
 function eliteSparksTick(dt) {

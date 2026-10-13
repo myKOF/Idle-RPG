@@ -14,7 +14,7 @@
         "y": 0.3906
       },
       "alpha": 0.16,
-      "tint": "#c925eb",
+      "tint": "#eb25aa",
       "blendMode": "add",
       "duration": 1.14,
       "alphaOverLife": [
@@ -60,7 +60,7 @@
         "y": 0.3906
       },
       "alpha": 0.8,
-      "tint": "#d560fa",
+      "tint": "#fa60d2",
       "blendMode": "add",
       "duration": 1.14,
       "alphaOverLife": [

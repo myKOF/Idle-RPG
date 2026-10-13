@@ -14,7 +14,7 @@
         "y": 0.1406
       },
       "alpha": 0.3,
-      "tint": "#ff246a",
+      "tint": "#ff2187",
       "blendMode": "add",
       "delay": 0,
       "duration": 0.087111,
@@ -103,7 +103,7 @@
       "type": "particle",
       "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": 2,
-      "tint": "#ff404c",
+      "tint": "#ff3d69",
       "blendMode": "add",
       "delay": 0,
       "duration": 0.14,
@@ -159,19 +159,19 @@
         ],
         [
           0.18,
-          "#ff828c"
+          "#ff7e9e"
         ],
         [
           0.45,
-          "#ff2460"
+          "#ff217f"
         ],
         [
           0.75,
-          "#bc1257"
+          "#ba116d"
         ],
         [
           1,
-          "#39081b"
+          "#380822"
         ]
       ],
       "scaleOverLife": [

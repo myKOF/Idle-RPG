@@ -14,7 +14,7 @@
         "y": 0.1094
       },
       "alpha": 0.62,
-      "tint": "#8af6e0",
+      "tint": "#8ef9c8",
       "blendMode": "screen",
       "delay": 0,
       "duration": 0.091,
@@ -65,7 +65,7 @@
         "y": 0.0898
       },
       "alpha": 0.85,
-      "tint": "#60f2e3",
+      "tint": "#63f7bf",
       "blendMode": "add",
       "delay": 0,
       "duration": 0.105,
@@ -117,7 +117,7 @@
         "y": 0.0859
       },
       "alpha": 0.85,
-      "tint": "#f1fefb",
+      "tint": "#f0fef8",
       "blendMode": "screen",
       "delay": 0,
       "duration": 0.05,
@@ -159,7 +159,7 @@
       "type": "particle",
       "assetId": "new_materials/mask-shape/dingbats-366.png",
       "zIndex": 5,
-      "tint": "#f1fefb",
+      "tint": "#f0fef8",
       "blendMode": "add",
       "delay": 0,
       "duration": 0.14,
@@ -223,15 +223,15 @@
         ],
         [
           0.35,
-          "#dbfcf6"
+          "#e3fef2"
         ],
         [
           0.75,
-          "#6addce"
+          "#6ce1b2"
         ],
         [
           1,
-          "#25746b"
+          "#247858"
         ]
       ],
       "scaleOverLife": [
@@ -250,7 +250,7 @@
       "type": "particle",
       "assetId": "particle-pack/png-black-background/star_08.png",
       "zIndex": 6,
-      "tint": "#60f2e3",
+      "tint": "#63f7bf",
       "blendMode": "add",
       "delay": 0,
       "duration": 0.14,

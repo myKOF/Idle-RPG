@@ -509,3 +509,22 @@ test('ELITE-ENGINE-24 玩家死亡或離開時 eliteReset 清掉所有預警、�
   assert.equal(c.ELITE_RT.pull, null);
   assert.equal(c.elitePlayerLocked(), false);
 });
+
+test('ELITE-ENGINE-25 經過正式的擊殺流程（onFieldKill）：小兵陣亡也會讓同群復仇者變強；召喚師死亡縮水召喚物', () => {
+  const c = fresh();
+  const a = quiet(makeElite(c, ['e_avenger'], { x: 150, y: 0, hp: 1e9 }));
+  const minion = makeMinion(c, 1, { x: 220, y: 40 });
+  run(c, 'FIELD.monsters.forEach(function (e) { e._enterCd = 0; });');
+  c.onFieldKill(minion);
+  assert.equal(a._el.avStacks, 1, '小兵死也算同伴陣亡');
+  assert.ok(Math.abs(a._grow - 1.2) < 1e-9);
+  const c2 = fresh();
+  const s = quiet(makeElite(c2, ['e_summon'], { x: 150, y: 0, hp: 1e9 }));
+  s.attr = 'fire';
+  run(c2, 'FIELD.monsters.forEach(function (e) { e._enterCd = 0; });');
+  c2.eliteCastSummon(s, c2.ELITE_AFFIXES.e_summon);
+  const kids = c2.FIELD.monsters.filter((e) => e._summoner === s);
+  const hp0 = kids.map((k) => k.maxHp);
+  c2.onFieldKill(s);
+  kids.forEach((k, i) => assert.ok(Math.abs(k.maxHp - hp0[i] * 0.1) < 1e-6, '最大生命 −90%'));
+});

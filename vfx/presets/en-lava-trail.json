@@ -14,7 +14,7 @@
         "y": 0.3906
       },
       "alpha": 0.5,
-      "tint": "#870b3c",
+      "tint": "#860b4c",
       "blendMode": "normal",
       "duration": 2.1,
       "alphaOverLife": [
@@ -46,7 +46,7 @@
         "y": 0.3906
       },
       "alpha": 0.55,
-      "tint": "#ff246c",
+      "tint": "#ff218a",
       "blendMode": "add",
       "duration": 2.1,
       "alphaOverLife": [
@@ -78,7 +78,7 @@
         "y": 0.3906
       },
       "alpha": 0.45,
-      "tint": "#ff4069",
+      "tint": "#ff3d84",
       "blendMode": "add",
       "duration": 2.1,
       "alphaOverLife": [
@@ -128,7 +128,7 @@
         "y": 0.3906
       },
       "alpha": 0.4,
-      "tint": "#ff4069",
+      "tint": "#ff3d84",
       "blendMode": "add",
       "delay": 0.7,
       "duration": 2.1,
@@ -179,7 +179,7 @@
         "y": 0.3906
       },
       "alpha": 0.35,
-      "tint": "#ff4069",
+      "tint": "#ff3d84",
       "blendMode": "add",
       "delay": 1.4,
       "duration": 2.1,
@@ -225,7 +225,7 @@
       "type": "particle",
       "assetId": "new_materials/orb/sphere_28.png",
       "zIndex": 5,
-      "tint": "#ff7a93",
+      "tint": "#ff76a5",
       "blendMode": "normal",
       "emission": {
         "mode": "rate",
@@ -289,7 +289,7 @@
       "type": "particle",
       "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": 7,
-      "tint": "#ff4069",
+      "tint": "#ff3d84",
       "blendMode": "add",
       "emission": {
         "mode": "rate",

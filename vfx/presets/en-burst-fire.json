@@ -14,7 +14,7 @@
         "y": 0.4297
       },
       "alpha": 0.55,
-      "tint": "#ff2468",
+      "tint": "#ff2186",
       "blendMode": "add",
       "duration": 0.6,
       "alphaOverLife": [
@@ -60,7 +60,7 @@
         "y": 0.3906
       },
       "alpha": 0.95,
-      "tint": "#e51f72",
+      "tint": "#e51d8b",
       "blendMode": "add",
       "duration": 0.62,
       "alphaOverLife": [
@@ -116,7 +116,7 @@
         "y": 0.3906
       },
       "alpha": 0.9,
-      "tint": "#ff1630",
+      "tint": "#ff1454",
       "blendMode": "add",
       "duration": 0.5,
       "alphaOverLife": [
@@ -166,7 +166,7 @@
         "y": 0.4102
       },
       "alpha": 0.8,
-      "tint": "#7a0836",
+      "tint": "#790845",
       "blendMode": "add",
       "delay": 0.1,
       "duration": 0.5,
@@ -217,7 +217,7 @@
         "y": 0.4297
       },
       "alpha": 0.6,
-      "tint": "#ff1630",
+      "tint": "#ff1454",
       "blendMode": "add",
       "delay": 0.22,
       "duration": 0.5,
@@ -268,7 +268,7 @@
         "y": 0.1367
       },
       "alpha": 1,
-      "tint": "#ff404b",
+      "tint": "#ff3d68",
       "blendMode": "add",
       "duration": 0.22,
       "alphaOverLife": [
@@ -309,7 +309,7 @@
       "type": "particle",
       "assetId": "particle-pack/png-black-background/flame_05.png",
       "zIndex": 6,
-      "tint": "#ff376a",
+      "tint": "#ff3486",
       "blendMode": "add",
       "emission": {
         "count": 18,
@@ -370,19 +370,19 @@
         ],
         [
           0.18,
-          "#ff828b"
+          "#ff7e9d"
         ],
         [
           0.45,
-          "#ff245f"
+          "#ff217e"
         ],
         [
           0.75,
-          "#bc1256"
+          "#ba116c"
         ],
         [
           1,
-          "#39081b"
+          "#380821"
         ]
       ],
       "scaleOverLife": [
@@ -401,7 +401,7 @@
       "type": "particle",
       "assetId": "particle-pack/png-transparent/smoke_04.png",
       "zIndex": 8,
-      "tint": "#783f51",
+      "tint": "#763e58",
       "blendMode": "normal",
       "emission": {
         "mode": "sub"
@@ -455,11 +455,11 @@
         ],
         [
           0.25,
-          "#c63765"
+          "#c43779"
         ],
         [
           0.6,
-          "#694752"
+          "#684656"
         ],
         [
           1,

@@ -1380,20 +1380,20 @@ var BattleRenderer = (function () {
       glow.anchor.set(0.5);
       var glowCss = parseInt(String(data._elColor || '').replace('#', '0x'));
       glow.tint = (tierSize && isFinite(glowCss)) ? glowCss : 0xb17aff;
-      glow.alpha = tierSize ? ({ elite: 0.34, elite_adv: 0.62, boss: 0.6, tower: 0.7 }[tierName] || 0.4) : 0.42;
-      glow.scale.set(tierSize ? 1.3 * visScale : 1.65);
+      glow.alpha = tierSize ? ({ elite: 0.42, elite_adv: 0.7, boss: 0.7, tower: 0.78 }[tierName] || 0.45) : 0.42;
+      glow.scale.set(tierSize ? 1.4 * visScale : 1.65);
       glow.y = tierSize ? -19 * visScale : -24;
-      glow.blendMode = 'max';
+      glow.blendMode = tierSize ? 'normal' : 'max';     // 一般混色：淺色地面上加法／max 混色會洗掉顏色，光暈看不出來
       view.addChild(glow);
       if (tierSize && (tierName === 'elite_adv' || tierName === 'boss' || tierName === 'tower')) {
         // 較濃的外層光暈：再疊一圈更大更淡的
         var halo2 = new PIXI.Sprite(glowTexture());
         halo2.anchor.set(0.5);
         halo2.tint = glow.tint;
-        halo2.alpha = 0.3;
-        halo2.scale.set(1.75 * visScale);
+        halo2.alpha = 0.34;
+        halo2.scale.set(1.9 * visScale);
         halo2.y = -19 * visScale;
-        halo2.blendMode = 'max';
+        halo2.blendMode = 'normal';
         view.addChild(halo2);
       }
     }

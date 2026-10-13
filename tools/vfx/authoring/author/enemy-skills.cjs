@@ -36,15 +36,16 @@ function hslToRgb(h, s, l) {
 /* 敵人配色：theme.h＝目標色相；k＝保留原色相差異的比例（0＝全部壓成同一色相、1＝原樣平移）。
    灰白（飽和度低）原樣保留——光暈的白心不能被染掉。 */
 const THEMES = {
-  fire:      { h: 345, k: 0.55, s: 1.0, l: 0.98 },   // 橘紅 → 緋紅／洋紅
-  ice:       { h: 172, k: 0.45, s: 0.85, l: 1.02 },  // 冰藍 → 青綠（水鴨色）
+  fire:      { h: 336, k: 0.5, s: 1.0, l: 0.97 },    // 橘紅 → 緋紅／洋紅
+  ice:       { h: 156, k: 0.4, s: 0.9, l: 1.04 },    // 冰藍 → 青綠（跟玩家的冰藍差 50 度以上）
   lightning: { h: 288, k: 0.5, s: 1.0, l: 1.0 },     // 藍白／黃 → 紫紅
   poison:    { h: 72, k: 0.5, s: 1.0, l: 1.0 },      // 綠 → 酸黃綠
   earth:     { h: 265, k: 0.4, s: 0.5, l: 0.88 },    // 土黃 → 灰紫
   dark:      { h: 352, k: 0.4, s: 0.95, l: 0.85 },   // 暗紫 → 暗血紅
   light:     { h: 322, k: 0.5, s: 1.0, l: 1.0 },     // 金白 → 粉紅
   wind:      { h: 52, k: 0.5, s: 1.0, l: 1.0 },      // 青綠 → 金黃
-  phys:      { h: 8, k: 0.5, s: 1.15, l: 0.98 },     // 灰白 → 暗紅
+  phys:      { h: 256, k: 0.5, s: 0.55, l: 1.04 },   // 紅／灰白 → 冷紫鋼色
+  storm:     { h: 318, k: 0.5, s: 1.0, l: 1.0 },     // 雷霆風暴：紫紅（文件指定）
   warn:      { h: 330, k: 0.5, s: 1.0, l: 1.02 },    // 預警圈：洋紅（玩家技能沒有地面預警圈）
   gold:      { h: 46, k: 0.5, s: 1.0, l: 1.0 }
 };
@@ -73,6 +74,14 @@ function mapTint(hex, theme, mean) {
   const ns = Math.min(1, s * theme.s), nl = Math.min(0.97, l * theme.l);
   return rgbToHex(...hslToRgb(nh, ns, nl));
 }
+function forceNeutral(p, hex) {
+  p.layers.forEach(l => {
+    if (l.type === 'procedural') return;
+    const t = typeof l.tint === 'string' ? l.tint : '#ffffff';
+    const [, sat] = rgbToHsl(...hexToRgb(t));
+    if (sat < 0.12) l.tint = hex;
+  });
+}
 function recolor(srcId, newId, themeName, tweak) {
   const theme = THEMES[themeName];
   if (!theme) throw new Error('沒有這個配色：' + themeName);
@@ -95,16 +104,16 @@ const RECOLORS = [
   ['en-ground-domain-fire', 'ground-domain-fire', 'fire'], ['en-ground-domain-ice', 'ground-domain-ice', 'ice'],
   ['en-ground-domain-earth', 'ground-domain-earth', 'earth'], ['en-ground-mire-magma-10', 'ground-mire-magma-10', 'dark'],
   ['en-ground-blizzard', 'ground-blizzard', 'ice'], ['en-ground-tornado-wind', 'ground-tornado-wind', 'wind'],
-  ['en-ground-thunder-orb', 'ground-thunder-orb', 'lightning'], ['en-field-water-prison-dome', 'field-water-prison-dome', 'ice'],
+  ['en-ground-thunder-orb', 'ground-thunder-orb', 'lightning'], ['en-field-water-prison-dome', 'field-water-prison-dome', 'ice', p => forceNeutral(p, '#7fffd0')],
   ['en-bolt-curtain-lightning', 'bolt-curtain-lightning', 'lightning'], ['en-bolt-chain-lightning', 'bolt-chain-lightning', 'lightning'],
-  ['en-toxic-pool', 'ground-mire-venom', 'poison'], ['en-lava-trail', 'ground-mire-lava', 'fire'],
+  ['en-lava-trail', 'ground-mire-lava', 'fire'],
   // 爆發
   ['en-burst-fire-shockwave-small', 'burst-fire-shockwave-small', 'fire'], ['en-burst-fire-shockwave', 'burst-fire-shockwave', 'fire'],
   ['en-burst-fire', 'burst-fire', 'fire'], ['en-burst-frost-nova', 'burst-frost-nova', 'ice'],
   ['en-burst-earth', 'burst-earth', 'earth'], ['en-burst-rock-petrify', 'burst-rock-petrify', 'earth'],
   ['en-burst-detonate-phys', 'burst-detonate-phys', 'phys'], ['en-burst-blood', 'burst-blood', 'phys'],
   ['en-burst-holy', 'burst-holy', 'light'], ['en-burst-wind', 'burst-wind', 'wind'],
-  ['en-burst-zero-infection', 'burst-zero-infection', 'poison'], ['en-burst-explosion-sheet', 'burst-explosion-sheet', 'fire'],
+  ['en-burst-zero-infection', 'burst-zero-infection', 'poison'], ['en-burst-explosion-sheet', 'burst-explosion-sheet', 'fire', p => forceNeutral(p, '#ff4a8a')],
   ['en-ice-burst', 'burst-frost-freeze', 'ice'], ['en-vortex-burst', 'burst-gravity', 'dark'],
   ['en-molten-core-burst', 'burst-meteor-inferno', 'fire'],
   // 命中
@@ -119,9 +128,9 @@ const RECOLORS = [
   // 其他角色
   ['en-slash-phys-big', 'slash-phys-big', 'phys'], ['en-slash-wind-spin', 'slash-wind-spin', 'wind'], ['en-pillar-light', 'pillar-light', 'light'],
   ['en-curse-dark', 'curse-dark', 'dark'], ['en-vortex', 'black-hole', 'dark', p => { p.sizing = { shape: 'circle', authored: { radius: 100 } }; }],
-  ['en-cast-fire', 'cast-buff-phys', 'fire'], ['en-cast-poison', 'cast-buff-def', 'poison'], ['en-cast-arcane', 'cast-magic', 'light'],
-  ['en-cast-gold', 'cast-buff-light', 'gold'], ['en-cast-dark', 'cast-buff-dark', 'dark'],
-  ['en-bolt-storm', 'bolt-sky-purple', 'lightning'], ['en-burst-storm', 'burst-detonate-dark', 'lightning'], ['en-mark-storm', 'mark-blue', 'lightning']
+  ['en-cast-fire', 'cast-buff-phys', 'fire', p => forceNeutral(p, '#ff5a7a')], ['en-cast-poison', 'cast-buff-def', 'poison'], ['en-cast-arcane', 'cast-magic', 'light'],
+  ['en-cast-gold', 'cast-buff-light', 'gold', p => forceNeutral(p, '#ffc24a')], ['en-cast-dark', 'cast-buff-dark', 'dark'],
+  ['en-bolt-storm', 'bolt-sky-purple', 'storm'], ['en-burst-storm', 'burst-detonate-dark', 'storm'], ['en-mark-storm', 'mark-blue', 'storm']
 ];
 
 
@@ -139,18 +148,33 @@ const orbSizing = r => ({ shape: 'projectile-circle', authored: { radius: r } })
 
 const NEW = {};
 
-/* 火鏈：兩隻怪之間的一條橘紅火光鏈條（矩形場域，長度由模擬層的兩端點決定）。 */
+/* 毒水窪：冒泡的濃稠酸綠色毒窪（圓形、中央發黑，邊緣翻著氣泡）——和玩家毒沼的「流動菱形泥塊」是兩種畫面。 */
+NEW['en-toxic-pool'] = () => ({
+  id: 'en-toxic-pool', duration: 3, loop: true,
+  sizing: { shape: 'rectangle', widthM: 10, heightM: 10, authored: { width: 120, height: 120 } },
+  layers: [
+    withGround(kit.sprite({ id: 'sludge', asset: A.discNoise, z: 0, size: 130, alpha: 0.85, tint: '#a8d014', blend: 'add', duration: 3, rotationOverLife: C.spin(0.08), scaleOverLife: C.breathe(0.04) })),
+    withGround(kit.sprite({ id: 'murk', asset: kit.AT.discB, z: 1, size: 84, alpha: 0.55, tint: '#26340a', blend: 'normal', duration: 3 })),
+    withGround(kit.sprite({ id: 'rim', asset: A.ringSoft, z: 2, size: 128, alpha: 0.7, tint: '#e2ff5a', blend: 'add', duration: 3, alphaOverLife: [[0, 0.55], [0.5, 0.8], [1, 0.55]] })),
+    withGround(kit.particle({ id: 'pops', asset: A.ringThin, z: 3, rate: 5, lifetime: [0.5, 0.9], spawnRadius: 44, speed: [0, 4], startPx: [14, 26], alpha: 0.9, tint: '#f0ff8a', blend: 'add', alphaOverLife: [[0, 0], [0.3, 1], [1, 0]], scaleOverLife: [[0, 0.4], [1, 1.3]] })),
+    kit.particle({ id: 'bubbles', asset: A.dot, z: 4, rate: 9, lifetime: [0.8, 1.4], spawnRadius: 40, speed: [10, 24], direction: -90, spread: 30, startPx: [8, 16], alpha: 0.9, tint: '#dfff6a', blend: 'add', alphaOverLife: [[0, 0], [0.25, 1], [1, 0]] }),
+    kit.particle({ id: 'fumes', asset: A.smokeSoft, z: 5, rate: 3, lifetime: [1, 1.8], spawnRadius: 34, speed: [6, 14], direction: -90, spread: 40, startPx: [40, 70], alpha: 0.35, tint: '#b4d040', blend: 'add', alphaOverLife: [[0, 0], [0.4, 0.6], [1, 0]] })
+  ]
+});
+
+/* 火鏈：兩隻怪之間的一條橘紅火光鏈條（矩形場域，長度由模擬層的兩端點決定）。
+   外層炙熱光暈＋白熱鏈芯＋沿線的火焰環（鏈環）與飄起的火星。 */
 NEW['en-fire-chain'] = () => ({
   id: 'en-fire-chain', duration: 1.2, loop: true, sizing: rectSizing(200, 28),
   layers: [
-    withGround(kit.sprite({ id: 'glow', asset: A.discB, z: 0, sizeX: 210, sizeY: 70, alpha: 0.5, tint: '#ff4a12', blend: 'add', duration: 1.2, alphaOverLife: [[0, 0.42], [0.5, 0.6], [1, 0.42]] })),
-    withGround(kit.sprite({ id: 'band', asset: A.trace06H, z: 1, sizeX: 200, sizeY: 30, alpha: 0.9, tint: '#ff7a1a', blend: 'add', duration: 1.2, alphaOverLife: [[0, 0.8], [0.5, 1], [1, 0.8]] })),
-    withGround(kit.sprite({ id: 'core', asset: A.trace02H, z: 2, sizeX: 200, sizeY: 12, alpha: 1, tint: '#fff0c8', blend: 'add', duration: 1.2 })),
-    withGround(kit.particle({ id: 'links', asset: A.ringThin, z: 3, rate: 9, lifetime: [0.5, 0.9], spawnBox: [190, 4], speed: [0, 6], startPx: [26, 34], alpha: 0.9, tint: '#ffb04a', blend: 'add',
-      alphaOverLife: [[0, 0], [0.2, 1], [0.8, 0.8], [1, 0]], rotationStart: [0, 360] })),
-    kit.particle({ id: 'embers', asset: A.flame04, z: 4, rate: 24, lifetime: [0.35, 0.7], spawnBox: [190, 8], speed: [18, 46], direction: -90, spread: 40, startPx: [18, 30],
-      alpha: 0.8, tint: '#ff5a1a', blend: 'add', alphaOverLife: [[0, 0], [0.2, 0.9], [1, 0]] }),
-    kit.particle({ id: 'sparks', asset: A.star04, z: 5, rate: 14, lifetime: [0.25, 0.55], spawnBox: [190, 6], speed: [30, 80], direction: -90, spread: 70, startPx: [8, 16],
+    withGround(kit.sprite({ id: 'glow', asset: A.discB, z: 0, sizeX: 215, sizeY: 120, alpha: 0.6, tint: '#ff3a0a', blend: 'add', duration: 1.2, alphaOverLife: [[0, 0.5], [0.5, 0.72], [1, 0.5]] })),
+    withGround(kit.sprite({ id: 'band2', asset: A.trace06H, z: 2, sizeX: 205, sizeY: 70, alpha: 0.95, tint: '#ff6a14', blend: 'add', duration: 1.2, alphaOverLife: [[0, 0.8], [0.5, 1], [1, 0.8]] })),
+    withGround(kit.sprite({ id: 'core', asset: A.trace02H, z: 3, sizeX: 205, sizeY: 26, alpha: 1, tint: '#fff2c8', blend: 'add', duration: 1.2 })),
+    withGround(kit.particle({ id: 'links', asset: A.ringThin, z: 4, rate: 9, lifetime: [0.5, 0.9], spawnBox: [190, 4], speed: [0, 6], startPx: [44, 56], alpha: 1, tint: '#ffc060', blend: 'add',
+      alphaOverLife: [[0, 0], [0.2, 1], [0.8, 0.9], [1, 0]], rotationStart: [0, 360] })),
+    kit.particle({ id: 'embers', asset: A.flame04, z: 5, rate: 30, lifetime: [0.35, 0.7], spawnBox: [190, 8], speed: [18, 46], direction: -90, spread: 40, startPx: [22, 38],
+      alpha: 0.9, tint: '#ff5a1a', blend: 'add', alphaOverLife: [[0, 0], [0.2, 0.9], [1, 0]] }),
+    kit.particle({ id: 'sparks', asset: A.star04, z: 6, rate: 16, lifetime: [0.25, 0.55], spawnBox: [190, 6], speed: [30, 80], direction: -90, spread: 70, startPx: [10, 18],
       alpha: 1, tint: '#fff2b0', blend: 'add', alphaOverLife: [[0, 1], [1, 0]] })
   ]
 });
@@ -168,19 +192,21 @@ NEW['en-arcane-core'] = () => ({
 });
 
 /* 旋轉光束：N 根從核心向外的白紫光束，順時針掃過 dur 秒（轉速 rot 度／秒與 JSON 一致）。
+   光束用漸層光柱素材（cone_a：底端最亮、向上漸淡）以底端為軸心，旋轉 90 度讓它朝 +X 長出去。
    光束長度 authored 100px＝事件半徑（地板圓 r＝光束長度）。 */
 function arcaneBeams(arms, dur, rot) {
   const id = 'en-arcane-beams-' + arms;
   const layers = [
-    withGround(kit.sprite({ id: 'halo', asset: A.discB, z: 0, size: 70, alpha: 0.5, tint: '#c850ff', blend: 'add', duration: dur, scaleOverLife: C.breathe(0.1) })),
-    kit.sprite({ id: 'hub', asset: A.glowSoft, z: 1, size: 50, alpha: 1, tint: '#ffffff', blend: 'add', duration: dur })
+    withGround(kit.sprite({ id: 'halo', asset: A.discB, z: 0, size: 44, alpha: 0.5, tint: '#c850ff', blend: 'add', duration: dur, scaleOverLife: C.breathe(0.1) })),
+    kit.sprite({ id: 'hub', asset: A.glowSoft, z: 9, size: 26, alpha: 0.9, tint: '#ffd0ff', blend: 'add', duration: dur })
   ];
   const turn = rot * dur * D2R;
   for (let i = 0; i < arms; i++) {
-    const base = i * 2 * Math.PI / arms;
+    const base = i * 2 * Math.PI / arms + Math.PI / 2;      // +90°：把「向上」的光柱轉成「朝 +X」
     const spin = [[0, +base.toFixed(5)], [1, +(base + turn).toFixed(5)]];
-    layers.push(withGround(kit.sprite({ id: 'beam' + i + '-glow', asset: A.trace06H, z: 2 + i * 2, x: 0, y: 0, anchor: { x: 0, y: 0.5 }, sizeX: 100, sizeY: 30, alpha: 0.55, tint: '#c850ff', blend: 'add', duration: dur, rotationOverLife: spin })));
-    layers.push(withGround(kit.sprite({ id: 'beam' + i + '-core', asset: A.trace06H, z: 3 + i * 2, x: 0, y: 0, anchor: { x: 0, y: 0.5 }, sizeX: 100, sizeY: 12, alpha: 1, tint: '#f6e8ff', blend: 'add', duration: dur, rotationOverLife: spin })));
+    layers.push(withGround(kit.sprite({ id: 'beam' + i + '-glow', asset: A.barA, z: 1 + i * 3, anchor: { x: 0.5, y: 1 }, sizeX: 62, sizeY: 100, alpha: 0.7, tint: '#c850ff', blend: 'add', duration: dur, rotationOverLife: spin })));
+    layers.push(withGround(kit.sprite({ id: 'beam' + i + '-body', asset: A.barA, z: 2 + i * 3, anchor: { x: 0.5, y: 1 }, sizeX: 34, sizeY: 100, alpha: 0.95, tint: '#e8b6ff', blend: 'add', duration: dur, rotationOverLife: spin })));
+    layers.push(withGround(kit.sprite({ id: 'beam' + i + '-core', asset: A.barB, z: 3 + i * 3, anchor: { x: 0.5, y: 1 }, sizeX: 14, sizeY: 100, alpha: 1, tint: '#ffffff', blend: 'add', duration: dur, rotationOverLife: spin })));
   }
   return { id, duration: dur, loop: false, sizing: circleSizing(100), layers };
 }
@@ -268,9 +294,10 @@ NEW['en-ice-orb'] = () => ({
 NEW['en-ice-pulse'] = () => ({
   id: 'en-ice-pulse', duration: 0.7, loop: false, sizing: circleSizing(100),
   layers: [
-    withGround(kit.sprite({ id: 'wave', asset: A.ringThin, z: 0, size: 200, alpha: 0.9, tint: '#c8fff6', blend: 'add', duration: 0.7, scaleOverLife: [[0, 0.1], [1, 1]], alphaOverLife: [[0, 0.9], [1, 0]] })),
-    withGround(kit.sprite({ id: 'fill', asset: A.discB, z: 1, size: 200, alpha: 0.25, tint: '#7ff0e0', blend: 'add', duration: 0.7, scaleOverLife: [[0, 0.2], [1, 1]], alphaOverLife: [[0, 0.5], [1, 0]] })),
-    kit.particle({ id: 'frost', asset: A.star04, z: 2, burst: 18, lifetime: [0.4, 0.7], spawnRadius: 20, speed: [120, 220], direction: 0, spread: 360, startPx: [8, 16], alpha: 1, tint: '#ffffff', blend: 'add', alphaOverLife: [[0, 1], [1, 0]] })
+    withGround(kit.sprite({ id: 'wave', asset: A.ringThin, z: 0, size: 200, alpha: 1, tint: '#d8fff8', blend: 'add', duration: 0.7, scaleOverLife: [[0, 0.1], [1, 1]], alphaOverLife: [[0, 1], [0.7, 0.8], [1, 0]] })),
+    withGround(kit.sprite({ id: 'wave2', asset: A.ringSoft, z: 1, size: 200, alpha: 0.9, tint: '#9ff5e8', blend: 'add', duration: 0.7, scaleOverLife: [[0, 0.05], [1, 0.95]], alphaOverLife: [[0, 1], [1, 0]] })),
+    withGround(kit.sprite({ id: 'fill', asset: A.discB, z: 2, size: 200, alpha: 0.4, tint: '#7ff0e0', blend: 'add', duration: 0.7, scaleOverLife: [[0, 0.2], [1, 1]], alphaOverLife: [[0, 0.7], [1, 0]] })),
+    kit.particle({ id: 'frost', asset: A.star04, z: 3, burst: 24, lifetime: [0.4, 0.7], spawnRadius: 20, speed: [120, 240], direction: 0, spread: 360, startPx: [10, 20], alpha: 1, tint: '#ffffff', blend: 'add', alphaOverLife: [[0, 1], [1, 0]] })
   ]
 });
 
@@ -284,27 +311,32 @@ NEW['en-mortar-mark'] = () => ({
   ]
 });
 
-/* 築牆預警：牆體升起前的地面標記（矩形）。 */
+/* 築牆預警：牆體升起前的地面標記（矩形）：紫色警示帶＋虛線＋飛起的碎石。 */
 NEW['en-wall-warn'] = () => ({
   id: 'en-wall-warn', duration: 0.8, loop: true, sizing: rectSizing(200, 28),
   layers: [
-    withGround(kit.sprite({ id: 'fill', asset: A.discB, z: 0, sizeX: 210, sizeY: 60, alpha: 0.3, tint: '#b08cff', blend: 'add', duration: 0.8, alphaOverLife: [[0, 0.2], [0.5, 0.45], [1, 0.2]] })),
-    withGround(kit.sprite({ id: 'line', asset: A.trace06H, z: 1, sizeX: 200, sizeY: 14, alpha: 0.9, tint: '#e0d0ff', blend: 'add', duration: 0.8 })),
-    withGround(kit.particle({ id: 'dust', asset: A.dirt01, z: 2, rate: 16, lifetime: [0.4, 0.7], spawnBox: [190, 6], speed: [10, 30], direction: -90, spread: 60, startPx: [14, 22], alpha: 0.7, tint: '#c8b8e8', blend: 'add', alphaOverLife: [[0, 0], [0.3, 0.8], [1, 0]] }))
+    withGround(kit.sprite({ id: 'fill', asset: A.discB, z: 0, sizeX: 215, sizeY: 130, alpha: 0.55, tint: '#9a6cff', blend: 'add', duration: 0.8, alphaOverLife: [[0, 0.4], [0.5, 0.7], [1, 0.4]] })),
+    withGround(kit.sprite({ id: 'edge', asset: A.reticleDashed, z: 1, sizeX: 215, sizeY: 120, alpha: 0.9, tint: '#e0ccff', blend: 'add', duration: 0.8 })),
+    withGround(kit.sprite({ id: 'line', asset: A.trace06H, z: 2, sizeX: 210, sizeY: 40, alpha: 1, tint: '#f2e8ff', blend: 'add', duration: 0.8 })),
+    kit.particle({ id: 'dust', asset: A.dirt01, z: 3, rate: 22, lifetime: [0.4, 0.7], spawnBox: [190, 6], speed: [14, 40], direction: -90, spread: 60, startPx: [16, 26], alpha: 0.8, tint: '#cdbcf0', blend: 'add', alphaOverLife: [[0, 0], [0.3, 0.9], [1, 0]] })
   ]
 });
 
-/* 石牆：升起後持續存在的石砌高牆（矩形，長度與厚度由模擬層決定）。 */
-NEW['en-stone-wall'] = () => ({
-  id: 'en-stone-wall', duration: 1.2, loop: true, sizing: rectSizing(200, 28),
-  layers: [
-    withGround(kit.sprite({ id: 'shadow', asset: A.discB, z: 0, sizeX: 215, sizeY: 70, alpha: 0.35, tint: '#201830', blend: 'add', duration: 1.2 })),
-    kit.sprite({ id: 'body', asset: A.trace06H, z: 1, x: 0, y: -10, sizeX: 200, sizeY: 52, alpha: 0.95, tint: '#8a78a8', blend: 'add', duration: 1.2 }),
-    kit.sprite({ id: 'top', asset: A.trace02H, z: 2, x: 0, y: -30, sizeX: 200, sizeY: 12, alpha: 0.95, tint: '#d8c8f0', blend: 'add', duration: 1.2 }),
-    kit.sprite({ id: 'blocks', asset: A.trace03, z: 3, x: 0, y: -8, sizeX: 200, sizeY: 40, alpha: 0.4, tint: '#4c3c68', blend: 'add', duration: 1.2 }),
-    kit.particle({ id: 'dust', asset: A.dirt01, z: 4, rate: 6, lifetime: [0.5, 0.9], spawnBox: [190, 4], speed: [6, 16], direction: -90, spread: 50, startPx: [10, 18], alpha: 0.5, tint: '#b8a8d8', blend: 'add', alphaOverLife: [[0, 0], [0.3, 0.7], [1, 0]] })
-  ]
-});
+/* 石牆：升起後持續存在的石砌高牆（矩形，長度與厚度由模擬層決定）：一排灰紫的岩塊，頂緣有淡淡的魔力光。 */
+NEW['en-stone-wall'] = () => {
+  const layers = [
+    withGround(kit.sprite({ id: 'shadow', asset: A.discB, z: 0, sizeX: 220, sizeY: 110, alpha: 0.55, tint: '#1a1230', blend: 'add', duration: 1.2 })),
+    withGround(kit.sprite({ id: 'base', asset: A.discB, z: 1, sizeX: 205, sizeY: 70, alpha: 0.55, tint: '#7a64a8', blend: 'add', duration: 1.2 }))
+  ];
+  const xs = [-92, -66, -40, -14, 14, 40, 66, 92];
+  xs.forEach((x, i) => {
+    layers.push(kit.sprite({ id: 'block' + i, asset: 'codex-authored/rockarmor-objects/plate.png', z: 2 + i, x: x, y: 8, sizeX: 74, sizeY: 104, anchor: { x: 0.5, y: 0.95 },
+      rotDeg: (i % 3 - 1) * 4, alpha: 1, tint: i % 2 ? '#ddd0ff' : '#f2eaff', duration: 1.2 }));
+  });
+  layers.push(withGround(kit.sprite({ id: 'rim', asset: A.trace06H, z: 12, y: -2, sizeX: 210, sizeY: 30, alpha: 0.8, tint: '#e6d6ff', blend: 'add', duration: 1.2, alphaOverLife: [[0, 0.6], [0.5, 0.9], [1, 0.6]] })));
+  layers.push(kit.particle({ id: 'dust', asset: A.dirt01, z: 20, rate: 8, lifetime: [0.5, 0.9], spawnBox: [190, 4], speed: [6, 16], direction: -90, spread: 50, startPx: [14, 22], alpha: 0.5, tint: '#c4b4e4', blend: 'add', alphaOverLife: [[0, 0], [0.3, 0.7], [1, 0]] }));
+  return { id: 'en-stone-wall', duration: 1.2, loop: true, sizing: rectSizing(200, 28), layers };
+};
 
 /* 石牆升起瞬間的塵爆。 */
 NEW['en-wall-rise'] = () => ({

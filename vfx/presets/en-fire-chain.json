@@ -10,25 +10,25 @@
       "assetId": "light-masks-1.0/default/circle_b.png",
       "zIndex": 0,
       "scale": {
-        "x": 0.4102,
-        "y": 0.1367
+        "x": 0.4199,
+        "y": 0.2344
       },
-      "alpha": 0.5,
-      "tint": "#ff4a12",
+      "alpha": 0.6,
+      "tint": "#ff3a0a",
       "blendMode": "add",
       "duration": 1.2,
       "alphaOverLife": [
         [
           0,
-          0.42
+          0.5
         ],
         [
           0.5,
-          0.6
+          0.72
         ],
         [
           1,
-          0.42
+          0.5
         ]
       ],
       "projection": {
@@ -37,16 +37,16 @@
       }
     },
     {
-      "id": "band",
+      "id": "band2",
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/rotated/trace_06_rotated.png",
-      "zIndex": 1,
+      "zIndex": 2,
       "scale": {
-        "x": 0.3906,
-        "y": 0.0586
+        "x": 0.4004,
+        "y": 0.1367
       },
-      "alpha": 0.9,
-      "tint": "#ff7a1a",
+      "alpha": 0.95,
+      "tint": "#ff6a14",
       "blendMode": "add",
       "duration": 1.2,
       "alphaOverLife": [
@@ -72,13 +72,13 @@
       "id": "core",
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
-      "zIndex": 2,
+      "zIndex": 3,
       "scale": {
-        "x": 0.3906,
-        "y": 0.0234
+        "x": 0.4004,
+        "y": 0.0508
       },
       "alpha": 1,
-      "tint": "#fff0c8",
+      "tint": "#fff2c8",
       "blendMode": "add",
       "duration": 1.2,
       "projection": {
@@ -90,9 +90,9 @@
       "id": "links",
       "type": "particle",
       "assetId": "particle-pack/png-black-background/circle_02.png",
-      "zIndex": 3,
-      "alpha": 0.9,
-      "tint": "#ffb04a",
+      "zIndex": 4,
+      "alpha": 1,
+      "tint": "#ffc060",
       "blendMode": "add",
       "emission": {
         "mode": "rate",
@@ -112,8 +112,8 @@
         6
       ],
       "startScale": [
-        0.0508,
-        0.0664
+        0.0859,
+        0.1094
       ],
       "rotationStart": [
         0,
@@ -130,7 +130,7 @@
         ],
         [
           0.8,
-          0.8
+          0.9
         ],
         [
           1,
@@ -146,13 +146,13 @@
       "id": "embers",
       "type": "particle",
       "assetId": "particle-pack/png-black-background/flame_04.png",
-      "zIndex": 4,
-      "alpha": 0.8,
+      "zIndex": 5,
+      "alpha": 0.9,
       "tint": "#ff5a1a",
       "blendMode": "add",
       "emission": {
         "mode": "rate",
-        "rate": 24
+        "rate": 30
       },
       "lifetime": [
         0.35,
@@ -170,8 +170,8 @@
       "direction": -90,
       "spread": 40,
       "startScale": [
-        0.0352,
-        0.0586
+        0.043,
+        0.0742
       ],
       "alphaOverLife": [
         [
@@ -192,13 +192,13 @@
       "id": "sparks",
       "type": "particle",
       "assetId": "particle-pack/png-black-background/star_04.png",
-      "zIndex": 5,
+      "zIndex": 6,
       "alpha": 1,
       "tint": "#fff2b0",
       "blendMode": "add",
       "emission": {
         "mode": "rate",
-        "rate": 14
+        "rate": 16
       },
       "lifetime": [
         0.25,
@@ -216,8 +216,8 @@
       "direction": -90,
       "spread": 70,
       "startScale": [
-        0.0156,
-        0.0313
+        0.0195,
+        0.0352
       ],
       "alphaOverLife": [
         [

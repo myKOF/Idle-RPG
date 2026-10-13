@@ -13,7 +13,7 @@
         "y": 0.1406
       },
       "alpha": 0.65,
-      "tint": "#77f4e3",
+      "tint": "#7af8c6",
       "blendMode": "add",
       "duration": 0.25,
       "alphaOverLife": [
@@ -111,7 +111,7 @@
       "type": "particle",
       "assetId": "particle-pack/png-transparent/smoke_04.png",
       "alpha": 0.3,
-      "tint": "#b3f9f0",
+      "tint": "#b8fbe1",
       "blendMode": "add",
       "emission": {
         "count": 6,

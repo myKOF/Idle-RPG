@@ -14,7 +14,7 @@
         "y": 0.1162
       },
       "alpha": 0.6,
-      "tint": "#f30028",
+      "tint": "#f1004e",
       "blendMode": "add",
       "duration": 2,
       "alphaOverLife": [
@@ -68,7 +68,7 @@
         "y": 0.0684
       },
       "alpha": 0.95,
-      "tint": "#f3005d",
+      "tint": "#f1007d",
       "blendMode": "add",
       "duration": 2,
       "alphaOverLife": [
@@ -110,7 +110,7 @@
         "y": 0.0533
       },
       "alpha": 1,
-      "tint": "#f30028",
+      "tint": "#f1004e",
       "blendMode": "add",
       "duration": 2,
       "alphaOverLife": [
@@ -152,7 +152,7 @@
         "y": 0.0232
       },
       "alpha": 1,
-      "tint": "#fa1c2c",
+      "tint": "#fa1a4f",
       "blendMode": "add",
       "duration": 2,
       "alphaOverLife": [
@@ -206,7 +206,7 @@
         "y": 0.0718
       },
       "alpha": 0.5,
-      "tint": "#9c0450",
+      "tint": "#9a0463",
       "blendMode": "normal",
       "duration": 2,
       "alphaOverLife": [
@@ -233,7 +233,7 @@
       "type": "particle",
       "assetId": "particle-pack/png-black-background/flame_05.png",
       "zIndex": 5,
-      "tint": "#f30028",
+      "tint": "#f1004e",
       "blendMode": "add",
       "emission": {
         "mode": "rate",
@@ -284,19 +284,19 @@
         ],
         [
           0.18,
-          "#ff828e"
+          "#ff7ea0"
         ],
         [
           0.45,
-          "#ff2465"
+          "#ff2183"
         ],
         [
           0.75,
-          "#bc125a"
+          "#ba1170"
         ],
         [
           1,
-          "#39081c"
+          "#380822"
         ]
       ],
       "scaleOverLife": [

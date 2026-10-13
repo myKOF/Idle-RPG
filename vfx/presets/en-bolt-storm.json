@@ -22,7 +22,7 @@
         "y": 1
       },
       "alpha": 0.24,
-      "tint": "#c133ea",
+      "tint": "#ea33b8",
       "blendMode": "add",
       "duration": 0.65,
       "alphaOverLife": [
@@ -96,15 +96,15 @@
         ],
         [
           0.08,
-          "#fae8ff"
+          "#ffe8f8"
         ],
         [
           0.35,
-          "#df84fc"
+          "#fc84dd"
         ],
         [
           1,
-          "#4e1060"
+          "#60104a"
         ]
       ],
       "rotationYOverLife": 0,
@@ -160,15 +160,15 @@
         ],
         [
           0.08,
-          "#fae8ff"
+          "#ffe8f8"
         ],
         [
           0.35,
-          "#df84fc"
+          "#fc84dd"
         ],
         [
           1,
-          "#4e1060"
+          "#60104a"
         ]
       ],
       "rotationYOverLife": 0,
@@ -225,15 +225,15 @@
         ],
         [
           0.08,
-          "#fae8ff"
+          "#ffe8f8"
         ],
         [
           0.35,
-          "#df84fc"
+          "#fc84dd"
         ],
         [
           1,
-          "#4e1060"
+          "#60104a"
         ]
       ],
       "rotationYOverLife": 0,
@@ -290,15 +290,15 @@
         ],
         [
           0.08,
-          "#fae8ff"
+          "#ffe8f8"
         ],
         [
           0.35,
-          "#df84fc"
+          "#fc84dd"
         ],
         [
           1,
-          "#4e1060"
+          "#60104a"
         ]
       ],
       "perspective": false
@@ -317,7 +317,7 @@
         "y": 0.069
       },
       "alpha": 1,
-      "tint": "#e675f0",
+      "tint": "#f075bc",
       "blendMode": "add",
       "delay": 0.03,
       "duration": 0.2,
@@ -401,15 +401,15 @@
         ],
         [
           0.08,
-          "#fae8ff"
+          "#ffe8f8"
         ],
         [
           0.35,
-          "#df84fc"
+          "#fc84dd"
         ],
         [
           1,
-          "#4e1060"
+          "#60104a"
         ]
       ],
       "perspective": false
@@ -428,7 +428,7 @@
         "y": 0.0382
       },
       "alpha": 1,
-      "tint": "#e970ff",
+      "tint": "#ff70ce",
       "blendMode": "add",
       "duration": 0.5,
       "alphaOverLife": [
@@ -464,15 +464,15 @@
         ],
         [
           0.08,
-          "#fae8ff"
+          "#ffe8f8"
         ],
         [
           0.35,
-          "#df84fc"
+          "#fc84dd"
         ],
         [
           1,
-          "#4e1060"
+          "#60104a"
         ]
       ],
       "perspective": false
@@ -534,7 +534,7 @@
         "x": -2.0391,
         "y": 0
       },
-      "tint": "#e54dff",
+      "tint": "#ff4dc0",
       "blendMode": "add",
       "duration": 0.08,
       "emission": {
@@ -590,7 +590,7 @@
         "x": -2.0391,
         "y": 0
       },
-      "tint": "#f2f0ff",
+      "tint": "#faf0ff",
       "blendMode": "add",
       "duration": 0.08,
       "emission": {
@@ -656,7 +656,7 @@
         "y": 1
       },
       "alpha": 0.9,
-      "tint": "#ea70ff",
+      "tint": "#ff70cc",
       "blendMode": "add",
       "delay": 0,
       "duration": 0.26,
@@ -725,7 +725,7 @@
         "y": 1
       },
       "alpha": 0.9,
-      "tint": "#ea70ff",
+      "tint": "#ff70cc",
       "blendMode": "add",
       "delay": 0.018,
       "duration": 0.26,
@@ -794,7 +794,7 @@
         "y": 1
       },
       "alpha": 0.9,
-      "tint": "#ea70ff",
+      "tint": "#ff70cc",
       "blendMode": "add",
       "delay": 0.036,
       "duration": 0.26,
@@ -863,7 +863,7 @@
         "y": 1
       },
       "alpha": 0.9,
-      "tint": "#ea70ff",
+      "tint": "#ff70cc",
       "blendMode": "add",
       "delay": 0.05399999999999999,
       "duration": 0.26,
@@ -932,7 +932,7 @@
         "y": 1
       },
       "alpha": 0.9,
-      "tint": "#ea70ff",
+      "tint": "#ff70cc",
       "blendMode": "add",
       "delay": 0.072,
       "duration": 0.26,
@@ -995,7 +995,7 @@
         "x": 0.0628,
         "y": 0.023
       },
-      "tint": "#dbd4ff",
+      "tint": "#f1d4ff",
       "blendMode": "add",
       "duration": 0.14,
       "alphaOverLife": [

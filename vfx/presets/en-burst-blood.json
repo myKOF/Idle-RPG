@@ -14,7 +14,7 @@
         "y": 0.332
       },
       "alpha": 0.5,
-      "tint": "#e22818",
+      "tint": "#6955b4",
       "blendMode": "add",
       "duration": 0.4,
       "alphaOverLife": [
@@ -56,7 +56,7 @@
         "y": 0.3906
       },
       "alpha": 0.9,
-      "tint": "#fa1a00",
+      "tint": "#6141c8",
       "blendMode": "add",
       "duration": 0.45,
       "alphaOverLife": [
@@ -106,7 +106,7 @@
         "y": 0.1563
       },
       "alpha": 1,
-      "tint": "#ffeec7",
+      "tint": "#f6e9f9",
       "blendMode": "add",
       "duration": 0.18,
       "alphaOverLife": [
@@ -147,7 +147,7 @@
       "type": "particle",
       "assetId": "particle-pack/png-transparent/circle_05.png",
       "zIndex": 6,
-      "tint": "#e23118",
+      "tint": "#6d55b4",
       "blendMode": "normal",
       "emission": {
         "count": 12,

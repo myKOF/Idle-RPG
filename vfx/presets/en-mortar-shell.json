@@ -14,7 +14,7 @@
         "y": 0
       },
       "alpha": 0.72,
-      "tint": "#ff0e5d",
+      "tint": "#ff0b7e",
       "blendMode": "screen",
       "duration": 1,
       "emission": {
@@ -95,7 +95,7 @@
         "y": 0.1946
       },
       "alpha": 0.8,
-      "tint": "#ff1467",
+      "tint": "#ff1286",
       "blendMode": "screen"
     },
     {
@@ -112,7 +112,7 @@
         "y": 0.1198
       },
       "alpha": 0.95,
-      "tint": "#ff5d76",
+      "tint": "#ff598d",
       "blendMode": "screen"
     },
     {
@@ -125,7 +125,7 @@
         "y": 0
       },
       "alpha": 0.6,
-      "tint": "#ff284c",
+      "tint": "#ff256c",
       "blendMode": "screen",
       "duration": 1,
       "emission": {
@@ -180,7 +180,7 @@
         "y": 0
       },
       "alpha": 0.85,
-      "tint": "#ff2554",
+      "tint": "#ff2273",
       "blendMode": "screen",
       "duration": 1,
       "emission": {
@@ -230,7 +230,7 @@
         "y": 0.1958
       },
       "alpha": 0.9,
-      "tint": "#ff2d5f",
+      "tint": "#ff2a7d",
       "blendMode": "normal"
     },
     {
@@ -247,7 +247,7 @@
         "y": 0.1504
       },
       "alpha": 0.85,
-      "tint": "#ff1e5a",
+      "tint": "#ff1b7a",
       "blendMode": "screen",
       "duration": 1.5,
       "alphaOverLife": [
@@ -304,7 +304,7 @@
         "y": 0.0909
       },
       "alpha": 0.9,
-      "tint": "#fa003c",
+      "tint": "#f70060",
       "blendMode": "screen"
     }
   ],

@@ -14,7 +14,7 @@
         "y": 0.4492
       },
       "alpha": 0.6,
-      "tint": "#ff4e32",
+      "tint": "#8d75ce",
       "blendMode": "add",
       "duration": 0.3,
       "alphaOverLife": [
@@ -60,7 +60,7 @@
         "y": 0.4219
       },
       "alpha": 0.6,
-      "tint": "#f52100",
+      "tint": "#623dc7",
       "blendMode": "add",
       "duration": 0.55,
       "alphaOverLife": [
@@ -110,7 +110,7 @@
         "y": 0.3906
       },
       "alpha": 0.9,
-      "tint": "#ff9382",
+      "tint": "#bfb1e8",
       "blendMode": "add",
       "duration": 0.55,
       "alphaOverLife": [
@@ -160,7 +160,7 @@
         "y": 0.2148
       },
       "alpha": 1,
-      "tint": "#fa2200",
+      "tint": "#6641c8",
       "blendMode": "add",
       "duration": 0.22,
       "alphaOverLife": [
@@ -201,7 +201,7 @@
       "type": "particle",
       "assetId": "new_materials/mask-shape/dingbats-366.png",
       "zIndex": 6,
-      "tint": "#ff3414",
+      "tint": "#7656ce",
       "blendMode": "add",
       "emission": {
         "count": 7,

@@ -6,8 +6,12 @@
       "id": "en-toxic-pool",
       "name": "en-toxic-pool",
       "layerIds": [
-        "flowing-earth-mud",
-        "sprite-4"
+        "sludge",
+        "murk",
+        "rim",
+        "pops",
+        "bubbles",
+        "fumes"
       ]
     }
   ],

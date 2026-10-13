@@ -504,6 +504,13 @@
       "fileSize": 171037
     },
     {
+      "assetId": "new_materials/hud-reticle/target_11.png",
+      "relativePath": "new_materials/hud-reticle/target_11.png",
+      "package": "new_materials",
+      "contentHash": "sha256:67d88f581ba5a65956aa287da2079b564159b666668a08fcadea9fc2b034f82d",
+      "fileSize": 15084
+    },
+    {
       "assetId": "new_materials/hud-reticle/target_19.png",
       "relativePath": "new_materials/hud-reticle/target_19.png",
       "package": "new_materials",
@@ -1020,13 +1027,6 @@
       "package": "particle-pack",
       "contentHash": "sha256:590bf09870a76e840068cd84333d14cde0666d1816e5636efac6201440dc66c7",
       "fileSize": 20280
-    },
-    {
-      "assetId": "particle-pack/png-black-background/trace_03.png",
-      "relativePath": "particle-pack/PNG (Black background)/trace_03.png",
-      "package": "particle-pack",
-      "contentHash": "sha256:1226d3973ec9c785a40e89bedc5abc282edc2bb403f756c1a60ef3c694687cf5",
-      "fileSize": 24429
     },
     {
       "assetId": "particle-pack/png-black-background/twirl_01.png",

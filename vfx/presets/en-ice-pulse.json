@@ -13,14 +13,18 @@
         "x": 0.3906,
         "y": 0.3906
       },
-      "alpha": 0.9,
-      "tint": "#c8fff6",
+      "alpha": 1,
+      "tint": "#d8fff8",
       "blendMode": "add",
       "duration": 0.7,
       "alphaOverLife": [
         [
           0,
-          0.9
+          1
+        ],
+        [
+          0.7,
+          0.8
         ],
         [
           1,
@@ -43,22 +47,60 @@
       }
     },
     {
-      "id": "fill",
+      "id": "wave2",
       "type": "sprite",
-      "assetId": "light-masks-1.0/default/circle_b.png",
+      "assetId": "particle-pack/png-black-background/circle_01.png",
       "zIndex": 1,
       "scale": {
         "x": 0.3906,
         "y": 0.3906
       },
-      "alpha": 0.25,
+      "alpha": 0.9,
+      "tint": "#9ff5e8",
+      "blendMode": "add",
+      "duration": 0.7,
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.05
+        ],
+        [
+          1,
+          0.95
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "fill",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/circle_b.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.3906
+      },
+      "alpha": 0.4,
       "tint": "#7ff0e0",
       "blendMode": "add",
       "duration": 0.7,
       "alphaOverLife": [
         [
           0,
-          0.5
+          0.7
         ],
         [
           1,
@@ -84,12 +126,12 @@
       "id": "frost",
       "type": "particle",
       "assetId": "particle-pack/png-black-background/star_04.png",
-      "zIndex": 2,
+      "zIndex": 3,
       "alpha": 1,
       "tint": "#ffffff",
       "blendMode": "add",
       "emission": {
-        "count": 18,
+        "count": 24,
         "mode": "burst"
       },
       "lifetime": [
@@ -102,13 +144,13 @@
       },
       "speed": [
         120,
-        220
+        240
       ],
       "direction": 0,
       "spread": 360,
       "startScale": [
-        0.0156,
-        0.0313
+        0.0195,
+        0.0391
       ],
       "alphaOverLife": [
         [

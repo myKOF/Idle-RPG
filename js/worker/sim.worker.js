@@ -12,17 +12,17 @@
 
 importScripts('protocol.js?v=50', 'shim.js?v=12');
 importScripts(
-  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261013-enemy-skills', '../runeword_data.js?v=20261013-rune-v2-parts', '../status.js?v=20261012-super-rock-art', '../formula.js?v=20261013-enemy-skills', '../battlefield.js?v=20261013-enemy-skills', '../stats.js?v=20261003-rename-weineng',
+  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261013-enemy-skills2', '../runeword_data.js?v=20261013-rune-v2-parts', '../status.js?v=20261012-super-rock-art', '../formula.js?v=20261013-enemy-skills2', '../battlefield.js?v=20261013-enemy-skills2', '../stats.js?v=20261003-rename-weineng',
   '../item.js?v=20261008-rune-erase-cfg', '../runeword.js?v=20261013-rune-v2-parts',
-  '../skills.js?v=20261007-runes4', '../skills2.js?v=20261013-enemy-skills', '../elite_data.js?v=20261013-enemy-skills', '../talents.js?v=20261003-rename-weineng',
+  '../skills.js?v=20261007-runes4', '../skills2.js?v=20261013-enemy-skills2', '../elite_data.js?v=20261013-enemy-skills2', '../talents.js?v=20261003-rename-weineng',
   '../player.js?v=20261008-boss-config-lock', '../special_rules.js',
-  '../combat.js?v=20261013-enemy-skills', '../elite.js?v=20261013-enemy-skills', '../legendary.js?v=20261012-indomitable-guard', '../potential.js?v=20261005-cc-decay-count', '../tower.js?v=20261013-enemy-skills',
+  '../combat.js?v=20261013-enemy-skills2', '../elite.js?v=20261013-enemy-skills2', '../legendary.js?v=20261012-indomitable-guard', '../potential.js?v=20261005-cc-decay-count', '../tower.js?v=20261013-enemy-skills2',
   '../factory.js?v=20261007-runes4', '../newforge.js', '../forge.js?v=20261007-runes4', '../save.js?v=20261007-rune-seen',
   '../tasks.js?v=20261007-runes4'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
    它自己會擋非本機 hostname；Worker 的 location 是本檔的 URL，判定結果與主執行緒一致。 */
-importScripts('../gm_exec.js?v=20261013-enemy-skills');
+importScripts('../gm_exec.js?v=20261013-enemy-skills2');
 
 /* ---- 決定論測試模式（只在本機、只在網址帶 ?seed=N 時啟用）----
    存在的唯一理由：讓瀏覽器實機跑出來的結果，能和 headless 模擬器

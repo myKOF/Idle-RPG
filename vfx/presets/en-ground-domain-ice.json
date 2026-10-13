@@ -14,7 +14,7 @@
         "y": 0.3906
       },
       "alpha": 0.1,
-      "tint": "#f1fefd",
+      "tint": "#f0fef9",
       "blendMode": "add",
       "duration": 1.85,
       "alphaOverLife": [
@@ -60,7 +60,7 @@
         "y": 0.4287
       },
       "alpha": 0.75,
-      "tint": "#60f1f2",
+      "tint": "#63f7ce",
       "blendMode": "add",
       "duration": 1.85,
       "alphaOverLife": [
@@ -106,7 +106,7 @@
         "y": 0.3216
       },
       "alpha": 0.55,
-      "tint": "#8af6ec",
+      "tint": "#8ef9d2",
       "blendMode": "add",
       "duration": 1.85,
       "alphaOverLife": [
@@ -151,7 +151,7 @@
         "x": 0,
         "y": 0
       },
-      "tint": "#8af6ec",
+      "tint": "#8ef9d2",
       "blendMode": "add",
       "emission": {
         "mode": "rate",
@@ -215,7 +215,7 @@
         "y": 0.2453
       },
       "alpha": 0.35,
-      "tint": "#60f2ce",
+      "tint": "#63f7ac",
       "blendMode": "add",
       "duration": 1.85,
       "rotationSpeed": -0.2617993877991494,
@@ -262,7 +262,7 @@
         "y": 0.2999
       },
       "alpha": 0.35,
-      "tint": "#19e5c3",
+      "tint": "#17ec90",
       "blendMode": "add",
       "duration": 1.85,
       "rotationSpeed": -0.2617993877991494,
@@ -310,7 +310,7 @@
         "y": 0.2999
       },
       "alpha": 0.35,
-      "tint": "#19e5c3",
+      "tint": "#17ec90",
       "blendMode": "add",
       "duration": 1.85,
       "rotationSpeed": -0.2617993877991494,
