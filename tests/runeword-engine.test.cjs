@@ -225,7 +225,7 @@ test('rwCandidates：列出差幾顆就成形的配方，並說明缺哪幾顆',
 
 /* ---------------- 屬性聚合 ---------------- */
 
-test('單顆符文依武器／防具各給一條屬性，數值＝詞條下限（基準值 × 80%）× mult', () => {
+test('單顆符文依部位（武器／防具／飾品）各給一條屬性，數值＝詞條下限（基準值 × 80%）× mult', () => {
   const c = loadRuneEnv();
   const weapon = fillRunes(makeItem(c, { rarity: 5, level: 100 }), ['r10']);
   const chest = fillRunes(makeItem(c, { rarity: 5, level: 100, slot: 'chest', weaponType: undefined }), ['r10']);
@@ -237,8 +237,43 @@ test('單顆符文依武器／防具各給一條屬性，數值＝詞條下限�
   assert.equal(we[0].val, expectW);
   // 與裝備詳情「可能出現的詞條 [下限 ~ 上限]」的下限同口徑：倍率 1 ＝ 下限
   assert.equal(c.rwRuneStatValue(weapon, 'atkPct', 1), c.getAffixLimits('atkPct', 100, 5, weapon).min);
-  const shield = fillRunes(makeItem(c, { rarity: 5, weaponType: 'shield' }), ['r10']);
-  assert.equal(c.rwItemStatEntries(shield)[0].key, 'hpPct', '副手視同防具側');
+  // 符文系統 V2：三個部位。武器＝主手／副手／雙手；防具＝八件防具；飾品＝戒指與項鍊
+  const R = c.RUNE_BY_ID.r10;
+  ['shield', 'focus', 'orb', 'spellbook', 'axe2h', 'sword1h'].forEach((wt) => {
+    const w = fillRunes(makeItem(c, { rarity: 5, weaponType: wt }), ['r10']);
+    assert.equal(c.rwRuneSide(w), 'w', wt + ' 屬於武器部位（副手也算武器）');
+    assert.equal(c.rwItemStatEntries(w)[0].key, R.w[0]);
+  });
+  ['helmet', 'shoulder', 'chest', 'belt', 'gloves', 'wrist', 'legs', 'boots'].forEach((slot) => {
+    const a = fillRunes(makeItem(c, { rarity: 5, slot, weaponType: undefined }), ['r10']);
+    assert.equal(c.rwRuneSide(a), 'a', slot + ' 屬於防具部位');
+    assert.equal(c.rwItemStatEntries(a)[0].key, R.a[0]);
+  });
+  ['ring', 'amulet'].forEach((slot) => {
+    const j = fillRunes(makeItem(c, { rarity: 5, slot, weaponType: undefined }), ['r10']);
+    assert.equal(c.rwRuneSide(j), 'j', slot + ' 屬於飾品部位');
+    assert.equal(c.rwItemStatEntries(j)[0].key, R.j[0]);
+  });
+  c.RUNES.forEach((r) => ['w', 'a', 'j'].forEach((s) => assert.ok(c.AFFIX_POOL[r[s][0]] && r[s][1] > 0, r.id + ' 的 ' + s + ' 側要有有效詞條與倍率')));
+});
+
+test('三個部位的單顆符文都真的進角色屬性：戒指／項鍊走飾品側、副手走武器側、胸甲走防具側', () => {
+  const c = loadRuneEnv();
+  const base = Object.assign({}, c.getStats());
+  // 星辰：飾品側＝幸運值、武器側＝暴擊率、防具側＝物理防禦%
+  const R = c.RUNE_BY_ID.r27;
+  assert.equal(R.j[0], 'luck');
+  const ring = fillRunes(makeItem(c, { rarity: 5, slot: 'ring', weaponType: undefined }), ['r27']);
+  const st1 = equip(c, 'ring', ring);
+  assert.ok(st1.luck > base.luck, '戒指上的星辰符文增加幸運值（飾品側）');
+  c.G.equipment.ring = null;
+  const amulet = fillRunes(makeItem(c, { rarity: 5, slot: 'amulet', weaponType: undefined }), ['r27']);
+  assert.ok(equip(c, 'amulet', amulet).luck > base.luck, '項鍊同樣走飾品側');
+  c.G.equipment.amulet = null;
+  const shield = fillRunes(makeItem(c, { rarity: 5, weaponType: 'shield' }), ['r27']);
+  const stS = equip(c, 'weapon2', shield);
+  assert.ok(stS.critRate > base.critRate, '副手（盾）上的星辰符文走武器側：暴擊率');
+  assert.equal(stS.luck, base.luck, '副手不拿飾品側的幸運值');
 });
 
 test('強化倍率套用在符文屬性上；雙手武器的符文跟詞條一樣 ×2；符文孔只多 twoHandBonusSlots 個（加法）', () => {

@@ -118,6 +118,12 @@ test('設定檢查：孔數超過上限、隨稀有度變少、雙手加成超�
 test('符文檢查：詞條不存在、倍率非正、列順序被改（階與 id 對不上）、名稱重複都被擋下', () => {
   assert.throws(() => rebuildFrom(mutate((rows, c) => { findRow(rows, '符文', 'r01')[c('武器詞條')] = 'noSuchAffix'; })), /詞條「noSuchAffix」不在詞條池/);
   assert.throws(() => rebuildFrom(mutate((rows, c) => { findRow(rows, '符文', 'r02')[c('防具倍率')] = '0'; })), /必須大於 0/);
+  // 符文系統 V2：飾品側（戒指、項鍊）與武器、防具同樣一條詞條＋一個正倍率
+  assert.throws(() => rebuildFrom(mutate((rows, c) => { findRow(rows, '符文', 'r02')[c('飾品倍率')] = '0'; })), /飾品倍率.*必須大於 0/);
+  assert.throws(() => rebuildFrom(mutate((rows, c) => { findRow(rows, '符文', 'r03')[c('飾品詞條')] = 'noSuchAffix'; })), /飾品詞條.*noSuchAffix.*不在詞條池/);
+  assert.throws(() => rebuildFrom(mutate((rows, c) => { findRow(rows, '符文', 'r04')[c('飾品詞條')] = ''; })), /飾品詞條/);
+  const ok = rebuildFrom(mutate((rows, c) => { const r = findRow(rows, '符文', 'r05'); r[c('飾品詞條')] = 'luck'; r[c('飾品倍率')] = '0.7'; }));
+  assert.deepEqual(ok.RUNES[4].j, ['luck', 0.7], '改飾品詞條與倍率會寫進 RUNES 的 j');
   assert.throws(() => rebuildFrom(mutate((rows) => {
     const a = rows.indexOf(findRow(rows, '符文', 'r01')), b = a + 1;
     [rows[a], rows[b]] = [rows[b], rows[a]];
@@ -157,7 +163,7 @@ test('設計表改了就會跟著遊戲走：改 CSV 的合成顆數／倍率／
     findRow(r, '符文真言', 'rw_firstcry')[c('配方')] = '微光;巖心';
     const nu = word => word;
     const clone = findRow(r, '符文真言', 'rw_stoneskin').slice();
-    clone[1] = 'rw_extra_test'; clone[2] = '測試新語'; clone[8] = '霜痕;霜痕;霜痕'; clone[13] = 'dmgPct:5';
+    clone[1] = 'rw_extra_test'; clone[2] = '測試新語'; clone[c('配方')] = '霜痕;霜痕;霜痕'; clone[c('靜態效果')] = 'dmgPct:5';
     r.push(clone); nu(clone);
   });
   const out = rebuildFrom(rows);
@@ -188,7 +194,7 @@ test('備註欄有能力中文名稱說明：符文列＝兩側屬性中文名�
     assert.ok(r[note], `${r[1]} 沒有備註`);
     assert.doesNotMatch(r[note], /undefined|NaN/);
     keys.filter((k) => k.length > 4).forEach((k) => assert.ok(!r[note].includes(k), `${r[1]} 的備註出現英文鍵 ${k}`));
-    if (r[0] === '符文') { runes++; assert.match(r[note], /^武器：.+×.+｜防具・飾品・副手：.+×/); }
+    if (r[0] === '符文') { runes++; assert.match(r[note], /^武器：.+×.+｜防具：.+×.+｜飾品：.+×/); }
     else { words++; assert.match(r[note], /[一-鿿]/); }
   });
   assert.equal(runes, 33);

@@ -339,10 +339,13 @@ function rwRuneStatValue(it, key, mult) {
   return affixRoundValue(key, base * (Number(mult) || 0) * two * um * RW_STAT_SCALE);
 }
 
-/* 符文單獨鑲著的加成類別：主手／雙手武器用 w，其餘（防具、飾品、副手）用 a。 */
+/* 符文單獨鑲著的加成類別（符文系統 V2，三個部位）：
+   w＝武器（主手、副手、雙手；裝備欄位 weapon）、j＝飾品（戒指、項鍊）、a＝防具（頭肩胸腰手腕腿靴八件）。 */
 function rwRuneSide(it) {
-  var wd = (typeof weaponDef === 'function') ? weaponDef(it) : null;
-  return (wd && (wd.cat === 'oneHand' || wd.cat === 'twoHand')) ? 'w' : 'a';
+  var slot = it && it.slot;
+  if (slot === 'weapon') return 'w';
+  if (RW_JEWELRY_SLOTS.indexOf(slot) >= 0) return 'j';
+  return 'a';
 }
 
 /* 屬性顯示：「物理攻擊 +123」「暴擊率 +4.2%」；名稱去掉詞條名尾端的 %。 */

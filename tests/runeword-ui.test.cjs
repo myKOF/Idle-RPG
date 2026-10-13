@@ -81,6 +81,11 @@ test('符文庫：33 格、持有量與選中符文的合成／拆解狀態', ()
   c.selectRune('r04');
   const f4 = c.els['rune-focus'].innerHTML;
   assert.match(f4, /基礎值 ×0[.]3/);
+  // 符文系統 V2：三個部位各一行（武器／防具／飾品），不再有「防具・飾品・副手」合併的一行
+  assert.match(f4, /鑲在武器.*攻擊速度/);
+  assert.match(f4, /鑲在防具.*閃避率/);
+  assert.match(f4, /鑲在飾品.*敏捷/);
+  assert.doesNotMatch(f4, /防具・飾品・副手/);
   assert.match(f4, /rx-flavor[^>]*>「風的聲息稍縱即逝，發出嘆息之悲鳴。」/);
   assert.doesNotMatch(f4, /rx-stat-note|與詞條同一套算法|只能降階頂替/);
   assert.match(f4, /拆解：可獲得 [0-9]+ 顆「霜痕」/);
