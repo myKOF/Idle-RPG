@@ -9,6 +9,18 @@
 - 指令／結果：node --test tests/equipment-selection-border.test.cjs tests/equipment-slot-selection.test.cjs tests/equip-selection-outline-instant.test.cjs，17/17通過；npm.cmd run build，510檔通過；git diff --check通過。CUA瀏覽器隔離CSS預覽確認350／400／500／650px面板厚度由5／6／8／12px降為4／5／7／11px，全部減1px，圓角0、outline-offset0、Console錯誤／警告0；未讀真人存檔，臨時服務已停止。
 - 交付：Commit為本紀錄所在[Codex] fix提交，回覆附編號；沒有本次未完成項或已知新增風險，可供使用者合併，未合併／推送。限制：瀏覽器為正式CSS隔離預覽，未重跑完整遊戲；下一步整合後重載查看。素材庫無變更／不需Commit。
 
+## ESC-GLOBAL-PAUSE-20261014 — Esc菜單暫停全遊戲與移除預設焦點黃框
+
+- Owner：Codex；Done。使用者追加Esc菜單開啟時戰鬥／BOSS／神鑄與其他背景工作全面暫停，關閉後原地續行、不補菜單時間；重啟不預設黃框，鍵盤Tab仍有焦點指示。單一開發者，前置裝備記憶b3d5527a已完成，後續交使用者整合。
+- 允許新js/game-clock.js、game-menu／bridge／ui／battle-renderer／vfx／vfx-tower、worker protocol／sim.worker、dialogs.css、index必要快取與載入、本紀錄／WORKER_PROTOCOL、game-menu／clock／pause／protocol及冷卻重繪／UI事件／診斷相關測試。除sim.worker與Claude33853a16只改data／formula載入版本外預檢乾淨，使用者已同意保留載入版本分段修改；index同檔分段亦已同意。禁止改玩法／數值／存檔格式／Preset／其他副本，不合併／推送。
+- 驗收：權威Worker整體停止模擬、保留原戰鬥暫停設定、暫停時間不進catchup、神鑄牆鐘不跳完成；離線chunk／已排背景指令／表現時間與計時器／Pixi與CSS動畫暫停且可續行，手動存檔仍可用。關閉與設定返回／重複Esc、長暫停／背景／儲存與重啟、正式Worker和瀏覽器／回歸／Build／diff，完成後提交。
+
+- 完成20檔：新game-clock.js統一可暫停時間／timeout／interval／RAF、Pixi ticker與DOM動畫；canvas保留一幀避免停止WebGL後黑屏，恢復釋放快照，不持續渲染。game-menu.js改預設焦點到標題，設定返回不恢復，關閉後恢復；重啟先保存暫停快照再刷新。bridge.js維持menuPaused跨Worker重啟；sim.worker.js整體loop及決定論迴圈停止、背景遊戲指令排隊、神鑄startedAt排除暫停時間、暫停存檔亦保留剩餘時間，PING／存檔I/O仍正常；protocol.js及WORKER_PROTOCOL升v52，仍94指令，未改存檔格式。ui.js／vfx.js／battle-renderer.js／vfx-tower.js使用遊戲時鐘，包含冷卻／高塔結算倒數／延遲特效／飄字／裝備閃光，FPS不誤報暫停；dialogs.css暫停遊戲CSS動畫。index只載入GameClock與必要快取，不改其他AI段落。本紀錄、2個新測試及5個既有測試同步新計時依賴與預期，冷卻節流功能斷言保留。
+- 測試指令：node --test tests/game-clock.test.cjs tests/game-menu-pause.test.cjs tests/game-menu.test.cjs tests/game-menu-save.test.cjs tests/worker-protocol.test.cjs tests/worker-catchup-silent.test.cjs tests/catchup-write-throttle.test.cjs tests/sim-harness-sync.test.cjs tests/esc-shortcut.test.cjs tests/init-ui-smoke.test.cjs tests/equipment-selection-memory.test.cjs tests/equipment-slot-selection.test.cjs tests/ui-worker-events.test.cjs tests/tower-auto-result.test.cjs tests/cooldown-repaint.test.cjs tests/vfx-tower.test.cjs tests/enemy-attack-vfx-lifecycle.test.cjs tests/lightning-vfx-lifecycle.test.cjs tests/ui-clock.test.cjs tests/ui-stall-diag.test.cjs；145/145通過。npm.cmd run build，512檔通過；git diff --check通過。新測試驗證實際BOSS狀態／G／GT／SIM_T、待拆熔爐與神鑄、暫停120秒／1小時、保留欠帳／原戰鬥暫停、指令排隊、儲存剩餘時間、分批timeout不偷跑、BOOT暫停與畫布快照生命週期。
+- 瀏覽器：computer-use／CUA，隔離localhost:13740正式UI／Worker與測試存檔；標題焦點、重啟outline:none，長暫停期間生命／經驗／關卡／資源／FPS不變，前後整張截圖位元組完全相同（逐像素亦相同），戰場保持原畫面無黑屏；設定返回仍暫停、立即存檔顯示成功、重啟後同一關卡／經驗／資源續玩，關閉暫停後戰鬥續行。Console error／warning 0；未讀真人存檔。交付截圖esc-global-pause.png在本聊天visualizations，臨時服務／頁面／驗證日誌／基線腳本清理。
+- 唯讀檢查：main.js的UI週期、save.js離線chunks與儲存、forge／factory／newforge／tower／player計時來源、Pixi渲染與既有VFX生命週期、他AI的CSV／data與異區版本。另跑skill-cooldown-display.test.cjs為9項7通過／2既有失敗（天霸風神斬total=4而測試預期3、7.6而預期7.5）；以fs唯讀攔截換回HEAD原ui／worker／protocol後重跑，同樣兩項失敗且數值相同，未改技能數值或相關斷言。沒有新美術／外部素材，素材庫無本次變更／不需Commit。
+- 交付：遊戲Commit為本紀錄所在[Codex] fix提交，回覆附編號；裝備記憶前置提交b3d5527a（其index UI快取先隨共享副本3355307a提交）。本任務無未完成項，可供Review與使用者合併，未合併／推送；另有使用者／其他聊天的CSV與data未提交修改，完整保留且未納入本提交。限制：未跑全庫／真人長戰；暫停僅遊戲進度與演出，儲存與連線健康檢查保持可用。下一步由使用者整合後重載驗收，已知既有技能冷卻數值測試差異交其原任務處理。
+
 ## EQUIP-YELLOW-FRAME-THINNER-20261014 — 方角黃框減薄2px
 
 - Owner：Codex；Done，單一開發者。使用者要求黃框減2px、保持方角，不再要求完全遮住黑框；前置91072cc1，後續交使用者整合。

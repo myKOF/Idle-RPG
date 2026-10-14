@@ -22,6 +22,11 @@
      images/sprites/boss_generic.png + boss_generic.json  野外 BOSS（idle/attack/hurt） */
 
 var BattleRenderer = (function () {
+  var setTimeout = typeof GameClock !== 'undefined' ? GameClock.setTimeout : globalThis.setTimeout.bind(globalThis);
+  var clearTimeout = typeof GameClock !== 'undefined' ? GameClock.clearTimeout : globalThis.clearTimeout.bind(globalThis);
+  var setInterval = typeof GameClock !== 'undefined' ? GameClock.setInterval : globalThis.setInterval.bind(globalThis);
+  var clearInterval = typeof GameClock !== 'undefined' ? GameClock.clearInterval : globalThis.clearInterval.bind(globalThis);
+  function wallNow() { return typeof GameClock !== 'undefined' ? GameClock.dateNow() : Date.now(); }
 
   /* ---- 開關 ---- */
   function disabledByQuery() {
@@ -308,7 +313,7 @@ var BattleRenderer = (function () {
     var v = parseInt(String(c || '').replace('#', '0x'));
     return isFinite(v) ? v : fallback;
   }
-  function nowMs() { return (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now(); }
+  function nowMs() { return typeof GameClock !== 'undefined' ? GameClock.now() : (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now(); }
   function fmtNum(n) { return (typeof fmt === 'function') ? fmt(n) : String(Math.floor(n)); }
 
   /* ---- 斜俯視投影（2.5D）----
@@ -5557,7 +5562,7 @@ var BattleRenderer = (function () {
     if (!S.ready || !spec) return;
     normalizeTowerVfxIds(spec);
     if (spec.variant === 'water-tornado-end') {
-      var endNow = Date.now(), endId = spec.area && spec.area.id;
+      var endNow = wallNow(), endId = spec.area && spec.area.id;
       Object.keys(endedWaterTornadoes).forEach(function(id) {
         if (endedWaterTornadoes[id] <= endNow) delete endedWaterTornadoes[id];
       });
@@ -5565,7 +5570,7 @@ var BattleRenderer = (function () {
       if (!(S.vfxLoading && deferVfxUntilReady(spec)) && S.vfxrt) S.vfxrt.tryPlay(spec);
       return;
     }
-    if ((spec.variant === 'water-tornado' || spec.variant === 'water-tide-merge') && spec.area && endedWaterTornadoes[spec.area.id] > Date.now()) return;
+    if ((spec.variant === 'water-tornado' || spec.variant === 'water-tide-merge') && spec.area && endedWaterTornadoes[spec.area.id] > wallNow()) return;
     // 終止訊號不等位置緩衝，也不能被死亡目標／空目標守門擋掉。
     if (spec.variant === 'lightning-chain-end' || spec.variant === 'flying-thunder-end') {
       if (!(S.vfxLoading && deferVfxUntilReady(spec)) && S.vfxrt) S.vfxrt.tryPlay(spec);
@@ -6289,6 +6294,7 @@ var BattleRenderer = (function () {
 
   /* ============ 每幀更新 ============ */
   function tickWorld(ticker) {
+    if (typeof GameClock !== 'undefined' && GameClock.isPaused()) return;
     var dt = Math.min(0.05, (ticker.deltaMS || 16.7) / 1000);
     /* 轉場用真實時間走：暫停中也要把黑圈收完／張開，不能卡在全黑；
        掉幀時（一幀上百毫秒）也照實際經過的時間推進，否則黑幕會拖得比模擬層的登場還久、
@@ -7372,7 +7378,7 @@ var BattleRenderer = (function () {
         return !(old.fxKind === 'aura' && old.variant === copy.variant && old.area && old.area.id === copy.area.id);
       });
     }
-    S.pendingVfx.push({ spec: copy, at: Date.now() });
+    S.pendingVfx.push({ spec: copy, at: wallNow() });
     if (S.pendingVfx.length > MAX_PENDING_VFX) S.pendingVfx.shift();
     return true;
   }
@@ -7382,7 +7388,7 @@ var BattleRenderer = (function () {
     S.pendingVfx = [];
     pending.forEach(function (entry) {
       var spec = entry.spec, area = spec.area;
-      var age = Math.max(0, (Date.now() - entry.at) / 1000);
+      var age = Math.max(0, (wallNow() - entry.at) / 1000);
       var isEnd = /-end$/.test(spec.variant || '');
       var life = area && isFinite(area.lifeSec) ? Number(area.lifeSec) : Number(spec.dur) || 0.5;
       if (!isEnd && age >= life) return;
@@ -7609,6 +7615,11 @@ var BattleRenderer = (function () {
          不是 tickWorld 自己判斷要不要跑。maxFPS = 0 代表不節流。 */
       app.ticker.maxFPS = battleMaxFps();
       app.ticker.add(tickWorld);
+      if (typeof GameClock !== 'undefined') {
+        GameClock.trackTicker(app.ticker);
+        GameClock.trackTicker(PIXI.Ticker.shared);
+        GameClock.trackCanvas(app.canvas, function () { app.render(); });
+      }
       app.ticker.add(renderPerspectiveScene, null, PERSPECTIVE_RENDER_PRIORITY);
       if (typeof ResizeObserver === 'function') {
         S.resizeObs = new ResizeObserver(function () { resize(); });

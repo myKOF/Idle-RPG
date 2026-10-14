@@ -1,4 +1,5 @@
 'use strict';
+var UI_GAME_TIMING = typeof GameClock !== 'undefined' ? GameClock : globalThis;
 /* ============ UI 渲染與互動 ============ */
 
 var UI = {
@@ -424,6 +425,7 @@ var _uiGtBase = 0;
 var _uiGtBaseAt = 0;
 
 function uiNowMs() {
+  if (typeof GameClock !== 'undefined') return GameClock.now();
   return (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
 }
 
@@ -636,9 +638,9 @@ function scheduleWorkerVisualEventFlush() {
     flushWorkerVisualEvents();
   };
   if (typeof requestAnimationFrame === 'function') {
-    UI_WORKER_VISUAL_FLUSH_HANDLE = requestAnimationFrame(flush);
+    UI_WORKER_VISUAL_FLUSH_HANDLE = UI_GAME_TIMING.requestAnimationFrame(flush);
   } else if (typeof setTimeout === 'function') {
-    UI_WORKER_VISUAL_FLUSH_HANDLE = setTimeout(flush, 0);
+    UI_WORKER_VISUAL_FLUSH_HANDLE = UI_GAME_TIMING.setTimeout(flush, 0);
   }
 }
 
@@ -1996,7 +1998,7 @@ function animatePendingEnemyKill(ent, elId, cls, battleSnapshot) {
   void fill.offsetWidth;
   fill.style.transition = 'width ' + INSTANT_KILL_HP_ANIMATION_MS + 'ms linear';
   fill.style.width = '0%';
-  setTimeout(function () {
+  UI_GAME_TIMING.setTimeout(function () {
     if (!fill) return;
     fill.style.transition = '';
     fill._pendingInstantKillPlayed = false;
@@ -2309,8 +2311,8 @@ function playerFloatStyleClass(elId, text, cls) {
 }
 
 function scheduleFloatTextRemoval(sp, lifetimeMs) {
-  if (sp._floatRemovalTimer) clearTimeout(sp._floatRemovalTimer);
-  sp._floatRemovalTimer = setTimeout(function () {
+  if (sp._floatRemovalTimer) UI_GAME_TIMING.clearTimeout(sp._floatRemovalTimer);
+  sp._floatRemovalTimer = UI_GAME_TIMING.setTimeout(function () {
     if (sp.parentNode) sp.parentNode.removeChild(sp);
   }, lifetimeMs || FLOAT_TEXT_LIFETIME_MS);
 }
@@ -2524,7 +2526,7 @@ function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
      遠長於這裡的延遲；真的來不及也只是走 queuePendingEnemyFloat 的既有路徑。 */
   var delayedEnemyHitFloat = elId && elId.indexOf('mv-float-') === 0 && isEnemyHitFloat(elId, cls);
   if (delayMs > 0) {
-    setTimeout(function () {
+    UI_GAME_TIMING.setTimeout(function () {
       if (delayedEnemyHitFloat && !enemyFloatTargetStillTracked(elId, ent, battleSnapshot)) return;
       floatText(elId, text, cls, damageValue, ent, battleSnapshot, 0);
     }, delayMs);
@@ -4158,7 +4160,7 @@ var _battleSkillBarLastAt = 0;
 function startBattleSkillBarAnimation() {
   if (typeof requestAnimationFrame !== 'function') return;
   if (_battleSkillBarAnimFrame) {
-    cancelAnimationFrame(_battleSkillBarAnimFrame);
+    UI_GAME_TIMING.cancelAnimationFrame(_battleSkillBarAnimFrame);
     _battleSkillBarAnimFrame = null;
   }
   _battleSkillBarLastAt = 0;
@@ -4169,15 +4171,15 @@ function startBattleSkillBarAnimation() {
     /* 還沒到下一拍就直接續排，不做任何 DOM 讀寫——這條路徑必須極便宜，
        否則節流本身就變成新的每幀成本。 */
     if (_battleSkillBarLastAt && (now - _battleSkillBarLastAt) < minGap) {
-      _battleSkillBarAnimFrame = requestAnimationFrame(step);
+      _battleSkillBarAnimFrame = UI_GAME_TIMING.requestAnimationFrame(step);
       return;
     }
     _battleSkillBarLastAt = now;
     if (updateBattleSkillBarCds()) {
-      _battleSkillBarAnimFrame = requestAnimationFrame(step);
+      _battleSkillBarAnimFrame = UI_GAME_TIMING.requestAnimationFrame(step);
     }
   }
-  _battleSkillBarAnimFrame = requestAnimationFrame(step);
+  _battleSkillBarAnimFrame = UI_GAME_TIMING.requestAnimationFrame(step);
 }
 
 /* ---- 冷卻圈的更新成本 ----
@@ -5111,7 +5113,7 @@ function renderEquip() {
 function equipFlashActive(slot) {
   var until = UI.equipFlashSlots && UI.equipFlashSlots[slot];
   if (!until) return false;
-  if (until <= Date.now()) {
+  if (until <= (typeof GameClock !== 'undefined' ? GameClock.dateNow() : Date.now())) {
     delete UI.equipFlashSlots[slot];
     return false;
   }
@@ -5124,13 +5126,13 @@ function triggerEquipFlash(slotKey, item) {
   if (slotKey === 'weapon' && typeof isTwoHandItem === 'function' && isTwoHandItem(item)) {
     slots.push('weapon2');
   }
-  var until = Date.now() + 2000;
+  var until = (typeof GameClock !== 'undefined' ? GameClock.dateNow() : Date.now()) + 2000;
   slots.forEach(function (slot) { UI.equipFlashSlots[slot] = until; });
   UI.dirty.equip = true;
-  if (UI.equipFlashTimer) clearTimeout(UI.equipFlashTimer);
-  UI.equipFlashTimer = setTimeout(function () {
+  if (UI.equipFlashTimer) UI_GAME_TIMING.clearTimeout(UI.equipFlashTimer);
+  UI.equipFlashTimer = UI_GAME_TIMING.setTimeout(function () {
     Object.keys(UI.equipFlashSlots).forEach(function (slot) {
-      if (UI.equipFlashSlots[slot] <= Date.now()) delete UI.equipFlashSlots[slot];
+      if (UI.equipFlashSlots[slot] <= (typeof GameClock !== 'undefined' ? GameClock.dateNow() : Date.now())) delete UI.equipFlashSlots[slot];
     });
     UI.equipFlashTimer = null;
     UI.dirty.equip = true;
@@ -5573,7 +5575,7 @@ function ensureUpgradePopStyle() {
 
 function triggerUpgradeNumberAnimation(itemId) {
   ensureUpgradePopStyle();
-  UI._upgradePopUntil = Date.now() + 850;
+  UI._upgradePopUntil = (typeof GameClock !== 'undefined' ? GameClock.dateNow() : Date.now()) + 850;
   UI._upgradePopItemId = itemId;
   var upEl = document.querySelector('#detail-pane .it-up');
   if (upEl) {
@@ -5725,7 +5727,7 @@ function runeDraftCount(draft, runeId) {
 function waitUiCommandIdle(key, tries) {
   if (!isUiCommandPending(key)) return Promise.resolve();
   if (tries <= 0) return Promise.reject(new Error('等待裝備資料更新逾時'));
-  return new Promise(function (resolve) { setTimeout(resolve, 50); }).then(function () { return waitUiCommandIdle(key, tries - 1); });
+  return new Promise(function (resolve) { (typeof GameClock !== 'undefined' ? GameClock.setTimeout : setTimeout)(resolve, 50); }).then(function () { return waitUiCommandIdle(key, tries - 1); });
 }
 
 /* 刻印：把暫放的符文依孔位順序逐顆送 rune.socket；任何一顆失敗就停（沒送的仍留在暫放，已鑲上的不會回頭）。 */
@@ -5897,10 +5899,10 @@ function renderDetail() {
   if (it) {
     if (UI._upgradingItemId === it.id && (it.upgrade || 0) > (UI._upgradingItemPrevLevel || 0)) {
       justUpgraded = true;
-      UI._upgradePopUntil = Date.now() + 850;
+      UI._upgradePopUntil = (typeof GameClock !== 'undefined' ? GameClock.dateNow() : Date.now()) + 850;
       UI._upgradePopItemId = it.id;
       UI._upgradingItemId = null;
-    } else if (UI._upgradePopItemId === it.id && Date.now() < (UI._upgradePopUntil || 0)) {
+    } else if (UI._upgradePopItemId === it.id && (typeof GameClock !== 'undefined' ? GameClock.dateNow() : Date.now()) < (UI._upgradePopUntil || 0)) {
       justUpgraded = true;
     }
   }
@@ -6198,6 +6200,7 @@ function showFloatingText(btn, text, color) {
   var rect = btn.getBoundingClientRect();
   var el = document.createElement('div');
   el.textContent = text;
+  el.className = 'game-floating-text';
   el.style.position = 'fixed';
   el.style.left = (rect.left + rect.width / 2) + 'px';
   el.style.top = rect.top + 'px';
@@ -6215,7 +6218,7 @@ function showFloatingText(btn, text, color) {
   el.style.top = (rect.top - 40) + 'px';
   el.style.opacity = '0';
 
-  setTimeout(function () {
+  UI_GAME_TIMING.setTimeout(function () {
     if (el.parentNode) el.parentNode.removeChild(el);
   }, 800);
 }
@@ -6982,7 +6985,7 @@ function renderForgeProgress(forge, inventorySnapshot, gemsSnapshot) {
     return;
   }
   var duration = Math.max(1, Number(c.durationMs) || 1);
-  var elapsed = clamp(Date.now() - Number(c.startedAt), 0, duration);
+  var elapsed = clamp((typeof GameClock !== 'undefined' ? GameClock.wallNow() : Date.now()) - Number(c.startedAt), 0, duration);
   var remain = Math.max(0, duration - elapsed);
   box.style.display = '';
   $id('forge-progress-status').textContent = '鑄造中....';
@@ -7476,12 +7479,14 @@ function renderTower() {
 }
 
 function towerTimerNow() {
+  if (typeof GameClock !== 'undefined') return GameClock.now();
   return (typeof performance !== 'undefined' && typeof performance.now === 'function') ? performance.now() : Date.now();
 }
 
 function stopTowerTimerAnimation() {
   if (UI.towerTimerRaf) {
-    if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(UI.towerTimerRaf);
+    if (typeof GameClock !== 'undefined') GameClock.cancelAnimationFrame(UI.towerTimerRaf);
+    else if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(UI.towerTimerRaf);
     else clearTimeout(UI.towerTimerRaf);
     UI.towerTimerRaf = 0;
   }
@@ -7489,6 +7494,7 @@ function stopTowerTimerAnimation() {
 }
 
 function scheduleTowerTimerFrame() {
+  if (typeof GameClock !== 'undefined') return GameClock.requestAnimationFrame(renderTowerTimerFrame);
   if (typeof requestAnimationFrame === 'function') return requestAnimationFrame(renderTowerTimerFrame);
   return setTimeout(renderTowerTimerFrame, 50);
 }
@@ -7776,6 +7782,7 @@ function noteInventoryPanelRequested() {
 }
 
 function uiTick() {
+  if (typeof GameClock !== 'undefined' && GameClock.isPaused()) return;
   if (uiRenderingSuspended()) return;
   uiApplyGameTime(); // 先對時，之後這一輪所有到期判定與倒數都以同一個時間為準
   flushPendingLogDom();
@@ -11577,6 +11584,7 @@ function uiVisualDiagText(now) {
      特效佇列等   ＝ 佇列頭那一件事件已經等了這麼久：顯示層追不上 Worker 的事件量
    四個都沒出現卻還是凍住，問題就在這幾層之外（渲染器／GPU），請改看 Performance_Information。 */
 function uiStallDiagText(now) {
+  if (typeof GameClock !== 'undefined' && GameClock.isPaused()) return '';
   var diag = UI_TICK_DIAG;
   var text = '';
   if (diag.errors && now - diag.lastErrorAt <= 5000) {
@@ -11630,11 +11638,11 @@ function initBattleFPS() {
      （js/gm.js，主執行緒處理）切換多行疊層的顯示，?perf=0 則整個不啟用。 */
   var perfOn = typeof BattlePerf !== 'undefined' && BattlePerf.attach();
 
-  var lastTime = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+  var lastTime = uiNowMs();
   var frames = 0;
   function updateFPS() {
     frames++;
-    var now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    var now = uiNowMs();
     var delta = now - lastTime;
     if (delta >= 500) {
       var fps = Math.round((frames * 1000) / delta);
@@ -11647,11 +11655,11 @@ function initBattleFPS() {
       lastTime = now;
     }
     if (typeof requestAnimationFrame === 'function') {
-      requestAnimationFrame(updateFPS);
+      UI_GAME_TIMING.requestAnimationFrame(updateFPS);
     }
   }
   if (typeof requestAnimationFrame === 'function') {
-    requestAnimationFrame(updateFPS);
+    UI_GAME_TIMING.requestAnimationFrame(updateFPS);
   }
 }
 
@@ -14132,7 +14140,8 @@ function initUI() {
 /* ---- 高塔結算彈窗 ---- */
 function clearTowerResultCountdown() {
   if (UI.towerResultCountdownTimer) {
-    clearInterval(UI.towerResultCountdownTimer);
+    if (typeof GameClock !== 'undefined') GameClock.clearInterval(UI.towerResultCountdownTimer);
+    else clearInterval(UI.towerResultCountdownTimer);
     UI.towerResultCountdownTimer = null;
   }
 }
@@ -14246,7 +14255,7 @@ function showTowerResultModal(r, p, b, myDmg, bDmg, options) {
       stopAutoBtn.disabled = !canStopAuto;
     }
     if (countdown > 0) {
-      UI.towerResultCountdownTimer = setInterval(function () {
+      UI.towerResultCountdownTimer = (typeof GameClock !== 'undefined' ? GameClock.setInterval : setInterval)(function () {
         countdown--;
         if (confirmBtn) confirmBtn.textContent = countdown > 0 ? '確定（' + countdown + '）' : '確定';
         if (countdown <= 0) {
@@ -14516,7 +14525,7 @@ function spawnQuestRewardFlyFx(rewardType, sourceEl) {
     flashTarget.classList.remove('quest-claim-flash');
     void flashTarget.offsetWidth; // 強制重繪觸發動畫
     flashTarget.classList.add('quest-claim-flash');
-    setTimeout(function () {
+    UI_GAME_TIMING.setTimeout(function () {
       if (flashTarget && flashTarget.classList) flashTarget.classList.remove('quest-claim-flash');
     }, 700);
   }
@@ -14616,13 +14625,13 @@ function spawnQuestRewardFlyFx(rewardType, sourceEl) {
       p.style.left = (curX + (Math.random() - 0.5) * 8) + 'px';
       p.style.top = (curY + (Math.random() - 0.5) * 8) + 'px';
       document.body.appendChild(p);
-      setTimeout(function () {
+      UI_GAME_TIMING.setTimeout(function () {
         if (p && p.parentNode) p.parentNode.removeChild(p);
       }, 450);
     }
 
     if (t < 1) {
-      requestAnimationFrame(animateFly);
+      UI_GAME_TIMING.requestAnimationFrame(animateFly);
     } else {
       // 飛行結束
       if (flyEl && flyEl.parentNode) flyEl.parentNode.removeChild(flyEl);
@@ -14631,14 +14640,14 @@ function spawnQuestRewardFlyFx(rewardType, sourceEl) {
         destEl.classList.remove('res-hit-bump');
         void destEl.offsetWidth;
         destEl.classList.add('res-hit-bump');
-        setTimeout(function () {
+        UI_GAME_TIMING.setTimeout(function () {
           if (destEl && destEl.classList) destEl.classList.remove('res-hit-bump');
         }, 400);
       }
     }
   }
 
-  requestAnimationFrame(animateFly);
+  UI_GAME_TIMING.requestAnimationFrame(animateFly);
 }
 
 function questClaim(sourceEl) {

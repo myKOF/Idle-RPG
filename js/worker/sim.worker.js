@@ -10,7 +10,12 @@
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-importScripts('protocol.js?v=51', 'shim.js?v=13');
+importScripts('protocol.js?v=52', '../game-clock.js?v=1.0.1', 'shim.js?v=13');
+// 離線結算等分批工作亦共用暫停時鐘；訊息與loop仍能回應存檔及PING。
+if (typeof GameClock !== 'undefined') {
+  globalThis.setTimeout = GameClock.setTimeout;
+  globalThis.clearTimeout = GameClock.clearTimeout;
+}
 importScripts(
   '../util.js?v=20260922-firegod-formation', '../data.js?v=20261013-enemy-skills2', '../runeword_data.js?v=20261013-rune-all-elem-color', '../status.js?v=20261014-state-status', '../formula.js?v=20261013-enemy-skills2', '../battlefield.js?v=20261013-enemy-skills2', '../stats.js?v=20261003-rename-weineng',
   '../item.js?v=20261013-rune-all-elem-color', '../runeword.js?v=20261014-develop-integration',
@@ -164,6 +169,36 @@ function reportError(where, err) {
    （在那裡補 10 秒以上會凍畫面），Worker 裡沒有這個約束。 */
 var _catchupDebt = 0;          // 尚未補完的遊戲時間（秒）
 var _offlineBootTimer = 0;
+var _menuPaused = false, _menuPausedAt = 0, _menuDeferredCommands = [];
+function setMenuPaused(paused) {
+  if (typeof paused !== 'boolean' || paused === _menuPaused) return;
+  var now = Date.now();
+  if (paused) {
+    if (_booted && _lastTickAt) _catchupDebt = Math.min(_catchupDebt + Math.max(0, now - _lastTickAt) / 1000, MAX_CATCHUP_DEBT_SEC);
+    _menuPausedAt = now;
+  } else {
+    var elapsed = Math.max(0, now - _menuPausedAt);
+    if (typeof G !== 'undefined' && G.forge && G.forge.crafting) G.forge.crafting.startedAt += elapsed;
+    if (_offlineBootTimer && typeof G !== 'undefined' && G.savedAt) G.savedAt += elapsed;
+    _lastAutoAt += elapsed; _lastFolderAt += elapsed;
+    if (typeof UI !== 'undefined' && UI.dirty) UI.dirty.forge = true;
+  }
+  _menuPaused = paused; _lastTickAt = now;
+  if (typeof GameClock !== 'undefined') GameClock.setPaused(paused);
+  if (!paused) {
+    var waiting = _menuDeferredCommands; _menuDeferredCommands = [];
+    waiting.forEach(dispatchGameCommand);
+    if (_booted) emitTick();
+  }
+}
+function dispatchGameCommand(msg) {
+  if (_menuPaused && !/^(save\.|settings\.|stats\.)/.test(msg.name || '')) {
+    _menuDeferredCommands.push(msg); return;
+  }
+  var result = runCommand(msg.name, msg.args);
+  post(MSG_OUT.ACK, { id: msg.id, ok: result.ok, result: result.result, error: result.error });
+  if (result.ok) emitTick();
+}
 // 與離線收益同上限：背景掛機不該比關掉遊戲更優待。typeof 保護是因為既有測試會以
 // importScripts 空實作載入本檔（模擬層未載入），不能讓模組載入期就炸掉。
 var MAX_CATCHUP_DEBT_SEC = (typeof OFFLINE_MAX_HOURS === 'number' ? OFFLINE_MAX_HOURS : 24) * 3600;
@@ -398,6 +433,7 @@ function deterministicLoop() {
 
 function loop() {
   if (!_booted) return;
+  if (_menuPaused) return;
   if (DETERMINISTIC_STEPS) { deterministicLoop(); return; }
   var _lt0 = slowLoopBegin();
   try {
@@ -1071,7 +1107,16 @@ function requestPersist(kind, opts) {
        能認出「這份不是我寫的」並先問過玩家，出事時也查得出檔案的來歷。
        typeof 保護的理由同 MAX_CATCHUP_DEBT_SEC：既有測試會以空的 importScripts 載入本檔。 */
     if (typeof SAVE_ORIGIN_TAG_V2 === 'string') state.savedBy = SAVE_ORIGIN_TAG_V2;
-    var json = JSON.stringify(state);
+    var serialState = state;
+    // 暫停期間存檔也必須保留神鑄剩餘時間，不能在刷新後把菜單時間算入。
+    if (state === G && _menuPaused && state.forge && state.forge.crafting) {
+      serialState = Object.assign({}, state, { forge: Object.assign({}, state.forge, {
+        crafting: Object.assign({}, state.forge.crafting, {
+          startedAt: Number(state.forge.crafting.startedAt) + Math.max(0, Date.now() - _menuPausedAt)
+        })
+      }) });
+    }
+    var json = JSON.stringify(serialState);
     // meta 用模擬層既有的 saveRecMeta 產生（只讀 G、不碰儲存），主執行緒不必再自行推算
     var meta = opts.meta || saveRecMeta('auto', 'auto_current', AUTO_FOLDER_FILE_V2);
     _pendingPersist[token] = { kind: kind, savedAt: G.savedAt, prevSavedAt: prevSavedAt, rollback: state === G };
@@ -1790,6 +1835,8 @@ function defaultSalvageHintText() {
 
 /* ---- 開機 ---- */
 function boot(msg) {
+  _menuPaused = false; _menuDeferredCommands = [];
+  if (typeof GameClock !== 'undefined') GameClock.setPaused(false);
   var loaded = null;
   var notices = [];
   var deferOfflineProgress = false;
@@ -1889,6 +1936,7 @@ function boot(msg) {
 
   _booted = true;
   _lastTickAt = Date.now();
+  if (msg.menuPaused) setMenuPaused(true);
   _lastEmitAt = _lastAutoAt = _lastFolderAt = _lastTickAt;
   if (_loopTimer) clearInterval(_loopTimer);
   _loopTimer = setInterval(loop, TICK_MS);
@@ -1960,9 +2008,10 @@ self.onmessage = function (e) {
         loadIntoRunningSim(msg);
         break;
       case MSG_IN.CMD:
-        var r = runCommand(msg.name, msg.args);
-        post(MSG_OUT.ACK, { id: msg.id, ok: r.ok, result: r.result, error: r.error });
-        if (r.ok) emitTick(); // 指令有結果就立刻推一次，不必等下個 tick
+        dispatchGameCommand(msg);
+        break;
+      case MSG_IN.MENU_PAUSE:
+        setMenuPaused(msg.paused);
         break;
       case MSG_IN.PANEL:
         if (!isPanelKey(msg.name)) { reportError('panel', new Error('unknown panel: ' + msg.name)); break; }

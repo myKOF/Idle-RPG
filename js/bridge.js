@@ -15,7 +15,12 @@ var WorkerBridge = (function () {
   /* Worker 與其模擬層不是由 bundler 產生，瀏覽器可能把舊的 Worker
      腳本留在快取裡。每次修改 Worker 啟動／核心邏輯時更新這個鍵，避免
      使用者刷新後仍執行舊版升級公式。 */
-  var WORKER_ASSET_VERSION = '20261014-esc-menu';
+  var WORKER_ASSET_VERSION = '20261014-global-menu-pause';
+  var _menuPaused = false;
+  function setMenuPaused(value) {
+    _menuPaused = !!value;
+    return post(MSG_IN.MENU_PAUSE, { paused: _menuPaused });
+  }
 
   /* ---- 量測模式（P4 用，預設關閉）----
      網址帶 ?measure=1 時，Worker 與主執行緒兩側都會統計訊息規模與耗時。
@@ -446,7 +451,7 @@ var WorkerBridge = (function () {
     }
     post(MSG_IN.BOOT, {
       save: opts.save || null, now: Date.now(),
-      maxRunId: opts.maxRunId || 1, safeMode: safeMode()
+      maxRunId: opts.maxRunId || 1, safeMode: safeMode(), menuPaused: _menuPaused
     });
 
     // 初始狀態也要送：分頁若在隱藏狀態下被載入就不會有 visibilitychange，
@@ -590,7 +595,7 @@ var WorkerBridge = (function () {
   return {
     start: start, stop: stop, send: send, on: on, loadSave: loadSave, handoff: handoff,
     requestPanel: requestPanel, status: status, enabled: enabled, safeMode: safeMode,
-    whenWritesDrained: whenWritesDrained, saveAutoNow: saveAutoNow
+    whenWritesDrained: whenWritesDrained, saveAutoNow: saveAutoNow, setMenuPaused: setMenuPaused
   };
 })();
 

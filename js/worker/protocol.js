@@ -84,11 +84,11 @@
    主執行緒據此決定圖鑑顯示配方與效果或問號；舊快照缺欄時一律視為都沒激活。指令數不變。 */
 /* v50（2026-10-08 BOSS 配置鎖）：UI／Worker 共用 bossFightBlocksCommand；
    戰中拒絕配置變更，沿用既有錯誤封包，指令數／參數／快照與存檔格式不變。 */
-var WORKER_PROTOCOL_VERSION = 51;
+var WORKER_PROTOCOL_VERSION = 52;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
-  /* { save: <存檔物件|null>, now, maxRunId, safeMode? }
+  /* { save: <存檔物件|null>, now, maxRunId, safeMode?, menuPaused? }
      maxRunId 供重新開局編號用。
      safeMode（v6 新增）：跳過離線結算直接開機。離線結算是開機流程裡最容易因為
      異常存檔資料而拋錯的一段，安全模式讓玩家至少能進到遊戲裡把存檔匯出。 */
@@ -108,6 +108,7 @@ var MSG_IN = {
      `pip`（v7 加入）已移除：它存在的唯一理由是「觀戰中要豁免背景休眠」，
      休眠機制沒了就沒有接收端；PiP 功能本身不受影響。 */
   VISIBILITY: 'visibility',
+  MENU_PAUSE: 'menuPause',    // { paused: bool } 暫停整體模擬及背景工作，不改戰鬥暫停設定
   SAVE_RESULT: 'saveResult', // { token, ok, error }
   PING: 'ping'               // { t }  存活探測
 };

@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="css/battle-hud.css?v=1.0.6">
   <link rel="stylesheet" href="css/runeword.css?v=1.0.6">
   <link rel="stylesheet" href="css/gems.css?v=1.0.2">
-  <link rel="stylesheet" href="css/dialogs.css?v=1.0.2">
+  <link rel="stylesheet" href="css/dialogs.css?v=1.0.3">
 </head>
 
 <body>
@@ -930,7 +930,8 @@
   <script src="js/runeword_data.js?v=1.0.15"></script>
   <script src="js/formula.js?v=1.0.53"></script>
   <script src="js/battlefield.js?v=1.4.8"></script>
-  <script src="js/vfx.js?v=1.0.80"></script>
+  <script src="js/game-clock.js?v=1.0.1"></script>
+  <script src="js/vfx.js?v=1.0.81"></script>
   <!-- PixiJS（本地 vendor，零建置專案不用 CDN）＋ Canvas 戰鬥渲染器。
        渲染器只在主執行緒跑，模擬層與 Worker 完全不知道它存在。 -->
   <script src="js/vendor/pixi.min.js"></script>
@@ -942,7 +943,7 @@
   <script src="js/vfx-pixi-backend.js?v=20261007-deform-prep"></script>
   <script src="js/vfx-runtime.js?v=1.0.200"></script>
   <!-- 高塔的第二個 Pixi 疊層：卡片版面沒有座標，尺寸規則也另立一組（見檔頭）。 -->
-  <script src="js/vfx-tower.js?v=1.0.2"></script>
+  <script src="js/vfx-tower.js?v=1.0.3"></script>
   <!-- 戰場地形裝飾（地面色塊／擺件／天氣）：battle-renderer 的 init() 會建立它。
        decor-sculpt 是它的程序化浮雕繪圖（塑形＋打光），必須先載入。 -->
   <script src="js/decor-sculpt.js?v=1.0.0"></script>
@@ -951,7 +952,7 @@
   <!-- 封魔塔魔王祭壇（BOSS 戰專用場景）：沿用 battle-decor 的繪圖工具，battle-renderer 的 init() 會建立它。 -->
   <script src="js/battle-arena.js?v=1.0.6"></script>
   <script src="js/battle-elite.js?v=1.0.5"></script>
-  <script src="js/battle-renderer.js?v=1.6.186"></script>
+  <script src="js/battle-renderer.js?v=1.6.187"></script>
   <script src="js/stats.js?v=1.0.4"></script>
   <script src="js/item.js?v=1.0.21"></script>
   <script src="js/runeword.js?v=1.0.14"></script>
@@ -965,7 +966,7 @@
   <script src="js/potential.js?v=1.0.9"></script>
   <script src="js/tower.js?v=1.0.26"></script>
   <script src="js/save.js?v=1.0.14"></script>
-  <script src="js/ui.js?v=1.0.159"></script>
+  <script src="js/ui.js?v=1.0.160"></script>
   <script src="js/ui-runeword.js?v=1.0.11"></script>
   <script src="js/param_autoreload.js"></script>
   <!-- GM 面板。指令執行層在 js/gm_exec.js，由 Worker importScripts 載入 -->
@@ -974,12 +975,12 @@
        正式遊玩是空殼。必須排在 ui.js（用它的 isInternalVersion）之後、VFX Runtime 建立（main 開機）之前。 -->
   <script src="js/battle-perf.js?v=1.0.3"></script>
   <!-- 模擬 Worker 的協議與橋接。bridge.js 於 DOMContentLoaded 開機 -->
-  <script src="js/worker/protocol.js?v=51"></script>
+  <script src="js/worker/protocol.js?v=52"></script>
   <script src="js/storage.js?v=1.0.1"></script>
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
-  <script src="js/bridge.js?v=1.0.271"></script>
+  <script src="js/bridge.js?v=1.0.272"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->
@@ -988,7 +989,7 @@
        正式遊玩不包裝任何函式、不攔任何屬性。排在 main 之前，才來得及在
        DOMContentLoaded 就把 ui.js 的渲染函式包起來。用法：網址加 ?lag=1 -->
   <script src="js/lagprobe.js?v=1.0.18"></script>
-  <script src="js/game-menu.js?v=1.0.1"></script>
+  <script src="js/game-menu.js?v=1.0.2"></script>
   <script src="js/main.js?v=1.0.3"></script>
 </body>
 

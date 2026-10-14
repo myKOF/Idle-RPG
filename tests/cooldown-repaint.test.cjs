@@ -78,7 +78,7 @@ test('冷卻更新要節流，且節流的是「多久算一次」而非跳拍',
                         ui.indexOf('/* ---- 冷卻圈的更新成本'));
   assert.match(loop, /var minGap = 1000 \/ CD_UPDATE_HZ;/);
   // 還沒到下一拍就直接續排，這條路徑不得做任何 DOM 讀寫
-  assert.match(loop, /if \(_battleSkillBarLastAt && \(now - _battleSkillBarLastAt\) < minGap\) \{\s*_battleSkillBarAnimFrame = requestAnimationFrame\(step\);\s*return;/);
+  assert.match(loop, /if \(_battleSkillBarLastAt && \(now - _battleSkillBarLastAt\) < minGap\) \{\s*_battleSkillBarAnimFrame = UI_GAME_TIMING\.requestAnimationFrame\(step\);\s*return;/);
   // 仍掛 rAF：換成 setInterval 會與畫面節奏打架
   assert.match(loop, /requestAnimationFrame\(step\)/);
   assert.doesNotMatch(loop, /setInterval/);

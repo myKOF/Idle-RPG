@@ -1,4 +1,13 @@
 'use strict';
+var VFX_TIMING = typeof GameClock !== 'undefined' ? GameClock : {
+  dateNow: function () { return Date.now(); },
+  setTimeout: function (fn, ms) { return setTimeout(fn, ms); },
+  clearTimeout: function (id) { clearTimeout(id); },
+  clearInterval: function (id) { clearInterval(id); },
+  requestAnimationFrame: function (fn) { return requestAnimationFrame(fn); },
+  cancelAnimationFrame: function (id) { cancelAnimationFrame(id); }
+};
+
 /* ============ 戰鬥特效（主執行緒） ============ v2「酷炫改造」（協議 v17）
    協議的 vfx 事件進來這裡變成畫面。模擬層只告訴我們「什麼原型、什麼屬性、什麼變體、
    打到哪些圖層／格子」，怎麼畫完全是這一支的事——調特效不必動模擬層，也不影響戰鬥結果。
@@ -155,12 +164,12 @@ function vfxClear() {
   _vfxGeneration++;
   _vfxEventQueue.length = 0;
   if (_vfxFlushHandle) {
-    if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(_vfxFlushHandle);
-    if (typeof clearTimeout === 'function') clearTimeout(_vfxFlushHandle);
+    if (typeof cancelAnimationFrame === 'function') VFX_TIMING.cancelAnimationFrame(_vfxFlushHandle);
+    if (typeof clearTimeout === 'function') VFX_TIMING.clearTimeout(_vfxFlushHandle);
     _vfxFlushHandle = 0;
   }
   if (_vfxWatchdogHandle) {
-    if (typeof clearTimeout === 'function') clearTimeout(_vfxWatchdogHandle);
+    if (typeof clearTimeout === 'function') VFX_TIMING.clearTimeout(_vfxWatchdogHandle);
     _vfxWatchdogHandle = 0;
   }
   for (var i = 0; i < _vfxNodes.length; i++) {
@@ -209,8 +218,8 @@ function vfxNodeClassName(node) {
 /* 對已脫離 DOM 的節點也安全；清理路徑可重複呼叫。 */
 function vfxRemoveNode(node) {
   if (node && node._vfxTargetGuardHandle) {
-    if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(node._vfxTargetGuardHandle);
-    else if (typeof clearTimeout === 'function') clearTimeout(node._vfxTargetGuardHandle);
+    if (typeof cancelAnimationFrame === 'function') VFX_TIMING.cancelAnimationFrame(node._vfxTargetGuardHandle);
+    else if (typeof clearTimeout === 'function') VFX_TIMING.clearTimeout(node._vfxTargetGuardHandle);
     node._vfxTargetGuardHandle = 0;
   }
   if (node && node.parentNode) node.parentNode.removeChild(node);
@@ -220,7 +229,7 @@ function vfxRemoveNode(node) {
    某個 CSS／瀏覽器回呼沒有如期完成的情況。 */
 function vfxRunNodeWatchdog() {
   _vfxWatchdogHandle = 0;
-  var now = Date.now();
+  var now = VFX_TIMING.dateNow();
   for (var i = _vfxNodes.length - 1; i >= 0; i--) {
     var node = _vfxNodes[i];
     if (!node || !node.parentNode || (node._vfxExpiresAt && node._vfxExpiresAt <= now)) {
@@ -228,13 +237,13 @@ function vfxRunNodeWatchdog() {
       vfxRemoveNode(node);
     }
   }
-  if (_vfxNodes.length) _vfxWatchdogHandle = setTimeout(vfxRunNodeWatchdog, VFX_NODE_WATCHDOG_MS);
+  if (_vfxNodes.length) _vfxWatchdogHandle = VFX_TIMING.setTimeout(vfxRunNodeWatchdog, VFX_NODE_WATCHDOG_MS);
 }
 
 /* 只有有追蹤節點且目前沒有 watchdog 時才排程，避免每個特效各自建立 Timer。 */
 function vfxScheduleNodeWatchdog() {
   if (!_vfxWatchdogHandle && _vfxNodes.length) {
-    _vfxWatchdogHandle = setTimeout(vfxRunNodeWatchdog, VFX_NODE_WATCHDOG_MS);
+    _vfxWatchdogHandle = VFX_TIMING.setTimeout(vfxRunNodeWatchdog, VFX_NODE_WATCHDOG_MS);
   }
 }
 
@@ -247,7 +256,7 @@ function vfxTrack(node, ms, targetGuard) {
   if (cls.indexOf('vfx-meteor') >= 0 || cls.indexOf('vfx-area-flash') >= 0) {
     ttl = Math.min(ttl, VFX_METEOR_HARD_LIFETIME_MS);
   }
-  node._vfxExpiresAt = Date.now() + ttl;
+  node._vfxExpiresAt = VFX_TIMING.dateNow() + ttl;
   if (typeof targetGuard === 'function') {
     node._vfxTargetGuard = targetGuard;
     var checkTarget = function () {
@@ -257,15 +266,15 @@ function vfxTrack(node, ms, targetGuard) {
         return;
       }
       if (typeof requestAnimationFrame === 'function') {
-        node._vfxTargetGuardHandle = requestAnimationFrame(checkTarget);
+        node._vfxTargetGuardHandle = VFX_TIMING.requestAnimationFrame(checkTarget);
       } else if (typeof setTimeout === 'function') {
-        node._vfxTargetGuardHandle = setTimeout(checkTarget, 50);
+        node._vfxTargetGuardHandle = VFX_TIMING.setTimeout(checkTarget, 50);
       }
     };
     if (typeof requestAnimationFrame === 'function') {
-      node._vfxTargetGuardHandle = requestAnimationFrame(checkTarget);
+      node._vfxTargetGuardHandle = VFX_TIMING.requestAnimationFrame(checkTarget);
     } else if (typeof setTimeout === 'function') {
-      node._vfxTargetGuardHandle = setTimeout(checkTarget, 50);
+      node._vfxTargetGuardHandle = VFX_TIMING.setTimeout(checkTarget, 50);
     }
   }
   _vfxNodes.push(node);
@@ -284,7 +293,7 @@ function vfxTrack(node, ms, targetGuard) {
     var old = _vfxNodes.splice(evict, 1)[0];
     vfxRemoveNode(old);
   }
-  setTimeout(function () {
+  VFX_TIMING.setTimeout(function () {
     var idx = _vfxNodes.indexOf(node);
     if (idx >= 0) _vfxNodes.splice(idx, 1);
     vfxRemoveNode(node);
@@ -506,7 +515,7 @@ function vfxFieldMotionSchedule(node) {
     node._vfxFieldMotionHandle = 0;
     if (!node.parentNode || !node._vfxFieldMotion) return;
     var state = node._vfxFieldMotion;
-    var now = Date.now();
+    var now = VFX_TIMING.dateNow();
     var dt = Math.min(0.05, Math.max(0, now - (state.lastAt || now)) / 1000);
     state.lastAt = now;
     if (state.followPlayer) {
@@ -524,8 +533,8 @@ function vfxFieldMotionSchedule(node) {
     if (node._vfxExpiresAt && node._vfxExpiresAt <= now) return;
     if (vfxFieldMotionBusy(state)) vfxFieldMotionSchedule(node);
   };
-  if (typeof requestAnimationFrame === 'function') node._vfxFieldMotionHandle = requestAnimationFrame(frame);
-  else node._vfxFieldMotionHandle = setTimeout(frame, 16);
+  if (typeof requestAnimationFrame === 'function') node._vfxFieldMotionHandle = VFX_TIMING.requestAnimationFrame(frame);
+  else node._vfxFieldMotionHandle = VFX_TIMING.setTimeout(frame, 16);
 }
 
 /* 每則事件：更新推算基準與運動語意。motion 就是事件的 area
@@ -541,7 +550,7 @@ function vfxFieldMotionSet(node, x, y, w, h, motion) {
       baseX: nx, baseY: ny, offX: 0, offY: 0,
       baseSizeW: nw, baseSizeH: nh,
       speed: 0, moveA: NaN, destX: NaN, destY: NaN,
-      lastAt: Date.now()
+      lastAt: VFX_TIMING.dateNow()
     };
   } else {
     state.followPlayer = false;
@@ -581,7 +590,7 @@ function vfxFieldMotionFollowPlayer(node, layer) {
   state.speed = 0;
   state.moveA = NaN;
   state.layer = layer;
-  state.lastAt = Date.now();
+  state.lastAt = VFX_TIMING.dateNow();
   vfxFieldMotionSchedule(node);
 }
 
@@ -673,24 +682,24 @@ function vfxHitReact(targetId, elem, delayMs, strong, targetGuard, suppressShake
   if (!targetId) return;
   if (_vfxQuality === VFX_QUALITY_LEVELS.REDUCED && !strong) return;
   var generation = _vfxGeneration;
-  setTimeout(function () {
+  VFX_TIMING.setTimeout(function () {
     if (!_vfxEnabled || generation !== _vfxGeneration || (targetGuard && !targetGuard())) return;
     var el = document.getElementById(targetId);
     var card = (el && el.closest) ? (el.closest('.enemy-card') || el.closest('.combatant')) : null;
     var visual = vfxHitVisualTarget(targetId, card);
     if (!card || !card.classList || !visual || !visual.classList) return;
-    var hitAt = Date.now();
+    var hitAt = VFX_TIMING.dateNow();
     if (typeof card._vfxHitLastAt === 'number' &&
         hitAt - card._vfxHitLastAt < VFX_HIT_COOLDOWN_MS) return;
     card._vfxHitLastAt = hitAt;
     for (var vi = 0; vi < VFX_HIT_CLASSES.length; vi++) visual.classList.remove(VFX_HIT_CLASSES[vi]);
     // 先移除再隔兩幀掛回：連續命中時動畫才會重新播放（不用 offsetWidth 硬觸發 reflow）
     for (var i = 0; i < VFX_HIT_CLASSES.length; i++) card.classList.remove(VFX_HIT_CLASSES[i]);
-    var until = Date.now() + 340;
+    var until = VFX_TIMING.dateNow() + 340;
     card._vfxHitUntil = until;
     visual._vfxHitUntil = until;
-    requestAnimationFrame(function () {
-      requestAnimationFrame(function () {
+    VFX_TIMING.requestAnimationFrame(function () {
+      VFX_TIMING.requestAnimationFrame(function () {
         if (!visual || visual._vfxHitUntil !== until) return;
         if (!_vfxEnabled || generation !== _vfxGeneration || card._vfxHitUntil !== until ||
             (targetGuard && !targetGuard())) return;  // 已被更新的一擊接手
@@ -698,7 +707,7 @@ function vfxHitReact(targetId, elem, delayMs, strong, targetGuard, suppressShake
         if (!suppressShake) visual.classList.add('vfx-hit');
         if (!suppressShake && strong) visual.classList.add('vfx-hit-strong');
         if (elem && VFX_ELEM_THEME[elem]) visual.classList.add('vfx-hit-' + elem);
-        setTimeout(function () {
+        VFX_TIMING.setTimeout(function () {
           if (generation !== _vfxGeneration || card._vfxHitUntil !== until || visual._vfxHitUntil !== until ||
               (targetGuard && !targetGuard())) return;
           for (var j = 0; j < VFX_HIT_CLASSES.length; j++) visual.classList.remove(VFX_HIT_CLASSES[j]);
@@ -729,18 +738,18 @@ function vfxSceneShake(layer, delayMs, strong, spec) {
   var meteor = spec && spec.variant === 'meteor';
   if (_vfxQuality !== VFX_QUALITY_LEVELS.FULL && !meteor) return;
   var generation = _vfxGeneration;
-  setTimeout(function () {
+  VFX_TIMING.setTimeout(function () {
     if (!_vfxEnabled || generation !== _vfxGeneration) return;
     var scene = (layer && layer.closest) ? layer.closest('.battle-scene')
       : ((layer && layer.parentNode) ? layer.parentNode : null);
     if (!scene || !scene.classList) return;
     scene.classList.remove('vfx-scene-shake', 'vfx-scene-shake-strong', 'vfx-scene-shake-meteor');
-    requestAnimationFrame(function () {
-      requestAnimationFrame(function () {
+    VFX_TIMING.requestAnimationFrame(function () {
+      VFX_TIMING.requestAnimationFrame(function () {
         if (!_vfxEnabled || generation !== _vfxGeneration) return;
         if (meteor) scene.classList.add('vfx-scene-shake-meteor');
         else scene.classList.add(strong ? 'vfx-scene-shake-strong' : 'vfx-scene-shake');
-        setTimeout(function () {
+        VFX_TIMING.setTimeout(function () {
           if (generation !== _vfxGeneration) return;
           scene.classList.remove('vfx-scene-shake', 'vfx-scene-shake-strong', 'vfx-scene-shake-meteor');
         }, strong ? 520 : 340);
@@ -911,7 +920,7 @@ function vfxBuildFlareFlame(parent, small, sizeScale) {
   var interval = VFX_FLARE_ADVANCE_MS / count;
   var particles = [];
   var accumulator = 0;
-  var lastAt = Date.now();
+  var lastAt = VFX_TIMING.dateNow();
   var generation = _vfxGeneration;
 
   function spawn(ageMs) {
@@ -954,7 +963,7 @@ function vfxBuildFlareFlame(parent, small, sizeScale) {
       p.style.setProperty('--flare-color', vfxFlareColorAt(life));
       p.style.opacity = String(Math.max(0, 1 - life));
     }
-    (typeof requestAnimationFrame === 'function' ? requestAnimationFrame : function (fn) { return setTimeout(fn, 16); })(update);
+    (typeof requestAnimationFrame === 'function' ? VFX_TIMING.requestAnimationFrame : function (fn) { return VFX_TIMING.setTimeout(fn, 16); })(update);
   }
   update(lastAt);
 }
@@ -999,12 +1008,12 @@ function vfxBarrageProjectile(spec, layer, from, to, side, lane, delayMs, travel
   trail.className = 'vfx-proj-trail';
   d.appendChild(trail);
   var generation = _vfxGeneration;
-  var startedAt = Date.now() + Math.max(0, delayMs || 0);
+  var startedAt = VFX_TIMING.dateNow() + Math.max(0, delayMs || 0);
   function frame() {
     if (!_vfxEnabled || generation !== _vfxGeneration || !d.parentNode) return;
-    var elapsed = Date.now() - startedAt;
+    var elapsed = VFX_TIMING.dateNow() - startedAt;
     if (elapsed < 0) {
-      (typeof requestAnimationFrame === 'function' ? requestAnimationFrame : function (fn) { return setTimeout(fn, 16); })(frame);
+      (typeof requestAnimationFrame === 'function' ? VFX_TIMING.requestAnimationFrame : function (fn) { return VFX_TIMING.setTimeout(fn, 16); })(frame);
       return;
     }
     var k = Math.min(1, elapsed / Math.max(1, flight));
@@ -1028,7 +1037,7 @@ function vfxBarrageProjectile(spec, layer, from, to, side, lane, delayMs, travel
     d.style.transform = 'translate(-50%, -50%)';
     d.style.opacity = String(k >= 1 ? 0 : 1);
     if (k < 1) {
-      (typeof requestAnimationFrame === 'function' ? requestAnimationFrame : function (fn) { return setTimeout(fn, 16); })(frame);
+      (typeof requestAnimationFrame === 'function' ? VFX_TIMING.requestAnimationFrame : function (fn) { return VFX_TIMING.setTimeout(fn, 16); })(frame);
     }
   }
   vfxTrack(d, Math.max(0, delayMs || 0) + flight + 220);
@@ -1135,16 +1144,16 @@ function vfxCleaveArc(spec, layer, pt, delayMs, angleDeg, extraClass, travel) {
     var distance = Math.max(48, Number(travel.length));
     var travelAngle = Number(travel.angle) || 0;
     var generation = _vfxGeneration;
-    var startedAt = Date.now() + delay;
+    var startedAt = VFX_TIMING.dateNow() + delay;
     var frame = function () {
       if (!_vfxEnabled || generation !== _vfxGeneration || !d.parentNode) return;
-      var elapsed = Date.now() - startedAt;
+      var elapsed = VFX_TIMING.dateNow() - startedAt;
       var k = elapsed <= 0 ? 0 : Math.min(1, elapsed / (duration * 1000));
       var eased = k * k * (3 - 2 * k);
       d.style.left = (pt.x + Math.cos(travelAngle) * distance * eased) + 'px';
       d.style.top = (pt.y + Math.sin(travelAngle) * distance * eased) + 'px';
       if (k < 1) {
-        (typeof requestAnimationFrame === 'function' ? requestAnimationFrame : function (fn) { return setTimeout(fn, 16); })(frame);
+        (typeof requestAnimationFrame === 'function' ? VFX_TIMING.requestAnimationFrame : function (fn) { return VFX_TIMING.setTimeout(fn, 16); })(frame);
       }
     };
     frame();
@@ -1170,10 +1179,10 @@ function vfxCleaveSector(spec, layer, pt, delayMs, angleDeg, travel) {
   d.style.setProperty('--vfx-sector-radius', maxRadius + 'px');
   d.style.setProperty('--vfx-sector-angle', angle.toFixed(0) + 'deg');
   var generation = _vfxGeneration;
-  var startedAt = Date.now() + delay;
+  var startedAt = VFX_TIMING.dateNow() + delay;
   var frame = function () {
     if (!_vfxEnabled || generation !== _vfxGeneration || !d.parentNode) return;
-    var elapsed = Date.now() - startedAt;
+    var elapsed = VFX_TIMING.dateNow() - startedAt;
     if (elapsed < 0) {
       d.style.opacity = '0';
     } else {
@@ -1188,7 +1197,7 @@ function vfxCleaveSector(spec, layer, pt, delayMs, angleDeg, travel) {
       d.style.opacity = k > 0.76 ? String(Math.max(0, 1 - (k - 0.76) / 0.24)) : String(Math.min(1, k / 0.08));
       if (k >= 1) return;
     }
-    (typeof requestAnimationFrame === 'function' ? requestAnimationFrame : function (fn) { return setTimeout(fn, 16); })(frame);
+    (typeof requestAnimationFrame === 'function' ? VFX_TIMING.requestAnimationFrame : function (fn) { return VFX_TIMING.setTimeout(fn, 16); })(frame);
   };
   frame();
   vfxTrack(d, delay + duration * 1000 + 180);
@@ -1277,10 +1286,10 @@ function vfxKnifeReturn(spec, layer, pt, delayMs, travelMs) {
     y: pt.y + directionY / directionLength * penetration
   };
   var generation = _vfxGeneration;
-  var startedAt = Date.now() + Math.max(0, delayMs || 0);
+  var startedAt = VFX_TIMING.dateNow() + Math.max(0, delayMs || 0);
   function frame() {
     if (!_vfxEnabled || generation !== _vfxGeneration || !d.parentNode) return;
-    var elapsed = Date.now() - startedAt;
+    var elapsed = VFX_TIMING.dateNow() - startedAt;
     if (elapsed < 0) {
       d.style.opacity = '0';
     } else {
@@ -1305,7 +1314,7 @@ function vfxKnifeReturn(spec, layer, pt, delayMs, travelMs) {
       d.style.opacity = String(k >= 1 ? 0 : 1);
       if (k >= 1) return;
     }
-    (typeof requestAnimationFrame === 'function' ? requestAnimationFrame : function (fn) { return setTimeout(fn, 16); })(frame);
+    (typeof requestAnimationFrame === 'function' ? VFX_TIMING.requestAnimationFrame : function (fn) { return VFX_TIMING.setTimeout(fn, 16); })(frame);
   }
   vfxTrack(d, Math.max(0, delayMs || 0) + flight + VFX_FLARE_LIFESPAN_MS + 160);
   frame();
@@ -1654,7 +1663,7 @@ function vfxFirePillar(spec, layer, area, fallbackPt) {
   var node = _vfxFirePillars[key];
   if (node && node.parentNode === layer) {
     vfxPlace(node, pt);
-    node._vfxExpiresAt = Date.now() + Math.max(900, Number(spec.dur || 0.5) * 2400);
+    node._vfxExpiresAt = VFX_TIMING.dateNow() + Math.max(900, Number(spec.dur || 0.5) * 2400);
     return node;
   }
   var pillarClass = 'vfx-fire-pillar' + (isWater ? ' vfx-water-tornado-pillar' : (isWind ? ' vfx-wind-tornado-pillar' : ''));
@@ -1709,7 +1718,7 @@ function vfxFireWall(spec, layer, area, rect) {
     node.style.height = wallH + 'px';
     node.style.setProperty('--vfx-wall-angle', wallAngle.toFixed(3) + 'rad');
     updateWallVortexLayout(node);
-    node._vfxExpiresAt = Date.now() + Math.max(900, Number(spec.dur || 0.5) * 2400);
+    node._vfxExpiresAt = VFX_TIMING.dateNow() + Math.max(900, Number(spec.dur || 0.5) * 2400);
     return node;
   }
 
@@ -1769,7 +1778,7 @@ function vfxMirePool(spec, layer, area, rect) {
   var node = _vfxMirePools[key];
   if (node && node.parentNode === layer) {
     vfxFieldMotionSet(node, x, y, w, h, area);
-    node._vfxExpiresAt = Date.now() + ttl;
+    node._vfxExpiresAt = VFX_TIMING.dateNow() + ttl;
     return node;
   }
   node = vfxNode('vfx-field-motion', layer, null);
@@ -1816,7 +1825,7 @@ function vfxThunderOrb(spec, layer, area, rect) {
   var node = _vfxThunderOrbs[key];
   if (node && node.parentNode === layer) {
     vfxFieldMotionSet(node, cx - d / 2, cy - d / 2, d, d, area);
-    node._vfxExpiresAt = Date.now() + ttl;
+    node._vfxExpiresAt = VFX_TIMING.dateNow() + ttl;
     return node;
   }
   node = vfxNode('vfx-field-motion', layer, null);
@@ -1871,7 +1880,7 @@ function vfxIceField(spec, layer, area, rect) {
       vfxFieldMotionFollowPlayer(node, layer);
     }
     if (variant === 'wind-blade-homing') vfxWindHomingSetAngle(node._vfxFieldVisual, cx, cy, area);
-    node._vfxExpiresAt = Date.now() + ttl;
+    node._vfxExpiresAt = VFX_TIMING.dateNow() + ttl;
     return node;
   }
   var cls = (variant === 'blizzard') ? 'vfx-blizzard'
@@ -2938,8 +2947,8 @@ function vfxScheduleFlush() {
     _vfxFlushHandle = 0;
     vfxFlushQueue();
   };
-  if (typeof requestAnimationFrame === 'function') _vfxFlushHandle = requestAnimationFrame(flush);
-  else _vfxFlushHandle = setTimeout(flush, 0);
+  if (typeof requestAnimationFrame === 'function') _vfxFlushHandle = VFX_TIMING.requestAnimationFrame(flush);
+  else _vfxFlushHandle = VFX_TIMING.setTimeout(flush, 0);
 }
 
 /* 消化事件佇列的主迴圈：受品質限制的每幀預算，並丟掉超過 stale 門檻的舊事件。
@@ -2951,7 +2960,7 @@ function vfxFlushQueue() {
   }
   var budget = _vfxQuality === VFX_QUALITY_LEVELS.REDUCED ? VFX_FRAME_BUDGET_REDUCED : VFX_FRAME_BUDGET_FULL;
   var count = 0;
-  var now = Date.now();
+  var now = VFX_TIMING.dateNow();
   while (_vfxEventQueue.length && count < budget) {
     var entry = _vfxEventQueue.shift();
     if (!entry || !entry.spec || now - entry.queuedAt > VFX_STALE_EVENT_MS) continue;
@@ -2964,7 +2973,7 @@ function vfxFlushQueue() {
 /* 事件入列時先嘗試在短合併窗內更新同類事件；無法合併時才新增項目，
    佇列撞上限則丟最舊項，避免特效洪峰拖慢輸入與面板操作。 */
 function vfxEnqueue(spec) {
-  var now = Date.now();
+  var now = VFX_TIMING.dateNow();
   var mergeKey = vfxMergeKey(spec);
   if (mergeKey) {
     for (var i = _vfxEventQueue.length - 1; i >= 0; i--) {

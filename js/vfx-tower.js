@@ -177,6 +177,10 @@ var VFXTower = (function () {
               adapter.registerPresets(presets);
               S.app = app;
               S.adapter = adapter;
+              if (typeof GameClock !== 'undefined') {
+                GameClock.trackTicker(app.ticker);
+                GameClock.trackCanvas(app.canvas, function () { app.render(); });
+              }
               app.ticker.add(function (ticker) {
                 sizeCanvas();
                 adapter.update(Math.min(0.05, (ticker.deltaMS || 16.7) / 1000));
