@@ -3183,6 +3183,7 @@ html *::-webkit-scrollbar-corner {
 }
 
 .sgb-path-ink {
+  --sgb-path-width: 3px;
   position: absolute;
   top: 0;
   left: 0;
@@ -3223,7 +3224,7 @@ html *::-webkit-scrollbar-corner {
 
 .sgb-path-core {
   stroke: #d67a5d;
-  stroke-width: 3px;
+  stroke-width: var(--sgb-path-width);
 }
 
 .sgb-path-shine {
@@ -3235,6 +3236,8 @@ html *::-webkit-scrollbar-corner {
 .sgb-path-glow,
 .sgb-path-spark {
   stroke: #fff3ce;
+  stroke-width: var(--sgb-path-width);
+  filter: none;
   animation: sgb-path-flow var(--sgb-flow-duration, 3200ms) linear infinite;
   animation-delay: var(--sgb-flow-delay, 0s);
 }
@@ -3242,27 +3245,21 @@ html *::-webkit-scrollbar-corner {
 .sgb-path-tail {
   --sgb-dash-start: 16px;
   stroke: #ffb45f;
-  stroke-width: 5px;
   stroke-opacity: .42;
   stroke-dasharray: 32 88;
-  filter: drop-shadow(0 0 3px #ff823da6);
 }
 
 .sgb-path-glow {
   --sgb-dash-start: 7px;
   stroke: #ffe7a3;
-  stroke-width: 4px;
   stroke-opacity: .9;
   stroke-dasharray: 14 106;
-  filter: drop-shadow(0 0 4px #ffad5cd9);
 }
 
 .sgb-path-spark {
   --sgb-dash-start: 3px;
   stroke: #fffef0;
-  stroke-width: 3px;
   stroke-dasharray: 6 114;
-  filter: drop-shadow(0 0 2px #fff4c6);
 }
 
 @keyframes sgb-path-flow {

@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## SKILL-FLOW-WIDTH-20261014 — 流光與進化線條等寬
+
+- Owner：Codex；Done，單一開發者。使用者指出增亮後流光超出線段寬度，要求等寬；前置0c0f23a2，後續交使用者整合。
+- 允許css/ashen-forge.css流光及線芯共用寬度、index.html僅CSS快取及本紀錄；禁止JS／幾何／技能規則／Worker／存檔／素材及其他副本，不合併／推送。三檔預檢乾淨、工作區乾淨。
+- 內容／驗收：流光三層與正常線芯共用3px寬度，移除向外擴張的drop-shadow；保留白色亮芯、金色光尾、既有長度／速度及連續轉角。瀏覽器核對實際寬度／filter及目視、相關回歸、Build、diff後Commit；純CSS，素材庫無變更。
+- 完成／修改3檔：CSS在sgb-path-ink定義共用--sgb-path-width:3px，靜態core及tail／glow／spark都使用該值，移除原5px／4px個別寬度及三層drop-shadow；保留白金高光、光尾長度與透明度、120px週期及線性動畫。主頁僅CSS1.0.66→1.0.67；本紀錄同步。
+- 指令／結果：node --test tests/skill2-ui.test.cjs tests/boss-skill-lock.test.cjs，35/35通過；npm.cmd run build，507檔通過；git diff --check通過。無新增鏡像測試或改舊斷言。
+- 瀏覽器：computer-use／CUA，隔離localhost正式大地守護／光耀之堂HTML與原描線函式；ComputedStyle確認正常線芯及三層流光皆3px／filter:none，動畫linear、dash長度不變，轉角閉合，Console error／warning 0。預覽在本聊天visualizations/skills-same-width-flow.png；未讀真人存檔，臨時頁面／服務／腳本已清理。
+- 唯讀檢查：js/ui.js描線／動畫相位、上述兩份測試、既有主題與Build工具，未修改；無獨立素材／Preset，素材庫無本次變更／無需Commit。遊戲Commit為本紀錄所在[Codex] fix提交，回覆附編號；無本次未完成項或已知新增風險，可合併，未合併／推送。限制：未做真人長戰／全庫測試；下一步整合後重載技能頁驗收等寬高光。
+
 ## SKILL-FLOW-BRIGHTNESS-20261014 — 加強進化路徑流光
 
 - Owner：Codex；Done，單一開發者。使用者指出流光太微弱，要求更明顯；前置586a8c59連續路徑已完成，後續交使用者整合。
