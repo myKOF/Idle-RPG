@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## ENAMEL-NAV-RIM-20261014 — 移除外圈亮點、加厚圓框並放大圖示
+
+- Owner：Codex；Done。使用者要求十圖外圈四個亮點全部刪除、框厚增加1px、圖示放大10%；另要求威能兩個提案，最後附圖核定第3版紅藍雙色火焰＋金色晶核接入，以最後附圖為準。前置為既有清理版，單一開發者，後續使用者審閱整合。
+- 允許：十張images/ui/enamel-nav圖示、css/ashen-forge.css導覽圖示尺寸與圓框、index.html圖檔／CSS快取、tools/enamel-nav/export-source.cjs獨立來源接線、本紀錄；素材庫codex-authored/enamel-nav母圖／匯出／來源／提示詞。禁止改頁籤事件、解鎖、規則、存檔與其他副本；不合併／推送。兩庫原乾淨，以上遊戲路徑（含補查匯出工具）預檢無其他副本／分支衝突。
+- 驗收：每個金色圓框均平順無四方尖端／亮點，主體維持清理版；圖示CSS38→41.8px（+10%），圓框以CSS1px金邊追加，保留文字與按鈕互動；透明／SHA／Build／既有UI測試、瀏覽器尺寸及破圖／Console驗證後，先素材庫再遊戲Commit。使用imagegen修整既有原創母圖，沿既有匯出裁切流程；Mote像素編修不適合整組細緻母圖的無痕修整。
+- 完成／修改14檔：十張images/ui/enamel-nav圖示全部去除外圈12／3／6／9點鐘的鑽形角飾與金尖端，外緣為完整圓形；威能換為核定紅藍火焰＋金色晶核。css/ashen-forge.css圖示38→41.8px，於素材外緣以::after追加1px連續金邊，pointer-events:none保留互動；不增加按鈕邊框厚度。index.html十圖快取20261014-round、CSS1.0.60→1.0.61；匯出工具與本紀錄同步。未改頁籤文字／排列／事件／解鎖／存檔。
+- 素材：內建imagegen原創修整整組母圖，另產威能兩提案並依使用者最後附圖選紅藍火焰金色晶核。未將附圖棋盤背景／浮水印匯入素材。素材庫originals/badges.png、獨立originals/talents.png、十圖、SOURCE／PROMPTS-ROUND／PROMPTS-TALENTS及exports.json同步，先提交52810af。未選提案及改色候選只留聊天生成目錄，不納入正式素材；既有核定概念圖保留，舊圖可由Git歷史恢復。十圖128×128真透明、總343490 bytes，遊戲與素材及紀錄SHA一致，沒有第三方美術。
+- 獨立來源：tools/enamel-nav/export-source.cjs優先讀素材庫originals/<name>.png（有則使用，否則沿整組母圖）；匯出紀錄保存獨立來源SHA，--check遇母圖改動或新增來源但未重匯出會拒絕。獨立威能不再因--make-icons回退為整組中的舊圖案；仍只標準裁切、等比縮小與透明留白，不程序重畫。
+- 驗證：node tools/enamel-nav/export-source.cjs --make-icons／--apply／--check全過；node --check tools/enamel-nav/export-source.cjs通過；node --test tests/sidebar-layout.test.cjs tests/init-ui-smoke.test.cjs，3/3通過；npm.cmd run build，503檔全過；兩庫git diff --check通過。隔離暫存素材庫重播整組＋獨立威能來源，十圖及裁切／來源SHA紀錄逐位元一致；改動暫存威能母圖後--check正確拒絕過期匯出。測試副本逐檔清理，未改正式來源來測試。
+- 瀏覽器：隔離localhost新角色、正式UI／Worker／Pixi，不讀真人存檔。十圖全載入128px新快取，CSS尺寸41.7969px（41.8的排版像素取整）、圓邊1px；可見圖示全在按鈕範圍內，無裁切／側欄橫向溢出，設定→角色切換正常；神鑄仍依原規則隱藏，Console error／warning 0。獨立十圖外觀預覽使用正式CSS的圖示／圓邊並顯示全部十圖，與真遊戲未解鎖狀態分開；威能192／64／41.8px檢視，紅藍與金色晶核可辨。截圖在本聊天visualizations/enamel-round-final.png及enamel-round-game.png。臨時頁面／服務關閉，腳本／測試副本已清理。
+- 未修改但檢查：AI規範、原始整組與威能候選、既有exports／SOURCE、tools/vfx/vfx-library-root.cjs、tests/sidebar-layout.test.cjs／init-ui-smoke.test.cjs及index的其餘UI標記。正式參數／Worker／存檔未變。
+- 交付：遊戲Commit為本紀錄所在[Codex] feat提交；素材Commit52810af。無本次未完成項或已知新增風險，可供審查合併，未合併／推送。限制：未跑全庫回歸或真人存檔長時間驗收；威能未解鎖時只驗證已載入素材，完整外觀另用隔離十圖預覽。下一步使用者整合後重載遊戲。
+
 ## ENAMEL-NAV-CLEANUP-20261014 — 清理十個功能徽章的細碎裝飾
 
 - Owner：Codex；Done，單一開發者。使用者指出64×64小尺寸的雕飾／內圈細線／光點使圖示顯髒，要求全部圖案簡化，不只處理紅圈示例，隨後確認接入遊戲。前置為既有ENAMEL-NAV，後續交使用者審閱整合。

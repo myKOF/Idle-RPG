@@ -42,13 +42,21 @@ async function main() {
     const records = [];
     fs.mkdirSync(path.join(sourceRoot, 'icons'), { recursive: true });
     for (let i = 0; i < names.length; i++) {
-      const x0 = cuts[i % 5];
-      const x1 = cuts[i % 5 + 1];
-      const y0 = Math.round(Math.floor(i / 5) * info.height / 2);
-      const y1 = Math.round((Math.floor(i / 5) + 1) * info.height / 2);
+      let original = sheet, pixels = data, rasterWidth = info.width;
+      let x0 = cuts[i % 5], x1 = cuts[i % 5 + 1];
+      let y0 = Math.round(Math.floor(i / 5) * info.height / 2);
+      let y1 = Math.round((Math.floor(i / 5) + 1) * info.height / 2);
+      // 核定後獨立重製的單圖同樣由素材庫母圖匯出，不回退到舊整組圖案。
+      const override = path.join(sourceRoot, 'originals', names[i] + '.png');
+      if (fs.existsSync(override)) {
+        original = override;
+        const single = await sharp(original).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+        pixels = single.data; rasterWidth = single.info.width;
+        x0 = 0; y0 = 0; x1 = single.info.width; y1 = single.info.height;
+      }
       let left = x1, top = y1, right = -1, bottom = -1, transparent = 0;
       for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
-        const alpha = data[(y * info.width + x) * 4 + 3];
+        const alpha = pixels[(y * rasterWidth + x) * 4 + 3];
         if (!alpha) transparent++;
         if (alpha > 16) { left = Math.min(left, x); top = Math.min(top, y); right = Math.max(right, x); bottom = Math.max(bottom, y); }
       }
@@ -58,9 +66,11 @@ async function main() {
       top = Math.max(y0, top - 2); bottom = Math.min(y1 - 1, bottom + 2);
       const crop = { left, top, width: right - left + 1, height: bottom - top + 1 };
       const output = path.join(sourceRoot, 'icons', names[i] + '.png');
-      await sharp(sheet).extract(crop).resize(120, 120, { fit: 'contain', background: '#00000000' })
+      await sharp(original).extract(crop).resize(120, 120, { fit: 'contain', background: '#00000000' })
         .extend({ top: 4, bottom: 4, left: 4, right: 4, background: '#00000000' }).png().toFile(output);
-      records.push({ name: names[i], crop, sha256: hash(output) });
+      const record = { name: names[i], crop, sha256: hash(output) };
+      if (original !== sheet) { record.original = 'originals/' + names[i] + '.png'; record.originalSha256 = hash(original); }
+      records.push(record);
     }
     fs.writeFileSync(path.join(sourceRoot, 'exports.json'), JSON.stringify({ sourceSha256: hash(sheet), size: 128, icons: records }, null, 2) + '\n');
     console.log('10張透明徽章已匯出到素材庫（128×128）。');
@@ -74,6 +84,10 @@ async function main() {
     const target = path.join(targetRoot, name + '.png');
     const record = records.icons.find(icon => icon.name === name);
     if (!record || record.sha256 !== hash(source)) throw new Error(name + '素材與匯出紀錄不同');
+    const originalRel = 'originals/' + name + '.png';
+    const original = path.join(sourceRoot, originalRel);
+    if (record.original && (record.original !== originalRel || !fs.existsSync(original) || hash(original) !== record.originalSha256)) throw new Error(name + '獨立母圖變更，請先--make-icons');
+    if (!record.original && fs.existsSync(original)) throw new Error(name + '新增獨立母圖，請先--make-icons');
     if (mode === '--apply') fs.copyFileSync(source, target);
     if (hash(source) !== hash(target)) throw new Error(name + '素材庫與遊戲匯出不同');
   }

@@ -2139,12 +2139,23 @@ html *::-webkit-scrollbar-corner {
 }
 
 #workspace-area #tabs .af-nav-icon {
+  position: relative;
   display: block;
-  width: 38px;
-  height: 38px;
+  width: 41.8px;
+  height: 41.8px;
   margin: 0;
   flex: 0 0 auto;
   line-height: 0;
+}
+
+/* 素材留白約4%，在圓框外緣追加固定1px金邊，不新增角飾或亮點。 */
+#workspace-area #tabs .af-nav-icon::after {
+  content: "";
+  position: absolute;
+  inset: calc(4% - 1px);
+  border: 1px solid #d3ab55;
+  border-radius: 50%;
+  pointer-events: none;
 }
 
 #workspace-area #tabs .af-nav-icon img {
