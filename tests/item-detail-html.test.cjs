@@ -37,6 +37,17 @@ function affixAt(c, key, val) {
   return { key: key, roll: c.affixStrengthFromValue(key, 50, 5, val) };
 }
 
+test('比較卡標籤縮為現有，與鎖鈕同置於右側控制區，不再絕對疊到名稱上', () => {
+  const c = loadItemContext();
+  const it = makeItem({ name: '傳說的長名稱秘紋戒指', slot: 'ring', upgrade: 40 });
+  const h = c.itemHeaderHTML(it, { isEquipped: true, showAffixReroll: false });
+  assert.match(h, /class="it-head-actions"><span class="equipped-tag">現有<\/span><button/);
+  assert.doesNotMatch(h, /現有裝備|class="equipped-tag" style=/);
+  assert.match(h, /傳說的長名稱秘紋戒指/);
+  assert.match(h, /it-up">\+40/);
+  assert.doesNotMatch(c.itemHeaderHTML(it, { showAffixReroll: false }), /equipped-tag/);
+});
+
 test('不讀取 G——沒有 G 的環境下也能產生完整詳情', () => {
   const c = loadItemContext();
   const it = makeItem({ affixes: [affixAt(c, 'atkFlat', 10)] });

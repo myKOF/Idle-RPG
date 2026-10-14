@@ -10076,7 +10076,8 @@ function showItemTooltip(it, anchorEl, opts) {
   }
   var compareItem = null;
   var tc = $id('toggle-compare');
-  if (tc && tc.checked) {
+  var tooltipSource = anchorEl && anchorEl.getAttribute('data-src');
+  if (tc && tc.checked && (tooltipSource === 'inv' || tooltipSource === 'forgeinv')) {
     var tooltipInvSnapshot = uiInventoryPanelSnapshot();
     var cmpEq = tooltipInvSnapshot && tooltipInvSnapshot.viewEquipment
       ? tooltipInvSnapshot.viewEquipment

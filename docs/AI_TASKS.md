@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## EQUIP-SELECTION-COMPARE-20261014 — 方角選取框與裝備比較範圍
+
+- Owner：Codex；Done，單一開發者。使用者要求黃框方角覆蓋裝備框、比較標籤改「現有」靠右、身上兩戒指不互相比較，只比較背包與已穿裝備；前置既有裝備UI已完成，後續交使用者整合。
+- 允許css/ashen-forge.css選取框與標籤、js/ui.js tooltip比較來源、js/item.js純標頭、index.html上述快取、tests/equipment-selection-border.test.cjs／tests/item-detail-html.test.cjs／新tests/equipment-tooltip-compare.test.cjs及本紀錄；禁止改裝備規則／數值／Worker／存檔／素材及其他副本，不合併／推送。JS／測試／紀錄預檢乾淨；CSS與Antigravity未提交的afx-label固定色移除、index與Claude33853a16的data／formula版本同檔異區，使用者已同意分段修改並保留其他工作。本副本原乾淨，不修改其他副本。
+- 驗收：黃框0圓角且覆蓋原邊框、不改格子尺寸；長名稱／強化與「現有」／鎖鈕不重疊；兩枚已穿戒指各單卡、背包戒指／一般部位／雙手武器仍與原目標部位比較，關閉比較維持單卡；相關回歸、正式HTML與瀏覽器／Console、Build、diff後Commit。純UI，無素材變更。
+- 完成／修改8檔：ashen-forge.css黃框保留5px厚度，outline-offset改-5px、border-radius:0，使黃框向內完全遮住原品質邊框且不改格尺寸；「現有」使用右側it-head-actions的正常flex排版、緊鄰鎖鈕左側，取消原right:52px絕對標籤。item.js僅改純HTML標頭，不改物品／模擬；ui.js比較只允許data-src為inv或forgeinv，身上equip／法陣槽不比較，仍沿原目標欄位及相同ID排除。主頁CSS1.0.69／item1.0.21／ui1.0.158，本紀錄同步；未動Claude的data／formula版本或Antigravity的afx-label段落。
+- 測試指令／結果：node --test tests/equipment-tooltip-compare.test.cjs tests/equipment-selection-border.test.cjs tests/item-detail-html.test.cjs tests/equipment-slot-selection.test.cjs tests/equipment-detail-layout.test.cjs tests/equip-selection-outline-instant.test.cjs tests/ui-worker-panels.test.cjs tests/init-ui-smoke.test.cjs，共49項47通過／2既有失敗。本次新增6項全部通過：方角／覆蓋不改尺寸、短標籤位置、身上戒指／其他裝備單卡、背包戒指兩槽／胸甲／武器比較、forgeinv與法陣來源、停比較／空槽／相同ID。
+- 基線：唯讀攔截ui.js載入HEAD原檔，node --test --test-reporter=tap --require臨時baseline.cjs tests/ui-worker-panels.test.cjs，與當前同為8項6通過／2失敗、失敗名稱差集0；分別為既有gem.socket接線字串斷言及detailAction測試替身缺UI，未改相關測試或放寬斷言。npm.cmd run build 508檔通過，git diff --check通過。
+- 瀏覽器：computer-use／CUA，隔離localhost，正式renderEquip／itemDetailHTML產生紙娃娃及提示HTML，正式showItemTooltip函式、拋棄式裝備快照。身上戒指一／二／副手均1張卡，背包戒指2張，關閉比較後1張；黃色框ComputedStyle 0px圓角／5px solid／-5px offset，目視原橘框被覆蓋。標籤文字僅「現有」、position:static，右側控制區50.45px小於標題保留56px，標籤右距26px（鎖鈕20＋間距6），無遮字；Console error／warning 0。截圖在本聊天visualizations/equip-square-selection.png、equip-current-label.png；臨時頁面／服務／腳本及基線日誌清理。
+- 唯讀檢查：AI規範、其他副本／Claude差異、style.css／ashen-forge-flat.css、既有選取與目標欄位、Worker item import及上述未改測試／Build；未改Worker／Protocol／存檔／規則／數值。本次item.js僅主端純HTML標頭更新，主端快取同步，無模擬變更。沒有外部或新美術素材，素材庫無變更／無需Commit。
+- 交付：遊戲Commit為本紀錄所在[Codex] fix提交，回覆附編號；無本次未完成項，可供審查合併，未合併／推送。已知限制／風險為上述2項既有測試失敗、未操作真人存檔長戰或真Worker完整背包；瀏覽器採正式函式與拋棄式投影。下一步整合時保留其他AI同檔修改，重載遊戲驗收三項調整。
+
 ## SKILL-FLOW-GRADIENT-20261014 — 沿路徑漸淡的白色流光
 
 - Owner：Codex；Done，單一開發者。使用者要求將平整白光改成漸層白光；前置8661e6d6等寬流光已完成，後續交使用者整合。

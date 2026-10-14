@@ -832,6 +832,14 @@ select option {
   position: static !important;
 }
 
+.it-head-actions .equipped-tag {
+  color: #4ade80;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  text-align: right;
+}
+
 .btn-it-lock {
   width: 20px;
   height: 20px;
@@ -1058,7 +1066,8 @@ select option {
 #workspace-area .item-cell.selected,
 #workspace-area .eq-slot.selected {
   outline: 5px solid #ffe354;
-  outline-offset: 1px;
+  outline-offset: -5px;
+  border-radius: 0 !important;
   transition: none !important;
 }
 
