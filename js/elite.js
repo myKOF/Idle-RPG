@@ -552,6 +552,11 @@ function eliteCanCast(m, d) {
       return !!mp && eliteDist(mp.x, mp.y, elitePos().x, elitePos().y) >= (d.minRange || 0);
     }
     case 'chain': return !!eliteChainPartner(m);
+    case 'pull': {
+      /* 玩家已經貼在牠身邊（拉不動）或離太遠（超出拉扯範圍）都是白放：只在「拉得動、拉得有感」時才抽這個技能 */
+      var vp = eliteMonsterPos(m), pd = vp ? eliteDist(vp.x, vp.y, elitePos().x, elitePos().y) : 0;
+      return !!vp && pd >= elitePullStop(m) + (d.minPull || 0) && pd <= elitePullReach(m, d);
+    }
     case 'sparks': return false;
     default: return true;
   }
@@ -1318,6 +1323,10 @@ function eliteWallsPushOut() {
 }
 
 /* ============ 漩渦：把你快速拉扯到牠身邊 ============ */
+/* 漩渦：停下來的距離（貼到牠身邊）與拉得到的最遠距離。拉扯範圍 pullR 與漩渦畫面半徑 r 是兩回事：
+   怪物常站在自己的攻擊距離（6／24／36 米）外開打，畫面上的漩渦不必有那麼大，但拉扯要能夠到。 */
+function elitePullStop(m) { return (m._bodyR || 20) + ELITE_PLAYER_BODY_R + 12; }
+function elitePullReach(m, d) { return (d.pullR > 0 ? d.pullR : d.r) + (m._bodyR || 20); }
 function eliteCastPull(m, d) {
   var mp = eliteMonsterPos(m);
   if (!mp) return;
@@ -1329,8 +1338,8 @@ function eliteCastPull(m, d) {
     if (!mp2) return;
     var pp = elitePos();
     var dist = eliteDist(pp.x, pp.y, mp2.x, mp2.y);
-    if (dist > d.r + (m._bodyR || 20)) return;               // 不在漩渦範圍內：拉不到
-    var stop = (m._bodyR || 20) + ELITE_PLAYER_BODY_R + 12;
+    if (dist > elitePullReach(m, d)) return;                 // 不在拉扯範圍內：拉不到
+    var stop = elitePullStop(m);
     if (dist <= stop) { eliteHitPlayer(m, { mult: d.dmg, elem: d.elem, sure: true, stun: d.stun, label: d.name }); return; }
     var ux = (pp.x - mp2.x) / dist, uy = (pp.y - mp2.y) / dist;
     ELITE_RT.pull = { owner: m, def: d, tx: mp2.x + ux * stop, ty: mp2.y + uy * stop, speed: d.speed || 600 };

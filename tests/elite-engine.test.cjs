@@ -329,7 +329,8 @@ test('ELITE-ENGINE-14 築牆：近戰隔著牆打不到（雙方），遠程不�
 test('ELITE-ENGINE-15 漩渦：先有暗影引力場，再以 60 米/秒把玩家拉到牠身邊；拉扯中玩家走位暫停', () => {
   const c = fresh();
   const m = quiet(makeElite(c, ['e_vortex'], { x: 110, y: 0, hp: 1e9 }));
-  const d = Object.assign({}, c.ELITE_AFFIXES.e_vortex, { r: 140 });   // 這條測拉扯機制，與表上的範圍大小無關
+  const d = c.ELITE_AFFIXES.e_vortex;
+  assert.equal(d.pullR, 400, '拉扯範圍 40 米（畫面半徑 r 另計）');
   c.bfPlayerPos().x = -400; c.bfPlayerPos().y = 0;               // 距離 51 米 → 超出範圍
   c.eliteCastPull(m, d);
   stepElite(c, d.windup + 0.2);
@@ -346,6 +347,20 @@ test('ELITE-ENGINE-15 漩渦：先有暗影引力場，再以 60 米/秒把玩�
   stepElite(c, 1);
   assert.equal(c.elitePlayerLocked(), false, '拉完解除');
   assert.ok(Math.hypot(c.bfPlayerPos().x - m.pos.x, c.bfPlayerPos().y - m.pos.y) < (m._bodyR || 20) + 60, '落在牠身邊');
+});
+
+test('ELITE-ENGINE-15b 漩渦只在「拉得動、拉得有感」時才會被抽到：貼身或太遠都不放', () => {
+  const c = fresh();
+  const m = quiet(makeElite(c, ['e_vortex'], { x: 0, y: 0, hp: 1e9 }));
+  const d = c.ELITE_AFFIXES.e_vortex;
+  const stop = c.elitePullStop(m), reach = c.elitePullReach(m, d);
+  const at = (dist) => { c.bfPlayerPos().x = dist; c.bfPlayerPos().y = 0; return c.eliteCanCast(m, d); };
+  assert.equal(at(stop - 5), false, '已經貼在牠身邊：拉不動');
+  assert.equal(at(stop + 10), false, '只差一點點：拉了也看不出來');
+  assert.equal(at(stop + d.minPull + 5), true, '離牠有一段距離：拉得動');
+  assert.equal(at(reach - 5), true, '範圍邊緣仍拉得到');
+  assert.equal(at(reach + 20), false, '超出拉扯範圍');
+  assert.ok(reach >= 400 + 20, '範圍涵蓋怪物站著開打的距離（遠程 NPC 攻擊距離最遠 36 米）');
 });
 
 test('ELITE-ENGINE-16 護盾：持續 3 秒完全免疫所有傷害，結束後恢復', () => {
