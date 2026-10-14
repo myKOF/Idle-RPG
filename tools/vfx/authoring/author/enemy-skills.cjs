@@ -128,7 +128,7 @@ const RECOLORS = [
   ['en-proj-meteor-small', 'proj-meteor-small', 'fire'], ['en-proj-dark-orb', 'proj-dark-orb', 'dark'], ['en-proj-ice-shard', 'proj-ice-shard', 'ice'],
   ['en-proj-poison-drop', 'proj-poison-drop', 'poison'], ['en-proj-fireball', 'proj-fireball', 'fire'], ['en-proj-wind-crescent', 'proj-wind-crescent', 'wind'],
   ['en-proj-lightning', 'proj-lightning', 'lightning'], ['en-proj-light-orb', 'proj-light-orb', 'light'], ['en-proj-bloodrage-drain', 'proj-bloodrage-drain', 'phys'],
-  ['en-mortar-shell', 'proj-fireball-ember', 'fire'], ['en-spark', 'proj-thunder-orb-fall', 'lightning'],
+  ['en-mortar-shell', 'proj-fireball-ember', 'fire'],
   // 其他角色
   ['en-slash-phys-big', 'slash-phys-big', 'phys'], ['en-slash-wind-spin', 'slash-wind-spin', 'wind'], ['en-pillar-light', 'pillar-light', 'light'],
   ['en-curse-dark', 'curse-dark', 'dark'], ['en-vortex', 'black-hole', 'dark', p => { p.sizing = { shape: 'circle', authored: { radius: 100 } }; boostAlpha(p, 1.7); }],
@@ -407,16 +407,25 @@ NEW['en-missile-burst'] = () => ({
   ]
 });
 
-/* 電火花（帶電）：白心＋青綠光暈的小火花彈。朝 +X 飛。 */
-NEW['en-spark'] = () => ({
-  id: 'en-spark', duration: 1.2, loop: false, sizing: orbSizing(10),
-  layers: [
-    kit.sprite({ id: 'glow', asset: A.glowSoft, z: 0, size: 54, alpha: 0.85, tint: '#34e0d0', blend: 'add', duration: 1.2, alphaOverLife: [[0, 0], [0.05, 1], [0.9, 1], [1, 0]] }),
-    kit.sprite({ id: 'star', asset: A.star08, z: 1, size: 38, alpha: 1, tint: '#e8ffff', blend: 'add', duration: 1.2, rotationOverLife: C.spin(2), alphaOverLife: [[0, 0], [0.05, 1], [0.9, 1], [1, 0]] }),
-    kit.sprite({ id: 'core', asset: A.dot, z: 2, size: 14, alpha: 1, tint: '#ffffff', blend: 'add', duration: 1.2 }),
-    kit.particle({ id: 'zap', asset: A.arc02, z: 3, rate: 18, lifetime: [0.1, 0.2], spawnRadius: 6, speed: [20, 60], direction: 180, spread: 180, startPx: [10, 18], alpha: 1, tint: '#b8fff6', blend: 'add', alphaOverLife: [[0, 1], [1, 0]] })
-  ]
-});
+/* 電火花（帶電）：一條不規則的琥珀色閃電絲，三股鋸齒電光各自快速閃爍、微微抖動，沒有圓形本體
+   （和玩家的藍白電球、敵人的雷光球都是圓的，這個是線狀）。朝 +X 飛，細長形（custom 尺寸，不靠 bodyD）。 */
+NEW['en-spark'] = () => {
+  const D = 0.5;
+  const flick = (shift) => [[0, 1], [0.12, 0.2], [0.26, 1], [0.4, 0.3], [0.55, 0.95], [0.7, 0.15], [0.85, 1], [1, 1]]
+    .map(([t, v], i, arr) => [+((t + shift) % 1).toFixed(3), v]).sort((x, y) => x[0] - y[0]);
+  const jig = (amp, ph) => [[0, -amp], [0.2, amp * 0.8], [0.4, -amp * 0.6], [0.6, amp], [0.8, -amp * 0.9], [1, -amp]].map(([t, v]) => [t, +(v * ph).toFixed(3)]);
+  return {
+    id: 'en-spark', duration: D, loop: true, sizing: customSizing(56, 22, 4, 1.6),
+    layers: [
+      kit.sprite({ id: 'glow', asset: A.glowSoft, z: 0, sizeX: 78, sizeY: 20, alpha: 0.3, tint: '#ff9a1a', blend: 'add', duration: D, alphaOverLife: [[0, 0.5], [0.3, 0.25], [0.6, 0.5], [1, 0.5]] }),
+      kit.sprite({ id: 'fil-a', asset: A.bolt05H, z: 1, sizeX: 80, sizeY: 30, alpha: 1, tint: '#ffb830', blend: 'add', duration: D, alphaOverLife: flick(0), rotationOverLife: jig(0.2, 1) }),
+      kit.sprite({ id: 'fil-b', asset: A.bolt06H, z: 2, sizeX: 70, sizeY: 26, alpha: 1, tint: '#ffd978', blend: 'add', duration: D, alphaOverLife: flick(0.37), rotationOverLife: jig(0.22, -1) }),
+      kit.sprite({ id: 'fil-c', asset: A.bolt05H, z: 3, sizeX: 62, sizeY: -22, alpha: 0.9, tint: '#ff8a1a', blend: 'add', duration: D, alphaOverLife: flick(0.71), rotationOverLife: jig(0.3, 1) }),
+      kit.sprite({ id: 'core', asset: A.bolt05H, z: 4, sizeX: 76, sizeY: 8, alpha: 1, tint: '#fff4d6', blend: 'add', duration: D, alphaOverLife: flick(0.2), rotationOverLife: jig(0.12, -1) }),
+      kit.particle({ id: 'zap', asset: A.bolt04, z: 5, rate: 14, lifetime: [0.1, 0.22], spawnRadius: 10, speed: [30, 80], direction: 0, spread: 360, startPx: [12, 22], alpha: 1, tint: '#ffe08a', blend: 'add', alphaOverLife: [[0, 1], [1, 0]] })
+    ]
+  };
+};
 
 module.exports = { THEMES, RECOLORS, NEW, recolor };
 
