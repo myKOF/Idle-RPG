@@ -1,6 +1,7 @@
-# Worker 協議 v50
+# Worker 協議 v51
 
-> 協議版本：`WORKER_PROTOCOL_VERSION = 50`　最後更新：2026-10-08
+v51（2026-10-14 Esc菜單）：新增`save.auto`（無參數，指令93→94），Worker從權威G產生auto_current快照，PERSIST.kind新增`autoNow`，ACK.result回傳persist token。主執行緒WorkerBridge.saveAutoNow()僅在該token的IndexedDB交易成功後resolve，寫入失敗／逾時reject，支援PERSIST完成早於ACK。不建立手動存檔、不要求資料夾，沿原自動存檔格式；此明確玩家操作不受測試模式的未要求自動寫入抑制。Esc離開必須先await成功，失敗不離開；定期資料夾同步沿原流程。
+> 協議版本：`WORKER_PROTOCOL_VERSION = 51`　最後更新：2026-10-14
 
 v50（2026-10-08 BOSS 戰配置鎖）：新增共用判定 `bossFightBlocksCommand(name)`。`G.tower.active` 期間（含登場、暫停、結算未退出）既有換裝／換套、裝備強化／洗煉／附魔、寶石鑲卸與融合寶石、符文刻印／抹除、技能裝載與排序、技能降級／重置／超神進化切換、威能與潛力變更指令，均以既有錯誤封包 `{ok:false,error:'BOSS 戰中不可變更戰鬥配置'}` 拒絕，在解析物件與扣資源前守門。UI 共用同一判定並置灰入口；自動穿裝在戰中暫停。退出後恢復；純瀏覽、庫存素材合成、一般技能升級保留。指令仍 93 條，參數、快照、存檔格式不變。
 
@@ -205,7 +206,7 @@ v21 補 2 條、v23 補 1 條）。
 - **原子操作**：`item.equip` / `item.unequip` / `item.salvage` / `item.salvageBulk` 等。
   這些在舊 UI 裡除了呼叫模擬層函式，還包含「從背包移除、替換下來的裝備退回背包」等
   狀態轉移，只呼叫既有函式會複製出第二件物品。
-- **存檔三條**（`save.manual` / `save.toFolder` / `save.restart`）：原本宣告直接呼叫
+- **存檔指令**（`save.auto` / `save.manual` / `save.toFolder` / `save.restart`）：原本宣告直接呼叫
   `manualSave` / `createManualSaveToFolderV2` / `restartGame` 是錯的——那些會碰
   localStorage、IndexedDB、File System Access 與 `location.reload`，Worker 一律不能碰。
   改為「產生 payload → 發 persist」。

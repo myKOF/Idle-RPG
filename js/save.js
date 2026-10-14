@@ -1361,23 +1361,29 @@ function removeLegacyRecordPayloadsV2() {
   _legacyPayloadsCompactedV2 = true;
 }
 
-function idbSetAutoV2(raw, done) {
+function idbSetAutoV2(raw, done, opts) {
   var seq = ++_autoWriteSeqV2;
   _autoRawV2 = raw;
+  var finished = false;
+  function finish(err) {
+    if (finished) return;
+    finished = true;
+    if (done) done(err || null);
+  }
   encodeSavePayloadV2(raw).then(function (payload) {
     // 依自動存檔間隔可能觸發存檔；只寫入最新快照，避免壓縮較慢時排隊保存大量舊快照。
-    if (seq !== _autoWriteSeqV2) { if (done) done(); return; }
+    if (seq !== _autoWriteSeqV2) { finish(opts && opts.strict ? new Error('自動存檔已被較新快照取代，請重試') : null); return; }
     idbKV(function (db) {
-      if (!db) { if (done) done(); return; }
+      if (!db) { finish(new Error('無法開啟自動存檔儲存空間')); return; }
       try {
         var tx = db.transaction('kv', 'readwrite');
-        tx.oncomplete = function () { if (done) done(); };
-        tx.onerror = function () { if (done) done(); };
-        tx.onabort = function () { if (done) done(); };
+        tx.oncomplete = function () { finish(null); };
+        tx.onerror = function () { finish(tx.error || new Error('自動存檔寫入失敗')); };
+        tx.onabort = function () { finish(tx.error || new Error('自動存檔寫入已中止')); };
         tx.objectStore('kv').put(payload, AUTO_CACHE_KEY_V2);
-      } catch (e) { if (done) done(); }
+      } catch (e) { finish(e); }
     });
-  }).catch(function () { if (done) done(); });
+  }).catch(finish);
 }
 
 function idbGetAutoV2(cb) {

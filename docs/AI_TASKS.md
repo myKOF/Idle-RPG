@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## ESC-MENU-NAV-20261014 — 單外框圖示與Esc遊戲菜單
+
+- Owner：Codex；Done，單一開發者。使用者要求圖示移除內圈、外圈再厚2px、主體補滿；移除側欄設定，Esc依序重啟遊戲（刷新）／離開遊戲（先存檔）／立即存檔（自動存檔）／設置（原設定改彈窗）。前置為既有功能頁籤，後續使用者審閱整合。
+- 允許：index.html、css/ashen-forge.css、js/ui.js、新js/game-menu.js、js/save.js／storage.js／bridge.js的實際存檔成功確認；js/worker/protocol.js／sim.worker.js新增自動存檔指令與必要快取、docs/WORKER_PROTOCOL.md、本紀錄、tests/game-menu*.test.cjs與既有protocol計數；圖示／素材庫母圖／匯出／來源／提示詞。上述路徑預檢均無其他副本／分支衝突，兩庫原乾淨。禁止改其他規則／技能／存檔格式／其他副本，不合併／推送。
+- 驗收：單一外框、主圖等比填滿；Esc開關／既有彈窗優先／焦點與Tab循環；設定完整搬至獨立彈窗、不切主分頁；刷新不開新局；自動存檔從Worker權威序列化並確認實際I/O成功，不需資料夾，不新增手動記錄；離開等待寫入，失敗不關閉。瀏覽器無法關閉一般分頁時，結束遊戲並轉空白頁；測試含成功／失敗／逾時／早晚ACK與存檔回覆、真Worker／Storage、UI／Build／圖示SHA，雙倉庫提交。
+- 圖示：imagegen移除整組母圖與威能獨立母圖的細內圈、放大主體，保留紅藍火焰與金色晶核；CSS追加外框1px→3px，顯示尺寸仍41.8px。沿既有工具匯出十圖128px真透明PNG，遊戲只引用九圖；settings素材保留供歷史維護。Mote Studio的像素繪圖流程不適合本次保留原材質編修；沒有引入外部素材。素材庫母圖／圖示／SHA／SOURCE／PROMPTS-SINGLE-RIM同步，先提交a640431，遊戲圖示快取20261014-single-rim。
+- 介面：index移除側欄設定，既有tab-settings整段移入獨立settings-modal，原事件與ID保留；舊資料夾按鈕改標「另存到資料夾」。新增js/game-menu.js及CSS，四按鈕順序依需求；Esc先關既有彈窗，再開關菜單／從設置返回菜單，Tab焦點循環，關閉還原焦點，存檔中鎖定操作避免重複退出。js/ui.js將舊設定導覽轉彈窗並保留資料夾重新掃描；不更動主分頁與原解鎖規則。
+- 存檔：新增Protocol51的save.auto／autoNow，Worker權威G序列化、保留補進度savedAt；bridge以token對應實際Storage回覆，支援先落地後ACK、去重、錯誤與逾時。save.js由IndexedDB交易完成才回成功，壓縮／開庫／交易錯誤確實傳回；Storage更新auto_current且不新增手動記錄、不要求資料夾。立即存檔與週期auto共用排序／合併佇列，舊idle工作不能在新快照後覆蓋，新快照取代待寫工作仍保留嚴格完成確認；既有10分鐘資料夾同步不變。exit只在落地成功後stop／close，失敗保留遊戲並允許重試；reload只呼叫location.reload，不呼叫重新開局。
+- 修改：index.html、css/ashen-forge.css、js/game-menu.js／ui.js／bridge.js／save.js／storage.js、js/worker/protocol.js／sim.worker.js、十張images/ui/enamel-nav PNG、docs/WORKER_PROTOCOL.md／本紀錄、tests/game-menu.test.cjs／game-menu-save.test.cjs／worker-protocol.test.cjs，共24檔。快取CSS1.0.62／ui1.0.154／save1.0.14／storage1.0.1／bridge1.0.271／game-menu1.0.1，Worker入口與save import為20261014-esc-menu，Protocol51。存檔鍵值／格式與模擬公式不變。
+- 測試指令：node --test tests/game-menu.test.cjs tests/game-menu-save.test.cjs tests/esc-shortcut.test.cjs tests/worker-protocol.test.cjs tests/catchup-write-throttle.test.cjs tests/init-ui-smoke.test.cjs tests/worker-shim.test.cjs tests/p5a-protocol-crosscheck.test.cjs tests/worker-catchup-silent.test.cjs tests/save-origin-isolation.test.cjs tests/save-folder-ui.test.cjs tests/save-folder-timestamps.test.cjs tests/save-drain-refresh.test.cjs tests/save-compression.test.cjs tests/manual-save-filename.test.cjs；15檔90/90通過，0失敗／略過。17項新增測試涵蓋UI／順序／重啟／離開／失敗、真正Worker與Storage、佇列競態及IndexedDB回覆；protocol既有計數改為94，其他既有斷言不降低。npm.cmd run build：507檔全過。node tools/enamel-nav/export-source.cjs --make-icons／--apply／--check成功，十圖來源／紀錄／遊戲SHA一致；兩庫diff check通過。
+- 瀏覽器：隔離http://127.0.0.1:8966的新角色、正式Worker／Pixi／UI，未讀真人存檔。實際Esc與設置返回、立即存檔成功提示、存檔清單僅auto_current且沒有手動記錄、主頁仍tab-equip、主側欄無設定；刷新後保留角色並繼續升級。Computed border3px；Console error／warning 0。離開實際存檔後轉about:blank。截圖保存在本聊天visualizations/esc-game-menu.png與esc-settings-modal.png；臨時預覽頁／服務及腳本完成後清理。
+- 未改但檢查：AI_RULES／AGENTS／AI_WORKFLOW、原設定與Esc關閉流程、tools/enamel-nav/export-source.cjs／tools/vfx/vfx-library-root.cjs、上述其餘12份既有測試及build工具、素材庫歷史母圖與匯出契約；未擴改技能／配置／其他副本。
+- 交付：遊戲Commit為本紀錄所在[Codex] feat提交，素材Commit a640431；無本次未完成項，可審查合併，未合併／推送。已知限制：一般瀏覽器可能禁止關閉非腳本開啟的分頁，因此備援為存檔成功後停止遊戲並轉空白頁（MDN Window.close）；未另跑全庫／真人存檔長時間驗收。下一步使用者整合後重新載入，按Esc驗收四個功能。
+
 ## DEVELOP-VORTEX-MERGE-20261014 — 合併漩渦拉扯修正與使用者NPC特效調整
 
 - Owner：Codex；Done。使用者快捷指令1授權解決develop既有合併，原HEAD c268df56、MERGE_HEAD aa81f68f（使用者「調整npc特效」）。前置為已提交兩側成果；單一開發者，完成交使用者重載驗收。
