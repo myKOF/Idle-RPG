@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## EQUIP-YELLOW-FRAME-FINAL-20261014 — 方角黃框再減薄1px並提交
+
+- Owner：Codex；Done，單一開發者。使用者要求再減1px後提交；前置3355307a，後續交使用者整合。
+- 允許css/ashen-forge.css黃框厚度、index.html僅CSS快取、tests/equipment-selection-border.test.cjs相應斷言及本紀錄；禁止JS／格位／比較功能／規則／Worker／存檔／素材及其他副本，不合併／推送。測試／CSS原無本副本修改；同副本ESC-GLOBAL-PAUSE進行中的JS／配置／紀錄保留，分段暫存共用index與本紀錄，只提交本次黃框。其他分支CSS／index仍為前輪已同意的同一批異區修改（Antigravity現已提交a05fc145），沿既有保留授權。
+- 內容／驗收：一般黃框3→2px，紙娃娃由calc(2.2cqw - 2px)改calc(2.2cqw - 3px)，保持方角及向外offset0；瀏覽器與相關測試、Build、diff後獨立Commit。純CSS，素材庫無變更。
+- 完成／修改4檔：上述CSS、index僅CSS快取1.0.71→1.0.72、既有黃框厚度斷言及本紀錄；其他進行中修改保留，分段暫存index／紀錄。唯讀檢查原黃框規則、選取測試及其他分支異區改動，未改JS／素材／格位／Worker／存檔。
+- 指令／結果：node --test tests/equipment-selection-border.test.cjs tests/equipment-slot-selection.test.cjs tests/equip-selection-outline-instant.test.cjs，17/17通過；npm.cmd run build，510檔通過；git diff --check通過。CUA瀏覽器隔離CSS預覽確認350／400／500／650px面板厚度由5／6／8／12px降為4／5／7／11px，全部減1px，圓角0、outline-offset0、Console錯誤／警告0；未讀真人存檔，臨時服務已停止。
+- 交付：Commit為本紀錄所在[Codex] fix提交，回覆附編號；沒有本次未完成項或已知新增風險，可供使用者合併，未合併／推送。限制：瀏覽器為正式CSS隔離預覽，未重跑完整遊戲；下一步整合後重載查看。素材庫無變更／不需Commit。
+
 ## EQUIP-YELLOW-FRAME-THINNER-20261014 — 方角黃框減薄2px
 
 - Owner：Codex；Done，單一開發者。使用者要求黃框減2px、保持方角，不再要求完全遮住黑框；前置91072cc1，後續交使用者整合。

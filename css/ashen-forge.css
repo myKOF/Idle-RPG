@@ -1066,7 +1066,7 @@ select option {
 
 #workspace-area .item-cell.selected,
 #workspace-area .eq-slot.selected {
-  outline: 3px solid #ffe354;
+  outline: 2px solid #ffe354;
   outline-offset: 0;
   border-radius: 0 !important;
   transition: none !important;
@@ -1074,7 +1074,7 @@ select option {
 
 /* 方角黃框向外畫，沿紙娃娃比例縮放後再減薄，允許露出部分背景黑框。 */
 #workspace-area #equip-grid .eq-slot.selected {
-  outline-width: calc(2.2cqw - 2px);
+  outline-width: calc(2.2cqw - 3px);
 }
 
 /* Hover updates must not rerasterize a filtered copy of the entire textured
