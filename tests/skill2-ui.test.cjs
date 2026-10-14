@@ -76,6 +76,28 @@ test('未投資的連線與失效超神不播放流光，斷開的投資區段�
   assert.equal(c.sgbPathGeometry([], null).track, '');
 });
 
+test('白光沿弧長由透明漸亮，亮頭位置及週期一致，等寬且不依賴外擴模糊', () => {
+  const c = loadContext();
+  const d = 'M 20.5 18 V 120 H 300 V 135';
+  const markup = c.sgbFlowMarkup(d);
+  const layers = Array.from(markup.matchAll(/--sgb-dash-start:(\d+)px;stroke-dasharray:(\d+) (\d+);stroke-opacity:([\d.]+)/g), m => ({
+    start: Number(m[1]), length: Number(m[2]), gap: Number(m[3]), alpha: Number(m[4])
+  }));
+  assert.equal(layers.length, 32);
+  assert.equal((markup.match(/d="M 20\.5 18 V 120 H 300 V 135"/g) || []).length, 32);
+  layers.forEach(layer => {
+    assert.equal(layer.length + layer.gap, 120);
+    assert.equal(layer.start, layer.length, '亮頭共用同一位置，不因長度不同漂移');
+  });
+  [1, 8, 16, 24, 32].forEach(count => {
+    const alpha = 1 - layers.slice(0, count).reduce((transmission, layer) => transmission * (1 - layer.alpha), 1);
+    assert.ok(Math.abs(alpha - count / 32) < .00001, '疊合後亮度應沿光尾均勻漸增，不能是平整白塊');
+  });
+  const style = theme.match(/\.sgb-path-flow\s*\{([^}]+)\}/)[1];
+  assert.match(style, /stroke-width:\s*var\(--sgb-path-width\)/);
+  assert.match(style, /filter:\s*none/);
+});
+
 test('進化描線將縮放及捲動還原成面板座標，未變的路徑保留動畫節點', () => {
   const c = loadContext();
   let writes = 0;

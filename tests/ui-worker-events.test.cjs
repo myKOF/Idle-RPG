@@ -221,6 +221,7 @@ test('Worker delayed lethal float animates a dead enemy bar from full to empty',
     isEnemyHitFloat: () => true,
     $id: () => layer,
     setTimeout: () => 0,
+    UI_GAME_TIMING: { setTimeout: () => 0 },
     INSTANT_KILL_HP_ANIMATION_MS: 100
   };
   vm.runInNewContext(functionBody('animatePendingEnemyKill'), context);

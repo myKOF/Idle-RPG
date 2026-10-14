@@ -540,6 +540,7 @@ select option {
 
 #equip-grid {
   position: relative;
+  container-type: inline-size;
   width: 100%;
   max-width: none;
   aspect-ratio: 1096 / 1440;
@@ -832,6 +833,14 @@ select option {
   position: static !important;
 }
 
+.it-head-actions .equipped-tag {
+  color: #4ade80;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  text-align: right;
+}
+
 .btn-it-lock {
   width: 20px;
   height: 20px;
@@ -1057,9 +1066,15 @@ select option {
 
 #workspace-area .item-cell.selected,
 #workspace-area .eq-slot.selected {
-  outline: 5px solid #ffe354;
-  outline-offset: 1px;
+  outline: 2px solid #ffe354;
+  outline-offset: 0;
+  border-radius: 0 !important;
   transition: none !important;
+}
+
+/* 方角黃框向外畫，沿紙娃娃比例縮放後再減薄，允許露出部分背景黑框。 */
+#workspace-area #equip-grid .eq-slot.selected {
+  outline-width: calc(2.2cqw - 3px);
 }
 
 /* Hover updates must not rerasterize a filtered copy of the entire textured
@@ -3179,6 +3194,7 @@ html *::-webkit-scrollbar-corner {
 }
 
 .sgb-path-ink {
+  --sgb-path-width: 3px;
   position: absolute;
   top: 0;
   left: 0;
@@ -3219,7 +3235,7 @@ html *::-webkit-scrollbar-corner {
 
 .sgb-path-core {
   stroke: #d67a5d;
-  stroke-width: 3px;
+  stroke-width: var(--sgb-path-width);
 }
 
 .sgb-path-shine {
@@ -3227,32 +3243,13 @@ html *::-webkit-scrollbar-corner {
   stroke-width: 1px;
 }
 
-.sgb-path-tail,
-.sgb-path-glow,
-.sgb-path-spark {
-  stroke: #fff3ce;
+.sgb-path-ink .sgb-path-flow {
+  stroke: #ffffff;
+  stroke-width: var(--sgb-path-width);
+  stroke-linecap: butt;
+  filter: none;
   animation: sgb-path-flow var(--sgb-flow-duration, 3200ms) linear infinite;
   animation-delay: var(--sgb-flow-delay, 0s);
-}
-
-.sgb-path-tail {
-  --sgb-dash-start: 9px;
-  stroke-width: 3px;
-  stroke-opacity: .22;
-  stroke-dasharray: 18 102;
-}
-
-.sgb-path-glow {
-  --sgb-dash-start: 4px;
-  stroke-width: 3px;
-  stroke-opacity: .5;
-  stroke-dasharray: 8 112;
-}
-
-.sgb-path-spark {
-  --sgb-dash-start: 1px;
-  stroke-width: 2px;
-  stroke-dasharray: 2 118;
 }
 
 @keyframes sgb-path-flow {
@@ -3261,9 +3258,7 @@ html *::-webkit-scrollbar-corner {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sgb-path-tail,
-  .sgb-path-glow,
-  .sgb-path-spark {
+  .sgb-path-flow {
     animation: none;
     visibility: hidden;
   }

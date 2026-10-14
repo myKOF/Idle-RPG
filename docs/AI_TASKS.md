@@ -1,5 +1,119 @@
 # AI_TASKS.md
 
+## MERGE-PREP-CLEANUP-20261014 — 整理全部未暫存變更供合併
+
+- Owner：Codex；Done，單一開發者。使用者要求清理unstaged準備合併，明確追加其他來源修改也一起commit；保留現有內容，未合併／推送。原6筆為4檔實質資料變更與Skills2／Status兩檔僅換行格式差異，後者透過Git正常暫存消除狀態，不建立無內容提交。
+- 允許現有config/CSV/Equipment_Affix.csv、Talents.csv、game_parameters.csv、Skills2.csv、Status.csv、js/data.js及必要快取index／bridge／worker與本紀錄；不擅自套用參數／更改玩法／修改正在製作中的診斷工具。預檢index／sim.worker有Claude新增dd475a0b、32438c21、fc4f0220的data／formula載入版本變更，使用者已同意只更新必要快取並提交；bridge及本紀錄預檢無其他副本來源。等待同副本離線診斷工具完成42e205ee後再改紀錄與提交，避免混入進行中工作。
+- 完成：原樣保存耐力名稱／天賦敘述、all_lock負重上限詞條及評分權重、參數表數值與負重相關描述；沒有將CSV草稿額外套用到公式。主端data1.0.72→73、bridge1.0.272→273，Worker data及WORKER_ASSET_VERSION改20261014-merge-prep-data；formula等其他字串保持。本紀錄同步。實際提交8檔；未修改但檢查Skills2／Status換行、apply_params工具、既有詞條／天賦及Worker測試、另一聊天診斷任務完成狀態。
+- 驗證：node --test tests/all-lock-affix.test.cjs tests/talents.test.cjs tests/affix-roll-storage.test.cjs tests/game-menu-pause.test.cjs tests/worker-protocol.test.cjs，56/56通過；npm.cmd run build，512檔通過；node --check js/data.js、js/bridge.js、js/worker/sim.worker.js均通過；git diff --check通過。只有版本字串新增修改，沒有新增鏡像測試。
+- 已知待整合：node tools/apply_params.cjs唯讀試跑失敗，CSV缺少2-屬性派生／生命恢復/秒（現有第70列改為負重上限），工具仍按原名稱取列。此批提交是保存使用者／他人既有草稿並清理Git，不宣稱參數已成功套用；合併整合時需處理這個資料／工具不一致。未變更錨點或修改最高權威數值以消除錯誤，未擅自改工具／公式。
+- 交付：Commit為本紀錄所在[Codex] chore提交，回覆附編號；完成後確認git status --short為空，無staged／unstaged／untracked產物。無新素材或素材庫變更，不需素材庫Commit。可開始Git合併，參數功能驗收仍受上述待整合問題限制；本次清理無未完成項，未合併／推送。下一步由使用者整合分支及處理參數套用問題。
+
+## OFFLINE-SAVE-DIAG-20261014 — 排查離開遊戲後未顯示離線摘要
+
+- Owner：Codex；診斷工具Done，原Bug仍待實際瀏覽器快取確認，單一開發者。使用者回報同一 http://127.0.0.1:8123/ 離開十分鐘後無離線摘要，非安全模式，並提供 Saves_new 自動檔；該檔資料／磁碟時間皆為10月8日19:57，可能與本次瀏覽器快取不同。
+- 已確認：正式Worker及隔離瀏覽器以該角色副本離線600秒可結算並顯示摘要，Console error／warning 0；原始時間亦可結算24小時上限。未修改原存檔或8123瀏覽器資料，尚未確認原回報根因。
+- 允許新增tools/offline-save-diagnostic.html及本紀錄，預檢乾淨；禁止改玩法／Worker／Protocol／存檔格式／原檔／其他副本與已有CSV、data修改，不合併／推送。
+- 內容／驗收：提供同源唯讀IndexedDB自動存檔檢查與下載，顯示時間／角色／來源，支援gzip與純JSON，不啟動遊戲、不開資料夾、不寫DB／localStorage、不建立空資料庫；瀏覽器驗證成功／缺快取、JSON下載一致、Console與Build、diff檢查。前置為既有ic_fs_kv／kv／ic_auto_cache_v2，後續需使用者提供實際瀏覽器快取再續查；本次是診斷工具，不宣稱Bug已修復。無素材／素材庫變更。
+- 使用者追問數日未存檔與資料夾位置：唯讀核對三個資料夾，Saves_new的8123自動檔為10/8，Saves的5500為9/10，Save_test的5002為8/13；無其他8123自動檔。程式autoNow／shutdown只落IndexedDB，folder為獨立十分鐘同步，可能造成實體檔落後；不能據此宣稱瀏覽器未存檔或確認目前仍連Saves_new。診斷頁追加讀取saveDir及queryPermission，顯示資料夾名稱／權限；不請求新授權，網頁API無法給絕對路徑。
+- 使用者實際8123檢查結果：10/14 20:29:30回報瀏覽器未記錄資料夾；快取savedAt=1791980968566（20:29:28，僅2秒前），角色607級、Icefield current233／best249、runId1。確認瀏覽器快取仍在更新，並非數日完全未保存；實體檔不更新因目前未連資料夾。提供的703級沼澤舊檔與實際角色不同；下一步需下載診斷頁的當前快取作離線問題重現。尚未重新連資料夾、還原舊檔或修改真人快取。
+- 驗證：正式Worker以提供存檔副本離線600秒及原始時間上限86400秒均送出離線摘要；隔離localhost正式遊戲顯示Lv.280沼澤60殺、經驗約827B／金幣13.8M，Console error／warning 0。診斷頁驗gzip快取、純JSON、缺快取提示與下載停用，兩次下載SHA相同且savedAt保持不變；原檔副本下載JSON亦與解壓原檔一致。inline script以vm.Script語法檢查通過，npm.cmd run build 512檔通過，node --test tests/save-folder-timestamps.test.cjs tests/save-compression.test.cjs tests/game-menu-save.test.cjs 18/18通過，git diff --check通過。未新增鏡像測試／修改遊戲JS，不需快取版本變動。
+- 唯讀檢查：原始自動存檔及三個資料夾、save／storage／bridge／main／ui／Worker與GameClock、既有離線與存檔測試／Build工具。修改僅診斷HTML與本紀錄；原CSV與data未提交修改保留且不納入。臨時隔離服務、複製下載與腳本清理，截圖在聊天visualizations/offline-save-diagnostic.png；原始存檔不變。
+- 交付：Commit為本紀錄所在[Codex] chore提交，回覆附編號；診斷工具可Review／合併，未合併／推送，無素材庫Commit。原離線彈窗Bug未解決，尚缺實際遊戲瀏覽器快取檔；真人狀態依使用者貼回結果確認，未直接讀取或改寫真人瀏覽器資料。下一步由使用者下載當前快取備份並提供，再續查；如需資料夾同步，可選擇／更新Saves_new後另存當前進度，不應載入703級舊檔。
+
+## EQUIP-YELLOW-FRAME-FINAL-20261014 — 方角黃框再減薄1px並提交
+
+- Owner：Codex；Done，單一開發者。使用者要求再減1px後提交；前置3355307a，後續交使用者整合。
+- 允許css/ashen-forge.css黃框厚度、index.html僅CSS快取、tests/equipment-selection-border.test.cjs相應斷言及本紀錄；禁止JS／格位／比較功能／規則／Worker／存檔／素材及其他副本，不合併／推送。測試／CSS原無本副本修改；同副本ESC-GLOBAL-PAUSE進行中的JS／配置／紀錄保留，分段暫存共用index與本紀錄，只提交本次黃框。其他分支CSS／index仍為前輪已同意的同一批異區修改（Antigravity現已提交a05fc145），沿既有保留授權。
+- 內容／驗收：一般黃框3→2px，紙娃娃由calc(2.2cqw - 2px)改calc(2.2cqw - 3px)，保持方角及向外offset0；瀏覽器與相關測試、Build、diff後獨立Commit。純CSS，素材庫無變更。
+- 完成／修改4檔：上述CSS、index僅CSS快取1.0.71→1.0.72、既有黃框厚度斷言及本紀錄；其他進行中修改保留，分段暫存index／紀錄。唯讀檢查原黃框規則、選取測試及其他分支異區改動，未改JS／素材／格位／Worker／存檔。
+- 指令／結果：node --test tests/equipment-selection-border.test.cjs tests/equipment-slot-selection.test.cjs tests/equip-selection-outline-instant.test.cjs，17/17通過；npm.cmd run build，510檔通過；git diff --check通過。CUA瀏覽器隔離CSS預覽確認350／400／500／650px面板厚度由5／6／8／12px降為4／5／7／11px，全部減1px，圓角0、outline-offset0、Console錯誤／警告0；未讀真人存檔，臨時服務已停止。
+- 交付：Commit為本紀錄所在[Codex] fix提交，回覆附編號；沒有本次未完成項或已知新增風險，可供使用者合併，未合併／推送。限制：瀏覽器為正式CSS隔離預覽，未重跑完整遊戲；下一步整合後重載查看。素材庫無變更／不需Commit。
+
+## ESC-GLOBAL-PAUSE-20261014 — Esc菜單暫停全遊戲與移除預設焦點黃框
+
+- Owner：Codex；Done。使用者追加Esc菜單開啟時戰鬥／BOSS／神鑄與其他背景工作全面暫停，關閉後原地續行、不補菜單時間；重啟不預設黃框，鍵盤Tab仍有焦點指示。單一開發者，前置裝備記憶b3d5527a已完成，後續交使用者整合。
+- 允許新js/game-clock.js、game-menu／bridge／ui／battle-renderer／vfx／vfx-tower、worker protocol／sim.worker、dialogs.css、index必要快取與載入、本紀錄／WORKER_PROTOCOL、game-menu／clock／pause／protocol及冷卻重繪／UI事件／診斷相關測試。除sim.worker與Claude33853a16只改data／formula載入版本外預檢乾淨，使用者已同意保留載入版本分段修改；index同檔分段亦已同意。禁止改玩法／數值／存檔格式／Preset／其他副本，不合併／推送。
+- 驗收：權威Worker整體停止模擬、保留原戰鬥暫停設定、暫停時間不進catchup、神鑄牆鐘不跳完成；離線chunk／已排背景指令／表現時間與計時器／Pixi與CSS動畫暫停且可續行，手動存檔仍可用。關閉與設定返回／重複Esc、長暫停／背景／儲存與重啟、正式Worker和瀏覽器／回歸／Build／diff，完成後提交。
+
+- 完成20檔：新game-clock.js統一可暫停時間／timeout／interval／RAF、Pixi ticker與DOM動畫；canvas保留一幀避免停止WebGL後黑屏，恢復釋放快照，不持續渲染。game-menu.js改預設焦點到標題，設定返回不恢復，關閉後恢復；重啟先保存暫停快照再刷新。bridge.js維持menuPaused跨Worker重啟；sim.worker.js整體loop及決定論迴圈停止、背景遊戲指令排隊、神鑄startedAt排除暫停時間、暫停存檔亦保留剩餘時間，PING／存檔I/O仍正常；protocol.js及WORKER_PROTOCOL升v52，仍94指令，未改存檔格式。ui.js／vfx.js／battle-renderer.js／vfx-tower.js使用遊戲時鐘，包含冷卻／高塔結算倒數／延遲特效／飄字／裝備閃光，FPS不誤報暫停；dialogs.css暫停遊戲CSS動畫。index只載入GameClock與必要快取，不改其他AI段落。本紀錄、2個新測試及5個既有測試同步新計時依賴與預期，冷卻節流功能斷言保留。
+- 測試指令：node --test tests/game-clock.test.cjs tests/game-menu-pause.test.cjs tests/game-menu.test.cjs tests/game-menu-save.test.cjs tests/worker-protocol.test.cjs tests/worker-catchup-silent.test.cjs tests/catchup-write-throttle.test.cjs tests/sim-harness-sync.test.cjs tests/esc-shortcut.test.cjs tests/init-ui-smoke.test.cjs tests/equipment-selection-memory.test.cjs tests/equipment-slot-selection.test.cjs tests/ui-worker-events.test.cjs tests/tower-auto-result.test.cjs tests/cooldown-repaint.test.cjs tests/vfx-tower.test.cjs tests/enemy-attack-vfx-lifecycle.test.cjs tests/lightning-vfx-lifecycle.test.cjs tests/ui-clock.test.cjs tests/ui-stall-diag.test.cjs；145/145通過。npm.cmd run build，512檔通過；git diff --check通過。新測試驗證實際BOSS狀態／G／GT／SIM_T、待拆熔爐與神鑄、暫停120秒／1小時、保留欠帳／原戰鬥暫停、指令排隊、儲存剩餘時間、分批timeout不偷跑、BOOT暫停與畫布快照生命週期。
+- 瀏覽器：computer-use／CUA，隔離localhost:13740正式UI／Worker與測試存檔；標題焦點、重啟outline:none，長暫停期間生命／經驗／關卡／資源／FPS不變，前後整張截圖位元組完全相同（逐像素亦相同），戰場保持原畫面無黑屏；設定返回仍暫停、立即存檔顯示成功、重啟後同一關卡／經驗／資源續玩，關閉暫停後戰鬥續行。Console error／warning 0；未讀真人存檔。交付截圖esc-global-pause.png在本聊天visualizations，臨時服務／頁面／驗證日誌／基線腳本清理。
+- 唯讀檢查：main.js的UI週期、save.js離線chunks與儲存、forge／factory／newforge／tower／player計時來源、Pixi渲染與既有VFX生命週期、他AI的CSV／data與異區版本。另跑skill-cooldown-display.test.cjs為9項7通過／2既有失敗（天霸風神斬total=4而測試預期3、7.6而預期7.5）；以fs唯讀攔截換回HEAD原ui／worker／protocol後重跑，同樣兩項失敗且數值相同，未改技能數值或相關斷言。沒有新美術／外部素材，素材庫無本次變更／不需Commit。
+- 交付：遊戲Commit為本紀錄所在[Codex] fix提交，回覆附編號；裝備記憶前置提交b3d5527a（其index UI快取先隨共享副本3355307a提交）。本任務無未完成項，可供Review與使用者合併，未合併／推送；另有使用者／其他聊天的CSV與data未提交修改，完整保留且未納入本提交。限制：未跑全庫／真人長戰；暫停僅遊戲進度與演出，儲存與連線健康檢查保持可用。下一步由使用者整合後重載驗收，已知既有技能冷卻數值測試差異交其原任務處理。
+
+## EQUIP-YELLOW-FRAME-THINNER-20261014 — 方角黃框減薄2px
+
+- Owner：Codex；Done，單一開發者。使用者要求黃框減2px、保持方角，不再要求完全遮住黑框；前置91072cc1，後續交使用者整合。
+- 允許css/ashen-forge.css黃框厚度、index.html僅CSS快取、tests/equipment-selection-border.test.cjs新厚度斷言及本紀錄；禁止JS／格位尺寸／比較功能／素材／規則／Worker／存檔及其他副本，不合併／推送。測試／紀錄預檢乾淨；CSS與index仍為先前同一批其他AI異區工作，沿使用者明確同意的分段保留授權。
+- 內容／驗收：紙娃娃厚度由2.2cqw改calc(2.2cqw - 2px)，一般黃框5→3px，保持向外outline-offset:0及0圓角；實際瀏覽器核對不同面板均減2px、既有UI回歸、Build及diff後Commit。純CSS，無素材變更。
+- 完成／修改4檔：CSS按上述方式減薄，方角與向外方向保留；index僅CSS1.0.70→1.0.71，既有選取測試改驗新厚度及方角，本紀錄同步。比較功能、格位與其他AI工作不變。
+- 指令／結果：node --test tests/equipment-selection-border.test.cjs tests/equipment-slot-selection.test.cjs tests/equip-selection-outline-instant.test.cjs，17/17通過；npm.cmd run build 508檔通過；git diff --check通過。沒有新增鏡像測試或放寬功能斷言。
+- 瀏覽器：computer-use／CUA，隔離localhost正式CSS／紙娃娃背景，與HEAD原CSS並排核對；350／400／500／650px面板的黃框分別7→5、8→6、10→8、14→12px，全部精確減2px且0圓角／offset0。並排預覽iframe曾出現MutationObserver觀察器錯誤（頁面未載入遊戲JS）；另開獨立單頁確認6px方角且Console error／warning 0。截圖在本聊天visualizations/equip-yellow-frame-thinner.png；臨時服務／頁面／腳本已清理，未讀真人存檔。
+- 唯讀檢查：原黃框規則與紙娃娃背景、其他副本預檢、選取相關測試／Build，未改JS／素材／Worker／規則／存檔。素材庫無本次變更／無需Commit。遊戲Commit為本紀錄所在[Codex] fix提交，回覆附編號；無本次未完成項或已知新增產品風險，可供合併，未合併／推送。限制：未做真人長戰或全庫測試；下一步整合後重載查看較細的方角黃框。
+
+## EQUIP-SELECTION-MEMORY-20261014 — 記住裝備詳情選取部位
+
+- Owner：Codex；Done。使用者要求刷新恢復最後選取部位（含自行取消），首次只自動選第一件穿上的裝備；本來源localStorage記UI偏好，slot追蹤身上裝備，ID追蹤背包，沒有紀錄才自選一次。單一開發者，前置既有選取UI，完成交使用者整合。
+- 允許js/ui.js、index.html的ui快取、本紀錄、tests/equipment-selection-memory.test.cjs及equipment-slot-selection.test.cjs；禁止Worker／Protocol／存檔格式／規則／素材／其他副本修改，不合併／推送。JS與測試預檢乾淨；index與Antigravity CSS快取／Claude33853a16的data及formula快取同檔異區，使用者已同意保留分段處理。已等待同副本EQUIP-OUTER-YELLOW-FRAME完成提交後才動手。
+- 驗收：刷新／取消／首件延遲穿上、換裝／換套／空部位／雙手副格、錯誤偏好與儲存不可用；既有選取回歸、瀏覽器、Build與diff後Commit。
+- 完成5檔：ui.js加入idle-rpg.equipmentSelection.v1偏好，記住選取／明確null，等待有效裝備面板才還原，沒有決定時首次有穿裝自選一次；findSelItem由slot解析最新裝備而非舊ID，空部位／雙手副格／預覽套仍保留slot，穿上與卸下也留在該部位，批次拆解不清除身上選取。index只改ui1.0.158→159；新增equipment-selection-memory測試，更新既有「穿上後清空」斷言為新需求「保留目標部位」，及本紀錄。
+- 驗證指令：node --test tests/equipment-selection-memory.test.cjs tests/equipment-slot-selection.test.cjs tests/equipment-detail-layout.test.cjs tests/equip-selection-outline-instant.test.cjs tests/init-ui-smoke.test.cjs，23/23通過（新增8項）；npm.cmd run build通過。隔離localhost:13740正式Worker／UI，新角色第一件腰帶自選、改點項鍊後刷新仍選amulet、自行取消後刷新selected數0、Console error／warning 0；未讀真人存檔，截圖equipment-selection-memory.png在本聊天visualizations。無新素材／素材庫變更。
+- 未改但檢查：裝備快照／雙手與套裝投影、Worker權威與存檔、既有選取框與其他AI同檔差異；無本次未完成項，可審查合併，不合併／推送。已知限制：偏好屬目前瀏覽器來源，清除網站儲存或換裝置不攜帶；未跑全庫／真人長戰，選取被拆解的背包物件需另選。遊戲Commit為本紀錄所在fix提交，下一步整合重載驗收；後續Esc全暫停為另一任務繼續處理。
+
+## EQUIP-OUTER-YELLOW-FRAME-20261014 — 黃框向外覆蓋紙娃娃黑框
+
+- Owner：Codex；Done，單一開發者。使用者澄清黃框應向外長並完全遮住背景圖外側黑框，修正前輪向內覆蓋品質框的誤解；前置d9950995，後續交使用者整合。
+- 允許css/ashen-forge.css紙娃娃容器與黃框、index.html僅CSS快取、tests/equipment-selection-border.test.cjs對新需求的斷言及本紀錄；禁止JS／比較標籤與來源／技能／裝備規則／素材／Worker／存檔及其他副本，不合併／推送。測試／紀錄預檢乾淨；CSS仍為Antigravity的afx-label移除、index為其舊CSS快取1.0.66及Claude33853a16的data／formula版本，沿使用者前輪已明確同意的同檔分段保留授權。
+- 內容／驗收：方角框改從原格外緣向外畫，不留outline-offset空隙；紙娃娃黃框厚度依容器寬度等比，蓋住PNG黑框，格位／內容尺寸不變。檢查戒指／副手與13格、不同面板寬度、瀏覽器／Console、相關回歸、Build與diff後Commit。純CSS，無素材變更。
+- 完成／修改4檔：CSS黃框outline-offset由-5px改0，自原格外緣向外畫；保持0圓角，紙娃娃格使用2.2cqw厚度覆蓋背景PNG金屬黑框，equip-grid設inline-size容器以隨背景同比例縮放；背包黃框亦由內畫改外畫，未改格位／內容／尺寸。index只CSS1.0.69→1.0.70，選取框測試同步改驗使用者澄清的外向要求，本紀錄同步。上一輪比較標籤與範圍保持，不動其他AI段落。
+- 指令／結果：node --test tests/equipment-selection-border.test.cjs tests/equipment-slot-selection.test.cjs tests/equip-selection-outline-instant.test.cjs tests/equipment-tooltip-compare.test.cjs tests/sidebar-layout.test.cjs tests/ui-fixed-canvas.test.cjs，31/31通過；npm.cmd run build 508檔通過；git diff --check通過。
+- 瀏覽器：computer-use／CUA，隔離localhost，正式renderEquip產生13部位與原紙娃娃PNG。13格逐一點選皆0圓角／offset0，選取前後全部格子的寬高完全相同；戒指51.34375×46.3125px亦未改。350／500／650px面板的實際格容器348／498／648px，黃框實際7／10／14px（瀏覽器像素取整），目視戒指／副手向外覆蓋整圈黑框且內側品質框保留。Console error／warning 0；預覽在本聊天visualizations/equip-outer-yellow-frame.png，臨時頁面／服務／腳本已清理。未操作真人存檔。
+- 唯讀檢查：character_UI.png、13格CSS比例及原校正紀錄、其他副本CSS／index差異、js/ui.js renderEquip與上述未改測試／Build；未改JS／比較功能／裝備規則／存檔／Worker或素材。純CSS，素材庫無變更／無需Commit。
+- 交付：Commit為本紀錄所在[Codex] fix提交，回覆列編號；無本次未完成項或已知新增風險，可供合併，未合併／推送。限制：未做真人長戰／全庫回歸，覆蓋比例依目前紙娃娃背景製作。下一步整合後重載驗收外側黃框，保留其他AI同檔修改。
+
+## EQUIP-SELECTION-COMPARE-20261014 — 方角選取框與裝備比較範圍
+
+- Owner：Codex；Done，單一開發者。使用者要求黃框方角覆蓋裝備框、比較標籤改「現有」靠右、身上兩戒指不互相比較，只比較背包與已穿裝備；前置既有裝備UI已完成，後續交使用者整合。
+- 允許css/ashen-forge.css選取框與標籤、js/ui.js tooltip比較來源、js/item.js純標頭、index.html上述快取、tests/equipment-selection-border.test.cjs／tests/item-detail-html.test.cjs／新tests/equipment-tooltip-compare.test.cjs及本紀錄；禁止改裝備規則／數值／Worker／存檔／素材及其他副本，不合併／推送。JS／測試／紀錄預檢乾淨；CSS與Antigravity未提交的afx-label固定色移除、index與Claude33853a16的data／formula版本同檔異區，使用者已同意分段修改並保留其他工作。本副本原乾淨，不修改其他副本。
+- 驗收：黃框0圓角且覆蓋原邊框、不改格子尺寸；長名稱／強化與「現有」／鎖鈕不重疊；兩枚已穿戒指各單卡、背包戒指／一般部位／雙手武器仍與原目標部位比較，關閉比較維持單卡；相關回歸、正式HTML與瀏覽器／Console、Build、diff後Commit。純UI，無素材變更。
+- 完成／修改8檔：ashen-forge.css黃框保留5px厚度，outline-offset改-5px、border-radius:0，使黃框向內完全遮住原品質邊框且不改格尺寸；「現有」使用右側it-head-actions的正常flex排版、緊鄰鎖鈕左側，取消原right:52px絕對標籤。item.js僅改純HTML標頭，不改物品／模擬；ui.js比較只允許data-src為inv或forgeinv，身上equip／法陣槽不比較，仍沿原目標欄位及相同ID排除。主頁CSS1.0.69／item1.0.21／ui1.0.158，本紀錄同步；未動Claude的data／formula版本或Antigravity的afx-label段落。
+- 測試指令／結果：node --test tests/equipment-tooltip-compare.test.cjs tests/equipment-selection-border.test.cjs tests/item-detail-html.test.cjs tests/equipment-slot-selection.test.cjs tests/equipment-detail-layout.test.cjs tests/equip-selection-outline-instant.test.cjs tests/ui-worker-panels.test.cjs tests/init-ui-smoke.test.cjs，共49項47通過／2既有失敗。本次新增6項全部通過：方角／覆蓋不改尺寸、短標籤位置、身上戒指／其他裝備單卡、背包戒指兩槽／胸甲／武器比較、forgeinv與法陣來源、停比較／空槽／相同ID。
+- 基線：唯讀攔截ui.js載入HEAD原檔，node --test --test-reporter=tap --require臨時baseline.cjs tests/ui-worker-panels.test.cjs，與當前同為8項6通過／2失敗、失敗名稱差集0；分別為既有gem.socket接線字串斷言及detailAction測試替身缺UI，未改相關測試或放寬斷言。npm.cmd run build 508檔通過，git diff --check通過。
+- 瀏覽器：computer-use／CUA，隔離localhost，正式renderEquip／itemDetailHTML產生紙娃娃及提示HTML，正式showItemTooltip函式、拋棄式裝備快照。身上戒指一／二／副手均1張卡，背包戒指2張，關閉比較後1張；黃色框ComputedStyle 0px圓角／5px solid／-5px offset，目視原橘框被覆蓋。標籤文字僅「現有」、position:static，右側控制區50.45px小於標題保留56px，標籤右距26px（鎖鈕20＋間距6），無遮字；Console error／warning 0。截圖在本聊天visualizations/equip-square-selection.png、equip-current-label.png；臨時頁面／服務／腳本及基線日誌清理。
+- 唯讀檢查：AI規範、其他副本／Claude差異、style.css／ashen-forge-flat.css、既有選取與目標欄位、Worker item import及上述未改測試／Build；未改Worker／Protocol／存檔／規則／數值。本次item.js僅主端純HTML標頭更新，主端快取同步，無模擬變更。沒有外部或新美術素材，素材庫無變更／無需Commit。
+- 交付：遊戲Commit為本紀錄所在[Codex] fix提交，回覆附編號；無本次未完成項，可供審查合併，未合併／推送。已知限制／風險為上述2項既有測試失敗、未操作真人存檔長戰或真Worker完整背包；瀏覽器採正式函式與拋棄式投影。下一步整合時保留其他AI同檔修改，重載遊戲驗收三項調整。
+
+## SKILL-FLOW-GRADIENT-20261014 — 沿路徑漸淡的白色流光
+
+- Owner：Codex；Done，單一開發者。使用者要求將平整白光改成漸層白光；前置8661e6d6等寬流光已完成，後續交使用者整合。
+- 允許css/ashen-forge.css流光樣式、js/ui.js流光裝飾產生、tests/skill2-ui.test.cjs必要回歸、index.html上述快取及本紀錄；禁止技能規則／數值／幾何／Worker／Protocol／存檔／獨立素材及其他副本，不合併／推送。五檔預檢乾淨、工作區乾淨。
+- 方式／驗收：沿原路徑以逐像素透明度疊合白光，亮頭向後平滑漸淡，漸層共用3px線寬且不加外暈；原速度、120px週期、連續轉角與減少動態保留。驗漸層透明度／週期／路徑、瀏覽器及Console、回歸、Build、diff後Commit；純SVG／CSS，素材庫無變更。
+- 完成／修改5檔：ui.js以sgbFlowMarkup取代原三段固定透明度的白／金光，沿同一路徑以32層不同長度的白色dash疊合，從光尾到亮頭的合成透明度逐像素線性遞增；全部亮頭對齊，不會因長度不同分離，弧長及轉角共用原速度。CSS共用3px、filter:none，光段butt端點避免圓端蓋疊成平整白塊，減少動態時隱藏新流光類。主頁CSS1.0.68／ui.js1.0.157，本紀錄同步；技能幾何／規則不變。
+- 測試指令／結果：node --test tests/skill2-ui.test.cjs tests/boss-skill-lock.test.cjs，36/36通過；新增1項驗各層共用120px週期及亮頭、同一路徑、透明度在1／8／16／24／32層時依序為1／32、1／4、1／2、3／4、1，釘住漸層而非均勻白塊，並驗等寬無外暈。npm.cmd run build 507檔通過，git diff --check通過。
+- 瀏覽器：computer-use／CUA，隔離localhost正式大地守護／光耀之堂HTML與原描線函式，目視漸層白光、完整直線與轉角；32層ComputedStyle均3px、filter:none、linear，最長層alpha.03125、最短層alpha1，端點butt且無橫向溢出，Console error／warning 0。預覽在本聊天visualizations/skills-gradient-flow.png；未讀真人存檔，臨時頁面／服務／腳本已清理。
+- 唯讀檢查：原sgbPathGeometry／排程與相位、BOSS測試、既有主題、Build工具及AI規範；未改Worker／存檔／素材／Protocol。自製SVG／CSS，無獨立素材或Preset，素材庫無本次變更／無需Commit。遊戲Commit為本紀錄所在[Codex] fix提交，回覆附編號；無本次未完成項，可審查合併，未合併／推送。限制／風險：流光由3層改32層以維持沿弧長且不擴線寬，未做低階裝置／真人長戰效能壓測或全庫測試；動畫仍由CSS執行，沒有新增逐幀JS。下一步整合後重載技能頁驗收漸層。
+
+## SKILL-FLOW-WIDTH-20261014 — 流光與進化線條等寬
+
+- Owner：Codex；Done，單一開發者。使用者指出增亮後流光超出線段寬度，要求等寬；前置0c0f23a2，後續交使用者整合。
+- 允許css/ashen-forge.css流光及線芯共用寬度、index.html僅CSS快取及本紀錄；禁止JS／幾何／技能規則／Worker／存檔／素材及其他副本，不合併／推送。三檔預檢乾淨、工作區乾淨。
+- 內容／驗收：流光三層與正常線芯共用3px寬度，移除向外擴張的drop-shadow；保留白色亮芯、金色光尾、既有長度／速度及連續轉角。瀏覽器核對實際寬度／filter及目視、相關回歸、Build、diff後Commit；純CSS，素材庫無變更。
+- 完成／修改3檔：CSS在sgb-path-ink定義共用--sgb-path-width:3px，靜態core及tail／glow／spark都使用該值，移除原5px／4px個別寬度及三層drop-shadow；保留白金高光、光尾長度與透明度、120px週期及線性動畫。主頁僅CSS1.0.66→1.0.67；本紀錄同步。
+- 指令／結果：node --test tests/skill2-ui.test.cjs tests/boss-skill-lock.test.cjs，35/35通過；npm.cmd run build，507檔通過；git diff --check通過。無新增鏡像測試或改舊斷言。
+- 瀏覽器：computer-use／CUA，隔離localhost正式大地守護／光耀之堂HTML與原描線函式；ComputedStyle確認正常線芯及三層流光皆3px／filter:none，動畫linear、dash長度不變，轉角閉合，Console error／warning 0。預覽在本聊天visualizations/skills-same-width-flow.png；未讀真人存檔，臨時頁面／服務／腳本已清理。
+- 唯讀檢查：js/ui.js描線／動畫相位、上述兩份測試、既有主題與Build工具，未修改；無獨立素材／Preset，素材庫無本次變更／無需Commit。遊戲Commit為本紀錄所在[Codex] fix提交，回覆附編號；無本次未完成項或已知新增風險，可合併，未合併／推送。限制：未做真人長戰／全庫測試；下一步整合後重載技能頁驗收等寬高光。
+
+## SKILL-FLOW-BRIGHTNESS-20261014 — 加強進化路徑流光
+
+- Owner：Codex；Done，單一開發者。使用者指出流光太微弱，要求更明顯；前置586a8c59連續路徑已完成，後續交使用者整合。
+- 允許css/ashen-forge.css流光三層樣式、index.html僅CSS快取及本紀錄；禁止JS／幾何／技能規則／Worker／存檔／獨立素材／其他副本，不合併／推送。三檔預檢乾淨，工作區乾淨。
+- 內容／驗收：提高亮芯亮度與長度、暖金光暈及光尾，使流光更醒目；同一120px週期與等速路徑不變，減少動態規則沿用。實際瀏覽器目視與Console、相關UI回歸、Build及diff check後Commit。自製CSS，素材庫無變更。
+- 完成／修改3檔：CSS光尾18→32px、寬3→5px、透明度.22→.42，加橘金3px外暈；中層8→14px、寬3→4px、透明度.5→.9，加暖金4px外暈；亮芯2→6px、寬2→3px、近白高光與2px外暈。各層仍以半段長對齊光點中心、dash總週期120px，沿用同一線性動畫／連續路徑／減少動態規則，未調速度或JS。index.html僅ashen-forge.css1.0.65→1.0.66，本紀錄同步。
+- 測試指令／結果：node --test tests/skill2-ui.test.cjs tests/boss-skill-lock.test.cjs，35/35通過；npm.cmd run build 507檔通過；git diff --check通過。沒有新增鏡像測試或修改斷言。
+- 瀏覽器：computer-use／CUA，隔離localhost正式sgb HTML及原描線函式；目視確認暖金光點／光尾／外暈明顯且轉角閉合，ComputedStyle三層均套用新亮度與dash、動畫linear，Console error／warning 0。未讀真人存檔，未重新跑整套真人遊戲長戰；預覽圖在本聊天visualizations/skills-brighter-flow.png，臨時服務／頁面／腳本已清理。
+- 唯讀檢查：js/ui.js連續路徑與動畫相位、上述UI／BOSS測試、既有主題及Build工具，均未修改；截圖只參考亮度不足問題，外觀為自製CSS，無獨立素材／Preset／素材庫Commit。遊戲Commit為本紀錄所在[Codex] fix提交，回覆附編號；無本次未完成項或已知新增風險，可供合併，未合併／推送。限制為未做低階裝置長時間GPU效能驗收；下一步整合後重載技能頁確認亮度。
+
 ## SKILL-PATH-CONTINUITY-20261014 — 進化連線閉合與連續流光
 
 - Owner：Codex；Done，單一開發者。使用者指出直線段／轉角／分支有接縫，並要求流光絲滑移動；前置67f294ec已完成，後續交使用者整合。
@@ -10042,3 +10156,10 @@ Worker 存活且頁面正常完成載入。
 - 其他檢查：npm.cmd run build 504檔通過；PowerShell兩支Parser檢查、BAT ASCII與CRLF、git diff --check均通過。早期既有結構測試把重同步素材判斷誤認為原終局判斷，改用清楚區分的postConflictAssetResult；素材測試git status被fixture trim去掉前導空格，改查實際unstaged／staged路徑，未放寬產品行為。
 - 唯讀檢查：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、.gitattributes、既有sync／merge-ai-tasks測試、VFX素材庫解析器、本機CLI help／登入與官方文件；未改遊戲JS／Excel／CSV／Preset／存檔／Protocol。
 - 交付：Commit為本紀錄所在[Codex] feat提交，位於ai/codex；未直接執行正式同步、合併或推送develop。無本次實作待辦，可審查合併。已知限制：需要可用CLI登入／連線／額度及原生工具；意圖不明／必要測試失敗／Excel鎖定／sandbox拒絕會保留停止，並非保證任何設計衝突都能無人決策；未做正式倉庫真遠端推送驗收。下一步使用者從codex目錄執行新版BAT，既有流程會將此工具變更整合與回同步。
+## SYNC-AUTO-CONFLICTS-20261014 — develop pending merge resolution
+
+- Owner: Codex; status: Done.
+- Merge: preserved the game-clock/menu-pause work from `642a72c1` together with the combo-hit, affix-growth, and attribute-rebalance work already integrated at `a9229e85`.
+- Data authority: reopened/exported `config/Excel/game_parameters.xlsx` and `config/Excel/Equipment_Affix.xlsx` through the supported tools; regenerated `config/CSV/game_parameters.csv` and `config/CSV/Equipment_Affix.csv`, and verified `js/data.js` is semantically consistent with the Equipment_Affix export.
+- Cache resolution: assigned new combined cache keys for `css/ashen-forge.css`, `js/data.js`, and the Worker asset/import set; synchronized `index.html`, `js/bridge.js`, and `js/worker/sim.worker.js`.
+- Validation: conflict-marker scan, JavaScript syntax checks, relevant Node regression tests, full build, and `git diff --check` completed for the pending merge. No asset-library files were required.

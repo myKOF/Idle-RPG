@@ -298,3 +298,11 @@ test('SD-HIT 命中次數顯示到小數一位；取不到時不顯示', () => {
   const d = makeContext({ status: { hitRate: undefined } });
   assert.equal(d.context.uiHitRateText(), '');
 });
+
+test('Esc主動暫停不誤報uiTick停止、Worker靜默或存檔落後',()=>{
+  const env=makeContext({silentMs:120000,status:{upTimeSec:120,persistAgeSec:120}});
+  env.context.uiTickGuarded();env.context.GameClock={isPaused:()=>true};
+  assert.equal(env.context.uiStallDiagText(130000),'');
+  env.context.GameClock.isPaused=()=>false;
+  assert.match(env.context.uiStallDiagText(130000),/uiTick 停/);
+});

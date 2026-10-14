@@ -832,6 +832,7 @@ function itemHeaderHTML(it, opts) {
     '</svg>' +
     '</button>';
   var headActionsHtml = '<span class="it-head-actions">' +
+    (opts.isEquipped ? '<span class="equipped-tag">現有</span>' : '') +
     lockBtnHtml +
     (showAffixReroll ? '<button type="button" class="btn-it-pool" data-affix-pool-toggle aria-label="查看可能詞條">!</button>' + poolHtml : '') +
     '</span>';
@@ -841,7 +842,6 @@ function itemHeaderHTML(it, opts) {
     (it.upgrade ? ' <span class="it-up' + ((opts && opts.justUpgraded) ? ' upgrade-pop' : '') + '">+' + it.upgrade + '</span>' : '') +
     (it.synthesized ? ' <span class="it-syn">✦合成</span>' : '') +
     headActionsHtml +
-    ((opts && opts.isEquipped) ? '<span class="equipped-tag" style="position: absolute; right: 52px; top: 2px; color: #4ade80; font-size: 12px; font-weight: bold;">(現有裝備)</span>' : '') +
     '</div>';
 
   h += '<div class="it-sub"><span>' + r.name + '・' +

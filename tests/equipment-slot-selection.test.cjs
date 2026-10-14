@@ -91,7 +91,7 @@ test('two-hand main/off-hand clicks transfer selection', () => {
   assert.equal(context.UI.sel, null);
 });
 
-test('inventory equip command clears selection after equipping', async () => {
+test('inventory equip command preserves the destination slot after equipping', async () => {
   const context = {
     UI: { sel: { id: 'ring-new', source: 'inv' } },
     uiHeaderPanelSnapshot: () => ({ player: {} }),
@@ -113,7 +113,8 @@ test('inventory equip command clears selection after equipping', async () => {
     },
     uiCommandResultError: () => null,
     hasOwnUiState: () => false,
-    reportUiCommandFailure: () => {}
+    reportUiCommandFailure: () => {},
+    rememberEquipmentSelection: () => {}
   };
   vm.createContext(context);
   vm.runInContext(
@@ -130,7 +131,7 @@ test('inventory equip command clears selection after equipping', async () => {
   });
   assert.equal(context.flash.slot, 'ring2');
   assert.equal(context.flash.item.id, 'ring-new');
-  assert.equal(context.UI.sel, null);
+  assert.deepEqual(JSON.parse(JSON.stringify(context.UI.sel)), { source: 'equip-slot', slot: 'ring2' });
   assert.equal(context.detailRendered, true);
 });
 

@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="zh-Hant">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>離線收益存檔檢查</title>
+<style>
+  body { color: #eee; background: #191d20; font: 16px/1.7 system-ui, sans-serif; margin: 32px auto; padding: 0 20px; max-width: 850px; }
+  h1 { font-size: 24px; color: #e9c575; }
+  button, a { font: inherit; }
+  button { padding: 8px 16px; margin: 0 10px 12px 0; cursor: pointer; }
+  button:disabled { cursor: default; }
+  textarea { box-sizing: border-box; width: 100%; min-height: 280px; padding: 14px; color: #eee; background: #101416; border: 1px solid #777; font: 15px/1.7 monospace; }
+  a { color: #e9c575; }
+</style>
+<h1>離線收益存檔檢查</h1>
+<p>請使用玩遊戲的同一個瀏覽器開啟此頁。此頁只讀取這個網址的瀏覽器自動存檔，不啟動遊戲、不修改存檔，也不讀取資料夾。</p>
+<p id="origin"></p>
+<p id="folder">正在檢查資料夾記錄…</p>
+<button id="read" type="button">重新讀取</button>
+<button id="download" type="button" disabled>下載瀏覽器自動存檔</button>
+<p id="status" role="status" aria-live="polite">正在讀取…</p>
+<textarea id="report" aria-label="存檔檢查結果" readonly></textarea>
+<p>若要排查離線問題：離開遊戲後先開此頁並下載存檔，再重新進入遊戲。重新進入後，自動存檔會持續更新時間。</p>
+<p><a href="/">返回遊戲</a></p>
+<script>
+'use strict';
+const readButton = document.getElementById('read');
+const downloadButton = document.getElementById('download');
+const status = document.getElementById('status');
+const report = document.getElementById('report');
+let snapshot = null;
+document.getElementById('origin').textContent = '目前來源：' + location.origin;
+
+function readCache() {
+  return new Promise((resolve, reject) => {
+    // 不指定版本；不存在時中止升級，避免為診斷建立空資料庫。
+    const request = indexedDB.open('ic_fs_kv');
+    let missing = false;
+    request.onupgradeneeded = () => { missing = true; request.transaction.abort(); };
+    request.onerror = () => missing ? resolve({ payload: null, directory: null }) : reject(request.error);
+    request.onblocked = () => { status.textContent = '資料庫正在更新，請稍後重試。'; };
+    request.onsuccess = () => {
+      const db = request.result;
+      db.onversionchange = () => db.close();
+      if (!db.objectStoreNames.contains('kv')) { db.close(); resolve({ payload: null, directory: null }); return; }
+      try {
+        const tx = db.transaction('kv', 'readonly');
+        const get = tx.objectStore('kv').get('ic_auto_cache_v2');
+        const getDirectory = tx.objectStore('kv').get('saveDir');
+        let payload, directory;
+        get.onsuccess = () => { payload = get.result; };
+        getDirectory.onsuccess = () => { directory = getDirectory.result; };
+        tx.oncomplete = () => { db.close(); resolve({ payload: payload == null ? null : payload, directory: directory || null }); };
+        tx.onabort = () => { db.close(); reject(tx.error || new Error('讀取已中止')); };
+        tx.onerror = () => { db.close(); reject(tx.error || new Error('讀取失敗')); };
+      } catch (error) { db.close(); reject(error); }
+    };
+  });
+}
+
+async function decode(payload) {
+  if (typeof payload === 'string') return payload;
+  const bytes = payload instanceof Blob ? new Uint8Array(await payload.arrayBuffer())
+    : payload instanceof ArrayBuffer ? new Uint8Array(payload)
+    : ArrayBuffer.isView(payload) ? new Uint8Array(payload.buffer, payload.byteOffset, payload.byteLength) : null;
+  if (!bytes) throw new Error('無法辨識快取格式');
+  if (bytes[0] === 0x1f && bytes[1] === 0x8b) {
+    if (typeof DecompressionStream !== 'function') throw new Error('此瀏覽器不支援 gzip 解壓縮');
+    return new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+  }
+  return new TextDecoder().decode(bytes);
+}
+
+function taipeiTime(value) {
+  const date = new Date(Number(value));
+  return Number(value) > 0 && Number.isFinite(date.getTime())
+    ? new Intl.DateTimeFormat('zh-TW', { timeZone: 'Asia/Taipei', dateStyle: 'medium', timeStyle: 'medium', hour12: false }).format(date)
+    : '缺少有效時間';
+}
+
+async function inspect() {
+  readButton.disabled = true;
+  downloadButton.disabled = true;
+  snapshot = null;
+  report.value = '';
+  status.textContent = '正在讀取…';
+  const folder = document.getElementById('folder');
+  folder.textContent = '正在檢查資料夾記錄…';
+  try {
+    const stored = await readCache();
+    const payload = stored.payload;
+    let folderInfo = '瀏覽器未記錄連接的資料夾。';
+    if (stored.directory) {
+      folderInfo = '瀏覽器記錄的資料夾：' + String(stored.directory.name || '名稱未知');
+      try {
+        const permission = await stored.directory.queryPermission({ mode: 'readwrite' });
+        const labels = { granted: '已授權', prompt: '需要重新授權', denied: '未授權' };
+        folderInfo += '；讀寫權限：' + (labels[permission] || permission);
+      } catch (error) { folderInfo += '；無法查詢讀寫權限'; }
+      folderInfo += '。瀏覽器不提供完整 Windows 路徑。';
+    }
+    folder.textContent = folderInfo;
+    if (payload === null) {
+      status.textContent = '這個瀏覽器來源找不到自動快取。請確認與遊戲使用相同瀏覽器、設定檔及網址。';
+      return;
+    }
+    const raw = await decode(payload);
+    const data = JSON.parse(raw);
+    if (!data || typeof data !== 'object' || !data.player || !data.stage) throw new Error('快取缺少角色或關卡資料');
+    const checkedAt = Date.now();
+    const age = Number(data.savedAt) > 0 ? Math.floor((checkedAt - Number(data.savedAt)) / 1000) : null;
+    let meta = null;
+    try { meta = JSON.parse(localStorage.getItem('ic_auto_meta_v2')); } catch (error) { /* Metadata不是快取內容的權威。 */ }
+    report.value = [
+      '來源：' + location.origin,
+      folderInfo,
+      '檢查時間（台北）：' + taipeiTime(checkedAt),
+      '快取進度時間（台北）：' + taipeiTime(data.savedAt),
+      '距離快取進度：' + (age === null ? '未知' : age + ' 秒'),
+      'savedAt：' + String(data.savedAt),
+      '寫入來源：' + String(data.savedBy || '未記錄'),
+      '角色等級：' + String(data.player.level),
+      '場景／目前／最高：' + [data.stage.zone, data.stage.current, data.stage.best].join(' / '),
+      '局號：' + String(data.runId),
+      '清單顯示時間（台北）：' + (meta ? taipeiTime(meta.savedAt) : '沒有清單資料'),
+      '清單檔名：' + (meta && meta.fname || '未記錄'),
+      '',
+      '快取進度時間來自實際存檔內容；清單時間可能是資料夾寫入時間。',
+      '此頁未執行離線結算；下載檔保留原本的 savedAt。'
+    ].join('\n');
+    snapshot = raw;
+    downloadButton.disabled = false;
+    status.textContent = '讀取成功。請將下載的存檔及上方檢查結果提供給開發者。';
+  } catch (error) {
+    status.textContent = '讀取失敗：' + (error.message || String(error));
+  } finally { readButton.disabled = false; }
+}
+
+readButton.addEventListener('click', inspect);
+downloadButton.addEventListener('click', () => {
+  if (snapshot === null) return;
+  const url = URL.createObjectURL(new Blob([snapshot], { type: 'application/json' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'IC_browser_autosave_' + location.origin.replace(/[^A-Za-z0-9._-]+/g, '-') + '.json';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
+inspect();
+</script>
+</html>

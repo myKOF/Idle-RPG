@@ -1,7 +1,16 @@
 'use strict';
-/* Esc選單只負責介面與導覽；完整進度由Worker產生，寫入成功才允許離開。 */
+/* Esc暫停整體Worker與演出，設定返回仍保持暫停；存檔成功才允許離開。 */
 var GameMenu = (function () {
   var bound = false, busy = false, previousFocus = null;
+  var gamePaused = false;
+  function pauseGame(value) {
+    if (value === gamePaused) return;
+    gamePaused = value;
+    if (!value && document.body && document.body.classList) document.body.classList.remove('game-menu-paused');
+    if (typeof GameClock !== 'undefined') GameClock.setPaused(value);
+    if (typeof WorkerBridge !== 'undefined' && WorkerBridge.setMenuPaused) WorkerBridge.setMenuPaused(value);
+    if (value && document.body && document.body.classList) document.body.classList.add('game-menu-paused');
+  }
   function el(id) { return document.getElementById(id); }
   function visible(id) { var node = el(id); return !!node && node.style.display !== 'none'; }
   function show(id, value) {
@@ -21,19 +30,22 @@ var GameMenu = (function () {
   }
   function open() {
     if (busy) return;
+    pauseGame(true);
     if (!visible('game-menu') && !visible('settings-modal')) previousFocus = document.activeElement;
     show('settings-modal', false);
     show('game-menu', true);
     status('');
-    var first = el('game-menu-reload'); if (first) first.focus();
+    var title = el('game-menu-title'); if (title) { title.setAttribute('tabindex', '-1'); title.focus(); }
   }
   function close() {
     if (busy) return;
     show('game-menu', false); show('settings-modal', false);
+    pauseGame(false);
     if (previousFocus && typeof previousFocus.focus === 'function' && previousFocus.isConnected !== false) previousFocus.focus();
   }
   function openSettings() {
     if (busy) return;
+    pauseGame(true);
     if (!visible('game-menu') && !visible('settings-modal')) previousFocus = document.activeElement;
     show('game-menu', false); show('settings-modal', true);
     if (typeof refreshSettingsPanel === 'function') refreshSettingsPanel();
@@ -56,11 +68,11 @@ var GameMenu = (function () {
   function runAction(action) {
     if (busy) return Promise.resolve(false);
     if (action === 'settings') { openSettings(); return Promise.resolve(true); }
-    if (action === 'reload') { location.reload(); return Promise.resolve(true); }
-    if (action !== 'save' && action !== 'exit') return Promise.resolve(false);
+    if (action !== 'reload' && action !== 'save' && action !== 'exit') return Promise.resolve(false);
     setBusy(true); status('正在儲存…');
     return Promise.resolve().then(function () { return WorkerBridge.saveAutoNow(); }).then(function () {
       status('已儲存至自動存檔');
+      if (action === 'reload') { location.reload(); return true; }
       if (typeof renderSaveList === 'function') renderSaveList();
       if (action === 'exit') { finishExit(); return true; }
       setBusy(false);
