@@ -30,27 +30,39 @@ test('comboHitsFor：暴擊率 ≤ 100% 時連擊數為 0', () => {
   assert.equal(c.comboHitsFor(0), 0);
 });
 
-test('comboHitsFor：恰 100% 為 0、超過即為正（閘門）', () => {
+test('comboHitsFor：溢出% = 暴擊率 − 100（以比例代入）；溢出 ≤ 100%（ln ≤ 0）時為 0', () => {
   const c = loadFormula();
-  assert.equal(c.comboHitsFor(100), 0);                 // 完全爆擊，無連擊
-  // 暴擊 a=0.5：101% → x=1.01：0.5*ln(1.01) ≈ 0.004975
-  approx(c.comboHitsFor(101), 0.004975, 0.0001, '暴擊 101%');
+  approx(c.comboHitsFor(250), 0.5 * Math.log(1.5), 1e-9, '暴擊 250% → 溢出 150% → 0.5·ln(1.5)≈0.203');
+  assert.equal(c.comboHitsFor(200), 0, '溢出恰 100%，ln(1)=0');
+  assert.equal(c.comboHitsFor(150), 0, '溢出 50%，ln 為負，夾到 0 不出現負連擊');
+  assert.equal(c.comboHitsFor(101), 0);
 });
 
-test('comboHitsFor：暴擊率% 直接代入（÷100），1380% ≈ 1.31、5000% ≈ 1.96', () => {
+test('comboHitsFor：更高暴擊率單調成長', () => {
   const c = loadFormula();
-  approx(c.comboHitsFor(1380), 0.5 * Math.log(13.8), 0.001, '暴擊 1380%');
-  approx(c.comboHitsFor(5000), 0.5 * Math.log(50), 0.001, '暴擊 5000%');
-  assert.ok(c.comboHitsFor(300) > c.comboHitsFor(200));
+  approx(c.comboHitsFor(1100), 0.5 * Math.log(10), 1e-9, '暴擊 1100% → 溢出 1000% → 0.5·ln(10)');
+  assert.ok(c.comboHitsFor(300) > c.comboHitsFor(250));
+  assert.ok(c.comboHitsFor(5000) > c.comboHitsFor(1380));
 });
 
-test('comboHitsTotal：攻速（門檻 5 次/秒、a=0.65）與冷卻縮減（門檻 60%、a=0.8）各自溢出，三者相加', () => {
+test('comboHitsTotal：攻速（門檻 5 次/秒、a=0.65）與冷卻縮減（門檻＝冷卻縮減上限 60%、a=0.8）各自溢出，三者相加', () => {
   const c = loadFormula();
   assert.equal(c.comboHitsTotal(100, 5, 60), 0, '三項都在門檻上＝0');
-  approx(c.comboHitsTotal(100, 6.5, 60), 0.65 * Math.log(1.3), 1e-9, '只有攻速溢出');
-  approx(c.comboHitsTotal(100, 5, 90), 0.8 * Math.log(1.5), 1e-9, '只有冷卻縮減溢出');
-  approx(c.comboHitsTotal(200, 10, 120),
-    0.5 * Math.log(2) + 0.65 * Math.log(2) + 0.8 * Math.log(2), 1e-9, '三項相加');
+  // 攻速溢出% ＝ (攻速 − 5) ÷ 5：12.5 次/秒 → 150%
+  approx(c.comboHitsTotal(100, 12.5, 60), 0.65 * Math.log(1.5), 1e-9, '只有攻速溢出');
+  // 冷卻縮減溢出% ＝ 冷卻縮減 − 60：210% → 150%
+  approx(c.comboHitsTotal(100, 5, 210), 0.8 * Math.log(1.5), 1e-9, '只有冷卻縮減溢出');
+  approx(c.comboHitsTotal(250, 12.5, 210),
+    (0.5 + 0.65 + 0.8) * Math.log(1.5), 1e-9, '三項相加');
+  assert.equal(c.comboHitsTotal(100, 6.5, 90), 0, '溢出未達 100% 的項為 0');
+});
+
+test('comboHitsTotal：門檻跟著冷卻縮減上限（STAT_CAPS.cdr）；上限 0 時退回預設 60', () => {
+  const c = loadFormula();
+  c.STAT_CAPS.cdr = 80;
+  approx(c.comboHitsTotal(100, 5, 230), 0.8 * Math.log(1.5), 1e-9, '上限 80 → 230 溢出 150%');
+  c.STAT_CAPS.cdr = 0;
+  approx(c.comboHitsTotal(100, 5, 210), 0.8 * Math.log(1.5), 1e-9, '無上限時用 cdrAt=60');
 });
 
 test('COMBO_HITS_COEF：預設值（觸發率 25%、暴擊 0.5、攻速 0.65、冷卻縮減 0.8）', () => {

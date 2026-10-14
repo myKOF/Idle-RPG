@@ -606,25 +606,32 @@ function controlDecayFactor(cat, hits) {
 
 /* ---- 連擊數（暴擊率／攻速／冷卻縮減「溢出」衍生的多段攻擊） ----
    定義（2026-10-14 改版）：每次攻擊命中時有 trigger% 機率造成「連擊數」那麼多次額外攻擊。
-   連擊數 = 暴擊溢出 + 攻速溢出 + 冷卻縮減溢出，各項皆為 a·ln(x)，x＝數值 ÷ 門檻（恰在門檻為 0、超過才為正，連續不跳變）：
-     暴擊：x = 暴擊率 ÷ 100（門檻 100%）          a = COMBO_HITS_COEF.crit
-     攻速：x = 原始攻速 ÷ 5（門檻 5 次/秒）        a = COMBO_HITS_COEF.aspd   （用未夾 5 次/秒上限的原始攻速）
-     冷卻：x = 冷卻縮減% ÷ 60（門檻 60%）          a = COMBO_HITS_COEF.cdr    （用未夾 60% 上限的原始值）
-   觸發率與三個 a 由參數表「2-屬性派生／連擊數」（參數 a／b／c／d）控制；門檻 critAt／aspdAt／cdrAt 為程式常數。
-   例：暴擊率 1380% → x=13.8 → 0.5·ln(13.8)≈1.31 → 固定額外 1 次 + 31% 機率第 2 次（皆須先通過觸發率）。僅作用於普攻與技能直接傷害，持續傷害不計。 */
-function comboOverflowHits(value, threshold, a) {
+   連擊數 = 暴擊溢出 + 攻速溢出 + 冷卻縮減溢出，各項皆為 a·ln(溢出%)，溢出% ＝（數值 − 門檻）換成比例：
+     暴擊：門檻 100%（完全爆擊）。例：暴擊率 250% → 溢出 150% → 0.5·ln(1.5)≈0.203     a = COMBO_HITS_COEF.crit
+     攻速：門檻 ASPD_CAP（5 次/秒），溢出% ＝（原始攻速 − 5）÷ 5                         a = COMBO_HITS_COEF.aspd
+           用未夾 5 次/秒上限的原始攻速
+     冷卻：門檻 STAT_CAPS.cdr（參數表「冷卻縮減 上限」，預設 60%），溢出% ＝ 原始冷卻縮減 − 門檻  a = COMBO_HITS_COEF.cdr
+           用未夾上限的原始冷卻縮減
+   溢出% ≤ 100%（ln ≤ 0）時該項為 0，不會出現負的連擊數。
+   觸發率與三個 a 由參數表「2-屬性派生／連擊數」（參數 a／b／c／d）控制；暴擊的 100% 門檻為程式常數（不在參數表），
+   攻速與冷卻縮減的門檻跟著各自的上限（ASPD_CAP／STAT_CAPS.cdr；上限為 0＝無上限時退回 critAt／aspdAt／cdrAt 預設值）。
+   僅作用於普攻與技能直接傷害，持續傷害不計。 */
+// 溢出% = (value − threshold) ÷ per；回傳 a·ln(溢出%)，不足以為正則 0
+function comboOverflowHits(value, threshold, per, a) {
   var v = Number(value) || 0;
-  if (!(threshold > 0) || v <= threshold) return 0;
-  var n = (Number(a) || 0) * Math.log(v / threshold);
+  if (!(threshold > 0) || !(per > 0) || v <= threshold) return 0;
+  var n = (Number(a) || 0) * Math.log((v - threshold) / per);
   return n > 0 ? n : 0;
 }
 function comboHitsFor(critRate) {
-  return comboOverflowHits(critRate, COMBO_HITS_COEF.critAt, COMBO_HITS_COEF.crit);
+  return comboOverflowHits(critRate, COMBO_HITS_COEF.critAt, 100, COMBO_HITS_COEF.crit);
 }
 function comboHitsTotal(critRate, rawAspd, rawCdr) {
-  return comboOverflowHits(critRate, COMBO_HITS_COEF.critAt, COMBO_HITS_COEF.crit) +
-    comboOverflowHits(rawAspd, COMBO_HITS_COEF.aspdAt, COMBO_HITS_COEF.aspd) +
-    comboOverflowHits(rawCdr, COMBO_HITS_COEF.cdrAt, COMBO_HITS_COEF.cdr);
+  var aspdAt = ASPD_CAP > 0 ? ASPD_CAP : COMBO_HITS_COEF.aspdAt;
+  var cdrAt = STAT_CAPS.cdr > 0 ? STAT_CAPS.cdr : COMBO_HITS_COEF.cdrAt;
+  return comboHitsFor(critRate) +
+    comboOverflowHits(rawAspd, aspdAt, aspdAt, COMBO_HITS_COEF.aspd) +
+    comboOverflowHits(rawCdr, cdrAt, 100, COMBO_HITS_COEF.cdr);
 }
 
 // 依連擊數擲骰出本次實際追加攻擊次數：先過觸發率（COMBO_HITS_COEF.trigger%），再整數部分固定追加、小數部分為機率再追加一次

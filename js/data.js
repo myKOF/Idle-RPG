@@ -592,7 +592,8 @@ var XP_LEVEL_COEF = { a: 20, b: 3, c: 40 };
 /* 等級基礎四維 = 基底 +（等級-1）× 每級增加。參數表「1-成長經驗／等級基礎四維」的 a / b。 */
 var PRIMARY_STAT_GROWTH = { base: 5, perLevel: 2 };
 // 連擊數係數（參數表「2-屬性派生／連擊數」：a＝觸發率 b＝暴擊 c＝攻速 d＝冷卻縮減）：
-// 每次攻擊命中有 trigger% 機率追加「連擊數」次；連擊數 = crit·ln(暴擊率/100) + aspd·ln(攻速/5) + cdr·ln(冷卻縮減/60)，各項在門檻（critAt/aspdAt/cdrAt）以下為 0。
+// 每次攻擊命中有 trigger% 機率追加「連擊數」次；連擊數 = crit·ln(暴擊溢出%) + aspd·ln(攻速溢出%) + cdr·ln(冷卻縮減溢出%)（formula.js comboHitsTotal）。
+// critAt＝暴擊門檻（完全爆擊 100%，不在參數表）；aspdAt／cdrAt 只在 ASPD_CAP／STAT_CAPS.cdr 為 0（無上限）時當門檻。
 var COMBO_HITS_COEF = { trigger: 25, crit: 0.5, aspd: 0.65, cdr: 0.8, critAt: 100, aspdAt: 5, cdrAt: 60 };
 var ASPD_BASE = 0.86;
 var ASPD_MIN = 0.2;
