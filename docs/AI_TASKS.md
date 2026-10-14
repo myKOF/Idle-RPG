@@ -1,5 +1,44 @@
 # AI_TASKS.md
 
+## ENAMEL-NAV-RIM-20261014 — 移除外圈亮點、加厚圓框並放大圖示
+
+- Owner：Codex；Done。使用者要求十圖外圈四個亮點全部刪除、框厚增加1px、圖示放大10%；另要求威能兩個提案，最後附圖核定第3版紅藍雙色火焰＋金色晶核接入，以最後附圖為準。前置為既有清理版，單一開發者，後續使用者審閱整合。
+- 允許：十張images/ui/enamel-nav圖示、css/ashen-forge.css導覽圖示尺寸與圓框、index.html圖檔／CSS快取、tools/enamel-nav/export-source.cjs獨立來源接線、本紀錄；素材庫codex-authored/enamel-nav母圖／匯出／來源／提示詞。禁止改頁籤事件、解鎖、規則、存檔與其他副本；不合併／推送。兩庫原乾淨，以上遊戲路徑（含補查匯出工具）預檢無其他副本／分支衝突。
+- 驗收：每個金色圓框均平順無四方尖端／亮點，主體維持清理版；圖示CSS38→41.8px（+10%），圓框以CSS1px金邊追加，保留文字與按鈕互動；透明／SHA／Build／既有UI測試、瀏覽器尺寸及破圖／Console驗證後，先素材庫再遊戲Commit。使用imagegen修整既有原創母圖，沿既有匯出裁切流程；Mote像素編修不適合整組細緻母圖的無痕修整。
+- 完成／修改14檔：十張images/ui/enamel-nav圖示全部去除外圈12／3／6／9點鐘的鑽形角飾與金尖端，外緣為完整圓形；威能換為核定紅藍火焰＋金色晶核。css/ashen-forge.css圖示38→41.8px，於素材外緣以::after追加1px連續金邊，pointer-events:none保留互動；不增加按鈕邊框厚度。index.html十圖快取20261014-round、CSS1.0.60→1.0.61；匯出工具與本紀錄同步。未改頁籤文字／排列／事件／解鎖／存檔。
+- 素材：內建imagegen原創修整整組母圖，另產威能兩提案並依使用者最後附圖選紅藍火焰金色晶核。未將附圖棋盤背景／浮水印匯入素材。素材庫originals/badges.png、獨立originals/talents.png、十圖、SOURCE／PROMPTS-ROUND／PROMPTS-TALENTS及exports.json同步，先提交52810af。未選提案及改色候選只留聊天生成目錄，不納入正式素材；既有核定概念圖保留，舊圖可由Git歷史恢復。十圖128×128真透明、總343490 bytes，遊戲與素材及紀錄SHA一致，沒有第三方美術。
+- 獨立來源：tools/enamel-nav/export-source.cjs優先讀素材庫originals/<name>.png（有則使用，否則沿整組母圖）；匯出紀錄保存獨立來源SHA，--check遇母圖改動或新增來源但未重匯出會拒絕。獨立威能不再因--make-icons回退為整組中的舊圖案；仍只標準裁切、等比縮小與透明留白，不程序重畫。
+- 驗證：node tools/enamel-nav/export-source.cjs --make-icons／--apply／--check全過；node --check tools/enamel-nav/export-source.cjs通過；node --test tests/sidebar-layout.test.cjs tests/init-ui-smoke.test.cjs，3/3通過；npm.cmd run build，503檔全過；兩庫git diff --check通過。隔離暫存素材庫重播整組＋獨立威能來源，十圖及裁切／來源SHA紀錄逐位元一致；改動暫存威能母圖後--check正確拒絕過期匯出。測試副本逐檔清理，未改正式來源來測試。
+- 瀏覽器：隔離localhost新角色、正式UI／Worker／Pixi，不讀真人存檔。十圖全載入128px新快取，CSS尺寸41.7969px（41.8的排版像素取整）、圓邊1px；可見圖示全在按鈕範圍內，無裁切／側欄橫向溢出，設定→角色切換正常；神鑄仍依原規則隱藏，Console error／warning 0。獨立十圖外觀預覽使用正式CSS的圖示／圓邊並顯示全部十圖，與真遊戲未解鎖狀態分開；威能192／64／41.8px檢視，紅藍與金色晶核可辨。截圖在本聊天visualizations/enamel-round-final.png及enamel-round-game.png。臨時頁面／服務關閉，腳本／測試副本已清理。
+- 未修改但檢查：AI規範、原始整組與威能候選、既有exports／SOURCE、tools/vfx/vfx-library-root.cjs、tests/sidebar-layout.test.cjs／init-ui-smoke.test.cjs及index的其餘UI標記。正式參數／Worker／存檔未變。
+- 交付：遊戲Commit為本紀錄所在[Codex] feat提交；素材Commit52810af。無本次未完成項或已知新增風險，可供審查合併，未合併／推送。限制：未跑全庫回歸或真人存檔長時間驗收；威能未解鎖時只驗證已載入素材，完整外觀另用隔離十圖預覽。下一步使用者整合後重載遊戲。
+
+## ENAMEL-NAV-CLEANUP-20261014 — 清理十個功能徽章的細碎裝飾
+
+- Owner：Codex；Done，單一開發者。使用者指出64×64小尺寸的雕飾／內圈細線／光點使圖示顯髒，要求全部圖案簡化，不只處理紅圈示例，隨後確認接入遊戲。前置為既有ENAMEL-NAV，後續交使用者審閱整合。
+- 允許：images/ui/enamel-nav十圖、index.html僅圖檔快取、tools/enamel-nav/export-source.cjs必要分格邊界修正、本紀錄；素材庫codex-authored/enamel-nav透明母圖／十個匯出／來源／提示詞及匯出紀錄。禁止改頁籤排列、尺寸、事件、解鎖、遊戲規則、Worker／存檔與其他副本；不合併／推送。預檢以上路徑（含補查匯出工具）無其他副本／分支衝突，兩庫原乾淨。
+- 驗收：所有徽章內圈平順簡潔、背景無光點／刻紋／碎裂細線，主體清楚簡化、保留對應語意與配色、寶石仍單顆；同時查看64×64與現行38px實際側欄，透明與SHA／匯出一致、頁面無破圖／Console錯誤、Build與diff check；先素材庫再遊戲Commit。沿用imagegen整理已核定原創素材，Mote像素編輯流程不適合整組高精細圖稿的重整；不程序重畫圖案。
+- 完成／修改13檔：images/ui/enamel-nav的char／equip／skills／newforge／gems／runes／tower／talents／forge／settings.png全部更新；index.html十圖快取20261014→20261014-clean；tools/enamel-nav/export-source.cjs及本紀錄。內圈統一連續金線與平滑深藍底，清除金色細髮線／光點／碎片；盔甲寬面、書本簡潔符號與單束紫焰、爐砧去鏈條、寶石少量寬切面、完整符文石、塔樓減少雕飾、威能四個主節點、神鑄錘去放射細刺、齒輪去小鉚釘。未改CSS／圖示顯示尺寸或按鈕規則。
+- 素材：沿已提交原創母圖由內建imagegen重整；保留原始核定概念圖，舊版母圖／匯出仍可由65318f4歷史恢復。素材庫SOURCE／PROMPTS-CLEANUP／母圖／十圖／exports.json同步，先提交bf1dd2c（[Codex] fix: 清理功能徽章內圈與細碎裝飾）。十圖128×128 RGBA、角落alpha0、每圖逾6千透明像素且逾9千近不透明像素；合計301780 bytes，十圖及紀錄SHA與遊戲一致。
+- 匯出修正：新版母圖的格心有數像素偏移，等分線原會切到金框尖端；工具改為在名目欄分界附近找透明縫，再裁透明留白。alpha<=16只用於定位邊界，保留兩像素邊緣，不改原像素／alpha、不畫遮罩或重畫美術。新版真母圖成功產十圖，額外隔離暫存素材庫重播舊版母圖也成功；完全不透明／沒有分格透明縫的錯誤輸入仍正確拒絕，未放寬為接受相連圖案。
+- 指令與結果：node tools/enamel-nav/export-source.cjs --make-icons／--apply／--check成功；node --check tools/enamel-nav/export-source.cjs通過；node --test tests/sidebar-layout.test.cjs tests/init-ui-smoke.test.cjs，3/3通過；npm.cmd run build，503檔全過；兩庫git diff --check通過。另HTML與HEAD逐位元比較，只改十圖快取；十PNG尺寸／alpha／SHA核對通過。未改測試斷言。
+- 瀏覽器：隔離localhost新來源的正式Worker／Pixi／UI，未讀真人存檔。十圖全載入128px新快取；角色與寶石切換正常、側欄無橫向溢出、神鑄仍依原解鎖保持隱藏，Console error／warning 0。對照頁30張圖片全部載入，舊版64px／新版64px與新版38px經DOM量測均為實際尺寸，目視主體更清晰、內圈與背景無細碎裝飾。比較圖與實際接線圖分別保存在本聊天visualizations/enamel-nav-clean-comparison.png及enamel-nav-clean-applied.png。驗證頁／伺服器已關閉，暫存腳本與測試副本清理。
+- 未改但檢查：AI規範、css/ashen-forge.css、素材庫來源及舊版母圖／圖示、tests/sidebar-layout.test.cjs／init-ui-smoke.test.cjs、共用vfx-library-root.cjs。沒有引入第三方素材或變更CSS／UI事件／模擬／配置／存檔。
+- 交付：遊戲Commit為本紀錄所在[Codex] fix提交；素材Commit bf1dd2c。無本次未完成項或已知新增風險，可供審查合併，未合併／推送。限制：未另跑全庫測試或真人存檔長時間驗收。下一步使用者整合後重載查看新版圖示。
+
+## ENAMEL-NAV-20261014 — 套用寶石琺瑯功能頁籤
+
+- Owner：Codex；Done，單一開發者。使用者核定第三組金邊琺瑯徽章，寶石改為完整單顆藍綠寶石，並要求開始套用。前置為本聊天核定預覽，後續交使用者審閱整合。
+- 允許：index.html側欄圖示與CSS快取、css/ashen-forge.css的導覽樣式、images/ui/enamel-nav十張透明素材、tools/enamel-nav素材匯出工具、本紀錄及素材庫codex-authored/enamel-nav來源與匯出。禁止改遊戲規則、頁籤事件、神鑄解鎖、Worker／Protocol、存檔、其他副本及未授權素材。不合併／推送。
+- 預檢：ai/codex原乾淨；上述路徑check-conflicts全部無其他副本／分支衝突。已確認Mote Studio可用，其像素繪製流程不適合保留核定圖稿的細緻材質與自動去背；沿imagegen整理原創核定圖稿，標準裁切縮圖只作匯出，不重畫圖案。
+- 驗收：十圖一致金邊、真透明且寶石為單顆，保留十個data-tab／名稱與神鑄顯示規則；實際桌面及窄視窗側欄、hover／focus／active、頁籤切換與無破圖／Console錯誤。素材SHA一致、Build、相關既有測試與diff check；先素材庫再遊戲Commit。
+- 完成／修改14檔：index.html將十個SVG線條圖示換為原創128×128透明PNG，CSS快取1.0.59→1.0.60；css/ashen-forge.css導覽圖示38px、按鈕最小64px、間距2px，補金色選取／hover與鍵盤focus-visible輪廓；images/ui/enamel-nav/下char／equip／skills／newforge／gems／runes／tower／talents／forge／settings.png；新增tools/enamel-nav/export-source.cjs及本紀錄。側欄仍為88px、圖上字下，保留原本解鎖與事件，不改模擬或存檔。素材合計327597 bytes，沒有新增網頁JS。
+- 素材庫：codex-authored/enamel-nav保留核定概念圖、透明母圖、十個匯出、來源與提示詞、SHA／裁切座標。母圖去背與整理採內建imagegen；遊戲匯出只裁透明留白、等比縮小，不程序重畫造型。十圖皆128×128 RGBA，角落alpha0且有大量接近不透明圖案，SHA與素材庫／exports.json全一致。先提交素材庫65318f4（[Codex] feat: 保存寶石琺瑯功能頁籤素材）；素材庫狀態乾淨。
+- 驗證指令：node tools/enamel-nav/export-source.cjs --make-icons／--apply／--check成功；node --check tools/enamel-nav/export-source.cjs通過；node --test tests/sidebar-layout.test.cjs tests/init-ui-smoke.test.cjs，3/3通過；npm.cmd run build，503檔全過；兩庫git diff --check通過。另唯讀逐位元比較HEAD與新nav，除了圖示SVG→img，其餘標記／文字／data-tab／解鎖inline style完全相同；十張PNG尺寸／透明像素及內容SHA核對通過。未寫鏡像實作的形式測試。
+- 瀏覽器：隨機localhost埠／獨立來源新存檔，正式Worker／Pixi／UI，未讀真人存檔。十圖皆完整載入；新角色已開放的角色／裝備／技能／熔爐／寶石／符文／封魔塔／設定8頁切換正確。未解鎖威能與神鑄保持隱藏，沒有強制解鎖；兩圖也正常載入，原解鎖標記逐位元不變。1920×1080、960×640及1920×720均可操作設定、側欄無橫向溢出；38px圖示依既有整體UI縮放呈現。點擊／hover金邊與鍵盤Tab焦點（2px輪廓）正常；Console error／warning 0。實際角色頁截圖保存在本聊天visualizations/enamel-nav-applied.png。已恢復瀏覽器尺寸，臨時服務與頁面收尾關閉。
+- 未改但檢查：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、js/ui.js的頁籤與解鎖邏輯、css/style.css／ashen-forge-flat.css、tools/vfx/vfx-library-root.cjs／scene-renewal/export-source.cjs／build_check.cjs及兩檔既有UI測試。沒有引用第三方美術，使用者截圖只作風格／佈局參考。
+- 交付：遊戲Commit為本紀錄所在[Codex] feat提交；素材Commit65318f4。無本次未完成項或已知新增功能風險，可供審查合併，未合併／推送。限制為只驗證隔離新角色的已開放頁籤，未另跑全庫測試／真人存檔長時間驗收；已核對未解鎖頁籤的圖示與原始契約。下一步使用者整合後重新載入遊戲查看。
+
 ## DEVELOP-MERGE-20261014 — 整合攻速疊層與天穹提示圈、保留敵人技能與補進度修正
 
 - Owner：Codex；Done。使用者快捷指令1授權解決develop衝突，接續主整合副本的既有合併；原HEAD 933d7aff、MERGE_HEAD cbdd9b96。單一開發者，前置為雙方已提交成果，完成後交使用者重載驗收。
