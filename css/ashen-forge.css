@@ -1591,10 +1591,6 @@ html *::-webkit-scrollbar-corner {
   gap: 12px;
 }
 
-#tab-equip #detail-pane .afx-label {
-  color: #c9c3b5;
-}
-
 #tab-equip #detail-pane .afx-val {
   font-weight: 700;
   white-space: nowrap;

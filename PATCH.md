@@ -1,5 +1,13 @@
 # PATCH.md
 
+## 裝備詳情詞條文字顏色對齊裝備 Tips（Antigravity 2026-10-14）
+
+- **裝備詳情面板詞條文字顏色對齊 Tips（`css/ashen-forge.css`、`index.html`、`tests/equipment-detail-layout.test.cjs`）**：
+  - 依使用者指示，移除 `css/ashen-forge.css` 中 `#tab-equip #detail-pane .afx-label` 強制覆蓋為灰白字體（`color: #c9c3b5`）的規則。
+  - 使裝備詳情面板（`#detail-pane`）中的詞條標籤（如 `◆ 智力`、`◆ 生命值`、`✡ 法力值`）自動繼承與裝備 Tips 完全一致的詞條類別顏色（基礎紫、防禦青、進攻粉、太古橘等）。
+  - 更新 `index.html` 的 `ashen-forge.css` 快取版本號為 `1.0.66`。
+  - 於 `tests/equipment-detail-layout.test.cjs` 增加樣式回歸測試斷言。
+
 ## 戰鬥區狂暴化數值加入 Hover 提示（Antigravity 2026-10-14）
 
 - **狂暴化文字加入說明 Tips（`index.html`、`tests/enemy-frenzy.test.cjs`）**：
