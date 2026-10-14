@@ -42,6 +42,68 @@ function snapshot(levels, extra) {
   return Object.assign({ skills2: { levels, progress: { level: 576, reinc: 0 } }, loadout: [] }, extra || {});
 }
 
+test('進化連線合併所有相鄰段，流光沿同一條路徑通過轉角與三個分支中心', () => {
+  const c = loadContext();
+  const segments = [
+    { x: 20.5, y1: 18, y2: 38, lit: true },
+    { x: 20.5, y1: 38, y2: 56, lit: true },
+    { x: 20.5, y1: 56, y2: 76, lit: true },
+    { x: 20.5, y1: 76, y2: 120, lit: true }
+  ];
+  [100.25, 300.5, 500.75].forEach((chosen, idx) => {
+    const fork = { x: 20.5, y: 120, branches: [100.25, 300.5, 500.75].map((x, j) => ({ x, y: 135, lit: idx === j })) };
+    const geometry = c.sgbPathGeometry(segments, fork);
+    assert.equal(geometry.lit, 'M 20.5 18 V 120 V 120 H ' + chosen + ' V 135');
+    assert.equal((geometry.lit.match(/M /g) || []).length, 1, '中途不另起新路徑或重新起算動畫');
+    assert.equal(geometry.track, 'M 20.5 18 V 120 M 20.5 120 H 500.75 M 100.25 120 V 135 M 300.5 120 V 135 M 500.75 120 V 135');
+  });
+  assert.equal(JSON.stringify(segments), JSON.stringify([
+    { x: 20.5, y1: 18, y2: 38, lit: true }, { x: 20.5, y1: 38, y2: 56, lit: true },
+    { x: 20.5, y1: 56, y2: 76, lit: true }, { x: 20.5, y1: 76, y2: 120, lit: true }
+  ]), '不能修改作為來源的點亮狀態');
+});
+
+test('未投資的連線與失效超神不播放流光，斷開的投資區段不被連亮', () => {
+  const c = loadContext();
+  const segments = [
+    { x: 20.5, y1: 18, y2: 38, lit: true },
+    { x: 20.5, y1: 38, y2: 76, lit: false },
+    { x: 20.5, y1: 76, y2: 120, lit: true }
+  ];
+  const fork = { x: 20.5, y: 120, branches: [{ x: 100, y: 135, lit: false }] };
+  assert.equal(c.sgbPathGeometry(segments, fork).lit, 'M 20.5 18 V 38 M 20.5 76 V 120');
+  assert.equal(c.sgbPathGeometry(segments.map(s => ({ ...s, lit: false })), fork).lit, '');
+  assert.equal(c.sgbPathGeometry([], null).track, '');
+});
+
+test('進化描線將縮放及捲動還原成面板座標，未變的路徑保留動畫節點', () => {
+  const c = loadContext();
+  let writes = 0;
+  const attrs = {}, properties = {};
+  const svg = { setAttribute(k, v) { attrs[k] = v; }, style: { setProperty(k, v) { properties[k] = v; } },
+    set innerHTML(v) { writes++; this.markup = v; } };
+  const element = (x, y, w, h, lit) => ({
+    getBoundingClientRect() { return { left: 100 + x * 1.25, top: 200 + (y - 40) * 1.25, width: w * 1.25, height: h * 1.25 }; },
+    classList: { contains() { return lit; } }
+  });
+  const lines = [element(18.5, 18, 4, 20, true), element(18.5, 38, 4, 26, true)];
+  const card = element(240, 80, 100, 52, true);
+  const detail = {
+    clientWidth: 598, offsetWidth: 600, offsetHeight: 700, scrollTop: 40, scrollLeft: 0, clientLeft: 1, clientTop: 1,
+    getBoundingClientRect() { return { left: 100, top: 200, width: 750, height: 875 }; },
+    querySelectorAll(s) { return s === '.sgb-line' ? lines : [card]; },
+    querySelector(s) { return s === '.sgb-fork-bar' ? element(19, 64, 280, 3, false) : svg; },
+    classList: { add() {} }
+  };
+  c.sgbSyncPath(detail);
+  assert.match(svg.markup, /d="M 19\.5 17 V 64\.5 V 64\.5 H 289 V 79"/);
+  assert.equal(attrs.width, 598);
+  assert.equal(attrs.height, 83);
+  assert.equal(properties['--sgb-flow-duration'], '3200ms');
+  c.sgbSyncPath(detail);
+  assert.equal(writes, 1, '尺寸未變不重建SVG子節點、不重新播放動畫');
+});
+
 function detail(c, gid, snap, tier, gold, focus) {
   c.UI.sgBrowse.tier = tier;
   c.UI.sgBrowse.ultFocus = null;

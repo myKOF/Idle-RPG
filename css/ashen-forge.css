@@ -2743,6 +2743,7 @@ html *::-webkit-scrollbar-corner {
 
 /* 右：選中技能的詳情 */
 .sgb-detail {
+  position: relative;
   min-width: 0;
   min-height: 0;
   overflow-y: auto;
@@ -2870,17 +2871,6 @@ html *::-webkit-scrollbar-corner {
   background: #c4282a;
   background-image: linear-gradient(90deg, #571f24, #ffad7b 45%, #c64a43 70%, #571a24);
   box-shadow: 0 0 0 1px #4f2726, 0 0 7px #e0483440;
-}
-
-.sgb-line.is-lit::after,
-.sgb-fork-bar.is-lit::after,
-.sgb-ult-card.is-chosen::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, transparent 30%, #ffcf8c88 46%, #fff6d8 50%, #ff996a80 54%, transparent 70%) 0 0 / 100% 90px repeat-y;
-  animation: sgb-flow-down 2.8s linear infinite;
-  pointer-events: none;
 }
 
 .sgb-node {
@@ -3132,11 +3122,6 @@ html *::-webkit-scrollbar-corner {
   box-shadow: 0 0 0 1px #4f2726, 0 0 7px #e0483440;
 }
 
-.sgb-fork-bar.is-lit::after {
-  background: linear-gradient(90deg, transparent 30%, #ffcf8c88 46%, #fff6d8 50%, #ff996a80 54%, transparent 70%) 0 0 / 120px 100% repeat-x;
-  animation-name: sgb-flow-right;
-}
-
 .sgb-ult-cards {
   display: grid;
   grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr));
@@ -3197,28 +3182,94 @@ html *::-webkit-scrollbar-corner {
   box-shadow: 0 0 0 1px #4f2726, 0 0 7px #e0483440;
 }
 
-.sgb-ult-card.is-chosen::after {
-  inset: auto;
-  top: -15px;
-  left: 50%;
-  width: 3px;
-  height: 14px;
-  margin-left: -1.5px;
+.sgb-path-ink {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: visible;
+  pointer-events: none;
 }
 
-@keyframes sgb-flow-down {
-  to { background-position: 0 90px; }
+.sgb-path-ink path {
+  fill: none;
+  stroke-linejoin: round;
+  stroke-linecap: round;
 }
 
-@keyframes sgb-flow-right {
-  to { background-position: 120px 0; }
+.has-path-ink .sgb-line,
+.has-path-ink .sgb-fork-bar,
+.has-path-ink .sgb-ult-card::before {
+  visibility: hidden;
+}
+
+/* 晶石、卡片與操作位於描線上方；SVG不攔截任何點擊。 */
+.sgb-tier-body,
+.sgb-ult-card,
+.sgb-ult-head b,
+.sgb-ult-sub {
+  position: relative;
+  z-index: 1;
+}
+
+.sgb-path-track {
+  stroke: #3b3d43;
+  stroke-width: 3px;
+}
+
+.sgb-path-edge {
+  stroke: #71372e;
+  stroke-width: 5px;
+}
+
+.sgb-path-core {
+  stroke: #d67a5d;
+  stroke-width: 3px;
+}
+
+.sgb-path-shine {
+  stroke: #f3bc8b;
+  stroke-width: 1px;
+}
+
+.sgb-path-tail,
+.sgb-path-glow,
+.sgb-path-spark {
+  stroke: #fff3ce;
+  animation: sgb-path-flow var(--sgb-flow-duration, 3200ms) linear infinite;
+  animation-delay: var(--sgb-flow-delay, 0s);
+}
+
+.sgb-path-tail {
+  --sgb-dash-start: 9px;
+  stroke-width: 3px;
+  stroke-opacity: .22;
+  stroke-dasharray: 18 102;
+}
+
+.sgb-path-glow {
+  --sgb-dash-start: 4px;
+  stroke-width: 3px;
+  stroke-opacity: .5;
+  stroke-dasharray: 8 112;
+}
+
+.sgb-path-spark {
+  --sgb-dash-start: 1px;
+  stroke-width: 2px;
+  stroke-dasharray: 2 118;
+}
+
+@keyframes sgb-path-flow {
+  from { stroke-dashoffset: var(--sgb-dash-start); }
+  to { stroke-dashoffset: calc(var(--sgb-dash-start) - 120px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sgb-line.is-lit::after,
-  .sgb-fork-bar.is-lit::after,
-  .sgb-ult-card.is-chosen::after {
+  .sgb-path-tail,
+  .sgb-path-glow,
+  .sgb-path-spark {
     animation: none;
+    visibility: hidden;
   }
 }
 

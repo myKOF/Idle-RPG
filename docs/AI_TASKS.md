@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## SKILL-PATH-CONTINUITY-20261014 — 進化連線閉合與連續流光
+
+- Owner：Codex；Done，單一開發者。使用者指出直線段／轉角／分支有接縫，並要求流光絲滑移動；前置67f294ec已完成，後續交使用者整合。
+- 允許css/ashen-forge.css技能連線、js/ui.js技能瀏覽器裝飾路徑、tests/skill2-ui.test.cjs及tests/boss-skill-lock.test.cjs必要測試替身、index.html上述快取及本紀錄；禁止改技能規則／數值／Worker／Protocol／存檔／素材及其他副本，不合併／推送。六檔預檢無衝突、工作區乾淨。
+- 方式：由既有DOM解鎖／點亮狀態與實際排版投影出單一SVG路徑，合併相鄰直線並精確接到分岔卡中心；同一路徑的流光以固定速度通過直線與轉角，不再各段重播。展開／縮放後重算幾何、減少動態時停流光，裝飾不攔截操作。
+- 驗收：連續直線、左轉角、三張卡支線中心、展開與窄寬／縮放、部分點亮及停動畫；幾何回歸、既有UI測試、實際瀏覽器／Console、Build、diff後Commit。無獨立素材或素材庫變更。
+- 完成／修改6檔：ui.js將原DOM的灰線／點亮class與實際卡中心投影為SVG，合併相鄰直線、縱線延至橫線中心、點亮路徑一筆接到選中卡上緣；原分段線僅作幾何與狀態來源，SVG就緒才隱藏。CSS以連續圓角描邊取代相鄰斜面端蓋，三層柔光／亮芯沿完整弧長以37.5 CSS px/s移動，轉角不另起動畫；無新素材／Preset。ResizeObserver＋單次rAF只於詳情重建／尺寸變化重算，保留未變的動畫節點，重建以時間相位延續；裝飾不攔截點擊，減少動態保留靜態亮線。主頁ashen-forge.css1.0.65／ui.js1.0.156，本紀錄同步。
+- 測試：node --test tests/skill2-ui.test.cjs tests/skill-tree-layout.test.cjs tests/skill-equipped-style.test.cjs tests/skill-loadout.test.cjs tests/init-ui-smoke.test.cjs tests/ui-worker-events.test.cjs tests/boss-skill-lock.test.cjs，53/53通過。技能UI新增3項涵蓋三分支共用一條路徑、未投資／失效超神不連亮、縮放／捲動座標與保留動畫節點；BOSS測試抽出單函式的替身補上sgbSchedulePath依賴，原鎖定斷言不變（初跑缺替身1失敗，補齊後通過）。最後排程限縮至詳情實際變更，重跑技能UI／BOSS35/35；npm.cmd run build 507檔通過，git diff --check通過。
+- 瀏覽器：computer-use／CUA，隔離隨機localhost來源正式UI／真Worker／Pixi，進入技能頁、展開連刺後描線自動重建、灰線不缺段、快取正確且無橫向溢出；Console error／warning 0。以正式HTML產生器及原描線函式驗滿階三分支、部分點亮、第四階展開、710px窄面板＋80%縮放；直線、左轉角與卡中心均閉合且橫向溢出0。整條點亮路徑只有一個M；線性動畫相隔31.802秒取樣，dash offset模120位移112.585px，與固定速率預期112.575px一致。未對真人存檔操作、未承諾所有裝置固定FPS。
+- 唯讀檢查：AI規範、sgb詳情／狀態生成、既有style.css／ashen-forge-flat.css、上述未修改的UI測試與Build工具；未改技能規則／數值／Worker／協議／存檔。截圖只用於辨識接縫，自製SVG／CSS，素材庫無本次變更／無需Commit。預覽保存在本聊天visualizations/skills-continuous-path.png；臨時服務／頁面／腳本已清理。
+- 交付：Commit為本紀錄所在[Codex] fix提交，回覆列編號；無本次未完成項或已知新增風險，可審查合併，未合併／推送。限制：未做真人長戰／全庫回歸／實際系統減少動態切換，減少動態沿CSS停動畫。下一步整合後重載遊戲驗收完整連線與連續流光。
+
 ## SKILL-CRYSTAL-PATH-20261014 — 技能進階晶條與進化流光
 
 - Owner：Codex；Done，單一開發者。使用者依截圖要求左側進階條與中央進化節點／連線提升質感並加入流光；前置既有技能瀏覽器已完成，後續交使用者整合驗收。
