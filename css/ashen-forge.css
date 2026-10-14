@@ -3240,23 +3240,29 @@ html *::-webkit-scrollbar-corner {
 }
 
 .sgb-path-tail {
-  --sgb-dash-start: 9px;
-  stroke-width: 3px;
-  stroke-opacity: .22;
-  stroke-dasharray: 18 102;
+  --sgb-dash-start: 16px;
+  stroke: #ffb45f;
+  stroke-width: 5px;
+  stroke-opacity: .42;
+  stroke-dasharray: 32 88;
+  filter: drop-shadow(0 0 3px #ff823da6);
 }
 
 .sgb-path-glow {
-  --sgb-dash-start: 4px;
-  stroke-width: 3px;
-  stroke-opacity: .5;
-  stroke-dasharray: 8 112;
+  --sgb-dash-start: 7px;
+  stroke: #ffe7a3;
+  stroke-width: 4px;
+  stroke-opacity: .9;
+  stroke-dasharray: 14 106;
+  filter: drop-shadow(0 0 4px #ffad5cd9);
 }
 
 .sgb-path-spark {
-  --sgb-dash-start: 1px;
-  stroke-width: 2px;
-  stroke-dasharray: 2 118;
+  --sgb-dash-start: 3px;
+  stroke: #fffef0;
+  stroke-width: 3px;
+  stroke-dasharray: 6 114;
+  filter: drop-shadow(0 0 2px #fff4c6);
 }
 
 @keyframes sgb-path-flow {

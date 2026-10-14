@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## SKILL-FLOW-BRIGHTNESS-20261014 — 加強進化路徑流光
+
+- Owner：Codex；Done，單一開發者。使用者指出流光太微弱，要求更明顯；前置586a8c59連續路徑已完成，後續交使用者整合。
+- 允許css/ashen-forge.css流光三層樣式、index.html僅CSS快取及本紀錄；禁止JS／幾何／技能規則／Worker／存檔／獨立素材／其他副本，不合併／推送。三檔預檢乾淨，工作區乾淨。
+- 內容／驗收：提高亮芯亮度與長度、暖金光暈及光尾，使流光更醒目；同一120px週期與等速路徑不變，減少動態規則沿用。實際瀏覽器目視與Console、相關UI回歸、Build及diff check後Commit。自製CSS，素材庫無變更。
+- 完成／修改3檔：CSS光尾18→32px、寬3→5px、透明度.22→.42，加橘金3px外暈；中層8→14px、寬3→4px、透明度.5→.9，加暖金4px外暈；亮芯2→6px、寬2→3px、近白高光與2px外暈。各層仍以半段長對齊光點中心、dash總週期120px，沿用同一線性動畫／連續路徑／減少動態規則，未調速度或JS。index.html僅ashen-forge.css1.0.65→1.0.66，本紀錄同步。
+- 測試指令／結果：node --test tests/skill2-ui.test.cjs tests/boss-skill-lock.test.cjs，35/35通過；npm.cmd run build 507檔通過；git diff --check通過。沒有新增鏡像測試或修改斷言。
+- 瀏覽器：computer-use／CUA，隔離localhost正式sgb HTML及原描線函式；目視確認暖金光點／光尾／外暈明顯且轉角閉合，ComputedStyle三層均套用新亮度與dash、動畫linear，Console error／warning 0。未讀真人存檔，未重新跑整套真人遊戲長戰；預覽圖在本聊天visualizations/skills-brighter-flow.png，臨時服務／頁面／腳本已清理。
+- 唯讀檢查：js/ui.js連續路徑與動畫相位、上述UI／BOSS測試、既有主題及Build工具，均未修改；截圖只參考亮度不足問題，外觀為自製CSS，無獨立素材／Preset／素材庫Commit。遊戲Commit為本紀錄所在[Codex] fix提交，回覆附編號；無本次未完成項或已知新增風險，可供合併，未合併／推送。限制為未做低階裝置長時間GPU效能驗收；下一步整合後重載技能頁確認亮度。
+
 ## SKILL-PATH-CONTINUITY-20261014 — 進化連線閉合與連續流光
 
 - Owner：Codex；Done，單一開發者。使用者指出直線段／轉角／分支有接縫，並要求流光絲滑移動；前置67f294ec已完成，後續交使用者整合。
