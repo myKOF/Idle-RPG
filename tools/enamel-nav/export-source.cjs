@@ -17,21 +17,45 @@ async function main() {
     const sharp = require('sharp');
     const sheet = path.join(sourceRoot, 'originals/badges.png');
     const { data, info } = await sharp(sheet).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    // AI母圖的格心可能偏移幾個像素；在名目分界附近找透明縫，避免切到金框尖端。
+    // alpha<=16只作裁切邊界判斷，原像素／alpha不重寫；保留兩像素透明邊緣。
+    const cuts = [0];
+    for (let column = 1; column < 5; column++) {
+      const expected = Math.round(column * info.width / 5);
+      const search = Math.max(8, Math.round(info.width / 100));
+      const bands = [];
+      let start = -1;
+      for (let x = expected - search; x <= expected + search + 1; x++) {
+        let maxAlpha = 255;
+        if (x <= expected + search) {
+          maxAlpha = 0;
+          for (let y = 0; y < info.height; y++) maxAlpha = Math.max(maxAlpha, data[(y * info.width + x) * 4 + 3]);
+        }
+        if (maxAlpha <= 16 && start < 0) start = x;
+        if (maxAlpha > 16 && start >= 0) { bands.push(Math.round((start + x - 1) / 2)); start = -1; }
+      }
+      bands.sort((a, b) => Math.abs(a - expected) - Math.abs(b - expected));
+      if (!bands.length) throw new Error('第' + column + '欄之間沒有透明縫，需重新整理母圖');
+      cuts.push(bands[0]);
+    }
+    cuts.push(info.width);
     const records = [];
     fs.mkdirSync(path.join(sourceRoot, 'icons'), { recursive: true });
     for (let i = 0; i < names.length; i++) {
-      const x0 = Math.round((i % 5) * info.width / 5);
-      const x1 = Math.round((i % 5 + 1) * info.width / 5);
+      const x0 = cuts[i % 5];
+      const x1 = cuts[i % 5 + 1];
       const y0 = Math.round(Math.floor(i / 5) * info.height / 2);
       const y1 = Math.round((Math.floor(i / 5) + 1) * info.height / 2);
       let left = x1, top = y1, right = -1, bottom = -1, transparent = 0;
       for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
         const alpha = data[(y * info.width + x) * 4 + 3];
         if (!alpha) transparent++;
-        if (alpha > 4) { left = Math.min(left, x); top = Math.min(top, y); right = Math.max(right, x); bottom = Math.max(bottom, y); }
+        if (alpha > 16) { left = Math.min(left, x); top = Math.min(top, y); right = Math.max(right, x); bottom = Math.max(bottom, y); }
       }
       if (!transparent || right < left) throw new Error(names[i] + '缺少透明背景或沒有圖案');
       if (left <= x0 || right >= x1 - 1 || top <= y0 || bottom >= y1 - 1) throw new Error(names[i] + '圖案碰到分格邊緣，需重新整理母圖');
+      left = Math.max(x0, left - 2); right = Math.min(x1 - 1, right + 2);
+      top = Math.max(y0, top - 2); bottom = Math.min(y1 - 1, bottom + 2);
       const crop = { left, top, width: right - left + 1, height: bottom - top + 1 };
       const output = path.join(sourceRoot, 'icons', names[i] + '.png');
       await sharp(sheet).extract(crop).resize(120, 120, { fit: 'contain', background: '#00000000' })

@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## ENAMEL-NAV-CLEANUP-20261014 — 清理十個功能徽章的細碎裝飾
+
+- Owner：Codex；Done，單一開發者。使用者指出64×64小尺寸的雕飾／內圈細線／光點使圖示顯髒，要求全部圖案簡化，不只處理紅圈示例，隨後確認接入遊戲。前置為既有ENAMEL-NAV，後續交使用者審閱整合。
+- 允許：images/ui/enamel-nav十圖、index.html僅圖檔快取、tools/enamel-nav/export-source.cjs必要分格邊界修正、本紀錄；素材庫codex-authored/enamel-nav透明母圖／十個匯出／來源／提示詞及匯出紀錄。禁止改頁籤排列、尺寸、事件、解鎖、遊戲規則、Worker／存檔與其他副本；不合併／推送。預檢以上路徑（含補查匯出工具）無其他副本／分支衝突，兩庫原乾淨。
+- 驗收：所有徽章內圈平順簡潔、背景無光點／刻紋／碎裂細線，主體清楚簡化、保留對應語意與配色、寶石仍單顆；同時查看64×64與現行38px實際側欄，透明與SHA／匯出一致、頁面無破圖／Console錯誤、Build與diff check；先素材庫再遊戲Commit。沿用imagegen整理已核定原創素材，Mote像素編輯流程不適合整組高精細圖稿的重整；不程序重畫圖案。
+- 完成／修改13檔：images/ui/enamel-nav的char／equip／skills／newforge／gems／runes／tower／talents／forge／settings.png全部更新；index.html十圖快取20261014→20261014-clean；tools/enamel-nav/export-source.cjs及本紀錄。內圈統一連續金線與平滑深藍底，清除金色細髮線／光點／碎片；盔甲寬面、書本簡潔符號與單束紫焰、爐砧去鏈條、寶石少量寬切面、完整符文石、塔樓減少雕飾、威能四個主節點、神鑄錘去放射細刺、齒輪去小鉚釘。未改CSS／圖示顯示尺寸或按鈕規則。
+- 素材：沿已提交原創母圖由內建imagegen重整；保留原始核定概念圖，舊版母圖／匯出仍可由65318f4歷史恢復。素材庫SOURCE／PROMPTS-CLEANUP／母圖／十圖／exports.json同步，先提交bf1dd2c（[Codex] fix: 清理功能徽章內圈與細碎裝飾）。十圖128×128 RGBA、角落alpha0、每圖逾6千透明像素且逾9千近不透明像素；合計301780 bytes，十圖及紀錄SHA與遊戲一致。
+- 匯出修正：新版母圖的格心有數像素偏移，等分線原會切到金框尖端；工具改為在名目欄分界附近找透明縫，再裁透明留白。alpha<=16只用於定位邊界，保留兩像素邊緣，不改原像素／alpha、不畫遮罩或重畫美術。新版真母圖成功產十圖，額外隔離暫存素材庫重播舊版母圖也成功；完全不透明／沒有分格透明縫的錯誤輸入仍正確拒絕，未放寬為接受相連圖案。
+- 指令與結果：node tools/enamel-nav/export-source.cjs --make-icons／--apply／--check成功；node --check tools/enamel-nav/export-source.cjs通過；node --test tests/sidebar-layout.test.cjs tests/init-ui-smoke.test.cjs，3/3通過；npm.cmd run build，503檔全過；兩庫git diff --check通過。另HTML與HEAD逐位元比較，只改十圖快取；十PNG尺寸／alpha／SHA核對通過。未改測試斷言。
+- 瀏覽器：隔離localhost新來源的正式Worker／Pixi／UI，未讀真人存檔。十圖全載入128px新快取；角色與寶石切換正常、側欄無橫向溢出、神鑄仍依原解鎖保持隱藏，Console error／warning 0。對照頁30張圖片全部載入，舊版64px／新版64px與新版38px經DOM量測均為實際尺寸，目視主體更清晰、內圈與背景無細碎裝飾。比較圖與實際接線圖分別保存在本聊天visualizations/enamel-nav-clean-comparison.png及enamel-nav-clean-applied.png。驗證頁／伺服器已關閉，暫存腳本與測試副本清理。
+- 未改但檢查：AI規範、css/ashen-forge.css、素材庫來源及舊版母圖／圖示、tests/sidebar-layout.test.cjs／init-ui-smoke.test.cjs、共用vfx-library-root.cjs。沒有引入第三方素材或變更CSS／UI事件／模擬／配置／存檔。
+- 交付：遊戲Commit為本紀錄所在[Codex] fix提交；素材Commit bf1dd2c。無本次未完成項或已知新增風險，可供審查合併，未合併／推送。限制：未另跑全庫測試或真人存檔長時間驗收。下一步使用者整合後重載查看新版圖示。
+
 ## ENAMEL-NAV-20261014 — 套用寶石琺瑯功能頁籤
 
 - Owner：Codex；Done，單一開發者。使用者核定第三組金邊琺瑯徽章，寶石改為完整單顆藍綠寶石，並要求開始套用。前置為本聊天核定預覽，後續交使用者審閱整合。
