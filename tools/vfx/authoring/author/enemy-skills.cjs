@@ -351,7 +351,9 @@ NEW['en-wall-rise'] = () => ({
 });
 
 /* 金色球形護盾：半透明金色能量光罩，持續 3 秒（一次播完，跟著怪物）。 */
-NEW['en-gold-dome'] = () => ({
+/* 護盾是「罩在身上的球」：整份標 perspective:false（billboard 層），不受視角方向與 FOV 影響（靠畫面邊緣也不會被拉歪）。 */
+const billboardAll = p => { p.layers.forEach(l => { l.perspective = false; }); return p; };
+NEW['en-gold-dome'] = () => billboardAll({
   id: 'en-gold-dome', duration: 3, loop: false, sizing: customSizing(60, 60, 6, 6),
   layers: [
     kit.sprite({ id: 'glow', asset: A.glowSoft, z: 0, size: 120, alpha: 0.5, tint: '#ffcf3a', blend: 'add', duration: 3, alphaOverLife: [[0, 0], [0.08, 1], [0.9, 1], [1, 0]], scaleOverLife: C.breathe(0.05) }),
