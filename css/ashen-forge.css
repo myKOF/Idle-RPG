@@ -3232,34 +3232,13 @@ html *::-webkit-scrollbar-corner {
   stroke-width: 1px;
 }
 
-.sgb-path-tail,
-.sgb-path-glow,
-.sgb-path-spark {
-  stroke: #fff3ce;
+.sgb-path-ink .sgb-path-flow {
+  stroke: #ffffff;
   stroke-width: var(--sgb-path-width);
+  stroke-linecap: butt;
   filter: none;
   animation: sgb-path-flow var(--sgb-flow-duration, 3200ms) linear infinite;
   animation-delay: var(--sgb-flow-delay, 0s);
-}
-
-.sgb-path-tail {
-  --sgb-dash-start: 16px;
-  stroke: #ffb45f;
-  stroke-opacity: .42;
-  stroke-dasharray: 32 88;
-}
-
-.sgb-path-glow {
-  --sgb-dash-start: 7px;
-  stroke: #ffe7a3;
-  stroke-opacity: .9;
-  stroke-dasharray: 14 106;
-}
-
-.sgb-path-spark {
-  --sgb-dash-start: 3px;
-  stroke: #fffef0;
-  stroke-dasharray: 6 114;
 }
 
 @keyframes sgb-path-flow {
@@ -3268,9 +3247,7 @@ html *::-webkit-scrollbar-corner {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sgb-path-tail,
-  .sgb-path-glow,
-  .sgb-path-spark {
+  .sgb-path-flow {
     animation: none;
     visibility: hidden;
   }

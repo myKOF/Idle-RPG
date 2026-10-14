@@ -9509,6 +9509,16 @@ function sgbPathGeometry(segments, fork) {
   return { track: track, lit: lit };
 }
 
+/* 逐像素疊合透明度，讓白光沿弧長漸淡，過轉角也不切換漸層方向或擴張線寬。 */
+function sgbFlowMarkup(d) {
+  var h = '';
+  for (var n = 32; n >= 1; n--) {
+    h += '<path class="sgb-path-flow" style="--sgb-dash-start:' + n + 'px;stroke-dasharray:' + n + ' ' + (120 - n) +
+      ';stroke-opacity:' + (1 / n).toFixed(6) + '" d="' + d + '"/>';
+  }
+  return h;
+}
+
 function sgbSyncPath(detail) {
   var lines = Array.from(detail.querySelectorAll('.sgb-line'));
   if (!lines.length || !detail.clientWidth) return;
@@ -9550,9 +9560,10 @@ function sgbSyncPath(detail) {
   svg.setAttribute('height', h);
   var markup = '<path class="sgb-path-track" d="' + paths.track + '"/>';
   if (paths.lit) {
-    ['edge', 'core', 'shine', 'tail', 'glow', 'spark'].forEach(function (kind) {
+    ['edge', 'core', 'shine'].forEach(function (kind) {
       markup += '<path class="sgb-path-' + kind + '" d="' + paths.lit + '"/>';
     });
+    markup += sgbFlowMarkup(paths.lit);
   }
   // 排版未變時保留動畫節點，避免快照更新或ResizeObserver重設動畫相位。
   if (svg._pathMarkup !== markup) {

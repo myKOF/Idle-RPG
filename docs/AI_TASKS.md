@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## SKILL-FLOW-GRADIENT-20261014 — 沿路徑漸淡的白色流光
+
+- Owner：Codex；Done，單一開發者。使用者要求將平整白光改成漸層白光；前置8661e6d6等寬流光已完成，後續交使用者整合。
+- 允許css/ashen-forge.css流光樣式、js/ui.js流光裝飾產生、tests/skill2-ui.test.cjs必要回歸、index.html上述快取及本紀錄；禁止技能規則／數值／幾何／Worker／Protocol／存檔／獨立素材及其他副本，不合併／推送。五檔預檢乾淨、工作區乾淨。
+- 方式／驗收：沿原路徑以逐像素透明度疊合白光，亮頭向後平滑漸淡，漸層共用3px線寬且不加外暈；原速度、120px週期、連續轉角與減少動態保留。驗漸層透明度／週期／路徑、瀏覽器及Console、回歸、Build、diff後Commit；純SVG／CSS，素材庫無變更。
+- 完成／修改5檔：ui.js以sgbFlowMarkup取代原三段固定透明度的白／金光，沿同一路徑以32層不同長度的白色dash疊合，從光尾到亮頭的合成透明度逐像素線性遞增；全部亮頭對齊，不會因長度不同分離，弧長及轉角共用原速度。CSS共用3px、filter:none，光段butt端點避免圓端蓋疊成平整白塊，減少動態時隱藏新流光類。主頁CSS1.0.68／ui.js1.0.157，本紀錄同步；技能幾何／規則不變。
+- 測試指令／結果：node --test tests/skill2-ui.test.cjs tests/boss-skill-lock.test.cjs，36/36通過；新增1項驗各層共用120px週期及亮頭、同一路徑、透明度在1／8／16／24／32層時依序為1／32、1／4、1／2、3／4、1，釘住漸層而非均勻白塊，並驗等寬無外暈。npm.cmd run build 507檔通過，git diff --check通過。
+- 瀏覽器：computer-use／CUA，隔離localhost正式大地守護／光耀之堂HTML與原描線函式，目視漸層白光、完整直線與轉角；32層ComputedStyle均3px、filter:none、linear，最長層alpha.03125、最短層alpha1，端點butt且無橫向溢出，Console error／warning 0。預覽在本聊天visualizations/skills-gradient-flow.png；未讀真人存檔，臨時頁面／服務／腳本已清理。
+- 唯讀檢查：原sgbPathGeometry／排程與相位、BOSS測試、既有主題、Build工具及AI規範；未改Worker／存檔／素材／Protocol。自製SVG／CSS，無獨立素材或Preset，素材庫無本次變更／無需Commit。遊戲Commit為本紀錄所在[Codex] fix提交，回覆附編號；無本次未完成項，可審查合併，未合併／推送。限制／風險：流光由3層改32層以維持沿弧長且不擴線寬，未做低階裝置／真人長戰效能壓測或全庫測試；動畫仍由CSS執行，沒有新增逐幀JS。下一步整合後重載技能頁驗收漸層。
+
 ## SKILL-FLOW-WIDTH-20261014 — 流光與進化線條等寬
 
 - Owner：Codex；Done，單一開發者。使用者指出增亮後流光超出線段寬度，要求等寬；前置0c0f23a2，後續交使用者整合。
