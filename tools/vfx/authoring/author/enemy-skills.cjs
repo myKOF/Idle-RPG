@@ -409,22 +409,22 @@ NEW['en-missile-burst'] = () => ({
   ]
 });
 
-/* 電火花（帶電）：一條不規則的琥珀色閃電絲，三股鋸齒電光各自快速閃爍、微微抖動，沒有圓形本體
+/* 電火花（帶電）：一條不規則的藍白色閃電絲，三股鋸齒電光各自快速閃爍、微微抖動，沒有圓形本體
    （和玩家的藍白電球、敵人的雷光球都是圓的，這個是線狀）。朝 +X 飛，細長形（custom 尺寸，不靠 bodyD）。 */
 NEW['en-spark'] = () => {
-  const D = 0.5;
+  const D = 0.25;   // 變形（閃爍、抖動）的循環週期：0.5→0.25 秒，頻率 ×2
   const flick = (shift) => [[0, 1], [0.12, 0.2], [0.26, 1], [0.4, 0.3], [0.55, 0.95], [0.7, 0.15], [0.85, 1], [1, 1]]
     .map(([t, v], i, arr) => [+((t + shift) % 1).toFixed(3), v]).sort((x, y) => x[0] - y[0]);
   const jig = (amp, ph) => [[0, -amp], [0.2, amp * 0.8], [0.4, -amp * 0.6], [0.6, amp], [0.8, -amp * 0.9], [1, -amp]].map(([t, v]) => [t, +(v * ph).toFixed(3)]);
   return {
     id: 'en-spark', duration: D, loop: true, sizing: customSizing(56, 22, 4, 1.6),
     layers: [
-      kit.sprite({ id: 'glow', asset: A.glowSoft, z: 0, sizeX: 78, sizeY: 20, alpha: 0.3, tint: '#ff9a1a', blend: 'add', duration: D, alphaOverLife: [[0, 0.5], [0.3, 0.25], [0.6, 0.5], [1, 0.5]] }),
-      kit.sprite({ id: 'fil-a', asset: A.bolt05H, z: 1, sizeX: 80, sizeY: 30, alpha: 1, tint: '#ffb830', blend: 'add', duration: D, alphaOverLife: flick(0), rotationOverLife: jig(0.2, 1) }),
-      kit.sprite({ id: 'fil-b', asset: A.bolt06H, z: 2, sizeX: 70, sizeY: 26, alpha: 1, tint: '#ffd978', blend: 'add', duration: D, alphaOverLife: flick(0.37), rotationOverLife: jig(0.22, -1) }),
-      kit.sprite({ id: 'fil-c', asset: A.bolt05H, z: 3, sizeX: 62, sizeY: -22, alpha: 0.9, tint: '#ff8a1a', blend: 'add', duration: D, alphaOverLife: flick(0.71), rotationOverLife: jig(0.3, 1) }),
-      kit.sprite({ id: 'core', asset: A.bolt05H, z: 4, sizeX: 76, sizeY: 8, alpha: 1, tint: '#fff4d6', blend: 'add', duration: D, alphaOverLife: flick(0.2), rotationOverLife: jig(0.12, -1) }),
-      kit.particle({ id: 'zap', asset: A.bolt04, z: 5, rate: 14, lifetime: [0.1, 0.22], spawnRadius: 10, speed: [30, 80], direction: 0, spread: 360, startPx: [12, 22], alpha: 1, tint: '#ffe08a', blend: 'add', alphaOverLife: [[0, 1], [1, 0]] })
+      kit.sprite({ id: 'glow', asset: A.glowSoft, z: 0, sizeX: 78, sizeY: 20, alpha: 0.3, tint: '#3a8cff', blend: 'add', duration: D, alphaOverLife: [[0, 0.5], [0.3, 0.25], [0.6, 0.5], [1, 0.5]] }),
+      kit.sprite({ id: 'fil-a', asset: A.bolt05H, z: 1, sizeX: 80, sizeY: 30, alpha: 1, tint: '#8fd0ff', blend: 'add', duration: D, alphaOverLife: flick(0), rotationOverLife: jig(0.2, 1) }),
+      kit.sprite({ id: 'fil-b', asset: A.bolt06H, z: 2, sizeX: 70, sizeY: 26, alpha: 1, tint: '#d4eeff', blend: 'add', duration: D, alphaOverLife: flick(0.37), rotationOverLife: jig(0.22, -1) }),
+      kit.sprite({ id: 'fil-c', asset: A.bolt05H, z: 3, sizeX: 62, sizeY: -22, alpha: 0.9, tint: '#5aa8ff', blend: 'add', duration: D, alphaOverLife: flick(0.71), rotationOverLife: jig(0.3, 1) }),
+      kit.sprite({ id: 'core', asset: A.bolt05H, z: 4, sizeX: 76, sizeY: 8, alpha: 1, tint: '#ffffff', blend: 'add', duration: D, alphaOverLife: flick(0.2), rotationOverLife: jig(0.12, -1) }),
+      kit.particle({ id: 'zap', asset: A.bolt04, z: 5, rate: 14, lifetime: [0.1, 0.22], spawnRadius: 10, speed: [30, 80], direction: 0, spread: 360, startPx: [12, 22], alpha: 1, tint: '#bfe4ff', blend: 'add', alphaOverLife: [[0, 1], [1, 0]] })
     ]
   };
 };

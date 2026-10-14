@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "en-spark",
-  "duration": 0.5,
+  "duration": 0.25,
   "loop": true,
   "layers": [
     {
@@ -14,9 +14,9 @@
         "y": 0.0391
       },
       "alpha": 0.3,
-      "tint": "#ff9a1a",
+      "tint": "#3a8cff",
       "blendMode": "add",
-      "duration": 0.5,
+      "duration": 0.25,
       "alphaOverLife": [
         [
           0,
@@ -46,9 +46,9 @@
         "y": 0.0586
       },
       "alpha": 1,
-      "tint": "#ffb830",
+      "tint": "#8fd0ff",
       "blendMode": "add",
-      "duration": 0.5,
+      "duration": 0.25,
       "alphaOverLife": [
         [
           0,
@@ -120,9 +120,9 @@
         "y": 0.0508
       },
       "alpha": 1,
-      "tint": "#ffd978",
+      "tint": "#d4eeff",
       "blendMode": "add",
-      "duration": 0.5,
+      "duration": 0.25,
       "alphaOverLife": [
         [
           0.07,
@@ -194,9 +194,9 @@
         "y": -0.043
       },
       "alpha": 0.9,
-      "tint": "#ff8a1a",
+      "tint": "#5aa8ff",
       "blendMode": "add",
-      "duration": 0.5,
+      "duration": 0.25,
       "alphaOverLife": [
         [
           0.11,
@@ -268,9 +268,9 @@
         "y": 0.0156
       },
       "alpha": 1,
-      "tint": "#fff4d6",
+      "tint": "#ffffff",
       "blendMode": "add",
-      "duration": 0.5,
+      "duration": 0.25,
       "alphaOverLife": [
         [
           0.05,
@@ -338,7 +338,7 @@
       "assetId": "particle-pack/png-black-background/spark_04.png",
       "zIndex": 5,
       "alpha": 1,
-      "tint": "#ffe08a",
+      "tint": "#bfe4ff",
       "blendMode": "add",
       "emission": {
         "mode": "rate",
