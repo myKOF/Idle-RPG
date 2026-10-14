@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "en-vortex",
-  "duration": 3,
+  "duration": 2,
   "loop": true,
   "layers": [
     {
@@ -14,12 +14,13 @@
         "y": 0
       },
       "scale": {
-        "x": 1,
-        "y": 0.55
+        "x": 0.1769,
+        "y": 0.0973
       },
       "alpha": 0.595,
       "tint": "#833884",
       "blendMode": "add",
+      "duration": 2,
       "scaleOverLife": [
         [
           0,
@@ -33,7 +34,11 @@
           1,
           0.95
         ]
-      ]
+      ],
+      "perspective": false,
+      "cameraDepth": true,
+      "followDirection": false,
+      "followStretch": false
     },
     {
       "id": "accretion-outer",
@@ -45,12 +50,13 @@
         "y": 0
       },
       "scale": {
-        "x": 0.9,
-        "y": 0.28
+        "x": 0.1735,
+        "y": 0.0988
       },
       "alpha": 1,
       "tint": "#f91331",
       "blendMode": "add",
+      "duration": 2,
       "rotationOverLife": [
         [
           0,
@@ -60,7 +66,11 @@
           1,
           6.28318
         ]
-      ]
+      ],
+      "perspective": false,
+      "cameraDepth": true,
+      "followDirection": false,
+      "followStretch": false
     },
     {
       "id": "swirl-outer",
@@ -72,12 +82,13 @@
         "y": 0
       },
       "scale": {
-        "x": 0.7,
-        "y": 0.24
+        "x": 0.1322,
+        "y": 0.0847
       },
       "alpha": 0.68,
       "tint": "#fa364f",
       "blendMode": "add",
+      "duration": 2,
       "rotationOverLife": [
         [
           0,
@@ -87,7 +98,11 @@
           1,
           12.56637
         ]
-      ]
+      ],
+      "perspective": false,
+      "cameraDepth": true,
+      "followDirection": false,
+      "followStretch": false
     },
     {
       "id": "swirl-inner",
@@ -99,12 +114,13 @@
         "y": 0
       },
       "scale": {
-        "x": 0.5,
-        "y": 0.17
+        "x": 0.0844,
+        "y": 0.06
       },
       "alpha": 0.595,
       "tint": "#f5fb65",
       "blendMode": "add",
+      "duration": 2,
       "rotationOverLife": [
         [
           0,
@@ -114,7 +130,11 @@
           1,
           25.13274
         ]
-      ]
+      ],
+      "perspective": false,
+      "cameraDepth": true,
+      "followDirection": false,
+      "followStretch": false
     },
     {
       "id": "inflow-w",
@@ -122,11 +142,12 @@
       "assetId": "particle-pack/png-black-background/trace_02.png",
       "zIndex": 4,
       "position": {
-        "x": -150,
-        "y": 0
+        "x": -26.1637,
+        "y": 0.6376
       },
       "tint": "#fa394c",
       "blendMode": "add",
+      "duration": 2,
       "emission": {
         "mode": "rate",
         "rate": 20
@@ -137,22 +158,22 @@
         1.3
       ],
       "spawn": {
-        "radius": 30,
+        "radius": 10.5888,
         "shape": "circle"
       },
       "speed": [
-        30,
-        60
+        10.5888,
+        21.1777
       ],
       "direction": 25,
       "spread": 15,
       "gravity": {
-        "x": 170,
+        "x": 60.0034,
         "y": 0
       },
       "startScale": [
-        0.04,
-        0.09
+        0.0141,
+        0.0317
       ],
       "alignToVelocity": true,
       "velocityRotationOffset": 1.5708,
@@ -183,7 +204,10 @@
           1,
           0.45
         ]
-      ]
+      ],
+      "perspective": false,
+      "cameraDepth": true,
+      "followDirection": false
     },
     {
       "id": "inflow-n",
@@ -191,11 +215,12 @@
       "assetId": "particle-pack/png-black-background/trace_02.png",
       "zIndex": 5,
       "position": {
-        "x": 0,
-        "y": -150
+        "x": -2.5505,
+        "y": -27.439
       },
       "tint": "#fa394c",
       "blendMode": "add",
+      "duration": 2,
       "emission": {
         "mode": "rate",
         "rate": 20
@@ -206,22 +231,22 @@
         1.3
       ],
       "spawn": {
-        "radius": 30,
+        "radius": 10.5888,
         "shape": "circle"
       },
       "speed": [
-        30,
-        60
+        10.5888,
+        21.1777
       ],
       "direction": 115,
       "spread": 15,
       "gravity": {
         "x": 0,
-        "y": 170
+        "y": 60.0034
       },
       "startScale": [
-        0.04,
-        0.09
+        0.0141,
+        0.0317
       ],
       "alignToVelocity": true,
       "velocityRotationOffset": 1.5708,
@@ -252,7 +277,10 @@
           1,
           0.45
         ]
-      ]
+      ],
+      "perspective": false,
+      "cameraDepth": true,
+      "followDirection": false
     },
     {
       "id": "inflow-e",
@@ -260,11 +288,12 @@
       "assetId": "particle-pack/png-black-background/trace_02.png",
       "zIndex": 6,
       "position": {
-        "x": 150,
-        "y": 0
+        "x": 35.0905,
+        "y": 1.2753
       },
       "tint": "#fa394c",
       "blendMode": "add",
+      "duration": 2,
       "emission": {
         "mode": "rate",
         "rate": 20
@@ -275,22 +304,22 @@
         1.3
       ],
       "spawn": {
-        "radius": 30,
+        "radius": 10.5888,
         "shape": "circle"
       },
       "speed": [
-        30,
-        60
+        10.5888,
+        21.1777
       ],
       "direction": 205,
       "spread": 15,
       "gravity": {
-        "x": -170,
+        "x": -60.0034,
         "y": 0
       },
       "startScale": [
-        0.04,
-        0.09
+        0.0141,
+        0.0317
       ],
       "alignToVelocity": true,
       "velocityRotationOffset": 1.5708,
@@ -321,7 +350,10 @@
           1,
           0.45
         ]
-      ]
+      ],
+      "perspective": false,
+      "cameraDepth": true,
+      "followDirection": false
     },
     {
       "id": "inflow-s",
@@ -329,11 +361,12 @@
       "assetId": "particle-pack/png-black-background/trace_02.png",
       "zIndex": 7,
       "position": {
-        "x": 0,
-        "y": 150
+        "x": -0.6376,
+        "y": 27.439
       },
       "tint": "#fa394c",
       "blendMode": "add",
+      "duration": 2,
       "emission": {
         "mode": "rate",
         "rate": 20
@@ -344,22 +377,22 @@
         1.3
       ],
       "spawn": {
-        "radius": 30,
+        "radius": 10.5888,
         "shape": "circle"
       },
       "speed": [
-        30,
-        60
+        10.5888,
+        21.1777
       ],
       "direction": -65,
       "spread": 15,
       "gravity": {
         "x": 0,
-        "y": -170
+        "y": -60.0034
       },
       "startScale": [
-        0.04,
-        0.09
+        0.0141,
+        0.0317
       ],
       "alignToVelocity": true,
       "velocityRotationOffset": 1.5708,
@@ -390,7 +423,10 @@
           1,
           0.45
         ]
-      ]
+      ],
+      "perspective": false,
+      "cameraDepth": true,
+      "followDirection": false
     },
     {
       "id": "debris",
@@ -403,22 +439,23 @@
       },
       "tint": "#e58dfc",
       "blendMode": "add",
+      "duration": 2,
       "emission": {
         "mode": "rate",
         "rate": 6
       },
       "maxParticles": 24,
       "lifetime": [
-        2,
-        3
+        1,
+        2
       ],
       "spawn": {
-        "radius": 210,
+        "radius": 30,
         "shape": "circle"
       },
       "speed": [
-        8,
-        22
+        2.8237,
+        7.7651
       ],
       "direction": 0,
       "spread": 360,
@@ -427,8 +464,8 @@
         "y": 0
       },
       "startScale": [
-        0.03,
-        0.07
+        0.0106,
+        0.0247
       ],
       "rotationSpeed": [
         -1,
@@ -451,7 +488,10 @@
           1,
           0
         ]
-      ]
+      ],
+      "perspective": false,
+      "cameraDepth": true,
+      "followDirection": false
     },
     {
       "id": "accretion-inner",
@@ -463,12 +503,13 @@
         "y": 0
       },
       "scale": {
-        "x": 0.55,
-        "y": 0.18
+        "x": 0.1683,
+        "y": 0.055
       },
       "alpha": 1,
       "tint": "#fb6672",
       "blendMode": "add",
+      "duration": 2,
       "rotationOverLife": [
         [
           0,
@@ -478,7 +519,11 @@
           1,
           -18.84956
         ]
-      ]
+      ],
+      "perspective": false,
+      "cameraDepth": true,
+      "followDirection": false,
+      "followStretch": false
     },
     {
       "id": "event-horizon",
@@ -490,12 +535,17 @@
         "y": 0
       },
       "scale": {
-        "x": 0.26,
-        "y": 0.26
+        "x": 0.0687,
+        "y": 0.0687
       },
       "alpha": 1,
       "tint": "#000000",
-      "blendMode": "normal"
+      "blendMode": "normal",
+      "duration": 2,
+      "perspective": false,
+      "cameraDepth": true,
+      "followDirection": false,
+      "followStretch": false
     },
     {
       "id": "photon-ring",
@@ -507,12 +557,13 @@
         "y": 0
       },
       "scale": {
-        "x": 0.22,
-        "y": 0.22
+        "x": 0.0581,
+        "y": 0.0581
       },
       "alpha": 1,
       "tint": "#fc7a82",
       "blendMode": "add",
+      "duration": 2,
       "scaleOverLife": [
         [
           0,
@@ -526,7 +577,11 @@
           1,
           0.98
         ]
-      ]
+      ],
+      "perspective": false,
+      "cameraDepth": true,
+      "followDirection": false,
+      "followStretch": false
     }
   ],
   "sizing": {

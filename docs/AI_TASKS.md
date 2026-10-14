@@ -1,5 +1,20 @@
 # AI_TASKS.md
 
+## DEVELOP-VORTEX-MERGE-20261014 — 合併漩渦拉扯修正與使用者NPC特效調整
+
+- Owner：Codex；Done。使用者快捷指令1授權解決develop既有合併，原HEAD c268df56、MERGE_HEAD aa81f68f（使用者「調整npc特效」）。前置為已提交兩側成果；單一開發者，完成交使用者重載驗收。
+- 允許：Skills2 Excel／CSV與生成JS的漩渦衝突、必要index／bridge／Worker／Runtime／Editor快取、本紀錄、既有兩份NPC Preset原樣保留及素材庫副本／來源紀錄；完成原合併及驗證。禁止改其他技能／數值／Protocol／存檔／他人副本，不推送。預檢只發現本次待合併aa81f68f，同輪指令已授權處理。
+- 決策：保留Claude的pullR40／minPull4與相應描述／實作，並保留使用者移除e_vortex持續場域en-vortex的意圖；兩份en-vortex／en-gold-dome Preset逐位元保留使用者版本。Excel由原HEAD工作簿只清除漩渦列持續場域特效一格，保留既有資料／公式／格式／物件，禁止手工寫XML；再經正式工具重轉CSV與生成JS。
+- 驗收：試算表工具窄域檢視／編輯、Excel正常重開、三方格值／格式保留、表格與JS同源，漩渦施放邊界／拉扯與無場域、NPC特效／Worker回歸、Build、素材來源／雙倉庫提交及diff check。
+- 完成：合併Excel／CSV／js的e_vortex，保留pullR40／minPull4、Claude最新說明與施放條件，只移除使用者清空的field引用；en-vortex與en-gold-dome逐位元等於aa81f68f。手動／生成修改9檔：Skills2 Excel／CSV／js、index、bridge、sim.worker、Runtime資料快取、Editor共用Runtime快取、本紀錄；2份Preset保留原合併結果，共11檔。
+- Excel：Artifact Tool完成匯入、AN242單格清空、重算／匯出及前後窄域預覽。比對發現匯出改動styles與5處原生結構（欄寬／視圖／驗證／篩選等），未採用該匯出；依AI_RULES8.5改用Excel原生API在原HEAD副本只ClearContents Skills2!AN242。正常模式重開、所有工作表的其他值／公式／範圍／圖形與表格數完全相同；唯讀XML稽核確認styles、格樣式、欄寬／視圖／驗證／合併／篩選不變。首輪校驗腳本中文表頭因PowerShell無BOM誤判，加BOM後重驗通過，過程未寫回錯誤來源。沒有手工寫XML。
+- 同源：正式xlsx_to_csv轉283列52欄；以CSV parser比較原HEAD，唯一格差為第242列第40欄en-vortex變空，其餘所有格不變。正式config_tables --apply --write Skills2只生成一次ENEMY_SKILLS2語意變更，最終skills2完整檔案等於HEAD只刪e_vortex的field。之後--apply Skills2語意變更0。
+- 快取：skills2 1.0.311、bridge1.0.269、Runtime1.0.198（Editor同步）；Worker入口與skills2 import、Preset DATA_VERSION均20261014-vortex-merge-presets，elite／elite_data仍沿Claude20261014-vortex-reach、shim13與Protocol50不變。
+- 測試：node --test --test-reporter=tap tests/elite-engine.test.cjs tests/elite-data.test.cjs tests/elite-groups.test.cjs tests/elite-params.test.cjs tests/npc-elite-skills.test.cjs tests/battle-elite.test.cjs tests/enemy-attack-vfx-lifecycle.test.cjs tests/enemy-buffs-tooltip.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/worker-catchup-silent.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/skyfall-telegraph.test.cjs tests/skills2-vfx-schema.test.cjs tests/skills2-vfx-usage.test.cjs，16檔140/140全過、0略過；包含漩渦40米拉扯與貼身／超距拒絕、敵人技能／特效、Worker及補進度靜音、天穹與配置／Editor快取。真sim engine另核對pullR400座標／minPull40座標、e_vortex.vfx.field缺省；未新增測試或修改斷言。
+- 驗證：npm.cmd run build 503檔通過，git diff --check／git diff --cached --check通過；node tools/vfx/export-assets.cjs --check --root D:/MyGame/Asset確認172素材引用最新。唯讀檢查AI規範、原生Excel與CSV工具、elite／elite_data／engine與測試、兩側原表格與Preset；上述未擴改。
+- 雙倉庫：兩份使用者Preset保存至Asset的codex-authored/npc-vfx-adjustments-20261014/presets及SOURCE.md，逐位元核對後先提交e3bf651（[Codex] fix: 保存使用者 NPC 漩渦與護盾特效調整）。沒有新繪圖、貼圖或外部素材，原Preset不再被配置引用仍保存不刪；素材庫其餘內容未變、狀態乾淨。
+- 交付：遊戲Commit為本紀錄所在[Codex] merge提交，父提交c268df56與aa81f68f；3個unmerged檔清零、無本次未完成項，可審查；兩庫均不推送。已知限制：本輪未另跑全庫或瀏覽器Console／真人長時間戰鬥驗收。下一步使用者重載遊戲；Editor未儲存內容先另存再重載。臨時腳本／工作簿／預覽及junction於提交前清理。
+
 ## ENAMEL-NAV-RIM-20261014 — 移除外圈亮點、加厚圓框並放大圖示
 
 - Owner：Codex；Done。使用者要求十圖外圈四個亮點全部刪除、框厚增加1px、圖示放大10%；另要求威能兩個提案，最後附圖核定第3版紅藍雙色火焰＋金色晶核接入，以最後附圖為準。前置為既有清理版，單一開發者，後續使用者審閱整合。
