@@ -1,5 +1,39 @@
 # AI_TASKS.md
 
+## SKILL-CRYSTAL-PATH-20261014 — 技能進階晶條與進化流光
+
+- Owner：Codex；Done，單一開發者。使用者依截圖要求左側進階條與中央進化節點／連線提升質感並加入流光；前置既有技能瀏覽器已完成，後續交使用者整合驗收。
+- 允許css/ashen-forge.css技能瀏覽器樣式、index.html僅該CSS快取、本紀錄；禁止修改JS／技能規則／數值／Worker／存檔／獨立素材與其他副本，不合併／推送。CSS與紀錄預檢乾淨；index有ai/claude af8b7ab0的指南及JS版本異區修改，使用者已同意僅更新第11行技能CSS快取。開始時彈窗轉角任務剛完成提交，工作區乾淨。
+- 內容：沿用元素色與原進度／解鎖class，進階條改金屬嵌邊晶條，中央節點改多切面紅晶石，已點亮縱線／超神分岔加入流光；未學／鎖定保持暗色，選取仍可辨識，減少動態偏好停動畫。
+- 驗收：正式UI瀏覽器檢查滿級／部分／未學／鎖定、普通階展開及三岔選取、窄面板與動畫／減少動態；相關既有UI回歸、Build、Console與diff check後獨立Commit。純CSS自製外觀，無外部素材／素材庫變更。
+- 完成／修改3檔：css/ashen-forge.css的進階晶條由15×4改15×8並保留原--pct分段填色，金屬包邊／上下反光／凹槽及滿階微光；超神小菱形改切面金晶石。進化節點改22px金屬托座＋紅晶切面，部分／滿階／未學／鎖定分色，白色選取輪廓保留。原已點亮的縱線與超神橫線／所選卡分支加暖金流光，未投資連線無動畫；裝飾pointer-events:none，減少動態媒體規則關閉動畫。index.html只更新ashen-forge.css 1.0.63→1.0.64；本紀錄同步。
+- 指令／結果：node --test tests/skill2-ui.test.cjs tests/skill-tree-layout.test.cjs tests/skill-equipped-style.test.cjs tests/skill-loadout.test.cjs，28/28通過；npm.cmd run build，507檔全過；git diff --check通過。沒有新增鏡像測試或修改既有斷言，未改JS／技能規則／數值／Worker／存檔。
+- 瀏覽器：computer-use技能／CUA，隨機localhost埠的正式遊戲新來源，新角色進入技能頁及展開連刺正常，真Worker／Pixi載入，CSS快取1.0.64及22px節點生效，詳情橫向溢出0；Console error／warning 0，未讀真人存檔。另用正式sgbListItemHTML／sgbDetailHTML產生拋棄式滿級／混合／鎖定資料驗收，70／80與80／80、部分填充、未學／鎖定晶石、三岔瀏覽及原選中路徑均正確；710px面板下詳情426px、橫向溢出0且清單無溢出。ComputedStyle確認點亮縱線sgb-flow-down、橫線sgb-flow-right、卡分支動畫；CSSOM確認減少動態規則已載入，未切換系統偏好實測。
+- 素材／未修改但檢查：截圖僅參考範圍與位置；外觀為自製CSS，不匯入外部素材、不產生獨立圖檔或Preset，素材庫無本次變更／無需Commit。唯讀檢查js/ui.js、css/style.css／ashen-forge-flat.css／dialogs.css、上述4份測試、Build工具、AI規範／prompts/codex.md及Claude af8b7ab0的index差異。預覽圖保存在本聊天visualizations/skills-crystal-path.png，臨時驗收頁／伺服器／腳本已清理。
+- 交付：遊戲Commit為本紀錄所在[Codex] feat提交，回覆附編號；無本次未完成項或已知新增風險，可供審查合併，未合併／推送。限制：未做真人存檔長時間效能壓測、未跑全庫測試；減少動態僅確認正式CSS規則。下一步使用者整合後重載技能頁驗收外觀及動態。
+
+## DIALOG-CORNER-FIX-20261014 — 修整彈窗外框轉角閉合
+
+- Owner：Codex；Done，單一開發者。使用者指出設置／Esc彈窗右上角有尖縫；前置DIALOG-UI-UNIFY-20261014，將分邊ridge改為連續漸層框，保留6px寬度／灰色質感，完成交使用者整合。
+- 允許css/dialogs.css、index.html的dialogs.css快取版本、本必要紀錄；禁止JS／功能／素材／其他副本修改，不合併／推送。CSS／紀錄預檢乾淨；index與ai/claude af8b7ab0的指南／JS版本同檔異區，已告知並取得同意，本輪只改第16行CSS版本。
+- 驗收：設置、菜單與確認框四角連續閉合，保持尺寸／6px厚度／關閉與捲動；相關既有UI測試、Build、diff check，完成後提交。
+- 完成：css/dialogs.css將ridge四邊各自拼接改成6px透明solid邊界，以padding-box深色底＋border-box連續灰金屬漸層填滿外框，原4px圓角／陰影／尺寸不變；四角不再有明暗對接尖縫。index.html唯一差異為dialogs.css1.0.1→1.0.2；加本紀錄共3檔。
+- 驗證：node --test tests/modal-close-hitbox.test.cjs tests/esc-shortcut.test.cjs tests/game-menu.test.cjs，8/8通過；npm.cmd run build，507檔全過；git diff --check通過。隔離localhost:12640正式Worker／Pixi／UI，菜單／設置四角目視閉合、設定關閉返回菜單與重新開局確認只取消正常；12個靜態彈窗均ComputedStyle 6px solid／padding-box,border-box，Console error／warning 0，沒有讀真人存檔。截圖為本聊天visualizations/dialogs-corners-menu.png／dialogs-corners-settings.png／dialogs-corners-menu-detail.png；預覽服務及頁面已關閉。
+- 未修改但檢查：原共用彈窗規則、Claude af8b7ab0的index差異、上述3份測試及Build工具；沒有新增測試或改斷言，未改JS／素材，素材庫無本次變更。遊戲Commit為本紀錄所在[Codex] fix提交；無本次未完成項或已知新增風險，可審查合併，未合併／推送。未另跑全庫測試或真人存檔長時間驗收；下一步整合後重新載入查看閉合外框。
+
+## DIALOG-UI-UNIFY-20261014 — 統一遊戲彈窗與確認訊息風格
+
+- Owner：Codex；Done，單一開發者。使用者要求所有大小彈窗／確認訊息一致，追加指定裝備框風格的灰色質感外框、厚度約截圖一半；採6px金屬灰斜面框、深色底、共用標題／關閉鈕／操作按鈕與間距。前置既有UI；完成交使用者驗收整合。
+- 允許：新增css/dialogs.css、index.html載入／必要呈現標記、本紀錄。預檢三路徑乾淨。禁止改JS事件／Worker／存檔／模擬／素材／其他副本，不合併／推送。
+- 範圍：共用確認／輸入、Esc菜單／設置、統計、任務、詳細日誌、技能／威能、離線收益、封魔塔結算／公告，以及多分頁鎖／存檔來源／Worker停止提示；裝備方案與分解等浮層共用框／按鈕語彙。保留各窗口尺寸、統計拖曳與穿透、功能／危險語意／層級；不改hover工具提示。
+- 驗收：真瀏覽器多類大小視窗／重疊確認／Esc與取消、長內容捲動、小視窗、無遮擋與Console錯誤；既有UI相關測試、Build、diff check。純CSS格式整理，不產生新美術資源。
+- 完成／修改：新增css/dialogs.css，收斂既有三套主題與inline外觀，6px灰色ridge斜面框／4px圓角／深灰漸層底／24px內距、暖金19px標頭／分隔線、30px統一關閉鈕、36px基本操作鈕與焦點輪廓；主要／選取操作暖金，danger／warn保留紅色（含hover），確認鈕統一間距，輸入框與窄視窗18px內距同步。去除舊角飾／轉生彩虹框動畫，覆蓋所有共用彈窗；統計無遮罩／穿透／拖曳、原尺寸與各自滾動區仍保留。index.html唯一差異為最後載入dialogs.css?v=1.0.1；加本紀錄共3檔，未改JS或美術素材。
+- 指令：node --test tests/confirm-dialog.test.cjs tests/modal-close-hitbox.test.cjs tests/tooltip-modal-close.test.cjs tests/esc-shortcut.test.cjs tests/game-menu.test.cjs tests/init-ui-smoke.test.cjs tests/summary.test.cjs tests/battle-skill-summary.test.cjs tests/save-origin-isolation.test.cjs；9檔37/37通過，0失敗／略過，未新增或降低斷言。npm.cmd run build：507檔全過；git diff --check通過。舊轉生測試只驗證基礎CSS保留的定義，本次最後載入的共用樣式會關閉該獨立彩虹外框，不以該測試聲稱流光仍顯示。
+- 瀏覽器：隔離localhost:7201正式Worker／Pixi／UI，未讀真人存檔；Esc菜單、設置、重新開局確認（只取消）、統計、詳細日誌均實際開關，確認取消及Esc只關最上層、內文捲動正常。ComputedStyle核對12個靜態彈窗均6px ridge rgb(100,105,103)／4px圓角／24px內距；第二個隔離分頁的動態tab-lock-notice亦6px灰框／19px標題，未按接管。統計維持透明遮罩且pointer-events沿原值，880px寬與內文捲動正常；拖曳事件原檔未改，未額外進行拖曳驗收。
+- 響應／紀錄：390×700下設置外框x10..380／y10..690，370px寬／680px高，內文可捲動、外框無橫向溢出，關閉與按鈕可見；驗證後還原尺寸。Console error／warning 0。截圖保存在本聊天visualizations/dialogs-menu.png、dialogs-settings.png、dialogs-confirm.png、dialogs-stats.png；臨時預覽服務／頁面均清理。技能／威能／離線／結算／公告未強行解鎖或觸發，以原標記與ComputedStyle確認外框覆蓋，不宣稱已實操所有條件流程。
+- 未修改但檢查：css/style.css／ashen-forge.css／ashen-forge-flat.css、js/ui.js／game-menu.js／save_origin.js／tablock.js、共用確認與各彈窗標記、上述9份既有測試及Build工具。沒有新素材或來源變更，素材庫乾淨，不建立空提交。
+- 交付：遊戲Commit為本紀錄所在[Codex] feat提交；無本次未完成項，可供審查合併，未合併／推送。限制為未另跑全庫測試／真人存檔長時間驗收或未解鎖彈窗流程；下一步使用者整合後重新載入驗收統一灰框。
+
 ## NAV-SINGLE-CIRCLE-FIX-20261014 — 修正圖檔與CSS疊出的雙圈
 
 - Owner：Codex；Done，單一開發者。前置為ESC-MENU-NAV-20261014；使用者指出仍有雙圈，已確認PNG原框與CSS外框分離。使用者明確同意只改圖示樣式與快取版本，後續交使用者整合。

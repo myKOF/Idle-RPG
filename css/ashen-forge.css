@@ -2679,26 +2679,60 @@ html *::-webkit-scrollbar-corner {
 }
 
 .sgb-pip {
+  position: relative;
+  box-sizing: border-box;
+  flex: 0 0 15px;
   width: 15px;
-  height: 4px;
-  border-radius: 1px;
-  background: linear-gradient(90deg, var(--elem) var(--pct), #2a2d34 var(--pct));
+  height: 8px;
+  border: 1px solid #54514a;
+  border-radius: 2px;
+  background:
+    linear-gradient(180deg, #ffffff70, transparent 40%, #00000070),
+    linear-gradient(90deg, var(--elem) var(--pct), #20252b var(--pct));
+  box-shadow: 0 1px 2px #000000b3, inset 0 0 0 1px #00000050;
+}
+
+.sgb-pip::after {
+  content: '';
+  position: absolute;
+  inset: 1px 2px;
+  border-top: 1px solid #ffffff30;
+  pointer-events: none;
+}
+
+.sgb-pip.is-max {
+  border-color: color-mix(in srgb, var(--elem) 65%, #524b3b);
+  box-shadow: 0 1px 2px #000000b3, inset 0 0 0 1px #ffffff25,
+    0 0 4px color-mix(in srgb, var(--elem) 22%, transparent);
 }
 
 .sgb-pip.is-locked {
-  background: #1c1e23;
+  border-color: #30343a;
+  background: linear-gradient(180deg, #272c33, #11151b);
+}
+
+.sgb-pip.is-locked::after {
+  border-top-color: #ffffff0a;
 }
 
 .sgb-pip-ult {
-  width: 7px;
-  height: 7px;
+  position: relative;
+  box-sizing: border-box;
+  flex: 0 0 9px;
+  width: 9px;
+  height: 9px;
   margin-left: 4px;
+  border: 1px solid #494944;
+  border-radius: 2px;
   transform: rotate(45deg);
-  background: #2a2d34;
+  background: conic-gradient(from 45deg, #343b44, #161b22, #42464b, #20252d, #343b44);
+  box-shadow: 0 1px 3px #000;
 }
 
 .sgb-pip-ult.is-on {
-  background: #e7c47c;
+  border-color: #f0cf86;
+  background: conic-gradient(from 45deg, #fff3c1, #9a591f, #e1ad4a, #fff1b4, #fff3c1);
+  box-shadow: 0 0 5px #edb74f66, inset 0 0 0 1px #fff0b433;
 }
 
 .sgb-item-total {
@@ -2797,7 +2831,7 @@ html *::-webkit-scrollbar-corner {
   color: #a39d90;
 }
 
-/* 進化之路：左側節點欄（菱形節點＋上下連線，已投資的段落點亮成紅色） */
+/* 進化之路：金屬嵌邊晶石；只有已投資的連線流動，狀態仍由原有 class 決定。 */
 .sgb-tier {
   display: flex;
   gap: 10px;
@@ -2810,9 +2844,11 @@ html *::-webkit-scrollbar-corner {
 
 .sgb-line {
   position: absolute;
-  left: 19px;
-  width: 3px;
-  background: #34373e;
+  left: 18.5px;
+  width: 4px;
+  background: linear-gradient(90deg, #15191f, #4b4c50 45%, #25272d 75%, #11151b);
+  box-shadow: 0 0 0 1px #090b0e;
+  pointer-events: none;
 }
 
 .sgb-line-up {
@@ -2832,35 +2868,96 @@ html *::-webkit-scrollbar-corner {
 
 .sgb-line.is-lit {
   background: #c4282a;
-  box-shadow: 0 0 6px rgba(220, 40, 40, .75);
+  background-image: linear-gradient(90deg, #571f24, #ffad7b 45%, #c64a43 70%, #571a24);
+  box-shadow: 0 0 0 1px #4f2726, 0 0 7px #e0483440;
+}
+
+.sgb-line.is-lit::after,
+.sgb-fork-bar.is-lit::after,
+.sgb-ult-card.is-chosen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 30%, #ffcf8c88 46%, #fff6d8 50%, #ff996a80 54%, transparent 70%) 0 0 / 100% 90px repeat-y;
+  animation: sgb-flow-down 2.8s linear infinite;
+  pointer-events: none;
 }
 
 .sgb-node {
   position: absolute;
-  left: 12px;
-  top: 10px;
+  z-index: 1;
+  left: 9.5px;
+  top: 7.5px;
   box-sizing: border-box;
-  width: 17px;
-  height: 17px;
-  border: 2px solid #5a5d66;
-  border-radius: 2px;
-  background: #1b1e24;
+  width: 22px;
+  height: 22px;
+  border: 1px solid #74726b;
+  border-radius: 4px;
+  background: conic-gradient(from 45deg, #63686f, #171d25, #494d54, #252b34, #63686f);
+  box-shadow: 0 2px 4px #000, inset 0 0 0 2px #15191f;
   transform: rotate(45deg);
+  pointer-events: none;
+}
+
+.sgb-node::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border: 1px solid #a0a6ad55;
+  border-radius: 2px;
+  background: conic-gradient(from 45deg, #46505c, #1b2530, #36404d, #64707c, #46505c);
+}
+
+.sgb-node::after {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border-top: 1px solid #ffffff55;
+  border-left: 1px solid #ffffff30;
+  border-radius: 1px;
+  background: linear-gradient(135deg, #ffffff20, transparent 65%);
 }
 
 .sgb-tier-part .sgb-node {
-  border-color: #c4282a;
-  background: #5a1618;
+  border-color: #bb8261;
+  background: conic-gradient(from 45deg, #dfb483, #57362e, #a57550, #e3c295, #dfb483);
+  box-shadow: 0 2px 4px #000, inset 0 0 0 2px #442223, 0 0 8px #b9342c30;
+}
+
+.sgb-tier-part .sgb-node::before {
+  border-color: #e69c7955;
+  background: conic-gradient(from 45deg, #c56759, #4d1825, #8c2635, #e58c72, #c56759);
 }
 
 .sgb-tier-max .sgb-node {
   border-color: #f0cf86;
-  background: #c4282a;
+  background: conic-gradient(from 45deg, #fff0b6, #79502e, #c28b43, #ffe2a0, #fff0b6);
+  box-shadow: 0 2px 4px #000, inset 0 0 0 2px #69332c, 0 0 10px #de573a45;
+}
+
+.sgb-tier-max .sgb-node::before {
+  border-color: #ffc2a080;
+  background: conic-gradient(from 45deg, #ffb38a, #951b34, #e14745, #ffddad, #ffb38a);
+}
+
+.sgb-tier-max .sgb-node::after {
+  border-color: #fff4d7a0;
+  background: linear-gradient(135deg, #fff1c960, transparent 70%);
 }
 
 .sgb-tier-locked .sgb-node {
   border-color: #2f3238;
-  background: #15171c;
+  background: linear-gradient(135deg, #353b43, #141920 65%);
+  box-shadow: 0 2px 4px #000, inset 0 0 0 2px #11151b;
+}
+
+.sgb-tier-locked .sgb-node::before {
+  border-color: #343a44;
+  background: linear-gradient(135deg, #29313b, #171d26);
+}
+
+.sgb-tier-locked .sgb-node::after {
+  opacity: .25;
 }
 
 .sgb-tier.is-sel .sgb-node {
@@ -3023,13 +3120,21 @@ html *::-webkit-scrollbar-corner {
   left: 19px;
   right: 16.667%;
   height: 3px;
-  background: #34373e;
+  background: linear-gradient(180deg, #15191f, #4b4c50 45%, #25272d 75%, #11151b);
+  box-shadow: 0 0 0 1px #090b0e;
+  pointer-events: none;
 }
 
 .sgb-fork-bar.is-lit {
   right: auto;
   background: #c4282a;
-  box-shadow: 0 0 6px rgba(220, 40, 40, .75);
+  background-image: linear-gradient(180deg, #571f24, #ffad7b 45%, #c64a43 70%, #571a24);
+  box-shadow: 0 0 0 1px #4f2726, 0 0 7px #e0483440;
+}
+
+.sgb-fork-bar.is-lit::after {
+  background: linear-gradient(90deg, transparent 30%, #ffcf8c88 46%, #fff6d8 50%, #ff996a80 54%, transparent 70%) 0 0 / 120px 100% repeat-x;
+  animation-name: sgb-flow-right;
 }
 
 .sgb-ult-cards {
@@ -3062,7 +3167,8 @@ html *::-webkit-scrollbar-corner {
   width: 3px;
   height: 14px;
   margin-left: -1.5px;
-  background: #34373e;
+  background: linear-gradient(90deg, #15191f, #4b4c50 45%, #25272d 75%, #11151b);
+  pointer-events: none;
 }
 
 .sgb-ult-card b {
@@ -3087,7 +3193,33 @@ html *::-webkit-scrollbar-corner {
 
 .sgb-ult-card.is-chosen::before {
   background: #c4282a;
-  box-shadow: 0 0 6px rgba(220, 40, 40, .75);
+  background-image: linear-gradient(90deg, #571f24, #ffad7b 45%, #c64a43 70%, #571a24);
+  box-shadow: 0 0 0 1px #4f2726, 0 0 7px #e0483440;
+}
+
+.sgb-ult-card.is-chosen::after {
+  inset: auto;
+  top: -15px;
+  left: 50%;
+  width: 3px;
+  height: 14px;
+  margin-left: -1.5px;
+}
+
+@keyframes sgb-flow-down {
+  to { background-position: 0 90px; }
+}
+
+@keyframes sgb-flow-right {
+  to { background-position: 120px 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sgb-line.is-lit::after,
+  .sgb-fork-bar.is-lit::after,
+  .sgb-ult-card.is-chosen::after {
+    animation: none;
+  }
 }
 
 .sgb-ult-card.is-focus {
