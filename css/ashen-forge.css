@@ -540,6 +540,7 @@ select option {
 
 #equip-grid {
   position: relative;
+  container-type: inline-size;
   width: 100%;
   max-width: none;
   aspect-ratio: 1096 / 1440;
@@ -1066,9 +1067,14 @@ select option {
 #workspace-area .item-cell.selected,
 #workspace-area .eq-slot.selected {
   outline: 5px solid #ffe354;
-  outline-offset: -5px;
+  outline-offset: 0;
   border-radius: 0 !important;
   transition: none !important;
+}
+
+/* 外側金屬黑框畫在紙娃娃PNG上，黃框向外等比覆蓋，不侵入內側品質框。 */
+#workspace-area #equip-grid .eq-slot.selected {
+  outline-width: 2.2cqw;
 }
 
 /* Hover updates must not rerasterize a filtered copy of the entire textured

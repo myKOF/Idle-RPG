@@ -28,13 +28,15 @@ function selectionRule() {
   return match[1];
 }
 
-test('選取黃框使用方角並向內覆蓋原裝備邊框，不改格子尺寸', () => {
+test('選取黃框使用方角，從格外緣向外畫且隨紙娃娃縮放覆蓋背景黑框', () => {
   const skin = fs.readFileSync(path.join(root, 'css/ashen-forge.css'), 'utf8');
   const rule = skin.match(/#workspace-area \.item-cell\.selected,\s*#workspace-area \.eq-slot\.selected\s*\{([^}]+)\}/)[1];
   assert.match(rule, /outline:\s*5px solid #ffe354/);
-  assert.match(rule, /outline-offset:\s*-5px/);
+  assert.match(rule, /outline-offset:\s*0\s*;/);
   assert.match(rule, /border-radius:\s*0\s*!important/);
   assert.doesNotMatch(rule, /(?:^|;)\s*(?:width|height|padding|border-width):/);
+  assert.match(skin, /#equip-grid\s*\{[^}]*container-type:\s*inline-size/);
+  assert.match(skin, /#workspace-area #equip-grid \.eq-slot\.selected\s*\{\s*outline-width:\s*2\.2cqw/);
 });
 
 test('背包選取對應裝備欄以加粗原本的品質邊框呈現', () => {

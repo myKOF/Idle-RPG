@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## EQUIP-OUTER-YELLOW-FRAME-20261014 — 黃框向外覆蓋紙娃娃黑框
+
+- Owner：Codex；Done，單一開發者。使用者澄清黃框應向外長並完全遮住背景圖外側黑框，修正前輪向內覆蓋品質框的誤解；前置d9950995，後續交使用者整合。
+- 允許css/ashen-forge.css紙娃娃容器與黃框、index.html僅CSS快取、tests/equipment-selection-border.test.cjs對新需求的斷言及本紀錄；禁止JS／比較標籤與來源／技能／裝備規則／素材／Worker／存檔及其他副本，不合併／推送。測試／紀錄預檢乾淨；CSS仍為Antigravity的afx-label移除、index為其舊CSS快取1.0.66及Claude33853a16的data／formula版本，沿使用者前輪已明確同意的同檔分段保留授權。
+- 內容／驗收：方角框改從原格外緣向外畫，不留outline-offset空隙；紙娃娃黃框厚度依容器寬度等比，蓋住PNG黑框，格位／內容尺寸不變。檢查戒指／副手與13格、不同面板寬度、瀏覽器／Console、相關回歸、Build與diff後Commit。純CSS，無素材變更。
+- 完成／修改4檔：CSS黃框outline-offset由-5px改0，自原格外緣向外畫；保持0圓角，紙娃娃格使用2.2cqw厚度覆蓋背景PNG金屬黑框，equip-grid設inline-size容器以隨背景同比例縮放；背包黃框亦由內畫改外畫，未改格位／內容／尺寸。index只CSS1.0.69→1.0.70，選取框測試同步改驗使用者澄清的外向要求，本紀錄同步。上一輪比較標籤與範圍保持，不動其他AI段落。
+- 指令／結果：node --test tests/equipment-selection-border.test.cjs tests/equipment-slot-selection.test.cjs tests/equip-selection-outline-instant.test.cjs tests/equipment-tooltip-compare.test.cjs tests/sidebar-layout.test.cjs tests/ui-fixed-canvas.test.cjs，31/31通過；npm.cmd run build 508檔通過；git diff --check通過。
+- 瀏覽器：computer-use／CUA，隔離localhost，正式renderEquip產生13部位與原紙娃娃PNG。13格逐一點選皆0圓角／offset0，選取前後全部格子的寬高完全相同；戒指51.34375×46.3125px亦未改。350／500／650px面板的實際格容器348／498／648px，黃框實際7／10／14px（瀏覽器像素取整），目視戒指／副手向外覆蓋整圈黑框且內側品質框保留。Console error／warning 0；預覽在本聊天visualizations/equip-outer-yellow-frame.png，臨時頁面／服務／腳本已清理。未操作真人存檔。
+- 唯讀檢查：character_UI.png、13格CSS比例及原校正紀錄、其他副本CSS／index差異、js/ui.js renderEquip與上述未改測試／Build；未改JS／比較功能／裝備規則／存檔／Worker或素材。純CSS，素材庫無變更／無需Commit。
+- 交付：Commit為本紀錄所在[Codex] fix提交，回覆列編號；無本次未完成項或已知新增風險，可供合併，未合併／推送。限制：未做真人長戰／全庫回歸，覆蓋比例依目前紙娃娃背景製作。下一步整合後重載驗收外側黃框，保留其他AI同檔修改。
+
 ## EQUIP-SELECTION-COMPARE-20261014 — 方角選取框與裝備比較範圍
 
 - Owner：Codex；Done，單一開發者。使用者要求黃框方角覆蓋裝備框、比較標籤改「現有」靠右、身上兩戒指不互相比較，只比較背包與已穿裝備；前置既有裝備UI已完成，後續交使用者整合。
