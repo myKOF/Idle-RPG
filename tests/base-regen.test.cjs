@@ -8,10 +8,11 @@ const row = (c, name) => c.STAT_GROUPS.flatMap(g => g.rows).find(r => r[0].inclu
 
 test('新角色：生命基礎每秒5、法力基礎每秒1，智力加成另行累加', () => {
   const c = load(), st = c.computeStats();
-  assert.equal(st.hpRegen, 0);
-  assert.equal(c.playerHpRegenPerSec(st), 5);
+  const E = c.PRIMARY_STAT_EFFECTS;
+  near(st.hpRegen, st.str * E.strHpRegen + st.vit * E.vitHpRegen); // 力量／體質提供額外生命回復
+  near(c.playerHpRegenPerSec(st), 5 + st.hpRegen);
   assert.equal(c.DERIVED_COEF.mpRegenBase, 1);
-  near(st.mpRegen, 1.02);
+  near(st.mpRegen, 1 + st.int * E.intMpRegen + st.vit * E.vitMpRegen);
   assert.equal(c.playerMpRegenPerSec({ mpRegen: 1 }), 1);
 });
 
@@ -21,12 +22,12 @@ test('最大生命／法力大幅變動不改回復；裝備回復與智力加�
   const larger = c.computeStats();
   assert.ok(larger.hp > bare.hp * 1000);
   assert.ok(larger.mp > bare.mp * 1000);
-  assert.equal(c.playerHpRegenPerSec(larger), 5);
+  near(c.playerHpRegenPerSec(larger), 5 + bare.hpRegen);
   assert.equal(larger.mpRegen, bare.mpRegen);
   c.G.equipment.helmet.affixes.push({ key: 'hpRegen', val: 7 }, { key: 'mpRegen', val: 3 }, { key: 'int', val: 100 });
   const geared = c.computeStats();
-  assert.equal(c.playerHpRegenPerSec(geared), 12);
-  near(geared.mpRegen, 4.42);
+  near(c.playerHpRegenPerSec(geared), 12 + bare.hpRegen);
+  near(geared.mpRegen, bare.mpRegen + 3 + 100 * c.PRIMARY_STAT_EFFECTS.intMpRegen);
 });
 
 test('正式Worker野外Tick：實際生命入帳與面板共用定值，回復仍夾資源上限', () => {
@@ -35,11 +36,11 @@ test('正式Worker野外Tick：實際生命入帳與面板共用定值，回復�
   const p = c.FIELD.player, st = c.getStats();
   p.hp = 10; p.mp = 10;
   c.fieldTick(0.1);
-  near(p.hp, 10.5); near(p.mp, 10.102);
+  near(p.hp, 10 + 0.1 * (5 + st.hpRegen)); near(p.mp, 10 + 0.1 * st.mpRegen);
   const panel = c.buildPanel('header').stats;
-  assert.equal(panel.passivePanel.hpRegen, 5);
+  near(panel.passivePanel.hpRegen, 5 + st.hpRegen);
   near(panel.passivePanel.mpRegen, st.mpRegen);
-  assert.equal(row(c, '生命恢復')[1](panel), c.statFmt(5, null, '/s'));
+  assert.equal(row(c, '生命恢復')[1](panel), c.statFmt(panel.passivePanel.hpRegen, null, '/s'));
   p.hp = st.hp - 0.1; p.mp = st.mp - 0.01;
   c.fieldTick(0.1);
   assert.equal(p.hp, st.hp); assert.equal(p.mp, st.mp);
@@ -74,5 +75,5 @@ test('高塔仍只有額外生命回復，法力共用新的基礎值', () => {
   p.effects = { stun: c.GT + 10 };
   c.TOWER.boss.effects = { stun: c.GT + 10 };
   c.towerTick(0.1);
-  near(p.hp, 10); near(p.mp, 10 + st.mpRegen * 0.1);
+  near(p.hp, 10 + st.hpRegen * 0.1); near(p.mp, 10 + st.mpRegen * 0.1);
 });

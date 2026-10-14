@@ -142,7 +142,7 @@ function computeStats(equipmentOverride) {
     eliteDmg: 0, bossDmg: 0, normalDmg: 0, aoeDmg: 0, globalDmgRed: 0,
     normalDmgRed: 0, eliteDmgRed: 0, bossDmgRed: 0,
     blockRate: 0, blockDmgRed: 0, evasion: 0, tenacity: 0, shieldEff: 0, pRes: 0, mRes: 0,
-    ccRed: 0, moveSpeed: 0, loot: 0, xpBonus: 0, goldBonus: 0, luck: 0, weight: 0,
+    ccRed: 0, moveSpeed: 0, loot: 0, xpBonus: 0, goldBonus: 0, luck: 0,
     enhanceSuccess: 0, decomposeYield: 0, hybridMutation: 0, enrageThreshold: 0, affixCap: 0, gemEff: 0
   };
   var resist = zeroElemMap({ ctrl: 0 });
@@ -303,7 +303,7 @@ function computeStats(equipmentOverride) {
   // 四維主屬性：原始總值完成後，再套用轉生最終倍率。
   st.str = Math.round(rawStr * reincMult); st.agi = Math.round(rawAgi * reincMult);
   st.int = Math.round(rawInt * reincMult); st.vit = Math.round(rawVit * reincMult);
-  // 基礎：生命 = (基底 + (等級-1)×每級 + 耐力×vitHp + 定值) × (1 + 生命%) × (1 + 天賦生命%［生命洪流，獨立乘區］)
+  // 基礎：生命 = (基底 + (等級-1)×每級 + 體質×vitHp + 定值) × (1 + 生命%) × (1 + 天賦生命%［生命洪流，獨立乘區］)
   st.base = {};
   st.base.hp = DERIVED_COEF.hpBase + (lv - 1) * DERIVED_COEF.hpPerLevel + rawVit * PRIMARY_STAT_EFFECTS.vitHp;
   var rawHp = (st.base.hp + A.hpFlat) * Math.max(0.1, 1 + A.hpPct / 100);   // 下限 0.1：保險，避免任何負值來源把生命推到 0 以下
@@ -316,12 +316,12 @@ function computeStats(equipmentOverride) {
     ((typeof skill2RockMaxHpFactor === 'function') ? skill2RockMaxHpFactor() : 1) *
     // 符文真言的最大生命乘區（正負皆可；負值是代價，如血月、時之沙），下限 0.1
     ((rwAgg && rwAgg.fx.maxHpPct) ? Math.max(0.1, 1 + rwAgg.fx.maxHpPct / 100) : 1));
-  st.hpRegen = A.hpRegen;                                    // 額外生命恢復/秒（野外另加 BASE_HP_REGEN 定值基礎回復）
+  st.hpRegen = A.hpRegen + st.str * PRIMARY_STAT_EFFECTS.strHpRegen + st.vit * PRIMARY_STAT_EFFECTS.vitHpRegen; // 額外生命恢復/秒（野外另加 BASE_HP_REGEN 定值基礎回復）
   // 法力 =（基底 + 原始智力×intMp + 定值）×轉生倍率；法力恢復另依原有公式計算
   st.base.mp = DERIVED_COEF.mpBase + rawInt * PRIMARY_STAT_EFFECTS.intMp;
   var rawMp = st.base.mp + A.mpFlat;
   st.mp = Math.round(rawMp * reincMult);
-  st.mpRegen = DERIVED_COEF.mpRegenBase + st.int * PRIMARY_STAT_EFFECTS.intMpRegen + A.mpRegen;
+  st.mpRegen = DERIVED_COEF.mpRegenBase + st.int * PRIMARY_STAT_EFFECTS.intMpRegen + st.vit * PRIMARY_STAT_EFFECTS.vitMpRegen + A.mpRegen;
   // 進攻／防禦定值的轉生指數強化：flatMult × 定值 × reincBase^轉生次數（0 轉時 = flatMult×定值）
   var reincN = reincarnationCount();
   st.reincFlatBonus = {
@@ -337,7 +337,7 @@ function computeStats(equipmentOverride) {
   st.base.matk = DERIVED_COEF.matkBase + st.int * PRIMARY_STAT_EFFECTS.intMatk;
   st.matk = Math.round((st.base.matk + A.matkFlat + st.reincFlatBonus.matk) * (1 + A.matkPct / 100) * godAttackMultiplier * (1 + (talent.matkPct || 0) / 100));
   st.critRate = capValue(DERIVED_COEF.critRateBase + st.agi * PRIMARY_STAT_EFFECTS.agiCritRate + A.critRate, STAT_CAPS.critRate);   // 暴擊率：基礎 5% + 敏捷係數
-  st.critDmg = DERIVED_COEF.critDmgBase + A.critDmg;                                  // 暴擊傷害：基礎 150%
+  st.critDmg = DERIVED_COEF.critDmgBase + st.agi * PRIMARY_STAT_EFFECTS.agiCritDmg + A.critDmg;                                  // 暴擊傷害：基礎 150%
   st.comboHits = comboHitsFor(st.critRate);                     // 連擊數：暴擊率破 100% 衍生的額外攻擊次數（僅普攻／技能直接傷害，持續傷害不計）
   // 穿透不設上限（STAT_CAPS.pPen/mPen = 0）：實際忽略防禦% 由 penIgnorePct 的飽和曲線換算（§3）。
   st.pPen = capValue(A.pPen, STAT_CAPS.pPen);
@@ -366,10 +366,10 @@ function computeStats(equipmentOverride) {
   st.bossDmgRed = A.bossDmgRed * (1 + (talent.bossDmgRed || 0) / 100);
   // 7/10 轉「總傷害額外增加」＝攻擊端最終獨立乘區（resolveHit 於敵種/屬性加成後套用）。
   st.totalDmgPct = talent.totalDmgPct || 0;
-  // 防禦：物防 = (defBase + 物防定值 + 轉生定值強化 + 力量×strDef + 耐力×vitDef) × (1 + 物防%) × (1 + 天賦物防%［獨立乘區］)
+  // 防禦：物防 = (defBase + 物防定值 + 轉生定值強化 + 力量×strDef + 體質×vitDef) × (1 + 物防%) × (1 + 天賦物防%［獨立乘區］)
   st.base.def = DERIVED_COEF.defBase + st.str * PRIMARY_STAT_EFFECTS.strDef + st.vit * PRIMARY_STAT_EFFECTS.vitDef;
   st.def = Math.round((st.base.def + A.defFlat + st.reincFlatBonus.def) * (1 + A.defPct / 100) * (1 + (talent.defPct || 0) / 100));
-  // 魔防 = (mdefBase + 魔防定值 + 轉生定值強化 + 智力×intMdef + 耐力×vitMdef) × (1 + 魔防%) × (1 + 天賦魔防%［獨立乘區］)
+  // 魔防 = (mdefBase + 魔防定值 + 轉生定值強化 + 智力×intMdef + 體質×vitMdef) × (1 + 魔防%) × (1 + 天賦魔防%［獨立乘區］)
   st.base.mdef = DERIVED_COEF.mdefBase + st.int * PRIMARY_STAT_EFFECTS.intMdef + st.vit * PRIMARY_STAT_EFFECTS.vitMdef;
   st.mdef = Math.round((st.base.mdef + A.mdefFlat + st.reincFlatBonus.mdef) * (1 + A.mdefPct / 100) * (1 + (talent.mdefPct || 0) / 100));
   st.blockRate = capValue(A.blockRate, STAT_CAPS.blockRate);                      // 格擋率上限（上限 0＝無上限）
@@ -410,7 +410,6 @@ function computeStats(equipmentOverride) {
   st.xpBonus = A.xpBonus;
   st.goldBonus = A.goldBonus;
   st.luck = capValue(A.luck, STAT_CAPS.luck);                               // 幸運值上限（上限 0＝無上限）
-  st.weight = Math.round(st.str * PRIMARY_STAT_EFFECTS.strWeight + A.weight);               // 負重 = 力量係數 + 詞條
   st.enhanceSuccess = A.enhanceSuccess;
   st.decomposeYield = A.decomposeYield;
   st.hybridMutation = capValue(A.hybridMutation, STAT_CAPS.hybridMutation);            // 合成變異率上限（上限 0＝無上限）
@@ -2220,9 +2219,9 @@ function inventoryExpandCost(upg) {
   return Math.round(INVENTORY_EXPAND_COST_BASE + INVENTORY_EXPAND_COST_MULT * Math.pow(INVENTORY_EXPAND_COST_RATE, n));
 }
 
-// 生產線容量（受「負重上限」屬性擴充）
+// 生產線容量（皆為固定值）
 function conveyorCap() { return CONVEYOR_CAP; }                              // 輸送帶固定上限
-function synthBufCap() { return SYNTH_BUFFER_CAP + Math.floor(getStats().weight / 2); } // 暫存區 = 30 + 負重/2
+function synthBufCap() { return SYNTH_BUFFER_CAP; }                          // 合成暫存區固定上限
 
 // 分解槽零件安裝格數：由初始格數起，使用金幣逐格解鎖至上限（兩者見 data.js）。
 // 舊存檔沒有 salvageSlots 欄位時由 migrateSave 保留既有格數。
