@@ -78,7 +78,8 @@ test('屬性面板：吸血／吸魔列顯示定值，不帶 %，提示說明單
     assert.doesNotMatch(shown, /%/, name + ' 不顯示百分比');
     assert.equal(shown, c.statFmt(st.passivePanel[key], c.STAT_CAPS[key], 'raw1'));
     const tip = row[2](st);
-    assert.match(tip, /單獨計算/);
+    assert.match(tip, /固定回復此數值的/);
+    assert.doesNotMatch(tip, /單獨計算/);
     assert.doesNotMatch(tip, /每秒.*換算|汲取換算基準/);
   }
 });

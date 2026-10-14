@@ -116,7 +116,7 @@ test('combat.js 普攻追加連擊段（僅主攻擊、遞迴 depth）', () => {
 test('data.js 連擊數常數與面板列', () => {
   const data = fs.readFileSync(path.join(root, 'js/data.js'), 'utf8');
   assert.match(data, /COMBO_HITS_COEF = \{/);
-  assert.match(data, /連擊數/);
-  assert.match(data, /暴擊率、攻速、冷卻縮減三項屬性達到一定程度後，超出的部分會增加連擊數。每次攻擊命中時有機會追加這麼多次攻擊。持續傷害不受影響。/);
+  assert.match(data, /每次攻擊命中時有25%機率造成額外攻擊次數/);
+  assert.match(data, /暴擊率、攻擊速度、冷卻縮減溢出上限時將會轉為增加連擊數/);
   assert.doesNotMatch(data, /整數部分固定追加|2\.57＝固定|中毒／詛咒/);
 });
