@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## MERGE-PREP-CLEANUP-20261014 — 整理全部未暫存變更供合併
+
+- Owner：Codex；Done，單一開發者。使用者要求清理unstaged準備合併，明確追加其他來源修改也一起commit；保留現有內容，未合併／推送。原6筆為4檔實質資料變更與Skills2／Status兩檔僅換行格式差異，後者透過Git正常暫存消除狀態，不建立無內容提交。
+- 允許現有config/CSV/Equipment_Affix.csv、Talents.csv、game_parameters.csv、Skills2.csv、Status.csv、js/data.js及必要快取index／bridge／worker與本紀錄；不擅自套用參數／更改玩法／修改正在製作中的診斷工具。預檢index／sim.worker有Claude新增dd475a0b、32438c21、fc4f0220的data／formula載入版本變更，使用者已同意只更新必要快取並提交；bridge及本紀錄預檢無其他副本來源。等待同副本離線診斷工具完成42e205ee後再改紀錄與提交，避免混入進行中工作。
+- 完成：原樣保存耐力名稱／天賦敘述、all_lock負重上限詞條及評分權重、參數表數值與負重相關描述；沒有將CSV草稿額外套用到公式。主端data1.0.72→73、bridge1.0.272→273，Worker data及WORKER_ASSET_VERSION改20261014-merge-prep-data；formula等其他字串保持。本紀錄同步。實際提交8檔；未修改但檢查Skills2／Status換行、apply_params工具、既有詞條／天賦及Worker測試、另一聊天診斷任務完成狀態。
+- 驗證：node --test tests/all-lock-affix.test.cjs tests/talents.test.cjs tests/affix-roll-storage.test.cjs tests/game-menu-pause.test.cjs tests/worker-protocol.test.cjs，56/56通過；npm.cmd run build，512檔通過；node --check js/data.js、js/bridge.js、js/worker/sim.worker.js均通過；git diff --check通過。只有版本字串新增修改，沒有新增鏡像測試。
+- 已知待整合：node tools/apply_params.cjs唯讀試跑失敗，CSV缺少2-屬性派生／生命恢復/秒（現有第70列改為負重上限），工具仍按原名稱取列。此批提交是保存使用者／他人既有草稿並清理Git，不宣稱參數已成功套用；合併整合時需處理這個資料／工具不一致。未變更錨點或修改最高權威數值以消除錯誤，未擅自改工具／公式。
+- 交付：Commit為本紀錄所在[Codex] chore提交，回覆附編號；完成後確認git status --short為空，無staged／unstaged／untracked產物。無新素材或素材庫變更，不需素材庫Commit。可開始Git合併，參數功能驗收仍受上述待整合問題限制；本次清理無未完成項，未合併／推送。下一步由使用者整合分支及處理參數套用問題。
+
 ## OFFLINE-SAVE-DIAG-20261014 — 排查離開遊戲後未顯示離線摘要
 
 - Owner：Codex；診斷工具Done，原Bug仍待實際瀏覽器快取確認，單一開發者。使用者回報同一 http://127.0.0.1:8123/ 離開十分鐘後無離線摘要，非安全模式，並提供 Saves_new 自動檔；該檔資料／磁碟時間皆為10月8日19:57，可能與本次瀏覽器快取不同。
