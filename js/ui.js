@@ -5060,6 +5060,7 @@ function renderEquip() {
   var equipSnapshot = uiEquipPanelSnapshot();
   var headerSnapshot = uiHeaderPanelSnapshot();
   if (!equipSnapshot || !headerSnapshot || !headerSnapshot.player) return;
+  syncEquipmentSelectionMemory(equipSnapshot);
   var box = $id('equip-grid');
   var h = '';
   var eq = equipViewEquipment(equipSnapshot);
@@ -5540,6 +5541,15 @@ function findItemById(id, detailed) {
 
 function findSelItem() {
   if (!UI.sel) return null;
+  if (UI.sel.slot && (UI.sel.source === 'equip' || UI.sel.source === 'equip-slot')) {
+    var eq = equipViewEquipment(peekUiPanelData('equip'));
+    var item = eq[UI.sel.slot];
+    if (!item && UI.sel.slot === 'weapon2' && !uiAsuraDualWield() &&
+        typeof isTwoHandItem === 'function' && isTwoHandItem(eq.weapon)) item = eq.weapon;
+    UI.sel.source = item ? 'equip' : 'equip-slot';
+    if (item) UI.sel.id = item.id; else delete UI.sel.id;
+    return item || null;
+  }
   return findItemById(UI.sel.id, UI.sel.source === 'inv');
 }
 
@@ -6067,6 +6077,58 @@ function selectionEquipSlotsForItem(selItem, selectedSlot) {
 
 // 同一件雙手武器會同時渲染在 weapon 與 weapon2；互點兩格時應轉移欄位選取，
 // 只有再次點擊同一格才取消選取。
+function equipmentSelectionChoice(selection) {
+  if (!selection) return null;
+  if ((selection.source === 'equip' || selection.source === 'equip-slot') &&
+      typeof SLOT_LIST !== 'undefined' && SLOT_LIST.indexOf(selection.slot) >= 0) {
+    return { source: 'equip-slot', slot: selection.slot };
+  }
+  if (selection.source === 'inv' && typeof selection.id === 'string' && selection.id && selection.id.length <= 200) {
+    return { source: 'inv', id: selection.id };
+  }
+  return null;
+}
+function equipmentSelectionMemory() {
+  if (UI.equipmentSelectionMemory) return UI.equipmentSelectionMemory;
+  var memory = { decided: false, restored: false, choice: null };
+  try {
+    var raw = localStorage.getItem('idle-rpg.equipmentSelection.v1');
+    if (raw !== null) {
+      var saved = JSON.parse(raw);
+      var choice = saved && equipmentSelectionChoice(saved.selection);
+      if (saved && Object.prototype.hasOwnProperty.call(saved, 'selection') && (saved.selection === null || choice)) {
+        memory.decided = true; memory.choice = choice;
+      }
+    }
+  } catch (error) {}
+  UI.equipmentSelectionMemory = memory;
+  return memory;
+}
+function rememberEquipmentSelection() {
+  var memory = equipmentSelectionMemory();
+  memory.decided = true;
+  memory.restored = true;
+  memory.choice = equipmentSelectionChoice(UI.sel);
+  try { localStorage.setItem('idle-rpg.equipmentSelection.v1', JSON.stringify({ selection: memory.choice })); } catch (error) {}
+}
+function syncEquipmentSelectionMemory(snapshot) {
+  if (!snapshot) return;
+  var memory = equipmentSelectionMemory();
+  if (!memory.restored) {
+    memory.restored = true;
+    if (memory.decided) UI.sel = memory.choice ? Object.assign({}, memory.choice) : null;
+    else if (UI.sel) rememberEquipmentSelection();
+  }
+  if (!memory.decided && !UI.sel) {
+    var eq = equipViewEquipment(snapshot);
+    var slot = SLOT_LIST.find(function (key) { return eq[key] && eq[key].id; });
+    if (slot) {
+      UI.sel = { source: 'equip', slot: slot, id: eq[slot].id };
+      rememberEquipmentSelection();
+    }
+  }
+  if (UI.sel && UI.sel.slot) UI.lastEquipSlot = UI.sel.slot;
+}
 function selectFilledCell(cell) {
   var cid = cell.getAttribute('data-id');
   var cellSource = cell.getAttribute('data-src');
@@ -6075,9 +6137,11 @@ function selectFilledCell(cell) {
     if (UI.sel.source === 'equip' && cellSource === 'equip' && UI.sel.slot !== cellSlot) {
       UI.sel.slot = cellSlot;
       UI.lastEquipSlot = cellSlot;
+      rememberEquipmentSelection();
       return;
     }
     UI.sel = null;
+    rememberEquipmentSelection();
     return;
   }
   UI.sel = { id: cid, source: cellSource };
@@ -6085,6 +6149,7 @@ function selectFilledCell(cell) {
     UI.lastEquipSlot = cellSlot;
     UI.sel.slot = cellSlot;
   }
+  rememberEquipmentSelection();
 }
 
 function updateSelectionUI() {
@@ -6235,12 +6300,16 @@ function detailAction(act, actBtn) {
       return;
     }
     if (act === 'equip') {
-      UI.sel = null;
+      UI.sel = { source: 'equip-slot', slot: args.slotKey || it.slot };
+      rememberEquipmentSelection();
       triggerEquipFlash(args.slotKey || it.slot, it);
       renderDetail();
     }
-    if (act === 'unequip') UI.sel = { id: it.id, source: 'inv' };
-    if (act === 'salvage') UI.sel = null;
+    if (act === 'unequip') {
+      UI.sel = { source: 'equip-slot', slot: args.slotKey || it.slot };
+      rememberEquipmentSelection();
+    }
+    if (act === 'salvage') { UI.sel = null; rememberEquipmentSelection(); }
     if (act === 'upgrade' && actBtn) {
       var upgradeResult = result && hasOwnUiState(result, 'result') ? result.result : result;
       if (upgradeResult === 'ok') {
@@ -6275,7 +6344,7 @@ function salvageAllUnlocked(maxRarity, maxLevel, maxAncient) {
       reportUiCommandFailure('批次分解', resultError, ['inv', 'equip', 'header', 'gems']);
       return;
     }
-    UI.sel = null;
+    if (UI.sel && UI.sel.source === 'inv' && !findSelItem()) { UI.sel = null; rememberEquipmentSelection(); }
   }).catch(function (error) {
     reportUiCommandFailure('批次分解', error, ['inv', 'equip', 'header', 'gems']);
   });
@@ -13269,6 +13338,7 @@ function initUI() {
           UI.sel = { source: 'equip-slot', slot: emptySlot };
         }
         UI.lastEquipSlot = emptySlot;
+        rememberEquipmentSelection();
       } else {
         selectFilledCell(cell);
       }

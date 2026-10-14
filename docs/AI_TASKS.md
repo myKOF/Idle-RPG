@@ -12,9 +12,12 @@
 
 ## EQUIP-SELECTION-MEMORY-20261014 — 記住裝備詳情選取部位
 
-- Owner：Codex；In Progress。使用者要求刷新恢復最後選取部位（含自行取消），首次只自動選第一件穿上的裝備；本來源localStorage記UI偏好，slot追蹤身上裝備，ID追蹤背包，沒有紀錄才自選一次。單一開發者，前置既有選取UI，完成交使用者整合。
+- Owner：Codex；Done。使用者要求刷新恢復最後選取部位（含自行取消），首次只自動選第一件穿上的裝備；本來源localStorage記UI偏好，slot追蹤身上裝備，ID追蹤背包，沒有紀錄才自選一次。單一開發者，前置既有選取UI，完成交使用者整合。
 - 允許js/ui.js、index.html的ui快取、本紀錄、tests/equipment-selection-memory.test.cjs及equipment-slot-selection.test.cjs；禁止Worker／Protocol／存檔格式／規則／素材／其他副本修改，不合併／推送。JS與測試預檢乾淨；index與Antigravity CSS快取／Claude33853a16的data及formula快取同檔異區，使用者已同意保留分段處理。已等待同副本EQUIP-OUTER-YELLOW-FRAME完成提交後才動手。
 - 驗收：刷新／取消／首件延遲穿上、換裝／換套／空部位／雙手副格、錯誤偏好與儲存不可用；既有選取回歸、瀏覽器、Build與diff後Commit。
+- 完成5檔：ui.js加入idle-rpg.equipmentSelection.v1偏好，記住選取／明確null，等待有效裝備面板才還原，沒有決定時首次有穿裝自選一次；findSelItem由slot解析最新裝備而非舊ID，空部位／雙手副格／預覽套仍保留slot，穿上與卸下也留在該部位，批次拆解不清除身上選取。index只改ui1.0.158→159；新增equipment-selection-memory測試，更新既有「穿上後清空」斷言為新需求「保留目標部位」，及本紀錄。
+- 驗證指令：node --test tests/equipment-selection-memory.test.cjs tests/equipment-slot-selection.test.cjs tests/equipment-detail-layout.test.cjs tests/equip-selection-outline-instant.test.cjs tests/init-ui-smoke.test.cjs，23/23通過（新增8項）；npm.cmd run build通過。隔離localhost:13740正式Worker／UI，新角色第一件腰帶自選、改點項鍊後刷新仍選amulet、自行取消後刷新selected數0、Console error／warning 0；未讀真人存檔，截圖equipment-selection-memory.png在本聊天visualizations。無新素材／素材庫變更。
+- 未改但檢查：裝備快照／雙手與套裝投影、Worker權威與存檔、既有選取框與其他AI同檔差異；無本次未完成項，可審查合併，不合併／推送。已知限制：偏好屬目前瀏覽器來源，清除網站儲存或換裝置不攜帶；未跑全庫／真人長戰，選取被拆解的背包物件需另選。遊戲Commit為本紀錄所在fix提交，下一步整合重載驗收；後續Esc全暫停為另一任務繼續處理。
 
 ## EQUIP-OUTER-YELLOW-FRAME-20261014 — 黃框向外覆蓋紙娃娃黑框
 
