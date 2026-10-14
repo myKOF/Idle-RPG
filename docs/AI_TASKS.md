@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## SKILL-CRYSTAL-PATH-20261014 — 技能進階晶條與進化流光
+
+- Owner：Codex；Done，單一開發者。使用者依截圖要求左側進階條與中央進化節點／連線提升質感並加入流光；前置既有技能瀏覽器已完成，後續交使用者整合驗收。
+- 允許css/ashen-forge.css技能瀏覽器樣式、index.html僅該CSS快取、本紀錄；禁止修改JS／技能規則／數值／Worker／存檔／獨立素材與其他副本，不合併／推送。CSS與紀錄預檢乾淨；index有ai/claude af8b7ab0的指南及JS版本異區修改，使用者已同意僅更新第11行技能CSS快取。開始時彈窗轉角任務剛完成提交，工作區乾淨。
+- 內容：沿用元素色與原進度／解鎖class，進階條改金屬嵌邊晶條，中央節點改多切面紅晶石，已點亮縱線／超神分岔加入流光；未學／鎖定保持暗色，選取仍可辨識，減少動態偏好停動畫。
+- 驗收：正式UI瀏覽器檢查滿級／部分／未學／鎖定、普通階展開及三岔選取、窄面板與動畫／減少動態；相關既有UI回歸、Build、Console與diff check後獨立Commit。純CSS自製外觀，無外部素材／素材庫變更。
+- 完成／修改3檔：css/ashen-forge.css的進階晶條由15×4改15×8並保留原--pct分段填色，金屬包邊／上下反光／凹槽及滿階微光；超神小菱形改切面金晶石。進化節點改22px金屬托座＋紅晶切面，部分／滿階／未學／鎖定分色，白色選取輪廓保留。原已點亮的縱線與超神橫線／所選卡分支加暖金流光，未投資連線無動畫；裝飾pointer-events:none，減少動態媒體規則關閉動畫。index.html只更新ashen-forge.css 1.0.63→1.0.64；本紀錄同步。
+- 指令／結果：node --test tests/skill2-ui.test.cjs tests/skill-tree-layout.test.cjs tests/skill-equipped-style.test.cjs tests/skill-loadout.test.cjs，28/28通過；npm.cmd run build，507檔全過；git diff --check通過。沒有新增鏡像測試或修改既有斷言，未改JS／技能規則／數值／Worker／存檔。
+- 瀏覽器：computer-use技能／CUA，隨機localhost埠的正式遊戲新來源，新角色進入技能頁及展開連刺正常，真Worker／Pixi載入，CSS快取1.0.64及22px節點生效，詳情橫向溢出0；Console error／warning 0，未讀真人存檔。另用正式sgbListItemHTML／sgbDetailHTML產生拋棄式滿級／混合／鎖定資料驗收，70／80與80／80、部分填充、未學／鎖定晶石、三岔瀏覽及原選中路徑均正確；710px面板下詳情426px、橫向溢出0且清單無溢出。ComputedStyle確認點亮縱線sgb-flow-down、橫線sgb-flow-right、卡分支動畫；CSSOM確認減少動態規則已載入，未切換系統偏好實測。
+- 素材／未修改但檢查：截圖僅參考範圍與位置；外觀為自製CSS，不匯入外部素材、不產生獨立圖檔或Preset，素材庫無本次變更／無需Commit。唯讀檢查js/ui.js、css/style.css／ashen-forge-flat.css／dialogs.css、上述4份測試、Build工具、AI規範／prompts/codex.md及Claude af8b7ab0的index差異。預覽圖保存在本聊天visualizations/skills-crystal-path.png，臨時驗收頁／伺服器／腳本已清理。
+- 交付：遊戲Commit為本紀錄所在[Codex] feat提交，回覆附編號；無本次未完成項或已知新增風險，可供審查合併，未合併／推送。限制：未做真人存檔長時間效能壓測、未跑全庫測試；減少動態僅確認正式CSS規則。下一步使用者整合後重載技能頁驗收外觀及動態。
+
 ## DIALOG-CORNER-FIX-20261014 — 修整彈窗外框轉角閉合
 
 - Owner：Codex；Done，單一開發者。使用者指出設置／Esc彈窗右上角有尖縫；前置DIALOG-UI-UNIFY-20261014，將分邊ridge改為連續漸層框，保留6px寬度／灰色質感，完成交使用者整合。
