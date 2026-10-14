@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## OFFLINE-SAVE-DIAG-20261014 — 排查離開遊戲後未顯示離線摘要
+
+- Owner：Codex；診斷工具Done，原Bug仍待實際瀏覽器快取確認，單一開發者。使用者回報同一 http://127.0.0.1:8123/ 離開十分鐘後無離線摘要，非安全模式，並提供 Saves_new 自動檔；該檔資料／磁碟時間皆為10月8日19:57，可能與本次瀏覽器快取不同。
+- 已確認：正式Worker及隔離瀏覽器以該角色副本離線600秒可結算並顯示摘要，Console error／warning 0；原始時間亦可結算24小時上限。未修改原存檔或8123瀏覽器資料，尚未確認原回報根因。
+- 允許新增tools/offline-save-diagnostic.html及本紀錄，預檢乾淨；禁止改玩法／Worker／Protocol／存檔格式／原檔／其他副本與已有CSV、data修改，不合併／推送。
+- 內容／驗收：提供同源唯讀IndexedDB自動存檔檢查與下載，顯示時間／角色／來源，支援gzip與純JSON，不啟動遊戲、不開資料夾、不寫DB／localStorage、不建立空資料庫；瀏覽器驗證成功／缺快取、JSON下載一致、Console與Build、diff檢查。前置為既有ic_fs_kv／kv／ic_auto_cache_v2，後續需使用者提供實際瀏覽器快取再續查；本次是診斷工具，不宣稱Bug已修復。無素材／素材庫變更。
+- 使用者追問數日未存檔與資料夾位置：唯讀核對三個資料夾，Saves_new的8123自動檔為10/8，Saves的5500為9/10，Save_test的5002為8/13；無其他8123自動檔。程式autoNow／shutdown只落IndexedDB，folder為獨立十分鐘同步，可能造成實體檔落後；不能據此宣稱瀏覽器未存檔或確認目前仍連Saves_new。診斷頁追加讀取saveDir及queryPermission，顯示資料夾名稱／權限；不請求新授權，網頁API無法給絕對路徑。
+- 使用者實際8123檢查結果：10/14 20:29:30回報瀏覽器未記錄資料夾；快取savedAt=1791980968566（20:29:28，僅2秒前），角色607級、Icefield current233／best249、runId1。確認瀏覽器快取仍在更新，並非數日完全未保存；實體檔不更新因目前未連資料夾。提供的703級沼澤舊檔與實際角色不同；下一步需下載診斷頁的當前快取作離線問題重現。尚未重新連資料夾、還原舊檔或修改真人快取。
+- 驗證：正式Worker以提供存檔副本離線600秒及原始時間上限86400秒均送出離線摘要；隔離localhost正式遊戲顯示Lv.280沼澤60殺、經驗約827B／金幣13.8M，Console error／warning 0。診斷頁驗gzip快取、純JSON、缺快取提示與下載停用，兩次下載SHA相同且savedAt保持不變；原檔副本下載JSON亦與解壓原檔一致。inline script以vm.Script語法檢查通過，npm.cmd run build 512檔通過，node --test tests/save-folder-timestamps.test.cjs tests/save-compression.test.cjs tests/game-menu-save.test.cjs 18/18通過，git diff --check通過。未新增鏡像測試／修改遊戲JS，不需快取版本變動。
+- 唯讀檢查：原始自動存檔及三個資料夾、save／storage／bridge／main／ui／Worker與GameClock、既有離線與存檔測試／Build工具。修改僅診斷HTML與本紀錄；原CSV與data未提交修改保留且不納入。臨時隔離服務、複製下載與腳本清理，截圖在聊天visualizations/offline-save-diagnostic.png；原始存檔不變。
+- 交付：Commit為本紀錄所在[Codex] chore提交，回覆附編號；診斷工具可Review／合併，未合併／推送，無素材庫Commit。原離線彈窗Bug未解決，尚缺實際遊戲瀏覽器快取檔；真人狀態依使用者貼回結果確認，未直接讀取或改寫真人瀏覽器資料。下一步由使用者下載當前快取備份並提供，再續查；如需資料夾同步，可選擇／更新Saves_new後另存當前進度，不應載入703級舊檔。
+
 ## EQUIP-YELLOW-FRAME-FINAL-20261014 — 方角黃框再減薄1px並提交
 
 - Owner：Codex；Done，單一開發者。使用者要求再減1px後提交；前置3355307a，後續交使用者整合。
