@@ -13,7 +13,7 @@ const root = path.resolve(__dirname, '..');
 const docPath = path.join(root, 'docs', 'ELITE_AFFIXES.md');
 const ctx = { console, module: { exports: {} } };
 vm.createContext(ctx);
-['js/data.js', 'js/skills2.js', 'js/elite_data.js'].forEach((f) => vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f }));
+['js/data.js', 'js/skills2.js', 'js/status.js', 'js/elite_data.js'].forEach((f) => vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f }));
 
 const ARCH_NAME = {
   spots: '多點落下', spot: '單點爆發', zone: '地面場域', volley: '彈體齊射', bolt: '電弧', dash: '衝鋒', spin: '原地連斬',
@@ -75,11 +75,31 @@ function vfxOf(d) {
   (d.presets || []).forEach((p) => parts.push('`' + p + '`'));
   return parts.join('、') || '（無畫面）';
 }
+/* 狀態欄：我方＝施放者自己身上、敵方＝玩家身上；名稱取 Status 表 */
+function statusOf(d) {
+  const part = (label, list) => (list || []).map((e) => label + '：' + ((ctx.STATUS[e.id] && ctx.STATUS[e.id].name) || e.id) + '（`' + e.id + '`）');
+  const st = d.status || {};
+  return part('自己', st.self).concat(part('玩家', st.enemy)).join('、') || '—';
+}
 function row(id) {
   const d = ctx.ELITE_AFFIXES[id];
-  return [d.emoji + ' ' + d.name, '`' + id + '`', ARCH_NAME[d.arch] || d.arch, d.elem ? (ELEM_NAME[d.elem] || d.elem) : '—', cd(d), knobs(d), flags(d), d.desc, vfxOf(d)];
+  return [d.emoji + ' ' + d.name, '`' + id + '`', ARCH_NAME[d.arch] || d.arch, d.elem ? (ELEM_NAME[d.elem] || d.elem) : '—', cd(d), knobs(d), flags(d), d.desc, statusOf(d), vfxOf(d)];
 }
-const HEADER = ['技能', 'id', '型態', '屬性', '冷卻（秒）', '關鍵數字', '限制', '效果', '特效 Preset'];
+const HEADER = ['技能', 'id', '型態', '屬性', '冷卻（秒）', '關鍵數字', '限制', '效果', '掛的狀態', '特效 Preset（技能本身）'];
+/* 敵人專用狀態（Status 表，id 以 e 開頭且 Skills2 敵人技能有引用）：畫面全在這裡 */
+function statusTable() {
+  const used = {};
+  ctx.ELITE_AFFIX_ORDER.forEach((id) => {
+    const st = ctx.ELITE_AFFIXES[id].status || {};
+    ['self', 'enemy'].forEach((side) => (st[side] || []).forEach((e) => { (used[e.id] = used[e.id] || []).push(ctx.ELITE_AFFIXES[id].name); }));
+  });
+  return Object.keys(used).map((sid) => {
+    const s = ctx.STATUS[sid] || {};
+    const v = s.vfx || {};
+    const cell = (k) => (v[k] ? '`' + v[k] + '`' : '—');
+    return [s.icon + ' ' + s.name, '`' + sid + '`', used[sid].join('、'), cell('apply'), cell('aura'), cell('tick')];
+  });
+}
 
 function npcSummary() {
   const pools = ['DESERT_POOL', 'ICEFIELD_POOL', 'SWAMP_POOL', 'UNDEAD_MOUNTAINS_POOL', 'GOD_BATTLEFIELD_POOL', 'GOD_CHAOS_POOL', 'GOD_SANCTUARY_POOL'];
@@ -106,6 +126,10 @@ function generate() {
   L.push('');
   L.push(table(excl.map(row), HEADER));
   const s = npcSummary();
+  L.push('');
+  L.push('### 敵人專用狀態（Status 表；狀態型特效的畫面都在這裡）');
+  L.push('');
+  L.push(table(statusTable(), ['狀態', 'id', '哪些技能掛', '施加特效（上身一次）', '持續特效（期間）', '作用特效（每次回復）']));
   L.push('');
   L.push('### 封魔塔 BOSS 的專屬技能（NPC 表 tower_boss 列）');
   L.push('');

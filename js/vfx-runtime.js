@@ -1901,7 +1901,8 @@ var VFXRuntime = (function () {
             mult: r > 0 ? profile.areaScale : profile.scale };
           auraTarget(a, r);
           a.sx = a.tsx; a.sy = a.tsy;
-          a.ref = play(rtZone, presetId, { position: footOf(e.key), scaleX: a.sx, scaleY: a.sy }, a.mult);
+          /* 整份標 perspective:false 的光罩（護盾球…）走 billboard 層：不受視角方向與 FOV 影響；其餘（地面光環）留在場景層 */
+          a.ref = play(billboardPresets[presetId] ? rtBillboard : rtZone, presetId, { position: footOf(e.key), scaleX: a.sx, scaleY: a.sy }, a.mult);
           if (a.ref) auras[k] = a;
         });
       });

@@ -354,6 +354,14 @@
 - 驗證：新增／重寫 6 支測試約 70 項；全庫測試失敗名稱與改造前 HEAD 比對，新增 0；實機（隱藏面板驅動）看過 arcane／poisoncross／frostburst／frostpulse／walls／vortex／electrified／plague／封魔塔 BOSS，並用離線渲染產生玩家 vs 敵人的特效對照預覽圖。
 - 已知：漩渦的拋物線高度沒有畫面（Canvas 沒有玩家離地高度）；任何一個 Preset 的素材不在發佈清單裡，整個 VFX Runtime 會靜默組裝失敗（所有特效消失），新增 Preset 後務必 `node tools/vfx/export-assets.cjs`。
 
+## Claude｜敵人技能的狀態型特效改放 Status 表（ELITE-STATUS-20261014）
+
+- Owner：Claude；Done（等使用者看實機）。使用者問「護盾為什麼是持續場域特效？不該是 Status 嗎」，並要求整體疏理 NPC 技能、把狀態型的特效都放進 Status 表。分類原則沿用 2026-09-18：除飛行子彈外，掛在單位身上有持續時間的效果＝狀態；自己在場上存在、移動、判定的場域物件（毒窪、冰球、火牆、漩渦場…）不是。
+- 盤點（52 個技能）：狀態型 7 個——護盾（金色光罩，原填在「持續場域特效」）、庇護光環、不死鳥（重生後 1.6 秒無敵）、狂暴、復仇、血祭、再生、衰弱詛咒；加上 battle-elite.js 原本寫死的狀態環與狀態圖示（無敵／護盾／反射／狂暴／怒意）。其餘（彈體、爆發、預警、場域物件、一次性命中）維持在 Skills2。熔火、毒窪等 DoT 狀態本來就用 Status 既有的 burn／poison／slow。
+- 修改：Status 表新增 5 個敵人專用狀態（畫面標記）eInvuln 無敵護罩／eEnrage 狂暴／eRage 怒意／eRegen 再生／eCurse 衰弱詛咒，施加／持續／作用特效只填在這裡；Skills2 敵人列啟用「我方狀態／敵方狀態」欄（`tools/config_tables.cjs` 解析、驗證、往返）；引擎 `js/elite.js` 的 `eliteSyncStates` 依狀態旗標掛上／拿掉狀態，再生每次回復用 `statusTickVfxCollect`，詛咒對玩家 `applyStatus`；`js/battle-elite.js` 拿掉狀態環與圖示；`js/vfx-runtime.js syncStatuses` 整份 `perspective:false` 的光罩走 billboard 層（不受視角與 FOV 影響）；新增 `en-aura-enrage`、`en-aura-rage`，`en-gold-dome` 改腳底原點並循環；特效生成腳本預設不重生使用者在編輯器調過的 `en-gold-dome`、`en-vortex`（`--force` 才重生）。
+- 決策（我自己訂的）：①敵人專用狀態獨立成 e 開頭的 id，不共用玩家的 `invuln`／`shield`／`atkDown`（共用會讓玩家自己的狀態也長出敵人的光環）②復仇與血祭共用同一個「怒意」狀態，狂暴另一個（紅 vs 橘金）③詛咒除了原本的「攻擊」「防禦」減益狀態，另掛一個 eCurse 只負責顯示上身特效與剩餘時間（狀態列會多一個圖示）④帶電、強命、迅捷、嗜血、擊飛、生命鏈結、自爆、分裂沒有持續畫面，不建狀態。
+- 驗證：新增 ELITE-DATA-9、改寫 ELITE-DATA-8、ELITE-ENGINE-16／18、BATTLE-ELITE-2；實機（隱藏面板抽圖）看過金色光罩改走 billboard 後是直立橢圓、狂暴紅色光環、狀態文字。全庫失敗名稱與乾淨 HEAD 比對見提交說明。
+
 ## Claude｜高級敵人預覽回饋修正：BOSS 技能標籤、落雷方向、漩渦、地板面積、秘法棒（ELITE-FEEDBACK-20261013）
 
 - Owner：Claude；Done（等使用者實機看）。使用者回饋：①BOSS 血條下方顯示技能標籤（專屬＝亮暗金色、隨機＝技能屬性色），頭頂不再放圖示列 ②雷霆風暴落雷會斜著從畫面某方向劈來，違反落雷邏輯 ③漩渦特效太大、太久、太透明 ④熔火、瘟疫等地板效果太小（至少 6×6 米）⑤秘法棒要單側指針、體積 +30%。
