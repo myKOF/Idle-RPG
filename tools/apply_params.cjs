@@ -860,7 +860,7 @@ objFieldML('data', 'DERIVED_COEF = {', 'mpBase', '2-屬性派生', '法力上限
 objFieldML('data', 'PRIMARY_STAT_EFFECTS = {', 'intMp', '2-屬性派生', '法力上限', 1, 'mp每智');
 objFieldML('data', 'DERIVED_COEF = {', 'mpRegenBase', '2-屬性派生', '法力恢復/秒', 0, 'mpregen基底');
 objFieldML('data', 'PRIMARY_STAT_EFFECTS = {', 'intMpRegen', '2-屬性派生', '法力恢復/秒', 1, 'mpregen每智');
-// 物攻/魔攻 = (a + 定值 + b×定值×c^轉生次數 + 主屬×d) × (1+對應%)；物防/魔防另有耐力×e、共用攻擊%
+// 物攻/魔攻 = (a + 定值 + b×定值×c^轉生次數 + 主屬×d) × (1+對應%)；物防/魔防另有體質×e、共用攻擊%
 objFieldML('data', 'DERIVED_COEF = {', 'atkBase', '2-屬性派生', '物理攻擊', 0, 'atk基底a');
 objFieldML('data', 'DERIVED_COEF = {', 'atkFlatMult', '2-屬性派生', '物理攻擊', 1, 'atk定值係數b');
 objFieldML('data', 'DERIVED_COEF = {', 'atkReincBase', '2-屬性派生', '物理攻擊', 2, 'atk轉生指數底c');
@@ -889,7 +889,10 @@ scalar('data', 'ASPD_BASE', '2-屬性派生', '攻擊速度', 0);
 objFieldML('data', 'PRIMARY_STAT_EFFECTS = {', 'agiAspdPct', '2-屬性派生', '攻擊速度', 1, '攻速每敏');
 objFieldML('data', 'PRIMARY_STAT_EFFECTS = {', 'agiHit', '2-屬性派生', '命中率', 0, '命中每敏');
 objFieldML('data', 'PRIMARY_STAT_EFFECTS = {', 'agiEvasion', '2-屬性派生', '閃避率', 0, '閃避每敏');
-objFieldML('data', 'PRIMARY_STAT_EFFECTS = {', 'strWeight', '2-屬性派生', '負重上限', 0, '負重每力');
+objFieldML('data', 'PRIMARY_STAT_EFFECTS = {', 'strHpRegen', '2-屬性派生', '生命恢復/秒', 0, 'hpregen每力');
+objFieldML('data', 'PRIMARY_STAT_EFFECTS = {', 'vitHpRegen', '2-屬性派生', '生命恢復/秒', 1, 'hpregen每體');
+objFieldML('data', 'PRIMARY_STAT_EFFECTS = {', 'vitMpRegen', '2-屬性派生', '法力恢復/秒', 2, 'mpregen每體');
+objFieldML('data', 'PRIMARY_STAT_EFFECTS = {', 'agiCritDmg', '2-屬性派生', '暴擊傷害', 1, '暴傷每敏');
 
 /* ---- §2 屬性上限：單一來源 STAT_CAPS（data.js）；formula.js 夾限與 data.js 面板顯示/提示皆引用之 ---- */
 objFieldML('data', 'STAT_CAPS = {', 'critRate', '2-屬性上限', '暴擊率 上限', 0, '上限-暴擊率');

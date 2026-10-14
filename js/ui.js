@@ -11756,7 +11756,7 @@ function initUI() {
       showConfirmDialog(
         actTitle + '效果：\n' +
         '・人物等級回到 1 級，經驗歸零。\n' +
-        '・生命、法力及力量、敏捷、耐力、智力變為 ×' + reincarnationTotalMultiplier(nextCount) + '。\n' +
+        '・生命、法力及力量、敏捷、體質、智力變為 ×' + reincarnationTotalMultiplier(nextCount) + '。\n' +
         '・不再獲得技能點，改獲得轉生威能點。\n' +
         skillLimitLine +
         '・裝備、技能、資源與關卡進度保留。\n\n確定要進行' + actTitle + '嗎？',

@@ -109,7 +109,7 @@ var TALENT_TREES = {
     { id: 't1_str', name: '力量淬鍊', emoji: '💪', stat: 'strPct', low: 0.5, high: 1, desc: '力量總值額外提高' },
     { id: 't1_agi', name: '迅捷淬鍊', emoji: '🪽', stat: 'agiPct', low: 0.5, high: 1, desc: '敏捷總值額外提高' },
     { id: 't1_int', name: '奧術淬鍊', emoji: '🔮', stat: 'intPct', low: 0.5, high: 1, desc: '智力總值額外提高' },
-    { id: 't1_vit', name: '鋼骨淬鍊', emoji: '🦴', stat: 'vitPct', low: 0.5, high: 1, desc: '耐力總值額外提高' },
+    { id: 't1_vit', name: '鋼骨淬鍊', emoji: '🦴', stat: 'vitPct', low: 0.5, high: 1, desc: '體質總值額外提高' },
     { id: 't1_def', name: '物防鍛體', emoji: '🛡️', stat: 'defPct', low: 0.5, high: 1, desc: '物理防禦總值額外提高' },
     { id: 't1_mdef', name: '魔防鍛體', emoji: '🔰', stat: 'mdefPct', low: 0.5, high: 1, desc: '魔法防禦總值額外提高' },
     { id: 't1_pres', name: '物理抗性', emoji: '🪨', stat: 'pRes', low: 0.5, high: 1, desc: '物理抗性總值額外提高' },
@@ -207,7 +207,7 @@ var TALENT_TREES = {
     { id: 't10_str', name: '力量超昇', emoji: '💪', stat: 'strPct', low: 0.75, high: 1.5, desc: '力量總值額外提高' },
     { id: 't10_agi', name: '迅捷超昇', emoji: '🪽', stat: 'agiPct', low: 0.75, high: 1.5, desc: '敏捷總值額外提高' },
     { id: 't10_int', name: '奧術超昇', emoji: '🔮', stat: 'intPct', low: 0.75, high: 1.5, desc: '智力總值額外提高' },
-    { id: 't10_vit', name: '鋼骨超昇', emoji: '🦴', stat: 'vitPct', low: 0.75, high: 1.5, desc: '耐力總值額外提高' },
+    { id: 't10_vit', name: '鋼骨超昇', emoji: '🦴', stat: 'vitPct', low: 0.75, high: 1.5, desc: '體質總值額外提高' },
     { id: 't10_bossred', name: '屠龍神鎧', emoji: '🐉', stat: 'bossDmgRed', low: 10, high: 20, desc: '對 BOSS 敵人抗性額外提高' },
     { id: 't10_gemeff', name: '寶石共鳴', emoji: '💎', stat: 'gemEff', low: 10, high: 20, desc: '寶石鑲嵌效率提高' },
     { id: 't10_totaldmg', name: '毀滅本源', emoji: '☄️', stat: 'totalDmgPct', low: 1, high: 2, desc: '總傷害額外增幅' },
@@ -552,23 +552,26 @@ var STAT_CAPS = {
 
 var PRIMARY_STAT_EFFECTS = {
   strAtk: 1,
-  strDef: 0.35,
-  strWeight: 0.5,
-  agiCritRate: 1.0000000000000001E-5,
-  agiAspdPct: 0.2,
-  agiEvasion: 3.4999999999999999E-6,
-  agiHit: 0,        // 命中率每點敏捷（原本內嵌在 formula.js 的 st.hit 算式裡）
+  strDef: 0.5,
+  strHpRegen: 0.03, // 生命恢復/秒每點力量
+  agiCritRate: 0,
+  agiCritDmg: 1,    // 暴擊傷害%每點敏捷
+  agiAspdPct: 0,
+  agiEvasion: 0.02,
+  agiHit: 0.02,     // 命中率每點敏捷
   intMp: 2,
-  intMpRegen: 4.0000000000000001E-3,
+  intMpRegen: 0.01,
   intMatk: 1,
-  intMdef: 0.35,
+  intMdef: 0,
   vitHp: 10,
-  vitDef: 0.65,
-  vitMdef: 0.65
+  vitDef: 1,
+  vitMdef: 1,
+  vitHpRegen: 0.06, // 生命恢復/秒每點體質
+  vitMpRegen: 0.02  // 法力恢復/秒每點體質
 };
 // 攻防派生係數（參數表「2-屬性派生」22~25 列）：
 // 攻擊 = (base + 定值 + flatMult×定值×reincBase^轉生次數 + 主屬性×係數) × (1 + 對應攻擊%)
-// 防禦 = (base + 定值 + flatMult×定值×reincBase^轉生次數 + 主屬性×係數 + 耐力×係數) × (1 + 共用對應攻擊%)
+// 防禦 = (base + 定值 + flatMult×定值×reincBase^轉生次數 + 主屬性×係數 + 體質×係數) × (1 + 共用對應攻擊%)
 var DERIVED_COEF = {
   atkBase: 20, atkFlatMult: 1.2, atkReincBase: 2.5,
   matkBase: 16, matkFlatMult: 1.2, matkReincBase: 2.5,
@@ -652,7 +655,7 @@ var AFFIX_POOL = {
   str: { name: '力量', base: 3, growthBase: 3, lv: 0.4, pct: false, weight: 8, slots: ['weapon', 'helmet', 'shoulder', 'chest', 'belt', 'gloves', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
   agi: { name: '敏捷', base: 3, growthBase: 3, lv: 0.4, pct: false, weight: 8, slots: ['weapon', 'helmet', 'shoulder', 'chest', 'belt', 'gloves', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
   int: { name: '智力', base: 3, growthBase: 3, lv: 0.4, pct: false, weight: 8, slots: ['weapon', 'helmet', 'shoulder', 'chest', 'belt', 'gloves', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
-  vit: { name: '耐力', base: 3, growthBase: 3, lv: 0.4, pct: false, weight: 8, slots: ['weapon', 'helmet', 'shoulder', 'chest', 'belt', 'gloves', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
+  vit: { name: '體質', base: 3, growthBase: 3, lv: 0.4, pct: false, weight: 8, slots: ['weapon', 'helmet', 'shoulder', 'chest', 'belt', 'gloves', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
   defFlat: { name: '物理防禦', base: 3, growthBase: 3, lv: 0.35, pct: false, weight: 9, slots: ['helmet', 'shoulder', 'chest', 'gloves', 'wrist', 'legs', 'boots', 'amulet'] },
   defPct: { name: '物理防禦%', base: 4, growthBase: 4, lv: 0.02, pct: true, weight: 6, slots: ['helmet', 'shoulder', 'chest', 'gloves', 'wrist', 'legs', 'boots', 'amulet'] },
   mdefFlat: { name: '魔法防禦', base: 3, growthBase: 3, lv: 0.35, pct: false, weight: 9, slots: ['helmet', 'shoulder', 'chest', 'gloves', 'wrist', 'legs', 'boots', 'amulet'] },
@@ -713,7 +716,6 @@ var AFFIX_POOL = {
   xpBonus: { name: '經驗加成%', base: 2, growthBase: 1, lv: 0.005, pct: true, weight: 4, minR: 5, slots: ['ring', 'amulet'] },
   goldBonus: { name: '金幣加成%', base: 2, growthBase: 3, lv: 0.0149999999999999, pct: true, weight: 4, minR: 4, slots: ['ring', 'amulet'] },
   luck: { name: '幸運值', base: 3, growthBase: 3, lv: 0.2, pct: false, weight: 3, minR: 5, slots: ['helmet', 'ring', 'amulet'] },
-  weight: { name: '負重上限', base: 2, growthBase: 2, lv: 0.3, pct: false, weight: 3, slots: ['all_lock'] },
   enhanceSuccess: { name: '強化成功率%', base: 3, growthBase: 2, lv: 0.01, pct: true, weight: 3, minR: 5, slots: ['ring', 'amulet'] },
   decomposeYield: { name: '分解高產率%', base: 3, growthBase: 3, lv: 0.0149999999999999, pct: true, weight: 3, slots: ['all_lock'] },
   hybridMutation: { name: '合成變異率%', base: 2.5, growthBase: 2.5, lv: 0.012, pct: true, weight: 2, slots: ['all_lock'] },
@@ -1635,7 +1637,6 @@ var SCORE_WEIGHTS = {
   xpBonus: 0.8,
   goldBonus: 0.8,
   luck: 1.5,
-  weight: 0.8,
   enhanceSuccess: 0.8,
   decomposeYield: 0.8,
   hybridMutation: 1.2,
@@ -2208,7 +2209,7 @@ var PART_KEEP_PER_KEY = 10;    // 舊存檔相容常數；新制不再建立零�
 
 // ---- 生產線 ----
 var CONVEYOR_CAP = 20000;      // 輸送帶固定硬上限；超出的新裝備直接丟棄
-var SYNTH_BUFFER_CAP = 30;     // 合成暫存區基礎容量（受「負重上限」屬性擴充）
+var SYNTH_BUFFER_CAP = 30;     // 合成暫存區固定容量
 var INVENTORY_CAP = 100;       // 背包基礎容量（參數表「7-容量／背包容量」a）
 var INVENTORY_MAX = 1000;      // 背包擴充上限（含基礎容量，可自訂；參數表「7-容量／背包容量」b）
 // 背包擴充費用：a + b × c^購買次數（購買次數 = 已擴充次數 + 1）；參數表「7-容量／背包擴充費用」a/b/c
@@ -2466,12 +2467,14 @@ function primaryStatDesc(key) {
     str: [
       { k: 'strAtk', unit: '點', label: '物理攻擊力' },
       { k: 'strDef', unit: '點', label: '物理防禦' },
-      { k: 'strWeight', unit: '點', label: '負重上限' }
+      { k: 'strHpRegen', unit: '', label: '生命恢復/秒' }
     ],
     agi: [
       { k: 'agiCritRate', unit: '%', label: '暴擊率' },
       { k: 'agiAspdPct', unit: '%', label: '攻速' },
-      { k: 'agiEvasion', unit: '%', label: '閃避率' }
+      { k: 'agiHit', unit: '%', label: '命中率' },
+      { k: 'agiEvasion', unit: '%', label: '閃避率' },
+      { k: 'agiCritDmg', unit: '%', label: '暴擊傷害' }
     ],
     int: [
       { k: 'intMp', unit: '點', label: '法力上限' },
@@ -2482,7 +2485,9 @@ function primaryStatDesc(key) {
     vit: [
       { k: 'vitHp', unit: '點', label: '生命上限' },
       { k: 'vitDef', unit: '點', label: '物理防禦' },
-      { k: 'vitMdef', unit: '點', label: '魔法防禦' }
+      { k: 'vitMdef', unit: '點', label: '魔法防禦' },
+      { k: 'vitHpRegen', unit: '', label: '生命恢復/秒' },
+      { k: 'vitMpRegen', unit: '', label: '法力恢復/秒' }
     ]
   }[key] || [];
   var parts = [];
@@ -2604,7 +2609,7 @@ var STAT_GROUPS = [
       ['💪 力量', function (st) { return statFmt(st.str, null); }, function () { return primaryStatDesc('str'); }],
       ['🏃 敏捷', function (st) { return statFmt(st.agi, null); }, function () { return primaryStatDesc('agi'); }],
       ['🧠 智力', function (st) { return statFmt(st.int, null); }, function () { return primaryStatDesc('int'); }],
-      ['🪨 耐力', function (st) { return statFmt(st.vit, null); }, function () { return primaryStatDesc('vit'); }]
+      ['🪨 體質', function (st) { return statFmt(st.vit, null); }, function () { return primaryStatDesc('vit'); }]
     ]
   },
   {
@@ -2644,8 +2649,8 @@ var STAT_GROUPS = [
   },
   {
     title: '防禦屬性', rows: [
-      ['🛡️ 物理防禦', function (st) { return statFmt(st.def, null); }, function (st) { return defenseStatDesc(st, '降低受到的物理傷害。由力量與耐力派生。', '物理防禦', 'def', 'defPct'); }],
-      ['🔰 魔法防禦', function (st) { return statFmt(st.mdef, null); }, function (st) { return defenseStatDesc(st, '降低受到的魔法傷害。由智力與耐力派生。', '魔法防禦', 'mdef', 'mdefPct'); }],
+      ['🛡️ 物理防禦', function (st) { return statFmt(st.def, null); }, function (st) { return defenseStatDesc(st, '降低受到的物理傷害。由力量與體質派生。', '物理防禦', 'def', 'defPct'); }],
+      ['🔰 魔法防禦', function (st) { return statFmt(st.mdef, null); }, function (st) { return defenseStatDesc(st, '降低受到的魔法傷害。由智力與體質派生。', '魔法防禦', 'mdef', 'mdefPct'); }],
       ['🌍 常駐技能減傷', function (st) { return statFmt(passivePanelValue(st, 'damageRed', 0), null, '%.1f'); }, '裝配後持續生效的技能傷害減免，與其他減傷乘算；不是全局減傷屬性點數。'],
       ['🛡️ 全局減傷', function (st) { return statFmt(st.globalDmgRed, null); }, function (st) {
         var reduction = globalDamageReduction(st.globalDmgRed) * 100;
@@ -2682,7 +2687,6 @@ var STAT_GROUPS = [
       ['📚 經驗加成', function (st) { return statFmt(st.xpBonus, null, '%', true); }, '額外增加戰鬥勝利後獲得的經驗值。'],
       ['🪙 金幣加成', function (st) { return statFmt(st.goldBonus, null, '%', true); }, '額外增加戰鬥勝利後獲得的金幣。'],
       ['🍀 幸運值', function (st) { return statFmt(st.luck, STAT_CAPS.luck, 'raw1'); }, '提升太古詞條的出現機率。' + capText(STAT_CAPS.luck, '')],
-      ['🎒 負重上限', function (st) { return statFmt(st.weight, null, null, true); }, '提升生產線輸送帶與合成暫存區的容量上限。'],
       ['🔨 強化成功率', function (st) { return statFmt(st.enhanceSuccess, null, '%', true); }, '提升裝備強化的成功機率。'],
       ['⚗️ 分解高產率', function (st) { return statFmt(st.decomposeYield, null, '%', true); }, '增加分解裝備時獲得洗煉精粹的數量或機率。'],
       ['🧬 合成變異率', function (st) { return statFmt(st.hybridMutation, STAT_CAPS.hybridMutation, '%'); }, '提升裝備合成時發生特殊異變（如詞條升級）的機率。' + capText(STAT_CAPS.hybridMutation, '%')],
