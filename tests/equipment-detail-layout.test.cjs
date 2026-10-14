@@ -35,3 +35,8 @@ test('裝備詳情不渲染空附魔欄文字', () => {
   const item = fs.readFileSync(path.join(root, 'js/item.js'), 'utf8');
   assert.doesNotMatch(item, /空附魔欄/);
 });
+
+test('裝備詳情詞條名稱不覆蓋灰白色，與tips相同繼承詞條類別顏色', () => {
+  const ashen = fs.readFileSync(path.join(root, 'css/ashen-forge.css'), 'utf8');
+  assert.doesNotMatch(ashen, /#detail-pane\s+\.afx-label\s*\{\s*color:\s*#c9c3b5/);
+});
