@@ -145,3 +145,11 @@ test('ELITE-DATA-7 要同伴才有意義的技能（火鏈、復仇…）有標 
   }
   assert.ok(!tower.has('e_summon'), '封魔塔只有 BOSS 一隻，不抽召喚');
 });
+
+test('ELITE-DATA-8 護盾的光罩整份標 perspective:false（走 billboard 層，不受視角方向與 FOV 影響）', () => {
+  const c = loadEliteEnv();
+  const id = c.ELITE_AFFIXES.e_shield.v.field;
+  const p = JSON.parse(fs.readFileSync(path.join(root, 'vfx/presets', id + '.json'), 'utf8'));
+  assert.ok(p.layers.length > 0);
+  p.layers.forEach((l) => assert.equal(l.perspective, false, id + ' 的圖層 ' + l.id));
+});
