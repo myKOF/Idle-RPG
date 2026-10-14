@@ -2681,6 +2681,7 @@ function markTabDirty(name) {
 }
 
 function switchTab(name) {
+  if (name === 'settings' && typeof GameMenu !== 'undefined') { GameMenu.openSettings(); return; }
   if (name === 'talents') {
     var talentSnapshot = uiTalentPanelSnapshot();
     if (!talentSnapshot || talentViewReincarnations(talentSnapshot) < 1) name = 'equip';
@@ -2708,7 +2709,11 @@ function switchTab(name) {
   if (name === 'newforge') {
     markNewForgeTabSeenIfNeeded();
   }
-  if (name === 'settings') {
+  if (name === 'settings') refreshSettingsPanel();
+  if (name === 'tower') UI._scrollTower = true;
+}
+
+function refreshSettingsPanel() {
     if (typeof scanManualMetadataV2 === 'function' && typeof _saveDir !== 'undefined' && _saveDir) {
       scanManualMetadataV2().then(function () {
         renderSaveList();
@@ -2721,8 +2726,6 @@ function switchTab(name) {
       renderSaveList();
       refreshSaveFolderFilesV2();
     }
-  }
-  if (name === 'tower') UI._scrollTower = true;
 }
 
 /* ---- 熔爐改版公告：頁籤閃爍＋一次性彈窗（合併版遷移，migrateSave 設旗標） ---- */
@@ -11655,7 +11658,8 @@ function initUI() {
     // Esc 快捷鍵關閉界面
     window.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' || e.keyCode === 27) {
-        if (closeTopmostModalOrOverlay()) {
+        if (e.defaultPrevented || e.repeat || e.isComposing) return;
+        if (closeTopmostModalOrOverlay() || (typeof GameMenu !== 'undefined' && GameMenu.handleEscape())) {
           e.preventDefault();
           e.stopPropagation();
         }
@@ -13860,7 +13864,7 @@ function initUI() {
     rescanSaveFolderView(true);
   });
   window.addEventListener('focus', function () {
-    if (UI.tab === 'settings') rescanSaveFolderView(false);
+    if (UI.tab === 'settings' || (typeof GameMenu !== 'undefined' && GameMenu.isSettingsOpen())) rescanSaveFolderView(false);
   });
   $id('btn-restart').addEventListener('click', function () {
     var restartAuto = autoSaveMetaV2();
@@ -13904,6 +13908,7 @@ function initUI() {
   renderSaveList();
 
   syncFactoryInputs();
+  if (typeof GameMenu !== 'undefined') GameMenu.init();
 
   // 統計面板彈窗（支援獨立懸浮與拖曳移動）
   var btnSummary = $id('btn-summary');

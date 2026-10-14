@@ -84,7 +84,7 @@
    主執行緒據此決定圖鑑顯示配方與效果或問號；舊快照缺欄時一律視為都沒激活。指令數不變。 */
 /* v50（2026-10-08 BOSS 配置鎖）：UI／Worker 共用 bossFightBlocksCommand；
    戰中拒絕配置變更，沿用既有錯誤封包，指令數／參數／快照與存檔格式不變。 */
-var WORKER_PROTOCOL_VERSION = 50;
+var WORKER_PROTOCOL_VERSION = 51;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -236,6 +236,7 @@ var EVENT_KINDS = {
 /* ---- 存檔落地種類（PERSIST.kind）---- */
 var PERSIST_KINDS = {
   AUTO: 'auto',        // 自動存檔（每 15 秒）
+  AUTO_NOW: 'autoNow', // 玩家立即存檔：直接更新auto_current並確認實際寫入
   MANUAL: 'manual',    // 手動存檔：優先寫瀏覽器存檔記錄，未連接資料夾時仍會落地
   MANUAL_FOLDER: 'manualFolder', // 明確「另存到資料夾」：未連接資料夾即視為失敗
   FOLDER: 'folder',    // 存檔資料夾同步（每 10 分鐘）
@@ -455,6 +456,7 @@ var COMMANDS = {
      但那些函式會碰 localStorage、IndexedDB、File System Access 與 location.reload，
      Worker 一律不能碰，與「I/O 留主執行緒」的決策衝突。
      改為 fn:null，由 Worker 端產生 payload 後發 persist，主執行緒完成落地與 reload。 */
+  'save.auto':             { fn: null,               args: {},                                    dirty: [] },
   'save.manual':           { fn: null,               args: { label: 'str?' },                     dirty: [] },
   'save.toFolder':         { fn: null,               args: { label: 'str?' },                     dirty: [] },
   'save.restart':          { fn: null,               args: {},                                    dirty: PANEL_KEYS },

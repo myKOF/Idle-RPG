@@ -84,7 +84,8 @@ var SaveStorage = (function () {
         removeLegacyRecordPayloadsV2();
       }
       try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
-      idbSetAutoV2(json, function () {
+      idbSetAutoV2(json, function (err) {
+        if (err) { done(err); return; }
         if (!_saveDir) writeAutoMetaV2(meta);
         done(null);
       });
@@ -145,6 +146,13 @@ var SaveStorage = (function () {
 
   var WRITERS = {
     auto: writeAuto,
+    autoNow: function (json, meta, done) {
+      // 明確操作需等到IndexedDB交易完成，不以主端鏡像或手動另存檔替代。
+      idbSetAutoV2(json, function (err) {
+        if (err) { done(err); return; }
+        try { writeAutoMetaV2(meta); done(null); } catch (error) { done(error); }
+      }, { strict: true });
+    },
     shutdown: writeAuto,
     folder: writeFolderAuto,
     manual: writeManual,
@@ -190,10 +198,12 @@ var SaveStorage = (function () {
      它與已在飛行中的 auto 寫入之間的先後順序不受此處保護，維持既有行為。 */
   var _writeSlots = {};   // kind -> { running, next:{json,meta}, waiters:[done] }
 
-  function coalescedPersist(kind, writer, json, meta, done) {
+  function coalescedPersist(kind, writer, json, meta, done, immediate) {
     var slot = _writeSlots[kind];
     if (!slot) slot = _writeSlots[kind] = { running: false, next: null, waiters: [] };
-    slot.next = { json: json, meta: meta };   // 後到的直接取代待寫那筆
+    // 玩家立即存檔與週期auto共用順序；不能讓已排程的舊auto在新進度之後覆蓋。
+    var strict = !!immediate || !!(slot.next && slot.next.immediate);
+    slot.next = { json: json, meta: meta, writer: strict ? WRITERS.autoNow : writer, immediate: strict };
     slot.waiters.push(done);
     if (slot.running) return;                 // 飛行中：等它寫完後由 pump 接續最新的一筆
     slot.running = true;
@@ -210,10 +220,11 @@ var SaveStorage = (function () {
         }
         pump();   // 寫入期間若又有新的請求進來，這裡接著寫最新那份
       };
-      runWhenIdle(function () {
-        try { writer(job.json, job.meta, finish); }
+      var write = function () {
+        try { job.writer(job.json, job.meta, finish); }
         catch (e) { finish(e); }
-      });
+      };
+      if (job.immediate) write(); else runWhenIdle(write);
     };
     pump();
   }
@@ -223,6 +234,7 @@ var SaveStorage = (function () {
   function persist(kind, json, meta, done) {
     var writer = WRITERS[kind];
     if (!writer) { done(new Error('unknown persist kind: ' + kind)); return; }
+    if (kind === 'autoNow') { coalescedPersist('auto', writer, json, meta, done, true); return; }
     if (DEFERRABLE[kind]) { coalescedPersist(kind, writer, json, meta, done); return; }
     try { writer(json, meta, done); }
     catch (e) { done(e); }

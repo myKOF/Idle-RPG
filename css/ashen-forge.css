@@ -2143,27 +2143,88 @@ html *::-webkit-scrollbar-corner {
   display: block;
   width: 41.8px;
   height: 41.8px;
+  box-sizing: border-box;
+  border: 3px solid #d3ab55;
+  border-radius: 50%;
+  overflow: hidden;
   margin: 0;
   flex: 0 0 auto;
   line-height: 0;
 }
 
-/* 素材留白約4%，在圓框外緣追加固定1px金邊，不新增角飾或亮點。 */
-#workspace-area #tabs .af-nav-icon::after {
-  content: "";
+/* 主圖等比放大，將PNG自帶圓框裁到容器外，只由容器畫一個金框。 */
+#workspace-area #tabs .af-nav-icon img {
   position: absolute;
-  inset: calc(4% - 1px);
-  border: 1px solid #d3ab55;
-  border-radius: 50%;
-  pointer-events: none;
+  left: 50%;
+  top: 50%;
+  display: block;
+  width: 125%;
+  height: 125%;
+  max-width: none;
+  object-fit: contain;
+  transform: translate(-50%, -50%);
+  filter: none;
 }
 
-#workspace-area #tabs .af-nav-icon img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  filter: drop-shadow(0 1px 2px #0009);
+/* 系統選單位於未縮放的body，鍵盤與小視窗操作皆保持清楚。 */
+.system-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: #05070bd9;
+}
+.system-card {
+  position: relative;
+  width: min(360px, 100%);
+  padding: 30px;
+  border: 1px solid #a7874e;
+  border-radius: 10px;
+  background: linear-gradient(145deg, #1c2028, #101216);
+  box-shadow: 0 18px 70px #000a, inset 0 0 0 3px #d1ae5720;
+  color: #e7decc;
+}
+.system-card h2 { margin: 0 0 24px; text-align: center; color: #e9c77f; font-size: 23px; }
+.system-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  border: 0;
+  background: transparent;
+  color: #c9bb9c;
+  font-size: 26px;
+  cursor: pointer;
+}
+.system-menu-actions { display: flex; flex-direction: column; gap: 12px; }
+.system-menu-actions button {
+  min-height: 46px;
+  border: 1px solid #665238;
+  border-radius: 6px;
+  background: #24231f;
+  color: #ead7ad;
+  font-size: 16px;
+  cursor: pointer;
+}
+.system-menu-actions button:is(:hover, :focus-visible) { background: #3b3020; border-color: #d4b374; }
+.system-card button:focus-visible { outline: 2px solid #f0cf86; outline-offset: 2px; }
+.system-card button:disabled { opacity: .5; cursor: wait; }
+.system-menu-status { min-height: 22px; margin-top: 18px; font-size: 13px; line-height: 1.5; color: #cfbd92; }
+.system-settings-card {
+  display: flex;
+  flex-direction: column;
+  width: min(960px, 100%);
+  max-height: 90vh;
+  padding: 24px;
+}
+.system-settings-heading { flex: 0 0 auto; }
+.system-settings-heading h2 { margin-bottom: 20px; }
+.system-settings-body { overflow: auto; min-height: 0; }
+.system-settings-content > .panel { margin-bottom: 14px; }
+@media (max-width: 600px) {
+  .system-overlay { padding: 10px; }
+  .system-settings-card { padding: 16px; max-height: 94vh; }
 }
 
 #workspace-area #tabs .tab-btn:is(:hover, :focus-visible, .active) .af-nav-icon img {

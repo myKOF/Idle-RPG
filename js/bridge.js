@@ -15,7 +15,7 @@ var WorkerBridge = (function () {
   /* Worker 與其模擬層不是由 bundler 產生，瀏覽器可能把舊的 Worker
      腳本留在快取裡。每次修改 Worker 啟動／核心邏輯時更新這個鍵，避免
      使用者刷新後仍執行舊版升級公式。 */
-  var WORKER_ASSET_VERSION = '20261014-state-status';
+  var WORKER_ASSET_VERSION = '20261014-esc-menu';
 
   /* ---- 量測模式（P4 用，預設關閉）----
      網址帶 ?measure=1 時，Worker 與主執行緒兩側都會統計訊息規模與耗時。
@@ -62,6 +62,30 @@ var WorkerBridge = (function () {
   /* 尚未落地完成的 persist 筆數。分頁交接時要等它歸零才能放開多分頁鎖——
      主執行緒自己就是落地端，所以這裡是唯一知道「真的寫完了沒」的地方。 */
   var _pendingWrites = 0;
+  var _autoNowRequest = null;
+  var _autoNowPromise = null;
+
+  function saveAutoNow() {
+    if (_autoNowPromise) return _autoNowPromise;
+    _autoNowPromise = new Promise(function (resolve, reject) {
+      var req = { token: null, results: {}, finished: false };
+      _autoNowRequest = req;
+      var timer = setTimeout(function () { req.finish(new Error('自動存檔寫入逾時，遊戲仍保持開啟')); }, 10000);
+      req.finish = function (error) {
+        if (req.finished) return;
+        req.finished = true;
+        clearTimeout(timer);
+        if (_autoNowRequest === req) { _autoNowRequest = null; _autoNowPromise = null; }
+        if (error) reject(error); else resolve(true);
+      };
+      send('save.auto', {}).then(function (token) {
+        if (req.finished) return;
+        req.token = token;
+        if (Object.prototype.hasOwnProperty.call(req.results, token)) req.finish(req.results[token]);
+      }, req.finish);
+    });
+    return _autoNowPromise;
+  }
 
   var stats = {
     booted: false,
@@ -180,6 +204,7 @@ var WorkerBridge = (function () {
       case MSG_OUT.PERSIST:
         stats.persists++;
         _pendingWrites++;
+        var autoNowRequest = typeof PERSIST_KINDS !== 'undefined' && msg.kind === PERSIST_KINDS.AUTO_NOW ? _autoNowRequest : null;
         SaveStorage.persist(msg.kind, msg.payload.json, msg.payload.meta, function (err) {
           _pendingWrites--;
           if (!err) stats.lastPersistOkAt = Date.now();   // 診斷：存檔是否真的落地（寫入卡死時後續存檔會被合併擋住）
@@ -189,6 +214,10 @@ var WorkerBridge = (function () {
             console.error('[bridge] 存檔寫入失敗（' + msg.kind + '）:', err);
           }
           post(MSG_IN.SAVE_RESULT, { token: msg.token, ok: !err, error: err ? (err.message || String(err)) : undefined });
+          if (autoNowRequest && !autoNowRequest.finished) {
+            autoNowRequest.results[msg.token] = err || null;
+            if (autoNowRequest.token === msg.token) autoNowRequest.finish(err);
+          }
         });
         break;
       case MSG_OUT.ERROR:
@@ -561,7 +590,7 @@ var WorkerBridge = (function () {
   return {
     start: start, stop: stop, send: send, on: on, loadSave: loadSave, handoff: handoff,
     requestPanel: requestPanel, status: status, enabled: enabled, safeMode: safeMode,
-    whenWritesDrained: whenWritesDrained
+    whenWritesDrained: whenWritesDrained, saveAutoNow: saveAutoNow
   };
 })();
 

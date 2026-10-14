@@ -10,14 +10,14 @@
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-importScripts('protocol.js?v=50', 'shim.js?v=13');
+importScripts('protocol.js?v=51', 'shim.js?v=13');
 importScripts(
   '../util.js?v=20260922-firegod-formation', '../data.js?v=20261013-enemy-skills2', '../runeword_data.js?v=20261013-rune-all-elem-color', '../status.js?v=20261014-state-status', '../formula.js?v=20261013-enemy-skills2', '../battlefield.js?v=20261013-enemy-skills2', '../stats.js?v=20261003-rename-weineng',
   '../item.js?v=20261013-rune-all-elem-color', '../runeword.js?v=20261014-develop-integration',
   '../skills.js?v=20261007-runes4', '../skills2.js?v=20261014-state-status', '../elite_data.js?v=20261014-state-status', '../talents.js?v=20261003-rename-weineng',
   '../player.js?v=20261008-boss-config-lock', '../special_rules.js',
   '../combat.js?v=20261014-develop-integration', '../elite.js?v=20261014-state-status', '../legendary.js?v=20261012-indomitable-guard', '../potential.js?v=20261005-cc-decay-count', '../tower.js?v=20261013-enemy-skills2',
-  '../factory.js?v=20261007-runes4', '../newforge.js', '../forge.js?v=20261007-runes4', '../save.js?v=20261007-rune-seen',
+  '../factory.js?v=20261007-runes4', '../newforge.js', '../forge.js?v=20261007-runes4', '../save.js?v=20261014-esc-menu',
   '../tasks.js?v=20261007-runes4'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
@@ -1076,7 +1076,7 @@ function requestPersist(kind, opts) {
     var meta = opts.meta || saveRecMeta('auto', 'auto_current', AUTO_FOLDER_FILE_V2);
     _pendingPersist[token] = { kind: kind, savedAt: G.savedAt, prevSavedAt: prevSavedAt, rollback: state === G };
     post(MSG_OUT.PERSIST, { token: token, kind: kind, payload: { json: json, meta: meta } });
-    return meta;
+    return opts.returnToken ? token : meta;
   } catch (e) {
     reportError('requestPersist', e);
     return null;
@@ -1690,6 +1690,11 @@ var COMMAND_IMPL = {
   },
 
   /* ---- 存檔 ---- */
+  'save.auto': function () {
+    var token = requestPersist(PERSIST_KINDS.AUTO_NOW, { returnToken: true });
+    if (!token) throw new Error('目前無法建立自動存檔');
+    return token;
+  },
   'save.manual': function (a) { return manualSave(a && a.label); },
   'save.toFolder': function (a) { return createManualSaveToFolderV2(a && a.label); },
   'save.restart': function () { return restartGame(); },
