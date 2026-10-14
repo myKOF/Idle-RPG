@@ -9482,6 +9482,101 @@ function sgbDetailHTML(gid, skillsSnapshot, headerSnapshot) {
   return h;
 }
 
+/* 相鄰直線合為一條；分岔沿實際卡片中心接續，流光共用完整路徑的弧長。 */
+function sgbPathGeometry(segments, fork) {
+  var runs = [];
+  segments.filter(function (s) { return s.lit; }).forEach(function (s) {
+    var prev = runs[runs.length - 1];
+    if (prev && Math.abs(prev.x - s.x) < .5 && Math.abs(prev.y2 - s.y1) <= 1) {
+      prev.y2 = s.y2;
+    } else {
+      runs.push({ x: s.x, y1: s.y1, y2: s.y2 });
+    }
+  });
+  var track = segments.length ? 'M ' + segments[0].x + ' ' + segments[0].y1 + ' V ' + segments[segments.length - 1].y2 : '';
+  var chosen = fork && fork.branches.find(function (b) { return b.lit; });
+  if (fork) {
+    track += ' M ' + fork.x + ' ' + fork.y + ' H ' + fork.branches[fork.branches.length - 1].x;
+    fork.branches.forEach(function (b) { track += ' M ' + b.x + ' ' + fork.y + ' V ' + b.y; });
+  }
+  var lit = runs.map(function (run) {
+    var d = 'M ' + run.x + ' ' + run.y1 + ' V ' + run.y2;
+    if (chosen && Math.abs(run.y2 - fork.y) <= 1) {
+      d += ' V ' + fork.y + ' H ' + chosen.x + ' V ' + chosen.y;
+    }
+    return d;
+  }).join(' ');
+  return { track: track, lit: lit };
+}
+
+function sgbSyncPath(detail) {
+  var lines = Array.from(detail.querySelectorAll('.sgb-line'));
+  if (!lines.length || !detail.clientWidth) return;
+  var box = detail.getBoundingClientRect();
+  var sx = box.width / detail.offsetWidth;
+  var sy = box.height / detail.offsetHeight;
+  if (!(sx > 0 && sy > 0)) return;
+  function rect(el) {
+    var r = el.getBoundingClientRect();
+    return { x: (r.left - box.left + r.width / 2) / sx + detail.scrollLeft - detail.clientLeft,
+      y: (r.top - box.top) / sy + detail.scrollTop - detail.clientTop, h: r.height / sy };
+  }
+  var segments = lines.map(function (el) {
+    var r = rect(el);
+    return { x: r.x, y1: r.y, y2: r.y + r.h, lit: el.classList.contains('is-lit') };
+  });
+  var bar = detail.querySelector('.sgb-fork-bar');
+  var cards = Array.from(detail.querySelectorAll('.sgb-ult-card'));
+  var fork = null;
+  if (bar && cards.length) {
+    var fr = rect(bar);
+    fork = { x: segments[0].x, y: fr.y + fr.h / 2, branches: cards.map(function (card) {
+      var r = rect(card);
+      return { x: r.x, y: r.y, lit: card.classList.contains('is-chosen') };
+    }) };
+    // 縱線延伸到橫線中心；不留下兩個斜面端蓋交接的暗縫。
+    segments[segments.length - 1].y2 = fork.y;
+  }
+  var paths = sgbPathGeometry(segments, fork);
+  var svg = detail.querySelector('.sgb-path-ink');
+  if (!svg) {
+    svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'sgb-path-ink');
+    svg.setAttribute('aria-hidden', 'true');
+    detail.appendChild(svg);
+  }
+  var h = Math.ceil(Math.max.apply(null, segments.map(function (s) { return s.y2; }).concat(fork ? fork.branches.map(function (b) { return b.y; }) : [])) + 4);
+  svg.setAttribute('width', detail.clientWidth);
+  svg.setAttribute('height', h);
+  var markup = '<path class="sgb-path-track" d="' + paths.track + '"/>';
+  if (paths.lit) {
+    ['edge', 'core', 'shine', 'tail', 'glow', 'spark'].forEach(function (kind) {
+      markup += '<path class="sgb-path-' + kind + '" d="' + paths.lit + '"/>';
+    });
+  }
+  // 排版未變時保留動畫節點，避免快照更新或ResizeObserver重設動畫相位。
+  if (svg._pathMarkup !== markup) {
+    var flowMs = 3200;
+    svg.style.setProperty('--sgb-flow-duration', flowMs + 'ms');
+    svg.style.setProperty('--sgb-flow-delay', -(Date.now() % flowMs) + 'ms');
+    svg.innerHTML = markup;
+    svg._pathMarkup = markup;
+  }
+  detail.classList.add('has-path-ink');
+}
+
+function sgbSchedulePath(detail) {
+  if (!detail._pathResize && typeof ResizeObserver === 'function') {
+    detail._pathResize = new ResizeObserver(function () { sgbSchedulePath(detail); });
+    detail._pathResize.observe(detail);
+  }
+  if (detail._pathFrame) return;
+  detail._pathFrame = requestAnimationFrame(function () {
+    detail._pathFrame = null;
+    sgbSyncPath(detail);
+  });
+}
+
 /* 技能瀏覽器：清單與詳情分開快取，金幣變動只會重繪詳情，清單的捲動位置不受影響 */
 function renderSkillBrowser(treesBox, skillsSnapshot, headerSnapshot) {
   if (!treesBox.querySelector('.sgb')) {
@@ -9517,6 +9612,7 @@ function renderSkillBrowser(treesBox, skillsSnapshot, headerSnapshot) {
     detail.innerHTML = detailH;
     detail._lastH = detailH;
     detail._bossFightLocked = fightLocked;
+    sgbSchedulePath(detail);
   }
   syncBossConfigControls();
 }

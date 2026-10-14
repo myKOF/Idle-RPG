@@ -225,6 +225,7 @@ test('技能詳情 HTML 未變時，退出 BOSS 仍清除 DOM 的戰鬥鎖，不
   c.skillViewLoadout = () => [];
   c.sgbFilterChipsHTML = c.sgbListItemHTML = () => '';
   c.sgbDetailHTML = () => '<button data-skill2-delete="test:0">重置</button>';
+  c.sgbSchedulePath = () => {}; // 此測試僅抽出renderSkillBrowser；描線幾何由技能UI專項驗證。
   vm.runInContext(fn(ui, 'renderSkillBrowser'), c);
   const trees = { querySelector: () => ({}) };
   c.renderSkillBrowser(trees, {}, {});
