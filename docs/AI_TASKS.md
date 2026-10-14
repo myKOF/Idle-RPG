@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## DIALOG-UI-UNIFY-20261014 — 統一遊戲彈窗與確認訊息風格
+
+- Owner：Codex；Done，單一開發者。使用者要求所有大小彈窗／確認訊息一致，追加指定裝備框風格的灰色質感外框、厚度約截圖一半；採6px金屬灰斜面框、深色底、共用標題／關閉鈕／操作按鈕與間距。前置既有UI；完成交使用者驗收整合。
+- 允許：新增css/dialogs.css、index.html載入／必要呈現標記、本紀錄。預檢三路徑乾淨。禁止改JS事件／Worker／存檔／模擬／素材／其他副本，不合併／推送。
+- 範圍：共用確認／輸入、Esc菜單／設置、統計、任務、詳細日誌、技能／威能、離線收益、封魔塔結算／公告，以及多分頁鎖／存檔來源／Worker停止提示；裝備方案與分解等浮層共用框／按鈕語彙。保留各窗口尺寸、統計拖曳與穿透、功能／危險語意／層級；不改hover工具提示。
+- 驗收：真瀏覽器多類大小視窗／重疊確認／Esc與取消、長內容捲動、小視窗、無遮擋與Console錯誤；既有UI相關測試、Build、diff check。純CSS格式整理，不產生新美術資源。
+- 完成／修改：新增css/dialogs.css，收斂既有三套主題與inline外觀，6px灰色ridge斜面框／4px圓角／深灰漸層底／24px內距、暖金19px標頭／分隔線、30px統一關閉鈕、36px基本操作鈕與焦點輪廓；主要／選取操作暖金，danger／warn保留紅色（含hover），確認鈕統一間距，輸入框與窄視窗18px內距同步。去除舊角飾／轉生彩虹框動畫，覆蓋所有共用彈窗；統計無遮罩／穿透／拖曳、原尺寸與各自滾動區仍保留。index.html唯一差異為最後載入dialogs.css?v=1.0.1；加本紀錄共3檔，未改JS或美術素材。
+- 指令：node --test tests/confirm-dialog.test.cjs tests/modal-close-hitbox.test.cjs tests/tooltip-modal-close.test.cjs tests/esc-shortcut.test.cjs tests/game-menu.test.cjs tests/init-ui-smoke.test.cjs tests/summary.test.cjs tests/battle-skill-summary.test.cjs tests/save-origin-isolation.test.cjs；9檔37/37通過，0失敗／略過，未新增或降低斷言。npm.cmd run build：507檔全過；git diff --check通過。舊轉生測試只驗證基礎CSS保留的定義，本次最後載入的共用樣式會關閉該獨立彩虹外框，不以該測試聲稱流光仍顯示。
+- 瀏覽器：隔離localhost:7201正式Worker／Pixi／UI，未讀真人存檔；Esc菜單、設置、重新開局確認（只取消）、統計、詳細日誌均實際開關，確認取消及Esc只關最上層、內文捲動正常。ComputedStyle核對12個靜態彈窗均6px ridge rgb(100,105,103)／4px圓角／24px內距；第二個隔離分頁的動態tab-lock-notice亦6px灰框／19px標題，未按接管。統計維持透明遮罩且pointer-events沿原值，880px寬與內文捲動正常；拖曳事件原檔未改，未額外進行拖曳驗收。
+- 響應／紀錄：390×700下設置外框x10..380／y10..690，370px寬／680px高，內文可捲動、外框無橫向溢出，關閉與按鈕可見；驗證後還原尺寸。Console error／warning 0。截圖保存在本聊天visualizations/dialogs-menu.png、dialogs-settings.png、dialogs-confirm.png、dialogs-stats.png；臨時預覽服務／頁面均清理。技能／威能／離線／結算／公告未強行解鎖或觸發，以原標記與ComputedStyle確認外框覆蓋，不宣稱已實操所有條件流程。
+- 未修改但檢查：css/style.css／ashen-forge.css／ashen-forge-flat.css、js/ui.js／game-menu.js／save_origin.js／tablock.js、共用確認與各彈窗標記、上述9份既有測試及Build工具。沒有新素材或來源變更，素材庫乾淨，不建立空提交。
+- 交付：遊戲Commit為本紀錄所在[Codex] feat提交；無本次未完成項，可供審查合併，未合併／推送。限制為未另跑全庫測試／真人存檔長時間驗收或未解鎖彈窗流程；下一步使用者整合後重新載入驗收統一灰框。
+
 ## NAV-SINGLE-CIRCLE-FIX-20261014 — 修正圖檔與CSS疊出的雙圈
 
 - Owner：Codex；Done，單一開發者。前置為ESC-MENU-NAV-20261014；使用者指出仍有雙圈，已確認PNG原框與CSS外框分離。使用者明確同意只改圖示樣式與快取版本，後續交使用者整合。

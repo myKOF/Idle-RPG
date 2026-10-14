@@ -1,0 +1,216 @@
+/* 遊戲彈窗共用外觀。最後載入以收斂舊主題與inline外觀；保留原尺寸、層級與事件。
+   統計維持獨立懸浮／拖曳；提示工具不在此範圍。 */
+:root {
+  --dialog-frame: #646967;
+  --dialog-surface: linear-gradient(145deg, #1c2025, #111417 75%);
+  --dialog-text: #e7e1d5;
+  --dialog-muted: #b5afa2;
+  --dialog-gold: #e7c784;
+  --dialog-line: #414643;
+  --dialog-inset: 0 0 0 1px #262b2a, inset 0 0 0 1px #92958a55;
+  --dialog-shadow: 0 18px 56px #000b, var(--dialog-inset);
+}
+
+:is(.modal-overlay, .system-overlay, .detail-log-modal, #tower-result-modal,
+    #worker-dead-notice, #save-origin-notice, #tab-lock-notice) {
+  box-sizing: border-box;
+  padding: 20px !important;
+  background: #050709c9 !important;
+  backdrop-filter: none !important;
+}
+/* 統計是非阻擋浮窗，保持戰鬥區可操作與標頭拖曳。 */
+#summary-modal { background: transparent !important; pointer-events: none; }
+
+:is(.modal-box, .system-card, .detail-log-box, #tower-result-modal > div,
+    #worker-dead-notice > div, #save-origin-notice > div, #tab-lock-notice > div,
+    #equip-set-tabs, #salvage-settings-panel, #battle-info-drawer) {
+  box-sizing: border-box;
+  border: 6px ridge var(--dialog-frame) !important;
+  border-radius: 4px !important;
+  background: var(--dialog-surface) !important;
+  color: var(--dialog-text);
+  box-shadow: var(--dialog-shadow) !important;
+  text-shadow: none !important;
+  font-family: inherit;
+}
+:is(.modal-box, .system-card, .detail-log-box, #tower-result-modal > div,
+    #worker-dead-notice > div, #save-origin-notice > div, #tab-lock-notice > div) {
+  padding: 24px !important;
+  max-width: calc(100vw - 40px);
+  max-height: calc(100dvh - 40px) !important;
+  font-size: 14px;
+  line-height: 1.65;
+}
+/* 單一斜面框取代舊裝飾角與轉生彩虹框，避免多套外框相疊。 */
+.modal-box::after, .detail-log-box::after,
+.confirm-modal.reincarnation-confirm .confirm-box::before { display: none !important; }
+.confirm-modal.reincarnation-confirm .confirm-box { animation: none; }
+
+/* 普通小框自行捲動；大型flex視窗保留內文捲動與固定標頭。 */
+.modal-box:not(:is(#summary-modal-box, #quest-modal > .modal-box)),
+#tower-result-modal > div,
+:is(#worker-dead-notice, #save-origin-notice, #tab-lock-notice) > div { overflow-y: auto; }
+.detail-log-box { min-height: 0; }
+.system-settings-body, #stats-scroll, #quest-modal-list, .detail-log-content { min-height: 0; }
+
+:is(.system-card h2, .confirm-title, .modal-box > .sec-title,
+    .summary-modal-header > .sec-title, .detail-log-head > .sec-title,
+    .talent-modal-head, #skill-modal-body .skd-head, #trm-title,
+    #worker-dead-notice h2, #save-origin-notice h2, #tab-lock-notice h2) {
+  color: var(--dialog-gold) !important;
+  font-size: 19px !important;
+  font-weight: 700;
+  line-height: 1.45;
+  box-sizing: border-box;
+  text-align: center;
+  padding: 0 30px 16px;
+  margin: 0 0 18px !important;
+  border-bottom: 1px solid var(--dialog-line);
+  text-shadow: none !important;
+  flex-shrink: 0;
+}
+.system-settings-heading h2 { padding-right: 30px; }
+:is(.talent-modal-head, #skill-modal-body .skd-head) {
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+:is(.talent-modal-head, #skill-modal-body .skd-head) > b {
+  font-size: 19px;
+  color: var(--dialog-gold);
+}
+:is(.talent-modal-head, #skill-modal-body .skd-head) > .dim-text { font-size: 13px; }
+.detail-log-head { border-bottom: 0; padding: 0; min-height: 0; }
+.detail-log-head > .sec-title { width: 100%; }
+.confirm-message { color: var(--dialog-text); font-size: 14px; line-height: 1.8; }
+.system-menu-status { color: var(--dialog-muted); }
+.system-menu-status:empty { min-height: 0; margin-top: 0; }
+
+:is(.modal-x, .system-close, .eqset-popup-close) {
+  box-sizing: border-box;
+  z-index: 10;
+  width: 30px;
+  height: 30px;
+  min-height: 30px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #626863 !important;
+  border-radius: 4px !important;
+  background: #24292a !important;
+  color: #d2caba !important;
+  box-shadow: inset 0 1px 0 #ffffff0c;
+  font: 20px/1 sans-serif;
+  cursor: pointer;
+}
+:is(.modal-box, .system-card) > :is(.modal-x, .system-close),
+.system-settings-heading .system-close { top: 10px; right: 10px; }
+.detail-log-head .modal-x { top: 0; right: 0; }
+:is(.modal-x, .system-close, .eqset-popup-close):hover {
+  background: #39332b !important;
+  border-color: #be9b5c !important;
+  color: #ffe3aa !important;
+}
+
+:is(.modal-box, .system-card, .detail-log-box, #tower-result-modal,
+    #worker-dead-notice, #save-origin-notice, #tab-lock-notice,
+    #equip-set-tabs, #salvage-settings-panel, #battle-info-drawer) :is(.btn, .system-menu-actions button) {
+  border: 1px solid #686451 !important;
+  border-radius: 5px !important;
+  background: #272925 !important;
+  color: var(--dialog-text) !important;
+  box-shadow: inset 0 1px 0 #ffffff08 !important;
+  text-shadow: none !important;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+  min-height: 36px;
+  padding: 8px 16px;
+  cursor: pointer;
+}
+:is(.modal-box, .system-card, .detail-log-box, #tower-result-modal,
+    #worker-dead-notice, #save-origin-notice, #tab-lock-notice,
+    #equip-set-tabs, #salvage-settings-panel, #battle-info-drawer) :is(.btn, .system-menu-actions button):hover:not(:disabled) {
+  border-color: #c7a765 !important;
+  background: #3b3326 !important;
+  color: #ffe6af !important;
+  filter: none;
+}
+:is(.modal-box, .system-card, .detail-log-box, #tower-result-modal,
+    #worker-dead-notice, #save-origin-notice, #tab-lock-notice,
+    #equip-set-tabs, #salvage-settings-panel, #battle-info-drawer)
+    :is(.btn.primary, .btn.btn-primary, .btn.active, #confirm-ok, #trm-confirm):not(.danger, .warn) {
+  border-color: #ad915c !important;
+  background: #3a3021 !important;
+  color: #f4d79c !important;
+}
+:is(.modal-box, .system-card, .detail-log-box, #tower-result-modal,
+    #worker-dead-notice, #save-origin-notice, #tab-lock-notice,
+    #equip-set-tabs, #salvage-settings-panel, #battle-info-drawer) .btn:is(.danger, .warn) {
+  border-color: #92524a !important;
+  color: #f0a095 !important;
+  background: #302221 !important;
+}
+:is(.modal-box, .system-card, .detail-log-box, #tower-result-modal,
+    #worker-dead-notice, #save-origin-notice, #tab-lock-notice,
+    #equip-set-tabs, #salvage-settings-panel, #battle-info-drawer) .btn:is(.danger, .warn):hover:not(:disabled) {
+  border-color: #cf786a !important;
+  color: #ffc1b6 !important;
+  background: #482b28 !important;
+}
+:is(.modal-box, .system-card, .detail-log-box, #tower-result-modal,
+    #worker-dead-notice, #save-origin-notice, #tab-lock-notice,
+    #equip-set-tabs, #salvage-settings-panel, #battle-info-drawer) :is(.btn, .system-menu-actions button):disabled {
+  opacity: .5;
+  cursor: default;
+}
+:is(.modal-box, .system-card, .detail-log-box, #tower-result-modal,
+    #worker-dead-notice, #save-origin-notice, #tab-lock-notice,
+    #equip-set-tabs, #salvage-settings-panel, #battle-info-drawer) :is(button, input, select, textarea):focus-visible {
+  outline: 2px solid var(--dialog-gold);
+  outline-offset: 3px;
+}
+.system-menu-actions { gap: 12px; }
+.system-menu-actions button { min-height: 44px !important; font-size: 16px !important; }
+.confirm-actions {
+  grid-template-columns: repeat(2, minmax(96px, 120px));
+  column-gap: 16px;
+  margin-top: 24px;
+}
+.confirm-input {
+  box-sizing: border-box;
+  width: 100%;
+  margin-top: 16px;
+  padding: 10px 12px;
+  border: 1px solid #646b64;
+  border-radius: 4px;
+  background: #101315;
+  color: var(--dialog-text);
+}
+#btn-summary-detail-log { top: 10px; left: 12px; }
+.detail-log-toolbar .btn, #btn-summary-detail-log, #btn-summary-clear {
+  min-height: 28px !important;
+  padding: 4px 10px !important;
+  font-size: 12px !important;
+}
+:is(#equip-set-tabs, #salvage-settings-panel, #battle-info-drawer) {
+  padding: 16px !important;
+}
+.eqset-popup-header { border-color: var(--dialog-line); padding-bottom: 12px; margin-bottom: 14px; }
+.eqset-popup-title { color: var(--dialog-gold); }
+
+@media (max-width: 600px), (max-height: 500px) {
+  :is(.modal-overlay, .system-overlay, .detail-log-modal, #tower-result-modal,
+      #worker-dead-notice, #save-origin-notice, #tab-lock-notice) { padding: 10px !important; }
+  :is(.modal-box, .system-card, .detail-log-box, #tower-result-modal > div,
+      #worker-dead-notice > div, #save-origin-notice > div, #tab-lock-notice > div) {
+    padding: 18px !important;
+    max-width: calc(100vw - 20px);
+    max-height: calc(100dvh - 20px) !important;
+  }
+  :is(.system-card h2, .confirm-title, .modal-box > .sec-title,
+      .summary-modal-header > .sec-title, .detail-log-head > .sec-title,
+      .talent-modal-head, #skill-modal-body .skd-head, #trm-title) { font-size: 17px !important; }
+  #btn-summary-detail-log { position: static; align-self: flex-start; margin-bottom: 8px; }
+}
