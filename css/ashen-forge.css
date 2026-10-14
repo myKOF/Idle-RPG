@@ -1066,15 +1066,15 @@ select option {
 
 #workspace-area .item-cell.selected,
 #workspace-area .eq-slot.selected {
-  outline: 5px solid #ffe354;
+  outline: 3px solid #ffe354;
   outline-offset: 0;
   border-radius: 0 !important;
   transition: none !important;
 }
 
-/* 外側金屬黑框畫在紙娃娃PNG上，黃框向外等比覆蓋，不侵入內側品質框。 */
+/* 方角黃框向外畫，沿紙娃娃比例縮放後再減薄，允許露出部分背景黑框。 */
 #workspace-area #equip-grid .eq-slot.selected {
-  outline-width: 2.2cqw;
+  outline-width: calc(2.2cqw - 2px);
 }
 
 /* Hover updates must not rerasterize a filtered copy of the entire textured

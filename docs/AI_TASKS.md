@@ -1,5 +1,21 @@
 # AI_TASKS.md
 
+## EQUIP-YELLOW-FRAME-THINNER-20261014 — 方角黃框減薄2px
+
+- Owner：Codex；Done，單一開發者。使用者要求黃框減2px、保持方角，不再要求完全遮住黑框；前置91072cc1，後續交使用者整合。
+- 允許css/ashen-forge.css黃框厚度、index.html僅CSS快取、tests/equipment-selection-border.test.cjs新厚度斷言及本紀錄；禁止JS／格位尺寸／比較功能／素材／規則／Worker／存檔及其他副本，不合併／推送。測試／紀錄預檢乾淨；CSS與index仍為先前同一批其他AI異區工作，沿使用者明確同意的分段保留授權。
+- 內容／驗收：紙娃娃厚度由2.2cqw改calc(2.2cqw - 2px)，一般黃框5→3px，保持向外outline-offset:0及0圓角；實際瀏覽器核對不同面板均減2px、既有UI回歸、Build及diff後Commit。純CSS，無素材變更。
+- 完成／修改4檔：CSS按上述方式減薄，方角與向外方向保留；index僅CSS1.0.70→1.0.71，既有選取測試改驗新厚度及方角，本紀錄同步。比較功能、格位與其他AI工作不變。
+- 指令／結果：node --test tests/equipment-selection-border.test.cjs tests/equipment-slot-selection.test.cjs tests/equip-selection-outline-instant.test.cjs，17/17通過；npm.cmd run build 508檔通過；git diff --check通過。沒有新增鏡像測試或放寬功能斷言。
+- 瀏覽器：computer-use／CUA，隔離localhost正式CSS／紙娃娃背景，與HEAD原CSS並排核對；350／400／500／650px面板的黃框分別7→5、8→6、10→8、14→12px，全部精確減2px且0圓角／offset0。並排預覽iframe曾出現MutationObserver觀察器錯誤（頁面未載入遊戲JS）；另開獨立單頁確認6px方角且Console error／warning 0。截圖在本聊天visualizations/equip-yellow-frame-thinner.png；臨時服務／頁面／腳本已清理，未讀真人存檔。
+- 唯讀檢查：原黃框規則與紙娃娃背景、其他副本預檢、選取相關測試／Build，未改JS／素材／Worker／規則／存檔。素材庫無本次變更／無需Commit。遊戲Commit為本紀錄所在[Codex] fix提交，回覆附編號；無本次未完成項或已知新增產品風險，可供合併，未合併／推送。限制：未做真人長戰或全庫測試；下一步整合後重載查看較細的方角黃框。
+
+## EQUIP-SELECTION-MEMORY-20261014 — 記住裝備詳情選取部位
+
+- Owner：Codex；In Progress。使用者要求刷新恢復最後選取部位（含自行取消），首次只自動選第一件穿上的裝備；本來源localStorage記UI偏好，slot追蹤身上裝備，ID追蹤背包，沒有紀錄才自選一次。單一開發者，前置既有選取UI，完成交使用者整合。
+- 允許js/ui.js、index.html的ui快取、本紀錄、tests/equipment-selection-memory.test.cjs及equipment-slot-selection.test.cjs；禁止Worker／Protocol／存檔格式／規則／素材／其他副本修改，不合併／推送。JS與測試預檢乾淨；index與Antigravity CSS快取／Claude33853a16的data及formula快取同檔異區，使用者已同意保留分段處理。已等待同副本EQUIP-OUTER-YELLOW-FRAME完成提交後才動手。
+- 驗收：刷新／取消／首件延遲穿上、換裝／換套／空部位／雙手副格、錯誤偏好與儲存不可用；既有選取回歸、瀏覽器、Build與diff後Commit。
+
 ## EQUIP-OUTER-YELLOW-FRAME-20261014 — 黃框向外覆蓋紙娃娃黑框
 
 - Owner：Codex；Done，單一開發者。使用者澄清黃框應向外長並完全遮住背景圖外側黑框，修正前輪向內覆蓋品質框的誤解；前置d9950995，後續交使用者整合。
