@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "id": "en-aura-enrage",
+  "duration": 1.2,
+  "loop": true,
+  "layers": [
+    {
+      "id": "fill",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/circle_b.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.3711,
+        "y": 0.3711
+      },
+      "alpha": 0.2,
+      "tint": "#ff2a1a",
+      "blendMode": "add",
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          0.12
+        ],
+        [
+          0.5,
+          0.26
+        ],
+        [
+          1,
+          0.12
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "ring",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.3906
+      },
+      "alpha": 0.95,
+      "tint": "#ff3a2a",
+      "blendMode": "add",
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          0.55
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          0.55
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.94
+        ],
+        [
+          0.5,
+          1.06
+        ],
+        [
+          1,
+          0.94
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "ring-inner",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_01.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.293,
+        "y": 0.293
+      },
+      "alpha": 0.6,
+      "tint": "#ff7a5a",
+      "blendMode": "add",
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          0.3
+        ],
+        [
+          0.5,
+          0.7
+        ],
+        [
+          1,
+          0.3
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "radius": 100
+    },
+    "shape": "circle"
+  }
+}

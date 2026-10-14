@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 1,
+  "id": "en-aura-rage",
+  "duration": 1.6,
+  "loop": true,
+  "layers": [
+    {
+      "id": "fill",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/circle_b.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.332,
+        "y": 0.332
+      },
+      "alpha": 0.18,
+      "tint": "#ff9a2a",
+      "blendMode": "add",
+      "duration": 1.6,
+      "alphaOverLife": [
+        [
+          0,
+          0.1
+        ],
+        [
+          0.5,
+          0.24
+        ],
+        [
+          1,
+          0.1
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "ring",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.3418,
+        "y": 0.3418
+      },
+      "alpha": 0.9,
+      "tint": "#ffb03a",
+      "blendMode": "add",
+      "duration": 1.6,
+      "alphaOverLife": [
+        [
+          0,
+          0.6
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          0.6
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          3.14159
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "embers",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 3,
+      "alpha": 0.95,
+      "tint": "#ffd27a",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 14
+      },
+      "lifetime": [
+        0.5,
+        0.9
+      ],
+      "spawn": {
+        "radius": 70,
+        "shape": "circle"
+      },
+      "speed": [
+        14,
+        34
+      ],
+      "direction": -90,
+      "spread": 30,
+      "startScale": [
+        0.0117,
+        0.0234
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.3,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "radius": 100
+    },
+    "shape": "circle"
+  }
+}

@@ -6,22 +6,18 @@
      data.affixes   技能 id 陣列（Skills2 表敵人技能；只有高級敵人有）
      data._tier／_size／_elColor  敵人類型、體型倍率、光暈顏色（外層光暈與本體縮放在 battle-renderer.js makeEnemy）
      data._grow     復仇疊出來的體型加成倍率（這裡動態縮放本體）
-     data._fx       目前的狀態旗標：shield／invuln／reflect／enrage／rage
      data._gid      群組編號（同一群共用；小兵與召喚物也有）
      data._gRole    leader／elite／minion／summon／split
    這一支只負責畫：
      1. 腳下的群組環（同一群同一個顏色，一眼看出誰跟誰是一夥）
-     2. 頭頂的詞條圖示列與狀態圖示（護盾、無敵、反射、狂暴）
-     3. 狀態光環（無敵＝金、護盾＝青、反射＝白、狂暴＝紅），一直脈動，好認
-     4. 生命鏈結：同一群帶「生命鏈結」的成員之間畫一條粉紅色的脈動連線
+     2. 頭頂的詞條圖示列（菁英、高級菁英；BOSS 的技能標籤在血條下方）
+     3. 生命鏈結：同一群帶「生命鏈結」的成員之間畫一條粉紅色的脈動連線
    技能本身的預警、爆發、彈體都是模擬層送來的 Preset 事件（js/elite.js），不在這裡。
+   怪物身上的持續狀態（無敵護罩、狂暴、怒意、再生…）的畫面不在這裡：它們是 Status 表的狀態（eInvuln／eEnrage／eRage／eRegen），
+   光環與上身特效由狀態表的特效欄決定，跟其他所有狀態一樣由 VFX Runtime 依面板快照畫出（js/vfx-runtime.js syncStatuses）。
    ============================================================ */
 var BattleElite = (function () {
   var GROUP_COLORS = [0xff7a7a, 0x7ad4ff, 0xffd45e, 0x9cff8a, 0xd89cff, 0xff9a5a, 0x5ae0c8, 0xff7ad0];
-  var STATE_ICON = { shield: '🛡️', invuln: '🔰', reflect: '🪞', enrage: '😡', rage: '🩸' };
-  var STATE_COLOR = { invuln: 0xffe28a, shield: 0x8fd8ff, reflect: 0xffffff, enrage: 0xff4a3a, rage: 0xff4a3a };
-  var STATE_ORDER = ['invuln', 'reflect', 'shield', 'enrage', 'rage'];
-
   function groupColor(gid) { return GROUP_COLORS[Math.abs(Math.floor(Number(gid) || 0)) % GROUP_COLORS.length]; }
   function cssToInt(css, fallback) {
     var v = parseInt(String(css || '').replace('#', '0x'));
@@ -56,11 +52,6 @@ var BattleElite = (function () {
     }
     return out;
   }
-  function stateKey(data) {
-    var fx = (data && Array.isArray(data._fx)) ? data._fx : [];
-    return fx.join(',');
-  }
-
   function create(o) {
     var PIXI = o.PIXI;
     var layer = o.layer;                 // 與敵人同一層：座標系與 ent.root 相同
@@ -71,18 +62,13 @@ var BattleElite = (function () {
 
     function build(ent) {
       var d = ent.data;
-      var deco = { sig: '', stateSig: null, ring: null, stateRing: null, badge: null, state: null };
+      var deco = { sig: '', ring: null, badge: null };
       var big = d.isBoss ? 1.6 : (d.elite ? 1.0 : 0.62);
       deco.r = d._size > 0 ? (20 * (ent.visScale || 1) + 10) : 30 * big * (ent.visScale || 1);
       var ring = new PIXI.Graphics();
       ring.y = 2;
       ent.view.addChildAt(ring, 0);
       deco.ring = ring;
-      var stateRing = new PIXI.Graphics();
-      stateRing.y = 2;
-      stateRing.visible = false;
-      ent.view.addChildAt(stateRing, 1);
-      deco.stateRing = stateRing;
       if (affixList(d).length && !d.isBoss) {   // BOSS 的技能標籤改放在血條下方
         var badge = new PIXI.Text({
           text: badgeText(d), style: { fontSize: 15, fontFamily: 'sans-serif' }
@@ -92,13 +78,6 @@ var BattleElite = (function () {
         ent.view.addChild(badge);
         deco.badge = badge;
       }
-      var state = new PIXI.Text({
-        text: '', style: { fontSize: 13, fontFamily: 'sans-serif' }
-      });
-      state.anchor.set(0.5, 1);
-      state.y = -(66 * (ent.visScale || 1)) - 32;
-      ent.view.addChild(state);
-      deco.state = state;
       drawStatic(ent, deco);
       return deco;
     }
@@ -113,30 +92,6 @@ var BattleElite = (function () {
       if (elite) g.ellipse(0, 0, r * 0.82, r * 0.31).stroke({ color: gc, width: 1.5, alpha: 0.7 });
       deco.sig = d._gid + '|' + d._elColor + '|' + (d.elite ? 1 : 0) + '|' + (d._tier || '');
     }
-    function drawState(ent, deco, nowMs) {
-      var d = ent.data;
-      var fx = (d && Array.isArray(d._fx)) ? d._fx : [];
-      var key = fx.join(',');
-      if (key !== deco.stateSig) {
-        deco.stateSig = key;
-        var icons = '';
-        for (var i = 0; i < STATE_ORDER.length; i++) if (fx.indexOf(STATE_ORDER[i]) >= 0) icons += STATE_ICON[STATE_ORDER[i]];
-        deco.state.text = icons;
-        deco.stateColor = 0;
-        for (var j = 0; j < STATE_ORDER.length; j++) {
-          if (fx.indexOf(STATE_ORDER[j]) >= 0) { deco.stateColor = STATE_COLOR[STATE_ORDER[j]]; break; }
-        }
-      }
-      var sr = deco.stateRing;
-      if (!deco.stateColor) { sr.visible = false; return; }
-      sr.visible = true;
-      var pulse = 0.5 + 0.5 * Math.sin(nowMs / 170);
-      var r = deco.r * (1.15 + 0.12 * pulse);
-      sr.clear();
-      sr.ellipse(0, 0, r, r * 0.4).stroke({ color: deco.stateColor, width: 3, alpha: 0.55 + 0.4 * pulse });
-      sr.ellipse(0, 0, r * 0.78, r * 0.31).fill({ color: deco.stateColor, alpha: 0.1 + 0.12 * pulse });
-    }
-
     function update(entities, dt, nowMs) {
       clock = nowMs;
       var groups = null;
@@ -155,7 +110,6 @@ var BattleElite = (function () {
           var txt = badgeText(d);
           if (deco.badge.text !== txt) deco.badge.text = txt;
         }
-        drawState(ent, deco, nowMs);
         /* 復仇：體型隨同伴陣亡一步步長大（本體縮放；陰影與血條不動） */
         if (ent.body && ent.body.scale) {
           if (deco.baseScale === undefined) deco.baseScale = ent.body.scale.x;
@@ -196,7 +150,7 @@ var BattleElite = (function () {
     return { update: update, destroy: destroy, _groupColor: groupColor };
   }
 
-  return { create: create, groupColor: groupColor, STATE_ICON: STATE_ICON, skillTags: skillTags };
+  return { create: create, groupColor: groupColor, skillTags: skillTags };
 })();
 
 if (typeof module !== 'undefined' && module.exports) module.exports = BattleElite;

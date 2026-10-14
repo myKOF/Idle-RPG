@@ -148,8 +148,40 @@ test('ELITE-DATA-7 要同伴才有意義的技能（火鏈、復仇…）有標 
 
 test('ELITE-DATA-8 護盾的光罩整份標 perspective:false（走 billboard 層，不受視角方向與 FOV 影響）', () => {
   const c = loadEliteEnv();
-  const id = c.ELITE_AFFIXES.e_shield.v.field;
+  const id = c.STATUS.eInvuln.vfx.aura;
   const p = JSON.parse(fs.readFileSync(path.join(root, 'vfx/presets', id + '.json'), 'utf8'));
   assert.ok(p.layers.length > 0);
   p.layers.forEach((l) => assert.equal(l.perspective, false, id + ' 的圖層 ' + l.id));
+});
+
+test('ELITE-DATA-9 狀態型特效都在 Status 表：護盾／庇護光環／不死鳥掛無敵護罩，狂暴、復仇／血祭、再生、詛咒各有狀態與特效', () => {
+  const c = loadEliteEnv();
+  const A = c.ELITE_AFFIXES, S = c.STATUS;
+  const self = (id) => Array.from((A[id].status && A[id].status.self || []).map((e) => e.id));
+  assert.deepEqual(self('e_shield'), ['eInvuln']);
+  assert.deepEqual(self('e_invulnaura'), ['eInvuln']);
+  assert.deepEqual(self('e_phoenix'), ['eInvuln']);
+  assert.deepEqual(self('e_enrage'), ['eEnrage']);
+  assert.deepEqual(self('e_avenger'), ['eRage']);
+  assert.deepEqual(self('e_bloodsac'), ['eRage']);
+  assert.deepEqual(self('e_regen'), ['eRegen']);
+  assert.deepEqual(Array.from((A.e_curse.status.enemy || []).map((e) => e.id)), ['eCurse'], '詛咒掛在玩家身上');
+  // 這些技能不再在 Skills2 的特效欄填「狀態的畫面」（上身／持續／作用都只在 Status 表）
+  assert.equal(A.e_shield.v.field, undefined, '護盾的光罩不是持續場域');
+  assert.equal(A.e_enrage.v.attack, undefined);
+  assert.equal(A.e_regen.v.attack, undefined);
+  assert.equal(A.e_curse.v.hit, undefined);
+  assert.equal(S.eInvuln.vfx.aura, 'en-gold-dome');
+  assert.equal(S.eEnrage.vfx.aura, 'en-aura-enrage');
+  assert.equal(S.eEnrage.vfx.apply, 'en-burst-blood');
+  assert.equal(S.eRage.vfx.aura, 'en-aura-rage');
+  assert.equal(S.eRage.vfx.apply, 'en-rage-burst');
+  assert.equal(S.eRegen.vfx.tick, 'en-burst-holy');
+  assert.equal(S.eCurse.vfx.apply, 'en-curse-dark');
+  ['eInvuln', 'eEnrage', 'eRage', 'eRegen', 'eCurse'].forEach((id) => {
+    ['apply', 'aura', 'tick'].forEach((role) => {
+      const p = S[id].vfx && S[id].vfx[role];
+      if (p) assert.ok(PRESETS.has(p), id + ' 的 ' + role + ' 特效不存在：' + p);
+    });
+  });
 });

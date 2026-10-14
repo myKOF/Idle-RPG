@@ -347,7 +347,6 @@ function eliteEquip(m, ids, o) {
     repoAt: GT + rnd(1.5, 3.5), pend: null, avStacks: 0, sparkAt: -9, trailX: null, trailY: null, orbs: 0
   };
   m._el = rt;
-  m._fx = [];
   var tier = o.tier || m._tier || 'elite';
   m._tier = tier;
   var size = eliteTierSize(tier, o.towerIdx || 0, o.towerCount || 1);
@@ -481,15 +480,50 @@ function eliteTick(dt) {
   return false;
 }
 
+/* ============ 狀態標記（Status 表）============
+   怪物身上的持續狀態（無敵護罩、狂暴、怒意、再生）的「畫面」一律由 Status 表決定（上身、持續、作用特效），
+   引擎只負責在狀態成立／結束時對應地掛上、拿掉；數值（免疫、攻擊倍率、回復）仍由本檔結算。
+   各技能掛哪個狀態寫在 Skills2 的「我方狀態」欄（d.status.self），引擎把它記在 rt.*Sid，沒填就用預設。 */
+var ELITE_STATE_DEFAULT = { invuln: 'eInvuln', enrage: 'eEnrage', rage: 'eRage', regen: 'eRegen' };
+/* 光環半徑＝身體半徑的倍數（球形光罩比地面光環小一點才罩得住身體） */
+var ELITE_STATE_R = { eInvuln: 0.8 };
+function eliteStatusEntry(d, side) {
+  var list = d && d.status && d.status[side];
+  return (list && list[0]) || null;
+}
+/* 技能的狀態欄寫的持續秒數（數字，或本技能效果參數的鍵名）；沒寫就用 fallback */
+function eliteStatusDur(d, side, fallback) {
+  var e = eliteStatusEntry(d, side);
+  if (!e || e.dur === undefined) return fallback;
+  var v = typeof e.dur === 'string' ? d[e.dur] : e.dur;
+  return v > 0 ? v : fallback;
+}
+function eliteStatusOn(m, sid, dur) {
+  if (typeof applyStatus !== 'function') return;
+  applyStatus(m, sid, { dur: dur, vfxR: (m._bodyR || 20) * (ELITE_STATE_R[sid] || 1.15) });
+}
+function eliteStatusOff(m, sid) {
+  var def = (typeof statusDef === 'function') ? statusDef(sid) : null;
+  if (def && m.buffs && m.buffs[def.key]) delete m.buffs[def.key];
+}
+function eliteSyncStates(m, rt) {
+  var want = {};
+  var regen = eliteArch(m, 'regen');
+  want[rt.invulnSid || ELITE_STATE_DEFAULT.invuln] = rt.invulnUntil > GT ? rt.invulnUntil - GT : 0;
+  want[rt.enrageSid || ELITE_STATE_DEFAULT.enrage] = rt.enraged ? 99999 : 0;
+  want[rt.rageSid || ELITE_STATE_DEFAULT.rage] = rt.atkUntil > GT ? rt.atkUntil - GT : (rt.avStacks > 0 ? 99999 : 0);
+  if (regen) want[eliteStatusEntry(regen, 'self') ? eliteStatusEntry(regen, 'self').id : ELITE_STATE_DEFAULT.regen] = 99999;
+  Object.keys(want).forEach(function (sid) {
+    var active = (typeof statusActive === 'function') && statusActive(m, sid);
+    if (want[sid] > 0 && !active) eliteStatusOn(m, sid, want[sid]);
+    else if (!(want[sid] > 0) && active) eliteStatusOff(m, sid);
+  });
+}
+
 function eliteTickOne(m, dt) {
   var rt = m._el;
   if (!rt) return;
-  var fx = [];
-  if (m.shield > 0.5) fx.push('shield');
-  if (rt.invulnUntil > GT) fx.push('invuln');
-  if (rt.enraged) fx.push('enrage');
-  if (rt.atkUntil > GT || rt.avStacks > 0) fx.push('rage');
-  if (fx.join() !== (m._fx || []).join()) m._fx = fx;
+  eliteSyncStates(m, rt);
   if (rt.atkUntil && rt.atkUntil <= GT) { rt.sacMult = 1; rt.atkUntil = 0; }
   if (!eliteReady(m)) return;
   var acting = !ccActionLocked(m);
@@ -897,6 +931,8 @@ function eliteCastInvuln(m, d) {
   members.forEach(function (e) {
     if (!e._el) return;
     e._el.invulnUntil = GT + d.dur;
+    var ie = eliteStatusEntry(d, 'self');
+    if (ie) e._el.invulnSid = ie.id;
     var ep = eliteMonsterPos(e);
     if (ep) eliteBurstFx(ep.x, ep.y, 55 * (d.vfxScale || 1), d.v.attack, 0);
   });
@@ -935,15 +971,15 @@ function eliteCastBloodsac(m, d) {
   var rt = m._el;
   rt.sacMult = 1 + d.atk / 100;
   rt.atkUntil = GT + d.dur;
+  if (eliteStatusEntry(d, 'self')) rt.rageSid = eliteStatusEntry(d, 'self').id;
   floatEnemyEvent(m, 'mv-float', '+' + fmt(heal), 'elite-heal');
-  var mp = eliteMonsterPos(m);
-  if (mp) eliteBurstFx(mp.x, mp.y, 70, d.v.attack, 0.1);
 }
 function eliteCastCurse(m, d) {
   eliteBusy(m, d.busy, false);
   eliteLater(0.3, function () {
     if (!(m.hp > 0) || !elitePlayerAlive()) return;
-    eliteHitFx(elitePF(), d.v.hit);
+    var ce = eliteStatusEntry(d, 'enemy');   // 詛咒的上身畫面由 Status 表決定
+    if (ce && typeof applyStatus === 'function' && elitePlayer()) applyStatus(elitePlayer(), ce.id, { dur: eliteStatusDur(d, 'enemy', d.dur) });
     eliteHitPlayer(m, {
       mult: d.dmg, elem: d.elem, sure: true, atkDown: d.atkDown, defDown: d.defDown, dur: d.dur, label: d.name
     });
@@ -973,11 +1009,8 @@ function eliteCastDrain(m, d) {
 function eliteCastImmune(m, d) {
   eliteBusy(m, 0.6, false);
   m._el.invulnUntil = GT + d.dur;
-  if (m.floatSel && d.v.field) {
-    eliteFx({
-      fxKind: 'impact', variant: 'elite-dome', count: 1, dur: d.dur, targets: [m.floatSel], vfx: { hit: d.v.field }
-    });
-  }
+  var se = eliteStatusEntry(d, 'self');
+  if (se) m._el.invulnSid = se.id;   // 光罩的畫面由 Status 表的持續特效決定（eliteSyncStates 掛上）
 }
 
 /* ============ 常駐：再生 ============ */
@@ -990,8 +1023,10 @@ function eliteRegenTick(m, d, rt, dt, id) {
   var before = m.hp;
   m.hp = Math.min(m.maxHp, m.hp + add);
   floatEnemyEvent(m, 'mv-float', '+' + fmt(m.hp - before), 'elite-heal');
-  var mp = eliteMonsterPos(m);
-  if (mp) eliteBurstFx(mp.x, mp.y, 46, d.v.attack, 0);
+  if (typeof statusTickVfxCollect === 'function') {   // 每次回復的畫面＝Status 表「再生」的作用特效
+    var rs = eliteStatusEntry(d, 'self');
+    statusTickVfxCollect(m, rs ? rs.id : ELITE_STATE_DEFAULT.regen);
+  }
 }
 
 /* ============ 火鏈：同群夥伴之間拉出一條火鏈，持續到怪物死亡 ============
@@ -1496,10 +1531,9 @@ function eliteOnDamaged(m, dealt, attacker) {
       }
     } else if (d.arch === 'enrage' && !rt.enraged && m.hp > 0 && m.hp <= m.maxHp * d.hpPct / 100) {
       rt.enraged = true;
+      if (eliteStatusEntry(d, 'self')) rt.enrageSid = eliteStatusEntry(d, 'self').id;   // 上身爆發與光環由 Status 表決定
       rt.rageMult = d.atk;
       m.aspd = (Number(m.aspd) || 1) * d.aspd;
-      var mp = eliteMonsterPos(m);
-      if (mp) eliteBurstFx(mp.x, mp.y, 85, d.v.attack, 0);
       floatEnemyEvent(m, 'mv-float', d.emoji + '狂暴!', 'elite-cast');
       if (typeof blog === 'function') blog('😡 ' + (m.name || '敵人') + ' 進入狂暴！', 'log-enemy-skill', 'combat');
     } else if (d.arch === 'sparks') {
@@ -1562,7 +1596,8 @@ function eliteOnDeath(m) {
       rt.phoenixUsed = true;
       m.hp = Math.max(1, m.maxHp * d.hp / 100);
       m.shield = 0;
-      rt.invulnUntil = GT + 1.6;
+      rt.invulnUntil = GT + eliteStatusDur(d, 'self', 1.6);
+      if (eliteStatusEntry(d, 'self')) rt.invulnSid = eliteStatusEntry(d, 'self').id;
       if (typeof cleanse === 'function') cleanse(m);
       var mp = eliteMonsterPos(m);
       if (mp) { eliteBurstFx(mp.x, mp.y, 110, d.v.attack, 0); }
@@ -1605,11 +1640,10 @@ function eliteOnAllyDeath(dead) {
       if (da) {
         var rt = e._el;
         rt.avStacks = (rt.avStacks || 0) + 1;
+        if (eliteStatusEntry(da, 'self')) rt.rageSid = eliteStatusEntry(da, 'self').id;
         e._grow = (e._grow || 1) * (1 + da.size);
         e.aspd = (Number(e.aspd) || 1) * (1 + da.aspd);
         e.runSpeed = ((Number(e.runSpeed) > 0) ? Number(e.runSpeed) : (typeof bfEnemySpeed === 'function' ? bfEnemySpeed() : 210)) * (1 + da.run);
-        var ep = eliteMonsterPos(e);
-        if (ep) eliteBurstFx(ep.x, ep.y, 70, da.v.cast, 0);
         eliteCastFx(e, da);
         floatEnemyEvent(e, 'mv-float', da.emoji + '復仇!', 'elite-cast');
       }

@@ -1408,7 +1408,7 @@ function enemyRowFromDef(gid, d) {
     .concat(skills2Vfx.columns.map(c => (d.triggerVfx && d.triggerVfx[c[1]]) || ''));
   return { gid, d, roles };
 }
-function enemyDefFromRow(get, r, gid) {
+function enemyDefFromRow(get, r, gid, catalog) {
   const where = 'Skills2 敵人技能「' + gid + '」';
   const fxRaw = get(r, '效果參數(JSON)').trim();
   let fx;
@@ -1435,6 +1435,14 @@ function enemyDefFromRow(get, r, gid) {
   if (vfx) d.vfx = vfx;
   const tv = vfxFromRow(get, r, skills2Vfx.columns);
   if (tv) d.triggerVfx = tv;
+  /* 狀態欄（2026-10-14）：我方狀態＝施放者自己身上的狀態（護盾、狂暴…）；敵方狀態＝玩家身上的狀態（詛咒…）。
+     狀態長什麼樣子（上身、持續、作用特效）只寫在 Status 表。 */
+  const status = {};
+  SKILLS2_STATUS_COLUMNS.forEach(([label, side]) => {
+    const list = skills2StatusFromCell(get(r, label), where + '「' + label + '」', fx, [], catalog || {});
+    if (list.length) status[side] = list;
+  });
+  if (Object.keys(status).length) d.status = status;
   d.desc = get(r, '效果說明模板');
   return d;
 }
@@ -1451,7 +1459,8 @@ SKILLS2_GLOSSARY_ROWS.push(
   ['特效欄位（敵人列十一欄全可填，檢查只看 Preset 檔案存在）：施放特效＝施法者身上；攻擊特效＝爆發／落點；飛行子彈＝彈體本身；受擊特效＝玩家被打中；'],
   ['　地板特效＝預警圈／地面標記；持續場域特效＝持續存在的場域本體；觸發特效／觸發子彈／觸發命中特效／觸發地板特效／觸發持續場域特效＝第二層（各技能怎麼用見該列「效果說明模板」與 docs/ELITE_AFFIXES.md）。'],
   ['敵人技能的特效不要和玩家技能相同：同形態時也要換顏色（敵人專用 Preset 以 en- 開頭，見 tools/vfx/authoring/author/enemy-skills.cjs）。額外用到的 Preset（例如飛彈的四種顏色）填在效果參數的 presets 陣列。'],
-  ['這些列的解鎖、金幣、範圍用途欄、狀態欄不使用（留白）。']
+  ['我方狀態／敵方狀態（敵人列也能填）：我方狀態＝施放者自己身上的狀態（例：護盾→eInvuln）；敵方狀態＝玩家身上的狀態（例：衰弱詛咒→eCurse）。格式同玩家技能（狀態ID，可帶 dur 等參數）。狀態上身、持續、作用的畫面一律填在 Status 表，不填在這裡。'],
+  ['這些列的解鎖、金幣、範圍用途欄不使用（留白）。']
 );
 
 SCHEMAS.Skills2 = {
@@ -1504,6 +1513,7 @@ SCHEMAS.Skills2 = {
         '冷卻時間': enemyCdCell(d.cd), '階數': '1', '效果參數(JSON)': JSON.stringify(d.fx || {}), '效果說明模板': d.desc || '' };
       SKILL_VFX_COLUMNS.forEach(c => { byName[c[0]] = (d.vfx && d.vfx[c[1]]) || ''; });
       skills2Vfx.columns.forEach(c => { byName[c[0]] = (d.triggerVfx && d.triggerVfx[c[1]]) || ''; });
+      SKILLS2_STATUS_COLUMNS.forEach(c => { byName[c[0]] = skills2StatusCell(d.status && d.status[c[1]]); });
       rows.push(header.map(h => (byName[h] === undefined ? '' : byName[h])));
     });
     return rows;
@@ -1530,7 +1540,7 @@ SCHEMAS.Skills2 = {
       if (klass === ENEMY_CLASS) {
         if (enemyGroups[gid]) throw new Error('Skills2 敵人技能「' + gid + '」重複');
         if (!/^e_[A-Za-z0-9_]+$/.test(gid)) throw new Error('Skills2 敵人技能的群組ID要以 e_ 開頭（例：e_firechain）：' + gid);
-        enemyGroups[gid] = enemyDefFromRow(get, r, gid);
+        enemyGroups[gid] = enemyDefFromRow(get, r, gid, catalog);
         enemyOrder.push(gid);
         return;
       }

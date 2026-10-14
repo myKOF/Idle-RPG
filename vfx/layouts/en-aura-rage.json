@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-aura-rage",
+  "groups": [
+    {
+      "id": "en-aura-rage",
+      "name": "en-aura-rage",
+      "layerIds": [
+        "fill",
+        "ring",
+        "embers"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-aura-rage"
+  ]
+}
