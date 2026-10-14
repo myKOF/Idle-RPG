@@ -1,5 +1,12 @@
 # PATCH.md
 
+## 戰鬥區狂暴化數值加入 Hover 提示（Antigravity 2026-10-14）
+
+- **狂暴化文字加入說明 Tips（`index.html`、`tests/enemy-frenzy.test.cjs`）**：
+  - 依使用者指示，將戰鬥場景右上角的狂暴化數值節點（`#battle-frenzy`）開啟滑鼠互動（`pointer-events: auto; cursor: help;`）。
+  - 掛載通用提示屬性 `data-tt-title="狂暴化"` 與 `data-tt-desc="敵人在場上存在時間越久會逐漸提升其強度"`，滑鼠懸停時自動彈出說明提示視窗。
+  - 單元測試補齊屬性與互動性斷言。
+
 ## 遊戲經驗條改為墨綠漸變色（Antigravity 2026-10-14）
 
 - **經驗條配色調整為墨綠漸變色（`css/battle-hud.css`、`css/ashen-forge-flat.css`）**：

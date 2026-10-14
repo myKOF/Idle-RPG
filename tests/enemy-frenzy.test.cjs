@@ -61,6 +61,8 @@ test('平均只算存活敵人，UI白到紅並保持無上限文字，高塔選
   assert.equal(el.textContent, '狂暴化：0%');
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   assert.match(html, /id="battle-frenzy"[^>]*right:12px;top:44px/);
+  assert.match(html, /id="battle-frenzy"[^>]*pointer-events:auto/);
+  assert.match(html, /id="battle-frenzy"[^>]*data-tt-title="狂暴化"[^>]*data-tt-desc="敵人在場上存在時間越久會逐漸提升其強度"/);
   assert.match(ui, /renderEnemyFrenzy\(battleSnapshot, view\)/);
   assert.match(fs.readFileSync(path.join(root, 'js/tower.js'), 'utf8'), /TOWER\.boss = makeBoss\(floor\);\s*TOWER\.boss\._spawnAt = GT/);
 });
