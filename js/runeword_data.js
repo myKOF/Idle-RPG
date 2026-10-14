@@ -156,6 +156,16 @@ var RW_FX_KEYS = [
   'reviveHpPct', 'reviveCdSec', 'reviveInvulnSec', 'reviveDmgPct', 'reviveDmgSec', 'reviveRefresh'
 ];
 /* passives（並入既有被動表 st.passives 的數值）：只能用這些鍵。 */
+/* 符文專用的「合成屬性」：一條屬性同時作用在多條詞條上，讓效果文字不必逐條列出。
+   key＝符文表（武器／防具／飾品詞條、真言的屬性加成）可以填的詞條鍵；
+   like＝數值照哪一條詞條算（基準值、成長、進位都用它）；keys＝實際加進角色屬性的詞條鍵（每一條都得到同樣的數值）；
+   name＝畫面顯示的名稱。例：elemDmgAll（全屬性傷害提升）＝火冰雷毒聖暗地風八種元素傷害提升各加同樣的值。 */
+var RW_STAT_ALIASES = {
+  elemDmgAll: {
+    name: '全屬性傷害提升%', like: 'elemDmgFire',
+    keys: ['elemDmgFire', 'elemDmgIce', 'elemDmgLightning', 'elemDmgPoison', 'elemDmgLight', 'elemDmgDark', 'elemDmgEarth', 'elemDmgWind']
+  }
+};
 var RW_PASSIVE_KEYS = ['thorns', 'smite', 'undying', 'sunder', 'trueDmg', 'omniDrain', 'soulEater', 'annihilate', 'sanctuary', 'godWrath'];
 var RW_PROC_TRIGGERS = ['hit', 'crit', 'kill', 'hurt', 'block', 'cast', 'tick', 'lowhp'];
 var RW_ACTS = ['dmg', 'heal', 'shield', 'mana', 'buff', 'buffRandom', 'stun', 'slow', 'dot', 'cdr',
@@ -436,7 +446,7 @@ var RUNEWORDS = [
     legend: ['windbladeVoidCut'],
     flavor: '走進虛空的人，被攻擊的永遠是上一個位置。' },
   { id: 'rw_genesis', name: '創世紀', tier: 4, runes: ['r30', 'r31', 'r32', 'r33'], bases: ['any'],
-    stats: [['atkPct', 0.9], ['matkPct', 0.9], ['elemDmgFire', 0.45], ['elemDmgIce', 0.45], ['elemDmgLightning', 0.45], ['elemDmgPoison', 0.45], ['elemDmgLight', 0.45], ['elemDmgDark', 0.45], ['elemDmgEarth', 0.45], ['elemDmgWind', 0.45]],
+    stats: [['atkPct', 0.9], ['matkPct', 0.9], ['elemDmgAll', 0.45]],
     fx: { dmgPct: 50, cdPct: 20, aspdMult: 15, manaCostRedPct: 30 },
     legend: ['firepillarResonance'],
     flavor: '最後一顆符文落下時，世界從頭開始。' },

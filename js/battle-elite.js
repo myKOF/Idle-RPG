@@ -39,6 +39,23 @@ var BattleElite = (function () {
     }
     return out;
   }
+  /* BOSS 血條下方的技能標籤：[{ text: '熔火', color: 0xf08040 }, …]。專屬技能固定亮暗金色；隨機技能用技能的屬性（同玩家技能頁的屬性色）；
+     無屬性的技能（護盾、再生…）用技能自己的光環色。 */
+  var ELEM_TAG_COLOR = {
+    phys: '#d6cfbf', fire: '#f08040', earth: '#c9a060', lightning: '#ecd050',
+    ice: '#6ec8ec', wind: '#78dca6', poison: '#8fd46b', light: '#f5df8a', dark: '#b48ae8'
+  };
+  var EXCLUSIVE_TAG_COLOR = '#e3b13a';   // 專屬技能一律用亮暗金色（有別於隨機技能的屬性色）
+  function skillTags(data) {
+    var ids = affixList(data);
+    var out = [];
+    for (var i = 0; i < ids.length; i++) {
+      var def = (typeof ELITE_AFFIXES !== 'undefined') ? ELITE_AFFIXES[ids[i]] : null;
+      var css = !def ? '#ffe9a8' : (def.pool === 'exclusive' ? EXCLUSIVE_TAG_COLOR : (ELEM_TAG_COLOR[def.elem] || def.color));
+      out.push({ text: def ? def.name : ids[i], color: css });
+    }
+    return out;
+  }
   function stateKey(data) {
     var fx = (data && Array.isArray(data._fx)) ? data._fx : [];
     return fx.join(',');
@@ -66,7 +83,7 @@ var BattleElite = (function () {
       stateRing.visible = false;
       ent.view.addChildAt(stateRing, 1);
       deco.stateRing = stateRing;
-      if (affixList(d).length) {
+      if (affixList(d).length && !d.isBoss) {   // BOSS 的技能標籤改放在血條下方
         var badge = new PIXI.Text({
           text: badgeText(d), style: { fontSize: 15, fontFamily: 'sans-serif' }
         });
@@ -179,7 +196,7 @@ var BattleElite = (function () {
     return { update: update, destroy: destroy, _groupColor: groupColor };
   }
 
-  return { create: create, groupColor: groupColor, STATE_ICON: STATE_ICON };
+  return { create: create, groupColor: groupColor, STATE_ICON: STATE_ICON, skillTags: skillTags };
 })();
 
 if (typeof module !== 'undefined' && module.exports) module.exports = BattleElite;

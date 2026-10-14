@@ -257,6 +257,63 @@ test('單顆符文依部位（武器／防具／飾品）各給一條屬性，�
   c.RUNES.forEach((r) => ['w', 'a', 'j'].forEach((s) => assert.ok(c.AFFIX_POOL[r[s][0]] && r[s][1] > 0, r.id + ' 的 ' + s + ' 側要有有效詞條與倍率')));
 });
 
+test('合成屬性 elemDmgAll（全屬性傷害提升）：展開成八種元素傷害提升各加同樣的值，文字只寫一行；創世紀用它', () => {
+  const c = loadRuneEnv();
+  const al = c.RW_STAT_ALIASES.elemDmgAll;
+  assert.equal(al.keys.length, 8);
+  assert.equal(c.rwStatDef('elemDmgAll').name, '全屬性傷害提升%');
+  const gen = c.RUNEWORD_BY_ID.rw_genesis;
+  assert.equal(gen.stats.filter((s) => /^elemDmg/.test(s[0])).length, 1, '創世紀的元素傷害只有一條 elemDmgAll');
+  assert.equal(gen.stats.find((s) => /^elemDmg/.test(s[0]))[0], 'elemDmgAll');
+  const it = wordItem(c, 'rw_genesis');
+  const mult = gen.stats.find((s) => s[0] === 'elemDmgAll')[1];
+  const want = c.affixRoundValue('elemDmgFire', c.affixBaseValue('elemDmgFire', it.level, it.rarity) * 0.8 * mult);
+  const ents = c.rwItemStatEntries(it).filter((e) => e.src === 'word' && /^elemDmg/.test(e.key));
+  assert.deepEqual(plain(ents.map((e) => e.key).sort()), plain(al.keys.slice().sort()), '展開成八條');
+  ents.forEach((e) => assert.equal(e.val, want, e.key + ' 的值相同'));
+  const lines = c.rwDescribeLines(gen, it).filter((l) => /屬性傷害提升/.test(l));
+  assert.equal(lines.length, 1, '效果文字只有一行');
+  assert.match(lines[0], /^全屬性傷害提升 +/);
+  assert.match(c.rwDescribeLines(gen)[2], /全屬性傷害提升（基礎值 ×0.45）/);
+  const before = plain(c.getStats().elemDmgUp);
+  const st = equip(c, 'weapon', it);
+  ['fire', 'ice', 'lightning', 'poison', 'light', 'dark', 'earth', 'wind'].forEach((e) => assert.ok(st.elemDmgUp[e] - before[e] > 0, e + ' 元素傷害提升有加成（八種都有）'));
+});
+
+test('裝備詳情的符文真言區塊：效果逐行上色，創世紀的元素傷害只有一行「全屬性傷害提升」', () => {
+  const c = loadRuneEnv();
+  const it = wordItem(c, 'rw_genesis');
+  const html = c.itemRuneHTML(it, null);
+  assert.equal((html.match(/全屬性傷害提升/g) || []).length, 1);
+  assert.doesNotMatch(html, /火屬性傷害提升|雷屬性傷害提升/);
+  assert.ok(html.includes('<div class="it-runeword-line" style="color:' + c.RARITIES[3].color + '">全屬性傷害提升'), '屬性行＝詞條要求稀有度的顏色');
+  assert.ok(html.includes('style="color:' + c.RARITIES[c.PASSIVE_MIN_RARITY].color + '">傳奇特效【'), '傳奇特效＝傳說色');
+});
+
+test('符文真言效果分色：屬性行＝詞條要求的稀有度色（沒要求就不上色）、傳奇特效＝傳說色、機制＝該真言的品質色；文字版與彩色版內容一致', () => {
+  const c = loadRuneEnv();
+  const gen = c.RUNEWORD_BY_ID.rw_genesis;
+  const es = c.rwDescribeEntries(gen);
+  assert.deepEqual(plain(es.map((e) => e.text)), plain(c.rwDescribeLines(gen)), '同一份內容');
+  const stat = (k) => es.find((e) => e.kind === 'stat' && e.text.startsWith(c.rwStatDef(k).name.replace(/%$/, '')));
+  assert.equal(stat('atkPct').color, '', '沒有稀有度要求的詞條用預設文字色');
+  const el = c.rwStatDef('elemDmgAll');
+  assert.ok(el.minR !== undefined);
+  assert.equal(stat('elemDmgAll').color, c.RARITIES[el.minR].color, '元素傷害提升要求 ' + c.RARITIES[el.minR].name + ' 以上，用那個品質色');
+  const lg = es.filter((e) => e.kind === 'legend');
+  assert.ok(lg.length >= 1);
+  lg.forEach((e) => assert.equal(e.color, c.RARITIES[c.PASSIVE_MIN_RARITY].color, '傳奇特效用傳說品質色'));
+  const mech = es.filter((e) => e.kind === 'mech');
+  assert.ok(mech.length >= 1);
+  mech.forEach((e) => assert.equal(e.color, c.RUNEWORD_TIER_COLORS[gen.tier]));
+  // 所有真言：每一行都有 text 與 kind，沒有 undefined
+  c.RUNEWORDS.forEach((w) => c.rwDescribeEntries(w).forEach((e) => { assert.ok(e.text && e.kind, w.id); assert.doesNotMatch(e.text, /undefined|NaN/); }));
+  // 詞條提示裡「(史詩+)」的品質色＝詞條 minR 的稀有度色：挑一條史詩以上的詞條驗證
+  const epicKey = Object.keys(c.AFFIX_POOL).find((k) => c.AFFIX_POOL[k].minR === 4 && !c.affixIsAllLocked(k));
+  assert.ok(epicKey);
+  assert.equal(c.rwStatColor(epicKey), c.RARITIES[4].color);
+});
+
 test('三個部位的單顆符文都真的進角色屬性：戒指／項鍊走飾品側、副手走武器側、胸甲走防具側', () => {
   const c = loadRuneEnv();
   const base = Object.assign({}, c.getStats());

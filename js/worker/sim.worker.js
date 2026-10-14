@@ -10,13 +10,13 @@
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-importScripts('protocol.js?v=50', 'shim.js?v=12');
+importScripts('protocol.js?v=50', 'shim.js?v=13');
 importScripts(
-  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261013-enemy-skills2', '../runeword_data.js?v=20261013-rune-v2-parts', '../status.js?v=20261012-super-rock-art', '../formula.js?v=20261013-enemy-skills2', '../battlefield.js?v=20261013-enemy-skills2', '../stats.js?v=20261003-rename-weineng',
-  '../item.js?v=20261008-rune-erase-cfg', '../runeword.js?v=20261013-rune-v2-parts',
-  '../skills.js?v=20261007-runes4', '../skills2.js?v=20261013-enemy-skills2', '../elite_data.js?v=20261013-enemy-skills2', '../talents.js?v=20261003-rename-weineng',
+  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261013-enemy-skills2', '../runeword_data.js?v=20261013-rune-all-elem-color', '../status.js?v=20261012-super-rock-art', '../formula.js?v=20261013-enemy-skills2', '../battlefield.js?v=20261013-enemy-skills2', '../stats.js?v=20261003-rename-weineng',
+  '../item.js?v=20261013-rune-all-elem-color', '../runeword.js?v=20261013-rune-all-elem-color',
+  '../skills.js?v=20261007-runes4', '../skills2.js?v=20261013-enemy-fix2', '../elite_data.js?v=20261013-enemy-skills2', '../talents.js?v=20261003-rename-weineng',
   '../player.js?v=20261008-boss-config-lock', '../special_rules.js',
-  '../combat.js?v=20261013-enemy-skills2', '../elite.js?v=20261013-enemy-skills2', '../legendary.js?v=20261012-indomitable-guard', '../potential.js?v=20261005-cc-decay-count', '../tower.js?v=20261013-enemy-skills2',
+  '../combat.js?v=20261013-enemy-skills2', '../elite.js?v=20261013-enemy-fix2', '../legendary.js?v=20261012-indomitable-guard', '../potential.js?v=20261005-cc-decay-count', '../tower.js?v=20261013-enemy-skills2',
   '../factory.js?v=20261007-runes4', '../newforge.js', '../forge.js?v=20261007-runes4', '../save.js?v=20261007-rune-seen',
   '../tasks.js?v=20261007-runes4'
 );
@@ -174,6 +174,21 @@ var MAX_CATCHUP_STEPS = 2000;  // 保險絲：單次 loop 的步數硬上限（2
    TICK_MS，那是正常節奏不是欠帳；超過一秒才代表真的落後了。
    主執行緒拿它放寬 watchdog 的判定門檻（見 bridge.js 的存活監測）。 */
 var CATCHUP_REPORT_MIN_SEC = 1;
+
+/* 補進度期間的視覺靜默（見 shim.js shimSetCatchupSilent）：欠帳超過 ENTER 秒、而且單步便宜（真的在快轉，
+   一個 loop 能跑好幾步）才進入；欠帳補到 LEAVE 秒以內恢復，所以回到前景後只播最後約 2 秒。
+   單步很貴（≥EXPENSIVE_STEP_MS，模擬本身比現實慢）時不靜默——那是慢動作而不是快轉，
+   把畫面關掉比慢動作更像當機。 */
+var CATCHUP_SILENT_ENTER_SEC = 4;
+var CATCHUP_SILENT_LEAVE_SEC = 2;
+var CATCHUP_CHEAP_STEP_MS = 15;
+var CATCHUP_EXPENSIVE_STEP_MS = 25;
+var _catchupSilent = false;
+var _stepMsEma = 0;            // 單步耗時的指數平均（真實時間）
+function catchupSilentDecide(cur, debt) {
+  if (cur) return !(debt <= CATCHUP_SILENT_LEAVE_SEC || _stepMsEma >= CATCHUP_EXPENSIVE_STEP_MS);
+  return debt > CATCHUP_SILENT_ENTER_SEC && _stepMsEma < CATCHUP_CHEAP_STEP_MS;
+}
 
 /* 補進度的計時來源要與遊戲時間分開：Date.now() 在測試裡是可控的假時鐘，
    拿它當預算計時會失效。performance.now() 是單調時鐘，正是這裡要的。 */
@@ -400,13 +415,22 @@ function loop() {
     var steps = 0;
     while (_catchupDebt > 0.0001) {
       var dt = Math.min(_catchupDebt, TICK_MS / 1000);
+      _catchupSilent = catchupSilentDecide(_catchupSilent, _catchupDebt);
+      if (typeof shimSetCatchupSilent === 'function') shimSetCatchupSilent(_catchupSilent);
+      var _stepT0 = _phNow();
       simStep(dt);
       emitUrgentVisualEvents();
+      _stepMsEma += ((_phNow() - _stepT0) - _stepMsEma) * 0.2;
       _catchupDebt -= dt;
       stepped += dt;
       /* 步數上限是保險絲：計時來源若被替換成不會前進的假時鐘（既有測試就是這樣），
          只靠 CPU 預算會一路把欠帳跑完，變成一次很長的同步工作。 */
       if (++steps >= MAX_CATCHUP_STEPS || catchupClock() >= budgetUntil) break;
+    }
+
+    if (_catchupSilent && _catchupDebt <= CATCHUP_SILENT_LEAVE_SEC) {
+      _catchupSilent = false;
+      if (typeof shimSetCatchupSilent === 'function') shimSetCatchupSilent(false);
     }
 
     /* 一律以 now（真實時間）判斷，`stepped` 只用來推進模擬，不參與節流——見宣告處的說明。

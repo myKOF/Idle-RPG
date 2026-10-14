@@ -2,7 +2,7 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const geo=require('../tools/skills2-geometry.cjs'),tables=require('../tools/config_tables.cjs');
 test('臨界雷劫外擴速度使用速度欄，Excel／CSV／JS與新效果一致',()=>{
  const row=tables.csvParse(fs.readFileSync(path.join(__dirname,'../config/CSV/Skills2.csv'),'utf8'));
- const found=row.find(r=>r[8]==='criticalThunderbolt');
+ const found=row.find(r=>r[row[0].indexOf('超神ID')]==='criticalThunderbolt');
  assert.equal(found[row[0].indexOf(geo.labels.speed)],'3');
  assert.deepEqual(JSON.parse(found[row[0].indexOf('效果參數(JSON)')]),{sec:10,chance:5,chancePer:.5,pct:50,pctPer:5,childSec:3});
  assert.deepEqual(geo.apply('thunderorb','criticalThunderbolt',{},c=>c===geo.labels.speed?'3':'').fx,{speed:3});

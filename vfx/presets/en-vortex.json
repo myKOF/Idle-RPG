@@ -17,7 +17,7 @@
         "x": 1,
         "y": 0.55
       },
-      "alpha": 0.35,
+      "alpha": 0.595,
       "tint": "#833884",
       "blendMode": "add",
       "scaleOverLife": [
@@ -48,7 +48,7 @@
         "x": 0.9,
         "y": 0.28
       },
-      "alpha": 0.7,
+      "alpha": 1,
       "tint": "#f91331",
       "blendMode": "add",
       "rotationOverLife": [
@@ -75,7 +75,7 @@
         "x": 0.7,
         "y": 0.24
       },
-      "alpha": 0.4,
+      "alpha": 0.68,
       "tint": "#fa364f",
       "blendMode": "add",
       "rotationOverLife": [
@@ -102,7 +102,7 @@
         "x": 0.5,
         "y": 0.17
       },
-      "alpha": 0.35,
+      "alpha": 0.595,
       "tint": "#f5fb65",
       "blendMode": "add",
       "rotationOverLife": [
@@ -466,7 +466,7 @@
         "x": 0.55,
         "y": 0.18
       },
-      "alpha": 0.9,
+      "alpha": 1,
       "tint": "#fb6672",
       "blendMode": "add",
       "rotationOverLife": [
@@ -510,7 +510,7 @@
         "x": 0.22,
         "y": 0.22
       },
-      "alpha": 0.9,
+      "alpha": 1,
       "tint": "#fc7a82",
       "blendMode": "add",
       "scaleOverLife": [

@@ -1535,10 +1535,14 @@ var BattleRenderer = (function () {
     });
     label.anchor.set(0.5, 0);
     label.y = -22;
-    c.addChild(g); c.addChild(label);
+    /* 技能標籤列：BOSS 的專屬／隨機技能名（依屬性上色），擺在血條正下方（BOSS 頭頂不再放圖示列） */
+    var tags = new PIXI.Container();
+    tags.y = 21;
+    tags.sig = '';
+    c.addChild(g); c.addChild(label); c.addChild(tags);
     c.x = (S.canvasW || S.W) / 2; c.y = BOSS_BAR_Y;
     S.layers.overlay.addChild(c);
-    S.bossBar = { root: c, g: g, label: label, forId: ent.id };
+    S.bossBar = { root: c, g: g, label: label, tags: tags, forId: ent.id };
     /* 建立當下就畫：實體的腳下血條早在 makeEnemy 畫過了，drawHpBar 之後要等血量變動才會再進來，
        不畫的話大血條會空著直到 BOSS 第一次掉血——塔戰「登場」那 2.4 秒就是一條空框。 */
     drawBossBar(ent);
@@ -1555,6 +1559,24 @@ var BattleRenderer = (function () {
     if (pct > 0) bar.g.roundRect(-w / 2, 0, w * pct, h, 3).fill(0xd9484f);
     bar.label.text = '👑 Lv.' + d.level + ' ' + (d.name || 'BOSS') +
       '　' + fmtNum(Math.max(0, d.hp)) + ' / ' + fmtNum(d.maxHp);
+    var list = (typeof BattleElite !== 'undefined' && BattleElite.skillTags) ? BattleElite.skillTags(d) : [];
+    var sig = list.map(function (t) { return t.text + t.color; }).join('|');
+    if (sig !== bar.tags.sig) {
+      bar.tags.sig = sig;
+      bar.tags.removeChildren().forEach(function (c) { c.destroy(); });
+      var GAP = 14, x = 0;
+      list.forEach(function (t) {
+        var tx = new PIXI.Text({
+          text: t.text,
+          style: { fontFamily: 'sans-serif', fontSize: 13, fontWeight: 'bold', fill: t.color, stroke: { color: '#000', width: 4 } }
+        });
+        tx.anchor.set(0, 0);
+        tx.x = x;
+        bar.tags.addChild(tx);
+        x += tx.width + GAP;
+      });
+      bar.tags.pivot.x = Math.max(0, x - GAP) / 2;   // 整列置中
+    }
   }
   function removeBossBar(forId) {
     if (S.bossBar && S.bossBar.forId === forId) {

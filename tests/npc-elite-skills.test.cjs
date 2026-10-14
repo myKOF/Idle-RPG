@@ -110,11 +110,11 @@ test('NPC-SKILL-6 基本資料只認 normal 列：改其他類型列的名稱不
   assert.equal(bosses[0].img, 'boss_flame.png', '圖檔不受表控制');
 });
 
-test('NPC-SKILL-7 Skills2 的敵人技能列：類別欄在最後、只有 enemy 列進 ENEMY_SKILLS2，玩家技能不受影響', () => {
+test('NPC-SKILL-7 Skills2 的敵人技能列：有「類別」欄、只有 enemy 列進 ENEMY_SKILLS2，玩家技能不受影響', () => {
   const rows = cfg.csvParse(fs.readFileSync(path.join(root, 'config/CSV/Skills2.csv'), 'utf8')).filter((r) => r.length > 1);
   const header = rows[0];
-  assert.equal(header[header.length - 1], '類別');
-  const k = header.length - 1;
+  const k = header.indexOf('類別');
+  assert.ok(k >= 0, 'Skills2 要有「類別」欄（位置由使用者調整，用表頭名稱找）');
   const enemy = rows.slice(1).filter((r) => r[k] === 'enemy');
   const player = rows.slice(1).filter((r) => r[k] === '');
   assert.ok(enemy.length >= 50);

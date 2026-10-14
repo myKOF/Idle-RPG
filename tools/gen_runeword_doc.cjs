@@ -16,7 +16,8 @@ const docPath = path.join(root, 'docs', 'RUNEWORD_DESIGN.md');
 const c = loadRuneEnv({ noState: true });
 
 function budget(w) {
-  return (w.stats || []).reduce((s, x) => s + x[1], 0);
+  // 合成屬性（如全屬性傷害提升）實際作用在多條詞條上，預算按它展開後的條數算，才跟逐條列出時可比
+  return (w.stats || []).reduce((s, x) => s + x[1] * ((c.RW_STAT_ALIASES[x[0]] || { keys: [0] }).keys.length), 0);
 }
 function table(rows, header) {
   const out = ['| ' + header.join(' | ') + ' |', '| ' + header.map(() => '---').join(' | ') + ' |'];
@@ -47,7 +48,7 @@ function generate() {
     const rows = c.RUNEWORDS.filter((w) => w.tier === t).map((w) => {
       const lines = c.rwDescribeLines(w).filter((l) => !/詞條的份量|^傳奇特效/.test(l) || /代價/.test(l));
       const stats = (w.stats || []).map((s) => {
-        const d = c.AFFIX_POOL[s[0]];
+        const d = c.rwStatDef(s[0]);
         return `${d.name.replace(/%$/, '')}${s[1] < 0 ? '（代價）' : ''}×${Math.abs(s[1])}`;
       }).join('、');
       const legend = (w.legend || []).map((k) => `借用傳奇【${c.PASSIVE_POOL[k].name}】`);

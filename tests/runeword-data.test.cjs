@@ -111,8 +111,10 @@ test('stats／passives／legend／fx／procs 只用已實作的詞彙', () => {
   const passiveKeys = new Set(c.RW_PASSIVE_KEYS);
   WORDS.forEach((w) => {
     (w.stats || []).forEach(([key, mult]) => {
-      assert.ok(c.AFFIX_POOL[key], `${w.id} stats 詞條 ${key} 不存在`);
-      assert.ok(!c.affixIsAllLocked(key), `${w.id} stats 詞條 ${key} 已被鎖定`);
+      // 符文專用的合成屬性（RW_STAT_ALIASES，例：全屬性傷害提升）：它背後的每一條詞條都要存在
+      const al = c.RW_STAT_ALIASES[key];
+      (al ? al.keys : [key]).forEach((k) => assert.ok(c.AFFIX_POOL[k], `${w.id} stats 詞條 ${k} 不存在`));
+      assert.ok(!c.affixIsAllLocked(al ? al.like : key), `${w.id} stats 詞條 ${key} 已被鎖定`);
       assert.equal(typeof mult, 'number');
     });
     Object.keys(w.passives || {}).forEach((k) => assert.ok(passiveKeys.has(k), `${w.id} 未知被動 ${k}`));

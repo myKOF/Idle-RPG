@@ -41,7 +41,7 @@ test('雙刀逐刀目標與傷害飄字共用 0.2 秒，不對每個目標重播
   c.sgCastDualdance({}, {atk:10},c.SKILLS2.dualdance,[1,0,0,0,0,0,0],pool,pool[0],'',{},false);
   assert.equal(events.length,2);assert.deepEqual(events.map(e=>e.delayMs),[0,200]);
   assert.deepEqual(events.map(e=>e.angle),[0,1.5]);
-  events.forEach((e,i)=>{assert.equal(e.count,1);assert.equal(e.target,pool[i%pool.length]);assert.equal(e.delayMs,hits[i].delay);});
+  events.forEach((e,i)=>{assert.equal(e.count,1);assert.ok(pool.includes(e.target),'目標是池子裡的敵人（每刀隨機挑）');assert.equal(e.delayMs,hits[i].delay);});
  }
 });
 

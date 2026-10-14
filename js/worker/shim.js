@@ -137,9 +137,19 @@ function shimEvictForUrgent(incoming, incomingIsBirth) {
   return true;
 }
 
+/* 補進度（快轉）期間的視覺靜默：分頁在背景一陣子再回來，Worker 會一口氣補上累積的欠帳，
+   那段時間產生的特效、動作與傷害數字都已經過期，擠在同一瞬間播出只會讓畫面卡死。
+   靜默期間照常模擬、照常算傷害，只是不產生這三類純視覺事件（日誌、擊殺、掉落等不受影響）；
+   欠帳補到只剩最後約 2 秒才恢復（見 sim.worker.js catchupSilentDecide）。 */
+var _shimCatchupSilent = false;
+var _shimSilentDropped = 0;
+function shimSetCatchupSilent(on) { _shimCatchupSilent = !!on; }
+function shimSilentDropped() { return _shimSilentDropped; }
+
 function shimPushEvent(kind, data) {
   data = data || {};
   data.kind = kind;
+  if (_shimCatchupSilent && (kind === 'vfx' || kind === 'act' || kind === 'float')) { _shimSilentDropped++; return; }
   if (shimIsUrgentVisualEvent(kind, data)) {
     var sustain = shimIsSustainVisualEvent(data);
     var birth = sustain && shimIsSustainBirth(data);

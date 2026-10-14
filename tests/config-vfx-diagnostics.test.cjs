@@ -9,6 +9,9 @@ function change(data,gid,stage,label,value){
     (r[header.indexOf('超神ID')]||r[header.indexOf('階數')])===stage);
   assert.ok(row);row[header.indexOf(label)]=value;return data.indexOf(row)+1;
 }
+/* Excel 欄位字母由表頭名稱推算（使用者會調整欄位順序，不能寫死 AP／AQ／AJ） */
+function colLetter(i){let n=i+1,s='';while(n>0){const m=(n-1)%26;s=String.fromCharCode(65+m)+s;n=Math.floor((n-1)/26);}return s;}
+const at=label=>{const i=rows()[0].indexOf(label);assert.ok(i>=0,label);return colLetter(i);};
 const inspect=data=>table.validateVfxTable('Skills2',data.slice(1),data[0]);
 
 test('誤填觸發欄一次列出兩個問題：技能、Excel格位、值、未接線原因與修正方式',()=>{
@@ -17,8 +20,8 @@ test('誤填觸發欄一次列出兩個問題：技能、Excel格位、值、未
   change(data,'windblade','7','觸發地板特效','ground-homing-wind-crescent-09');
   const issues=inspect(data);assert.equal(issues.length,2);
   assert.match(issues[0],/Skills2.xlsx 第208列「暴風真空刃」/);
-  assert.match(issues[0],/AP208「觸發命中特效」＝「hit-wind-09」/);
-  assert.match(issues[1],/AQ208「觸發地板特效」/);
+  assert.ok(issues[0].includes(at('觸發命中特效')+'208「觸發命中特效」＝「hit-wind-09」'));
+  assert.ok(issues[1].includes(at('觸發地板特效')+'208「觸發地板特效」'));
   assert.match(issues[0],/未接線.*沒有獨立觸發事件/);
   assert.match(issues[0],/可用觸發欄：無/);assert.match(issues[0],/清除此格/);
   assert.match(issues[0],/飛行子彈.*受擊特效/);assert.match(issues[0],/改 Preset 名稱不會新增事件/);
@@ -26,10 +29,10 @@ test('誤填觸發欄一次列出兩個問題：技能、Excel格位、值、未
 
 test('名稱拼錯提供實際檔案與相近名稱，保留空白列及含換行表頭的格位',()=>{
   const data=rows();data.splice(1,0,Array(data[0].length).fill(''));
-  const row=change(data,'windblade','1','飛行子彈','proj-wind-crescen');
+  const letterOfProjectile=at('飛行子彈'),row=change(data,'windblade','1','飛行子彈','proj-wind-crescen');
   data[0][data[0].indexOf('飛行子彈')]+='\n本體外觀';
   const issues=inspect(data);assert.equal(issues.length,1);
-  assert.ok(issues[0].includes(`AJ${row}「飛行子彈」`));
+  assert.ok(issues[0].includes(`${letterOfProjectile}${row}「飛行子彈」`));
   assert.match(issues[0],/找不到 vfx\/presets\/proj-wind-crescen.json/);
   assert.match(issues[0],/相近可用名稱：.*proj-wind-crescent/);
   assert.match(issues[0],/若是誤改，恢復原名稱/);
@@ -78,7 +81,7 @@ test('正式CLI：錯誤整批拒絕且所有JS／CSV不變；修正、有效換
   fs.writeFileSync(csv,table.csvStringify(data));const badCSV=hash(csv);
   const run=(...args)=>spawnSync(process.execPath,['tools/config_tables.cjs','--apply','--write',...args],{cwd:dir,encoding:'utf8'});
   const fail=run();assert.equal(fail.status,2,fail.stdout+fail.stderr);
-  assert.match(fail.stderr,/2 個問題/);assert.match(fail.stderr,/AP208/);assert.match(fail.stderr,/AQ208/);
+  assert.match(fail.stderr,/2 個問題/);assert.ok(fail.stderr.includes(at('觸發命中特效')+'208'));assert.ok(fail.stderr.includes(at('觸發地板特效')+'208'));
   assert.match(fail.stdout,/任何遊戲 JS 都未覆寫/);
   assert.deepEqual(js.map(name=>hash(path.join(dir,'js',name+'.js'))),before);assert.equal(hash(csv),badCSV);
   assert.equal(fs.existsSync(path.join(dir,'params_version.txt')),false);
@@ -86,7 +89,7 @@ test('正式CLI：錯誤整批拒絕且所有JS／CSV不變；修正、有效換
   change(data,'windblade','7','觸發地板特效','');
   change(data,'windblade','1','飛行子彈','proj-wind-crescen');fs.writeFileSync(csv,table.csvStringify(data));
   const wrongNameCSV=hash(csv),missing=run();assert.equal(missing.status,2,missing.stdout+missing.stderr);
-  assert.match(missing.stderr,/AJ202/);assert.match(missing.stderr,/相近可用名稱/);
+  assert.ok(missing.stderr.includes(at('飛行子彈')+'202'));assert.match(missing.stderr,/相近可用名稱/);
   assert.deepEqual(js.map(name=>hash(path.join(dir,'js',name+'.js'))),before);assert.equal(hash(csv),wrongNameCSV);
   for(const preset of ['proj-wind-crescent-09','proj-wind-crescent']){
     change(data,'windblade','1','飛行子彈',preset);fs.writeFileSync(csv,table.csvStringify(data));

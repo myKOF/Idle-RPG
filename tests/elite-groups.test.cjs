@@ -94,6 +94,7 @@ test('ELITE-GROUP-4 體型與數值：菁英 1.6、高級菁英 2.2；高級菁�
       /* 同一張地圖同一階段：血量只差階級倍率與 NPC 自己的 hpMult，所以用 maxHp ÷ 該 NPC 的 hpMult 比較（排除隨機強命 affixes） */
       if (e.affixes && e.affixes.includes('e_vitality')) return;
       const hp = e.maxHp / (c.NPC_CONFIG_TABLE[e.npcId].hpMult || 1);
+      if ((e.affixes || []).indexOf('e_vitality') >= 0) return;   // 強命技能本身 +50% 生命，抽到的不能拿來比階級倍率
       if (e._tier === 'elite') { eliteHp = hp; eliteAtk = e.atk / (c.NPC_CONFIG_TABLE[e.npcId].atkMult || 1); }
       else { advHp = hp; advAtk = e.atk / (c.NPC_CONFIG_TABLE[e.npcId].atkMult || 1); }
       assert.equal(e._bodyR, c.bfBodyRadius() * e._size, '碰撞半徑＝基本半徑 × 體型');
