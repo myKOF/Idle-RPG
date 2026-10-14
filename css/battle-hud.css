@@ -77,9 +77,9 @@
 
 #battle-canvas-host #battle-action-dock #battle-xp-fill {
   background:
-    linear-gradient(#fff6cf88, #fff6cf00 45%, #00000033 100%),
-    linear-gradient(90deg, #b5791c, #f0c455 55%, #ffe8a0);
-  box-shadow: 2px 0 4px #ffd36a99;
+    linear-gradient(#edffc988, #edffc900 45%, #00000040 100%),
+    linear-gradient(90deg, #185222, #389e2c 45%, #62c930 80%, #85ea38 100%);
+  box-shadow: 2px 0 5px #7ee03699;
 }
 
 /* 刻度（每 10%，5 成處加亮）＋兩端圓釘，畫在填色之上 */

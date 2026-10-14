@@ -1,5 +1,13 @@
 # PATCH.md
 
+## 遊戲經驗條改為墨綠漸變色（Antigravity 2026-10-14）
+
+- **經驗條配色調整為墨綠漸變色（`css/battle-hud.css`、`css/ashen-forge-flat.css`）**：
+  - 依使用者指示，參考 Minecraft 風格經驗條配色，將遊戲中三處經驗條（戰鬥底座上緣 `#battle-xp-fill`、角色分頁大條 `#tab-char #xp-fill`、左側導覽頭像下方小條 `#rail-xp-fill`）由原金色漸層改為墨綠到嫩綠的高質感雙層漸變色。
+  - 上層採用柔和嫩綠高光與底層深陰影（`linear-gradient(#edffc988, #edffc900 45%, #00000040 100%)`），營造通透立體光澤。
+  - 主體漸層採用深墨綠（`#185222`）銜接至青翠綠（`#389e2c`、`#62c930`）與進度頂端的明亮嫩綠（`#85ea38`）。
+  - 同步更新戰鬥區經驗條進度頂端的推進微光為嫩綠光暈（`box-shadow: 2px 0 5px #7ee03699`），並調整角色頁與導覽列經驗條外框為深墨金屬邊框（`border: 1px solid #304434`），保持視覺和諧一致。
+
 ## 關卡標籤文案「階段」調整為「關」（Antigravity 2026-10-13）
 
 - **關卡列與標題文案統一為「第 N 關」（`index.html`、`js/ui.js`、`tests/stage-jump-ui.test.cjs`）**：
