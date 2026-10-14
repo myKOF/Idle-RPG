@@ -1,5 +1,21 @@
 # AI_TASKS.md
 
+## SYNC-AUTO-CONFLICTS-20261014 — 一鍵同步自動解決develop衝突
+
+- Owner：Codex；Done，單一開發者。使用者要求改寫sync_ai_worktrees.bat，使develop合併衝突不需每次手動呼叫AI。前置為既有BAT／PowerShell同步流程與本機已安裝且ChatGPT登入的Codex CLI；完成交使用者從新版本BAT執行。
+- 允許：sync_ai_worktrees.bat、tools/sync_ai_worktrees.ps1、新tools/resolve-sync-conflicts.ps1、tests/sync-ai-worktrees.test.cjs／新tests/sync-auto-conflicts.test.cjs、docs/SYNC_AI_WORKTREES.md及本紀錄。禁止改遊戲邏輯／素材／配置／存檔及他人副本；本輪不直接執行正式同步或推送develop。全檔預檢無衝突，工作區原乾淨。
+- 設計：develop合併失敗且存在MERGE_HEAD時自動啟動非互動Codex，明確授權三方保留、Excel原生API與配置再生成、快取同步、必要測試及素材雙倉流程；不授權代理提交遊戲／推送／切分支／reset／abort。主腳本獨立檢查HEAD與MERGE_HEAD未改、無unmerged／衝突標記／漏存檔案及Build通過後完成merge並繼續既有同步。支援已卡住的已知AI分支合併重跑，保留失敗現場與日誌；缺CLI／登入／網路或判斷不可靠時停止。
+- 驗收：隔離本機bare remote與worktrees執行成功／失敗／重跑、模擬Codex輸出與不良狀態，驗證真正Git parents與remote refs；既有同步／任務merge回歸、PowerShell語法、Build及diff後Commit。正式帳號只唯讀核對CLI介面與登入，不用真人倉庫做測試。
+- 完成／修改6檔：sync_ai_worktrees.bat、tools/sync_ai_worktrees.ps1、新tools/resolve-sync-conflicts.ps1、新tests/sync-auto-conflicts.test.cjs、新docs/SYNC_AI_WORKTREES.md與本紀錄。原BAT的ASCII／CRLF、素材同步、ff-only遠端對齊／AI分支推送與回同步保留；develop衝突新增自動非互動Codex、已知來源待完成合併續接與-NoAutoResolve選項。
+- 安全與驗證：模型只改檔／測試並回報files／asset_files，外層檢查相對路徑不逸出工作區／不指向Git metadata或資料夾，再明確暫存清單；不使用git add -A掃整庫。要求resolved且有測試紀錄，獨立核對develop與HEAD／MERGE_HEAD、unmerged／diff check／漏報修改／untracked、再跑Build，通過才commit。未知合併、代理失敗／擅自commit、標記殘留、Build失敗等保留現場並停止推送。日誌存Git metadata，不進版控。
+- 素材：必要素材也由外層暫存／只提交回報的檔案，已有他人staged或HEAD被改則停止，保留無關unstaged；素材先Commit，再遊戲merge。自動處理後重同步素材，新素材未完成同步時不推送develop；-SkipAssetLibrary沿用使用者明確略過遠端素材同步語意。此輪工具開發無素材內容修改、無素材庫Commit。
+- CLI：核對本機Codex CLI0.151.0介面與ChatGPT登入，按OpenAI官方noninteractive／Windows sandbox文件接線。exec用ephemeral／never／workspace-write、不繞過sandbox、不指定模型；ignore-user-config避開App模型別名，僅沿用本機Windows sandbox設定並顯式指定workspace-write。Windows sandbox不同帳號的Git讀取用子程序專屬GIT_CONFIG_GLOBAL只信任明確工作區／已設定素材庫，結束還原環境，不放寬全域safe.directory。
+- 真實驗證：臨時develop／ai/test三方JSON衝突，真Codex保留left1／right2、讀規範／base-ours-theirs、執行JSON斷言／Build／標記檢查，外層成功暫存且獨立Build通過、HEAD與MERGE_HEAD不變。前幾輪查出App模型不相容、忽略設定造成read-only、Windows所有權及Git index保護，已修正啟動設定與外層暫存分工；不以解除sandbox處理。真CLI測試未推送／修改正式倉庫；臨時倉庫、測試程序及CLI自動寫入的該臨時trust條目均已清理。
+- 測試：node --test --test-reporter=tap tests/sync-auto-conflicts.test.cjs tests/sync-ai-worktrees.test.cjs tests/merge-ai-tasks.test.cjs，完整30/30通過；後加兩項真本機bare素材remote的定向Full sync asset gate，均通過，相關唯一測試共32項。最後node --test --test-reporter=tap --test-name-pattern="Full sync asset gate|scripts parse" tests/sync-auto-conflicts.test.cjs，3/3。涵蓋真Git雙父merge／所有AI與remote refs同步、重跑續接、預檢／停用、CLI缺失／失敗、blocked／假成功／殘標記／未回報修改／untracked／路徑逸出／代理擅自commit、獨立Build擋下、素材只提交必要檔與未發佈素材擋住develop push。
+- 其他檢查：npm.cmd run build 504檔通過；PowerShell兩支Parser檢查、BAT ASCII與CRLF、git diff --check均通過。早期既有結構測試把重同步素材判斷誤認為原終局判斷，改用清楚區分的postConflictAssetResult；素材測試git status被fixture trim去掉前導空格，改查實際unstaged／staged路徑，未放寬產品行為。
+- 唯讀檢查：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、.gitattributes、既有sync／merge-ai-tasks測試、VFX素材庫解析器、本機CLI help／登入與官方文件；未改遊戲JS／Excel／CSV／Preset／存檔／Protocol。
+- 交付：Commit為本紀錄所在[Codex] feat提交，位於ai/codex；未直接執行正式同步、合併或推送develop。無本次實作待辦，可審查合併。已知限制：需要可用CLI登入／連線／額度及原生工具；意圖不明／必要測試失敗／Excel鎖定／sandbox拒絕會保留停止，並非保證任何設計衝突都能無人決策；未做正式倉庫真遠端推送驗收。下一步使用者從codex目錄執行新版BAT，既有流程會將此工具變更整合與回同步。
+
 ## DEVELOP-VORTEX-MERGE-20261014 — 合併漩渦拉扯修正與使用者NPC特效調整
 
 - Owner：Codex；Done。使用者快捷指令1授權解決develop既有合併，原HEAD c268df56、MERGE_HEAD aa81f68f（使用者「調整npc特效」）。前置為已提交兩側成果；單一開發者，完成交使用者重載驗收。

@@ -5,7 +5,9 @@ param(
     [string]$Remote = 'origin',
     [switch]$ValidateOnly,
     [switch]$SyncRemoteFirst,
-    [switch]$SkipAssetLibrary
+    [switch]$SkipAssetLibrary,
+    [switch]$NoAutoResolve,
+    [string]$CodexCommand = 'codex.cmd'
 )
 
 # Usage:
@@ -13,6 +15,7 @@ param(
 #   powershell -ExecutionPolicy Bypass -File .\tools\sync_ai_worktrees.ps1
 #   sync_ai_worktrees.bat                         # 預設先同步所有必要的遠端分支
 #   sync_ai_worktrees.bat -SkipAssetLibrary       # 只同步程式碼，不碰 VFX 素材庫
+#   sync_ai_worktrees.bat -NoAutoResolve          # 衝突時停止，不呼叫 Codex
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -31,6 +34,8 @@ $agentBranches = @(
     'ai/claude',
     'ai/codex'
 )
+$script:automaticConflictResolved = $false
+$script:automaticAssetCommitCreated = $false
 
 function Write-Step {
     param([string]$Message)
@@ -285,6 +290,56 @@ function Assert-CleanWorktree {
     }
 }
 
+function Complete-DevelopConflict {
+    param([string]$Worktree, [string]$IncomingSha, [string]$Message)
+
+    if ($NoAutoResolve) { throw 'develop 有合併衝突（-NoAutoResolve 已停用自動處理）。' }
+    $resolver = Join-Path $PSScriptRoot 'resolve-sync-conflicts.ps1'
+    if (-not (Test-Path -LiteralPath $resolver -PathType Leaf)) { throw "找不到自動解衝突工具：$resolver" }
+    $assetRoot = Get-AssetLibraryRoot -Repository $Worktree
+    $assetBefore = if ($assetRoot) { Get-GitTextSoft -Worktree $assetRoot -GitArguments @('rev-parse', 'HEAD') } else { $null }
+    & $resolver -Worktree $Worktree -IncomingSha $IncomingSha -CodexCommand $CodexCommand -AssetLibraryRoot $assetRoot
+    $assetAfter = if ($assetRoot) { Get-GitTextSoft -Worktree $assetRoot -GitArguments @('rev-parse', 'HEAD') } else { $null }
+    if ($assetBefore -and $assetAfter -and $assetBefore -ne $assetAfter) { $script:automaticAssetCommitCreated = $true }
+    # The resolver leaves the game merge uncommitted for this independent gate.
+    Invoke-Git -Worktree $Worktree -GitArguments @('commit', '-m', $Message)
+    Assert-CleanWorktree -Worktree $Worktree -ExpectedBranch $developBranch
+    $script:automaticConflictResolved = $true
+}
+
+function Merge-AiBranch {
+    param([string]$Worktree, [string]$Ref)
+
+    Assert-CleanWorktree -Worktree $Worktree -ExpectedBranch $developBranch
+    $incoming = Get-GitText -Worktree $Worktree -GitArguments @('rev-parse', $Ref)
+    $message = "[Codex] merge: 自動整合 $Ref"
+    $code = Invoke-GitSoft -Worktree $Worktree -GitArguments @('merge', '--no-ff', $incoming, '-m', $message)
+    if ($code -eq 0) { return }
+    $pending = Get-GitTextSoft -Worktree $Worktree -GitArguments @('rev-parse', '--verify', 'MERGE_HEAD')
+    if ($pending -ne $incoming) { throw "合併 $Ref 失敗，並非可自動處理的合併衝突。" }
+    Complete-DevelopConflict -Worktree $Worktree -IncomingSha $incoming -Message $message
+}
+
+function Resume-DevelopConflict {
+    param([string]$Worktree)
+
+    $pending = Get-GitTextSoft -Worktree $Worktree -GitArguments @('rev-parse', '--verify', 'MERGE_HEAD')
+    if (-not $pending) { return }
+    if ($ValidateOnly) { throw 'develop 有待完成合併；預檢模式不會呼叫 Codex 或修改檔案。' }
+    # Resume only a single, known AI branch head. Do not guess about an unrelated merge.
+    foreach ($branch in $agentBranches) {
+        foreach ($ref in @($branch, "$Remote/$branch")) {
+            $sha = Get-GitTextSoft -Worktree $Worktree -GitArguments @('rev-parse', '--verify', $ref)
+            if ($sha -eq $pending) {
+                Write-Step "自動接續 develop 尚未完成的合併：$ref"
+                Complete-DevelopConflict -Worktree $Worktree -IncomingSha $pending -Message "[Codex] merge: 自動解決衝突並整合 $ref"
+                return
+            }
+        }
+    }
+    throw 'develop 的 MERGE_HEAD 不是已知 AI 分支目前的提交；保留現場，不自行選擇合併來源。'
+}
+
 try {
     $repository = (Resolve-Path -LiteralPath $RepositoryPath).Path
 
@@ -312,12 +367,15 @@ try {
     }
 
     Write-Step '檢查分支與工作區狀態'
-    foreach ($branch in $requiredBranches) {
+    foreach ($branch in $agentBranches) {
         Assert-CleanWorktree -Worktree $worktrees[$branch] -ExpectedBranch $branch
         Write-Host ('[正常] {0}' -f $branch) -ForegroundColor Green
     }
 
     $developWorktree = $worktrees[$developBranch]
+    Resume-DevelopConflict -Worktree $developWorktree
+    Assert-CleanWorktree -Worktree $developWorktree -ExpectedBranch $developBranch
+    Write-Host ('[正常] {0}' -f $developBranch) -ForegroundColor Green
     $remoteUrl = Get-GitText -Worktree $developWorktree -GitArguments @('remote', 'get-url', $Remote)
     Write-Host ('遠端：{0}（{1}）' -f $Remote, $remoteUrl)
 
@@ -388,16 +446,17 @@ try {
     # 語意不變而且與下方「fast-forward 回各 AI 分支」那段一致。
     Invoke-Git -Worktree $developWorktree -GitArguments @('merge', '--ff-only', "$Remote/$developBranch")
     foreach ($branch in $agentBranches) {
-        Invoke-Git -Worktree $developWorktree -GitArguments @(
-            'merge',
-            '--no-ff',
-            "$Remote/$branch",
-            '-m',
-            "merge: integrate $branch"
-        )
+        Merge-AiBranch -Worktree $developWorktree -Ref "$Remote/$branch"
     }
 
     Assert-CleanWorktree -Worktree $developWorktree -ExpectedBranch $developBranch
+    # Conflict resolution may have saved/committed necessary assets after the initial sync.
+    if ($script:automaticConflictResolved -and -not $SkipAssetLibrary) {
+        $postConflictAssetResult = Sync-AssetLibrary -Repository $repository
+        if ($postConflictAssetResult -eq 'failed') { throw '自動解衝突後的素材庫同步失敗，暫不推送 develop。' }
+        if ($script:automaticAssetCommitCreated -and $postConflictAssetResult -ne 'synced') { throw '本輪新增的必要素材尚未完成同步，暫不推送 develop。' }
+        $assetLibraryResult = $postConflictAssetResult
+    }
     Invoke-Git -Worktree $developWorktree -GitArguments @('push', $Remote, "${developBranch}:${developBranch}")
     Invoke-Git -Worktree $developWorktree -GitArguments @('fetch', '--prune', $Remote)
 

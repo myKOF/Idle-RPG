@@ -1,6 +1,8 @@
 @echo off
 rem Syncs the AI worktrees AND the VFX asset library (Effects-Materials).
 rem Both live in tools\sync_ai_worktrees.ps1; this file only launches it.
+rem Develop merge conflicts are resolved automatically by the local Codex CLI.
+rem Pass -NoAutoResolve to stop on conflicts instead. Failures preserve the merge.
 rem Comments here stay ASCII on purpose: after chcp 65001, multi-byte text on a
 rem non-echo line can be re-parsed as a command. See test W8 in vfx-editor-save.
 chcp 65001 >nul
