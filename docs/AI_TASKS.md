@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## SYNC-MD-REPORT-20261014 — 同步主控台問題匯出 Markdown
+
+- Owner：Codex；Done，單一開發者。使用者要求自動合併工具可將小黑視窗問題匯出為md供排查；前置既有sync自動解衝突功能，後續由使用者執行新版BAT。
+- 允許sync_ai_worktrees.bat、新tools/invoke-sync-with-report.ps1、tests/sync-auto-conflicts.test.cjs、docs/SYNC_AI_WORKTREES.md及本紀錄；禁止改遊戲／素材／其他副本，不執行正式同步或合併／推送。工具檔預檢無來源衝突；develop任務紀錄已暫存其他任務，使用者已明確同意只在Codex新增本次獨立區段，保留既有內容。
+- 內容／驗收：保留即時stdout與stderr，成功或失敗皆產生UTF-8 Markdown，含結束碼、執行參數、完整紀錄、各AI／develop及素材庫唯讀Git狀態與本輪Codex結果；時間戳保留歷次及latest.md捷徑，輸出放既有忽略logs目錄，失敗時顯示位置；測試成功／衝突失敗／前置失敗／非零退出碼／中文編碼及不污染Git，Build與diff後Commit。沒有新素材或素材庫變更。
+
+- 完成／修改5檔：BAT改走新增報告包裝程序，原tools/sync_ai_worktrees.ps1及resolve-sync-conflicts.ps1唯讀檢查、同步邏輯不變；新增7個端到端報告案例並沿用原有真Git fixture，文件補上路徑／分享方式／限制。本紀錄只新增此獨立區段，未改develop或他人紀錄。
+- 驗證：node --test --test-reporter=tap tests/sync-auto-conflicts.test.cjs tests/sync-ai-worktrees.test.cjs tests/merge-ai-tasks.test.cjs，37/37通過；新增歷史保留與暫存備援案例另跑通過，合計39項。最後node --test --test-reporter=tap --test-name-pattern="Markdown report: rerun" tests/sync-auto-conflicts.test.cjs確認還原fixture原始換行後重跑成功；所有失敗均保留退出碼與現場，未知參數亦可匯出，UTF-8／Markdown fence／真BAT有空白路徑驗證通過。npm.cmd run build，512檔通過；git diff --check通過。
+- 交付：Commit為本紀錄所在[Codex] feat提交，回覆附編號；可以Review／合併，本任務無未完成項，無素材庫變更／不需素材Commit。限制為強制關閉／斷電不保證完成md、只留已寫入log；直接執行原核心ps1不經包裝、不產生報告。正式同步仍由使用者執行新版Codex BAT；可用ValidateOnly預檢產出報告，不啟動AI／merge／push。歷史報告存啟動工作區logs/sync-ai-worktrees，latest.md更新、時間戳報告保留。
+
 ## MERGE-PREP-CLEANUP-20261014 — 整理全部未暫存變更供合併
 
 - Owner：Codex；Done，單一開發者。使用者要求清理unstaged準備合併，明確追加其他來源修改也一起commit；保留現有內容，未合併／推送。原6筆為4檔實質資料變更與Skills2／Status兩檔僅換行格式差異，後者透過Git正常暫存消除狀態，不建立無內容提交。

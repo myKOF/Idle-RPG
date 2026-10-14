@@ -22,6 +22,20 @@ Windows sandbox 實作沿用既有 `config.toml` 的 `[windows].sandbox` 設定�
 
 腳本會嘗試自動解決程式、快取與 Excel 等衝突，但不能保證所有設計衝突都能無人裁決。當雙方意圖矛盾、必要測試不過、缺工具／額度／連線或檔案鎖住時，會保留現場並停止，不盲選一邊、不降低測試要求、不自動 `reset` 或 `merge --abort`。已成功整合的本機提交仍保留；develop 不會在這個失敗點繼續推送。
 
+## 將小黑視窗問題傳給 Codex
+
+每次執行 `sync_ai_worktrees.bat`，都會在**啟動 BAT 的工作區**產生 Markdown 報告，成功與失敗皆會保存。主控台最後會顯示完整路徑；直接將該 `.md` 檔傳給 Codex 即可，不用逐行複製或截圖。
+
+- 最新一份：`logs/sync-ai-worktrees/latest.md`。
+- 歷史報告：同資料夾內的 `sync-時間-識別碼.md`，重跑不覆蓋前一輪問題。
+- 原始文字紀錄：同名 `.log`，輸出過程持續寫入。
+
+報告包含結束碼、開始／結束時間、傳入參數、完整 stdout／stderr、工具版本，以及 develop、三個 AI 工作區和已設定素材庫的 Git 狀態、HEAD／upstream／MERGE_HEAD、未解衝突清單。本輪若呼叫自動解衝突，也會附上原合併父提交、初始衝突清單與 Codex 結果。報告不讀取登入設定或環境變數，但執行輸出可能包含程式碼與本機路徑。
+
+`logs/` 已排除版控，不會讓同步因報告變成工作區不乾淨。工作區無法寫入時改存 Windows 暫存目錄的 `Idle-RPG-sync-reports`，實際位置仍會顯示。請等腳本結束再關閉視窗；強制關閉／斷電無法保證完成 Markdown 匯出，但已寫入的 `.log` 可供排查。
+
+BAT 透過 `tools/invoke-sync-with-report.ps1` 包裝原同步程序，保留其非零結束碼及原同步流程。直接執行 `tools/sync_ai_worktrees.ps1` 不經報告包裝；需要報告時請使用 BAT，或執行 `powershell -NoProfile -ExecutionPolicy Bypass -File tools/invoke-sync-with-report.ps1 -ValidateOnly`。
+
 ## 失敗後重跑
 
 處理完登入、連線、額度或 Excel 鎖定等原因後，再執行同一個 BAT。若 develop 的單一 `MERGE_HEAD` 仍對應某個已知 AI 分支目前的本機或遠端提交，腳本會自動接續原合併。來源已移動、未知分支或其他 Git 操作的現場不會被自行猜測處理。
