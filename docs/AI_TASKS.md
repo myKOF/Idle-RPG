@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## DIALOG-CORNER-FIX-20261014 — 修整彈窗外框轉角閉合
+
+- Owner：Codex；Done，單一開發者。使用者指出設置／Esc彈窗右上角有尖縫；前置DIALOG-UI-UNIFY-20261014，將分邊ridge改為連續漸層框，保留6px寬度／灰色質感，完成交使用者整合。
+- 允許css/dialogs.css、index.html的dialogs.css快取版本、本必要紀錄；禁止JS／功能／素材／其他副本修改，不合併／推送。CSS／紀錄預檢乾淨；index與ai/claude af8b7ab0的指南／JS版本同檔異區，已告知並取得同意，本輪只改第16行CSS版本。
+- 驗收：設置、菜單與確認框四角連續閉合，保持尺寸／6px厚度／關閉與捲動；相關既有UI測試、Build、diff check，完成後提交。
+- 完成：css/dialogs.css將ridge四邊各自拼接改成6px透明solid邊界，以padding-box深色底＋border-box連續灰金屬漸層填滿外框，原4px圓角／陰影／尺寸不變；四角不再有明暗對接尖縫。index.html唯一差異為dialogs.css1.0.1→1.0.2；加本紀錄共3檔。
+- 驗證：node --test tests/modal-close-hitbox.test.cjs tests/esc-shortcut.test.cjs tests/game-menu.test.cjs，8/8通過；npm.cmd run build，507檔全過；git diff --check通過。隔離localhost:12640正式Worker／Pixi／UI，菜單／設置四角目視閉合、設定關閉返回菜單與重新開局確認只取消正常；12個靜態彈窗均ComputedStyle 6px solid／padding-box,border-box，Console error／warning 0，沒有讀真人存檔。截圖為本聊天visualizations/dialogs-corners-menu.png／dialogs-corners-settings.png／dialogs-corners-menu-detail.png；預覽服務及頁面已關閉。
+- 未修改但檢查：原共用彈窗規則、Claude af8b7ab0的index差異、上述3份測試及Build工具；沒有新增測試或改斷言，未改JS／素材，素材庫無本次變更。遊戲Commit為本紀錄所在[Codex] fix提交；無本次未完成項或已知新增風險，可審查合併，未合併／推送。未另跑全庫測試或真人存檔長時間驗收；下一步整合後重新載入查看閉合外框。
+
 ## DIALOG-UI-UNIFY-20261014 — 統一遊戲彈窗與確認訊息風格
 
 - Owner：Codex；Done，單一開發者。使用者要求所有大小彈窗／確認訊息一致，追加指定裝備框風格的灰色質感外框、厚度約截圖一半；採6px金屬灰斜面框、深色底、共用標題／關閉鈕／操作按鈕與間距。前置既有UI；完成交使用者驗收整合。

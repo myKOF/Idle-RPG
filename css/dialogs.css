@@ -1,7 +1,7 @@
 /* 遊戲彈窗共用外觀。最後載入以收斂舊主題與inline外觀；保留原尺寸、層級與事件。
    統計維持獨立懸浮／拖曳；提示工具不在此範圍。 */
 :root {
-  --dialog-frame: #646967;
+  --dialog-frame: linear-gradient(135deg, #8e9490, #535957 38%, #343a38 62%, #797f7b);
   --dialog-surface: linear-gradient(145deg, #1c2025, #111417 75%);
   --dialog-text: #e7e1d5;
   --dialog-muted: #b5afa2;
@@ -25,9 +25,10 @@
     #worker-dead-notice > div, #save-origin-notice > div, #tab-lock-notice > div,
     #equip-set-tabs, #salvage-settings-panel, #battle-info-drawer) {
   box-sizing: border-box;
-  border: 6px ridge var(--dialog-frame) !important;
+  /* 同一層漸層沿四角連續包覆，避免ridge分邊明暗在轉角形成尖縫。 */
+  border: 6px solid transparent !important;
   border-radius: 4px !important;
-  background: var(--dialog-surface) !important;
+  background: var(--dialog-surface) padding-box, var(--dialog-frame) border-box !important;
   color: var(--dialog-text);
   box-shadow: var(--dialog-shadow) !important;
   text-shadow: none !important;
