@@ -25,9 +25,9 @@ test('詞條池：吸血／吸魔是定值，不是百分比；數字沿用舊�
     assert.equal(def.pct, false, key + ' 不再是百分比詞條');
     assert.doesNotMatch(def.name, /%/, key + ' 名稱不再帶 %');
   }
-  // 轉換是 1%＝1：基礎值、成長係數完全沿用舊百分比的數字
-  assert.deepEqual([c.AFFIX_POOL.lifesteal.base, c.AFFIX_POOL.lifesteal.growthBase, c.AFFIX_POOL.lifesteal.lv], [1, 1, 0.005]);
-  assert.deepEqual([c.AFFIX_POOL.manaSteal.base, c.AFFIX_POOL.manaSteal.growthBase, c.AFFIX_POOL.manaSteal.lv], [0.8, 0.8, 0.003]);
+  // 轉換是 1%＝1：基礎值、每級成長（原成長基礎值×係數）完全沿用舊百分比的數字
+  assert.deepEqual([c.AFFIX_POOL.lifesteal.base, c.AFFIX_POOL.lifesteal.lv], [1, 0.005]);
+  assert.deepEqual([c.AFFIX_POOL.manaSteal.base, c.AFFIX_POOL.manaSteal.lv], [0.8, 0.0024]);
   // 定值詞條與其他定值詞條（生命恢復、攻擊力）一致：取整數
   assert.equal(c.affixRoundValue('lifesteal', 1.4), 1);
   assert.equal(c.affixRoundValue('lifesteal', 1.6), 2);

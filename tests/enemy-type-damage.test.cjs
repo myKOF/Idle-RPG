@@ -15,7 +15,7 @@ function loadFormulaContext() {
   return context;
 }
 
-test('對普通敵人傷害% 使用新版 base=2/growthBase=3，三種敵種抗性使用 base=30/growthBase=6', () => {
+test('對普通敵人傷害% 使用新版 base=2/每級成長 0.105，三種敵種抗性使用 base=30/每級成長 2.1', () => {
   const context = loadFormulaContext();
   const defFlat = context.AFFIX_POOL.defFlat;
   const normalDmg = context.AFFIX_POOL.normalDmg;
@@ -23,11 +23,11 @@ test('對普通敵人傷害% 使用新版 base=2/growthBase=3，三種敵種抗�
   assert.equal(normalDmg.name, '對普通敵人傷害%');
   assert.equal(normalDmg.pct, true);
   assert.equal(normalDmg.base, 2);
-  assert.equal(normalDmg.lv, 0.035);
+  assert.equal(normalDmg.lv, 0.105);
   assert.equal(context.AFFIX_POOL.eliteDmg.base, 2);
-  assert.equal(context.AFFIX_POOL.eliteDmg.lv, 0.02);
+  assert.equal(context.AFFIX_POOL.eliteDmg.lv, 0.08);
   assert.equal(context.AFFIX_POOL.bossDmg.base, 2);
-  assert.equal(context.AFFIX_POOL.bossDmg.lv, 0.02);
+  assert.equal(context.AFFIX_POOL.bossDmg.lv, 0.08);
   const RED_NAMES = { normalDmgRed: '普通敵人傷害抗性', eliteDmgRed: '菁英傷害抗性', bossDmgRed: 'BOSS傷害抗性' };
   Object.keys(RED_NAMES).forEach((key) => {
     const def = context.AFFIX_POOL[key];
@@ -35,8 +35,7 @@ test('對普通敵人傷害% 使用新版 base=2/growthBase=3，三種敵種抗�
     assert.equal(def.name, RED_NAMES[key]);
     assert.equal(def.pct, false);
     assert.equal(def.base, 30);
-    assert.equal(def.growthBase, 6);
-    assert.equal(def.lv, defFlat.lv);
+    assert.equal(def.lv, 2.1);
   });
   // 顯示分類：加成歸進攻、抗性歸防禦
   assert.equal(context.affixCat('normalDmg'), 'off');
