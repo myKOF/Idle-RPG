@@ -338,7 +338,6 @@ function computeStats(equipmentOverride) {
   st.matk = Math.round((st.base.matk + A.matkFlat + st.reincFlatBonus.matk) * (1 + A.matkPct / 100) * godAttackMultiplier * (1 + (talent.matkPct || 0) / 100));
   st.critRate = capValue(DERIVED_COEF.critRateBase + st.agi * PRIMARY_STAT_EFFECTS.agiCritRate + A.critRate, STAT_CAPS.critRate);   // 暴擊率：基礎 5% + 敏捷係數
   st.critDmg = DERIVED_COEF.critDmgBase + st.agi * PRIMARY_STAT_EFFECTS.agiCritDmg + A.critDmg;                                  // 暴擊傷害：基礎 150%
-  st.comboHits = comboHitsFor(st.critRate);                     // 連擊數：暴擊率破 100% 衍生的額外攻擊次數（僅普攻／技能直接傷害，持續傷害不計）
   // 穿透不設上限（STAT_CAPS.pPen/mPen = 0）：實際忽略防禦% 由 penIgnorePct 的飽和曲線換算（§3）。
   st.pPen = capValue(A.pPen, STAT_CAPS.pPen);
   st.mPen = capValue(A.mPen, STAT_CAPS.mPen);
@@ -350,6 +349,8 @@ function computeStats(equipmentOverride) {
     ? clamp(ASPD_BASE * (1 + st.aspdBonusBase / 100), ASPD_MIN, ASPD_CAP)
     : Math.max(ASPD_MIN, ASPD_BASE * (1 + st.aspdBonusBase / 100));
   st.cdr = capValue(A.cdr, STAT_CAPS.cdr);       // 冷卻縮減上限（潛力【時間坍縮】於施放時另行突破，見 skills2.js 的冷卻計算）
+  // 連擊數：暴擊率／攻速／冷卻縮減各自「溢出」門檻後的部分衍生（用未夾限的原始值：夾限吃掉的部分正是溢出）。僅普攻／技能直接傷害，持續傷害不計。
+  st.comboHits = comboHitsTotal(st.critRate, ASPD_BASE * (1 + st.aspdBonusBase / 100), A.cdr);
   st.castSpeed = capValue(A.castSpeed, STAT_CAPS.castSpeed);                      // 施法速度上限（上限 0＝無上限）
   // 吸血／吸魔是定值（每次對敵人造成傷害回復的固定量），與每秒回復無關（§3 lifestealHealAmount）；不設上限（STAT_CAPS = 0）。
   st.lifesteal = capValue(A.lifesteal, STAT_CAPS.lifesteal);
@@ -603,25 +604,35 @@ function controlDecayFactor(cat, hits) {
   return Math.max(0, 1 - (Number(hits) || 0) * (Number(rate) || 0) / 100);
 }
 
-/* ---- 連擊數（暴擊率破 100% 衍生的多段攻擊） ----
-   語意：暴擊率 = 100% 為「完全爆擊」；超過 100% 才衍生額外攻擊次數。
-   公式：連擊數 = a·ln(暴擊率%) + b·暴擊率% + c，取 max(0)。
-   其中「暴擊率%」＝把暴擊率當比值直接代入（例：暴擊率 5000% → 代入 50，即 critRate 數值 ÷ 100），不做「減 100」。
-   係數 COMBO_HITS_COEF 由參數表「2-屬性派生／連擊數」控制（a=自然對數乘數、b=暴擊乘數、c=常數）。
-   例：暴擊率 1380% → 代入 13.8 → ≈2.57 → 固定額外 2 次 + 57% 機率第 3 次。僅作用於普攻與技能直接傷害，持續傷害不計。 */
-function comboHitsFor(critRate) {
-  var cr = Number(critRate) || 0;
-  if (cr <= 100) return 0;                 // ≤100% 為完全爆擊，尚無連擊
-  var x = cr / 100;                        // 暴擊率% 直接代入（5000% → 50）
-  var n = COMBO_HITS_COEF.a * Math.log(x) + COMBO_HITS_COEF.b * x + COMBO_HITS_COEF.c;
+/* ---- 連擊數（暴擊率／攻速／冷卻縮減「溢出」衍生的多段攻擊） ----
+   定義（2026-10-14 改版）：每次攻擊命中時有 trigger% 機率造成「連擊數」那麼多次額外攻擊。
+   連擊數 = 暴擊溢出 + 攻速溢出 + 冷卻縮減溢出，各項皆為 a·ln(x)，x＝數值 ÷ 門檻（恰在門檻為 0、超過才為正，連續不跳變）：
+     暴擊：x = 暴擊率 ÷ 100（門檻 100%）          a = COMBO_HITS_COEF.crit
+     攻速：x = 原始攻速 ÷ 5（門檻 5 次/秒）        a = COMBO_HITS_COEF.aspd   （用未夾 5 次/秒上限的原始攻速）
+     冷卻：x = 冷卻縮減% ÷ 60（門檻 60%）          a = COMBO_HITS_COEF.cdr    （用未夾 60% 上限的原始值）
+   觸發率與三個 a 由參數表「2-屬性派生／連擊數」（參數 a／b／c／d）控制；門檻 critAt／aspdAt／cdrAt 為程式常數。
+   例：暴擊率 1380% → x=13.8 → 0.5·ln(13.8)≈1.31 → 固定額外 1 次 + 31% 機率第 2 次（皆須先通過觸發率）。僅作用於普攻與技能直接傷害，持續傷害不計。 */
+function comboOverflowHits(value, threshold, a) {
+  var v = Number(value) || 0;
+  if (!(threshold > 0) || v <= threshold) return 0;
+  var n = (Number(a) || 0) * Math.log(v / threshold);
   return n > 0 ? n : 0;
 }
+function comboHitsFor(critRate) {
+  return comboOverflowHits(critRate, COMBO_HITS_COEF.critAt, COMBO_HITS_COEF.crit);
+}
+function comboHitsTotal(critRate, rawAspd, rawCdr) {
+  return comboOverflowHits(critRate, COMBO_HITS_COEF.critAt, COMBO_HITS_COEF.crit) +
+    comboOverflowHits(rawAspd, COMBO_HITS_COEF.aspdAt, COMBO_HITS_COEF.aspd) +
+    comboOverflowHits(rawCdr, COMBO_HITS_COEF.cdrAt, COMBO_HITS_COEF.cdr);
+}
 
-// 依連擊數擲骰出本次實際追加攻擊次數：整數部分固定追加，小數部分為機率再追加一次
+// 依連擊數擲骰出本次實際追加攻擊次數：先過觸發率（COMBO_HITS_COEF.trigger%），再整數部分固定追加、小數部分為機率再追加一次
 function rollComboHits(st) {
   var c = (st && st.comboHits) || 0;
   if (typeof skill2FrenzyComboBonus === 'function') c += skill2FrenzyComboBonus();
   if (c <= 0) return 0;
+  if (!chance(COMBO_HITS_COEF.trigger)) return 0;
   var n = Math.floor(c);
   if (chance((c - n) * 100)) n++;
   return n;

@@ -591,8 +591,9 @@ var DERIVED_COEF = {
 var XP_LEVEL_COEF = { a: 20, b: 3, c: 40 };
 /* 等級基礎四維 = 基底 +（等級-1）× 每級增加。參數表「1-成長經驗／等級基礎四維」的 a / b。 */
 var PRIMARY_STAT_GROWTH = { base: 5, perLevel: 2 };
-// 連擊數係數：連擊數 = a·ln(暴擊率−100) + b·(暴擊率−100) + c（暴擊率 ≤100% 時為 0；由參數表「2-屬性派生／連擊數」控制）
-var COMBO_HITS_COEF = { a: 0.875, b: 2.5000000000000001E-3, c: 0.05 };
+// 連擊數係數（參數表「2-屬性派生／連擊數」：a＝觸發率 b＝暴擊 c＝攻速 d＝冷卻縮減）：
+// 每次攻擊命中有 trigger% 機率追加「連擊數」次；連擊數 = crit·ln(暴擊率/100) + aspd·ln(攻速/5) + cdr·ln(冷卻縮減/60)，各項在門檻（critAt/aspdAt/cdrAt）以下為 0。
+var COMBO_HITS_COEF = { trigger: 25, crit: 0.5, aspd: 0.65, cdr: 0.8, critAt: 100, aspdAt: 5, cdrAt: 60 };
 var ASPD_BASE = 0.86;
 var ASPD_MIN = 0.2;
 var ASPD_CAP = 5;
@@ -2617,7 +2618,7 @@ var STAT_GROUPS = [
       ['⚔️ 物理攻擊', function (st) { return statFmt(st.atk, null); }, function (st) { return statDesc(st, '影響普攻與多數物理技能的傷害基礎。由力量派生。', '物理攻擊', 'atk', 'atkPct'); }],
       ['🔮 魔法攻擊', function (st) { return statFmt(st.matk, null); }, function (st) { return statDesc(st, '影響多數魔法技能的傷害基礎。由智力派生。', '魔法攻擊', 'matk', 'matkPct'); }],
       ['💥 暴擊率', function (st) { return statFmt(st.critRate, STAT_CAPS.critRate, '%'); }, '攻擊時造成額外暴擊傷害的機率。暴擊率 100% 為完全爆擊，超過 100% 的部分會衍生「連擊數」。' + capText(STAT_CAPS.critRate, '%')],
-      ['🔗 連擊數', function (st) { return (st.comboHits || 0) > 0 ? fmt1(st.comboHits) + ' 次' : '—'; }, '暴擊率超過 100% 後衍生：普攻與技能的「直接傷害」會額外追加的攻擊次數。持續傷害不受影響。'],
+      ['🔗 連擊數', function (st) { return (st.comboHits || 0) > 0 ? fmt1(st.comboHits) + ' 次' : '—'; }, '暴擊率、攻速、冷卻縮減三項屬性達到一定程度後，超出的部分會增加連擊數。每次攻擊命中時有機會追加這麼多次攻擊。持續傷害不受影響。'],
       ['🩸 暴擊傷害', function (st) { return Math.round(st.critDmg) + '%'; }, '觸發暴擊時的傷害倍率。'],
       ['🗡️ 物理穿透', function (st) { return statFmt(st.pPen, STAT_CAPS.pPen, '%'); }, function (st) { return penetrationDesc(st, 'pPen', '物理'); }],
       ['🪄 魔法穿透', function (st) { return statFmt(st.mPen, STAT_CAPS.mPen, '%'); }, function (st) { return penetrationDesc(st, 'mPen', '魔法'); }],

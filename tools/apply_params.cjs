@@ -882,9 +882,10 @@ objFieldML('data', 'PRIMARY_STAT_EFFECTS = {', 'vitMdef', '2-屬性派生', '魔
 objFieldML('data', 'DERIVED_COEF = {', 'critRateBase', '2-屬性派生', '暴擊率', 0, '暴擊率基底');
 objFieldML('data', 'PRIMARY_STAT_EFFECTS = {', 'agiCritRate', '2-屬性派生', '暴擊率', 1, '暴擊率每敏');
 objFieldML('data', 'DERIVED_COEF = {', 'critDmgBase', '2-屬性派生', '暴擊傷害', 0, '暴傷基底');
-objFieldML('data', 'COMBO_HITS_COEF = {', 'a', '2-屬性派生', '連擊數', 0, '連擊數-a');
-objFieldML('data', 'COMBO_HITS_COEF = {', 'b', '2-屬性派生', '連擊數', 1, '連擊數-b');
-objFieldML('data', 'COMBO_HITS_COEF = {', 'c', '2-屬性派生', '連擊數', 2, '連擊數-c');
+objFieldML('data', 'COMBO_HITS_COEF = {', 'trigger', '2-屬性派生', '連擊數', 0, '連擊數-觸發率');
+objFieldML('data', 'COMBO_HITS_COEF = {', 'crit', '2-屬性派生', '連擊數', 1, '連擊數-暴擊a');
+objFieldML('data', 'COMBO_HITS_COEF = {', 'aspd', '2-屬性派生', '連擊數', 2, '連擊數-攻速a');
+objFieldML('data', 'COMBO_HITS_COEF = {', 'cdr', '2-屬性派生', '連擊數', 3, '連擊數-冷卻縮減a');
 scalar('data', 'ASPD_BASE', '2-屬性派生', '攻擊速度', 0);
 objFieldML('data', 'PRIMARY_STAT_EFFECTS = {', 'agiAspdPct', '2-屬性派生', '攻擊速度', 1, '攻速每敏');
 objFieldML('data', 'PRIMARY_STAT_EFFECTS = {', 'agiHit', '2-屬性派生', '命中率', 0, '命中每敏');

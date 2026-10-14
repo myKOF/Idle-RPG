@@ -794,6 +794,7 @@ test('狂暴之舞：暴擊率與連擊數持續 6 秒，不再提供暴擊傷�
   assert.equal(p.buffs.sgCritUp.until, 6);
   assert.equal(p.buffs.sgCritDmgUp, undefined);
   assert.ok(Math.abs(c.skill2FrenzyComboBonus() - 1.1) < 1e-9);
+  c.COMBO_HITS_COEF.trigger = 100;   // 觸發率固定 100%，只驗證狂暴之舞的連擊數加成
   assert.equal(c.rollComboHits({ comboHits: 0 }), 1, '連擊數 +1 應產生 1 次追加攻擊');
 
   c.GT = 6;
