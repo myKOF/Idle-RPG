@@ -2080,14 +2080,14 @@ html *::-webkit-scrollbar-corner {
   grid-row: 2;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   min-height: 0;
   padding: 10px 6px;
   overflow-y: auto;
-  background: #111317;
+  background: linear-gradient(90deg, #0d1015, #151922 50%, #0d1015);
   border-bottom: 0;
-  border-right: 1px solid #23262d;
-  box-shadow: none;
+  border-right: 1px solid #665339;
+  box-shadow: inset -2px 0 0 #090b10, inset -3px 0 0 #c8a25b12;
 }
 
 #workspace-area main {
@@ -2102,49 +2102,61 @@ html *::-webkit-scrollbar-corner {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 2px;
   flex: 0 0 auto;
   width: 100%;
   min-width: 0;
-  min-height: 58px;
-  padding: 6px 2px;
+  min-height: 64px;
+  padding: 3px 2px;
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: 6px;
   background: transparent;
   box-shadow: none;
   color: #a39d90;
   font-size: 12px;
+  line-height: 16px;
   letter-spacing: .04em;
   text-shadow: none;
 }
 
 #workspace-area #tabs .tab-btn:hover {
-  border-color: #2a2d34;
-  background: #1b1e24;
+  border-color: #8c734b;
+  background: linear-gradient(90deg, #372b1a50, #44352275, #372b1a50);
   color: #ece6d8;
   filter: none;
 }
 
 #workspace-area #tabs .tab-btn.active {
-  border-color: #7a6440;
-  background: #2a2218;
+  border-color: #c5a15f;
+  background: linear-gradient(90deg, #241c13, #3a2b18 50%, #241c13);
   color: #f0cf86;
-  box-shadow: none;
+  box-shadow: inset 0 0 0 1px #e8c78015, inset 0 0 12px #d99b2810;
+}
+
+#workspace-area #tabs .tab-btn:focus-visible {
+  outline: 2px solid #f0cf86;
+  outline-offset: -2px;
 }
 
 #workspace-area #tabs .af-nav-icon {
   display: block;
+  width: 38px;
+  height: 38px;
+  margin: 0;
+  flex: 0 0 auto;
   line-height: 0;
 }
 
-#workspace-area #tabs .af-nav-icon svg {
-  width: 22px;
-  height: 22px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.7;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+#workspace-area #tabs .af-nav-icon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 2px #0009);
+}
+
+#workspace-area #tabs .tab-btn:is(:hover, :focus-visible, .active) .af-nav-icon img {
+  filter: brightness(1.12) drop-shadow(0 0 3px #d9ac4940);
 }
 
 /* 導覽列頂端的角色縮圖：頭像＋等級＋經驗條（完整資料在「角色」分頁） */

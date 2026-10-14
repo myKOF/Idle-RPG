@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## ENAMEL-NAV-20261014 — 套用寶石琺瑯功能頁籤
+
+- Owner：Codex；Done，單一開發者。使用者核定第三組金邊琺瑯徽章，寶石改為完整單顆藍綠寶石，並要求開始套用。前置為本聊天核定預覽，後續交使用者審閱整合。
+- 允許：index.html側欄圖示與CSS快取、css/ashen-forge.css的導覽樣式、images/ui/enamel-nav十張透明素材、tools/enamel-nav素材匯出工具、本紀錄及素材庫codex-authored/enamel-nav來源與匯出。禁止改遊戲規則、頁籤事件、神鑄解鎖、Worker／Protocol、存檔、其他副本及未授權素材。不合併／推送。
+- 預檢：ai/codex原乾淨；上述路徑check-conflicts全部無其他副本／分支衝突。已確認Mote Studio可用，其像素繪製流程不適合保留核定圖稿的細緻材質與自動去背；沿imagegen整理原創核定圖稿，標準裁切縮圖只作匯出，不重畫圖案。
+- 驗收：十圖一致金邊、真透明且寶石為單顆，保留十個data-tab／名稱與神鑄顯示規則；實際桌面及窄視窗側欄、hover／focus／active、頁籤切換與無破圖／Console錯誤。素材SHA一致、Build、相關既有測試與diff check；先素材庫再遊戲Commit。
+- 完成／修改14檔：index.html將十個SVG線條圖示換為原創128×128透明PNG，CSS快取1.0.59→1.0.60；css/ashen-forge.css導覽圖示38px、按鈕最小64px、間距2px，補金色選取／hover與鍵盤focus-visible輪廓；images/ui/enamel-nav/下char／equip／skills／newforge／gems／runes／tower／talents／forge／settings.png；新增tools/enamel-nav/export-source.cjs及本紀錄。側欄仍為88px、圖上字下，保留原本解鎖與事件，不改模擬或存檔。素材合計327597 bytes，沒有新增網頁JS。
+- 素材庫：codex-authored/enamel-nav保留核定概念圖、透明母圖、十個匯出、來源與提示詞、SHA／裁切座標。母圖去背與整理採內建imagegen；遊戲匯出只裁透明留白、等比縮小，不程序重畫造型。十圖皆128×128 RGBA，角落alpha0且有大量接近不透明圖案，SHA與素材庫／exports.json全一致。先提交素材庫65318f4（[Codex] feat: 保存寶石琺瑯功能頁籤素材）；素材庫狀態乾淨。
+- 驗證指令：node tools/enamel-nav/export-source.cjs --make-icons／--apply／--check成功；node --check tools/enamel-nav/export-source.cjs通過；node --test tests/sidebar-layout.test.cjs tests/init-ui-smoke.test.cjs，3/3通過；npm.cmd run build，503檔全過；兩庫git diff --check通過。另唯讀逐位元比較HEAD與新nav，除了圖示SVG→img，其餘標記／文字／data-tab／解鎖inline style完全相同；十張PNG尺寸／透明像素及內容SHA核對通過。未寫鏡像實作的形式測試。
+- 瀏覽器：隨機localhost埠／獨立來源新存檔，正式Worker／Pixi／UI，未讀真人存檔。十圖皆完整載入；新角色已開放的角色／裝備／技能／熔爐／寶石／符文／封魔塔／設定8頁切換正確。未解鎖威能與神鑄保持隱藏，沒有強制解鎖；兩圖也正常載入，原解鎖標記逐位元不變。1920×1080、960×640及1920×720均可操作設定、側欄無橫向溢出；38px圖示依既有整體UI縮放呈現。點擊／hover金邊與鍵盤Tab焦點（2px輪廓）正常；Console error／warning 0。實際角色頁截圖保存在本聊天visualizations/enamel-nav-applied.png。已恢復瀏覽器尺寸，臨時服務與頁面收尾關閉。
+- 未改但檢查：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、js/ui.js的頁籤與解鎖邏輯、css/style.css／ashen-forge-flat.css、tools/vfx/vfx-library-root.cjs／scene-renewal/export-source.cjs／build_check.cjs及兩檔既有UI測試。沒有引用第三方美術，使用者截圖只作風格／佈局參考。
+- 交付：遊戲Commit為本紀錄所在[Codex] feat提交；素材Commit65318f4。無本次未完成項或已知新增功能風險，可供審查合併，未合併／推送。限制為只驗證隔離新角色的已開放頁籤，未另跑全庫測試／真人存檔長時間驗收；已核對未解鎖頁籤的圖示與原始契約。下一步使用者整合後重新載入遊戲查看。
+
 ## DEVELOP-MERGE-20261014 — 整合攻速疊層與天穹提示圈、保留敵人技能與補進度修正
 
 - Owner：Codex；Done。使用者快捷指令1授權解決develop衝突，接續主整合副本的既有合併；原HEAD 933d7aff、MERGE_HEAD cbdd9b96。單一開發者，前置為雙方已提交成果，完成後交使用者重載驗收。
