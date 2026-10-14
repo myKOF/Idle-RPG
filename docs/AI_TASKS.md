@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## DEVELOP-MERGE-20261014 — 整合攻速疊層與天穹提示圈、保留敵人技能與補進度修正
+
+- Owner：Codex；Done。使用者快捷指令1授權解決develop衝突，接續主整合副本的既有合併；原HEAD 933d7aff、MERGE_HEAD cbdd9b96。單一開發者，前置為雙方已提交成果，完成後交使用者重載驗收。
+- 允許：index.html、js/bridge.js、js/vfx-runtime.js、js/worker/sim.worker.js的快取衝突、tools/vfx/editor/index.html共用快取及本紀錄；必要驗證與完成原合併。禁止其他副本、功能／數值／協議／存檔／配置／素材擴改或推送。預檢只有本次Codex兩筆待合併提交來源，沒有他人未提交修改；使用者快捷指令已授權。
+- 決策：保留Claude符文合成屬性／品質分色、敵人技能及前景補進度靜音，保留Codex獨立攻速疊層與天穹三色落點圈。合成runeword／combat／skills2用新Worker token 20261014-develop-integration，bridge入口與Preset資料版號同token；status保留疊層版本，其他模組保留對應較新來源。主頁runeword1.0.14／combat1.0.82／skills2 1.0.309／bridge1.0.266／Runtime1.0.197，Editor Runtime同步；runeword_data1.0.15及item1.0.20保留Claude，status1.0.32保留Codex。
+- 驗收：源碼三方差異審查、Worker／補進度靜音／符文與攻速疊層／敵人技能及天穹Runtime回歸、Build、配置與素材唯讀一致性、diff check，確認無衝突並完成原合併。
+- 完成：手動修改本紀錄、index.html、js/bridge.js、js/vfx-runtime.js、js/worker/sim.worker.js及tools/vfx/editor/index.html；其餘9檔保留原三方合併結果。4個unmerged檔案清零，所有staged文字檔無衝突標記。
+- 唯讀審查：combat／status與新增測試及mark-green逐位元保留Codex；Runtime等於Codex只換新DATA_VERSION。skills2完整檔案等於原develop只追加天穹提示圈四處修改，保留Claude最新敵人配置；runeword逐函式核對保留Claude合成屬性／品質分色及Codex疊層／觸發功能。Worker完整檔案等於原develop只更新4支import token，保留shim13與補進度靜音；bridge僅新入口token。runeword_data／item／ui-runeword／elite／shim／ui／renderer／Runes與Skills2 Excel及CSV／config_tables均逐位元等於原develop，未擴改。
+- 回歸指令：node --test --test-reporter=tap tests/runeword-aspd-stacks.test.cjs tests/runeword-data.test.cjs tests/runeword-engine.test.cjs tests/runeword-ui.test.cjs tests/runeword-all-words.test.cjs tests/runeword-seen.test.cjs tests/rune-slots-config.test.cjs tests/config-runes-table.test.cjs tests/status-system.test.cjs tests/active-buffs-panel.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/tower-battlefield.test.cjs tests/skyfall-telegraph.test.cjs tests/meteor-entry-origin.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/indomitable-vfx.test.cjs tests/worker-catchup-silent.test.cjs tests/enemy-hit.test.cjs tests/enemy-buffs-tooltip.test.cjs tests/enemy-attack-vfx-lifecycle.test.cjs tests/elite-engine.test.cjs tests/elite-data.test.cjs tests/elite-groups.test.cjs tests/elite-params.test.cjs tests/battle-elite.test.cjs。28檔共352/352通過、0失敗、0略過；含真Worker／符文3與4層、增益UI與野外高塔攻速、三色提示圈正式Core／Runtime、敵人技能／標籤／特效及補進度60秒靜音與傷害一致性。未修改測試或降低斷言。
+- Build與配置：npm.cmd run build 503檔通過；三支衝突JS的node --check、git diff --check及git diff --cached --check通過。node tools/config_tables.cjs --apply Runes／Status／Skills2皆語意變更0，未寫回配置。
+- 素材：node tools/vfx/export-assets.cjs --check --root D:/MyGame/Asset，331份Preset／172個素材引用最新；素材庫工作區乾淨、HEAD f0bd20b。合併的mark-green Preset／layout逐位元等於素材庫已提交來源，沿用其素材Commit f0bd20b，無需新素材Commit；未新增第三來源或修改素材內容。
+- 交付：本紀錄所在[Codex] merge提交完成原develop合併，父提交933d7aff與cbdd9b96；無未完成衝突或本次測試失敗，可供審查，未推送。已知限制：本輪未另跑全庫測試、瀏覽器Console／真人長時間戰鬥或FPS壓測。下一步使用者重載遊戲驗收；VFX Editor未儲存內容先另存再重載，勿以舊頁覆寫新版。
+
 ## CODEX-CLAUDE-MERGE-20261013 — 解決符文V2與天穹崩裂整合衝突
 
 - Owner：Codex；Done，單一開發者。使用者要求解決衝突，接續 develop 原有合併；原 HEAD b531b15f、MERGE_HEAD e059fd67。前置為雙方已提交成果，完成後交使用者重新載入驗收。
@@ -9856,3 +9869,28 @@ Worker 存活且頁面正常完成載入。
 - 測試：新增 ACK／快照測試在修改前兩項均失敗於暫放符文變空孔；修改後含裝備先到／庫存先到、成形／未成形、部分成功後失敗／Promise rejection、換件與逾時全部通過。`node --test --test-reporter=tap tests/runeword-ui.test.cjs tests/runeword-engine.test.cjs tests/runeword-data.test.cjs tests/runeword-all-words.test.cjs tests/equip-socket-ui.test.cjs tests/equip-reroll-ui.test.cjs tests/inventory-command-pending.test.cjs tests/equipment-detail-layout.test.cjs tests/equipment-selection-border.test.cjs tests/boss-skill-lock.test.cjs tests/init-ui-smoke.test.cjs tests/ui-worker-events.test.cjs tests/runeword-seen.test.cjs tests/rune-slots-config.test.cjs tests/config-runes-table.test.cjs tests/worker-protocol.test.cjs` 238/238；`npm.cmd run build` 499檔通過；`git diff --check` 通過。
 - 瀏覽器：隔離隨機埠 HTTP／全新 headless Edge context，正式 UI／CSS／Bridge／真 Worker，拋棄式巨劍與符文，不讀真人存檔。刻意分別延遲 gems／inv／header／equip 回覆；舊 HEAD 在未成形／破軍成形時各重建孔列6次、38／35幀缺少應有符文；修正後各只更新1次、空孔幀數0，標題及素材容器保持原節點，3顆正確鑲入、庫存正確扣除，真言只在正確配方出現。四情境 Console error／warning 均0；臨時服務／瀏覽器關閉，暫存腳本清理。
 - 交付：遊戲 Commit 為本紀錄所在 `[Codex] fix: 消除符文刻印後裝備詳情閃爍`。本次無未完成項或已知新增風險，可供審查合併；未合併／推送。限制：瀏覽器驗證採拋棄式狀態與可控面板延遲，未操作真人存檔。下一步使用者整合後重新載入遊戲驗收刻印。
+
+## SKYFALL-TELEGRAPH-20261013 — 天穹崩裂三色落點圈與物件尺寸同步
+
+- Owner：Codex；Done，單一開發者。使用者指定火殞石／雷殞石／大型風刃各用對應顏色的地板提示圈，圈大小符合落下物件。使用者已同意保留Claude及Antigravity在共用檔的工作，於Codex副本分段完成；不修改其他副本、不合併或推送。
+- 允許：js/skills2.js的skyfallStars事件、js/vfx-runtime.js的天降物件尺寸共用與提示圈播放、必要主頁／Editor／Worker快取、新mark-green Preset及素材庫副本／來源紀錄、寫死用途清單、本紀錄與新tests/skyfall-telegraph.test.cjs。禁止改傷害／判定半徑／元素／顆數／節拍、其他技能及Protocol／存檔／Excel配置。
+- 驗收：火橘紅／雷藍／風綠；圈直徑沿實際物件本體最大長寬及同一場景倍率；固定落點、獨立多顆、起飛出圈／落地回收；傷害仍用原AOE且僅落地結算。正式Core／Runtime與Worker事件測試、三色預覽、Build、用途與素材同步、先素材庫再遊戲Commit。
+- 完成／修改11檔：js/skills2.js新增SG_SKYFALL_MARKS選用藍圈／綠圈，火圈沿原表；天穹事件area附帶skyfallMark，Worker沿既有area透傳。js/vfx-runtime.js將彈體尺寸換算抽為共用函式，圈半徑由Preset作者本體長寬、事件尺寸與skyScale衍生，不改原事件AOE；每顆圈獨立識別與飛行壽命，抵達即回收。預載同步收錄SG_SKYFALL_MARKS。另改index.html、js/bridge.js、js/worker/sim.worker.js、tools/vfx/editor/index.html、用途清單、本紀錄，新tests/skyfall-telegraph.test.cjs、vfx/presets/mark-green.json及vfx/layouts/mark-green.json。主頁skills2 1.0.308／Runtime1.0.196／bridge1.0.265，Editor同步Runtime；Worker入口／skills2 import與Preset資料版號20261013-skyfall-telegraph。跳過其他分支已使用快取，保留其工作。
+- 測試：node --test --test-reporter=tap tests/skyfall-telegraph.test.cjs tests/meteor-entry-origin.test.cjs tests/worker-protocol.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/indomitable-vfx.test.cjs，59/59通過。新專項6項含真sim engine三種星體、不提前傷害、原8米判定、三種skyScale、固定落點／原事件不變、同點多顆／延遲分別回收、素材合法與正式預載。
+- 擴大：node --test --test-reporter=tap tests/meteor-impact-timing.test.cjs tests/vfx-runtime.test.cjs，134項129通過／5既有失敗；唯讀載入HEAD原skills2／Runtime重跑同134項129通過／5失敗，名稱差集0。為伴生火球、FIELD地層、CATALOG根群組、CHAIN顏色及STARFALL-TAIL既有斷言，未改其他測試。npm.cmd run build 501檔全過；node tools/vfx/export-assets.cjs --check最新（無需重匯出），git diff --check通過。
+- 素材與預覽：綠圈只將現有mark-blue兩層換為綠色並保留既有circle masks，沒有繪製或匯入新圖片，沿Preset流程編輯；同時建立合法單根群組layout。隔離headless Edge／正式Core／Runtime／Pixi預覽三色落下物與提示圈，3顆彈體／3圈，pageerror 0；圖片在本聊天visualizations/skyfall-colors.png，純文字檔名mark-green.json。程式提示圈來源登記於VFX_PRESET_USAGE_OUTSIDE_TABLES.md，沒有第三來源。素材庫codex-authored/skyfall-telegraph保存Preset／layout及SOURCE.md，先提交f0bd20b；與遊戲內容一致，沒有更動原藍圈／紅圈。臨時預覽腳本與測試日誌已清理。
+- 唯讀檢查：AI規範／prompts/codex.md、既有提示圈／三種彈體Preset、Worker shim／Protocol、battle-renderer、VFX Core／Pixi後端、素材解析器／匯出器及既有隕石回歸，未修改上述檔案。遊戲Commit為本紀錄所在[Codex] fix提交；無本次未完成項，可供合併，未合併／推送。已知限制：上述5項既有失敗、未做真人長時間戰鬥壓測。整合時保留其他分支共用檔及使用更新快取；重載遊戲與VFX Editor前先另存未儲存內容，勿用舊頁覆寫新版。
+
+## RUNE-ASPD-STACKS-20261013 — 驚蟄與風暴之眼攻速疊層修正
+
+- Owner：Codex；Done，單一開發者。使用者要求疊層符合驚蟄最多3層、風暴之眼最多4層並補測試；前置為本分支既有符文V2，後續使用者審閱／整合。
+- 授權：使用者已明確同意分段修改並獨立提交；預檢runeword.js／bridge／Worker／index／本紀錄有Claude未合併變更及Worker未提交工作，index另有Antigravity未提交戰鬥日誌修改。僅在本ai/codex副本修改，保留既有版本，不碰其他副本，不合併／推送；日後整合需保留雙方快取及功能。
+- 允許：js/runeword.js、js/status.js、js/combat.js、新tests/runeword-aspd-stacks.test.cjs、index.html／js/bridge.js／js/worker/sim.worker.js必要快取及本紀錄。禁止改配置數值／Excel／CSV、其他技能、Protocol、存檔與素材。
+- 實作：以真言配置的max／val／sec與既有STATUS基底衍生來源獨立的疊層狀態；兩組不共用層數／倒數，普通aspdUp維持單層刷新。狀態列與攻速計算共用權威buff，不另建一套狀態或硬編碼倍率。
+- 驗收：逐暴擊疊層、3／4層封頂、刷新與到期重置、非暴擊／未命中不觸發、兩組與一般攻速並存、重複真言機制去重、實際攻速／狀態列／Worker快照一致；專項先紅後綠、符文／狀態／Worker回歸、Build、配置乾跑與diff check後獨立Commit。
+- 完成：新增來源獨立的rw疊層狀態，狀態定義由既有STATUS基底＋真言procs的max／val／sec純衍生；重用applyStatus／applyBuff／stackStep處理封頂與刷新，不修改表值。buffVal把同屬性來源加總，既有野外／塔戰／近戰動畫共用攻速；狀態列依不同sid顯示名稱、數值、層數及各自倒數，舊增益tooltip同時可讀。驚蟄3層+36%／3秒，風暴之眼4層+48%／4秒；同時滿層+84%，一般攻速增益獨立刷新。
+- 修改8檔：js/runeword.js、js/status.js、js/combat.js、tests/runeword-aspd-stacks.test.cjs、index.html、js/bridge.js、js/worker/sim.worker.js及本紀錄。主頁status1.0.32／runeword1.0.13／combat1.0.81／bridge1.0.264，Worker入口與上述三支import均20261013-rune-aspd-stacks；跳過Claude已用的runeword1.0.12／bridge1.0.263，避免快取重用。Protocol50及存檔不變。
+- 測試：新增專項初版8項，修正前1通過／7失敗，修正後8/8；補齊後15/15。node --test --test-reporter=tap tests/runeword-aspd-stacks.test.cjs tests/runeword-data.test.cjs tests/runeword-engine.test.cjs tests/runeword-ui.test.cjs tests/runeword-all-words.test.cjs tests/runeword-seen.test.cjs tests/rune-slots-config.test.cjs tests/config-runes-table.test.cjs tests/status-system.test.cjs tests/active-buffs-panel.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/tower-battlefield.test.cjs tests/vfx-editor-cache-versions.test.cjs：233/233通過，無失敗。
+- 驗證：npm.cmd run build，500檔全過；node tools/config_tables.cjs --apply Runes／--apply Status皆語意變更0；git diff --check通過。新增測試含正式Worker入口產生battle快照後在主端還原；正式UI的renderBattleBuffBar／battleBuffBadgeMarkup產生3／4層徽章、+36%／+48%提示與獨立到期移除（DOM寫入器以測試替身接收）；真towerTick驗普攻冷卻進度與野外攻速一致。測試未改舊斷言／接受錯誤現況。
+- 唯讀檢查：js/runeword_data.js、js/legendary.js、js/tower.js、js/ui.js、Worker Protocol／shim、scripts/sim/engine.js、tests/helpers/runeword-env.cjs、既有狀態／符文／Worker／塔戰／增益測試、AI規範與其他分支衝突diff；未修改上述檔案。Excel／CSV／素材未變，無素材庫Commit。先前MD審閱報告保留2f6a135d歷史快照，不覆寫當時觀察。
+- 交付：Commit為本紀錄所在[Codex] fix提交；本次無未完成項，可審查合併，未合併／推送。已知限制：未做真人瀏覽器目視／長時間戰鬥與效能壓測；與Claude的runeword屬性展開／分色與Worker補進度、Antigravity的index戰鬥日誌分開，未取代其副本；整合時共用快取與任務紀錄仍須保留雙方修改。下一步使用者整合後重新載入遊戲驗收疊層。

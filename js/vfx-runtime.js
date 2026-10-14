@@ -434,6 +434,7 @@ var VFXRuntime = (function () {
        新增播放路徑時要一起用這支，不要再寫死 rtFx。 */
     function fxRtFor(presetId) { return billboardPresets[presetId] ? rtBillboard : rtFx; }
     var presetSizes = Object.create(null);
+    var rainMarkSeq = 0;
     var planePresets = Object.create(null);
     var planeAngles = Object.create(null);
     var presetDurations = Object.create(null);
@@ -674,6 +675,24 @@ var VFXRuntime = (function () {
       var p = sizeOf(id) || { scaleX: 1, scaleY: 1 };
       p.scaleX *= num(scale, 1); p.scaleY *= num(scale, 1);
       return p;
+    }
+
+    // 彈體與落點提示共用同一份事件尺寸；Preset本體座標不包含外暈／拖尾。
+    function projectileDimensions(presetId, spec) {
+      var dimensions = num(spec.bodyLength, 0) > 0 && num(spec.lineWidth, 0) > 0
+        ? sizeOf(presetId, { w: spec.bodyLength, h: spec.lineWidth }) : null;
+      if (!dimensions && num(spec.lineWidth, 0) > 0 && presetSizes[presetId] && presetSizes[presetId].shape === 'projectile-circle') {
+        dimensions = sizeOf(presetId, { r: spec.lineWidth / 2 });
+      }
+      return dimensions;
+    }
+    function rainBodyRadius(spec) {
+      var id = spec.vfx && spec.vfx.projectile, sizing = presetSizes[id];
+      if (!sizing) return 0;
+      var authored = sizing.authored || {};
+      var dimensions = projectileDimensions(id, spec) || defaultSize(id, num(spec.sizeMult, 1) > 0 ? num(spec.sizeMult, 1) : 1);
+      return Math.max((authored.width || authored.radius * 2) * dimensions.scaleX,
+        (authored.height || authored.radius * 2) * dimensions.scaleY) * profile.skyScale / 2;
     }
 
     /* 把表面的尺寸係數乘進 transform 參數。沒給任何縮放時視為 1，
@@ -1088,12 +1107,7 @@ var VFXRuntime = (function () {
       if (arcHeight > 0) ctrl = {x:(from.x+to.x)/2,y:(from.y+to.y)/2-2*arcHeight};
       var mult = spec.fxKind === 'rain' ? profile.skyScale : profile.scale;
       var facing = curveHeading(from, ctrl, to, 0);
-      var dimensions = num(spec.bodyLength, 0) > 0 && num(spec.lineWidth, 0) > 0
-        ? sizeOf(presetId, { w: spec.bodyLength, h: spec.lineWidth }) : null;
-      // 圓形彈體只需權威直徑；lineWidth 已由 Worker 白名單透傳。
-      if (!dimensions && num(spec.lineWidth, 0) > 0 && presetSizes[presetId] && presetSizes[presetId].shape === 'projectile-circle') {
-        dimensions = sizeOf(presetId, { r: spec.lineWidth / 2 });
-      }
+      var dimensions = projectileDimensions(presetId, spec);
       // 敵方普攻與神聖光彈只表現飛行，不表達碰撞範圍；與編輯器共用製作尺寸。
       // 有權威彈體尺寸的事件仍沿用上面的幾何換算。
       var holyFlight = spec.variant === 'counter-holy-flight';
@@ -1310,6 +1324,12 @@ var VFXRuntime = (function () {
 
     /* 持續場域：以 area.id 合併，重複事件只續命與更新「權威目標」 */
     function playGround(presetId, spec, role) {
+      var skyfallMark = role === 'ground' && spec.fxKind === 'rain' && spec.area && spec.area.skyfallMark === true;
+      if (skyfallMark) {
+        // 僅改提示圈演出尺寸，傷害AOE仍保留在原事件／模擬排程。
+        var radius = rainBodyRadius(spec);
+        if (radius > 0) spec = Object.assign({}, spec, { area: Object.assign({}, spec.area, { r: radius }) });
+      }
       var staticVacuum = !!(spec.area && spec.area.staticVacuum);
       if (presetId === 'ground-firewall' && has(presetId + '-column-0') && spec.area) {
         var wall = spec.area, axis = num(wall.a, 0), result = false;
@@ -1341,6 +1361,7 @@ var VFXRuntime = (function () {
       var key = noArea ? (presetId + '@' + anchor)
         : (spec.area.id ||
            (presetId + '@' + Math.round(num(spec.area.x, 0)) + ',' + Math.round(num(spec.area.y, 0))));
+      if (skyfallMark) key = 'skyfall@' + (++rainMarkSeq);
       // 場域本體與地面提示可共用 area.id，但必須分別續命、移動及回收。
       key = (role === 'attack' ? 'attack:' : role === 'field' ? 'field:' : role === 'projectile' ? 'projectile:' : 'ground:') + key;
       // 吞噬全場只保留一個：新施放立即移除舊畫面，並從新位置重新出生。
@@ -1348,6 +1369,7 @@ var VFXRuntime = (function () {
       // 吞噬與飛雷神只在出生派送一次完整壽命，不使用逐拍場域的續命緩衝。
       var keep = (spec.variant === 'dragon-devour' || spec.variant === 'flying-thunder' || indomitableVisual) ? Math.max(0, num(spec.dur, 0))
         : Math.max(GROUND_MIN_KEEP_SEC, num(spec.dur, 0.5) * GROUND_KEEP_TICKS);
+      if (skyfallMark) keep = travelSecAt(spec, 0);
       if ((spec.variant === 'water-tornado' || spec.variant === 'water-tide-merge') && spec.area && isFinite(spec.area.lifeSec)) {
         keep = Math.max(0, Number(spec.area.lifeSec));
       }
@@ -1356,7 +1378,7 @@ var VFXRuntime = (function () {
       var curtainColumn = role === 'attack' && spec.variant === 'thunder-curtain';
       // 舊事件缺 variant 時沿用既有月牙辨識；新素材依追蹤事件語意判斷。
       var windBody = !staticVacuum && (spec.variant === 'wind-blade-homing' || presetId === 'ground-homing-wind-crescent');
-      var mult = curtainColumn || spec.variant === 'flying-thunder' || indomitableVisual ? 1 : noArea || spec.variant === 'ice-arrow-homing' || windBody || presetId === 'proj-icearrow-frost' ? profile.scale : profile.areaScale;
+      var mult = curtainColumn || spec.variant === 'flying-thunder' || indomitableVisual || skyfallMark ? 1 : noArea || spec.variant === 'ice-arrow-homing' || windBody || presetId === 'proj-icearrow-frost' ? profile.scale : profile.areaScale;
       var live = grounds[key];
       if (live && live.presetId === presetId && spec.variant !== 'dragon-devour') {
         live.expireAt = clock + keep;
@@ -2234,6 +2256,7 @@ var VFXRuntime = (function () {
       for (var st in STATUS) take(STATUS[st] && STATUS[st].vfx);
     }
     if (typeof VFX_COMBAT_DEFAULTS !== 'undefined') takeDeep(VFX_COMBAT_DEFAULTS);
+    if (typeof SG_SKYFALL_MARKS !== 'undefined') take(SG_SKYFALL_MARKS);
     // 敵人專用技能（Skills2 表類別＝enemy → ENEMY_SKILLS2）：本體與觸發兩組特效，以及 fx.presets 額外列的 Preset
     if (typeof ENEMY_SKILLS2 !== 'undefined' && ENEMY_SKILLS2) {
       for (var eid in ENEMY_SKILLS2) {
@@ -2250,7 +2273,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20261013-enemy-fix2';
+  var DATA_VERSION = '20261014-develop-integration';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

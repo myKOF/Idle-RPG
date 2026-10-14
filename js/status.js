@@ -160,7 +160,10 @@ var STATUS_BY_NAME = {};
   }
 })();
 
-function statusDef(sid) { return (sid && STATUS[sid]) || null; }
+function statusDef(sid) {
+  return (sid && STATUS[sid]) ||
+    (typeof rwStackedStatusDef === 'function' ? rwStackedStatusDef(sid) : null);
+}
 /* 疊加規則傳給低階寫入器；未指定＝維持各容器原本的行為（持續傷害取高、增益後蓋前）。 */
 /* maxOverride：呼叫端（技能／特效）可把層數上限往上調，表上的值是預設值。
    例：突刺超神進化【暗影絕殺者】的靈魂撕裂上限寫在技能參數裡，隨版本調整；
@@ -171,7 +174,7 @@ function statusStackCfg(def, maxOverride) {
   if (!(max > 0)) max = Math.floor(Number(def.maxStacks) || 0);
   return { rule: 'stack', max: Math.max(1, max) };
 }
-function statusIdByKey(key) { return STATUS_BY_KEY[key] || (STATUS[key] ? key : ''); }
+function statusIdByKey(key) { return STATUS_BY_KEY[key] || (statusDef(key) ? key : ''); }
 function statusIdByName(name) { return STATUS_BY_NAME[name] || ''; }
 function statusName(sid, fallback) { var d = statusDef(sid); return d ? d.name : (fallback || ''); }
 /* 增益鍵的顯示名稱：狀態表是唯一來源（表上查無的鍵才回傳原鍵，供除錯辨識）。 */

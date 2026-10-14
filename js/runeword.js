@@ -575,6 +575,46 @@ function rwFreeCast(pEnt, gid, ctx, out) {
   }
 }
 
+/* 顯式指定疊層的真言增益依來源分開存放。狀態名稱／圖示沿用 STATUS，
+   單層值、層數上限與持續時間只讀真言配置，不改一般同名增益的刷新規則。 */
+function rwStackedStatusDef(sid) {
+  if (typeof sid !== 'string' || sid.indexOf('rw:') !== 0) return null;
+  var parts = sid.split(':');
+  if (parts.length !== 3) return null;
+  var word = RUNEWORD_BY_ID[parts[1]], base = STATUS[parts[2]];
+  if (!word || !base || base.effect !== 'stat' || base.kind !== 'buff') return null;
+  var procs = word.procs || [];
+  for (var p = 0; p < procs.length; p++) {
+    var acts = procs[p].acts || [];
+    for (var i = 0; i < acts.length; i++) {
+      var a = acts[i];
+      if (a.act !== 'buff' || a.sid !== parts[2] || !(a.max > 1)) continue;
+      var def = {};
+      for (var k in base) def[k] = base[k];
+      def.key = sid;
+      def.name = word.name + '·' + base.name;
+      def.stack = 'stack';
+      def.maxStacks = a.max;
+      def.val = a.val;
+      def.dur = a.sec;
+      def.rwBaseKey = base.key;
+      return def;
+    }
+  }
+  return null;
+}
+function rwStackedBuffValue(ent, key) {
+  var value = 0;
+  if (!ent || !ent.buffs) return value;
+  for (var sid in ent.buffs) {
+    var b = ent.buffs[sid];
+    if (!b || !(b.until > GT) || sid.indexOf('rw:') !== 0) continue;
+    var def = rwStackedStatusDef(sid);
+    if (def && def.rwBaseKey === key) value += b.val || 0;
+  }
+  return value;
+}
+
 /* 執行一串動作；結果累計到 out（{ dmg, killed }）。 */
 function rwRunActs(proc, ctx, out) {
   var pEnt = ctx.pEnt;
@@ -622,7 +662,8 @@ function rwRunActs(proc, ctx, out) {
         gainPlayerMana(pEnt, st.mp * a.pctMax / 100, st);
         break;
       case 'buff':
-        applyStatus(pEnt, a.sid, { val: a.val, dur: a.sec, maxStacks: a.max });
+        var buffSid = a.max > 1 && ctx.wordId ? 'rw:' + ctx.wordId + ':' + a.sid : a.sid;
+        applyStatus(pEnt, buffSid, { val: a.val, dur: a.sec, maxStacks: a.max });
         break;
       case 'buffRandom':
         var opt = pick(a.from);
@@ -699,7 +740,7 @@ function rwFire(on, ctx) {
     if (pr.cd) s.next = GT + pr.cd;
     if (!out) out = { dmg: 0, killed: false };
     var local = { pEnt: ctx.pEnt, target: ctx.target, attacker: ctx.attacker, enemies: ctx.enemies,
-      floatSel: ctx.floatSel, gid: ctx.gid, cb: ctx.cb, wordName: p.name };
+      floatSel: ctx.floatSel, gid: ctx.gid, cb: ctx.cb, wordName: p.name, wordId: p.wid };
     rt.depth++;
     try { rwRunActs(pr, local, out); } finally { rt.depth--; }
   }
@@ -805,7 +846,7 @@ function rwCheckLowHp(pEnt, st, floatSel) {
     var out = { dmg: 0, killed: false };
     rt.depth++;
     try {
-      rwRunActs(pr, { pEnt: pEnt, floatSel: floatSel || rwEnemyFloat(), wordName: procs[i].name }, out);
+      rwRunActs(pr, { pEnt: pEnt, floatSel: floatSel || rwEnemyFloat(), wordName: procs[i].name, wordId: procs[i].wid }, out);
     } finally { rt.depth--; }
   }
 }
@@ -839,7 +880,7 @@ function rwTick(dt, ctx) {
       var enemies = ctx.getEnemies ? ctx.getEnemies() : rwEnemies();
       if (!rwAliveOnly(enemies).length && rwProcNeedsEnemies(pr)) continue;
       var out = { dmg: 0, killed: false };
-      var local = { pEnt: pEnt, enemies: enemies, floatSel: ctx.floatSel, cb: ctx, wordName: procs[i].name };
+      var local = { pEnt: pEnt, enemies: enemies, floatSel: ctx.floatSel, cb: ctx, wordName: procs[i].name, wordId: procs[i].wid };
       rt.depth++;
       try { rwRunActs(pr, local, out); } finally { rt.depth--; }
       if (out.killed && ctx.onDeaths) ctx.onDeaths();

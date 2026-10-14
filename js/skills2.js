@@ -10969,15 +10969,16 @@ function sgSpawnVoidDiscs(pEnt, st, g, lvs, floatSel, baseAngle, opts) {
    ⚠️ 這一個超神與風刃的【天穹崩裂】同名不同物（設計文檔就是這樣命名的），
    id 是 skyfallStars；風刃那一個是 skyCollapse，兩者沒有任何共用程式。 */
 var SG_SKYFALL_KINDS = ['blade', 'thunder', 'fire'];
+var SG_SKYFALL_MARKS = { blade: 'mark-green', thunder: 'mark-blue' };
 var SG_SKYFALL_BLADE_SCALE = 2;   // 「巨大風刃」的體積倍率（設計只寫「巨大」）
 
 function sgSkyfallVfxRoles(kind) {
-  if(kind==='thunder')return sgVfxRoles('thunderorb',{vfxTier:7});
+  if(kind==='thunder')return Object.assign({},sgVfxRoles('thunderorb',{vfxTier:7}),{ground:SG_SKYFALL_MARKS.thunder});
   var own=sgVfxRoles('stormbarrier',{vfxUlt:'skyfallStars'});
   if(kind!=='blade')return own;
   var blade=sgVfxRoles('windblade',{vfxTier:1,vfxBase:true});
   var pulse=sgVfxRoles('windblade',{vfxTier:6});
-  return {projectile:blade.projectile,hit:blade.hit,attack:pulse.attack,ground:own.ground};
+  return {projectile:blade.projectile,hit:blade.hit,attack:pulse.attack,ground:SG_SKYFALL_MARKS.blade};
 }
 function sgSkyfallImpactVfx(roles) {
   return function(m,victims){
@@ -11020,7 +11021,7 @@ function sgTickSkyfallStars(ctx, dt) {
     var shape=blade?sgWindbladeGeom(SKILLS2.windblade,[1,0,0,0,0,0,0],null):null;
     var castDelay = i * SG_METEOR_INTERVAL_MS;
     var landingArea=sgAreaAround(target,radius);
-    if(landingArea)landingArea.fixedLanding=true;
+    if(landingArea){landingArea.fixedLanding=true;landingArea.skyfallMark=true;}
     sgEmitVfx('stormbarrier', [target], ctx.floatSel, {
       fxKind: 'rain', variant: blade?'wind-blade':bolt ? 'thunder-fall' : 'meteor',
       elem: elem, count: 1,hit:false,

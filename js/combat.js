@@ -820,7 +820,8 @@ function applyBuff(ent, key, val, dur, sid, stackCfg) {
 function buffVal(ent, key) {
     if (!ent || !ent.buffs) return 0;
     var b = ent.buffs[key];
-    return (b && b.until > GT) ? b.val : 0;
+    var value = (b && b.until > GT) ? b.val : 0;
+    return value + (typeof rwStackedBuffValue === 'function' ? rwStackedBuffValue(ent, key) : 0);
 }
 function activeBuffKeys(ent) {
     var out = [];
@@ -2553,6 +2554,14 @@ function activePlayerBuffs(ent) {
                     val: b.val || 0,
                     remain: Math.ceil(b.until - GT)
                 });
+            }
+        }
+    }
+    if (ent.buffs && typeof rwStackedStatusDef === 'function') {
+        for (var sid in ent.buffs) {
+            var rb = ent.buffs[sid];
+            if (rb && rb.until > GT && rwStackedStatusDef(sid)) {
+                list.push({ key: sid, val: rb.val || 0, remain: Math.ceil(rb.until - GT) });
             }
         }
     }
