@@ -1,5 +1,36 @@
 # PATCH.md
 
+## 關卡標籤文案「階段」調整為「關」（Antigravity 2026-10-13）
+
+- **關卡列與標題文案統一為「第 N 關」（`index.html`、`js/ui.js`、`tests/stage-jump-ui.test.cjs`）**：
+  - 依使用者指示，將關卡控制列中原「第 N 階段」（例如 `第 210 階段`）全數改為「第 N 關」（如 `第 210 關`），與右側「最高 N 關」統一名稱用語。
+  - 同步更新迷你視窗（`miniSnapshot`）與分頁標題（`updateLiveTitle`）的野外地圖關卡字串為「第 N 關」。
+  - 更新 `index.html` 靜態占位符 `<span id="stage-label">第 1 關</span>` 與直達按鈕 tooltip（`最高關卡`）。
+  - 更新單元測試 `tests/stage-jump-ui.test.cjs` 加入格式斷言。
+
+## 戰況資訊直開加寬統計面板、新增詳細日誌按鈕與移除戰鬥區右側面版（Antigravity 2026-10-13）
+
+- **戰況資訊直開統計面板與面板加寬 1 倍（`index.html`、`js/ui.js`、`css/style.css`）**：
+  - 戰鬥區域右上角「戰況資訊」按鈕（`#btn-battle-info`）調整為點擊直接開關統計面板（`#summary-modal`），並隨面板開啟狀態同步切換 `.active` 樣式。
+  - 統計面板（`#summary-modal-box`）寬度由原先的 `min(440px, 92vw)` 加倍擴充至 `min(880px, 94vw)`，給予基本統計、來源明細與即時戰鬥數據充足的水平排版與展示空間；同步更新置中定位計算與拖曳邊界判定。
+- **統計面板左上角新增「詳細日誌」按鈕（`index.html`、`js/ui.js`、`css/style.css`）**：
+  - 在統計面板左上方新增按鈕 `#btn-summary-detail-log`（文案「詳細日誌」），點擊後直接彈出詳細戰鬥日誌視窗（`#detail-log-modal`），並支援以 Esc 鍵優先關閉詳細日誌彈窗。
+- **移除戰鬥區右側抽屜面版（`index.html`、`js/ui.js`、`css/style.css`）**：
+  - 徹底移除戰鬥區右側的抽屜面版 DOM（`#battle-info-drawer`），野外 Canvas 戰鬥場景不再被側邊面板遮擋或壓縮。
+  - 原戰鬥區域下側的紀錄與日誌容器設定為 `display: none !important;`，所有戰況統計與即時詳細日誌統一集中於浮層彈窗中呈現。
+- **單元測試驗證（`tests/battle-log-ui-layout.test.cjs`）**：
+  - 新增專屬規格測試，驗證戰況資訊按鈕綁定、統計面板加倍寬度、詳細日誌按鈕定位與呼叫，以及舊抽屜面版之完全移除。
+
+## NPC 改造計劃全量測試驗證與單元測試穩定度修復（Antigravity 2026-10-13）
+
+- **全量測試報告產出（`docs/ELITE_TEST_REPORT.md`）**：
+  - 依照 `docs/ANTIGRAVITY_ELITE_TEST_CASES.md` 逐項完成 52 個技能（17 個隨機技能池 + 35 個專屬技能）實機 CDP 動態捕捉與外觀特效差異化評測。
+  - 完成核心系統測試：跑位機制（4~8 秒）、敵人類型外觀與體型倍率（1.6x / 2.2x / 3.4x）、封魔塔技能徽章列與失敗機制、狀態完全清除、高密度壓力測試（FPS 60 穩定）。
+  - 完成表格與防呆機制實測：BOSS 專屬技能替換、隨機技能數量調整、無效特效 Preset 檢測攔截；測試完成後還原配置檔案。
+- **單元測試穩定度修復（`tests/elite-groups.test.cjs`、`tests/npc-elite-skills.test.cjs`）**：
+  - `tests/elite-groups.test.cjs`：修正抽樣量測生命倍率時，過濾排除隨機詞條抽中 `e_vitality`（生命×1.5）的樣本，消除偶發之 flakiness。
+  - `tests/npc-elite-skills.test.cjs`：加入 CRLF/LF 換行符號正規化處理，消除 Windows 環境下 CSV 輸出與 Git 檢出差異導致的斷行比對問題。
+
 ## 角色面板置頂區整合為攻擊與堅韌雙數值顯示與提示優化（Antigravity 2026-10-12）
 
 - **角色面板置頂區改為「攻擊」與「堅韌」雙大方塊（`js/ui.js`、`css/ashen-forge.css`）**：
