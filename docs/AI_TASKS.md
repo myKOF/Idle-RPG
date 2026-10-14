@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## NAV-SINGLE-CIRCLE-FIX-20261014 — 修正圖檔與CSS疊出的雙圈
+
+- Owner：Codex；Done，單一開發者。前置為ESC-MENU-NAV-20261014；使用者指出仍有雙圈，已確認PNG原框與CSS外框分離。使用者明確同意只改圖示樣式與快取版本，後續交使用者整合。
+- 允許：css/ashen-forge.css、index.html的CSS快取版本、本必要紀錄。禁止改PNG／其他功能／其他副本，不合併／推送。預檢CSS／本紀錄乾淨；index與ai/antigravity的3d887d19狂暴化提示同檔異區，已說明並取得使用者同意。
+- 驗收：原PNG框完全裁出顯示範圍，主體等比放大，只由容器畫單一3px金框；保持圖示41.8px與原功能／解鎖。實際瀏覽器大小與64px比對、hover／active、Build與diff check，完成後提交。
+- 完成：css/ashen-forge.css刪除::after疊框，af-nav-icon本身改為3px金邊／圓形overflow:hidden／border-box；圖片125%等比置中，將PNG原框裁出顯示範圍，不修改素材。index.html唯一差異為CSS1.0.62→1.0.63，未碰狂暴化提示或任何事件。加上本紀錄，共3檔。
+- 驗證：node --test tests/sidebar-layout.test.cjs tests/init-ui-smoke.test.cjs tests/game-menu.test.cjs，9/9通過；npm.cmd run build，507檔通過；git diff --check通過。既有64px前後比對已確認九圖單圈；正式CSS檢視九圖全部載入128px、容器41.796875px／border3px／overflow hidden／::after none。隔離localhost新來源正式Worker／Pixi／UI，角色頁切換及active樣式正常、單框目視確認，Console error／warning 0；沒有讀真人存檔。正式遊戲截圖為本聊天visualizations/single-circle-applied.png。臨時預覽頁／記憶體服務均關閉。
+- 未修改但檢查：九張PNG、tools/enamel-nav/export-source.cjs、上述3份既有測試、原側欄CSS／HTML與ai/antigravity的3d887d19差異。純CSS顯示修正，不產生或修改美術資源；素材庫無本次變更，不建立空提交。
+- 交付：遊戲Commit為本紀錄所在[Codex] fix提交；無本次未完成項或新增已知風險，可審查合併，未合併／推送。限制為未另跑全庫測試或真人存檔長時間驗收；下一步整合後重新載入查看單框圖示。
+
 ## ESC-MENU-NAV-20261014 — 單外框圖示與Esc遊戲菜單
 
 - Owner：Codex；Done，單一開發者。使用者要求圖示移除內圈、外圈再厚2px、主體補滿；移除側欄設定，Esc依序重啟遊戲（刷新）／離開遊戲（先存檔）／立即存檔（自動存檔）／設置（原設定改彈窗）。前置為既有功能頁籤，後續使用者審閱整合。

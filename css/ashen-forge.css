@@ -2143,27 +2143,27 @@ html *::-webkit-scrollbar-corner {
   display: block;
   width: 41.8px;
   height: 41.8px;
+  box-sizing: border-box;
+  border: 3px solid #d3ab55;
+  border-radius: 50%;
+  overflow: hidden;
   margin: 0;
   flex: 0 0 auto;
   line-height: 0;
 }
 
-/* 素材留白約4%，原1px圓邊再加厚2px，不新增內圈或亮點。 */
-#workspace-area #tabs .af-nav-icon::after {
-  content: "";
-  position: absolute;
-  inset: calc(4% - 3px);
-  border: 3px solid #d3ab55;
-  border-radius: 50%;
-  pointer-events: none;
-}
-
+/* 主圖等比放大，將PNG自帶圓框裁到容器外，只由容器畫一個金框。 */
 #workspace-area #tabs .af-nav-icon img {
+  position: absolute;
+  left: 50%;
+  top: 50%;
   display: block;
-  width: 100%;
-  height: 100%;
+  width: 125%;
+  height: 125%;
+  max-width: none;
   object-fit: contain;
-  filter: drop-shadow(0 1px 2px #0009);
+  transform: translate(-50%, -50%);
+  filter: none;
 }
 
 /* 系統選單位於未縮放的body，鍵盤與小視窗操作皆保持清楚。 */
