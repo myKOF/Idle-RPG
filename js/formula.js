@@ -1852,14 +1852,13 @@ function affixRerollUnit(affixCap) {
   return Math.random() * total < lowerWeight ? rnd(0, 0.5) : rnd(0.5, 1);
 }
 
-// 詞條基準值（不含隨機、不含強化）＝ (基礎值 + 成長基礎值×lv×(裝備等級-1)) × 稀有度倍率
+// 詞條基準值（不含隨機、不含強化）＝ (基礎值 + 每級成長×(裝備等級-1)) × 稀有度倍率
 function affixBaseValue(key, itemLevel, rarityIdx) {
   var def = AFFIX_POOL[key];
   var r = RARITIES[rarityIdx];
   if (!def || !r) return 0;
   var base = Number(def.base) || 0;
-  var growthBase = def.growthBase === undefined ? base : (Number(def.growthBase) || 0);
-  return (base + growthBase * (Number(def.lv) || 0) * ((Number(itemLevel) || 1) - 1)) * r.mult;
+  return (base + (Number(def.lv) || 0) * ((Number(itemLevel) || 1) - 1)) * r.mult;
 }
 // 依詞條定義進位：百分比類留一位小數，其餘取整（產出與顯示共用同一套進位）
 function affixRoundValue(key, v) {
