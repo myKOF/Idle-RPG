@@ -12,7 +12,7 @@
 
 importScripts('protocol.js?v=51', 'shim.js?v=13');
 importScripts(
-  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261014-combo-hits2', '../runeword_data.js?v=20261013-rune-all-elem-color', '../status.js?v=20261014-state-status', '../formula.js?v=20261014-combo-hits2', '../battlefield.js?v=20261013-enemy-skills2', '../stats.js?v=20261003-rename-weineng',
+  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261014-combo-hits2', '../runeword_data.js?v=20261013-rune-all-elem-color', '../status.js?v=20261014-state-status', '../formula.js?v=20261014-combo-hits3', '../battlefield.js?v=20261013-enemy-skills2', '../stats.js?v=20261003-rename-weineng',
   '../item.js?v=20261013-rune-all-elem-color', '../runeword.js?v=20261014-develop-integration',
   '../skills.js?v=20261007-runes4', '../skills2.js?v=20261014-state-status', '../elite_data.js?v=20261014-state-status', '../talents.js?v=20261003-rename-weineng',
   '../player.js?v=20261008-boss-config-lock', '../special_rules.js',

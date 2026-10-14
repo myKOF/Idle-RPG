@@ -350,7 +350,7 @@ function computeStats(equipmentOverride) {
     : Math.max(ASPD_MIN, ASPD_BASE * (1 + st.aspdBonusBase / 100));
   st.cdr = capValue(A.cdr, STAT_CAPS.cdr);       // 冷卻縮減上限（潛力【時間坍縮】於施放時另行突破，見 skills2.js 的冷卻計算）
   // 連擊數：暴擊率／攻速／冷卻縮減各自「溢出」門檻後的部分衍生（用未夾限的原始值：夾限吃掉的部分正是溢出）。僅普攻／技能直接傷害，持續傷害不計。
-  st.comboHits = comboHitsTotal(st.critRate, ASPD_BASE * (1 + st.aspdBonusBase / 100), A.cdr);
+  st.comboHits = comboHitsTotal(st.critRate, st.aspdBonusBase, A.cdr);
   st.castSpeed = capValue(A.castSpeed, STAT_CAPS.castSpeed);                      // 施法速度上限（上限 0＝無上限）
   // 吸血／吸魔是定值（每次對敵人造成傷害回復的固定量），與每秒回復無關（§3 lifestealHealAmount）；不設上限（STAT_CAPS = 0）。
   st.lifesteal = capValue(A.lifesteal, STAT_CAPS.lifesteal);
@@ -608,13 +608,13 @@ function controlDecayFactor(cat, hits) {
    定義（2026-10-14 改版）：每次攻擊命中時有 trigger% 機率造成「連擊數」那麼多次額外攻擊。
    連擊數 = 暴擊溢出 + 攻速溢出 + 冷卻縮減溢出，各項皆為 a·ln(溢出%)，溢出% ＝（數值 − 門檻）換成比例：
      暴擊：門檻 100%（完全爆擊）。例：暴擊率 250% → 溢出 150% → 0.5·ln(1.5)≈0.203     a = COMBO_HITS_COEF.crit
-     攻速：門檻 ASPD_CAP（5 次/秒），溢出% ＝（原始攻速 − 5）÷ 5                         a = COMBO_HITS_COEF.aspd
-           用未夾 5 次/秒上限的原始攻速
+     攻速：用攻速加成%（裝備詞條上寫的那個值，未夾上限）。門檻＝攻速剛好到 ASPD_CAP（5 次/秒）所需的加成%＝(5÷ASPD_BASE − 1)×100≈481.4%，
+           溢出% ＝ 攻速加成% − 門檻                                                          a = COMBO_HITS_COEF.aspd
      冷卻：門檻 STAT_CAPS.cdr（參數表「冷卻縮減 上限」，預設 60%），溢出% ＝ 原始冷卻縮減 − 門檻  a = COMBO_HITS_COEF.cdr
            用未夾上限的原始冷卻縮減
    溢出% ≤ 100%（ln ≤ 0）時該項為 0，不會出現負的連擊數。
    觸發率與三個 a 由參數表「2-屬性派生／連擊數」（參數 a／b／c／d）控制；暴擊的 100% 門檻為程式常數（不在參數表），
-   攻速與冷卻縮減的門檻跟著各自的上限（ASPD_CAP／STAT_CAPS.cdr；上限為 0＝無上限時退回 critAt／aspdAt／cdrAt 預設值）。
+   攻速與冷卻縮減的門檻跟著各自的上限（ASPD_CAP＋ASPD_BASE／STAT_CAPS.cdr；上限為 0＝無上限時退回 critAt／aspdAt／cdrAt 預設值）。
    僅作用於普攻與技能直接傷害，持續傷害不計。 */
 // 溢出% = (value − threshold) ÷ per；回傳 a·ln(溢出%)，不足以為正則 0
 function comboOverflowHits(value, threshold, per, a) {
@@ -626,11 +626,12 @@ function comboOverflowHits(value, threshold, per, a) {
 function comboHitsFor(critRate) {
   return comboOverflowHits(critRate, COMBO_HITS_COEF.critAt, 100, COMBO_HITS_COEF.crit);
 }
-function comboHitsTotal(critRate, rawAspd, rawCdr) {
-  var aspdAt = ASPD_CAP > 0 ? ASPD_CAP : COMBO_HITS_COEF.aspdAt;
+function comboHitsTotal(critRate, aspdBonusPct, rawCdr) {
+  // 攻速門檻：攻速剛好到上限時的攻速加成%（攻速 = ASPD_BASE × (1 + 加成%/100)）
+  var aspdAt = ((ASPD_CAP > 0 ? ASPD_CAP : COMBO_HITS_COEF.aspdAt) / ASPD_BASE - 1) * 100;
   var cdrAt = STAT_CAPS.cdr > 0 ? STAT_CAPS.cdr : COMBO_HITS_COEF.cdrAt;
   return comboHitsFor(critRate) +
-    comboOverflowHits(rawAspd, aspdAt, aspdAt, COMBO_HITS_COEF.aspd) +
+    comboOverflowHits(aspdBonusPct, aspdAt, 100, COMBO_HITS_COEF.aspd) +
     comboOverflowHits(rawCdr, cdrAt, 100, COMBO_HITS_COEF.cdr);
 }
 
