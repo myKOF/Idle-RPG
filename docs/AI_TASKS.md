@@ -10156,6 +10156,7 @@ Worker 存活且頁面正常完成載入。
 - 其他檢查：npm.cmd run build 504檔通過；PowerShell兩支Parser檢查、BAT ASCII與CRLF、git diff --check均通過。早期既有結構測試把重同步素材判斷誤認為原終局判斷，改用清楚區分的postConflictAssetResult；素材測試git status被fixture trim去掉前導空格，改查實際unstaged／staged路徑，未放寬產品行為。
 - 唯讀檢查：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、.gitattributes、既有sync／merge-ai-tasks測試、VFX素材庫解析器、本機CLI help／登入與官方文件；未改遊戲JS／Excel／CSV／Preset／存檔／Protocol。
 - 交付：Commit為本紀錄所在[Codex] feat提交，位於ai/codex；未直接執行正式同步、合併或推送develop。無本次實作待辦，可審查合併。已知限制：需要可用CLI登入／連線／額度及原生工具；意圖不明／必要測試失敗／Excel鎖定／sandbox拒絕會保留停止，並非保證任何設計衝突都能無人決策；未做正式倉庫真遠端推送驗收。下一步使用者從codex目錄執行新版BAT，既有流程會將此工具變更整合與回同步。
+
 ## SYNC-AUTO-CONFLICTS-20261014 — develop pending merge resolution
 
 - Owner: Codex; status: Done.
@@ -10163,3 +10164,13 @@ Worker 存活且頁面正常完成載入。
 - Data authority: reopened/exported `config/Excel/game_parameters.xlsx` and `config/Excel/Equipment_Affix.xlsx` through the supported tools; regenerated `config/CSV/game_parameters.csv` and `config/CSV/Equipment_Affix.csv`, and verified `js/data.js` is semantically consistent with the Equipment_Affix export.
 - Cache resolution: assigned new combined cache keys for `css/ashen-forge.css`, `js/data.js`, and the Worker asset/import set; synchronized `index.html`, `js/bridge.js`, and `js/worker/sim.worker.js`.
 - Validation: conflict-marker scan, JavaScript syntax checks, relevant Node regression tests, full build, and `git diff --check` completed for the pending merge. No asset-library files were required.
+
+## SYNC-MD-REPORT-20261014 — 同步主控台問題匯出 Markdown
+
+- Owner：Codex；Done，單一開發者。使用者要求自動合併工具可將小黑視窗問題匯出為md供排查；前置既有sync自動解衝突功能，後續由使用者執行新版BAT。
+- 允許sync_ai_worktrees.bat、新tools/invoke-sync-with-report.ps1、tests/sync-auto-conflicts.test.cjs、docs/SYNC_AI_WORKTREES.md及本紀錄；禁止改遊戲／素材／其他副本，不執行正式同步或合併／推送。工具檔預檢無來源衝突；develop任務紀錄已暫存其他任務，使用者已明確同意只在Codex新增本次獨立區段，保留既有內容。
+- 內容／驗收：保留即時stdout與stderr，成功或失敗皆產生UTF-8 Markdown，含結束碼、執行參數、完整紀錄、各AI／develop及素材庫唯讀Git狀態與本輪Codex結果；時間戳保留歷次及latest.md捷徑，輸出放既有忽略logs目錄，失敗時顯示位置；測試成功／衝突失敗／前置失敗／非零退出碼／中文編碼及不污染Git，Build與diff後Commit。沒有新素材或素材庫變更。
+
+- 完成／修改5檔：BAT改走新增報告包裝程序，原tools/sync_ai_worktrees.ps1及resolve-sync-conflicts.ps1唯讀檢查、同步邏輯不變；新增7個端到端報告案例並沿用原有真Git fixture，文件補上路徑／分享方式／限制。本紀錄只新增此獨立區段，未改develop或他人紀錄。
+- 驗證：node --test --test-reporter=tap tests/sync-auto-conflicts.test.cjs tests/sync-ai-worktrees.test.cjs tests/merge-ai-tasks.test.cjs，37/37通過；新增歷史保留與暫存備援案例另跑通過，合計39項。最後node --test --test-reporter=tap --test-name-pattern="Markdown report: rerun" tests/sync-auto-conflicts.test.cjs確認還原fixture原始換行後重跑成功；所有失敗均保留退出碼與現場，未知參數亦可匯出，UTF-8／Markdown fence／真BAT有空白路徑驗證通過。npm.cmd run build，512檔通過；git diff --check通過。
+- 交付：Commit為本紀錄所在[Codex] feat提交，回覆附編號；可以Review／合併，本任務無未完成項，無素材庫變更／不需素材Commit。限制為強制關閉／斷電不保證完成md、只留已寫入log；直接執行原核心ps1不經包裝、不產生報告。正式同步仍由使用者執行新版Codex BAT；可用ValidateOnly預檢產出報告，不啟動AI／merge／push。歷史報告存啟動工作區logs/sync-ai-worktrees，latest.md更新、時間戳報告保留。
