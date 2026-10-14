@@ -93,3 +93,8 @@ sgPetrifyDomain,超重岩領域,🗿,buff,stat,sgPetrifyDomain,earth,,0,,0,0,4,0
 sgGravityDomain,超重力場,🌐,buff,stat,sgGravityDomain,earth,,0,,0,0,10,0,refresh,1,,ground-domain-earth-10,,超神進化【超重力場】：岩甲護盾存在期間展開的重力場，進入的敵人僵化；持續特效依領域半徑縮放、跟著你移動。持續到岩甲護盾結束（實際秒數由岩甲術給）。
 sgWaterPrisonDomain,水牢天瀑,🫧,buff,stat,sgWaterPrisonDomain,ice,,0,,0,0,6,0,refresh,1,,field-water-prison-dome,,超神進化【水牢天瀑】：周圍的水牢罩子（半徑依技能範圍，跟著玩家移動）；期間受到的遠程傷害降低，圈內敵人攻擊下降且受到傷害提高，水牢結束時撤除。
 sgAbyssDomain,海淵葬界,🌊,buff,stat,sgAbyssDomain,ice,,0,,0,0,99999,0,refresh,1,,ground-domain-ice,,超神進化【海淵葬界】：永久展開的寒冰領域，跟著你移動；持續特效依領域半徑縮放。持續時間只是讓它一直掛著：領域在不在由超神進化與技能列裝配決定，卸下或換掉超神就移除。
+eInvuln,無敵護罩,🛡️,buff,stat,eInvuln,,,0,,0,0,3,0,refresh,1,,en-gold-dome,,敵人專用（高級敵人技能【護盾】【庇護光環】【不死鳥】）：身上罩著金色光罩，期間免疫所有傷害。這是畫面標記，免疫本身由敵人技能引擎結算；持續時間由技能給。
+eEnrage,狂暴,😡,buff,stat,eEnrage,,,0,,0,0,99999,0,refresh,1,en-burst-blood,en-aura-enrage,,敵人專用（高級敵人技能【狂暴】）：生命低於門檻後進入，攻擊力與攻速大幅提高，直到死亡為止。這是畫面標記，數值由敵人技能引擎結算。
+eRage,怒意,🔥,buff,stat,eRage,,,0,,0,0,8,0,refresh,1,en-rage-burst,en-aura-rage,,敵人專用（高級敵人技能【血祭】【復仇】）：攻擊力提高的怒氣狀態（血祭＝限時、復仇＝每死一個同伴疊一次並持續到死亡）。這是畫面標記，數值由敵人技能引擎結算。
+eRegen,再生,💚,buff,stat,eRegen,,,0,,0,0,99999,2,refresh,1,,,en-burst-holy,敵人專用（高級敵人技能【再生】）：每隔一段時間回復最大生命的一個比例，直到死亡為止。這是畫面標記，回復由敵人技能引擎結算；每次回復播「作用特效」。
+eCurse,衰弱詛咒,🧿,debuff,stat,eCurse,,,0,,0,0,7,0,refresh,1,en-curse-dark,,,敵人專用（高級敵人技能【衰弱詛咒】）：被詛咒的玩家攻擊力與防禦力降低（降幅由「攻擊」「防禦」減益狀態結算）。這是畫面標記，用來顯示詛咒的上身特效與剩餘時間。

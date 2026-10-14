@@ -59,17 +59,14 @@ test('BATTLE-ELITE-1 菁英：群組環、詞條圖示列；小兵：只有群�
   assert.equal(groupStroke(elite), groupStroke(minion), '同群環色相同（最後一圈是群組色）');
 });
 
-test('BATTLE-ELITE-2 狀態旗標：無敵／護盾／反射／狂暴各有圖示與光環，消失時光環關掉', () => {
+test('BATTLE-ELITE-2 持續狀態（無敵護罩、狂暴、怒意…）不在這裡畫：改由 Status 表的特效欄決定', () => {
   const c = env();
   const be = vm.runInContext('BattleElite', c).create({ PIXI: c.PIXI, layer: new Container() });
-  const e = ent('a', { elite: true, hp: 10, _gid: 1, affixes: ['e_shield'], _fx: ['invuln', 'shield'] });
+  const e = ent('a', { elite: true, hp: 10, _gid: 1, affixes: ['e_shield'], buffs: { eInvuln: { until: 1e9, sid: 'eInvuln' } } });
   be.update({ a: e }, 0.016, 1000);
-  assert.equal(e.eliteDeco.state.text, '🔰🛡️');
-  assert.equal(e.eliteDeco.stateRing.visible, true);
-  e.data._fx = [];
-  be.update({ a: e }, 0.016, 1100);
-  assert.equal(e.eliteDeco.state.text, '');
-  assert.equal(e.eliteDeco.stateRing.visible, false);
+  assert.equal(e.eliteDeco.stateRing, undefined, '沒有寫死的狀態環');
+  assert.equal(e.eliteDeco.state, undefined, '沒有寫死的狀態圖示');
+  assert.ok(e.eliteDeco.ring, '群組環照舊');
 });
 
 test('BATTLE-ELITE-3 生命鏈結：同群帶鏈結的活成員兩兩連線；死的不連；ELITE_GROUP.linkBeam=0 不畫', () => {
@@ -90,7 +87,7 @@ test('BATTLE-ELITE-3 生命鏈結：同群帶鏈結的活成員兩兩連線；�
   assert.equal(link.ops.filter((o) => o === 'moveTo').length, 0);
 });
 
-test('BATTLE-ELITE-4 資料缺欄位不炸：沒有 _fx、沒有 affixes、死亡中、已移除', () => {
+test('BATTLE-ELITE-4 資料缺欄位不炸：沒有 affixes、死亡中、已移除', () => {
   const c = env();
   const be = vm.runInContext('BattleElite', c).create({ PIXI: c.PIXI, layer: new Container() });
   const weird = ent('w', { elite: true, hp: 0, _gid: 9 });

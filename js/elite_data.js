@@ -46,6 +46,7 @@ function eliteBuildDef(id, src) {
   d.elem = src.elem || null;
   d.dmgType = src.dmgType || null;
   d.desc = src.desc || '';
+  d.status = src.status || null;   // { self:[{id,dur…}], enemy:[…] }：我方狀態＝施放者自己身上、敵方狀態＝玩家身上（Skills2 的狀態欄）
   d.color = fx.color || '#ffffff';
   d.kind = fx.kind || 'active';
   d.pool = fx.pool || 'exclusive';

@@ -58,7 +58,7 @@ test('ELITE-GROUP-2 全員菁英或「菁英帶小兵」；技能只在菁英身
         assert.ok(Array.isArray(e.affixes) && e.affixes.length === want, e._tier + ' 應有 ' + want + ' 個技能，實際 ' + e.affixes.length);
         assert.equal(new Set(e.affixes).size, e.affixes.length, '技能不重複');
         e.affixes.forEach((id) => assert.ok(c.ELITE_AFFIXES[id], '未知技能 ' + id));
-        assert.ok(e._el && e._fx, '技能引擎狀態');
+        assert.ok(e._el, '技能引擎狀態');
         if (e._tier === 'elite_adv') adv++; else normalElite++;
       });
       minions.forEach((e) => {

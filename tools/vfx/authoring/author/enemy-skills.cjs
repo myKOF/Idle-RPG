@@ -363,6 +363,25 @@ NEW['en-gold-dome'] = () => billboardAll({
   ]
 });
 
+/* 狀態光環（Status 表「持續特效」）：套在怪物腳下的一圈脈動光環，半徑由狀態實例的 vfxR（身體半徑）決定。
+   狂暴＝血紅；怒意（嗜血、復仇、血祭的攻擊強化）＝橘金並向上冒火星。兩者顏色、動態都不同，一眼分得出是哪一種。 */
+NEW['en-aura-enrage'] = () => ({
+  id: 'en-aura-enrage', duration: 1.2, loop: true, sizing: circleSizing(100),
+  layers: [
+    withGround(kit.sprite({ id: 'fill', asset: A.discB, z: 0, size: 190, alpha: 0.2, tint: '#ff2a1a', blend: 'add', duration: 1.2, alphaOverLife: [[0, 0.12], [0.5, 0.26], [1, 0.12]] })),
+    withGround(kit.sprite({ id: 'ring', asset: A.ringThin, z: 1, size: 200, alpha: 0.95, tint: '#ff3a2a', blend: 'add', duration: 1.2, alphaOverLife: [[0, 0.55], [0.5, 1], [1, 0.55]], scaleOverLife: C.breathe(0.06) })),
+    withGround(kit.sprite({ id: 'ring-inner', asset: A.ringSoft, z: 2, size: 150, alpha: 0.6, tint: '#ff7a5a', blend: 'add', duration: 1.2, alphaOverLife: [[0, 0.3], [0.5, 0.7], [1, 0.3]] }))
+  ]
+});
+NEW['en-aura-rage'] = () => ({
+  id: 'en-aura-rage', duration: 1.6, loop: true, sizing: circleSizing(100),
+  layers: [
+    withGround(kit.sprite({ id: 'fill', asset: A.discB, z: 0, size: 170, alpha: 0.18, tint: '#ff9a2a', blend: 'add', duration: 1.6, alphaOverLife: [[0, 0.1], [0.5, 0.24], [1, 0.1]] })),
+    withGround(kit.sprite({ id: 'ring', asset: A.ringThin, z: 1, size: 175, alpha: 0.9, tint: '#ffb03a', blend: 'add', duration: 1.6, rotationOverLife: C.spin(0.5), alphaOverLife: [[0, 0.6], [0.5, 1], [1, 0.6]] })),
+    kit.particle({ id: 'embers', asset: A.dot, z: 3, rate: 14, lifetime: [0.5, 0.9], spawnRadius: 70, speed: [14, 34], direction: -90, spread: 30, startPx: [6, 12], alpha: 0.95, tint: '#ffd27a', blend: 'add', alphaOverLife: [[0, 0], [0.3, 1], [1, 0]] })
+  ]
+});
+
 /* 狂暴爆發：復仇觸發時身上炸開的血紅氣浪。 */
 NEW['en-rage-burst'] = () => ({
   id: 'en-rage-burst', duration: 0.9, loop: false, sizing: customSizing(60, 60, 6, 6),
@@ -431,15 +450,21 @@ NEW['en-spark'] = () => {
 
 module.exports = { THEMES, RECOLORS, NEW, recolor };
 
+/* 使用者已在 VFX Editor 手調過的特效：重生會蓋掉他的修改，預設跳過（明確指定 id 並加 --force 才重生）。 */
+const USER_EDITED = new Set(['en-gold-dome', 'en-vortex']);
+
 if (require.main === module) {
-  const only = new Set(process.argv.slice(2));
+  const force = process.argv.includes('--force');
+  const only = new Set(process.argv.slice(2).filter(a => a !== '--force'));
   const made = [];
   RECOLORS.forEach(([newId, srcId, theme, tweak]) => {
     if (only.size && !only.has(newId)) return;
+    if (USER_EDITED.has(newId) && !(force && only.has(newId))) return;
     made.push(recolor(srcId, newId, theme, tweak));
   });
   Object.keys(NEW).forEach(id => {
     if (only.size && !only.has(id)) return;
+    if (USER_EDITED.has(id) && !(force && only.has(id))) return;
     made.push(kit.write(NEW[id]()));
   });
   console.log('敵人技能特效 ' + made.length + ' 份');

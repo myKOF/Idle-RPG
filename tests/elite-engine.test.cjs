@@ -369,11 +369,16 @@ test('ELITE-ENGINE-16 護盾：持續 3 秒完全免疫所有傷害，結束後�
   const d = c.ELITE_AFFIXES.e_shield;
   c.eliteCastImmune(m, d);
   assert.equal(c.eliteIncomingDamage(m, 5000, c.FIELD.player), 0, '免疫');
-  stepElite(c, 2.5);
+  assert.deepEqual(Array.from(d.status.self.map((e) => e.id)), ['eInvuln'], '護盾掛的是 Status 表的「無敵護罩」');
+  stepElite(c, 0.2);
+  assert.equal(c.statusActive(m, 'eInvuln'), true, '光罩是狀態：畫面由 Status 表的持續特效決定');
+  stepElite(c, 2.3);
   assert.equal(c.eliteIncomingDamage(m, 5000, c.FIELD.player), 0, '3 秒內仍免疫');
+  assert.equal(c.statusActive(m, 'eInvuln'), true, '3 秒內狀態仍在');
   stepElite(c, 1);
   assert.equal(c.eliteIncomingDamage(m, 5000, c.FIELD.player), 5000, '3 秒後恢復');
-  assert.ok(c.vfx.some((v) => v.vfx && v.vfx.hit === d.v.field && v.dur === d.dur), '金色光罩畫面持續 3 秒');
+  assert.equal(c.statusActive(m, 'eInvuln'), false, '狀態同時結束');
+  assert.ok(!c.vfx.some((v) => v.vfx && v.vfx.hit === 'en-gold-dome'), '引擎不再自己播光罩特效');
 });
 
 test('ELITE-ENGINE-17 強命：生命 +50%', () => {
@@ -402,7 +407,8 @@ test('ELITE-ENGINE-18 復仇：同群每死一隻，存活的復仇者體積 +20
   d.hp = 0; c.eliteOnDeath(d);
   assert.ok(Math.abs(a._grow - 1.44) < 1e-9, '兩隻陣亡：1.2 × 1.2');
   assert.ok(Math.abs(c.eliteAtkFactor(a) / atk0 - 1.4) < 1e-9, '攻擊 +40%');
-  assert.ok(c.vfx.some((v) => v.vfx && v.vfx.hit === c.ELITE_AFFIXES.e_avenger.v.cast), '血紅氣息畫面');
+  stepElite(c, 0.2);
+  assert.equal(c.statusActive(a, 'eRage'), true, '復仇者身上有「怒意」狀態（光環畫面由 Status 表決定）');
 });
 
 test('ELITE-ENGINE-19 召喚：2~4 隻與召喚者同屬性的普通怪；召喚者死後牠們最大生命 −90%', () => {

@@ -1901,7 +1901,8 @@ var VFXRuntime = (function () {
             mult: r > 0 ? profile.areaScale : profile.scale };
           auraTarget(a, r);
           a.sx = a.tsx; a.sy = a.tsy;
-          a.ref = play(rtZone, presetId, { position: footOf(e.key), scaleX: a.sx, scaleY: a.sy }, a.mult);
+          /* 整份標 perspective:false 的光罩（護盾球…）走 billboard 層：不受視角方向與 FOV 影響；其餘（地面光環）留在場景層 */
+          a.ref = play(billboardPresets[presetId] ? rtBillboard : rtZone, presetId, { position: footOf(e.key), scaleX: a.sx, scaleY: a.sy }, a.mult);
           if (a.ref) auras[k] = a;
         });
       });
@@ -2273,7 +2274,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20261014-vortex-merge-presets';
+  var DATA_VERSION = '20261014-state-status';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';
