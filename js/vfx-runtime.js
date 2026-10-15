@@ -1456,8 +1456,8 @@ var VFXRuntime = (function () {
         rGrowSec: Math.max(0.1, num(area.rGrowSec, num(area.orbGrowSec, 1)))
       };
     }
-    function orbitCentre(presetId) {
-      var p = footOf('pv-float');
+    function orbitCentre(presetId, centreId) {
+      var p = footOf(centreId || 'pv-float');   // centreId＝環繞的中心（BOSS 的環繞體由模擬層帶 area.centreId；玩家的不帶＝玩家）
       return { x: p.x, y: p.y - tuning(presetId,'orbitLift') };
     }
     /* 合併鍵：同一道（半徑＋方向相同）只保留一組。【再生】延長持續時間時
@@ -1476,7 +1476,7 @@ var VFXRuntime = (function () {
           var presetId = member.companion ? entry.companionId : entry.orbId;
           var ref = old.find(function (r) { return r.memberId === member.id && r.presetId === presetId; });
           if (!ref) {
-            var pose = sampleOrbitMember(entry.geo.area, entry.t, index), centre = orbitCentre(entry.orbId);
+            var pose = sampleOrbitMember(entry.geo.area, entry.t, index), centre = orbitCentre(entry.orbId, entry.centreId);
             ref = play(entry.orbRuntime, presetId, Object.assign({
               position: { x: centre.x + Math.cos(pose.angle) * pose.radius, y: centre.y + Math.sin(pose.angle) * pose.radius * orbitFlat }
             }, sizeOf(presetId, { r: pose.bodyR }) || { scale: pose.bodyR / NOMINAL_ORB }), profile.areaScale);
@@ -1489,7 +1489,7 @@ var VFXRuntime = (function () {
       }
       while (entry.orbs.length > entry.geo.orbs) stopRef(entry.orbs.pop());
       while (entry.orbs.length < entry.geo.orbs) {
-        var ref = play(entry.orbRuntime, entry.orbId, Object.assign({ position: orbitCentre(entry.orbId) },
+        var ref = play(entry.orbRuntime, entry.orbId, Object.assign({ position: orbitCentre(entry.orbId, entry.centreId) },
           sizeOf(entry.orbId, { r: entry.geo.orbR }) || { scale: entry.geo.orbR / NOMINAL_ORB }), profile.areaScale);
         if (!ref) break;                    // 預算滿了就先少幾團，下一次事件再補
         entry.orbs.push(ref);
@@ -1522,9 +1522,9 @@ var VFXRuntime = (function () {
       }
       if (live) stopOrbit(key);
       var ringId = (roles.ground && has(roles.ground)) ? roles.ground : '';
-      var centre = orbitCentre(orbId);
+      var centre = orbitCentre(orbId, spec.area.centreId);
       var entry = {
-        orbId: orbId, companionId: companionId, ringId: ringId, geo: geo,
+        centreId: spec.area.centreId || '', orbId: orbId, companionId: companionId, ringId: ringId, geo: geo,
         // 只讓環繞電球以各自球心整體投影；地板環與公轉路徑沿用原本幾何。
         orbRuntime: spec.variant === 'thunder-orbit' ? rtBillboard : rtAir,
         t: geo.members ? Math.max(0, num(spec.area.orbitAge, 0)) : 0,
@@ -1580,7 +1580,7 @@ var VFXRuntime = (function () {
         o.t += step;
         if (o.t >= o.dur) { stopOrbit(key); return; }
         var g = o.geo;
-        var centre = orbitCentre(o.orbId);
+        var centre = orbitCentre(o.orbId, o.centreId);
         function ease(sec) { return Math.max(0, Math.min(1, o.t / sec)); }
         /* 體積成長（超神【烈陽星環】）：出生後 orbGrowSec 秒內線性長到 orbGrowTo 倍。 */
         var orbR = g.orbGrowTo > 1 ? g.orbR * (1 + (g.orbGrowTo - 1) * ease(g.orbGrowSec)) : g.orbR;

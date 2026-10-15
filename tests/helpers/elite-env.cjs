@@ -6,7 +6,7 @@ const { loadRuneEnv } = require('./runeword-env.cjs');
 const FILES = [
   'util.js', 'data.js', 'runeword_data.js', 'status.js', 'formula.js', 'battlefield.js', 'stats.js',
   'item.js', 'runeword.js', 'skills.js', 'skills2.js', 'elite_data.js', 'talents.js', 'player.js', 'special_rules.js',
-  'combat.js', 'elite.js', 'legendary.js', 'potential.js', 'tower.js', 'factory.js', 'newforge.js', 'forge.js', 'save.js', 'tasks.js'
+  'combat.js', 'elite.js', 'elite_boss.js', 'elite_boss_recipes.js', 'legendary.js', 'potential.js', 'tower.js', 'factory.js', 'newforge.js', 'forge.js', 'save.js', 'tasks.js'
 ];
 
 function loadEliteEnv(opts) {

@@ -510,8 +510,10 @@ test('ELITE-ENGINE-22 封魔塔：BOSS 也放技能（專屬 1~2＋隨機 4~6）
   const bd = run(c, 'BOSS_LIST[0]');
   const ex = bd.skills.ex;
   ex.forEach((id) => assert.ok(b.affixes.indexOf(id) >= 0, '專屬 ' + id));
+  /* 第 1 層沒有解鎖任何超神技能：隨機技能 4~6 個＋額外 BSK_EXTRA_NPC_COUNT 個（2026-10-15 規則，見 boss-player-skill.test.cjs） */
+  const extra = run(c, 'BSK_EXTRA_NPC_COUNT');
   const rnd = b.affixes.length - ex.length;
-  assert.ok(rnd >= 4 && rnd <= 6, '隨機 4~6 個：' + rnd);
+  assert.ok(rnd >= 4 + extra && rnd <= 6 + extra, '隨機 ' + (4 + extra) + '~' + (6 + extra) + ' 個：' + rnd);
   b.affixes.filter((id) => ex.indexOf(id) < 0).forEach((id) => {
     const d = c.ELITE_AFFIXES[id];
     assert.ok(d.needs !== 'group' && !d.noTower, '塔戰 BOSS 抽不到要同伴或死亡類的技能：' + id);

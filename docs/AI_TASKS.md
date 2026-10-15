@@ -1,5 +1,11 @@
 # AI_TASKS.md
 
+## BOSS-PLAYER-SKILL-20261015 — 封魔塔 BOSS 施放玩家超神進化技能
+
+- Owner：Claude；進行中，單一開發者。使用者要求（全權授權、不中途停止）：①塔 BOSS 解鎖哪個超神進化技能，就固定使用哪個技能；②技能效果／特效沿用玩家技能的 Skills2 參數與 Preset，傷害套用 BOSS 強度；③BOSS 沒有的參數先自行補在 Skills2，最後列總結；④沒有解鎖任何技能的 BOSS 額外隨機放出 2 個 NPC 技能池技能；⑤101 層起的 BOSS 每場隨機放出 2 個玩家超神進化技能；⑥隨機技能每次打 BOSS 都重抽，只有會解鎖技能的 BOSS 是固定專屬技能。
+- 前置：現有 js/elite.js 的 NPC 技能引擎與 makeBoss（js/tower.js），已滿足。
+- 允許：js/elite_data.js（衍生技能定義）、js/elite.js 與新增 js/elite_boss.js（施放引擎）、js/tower.js（抽技能）、js/battle-elite.js（標籤）、Worker 載入清單、index.html 快取、本紀錄與相關測試；必要時 config Skills2。禁止：存檔格式、Protocol、素材、其他副本。
+
 ## SKILL-TOWER-UNLOCK-20261015 — 技能與超神進化封魔塔解鎖限制
 
 - Owner：Codex；Done，單一開發者。使用者已改Skills2.xlsx，要求匯出CSV、接受可選第三段塔層限制、檢查超神進化限制、Tips末行橘色未通關／灰色小字已通關，以及塔BOSS獎勵最下方多技能解鎖框；後續追加統一Excel欄名為「解鎖轉生/等級/封魔塔層級」。

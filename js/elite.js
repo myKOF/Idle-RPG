@@ -304,7 +304,7 @@ function eliteRollSkills(entry, tier, o) {
     if (ELITE_AFFIXES[id] && out.indexOf(id) < 0) out.push(id);
   });
   var rng = eliteRange(cfg.rnd, [0, 0]);
-  var n = eliteRandInt(rng[0], rng[1]);
+  var n = eliteRandInt(rng[0], rng[1]) + Math.max(0, Math.floor(o.extraRnd || 0));   // extraRnd＝封魔塔沒解鎖技能的 BOSS 額外多抽幾個
   if (n <= 0) return out;
   var pool = [];
   eliteSkillIds('random').forEach(function (id) {
@@ -755,7 +755,7 @@ function eliteZonesTick(dt) {
       var inside = z.w > 0 ? eliteInRect(z.x, z.y, z.w, z.h, z.a) : eliteInCircle(z.x, z.y, z.r);
       if (inside && elitePlayerAlive()) {
         eliteHitPlayer(z.owner, {
-          mult: d.dmg, elem: d.elem, sure: true, dot: d.dot, stun: d.stun, slow: d.slow,
+          mult: d.dmg, elem: d.elem, phys: d.phys, sure: true, dot: d.dot, stun: d.stun, slow: d.slow,
           label: d.name, quiet: true
         });
       }
@@ -1499,6 +1499,7 @@ function eliteIncomingDamage(m, dmg, attacker) {
     return 0;
   }
   var mult = 1;
+  if (rt.ps && rt.ps.drUntil > GT && rt.ps.dr > 0) mult *= 1 - rt.ps.dr;     // 玩家技能的減傷（js/elite_boss.js）
   (m.affixes || []).forEach(function (id) {
     var d = eliteDef(id);
     if (d && d.arch === 'lifelink' && eliteLinkPartners(m).length) mult *= 1 - d.share / 100;
@@ -1513,6 +1514,7 @@ var ELITE_SHARING = false;
 function eliteOnDamaged(m, dealt, attacker) {
   var rt = m && m._el;
   if (!rt || !(dealt > 0)) return;
+  if (typeof bskOnDamaged === 'function') bskOnDamaged(m, dealt);        // 玩家技能的被動反應（js/elite_boss.js）
   for (var i = 0; i < m.affixes.length; i++) {
     var d = eliteDef(m.affixes[i]);
     if (!d) continue;
@@ -1545,6 +1547,8 @@ function eliteOnDamaged(m, dealt, attacker) {
 /* ============ 傷害管線：這隻敵人打中玩家之後 ============ */
 function eliteOnAttackHit(m, p, res, hpDamage) {
   if (!m || !m.affixes || !res || res.miss || res.invuln) return;
+  var psl = m._el && m._el.ps;
+  if (psl && psl.lifestealUntil > GT && psl.lifesteal > 0 && hpDamage > 0) m.hp = Math.min(m.maxHp, m.hp + hpDamage * psl.lifesteal);   // 戰神屠錄的吸血
   for (var i = 0; i < m.affixes.length; i++) {
     var d = eliteDef(m.affixes[i]);
     if (!d) continue;
@@ -1577,7 +1581,14 @@ function eliteAtkFactor(m) {
   if (!rt) return 1;
   var av = 1;
   if (rt.avStacks > 0) { var da = eliteArch(m, 'avenger'); if (da) av = 1 + da.atk * rt.avStacks; }
-  return (rt.rageMult > 0 ? rt.rageMult : 1) * (rt.atkUntil > GT && rt.sacMult > 0 ? rt.sacMult : 1) * av;
+  var ps = rt.ps;
+  var pf = 1;
+  if (ps) {
+    if (ps.atkUntil > GT && ps.atk > 0) pf *= 1 + ps.atk;                    // 玩家技能增益（js/elite_boss.js）
+    if (ps.reaperUntil > GT && ps.reaper > 0) pf *= 1 + ps.reaper;
+    if (ps.vulnUntil > GT && ps.vuln > 0) pf *= 1 + ps.vuln;                // 玩家被標記易傷：BOSS 對你的傷害提高
+  }
+  return (rt.rageMult > 0 ? rt.rageMult : 1) * (rt.atkUntil > GT && rt.sacMult > 0 ? rt.sacMult : 1) * av * pf;
 }
 
 /* ============ 死亡 ============ */
