@@ -1,5 +1,21 @@
 # AI_TASKS.md
 
+## GEM-ENABLED-20261015 — 寶石開放欄與停用操作限制
+
+- Owner：Codex；Done，單一開發者。使用者已修改 Gems.xlsx，授權匯出 CSV 並接入「開放」1／0；前置已滿足，後續使用者審閱合併。
+- 允許：Gems Excel原樣提交／CSV、tools/config_tables.cjs及參數表說明、js/data.js／item.js／ui.js／forge.js與必要掉落入口combat／factory／tower／save／tasks、index／bridge／worker快取、本紀錄與寶石回歸測試。禁止修改其他配置、技能、Protocol／存檔格式、其他副本、素材，不合併／推送。
+- 驗收：關閉種類不再產出／購買，禁止合成、轉換雙端、融合、拆解、神鑄及強化消耗；保留舊物品／融合物品顯示、裝備原有效果及取下／法陣取回。空開放池安全退化，批次與Worker同樣防護；CSV同源往返、相關回歸／Build／Console及diff檢查後Commit。
+- 預檢：除sim.worker.js外均無其他來源衝突。Claude未提交Worker新增runeDecisionView及gems面板rune投影，本次只改頂部import快取；以merge-base／本次候選／Claude磁碟內容執行git merge-file -p，退出碼0。不同區段、沒有語意相依，分段修改，未動他人副本。追加的4份既有測試亦預檢乾淨。
+- 完成21檔：config/Excel/Gems.xlsx原樣保留使用者編輯並提交；正式xlsx_to_csv匯出config/CSV/Gems.csv（50列17欄，49種類）；tools/config_tables.cjs新增開放欄匯入／匯出及非法值拒絕，tools/參數表使用說明.md同步。js/data.js由Excel重建所有能力值及enabled，新增兩支純查詢（舊表缺欄／空白沿開放相容）；綠松石turquoise與瑪瑙agate為關閉。Excel未由AI重寫，SHA256 D89A465704610FEC47966F54879EDD79D3F484CA663477AF5FEA602FA3F86360。
+- 邏輯：js/item.js在合成／批次選材、轉換雙端、拆解／融合及普通／融合鑲嵌、商店單買／全買加權威防護，強化選材排除關閉種類。js/forge.js擋放入、開始與既有進度結算，保留取回。js/combat.js／factory.js／tower.js／save.js處理全關閉池的掉落、紀錄與離線彙總，任務獎勵沿randomGemType／addGem同樣安全留空。addGem允許既有關閉物品退回，只拒絕未知／null種類；不清除庫存、融合物品或既有插槽屬性，存檔格式／Protocol不變。
+- UI：js/ui.js保留舊庫存並標「已關閉」，空庫存停用種類不列出；排除鑲嵌、轉換、融合、神鑄與自動放入候選，關閉寶石的單次／同類批次合成按鈕停用；全部類型合成可繼續處理其他開放寶石。含關閉種類的融合寶石仍可在拆解區查看但沒有拆解事件，普通拆解下拉也排除關閉種類。舊神鑄素材的鑄造按鈕停用，取回完整保留。
+- 快取：index.html data1.0.78／item1.0.22／combat1.0.83／tower1.0.27／save1.0.15／ui1.0.161／bridge1.0.274；bridge Worker入口與7支修改的模擬模組import使用20261015-gem-enabled。factory／forge本來只由Worker載入，無主頁script。沒有新增素材、素材庫無需Commit。
+- 測試指令：node --test tests/gem-enabled.test.cjs tests/gem-compose-all.test.cjs tests/gem-shop.test.cjs tests/gem-convert-stack.test.cjs tests/gem-tooltip.test.cjs tests/field-gem-drop-table.test.cjs tests/pen-gem.test.cjs tests/pen-gem-flow.test.cjs tests/gem-mana.test.cjs tests/gem-hit.test.cjs tests/gem-attr-dmg-base.test.cjs；11檔58/58通過（新增13項，涵蓋正式Worker指令、實際野外／高塔／離線／採集器全關閉與正式存檔重載）。4份既有測試僅同步使用者Excel能力值、新CSV欄位及隨機來源開放過濾斷言，沒有放寬規則。
+- 相關回歸：node --test tests/forge-duration.test.cjs tests/forge-auto-menu.test.cjs tests/forge-failure.test.cjs tests/forge-unlock.test.cjs tests/forge-shared-inventory.test.cjs tests/factory-parts.test.cjs tests/offline-rewards.test.cjs tests/offline-stage-params.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/sim-harness-sync.test.cjs；11檔71/71通過。另node --test tests/gem-convert-shift.test.cjs為4/5，唯一失敗bossFightBlocksCommand未定義；於臨時目錄使用HEAD的6支原版JS重跑同樣4/5、同名同錯，為既有測試fixture缺少函式，未改範圍外測試。合計133通過／1既有失敗，沒有新增失敗。
+- 驗證：npm.cmd run build 513檔全過；node tools/config_tables.cjs --apply Gems語意變更0；git diff --check通過。自我唯讀Review涵蓋掉落入口、所有普通與融合操作、原存檔migration／屬性、退款與批次、Worker／快取；未修改Protocol、formula、tasks、player、newforge、GM、sim engine或其他配置／素材。
+- 瀏覽器：computer-use／CUA在獨立http://127.0.0.1:13741載入人工舊存檔，正式Worker／UI／Pixi，未讀真人存檔。舊綠松石／瑪瑙庫存及鑲嵌屬性正常顯示，關閉標示／合成按鈕停用，轉換目標與素材關閉候選0；實際取下普通及含關閉種類的融合物品，鑲嵌候選0；舊法陣6顆不能鑄造但全取回。重新載入後綠松石18顆（原11＋裝備1＋法陣6）保留、仍無法合成。兩次Console error／warning0，截圖gem-disabled-verified.png保存在本聊天visualizations；臨時服務、頁面與腳本已清理。
+- 交付：Commit為本紀錄所在[Codex] feat提交；本次沒有未完成項，可審查合併，未合併／推送。限制：上述1項既有測試fixture失敗，本輪未跑全庫或真人長時間驗收；既有已鑲寶石效果保持至取下。下一步使用者整合後重載，之後在Excel改開放再沿正式匯出／套用流程生效。
+
 ## MERGE-PREP-CLEANUP-20261014 — 整理全部未暫存變更供合併
 
 - Owner：Codex；Done，單一開發者。使用者要求清理unstaged準備合併，明確追加其他來源修改也一起commit；保留現有內容，未合併／推送。原6筆為4檔實質資料變更與Skills2／Status兩檔僅換行格式差異，後者透過Git正常暫存消除狀態，不建立無內容提交。

@@ -5811,6 +5811,7 @@ function syncEquipSocketPending() {
 function equipGemGridHTML(gemsSnapshot) {
   var gemIcons = [];
   for (var gt in GEM_TYPES) {
+    if (!isGemEnabled(gt)) continue;
     var gdef = GEM_TYPES[gt];
     for (var lv = GEM_FORGE_MAX_LEVEL; lv >= 1; lv--) {
       var n = gemsViewCount(gemsSnapshot, gt, lv);
@@ -5823,6 +5824,7 @@ function equipGemGridHTML(gemsSnapshot) {
     }
   }
   gemsViewFused(gemsSnapshot).forEach(function (fg) {
+    if (!isFusedGemEnabled(fg)) return;
     gemIcons.push('<button type="button" class="equip-material-icon" data-gem-socket-fused="' + esc(fg.id) + '" data-tip="' +
       esc(fusedGemLabel(fg) + '｜鑲入選中孔位') + '">' + fusedGemIconHTML(fg, 'gi-socket') + '<span class="socket-gem-count">×1</span></button>');
   });
@@ -6890,7 +6892,7 @@ function renderForgeAutoMenu(forge, inventorySnapshot, gemsSnapshot) {
     for (var lv = GEM_FORGE_MAX_LEVEL - 1; lv >= GEM_MAX_LEVEL; lv--) {
       for (var t in GEM_TYPES) {
         var n = forgeViewGemCount(gemsSnapshot, t, lv);
-        if (!n) continue;
+        if (!n || !isGemEnabled(t)) continue;
         gemOptions.push({ type: t, level: lv, count: n, canForge: n >= FORGE_SLOTS });
       }
     }
@@ -7137,7 +7139,7 @@ function renderForge() {
       ? '鑄造 <img src="images/icon_gold.png" class="res-icon">' + fmt(rate.cost)
       : '鑄造';
     setHtmlIfChanged(goBtn, goLabel);
-    if (forgeBusy || forgeViewItemCount(f) < FORGE_SLOTS) {
+    if (forgeBusy || forgeViewItemCount(f) < FORGE_SLOTS || forgeViewSlots(f).some(function (it) { return it && it.kind === 'gem' && !isGemEnabled(it.type); })) {
       goBtn.disabled = true;
       goBtn.style.background = '#4b5563';
       goBtn.style.color = '#d1d5db';
@@ -7196,7 +7198,7 @@ function renderForge() {
     for (var glv = GEM_FORGE_MAX_LEVEL; glv >= 1; glv--) {
       for (var gt2 in GEM_TYPES) {
         var gn = forgeViewGemCount(gemsSnapshot, gt2, glv);
-        if (!gn) continue;
+        if (!gn || !isGemEnabled(gt2)) continue;
         var gok = glv >= GEM_MAX_LEVEL && glv < GEM_FORGE_MAX_LEVEL;
         var gcol2 = GEM_TIER_COLORS[glv] || '#f5c542';
         var gdef = GEM_TYPES[gt2];
@@ -8197,6 +8199,7 @@ function gemsViewFindFused(snapshot, id) {
 function gemsViewNormalizeFuseMaterial(snapshot, ref) {
   if (!ref) return null;
   if (ref.kind === 'plain') {
+    if (!isGemEnabled(ref.type)) return null;
     var level = ref.lv || GEM_MAX_LEVEL;
     if (level < GEM_MAX_LEVEL || level > GEM_FORGE_MAX_LEVEL ||
       gemsViewCount(snapshot, ref.type, level) < 1) {
@@ -8210,7 +8213,7 @@ function gemsViewNormalizeFuseMaterial(snapshot, ref) {
     };
   }
   var fused = gemsViewFindFused(snapshot, ref.id);
-  if (!fused) return null;
+  if (!isFusedGemEnabled(fused)) return null;
   return {
     stats: fused.stats,
     fusions: fused.fusions || 0,
@@ -10528,7 +10531,7 @@ function gemLibItemHTML(gemsSnapshot, type, total) {
   return '<button type="button" class="gx-item' + (UI.gemBrowse.sel === type ? ' is-sel' : '') + (total ? '' : ' is-empty') + '" data-gem-pick="' + type + '">' +
     '<span class="gx-ico" style="--c:' + (top ? GEM_TIER_COLORS[top] : '#3a3d44') + '">' + gemIconHTML(type, top || GEM_MAX_LEVEL, 'gi-lib') + '</span>' +
     '<span class="gx-item-main">' +
-      '<span class="gx-item-top"><b>' + esc(gt.name) + '</b><span class="gx-item-total">×' + fmt(total) + '</span></span>' +
+      '<span class="gx-item-top"><b>' + esc(gt.name) + (isGemEnabled(type) ? '' : '（已關閉）') + '</b><span class="gx-item-total">×' + fmt(total) + '</span></span>' +
       '<span class="gx-item-stat">' + esc(gt.statName.replace(/%/g, '')) + '</span>' +
       '<span class="gx-lvs">' + cells + '</span>' +
     '</span></button>';
@@ -10603,10 +10606,11 @@ function renderGems() {
   var st = UI.gemBrowse;
   var totals = {}, owned = 0, kinds = 0, typeCount = 0, firstOwned = null, firstType = null;
   for (var t in GEM_TYPES) {
-    typeCount++;
-    if (!firstType) firstType = t;
     var typeTotal = 0;
     for (var lv = 1; lv <= GEM_FORGE_MAX_LEVEL; lv++) typeTotal += gemsViewCount(gemsSnapshot, t, lv);
+    if (!isGemEnabled(t) && !typeTotal) continue;
+    typeCount++;
+    if (!firstType) firstType = t;
     totals[t] = typeTotal;
     owned += totals[t];
     if (totals[t]) {
@@ -10614,7 +10618,7 @@ function renderGems() {
       if (!firstOwned) firstOwned = t;
     }
   }
-  if (!st.sel || !GEM_TYPES[st.sel]) st.sel = firstOwned || firstType;
+  if (!st.sel || !GEM_TYPES[st.sel] || (!isGemEnabled(st.sel) && !totals[st.sel])) st.sel = firstOwned || firstType;
   setTextIfChanged($id('gem-total'), fmtFull(owned + gemsViewFused(gemsSnapshot).length));
   setTextIfChanged($id('gem-kinds'), kinds + ' / ' + typeCount);
 
@@ -10626,6 +10630,7 @@ function renderGems() {
 
   var h = '';
   for (var t2 in GEM_TYPES) {
+    if (!isGemEnabled(t2) && !totals[t2]) continue;
     if (st.filter !== 'all' && gemCategoryOf(t2) !== st.filter) continue;
     if (st.ownedOnly && !totals[t2] && t2 !== st.sel) continue;
     h += gemLibItemHTML(gemsSnapshot, t2, totals[t2]);
@@ -10668,6 +10673,7 @@ function fillGemTypeSelect(sel) {
   if (!sel || sel.options.length) return;
   var h = '';
   for (var t in GEM_TYPES) {
+    if (!isGemEnabled(t)) continue;
     h += '<option value="' + t + '">' + GEM_TYPES[t].emoji + ' ' + esc(GEM_TYPES[t].name) + '（' + esc(GEM_TYPES[t].statName.replace('%', '')) + '）</option>';
   }
   sel.innerHTML = h;
@@ -10703,15 +10709,19 @@ function renderFuseInfo(gemsSnapshot) {
   gemsSnapshot = resolveGemsPanelSnapshot(gemsSnapshot);
   if (!gemsSnapshot) return;
   var t = UI.gemBrowse.sel, lv = UI.gemBrowse.fuseLv || 1;
-  if (!GEM_TYPES[t]) return;
-  var canCompose = lv < GEM_MAX_LEVEL;
+  var canCompose = lv < GEM_MAX_LEVEL && isGemEnabled(t);
   var recipe = $id('fuse-recipe');
   var recipeH = fuseRecipeHTML(t, lv);
   if (recipe && recipe._lastH !== recipeH) { recipe._lastH = recipeH; recipe.innerHTML = recipeH; }
   ['fuse-btn', 'fuse-all-btn', 'fuse-alltypes-btn'].forEach(function (id) {
     var b = $id(id);
-    if (b && b.disabled !== !canCompose) b.disabled = !canCompose;
+    var allowed = id === 'fuse-alltypes-btn' ? lv < GEM_MAX_LEVEL : canCompose;
+    if (b && b.disabled !== !allowed) b.disabled = !allowed;
   });
+  if (!isGemEnabled(t)) {
+    info.textContent = '此寶石已關閉，僅保留既有物品顯示與從裝備取下功能';
+    return;
+  }
   var n = gemsViewCount(gemsSnapshot, t, lv);
   var head = '「' + gemIconHTML(t, lv, 'gi-inline') + esc(GEM_NAMES[lv] + GEM_TYPES[t].name) + '」庫存 ' + fmt(n) + ' 顆';
   if (!canCompose) {
@@ -10721,7 +10731,7 @@ function renderFuseInfo(gemsSnapshot) {
     return;
   }
   var allTypes = 0;
-  for (var allType in GEM_TYPES) allTypes += Math.floor(gemsViewCount(gemsSnapshot, allType, lv) / GEM_COMPOSE_INPUT_COUNT);
+  for (var allType in GEM_TYPES) if (isGemEnabled(allType)) allTypes += Math.floor(gemsViewCount(gemsSnapshot, allType, lv) / GEM_COMPOSE_INPUT_COUNT);
   info.innerHTML = head + '｜每次消耗 ' + GEM_COMPOSE_INPUT_COUNT + ' 顆＋<img src="images/icon_gold.png" class="res-icon">' + fmt(FUSE_GOLD_COST[lv]) +
     ' → 1 顆' + esc(GEM_NAMES[lv + 1] + GEM_TYPES[t].name) + '｜目前可合成 ' + Math.floor(n / GEM_COMPOSE_INPUT_COUNT) + ' 次' +
     '｜全部類型合計可合成 ' + allTypes + ' 次';
@@ -10831,6 +10841,7 @@ function renderGemConvert(gemsSnapshot) {
 
   var gemItems = [];
   for (var t in GEM_TYPES) {
+    if (!isGemEnabled(t)) continue;
     for (var lv = 1; lv <= GEM_FORGE_MAX_LEVEL; lv++) {
       var have = gemsViewCount(gemsSnapshot, t, lv);
       if (!have) continue;
@@ -10878,7 +10889,9 @@ function renderGemDismantle(gemsSnapshot) {
   gemsSnapshot = resolveGemsPanelSnapshot(gemsSnapshot);
   if (!gemsSnapshot) return;
   var t = selT.value, lv = parseInt(selL.value, 10) || 2;
-  if (GEM_TYPES[t]) {
+  ['gdis-btn', 'gdis-all-btn'].forEach(function (id) { var btn = $id(id); if (btn) btn.disabled = !isGemEnabled(t); });
+  if (!isGemEnabled(t)) info.textContent = '此寶石已關閉或沒有開放種類，無法拆解';
+  if (isGemEnabled(t)) {
     var n = gemsViewCount(gemsSnapshot, t, lv);
     info.innerHTML = '「' + gemIconHTML(t, lv, 'gi-inline') + esc(GEM_NAMES[lv] + GEM_TYPES[t].name) + '」庫存 ' + fmt(n) +
       ' 顆｜每顆拆解 → <b>' + gemDismantleYield(lv) + '</b> 顆一級' + esc(GEM_TYPES[t].name) +
@@ -10889,7 +10902,7 @@ function renderGemDismantle(gemsSnapshot) {
     var chips = gemsViewFused(gemsSnapshot).map(function (fg) {
       var yieldAmt = fusedGemDismantleYield(fg);
       var tip = esc(fusedGemLabel(fg)) + '｜融合 ' + (fg.fusions || 0) + ' 次｜拆解可得 ⛏️ ' + yieldAmt + ' 顆｜成本 ' + fusedGemL1Worth(fg) + ' 顆一級 × 70%';
-      return '<span class="gem-chip fused-chip gem-inventory-cell" data-gdis-fused="' + fg.id + '" data-tip="' + tip + '">' +
+      return '<span class="gem-chip fused-chip gem-inventory-cell"' + (isFusedGemEnabled(fg) ? ' data-gdis-fused="' + fg.id + '"' : '') + ' data-tip="' + tip + (isFusedGemEnabled(fg) ? '' : '｜含已關閉種類，無法操作') + '">' +
         '<span class="gem-chip-count">×1</span>' +
         '<span class="gem-chip-emoji">' + fusedGemIconHTML(fg, 'gi-chip') + '</span>' +
         '<span class="gem-chip-level" style="color:#f0abfc">融' + (fg.fusions || 0) + '</span></span>';
@@ -10996,6 +11009,7 @@ function renderGemFusion(gemsSnapshot, headerSnapshot) {
   var chipKeys = [];
   for (var flv = GEM_MAX_LEVEL; flv <= GEM_FORGE_MAX_LEVEL; flv++) {
     for (var t in GEM_TYPES) {
+      if (!isGemEnabled(t)) continue;
       var n = gemsViewCount(gemsSnapshot, t, flv);
       if (n > 0) {
         var fcol = GEM_TIER_COLORS[flv] || '#ffd700';
@@ -11010,6 +11024,7 @@ function renderGemFusion(gemsSnapshot, headerSnapshot) {
     }
   }
   gemsViewFused(gemsSnapshot).forEach(function (fg) {
+    if (!isFusedGemEnabled(fg)) return;
     chipKeys.push('fused:' + fg.id);
     chips.push('<span class="gem-chip fused-chip gem-inventory-cell" data-gfuse-pick="fused:' + fg.id + '" data-tip="' + esc(fusedGemLabel(fg)) + '｜已成功融合 ' + (fg.fusions || 0) + ' 次（下次成功率遞減）">' +
       '<span class="gem-chip-count">×1</span>' +
@@ -11051,6 +11066,7 @@ function renderGemShop(gemsSnapshot, headerSnapshot) {
     }
   }
   var htmls = s.items.map(function (item, i) {
+    if (!isGemEnabled(item.type)) return '';
     var gt = GEM_TYPES[item.type];
     var c = GEM_TIER_COLORS[item.lv];
     return '<div class="shop-card' + (item.sold ? ' sold' : '') + '" style="border-color:' + c + '">' +
@@ -11068,7 +11084,7 @@ function renderGemShop(gemsSnapshot, headerSnapshot) {
   }
   grid.innerHTML = htmls.join('');
   var total = 0;
-  s.items.forEach(function (it2) { if (!it2.sold) total += gemShopPrice(it2.lv); });
+  s.items.forEach(function (it2) { if (!it2.sold && isGemEnabled(it2.type)) total += gemShopPrice(it2.lv); });
   var buyAllBtn = $id('shop-buy-all');
   if (buyAllBtn) buyAllBtn.setAttribute('data-ui-pending-key', shopPendingKey);
   if (buyAllBtn) buyAllBtn.innerHTML = '🛒 一鍵全購買（<img src="images/icon_gold.png" class="res-icon">' + fmt(total) + '）';

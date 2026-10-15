@@ -72,8 +72,8 @@ test('命中寶石納入戰力評分（沿用詞條池的 hit 權重，不是預
 
 test('新寶石自動進入掉落／商店／合成流程（不需另外登記）', () => {
   const context = loadGameContext();
-  // randomGemType 直接取 GEM_TYPES 的鍵，所以新種類會自動出現在所有隨機來源
+  // 開放的新種類直接由 GEM_TYPES 進入隨機來源。
   const item = fs.readFileSync(path.join(__dirname, '..', 'js/item.js'), 'utf8');
-  assert.match(item, /function randomGemType\(\)\s*\{\s*return pick\(Object\.keys\(GEM_TYPES\)\)/);
+  assert.match(item, /function randomGemType\(\)\s*\{\s*return pick\(Object\.keys\(GEM_TYPES\)\.filter\(isGemEnabled\)\)/);
   assert.ok(Object.keys(context.GEM_TYPES).indexOf('catseye') >= 0);
 });

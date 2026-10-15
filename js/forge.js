@@ -183,6 +183,7 @@ function forgePlaceGem(type, level) {
   var f = forgeState();
   if (f.crafting) return '鑄造進行中，請等待完成';
   if (!GEM_TYPES[type]) return '未知寶石種類';
+  if (!isGemEnabled(type)) return '此寶石已關閉，無法神鑄';
   if (forgeMode() === 'equip') return '法陣中已放入裝備，裝備與寶石不可混放';
   if (level < GEM_MAX_LEVEL) return '只有五階以上的寶石可放入法陣';
   if (level >= GEM_FORGE_MAX_LEVEL) return GEM_NAMES[GEM_FORGE_MAX_LEVEL] + '寶石已是最高階級，無法再鑄造';
@@ -370,6 +371,7 @@ function forgeAutoRefill() {
 // 開始鑄造；回傳 null=已進入等待，否則錯誤訊息。
 function doForge(startedAt) {
   var f = forgeState();
+  if (f.slots.some(function (it) { return it && it.kind === 'gem' && !isGemEnabled(it.type); })) return '此寶石已關閉，請取回法陣中的寶石';
   if (f.crafting) return '目前已有鑄造進行中';
   var mode = forgeMode();
   if (forgeItemCount() < FORGE_SLOTS) {
@@ -399,6 +401,7 @@ function doForge(startedAt) {
 // 完成等待中的鑄造；只由 forgeTick 呼叫，沿用原本的成功／失敗結算規則。
 function resolveForge(crafting) {
   var f = forgeState();
+  if (f.slots.some(function (it) { return it && it.kind === 'gem' && !isGemEnabled(it.type); })) return '此寶石已關閉，請取回法陣中的寶石';
   var mode = forgeMode();
   if (forgeItemCount() < FORGE_SLOTS) {
     return mode === 'gem' ? '需放滿 6 顆相同種類與階級的寶石' : '需放滿 6 件相同品質的裝備';

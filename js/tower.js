@@ -420,11 +420,11 @@ function endTowerFight(win, reason) {
     result.rewards.push('💰 金幣 x' + fmt(rw.gold));
     var gt1 = randomGemType(), gt2 = randomGemType();
     addGem(gt1, rw.gemLevel, 1); addGem(gt2, rw.gemLevel, 1);
-    if (window.recordLootGem) {
+    if (gt1 && window.recordLootGem) {
       window.recordLootGem(gt1, rw.gemLevel, 1, 'tower');
       window.recordLootGem(gt2, rw.gemLevel, 1, 'tower');
     }
-    result.rewards.push('💎 ' + gemLabel(gt1, rw.gemLevel) + '、' + gemLabel(gt2, rw.gemLevel));
+    if (gt1) result.rewards.push('💎 ' + gemLabel(gt1, rw.gemLevel) + '、' + gemLabel(gt2, rw.gemLevel));
     if (ENCHANT_ENABLED) {
       var bk = pick(Object.keys(ENCHANTS));
       G.player.books[bk] += 2;

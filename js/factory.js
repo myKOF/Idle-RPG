@@ -175,7 +175,8 @@ function doSalvage(it, silent, bonus) {
   var gemDrops = [];
   var gemChance = raw('gemCollector');
   if (gemChance > 0 && chance(gemChance)) {
-    gemDrops.push({ type: randomGemType(), level: 1, count: 1 });
+    var gemType = randomGemType();
+    if (gemType) gemDrops.push({ type: gemType, level: 1, count: 1 });
   }
 
   // 知識核心固定取得「當前關卡敵人經驗」的指定百分比，不是額外機率。

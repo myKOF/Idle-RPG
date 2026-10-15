@@ -74,9 +74,9 @@ test('conversion gem inventory chips expose gem ability values in tooltip text',
   const html = elements.get('gconv-pool').innerHTML;
   assert.match(html, /data-tip="/);
   assert.match(html, /三級紅寶石/);
-  assert.match(html, /物理攻擊 \+25/);
+  assert.match(html, /物理攻擊 \+20/);
   assert.match(html, /四級蛋白石/);
-  assert.match(html, /攻擊速度 \+9\.6%/);
+  assert.match(html, /攻擊速度 \+5%/);
 });
 
 test('一般寶石庫存顯示神鑄六階寶石並使用方形圖示', () => {

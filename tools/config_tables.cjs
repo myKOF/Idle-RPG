@@ -570,24 +570,26 @@ SCHEMAS.NPC = {
 SCHEMAS.Gems = {
   name: 'Gems', jsFile: 'data', sheet: 'Gems', vars: ['GEM_TYPES'],
   // 1~10 階的能力值逐階直接寫在表上（values[0]＝1 階 … values[9]＝10 階）；不再有「基礎值／線性」公式。
-  header: ['id', '名稱', 'icon圖號', '屬性桶', '屬性名稱', '百分比', '1級', '2級', '3級', '4級', '5級', '6級', '7級', '8級', '9級', '10級'],
+  header: ['id', '名稱', 'icon圖號', '屬性桶', '屬性名稱', '百分比', '1級', '2級', '3級', '4級', '5級', '6級', '7級', '8級', '9級', '10級', '開放'],
   extract(src) {
     const GEM_TYPES = evalLiteral(extractLiteral(src, 'GEM_TYPES').literal);
     return Object.keys(GEM_TYPES).map(id => {
       const g = GEM_TYPES[id];
       const vals = [];
       for (let i = 0; i < 10; i++) vals.push(numStr(g.values[i]));
-      return [id, g.name, g.emoji, g.stat, g.statName, boolCell(!!g.pct)].concat(vals);
+      return [id, g.name, g.emoji, g.stat, g.statName, boolCell(!!g.pct)].concat(vals, [g.enabled === false ? '0' : '1']);
     });
   },
   rebuild(dataRows, header) {
     const get = rowGetter(header);
     const entries = dataRows.filter(r => get(r, 'id').trim() !== '').map(r => {
       const id = get(r, 'id').trim();
+      const open = get(r, '開放').trim();
+      if (open !== '' && open !== '0' && open !== '1') throw new Error('Gems ' + id + '：開放只能填 1 或 0');
       const values = [];
       for (let lv = 1; lv <= 10; lv++) values.push(toNum(get(r, lv + '級')));
       const o = { name: get(r, '名稱'), emoji: get(r, 'icon圖號'), stat: get(r, '屬性桶'),
-        statName: get(r, '屬性名稱'), pct: toBool(get(r, '百分比')), values: values };
+        statName: get(r, '屬性名稱'), pct: toBool(get(r, '百分比')), values: values, enabled: open !== '0' };
       return '  ' + id + ': ' + jsLit(o);
     });
     return { GEM_TYPES: 'var GEM_TYPES = {\n' + entries.join(',\n') + '\n};' };
