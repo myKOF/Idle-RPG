@@ -1243,12 +1243,14 @@ function segmentedLevelGrowth(base, level, brackets) {
   return total;
 }
 
-function monsterStatsFor(stage, elite, boss) {
+function monsterStatsFor(stage, elite, boss, powerBonus) {
+  var rewardStage = stage;
+  stage += powerBonus === undefined ? (typeof monsterPowerLevelBonus === 'function' ? monsterPowerLevelBonus() : 0) : powerBonus;
   var hp = (FIELD_MONSTER_GROWTH.hpA + stage * FIELD_MONSTER_GROWTH.hpB) * Math.pow(FIELD_MONSTER_GROWTH.hpC, stage - 1);
   var atk = (FIELD_MONSTER_GROWTH.atkA + stage * FIELD_MONSTER_GROWTH.atkB) * Math.pow(FIELD_MONSTER_GROWTH.atkC, stage - 1);
   var def = (FIELD_MONSTER_GROWTH.defA + stage * FIELD_MONSTER_GROWTH.defB) * Math.pow(FIELD_MONSTER_GROWTH.defC, stage - 1);
-  var gold = (FIELD_MONSTER_GROWTH.goldA + stage) * Math.pow(FIELD_MONSTER_GROWTH.goldC, stage - 1);
-  var xp = (FIELD_MONSTER_GROWTH.xpA + stage) * Math.pow(FIELD_MONSTER_GROWTH.xpC, stage - 1);
+  var gold = (FIELD_MONSTER_GROWTH.goldA + rewardStage) * Math.pow(FIELD_MONSTER_GROWTH.goldC, rewardStage - 1);
+  var xp = (FIELD_MONSTER_GROWTH.xpA + rewardStage) * Math.pow(FIELD_MONSTER_GROWTH.xpC, rewardStage - 1);
   var m = {
     level: stage, hp: hp, atk: atk,
     def: def,                 // 物理防禦
@@ -1474,14 +1476,14 @@ function towerBossCfg(floor) {
   if (isHellTowerFloor(floor)) return TOWER_BOSS_HELL;
   return TOWER_BOSS_TRIAL;
 }
-function bossStatsFor(floor) {
+function bossStatsFor(floor, powerBonus) {
   var cfg = towerBossCfg(floor);
   var refStage = cfg.refStageBase + floor * cfg.refStagePerFloor;
-  var base = monsterStatsFor(refStage, false);
+  var base = monsterStatsFor(refStage, false, false, powerBonus);
   var bossAtk = base.atk * cfg.atkMult;   // BOSS 總魔攻（該塔總倍率）
   return {
     refStage: refStage,
-    level: refStage + cfg.levelBonus,
+    level: base.level + cfg.levelBonus,
     hell: isHellTowerFloor(floor),
     purgatory: isPurgatoryTowerFloor(floor),
     hp: base.hp * cfg.hpMult,

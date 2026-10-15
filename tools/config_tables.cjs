@@ -599,14 +599,15 @@ SCHEMAS.Gems = {
 /* ---- Talents ← TALENT_TREES + POTENTIAL_TALENTS ---- */
 SCHEMAS.Talents = {
   name: 'Talents', jsFile: 'data', sheet: 'Talents', vars: ['TALENT_TREES'],
-  header: ['類型', '轉數', 'id', '名稱', 'icon圖號', '屬性桶', '低階值', '高階值', '每級值', '解鎖數', '停用', '停用原因', '說明'],
+  noXlsxGen: true,
+  header: ['類型', '轉數', 'id', '名稱', 'icon圖號', '屬性桶', '每級增加值', '威脅值', '停用', '停用原因', '說明'],
   extract(src) {
     const TALENT_TREES = evalLiteral(extractLiteral(src, 'TALENT_TREES').literal);
     const rows = [];
     Object.keys(TALENT_TREES).map(Number).sort((a, b) => a - b).forEach(turn => {
       TALENT_TREES[turn].forEach(t => {
         rows.push(['轉生天賦', String(turn), t.id, t.name, t.emoji, t.stat,
-          numStr(t.low), numStr(t.high), '', t.unlocks == null ? '' : numStr(t.unlocks),
+          numStr(t.per), numStr(t.threat),
           t.disabled ? 'TRUE' : '', t.disabledReason || '', t.desc]);
       });
     });
@@ -626,8 +627,7 @@ SCHEMAS.Talents = {
       } else {
         const turn = String(toNum(get(r, '轉數')));
         const o = { id: id, name: get(r, '名稱'), emoji: get(r, 'icon圖號'), stat: get(r, '屬性桶'),
-          low: toNum(get(r, '低階值')), high: toNum(get(r, '高階值')) };
-        if (get(r, '解鎖數').trim() !== '') o.unlocks = toNum(get(r, '解鎖數'));
+          per: toNum(get(r, '每級增加值')), threat: toNum(get(r, '威脅值')) };
         o.desc = get(r, '說明');
         if (toBool(get(r, '停用'))) { o.disabled = true; o.disabledReason = get(r, '停用原因'); }
         (trees[turn] || (trees[turn] = [])).push(o);

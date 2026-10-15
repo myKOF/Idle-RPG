@@ -206,7 +206,10 @@ test('遞迴掃描 UI 呼叫的模擬層 G 相依，無未守衛路徑', () => {
     'talentUnlocked',
     'xpForLevel',
     'fieldDropRatesFor',
-    'fieldMaterialConfigFor'
+    'fieldMaterialConfigFor',
+    // power-rework 的 G=null／無G 測試覆蓋預設保底與明確快照；塔預覽傳入威脅加級。
+    'talentThreatTotal',
+    'bossStatsFor'
   ]);
   const uiThrowers = uiGDependencies.filter((name) => !reviewedSafeUiDependencies.has(name));
   const report = uiGDependencies.map((name) => {

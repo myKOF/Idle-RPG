@@ -5,7 +5,7 @@
    本檔只保留兩者共用的部分：
      - 冷卻／就緒佇列／施法硬直（pickAndCastSkill、beginSkillCast、tickSkillCast、tickSkillCds）
      - 裝載欄（equipSkillToLoadout／unequipSkillFromLoadout）
-     - 技能點（技能熟練度＋天賦加成，目前只用於潛力技能）
+     - 舊技能點預算相容；潛力使用威能點
      - 潛力技能資料表 POTENTIAL_TALENTS（來源 config/CSV/Skills.csv）
      - 技能特效事件組裝（skillVfxSpec／emitSkillVfx，潛力技能使用）
    數值公式（loadoutSize、skillUpgradeCost、skillMaxLvForRc、skillCdFor…）→ js/formula.js §9 */
@@ -50,9 +50,9 @@ function skillElemOf(sk) {
   return (sk && Array.isArray(sk.tags) && sk.tags.length) ? sk.tags[0] : null;
 }
 
-/* ---- 潛力技能（V3；主動＝需裝入裝載欄施放、被動＝學會即常駐；經 3/4/7/10 轉「潛力」天賦節點解鎖）----
+/* ---- 潛力技能（主動＝需裝入裝載欄施放、被動＝學會即常駐；無解鎖限制）----
    定義來源＝config/Excel/Skills.xlsx（→ config/CSV/Skills.csv，只剩 系統分類=potential 的列）；
-   欄位：type active/passive/passiveTrigger；cd 冷卻秒；base 起始值；per 每級增量（無數值上限，等級上限查轉生對照表 skillMaxLvForRc）；
+   欄位：type active/passive/passiveTrigger；cd 冷卻秒；base 起始值；per 每級增量（等級上限共用 TALENT_MAX_LEVEL）；
    dmgType 傷害類型；dur 主動增益持續秒；mech 對應戰鬥機制（js/potential.js / formula.js / skills.js 依此分派）。
    數值來源＝天賦V3.xlsx 第 2 頁；戰鬥公式與詮釋見 game_formula.md §潛力技能。 */
 var POTENTIAL_TALENTS = [
@@ -70,7 +70,7 @@ var POTENTIAL_TALENTS = [
 
 /* ---- 技能點（2026-07-30 技能熟練度制）----
    技能點不再隨角色升級發放：總預算 = 基礎 3 點
-   + 技能熟練度等級（每級 1 點）+ 潛力解鎖天賦加成。
+   + 技能熟練度等級；潛力改用威能點後不再消耗此預算。
    已使用：潛力技能等級總和；可用 = 總預算 - 已使用。 */
 var SKILL_POINT_BASE = 3; // 固定基礎點數（歷史上等於開局自帶的 3 個 1 級技能；舊技能移除後保留為基礎預算，與參數表「技能點總預算」a 同步）
 
@@ -111,9 +111,8 @@ function totalSkillPoints() {
   return Math.max(0, SKILL_POINT_BASE + m.level + talentBonus);
 }
 function spentSkillPoints() {
-  // 潛力是技能分類，沿用同一份技能點預算，不建立額外點數。
-  var spent = (typeof potentialSpentSkillPoints === 'function') ? potentialSpentSkillPoints() : 0;
-  return Math.max(0, Math.floor(spent));
+  // 潛力改用威能點；新版技能群組也不消耗此舊技能點預算。
+  return 0;
 }
 function availableSkillPoints() {
   var available = Math.max(0, totalSkillPoints() - spentSkillPoints());

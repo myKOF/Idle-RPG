@@ -17,12 +17,12 @@ if (typeof GameClock !== 'undefined') {
   globalThis.clearTimeout = GameClock.clearTimeout;
 }
 importScripts(
-  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261015-repo-speed', '../runeword_data.js?v=20261013-rune-all-elem-color', '../status.js?v=20261014-state-status', '../formula.js?v=20261014-merged-clock-combo', '../battlefield.js?v=20261015-repo-speed', '../stats.js?v=20261003-rename-weineng',
+  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261015-repo-speed-power-threat', '../runeword_data.js?v=20261013-rune-all-elem-color', '../status.js?v=20261014-state-status', '../formula.js?v=20261015-repo-speed-power-threat', '../battlefield.js?v=20261015-repo-speed-power-threat', '../stats.js?v=20261003-rename-weineng',
   '../item.js?v=20261015-gem-enabled', '../runeword.js?v=20261014-develop-integration',
-  '../skills.js?v=20261007-runes4', '../skills2.js?v=20261015-repo-speed', '../elite_data.js?v=20261014-state-status', '../talents.js?v=20261003-rename-weineng',
-  '../player.js?v=20261008-boss-config-lock', '../special_rules.js',
-  '../combat.js?v=20261015-gem-enabled', '../elite.js?v=20261014-state-status', '../legendary.js?v=20261012-indomitable-guard', '../potential.js?v=20261005-cc-decay-count', '../tower.js?v=20261015-skill-tower-unlock',
-  '../factory.js?v=20261015-gem-enabled', '../newforge.js', '../forge.js?v=20261015-gem-enabled', '../save.js?v=20261015-gem-enabled',
+  '../skills.js?v=20261015-repo-speed-power-threat', '../skills2.js?v=20261015-repo-speed-power-threat', '../elite_data.js?v=20261014-state-status', '../talents.js?v=20261015-repo-speed-power-threat',
+  '../player.js?v=20261015-repo-speed-power-threat', '../special_rules.js',
+  '../combat.js?v=20261015-repo-speed-power-threat', '../elite.js?v=20261014-state-status', '../legendary.js?v=20261012-indomitable-guard', '../potential.js?v=20261005-cc-decay-count', '../tower.js?v=20261015-repo-speed-power-threat',
+  '../factory.js?v=20261015-gem-enabled', '../newforge.js', '../forge.js?v=20261015-gem-enabled', '../save.js?v=20261015-repo-speed-power-threat',
   '../tasks.js?v=20261007-runes4'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
@@ -1894,7 +1894,7 @@ function boot(msg) {
   }
   if (G._talentRespecNotice) {
     notices.push({ key: '_talentRespecNotice', text: '🌟 ' + G._talentRespecNotice +
-      '，請至【威能】頁重新配點（新制成本＝威能轉數+9／級，Lv.51 起每級加倍）。', cls: 'warn' });
+      '，威能與潛力均改為十級制，升至下一級消耗該級等量威能點。', cls: 'warn' });
     delete G._talentRespecNotice;
   }
   /* 帶 modal 的公告要彈窗，不是寫進日誌，UI 端據此分辨。

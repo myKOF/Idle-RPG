@@ -10214,3 +10214,25 @@ Worker 存活且頁面正常完成載入。
 - 完成／修改5檔：BAT改走新增報告包裝程序，原tools/sync_ai_worktrees.ps1及resolve-sync-conflicts.ps1唯讀檢查、同步邏輯不變；新增7個端到端報告案例並沿用原有真Git fixture，文件補上路徑／分享方式／限制。本紀錄只新增此獨立區段，未改develop或他人紀錄。
 - 驗證：node --test --test-reporter=tap tests/sync-auto-conflicts.test.cjs tests/sync-ai-worktrees.test.cjs tests/merge-ai-tasks.test.cjs，37/37通過；新增歷史保留與暫存備援案例另跑通過，合計39項。最後node --test --test-reporter=tap --test-name-pattern="Markdown report: rerun" tests/sync-auto-conflicts.test.cjs確認還原fixture原始換行後重跑成功；所有失敗均保留退出碼與現場，未知參數亦可匯出，UTF-8／Markdown fence／真BAT有空白路徑驗證通過。npm.cmd run build，512檔通過；git diff --check通過。
 - 交付：Commit為本紀錄所在[Codex] feat提交，回覆附編號；可以Review／合併，本任務無未完成項，無素材庫變更／不需素材Commit。限制為強制關閉／斷電不保證完成md、只留已寫入log；直接執行原核心ps1不經包裝、不產生報告。正式同步仍由使用者執行新版Codex BAT；可用ValidateOnly預檢產出報告，不啟動AI／merge／push。歷史報告存啟動工作區logs/sync-ai-worktrees，latest.md更新、時間戳報告保留。
+
+## POWER-THREAT-20261015 — 天堂威能與魔物威能改造
+
+- Owner：Codex；Done，單一開發者。依賴使用者已更新 Talents.xlsx；後續由使用者審閱整合。
+- 範圍：Talents Excel／CSV／資料匯入器、talents／skills／formula／save／player／UI、必要 CSS 與主頁／Worker 快取、專項及既有受影響測試、公式／一次性遷移文件與本紀錄；禁止無關技能／素材／其他副本、合併或推送。
+- 規則：每級固定增加值；威能與潛力均十級，升至目標等級消耗等量威能點；潛力取消轉生／節點限制。Talents 首次點亮計入表定威脅，魔物威能百分比為基礎百分比加總威脅，每滿十點敵人強度增加一級，涵蓋野外各階與封魔塔。
+- 驗收：配置對齊、逐級費用／退點／上限、威脅點亮與清除、敵人實值／顯示／塔戰、潛力實際效果與 UI、舊檔遷移冪等、Worker／回歸、Build 與 diff 後 Commit。初始僅使用者 Excel 變更，預檢無其他副本衝突；無新增素材。
+- 提交前新增重疊：Claude於875ec6fc完成跑位加速／推擠重量，碰到data的ELITE_GROUP、任務紀錄與index／bridge／Worker快取。使用者明確同意分段保留兩項功能並獨立提交；本輪只提交威能，Claude跑位功能留在原分支，不改寫／合併他人分支。data的威能樹與跑位設定分屬不同區段；主頁data跳過對方已用的1.0.79，改為1.0.80，Worker威能使用獨立20261015-power-threat。日後整合須保留雙方data／battlefield內容、兩份任務紀錄及全部相關快取，不可只選其中一方整份覆蓋。
+- 完成：Talents 每級增加值／威脅值對應 per／threat；Excel 原生 API 只新增四個舊解鎖節點的停用與原因，共8格，保留使用者其他內容，正常重開兩次、逐格及繪圖物件驗證通過；CSV／JS匯出一致。依使用者回覆，潛力亦改用威能點與十級制；四個舊解鎖威能保留但停用，不佔全滿判定。每個啟用威能首次點亮計威脅，後續等級不重複計；圖下顯示威脅值、右上顯示魔物威能及指定兩行tips。
+- 敵人：野外普通／菁英／高級菁英／BOSS、三塔BOSS共用威脅加級公式；塔挑戰前預覽使用Worker威脅快照。配點立即按新舊強度比例更新存活敵人，保留血量比例／站位／階級／技能與戰鬥進度；獎勵／掉落／通關仍依原關卡／樓層。潛力沒有Talents威脅欄位，故不另加威脅。
+- 存檔：powerThreatV1在新上限夾限前退還舊威能投入，重置舊潛力並按保留的舊費用公式推算退還金幣，卸下其裝載；新局預帶旗標，持久化後重讀不重複退還。舊檔沒有逐次實付金幣紀錄，金幣退款依原等級與目前保留的舊公式估算。遷移登錄同步ONE_TIME_MIGRATIONS；Protocol52與既有指令名稱不變。
+- 修改27檔：config/Excel/Talents.xlsx、config/CSV/Talents.csv、tools/config_tables.cjs；js/data.js／talents.js／formula.js／skills.js／save.js／player.js／combat.js／tower.js／ui.js；css/ashen-forge.css、index.html／js/bridge.js／js/worker/sim.worker.js必要快取；新tests/power-rework.test.cjs與talents／skill-mastery／skill-max-level-lookup／gm-skill-unlock／legacy-skill-removal-migration／skill2-tower-unlock／ui-worker-g-dependency測試；game_formula.md／ONE_TIME_MIGRATIONS.md／本紀錄。主頁相關JS與CSS版號均遞增，Worker入口與相關import使用20261015-power-threat。
+- 驗證：`node --test --test-reporter=tap tests/power-rework.test.cjs` 12/12；同指令加上talents、talents-perf-equivalence、talent-elem-attach、skill-mastery、skill-max-level-lookup、ui-worker-g-dependency、worker-protocol、purgatory-tower、tower-battlefield、offline-rewards、save-migration-persistence-verification、gm-skill-unlock、legacy-skill-removal-migration、skill2-tower-unlock、init-ui-smoke、offline-stage-params、new-forge、task-system、essence-salvage、part-upgrade、save-compression、xp-levelup-overflow、tower-xp對應.test.cjs檔，共194/194。`npm.cmd run build` 520檔通過；`node tools/config_tables.cjs --apply Talents` 語意變更0；`node tools/apply_params.cjs` 552參數一致、變更0／錨點問題0；`git diff --check`通過。
+- 全庫限制：較早完整`node --test --test-reporter=tap "tests/*.test.cjs"`為4434項、3972通過／460失敗／2略過；其中23項為本輪早期測試環境／舊制預期／快取斷言，已完成修正。將所有失敗來源檔案以原HEAD唯讀載入與最終工作檔分別重跑（每檔120秒上限），兩版均1613項、1175通過／437失敗／1略過，失敗名稱雙向差集0。沒有把既有失敗改為接受現況；沒有再重跑耗時約九分鐘的全庫，最終受影響範圍以194項及上述差集確認。
+- 瀏覽器：隔離隨機埠HTTP／全新headless Edge context／正式UI與真Worker，拋棄式存檔、不讀真人存檔。保留8個圖下威脅標示，既有9個點亮節點118%；原節點升級仍118%、另一節點首次學習變120%；tips文字、潛力學習／十級上限／威能點扣除／金幣不扣驗證通過，Console error／warning均0。驗證採DOM戰場模式（移除Canvas host以避免無關場景圖集啟動等待），未驗真人長時間Canvas戰鬥；戰鬥數值與Worker／預覽同步由專項及回歸涵蓋。畫面存於本聊天visualizations/power-threat.png，臨時服務與瀏覽器均已關閉。
+- 唯讀檢查：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、Worker protocol／shim、scripts/sim/engine與策略、js/potential.js／elite.js／gm_exec.js、其他回歸及Excel原生工具；未修改上述檔案。無新增或修改美術素材，素材庫無本次變更／不需素材Commit。Commit為本紀錄所在`[Codex] feat: 改造天堂威能與魔物威能系統`；無本次功能未完成項，可供審查合併，未合併／推送。下一步重載遊戲，舊檔依公告重新配置威能與潛力。
+## SYNC-AUTO-CONFLICTS-20261015 — develop pending merge resolution (repo speed + power threat)
+
+- Owner: Codex; status: Done.
+- Merge: resolved `index.html`, `js/bridge.js`, and `js/worker/sim.worker.js` by preserving the enemy reposition-speed/weight changes from `6097be41` and the Heaven Power/monster-threat rework from `beed6a81`.
+- Cache resolution: assigned new combined main-thread versions for data/formula/battlefield/bridge and the Worker key `20261015-repo-speed-power-threat`; synchronized all Worker imports touched by either side.
+- Validation: conflict-marker scan found no merge markers in the resolved files; JavaScript syntax checks, 74 directly relevant Node regression tests, full build, and `git diff --check` passed. No asset-library files were required.

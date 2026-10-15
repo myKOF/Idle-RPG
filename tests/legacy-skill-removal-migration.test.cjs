@@ -75,7 +75,7 @@ test('公告統計：清除幾個舊技能、幾個融合技、卸下幾個、�
     { skills: 4, fusions: 1, equipped: 3, scrolls: 12 });
 });
 
-test('技能點自動退還：已投入只剩潛力技能', () => {
+test('技能點自動退還：潛力改用威能點，不再佔用舊技能點', () => {
   const c = loadMigrationContext();
   const data = legacySave(c, (d) => {
     d.player.reincarnations = 3;
@@ -83,8 +83,8 @@ test('技能點自動退還：已投入只剩潛力技能', () => {
   });
   c.migrateSave(data);
   c.G = data;
-  assert.equal(c.spentSkillPoints(), 2);
-  assert.equal(c.availableSkillPoints(), c.totalSkillPoints() - 2);
+  assert.equal(c.spentSkillPoints(), 0);
+  assert.equal(c.availableSkillPoints(), c.totalSkillPoints());
 });
 
 test('主線任務索引：被移除的兩個任務（原索引 6、16）之後的已領取進度平移', () => {
