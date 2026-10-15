@@ -7336,7 +7336,7 @@ function towerFloorRowHTML(fl, highest) {
 function towerDetailHTML(fl, highest) {
   var bd = towerBossOf(fl);
   var tier = towerTierOf(fl);
-  var stats = bossStatsFor(fl);
+  var stats = bossStatsFor(fl, Math.floor(talentThreatTotal(talentViewLevels(uiTalentPanelSnapshot())) / 10));
   var ei = ELEM_INFO[bd.attr] || null;
   var color = ei ? ei.color : '#c9c3b5';
   var cleared = fl <= highest, next = fl === highest + 1;
@@ -8394,12 +8394,12 @@ function talentViewUnlocked(snapshot, id) {
 
 function talentViewTreeLevelTotal(snapshot, turn) {
   return (TALENT_TREES[turn] || []).reduce(function (sum, def) {
-    return sum + talentViewLevel(snapshot, def.id);
+    return sum + (def.disabled ? 0 : talentViewLevel(snapshot, def.id));
   }, 0);
 }
 
 function talentViewTreeComplete(snapshot, turn) {
-  var tree = TALENT_TREES[turn] || [];
+  var tree = (TALENT_TREES[turn] || []).filter(function (def) { return !def.disabled; });
   // 與 talentTreeComplete（js/talents.js）同一判斷：有節點且全滿，不看節點數量。
   return tree.length > 0 && tree.every(function (def) {
     return talentViewLevel(snapshot, def.id) >= TALENT_MAX_LEVEL;
@@ -8411,12 +8411,7 @@ function talentViewCompleteMultiplier(snapshot, turn) {
 }
 
 function talentViewPotentialUnlockLimit(snapshot) {
-  var count = 0;
-  potentialUnlockTalentIds().forEach(function (id) {
-    var def = talentDef(id);
-    if (def) count += potentialCountForLevel(def, talentViewLevel(snapshot, id));
-  });
-  return clamp(count, 0, POTENTIAL_NODE_COUNT);
+  return POTENTIAL_TALENTS.length;
 }
 
 function talentViewPotentialUnlocked(snapshot, id) {
@@ -8603,7 +8598,7 @@ function potentialNodeHTML(def, index, talentSnapshot, headerSnapshot) {
 }
 
 function talentEffectLabel(def, value) {
-  if (def.stat === 'potentialUnlock') return fmt(value) + ' 個潛力節點';
+  if (def.stat === 'potentialUnlock') return '已停用';
   var elementTalentNames = {
     elemFire: '火焰', elemIce: '寒冰', elemLightning: '雷電',
     elemPoison: '劇毒', elemLight: '聖光', elemDark: '暗影', elemEarth: '大地'
@@ -8616,14 +8611,13 @@ function talentEffectLabel(def, value) {
 
 function talentEffectDescription(def, value) {
   // 潛力技能 V3 的效果文字由 potentialValueLine 產生（見潛力面板/提示/彈窗）；此處僅處理一般天賦與潛力解鎖節點。
-  if (def.stat === 'potentialUnlock') return '升至 100 級才會解鎖新類型技能「潛力」' + fmt(def.unlocks || 0) + ' 個，並給予' + fmt(value) + '點技能點。';
+  if (def.disabled) return esc(def.disabledReason || '此威能已停用');
   return esc(def.desc) + talentEffectLabel(def, value);
 }
 
 function talentDescriptionValue(def, level, turn, snapshot) {
   var lv = Math.max(1, Math.floor(Number(level) || 0));
-  // 潛力解鎖天賦顯示的是技能點效果（解鎖數固定為 def.unlocks，寫在說明文字裡）
-  if (def.stat === 'potentialUnlock') return talentLevelValue(def, lv);
+  if (def.disabled) return 0;
   var multiplier = snapshot
     ? talentViewCompleteMultiplier(snapshot, turn)
     : 1;
@@ -8720,7 +8714,7 @@ function renderTalentModal() {
   var maxAttr = 'data-talent-max="' + def.id + '"';
   var downAttr = 'data-talent-down="' + def.id + '"';
   var deleteAttr = 'data-talent-delete="' + def.id + '"';
-  var cost = (typeof talentUpgradeCost === 'function') ? talentUpgradeCost(def.id, lv + 1) : turn + 9;
+  var cost = talentUpgradeCost(def.id, lv + 1);
   var maxed = lv >= maxLv;
   var pendingKey = nodePendingKey('talent:' + def.id);
   var pendingAttrs = pendingUiButtonAttributes(pendingKey);
@@ -8733,7 +8727,7 @@ function renderTalentModal() {
     h += '<div>下一級：<b>' + talentEffectDescription(def, next) + '</b></div>';
     h += '<div>消耗威能點：' + cost + '</div>';
   }
-  if (talentViewCompleteMultiplier(snapshot, turn) > 1) h += '<div class="talent-modal-complete">該轉 ' + (TALENT_TREES[turn] || []).length + ' 個威能已全滿，效果 ×2</div>';
+  if (talentViewCompleteMultiplier(snapshot, turn) > 1) h += '<div class="talent-modal-complete">該轉所有啟用威能已全滿，效果 ×2</div>';
   if (!unlocked) h += '<div class="hint">🔒 需要達到 ' + turn + ' 轉</div>';
   h += '</div><div class="talent-modal-points">轉生威能點：' + fmtFull(points) + '</div>';
   h += '<div class="talent-modal-actions">';
@@ -8753,7 +8747,7 @@ function renderTalentModal() {
 UI.talentBrowse = { turn: null };
 
 function talentTreeMaxTotal(turn) {
-  return TALENT_MAX_LEVEL * (TALENT_TREES[turn] || []).length;
+  return TALENT_MAX_LEVEL * (TALENT_TREES[turn] || []).filter(function (def) { return !def.disabled; }).length;
 }
 
 function talentDefaultTurn(snapshot) {
@@ -8798,6 +8792,7 @@ function talentNodeHTML(def, turn, snapshot, index, count) {
   return '<button type="button" class="tlx-node' + (lv > 0 ? ' learned' : '') + (lv >= TALENT_MAX_LEVEL ? ' maxed' : '') + (locked ? ' locked' : '') + (disabled ? ' temporarily-disabled' : '') +
     '" style="--a:' + angle + 'deg;--p:' + pct + '%" data-talent-select="talent:' + def.id + '" data-talent-tip="' + def.id + '" aria-label="' + esc(aria) + '">' +
     '<span class="tlx-node-ring"><span class="tlx-node-glyph">' + def.emoji + '</span></span>' +
+    '<span class="tlx-node-threat">威脅值 +' + (def.disabled ? 0 : Math.max(0, Number(def.threat) || 0)) + '</span>' +
     '<span class="tlx-node-name">' + esc(def.name) + '</span>' +
     '<span class="tlx-node-lv">' + (locked ? '🔒 ' + lockText : 'Lv.' + lv + ' / ' + TALENT_MAX_LEVEL) + '</span>' +
     '</button>';
@@ -8837,7 +8832,7 @@ function talentEffectsHTML(turn, snapshot) {
   }).join('');
   return '<div class="tlx-side-title"><b>本轉效果</b></div>' +
     '<div class="tlx-side-note' + (complete ? ' is-complete' : '') + '">' +
-      (complete ? '本轉 ' + tree.length + ' 個威能已全部升滿，效果 ×2' : '本轉 ' + tree.length + ' 個威能全部升滿後，效果加倍') + '</div>' +
+      (complete ? '本轉所有啟用威能已全部升滿，效果 ×2' : '本轉所有啟用威能全部升滿後，效果加倍') + '</div>' +
     '<div class="tlx-effs">' + rows + '</div>' +
     '<div class="tlx-side-foot">點選星盤上的威能可升級或調整</div>';
 }
@@ -8857,7 +8852,8 @@ function renderTalents() {
   var h = '<div class="pg-top"><h2 class="pg-title">威能</h2>' +
     '<span class="pg-pill">轉生威能點 <b>' + fmtFull(snapshot.talentPoints || 0) + '</b></span>' +
     '<span class="pg-pill">已轉生 <b>' + rc + ' 轉</b></span>' +
-    '<button type="button" class="pg-help" aria-label="威能說明" data-tt-title="威能" data-tt-desc="1 轉後開放；轉生後每升 1 級獲得 1 點轉生威能點。升 1 級消耗＝該威能轉數＋9，Lv.51 起每級加倍（例：1 轉前 50 級每級 10 點、51 級起每級 20 點）。同一轉的威能全部升滿後，該轉效果加倍。潛力是技能分類，與特殊、被動共用技能點，不另設潛力點。">?</button></div>';
+    '<span class="pg-pill tlx-monster-power" tabindex="0" data-tt-title="魔物威能" data-tt-desc="地獄大軍感受到你接收了天堂神力而倍感憤怒&lt;br&gt;魔物威能每增加10%則敵人強度+1級">魔物威能 <b>' + (100 + talentThreatTotal(talentViewLevels(snapshot))) + '%</b></span>' +
+    '<button type="button" class="pg-help" aria-label="威能說明" data-tt-title="天堂威能" data-tt-desc="1 轉後開放；轉生後每升 1 級獲得 1 點轉生威能點。威能與潛力最高10級，升至第N級消耗N點威能點，升滿共55點。每級效果依表定增加值累加。本轉所有啟用威能升滿後效果加倍。潛力無解鎖限制，與威能共用點數。每個威能首次點亮增加表定威脅值，後續升級不再增加。">?</button></div>';
   if (rc < 1) h += '<div class="tlx-locked-banner">🔒 威能系統將於完成 1 轉後開放。</div>';
   h += '<div class="tlx-tiers" role="tablist" aria-label="轉數">' + talentTierTabsHTML(snapshot) + '</div>';
   h += '<div class="tlx"><div class="tlx-board">' + talentBoardHTML(turn, snapshot) + '</div>' +
@@ -8888,16 +8884,11 @@ function skillViewReincarnations(headerSnapshot, talentSnapshot) {
 }
 
 function skillViewPotentialMaxLevel(reincarnations) {
-  return skillMaxLvForRc(reincarnations);
+  return TALENT_MAX_LEVEL;
 }
 
 function skillViewSpentPoints(skillsSnapshot, talentSnapshot, reincarnations) {
-  var spent = 0;
-  var potentialMax = skillViewPotentialMaxLevel(reincarnations);
-  POTENTIAL_TALENTS.forEach(function (def) {
-    spent += talentViewPotentialLevel(talentSnapshot, def.id, potentialMax);
-  });
-  return spent;
+  return 0;
 }
 
 function skillViewLoadoutSize(skillsSnapshot) {
@@ -9114,9 +9105,9 @@ function renderSkills() {
   // 新版技能群組（js/skills2.js）：左清單＋右進化之路的技能瀏覽器
   if (typeof SKILLS2 !== 'undefined') renderSkillBrowser(treesBox, skillsSnapshot, headerSnapshot);
 
-  // 潛力技能（3 轉後）：維持原本的格狀面板與升級彈窗，放在瀏覽器下方
+  // 潛力無解鎖限制，維持格狀面板與升級彈窗，放在瀏覽器下方。
   var h = '';
-  if (reincarnations >= 3) {
+  {
     var potentialCells = POTENTIAL_TALENTS.map(function (def, index) {
       return potentialNodeHTML(def, index, talentSnapshot, headerSnapshot);
     });
@@ -9124,7 +9115,7 @@ function renderSkills() {
     for (var pr = 0; pr < potentialCells.length; pr += 6) {
       potentialRows += '<div class="tree-row">' + potentialCells.slice(pr, pr + 6).join('') + '</div>';
     }
-    h += '<div class="tree-panel potential-skill-panel"><div class="tree-title">✨ 潛力 <span class="dim-text">技能分類；使用技能點與金幣　已解鎖 ' + talentViewPotentialUnlockedCount(talentSnapshot) + '/' + POTENTIAL_NODE_COUNT + '</span></div>' + potentialRows + '</div>';
+    h += '<div class="tree-panel potential-skill-panel"><div class="tree-title">✨ 潛力 <span class="dim-text">無解鎖限制；最高10級，與天堂威能共用威能點　可用威能點 ' + fmtFull(talentSnapshot.talentPoints || 0) + '</span></div>' + potentialRows + '</div>';
   }
   var potentialBox = $id('sgb-potential') || treesBox;
   if (potentialBox._lastH !== h) {
@@ -9824,14 +9815,14 @@ function renderSkillModal() {
   if (lock) h += '<div class="hint skill-unlock-hint">🔒 ' + esc(lock) + '</div>';
   h += '</div>';
 
-  h += '<div class="skill-modal-points">技能點：' + Math.max(0, Math.floor(Number(skillsSnapshot.points) || 0)) + '</div>';
+  h += '<div class="skill-modal-points">轉生威能點：' + fmtFull(talentSnapshot.talentPoints || 0) + '</div>';
   h += '<div class="detail-actions skill-modal-actions">';
   if (lv < maxLv && !lock) {
-    var cost = skillUpgradeCost(lv);
-    var insufficientGold = (Number(headerSnapshot.player && headerSnapshot.player.gold) || 0) < cost;
-    h += '<button class="btn sm" data-skill-learn="' + loadoutRef + '" data-tip="花費 ' + fmt(cost) + ' 金幣"' + pendingAttrs + (insufficientGold ? ' disabled' : '') + '>' +
+    var cost = talentUpgradeCost(id, lv + 1);
+    var insufficientPoints = (Number(talentSnapshot.talentPoints) || 0) < cost;
+    h += '<button class="btn sm" data-skill-learn="' + loadoutRef + '" data-tip="花費 ' + fmt(cost) + ' 點威能點"' + pendingAttrs + (insufficientPoints ? ' disabled' : '') + '>' +
       (lv === 0 ? '📖 學習' : '⬆️ 升級') + '</button>';
-    h += '<button class="btn sm" data-skill-max="' + loadoutRef + '" data-tip="自動消耗技能點與金幣，升到目前技能上限"' + pendingAttrs + '>⚡ 一鍵滿級</button>';
+    h += '<button class="btn sm" data-skill-max="' + loadoutRef + '" data-tip="自動消耗威能點，升到10級上限"' + pendingAttrs + (insufficientPoints ? ' disabled' : '') + '>⚡ 一鍵滿級</button>';
   } else if (lv >= maxLv) {
     h += '<div style="text-align:center; padding: 4px; color: var(--good); font-size: 12px;">已滿級</div>';
     h += '<div style="visibility: hidden;"></div>'; // 保留一鍵滿級欄位，讓後方按鈕位置固定
@@ -9840,7 +9831,7 @@ function renderSkillModal() {
   }
 
   if (lv > 0) {
-    h += '<button class="btn sm warn" data-skill-downgrade="' + loadoutRef + '" data-tip="退回 1 技能點（不退還金幣）"' + pendingAttrs + '>⬇️ 降級</button>';
+    h += '<button class="btn sm warn" data-skill-downgrade="' + loadoutRef + '" data-tip="退回 ' + lv + ' 點威能點"' + pendingAttrs + '>⬇️ 降級</button>';
   } else {
     h += '<div style="visibility: hidden;"></div>'; // empty grid cell
   }
@@ -10012,7 +10003,7 @@ function showSkillTooltip(ref, anchorEl) {
   var maxLv = skillViewPotentialMaxLevel(reincarnations);
   var lv = talentViewPotentialLevel(talentSnapshot, id, maxLv);
   var lock = potentialTemporarilyDisabled(id) ? '此潛力技能目前暫不開放升級'
-    : (talentViewPotentialUnlocked(talentSnapshot, id) ? null : (reincarnations < 3 ? '潛力技能需在 3 轉後解鎖' : '潛力節點尚未解鎖'));
+    : (talentViewPotentialUnlocked(talentSnapshot, id) ? null : '此潛力技能尚未開放');
   var h = '<div class="skt-name">' + sk.emoji + ' ' + esc(sk.name) +
     ' <span class="dim-text">Lv.' + lv + '/' + maxLv + '｜潛力·' + potentialTypeLabel(sk) + potentialDmgLabel(sk) + '</span></div>';
   h += skillTagsHTML(id, sk, lv);
@@ -12337,7 +12328,7 @@ function initUI() {
       var actualId = potentialSkillId(deleteRef);
       var skDefObj = actualId !== null ? potentialDef(actualId) : null;
       if (skDefObj) {
-        showConfirmDialog('確定重置技能「' + skDefObj.name + '」？等級將歸零，已投入的技能點將全額退還。', function () {
+        showConfirmDialog('確定重置潛力「' + skDefObj.name + '」？等級將歸零，已投入的威能點將全額退還。', function () {
           runSkillUiAction(
             'talent.potentialDelete', actualId, deleteRef, potentialDelete,
             ['skills', 'talents', 'header'], function () { UI.selSkill = null; }

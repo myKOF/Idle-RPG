@@ -401,3 +401,9 @@
 - **保留資料**：保留玩家已持有的多套裝備清單，僅重置當前使用與檢視指標；清空潛力技能點數時，原投入的技能點會動態退還，保留點數總量。
 - **測試**：`tests/equip-set-preview-stats.test.cjs` 驗證安全限制，`tests/talents.test.cjs` 驗證潛力技能解鎖。
 - **日後清理**：確認所有存檔已載入並套用後，移除 `js/save.js` 遷移旗標捕捉與重置邏輯、`js/player.js` 中的預置旗標，保留此紀錄。
+
+## powerThreatV1 — 天堂威能與潛力十級制（2026-10-15）
+
+- 狀態：已實作於 talents.js migratePowerSave，save.js migrateSave 在 mergeDefaults 前保留原旗標，等級夾限前執行；player.js 新局預帶 true。
+- 舊威能按歷史一至五十級每級轉數加九、之後雙倍計算退點；舊潛力依原等級與原 skillUpgradeCost 推算退還金幣，清空兩組等級與潛力裝載，保留其他技能及資源。既有存檔未記錄逐次實付金幣，退還依目前保留的舊費用公式估算。
+- 旗標完成後持久化；重複讀檔不再次退點，新制度十級以內的存檔也不得靠等級猜測已遷移。專項 tests/power-rework.test.cjs 覆蓋舊制高等級、低等級、重複載入與新局。

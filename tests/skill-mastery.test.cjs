@@ -45,10 +45,10 @@ test('技能熟練度：經驗升級給點、上限封頂；技能點 = 基礎�
   c.gainSkillMasteryXp(c.skillMasteryXpForLevel(0)); // 升 1 級
   assert.equal(p.skillMastery.level, 1);
   assert.equal(c.totalSkillPoints(), base + 1);
-  // 已用 = 潛力技能等級總和；可用 = 總 − 已用
+  // 潛力改用威能點，不再佔用技能點。
   p.talents.potentialLevels.velocityForce = 2;
-  assert.equal(c.spentSkillPoints(), 2);
-  assert.equal(c.availableSkillPoints(), base + 1 - 2);
+  assert.equal(c.spentSkillPoints(), 0);
+  assert.equal(c.availableSkillPoints(), base + 1);
   // 上限封頂
   p.skillMastery.level = c.SKILL_MASTERY_MAX_LEVEL;
   c.gainSkillMasteryXp(999999999);

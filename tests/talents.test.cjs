@@ -5,31 +5,15 @@ const path = require('node:path');
 const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 
-/* 天賦系統 V2（1～10 轉）：
-   - 每轉 8 個節點、每個上限 100 級；升 1 級成本 = 該天賦轉數 + 1（固定值/級）。
-   - 「額外」＝於對應總值上乘算（獨立乘區）；沒寫「額外」＝與現有加成相加。
-   - 潛力解鎖節點位於 3/4/7/10 轉（解鎖 3+3+3+1 = 10 個）。
+/* 天堂威能十級制：固定每級效果與逐級成本。 */
 
-   ⚠️ 2026-07-22 `3fdf419 潛力技能實裝` 起，潛力解鎖天賦**已開放升級**
-   （`js/data.js` 移除了 `disabled: true` / `disabledReason`），潛力技能本身
-   也從「聚合到 talentStatBonuses 的被動加成」改為 `js/potential.js` 的主動技能。
-   本檔原本斷言的是改版前的暫時停用狀態，2026-07-28 依程式現況更新。 */
-
-test('潛力解鎖天賦（3/4/7/10 轉）已開放升級，不再置灰', () => {
-  const c = loadContext();
-  c.G.player.reincarnations = 0;
-  assert.equal(c.talentSystemUnlocked(), false);
-  c.G.player.reincarnations = 1;
-  assert.equal(c.talentSystemUnlocked(), true);
-  c.G.player.reincarnations = 10;
-  c.G.player.reincarnationTalentPoints = 999;
-
-  for (const id of ['t3_potential', 't4_potential', 't7_potential', 't10_potential']) {
-    assert.ok(!c.talentDef(id).disabled, id + ' 不應再帶 disabled 旗標');
-    assert.equal(c.potentialTemporarilyDisabled(id), false);
-    assert.equal(c.talentUpgrade(id), null, id + ' 應可升級');
-    assert.equal(c.talentLevel(id), 1);
+test('四個舊潛力解鎖威能保留資料並停用，不阻擋整轉全滿', () => {
+  const c=loadContext(); c.G.player.reincarnations=10; c.G.player.reincarnationTalentPoints=999;
+  for(const id of ['t3_potential','t4_potential','t7_potential','t10_potential']) {
+    assert.equal(c.talentDef(id).disabled,true); assert.match(c.talentUpgrade(id),/停用/);
   }
+  for(const def of c.TALENT_TREES[3]) if(!def.disabled) c.G.player.talents.levels[def.id]=10;
+  assert.equal(c.talentTreeComplete(3),true); assert.equal(c.talentCompleteMultiplier(3),2);
 });
 
 function loadContext() {
@@ -83,139 +67,58 @@ test('天賦資料包含 1～10 轉節點（元素轉 10 個、其餘 8 個）�
   }
   assert.equal(c.TALENT_IMPLEMENTED_REINCARNATIONS, 10);
   assert.equal(c.POTENTIAL_TALENTS.length, 10);
-  assert.equal(c.TALENT_MAX_LEVEL, 100);
+  assert.equal(c.TALENT_MAX_LEVEL, 10);
   // 潛力解鎖節點：3/4/7 轉各解鎖 3 個、10 轉解鎖 1 個，合計 10
   const unlockDefs = c.talentList().filter((e) => e.def.stat === 'potentialUnlock');
   assert.deepEqual(Array.from(unlockDefs, (e) => e.turn), [3, 4, 7, 10]);
-  assert.deepEqual(Array.from(unlockDefs, (e) => e.def.unlocks), [3, 3, 3, 1]);
+  assert.ok(unlockDefs.every(e => e.def.disabled && e.def.unlocks === undefined));
 });
 
-test('天賦 1～50 級與 51～100 級依 low/high 累加，整轉全滿時效果加倍', () => {
-  const c = loadContext();
-  const def = c.talentDef('t1_str');
-  assert.equal(def.low, 0.5);  // V3：1 轉四維/防禦/抗性每級 0.5%（51 級起 1%）
-  assert.equal(def.high, 1);
-  assert.equal(c.talentLevelValue(def, 0), 0);
-  assert.equal(c.talentLevelValue(def, 50), 25);
-  assert.equal(c.talentLevelValue(def, 51), 26);
-  assert.equal(c.talentLevelValue(def, 100), 75);
-  for (const node of c.TALENT_TREES[1]) c.G.player.talents.levels[node.id] = 100;
-  assert.equal(c.talentStatBonuses().strPct, 150);
+test('威能十級均使用每級增加值，整轉啟用節點全滿時效果加倍', () => {
+  const c=loadContext(),def=c.talentDef('t1_str'); assert.equal(def.per,0.5);
+  assert.equal(c.talentLevelValue(def,0),0); assert.equal(c.talentLevelValue(def,1),0.5);
+  assert.equal(c.talentLevelValue(def,10),5); assert.equal(c.talentLevelValue(def,100),5);
+  for(const node of c.TALENT_TREES[1]) c.G.player.talents.levels[node.id]=10;
+  assert.equal(c.talentStatBonuses().strPct,10);
 });
 
-test('天賦升級成本 = 轉數+9、Lv.51 起每級加倍；降級與清除按實付成本退點', () => {
-  const c = loadContext();
-  // 單級成本（依目標等級）與累計成本
-  assert.equal(c.talentUpgradeCost('t1_str', 1), 10);
-  assert.equal(c.talentUpgradeCost('t1_str', 50), 10);
-  assert.equal(c.talentUpgradeCost('t1_str', 51), 20);
-  assert.equal(c.talentUpgradeCost('t1_str', 100), 20);
-  assert.equal(c.talentUpgradeCost('t2_crit', 1), 11);
-  assert.equal(c.talentUpgradeCost('t2_crit', 51), 22);
-  assert.equal(c.talentTotalCost('t1_str', 50), 500);         // 50 × 10
-  assert.equal(c.talentTotalCost('t1_str', 100), 500 + 1000); // + 50 × 20
-
-  // 1 轉天賦低段：每級 10 點
-  c.G.player.reincarnationTalentPoints = 30;
-  assert.equal(c.talentUpgrade('t1_str'), null);
-  assert.equal(c.talentLevel('t1_str'), 1);
-  assert.equal(c.G.player.reincarnationTalentPoints, 20);
-  assert.equal(c.talentMax('t1_str'), null); // 一鍵升滿：20 點只夠再升 2 級
-  assert.equal(c.talentLevel('t1_str'), 3);
-  assert.equal(c.G.player.reincarnationTalentPoints, 0);
-  assert.equal(c.talentDowngrade('t1_str'), null);
-  assert.equal(c.talentLevel('t1_str'), 2);
-  assert.equal(c.G.player.reincarnationTalentPoints, 10);
-  assert.equal(c.talentDelete('t1_str'), null);
-  assert.equal(c.talentLevel('t1_str'), 0);
-  assert.equal(c.G.player.reincarnationTalentPoints, 30);
-
-  // 50 → 51 級起加倍：需要 20 點；降級退 20、清除退累計（50×10 + 2×20 = 540）
-  c.G.player.talents.levels.t1_str = 50;
-  c.G.player.reincarnationTalentPoints = 19;
-  assert.match(c.talentUpgrade('t1_str'), /需要 20 點/);
-  c.G.player.reincarnationTalentPoints = 20;
-  assert.equal(c.talentUpgrade('t1_str'), null);
-  assert.equal(c.talentLevel('t1_str'), 51);
-  assert.equal(c.G.player.reincarnationTalentPoints, 0);
-  assert.equal(c.talentDowngrade('t1_str'), null);
-  assert.equal(c.G.player.reincarnationTalentPoints, 20);
-  c.G.player.talents.levels.t1_str = 52;
-  c.G.player.reincarnationTalentPoints = 0;
-  assert.equal(c.talentDelete('t1_str'), null);
-  assert.equal(c.G.player.reincarnationTalentPoints, 540);
-
-  // 10 轉天賦：19 點／38 點
-  c.G.player.reincarnations = 10;
-  c.G.player.reincarnationTalentPoints = 19;
-  assert.equal(c.talentUpgradeCost('t10_str', 1), 19);
-  assert.equal(c.talentUpgradeCost('t10_str', 51), 38);
-  assert.equal(c.talentUpgrade('t10_str'), null);
-  assert.equal(c.G.player.reincarnationTalentPoints, 0);
-  assert.match(c.talentUpgrade('t10_str'), /需要 19 點/);
-  assert.equal(c.talentDelete('t10_str'), null);
-  assert.equal(c.G.player.reincarnationTalentPoints, 19);
-});
-
-test('未達轉生次數的天賦鎖定；潛力解鎖節點需升至 100 級才解鎖潛力', () => {
-  const c = loadContext();
-  assert.match(c.talentUpgrade('t2_crit'), /尚未達到 2 轉/);
-  c.G.player.reincarnations = 3;
-  c.G.player.reincarnationTalentPoints = 10;
-  // 尚未解鎖任何潛力：解鎖數為 0，潛力技能不可升級
-  assert.equal(c.potentialUnlockedCount(), 0);
-  const [pot1, , pot3, pot4] = c.POTENTIAL_TALENTS.map((p) => p.id);
-  assert.match(c.potentialUpgrade(pot1), /尚未解鎖/);
-  assert.equal(c.potentialLevel(pot1), 0);
-  assert.equal(c.availableSkillPoints(), c.totalSkillPoints());
-
-  // 解鎖門檻是「升至 100 級（滿級）」，99 級不算（PATCH.md 2026-07-19）
-  c.G.player.talents.levels.t3_potential = 99;
-  assert.equal(c.potentialUnlockLimit(), 0);
-  c.G.player.talents.levels.t3_potential = 100;
-  assert.equal(c.potentialUnlockedCount(), 3); // 依 POTENTIAL_TALENTS 順序解鎖前 3 個
-  assert.equal(c.potentialUnlockLimit(), 3);
-  assert.equal(c.potentialUnlocked(pot3), true);
-  assert.equal(c.potentialUnlocked(pot4), false);
-  c.G.player.talents.levels.t4_potential = 100;
-  assert.equal(c.potentialUnlockLimit(), 6);
-  c.G.player.talents.levels.t7_potential = 100;
-  c.G.player.talents.levels.t10_potential = 100;
-  assert.equal(c.potentialUnlockLimit(), 10);
-});
-
-test('潛力解鎖天賦升至 100 級才解鎖；技能點依 2/4 點規則逐級給予', () => {
-  const c = loadContext();
-  const def = c.talentDef('t3_potential');
-  assert.equal(c.talentLevelValue(def, 1), 2);
-  assert.equal(c.talentLevelValue(def, 50), 100);
-  assert.equal(c.talentLevelValue(def, 51), 104);
-  assert.equal(c.talentLevelValue(def, 100), 300);
-  // 解鎖數量：僅滿級（100）才解鎖，未滿級為 0
-  assert.equal(c.potentialCountForLevel(def, 1), 0);
-  assert.equal(c.potentialCountForLevel(def, 99), 0);
-  assert.equal(c.potentialCountForLevel(def, 100), 3);
-
-  c.G.player.reincarnations = 4;
-  c.G.player.talents.levels.t3_potential = 100;
-  c.G.player.talents.levels.t4_potential = 100;
-  assert.equal(c.talentSkillPointBonus(), 600);
-  // 2026-07-30 熟練度制：總點數 = 基礎點數 + 熟練度等級 + 潛力天賦加成（不再隨轉生/等級發放）
-  const base = c.SKILL_POINT_BASE; // 開局自帶技能數；調整初始技能不該讓本測試變紅
-  assert.equal(c.totalSkillPoints(), base + 600);
-  c.G.player.skillMastery = { level: 40, xp: 0 };
-  assert.equal(c.totalSkillPoints(), base + 640);
-});
-
-test('潛力解鎖天賦的 tips 明確標示「升至 100 級才會解鎖」', () => {
-  const c = loadContext();
-  c.document = { getElementById: () => null };
-  vm.runInContext(fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8'), c, { filename: 'js/ui.js' });
-  for (const id of ['t3_potential', 't4_potential', 't7_potential', 't10_potential']) {
-    const def = c.talentDef(id);
-    const desc = c.talentEffectDescription(def, c.talentDescriptionValue(def, 1, c.talentTurn(id)));
-    assert.match(desc, /升至 100 級才會解鎖新類型技能「潛力」/);
+test('威能升到N級消耗N點，滿級55點，降級與清除精確退點', () => {
+  const c=loadContext(); c.G.player.reincarnations=10;
+  for(const id of ['t1_str','t2_crit','t10_str']) {
+    c.G.player.reincarnationTalentPoints=55;
+    for(let lv=1;lv<=10;lv++) { assert.equal(c.talentUpgradeCost(id,lv),lv); assert.equal(c.talentUpgrade(id),null); }
+    assert.equal(c.talentTotalCost(id,10),55); assert.equal(c.G.player.reincarnationTalentPoints,0);
+    assert.match(c.talentUpgrade(id),/最高/); assert.equal(c.talentDowngrade(id),null);
+    assert.equal(c.G.player.reincarnationTalentPoints,10); assert.equal(c.talentDelete(id),null);
+    assert.equal(c.G.player.reincarnationTalentPoints,55);
   }
+  c.G.player.reincarnationTalentPoints=5; assert.equal(c.talentMax('t1_str'),null);
+  assert.equal(c.talentLevel('t1_str'),2); assert.equal(c.G.player.reincarnationTalentPoints,2);
+  assert.match(c.talentUpgrade('t1_str'),/需要 3 點/);
+});
+
+test('威能仍依轉數開放，所有潛力無解鎖限制並使用威能點', () => {
+  const c=loadContext(); assert.match(c.talentUpgrade('t2_crit'),/尚未達到 2 轉/);
+  c.G.player.reincarnations=0; c.G.player.reincarnationTalentPoints=55; c.G.player.gold=0;
+  assert.equal(c.potentialUnlockedCount(),10); assert.equal(c.potentialUnlockLimit(),10);
+  const id=c.POTENTIAL_TALENTS[9].id; assert.equal(c.potentialUnlocked(id),true);
+  assert.equal(c.potentialMax(id),null); assert.equal(c.potentialLevel(id),10);
+  assert.equal(c.G.player.gold,0); assert.equal(c.G.player.reincarnationTalentPoints,0);
+  assert.equal(c.potentialDowngrade(id),null); assert.equal(c.G.player.reincarnationTalentPoints,10);
+  assert.equal(c.potentialDelete(id),null); assert.equal(c.G.player.reincarnationTalentPoints,55);
+});
+
+test('停用節點不再給技能點，潛力投入不佔用技能點預算', () => {
+  const c=loadContext(); c.G.player.talents.levels.t3_potential=10;
+  c.G.player.talents.potentialLevels[c.POTENTIAL_TALENTS[0].id]=10;
+  assert.equal(c.talentSkillPointBonus(),0); assert.equal(c.potentialSpentSkillPoints(),0);
+  assert.equal(c.spentSkillPoints(),0); assert.equal(c.talentSpentPoints(),110);
+});
+
+test('舊潛力解鎖威能tips說明停用原因', () => {
+  const c=loadContext(); c.document={getElementById:()=>null};
+  vm.runInContext(fs.readFileSync(path.join(root,'js/ui.js'),'utf8'),c);
+  for(const id of ['t3_potential','t4_potential','t7_potential','t10_potential']) assert.match(c.talentEffectDescription(c.talentDef(id),0),/停用/);
 });
 
 /* 改版前潛力是「聚合到 talentStatBonuses 的被動加成」（b.potentialCdr / b.potentialInvCap）。
@@ -341,12 +244,12 @@ test('物攻/魔攻天賦為「額外」獨立乘區；總傷害額外增幅寫�
   const c = statsContext();
   const base = c.computeStats();
   c.G.player.talents.levels.t7_patk = 10;      // 物攻 +5%（V3 每級 0.5%）
-  c.G.player.talents.levels.t7_matk = 20;      // 魔攻 +10%
+  c.G.player.talents.levels.t7_matk = 10;      // 魔攻 +10%
   c.G.player.talents.levels.t7_totaldmg = 10;  // 總傷害 +2.5%（V3 每級 0.25%）
   c.G.player.talents.levels.t10_totaldmg = 10; // 總傷害 +10%（每級 1%）
   const st = c.computeStats();
   assert.equal(st.atk, Math.round(base.atk * 1.05));
-  assert.equal(st.matk, Math.round(base.matk * 1.1));
+  assert.equal(st.matk, Math.round(base.matk * 1.05));
   assert.equal(st.totalDmgPct, 12.5);
 });
 
@@ -474,16 +377,14 @@ test('5/9 轉元素天賦使用攻擊附加元素傷害的完整說明', () => {
   for (const [id, element] of Object.entries(expected5)) {
     const def = c.talentDef(id);
     assert.equal(def.desc, '攻擊時額外附加');
-    assert.equal(def.low, 0.5); // V3：Lv.1~50 每級 0.5%
-    assert.equal(def.high, 1);  // Lv.51~100 每級 1%
-    assert.equal(c.talentLevelValue(def, 50), 25);
-    assert.equal(c.talentLevelValue(def, 100), 75);
+    assert.equal(def.per, 0.5);
+    assert.equal(c.talentLevelValue(def, 5), 2.5);
+    assert.equal(c.talentLevelValue(def, 10), 5);
     assert.equal(c.talentEffectDescription(def, 0.5), '攻擊時額外附加0.5%' + element + '傷害');
   }
   for (const id of ['t9_fire', 't9_ice', 't9_lightning', 't9_poison', 't9_light', 't9_dark']) {
     const def = c.talentDef(id);
-    assert.equal(def.low, 2);  // Lv.1~50 每級 2%
-    assert.equal(def.high, 4); // Lv.51~100 每級 4%
+    assert.equal(def.per, 2);
   }
 });
 
@@ -555,22 +456,20 @@ test('傷害偏折/絕對偏折為乘算：全局減傷 = 裝備總值 × (1 + �
   c.G.equipment = c.SLOT_LIST.reduce((eq, slot) => { eq[slot] = null; return eq; }, {});
   c.G.equipment.helmet = { affixes: [{ key: 'globalDmgRed', val: 1000 }], sockets: [] };
 
-  // V2 數值：5 轉傷害偏折 Lv.1~50 每級 1%、Lv.51~100 每級 2%；7 轉絕對偏折每級 2%/4%
-  assert.equal(c.talentDef('t5_global').low, 1);
-  assert.equal(c.talentDef('t5_global').high, 2);
-  assert.equal(c.talentDef('t7_global').low, 2);
-  assert.equal(c.talentDef('t7_global').high, 4);
+  // 固定每級增加值，不再分高低階。
+  assert.equal(c.talentDef('t5_global').per, 1);
+  assert.equal(c.talentDef('t7_global').per, 2);
 
   // 無天賦：純裝備定值
   assert.equal(c.computeStats().globalDmgRed, 1000);
 
-  // 傷害偏折 Lv.100（未全滿 ×1）＝ +150% → 1000 × 2.5
-  c.G.player.talents.levels.t5_global = 100;
-  assert.equal(c.computeStats().globalDmgRed, 2500);
+  // 傷害偏折十級＝ +10%。
+  c.G.player.talents.levels.t5_global = 10;
+  assert.equal(c.computeStats().globalDmgRed, 1100);
 
-  // 疊加 7 轉絕對偏折 Lv.50（+100%）：百分比相加 → 1000 × (1 + 250%)
-  c.G.player.talents.levels.t7_global = 50;
-  assert.equal(c.computeStats().globalDmgRed, 3500);
+  // 疊加絕對偏折十級的 +20%，百分比相加。
+  c.G.player.talents.levels.t7_global = 10;
+  assert.equal(c.computeStats().globalDmgRed, 1300);
 
   // 沒有任何全局減傷來源時，天賦不再憑空提供定值
   c.G.equipment.helmet = null;
@@ -607,15 +506,14 @@ test('物防/魔防鍛體為獨立乘區：與裝備物防%連乘、物魔分開
   assert.equal(stacked.def, Math.round(stacked.base.def * 2 * 1.1));
 });
 
-test('爆擊/閃避/命中天賦與屬性加成直接相加；爆傷每級 75/150', () => {
+test('爆擊/閃避/命中威能與屬性加成直接相加；爆傷每級75', () => {
   const c = loadContext();
   c.itemEnchants = () => [];
   c.G.player.level = 1;
   c.G.player.reincarnations = 10;
   c.G.equipment = c.SLOT_LIST.reduce((eq, slot) => { eq[slot] = null; return eq; }, {});
 
-  assert.equal(c.talentDef('t2_critdmg').low, 75);
-  assert.equal(c.talentDef('t2_critdmg').high, 150);
+  assert.equal(c.talentDef('t2_critdmg').per, 75);
 
   const base = c.computeStats();
   c.G.player.talents.levels.t2_crit = 10;     // +50%
@@ -631,7 +529,7 @@ test('爆擊/閃避/命中天賦與屬性加成直接相加；爆傷每級 75/15
   assert.equal(st.evasion, base.evasion + 150);
 });
 
-test('天賦升級成本顯示為「轉數+9」，51 級起顯示加倍', () => {
+test('威能升級彈窗顯示下一級的威能點成本', () => {
   const c = loadContext();
   const body = { innerHTML: '' };
   const overlay = { style: { display: 'flex' } };
@@ -642,10 +540,10 @@ test('天賦升級成本顯示為「轉數+9」，51 級起顯示加倍', () => 
   c.G.player.reincarnations = 6;
   c.UI.selTalent = { kind: 'talent', id: 't6_boss' };
   c.renderTalentModal(talentPanelSnapshot(c));
-  assert.match(body.innerHTML, /消耗威能點：15/);
+  assert.match(body.innerHTML, /消耗威能點：1/);
 
-  // Lv.50 → 下一級 51 → 顯示加倍成本 30
-  c.G.player.talents.levels.t6_boss = 50;
+  // 九級升十級的下一級成本。
+  c.G.player.talents.levels.t6_boss = 9;
   c.renderTalentModal(talentPanelSnapshot(c));
-  assert.match(body.innerHTML, /消耗威能點：30/);
+  assert.match(body.innerHTML, /消耗威能點：10/);
 });

@@ -5328,6 +5328,19 @@ html *::-webkit-scrollbar-corner {
   transition: box-shadow .15s;
 }
 
+#tab-talents .tlx-node-threat {
+  color: #e7a387;
+  font-size: 11px;
+  line-height: 14px;
+  white-space: nowrap;
+}
+
+#tab-talents .tlx-monster-power {
+  margin-left: auto;
+  color: #e7a387;
+  cursor: help;
+}
+
 #tab-talents .tlx-node.maxed .tlx-node-ring {
   background: conic-gradient(#e7c47c var(--p), #2a2d34 var(--p));
 }

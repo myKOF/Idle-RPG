@@ -81,6 +81,7 @@ function newGameState() {
        登錄與清理條件見 ONE_TIME_MIGRATIONS.md。 */
     loadoutCapClampV1: true,   // 裝載欄上限下修後裁切超額格數
     legacySkillRemovalV1: true, // 舊版技能系統移除：清除舊技能／融合技、任務進度索引平移
+    powerThreatV1: true, // 威能十級制與潛力改用威能點
 
     savedAt: Date.now(),
     player: {

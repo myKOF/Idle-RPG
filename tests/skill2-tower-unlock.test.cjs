@@ -21,7 +21,7 @@ function uiContext() {
   const c = vm.createContext({ console, Math, setTimeout() {}, clearTimeout() {},
     document: { addEventListener() {}, getElementById() { return null; }, querySelectorAll() { return []; } } });
   c.window = c;
-  for (const file of ['util', 'data', 'status', 'formula', 'battlefield', 'skills', 'skills2', 'ui']) {
+  for (const file of ['util', 'data', 'status', 'formula', 'battlefield', 'skills', 'skills2', 'talents', 'ui']) {
     vm.runInContext(fs.readFileSync(path.join(root, 'js', file + '.js'), 'utf8'), c);
   }
   c.pendingUiButtonAttributes = () => '';

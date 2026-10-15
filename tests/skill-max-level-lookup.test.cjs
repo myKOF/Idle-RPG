@@ -65,9 +65,8 @@ test('對照表整張缺失才回傳 SKILL_MAX_LV_NO_TABLE，且它不是遊戲�
   assert.equal(c.skillMaxLvForRc(3), c.SKILL_MAX_LV_NO_TABLE);
 });
 
-/* 舊技能表移除後，skillMaxLvForRc 是唯一入口：潛力技能等級上限（talents.js）直接呼叫它，
-   舊的 skillMaxLv(skill) 包裝已刪，不得復活成第二套算法。 */
-test('潛力技能等級上限走同一張表——skillMaxLv 已刪，不得再有第二套上限算法', () => {
+/* 潛力改為威能十級制，不受轉生對照表影響，舊 skillMaxLv 仍維持移除。 */
+test('潛力技能上限固定十級，不受轉生次數影響', () => {
   const root = path.resolve(__dirname, '..');
   const context = { console, Math: Object.create(Math) };
   vm.createContext(context);
@@ -75,9 +74,9 @@ test('潛力技能等級上限走同一張表——skillMaxLv 已刪，不得再
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });
   context.G = { player: { level: 1, reincarnations: 3 } };
-  assert.equal(context.potentialSkillMaxLv(), context.skillMaxLvForRc(3));
+  assert.equal(context.potentialSkillMaxLv(), 10);
   context.G.player.reincarnations = 10;
-  assert.equal(context.potentialSkillMaxLv(), context.skillMaxLvForRc(10));
+  assert.equal(context.potentialSkillMaxLv(), 10);
   assert.equal(typeof context.skillMaxLv, 'undefined', 'skillMaxLv 已隨舊技能系統刪除');
 });
 

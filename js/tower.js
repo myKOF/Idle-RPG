@@ -41,6 +41,7 @@ function makeBoss(floor) {
     hell: !!bs.hell,
     purgatory: !!bs.purgatory,
     level: bs.level,
+    _powerLevelBonus: typeof monsterPowerLevelBonus === 'function' ? monsterPowerLevelBonus() : 0,
     maxHp: bs.hp, hp: bs.hp,
     atk: bs.atk, def: bs.def, mdef: bs.mdef,
     magic: !!bd.elem,                        // 元素 BOSS 以魔法攻擊（對玩家魔防）

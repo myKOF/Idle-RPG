@@ -261,6 +261,7 @@ function makeFieldEnemy(mtype, base, zn, s, o) {
         // 名稱一律用 NPC 原名，不加「菁英・」前綴；階級改由圖示、名稱顏色與血條樣式表示。
         name: mtype.name, emoji: mtype.emoji, npcId: mtype.id || null, appearance: mtype.appearance || mtype.emoji || '',
         level: base.level,
+        _powerLevelBonus: typeof monsterPowerLevelBonus === 'function' ? monsterPowerLevelBonus() : 0,
         maxHp: base.hp * zn.hpMult * hpMult, hp: base.hp * zn.hpMult * hpMult,
         atk: base.atk * zn.atkMult * atkMult,
         def: base.def * zn.defMult * defMult, mdef: base.mdef * zn.defMult * defMult,
@@ -2290,7 +2291,7 @@ function rollFieldDrops(m) {
     if (window.recordLootDrop) window.recordLootDrop('field');
     // 菁英掉落：裝備與材料都在一般基礎上乘 ELITE_DROP_MULT（→ formula.js §5，與離線收益共用）。
     var zoneDrop = fieldMaterialConfigFor(G.stage.zone, s);
-    var rates = fieldDropRatesFor(s, m.level, G.stage.zone);
+    var rates = fieldDropRatesFor(s, m.level - (Number(m._powerLevelBonus) || 0), G.stage.zone);
     // 敵種掉落倍率：BOSS ＞ 菁英 ＞ 普通（BOSS 倍率 → data.js FIELD_BOSS_DROP_MULT）
     var eliteDropMult = m.isBoss ? FIELD_BOSS_DROP_MULT : (m.elite ? ELITE_DROP_MULT : 1);
     var dropMult = (1 + lootBonus / 100) * eliteDropMult;

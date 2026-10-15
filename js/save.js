@@ -294,6 +294,7 @@ function migrateSave(data) {
   var hadLoadoutCapClampV1 = !!(data.loadoutCapClampV1);
   /* 舊版技能移除遷移旗標：同樣須在 mergeDefaults 前判斷（newGameState 預帶 true）。 */
   var hadLegacySkillRemovalV1 = !!(data.legacySkillRemovalV1);
+  var hadPowerThreatV1 = !!data.powerThreatV1;
   var originalEquipment = (data.equipment && typeof data.equipment === 'object') ? data.equipment : null; // 保留真正裝備參照
   var def = newGameState();
   
@@ -511,6 +512,8 @@ function migrateSave(data) {
     };
   }
   data.player.reincarnationTalentPoints = Math.max(0, Math.floor(Number(data.player.reincarnationTalentPoints) || 0));
+  data.powerThreatV1 = hadPowerThreatV1;
+  if (typeof migratePowerSave === 'function') migratePowerSave(data);
   if (!data.player.talents || typeof data.player.talents !== 'object') data.player.talents = { levels: {}, potentialLevels: {} };
   if (!data.player.talents.levels || typeof data.player.talents.levels !== 'object') data.player.talents.levels = {};
   if (!data.player.talents.potentialLevels || typeof data.player.talents.potentialLevels !== 'object') data.player.talents.potentialLevels = {};
@@ -520,17 +523,13 @@ function migrateSave(data) {
     });
   }
   if (typeof POTENTIAL_TALENTS !== 'undefined') {
-    if (data.player && data.player.reincarnations < 3) {
-      data.player.talents.potentialLevels = {};
-    } else {
-      // 潛力技能：只保留現有潛力技能鍵並依轉生對照表的等級上限夾限；舊版潛力鍵一律清除。
-      var potMaxLv = skillMaxLvForRc(data.player.reincarnations);
-      var cleaned = {};
-      POTENTIAL_TALENTS.forEach(function (def) {
-        cleaned[def.id] = clamp(Math.floor(Number(data.player.talents.potentialLevels[def.id]) || 0), 0, potMaxLv);
-      });
-      data.player.talents.potentialLevels = cleaned;
-    }
+    // 潛力技能：只保留現有鍵並夾回威能等級上限。
+    var potMaxLv = TALENT_MAX_LEVEL;
+    var cleaned = {};
+    POTENTIAL_TALENTS.forEach(function (def) {
+      cleaned[def.id] = clamp(Math.floor(Number(data.player.talents.potentialLevels[def.id]) || 0), 0, potMaxLv);
+    });
+    data.player.talents.potentialLevels = cleaned;
   }
   // 2026-07-30 技能熟練度制：技能點不再依角色等級補建（舊 skillPointBudget 於下方轉換為熟練度等級）。
   // 經驗值是目前等級的「剩餘經驗」，不是累積總經驗；讀檔先轉回有限非負數，
@@ -693,9 +692,6 @@ function migrateSave(data) {
   // 基礎點數以 skills.js 的 SKILL_POINT_BASE 為準，不得寫死。
   var spBase = (typeof SKILL_POINT_BASE === 'number') ? SKILL_POINT_BASE : 2;
   var spSpentAll = 0;
-  if (data.player.talents && data.player.talents.potentialLevels) {
-    for (var ppId in data.player.talents.potentialLevels) spSpentAll += data.player.talents.potentialLevels[ppId] || 0;
-  }
   spSpentAll = Math.max(0, Math.floor(spSpentAll));
   if (!data.player.skillMastery || typeof data.player.skillMastery !== 'object') data.player.skillMastery = { level: 0, xp: 0 };
   var mgMastery = data.player.skillMastery;
