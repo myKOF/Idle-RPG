@@ -68,9 +68,12 @@ test('登記項目都有合法類別與理由', () => {
   }
 });
 
-test('pending 只能是任務 A（技能系統）的指令，且技能系統做完後必須清空', () => {
+test('pending 只能是已排定的任務，做完必須移除', () => {
+  /* 允許的 pending：技能系統（skill*、skill2*）與裝備組（player_strategy.md §7）。
+     新增項目要改這裡並說明——pending 不能拿來暫時靜音其他系統。 */
+  const ALLOWED = (c) => /^skill2?./.test(c) || c === 'player.switchEquipSet';
   const pending = Object.keys(classified).filter((c) => classified[c]['類別'] === 'pending');
-  const bad = pending.filter((c) => !/^skill2?\./.test(c));
+  const bad = pending.filter((c) => !ALLOWED(c));
   assert.deepEqual(bad, [], 'pending 不能拿來暫時靜音其他系統：' + bad.join(', '));
 });
 

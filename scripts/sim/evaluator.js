@@ -1468,3 +1468,103 @@ function buildRunePanel() {
     equip: equip
   };
 }
+
+/* ============ 技能決策面板（harness 專用，player_strategy.md §4） ============
+
+   與 buildRunePanel 同一個理由放在這裡：它是模擬策略的需求，真實玩家的 UI 不需要。
+   費用、解鎖、超神進化條件全由遊戲函式現算，策略不抄公式——
+   遊戲改了成長曲線或解鎖等級，兩邊就會悄悄脫鉤（送出去只會被回「金幣不足」「尚未解鎖」，
+   報表看不出整個系統沒在升級）。唯讀，不改任何狀態。 */
+function buildSkillPanel() {
+  if (typeof SKILLS2 === 'undefined' || typeof skills2Levels !== 'function') return null;
+  var prg = (typeof sgUnlockProgress === 'function') ? sgUnlockProgress(null) : null;
+  var groups = {};
+  for (var gid in SKILLS2) {
+    var g = SKILLS2[gid];
+    var lvs = skills2Levels(gid);
+    var tiers = [];
+    for (var t = 0; t < g.tiers.length; t++) {
+      var lv = lvs[t] || 0;
+      var maxed = lv >= SG_TIER_MAX_LV;
+      var unlocked = !prg || sgTierUnlockedBy(g.tiers[t].unlock, prg.level, prg.reinc);
+      tiers.push({
+        lv: lv,
+        maxed: maxed,
+        cost: maxed ? null : skills2UpgradeCost(gid, t, lv),
+        /* 循序解鎖：第 2 階起，前一階至少要有 Lv.1。 */
+        prevOk: t === 0 || (lvs[t - 1] || 0) >= 1,
+        unlocked: unlocked,
+        unlockLv: (g.tiers[t].unlock && g.tiers[t].unlock.lv) || 0
+      });
+    }
+    var defs = (typeof sgUltDefs === 'function') ? sgUltDefs(gid) : null;
+    var ult = null;
+    if (defs) {
+      var pick = sgUltPickOf((G.player.skills2 && G.player.skills2.ult) || null, gid);
+      var optCosts = [];
+      for (var oi = 0; oi < defs.length; oi++) optCosts.push(skills2UltCost(gid, oi, 0));
+      ult = {
+        options: defs.length,
+        unlocked: sgUltUnlockedBy(gid, lvs),                    // 前 7 階全滿才開放
+        pick: pick ? pick.idx : -1,
+        lv: pick ? pick.lv : 0,
+        nextCost: pick && pick.lv < SG_TIER_MAX_LV ? skills2UltCost(gid, pick.idx, pick.lv) : null,
+        optCosts: optCosts                                      // 選／切換到各選項 Lv.1 的費用
+      };
+    }
+    groups[gid] = {
+      name: g.name,
+      kind: g.dmgType === 'magic' ? 'magic' : 'phys',
+      elem: g.elem || null,
+      passive: !!(typeof skills2IsPassive === 'function' && skills2IsPassive(gid)),
+      castable: skills2Castable(gid),
+      tiers: tiers,
+      ult: ult
+    };
+  }
+  return {
+    loadoutSize: loadoutSize(),
+    loadout: (G.player.loadout || []).slice(),
+    prefix: SG_PREFIX,
+    tierMax: SG_TIER_MAX_LV,
+    groups: groups
+  };
+}
+
+/* ============ 任務目標面板（harness 專用，player_strategy.md §6） ============
+
+   遊戲的 task 面板只有 idx／prog／ready，沒有「這個任務要什麼」。策略要判斷
+   「這件事是不是順手能做」就得知道目前任務的類型與目標。
+   進度與可否領取一律用遊戲函式算（taskProgressFor），不在外面重推。唯讀。 */
+function buildTaskGoalPanel() {
+  if (typeof TASKS === 'undefined' || typeof taskState !== 'function') return null;
+  var st = taskState();
+  var def = TASKS[st.idx];
+  if (!def) return { done: true, ready: false, type: null };
+  var prog = taskProgressFor(def);
+  return {
+    done: false,
+    idx: st.idx,
+    name: def.name,
+    type: def.type,
+    param: def.param || null,
+    count: def.count,
+    prog: prog,
+    ready: prog >= def.count
+  };
+}
+
+/* ============ 裝備欄規則面板（harness 專用） ============
+
+   哪些部位「現在不能裝」由遊戲回答（slotBlockedByTwoHand：主手是雙手武器時副手被連帶佔用），
+   策略不自己重推。少了這個，策略看到「副手空著、背包有匕首」就裝上去，結果雙手主手被擠下，
+   下一輪又把雙手武器裝回主手把副手擠下——每個決策點都在來回換裝（實測 6 小時 65 次），
+   而且每次都回成功，報表上完全看不出來。唯讀。 */
+function buildEquipRulesPanel() {
+  var blocked = {};
+  var eq = (G && G.equipment) || {};
+  if (typeof slotBlockedByTwoHand === 'function') {
+    for (var k in eq) if (slotBlockedByTwoHand(eq, k)) blocked[k] = true;
+  }
+  return { blocked: blocked };
+}

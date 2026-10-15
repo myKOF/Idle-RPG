@@ -540,6 +540,7 @@ function updateContext(state, policy, memo) {
     enemyLevel: T.enemyLevel || 0,
     blockStage: blockStage,
     fails: blockRec ? blockRec.fails : 0,
+    blockMode: blockRec ? (blockRec.mode || 'normal') : 'normal',
     /* 同一個卡點試了 5 次還過不去＝生存率不足，轉為針對性強化
        （菁英／BOSS 抗性與傷害加成）。 */
     desperate: !!(blockRec && blockRec.fails >= 5),
@@ -1030,9 +1031,280 @@ function planRunes(state, cfg, ruleId) {
   return out;
 }
 
+/* ============ 技能計畫（player_strategy.md §4 最佳技能進化策略） ============
+
+   技能是金幣升級制（沒有技能點）：每個群組 7 階、每階最多 Lv.10，費用逐級 ×1.5；
+   7 階全滿才開放第 8 階「超神進化」三選一。所有費用、解鎖、開放條件都由遊戲算好放在
+   panels.skill，策略不抄公式。 */
+
+/* 種子化亂數（mulberry32）。策略層禁用 Math.random，組合要能由 seed 重現。 */
+function mulberry32(a) {
+  return function () {
+    a = (a + 0x6D2B79F5) | 0;
+    var t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function seededShuffle(list, rng) {
+  var a = list.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(rng() * (i + 1));
+    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+/* 技能組合：整組同一類別（全物理或全魔法）；魔法再集中在少數元素系。
+   「每次模擬隨機挑選」——由 seed 決定，同 seed 必得同組合。
+   魔法時各元素輪流排進優先序，這樣裝配欄只有 4 格時也是兩個元素各 2 個。 */
+function buildSkillComposition(P, cfg, seed) {
+  var rng = mulberry32((seed ^ 0x51ab7) >>> 0);
+  rng(); rng();                                      // 前幾個值相關性高，丟掉
+  var phys = [], byElem = {};
+  var ids = Object.keys(P.groups).sort();
+  for (var i = 0; i < ids.length; i++) {
+    var g = P.groups[ids[i]];
+    if (g.passive) continue;                         // 被動群組是生存補位用，不當主力
+    if (g.kind === 'phys') phys.push(ids[i]);
+    else { (byElem[g.elem] = byElem[g.elem] || []).push(ids[i]); }
+  }
+  var magicChance = (typeof cfg.magicChance === 'number') ? cfg.magicChance : 0.5;
+  var mode = (cfg.mode === 'phys' || cfg.mode === 'magic') ? cfg.mode : (rng() < magicChance ? 'magic' : 'phys');
+  /* 備用成員：同類別、不在主力組合內的群組，依「第 1 階開放等級」由低到高。
+     群組的開放等級從 1 到 700 級不等（雷系 300、冰系 450、風系 600），
+     主力組合在前期多半還沒開放；沒有備用成員的話裝配欄會是空的，角色只剩普攻。 */
+  function byOpenLevel(list) {
+    return list.slice().sort(function (a, b) {
+      var la = P.groups[a].tiers[0].unlockLv || 0, lb = P.groups[b].tiers[0].unlockLv || 0;
+      return (la - lb) || (a < b ? -1 : 1);
+    });
+  }
+  if (mode === 'phys') {
+    return { mode: 'phys', elems: [], comp: seededShuffle(phys, rng), fallback: [] };
+  }
+  var pool = [];
+  var wanted = cfg.elemPool || Object.keys(byElem).sort();
+  for (var w = 0; w < wanted.length; w++) if (byElem[wanted[w]] && byElem[wanted[w]].length) pool.push(wanted[w]);
+  var elems = seededShuffle(pool, rng).slice(0, cfg.elemCount || 2);
+  var lists = [];
+  for (var e = 0; e < elems.length; e++) lists.push(seededShuffle(byElem[elems[e]], rng));
+  var comp = [];
+  for (var round = 0; ; round++) {
+    var added = false;
+    for (var l = 0; l < lists.length; l++) if (round < lists[l].length) { comp.push(lists[l][round]); added = true; }
+    if (!added) break;
+  }
+  var rest = [];
+  for (var ek in byElem) for (var ri2 = 0; ri2 < byElem[ek].length; ri2++) {
+    if (comp.indexOf(byElem[ek][ri2]) < 0) rest.push(byElem[ek][ri2]);
+  }
+  return { mode: 'magic', elems: elems, comp: comp, fallback: byOpenLevel(rest) };
+}
+
+/* 每個決策點更新技能情境：組合只在第一次看得到技能面板時決定一次，之後不變。 */
+function updateSkillContext(state, policy, memo) {
+  var cfg = policy.skills;
+  if (!cfg) return;
+  if (!state.ctx) state.ctx = {};
+  var P = pathVal(state, cfg.panel || 'panels.skill');
+  if (P && P.groups && !memo.skill) {
+    memo.skill = buildSkillComposition(P, cfg, Number(state.seed) || 0);
+    memo.skill.lastUltSwitchAt = -1e12;
+  }
+  var S = memo.skill;
+  if (!S) return;
+  state.ctx.skillMode = S.mode;
+  /* 沒選到的元素要明確是 false：條件寫成 ['ctx.elem_fire','truthy']，
+     欄位不存在會被記成「失效路徑」，而它其實是正常的「沒選這個元素」。 */
+  var allElems = ['fire', 'lightning', 'ice', 'wind', 'earth'];
+  for (var ei = 0; ei < allElems.length; ei++) state.ctx['elem_' + allElems[ei]] = false;
+  for (var i = 0; i < S.elems.length; i++) state.ctx['elem_' + S.elems[i]] = true;
+}
+
+/* 目前的情境：封魔塔進行中＝tower；野外 BOSS 卡關（失敗 ≥2 次）＝boss；其餘＝farm。
+   菁英關歸 farm：超神進化切換要付上千萬金幣，只值得為持續性的情境切換。 */
+function skillSituation(state, cfg) {
+  var tower = pathVal(state, cfg.towerActive || 'panels.tower.tower.active');
+  if (tower) return 'tower';
+  var c = state.ctx || {};
+  if (c.blockMode === 'boss' && (c.fails || 0) >= 2) return 'boss';
+  return 'farm';
+}
+
+function gearCoverageOk(state, g) {
+  if (!g) return true;
+  var rar = pathVal(state, g.equippedRarities) || {};
+  var total = 0, meet = 0;
+  for (var k in rar) {
+    var v = Number(rar[k]);
+    if (!(v >= 0)) continue;
+    total++;
+    if (v >= (g.minRarity || 0)) meet++;
+  }
+  return total > 0 && (meet / total) >= (typeof g.coverage === 'number' ? g.coverage : 1);
+}
+
+/* 這個群組離「7 階全滿＝可進超神進化」還差幾級。 */
+function skillRemaining(grp) {
+  var n = 0;
+  for (var i = 0; i < grp.tiers.length; i++) n += (10 - grp.tiers[i].lv);
+  return n;
+}
+
+function planSkills(state, policy, memo, ruleId) {
+  var cfg = policy.skills || {};
+  var out = [];
+  var P = pathVal(state, cfg.panel || 'panels.skill');
+  var S = memo.skill;
+  if (!P || !P.groups || !S) return out;
+  var ctx = state.ctx || {};
+  var gold = Number(pathVal(state, cfg.gold || 'view.gold')) || 0;
+  var size = Number(P.loadoutSize) || 0;
+  var prefix = P.prefix || 'sg:';
+
+  /* 目前裝配中的群組（先算，後面「保留已裝配」要用）。 */
+  var cur = [];
+  for (var ci = 0; ci < P.loadout.length; ci++) {
+    if (String(P.loadout[ci]).indexOf(prefix) === 0) cur.push(String(P.loadout[ci]).slice(prefix.length));
+  }
+
+  /* ---- 1. 想要裝配哪些群組 ----
+     只挑「已學會，或現在學得起」的成員：每個群組連第 1 階都有各自的等級門檻
+     （例如飛刀 50 級、雙刀亂舞 250 級），硬挑還沒開放的只會被遊戲回「需達到 N 級」。
+     已學會且已裝配的優先保留——不然等級一到，優先序較前的新成員就會把投資了很多的群組擠掉。
+     生存率不足（ctx.desperate）時把最後幾格換成生存類群組，其餘維持主力組合。 */
+  function usable(g) {
+    var x = P.groups[g];
+    return x && (x.castable || (x.tiers[0].unlocked && x.tiers[0].prevOk));
+  }
+  function isOn(g) { return P.groups[g].castable && cur.indexOf(g) >= 0; }
+  var mainOk = S.comp.filter(usable);
+  var backOk = (S.fallback || []).filter(usable);
+  /* 順序：主力已裝配 → 主力新開放 → 備用已裝配 → 備用新開放。
+     備用成員排在主力之後，所以主力一開放就會把備用擠掉。 */
+  var ordered = mainOk.filter(isOn).concat(mainOk.filter(function (g) { return !isOn(g); }),
+                                          backOk.filter(isOn), backOk.filter(function (g) { return !isOn(g); }));
+  var desired = ordered.slice(0, size);
+  if (ctx.desperate && cfg.survival) {
+    var k = Math.min(cfg.survivalSlots || 2, size);
+    var surv = [];
+    for (var si = 0; si < cfg.survival.length && surv.length < k; si++) {
+      var sg = cfg.survival[si];
+      if (P.groups[sg] && desired.indexOf(sg) < 0) surv.push(sg);
+    }
+    desired = ordered.slice(0, Math.max(0, size - surv.length)).concat(surv);
+  }
+
+  /* ---- 2. 學習：第一階段先把裝配欄各群組都學起來（平均），再依離超神進化的遠近升級 ---- */
+  var maxLearns = (typeof cfg.maxLearnsPerDecision === 'number') ? cfg.maxLearnsPerDecision : 6;
+  var learns = 0;
+  var di;
+  for (di = 0; di < desired.length && learns < maxLearns; di++) {
+    var dg = P.groups[desired[di]];
+    if (!dg || dg.castable) continue;
+    var t0 = dg.tiers[0];
+    if (t0.unlocked && t0.prevOk && t0.cost !== null && t0.cost <= gold) {
+      gold -= t0.cost; learns++;
+      out.push({ name: 'skill2.learn', args: { group: desired[di], tier: 0 }, ruleId: ruleId });
+    }
+  }
+
+  /* 全部都學起來之後才進入升級階段（先平均，再集中）。 */
+  var allCastable = true;
+  for (di = 0; di < desired.length; di++) if (!(P.groups[desired[di]] && P.groups[desired[di]].castable)) allCastable = false;
+
+  if (allCastable) {
+    var ranked = desired.slice().sort(function (a, b) {
+      return (skillRemaining(P.groups[a]) - skillRemaining(P.groups[b])) || (a < b ? -1 : 1);
+    });
+    for (var ri = 0; ri < ranked.length && learns < maxLearns; ri++) {
+      var gid = ranked[ri], grp = P.groups[gid];
+      /* 超神進化階：已選就繼續升；7 階全滿但還沒選就依情境挑一個。 */
+      if (grp.ult && grp.ult.unlocked) {
+        if (grp.ult.pick < 0) {
+          var want = skillUltChoice(state, cfg, gid, ctx);
+          var oc = grp.ult.optCosts[want];
+          if (oc <= gold) {
+            gold -= oc; learns++;
+            out.push({ name: 'skill2.ultPick', args: { group: gid, opt: want }, ruleId: ruleId });
+          }
+        } else if (grp.ult.nextCost !== null && grp.ult.nextCost <= gold) {
+          gold -= grp.ult.nextCost; learns++;
+          out.push({ name: 'skill2.learn', args: { group: gid, tier: grp.tiers.length }, ruleId: ruleId });
+        }
+        continue;
+      }
+      /* 一般階：第一個還沒滿的階，且解鎖、前一階 ≥ Lv.1、付得起。卡在等級門檻就換下一個群組。 */
+      for (var ti = 0; ti < grp.tiers.length; ti++) {
+        var tr = grp.tiers[ti];
+        if (tr.maxed) continue;
+        if (tr.unlocked && tr.prevOk && tr.cost !== null && tr.cost <= gold) {
+          gold -= tr.cost; learns++;
+          out.push({ name: 'skill2.learn', args: { group: gid, tier: ti }, ruleId: ruleId });
+        }
+        break;
+      }
+    }
+
+    /* ---- 3. 超神進化的情境切換 ----
+       切換要付上千萬金幣，所以三道閘：裝備強度先到位、金幣有餘裕、距離上次切換夠久。 */
+    var sit = skillSituation(state, cfg);
+    var gateOk = gearCoverageOk(state, cfg.gear);
+    var now = Number(state.gameTimeSec) || 0;
+    if (gateOk && (now - S.lastUltSwitchAt) >= (cfg.switchMinSec || 21600)) {
+      for (var ui = 0; ui < desired.length; ui++) {
+        var ug = P.groups[desired[ui]];
+        if (!ug || !ug.ult || ug.ult.pick < 0) continue;
+        var target = skillUltChoice(state, cfg, desired[ui], ctx);
+        if (target === ug.ult.pick) continue;
+        var cost = ug.ult.optCosts[target];
+        if (gold < cost * (cfg.switchGoldMult || 2)) continue;
+        gold -= cost;
+        S.lastUltSwitchAt = now;
+        out.push({
+          name: 'skill2.ultSwitch',
+          args: { group: desired[ui], opt: target, fromOpt: ug.ult.pick, fromLv: ug.ult.lv, cost: cost },
+          ruleId: ruleId
+        });
+        break;                                       // 一次只切一個，貴
+      }
+    }
+  }
+
+  /* ---- 4. 裝配：缺的補上；欄位滿了就卸掉不在目標內的 ---- */
+  var free = size - P.loadout.length;
+  var removable = cur.filter(function (g) { return desired.indexOf(g) < 0; });
+  for (var mi = 0; mi < desired.length; mi++) {
+    var mg = desired[mi];
+    if (cur.indexOf(mg) >= 0) continue;
+    if (!(P.groups[mg] && P.groups[mg].castable)) continue;
+    if (free <= 0) {
+      if (!removable.length) break;
+      var victim = removable.shift();
+      out.push({ name: 'skill.unequipLoadout', args: { id: prefix + victim }, ruleId: ruleId });
+      free++;
+    }
+    out.push({ name: 'skill.equipLoadout', args: { id: prefix + mg }, ruleId: ruleId });
+    free--;
+  }
+  return out;
+}
+
+/* 超神進化三選項：依情境挑。對應表是策略資料（cfg.ult.byGroup），沒列到就用 cfg.ult.default。 */
+function skillUltChoice(state, cfg, gid, ctx) {
+  var u = cfg.ult || {};
+  var sit = skillSituation(state, cfg);
+  var row = u.byGroup && u.byGroup[gid];
+  if (row && typeof row[sit] === 'number') return row[sit];
+  return (typeof u.default === 'number') ? u.default : 0;
+}
+
 /* 回傳這個決策點要送出的指令陣列。純函式：同樣的輸入必定得到同樣的輸出。 */
 function decide(state, policy, memo) {
   updateContext(state, policy, memo);
+  updateSkillContext(state, policy, memo);
   var out = [];
   var now = state.gameTimeSec;
   for (var i = 0; i < policy.rules.length; i++) {
@@ -1074,7 +1346,11 @@ function decide(state, policy, memo) {
          1. 只要背包物品的品質 (rarity) > 身上現有裝備的品質，100% 強制換上！
          2. 若品質相同，評分 (score) 較高者優先換上！ */
       var used = {};
+      /* 遊戲說目前不能裝的部位（主手是雙手武器時的副手）一律跳過。
+         不跳的話會無限來回換裝：裝副手擠下雙手主手、再裝雙手主手擠下副手。 */
+      var blockedSlots = pathVal(state, cfg.blocked || 'panels.equipRules.blocked') || {};
       for (var slotKey in eqScores) {
+        if (blockedSlots[slotKey]) continue;
         /* 部位歸屬以遊戲提供的 item.slots 為準（面板欄位，來自 equipSlotsForItem）。
            舊版是把部位鍵結尾的數字去掉當基礎部位——那對戒指沒問題，
            但雙手武器的合法部位只有 weapon，硬塞進 weapon2 會害主手被卸下。
@@ -1514,6 +1790,39 @@ function decide(state, policy, memo) {
           }
         }
       }
+    } else if (r.claimTask) {
+      /* 任務是依序的，只有「目前任務」可領。達成就領，無條件、不花資源。 */
+      var ctTask = pathVal(state, r.claimTask.panel || 'panels.taskGoal');
+      if (ctTask && ctTask.ready) out.push({ name: r.cmd, args: {}, ruleId: r.id });
+    } else if (r.taskAssist) {
+      /* 順手完成任務（player_strategy.md §6）：只在「不影響練功」的前提下做。
+         初版只涵蓋主要策略不會主動做的那一種——升級熔爐零件至 N 級。
+         其餘任務（穿裝、強化次數、洗煉次數、鑲寶石、過關…）本來就是練功會做的事，
+         達成後由 claimTask 自動領。
+
+         餘裕條件：付完之後餘額仍 ≥ 支出 × spareMult（預設 2）。
+         零件等級是全域的（升一次所有熔爐的同種零件一起變強），而任務看的是
+         「最高的那一個零件的等級」，所以集中升等級最高的那一種最快達標。 */
+      var taCfg = r.taskAssist;
+      var taTask = pathVal(state, taCfg.panel || 'panels.taskGoal');
+      if (taTask && !taTask.done && !taTask.ready && taTask.type === 'forgePartLevel') {
+        var taLv = pathVal(state, taCfg.levels) || {};
+        var taCost = pathVal(state, taCfg.costs) || {};
+        var taGold = Number(pathVal(state, taCfg.gold || 'view.gold')) || 0;
+        var taSpare = (typeof taCfg.spareMult === 'number') ? taCfg.spareMult : 2;
+        var taBest = null, taBestLv = -1;
+        var taKeys = Object.keys(taLv).sort();
+        for (var tki = 0; tki < taKeys.length; tki++) {
+          var tk = taKeys[tki], tl = Number(taLv[tk]), tc = Number(taCost[tk]);
+          if (!(tl >= 0) || !(tc > 0)) continue;           // 已達上限時遊戲給 null
+          if (taGold - tc < taSpare * tc) continue;        // 付完要還有餘裕
+          if (tl > taBestLv) { taBest = tk; taBestLv = tl; }
+        }
+        if (taBest) out.push({ name: 'newforge.upgradePart', args: { partKey: taBest }, ruleId: r.id });
+      }
+    } else if (r.skillPlan) {
+      var spOut = planSkills(state, policy, memo, r.id);
+      for (var spi = 0; spi < spOut.length; spi++) out.push(spOut[spi]);
     } else if (r.runePlan) {
       var rpOut = planRunes(state, r.runePlan, r.id);
       for (var rpi = 0; rpi < rpOut.length; rpi++) out.push(rpOut[rpi]);

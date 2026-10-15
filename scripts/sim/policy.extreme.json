@@ -12,7 +12,10 @@
     "header",
     "inv",
     "battle",
-    "rune"
+    "rune",
+    "skill",
+    "taskGoal",
+    "equipRules"
   ],
   "lists": {
     "slotList": [
@@ -135,6 +138,90 @@
     ],
     "affixVsNormalRed": [
       "normalDmgRed"
+    ],
+    "affixWeaponMagic": [
+      "matkPct",
+      "critRate",
+      "aspd",
+      "mPen",
+      "eliteDmg",
+      "bossDmg",
+      "aoeDmg",
+      "matkFlat",
+      "blockRate"
+    ],
+    "affixArmorMagic": [
+      "hpPct",
+      "hpFlat",
+      "defPct",
+      "mdefPct",
+      "globalDmgRed",
+      "resAll",
+      "pRes",
+      "mRes",
+      "shieldEff",
+      "blockRate",
+      "blockDmgRed",
+      "tenacity",
+      "eliteDmgRed",
+      "bossDmgRed",
+      "hit",
+      "lifesteal",
+      "matkFlat",
+      "defFlat",
+      "mdefFlat",
+      "matkPct",
+      "critRate",
+      "aspd",
+      "mPen",
+      "eliteDmg",
+      "bossDmg"
+    ],
+    "affixJewelMagic": [
+      "gemEff",
+      "loot",
+      "xpBonus",
+      "matkPct",
+      "critRate",
+      "mPen",
+      "aspd",
+      "eliteDmg",
+      "bossDmg",
+      "hit",
+      "hpPct",
+      "globalDmgRed",
+      "resAll",
+      "eliteDmgRed",
+      "bossDmgRed",
+      "shieldEff",
+      "lifesteal",
+      "matkFlat",
+      "aoeDmg",
+      "hpFlat",
+      "defPct",
+      "mdefPct",
+      "pRes",
+      "mRes",
+      "blockRate",
+      "blockDmgRed",
+      "tenacity",
+      "defFlat",
+      "mdefFlat"
+    ],
+    "affixElem_fire": [
+      "elemDmgFire"
+    ],
+    "affixElem_lightning": [
+      "elemDmgLightning"
+    ],
+    "affixElem_ice": [
+      "elemDmgIce"
+    ],
+    "affixElem_wind": [
+      "elemDmgWind"
+    ],
+    "affixElem_earth": [
+      "elemDmgEarth"
     ]
   },
   "rules": [
@@ -224,7 +311,8 @@
           "ancientOnly_為什麼是_false": "只保太古位置時，洗在普通位置上的關鍵詞條會被換裝丟掉。實測 4 個 seed：只保太古是 2/3/3 條（寶石鑲嵌/經驗/掉寶合計），全位置保護是 5/7/2 並出現第一個達標項。代價是成績下緣變差（等級最低 365→203、死亡中位約 53→99.5），中位等級 412→378.5 在 n=4 下算噪音。選 false 是取「像真人的配裝」而不是「最高分」",
           "overrideRarityGap_的作用": "防止保護變成永久凍結的閘。先前有一版保護綁在「缺口未補滿」上，目標達不到時永遠成立，實測 100 小時從關卡 190 掉到 117。品質高 2 階以上仍然換，凍結就有出口",
           "overrideLevelGap": 0
-        }
+        },
+        "blocked": "panels.equipRules.blocked"
       },
       "why": "換裝優先序：品質 >> 等級 >> 太古詞條數 >> 評分（player_strategy.md）。評分只當平手裁判——itemScore 把品質、等級、太古壓成一個數字，照它排會出現「品質低一階但詞條滾得好所以分數高」而換錯，而品質決定插槽數與附魔欄數，換不回來"
     },
@@ -692,6 +780,35 @@
       "why": "player_strategy.md §5：①真言優先（手上符文湊得齊、類型符合的最高階真言）②其餘空孔補滿最高階符文③合成只在升階後該符文仍留有5顆以上時才做。規則（孔數、真言適用的裝備、合成上限階）全部取自遊戲面板 panels.rune，策略不自己抄。不拆已鑲符文（取下要付碎片與精華）"
     },
     {
+      "id": "skill-plan",
+      "everySec": 60,
+      "cmd": "skill2.learn",
+      "skillPlan": true,
+      "why": "player_strategy.md §4：先把裝配欄各群組平均學起來，再依離超神進化（7階全滿）的遠近升級；裝配組合由 seed 決定；生存不足時換生存類群組；超神進化依情境切換（需裝備強度到位）。費用與解鎖全由遊戲算（panels.skill）"
+    },
+    {
+      "id": "task-claim",
+      "everySec": 60,
+      "cmd": "task.claim",
+      "claimTask": {
+        "panel": "panels.taskGoal"
+      },
+      "why": "player_strategy.md §6：目前任務達成就領，無條件、不花資源。任務是依序的，只有目前那個可領"
+    },
+    {
+      "id": "task-assist",
+      "everySec": 300,
+      "cmd": "newforge.upgradePart",
+      "taskAssist": {
+        "panel": "panels.taskGoal",
+        "levels": "panels.newforge.partLevels",
+        "costs": "panels.newforge.partUpgradeCosts",
+        "gold": "view.gold",
+        "spareMult": 2
+      },
+      "why": "player_strategy.md §6：順手完成「升級熔爐零件至N級」。付完餘額仍≥支出×2才做（⚠️倍數是詮釋，待確認）；零件等級是全域的、任務看最高那個，集中升等級最高的最快"
+    },
+    {
       "id": "reroll-for-deficit",
       "everySec": 60,
       "cmd": "item.rerollAffix",
@@ -725,7 +842,20 @@
             ],
             "lists": [
               {
-                "list": "affixWeapon"
+                "list": "affixWeapon",
+                "when": [
+                  "ctx.skillMode",
+                  "==",
+                  "phys"
+                ]
+              },
+              {
+                "list": "affixWeaponMagic",
+                "when": [
+                  "ctx.skillMode",
+                  "==",
+                  "magic"
+                ]
               },
               {
                 "list": "affixCritDmg",
@@ -742,6 +872,41 @@
                   "falsy"
                 ],
                 "依據": "生存率不足時把對普通敵人的加成／抗性從保留清單移除，讓它們被洗成對菁英/BOSS的"
+              },
+              {
+                "list": "affixElem_fire",
+                "when": [
+                  "ctx.elem_fire",
+                  "truthy"
+                ]
+              },
+              {
+                "list": "affixElem_lightning",
+                "when": [
+                  "ctx.elem_lightning",
+                  "truthy"
+                ]
+              },
+              {
+                "list": "affixElem_ice",
+                "when": [
+                  "ctx.elem_ice",
+                  "truthy"
+                ]
+              },
+              {
+                "list": "affixElem_wind",
+                "when": [
+                  "ctx.elem_wind",
+                  "truthy"
+                ]
+              },
+              {
+                "list": "affixElem_earth",
+                "when": [
+                  "ctx.elem_earth",
+                  "truthy"
+                ]
               }
             ],
             "依據": "主副手：全洗傷害類，百分比>定值；爆傷只在爆率高於50%後才洗"
@@ -754,7 +919,20 @@
             ],
             "lists": [
               {
-                "list": "affixJewel"
+                "list": "affixJewel",
+                "when": [
+                  "ctx.skillMode",
+                  "==",
+                  "phys"
+                ]
+              },
+              {
+                "list": "affixJewelMagic",
+                "when": [
+                  "ctx.skillMode",
+                  "==",
+                  "magic"
+                ]
               },
               {
                 "list": "affixCritDmg",
@@ -779,6 +957,41 @@
                   "falsy"
                 ],
                 "依據": "生存率不足時把對普通敵人的加成／抗性從保留清單移除，讓它們被洗成對菁英/BOSS的"
+              },
+              {
+                "list": "affixElem_fire",
+                "when": [
+                  "ctx.elem_fire",
+                  "truthy"
+                ]
+              },
+              {
+                "list": "affixElem_lightning",
+                "when": [
+                  "ctx.elem_lightning",
+                  "truthy"
+                ]
+              },
+              {
+                "list": "affixElem_ice",
+                "when": [
+                  "ctx.elem_ice",
+                  "truthy"
+                ]
+              },
+              {
+                "list": "affixElem_wind",
+                "when": [
+                  "ctx.elem_wind",
+                  "truthy"
+                ]
+              },
+              {
+                "list": "affixElem_earth",
+                "when": [
+                  "ctx.elem_earth",
+                  "truthy"
+                ]
               }
             ],
             "依據": "項鏈戒指：寶石鑲嵌效率最關鍵，其次掉寶率與經驗加成"
@@ -786,7 +999,20 @@
           {
             "lists": [
               {
-                "list": "affixArmor"
+                "list": "affixArmor",
+                "when": [
+                  "ctx.skillMode",
+                  "==",
+                  "phys"
+                ]
+              },
+              {
+                "list": "affixArmorMagic",
+                "when": [
+                  "ctx.skillMode",
+                  "==",
+                  "magic"
+                ]
               },
               {
                 "list": "affixVsNormalRed",
@@ -811,13 +1037,48 @@
                   "falsy"
                 ],
                 "依據": "生存率不足時把對普通敵人的加成／抗性從保留清單移除，讓它們被洗成對菁英/BOSS的"
+              },
+              {
+                "list": "affixElem_fire",
+                "when": [
+                  "ctx.elem_fire",
+                  "truthy"
+                ]
+              },
+              {
+                "list": "affixElem_lightning",
+                "when": [
+                  "ctx.elem_lightning",
+                  "truthy"
+                ]
+              },
+              {
+                "list": "affixElem_ice",
+                "when": [
+                  "ctx.elem_ice",
+                  "truthy"
+                ]
+              },
+              {
+                "list": "affixElem_wind",
+                "when": [
+                  "ctx.elem_wind",
+                  "truthy"
+                ]
+              },
+              {
+                "list": "affixElem_earth",
+                "when": [
+                  "ctx.elem_earth",
+                  "truthy"
+                ]
               }
             ],
             "依據": "防具：以防禦性詞條為主，保留一條物攻；不留單一元素抗性（怪物屬性隨機），改留全抗性與全局減傷"
           }
         ]
       },
-      "why": "依 player_strategy.md 裝備詞條洗煉策略分三組：主副手全傷害、防具以防禦為主、項鏈戒指以寶石鑲嵌效率/掉寶率/經驗加成為關鍵。用同一份清單套 13 個部位不可能對——武器洗不出防禦詞條，而 gemEff/loot/xpBonus 只有戒指項鏈出得來。爆傷要爆率破 50% 才留；閃避 300 級前不留；單一元素抗性不留（怪物屬性隨機，改留全抗性）。連續 5 次打不過菁英/BOSS（ctx.desperate）時改打針對性：對普通敵人的傷害加成與抗性不再保留",
+      "why": "依 player_strategy.md 裝備詞條洗煉策略分三組：主副手全傷害、防具以防禦為主、項鏈戒指以寶石鑲嵌效率/掉寶率/經驗加成為關鍵。用同一份清單套 13 個部位不可能對——武器洗不出防禦詞條，而 gemEff/loot/xpBonus 只有戒指項鏈出得來。爆傷要爆率破 50% 才留；閃避 300 級前不留；單一元素抗性不留（怪物屬性隨機，改留全抗性）。連續 5 次打不過菁英/BOSS（ctx.desperate）時改打針對性：對普通敵人的傷害加成與抗性不再保留。詞條目標依 seed 決定的技能類別切換：物理組留 atk 系、魔法組留 matk 系（matkPct/matkFlat/mPen），並額外保留主打元素的屬性傷害提升（elemDmgX）。技能吃魔攻、裝備卻堆物攻等於白洗",
       "if": [
         [
           "view.essence",
@@ -1066,5 +1327,155 @@
       "為什麼不能只靠保留清單": "保留清單只表達得出「這些可以留」，表達不出「這條要湊到 N 條」。這三條合計只佔項鏈詞條池權重的 3%（336 分之 10），而清單有 18 項可接受，隨便中一項就停手",
       "when_依據": "真人打法：先在穩定關卡快速刷怪累積材料，穿上 Lv100 史詩／傳說之後才去洗寶石鑲嵌率——它期望要 168 次洗煉才中一條，材料不夠時去追等於把精華燒在最貴的一項上"
     }
-  ]
+  ],
+  "skills": {
+    "panel": "panels.skill",
+    "gold": "view.gold",
+    "magicChance": 0.5,
+    "elemPool": [
+      "fire",
+      "lightning",
+      "ice",
+      "wind"
+    ],
+    "elemCount": 2,
+    "survival": [
+      "rockarmor",
+      "earthguard",
+      "counter",
+      "frostnova",
+      "stormbarrier"
+    ],
+    "survivalSlots": 2,
+    "maxLearnsPerDecision": 6,
+    "switchMinSec": 21600,
+    "switchGoldMult": 2,
+    "gear": {
+      "equippedRarities": "panels.inv.equipmentRarities",
+      "minRarity": 4,
+      "coverage": 0.85
+    },
+    "ult": {
+      "default": 0,
+      "byGroup": {
+        "thrust": {
+          "farm": 2,
+          "boss": 1,
+          "tower": 0
+        },
+        "cleave": {
+          "farm": 2,
+          "boss": 0,
+          "tower": 1
+        },
+        "knife": {
+          "farm": 0,
+          "boss": 2,
+          "tower": 1
+        },
+        "gale": {
+          "farm": 2,
+          "boss": 0,
+          "tower": 0
+        },
+        "bloodblade": {
+          "farm": 0,
+          "boss": 1,
+          "tower": 0
+        },
+        "dualdance": {
+          "farm": 0,
+          "boss": 1,
+          "tower": 1
+        },
+        "counter": {
+          "farm": 0,
+          "boss": 1,
+          "tower": 1
+        },
+        "bloodrage": {
+          "farm": 0,
+          "boss": 2,
+          "tower": 2
+        },
+        "fireball": {
+          "farm": 2,
+          "boss": 1,
+          "tower": 1
+        },
+        "firepillar": {
+          "farm": 2,
+          "boss": 0,
+          "tower": 0
+        },
+        "firehunt": {
+          "farm": 1,
+          "boss": 0,
+          "tower": 0
+        },
+        "rockarmor": {
+          "farm": 0,
+          "boss": 2,
+          "tower": 1
+        },
+        "mire": {
+          "farm": 2,
+          "boss": 0,
+          "tower": 0
+        },
+        "earthguard": {
+          "farm": 0,
+          "boss": 2,
+          "tower": 0
+        },
+        "chainlightning": {
+          "farm": 2,
+          "boss": 1,
+          "tower": 1
+        },
+        "thunderstrike": {
+          "farm": 0,
+          "boss": 1,
+          "tower": 1
+        },
+        "thunderorb": {
+          "farm": 1,
+          "boss": 2,
+          "tower": 0
+        },
+        "icearrow": {
+          "farm": 2,
+          "boss": 1,
+          "tower": 1
+        },
+        "waterball": {
+          "farm": 2,
+          "boss": 1,
+          "tower": 0
+        },
+        "frostnova": {
+          "farm": 0,
+          "boss": 1,
+          "tower": 1
+        },
+        "windblade": {
+          "farm": 0,
+          "boss": 0,
+          "tower": 1
+        },
+        "vacuumslash": {
+          "farm": 1,
+          "boss": 1,
+          "tower": 2
+        },
+        "stormbarrier": {
+          "farm": 1,
+          "boss": 2,
+          "tower": 0
+        }
+      },
+      "依據": "初版判讀：依 js/skills2.js 各選項說明分成 farm(練級)/boss(野外BOSS)/tower(封魔塔)，待設計者審"
+    },
+    "說明": "player_strategy.md §4。組合由 seed 決定（全物理或全魔法；魔法取兩個元素系輪流）。生存率不足時末幾格換成生存類群組。超神進化切換三道閘：裝備覆蓋達標、金幣≥費用×2、距上次切換≥6 遊戲小時"
+  }
 }
