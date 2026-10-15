@@ -1432,3 +1432,215 @@ function buildEvalPanel(params) {
     model: MODEL_NOTES
   };
 }
+
+/* ============ 符文決策面板（harness 專用，player_strategy.md §5） ============
+
+   放在這裡而不是遊戲的 Worker：它是模擬策略的需求，真實玩家的 UI 不需要，
+   而它每次要對 13 個部位比對 65 組真言——掛在遊戲的 gems 面板上會白白拖慢真實遊戲。
+   （與 eval／evalCombat 同樣的做法：harness 專用面板由引擎的 panel() 分流。）
+
+   規則一律由遊戲函式算出，這裡只搬運結果、不改任何狀態：
+   策略若自己抄「哪種裝備能放哪組真言」「幾個孔」，遊戲改了規則兩邊就會悄悄脫鉤——
+   送出去只會被回一句錯誤，報表看不出整條規則沒生效。 */
+function buildRunePanel() {
+  if (typeof RUNEWORDS === 'undefined' || typeof rwSlots !== 'function') return null;
+  var words = [];
+  for (var wi = 0; wi < RUNEWORDS.length; wi++) {
+    words.push({ id: RUNEWORDS[wi].id, tier: RUNEWORDS[wi].tier || 0, runes: RUNEWORDS[wi].runes });
+  }
+  var tiers = {};
+  for (var ri = 0; ri < RUNES.length; ri++) tiers[RUNES[ri].id] = RUNES[ri].tier;
+  var equip = {};
+  var eq = (G && G.equipment) || {};
+  for (var slot in eq) {
+    var it = eq[slot];
+    if (!it) continue;
+    var fits = [];
+    for (var k = 0; k < RUNEWORDS.length; k++) {
+      if (rwItemMatches(it, RUNEWORDS[k].bases)) fits.push(RUNEWORDS[k].id);
+    }
+    equip[slot] = { slots: rwSlots(it), cap: runeSlotCountFor(it), fits: fits };
+  }
+  return {
+    words: words,
+    tiers: tiers,
+    compose: { count: RUNE_COMPOSE_COUNT, maxTier: RUNE_COMPOSE_MAX_TIER },
+    equip: equip
+  };
+}
+
+/* ============ 技能決策面板（harness 專用，player_strategy.md §4） ============
+
+   與 buildRunePanel 同一個理由放在這裡：它是模擬策略的需求，真實玩家的 UI 不需要。
+   費用、解鎖、超神進化條件全由遊戲函式現算，策略不抄公式——
+   遊戲改了成長曲線或解鎖等級，兩邊就會悄悄脫鉤（送出去只會被回「金幣不足」「尚未解鎖」，
+   報表看不出整個系統沒在升級）。唯讀，不改任何狀態。 */
+function buildSkillPanel() {
+  if (typeof SKILLS2 === 'undefined' || typeof skills2Levels !== 'function') return null;
+  var prg = (typeof sgUnlockProgress === 'function') ? sgUnlockProgress(null) : null;
+  var groups = {};
+  for (var gid in SKILLS2) {
+    var g = SKILLS2[gid];
+    var lvs = skills2Levels(gid);
+    var tiers = [];
+    for (var t = 0; t < g.tiers.length; t++) {
+      var lv = lvs[t] || 0;
+      var maxed = lv >= SG_TIER_MAX_LV;
+      var unlocked = !prg || sgTierUnlockedBy(g.tiers[t].unlock, prg.level, prg.reinc);
+      tiers.push({
+        lv: lv,
+        maxed: maxed,
+        cost: maxed ? null : skills2UpgradeCost(gid, t, lv),
+        /* 循序解鎖：第 2 階起，前一階至少要有 Lv.1。 */
+        prevOk: t === 0 || (lvs[t - 1] || 0) >= 1,
+        unlocked: unlocked,
+        unlockLv: (g.tiers[t].unlock && g.tiers[t].unlock.lv) || 0
+      });
+    }
+    var defs = (typeof sgUltDefs === 'function') ? sgUltDefs(gid) : null;
+    var ult = null;
+    if (defs) {
+      var pick = sgUltPickOf((G.player.skills2 && G.player.skills2.ult) || null, gid);
+      var optCosts = [];
+      for (var oi = 0; oi < defs.length; oi++) optCosts.push(skills2UltCost(gid, oi, 0));
+      ult = {
+        options: defs.length,
+        unlocked: sgUltUnlockedBy(gid, lvs),                    // 前 7 階全滿才開放
+        pick: pick ? pick.idx : -1,
+        lv: pick ? pick.lv : 0,
+        nextCost: pick && pick.lv < SG_TIER_MAX_LV ? skills2UltCost(gid, pick.idx, pick.lv) : null,
+        optCosts: optCosts                                      // 選／切換到各選項 Lv.1 的費用
+      };
+    }
+    groups[gid] = {
+      name: g.name,
+      kind: g.dmgType === 'magic' ? 'magic' : 'phys',
+      elem: g.elem || null,
+      passive: !!(typeof skills2IsPassive === 'function' && skills2IsPassive(gid)),
+      castable: skills2Castable(gid),
+      tiers: tiers,
+      ult: ult
+    };
+  }
+  return {
+    loadoutSize: loadoutSize(),
+    loadout: (G.player.loadout || []).slice(),
+    prefix: SG_PREFIX,
+    tierMax: SG_TIER_MAX_LV,
+    groups: groups
+  };
+}
+
+/* ============ 任務目標面板（harness 專用，player_strategy.md §6） ============
+
+   遊戲的 task 面板只有 idx／prog／ready，沒有「這個任務要什麼」。策略要判斷
+   「這件事是不是順手能做」就得知道目前任務的類型與目標。
+   進度與可否領取一律用遊戲函式算（taskProgressFor），不在外面重推。唯讀。 */
+function buildTaskGoalPanel() {
+  if (typeof TASKS === 'undefined' || typeof taskState !== 'function') return null;
+  var st = taskState();
+  var def = TASKS[st.idx];
+  if (!def) return { done: true, ready: false, type: null };
+  var prog = taskProgressFor(def);
+  return {
+    done: false,
+    idx: st.idx,
+    name: def.name,
+    type: def.type,
+    param: def.param || null,
+    count: def.count,
+    prog: prog,
+    ready: prog >= def.count
+  };
+}
+
+/* ============ 裝備欄規則面板（harness 專用） ============
+
+   哪些部位「現在不能裝」由遊戲回答（slotBlockedByTwoHand：主手是雙手武器時副手被連帶佔用），
+   策略不自己重推。少了這個，策略看到「副手空著、背包有匕首」就裝上去，結果雙手主手被擠下，
+   下一輪又把雙手武器裝回主手把副手擠下——每個決策點都在來回換裝（實測 6 小時 65 次），
+   而且每次都回成功，報表上完全看不出來。唯讀。 */
+function buildEquipRulesPanel() {
+  var blocked = {};
+  var eq = (G && G.equipment) || {};
+  if (typeof slotBlockedByTwoHand === 'function') {
+    for (var k in eq) if (slotBlockedByTwoHand(eq, k)) blocked[k] = true;
+  }
+  return { blocked: blocked };
+}
+
+/* ============ 三套裝備面板（harness 專用，player_strategy.md §7） ============
+
+   第 2、3 套各自看重不同的詞條（BOSS／菁英），而背包投影只有遊戲算好的綜合評分，
+   看不出「這件對 BOSS 戰好不好」。所以這裡替策略把背包裡每件候選裝備，依策略宣告的
+   詞條權重（params.profiles，屬於策略資料）算一個「專用分數」。
+
+   ⚠️ 數值一律用遊戲的 affixValue 與 SCORE_WEIGHTS 現算，不自己重推詞條強度——
+   強度存的是 roll，換算成實際數值的公式遊戲改過一次（詞條改存強度值），自己算會悄悄脫鉤。
+   唯讀，不改任何狀態。 */
+function buildEquipSetsPanel(params) {
+  params = params || {};
+  var profiles = params.profiles || {};
+  var topN = Math.max(1, Math.floor(Number(params.topN) || 3));
+  var count = (typeof EQUIP_SET_COUNT === 'number') ? EQUIP_SET_COUNT : 3;
+
+  function ancientOf(it) {
+    var n = 0;
+    for (var i = 0; i < (it.affixes || []).length; i++) if (it.affixes[i] && it.affixes[i].ancient) n++;
+    return n;
+  }
+  function profileScore(it, w) {
+    if (!w) return 0;
+    var s = 0;
+    for (var i = 0; i < (it.affixes || []).length; i++) {
+      var a = it.affixes[i];
+      var wt = a && w[a.key];
+      if (!wt) continue;
+      s += wt * ((typeof SCORE_WEIGHTS !== 'undefined' && SCORE_WEIGHTS[a.key]) || 1) * affixValue(it, a);
+    }
+    return s;
+  }
+  function brief(it, w) {
+    /* score＝遊戲的 itemScore，slots＝遊戲的 equipSlotsForItem：
+       策略要用「跟第 1 套換裝規則同一把尺」判斷這件會不會被第 1 套拿走，
+       就得有同樣的評分與同樣的可放欄位。 */
+    return {
+      id: it.id, rarity: it.rarity || 0, level: it.level || 0, anc: ancientOf(it), p: profileScore(it, w),
+      score: itemScore(it), slots: equipSlotsForItem(it)
+    };
+  }
+
+  var sets = [], unlocked = [];
+  for (var i = 0; i < count; i++) {
+    var eq = equipmentSetAt(i);
+    var slots = {}, blocked = {};
+    for (var k in eq) {
+      if (eq[k]) slots[k] = brief(eq[k], profiles[i]);
+      if (typeof slotBlockedByTwoHand === 'function' && slotBlockedByTwoHand(eq, k)) blocked[k] = true;
+    }
+    sets.push({ slots: slots, blocked: blocked });
+    unlocked.push(!!equipmentSetUnlocked(i));
+  }
+
+  /* 候選：背包裡每件裝備可以放進哪些欄位（equipSlotsForItem，遊戲回答），
+     每個欄位只留前 topN 名，依 品質 >> 等級 >> 太古數 >> 專用分數。 */
+  var candidates = {};
+  for (var si = 1; si < count; si++) {
+    var bySlot = {};
+    var inv = G.inventory || [];
+    for (var j = 0; j < inv.length; j++) {
+      var it = inv[j];
+      if (!it || it.locked || it.kind !== 'equip') continue;
+      var cs = equipSlotsForItem(it);
+      for (var c = 0; c < cs.length; c++) (bySlot[cs[c]] = bySlot[cs[c]] || []).push(brief(it, profiles[si]));
+    }
+    for (var key in bySlot) {
+      bySlot[key].sort(function (a, b) {
+        return (b.rarity - a.rarity) || (b.level - a.level) || (b.anc - a.anc) || (b.p - a.p) || (a.id < b.id ? -1 : 1);
+      });
+      bySlot[key] = bySlot[key].slice(0, topN);
+    }
+    candidates[si] = bySlot;
+  }
+  return { active: G.equipActive || 0, count: count, unlocked: unlocked, sets: sets, candidates: candidates };
+}

@@ -107,6 +107,24 @@ test('換裝：只知道身上那件的品質與評分時，不得憑空在等�
   assert.deepEqual(cmds, [], '同品質、等級無從比較、評分較低——不該換');
 });
 
+test('換裝：遊戲說被占用的部位不裝（主手是雙手武器時的副手）', () => {
+  /* 不跳過的話會無限來回：副手空著→裝匕首→雙手主手被擠下→再裝雙手主手→副手被擠下。
+     實測 6 小時 65 次，每次都回成功，報表看不出來；是領任務時發現進度一格一格掉才抓到。 */
+  const p = makePolicy([Object.assign({}, EQUIP_RULE, { bestPerSlot: Object.assign({}, EQUIP_RULE.bestPerSlot, { blocked: 'panels.equipRules.blocked' }) })]);
+  const state = (blocked) => ({
+    gameTimeSec: 100,
+    panels: {
+      equipRules: { blocked },
+      inv: invPanel({
+        items: [{ id: 'd1', slot: 'weapon', slots: ['weapon', 'weapon2'], rarity: 3, score: 50 }],
+        scores: { weapon: 90, weapon2: 0 }, rarities: { weapon: 3, weapon2: -1 }
+      })
+    }
+  });
+  assert.deepEqual(p.decide(state({ weapon2: true })), [], '副手被雙手主手占用：不該裝');
+  assert.equal(p.decide(state({})).length, 1, '沒被占用時照常把更好的裝上');
+});
+
 test('強化：低品質依上限表停手，身上最高品質不設上限', () => {
   const rule = {
     id: 'up', cmd: 'item.upgrade',

@@ -47,6 +47,17 @@ function firstPathVal(root, paths) {
   return undefined;
 }
 
+/* 與 pathVal 相同，但讀不到時不記入 BAD_PATHS。只給「可能尚未建立」的欄位用。 */
+function peekPath(root, path) {
+  var cur = root;
+  var parts = String(path).split('.');
+  for (var i = 0; i < parts.length; i++) {
+    if (cur === null || cur === undefined) return undefined;
+    cur = cur[parts[i]];
+  }
+  return cur;
+}
+
 function testCond(root, cond) {
   var v = pathVal(root, cond[0]);
   var op = cond[1];
@@ -529,6 +540,7 @@ function updateContext(state, policy, memo) {
     enemyLevel: T.enemyLevel || 0,
     blockStage: blockStage,
     fails: blockRec ? blockRec.fails : 0,
+    blockMode: blockRec ? (blockRec.mode || 'normal') : 'normal',
     /* 同一個卡點試了 5 次還過不去＝生存率不足，轉為針對性強化
        （菁英／BOSS 抗性與傷害加成）。 */
     desperate: !!(blockRec && blockRec.fails >= 5),
@@ -718,7 +730,14 @@ function sampleRates(state, policy, memo) {
   for (var i = 0; i < list.length; i++) {
     var t = list[i];
     if (!t || t.kind !== 'ratePerMin' || !t.id) continue;
-    var raw = pathVal(state, t.counter);
+    /* 計數器的「桶」是遊戲第一次發生該事件才建的（例如 lootStats.sources.field 要等第一次
+       野外擊殺），所以開局第一拍讀不到是正常的，不能算失效路徑。
+       但欄位被改名時會永遠讀不到——所以寬限 counterGraceSec（預設 120 遊戲秒）之後
+       仍然讀不到，才交給 pathVal 記成失效。 */
+    var raw = peekPath(state, t.counter);
+    if (raw === undefined && now >= (typeof t.counterGraceSec === 'number' ? t.counterGraceSec : 120)) {
+      raw = pathVal(state, t.counter);
+    }
     if (raw === null || raw === undefined) continue;   // 這一拍沒送這個面板，跳過不記
     var v = Number(raw);
     if (!isFinite(v)) continue;
@@ -875,13 +894,560 @@ function observe(state, policy, memo) {
   observeCombat(state, policy, memo);
 }
 
+/* ============ 符文計畫（player_strategy.md §5 最佳符文策略） ============
+
+   鑲嵌與合成放在同一個函式、共用同一份庫存快照。分成兩條規則的話，
+   第二條看到的是還沒扣掉剛鑲出去那幾顆的庫存，合成就會送出必定被拒的指令。
+
+   所有「遊戲規則」都由面板提供（panels.rune）：孔數、哪些真言適用哪件裝備、
+   合成需要幾顆、合成上限階——策略不自己抄一份。 */
+
+/* 這件裝備是否已經有成形的真言。遊戲一件裝備只會啟動符文數最多的那一組，
+   所以已成形就不必再在別的孔位湊第二組（湊出來也不會生效）。 */
+function runeActiveWord(slots, words, fitsSet) {
+  for (var wi = 0; wi < words.length; wi++) {
+    var w = words[wi];
+    if (!fitsSet[w.id]) continue;
+    var n = w.runes.length;
+    for (var st = 0; st + n <= slots.length; st++) {
+      var ok = true;
+      for (var k = 0; k < n; k++) if (slots[st + k] !== w.runes[k]) { ok = false; break; }
+      if (ok) return w;
+    }
+  }
+  return null;
+}
+
+function planRunes(state, cfg, ruleId) {
+  var out = [];
+  var view = pathVal(state, cfg.view);
+  var stock0 = pathVal(state, cfg.runes) || {};
+  var equipment = pathVal(state, cfg.equipment) || {};
+  if (!view || !view.words) return out;
+
+  var stock = {};
+  for (var rk in stock0) stock[rk] = Number(stock0[rk]) || 0;
+  var tiers = view.tiers || {};
+
+  /* 真言排序：階數高的先試；同階符文多的先（長真言需要孔，先佔）。 */
+  var words = view.words.slice().sort(function (a, b) {
+    return (b.tier - a.tier) || (b.runes.length - a.runes.length) || (a.id < b.id ? -1 : 1);
+  });
+
+  /* 裝備排序：孔數多的先（長真言只有孔多的裝備放得下），同孔數依部位鍵穩定排序。 */
+  var keys = Object.keys(view.equip || {}).sort(function (a, b) {
+    return (view.equip[b].cap - view.equip[a].cap) || (a < b ? -1 : 1);
+  });
+
+  /* 庫存裡階數最高、且還有貨的符文。 */
+  function topRune() {
+    var best = null;
+    for (var id in stock) {
+      if (stock[id] > 0 && (best === null || (tiers[id] || 0) > (tiers[best] || 0))) best = id;
+    }
+    return best;
+  }
+
+  var sockets = 0, maxSockets = (typeof cfg.maxSocketsPerDecision === 'number') ? cfg.maxSocketsPerDecision : 24;
+
+  /* 兩輪：第一輪所有裝備只處理真言，第二輪才補滿。
+     補滿若跟真言在同一件裝備的迴圈裡做，排在前面的裝備會把後面那件湊真言要用的符文吃光
+     （規格是「真言優先」，優先的對象是整身裝備，不是單件）。 */
+  var work = [];
+  for (var wk = 0; wk < keys.length; wk++) {
+    var wInfo = view.equip[keys[wk]], wItem = equipment[keys[wk]];
+    if (!wItem || !wItem.id || !(wInfo.cap > 0)) continue;
+    work.push({ item: wItem, info: wInfo, slots: wInfo.slots.slice() });
+  }
+
+  for (var ki = 0; ki < work.length && sockets < maxSockets; ki++) {
+    var item = work[ki].item, info = work[ki].info, slots = work[ki].slots;
+    var fitsSet = {};
+    for (var fi = 0; fi < info.fits.length; fi++) fitsSet[info.fits[fi]] = true;
+
+    /* 規則 1：真言優先（已有成形真言就跳過）。 */
+    if (!runeActiveWord(slots, words, fitsSet)) {
+      var picked = null;
+      for (var wi = 0; wi < words.length && !picked; wi++) {
+        var w = words[wi];
+        if (!fitsSet[w.id]) continue;
+        var n = w.runes.length;
+        for (var st = 0; st + n <= slots.length && !picked; st++) {
+          var need = {}, ok = true, empties = 0;
+          for (var k = 0; k < n; k++) {
+            var cur = slots[st + k];
+            if (cur === null) { need[w.runes[k]] = (need[w.runes[k]] || 0) + 1; empties++; }
+            else if (cur !== w.runes[k]) { ok = false; break; }
+          }
+          if (!ok || empties === 0) continue;
+          for (var nr in need) if ((stock[nr] || 0) < need[nr]) { ok = false; break; }
+          if (ok) picked = { word: w, start: st };
+        }
+      }
+      if (picked) {
+        for (var pk = 0; pk < picked.word.runes.length; pk++) {
+          if (slots[picked.start + pk] !== null) continue;
+          var rid = picked.word.runes[pk];
+          stock[rid]--;
+          slots[picked.start + pk] = rid;
+          sockets++;
+          out.push({ name: 'rune.socket', args: { itemId: item.id, runeId: rid, index: picked.start + pk }, ruleId: ruleId });
+        }
+      }
+    }
+
+  }
+
+  /* 規則 2：其餘空孔補滿庫存最高階的符文（真言都放完之後）。 */
+  for (var fk = 0; fk < work.length && sockets < maxSockets; fk++) {
+    for (var si = 0; si < work[fk].slots.length && sockets < maxSockets; si++) {
+      if (work[fk].slots[si] !== null) continue;
+      var top = topRune();
+      if (top === null) break;
+      stock[top]--;
+      work[fk].slots[si] = top;
+      sockets++;
+      out.push({ name: 'rune.socket', args: { itemId: work[fk].item.id, runeId: top, index: si }, ruleId: ruleId });
+    }
+  }
+
+  /* 合成：階數 < 上限、且合成後仍留有保留量。先扣掉上面鑲出去的才算。 */
+  var comp = view.compose || {};
+  var per = comp.count || 3;
+  var keep = (typeof cfg.keepAfterCompose === 'number') ? cfg.keepAfterCompose : 5;
+  var maxCompose = (typeof cfg.maxComposePerDecision === 'number') ? cfg.maxComposePerDecision : 20;
+  var ids = Object.keys(stock).sort(function (a, b) { return (tiers[a] || 0) - (tiers[b] || 0); });
+  var composed = 0;
+  for (var ci = 0; ci < ids.length && composed < maxCompose; ci++) {
+    var cid = ids[ci];
+    var t = tiers[cid] || 0;
+    if (!(t > 0) || t >= (comp.maxTier || 0)) continue;
+    var times = Math.floor((stock[cid] - keep) / per);
+    for (var tm = 0; tm < times && composed < maxCompose; tm++) {
+      out.push({ name: cfg.composeCmd || 'rune.compose', args: { runeId: cid }, ruleId: ruleId });
+      composed++;
+    }
+  }
+  return out;
+}
+
+/* ============ 技能計畫（player_strategy.md §4 最佳技能進化策略） ============
+
+   技能是金幣升級制（沒有技能點）：每個群組 7 階、每階最多 Lv.10，費用逐級 ×1.5；
+   7 階全滿才開放第 8 階「超神進化」三選一。所有費用、解鎖、開放條件都由遊戲算好放在
+   panels.skill，策略不抄公式。 */
+
+/* 種子化亂數（mulberry32）。策略層禁用 Math.random，組合要能由 seed 重現。 */
+function mulberry32(a) {
+  return function () {
+    a = (a + 0x6D2B79F5) | 0;
+    var t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function seededShuffle(list, rng) {
+  var a = list.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(rng() * (i + 1));
+    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+/* 技能組合：整組同一類別（全物理或全魔法）；魔法再集中在少數元素系。
+   「每次模擬隨機挑選」——由 seed 決定，同 seed 必得同組合。
+   魔法時各元素輪流排進優先序，這樣裝配欄只有 4 格時也是兩個元素各 2 個。 */
+function buildSkillComposition(P, cfg, seed) {
+  var rng = mulberry32((seed ^ 0x51ab7) >>> 0);
+  rng(); rng();                                      // 前幾個值相關性高，丟掉
+  var phys = [], byElem = {};
+  var ids = Object.keys(P.groups).sort();
+  for (var i = 0; i < ids.length; i++) {
+    var g = P.groups[ids[i]];
+    if (g.passive) continue;                         // 被動群組是生存補位用，不當主力
+    if (g.kind === 'phys') phys.push(ids[i]);
+    else { (byElem[g.elem] = byElem[g.elem] || []).push(ids[i]); }
+  }
+  var magicChance = (typeof cfg.magicChance === 'number') ? cfg.magicChance : 0.5;
+  var mode = (cfg.mode === 'phys' || cfg.mode === 'magic') ? cfg.mode : (rng() < magicChance ? 'magic' : 'phys');
+  /* 備用成員：同類別、不在主力組合內的群組，依「第 1 階開放等級」由低到高。
+     群組的開放等級從 1 到 700 級不等（雷系 300、冰系 450、風系 600），
+     主力組合在前期多半還沒開放；沒有備用成員的話裝配欄會是空的，角色只剩普攻。 */
+  function byOpenLevel(list) {
+    return list.slice().sort(function (a, b) {
+      var la = P.groups[a].tiers[0].unlockLv || 0, lb = P.groups[b].tiers[0].unlockLv || 0;
+      return (la - lb) || (a < b ? -1 : 1);
+    });
+  }
+  if (mode === 'phys') {
+    return { mode: 'phys', elems: [], comp: seededShuffle(phys, rng), fallback: [] };
+  }
+  var pool = [];
+  var wanted = cfg.elemPool || Object.keys(byElem).sort();
+  for (var w = 0; w < wanted.length; w++) if (byElem[wanted[w]] && byElem[wanted[w]].length) pool.push(wanted[w]);
+  var elems = seededShuffle(pool, rng).slice(0, cfg.elemCount || 2);
+  var lists = [];
+  for (var e = 0; e < elems.length; e++) lists.push(seededShuffle(byElem[elems[e]], rng));
+  var comp = [];
+  for (var round = 0; ; round++) {
+    var added = false;
+    for (var l = 0; l < lists.length; l++) if (round < lists[l].length) { comp.push(lists[l][round]); added = true; }
+    if (!added) break;
+  }
+  var rest = [];
+  for (var ek in byElem) for (var ri2 = 0; ri2 < byElem[ek].length; ri2++) {
+    if (comp.indexOf(byElem[ek][ri2]) < 0) rest.push(byElem[ek][ri2]);
+  }
+  return { mode: 'magic', elems: elems, comp: comp, fallback: byOpenLevel(rest) };
+}
+
+/* 每個決策點更新技能情境：組合只在第一次看得到技能面板時決定一次，之後不變。 */
+function updateSkillContext(state, policy, memo) {
+  var cfg = policy.skills;
+  if (!cfg) return;
+  if (!state.ctx) state.ctx = {};
+  var P = pathVal(state, cfg.panel || 'panels.skill');
+  if (P && P.groups && !memo.skill) {
+    memo.skill = buildSkillComposition(P, cfg, Number(state.seed) || 0);
+    memo.skill.lastUltSwitchAt = -1e12;
+  }
+  var S = memo.skill;
+  if (!S) return;
+  state.ctx.skillMode = S.mode;
+  /* 沒選到的元素要明確是 false：條件寫成 ['ctx.elem_fire','truthy']，
+     欄位不存在會被記成「失效路徑」，而它其實是正常的「沒選這個元素」。 */
+  var allElems = ['fire', 'lightning', 'ice', 'wind', 'earth'];
+  for (var ei = 0; ei < allElems.length; ei++) state.ctx['elem_' + allElems[ei]] = false;
+  for (var i = 0; i < S.elems.length; i++) state.ctx['elem_' + S.elems[i]] = true;
+}
+
+/* 目前使用中的是不是第 1 套之外的裝備組。
+   離開第 1 套時，針對「使用中裝備」的規則（換裝、強化、洗煉、鑲寶石、符文）要暫停：
+   不然資源會灌進第 2、3 套，違反「資源先全給第 1 套」（player_strategy.md §7）。 */
+function updateSetContext(state, policy) {
+  if (!policy.equipSets) return;
+  if (!state.ctx) state.ctx = {};
+  var P = pathVal(state, policy.equipSets.panel || 'panels.equipSets');
+  state.ctx.setAway = !!(P && P.active !== undefined && P.active !== (policy.equipSets.home || 0));
+}
+
+function setAwayBlocks(r, policy, state) {
+  if (!policy.equipSets || !state.ctx || !state.ctx.setAway) return false;
+  if (r.equipSetBuild || r.equipSetSwitch) return false;          // 這兩條自己指定套別，不受影響
+  var pre = policy.equipSets.awayBlock || [];
+  for (var i = 0; i < pre.length; i++) if (String(r.cmd || '').indexOf(pre[i]) === 0) return true;
+  return false;
+}
+
+/* 目前的情境：封魔塔進行中＝tower；野外 BOSS 卡關（失敗 ≥2 次）＝boss；其餘＝farm。
+   菁英關歸 farm：超神進化切換要付上千萬金幣，只值得為持續性的情境切換。 */
+function skillSituation(state, cfg) {
+  var tower = pathVal(state, cfg.towerActive || 'panels.tower.tower.active');
+  if (tower) return 'tower';
+  var c = state.ctx || {};
+  if (c.blockMode === 'boss' && (c.fails || 0) >= 2) return 'boss';
+  return 'farm';
+}
+
+function gearCoverageOk(state, g) {
+  if (!g) return true;
+  var rar = pathVal(state, g.equippedRarities) || {};
+  var total = 0, meet = 0;
+  for (var k in rar) {
+    var v = Number(rar[k]);
+    if (!(v >= 0)) continue;
+    total++;
+    if (v >= (g.minRarity || 0)) meet++;
+  }
+  return total > 0 && (meet / total) >= (typeof g.coverage === 'number' ? g.coverage : 1);
+}
+
+/* 這個群組離「7 階全滿＝可進超神進化」還差幾級。 */
+function skillRemaining(grp) {
+  var n = 0;
+  for (var i = 0; i < grp.tiers.length; i++) n += (10 - grp.tiers[i].lv);
+  return n;
+}
+
+function planSkills(state, policy, memo, ruleId) {
+  var cfg = policy.skills || {};
+  var out = [];
+  var P = pathVal(state, cfg.panel || 'panels.skill');
+  var S = memo.skill;
+  if (!P || !P.groups || !S) return out;
+  var ctx = state.ctx || {};
+  var gold = Number(pathVal(state, cfg.gold || 'view.gold')) || 0;
+  var size = Number(P.loadoutSize) || 0;
+  var prefix = P.prefix || 'sg:';
+
+  /* 目前裝配中的群組（先算，後面「保留已裝配」要用）。 */
+  var cur = [];
+  for (var ci = 0; ci < P.loadout.length; ci++) {
+    if (String(P.loadout[ci]).indexOf(prefix) === 0) cur.push(String(P.loadout[ci]).slice(prefix.length));
+  }
+
+  /* ---- 1. 想要裝配哪些群組 ----
+     只挑「已學會，或現在學得起」的成員：每個群組連第 1 階都有各自的等級門檻
+     （例如飛刀 50 級、雙刀亂舞 250 級），硬挑還沒開放的只會被遊戲回「需達到 N 級」。
+     已學會且已裝配的優先保留——不然等級一到，優先序較前的新成員就會把投資了很多的群組擠掉。
+     生存率不足（ctx.desperate）時把最後幾格換成生存類群組，其餘維持主力組合。 */
+  function usable(g) {
+    var x = P.groups[g];
+    return x && (x.castable || (x.tiers[0].unlocked && x.tiers[0].prevOk));
+  }
+  function isOn(g) { return P.groups[g].castable && cur.indexOf(g) >= 0; }
+  var mainOk = S.comp.filter(usable);
+  var backOk = (S.fallback || []).filter(usable);
+  /* 順序：主力已裝配 → 主力新開放 → 備用已裝配 → 備用新開放。
+     備用成員排在主力之後，所以主力一開放就會把備用擠掉。 */
+  var ordered = mainOk.filter(isOn).concat(mainOk.filter(function (g) { return !isOn(g); }),
+                                          backOk.filter(isOn), backOk.filter(function (g) { return !isOn(g); }));
+  var desired = ordered.slice(0, size);
+  if (ctx.desperate && cfg.survival) {
+    var k = Math.min(cfg.survivalSlots || 2, size);
+    var surv = [];
+    for (var si = 0; si < cfg.survival.length && surv.length < k; si++) {
+      var sg = cfg.survival[si];
+      if (P.groups[sg] && desired.indexOf(sg) < 0) surv.push(sg);
+    }
+    desired = ordered.slice(0, Math.max(0, size - surv.length)).concat(surv);
+  }
+
+  /* ---- 2. 學習：第一階段先把裝配欄各群組都學起來（平均），再依離超神進化的遠近升級 ---- */
+  var maxLearns = (typeof cfg.maxLearnsPerDecision === 'number') ? cfg.maxLearnsPerDecision : 6;
+  var learns = 0;
+  var di;
+  for (di = 0; di < desired.length && learns < maxLearns; di++) {
+    var dg = P.groups[desired[di]];
+    if (!dg || dg.castable) continue;
+    var t0 = dg.tiers[0];
+    if (t0.unlocked && t0.prevOk && t0.cost !== null && t0.cost <= gold) {
+      gold -= t0.cost; learns++;
+      out.push({ name: 'skill2.learn', args: { group: desired[di], tier: 0 }, ruleId: ruleId });
+    }
+  }
+
+  /* 全部都學起來之後才進入升級階段（先平均，再集中）。 */
+  var allCastable = true;
+  for (di = 0; di < desired.length; di++) if (!(P.groups[desired[di]] && P.groups[desired[di]].castable)) allCastable = false;
+
+  if (allCastable) {
+    var ranked = desired.slice().sort(function (a, b) {
+      return (skillRemaining(P.groups[a]) - skillRemaining(P.groups[b])) || (a < b ? -1 : 1);
+    });
+    for (var ri = 0; ri < ranked.length && learns < maxLearns; ri++) {
+      var gid = ranked[ri], grp = P.groups[gid];
+      /* 超神進化階：已選就繼續升；7 階全滿但還沒選就依情境挑一個。 */
+      if (grp.ult && grp.ult.unlocked) {
+        if (grp.ult.pick < 0) {
+          var want = skillUltChoice(state, cfg, gid, ctx);
+          var oc = grp.ult.optCosts[want];
+          if (oc <= gold) {
+            gold -= oc; learns++;
+            out.push({ name: 'skill2.ultPick', args: { group: gid, opt: want }, ruleId: ruleId });
+          }
+        } else if (grp.ult.nextCost !== null && grp.ult.nextCost <= gold) {
+          gold -= grp.ult.nextCost; learns++;
+          out.push({ name: 'skill2.learn', args: { group: gid, tier: grp.tiers.length }, ruleId: ruleId });
+        }
+        continue;
+      }
+      /* 一般階：第一個還沒滿的階，且解鎖、前一階 ≥ Lv.1、付得起。卡在等級門檻就換下一個群組。 */
+      for (var ti = 0; ti < grp.tiers.length; ti++) {
+        var tr = grp.tiers[ti];
+        if (tr.maxed) continue;
+        if (tr.unlocked && tr.prevOk && tr.cost !== null && tr.cost <= gold) {
+          gold -= tr.cost; learns++;
+          out.push({ name: 'skill2.learn', args: { group: gid, tier: ti }, ruleId: ruleId });
+        }
+        break;
+      }
+    }
+
+    /* ---- 3. 超神進化的情境切換 ----
+       切換要付上千萬金幣，所以三道閘：裝備強度先到位、金幣有餘裕、距離上次切換夠久。 */
+    var sit = skillSituation(state, cfg);
+    var gateOk = gearCoverageOk(state, cfg.gear);
+    var now = Number(state.gameTimeSec) || 0;
+    if (gateOk && (now - S.lastUltSwitchAt) >= (cfg.switchMinSec || 21600)) {
+      for (var ui = 0; ui < desired.length; ui++) {
+        var ug = P.groups[desired[ui]];
+        if (!ug || !ug.ult || ug.ult.pick < 0) continue;
+        var target = skillUltChoice(state, cfg, desired[ui], ctx);
+        if (target === ug.ult.pick) continue;
+        var cost = ug.ult.optCosts[target];
+        if (gold < cost * (cfg.switchGoldMult || 2)) continue;
+        gold -= cost;
+        S.lastUltSwitchAt = now;
+        out.push({
+          name: 'skill2.ultSwitch',
+          args: { group: desired[ui], opt: target, fromOpt: ug.ult.pick, fromLv: ug.ult.lv, cost: cost },
+          ruleId: ruleId
+        });
+        break;                                       // 一次只切一個，貴
+      }
+    }
+  }
+
+  /* ---- 4. 裝配：缺的補上；欄位滿了就卸掉不在目標內的 ---- */
+  var free = size - P.loadout.length;
+  var removable = cur.filter(function (g) { return desired.indexOf(g) < 0; });
+  for (var mi = 0; mi < desired.length; mi++) {
+    var mg = desired[mi];
+    if (cur.indexOf(mg) >= 0) continue;
+    if (!(P.groups[mg] && P.groups[mg].castable)) continue;
+    if (free <= 0) {
+      if (!removable.length) break;
+      var victim = removable.shift();
+      out.push({ name: 'skill.unequipLoadout', args: { id: prefix + victim }, ruleId: ruleId });
+      free++;
+    }
+    out.push({ name: 'skill.equipLoadout', args: { id: prefix + mg }, ruleId: ruleId });
+    free--;
+  }
+  return out;
+}
+
+/* 超神進化三選項：依情境挑。對應表是策略資料（cfg.ult.byGroup），沒列到就用 cfg.ult.default。 */
+function skillUltChoice(state, cfg, gid, ctx) {
+  var u = cfg.ult || {};
+  var sit = skillSituation(state, cfg);
+  var row = u.byGroup && u.byGroup[gid];
+  if (row && typeof row[sit] === 'number') return row[sit];
+  return (typeof u.default === 'number') ? u.default : 0;
+}
+
+/* ============ 三套裝備（player_strategy.md §7） ============
+
+   第 1 套練功、第 2 套野外 BOSS 與封魔塔、第 3 套菁英關。
+   遊戲的限制：第 2 套 500 級解鎖，第 3 套要 500 級＋1 轉——一般模擬跑不到，
+   所以這組規則在前期整個不動（面板 unlocked 為 false），只有後期或 GM 墊到轉生才會啟動。 */
+
+/* 一套裝備的品質覆蓋：只算有裝備的部位，且至少要填滿 minFilled 格，
+   否則「空套」會因為分母是 0 或太小而被判成達標。 */
+function setCoverageOk(setView, g) {
+  var total = 0, meet = 0;
+  for (var k in setView.slots) {
+    total++;
+    if ((setView.slots[k].rarity || 0) >= (g.minRarity || 0)) meet++;
+  }
+  if (total < (g.minFilled || 1)) return false;
+  return (meet / total) >= (typeof g.coverage === 'number' ? g.coverage : 1);
+}
+
+/* 第 1 套的換裝規則會不會拿走這件：任何一個可放欄位是空的，或這件比該欄現有的好。 */
+function equipSetWantedByHome(cd, homeSet) {
+  var ks = cd.slots || [];
+  for (var i = 0; i < ks.length; i++) {
+    var cur = homeSet.slots[ks[i]];
+    if (!cur) return true;
+    if (rankBetter([cd.rarity, cd.level, cd.anc, cd.score], [cur.rarity, cur.level, cur.anc, cur.score])) return true;
+  }
+  return false;
+}
+
+function equipSetRank(b) {
+  return b ? [b.rarity, b.level, b.anc, b.p] : [-1, -1, -1, -1];
+}
+
+/* 建構第 2、3 套：只用「第 1 套不要的」。
+   候選若比第 1 套該部位現有的還好，第 1 套的換裝規則自己就會拿走，這裡不去搶——
+   那是文件的優先序（先把第 1 套做好，第 2、3 套才有餘力），也避免同一輪兩條規則
+   對同一件裝備各送一次、後一條被遊戲回「找不到物品」。不為第 2、3 套另外強化。 */
+function planEquipSetBuild(state, cfg, ruleId) {
+  var out = [];
+  var P = pathVal(state, cfg.panel || 'panels.equipSets');
+  if (!P || !P.sets) return out;
+  var limit = (typeof cfg.maxPerDecision === 'number') ? cfg.maxPerDecision : 4;
+  var used = {};
+  for (var si = 1; si < P.count && out.length < limit; si++) {
+    if (!P.unlocked[si]) continue;
+    /* 有餘力才建這一套：前一套的品質覆蓋已達標。 */
+    if (!setCoverageOk(P.sets[si - 1], cfg.gear || {})) continue;
+    var cands = (P.candidates && P.candidates[si]) || {};
+    var keys = Object.keys(cands).sort();
+    for (var ki = 0; ki < keys.length && out.length < limit; ki++) {
+      var key = keys[ki];
+      if (P.sets[si].blocked[key]) continue;            // 遊戲說目前不能裝（雙手主手占用副手）
+      var home = P.sets[0].slots[key] || null;
+      var cur = P.sets[si].slots[key] || null;
+      var pick = null;
+      for (var ci = 0; ci < cands[key].length && !pick; ci++) {
+        var cd = cands[key][ci];
+        if (used[cd.id]) continue;
+        /* ⚠️ 絕對不能跟第 1 套的換裝規則（equip-best-per-slot）搶同一件。
+           同一個決策點裡它會先把這件裝進第 1 套（從背包移走），接著這裡又對同一個 id
+           送 item.equip 到第 2 套——遊戲找得到它（已在裝備欄），而「同一件不得佔兩個欄位」
+           的防護只在單一套內有效，於是同一個物件跨兩套共存，之後變成裝備欄與背包重複。
+           所以判斷要跟它完全同一把尺：品質 >> 等級 >> 太古數 >> 遊戲評分，
+           而且要看這件能放的**每一個**欄位（戒指可放 ring／ring2，匕首可放主副手）。 */
+        if (equipSetWantedByHome(cd, P.sets[0])) continue;
+        if (!home) continue;                                                     // 第 1 套該部位還空著，先補它
+        pick = cd;
+      }
+      if (!pick) continue;
+      if (cur && !rankBetter(equipSetRank(pick), equipSetRank(cur))) continue;   // 沒有更好就不換
+      used[pick.id] = true;
+      out.push({ name: 'item.equip', args: { itemId: pick.id, slotKey: key, setIndex: si }, ruleId: ruleId });
+    }
+  }
+  return out;
+}
+
+/* 依階段切換使用中的那套。
+   文件：只在「推關嘗試」時才換，不在日常掛機中來回切。
+   決策點是取樣式的（約每 60 遊戲秒一次），而推關時關卡一分鐘會跳好幾關，
+   等怪物真的是菁英／BOSS 才反應一定來不及，所以改看「離下一個菁英／BOSS 關還有幾關」，
+   在抵達前 ahead 關就先換好。掛機在安全區間（沒在推關）時一律用第 1 套。 */
+function planEquipSetSwitch(state, cfg, ruleId, memo) {
+  var P = pathVal(state, cfg.panel || 'panels.equipSets');
+  if (!P || !P.sets) return [];
+  var stage = Number(pathVal(state, cfg.stage || 'view.stage')) || 0;
+  var pushing = !!(state.ctx && state.ctx.pushing);
+  var tower = !!pathVal(state, cfg.towerActive || 'panels.tower.tower.active');
+
+  function within(every, ahead) {
+    if (!(every > 0) || stage <= 0) return false;
+    return ((every - (stage % every)) % every) <= ahead;
+  }
+  var target = cfg.home || 0;
+  if (tower) target = cfg.tower ? cfg.tower.set : target;
+  else if (pushing && cfg.boss && within(cfg.boss.every, cfg.boss.ahead)) target = cfg.boss.set;
+  else if (pushing && cfg.elite && within(cfg.elite.every, cfg.elite.ahead)) target = cfg.elite.set;
+
+  /* 那一套要真的建好了才切：空套穿上去等於裸裝上場。 */
+  if (target !== (cfg.home || 0)) {
+    if (!P.unlocked[target]) target = cfg.home || 0;
+    else if (Object.keys(P.sets[target].slots).length < (cfg.minFilled || 1)) target = cfg.home || 0;
+  }
+  /* 遲滯：要換「離開」第 1 套，得連續 confirm 個決策點都想換才動。
+     推關開關在安全關卡的掛機邏輯裡會一開一關，不加遲滯的話切換會跟著每分鐘抖一次，
+     而且抖的那些時間其實是在掛機，不是在推關嘗試（實測 3 小時 94 次來回）。
+     換回第 1 套不等：回家永遠立刻。 */
+  var home = cfg.home || 0;
+  if (!memo.setSwitch) memo.setSwitch = { streak: 0 };
+  if (target === home) {
+    memo.setSwitch.streak = 0;
+  } else if (target !== P.active) {
+    memo.setSwitch.streak++;
+    if (memo.setSwitch.streak < (cfg.confirm || 2)) return [];
+  }
+  if (target === P.active) return [];
+  return [{ name: 'player.switchEquipSet', args: { index: target }, ruleId: ruleId }];
+}
+
 /* 回傳這個決策點要送出的指令陣列。純函式：同樣的輸入必定得到同樣的輸出。 */
 function decide(state, policy, memo) {
   updateContext(state, policy, memo);
+  updateSkillContext(state, policy, memo);
+  updateSetContext(state, policy);
   var out = [];
   var now = state.gameTimeSec;
   for (var i = 0; i < policy.rules.length; i++) {
     var r = policy.rules[i];
+    if (setAwayBlocks(r, policy, state)) continue;
     if (r.once && memo.fired[r.id]) continue;
     if (r.everySec) {
       var last = memo.lastAt[r.id];
@@ -919,7 +1485,11 @@ function decide(state, policy, memo) {
          1. 只要背包物品的品質 (rarity) > 身上現有裝備的品質，100% 強制換上！
          2. 若品質相同，評分 (score) 較高者優先換上！ */
       var used = {};
+      /* 遊戲說目前不能裝的部位（主手是雙手武器時的副手）一律跳過。
+         不跳的話會無限來回換裝：裝副手擠下雙手主手、再裝雙手主手擠下副手。 */
+      var blockedSlots = pathVal(state, cfg.blocked || 'panels.equipRules.blocked') || {};
       for (var slotKey in eqScores) {
+        if (blockedSlots[slotKey]) continue;
         /* 部位歸屬以遊戲提供的 item.slots 為準（面板欄位，來自 equipSlotsForItem）。
            舊版是把部位鍵結尾的數字去掉當基礎部位——那對戒指沒問題，
            但雙手武器的合法部位只有 weapon，硬塞進 weapon2 會害主手被卸下。
@@ -1359,6 +1929,48 @@ function decide(state, policy, memo) {
           }
         }
       }
+    } else if (r.claimTask) {
+      /* 任務是依序的，只有「目前任務」可領。達成就領，無條件、不花資源。 */
+      var ctTask = pathVal(state, r.claimTask.panel || 'panels.taskGoal');
+      if (ctTask && ctTask.ready) out.push({ name: r.cmd, args: {}, ruleId: r.id });
+    } else if (r.taskAssist) {
+      /* 順手完成任務（player_strategy.md §6）：只在「不影響練功」的前提下做。
+         初版只涵蓋主要策略不會主動做的那一種——升級熔爐零件至 N 級。
+         其餘任務（穿裝、強化次數、洗煉次數、鑲寶石、過關…）本來就是練功會做的事，
+         達成後由 claimTask 自動領。
+
+         餘裕條件：付完之後餘額仍 ≥ 支出 × spareMult（預設 2）。
+         零件等級是全域的（升一次所有熔爐的同種零件一起變強），而任務看的是
+         「最高的那一個零件的等級」，所以集中升等級最高的那一種最快達標。 */
+      var taCfg = r.taskAssist;
+      var taTask = pathVal(state, taCfg.panel || 'panels.taskGoal');
+      if (taTask && !taTask.done && !taTask.ready && taTask.type === 'forgePartLevel') {
+        var taLv = pathVal(state, taCfg.levels) || {};
+        var taCost = pathVal(state, taCfg.costs) || {};
+        var taGold = Number(pathVal(state, taCfg.gold || 'view.gold')) || 0;
+        var taSpare = (typeof taCfg.spareMult === 'number') ? taCfg.spareMult : 2;
+        var taBest = null, taBestLv = -1;
+        var taKeys = Object.keys(taLv).sort();
+        for (var tki = 0; tki < taKeys.length; tki++) {
+          var tk = taKeys[tki], tl = Number(taLv[tk]), tc = Number(taCost[tk]);
+          if (!(tl >= 0) || !(tc > 0)) continue;           // 已達上限時遊戲給 null
+          if (taGold - tc < taSpare * tc) continue;        // 付完要還有餘裕
+          if (tl > taBestLv) { taBest = tk; taBestLv = tl; }
+        }
+        if (taBest) out.push({ name: 'newforge.upgradePart', args: { partKey: taBest }, ruleId: r.id });
+      }
+    } else if (r.equipSetBuild) {
+      var esb = planEquipSetBuild(state, r.equipSetBuild, r.id);
+      for (var esi = 0; esi < esb.length; esi++) out.push(esb[esi]);
+    } else if (r.equipSetSwitch) {
+      var ess = planEquipSetSwitch(state, r.equipSetSwitch, r.id, memo);
+      for (var esj = 0; esj < ess.length; esj++) out.push(ess[esj]);
+    } else if (r.skillPlan) {
+      var spOut = planSkills(state, policy, memo, r.id);
+      for (var spi = 0; spi < spOut.length; spi++) out.push(spOut[spi]);
+    } else if (r.runePlan) {
+      var rpOut = planRunes(state, r.runePlan, r.id);
+      for (var rpi = 0; rpi < rpOut.length; rpi++) out.push(rpOut[rpi]);
     } else if (r.enchantPriority) {
       /* 依部位可用的附魔類別挑書附上去。
 
@@ -1897,6 +2509,9 @@ function decide(state, policy, memo) {
         /* farmAuto 非 null＝farmPark 接管了這一段（!inPark 時才會發生）。
            它已經把「該待在哪一格」算完了，自動推關只是「還沒走到就繼續走」。 */
         gArgs[gCfg.argKey || 'on'] = (farmAuto !== null) ? !!farmAuto : !!(passGate || advanceOn);
+        /* 記下現在是否在推關（自動推關開著）。裝備組切換只在推關時才換。 */
+        if (!state.ctx) state.ctx = {};
+        state.ctx.pushing = !!gArgs[gCfg.argKey || 'on'];
         out.push({ name: r.cmd, args: gArgs, ruleId: r.id });
       }
     } else if (r.convertToPreferred) {

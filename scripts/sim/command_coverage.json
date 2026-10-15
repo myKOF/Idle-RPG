@@ -1,0 +1,218 @@
+{
+  "說明": "協議（js/worker/protocol.js）每一條指令，要嘛被某份策略用到，要嘛在這裡有明文理由。tests/sim-command-coverage.test.cjs 會擋下「遊戲新增了指令、模擬器沒人理」——模擬器過期最常見的形態就是系統整個沒被摸到，而報表上只會多一行「未測到指令」，沒人會看。",
+  "類別": {
+    "never": "不該碰：作弊、檔案 I/O、純 UI、或會毀掉量測／累積進度",
+    "redundant": "已被另一條指令涵蓋（單次版對批次版、手動版對自動版）",
+    "noRule": "player_strategy.md 沒有對應規則。要不要補是設計決定，補之前先由設計者寫規則，不是實作者猜",
+    "disabled": "對應的遊戲功能目前關閉；重新開啟時測試會要求策略補上",
+    "pending": "排定要做的任務，做完必須從這裡移除"
+  },
+  "指令": {
+    "gm.exec": {
+      "類別": "never",
+      "理由": "作弊指令。模擬的前提是『玩家能按的按鈕』"
+    },
+    "app.handoff": {
+      "類別": "never",
+      "理由": "應用層交接，與遊戲進度無關"
+    },
+    "save.auto": {
+      "類別": "never",
+      "理由": "存檔由模擬器自己管（決定論雜湊要靠它）"
+    },
+    "save.manual": {
+      "類別": "never",
+      "理由": "存檔由模擬器自己管，策略手動存檔會干擾決定論雜湊"
+    },
+    "save.toFolder": {
+      "類別": "never",
+      "理由": "檔案 I/O，headless 沒有資料夾"
+    },
+    "save.restart": {
+      "類別": "never",
+      "理由": "重啟會中斷模擬"
+    },
+    "settings.set": {
+      "類別": "never",
+      "理由": "介面與音效等偏好設定，不影響遊戲結果"
+    },
+    "stats.reset": {
+      "類別": "never",
+      "理由": "會清掉 LOOT_STATS，而報表的累積獲得全讀那裡"
+    },
+    "combat.setPaused": {
+      "類別": "never",
+      "理由": "headless 是步進式，沒有牆鐘時間可暫停"
+    },
+    "combat.togglePaused": {
+      "類別": "never",
+      "理由": "headless 是步進式，沒有牆鐘時間可暫停"
+    },
+    "player.setInvSort": {
+      "類別": "never",
+      "理由": "純顯示排序，不影響遊戲結果"
+    },
+    "player.setEquipView": {
+      "類別": "never",
+      "理由": "純顯示：預覽另一套裝備"
+    },
+    "player.renameEquipSet": {
+      "類別": "never",
+      "理由": "純改名，不影響遊戲結果"
+    },
+    "newforge.markTabSeen": {
+      "類別": "never",
+      "理由": "新手提示已讀標記"
+    },
+    "newforge.markNoticeShown": {
+      "類別": "never",
+      "理由": "新手提示已讀標記"
+    },
+    "gem.compose": {
+      "類別": "redundant",
+      "理由": "gem.composeAll 涵蓋"
+    },
+    "gem.shopBuy": {
+      "類別": "redundant",
+      "理由": "gem.shopBuyAll 涵蓋"
+    },
+    "talent.max": {
+      "類別": "redundant",
+      "理由": "talent.upgrade 重複送即等價"
+    },
+    "talent.potentialMax": {
+      "類別": "redundant",
+      "理由": "talent.potentialUpgrade 重複送即等價"
+    },
+    "rune.composeAll": {
+      "類別": "redundant",
+      "理由": "符文要保留 5 顆，不能全部合光；planRunes 逐次算好才送 rune.compose"
+    },
+    "item.salvage": {
+      "類別": "redundant",
+      "理由": "單件分解；批次由 item.salvageBulk，常態由熔爐分解品質"
+    },
+    "tower.start": {
+      "類別": "redundant",
+      "理由": "tower.startAuto 涵蓋"
+    },
+    "tower.stopAuto": {
+      "類別": "redundant",
+      "理由": "tower.finish 涵蓋"
+    },
+    "forge.cancel": {
+      "類別": "redundant",
+      "理由": "forge.setAuto／forge.start 的自動流程涵蓋"
+    },
+    "forge.removeItem": {
+      "類別": "redundant",
+      "理由": "手動熔爐工序，forge.setAuto／forge.start 的自動流程已涵蓋"
+    },
+    "forge.toggleDust": {
+      "類別": "redundant",
+      "理由": "手動熔爐工序，自動流程已涵蓋"
+    },
+    "item.enchant": {
+      "類別": "disabled",
+      "理由": "ENCHANT_ENABLED=false，符文真言取代",
+      "需要": "ENCHANT_ENABLED"
+    },
+    "item.removeEnchant": {
+      "類別": "disabled",
+      "理由": "ENCHANT_ENABLED=false，符文真言取代附魔",
+      "需要": "ENCHANT_ENABLED"
+    },
+    "rune.erase": {
+      "類別": "noRule",
+      "理由": "player_strategy.md §5.2-3 初版不取下已鑲符文（要付碎片與精華）"
+    },
+    "rune.dismantle": {
+      "類別": "noRule",
+      "理由": "§5.4 初版不拆符文"
+    },
+    "item.unequip": {
+      "類別": "noRule",
+      "理由": "換裝直接用 item.equip 覆蓋；沒有『主動卸下』的情境"
+    },
+    "item.setLock": {
+      "類別": "noRule",
+      "理由": "文件沒有保護特定裝備不被分解的規則"
+    },
+    "gem.dismantle": {
+      "類別": "noRule",
+      "理由": "文件的寶石策略是轉換→合成→鑲嵌，沒有拆解"
+    },
+    "gem.dismantleAll": {
+      "類別": "noRule",
+      "理由": "文件的寶石策略沒有拆解，批次版同理"
+    },
+    "gem.dismantleFused": {
+      "類別": "noRule",
+      "理由": "文件的寶石策略沒有拆解，融合寶石同理"
+    },
+    "gem.fuse": {
+      "類別": "noRule",
+      "理由": "寶石融合系統，文件沒有對應規則"
+    },
+    "gem.socketFused": {
+      "類別": "noRule",
+      "理由": "寶石融合系統文件沒有對應規則，鑲融合寶石同理"
+    },
+    "newforge.removeFurnace": {
+      "類別": "noRule",
+      "理由": "文件只有『解鎖到最大數量』，沒有拆爐"
+    },
+    "newforge.setEnabled": {
+      "類別": "noRule",
+      "理由": "文件沒有暫停熔爐的情境"
+    },
+    "factory.setSalvageSettings": {
+      "類別": "noRule",
+      "理由": "分解品質走熔爐（newforge.setQuality）"
+    },
+    "stage.goMax": {
+      "類別": "noRule",
+      "理由": "『回到最高關』文件沒寫；退關用 stage.go 指定關卡"
+    },
+    "tower.flee": {
+      "類別": "noRule",
+      "理由": "文件的塔策略是『打到失敗即停止』，沒有中途撤退"
+    },
+    "tower.confirmResult": {
+      "類別": "noRule",
+      "理由": "待查：結算確認是否必要。tower.finish 已涵蓋回到一般戰鬥"
+    },
+    "talent.downgrade": {
+      "類別": "noRule",
+      "理由": "回退／刪除會破壞累積進度，文件沒有重配規則"
+    },
+    "talent.delete": {
+      "類別": "noRule",
+      "理由": "回退／刪除會破壞累積進度，文件沒有重配規則"
+    },
+    "talent.potentialDowngrade": {
+      "類別": "noRule",
+      "理由": "回退會破壞累積進度，文件沒有重配規則"
+    },
+    "talent.potentialDelete": {
+      "類別": "noRule",
+      "理由": "刪除會破壞累積進度，文件沒有重配規則"
+    },
+    "skill.reorderLoadout": {
+      "類別": "noRule",
+      "理由": "文件沒有調整裝配順序的規則（順序不影響施放優先）"
+    },
+    "skill2.max": {
+      "類別": "redundant",
+      "理由": "skill2.learn 逐級升已涵蓋，且要逐級檢查金幣餘裕"
+    },
+    "skill2.downgrade": {
+      "類別": "noRule",
+      "理由": "回退會破壞累積投資，文件沒有重配規則"
+    },
+    "skill2.delete": {
+      "類別": "noRule",
+      "理由": "刪除會破壞累積投資，文件沒有重配規則"
+    }
+  }
+}

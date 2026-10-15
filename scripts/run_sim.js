@@ -281,6 +281,15 @@ function bump(bucket, key) { bucket[key] = (bucket[key] || 0) + 1; }
 function dispatch(cmds) {
   for (const c of cmds) {
     const r = engine.cmd(c.name, c.args);
+    /* 除錯用：SIM_CMD_LOG=<檔案> 把每一條實際送出的指令與回覆逐行記下來
+       （JSON Lines）。預設關閉，不影響結果也不影響決定論。
+       看報表只知道「某規則成功 N 次」，要查規則之間互相干擾（同一輪裡前一條
+       把後一條要的條件弄掉）只能看指令流水。 */
+    if (process.env.SIM_CMD_LOG) {
+      fs.appendFileSync(process.env.SIM_CMD_LOG, JSON.stringify({
+        t: Math.round(engine.gameTimeSec()), rule: c.ruleId, cmd: c.name, args: c.args, res: r && r.result
+      }) + String.fromCharCode(10));
+    }
     const key = c.ruleId + ' → ' + c.name;
     const s = cmdStats[key] || (cmdStats[key] = {
       sent: 0, ok: 0, failed: 0, gameReply: 0, noReturn: 0, rejected: 0, replies: Object.create(null)
@@ -588,7 +597,7 @@ try {
          面板只建策略宣告要的那幾個——背包面板很大，每次都建會白付序列化成本。 */
       const panels = {};
       for (const p of policy.needPanels) panels[p] = engine.panel(p, panelParamsFor(p));
-      dispatch(policy.decide({ view: engine.view(), panels, gameTimeSec: engine.gameTimeSec() }));
+      dispatch(policy.decide({ view: engine.view(), panels, gameTimeSec: engine.gameTimeSec(), seed: SEED }));
       decisions++;
 
       if (engine.gameTimeSec() >= nextSnapAt) {
