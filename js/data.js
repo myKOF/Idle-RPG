@@ -310,7 +310,7 @@ var FIELD_ELITE = { hpMult: 4, atkMult: 2, rewardMult: 2, dodgeAdd: 1.5, aspd: 1
    skillDmgPct／cdPct＝菁英技能的傷害與冷卻倍率（%）；firstCastMax＝進場後第一次施放最久等幾秒；
    maxZones＝同時存在的場域上限；summonCap＝每隻怪物一生最多召喚幾隻；linkBeam＝0 時不畫鏈結線。
    高級敵人（2026-10-13）：advChance＝[普通關%, 菁英關%]，每隻菁英升級成高級菁英的機率；advHp／advAtk／advReward＝高級菁英相對普通怪的生命／攻擊／金幣經驗倍率；
-   sizeElite／sizeAdv／sizeBoss／sizeTower[下限, 上限]＝體型倍率（封魔塔 BOSS 依順序從下限長到上限）；repoMin／repoMax＝跑位間隔（秒）。
+   sizeElite／sizeAdv／sizeBoss／sizeTower[下限, 上限]＝體型倍率（封魔塔 BOSS 依順序從下限長到上限）；repoMin／repoMax＝跑位間隔（秒）；repoSpeed＝跑位時的移動速度倍率。
    每種敵人帶哪些技能不在這裡：NPC 表（專屬技能＋隨機技能數量）與 Skills2 表（類別＝enemy）。 */
 var ELITE_GROUP = {
   normalChance: {
@@ -339,7 +339,7 @@ var ELITE_GROUP = {
   skillDmgPct: 100, cdPct: 100, firstCastMax: 3.5, maxZones: 48, summonCap: 10, linkBeam: 1,
   advChance: [6, 20], advHp: 8, advAtk: 3, advReward: 4,
   sizeElite: 1.6, sizeAdv: 2.2, sizeBoss: 3.4, sizeTower: [5, 7],
-  repoMin: 4, repoMax: 8
+  repoMin: 4, repoMax: 8, repoSpeed: 1.6
 };
 var MONSTER_DEFAULT_HIT = 100;   // 怪物固定命中（怪物資料未提供 hit 時的預設；參數表「3-戰鬥核心／怪物固定戰鬥值」）
 var FIELD_MONSTER_DODGE_BASE = 5;

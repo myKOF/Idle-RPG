@@ -80,6 +80,30 @@ test('ELITE-ENGINE-3 跑位間隔吃參數（repoMin／repoMax）', () => {
   assert.ok(picks >= 4, '間隔 1 秒時 20 秒內至少跑位 4 次（預設 4~8 秒只會有 2~3 次）：' + picks);
 });
 
+test('ELITE-ENGINE-3b 跑位時加速（repoSpeed）：目標點跟著玩家走，用平常的跑速追不上；小兵擠不動跑位中的高級敵人', () => {
+  const c = fresh();
+  assert.equal(c.ELITE_GROUP.repoSpeed, 1.6, '預設 1.6 倍（game_parameters「跑位設定」c）');
+  const m = makeElite(c, ['e_vitality'], { x: 600, y: 0, hp: 1e9 });
+  run(c, 'FIELD.monsters.forEach(function (e) { e._enterCd = 0; });');
+  c.bfPlayerPos().x = 0; c.bfPlayerPos().y = 0;
+  const dist = (ent) => Math.hypot(ent.pos.x - 600, ent.pos.y);
+  const step = (speed) => {
+    run(c, 'ELITE_GROUP.repoSpeed = ' + speed + ';');
+    m.pos = { x: 600, y: 0 };
+    m._rp = { ang: Math.PI, dist: 300, t0: c.GT };      // 目標點在玩家另一側（遠）
+    run(c, 'bfTickApproach(FIELD.monsters, 0.1);');
+    return dist(m);
+  };
+  const slow = step(1), fast = step(1.6);
+  assert.ok(Math.abs(fast / slow - 1.6) < 0.01, '加速倍率生效：' + slow + ' → ' + fast);
+  // 推擠：同一個位置放一隻小兵，跑位中的高級敵人被擠開的距離遠小於小兵
+  const minion = makeMinion(c, 1, { x: 600, y: 0 });
+  m.pos = { x: 600, y: 0 }; minion.pos = { x: 610, y: 0 }; m._rp = { ang: 0, dist: 1e6, t0: c.GT };
+  const m0 = m.pos.x, n0 = minion.pos.x;
+  run(c, 'ELITE_GROUP.repoSpeed = 0; bfTickApproach(FIELD.monsters, 0.0001);');
+  assert.ok(Math.abs(minion.pos.x - n0) > Math.abs(m.pos.x - m0) * 3, '小兵被擠開、跑位中的高級敵人幾乎不動');
+});
+
 test('ELITE-ENGINE-4 火鏈：同群夥伴之間常駐一條鏈，玩家踩上去持續受傷；單獨一隻沒有鏈', () => {
   const c = fresh();
   const a = makeElite(c, ['e_firechain'], { x: -300, y: 0, hp: 1e9 });

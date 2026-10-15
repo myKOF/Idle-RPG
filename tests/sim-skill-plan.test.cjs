@@ -230,8 +230,12 @@ test('任務順手：只處理需要額外動作的任務類型', () => {
 
 const SET_BUILD = { id: 'b', cmd: 'item.equip', equipSetBuild: { panel: 'panels.equipSets', maxPerDecision: 4, gear: { minRarity: 4, coverage: 0.85, minFilled: 2 } } };
 const SET_SWITCH = { id: 's', cmd: 'player.switchEquipSet', equipSetSwitch: {
-  panel: 'panels.equipSets', stage: 'view.stage', towerActive: 'panels.tower.tower.active', home: 0, minFilled: 1,
-  tower: { set: 1 }, boss: { every: 50, ahead: 3, set: 1 }, elite: { every: 10, ahead: 3, set: 2 } } };
+  panel: 'panels.equipSets', home: 0, minFilled: 1, towerActive: 'panels.tower.tower.active',
+  encounter: { boss: 1, elite: 2, tower: 1 }, towerStartRule: 'tower-auto',
+  invest: {
+    gear: { minRarity: 4, coverage: 1, minFilled: 1 }, towerHighest: 'panels.tower.tower.highest',
+    sets: { 1: { base: 0.5, bossRampPerMin: 0.1, bossCap: 0.5, towerRampPerMin: 0.05, towerCap: 0.25, max: 1 }, 2: { base: 0.2, max: 0.2 } }
+  } } };
 
 function setPolicy(rule, extra) {
   return createPolicy(Object.assign({ name: 't', decideEveryGameSec: 1, needPanels: [], lists: {}, rules: [rule] }, extra || {}));
@@ -312,36 +316,139 @@ test('裝備組：被雙手主手占用的副手不裝', () => {
   assert.deepEqual(eqCmds(setPolicy(SET_BUILD).decide(setState(P))), []);
 });
 
-function switchTo(stage, o) {
+const filledSet = (n, rar) => { const x = {}; for (let i = 0; i < n; i++) x['k' + i] = brief('i' + i, rar === undefined ? 4 : rar); return { slots: x, blocked: {} }; };
+function swPanel(o) {
   o = o || {};
-  const filled = (n) => { const s = {}; for (let i = 0; i < n; i++) s['k' + i] = brief('i' + i, 4); return { slots: s, blocked: {} }; };
-  const P = setsPanel({ active: o.active || 0, sets: [filled(5), filled(o.filled1 === undefined ? 5 : o.filled1), filled(5)], unlocked: o.unlocked || [true, true, true] });
-  const st = setState(P, { view: { stage }, ctx: { pushing: o.pushing !== false } });
-  if (o.tower) st.panels.tower.tower.active = true;
-  const pol = setPolicy(SET_SWITCH);
-  let cmds = pol.decide(st);
-  if (!cmds.length && !o.once) cmds = pol.decide(Object.assign({}, st, { gameTimeSec: st.gameTimeSec + 60 }));   // 遲滯：連續第二個決策點才換
-  return cmds.length ? cmds[0].args.index : (o.active || 0);
+  return setsPanel({
+    active: o.active || 0,
+    sets: [filledSet(5), filledSet(o.n1 === undefined ? 5 : o.n1), filledSet(o.n2 === undefined ? 5 : o.n2)],
+    unlocked: o.unlocked || [true, true, true]
+  });
+}
+function swState(P, o) {
+  o = o || {};
+  const st = setState(P, { gameTimeSec: o.t === undefined ? 60 : o.t, ctx: Object.assign({ mode: 'normal', stuckBossMin: 0 }, o.ctx || {}) });
+  st.panels.tower.tower.active = !!o.tower;
+  st.panels.tower.tower.highest = o.highest === undefined ? 10 : o.highest;
+  return st;
+}
+const swIdx = (cmds) => cmds.filter((c) => c.name === 'player.switchEquipSet').map((c) => c.args.index);
+function noInvestPolicy() {
+  const cfg = JSON.parse(JSON.stringify(SET_SWITCH));
+  delete cfg.equipSetSwitch.invest;
+  return setPolicy(cfg);
 }
 
-test('裝備組切換：推關時在抵達菁英／BOSS 關之前先換好', () => {
-  assert.equal(switchTo(25), 0, '離菁英關還遠＝第 1 套');
-  assert.equal(switchTo(30), 2, '30 關本身就是菁英關');
-  assert.equal(switchTo(37), 2, '37 關：離 40 關菁英只剩 3 關＝第 3 套');
-  assert.equal(switchTo(40), 2, '菁英關當下');
-  assert.equal(switchTo(41), 0, '過了菁英關換回第 1 套');
-  assert.equal(switchTo(47), 1, '47 關：離 50 關 BOSS 只剩 3 關＝第 2 套（BOSS 優先於菁英）');
-  assert.equal(switchTo(50), 1);
+test('裝備組切換：實際碰到才換，不提前（裝備可以戰鬥中任意切換，提前換沒有意義）', () => {
+  assert.deepEqual(swIdx(noInvestPolicy().decide(swState(swPanel(), { ctx: { mode: 'normal' } }))), [], '一般戰鬥＝第 1 套');
+  assert.deepEqual(swIdx(noInvestPolicy().decide(swState(swPanel(), { ctx: { mode: 'boss' } }))), [1], '碰到野外 BOSS＝第 2 套');
+  assert.deepEqual(swIdx(noInvestPolicy().decide(swState(swPanel(), { ctx: { mode: 'elite' } }))), [2], '碰到菁英＝第 3 套');
+  assert.deepEqual(swIdx(noInvestPolicy().decide(swState(swPanel({ active: 1 }), { ctx: { mode: 'normal' } }))), [0],
+    '遭遇結束立刻換回第 1 套，不需要等');
 });
 
-test('裝備組切換：掛機（沒在推關）一律第 1 套；封魔塔用第 2 套', () => {
-  assert.equal(switchTo(59, { pushing: false, active: 2 }), 0, '安全區間 51~59 剛好落在菁英窗口，但沒在推關就不該換');
-  assert.equal(switchTo(30, { tower: true }), 1, '封魔塔＝第 2 套');
+test('裝備組切換：沒解鎖或沒建好的套不切', () => {
+  assert.deepEqual(swIdx(noInvestPolicy().decide(swState(swPanel({ n1: 0 }), { ctx: { mode: 'boss' } }))), [], '第 2 套是空的，穿上去等於裸裝上場');
+  assert.deepEqual(swIdx(noInvestPolicy().decide(swState(swPanel({ unlocked: [true, false, false] }), { ctx: { mode: 'boss' } }))), []);
 });
 
-test('裝備組切換：沒建好或沒解鎖的套不切', () => {
-  assert.equal(switchTo(47, { filled1: 0 }), 0, '第 2 套是空的，穿上去等於裸裝上場');
-  assert.equal(switchTo(47, { unlocked: [true, false, false] }), 0);
+test('強化額度：基礎權重累積，滿 1 才切過去強化一次', () => {
+  const p = setPolicy(SET_SWITCH);
+  const tick = (t) => swIdx(p.decide(swState(swPanel(), { t })));
+  assert.deepEqual(tick(60), [], '額度 0.5，未滿');
+  assert.deepEqual(tick(120), [1], '額度 1.0＝滿，切到第 2 套強化');
+});
+
+/* 跑完整流程（切過去 → 下一輪強化 → 再下一輪切回），數一共強化了幾次。 */
+function countInvests(ticks, ctxOf, extra) {
+  const p = setPolicy(SET_SWITCH);
+  let n = 0;
+  for (let i = 1; i <= ticks; i++) {
+    const o = Object.assign({ t: i * 60, ctx: ctxOf(i) }, extra || {});
+    if (swIdx(p.decide(swState(swPanel(), o))).length) {
+      n++;
+      p.decide(swState(swPanel({ active: 1 }), Object.assign({}, o, { t: i * 60 + 1 })));
+      p.decide(swState(swPanel({ active: 1 }), Object.assign({}, o, { t: i * 60 + 2 })));
+    }
+  }
+  return n;
+}
+
+test('強化額度：卡野外 BOSS 越久，第 2 套的權重越高', () => {
+  const free = countInvests(20, () => ({ stuckBossMin: 0 }));
+  const mid = countInvests(20, () => ({ stuckBossMin: 2 }));
+  const long = countInvests(20, () => ({ stuckBossMin: 5 }));
+  assert.ok(free < mid && mid < long, '權重要隨卡關時間漸增：' + [free, mid, long].join(' < '));
+});
+
+test('強化額度：封魔塔層數停滯越久，第 2 套權重也越高；有進步就重新起算', () => {
+  /* 同一個最高層數撐 N 個決策點（停滯），額度比「每隔幾輪就進步一層」多。 */
+  const stalled = countInvests(40, () => ({}), { highest: 10 });
+  const p = setPolicy(SET_SWITCH);
+  let n = 0;
+  for (let i = 1; i <= 40; i++) {
+    const o = { t: i * 60, highest: 10 + Math.floor(i / 3) };           // 層數持續往上
+    if (swIdx(p.decide(swState(swPanel(), o))).length) {
+      n++;
+      p.decide(swState(swPanel({ active: 1 }), Object.assign({}, o, { t: i * 60 + 1 })));
+      p.decide(swState(swPanel({ active: 1 }), Object.assign({}, o, { t: i * 60 + 2 })));
+    }
+  }
+  assert.ok(stalled > n, '停滯 ' + stalled + ' 次 > 持續進步 ' + n + ' 次');
+});
+
+test('強化額度：沒有餘力（前一套品質覆蓋沒達標）就不強化', () => {
+  const p = setPolicy(SET_SWITCH);
+  const P = setsPanel({ active: 0, sets: [filledSet(5, 3), filledSet(5), filledSet(5)] });     // 第 1 套 R3 < 門檻 R4
+  for (let i = 1; i <= 6; i++) assert.deepEqual(swIdx(p.decide(swState(P, { t: i * 60 }))), [], '練功效率最重要，第 1 套沒到位就不分資源給第 2 套');
+});
+
+test('強化流程：切過去的下一輪才強化，再下一輪才切回', () => {
+  const p = setPolicy(SET_SWITCH);
+  p.decide(swState(swPanel(), { t: 60 }));
+  assert.deepEqual(swIdx(p.decide(swState(swPanel(), { t: 120 }))), [1], '切過去');
+  /* 下一輪：第 2 套是使用中的。不能馬上切回——強化規則吃的是這一輪的面板快照，
+     item.upgrade 又只解析得到使用中那套，先切回去會對不存在的物件送指令。 */
+  assert.deepEqual(swIdx(p.decide(swState(swPanel({ active: 1 }), { t: 180 }))), [], '這一輪留著讓強化規則跑');
+  assert.deepEqual(swIdx(p.decide(swState(swPanel({ active: 1 }), { t: 240 }))), [0], '再下一輪才切回第 1 套');
+});
+
+test('強化流程：強化那一輪只放行強化規則、不受 everySec 限制；遭遇優先於強化', () => {
+  const mk = (allow) => createPolicy({
+    name: 't', decideEveryGameSec: 1, needPanels: [], lists: {},
+    equipSets: { panel: 'panels.equipSets', home: 0, awayBlock: ['item.', 'gem.'], investAllow: allow },
+    rules: [
+      SET_SWITCH,
+      { id: 'up', everySec: 600, cmd: 'item.upgrade', args: { itemId: 'x' } },
+      { id: 'rr', cmd: 'item.rerollAffix', args: { itemId: 'x' } }
+    ]
+  });
+  const p = mk(['up']);
+  p.decide(swState(swPanel(), { t: 60 }));
+  p.decide(swState(swPanel(), { t: 120 }));                                         // 切過去
+  const inv = p.decide(swState(swPanel({ active: 1 }), { t: 130 }));
+  assert.deepEqual(inv.map((c) => c.ruleId), ['up'], '強化那一輪：只放行強化（且不受 everySec 限制），洗煉仍暫停');
+
+  const q = mk(['up']);
+  q.decide(swState(swPanel(), { t: 60 })); q.decide(swState(swPanel(), { t: 120 }));
+  const enc = q.decide(swState(swPanel({ active: 1 }), { t: 130, ctx: { mode: 'elite' } }));
+  assert.deepEqual(enc.map((c) => c.name), ['player.switchEquipSet'], '強化到一半遇到菁英：改去第 3 套，強化規則不跑');
+  assert.equal(enc[0].args.index, 2);
+});
+
+test('卡關時間：updateContext 記下野外 BOSS 第一次失敗的時間，過關就清掉', () => {
+  const p = createPolicy({
+    name: 't', decideEveryGameSec: 1, needPanels: [], lists: {},
+    track: { monster: 'panels.battle.field.monster', stage: 'view.stage', equipment: 'panels.inv.equipment', equippedScores: 'panels.inv.equipmentScores' },
+    rules: [{ id: 'probe', cmd: 'noop', args: {}, if: [['ctx.stuckBossMin', '>', 5]] }]
+  });
+  const st = (t, stage, mon) => ({ gameTimeSec: t, view: { stage }, panels: { battle: { field: { monster: mon } }, inv: { equipment: {}, equipmentScores: {} } } });
+  const boss = { isBoss: true, elite: false, hp: 50, maxHp: 100 };
+  p.decide(st(0, 50, boss)); p.decide(st(10, 45, null));                    // 第一次失敗（t=10）
+  p.decide(st(1000, 50, boss)); p.decide(st(1010, 45, null));               // 第二次失敗
+  assert.equal(p.decide(st(1100, 45, null)).length, 1, '卡了 (1100−10)/60 ≈ 18 分鐘 > 5');
+  p.decide(st(1200, 50, boss)); p.decide(st(1210, 51, null));               // 過關
+  assert.equal(p.decide(st(1300, 51, null)).length, 0, '過關後卡關時間歸零');
 });
 
 test('裝備組：離開第 1 套時暫停針對使用中裝備的規則', () => {
@@ -371,16 +478,96 @@ test('三套裝備面板與遊戲一致：解鎖條件、使用中套別', () =>
   assert.deepEqual(JSON.parse(JSON.stringify(P.unlocked)), [true, false, false], '新角色只有第 1 套（第 2 套 500 級、第 3 套 500 級＋1 轉）');
 });
 
-test('裝備組切換：遲滯——單一決策點想換不動，連續兩個才換；換回第 1 套立刻', () => {
-  const filled = () => { const x = {}; for (let i = 0; i < 5; i++) x['k' + i] = brief('i' + i, 4); return { slots: x, blocked: {} }; };
-  const P = (active) => setsPanel({ active, sets: [filled(), filled(), filled()] });
-  const pol = setPolicy(SET_SWITCH);
-  const at = (t, stage, active, pushing) => pol.decide(setState(P(active), { gameTimeSec: t, view: { stage }, ctx: { pushing } }));
 
-  assert.deepEqual(at(60, 47, 0, true), [], '第一個決策點：還不換（可能只是掛機邏輯抖了一下）');
-  assert.equal(at(120, 47, 0, true)[0].args.index, 1, '連續第二個才換');
-  assert.equal(at(180, 30, 1, false)[0].args.index, 0, '回第 1 套不用等');
-  at(240, 47, 0, true);                                               // streak=1
-  at(300, 30, 0, false);                                              // 中斷，歸零
-  assert.deepEqual(at(360, 47, 0, true), [], '中途斷過就要重新累計，不是累計總次數');
+test('有餘力：第 3 套要求之前每一套都達標，不只前一套', () => {
+  const p = setPolicy(SET_SWITCH);
+  /* 第 1 套 R3（未達標），第 2 套 R4（達標），第 3 套已建好：前一套（第 2 套）達標，但第 1 套沒有。 */
+  const P = setsPanel({ active: 0, sets: [filledSet(5, 3), filledSet(5, 4), filledSet(5, 4)] });
+  for (let i = 1; i <= 10; i++) assert.deepEqual(swIdx(p.decide(swState(P, { t: i * 60 }))), [], '第 1 套沒到位，第 2、3 套都不該分到資源');
+});
+
+/* ---- 封魔塔：進塔後遊戲會鎖住換裝與切套（bossFightBlocksCommand），第 2 套必須在進塔前穿好 ---- */
+
+function towerPolicy(extraRules) {
+  return createPolicy({
+    name: 't', decideEveryGameSec: 1, needPanels: [], lists: {},
+    equipSets: { panel: 'panels.equipSets', home: 0, awayBlock: ['item.', 'gem.'], investAllow: [] },
+    rules: [SET_SWITCH, { id: 'tower-auto', everySec: 300, cmd: 'tower.startAuto', args: { floor: 1, count: 1 } }].concat(extraRules || [])
+  });
+}
+
+test('封魔塔：進行中不送切換（遊戲會拒絕），維持現狀', () => {
+  const p = towerPolicy();
+  assert.deepEqual(swIdx(p.decide(swState(swPanel({ active: 0 }), { tower: true, t: 10 }))), [], '塔戰中已鎖，送了只會被拒');
+  assert.deepEqual(swIdx(p.decide(swState(swPanel({ active: 1 }), { tower: true, t: 20 }))), []);
+});
+
+test('封魔塔：啟動規則這一輪會送出時，先換成第 2 套（排在它前面，換好才開塔）', () => {
+  const p = towerPolicy();
+  const cmds = p.decide(swState(swPanel({ active: 0 }), { t: 1000 }));
+  assert.deepEqual(cmds.map((c) => c.name), ['player.switchEquipSet', 'tower.startAuto'],
+    '順序必須是先切套、再開塔——開了塔就鎖住了');
+  assert.equal(cmds[0].args.index, 1);
+});
+
+test('封魔塔：啟動規則還沒到期就不提前換（那樣只會白白離開第 1 套）', () => {
+  const p = towerPolicy();
+  p.decide(swState(swPanel({ active: 0 }), { t: 1000 }));                    // 啟動，lastAt=1000
+  const cmds = p.decide(swState(swPanel({ active: 1 }), { t: 1100 }));        // 塔已結束、離下次還有 200 秒
+  assert.deepEqual(swIdx(cmds), [0], '塔結束、沒到期：換回第 1 套');
+});
+
+test('封魔塔：第 2 套沒建好就不換，直接開塔', () => {
+  const p = towerPolicy();
+  const cmds = p.decide(swState(swPanel({ n1: 0 }), { t: 1000 }));
+  assert.deepEqual(cmds.map((c) => c.name), ['tower.startAuto']);
+});
+
+test('切換那一輪：後面針對使用中裝備的規則停手（拿的是切換前的面板）', () => {
+  /* 實際事故：切到第 2 套的同一輪，後面的強化規則仍拿第 1 套的物件 id 送 item.upgrade，
+     遊戲回「找不到物品」（實測 3 小時 18+18+5+… 次）。 */
+  const p = towerPolicy([{ id: 'up', cmd: 'item.upgrade', args: { itemId: 'x' } }]);
+  const cmds = p.decide(swState(swPanel({ active: 0 }), { t: 1000 }));
+  assert.deepEqual(cmds.map((c) => c.ruleId), ['s', 'tower-auto'], '切了之後強化規則這一輪不送');
+});
+
+test('封魔塔進行中：遊戲此刻必定拒絕的指令不送（panels.equipRules.locked）', () => {
+  const p = createPolicy({
+    name: 't', decideEveryGameSec: 1, needPanels: [], lists: {},
+    rules: [{ id: 'up', cmd: 'item.upgrade', args: { itemId: 'x' } }, { id: 'st', cmd: 'stage.setAutoAdvance', args: { on: true } }]
+  });
+  const st = (locked) => ({ gameTimeSec: 10, panels: { equipRules: { blocked: {}, locked } } });
+  assert.deepEqual(p.decide(st({})).map((c) => c.ruleId), ['up', 'st']);
+  assert.deepEqual(p.decide(st({ 'item.upgrade': true })).map((c) => c.ruleId), ['st'],
+    '塔戰中 item.upgrade 會被鎖：不送，免得把報表淹成「BOSS 戰中不可變更戰鬥配置」');
+});
+
+test('封魔塔鎖：面板的 locked 與遊戲協議一致，只有塔進行中才有', () => {
+  const e = createEngine({ seed: 8 });
+  e.boot(null);
+  e.step(100);
+  const c = e.ctx;
+  assert.deepEqual(Object.keys(e.panel('equipRules').locked), [], '平時沒有鎖（野外 BOSS 戰也沒有）');
+  c.G.tower.active = true;
+  const locked = e.panel('equipRules').locked;
+  for (const name of ['player.switchEquipSet', 'item.upgrade', 'item.equip', 'gem.socket']) {
+    assert.equal(!!locked[name], !!c.bossFightBlocksCommand(name), name + ' 要與遊戲的 bossFightBlocksCommand 一致');
+  }
+  assert.ok(locked['player.switchEquipSet'], '切套在塔戰中被鎖——這是第 2 套必須進塔前穿好的原因');
+  c.G.tower.active = false;
+});
+
+test('開塔之後同一批的指令也不送（塔一開配置就鎖了）', () => {
+  const p = createPolicy({
+    name: 't', decideEveryGameSec: 1, needPanels: [], lists: {},
+    rules: [
+      { id: 'before', cmd: 'item.upgrade', args: { itemId: 'x' } },
+      { id: 'tw', cmd: 'tower.startAuto', args: { floor: 1, count: 1 } },
+      { id: 'after', cmd: 'item.upgrade', args: { itemId: 'y' } },
+      { id: 'ok', cmd: 'stage.setAutoAdvance', args: { on: true } }
+    ]
+  });
+  const st = { gameTimeSec: 10, panels: { equipRules: { blocked: {}, locked: {}, lockedWhenTower: { 'item.upgrade': true } } } };
+  assert.deepEqual(p.decide(st).map((c) => c.ruleId), ['before', 'tw', 'ok'],
+    '開塔前的照送；開塔之後的 item.upgrade 會被遊戲拒絕，不送');
 });

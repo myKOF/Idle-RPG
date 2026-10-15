@@ -303,26 +303,39 @@
       "cmd": "player.switchEquipSet",
       "equipSetSwitch": {
         "panel": "panels.equipSets",
-        "stage": "view.stage",
-        "towerActive": "panels.tower.tower.active",
         "home": 0,
         "minFilled": 10,
-        "tower": {
-          "set": 1
+        "towerActive": "panels.tower.tower.active",
+        "encounter": {
+          "boss": 1,
+          "elite": 2,
+          "tower": 1
         },
-        "boss": {
-          "every": 50,
-          "ahead": 3,
-          "set": 1
+        "invest": {
+          "gear": {
+            "minRarity": 4,
+            "coverage": 0.85,
+            "minFilled": 10
+          },
+          "towerHighest": "panels.tower.tower.highest",
+          "sets": {
+            "1": {
+              "base": 0.1,
+              "bossRampPerMin": 0.005,
+              "bossCap": 0.6,
+              "towerRampPerMin": 0.002,
+              "towerCap": 0.2,
+              "max": 0.9
+            },
+            "2": {
+              "base": 0.03,
+              "max": 0.1
+            }
+          }
         },
-        "elite": {
-          "every": 10,
-          "ahead": 3,
-          "set": 2
-        },
-        "confirm": 2
+        "towerStartRule": "tower-auto"
       },
-      "why": "player_strategy.md §7：平時第 1 套；推關時依「離下一個菁英／BOSS 關還有幾關」在抵達前先換——決策點約每分鐘一次，而推關時一分鐘跳好幾關，等怪物出現才反應會來不及。封魔塔用第 2 套。那一套沒建好（<minFilled 格）就不切"
+      "why": "player_strategy.md §7：①實際碰到 BOSS／菁英／封魔塔才換（裝備可戰鬥中任意切換、不花資源，提前換沒意義）。②第 2、3 套有餘力才強化，練功效率最重要：每個決策點累積強化額度，滿 1 才切過去強化一次。第 2 套權重＝基礎 0.1 ＋ 野外 BOSS 卡關每分鐘 +0.005（上限 0.6）＋ 封魔塔層數停滯每分鐘 +0.002（上限 0.2）；第 3 套只有基礎 0.03。⚠️ 數字是詮釋，待設計者審。切過去的下一輪才強化、再下一輪切回（item.upgrade 只解析得到使用中那套）。⚠️ 封魔塔進行中遊戲會拒絕換裝與切套（只有塔戰有這個鎖），所以第 2 套要在進塔前穿好：塔的啟動規則（tower-auto）到期的那一輪，這條規則排在它前面先切過去"
     },
     {
       "id": "equip-best-per-slot",
@@ -1529,7 +1542,10 @@
       "gem.",
       "rune."
     ],
-    "說明": "離開第 1 套時暫停針對使用中裝備的規則，避免把強化／洗煉／寶石／符文資源灌進第 2、3 套"
+    "說明": "離開第 1 套時暫停針對使用中裝備的規則；強化另一套的那一輪只放行 investAllow 列的規則（強化），其餘（換裝、洗煉、寶石、符文）仍暫停",
+    "investAllow": [
+      "upgrade-by-rarity-cap"
+    ]
   },
   "panelParams": {
     "equipSets": {
