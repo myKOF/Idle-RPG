@@ -53,8 +53,8 @@ test('法力恢復寶石 Lv.1 至少為 1，且整體約為生命恢復寶石的
   const mpRegen = context.GEM_TYPES.kyanite;
   const hpRegen = context.GEM_TYPES.emerald;
   assert.equal(context.gemStatValue('kyanite', 1), 1);
-  assert.equal(context.gemStatValue('kyanite', 10), 288);
-  assert.equal(context.gemStatValue('emerald', 10), 864);
+  assert.equal(context.gemStatValue('kyanite', 10), 320);
+  assert.equal(context.gemStatValue('emerald', 10), 960);
   assert.equal(context.gemStatValue('kyanite', 10) / context.gemStatValue('emerald', 10), 1 / 3);
 });
 
@@ -91,9 +91,9 @@ test('法力寶石納入戰力評分（沿用詞條池的 mpFlat／mpRegen 權�
 
 test('法力寶石自動進入掉落／商店／合成流程（不需另外登記）', () => {
   const context = loadGameContext();
-  // randomGemType 直接取 GEM_TYPES 的鍵，所以新種類會自動出現在所有隨機來源
+  // 開放的新種類直接由 GEM_TYPES 進入隨機來源。
   const item = fs.readFileSync(path.join(__dirname, '..', 'js/item.js'), 'utf8');
-  assert.match(item, /function randomGemType\(\)\s*\{\s*return pick\(Object\.keys\(GEM_TYPES\)\)/);
+  assert.match(item, /function randomGemType\(\)\s*\{\s*return pick\(Object\.keys\(GEM_TYPES\)\.filter\(isGemEnabled\)\)/);
   assert.ok(Object.keys(context.GEM_TYPES).indexOf('iolite') >= 0);
   assert.ok(Object.keys(context.GEM_TYPES).indexOf('kyanite') >= 0);
 });

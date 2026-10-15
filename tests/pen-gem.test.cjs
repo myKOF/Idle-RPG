@@ -118,6 +118,6 @@ test('穿透寶石納入戰力評分，並自動進入掉落／商店／合成�
 test('Gems 表已同步兩列，套用參數時不會把寶石洗掉', () => {
   const csv = fs.readFileSync(path.join(root, 'config/CSV/Gems.csv'), 'utf8');
   // config_tables --apply 會由這張表重建 GEM_TYPES；表裡沒有就等於刪掉
-  assert.match(csv, /^piercePhys,穿甲寶石,.*,pPen,物理穿透%,TRUE,10,20,30,40,50,100,200,400,800,1600\r?$/m);
-  assert.match(csv, /^pierceMagic,穿魔寶石,.*,mPen,魔法穿透%,TRUE,10,20,30,40,50,100,200,400,800,1600\r?$/m);
+  assert.match(csv, /^piercePhys,穿甲寶石,.*,pPen,物理穿透%,TRUE,10,20,30,40,50,100,200,400,800,1600,1\r?$/m);
+  assert.match(csv, /^pierceMagic,穿魔寶石,.*,mPen,魔法穿透%,TRUE,10,20,30,40,50,100,200,400,800,1600,1\r?$/m);
 });

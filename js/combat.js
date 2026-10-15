@@ -2315,6 +2315,7 @@ function rollFieldDrops(m) {
         for (var gi = 0; gi < gemN; gi++) {
             var lv = glv + 1;
             var gtype = randomGemType();
+            if (!gtype) continue;
             addGem(gtype, lv, 1);
             if (window.recordLootGem) window.recordLootGem(gtype, lv, 1, 'field');
             drops.push('💎' + gemLabel(gtype, lv));

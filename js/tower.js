@@ -374,7 +374,10 @@ function endTowerFight(win, reason) {
 
   if (win) {
     var firstClear = floor > G.tower.highest;
-    if (firstClear) G.tower.highest = floor;
+    if (firstClear) {
+      G.tower.highest = floor;
+      if (typeof sgAfterSkillChange === 'function') sgAfterSkillChange();
+    }
     blog('🏆 通關封魔塔第 ' + floor + ' 層！', 'good');
     // 獎勵：資源（零件改由熔爐升級取得）
     var rw = towerRewardFor(floor, firstClear);
@@ -420,11 +423,11 @@ function endTowerFight(win, reason) {
     result.rewards.push('💰 金幣 x' + fmt(rw.gold));
     var gt1 = randomGemType(), gt2 = randomGemType();
     addGem(gt1, rw.gemLevel, 1); addGem(gt2, rw.gemLevel, 1);
-    if (window.recordLootGem) {
+    if (gt1 && window.recordLootGem) {
       window.recordLootGem(gt1, rw.gemLevel, 1, 'tower');
       window.recordLootGem(gt2, rw.gemLevel, 1, 'tower');
     }
-    result.rewards.push('💎 ' + gemLabel(gt1, rw.gemLevel) + '、' + gemLabel(gt2, rw.gemLevel));
+    if (gt1) result.rewards.push('💎 ' + gemLabel(gt1, rw.gemLevel) + '、' + gemLabel(gt2, rw.gemLevel));
     if (ENCHANT_ENABLED) {
       var bk = pick(Object.keys(ENCHANTS));
       G.player.books[bk] += 2;

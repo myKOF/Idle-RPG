@@ -1,5 +1,37 @@
 # AI_TASKS.md
 
+## SKILL-TOWER-UNLOCK-20261015 — 技能與超神進化封魔塔解鎖限制
+
+- Owner：Codex；Done，單一開發者。使用者已改Skills2.xlsx，要求匯出CSV、接受可選第三段塔層限制、檢查超神進化限制、Tips末行橘色未通關／灰色小字已通關，以及塔BOSS獎勵最下方多技能解鎖框；後續追加統一Excel欄名為「解鎖轉生/等級/封魔塔層級」。
+- 前置：現有Skills2／封魔塔流程，已滿足；後續使用者審閱合併。全目標衝突預檢乾淨；保留本副本既有Skills2消耗修改與使用者Excel，不改其他副本。
+- 允許：Skills2 Excel原樣提交／CSV、tools/config_tables.cjs及參數表說明、js/skills2.js／ui.js／必要tower刷新、CSS、index／bridge／Worker必要快取與批次門檻、本紀錄及相關回歸測試。禁止其他技能效果與數值、其他配置、Protocol／存檔格式與素材；不合併／推送。
+- 驗收：兩段／三段／留白與非法格式、轉生優先及塔層AND條件、各超神選項選擇／切換／升級／舊投資失效保留／快取失效、UI與Worker同源、同層多技能／無技能隱藏、CSV重建零變更、相關回歸、Build／Console／diff後獨立Commit。
+- 完成／修改17檔：config/Excel/Skills2.xlsx以既有excel-update-sheets.ps1原生Excel API只改1格欄名，正常重開／全格與物件驗證通過；xlsx_to_csv匯出CSV（283列52欄），保留使用者表值與排序。tools/config_tables.cjs同時接受新欄名、舊兩段欄名與「封魔塔等級」別名，普通階及69個超神選項雙向保留unlock；tools/參數表使用說明.md及本紀錄同步。
+- 邏輯／畫面：js/skills2.js塔層AND判定、快取輸入、逐選項權威學習／切換／升級及生效判定，舊投資只失效不刪除；skills面板progress加towerHighest，沿既有泛用面板資料傳送，沒有Protocol或存檔格式變更。js/ui.js各選項獨立鎖定與Tips最後一行、已通關灰色小字、MP及修羅裝備資格同源，塔獎勵由同一SKILLS2資料衍生多技能獨立框。js/tower.js首通刷新技能及屬性快取。css/ashen-forge.css未通關橘色13px／通關灰色11px、獎勵黃色16px框。
+- 配置確認：依使用者最新Excel一併帶入飛刀／迴旋斬普通7階的等級門檻與原有施法消耗編輯；不是以程式舊值覆蓋表格。排除施法消耗與unlock後，與HEAD逐群組深比較，其他技能效果／數值完全一致。
+- 快取：index.html skills2 1.0.313／ui 1.0.162／tower 1.0.28／bridge 1.0.275／CSS1.0.74；bridge入口及sim.worker的skills2／tower import均20261015-skill-tower-unlock；Worker一般階一鍵滿級也檢查第三段。沒有新增素材／素材庫Commit。
+- 測試修改：新增tests/skill2-tower-unlock.test.cjs共10項，涵蓋全部69個選項Excel／CSV／JS往返、格式與別名、人物與塔層、拒絕不扣款／不覆蓋原投資、MP與快照、正式首通及UI多技能框。既有tests/skill2-ui.test.cjs／skill2-ult-switch.test.cjs／skill2-asura-dualwield.test.cjs補齊已解鎖情境塔層前置；skill2-system.test.cjs用完整鍵集合比較支援使用者Excel新排序，沒有刪減群組／階級／效果斷言。
+- 指令／結果：node --test --test-reporter=tap tests/skill2-tower-unlock.test.cjs tests/skill2-ui.test.cjs tests/skill2-ult-switch.test.cjs tests/skill2-asura-dualwield.test.cjs tests/skills2-levels-memo.test.cjs tests/worker-protocol.test.cjs tests/tower-battlefield.test.cjs tests/tower-auto-result.test.cjs，共78/78通過；再加tests/skill2-system.test.cjs tests/skills2-mana-cost.test.cjs，共118項101通過／17既有失敗。唯讀攔截檔案讀取改用git show HEAD原版JS與CSV重跑後兩檔，同樣23通過／17失敗，失敗名稱差集0；舊飛行命中／狀態／雙刀／耗魔斷言未於本任務擴大修復。npm.cmd run build 514檔全過；node tools/config_tables.cjs --apply Skills2語意變更0；git diff --check通過。
+- 瀏覽器：computer-use／CUA獨立127.0.0.1:13742、拋棄式IndexedDB測試存檔，正式index／UI／Bridge／真Worker／Pixi。最高29層時幻影八方陣鎖定、橘色13px及無學習鈕；塔30獎勵黃色16px獨立框在通關獎勵後，塔1完全隱藏。最高30層、已保留Lv.3的存檔正常載入生效並顯示灰色11px「已通行封魔塔第30層」；兩次Console error／warning均0。截圖tower-skill-unlock.png／skill-tower-cleared.png存本聊天visualizations；分頁、服務及臨時腳本／日誌清理，未讀真人存檔。同層多技能以正式HTML回歸注入第二條門檻驗證。
+- 唯讀檢查：AI規範、prompts/codex.md、js/formula.js／save.js／storage.js／player.js／skills.js、Worker Protocol、scripts/sim/engine.js、xlsx_to_csv及excel-update-sheets工具、原塔戰／Worker／快取回歸；未修改上述檔案。保留開始前Gems／Talents及其他CSV未提交工作，本次只提交技能相關修改。
+- 交付：Commit為本紀錄所在[Codex] feat提交，編號見回覆；本需求無未完成項，可供審閱合併，未合併／推送。限制／已知風險：17項既有回歸失敗、未跑全庫與真人長時間戰鬥；新限制會使未達門檻的既有超神投資暫時失效，通關後恢復。下一步使用者整合後重新載入遊戲，使用更新快取驗收。
+
+## GEM-ENABLED-20261015 — 寶石開放欄與停用操作限制
+
+- Owner：Codex；Done，單一開發者。使用者已修改 Gems.xlsx，授權匯出 CSV 並接入「開放」1／0；前置已滿足，後續使用者審閱合併。
+- 允許：Gems Excel原樣提交／CSV、tools/config_tables.cjs及參數表說明、js/data.js／item.js／ui.js／forge.js與必要掉落入口combat／factory／tower／save／tasks、index／bridge／worker快取、本紀錄與寶石回歸測試。禁止修改其他配置、技能、Protocol／存檔格式、其他副本、素材，不合併／推送。
+- 驗收：關閉種類不再產出／購買，禁止合成、轉換雙端、融合、拆解、神鑄及強化消耗；保留舊物品／融合物品顯示、裝備原有效果及取下／法陣取回。空開放池安全退化，批次與Worker同樣防護；CSV同源往返、相關回歸／Build／Console及diff檢查後Commit。
+- 預檢：除sim.worker.js外均無其他來源衝突。Claude未提交Worker新增runeDecisionView及gems面板rune投影，本次只改頂部import快取；以merge-base／本次候選／Claude磁碟內容執行git merge-file -p，退出碼0。不同區段、沒有語意相依，分段修改，未動他人副本。追加的4份既有測試亦預檢乾淨。
+- 完成21檔：config/Excel/Gems.xlsx原樣保留使用者編輯並提交；正式xlsx_to_csv匯出config/CSV/Gems.csv（50列17欄，49種類）；tools/config_tables.cjs新增開放欄匯入／匯出及非法值拒絕，tools/參數表使用說明.md同步。js/data.js由Excel重建所有能力值及enabled，新增兩支純查詢（舊表缺欄／空白沿開放相容）；綠松石turquoise與瑪瑙agate為關閉。Excel未由AI重寫，SHA256 D89A465704610FEC47966F54879EDD79D3F484CA663477AF5FEA602FA3F86360。
+- 邏輯：js/item.js在合成／批次選材、轉換雙端、拆解／融合及普通／融合鑲嵌、商店單買／全買加權威防護，強化選材排除關閉種類。js/forge.js擋放入、開始與既有進度結算，保留取回。js/combat.js／factory.js／tower.js／save.js處理全關閉池的掉落、紀錄與離線彙總，任務獎勵沿randomGemType／addGem同樣安全留空。addGem允許既有關閉物品退回，只拒絕未知／null種類；不清除庫存、融合物品或既有插槽屬性，存檔格式／Protocol不變。
+- UI：js/ui.js保留舊庫存並標「已關閉」，空庫存停用種類不列出；排除鑲嵌、轉換、融合、神鑄與自動放入候選，關閉寶石的單次／同類批次合成按鈕停用；全部類型合成可繼續處理其他開放寶石。含關閉種類的融合寶石仍可在拆解區查看但沒有拆解事件，普通拆解下拉也排除關閉種類。舊神鑄素材的鑄造按鈕停用，取回完整保留。
+- 快取：index.html data1.0.78／item1.0.22／combat1.0.83／tower1.0.27／save1.0.15／ui1.0.161／bridge1.0.274；bridge Worker入口與7支修改的模擬模組import使用20261015-gem-enabled。factory／forge本來只由Worker載入，無主頁script。沒有新增素材、素材庫無需Commit。
+- 測試指令：node --test tests/gem-enabled.test.cjs tests/gem-compose-all.test.cjs tests/gem-shop.test.cjs tests/gem-convert-stack.test.cjs tests/gem-tooltip.test.cjs tests/field-gem-drop-table.test.cjs tests/pen-gem.test.cjs tests/pen-gem-flow.test.cjs tests/gem-mana.test.cjs tests/gem-hit.test.cjs tests/gem-attr-dmg-base.test.cjs；11檔58/58通過（新增13項，涵蓋正式Worker指令、實際野外／高塔／離線／採集器全關閉與正式存檔重載）。4份既有測試僅同步使用者Excel能力值、新CSV欄位及隨機來源開放過濾斷言，沒有放寬規則。
+- 相關回歸：node --test tests/forge-duration.test.cjs tests/forge-auto-menu.test.cjs tests/forge-failure.test.cjs tests/forge-unlock.test.cjs tests/forge-shared-inventory.test.cjs tests/factory-parts.test.cjs tests/offline-rewards.test.cjs tests/offline-stage-params.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/sim-harness-sync.test.cjs；11檔71/71通過。另node --test tests/gem-convert-shift.test.cjs為4/5，唯一失敗bossFightBlocksCommand未定義；於臨時目錄使用HEAD的6支原版JS重跑同樣4/5、同名同錯，為既有測試fixture缺少函式，未改範圍外測試。合計133通過／1既有失敗，沒有新增失敗。
+- 驗證：npm.cmd run build 513檔全過；node tools/config_tables.cjs --apply Gems語意變更0；git diff --check通過。自我唯讀Review涵蓋掉落入口、所有普通與融合操作、原存檔migration／屬性、退款與批次、Worker／快取；未修改Protocol、formula、tasks、player、newforge、GM、sim engine或其他配置／素材。
+- 瀏覽器：computer-use／CUA在獨立http://127.0.0.1:13741載入人工舊存檔，正式Worker／UI／Pixi，未讀真人存檔。舊綠松石／瑪瑙庫存及鑲嵌屬性正常顯示，關閉標示／合成按鈕停用，轉換目標與素材關閉候選0；實際取下普通及含關閉種類的融合物品，鑲嵌候選0；舊法陣6顆不能鑄造但全取回。重新載入後綠松石18顆（原11＋裝備1＋法陣6）保留、仍無法合成。兩次Console error／warning0，截圖gem-disabled-verified.png保存在本聊天visualizations；臨時服務、頁面與腳本已清理。
+- 交付：Commit為本紀錄所在[Codex] feat提交；本次沒有未完成項，可審查合併，未合併／推送。限制：上述1項既有測試fixture失敗，本輪未跑全庫或真人長時間驗收；既有已鑲寶石效果保持至取下。下一步使用者整合後重載，之後在Excel改開放再沿正式匯出／套用流程生效。
+
 ## MERGE-PREP-CLEANUP-20261014 — 整理全部未暫存變更供合併
 
 - Owner：Codex；Done，單一開發者。使用者要求清理unstaged準備合併，明確追加其他來源修改也一起commit；保留現有內容，未合併／推送。原6筆為4檔實質資料變更與Skills2／Status兩檔僅換行格式差異，後者透過Git正常暫存消除狀態，不建立無內容提交。

@@ -56,6 +56,14 @@
     if (local) { setGMStatus(local.message, local.ok); return; }
     setGMStatus('執行中…', true);
     WorkerBridge.send('gm.exec', { line: text }).then(function (res) {
+      if (res && res.skillUnlock !== undefined && typeof window !== 'undefined') {
+        if (!window.GM_TEST) window.GM_TEST = {};
+        window.GM_TEST.skillUnlock = res.skillUnlock;
+        if (typeof UI !== 'undefined' && UI.dirty) {
+          UI.dirty.skills = true;
+          UI.dirty.battle = true;
+        }
+      }
       setGMStatus(res && res.message ? res.message : '已執行', !!(res && res.ok));
     }).catch(function (err) {
       setGMStatus(err && err.message ? err.message : '指令執行失敗', false);

@@ -208,11 +208,11 @@ test('迴身四方斬五道完整刀環逐波擴張，每道只命中一次', ()
 test('SKILLS2：23 個群組、每組 7 階、欄位齊全且說明模板的參數鍵都存在', () => {
   const c = loadContext();
   const gids = Object.keys(c.SKILLS2);
-  assert.deepEqual(gids, ['thrust', 'cleave', 'knife', 'gale', 'bloodblade', 'dualdance', 'counter', 'bloodrage',
+  assert.deepEqual([...gids].sort(), ['thrust', 'cleave', 'knife', 'gale', 'bloodblade', 'dualdance', 'counter', 'bloodrage',
     'fireball', 'firepillar', 'firehunt', 'rockarmor', 'mire', 'earthguard',
     'chainlightning', 'thunderstrike', 'thunderorb',
     'icearrow', 'waterball', 'frostnova',
-    'windblade', 'vacuumslash', 'stormbarrier']);
+    'windblade', 'vacuumslash', 'stormbarrier'].sort());
   gids.forEach((gid) => {
     const g = c.SKILLS2[gid];
     const isPassive = c.skills2IsPassive(gid);

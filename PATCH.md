@@ -1,5 +1,18 @@
 # PATCH.md
 
+## 新增 GM 指令 skill_unlock 解鎖全技能限制條件（Antigravity 2026-10-15）
+
+- **新增 GM 指令 `skill_unlock`（`js/gm_exec.js`、`js/gm.js`、`js/skills2.js`、`js/formula.js`、`js/talents.js`、`js/ui.js`、`GM_command.md`、`tests/gm-skill-unlock.test.cjs`）**：
+  - 支援指令 `skill_unlock` 及別名 `skillunlock`、`skills_unlock`、`skillsunlock`，可無參數切換（toggle），或帶參數 `on`/`off` 明確設定。
+  - 當指令開啟時：
+    - 解除所有技能（新版技能全階與超神進化、舊版技能、潛力技能）的角色等級、轉生次數與封魔塔層級限制。
+    - 解除技能裝備欄位限制（直接解鎖全部 6 個技能欄位）。
+    - 允許 1 級角色即可升級、裝配與施放高等級、高轉生與高塔層技能。
+    - 主執行緒與 Worker 端技能快取（`SG_LEVELS_CACHE`）自動失效並刷新，UI 正確反映解鎖狀態。
+  - 當再次執行指令關閉時：
+    - 完整恢復為正常的角色等級、轉生與封魔塔層級限制。
+  - 於 `GM_command.md` 補充指令格式與使用範例，並新增完整單元測試 `tests/gm-skill-unlock.test.cjs`。
+
 ## 連擊數、吸血與吸魔屬性 Tips 文案調整（Antigravity 2026-10-14）
 
 - **屬性面板 Tips 文案與樣式更新（`js/data.js`、`index.html`、`tests/combo-hits.test.cjs`、`tests/drain-flat-value.test.cjs`、`tests/passive-stat-panel.test.cjs`）**：

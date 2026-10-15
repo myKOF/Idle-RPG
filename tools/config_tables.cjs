@@ -570,24 +570,26 @@ SCHEMAS.NPC = {
 SCHEMAS.Gems = {
   name: 'Gems', jsFile: 'data', sheet: 'Gems', vars: ['GEM_TYPES'],
   // 1~10 階的能力值逐階直接寫在表上（values[0]＝1 階 … values[9]＝10 階）；不再有「基礎值／線性」公式。
-  header: ['id', '名稱', 'icon圖號', '屬性桶', '屬性名稱', '百分比', '1級', '2級', '3級', '4級', '5級', '6級', '7級', '8級', '9級', '10級'],
+  header: ['id', '名稱', 'icon圖號', '屬性桶', '屬性名稱', '百分比', '1級', '2級', '3級', '4級', '5級', '6級', '7級', '8級', '9級', '10級', '開放'],
   extract(src) {
     const GEM_TYPES = evalLiteral(extractLiteral(src, 'GEM_TYPES').literal);
     return Object.keys(GEM_TYPES).map(id => {
       const g = GEM_TYPES[id];
       const vals = [];
       for (let i = 0; i < 10; i++) vals.push(numStr(g.values[i]));
-      return [id, g.name, g.emoji, g.stat, g.statName, boolCell(!!g.pct)].concat(vals);
+      return [id, g.name, g.emoji, g.stat, g.statName, boolCell(!!g.pct)].concat(vals, [g.enabled === false ? '0' : '1']);
     });
   },
   rebuild(dataRows, header) {
     const get = rowGetter(header);
     const entries = dataRows.filter(r => get(r, 'id').trim() !== '').map(r => {
       const id = get(r, 'id').trim();
+      const open = get(r, '開放').trim();
+      if (open !== '' && open !== '0' && open !== '1') throw new Error('Gems ' + id + '：開放只能填 1 或 0');
       const values = [];
       for (let lv = 1; lv <= 10; lv++) values.push(toNum(get(r, lv + '級')));
       const o = { name: get(r, '名稱'), emoji: get(r, 'icon圖號'), stat: get(r, '屬性桶'),
-        statName: get(r, '屬性名稱'), pct: toBool(get(r, '百分比')), values: values };
+        statName: get(r, '屬性名稱'), pct: toBool(get(r, '百分比')), values: values, enabled: open !== '0' };
       return '  ' + id + ': ' + jsLit(o);
     });
     return { GEM_TYPES: 'var GEM_TYPES = {\n' + entries.join(',\n') + '\n};' };
@@ -1216,8 +1218,8 @@ const SKILLS2_GLOSSARY_ROWS = [
   ['　　　　　　第 4 階 m＝以主目標為中心的擴散搜尋半徑（米）；第 7 階 m＝月牙傷害半徑（米），特效同步等比縮放；'],
   ['　　　　　　月牙使用第 7 階 castM，可與第 1 階獨立調整。range 欄不控制疾風斬／月牙斬；'],
   [''],
-  ['解鎖轉生/等級'],
-  ['用途：這一階要達到什麼進度才能投資；格式「轉生次數|等級」，例如 0|100 ＝ 0 轉 100 級解鎖；'],
+  ['解鎖轉生/等級/封魔塔層級'],
+  ['用途：一般階與超神進化各選項的門檻；格式「轉生次數|等級」或「轉生次數|等級|封魔塔層級」，第三段留白／省略＝無塔層限制；'],
   ['注意：留白＝無門檻；未解鎖的階一律視為 Lv.0（含第 1 階的預設開啟），已投入的等級留在存檔裡，'],
   ['　　　達到門檻就原樣回來；'],
   [''],
@@ -1461,6 +1463,12 @@ SKILLS2_GLOSSARY_ROWS.push(
   ['這些列的解鎖、金幣、範圍用途欄不使用（留白）。']
 );
 
+function skills2UnlockCell(unlock) {
+  if (!unlock) return '';
+  return numStr(unlock.reinc || 0) + '|' + numStr(unlock.lv || 0) +
+    (unlock.tower != null ? '|' + numStr(unlock.tower) : '');
+}
+
 SCHEMAS.Skills2 = {
   name: 'Skills2', jsFile: 'skills2', sheet: 'Skills2', vars: ['SKILLS2', 'ENEMY_SKILLS2'],
   extraSheets: [{ name: '欄位定義', rows: SKILLS2_GLOSSARY_ROWS }],
@@ -1468,7 +1476,7 @@ SCHEMAS.Skills2 = {
      它不是 tiers 的第 8~10 個元素，回寫時進 g.ult[0..2]（見 rebuild）；
      「超神ID」欄只有這三列要填，是程式判定用的穩定鍵（存檔存索引、程式判 id）。 */
   header: ['群組ID', '群組名稱', '群組圖標', '傷害類型', '傷害屬性', '冷卻時間', '施法消耗', '階數',
-    '解鎖轉生/等級', '階段名稱',
+    '解鎖轉生/等級/封魔塔層級', '階段名稱',
     '效果參數(JSON)', '升級金幣基數', '升級金幣倍率', '效果說明模板']
     .concat(SKILL_VFX_COLUMNS.map(c => c[0])).concat(['超神ID'])
     .concat(skills2Geometry.columns).concat(['作用方式與距離用途（唯讀說明）']).concat(skills2Vfx.columns.map(c=>c[0])).concat([skills2Vfx.noteColumn])
@@ -1485,7 +1493,7 @@ SCHEMAS.Skills2 = {
         rows.push([gid, g.name, g.emoji, g.dmgType || '', g.elem || '',
           (note && note.cd !== '') ? note.cd : numStr(g.cd),
           skills2TierCostCell(t, note, g.cost), String(i + 1),
-          t.unlock ? (numStr(t.unlock.reinc || 0) + '|' + numStr(t.unlock.lv || 0)) : '', t.name,
+          skills2UnlockCell(t.unlock), t.name,
           skills2OtherFx(t.fx || {}), numStr(t.goldBase || 0), numStr(t.goldGrow || 1), t.desc || '']
           .concat(vfxCells(t.vfx, SKILL_VFX_COLUMNS)).concat(['']).concat(skills2GeometryCells(gid,String(i+1),t,g.range)).concat(vfxCells(t.triggerVfx,skills2Vfx.columns)).concat([skills2Vfx.note(gid,String(i+1))])
           .concat(SKILLS2_STATUS_COLUMNS.map(c => skills2StatusCell(t.status && t.status[c[1]]))).concat(['']));
@@ -1496,7 +1504,7 @@ SCHEMAS.Skills2 = {
         rows.push([gid, '', '', '', '',
           (note && note.cd !== '') ? note.cd : '',
           skills2TierCostCell(o, note, g.cost), String(SKILLS2_ULT_ROW_BASE + i),
-          '', o.name,
+          skills2UnlockCell(o.unlock), o.name,
           skills2OtherFx(o.fx || {}), numStr(o.goldBase || 0), numStr(o.goldGrow || 1), o.desc || '']
           .concat(vfxCells(o.vfx, SKILL_VFX_COLUMNS)).concat([o.id || '']).concat(skills2GeometryCells(gid,o.id,o)).concat(vfxCells(o.triggerVfx,skills2Vfx.columns)).concat([skills2Vfx.note(gid,o.id)])
           .concat(SKILLS2_STATUS_COLUMNS.map(c => skills2StatusCell(o.status && o.status[c[1]]))).concat(['']));
@@ -1595,17 +1603,18 @@ SCHEMAS.Skills2 = {
         fx[key] = value;
       });
       }
-      /* 解鎖門檻：「轉生次數|等級」，留白＝無門檻（不寫進字面值）。
-         留白與 0|0 等價，但留白時不產生欄位，字面值才不會多出一堆 { reinc: 0, lv: 0 }。 */
-      const unlockRaw = get(r, '解鎖轉生/等級').trim();
+      /* 同時接受使用者 Excel 的「封魔塔等級」命名與舊版兩段欄名。 */
+      const unlockRaw = get(r, '解鎖轉生/等級/封魔塔層級').trim() ||
+        get(r, '解鎖轉生/等級/封魔塔等級').trim() || get(r, '解鎖轉生/等級').trim();
       let unlock = null;
       if (unlockRaw) {
-        const m = /^(\d+)\s*\|\s*(\d+)$/.exec(unlockRaw);
+        const m = /^(\d+)\s*\|\s*(\d+)(?:\s*\|\s*(\d*))?$/.exec(unlockRaw);
         if (!m) {
           throw new Error('Skills2 群組「' + gid + '」第 ' + tierIdx +
-            ' 階的「解鎖轉生/等級」必須是「轉生次數|等級」（例如 0|100），目前是「' + unlockRaw + '」');
+            ' 階的「解鎖轉生/等級/封魔塔層級」必須是「轉生次數|等級」或「轉生次數|等級|封魔塔層級」（例如 10|50|80），目前是「' + unlockRaw + '」');
         }
         unlock = { reinc: Number(m[1]), lv: Number(m[2]) };
+        if (m[3]) unlock.tower = Number(m[3]);
       }
       /* 每階的施法消耗供最高階基本消耗及追加效果使用；留白／0 不寫進字面值，
          讓「這一階不耗魔」在程式端就是「沒有這個欄位」。 */
@@ -1637,7 +1646,7 @@ SCHEMAS.Skills2 = {
           id: ultId, name: get(r, '階段名稱'), cost: tierCost, fx: fx,
           goldBase: toNum(get(r, '升級金幣基數')), goldGrow: toNum(get(r, '升級金幣倍率')),
           desc: get(r, '效果說明模板')
-        }, tierVfx ? { vfx: tierVfx } : null, triggerData, tierStatus);
+        }, unlock ? { unlock } : null, tierVfx ? { vfx: tierVfx } : null, triggerData, tierStatus);
         return;
       }
       groups[gid].tiers[tierIdx - 1] = Object.assign(

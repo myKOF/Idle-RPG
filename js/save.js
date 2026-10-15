@@ -1212,7 +1212,9 @@ function applyOfflineProgress(options) {
       if (!gemRates[glv]) continue;
       var gemN = rollDropCount(gemRates[glv] * (1 + lootBonus / 100) * rw * ELITE_DROP_MULT);
       for (var gi = 0; gi < gemN; gi++) {
-        addGem(randomGemType(), glv + 1, 1);
+        var gemType = randomGemType();
+        if (!gemType) continue;
+        addGem(gemType, glv + 1, 1);
         sum.gems[glv + 1] = (sum.gems[glv + 1] || 0) + 1;
       }
     }

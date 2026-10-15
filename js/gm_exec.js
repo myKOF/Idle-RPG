@@ -16,7 +16,7 @@
   var GM_GLOBAL = (typeof self !== 'undefined') ? self
     : ((typeof window !== 'undefined') ? window : globalThis);
   if (!GM_GLOBAL.GM_TEST) GM_GLOBAL.GM_TEST = {
-    god: false, hpLock: false, mpLock: false, statOverride: null
+    god: false, hpLock: false, mpLock: false, statOverride: null, skillUnlock: false
   };
 
   // 安全邊界：不依賴「是否為開發模式」等可被前端變數覆寫的旗標，只接受本機 hostname。
@@ -870,6 +870,28 @@
       return {
         ok: true,
         message: GM_GLOBAL.GM_TEST.mpLock ? 'MP 鎖定開啟：不扣魔且技能可免費使用' : 'MP 鎖定解除'
+      };
+    }
+    if (command === 'skill_unlock' || command === 'skillunlock' || command === 'skills_unlock' || command === 'skillsunlock') {
+      var rawSkillOpt = String(args[0] === undefined ? '' : args[0]).toLowerCase();
+      if (rawSkillOpt === 'on' || rawSkillOpt === '1' || rawSkillOpt === 'true') {
+        GM_GLOBAL.GM_TEST.skillUnlock = true;
+      } else if (rawSkillOpt === 'off' || rawSkillOpt === '0' || rawSkillOpt === 'false') {
+        GM_GLOBAL.GM_TEST.skillUnlock = false;
+      } else if (!rawSkillOpt) {
+        GM_GLOBAL.GM_TEST.skillUnlock = !GM_GLOBAL.GM_TEST.skillUnlock;
+      } else {
+        return { ok: false, message: '格式：skill_unlock [on|off]（省略參數為重複切換）' };
+      }
+      if (typeof clearSkills2LevelsCache === 'function') clearSkills2LevelsCache();
+      if (typeof markStatsDirty === 'function') markStatsDirty();
+      gmDirty();
+      return {
+        ok: true,
+        skillUnlock: GM_GLOBAL.GM_TEST.skillUnlock,
+        message: GM_GLOBAL.GM_TEST.skillUnlock
+          ? '全技能限制已解鎖：無需達到指定等級或封魔塔層級即可升級與使用（再次輸入可恢復正常）'
+          : '已恢復技能正常限制條件'
       };
     }
     if (command === 'statset' || command === 'stat') {

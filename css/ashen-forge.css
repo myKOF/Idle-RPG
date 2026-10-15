@@ -5497,3 +5497,7 @@ html *::-webkit-scrollbar-corner {
   height: 20px;
   vertical-align: -5px;
 }
+/* 技能的封魔塔門檻固定置於說明末行；通關後降低提示權重。 */
+.skill-tower-hint { margin-top: 10px; color: #ffab54; font-size: 13px; line-height: 1.5; }
+.skill-tower-hint.is-cleared { color: #999; font-size: 11px; }
+.twx-skill-unlocks { margin-top: 10px; padding: 12px 14px; border: 1px solid #89722d; border-radius: 7px; background: rgba(255, 211, 77, .06); color: #ffe066; font-size: 16px; font-weight: 700; line-height: 1.7; overflow-wrap: anywhere; }

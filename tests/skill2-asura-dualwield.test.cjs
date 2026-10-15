@@ -64,6 +64,7 @@ function shield(c, id) {
 function makeG(c) {
   const set = emptySet(c);
   return {
+    tower: { highest: 150 },
     player: {
       level: 2000, reincarnations: 0, skills: {}, loadout: [],
       skills2: { levels: { dualdance: [10, 10, 10, 10, 10, 10, 10] }, ult: {} }
