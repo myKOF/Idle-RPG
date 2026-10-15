@@ -258,7 +258,9 @@ function bfTickApproach(enemies, dt) {
       var rdx = tx - p.x, rdy = ty - p.y, rd = Math.sqrt(rdx * rdx + rdy * rdy);
       if (rd <= 8) { ent._rp = null; ent._rpDone = true; }
       else {
-        var rstep = Math.min(rd, bfEnemyRunSpeed(ent) * bfEnemySpeedFactor(ent) * dt);
+        /* 跑位時加速（ELITE_GROUP.repoSpeed）：我方一直在動，目標點跟著走，用平常的跑速追不上就會跑到一半被甩開、等於沒跑位 */
+        var rsp = (typeof ELITE_GROUP !== 'undefined' && ELITE_GROUP && ELITE_GROUP.repoSpeed > 0) ? ELITE_GROUP.repoSpeed : 1;
+        var rstep = Math.min(rd, bfEnemyRunSpeed(ent) * bfEnemySpeedFactor(ent) * rsp * dt);
         p.x += (rdx / rd) * rstep;
         p.y += (rdy / rd) * rstep;
       }
@@ -279,12 +281,14 @@ function bfTickApproach(enemies, dt) {
      座標物件與半徑在迴圈外只取一次（推擠只改 x／y，不會讓座標失效，半徑也不變）；
      內層先用 |dx|、|dy| 是否已 >= 兩半徑和做便宜的剔除——距離恆不小於任一軸分量，
      所以被剔除的配對在原本的判斷裡也一定會被略過，結果與逐對 sqrt 完全一致。 */
-  var ps = [], rs = [];
+  var ps = [], rs = [], ms = [];
   for (i = 0; i < live.length; i++) {
     var pp = bfPos(live[i]);
     if (!pp) continue;
     ps.push(pp);
     rs.push(bfEntityRadius(live[i]));
+    /* 推擠的「重量」：高級敵人（跑位中更重）擠得開小兵，小兵擠不動牠；不然跑位一遇到人堆就被卡住 */
+    ms.push(live[i]._rp ? 8 : (live[i]._tier ? 3 : 1));
   }
   var cnt = ps.length;
   for (i = 0; i < cnt; i++) {
@@ -296,10 +300,11 @@ function bfTickApproach(enemies, dt) {
       if (dx >= minD || -dx >= minD || dy >= minD || -dy >= minD) continue;
       var dd = Math.sqrt(dx * dx + dy * dy);
       if (dd >= minD || dd <= 0.0001) continue;
-      var push = (minD - dd) * 0.5;
+      var push = (minD - dd);
       var ux = dx / dd, uy = dy / dd;
-      a.x -= ux * push; a.y -= uy * push;
-      b.x += ux * push; b.y += uy * push;
+      var wa = ms[j] / (ms[i] + ms[j]), wb = ms[i] / (ms[i] + ms[j]);   // 輕的那一方退得多（同重量時各退一半，與舊行為一致）
+      a.x -= ux * push * wa; a.y -= uy * push * wa;
+      b.x += ux * push * wb; b.y += uy * push * wb;
     }
   }
   return justInRange;

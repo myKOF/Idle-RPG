@@ -696,7 +696,7 @@ function eliteGroupBody() {
     ', advHp: ' + n('高級菁英倍率', 0) + ', advAtk: ' + n('高級菁英倍率', 1) + ', advReward: ' + n('高級菁英倍率', 2) +
     ',\n  sizeElite: ' + n('敵人體型倍率', 0) + ', sizeAdv: ' + n('敵人體型倍率', 1) + ', sizeBoss: ' + n('敵人體型倍率', 2) +
     ', sizeTower: [' + n('敵人體型倍率', 3) + ', ' + n('敵人體型倍率', 4) + ']' +
-    ',\n  repoMin: ' + n('跑位設定', 0) + ', repoMax: ' + n('跑位設定', 1);
+    ',\n  repoMin: ' + n('跑位設定', 0) + ', repoMax: ' + n('跑位設定', 1) + ', repoSpeed: ' + n('跑位設定', 2);
 }
 edits.push({
   file: 'data', scopeVar: 'ELITE_GROUP',
