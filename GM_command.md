@@ -692,6 +692,17 @@ spawn off （收尾）
 
 封魔塔 BOSS 的技能直接進塔看（`tower_jump 樓層` 跳層後挑戰）。技能表在 Skills2（類別＝enemy），各技能的說明與數字見 `docs/ELITE_AFFIXES.md`。
 
+**封魔塔 BOSS 的玩家技能（2026-10-15）**：某層 BOSS 解鎖哪個超神進化技能就固定施放哪個（對照表見 `docs/BOSS_PLAYER_SKILLS.md`）。
+技能 id 一律帶 `ps_` 前綴（`elite list` 末尾列出全部 69 個），可以直接在演武場單獨觀察：
+
+```text
+elite 1 ps_meteorFall 1 1000000 boss （1 隻 BOSS，只放火殞天落、打不死）
+elite 1 ps_petalStorm,ps_phantomOcta 1 1000000 boss （一隻 BOSS 同時帶兩個玩家技能）
+spawn off （收尾）
+```
+
+被動型（神聖之體、不屈鬥魂、天地再造、逆轉乾坤）的保命／復活只在封魔塔生效，演武場看不到；環繞／領域型招式在 BOSS 離玩家太遠時會先衝近再出招。
+
 ### 新版技能等級直設
 
 ```text

@@ -336,3 +336,25 @@ test('BPS-14 野外菁英也能帶玩家技能（GM 測試用）：效果照常�
   stepElite(c, 5);
   assert.equal(c.ELITE_RT.errors, 0);
 });
+
+test('BPS-15 整體強度旋鈕在參數表「封魔塔BOSS玩家技能」一列，與 data.js ELITE_GROUP、程式預設值三處一致', () => {
+  const csv = fs.readFileSync(path.join(root, 'config/CSV/game_parameters.csv'), 'utf8');
+  const line = csv.split(/\r?\n/).find((l) => l.indexOf(',4-菁英群組,封魔塔BOSS玩家技能,') >= 0);
+  assert.ok(line, '參數表要有這一列');
+  const cells = line.split(',');
+  const values = cells.slice(cells.length - 12).map(Number);       // 參數 a~l
+  const keys = ['psDmgPct', 'psTickPct', 'psAreaPct', 'psBuffPct', 'psCtrlPct', 'psShieldPct', 'psReviveHpPct', 'psPassiveGap'];
+  const c = loadEliteEnv();
+  keys.forEach((k, i) => {
+    assert.equal(run(c, 'ELITE_GROUP.' + k), values[i], 'data.js ELITE_GROUP.' + k + ' 要等於參數表第 ' + (i + 1) + ' 格');
+  });
+  // 程式端的預設值（參數沒填時用）與參數表預設一致：把 ELITE_GROUP 的鍵拿掉後，bskG 的結果要回到同一個數字
+  const fallbacks = { DmgPct: 'psDmgPct', TickPct: 'psTickPct', AreaPct: 'psAreaPct', BuffPct: 'psBuffPct', CtrlPct: 'psCtrlPct', ShieldPct: 'psShieldPct', ReviveHpPct: 'psReviveHpPct', PassiveGap: 'psPassiveGap' };
+  Object.keys(fallbacks).forEach((suffix) => {
+    const want = run(c, 'ELITE_GROUP.' + fallbacks[suffix]);
+    const src = fs.readFileSync(path.join(root, 'js/elite_boss.js') , 'utf8') + fs.readFileSync(path.join(root, 'js/elite_boss_recipes.js'), 'utf8');
+    const m = src.match(new RegExp("bskG\\('" + suffix + "', (\\d+(?:\\.\\d+)?)\\)"));
+    assert.ok(m, suffix + ' 在程式裡要有預設值');
+    assert.equal(Number(m[1]), want, suffix + ' 程式預設值要與參數表一致');
+  });
+});

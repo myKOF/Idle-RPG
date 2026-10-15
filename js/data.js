@@ -309,7 +309,10 @@ var FIELD_ELITE = { hpMult: 4, atkMult: 2, rewardMult: 2, dodgeAdd: 1.5, aspd: 1
    maxZones＝同時存在的場域上限；summonCap＝每隻怪物一生最多召喚幾隻；linkBeam＝0 時不畫鏈結線。
    高級敵人（2026-10-13）：advChance＝[普通關%, 菁英關%]，每隻菁英升級成高級菁英的機率；advHp／advAtk／advReward＝高級菁英相對普通怪的生命／攻擊／金幣經驗倍率；
    sizeElite／sizeAdv／sizeBoss／sizeTower[下限, 上限]＝體型倍率（封魔塔 BOSS 依順序從下限長到上限）；repoMin／repoMax＝跑位間隔（秒）；repoSpeed＝跑位時的移動速度倍率。
-   每種敵人帶哪些技能不在這裡：NPC 表（專屬技能＋隨機技能數量）與 Skills2 表（類別＝enemy）。 */
+   每種敵人帶哪些技能不在這裡：NPC 表（專屬技能＋隨機技能數量）與 Skills2 表（類別＝enemy）。
+   封魔塔 BOSS 的玩家技能（2026-10-15，js/elite_boss.js；參數表「封魔塔BOSS玩家技能」一列）：
+   psDmgPct 技能傷害倍率、psTickPct 持續場域／領域跳動再折扣、psAreaPct 範圍半徑倍率、psBuffPct 玩家式增益轉 BOSS 增益的強度、
+   psCtrlPct 控場秒數倍率、psShieldPct 護盾量倍率、psReviveHpPct 復活生命倍率、psPassiveGap 被動反應最短間隔（秒）。 */
 var ELITE_GROUP = {
   normalChance: {
     desert: [[1, 10, 1], [11, 50, 3], [51, 100, 5], [101, 9999, 7]],
@@ -337,7 +340,8 @@ var ELITE_GROUP = {
   skillDmgPct: 100, cdPct: 100, firstCastMax: 3.5, maxZones: 48, summonCap: 10, linkBeam: 1,
   advChance: [6, 20], advHp: 8, advAtk: 3, advReward: 4,
   sizeElite: 1.6, sizeAdv: 2.2, sizeBoss: 3.4, sizeTower: [5, 7],
-  repoMin: 4, repoMax: 8, repoSpeed: 1.6
+  repoMin: 4, repoMax: 8, repoSpeed: 1.6,
+  psDmgPct: 25, psTickPct: 20, psAreaPct: 60, psBuffPct: 25, psCtrlPct: 50, psShieldPct: 15, psReviveHpPct: 40, psPassiveGap: 4
 };
 var MONSTER_DEFAULT_HIT = 100;   // 怪物固定命中（怪物資料未提供 hit 時的預設；參數表「3-戰鬥核心／怪物固定戰鬥值」）
 var FIELD_MONSTER_DODGE_BASE = 5;

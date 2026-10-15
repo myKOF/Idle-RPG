@@ -20,7 +20,7 @@
 function bskG(key, fallback) { return eliteG('ps' + key, fallback); }
 function bskMult(pct) { return Math.max(0, Number(pct) || 0) / 100 * bskG('DmgPct', 25) / 100; }
 function bskArea() { return Math.max(0.05, bskG('AreaPct', 60) / 100); }
-function bskBuff() { return Math.max(0, bskG('BuffPct', 10) / 100); }
+function bskBuff() { return Math.max(0, bskG('BuffPct', 25) / 100); }
 function bskCtrl() { return Math.max(0, bskG('CtrlPct', 50) / 100); }
 function bskRad(m) { return Math.max(0, Number(m) || 0) * ELITE_METER * bskArea(); }     // 範圍半徑（米→座標單位，乘範圍倍率）
 function bskLen(m) { return Math.max(0, Number(m) || 0) * ELITE_METER; }                  // 長度（米→座標單位）
@@ -43,7 +43,9 @@ function bskCtx(m, d) {
   var ult = g.ult[d.ultIdx];
   return {
     m: m, d: d, g: g, gid: d.gid, ult: ult, fx: ult.fx || {}, tiers: g.tiers, v: d.v || {}, lv: bskLevel(),
-    magic: g.dmgType === 'magic', elem: g.dmgType === 'magic' ? (g.elem || null) : null, hitCount: 0
+    magic: g.dmgType === 'magic', elem: g.dmgType === 'magic' ? (g.elem || null) : null, hitCount: 0,
+    /* 設計師可在 Skills2 該列的效果參數(JSON) 補 bossMul（這個技能給 BOSS 用時的傷害倍率，預設 1）、bossCd／bossCdMax（冷卻秒數） */
+    bossMul: Number(ult.fx && ult.fx.bossMul) > 0 ? Number(ult.fx.bossMul) : 1
   };
 }
 
@@ -96,7 +98,7 @@ function bskHit(c, pct, o) {
   }
   var elem = o.elem !== undefined ? o.elem : c.elem;
   var opts = {
-    mult: bskMult(pct) * (o.mul || 1) * dim, elem: elem, phys: !elem && !c.magic, label: o.label || c.d.name,
+    mult: bskMult(pct) * (o.mul || 1) * dim * c.bossMul, elem: elem, phys: !elem && !c.magic, label: o.label || c.d.name,
     sure: o.sure !== false, quiet: !!o.quiet
   };
   ['stun', 'slow', 'dot', 'push', 'from', 'atkDown', 'defDown', 'dur', 'freeze'].forEach(function (k) { if (o[k] !== undefined) opts[k] = o[k]; });
@@ -227,8 +229,7 @@ function bskLines(c, o) {
 }
 
 /* ---------------- 動作零件：環形 ----------------
-   以 (中心＝BOSS) 半徑 r 的圓：先標預警，倒數後爆發並打圈內。times>1＝連續多波（每波 waveGap）。
-   expand＝true 時，圈從 0 擴張到 r（刀波），玩家在擴張結束時仍在圈內才算中。 */
+   以 (中心＝BOSS) 半徑 r 的圓：先標預警，倒數後爆發並打圈內。times>1＝連續多波（每波 waveGap）。 */
 function bskRing(c, o) {
   var m = c.m;
   var mp = eliteMonsterPos(m);
@@ -662,6 +663,8 @@ function bskDecorate() {
       var sec = Math.max(2, sgVal(SKILLS2.cleave.ult[2].fx, 'sec', bskLevel()));
       d.cd = [sec * 1.5, sec * 2.2];
     }
+    var ufx = SKILLS2[d.gid].ult[d.ultIdx].fx || {};
+    if (Number(ufx.bossCd) > 0) d.cd = [Number(ufx.bossCd), Math.max(Number(ufx.bossCd), Number(ufx.bossCdMax) || Number(ufx.bossCd) * 1.3)];   // 設計師在 Skills2 該列指定的 BOSS 冷卻
   });
   ELITE_PASSIVE_ARCHS.push('pskCounter', 'pskReact', 'pskUndying');
 }
