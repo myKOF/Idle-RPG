@@ -377,9 +377,11 @@ resetSkill2RT(); // 載入即建立初始狀態
    使用者決策 2026-08-16：達到 1 轉即視為 0 轉的門檻全部通過，2 轉視為 1 轉以前全通過，以此類推。
    要卡「1 轉之後才開放」的玄階，門檻就填 1|200。 */
 function sgTierUnlockedBy(unlock, level, reinc, towerHighest) {
+  if (typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.skillUnlock) return true;
   if (!unlock) return true;                                    // 留白＝無門檻
   var needR = Math.max(0, Number(unlock.reinc) || 0);
   var r = Math.max(0, Number(reinc) || 0);
+  if (r >= 999999 || Math.max(0, Number(towerHighest) || 0) >= 999999) return true;
   if (Math.max(0, Number(towerHighest) || 0) < Math.max(0, Number(unlock.tower) || 0)) return false;
   if (r !== needR) return r > needR;
   return Math.max(0, Number(level) || 0) >= Math.max(0, Number(unlock.lv) || 0);
@@ -396,6 +398,12 @@ function sgUnlockText(unlock) {
 /* 解鎖進度來源：Worker 端讀 G；主執行緒沒有 G，由呼叫端傳面板快照的等級／轉生數／最高通關塔層。
    兩邊都取不到時回傳 null＝不套用門檻——寧可維持接線前的行為，也不要憑空把技能鎖住。 */
 function sgUnlockProgress(prog) {
+  if (prog && prog.skillUnlock) {
+    return { level: 999999, reinc: 999999, towerHighest: 999999, skillUnlock: true };
+  }
+  if (typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.skillUnlock) {
+    return { level: 999999, reinc: 999999, towerHighest: 999999, skillUnlock: true };
+  }
   if (prog && (prog.level !== undefined || prog.reinc !== undefined)) {
     return { level: Number(prog.level) || 0, reinc: Number(prog.reinc) || 0, towerHighest: Number(prog.towerHighest) || 0 };
   }
@@ -460,9 +468,10 @@ function skills2Levels(gid) {
   var level = hasPlayer ? G.player.level : undefined;
   var reinc = hasPlayer ? G.player.reincarnations : undefined;
   var towerHighest = hasPlayer && G.tower ? G.tower.highest : undefined;
+  var isSkillUnlock = !!(typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.skillUnlock);
   var tiers = g.tiers, n = tiers.length, i;
   var e = SG_LEVELS_CACHE[gid];
-  if (e && e.g === g && e.tiers === tiers && e.n === n && e.src === src && e.level === level && e.reinc === reinc && e.towerHighest === towerHighest) {
+  if (e && e.skillUnlock === isSkillUnlock && e.g === g && e.tiers === tiers && e.n === n && e.src === src && e.level === level && e.reinc === reinc && e.towerHighest === towerHighest) {
     var same = true;
     for (i = 0; i < n; i++) {
       var u = tiers[i] && tiers[i].unlock;
@@ -482,9 +491,15 @@ function skills2Levels(gid) {
     needTower.push(ui ? ui.tower : undefined);
   }
   SG_LEVELS_CACHE[gid] = { g: g, tiers: tiers, n: n, src: src, level: level, reinc: reinc,
-    towerHighest: towerHighest, copy: copy, unlock: unlock, needR: needR, needLv: needLv, needTower: needTower, out: out.slice() };
+    towerHighest: towerHighest, skillUnlock: isSkillUnlock, copy: copy, unlock: unlock, needR: needR, needLv: needLv, needTower: needTower, out: out.slice() };
   return out;
 }
+function clearSkills2LevelsCache() {
+  SG_LEVELS_CACHE = Object.create(null);
+}
+var _gSkills = (typeof self !== 'undefined') ? self
+  : ((typeof window !== 'undefined') ? window : ((typeof globalThis !== 'undefined') ? globalThis : null));
+if (_gSkills) _gSkills.clearSkills2LevelsCache = clearSkills2LevelsCache;
 function skills2Castable(gid) {
   var l = skills2Levels(gid);
   return !!l && l[0] >= 1;
@@ -515,15 +530,22 @@ function sgUltIndexOfId(gid, id) {
 }
 /* 超神進化共同前置：普通階全部練滿；各選項另套自己的配置門檻。 */
 function sgUltUnlockedBy(gid, lvs) {
+  if (typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.skillUnlock) {
+    var g0 = SKILLS2[gid];
+    return !!(g0 && sgUltDefs(gid));
+  }
   var g = SKILLS2[gid];
   if (!g || !lvs || !sgUltDefs(gid)) return false;
   for (var i = 0; i < g.tiers.length; i++) if ((lvs[i] || 0) < SG_TIER_MAX_LV) return false;
   return true;
 }
 function sgUltOptionUnlockedBy(gid, idx, lvs, prog) {
+  var prg = sgUnlockProgress(prog);
+  if ((typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.skillUnlock) || (prg && prg.skillUnlock)) {
+    return !!sgUltOption(gid, idx);
+  }
   var opt = sgUltOption(gid, idx);
   if (!opt || !sgUltUnlockedBy(gid, lvs)) return false;
-  var prg = sgUnlockProgress(prog);
   return !prg || sgTierUnlockedBy(opt.unlock, prg.level, prg.reinc, prg.towerHighest);
 }
 /* 塔層解鎖清單純粹由技能配置衍生，沒有第二份獎勵表。 */
@@ -1464,10 +1486,12 @@ function skills2Downgrade(group, tier) {
 function skills2PanelView() {
   /* progress＝算這份等級時用的解鎖進度。主執行緒沒有 G，只能靠這一份；
      不送出去的話，UI 會以「沒有進度＝不套門檻」重算，畫面顯示已解鎖、Worker 卻擋著升級。 */
+  var isSkillUnlock = !!(typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.skillUnlock);
   var prg = sgUnlockProgress(null);
   var out = {
     tierMax: SG_TIER_MAX_LV, levels: {}, ult: {},
-    progress: prg ? { level: prg.level, reinc: prg.reinc, towerHighest: prg.towerHighest } : null
+    progress: prg ? { level: prg.level, reinc: prg.reinc, towerHighest: prg.towerHighest, skillUnlock: isSkillUnlock } : (isSkillUnlock ? { level: 999999, reinc: 999999, towerHighest: 999999, skillUnlock: true } : null),
+    skillUnlock: isSkillUnlock
   };
   var ultRaw = (G && G.player && G.player.skills2) ? G.player.skills2.ult : null;
   for (var gid in SKILLS2) {

@@ -9197,6 +9197,10 @@ function skillTowerUnlockHintHTML(row, skillsSnapshot) {
   var floor = row && row.unlock && Number(row.unlock.tower);
   if (!(floor > 0)) return '';
   var prg = sgUiUnlockProgress(skillsSnapshot);
+  var isSkillUnlock = !!((prg && prg.skillUnlock) || (typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.skillUnlock));
+  if (isSkillUnlock) {
+    return '<div class="skill-tower-hint is-cleared">封魔塔第' + floor + '層門檻已解除（GM解鎖）</div>';
+  }
   var cleared = !!prg && Number(prg.towerHighest) >= floor;
   return '<div class="skill-tower-hint' + (cleared ? ' is-cleared' : '') + '">' +
     (cleared ? '已通行封魔塔第' + floor + '層' : '需通關封魔塔第' + floor + '層解鎖') + '</div>';

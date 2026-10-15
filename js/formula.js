@@ -2399,12 +2399,14 @@ var LOADOUT_SIZE = { perLevels: 50, min: 4, base: 4, max: 6 };
 /* 純函式版本：不讀 G，讓讀檔遷移（save.js）能對「存檔裡的」等級與轉數算格數。
    loadoutSize() 是它讀取現況 G 的包裝，兩者必須是同一套規則——分成兩份算法遲早會飄。 */
 function loadoutSizeFor(level, reincarnations) {
+  if (typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.skillUnlock) return LOADOUT_SIZE.max;
   if ((Math.floor(Number(reincarnations)) || 0) >= 1) return LOADOUT_SIZE.max;
   var lvl = Math.max(1, Math.floor(Number(level)) || 1);
   return Math.min(LOADOUT_SIZE.max, Math.max(LOADOUT_SIZE.min,
     LOADOUT_SIZE.base + Math.floor(lvl / LOADOUT_SIZE.perLevels)));
 }
 function loadoutSize() {
+  if (typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.skillUnlock) return LOADOUT_SIZE.max;
   var rc = (typeof reincarnationCount === 'function') ? reincarnationCount() : 0;
   var lvl = (typeof G !== 'undefined' && G.player && G.player.level) ? G.player.level : 1;
   return loadoutSizeFor(lvl, rc);
