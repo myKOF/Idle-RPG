@@ -374,7 +374,10 @@ function endTowerFight(win, reason) {
 
   if (win) {
     var firstClear = floor > G.tower.highest;
-    if (firstClear) G.tower.highest = floor;
+    if (firstClear) {
+      G.tower.highest = floor;
+      if (typeof sgAfterSkillChange === 'function') sgAfterSkillChange();
+    }
     blog('🏆 通關封魔塔第 ' + floor + ' 層！', 'good');
     // 獎勵：資源（零件改由熔爐升級取得）
     var rw = towerRewardFor(floor, firstClear);

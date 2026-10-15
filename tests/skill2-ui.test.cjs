@@ -39,7 +39,7 @@ function loadContext() {
 }
 
 function snapshot(levels, extra) {
-  return Object.assign({ skills2: { levels, progress: { level: 576, reinc: 0 } }, loadout: [] }, extra || {});
+  return Object.assign({ skills2: { levels, progress: { level: 576, reinc: 0, towerHighest: 150 } }, loadout: [] }, extra || {});
 }
 
 test('進化連線合併所有相鄰段，流光沿同一條路徑通過轉角與三個分支中心', () => {
@@ -185,7 +185,7 @@ test('下方快捷格同步左側群組與最高已學階，捲入可見處且�
 test('快捷技能被篩選隱藏時切全部，選中已學超神；重點快捷格仍同步焦點', () => {
   const c = loadContext();
   const snap = snapshot({ icearrow: Array(7).fill(10) });
-  snap.skills2.progress = { level: 1000, reinc: 0 };
+  snap.skills2.progress = { level: 1000, reinc: 0, towerHighest: 150 };
   snap.skills2.ult = { icearrow: { pick: 1, lv: 10 } };
   c.UI.sgBrowse.filter = 'phys';
   const h = loadoutClickHarness(c, snap);
@@ -350,7 +350,7 @@ test('超神進化：未開放顯示還差幾階，未選三選一，已選升�
 test('切換二次確認顯示完整費用；取消不送指令，確認只送原子切換', async () => {
   const c = loadContext();
   const snap = snapshot({ frostnova: Array(7).fill(10) });
-  snap.skills2.progress = { level: 1000, reinc: 10 };
+  snap.skills2.progress = { level: 1000, reinc: 10, towerHighest: 150 };
   snap.skills2.ult = { frostnova: { pick: 1, lv: 10 } };
   c.uiSkillsPanelSnapshot = () => snap;
   const elements = {};
@@ -517,7 +517,7 @@ test('戰鬥快捷列：主動型被動帶 active-passive class，不套冷卻�
 
 test('技能上方的mp消耗顯示當前最高階技能的mp（含超神進化、一般階級與手動瀏覽不同階級時）', () => {
   const c = loadContext();
-  const progressMax = { level: 900, reinc: 1 };
+  const progressMax = { level: 900, reinc: 1, towerHighest: 150 };
   // 1. 僅學第 1 階：顯示第 1 階消耗 (25 MP)
   const snap1 = snapshot({ waterball: [1, 0, 0, 0, 0, 0, 0] }, { skills2: { levels: { waterball: [1, 0, 0, 0, 0, 0, 0] }, progress: progressMax } });
   let h1 = c.sgbDetailHTML('waterball', snap1, { player: { gold: 1e15 } });

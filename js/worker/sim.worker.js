@@ -19,9 +19,9 @@ if (typeof GameClock !== 'undefined') {
 importScripts(
   '../util.js?v=20260922-firegod-formation', '../data.js?v=20261015-gem-enabled', '../runeword_data.js?v=20261013-rune-all-elem-color', '../status.js?v=20261014-state-status', '../formula.js?v=20261014-merged-clock-combo', '../battlefield.js?v=20261013-enemy-skills2', '../stats.js?v=20261003-rename-weineng',
   '../item.js?v=20261015-gem-enabled', '../runeword.js?v=20261014-develop-integration',
-  '../skills.js?v=20261007-runes4', '../skills2.js?v=20261014-state-status', '../elite_data.js?v=20261014-state-status', '../talents.js?v=20261003-rename-weineng',
+  '../skills.js?v=20261007-runes4', '../skills2.js?v=20261015-skill-tower-unlock', '../elite_data.js?v=20261014-state-status', '../talents.js?v=20261003-rename-weineng',
   '../player.js?v=20261008-boss-config-lock', '../special_rules.js',
-  '../combat.js?v=20261015-gem-enabled', '../elite.js?v=20261014-state-status', '../legendary.js?v=20261012-indomitable-guard', '../potential.js?v=20261005-cc-decay-count', '../tower.js?v=20261015-gem-enabled',
+  '../combat.js?v=20261015-gem-enabled', '../elite.js?v=20261014-state-status', '../legendary.js?v=20261012-indomitable-guard', '../potential.js?v=20261005-cc-decay-count', '../tower.js?v=20261015-skill-tower-unlock',
   '../factory.js?v=20261015-gem-enabled', '../newforge.js', '../forge.js?v=20261015-gem-enabled', '../save.js?v=20261015-gem-enabled',
   '../tasks.js?v=20261007-runes4'
 );
@@ -1601,7 +1601,7 @@ var COMMAND_IMPL = {
        少了它，未達「解鎖轉生/等級」的階可以用這條指令直接升到滿級。 */
     if (typeof sgTierUnlockedBy === 'function' && typeof sgUnlockProgress === 'function') {
       var maxPrg = sgUnlockProgress(null);
-      if (maxPrg && !sgTierUnlockedBy(g.tiers[tier].unlock, maxPrg.level, maxPrg.reinc)) {
+      if (maxPrg && !sgTierUnlockedBy(g.tiers[tier].unlock, maxPrg.level, maxPrg.reinc, maxPrg.towerHighest)) {
         return { err: '需達到 ' + sgUnlockText(g.tiers[tier].unlock) + '才能解鎖此階' };
       }
     }

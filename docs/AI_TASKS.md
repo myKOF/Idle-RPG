@@ -1,5 +1,21 @@
 # AI_TASKS.md
 
+## SKILL-TOWER-UNLOCK-20261015 — 技能與超神進化封魔塔解鎖限制
+
+- Owner：Codex；Done，單一開發者。使用者已改Skills2.xlsx，要求匯出CSV、接受可選第三段塔層限制、檢查超神進化限制、Tips末行橘色未通關／灰色小字已通關，以及塔BOSS獎勵最下方多技能解鎖框；後續追加統一Excel欄名為「解鎖轉生/等級/封魔塔層級」。
+- 前置：現有Skills2／封魔塔流程，已滿足；後續使用者審閱合併。全目標衝突預檢乾淨；保留本副本既有Skills2消耗修改與使用者Excel，不改其他副本。
+- 允許：Skills2 Excel原樣提交／CSV、tools/config_tables.cjs及參數表說明、js/skills2.js／ui.js／必要tower刷新、CSS、index／bridge／Worker必要快取與批次門檻、本紀錄及相關回歸測試。禁止其他技能效果與數值、其他配置、Protocol／存檔格式與素材；不合併／推送。
+- 驗收：兩段／三段／留白與非法格式、轉生優先及塔層AND條件、各超神選項選擇／切換／升級／舊投資失效保留／快取失效、UI與Worker同源、同層多技能／無技能隱藏、CSV重建零變更、相關回歸、Build／Console／diff後獨立Commit。
+- 完成／修改17檔：config/Excel/Skills2.xlsx以既有excel-update-sheets.ps1原生Excel API只改1格欄名，正常重開／全格與物件驗證通過；xlsx_to_csv匯出CSV（283列52欄），保留使用者表值與排序。tools/config_tables.cjs同時接受新欄名、舊兩段欄名與「封魔塔等級」別名，普通階及69個超神選項雙向保留unlock；tools/參數表使用說明.md及本紀錄同步。
+- 邏輯／畫面：js/skills2.js塔層AND判定、快取輸入、逐選項權威學習／切換／升級及生效判定，舊投資只失效不刪除；skills面板progress加towerHighest，沿既有泛用面板資料傳送，沒有Protocol或存檔格式變更。js/ui.js各選項獨立鎖定與Tips最後一行、已通關灰色小字、MP及修羅裝備資格同源，塔獎勵由同一SKILLS2資料衍生多技能獨立框。js/tower.js首通刷新技能及屬性快取。css/ashen-forge.css未通關橘色13px／通關灰色11px、獎勵黃色16px框。
+- 配置確認：依使用者最新Excel一併帶入飛刀／迴旋斬普通7階的等級門檻與原有施法消耗編輯；不是以程式舊值覆蓋表格。排除施法消耗與unlock後，與HEAD逐群組深比較，其他技能效果／數值完全一致。
+- 快取：index.html skills2 1.0.313／ui 1.0.162／tower 1.0.28／bridge 1.0.275／CSS1.0.74；bridge入口及sim.worker的skills2／tower import均20261015-skill-tower-unlock；Worker一般階一鍵滿級也檢查第三段。沒有新增素材／素材庫Commit。
+- 測試修改：新增tests/skill2-tower-unlock.test.cjs共10項，涵蓋全部69個選項Excel／CSV／JS往返、格式與別名、人物與塔層、拒絕不扣款／不覆蓋原投資、MP與快照、正式首通及UI多技能框。既有tests/skill2-ui.test.cjs／skill2-ult-switch.test.cjs／skill2-asura-dualwield.test.cjs補齊已解鎖情境塔層前置；skill2-system.test.cjs用完整鍵集合比較支援使用者Excel新排序，沒有刪減群組／階級／效果斷言。
+- 指令／結果：node --test --test-reporter=tap tests/skill2-tower-unlock.test.cjs tests/skill2-ui.test.cjs tests/skill2-ult-switch.test.cjs tests/skill2-asura-dualwield.test.cjs tests/skills2-levels-memo.test.cjs tests/worker-protocol.test.cjs tests/tower-battlefield.test.cjs tests/tower-auto-result.test.cjs，共78/78通過；再加tests/skill2-system.test.cjs tests/skills2-mana-cost.test.cjs，共118項101通過／17既有失敗。唯讀攔截檔案讀取改用git show HEAD原版JS與CSV重跑後兩檔，同樣23通過／17失敗，失敗名稱差集0；舊飛行命中／狀態／雙刀／耗魔斷言未於本任務擴大修復。npm.cmd run build 514檔全過；node tools/config_tables.cjs --apply Skills2語意變更0；git diff --check通過。
+- 瀏覽器：computer-use／CUA獨立127.0.0.1:13742、拋棄式IndexedDB測試存檔，正式index／UI／Bridge／真Worker／Pixi。最高29層時幻影八方陣鎖定、橘色13px及無學習鈕；塔30獎勵黃色16px獨立框在通關獎勵後，塔1完全隱藏。最高30層、已保留Lv.3的存檔正常載入生效並顯示灰色11px「已通行封魔塔第30層」；兩次Console error／warning均0。截圖tower-skill-unlock.png／skill-tower-cleared.png存本聊天visualizations；分頁、服務及臨時腳本／日誌清理，未讀真人存檔。同層多技能以正式HTML回歸注入第二條門檻驗證。
+- 唯讀檢查：AI規範、prompts/codex.md、js/formula.js／save.js／storage.js／player.js／skills.js、Worker Protocol、scripts/sim/engine.js、xlsx_to_csv及excel-update-sheets工具、原塔戰／Worker／快取回歸；未修改上述檔案。保留開始前Gems／Talents及其他CSV未提交工作，本次只提交技能相關修改。
+- 交付：Commit為本紀錄所在[Codex] feat提交，編號見回覆；本需求無未完成項，可供審閱合併，未合併／推送。限制／已知風險：17項既有回歸失敗、未跑全庫與真人長時間戰鬥；新限制會使未達門檻的既有超神投資暫時失效，通關後恢復。下一步使用者整合後重新載入遊戲，使用更新快取驗收。
+
 ## GEM-ENABLED-20261015 — 寶石開放欄與停用操作限制
 
 - Owner：Codex；Done，單一開發者。使用者已修改 Gems.xlsx，授權匯出 CSV 並接入「開放」1／0；前置已滿足，後續使用者審閱合併。
