@@ -1,5 +1,13 @@
 # PATCH.md
 
+## 連擊數、吸血與吸魔屬性 Tips 文案調整（Antigravity 2026-10-14）
+
+- **屬性面板 Tips 文案與樣式更新（`js/data.js`、`index.html`、`tests/combo-hits.test.cjs`、`tests/drain-flat-value.test.cjs`、`tests/passive-stat-panel.test.cjs`）**：
+  - 連擊數 Tips 改為兩行說明：首行以黃字高亮「每次攻擊命中時有25%機率造成額外攻擊次數」，次行以正常文字說明「暴擊率、攻擊速度、冷卻縮減溢出上限時將會轉為增加連擊數」。
+  - 吸血與吸魔 Tips 移除底部灰色補充文字（「單獨計算，與每秒生命回復/法力恢復、造成的傷害皆無關。」），使說明更簡潔純粹。
+  - 更新 `index.html` 的 `data.js` 快取版本號為 `1.0.77`。
+  - 同步更新相關單元測試斷言。
+
 ## 裝備詳情詞條文字顏色對齊裝備 Tips（Antigravity 2026-10-14）
 
 - **裝備詳情面板詞條文字顏色對齊 Tips（`css/ashen-forge.css`、`index.html`、`tests/equipment-detail-layout.test.cjs`）**：

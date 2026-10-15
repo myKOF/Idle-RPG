@@ -36,8 +36,8 @@ test('序列化後無 G 的 UI 仍顯示正確回復／汲取；預覽套使用�
  delete c.G;
  assert.equal(byName('法力恢復')[1](snap),c.statFmt(150,null,'/s'));
  assert.equal(byName('吸魔')[1](snap),c.statFmt(20,c.STAT_CAPS.manaSteal,'raw1'));
- assert.doesNotMatch(byName('吸魔')[1](snap),/%/,'吸魔是定值，不顯示百分比');
- assert.match(byName('吸魔')[2](snap),/單獨計算/);
+ assert.match(byName('吸魔')[2](snap),/固定回復此數值的/);
+ assert.doesNotMatch(byName('吸魔')[2](snap),/單獨計算/);
  assert.doesNotMatch(byName('吸魔')[2](snap),/汲取換算基準/);
  assert.equal(byName('火屬性傷害提升')[1](snap),c.statFmt(110,null,'%',true));
  assert.equal(byName('法力恢復')[1](st),c.statFmt(50,null,'/s'),'舊快照相容');

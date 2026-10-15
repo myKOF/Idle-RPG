@@ -2584,11 +2584,10 @@ function penetrationDesc(st, key, label) {
     '<br><br><span style="color:#ffd700">目前忽略防禦：' + pctStrFloor4(ignore) + '</span>';
 }
 
-/* 吸血／吸魔 tips：定值，單獨計算，不看每秒回復也不看造成的傷害 */
+/* 吸血／吸魔 tips：定值，每對敵人造成傷害時固定回復 */
 function drainDesc(key) {
   var isHp = key === 'lifesteal';
-  return '每對一名敵人造成一次傷害時，固定回復此數值的' + (isHp ? '生命' : '法力') + '；範圍、多段與持續傷害逐次觸發，未造成傷害不觸發。' +
-    '<br><br><span style="color:#aaa">單獨計算，與每秒' + (isHp ? '生命回復' : '法力恢復') + '、造成的傷害皆無關。</span>';
+  return '每對一名敵人造成一次傷害時，固定回復此數值的' + (isHp ? '生命' : '法力') + '；範圍、多段與持續傷害逐次觸發，未造成傷害不觸發。';
 }
 
 /* 舊快照退回既有基準值；新版只讀 Worker 已結算的面板數值。 */
@@ -2619,7 +2618,7 @@ var STAT_GROUPS = [
       ['⚔️ 物理攻擊', function (st) { return statFmt(st.atk, null); }, function (st) { return statDesc(st, '影響普攻與多數物理技能的傷害基礎。由力量派生。', '物理攻擊', 'atk', 'atkPct'); }],
       ['🔮 魔法攻擊', function (st) { return statFmt(st.matk, null); }, function (st) { return statDesc(st, '影響多數魔法技能的傷害基礎。由智力派生。', '魔法攻擊', 'matk', 'matkPct'); }],
       ['💥 暴擊率', function (st) { return statFmt(st.critRate, STAT_CAPS.critRate, '%'); }, '攻擊時造成額外暴擊傷害的機率。暴擊率 100% 為完全爆擊，超過 100% 的部分會衍生「連擊數」。' + capText(STAT_CAPS.critRate, '%')],
-      ['🔗 連擊數', function (st) { return (st.comboHits || 0) > 0 ? fmt1(st.comboHits) + ' 次' : '—'; }, '暴擊率、攻速、冷卻縮減三項屬性達到一定程度後，超出的部分會增加連擊數。每次攻擊命中時有機會追加這麼多次攻擊。持續傷害不受影響。'],
+      ['🔗 連擊數', function (st) { return (st.comboHits || 0) > 0 ? fmt1(st.comboHits) + ' 次' : '—'; }, '<span style="color:#ffd700">每次攻擊命中時有25%機率造成額外攻擊次數</span><br>暴擊率、攻擊速度、冷卻縮減溢出上限時將會轉為增加連擊數'],
       ['🩸 暴擊傷害', function (st) { return Math.round(st.critDmg) + '%'; }, '觸發暴擊時的傷害倍率。'],
       ['🗡️ 物理穿透', function (st) { return statFmt(st.pPen, STAT_CAPS.pPen, '%'); }, function (st) { return penetrationDesc(st, 'pPen', '物理'); }],
       ['🪄 魔法穿透', function (st) { return statFmt(st.mPen, STAT_CAPS.mPen, '%'); }, function (st) { return penetrationDesc(st, 'mPen', '魔法'); }],
