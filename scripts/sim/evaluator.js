@@ -1566,7 +1566,18 @@ function buildEquipRulesPanel() {
   if (typeof slotBlockedByTwoHand === 'function') {
     for (var k in eq) if (slotBlockedByTwoHand(eq, k)) blocked[k] = true;
   }
-  return { blocked: blocked };
+  /* 封魔塔進行中（G.tower.active）時，遊戲協議會拒絕一整批「變更戰鬥配置」的指令
+     （bossFightBlocksCommand：換裝、切套、強化、洗煉、鑲嵌…）。野外 BOSS 戰沒有這個鎖。
+     由遊戲的同一支函式回答，策略不自己抄那份清單。 */
+  var locked = {}, lockedWhenTower = {};
+  if (typeof bossFightBlocksCommand === 'function' && typeof COMMANDS !== 'undefined') {
+    for (var name in COMMANDS) if (bossFightBlocksCommand(name)) lockedWhenTower[name] = true;
+    if (G && G.tower && G.tower.active) locked = lockedWhenTower;
+  }
+  /* lockedWhenTower：塔「一開」就會鎖的清單，與現在有沒有開無關。
+     同一個決策點裡 tower.startAuto 之後排在後面的規則，拿到的面板還是開塔前的，
+     要靠這份才知道它們已經被鎖。 */
+  return { blocked: blocked, locked: locked, lockedWhenTower: lockedWhenTower };
 }
 
 /* ============ 三套裝備面板（harness 專用，player_strategy.md §7） ============

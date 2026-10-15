@@ -435,6 +435,7 @@ function observeCombat(state, policy, memo) {
       delete T.attempts[e.stage];                    // 過關就清掉紀錄
     } else if (stage < e.stage) {
       var rec = T.attempts[e.stage] || (T.attempts[e.stage] = { fails: 0, micro: 0 });
+      if (!rec.firstFailAt) rec.firstFailAt = now;     // 這個卡點第一次失敗的時間，算「卡了多久」用
       rec.fails++;
       rec.lastFailAt = now;
       rec.minHpPct = e.minHpPct;
@@ -541,6 +542,8 @@ function updateContext(state, policy, memo) {
     blockStage: blockStage,
     fails: blockRec ? blockRec.fails : 0,
     blockMode: blockRec ? (blockRec.mode || 'normal') : 'normal',
+    /* 卡在野外 BOSS 多久（分鐘）。第 2 套的強化權重隨它漸增（player_strategy.md §7）。 */
+    stuckBossMin: (blockRec && blockRec.mode === 'boss') ? Math.max(0, (now - (blockRec.firstFailAt || now)) / 60) : 0,
     /* 同一個卡點試了 5 次還過不去＝生存率不足，轉為針對性強化
        （菁英／BOSS 抗性與傷害加成）。 */
     desperate: !!(blockRec && blockRec.fails >= 5),
@@ -1126,15 +1129,26 @@ function updateSkillContext(state, policy, memo) {
 /* 目前使用中的是不是第 1 套之外的裝備組。
    離開第 1 套時，針對「使用中裝備」的規則（換裝、強化、洗煉、鑲寶石、符文）要暫停：
    不然資源會灌進第 2、3 套，違反「資源先全給第 1 套」（player_strategy.md §7）。 */
-function updateSetContext(state, policy) {
-  if (!policy.equipSets) return;
+function updateSetContext(state, policy, memo) {
+  var sets = policy.equipSets || {};
   if (!state.ctx) state.ctx = {};
-  var P = pathVal(state, policy.equipSets.panel || 'panels.equipSets');
-  state.ctx.setAway = !!(P && P.active !== undefined && P.active !== (policy.equipSets.home || 0));
+  var P = peekPath(state, sets.panel || 'panels.equipSets');       // 沒有這個面板的策略也會走到這裡，缺值是正常的
+  state.ctx.setAway = !!(policy.equipSets && P && P.active !== undefined && P.active !== (sets.home || 0));
+  /* 上一個決策點為了強化而切到另一套，這一輪那套是使用中的：強化規則可以跑。
+     （item.upgrade 只解析得到「背包＋使用中那套」的物件，所以要強化第 2 套，它必須先是使用中的。） */
+  var sw = memo && memo.setSwitch;
+  state.ctx.investing = !!(sw && sw.pending !== null && sw.pending !== undefined && P && P.active === sw.pending);
+}
+
+/* 強化另一套的那一輪，允許跑的規則（只放強化，不放換裝／洗煉／寶石／符文）。 */
+function investAllows(r, policy, state) {
+  if (!policy.equipSets || !state.ctx || !state.ctx.investing) return false;
+  return (policy.equipSets.investAllow || []).indexOf(r.id) >= 0;
 }
 
 function setAwayBlocks(r, policy, state) {
   if (!policy.equipSets || !state.ctx || !state.ctx.setAway) return false;
+  if (investAllows(r, policy, state)) return false;
   if (r.equipSetBuild || r.equipSetSwitch) return false;          // 這兩條自己指定套別，不受影響
   var pre = policy.equipSets.awayBlock || [];
   for (var i = 0; i < pre.length; i++) if (String(r.cmd || '').indexOf(pre[i]) === 0) return true;
@@ -1348,6 +1362,14 @@ function equipSetWantedByHome(cd, homeSet) {
   return false;
 }
 
+/* 有餘力輪到第 si 套：之前**每一套**的品質覆蓋都達標。
+   文件：第 1 套做好之前不投資第 2 套，第 2 套之後才考慮第 3 套。
+   只看前一套的話，第 1 套掉下去而第 2 套還撐著時，第 3 套會照樣拿到資源。 */
+function equipSetsEarlierOk(P, si, gear) {
+  for (var i = 0; i < si; i++) if (!P.sets[i] || !setCoverageOk(P.sets[i], gear || {})) return false;
+  return true;
+}
+
 function equipSetRank(b) {
   return b ? [b.rarity, b.level, b.anc, b.p] : [-1, -1, -1, -1];
 }
@@ -1365,7 +1387,7 @@ function planEquipSetBuild(state, cfg, ruleId) {
   for (var si = 1; si < P.count && out.length < limit; si++) {
     if (!P.unlocked[si]) continue;
     /* 有餘力才建這一套：前一套的品質覆蓋已達標。 */
-    if (!setCoverageOk(P.sets[si - 1], cfg.gear || {})) continue;
+    if (!equipSetsEarlierOk(P, si, cfg.gear)) continue;
     var cands = (P.candidates && P.candidates[si]) || {};
     var keys = Object.keys(cands).sort();
     for (var ki = 0; ki < keys.length && out.length < limit; ki++) {
@@ -1396,60 +1418,120 @@ function planEquipSetBuild(state, cfg, ruleId) {
   return out;
 }
 
-/* 依階段切換使用中的那套。
-   文件：只在「推關嘗試」時才換，不在日常掛機中來回切。
-   決策點是取樣式的（約每 60 遊戲秒一次），而推關時關卡一分鐘會跳好幾關，
-   等怪物真的是菁英／BOSS 才反應一定來不及，所以改看「離下一個菁英／BOSS 關還有幾關」，
-   在抵達前 ahead 關就先換好。掛機在安全區間（沒在推關）時一律用第 1 套。 */
-function planEquipSetSwitch(state, cfg, ruleId, memo) {
+/* 切換使用中的那套（player_strategy.md §7）。
+
+   ① 遭遇：實際碰到 BOSS／菁英／封魔塔才換，不提前。裝備可以在戰鬥中任意切換、不花資源，
+      提前換沒有意義。用實際遭遇的怪物（ctx.mode）判斷，不用關卡數算術。
+   ② 強化額度：第 2、3 套有餘力才強化，而且練功效率最重要。每個決策點給它們累積一份額度，
+      額度滿 1 才切過去強化一次。權重 ＝ 基礎值 ＋ 野外 BOSS 卡關時間的漸增量
+      ＋ 封魔塔層數停滯時間的漸增量（第 2 套同時關係封魔塔進度與技能解鎖）。
+   ⚠️ 切過去的那一輪不能馬上切回：強化規則吃的是切換前建好的面板快照，
+      而 item.upgrade 只解析得到使用中那套，先切回去會對不存在的物件送指令。
+      所以流程是 切過去 → 下一輪強化 → 再下一輪切回。 */
+/* 指定的規則這一輪會不會送出：到期（everySec）且條件（if）成立。
+   用來「在它動手之前」先換好裝備——例如封魔塔一進去就鎖配置。 */
+function towerStartDue(state, policy, memo, ruleId) {
+  var rules = policy.rules || [];
+  for (var i = 0; i < rules.length; i++) {
+    var r = rules[i];
+    if (r.id !== ruleId) continue;
+    var last = memo.lastAt[r.id];
+    if (r.everySec && last !== undefined && (Number(state.gameTimeSec) || 0) - last < r.everySec) return false;
+    for (var c = 0; r.if && c < r.if.length; c++) if (!testCond(state, r.if[c])) return false;
+    return true;
+  }
+  return false;
+}
+
+function planEquipSetSwitch(state, cfg, ruleId, memo, policy) {
   var P = pathVal(state, cfg.panel || 'panels.equipSets');
   if (!P || !P.sets) return [];
-  var stage = Number(pathVal(state, cfg.stage || 'view.stage')) || 0;
-  var pushing = !!(state.ctx && state.ctx.pushing);
-  var tower = !!pathVal(state, cfg.towerActive || 'panels.tower.tower.active');
-
-  function within(every, ahead) {
-    if (!(every > 0) || stage <= 0) return false;
-    return ((every - (stage % every)) % every) <= ahead;
-  }
-  var target = cfg.home || 0;
-  if (tower) target = cfg.tower ? cfg.tower.set : target;
-  else if (pushing && cfg.boss && within(cfg.boss.every, cfg.boss.ahead)) target = cfg.boss.set;
-  else if (pushing && cfg.elite && within(cfg.elite.every, cfg.elite.ahead)) target = cfg.elite.set;
-
-  /* 那一套要真的建好了才切：空套穿上去等於裸裝上場。 */
-  if (target !== (cfg.home || 0)) {
-    if (!P.unlocked[target]) target = cfg.home || 0;
-    else if (Object.keys(P.sets[target].slots).length < (cfg.minFilled || 1)) target = cfg.home || 0;
-  }
-  /* 遲滯：要換「離開」第 1 套，得連續 confirm 個決策點都想換才動。
-     推關開關在安全關卡的掛機邏輯裡會一開一關，不加遲滯的話切換會跟著每分鐘抖一次，
-     而且抖的那些時間其實是在掛機，不是在推關嘗試（實測 3 小時 94 次來回）。
-     換回第 1 套不等：回家永遠立刻。 */
   var home = cfg.home || 0;
-  if (!memo.setSwitch) memo.setSwitch = { streak: 0 };
-  if (target === home) {
-    memo.setSwitch.streak = 0;
-  } else if (target !== P.active) {
-    memo.setSwitch.streak++;
-    if (memo.setSwitch.streak < (cfg.confirm || 2)) return [];
+  var ctx = state.ctx || (state.ctx = {});
+  var now = Number(state.gameTimeSec) || 0;
+  var inv = cfg.invest || null;
+  var SW = memo.setSwitch || (memo.setSwitch = { credit: {}, pending: null, towerHigh: -1, towerSince: 0 });
+
+  /* 封魔塔層數停滯：最高層數沒再往上多久了。 */
+  var hi = Number(pathVal(state, (inv && inv.towerHighest) || 'panels.tower.tower.highest')) || 0;
+  if (hi > SW.towerHigh) { SW.towerHigh = hi; SW.towerSince = now; }
+
+  function ready(i) {
+    return !!P.unlocked[i] && Object.keys(P.sets[i].slots).length >= (cfg.minFilled || 1);
   }
-  if (target === P.active) return [];
-  return [{ name: 'player.switchEquipSet', args: { index: target }, ruleId: ruleId }];
+  function switchTo(i) {
+    /* 切換之後，這一輪排在後面的規則拿的還是切換前建好的面板：
+       對已經不在使用中的那套的物件送強化／洗煉，只會被遊戲回「找不到物品」。
+       所以任何切換都讓同一輪後面針對使用中裝備的規則停手。 */
+    ctx.setAway = true;
+    return [{ name: 'player.switchEquipSet', args: { index: i }, ruleId: ruleId }];
+  }
+
+  /* ⓪ 封魔塔進行中：遊戲拒絕換裝與切套（bossFightBlocksCommand，只有塔戰有這個鎖，野外 BOSS 沒有）。
+     所以第 2 套必須在**進塔之前**穿好；進了塔就只能維持現狀，送了也只會被拒。 */
+  var tower = !!pathVal(state, cfg.towerActive || 'panels.tower.tower.active');
+  if (tower) { SW.pending = null; ctx.investing = false; return []; }
+
+  /* ① 遭遇 */
+  var enc = cfg.encounter || {};
+  var target = home;
+  /* 這一輪就要進塔（塔的啟動規則到期且條件成立）：先換成塔用的那套，
+     同一輪裡這條規則排在啟動規則前面，所以換好之後才開塔。 */
+  var tsr = cfg.towerStartRule;
+  if (tsr && enc.tower !== undefined && towerStartDue(state, policy, memo, tsr)) target = enc.tower;
+  else if (ctx.mode === 'boss' && enc.boss !== undefined) target = enc.boss;
+  else if (ctx.mode === 'elite' && enc.elite !== undefined) target = enc.elite;
+  if (target !== home && !ready(target)) target = home;     // 沒建好的套穿上去等於裸裝上場
+  if (target !== home) {
+    SW.pending = null; ctx.investing = false;                // 遭遇優先於強化
+    return target === P.active ? [] : switchTo(target);
+  }
+
+  /* ② 這一輪正在強化另一套：讓強化規則跑完，下一輪再切回。 */
+  if (ctx.investing) { SW.pending = null; return []; }
+
+  /* 回家：不在遭遇、也不在強化 */
+  if (P.active !== home) return switchTo(home);
+
+  /* ③ 累積強化額度 */
+  if (inv && inv.sets) {
+    var bossMin = Number(ctx.stuckBossMin) || 0;
+    var towerMin = Math.max(0, (now - SW.towerSince) / 60);
+    var best = -1, bestCredit = 0;
+    var keys = Object.keys(inv.sets).sort();
+    for (var ki = 0; ki < keys.length; ki++) {
+      var si = Number(keys[ki]);
+      var c = inv.sets[keys[ki]];
+      /* 有餘力才強化：這一套已經建好，且前一套的品質覆蓋達標。 */
+      if (!ready(si) || !equipSetsEarlierOk(P, si, inv.gear || cfg.gear)) continue;
+      var w = (c.base || 0)
+        + Math.min(c.bossCap || 0, (c.bossRampPerMin || 0) * bossMin)
+        + Math.min(c.towerCap || 0, (c.towerRampPerMin || 0) * towerMin);
+      w = Math.min(typeof c.max === 'number' ? c.max : 1, w);
+      SW.credit[si] = (SW.credit[si] || 0) + w;
+      if (SW.credit[si] >= 1 && SW.credit[si] > bestCredit) { best = si; bestCredit = SW.credit[si]; }
+    }
+    if (best >= 0) {
+      SW.credit[best] -= 1;
+      SW.pending = best;
+      return switchTo(best);
+    }
+  }
+  return [];
 }
 
 /* 回傳這個決策點要送出的指令陣列。純函式：同樣的輸入必定得到同樣的輸出。 */
 function decide(state, policy, memo) {
   updateContext(state, policy, memo);
   updateSkillContext(state, policy, memo);
-  updateSetContext(state, policy);
+  updateSetContext(state, policy, memo);
   var out = [];
   var now = state.gameTimeSec;
   for (var i = 0; i < policy.rules.length; i++) {
     var r = policy.rules[i];
     if (setAwayBlocks(r, policy, state)) continue;
     if (r.once && memo.fired[r.id]) continue;
-    if (r.everySec) {
+    if (r.everySec && !investAllows(r, policy, state)) {
       var last = memo.lastAt[r.id];
       if (last !== undefined && now - last < r.everySec) continue;
     }
@@ -1963,7 +2045,7 @@ function decide(state, policy, memo) {
       var esb = planEquipSetBuild(state, r.equipSetBuild, r.id);
       for (var esi = 0; esi < esb.length; esi++) out.push(esb[esi]);
     } else if (r.equipSetSwitch) {
-      var ess = planEquipSetSwitch(state, r.equipSetSwitch, r.id, memo);
+      var ess = planEquipSetSwitch(state, r.equipSetSwitch, r.id, memo, policy);
       for (var esj = 0; esj < ess.length; esj++) out.push(ess[esj]);
     } else if (r.skillPlan) {
       var spOut = planSkills(state, policy, memo, r.id);
@@ -3506,6 +3588,23 @@ function decide(state, policy, memo) {
     }
     memo.lastAt[r.id] = now;
     if (r.once) memo.fired[r.id] = true;
+  }
+  /* 封魔塔進行中，遊戲會整批拒絕「變更戰鬥配置」類指令（panels.equipRules.locked 由遊戲回答）。
+     送了只會多一堆「BOSS 戰中不可變更戰鬥配置」的拒絕，把報表淹掉。 */
+  /* 面板是選用的（沒宣告 equipRules 的策略就沒有），缺值不算失效路徑。 */
+  var lockedNow = peekPath(state, 'panels.equipRules.locked');
+  var lockedAfterStart = peekPath(state, 'panels.equipRules.lockedWhenTower');
+  if (lockedNow || lockedAfterStart) {
+    var kept = [], towerStarted = false;
+    for (var oi = 0; oi < out.length; oi++) {
+      var nm = out[oi].name;
+      if (lockedNow && lockedNow[nm]) continue;
+      /* 這一批裡 tower.startAuto／tower.start 之後送出的指令，遊戲到時已經鎖住了。 */
+      if (towerStarted && lockedAfterStart && lockedAfterStart[nm]) continue;
+      if (/^tower\.start/.test(nm)) towerStarted = true;   // 比對用，不是在送這條指令
+      kept.push(out[oi]);
+    }
+    out = kept;
   }
   return out;
 }
