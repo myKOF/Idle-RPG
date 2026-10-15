@@ -47,6 +47,17 @@ function firstPathVal(root, paths) {
   return undefined;
 }
 
+/* 與 pathVal 相同，但讀不到時不記入 BAD_PATHS。只給「可能尚未建立」的欄位用。 */
+function peekPath(root, path) {
+  var cur = root;
+  var parts = String(path).split('.');
+  for (var i = 0; i < parts.length; i++) {
+    if (cur === null || cur === undefined) return undefined;
+    cur = cur[parts[i]];
+  }
+  return cur;
+}
+
 function testCond(root, cond) {
   var v = pathVal(root, cond[0]);
   var op = cond[1];
@@ -718,7 +729,14 @@ function sampleRates(state, policy, memo) {
   for (var i = 0; i < list.length; i++) {
     var t = list[i];
     if (!t || t.kind !== 'ratePerMin' || !t.id) continue;
-    var raw = pathVal(state, t.counter);
+    /* 計數器的「桶」是遊戲第一次發生該事件才建的（例如 lootStats.sources.field 要等第一次
+       野外擊殺），所以開局第一拍讀不到是正常的，不能算失效路徑。
+       但欄位被改名時會永遠讀不到——所以寬限 counterGraceSec（預設 120 遊戲秒）之後
+       仍然讀不到，才交給 pathVal 記成失效。 */
+    var raw = peekPath(state, t.counter);
+    if (raw === undefined && now >= (typeof t.counterGraceSec === 'number' ? t.counterGraceSec : 120)) {
+      raw = pathVal(state, t.counter);
+    }
     if (raw === null || raw === undefined) continue;   // 這一拍沒送這個面板，跳過不記
     var v = Number(raw);
     if (!isFinite(v)) continue;
@@ -873,6 +891,143 @@ function evalTargets(state, policy, memo) {
 function observe(state, policy, memo) {
   sampleRates(state, policy, memo);
   observeCombat(state, policy, memo);
+}
+
+/* ============ 符文計畫（player_strategy.md §5 最佳符文策略） ============
+
+   鑲嵌與合成放在同一個函式、共用同一份庫存快照。分成兩條規則的話，
+   第二條看到的是還沒扣掉剛鑲出去那幾顆的庫存，合成就會送出必定被拒的指令。
+
+   所有「遊戲規則」都由面板提供（panels.rune）：孔數、哪些真言適用哪件裝備、
+   合成需要幾顆、合成上限階——策略不自己抄一份。 */
+
+/* 這件裝備是否已經有成形的真言。遊戲一件裝備只會啟動符文數最多的那一組，
+   所以已成形就不必再在別的孔位湊第二組（湊出來也不會生效）。 */
+function runeActiveWord(slots, words, fitsSet) {
+  for (var wi = 0; wi < words.length; wi++) {
+    var w = words[wi];
+    if (!fitsSet[w.id]) continue;
+    var n = w.runes.length;
+    for (var st = 0; st + n <= slots.length; st++) {
+      var ok = true;
+      for (var k = 0; k < n; k++) if (slots[st + k] !== w.runes[k]) { ok = false; break; }
+      if (ok) return w;
+    }
+  }
+  return null;
+}
+
+function planRunes(state, cfg, ruleId) {
+  var out = [];
+  var view = pathVal(state, cfg.view);
+  var stock0 = pathVal(state, cfg.runes) || {};
+  var equipment = pathVal(state, cfg.equipment) || {};
+  if (!view || !view.words) return out;
+
+  var stock = {};
+  for (var rk in stock0) stock[rk] = Number(stock0[rk]) || 0;
+  var tiers = view.tiers || {};
+
+  /* 真言排序：階數高的先試；同階符文多的先（長真言需要孔，先佔）。 */
+  var words = view.words.slice().sort(function (a, b) {
+    return (b.tier - a.tier) || (b.runes.length - a.runes.length) || (a.id < b.id ? -1 : 1);
+  });
+
+  /* 裝備排序：孔數多的先（長真言只有孔多的裝備放得下），同孔數依部位鍵穩定排序。 */
+  var keys = Object.keys(view.equip || {}).sort(function (a, b) {
+    return (view.equip[b].cap - view.equip[a].cap) || (a < b ? -1 : 1);
+  });
+
+  /* 庫存裡階數最高、且還有貨的符文。 */
+  function topRune() {
+    var best = null;
+    for (var id in stock) {
+      if (stock[id] > 0 && (best === null || (tiers[id] || 0) > (tiers[best] || 0))) best = id;
+    }
+    return best;
+  }
+
+  var sockets = 0, maxSockets = (typeof cfg.maxSocketsPerDecision === 'number') ? cfg.maxSocketsPerDecision : 24;
+
+  /* 兩輪：第一輪所有裝備只處理真言，第二輪才補滿。
+     補滿若跟真言在同一件裝備的迴圈裡做，排在前面的裝備會把後面那件湊真言要用的符文吃光
+     （規格是「真言優先」，優先的對象是整身裝備，不是單件）。 */
+  var work = [];
+  for (var wk = 0; wk < keys.length; wk++) {
+    var wInfo = view.equip[keys[wk]], wItem = equipment[keys[wk]];
+    if (!wItem || !wItem.id || !(wInfo.cap > 0)) continue;
+    work.push({ item: wItem, info: wInfo, slots: wInfo.slots.slice() });
+  }
+
+  for (var ki = 0; ki < work.length && sockets < maxSockets; ki++) {
+    var item = work[ki].item, info = work[ki].info, slots = work[ki].slots;
+    var fitsSet = {};
+    for (var fi = 0; fi < info.fits.length; fi++) fitsSet[info.fits[fi]] = true;
+
+    /* 規則 1：真言優先（已有成形真言就跳過）。 */
+    if (!runeActiveWord(slots, words, fitsSet)) {
+      var picked = null;
+      for (var wi = 0; wi < words.length && !picked; wi++) {
+        var w = words[wi];
+        if (!fitsSet[w.id]) continue;
+        var n = w.runes.length;
+        for (var st = 0; st + n <= slots.length && !picked; st++) {
+          var need = {}, ok = true, empties = 0;
+          for (var k = 0; k < n; k++) {
+            var cur = slots[st + k];
+            if (cur === null) { need[w.runes[k]] = (need[w.runes[k]] || 0) + 1; empties++; }
+            else if (cur !== w.runes[k]) { ok = false; break; }
+          }
+          if (!ok || empties === 0) continue;
+          for (var nr in need) if ((stock[nr] || 0) < need[nr]) { ok = false; break; }
+          if (ok) picked = { word: w, start: st };
+        }
+      }
+      if (picked) {
+        for (var pk = 0; pk < picked.word.runes.length; pk++) {
+          if (slots[picked.start + pk] !== null) continue;
+          var rid = picked.word.runes[pk];
+          stock[rid]--;
+          slots[picked.start + pk] = rid;
+          sockets++;
+          out.push({ name: 'rune.socket', args: { itemId: item.id, runeId: rid, index: picked.start + pk }, ruleId: ruleId });
+        }
+      }
+    }
+
+  }
+
+  /* 規則 2：其餘空孔補滿庫存最高階的符文（真言都放完之後）。 */
+  for (var fk = 0; fk < work.length && sockets < maxSockets; fk++) {
+    for (var si = 0; si < work[fk].slots.length && sockets < maxSockets; si++) {
+      if (work[fk].slots[si] !== null) continue;
+      var top = topRune();
+      if (top === null) break;
+      stock[top]--;
+      work[fk].slots[si] = top;
+      sockets++;
+      out.push({ name: 'rune.socket', args: { itemId: work[fk].item.id, runeId: top, index: si }, ruleId: ruleId });
+    }
+  }
+
+  /* 合成：階數 < 上限、且合成後仍留有保留量。先扣掉上面鑲出去的才算。 */
+  var comp = view.compose || {};
+  var per = comp.count || 3;
+  var keep = (typeof cfg.keepAfterCompose === 'number') ? cfg.keepAfterCompose : 5;
+  var maxCompose = (typeof cfg.maxComposePerDecision === 'number') ? cfg.maxComposePerDecision : 20;
+  var ids = Object.keys(stock).sort(function (a, b) { return (tiers[a] || 0) - (tiers[b] || 0); });
+  var composed = 0;
+  for (var ci = 0; ci < ids.length && composed < maxCompose; ci++) {
+    var cid = ids[ci];
+    var t = tiers[cid] || 0;
+    if (!(t > 0) || t >= (comp.maxTier || 0)) continue;
+    var times = Math.floor((stock[cid] - keep) / per);
+    for (var tm = 0; tm < times && composed < maxCompose; tm++) {
+      out.push({ name: cfg.composeCmd || 'rune.compose', args: { runeId: cid }, ruleId: ruleId });
+      composed++;
+    }
+  }
+  return out;
 }
 
 /* 回傳這個決策點要送出的指令陣列。純函式：同樣的輸入必定得到同樣的輸出。 */
@@ -1359,6 +1514,9 @@ function decide(state, policy, memo) {
           }
         }
       }
+    } else if (r.runePlan) {
+      var rpOut = planRunes(state, r.runePlan, r.id);
+      for (var rpi = 0; rpi < rpOut.length; rpi++) out.push(rpOut[rpi]);
     } else if (r.enchantPriority) {
       /* 依部位可用的附魔類別挑書附上去。
 

@@ -13,7 +13,8 @@
     "inv",
     "battle",
     "eval",
-    "forge"
+    "forge",
+    "rune"
   ],
   "panelParams": {
     "inv": {
@@ -730,6 +731,20 @@
       "why": "把寶石鑲進空插槽，依 player_strategy.md 寶石鑲嵌策略分段：前50級 生命→暴擊率→吸血→物攻→魔攻；51~100 吸血→暴擊率→爆傷→生命→物攻→魔攻；101以後 一半爆傷、一半六大屬性傷害加成（mix 兩組輪流）。手上沒有偏好種類就鑲任何有貨的；階級由遊戲挑（socketGem 取庫存最高階），所以本規則排在 gem-compose 之後，先合成再鑲就會鑲到當前可得的最高品質"
     },
     {
+      "id": "rune-plan",
+      "everySec": 60,
+      "cmd": "rune.socket",
+      "runePlan": {
+        "view": "panels.rune",
+        "runes": "panels.gems.runes",
+        "equipment": "panels.inv.equipment",
+        "keepAfterCompose": 5,
+        "maxSocketsPerDecision": 24,
+        "maxComposePerDecision": 20
+      },
+      "why": "player_strategy.md §5：①真言優先（手上符文湊得齊、類型符合的最高階真言）②其餘空孔補滿最高階符文③合成只在升階後該符文仍留有5顆以上時才做。規則（孔數、真言適用的裝備、合成上限階）全部取自遊戲面板 panels.rune，策略不自己抄。不拆已鑲符文（取下要付碎片與精華）"
+    },
+    {
       "id": "reroll-off-target",
       "everySec": 60,
       "cmd": "item.rerollAffix",
@@ -875,70 +890,6 @@
         "minRarity": 4,
         "keepAncient": true
       }
-    },
-    {
-      "id": "enchant-equipped",
-      "everySec": 300,
-      "cmd": "item.enchant",
-      "enchantPriority": {
-        "equipment": "panels.inv.equipment",
-        "enchantInfo": "panels.inv.equipmentEnchantInfo",
-        "books": "panels.inv.books",
-        "byCategory": {
-          "util": [
-            "focus",
-            "vigor",
-            "wisdom",
-            "loot",
-            "fortune",
-            "haste",
-            "clarity"
-          ],
-          "atk": [
-            "ice",
-            "fire",
-            "lightning",
-            "dark",
-            "poison",
-            "light"
-          ],
-          "def": [
-            "fireRes",
-            "iceRes",
-            "lightningRes",
-            "poisonRes",
-            "lightRes",
-            "darkRes",
-            "ctrlRes"
-          ]
-        },
-        "spread": [
-          "def"
-        ],
-        "maxPerDecision": 6,
-        "overrides": [
-          {
-            "when": [
-              "ctx.desperate",
-              "truthy"
-            ],
-            "byCategory": {
-              "util": [
-                "vigor",
-                "focus"
-              ]
-            },
-            "依據": "遇菁英或BOSS時若生存能力不足則換成生命值提升及冷卻縮短"
-          }
-        ],
-        "spread_依據": "def 維持輪流取用（六種抗性平均分散）。atk 試過也加進來（sim_ab_ench），8 個 seed 有 5 個等級變差、中位 380→319，所以退回集中在 ice。書單維持補齊是另一回事：同一件裝備不能重複附同一種書，單一本書在結構上填不滿第二格",
-        "byCategory_atk_依據": "ice 仍排第一（維持 player_strategy.md 的原意，冰凍有控場價值），其餘五本是**補位**。實測 20 小時的存檔：武器／手套／護腕／雙戒五個攻擊部位全部停在 1/2 格，而手上躺著 fire×44 lightning×45 dark×41 poison×30 light×28、ice 只剩 9 本。關鍵是同一件裝備不能重複附同一種（遊戲回「已有同類附魔且數值不會提升」），所以單一本書的清單**在結構上就填不滿第二格**。附魔只花 1 點精華，是整份策略最便宜的戰力來源",
-        "byCategory_util_依據": "focus（專注＝冷卻縮減）排第一、vigor（生命）第二。真人 10 小時的存檔是鞋子與項鍊各帶 focus+vigor，冷卻縮減 48%；而 AI 的 cdr 是 0——focus 原本只寫在 ctx.desperate 的緊急覆寫裡，等於整場沒用過。冷卻縮減不只是輸出乘區，它決定治療與護盾技能的施放頻率，直接影響 BOSS 生存率。實測同一時點：真人 Lv98/關卡158 對 AI Lv170/關卡147，AI 物攻是真人的 3.79 倍卻推得更淺",
-        "byCategory_def_依據": "補上 ctrlRes（控制抵抗）——手上有 40 本卻不在任何清單裡"
-      },
-      "why": "依 player_strategy.md 附魔策略：生命值(vigor)→冰凍(ice)→六大屬性抗性平均。遊戲規定每個部位只吃一種類別（enchantCatForType：武器/戒指/手套/護腕＝攻擊，項鍊/鞋子＝功能，其餘＝防禦），所以這份優先序實際上是按類別分工而不是單一排序：功能部位放生命值、攻擊部位放冰凍、防禦部位放六大抗性並輪流分散。部位與類別的對應取自遊戲的面板欄位，策略不自己抄——抄一份遲早跟遊戲脫鉤，而 manualEnchant 只會回「XX 只能使用 OO 類附魔」，看報表不會發現規則從沒生效。項鏈與鞋子平時放經驗(wisdom)與掉寶率(loot)，生存不足時換成生命值(vigor)與冷卻縮短(focus)",
-      "removeCmd": "item.removeEnchant",
-      "removeCmd_依據": "附魔格滿了、而庫存裡有更高順位的書時，把最低順位的那一格拆掉（下一個決策點自然會補上更好的）。拆是免費的——removeEnchantAt 會退還那本書，只有精華不退而那筆早就花掉了。沒有這條的話第一本掉到的書會把格子佔死：實測 2 小時的存檔鞋子與項鍊各附了 fortune（util 清單第五順位，只因為它是當下唯一有的書），而真人同部位是 focus+vigor、冷卻縮減 48% 對 AI 的 0%。附魔書隨機掉，所以「先到先得」等於隨機配置"
     },
     {
       "id": "auto-equip-on",

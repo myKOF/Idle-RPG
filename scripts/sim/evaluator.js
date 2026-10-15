@@ -1432,3 +1432,39 @@ function buildEvalPanel(params) {
     model: MODEL_NOTES
   };
 }
+
+/* ============ 符文決策面板（harness 專用，player_strategy.md §5） ============
+
+   放在這裡而不是遊戲的 Worker：它是模擬策略的需求，真實玩家的 UI 不需要，
+   而它每次要對 13 個部位比對 65 組真言——掛在遊戲的 gems 面板上會白白拖慢真實遊戲。
+   （與 eval／evalCombat 同樣的做法：harness 專用面板由引擎的 panel() 分流。）
+
+   規則一律由遊戲函式算出，這裡只搬運結果、不改任何狀態：
+   策略若自己抄「哪種裝備能放哪組真言」「幾個孔」，遊戲改了規則兩邊就會悄悄脫鉤——
+   送出去只會被回一句錯誤，報表看不出整條規則沒生效。 */
+function buildRunePanel() {
+  if (typeof RUNEWORDS === 'undefined' || typeof rwSlots !== 'function') return null;
+  var words = [];
+  for (var wi = 0; wi < RUNEWORDS.length; wi++) {
+    words.push({ id: RUNEWORDS[wi].id, tier: RUNEWORDS[wi].tier || 0, runes: RUNEWORDS[wi].runes });
+  }
+  var tiers = {};
+  for (var ri = 0; ri < RUNES.length; ri++) tiers[RUNES[ri].id] = RUNES[ri].tier;
+  var equip = {};
+  var eq = (G && G.equipment) || {};
+  for (var slot in eq) {
+    var it = eq[slot];
+    if (!it) continue;
+    var fits = [];
+    for (var k = 0; k < RUNEWORDS.length; k++) {
+      if (rwItemMatches(it, RUNEWORDS[k].bases)) fits.push(RUNEWORDS[k].id);
+    }
+    equip[slot] = { slots: rwSlots(it), cap: runeSlotCountFor(it), fits: fits };
+  }
+  return {
+    words: words,
+    tiers: tiers,
+    compose: { count: RUNE_COMPOSE_COUNT, maxTier: RUNE_COMPOSE_MAX_TIER },
+    equip: equip
+  };
+}

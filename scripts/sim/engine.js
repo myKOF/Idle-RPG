@@ -272,6 +272,7 @@ function createEngine(opts) {
          分兩個面板名而不是一個參數，是為了讓 policy.js 從宣告的路徑
          自動推導出「觀測時要建哪些面板」——參數推導不出來。 */
       if (name === 'evalCombat') return ctx.buildEvalCombatPanel();
+      if (name === 'rune') return ctx.buildRunePanel();   // 符文決策（harness 專用，見 evaluator.js）
       if (name === 'eval') return ctx.buildEvalPanel(params || evalParams);
       return ctx.buildPanel(name, params);
     },
