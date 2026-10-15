@@ -1568,3 +1568,79 @@ function buildEquipRulesPanel() {
   }
   return { blocked: blocked };
 }
+
+/* ============ 三套裝備面板（harness 專用，player_strategy.md §7） ============
+
+   第 2、3 套各自看重不同的詞條（BOSS／菁英），而背包投影只有遊戲算好的綜合評分，
+   看不出「這件對 BOSS 戰好不好」。所以這裡替策略把背包裡每件候選裝備，依策略宣告的
+   詞條權重（params.profiles，屬於策略資料）算一個「專用分數」。
+
+   ⚠️ 數值一律用遊戲的 affixValue 與 SCORE_WEIGHTS 現算，不自己重推詞條強度——
+   強度存的是 roll，換算成實際數值的公式遊戲改過一次（詞條改存強度值），自己算會悄悄脫鉤。
+   唯讀，不改任何狀態。 */
+function buildEquipSetsPanel(params) {
+  params = params || {};
+  var profiles = params.profiles || {};
+  var topN = Math.max(1, Math.floor(Number(params.topN) || 3));
+  var count = (typeof EQUIP_SET_COUNT === 'number') ? EQUIP_SET_COUNT : 3;
+
+  function ancientOf(it) {
+    var n = 0;
+    for (var i = 0; i < (it.affixes || []).length; i++) if (it.affixes[i] && it.affixes[i].ancient) n++;
+    return n;
+  }
+  function profileScore(it, w) {
+    if (!w) return 0;
+    var s = 0;
+    for (var i = 0; i < (it.affixes || []).length; i++) {
+      var a = it.affixes[i];
+      var wt = a && w[a.key];
+      if (!wt) continue;
+      s += wt * ((typeof SCORE_WEIGHTS !== 'undefined' && SCORE_WEIGHTS[a.key]) || 1) * affixValue(it, a);
+    }
+    return s;
+  }
+  function brief(it, w) {
+    /* score＝遊戲的 itemScore，slots＝遊戲的 equipSlotsForItem：
+       策略要用「跟第 1 套換裝規則同一把尺」判斷這件會不會被第 1 套拿走，
+       就得有同樣的評分與同樣的可放欄位。 */
+    return {
+      id: it.id, rarity: it.rarity || 0, level: it.level || 0, anc: ancientOf(it), p: profileScore(it, w),
+      score: itemScore(it), slots: equipSlotsForItem(it)
+    };
+  }
+
+  var sets = [], unlocked = [];
+  for (var i = 0; i < count; i++) {
+    var eq = equipmentSetAt(i);
+    var slots = {}, blocked = {};
+    for (var k in eq) {
+      if (eq[k]) slots[k] = brief(eq[k], profiles[i]);
+      if (typeof slotBlockedByTwoHand === 'function' && slotBlockedByTwoHand(eq, k)) blocked[k] = true;
+    }
+    sets.push({ slots: slots, blocked: blocked });
+    unlocked.push(!!equipmentSetUnlocked(i));
+  }
+
+  /* 候選：背包裡每件裝備可以放進哪些欄位（equipSlotsForItem，遊戲回答），
+     每個欄位只留前 topN 名，依 品質 >> 等級 >> 太古數 >> 專用分數。 */
+  var candidates = {};
+  for (var si = 1; si < count; si++) {
+    var bySlot = {};
+    var inv = G.inventory || [];
+    for (var j = 0; j < inv.length; j++) {
+      var it = inv[j];
+      if (!it || it.locked || it.kind !== 'equip') continue;
+      var cs = equipSlotsForItem(it);
+      for (var c = 0; c < cs.length; c++) (bySlot[cs[c]] = bySlot[cs[c]] || []).push(brief(it, profiles[si]));
+    }
+    for (var key in bySlot) {
+      bySlot[key].sort(function (a, b) {
+        return (b.rarity - a.rarity) || (b.level - a.level) || (b.anc - a.anc) || (b.p - a.p) || (a.id < b.id ? -1 : 1);
+      });
+      bySlot[key] = bySlot[key].slice(0, topN);
+    }
+    candidates[si] = bySlot;
+  }
+  return { active: G.equipActive || 0, count: count, unlocked: unlocked, sets: sets, candidates: candidates };
+}

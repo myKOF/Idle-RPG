@@ -1123,6 +1123,24 @@ function updateSkillContext(state, policy, memo) {
   for (var i = 0; i < S.elems.length; i++) state.ctx['elem_' + S.elems[i]] = true;
 }
 
+/* 目前使用中的是不是第 1 套之外的裝備組。
+   離開第 1 套時，針對「使用中裝備」的規則（換裝、強化、洗煉、鑲寶石、符文）要暫停：
+   不然資源會灌進第 2、3 套，違反「資源先全給第 1 套」（player_strategy.md §7）。 */
+function updateSetContext(state, policy) {
+  if (!policy.equipSets) return;
+  if (!state.ctx) state.ctx = {};
+  var P = pathVal(state, policy.equipSets.panel || 'panels.equipSets');
+  state.ctx.setAway = !!(P && P.active !== undefined && P.active !== (policy.equipSets.home || 0));
+}
+
+function setAwayBlocks(r, policy, state) {
+  if (!policy.equipSets || !state.ctx || !state.ctx.setAway) return false;
+  if (r.equipSetBuild || r.equipSetSwitch) return false;          // 這兩條自己指定套別，不受影響
+  var pre = policy.equipSets.awayBlock || [];
+  for (var i = 0; i < pre.length; i++) if (String(r.cmd || '').indexOf(pre[i]) === 0) return true;
+  return false;
+}
+
 /* 目前的情境：封魔塔進行中＝tower；野外 BOSS 卡關（失敗 ≥2 次）＝boss；其餘＝farm。
    菁英關歸 farm：超神進化切換要付上千萬金幣，只值得為持續性的情境切換。 */
 function skillSituation(state, cfg) {
@@ -1301,14 +1319,135 @@ function skillUltChoice(state, cfg, gid, ctx) {
   return (typeof u.default === 'number') ? u.default : 0;
 }
 
+/* ============ 三套裝備（player_strategy.md §7） ============
+
+   第 1 套練功、第 2 套野外 BOSS 與封魔塔、第 3 套菁英關。
+   遊戲的限制：第 2 套 500 級解鎖，第 3 套要 500 級＋1 轉——一般模擬跑不到，
+   所以這組規則在前期整個不動（面板 unlocked 為 false），只有後期或 GM 墊到轉生才會啟動。 */
+
+/* 一套裝備的品質覆蓋：只算有裝備的部位，且至少要填滿 minFilled 格，
+   否則「空套」會因為分母是 0 或太小而被判成達標。 */
+function setCoverageOk(setView, g) {
+  var total = 0, meet = 0;
+  for (var k in setView.slots) {
+    total++;
+    if ((setView.slots[k].rarity || 0) >= (g.minRarity || 0)) meet++;
+  }
+  if (total < (g.minFilled || 1)) return false;
+  return (meet / total) >= (typeof g.coverage === 'number' ? g.coverage : 1);
+}
+
+/* 第 1 套的換裝規則會不會拿走這件：任何一個可放欄位是空的，或這件比該欄現有的好。 */
+function equipSetWantedByHome(cd, homeSet) {
+  var ks = cd.slots || [];
+  for (var i = 0; i < ks.length; i++) {
+    var cur = homeSet.slots[ks[i]];
+    if (!cur) return true;
+    if (rankBetter([cd.rarity, cd.level, cd.anc, cd.score], [cur.rarity, cur.level, cur.anc, cur.score])) return true;
+  }
+  return false;
+}
+
+function equipSetRank(b) {
+  return b ? [b.rarity, b.level, b.anc, b.p] : [-1, -1, -1, -1];
+}
+
+/* 建構第 2、3 套：只用「第 1 套不要的」。
+   候選若比第 1 套該部位現有的還好，第 1 套的換裝規則自己就會拿走，這裡不去搶——
+   那是文件的優先序（先把第 1 套做好，第 2、3 套才有餘力），也避免同一輪兩條規則
+   對同一件裝備各送一次、後一條被遊戲回「找不到物品」。不為第 2、3 套另外強化。 */
+function planEquipSetBuild(state, cfg, ruleId) {
+  var out = [];
+  var P = pathVal(state, cfg.panel || 'panels.equipSets');
+  if (!P || !P.sets) return out;
+  var limit = (typeof cfg.maxPerDecision === 'number') ? cfg.maxPerDecision : 4;
+  var used = {};
+  for (var si = 1; si < P.count && out.length < limit; si++) {
+    if (!P.unlocked[si]) continue;
+    /* 有餘力才建這一套：前一套的品質覆蓋已達標。 */
+    if (!setCoverageOk(P.sets[si - 1], cfg.gear || {})) continue;
+    var cands = (P.candidates && P.candidates[si]) || {};
+    var keys = Object.keys(cands).sort();
+    for (var ki = 0; ki < keys.length && out.length < limit; ki++) {
+      var key = keys[ki];
+      if (P.sets[si].blocked[key]) continue;            // 遊戲說目前不能裝（雙手主手占用副手）
+      var home = P.sets[0].slots[key] || null;
+      var cur = P.sets[si].slots[key] || null;
+      var pick = null;
+      for (var ci = 0; ci < cands[key].length && !pick; ci++) {
+        var cd = cands[key][ci];
+        if (used[cd.id]) continue;
+        /* ⚠️ 絕對不能跟第 1 套的換裝規則（equip-best-per-slot）搶同一件。
+           同一個決策點裡它會先把這件裝進第 1 套（從背包移走），接著這裡又對同一個 id
+           送 item.equip 到第 2 套——遊戲找得到它（已在裝備欄），而「同一件不得佔兩個欄位」
+           的防護只在單一套內有效，於是同一個物件跨兩套共存，之後變成裝備欄與背包重複。
+           所以判斷要跟它完全同一把尺：品質 >> 等級 >> 太古數 >> 遊戲評分，
+           而且要看這件能放的**每一個**欄位（戒指可放 ring／ring2，匕首可放主副手）。 */
+        if (equipSetWantedByHome(cd, P.sets[0])) continue;
+        if (!home) continue;                                                     // 第 1 套該部位還空著，先補它
+        pick = cd;
+      }
+      if (!pick) continue;
+      if (cur && !rankBetter(equipSetRank(pick), equipSetRank(cur))) continue;   // 沒有更好就不換
+      used[pick.id] = true;
+      out.push({ name: 'item.equip', args: { itemId: pick.id, slotKey: key, setIndex: si }, ruleId: ruleId });
+    }
+  }
+  return out;
+}
+
+/* 依階段切換使用中的那套。
+   文件：只在「推關嘗試」時才換，不在日常掛機中來回切。
+   決策點是取樣式的（約每 60 遊戲秒一次），而推關時關卡一分鐘會跳好幾關，
+   等怪物真的是菁英／BOSS 才反應一定來不及，所以改看「離下一個菁英／BOSS 關還有幾關」，
+   在抵達前 ahead 關就先換好。掛機在安全區間（沒在推關）時一律用第 1 套。 */
+function planEquipSetSwitch(state, cfg, ruleId, memo) {
+  var P = pathVal(state, cfg.panel || 'panels.equipSets');
+  if (!P || !P.sets) return [];
+  var stage = Number(pathVal(state, cfg.stage || 'view.stage')) || 0;
+  var pushing = !!(state.ctx && state.ctx.pushing);
+  var tower = !!pathVal(state, cfg.towerActive || 'panels.tower.tower.active');
+
+  function within(every, ahead) {
+    if (!(every > 0) || stage <= 0) return false;
+    return ((every - (stage % every)) % every) <= ahead;
+  }
+  var target = cfg.home || 0;
+  if (tower) target = cfg.tower ? cfg.tower.set : target;
+  else if (pushing && cfg.boss && within(cfg.boss.every, cfg.boss.ahead)) target = cfg.boss.set;
+  else if (pushing && cfg.elite && within(cfg.elite.every, cfg.elite.ahead)) target = cfg.elite.set;
+
+  /* 那一套要真的建好了才切：空套穿上去等於裸裝上場。 */
+  if (target !== (cfg.home || 0)) {
+    if (!P.unlocked[target]) target = cfg.home || 0;
+    else if (Object.keys(P.sets[target].slots).length < (cfg.minFilled || 1)) target = cfg.home || 0;
+  }
+  /* 遲滯：要換「離開」第 1 套，得連續 confirm 個決策點都想換才動。
+     推關開關在安全關卡的掛機邏輯裡會一開一關，不加遲滯的話切換會跟著每分鐘抖一次，
+     而且抖的那些時間其實是在掛機，不是在推關嘗試（實測 3 小時 94 次來回）。
+     換回第 1 套不等：回家永遠立刻。 */
+  var home = cfg.home || 0;
+  if (!memo.setSwitch) memo.setSwitch = { streak: 0 };
+  if (target === home) {
+    memo.setSwitch.streak = 0;
+  } else if (target !== P.active) {
+    memo.setSwitch.streak++;
+    if (memo.setSwitch.streak < (cfg.confirm || 2)) return [];
+  }
+  if (target === P.active) return [];
+  return [{ name: 'player.switchEquipSet', args: { index: target }, ruleId: ruleId }];
+}
+
 /* 回傳這個決策點要送出的指令陣列。純函式：同樣的輸入必定得到同樣的輸出。 */
 function decide(state, policy, memo) {
   updateContext(state, policy, memo);
   updateSkillContext(state, policy, memo);
+  updateSetContext(state, policy);
   var out = [];
   var now = state.gameTimeSec;
   for (var i = 0; i < policy.rules.length; i++) {
     var r = policy.rules[i];
+    if (setAwayBlocks(r, policy, state)) continue;
     if (r.once && memo.fired[r.id]) continue;
     if (r.everySec) {
       var last = memo.lastAt[r.id];
@@ -1820,6 +1959,12 @@ function decide(state, policy, memo) {
         }
         if (taBest) out.push({ name: 'newforge.upgradePart', args: { partKey: taBest }, ruleId: r.id });
       }
+    } else if (r.equipSetBuild) {
+      var esb = planEquipSetBuild(state, r.equipSetBuild, r.id);
+      for (var esi = 0; esi < esb.length; esi++) out.push(esb[esi]);
+    } else if (r.equipSetSwitch) {
+      var ess = planEquipSetSwitch(state, r.equipSetSwitch, r.id, memo);
+      for (var esj = 0; esj < ess.length; esj++) out.push(ess[esj]);
     } else if (r.skillPlan) {
       var spOut = planSkills(state, policy, memo, r.id);
       for (var spi = 0; spi < spOut.length; spi++) out.push(spOut[spi]);
@@ -2364,6 +2509,9 @@ function decide(state, policy, memo) {
         /* farmAuto 非 null＝farmPark 接管了這一段（!inPark 時才會發生）。
            它已經把「該待在哪一格」算完了，自動推關只是「還沒走到就繼續走」。 */
         gArgs[gCfg.argKey || 'on'] = (farmAuto !== null) ? !!farmAuto : !!(passGate || advanceOn);
+        /* 記下現在是否在推關（自動推關開著）。裝備組切換只在推關時才換。 */
+        if (!state.ctx) state.ctx = {};
+        state.ctx.pushing = !!gArgs[gCfg.argKey || 'on'];
         out.push({ name: r.cmd, args: gArgs, ruleId: r.id });
       }
     } else if (r.convertToPreferred) {

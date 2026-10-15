@@ -198,10 +198,6 @@
       "類別": "noRule",
       "理由": "刪除會破壞累積進度，文件沒有重配規則"
     },
-    "player.switchEquipSet": {
-      "類別": "pending",
-      "理由": "player_strategy.md §7 已有規則（三套裝備依情境切換），尚未實作：要先解決「為第 2、3 套各自挑裝備」才有東西可切"
-    },
     "skill.reorderLoadout": {
       "類別": "noRule",
       "理由": "文件沒有調整裝配順序的規則（順序不影響施放優先）"

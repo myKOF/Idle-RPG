@@ -98,6 +98,14 @@ test('其餘策略沒有宣告，行為不變', () => {
   for (const f of fs.readdirSync(SIM_DIR).filter((x) => /^policy\..+\.json$/.test(x))) {
     if (f === 'policy.extreme.roi.json') continue;
     const p = createPolicy(JSON.parse(fs.readFileSync(path.join(SIM_DIR, f), 'utf8')));
-    assert.equal(p.panelParams, null, `${f} 不應該有 panelParams`);
+    /* 這條要守的是「只有 ROI 策略宣告了『不建某欄位』」，也就是沒有任何欄位被設成 false。
+       panelParams 也被拿來傳參數給 harness 專用面板（例如 equipSets 的詞條權重），
+       那不是省略欄位，不能因此被擋。 */
+    const omitted = [];
+    for (const panel of Object.keys(p.panelParams || {})) {
+      const cfg = p.panelParams[panel];
+      if (cfg && typeof cfg === 'object') for (const k of Object.keys(cfg)) if (cfg[k] === false) omitted.push(panel + '.' + k);
+    }
+    assert.deepEqual(omitted, [], `${f} 不應該宣告不建任何面板欄位`);
   }
 });

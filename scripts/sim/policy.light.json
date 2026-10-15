@@ -15,7 +15,8 @@
     "rune",
     "skill",
     "taskGoal",
-    "equipRules"
+    "equipRules",
+    "equipSets"
   ],
   "lists": {
     "affixWeapon": [
@@ -244,6 +245,33 @@
       "why": "依 player_strategy.md「前期優先生存任務指南」控制自動推關：裝備品質覆蓋率沒到門檻就關掉自動推關、留在原地掛機把裝備換上來。指南的核心是不要讓關卡跑在裝備前面——推太深只會一直死，死了就掉不到裝備，掉不到裝備就更推不動。先前是無條件每 15 秒送一次「開啟自動推關」，正是指南要防的那件事。覆蓋率只算身上真的有裝備的部位（空部位面板值為 -1，雙手武器會讓 weapon2 永遠空著，算進分母的話門檻永遠到不了、閘門永久關閉）"
     },
     {
+      "id": "equip-set-switch",
+      "everySec": 60,
+      "cmd": "player.switchEquipSet",
+      "equipSetSwitch": {
+        "panel": "panels.equipSets",
+        "stage": "view.stage",
+        "towerActive": "panels.tower.tower.active",
+        "home": 0,
+        "minFilled": 10,
+        "tower": {
+          "set": 1
+        },
+        "boss": {
+          "every": 50,
+          "ahead": 3,
+          "set": 1
+        },
+        "elite": {
+          "every": 10,
+          "ahead": 3,
+          "set": 2
+        },
+        "confirm": 2
+      },
+      "why": "player_strategy.md §7：平時第 1 套；推關時依「離下一個菁英／BOSS 關還有幾關」在抵達前先換——決策點約每分鐘一次，而推關時一分鐘跳好幾關，等怪物出現才反應會來不及。封魔塔用第 2 套。那一套沒建好（<minFilled 格）就不切"
+    },
+    {
       "id": "equip-best-per-slot",
       "everySec": 15,
       "cmd": "item.equip",
@@ -254,6 +282,21 @@
         "blocked": "panels.equipRules.blocked"
       },
       "why": "換裝優先序：品質 >> 等級 >> 太古詞條數 >> 評分（player_strategy.md）。評分只當平手裁判——itemScore 把品質、等級、太古壓成一個數字，照它排會出現「品質低一階但詞條滾得好所以分數高」而換錯，而品質決定插槽數與附魔欄數，換不回來"
+    },
+    {
+      "id": "equip-set-build",
+      "everySec": 120,
+      "cmd": "item.equip",
+      "equipSetBuild": {
+        "panel": "panels.equipSets",
+        "maxPerDecision": 4,
+        "gear": {
+          "minRarity": 4,
+          "coverage": 0.85,
+          "minFilled": 10
+        }
+      },
+      "why": "player_strategy.md §7：第 2、3 套只用「第 1 套不要的」裝備（候選比第 1 套現有的還好就留給第 1 套），且前一套品質覆蓋達標才建下一套（有餘力才弄）。不為它們另外強化"
     },
     {
       "id": "upgrade-by-rarity-cap",
@@ -1251,5 +1294,49 @@
       "依據": "初版判讀：依 js/skills2.js 各選項說明分成 farm(練級)/boss(野外BOSS)/tower(封魔塔)，待設計者審"
     },
     "說明": "player_strategy.md §4。組合由 seed 決定（全物理或全魔法；魔法取兩個元素系輪流）。生存率不足時末幾格換成生存類群組。超神進化切換三道閘：裝備覆蓋達標、金幣≥費用×2、距上次切換≥6 遊戲小時"
+  },
+  "equipSets": {
+    "panel": "panels.equipSets",
+    "home": 0,
+    "awayBlock": [
+      "item.",
+      "gem.",
+      "rune."
+    ],
+    "說明": "離開第 1 套時暫停針對使用中裝備的規則，避免把強化／洗煉／寶石／符文資源灌進第 2、3 套"
+  },
+  "panelParams": {
+    "equipSets": {
+      "topN": 3,
+      "profiles": {
+        "1": {
+          "hpPct": 2,
+          "hpFlat": 1,
+          "shieldEff": 2,
+          "globalDmgRed": 2,
+          "pRes": 1,
+          "mRes": 1,
+          "atkPct": 1,
+          "matkPct": 1,
+          "critDmg": 1,
+          "bossDmg": 3,
+          "bossDmgRed": 3
+        },
+        "2": {
+          "hpPct": 2,
+          "hpFlat": 1,
+          "shieldEff": 2,
+          "globalDmgRed": 2,
+          "pRes": 1,
+          "mRes": 1,
+          "atkPct": 1,
+          "matkPct": 1,
+          "critDmg": 1,
+          "eliteDmg": 3,
+          "eliteDmgRed": 3
+        }
+      },
+      "依據": "權重是策略詮釋（§7 只說第 2 套重 BOSS 傷害與抗性＋生命護盾、第 3 套重菁英），數字待設計者審"
+    }
   }
 }

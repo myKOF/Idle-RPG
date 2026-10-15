@@ -16,7 +16,8 @@
     "forge",
     "rune",
     "skill",
-    "taskGoal"
+    "taskGoal",
+    "equipSets"
   ],
   "panelParams": {
     "inv": {
@@ -27,7 +28,39 @@
       "craft": true,
       "keepPerRarity": 8
     },
-    "forge_依據": "craft=true 才會掃背包算「哪幾件適合進法陣」；UI 不傳 params，路徑不變。keepPerRarity：每個品質各裁 8 筆（需要 6 件＋備份），深局背包上千件時不把面板灌爆"
+    "forge_依據": "craft=true 才會掃背包算「哪幾件適合進法陣」；UI 不傳 params，路徑不變。keepPerRarity：每個品質各裁 8 筆（需要 6 件＋備份），深局背包上千件時不把面板灌爆",
+    "equipSets": {
+      "topN": 3,
+      "profiles": {
+        "1": {
+          "hpPct": 2,
+          "hpFlat": 1,
+          "shieldEff": 2,
+          "globalDmgRed": 2,
+          "pRes": 1,
+          "mRes": 1,
+          "atkPct": 1,
+          "matkPct": 1,
+          "critDmg": 1,
+          "bossDmg": 3,
+          "bossDmgRed": 3
+        },
+        "2": {
+          "hpPct": 2,
+          "hpFlat": 1,
+          "shieldEff": 2,
+          "globalDmgRed": 2,
+          "pRes": 1,
+          "mRes": 1,
+          "atkPct": 1,
+          "matkPct": 1,
+          "critDmg": 1,
+          "eliteDmg": 3,
+          "eliteDmgRed": 3
+        }
+      },
+      "依據": "權重是策略詮釋（§7 只說第 2 套重 BOSS 傷害與抗性＋生命護盾、第 3 套重菁英），數字待設計者審"
+    }
   },
   "lists": {
     "slotList": [
@@ -298,6 +331,33 @@
       "tierPush_退關地板": "退關的地板同時被拉到當前裝等分段的底（見 policy_interpreter.js 的 tierFloor）。跌破分段邊界一定更差，而這個地板是靜態的分段邊界、不是「記下來的已知安全關卡」，所以不會造成死鎖"
     },
     {
+      "id": "equip-set-switch",
+      "everySec": 60,
+      "cmd": "player.switchEquipSet",
+      "equipSetSwitch": {
+        "panel": "panels.equipSets",
+        "stage": "view.stage",
+        "towerActive": "panels.tower.tower.active",
+        "home": 0,
+        "minFilled": 10,
+        "tower": {
+          "set": 1
+        },
+        "boss": {
+          "every": 50,
+          "ahead": 3,
+          "set": 1
+        },
+        "elite": {
+          "every": 10,
+          "ahead": 3,
+          "set": 2
+        },
+        "confirm": 2
+      },
+      "why": "player_strategy.md §7：平時第 1 套；推關時依「離下一個菁英／BOSS 關還有幾關」在抵達前先換——決策點約每分鐘一次，而推關時一分鐘跳好幾關，等怪物出現才反應會來不及。封魔塔用第 2 套。那一套沒建好（<minFilled 格）就不切"
+    },
+    {
       "id": "switch-zone-when-cleared",
       "everySec": 60,
       "cmd": "stage.switchZone",
@@ -335,6 +395,21 @@
         "minGainPct_依據": "評估器的 worth 已扣掉插槽與強化重建成本；這裡再加一道，避免為了 <1% 的增幅換裝——換裝會讓寶石與附魔重來一輪",
         "maxPerDecision": 4
       }
+    },
+    {
+      "id": "equip-set-build",
+      "everySec": 120,
+      "cmd": "item.equip",
+      "equipSetBuild": {
+        "panel": "panels.equipSets",
+        "maxPerDecision": 4,
+        "gear": {
+          "minRarity": 4,
+          "coverage": 0.85,
+          "minFilled": 10
+        }
+      },
+      "why": "player_strategy.md §7：第 2、3 套只用「第 1 套不要的」裝備（候選比第 1 套現有的還好就留給第 1 套），且前一套品質覆蓋達標才建下一套（有餘力才弄）。不為它們另外強化"
     },
     {
       "id": "upgrade-by-rarity-cap",
@@ -1741,5 +1816,15 @@
       "依據": "初版判讀：依 js/skills2.js 各選項說明分成 farm(練級)/boss(野外BOSS)/tower(封魔塔)，待設計者審"
     },
     "說明": "player_strategy.md §4。組合由 seed 決定（全物理或全魔法；魔法取兩個元素系輪流）。生存率不足時末幾格換成生存類群組。超神進化切換三道閘：裝備覆蓋達標、金幣≥費用×2、距上次切換≥6 遊戲小時"
+  },
+  "equipSets": {
+    "panel": "panels.equipSets",
+    "home": 0,
+    "awayBlock": [
+      "item.",
+      "gem.",
+      "rune."
+    ],
+    "說明": "離開第 1 套時暫停針對使用中裝備的規則，避免把強化／洗煉／寶石／符文資源灌進第 2、3 套"
   }
 }

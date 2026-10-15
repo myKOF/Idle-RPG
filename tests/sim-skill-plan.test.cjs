@@ -225,3 +225,162 @@ test('任務順手：只處理需要額外動作的任務類型', () => {
   const cmds = taskPolicy().decide(taskState(other, 1e12));
   assert.deepEqual(cmds, [], '強化次數之類是練功自然會做的事，不為它另外花錢');
 });
+
+/* ---- 三套裝備（player_strategy.md §7）---- */
+
+const SET_BUILD = { id: 'b', cmd: 'item.equip', equipSetBuild: { panel: 'panels.equipSets', maxPerDecision: 4, gear: { minRarity: 4, coverage: 0.85, minFilled: 2 } } };
+const SET_SWITCH = { id: 's', cmd: 'player.switchEquipSet', equipSetSwitch: {
+  panel: 'panels.equipSets', stage: 'view.stage', towerActive: 'panels.tower.tower.active', home: 0, minFilled: 1,
+  tower: { set: 1 }, boss: { every: 50, ahead: 3, set: 1 }, elite: { every: 10, ahead: 3, set: 2 } } };
+
+function setPolicy(rule, extra) {
+  return createPolicy(Object.assign({ name: 't', decideEveryGameSec: 1, needPanels: [], lists: {}, rules: [rule] }, extra || {}));
+}
+const brief = (id, rarity, level, anc, p, score, slots) => ({ id, rarity, level: level || 1, anc: anc || 0, p: p || 0, score: score || 0, slots: slots || [] });
+function setsPanel(o) {
+  const empty = () => ({ slots: {}, blocked: {} });
+  return Object.assign({
+    active: 0, count: 3, unlocked: [true, true, true],
+    sets: [empty(), empty(), empty()], candidates: { 1: {}, 2: {} }
+  }, o);
+}
+function setState(panel, extra) {
+  return Object.assign({ gameTimeSec: 100, view: { stage: 1 }, panels: { equipSets: panel, tower: { tower: { active: false } } } }, extra || {});
+}
+const eqCmds = (cmds) => cmds.filter((c) => c.name === 'item.equip').map((c) => c.args.itemId + '@' + c.args.slotKey + '#' + c.args.setIndex);
+
+test('裝備組：第 2 套只用第 1 套不要的；比第 1 套現有的好就留給第 1 套', () => {
+  const P = setsPanel({
+    sets: [
+      { slots: { helmet: brief('home_h', 4, 1, 0, 0, 10, ['helmet']), chest: brief('home_c', 4, 1, 0, 0, 10, ['chest']) }, blocked: {} },
+      { slots: {}, blocked: {} }, { slots: {}, blocked: {} }
+    ],
+    candidates: { 1: {
+      helmet: [brief('better', 5, 1, 0, 0, 1, ['helmet']), brief('spare', 3, 1, 0, 0, 1, ['helmet'])],   // better 品質更高：第 1 套會拿
+      chest: [brief('spare_c', 4, 1, 0, 9, 5, ['chest'])]       // 同品質等級太古，遊戲評分 5 < 10：第 1 套不要
+    }, 2: {} }
+  });
+  assert.deepEqual(eqCmds(setPolicy(SET_BUILD).decide(setState(P))), ['spare_c@chest#1', 'spare@helmet#1']);
+});
+
+test('裝備組：不得與第 1 套搶同一件（會讓同一物件跨兩套共存）', () => {
+  /* 實際事故：同一個決策點 equip-best-per-slot 先把 X 裝進第 1 套，equip-set-build 又對同一個 id
+     送 item.equip 到第 2 套。遊戲找得到它（已在裝備欄），「同一件不得佔兩個欄位」的防護只在單一套內
+     有效——結果裝備欄與背包出現重複 id，不變量檢查當場失敗。
+     所以判斷必須跟第 1 套換裝規則同一把尺：連「前三層全平手、只有遊戲評分較高」也算被第 1 套拿走。 */
+  const home = { legs: brief('home_l', 4, 1, 0, 0, 10, ['legs']) };
+  const P = (score) => setsPanel({
+    sets: [{ slots: Object.assign({ x: brief('hx', 4) }, home), blocked: {} }, { slots: {}, blocked: {} }, { slots: {}, blocked: {} }],
+    candidates: { 1: { legs: [brief('tie_higher', 4, 1, 0, 0, score, ['legs'])] }, 2: {} }
+  });
+  assert.deepEqual(eqCmds(setPolicy(SET_BUILD).decide(setState(P(11)))), [], '評分 11 > 10：第 1 套會拿走，不能碰');
+  assert.deepEqual(eqCmds(setPolicy(SET_BUILD).decide(setState(P(9)))), ['tie_higher@legs#1'], '評分 9 < 10：第 1 套不要，可以給第 2 套');
+
+  /* 戒指能放 ring／ring2：只要有任何一個欄位會被第 1 套拿走就不能碰。 */
+  const rings = setsPanel({
+    sets: [{ slots: { ring: brief('r1', 4, 1, 0, 0, 50, ['ring', 'ring2']), ring2: brief('r2', 4, 1, 0, 0, 5, ['ring', 'ring2']) }, blocked: {} },
+           { slots: {}, blocked: {} }, { slots: {}, blocked: {} }],
+    candidates: { 1: { ring: [brief('cand', 4, 1, 0, 0, 20, ['ring', 'ring2'])] }, 2: {} }
+  });
+  assert.deepEqual(eqCmds(setPolicy(SET_BUILD).decide(setState(rings))), [],
+    '候選 20 比 ring 的 50 差，但比 ring2 的 5 好——第 1 套會把它裝進 ring2');
+});
+
+test('裝備組：沒解鎖、或前一套品質覆蓋沒達標就不建', () => {
+  const home = { helmet: brief('h', 3), chest: brief('c', 3) };       // R3 < 門檻 R4
+  const P = setsPanel({
+    sets: [{ slots: home, blocked: {} }, { slots: {}, blocked: {} }, { slots: {}, blocked: {} }],
+    candidates: { 1: { helmet: [brief('x', 3, 1, 0, 0, 1, ['helmet'])] }, 2: {} }
+  });
+  assert.deepEqual(eqCmds(setPolicy(SET_BUILD).decide(setState(P))), [], '第 1 套還沒達標＝沒有餘力');
+
+  const good = setsPanel({
+    sets: [{ slots: { helmet: brief('h', 4), chest: brief('c', 4) }, blocked: {} }, { slots: {}, blocked: {} }, { slots: {}, blocked: {} }],
+    candidates: { 1: { helmet: [brief('x', 3, 1, 0, 0, 1, ['helmet'])] }, 2: {} }, unlocked: [true, false, false]
+  });
+  assert.deepEqual(eqCmds(setPolicy(SET_BUILD).decide(setState(good))), [], '第 2 套還沒解鎖（500 級）');
+});
+
+test('裝備組：被雙手主手占用的副手不裝', () => {
+  const P = setsPanel({
+    sets: [
+      { slots: { weapon: brief('h', 4), weapon2: brief('h2', 4) }, blocked: {} },
+      { slots: {}, blocked: { weapon2: true } }, { slots: {}, blocked: {} }
+    ],
+    candidates: { 1: { weapon2: [brief('off', 3)] }, 2: {} }
+  });
+  assert.deepEqual(eqCmds(setPolicy(SET_BUILD).decide(setState(P))), []);
+});
+
+function switchTo(stage, o) {
+  o = o || {};
+  const filled = (n) => { const s = {}; for (let i = 0; i < n; i++) s['k' + i] = brief('i' + i, 4); return { slots: s, blocked: {} }; };
+  const P = setsPanel({ active: o.active || 0, sets: [filled(5), filled(o.filled1 === undefined ? 5 : o.filled1), filled(5)], unlocked: o.unlocked || [true, true, true] });
+  const st = setState(P, { view: { stage }, ctx: { pushing: o.pushing !== false } });
+  if (o.tower) st.panels.tower.tower.active = true;
+  const pol = setPolicy(SET_SWITCH);
+  let cmds = pol.decide(st);
+  if (!cmds.length && !o.once) cmds = pol.decide(Object.assign({}, st, { gameTimeSec: st.gameTimeSec + 60 }));   // 遲滯：連續第二個決策點才換
+  return cmds.length ? cmds[0].args.index : (o.active || 0);
+}
+
+test('裝備組切換：推關時在抵達菁英／BOSS 關之前先換好', () => {
+  assert.equal(switchTo(25), 0, '離菁英關還遠＝第 1 套');
+  assert.equal(switchTo(30), 2, '30 關本身就是菁英關');
+  assert.equal(switchTo(37), 2, '37 關：離 40 關菁英只剩 3 關＝第 3 套');
+  assert.equal(switchTo(40), 2, '菁英關當下');
+  assert.equal(switchTo(41), 0, '過了菁英關換回第 1 套');
+  assert.equal(switchTo(47), 1, '47 關：離 50 關 BOSS 只剩 3 關＝第 2 套（BOSS 優先於菁英）');
+  assert.equal(switchTo(50), 1);
+});
+
+test('裝備組切換：掛機（沒在推關）一律第 1 套；封魔塔用第 2 套', () => {
+  assert.equal(switchTo(59, { pushing: false, active: 2 }), 0, '安全區間 51~59 剛好落在菁英窗口，但沒在推關就不該換');
+  assert.equal(switchTo(30, { tower: true }), 1, '封魔塔＝第 2 套');
+});
+
+test('裝備組切換：沒建好或沒解鎖的套不切', () => {
+  assert.equal(switchTo(47, { filled1: 0 }), 0, '第 2 套是空的，穿上去等於裸裝上場');
+  assert.equal(switchTo(47, { unlocked: [true, false, false] }), 0);
+});
+
+test('裝備組：離開第 1 套時暫停針對使用中裝備的規則', () => {
+  const p = createPolicy({
+    name: 't', decideEveryGameSec: 1, needPanels: [], lists: {},
+    equipSets: { panel: 'panels.equipSets', home: 0, awayBlock: ['item.', 'gem.'] },
+    rules: [
+      { id: 'up', cmd: 'item.upgrade', args: { itemId: 'x' } },
+      { id: 'st', cmd: 'stage.setAutoAdvance', args: { on: true } }
+    ]
+  });
+  const st = (active) => ({ gameTimeSec: 100, panels: { equipSets: setsPanel({ active }) } });
+  assert.deepEqual(p.decide(st(0)).map((c) => c.ruleId), ['up', 'st'], '第 1 套使用中：照常');
+  assert.deepEqual(p.decide(st(1)).map((c) => c.ruleId), ['st'],
+    '第 2 套使用中：強化／洗煉／寶石暫停，不然資源會灌進第 2 套');
+});
+
+test('三套裝備面板與遊戲一致：解鎖條件、使用中套別', () => {
+  const e = createEngine({ seed: 6 });
+  e.boot(null);
+  e.step(200);
+  const c = e.ctx;
+  const P = e.panel('equipSets', { profiles: {} });
+  assert.equal(P.count, c.EQUIP_SET_COUNT);
+  assert.equal(P.active, c.G.equipActive || 0);
+  for (let i = 0; i < P.count; i++) assert.equal(P.unlocked[i], !!c.equipmentSetUnlocked(i), '第 ' + (i + 1) + ' 套解鎖狀態要等於遊戲');
+  assert.deepEqual(JSON.parse(JSON.stringify(P.unlocked)), [true, false, false], '新角色只有第 1 套（第 2 套 500 級、第 3 套 500 級＋1 轉）');
+});
+
+test('裝備組切換：遲滯——單一決策點想換不動，連續兩個才換；換回第 1 套立刻', () => {
+  const filled = () => { const x = {}; for (let i = 0; i < 5; i++) x['k' + i] = brief('i' + i, 4); return { slots: x, blocked: {} }; };
+  const P = (active) => setsPanel({ active, sets: [filled(), filled(), filled()] });
+  const pol = setPolicy(SET_SWITCH);
+  const at = (t, stage, active, pushing) => pol.decide(setState(P(active), { gameTimeSec: t, view: { stage }, ctx: { pushing } }));
+
+  assert.deepEqual(at(60, 47, 0, true), [], '第一個決策點：還不換（可能只是掛機邏輯抖了一下）');
+  assert.equal(at(120, 47, 0, true)[0].args.index, 1, '連續第二個才換');
+  assert.equal(at(180, 30, 1, false)[0].args.index, 0, '回第 1 套不用等');
+  at(240, 47, 0, true);                                               // streak=1
+  at(300, 30, 0, false);                                              // 中斷，歸零
+  assert.deepEqual(at(360, 47, 0, true), [], '中途斷過就要重新累計，不是累計總次數');
+});
