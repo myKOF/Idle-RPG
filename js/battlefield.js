@@ -17,7 +17,7 @@
    現在改成連續座標：
      - 我方與敵人都有絕對座標 { x, y }（單位≈像素），玩家起點是原點。
      - 我方會自己朝目標跑（bfTickPlayer），敵人各自追我方的**當前**位置。
-     - 敵人每個 tick 朝我方逼近，走到接觸距離就停，並與同伴互相推開。
+     - 敵人在配置視野內發現我方後，每個 tick 朝我方逼近，走到停止距離就停，並與同伴互相推開。
      - 距離＝真正的歐幾里得距離；能不能攻擊要看距離（bfInAttackRange）。
      - 範圍技從「n×n 方框」改成以主目標為中心的圓（半徑由 n 換算）。
 
@@ -117,6 +117,21 @@ function bfEnemyAttackRange(ent) {
   if (v > 0) return v;
   return (ent && ent.magic) ? bfRangedRange() : bfMeleeRange();
 }
+/* 圓形視野以雙方中心距離判定；發現一次便持續追擊。
+   沒有視野欄位的舊實體／測試替身保留原行為。進場倒數期間不索敵。
+   普攻、技能與移動共用這個入口，不能用攻擊射程繞過視野。 */
+function bfEnemyAlerted(ent) {
+  if (!ent || ent._enterCd > 0) return false;
+  if (ent._alerted) return true;
+  var range = Number(ent.sightRange);
+  if (!(range > 0) || !isFinite(range)) return true;
+  var p = bfPos(ent), c = bfPlayerPos();
+  if (!p) return false;
+  var dx = p.x - c.x, dy = p.y - c.y;
+  if (dx * dx + dy * dy > range * range) return false;
+  ent._alerted = true;
+  return true;
+}
 /* 遠程敵人＝射程超過近戰距離兩倍。攻擊畫面（投射物 vs 近戰撲擊）與停步位置都看這個，
    不看 magic——魔法型只代表傷害類型，跟射程是兩件事。 */
 function bfEnemyIsRanged(ent) {
@@ -144,6 +159,7 @@ function bfStopDistance(ent) {
    ⚠️ 這是改造前完全不存在的判定——舊版任何位置都打得到。 */
 function bfInAttackRange(ent) {
   if (!ent) return false;
+  if (!bfEnemyAlerted(ent)) return false;
   if (!bfPos(ent)) return true;                 // 沒有座標（高塔）＝沿用舊行為，不擋
   if (bfEntityDistance(ent) > bfEnemyAttackRange(ent)) return false;
   return !bfWallBlocksMelee(ent);
@@ -244,6 +260,7 @@ function bfTickApproach(enemies, dt) {
     if (!p) continue;
     if (bfTickKnockback(ent)) continue;
     if (ent._enterCd > 0) continue;            // 還在進場：不參與逼近，也還不能被打
+    if (!bfEnemyAlerted(ent)) continue;        // 尚未發現玩家：不追擊、不跑位
     // 菁英詞條施法／衝鋒中：原地不動（衝鋒的位移由 js/elite.js 自己推進）
     if (typeof eliteLocked === 'function' && eliteLocked(ent)) continue;
     /* 追的是我方**當前**座標，不是出生時的方位——我方跑走就得重新追。 */

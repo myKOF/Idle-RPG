@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## NPC-VISION-20261016 — NPC 配置視野與進入範圍才追擊
+
+- Owner：Codex；Done，單一開發者。使用者要求 NPC 玩家進入視野才追擊，NPC 配置表新增視野範圍，全部預填 50 米。
+- 前置：既有 NPC Excel／CSV／data 與連續座標戰場已具備；全部目標衝突預檢乾淨。允許 NPC Excel／CSV、config_tables、data／battlefield／combat／elite／tower、必要主頁與 Worker 快取、專項測試、參數表說明與本紀錄；禁止無關數值／技能／素材／其他副本，不合併推送。
+- 規則：以 NPC 圓心到玩家的距離判定，全方向圓形視野；進場完成且進入視野後記住發現狀態、持續追擊，不增加離開視野脫戰或受擊自動索敵。各階級及塔 BOSS 均使用各自配置列；未發現時不主動跑位、普攻或施放攻擊技能。
+- 驗收：Excel 正常開啟與無關內容保留、CSV／JS 往返、視野內外／邊界／玩家移動觸發／追擊保持／進場／普通與遠程／菁英技能與塔 BOSS、正式 Worker／畫面位置同步、受影響回歸、Build、diff 後獨立 Commit。無素材變更；目前生成約 44 米，預設 50 米多數怪物仍立即發現玩家。
+- 完成／修改17檔：config/Excel/NPC.xlsx、config/CSV/NPC.csv、tools/config_tables.cjs、js/data.js／battlefield.js／combat.js／elite.js／tower.js、index.html／bridge.js／worker/sim.worker.js 快取、tests/npc-vision.test.cjs（新，13項）／npc-move-attack／npc-elite-skills／elite-engine、tools/參數表使用說明.md與本紀錄。視野以米配置、生成時換算為座標；84種野外NPC的四種階級與10列塔BOSS共346列預填50。各階級獨立讀取，NPC_CONFIG_TABLE註冊保留完整設定；演武場、召喚／分裂沿既有生成入口生效。未改Protocol／存檔格式／其他技能數值與素材。
+- Excel：Artifact Tool唯讀盤點／前後渲染確認；缺少插入整欄的公開API，採專案既有excel-update-sheets.ps1原生Excel插欄，正常重開兩次、逐格與物件驗證通過。唯讀ZIP內容核對原有5888格的值／公式／樣式全部保留、備用工作表與凍結／保護不變；NPCTable擴為A1:P347。由xlsx_to_csv輸出347列16欄，NPC匯入dry-run語意變更0，自訂各階級視野可完整往返；留白相容50、拒絕0／負數／非有限值。若使用者正開NPC.xlsx，請重開後再編輯新欄。
+- 指令／結果：`node --test --test-reporter=tap tests/npc-vision.test.cjs tests/npc-move-attack.test.cjs tests/npc-elite-skills.test.cjs tests/elite-engine.test.cjs tests/battlefield.test.cjs tests/battlefield-rt.test.cjs tests/multi-enemy.test.cjs tests/tower-battlefield.test.cjs tests/boss-player-skill.test.cjs tests/elite-params.test.cjs tests/worker-protocol.test.cjs tests/enemy-hit.test.cjs tests/enemy-projectile-retaliation.test.cjs tests/offline-rewards.test.cjs tests/tower-scene-intro.test.cjs tests/sim-harness-sync.test.cjs tests/init-ui-smoke.test.cjs tests/purgatory-tower.test.cjs tests/tower-cost.test.cjs tests/tower-xp.test.cjs`，178/178通過；補強現有生成測試的視野欄位後再跑npc-vision／npc-move-attack，20/20通過。`npm.cmd run build`525檔通過；NPC apply語意變更0、git diff --check通過。未跑全庫。另enemy-attack-vfx有1項既有渲染器正規式斷言失敗，以HEAD原combat唯讀替換重跑仍同項失敗，未改渲染器或放寬斷言。
+- 瀏覽器：隨機localhost埠／全新headless Edge／正式Worker＋Pixi，不讀真人存檔。僅測試通道固定場景、手動驅動原逼近函式，正式5Hz面板與顯示時鐘保持運作；60米外NPC停在x600，玩家移至x100進入50米邊界後NPC到x480，玩家移到x-1000離開視野後仍追至x360，三段Canvas座標與Worker一致；Console error／warning皆0。初次測試抓到素材Worker而非模擬Worker、其後用戰鬥暫停讓Canvas停止導致驗證失敗，修正隔離QA通道後通過，沒有為測試修改正式產品邏輯。臨時瀏覽器／服務已關閉；自動核准審查拒絕刪除logs/npc-vision依賴junction（blocked by policy），暫存目錄保留在既有ignore範圍、不納提交，未宣稱清理完成。
+- 重疊處理：elite-engine的跑位案例需明確設為已發現玩家，與Claude ai/claude的1b17f050毒素中心圈案例不同段落（第88與265行附近）、無公式相依；候選git merge-file三方試跑退出碼0後僅新增跑位fixture一行，未改毒素案例。共享副本另一聊天的HUD雕飾任務845ca88a由其獨立提交；本次index僅JS快取、本紀錄僅NPC區段，不納其素材／CSS。
+- 唯讀檢查：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、xlsx_to_csv／excel-update-sheets、Worker protocol／bridge／shim、battle-renderer位置補間與相關既有測試、scripts/sim/engine、Claude毒素測試差異；未改上述未列修改檔。無本次美術素材／素材庫變更，不需素材Commit。
+- 交付：Commit為本紀錄所在`[Codex] feat: 新增NPC配置視野與範圍觸發追擊`，回覆附編號；可Review／合併，未合併推送。無本次未完成項；限制為未驗真人長時間戰鬥、未新增脫戰／受擊索敵／視線遮擋（被動受擊反應沿既有規則），50米大於現有出生距離所以多數怪物仍立即發現玩家。下一步整合後重新載入遊戲；要觀察走近觸發，可在NPC表調小視野並套用。
+
 ## BATTLE-HUD-ORNAMENT-20261016 — 全螢幕 HUD 雙側金屬翼飾
 
 - Owner：Codex；Done，單一開發者。使用者要求優化收攏 HUD 外側原本切齊戰鬥區的生硬邊緣，參考先前截圖的裝飾感。

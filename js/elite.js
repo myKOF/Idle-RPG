@@ -104,6 +104,7 @@ function elitePlayerAlive() {
 }
 /* 這隻現在能不能行動：還在進場倒數、塔戰登場演出中都不行。 */
 function eliteReady(m) {
+  if (typeof bfEnemyAlerted === 'function' && !bfEnemyAlerted(m)) return false;
   if (eliteTowerOn()) return !(TOWER.introCd > 0);
   return (typeof fieldCombatReady === 'function') ? fieldCombatReady(m) : true;
 }

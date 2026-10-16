@@ -84,6 +84,7 @@ test('ELITE-ENGINE-3b 跑位時加速（repoSpeed）：目標點跟著玩家走�
   const c = fresh();
   assert.equal(c.ELITE_GROUP.repoSpeed, 1.6, '預設 1.6 倍（game_parameters「跑位設定」c）');
   const m = makeElite(c, ['e_vitality'], { x: 600, y: 0, hp: 1e9 });
+  m._alerted = true; // 本案例驗已接戰後的跑位速度；視野外不啟動跑位由 npc-vision 測試涵蓋
   run(c, 'FIELD.monsters.forEach(function (e) { e._enterCd = 0; });');
   c.bfPlayerPos().x = 0; c.bfPlayerPos().y = 0;
   const dist = (ent) => Math.hypot(ent.pos.x - 600, ent.pos.y);

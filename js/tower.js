@@ -47,6 +47,8 @@ function makeBoss(floor) {
     magic: !!bd.elem,                        // 元素 BOSS 以魔法攻擊（對玩家魔防）
     aspd: bs.aspd, dodge: bs.dodge, hit: bs.hit, // 命中率 = 基礎值 + 樓層×每層值 → formula.js §4
     atkCd: 1.5, effects: {}, ctrlRes: bs.ctrlRes,
+    sightRange: npcSightRange(bd, 'tower_boss'),
+    _alerted: false,
     elite: false, isBoss: true, towerBoss: true, xp: bs.xp,
     /* 浮字／特效定址沿用塔戰原有的 tb-float（我方是 tp-float）；
        Canvas 戰場也用它當這隻 BOSS 的實體 id（js/battle-renderer.js）。 */

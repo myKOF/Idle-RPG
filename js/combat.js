@@ -234,7 +234,12 @@ function fieldStageQuota() {
      表格留白＝以 1 次/秒計，與改版前「基礎攻速 1」相同。
    - runSpeed／atkRange：NPC 表以「米」填寫，這裡換成戰場座標單位（js/battlefield.js
      bfMeterPx：10 單位 = 1 米）。留白＝0＝戰場使用預設值（BF_ENEMY_SPEED／近戰或魔法射程）。 */
-function npcCombatProfile(mtype, base, zn) {
+function npcSightRange(mtype, tier) {
+    var meters = Number(mtype && (mtype.sightRanges ? mtype.sightRanges[tier || 'normal'] : mtype.sightRange));
+    if (!(meters > 0) || !isFinite(meters)) meters = 50;
+    return (typeof bfMeterPx === 'function') ? bfMeterPx(meters) : meters * 10;
+}
+function npcCombatProfile(mtype, base, zn, tier) {
     var tableAspd = Number(mtype.atkSpeed) > 0 ? Number(mtype.atkSpeed) : 1;
     var tierAspd = Number(base.aspd) > 0 ? Number(base.aspd) : 1;
     var zoneAspd = Number(zn && zn.aspdMult) > 0 ? Number(zn.aspdMult) : 1;
@@ -242,7 +247,8 @@ function npcCombatProfile(mtype, base, zn) {
     return {
         aspd: tableAspd * tierAspd * zoneAspd,
         runSpeed: Number(mtype.runSpeed) > 0 ? px(mtype.runSpeed) : 0,
-        atkRange: Number(mtype.atkRange) > 0 ? px(mtype.atkRange) : 0
+        atkRange: Number(mtype.atkRange) > 0 ? px(mtype.atkRange) : 0,
+        sightRange: npcSightRange(mtype, tier)
     };
 }
 
@@ -255,7 +261,7 @@ function makeFieldEnemy(mtype, base, zn, s, o) {
     var atkMult = (Number(mtype.atkMult) > 0 ? Number(mtype.atkMult) : 1) * (Number(o.atkMult) > 0 ? Number(o.atkMult) : 1);
     var defMult = Number(mtype.defMult) > 0 ? Number(mtype.defMult) : 1;
     var rewardMult = (o.rewardMult !== undefined && Number(o.rewardMult) >= 0) ? Number(o.rewardMult) : 1;
-    var profile = npcCombatProfile(mtype, base, zn);
+    var profile = npcCombatProfile(mtype, base, zn, o.boss ? 'boss' : (o.elite ? 'elite' : 'normal'));
     var mAspd = profile.aspd; // NPC 表攻速 × 階級係數 × 場景攻速倍率
     return {
         // 名稱一律用 NPC 原名，不加「菁英・」前綴；階級改由圖示、名稱顏色與血條樣式表示。
@@ -269,6 +275,7 @@ function makeFieldEnemy(mtype, base, zn, s, o) {
         attr: mtype.attr || null,      // 屬性標籤（六大屬性；對X屬性傷害加成與 tips 顯示）
         aspd: mAspd, dodge: base.dodge, hit: base.hit, // 命中率隨敵人等級成長 → formula.js §4
         runSpeed: profile.runSpeed, atkRange: profile.atkRange, // 座標單位；0＝用戰場預設 → js/battlefield.js
+        sightRange: profile.sightRange, _alerted: false,
         elite: !!o.elite, isBoss: !!o.boss,
         gold: base.gold * zn.rewardMult * rewardMult, xp: base.xp * zn.rewardMult * rewardMult, // 金幣/經驗 x場景倍率
         atkCd: 1 / mAspd, effects: {}, ctrlRes: 0, _spawnAt: GT, // 帶 _spawnAt ＝ 吃控場遞減（→ formula.js「控場效果遞減」）
@@ -377,6 +384,7 @@ function eliteAdvMults() {
 /* 替一隻已建好的敵人配技能與體型（技能由 NPC 表決定 → js/elite.js eliteRollSkills）。
    tier：elite／elite_adv／boss；groupSize＝同群幾隻（單獨一隻抽不到火鏈、復仇這類要同伴的技能）。 */
 function equipEliteEnemy(e, mt, tier, groupSize, extra) {
+    e.sightRange = npcSightRange(mt, tier);
     if (typeof eliteEquip !== 'function') return e;
     var range = Number(e.atkRange) > 0 ? Number(e.atkRange) : (typeof bfEnemyAttackRange === 'function' ? bfEnemyAttackRange(e) : 0);
     var ids = (extra && extra.ids) ? extra.ids.slice() : eliteRollSkills(mt, tier, {
@@ -544,7 +552,7 @@ function gmArenaSpawn(count, kind, hpMult) {
         var npcHpMult = Number(mtype.hpMult) > 0 ? Number(mtype.hpMult) : 1;
         var npcAtkMult = Number(mtype.atkMult) > 0 ? Number(mtype.atkMult) : 1;
         var npcDefMult = Number(mtype.defMult) > 0 ? Number(mtype.defMult) : 1;
-        var profile = npcCombatProfile(mtype, base, zn);
+        var profile = npcCombatProfile(mtype, base, zn, boss ? 'boss' : (elite ? 'elite' : 'normal'));
         var mAspd = profile.aspd;
         var ang = Math.PI * 2 * i / count;
         enemies.push({
@@ -556,6 +564,7 @@ function gmArenaSpawn(count, kind, hpMult) {
             magic: !!mtype.magic, attr: mtype.attr || null,
             aspd: mAspd, dodge: base.dodge, hit: base.hit,
             runSpeed: profile.runSpeed, atkRange: profile.atkRange,
+            sightRange: profile.sightRange, _alerted: false,
             elite: elite, isBoss: boss,
             gold: base.gold * zn.rewardMult, xp: base.xp * zn.rewardMult,
             atkCd: 1 / mAspd, effects: {}, ctrlRes: 0, _spawnAt: GT,
