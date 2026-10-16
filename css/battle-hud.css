@@ -7,19 +7,29 @@
    style.css／ashen-forge.css 的舊規則不動，這裡以更高的選擇器權重覆蓋。
    載入順序在 ashen-forge-flat.css 之後（flat 把這一區也簡化過，這裡再蓋回來）。
 
-   尺寸以戰鬥容器寬度（cqw）縮放：--hud-orb 是球的直徑，石板高度、技能列寬度都由它推出，
-   窄容器時整體等比縮小，球不會壓到技能列。 */
+   雙球、經驗、增益與技能共用固定尺寸組件；只有整組等比縮放，切換模式不重排。 */
 
 #battle-canvas-host {
-  --hud-orb: clamp(64px, 17cqw, 112px);
-  /* 玻璃內徑扣掉兩側 10px 內距，與液位高度無關。 */
-  --orb-glass-size: calc(var(--hud-orb) - 20px);
-  --hud-h: calc(var(--hud-orb) * .82);
-  --hud-side: calc(var(--hud-orb) + 16px);
-  /* 為兩側球框之外的雕飾預留空間，技能可用寬度跟著底座計算。 */
-  --hud-edge-space: calc(var(--hud-orb) * .6);
-  --hud-width: calc(100cqw - 2 * var(--hud-edge-space));
-  /* 金屬色：高光／本色／暗部／縫 */
+  /* 依正常戰鬥區的可用寬度共用倍率，與 fullscreen 畫布變寬無關。 */
+  --hud-scale: min(1, calc((var(--af-combat-w, 820px) - 48px) / 772px));
+}
+
+#battle-canvas-host #battle-hud {
+  position: absolute;
+  left: 50%;
+  bottom: -2px;
+  width: 772px;
+  height: 160px;
+  transform: translateX(-50%) scale(var(--hud-scale));
+  transform-origin: 50% 100%;
+  z-index: 30;
+  pointer-events: none;
+  --hud-orb: 112px;
+  --orb-glass-size: 92px;
+  --hud-h: 91.84px;
+  --hud-side: 128px;
+  --hud-width: 672px;
+  --hud-edge-space: 50px;
   --hud-metal-hi: #e4d19a;
   --hud-metal: #8c7a52;
   --hud-metal-lo: #4a4130;
@@ -41,17 +51,14 @@
   border-radius: calc(var(--hud-orb) / 2) calc(var(--hud-orb) / 2) 8px 8px;
 }
 
-/* 只挖空底座的繪製層，讓玻璃透出場景；技能、增益與點擊區域不裁切。 */
+/* 不透明底座延伸至畫框下緣，縮放後也不留下透景接縫。 */
 #battle-canvas-host #battle-action-dock::before {
   content: '';
   position: absolute;
   inset: 0;
   pointer-events: none;
-  border-radius: inherit;
-  mask-image:
-    radial-gradient(circle at calc(var(--hud-orb) / 2 - 1px) calc(100% - var(--hud-orb) / 2 - 5px), transparent calc(var(--hud-orb) / 2 - 9px), #000 calc(var(--hud-orb) / 2 - 8px)),
-    radial-gradient(circle at calc(100% - var(--hud-orb) / 2 + 1px) calc(100% - var(--hud-orb) / 2 - 5px), transparent calc(var(--hud-orb) / 2 - 9px), #000 calc(var(--hud-orb) / 2 - 8px));
-  mask-composite: intersect;
+  border-radius: calc(var(--hud-orb) / 2) calc(var(--hud-orb) / 2) 0 0;
+  bottom: -2px;
   /* 由上到下：上緣金屬飾條、中央微光、拉絲紋、石板底、鑄鐵紋理 */
   background:
     linear-gradient(var(--hud-metal-hi) 0 1px, var(--hud-metal) 1px 3px, var(--hud-metal-lo) 3px 4px, var(--hud-seam) 4px 5px, transparent 5px) top / 100% 5px no-repeat,
@@ -133,7 +140,8 @@
   position: absolute;
   left: 50%;
   bottom: calc(var(--hud-h) * .1);
-  width: min(344px, calc(var(--hud-width) - 2 * var(--hud-side)));
+  width: 344px;
+  height: 66.5px;
   max-width: none;
   transform: translateX(-50%);
   padding: 6px;
@@ -195,7 +203,7 @@
 /* 增益列：貼在底座上緣之上，與技能列同寬 */
 #battle-canvas-host #battle-action-dock #battle-buff-bar {
   bottom: calc(100% + 12px);
-  width: min(344px, calc(var(--hud-width) - 2 * var(--hud-side)));
+  width: 344px;
   max-width: none;
   padding: 0;
 }
@@ -229,7 +237,7 @@
 #battle-canvas-host .mana-orb { --orb-color:66 137 255; --orb-deep:17 30 115; --orb-top:235 179 255; --orb-spark:172 111 255; }
 #battle-canvas-host .battle-resource-orb .orb-glass {
   isolation:isolate;
-  background:radial-gradient(ellipse at 50% 15%,#a4b3bd14,#35424c24 48%,#0b152b52);
+  background:radial-gradient(ellipse at 50% 15%,#25323d,#17212a 48%,#091322);
   box-shadow:0 0 0 1px #071018,inset 0 1px 2px #e6f3ff80,inset 1px 0 2px #a6b8cd30;
 }
 #battle-canvas-host .battle-resource-orb .orb-glass::before {
@@ -321,13 +329,6 @@
   box-shadow: none;
 }
 
-/* 全螢幕保留原戰鬥區尺度的 HUD，整組置中，不把底座與雙球拉到畫面兩端。
-   一般畫布寬度＝戰鬥區寬度扣除左右 padding、容器邊框與畫布邊框。 */
-#ui-shell.battle-fullscreen #battle-canvas-host {
-  --hud-width: min(100cqw, calc(var(--af-combat-w) - 48px));
-  --hud-edge-space: calc((100cqw - var(--hud-width)) / 2);
-}
-
 /* 核定的岩甲符文框：透明孔中心對準玻璃，右側鏡像藍色版。
    圖含短內刺，畫在玻璃上方；不攔截球體或技能的互動。 */
 #battle-canvas-host .battle-resource-orb::after {
@@ -346,13 +347,13 @@
 #battle-canvas-host #battle-health-orb::after {
   left: calc(var(--hud-orb) * .5 - var(--frame-size) * .599);
   right: auto;
-  background-image: url('../images/ui/battle-hud/orb-frame-health.png?v=1');
+  background-image: url('../images/ui/battle-hud/orb-frame-health.png?v=2');
 }
 
 #battle-canvas-host #battle-mana-orb::after {
   right: calc(var(--hud-orb) * .5 - var(--frame-size) * .599);
   left: auto;
-  background-image: url('../images/ui/battle-hud/orb-frame-mana.png?v=1');
+  background-image: url('../images/ui/battle-hud/orb-frame-mana.png?v=2');
   transform: scaleX(-1);
 }
 
