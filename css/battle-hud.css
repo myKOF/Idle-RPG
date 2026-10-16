@@ -367,6 +367,11 @@
     animation: none;
   }
 
+  /* 雙球內光暈仍需流動；減少動態時放慢原旋流，避免變成靜止圖案。 */
+  #battle-canvas-host .orb-energy::before {
+    animation: battle-orb-current 14s linear infinite alternate;
+  }
+
   #battle-canvas-host .orb-liquid,
   #battle-canvas-host .orb-shield {
     transition: none;

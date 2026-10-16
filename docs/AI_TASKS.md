@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## BATTLE-ORB-FLOW-20261017 — 恢復血球與法力球內光暈流動
+
+- Owner：Codex；Done，單一開發者。使用者回報雙球內圓形光暈靜止，要求恢復流動。正式CSS／DOM隔離頁重現：瀏覽器prefers-reduced-motion=true，兩球orb-energy::before的animationName均none；Windows減少動畫偏好與此一致。
+- 允許css/battle-hud.css針對球內旋流的減少動態規則、index.html僅HUD CSS快取、本紀錄；禁止系統設定、液位／護盾數值、Worker／Protocol／存檔、素材／Preset及其他副本。不分派、不合併推送。三檔衝突預檢乾淨，工作區乾淨。
+- 方式／驗收：減少動態時只為使用者指定的球內光暈保留較慢且平順的原旋流，其他裝飾維持既有減少動態行為；正常模式沿用原動畫。核對兩球實際transform隨時間變化，空／滿／部分液位、固定光環尺寸、選單暫停／恢復，相關回歸／Build／Console／diff後獨立Commit。純CSS顯示修正，無新增素材或素材庫變更。
+- 完成3檔：css/battle-hud.css在減少動態媒體規則末段只恢復orb-energy::before原battle-orb-current，14秒linear／alternate，比一般模式原7秒放慢一倍；其他粒子、液面與玻璃裝飾維持減少動態規則。index.html僅HUD CSS1.0.16→17，本紀錄同步；沒有新增JS排程、改動系統設定或玩法／存檔／素材。素材庫無本次變更，無需素材Commit。
+- 指令／結果：`node --test tests/battle-resource-orbs.test.cjs tests/battle-fullscreen.test.cjs tests/esc-shortcut.test.cjs tests/init-ui-smoke.test.cjs tests/battle-log-ui-layout.test.cjs tests/fullscreen-toggle.test.cjs tests/game-menu.test.cjs tests/game-menu-pause.test.cjs`32/32通過；`npm.cmd run build`528檔通過；`git diff --check`通過。可逆CSS修正使用正式瀏覽器動畫量測與既有回歸，不新增鏡像靜態測試或降低斷言。
+- 瀏覽器：Browser專用IAB連線不可用，改CUA／IAB隔離localhost4331；正式CSS／DOM fixture與正式index／Worker／Pixi均核對。修前兩球animationName=none，修後皆battle-orb-current／14s／running且兩次transform矩陣不同；粒子仍none。空球display／animation皆none，45%與100%液位保留150.875px固定光環及裁切。暫停前後矩陣一致且state=paused，恢復running；正式遊戲Esc選單與關閉也實際通過。Console error／warning0，未讀真人存檔；主頁只在本次獨立測試來源建立新角色。測試fixture初次切片抓到前一個battle-scene、以及後續臨時按鈕引號錯誤，皆只修臨時頁後重驗，正式程式無此錯誤。
+- 唯讀檢查未改：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、css/style.css／ashen-forge.css／ashen-forge-flat.css／dialogs.css、js/ui.js／game-menu.js／lagprobe.js、舊球體接入／裁切紀錄及上述八份回歸；沒有新增Preset或外部素材。預覽保留本聊天visualizations/resource-orb-flow-restored.png，臨時腳本／服務／頁籤已清理。
+- 交付：Commit為本紀錄所在`[Codex] fix: 恢復減少動態模式下雙球光暈流動`，回覆附編號。無未完成需求或已知新增阻擋，可供Review／合併，未合併推送；未做真人長戰效能壓測。一般動畫規則與液位計算原樣保留，僅指定光暈在減少動態下例外保留慢速。下一步整合後重新載入遊戲驗收流動。
+
 ## SCENE-FOG-SOFT-EDGE-20261017 — 漂移霧氣四周平滑淡出
 
 - Owner：Codex；Done，單一開發者。使用者要求消除場景霧氣矩形邊界、四周平滑淡出，保留原漂移。前置已完成唯讀追查：霧團超出貼圖框且被硬裁切；後續使用者審閱合併。
