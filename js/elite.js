@@ -1648,12 +1648,16 @@ function eliteOnAllyDeath(dead) {
     /* 復仇：同一群每死一隻，存活的復仇者變大、變強、變快 */
     if (dead._gid !== undefined && e._gid === dead._gid && e._el) {
       var da = eliteArch(e, 'avenger');
-      /* 疊層有上限（maxStacks，預設 5）：體積、攻速、跑速都是連乘，不設上限在人堆裡死十隻就是 6 倍大小、6 倍攻速 */
-      if (da && (e._el.avStacks || 0) < (da.maxStacks > 0 ? da.maxStacks : 5)) {
+      /* 體積有上限：一般菁英／高級菁英每次 +size（20%）、最多 sizeMax（2 倍）；BOSS 每次 +bossSize（10%）、最多 bossSizeMax（1.5 倍）。
+         體積、攻速、跑速都是連乘，不設上限在人堆裡死十隻就是 6 倍大小、6 倍攻速；體積長到上限就不再疊層。 */
+      var avBoss = e._tier === 'boss' || e._tier === 'tower';
+      var avStep = avBoss ? (da && da.bossSize > 0 ? da.bossSize : 0.1) : (da ? da.size : 0);
+      var avCap = avBoss ? (da && da.bossSizeMax > 0 ? da.bossSizeMax : 1.5) : (da && da.sizeMax > 0 ? da.sizeMax : 2);
+      if (da && (e._grow || 1) < avCap - 1e-9) {
         var rt = e._el;
         rt.avStacks = (rt.avStacks || 0) + 1;
         if (eliteStatusEntry(da, 'self')) rt.rageSid = eliteStatusEntry(da, 'self').id;
-        e._grow = (e._grow || 1) * (1 + da.size);
+        e._grow = Math.min(avCap, (e._grow || 1) * (1 + avStep));
         e.aspd = (Number(e.aspd) || 1) * (1 + da.aspd);
         e.runSpeed = ((Number(e.runSpeed) > 0) ? Number(e.runSpeed) : (typeof bfEnemySpeed === 'function' ? bfEnemySpeed() : 210)) * (1 + da.run);
         eliteCastFx(e, da);

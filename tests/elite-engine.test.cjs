@@ -433,12 +433,19 @@ test('ELITE-ENGINE-18 復仇：同群每死一隻，存活的復仇者體積 +20
   assert.ok(Math.abs(c.eliteAtkFactor(a) / atk0 - 1.4) < 1e-9, '攻擊 +40%');
   stepElite(c, 0.2);
   assert.equal(c.statusActive(a, 'eRage'), true, '復仇者身上有「怒意」狀態（光環畫面由 Status 表決定）');
-  // 疊層上限（maxStacks，預設 5）：體積、攻速、跑速都是連乘，人堆裡死十幾隻也不能長成巨獸
-  const cap = c.ELITE_AFFIXES.e_avenger.maxStacks;
-  assert.equal(cap, 5);
+  // 體積上限：一般菁英／高級菁英最多 2 倍（每次 +20%）；體積、攻速、跑速都是連乘，人堆裡死十幾隻也不能長成巨獸
+  const d_ = c.ELITE_AFFIXES.e_avenger;
+  assert.equal(d_.sizeMax, 2);
   for (let i = 0; i < 10; i++) { const x = makeMinion(c, 1, { x: 240 + i * 8, y: 60 }); x.hp = 0; c.eliteOnDeath(x); }
-  assert.equal(a._el.avStacks, cap, '疊到上限就不再增加');
-  assert.ok(Math.abs(a._grow - Math.pow(1.2, cap)) < 1e-9, '體積停在 1.2^5：' + a._grow);
+  assert.ok(Math.abs(a._grow - 2) < 1e-9, '菁英疊到最滿剛好 2 倍：' + a._grow);
+  assert.equal(a._el.avStacks, 4, '1.2^4 超過 2 倍，第 4 層收在上限，之後不再疊');
+  // BOSS：每次 +10%、最多 1.5 倍
+  const bossGroup = makeElite(c, ['e_avenger'], { x: 150, y: 90, hp: 1e9, tier: 'boss', gid: 7 });
+  assert.equal(bossGroup._tier, 'boss');
+  const growth = [];
+  for (let i = 0; i < 10; i++) { const x = makeMinion(c, 7, { x: 300 + i * 8, y: 100 }); x.hp = 0; c.eliteOnDeath(x); growth.push(+bossGroup._grow.toFixed(4)); }
+  assert.deepEqual(growth.slice(0, 3), [1.1, 1.21, 1.331], 'BOSS 每次放大 1.1 倍');
+  assert.ok(Math.abs(bossGroup._grow - 1.5) < 1e-9, 'BOSS 最多 1.5 倍：' + bossGroup._grow);
 });
 
 test('ELITE-ENGINE-19 召喚：2~4 隻與召喚者同屬性的普通怪；召喚者死後牠們最大生命 −90%', () => {
