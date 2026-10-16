@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## SCENE-FOG-SOFT-EDGE-20261017 — 漂移霧氣四周平滑淡出
+
+- Owner：Codex；Done，單一開發者。使用者要求消除場景霧氣矩形邊界、四周平滑淡出，保留原漂移。前置已完成唯讀追查：霧團超出貼圖框且被硬裁切；後續使用者審閱合併。
+- 允許js/battle-decor.js霧氣建圖、js/worker/decor-atlas.worker.js及index.html／tools/decor-preview.html／tools/scene-preview.html必要快取、本紀錄；禁止漂移速度／數量、玩法／模擬／存檔、地板或其他素材及其他副本，不合併推送。全部目標預檢乾淨。
+- 方式／驗收：建圖時以獨立暫存畫布合成霧氣與橢圓柔邊遮罩，再寫回圖集，避免遮罩清掉其他素材；沿原解析度、固定種子、霧氣數量／縮放／漂移。驗證四邊alpha為0、中央霧氣保留、主端／Worker畫素一致與實際放大漂移，相關回歸、Build、Console、diff後獨立Commit。純程序建圖修正，無新增獨立素材或Preset／素材庫變更。
+- 完成6檔：battle-decor僅建圖時套smoothstep橢圓淡出並保留透明邊，獨立畫布以原1.5倍解析度合成，不影響其他圖集素材或增加每幀繪製；原14個霧瓣的種子／中心透明度、數量／縮放／速度／暫停均保留。同步主頁、兩預覽頁與Worker import的Decor1.0.17→18、圖集Worker1.0.8→9。無外部素材、素材庫無變更／無素材Commit。
+- 指令／結果：`node --test tests/battle-decor.test.cjs tests/battle-arena.test.cjs tests/battle-perspective.test.cjs`47/47通過；`npm.cmd run build`528檔通過；`git diff --check`通過。局部可逆外觀修正以實際Canvas畫素與既有回歸驗證，不新增鏡像測試或放寬斷言。
+- 瀏覽器：Browser專用連線不可用，改CUA／IAB隔離localhost4616，臨時fixture沿正式函式與HEAD原函式並排；舊版切邊alpha37，新版1／1.5／2／5.2倍、種子2／17／99四邊全部alpha0且中央保留。沼澤地表／地下整圖集除霧氣框外逐畫素差0；正式PIXI節點固定鏡頭每0.1秒位移符合原0.4～1.2px、地表3團且暫停不移。正式Renderer預覽沼澤地表／地下、鏡頭前進／返回正常；14份地表／地下主端與真Worker圖集alpha差及預乘RGB差皆0，Console error／warning0。未讀寫真人存檔。
+- 唯讀檢查：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、地板載入與捲動、場景配置／漂移生命週期、圖集布局／裁切及上述3份測試與Build；本次沒有更動玩法／模擬／地板貼圖／Preset／VFX編輯器。對照截圖保留本聊天visualizations/fog-soft-edge-comparison.png；臨時fixture／服務／頁籤收尾清理。
+- 交付：Commit為本紀錄所在 `[Codex] fix: 修正場景霧氣矩形切邊並保留漂移`，回覆附編號；無未完成項，可供Review／合併，未合併推送。限制：未做真人長時間戰鬥效能壓測，遮罩只在圖集建圖時執行；下一步重新載入遊戲查看新版霧氣。
+
 ## BOSS-PLAYER-SKILL-20261015 — 封魔塔 BOSS 施放玩家超神進化技能
 
 - Owner：Claude；Done，單一開發者。使用者要求（全權授權、不中途停止）：①塔 BOSS 解鎖哪個超神進化技能，就固定使用哪個技能；②技能效果／特效沿用玩家技能的 Skills2 參數與 Preset，傷害套用 BOSS 強度；③BOSS 沒有的參數先自行補在 Skills2，最後列總結；④沒有解鎖任何技能的 BOSS 額外隨機放出 2 個 NPC 隨機池技能；⑤101 層起的 BOSS 每場隨機放出 2 個玩家超神進化技能；⑥隨機技能每次挑戰都重抽，只有會解鎖技能的 BOSS 是固定專屬技能。
