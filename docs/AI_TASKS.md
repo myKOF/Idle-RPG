@@ -10297,3 +10297,16 @@ Worker 存活且頁面正常完成載入。
 - 瀏覽器：隨機localhost埠／全新隔離headless Edge／正式Worker與Pixi，不讀真人存檔；1920×1080、1366×768、2560×1080、390×700四組皆通過外框貼齊四邊、戰鬥填滿、頂欄／左側隱藏、按鈕還原／Esc還原尺寸一致且不開菜單，保留場景頁籤與HUD；荒漠頁籤可點，原生網頁全螢幕退出一併還原通過。Console error／warning皆0。首次原生驗證經頂欄按鈕被既有headless F11偵測擋下等待逾時，改直接呼叫標準 requestFullscreen 驗證實際 fullscreenchange，未改既有頂欄邏輯；最終全部通過。主畫面與戰鬥全螢幕截圖保存在本聊天 visualizations/battle-layout-filled.png／battle-fullscreen.png；臨時服務／瀏覽器與QA腳本已關閉清理。
 - 唯讀檢查：js/ui-scale.js、js/battle-renderer.js、js/game-menu.js、css/style.css／ashen-forge-flat.css、既有上述回歸測試與Build工具、AI規範／prompts/codex.md、Claude index變更。收尾Claude工作區新增VFX Runtime／skills2／elite_data／bridge快取，與本次區段無交集或語意依賴；以Claude完整工作檔再次三方試跑退出碼0，未覆蓋他人修改。沒有獨立美術資源變更／素材庫Commit。
 - 交付：Commit為本紀錄所在 `[Codex] feat: 主畫面貼齊視窗並新增戰鬥區全螢幕`，回覆附編號；本次無未完成項，可審閱合併，未合併／推送。限制：未做真人存檔長時間戰鬥／效能壓測；手機仍沿用原有全介面等比縮放，不另改手機版設計。下一步由使用者整合後重載遊戲，右上全螢幕／還原或 Esc 驗收；既有指南修改保留未提交。
+
+## BATTLE-HUD-SCULPTURE-20261016 — 全螢幕球側立體雕飾
+
+- Owner：Codex；Done，單一開發者。使用者指出鋸齒不好看，要求改成參考圖風格的立體雕刻，兩側與血球／法力球自然銜接。
+- 前置：中央HUD已完成。允許css/battle-hud.css、index.html僅HUD快取、自製images/ui/battle-hud雕飾、新tools/battle-hud匯出工具與素材庫codex-authored/battle-hud原圖／來源／匯出、必要驗證及本紀錄。禁止玩法／JS模擬／Worker／存檔／配置／外部未授權素材／其他副本，不合併推送。現有三檔預檢乾淨，新檔修改前預檢；後續使用者審閱整合。
+- 內容：移除CSS鋸齒，透明母圖製成立體深色金屬卷葉雕飾，沿球外圈與底座包覆。Mote Studio可存取但為像素畫工具，不適合本次細緻浮雕，採內建imagegen生成自製素材；參考圖僅風格，不匯入或描圖。沿既有素材庫Root解析與單向匯出保存母圖，素材先Commit再遊戲Commit。
+- 驗收：透明與尺寸／匯出雜湊一致、全螢幕雙側銜接與圓瓶／技能不遮擋、多尺寸／正常模式／還原／Esc／點擊、Console／回歸／Build／diff，記錄兩個Commit。不以CSS尖刺或幾何占位代替雕刻。
+- 完成／修改5檔：css/battle-hud.css 移除幾何尖刺與clip-path，使用images/ui/battle-hud/orb-carving.png的透明立體卷葉雕刻，凹弧依原球框對位，法力側CSS鏡像共用。index.html HUD CSS1.0.8→1.0.9；新tools/battle-hud/export-source.cjs沿共用Root提供--make-export／--apply／--check，完整母圖只標準縮小，不重畫；本紀錄同步。球／技能／底座尺寸不變，裝飾pointer-events:none。
+- 素材：素材庫codex-authored/battle-hud保留1254×1254透明原圖、512×512匯出、exports.json雜湊、SOURCE.md與PROMPT.txt；RGBA alpha範圍0..255、圓孔中心alpha0，母圖／匯出／遊戲SHA256一致。素材庫Commit `11b766c`，先於遊戲提交；自製ImageGen素材，不使用第三方素材或新增VFX Preset。
+- 指令／結果：`node --test tests/battle-fullscreen.test.cjs tests/battle-resource-orbs.test.cjs tests/esc-shortcut.test.cjs tests/battle-log-ui-layout.test.cjs` 11/11通過；`npm.cmd run build` 525檔通過；`node tools/battle-hud/export-source.cjs --check`與本次diff check通過。無新增鏡像測試或放寬既有斷言。
+- 瀏覽器：依CUA／Mote工具檢查，使用IAB隨機本機新來源、正式Worker與Pixi，不讀真人存檔；1920×1080、1366×768、2560×1080、390×700皆驗證雕飾載入／鏡像、HUD尺寸一致與置中、球中心仍可命中、Esc恢復原版面且不開菜單；Console error／warning 0。目視確認卷葉沿金框自然包覆，不遮液面與技能；已向使用者展示預覽，檔案為本聊天visualizations/battle-hud-sculpture.png／battle-fullscreen-sculpture.png。臨時IAB頁籤與HTTP服務已關閉、viewport已還原。
+- 唯讀檢查：AI規範、imagegen技能、Mote Studio、素材庫Root／既有enamel-nav與scene-renewal匯出流程、css/ashen-forge.css／style.css、js/ui.js／battle-renderer.js與上述回歸。未修改玩法／Worker／配置／存檔。另一聊天NPC-VISION同時修改本副本NPC配置／JS／測試與index JS快取／任務紀錄，只暫存本次HUD CSS快取與獨立紀錄，保留其餘工作；本紀錄放檔尾避免同位置插入，三方試跑後分段提交。
+- 交付：遊戲Commit為本紀錄所在 `[Codex] feat: 以立體卷葉雕刻銜接戰鬥資源球`，回覆附編號；本次無未完成項，可審閱合併，未合併／推送。限制：未做真人長時間效能壓測，手機仍沿原等比縮放。下一步使用者整合後重載檢視；內建生成提示詞及來源詳見素材庫PROMPT.txt／SOURCE.md。
