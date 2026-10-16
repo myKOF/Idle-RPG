@@ -10,11 +10,11 @@
       "assetId": "light-masks-1.0/default/circle_b.png",
       "zIndex": 0,
       "scale": {
-        "x": 0.4297,
-        "y": 0.2148
+        "x": 0.4199,
+        "y": 0.1641
       },
-      "alpha": 0.55,
-      "tint": "#1a1230",
+      "alpha": 0.6,
+      "tint": "#150f2a",
       "blendMode": "add",
       "duration": 1.2,
       "projection": {
@@ -28,10 +28,10 @@
       "assetId": "light-masks-1.0/default/circle_b.png",
       "zIndex": 1,
       "scale": {
-        "x": 0.4004,
-        "y": 0.1367
+        "x": 0.3906,
+        "y": 0.1172
       },
-      "alpha": 0.55,
+      "alpha": 0.35,
       "tint": "#7a64a8",
       "blendMode": "add",
       "duration": 1.2,
@@ -43,178 +43,77 @@
     {
       "id": "block0",
       "type": "sprite",
-      "assetId": "codex-authored/rockarmor-objects/plate.png",
+      "assetId": "claude-authored/rock-wall/wall-block.svg",
       "zIndex": 2,
       "position": {
-        "x": -92,
-        "y": 8
+        "x": -66.7,
+        "y": 0
       },
-      "rotation": -0.0698,
       "scale": {
-        "x": 0.1445,
-        "y": 0.2031
+        "x": 0.2734375,
+        "y": 0.547
       },
       "anchor": {
         "x": 0.5,
-        "y": 0.95
+        "y": 0.93
       },
       "alpha": 1,
-      "tint": "#f2eaff",
-      "duration": 1.2
+      "duration": 1.2,
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      },
+      "followDirection": false
     },
     {
       "id": "block1",
       "type": "sprite",
-      "assetId": "codex-authored/rockarmor-objects/plate.png",
+      "assetId": "claude-authored/rock-wall/wall-block.svg",
       "zIndex": 3,
       "position": {
-        "x": -66,
-        "y": 8
+        "x": 0,
+        "y": 0
       },
-      "rotation": 0,
       "scale": {
-        "x": 0.1445,
-        "y": 0.2031
+        "x": 0.2734375,
+        "y": 0.547
       },
       "anchor": {
         "x": 0.5,
-        "y": 0.95
+        "y": 0.93
       },
       "alpha": 1,
-      "tint": "#ddd0ff",
-      "duration": 1.2
+      "duration": 1.2,
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      },
+      "followDirection": false
     },
     {
       "id": "block2",
       "type": "sprite",
-      "assetId": "codex-authored/rockarmor-objects/plate.png",
+      "assetId": "claude-authored/rock-wall/wall-block.svg",
       "zIndex": 4,
       "position": {
-        "x": -40,
-        "y": 8
+        "x": 66.7,
+        "y": 0
       },
-      "rotation": 0.0698,
       "scale": {
-        "x": 0.1445,
-        "y": 0.2031
+        "x": 0.2734375,
+        "y": 0.547
       },
       "anchor": {
         "x": 0.5,
-        "y": 0.95
+        "y": 0.93
       },
       "alpha": 1,
-      "tint": "#f2eaff",
-      "duration": 1.2
-    },
-    {
-      "id": "block3",
-      "type": "sprite",
-      "assetId": "codex-authored/rockarmor-objects/plate.png",
-      "zIndex": 5,
-      "position": {
-        "x": -14,
-        "y": 8
+      "duration": 1.2,
+      "projection": {
+        "x": 1,
+        "y": 0.5
       },
-      "rotation": -0.0698,
-      "scale": {
-        "x": 0.1445,
-        "y": 0.2031
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.95
-      },
-      "alpha": 1,
-      "tint": "#ddd0ff",
-      "duration": 1.2
-    },
-    {
-      "id": "block4",
-      "type": "sprite",
-      "assetId": "codex-authored/rockarmor-objects/plate.png",
-      "zIndex": 6,
-      "position": {
-        "x": 14,
-        "y": 8
-      },
-      "rotation": 0,
-      "scale": {
-        "x": 0.1445,
-        "y": 0.2031
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.95
-      },
-      "alpha": 1,
-      "tint": "#f2eaff",
-      "duration": 1.2
-    },
-    {
-      "id": "block5",
-      "type": "sprite",
-      "assetId": "codex-authored/rockarmor-objects/plate.png",
-      "zIndex": 7,
-      "position": {
-        "x": 40,
-        "y": 8
-      },
-      "rotation": 0.0698,
-      "scale": {
-        "x": 0.1445,
-        "y": 0.2031
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.95
-      },
-      "alpha": 1,
-      "tint": "#ddd0ff",
-      "duration": 1.2
-    },
-    {
-      "id": "block6",
-      "type": "sprite",
-      "assetId": "codex-authored/rockarmor-objects/plate.png",
-      "zIndex": 8,
-      "position": {
-        "x": 66,
-        "y": 8
-      },
-      "rotation": -0.0698,
-      "scale": {
-        "x": 0.1445,
-        "y": 0.2031
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.95
-      },
-      "alpha": 1,
-      "tint": "#f2eaff",
-      "duration": 1.2
-    },
-    {
-      "id": "block7",
-      "type": "sprite",
-      "assetId": "codex-authored/rockarmor-objects/plate.png",
-      "zIndex": 9,
-      "position": {
-        "x": 92,
-        "y": 8
-      },
-      "rotation": 0,
-      "scale": {
-        "x": 0.1445,
-        "y": 0.2031
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.95
-      },
-      "alpha": 1,
-      "tint": "#ddd0ff",
-      "duration": 1.2
+      "followDirection": false
     },
     {
       "id": "rim",
@@ -223,28 +122,28 @@
       "zIndex": 12,
       "position": {
         "x": 0,
-        "y": -2
+        "y": -6
       },
       "scale": {
-        "x": 0.4102,
-        "y": 0.0586
+        "x": 0.4004,
+        "y": 0.0273
       },
-      "alpha": 0.8,
+      "alpha": 0.7,
       "tint": "#e6d6ff",
       "blendMode": "add",
       "duration": 1.2,
       "alphaOverLife": [
         [
           0,
-          0.6
+          0.5
         ],
         [
           0.5,
-          0.9
+          0.85
         ],
         [
           1,
-          0.6
+          0.5
         ]
       ],
       "projection": {
@@ -269,7 +168,7 @@
         0.9
       ],
       "spawn": {
-        "height": 4,
+        "height": 6,
         "shape": "box",
         "width": 190
       },
@@ -301,7 +200,7 @@
   ],
   "sizing": {
     "authored": {
-      "height": 28,
+      "height": 67,
       "width": 200
     },
     "shape": "rectangle"

@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="200" viewBox="0 0 256 200">
+  <!-- 築牆用的一塊岩壁：頂面＋正面兩個面的粗切石塊（斜俯視），灰紫色。原創繪製，無參考圖。 -->
+  <defs>
+    <linearGradient id="top" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d6cfe4"/><stop offset=".55" stop-color="#b3aac8"/><stop offset="1" stop-color="#9a90b2"/>
+    </linearGradient>
+    <linearGradient id="front" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8d84a6"/><stop offset=".5" stop-color="#6d6486"/><stop offset="1" stop-color="#4a4263"/>
+    </linearGradient>
+    <linearGradient id="side" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#5a5276"/><stop offset="1" stop-color="#3c3554"/>
+    </linearGradient>
+  </defs>
+  <!-- 底部陰影 -->
+  <ellipse cx="128" cy="190" rx="124" ry="9" fill="#14102a" opacity=".55"/>
+  <!-- 正面（略往下收，像粗切的石塊） -->
+  <polygon points="2,66 254,66 250,192 6,192" fill="url(#front)" stroke="#2e2842" stroke-width="3" stroke-linejoin="round"/>
+  <!-- 正面的石縫（交錯的磚紋） -->
+  <g stroke="#2e2842" stroke-width="3" stroke-linecap="round" fill="none" opacity=".9">
+    <path d="M3 110 L253 110"/>
+    <path d="M5 152 L251 152"/>
+    <path d="M86 66 L84 110"/><path d="M176 66 L178 110"/>
+    <path d="M44 110 L42 152"/><path d="M130 110 L132 152"/><path d="M212 110 L214 152"/>
+    <path d="M86 152 L84 192"/><path d="M176 152 L178 192"/>
+  </g>
+  <!-- 正面各塊的受光邊 -->
+  <g stroke="#b9afd2" stroke-width="2" stroke-linecap="round" fill="none" opacity=".75">
+    <path d="M6 70 L82 70"/><path d="M90 70 L172 70"/><path d="M180 70 L250 70"/>
+    <path d="M8 114 L40 114"/><path d="M48 114 L128 114"/><path d="M136 114 L210 114"/><path d="M218 114 L248 114"/>
+    <path d="M10 156 L82 156"/><path d="M90 156 L174 156"/><path d="M182 156 L246 156"/>
+  </g>
+  <!-- 裂紋與缺角 -->
+  <g stroke="#1f1a33" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity=".85">
+    <path d="M60 80 L68 96 L58 104"/><path d="M150 120 L158 134 L150 146 L156 150"/>
+    <path d="M222 74 L216 90 L224 104"/><path d="M110 160 L118 174 L108 186"/>
+  </g>
+  <!-- 頂面（較亮，往內縮，表現出厚度） -->
+  <polygon points="30,14 226,14 254,66 2,66" fill="url(#top)" stroke="#2e2842" stroke-width="3" stroke-linejoin="round"/>
+  <!-- 頂面的紋路 -->
+  <g stroke="#7d73a0" stroke-width="2" stroke-linecap="round" fill="none" opacity=".8">
+    <path d="M70 26 L118 24 L112 40"/><path d="M150 30 L196 28"/><path d="M40 52 L92 56 L100 48"/><path d="M168 48 L220 52"/>
+  </g>
+  <path d="M34 17 L222 17" stroke="#f1ecfa" stroke-width="2.5" stroke-linecap="round" opacity=".7"/>
+  <!-- 頂面碎石 -->
+  <g fill="#8d84a6" stroke="#2e2842" stroke-width="1.5">
+    <polygon points="122,34 134,32 138,40 126,42"/><polygon points="80,44 88,42 90,48 82,50"/><polygon points="188,40 198,38 200,45 190,46"/>
+  </g>
+</svg>

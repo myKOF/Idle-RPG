@@ -385,6 +385,31 @@ test('ELITE-ENGINE-14 築牆：近戰隔著牆打不到（雙方），遠程不�
   assert.equal(c.ELITE_RT.walls.length, 0);
 });
 
+test('ELITE-ENGINE-14b 築牆：每次 2~3 面整塊岩壁，每面 18 米長、6 米厚（三塊 6×6 米岩塊）', () => {
+  const c = fresh();
+  const m = quiet(makeElite(c, ['e_walls'], { x: 200, y: 0, hp: 1e9 }));
+  const d = c.ELITE_AFFIXES.e_walls;
+  assert.deepEqual([d.len, d.thick], [180, 60], '18 米長、6 米厚');
+  const seen = new Set();
+  for (let k = 0; k < 40; k++) {
+    c.ELITE_RT.walls.length = 0;
+    c.eliteCastWalls(m, d);
+    stepElite(c, d.warn + 0.2);
+    const ws = c.ELITE_RT.walls;
+    assert.ok(ws.length === 2 || ws.length === 3, '一次 2 或 3 面：' + ws.length);
+    ws.forEach((w) => { assert.equal(w.len, 180, '每面 18 米'); assert.equal(w.thick, 60, '厚 6 米'); });
+    seen.add(ws.length);
+    stepElite(c, 7.5);
+  }
+  assert.ok(seen.has(2) && seen.has(3), '平行 2 面與 U 型 3 面都會出現');
+  // 牆的畫面：寬長比跟 Preset 一致（18:6＝3:1），岩塊不會被拉歪
+  c.ELITE_RT.walls.length = 0;
+  c.eliteCastWalls(m, d);
+  stepElite(c, d.warn + 0.2);
+  const fx = c.vfx.filter((v) => v.vfx && v.vfx.ground === d.v.field && v.area && v.area.w > 0);
+  assert.ok(fx.length >= 2 && fx.every((v) => Math.abs(v.area.w / v.area.h - 3) < 1e-6), '矩形比例 18:6');
+});
+
 test('ELITE-ENGINE-15 漩渦：先有暗影引力場，再以 60 米/秒把玩家拉到牠身邊；拉扯中玩家走位暫停', () => {
   const c = fresh();
   const m = quiet(makeElite(c, ['e_vortex'], { x: 110, y: 0, hp: 1e9 }));

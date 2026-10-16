@@ -334,31 +334,37 @@ NEW['en-mortar-mark'] = () => ({
   ]
 });
 
-/* 築牆預警：牆體升起前的地面標記（矩形）：紫色警示帶＋虛線＋飛起的碎石。 */
+/* 築牆預警：牆體升起前的地面標記（矩形，18×6 米＝authored 200×67）：紫色警示帶＋虛線框＋飛起的碎石。 */
 NEW['en-wall-warn'] = () => ({
-  id: 'en-wall-warn', duration: 0.8, loop: true, sizing: rectSizing(200, 28),
+  id: 'en-wall-warn', duration: 0.8, loop: true, sizing: rectSizing(200, 67),
   layers: [
-    withGround(kit.sprite({ id: 'fill', asset: A.discB, z: 0, sizeX: 215, sizeY: 130, alpha: 0.55, tint: '#9a6cff', blend: 'add', duration: 0.8, alphaOverLife: [[0, 0.4], [0.5, 0.7], [1, 0.4]] })),
-    withGround(kit.sprite({ id: 'edge', asset: A.reticleDashed, z: 1, sizeX: 215, sizeY: 120, alpha: 0.9, tint: '#e0ccff', blend: 'add', duration: 0.8 })),
-    withGround(kit.sprite({ id: 'line', asset: A.trace06H, z: 2, sizeX: 210, sizeY: 40, alpha: 1, tint: '#f2e8ff', blend: 'add', duration: 0.8 })),
-    kit.particle({ id: 'dust', asset: A.dirt01, z: 3, rate: 22, lifetime: [0.4, 0.7], spawnBox: [190, 6], speed: [14, 40], direction: -90, spread: 60, startPx: [16, 26], alpha: 0.8, tint: '#cdbcf0', blend: 'add', alphaOverLife: [[0, 0], [0.3, 0.9], [1, 0]] })
+    withGround(kit.sprite({ id: 'fill', asset: A.discB, z: 0, sizeX: 215, sizeY: 80, alpha: 0.55, tint: '#9a6cff', blend: 'add', duration: 0.8, alphaOverLife: [[0, 0.4], [0.5, 0.7], [1, 0.4]] })),
+    withGround(kit.sprite({ id: 'edge', asset: A.reticleDashed, z: 1, sizeX: 210, sizeY: 70, alpha: 0.9, tint: '#e0ccff', blend: 'add', duration: 0.8 })),
+    withGround(kit.sprite({ id: 'line', asset: A.trace06H, z: 2, sizeX: 210, sizeY: 22, alpha: 1, tint: '#f2e8ff', blend: 'add', duration: 0.8 })),
+    kit.particle({ id: 'dust', asset: A.dirt01, z: 3, rate: 26, lifetime: [0.4, 0.7], spawnBox: [190, 50], speed: [14, 40], direction: -90, spread: 60, startPx: [16, 26], alpha: 0.8, tint: '#cdbcf0', blend: 'add', alphaOverLife: [[0, 0], [0.3, 1], [1, 0]] })
   ]
 });
 
-/* 石牆：升起後持續存在的石砌高牆（矩形，長度與厚度由模擬層決定）：一排灰紫的岩塊，頂緣有淡淡的魔力光。 */
+/* 石牆：升起後持續存在的整塊岩壁。18×6 米（authored 200×67）＝三塊約 6×6 米的粗切岩塊並排（一塊就是一個大石磚，不是細柱），
+   岩塊素材 claude-authored/rock-wall/wall-block.svg（頂面＋正面兩個面，灰紫色）。腳下一層陰影，頂緣一道淡淡的魔力光。
+   牆的長度與厚度由模擬層的 len／thick 決定，Preset 的比例就是 18:6，所以岩塊不會被拉歪。 */
 NEW['en-stone-wall'] = () => {
+  const BLOCK = 'claude-authored/rock-wall/wall-block.svg';
   const layers = [
-    withGround(kit.sprite({ id: 'shadow', asset: A.discB, z: 0, sizeX: 220, sizeY: 110, alpha: 0.55, tint: '#1a1230', blend: 'add', duration: 1.2 })),
-    withGround(kit.sprite({ id: 'base', asset: A.discB, z: 1, sizeX: 205, sizeY: 70, alpha: 0.55, tint: '#7a64a8', blend: 'add', duration: 1.2 }))
+    withGround(kit.sprite({ id: 'shadow', asset: A.discB, z: 0, sizeX: 215, sizeY: 84, alpha: 0.6, tint: '#150f2a', blend: 'add', duration: 1.2 })),
+    withGround(kit.sprite({ id: 'base', asset: A.discB, z: 1, sizeX: 200, sizeY: 60, alpha: 0.35, tint: '#7a64a8', blend: 'add', duration: 1.2 }))
   ];
-  const xs = [-92, -66, -40, -14, 14, 40, 66, 92];
-  xs.forEach((x, i) => {
-    layers.push(kit.sprite({ id: 'block' + i, asset: 'codex-authored/rockarmor-objects/plate.png', z: 2 + i, x: x, y: 8, sizeX: 74, sizeY: 104, anchor: { x: 0.5, y: 0.95 },
-      rotDeg: (i % 3 - 1) * 4, alpha: 1, tint: i % 2 ? '#ddd0ff' : '#f2eaff', duration: 1.2 }));
+  [-66.7, 0, 66.7].forEach((x, i) => {
+    /* 岩塊是「直立」的圖：位置跟著牆的方向（projection 的旋轉與壓扁）走，圖本身不轉（followDirection:false）、
+       高度補償地面壓扁（sy ×2），所以牆朝任何方向，岩塊都站得直、排成一列。
+       素材是 256×200 的 SVG（kit 的 size 以 512 貼圖為基準，這裡直接給縮放）。 */
+    const blk = kit.sprite({ id: 'block' + i, asset: BLOCK, z: 2 + i, x: x, y: 0, sx: 70 / 256, sy: (54.7 / 200) * 2, anchor: { x: 0.5, y: 0.93 }, alpha: 1, duration: 1.2 });
+    blk.projection = GROUND; blk.followDirection = false;
+    layers.push(blk);
   });
-  layers.push(withGround(kit.sprite({ id: 'rim', asset: A.trace06H, z: 12, y: -2, sizeX: 210, sizeY: 30, alpha: 0.8, tint: '#e6d6ff', blend: 'add', duration: 1.2, alphaOverLife: [[0, 0.6], [0.5, 0.9], [1, 0.6]] })));
-  layers.push(kit.particle({ id: 'dust', asset: A.dirt01, z: 20, rate: 8, lifetime: [0.5, 0.9], spawnBox: [190, 4], speed: [6, 16], direction: -90, spread: 50, startPx: [14, 22], alpha: 0.5, tint: '#c4b4e4', blend: 'add', alphaOverLife: [[0, 0], [0.3, 0.7], [1, 0]] }));
-  return { id: 'en-stone-wall', duration: 1.2, loop: true, sizing: rectSizing(200, 28), layers };
+  layers.push(withGround(kit.sprite({ id: 'rim', asset: A.trace06H, z: 12, y: -6, sizeX: 205, sizeY: 14, alpha: 0.7, tint: '#e6d6ff', blend: 'add', duration: 1.2, alphaOverLife: [[0, 0.5], [0.5, 0.85], [1, 0.5]] })));
+  layers.push(kit.particle({ id: 'dust', asset: A.dirt01, z: 20, rate: 8, lifetime: [0.5, 0.9], spawnBox: [190, 6], speed: [6, 16], direction: -90, spread: 50, startPx: [14, 22], alpha: 0.5, tint: '#c4b4e4', blend: 'add', alphaOverLife: [[0, 0], [0.3, 0.7], [1, 0]] }));
+  return { id: 'en-stone-wall', duration: 1.2, loop: true, sizing: rectSizing(200, 67), layers };
 };
 
 /* 石牆升起瞬間的塵爆。 */

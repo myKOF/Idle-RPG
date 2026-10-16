@@ -583,6 +583,14 @@
 - 驗證：新增／重寫 6 支測試約 70 項；全庫測試失敗名稱與改造前 HEAD 比對，新增 0；實機（隱藏面板驅動）看過 arcane／poisoncross／frostburst／frostpulse／walls／vortex／electrified／plague／封魔塔 BOSS，並用離線渲染產生玩家 vs 敵人的特效對照預覽圖。
 - 已知：漩渦的拋物線高度沒有畫面（Canvas 沒有玩家離地高度）；任何一個 Preset 的素材不在發佈清單裡，整個 VFX Runtime 會靜默組裝失敗（所有特效消失），新增 Preset 後務必 `node tools/vfx/export-assets.cjs`。
 
+## Claude｜築牆改成整塊岩壁、毒素加持毒圈放大（ELITE-FX3-20261016）
+
+- Owner：Claude；Done（等使用者實機看）。使用者回饋：①毒素加持毒圈還是太小，要約他框出的紅圈的 80%（估算＝半徑 4 米；`hubR` 2.8→4，Preset 毒池與外環改成填滿整個判定圈）②築牆的畫面是一排細長的柵欄，應該是整塊岩壁：由約 6×6 米的岩塊組成，每面牆 18 米長，每次至少 2～3 面。
+- 築牆：每面 `len` 18 米 × `thick` 6 米（三塊 6×6 米岩塊並排）、`dist` 9 米（兩側牆離玩家）、`n:[2,3]`（2＝平行、3＝U 型；U 的背牆也是 18 米）。Preset 比例 authored 200×67＝18:6，岩塊不會被拉歪；視覺矩形高度改為 `thick`（原本是厚度×2）。
+- 新素材：`claude-authored/rock-wall/wall-block.svg`（原創 SVG：頂面＋正面兩面的粗切石塊，256×200，灰紫色），放在素材庫 `D:\MyGame\Asset\claude-authoredock-wall\`（附 SOURCE.md，**素材庫不在本 repo，需要你在素材庫那邊提交**），索引用手動插入單筆（`vfx/asset-index.json`；素材庫目前有名稱衝突，scanner 整份重掃會失敗，不能用），再 `export-assets`。
+- 岩塊是直立的圖：projection（位置跟牆方向走、y 壓 0.5）＋ `followDirection:false`（圖不轉）＋ sy ×2（補償壓扁），所以牆朝任何方向岩塊都站得直。kit 的 `size` 以 512 貼圖為基準，非 512 的素材要直接給 `sx`／`sy`。
+- 驗證：新增 ELITE-ENGINE-14b（每次 2 或 3 面、每面 18×6 米、Preset 矩形比例 3:1、平行與 U 型都會出現）；實機看過整塊岩壁圍住玩家、直立與橫向的牆都站得直。
+
 ## Claude｜火鏈重做、毒素加持改版、帶電電光團、復仇體積上限（ELITE-FX2-20261016）
 
 - Owner：Claude；Done（火鏈使用者已看過說「不錯」；毒素加持與帶電等使用者實機看）。使用者回饋：①火鏈看不出來、不像鎖鏈，重做；菁英跑位時應該是「長出更多鏈環」，不是把單個鏈環拉長 ②毒素加持不對：中心一個毒圈（放大 2 倍），十字向外延伸約 12 米／秒、最長 36 米 ③帶電給了暗黑 3 的參考圖（藍色分岔電光團）④畫面上偶爾出現超大模型敵人 ⑤復仇：BOSS 每次 ×1.1 最多 1.5 倍，其他菁英最多 2 倍。
