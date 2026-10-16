@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## NPC-ENCOUNTER-RETALIATE-20261016 — 受擊警戒與隨機遠方補群
+
+- Owner：Codex；Done，單一開發者。使用者要求視野外NPC受玩家攻擊後直接追擊反擊，追加遠方群數可調為隨機4～8群、死亡後可隨機補上；後者取代前輪不補生規則。
+- 範圍：battlefield／formula的受擊警戒、combat遠方生成、data／game_parameters Excel與CSV／apply_params／說明、相關測試、index／bridge／sim.worker必要快取與本紀錄。沿用FIELD敵人權威、NPC視野與原攻擊射程；不改存檔／Protocol／素材或其他副本，不合併推送。
+- 預檢：功能與表格檔案乾淨；Claude新增岩壁與毒圈的改動只與本次快取鍵相交，延續使用者已明確允許「保留雙方功能並更新快取」的授權。docs僅新增獨立任務段，merge-tree試跑文件乾淨，無語意相依；快取衝突留待使用者整合，不改Claude功能。
+- 驗收：正常命中／護盾／持續與衍生傷害觸發追擊並停止遊走，未命中／零傷害不觸發；原射程、進場、控場與冷卻不繞過。遠方初次隨機抽定4～8群，整群死亡才在遠方隨機空位補回目標；活群不重複、不在身旁補生，共用總容量。參數往返／擾動檢查、完整測試與既有失敗比對、Worker位置投影與瀏覽器、Build／diff後提交。無素材庫變更。
+- 實作：bfAlertEnemy統一視野／受傷警戒，resolveHit含護盾傷害及applyEnemyHpDamage持續／衍生傷害在原結算掛點通知；只更新戰鬥實體暫態，不改傷害公式數值。第一次警戒清遊走並開始遠方怪狂暴計時，後續受傷不重置。遠方世界紀錄初次抽定含端點4～8群，偵測活群鍵消失後洗牌空位補群；仍存活的地點不能重複配置，部分死亡不補單隻。總容量不足保留待補，地點不足則等待移動，不以近身波次計時器刷遠方群。
+- Excel／參數：原「4-遠方怪群／預先生成」d改8、f改4，e仍每群最多4隻，a100米／b160米／c70米不變。Artifact Tool讀取／目標值／渲染，沿既有Excel原生API只改5格並正常重開兩次驗證；原12806個無關格、全部公式／樣式、其他工作表及凍結／保護保留。xlsx_to_csv輸出344列18欄，CSV僅兩列受影響。`node tools/apply_params.cjs`562參數全部一致、將變更0／錨點問題0（561＋群數下限1）；`node tools/apply_params.cjs --check-anchors`擾動513值後562錨點各命中一次。
+- 相關回歸：`node --test --test-reporter=tap tests/npc-damage-aggro.test.cjs tests/npc-roaming.test.cjs tests/npc-vision.test.cjs tests/npc-move-attack.test.cjs tests/npc-elite-skills.test.cjs tests/elite-engine.test.cjs tests/battlefield.test.cjs tests/battlefield-rt.test.cjs tests/multi-enemy.test.cjs tests/tower-battlefield.test.cjs tests/boss-player-skill.test.cjs tests/elite-params.test.cjs tests/enemy-frenzy.test.cjs tests/worker-protocol.test.cjs tests/offline-rewards.test.cjs tests/init-ui-smoke.test.cjs tests/sim-harness-sync.test.cjs`，185/185通過，專項新增8項。初次專項控場fixture誤以為舊追擊會受暈眩停止，改為驗證既有施法移動鎖及暈眩普攻鎖；沒有改控場規則或放寬既有斷言。`npm.cmd run build`528檔通過，git diff --check通過。
+- 瀏覽器：隨機localhost／全新隔離headless Edge、正式Worker＋Pixi，1920×1080全螢幕，未讀真人存檔。抽到6群16隻，先驗10秒未警戒遊走；距離95.72米受到正式sgHitOne技能命中後立即警戒、清遊走且向玩家移動，遠距普攻扣血0，走入射程後實際反擊扣血16。整群死亡後在遠方補2隻回6群，等待120秒仍16隻；追擊與新生怪Canvas／Worker位置差≤2座標。Console error／warning0，服務／瀏覽器已關閉。
+- 快取：data1.0.85／formula1.0.60／battlefield1.4.13／combat1.0.87／bridge1.0.286，Worker入口與上述4個模擬檔import均20261016-npc-retaliate-refill；其他技能／VFX載入鍵保留。唯讀檢查elite／skills2／tower／status、battle-renderer位置補間、Worker投影／Protocol／sim engine、既有Excel工具與回歸，未改其內容。共享副本另一聊天的HUD CSS與紀錄／CSS快取由對方獨立提交，不納本任務；無新素材／素材庫變更。
+- 全庫：`node --test --test-reporter=tap "tests/*.test.cjs"`4509項、4068通過／439失敗／2略過，617.95秒。與前輪已覆載HEAD重現的438個既有失敗按檔案＋名稱比較，全部相同、缺失0；額外1項為啟動時已載入的新增控場fixture舊版本，執行途中修正（產品程式未再變動），最後完整相關17檔185/185通過。最終新命中fixture另固定防守方閃避0，避免測無敵分支時偶發先MISS；沒有調整產品命中規則。全庫未宣稱全綠，未重跑整套長模擬；既有失敗保留原任務處理。
+- 交付：修改14檔（上述程式／參數／快取／說明、本紀錄與新增npc-damage-aggro、更新npc-roaming測試），Commit為本紀錄所在[Codex] feat提交，回覆附編號；未合併／推送。無本次功能待辦，可供審查合併，整合後重新載入驗收。限制：未做真人存檔長時間操作；遠方群共用總容量，容量／遠方空位不足時實際群數可能低於目標。忽略目錄logs/npc-encounters沿前次自動核准以blocked by policy拒絕清理而保留，未納提交，未繞過政策；測試服務均關閉。
+
 ## NPC-FIELD-ENCOUNTERS-20261016 — 遠方預置怪群與未警戒遊走
 
 - Owner：Codex；Done，單一開發者。使用者要求全螢幕可看見更遠敵人，例如100米菁英群，未發現玩家時在出生點附近遊走；追加明確要求遠方群在玩家抵達前預先生成、同區域不持續補怪。保留原近身波次，遠方採固定世界格點與本次遊玩區域生成紀錄，只於移動進新區域預載新地點。

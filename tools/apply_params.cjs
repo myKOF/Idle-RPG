@@ -290,7 +290,7 @@ function objFieldMLValue(file, keyAnchor, field, value, label, scopeVar) {
 }
 
 /* 遠方預置怪群與遊走：名稱錨點，不依賴函式內的數字或程式碼片段。 */
-['cellM', 'preloadM', 'minDistanceM', 'maxGroups', 'maxGroupSize'].forEach(function (field, i) {
+['cellM', 'preloadM', 'minDistanceM', 'maxGroups', 'maxGroupSize', 'minGroups'].forEach(function (field, i) {
   objFieldML('data', '', field, '4-遠方怪群', '預先生成', i, 'FIELD_ENCOUNTER', 'FIELD_ENCOUNTER');
 });
 ['roamRadiusM', 'roamSpeedRatio', 'roamWaitMin', 'roamWaitMax'].forEach(function (field, i) {

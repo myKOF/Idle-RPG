@@ -382,14 +382,19 @@ function placeFieldWave(enemies, standing, append, encounter) {
 }
 
 var FIELD_ELITE_GROUP_SEQ = 0;
-/* 只記錄本次遊玩已預先配置的世界地點，不存第二份敵人資料。
-   G 換成新遊戲／載入的物件時重置；同區域清怪、換關、死亡不重新補生。 */
-var FIELD_ENCOUNTER_RT = { root: null, zones: {} };
+/* 僅記錄世界地點、抽定群數與上次活群鍵；敵人仍只存 FIELD。
+   初次抽定目標群數，整群死亡後在遠方隨機空位補回；活群不重置。 */
+var FIELD_ENCOUNTER_RT = { root: null, zones: {}, targetGroups: null, groups: {}, pending: false };
 function tickFieldEncounters() {
     if (typeof FIELD_ENCOUNTER === 'undefined' || typeof eliteEquip !== 'function' ||
         FIELD._gmArena || FIELD.mapComplete || G.tower.active || hasLiveFieldBoss()) return [];
-    if (FIELD_ENCOUNTER_RT.root !== G) FIELD_ENCOUNTER_RT = { root: G, zones: {} };
+    if (FIELD_ENCOUNTER_RT.root !== G) FIELD_ENCOUNTER_RT = { root: G, zones: {}, targetGroups: null, groups: {}, pending: false };
     var cfg = FIELD_ENCOUNTER, home = bfPlayerPos();
+    var world = FIELD_ENCOUNTER_RT;
+    var maxGroups = Math.max(0, Math.floor(Number(cfg.maxGroups) || 0));
+    var minGroups = Math.min(maxGroups, Math.max(0, Math.floor(Number(cfg.minGroups) || 0)));
+    if (world.targetGroups === null) world.targetGroups = minGroups + Math.floor(Math.random() * (maxGroups - minGroups + 1));
+    var target = Math.min(maxGroups, world.targetGroups);
     var cell = bfMeterPx(Math.max(1, Number(cfg.cellM) || 1));
     var radius = bfMeterPx(Math.max(0, Number(cfg.preloadM) || 0));
     var minimum = bfMeterPx(Math.max(0, Number(cfg.minDistanceM) || 0));
@@ -397,27 +402,41 @@ function tickFieldEncounters() {
     var zone = G.stage.zone || 'desert';
     var rt = FIELD_ENCOUNTER_RT.zones[zone];
     if (!rt) rt = FIELD_ENCOUNTER_RT.zones[zone] = { seen: {}, x: null, y: null };
-    if (rt.x === zx && rt.y === zy) return [];
-    rt.x = zx; rt.y = zy;
     var groups = {}, live = liveFieldEnemies();
     for (var i = 0; i < live.length; i++) if (live[i]._encounterKey) groups[live[i]._encounterKey] = true;
-    var room = Math.max(0, Math.floor(Number(cfg.maxGroups) || 0) - Object.keys(groups).length);
+    var lost = Object.keys(world.groups).some(function (key) { return !groups[key]; });
+    var moved = rt.x !== zx || rt.y !== zy;
+    world.groups = groups;
+    if (!moved && !lost && !world.pending) return [];
+    rt.x = zx; rt.y = zy;
+    var room = Math.max(0, target - Object.keys(groups).length);
+    world.pending = room > 0;
+    if (!room || bfFreeCellCount(live) <= 0) return [];
     var candidates = [], reach = Math.ceil(radius / cell);
     for (var x = zx - reach; x <= zx + reach; x++) {
         for (var y = zy - reach; y <= zy + reach; y++) {
             var key = x + ',' + y, wx = x * cell, wy = y * cell;
             var dx = wx - home.x, dy = wy - home.y, d2 = dx * dx + dy * dy;
-            if (rt.seen[key] || d2 > radius * radius) continue;
-            rt.seen[key] = true; // 包含空地與容量不足的地點；站著／往返都不能反覆補怪
-            if (d2 >= minimum * minimum) candidates.push({ key: zone + ':' + key, x: wx, y: wy, d2: d2 });
+            if (groups[zone + ':' + key] || d2 > radius * radius || d2 < minimum * minimum) continue;
+            candidates.push({ key: zone + ':' + key, x: wx, y: wy, seen: !!rt.seen[key] });
         }
     }
-    candidates.sort(function (a, b) { return a.d2 - b.d2 || a.x - b.x || a.y - b.y; });
+    // 先洗牌再把新地點排前面；死亡補群也可重用空出的遠方地點。
+    for (var si = candidates.length - 1; si > 0; si--) {
+        var sj = Math.floor(Math.random() * (si + 1)), swap = candidates[si];
+        candidates[si] = candidates[sj]; candidates[sj] = swap;
+    }
+    candidates.sort(function (a, b) { return Number(a.seen) - Number(b.seen); });
     var made = [];
     for (var ci = 0; ci < candidates.length && room > 0; ci++) {
         var added = spawnEliteWave(true, false, candidates[ci]);
-        if (added && added.length) { made = made.concat(added); room--; }
+        if (added && added.length) {
+            made = made.concat(added); room--;
+            world.groups[candidates[ci].key] = true;
+            rt.seen[candidates[ci].x / cell + ',' + candidates[ci].y / cell] = true;
+        }
     }
+    world.pending = room > 0 && bfFreeCellCount(liveFieldEnemies()) <= 0;
     return made;
 }
 /* 高級敵人的數值：相對「同階段普通怪」的倍率。
@@ -2000,7 +2019,7 @@ function fieldTick(dt) {
             if (added && added.length) spawnedEnemies = added;
         }
     }
-    tickFieldEncounters(); // 移動進新區域才預置遠方地點；與近身波次計時器無關
+    tickFieldEncounters(); // 預置遠方地點，整群死亡後補群；與近身波次計時器無關
     // 自身防禦在敵人生成時便可起手；不等進場、射程或敵方首擊。
     var defensiveTargets = fieldEnemyList().filter(function (m) { return m && m.hp > 0; });
     if (p.hp > 0 && defensiveTargets.length && !playerActionControlBlocked(p, true) &&

@@ -2073,7 +2073,7 @@ var BF_SPAWN_DIST = 440;       // 生成時離我方多遠（畫面外一點）
 /* 遠方怪群是世界地點的預先配置；近身波次仍沿用 BF_SPAWN_DIST。
    距離與遊走半徑以米配置，位置在 battlefield.js 換算；參數表「4-遠方怪群」。 */
 var FIELD_ENCOUNTER = {
-  cellM: 100, preloadM: 160, minDistanceM: 70, maxGroups: 4, maxGroupSize: 4,
+  cellM: 100, preloadM: 160, minDistanceM: 70, maxGroups: 8, maxGroupSize: 4, minGroups: 4,
   roamRadiusM: 8, roamSpeedRatio: 0.25, roamWaitMin: 0.8, roamWaitMax: 2.5
 };
 var BF_CONTACT_DIST = 46;      // 走到這麼近就停（接觸）

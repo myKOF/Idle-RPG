@@ -2,41 +2,47 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
 const cfg=require('../tools/config_tables.cjs');
 const {loadEliteEnv}=require('./helpers/elite-env.cjs');
-function env(){return loadEliteEnv({stage:1});}
+function env(){const c=loadEliteEnv({stage:1});c.FIELD_ENCOUNTER.minGroups=4;c.FIELD_ENCOUNTER.maxGroups=4;return c;}
 function groups(list){return [...new Set(list.map(m=>m._encounterKey).filter(Boolean))];}
 function plain(c,x=1000){const m={hp:100,pos:{x,y:0},runSpeed:120,sightRange:500,_alerted:false,atkRange:60};c.bfInitRoam(m);return m;}
-test('遠方初始預置四組100米菁英群，全部共用FIELD且固定於世界座標',()=>{
+test('遠方預置菁英群在70～160米內，全部共用FIELD且固定於世界座標',()=>{
  const c=env(),made=c.tickFieldEncounters();
  assert.equal(groups(made).length,4);assert.ok(made.every(m=>c.FIELD.monsters.includes(m)));
  for(const key of groups(made)){
   const members=made.filter(m=>m._encounterKey===key),anchor=members[0].pos;
-  assert.equal(Math.hypot(anchor.x,anchor.y),1000);assert.ok(members.some(m=>m.elite));
+  assert.ok(Math.hypot(anchor.x,anchor.y)>=700&&Math.hypot(anchor.x,anchor.y)<=1600);assert.ok(members.some(m=>m.elite));
   assert.ok(members.length<=4);
   for(const m of members){assert.ok(Math.hypot(m.pos.x-anchor.x,m.pos.y-anchor.y)<80);assert.equal(m._alerted,false);assert.equal(m._roam.x,m.pos.x);}
  }
 });
-test('站著等待、清掉、換關都不補生遠方群；近身波次不受影響',()=>{
+test('活群不持續增生；整群死亡後在遠方補回，部分死亡不補單隻',()=>{
  const c=env();c.tickFieldEncounters();const n=c.FIELD.monsters.length;
  for(let i=0;i<100;i++){c.GT++;assert.equal(c.tickFieldEncounters().length,0);}
  assert.equal(c.FIELD.monsters.length,n);
- c.FIELD.monsters=[];c.FIELD.monster=null;
- assert.equal(c.tickFieldEncounters().length,0);
+ const key=c.FIELD.monsters[0]._encounterKey,group=c.FIELD.monsters.filter(m=>m._encounterKey===key);
+ group[0].hp=0;
+ if(group.length>1)assert.equal(c.tickFieldEncounters().length,0);
+ group.forEach(m=>m.hp=0);const added=c.tickFieldEncounters();assert.ok(added.length);
+ assert.equal(groups(c.liveFieldEnemies()).length,4);
+ assert.ok(added.every(m=>Math.hypot(m.pos.x,m.pos.y)>=620));
+ const survivor=c.liveFieldEnemies().find(m=>!added.includes(m));
  c.G.stage.current=2;assert.equal(c.tickFieldEncounters().length,0);
+ assert.ok(c.FIELD.monsters.includes(survivor));
  c.BF_PLAYER.x=40;assert.equal(c.tickFieldEncounters().length,0);
 });
-test('玩家走入新格區才預載尚未抵達的固定地點，往返不重複生成',()=>{
- const c=env(),first=c.tickFieldEncounters(),keys=groups(first);
+test('移動後死亡補群選玩家遠方空位，往返不重置現有怪群',()=>{
+ const c=env();c.tickFieldEncounters();
  c.FIELD.monsters=[];c.FIELD.monster=null;c.BF_PLAYER.x=1000;
  const next=c.tickFieldEncounters();assert.ok(next.length);
- for(const m of next){assert.ok(!keys.includes(m._encounterKey));assert.ok(Math.hypot(m.pos.x-1000,m.pos.y)>=650);}
- c.FIELD.monsters=[];c.FIELD.monster=null;c.BF_PLAYER.x=0;
+ for(const m of next){assert.ok(Math.hypot(m.pos.x-1000,m.pos.y)>=620);}
+ c.BF_PLAYER.x=0;
  assert.equal(c.tickFieldEncounters().length,0);
 });
-test('地圖生成紀錄獨立；切換回已配置地圖不再補群，新遊戲重置',()=>{
+test('地圖地點獨立、群上限共用；載入新遊戲重置',()=>{
  const c=env();c.tickFieldEncounters();c.FIELD.monsters=[];c.FIELD.monster=null;
  c.G.stage.zone='Icefield';const ice=c.tickFieldEncounters();assert.ok(ice.length);assert.ok(ice.every(m=>m._encounterKey.startsWith('Icefield:')));
- c.FIELD.monsters=[];c.FIELD.monster=null;c.G.stage.zone='desert';assert.equal(c.tickFieldEncounters().length,0);
- c.G=Object.assign({},c.G);assert.ok(c.tickFieldEncounters().length);
+ c.G.stage.zone='desert';assert.equal(c.tickFieldEncounters().length,0);
+ c.G=Object.assign({},c.G);c.FIELD.monsters=[];c.FIELD.monster=null;assert.ok(c.tickFieldEncounters().length);
 });
 test('遠方群共享總容量、遵守群上限；不占原有波次的數量名額',()=>{
  const c=env();c.FIELD_ENCOUNTER.maxGroups=1;c.tickFieldEncounters();assert.equal(groups(c.FIELD.monsters).length,1);
@@ -104,17 +110,43 @@ test('遠方未接戰不增加狂暴計數與平均，發現玩家後才開始�
  c.BF_PLAYER.x=900;c.bfEnemyAlerted(far);c.tickEnemyFrenzy([near,far],160);assert.equal(c.enemyFrenzyPct(far),0);
  c.tickEnemyFrenzy([near,far],171);assert.equal(c.enemyFrenzyPct(far),1.02);
 });
-test('參數表生成與遊走九個值同步至具名設定',()=>{
- const c=env(),rows=cfg.csvParse(fs.readFileSync('config/CSV/game_parameters.csv','utf8'));
- for(const [name,fields] of [['預先生成',['cellM','preloadM','minDistanceM','maxGroups','maxGroupSize']],['未警戒遊走',['roamRadiusM','roamSpeedRatio','roamWaitMin','roamWaitMax']]]){
+test('參數表生成與遊走十個值同步至具名設定',()=>{
+ const c=loadEliteEnv({stage:1}),rows=cfg.csvParse(fs.readFileSync('config/CSV/game_parameters.csv','utf8'));
+ for(const [name,fields] of [['預先生成',['cellM','preloadM','minDistanceM','maxGroups','maxGroupSize','minGroups']],['未警戒遊走',['roamRadiusM','roamSpeedRatio','roamWaitMin','roamWaitMax']]]){
   const r=rows.find(r=>r[2]==='4-遠方怪群'&&r[3]===name);assert.ok(r,name);
   fields.forEach((f,i)=>assert.equal(c.FIELD_ENCOUNTER[f],Number(r[6+i])));
  }
 });
-test('正式Worker持續推進只遊走、不在原地補群，面板傳送同一權威位置',()=>{
+test('群數隨機可取4與8的端點，死亡補群不超出抽定目標',()=>{
+ const vm=require('node:vm');
+ for(const [roll,expected] of [[0,4],[.999,8]]){
+  const c=loadEliteEnv({stage:1});
+  vm.runInContext('Math.random=function(){return '+roll+';}',c);
+  const first=c.tickFieldEncounters();assert.equal(groups(first).length,expected);
+  const target=c.FIELD_ENCOUNTER_RT.targetGroups;
+  for(let round=0;round<10;round++){
+   const before=c.liveFieldEnemies(),key=before[0]._encounterKey;
+   before.filter(m=>m._encounterKey===key).forEach(m=>m.hp=0);
+   const replacements=c.tickFieldEncounters();assert.ok(replacements.length);
+   assert.equal(groups(c.liveFieldEnemies()).length,expected);
+   assert.equal(c.FIELD_ENCOUNTER_RT.targetGroups,target);
+   assert.equal(c.tickFieldEncounters().length,0);
+  }
+ }
+});
+test('戰場容量釋出才補遠方群，沒有死亡時不重置存活群',()=>{
+ const c=env();c.BF_COLS=1;c.BF_ROWS=1;
+ c.FIELD.monsters=[{hp:100,pos:{x:0,y:0}}];c.syncFieldPrimary();
+ assert.equal(c.tickFieldEncounters().length,0);
+ c.FIELD.monsters[0].hp=0;
+ const made=c.tickFieldEncounters();assert.equal(made.length,1);
+ assert.equal(c.tickFieldEncounters().length,0);
+ assert.equal(c.liveFieldEnemies()[0],made[0]);
+});
+test('正式Worker未警戒時遊走、活群存在時不額外補群，面板傳送同一權威位置',()=>{
  const engine=require('../scripts/sim/engine').createEngine({seed:1610100}).boot(null),c=engine.ctx;
  c.bfTickPlayer=()=>false;c.FIELD.spawnCd=1e6;c.fieldTick(.1);
- const keys=groups(c.FIELD.monsters);assert.equal(keys.length,4);
+ const keys=groups(c.FIELD.monsters);assert.ok(keys.length>=4&&keys.length<=8);
  const count=c.FIELD.monsters.length;
  for(let i=0;i<200;i++){c.GT+=.1;c.fieldTick(.1);}
  assert.equal(c.FIELD.monsters.length,count);assert.deepEqual(groups(c.FIELD.monsters),keys);

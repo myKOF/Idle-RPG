@@ -777,6 +777,8 @@ function applyEnemyHpDamage(ent, damage, drainHits) {
     }
     var hpBeforeDirect = ent.hp;
     ent.hp = Math.max(gmFloor, ent.hp - amount);
+    // 持續／衍生傷害同樣會暴露玩家位置，與視野發現共用警戒轉換。
+    if (wasAlive && amount > 0 && ent.maxHp > 0 && typeof bfAlertEnemy === 'function') bfAlertEnemy(ent);
     if (!(ent.maxHp > 0) && typeof sgWarGodBodyOnDamaged === 'function') sgWarGodBodyOnDamaged(hpBeforeDirect - ent.hp, ent);
     // 新版技能【血飲術】反噬：持續傷害／衍生傷害等直接扣血也是「敵人受傷」
     //（僅敵方實體＝有 maxHp；玩家自身流血不通知，天然阻斷遞迴）
@@ -1021,6 +1023,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   if (dCfg.isPlayer && typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.god && defender.hp < 1) defender.hp = 1;
   var actualHpLoss = Math.max(0, hpBeforeHit - Math.max(0, defender.hp));
   out.dmg = dmg + out.absorbed; // 統計上含護盾吸收量
+  if (defenderWasAlive && !dCfg.isPlayer && out.dmg > 0 && typeof bfAlertEnemy === 'function') bfAlertEnemy(defender);
   // 菁英詞條（js/elite.js）：受傷後的反應（反震、生命鏈結分攤、狂暴門檻…）
   if (!dCfg.isPlayer && defender.affixes && out.dmg > 0 && typeof eliteOnDamaged === 'function') {
     eliteOnDamaged(defender, out.dmg, attacker);

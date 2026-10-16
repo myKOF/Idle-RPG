@@ -120,6 +120,12 @@ function bfEnemyAttackRange(ent) {
 /* 圓形視野以雙方中心距離判定；發現一次便持續追擊。
    沒有視野欄位的舊實體／測試替身保留原行為。進場倒數期間不索敵。
    普攻、技能與移動共用這個入口，不能用攻擊射程繞過視野。 */
+function bfAlertEnemy(ent) {
+  if (!ent || ent._alerted) return;
+  ent._alerted = true;
+  if (ent._encounterKey && typeof GT === 'number') ent._frenzyStartAt = GT;
+  if (ent._roam) ent._roam = null;
+}
 function bfEnemyAlerted(ent) {
   if (!ent || ent._enterCd > 0) return false;
   if (ent._alerted) return true;
@@ -129,9 +135,7 @@ function bfEnemyAlerted(ent) {
   if (!p) return false;
   var dx = p.x - c.x, dy = p.y - c.y;
   if (dx * dx + dy * dy > range * range) return false;
-  ent._alerted = true;
-  if (ent._encounterKey && typeof GT === 'number') ent._frenzyStartAt = GT;
-  if (ent._roam) ent._roam = null;
+  bfAlertEnemy(ent);
   return true;
 }
 /* 遠程敵人＝射程超過近戰距離兩倍。攻擊畫面（投射物 vs 近戰撲擊）與停步位置都看這個，
