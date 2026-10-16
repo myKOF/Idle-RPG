@@ -11872,6 +11872,26 @@ if (typeof window !== 'undefined') {
   window.closeTopmostModalOrOverlay = closeTopmostModalOrOverlay;
 }
 
+function setBattleFullscreen(enabled) {
+  var shell = $id('ui-shell');
+  var button = $id('btn-battle-fullscreen');
+  if (!shell || !button) return;
+  shell.classList.toggle('battle-fullscreen', !!enabled);
+  button.textContent = enabled ? '還原' : '全螢幕';
+  button.setAttribute('aria-pressed', String(!!enabled));
+  button.setAttribute('data-tip', enabled ? '還原主畫面（Esc）' : '戰鬥區全螢幕（Esc 還原）');
+  // 沿用既有版面失效與 Canvas resize 路徑，不重建戰場或改變模擬狀態。
+  window.dispatchEvent(new Event('resize'));
+  button.focus();
+}
+
+function exitBattleFullscreen() {
+  var shell = $id('ui-shell');
+  if (!shell || !shell.classList.contains('battle-fullscreen')) return false;
+  setBattleFullscreen(false);
+  return true;
+}
+
 function initUI() {
   // 捕獲階段先守門，避免已開啟的面板或晚到的點擊改動本機配置草稿。
   document.addEventListener('click', function (e) {
@@ -11905,6 +11925,10 @@ function initUI() {
     });
     // 介面縮放（js/ui-scale.js）會改變格線容器寬度，欄數快取一樣得作廢
     document.addEventListener('fullscreenchange', invalidateInventoryGridColumns);
+    document.addEventListener('fullscreenchange', function () {
+      // 瀏覽器先接收 Esc 離開網頁全螢幕時，也一併還原戰鬥區版面。
+      if (!document.fullscreenElement) exitBattleFullscreen();
+    });
     document.addEventListener('visibilitychange', handleVisibilityChange);
     document.addEventListener('pointerdown', noteUiInteraction, true);
     document.addEventListener('keydown', noteUiInteraction, true);
@@ -11913,7 +11937,7 @@ function initUI() {
     window.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' || e.keyCode === 27) {
         if (e.defaultPrevented || e.repeat || e.isComposing) return;
-        if (closeTopmostModalOrOverlay() || (typeof GameMenu !== 'undefined' && GameMenu.handleEscape())) {
+        if (closeTopmostModalOrOverlay() || exitBattleFullscreen() || (typeof GameMenu !== 'undefined' && GameMenu.handleEscape())) {
           e.preventDefault();
           e.stopPropagation();
         }
@@ -11924,6 +11948,12 @@ function initUI() {
   }
   syncVfxQualityForTab();
   initBattleCanvasMode();
+
+  var battleFullscreenBtn = $id('btn-battle-fullscreen');
+  if (battleFullscreenBtn) battleFullscreenBtn.addEventListener('click', function () {
+    var shell = $id('ui-shell');
+    if (shell) setBattleFullscreen(!shell.classList.contains('battle-fullscreen'));
+  });
 
   var toggleDamageBtn = $id('btn-toggle-damage');
   if (toggleDamageBtn) {

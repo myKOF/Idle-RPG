@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## BATTLE-FULLSCREEN-20261016 — 主畫面貼齊與戰鬥區全螢幕
+
+- Owner：Codex；Done，單一開發者。使用者要求消除主畫面四周空隙，戰鬥區右上新增全螢幕按鈕，保留場景頁籤與戰鬥 UI、隱藏其他主介面，再按一次或 Esc 還原。
+- 前置：既有 ui-scale 與 Canvas ResizeObserver 已具備；後續使用者審閱整合。允許 css/ashen-forge.css、js/ui.js、index.html 必要按鈕與快取、tests/battle-fullscreen.test.cjs 與本紀錄；禁止戰鬥邏輯／配置／Worker／存檔／素材及其他副本，不合併或推送。
+- 預檢：除 index 外目標皆乾淨；Claude fecc6ab4 僅改 index 的 skills2／bridge 快取，本次 CSS／UI 快取與 stage-tools 按鈕不同區段且無語意依賴，以完整候選做 git merge-file 三方試跑退出碼0。只分段修改，保留本副本既有 docs/elite_monster_affixes_guide.md 修改。
+- 驗收：正常版面各邊填滿、戰鬥全螢幕／按鈕還原／Esc 還原、場景頁籤與 HUD、縮放與既有全螢幕／Esc 回歸、Build、Console 與 diff check；通過後獨立 Commit。無美術素材變更，不需素材庫 Commit。
+- 完成／修改5檔：css/ashen-forge.css 主版面 padding 對齊外框12px向外延伸，不裁切框線，消除原上下左右額外留白；戰鬥模式隱藏頂欄與管理區並解除固定戰鬥寬度，填滿整個網頁可視範圍。index.html 新增 stage-tools 全螢幕／還原鈕及 CSS1.0.77／UI1.0.165快取；js/ui.js 以單一 shell class 切換並沿用 resize 失效路徑，不重建Canvas／Worker／模擬狀態；Esc 先關頂層彈窗、再還原戰鬥區、之後才開菜單，原生網頁全螢幕退出也同步還原；tests/battle-fullscreen.test.cjs 與本紀錄。
+- 指令／結果：`node --test tests/battle-fullscreen.test.cjs tests/fullscreen-toggle.test.cjs tests/esc-shortcut.test.cjs tests/game-menu.test.cjs tests/init-ui-smoke.test.cjs tests/sidebar-layout.test.cjs tests/battle-log-ui-layout.test.cjs`，19/19通過；`npm.cmd run build`，524檔通過；`git diff --check -- css/ashen-forge.css index.html js/ui.js tests/battle-fullscreen.test.cjs docs/AI_TASKS.md` 通過。全工作區 diff check 另有既存 elite_monster_affixes_guide.md 第25行尾空白，未觸碰或納入本提交。
+- 瀏覽器：隨機localhost埠／全新隔離headless Edge／正式Worker與Pixi，不讀真人存檔；1920×1080、1366×768、2560×1080、390×700四組皆通過外框貼齊四邊、戰鬥填滿、頂欄／左側隱藏、按鈕還原／Esc還原尺寸一致且不開菜單，保留場景頁籤與HUD；荒漠頁籤可點，原生網頁全螢幕退出一併還原通過。Console error／warning皆0。首次原生驗證經頂欄按鈕被既有headless F11偵測擋下等待逾時，改直接呼叫標準 requestFullscreen 驗證實際 fullscreenchange，未改既有頂欄邏輯；最終全部通過。主畫面與戰鬥全螢幕截圖保存在本聊天 visualizations/battle-layout-filled.png／battle-fullscreen.png；臨時服務／瀏覽器與QA腳本已關閉清理。
+- 唯讀檢查：js/ui-scale.js、js/battle-renderer.js、js/game-menu.js、css/style.css／ashen-forge-flat.css、既有上述回歸測試與Build工具、AI規範／prompts/codex.md、Claude index變更。收尾Claude工作區新增VFX Runtime／skills2／elite_data／bridge快取，與本次區段無交集或語意依賴；以Claude完整工作檔再次三方試跑退出碼0，未覆蓋他人修改。沒有獨立美術資源變更／素材庫Commit。
+- 交付：Commit為本紀錄所在 `[Codex] feat: 主畫面貼齊視窗並新增戰鬥區全螢幕`，回覆附編號；本次無未完成項，可審閱合併，未合併／推送。限制：未做真人存檔長時間戰鬥／效能壓測；手機仍沿用原有全介面等比縮放，不另改手機版設計。下一步由使用者整合後重載遊戲，右上全螢幕／還原或 Esc 驗收；既有指南修改保留未提交。
+
 ## BOSS-PLAYER-SKILL-20261015 — 封魔塔 BOSS 施放玩家超神進化技能
 
 - Owner：Claude；Done，單一開發者。使用者要求（全權授權、不中途停止）：①塔 BOSS 解鎖哪個超神進化技能，就固定使用哪個技能；②技能效果／特效沿用玩家技能的 Skills2 參數與 Preset，傷害套用 BOSS 強度；③BOSS 沒有的參數先自行補在 Skills2，最後列總結；④沒有解鎖任何技能的 BOSS 額外隨機放出 2 個 NPC 隨機池技能；⑤101 層起的 BOSS 每場隨機放出 2 個玩家超神進化技能；⑥隨機技能每次挑戰都重抽，只有會解鎖技能的 BOSS 是固定專屬技能。
