@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## BATTLE-FULLSCREEN-HUD-20261016 — 全螢幕 HUD 收攏與精簡頂部
+
+- Owner：Codex；Done，單一開發者。使用者追加要求：全螢幕 HUD 維持正常寬度集中下方中央，頂部標題／場景頁籤／關卡／迷你視窗控制全部隱藏，只保留還原按鈕。
+- 前置：BATTLE-FULLSCREEN-20261016 已完成；允許 css/ashen-forge.css、css/battle-hud.css、index.html 僅 CSS 快取及本紀錄，禁止 JS／戰鬥／Worker／存檔／配置／素材／其他副本，不合併推送。後續使用者整合驗收。
+- 驗收：隔離瀏覽器四種尺寸，HUD 與正常模式尺寸一致並置中、頂部僅還原、按鈕／Esc 還原後版面一致、Console、既有回歸／Build／diff 後獨立 Commit。預檢 CSS 乾淨；共用 index／紀錄與 develop 的 Claude 菁英特效功能不同區段，候選三方合併試跑確認後分段修改。無素材變更。
+
+- 完成／修改4檔：css/ashen-forge.css 只針對 battle-fullscreen 隱藏標題／場景頁籤／關卡列及迷你視窗，移除戰鬥區內距，還原按鈕浮在右上；暫停／統計與狂暴提示下移避免遮擋。css/battle-hud.css 以原 --af-combat-w 扣除一般模式邊框／內距衍生 HUD 寬度，底座與雙球集中下方中央，技能與增益列原尺寸保留。index.html 只更新 CSS 快取1.0.78／1.0.7，本紀錄同步。沒有 JS 或獨立素材變更／素材庫 Commit。
+- 指令／結果：`node --test tests/battle-fullscreen.test.cjs tests/fullscreen-toggle.test.cjs tests/esc-shortcut.test.cjs tests/game-menu.test.cjs tests/battle-resource-orbs.test.cjs tests/battle-log-ui-layout.test.cjs`，20/20通過；`npm.cmd run build`，524檔通過；`git diff --check -- css/ashen-forge.css css/battle-hud.css index.html docs/AI_TASKS.md` 通過。既有指南未提交修改原樣保留，未納本提交。
+- 瀏覽器：隨機localhost埠、隔離headless Edge／正式Worker＋Pixi、不讀真人存檔；1920×1080、1366×768、2560×1080、390×700皆驗證底座／技能列／雙球寬高與一般模式一致、HUD置中、上方指定UI全部隱藏且還原可點、Canvas向上填滿、還原鈕與暫停統計不重疊，按鈕／Esc還原尺寸完全一致且不開菜單，Console error／warning皆0。初次查出一般畫布內框額外4px，調整寬度推導後四組皆通過；無放寬驗收。預覽為本聊天visualizations/battle-fullscreen-compact.png，臨時服務／瀏覽器／QA腳本已清理。
+- 唯讀檢查：js/ui.js／ui-scale.js／battle-renderer.js、css/style.css／ashen-forge-flat.css、上述6份回歸測試、AI規範與既有任務、develop的Claude特效快取與任務紀錄。index／紀錄共用檔候選以共同祖先三方合併試跑皆退出碼0，保留不同區段，不合併其他分支。參考截圖僅用於排版，未使用其外部美術素材。
+- 交付：Commit為本紀錄所在 `[Codex] fix: 收攏全螢幕戰鬥HUD並精簡頂部介面`，回覆附編號；本次無未完成項或已知新增風險，可審閱合併，未合併／推送。未做真人存檔長時間效能壓測；手機沿用原等比縮放。下一步使用者整合後重載並檢視全螢幕效果。
+
 ## BATTLE-FULLSCREEN-20261016 — 主畫面貼齊與戰鬥區全螢幕
 
 - Owner：Codex；Done，單一開發者。使用者要求消除主畫面四周空隙，戰鬥區右上新增全螢幕按鈕，保留場景頁籤與戰鬥 UI、隱藏其他主介面，再按一次或 Esc 還原。

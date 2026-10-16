@@ -96,6 +96,31 @@ body {
   width: 100% !important;
   min-width: 0 !important;
   max-width: none !important;
+  padding: 0;
+}
+
+#ui-shell.battle-fullscreen #battle-area > .af-heading,
+#ui-shell.battle-fullscreen #zone-bar,
+#ui-shell.battle-fullscreen .stage-main-controls,
+#ui-shell.battle-fullscreen .stage-tools > :not(#btn-battle-fullscreen) {
+  display: none !important;
+}
+
+#ui-shell.battle-fullscreen #stage-bar {
+  position: absolute;
+  top: 12px;
+  right: 20px;
+  z-index: 30;
+  width: auto;
+  margin: 0;
+}
+
+#ui-shell.battle-fullscreen #battle-canvas-buttons {
+  top: 44px;
+}
+
+#ui-shell.battle-fullscreen #battle-frenzy {
+  top: 78px !important;
 }
 
 #ui-shell #stats-sidebar {
