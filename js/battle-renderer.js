@@ -939,6 +939,8 @@ var BattleRenderer = (function () {
     if (!sheet || !sheet.anims[animName]) return null;
     var meta = sheet.manifest.anims[animName];
     var sp = new PIXI.AnimatedSprite(sheet.anims[animName]);
+    // 人物序列幀跟隨戰鬥ticker；獨立的shared ticker不受戰鬥暫停dt=0控制。
+    sp.autoUpdate = false;
     sp.animationSpeed = sheet.speeds[animName];
     sp.loop = !!meta.loop;
     var ax = sheet.manifest.anchorX;
@@ -949,6 +951,12 @@ var BattleRenderer = (function () {
     if (typeof k === 'number' && k > 0) sp.scale.set(k);
     sp.play();
     return sp;
+  }
+  function tickEntityAnimation(entity, ticker, dt) {
+    var body = entity && entity.body;
+    if (dt > 0 && body && !body.destroyed && body.playing && typeof body.update === 'function') {
+      body.update(ticker);
+    }
   }
   /* 這個動作在實體目前方向的那一組幀；不分方向的序列幀就是唯一那一組 */
   function animFrames(sheet, entity, animName) {
@@ -6320,6 +6328,7 @@ var BattleRenderer = (function () {
      ⚠️ 不要讓角色在這裡自己移動。顯示層自作主張的位移不會回饋給模擬層，
      敵人卻是照模擬層座標畫的，於是「看到的距離」與「打得到的距離」會分家。 */
     var p = S.player;
+    tickEntityAnimation(p, ticker, dt);
     if (p && dt > 0) {
       /* 倒地／起身：fallK 0＝站著、1＝完全倒下。倒下快一點（被打倒），
          起身慢一點（撐起來），中間帶一點回彈，看起來才像個動作。 */
@@ -6476,6 +6485,7 @@ var BattleRenderer = (function () {
       if (!Object.prototype.hasOwnProperty.call(S.entities, id)) continue;
       var e = S.entities[id];
       if (dt <= 0) continue;
+      tickEntityAnimation(e, ticker, dt);
 
       /* 站位與逼近由模擬層決定（js/battlefield.js 座標制），面板只有 5Hz。
          這裡照內插緩衝播放（見 posSolve）：畫面比模擬層晚一點點，

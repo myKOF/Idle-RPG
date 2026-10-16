@@ -10340,3 +10340,15 @@ Worker 存活且頁面正常完成載入。
 - 瀏覽器：依CUA／Mote工具檢查，使用IAB隨機本機新來源、正式Worker與Pixi，不讀真人存檔；1920×1080、1366×768、2560×1080、390×700皆驗證雕飾載入／鏡像、HUD尺寸一致與置中、球中心仍可命中、Esc恢復原版面且不開菜單；Console error／warning 0。目視確認卷葉沿金框自然包覆，不遮液面與技能；已向使用者展示預覽，檔案為本聊天visualizations/battle-hud-sculpture.png／battle-fullscreen-sculpture.png。臨時IAB頁籤與HTTP服務已關閉、viewport已還原。
 - 唯讀檢查：AI規範、imagegen技能、Mote Studio、素材庫Root／既有enamel-nav與scene-renewal匯出流程、css/ashen-forge.css／style.css、js/ui.js／battle-renderer.js與上述回歸。未修改玩法／Worker／配置／存檔。另一聊天NPC-VISION同時修改本副本NPC配置／JS／測試與index JS快取／任務紀錄，只暫存本次HUD CSS快取與獨立紀錄，保留其餘工作；本紀錄放檔尾避免同位置插入，三方試跑後分段提交。
 - 交付：遊戲Commit為本紀錄所在 `[Codex] feat: 以立體卷葉雕刻銜接戰鬥資源球`，回覆附編號；本次無未完成項，可審閱合併，未合併／推送。限制：未做真人長時間效能壓測，手機仍沿原等比縮放。下一步使用者整合後重載檢視；內建生成提示詞及來源詳見素材庫PROMPT.txt／SOURCE.md。
+
+## BATTLE-CHARACTER-PAUSE-20261016 — 戰鬥暫停時人物序列幀停在當前動作
+
+- Owner：Codex；Done，單一開發者。使用者回報右上角戰鬥暫停後，人物仍播放移動動作；前置為既有combat paused與Pixi戰鬥渲染器，後續交使用者審閱整合。
+- 允許js/battle-renderer.js、index.html僅renderer快取、新tests/battle-renderer-pause.test.cjs及本紀錄；禁止Worker／Protocol／存檔／數值／背景生產／素材／其他副本修改，不合併推送。renderer／新測試預檢乾淨；index與Claude1b17f050的VFX／skills2／bridge快取不同區段，候選git merge-file試跑退出碼0、無語意相依。共享副本HUD雕飾任務的CSS／PNG與index CSS快取／本紀錄上方區段保留，本次紀錄追加檔尾，兩個同檔均三方試跑0且僅stage自己hunk，不等待或納入其進行中工作。
+- 原因／完成4檔：戰鬥paused只把tickWorld的dt設0，但玩家與BOSS的AnimatedSprite仍以autoUpdate掛在PIXI.Ticker.shared繼續走幀；makeAnimSprite設autoUpdate=false，由正式tickWorld於dt>0時手動呼叫body.update(ticker)，玩家及BOSS都跟隨戰鬥更新，使用原ticker.deltaTime保留正常播放速度。paused期間不推進幀或onComplete，恢復沿原小數幀接續，死亡／手動停止／已銷毀本體不重啟；輪廓仍由既有syncOutline對齊。index僅renderer1.6.187→1.6.188，沒有停用全域shared ticker或改戰鬥之外的時間。新測試直接載入專案Pixi8.6.6驗證真實AnimatedSprite。
+- 測試指令／結果：node --test tests/battle-renderer-pause.test.cjs tests/combat-pause.test.cjs tests/game-clock.test.cjs tests/player-directional-sprite.test.cjs，24/24通過（新增4項）；node --test tests/player-cast-act.test.cjs tests/player-outline.test.cjs tests/tower-scene-intro.test.cjs tests/game-menu-pause.test.cjs，22/22通過，合計46/46。涵蓋玩家／BOSS播放、600次暫停更新幀及小數不動、恢復接續、暫停新動作與完成回調、死亡停幀、方向切換／施法／輪廓、塔戰倒數、Esc全遊戲暫停。npm.cmd run build 526檔通過，git diff --check通過；沒有修改既有測試斷言或新增素材。
+- 瀏覽器：CUA隔離localhost:13743正式Worker＋Pixi新角色，不讀真人存檔；按右上角後aria-pressed=true／繼續與戰鬥已暫停顯示，兩次80×55玩家區域截圖逐像素相同；關閉後aria-pressed=false，人物區域重新變動，Console error／warning 0。背景工廠資源在戰鬥暫停期間仍增加，符合既有只暫停戰鬥行為。截圖battle-character-pause.png存本聊天visualizations；臨時頁面／服務與比較截圖清理，既有使用者頁面保留。
+- 唯讀檢查：js/combat.js／worker simStep與paused投影、game-clock.js、Pixi AnimatedSprite.update實作、renderer make／play／轉向／輪廓與上述既有回歸、AI規範與其他AI同檔差異；未改這些未列檔案。無本次美術／素材庫變更，不需素材Commit。
+- 交付：Commit為本紀錄所在[Codex] fix提交，回覆附編號；本需求無未完成項或已知新增風險，可以Review／合併，未合併推送。限制：未做真人存檔長戰／全庫測試；本次僅人物與BOSS序列幀暫停，不改既有場景轉場及其他背景工作的規則。下一步整合後重載遊戲驗收，其他聊天HUD進行中修改原樣保留。
+
+- 提交註記：曾誤將共享暫存區已備妥的HUD CSS快取行提交，已立即更正該筆標題為獨立chore aa872e20；CSS1.0.9→10內容原樣保留。人物修正另行提交，未納入HUD CSS／圖檔／上方任務紀錄。
