@@ -7,9 +7,10 @@
       "name": "en-spark",
       "layerIds": [
         "glow",
-        "fil-a",
-        "fil-b",
-        "fil-c",
+        "plasma",
+        "web-a",
+        "web-b",
+        "web-c",
         "core",
         "zap"
       ]

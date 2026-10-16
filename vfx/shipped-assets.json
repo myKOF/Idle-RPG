@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 172,
+  "assetCount": 173,
   "assets": [
     {
       "assetId": "claude-authored/dragon-devour/vortex-ring.png",
@@ -726,6 +726,13 @@
       "package": "new_materials",
       "contentHash": "sha256:53d6617e7d3a7360ee972edf9a940c688095200e44a0de52d9f338853a411d36",
       "fileSize": 152220
+    },
+    {
+      "assetId": "new_materials/plasma/magic_particles_2.png",
+      "relativePath": "new_materials/plasma/magic_particles_2.png",
+      "package": "new_materials",
+      "contentHash": "sha256:0f7d839a3e690820cd18ca49e2a52f822e134b044ef26780781a68cda7c73d78",
+      "fileSize": 200222
     },
     {
       "assetId": "new_materials/plasma/magic_particles_5.png",

@@ -104,6 +104,25 @@ test('ELITE-ENGINE-3b 跑位時加速（repoSpeed）：目標點跟著玩家走�
   assert.ok(Math.abs(minion.pos.x - n0) > Math.abs(m.pos.x - m0) * 3, '小兵被擠開、跑位中的高級敵人幾乎不動');
 });
 
+test('ELITE-ENGINE-4b 火鏈：距離越遠鏈環越多（換鏈環數不同的 Preset），鏈環本身只小幅拉長', () => {
+  const c = fresh();
+  const d = c.ELITE_AFFIXES.e_firechain;
+  const vars = c.eliteChainVariants(d);
+  assert.ok(vars.length >= 8, '至少 8 個鏈環數級距：' + vars.map((v) => v.n).join(','));
+  assert.equal(vars[0].id.replace(/-\d+$/, ''), 'en-fire-chain');
+  let prev = 0, worst = 1, cur;
+  for (let len = 20; len <= 340; len += 5) {      // 2 米～34 米
+    cur = c.eliteChainPick(d, len, cur);
+    const n = vars[cur].n;
+    assert.ok(n >= prev || len < 60, '距離增加時鏈環數不會變少');
+    prev = n;
+    const stretch = (len / n) / d.linkLen;        // 一節鏈環被拉長的倍率（1＝原樣）
+    if (len >= d.linkLen * vars[0].n * 0.8 && len <= d.linkLen * vars[vars.length - 1].n) worst = Math.max(worst, stretch, 1 / stretch);
+  }
+  assert.ok(worst <= 1.3, '鏈環被拉長或壓縮不超過 30%：' + worst);
+  assert.ok(vars[vars.length - 1].n >= 20, '最長可達 20 節以上');
+});
+
 test('ELITE-ENGINE-4 火鏈：同群夥伴之間常駐一條鏈，玩家踩上去持續受傷；單獨一隻沒有鏈', () => {
   const c = fresh();
   const a = makeElite(c, ['e_firechain'], { x: -300, y: 0, hp: 1e9 });
@@ -117,8 +136,9 @@ test('ELITE-ENGINE-4 火鏈：同群夥伴之間常駐一條鏈，玩家踩上�
   assert.ok(hpLost(c) > before, '站在鏈上會持續受傷');
   const ticks = dmgEvents(c).length;
   assert.ok(ticks >= 5, '高頻率：3 秒內至少 5 次 ' + ticks);
-  // 鏈條畫面：持續場域特效，矩形 w＝兩端距離
-  const chainFx = c.vfx.filter((v) => v.vfx && v.vfx.ground === c.ELITE_AFFIXES.e_firechain.v.field && v.area && v.area.w > 0);
+  // 鏈條畫面：持續場域特效，矩形 w＝兩端距離（Preset 是依距離挑的鏈環數版本之一）
+  const chainIds = c.eliteChainVariants(c.ELITE_AFFIXES.e_firechain).map((v) => v.id);
+  const chainFx = c.vfx.filter((v) => v.vfx && chainIds.indexOf(v.vfx.ground) >= 0 && v.area && v.area.w > 0);
   assert.ok(chainFx.length > 0 && Math.abs(chainFx[chainFx.length - 1].area.w - 600) < 5, '鏈條矩形長度＝兩端距離');
   // 把玩家搬離連線 → 不再受傷
   c.bfPlayerPos().y = 200;
@@ -242,27 +262,42 @@ test('ELITE-ENGINE-9 帶電：每次被擊中向四周散出 2~4 顆電火花；
   assert.ok(c.ELITE_RT.sparks.length <= d.cap);
 });
 
-test('ELITE-ENGINE-10 毒素加持：先有毒液圓點，再展開十字毒球軌道，旋轉擴散 6 秒', () => {
+test('ELITE-ENGINE-10 毒素加持：中心毒圈（2.8 米）→ 十字毒球以 12 米／秒向外長到 36 米，固定不旋轉、持續 6 秒', () => {
   const c = fresh();
   const m = quiet(makeElite(c, ['e_poisoncross'], { x: 150, y: 0, hp: 1e9 }));
   const d = c.ELITE_AFFIXES.e_poisoncross;
+  assert.deepEqual([d.hubR, d.len, d.speed, d.balls], [28, 360, 120, 7], '毒圈 2.8 米、36 米、12 米／秒、每臂 7 顆');
   c.eliteCastCross(m, d);
-  assert.ok(c.vfx.some((v) => v.vfx && v.vfx.ground === d.v.ground), '預警：毒液圓點');
-  stepElite(c, d.warn + 0.3);
+  const hubFx = c.vfx.filter((v) => v.vfx && v.vfx.ground === d.v.ground && v.area && v.area.r > 0);
+  assert.ok(hubFx.length && hubFx[0].area.r === d.hubR, '預警：中心毒圈，半徑 2.8 米（原本的 2 倍）');
+  stepElite(c, d.warn + 0.1);
   assert.equal(c.ELITE_RT.crosses.length, 1);
   const x = c.ELITE_RT.crosses[0];
-  // 在第一顆毒球（東邊、距離 ballGap×f）上
-  const f = 0.7 + 0.8 * 0.3 / d.dur;
-  c.bfPlayerPos().x = x.x + d.ballGap * f * 1.0; c.bfPlayerPos().y = x.y;
-  const mark = hpLost(c);
+  const gap = d.len / d.balls;
+  // 站在中心毒圈裡會受傷
+  c.bfPlayerPos().x = x.x + 10; c.bfPlayerPos().y = x.y;
+  let mark = hpLost(c);
   stepElite(c, 0.4);
-  assert.ok(hpLost(c) > mark, '毒球上會受傷');
-  // 十字的對角線方向（兩臂之間）安全
-  c.bfPlayerPos().x = x.x + 60; c.bfPlayerPos().y = x.y + 60;
-  stepElite(c, 0.1);
+  assert.ok(hpLost(c) > mark, '站在毒圈裡會受傷');
+  // 延伸前緣：t≈0.5 秒時只到 6 米；最遠那顆（36 米）此刻還不存在，安全
+  const t0 = c.GT - x.t0;
+  const far = d.len - 1;                      // 最遠一顆旁邊
+  c.bfPlayerPos().x = x.x + far; c.bfPlayerPos().y = x.y;
+  mark = hpLost(c);
+  stepElite(c, 0.3);
+  assert.equal(hpLost(c), mark, '延伸前緣還沒到 36 米：最遠那顆還沒長出來');
+  // 3 秒後長到 36 米：站在最遠那顆上會受傷（旋轉很慢，用當下角度對準）
+  stepElite(c, 3.2);
+  const tt = c.GT - x.t0;
+  c.bfPlayerPos().x = x.x + d.len; c.bfPlayerPos().y = x.y;
+  mark = hpLost(c);
+  stepElite(c, 0.3);
+  assert.ok(hpLost(c) > mark, '長到 36 米後，最遠那顆毒球會打到人：' + tt);
+  // 兩臂之間安全
+  c.bfPlayerPos().x = x.x + 150; c.bfPlayerPos().y = x.y + 150;
   const m2 = hpLost(c);
   stepElite(c, 0.2);
-  assert.equal(hpLost(c), m2, '兩臂之間是安全的（旋轉很慢，0.2 秒內不會轉到）');
+  assert.equal(hpLost(c), m2, '兩臂之間是安全的');
   stepElite(c, 7);
   assert.equal(c.ELITE_RT.crosses.length, 0);
 });
@@ -433,12 +468,19 @@ test('ELITE-ENGINE-18 復仇：同群每死一隻，存活的復仇者體積 +20
   assert.ok(Math.abs(c.eliteAtkFactor(a) / atk0 - 1.4) < 1e-9, '攻擊 +40%');
   stepElite(c, 0.2);
   assert.equal(c.statusActive(a, 'eRage'), true, '復仇者身上有「怒意」狀態（光環畫面由 Status 表決定）');
-  // 疊層上限（maxStacks，預設 5）：體積、攻速、跑速都是連乘，人堆裡死十幾隻也不能長成巨獸
-  const cap = c.ELITE_AFFIXES.e_avenger.maxStacks;
-  assert.equal(cap, 5);
+  // 體積上限：一般菁英／高級菁英最多 2 倍（每次 +20%）；體積、攻速、跑速都是連乘，人堆裡死十幾隻也不能長成巨獸
+  const d_ = c.ELITE_AFFIXES.e_avenger;
+  assert.equal(d_.sizeMax, 2);
   for (let i = 0; i < 10; i++) { const x = makeMinion(c, 1, { x: 240 + i * 8, y: 60 }); x.hp = 0; c.eliteOnDeath(x); }
-  assert.equal(a._el.avStacks, cap, '疊到上限就不再增加');
-  assert.ok(Math.abs(a._grow - Math.pow(1.2, cap)) < 1e-9, '體積停在 1.2^5：' + a._grow);
+  assert.ok(Math.abs(a._grow - 2) < 1e-9, '菁英疊到最滿剛好 2 倍：' + a._grow);
+  assert.equal(a._el.avStacks, 4, '1.2^4 超過 2 倍，第 4 層收在上限，之後不再疊');
+  // BOSS：每次 +10%、最多 1.5 倍
+  const bossGroup = makeElite(c, ['e_avenger'], { x: 150, y: 90, hp: 1e9, tier: 'boss', gid: 7 });
+  assert.equal(bossGroup._tier, 'boss');
+  const growth = [];
+  for (let i = 0; i < 10; i++) { const x = makeMinion(c, 7, { x: 300 + i * 8, y: 100 }); x.hp = 0; c.eliteOnDeath(x); growth.push(+bossGroup._grow.toFixed(4)); }
+  assert.deepEqual(growth.slice(0, 3), [1.1, 1.21, 1.331], 'BOSS 每次放大 1.1 倍');
+  assert.ok(Math.abs(bossGroup._grow - 1.5) < 1e-9, 'BOSS 最多 1.5 倍：' + bossGroup._grow);
 });
 
 test('ELITE-ENGINE-19 召喚：2~4 隻與召喚者同屬性的普通怪；召喚者死後牠們最大生命 −90%', () => {

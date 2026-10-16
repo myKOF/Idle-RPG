@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "presetId": "en-fire-chain-4",
+  "groups": [
+    {
+      "id": "en-fire-chain-4",
+      "name": "en-fire-chain-4",
+      "layerIds": [
+        "heat",
+        "wire",
+        "link0",
+        "link1",
+        "link2",
+        "link3",
+        "node0",
+        "node1",
+        "embers",
+        "sparks"
+      ]
+    }
+  ],
+  "order": [
+    "group:en-fire-chain-4"
+  ]
+}
