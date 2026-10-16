@@ -433,6 +433,12 @@ test('ELITE-ENGINE-18 復仇：同群每死一隻，存活的復仇者體積 +20
   assert.ok(Math.abs(c.eliteAtkFactor(a) / atk0 - 1.4) < 1e-9, '攻擊 +40%');
   stepElite(c, 0.2);
   assert.equal(c.statusActive(a, 'eRage'), true, '復仇者身上有「怒意」狀態（光環畫面由 Status 表決定）');
+  // 疊層上限（maxStacks，預設 5）：體積、攻速、跑速都是連乘，人堆裡死十幾隻也不能長成巨獸
+  const cap = c.ELITE_AFFIXES.e_avenger.maxStacks;
+  assert.equal(cap, 5);
+  for (let i = 0; i < 10; i++) { const x = makeMinion(c, 1, { x: 240 + i * 8, y: 60 }); x.hp = 0; c.eliteOnDeath(x); }
+  assert.equal(a._el.avStacks, cap, '疊到上限就不再增加');
+  assert.ok(Math.abs(a._grow - Math.pow(1.2, cap)) < 1e-9, '體積停在 1.2^5：' + a._grow);
 });
 
 test('ELITE-ENGINE-19 召喚：2~4 隻與召喚者同屬性的普通怪；召喚者死後牠們最大生命 −90%', () => {

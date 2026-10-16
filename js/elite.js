@@ -1648,7 +1648,8 @@ function eliteOnAllyDeath(dead) {
     /* 復仇：同一群每死一隻，存活的復仇者變大、變強、變快 */
     if (dead._gid !== undefined && e._gid === dead._gid && e._el) {
       var da = eliteArch(e, 'avenger');
-      if (da) {
+      /* 疊層有上限（maxStacks，預設 5）：體積、攻速、跑速都是連乘，不設上限在人堆裡死十隻就是 6 倍大小、6 倍攻速 */
+      if (da && (e._el.avStacks || 0) < (da.maxStacks > 0 ? da.maxStacks : 5)) {
         var rt = e._el;
         rt.avStacks = (rt.avStacks || 0) + 1;
         if (eliteStatusEntry(da, 'self')) rt.rageSid = eliteStatusEntry(da, 'self').id;
