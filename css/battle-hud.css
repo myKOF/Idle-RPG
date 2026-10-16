@@ -12,6 +12,8 @@
 
 #battle-canvas-host {
   --hud-orb: clamp(64px, 17cqw, 112px);
+  /* 玻璃內徑扣掉兩側 10px 內距，與液位高度無關。 */
+  --orb-glass-size: calc(var(--hud-orb) - 20px);
   --hud-h: calc(var(--hud-orb) * .82);
   --hud-side: calc(var(--hud-orb) + 16px);
   /* 為兩側球框之外的雕飾預留空間，技能可用寬度跟著底座計算。 */
@@ -47,8 +49,8 @@
   pointer-events: none;
   border-radius: inherit;
   mask-image:
-    radial-gradient(circle at calc(var(--hud-orb) / 2 + 9px) calc(100% - var(--hud-orb) / 2 - 5px), transparent calc(var(--hud-orb) / 2 - 9px), #000 calc(var(--hud-orb) / 2 - 8px)),
-    radial-gradient(circle at calc(100% - var(--hud-orb) / 2 - 9px) calc(100% - var(--hud-orb) / 2 - 5px), transparent calc(var(--hud-orb) / 2 - 9px), #000 calc(var(--hud-orb) / 2 - 8px));
+    radial-gradient(circle at calc(var(--hud-orb) / 2 - 1px) calc(100% - var(--hud-orb) / 2 - 5px), transparent calc(var(--hud-orb) / 2 - 9px), #000 calc(var(--hud-orb) / 2 - 8px)),
+    radial-gradient(circle at calc(100% - var(--hud-orb) / 2 + 1px) calc(100% - var(--hud-orb) / 2 - 5px), transparent calc(var(--hud-orb) / 2 - 9px), #000 calc(var(--hud-orb) / 2 - 8px));
   mask-composite: intersect;
   /* 由上到下：上緣金屬飾條、中央微光、拉絲紋、石板底、鑄鐵紋理 */
   background:
@@ -198,51 +200,28 @@
   padding: 0;
 }
 
-/* ------------------------------------------------------------------ 血球／魔球：青銅圈＋寶石，坐在底座兩端並凸出上緣 */
+/* ------------------------------------------------------------------ 血球／魔球：保留玻璃盒模型，岩甲框在其外側對位 */
 #battle-canvas-host .battle-resource-orb {
-  /* 玻璃內徑扣掉兩側 8px padding 與 2px 邊框，與液位高度無關。 */
-  --orb-glass-size: calc(var(--hud-orb) - 20px);
+  --frame-size: calc(var(--orb-glass-size) * 1.9);
   bottom: 5px;
   width: var(--hud-orb);
-  padding: 8px;
-  border: 2px solid var(--hud-seam);
-  /* 內圈金環：整圈一致，內側亮、往外均勻變暗，接到外側的青銅細圈（inset 4px 那圈 #6d5d38）。
-     舊版用 conic-gradient 繞圈深淺交錯，暗的那幾段在金環上像一塊塊黑影（使用者 2026-10-05 要求整圈統一）。
-     可見的金環是 padding 的內側 4px（外側 4px 被兩道 inset 細圈蓋住）：100% − 8px 是玻璃邊、100% − 4px 是青銅細圈。 */
-  background: radial-gradient(circle closest-side, transparent calc(100% - 8px), #b39a5e calc(100% - 6px), #857044 calc(100% - 4px), #6d5d38 100%);
-  box-shadow: 0 0 0 3px var(--hud-seam), 0 0 0 5px var(--hud-metal), 0 0 0 6px var(--hud-seam), 0 7px 14px #000c, inset 0 0 0 2px var(--hud-seam), inset 0 0 0 4px #6d5d38;
+  padding: 10px;
+  border: 0;
+  background: none;
+  box-shadow: none;
 }
 
 #battle-canvas-host #battle-health-orb {
-  left: calc(var(--hud-edge-space) + 9px);
+  left: calc(var(--hud-edge-space) - 1px);
 }
 
 #battle-canvas-host #battle-mana-orb {
-  right: calc(var(--hud-edge-space) + 9px);
+  right: calc(var(--hud-edge-space) - 1px);
 }
 
-/* 頂端的寶石 */
+/* 寶石已包含在透明球框內，避免疊加舊的幾何寶石。 */
 #battle-canvas-host .battle-resource-orb::before {
-  content: '';
-  position: absolute;
-  top: -12px;
-  left: 50%;
-  width: 13px;
-  height: 13px;
-  margin-left: -6.5px;
-  z-index: 2;
-  pointer-events: none;
-  transform: rotate(45deg);
-  border: 2px solid var(--hud-seam);
-  box-shadow: 0 0 0 1px var(--hud-metal-hi), 0 2px 4px #000a;
-}
-
-#battle-canvas-host .health-orb::before {
-  background: radial-gradient(circle at 35% 30%, #ffb0a0, #d02a22 55%, #6a0c10);
-}
-
-#battle-canvas-host .mana-orb::before {
-  background: radial-gradient(circle at 35% 30%, #b8d8ff, #2a6ae0 55%, #0c2a70);
+  display: none;
 }
 
 /* 透明玻璃、球框游光與液體旋流；液位仍由即時戰鬥快照控制。 */
@@ -349,26 +328,31 @@
   --hud-edge-space: calc((100cqw - var(--hud-width)) / 2);
 }
 
-/* 自製透明卷葉浮雕：凹弧包覆原球框，鏡像共用同一份母圖匯出。
-   偽元素只負責裝飾，不擴大 HUD 的佈局或互動範圍。 */
+/* 核定的岩甲符文框：透明孔中心對準玻璃，右側鏡像藍色版。
+   圖含短內刺，畫在玻璃上方；不攔截球體或技能的互動。 */
 #battle-canvas-host .battle-resource-orb::after {
   content: '';
   position: absolute;
-  z-index: -1;
-  bottom: calc(var(--hud-orb) * -.34);
-  width: calc(var(--hud-orb) * 1.55);
-  height: calc(var(--hud-orb) * 1.55);
+  z-index: 5;
+  top: calc(var(--hud-orb) * .5 - var(--frame-size) * .518);
+  bottom: auto;
+  width: var(--frame-size);
+  height: var(--frame-size);
   pointer-events: none;
-  background: url('../images/ui/battle-hud/orb-carving.png?v=3') center / contain no-repeat;
-  filter: drop-shadow(0 2px 2px #000b);
+  background: center / contain no-repeat;
+  filter: drop-shadow(0 2px 2px #0009);
 }
 
 #battle-canvas-host #battle-health-orb::after {
-  left: calc(var(--hud-orb) * -.66);
+  left: calc(var(--hud-orb) * .5 - var(--frame-size) * .599);
+  right: auto;
+  background-image: url('../images/ui/battle-hud/orb-frame-health.png?v=1');
 }
 
 #battle-canvas-host #battle-mana-orb::after {
-  right: calc(var(--hud-orb) * -.66);
+  right: calc(var(--hud-orb) * .5 - var(--frame-size) * .599);
+  left: auto;
+  background-image: url('../images/ui/battle-hud/orb-frame-mana.png?v=1');
   transform: scaleX(-1);
 }
 

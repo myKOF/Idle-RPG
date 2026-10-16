@@ -10410,3 +10410,15 @@ Worker 存活且頁面正常完成載入。
 - 正式Worker＋Pixi新來源不讀真人存檔，1920×1080／1366×768正常與全螢幕皆確認光環固定大小、兩球等比縮放且Esc可還原。Console error0；有一筆既有battle-decor背景建圖Worker失敗並自動主執行緒分段繪製的warning，未修改該模組。未做真人長時間效能驗證。預覽截圖為本聊天visualizations/battle-orb-fixed-ring.jpg／battle-orb-fixed-ring-detail.jpg；臨時頁籤、服務與fixture已清理，viewport還原，使用者12412服務保留。
 - 唯讀檢查：AI規範／工作流／既有任務、css/ashen-forge.css玻璃盒模型、index HUD DOM、既有資源球UI／上述4份測試、核定預覽及Claude的VFX／技能／bridge快取差異。文件候選三方試跑0；共享index候選三方試跑0，只stage本次CSS快取與本任務文件段。另一聊天NPC受擊／補群進行中修改含index JS快取與文件檔首，完整留在工作區不納本Commit，無語意相依。
 - 交付：Commit為本紀錄所在 `[Codex] fix: 球內光環依液位裁切且維持原尺寸`，回覆附編號。本需求無未完成項、可供Review／合併，未合併推送；下一步重新載入正式遊戲檢視血量與法力下降時光環維持形狀。
+
+## BATTLE-ORB-RUNIC-FRAME-20261016 — 授權參考的岩甲符文雙色球框
+
+- Owner：Codex；Done，單一開發者。使用者要求依附圖重製紅色血球外框與裝飾、兩根內伸尖刺縮到只略微突出；法力球同造型、火紋／符文／寶石改藍色。使用者明確確認「已取得可重製及遊戲使用授權」，在預覽服檢視後再次要求接入。後續修正：底座恢復原高度與球體基線，兩球連框各向外移10px，技能列不移。
+- 範圍／完成6檔：css/battle-hud.css替換球框、保留玻璃與液位盒模型，10px內距等價原8px內距＋2px邊框，圓孔準確對位；底座沿原0.82×球徑（112px球時91.8281px）與球底5px，不抬高。生命left／法力right由edge+9px改edge-1px，透明底座挖孔同步，經驗／技能／增益不移。index.html僅HUD CSS1.0.13→15（14為過程中已載入版）。新增images/ui/battle-hud/orb-frame-health.png／orb-frame-mana.png與tools/battle-hud/export-frames.cjs，本紀錄同步。沒有修改JS／Worker／玩法／NPC／配置／存檔或其他副本，不合併推送。
+- 素材：內建imagegen依已授權參考重製；紅版保留岩甲、符文、火裂紋、紅寶石與外側長刃，雙內刺縮短；藍版由紅版只改發光色系、右側CSS鏡像。素材庫codex-authored/battle-hud/runic-frames保存兩張1254px RGBA母圖、512px標準匯出、frames.json雜湊／布局、PROMPTS.json完整兩份提示詞、SOURCE.md授權／製作紀錄及references/authorized-reference.png。母圖不裁切／不再重畫；先於遊戲提交素材庫Commit `50940ad`。兩份匯出alpha0..255且圓孔中心alpha0，遊戲副本與匯出SHA256完全相同。舊orb-carving素材／工具原樣保留，素材庫Claude岩壁進行中目錄未提交或修改。本輪沒有新Preset。
+- 匯出流程：新工具沿既有Root解析提供--make-export／--apply／--check，先驗證兩色全部母圖／匯出後才複製遊戲檔，避免第二色錯誤時半套更新；check不需Sharp。--make-export使用bundled Sharp標準縮小，受Git管理設定不含本機絕對路徑。以隔離臨時素材庫破壞一份匯出，--check退出1如預期；真實素材不動。node --check工具語法通過，兩個新舊匯出工具--check皆通過。
+- 指令／結果：`node --test tests/battle-resource-orbs.test.cjs tests/battle-fullscreen.test.cjs tests/esc-shortcut.test.cjs tests/battle-log-ui-layout.test.cjs tests/init-ui-smoke.test.cjs tests/fullscreen-toggle.test.cjs tests/game-menu.test.cjs`24/24通過；`npm.cmd run build`528檔通過；`git diff --check`通過。可逆外觀／間距修正不新增鏡像測試，不放寬既有斷言。
+- 瀏覽器：CUA／IAB隔離localhost11184正式Worker＋Pixi，不讀真人存檔。1920×1080／1366×768／2560×1080／390×700，一般與全螢幕共8組皆確認原底座高度／球底5px、球寬不因切換變化；兩球相對底座邊緣從+9px變-1px、即各向外10px（CSS邏輯座標，隨既有UI縮放），六個技能格中心hit-test全通過，框pointer-events:none。Esc恢復正常模式且未開菜單。Console error／warning0。框底沿原畫布下緣收邊，沒有為容納裝飾再拉高HUD。
+- 邊界：外部臨時fixture載入正式DOM／最終CSS及實際render函式，確認empty0%隱藏球內能量、full100%無虛假液面線、40%生命／35%法力與65%護盾並存、回65%正常；光環保持150.875px方形，不隨液位變形。原減少動態CSS區塊強制啟用後所有新動畫為none。未修改系統設定或正式程式製造測試狀態。臨時fixture／服務／頁籤及量測JSON已清理，viewport還原。
+- 預覽／唯讀：使用者12102預覽服與12412舊預覽服保留，12102/index.html可開正式遊戲；最終截圖在本聊天visualizations/runic-integrated-normal.jpg／runic-integrated-fullscreen.jpg／runic-integrated-detail.jpg。唯讀檢查AI規範與工作流、css/ashen-forge.css球體盒模型、原HUD資料流與固定光環、7份回歸／Build、既有素材匯出／Root、已授權參考／核定預覽、Claude的VFX／技能／bridge快取。index本輪只改CSS快取，與Claude不同區段無語意相依，既有無關快取衝突依使用者已授權保留雙方方式處理；文件候選與共享index三方試跑均0。沒有修改或納入NPC任務。
+- 交付：遊戲Commit為本紀錄所在 `[Codex] feat: 接入岩甲符文雙色球框並保留原HUD高度`，回覆附編號；素材庫Commit50940ad。本需求無未完成項，可以審閱合併，未合併／推送。限制：未做真人長時間效能壓測，窄視窗沿既有等比縮放。下一步重新載入遊戲檢視原高度與雙側10px間距。
