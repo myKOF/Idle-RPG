@@ -1310,10 +1310,17 @@ function eliteCastMortar(m, d) {
 /* ============ 築牆：在你周圍升起 2～3 面整塊岩壁（平行 2 面或 U 型 3 面） ============
    每面 len（18 米）× thick（6 米），由三塊約 6×6 米的岩塊組成（畫面見 en-stone-wall）。n＝一次升起幾面（2＝平行、3＝U 型）。
    牆擋住「近戰」：雙方都不能隔著牆近戰攻擊（遠程不受影響），玩家也走不過牆（battlefield.js 呼叫 eliteWallBlocks／eliteClampMove）。 */
+var ELITE_WALL_STEP = Math.PI / 12;           // 牆的朝向吸附到 15° 的倍數：每個角度各有一張畫好的整面岩壁（en-stone-wall-度數）
+function eliteWallPreset(d, a) {
+  var deg = ((Math.round(a / ELITE_WALL_STEP) * 15) % 180 + 180) % 180;
+  var base = String(d.v.field || '').replace(/-\d+$/, '');
+  var id = base + '-' + deg;
+  return (id === d.v.field || (d.presets && d.presets.indexOf(id) >= 0)) ? id : d.v.field;
+}
 function eliteCastWalls(m, d) {
   var pp = elitePos(), mp = eliteMonsterPos(m) || pp;
-  var ux = pp.x - mp.x, uy = pp.y - mp.y, ul = Math.sqrt(ux * ux + uy * uy) || 1;
-  ux /= ul; uy /= ul;                         // 由怪物指向玩家
+  var a0 = Math.round(Math.atan2(pp.y - mp.y, pp.x - mp.x) / ELITE_WALL_STEP) * ELITE_WALL_STEP;
+  var ux = Math.cos(a0), uy = Math.sin(a0);   // 由怪物指向玩家（吸附到 15° 的倍數）
   var vx = -uy, vy = ux;                      // 垂直方向
   var len = d.len, thick = d.thick, off = d.dist, life = d.life, warn = d.warn || 0.8;
   var nr = eliteRange(d.n, [2, 3]);
@@ -1333,7 +1340,7 @@ function eliteCastWalls(m, d) {
   eliteLater(warn, function () {
     segs.forEach(function (s) {
       var wall = { x: s.x, y: s.y, a: s.a, len: s.len, thick: thick, until: GT + life, owner: m, def: d };
-      wall.vis = eliteVisAdd({ id: eliteVisId('wall'), preset: d.v.field, x: s.x, y: s.y, w: s.len, h: thick, a: s.a, until: wall.until });
+      wall.vis = eliteVisAdd({ id: eliteVisId('wall'), preset: eliteWallPreset(d, s.a), x: s.x, y: s.y, w: s.len, h: thick, a: s.a, until: wall.until });
       ELITE_RT.walls.push(wall);
       eliteBurstFx(s.x, s.y, s.len * 0.32, d.v.attack, 0);
     });

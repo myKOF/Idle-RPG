@@ -407,8 +407,27 @@ test('ELITE-ENGINE-14b 築牆：每次 2~3 面整塊岩壁，每面 18 米長、
   c.ELITE_RT.walls.length = 0;
   c.eliteCastWalls(m, d);
   stepElite(c, d.warn + 0.2);
-  const fx = c.vfx.filter((v) => v.vfx && v.vfx.ground === d.v.field && v.area && v.area.w > 0);
+  const fx = c.vfx.filter((v) => v.vfx && /^en-stone-wall-\d+$/.test(v.vfx.ground) && v.area && v.area.w > 0);
   assert.ok(fx.length >= 2 && fx.every((v) => Math.abs(v.area.w / v.area.h - 3) < 1e-6), '矩形比例 18:6');
+});
+
+test('ELITE-ENGINE-14c 築牆：牆角度吸附到 15° 倍數，並使用對應角度那張整面岩壁 Preset', () => {
+  const c = fresh();
+  const d = c.ELITE_AFFIXES.e_walls;
+  assert.equal(d.presets.length, 11, '場域＋11 份＝12 個角度');
+  for (let k = 0; k < 12; k++) {
+    const m = quiet(makeElite(c, ['e_walls'], { x: 200 * Math.cos(k * 0.53), y: 200 * Math.sin(k * 0.53), hp: 1e9 }));
+    c.ELITE_RT.walls.length = 0;
+    c.eliteCastWalls(m, d);
+    stepElite(c, d.warn + 0.2);
+    c.ELITE_RT.walls.forEach((w) => {
+      const deg = w.a * 180 / Math.PI;
+      assert.ok(Math.abs(deg / 15 - Math.round(deg / 15)) < 1e-6, '角度是 15° 倍數：' + deg);
+      const want = 'en-stone-wall-' + ((Math.round(deg / 15) * 15 % 180) + 180) % 180;
+      assert.equal(w.vis.preset, want, '用對應角度的 Preset');
+    });
+    stepElite(c, 7.5);
+  }
 });
 
 test('ELITE-ENGINE-15 漩渦：先有暗影引力場，再以 60 米/秒把玩家拉到牠身邊；拉扯中玩家走位暫停', () => {

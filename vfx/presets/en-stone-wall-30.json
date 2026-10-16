@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "id": "en-stone-wall-30",
+  "duration": 1.2,
+  "loop": true,
+  "layers": [
+    {
+      "id": "shadow",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/circle_b.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.4199,
+        "y": 0.1641
+      },
+      "alpha": 0.6,
+      "tint": "#150f2a",
+      "blendMode": "add",
+      "duration": 1.2,
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "base",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/circle_b.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.1172
+      },
+      "alpha": 0.35,
+      "tint": "#7a64a8",
+      "blendMode": "add",
+      "duration": 1.2,
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "slab",
+      "type": "sprite",
+      "assetId": "claude-authored/rock-wall/wall-slab-030.svg",
+      "zIndex": 2,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.7
+      },
+      "alpha": 1,
+      "duration": 1.2,
+      "followDirection": false
+    },
+    {
+      "id": "rim",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/rotated/trace_06_rotated.png",
+      "zIndex": 12,
+      "position": {
+        "x": 0,
+        "y": -6
+      },
+      "scale": {
+        "x": 0.4004,
+        "y": 0.0273
+      },
+      "alpha": 0.55,
+      "tint": "#e6d6ff",
+      "blendMode": "add",
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          0.4
+        ],
+        [
+          0.5,
+          0.7
+        ],
+        [
+          1,
+          0.4
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "dust",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/dirt_01.png",
+      "zIndex": 20,
+      "alpha": 0.5,
+      "tint": "#c4b4e4",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 8
+      },
+      "lifetime": [
+        0.5,
+        0.9
+      ],
+      "spawn": {
+        "height": 6,
+        "shape": "box",
+        "width": 190
+      },
+      "speed": [
+        6,
+        16
+      ],
+      "direction": -90,
+      "spread": 50,
+      "startScale": [
+        0.0273,
+        0.043
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.3,
+          0.7
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "height": 67,
+      "width": 200
+    },
+    "shape": "rectangle"
+  }
+}

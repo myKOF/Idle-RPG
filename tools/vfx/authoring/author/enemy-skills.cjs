@@ -345,27 +345,26 @@ NEW['en-wall-warn'] = () => ({
   ]
 });
 
-/* 石牆：升起後持續存在的整塊岩壁。18×6 米（authored 200×67）＝三塊約 6×6 米的粗切岩塊並排（一塊就是一個大石磚，不是細柱），
-   岩塊素材 claude-authored/rock-wall/wall-block.svg（寬而粗糙的風化岩塊，土灰色、稜角分明，畫法與配色對齊遊戲裡的岩石）。腳下一層陰影，頂緣一道淡淡的魔力光。
-   牆的長度與厚度由模擬層的 len／thick 決定，Preset 的比例就是 18:6，所以岩塊不會被拉歪。 */
-NEW['en-stone-wall'] = () => {
-  const BLOCK = 'claude-authored/rock-wall/wall-block.svg';
+/* 石牆：升起後持續存在的整塊岩壁。18×6 米（authored 200×67）＝三塊約 6×6 米的粗切岩塊拼成一整面。
+   岩塊是立體的，牆斜著放時接縫與側面都會變，所以每 15° 畫一張整面牆（claude-authored/rock-wall/wall-slab-NNN.svg，
+   由 rock-wall-slabs.cjs 用斜俯視幾何算出，三塊在接縫處連續），做成 12 份 Preset（en-stone-wall-0～165）。
+   模擬層（js/elite.js eliteCastWalls）把牆角度吸附到 15° 的倍數，依角度挑對應那份；牆長寬由 len／thick 決定，
+   比例就是 18:6。圖本身不轉（followDirection:false、不套地面投影），因為斜俯視的形狀已經畫在圖裡。 */
+const WALL_DEGS = []; for (let d = 0; d < 180; d += 15) WALL_DEGS.push(d);
+const stoneWall = deg => () => {
   const layers = [
     withGround(kit.sprite({ id: 'shadow', asset: A.discB, z: 0, sizeX: 215, sizeY: 84, alpha: 0.6, tint: '#150f2a', blend: 'add', duration: 1.2 })),
     withGround(kit.sprite({ id: 'base', asset: A.discB, z: 1, sizeX: 200, sizeY: 60, alpha: 0.35, tint: '#7a64a8', blend: 'add', duration: 1.2 }))
   ];
-  [-66.7, 0, 66.7].forEach((x, i) => {
-    /* 岩塊是「直立」的圖：位置跟著牆的方向（projection 的旋轉與壓扁）走，圖本身不轉（followDirection:false）、
-       高度補償地面壓扁（sy ×2），所以牆朝任何方向，岩塊都站得直、排成一列。
-       素材是 256×200 的 SVG（kit 的 size 以 512 貼圖為基準，這裡直接給縮放）。 */
-    const blk = kit.sprite({ id: 'block' + i, asset: BLOCK, z: 2 + i, x: x, y: 0, sx: (i === 1 ? 84 : 80) / 256, sy: ((i === 1 ? 64 : 58) / 200) * 2, anchor: { x: 0.5, y: 0.93 }, alpha: 1, duration: 1.2 });   // 中間那塊略寬略高（不用左右翻轉：Chrome 在鏡像下會把 SVG 的光照濾鏡畫成全黑），三塊接起來才像一整面天然岩壁
-    blk.projection = GROUND; blk.followDirection = false;
-    layers.push(blk);
-  });
-  layers.push(withGround(kit.sprite({ id: 'rim', asset: A.trace06H, z: 12, y: -6, sizeX: 205, sizeY: 14, alpha: 0.7, tint: '#e6d6ff', blend: 'add', duration: 1.2, alphaOverLife: [[0, 0.5], [0.5, 0.85], [1, 0.5]] })));
+  /* 素材 256×200，地面中心在 (128,140)；kit 的 size 以 512 貼圖為基準，這裡直接給縮放 1（authored 單位 1:1）。 */
+  const slab = kit.sprite({ id: 'slab', asset: 'claude-authored/rock-wall/wall-slab-' + String(deg).padStart(3, '0') + '.svg', z: 2, x: 0, y: 0, sx: 1, sy: 1, anchor: { x: 0.5, y: 0.7 }, alpha: 1, duration: 1.2 });
+  slab.followDirection = false;
+  layers.push(slab);
+  layers.push(withGround(kit.sprite({ id: 'rim', asset: A.trace06H, z: 12, y: -6, sizeX: 205, sizeY: 14, alpha: 0.55, tint: '#e6d6ff', blend: 'add', duration: 1.2, alphaOverLife: [[0, 0.4], [0.5, 0.7], [1, 0.4]] })));
   layers.push(kit.particle({ id: 'dust', asset: A.dirt01, z: 20, rate: 8, lifetime: [0.5, 0.9], spawnBox: [190, 6], speed: [6, 16], direction: -90, spread: 50, startPx: [14, 22], alpha: 0.5, tint: '#c4b4e4', blend: 'add', alphaOverLife: [[0, 0], [0.3, 0.7], [1, 0]] }));
-  return { id: 'en-stone-wall', duration: 1.2, loop: true, sizing: rectSizing(200, 67), layers };
+  return { id: 'en-stone-wall-' + deg, duration: 1.2, loop: true, sizing: rectSizing(200, 67), layers };
 };
+WALL_DEGS.forEach(d => { NEW['en-stone-wall-' + d] = stoneWall(d); });
 
 /* 石牆升起瞬間的塵爆。 */
 NEW['en-wall-rise'] = () => ({
