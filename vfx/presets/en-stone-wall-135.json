@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "id": "en-stone-wall",
+  "id": "en-stone-wall-135",
   "duration": 1.2,
   "loop": true,
   "layers": [
@@ -41,78 +41,24 @@
       }
     },
     {
-      "id": "block0",
+      "id": "slab",
       "type": "sprite",
-      "assetId": "claude-authored/rock-wall/wall-block.svg",
+      "assetId": "claude-authored/rock-wall/wall-slab-135.svg",
       "zIndex": 2,
-      "position": {
-        "x": -66.7,
-        "y": 0
-      },
-      "scale": {
-        "x": 0.3125,
-        "y": 0.58
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.93
-      },
-      "alpha": 1,
-      "duration": 1.2,
-      "projection": {
-        "x": 1,
-        "y": 0.5
-      },
-      "followDirection": false
-    },
-    {
-      "id": "block1",
-      "type": "sprite",
-      "assetId": "claude-authored/rock-wall/wall-block.svg",
-      "zIndex": 3,
       "position": {
         "x": 0,
         "y": 0
       },
       "scale": {
-        "x": 0.328125,
-        "y": 0.64
+        "x": 1,
+        "y": 1
       },
       "anchor": {
         "x": 0.5,
-        "y": 0.93
+        "y": 0.7
       },
       "alpha": 1,
       "duration": 1.2,
-      "projection": {
-        "x": 1,
-        "y": 0.5
-      },
-      "followDirection": false
-    },
-    {
-      "id": "block2",
-      "type": "sprite",
-      "assetId": "claude-authored/rock-wall/wall-block.svg",
-      "zIndex": 4,
-      "position": {
-        "x": 66.7,
-        "y": 0
-      },
-      "scale": {
-        "x": 0.3125,
-        "y": 0.58
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.93
-      },
-      "alpha": 1,
-      "duration": 1.2,
-      "projection": {
-        "x": 1,
-        "y": 0.5
-      },
       "followDirection": false
     },
     {
@@ -128,22 +74,22 @@
         "x": 0.4004,
         "y": 0.0273
       },
-      "alpha": 0.7,
+      "alpha": 0.55,
       "tint": "#e6d6ff",
       "blendMode": "add",
       "duration": 1.2,
       "alphaOverLife": [
         [
           0,
-          0.5
+          0.4
         ],
         [
           0.5,
-          0.85
+          0.7
         ],
         [
           1,
-          0.5
+          0.4
         ]
       ],
       "projection": {

@@ -50,7 +50,7 @@ tower_jump 5                              跳層後進封魔塔看 BOSS 的技�
 | 7 | `e_frostburst` | 🧊 冰爆 | 主動 | 3～6 | — | 攻擊`en-ice-burst` 受擊`en-hit-freeze` 地板`en-ice-crystal` | 地面浮現多顆持續膨脹、散發白光的冰晶；約 2~3 秒後炸裂，造成冰冷傷害並把範圍內的你完全定身冰凍。 |
 | 8 | `e_frostpulse` | ❄️ 冰凍脈衝 | 主動 | 4～7 | — | 攻擊`en-ice-pulse` 受擊`en-hit-ice` 場域`en-ice-orb` | 生成一顆會持續追著你飄的旋轉冰球，帶著白色冰霧；冰球在周圍半徑內不斷釋放冰冷脈衝，造成傷害並使你緩速。 |
 | 9 | `e_mortar` | 🎆 迫擊 | 主動 | 5～10 | — | 攻擊`en-burst-fire-shockwave-small` 彈體`en-mortar-shell` 受擊`en-hit-fire` 地板`en-mortar-mark` | 朝空中高角度拋射數顆紅色火球並標出落點；有最小射程 14 米（貼臉打不到），火球落地引發小範圍爆炸。 |
-| 10 | `e_walls` | 🧱 築牆 | 主動 | 6～10 | — | 攻擊`en-wall-rise` 地板`en-wall-warn` 場域`en-stone-wall`（岩塊素材 `claude-authored/rock-wall/wall-block.svg`） | 在你周圍從地面升起 2~3 面整塊岩壁（平行 2 面或 U 型 3 面，每面長 18 米、厚 6 米，由三塊約 6×6 米的岩塊組成），持續 7 秒：你和敵人都無法隔著牆壁近戰攻擊（遠程不受影響），常把你關在危險的地面技能裡。 |
+| 10 | `e_walls` | 🧱 築牆 | 主動 | 6～10 | — | 攻擊`en-wall-rise` 地板`en-wall-warn` 場域`en-stone-wall-0`＋11 份其他角度（每 15° 一張整面岩壁素材 `claude-authored/rock-wall/wall-slab-NNN.svg`） | 在你周圍從地面升起 2~3 面整塊岩壁（平行 2 面或 U 型 3 面，每面長 18 米、厚 6 米，由三塊約 6×6 米的岩塊組成），持續 7 秒：你和敵人都無法隔著牆壁近戰攻擊（遠程不受影響），常把你關在危險的地面技能裡。 |
 | 11 | `e_vortex` | 🌀 漩渦 | 主動 | 7～12 | — | 攻擊`en-vortex-burst` 受擊`en-hit-dark` 場域`en-vortex` | 周圍產生向內高速旋轉的氣流與暗影引力場，強行把你以低拋物線（高約 3 米、速度 60 米/秒）拉扯到牠身邊。 |
 | 12 | `e_shield` | 🛡️ 護盾 | 主動 | 8～12 | — | 施放`en-cast-gold`；光罩＝狀態「無敵護罩」`eInvuln`（Status 表持續特效 `en-gold-dome`） | 身邊包覆一層半透明的金色球形能量光罩，持續 3 秒，期間完全免疫所有傷害。 |
 | 13 | `e_vitality` | 💗 強命 | 被動 | 常駐 | — |  | 沒有主動畫面，基礎生命總量提高 50%。 |

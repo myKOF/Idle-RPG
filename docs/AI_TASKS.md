@@ -592,6 +592,7 @@ ock-wall\`（附 SOURCE.md，**素材庫不在本 repo，需要你在素材庫�
 - 岩塊是直立的圖：projection（位置跟牆方向走、y 壓 0.5）＋ `followDirection:false`（圖不轉）＋ sy ×2（補償壓扁），所以牆朝任何方向岩塊都站得直。kit 的 `size` 以 512 貼圖為基準，非 512 的素材要直接給 `sx`／`sy`。
 - 第二版（同日）：使用者看到第一版的灰紫色磚塊「跟遊戲風格完全不搭」，重畫成風化岩塊（土灰色、稜角分明的受光面與背光面、裂紋、腳下碎石，畫法與配色對齊遊戲裡 rock-pyramid 那一類），三塊並排（中間一塊左右翻轉、高度略不同）。畫面上那些土色圓形不是築牆：是土屬性遠程敵人的普通攻擊彈體（`proj-earth-rock`）。
 - 第三版（同日）：使用者說形狀可以但太卡通。改成寫實畫法：SVG 內用 feTurbulence＋feDiffuseLighting 做岩石表面的顆粒與起伏（低飽和色塊、不描黑邊、靠環境遮蔽收邊）。注意：Chrome 在鏡像（負縮放）下會把這種光照濾鏡畫成全黑，所以中間那塊不再左右翻轉，改成略寬略高（`sx` 84、`sy` 64）；素材庫與 Preset 都不要再用負縮放。`DATA_VERSION` 20261016-wall-real3、vfx-runtime v=1.0.209。
+- 第四版（同日）：使用者指出斜向的牆岩塊分離、排列錯誤（直立貼圖沿牆放，斜向會重疊或留縫），要求圖片跟著牆的方向。採「畫各方向」：`tools/vfx/authoring/author/rock-wall-slabs.cjs` 以斜俯視幾何（地面 y×0.5）每 15° 畫一張整面 18×6 米岩壁（三塊 6×6 米岩塊、接縫連續，每張約 7 KB），素材 `claude-authored/rock-wall/wall-slab-000～165.svg`（素材庫在 repo 之外，需另行提交；舊 wall-block.svg 已移除）；12 份 Preset `en-stone-wall-0～165`（圖不轉、不套投影），Skills2 `e_walls` 場域＝`en-stone-wall-0`、效果參數 `presets` 列其餘 11 份；`js/elite.js` eliteCastWalls 把牆朝向吸附到 15° 倍數並依角度挑 Preset（eliteWallPreset），判定框用吸附後角度。Excel／CSV／js/skills2.js 已同步；新增測試 ELITE-ENGINE-14c。版本字串 20261016-wall-slab。素材索引手動換入 12 筆（掃描器遇同名會失敗）。不做左右鏡像（同 Chrome 光照濾鏡全黑問題）。
 - 驗證：新增 ELITE-ENGINE-14b（每次 2 或 3 面、每面 18×6 米、Preset 矩形比例 3:1、平行與 U 型都會出現）；實機看過整塊岩壁圍住玩家、直立與橫向的牆都站得直。
 
 ## Claude｜火鏈重做、毒素加持改版、帶電電光團、復仇體積上限（ELITE-FX2-20261016）

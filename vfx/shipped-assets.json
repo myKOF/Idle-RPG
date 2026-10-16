@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 174,
+  "assetCount": 185,
   "assets": [
     {
       "assetId": "claude-authored/dragon-devour/vortex-ring.png",
@@ -21,11 +21,88 @@
       "fileSize": 674141
     },
     {
-      "assetId": "claude-authored/rock-wall/wall-block.svg",
-      "relativePath": "claude-authored/rock-wall/wall-block.svg",
+      "assetId": "claude-authored/rock-wall/wall-slab-000.svg",
+      "relativePath": "claude-authored/rock-wall/wall-slab-000.svg",
       "package": "claude-authored",
-      "contentHash": "sha256:94cbbc1dc9f4156eeec4e1a34007c74369eefa63ab5cf0d16994a1f1077f04af",
-      "fileSize": 6842
+      "contentHash": "sha256:c0a6b0182c77ed5bd495aa9c55551a888fbc26035a960c736146bdf0a57e59e0",
+      "fileSize": 5948
+    },
+    {
+      "assetId": "claude-authored/rock-wall/wall-slab-015.svg",
+      "relativePath": "claude-authored/rock-wall/wall-slab-015.svg",
+      "package": "claude-authored",
+      "contentHash": "sha256:b529f65a3dd4c314193c44734eb56e5f87f603a6536fa7ea97a9c1513f02a991",
+      "fileSize": 7326
+    },
+    {
+      "assetId": "claude-authored/rock-wall/wall-slab-030.svg",
+      "relativePath": "claude-authored/rock-wall/wall-slab-030.svg",
+      "package": "claude-authored",
+      "contentHash": "sha256:cd251bf547cb9ba06b044e1302a584ca6a4d402bc711841afae2c044ab63cd84",
+      "fileSize": 7310
+    },
+    {
+      "assetId": "claude-authored/rock-wall/wall-slab-045.svg",
+      "relativePath": "claude-authored/rock-wall/wall-slab-045.svg",
+      "package": "claude-authored",
+      "contentHash": "sha256:d659dc7eab378fe109edb19a84c272feeefe61d8a23a38f12b40c565affb2f16",
+      "fileSize": 7310
+    },
+    {
+      "assetId": "claude-authored/rock-wall/wall-slab-060.svg",
+      "relativePath": "claude-authored/rock-wall/wall-slab-060.svg",
+      "package": "claude-authored",
+      "contentHash": "sha256:63e3d9bd748e1e6d0e0b4f93c35f42804145fac1613e1fae4e2e6fa7d8e6e4d0",
+      "fileSize": 7328
+    },
+    {
+      "assetId": "claude-authored/rock-wall/wall-slab-075.svg",
+      "relativePath": "claude-authored/rock-wall/wall-slab-075.svg",
+      "package": "claude-authored",
+      "contentHash": "sha256:6d96e7cf6a4669360f9238ba1f6a982024a3ab57288ee5f6ae12fa379869b642",
+      "fileSize": 7330
+    },
+    {
+      "assetId": "claude-authored/rock-wall/wall-slab-090.svg",
+      "relativePath": "claude-authored/rock-wall/wall-slab-090.svg",
+      "package": "claude-authored",
+      "contentHash": "sha256:65eb8e3ab28c6175d6125868711799ab5a0c53fe3d7c9ce12165e83cbbbf2015",
+      "fileSize": 5971
+    },
+    {
+      "assetId": "claude-authored/rock-wall/wall-slab-105.svg",
+      "relativePath": "claude-authored/rock-wall/wall-slab-105.svg",
+      "package": "claude-authored",
+      "contentHash": "sha256:391ee5f6f170c0a85cef3c4932f8233a23ecbced31b011633021ebea32653fee",
+      "fileSize": 7306
+    },
+    {
+      "assetId": "claude-authored/rock-wall/wall-slab-120.svg",
+      "relativePath": "claude-authored/rock-wall/wall-slab-120.svg",
+      "package": "claude-authored",
+      "contentHash": "sha256:d1fd5a46fd2afce9295b804b461b38c4c23f93cac9c92d8f225e04a77386b720",
+      "fileSize": 7312
+    },
+    {
+      "assetId": "claude-authored/rock-wall/wall-slab-135.svg",
+      "relativePath": "claude-authored/rock-wall/wall-slab-135.svg",
+      "package": "claude-authored",
+      "contentHash": "sha256:09a2c1fec049812f8ec30667df301b96a4af703b73939038e8bb61734d7681b0",
+      "fileSize": 7338
+    },
+    {
+      "assetId": "claude-authored/rock-wall/wall-slab-150.svg",
+      "relativePath": "claude-authored/rock-wall/wall-slab-150.svg",
+      "package": "claude-authored",
+      "contentHash": "sha256:e0bc41aa2aa52a9f3cfd5a81bf2260cbdc471df23f456278e01a5514bce963f0",
+      "fileSize": 7302
+    },
+    {
+      "assetId": "claude-authored/rock-wall/wall-slab-165.svg",
+      "relativePath": "claude-authored/rock-wall/wall-slab-165.svg",
+      "package": "claude-authored",
+      "contentHash": "sha256:e4c7e15ddb6824667f5a38b07cffe3d694e1c02eb258cc3d47f52b5715fa0b0b",
+      "fileSize": 7304
     },
     {
       "assetId": "codex-authored/cleave/sharp-cyclone.png",

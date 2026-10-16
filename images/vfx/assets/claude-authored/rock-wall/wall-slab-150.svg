@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="200" viewBox="0 0 256 200">
+  <!-- 築牆：朝 150° 的整面岩壁（三塊 6×6 米岩塊，斜俯視幾何）。原創繪製，岩石表面用雜訊光照。 -->
+  <defs>
+    <filter id="rock" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.02 0.03" numOctaves="3" seed="14" result="n1"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="2" seed="4" result="n2"/>
+      <feComposite in="n1" in2="n2" operator="arithmetic" k1="0" k2="0.8" k3="0.2" k4="0" result="n0"/>
+      <feGaussianBlur in="n0" stdDeviation="0.9" result="n"/>
+      <feDiffuseLighting in="n" surfaceScale="7" diffuseConstant="1" lighting-color="#ffffff" result="lit">
+        <feDistantLight azimuth="235" elevation="55"/>
+      </feDiffuseLighting>
+      <feComponentTransfer in="lit" result="lit2">
+        <feFuncR type="linear" slope="0.8" intercept="0.22"/><feFuncG type="linear" slope="0.8" intercept="0.22"/><feFuncB type="linear" slope="0.8" intercept="0.22"/>
+      </feComponentTransfer>
+      <feBlend in="SourceGraphic" in2="lit2" mode="multiply" result="m0"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.12 0.14" numOctaves="3" seed="21" result="g0"/>
+      <feColorMatrix in="g0" type="saturate" values="0" result="g1"/>
+      <feComponentTransfer in="g1" result="grain">
+        <feFuncR type="linear" slope="0.4" intercept="0.7"/><feFuncG type="linear" slope="0.4" intercept="0.7"/><feFuncB type="linear" slope="0.4" intercept="0.7"/>
+      </feComponentTransfer>
+      <feBlend in="m0" in2="grain" mode="multiply" result="m"/>
+      <feComposite in="m" in2="SourceAlpha" operator="in"/>
+    </filter>
+  </defs>
+  <g filter="url(#rock)">
+<polygon points="231.4,129.5 173.6,146.2 175.9,91.6 229.2,73" fill="#c4bca6" stroke="#2c281c" stroke-opacity=".45" stroke-width="1" stroke-linejoin="round"/>
+<polygon points="173.6,146.2 140.1,117.2 142,62.4 175.9,91.6" fill="#837b68" stroke="#2c281c" stroke-opacity=".45" stroke-width="1" stroke-linejoin="round"/>
+<polygon points="229.2,73 175.9,91.6 142,62.4 200.2,46.1" fill="#c4bca6" stroke="#2c281c" stroke-opacity=".35" stroke-width="1" stroke-linejoin="round"/>
+<polygon points="173.6,146.2 115.9,162.8 114.5,97.6 176,83" fill="#c4bca6" stroke="#2c281c" stroke-opacity=".45" stroke-width="1" stroke-linejoin="round"/>
+<polygon points="115.9,162.8 82.4,133.8 84.6,71.4 114.5,97.6" fill="#837b68" stroke="#2c281c" stroke-opacity=".45" stroke-width="1" stroke-linejoin="round"/>
+<polygon points="176,83 114.5,97.6 84.6,71.4 141,51.9" fill="#c4bca6" stroke="#2c281c" stroke-opacity=".35" stroke-width="1" stroke-linejoin="round"/>
+<polygon points="115.9,162.8 58.1,179.5 58.9,122 114.9,102.4" fill="#c4bca6" stroke="#2c281c" stroke-opacity=".45" stroke-width="1" stroke-linejoin="round"/>
+<polygon points="58.1,179.5 24.6,150.5 27,90 58.9,122" fill="#837b68" stroke="#2c281c" stroke-opacity=".45" stroke-width="1" stroke-linejoin="round"/>
+<polygon points="114.9,102.4 58.9,122 27,90 83.7,75.8" fill="#c4bca6" stroke="#2c281c" stroke-opacity=".35" stroke-width="1" stroke-linejoin="round"/>
+  </g>
+<polyline points="214.7,94 216.8,100.7 215.1,107.4" fill="none" stroke="#2a2619" stroke-opacity=".5" stroke-width="1.1" stroke-linecap="round"/>
+<polyline points="196.3,101 198.6,108 194.6,115.1" fill="none" stroke="#2a2619" stroke-opacity=".5" stroke-width="1.1" stroke-linecap="round"/>
+<polyline points="152.1,84.3 152.8,95.4 154.5,106.5" fill="none" stroke="#2a2619" stroke-opacity=".5" stroke-width="1.1" stroke-linecap="round"/>
+<polyline points="151.3,86.7 152,99.3 150.4,111.8" fill="none" stroke="#2a2619" stroke-opacity=".5" stroke-width="1.1" stroke-linecap="round"/>
+<polyline points="181.3,73.1 191.3,70.1 203.3,74.1" fill="none" stroke="#3a3425" stroke-opacity=".4" stroke-width="1" stroke-linecap="round"/>
+<polyline points="141.3,110.3 144.6,128.2 141.8,146.2" fill="none" stroke="#2a2619" stroke-opacity=".5" stroke-width="1.1" stroke-linecap="round"/>
+<polyline points="159.3,93.7 155.4,116.6 157.9,139.5" fill="none" stroke="#2a2619" stroke-opacity=".5" stroke-width="1.1" stroke-linecap="round"/>
+<polyline points="90.8,102.5 87.1,108.3 90.1,114.1" fill="none" stroke="#2a2619" stroke-opacity=".5" stroke-width="1.1" stroke-linecap="round"/>
+<polyline points="103.5,111.2 99.6,126.5 101.9,141.8" fill="none" stroke="#2a2619" stroke-opacity=".5" stroke-width="1.1" stroke-linecap="round"/>
+<polyline points="111.8,80.7 121.8,77.7 133.8,81.7" fill="none" stroke="#3a3425" stroke-opacity=".4" stroke-width="1" stroke-linecap="round"/>
+<polyline points="91.2,130.9 88.5,137.2 87.7,143.6" fill="none" stroke="#2a2619" stroke-opacity=".5" stroke-width="1.1" stroke-linecap="round"/>
+<polyline points="89.6,121.7 92,140.5 91.7,159.3" fill="none" stroke="#2a2619" stroke-opacity=".5" stroke-width="1.1" stroke-linecap="round"/>
+<polyline points="38.9,117.3 41.6,132.2 39.2,147.2" fill="none" stroke="#2a2619" stroke-opacity=".5" stroke-width="1.1" stroke-linecap="round"/>
+<polyline points="44,126.9 47.5,141.6 46.1,156.3" fill="none" stroke="#2a2619" stroke-opacity=".5" stroke-width="1.1" stroke-linecap="round"/>
+<polyline points="56.3,99.7 66.3,96.7 78.3,100.7" fill="none" stroke="#3a3425" stroke-opacity=".4" stroke-width="1" stroke-linecap="round"/>
+<ellipse cx="226.4" cy="134.2" rx="4" ry="2.4" fill="#8b836f" stroke="#2c281c" stroke-opacity=".4" stroke-width=".8"/>
+<ellipse cx="223.7" cy="133.9" rx="3.1" ry="1.8" fill="#76705e" stroke="#2c281c" stroke-opacity=".4" stroke-width=".8"/>
+<ellipse cx="138.4" cy="161" rx="3.6" ry="2.2" fill="#444033" stroke="#2c281c" stroke-opacity=".4" stroke-width=".8"/>
+<ellipse cx="130.1" cy="162.5" rx="4.4" ry="2.7" fill="#625c4c" stroke="#2c281c" stroke-opacity=".4" stroke-width=".8"/>
+<ellipse cx="164.7" cy="107.6" rx="4.7" ry="2.8" fill="#454134" stroke="#2c281c" stroke-opacity=".4" stroke-width=".8"/>
+<ellipse cx="27.4" cy="149.1" rx="4.5" ry="2.7" fill="#7e7765" stroke="#2c281c" stroke-opacity=".4" stroke-width=".8"/>
+<ellipse cx="124" cy="120.8" rx="4.5" ry="2.7" fill="#807966" stroke="#2c281c" stroke-opacity=".4" stroke-width=".8"/>
+<ellipse cx="209.2" cy="138.1" rx="4.4" ry="2.6" fill="#867e6b" stroke="#2c281c" stroke-opacity=".4" stroke-width=".8"/>
+<ellipse cx="85.3" cy="131.5" rx="2.5" ry="1.5" fill="#5c5748" stroke="#2c281c" stroke-opacity=".4" stroke-width=".8"/>
+<ellipse cx="137.2" cy="161.6" rx="2" ry="1.2" fill="#605b4b" stroke="#2c281c" stroke-opacity=".4" stroke-width=".8"/>
+<ellipse cx="97.8" cy="127" rx="2.5" ry="1.5" fill="#7f7865" stroke="#2c281c" stroke-opacity=".4" stroke-width=".8"/>
+<ellipse cx="124.9" cy="120.9" rx="2.9" ry="1.7" fill="#5e5949" stroke="#2c281c" stroke-opacity=".4" stroke-width=".8"/>
+<ellipse cx="163.5" cy="107.5" rx="2.5" ry="1.5" fill="#524d3f" stroke="#2c281c" stroke-opacity=".4" stroke-width=".8"/>
+<ellipse cx="154.1" cy="153.6" rx="2.8" ry="1.7" fill="#686252" stroke="#2c281c" stroke-opacity=".4" stroke-width=".8"/>
+<ellipse cx="64.8" cy="182.3" rx="1.9" ry="1.1" fill="#625c4d" stroke="#2c281c" stroke-opacity=".4" stroke-width=".8"/>
+<ellipse cx="182.7" cy="146.1" rx="3.4" ry="2" fill="#87806c" stroke="#2c281c" stroke-opacity=".4" stroke-width=".8"/>
+</svg>
