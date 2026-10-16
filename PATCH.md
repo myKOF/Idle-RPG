@@ -1,5 +1,17 @@
 # PATCH.md
 
+## 封魔塔 BOSS 施放玩家超神進化技能驗證（Antigravity 2026-10-16）
+
+- **完成封魔塔 BOSS 施放玩家超神進化技能全量驗證與報告產出（`docs/BOSS_PLAYER_SKILL_TEST_REPORT.md`、`tmp/boss-ps-shots/`）**：
+  - 依據 `docs/ANTIGRAVITY_BOSS_PLAYER_SKILL_TEST_CASES.md` 規範完成 7 大組別（A ~ G）全量實機與自動化檢測，全部項目 100% 通過無阻礙。
+  - A 組（選技規則）：驗證 19、20、25、46、57 等層金色技能標籤與施放浮字；25 層雙超神技能；18 層無解鎖多抽 2 個 NPC 技能；101 層連挑每場隨機 2 個玩家技能；樓層詳情提示與解鎖框無退步。
+  - B 組（69 招外觀與判定）：分 6 批次演武場實測，確認特效 Preset 100% 讀取自玩家技能表，預警圈/帶與判定完全吻合，傷害浮字合理。
+  - C 組（環繞型與衝近）：確認星環公轉圓心鎖定 BOSS，具備碰觸冷卻保護；近身招式遠距自動高速衝近（`bskNear`）；多環繞同場維持 60 FPS 滿幀。
+  - D 組（被動型）：46 層不屈鬥魂致命保命無敵、57/80 層天地再造與逆轉乾坤多段復活、25 層神聖之體反擊光彈、87 層天穹崩裂反擊風刃，防卡死與結算連挑順暢。
+  - E 組（數值與強度）：紀錄常規技能約 1~2.5 倍普攻、持續場域按 `psTickPct` 折算、`psDmgPct` 旋鈕加倍連動、`bossMul`/`bossCd` 單招覆蓋。
+  - F 組（不得退步）：野外怪技能不變、玩家自身使用超神技能外觀與圓心不變、VFX 編輯器正常加載。
+  - G 組（技術檢查）：Console 0 報錯、VFX skipped/missing/dropped=0、記憶體穩定、結束無殘留、自動化測試 15/15 與語法檢查 523 檔案全過。
+
 ## 封魔塔 BOSS 施放玩家超神進化技能（Claude 2026-10-15）
 
 - **BOSS 解鎖哪個超神進化技能就固定使用哪個（`js/elite_data.js`、`js/elite_boss.js`、`js/elite_boss_recipes.js`、`js/elite.js`、`js/tower.js`、`js/vfx-runtime.js`、`js/ui.js`、`js/gm_exec.js`、`config/Excel|CSV/game_parameters`、`tools/apply_params.cjs`、`tests/boss-player-skill.test.cjs`、`docs/BOSS_PLAYER_SKILLS.md`）**：
