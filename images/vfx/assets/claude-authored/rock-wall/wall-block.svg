@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="200" viewBox="0 0 256 200">
+  <!-- 築牆用的一塊岩壁：寬而粗糙的風化岩塊。寫實畫法：雜訊凹凸光照（feTurbulence＋feDiffuseLighting）做出岩石表面的顆粒與起伏，
+       大塊受光面／背光面只用低飽和、低對比的色塊，邊緣不描黑線而是靠腳下與縫隙的環境遮蔽暗部。原創繪製，沒有參考外部圖片。 -->
+  <defs>
+    <path id="main" d="M6 188 2 150 14 118 10 88 26 62 44 70 58 40 84 30 100 46 122 22 150 18 168 38 190 30 214 48 222 74 246 86 252 122 244 150 254 184 226 196 170 192 120 198 64 194Z"/>
+    <clipPath id="body"><use href="#main"/></clipPath>
+    <linearGradient id="stone" x1="0" y1="0" x2="1" y2=".7">
+      <stop stop-color="#b3aa94"/><stop offset=".5" stop-color="#8a826d"/><stop offset="1" stop-color="#524d3e"/>
+    </linearGradient>
+    <linearGradient id="shade" x2="1" y2="1">
+      <stop stop-color="#7d7662"/><stop offset="1" stop-color="#413d31"/>
+    </linearGradient>
+    <radialGradient id="ao" cx=".5" cy=".4" r=".75">
+      <stop offset=".55" stop-color="#1b180f" stop-opacity="0"/><stop offset="1" stop-color="#1b180f" stop-opacity=".62"/>
+    </radialGradient>
+    <linearGradient id="sun" x1="0" y1="0" x2=".6" y2=".8">
+      <stop stop-color="#fff6dc" stop-opacity=".5"/><stop offset=".55" stop-color="#fff6dc" stop-opacity="0"/>
+    </linearGradient>
+    <!-- 岩石表面：粗細兩層雜訊做凹凸，再用側光打出顆粒與起伏，與底色相乘 -->
+    <filter id="rock" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.014 0.022" numOctaves="3" seed="11" result="n1"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="2" seed="4" result="n2"/>
+      <feComposite in="n1" in2="n2" operator="arithmetic" k1="0" k2="0.8" k3="0.2" k4="0" result="n0"/>
+      <feGaussianBlur in="n0" stdDeviation="1.2" result="n"/>
+      <feDiffuseLighting in="n" surfaceScale="9" diffuseConstant="1" lighting-color="#ffffff" result="lit">
+        <feDistantLight azimuth="235" elevation="55"/>
+      </feDiffuseLighting>
+      <feComponentTransfer in="lit" result="lit2">
+        <feFuncR type="linear" slope="0.95" intercept="0.1"/><feFuncG type="linear" slope="0.95" intercept="0.1"/><feFuncB type="linear" slope="0.95" intercept="0.1"/>
+      </feComponentTransfer>
+      <feBlend in="SourceGraphic" in2="lit2" mode="multiply" result="m0"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.11 0.13" numOctaves="3" seed="21" result="g0"/>
+      <feColorMatrix in="g0" type="saturate" values="0" result="g1"/>
+      <feComponentTransfer in="g1" result="grain">
+        <feFuncR type="linear" slope="0.5" intercept="0.62"/><feFuncG type="linear" slope="0.5" intercept="0.62"/><feFuncB type="linear" slope="0.5" intercept="0.62"/>
+      </feComponentTransfer>
+      <feBlend in="m0" in2="grain" mode="multiply" result="m"/>
+      <feComposite in="m" in2="SourceAlpha" operator="in"/>
+    </filter>
+  </defs>
+  <!-- 腳下陰影 -->
+  <ellipse cx="128" cy="194" rx="126" ry="9" fill="#14110a" opacity=".55"/>
+  <g filter="url(#rock)">
+    <use href="#main" fill="url(#stone)"/>
+    <g clip-path="url(#body)">
+      <!-- 受光面（左上） -->
+      <path d="M14 118 26 62 58 40 84 30 74 76 48 112Z" fill="#d4ccb7" opacity=".85"/>
+      <path d="M84 30 122 22 112 70 74 76Z" fill="#c6bda7" opacity=".8"/>
+      <path d="M122 22 150 18 168 38 150 80 112 70Z" fill="#b6ad97" opacity=".75"/>
+      <path d="M2 150 14 118 48 112 60 160 30 184Z" fill="#aea690" opacity=".8"/>
+      <path d="M48 112 74 76 112 70 126 128 96 170 60 160Z" fill="#a0987f" opacity=".7"/>
+      <!-- 背光面（右下） -->
+      <path d="M168 38 190 30 214 48 222 74 190 96 150 80Z" fill="#8a826c" opacity=".85"/>
+      <path d="M222 74 246 86 252 122 244 150 210 130 190 96Z" fill="#665f4c" opacity=".9"/>
+      <path d="M112 70 150 80 190 96 186 150 140 176 126 128Z" fill="#847c66" opacity=".85"/>
+      <path d="M190 96 210 130 244 150 254 184 226 196 186 150Z" fill="#58523f" opacity=".95"/>
+      <path d="M60 160 96 170 140 176 186 150 226 196 170 192 120 198 64 194 30 184Z" fill="url(#shade)" opacity=".9"/>
+    </g>
+  </g>
+  <g clip-path="url(#body)">
+    <!-- 地層般的橫向紋路（很淡） -->
+    <g fill="none" stroke="#3f3a2d" stroke-linecap="round" opacity=".22">
+      <path d="M8 96 60 90 118 98 176 88 240 100" stroke-width="2.2"/>
+      <path d="M4 132 70 126 130 136 196 126 250 138" stroke-width="2"/>
+      <path d="M12 168 84 160 150 170 214 162 252 170" stroke-width="2.4"/>
+    </g>
+    <!-- 裂縫：深色細線，邊緣帶一點淺色反光 -->
+    <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <g stroke="#2c281e" opacity=".8">
+        <path d="M58 40 66 62 56 88 64 112 54 140 62 160" stroke-width="2.2"/>
+        <path d="M112 70 120 98 110 124 126 128 118 152 128 176" stroke-width="2.4"/>
+        <path d="M150 80 158 106 148 128 160 148 154 172" stroke-width="2"/>
+        <path d="M190 96 196 118 188 136 200 156" stroke-width="1.8"/>
+        <path d="M28 150 40 156 54 150 M96 170 108 160 120 164 M170 120 182 124 190 118" stroke-width="1.5"/>
+      </g>
+      <g stroke="#e9dfc4" opacity=".28" transform="translate(1.2 -1)">
+        <path d="M58 40 66 62 56 88 64 112 54 140 62 160" stroke-width="1.2"/>
+        <path d="M112 70 120 98 110 124 126 128 118 152 128 176" stroke-width="1.2"/>
+      </g>
+    </g>
+    <!-- 頂部受光的高光與四周的環境遮蔽 -->
+    <rect width="256" height="200" fill="url(#sun)"/>
+    <rect width="256" height="200" fill="url(#ao)"/>
+    <!-- 剝落的碎屑 -->
+    <g fill="#3f3a2d" opacity=".35">
+      <path d="M70 120 76 116 79 124 72 128Z M132 144 138 140 141 148 134 152Z M206 112 212 108 215 116 208 120Z M160 176 166 172 170 180 162 184Z"/>
+    </g>
+    <g fill="#e6dcc2" opacity=".3">
+      <path d="M40 82 46 78 49 86 42 90Z M98 94 104 90 107 98 100 102Z M176 60 182 56 185 64 178 68Z"/>
+    </g>
+  </g>
+  <!-- 細邊（不描黑線，只收一道很淡的暗邊） -->
+  <use href="#main" fill="none" stroke="#2a261c" stroke-width="1.3" stroke-linejoin="round" opacity=".55"/>
+  <!-- 腳下碎石：同樣的凹凸光照 -->
+  <g filter="url(#rock)">
+    <path d="M4 190 12 172 28 168 36 184 30 198 10 198Z" fill="#8f8772"/>
+    <path d="M226 192 232 174 246 170 254 184 250 198 234 199Z" fill="#7b745f"/>
+  </g>
+  <path d="M4 190 12 172 28 168 36 184 30 198 10 198Z" fill="none" stroke="#2a261c" stroke-width="1.2" opacity=".5"/>
+  <path d="M226 192 232 174 246 170 254 184 250 198 234 199Z" fill="none" stroke="#2a261c" stroke-width="1.2" opacity=".5"/>
+</svg>

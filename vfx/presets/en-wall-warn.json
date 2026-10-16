@@ -11,7 +11,7 @@
       "zIndex": 0,
       "scale": {
         "x": 0.4199,
-        "y": 0.2539
+        "y": 0.1563
       },
       "alpha": 0.55,
       "tint": "#9a6cff",
@@ -42,8 +42,8 @@
       "assetId": "new_materials/hud-reticle/target_11.png",
       "zIndex": 1,
       "scale": {
-        "x": 0.4199,
-        "y": 0.2344
+        "x": 0.4102,
+        "y": 0.1367
       },
       "alpha": 0.9,
       "tint": "#e0ccff",
@@ -61,7 +61,7 @@
       "zIndex": 2,
       "scale": {
         "x": 0.4102,
-        "y": 0.0781
+        "y": 0.043
       },
       "alpha": 1,
       "tint": "#f2e8ff",
@@ -82,14 +82,14 @@
       "blendMode": "add",
       "emission": {
         "mode": "rate",
-        "rate": 22
+        "rate": 26
       },
       "lifetime": [
         0.4,
         0.7
       ],
       "spawn": {
-        "height": 6,
+        "height": 50,
         "shape": "box",
         "width": 190
       },
@@ -110,7 +110,7 @@
         ],
         [
           0.3,
-          0.9
+          1
         ],
         [
           1,
@@ -121,7 +121,7 @@
   ],
   "sizing": {
     "authored": {
-      "height": 28,
+      "height": 67,
       "width": 200
     },
     "shape": "rectangle"

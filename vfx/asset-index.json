@@ -6,7 +6,7 @@
     "name": "asset-scanner",
     "version": "1.0.0"
   },
-  "assetCount": 2449,
+  "assetCount": 2450,
   "assets": [
     {
       "assetId": "antigravity-authored/ice/ice-arrow-spike.png",
@@ -512,6 +512,25 @@
           "v": 1
         },
         "backgroundVariant": "blackBackground"
+      }
+    },
+    {
+      "assetId": "claude-authored/rock-wall/wall-block.svg",
+      "package": "claude-authored",
+      "relativePath": "claude-authored/rock-wall/wall-block.svg",
+      "format": "svg",
+      "fileSize": 6842,
+      "contentHash": "sha256:94cbbc1dc9f4156eeec4e1a34007c74369eefa63ab5cf0d16994a1f1077f04af",
+      "facts": {
+        "dimensions": {
+          "width": 256,
+          "height": 200
+        },
+        "dimensionsSource": "attributes",
+        "colorModel": null,
+        "bitDepth": null,
+        "hasAlphaChannel": null,
+        "pixelsAnalyzed": false
       }
     },
     {

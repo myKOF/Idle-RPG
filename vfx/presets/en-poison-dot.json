@@ -10,25 +10,53 @@
       "assetId": "light-masks-1.0/default/circle_b.png",
       "zIndex": 0,
       "scale": {
-        "x": 0.1758,
-        "y": 0.1758
+        "x": 0.3594,
+        "y": 0.3594
       },
-      "alpha": 0.7,
+      "alpha": 0.6,
       "tint": "#8cff2a",
       "blendMode": "add",
       "duration": 0.9,
       "scaleOverLife": [
         [
           0,
-          0.8200000000000001
+          0.95
         ],
         [
           0.5,
-          1.18
+          1.05
         ],
         [
           1,
-          0.8200000000000001
+          0.95
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "pool",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/circle_a_noise.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.293,
+        "y": 0.293
+      },
+      "alpha": 0.55,
+      "tint": "#c8ff6a",
+      "blendMode": "add",
+      "duration": 0.9,
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0.94248
         ]
       ],
       "projection": {
@@ -40,33 +68,33 @@
       "id": "ring",
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/circle_02.png",
-      "zIndex": 1,
+      "zIndex": 2,
       "scale": {
-        "x": 0.2539,
-        "y": 0.2539
+        "x": 0.3867,
+        "y": 0.3867
       },
-      "alpha": 0.9,
+      "alpha": 0.95,
       "tint": "#c8ff6a",
       "blendMode": "add",
       "duration": 0.9,
       "alphaOverLife": [
         [
           0,
-          0.9
+          0.95
         ],
         [
           1,
-          0
+          0.35
         ]
       ],
       "scaleOverLife": [
         [
           0,
-          0.6
+          0.8
         ],
         [
           1,
-          1.1
+          1
         ]
       ],
       "projection": {
@@ -78,10 +106,10 @@
       "id": "glint",
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/star_04.png",
-      "zIndex": 2,
+      "zIndex": 3,
       "scale": {
-        "x": 0.0703,
-        "y": 0.0703
+        "x": 0.0898,
+        "y": 0.0898
       },
       "alpha": 0.9,
       "tint": "#f4ffc8",

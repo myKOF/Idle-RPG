@@ -1306,7 +1306,8 @@ function eliteCastMortar(m, d) {
   }
 }
 
-/* ============ 築牆：在你周圍升起 U 型或平行排列的石牆 ============
+/* ============ 築牆：在你周圍升起 2～3 面整塊岩壁（平行 2 面或 U 型 3 面） ============
+   每面 len（18 米）× thick（6 米），由三塊約 6×6 米的岩塊組成（畫面見 en-stone-wall）。n＝一次升起幾面（2＝平行、3＝U 型）。
    牆擋住「近戰」：雙方都不能隔著牆近戰攻擊（遠程不受影響），玩家也走不過牆（battlefield.js 呼叫 eliteWallBlocks／eliteClampMove）。 */
 function eliteCastWalls(m, d) {
   var pp = elitePos(), mp = eliteMonsterPos(m) || pp;
@@ -1314,25 +1315,26 @@ function eliteCastWalls(m, d) {
   ux /= ul; uy /= ul;                         // 由怪物指向玩家
   var vx = -uy, vy = ux;                      // 垂直方向
   var len = d.len, thick = d.thick, off = d.dist, life = d.life, warn = d.warn || 0.8;
-  var shape = Math.random() < 0.5 ? 'U' : 'parallel';
+  var nr = eliteRange(d.n, [2, 3]);
+  var shape = eliteRandInt(nr[0], nr[1]) >= 3 ? 'U' : 'parallel';
   var segs = [
     { x: pp.x + vx * off, y: pp.y + vy * off, a: Math.atan2(uy, ux), len: len },        // 左右兩面與怪物來向平行
     { x: pp.x - vx * off, y: pp.y - vy * off, a: Math.atan2(uy, ux), len: len }
   ];
   if (shape === 'U') {
-    // 背面：缺口朝著怪物，把玩家關在裡面
-    segs.push({ x: pp.x + ux * off, y: pp.y + uy * off, a: Math.atan2(vy, vx), len: off * 2 + thick });
+    // 背面：缺口朝著怪物，把玩家關在裡面（同樣是 len 長）
+    segs.push({ x: pp.x + ux * off, y: pp.y + uy * off, a: Math.atan2(vy, vx), len: len });
   }
   eliteBusy(m, warn + 0.4, false);
   segs.forEach(function (s) {
-    eliteVisAdd({ id: eliteVisId('wallwarn'), preset: d.v.ground, x: s.x, y: s.y, w: s.len, h: Math.max(thick * 2, 28), a: s.a, until: GT + warn });
+    eliteVisAdd({ id: eliteVisId('wallwarn'), preset: d.v.ground, x: s.x, y: s.y, w: s.len, h: thick, a: s.a, until: GT + warn });
   });
   eliteLater(warn, function () {
     segs.forEach(function (s) {
       var wall = { x: s.x, y: s.y, a: s.a, len: s.len, thick: thick, until: GT + life, owner: m, def: d };
-      wall.vis = eliteVisAdd({ id: eliteVisId('wall'), preset: d.v.field, x: s.x, y: s.y, w: s.len, h: Math.max(thick * 2, 28), a: s.a, until: wall.until });
+      wall.vis = eliteVisAdd({ id: eliteVisId('wall'), preset: d.v.field, x: s.x, y: s.y, w: s.len, h: thick, a: s.a, until: wall.until });
       ELITE_RT.walls.push(wall);
-      eliteBurstFx(s.x, s.y, s.len * 0.55, d.v.attack, 0);
+      eliteBurstFx(s.x, s.y, s.len * 0.32, d.v.attack, 0);
     });
     // 升牆時被牆壓到的玩家會被推出牆外（不傷人，免得卡進牆裡）
     eliteWallsPushOut();
