@@ -4651,7 +4651,10 @@ function renderBattleResourceOrbs() {
   var shield = value(view.shield, p.shield);
   var shieldMax = Math.max(shield, value(p.shieldMax, 0));
   function fill(id, current, max) {
-    setStyleIfChanged($id(id), 'height', (clamp(current / Math.max(1, max), 0, 1) * 100) + '%');
+    var el = $id(id);
+    var ratio = max > 0 ? clamp(current / max, 0, 1) : 0;
+    setStyleIfChanged(el, 'height', (ratio * 100) + '%');
+    setAttrIfChanged(el, 'data-level', ratio <= 0 ? 'empty' : (ratio >= 1 ? 'full' : 'partial'));
   }
   fill('battle-health-fill', hp, hpMax);
   fill('battle-mana-fill', mp, mpMax);

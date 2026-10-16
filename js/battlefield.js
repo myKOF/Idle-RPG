@@ -17,7 +17,7 @@
    現在改成連續座標：
      - 我方與敵人都有絕對座標 { x, y }（單位≈像素），玩家起點是原點。
      - 我方會自己朝目標跑（bfTickPlayer），敵人各自追我方的**當前**位置。
-     - 敵人每個 tick 朝我方逼近，走到接觸距離就停，並與同伴互相推開。
+     - 敵人在配置視野內發現我方後，每個 tick 朝我方逼近，走到停止距離就停，並與同伴互相推開。
      - 距離＝真正的歐幾里得距離；能不能攻擊要看距離（bfInAttackRange）。
      - 範圍技從「n×n 方框」改成以主目標為中心的圓（半徑由 n 換算）。
 
@@ -117,6 +117,27 @@ function bfEnemyAttackRange(ent) {
   if (v > 0) return v;
   return (ent && ent.magic) ? bfRangedRange() : bfMeleeRange();
 }
+/* 圓形視野以雙方中心距離判定；發現一次便持續追擊。
+   沒有視野欄位的舊實體／測試替身保留原行為。進場倒數期間不索敵。
+   普攻、技能與移動共用這個入口，不能用攻擊射程繞過視野。 */
+function bfAlertEnemy(ent) {
+  if (!ent || ent._alerted) return;
+  ent._alerted = true;
+  if (ent._encounterKey && typeof GT === 'number') ent._frenzyStartAt = GT;
+  if (ent._roam) ent._roam = null;
+}
+function bfEnemyAlerted(ent) {
+  if (!ent || ent._enterCd > 0) return false;
+  if (ent._alerted) return true;
+  var range = Number(ent.sightRange);
+  if (!(range > 0) || !isFinite(range)) return true;
+  var p = bfPos(ent), c = bfPlayerPos();
+  if (!p) return false;
+  var dx = p.x - c.x, dy = p.y - c.y;
+  if (dx * dx + dy * dy > range * range) return false;
+  bfAlertEnemy(ent);
+  return true;
+}
 /* 遠程敵人＝射程超過近戰距離兩倍。攻擊畫面（投射物 vs 近戰撲擊）與停步位置都看這個，
    不看 magic——魔法型只代表傷害類型，跟射程是兩件事。 */
 function bfEnemyIsRanged(ent) {
@@ -144,6 +165,7 @@ function bfStopDistance(ent) {
    ⚠️ 這是改造前完全不存在的判定——舊版任何位置都打得到。 */
 function bfInAttackRange(ent) {
   if (!ent) return false;
+  if (!bfEnemyAlerted(ent)) return false;
   if (!bfPos(ent)) return true;                 // 沒有座標（高塔）＝沿用舊行為，不擋
   if (bfEntityDistance(ent) > bfEnemyAttackRange(ent)) return false;
   return !bfWallBlocksMelee(ent);
@@ -230,6 +252,41 @@ function bfFreeCellCount(placed) {
   return Math.max(0, bfCellCount() - n);
 }
 
+/* 遠方怪群的遊走錨點是生成完成後的世界座標，不能跟著玩家平移。
+   沒有 _roam 的普通波次／塔 BOSS 保留原待機行為。 */
+function bfInitRoam(ent) {
+  var p = bfPos(ent);
+  if (!p || typeof FIELD_ENCOUNTER === 'undefined') return;
+  ent._roam = { x: p.x, y: p.y, tx: p.x, ty: p.y, wait: 0 };
+}
+function bfTickRoam(ent, dt) {
+  var r = ent && ent._roam, p = bfPos(ent);
+  if (!r || !p || !(dt > 0) || typeof FIELD_ENCOUNTER === 'undefined') return;
+  if (typeof ccActionLocked === 'function' && ccActionLocked(ent)) return;
+  if (typeof eliteLocked === 'function' && eliteLocked(ent)) return;
+  var cfg = FIELD_ENCOUNTER;
+  var radius = bfMeterPx(Math.max(0, Number(cfg.roamRadiusM) || 0));
+  if (!(radius > 0)) return;
+  if (r.wait > 0) { r.wait = Math.max(0, r.wait - dt); return; }
+  var dx = r.tx - p.x, dy = r.ty - p.y;
+  var len = Math.sqrt(dx * dx + dy * dy);
+  if (len < 1) {
+    var angle = Math.random() * Math.PI * 2;
+    var reach = radius * Math.sqrt(Math.random());
+    r.tx = r.x + Math.cos(angle) * reach;
+    r.ty = r.y + Math.sin(angle) * reach;
+    dx = r.tx - p.x; dy = r.ty - p.y;
+    len = Math.sqrt(dx * dx + dy * dy);
+  }
+  if (!(len > 0)) return;
+  var step = Math.min(len, bfEnemyRunSpeed(ent) * bfEnemySpeedFactor(ent) * Math.max(0, Number(cfg.roamSpeedRatio) || 0) * dt);
+  p.x += dx / len * step; p.y += dy / len * step;
+  if (step >= len) {
+    var lo = Math.max(0, Number(cfg.roamWaitMin) || 0), hi = Math.max(lo, Number(cfg.roamWaitMax) || 0);
+    r.wait = lo + Math.random() * (hi - lo);
+  }
+}
+
 /* ---- 逼近與推擠（每個 tick 呼叫一次）----
    敵人朝我方走，走到停止距離就不再前進；同伴之間互相推開，避免整群疊在一點。
    這是「要走到面前才打得到」得以成立的前提。 */
@@ -244,6 +301,11 @@ function bfTickApproach(enemies, dt) {
     if (!p) continue;
     if (bfTickKnockback(ent)) continue;
     if (ent._enterCd > 0) continue;            // 還在進場：不參與逼近，也還不能被打
+    if (!bfEnemyAlerted(ent)) {
+      bfTickRoam(ent, dt);                     // 尚未發現玩家：只在預置的世界位置附近遊走
+      bfEnemyAlerted(ent);                     // 遊走途中進入視野，本輪立即記住發現狀態
+      continue;
+    }
     // 菁英詞條施法／衝鋒中：原地不動（衝鋒的位移由 js/elite.js 自己推進）
     if (typeof eliteLocked === 'function' && eliteLocked(ent)) continue;
     /* 追的是我方**當前**座標，不是出生時的方位——我方跑走就得重新追。 */

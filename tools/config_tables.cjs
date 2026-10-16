@@ -359,7 +359,7 @@ const SCHEMAS = {};
 
 /* ---- NPC ← 各地圖 NPC pool ----
    NPC.csv 管理 NPC 基本資料與移動／攻擊三項（2026-09-29）：移動速度（米/秒 → runSpeed）、
-   攻擊速度（次/秒 → atkSpeed）、攻擊距離（米 → atkRange）；hpMult／atkMult／defMult 等戰鬥倍率
+   攻擊速度（次/秒 → atkSpeed）、攻擊距離（米 → atkRange）、視野範圍（米 → sightRanges，各類型獨立）；hpMult／atkMult／defMult 等戰鬥倍率
    仍保留在 js/data.js，不讓「表格沒有的欄位」在套用時被清掉。
    舊的 aspdMult 已被 atkSpeed 取代（絕對值，不再是倍率）；套用時一併刪除，避免兩套攻速並存。
    外觀欄沿用既有 NPC.csv 語意：舊地圖填 emoji，亡靈山脈等有獨立外觀 key 的
@@ -429,7 +429,7 @@ function npcSkillCells(sk) {
 }
 SCHEMAS.NPC = {
   name: 'NPC', jsFile: 'data', sheet: 'NPC', vars: NPC_POOL_DEFS.map(d => d.varName).concat(['BOSS_LIST']),
-  header: ['NPC識別碼', 'NPC名稱', '所屬地圖識別碼', '類型', '屬性', '外觀', '移動速度(米/秒)', '攻擊速度(次/秒)', '攻擊距離(米)', '魔法型（1是／0否）', '出現權重',
+  header: ['NPC識別碼', 'NPC名稱', '所屬地圖識別碼', '類型', '屬性', '外觀', '移動速度(米/秒)', '攻擊速度(次/秒)', '攻擊距離(米)', '視野範圍(米)', '魔法型（1是／0否）', '出現權重',
     '專屬技能', '隨機技能下限', '隨機技能上限', '備註'],
   extract(src) {
     const rows = [];
@@ -444,7 +444,9 @@ SCHEMAS.NPC = {
           entry.magic ? '1' : '0', numStr(entry.weight == null ? 1 : entry.weight)];
         ['normal', 'elite', 'elite_adv', 'boss'].forEach(type => {
           const sk = type === 'normal' ? null : (entry.skills && entry.skills[type]) || null;
-          rows.push([id, entry.name, def.zone, type].concat(base, npcSkillCells(sk), [npcSkillNote(type, sk, catalog)]));
+          const row = [id, entry.name, def.zone, type].concat(base, npcSkillCells(sk), [npcSkillNote(type, sk, catalog)]);
+          row.splice(9, 0, numStr(entry.sightRanges && entry.sightRanges[type] != null ? entry.sightRanges[type] : 50));
+          rows.push(row);
         });
       });
     });
@@ -452,7 +454,7 @@ SCHEMAS.NPC = {
     bosses.forEach((b, index) => {
       const sk = (b.skills) || null;
       rows.push([b.id || ('tower_boss_' + (index + 1)), b.name, NPC_TOWER_ZONE, 'tower_boss', b.attr || b.elem || '', b.emoji || '',
-        '', '', '', b.elem ? '1' : '0', ''].concat(npcSkillCells(sk), [npcSkillNote('tower_boss', sk, catalog)]));
+        '', '', '', numStr(b.sightRange == null ? 50 : b.sightRange), b.elem ? '1' : '0', ''].concat(npcSkillCells(sk), [npcSkillNote('tower_boss', sk, catalog)]));
     });
     return rows;
   },
@@ -475,6 +477,7 @@ SCHEMAS.NPC = {
     const catalog = enemySkillCatalog();
     const randomPoolSize = Object.keys(catalog).filter(k => catalog[k].pool === 'random').length;
     const skillsById = {};     // id → { type → { ex, rnd } }
+    const sightById = {};      // 各類型列自己的視野（米），不由 normal 列覆蓋
     const towerRows = [];
     const seen = {};
     const lineOf = index => '第 ' + (index + 2) + ' 列';
@@ -485,6 +488,11 @@ SCHEMAS.NPC = {
       if (NPC_TYPES.indexOf(type) < 0) throw new Error('NPC ' + lineOf(index) + '的「類型」只能是 ' + NPC_TYPES.join('／') + '：' + type);
       if (seen[id + '|' + type]) throw new Error('NPC ' + lineOf(index) + '：' + id + ' 的 ' + type + ' 列重複');
       seen[id + '|' + type] = true;
+      const sightRaw = get(row, '視野範圍(米)').trim();
+      const sight = sightRaw === '' ? 50 : Number(sightRaw);
+      if (!Number.isFinite(sight) || !(sight > 0)) throw new Error('NPC ' + lineOf(index) + '「視野範圍(米)」必須是大於 0 的有限數字：' + sightRaw);
+      if (!sightById[id]) sightById[id] = {};
+      sightById[id][type] = sight;
       if (NPC_SKILL_TYPES.indexOf(type) >= 0) {
         const where = 'NPC ' + lineOf(index) + '（' + id + ' ' + type + '）';
         const ex = get(row, '專屬技能').split(/[;；,，\s]+/).map(t => t.trim()).filter(Boolean);
@@ -537,6 +545,7 @@ SCHEMAS.NPC = {
       rowsByZone[zone].push(o);
     });
     NPC_POOL_DEFS.forEach(def => rowsByZone[def.zone].forEach(o => {
+      o.sightRanges = sightById[o.id];
       const sk = skillsById[o.id];
       if (sk && Object.keys(sk).length) o.skills = sk;
     }));
@@ -548,6 +557,7 @@ SCHEMAS.NPC = {
       const t = towerRows[i];
       const b = Object.assign({}, old);
       b.id = 'tower_boss_' + (i + 1);
+      b.sightRange = sightById[t.id].tower_boss;
       const name = get(t.row, 'NPC名稱'); if (name) b.name = name;
       const emoji = get(t.row, '外觀'); if (emoji) b.emoji = emoji;
       const attr = get(t.row, '屬性').trim(); if (attr) b.attr = attr;

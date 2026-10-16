@@ -17,11 +17,11 @@ if (typeof GameClock !== 'undefined') {
   globalThis.clearTimeout = GameClock.clearTimeout;
 }
 importScripts(
-  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261015-boss-player-skill', '../runeword_data.js?v=20261013-rune-all-elem-color', '../status.js?v=20261014-state-status', '../formula.js?v=20261015-boss-player-skill', '../battlefield.js?v=20261015-boss-player-skill', '../stats.js?v=20261003-rename-weineng',
+  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261016-npc-retaliate-refill', '../runeword_data.js?v=20261013-rune-all-elem-color', '../status.js?v=20261014-state-status', '../formula.js?v=20261016-npc-retaliate-refill', '../battlefield.js?v=20261016-npc-retaliate-refill', '../stats.js?v=20261003-rename-weineng',
   '../item.js?v=20261015-gem-enabled', '../runeword.js?v=20261014-develop-integration',
   '../skills.js?v=20261015-boss-player-skill', '../skills2.js?v=20261016-wall-rock', '../elite_data.js?v=20261016-wall-rock', '../talents.js?v=20261015-boss-player-skill',
   '../player.js?v=20261015-boss-player-skill', '../special_rules.js',
-  '../combat.js?v=20261015-boss-player-skill', '../elite.js?v=20261016-wall-rock', '../elite_boss.js?v=20261015-boss-player-skill', '../elite_boss_recipes.js?v=20261015-boss-player-skill', '../legendary.js?v=20261012-indomitable-guard', '../potential.js?v=20261005-cc-decay-count', '../tower.js?v=20261015-boss-player-skill',
+  '../combat.js?v=20261016-npc-retaliate-refill', '../elite.js?v=20261016-wall-rock-npc-vision', '../elite_boss.js?v=20261015-boss-player-skill', '../elite_boss_recipes.js?v=20261015-boss-player-skill', '../legendary.js?v=20261012-indomitable-guard', '../potential.js?v=20261005-cc-decay-count', '../tower.js?v=20261016-npc-vision',
   '../factory.js?v=20261015-gem-enabled', '../newforge.js', '../forge.js?v=20261015-gem-enabled', '../save.js?v=20261015-boss-player-skill',
   '../tasks.js?v=20261007-runes4'
 );

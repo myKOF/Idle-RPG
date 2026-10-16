@@ -107,6 +107,7 @@ test('生成的敵人身上帶著自己 NPC 的攻速、跑速、射程', () => 
     assert.ok(npc, m.name);
     assert.equal(m.runSpeed, c.bfMeterPx(npc.runSpeed), m.name + ' 移動速度');
     assert.equal(m.atkRange, c.bfMeterPx(npc.atkRange), m.name + ' 攻擊距離');
+    assert.equal(m.sightRange, c.bfMeterPx(npc.sightRanges.normal), m.name + ' 視野範圍');
     assert.ok(Math.abs(m.aspd - npc.atkSpeed * c.FIELD_MONSTER_GROWTH.aspd * zoneMult) < 1e-9, m.name + ' 攻速');
     assert.ok(Math.abs(m.atkCd - 1 / m.aspd) < 1e-9);
   });

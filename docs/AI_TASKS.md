@@ -10293,3 +10293,149 @@ Worker 存活且頁面正常完成載入。
 - 瀏覽器：隨機localhost埠／全新隔離headless Edge／正式Worker與Pixi，不讀真人存檔；1920×1080、1366×768、2560×1080、390×700四組皆通過外框貼齊四邊、戰鬥填滿、頂欄／左側隱藏、按鈕還原／Esc還原尺寸一致且不開菜單，保留場景頁籤與HUD；荒漠頁籤可點，原生網頁全螢幕退出一併還原通過。Console error／warning皆0。首次原生驗證經頂欄按鈕被既有headless F11偵測擋下等待逾時，改直接呼叫標準 requestFullscreen 驗證實際 fullscreenchange，未改既有頂欄邏輯；最終全部通過。主畫面與戰鬥全螢幕截圖保存在本聊天 visualizations/battle-layout-filled.png／battle-fullscreen.png；臨時服務／瀏覽器與QA腳本已關閉清理。
 - 唯讀檢查：js/ui-scale.js、js/battle-renderer.js、js/game-menu.js、css/style.css／ashen-forge-flat.css、既有上述回歸測試與Build工具、AI規範／prompts/codex.md、Claude index變更。收尾Claude工作區新增VFX Runtime／skills2／elite_data／bridge快取，與本次區段無交集或語意依賴；以Claude完整工作檔再次三方試跑退出碼0，未覆蓋他人修改。沒有獨立美術資源變更／素材庫Commit。
 - 交付：Commit為本紀錄所在 `[Codex] feat: 主畫面貼齊視窗並新增戰鬥區全螢幕`，回覆附編號；本次無未完成項，可審閱合併，未合併／推送。限制：未做真人存檔長時間戰鬥／效能壓測；手機仍沿用原有全介面等比縮放，不另改手機版設計。下一步由使用者整合後重載遊戲，右上全螢幕／還原或 Esc 驗收；既有指南修改保留未提交。
+
+## NPC-ENCOUNTER-RETALIATE-20261016 — 受擊警戒與隨機遠方補群
+
+- Owner：Codex；Done，單一開發者。使用者要求視野外NPC受玩家攻擊後直接追擊反擊，追加遠方群數可調為隨機4～8群、死亡後可隨機補上；後者取代前輪不補生規則。
+- 範圍：battlefield／formula的受擊警戒、combat遠方生成、data／game_parameters Excel與CSV／apply_params／說明、相關測試、index／bridge／sim.worker必要快取與本紀錄。沿用FIELD敵人權威、NPC視野與原攻擊射程；不改存檔／Protocol／素材或其他副本，不合併推送。
+- 預檢：功能與表格檔案乾淨；Claude新增岩壁與毒圈的改動只與本次快取鍵相交，延續使用者已明確允許「保留雙方功能並更新快取」的授權。docs僅新增獨立任務段，merge-tree試跑文件乾淨，無語意相依；快取衝突留待使用者整合，不改Claude功能。
+- 驗收：正常命中／護盾／持續與衍生傷害觸發追擊並停止遊走，未命中／零傷害不觸發；原射程、進場、控場與冷卻不繞過。遠方初次隨機抽定4～8群，整群死亡才在遠方隨機空位補回目標；活群不重複、不在身旁補生，共用總容量。參數往返／擾動檢查、完整測試與既有失敗比對、Worker位置投影與瀏覽器、Build／diff後提交。無素材庫變更。
+- 實作：bfAlertEnemy統一視野／受傷警戒，resolveHit含護盾傷害及applyEnemyHpDamage持續／衍生傷害在原結算掛點通知；只更新戰鬥實體暫態，不改傷害公式數值。第一次警戒清遊走並開始遠方怪狂暴計時，後續受傷不重置。遠方世界紀錄初次抽定含端點4～8群，偵測活群鍵消失後洗牌空位補群；仍存活的地點不能重複配置，部分死亡不補單隻。總容量不足保留待補，地點不足則等待移動，不以近身波次計時器刷遠方群。
+- Excel／參數：原「4-遠方怪群／預先生成」d改8、f改4，e仍每群最多4隻，a100米／b160米／c70米不變。Artifact Tool讀取／目標值／渲染，沿既有Excel原生API只改5格並正常重開兩次驗證；原12806個無關格、全部公式／樣式、其他工作表及凍結／保護保留。xlsx_to_csv輸出344列18欄，CSV僅兩列受影響。`node tools/apply_params.cjs`562參數全部一致、將變更0／錨點問題0（561＋群數下限1）；`node tools/apply_params.cjs --check-anchors`擾動513值後562錨點各命中一次。
+- 相關回歸：`node --test --test-reporter=tap tests/npc-damage-aggro.test.cjs tests/npc-roaming.test.cjs tests/npc-vision.test.cjs tests/npc-move-attack.test.cjs tests/npc-elite-skills.test.cjs tests/elite-engine.test.cjs tests/battlefield.test.cjs tests/battlefield-rt.test.cjs tests/multi-enemy.test.cjs tests/tower-battlefield.test.cjs tests/boss-player-skill.test.cjs tests/elite-params.test.cjs tests/enemy-frenzy.test.cjs tests/worker-protocol.test.cjs tests/offline-rewards.test.cjs tests/init-ui-smoke.test.cjs tests/sim-harness-sync.test.cjs`，185/185通過，專項新增8項。初次專項控場fixture誤以為舊追擊會受暈眩停止，改為驗證既有施法移動鎖及暈眩普攻鎖；沒有改控場規則或放寬既有斷言。`npm.cmd run build`528檔通過，git diff --check通過。
+- 瀏覽器：隨機localhost／全新隔離headless Edge、正式Worker＋Pixi，1920×1080全螢幕，未讀真人存檔。抽到6群16隻，先驗10秒未警戒遊走；距離95.72米受到正式sgHitOne技能命中後立即警戒、清遊走且向玩家移動，遠距普攻扣血0，走入射程後實際反擊扣血16。整群死亡後在遠方補2隻回6群，等待120秒仍16隻；追擊與新生怪Canvas／Worker位置差≤2座標。Console error／warning0，服務／瀏覽器已關閉。
+- 快取：data1.0.85／formula1.0.60／battlefield1.4.13／combat1.0.87／bridge1.0.286，Worker入口與上述4個模擬檔import均20261016-npc-retaliate-refill；其他技能／VFX載入鍵保留。唯讀檢查elite／skills2／tower／status、battle-renderer位置補間、Worker投影／Protocol／sim engine、既有Excel工具與回歸，未改其內容。共享副本另一聊天的HUD CSS與紀錄／CSS快取由對方獨立提交，不納本任務；無新素材／素材庫變更。
+- 全庫：`node --test --test-reporter=tap "tests/*.test.cjs"`4509項、4068通過／439失敗／2略過，617.95秒。與前輪已覆載HEAD重現的438個既有失敗按檔案＋名稱比較，全部相同、缺失0；額外1項為啟動時已載入的新增控場fixture舊版本，執行途中修正（產品程式未再變動），最後完整相關17檔185/185通過。最終新命中fixture另固定防守方閃避0，避免測無敵分支時偶發先MISS；沒有調整產品命中規則。全庫未宣稱全綠，未重跑整套長模擬；既有失敗保留原任務處理。
+- 交付：修改14檔（上述程式／參數／快取／說明、本紀錄與新增npc-damage-aggro、更新npc-roaming測試），Commit為本紀錄所在[Codex] feat提交，回覆附編號；未合併／推送。無本次功能待辦，可供審查合併，整合後重新載入驗收。限制：未做真人存檔長時間操作；遠方群共用總容量，容量／遠方空位不足時實際群數可能低於目標。忽略目錄logs/npc-encounters沿前次自動核准以blocked by policy拒絕清理而保留，未納提交，未繞過政策；測試服務均關閉。
+
+## NPC-FIELD-ENCOUNTERS-20261016 — 遠方預置怪群與未警戒遊走
+
+- Owner：Codex；Done，單一開發者。使用者要求全螢幕可看見更遠敵人，例如100米菁英群，未發現玩家時在出生點附近遊走；追加明確要求遠方群在玩家抵達前預先生成、同區域不持續補怪。保留原近身波次，遠方採固定世界格點與本次遊玩區域生成紀錄，只於移動進新區域預載新地點。
+- 範圍：data／battlefield／combat、必要index／bridge／Worker快取、game_parameters Excel／CSV與apply_params錨點、專項回歸、參數說明與本紀錄；不改NPC視野50米、既有技能／掉落公式／存檔格式／素材／他人副本。沿用既有菁英波建怪、配技能、群組站位、FIELD唯一戰鬥清單；避免修改Claude進行中的elite.js與另一聊天的battle-renderer／HUD。
+- 預檢：data／battlefield／combat／參數表／匯入器／新測試乾淨。使用者已同意保留雙方功能並更新與Claude 1b17f050重疊的必要快取；index與紀錄只改自己的區段、分段提交。其毒圈／本副本HUD修改保留，未整合或覆蓋對方分支。
+- 初值：格點間距100米，預載160米內／至少70米外地點，同時至多4群、每群最多4隻；出生點8米內遊走、步速為各自跑速的25%、走停間隔0.8~2.5秒。玩家進入NPC既有視野後改追擊；遠方群未接戰時不推高近身刷怪上限或累積狂暴。
+- 驗收：固定世界點／站著不補生／清掉不重生／新區域預載／群組與既有容量、遊走範圍／速度／控制與警戒切換、近身波次／狂暴、區域切換與演武場／塔戰、Excel原生重開與原值保留、錨點／回歸／Build、正式Worker＋Canvas位置同步後獨立Commit。無素材變更，不合併推送。
+- 完成／修改12檔：config/Excel/game_parameters.xlsx、config/CSV/game_parameters.csv、js/data.js／battlefield.js／combat.js、index.html／js/bridge.js／js/worker/sim.worker.js必要快取、tools/apply_params.cjs、tools/參數表使用說明.md、新tests/npc-roaming.test.cjs與本紀錄。固定地點只配置一次（含容量不足的空地），區域生成紀錄不進FIELD快照；實體只存在原FIELD清單，沿既有spawnEliteWave建怪與配技，不複製菁英引擎。遠方群不占波次名額、共用總容量；未發現玩家時遊走並暫停狂暴，發現後依原追擊／技能／掉落與過關規則。
+- Excel：新增「4-遠方怪群／預先生成、未警戒遊走」兩列（編號358／359，工作表第342／343列），九個旋鈕。初次Windows回報鎖定，使用者儲存關閉後先重新讀取最新工作簿再修改，保留其內容；以既有Excel原生API插入列／逐格寫入，正常重開兩次與物件驗證通過。唯讀核對原12775格的值／公式／樣式、其他頁與凍結／保護全部保留；Artifact Tool前後盤點與渲染確認新增值可見。xlsx_to_csv輸出344列18欄，CSV僅新增兩列。
+- 指令／結果：`node tools/apply_params.cjs`561參數一致、將變更0／錨點問題0（原552＋本次9），`node tools/apply_params.cjs --check-anchors`擾動512值後561錨點各命中一次；均用objFieldML綁定FIELD_ENCOUNTER與欄位名。`node --test --test-reporter=tap tests/npc-roaming.test.cjs tests/npc-vision.test.cjs tests/npc-move-attack.test.cjs tests/npc-elite-skills.test.cjs tests/elite-engine.test.cjs tests/battlefield.test.cjs tests/battlefield-rt.test.cjs tests/multi-enemy.test.cjs tests/tower-battlefield.test.cjs tests/boss-player-skill.test.cjs tests/elite-params.test.cjs tests/enemy-frenzy.test.cjs tests/worker-protocol.test.cjs tests/offline-rewards.test.cjs tests/init-ui-smoke.test.cjs tests/sim-harness-sync.test.cjs`，最終177/177通過（新專項13項）。`npm.cmd run build`527檔通過，git diff --check通過。
+- 全庫：依參數接線規範執行`node --test --test-reporter=tap "tests/*.test.cjs"`，4499項、4059通過／438失敗／2略過，約574秒。將91份含失敗的測試以HEAD原data／battlefield／combat／bridge／Worker／主頁／apply_params／參數CSV與Excel唯讀覆載後逐檔重跑（每檔120秒上限），仍為同438個失敗名稱，新增與消失名稱差集皆0，沒有逾時或改斷言接受現況。全庫並非全綠；既有技能／VFX／舊制斷言失敗保留交原任務處理。
+- 瀏覽器：隨機localhost／隔離headless Edge／正式Worker＋Pixi，1920×1080全螢幕，不讀真人存檔。初始4群14隻約100米怪物，連續驅動原逼近／進場函式10秒確認在出生點8米內遊走、未警戒、Canvas與Worker位置一致；等待120秒仍14隻，靠近切換追擊；清場後等待0隻，新區域預載11隻，回原區域仍0隻。Console error／warning皆0，服務與瀏覽器已關閉。QA初版未推進進場倒數導致不遊走，補回正式進場函式後通過，未為測試改產品邏輯。
+- 唯讀檢查：AI_RULES／AI_WORKFLOW／AGENTS、NPC配置與前輪視野測試、elite.js（群組站位／技能警戒）／tower.js／battle-renderer位置補間／save與Worker protocol、Excel工具與sim engine、既有相關回歸；上述未列為修改檔者皆未改。Claude進行中的elite.js與毒圈分支不變；本副本其他聊天HUD／人物暫停修正由其獨立提交，不納本Commit。沒有新美術／VFX／素材庫變更。
+- 交付：Commit為本紀錄所在`[Codex] feat: 預置遠方菁英怪群與未警戒遊走`，回覆附編號；可Review／合併，未合併推送。本次功能無未完成項；已知限制為地點紀錄只保留本次遊玩，重新載入／新遊戲會重建世界（戰場實體原本亦不存檔），滿群數／總容量的地點保留空地、不原地補生；未做真人長時間效能壓測。下一步整合後重載遊戲，調整game_parameters「4-遠方怪群」；NPC視野仍為各列原50米。
+- 暫存交付：正式全螢幕預覽另存本聊天visualizations/npc-far-groups.png；已關閉臨時服務與瀏覽器。自動核准審查以blocked by policy拒絕刪除logs/npc-encounters（即使已加上路徑與無連結預檢），本次QA腳本／基線報告／預覽來源仍保留在既有ignore目錄、不納Commit；暫存清理尚未完成，未繞過拒絕。前輪logs/npc-vision依賴連結未動。
+
+## BATTLE-HUD-REFINE-20261016 — 雕飾減繁並套用一般戰鬥區
+
+- Owner：Codex；Done，單一開發者。使用者要求現有雕刻複雜度／紋理收斂約20%，另追加一般戰鬥區也套用同款裝飾；保留自然包覆球框與立體感。
+- 範圍：css/battle-hud.css、index.html僅HUD CSS快取、images/ui/battle-hud/orb-carving.png、素材庫codex-authored/battle-hud母圖／匯出／來源／提示詞、本紀錄；必要匯出工具唯讀沿用。禁止NPC進行中功能／數值／Worker／存檔／配置／其他副本，不合併推送。前置既有雕刻與匯出流程已完成，後續使用者審閱整合。
+- 內容：依原透明母圖用內建imagegen編修，簡化細卷葉／刻紋／粗糙度，保持大輪廓／凹弧／中心比例；Mote像素工作流不適合此細緻雕飾，沿既有備選工具。一般模式預留兩側雕飾空間並調整中央底座可用寬度，避免裁切／球與技能重疊；全螢幕保留中央構圖。不匯入第三方素材；必要素材雙倉提交。
+- 預檢：CSS／圖檔／紀錄乾淨；index與Claude1b17f050僅VFX／bridge等JS快取不同區段，三方候選試跑後分段修改。同副本NPC任務有既有未提交修改，保留並僅stage本次獨立區段。
+- 驗收：透明alpha與母圖／匯出雜湊、兩模式雕飾與球框銜接／不裁切／不遮技能、四種尺寸／切換／Esc還原／點擊、Console／相關回歸／Build／diff；先素材Commit再遊戲Commit。
+- 使用者追加圈選外側卷葉：最後一輪按PROMPT-edge.txt將外側小卷葉／螺旋改為少量寬葉與兩個主要外側卷紋；內弧／圓孔／底腳對位保留。約20%是美術收斂目標，非像素或葉片數的精確減量。
+- 完成／修改4檔：css/battle-hud.css兩模式共用雕飾，普通模式預留球外兩側空間，底座／技能／增益列由同一--hud-width計算；全螢幕保留原中央HUD尺度。index.html僅HUD CSS更新至1.0.11，PNG引用?v=3避免已開啟預覽快取；images/ui/battle-hud/orb-carving.png更新512px透明匯出，本紀錄同步。沒有修改JS或玩法。
+- 素材：完整1254×1254透明母圖、512×512匯出、exports.json／SOURCE.md與兩輪編修PROMPT-refine.txt／PROMPT-edge.txt納入素材庫，Commit `5cfa683`；初版仍保留Git歷史。RGBA alpha0..255且圓孔中心alpha0，`node tools/battle-hud/export-source.cjs --check`母圖／匯出／遊戲SHA256一致。沒有匯入第三方素材或新增Preset。
+- 指令／結果：`node --test tests/battle-fullscreen.test.cjs tests/battle-resource-orbs.test.cjs tests/esc-shortcut.test.cjs tests/battle-log-ui-layout.test.cjs` 11/11通過；`npm.cmd run build` 525檔通過；本次diff check及匯出檢查通過。無修改既有測試斷言或新增鏡像測試。
+- 瀏覽器：IAB隨機本機新來源、正式Worker＋Pixi、不讀真人存檔；1920×1080、1366×768、2560×1080、390×700逐組等待縮放穩定後，普通／全螢幕皆確認雕飾新版載入、左右在畫布內、不遮六格技能與雙球、球中心仍可命中、底座置中、Esc恢復原矩形且不開菜單；普通技能格CSS可用寬最小36px。Console error／warning0。最終預覽為本聊天visualizations/battle-normal-refined.jpg／battle-fullscreen-refined.jpg，臨時頁籤／HTTP服務已清理，viewport還原。
+- 唯讀檢查：既有HUD樣式、匯出工具、imagegen技能與原母圖、上述回歸、AI規範及Claude index JS快取差異；未改NPC配置／模擬／Worker／存檔／其他副本。CSS快取與Claude的JS快取三方候選試跑退出碼0；與本副本NPC進行中index／紀錄不同區段，僅stage本次CSS快取／獨立文檔，任務紀錄移到檔首避免另一人物暫停任務追加檔尾的插入點，三方試跑後提交。素材庫claude-authored/rock-wall保持未提交、不納本輪。
+- 交付：遊戲Commit為本紀錄所在 `[Codex] feat: 簡化雕飾並套用一般戰鬥HUD`，回覆附編號；本次無未完成項或已知新增風險，可審閱合併，未合併／推送。限制：未做真人存檔長時間效能壓測，手機沿既有等比縮放；下一步使用者整合後重載檢視。
+- 同副本人物暫停任務已提交f6c30bba，但該次共享index提交僅帶入中途HUD CSS1.0.10快取；本輪重新更新為1.0.11，人物renderer快取／JS／測試與紀錄仍留由原任務提交。最後兩個共用檔皆先完成候選試跑，再一次暫存與提交，避免留下部分暫存區段。
+
+## NPC-VISION-20261016 — NPC 配置視野與進入範圍才追擊
+
+- Owner：Codex；Done，單一開發者。使用者要求 NPC 玩家進入視野才追擊，NPC 配置表新增視野範圍，全部預填 50 米。
+- 前置：既有 NPC Excel／CSV／data 與連續座標戰場已具備；全部目標衝突預檢乾淨。允許 NPC Excel／CSV、config_tables、data／battlefield／combat／elite／tower、必要主頁與 Worker 快取、專項測試、參數表說明與本紀錄；禁止無關數值／技能／素材／其他副本，不合併推送。
+- 規則：以 NPC 圓心到玩家的距離判定，全方向圓形視野；進場完成且進入視野後記住發現狀態、持續追擊，不增加離開視野脫戰或受擊自動索敵。各階級及塔 BOSS 均使用各自配置列；未發現時不主動跑位、普攻或施放攻擊技能。
+- 驗收：Excel 正常開啟與無關內容保留、CSV／JS 往返、視野內外／邊界／玩家移動觸發／追擊保持／進場／普通與遠程／菁英技能與塔 BOSS、正式 Worker／畫面位置同步、受影響回歸、Build、diff 後獨立 Commit。無素材變更；目前生成約 44 米，預設 50 米多數怪物仍立即發現玩家。
+- 完成／修改17檔：config/Excel/NPC.xlsx、config/CSV/NPC.csv、tools/config_tables.cjs、js/data.js／battlefield.js／combat.js／elite.js／tower.js、index.html／bridge.js／worker/sim.worker.js 快取、tests/npc-vision.test.cjs（新，13項）／npc-move-attack／npc-elite-skills／elite-engine、tools/參數表使用說明.md與本紀錄。視野以米配置、生成時換算為座標；84種野外NPC的四種階級與10列塔BOSS共346列預填50。各階級獨立讀取，NPC_CONFIG_TABLE註冊保留完整設定；演武場、召喚／分裂沿既有生成入口生效。未改Protocol／存檔格式／其他技能數值與素材。
+- Excel：Artifact Tool唯讀盤點／前後渲染確認；缺少插入整欄的公開API，採專案既有excel-update-sheets.ps1原生Excel插欄，正常重開兩次、逐格與物件驗證通過。唯讀ZIP內容核對原有5888格的值／公式／樣式全部保留、備用工作表與凍結／保護不變；NPCTable擴為A1:P347。由xlsx_to_csv輸出347列16欄，NPC匯入dry-run語意變更0，自訂各階級視野可完整往返；留白相容50、拒絕0／負數／非有限值。若使用者正開NPC.xlsx，請重開後再編輯新欄。
+- 指令／結果：`node --test --test-reporter=tap tests/npc-vision.test.cjs tests/npc-move-attack.test.cjs tests/npc-elite-skills.test.cjs tests/elite-engine.test.cjs tests/battlefield.test.cjs tests/battlefield-rt.test.cjs tests/multi-enemy.test.cjs tests/tower-battlefield.test.cjs tests/boss-player-skill.test.cjs tests/elite-params.test.cjs tests/worker-protocol.test.cjs tests/enemy-hit.test.cjs tests/enemy-projectile-retaliation.test.cjs tests/offline-rewards.test.cjs tests/tower-scene-intro.test.cjs tests/sim-harness-sync.test.cjs tests/init-ui-smoke.test.cjs tests/purgatory-tower.test.cjs tests/tower-cost.test.cjs tests/tower-xp.test.cjs`，178/178通過；補強現有生成測試的視野欄位後再跑npc-vision／npc-move-attack，20/20通過。`npm.cmd run build`525檔通過；NPC apply語意變更0、git diff --check通過。未跑全庫。另enemy-attack-vfx有1項既有渲染器正規式斷言失敗，以HEAD原combat唯讀替換重跑仍同項失敗，未改渲染器或放寬斷言。
+- 瀏覽器：隨機localhost埠／全新headless Edge／正式Worker＋Pixi，不讀真人存檔。僅測試通道固定場景、手動驅動原逼近函式，正式5Hz面板與顯示時鐘保持運作；60米外NPC停在x600，玩家移至x100進入50米邊界後NPC到x480，玩家移到x-1000離開視野後仍追至x360，三段Canvas座標與Worker一致；Console error／warning皆0。初次測試抓到素材Worker而非模擬Worker、其後用戰鬥暫停讓Canvas停止導致驗證失敗，修正隔離QA通道後通過，沒有為測試修改正式產品邏輯。臨時瀏覽器／服務已關閉；自動核准審查拒絕刪除logs/npc-vision依賴junction（blocked by policy），暫存目錄保留在既有ignore範圍、不納提交，未宣稱清理完成。
+- 重疊處理：elite-engine的跑位案例需明確設為已發現玩家，與Claude ai/claude的1b17f050毒素中心圈案例不同段落（第88與265行附近）、無公式相依；候選git merge-file三方試跑退出碼0後僅新增跑位fixture一行，未改毒素案例。共享副本另一聊天的HUD雕飾任務845ca88a由其獨立提交；本次index僅JS快取、本紀錄僅NPC區段，不納其素材／CSS。
+- 唯讀檢查：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、xlsx_to_csv／excel-update-sheets、Worker protocol／bridge／shim、battle-renderer位置補間與相關既有測試、scripts/sim/engine、Claude毒素測試差異；未改上述未列修改檔。無本次美術素材／素材庫變更，不需素材Commit。
+- 交付：Commit為本紀錄所在`[Codex] feat: 新增NPC配置視野與範圍觸發追擊`，回覆附編號；可Review／合併，未合併推送。無本次未完成項；限制為未驗真人長時間戰鬥、未新增脫戰／受擊索敵／視線遮擋（被動受擊反應沿既有規則），50米大於現有出生距離所以多數怪物仍立即發現玩家。下一步整合後重新載入遊戲；要觀察走近觸發，可在NPC表調小視野並套用。
+
+## BATTLE-HUD-ORNAMENT-20261016 — 全螢幕 HUD 雙側金屬翼飾
+
+- Owner：Codex；Done，單一開發者。使用者要求優化收攏 HUD 外側原本切齊戰鬥區的生硬邊緣，參考先前截圖的裝飾感。
+- 前置：全螢幕與中央 HUD 已完成；允許 css/battle-hud.css、index.html 僅 HUD CSS 快取、本紀錄。禁止 JS／玩法／數值／Worker／存檔／配置／獨立素材／其他副本，不合併推送。三檔衝突預檢乾淨，後續使用者審閱整合。
+- 內容：僅全螢幕加入對稱深色金屬翼飾、青銅刻紋與鉚釘，底座兩端圓弧收邊；沿用原球／技能／底座尺寸與位置，裝飾不攔截點擊。純 CSS 自製，不取用參考圖素材，沒有獨立美術資源或素材庫變更。
+- 驗收：正式 Worker／Canvas 隔離瀏覽器目視及多尺寸檢查、正常模式無裝飾、切換／Esc還原、原HUD尺寸位置與tooltip／技能可操作、Console／既有回歸／Build／diff，通過後獨立 Commit。
+- 完成／修改3檔：css/battle-hud.css 在全螢幕模式下以球的 ::after 與純 CSS 漸層／clip-path 建立鏡像鍛鐵翼飾、青銅弧線／扇骨刻紋／鉚釘，底座兩端圓弧收邊；沒有新增 DOM、改動球／技能／增益列的原位置與尺寸。偽元素 pointer-events:none，僅裝飾；index.html HUD CSS 快取1.0.7→1.0.8，本紀錄同步。沒有獨立圖檔／第三方素材／Preset 或素材庫變更。
+- 回歸指令：`node --test tests/battle-fullscreen.test.cjs tests/battle-resource-orbs.test.cjs tests/esc-shortcut.test.cjs tests/battle-log-ui-layout.test.cjs`，11/11通過；本次沒有新增鏡像測試或改既有斷言。
+- 瀏覽器：隨機localhost埠、全新隔離headless Edge／正式Worker＋Pixi，未讀真人存檔。1920×1080、1366×768、2560×1080、390×700皆驗證正常模式無翼飾、全螢幕雙翼顯示且pointer-events:none、球中心elementFromPoint仍命中原球、球／底座／技能寬高與普通模式一致、底座置中、Esc恢復全部原矩形；Console error／warning皆0。目視確認雙側裸露直角收為弧形底座與對稱翼飾，未遮住球液面／技能。預覽為本聊天visualizations/battle-hud-ornaments.png與battle-fullscreen-ornaments.png；臨時服務／瀏覽器／QA腳本清理。
+- 唯讀檢查：css/ashen-forge.css／ashen-forge-flat.css／style.css、既有HUD／主頁標記、上述4份回歸測試、既有任務與Build工具；未修改JS／模擬／數值／配置／存檔。參考截圖只用於裝飾位置與風格，成品為自製CSS。限制：未做真人存檔長時間效能壓測，手機仍沿用原等比縮放。無本次功能待辦；後續使用者整合並重載檢視裝飾。
+
+
+- Build／交付：`npm.cmd run build` 524檔全通過，`git diff --check`通過。Commit為本紀錄所在 `[Codex] feat: 裝飾全螢幕戰鬥HUD兩端`，回覆附編號；無本次未完成項或已知新增風險，可以審閱合併，未合併／推送。
+
+## BATTLE-HUD-SCULPTURE-20261016 — 全螢幕球側立體雕飾
+
+- Owner：Codex；Done，單一開發者。使用者指出鋸齒不好看，要求改成參考圖風格的立體雕刻，兩側與血球／法力球自然銜接。
+- 前置：中央HUD已完成。允許css/battle-hud.css、index.html僅HUD快取、自製images/ui/battle-hud雕飾、新tools/battle-hud匯出工具與素材庫codex-authored/battle-hud原圖／來源／匯出、必要驗證及本紀錄。禁止玩法／JS模擬／Worker／存檔／配置／外部未授權素材／其他副本，不合併推送。現有三檔預檢乾淨，新檔修改前預檢；後續使用者審閱整合。
+- 內容：移除CSS鋸齒，透明母圖製成立體深色金屬卷葉雕飾，沿球外圈與底座包覆。Mote Studio可存取但為像素畫工具，不適合本次細緻浮雕，採內建imagegen生成自製素材；參考圖僅風格，不匯入或描圖。沿既有素材庫Root解析與單向匯出保存母圖，素材先Commit再遊戲Commit。
+- 驗收：透明與尺寸／匯出雜湊一致、全螢幕雙側銜接與圓瓶／技能不遮擋、多尺寸／正常模式／還原／Esc／點擊、Console／回歸／Build／diff，記錄兩個Commit。不以CSS尖刺或幾何占位代替雕刻。
+- 完成／修改5檔：css/battle-hud.css 移除幾何尖刺與clip-path，使用images/ui/battle-hud/orb-carving.png的透明立體卷葉雕刻，凹弧依原球框對位，法力側CSS鏡像共用。index.html HUD CSS1.0.8→1.0.9；新tools/battle-hud/export-source.cjs沿共用Root提供--make-export／--apply／--check，完整母圖只標準縮小，不重畫；本紀錄同步。球／技能／底座尺寸不變，裝飾pointer-events:none。
+- 素材：素材庫codex-authored/battle-hud保留1254×1254透明原圖、512×512匯出、exports.json雜湊、SOURCE.md與PROMPT.txt；RGBA alpha範圍0..255、圓孔中心alpha0，母圖／匯出／遊戲SHA256一致。素材庫Commit `11b766c`，先於遊戲提交；自製ImageGen素材，不使用第三方素材或新增VFX Preset。
+- 指令／結果：`node --test tests/battle-fullscreen.test.cjs tests/battle-resource-orbs.test.cjs tests/esc-shortcut.test.cjs tests/battle-log-ui-layout.test.cjs` 11/11通過；`npm.cmd run build` 525檔通過；`node tools/battle-hud/export-source.cjs --check`與本次diff check通過。無新增鏡像測試或放寬既有斷言。
+- 瀏覽器：依CUA／Mote工具檢查，使用IAB隨機本機新來源、正式Worker與Pixi，不讀真人存檔；1920×1080、1366×768、2560×1080、390×700皆驗證雕飾載入／鏡像、HUD尺寸一致與置中、球中心仍可命中、Esc恢復原版面且不開菜單；Console error／warning 0。目視確認卷葉沿金框自然包覆，不遮液面與技能；已向使用者展示預覽，檔案為本聊天visualizations/battle-hud-sculpture.png／battle-fullscreen-sculpture.png。臨時IAB頁籤與HTTP服務已關閉、viewport已還原。
+- 唯讀檢查：AI規範、imagegen技能、Mote Studio、素材庫Root／既有enamel-nav與scene-renewal匯出流程、css/ashen-forge.css／style.css、js/ui.js／battle-renderer.js與上述回歸。未修改玩法／Worker／配置／存檔。另一聊天NPC-VISION同時修改本副本NPC配置／JS／測試與index JS快取／任務紀錄，只暫存本次HUD CSS快取與獨立紀錄，保留其餘工作；本紀錄放檔尾避免同位置插入，三方試跑後分段提交。
+- 交付：遊戲Commit為本紀錄所在 `[Codex] feat: 以立體卷葉雕刻銜接戰鬥資源球`，回覆附編號；本次無未完成項，可審閱合併，未合併／推送。限制：未做真人長時間效能壓測，手機仍沿原等比縮放。下一步使用者整合後重載檢視；內建生成提示詞及來源詳見素材庫PROMPT.txt／SOURCE.md。
+
+## BATTLE-CHARACTER-PAUSE-20261016 — 戰鬥暫停時人物序列幀停在當前動作
+
+- Owner：Codex；Done，單一開發者。使用者回報右上角戰鬥暫停後，人物仍播放移動動作；前置為既有combat paused與Pixi戰鬥渲染器，後續交使用者審閱整合。
+- 允許js/battle-renderer.js、index.html僅renderer快取、新tests/battle-renderer-pause.test.cjs及本紀錄；禁止Worker／Protocol／存檔／數值／背景生產／素材／其他副本修改，不合併推送。renderer／新測試預檢乾淨；index與Claude1b17f050的VFX／skills2／bridge快取不同區段，候選git merge-file試跑退出碼0、無語意相依。共享副本HUD雕飾任務的CSS／PNG與index CSS快取／本紀錄上方區段保留，本次紀錄追加檔尾，兩個同檔均三方試跑0且僅stage自己hunk，不等待或納入其進行中工作。
+- 原因／完成4檔：戰鬥paused只把tickWorld的dt設0，但玩家與BOSS的AnimatedSprite仍以autoUpdate掛在PIXI.Ticker.shared繼續走幀；makeAnimSprite設autoUpdate=false，由正式tickWorld於dt>0時手動呼叫body.update(ticker)，玩家及BOSS都跟隨戰鬥更新，使用原ticker.deltaTime保留正常播放速度。paused期間不推進幀或onComplete，恢復沿原小數幀接續，死亡／手動停止／已銷毀本體不重啟；輪廓仍由既有syncOutline對齊。index僅renderer1.6.187→1.6.188，沒有停用全域shared ticker或改戰鬥之外的時間。新測試直接載入專案Pixi8.6.6驗證真實AnimatedSprite。
+- 測試指令／結果：node --test tests/battle-renderer-pause.test.cjs tests/combat-pause.test.cjs tests/game-clock.test.cjs tests/player-directional-sprite.test.cjs，24/24通過（新增4項）；node --test tests/player-cast-act.test.cjs tests/player-outline.test.cjs tests/tower-scene-intro.test.cjs tests/game-menu-pause.test.cjs，22/22通過，合計46/46。涵蓋玩家／BOSS播放、600次暫停更新幀及小數不動、恢復接續、暫停新動作與完成回調、死亡停幀、方向切換／施法／輪廓、塔戰倒數、Esc全遊戲暫停。npm.cmd run build 526檔通過，git diff --check通過；沒有修改既有測試斷言或新增素材。
+- 瀏覽器：CUA隔離localhost:13743正式Worker＋Pixi新角色，不讀真人存檔；按右上角後aria-pressed=true／繼續與戰鬥已暫停顯示，兩次80×55玩家區域截圖逐像素相同；關閉後aria-pressed=false，人物區域重新變動，Console error／warning 0。背景工廠資源在戰鬥暫停期間仍增加，符合既有只暫停戰鬥行為。截圖battle-character-pause.png存本聊天visualizations；臨時頁面／服務與比較截圖清理，既有使用者頁面保留。
+- 唯讀檢查：js/combat.js／worker simStep與paused投影、game-clock.js、Pixi AnimatedSprite.update實作、renderer make／play／轉向／輪廓與上述既有回歸、AI規範與其他AI同檔差異；未改這些未列檔案。無本次美術／素材庫變更，不需素材Commit。
+- 交付：Commit為本紀錄所在[Codex] fix提交，回覆附編號；本需求無未完成項或已知新增風險，可以Review／合併，未合併推送。限制：未做真人存檔長戰／全庫測試；本次僅人物與BOSS序列幀暫停，不改既有場景轉場及其他背景工作的規則。下一步整合後重載遊戲驗收，其他聊天HUD進行中修改原樣保留。
+
+- 提交註記：曾誤將共享暫存區已備妥的HUD CSS快取行提交，已立即更正該筆標題為獨立chore aa872e20；CSS1.0.9→10內容原樣保留。人物修正另行提交，未納入HUD CSS／圖檔／上方任務紀錄。
+
+## BATTLE-ORB-GLASS-20261016 — 接入玻璃罩與加強版資源球流光
+
+- Owner：Codex；Done，單一開發者。使用者已確認加強預覽並要求接入；一般／全螢幕共用透明玻璃罩、球框游光、球內旋流／光點、液面光帶。前置既有HUD／TICK／核定預覽，後續使用者審閱整合。
+- 允許css/battle-hud.css、index.html必要DOM／CSS及UI快取、js/ui.js僅圓瓶視覺狀態、tests/battle-resource-orbs.test.cjs與本紀錄；禁止NPC功能／數值／Worker／存檔／配置／素材／其他副本，不合併推送。CSS／DOM效果不新增Preset／美術素材，無素材庫變更。
+- 預檢：CSS／UI／測試乾淨。index有既存bridge283／285分支衝突，使用者已同意分段修改並保留其他內容，並再次明確指示本次不相衝的區段直接接入、更新快取，不因既存無關分支衝突另行詢問。僅分段改HUD DOM／CSS及UI快取，其他行原樣保留。任務紀錄候選三方試跑後分段新增。
+- 驗收：液位與tooltip沿權威TICK／塔戰快照；空球／零容量不殘光，滿球無假液面線，護盾並存；兩模式／尺寸／Esc／流光／減少動態、Console／回歸／Build／diff後獨立Commit。
+
+- 完成／修改5檔：css/battle-hud.css接入核定玻璃反射、球框旋轉游光、液體曲線旋流／漂浮光點及液面亮帶；底座背景移到獨立偽元素，僅挖空球內背景、讓玻璃透出場景，不裁切技能／增益或互動區。index.html僅加入兩組液體裝飾子層，CSS1.0.11→12／UI1.0.165→166快取。js/ui.js沿同一權威液位比例標記empty／partial／full，零容量清空；滿球隱藏假水平線、空球關閉液體流光、護盾獨立位於液體與玻璃之間。既有雕飾與原HUD尺寸保留，沒有新增素材／Preset，無素材庫變更或素材Commit。
+- 指令／結果：`node --test tests/battle-resource-orbs.test.cjs tests/battle-fullscreen.test.cjs tests/esc-shortcut.test.cjs tests/init-ui-smoke.test.cjs tests/battle-log-ui-layout.test.cjs tests/fullscreen-toggle.test.cjs tests/game-menu.test.cjs` 24/24通過；新增兩項覆蓋液位狀態轉換與零容量晚到正值，不放寬舊斷言。`npm.cmd run build` 527檔通過；`node tools/battle-hud/export-source.cjs --check`母圖／匯出／遊戲雜湊一致；`git diff --check`通過。
+- 瀏覽器：CUA／IAB隨機localhost7932、正式Worker＋Pixi新來源，不讀真人存檔；1920×1080／1366×768／2560×1080／390×700兩模式與Esc還原皆通過，雙球比例不因全螢幕放大，六格技能中心hit-test皆未被裝飾遮擋，底座overflow保持visible／本體不mask。實際戰鬥生命部分液位及法力滿量的狀態、動畫與液面顯示相符；Console error／warning 0。另以外部臨時fixture載入正式DOM／CSS與實際render函式，確認empty0%不殘光、full100%無水平線、40%生命／35%法力與65%護盾並存、回復partial正常；以原reduced-motion區塊強制啟用驗證實際層疊，全部新動畫為none（不修改系統設定）。最初fixture缺少快照helper與擷取起點已修正後完成驗收，不影響正式遊戲。
+- 預覽與清理：本聊天visualizations保留battle-orb-glass-normal.jpg／battle-orb-glass-fullscreen.jpg成果；臨時驗證頁籤／服務／fixture收尾清理，viewport還原，使用者12412預覽服務保留，可由/index.html開正式遊戲。參考截圖只作質感參考，效果均為自製CSS，沒有使用第三方圖像。
+- 唯讀檢查：AI_RULES.md／AGENTS.md／AI_WORKFLOW／專屬規範、css/style.css／ashen-forge.css／ashen-forge-flat.css、js/ui.js資料流與權威快照、上述7份回歸／build工具、核定預覽及Claude的index／任務區段。index與Claude同檔但本次HUD DOM／CSS與UI快取不同區段、無語意相依；既有bridge分支衝突依使用者已授權分段保留，不改其值、不合併分支。任務紀錄候選三方試跑乾淨；共享NPC內容未修改。
+- 交付：Commit為本紀錄所在 `[Codex] feat: 接入資源球玻璃與流光效果`，回覆附編號。本需求無未完成項，可以審閱合併，未合併／推送。限制：未做真人存檔長時間效能壓測，窄螢幕沿用原等比縮放。下一步重載正式遊戲檢視兩模式效果。
+
+## BATTLE-ORB-CLIP-20261016 — 球內光環固定尺寸並依液位裁切
+
+- Owner：Codex；Done，單一開發者。使用者要求球內飄浮光環不隨液位上升下降改變形狀／位置，而是以液面裁切；前置核定資源球玻璃流光已接入，後續交使用者檢視。
+- 允許css/battle-hud.css僅球內光環／粒子座標、index.html僅HUD CSS快取與本紀錄；禁止NPC進行中內容／JS／Worker／數值／配置／素材／存檔或其他副本，不合併推送。沿用液體層overflow裁切，光環／粒子固定以完整玻璃內徑為座標，液面光帶保持原邏輯。
+- 預檢：CSS乾淨；index的HUD CSS快取與Claude的VFX／技能／bridge快取不同區段、無語意相依，既存無關快取衝突沿使用者已授權保留雙方方式處理。本副本NPC任務只改JS快取與文件檔首，本任務追加檔尾且只stage自身hunk；候選三方試跑後分段修改。
+- 驗收：同一動畫相位下100%／60%／25%液位的光環尺寸、球內座標與變換一致、僅裁切範圍變化；空球與滿球狀態、一般／全螢幕／縮放、Console／相關回歸／Build／diff後獨立Commit。沒有新增素材／Preset，無素材庫變更。
+
+- 完成／修改3檔：css/battle-hud.css以完整玻璃內徑（HUD直徑扣除兩側padding／邊框）固定光環及粒子偽元素寬高、底部錨點與動畫百分比座標；外層orb-energy仍隨原液位高度並overflow:hidden，只裁切、不變形。100%液位保持原形狀，液面亮帶／空球／玻璃／護盾／雕飾／技能不改。index.html僅HUD CSS1.0.12→13，本紀錄僅本任務段；沒有JS／數值／素材變更，無素材庫Commit。
+- 指令／結果：`node --test tests/battle-resource-orbs.test.cjs tests/battle-fullscreen.test.cjs tests/esc-shortcut.test.cjs tests/battle-log-ui-layout.test.cjs` 13/13通過；`npm.cmd run build`527檔通過；本次3檔diff check通過。可逆局部CSS修正不新增鏡像測試。
+- 瀏覽器：CUA／IAB隔離localhost9786，臨時fixture沿正式DOM／樣式，固定相同動畫相位；兩球在100%／60%／25%時光環150.875px方形、粒子110.391px方形及動畫矩陣完全一致，球內錨點差異小於0.001px（CSS數字字串序列化精度），裁切高度則為92／55.1875／23px，0%容器display:none。原本嚴格字串比較誤把0.00002px序列化差異當成位移，改以0.001px檢查錨點、其他尺寸／矩陣仍精確相等後通過，未改產品以迎合測試。
+- 正式Worker＋Pixi新來源不讀真人存檔，1920×1080／1366×768正常與全螢幕皆確認光環固定大小、兩球等比縮放且Esc可還原。Console error0；有一筆既有battle-decor背景建圖Worker失敗並自動主執行緒分段繪製的warning，未修改該模組。未做真人長時間效能驗證。預覽截圖為本聊天visualizations/battle-orb-fixed-ring.jpg／battle-orb-fixed-ring-detail.jpg；臨時頁籤、服務與fixture已清理，viewport還原，使用者12412服務保留。
+- 唯讀檢查：AI規範／工作流／既有任務、css/ashen-forge.css玻璃盒模型、index HUD DOM、既有資源球UI／上述4份測試、核定預覽及Claude的VFX／技能／bridge快取差異。文件候選三方試跑0；共享index候選三方試跑0，只stage本次CSS快取與本任務文件段。另一聊天NPC受擊／補群進行中修改含index JS快取與文件檔首，完整留在工作區不納本Commit，無語意相依。
+- 交付：Commit為本紀錄所在 `[Codex] fix: 球內光環依液位裁切且維持原尺寸`，回覆附編號。本需求無未完成項、可供Review／合併，未合併推送；下一步重新載入正式遊戲檢視血量與法力下降時光環維持形狀。
+
+## BATTLE-ORB-RUNIC-FRAME-20261016 — 授權參考的岩甲符文雙色球框
+
+- Owner：Codex；Done，單一開發者。使用者要求依附圖重製紅色血球外框與裝飾、兩根內伸尖刺縮到只略微突出；法力球同造型、火紋／符文／寶石改藍色。使用者明確確認「已取得可重製及遊戲使用授權」，在預覽服檢視後再次要求接入。後續修正：底座恢復原高度與球體基線，兩球連框各向外移10px，技能列不移。
+- 範圍／完成6檔：css/battle-hud.css替換球框、保留玻璃與液位盒模型，10px內距等價原8px內距＋2px邊框，圓孔準確對位；底座沿原0.82×球徑（112px球時91.8281px）與球底5px，不抬高。生命left／法力right由edge+9px改edge-1px，透明底座挖孔同步，經驗／技能／增益不移。index.html僅HUD CSS1.0.13→15（14為過程中已載入版）。新增images/ui/battle-hud/orb-frame-health.png／orb-frame-mana.png與tools/battle-hud/export-frames.cjs，本紀錄同步。沒有修改JS／Worker／玩法／NPC／配置／存檔或其他副本，不合併推送。
+- 素材：內建imagegen依已授權參考重製；紅版保留岩甲、符文、火裂紋、紅寶石與外側長刃，雙內刺縮短；藍版由紅版只改發光色系、右側CSS鏡像。素材庫codex-authored/battle-hud/runic-frames保存兩張1254px RGBA母圖、512px標準匯出、frames.json雜湊／布局、PROMPTS.json完整兩份提示詞、SOURCE.md授權／製作紀錄及references/authorized-reference.png。母圖不裁切／不再重畫；先於遊戲提交素材庫Commit `50940ad`。兩份匯出alpha0..255且圓孔中心alpha0，遊戲副本與匯出SHA256完全相同。舊orb-carving素材／工具原樣保留，素材庫Claude岩壁進行中目錄未提交或修改。本輪沒有新Preset。
+- 匯出流程：新工具沿既有Root解析提供--make-export／--apply／--check，先驗證兩色全部母圖／匯出後才複製遊戲檔，避免第二色錯誤時半套更新；check不需Sharp。--make-export使用bundled Sharp標準縮小，受Git管理設定不含本機絕對路徑。以隔離臨時素材庫破壞一份匯出，--check退出1如預期；真實素材不動。node --check工具語法通過，兩個新舊匯出工具--check皆通過。
+- 指令／結果：`node --test tests/battle-resource-orbs.test.cjs tests/battle-fullscreen.test.cjs tests/esc-shortcut.test.cjs tests/battle-log-ui-layout.test.cjs tests/init-ui-smoke.test.cjs tests/fullscreen-toggle.test.cjs tests/game-menu.test.cjs`24/24通過；`npm.cmd run build`528檔通過；`git diff --check`通過。可逆外觀／間距修正不新增鏡像測試，不放寬既有斷言。
+- 瀏覽器：CUA／IAB隔離localhost11184正式Worker＋Pixi，不讀真人存檔。1920×1080／1366×768／2560×1080／390×700，一般與全螢幕共8組皆確認原底座高度／球底5px、球寬不因切換變化；兩球相對底座邊緣從+9px變-1px、即各向外10px（CSS邏輯座標，隨既有UI縮放），六個技能格中心hit-test全通過，框pointer-events:none。Esc恢復正常模式且未開菜單。Console error／warning0。框底沿原畫布下緣收邊，沒有為容納裝飾再拉高HUD。
+- 邊界：外部臨時fixture載入正式DOM／最終CSS及實際render函式，確認empty0%隱藏球內能量、full100%無虛假液面線、40%生命／35%法力與65%護盾並存、回65%正常；光環保持150.875px方形，不隨液位變形。原減少動態CSS區塊強制啟用後所有新動畫為none。未修改系統設定或正式程式製造測試狀態。臨時fixture／服務／頁籤及量測JSON已清理，viewport還原。
+- 預覽／唯讀：使用者12102預覽服與12412舊預覽服保留，12102/index.html可開正式遊戲；最終截圖在本聊天visualizations/runic-integrated-normal.jpg／runic-integrated-fullscreen.jpg／runic-integrated-detail.jpg。唯讀檢查AI規範與工作流、css/ashen-forge.css球體盒模型、原HUD資料流與固定光環、7份回歸／Build、既有素材匯出／Root、已授權參考／核定預覽、Claude的VFX／技能／bridge快取。index本輪只改CSS快取，與Claude不同區段無語意相依，既有無關快取衝突依使用者已授權保留雙方方式處理；文件候選與共享index三方試跑均0。沒有修改或納入NPC任務。
+- 交付：遊戲Commit為本紀錄所在 `[Codex] feat: 接入岩甲符文雙色球框並保留原HUD高度`，回覆附編號；素材庫Commit50940ad。本需求無未完成項，可以審閱合併，未合併／推送。限制：未做真人長時間效能壓測，窄視窗沿既有等比縮放。下一步重新載入遊戲檢視原高度與雙側10px間距。
+# DEVELOP-MERGE-ADB01DD9-20261016
+
+- Owner: Codex integrator; Done. Resolved the pending merge of `adb01dd9669385f4c781235e33364a99efb2e3bf` into original HEAD `9a0b4069285b2fcd5c34d52123a429b68bcf6f76` without staging, committing, or changing either parent.
+- Resolution: preserved Claude's wall-rock / elite preset changes and Codex's NPC vision, retaliation, refill, pause, and battle-HUD changes. The three textual conflicts were limited to cache versions/imports: `index.html` now loads bridge `1.0.287`, `js/bridge.js` uses the new combined Worker asset key `20261016-wall-rock-npc-refill`, and `js/worker/sim.worker.js` retains the NPC-specific data/formula/battlefield/combat/tower imports while using `20261016-wall-rock-npc-vision` for the independently changed elite module. No asset-library files were changed.
+- Authoritative data: reran the supported Excel export flow (`config_tables --sync`) for all configured workbooks, then both JS generators. NPC and game-parameter outputs report zero semantic changes; `apply_params` reports 562/562 values consistent and zero anchor problems.
+- Validation: focused merged-feature suite passed 87/87; `npm.cmd run build` passed all 528 files; `git diff --check` passed. A full `npm.cmd test` run was attempted twice (the second with Node's `--test-force-exit`), reproduced pre-existing failures in unrelated legacy suites, and did not terminate after the test output stopped, so both attempts were interrupted after several minutes. No focused merge regression was found and no assertions were weakened.
+- Delivery: controller may stage the reported game-repository paths and create the merge commit. Known risk is limited to the repository-wide suite's existing failures/non-terminating behavior; the directly affected suites and build are green.
