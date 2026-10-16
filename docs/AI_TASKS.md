@@ -1,5 +1,35 @@
 # AI_TASKS.md
 
+## BATTLE-ORB-SPEED-20261017 — 加快雙球內光暈流動
+
+- Owner：Codex；Done，單一開發者。使用者要求血球與法力球光暈再快一些、流動更明顯；前置d164fab9恢復動畫已完成。允許css/battle-hud.css僅旋流時長／註解、index.html僅HUD CSS快取、本紀錄；禁止液位／護盾數值、位移幅度、其他裝飾、JS／Worker／存檔／素材與其他副本，不合併推送。三檔衝突預檢乾淨，工作區乾淨。
+- 方式／驗收：兩種動態偏好的光暈速度都提高為兩倍，一般7秒→3.5秒、目前減少動態14秒→7秒；沿用原曲線、透明度、裁切及暫停規則。核對僅兩個時長改變、既有資源球／選單暫停回歸、Build／diff後獨立Commit。純CSS可逆微調，無新素材／素材庫變更。
+- 完成／修改3檔：上述兩個動畫時長減半，主頁HUD CSS1.0.17→18及本紀錄。唯讀檢查未改：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、前次流光驗證紀錄、tests/battle-resource-orbs.test.cjs／game-menu-pause.test.cjs；原keyframes、尺寸、液位及暫停選擇器完整保留。沒有美術變更，不需素材庫Commit。
+- 指令／結果：`node --test tests/battle-resource-orbs.test.cjs tests/game-menu-pause.test.cjs`14/14通過；`npm.cmd run build`528檔通過；`git diff --check`通過。僅兩個CSS時長微調，以diff及既有回歸驗證，未新增鏡像測試／本次未重做瀏覽器視覺驗證，實際快慢觀感待使用者驗收。
+- 交付：Commit為本紀錄所在`[Codex] fix: 加快血球與法力球光暈流動`，回覆附編號；無未完成需求或已知新增風險，可審閱合併，未合併推送；無臨時檔。下一步整合後重新載入遊戲確認兩倍速度。
+
+## BATTLE-ORB-FLOW-20261017 — 恢復血球與法力球內光暈流動
+
+- Owner：Codex；Done，單一開發者。使用者回報雙球內圓形光暈靜止，要求恢復流動。正式CSS／DOM隔離頁重現：瀏覽器prefers-reduced-motion=true，兩球orb-energy::before的animationName均none；Windows減少動畫偏好與此一致。
+- 允許css/battle-hud.css針對球內旋流的減少動態規則、index.html僅HUD CSS快取、本紀錄；禁止系統設定、液位／護盾數值、Worker／Protocol／存檔、素材／Preset及其他副本。不分派、不合併推送。三檔衝突預檢乾淨，工作區乾淨。
+- 方式／驗收：減少動態時只為使用者指定的球內光暈保留較慢且平順的原旋流，其他裝飾維持既有減少動態行為；正常模式沿用原動畫。核對兩球實際transform隨時間變化，空／滿／部分液位、固定光環尺寸、選單暫停／恢復，相關回歸／Build／Console／diff後獨立Commit。純CSS顯示修正，無新增素材或素材庫變更。
+- 完成3檔：css/battle-hud.css在減少動態媒體規則末段只恢復orb-energy::before原battle-orb-current，14秒linear／alternate，比一般模式原7秒放慢一倍；其他粒子、液面與玻璃裝飾維持減少動態規則。index.html僅HUD CSS1.0.16→17，本紀錄同步；沒有新增JS排程、改動系統設定或玩法／存檔／素材。素材庫無本次變更，無需素材Commit。
+- 指令／結果：`node --test tests/battle-resource-orbs.test.cjs tests/battle-fullscreen.test.cjs tests/esc-shortcut.test.cjs tests/init-ui-smoke.test.cjs tests/battle-log-ui-layout.test.cjs tests/fullscreen-toggle.test.cjs tests/game-menu.test.cjs tests/game-menu-pause.test.cjs`32/32通過；`npm.cmd run build`528檔通過；`git diff --check`通過。可逆CSS修正使用正式瀏覽器動畫量測與既有回歸，不新增鏡像靜態測試或降低斷言。
+- 瀏覽器：Browser專用IAB連線不可用，改CUA／IAB隔離localhost4331；正式CSS／DOM fixture與正式index／Worker／Pixi均核對。修前兩球animationName=none，修後皆battle-orb-current／14s／running且兩次transform矩陣不同；粒子仍none。空球display／animation皆none，45%與100%液位保留150.875px固定光環及裁切。暫停前後矩陣一致且state=paused，恢復running；正式遊戲Esc選單與關閉也實際通過。Console error／warning0，未讀真人存檔；主頁只在本次獨立測試來源建立新角色。測試fixture初次切片抓到前一個battle-scene、以及後續臨時按鈕引號錯誤，皆只修臨時頁後重驗，正式程式無此錯誤。
+- 唯讀檢查未改：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、css/style.css／ashen-forge.css／ashen-forge-flat.css／dialogs.css、js/ui.js／game-menu.js／lagprobe.js、舊球體接入／裁切紀錄及上述八份回歸；沒有新增Preset或外部素材。預覽保留本聊天visualizations/resource-orb-flow-restored.png，臨時腳本／服務／頁籤已清理。
+- 交付：Commit為本紀錄所在`[Codex] fix: 恢復減少動態模式下雙球光暈流動`，回覆附編號。無未完成需求或已知新增阻擋，可供Review／合併，未合併推送；未做真人長戰效能壓測。一般動畫規則與液位計算原樣保留，僅指定光暈在減少動態下例外保留慢速。下一步整合後重新載入遊戲驗收流動。
+
+## SCENE-FOG-SOFT-EDGE-20261017 — 漂移霧氣四周平滑淡出
+
+- Owner：Codex；Done，單一開發者。使用者要求消除場景霧氣矩形邊界、四周平滑淡出，保留原漂移。前置已完成唯讀追查：霧團超出貼圖框且被硬裁切；後續使用者審閱合併。
+- 允許js/battle-decor.js霧氣建圖、js/worker/decor-atlas.worker.js及index.html／tools/decor-preview.html／tools/scene-preview.html必要快取、本紀錄；禁止漂移速度／數量、玩法／模擬／存檔、地板或其他素材及其他副本，不合併推送。全部目標預檢乾淨。
+- 方式／驗收：建圖時以獨立暫存畫布合成霧氣與橢圓柔邊遮罩，再寫回圖集，避免遮罩清掉其他素材；沿原解析度、固定種子、霧氣數量／縮放／漂移。驗證四邊alpha為0、中央霧氣保留、主端／Worker畫素一致與實際放大漂移，相關回歸、Build、Console、diff後獨立Commit。純程序建圖修正，無新增獨立素材或Preset／素材庫變更。
+- 完成6檔：battle-decor僅建圖時套smoothstep橢圓淡出並保留透明邊，獨立畫布以原1.5倍解析度合成，不影響其他圖集素材或增加每幀繪製；原14個霧瓣的種子／中心透明度、數量／縮放／速度／暫停均保留。同步主頁、兩預覽頁與Worker import的Decor1.0.17→18、圖集Worker1.0.8→9。無外部素材、素材庫無變更／無素材Commit。
+- 指令／結果：`node --test tests/battle-decor.test.cjs tests/battle-arena.test.cjs tests/battle-perspective.test.cjs`47/47通過；`npm.cmd run build`528檔通過；`git diff --check`通過。局部可逆外觀修正以實際Canvas畫素與既有回歸驗證，不新增鏡像測試或放寬斷言。
+- 瀏覽器：Browser專用連線不可用，改CUA／IAB隔離localhost4616，臨時fixture沿正式函式與HEAD原函式並排；舊版切邊alpha37，新版1／1.5／2／5.2倍、種子2／17／99四邊全部alpha0且中央保留。沼澤地表／地下整圖集除霧氣框外逐畫素差0；正式PIXI節點固定鏡頭每0.1秒位移符合原0.4～1.2px、地表3團且暫停不移。正式Renderer預覽沼澤地表／地下、鏡頭前進／返回正常；14份地表／地下主端與真Worker圖集alpha差及預乘RGB差皆0，Console error／warning0。未讀寫真人存檔。
+- 唯讀檢查：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、地板載入與捲動、場景配置／漂移生命週期、圖集布局／裁切及上述3份測試與Build；本次沒有更動玩法／模擬／地板貼圖／Preset／VFX編輯器。對照截圖保留本聊天visualizations/fog-soft-edge-comparison.png；臨時fixture／服務／頁籤收尾清理。
+- 交付：Commit為本紀錄所在 `[Codex] fix: 修正場景霧氣矩形切邊並保留漂移`，回覆附編號；無未完成項，可供Review／合併，未合併推送。限制：未做真人長時間戰鬥效能壓測，遮罩只在圖集建圖時執行；下一步重新載入遊戲查看新版霧氣。
+
 ## BOSS-PLAYER-SKILL-20261015 — 封魔塔 BOSS 施放玩家超神進化技能
 
 - Owner：Claude；Done，單一開發者。使用者要求（全權授權、不中途停止）：①塔 BOSS 解鎖哪個超神進化技能，就固定使用哪個技能；②技能效果／特效沿用玩家技能的 Skills2 參數與 Preset，傷害套用 BOSS 強度；③BOSS 沒有的參數先自行補在 Skills2，最後列總結；④沒有解鎖任何技能的 BOSS 額外隨機放出 2 個 NPC 隨機池技能；⑤101 層起的 BOSS 每場隨機放出 2 個玩家超神進化技能；⑥隨機技能每次挑戰都重抽，只有會解鎖技能的 BOSS 是固定專屬技能。

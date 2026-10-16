@@ -280,7 +280,7 @@
   left:calc(var(--orb-glass-size) * -.32); bottom:calc(var(--orb-glass-size) * -.32);
   width:calc(var(--orb-glass-size) * 1.64); height:calc(var(--orb-glass-size) * 1.64);
   background:radial-gradient(ellipse at 39% 60%,transparent 30%,rgb(var(--orb-top) / .5) 32%,transparent 35%),radial-gradient(ellipse at 65% 39%,transparent 36%,rgb(var(--orb-spark) / .6) 39%,transparent 43%),radial-gradient(ellipse at 34% 40%,transparent 44%,rgb(var(--orb-color) / .8) 47%,transparent 51%);
-  filter:blur(.65px); animation:battle-orb-current 7s ease-in-out infinite alternate;
+  filter:blur(.65px); animation:battle-orb-current 3.5s ease-in-out infinite alternate;
 }
 #battle-canvas-host .orb-energy::after {
   content:''; position:absolute; opacity:.8;
@@ -365,6 +365,11 @@
   #battle-canvas-host .orb-energy::after,
   #battle-canvas-host .orb-surface-sparks {
     animation: none;
+  }
+
+  /* 雙球內光暈仍需流動；減少動態時放慢原旋流，避免變成靜止圖案。 */
+  #battle-canvas-host .orb-energy::before {
+    animation: battle-orb-current 7s linear infinite alternate;
   }
 
   #battle-canvas-host .orb-liquid,

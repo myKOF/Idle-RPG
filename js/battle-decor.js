@@ -1134,15 +1134,35 @@ var BattleDecor = (function () {
     g.fillRect(0, 0, w, h);
   }
   function particleFog(g, w, h, r) {
+    // 在獨立畫布套柔邊，避免 destination-in 清掉圖集內的其他素材。
+    var c = document.createElement('canvas');
+    c.width = Math.ceil(w * TEX_SCALE); c.height = Math.ceil(h * TEX_SCALE);
+    var fog = c.getContext('2d');
+    fog.scale(TEX_SCALE, TEX_SCALE);
     for (var i = 0; i < 14; i++) {
       var x = w / 2 + range(r, -w * 0.28, w * 0.28), y = h / 2 + range(r, -h * 0.2, h * 0.2);
       var rad = w * range(r, 0.15, 0.3);
-      var gr = g.createRadialGradient(x, y, 0, x, y, rad);
+      var gr = fog.createRadialGradient(x, y, 0, x, y, rad);
       gr.addColorStop(0, 'rgba(255,255,255,0.22)');
       gr.addColorStop(1, 'rgba(255,255,255,0)');
-      g.fillStyle = gr;
-      g.fillRect(x - rad, y - rad, rad * 2, rad * 2);
+      fog.fillStyle = gr;
+      fog.fillRect(x - rad, y - rad, rad * 2, rad * 2);
     }
+    // 橢圓外圈以 smoothstep 淡至零，並留透明邊，放大取樣也不會露出裁切框。
+    fog.save();
+    fog.translate(w / 2, h / 2);
+    fog.scale(w / 2 - 2, h / 2 - 2);
+    var edge = fog.createRadialGradient(0, 0, 0, 0, 0, 1);
+    edge.addColorStop(0, 'rgba(255,255,255,1)');
+    for (var j = 0; j <= 16; j++) {
+      var t = j / 16, a = 1 - t * t * (3 - 2 * t);
+      edge.addColorStop(0.55 + 0.45 * t, 'rgba(255,255,255,' + a + ')');
+    }
+    fog.globalCompositeOperation = 'destination-in';
+    fog.fillStyle = edge;
+    fog.fillRect(-2, -2, 4, 4);
+    fog.restore();
+    g.drawImage(c, 0, 0, w, h);
   }
   function particleGlow(g, w, h) {
     var gr = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
@@ -1438,7 +1458,7 @@ var BattleDecor = (function () {
   };
   /* 背景建圖 Worker（相對於 index.html）。改了 decor-sculpt／decor-nature／battle-decor 要一起更新
      這裡的版本與 Worker 檔內 importScripts 的版本字串，否則 Worker 會吃到快取的舊畫法。 */
-  var ATLAS_WORKER_URL = 'js/worker/decor-atlas.worker.js?v=1.0.8';
+  var ATLAS_WORKER_URL = 'js/worker/decor-atlas.worker.js?v=1.0.9';
   var VARIANTS = 3;          // 每種擺件／地面裝飾畫幾個變體
   var TEX_SCALE = 1.5;       // 圖集解析度（畫面放大或高 DPI 時仍清楚；開 mipmap 避免縮小時閃爍）
 
