@@ -10368,3 +10368,17 @@ Worker 存活且頁面正常完成載入。
 - 交付：Commit為本紀錄所在[Codex] fix提交，回覆附編號；本需求無未完成項或已知新增風險，可以Review／合併，未合併推送。限制：未做真人存檔長戰／全庫測試；本次僅人物與BOSS序列幀暫停，不改既有場景轉場及其他背景工作的規則。下一步整合後重載遊戲驗收，其他聊天HUD進行中修改原樣保留。
 
 - 提交註記：曾誤將共享暫存區已備妥的HUD CSS快取行提交，已立即更正該筆標題為獨立chore aa872e20；CSS1.0.9→10內容原樣保留。人物修正另行提交，未納入HUD CSS／圖檔／上方任務紀錄。
+
+## BATTLE-ORB-GLASS-20261016 — 接入玻璃罩與加強版資源球流光
+
+- Owner：Codex；Done，單一開發者。使用者已確認加強預覽並要求接入；一般／全螢幕共用透明玻璃罩、球框游光、球內旋流／光點、液面光帶。前置既有HUD／TICK／核定預覽，後續使用者審閱整合。
+- 允許css/battle-hud.css、index.html必要DOM／CSS及UI快取、js/ui.js僅圓瓶視覺狀態、tests/battle-resource-orbs.test.cjs與本紀錄；禁止NPC功能／數值／Worker／存檔／配置／素材／其他副本，不合併推送。CSS／DOM效果不新增Preset／美術素材，無素材庫變更。
+- 預檢：CSS／UI／測試乾淨。index有既存bridge283／285分支衝突，使用者已同意分段修改並保留其他內容，並再次明確指示本次不相衝的區段直接接入、更新快取，不因既存無關分支衝突另行詢問。僅分段改HUD DOM／CSS及UI快取，其他行原樣保留。任務紀錄候選三方試跑後分段新增。
+- 驗收：液位與tooltip沿權威TICK／塔戰快照；空球／零容量不殘光，滿球無假液面線，護盾並存；兩模式／尺寸／Esc／流光／減少動態、Console／回歸／Build／diff後獨立Commit。
+
+- 完成／修改5檔：css/battle-hud.css接入核定玻璃反射、球框旋轉游光、液體曲線旋流／漂浮光點及液面亮帶；底座背景移到獨立偽元素，僅挖空球內背景、讓玻璃透出場景，不裁切技能／增益或互動區。index.html僅加入兩組液體裝飾子層，CSS1.0.11→12／UI1.0.165→166快取。js/ui.js沿同一權威液位比例標記empty／partial／full，零容量清空；滿球隱藏假水平線、空球關閉液體流光、護盾獨立位於液體與玻璃之間。既有雕飾與原HUD尺寸保留，沒有新增素材／Preset，無素材庫變更或素材Commit。
+- 指令／結果：`node --test tests/battle-resource-orbs.test.cjs tests/battle-fullscreen.test.cjs tests/esc-shortcut.test.cjs tests/init-ui-smoke.test.cjs tests/battle-log-ui-layout.test.cjs tests/fullscreen-toggle.test.cjs tests/game-menu.test.cjs` 24/24通過；新增兩項覆蓋液位狀態轉換與零容量晚到正值，不放寬舊斷言。`npm.cmd run build` 527檔通過；`node tools/battle-hud/export-source.cjs --check`母圖／匯出／遊戲雜湊一致；`git diff --check`通過。
+- 瀏覽器：CUA／IAB隨機localhost7932、正式Worker＋Pixi新來源，不讀真人存檔；1920×1080／1366×768／2560×1080／390×700兩模式與Esc還原皆通過，雙球比例不因全螢幕放大，六格技能中心hit-test皆未被裝飾遮擋，底座overflow保持visible／本體不mask。實際戰鬥生命部分液位及法力滿量的狀態、動畫與液面顯示相符；Console error／warning 0。另以外部臨時fixture載入正式DOM／CSS與實際render函式，確認empty0%不殘光、full100%無水平線、40%生命／35%法力與65%護盾並存、回復partial正常；以原reduced-motion區塊強制啟用驗證實際層疊，全部新動畫為none（不修改系統設定）。最初fixture缺少快照helper與擷取起點已修正後完成驗收，不影響正式遊戲。
+- 預覽與清理：本聊天visualizations保留battle-orb-glass-normal.jpg／battle-orb-glass-fullscreen.jpg成果；臨時驗證頁籤／服務／fixture收尾清理，viewport還原，使用者12412預覽服務保留，可由/index.html開正式遊戲。參考截圖只作質感參考，效果均為自製CSS，沒有使用第三方圖像。
+- 唯讀檢查：AI_RULES.md／AGENTS.md／AI_WORKFLOW／專屬規範、css/style.css／ashen-forge.css／ashen-forge-flat.css、js/ui.js資料流與權威快照、上述7份回歸／build工具、核定預覽及Claude的index／任務區段。index與Claude同檔但本次HUD DOM／CSS與UI快取不同區段、無語意相依；既有bridge分支衝突依使用者已授權分段保留，不改其值、不合併分支。任務紀錄候選三方試跑乾淨；共享NPC內容未修改。
+- 交付：Commit為本紀錄所在 `[Codex] feat: 接入資源球玻璃與流光效果`，回覆附編號。本需求無未完成項，可以審閱合併，未合併／推送。限制：未做真人存檔長時間效能壓測，窄螢幕沿用原等比縮放。下一步重載正式遊戲檢視兩模式效果。

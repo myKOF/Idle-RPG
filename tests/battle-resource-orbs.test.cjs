@@ -35,6 +35,27 @@ test('死亡、零容量與護盾耗盡皆清空，不殘留最低液面', () =>
   const s=setup();Object.assign(s.view,{hp:0,mp:0,shield:0,hpMax:0,mpMax:0});s.render();
   for(const id of ['battle-health-fill','battle-mana-fill','battle-shield-fill']) assert.equal(s.elements.get(id).style.height,'0%');
 });
+test('液面與流光狀態共用比例，清空／滿量／回復不殘留舊狀態', () => {
+  const s=setup();s.render();
+  for(const id of ['battle-health-fill','battle-mana-fill']) assert.equal(s.elements.get(id).attrs['data-level'],'partial');
+  Object.assign(s.view,{hp:100,mp:80});s.render();
+  assert.equal(s.elements.get('battle-health-fill').style.height,'100%');
+  assert.equal(s.elements.get('battle-mana-fill').style.height,'100%');
+  for(const id of ['battle-health-fill','battle-mana-fill']) assert.equal(s.elements.get(id).attrs['data-level'],'full');
+  Object.assign(s.view,{hp:0,mp:0});s.render();
+  for(const id of ['battle-health-fill','battle-mana-fill']) assert.equal(s.elements.get(id).attrs['data-level'],'empty');
+  Object.assign(s.view,{hp:50,mp:15});s.render();
+  assert.equal(s.elements.get('battle-health-fill').style.height,'50%');
+  assert.equal(s.elements.get('battle-mana-fill').style.height,'25%');
+  for(const id of ['battle-health-fill','battle-mana-fill']) assert.equal(s.elements.get(id).attrs['data-level'],'partial');
+});
+test('零容量即使遇到晚到的正值也不畫液體或液面流光', () => {
+  const s=setup();Object.assign(s.view,{hp:10,mp:10,hpMax:0,mpMax:0});s.render();
+  for(const id of ['battle-health-fill','battle-mana-fill']) {
+    assert.equal(s.elements.get(id).style.height,'0%');
+    assert.equal(s.elements.get(id).attrs['data-level'],'empty');
+  }
+});
 test('缺少 TICK 時使用 panel；新護盾超出舊容量不溢出瓶子', () => {
   const s=setup();for(const k of Object.keys(s.view)) delete s.view[k];s.render();
   assert.equal(s.elements.get('battle-health-fill').style.height,'90%');
