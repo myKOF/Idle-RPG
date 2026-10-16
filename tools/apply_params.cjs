@@ -288,6 +288,14 @@ function objFieldMLValue(file, keyAnchor, field, value, label, scopeVar) {
     grp: 2, value: String(value), label: (label || keyAnchor) + '.' + field, scopeVar: scopeVar
   });
 }
+
+/* 遠方預置怪群與遊走：名稱錨點，不依賴函式內的數字或程式碼片段。 */
+['cellM', 'preloadM', 'minDistanceM', 'maxGroups', 'maxGroupSize'].forEach(function (field, i) {
+  objFieldML('data', '', field, '4-遠方怪群', '預先生成', i, 'FIELD_ENCOUNTER', 'FIELD_ENCOUNTER');
+});
+['roamRadiusM', 'roamSpeedRatio', 'roamWaitMin', 'roamWaitMax'].forEach(function (field, i) {
+  objFieldML('data', '', field, '4-遠方怪群', '未警戒遊走', i, 'FIELD_ENCOUNTER', 'FIELD_ENCOUNTER');
+});
 /* ---- 已移除：inline / inlineRegex / numCtx（2026-08-10）----
    這三個 helper 是「錨定程式碼片段」的寫法：inline 綁前綴字串（'st.base.mp = '）、
    inlineRegex 綁整條正規式、numCtx 綁前後文夾住的數字。

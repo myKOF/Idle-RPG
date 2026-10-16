@@ -1,5 +1,21 @@
 # AI_TASKS.md
 
+## NPC-FIELD-ENCOUNTERS-20261016 — 遠方預置怪群與未警戒遊走
+
+- Owner：Codex；Done，單一開發者。使用者要求全螢幕可看見更遠敵人，例如100米菁英群，未發現玩家時在出生點附近遊走；追加明確要求遠方群在玩家抵達前預先生成、同區域不持續補怪。保留原近身波次，遠方採固定世界格點與本次遊玩區域生成紀錄，只於移動進新區域預載新地點。
+- 範圍：data／battlefield／combat、必要index／bridge／Worker快取、game_parameters Excel／CSV與apply_params錨點、專項回歸、參數說明與本紀錄；不改NPC視野50米、既有技能／掉落公式／存檔格式／素材／他人副本。沿用既有菁英波建怪、配技能、群組站位、FIELD唯一戰鬥清單；避免修改Claude進行中的elite.js與另一聊天的battle-renderer／HUD。
+- 預檢：data／battlefield／combat／參數表／匯入器／新測試乾淨。使用者已同意保留雙方功能並更新與Claude 1b17f050重疊的必要快取；index與紀錄只改自己的區段、分段提交。其毒圈／本副本HUD修改保留，未整合或覆蓋對方分支。
+- 初值：格點間距100米，預載160米內／至少70米外地點，同時至多4群、每群最多4隻；出生點8米內遊走、步速為各自跑速的25%、走停間隔0.8~2.5秒。玩家進入NPC既有視野後改追擊；遠方群未接戰時不推高近身刷怪上限或累積狂暴。
+- 驗收：固定世界點／站著不補生／清掉不重生／新區域預載／群組與既有容量、遊走範圍／速度／控制與警戒切換、近身波次／狂暴、區域切換與演武場／塔戰、Excel原生重開與原值保留、錨點／回歸／Build、正式Worker＋Canvas位置同步後獨立Commit。無素材變更，不合併推送。
+- 完成／修改12檔：config/Excel/game_parameters.xlsx、config/CSV/game_parameters.csv、js/data.js／battlefield.js／combat.js、index.html／js/bridge.js／js/worker/sim.worker.js必要快取、tools/apply_params.cjs、tools/參數表使用說明.md、新tests/npc-roaming.test.cjs與本紀錄。固定地點只配置一次（含容量不足的空地），區域生成紀錄不進FIELD快照；實體只存在原FIELD清單，沿既有spawnEliteWave建怪與配技，不複製菁英引擎。遠方群不占波次名額、共用總容量；未發現玩家時遊走並暫停狂暴，發現後依原追擊／技能／掉落與過關規則。
+- Excel：新增「4-遠方怪群／預先生成、未警戒遊走」兩列（編號358／359，工作表第342／343列），九個旋鈕。初次Windows回報鎖定，使用者儲存關閉後先重新讀取最新工作簿再修改，保留其內容；以既有Excel原生API插入列／逐格寫入，正常重開兩次與物件驗證通過。唯讀核對原12775格的值／公式／樣式、其他頁與凍結／保護全部保留；Artifact Tool前後盤點與渲染確認新增值可見。xlsx_to_csv輸出344列18欄，CSV僅新增兩列。
+- 指令／結果：`node tools/apply_params.cjs`561參數一致、將變更0／錨點問題0（原552＋本次9），`node tools/apply_params.cjs --check-anchors`擾動512值後561錨點各命中一次；均用objFieldML綁定FIELD_ENCOUNTER與欄位名。`node --test --test-reporter=tap tests/npc-roaming.test.cjs tests/npc-vision.test.cjs tests/npc-move-attack.test.cjs tests/npc-elite-skills.test.cjs tests/elite-engine.test.cjs tests/battlefield.test.cjs tests/battlefield-rt.test.cjs tests/multi-enemy.test.cjs tests/tower-battlefield.test.cjs tests/boss-player-skill.test.cjs tests/elite-params.test.cjs tests/enemy-frenzy.test.cjs tests/worker-protocol.test.cjs tests/offline-rewards.test.cjs tests/init-ui-smoke.test.cjs tests/sim-harness-sync.test.cjs`，最終177/177通過（新專項13項）。`npm.cmd run build`527檔通過，git diff --check通過。
+- 全庫：依參數接線規範執行`node --test --test-reporter=tap "tests/*.test.cjs"`，4499項、4059通過／438失敗／2略過，約574秒。將91份含失敗的測試以HEAD原data／battlefield／combat／bridge／Worker／主頁／apply_params／參數CSV與Excel唯讀覆載後逐檔重跑（每檔120秒上限），仍為同438個失敗名稱，新增與消失名稱差集皆0，沒有逾時或改斷言接受現況。全庫並非全綠；既有技能／VFX／舊制斷言失敗保留交原任務處理。
+- 瀏覽器：隨機localhost／隔離headless Edge／正式Worker＋Pixi，1920×1080全螢幕，不讀真人存檔。初始4群14隻約100米怪物，連續驅動原逼近／進場函式10秒確認在出生點8米內遊走、未警戒、Canvas與Worker位置一致；等待120秒仍14隻，靠近切換追擊；清場後等待0隻，新區域預載11隻，回原區域仍0隻。Console error／warning皆0，服務與瀏覽器已關閉。QA初版未推進進場倒數導致不遊走，補回正式進場函式後通過，未為測試改產品邏輯。
+- 唯讀檢查：AI_RULES／AI_WORKFLOW／AGENTS、NPC配置與前輪視野測試、elite.js（群組站位／技能警戒）／tower.js／battle-renderer位置補間／save與Worker protocol、Excel工具與sim engine、既有相關回歸；上述未列為修改檔者皆未改。Claude進行中的elite.js與毒圈分支不變；本副本其他聊天HUD／人物暫停修正由其獨立提交，不納本Commit。沒有新美術／VFX／素材庫變更。
+- 交付：Commit為本紀錄所在`[Codex] feat: 預置遠方菁英怪群與未警戒遊走`，回覆附編號；可Review／合併，未合併推送。本次功能無未完成項；已知限制為地點紀錄只保留本次遊玩，重新載入／新遊戲會重建世界（戰場實體原本亦不存檔），滿群數／總容量的地點保留空地、不原地補生；未做真人長時間效能壓測。下一步整合後重載遊戲，調整game_parameters「4-遠方怪群」；NPC視野仍為各列原50米。
+- 暫存交付：正式全螢幕預覽另存本聊天visualizations/npc-far-groups.png；已關閉臨時服務與瀏覽器。自動核准審查以blocked by policy拒絕刪除logs/npc-encounters（即使已加上路徑與無連結預檢），本次QA腳本／基線報告／預覽來源仍保留在既有ignore目錄、不納Commit；暫存清理尚未完成，未繞過拒絕。前輪logs/npc-vision依賴連結未動。
+
 ## BATTLE-HUD-REFINE-20261016 — 雕飾減繁並套用一般戰鬥區
 
 - Owner：Codex；Done，單一開發者。使用者要求現有雕刻複雜度／紋理收斂約20%，另追加一般戰鬥區也套用同款裝飾；保留自然包覆球框與立體感。

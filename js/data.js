@@ -2070,6 +2070,12 @@ function currentZoneDef() {
    定調之後再搬進參數表；BF_COLS×BF_ROWS 現在只代表「場上同時容納幾隻」。 */
 var BF_UNIT = 60;              // 一個「身位」的長度；範圍技的 n×n 換算成半徑用
 var BF_SPAWN_DIST = 440;       // 生成時離我方多遠（畫面外一點）
+/* 遠方怪群是世界地點的預先配置；近身波次仍沿用 BF_SPAWN_DIST。
+   距離與遊走半徑以米配置，位置在 battlefield.js 換算；參數表「4-遠方怪群」。 */
+var FIELD_ENCOUNTER = {
+  cellM: 100, preloadM: 160, minDistanceM: 70, maxGroups: 4, maxGroupSize: 4,
+  roamRadiusM: 8, roamSpeedRatio: 0.25, roamWaitMin: 0.8, roamWaitMax: 2.5
+};
 var BF_CONTACT_DIST = 46;      // 走到這麼近就停（接觸）
 /* 移動速度：我方與敵人各自獨立，互不換算——兩邊的手感要能分開調。
    唯一的設計前提是敵人要比我方慢，否則我方永遠脫離不了包圍，

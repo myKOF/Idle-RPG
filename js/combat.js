@@ -101,6 +101,12 @@ function syncFieldPrimary() {
 function liveFieldEnemies() {
     return fieldEnemyList().filter(function (m) { return m && m.hp > 0; });
 }
+/* 預置怪群共用 FIELD 與棋盤總容量，但不擠掉持續波次的名額。 */
+function fieldWavePopulation(enemies) {
+    var n = 0;
+    for (var i = 0; i < enemies.length; i++) if (enemies[i] && enemies[i].hp > 0 && !enemies[i]._encounterKey) n++;
+    return n;
+}
 
 /* 「已經進場」＝走到定位、可以打人也可以被打。
    進場中的敵人仍然活著（liveFieldEnemies 看得到，所以它照樣佔格、照樣顯示、
@@ -333,7 +339,7 @@ function spawnFieldMonster(append) {
         var free = (typeof bfFreeCellCount === 'function') ? bfFreeCellCount(standing) : count;
         /* 同時上限（參數表可逐地圖／關卡調）：清不完的怪會一直堆，沒有煞車的話
            新角色前幾關就會被打死到推不動。棋盤格數是另一道硬上限。 */
-        var room = fieldMaxLiveEnemiesFor(s, G.stage.zone) - standing.length;
+        var room = fieldMaxLiveEnemiesFor(s, G.stage.zone) - fieldWavePopulation(standing);
         count = Math.min(count, room, Math.floor(free / cellsEach));
         if (count < 1) return [];   // 場上滿了：這一波跳過，下一個間隔再試
     }
@@ -350,10 +356,17 @@ function spawnFieldMonster(append) {
     return placeFieldWave(enemies, standing, append);
 }
 /* 站位與併入場上清單（普通波與菁英波共用）。 */
-function placeFieldWave(enemies, standing, append) {
+function placeFieldWave(enemies, standing, append, encounter) {
     // 站位：座標制，生成在離我方 BF_SPAWN_DIST 的圓周上；容量放不下的敵人直接捨棄 → js/battlefield.js
     var placed = bfPlaceEnemies(enemies, standing);
     if (typeof eliteClusterGroups === 'function') eliteClusterGroups(placed);   // 同一群擠在一起進場
+    if (encounter && placed.length) {
+        var dx = encounter.x - placed[0].pos.x, dy = encounter.y - placed[0].pos.y;
+        for (var ei = 0; ei < placed.length; ei++) {
+            placed[ei].pos.x += dx; placed[ei].pos.y += dy;
+            bfInitRoam(placed[ei]);
+        }
+    }
     if (append) {
         // 串流補波：接在既有清單後面（含還在淡出的屍體），不動場上任何人的站位；
         // 也不清普攻鎖定——目標還活著，沒有理由因為旁邊來了新怪就改打別隻。
@@ -369,6 +382,44 @@ function placeFieldWave(enemies, standing, append) {
 }
 
 var FIELD_ELITE_GROUP_SEQ = 0;
+/* 只記錄本次遊玩已預先配置的世界地點，不存第二份敵人資料。
+   G 換成新遊戲／載入的物件時重置；同區域清怪、換關、死亡不重新補生。 */
+var FIELD_ENCOUNTER_RT = { root: null, zones: {} };
+function tickFieldEncounters() {
+    if (typeof FIELD_ENCOUNTER === 'undefined' || typeof eliteEquip !== 'function' ||
+        FIELD._gmArena || FIELD.mapComplete || G.tower.active || hasLiveFieldBoss()) return [];
+    if (FIELD_ENCOUNTER_RT.root !== G) FIELD_ENCOUNTER_RT = { root: G, zones: {} };
+    var cfg = FIELD_ENCOUNTER, home = bfPlayerPos();
+    var cell = bfMeterPx(Math.max(1, Number(cfg.cellM) || 1));
+    var radius = bfMeterPx(Math.max(0, Number(cfg.preloadM) || 0));
+    var minimum = bfMeterPx(Math.max(0, Number(cfg.minDistanceM) || 0));
+    var zx = Math.floor(home.x / cell + 0.5), zy = Math.floor(home.y / cell + 0.5);
+    var zone = G.stage.zone || 'desert';
+    var rt = FIELD_ENCOUNTER_RT.zones[zone];
+    if (!rt) rt = FIELD_ENCOUNTER_RT.zones[zone] = { seen: {}, x: null, y: null };
+    if (rt.x === zx && rt.y === zy) return [];
+    rt.x = zx; rt.y = zy;
+    var groups = {}, live = liveFieldEnemies();
+    for (var i = 0; i < live.length; i++) if (live[i]._encounterKey) groups[live[i]._encounterKey] = true;
+    var room = Math.max(0, Math.floor(Number(cfg.maxGroups) || 0) - Object.keys(groups).length);
+    var candidates = [], reach = Math.ceil(radius / cell);
+    for (var x = zx - reach; x <= zx + reach; x++) {
+        for (var y = zy - reach; y <= zy + reach; y++) {
+            var key = x + ',' + y, wx = x * cell, wy = y * cell;
+            var dx = wx - home.x, dy = wy - home.y, d2 = dx * dx + dy * dy;
+            if (rt.seen[key] || d2 > radius * radius) continue;
+            rt.seen[key] = true; // 包含空地與容量不足的地點；站著／往返都不能反覆補怪
+            if (d2 >= minimum * minimum) candidates.push({ key: zone + ':' + key, x: wx, y: wy, d2: d2 });
+        }
+    }
+    candidates.sort(function (a, b) { return a.d2 - b.d2 || a.x - b.x || a.y - b.y; });
+    var made = [];
+    for (var ci = 0; ci < candidates.length && room > 0; ci++) {
+        var added = spawnEliteWave(true, false, candidates[ci]);
+        if (added && added.length) { made = made.concat(added); room--; }
+    }
+    return made;
+}
 /* 高級敵人的數值：相對「同階段普通怪」的倍率。
    菁英＝FIELD_ELITE；高級菁英＝ELITE_GROUP.adv*（參數表「高級菁英倍率」）。
    makeFieldEnemy 吃的是「相對 base 的額外倍率」，而 eliteBase 已經含菁英倍率，所以這裡換算成比例。 */
@@ -398,18 +449,22 @@ function equipEliteEnemy(e, mt, tier, groupSize, extra) {
    每一隻菁英各自擲骰要不要升級成高級菁英（ELITE_GROUP.advChance：[普通關%, 菁英關%]），
    各自依 NPC 表配技能（菁英 2 個隨機、高級菁英 3 個隨機）；小兵沒有技能。
    回傳站上場的敵人陣列。 */
-function spawnEliteWave(append, eliteStage) {
+function spawnEliteWave(append, eliteStage, encounter) {
     var s = G.stage.current;
     var zoneKey = G.stage.zone || 'desert';
     var zn = currentZoneDef();
     var plan = planEliteWave(s, zoneKey, eliteStage);
+    if (encounter) {
+        plan = plan.slice(0, 1);
+        if (plan.length) plan[0].size = Math.min(plan[0].size, Math.max(1, Math.floor(FIELD_ENCOUNTER.maxGroupSize)));
+    }
     var eliteBase = monsterStatsFor(s, true, false);
     var normalBase = monsterStatsFor(s, false, false);
     var standing = append ? liveFieldEnemies() : [];
     var room = Infinity;
     if (append) {
         var free = (typeof bfFreeCellCount === 'function') ? bfFreeCellCount(standing) : Infinity;
-        room = Math.min(fieldMaxLiveEnemiesFor(s, G.stage.zone) - standing.length, free);
+        room = encounter ? free : Math.min(fieldMaxLiveEnemiesFor(s, G.stage.zone) - fieldWavePopulation(standing), free);
         if (room < 1) return [];
     }
     var leadersCfg = Math.max(1, Math.floor(Number(ELITE_GROUP.leaders) || 1));
@@ -435,6 +490,7 @@ function spawnEliteWave(append, eliteStage) {
                 rewardMult: isElite ? (isAdv ? adv.reward : 1) : ELITE_GROUP.minionReward
             });
             e._gid = gid;
+            if (encounter) e._encounterKey = encounter.key;
             e._gRole = isElite ? (k === 0 ? 'leader' : 'elite') : 'minion';
             if (isElite) {
                 equipEliteEnemy(e, mt, isAdv ? 'elite_adv' : 'elite', g.size);
@@ -447,7 +503,7 @@ function spawnEliteWave(append, eliteStage) {
     }
     if (enemies.length > room) enemies.length = Math.max(0, Math.floor(room));   // 放不下就從最後一群的尾端（小兵）砍起
     if (!enemies.length) return [];
-    var placed = placeFieldWave(enemies, standing, append);
+    var placed = placeFieldWave(enemies, standing, append, encounter);
     if (placed.length && typeof blog === 'function' && typeof eliteAffixLabel === 'function') {
         summary.forEach(function (sm) {
             var names = (sm.affixes || []).map(eliteAffixLabel).join('、') || '（無技能）';
@@ -1290,13 +1346,15 @@ function enemyFrenzyPct(m, now) {
 function tickEnemyFrenzy(enemies, now) {
     var count = 0;
     for (var i = 0; i < enemies.length; i++) {
-        if (enemies[i] && enemies[i].hp > 0) count++;
+        if (enemies[i] && enemies[i].hp > 0 && (!enemies[i]._encounterKey || enemies[i]._alerted)) count++;
     }
     var increment = ENEMY_FRENZY_STEP_PCT * (1 + count / ENEMY_FRENZY_COUNT_DIVISOR);
     for (var j = 0; j < enemies.length; j++) {
         var m = enemies[j];
         if (!m || m.hp <= 0 || !Number.isFinite(m._spawnAt)) continue;
-        var age = Math.max(0, now - m._spawnAt - ENEMY_FRENZY_DELAY_SEC);
+        if (m._encounterKey && !m._alerted) continue;
+        var frenzyStart = Number.isFinite(m._frenzyStartAt) ? m._frenzyStartAt : m._spawnAt;
+        var age = Math.max(0, now - frenzyStart - ENEMY_FRENZY_DELAY_SEC);
         var steps = Math.floor(age / ENEMY_FRENZY_INTERVAL_SEC + 1e-9);
         var previous = m._frenzySteps || 0;
         if (steps > previous) {
@@ -1309,7 +1367,7 @@ function tickEnemyFrenzy(enemies, now) {
 function enemyFrenzyAverage(enemies, now) {
     var total = 0, count = 0;
     for (var i = 0; i < enemies.length; i++) {
-        if (!enemies[i] || enemies[i].hp <= 0) continue;
+        if (!enemies[i] || enemies[i].hp <= 0 || (enemies[i]._encounterKey && !enemies[i]._alerted)) continue;
         total += enemyFrenzyPct(enemies[i], now);
         count++;
     }
@@ -1942,6 +2000,7 @@ function fieldTick(dt) {
             if (added && added.length) spawnedEnemies = added;
         }
     }
+    tickFieldEncounters(); // 移動進新區域才預置遠方地點；與近身波次計時器無關
     // 自身防禦在敵人生成時便可起手；不等進場、射程或敵方首擊。
     var defensiveTargets = fieldEnemyList().filter(function (m) { return m && m.hp > 0; });
     if (p.hp > 0 && defensiveTargets.length && !playerActionControlBlocked(p, true) &&
