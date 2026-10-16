@@ -10252,9 +10252,34 @@ Worker 存活且頁面正常完成載入。
 - 全庫限制：較早完整`node --test --test-reporter=tap "tests/*.test.cjs"`為4434項、3972通過／460失敗／2略過；其中23項為本輪早期測試環境／舊制預期／快取斷言，已完成修正。將所有失敗來源檔案以原HEAD唯讀載入與最終工作檔分別重跑（每檔120秒上限），兩版均1613項、1175通過／437失敗／1略過，失敗名稱雙向差集0。沒有把既有失敗改為接受現況；沒有再重跑耗時約九分鐘的全庫，最終受影響範圍以194項及上述差集確認。
 - 瀏覽器：隔離隨機埠HTTP／全新headless Edge context／正式UI與真Worker，拋棄式存檔、不讀真人存檔。保留8個圖下威脅標示，既有9個點亮節點118%；原節點升級仍118%、另一節點首次學習變120%；tips文字、潛力學習／十級上限／威能點扣除／金幣不扣驗證通過，Console error／warning均0。驗證採DOM戰場模式（移除Canvas host以避免無關場景圖集啟動等待），未驗真人長時間Canvas戰鬥；戰鬥數值與Worker／預覽同步由專項及回歸涵蓋。畫面存於本聊天visualizations/power-threat.png，臨時服務與瀏覽器均已關閉。
 - 唯讀檢查：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、Worker protocol／shim、scripts/sim/engine與策略、js/potential.js／elite.js／gm_exec.js、其他回歸及Excel原生工具；未修改上述檔案。無新增或修改美術素材，素材庫無本次變更／不需素材Commit。Commit為本紀錄所在`[Codex] feat: 改造天堂威能與魔物威能系統`；無本次功能未完成項，可供審查合併，未合併／推送。下一步重載遊戲，舊檔依公告重新配置威能與潛力。
+
 ## SYNC-AUTO-CONFLICTS-20261015 — develop pending merge resolution (repo speed + power threat)
 
 - Owner: Codex; status: Done.
 - Merge: resolved `index.html`, `js/bridge.js`, and `js/worker/sim.worker.js` by preserving the enemy reposition-speed/weight changes from `6097be41` and the Heaven Power/monster-threat rework from `beed6a81`.
 - Cache resolution: assigned new combined main-thread versions for data/formula/battlefield/bridge and the Worker key `20261015-repo-speed-power-threat`; synchronized all Worker imports touched by either side.
 - Validation: conflict-marker scan found no merge markers in the resolved files; JavaScript syntax checks, 74 directly relevant Node regression tests, full build, and `git diff --check` passed. No asset-library files were required.
+
+## BATTLE-FULLSCREEN-HUD-20261016 — 全螢幕 HUD 收攏與精簡頂部
+
+- Owner：Codex；Done，單一開發者。使用者追加要求：全螢幕 HUD 維持正常寬度集中下方中央，頂部標題／場景頁籤／關卡／迷你視窗控制全部隱藏，只保留還原按鈕。
+- 前置：BATTLE-FULLSCREEN-20261016 已完成；允許 css/ashen-forge.css、css/battle-hud.css、index.html 僅 CSS 快取及本紀錄，禁止 JS／戰鬥／Worker／存檔／配置／素材／其他副本，不合併推送。後續使用者整合驗收。
+- 驗收：隔離瀏覽器四種尺寸，HUD 與正常模式尺寸一致並置中、頂部僅還原、按鈕／Esc 還原後版面一致、Console、既有回歸／Build／diff 後獨立 Commit。預檢 CSS 乾淨；共用 index／紀錄與 develop 的 Claude 菁英特效功能不同區段，候選三方合併試跑確認後分段修改。無素材變更。
+
+- 完成／修改4檔：css/ashen-forge.css 只針對 battle-fullscreen 隱藏標題／場景頁籤／關卡列及迷你視窗，移除戰鬥區內距，還原按鈕浮在右上；暫停／統計與狂暴提示下移避免遮擋。css/battle-hud.css 以原 --af-combat-w 扣除一般模式邊框／內距衍生 HUD 寬度，底座與雙球集中下方中央，技能與增益列原尺寸保留。index.html 只更新 CSS 快取1.0.78／1.0.7，本紀錄同步。沒有 JS 或獨立素材變更／素材庫 Commit。
+- 指令／結果：`node --test tests/battle-fullscreen.test.cjs tests/fullscreen-toggle.test.cjs tests/esc-shortcut.test.cjs tests/game-menu.test.cjs tests/battle-resource-orbs.test.cjs tests/battle-log-ui-layout.test.cjs`，20/20通過；`npm.cmd run build`，524檔通過；`git diff --check -- css/ashen-forge.css css/battle-hud.css index.html docs/AI_TASKS.md` 通過。既有指南未提交修改原樣保留，未納本提交。
+- 瀏覽器：隨機localhost埠、隔離headless Edge／正式Worker＋Pixi、不讀真人存檔；1920×1080、1366×768、2560×1080、390×700皆驗證底座／技能列／雙球寬高與一般模式一致、HUD置中、上方指定UI全部隱藏且還原可點、Canvas向上填滿、還原鈕與暫停統計不重疊，按鈕／Esc還原尺寸完全一致且不開菜單，Console error／warning皆0。初次查出一般畫布內框額外4px，調整寬度推導後四組皆通過；無放寬驗收。預覽為本聊天visualizations/battle-fullscreen-compact.png，臨時服務／瀏覽器／QA腳本已清理。
+- 唯讀檢查：js/ui.js／ui-scale.js／battle-renderer.js、css/style.css／ashen-forge-flat.css、上述6份回歸測試、AI規範與既有任務、develop的Claude特效快取與任務紀錄。index／紀錄共用檔候選以共同祖先三方合併試跑皆退出碼0，保留不同區段，不合併其他分支。參考截圖僅用於排版，未使用其外部美術素材。
+- 交付：Commit為本紀錄所在 `[Codex] fix: 收攏全螢幕戰鬥HUD並精簡頂部介面`，回覆附編號；本次無未完成項或已知新增風險，可審閱合併，未合併／推送。未做真人存檔長時間效能壓測；手機沿用原等比縮放。下一步使用者整合後重載並檢視全螢幕效果。
+
+## BATTLE-FULLSCREEN-20261016 — 主畫面貼齊與戰鬥區全螢幕
+
+- Owner：Codex；Done，單一開發者。使用者要求消除主畫面四周空隙，戰鬥區右上新增全螢幕按鈕，保留場景頁籤與戰鬥 UI、隱藏其他主介面，再按一次或 Esc 還原。
+- 前置：既有 ui-scale 與 Canvas ResizeObserver 已具備；後續使用者審閱整合。允許 css/ashen-forge.css、js/ui.js、index.html 必要按鈕與快取、tests/battle-fullscreen.test.cjs 與本紀錄；禁止戰鬥邏輯／配置／Worker／存檔／素材及其他副本，不合併或推送。
+- 預檢：除 index 外目標皆乾淨；Claude fecc6ab4 僅改 index 的 skills2／bridge 快取，本次 CSS／UI 快取與 stage-tools 按鈕不同區段且無語意依賴，以完整候選做 git merge-file 三方試跑退出碼0。只分段修改，保留本副本既有 docs/elite_monster_affixes_guide.md 修改。
+- 驗收：正常版面各邊填滿、戰鬥全螢幕／按鈕還原／Esc 還原、場景頁籤與 HUD、縮放與既有全螢幕／Esc 回歸、Build、Console 與 diff check；通過後獨立 Commit。無美術素材變更，不需素材庫 Commit。
+- 完成／修改5檔：css/ashen-forge.css 主版面 padding 對齊外框12px向外延伸，不裁切框線，消除原上下左右額外留白；戰鬥模式隱藏頂欄與管理區並解除固定戰鬥寬度，填滿整個網頁可視範圍。index.html 新增 stage-tools 全螢幕／還原鈕及 CSS1.0.77／UI1.0.165快取；js/ui.js 以單一 shell class 切換並沿用 resize 失效路徑，不重建Canvas／Worker／模擬狀態；Esc 先關頂層彈窗、再還原戰鬥區、之後才開菜單，原生網頁全螢幕退出也同步還原；tests/battle-fullscreen.test.cjs 與本紀錄。
+- 指令／結果：`node --test tests/battle-fullscreen.test.cjs tests/fullscreen-toggle.test.cjs tests/esc-shortcut.test.cjs tests/game-menu.test.cjs tests/init-ui-smoke.test.cjs tests/sidebar-layout.test.cjs tests/battle-log-ui-layout.test.cjs`，19/19通過；`npm.cmd run build`，524檔通過；`git diff --check -- css/ashen-forge.css index.html js/ui.js tests/battle-fullscreen.test.cjs docs/AI_TASKS.md` 通過。全工作區 diff check 另有既存 elite_monster_affixes_guide.md 第25行尾空白，未觸碰或納入本提交。
+- 瀏覽器：隨機localhost埠／全新隔離headless Edge／正式Worker與Pixi，不讀真人存檔；1920×1080、1366×768、2560×1080、390×700四組皆通過外框貼齊四邊、戰鬥填滿、頂欄／左側隱藏、按鈕還原／Esc還原尺寸一致且不開菜單，保留場景頁籤與HUD；荒漠頁籤可點，原生網頁全螢幕退出一併還原通過。Console error／warning皆0。首次原生驗證經頂欄按鈕被既有headless F11偵測擋下等待逾時，改直接呼叫標準 requestFullscreen 驗證實際 fullscreenchange，未改既有頂欄邏輯；最終全部通過。主畫面與戰鬥全螢幕截圖保存在本聊天 visualizations/battle-layout-filled.png／battle-fullscreen.png；臨時服務／瀏覽器與QA腳本已關閉清理。
+- 唯讀檢查：js/ui-scale.js、js/battle-renderer.js、js/game-menu.js、css/style.css／ashen-forge-flat.css、既有上述回歸測試與Build工具、AI規範／prompts/codex.md、Claude index變更。收尾Claude工作區新增VFX Runtime／skills2／elite_data／bridge快取，與本次區段無交集或語意依賴；以Claude完整工作檔再次三方試跑退出碼0，未覆蓋他人修改。沒有獨立美術資源變更／素材庫Commit。
+- 交付：Commit為本紀錄所在 `[Codex] feat: 主畫面貼齊視窗並新增戰鬥區全螢幕`，回覆附編號；本次無未完成項，可審閱合併，未合併／推送。限制：未做真人存檔長時間戰鬥／效能壓測；手機仍沿用原有全介面等比縮放，不另改手機版設計。下一步由使用者整合後重載遊戲，右上全螢幕／還原或 Esc 驗收；既有指南修改保留未提交。

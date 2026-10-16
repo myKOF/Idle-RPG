@@ -264,6 +264,27 @@
   box-shadow: none;
 }
 
+/* 全螢幕沿用一般戰鬥區的 HUD 寬度，整組置中，不把底座與雙球拉到畫面兩端。
+   一般畫布寬度＝戰鬥區寬度扣除左右 padding、容器邊框與畫布邊框。 */
+#ui-shell.battle-fullscreen #battle-canvas-host {
+  --hud-fullscreen-width: min(100cqw, calc(var(--af-combat-w) - 48px));
+}
+
+#ui-shell.battle-fullscreen #battle-action-dock {
+  left: 50%;
+  right: auto;
+  width: var(--hud-fullscreen-width);
+  transform: translateX(-50%);
+}
+
+#ui-shell.battle-fullscreen #battle-health-orb {
+  left: calc(50% - var(--hud-fullscreen-width) / 2 + 9px);
+}
+
+#ui-shell.battle-fullscreen #battle-mana-orb {
+  right: calc(50% - var(--hud-fullscreen-width) / 2 + 9px);
+}
+
 @media (prefers-reduced-motion: reduce) {
 
   #battle-canvas-host .orb-liquid,

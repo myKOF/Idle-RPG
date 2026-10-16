@@ -8,9 +8,9 @@
   <link rel="icon" href="images/icon_avatar.png" type="image/png">
   <link rel="stylesheet" href="css/style.css?v=1.0.75">
   <link rel="stylesheet" href="css/inventory-offset.css">
-  <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.76">
+  <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.78">
   <link rel="stylesheet" href="css/ashen-forge-flat.css?v=1.0.3">
-  <link rel="stylesheet" href="css/battle-hud.css?v=1.0.6">
+  <link rel="stylesheet" href="css/battle-hud.css?v=1.0.7">
   <link rel="stylesheet" href="css/runeword.css?v=1.0.6">
   <link rel="stylesheet" href="css/gems.css?v=1.0.2">
   <link rel="stylesheet" href="css/dialogs.css?v=1.0.3">
@@ -590,6 +590,7 @@
             <span id="stage-best" class="dim-text">最高1關</span>
           </div>
           <div class="stage-tools">
+            <button id="btn-battle-fullscreen" class="btn sm" type="button" aria-pressed="false" aria-controls="combat-area" data-tip="戰鬥區全螢幕（Esc 還原）">全螢幕</button>
             <button id="btn-realm-toggle" class="btn sm" style="display:none;" data-tt-title="切換地圖" data-tt-desc="切換凡人界與神界練功地圖"><svg class="ui-ico ui-ico-sanctuary" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="fs" d="M12 3l2.2 6.8L21 12l-6.8 2.2L12 21l-2.2-6.8L3 12l6.8-2.2z"/><path class="st" d="M19 2.8v3.4M17.3 4.5h3.4"/></svg> 神界地圖</button>
             <button id="btn-pip" class="btn sm" data-tt-title="迷你視窗" data-tt-desc="開啟永遠置頂的迷你監控視窗，背景掛機也能看到戰況" aria-label="迷你視窗"><svg class="ui-ico ui-ico-pip" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect class="ln" x="3" y="5" width="18" height="14" rx="2"/><rect class="fa" x="12" y="11" width="6.5" height="5" rx="1"/></svg></button>
           </div>
@@ -966,7 +967,7 @@
   <script src="js/potential.js?v=1.0.9"></script>
   <script src="js/tower.js?v=1.0.30"></script>
   <script src="js/save.js?v=1.0.16"></script>
-  <script src="js/ui.js?v=1.0.164"></script>
+  <script src="js/ui.js?v=1.0.165"></script>
   <script src="js/ui-runeword.js?v=1.0.11"></script>
   <script src="js/param_autoreload.js"></script>
   <!-- GM 面板。指令執行層在 js/gm_exec.js，由 Worker importScripts 載入 -->
