@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## BATTLE-ORB-SPEED-20261017 — 加快雙球內光暈流動
+
+- Owner：Codex；Done，單一開發者。使用者要求血球與法力球光暈再快一些、流動更明顯；前置d164fab9恢復動畫已完成。允許css/battle-hud.css僅旋流時長／註解、index.html僅HUD CSS快取、本紀錄；禁止液位／護盾數值、位移幅度、其他裝飾、JS／Worker／存檔／素材與其他副本，不合併推送。三檔衝突預檢乾淨，工作區乾淨。
+- 方式／驗收：兩種動態偏好的光暈速度都提高為兩倍，一般7秒→3.5秒、目前減少動態14秒→7秒；沿用原曲線、透明度、裁切及暫停規則。核對僅兩個時長改變、既有資源球／選單暫停回歸、Build／diff後獨立Commit。純CSS可逆微調，無新素材／素材庫變更。
+- 完成／修改3檔：上述兩個動畫時長減半，主頁HUD CSS1.0.17→18及本紀錄。唯讀檢查未改：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、前次流光驗證紀錄、tests/battle-resource-orbs.test.cjs／game-menu-pause.test.cjs；原keyframes、尺寸、液位及暫停選擇器完整保留。沒有美術變更，不需素材庫Commit。
+- 指令／結果：`node --test tests/battle-resource-orbs.test.cjs tests/game-menu-pause.test.cjs`14/14通過；`npm.cmd run build`528檔通過；`git diff --check`通過。僅兩個CSS時長微調，以diff及既有回歸驗證，未新增鏡像測試／本次未重做瀏覽器視覺驗證，實際快慢觀感待使用者驗收。
+- 交付：Commit為本紀錄所在`[Codex] fix: 加快血球與法力球光暈流動`，回覆附編號；無未完成需求或已知新增風險，可審閱合併，未合併推送；無臨時檔。下一步整合後重新載入遊戲確認兩倍速度。
+
 ## BATTLE-ORB-FLOW-20261017 — 恢復血球與法力球內光暈流動
 
 - Owner：Codex；Done，單一開發者。使用者回報雙球內圓形光暈靜止，要求恢復流動。正式CSS／DOM隔離頁重現：瀏覽器prefers-reduced-motion=true，兩球orb-energy::before的animationName均none；Windows減少動畫偏好與此一致。
