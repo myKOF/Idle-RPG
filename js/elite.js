@@ -1046,6 +1046,30 @@ function eliteChainPartner(m) {
 function eliteCastChain(m, d) {
   eliteBusy(m, 0.2, false);
 }
+/* 火鏈的畫面是一節一節的鏈環：鏈環數固定的 Preset 被拉成不同長度，鏈環就會被拉成長橢圓、不像鏈子。
+   所以 Skills2 火鏈列給了好幾份「鏈環數不同」的 Preset（持續場域特效＝基準、效果參數 presets＝其餘，id 以 -N 結尾，N＝鏈環數），
+   這裡依「兩端距離 ÷ linkLen」挑鏈環數最接近的一份；差一級以內不換（避免在兩份之間來回跳）。 */
+function eliteChainVariants(d) {
+  if (d._chainVars) return d._chainVars;
+  var out = [];
+  [d.v.field].concat(d.presets || []).forEach(function (id) {
+    var m = /-(\d+)$/.exec(String(id || ''));
+    if (m) out.push({ n: Number(m[1]), id: id });
+  });
+  out.sort(function (a, b) { return a.n - b.n; });
+  d._chainVars = out.length ? out : [{ n: 1, id: d.v.field }];
+  return d._chainVars;
+}
+function eliteChainPick(d, len, cur) {
+  var vars = eliteChainVariants(d);
+  var want = len / (d.linkLen > 0 ? d.linkLen : 15);
+  var best = 0;
+  for (var i = 1; i < vars.length; i++) {
+    if (Math.abs(Math.log(vars[i].n / want)) < Math.abs(Math.log(vars[best].n / want))) best = i;
+  }
+  if (cur !== undefined && cur !== best && Math.abs(Math.log(vars[cur].n / want)) < Math.log(1.25)) return cur;   // 差不多就別換
+  return best;
+}
 function eliteChainsTick(dt, list) {
   var want = {};
   var player = elitePlayerAlive();
@@ -1069,9 +1093,7 @@ function eliteChainsTick(dt, list) {
   Object.keys(want).forEach(function (key) {
     var w = want[key];
     var c = { key: key, a: w.a, b: w.b, d: w.d, nextTick: 0, vis: null };
-    c.vis = { id: eliteVisId('chain'), preset: w.d.v.field, x: 0, y: 0, w: 1, h: 1, a: 0, until: Infinity, every: 0.12, next: 0 };
-    c.vis.until = GT + 9999;
-    ELITE_RT.vis.push(c.vis);
+    c.varIdx = undefined;
     keep.push(c);
   });
   ELITE_RT.chains = keep;
@@ -1079,8 +1101,15 @@ function eliteChainsTick(dt, list) {
     var ap = eliteMonsterPos(c.a), bp = eliteMonsterPos(c.b);
     if (!ap || !bp) return;
     var len = Math.max(20, eliteDist(ap.x, ap.y, bp.x, bp.y));
+    var vi = eliteChainPick(c.d, len, c.varIdx);
+    if (vi !== c.varIdx || !c.vis) {
+      if (c.vis) c.vis.until = 0;           // 換一份鏈環數不同的 Preset：舊的自然收掉
+      c.varIdx = vi;
+      c.vis = { id: eliteVisId('chain'), preset: eliteChainVariants(c.d)[vi].id, x: 0, y: 0, w: 1, h: 1, a: 0, until: GT + 9999, every: 0.12, next: 0 };
+      ELITE_RT.vis.push(c.vis);
+    }
     c.vis.x = (ap.x + bp.x) / 2; c.vis.y = (ap.y + bp.y) / 2;
-    c.vis.w = len; c.vis.h = Math.max(24, c.d.wid * 2.2);
+    c.vis.w = len; c.vis.h = c.d.linkH > 0 ? c.d.linkH : Math.max(24, c.d.wid * 2.2);
     c.vis.a = Math.atan2(bp.y - ap.y, bp.x - ap.x);
     c.nextTick -= dt;
     if (c.nextTick > 0 || !player) return;
@@ -1138,9 +1167,12 @@ function eliteBeamsTick(dt) {
   ELITE_RT.beams = keep;
 }
 
-/* ============ 毒素加持：毒水球排成的十字軌道，緩慢旋轉並向外擴散 ============
-   第 i 顆距離 ＝ (i+1)×ballGap×f(t)；f(t)＝0.7＋0.8×t／dur；角度 ＝ 臂角＋rot×t；半徑 ＝ ballR×f(t)（與 Preset 同一組公式）。
-   畫面角色：地板特效＝開頭的毒液圓點；持續場域特效＝十字本體 */
+/* ============ 毒素加持：中心一個毒圈，十字形的毒水球從中心向外延伸，緩慢旋轉 ============
+   設計（使用者 2026-10-16）：中心毒圈半徑 hubR（預設 2.8 米）；四個方向各 balls 顆毒水球，以 speed（12 米／秒）朝外「長出」，
+   最終長度 len（36 米），之後固定長度，到 dur 秒結束。十字固定朝上下左右、不旋轉（Preset 的小球旋轉在地面投影下會炸開）。
+   第 k 顆（k＝0..balls-1）在距離 (k+1)×len/balls，延伸前緣（speed×t）到了才存在（與 Preset 同一組公式）。
+   碰到毒球或站在中心毒圈裡都會受傷。
+   畫面角色：地板特效＝中心毒圈（en-poison-dot，開頭預警到結束一直在）；持續場域特效＝十字本體 */
 function eliteCastCross(m, d) {
   var pp = elitePos();
   var ang = Math.random() * Math.PI * 2;
@@ -1148,11 +1180,10 @@ function eliteCastCross(m, d) {
   var cx = pp.x + Math.cos(ang) * rr, cy = pp.y + Math.sin(ang) * rr;
   var warn = d.warn || 0.9, dur = d.dur || 6;
   eliteBusy(m, 0.6, false);
-  eliteWarn(cx, cy, 14, d.v.ground, warn, 'poisondot');
+  var hub = eliteVisAdd({ id: eliteVisId('poisondot'), preset: d.v.ground, x: cx, y: cy, r: d.hubR || 28, until: GT + warn + dur });
   eliteLater(warn, function () {
-    var span = (d.balls || 4) * (d.ballGap || 22);
-    var c = { owner: m, def: d, x: cx, y: cy, t0: GT, until: GT + dur, nextTick: 0 };
-    c.vis = eliteVisAdd({ id: eliteVisId('cross'), preset: d.v.field, x: cx, y: cy, r: span, until: c.until });
+    var c = { owner: m, def: d, x: cx, y: cy, t0: GT, until: GT + dur, nextTick: 0, hub: hub };
+    c.vis = eliteVisAdd({ id: eliteVisId('cross'), preset: d.v.field, x: cx, y: cy, r: d.len || 360, until: c.until });
     ELITE_RT.crosses.push(c);
   });
 }
@@ -1163,20 +1194,22 @@ function eliteCrossesTick(dt) {
   var player = elitePlayerAlive();
   for (var i = 0; i < ELITE_RT.crosses.length; i++) {
     var c = ELITE_RT.crosses[i];
-    if (GT >= c.until) { if (c.vis) c.vis.until = 0; continue; }
+    if (GT >= c.until) { if (c.vis) c.vis.until = 0; if (c.hub) c.hub.until = 0; continue; }
     keep.push(c);
     c.nextTick -= dt;
     if (c.nextTick > 0 || !player) continue;
     c.nextTick = c.def.tick || 0.25;
-    var t = GT - c.t0, f = 0.7 + 0.8 * t / (c.def.dur || 6);
-    var turn = (c.def.rot || 22) * Math.PI / 180 * t;
-    var hit = false;
+    var t = GT - c.t0;
+    var len = c.def.len || 360, balls = c.def.balls || 7, reach = Math.min(len, (c.def.speed || 120) * t);
+    var ballR = c.def.ballR || 18;
+    var hit = eliteDist(pp.x, pp.y, c.x, c.y) <= (c.def.hubR || 28) + ELITE_PLAYER_BODY_R;     // 中心的毒圈
     for (var arm = 0; arm < 4 && !hit; arm++) {
-      var th = arm * Math.PI / 2 + turn;
-      for (var b = 0; b < (c.def.balls || 4); b++) {
-        var dist = (b + 1) * (c.def.ballGap || 22) * f;
+      var th = arm * Math.PI / 2;
+      for (var b = 0; b < balls; b++) {
+        var dist = (b + 1) * len / balls;
+        if (dist > reach + 1e-6) break;          // 延伸前緣還沒到這一顆
         var bx = c.x + Math.cos(th) * dist, by = c.y + Math.sin(th) * dist;
-        if (eliteDist(pp.x, pp.y, bx, by) <= (c.def.ballR || 9) * f + ELITE_PLAYER_BODY_R) { hit = true; break; }
+        if (eliteDist(pp.x, pp.y, bx, by) <= ballR + ELITE_PLAYER_BODY_R) { hit = true; break; }
       }
     }
     if (hit) {

@@ -166,22 +166,39 @@ NEW['en-toxic-pool'] = () => ({
   ]
 });
 
-/* 火鏈：兩隻怪之間的一條橘紅火光鏈條（矩形場域，長度由模擬層的兩端點決定）。
-   外層炙熱光暈＋白熱鏈芯＋沿線的火焰環（鏈環）與飄起的火星。 */
-NEW['en-fire-chain'] = () => ({
-  id: 'en-fire-chain', duration: 1.2, loop: true, sizing: rectSizing(200, 28),
-  layers: [
-    withGround(kit.sprite({ id: 'glow', asset: A.discB, z: 0, sizeX: 215, sizeY: 120, alpha: 0.6, tint: '#ff3a0a', blend: 'add', duration: 1.2, alphaOverLife: [[0, 0.5], [0.5, 0.72], [1, 0.5]] })),
-    withGround(kit.sprite({ id: 'band2', asset: A.trace06H, z: 2, sizeX: 205, sizeY: 70, alpha: 0.95, tint: '#ff6a14', blend: 'add', duration: 1.2, alphaOverLife: [[0, 0.8], [0.5, 1], [1, 0.8]] })),
-    withGround(kit.sprite({ id: 'core', asset: A.trace02H, z: 3, sizeX: 205, sizeY: 26, alpha: 1, tint: '#fff2c8', blend: 'add', duration: 1.2 })),
-    withGround(kit.particle({ id: 'links', asset: A.ringThin, z: 4, rate: 9, lifetime: [0.5, 0.9], spawnBox: [190, 4], speed: [0, 6], startPx: [44, 56], alpha: 1, tint: '#ffc060', blend: 'add',
-      alphaOverLife: [[0, 0], [0.2, 1], [0.8, 0.9], [1, 0]], rotationStart: [0, 360] })),
-    kit.particle({ id: 'embers', asset: A.flame04, z: 5, rate: 30, lifetime: [0.35, 0.7], spawnBox: [190, 8], speed: [18, 46], direction: -90, spread: 40, startPx: [22, 38],
-      alpha: 0.9, tint: '#ff5a1a', blend: 'add', alphaOverLife: [[0, 0], [0.2, 0.9], [1, 0]] }),
-    kit.particle({ id: 'sparks', asset: A.star04, z: 6, rate: 16, lifetime: [0.25, 0.55], spawnBox: [190, 6], speed: [30, 80], direction: -90, spread: 70, startPx: [10, 18],
-      alpha: 1, tint: '#fff2b0', blend: 'add', alphaOverLife: [[0, 1], [1, 0]] })
-  ]
-});
+/* 火鏈：兩隻怪之間的一條「真的鎖鏈」——一節一節交錯的橘紅火環（一節寬、一節側立的窄環，像互相扣住的鏈環），
+   鏈環自己燒得發亮（內圈白熱、外圈橘紅），背後一道細熱帶，兩端各一個發光節點，沿線飄火星。
+   矩形場域：長度由模擬層的兩端點決定，整份會被拉成那個長度。鏈環拉長了就變成長橢圓、不像鏈子，
+   所以做了好幾種鏈環數的版本（en-fire-chain-N，N＝鏈環數），模擬層（js/elite.js eliteChainsTick）依「長度÷linkLen」挑最接近的一份，
+   鏈環因此永遠接近原本的形狀。版本清單寫在 Skills2 火鏈列：持續場域特效＝基準版，效果參數 presets＝其餘版本。 */
+const CHAIN_COUNTS = [3, 4, 5, 6, 8, 10, 12, 15, 19, 23];   // 鏈環數級距約 ×1.25：鏈環最多被拉長或壓縮約一成多；每份 preset 最多 32 個圖層（一節鏈環一層）
+function fireChain(n, linkAsset) {
+  const id = 'en-fire-chain-' + n, D = 1.2;
+  const pitch = 200 / n;                          // 每節占的 authored 寬度
+  const layers = [
+    withGround(kit.sprite({ id: 'heat', asset: A.trace06H, z: 0, sizeX: 210, sizeY: 34, alpha: 0.6, tint: '#ff5a10', blend: 'add', duration: D, alphaOverLife: [[0, 0.45], [0.5, 0.7], [1, 0.45]] })),
+    withGround(kit.sprite({ id: 'wire', asset: A.trace02H, z: 1, sizeX: 206, sizeY: 6, alpha: 0.85, tint: '#ffd070', blend: 'add', duration: D }))
+  ];
+  for (let i = 0; i < n; i++) {
+    const x = -100 + pitch * (i + 0.5);
+    const wide = i % 2 === 0;                      // 寬環與側立窄環交錯，像互相扣住的鏈環
+    const sx = wide ? pitch * 1.45 : pitch * 0.62, sy = wide ? 27 : 30, dy = wide ? -2 : 2;
+    const phase = (i * 0.17) % 1;
+    const pulse = [[0, 0.8], [0.5, 1], [1, 0.8]].map(([t, v]) => [+((t + phase) % 1).toFixed(3), v]).sort((p, q) => p[0] - q[0]);
+    if (pulse[0][0] > 0) pulse.unshift([0, pulse[pulse.length - 1][1]]);
+    if (pulse[pulse.length - 1][0] < 1) pulse.push([1, pulse[0][1]]);
+    layers.push(withGround(kit.sprite({ id: 'link' + i, asset: linkAsset, z: 2 + i, x: x, y: dy, sizeX: sx, sizeY: sy, alpha: 1, tint: wide ? '#ffb02a' : '#fff1a8', blend: 'add', duration: D, alphaOverLife: pulse })));
+  }
+  [-100, 100].forEach((x, k) => {
+    layers.push(withGround(kit.sprite({ id: 'node' + k, asset: A.glowSoft, z: 100 + k, x: x, size: 46, alpha: 0.95, tint: '#ffa030', blend: 'add', duration: D, scaleOverLife: C.breathe(0.18) })));
+  });
+  layers.push(kit.particle({ id: 'embers', asset: A.flame04, z: 110, rate: 10 + n, lifetime: [0.35, 0.7], spawnBox: [190, 8], speed: [18, 46], direction: -90, spread: 40, startPx: [18, 30],
+    alpha: 0.9, tint: '#ff5a1a', blend: 'add', alphaOverLife: [[0, 0], [0.2, 0.9], [1, 0]] }));
+  layers.push(kit.particle({ id: 'sparks', asset: A.star04, z: 111, rate: 8 + n, lifetime: [0.25, 0.55], spawnBox: [190, 6], speed: [30, 80], direction: -90, spread: 70, startPx: [8, 14],
+    alpha: 1, tint: '#fff2b0', blend: 'add', alphaOverLife: [[0, 1], [1, 0]] }));
+  return { id, duration: D, loop: true, sizing: rectSizing(200, 28), layers };
+}
+CHAIN_COUNTS.forEach(n => { NEW['en-fire-chain-' + n] = () => fireChain(n, A.ringDouble); });
 
 /* 秘法棒核心：地面上的紫粉色核心（預警與持續期間都在）。 */
 NEW['en-arcane-core'] = () => ({
@@ -239,31 +256,33 @@ NEW['en-poison-dot'] = () => ({
   ]
 });
 
-/* 毒十字：4 條臂 × 4 顆毒水球，整體順時針旋轉並向外擴散（半徑倍率 0.7→1.5 隨時間線性）。
-   模擬層用同一組公式判定：第 i 顆距離 (i+1)*gap*f(t)、角度 臂角＋rot*t、半徑 ballR*f(t)，f(t)=0.7+0.8*t/dur。 */
-function poisonCross(dur, rot, balls) {
-  const R0 = 100 / balls;                       // authored 100px 對應最外顆的初始半徑（f=1 時）
+/* 毒十字：從中心向上下左右四個方向「長出」一排毒水球（朝外延伸、速度 speed 米／秒，最終長度 len 米），長成後固定不動。
+   中心的毒圈是另一份 Preset（en-poison-dot，由模擬層放在同一點）。
+   一份 Preset 最多 32 個圖層，所以每臂 balls 顆（預設 7）、每顆一層；球出現的時間 ＝ 距離 ÷ 速度（delay），出現後固定在原地。
+   座標：事件半徑 r＝len 米 ↔ authored 100px，所以 1 米 ＝ 100／len px。
+   模擬層用同一組公式判定（js/elite.js eliteCrossesTick）：第 k 顆在 (k+1)×len/balls 米，距離 ≤ speed×t 才存在。
+   ⚠️ 不旋轉：靠「錨點偏移繞圈」做旋轉的小球，投影到地面時 mesh 會炸開（舞台範圍變成幾千像素），所以十字固定朝上下左右。 */
+function poisonCross(o) {
+  const { dur, balls, len, speed, ballR } = o;
+  const pxPerM = 100 / len, gapM = len / balls;
   const layers = [
-    withGround(kit.sprite({ id: 'hub', asset: A.discB, z: 0, size: 60, alpha: 0.7, tint: '#8cff2a', blend: 'add', duration: dur, scaleOverLife: [[0, 0.7], [1, 1.5]] }))
+    withGround(kit.sprite({ id: 'hubglow', asset: A.discB, z: 0, size: 26, alpha: 0.55, tint: '#8cff2a', blend: 'add', duration: dur, scaleOverLife: C.breathe(0.12) }))
   ];
-  const turn = rot * dur * D2R;
   let z = 1;
+  const dirs = [[1, 0], [0, 1], [-1, 0], [0, -1]];
   for (let arm = 0; arm < 4; arm++) {
-    const base = arm * Math.PI / 2;
-    const spin = [[0, +base.toFixed(5)], [1, +(base + turn).toFixed(5)]];
-    // 軌道線（淡）
-    layers.push(withGround(kit.sprite({ id: 'rail' + arm, asset: A.trace06H, z: z++, anchor: { x: 0, y: 0.5 }, sizeX: 100, sizeY: 8, alpha: 0.28, tint: '#7ee02a', blend: 'add', duration: dur, rotationOverLife: spin, scaleOverLife: [[0, 0.7], [1, 1.5]] })));
     for (let b = 0; b < balls; b++) {
-      const dist = R0 * (b + 1);
-      // 以錨點偏移讓圓球繞著中心轉：anchor.x = -(距離 / 球直徑)
-      const d = 26;
-      layers.push(withGround(kit.sprite({ id: 'ball' + arm + '-' + b, asset: A.bubble, z: z++, size: d, anchor: { x: -(dist / d) + 0.5, y: 0.5 }, alpha: 0.95, tint: '#9dff3a', blend: 'add',
-        duration: dur, rotationOverLife: spin, scaleOverLife: [[0, 0.7], [1, 1.5]] })));
+      const distM = gapM * (b + 1), dist = distM * pxPerM;
+      const delay = +(distM / speed).toFixed(3);          // 球在延伸前緣到達的時候才冒出來
+      const d = Math.max(6, +(ballR * 2 * pxPerM).toFixed(2));   // 球直徑（px）
+      layers.push(withGround(kit.sprite({ id: 'ball' + arm + '-' + b, asset: A.bubble, z: z++, size: d, x: +(dirs[arm][0] * dist).toFixed(2), y: +(dirs[arm][1] * dist).toFixed(2), alpha: 0.95, tint: '#9dff3a', blend: 'add',
+        delay: delay, duration: +(dur - delay).toFixed(3), alphaOverLife: [[0, 0], [0.04, 1], [0.9, 1], [1, 0]], scaleOverLife: [[0, 0.3], [0.04, 1.15], [0.1, 1]] })));
     }
   }
+  layers.push(kit.particle({ id: 'drips', asset: A.dot, z: z++, rate: 10, lifetime: [0.6, 1.1], spawnRadius: 14, speed: [4, 14], direction: -90, spread: 50, startPx: [3, 6], alpha: 0.9, tint: '#c8ff6a', blend: 'add', alphaOverLife: [[0, 0], [0.3, 1], [1, 0]] }));
   return { id: 'en-poison-cross', duration: dur, loop: false, sizing: circleSizing(100), layers };
 }
-NEW['en-poison-cross'] = () => poisonCross(6, 22, 4);
+NEW['en-poison-cross'] = () => poisonCross({ dur: 6, balls: 7, len: 36, speed: 12, ballR: 1.8 });
 
 /* 冰晶：地面生出的冰晶持續膨脹（2~3 秒），外圈＝炸裂範圍。 */
 NEW['en-ice-crystal'] = () => {
@@ -428,27 +447,28 @@ NEW['en-missile-burst'] = () => ({
   ]
 });
 
-/* 電火花（帶電）：一條不規則的藍白色閃電絲，三股鋸齒電光各自快速閃爍、微微抖動，沒有圓形本體
-   （和玩家的藍白電球、敵人的雷光球都是圓的，這個是線狀）。朝 +X 飛，細長形（custom 尺寸，不靠 bodyD）。 */
+/* 電火花（帶電）：一團藍白色的「電光網」——中心有電漿般的藍色亂紋，外圍分岔的白藍電弧快速閃爍、旋轉亂竄（參考暗黑 3 的帶電菁英），
+   不是圓球也不是一條直線。朝任何方向飛都一樣（圓形彈體，直徑由 Skills2 的 bodyD 決定）。變形週期 0.25 秒（快速閃爍抖動）。 */
 NEW['en-spark'] = () => {
-  const D = 0.25;   // 變形（閃爍、抖動）的循環週期：0.5→0.25 秒，頻率 ×2
-  const flick = (shift) => [[0, 1], [0.12, 0.2], [0.26, 1], [0.4, 0.3], [0.55, 0.95], [0.7, 0.15], [0.85, 1], [1, 1]]
-    .map(([t, v], i, arr) => [+((t + shift) % 1).toFixed(3), v]).sort((x, y) => x[0] - y[0]);
-  const jig = (amp, ph) => [[0, -amp], [0.2, amp * 0.8], [0.4, -amp * 0.6], [0.6, amp], [0.8, -amp * 0.9], [1, -amp]].map(([t, v]) => [t, +(v * ph).toFixed(3)]);
+  const D = 0.25;
+  const flick = (shift) => [[0, 1], [0.12, 0.25], [0.26, 1], [0.4, 0.35], [0.55, 0.95], [0.7, 0.2], [0.85, 1], [1, 1]]
+    .map(([t, v]) => [+((t + shift) % 1).toFixed(3), v]).sort((x, y) => x[0] - y[0]);
+  const turn = (a0, a1) => [[0, a0], [0.33, a1], [0.66, a0 + 0.4], [1, a0 + 6.28319]];
   return {
-    id: 'en-spark', duration: D, loop: true, sizing: customSizing(56, 22, 4, 1.6),
+    id: 'en-spark', duration: D, loop: true, sizing: orbSizing(22),
     layers: [
-      kit.sprite({ id: 'glow', asset: A.glowSoft, z: 0, sizeX: 78, sizeY: 20, alpha: 0.3, tint: '#3a8cff', blend: 'add', duration: D, alphaOverLife: [[0, 0.5], [0.3, 0.25], [0.6, 0.5], [1, 0.5]] }),
-      kit.sprite({ id: 'fil-a', asset: A.bolt05H, z: 1, sizeX: 80, sizeY: 30, alpha: 1, tint: '#8fd0ff', blend: 'add', duration: D, alphaOverLife: flick(0), rotationOverLife: jig(0.2, 1) }),
-      kit.sprite({ id: 'fil-b', asset: A.bolt06H, z: 2, sizeX: 70, sizeY: 26, alpha: 1, tint: '#d4eeff', blend: 'add', duration: D, alphaOverLife: flick(0.37), rotationOverLife: jig(0.22, -1) }),
-      kit.sprite({ id: 'fil-c', asset: A.bolt05H, z: 3, sizeX: 62, sizeY: -22, alpha: 0.9, tint: '#5aa8ff', blend: 'add', duration: D, alphaOverLife: flick(0.71), rotationOverLife: jig(0.3, 1) }),
-      kit.sprite({ id: 'core', asset: A.bolt05H, z: 4, sizeX: 76, sizeY: 8, alpha: 1, tint: '#ffffff', blend: 'add', duration: D, alphaOverLife: flick(0.2), rotationOverLife: jig(0.12, -1) }),
-      kit.particle({ id: 'zap', asset: A.bolt04, z: 5, rate: 14, lifetime: [0.1, 0.22], spawnRadius: 10, speed: [30, 80], direction: 0, spread: 360, startPx: [12, 22], alpha: 1, tint: '#bfe4ff', blend: 'add', alphaOverLife: [[0, 1], [1, 0]] })
+      kit.sprite({ id: 'glow', asset: A.glowSoft, z: 0, size: 90, alpha: 0.16, tint: '#2f56ff', blend: 'add', duration: D, scaleOverLife: C.breathe(0.12) }),
+      kit.sprite({ id: 'plasma', asset: A.plasmaBlue, z: 1, size: 54, alpha: 0.75, tint: '#7a98ff', blend: 'add', duration: D, alphaOverLife: flick(0.1), rotationOverLife: turn(0, 1.2) }),
+      kit.sprite({ id: 'web-a', asset: A.arc02, z: 2, size: 100, alpha: 1, tint: '#d8e6ff', blend: 'add', duration: D, alphaOverLife: flick(0.37), rotationOverLife: turn(1.0, 2.6) }),
+      kit.sprite({ id: 'web-b', asset: A.arc01, z: 3, size: 88, alpha: 1, tint: '#aac4ff', blend: 'add', duration: D, alphaOverLife: flick(0.71), rotationOverLife: turn(3.1, 1.9) }),
+      kit.sprite({ id: 'web-c', asset: A.arc03, z: 4, size: 92, alpha: 0.9, tint: '#c4d8ff', blend: 'add', duration: D, alphaOverLife: flick(0.55), rotationOverLife: turn(2.2, 0.4) }),
+      kit.sprite({ id: 'core', asset: A.dot, z: 5, size: 10, alpha: 1, tint: '#ffffff', blend: 'add', duration: D, alphaOverLife: flick(0.2) }),
+      kit.particle({ id: 'zap', asset: A.bolt04, z: 6, rate: 16, lifetime: [0.1, 0.22], spawnRadius: 14, speed: [30, 80], direction: 0, spread: 360, startPx: [10, 20], alpha: 1, tint: '#bcd4ff', blend: 'add', alphaOverLife: [[0, 1], [1, 0]] })
     ]
   };
 };
 
-module.exports = { THEMES, RECOLORS, NEW, recolor };
+module.exports = { THEMES, RECOLORS, NEW, recolor, fireChain };
 
 /* 使用者已在 VFX Editor 手調過的特效：重生會蓋掉他的修改，預設跳過（明確指定 id 並加 --force 才重生）。 */
 const USER_EDITED = new Set(['en-gold-dome', 'en-vortex']);

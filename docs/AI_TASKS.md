@@ -583,6 +583,15 @@
 - 驗證：新增／重寫 6 支測試約 70 項；全庫測試失敗名稱與改造前 HEAD 比對，新增 0；實機（隱藏面板驅動）看過 arcane／poisoncross／frostburst／frostpulse／walls／vortex／electrified／plague／封魔塔 BOSS，並用離線渲染產生玩家 vs 敵人的特效對照預覽圖。
 - 已知：漩渦的拋物線高度沒有畫面（Canvas 沒有玩家離地高度）；任何一個 Preset 的素材不在發佈清單裡，整個 VFX Runtime 會靜默組裝失敗（所有特效消失），新增 Preset 後務必 `node tools/vfx/export-assets.cjs`。
 
+## Claude｜火鏈重做、毒素加持改版、帶電電光團、復仇體積上限（ELITE-FX2-20261016）
+
+- Owner：Claude；Done（火鏈使用者已看過說「不錯」；毒素加持與帶電等使用者實機看）。使用者回饋：①火鏈看不出來、不像鎖鏈，重做；菁英跑位時應該是「長出更多鏈環」，不是把單個鏈環拉長 ②毒素加持不對：中心一個毒圈（放大 2 倍），十字向外延伸約 12 米／秒、最長 36 米 ③帶電給了暗黑 3 的參考圖（藍色分岔電光團）④畫面上偶爾出現超大模型敵人 ⑤復仇：BOSS 每次 ×1.1 最多 1.5 倍，其他菁英最多 2 倍。
+- 火鏈：Preset 拆成 10 份鏈環數不同的版本（`en-fire-chain-3…23`，一節一節交錯的金橘火環＋熱帶＋兩端節點）；`js/elite.js eliteChainsTick` 依「兩端距離 ÷ linkLen」挑最接近的一份（`eliteChainVariants`／`eliteChainPick`，級距約 ×1.25、有遲滯不來回跳），鏈環被拉長壓縮不超過約 3 成；Skills2 火鏈列：場域＝基準版、效果參數 `presets`＝其餘版本、`linkLen`／`linkH`。一份 Preset 最多 32 層，所以最多 23 節（約 34 米，更長的鏈環只會拉長）。
+- 毒素加持：中心毒圈 `hubR`（2.8 米，原本的 2 倍，整段時間都在，站進去也會受傷）；十字以 `speed`（12 米／秒）長出每臂 `balls`（7）顆毒球、最長 `len`（36 米），固定不旋轉（原本用錨點偏移讓小球繞圈，投影到地面會讓 mesh 炸開、舞台範圍變幾千像素，改成固定的上下左右）。Preset 每顆球用 delay 在延伸前緣到達時冒出。
+- 帶電：`en-spark` 改成藍白色電光團（plasma 亂紋＋三層分岔電弧快速閃爍旋轉，循環 0.25 秒），`bodyD` 1.6 米；新增素材 `plasmaBlue`（已匯出素材庫）。
+- 超大敵人成因：復仇每同伴死一隻（小兵也算）體積／攻速／跑速各 ×1.2 連乘、沒有上限。改為體積上限：一般菁英 `sizeMax` 2 倍（每次 +20%）、BOSS `bossSize` 0.1 每次、`bossSizeMax` 1.5 倍；長到上限就不再疊層。
+- 驗證：新增／改寫 ELITE-ENGINE-4b（鏈環版本）、-10（毒素加持）、-18（復仇上限）；實機看過火鏈與毒素加持（毒素加持：十字從中心長出、毒圈變大）。⚠️ 新增 Preset 後要重跑 `node tools/vfx/export-assets.cjs`：這次 `plasmaBlue` 素材沒進發佈清單時，整個 VFX Runtime 靜默全滅（`status().preset` 為 null、所有特效消失）。
+
 ## Claude｜高級敵人跑位實測與修正（ELITE-REPO-20261015）
 
 - Owner：Claude；Done（等使用者實機）。使用者回報看不到跑位：敵人不是貼臉就是遠程站樁，只有封魔塔 BOSS 稍微會動。
