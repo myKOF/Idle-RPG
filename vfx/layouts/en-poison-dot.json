@@ -7,6 +7,7 @@
       "name": "en-poison-dot",
       "layerIds": [
         "blob",
+        "pool",
         "ring",
         "glint"
       ]

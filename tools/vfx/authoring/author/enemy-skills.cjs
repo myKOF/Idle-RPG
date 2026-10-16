@@ -250,9 +250,10 @@ NEW['en-molten-core-warn'] = () => ({
 NEW['en-poison-dot'] = () => ({
   id: 'en-poison-dot', duration: 0.9, loop: true, sizing: circleSizing(100),
   layers: [
-    withGround(kit.sprite({ id: 'blob', asset: A.discB, z: 0, size: 90, alpha: 0.7, tint: '#8cff2a', blend: 'add', duration: 0.9, scaleOverLife: C.breathe(0.18) })),
-    withGround(kit.sprite({ id: 'ring', asset: A.ringThin, z: 1, size: 130, alpha: 0.9, tint: '#c8ff6a', blend: 'add', duration: 0.9, scaleOverLife: [[0, 0.6], [1, 1.1]], alphaOverLife: [[0, 0.9], [1, 0]] })),
-    kit.sprite({ id: 'glint', asset: A.star04, z: 2, size: 36, alpha: 0.9, tint: '#f4ffc8', blend: 'add', duration: 0.9, rotationOverLife: C.spin(0.5) })
+    withGround(kit.sprite({ id: 'blob', asset: A.discB, z: 0, size: 184, alpha: 0.6, tint: '#8cff2a', blend: 'add', duration: 0.9, scaleOverLife: C.breathe(0.05) })),
+    withGround(kit.sprite({ id: 'pool', asset: A.discNoise, z: 1, size: 150, alpha: 0.55, tint: '#c8ff6a', blend: 'add', duration: 0.9, rotationOverLife: C.spin(0.15) })),
+    withGround(kit.sprite({ id: 'ring', asset: A.ringThin, z: 2, size: 198, alpha: 0.95, tint: '#c8ff6a', blend: 'add', duration: 0.9, scaleOverLife: [[0, 0.8], [1, 1]], alphaOverLife: [[0, 0.95], [1, 0.35]] })),
+    kit.sprite({ id: 'glint', asset: A.star04, z: 3, size: 46, alpha: 0.9, tint: '#f4ffc8', blend: 'add', duration: 0.9, rotationOverLife: C.spin(0.5) })
   ]
 });
 
