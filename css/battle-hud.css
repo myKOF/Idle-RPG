@@ -200,6 +200,8 @@
 
 /* ------------------------------------------------------------------ 血球／魔球：青銅圈＋寶石，坐在底座兩端並凸出上緣 */
 #battle-canvas-host .battle-resource-orb {
+  /* 玻璃內徑扣掉兩側 8px padding 與 2px 邊框，與液位高度無關。 */
+  --orb-glass-size: calc(var(--hud-orb) - 20px);
   bottom: 5px;
   width: var(--hud-orb);
   padding: 8px;
@@ -285,13 +287,18 @@
   background-size:150% 150%; mix-blend-mode:screen; animation:battle-orb-liquid-flow 5.5s ease-in-out infinite alternate;
 }
 #battle-canvas-host .orb-energy { position:absolute; inset:0; overflow:hidden; z-index:2; pointer-events:none; mix-blend-mode:screen; }
+/* energy 容器跟隨液位裁切，內容固定在完整球體底部，不隨容器伸縮。 */
 #battle-canvas-host .orb-energy::before {
-  content:''; position:absolute; inset:-32%;
+  content:''; position:absolute;
+  left:calc(var(--orb-glass-size) * -.32); bottom:calc(var(--orb-glass-size) * -.32);
+  width:calc(var(--orb-glass-size) * 1.64); height:calc(var(--orb-glass-size) * 1.64);
   background:radial-gradient(ellipse at 39% 60%,transparent 30%,rgb(var(--orb-top) / .5) 32%,transparent 35%),radial-gradient(ellipse at 65% 39%,transparent 36%,rgb(var(--orb-spark) / .6) 39%,transparent 43%),radial-gradient(ellipse at 34% 40%,transparent 44%,rgb(var(--orb-color) / .8) 47%,transparent 51%);
   filter:blur(.65px); animation:battle-orb-current 7s ease-in-out infinite alternate;
 }
 #battle-canvas-host .orb-energy::after {
-  content:''; position:absolute; inset:-10%; opacity:.8;
+  content:''; position:absolute; opacity:.8;
+  left:calc(var(--orb-glass-size) * -.1); bottom:calc(var(--orb-glass-size) * -.1);
+  width:calc(var(--orb-glass-size) * 1.2); height:calc(var(--orb-glass-size) * 1.2);
   background:radial-gradient(circle at 17% 65%,#fff 0 .7px,transparent 1.7px),radial-gradient(circle at 31% 84%,rgb(var(--orb-top)) 0 1px,transparent 2px),radial-gradient(circle at 52% 41%,#fff9 0 .7px,transparent 1.6px),radial-gradient(circle at 71% 74%,rgb(var(--orb-spark)) 0 1.2px,transparent 2.5px),radial-gradient(circle at 83% 53%,#fff 0 .6px,transparent 1.5px),radial-gradient(circle at 44% 66%,rgb(var(--orb-top)) 0 1px,transparent 2px);
   filter:drop-shadow(0 0 2px rgb(var(--orb-top))); animation:battle-orb-particles 4s ease-in-out infinite alternate;
 }

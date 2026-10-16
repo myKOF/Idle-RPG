@@ -10382,3 +10382,17 @@ Worker 存活且頁面正常完成載入。
 - 預覽與清理：本聊天visualizations保留battle-orb-glass-normal.jpg／battle-orb-glass-fullscreen.jpg成果；臨時驗證頁籤／服務／fixture收尾清理，viewport還原，使用者12412預覽服務保留，可由/index.html開正式遊戲。參考截圖只作質感參考，效果均為自製CSS，沒有使用第三方圖像。
 - 唯讀檢查：AI_RULES.md／AGENTS.md／AI_WORKFLOW／專屬規範、css/style.css／ashen-forge.css／ashen-forge-flat.css、js/ui.js資料流與權威快照、上述7份回歸／build工具、核定預覽及Claude的index／任務區段。index與Claude同檔但本次HUD DOM／CSS與UI快取不同區段、無語意相依；既有bridge分支衝突依使用者已授權分段保留，不改其值、不合併分支。任務紀錄候選三方試跑乾淨；共享NPC內容未修改。
 - 交付：Commit為本紀錄所在 `[Codex] feat: 接入資源球玻璃與流光效果`，回覆附編號。本需求無未完成項，可以審閱合併，未合併／推送。限制：未做真人存檔長時間效能壓測，窄螢幕沿用原等比縮放。下一步重載正式遊戲檢視兩模式效果。
+
+## BATTLE-ORB-CLIP-20261016 — 球內光環固定尺寸並依液位裁切
+
+- Owner：Codex；Done，單一開發者。使用者要求球內飄浮光環不隨液位上升下降改變形狀／位置，而是以液面裁切；前置核定資源球玻璃流光已接入，後續交使用者檢視。
+- 允許css/battle-hud.css僅球內光環／粒子座標、index.html僅HUD CSS快取與本紀錄；禁止NPC進行中內容／JS／Worker／數值／配置／素材／存檔或其他副本，不合併推送。沿用液體層overflow裁切，光環／粒子固定以完整玻璃內徑為座標，液面光帶保持原邏輯。
+- 預檢：CSS乾淨；index的HUD CSS快取與Claude的VFX／技能／bridge快取不同區段、無語意相依，既存無關快取衝突沿使用者已授權保留雙方方式處理。本副本NPC任務只改JS快取與文件檔首，本任務追加檔尾且只stage自身hunk；候選三方試跑後分段修改。
+- 驗收：同一動畫相位下100%／60%／25%液位的光環尺寸、球內座標與變換一致、僅裁切範圍變化；空球與滿球狀態、一般／全螢幕／縮放、Console／相關回歸／Build／diff後獨立Commit。沒有新增素材／Preset，無素材庫變更。
+
+- 完成／修改3檔：css/battle-hud.css以完整玻璃內徑（HUD直徑扣除兩側padding／邊框）固定光環及粒子偽元素寬高、底部錨點與動畫百分比座標；外層orb-energy仍隨原液位高度並overflow:hidden，只裁切、不變形。100%液位保持原形狀，液面亮帶／空球／玻璃／護盾／雕飾／技能不改。index.html僅HUD CSS1.0.12→13，本紀錄僅本任務段；沒有JS／數值／素材變更，無素材庫Commit。
+- 指令／結果：`node --test tests/battle-resource-orbs.test.cjs tests/battle-fullscreen.test.cjs tests/esc-shortcut.test.cjs tests/battle-log-ui-layout.test.cjs` 13/13通過；`npm.cmd run build`527檔通過；本次3檔diff check通過。可逆局部CSS修正不新增鏡像測試。
+- 瀏覽器：CUA／IAB隔離localhost9786，臨時fixture沿正式DOM／樣式，固定相同動畫相位；兩球在100%／60%／25%時光環150.875px方形、粒子110.391px方形及動畫矩陣完全一致，球內錨點差異小於0.001px（CSS數字字串序列化精度），裁切高度則為92／55.1875／23px，0%容器display:none。原本嚴格字串比較誤把0.00002px序列化差異當成位移，改以0.001px檢查錨點、其他尺寸／矩陣仍精確相等後通過，未改產品以迎合測試。
+- 正式Worker＋Pixi新來源不讀真人存檔，1920×1080／1366×768正常與全螢幕皆確認光環固定大小、兩球等比縮放且Esc可還原。Console error0；有一筆既有battle-decor背景建圖Worker失敗並自動主執行緒分段繪製的warning，未修改該模組。未做真人長時間效能驗證。預覽截圖為本聊天visualizations/battle-orb-fixed-ring.jpg／battle-orb-fixed-ring-detail.jpg；臨時頁籤、服務與fixture已清理，viewport還原，使用者12412服務保留。
+- 唯讀檢查：AI規範／工作流／既有任務、css/ashen-forge.css玻璃盒模型、index HUD DOM、既有資源球UI／上述4份測試、核定預覽及Claude的VFX／技能／bridge快取差異。文件候選三方試跑0；共享index候選三方試跑0，只stage本次CSS快取與本任務文件段。另一聊天NPC受擊／補群進行中修改含index JS快取與文件檔首，完整留在工作區不納本Commit，無語意相依。
+- 交付：Commit為本紀錄所在 `[Codex] fix: 球內光環依液位裁切且維持原尺寸`，回覆附編號。本需求無未完成項、可供Review／合併，未合併推送；下一步重新載入正式遊戲檢視血量與法力下降時光環維持形狀。
