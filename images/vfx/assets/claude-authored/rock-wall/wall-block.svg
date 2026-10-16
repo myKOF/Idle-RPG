@@ -1,48 +1,59 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="200" viewBox="0 0 256 200">
-  <!-- 築牆用的一塊岩壁：頂面＋正面兩個面的粗切石塊（斜俯視），灰紫色。原創繪製，無參考圖。 -->
+  <!-- 築牆用的一塊岩壁：寬而粗糙的風化岩塊（稜角分明的受光面／背光面、裂紋、腳下碎石），
+       配色與畫法對齊遊戲裡的岩石（rock-pyramid 那一類：土灰色、淡色高光、深褐細邊）。原創繪製，沒有參考外部圖片。 -->
   <defs>
-    <linearGradient id="top" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#d6cfe4"/><stop offset=".55" stop-color="#b3aac8"/><stop offset="1" stop-color="#9a90b2"/>
+    <linearGradient id="stone" x1="0" y1="0" x2="1" y2=".6">
+      <stop stop-color="#cfc7b2"/><stop offset=".5" stop-color="#a39b84"/><stop offset="1" stop-color="#625c4b"/>
     </linearGradient>
-    <linearGradient id="front" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#8d84a6"/><stop offset=".5" stop-color="#6d6486"/><stop offset="1" stop-color="#4a4263"/>
+    <linearGradient id="shade" x2="1" y2="1">
+      <stop stop-color="#8a836d"/><stop offset="1" stop-color="#4f4b3d"/>
     </linearGradient>
-    <linearGradient id="side" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#5a5276"/><stop offset="1" stop-color="#3c3554"/>
-    </linearGradient>
+    <path id="main" d="M6 188 2 150 14 118 10 88 26 62 44 70 58 40 84 30 100 46 122 22 150 18 168 38 190 30 214 48 222 74 246 86 252 122 244 150 254 184 226 196 170 192 120 198 64 194Z"/>
+    <clipPath id="body"><use href="#main"/></clipPath>
   </defs>
-  <!-- 底部陰影 -->
-  <ellipse cx="128" cy="190" rx="124" ry="9" fill="#14102a" opacity=".55"/>
-  <!-- 正面（略往下收，像粗切的石塊） -->
-  <polygon points="2,66 254,66 250,192 6,192" fill="url(#front)" stroke="#2e2842" stroke-width="3" stroke-linejoin="round"/>
-  <!-- 正面的石縫（交錯的磚紋） -->
-  <g stroke="#2e2842" stroke-width="3" stroke-linecap="round" fill="none" opacity=".9">
-    <path d="M3 110 L253 110"/>
-    <path d="M5 152 L251 152"/>
-    <path d="M86 66 L84 110"/><path d="M176 66 L178 110"/>
-    <path d="M44 110 L42 152"/><path d="M130 110 L132 152"/><path d="M212 110 L214 152"/>
-    <path d="M86 152 L84 192"/><path d="M176 152 L178 192"/>
+  <!-- 腳下陰影 -->
+  <ellipse cx="128" cy="194" rx="126" ry="8" fill="#17140d" opacity=".5"/>
+  <!-- 岩塊本體 -->
+  <use href="#main" fill="url(#stone)" stroke="#5b5646" stroke-width="2.5" stroke-linejoin="round"/>
+  <g clip-path="url(#body)">
+    <!-- 受光面（左上）：大塊的淺色破裂面 -->
+    <path d="M14 118 26 62 58 40 84 30 74 76 48 112Z" fill="#dcd4bf"/>
+    <path d="M84 30 122 22 112 70 74 76Z" fill="#cdc4ad"/>
+    <path d="M122 22 150 18 168 38 150 80 112 70Z" fill="#bfb69f"/>
+    <path d="M2 150 14 118 48 112 60 160 30 184Z" fill="#b8b09a"/>
+    <path d="M48 112 74 76 112 70 126 128 96 170 60 160Z" fill="#a9a18b"/>
+    <!-- 背光面（右下）：深色面 -->
+    <path d="M168 38 190 30 214 48 222 74 190 96 150 80Z" fill="#938b75"/>
+    <path d="M222 74 246 86 252 122 244 150 210 130 190 96Z" fill="#6f6955"/>
+    <path d="M112 70 150 80 190 96 186 150 140 176 126 128Z" fill="#8c846e"/>
+    <path d="M190 96 210 130 244 150 254 184 226 196 186 150Z" fill="#625d4b"/>
+    <path d="M60 160 96 170 140 176 186 150 226 196 170 192 120 198 64 194 30 184Z" fill="url(#shade)"/>
+    <!-- 面與面之間的淺色稜線 -->
+    <g fill="none" stroke="#efe6cc" stroke-linecap="round" stroke-linejoin="round" opacity=".65">
+      <path d="M26 62 58 40 84 30 122 22 150 18 168 38" stroke-width="3"/>
+      <path d="M14 118 26 62" stroke-width="2.4"/><path d="M74 76 112 70 150 80" stroke-width="2"/>
+      <path d="M48 112 74 76" stroke-width="2"/>
+    </g>
+    <!-- 裂紋 -->
+    <g fill="none" stroke="#4a4639" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M58 40 66 62 56 88 64 112 54 140 62 160" stroke-width="3.2"/>
+      <path d="M112 70 120 98 110 124 126 128 118 152 128 176" stroke-width="3.4"/>
+      <path d="M150 80 158 106 148 128 160 148 154 172" stroke-width="3"/>
+      <path d="M190 96 196 118 188 136 200 156" stroke-width="2.8"/>
+      <path d="M28 150 40 156 54 150 M96 170 108 160 120 164 M170 120 182 124 190 118" stroke-width="2.2"/>
+      <path d="M214 48 210 66 220 80 M84 30 90 50 80 66" stroke-width="2"/>
+    </g>
+    <!-- 小碎片與缺角 -->
+    <g fill="#e4dac0" opacity=".5">
+      <path d="M40 82 46 78 49 86 42 90Z M98 94 104 90 107 98 100 102Z M176 60 182 56 185 64 178 68Z M20 138 25 134 28 141 22 144Z"/>
+    </g>
+    <g fill="#5c5746" opacity=".55">
+      <path d="M70 120 76 116 79 124 72 128Z M132 144 138 140 141 148 134 152Z M206 112 212 108 215 116 208 120Z M160 176 166 172 170 180 162 184Z"/>
+    </g>
   </g>
-  <!-- 正面各塊的受光邊 -->
-  <g stroke="#b9afd2" stroke-width="2" stroke-linecap="round" fill="none" opacity=".75">
-    <path d="M6 70 L82 70"/><path d="M90 70 L172 70"/><path d="M180 70 L250 70"/>
-    <path d="M8 114 L40 114"/><path d="M48 114 L128 114"/><path d="M136 114 L210 114"/><path d="M218 114 L248 114"/>
-    <path d="M10 156 L82 156"/><path d="M90 156 L174 156"/><path d="M182 156 L246 156"/>
-  </g>
-  <!-- 裂紋與缺角 -->
-  <g stroke="#1f1a33" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity=".85">
-    <path d="M60 80 L68 96 L58 104"/><path d="M150 120 L158 134 L150 146 L156 150"/>
-    <path d="M222 74 L216 90 L224 104"/><path d="M110 160 L118 174 L108 186"/>
-  </g>
-  <!-- 頂面（較亮，往內縮，表現出厚度） -->
-  <polygon points="30,14 226,14 254,66 2,66" fill="url(#top)" stroke="#2e2842" stroke-width="3" stroke-linejoin="round"/>
-  <!-- 頂面的紋路 -->
-  <g stroke="#7d73a0" stroke-width="2" stroke-linecap="round" fill="none" opacity=".8">
-    <path d="M70 26 L118 24 L112 40"/><path d="M150 30 L196 28"/><path d="M40 52 L92 56 L100 48"/><path d="M168 48 L220 52"/>
-  </g>
-  <path d="M34 17 L222 17" stroke="#f1ecfa" stroke-width="2.5" stroke-linecap="round" opacity=".7"/>
-  <!-- 頂面碎石 -->
-  <g fill="#8d84a6" stroke="#2e2842" stroke-width="1.5">
-    <polygon points="122,34 134,32 138,40 126,42"/><polygon points="80,44 88,42 90,48 82,50"/><polygon points="188,40 198,38 200,45 190,46"/>
-  </g>
+  <!-- 腳下碎石 -->
+  <path d="M4 190 12 172 28 168 36 184 30 198 10 198Z" fill="#8c846e" stroke="#5b5646" stroke-width="2"/>
+  <path d="M4 190 12 172 20 190 10 198Z" fill="#bdb49b"/>
+  <path d="M226 192 232 174 246 170 254 184 250 198 234 199Z" fill="#7e7762" stroke="#5b5646" stroke-width="2"/>
+  <path d="M226 192 232 174 240 192 234 199Z" fill="#b2a98f"/>
 </svg>

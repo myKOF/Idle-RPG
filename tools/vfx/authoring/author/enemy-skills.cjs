@@ -346,7 +346,7 @@ NEW['en-wall-warn'] = () => ({
 });
 
 /* 石牆：升起後持續存在的整塊岩壁。18×6 米（authored 200×67）＝三塊約 6×6 米的粗切岩塊並排（一塊就是一個大石磚，不是細柱），
-   岩塊素材 claude-authored/rock-wall/wall-block.svg（頂面＋正面兩個面，灰紫色）。腳下一層陰影，頂緣一道淡淡的魔力光。
+   岩塊素材 claude-authored/rock-wall/wall-block.svg（寬而粗糙的風化岩塊，土灰色、稜角分明，畫法與配色對齊遊戲裡的岩石）。腳下一層陰影，頂緣一道淡淡的魔力光。
    牆的長度與厚度由模擬層的 len／thick 決定，Preset 的比例就是 18:6，所以岩塊不會被拉歪。 */
 NEW['en-stone-wall'] = () => {
   const BLOCK = 'claude-authored/rock-wall/wall-block.svg';
@@ -358,7 +358,7 @@ NEW['en-stone-wall'] = () => {
     /* 岩塊是「直立」的圖：位置跟著牆的方向（projection 的旋轉與壓扁）走，圖本身不轉（followDirection:false）、
        高度補償地面壓扁（sy ×2），所以牆朝任何方向，岩塊都站得直、排成一列。
        素材是 256×200 的 SVG（kit 的 size 以 512 貼圖為基準，這裡直接給縮放）。 */
-    const blk = kit.sprite({ id: 'block' + i, asset: BLOCK, z: 2 + i, x: x, y: 0, sx: 70 / 256, sy: (54.7 / 200) * 2, anchor: { x: 0.5, y: 0.93 }, alpha: 1, duration: 1.2 });
+    const blk = kit.sprite({ id: 'block' + i, asset: BLOCK, z: 2 + i, x: x, y: 0, sx: (i === 1 ? -1 : 1) * 80 / 256, sy: ((i === 1 ? 62 : 58) / 200) * 2, anchor: { x: 0.5, y: 0.93 }, alpha: 1, duration: 1.2 });   // 中間那塊左右翻轉、高度略不同，三塊接起來才像一整面天然岩壁
     blk.projection = GROUND; blk.followDirection = false;
     layers.push(blk);
   });
