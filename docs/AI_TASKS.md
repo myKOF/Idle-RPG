@@ -587,7 +587,8 @@
 
 - Owner：Claude；Done（等使用者實機看）。使用者回饋：①毒素加持毒圈還是太小，要約他框出的紅圈的 80%（估算＝半徑 4 米；`hubR` 2.8→4，Preset 毒池與外環改成填滿整個判定圈）②築牆的畫面是一排細長的柵欄，應該是整塊岩壁：由約 6×6 米的岩塊組成，每面牆 18 米長，每次至少 2～3 面。
 - 築牆：每面 `len` 18 米 × `thick` 6 米（三塊 6×6 米岩塊並排）、`dist` 9 米（兩側牆離玩家）、`n:[2,3]`（2＝平行、3＝U 型；U 的背牆也是 18 米）。Preset 比例 authored 200×67＝18:6，岩塊不會被拉歪；視覺矩形高度改為 `thick`（原本是厚度×2）。
-- 新素材：`claude-authored/rock-wall/wall-block.svg`（原創 SVG：頂面＋正面兩面的粗切石塊，256×200，灰紫色），放在素材庫 `D:\MyGame\Asset\claude-authoredock-wall\`（附 SOURCE.md，**素材庫不在本 repo，需要你在素材庫那邊提交**），索引用手動插入單筆（`vfx/asset-index.json`；素材庫目前有名稱衝突，scanner 整份重掃會失敗，不能用），再 `export-assets`。
+- 新素材：`claude-authored/rock-wall/wall-block.svg`（原創 SVG：頂面＋正面兩面的粗切石塊，256×200，灰紫色），放在素材庫 `D:\MyGame\Asset\claude-authored
+ock-wall\`（附 SOURCE.md，**素材庫不在本 repo，需要你在素材庫那邊提交**），索引用手動插入單筆（`vfx/asset-index.json`；素材庫目前有名稱衝突，scanner 整份重掃會失敗，不能用），再 `export-assets`。
 - 岩塊是直立的圖：projection（位置跟牆方向走、y 壓 0.5）＋ `followDirection:false`（圖不轉）＋ sy ×2（補償壓扁），所以牆朝任何方向岩塊都站得直。kit 的 `size` 以 512 貼圖為基準，非 512 的素材要直接給 `sx`／`sy`。
 - 第二版（同日）：使用者看到第一版的灰紫色磚塊「跟遊戲風格完全不搭」，重畫成風化岩塊（土灰色、稜角分明的受光面與背光面、裂紋、腳下碎石，畫法與配色對齊遊戲裡 rock-pyramid 那一類），三塊並排（中間一塊左右翻轉、高度略不同）。畫面上那些土色圓形不是築牆：是土屬性遠程敵人的普通攻擊彈體（`proj-earth-rock`）。
 - 第三版（同日）：使用者說形狀可以但太卡通。改成寫實畫法：SVG 內用 feTurbulence＋feDiffuseLighting 做岩石表面的顆粒與起伏（低飽和色塊、不描黑邊、靠環境遮蔽收邊）。注意：Chrome 在鏡像（負縮放）下會把這種光照濾鏡畫成全黑，所以中間那塊不再左右翻轉，改成略寬略高（`sx` 84、`sy` 64）；素材庫與 Preset 都不要再用負縮放。`DATA_VERSION` 20261016-wall-real3、vfx-runtime v=1.0.209。
@@ -10439,3 +10440,15 @@ Worker 存活且頁面正常完成載入。
 - Authoritative data: reran the supported Excel export flow (`config_tables --sync`) for all configured workbooks, then both JS generators. NPC and game-parameter outputs report zero semantic changes; `apply_params` reports 562/562 values consistent and zero anchor problems.
 - Validation: focused merged-feature suite passed 87/87; `npm.cmd run build` passed all 528 files; `git diff --check` passed. A full `npm.cmd test` run was attempted twice (the second with Node's `--test-force-exit`), reproduced pre-existing failures in unrelated legacy suites, and did not terminate after the test output stopped, so both attempts were interrupted after several minutes. No focused merge regression was found and no assertions were weakened.
 - Delivery: controller may stage the reported game-repository paths and create the merge commit. Known risk is limited to the repository-wide suite's existing failures/non-terminating behavior; the directly affected suites and build are green.
+
+## BATTLE-HUD-FIXED-20261016 — 共用固定HUD、球內不透底與裝飾包覆
+
+- Owner：Codex；Done，單一開發者。使用者要求球內空白不穿透背景；正常／全螢幕共用圖1的經驗／技能間距與整組固定排版；底部貼框不留1~2px；外側上方尖角縮短並向內包覆如圖4。保留雙球各外移10px的設計座標及既有液位／流光裁切。前置已授權雙色框完成，後續交使用者檢視整合，不合併推送。
+- 原因／完成5檔：css/battle-hud.css移除依cqw及fullscreen另訂寬度的兩套排版；index.html在原雙球／底座外新增單一#battle-hud，原id／XP→buff→skill順序與UI資料流不改。固定設計772×160、球112／玻璃92、底座672×91.84、技能344×66.5、XP416×12；所有子元件共用依正常戰鬥區可用寬度算出的等比縮放，切換模式不改尺寸、間距或比例。球內煙色漸層改全不透明、玻璃反射與流光保留；底座不再挖孔透底。HUD底-2px、底座繪製層再向下延伸2px，平直底緣貼框；不提高底座本身。另更新兩張images/ui/battle-hud球框與本紀錄。HUD CSS快取1.0.15→16、雙框PNG?v=2，沒有JS／玩法／NPC／Worker／存檔／數值或配置變更。
+- 素材：內建imagegen沿已授權母圖及使用者wrap-guide.png縮短上方外側長刃、改為較低且貼近球環的曲線，原圓孔／符文／寶石／短內刺保持；紅版完成後依同形狀改藍色。素材庫runic-frames保存1254px透明母圖、512px標準匯出、frames.json新SHA256、PROMPTS-wrap.json完整兩份提示詞、SOURCE.md修訂與references/wrap-guide.png；原素材與提示詞保留Git歷史50940ad。素材庫先提交 `e606716`，遊戲兩圖與匯出雜湊一致、圓孔中心alpha0。沿既有export-frames工具，無新增Preset或工具修改，Claude岩壁未提交目錄原樣保留。
+- 指令／結果：`node --test tests/battle-resource-orbs.test.cjs tests/battle-fullscreen.test.cjs tests/esc-shortcut.test.cjs tests/battle-log-ui-layout.test.cjs tests/init-ui-smoke.test.cjs tests/fullscreen-toggle.test.cjs tests/game-menu.test.cjs`24/24通過；`npm.cmd run build`528檔通過；`node tools/battle-hud/export-frames.cjs --make-export`／--apply／--check與git diff --check通過。局部可逆CSS／包層採實際瀏覽器幾何與畫素驗證，不新增鏡像斷言或放寬舊測試。
+- 模式驗證：CUA／IAB隔離localhost12155、正式Worker＋Pixi新來源，不讀真人存檔；1920×1080／1366×768／2560×1080／390×700各正常／fullscreen。逐一比較雙球／底座／XP／技能／增益6個矩形寬高與相對HUD座標、整組transform均一致（CSS量測容差0.04px）；XP→技能間距分別10.15625／7.22571／10.60876／2.06299實體px，兩模式相等。1920設計倍率1；2560共用倍率0.870466，整組縮放且不重排。六格技能中心hit-test全通過，Esc正常還原、無菜單彈出。初始化曾有一筆special_rules.js暫態網路載入錯誤，bridge自動重啟後運作，重新載入後error／warning0、關卡與即時液位持續更新，未修改Worker為測試讓步。
+- 不透底／接縫：外部臨時fixture沿正式DOM／CSS／實際render函式，固定動畫相位；場景從紫(226,37,181)變綠(49,213,54)確實改色，兩球上方空白ROI與中央最底3px條帶平均RGB差均<0.5、單通道最大≤5（JPEG壓縮差），沒有場景透色。CSS球底漸層所有色值alpha1。空球0%無能量殘光、滿球100%無假液面、40%生命／35%法力＋65%護盾並存、回45%正常，光環維持150.875px固定方形；強制啟用原reduced-motion CSS後新動畫皆none。
+- 預覽／清理：最終本聊天visualizations/fixed-hud-normal.jpg／fixed-hud-fullscreen.jpg／fixed-hud-detail.jpg保留，臨時fixture、測試服務／頁籤、比較畫素圖與量測JSON已清理，viewport還原；使用者12102／12412服務保留，12102預覽頁同步新包層與目前素材、12102/index.html為正式遊戲。未做真人長時間效能驗證。
+- 唯讀檢查：AI規範／AGENTS／工作流／既有任務、css/ashen-forge.css／ashen-forge-flat.css／style.css層疊與盒模型、js/ui-scale.js全頁縮放、ui.js權威液位與既有render函式、上述7份回歸／Build、素材Root／匯出工具與已授權母圖。全部目標衝突預檢乾淨，沒有擴大到NPC／Worker／存檔或其他副本。來源與授權沿使用者已明確確認的可重製／遊戲使用授權；新增圖是其母圖的imagegen編修。
+- 交付：遊戲Commit為本紀錄所在 `[Codex] fix: 統一戰鬥HUD排版並修正球體透底與接縫`，回覆附編號；素材庫Commite606716。本次五項需求無未完成項，可供Review／合併，未合併推送。下一步重載遊戲檢視兩模式固定HUD、半滿球與貼框底緣。
