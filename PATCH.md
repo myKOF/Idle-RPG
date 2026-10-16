@@ -1,5 +1,14 @@
 # PATCH.md
 
+## 封魔塔 BOSS 施放玩家超神進化技能（Claude 2026-10-15）
+
+- **BOSS 解鎖哪個超神進化技能就固定使用哪個（`js/elite_data.js`、`js/elite_boss.js`、`js/elite_boss_recipes.js`、`js/elite.js`、`js/tower.js`、`js/vfx-runtime.js`、`js/ui.js`、`js/gm_exec.js`、`config/Excel|CSV/game_parameters`、`tools/apply_params.cjs`、`tests/boss-player-skill.test.cjs`、`docs/BOSS_PLAYER_SKILLS.md`）**：
+  - Skills2 超神列的「封魔塔層級」＝該層 BOSS 固定使用的技能（同層多個就全用）；沒有解鎖的 BOSS（到 100 層）額外多抽 2 個 NPC 隨機技能；101 層起每場隨機抽 2 個玩家超神進化技能；隨機的每次挑戰重抽。
+  - 技能效果參數、特效 Preset、狀態都讀玩家那一列，傷害套 BOSS 攻擊力（旋鈕在參數表「4-菁英群組／封魔塔BOSS玩家技能」，也可在 Skills2 該列補 `bossMul`／`bossCd`）。
+  - 新增 69 個招式（23 個技能群組各 3 個超神進化選項）；被動型（神聖之體、不屈鬥魂、天地再造、逆轉乾坤、天穹崩裂）掛在受傷與致命傷節點。
+  - 顯示層軌道特效（火狩、虛空斬、環體電球）新增 `area.centreId`，BOSS 的環繞體與玩家技能共用同一種軌道畫法。
+  - 封魔塔樓層詳情新增 BOSS 技能提示；GM `elite list` 列出 `ps_` 玩家技能。
+
 ## 新增 GM 指令 skill_unlock 解鎖全技能限制條件（Antigravity 2026-10-15）
 
 - **新增 GM 指令 `skill_unlock`（`js/gm_exec.js`、`js/gm.js`、`js/skills2.js`、`js/formula.js`、`js/talents.js`、`js/ui.js`、`GM_command.md`、`tests/gm-skill-unlock.test.cjs`）**：

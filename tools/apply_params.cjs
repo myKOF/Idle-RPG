@@ -696,7 +696,11 @@ function eliteGroupBody() {
     ', advHp: ' + n('高級菁英倍率', 0) + ', advAtk: ' + n('高級菁英倍率', 1) + ', advReward: ' + n('高級菁英倍率', 2) +
     ',\n  sizeElite: ' + n('敵人體型倍率', 0) + ', sizeAdv: ' + n('敵人體型倍率', 1) + ', sizeBoss: ' + n('敵人體型倍率', 2) +
     ', sizeTower: [' + n('敵人體型倍率', 3) + ', ' + n('敵人體型倍率', 4) + ']' +
-    ',\n  repoMin: ' + n('跑位設定', 0) + ', repoMax: ' + n('跑位設定', 1) + ', repoSpeed: ' + n('跑位設定', 2);
+    ',\n  repoMin: ' + n('跑位設定', 0) + ', repoMax: ' + n('跑位設定', 1) + ', repoSpeed: ' + n('跑位設定', 2) +
+    // 封魔塔 BOSS 的玩家技能（js/elite_boss.js）：整體強度的八個旋鈕
+    ',\n  psDmgPct: ' + n('封魔塔BOSS玩家技能', 0) + ', psTickPct: ' + n('封魔塔BOSS玩家技能', 1) + ', psAreaPct: ' + n('封魔塔BOSS玩家技能', 2) +
+    ', psBuffPct: ' + n('封魔塔BOSS玩家技能', 3) + ', psCtrlPct: ' + n('封魔塔BOSS玩家技能', 4) + ', psShieldPct: ' + n('封魔塔BOSS玩家技能', 5) +
+    ', psReviveHpPct: ' + n('封魔塔BOSS玩家技能', 6) + ', psPassiveGap: ' + n('封魔塔BOSS玩家技能', 7);
 }
 edits.push({
   file: 'data', scopeVar: 'ELITE_GROUP',

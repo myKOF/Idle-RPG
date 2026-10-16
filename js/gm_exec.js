@@ -962,7 +962,10 @@
         return { ok: true, message: '敵人技能（' + ELITE_AFFIX_ORDER.length + '，隨機池 ' + eliteSkillIds('random').length + '／專屬 ' + eliteSkillIds('exclusive').length + '）：' +
           ELITE_AFFIX_ORDER.map(function (id) {
             return id.replace(/^e_/, '') + '＝' + ELITE_AFFIXES[id].name + (ELITE_AFFIXES[id].pool === 'random' ? '（隨機池）' : '');
-          }).join('、') };
+          }).join('、') +
+          // 封魔塔 BOSS 的玩家技能（超神進化）：id 要寫完整的 ps_ 開頭，例 ps_petalStorm
+          (typeof bskOptionList === 'function' ? '｜玩家技能（' + bskOptionList().length + '，id 含 ps_ 前綴）：' +
+            bskOptionList().map(function (o) { return bskIdOf(o.ult.id) + '＝' + o.ult.name; }).join('、') : '') };
       }
       if (G.tower && G.tower.active) return { ok: false, message: '封魔塔戰鬥中不可使用演武場出怪' };
       var eliteGroups = args[0] === undefined ? 1 : gmNumber(args[0], 1, 8);

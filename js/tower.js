@@ -56,7 +56,10 @@ function makeBoss(floor) {
   };
   if (typeof eliteEquip === 'function' && typeof eliteRollSkills === 'function') {
     var towerIdx = (floor - 1) % BOSS_LIST.length;
-    var towerIds = eliteRollSkills(bd, 'tower', { stage: floor, group: 1, tower: true, atkRange: 0 });
+    /* 玩家技能（js/elite_data.js bskPickForFloor）：這層解鎖的超神進化技能固定帶上；沒解鎖的 BOSS 額外多抽 NPC 隨機技能，101 層起每場隨機抽玩家技能。 */
+    var psk = (typeof bskPickForFloor === 'function') ? bskPickForFloor(floor) : { ids: [], extraNpc: 0 };
+    var towerIds = eliteRollSkills(bd, 'tower', { stage: floor, group: 1, tower: true, atkRange: 0, extraRnd: psk.extraNpc });
+    towerIds = towerIds.concat(psk.ids);
     eliteEquip(b, towerIds, { tier: 'tower', towerIdx: towerIdx, towerCount: BOSS_LIST.length });
   }
   if (bd.elem) {
@@ -342,6 +345,8 @@ function towerTick(dt) {
 /* ---- 結算與失敗分析 ---- */
 function endTowerFight(win, reason) {
   if (!win && reason === 'death' && TOWER.player && TOWER.player.hp > 0) return;
+  // 玩家技能【不屈鬥魂】【天地再造】【逆轉乾坤】（js/elite_boss.js）：BOSS 致命傷時保命／復活，戰鬥繼續，呼叫端本來就會 return
+  if (win && typeof eliteBossUndying === 'function' && eliteBossUndying(TOWER.boss)) return;
   // 致命傷免死先於復活／挑戰結算，不清BOSS、不記死亡、不停止挑戰。
   if (!win && reason === 'death' && typeof skills2TryLastStand === 'function' && TOWER.player &&
       skills2TryLastStand(TOWER.player, TOWER.boss ? [TOWER.boss] : [], 'tb-float')) return;

@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## BOSS-PLAYER-SKILL-20261015 — 封魔塔 BOSS 施放玩家超神進化技能
+
+- Owner：Claude；Done，單一開發者。使用者要求（全權授權、不中途停止）：①塔 BOSS 解鎖哪個超神進化技能，就固定使用哪個技能；②技能效果／特效沿用玩家技能的 Skills2 參數與 Preset，傷害套用 BOSS 強度；③BOSS 沒有的參數先自行補在 Skills2，最後列總結；④沒有解鎖任何技能的 BOSS 額外隨機放出 2 個 NPC 隨機池技能；⑤101 層起的 BOSS 每場隨機放出 2 個玩家超神進化技能；⑥隨機技能每次挑戰都重抽，只有會解鎖技能的 BOSS 是固定專屬技能。
+- 前置：現有 js/elite.js 的 NPC 技能引擎與 makeBoss（js/tower.js），已滿足。使用者全權授權，規範中需詢問的項目（Excel 參數表新增一列、顯示層軌道特效擴充、101 層取代額外 NPC 技能的解讀）均採推薦做法並於總結列出。
+- 架構決策：玩家技能引擎（js/skills2.js）整套綁死「施法者＝玩家、目標＝敵群」，無法反向給單一 BOSS 打單一玩家，因此不重用玩家的施放函式，改為「同一份 Skills2 資料＋BOSS 端施放器」：js/elite_data.js 末段（bsk*）由 Skills2 超神列衍生技能定義與選技規則（不開第二份資料）；js/elite_boss.js 提供動作零件（齊射／直線／環形／落點／場域／環繞／領域／連鎖／增益／衝近）；js/elite_boss_recipes.js 為 69 個招式。被動型（神聖之體、天穹崩裂、不屈鬥魂、天地再造、逆轉乾坤）掛在 eliteOnDamaged 與 tower.js endTowerFight 致命傷攔截。
+- 修改檔案：js/elite_data.js、js/elite_boss.js（新）、js/elite_boss_recipes.js（新）、js/elite.js、js/tower.js、js/vfx-runtime.js（軌道特效 area.centreId）、js/ui.js＋css/ashen-forge.css（樓層詳情 BOSS 技能提示）、js/gm_exec.js（elite list 列 ps_ 技能）、js/battle-elite.js（標籤色）、js/worker/sim.worker.js／js/bridge.js／index.html／tools/vfx/editor/index.html（快取版本）、config/Excel／CSV game_parameters＋tools/apply_params.cjs＋js/data.js（八個旋鈕）、docs/BOSS_PLAYER_SKILLS.md、GM_command.md、PATCH.md、tests/boss-player-skill.test.cjs（新，15 項）、tests/elite-engine.test.cjs／elite-params.test.cjs／helpers/elite-env.cjs。無素材變更，無素材庫 Commit；未動存檔格式與 Protocol。
+- 規則落實：bskPickForFloor（解鎖層固定、無解鎖 +2 NPC、101 層起每場隨機 2 個玩家技能）；makeBoss 每場挑戰重抽；Skills2 封魔塔層級改了，BOSS 技能跟著換。
+- 旋鈕：參數表「4-菁英群組／封魔塔BOSS玩家技能」（psDmgPct 25、psTickPct 20、psAreaPct 60、psBuffPct 25、psCtrlPct 50、psShieldPct 15、psReviveHpPct 40、psPassiveGap 4）；Skills2 該列效果參數可補 bossMul／bossCd／bossCdMax。Excel 以 excel-update-sheets.ps1（Excel 原生 API）新增一列，正常重開逐格驗證通過，再由 xlsx_to_csv／apply_params 重建，apply_params 錨點 552（一致）、擾動測試通過。
+- 驗證：tests/boss-player-skill.test.cjs 15/15（選技規則、定義與 Preset 來源、makeBoss 組成與重抽、69 招逐一施放無例外且 Preset 都存在、傷害倍率公式與旋鈕、衝近、軌道事件、致命傷保命／復活、被動反應、增益減傷、整場 60 秒塔戰、參數表三處一致）；elite／tower／apply_params／vfx-editor 快取等相關測試全過；全庫測試與修改前基線逐名比對無新增失敗；npm run build 523 檔通過。
+- 瀏覽器：127.0.0.1:8321 正式 Worker＋Pixi，GM 演武場 elite 1 ps_… boss 單看與塔第 20／35 層實戰：火殞天落殞石落下與紅圈預警、幻影八方陣八向突刺、雷電矩陣雷幕、怒海狂濤水龍捲、烈陽星環軌道（圓心在塔 BOSS）、萬毒血霧領域光環均正常；69 招全帶的 BOSS 連跑 80 秒 VFX Runtime skipped／missing／dropped 皆 0，Console 無錯誤。未逐一截圖驗證全部 69 招畫面。
+- 已知限制／風險：①玩家技能多段／多落點打在單一玩家身上會爆量，BOSS 版以遞減與範圍折扣縮減，數值為首版推薦值，需使用者實戰調整旋鈕；②被動與復活類（不屈鬥魂、天地再造、逆轉乾坤）會延長戰鬥，已限制次數與復活生命；③修改 js/vfx-runtime.js（VFX Runtime 共用）：VFX 編輯器開著的分頁需重新載入（編輯器頁已同步版號，改動向下相容）；④game_parameters.xlsx 已由 Excel API 改寫，若使用者正開著該檔請重新開啟。
+- 交付：Commit 6c119819、f32d6e45 與本紀錄所在提交；可供審閱合併，未合併／推送。下一步：使用者以 GM `tower_jump`／`elite 1 ps_… boss` 實戰檢視各技能手感，回報後調旋鈕。
+
 ## SKILL-TOWER-UNLOCK-20261015 — 技能與超神進化封魔塔解鎖限制
 
 - Owner：Codex；Done，單一開發者。使用者已改Skills2.xlsx，要求匯出CSV、接受可選第三段塔層限制、檢查超神進化限制、Tips末行橘色未通關／灰色小字已通關，以及塔BOSS獎勵最下方多技能解鎖框；後續追加統一Excel欄名為「解鎖轉生/等級/封魔塔層級」。

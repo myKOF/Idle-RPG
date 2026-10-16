@@ -17,17 +17,17 @@ if (typeof GameClock !== 'undefined') {
   globalThis.clearTimeout = GameClock.clearTimeout;
 }
 importScripts(
-  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261015-repo-speed-power-threat', '../runeword_data.js?v=20261013-rune-all-elem-color', '../status.js?v=20261014-state-status', '../formula.js?v=20261015-repo-speed-power-threat', '../battlefield.js?v=20261015-repo-speed-power-threat', '../stats.js?v=20261003-rename-weineng',
+  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261015-boss-player-skill', '../runeword_data.js?v=20261013-rune-all-elem-color', '../status.js?v=20261014-state-status', '../formula.js?v=20261015-boss-player-skill', '../battlefield.js?v=20261015-boss-player-skill', '../stats.js?v=20261003-rename-weineng',
   '../item.js?v=20261015-gem-enabled', '../runeword.js?v=20261014-develop-integration',
-  '../skills.js?v=20261015-repo-speed-power-threat', '../skills2.js?v=20261015-repo-speed-power-threat', '../elite_data.js?v=20261014-state-status', '../talents.js?v=20261015-repo-speed-power-threat',
-  '../player.js?v=20261015-repo-speed-power-threat', '../special_rules.js',
-  '../combat.js?v=20261015-repo-speed-power-threat', '../elite.js?v=20261014-state-status', '../legendary.js?v=20261012-indomitable-guard', '../potential.js?v=20261005-cc-decay-count', '../tower.js?v=20261015-repo-speed-power-threat',
-  '../factory.js?v=20261015-gem-enabled', '../newforge.js', '../forge.js?v=20261015-gem-enabled', '../save.js?v=20261015-repo-speed-power-threat',
+  '../skills.js?v=20261015-boss-player-skill', '../skills2.js?v=20261015-boss-player-skill', '../elite_data.js?v=20261015-boss-player-skill', '../talents.js?v=20261015-boss-player-skill',
+  '../player.js?v=20261015-boss-player-skill', '../special_rules.js',
+  '../combat.js?v=20261015-boss-player-skill', '../elite.js?v=20261015-boss-player-skill', '../elite_boss.js?v=20261015-boss-player-skill', '../elite_boss_recipes.js?v=20261015-boss-player-skill', '../legendary.js?v=20261012-indomitable-guard', '../potential.js?v=20261005-cc-decay-count', '../tower.js?v=20261015-boss-player-skill',
+  '../factory.js?v=20261015-gem-enabled', '../newforge.js', '../forge.js?v=20261015-gem-enabled', '../save.js?v=20261015-boss-player-skill',
   '../tasks.js?v=20261007-runes4'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
    它自己會擋非本機 hostname；Worker 的 location 是本檔的 URL，判定結果與主執行緒一致。 */
-importScripts('../gm_exec.js?v=20261013-enemy-skills2');
+importScripts('../gm_exec.js?v=20261015-boss-player-skill');
 
 /* ---- 決定論測試模式（只在本機、只在網址帶 ?seed=N 時啟用）----
    存在的唯一理由：讓瀏覽器實機跑出來的結果，能和 headless 模擬器

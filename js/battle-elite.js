@@ -47,7 +47,7 @@ var BattleElite = (function () {
     var out = [];
     for (var i = 0; i < ids.length; i++) {
       var def = (typeof ELITE_AFFIXES !== 'undefined') ? ELITE_AFFIXES[ids[i]] : null;
-      var css = !def ? '#ffe9a8' : (def.pool === 'exclusive' ? EXCLUSIVE_TAG_COLOR : (ELEM_TAG_COLOR[def.elem] || def.color));
+      var css = !def ? '#ffe9a8' : ((def.pool === 'exclusive' || def.pool === 'player') ? EXCLUSIVE_TAG_COLOR : (ELEM_TAG_COLOR[def.elem] || def.color));
       out.push({ text: def ? def.name : ids[i], color: css });
     }
     return out;

@@ -7357,6 +7357,17 @@ function towerDetailHTML(fl, highest) {
   var unlocks = (typeof skills2TowerUnlocks === 'function' ? skills2TowerUnlocks(fl) : []).map(function (name) {
     return '<div>解鎖【' + esc(name) + '】技能</div>';
   }).join('');
+  /* BOSS 會施放什麼玩家技能（規則與抽法在 js/elite_data.js bskPickForFloor）：解鎖技能的 BOSS 固定施放同一個，
+     沒解鎖的 BOSS 額外多抽 NPC 隨機技能，隨機層數起每場隨機抽玩家技能。 */
+  var bossSkillNote = '';
+  if (typeof bskFixedOptions === 'function') {
+    var fixedSkills = bskFixedOptions(fl).map(function (o) { return '【' + esc(o.ult.name) + '】'; });
+    bossSkillNote = fixedSkills.length
+      ? 'BOSS 專屬技能：' + fixedSkills.join('')
+      : (fl >= BSK_RANDOM_FROM_FLOOR
+        ? 'BOSS 每場隨機施放 ' + BSK_RANDOM_PLAYER_COUNT + ' 個玩家超神進化技能'
+        : 'BOSS 額外隨機施放 ' + BSK_EXTRA_NPC_COUNT + ' 個隨機技能');
+  }
   return '<div class="twx-boss" style="--c:' + color + '">' +
       '<div class="twx-boss-art">' + towerBossIconHTML(bd, 'twx-boss-img') + '</div>' +
       '<div class="twx-boss-main">' +
@@ -7372,7 +7383,8 @@ function towerDetailHTML(fl, highest) {
       '<div class="twx-loot-title"><b>通關獎勵</b><span>機率類獨立判定、不受掉寶率影響（裝備除外）</span></div>' +
       '<div class="twx-rws">' + rewards + '</div>' +
       (equips ? '<div class="twx-loot-title"><b>BOSS 裝備</b><span>受掉寶率加成，送入熔爐佇列</span></div><div class="twx-eqs">' + equips + '</div>' : '') +
-    '</div>' + (unlocks ? '<div class="twx-skill-unlocks">' + unlocks + '</div>' : '');
+    '</div>' + (bossSkillNote ? '<div class="twx-boss-skillnote">' + bossSkillNote + '</div>' : '') +
+    (unlocks ? '<div class="twx-skill-unlocks">' + unlocks + '</div>' : '');
 }
 
 function towerActionsHTML(fl, highest, gold, active) {

@@ -64,6 +64,7 @@ function eliteSkillsInit() {
     ELITE_AFFIXES[id] = eliteBuildDef(id, ENEMY_SKILLS2[id]);
     ELITE_AFFIX_ORDER.push(id);
   });
+  if (typeof BSK_PREFIX === 'string') bskRegisterDefs();   // 重建時封魔塔 BOSS 的玩家技能定義跟著回來（首次載入由檔尾登記）
 }
 eliteSkillsInit();
 
@@ -76,3 +77,83 @@ function eliteAffixLabel(id) {
 function eliteSkillIds(pool) {
   return ELITE_AFFIX_ORDER.filter(function (id) { return !pool || ELITE_AFFIXES[id].pool === pool; });
 }
+
+/* ============================================================
+   封魔塔 BOSS 的玩家技能（Skills2 超神進化選項 → 敵人技能定義）
+   ------------------------------------------------------------
+   資料的唯一來源仍是 Skills2 的超神進化列：選項的「封魔塔層級」門檻就是「這一層的 BOSS 解鎖它」，
+   所以該層 BOSS 固定使用它（不另開一份對照表）；效果參數、特效 Preset、狀態都直接讀玩家技能那一列。
+   這裡只做資料整理（主執行緒與 Worker 共用，顯示層要拿名稱／圖示／屬性）；施放行為在 js/elite_boss.js（Worker）。
+   定義 id＝ps_<超神ID>，放進 ELITE_AFFIXES（pool＝player），但不進 ELITE_AFFIX_ORDER，
+   所以隨機技能池（eliteSkillIds）與「敵人技能表」的核對測試都不受影響。
+   ============================================================ */
+var BSK_PREFIX = 'ps_';
+var BSK_RANDOM_FROM_FLOOR = 101;   // 這一層起沒有解鎖技能的 BOSS 改為每場隨機抽玩家技能
+var BSK_RANDOM_PLAYER_COUNT = 2;   // 隨機抽幾個玩家技能
+var BSK_EXTRA_NPC_COUNT = 2;       // 沒有解鎖技能的 BOSS 額外多抽幾個 NPC 隨機技能
+
+function bskLevel() { return (typeof SG_TIER_MAX_LV === 'number' && SG_TIER_MAX_LV > 0) ? SG_TIER_MAX_LV : 10; }
+function bskIdOf(ultId) { return BSK_PREFIX + ultId; }
+function bskIsId(id) { return typeof id === 'string' && id.indexOf(BSK_PREFIX) === 0; }
+
+/* 全部超神進化選項（依群組、選項順序）：{ gid, idx, ult, g }。 */
+function bskOptionList() {
+  var out = [];
+  if (typeof SKILLS2 === 'undefined' || !SKILLS2) return out;
+  Object.keys(SKILLS2).forEach(function (gid) {
+    var g = SKILLS2[gid];
+    (g.ult || []).forEach(function (u, idx) { out.push({ gid: gid, idx: idx, ult: u, g: g }); });
+  });
+  return out;
+}
+/* 該層 BOSS 解鎖的選項（可能同一層解鎖好幾個）。 */
+function bskFixedOptions(floor) {
+  var f = Math.floor(Number(floor) || 0);
+  if (!(f > 0)) return [];
+  return bskOptionList().filter(function (o) { return o.ult.unlock && Number(o.ult.unlock.tower) === f; });
+}
+/* 這一場 BOSS 要帶的玩家技能與額外 NPC 隨機技能數：{ ids: [ps_…], extraNpc: n }。
+   解鎖技能的 BOSS＝固定專屬；沒解鎖：101 層以前額外 NPC 隨機技能，101 層起每場隨機抽玩家技能。 */
+function bskPickForFloor(floor) {
+  var fixed = bskFixedOptions(floor);
+  if (fixed.length) return { ids: fixed.map(function (o) { return bskIdOf(o.ult.id); }), extraNpc: 0, fixed: true };
+  if (Math.floor(Number(floor) || 0) >= BSK_RANDOM_FROM_FLOOR) {
+    var pool = bskOptionList().map(function (o) { return bskIdOf(o.ult.id); });
+    var ids = [];
+    var n = Math.min(BSK_RANDOM_PLAYER_COUNT, pool.length);
+    while (ids.length < n) {
+      var k = Math.floor(Math.random() * pool.length);
+      ids.push(pool.splice(k, 1)[0]);
+    }
+    return { ids: ids, extraNpc: 0, fixed: false };
+  }
+  return { ids: [], extraNpc: BSK_EXTRA_NPC_COUNT, fixed: false };
+}
+
+/* 玩家技能那一列的畫面角色：本體六欄（含從第 1 階起逐欄向前繼承）與觸發五欄。 */
+function bskVfxRoles(opt) {
+  var v = {};
+  var body = (typeof sgVfxRoles === 'function') ? sgVfxRoles(opt.gid, { vfxUlt: opt.ult.id, vfxBase: true }) : {};
+  Object.keys(body || {}).forEach(function (k) { if (ELITE_ROLE_OF[k]) v[ELITE_ROLE_OF[k]] = body[k]; });
+  var trig = opt.ult.triggerVfx || {};
+  Object.keys(trig).forEach(function (k) {
+    if (ELITE_TRIGGER_ROLE_OF[k] && typeof trig[k] === 'string' && trig[k].trim()) v[ELITE_TRIGGER_ROLE_OF[k]] = trig[k].trim();
+  });
+  return v;
+}
+function bskBuildDef(opt) {
+  var g = opt.g, u = opt.ult;
+  var elem = g.elem || (u.fx && u.fx.elem) || null;
+  var d = {
+    id: bskIdOf(u.id), name: u.name, emoji: g.emoji || '✨', elem: elem || 'phys', dmgType: g.dmgType || 'phys',
+    desc: (typeof describeSkill2Ult === 'function') ? describeSkill2Ult(opt.gid, opt.idx, bskLevel()) : String(u.desc || ''),
+    color: '#ffe9a8', kind: 'active', pool: 'player', cd: [10, 16], arch: 'psk',
+    gid: opt.gid, ultId: u.id, ultIdx: opt.idx, groupName: g.name, status: u.status || null,
+    v: bskVfxRoles(opt)
+  };
+  return d;
+}
+function bskRegisterDefs() {
+  bskOptionList().forEach(function (opt) { ELITE_AFFIXES[bskIdOf(opt.ult.id)] = bskBuildDef(opt); });
+}
+bskRegisterDefs();
