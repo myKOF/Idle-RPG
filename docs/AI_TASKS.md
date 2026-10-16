@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## BATTLE-HUD-ORNAMENT-20261016 — 全螢幕 HUD 雙側金屬翼飾
+
+- Owner：Codex；Done，單一開發者。使用者要求優化收攏 HUD 外側原本切齊戰鬥區的生硬邊緣，參考先前截圖的裝飾感。
+- 前置：全螢幕與中央 HUD 已完成；允許 css/battle-hud.css、index.html 僅 HUD CSS 快取、本紀錄。禁止 JS／玩法／數值／Worker／存檔／配置／獨立素材／其他副本，不合併推送。三檔衝突預檢乾淨，後續使用者審閱整合。
+- 內容：僅全螢幕加入對稱深色金屬翼飾、青銅刻紋與鉚釘，底座兩端圓弧收邊；沿用原球／技能／底座尺寸與位置，裝飾不攔截點擊。純 CSS 自製，不取用參考圖素材，沒有獨立美術資源或素材庫變更。
+- 驗收：正式 Worker／Canvas 隔離瀏覽器目視及多尺寸檢查、正常模式無裝飾、切換／Esc還原、原HUD尺寸位置與tooltip／技能可操作、Console／既有回歸／Build／diff，通過後獨立 Commit。
+- 完成／修改3檔：css/battle-hud.css 在全螢幕模式下以球的 ::after 與純 CSS 漸層／clip-path 建立鏡像鍛鐵翼飾、青銅弧線／扇骨刻紋／鉚釘，底座兩端圓弧收邊；沒有新增 DOM、改動球／技能／增益列的原位置與尺寸。偽元素 pointer-events:none，僅裝飾；index.html HUD CSS 快取1.0.7→1.0.8，本紀錄同步。沒有獨立圖檔／第三方素材／Preset 或素材庫變更。
+- 回歸指令：`node --test tests/battle-fullscreen.test.cjs tests/battle-resource-orbs.test.cjs tests/esc-shortcut.test.cjs tests/battle-log-ui-layout.test.cjs`，11/11通過；本次沒有新增鏡像測試或改既有斷言。
+- 瀏覽器：隨機localhost埠、全新隔離headless Edge／正式Worker＋Pixi，未讀真人存檔。1920×1080、1366×768、2560×1080、390×700皆驗證正常模式無翼飾、全螢幕雙翼顯示且pointer-events:none、球中心elementFromPoint仍命中原球、球／底座／技能寬高與普通模式一致、底座置中、Esc恢復全部原矩形；Console error／warning皆0。目視確認雙側裸露直角收為弧形底座與對稱翼飾，未遮住球液面／技能。預覽為本聊天visualizations/battle-hud-ornaments.png與battle-fullscreen-ornaments.png；臨時服務／瀏覽器／QA腳本清理。
+- 唯讀檢查：css/ashen-forge.css／ashen-forge-flat.css／style.css、既有HUD／主頁標記、上述4份回歸測試、既有任務與Build工具；未修改JS／模擬／數值／配置／存檔。參考截圖只用於裝飾位置與風格，成品為自製CSS。限制：未做真人存檔長時間效能壓測，手機仍沿用原等比縮放。無本次功能待辦；後續使用者整合並重載檢視裝飾。
+
+
+- Build／交付：`npm.cmd run build` 524檔全通過，`git diff --check`通過。Commit為本紀錄所在 `[Codex] feat: 裝飾全螢幕戰鬥HUD兩端`，回覆附編號；無本次未完成項或已知新增風險，可以審閱合併，未合併／推送。
+
 ## BOSS-PLAYER-SKILL-20261015 — 封魔塔 BOSS 施放玩家超神進化技能
 
 - Owner：Claude；Done，單一開發者。使用者要求（全權授權、不中途停止）：①塔 BOSS 解鎖哪個超神進化技能，就固定使用哪個技能；②技能效果／特效沿用玩家技能的 Skills2 參數與 Preset，傷害套用 BOSS 強度；③BOSS 沒有的參數先自行補在 Skills2，最後列總結；④沒有解鎖任何技能的 BOSS 額外隨機放出 2 個 NPC 隨機池技能；⑤101 層起的 BOSS 每場隨機放出 2 個玩家超神進化技能；⑥隨機技能每次挑戰都重抽，只有會解鎖技能的 BOSS 是固定專屬技能。

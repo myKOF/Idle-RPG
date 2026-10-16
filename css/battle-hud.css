@@ -275,6 +275,7 @@
   right: auto;
   width: var(--hud-fullscreen-width);
   transform: translateX(-50%);
+  border-radius: calc(var(--hud-orb) / 2) calc(var(--hud-orb) / 2) 8px 8px;
 }
 
 #ui-shell.battle-fullscreen #battle-health-orb {
@@ -283,6 +284,34 @@
 
 #ui-shell.battle-fullscreen #battle-mana-orb {
   right: calc(50% - var(--hud-fullscreen-width) / 2 + 9px);
+}
+
+/* 自製鍛鐵翼飾：分層扇骨與迴紋沿球外側展開，青銅細邊銜接原有金環。
+   偽元素只負責裝飾，不擴大 HUD 的佈局或互動範圍。 */
+#ui-shell.battle-fullscreen .battle-resource-orb::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  bottom: -2px;
+  width: calc(var(--hud-orb) * .68);
+  height: calc(var(--hud-orb) * 1.08);
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 72% 86%, #d9c394 0 1px, #70624b 2px 3px, #111716 4px 5px, transparent 6px),
+    radial-gradient(ellipse at 108% 104%, transparent 0 43%, #0c1010 44% 47%, #a08c61 48%, #3e463f 49% 51%, #090d0d 52% 55%, #786c4e 56%, transparent 57%),
+    repeating-conic-gradient(from -81deg at 100% 100%, #111718 0deg 9deg, #626b61 10deg, #978361 11deg, #262d2b 12deg 17deg),
+    linear-gradient(120deg, #777b68, #242d2c 38%, #0b1011 70%);
+  clip-path: polygon(98% 100%, 4% 100%, 16% 94%, 3% 87%, 19% 80%, 4% 71%, 23% 65%, 8% 55%, 31% 52%, 19% 39%, 43% 42%, 37% 25%, 60% 33%, 66% 12%, 79% 28%, 92% 4%, 94% 47%, 100% 68%);
+  filter: drop-shadow(0 -1px 0 #8e7c55) drop-shadow(-1px 1px 0 #090d0d) drop-shadow(0 3px 3px #000c);
+}
+
+#ui-shell.battle-fullscreen #battle-health-orb::after {
+  left: calc(var(--hud-orb) * -.49);
+}
+
+#ui-shell.battle-fullscreen #battle-mana-orb::after {
+  right: calc(var(--hud-orb) * -.49);
+  transform: scaleX(-1);
 }
 
 @media (prefers-reduced-motion: reduce) {
