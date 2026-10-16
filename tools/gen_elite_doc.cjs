@@ -46,6 +46,7 @@ function knobs(d) {
   if (d.warn) k.push('預警 ' + d.warn + 's');
   if (d.n !== undefined) k.push(rng(d.n) + (d.arch === 'splitter' || d.arch === 'summon' ? ' 隻' : ' 發'));
   if (d.arms !== undefined) k.push(rng(d.arms) + ' 根');
+  if (d.maxStacks !== undefined) k.push('最多 ' + d.maxStacks + ' 層');
   if (d.life !== undefined) k.push('持續 ' + d.life + 's');
   if (d.dur !== undefined && d.arch !== 'curse') k.push(d.dur + 's');
   if (d.throwRange !== undefined) k.push('丟 ≤' + m(d.throwRange) + 'm');
