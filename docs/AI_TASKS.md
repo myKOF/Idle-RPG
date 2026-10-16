@@ -1,5 +1,21 @@
 # AI_TASKS.md
 
+## BATTLE-HUD-REFINE-20261016 — 雕飾減繁並套用一般戰鬥區
+
+- Owner：Codex；Done，單一開發者。使用者要求現有雕刻複雜度／紋理收斂約20%，另追加一般戰鬥區也套用同款裝飾；保留自然包覆球框與立體感。
+- 範圍：css/battle-hud.css、index.html僅HUD CSS快取、images/ui/battle-hud/orb-carving.png、素材庫codex-authored/battle-hud母圖／匯出／來源／提示詞、本紀錄；必要匯出工具唯讀沿用。禁止NPC進行中功能／數值／Worker／存檔／配置／其他副本，不合併推送。前置既有雕刻與匯出流程已完成，後續使用者審閱整合。
+- 內容：依原透明母圖用內建imagegen編修，簡化細卷葉／刻紋／粗糙度，保持大輪廓／凹弧／中心比例；Mote像素工作流不適合此細緻雕飾，沿既有備選工具。一般模式預留兩側雕飾空間並調整中央底座可用寬度，避免裁切／球與技能重疊；全螢幕保留中央構圖。不匯入第三方素材；必要素材雙倉提交。
+- 預檢：CSS／圖檔／紀錄乾淨；index與Claude1b17f050僅VFX／bridge等JS快取不同區段，三方候選試跑後分段修改。同副本NPC任務有既有未提交修改，保留並僅stage本次獨立區段。
+- 驗收：透明alpha與母圖／匯出雜湊、兩模式雕飾與球框銜接／不裁切／不遮技能、四種尺寸／切換／Esc還原／點擊、Console／相關回歸／Build／diff；先素材Commit再遊戲Commit。
+- 使用者追加圈選外側卷葉：最後一輪按PROMPT-edge.txt將外側小卷葉／螺旋改為少量寬葉與兩個主要外側卷紋；內弧／圓孔／底腳對位保留。約20%是美術收斂目標，非像素或葉片數的精確減量。
+- 完成／修改4檔：css/battle-hud.css兩模式共用雕飾，普通模式預留球外兩側空間，底座／技能／增益列由同一--hud-width計算；全螢幕保留原中央HUD尺度。index.html僅HUD CSS更新至1.0.11，PNG引用?v=3避免已開啟預覽快取；images/ui/battle-hud/orb-carving.png更新512px透明匯出，本紀錄同步。沒有修改JS或玩法。
+- 素材：完整1254×1254透明母圖、512×512匯出、exports.json／SOURCE.md與兩輪編修PROMPT-refine.txt／PROMPT-edge.txt納入素材庫，Commit `5cfa683`；初版仍保留Git歷史。RGBA alpha0..255且圓孔中心alpha0，`node tools/battle-hud/export-source.cjs --check`母圖／匯出／遊戲SHA256一致。沒有匯入第三方素材或新增Preset。
+- 指令／結果：`node --test tests/battle-fullscreen.test.cjs tests/battle-resource-orbs.test.cjs tests/esc-shortcut.test.cjs tests/battle-log-ui-layout.test.cjs` 11/11通過；`npm.cmd run build` 525檔通過；本次diff check及匯出檢查通過。無修改既有測試斷言或新增鏡像測試。
+- 瀏覽器：IAB隨機本機新來源、正式Worker＋Pixi、不讀真人存檔；1920×1080、1366×768、2560×1080、390×700逐組等待縮放穩定後，普通／全螢幕皆確認雕飾新版載入、左右在畫布內、不遮六格技能與雙球、球中心仍可命中、底座置中、Esc恢復原矩形且不開菜單；普通技能格CSS可用寬最小36px。Console error／warning0。最終預覽為本聊天visualizations/battle-normal-refined.jpg／battle-fullscreen-refined.jpg，臨時頁籤／HTTP服務已清理，viewport還原。
+- 唯讀檢查：既有HUD樣式、匯出工具、imagegen技能與原母圖、上述回歸、AI規範及Claude index JS快取差異；未改NPC配置／模擬／Worker／存檔／其他副本。CSS快取與Claude的JS快取三方候選試跑退出碼0；與本副本NPC進行中index／紀錄不同區段，僅stage本次CSS快取／獨立文檔，任務紀錄移到檔首避免另一人物暫停任務追加檔尾的插入點，三方試跑後提交。素材庫claude-authored/rock-wall保持未提交、不納本輪。
+- 交付：遊戲Commit為本紀錄所在 `[Codex] feat: 簡化雕飾並套用一般戰鬥HUD`，回覆附編號；本次無未完成項或已知新增風險，可審閱合併，未合併／推送。限制：未做真人存檔長時間效能壓測，手機沿既有等比縮放；下一步使用者整合後重載檢視。
+- 同副本人物暫停任務已提交f6c30bba，但該次共享index提交僅帶入中途HUD CSS1.0.10快取；本輪重新更新為1.0.11，人物renderer快取／JS／測試與紀錄仍留由原任務提交。最後兩個共用檔皆先完成候選試跑，再一次暫存與提交，避免留下部分暫存區段。
+
 ## NPC-VISION-20261016 — NPC 配置視野與進入範圍才追擊
 
 - Owner：Codex；Done，單一開發者。使用者要求 NPC 玩家進入視野才追擊，NPC 配置表新增視野範圍，全部預填 50 米。

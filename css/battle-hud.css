@@ -1,6 +1,6 @@
 /* Battle HUD — 戰鬥區下方的整合底座。
    原本血球、魔球、經驗條、增益列、技能列各自浮在畫布上，之間有空隙而且都很單薄。
-   這裡把 #battle-action-dock 擴成貼底、滿寬的一整塊金屬石板，血球與魔球坐在兩端，
+   這裡把 #battle-action-dock 整合成貼底、置中的金屬石板，血球與魔球坐在兩端，
    經驗條橫跨在石板上緣，技能列嵌在中央凹槽；底部這一區刻意走「有質感」路線，不跟隨其餘界面的簡約風格。
 
    只用 CSS：不改 DOM 結構與 id，#battle-action-dock → xp → buff → skill 的順序維持（測試釘住）。
@@ -14,6 +14,9 @@
   --hud-orb: clamp(64px, 17cqw, 112px);
   --hud-h: calc(var(--hud-orb) * .82);
   --hud-side: calc(var(--hud-orb) + 16px);
+  /* 為兩側球框之外的雕飾預留空間，技能可用寬度跟著底座計算。 */
+  --hud-edge-space: calc(var(--hud-orb) * .6);
+  --hud-width: calc(100cqw - 2 * var(--hud-edge-space));
   /* 金屬色：高光／本色／暗部／縫 */
   --hud-metal-hi: #e4d19a;
   --hud-metal: #8c7a52;
@@ -23,13 +26,13 @@
 
 /* ------------------------------------------------------------------ 底座 */
 #battle-canvas-host #battle-action-dock {
-  left: 0;
-  right: 0;
+  left: 50%;
+  right: auto;
   bottom: 0;
-  width: auto;
+  width: var(--hud-width);
   height: var(--hud-h);
   box-sizing: border-box;
-  transform: none;
+  transform: translateX(-50%);
   pointer-events: auto;
   /* 由上到下：上緣金屬飾條、中央微光、拉絲紋、石板底、鑄鐵紋理 */
   background:
@@ -41,6 +44,7 @@
     var(--af-iron) center / 300px;
   background-blend-mode: normal, normal, normal, normal, normal, soft-light;
   border-top: 1px solid #000;
+  border-radius: calc(var(--hud-orb) / 2) calc(var(--hud-orb) / 2) 8px 8px;
 }
 
 /* 底緣的雙刻線與兩端的收邊 */
@@ -112,7 +116,7 @@
   position: absolute;
   left: 50%;
   bottom: calc(var(--hud-h) * .1);
-  width: min(344px, calc(100cqw - 2 * var(--hud-side)));
+  width: min(344px, calc(var(--hud-width) - 2 * var(--hud-side)));
   max-width: none;
   transform: translateX(-50%);
   padding: 6px;
@@ -174,7 +178,7 @@
 /* 增益列：貼在底座上緣之上，與技能列同寬 */
 #battle-canvas-host #battle-action-dock #battle-buff-bar {
   bottom: calc(100% + 12px);
-  width: min(344px, calc(100cqw - 2 * var(--hud-side)));
+  width: min(344px, calc(var(--hud-width) - 2 * var(--hud-side)));
   max-width: none;
   padding: 0;
 }
@@ -193,11 +197,11 @@
 }
 
 #battle-canvas-host #battle-health-orb {
-  left: 9px;
+  left: calc(var(--hud-edge-space) + 9px);
 }
 
 #battle-canvas-host #battle-mana-orb {
-  right: 9px;
+  right: calc(var(--hud-edge-space) + 9px);
 }
 
 /* 頂端的寶石 */
@@ -264,31 +268,16 @@
   box-shadow: none;
 }
 
-/* 全螢幕沿用一般戰鬥區的 HUD 寬度，整組置中，不把底座與雙球拉到畫面兩端。
+/* 全螢幕保留原戰鬥區尺度的 HUD，整組置中，不把底座與雙球拉到畫面兩端。
    一般畫布寬度＝戰鬥區寬度扣除左右 padding、容器邊框與畫布邊框。 */
 #ui-shell.battle-fullscreen #battle-canvas-host {
-  --hud-fullscreen-width: min(100cqw, calc(var(--af-combat-w) - 48px));
-}
-
-#ui-shell.battle-fullscreen #battle-action-dock {
-  left: 50%;
-  right: auto;
-  width: var(--hud-fullscreen-width);
-  transform: translateX(-50%);
-  border-radius: calc(var(--hud-orb) / 2) calc(var(--hud-orb) / 2) 8px 8px;
-}
-
-#ui-shell.battle-fullscreen #battle-health-orb {
-  left: calc(50% - var(--hud-fullscreen-width) / 2 + 9px);
-}
-
-#ui-shell.battle-fullscreen #battle-mana-orb {
-  right: calc(50% - var(--hud-fullscreen-width) / 2 + 9px);
+  --hud-width: min(100cqw, calc(var(--af-combat-w) - 48px));
+  --hud-edge-space: calc((100cqw - var(--hud-width)) / 2);
 }
 
 /* 自製透明卷葉浮雕：凹弧包覆原球框，鏡像共用同一份母圖匯出。
    偽元素只負責裝飾，不擴大 HUD 的佈局或互動範圍。 */
-#ui-shell.battle-fullscreen .battle-resource-orb::after {
+#battle-canvas-host .battle-resource-orb::after {
   content: '';
   position: absolute;
   z-index: -1;
@@ -296,15 +285,15 @@
   width: calc(var(--hud-orb) * 1.55);
   height: calc(var(--hud-orb) * 1.55);
   pointer-events: none;
-  background: url('../images/ui/battle-hud/orb-carving.png') center / contain no-repeat;
+  background: url('../images/ui/battle-hud/orb-carving.png?v=3') center / contain no-repeat;
   filter: drop-shadow(0 2px 2px #000b);
 }
 
-#ui-shell.battle-fullscreen #battle-health-orb::after {
+#battle-canvas-host #battle-health-orb::after {
   left: calc(var(--hud-orb) * -.66);
 }
 
-#ui-shell.battle-fullscreen #battle-mana-orb::after {
+#battle-canvas-host #battle-mana-orb::after {
   right: calc(var(--hud-orb) * -.66);
   transform: scaleX(-1);
 }
