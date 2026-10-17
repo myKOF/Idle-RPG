@@ -124,17 +124,18 @@ function gresDetailHTML(snapshot, headerSnapshot, state, sel) {
   var cost = resonanceUpgradeCost(slot.lv);
   if (!cost) {
     h += '<div class="gres-cost">已達等級上限</div>';
-  } else if (!slot.gems.length) {
-    h += '<div class="gres-cost">鑲入寶石後才能升級（升級消耗該孔寶石種類的寶石）</div>';
   } else {
-    var type = slot.gems[0].type;
-    var have = gemsViewCount(snapshot, type, cost.gemLv);
+    var count = function (t, lv) { return gemsViewCount(snapshot, t, lv); };
+    var type = resonanceUpgradePayType(region, slot, cost, count);
     var player = headerSnapshot && headerSnapshot.player;
     var gold = player ? player.gold : 0;
-    var ok = gold >= cost.gold && have >= cost.gemCount;
+    var have = type ? count(type, cost.gemLv) : 0;
+    var ok = gold >= cost.gold && !!type && have >= cost.gemCount;
+    var gemText = type
+      ? gemIconHTML(type, cost.gemLv, 'gi-inline') + esc(GEM_NAMES[cost.gemLv] + GEM_TYPES[type].name) + ' ×' + cost.gemCount + '（持有 ' + fmt(have) + '）'
+      : esc(GEM_NAMES[cost.gemLv]) + '本區寶石 ×' + cost.gemCount + '（任一種，目前不足）';
     h += '<div class="gres-cost">升到 Lv.' + (slot.lv + 1) + '：<span class="' + (gold >= cost.gold ? '' : 'is-short') + '"><img src="images/icon_gold.png" class="res-icon">' + fmt(cost.gold) + '</span>＋' +
-      '<span class="' + (have >= cost.gemCount ? '' : 'is-short') + '">' + gemIconHTML(type, cost.gemLv, 'gi-inline') + esc(GEM_NAMES[cost.gemLv] + GEM_TYPES[type].name) +
-      ' ×' + cost.gemCount + '（持有 ' + fmt(have) + '）</span></div>' +
+      '<span class="' + (type && have >= cost.gemCount ? '' : 'is-short') + '">' + gemText + '</span></div>' +
       '<button type="button" class="btn" data-gres-upgrade="1"' + (ok ? '' : ' disabled') + '>⬆️ 升級此孔</button>';
   }
 
@@ -171,11 +172,11 @@ function renderGemResonance(gemsSnapshot, headerSnapshot) {
   gemsSnapshot = resolveGemsPanelSnapshot(gemsSnapshot);
   headerSnapshot = headerSnapshot || uiHeaderPanelSnapshot();
   if (!gemsSnapshot) return;
-  var hint = $id('gres-hint');
-  if (hint && !hint._set) {
-    hint._set = true;
-    hint.innerHTML = '把寶石鑲進共鳴孔：孔內寶石<b>直接提供自己的能力</b>；升級孔，還會額外獲得<b>相鄰孔寶石</b>的能力（每級 +' +
-      GEM_RESONANCE_SETTINGS.perLevelPct + '%，最高 +' + GEM_RESONANCE_SETTINGS.maxPct + '%）。外圍六區各限定寶石種類，中央區不限；孔上的數字是該孔要求的最低寶石階級。點孔查看與操作。';
+  var help = $id('gres-help');
+  if (help && !help._set) {
+    help._set = true;
+    help.setAttribute('data-tt-desc', '把寶石鑲進共鳴孔：孔內寶石直接提供自己的能力；升級孔，還會額外獲得相鄰孔寶石的能力（每級 +' +
+      GEM_RESONANCE_SETTINGS.perLevelPct + '%，最高 +' + GEM_RESONANCE_SETTINGS.maxPct + '%）。外圍六區各限定寶石種類，中央區不限；孔上的數字是該孔要求的最低寶石階級。孔不需要鑲寶石也能升級。點孔查看與操作。');
   }
   var state = gresSnapshotState(gemsSnapshot);
   var sel = gresSelected();
