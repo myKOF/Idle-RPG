@@ -10568,7 +10568,8 @@ function gemValueText(type, lv) {
 function gemFilterChipsHTML() {
   var h = '';
   GEM_LIB_FILTERS.forEach(function (f) {
-    var on = UI.gemBrowse.filter === f.id;
+    var filter = UI.gemBrowse.tool === 'resonance' ? (UI.gemBrowse.resFilter || 'all') : UI.gemBrowse.filter;
+    var on = filter === f.id;
     h += '<button type="button" class="gx-chip' + (on ? ' is-on' : '') + '" data-gem-filter="' + f.id + '" aria-pressed="' + on + '">' + f.label + '</button>';
   });
   return h;
@@ -10651,6 +10652,7 @@ function setGemTool(tool) {
       b.setAttribute('aria-selected', String(b.getAttribute('data-gem-tool-btn') === tool));
     });
   }
+  renderGems();
 }
 
 function renderGems() {
@@ -10684,15 +10686,19 @@ function renderGems() {
   var ownedOnly = $id('gem-owned-only');
   if (ownedOnly) ownedOnly.checked = !!st.ownedOnly;
 
-  var h = '';
-  for (var t2 in GEM_TYPES) {
-    if (!isGemEnabled(t2) && !totals[t2]) continue;
-    if (st.filter !== 'all' && gemCategoryOf(t2) !== st.filter) continue;
-    if (st.ownedOnly && !totals[t2] && t2 !== st.sel) continue;
-    h += gemLibItemHTML(gemsSnapshot, t2, totals[t2]);
+  if (st.tool === 'resonance' && typeof gresRenderLibrary === 'function') {
+    gresRenderLibrary(gemsSnapshot, box);
+  } else {
+    var h = '';
+    for (var t2 in GEM_TYPES) {
+      if (!isGemEnabled(t2) && !totals[t2]) continue;
+      if (st.filter !== 'all' && gemCategoryOf(t2) !== st.filter) continue;
+      if (st.ownedOnly && !totals[t2] && t2 !== st.sel) continue;
+      h += gemLibItemHTML(gemsSnapshot, t2, totals[t2]);
+    }
+    if (!h) h = '<div class="gx-empty">這個分類目前沒有持有的寶石</div>';
+    if (box._lastH !== h) { box._lastH = h; box.innerHTML = h; }
   }
-  if (!h) h = '<div class="gx-empty">這個分類目前沒有持有的寶石</div>';
-  if (box._lastH !== h) { box._lastH = h; box.innerHTML = h; }
 
   var focus = $id('gem-focus');
   var focusH = gemFocusHTML(gemsSnapshot, st.sel, totals[st.sel] || 0);
@@ -12583,7 +12589,8 @@ function initUI() {
     if (bossFightConfigLocked()) { draggedSlotIndex = null; e.preventDefault(); return; }
     var slot = e.target.closest('.battle-skill-slot.equipped, .loadout-slot.filled');
     if (!slot) {
-      // 遊戲只支援技能排序；取消圖片／文字的原生拖曳，避免禁止游標。
+      if (UI.gemBrowse.tool === 'resonance' && e.target.closest('[data-gres-gem]')) return;
+      // 保留技能排序與共鳴寶石拖曳；其餘圖片／文字不啟動原生拖曳。
       e.preventDefault();
       return;
     }
@@ -12834,7 +12841,8 @@ function initUI() {
       if (!t || !t.closest) return;
       var chip = t.closest('[data-gem-filter]');
       if (chip) {
-        UI.gemBrowse.filter = chip.getAttribute('data-gem-filter');
+        if (UI.gemBrowse.tool === 'resonance') UI.gemBrowse.resFilter = chip.getAttribute('data-gem-filter');
+        else UI.gemBrowse.filter = chip.getAttribute('data-gem-filter');
         renderGems();
         return;
       }

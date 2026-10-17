@@ -92,10 +92,10 @@
 /* ---- 寶石共鳴（js/ui-gem-resonance.js）---- */
 #tab-gems .gx-panel[data-gem-panel="resonance"] { position: relative; }
 .gres-help { position: absolute; top: 10px; right: 12px; z-index: 1; }
-.gres-layout { display: flex; flex: 1 1 auto; gap: 14px; align-items: stretch; min-height: 0; }
-.gres-board { flex: 1 1 58%; height: 100%; min-width: 0; }
-.gres-side { flex: 1 1 38%; min-width: 190px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; padding-right: 30px; }
-.gres-svg { display: block; width: 100%; height: 100%; }
+.gres-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(180px, .36fr); flex: 1 1 auto; gap: 14px; grid-template-rows: minmax(0, 1fr); align-items: stretch; min-height: 0; }
+.gres-board { position: relative; width: 100%; min-width: 0; min-height: 0; }
+.gres-side { min-width: 0; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; padding: 8px 22px 0 0; overflow-wrap: anywhere; }
+.gres-svg { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
 .gres-hole { cursor: pointer; }
 .gres-hole polygon {
   fill: hsl(var(--h) 38% 22%);
@@ -129,12 +129,27 @@ button.gres-gem:hover { border-color: #7a6440; }
 .gres-lvrow span { color: #a39d90; }
 .gres-cost { color: #c9c3b5; font-size: 12px; line-height: 1.7; }
 .gres-cost .is-short { color: #e0685c; }
-.gres-pool { display: flex; flex-wrap: wrap; gap: 4px; max-height: 190px; overflow-y: auto; }
-.gres-chip {
-  position: relative; padding: 2px; border: 1px solid var(--c, #3a3d44); border-radius: 6px;
-  background: #0e1013; cursor: pointer;
-}
-.gres-chip span { position: absolute; right: 2px; bottom: 0; font-size: 10px; color: #ece6d8; text-shadow: 0 0 3px #000; }
-.gres-chip:hover { background: #1a1d22; }
 .gres-empty { color: #8d877a; font-size: 12px; }
 .gres-list { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: #c9c3b5; }
+
+/* 共鳴盤優先使用工坊寬度；左庫存清單就是唯一鑲入入口。 */
+#tab-gems[data-gem-tool="resonance"] .gx-owned { display: none; }
+.gres-library-note { color: #d9c9a0; font-size: 12px; line-height: 1.5; }
+#tab-gems:not([data-gem-tool="resonance"]) .gres-library-note { display: none; }
+#tab-gems[data-gem-tool="resonance"] .gres-library-note { display: block; }
+#tab-gems .gres-library-gem { cursor: grab; }
+#tab-gems .gres-library-gem:active { cursor: grabbing; }
+#tab-gems .gres-library-gem .gx-item-top { flex-wrap: wrap; font-size: 12px; }
+.gres-library-hint { color: #a39d90; font-size: 12px; line-height: 1.7; }
+.gres-hole.is-drop polygon { fill: hsl(var(--h) 60% 40%); stroke: #a9edbd; stroke-width: 4; }
+.gres-hole.is-reject polygon { stroke: #e0685c; stroke-width: 3; }
+.gres-hole:focus-visible { outline: none; }
+.gres-hole:focus-visible polygon { stroke: #fff1c4; stroke-width: 4; }
+@media (max-width: 1500px) {
+  .gres-layout { display: flex; flex: 0 0 auto; flex-direction: column; }
+  .gres-board { flex: 0 0 auto; aspect-ratio: 1; }
+  .gres-side { overflow: visible; padding: 0 22px 0 0; }
+}
+
+#tab-gems[data-gem-tool="resonance"] .gx-focus { gap: 0; }
+#tab-gems[data-gem-tool="resonance"] .gx-curve { display: none; }

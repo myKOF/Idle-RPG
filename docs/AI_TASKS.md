@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## GEM-RESONANCE-INTERACTION-20261018 — 放大共鳴盤與左側清單鑲嵌
+
+- Owner：Codex；Done，單一開發者。使用者要求盤面接近紅框大小、選孔後直接篩選左側庫存、點擊或拖曳鑲入；前置共鳴功能已完成，工作區乾淨、全部目標衝突預檢乾淨。
+- 允許 js/ui.js、js/ui-gem-resonance.js、css/gems.css、index.html、共鳴UI回歸及本紀錄／PATCH／共鳴說明；禁止配置／數值／模擬／Worker協議／存檔／素材與其他副本，不合併推送。沿既有權威命令與快照檢查種類／最低階／庫存／容量，資料與存檔格式不變。
+- 驗收：盤面／說明不重疊、各區與階級篩選、點擊／拖曳／滿孔／取下／失效庫存／切回其他工具、既有與新增回歸／Build／隔離瀏覽器操作後Commit。無新增素材或素材庫變更。
+
+- 完成8檔：ui-gem-resonance 將 viewBox 236縮至206、區名置中減少外緣留白；gems.css 加寬盤面、共鳴模式收起重複十階列，窄畫面將詳情排在盤下；左側按實際階級列庫存，選孔即依種類／最低階／持有量篩選，滿孔顯示先取下提示，右側候選池移除。一般工具的分類獨立保留，共鳴分類選孔時重設。點擊與原生拖曳皆走原 gem.resonanceSocket，使用最新快照檢查庫存／容量；取下與升級沿原命令，沒有模擬／Protocol／存檔／數值變動。
+- 拖曳：排除全頁原有的非技能拖曳攔截；BOSS配置鎖沿用，合法孔提示綠框、不符紅框。拖曳期間保留左庫存來源節點，放開再次核對最新庫存與容量，外部拖放不建立寶石。左列沿既有syncItemGridCells逐格更新；模式切換立即刷新。新增tests/gem-resonance-ui.test.cjs的5項行為回歸，實際呼叫權威鑲入／取下規則。index僅gems CSS1.0.5→6、ui1.0.167→168、ui-gem-resonance1.0.1→2；PATCH及本說明同步。無素材內容變更，素材庫乾淨，無素材庫Commit。
+- 測試：node --test tests/gem-resonance-ui.test.cjs tests/gem-resonance.test.cjs tests/gem-enabled.test.cjs tests/gem-compose-all.test.cjs tests/gem-convert-stack.test.cjs tests/gem-convert-shift.test.cjs tests/gem-socket-height-compact.test.cjs tests/gem-shop.test.cjs tests/gem-tooltip.test.cjs tests/skill-loadout.test.cjs：57項56通過／1既有失敗；新增5項與共鳴既有12項全過。唯一失敗為gem-convert-shift「Shift conversion sends the exact gem.convert Worker command」測試VM未定義bossFightBlocksCommand；唯讀攔截fs載入git show HEAD:js/ui.js重跑原套件，同樣4/5且同錯，未修改斷言或擴大修復。npm.cmd run build：534檔通過；git diff --check通過。
+- 瀏覽器：Node REPL工具不可用，依browser skill回退獨立headless Chrome與臨時127.0.0.1服務；正式DOM／CSS／UI／Worker，新來源新角色，僅透過正式本機GM命令給測試寶石，不讀真人存檔。確認防禦孔只列四／七階鑽石、不列三階及紅寶石；點擊扣1顆／滿孔移除候選／取下退回／原生dragTo拖至另一防禦孔成功／拖到魔法孔拒絕／切回合成恢復普通清單，未觀察到pageerror。1920×900盤面區492×539、孔群379.51×423.22；1366×768、2560×1080、390×844各用新頁面檢查盤面／詳情無重疊，窄螢幕堆疊且面板可捲動。最初測試在快照先更新但畫面尚未繪製時過早斷言，改等待實際DOM完成後通過，產品沒有為測試改行為。
+- 唯讀檢查：既有共鳴資料／權威規則、Worker命令與sendGemUiCommand、庫存／合成／轉換／商店／技能拖曳、ashen-forge盒模型與上述測試；全部目標預檢乾淨，未改他方副本。預覽保留本聊天visualizations/resonance-expanded.png／resonance-1366.png；測試服務／瀏覽器已結束，外部臨時腳本收尾清理。未做真人長戰或觸控拖曳驗收；點擊可用於觸控，拖曳以桌面原生滑鼠驗收。
+- 交付：Commit為本紀錄所在[Codex] feat提交，回覆附編號；本次三項需求均完成，可供審閱合併，未合併推送。下一步重新載入Codex工作區頁面，於寶石→共鳴選孔，從左側按階級點擊或拖入。
+
 ## BATTLE-ORB-SPEED-20261017 — 加快雙球內光暈流動
 
 - Owner：Codex；Done，單一開發者。使用者要求血球與法力球光暈再快一些、流動更明顯；前置d164fab9恢復動畫已完成。允許css/battle-hud.css僅旋流時長／註解、index.html僅HUD CSS快取、本紀錄；禁止液位／護盾數值、位移幅度、其他裝飾、JS／Worker／存檔／素材與其他副本，不合併推送。三檔衝突預檢乾淨，工作區乾淨。
