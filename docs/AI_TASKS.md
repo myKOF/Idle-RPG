@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## BATTLE-FULLSCREEN-ZOOM-20261017 — 全螢幕鏡頭拉近30%
+
+- Owner：Codex；Done，單一開發者。使用者要求全螢幕鏡頭拉近30%；沿既有鏡頭倍率乘1.3，一般模式維持原距離。前置鏡頭／全螢幕切換已完成，四檔衝突預檢乾淨、開始時副本乾淨。
+- 允許js/battle-renderer.js僅全螢幕鏡頭倍率、tests/battle-camera-distance.test.cjs、index.html僅Renderer快取、本紀錄；禁止全域鏡頭參數表、世界座標／碰撞／傷害／Worker／存檔、HUD及素材或其他副本，不合併推送。沿既有resize重算與cameraStage共用所有場景層。
+- 驗收：全螢幕倍率恰為一般1.3倍，不因反覆切換累積；同尺寸切換亦更新、離開回原倍率；玩家中心／地面／空中特效及浮字保持對位、HUD尺寸不跟隨，相關回歸／Build／Console／diff後獨立Commit。
+- 完成／修改4檔：Renderer的cameraZoom沿原參數表距離取得基準倍率，再依ui-shell的battle-fullscreen乘1.3；沿原resize／cameraStage／投影與視野邏輯，沒有CSS放大Canvas或另縮角色。index Renderer1.6.188→189、上述回歸及本紀錄。新增同尺寸切換／連續進出不累積／一般還原／既有距離參數疊加／玩家中心／空中投影／HUD層級驗證。無素材變更，不需素材庫Commit。
+- 指令／結果：`node --test tests/battle-camera-distance.test.cjs tests/battle-fullscreen.test.cjs tests/battle-perspective.test.cjs tests/battle-ground-projection.test.cjs tests/battle-renderer-pause.test.cjs`40項39通過／1既有失敗，新增2項皆通過；`npm.cmd run build`528檔通過；`git diff --check`通過。唯一失敗PROJ-9為測試VM缺skyEntryPoint，唯讀攔截fs.readFileSync載入git show HEAD原Renderer重跑ground-projection仍10/11、同項同錯，不放寬測試或擴大修復舊替身。
+- 瀏覽器：完整讀browser skill並嘗試專用IAB仍不可用，CUA／IAB隔離localhost2289正式index／Worker／Pixi新角色；一般相機0.8、全螢幕1.04、比例1.3，Esc回0.8、重入1.04。HUD實際寬皆514.666687px，Pixi根層scale1，角色／地景／特效完整顯示，Console error／warning0。因工具唯讀頁面範圍無法直接存取BattleRenderer，僅在臨時HTTP回應追加隱藏output，每100ms讀正式公開診斷_app的相機scale並投影成DOM量測，未改正式index或新增產品排程；正式功能完全使用原Renderer。
+- 唯讀檢查未改：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、js/ui.js全螢幕事件、投影／場景樹／空中層／浮字換算、tools/apply_params.cjs原距離錨點、原參數CSV與相關回歸；沒有改Worker／Protocol／存檔或技能數值。預覽保留本聊天visualizations/fullscreen-camera-zoom-30.png，臨時服務／腳本／頁籤已清理，不讀真人存檔。
+- 收尾協作檢查：Claude期間在index.html加入寶石共鳴頁／腳本及其快取，自己的本次變更只有Renderer188→189，不同區段、無玩法／協議相依。依新版AI_RULES3.2取其未提交工作檔為theirs、鏡頭提交前index為base，git merge-file -p乾跑退出0，確認Renderer189與Claude共鳴腳本均保留；沒有改他方副本或納入其未提交工作。本次index修改時預檢乾淨，收尾重查才偵測對方後續修改；不同區段確認可分別保留。
+- 交付：Commit為本紀錄所在`[Codex] fix: 全螢幕鏡頭拉近百分之三十`，回覆附編號；無未完成本次需求，可審查合併，未合併推送。已知限制為上述既有測試替身錯誤、未做真人長戰／低階裝置效能壓測。期間config/Excel/Skills2.xlsx與參數捷徑有其他未提交修改，保留且不納入本提交；下一步整合後重載驗收鏡頭距離。
+
 ## BATTLE-FULLSCREEN-SWAP-20261017 — 交換全螢幕關卡列與任務列
 
 - Owner：Codex；Done，單一開發者。使用者要求全螢幕關卡列與任務列交換位置；前置40a799b1已完成。允許css/ashen-forge.css全螢幕兩列定位、index.html僅CSS快取、本紀錄；禁止JS／關卡與任務規則／Worker／存檔／素材及其他副本，不合併推送。三檔預檢乾淨、工作區乾淨。
