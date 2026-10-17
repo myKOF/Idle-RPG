@@ -8,7 +8,8 @@ var GRES_CELL = 22;                                    // 六角孔外接圓半�
 var GRES_SPACING = Math.sqrt(3) * GRES_CELL;           // 相鄰孔中心距
 var GRES_REGION_DIST = GRES_SPACING * 3.15;            // 外圍區中心到中央區中心的距離（略大於三格，區與區之間留縫）
 var GRES_LABEL_DIST = GRES_REGION_DIST + GRES_SPACING + GRES_CELL + 12;
-var GRES_VIEW = 273;                                   // 底板與孔位共用 viewBox，縮放時保持對齊。
+var GRES_VIEW = 273;                                   // 母圖在共用座標中的半邊長，不隨顯示範圍改動。
+var GRES_VIEW_BOX = '-257 -230 514 450';                 // 收去母圖外透明留白，四邊保留安全距離。
 var GRES_REGION_COLORS = [266, 214, 176, 37, 132, 355, 46]; // 各區色相（與區域順序一致）
 
 /* 方位 i（0＝正上方，順時針每 60°）的單位向量。 */
@@ -87,7 +88,7 @@ function gresSocketArt(c, region) {
 }
 
 function gresBoardHTML(state, sel) {
-  var h = '<svg viewBox="' + (-GRES_VIEW) + ' ' + (-GRES_VIEW) + ' ' + (GRES_VIEW * 2) + ' ' + (GRES_VIEW * 2) + '" class="gres-svg" role="group" aria-label="寶石共鳴盤面">';
+  var h = '<svg viewBox="' + GRES_VIEW_BOX + '" class="gres-svg" role="group" aria-label="寶石共鳴盤面">';
   h += gresMaterialDefs() + '<image class="gres-backplate" aria-hidden="true" href="images/ui/gem-resonance/hex-backplate.png" x="' + (-GRES_VIEW) + '" y="' + (-GRES_VIEW) + '" width="' + (GRES_VIEW * 2) + '" height="' + (GRES_VIEW * 2) + '"/>';
   GEM_RESONANCE_REGIONS.forEach(function (reg, r) {
     var hue = GRES_REGION_COLORS[r % GRES_REGION_COLORS.length];
@@ -189,7 +190,6 @@ function gresDetailHTML(snapshot, headerSnapshot, state, sel) {
   var s = GEM_RESONANCE_SETTINGS;
   var h = '<div class="gres-title"><b>' + esc(reg.name) + '區</b>・' + (hole === 0 ? '中心孔' : '外圈孔 ' + hole) +
     '<span class="gres-sub">需 ' + esc(GEM_NAMES[min]) + '以上｜容量 ' + cap + '</span></div>';
-  h += '<div class="gres-types">' + (reg.types ? reg.types.filter(isGemEnabled).map(function (t) { return esc(GEM_TYPES[t].name); }).join('、') : '不限寶石種類') + '</div>';
 
   h += '<div class="gres-slots">';
   for (var i = 0; i < cap; i++) {

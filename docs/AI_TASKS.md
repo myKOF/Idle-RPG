@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## GEM-RESONANCE-BOARD-FIT-20261018 — 放大共鳴盤與移除重複種類說明
+
+- Owner：Codex；Done，單一開發者。使用者要求整張共鳴盤放大接近上下框邊緣、不遮右側文字，並刪除右側重複的可鑲寶石類型清單。前置介面改造已完成；工作區與全部目標衝突預檢乾淨。
+- 允許js/ui-gem-resonance.js、css/gems.css、index.html、docs/GEM_RESONANCE.md、PATCH.md與本紀錄；禁止玩法／數值／Worker／存檔、素材、其他副本，不合併推送。
+- 方式：保留底板與孔位原座標，用SVG viewBox收去母圖外透明留白，等比填滿盤面可用空間；盤面維持獨立欄位，窄畫面依同一比例堆疊，保留安全邊距。移除右側gres-types清單，保留孔位需求／容量／庫存操作與升級花費。
+- 驗收：共鳴UI與規則回歸／Build；正式瀏覽器上下留白量測、盤面與右側無重疊、49孔命中與點擊／拖曳、十階列及頁籤位置保持不變，diff後獨立Commit。無新素材或素材庫變更。
+- 完成6檔：底板原圖與49孔座標不變，SVG viewBox改為-257 -230 514 450，收去外側留白並留安全邊距；SVG限制在盤面欄位內，窄畫面aspect-ratio同步514/450。刪除gresDetailHTML中的gres-types種類清單及其CSS，保留階級需求／容量／孔內寶石／取下與升級資訊。index僅gems CSS1.0.9→10、共鳴JS1.0.5→6；無素材、數值、命令或存檔變更。
+- 驗證：node --test tests/gem-resonance-ui.test.cjs tests/gem-resonance.test.cjs tests/init-ui-smoke.test.cjs：22/22通過；npm.cmd run build：534檔通過，git diff --check通過。可逆排版與刪除重複說明，沿用既有行為測試，未新增鏡像測試。
+- 瀏覽器：沿本聊天的獨立headless Chrome／隨機localhost來源，新角色、正式index／CSS／UI／Worker與GM測試庫存，不讀真人存檔。1920×900實際盤面492×432內，可見輪廓（母圖alpha>4）由347.94px高增至420.94px高（約21%），上／下留白6.15／4.91px，左右均有安全邊距。2560×1080、1920×1080、1366×768、390×844亦安全內含且與詳情無重疊；寬畫面49孔elementFromPoint全命中。點擊鑲入／取下／上方原生拖曳鑲入通過，右側gres-types節點0、十階工具頁籤Y維持343；Console error／warning、pageerror與資源404皆0。
+- 自我Review／交付：唯讀核對母圖可見輪廓、SVG共座標、孔位委派與既有回歸，沒有改母圖或其他副本，素材庫工作區乾淨、無需素材庫Commit。Commit為本紀錄所在[Codex] fix提交，回覆附編號；無未完成需求或已知新增風險，可供審閱合併，不合併推送。下一步重新載入寶石→共鳴；保留本聊天visualizations/gem-resonance-board-fit.png實際截圖，測試服務／瀏覽器已結束，臨時驗證腳本移除。
+
+
 ## GEM-RESONANCE-TIER-SOURCE-20261018 — 上方十階列作為共鳴鑲嵌入口
 
 - Owner：Codex；Done，單一開發者。使用者四項要求：保留上方1～10階與工具頁籤位置；左側只選符合孔位的寶石類型；由上方點擊／拖曳鑲嵌；無效階級置灰。前置視覺接入已完成，工作區乾淨，全部目標衝突預檢乾淨。
