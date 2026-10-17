@@ -3826,7 +3826,8 @@ html *::-webkit-scrollbar-corner {
 #tab-gems[data-gem-tool="convert"] [data-gem-tool-btn="convert"],
 #tab-gems[data-gem-tool="dismantle"] [data-gem-tool-btn="dismantle"],
 #tab-gems[data-gem-tool="fusion"] [data-gem-tool-btn="fusion"],
-#tab-gems[data-gem-tool="shop"] [data-gem-tool-btn="shop"] {
+#tab-gems[data-gem-tool="shop"] [data-gem-tool-btn="shop"],
+#tab-gems[data-gem-tool="resonance"] [data-gem-tool-btn="resonance"] {
   border-color: #7a6440;
   background: #2a2218;
   color: #f0cf86;
@@ -3849,7 +3850,8 @@ html *::-webkit-scrollbar-corner {
 #tab-gems[data-gem-tool="convert"] .gx-panel[data-gem-panel="convert"],
 #tab-gems[data-gem-tool="dismantle"] .gx-panel[data-gem-panel="dismantle"],
 #tab-gems[data-gem-tool="fusion"] .gx-panel[data-gem-panel="fusion"],
-#tab-gems[data-gem-tool="shop"] .gx-panel[data-gem-panel="shop"] {
+#tab-gems[data-gem-tool="shop"] .gx-panel[data-gem-panel="shop"],
+#tab-gems[data-gem-tool="resonance"] .gx-panel[data-gem-panel="resonance"] {
   display: flex;
 }
 

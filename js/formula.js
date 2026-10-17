@@ -273,6 +273,12 @@ function computeStats(equipmentOverride) {
       applyGemStat(g.type, gemStatValue(g.type, g.level));
     }
   });
+  // 寶石共鳴：孔內寶石自身能力＋孔等級帶來的相鄰加成（js/gem_resonance.js），與裝備鑲嵌同樣受鑲嵌效率放大。
+  if (typeof resonanceEntries === 'function') {
+    resonanceEntries(p.resonance).forEach(function (e) {
+      if (GEM_TYPES[e.type]) applyGemStat(e.type, gemStatValue(e.type, e.level) * e.mult);
+    });
+  }
 
   /* 天賦效果在裝備、寶石與被動技能彙總後套用；潛力不另設點數，僅提供技能分類與戰鬥衍生加成。
      《天賦V2》語意：「額外」＝於對應總值上乘算（獨立乘區、無其他來源時不憑空提供定值）；

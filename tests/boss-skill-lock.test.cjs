@@ -110,7 +110,7 @@ const configCommands = [
   'skill2.downgrade', 'skill2.delete', 'skill2.ultPick', 'skill2.ultSwitch',
   'item.equip', 'item.unequip', 'player.switchEquipSet',
   'item.upgrade', 'item.rerollAffix', 'item.enchant', 'item.removeEnchant',
-  'gem.socket', 'gem.socketFused', 'gem.unsocket', 'rune.socket', 'rune.erase',
+  'gem.socket', 'gem.socketFused', 'gem.unsocket', 'gem.resonanceSocket', 'gem.resonanceUnsocket', 'rune.socket', 'rune.erase',
   'talent.upgrade', 'talent.max', 'talent.downgrade', 'talent.delete',
   'talent.potentialUpgrade', 'talent.potentialMax', 'talent.potentialDowngrade', 'talent.potentialDelete'
 ];

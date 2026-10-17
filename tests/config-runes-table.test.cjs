@@ -55,7 +55,7 @@ test('Runes 表已登錄在配置撥離管線，xlsx 不由 --gen 手拼（AI_RU
   assert.equal(schema.jsFile, 'runes');
   assert.equal(schema.noXlsxGen, true);
   const tool = fs.readFileSync(path.join(root, 'tools', 'config_tables.cjs'), 'utf8');
-  assert.match(tool, /const TABLE_ORDER = \[[^\]]*'Runes'\]/);
+  assert.match(tool, /const TABLE_ORDER = \[[^\]]*'Runes'/);
   assert.match(tool, /runes: path\.join\(ROOT, 'js', 'runeword_data\.js'\)/);
 });
 

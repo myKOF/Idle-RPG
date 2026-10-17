@@ -84,7 +84,9 @@
    主執行緒據此決定圖鑑顯示配方與效果或問號；舊快照缺欄時一律視為都沒激活。指令數不變。 */
 /* v50（2026-10-08 BOSS 配置鎖）：UI／Worker 共用 bossFightBlocksCommand；
    戰中拒絕配置變更，沿用既有錯誤封包，指令數／參數／快照與存檔格式不變。 */
-var WORKER_PROTOCOL_VERSION = 52;
+/* v53（2026-10-17 寶石共鳴）：新增指令 gem.resonanceSocket／resonanceUnsocket／resonanceUpgrade（94 → 97）；
+   gems 面板新增 resonance＝{ holes }（G.player.resonance，存檔欄位同名；舊快照缺欄視為空）。 */
+var WORKER_PROTOCOL_VERSION = 53;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -339,7 +341,13 @@ var COMMANDS = {
   'rune.compose':          { fn: 'composeRune',      args: { runeId: 'str' },                      dirty: ['gems'] },
   'rune.composeAll':       { fn: null,               args: { runeId: 'str' },                      dirty: ['gems', 'header'] },
   'rune.dismantle':        { fn: 'dismantleRune',    args: { runeId: 'str' },                      dirty: ['gems', 'header'] },
-  'gem.shopBuy':           { fn: 'buyShopGem',       args: { index: 'int' },                      dirty: ['gems', 'header'] },
+  /* -- 寶石共鳴（js/gem_resonance.js）--
+     孔位以版面編號定址：region 0~6（6＝中央區）、hole 0~6（0＝中心）。鑲嵌 level 省略＝取庫存中達最低階的最低一階。
+     取下 index＝孔內第幾顆（中心孔可放多顆）。升級花金幣＋該孔目前鑲的寶石種類的指定階寶石。 */
+  'gem.resonanceSocket':   { fn: 'socketResonanceGem',   args: { region: 'int', hole: 'int', type: 'str', level: 'int?' }, limit: { region: { min: 0 }, hole: { min: 0 }, level: { min: 1 } }, dirty: ['gems', 'header'] },
+  'gem.resonanceUnsocket': { fn: 'unsocketResonanceGem', args: { region: 'int', hole: 'int', index: 'int' }, limit: { region: { min: 0 }, hole: { min: 0 }, index: { min: 0 } }, dirty: ['gems', 'header'] },
+  'gem.resonanceUpgrade':  { fn: 'upgradeResonanceHole',  args: { region: 'int', hole: 'int' }, limit: { region: { min: 0 }, hole: { min: 0 } }, dirty: ['gems', 'header'] },
+  'gem.shopBuy':           { fn: 'buyShopGem',      args: { index: 'int' },                      dirty: ['gems', 'header'] },
   'gem.shopBuyAll':        { fn: 'buyAllShopGems',   args: {},                                    dirty: ['gems', 'header'] },
   'gem.shopRefresh':       { fn: 'refreshGemShop',   args: {},                                    dirty: ['gems', 'header'] },
   'gem.shopUpgrade':       { fn: 'upgradeGemShop',   args: {},                                    dirty: ['gems', 'header'] },
@@ -580,6 +588,7 @@ function bossFightBlocksCommand(name) {
     'item.equip', 'item.unequip', 'player.switchEquipSet',
     'item.upgrade', 'item.rerollAffix', 'item.enchant', 'item.removeEnchant',
     'gem.socket', 'gem.socketFused', 'gem.unsocket', 'rune.socket', 'rune.erase',
+    'gem.resonanceSocket', 'gem.resonanceUnsocket',
     'talent.upgrade', 'talent.max', 'talent.downgrade', 'talent.delete',
     'talent.potentialUpgrade', 'talent.potentialMax', 'talent.potentialDowngrade', 'talent.potentialDelete'
   ].indexOf(name) !== -1;
