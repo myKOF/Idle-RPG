@@ -105,7 +105,9 @@
 }
 .gres-hole.is-filled polygon { fill: hsl(var(--h) 45% 30%); stroke: hsl(var(--h) 60% 58%); }
 .gres-hole:hover polygon { fill: hsl(var(--h) 45% 34%); }
-.gres-hole.is-sel polygon { stroke: #f0cf86; stroke-width: 3; }
+.gres-hole.is-sel polygon,
+.gres-selection-outline { stroke: #fff7cf; stroke-width: 5; }
+.gres-selection-outline { fill: none; pointer-events: none; }
 .gres-hole text { pointer-events: none; text-anchor: middle; font-size: 11px; }
 .gres-min { fill: hsl(var(--h) 60% 75% / 0.7); font-size: 14px; font-weight: 700; }
 .gres-lv { fill: #f0cf86; font-size: 9px; font-weight: 700; }

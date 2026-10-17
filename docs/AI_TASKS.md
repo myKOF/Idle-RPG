@@ -1,5 +1,10 @@
 # AI_TASKS.md
 
+## GEM-RESONANCE-SELECTION-20261018 — 完整的亮黃白選中框
+
+- Owner：Codex；Done。使用者要求選中框加粗2px、亮黃白色，並回報相鄰孔遮住部分邊框；允許js/ui-gem-resonance.js／css/gems.css／index.html及本紀錄／PATCH。全部目標預檢乾淨，不改共鳴規則、庫存、Worker、資料表、素材、其他副本或合併推送。
+- 修正：SVG最後新增獨立選中輪廓，fill:none／pointer-events:none，不攔截點擊與拖放；框線由3變5、顏色#fff7cf。保持原49孔DOM順序與操作語意；只更新共鳴JS1.0.2→3、gems CSS1.0.6→7。驗收：既有共鳴UI與規則測試17/17通過、Build534檔通過；獨立Chrome載入實際SVG／CSS，防禦外圈與中央孔的六條邊中點像素皆為#fff7cf，確認最上層輪廓、49孔與點擊命中保持正常。獨立Commit，不合併推送。
+
 ## GEM-RESONANCE-INTERACTION-20261018 — 放大共鳴盤與左側清單鑲嵌
 
 - Owner：Codex；Done，單一開發者。使用者要求盤面接近紅框大小、選孔後直接篩選左側庫存、點擊或拖曳鑲入；前置共鳴功能已完成，工作區乾淨、全部目標衝突預檢乾淨。
