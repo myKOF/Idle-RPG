@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## GEM-RESONANCE-CRYSTAL-20261018 — 接入六邊形共鳴底板與水晶切面
+
+- Owner：Codex；Done，單一開發者。前置：使用者已確認六邊形底板與水晶切面的合成預覽並要求接入，工作區乾淨、全部目標衝突預檢乾淨。
+- 範圍：js/ui-gem-resonance.js、css/gems.css、index.html、images/ui/gem-resonance/hex-backplate.png、tools/gem-resonance/export-source.cjs、docs/GEM_RESONANCE.md、PATCH.md與本紀錄；素材庫僅新增codex-authored/gem-resonance母圖、來源與匯出紀錄。禁止改共鳴數值／配置／Worker／存檔／其他副本，不合併推送。
+- 方式：沿既有SVG孔位與命令，加入裝飾底板、金屬鑲邊與水晶切面；裝飾不攔截點擊／拖放，49孔、選中頂層完整5px黃白框、鍵盤與合法／拒絕拖曳提示保留。沿現有素材匯出工具模式核對母圖與遊戲SHA256，先素材庫後遊戲提交。
+- 驗收：既有共鳴UI／規則測試、Build、素材匯出check；隔離瀏覽器實際畫面與點擊／拖曳／鍵盤、寬窄視窗、載圖及console檢查。完成後供使用者重新載入驗收，無未授權第三方素材。
+- 完成8檔：SVG加入與孔位共座標的透明底板、七區水晶切面／金屬鑲邊，49孔維持原DOM順序，最上層透明命中面與最後繪製的5px黃白選中框保留。裝飾不攔截互動；詳情依工坊容器650px斷點或原窄視窗規則下移。index僅gems CSS1.0.7→8、共鳴JS1.0.3→4；既有權威命令、共鳴資料／數值、Worker與存檔原樣保留。
+- 來源：接入本聊天imagegen生成且已核准的1254×1254 RGBA六邊形母圖，不重新作圖／改圖，沒有第三方素材。沿既有UI匯出工具模式新增export-source.cjs；素材庫相對codex-authored/gem-resonance/保存原圖、SOURCE.md與exports.json，遊戲原樣匯出，兩端SHA256皆7577129b32ef0329c3459dd91bdffdc4346c9a7848234e8ec8a335432d4e3394。
+- 驗證：node --test tests/gem-resonance-ui.test.cjs tests/gem-resonance.test.cjs tests/gem-enabled.test.cjs tests/init-ui-smoke.test.cjs：32/32通過；npm.cmd run build：534檔通過；export-source.cjs --check母圖／紀錄／遊戲雜湊一致，git diff --check通過。啟動程序繼承舊素材庫環境值，工具呼叫採讀取已修正的User環境值，不改受管設定或系統設定。
+- 實機：工具缺少Node REPL，沿本聊天已用的獨立headless Chrome與隨機localhost來源，正式index／CSS／UI／Worker、新角色與正式本機GM命令，不讀真人存檔。點擊鑲入／取下、空孔升級、原生dragTo鑲入／不符區域拒絕、Space選孔均通過；49孔中心elementFromPoint皆命中正確孔，防禦選中框六邊中點像素皆#fff7cf，原有完整框未退化。1920×900、2560×1080、1366×768、390×844無盤面／詳情重疊；本遊戲窄畫面沿既有整體縮放，不宣稱手機介面重新設計。資源404、Console error／warning、pageerror皆0，未做真人長戰或觸控拖曳測試。
+- 自我Review：檢查既有共鳴規則、事件委派、disabled寶石、初始化smoke、工坊盒模型與素材匯出模式；無新增權威資料或規則來源、沒有其他副本修改。素材庫Commit d30b9d3先建立，遊戲Commit為本紀錄所在[Codex] feat提交，回覆附編號；兩倉庫不合併不推送。無未完成需求或新增阻塞，可供Review合併。下一步重新載入Codex工作區遊戲的寶石→共鳴；效果截圖保留於本聊天visualizations/gem-resonance-integrated.png，測試服務／瀏覽器已結束，臨時驗證腳本與JSON移除。
+
+
 ## GEM-RESONANCE-SELECTION-20261018 — 完整的亮黃白選中框
 
 - Owner：Codex；Done。使用者要求選中框加粗2px、亮黃白色，並回報相鄰孔遮住部分邊框；允許js/ui-gem-resonance.js／css/gems.css／index.html及本紀錄／PATCH。全部目標預檢乾淨，不改共鳴規則、庫存、Worker、資料表、素材、其他副本或合併推送。

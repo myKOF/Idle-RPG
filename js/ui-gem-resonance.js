@@ -8,8 +8,8 @@ var GRES_CELL = 22;                                    // 六角孔外接圓半�
 var GRES_SPACING = Math.sqrt(3) * GRES_CELL;           // 相鄰孔中心距
 var GRES_REGION_DIST = GRES_SPACING * 3.15;            // 外圍區中心到中央區中心的距離（略大於三格，區與區之間留縫）
 var GRES_LABEL_DIST = GRES_REGION_DIST + GRES_SPACING + GRES_CELL + 12;
-var GRES_VIEW = 206;                                   // viewBox 為 [-GRES_VIEW, GRES_VIEW]
-var GRES_REGION_COLORS = [260, 215, 175, 35, 120, 0, 48]; // 各區色相（與區域順序一致）
+var GRES_VIEW = 273;                                   // 底板與孔位共用 viewBox，縮放時保持對齊。
+var GRES_REGION_COLORS = [266, 214, 176, 37, 132, 355, 46]; // 各區色相（與區域順序一致）
 
 /* 方位 i（0＝正上方，順時針每 60°）的單位向量。 */
 function gresDir(i) {
@@ -27,11 +27,12 @@ function gresHoleCenter(region, hole) {
   var d = gresDir(hole - 1);
   return { x: c.x + d.x * GRES_SPACING, y: c.y + d.y * GRES_SPACING };
 }
-function gresHexPoints(c) {
+function gresHexPoints(c, radius) {
+  if (radius == null) radius = GRES_CELL;
   var pts = [];
   for (var j = 0; j < 6; j++) {
     var a = j * Math.PI / 3;
-    pts.push((c.x + GRES_CELL * Math.cos(a)).toFixed(1) + ',' + (c.y + GRES_CELL * Math.sin(a)).toFixed(1));
+    pts.push((c.x + radius * Math.cos(a)).toFixed(1) + ',' + (c.y + radius * Math.sin(a)).toFixed(1));
   }
   return pts.join(' ');
 }
@@ -50,8 +51,44 @@ function gresStatText(type, value) {
 }
 
 /* ---- 盤面 ---- */
+function gresMaterialDefs() {
+  var h = '<defs><linearGradient id="gres-metal" x1="0" y1="0" x2=".65" y2="1">' +
+    '<stop stop-color="#d9d8c6"/><stop offset=".22" stop-color="#5e665e"/><stop offset=".46" stop-color="#2a302e"/>' +
+    '<stop offset=".72" stop-color="#777c69"/><stop offset="1" stop-color="#222a28"/></linearGradient>' +
+    '<linearGradient id="gres-sheen" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="white" stop-opacity=".35"/>' +
+    '<stop offset=".38" stop-color="white" stop-opacity=".03"/><stop offset=".6" stop-color="white" stop-opacity="0"/>' +
+    '<stop offset="1" stop-color="white" stop-opacity=".08"/></linearGradient>';
+  GRES_REGION_COLORS.forEach(function (hue, r) {
+    h += '<radialGradient id="gres-body-' + r + '" cx=".28" cy=".15" r=".95">' +
+      '<stop stop-color="hsl(' + hue + ' 58% 43%)"/><stop offset=".43" stop-color="hsl(' + hue + ' 52% 21%)"/>' +
+      '<stop offset=".8" stop-color="hsl(' + hue + ' 62% 12%)"/><stop offset="1" stop-color="hsl(' + hue + ' 60% 25%)"/></radialGradient>' +
+      '<linearGradient id="gres-face-' + r + '" x1=".15" y1="0" x2=".85" y2="1">' +
+      '<stop stop-color="hsl(' + hue + ' 50% 31%)"/><stop offset=".42" stop-color="hsl(' + hue + ' 50% 15%)"/>' +
+      '<stop offset=".75" stop-color="hsl(' + hue + ' 65% 10%)"/><stop offset="1" stop-color="hsl(' + hue + ' 58% 23%)"/></linearGradient>';
+  });
+  return h + '</defs>';
+}
+
+function gresSocketArt(c, region) {
+  var outer = gresHexPoints(c, 19.7).split(' '), inner = gresHexPoints(c, 15).split(' ');
+  var light = [0.15, 0.04, 0.12, 0.34, 0.44, 0.24];
+  var h = '<g class="gres-art" aria-hidden="true">' +
+    '<polygon class="gres-socket-shadow" points="' + gresHexPoints({ x: c.x, y: c.y + 1.1 }, 21.8) + '"/>' +
+    '<polygon class="gres-socket-frame" points="' + gresHexPoints(c, 21.3) + '"/>' +
+    '<polygon class="gres-socket-body" points="' + gresHexPoints(c, 20.05) + '" fill="url(#gres-body-' + region + ')"/>';
+  for (var i = 0; i < 6; i++) {
+    h += '<polygon points="' + [outer[i], outer[(i + 1) % 6], inner[(i + 1) % 6], inner[i]].join(' ') +
+      '" fill="' + ((i === 1 || i === 2) ? '#000a16' : '#dbefff') + '" opacity="' + light[i] + '"/>';
+  }
+  return h + '<polygon class="gres-face" points="' + gresHexPoints(c, 15) + '" fill="url(#gres-face-' + region + ')"/>' +
+    '<polygon points="' + [outer[4], outer[5], inner[0], inner[3]].join(' ') + '" fill="url(#gres-sheen)" opacity=".65"/>' +
+    '<path class="gres-rim-light" d="M ' + [outer[3], outer[4], outer[5], outer[0]].join(' L ') + '"/>' +
+    '<path class="gres-inner-light" d="M ' + [inner[2], inner[1], inner[0]].join(' L ') + '"/></g>';
+}
+
 function gresBoardHTML(state, sel) {
   var h = '<svg viewBox="' + (-GRES_VIEW) + ' ' + (-GRES_VIEW) + ' ' + (GRES_VIEW * 2) + ' ' + (GRES_VIEW * 2) + '" class="gres-svg" role="group" aria-label="寶石共鳴盤面">';
+  h += gresMaterialDefs() + '<image class="gres-backplate" aria-hidden="true" href="images/ui/gem-resonance/hex-backplate.png" x="' + (-GRES_VIEW) + '" y="' + (-GRES_VIEW) + '" width="' + (GRES_VIEW * 2) + '" height="' + (GRES_VIEW * 2) + '"/>';
   GEM_RESONANCE_REGIONS.forEach(function (reg, r) {
     var hue = GRES_REGION_COLORS[r % GRES_REGION_COLORS.length];
     for (var hole = 0; hole < RESONANCE_HOLE_COUNT; hole++) {
@@ -59,8 +96,8 @@ function gresBoardHTML(state, sel) {
       var slot = resonanceHoleState(state, r, hole);
       var min = resonanceHoleMinLevel(r, hole);
       var on = sel[0] === r && sel[1] === hole;
-      h += '<g class="gres-hole' + (slot.gems.length ? ' is-filled' : '') + (on ? ' is-sel' : '') + '" data-gres-hole="' + r + ':' + hole + '" role="button" tabindex="0" aria-label="' + esc(reg.name + '區' + (hole === 0 ? '中心孔' : '外圈孔 ' + hole)) + '" style="--h:' + hue + '">' +
-        '<polygon points="' + gresHexPoints(c) + '"/>';
+      h += '<g class="gres-hole' + (slot.gems.length ? ' is-filled' : '') + (on ? ' is-sel' : '') + '" data-gres-hole="' + r + ':' + hole + '" role="button" tabindex="0" aria-pressed="' + on + '" aria-label="' + esc(reg.name + '區' + (hole === 0 ? '中心孔' : '外圈孔 ' + hole)) + '" style="--h:' + hue + '">' +
+        gresSocketArt(c, r);
       if (slot.gems.length) {
         var g = slot.gems[0];
         h += '<image href="' + gemIconSrc(g.type, g.level) + '" x="' + (c.x - 14).toFixed(1) + '" y="' + (c.y - 15).toFixed(1) + '" width="28" height="28"/>';
@@ -69,7 +106,8 @@ function gresBoardHTML(state, sel) {
         h += '<text class="gres-min" x="' + c.x.toFixed(1) + '" y="' + (c.y + 5).toFixed(1) + '">' + min + '</text>';
       }
       if (slot.lv) h += '<text class="gres-lv" x="' + c.x.toFixed(1) + '" y="' + (c.y + 16).toFixed(1) + '">Lv' + slot.lv + '</text>';
-      h += '</g>';
+      // 最上層透明命中面覆蓋切面與寶石，整個孔都沿同一個互動入口。
+      h += '<polygon class="gres-hit" points="' + gresHexPoints(c) + '"/></g>';
     }
     var lc;
     if (r >= 6) lc = { x: 0, y: 0 };

@@ -90,29 +90,29 @@
 }
 
 /* ---- 寶石共鳴（js/ui-gem-resonance.js）---- */
-#tab-gems .gx-panel[data-gem-panel="resonance"] { position: relative; }
+#tab-gems .gx-panel[data-gem-panel="resonance"] { position: relative; container-type: inline-size; }
 .gres-help { position: absolute; top: 10px; right: 12px; z-index: 1; }
 .gres-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(180px, .36fr); flex: 1 1 auto; gap: 14px; grid-template-rows: minmax(0, 1fr); align-items: stretch; min-height: 0; }
 .gres-board { position: relative; width: 100%; min-width: 0; min-height: 0; }
 .gres-side { min-width: 0; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; padding: 8px 22px 0 0; overflow-wrap: anywhere; }
 .gres-svg { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+.gres-backplate, .gres-art, .gres-hole image, .gres-region { pointer-events: none; }
 .gres-hole { cursor: pointer; }
-.gres-hole polygon {
-  fill: hsl(var(--h) 38% 22%);
-  stroke: hsl(var(--h) 45% 42%);
-  stroke-width: 1.5;
-  transition: fill 0.12s, stroke 0.12s;
-}
-.gres-hole.is-filled polygon { fill: hsl(var(--h) 45% 30%); stroke: hsl(var(--h) 60% 58%); }
-.gres-hole:hover polygon { fill: hsl(var(--h) 45% 34%); }
-.gres-hole.is-sel polygon,
-.gres-selection-outline { stroke: #fff7cf; stroke-width: 5; }
-.gres-selection-outline { fill: none; pointer-events: none; }
+.gres-socket-shadow { fill: #020608; stroke: #020406; stroke-width: 2; }
+.gres-socket-frame { fill: url(#gres-metal); stroke: #080d10; stroke-width: .7; }
+.gres-socket-body { stroke: hsl(var(--h) 46% 58% / .8); stroke-width: .55; }
+.gres-face { stroke: hsl(var(--h) 65% 66% / .18); stroke-width: .4; }
+.gres-rim-light { fill: none; stroke: hsl(var(--h) 75% 84% / .75); stroke-width: .65; }
+.gres-inner-light { fill: none; stroke: hsl(var(--h) 80% 69% / .38); stroke-width: .5; }
+.gres-hole.is-filled .gres-face, .gres-hole:hover .gres-art { filter: brightness(1.15); }
+.gres-hit { fill: transparent; stroke: none; pointer-events: all; }
+.gres-selection-outline { fill: none; stroke: #fff7cf; stroke-width: 5; pointer-events: none; }
 .gres-hole text { pointer-events: none; text-anchor: middle; font-size: 11px; }
-.gres-min { fill: hsl(var(--h) 60% 75% / 0.7); font-size: 14px; font-weight: 700; }
+.gres-hole .gres-min { fill: hsl(var(--h) 65% 78%); font: 12px Georgia, 'Times New Roman', serif; paint-order: stroke; stroke: #070b13; stroke-width: .7; }
+.gres-hole.is-sel .gres-min { fill: #fff1bd; font-weight: 700; }
 .gres-lv { fill: #f0cf86; font-size: 9px; font-weight: 700; }
 .gres-hole .gres-cap { fill: #e8e2d4; font-size: 8px; }
-.gres-region { fill: hsl(var(--h) 70% 72%); font-size: 14px; font-weight: 700; }
+.gres-region { fill: hsl(var(--h) 75% 77%); font-size: 11px; font-weight: 600; paint-order: stroke; stroke: #090e11; stroke-width: 3; }
 .gres-detail { display: flex; flex-direction: column; gap: 10px; }
 .gres-title { color: #ece6d8; }
 .gres-sub { margin-left: 8px; color: #8d877a; font-size: 12px; }
@@ -143,11 +143,17 @@ button.gres-gem:hover { border-color: #7a6440; }
 #tab-gems .gres-library-gem:active { cursor: grabbing; }
 #tab-gems .gres-library-gem .gx-item-top { flex-wrap: wrap; font-size: 12px; }
 .gres-library-hint { color: #a39d90; font-size: 12px; line-height: 1.7; }
-.gres-hole.is-drop polygon { fill: hsl(var(--h) 60% 40%); stroke: #a9edbd; stroke-width: 4; }
-.gres-hole.is-reject polygon { stroke: #e0685c; stroke-width: 3; }
+.gres-hole.is-drop .gres-hit { fill: #76e6a126; stroke: #a9edbd; stroke-width: 4; }
+.gres-hole.is-reject .gres-hit { fill: #e0685c1a; stroke: #e0685c; stroke-width: 3; }
 .gres-hole:focus-visible { outline: none; }
-.gres-hole:focus-visible polygon { stroke: #fff1c4; stroke-width: 4; }
+.gres-hole:focus-visible .gres-hit { stroke: #fff1c4; stroke-width: 4; }
 @media (max-width: 1500px) {
+  .gres-layout { display: flex; flex: 0 0 auto; flex-direction: column; }
+  .gres-board { flex: 0 0 auto; aspect-ratio: 1; }
+  .gres-side { overflow: visible; padding: 0 22px 0 0; }
+}
+/* 工坊可由使用者縮窄，不能只依整個視窗寬度判斷左右排列。 */
+@container (max-width: 650px) {
   .gres-layout { display: flex; flex: 0 0 auto; flex-direction: column; }
   .gres-board { flex: 0 0 auto; aspect-ratio: 1; }
   .gres-side { overflow: visible; padding: 0 22px 0 0; }
