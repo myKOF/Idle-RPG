@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## NPC-WALL-FOUR-20261017 — 四塊岩壁與細緻石材
+
+- Owner：Codex；Done，單一開發者。使用者要求每面岩壁三塊改四塊、重繪細緻寫實岩石；依既有整面SVG與12個角度接線實作，牆長18米／厚6米、2~3面配置、阻擋與7秒存續均保留。無新Preset／layout／Protocol／存檔格式；後續交使用者整合，未合併推送。
+- 修改範圍：tools/vfx/authoring/author/rock-wall-slabs.cjs原創削角幾何、逐面光照、粗糙石紋／礦物顆粒／斷層／深裂隙／碎石，預設Root改沿既有解析器，不再寫死本機路徑；enemy-skills.cjs同步製作說明；12張images/vfx/assets/claude-authored/rock-wall/wall-slab-NNN.svg及asset-index／shipped-assets各12項SHA256與大小。每張256×200、地面中心(128,140)、200×67足跡保留，每面4塊約4.5×6米。工具確定性重建，維持穩定資產ID。
+- 描述來源：config/Excel/Skills2.xlsx的Skills2!AW241經既有excel-update-sheets.ps1原生Excel API僅改1格，兩輪正常儲存／重開及全格驗證成功；另唯讀解析前後全工作表儲存格，只有描述1格不同且樣式編號相同。config/CSV/Skills2.csv／js/skills2.js同步，config_tables --apply Skills2重建兩個字面值、語意變更0。預存的使用者冰霜新星gap編輯保留；暫存HEAD來源表同步修改同格，僅stage本輪描述，使用者原編輯保持unstaged。
+- 快取：VFXRuntime DATA_VERSION換20261017-wall-four-detail、index VFXRuntime1.0.210→211／Skills2 1.0.321→322；resolver沿既有新contentHash取新SVG。沒有Worker程式或行為／事件契約變更，Worker／Protocol不變。tests/elite-engine.test.cjs驗實際牆事件選到四塊素材，新增tests/rock-wall-art.test.cjs驗12角度四塊、輪廓不出畫布、足跡／錨點／角度、確定性與兩份索引雜湊。
+- 素材：Mote Studio可開，但目前是像素畫布，不適合保留此批向量岩壁的多角度立體幾何，改沿既有SVG自製工具；無外部素材。本機素材庫原缺這12張及既有rock-pyramid.svg；本輪新牆存回原穩定路徑，pyramid從已受Git管理的遊戲自製原檔原樣還原，SHA256與既有索引一致，來源紀錄皆保存。正式export-assets匯出成功，--check最新，來源與遊戲12張逐位元相同。素材庫先Commit fd95a57，原未追蹤.gitattributes保留不提交。
+- 指令／結果：node --test tests/rock-wall-art.test.cjs tests/elite-engine.test.cjs tests/vfx-core.test.cjs tests/vfx-editor-save.test.cjs tests/vfx-preset-usage.test.cjs：248項246通過／1跳過／1既有失敗。跳過為本機無符號連結權限；唯一失敗16b是ground-ice-spike.json非canonical，與git show HEAD原檔逐位元相同且基線canonical檢查同樣false，本輪未改任何Preset、不放寬斷言。排除該既有Editor套件的四套直接回歸全通過。npm.cmd run build 529檔通過；git diff --check通過。
+- 瀏覽器：browser skill的專用IAB無backend，改CUA／IAB隔離localhost；以正式VFXRuntime＋VFXCore＋PixiBackend及正式Preset／shipped索引播放6個代表角度，確認每面四塊、材質／透明／錨點正常，Console error／warning0。全部12角度的幾何／素材由回歸驗證。預覽在本聊天visualizations/npc-wall-four-rocks.png；未讀真人存檔、未做長時間戰場／低階裝置壓測。原Preset／layout未修改，既有防覆寫測試照跑；編輯器若仍開著，須先備份未存內容再重載以讀新貼圖，不能用舊頁覆蓋磁碟新版。
+- 衝突／唯讀：AI規範／工作流／prompts/codex.md、js/elite.js／battlefield.js阻擋與牆事件、原Preset／layout、resolver／Pixi載圖、匯出／Root／Excel工具、原技能資料與上述回歸已檢查。docs與Claude共鳴任務為文首／文末不同區段；index僅Skills2／VFXRuntime快取，與Claude新增共鳴UI／其他腳本快取不同區段且無語意相依，取對方當時未提交工作檔為theirs的git merge-file -p均退出0。其餘目標預檢乾淨，沒修改他方副本。
+- 交付：遊戲Commit為本紀錄所在[Codex] feat: 築牆改為四塊岩石並重繪寫實石材，回覆附編號；素材庫fd95a57。需求無未完成項，可供Review／合併；已知限制為上述既有canonical失敗與未做低階長戰效能驗證。原工作區各CSV／Excel／捷徑及素材庫.gitattributes變更保留，未納入本次提交。下一步整合後重新載入遊戲檢視；若VFX編輯器開著，先備份未存內容再重載。
+
+
 ## BATTLE-FULLSCREEN-ZOOM-20261017 — 全螢幕鏡頭拉近30%
 
 - Owner：Codex；Done，單一開發者。使用者要求全螢幕鏡頭拉近30%；沿既有鏡頭倍率乘1.3，一般模式維持原距離。前置鏡頭／全螢幕切換已完成，四檔衝突預檢乾淨、開始時副本乾淨。

@@ -345,9 +345,9 @@ NEW['en-wall-warn'] = () => ({
   ]
 });
 
-/* 石牆：升起後持續存在的整塊岩壁。18×6 米（authored 200×67）＝三塊約 6×6 米的粗切岩塊拼成一整面。
+/* 石牆：升起後持續存在的整塊岩壁。18×6 米（authored 200×67）＝四塊約 4.5×6 米的粗切岩塊拼成一整面。
    岩塊是立體的，牆斜著放時接縫與側面都會變，所以每 15° 畫一張整面牆（claude-authored/rock-wall/wall-slab-NNN.svg，
-   由 rock-wall-slabs.cjs 用斜俯視幾何算出，三塊在接縫處連續），做成 12 份 Preset（en-stone-wall-0～165）。
+   由 rock-wall-slabs.cjs 用斜俯視幾何算出，四塊在接縫處連續），做成 12 份 Preset（en-stone-wall-0～165）。
    模擬層（js/elite.js eliteCastWalls）把牆角度吸附到 15° 的倍數，依角度挑對應那份；牆長寬由 len／thick 決定，
    比例就是 18:6。圖本身不轉（followDirection:false、不套地面投影），因為斜俯視的形狀已經畫在圖裡。 */
 const WALL_DEGS = []; for (let d = 0; d < 180; d += 15) WALL_DEGS.push(d);
