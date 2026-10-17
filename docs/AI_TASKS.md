@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## BATTLE-FULLSCREEN-STAGE-20261017 — 全螢幕左上角關卡操作列
+
+- Owner：Codex；Done，單一開發者。使用者要求全螢幕左上顯示與一般模式相同的自動推進、後退／關卡／前進／直達最高／最高紀錄。前置原控制列與全螢幕切換已完成，三檔預檢乾淨、工作區乾淨。
+- 允許css/ashen-forge.css僅全螢幕關卡列排版、index.html僅CSS快取、本紀錄；禁止關卡規則、JS指令／Worker／Protocol／存檔、其他HUD與素材、其他副本，不合併推送。沿用原DOM與事件，不複製控制列。
+- 驗收：全螢幕左上列完整可點、關卡／自動推進與最高紀錄即時同步，與左側狀態／中央任務／右側還原互不遮擋；橫跨操作列空白可點戰場，還原後普通排版正常；實際瀏覽器與既有切換／關卡操作回歸、Build／Console／diff後獨立Commit。
+- 完成／修改3檔：css/ashen-forge.css移除全螢幕對原stage-main-controls的隱藏，stage-bar左148px／右20px，主控制列加暗底與細框、單行8px間距；保留右側還原按鈕及其他工具隱藏規則。父列pointer-events:none，主控制與工具auto，空白處不攔截戰場。index.html僅ashen CSS1.0.78→79，本紀錄同步。沒有新增DOM／指令／計時器或素材，素材庫無本次變更／不需Commit。
+- 指令／結果：`node --test tests/battle-fullscreen.test.cjs tests/fullscreen-toggle.test.cjs tests/esc-shortcut.test.cjs tests/init-ui-smoke.test.cjs`8/8；`node --test tests/stage-jump-ui.test.cjs tests/stage-rework.test.cjs`15/15，合計23/23；`npm.cmd run build`528檔通過；`git diff --check`通過。純CSS排版採既有回歸與實際畫面驗證，不新增鏡像斷言。
+- 瀏覽器：完整讀browser skill並嘗試專用IAB仍無backend，改CUA／IAB新localhost4800正式index／Worker／Pixi，新角色測試不讀真人存檔。1280×720以既有1920邏輯畫布縮放，全螢幕主列x107.2／y16.53、寬260.11／高26.2，左側狀態與中央任務互不重疊，四個輸入／按鈕中心hit-test皆true；只有一份st-next。實際關卡3→後退2→前進3→最高4，關卡與最高紀錄隨快照更新；自動推進關閉／開啟皆正確。空白點擊命中CANVAS、不是stage-bar；Esc還原後stage-bar為static、控制列flex／迷你視窗重現、自動推進保持，重入亦正常。首次對body送Esc遇工具焦點逾時，改對可聚焦原還原按鈕送同一Esc後成功，未修改遊戲快捷鍵。Console error／warning0。
+- 唯讀檢查未改：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、js/ui.js的refreshStageDisplay／setBattleFullscreen／關卡長按與正式事件、css/style.css／ashen-forge-flat.css／battle-hud.css、原index DOM及上述六份回歸。預覽保留本聊天visualizations/fullscreen-stage-controls.png；臨時服務／腳本／頁籤已清理，沒有新增外部素材。
+- 交付：Commit為本紀錄所在`[Codex] fix: 全螢幕左上顯示關卡資訊與操作`，回覆附編號；無未完成需求或已知新增阻擋，可供Review／合併，未合併推送。限制：未做所有實體螢幕／瀏覽器F11及真人長戰驗收，保留既有整頁等比縮放。下一步整合後重載、開啟戰鬥全螢幕查看左上關卡列。
+
 ## BATTLE-ORB-SPEED-20261017 — 加快雙球內光暈流動
 
 - Owner：Codex；Done，單一開發者。使用者要求血球與法力球光暈再快一些、流動更明顯；前置d164fab9恢復動畫已完成。允許css/battle-hud.css僅旋流時長／註解、index.html僅HUD CSS快取、本紀錄；禁止液位／護盾數值、位移幅度、其他裝飾、JS／Worker／存檔／素材與其他副本，不合併推送。三檔衝突預檢乾淨，工作區乾淨。
