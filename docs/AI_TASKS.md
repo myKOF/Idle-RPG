@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## BATTLE-FULLSCREEN-SWAP-20261017 — 交換全螢幕關卡列與任務列
+
+- Owner：Codex；Done，單一開發者。使用者要求全螢幕關卡列與任務列交換位置；前置40a799b1已完成。允許css/ashen-forge.css全螢幕兩列定位、index.html僅CSS快取、本紀錄；禁止JS／關卡與任務規則／Worker／存檔／素材及其他副本，不合併推送。三檔預檢乾淨、工作區乾淨。
+- 方式／驗收：原關卡控制列改置頂端正中央，任務列改左上148px原關卡列位置；塔戰替代任務的資訊列沿同一左側位置避免遮住中央關卡列。原還原按鈕保留右上，普通模式不變；確認內容不重疊、原操作／同步與Esc還原正常，既有回歸／Build／Console／diff後獨立Commit。純CSS可逆排版，無素材庫變更。
+- 完成／修改3檔：css/ashen-forge.css全螢幕stage-bar左右各20px、最低高40px以保留右側還原位置，原stage-main-controls絕對置中；任務與其塔戰替代列在原左側位置，限制寬度保留中央空間，塔戰列可折行。index.html僅ashen CSS1.0.79→80，本紀錄同步；原DOM／事件／資料與非全螢幕CSS不改。沒有素材變更，不需素材庫Commit。
+- 指令／結果：`node --test tests/battle-fullscreen.test.cjs tests/fullscreen-toggle.test.cjs tests/esc-shortcut.test.cjs tests/stage-jump-ui.test.cjs tests/tower-battlefield.test.cjs`16/16；`npm.cmd run build`528檔通過；`git diff --check`通過。可逆定位微調以既有回歸與瀏覽器畫面驗證，未新增鏡像測試或放寬斷言。
+- 瀏覽器：完整讀browser skill並嘗試IAB連線仍不可用，改CUA／IAB新localhost8771正式index／Worker／Pixi、獨立來源新角色。1280×720，全螢幕關卡列中心640.000046px、戰鬥容器中心640px，誤差小於0.001px；任務x107.73px、右緣312.92px，關卡列左緣509.95px，互不重疊；四個輸入／按鈕與任務中心hit-test全true。關閉自動推進、後退5→4正常，左側已完成任務點擊領獎後顯示下一任務；Esc還原後關卡列static、任務回正中央（誤差小於0.001px）、還原按鈕回全螢幕。Console error／warning0，無真人存檔改動。
+- 唯讀檢查未改：本會話已讀AI規範／工作流／Agent文件、css/style.css任務／塔戰定位、原JS事件與資料流、上述五份回歸；預覽保留本聊天visualizations/fullscreen-stage-quest-swapped.png。臨時腳本／服務／頁籤清理。Commit為本紀錄所在`[Codex] fix: 交換全螢幕關卡列與任務列位置`，回覆附編號；無未完成需求或已知新增阻擋，可審閱合併，未合併推送。限制：未實測塔戰長文字折行／所有實體尺寸／真人長戰；沿用既有等比縮放，塔戰模擬回歸通過。下一步整合重載並開啟戰鬥全螢幕驗收交換位置。
+
 ## BATTLE-FULLSCREEN-STAGE-20261017 — 全螢幕左上角關卡操作列
 
 - Owner：Codex；Done，單一開發者。使用者要求全螢幕左上顯示與一般模式相同的自動推進、後退／關卡／前進／直達最高／最高紀錄。前置原控制列與全螢幕切換已完成，三檔預檢乾淨、工作區乾淨。

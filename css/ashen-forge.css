@@ -108,15 +108,20 @@ body {
 #ui-shell.battle-fullscreen #stage-bar {
   position: absolute;
   top: 12px;
-  left: 148px;
+  left: 20px;
   right: 20px;
   z-index: 30;
   width: auto;
+  min-height: 40px;
   margin: 0;
   pointer-events: none;
 }
 
 #ui-shell.battle-fullscreen .stage-main-controls {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
   flex-wrap: nowrap;
   gap: 8px;
   padding: 4px 8px;
@@ -129,6 +134,18 @@ body {
 
 #ui-shell.battle-fullscreen .stage-tools {
   pointer-events: auto;
+}
+
+#ui-shell.battle-fullscreen #quest-bar,
+#ui-shell.battle-fullscreen #tower-canvas-hud {
+  top: 12px;
+  left: 148px;
+  transform: none;
+  max-width: min(520px, calc(50% - 380px));
+}
+
+#ui-shell.battle-fullscreen #tower-canvas-hud {
+  flex-wrap: wrap;
 }
 
 #ui-shell.battle-fullscreen #battle-canvas-buttons {
