@@ -137,20 +137,36 @@ function unsocketResonanceGem(region, hole, index) {
   return null;
 }
 
-/* 升級：金幣＋「孔目前鑲的寶石種類」的指定階級寶石。孔是空的就沒有指定種類，不能升級。 */
+/* 升級要扣哪一種寶石：孔裡有寶石就用它的種類；空孔則從本區允許且開放的種類中，挑庫存夠付的、存量最多的一種。
+   countOf(type, level) 取庫存數量（Worker 讀 G、UI 讀面板快照）；沒有任何種類付得起回 null。 */
+function resonanceUpgradePayType(region, slot, cost, countOf) {
+  if (slot && slot.gems && slot.gems.length) return slot.gems[0].type;
+  var best = null, bestN = 0;
+  Object.keys(GEM_TYPES).forEach(function (t) {
+    if (!isGemEnabled(t) || !resonanceTypeAllowed(region, t)) return;
+    var n = countOf(t, cost.gemLv);
+    if (n >= cost.gemCount && n > bestN) { best = t; bestN = n; }
+  });
+  return best;
+}
+
+/* 升級：金幣＋指定階級的寶石（種類見 resonanceUpgradePayType）。孔不必鑲寶石也能升級。 */
 function upgradeResonanceHole(region, hole) {
   if (!resonanceValidHole(region, hole)) return '無效的共鳴孔位';
-  var slot = resonanceEnsure().holes[resonanceHoleKey(region, hole)];
-  if (!slot || !slot.gems || !slot.gems.length) return '請先在此孔鑲入寶石';
-  var cost = resonanceUpgradeCost(slot.lv || 0);
+  var st = resonanceEnsure();
+  var key = resonanceHoleKey(region, hole);
+  var slot = st.holes[key];
+  var cost = resonanceUpgradeCost((slot && slot.lv) || 0);
   if (!cost) return '此孔已達等級上限';
-  var type = slot.gems[0].type;
   if (G.player.gold < cost.gold) return '金幣不足（需要 ' + fmt(cost.gold) + '）';
+  var type = resonanceUpgradePayType(region, slot, cost, gemCount);
+  if (!type) return '需要 ' + cost.gemCount + ' 顆' + GEM_NAMES[cost.gemLv] + '寶石（本區可用種類），庫存不足';
   if (gemCount(type, cost.gemLv) < cost.gemCount) {
     return '「' + GEM_NAMES[cost.gemLv] + GEM_TYPES[type].name + '」不足 ' + cost.gemCount + ' 顆';
   }
   G.player.gold -= cost.gold;
   addGem(type, cost.gemLv, -cost.gemCount);
+  if (!slot) slot = st.holes[key] = { gems: [], lv: 0 };
   slot.lv = (slot.lv || 0) + 1;
   resonanceTouched();
   return null;

@@ -126,10 +126,17 @@ test('鑲嵌：種類限制、最低階、容量、庫存扣除與取下退回',
   assert.match(c.unsocketResonanceGem(magic, 0, 5), /沒有寶石/);
 });
 
-test('升級：需先鑲寶石；扣金幣與同種寶石；孔等級上限；取下寶石不掉孔等級', () => {
+test('升級：空孔也能升級（扣本區任一種寶石）；扣金幣與同種寶石；孔等級上限；取下寶石不掉孔等級', () => {
   const c = game({ sapphire: { 1: 10, 2: 10, 3: 10, 4: 10, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0 } });
   const magic = c.GEM_RESONANCE_REGIONS.findIndex((r) => r.id === 'magic');
-  assert.match(c.upgradeResonanceHole(magic, 1), /先在此孔鑲入/);
+  const c0 = c.GEM_RESONANCE_UPGRADES[0];
+  assert.equal(c.upgradeResonanceHole(magic, 2), null);                         // 空孔直接升級
+  assert.equal(c.G.player.resonance.holes[magic + ':2'].lv, 1);
+  assert.equal(c.gemCount('sapphire', c0.gemLv), 10 - c0.gemCount);             // 本區唯一有庫存的種類被扣
+  c.addGem('sapphire', c0.gemLv, c0.gemCount);
+  assert.match(c.upgradeResonanceHole(c.GEM_RESONANCE_REGIONS.findIndex((r) => r.id === 'phys'), 1), /庫存不足/);
+  assert.equal(c.upgradeResonanceHole(6, 3), null);                              // 中央區不限種類
+  c.addGem('sapphire', c0.gemLv, c0.gemCount);
   c.socketResonanceGem(magic, 1, 'sapphire', 4);
   const cost = c.GEM_RESONANCE_UPGRADES[0];
   const gold = c.G.player.gold;
