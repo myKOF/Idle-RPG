@@ -10,19 +10,19 @@
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-importScripts('protocol.js?v=52', '../game-clock.js?v=1.0.1', 'shim.js?v=13');
+importScripts('protocol.js?v=53', '../game-clock.js?v=1.0.1', 'shim.js?v=13');
 // 離線結算等分批工作亦共用暫停時鐘；訊息與loop仍能回應存檔及PING。
 if (typeof GameClock !== 'undefined') {
   globalThis.setTimeout = GameClock.setTimeout;
   globalThis.clearTimeout = GameClock.clearTimeout;
 }
 importScripts(
-  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261016-npc-retaliate-refill', '../runeword_data.js?v=20261013-rune-all-elem-color', '../gem_resonance_data.js?v=20261017-gem-resonance','../status.js?v=20261014-state-status', '../formula.js?v=20261016-npc-retaliate-refill', '../battlefield.js?v=20261016-npc-retaliate-refill', '../stats.js?v=20261003-rename-weineng',
+  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261016-npc-retaliate-refill', '../runeword_data.js?v=20261013-rune-all-elem-color', '../gem_resonance_data.js?v=20261017-gem-resonance','../status.js?v=20261014-state-status', '../formula.js?v=20261017-gem-resonance-wall-merge', '../battlefield.js?v=20261016-npc-retaliate-refill', '../stats.js?v=20261003-rename-weineng',
   '../item.js?v=20261015-gem-enabled', '../gem_resonance.js?v=20261017-gem-resonance','../runeword.js?v=20261014-develop-integration',
-  '../skills.js?v=20261015-boss-player-skill', '../skills2.js?v=20261016-wall-slab', '../elite_data.js?v=20261016-wall-rock', '../talents.js?v=20261015-boss-player-skill',
-  '../player.js?v=20261015-boss-player-skill', '../special_rules.js',
+  '../skills.js?v=20261015-boss-player-skill', '../skills2.js?v=20261017-gem-resonance-wall-merge', '../elite_data.js?v=20261016-wall-rock', '../talents.js?v=20261015-boss-player-skill',
+  '../player.js?v=20261017-gem-resonance-wall-merge', '../special_rules.js',
   '../combat.js?v=20261016-npc-retaliate-refill', '../elite.js?v=20261016-wall-slab', '../elite_boss.js?v=20261015-boss-player-skill', '../elite_boss_recipes.js?v=20261015-boss-player-skill', '../legendary.js?v=20261012-indomitable-guard', '../potential.js?v=20261005-cc-decay-count', '../tower.js?v=20261016-npc-vision',
-  '../factory.js?v=20261015-gem-enabled', '../newforge.js', '../forge.js?v=20261015-gem-enabled', '../save.js?v=20261015-boss-player-skill',
+  '../factory.js?v=20261015-gem-enabled', '../newforge.js', '../forge.js?v=20261015-gem-enabled', '../save.js?v=20261017-gem-resonance-wall-merge',
   '../tasks.js?v=20261007-runes4'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。

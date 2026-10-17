@@ -15,6 +15,8 @@ function load() {
   const c = {S, Math, Number, isFinite, PIXI: fakePixi, BATTLE_CAMERA_DISTANCE_PERCENT: DEFAULT,
     playerPos: () => ({x: 30, y: 80}), currentResolution: () => 2, layoutScene() {},
     perspectiveTopScale: () => .82, PERSPECTIVE_MESH_VERTS: 8};
+  c.fullscreen = false;
+  c.document = {getElementById: id => id === 'ui-shell' ? {classList:{contains: name => name === 'battle-fullscreen' && c.fullscreen}} : null};
   vm.createContext(c);
   for (const name of ['cameraZoom', 'setCameraViewport', 'boardMetrics', 'resize', 'perspectiveLayout',
     'perspScreenPoint', 'worldToScreenPoint', 'airScreenPose', 'syncPerspective'])
@@ -57,6 +59,37 @@ test('CAMERA 重繪維持實際畫布尺寸，不逐幀重建；改距離會重�
   for(const invalid of [0,-100,NaN,Infinity]) {
     c.BATTLE_CAMERA_DISTANCE_PERCENT=invalid; near(c.cameraZoom(),.8);
   }
+});
+
+test('CAMERA 全螢幕拉近30%，同尺寸切換亦刷新、退出還原且重入不累積', () => {
+  const c=load(), S=c.S, calls=[];
+  S.host={clientWidth:800,clientHeight:600};
+  S.app.renderer={resize:(w,h)=>calls.push([w,h])};
+  c.resize();const normal=S.cameraScale,normalWidth=S.W;
+  for(let i=0;i<3;i++) {
+    c.fullscreen=true;c.resize();
+    near(S.cameraScale,normal*1.3);near(S.W,normalWidth/1.3);
+    near(S.cameraStage.scale.x,1.04);near(S.cameraStage.scale.y,1.04);
+    const count=calls.length;c.resize();assert.equal(calls.length,count,'相同倍率不得逐幀重建');
+    c.fullscreen=false;c.resize();near(S.cameraScale,normal);near(S.W,normalWidth);
+  }
+  assert.equal(calls.length,7);
+  c.BATTLE_CAMERA_DISTANCE_PERCENT=150;c.fullscreen=true;near(c.cameraZoom(),(100/150)*1.3);
+  c.document.getElementById=()=>null;near(c.cameraZoom(),100/150);
+});
+
+test('CAMERA 全螢幕人物中心不移動，透視落點與空中層共用拉近倍率，HUD不縮放', () => {
+  const c=load(), S=c.S;c.fullscreen=true;c.setCameraViewport(1920,1080);
+  S.layers.world.x=S.W/2-30;S.layers.world.y=S.H/2-80;
+  for(const top of [1,.82]) {
+    S.persp={layout:c.perspectiveLayout(S.W,S.H,top)};
+    const centre=c.worldToScreenPoint(30,80);near(centre.x,960);near(centre.y,540);
+    const point=c.worldToScreenPoint(130,180),air=c.airScreenPose(130,180);
+    near(point.x,air.x*S.cameraScale);near(point.y,air.y*S.cameraScale);
+  }
+  for(const key of ['decorAmbient','arenaAmbient','airBack','airPlayer','airFx','enemyAir'])assert.equal(S.layers[key].parent,S.cameraStage,key);
+  for(const key of ['float','playerHud','overlay'])assert.equal(S.layers[key].parent,S.app.stage,key);
+  near(S.app.stage.scale.x,1);near(S.app.stage.scale.y,1);
 });
 
 test('CAMERA BOSS祭壇名目尺寸不膨脹，登場標題仍在實際畫布中央', () => {

@@ -10490,3 +10490,64 @@ Worker 存活且頁面正常完成載入。
 - 內容：寶石分頁新增「共鳴」工具（7 區 × 7 孔，SVG 盤面）；新配置表 Gem_resonance（xlsx → CSV → js/gem_resonance_data.js）；`computeStats` 併入共鳴能力；協議 v53 新增 3 條指令（94 → 97）、gems 面板新增 `resonance`；存檔新增 `player.resonance`（mergeDefaults 補預設，不需 Migration）。
 - 新增檔案：js/gem_resonance_data.js、js/gem_resonance.js、js/ui-gem-resonance.js、config/Excel/Gem_resonance.xlsx、config/CSV/Gem_resonance.csv、tests/gem-resonance.test.cjs、docs/GEM_RESONANCE.md。
 - 驗證：tests/gem-resonance.test.cjs 12/12；本機測試服（8125）實測鑲嵌、升級、總加成顯示，Worker 指令全程生效。
+
+## WORKTREE-PATH-RENAME-20261017 — MyGames 改為 MyGame 與 Git 工作區修復
+
+- Owner：Codex；In Progress。使用者授權將 D:\MyGames 改為 D:\MyGame，修復 Claude／Codex／Antigravity／develop／production 路徑。前置：已備份 Git metadata、各工作區 HEAD／branch／index／status 與全部未提交檔案 SHA256；Windows 仍拒絕重新命名，須讓占用程式正常結束後執行。
+- 允許：目錄重新命名、Git worktree repair、本機素材庫／環境變數／Fork 與工作區路徑設定、必要捷徑、prompts/codex.md 的現行路徑及本紀錄。禁止遊戲程式／數值／Excel內容／素材內容、切換分支、合併、推送或提交既有13個未提交檔案；無素材庫內容變更，不需素材庫Commit。
+- 執行：單一維護流程，先保留外部備份，再搬移及修復共用 develop/.git 與四個 linked worktree；production 保持 main。驗收逐一比對 HEAD、分支、refs、index SHA256、status 與未提交檔案雜湊，所有 Git 路徑指向新目錄；不執行與路徑無關的遊戲 Build。後續接手者為使用者，以備份目錄下 RESULT.txt／result.json 檢查實際執行結果。
+- 本輪狀態：已停止可自動重建的 TGitCache 後重試仍被拒絕，未強制關閉 Fork／Codex、未改名或部分修復 Git metadata。離線流程將等占用程式關閉後執行並保留完整日誌；搬移未完成前不得宣稱 Done。
+
+## NPC-WALL-FOUR-20261017 — 四塊岩壁與細緻石材
+
+- Owner：Codex；Done，單一開發者。使用者要求每面岩壁三塊改四塊、重繪細緻寫實岩石；依既有整面SVG與12個角度接線實作，牆長18米／厚6米、2~3面配置、阻擋與7秒存續均保留。無新Preset／layout／Protocol／存檔格式；後續交使用者整合，未合併推送。
+- 修改範圍：tools/vfx/authoring/author/rock-wall-slabs.cjs原創削角幾何、逐面光照、粗糙石紋／礦物顆粒／斷層／深裂隙／碎石，預設Root改沿既有解析器，不再寫死本機路徑；enemy-skills.cjs同步製作說明；12張images/vfx/assets/claude-authored/rock-wall/wall-slab-NNN.svg及asset-index／shipped-assets各12項SHA256與大小。每張256×200、地面中心(128,140)、200×67足跡保留，每面4塊約4.5×6米。工具確定性重建，維持穩定資產ID。
+- 描述來源：config/Excel/Skills2.xlsx的Skills2!AW241經既有excel-update-sheets.ps1原生Excel API僅改1格，兩輪正常儲存／重開及全格驗證成功；另唯讀解析前後全工作表儲存格，只有描述1格不同且樣式編號相同。config/CSV/Skills2.csv／js/skills2.js同步，config_tables --apply Skills2重建兩個字面值、語意變更0。預存的使用者冰霜新星gap編輯保留；暫存HEAD來源表同步修改同格，僅stage本輪描述，使用者原編輯保持unstaged。
+- 快取：VFXRuntime DATA_VERSION換20261017-wall-four-detail、index VFXRuntime1.0.210→211／Skills2 1.0.321→322；resolver沿既有新contentHash取新SVG。沒有Worker程式或行為／事件契約變更，Worker／Protocol不變。tests/elite-engine.test.cjs驗實際牆事件選到四塊素材，新增tests/rock-wall-art.test.cjs驗12角度四塊、輪廓不出畫布、足跡／錨點／角度、確定性與兩份索引雜湊。
+- 素材：Mote Studio可開，但目前是像素畫布，不適合保留此批向量岩壁的多角度立體幾何，改沿既有SVG自製工具；無外部素材。本機素材庫原缺這12張及既有rock-pyramid.svg；本輪新牆存回原穩定路徑，pyramid從已受Git管理的遊戲自製原檔原樣還原，SHA256與既有索引一致，來源紀錄皆保存。正式export-assets匯出成功，--check最新，來源與遊戲12張逐位元相同。素材庫先Commit fd95a57，原未追蹤.gitattributes保留不提交。
+- 指令／結果：node --test tests/rock-wall-art.test.cjs tests/elite-engine.test.cjs tests/vfx-core.test.cjs tests/vfx-editor-save.test.cjs tests/vfx-preset-usage.test.cjs：248項246通過／1跳過／1既有失敗。跳過為本機無符號連結權限；唯一失敗16b是ground-ice-spike.json非canonical，與git show HEAD原檔逐位元相同且基線canonical檢查同樣false，本輪未改任何Preset、不放寬斷言。排除該既有Editor套件的四套直接回歸全通過。npm.cmd run build 529檔通過；git diff --check通過。
+- 瀏覽器：browser skill的專用IAB無backend，改CUA／IAB隔離localhost；以正式VFXRuntime＋VFXCore＋PixiBackend及正式Preset／shipped索引播放6個代表角度，確認每面四塊、材質／透明／錨點正常，Console error／warning0。全部12角度的幾何／素材由回歸驗證。預覽在本聊天visualizations/npc-wall-four-rocks.png；未讀真人存檔、未做長時間戰場／低階裝置壓測。原Preset／layout未修改，既有防覆寫測試照跑；編輯器若仍開著，須先備份未存內容再重載以讀新貼圖，不能用舊頁覆蓋磁碟新版。
+- 衝突／唯讀：AI規範／工作流／prompts/codex.md、js/elite.js／battlefield.js阻擋與牆事件、原Preset／layout、resolver／Pixi載圖、匯出／Root／Excel工具、原技能資料與上述回歸已檢查。docs與Claude共鳴任務為文首／文末不同區段；index僅Skills2／VFXRuntime快取，與Claude新增共鳴UI／其他腳本快取不同區段且無語意相依，取對方當時未提交工作檔為theirs的git merge-file -p均退出0。其餘目標預檢乾淨，沒修改他方副本。
+- 交付：遊戲Commit為本紀錄所在[Codex] feat: 築牆改為四塊岩石並重繪寫實石材，回覆附編號；素材庫fd95a57。需求無未完成項，可供Review／合併；已知限制為上述既有canonical失敗與未做低階長戰效能驗證。原工作區各CSV／Excel／捷徑及素材庫.gitattributes變更保留，未納入本次提交。下一步整合後重新載入遊戲檢視；若VFX編輯器開著，先備份未存內容再重載。
+
+## BATTLE-FULLSCREEN-ZOOM-20261017 — 全螢幕鏡頭拉近30%
+
+- Owner：Codex；Done，單一開發者。使用者要求全螢幕鏡頭拉近30%；沿既有鏡頭倍率乘1.3，一般模式維持原距離。前置鏡頭／全螢幕切換已完成，四檔衝突預檢乾淨、開始時副本乾淨。
+- 允許js/battle-renderer.js僅全螢幕鏡頭倍率、tests/battle-camera-distance.test.cjs、index.html僅Renderer快取、本紀錄；禁止全域鏡頭參數表、世界座標／碰撞／傷害／Worker／存檔、HUD及素材或其他副本，不合併推送。沿既有resize重算與cameraStage共用所有場景層。
+- 驗收：全螢幕倍率恰為一般1.3倍，不因反覆切換累積；同尺寸切換亦更新、離開回原倍率；玩家中心／地面／空中特效及浮字保持對位、HUD尺寸不跟隨，相關回歸／Build／Console／diff後獨立Commit。
+- 完成／修改4檔：Renderer的cameraZoom沿原參數表距離取得基準倍率，再依ui-shell的battle-fullscreen乘1.3；沿原resize／cameraStage／投影與視野邏輯，沒有CSS放大Canvas或另縮角色。index Renderer1.6.188→189、上述回歸及本紀錄。新增同尺寸切換／連續進出不累積／一般還原／既有距離參數疊加／玩家中心／空中投影／HUD層級驗證。無素材變更，不需素材庫Commit。
+- 指令／結果：`node --test tests/battle-camera-distance.test.cjs tests/battle-fullscreen.test.cjs tests/battle-perspective.test.cjs tests/battle-ground-projection.test.cjs tests/battle-renderer-pause.test.cjs`40項39通過／1既有失敗，新增2項皆通過；`npm.cmd run build`528檔通過；`git diff --check`通過。唯一失敗PROJ-9為測試VM缺skyEntryPoint，唯讀攔截fs.readFileSync載入git show HEAD原Renderer重跑ground-projection仍10/11、同項同錯，不放寬測試或擴大修復舊替身。
+- 瀏覽器：完整讀browser skill並嘗試專用IAB仍不可用，CUA／IAB隔離localhost2289正式index／Worker／Pixi新角色；一般相機0.8、全螢幕1.04、比例1.3，Esc回0.8、重入1.04。HUD實際寬皆514.666687px，Pixi根層scale1，角色／地景／特效完整顯示，Console error／warning0。因工具唯讀頁面範圍無法直接存取BattleRenderer，僅在臨時HTTP回應追加隱藏output，每100ms讀正式公開診斷_app的相機scale並投影成DOM量測，未改正式index或新增產品排程；正式功能完全使用原Renderer。
+- 唯讀檢查未改：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、js/ui.js全螢幕事件、投影／場景樹／空中層／浮字換算、tools/apply_params.cjs原距離錨點、原參數CSV與相關回歸；沒有改Worker／Protocol／存檔或技能數值。預覽保留本聊天visualizations/fullscreen-camera-zoom-30.png，臨時服務／腳本／頁籤已清理，不讀真人存檔。
+- 收尾協作檢查：Claude期間在index.html加入寶石共鳴頁／腳本及其快取，自己的本次變更只有Renderer188→189，不同區段、無玩法／協議相依。依新版AI_RULES3.2取其未提交工作檔為theirs、鏡頭提交前index為base，git merge-file -p乾跑退出0，確認Renderer189與Claude共鳴腳本均保留；沒有改他方副本或納入其未提交工作。本次index修改時預檢乾淨，收尾重查才偵測對方後續修改；不同區段確認可分別保留。
+- 交付：Commit為本紀錄所在`[Codex] fix: 全螢幕鏡頭拉近百分之三十`，回覆附編號；無未完成本次需求，可審查合併，未合併推送。已知限制為上述既有測試替身錯誤、未做真人長戰／低階裝置效能壓測。期間config/Excel/Skills2.xlsx與參數捷徑有其他未提交修改，保留且不納入本提交；下一步整合後重載驗收鏡頭距離。
+
+## BATTLE-FULLSCREEN-SWAP-20261017 — 交換全螢幕關卡列與任務列
+
+- Owner：Codex；Done，單一開發者。使用者要求全螢幕關卡列與任務列交換位置；前置40a799b1已完成。允許css/ashen-forge.css全螢幕兩列定位、index.html僅CSS快取、本紀錄；禁止JS／關卡與任務規則／Worker／存檔／素材及其他副本，不合併推送。三檔預檢乾淨、工作區乾淨。
+- 方式／驗收：原關卡控制列改置頂端正中央，任務列改左上148px原關卡列位置；塔戰替代任務的資訊列沿同一左側位置避免遮住中央關卡列。原還原按鈕保留右上，普通模式不變；確認內容不重疊、原操作／同步與Esc還原正常，既有回歸／Build／Console／diff後獨立Commit。純CSS可逆排版，無素材庫變更。
+- 完成／修改3檔：css/ashen-forge.css全螢幕stage-bar左右各20px、最低高40px以保留右側還原位置，原stage-main-controls絕對置中；任務與其塔戰替代列在原左側位置，限制寬度保留中央空間，塔戰列可折行。index.html僅ashen CSS1.0.79→80，本紀錄同步；原DOM／事件／資料與非全螢幕CSS不改。沒有素材變更，不需素材庫Commit。
+- 指令／結果：`node --test tests/battle-fullscreen.test.cjs tests/fullscreen-toggle.test.cjs tests/esc-shortcut.test.cjs tests/stage-jump-ui.test.cjs tests/tower-battlefield.test.cjs`16/16；`npm.cmd run build`528檔通過；`git diff --check`通過。可逆定位微調以既有回歸與瀏覽器畫面驗證，未新增鏡像測試或放寬斷言。
+- 瀏覽器：完整讀browser skill並嘗試IAB連線仍不可用，改CUA／IAB新localhost8771正式index／Worker／Pixi、獨立來源新角色。1280×720，全螢幕關卡列中心640.000046px、戰鬥容器中心640px，誤差小於0.001px；任務x107.73px、右緣312.92px，關卡列左緣509.95px，互不重疊；四個輸入／按鈕與任務中心hit-test全true。關閉自動推進、後退5→4正常，左側已完成任務點擊領獎後顯示下一任務；Esc還原後關卡列static、任務回正中央（誤差小於0.001px）、還原按鈕回全螢幕。Console error／warning0，無真人存檔改動。
+- 唯讀檢查未改：本會話已讀AI規範／工作流／Agent文件、css/style.css任務／塔戰定位、原JS事件與資料流、上述五份回歸；預覽保留本聊天visualizations/fullscreen-stage-quest-swapped.png。臨時腳本／服務／頁籤清理。Commit為本紀錄所在`[Codex] fix: 交換全螢幕關卡列與任務列位置`，回覆附編號；無未完成需求或已知新增阻擋，可審閱合併，未合併推送。限制：未實測塔戰長文字折行／所有實體尺寸／真人長戰；沿用既有等比縮放，塔戰模擬回歸通過。下一步整合重載並開啟戰鬥全螢幕驗收交換位置。
+
+## BATTLE-FULLSCREEN-STAGE-20261017 — 全螢幕左上角關卡操作列
+
+- Owner：Codex；Done，單一開發者。使用者要求全螢幕左上顯示與一般模式相同的自動推進、後退／關卡／前進／直達最高／最高紀錄。前置原控制列與全螢幕切換已完成，三檔預檢乾淨、工作區乾淨。
+- 允許css/ashen-forge.css僅全螢幕關卡列排版、index.html僅CSS快取、本紀錄；禁止關卡規則、JS指令／Worker／Protocol／存檔、其他HUD與素材、其他副本，不合併推送。沿用原DOM與事件，不複製控制列。
+- 驗收：全螢幕左上列完整可點、關卡／自動推進與最高紀錄即時同步，與左側狀態／中央任務／右側還原互不遮擋；橫跨操作列空白可點戰場，還原後普通排版正常；實際瀏覽器與既有切換／關卡操作回歸、Build／Console／diff後獨立Commit。
+- 完成／修改3檔：css/ashen-forge.css移除全螢幕對原stage-main-controls的隱藏，stage-bar左148px／右20px，主控制列加暗底與細框、單行8px間距；保留右側還原按鈕及其他工具隱藏規則。父列pointer-events:none，主控制與工具auto，空白處不攔截戰場。index.html僅ashen CSS1.0.78→79，本紀錄同步。沒有新增DOM／指令／計時器或素材，素材庫無本次變更／不需Commit。
+- 指令／結果：`node --test tests/battle-fullscreen.test.cjs tests/fullscreen-toggle.test.cjs tests/esc-shortcut.test.cjs tests/init-ui-smoke.test.cjs`8/8；`node --test tests/stage-jump-ui.test.cjs tests/stage-rework.test.cjs`15/15，合計23/23；`npm.cmd run build`528檔通過；`git diff --check`通過。純CSS排版採既有回歸與實際畫面驗證，不新增鏡像斷言。
+- 瀏覽器：完整讀browser skill並嘗試專用IAB仍無backend，改CUA／IAB新localhost4800正式index／Worker／Pixi，新角色測試不讀真人存檔。1280×720以既有1920邏輯畫布縮放，全螢幕主列x107.2／y16.53、寬260.11／高26.2，左側狀態與中央任務互不重疊，四個輸入／按鈕中心hit-test皆true；只有一份st-next。實際關卡3→後退2→前進3→最高4，關卡與最高紀錄隨快照更新；自動推進關閉／開啟皆正確。空白點擊命中CANVAS、不是stage-bar；Esc還原後stage-bar為static、控制列flex／迷你視窗重現、自動推進保持，重入亦正常。首次對body送Esc遇工具焦點逾時，改對可聚焦原還原按鈕送同一Esc後成功，未修改遊戲快捷鍵。Console error／warning0。
+- 唯讀檢查未改：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、js/ui.js的refreshStageDisplay／setBattleFullscreen／關卡長按與正式事件、css/style.css／ashen-forge-flat.css／battle-hud.css、原index DOM及上述六份回歸。預覽保留本聊天visualizations/fullscreen-stage-controls.png；臨時服務／腳本／頁籤已清理，沒有新增外部素材。
+- 交付：Commit為本紀錄所在`[Codex] fix: 全螢幕左上顯示關卡資訊與操作`，回覆附編號；無未完成需求或已知新增阻擋，可供Review／合併，未合併推送。限制：未做所有實體螢幕／瀏覽器F11及真人長戰驗收，保留既有整頁等比縮放。下一步整合後重載、開啟戰鬥全螢幕查看左上關卡列。
+
+## MERGE-CODEX-20261017-840bfebc ? pending develop merge
+
+- Owner?Codex?In Progress???????? bb90aecb + 840bfebc ?????? index.html ????????????????????????????????? Git metadata?????????????? controller staging?merge commit?
+- CSS?????????????? incoming ???????????????????? 1.0.81?JS ???????????????????????????build ? diff?
+- ??????????? js/bridge.js ?????Worker ????????? incoming Skills2????? 20261017-gem-resonance-wall-merge??? bridge 1.0.290?Protocol ??53????????
+- Worker import ?????js/worker/sim.worker.js ? Protocol53?formula?player?save?skills2 ?????????????????????????????????
+- Done????`node --test tests/gem-resonance.test.cjs tests/battle-camera-distance.test.cjs tests/battle-fullscreen.test.cjs tests/fullscreen-toggle.test.cjs tests/esc-shortcut.test.cjs tests/stage-jump-ui.test.cjs tests/tower-battlefield.test.cjs tests/elite-engine.test.cjs tests/rock-wall-art.test.cjs` 67/67?`node --test tests/gem-resonance.test.cjs tests/worker*.test.cjs` ??41/41?`npm.cmd run build` 533??????Worker?????? `node --check js/worker/sim.worker.js` ???`git diff --check` ??????????????
+- ???`node tools/vfx/export-assets.cjs --check` ??????????????? `node tools/vfx/export-assets.cjs` ??check???353 Preset?185???????? images/vfx/assets/.vfx-export-root.json??????????????????????asset_files??Excel?CSV???JS???????????Excel????????
+- ??????? index.html?js/bridge.js?js/worker/sim.worker.js?images/vfx/assets/.vfx-export-root.json?????????staged??????????????index?CSS???Worker import?HEAD?MERGE_HEAD????????????index unmerged entries??controller???????????Commit???controller??merge????????????????????????canonical????????????????worktree?ownership??????trust?

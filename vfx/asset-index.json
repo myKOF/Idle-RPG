@@ -519,8 +519,8 @@
       "package": "claude-authored",
       "relativePath": "claude-authored/rock-wall/wall-slab-000.svg",
       "format": "svg",
-      "fileSize": 5948,
-      "contentHash": "sha256:c0a6b0182c77ed5bd495aa9c55551a888fbc26035a960c736146bdf0a57e59e0",
+      "fileSize": 155100,
+      "contentHash": "sha256:60fdca464b88b5b20a31e529e21caa87914a99c69ff10e038b3b5c5ffe2b1ac2",
       "facts": {
         "dimensions": {
           "width": 256,
@@ -538,8 +538,8 @@
       "package": "claude-authored",
       "relativePath": "claude-authored/rock-wall/wall-slab-015.svg",
       "format": "svg",
-      "fileSize": 7326,
-      "contentHash": "sha256:b529f65a3dd4c314193c44734eb56e5f87f603a6536fa7ea97a9c1513f02a991",
+      "fileSize": 193241,
+      "contentHash": "sha256:a2c79d841938d6dfa22a0e3ddd206bb3c666e5083c3bb575f7ddeaef1f7904e1",
       "facts": {
         "dimensions": {
           "width": 256,
@@ -557,8 +557,8 @@
       "package": "claude-authored",
       "relativePath": "claude-authored/rock-wall/wall-slab-030.svg",
       "format": "svg",
-      "fileSize": 7310,
-      "contentHash": "sha256:cd251bf547cb9ba06b044e1302a584ca6a4d402bc711841afae2c044ab63cd84",
+      "fileSize": 193290,
+      "contentHash": "sha256:827b9c029af020d0e673af0e4fca99c6ce528f643f5ca1efd9c9343d5b241fb8",
       "facts": {
         "dimensions": {
           "width": 256,
@@ -576,8 +576,8 @@
       "package": "claude-authored",
       "relativePath": "claude-authored/rock-wall/wall-slab-045.svg",
       "format": "svg",
-      "fileSize": 7310,
-      "contentHash": "sha256:d659dc7eab378fe109edb19a84c272feeefe61d8a23a38f12b40c565affb2f16",
+      "fileSize": 193566,
+      "contentHash": "sha256:67f71a362706ff123fae29d713a81f58df778ee3fc19a41a22941918891fc7f3",
       "facts": {
         "dimensions": {
           "width": 256,
@@ -595,8 +595,8 @@
       "package": "claude-authored",
       "relativePath": "claude-authored/rock-wall/wall-slab-060.svg",
       "format": "svg",
-      "fileSize": 7328,
-      "contentHash": "sha256:63e3d9bd748e1e6d0e0b4f93c35f42804145fac1613e1fae4e2e6fa7d8e6e4d0",
+      "fileSize": 193615,
+      "contentHash": "sha256:5072313ec0b2cfc682a40eba4e350930317332e476f4095a2505d7c1aa7e53a3",
       "facts": {
         "dimensions": {
           "width": 256,
@@ -614,8 +614,8 @@
       "package": "claude-authored",
       "relativePath": "claude-authored/rock-wall/wall-slab-075.svg",
       "format": "svg",
-      "fileSize": 7330,
-      "contentHash": "sha256:6d96e7cf6a4669360f9238ba1f6a982024a3ab57288ee5f6ae12fa379869b642",
+      "fileSize": 193623,
+      "contentHash": "sha256:a8bd799943710635c6cfb6e87fd1cfb1c94a031750ca05dee09043b0610e83f8",
       "facts": {
         "dimensions": {
           "width": 256,
@@ -633,8 +633,8 @@
       "package": "claude-authored",
       "relativePath": "claude-authored/rock-wall/wall-slab-090.svg",
       "format": "svg",
-      "fileSize": 5971,
-      "contentHash": "sha256:65eb8e3ab28c6175d6125868711799ab5a0c53fe3d7c9ce12165e83cbbbf2015",
+      "fileSize": 155771,
+      "contentHash": "sha256:b3bb8444899e6eb02cc70559dea529044fc6093246aecf34bea70a300fb5ae93",
       "facts": {
         "dimensions": {
           "width": 256,
@@ -652,8 +652,8 @@
       "package": "claude-authored",
       "relativePath": "claude-authored/rock-wall/wall-slab-105.svg",
       "format": "svg",
-      "fileSize": 7306,
-      "contentHash": "sha256:391ee5f6f170c0a85cef3c4932f8233a23ecbced31b011633021ebea32653fee",
+      "fileSize": 193803,
+      "contentHash": "sha256:a37ea14ef702c60826386aa3ac0ae6ea5901db98e9f824fe62629968d8bad643",
       "facts": {
         "dimensions": {
           "width": 256,
@@ -671,8 +671,8 @@
       "package": "claude-authored",
       "relativePath": "claude-authored/rock-wall/wall-slab-120.svg",
       "format": "svg",
-      "fileSize": 7312,
-      "contentHash": "sha256:d1fd5a46fd2afce9295b804b461b38c4c23f93cac9c92d8f225e04a77386b720",
+      "fileSize": 193720,
+      "contentHash": "sha256:7258308f562e429148247c3c75618aab79323b46000a94c272051867b58e401c",
       "facts": {
         "dimensions": {
           "width": 256,
@@ -690,8 +690,8 @@
       "package": "claude-authored",
       "relativePath": "claude-authored/rock-wall/wall-slab-135.svg",
       "format": "svg",
-      "fileSize": 7338,
-      "contentHash": "sha256:09a2c1fec049812f8ec30667df301b96a4af703b73939038e8bb61734d7681b0",
+      "fileSize": 193219,
+      "contentHash": "sha256:61175806e15c2edb050fa86127a757d499f5c2ce22896a44e103a0a05495a25b",
       "facts": {
         "dimensions": {
           "width": 256,
@@ -709,8 +709,8 @@
       "package": "claude-authored",
       "relativePath": "claude-authored/rock-wall/wall-slab-150.svg",
       "format": "svg",
-      "fileSize": 7302,
-      "contentHash": "sha256:e0bc41aa2aa52a9f3cfd5a81bf2260cbdc471df23f456278e01a5514bce963f0",
+      "fileSize": 155991,
+      "contentHash": "sha256:b5dc44ec1d46b81ae38ff658395048d5c805347b556988891df8ec28505e3bf1",
       "facts": {
         "dimensions": {
           "width": 256,
@@ -728,8 +728,8 @@
       "package": "claude-authored",
       "relativePath": "claude-authored/rock-wall/wall-slab-165.svg",
       "format": "svg",
-      "fileSize": 7304,
-      "contentHash": "sha256:e4c7e15ddb6824667f5a38b07cffe3d694e1c02eb258cc3d47f52b5715fa0b0b",
+      "fileSize": 193203,
+      "contentHash": "sha256:8bb67ae61ef4c2f98aaf94880cfef61e76bf4772208bae39e142701e6b621c3b",
       "facts": {
         "dimensions": {
           "width": 256,

@@ -362,8 +362,8 @@ Codex 遇到下列情況時，應停止直接實作：
 
 ## Codex 工作目錄（使用者 2026-09-07 指定）
 
-本次與後續 Idle-RPG 任務一律使用 `D:\MyGames\Idle-RPG\codex`，這是 Codex 專用 worktree。
-舊的 `C:\Users\alway\Idle-RPG\codex` 與 `D:\MyGame\...` 路徑已失效；每次執行 shell 請明確指定正確工作目錄。
+本次與後續 Idle-RPG 任務一律使用 `D:\MyGame\Idle-RPG\codex`，這是 Codex 專用 worktree。
+舊的 `C:\Users\alway\Idle-RPG\codex` 與 `D:\MyGames\...` 路徑已失效（2026-10-17 使用者授權改名；搬移未完成時先確認外部遷移報告）；每次執行 shell 請明確指定正確工作目錄。
 如發現其他 AI 正在改動相同檔案，使用者已授權另建獨立分支處理，保留他人的修改。
 
 ## 使用者確認的技能特效製作預設（2026-09-09）

@@ -6,6 +6,9 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const vm = require('node:vm');
+const fs = require('node:fs');
+const path = require('node:path');
+const ROOT = path.resolve(__dirname, '..');
 const { loadEliteEnv, makeElite, makeMinion, stepElite } = require('./helpers/elite-env.cjs');
 
 function run(c, code) { return vm.runInContext(code, c); }
@@ -386,7 +389,7 @@ test('ELITE-ENGINE-14 築牆：近戰隔著牆打不到（雙方），遠程不�
   assert.equal(c.ELITE_RT.walls.length, 0);
 });
 
-test('ELITE-ENGINE-14b 築牆：每次 2~3 面整塊岩壁，每面 18 米長、6 米厚（三塊 6×6 米岩塊）', () => {
+test('ELITE-ENGINE-14b 築牆：每次 2~3 面整塊岩壁，每面 18 米長、6 米厚（四塊岩石）', () => {
   const c = fresh();
   const m = quiet(makeElite(c, ['e_walls'], { x: 200, y: 0, hp: 1e9 }));
   const d = c.ELITE_AFFIXES.e_walls;
@@ -409,6 +412,12 @@ test('ELITE-ENGINE-14b 築牆：每次 2~3 面整塊岩壁，每面 18 米長、
   stepElite(c, d.warn + 0.2);
   const fx = c.vfx.filter((v) => v.vfx && /^en-stone-wall-\d+$/.test(v.vfx.ground) && v.area && v.area.w > 0);
   assert.ok(fx.length >= 2 && fx.every((v) => Math.abs(v.area.w / v.area.h - 3) < 1e-6), '矩形比例 18:6');
+  for (const v of fx) {
+    const preset = JSON.parse(fs.readFileSync(path.join(ROOT, 'vfx/presets', v.vfx.ground + '.json'), 'utf8'));
+    const slab = preset.layers.find(l => l.id === 'slab');
+    const svg = fs.readFileSync(path.join(ROOT, 'images/vfx/assets', slab.assetId), 'utf8');
+    assert.equal([...svg.matchAll(/data-rock="\d+"/g)].length, 4, '權威牆事件選到的素材實際含四塊岩石');
+  }
 });
 
 test('ELITE-ENGINE-14c 築牆：牆角度吸附到 15° 倍數，並使用對應角度那張整面岩壁 Preset', () => {

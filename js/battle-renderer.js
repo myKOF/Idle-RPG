@@ -352,7 +352,10 @@ var BattleRenderer = (function () {
   var BATTLE_CAMERA_DISTANCE_PERCENT = 125;
   function cameraZoom() {
     var distance = Number(BATTLE_CAMERA_DISTANCE_PERCENT);
-    return 100 / (isFinite(distance) && distance > 0 ? distance : 125);
+    var zoom = 100 / (isFinite(distance) && distance > 0 ? distance : 125);
+    var shell = typeof document !== 'undefined' && document.getElementById('ui-shell');
+    // 全螢幕只拉近場景；HUD仍位於原本的螢幕層，退出後恢復參數表距離。
+    return shell && shell.classList.contains('battle-fullscreen') ? zoom * 1.3 : zoom;
   }
   function setCameraViewport(w, h) {
     S.canvasW = w; S.canvasH = h;
