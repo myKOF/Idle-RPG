@@ -4,59 +4,99 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const root=path.resolve(__dirname,'..'),read=p=>fs.readFileSync(path.join(root,p),'utf8');
 function ui(gems={diamond:{3:8,4:2,7:1},ruby:{10:3}}){
- const c=vm.createContext({console,Math,Date,JSON,Number,Map,Set});c.window=c;c.UI={gemBrowse:{tool:'resonance',filter:'atk',resHole:[1,1]},dirty:{}};
+ const c=vm.createContext({console,Math,Date,JSON,Number,Map,Set});c.window=c;
+ c.UI={gemBrowse:{tool:'resonance',filter:'atk',ownedOnly:true,resHole:[1,1],sel:'diamond',fuseLv:4},dirty:{}};
  for(const p of ['js/util.js','js/data.js','js/status.js','js/gem_resonance_data.js','js/formula.js','js/item.js','js/gem_resonance.js'])vm.runInContext(read(p),c,{filename:p});
  c.G={player:{gold:1e12,gems,resonance:{holes:{}}}};c.markStatsDirty=()=>{};
  c.esc=String;c.fmt=String;c.fmtFull=String;c.pctStr=String;
- c.GEM_DEF_STATS={hpFlat:1,hpRegen:1,defFlat:1,mdefFlat:1,evasion:1,tenacity:1,blockRate:1,blockDmgRed:1,shieldEff:1,pRes:1,mRes:1};
- const source=read('js/ui.js');vm.runInContext(source.match(/var GEM_TIER_COLORS = \{[\s\S]*?\n\};/)[0],c);
- for(const name of ['gemsViewCount','gemCategoryOf','gemAbilityText']){
+ const source=read('js/ui.js');
+ vm.runInContext(source.match(/var GEM_TIER_COLORS = \{[\s\S]*?\n\};/)[0],c);
+ for(const name of ['gemsViewCount','gemsViewFused','gemAbilityText']){
   const fn=source.match(new RegExp('function '+name+'\\([^)]*\\) \\{[\\s\\S]*?\\n\\}'));assert.ok(fn,name);vm.runInContext(fn[0],c);
  }
- const nodes={};function element(attrs={}){return {attrs,innerHTML:'',handlers:{},classes:new Set(),addEventListener(k,f){this.handlers[k]=f;},getAttribute(k){return this.attrs[k];},setAttribute(k,v){this.attrs[k]=v;},closest(k){return k==='[data-gres-gem]'&&this.attrs['data-gres-gem']||k==='[data-gres-hole]'&&this.attrs['data-gres-hole']||k==='[data-gres-take]'&&this.attrs['data-gres-take']?this:null;},classList:{add(){},remove(){}},querySelectorAll(){return [];},contains(){return true;}};}
- for(const id of ['gres-board','gres-detail','gem-table','gres-library-note'])nodes[id]=element();
+ // 使用正式 renderGems／類型列／十階列，只有無關的工坊面板採空實作。
+ vm.runInContext(source.slice(source.indexOf('var GEM_LIB_FILTERS ='),source.indexOf('function gemAbilityText(')),c);
+ for(const name of ['fillGemTypeSelect','renderFuseInfo','renderGemConvert','renderGemDismantle','renderGemFusion','renderGemShop'])c[name]=()=>{};
+ const nodes={};function element(attrs={}){return {attrs,innerHTML:'',handlers:{},addEventListener(k,f){this.handlers[k]=f;},getAttribute(k){return this.attrs[k];},setAttribute(k,v){this.attrs[k]=v;},closest(k){const key=k.slice(1,-1);return this.attrs[key]!==undefined?this:null;},classList:{add(){},remove(){}},querySelectorAll(){return [];},contains(){return true;}};}
+ for(const id of ['gres-board','gres-detail','gres-total','gem-table','gres-library-note','gem-focus','gem-filter','gem-owned-only','tab-gems','gem-total','gem-kinds'])nodes[id]=element();
  c.$id=id=>nodes[id]||null;c.uiGemsPanelSnapshot=()=>({gems:c.G.player.gems,resonance:c.G.player.resonance});
- c.resolveGemsPanelSnapshot=s=>s||c.uiGemsPanelSnapshot();c.uiHeaderPanelSnapshot=()=>({player:c.G.player});c.syncItemGridCells=(box,keys,htmls)=>{box.innerHTML=htmls.join('');box.keys=keys;};
- c.renders=0;c.renderGems=()=>{c.renders++;c.gresRenderLibrary(c.uiGemsPanelSnapshot(),nodes['gem-table']);};
+ c.resolveGemsPanelSnapshot=s=>s||c.uiGemsPanelSnapshot();c.uiHeaderPanelSnapshot=()=>({player:c.G.player});
+ c.setTextIfChanged=(n,t)=>{if(n)n.textContent=t;};
+ const render=c.renderGems;c.renders=0;c.renderGems=()=>{c.renders++;render();};
  c.calls=[];c.sendGemUiCommand=(name,args)=>{c.calls.push({name,args});let error;if(name==='gem.resonanceSocket')error=c.socketResonanceGem(args.region,args.hole,args.type,args.level);if(name==='gem.resonanceUnsocket')error=c.unsocketResonanceGem(args.region,args.hole,args.index);assert.equal(error,null);c.renderGems();};
- vm.runInContext(read('js/ui-gem-resonance.js'),c);c.initGemResonanceUi();return {c,nodes,element};
+ vm.runInContext(read('js/ui-gem-resonance.js'),c);c.initGemResonanceUi();c.renderGems();return {c,nodes,element};
 }
-test('選孔只列左側符合種類／階級／庫存的確切寶石，右側不再建候選池',()=>{
- const {c,nodes}=ui();c.renderGems();const html=nodes['gem-table'].innerHTML;
- assert.match(html,/data-gres-gem="diamond:4"/);assert.match(html,/data-gres-gem="diamond:7"/);assert.doesNotMatch(html,/diamond:3|ruby:10/);
- assert.equal(c.gresCandidates(c.uiGemsPanelSnapshot(),1,1).length,2);
+function tier(nodes,level){const tag=nodes['gem-focus'].innerHTML.match(new RegExp('<button[^>]*data-gem-lv="'+level+'"[^>]*>'));assert.ok(tag,'tier '+level);return tag[0];}
+function drag(f,type='diamond',level=4){const transfer={setData(){},dropEffect:''};let prevented=false;f.nodes['gem-focus'].handlers.dragstart({target:f.element({'data-gres-gem':type+':'+level}),dataTransfer:transfer,preventDefault(){prevented=true;}});return {transfer,prevented};}
+function drop(f,hole){f.nodes['gres-board'].handlers.drop({target:f.element({'data-gres-hole':hole}),preventDefault(){}});}
+
+test('左側每種寶石只列一列且只切類型；上方保留十階與各階庫存',()=>{
+ const {c,nodes}=ui();const html=nodes['gem-table'].innerHTML;
+ assert.equal((html.match(/data-gem-pick="diamond"/g)||[]).length,1);
+ assert.doesNotMatch(html,/data-gem-pick="ruby"|data-gres-gem|draggable="true"/);
+ assert.equal(nodes['gem-table'].handlers.click,undefined);assert.equal(nodes['gem-table'].handlers.dragstart,undefined);
+ c.selectGemType('diamond');assert.equal(c.calls.length,0);assert.equal(c.G.player.gems.diamond[4],2);
+ assert.equal((nodes['gem-focus'].innerHTML.match(/data-gem-lv=/g)||[]).length,10);
+ assert.match(tier(nodes,4),/data-gres-gem="diamond:4" draggable="true"/);
  const detail=c.gresDetailHTML(c.uiGemsPanelSnapshot(),c.uiHeaderPanelSnapshot(),c.G.player.resonance,[1,1]);
- assert.doesNotMatch(detail,/gres-pool|data-gres-put/);assert.match(detail,/左側已篩選/);
- c.GEM_TYPES.diamond.enabled=false;c.renderGems();assert.doesNotMatch(nodes['gem-table'].innerHTML,/data-gres-gem=/);
+ assert.doesNotMatch(detail,/gres-pool|data-gres-put/);assert.match(detail,/上方十階列/);
 });
-test('選孔重設共鳴分類並即時刷新；一般寶石工具的分類保持原值',()=>{
+
+test('不符最低階／缺庫存／滿孔在十階列禁用，類型列不因階級拆列或滿孔消失',()=>{
+ const {c,nodes}=ui();assert.match(tier(nodes,3),/is-unavailable/);assert.match(tier(nodes,3),/ disabled/);assert.match(tier(nodes,3),/draggable="false"/);
+ assert.match(tier(nodes,5),/ disabled/);assert.doesNotMatch(tier(nodes,4),/ disabled/);assert.doesNotMatch(tier(nodes,7),/ disabled/);
+ c.G.player.resonance.holes['1:1']={gems:[{type:'diamond',level:4}],lv:0};c.renderGems();
+ assert.equal((nodes['gem-focus'].innerHTML.match(/ disabled/g)||[]).length,10);assert.match(nodes['gem-table'].innerHTML,/data-gem-pick="diamond"/);
+ c.G.player.resonance.holes={};c.G.player.gems.diamond={3:8};c.renderGems();
+ assert.match(nodes['gem-table'].innerHTML,/data-gem-pick="diamond"/);assert.equal((nodes['gem-focus'].innerHTML.match(/ disabled/g)||[]).length,10);
+});
+
+test('選孔切換可鑲類型並重設共鳴分類；一般分類偏好獨立保留',()=>{
  const {c,nodes}=ui();c.UI.gemBrowse.resFilter='atk';c.gresSelectHole(1,1);
- assert.equal(c.UI.gemBrowse.resFilter,'all');assert.equal(c.UI.gemBrowse.filter,'atk');assert.match(nodes['gem-table'].innerHTML,/diamond:4/);
- c.gresSelectHole(5,1);assert.match(nodes['gem-table'].innerHTML,/ruby:10/);assert.doesNotMatch(nodes['gem-table'].innerHTML,/diamond:/);
+ assert.equal(c.UI.gemBrowse.resFilter,'all');assert.equal(c.UI.gemBrowse.filter,'atk');assert.match(nodes['gem-table'].innerHTML,/data-gem-pick="diamond"/);
+ c.gresSelectHole(5,1);assert.equal(c.UI.gemBrowse.sel,'ruby');assert.match(nodes['gem-table'].innerHTML,/data-gem-pick="ruby"/);assert.doesNotMatch(nodes['gem-table'].innerHTML,/data-gem-pick="diamond"/);
+ c.GEM_TYPES.ruby.enabled=false;c.renderGems();assert.doesNotMatch(nodes['gem-table'].innerHTML,/data-gem-pick=/);
+ assert.equal((nodes['gem-focus'].innerHTML.match(/data-gem-lv=/g)||[]).length,10);assert.equal((nodes['gem-focus'].innerHTML.match(/ disabled/g)||[]).length,10);
 });
-test('左側點擊使用指定階級與正式鑲嵌／取下規則，滿孔不重送、取下回庫存',()=>{
- const {c,nodes,element}=ui();const source=element({'data-gres-gem':'diamond:4'});
- nodes['gem-table'].handlers.click({target:source});assert.equal(c.calls.length,1);assert.equal(c.G.player.gems.diamond[4],1);
- assert.equal(c.G.player.resonance.holes['1:1'].gems[0].level,4);assert.match(nodes['gem-table'].innerHTML,/此孔已滿/);
- nodes['gem-table'].handlers.click({target:source});assert.equal(c.calls.length,1);
- nodes['gres-detail'].handlers.click({target:element({'data-gres-take':'0'})});assert.equal(c.G.player.gems.diamond[4],2);assert.match(nodes['gem-table'].innerHTML,/diamond:4/);
+
+test('只看持有可切換，空分類仍保留十階佔位，不會暴露不符孔位的類型',()=>{
+ const {c,nodes}=ui({});assert.doesNotMatch(nodes['gem-table'].innerHTML,/data-gem-pick=/);assert.match(nodes['gem-focus'].innerHTML,/沒有符合的寶石/);
+ c.UI.gemBrowse.ownedOnly=false;c.renderGems();assert.match(nodes['gem-table'].innerHTML,/data-gem-pick="diamond"/);assert.doesNotMatch(nodes['gem-table'].innerHTML,/data-gem-pick="ruby"/);
+ c.UI.gemBrowse.resFilter='atk';c.renderGems();assert.doesNotMatch(nodes['gem-table'].innerHTML,/data-gem-pick=/);assert.equal((nodes['gem-focus'].innerHTML.match(/data-gem-lv=/g)||[]).length,10);
 });
-test('拖曳支援不同有效孔位，拒絕不符種類／階級／外部拖曳並保留即時庫存來源',()=>{
- const {c,nodes,element}=ui({sapphire:{4:2},ruby:{4:2}});c.gresSelectHole(0,1);
- const transfer={setData(){},dropEffect:''},source=element({'data-gres-gem':'sapphire:4'});
- const start=()=>nodes['gem-table'].handlers.dragstart({target:source,dataTransfer:transfer,preventDefault(){throw Error('unexpected reject');}});
- start();const original=nodes['gem-table'].innerHTML;c.G.player.gems.sapphire[4]=3;c.renderGems();assert.equal(nodes['gem-table'].innerHTML,original);
- let accepted=false;nodes['gres-board'].handlers.dragover({target:element({'data-gres-hole':'5:1'}),dataTransfer:transfer,preventDefault(){accepted=true;}});assert.equal(accepted,false);
- nodes['gres-board'].handlers.drop({target:element({'data-gres-hole':'5:1'}),preventDefault(){}});assert.equal(c.calls.length,0);
- start();nodes['gres-board'].handlers.drop({target:element({'data-gres-hole':'0:2'}),preventDefault(){}});assert.equal(c.calls.length,1);assert.equal(c.calls[0].args.hole,2);assert.equal(c.G.player.gems.sapphire[4],2);
+
+test('上方點擊走正式鑲嵌／取下規則，失效階級與滿孔不重送',()=>{
+ const {c,nodes,element}=ui();const click=level=>nodes['gem-focus'].handlers.click({target:element({'data-gres-gem':'diamond:'+level})});
+ click(3);click(5);assert.equal(c.calls.length,0);
+ click(4);assert.equal(c.calls.length,1);assert.equal(c.G.player.gems.diamond[4],1);assert.equal(c.G.player.resonance.holes['1:1'].gems[0].level,4);
+ click(4);assert.equal(c.calls.length,1);assert.match(tier(nodes,4),/ disabled/);
+ nodes['gres-detail'].handlers.click({target:element({'data-gres-take':'0'})});assert.equal(c.G.player.gems.diamond[4],2);assert.doesNotMatch(tier(nodes,4),/ disabled/);
+});
+
+test('上方原生拖曳保留來源DOM，驗證目標種類／最低階並拒絕外部拖曳',()=>{
+ const f=ui({sapphire:{4:2},ruby:{4:2}}),{c,nodes}=f;c.gresSelectHole(0,1);
+ const start=drag(f,'sapphire');assert.equal(start.prevented,false);const original=nodes['gem-focus'].innerHTML;
+ c.G.player.gems.sapphire[4]=3;c.renderGems();assert.equal(nodes['gem-focus'].innerHTML,original);
+ let accepted=false;nodes['gres-board'].handlers.dragover({target:f.element({'data-gres-hole':'5:1'}),dataTransfer:start.transfer,preventDefault(){accepted=true;}});assert.equal(accepted,false);
+ drop(f,'5:1');assert.equal(c.calls.length,0);
+ drag(f,'sapphire');drop(f,'0:2');assert.equal(c.calls.length,1);assert.equal(c.calls[0].args.hole,2);assert.equal(c.G.player.gems.sapphire[4],2);
  assert.deepEqual(Array.from(c.UI.gemBrowse.resHole),[0,2]);assert.equal(c.UI.gemBrowse.resDrag,null);
- nodes['gres-board'].handlers.drop({target:element({'data-gres-hole':'0:1'}),preventDefault(){}});assert.equal(c.calls.length,1);
- c.gresSelectHole(0,1);start();nodes['gres-board'].handlers.drop({target:element({'data-gres-hole':'0:0'}),preventDefault(){}});assert.equal(c.calls.length,1);
+ drop(f,'0:1');assert.equal(c.calls.length,1);
+ c.gresSelectHole(0,1);drag(f,'sapphire');drop(f,'0:0');assert.equal(c.calls.length,1);
 });
-test('拖曳開始後庫存失效或目標被填滿，放開時重新驗證且不送出命令',()=>{
- const {c,nodes,element}=ui();const transfer={setData(){}};
- const start=()=>nodes['gem-table'].handlers.dragstart({target:element({'data-gres-gem':'diamond:4'}),dataTransfer:transfer,preventDefault(){}});
- start();c.G.player.gems.diamond[4]=0;nodes['gres-board'].handlers.drop({target:element({'data-gres-hole':'1:2'}),preventDefault(){}});assert.equal(c.calls.length,0);
- c.G.player.gems.diamond[4]=2;start();c.G.player.resonance.holes['1:2']={lv:2,gems:[{type:'diamond',level:4}]};
- nodes['gres-board'].handlers.drop({target:element({'data-gres-hole':'1:2'}),preventDefault(){}});assert.equal(c.calls.length,0);assert.equal(c.G.player.resonance.holes['1:2'].lv,2);
+
+test('拖曳後庫存失效或目標滿孔，放開重新驗證；BOSS鎖與無效來源不啟動拖曳',()=>{
+ const f=ui(),{c}=f;assert.equal(drag(f,'diamond',3).prevented,true);assert.equal(c.UI.gemBrowse.resDrag,undefined);
+ drag(f);c.G.player.gems.diamond[4]=0;drop(f,'1:2');assert.equal(c.calls.length,0);
+ c.G.player.gems.diamond[4]=2;drag(f);c.G.player.resonance.holes['1:2']={lv:2,gems:[{type:'diamond',level:4}]};drop(f,'1:2');assert.equal(c.calls.length,0);assert.equal(c.G.player.resonance.holes['1:2'].lv,2);
+ c.bossFightConfigLocked=()=>true;assert.equal(drag(f).prevented,true);assert.equal(c.UI.gemBrowse.resDrag,null);
+});
+
+test('切回合成只選階級、不鑲嵌，並取消殘留拖曳與共鳴置灰狀態',()=>{
+ const f=ui(),{c,nodes,element}=f;drag(f);c.setGemTool('compose');assert.equal(c.UI.gemBrowse.resDrag,null);
+ assert.doesNotMatch(nodes['gem-focus'].innerHTML,/data-gres-gem|is-unavailable| disabled/);
+ assert.equal((nodes['gem-focus'].innerHTML.match(/data-gem-lv=/g)||[]).length,10);
+ nodes['gem-focus'].handlers.click({target:element({'data-gres-gem':'diamond:4'})});assert.equal(c.calls.length,0);
+ c.setGemFuseLevel(2);assert.equal(c.UI.gemBrowse.fuseLv,2);assert.equal(c.calls.length,0);assert.equal(c.UI.gemBrowse.filter,'atk');
+ drop(f,'1:2');assert.equal(c.calls.length,0);
 });

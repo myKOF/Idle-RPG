@@ -10596,28 +10596,35 @@ function gemLibItemHTML(gemsSnapshot, type, total) {
 
 function gemFocusHTML(gemsSnapshot, type, total) {
   var gt = GEM_TYPES[type];
-  if (!gt) return '';
-  var top = gemTopLevel(gemsSnapshot, type);
+  var resonance = UI.gemBrowse.tool === 'resonance';
+  if (!gt && !resonance) return '';
+  var top = gt ? gemTopLevel(gemsSnapshot, type) : 0;
   var cells = '';
   for (var lv = 1; lv <= GEM_FORGE_MAX_LEVEL; lv++) {
-    var n = gemsViewCount(gemsSnapshot, type, lv);
-    /* 每一階一個按鈕：圖＝這一階的樣子，點了選這一階（合成頁的「幾級升幾級」跟著走）。
-       is-sel 不分工具一律標在目前選的階上，是否畫出來由 CSS 依 data-gem-tool 決定
-       （切工具不會重畫這一區，所以不能在這裡判斷工具）。 */
+    var n = gt ? gemsViewCount(gemsSnapshot, type, lv) : 0;
+    var reason = '';
+    if (resonance && typeof gresSocketBlockReason === 'function') {
+      var sel = gresSelected();
+      reason = gresSocketBlockReason(gemsSnapshot, sel[0], sel[1], { type: type, level: lv });
+    }
+    var unavailable = resonance && (!gt || !!reason);
+    var tip = gt ? GEM_NAMES[lv] + gt.name + '｜' + gemAbilityText(type, lv) + (n ? '｜持有 ' + fmtFull(n) + ' 顆' : '｜尚未持有') : '請先選擇寶石類型';
+    if (resonance) tip += '｜' + (reason || '點擊鑲入，或拖曳至共鳴孔');
     cells += '<button type="button" class="gx-curve-cell' + (n ? ' has' : '') + (lv > GEM_MAX_LEVEL ? ' is-forge' : '') +
-      (UI.gemBrowse.fuseLv === lv ? ' is-sel' : '') + '" data-gem-lv="' + lv + '" style="--c:' + GEM_TIER_COLORS[lv] + '"' +
-      ' data-tip="' + esc(GEM_NAMES[lv] + gt.name + '｜' + gemAbilityText(type, lv) + (n ? '｜持有 ' + fmtFull(n) + ' 顆' : '｜尚未持有')) + '">' +
-      gemIconHTML(type, lv, 'gi-curve') +
+      (UI.gemBrowse.fuseLv === lv ? ' is-sel' : '') + (unavailable ? ' is-unavailable' : '') + '" data-gem-lv="' + lv + '" style="--c:' + GEM_TIER_COLORS[lv] + '"' +
+      (resonance && gt ? ' data-gres-gem="' + type + ':' + lv + '" draggable="' + !unavailable + '"' : '') +
+      (unavailable ? ' disabled aria-disabled="true"' : '') + ' data-tip="' + esc(tip) + '">' +
+      (gt ? gemIconHTML(type, lv, 'gi-curve') : '<span class="gi-curve gres-empty-tier" aria-hidden="true">◇</span>') +
       '<span class="gx-curve-lv">' + GEM_NAMES[lv] + '</span>' +
-      '<span class="gx-curve-val">' + gemValueText(type, lv) + '</span>' +
+      '<span class="gx-curve-val">' + (gt ? gemValueText(type, lv) : '—') + '</span>' +
       '<span class="gx-curve-n">' + (n ? '×' + fmt(n) : '—') + '</span></button>';
   }
   var catLabel = '';
   GEM_LIB_FILTERS.forEach(function (f) { if (f.id === gemCategoryOf(type)) catLabel = f.label; });
   return '<div class="gx-focus-head">' +
-      '<span class="gx-focus-ico" style="--c:' + (top ? GEM_TIER_COLORS[top] : '#3a3d44') + '">' + gemIconHTML(type, top || GEM_MAX_LEVEL, 'gi-focus') + '</span>' +
-      '<span class="gx-focus-name">' + esc(gt.name) + '</span>' +
-      '<span class="gx-focus-stat">' + esc(gt.statName.replace(/%/g, '')) + '・' + catLabel + '</span>' +
+      '<span class="gx-focus-ico" style="--c:' + (top ? GEM_TIER_COLORS[top] : '#3a3d44') + '">' + (gt ? gemIconHTML(type, top || GEM_MAX_LEVEL, 'gi-focus') : '◇') + '</span>' +
+      '<span class="gx-focus-name">' + esc(gt ? gt.name : '沒有符合的寶石') + '</span>' +
+      '<span class="gx-focus-stat">' + (gt ? esc(gt.statName.replace(/%/g, '')) + '・' + catLabel : '') + '</span>' +
       '<span class="gx-focus-total">共 <b>' + fmtFull(total) + '</b> 顆</span>' +
     '</div>' +
     '<div class="gx-curve">' + cells + '</div>';
@@ -10644,6 +10651,11 @@ function setGemFuseLevel(lv) {
 
 function setGemTool(tool) {
   if (GEM_TOOLS.indexOf(tool) < 0) return;
+  if (UI.gemBrowse.resDrag) {
+    UI.gemBrowse.resDrag = null;
+    var board = $id('gres-board');
+    if (board) board._lastH = null;
+  }
   UI.gemBrowse.tool = tool;
   var sec = $id('tab-gems');
   if (sec && sec.setAttribute) sec.setAttribute('data-gem-tool', tool);
@@ -10687,7 +10699,7 @@ function renderGems() {
   if (ownedOnly) ownedOnly.checked = !!st.ownedOnly;
 
   if (st.tool === 'resonance' && typeof gresRenderLibrary === 'function') {
-    gresRenderLibrary(gemsSnapshot, box);
+    gresRenderLibrary(gemsSnapshot, box, totals);
   } else {
     var h = '';
     for (var t2 in GEM_TYPES) {
@@ -10702,7 +10714,8 @@ function renderGems() {
 
   var focus = $id('gem-focus');
   var focusH = gemFocusHTML(gemsSnapshot, st.sel, totals[st.sel] || 0);
-  if (focus && focus._lastH !== focusH) { focus._lastH = focusH; focus.innerHTML = focusH; }
+  // 原生拖曳持有十階列的來源節點；庫存更新不得中途移除它，放開後再刷新。
+  if (focus && !(st.tool === 'resonance' && st.resDrag) && focus._lastH !== focusH) { focus._lastH = focusH; focus.innerHTML = focusH; }
 
   fillGemTypeSelect($id('gconv-target'));
   fillGemTypeSelect($id('gdis-type'));
@@ -12589,7 +12602,7 @@ function initUI() {
     if (bossFightConfigLocked()) { draggedSlotIndex = null; e.preventDefault(); return; }
     var slot = e.target.closest('.battle-skill-slot.equipped, .loadout-slot.filled');
     if (!slot) {
-      if (UI.gemBrowse.tool === 'resonance' && e.target.closest('[data-gres-gem]')) return;
+      if (UI.gemBrowse.tool === 'resonance' && e.target.closest('#gem-focus [data-gres-gem][draggable="true"]')) return;
       // 保留技能排序與共鳴寶石拖曳；其餘圖片／文字不啟動原生拖曳。
       e.preventDefault();
       return;
@@ -12848,7 +12861,8 @@ function initUI() {
       }
       var lvBtn = t.closest('[data-gem-lv]');
       if (lvBtn) {
-        setGemFuseLevel(lvBtn.getAttribute('data-gem-lv'));
+        // 共鳴十階列的點擊由共鳴模組鑲入；其餘工具仍只選擇階級。
+        if (UI.gemBrowse.tool !== 'resonance') setGemFuseLevel(lvBtn.getAttribute('data-gem-lv'));
         return;
       }
       var pick = t.closest('[data-gem-pick]');

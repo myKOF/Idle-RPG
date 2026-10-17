@@ -134,14 +134,14 @@ button.gres-gem:hover { border-color: #7a6440; }
 .gres-empty { color: #8d877a; font-size: 12px; }
 .gres-list { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: #c9c3b5; }
 
-/* 共鳴盤優先使用工坊寬度；左庫存清單就是唯一鑲入入口。 */
-#tab-gems[data-gem-tool="resonance"] .gx-owned { display: none; }
+/* 共鳴沿用左側類型列與上方十階列，工具頁籤的位置與其他工具一致。 */
 .gres-library-note { color: #d9c9a0; font-size: 12px; line-height: 1.5; }
 #tab-gems:not([data-gem-tool="resonance"]) .gres-library-note { display: none; }
 #tab-gems[data-gem-tool="resonance"] .gres-library-note { display: block; }
-#tab-gems .gres-library-gem { cursor: grab; }
-#tab-gems .gres-library-gem:active { cursor: grabbing; }
-#tab-gems .gres-library-gem .gx-item-top { flex-wrap: wrap; font-size: 12px; }
+#tab-gems[data-gem-tool="resonance"] .gx-curve-cell[draggable="true"] { cursor: grab; }
+#tab-gems[data-gem-tool="resonance"] .gx-curve-cell[draggable="true"]:active { cursor: grabbing; }
+#tab-gems[data-gem-tool="resonance"] .gx-curve-cell.is-unavailable { filter: grayscale(1); opacity: .32; cursor: not-allowed; }
+.gres-empty-tier { display: flex; align-items: center; justify-content: center; }
 .gres-library-hint { color: #a39d90; font-size: 12px; line-height: 1.7; }
 .gres-hole.is-drop .gres-hit { fill: #76e6a126; stroke: #a9edbd; stroke-width: 4; }
 .gres-hole.is-reject .gres-hit { fill: #e0685c1a; stroke: #e0685c; stroke-width: 3; }
@@ -158,6 +158,3 @@ button.gres-gem:hover { border-color: #7a6440; }
   .gres-board { flex: 0 0 auto; aspect-ratio: 1; }
   .gres-side { overflow: visible; padding: 0 22px 0 0; }
 }
-
-#tab-gems[data-gem-tool="resonance"] .gx-focus { gap: 0; }
-#tab-gems[data-gem-tool="resonance"] .gx-curve { display: none; }

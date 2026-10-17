@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## GEM-RESONANCE-TIER-SOURCE-20261018 — 上方十階列作為共鳴鑲嵌入口
+
+- Owner：Codex；Done，單一開發者。使用者四項要求：保留上方1～10階與工具頁籤位置；左側只選符合孔位的寶石類型；由上方點擊／拖曳鑲嵌；無效階級置灰。前置視覺接入已完成，工作區乾淨，全部目標衝突預檢乾淨。
+- 允許js/ui.js、js/ui-gem-resonance.js、css/gems.css、index.html、tests/gem-resonance-ui.test.cjs、docs/GEM_RESONANCE.md、PATCH.md與本紀錄。禁止共鳴數值／資料表／模擬／Worker／存檔／素材及其他副本，不合併推送。
+- 方式：沿原寶石類型列、十階列與正式鑲嵌命令，左側只按類型限制篩選；階級／庫存／容量在上方控制，拖曳期間保留來源節點、放開時核對最新狀態。切工具／類型／孔位與空庫存須保持上方區塊及頁籤穩定。
+- 驗收：行為回歸、正式瀏覽器點選類型不鑲入／上方點擊與拖曳／置灰禁用／滿孔／失效庫存／切回合成／頁籤位置／窄視窗，Build及diff後獨立Commit。無新素材或素材庫變更。
+- 完成8檔：共鳴左側復用gemLibItemHTML，按孔位種類／分類／只看持有顯示一種類型一列；選孔或切類型同步十階列，不再在左側拆階或鑲嵌。上方同時顯示十階圖片、數值與各階庫存，依最低階／庫存／容量置灰並disabled；空分類保留完整十階佔位。移除共鳴隱藏十階列與變更focus間距的CSS，頁籤位置一致。
+- 事件：鑲入與dragstart／dragend改綁gem-focus；一般工具的data-gem-lv仍只選階級，共鳴不重複執行一般選階級分支。左側沿data-gem-pick切類型且無鑲入payload。拖曳期間凍結十階來源DOM／類型，放開再驗證最新庫存／容量；切工具清除拖曳狀態。共用gresSocketBlockReason產生禁用原因並供鑲嵌判斷，正式Worker命令與權威規則不變。index僅gems CSS1.0.8→9、ui1.0.168→169、共鳴JS1.0.4→5。
+- 回歸：更新共鳴UI測試8項，使用正式renderGems／類型列／十階列與真實鑲入／取下規則，覆蓋只切類型、置灰、滿孔、空分類、分類偏好、原生拖曳來源更新保留、不符目標、失效庫存、BOSS鎖、切回合成取消拖曳。node --test tests/gem-resonance-ui.test.cjs tests/gem-resonance.test.cjs tests/gem-enabled.test.cjs tests/init-ui-smoke.test.cjs tests/skill-loadout.test.cjs tests/gem-compose-all.test.cjs tests/gem-convert-stack.test.cjs tests/gem-shop.test.cjs tests/gem-tooltip.test.cjs tests/gem-socket-height-compact.test.cjs：57/57通過；npm.cmd run build：534檔通過；git diff --check通過。
+- 瀏覽器：沿本聊天已採用的獨立headless Chrome／隨機localhost，新來源新角色，正式index／UI／CSS／Worker與本機GM給測試庫存，不讀真人存檔。左側點類型或dragTo皆未鑲入；低階／未持有置灰、上方點擊鑲入／滿孔全停用／取下恢復、上方原生拖曳合法孔成功／不符區域拒絕／切孔同步類型／中央十階鑲入／切回合成只選階級均通過。合成、共鳴與空分類工具頁籤Y皆343、上方區塊高皆179；1920×900、2560×1080、1366×768、390×844各十階完整且盤面／詳情不重疊。Console error／warning、pageerror與資源404皆0；未做真人長戰或觸控拖曳驗收。
+- 自我Review／交付：唯讀檢查既有寶石庫、階級選取、技能拖曳攔截、共鳴規則／Worker命令、工坊盒模型與相關回歸；無數值、協議、存檔或素材變動，素材庫工作區乾淨，無需素材庫Commit。遊戲Commit為本紀錄所在[Codex] feat提交，回覆附編號；不合併推送，無未完成需求或新增阻塞，可供審閱合併。下一步重新載入遊戲於寶石→共鳴操作；實際截圖保留visualizations/gem-resonance-tier-source.png，服務／瀏覽器已結束，臨時驗證腳本移除。
+
+
 ## GEM-RESONANCE-CRYSTAL-20261018 — 接入六邊形共鳴底板與水晶切面
 
 - Owner：Codex；Done，單一開發者。前置：使用者已確認六邊形底板與水晶切面的合成預覽並要求接入，工作區乾淨、全部目標衝突預檢乾淨。
