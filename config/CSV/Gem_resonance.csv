@@ -1,0 +1,20 @@
+﻿類型,id,名稱,可鑲寶石,中心容量,孔位最低階,金幣,寶石階級,寶石數量,設定值,備註
+設定,perLevelPct,,,,,,,,3,孔每升 1 級，相鄰孔裡每顆寶石的能力多算這個 %（加成＝孔等級 × 此值，不超過上限）。
+設定,maxPct,,,,,,,,30,孔等級帶來的相鄰加成上限 %。
+區域,magic,魔法傷害,sapphire;pierceMagic;iolite;amethyst;garnet,2,6;4;4;5;5;5;4,,,,,
+區域,defense,防禦,diamond;lapis;topaz;moonstone;jade;pearl;malachite;fluorite,2,6;4;4;4;5;5;5,,,,,
+區域,elemRes,元素抗性,wardFire;wardIce;wardLightning;wardPoison;wardDark;wardLight;wardEarth;wardWind;wardAll,2,6;5;4;4;4;5;5,,,,,
+區域,elemDmg,屬性傷害,spinel;aquamarine;amazonite;peridot;citrine;tourmaline;tigerEye;moldavite;coreFire;coreIce;coreLightning;corePoison;coreLight;coreDark;coreEarth;coreWind,2,6;5;5;4;4;4;5,,,,,
+區域,recover,回復,emerald;kyanite;onyx;manastone,2,6;5;5;5;4;4;4,,,,,
+區域,phys,物理傷害,ruby;piercePhys;opal;catseye,2,6;4;5;5;5;4;4,,,,,
+區域,core,任意,*,6,10;8;8;8;8;8;8,,,,,
+升級,1,,,,,5000,1,3,,
+升級,2,,,,,15000,2,3,,
+升級,3,,,,,45000,3,3,,
+升級,4,,,,,135000,4,3,,
+升級,5,,,,,405000,5,3,,
+升級,6,,,,,1215000,6,1,,
+升級,7,,,,,3645000,7,1,,
+升級,8,,,,,10935000,8,1,,
+升級,9,,,,,32805000,9,1,,
+升級,10,,,,,98415000,10,1,,

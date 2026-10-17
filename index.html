@@ -8,11 +8,11 @@
   <link rel="icon" href="images/icon_avatar.png" type="image/png">
   <link rel="stylesheet" href="css/style.css?v=1.0.75">
   <link rel="stylesheet" href="css/inventory-offset.css">
-  <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.78">
+  <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.79">
   <link rel="stylesheet" href="css/ashen-forge-flat.css?v=1.0.3">
   <link rel="stylesheet" href="css/battle-hud.css?v=1.0.18">
   <link rel="stylesheet" href="css/runeword.css?v=1.0.6">
-  <link rel="stylesheet" href="css/gems.css?v=1.0.2">
+  <link rel="stylesheet" href="css/gems.css?v=1.0.3">
   <link rel="stylesheet" href="css/dialogs.css?v=1.0.3">
 </head>
 
@@ -353,6 +353,7 @@
                 <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="dismantle">拆解</button>
                 <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="fusion" id="gem-tool-fusion">融合</button>
                 <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="shop">商店</button>
+                <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="resonance">共鳴</button>
               </div>
 
               <div class="gx-panel" data-gem-panel="compose">
@@ -428,6 +429,17 @@
                   <div class="sec-sub">可用素材（點擊放入融合槽）</div>
                   <div id="gfuse-pool" class="chip-row"></div>
                   <div id="gfuse-result" class="gem-result gem-result-3">尚未進行融合</div>
+                </div>
+              </div>
+
+              <div class="gx-panel" data-gem-panel="resonance">
+                <div class="hint" id="gres-hint"></div>
+                <div class="gres-layout">
+                  <div id="gres-board" class="gres-board"></div>
+                  <div class="gres-side">
+                    <div id="gres-detail" class="gres-detail"></div>
+                    <div id="gres-total" class="gres-total"></div>
+                  </div>
                 </div>
               </div>
 
@@ -931,7 +943,8 @@
   <script src="js/data.js?v=1.0.85"></script>
   <script src="js/status.js?v=1.0.33"></script>
   <script src="js/runeword_data.js?v=1.0.15"></script>
-  <script src="js/formula.js?v=1.0.60"></script>
+  <script src="js/gem_resonance_data.js?v=1.0.0"></script>
+  <script src="js/formula.js?v=1.0.61"></script>
   <script src="js/battlefield.js?v=1.4.13"></script>
   <script src="js/game-clock.js?v=1.0.1"></script>
   <script src="js/vfx.js?v=1.0.81"></script>
@@ -958,19 +971,21 @@
   <script src="js/battle-renderer.js?v=1.6.188"></script>
   <script src="js/stats.js?v=1.0.4"></script>
   <script src="js/item.js?v=1.0.22"></script>
+  <script src="js/gem_resonance.js?v=1.0.0"></script>
   <script src="js/runeword.js?v=1.0.14"></script>
   <script src="js/skills.js?v=1.0.42"></script>
   <!-- 新版主動技能系統（2026-08-13 技能改造第一批）：定義表＋引擎＋純函式說明 -->
   <script src="js/skills2.js?v=1.0.321"></script>
   <script src="js/elite_data.js?v=1.0.6"></script>
   <script src="js/talents.js?v=1.0.5"></script>
-  <script src="js/player.js?v=1.0.14"></script>
+  <script src="js/player.js?v=1.0.15"></script>
   <script src="js/combat.js?v=1.0.87"></script>
   <script src="js/potential.js?v=1.0.9"></script>
   <script src="js/tower.js?v=1.0.31"></script>
-  <script src="js/save.js?v=1.0.16"></script>
-  <script src="js/ui.js?v=1.0.166"></script>
+  <script src="js/save.js?v=1.0.17"></script>
+  <script src="js/ui.js?v=1.0.167"></script>
   <script src="js/ui-runeword.js?v=1.0.11"></script>
+  <script src="js/ui-gem-resonance.js?v=1.0.0"></script>
   <script src="js/param_autoreload.js"></script>
   <!-- GM 面板。指令執行層在 js/gm_exec.js，由 Worker importScripts 載入 -->
   <script src="js/gm.js?v=1.0.1"></script>
@@ -978,12 +993,12 @@
        正式遊玩是空殼。必須排在 ui.js（用它的 isInternalVersion）之後、VFX Runtime 建立（main 開機）之前。 -->
   <script src="js/battle-perf.js?v=1.0.3"></script>
   <!-- 模擬 Worker 的協議與橋接。bridge.js 於 DOMContentLoaded 開機 -->
-  <script src="js/worker/protocol.js?v=52"></script>
+  <script src="js/worker/protocol.js?v=53"></script>
   <script src="js/storage.js?v=1.0.1"></script>
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
-  <script src="js/bridge.js?v=1.0.288"></script>
+  <script src="js/bridge.js?v=1.0.289"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->

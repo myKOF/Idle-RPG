@@ -391,6 +391,34 @@ function migrateSave(data) {
     var rn = Math.max(0, Math.floor(Number(data.player.runes[rk]) || 0));
     if (rn > 0) data.player.runes[rk] = rn; else delete data.player.runes[rk];
   });
+  // 寶石共鳴（js/gem_resonance.js）：舊存檔由 mergeDefaults 補空表；這裡整理孔位與寶石，
+  // 配置表改動後超出容量／低於最低階的寶石退回庫存（不白白消失），未知種類或編號丟掉。
+  if (typeof resonanceValidHole === 'function') {
+  var resHoles = {};
+  var resSrc = data.player.resonance && data.player.resonance.holes;
+  if (resSrc && typeof resSrc === 'object' && !Array.isArray(resSrc)) {
+    Object.keys(resSrc).forEach(function (hk) {
+      var hp = hk.split(':');
+      var hr = Number(hp[0]), hh = Number(hp[1]);
+      if (hp.length !== 2 || !resonanceValidHole(hr, hh)) return;
+      var raw = resSrc[hk] || {};
+      var kept = [];
+      (Array.isArray(raw.gems) ? raw.gems : []).forEach(function (g) {
+        var gl = Math.floor(Number(g && g.level));
+        if (!g || !GEM_TYPES[g.type] || !(gl >= 1 && gl <= GEM_FORGE_MAX_LEVEL)) return;
+        if (kept.length < resonanceHoleCap(hr, hh) && gl >= resonanceHoleMinLevel(hr, hh) && resonanceTypeAllowed(hr, g.type)) {
+          kept.push({ type: g.type, level: gl });
+        } else {
+          var inv = data.player.gems[g.type] || (data.player.gems[g.type] = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
+          inv[gl] = (inv[gl] || 0) + 1;
+        }
+      });
+      var hl = Math.min(resonanceMaxHoleLevel(), Math.max(0, Math.floor(Number(raw.lv) || 0)));
+      if (kept.length || hl) resHoles[hk] = { gems: kept, lv: hl };
+    });
+  }
+  data.player.resonance = { holes: resHoles };
+  }
   // 已激活的符文真言（2026-10-07，js/runeword.js §2）：{ 真言id: 1 }。舊存檔沒有這欄；已刪除的真言 id 丟掉，
   // 下面逐件整理裝備時，目前已成形的再補記進來（記錄功能上線前就成形的不必重鑲）
   var rwSeen = {};

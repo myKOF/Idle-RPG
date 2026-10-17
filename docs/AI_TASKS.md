@@ -10483,3 +10483,10 @@ Worker 存活且頁面正常完成載入。
 - 預覽／清理：最終本聊天visualizations/fixed-hud-normal.jpg／fixed-hud-fullscreen.jpg／fixed-hud-detail.jpg保留，臨時fixture、測試服務／頁籤、比較畫素圖與量測JSON已清理，viewport還原；使用者12102／12412服務保留，12102預覽頁同步新包層與目前素材、12102/index.html為正式遊戲。未做真人長時間效能驗證。
 - 唯讀檢查：AI規範／AGENTS／工作流／既有任務、css/ashen-forge.css／ashen-forge-flat.css／style.css層疊與盒模型、js/ui-scale.js全頁縮放、ui.js權威液位與既有render函式、上述7份回歸／Build、素材Root／匯出工具與已授權母圖。全部目標衝突預檢乾淨，沒有擴大到NPC／Worker／存檔或其他副本。來源與授權沿使用者已明確確認的可重製／遊戲使用授權；新增圖是其母圖的imagegen編修。
 - 交付：遊戲Commit為本紀錄所在 `[Codex] fix: 統一戰鬥HUD排版並修正球體透底與接縫`，回覆附編號；素材庫Commite606716。本次五項需求無未完成項，可供Review／合併，未合併推送。下一步重載遊戲檢視兩模式固定HUD、半滿球與貼框底緣。
+
+## GEM-RESONANCE-20261017 — 寶石共鳴系統
+
+- Owner：Claude；實作完成，待企劃確認「相鄰定義、各區寶石種類、升級花費」三項判定（見 docs/GEM_RESONANCE.md）。
+- 內容：寶石分頁新增「共鳴」工具（7 區 × 7 孔，SVG 盤面）；新配置表 Gem_resonance（xlsx → CSV → js/gem_resonance_data.js）；`computeStats` 併入共鳴能力；協議 v53 新增 3 條指令（94 → 97）、gems 面板新增 `resonance`；存檔新增 `player.resonance`（mergeDefaults 補預設，不需 Migration）。
+- 新增檔案：js/gem_resonance_data.js、js/gem_resonance.js、js/ui-gem-resonance.js、config/Excel/Gem_resonance.xlsx、config/CSV/Gem_resonance.csv、tests/gem-resonance.test.cjs、docs/GEM_RESONANCE.md。
+- 驗證：tests/gem-resonance.test.cjs 12/12；本機測試服（8125）實測鑲嵌、升級、總加成顯示，Worker 指令全程生效。

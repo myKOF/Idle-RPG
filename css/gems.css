@@ -88,3 +88,51 @@
   opacity: .45;
   cursor: not-allowed;
 }
+
+/* ---- 寶石共鳴（js/ui-gem-resonance.js）---- */
+.gres-layout { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start; }
+.gres-board { flex: 1 1 360px; max-width: 520px; min-width: 280px; }
+.gres-side { flex: 1 1 260px; min-width: 240px; display: flex; flex-direction: column; gap: 12px; }
+.gres-svg { display: block; width: 100%; height: auto; }
+.gres-hole { cursor: pointer; }
+.gres-hole polygon {
+  fill: hsl(var(--h) 38% 22%);
+  stroke: hsl(var(--h) 45% 42%);
+  stroke-width: 1.5;
+  transition: fill 0.12s, stroke 0.12s;
+}
+.gres-hole.is-filled polygon { fill: hsl(var(--h) 45% 30%); stroke: hsl(var(--h) 60% 58%); }
+.gres-hole:hover polygon { fill: hsl(var(--h) 45% 34%); }
+.gres-hole.is-sel polygon { stroke: #f0cf86; stroke-width: 3; }
+.gres-hole text { pointer-events: none; text-anchor: middle; font-size: 11px; }
+.gres-min { fill: hsl(var(--h) 60% 75% / 0.7); font-size: 14px; font-weight: 700; }
+.gres-lv { fill: #f0cf86; font-size: 9px; font-weight: 700; }
+.gres-hole .gres-cap { fill: #e8e2d4; font-size: 8px; }
+.gres-region { fill: hsl(var(--h) 70% 72%); font-size: 14px; font-weight: 700; }
+.gres-detail { display: flex; flex-direction: column; gap: 10px; }
+.gres-title { color: #ece6d8; }
+.gres-sub { margin-left: 8px; color: #8d877a; font-size: 12px; }
+.gres-types { color: #a39d90; font-size: 12px; line-height: 1.5; }
+.gres-slots { display: flex; flex-wrap: wrap; gap: 6px; }
+.gres-gem {
+  display: flex; align-items: center; gap: 6px; padding: 4px 8px;
+  border: 1px solid #2a2d34; border-radius: 6px; background: #0e1013;
+  color: #ece6d8; font: inherit; font-size: 12px; text-align: left;
+}
+button.gres-gem { cursor: pointer; }
+button.gres-gem:hover { border-color: #7a6440; }
+.gres-gem small { display: block; color: #a39d90; }
+.gres-gem.is-empty { color: #5c5f66; padding: 10px 14px; }
+.gres-lvrow { display: flex; justify-content: space-between; gap: 8px; color: #ece6d8; font-size: 13px; }
+.gres-lvrow span { color: #a39d90; }
+.gres-cost { color: #c9c3b5; font-size: 12px; line-height: 1.7; }
+.gres-cost .is-short { color: #e0685c; }
+.gres-pool { display: flex; flex-wrap: wrap; gap: 4px; max-height: 190px; overflow-y: auto; }
+.gres-chip {
+  position: relative; padding: 2px; border: 1px solid var(--c, #3a3d44); border-radius: 6px;
+  background: #0e1013; cursor: pointer;
+}
+.gres-chip span { position: absolute; right: 2px; bottom: 0; font-size: 10px; color: #ece6d8; text-shadow: 0 0 3px #000; }
+.gres-chip:hover { background: #1a1d22; }
+.gres-empty { color: #8d877a; font-size: 12px; }
+.gres-list { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: #c9c3b5; }

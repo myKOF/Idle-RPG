@@ -20,6 +20,7 @@
      Equipment_Affix   ← AFFIX_POOL + PASSIVE_POOL + GODFORGE_POOL（js/data.js）
      NPC               ← 各地圖 NPC pool（js/data.js）
      Task              ← TASKS（js/data.js，2026-08-05 任務系統）
+     Gem_resonance     ← GEM_RESONANCE_SETTINGS + GEM_RESONANCE_REGIONS + GEM_RESONANCE_UPGRADES（js/gem_resonance_data.js，2026-10-17 寶石共鳴；xlsx 由 Excel 建立，--gen 只寫 CSV）
      Runes             ← RUNE_SETTINGS + RUNES + RUNEWORDS（js/runeword_data.js，2026-10-07 符文取代附魔；xlsx 由 Excel 建立，--gen 只寫 CSV）
 
    原理：這些是「純資料字面值」（`var NAME = {…};`）。--gen 以字串感知的括號配對
@@ -42,7 +43,8 @@ const JS = {
   skills2: path.join(ROOT, 'js', 'skills2.js'),
   status: path.join(ROOT, 'js', 'status.js'),
   runes: path.join(ROOT, 'js', 'runeword_data.js'),
-  elite: path.join(ROOT, 'js', 'elite_data.js')
+  elite: path.join(ROOT, 'js', 'elite_data.js'),
+  gemRes: path.join(ROOT, 'js', 'gem_resonance_data.js')
 };
 const WRITE = process.argv.includes('--write');
 
@@ -2080,7 +2082,87 @@ SCHEMAS.Runes = {
   }
 };
 
-const TABLE_ORDER = ['Skills', 'Skills2', 'Status', 'Gems', 'Talents', 'Equipment_Affix', 'NPC', 'Task', 'Runes'];
+/* ---- Gem_resonance ← GEM_RESONANCE_SETTINGS + GEM_RESONANCE_REGIONS + GEM_RESONANCE_UPGRADES（js/gem_resonance_data.js；2026-10-17 寶石共鳴）----
+   一張表、三種列（「類型」欄區分）：
+     設定  id＝設定鍵（perLevelPct＝孔每升 1 級讓相鄰孔寶石多算幾 %；maxPct＝該加成上限 %）、「設定值」＝數字。
+     區域  版面順序固定：前 6 列是外圍區（從正上方順時針），最後 1 列是中央區，不可重排。
+           「可鑲寶石」＝GEM_TYPES 的 id 用「;」分隔，*＝不限種類；「中心容量」＝中心孔可放幾顆（外圈孔固定 1 顆）；
+           「孔位最低階」＝7 個整數用「;」分隔，依序是 中心;外圈1;外圈2;…;外圈6（外圈 1 在正上方，順時針）。
+     升級  id＝升到第幾級（1 起算、連續）；金幣；寶石階級＋寶石數量＝同種寶石（該孔目前鑲的種類）。列數＝孔等級上限。
+   寫回：rebuild 整塊重建三個字面值（語意無變更時不動檔案）。xlsx 不由 --gen 產生（AI_RULES 8.5）。 */
+const GEM_RES_HEADER = ['類型', 'id', '名稱', '可鑲寶石', '中心容量', '孔位最低階', '金幣', '寶石階級', '寶石數量', '設定值', '備註'];
+const GEM_RES_NOTES = {
+  perLevelPct: '孔每升 1 級，相鄰孔裡每顆寶石的能力多算這個 %（加成＝孔等級 × 此值，不超過上限）。',
+  maxPct: '孔等級帶來的相鄰加成上限 %。'
+};
+SCHEMAS.Gem_resonance = {
+  name: 'Gem_resonance', jsFile: 'gemRes', sheet: 'Gem_resonance', vars: ['GEM_RESONANCE_SETTINGS', 'GEM_RESONANCE_REGIONS', 'GEM_RESONANCE_UPGRADES'],
+  noXlsxGen: true,
+  header: GEM_RES_HEADER,
+  extract(src) {
+    const settings = evalLiteral(extractLiteral(src, 'GEM_RESONANCE_SETTINGS').literal);
+    const regions = evalLiteral(extractLiteral(src, 'GEM_RESONANCE_REGIONS').literal);
+    const ups = evalLiteral(extractLiteral(src, 'GEM_RESONANCE_UPGRADES').literal);
+    const col = {}; GEM_RES_HEADER.forEach((h, i) => { col[h] = i; });
+    const mk = (kind, obj) => { const row = GEM_RES_HEADER.map(() => ''); row[col['類型']] = kind; Object.keys(obj).forEach(k => { row[col[k]] = String(obj[k]); }); return row; };
+    const rows = [];
+    Object.keys(settings).forEach(k => rows.push(mk('設定', { id: k, 設定值: numStr(settings[k]), 備註: GEM_RES_NOTES[k] || '' })));
+    regions.forEach(r => rows.push(mk('區域', { id: r.id, 名稱: r.name, 可鑲寶石: r.types ? joinList(r.types) : '*', 中心容量: numStr(r.centerCap), 孔位最低階: joinList(r.minLv.map(numStr)) })));
+    ups.forEach((u, i) => rows.push(mk('升級', { id: String(i + 1), 金幣: numStr(u.gold), 寶石階級: numStr(u.gemLv), 寶石數量: numStr(u.gemCount) })));
+    return rows;
+  },
+  rebuild(dataRows, header) {
+    const get = rowGetter(header);
+    const fail = msg => { throw new Error(msg); };
+    const gemIds = new Set(Object.keys(evalLiteral(extractLiteral(readUtf8(JS.data), 'GEM_TYPES').literal)));
+    const isInt = n => Number.isInteger(n);
+    const settings = {}, regions = [], ups = [];
+    dataRows.forEach((r, i) => {
+      const kind = get(r, '類型').trim();
+      if (kind === '') return;
+      const id = get(r, 'id').trim();
+      const where = 'Gem_resonance 表 第' + (i + 2) + '列（' + kind + '「' + id + '」）';
+      const num = (col, min) => {
+        let n; try { n = toNum(get(r, col)); } catch (e) { fail(where + '的「' + col + '」' + e.message); }
+        if (n < min) fail(where + '的「' + col + '」不得小於 ' + min);
+        return n;
+      };
+      if (kind === '設定') {
+        if (!(id in GEM_RES_NOTES)) fail(where + '：未知設定鍵（只能是 ' + Object.keys(GEM_RES_NOTES).join('／') + '）');
+        settings[id] = num('設定值', 0);
+      } else if (kind === '區域') {
+        const typeText = get(r, '可鑲寶石').trim();
+        let types = null;
+        if (typeText !== '*') {
+          types = splitList(typeText);
+          if (!types.length) fail(where + '：「可鑲寶石」不可空白（不限種類請填 *）');
+          types.forEach(t => { if (!gemIds.has(t)) fail(where + '：寶石種類「' + t + '」不在 Gems 表'); });
+        }
+        const cap = num('中心容量', 1);
+        if (!isInt(cap) || cap > 6) fail(where + '：「中心容量」必須是 1~6 的整數');
+        const minLv = splitList(get(r, '孔位最低階')).map(Number);
+        if (minLv.length !== 7 || minLv.some(n => !isInt(n) || n < 1 || n > 10)) fail(where + '：「孔位最低階」必須是 7 個 1~10 的整數（中心;外圈1~6）');
+        regions.push({ id, name: get(r, '名稱').trim(), types, centerCap: cap, minLv });
+      } else if (kind === '升級') {
+        const gemLv = num('寶石階級', 1), gemCount = num('寶石數量', 1);
+        if (Number(id) !== ups.length + 1) fail(where + '：升級列的 id 必須從 1 起連續（這裡應為 ' + (ups.length + 1) + '）');
+        if (!isInt(gemLv) || gemLv > 10 || !isInt(gemCount)) fail(where + '：寶石階級須為 1~10、數量須為整數');
+        ups.push({ gold: num('金幣', 0), gemLv, gemCount });
+      } else fail(where + '：「類型」只能是 設定／區域／升級');
+    });
+    Object.keys(GEM_RES_NOTES).forEach(k => { if (!(settings[k] > 0)) fail('Gem_resonance 表缺少或不正確的設定列「' + k + '」（必須大於 0）'); });
+    if (regions.length !== 7) fail('Gem_resonance 表必須有 7 列區域（6 個外圍區＋最後 1 個中央區），目前 ' + regions.length + ' 列');
+    if (new Set(regions.map(r => r.id)).size !== regions.length) fail('Gem_resonance 表：區域 id 不可重複');
+    if (!ups.length) fail('Gem_resonance 表沒有任何升級列');
+    return {
+      GEM_RESONANCE_SETTINGS: 'var GEM_RESONANCE_SETTINGS = ' + jsLit({ perLevelPct: settings.perLevelPct, maxPct: settings.maxPct }) + ';',
+      GEM_RESONANCE_REGIONS: 'var GEM_RESONANCE_REGIONS = [\n' + regions.map(o => '  ' + jsLit(o)).join(',\n') + '\n];',
+      GEM_RESONANCE_UPGRADES: 'var GEM_RESONANCE_UPGRADES = [\n' + ups.map(o => '  ' + jsLit(o)).join(',\n') + '\n];'
+    };
+  }
+};
+
+const TABLE_ORDER = ['Skills', 'Skills2', 'Status', 'Gems', 'Talents', 'Equipment_Affix', 'NPC', 'Task', 'Runes', 'Gem_resonance'];
 
 /* ===========================================================================
    模式：--gen / --sync / --apply
@@ -2238,7 +2320,7 @@ if (mode === 'gen') cmdGen(only);
 else if (mode === 'sync') cmdSync();
 else if (mode === 'apply') cmdApply(only);
 else {
-  console.log('用法：node tools/config_tables.cjs [--gen | --sync | --apply [--write]] [Skills|Skills2|Status|Gems|Talents|Equipment_Affix|NPC|Task|Runes]');
+  console.log('用法：node tools/config_tables.cjs [--gen | --sync | --apply [--write]] [Skills|Skills2|Status|Gems|Talents|Equipment_Affix|NPC|Task|Runes|Gem_resonance]');
   process.exit(1);
 }
 

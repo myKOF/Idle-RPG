@@ -95,6 +95,7 @@ function newGameState() {
       fusedGems: [],          // 融合寶石（雙屬性，個別實體）
       runes: {},              // 符文庫存 { 符文id: 數量 }（符文真言的素材，js/runeword.js）
       runewordSeen: {},       // 已激活過的符文真言 { 真言id: 1 }（圖鑑據此顯示配方與效果，js/runeword.js §2）
+      resonance: { holes: {} }, // 寶石共鳴：{ holes: { '區域:孔': { gems: [{type, level}], lv } } }（js/gem_resonance.js）
       gemShop: { level: 1, items: [], refreshCount: 0, hourStart: Date.now() },
       books: books,
       invUpgrades: 0,

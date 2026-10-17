@@ -10540,7 +10540,7 @@ var GEM_LIB_FILTERS = [
   { id: 'res', label: '抗性' }
 ];
 var GEM_DEF_STATS = { hpFlat: 1, hpRegen: 1, defFlat: 1, mdefFlat: 1, evasion: 1, tenacity: 1, blockRate: 1, blockDmgRed: 1, shieldEff: 1, pRes: 1, mRes: 1 };
-var GEM_TOOLS = ['compose', 'convert', 'dismantle', 'fusion', 'shop'];
+var GEM_TOOLS = ['compose', 'convert', 'dismantle', 'fusion', 'shop', 'resonance'];
 
 // 分類只看聚合桶：對屬性增傷與屬性傷害提升歸「元素」、元素抗性歸「抗性」，其餘依攻防分。
 function gemCategoryOf(type) {
@@ -10715,6 +10715,7 @@ function renderGems() {
     if (fusionTab.className !== fusionTabClass) fusionTab.className = fusionTabClass;
   }
   renderGemShop(gemsSnapshot, headerSnapshot);
+  if (typeof renderGemResonance === 'function') renderGemResonance(gemsSnapshot, headerSnapshot);
 }
 
 function gemAbilityText(type, lv) {
@@ -12822,6 +12823,8 @@ function initUI() {
 
   // 符文頁（符文真言）：由 js/ui-runeword.js 綁定
   if (typeof initRuneUi === 'function') initRuneUi();
+  // 寶石共鳴工具：由 js/ui-gem-resonance.js 綁定
+  if (typeof initGemResonanceUi === 'function') initGemResonanceUi();
 
   // 寶石頁：寶石庫分類／選取、工坊分頁切換
   var gemsTab = $id('tab-gems');

@@ -17,8 +17,8 @@ if (typeof GameClock !== 'undefined') {
   globalThis.clearTimeout = GameClock.clearTimeout;
 }
 importScripts(
-  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261016-npc-retaliate-refill', '../runeword_data.js?v=20261013-rune-all-elem-color', '../status.js?v=20261014-state-status', '../formula.js?v=20261016-npc-retaliate-refill', '../battlefield.js?v=20261016-npc-retaliate-refill', '../stats.js?v=20261003-rename-weineng',
-  '../item.js?v=20261015-gem-enabled', '../runeword.js?v=20261014-develop-integration',
+  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261016-npc-retaliate-refill', '../runeword_data.js?v=20261013-rune-all-elem-color', '../gem_resonance_data.js?v=20261017-gem-resonance','../status.js?v=20261014-state-status', '../formula.js?v=20261016-npc-retaliate-refill', '../battlefield.js?v=20261016-npc-retaliate-refill', '../stats.js?v=20261003-rename-weineng',
+  '../item.js?v=20261015-gem-enabled', '../gem_resonance.js?v=20261017-gem-resonance','../runeword.js?v=20261014-develop-integration',
   '../skills.js?v=20261015-boss-player-skill', '../skills2.js?v=20261016-wall-slab', '../elite_data.js?v=20261016-wall-rock', '../talents.js?v=20261015-boss-player-skill',
   '../player.js?v=20261015-boss-player-skill', '../special_rules.js',
   '../combat.js?v=20261016-npc-retaliate-refill', '../elite.js?v=20261016-wall-slab', '../elite_boss.js?v=20261015-boss-player-skill', '../elite_boss_recipes.js?v=20261015-boss-player-skill', '../legendary.js?v=20261012-indomitable-guard', '../potential.js?v=20261005-cc-decay-count', '../tower.js?v=20261016-npc-vision',
@@ -1018,6 +1018,7 @@ function buildPanel(name, params) {
       // 一般寶石是 { type: { lv: n } } 計數；融合寶石才是個別實體
       return {
         gems: p.gems, fusedGems: p.fusedGems, runes: p.runes || {},
+        resonance: p.resonance || { holes: {} },   // v53：寶石共鳴孔位
         runewordSeen: p.runewordSeen || {},   // v48：成形過的符文真言 { id: 1 }，圖鑑據此決定顯示配方或問號
         shop: (typeof gemShop === 'function') ? gemShop() : p.gemShop
       };
