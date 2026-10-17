@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## WORKTREE-PATH-RENAME-20261017 — MyGames 改為 MyGame 與 Git 工作區修復
+
+- Owner：Codex；In Progress。使用者授權將 D:\MyGames 改為 D:\MyGame，修復 Claude／Codex／Antigravity／develop／production 路徑。前置：已備份 Git metadata、各工作區 HEAD／branch／index／status 與全部未提交檔案 SHA256；Windows 仍拒絕重新命名，須讓占用程式正常結束後執行。
+- 允許：目錄重新命名、Git worktree repair、本機素材庫／環境變數／Fork 與工作區路徑設定、必要捷徑、prompts/codex.md 的現行路徑及本紀錄。禁止遊戲程式／數值／Excel內容／素材內容、切換分支、合併、推送或提交既有13個未提交檔案；無素材庫內容變更，不需素材庫Commit。
+- 執行：單一維護流程，先保留外部備份，再搬移及修復共用 develop/.git 與四個 linked worktree；production 保持 main。驗收逐一比對 HEAD、分支、refs、index SHA256、status 與未提交檔案雜湊，所有 Git 路徑指向新目錄；不執行與路徑無關的遊戲 Build。後續接手者為使用者，以備份目錄下 RESULT.txt／result.json 檢查實際執行結果。
+- 本輪狀態：已停止可自動重建的 TGitCache 後重試仍被拒絕，未強制關閉 Fork／Codex、未改名或部分修復 Git metadata。離線流程將等占用程式關閉後執行並保留完整日誌；搬移未完成前不得宣稱 Done。
+
 ## NPC-WALL-FOUR-20261017 — 四塊岩壁與細緻石材
 
 - Owner：Codex；Done，單一開發者。使用者要求每面岩壁三塊改四塊、重繪細緻寫實岩石；依既有整面SVG與12個角度接線實作，牆長18米／厚6米、2~3面配置、阻擋與7秒存續均保留。無新Preset／layout／Protocol／存檔格式；後續交使用者整合，未合併推送。
