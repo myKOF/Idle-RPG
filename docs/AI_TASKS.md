@@ -1,5 +1,20 @@
 # AI_TASKS.md
 
+## GEM-CONVERT-HOLY-LIGHT-20261018 — 降低三成亮度、即時聖光與結束後成功提示
+
+- Owner：Codex；Done，單一開發者。使用者要求亮度降低30%、黃白聖光、查明按下後全寶石先閃再播放原因，改為按下直接播放、約2秒結束後才提示成功。前置轉換白光已完成，工作區乾淨、七檔預檢乾淨。
+- 允許js/ui.js僅轉換展示／回覆與完成時序／避免來源重繪閃爍、css/gems.css光色強度與起始幀、index.html相應快取、tests/gem-convert-shift.test.cjs相關非同步回歸、PATCH.md／本紀錄與效果登記；禁止Worker／轉換比例／數值／存檔／素材及其他副本，不合併推送。
+- 方式：點擊立即啟動2秒處理光效，成功訊息須同時滿足動畫結束及權威成功；延遲回覆不重播，失敗取消展示／計時並解鎖，不報假成功。轉場期間保留上方來源節點及外觀，以inert／操作檢查鎖定，避免全列置灰重建。黃白光暈峰值強度為原70%，移除前段無光空檔。驗原版與新版即時來源樣式／節點及動畫啟動、正常／晚回覆／失敗／重試與既有兩秒／暫停／減少動態，回歸／Build／正式瀏覽器及Console後Commit；後續使用者重載驗收。
+- 根因：原runGemConvert先設pending並renderGems，gemConvertBlockReason回報busy令十階列全部disabled／is-unavailable，整列innerHTML重建、opacity從1變.32並grayscale(1)；權威庫存到達又重建整個左側清單。光效直到成功回覆才啟動，原keyframes前8%（160ms）opacity0，更像先閃一下才亮。不是寶石資料實際消失再回填。
+- 完成七檔：ui.js改為按下直接renderGemConvert並開始共用兩秒計時，保留本次來源／產出；renderGems在轉換展示期間保留十階列及左側類型列節點，以inert及既有操作檢查鎖定而不改來源外觀。新增finishGemConvert，需elapsed與acknowledged同時成立才清空展示、記錄成功並顯示綠字；早回覆不重播，晚回覆不重設計時，失敗取消計時並恢復操作，舊回呼按身分檢查不會清除重試中的畫面。
+- gems.css保留142px溢出範圍，白光改暖白核心RGB255/248/223與金黃外光；峰值opacity1→.7、各段強度及亮框光暈同比減30%，icon峰值brightness4→2.8。起始opacity.12、scale.55直接帶光，移除無光等待段。index UI173→174／CSS19→20，PATCH／用途登記與本紀錄同步；沒有Worker／Protocol／配方／存檔／素材變更，無素材庫Commit。
+- 指令／結果：`node --test tests/gem-convert-shift.test.cjs tests/gem-resonance-ui.test.cjs tests/gem-tooltip.test.cjs tests/init-ui-smoke.test.cjs tests/game-clock.test.cjs tests/game-menu.test.cjs tests/vfx-preset-usage.test.cjs`73/73通過。兩項舊非同步斷言依新規格改為立即播放／成功延後／失敗取消，新增晚回覆不得假報成功或重播回歸；保留原子性與重試斷言。最後補上左側清單保留後，相依gem-convert-shift／gem-resonance-ui／init-ui-smoke重跑29/29、`node --check js/ui.js`通過；`npm.cmd run build`535檔通過，`git diff --check`通過。未重跑全庫，沒有參數接線變更。
+- 瀏覽器：隔離headless Edge／隨機localhost／兩個全新context／seed新角色，正式UI／Worker；測試服務before僅回傳HEAD的index／UI／CSS，after回傳工作檔，其他檔相同，不讀真人存檔。GM供11顆一級紅寶石及5顆二級紅寶石等測試料；只在測試包裝gem.convert成功回覆延遲600ms，實際權威立即結算，故能重現快照早到與顯示等待。
+- before按下立即phase=pending、十階來源節點更換、opacity.32／grayscale(1)、白光animation=none；750ms時左側清單節點亦更換、白光仍opacity0而成功文字已先出現。after按下立即phase=playing、白光opacity.12，來源及清單節點維持相同、來源opacity1／filter none；回覆到達後仍同節點且不先顯示成功。峰值讀到opacity.7、暖白核心RGB255/248/223、寬142px。透過共享時鐘暫停及固定真實CSS動畫至1000ms取圖；沒有修改產品時長或加入測試旗標。
+- after恢復後原料及成品清空，才出現「轉換成功！」，第一輪只送一次命令、紅寶石餘1顆；另一輪reduced-motion無::after動畫仍正常完成後提示。Console warning／error、pageerror及HTTP錯誤0。預覽保留本聊天visualizations/gem-convert-holy-light.png；隔離瀏覽器／服務正常結束，臨時gem-holy-light-check.cjs核對確切路徑後移除。
+- 唯讀未改：AI規範／AGENTS／工作流／專屬文件、權威轉換與Worker回覆／dirty流程、GameClock／GameMenu、原樣式層疊與來源渲染、VFX用途掃描及上列回歸。自我Review確認來源鎖定只在轉換工具生效、其他工具仍可正常刷新；光效是處理中展示，權威失敗不假報成功；權威結算不延遲或重扣。無本次未完成項，可供Review／合併，未合併推送。限制：未實測其他瀏覽器／實體觸控／低階長戰及慢網實機；已以延遲回覆及非同步回歸驗邊界。
+- 交付：Commit為本紀錄所在`[Codex] fix: 轉換聖光降低三成並修正播放與成功時序`，回覆附編號；下一步整合後重載，確認按下連續亮起、暖色強度及兩秒後的綠字。
+
 ## GEM-CONVERT-WHITE-FLASH-20261018 — 放大轉換白光並完全蓋住寶石
 
 - Owner：Codex；Done，單一開發者。使用者要求白光更大更明顯、可溢出格子，最亮時完全蓋住寶石圖示。前置GEM-CONVERT-GLOW完成，工作區乾淨、五檔預檢乾淨。

@@ -10682,6 +10682,7 @@ function renderGems() {
   var headerSnapshot = uiHeaderPanelSnapshot();
   if (!gemsSnapshot || !headerSnapshot) return;
   var st = UI.gemBrowse;
+  var holdConvertSources = st.tool === 'convert' && !!UI.gemConvertFx;
   var totals = {}, owned = 0, kinds = 0, typeCount = 0, firstOwned = null, firstType = null;
   for (var t in GEM_TYPES) {
     var typeTotal = 0;
@@ -10717,13 +10718,13 @@ function renderGems() {
       h += gemLibItemHTML(gemsSnapshot, t2, totals[t2]);
     }
     if (!h) h = '<div class="gx-empty">這個分類目前沒有持有的寶石</div>';
-    if (box._lastH !== h) { box._lastH = h; box.innerHTML = h; }
+    if (!holdConvertSources && box._lastH !== h) { box._lastH = h; box.innerHTML = h; }
   }
 
   var focus = $id('gem-focus');
   var focusH = gemFocusHTML(gemsSnapshot, st.sel, totals[st.sel] || 0);
   // 原生拖曳持有十階列的來源節點；庫存更新不得中途移除它，放開後再刷新。
-  if (focus && !st.resDrag && !st.convertDrag && focus._lastH !== focusH) { focus._lastH = focusH; focus.innerHTML = focusH; }
+  if (focus && !st.resDrag && !st.convertDrag && !holdConvertSources && focus._lastH !== focusH) { focus._lastH = focusH; focus.innerHTML = focusH; }
 
   fillGemTypeSelect($id('gconv-target'));
   fillGemTypeSelect($id('gdis-type'));
@@ -10925,6 +10926,11 @@ function renderGemConvert(gemsSnapshot) {
   if (targetSel) targetSel.disabled = !!fx;
   var clear = $id('gconv-clear');
   if (clear) clear.disabled = !!fx;
+  // 鎖定操作但保留原外觀；把整列改為disabled／重建會在光效前閃一下。
+  ['gem-focus', 'gem-table'].forEach(function (id) {
+    var source = $id(id);
+    if (source) source.inert = !!fx && UI.gemBrowse.tool === 'convert';
+  });
   grid.querySelectorAll('[data-gconv-slot]').forEach(function (cell) { cell.disabled = !!fx; });
   [grid, output].forEach(function (el) {
     if (!el) return;
@@ -10939,29 +10945,37 @@ function renderGemConvert(gemsSnapshot) {
 
 var GEM_CONVERT_FX_MS = 2000;
 
+function finishGemConvert(fx) {
+  if (UI.gemConvertFx !== fx || !fx.acknowledged || !fx.elapsed) return;
+  UI.gemConvertFx = null;
+  UI.gemConvertSuccess = true;
+  blog('🔄 寶石轉換成功', 'good', 'factory');
+  renderGems();
+}
+
 function runGemConvert() {
   if (UI.gemConvertFx) return Promise.resolve(null);
   var target = $id('gconv-target').value, slots = copyGemConvertSlots(UI.convertSlots);
   if (!isGemEnabled(target) || !gemConvertPlan(slots).consumed.length) return Promise.resolve(null);
-  var fx = { slots: slots, target: target, phase: 'pending' };
+  var fx = { slots: slots, target: target, phase: 'playing', acknowledged: false, elapsed: false };
   UI.gemConvertFx = fx;
   UI.gemConvertSuccess = false;
-  renderGems();
+  // 點擊當下直接播放，來源列不因busy狀態切換而重繪／置灰。
+  renderGemConvert();
+  fx.timer = UI_GAME_TIMING.setTimeout(function () {
+    if (UI.gemConvertFx !== fx) return;
+    fx.elapsed = true;
+    finishGemConvert(fx);
+  }, GEM_CONVERT_FX_MS);
   return sendGemUiCommand('gem.convert', { slots: slots, targetType: target }, 'gem-convert', ['gems'], function () {
     if (UI.gemConvertFx !== fx) return;
-    blog('🔄 寶石轉換成功', 'good', 'factory');
+    fx.acknowledged = true;
     UI.convertSlots = [];
-    UI.gemConvertSuccess = true;
-    fx.phase = 'playing';
-    renderGems();
-    UI_GAME_TIMING.setTimeout(function () {
-      if (UI.gemConvertFx !== fx) return;
-      UI.gemConvertFx = null;
-      renderGems();
-    }, GEM_CONVERT_FX_MS);
+    finishGemConvert(fx);
   }).then(function () {
-    // sendGemUiCommand會統一回報失敗；成功null與失敗null以本次階段區別。
-    if (UI.gemConvertFx === fx && fx.phase === 'pending') {
+    // sendGemUiCommand會統一回報失敗；回覆未確認時解除展示鎖，不報成功。
+    if (UI.gemConvertFx === fx && !fx.acknowledged) {
+      UI_GAME_TIMING.clearTimeout(fx.timer);
       UI.gemConvertFx = null;
       renderGems();
     }
