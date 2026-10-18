@@ -61,7 +61,8 @@ test('相同外觀不同ID分別入帶，消耗頭件後出帶而後件續移', 
   const b = h.entries()[1]; assert.notEqual(a, b); assert.equal(h.x(b), 352);
   h.step(500); const before = h.x(b);
   h.fu.belt.shift(); h.update(); assert.equal(h.entries().length, 2);
-  h.step(200); assert.equal(h.entries().length, 1); assert.equal(h.entries()[0], b);
+  h.step(200); assert.equal(h.entries().length, 2, '提前消耗仍保留頭件的剩餘入場路徑');
+  h.step(500); assert.equal(h.entries().length, 1); assert.equal(h.entries()[0], b);
   assert.ok(h.x(b) < before); assert.ok(h.x(b) > 0);
 });
 
@@ -124,4 +125,26 @@ test('捲出畫面不重繪粒子，捲回恢復，移除時釋放可見性觀�
   observer.callback([{ isIntersecting: true }]); h.step(100);
   assert.equal(h.jobs.size, 1); assert.ok(h.paints() > paints);
   h.node.isConnected = false; h.step(16); assert.equal(observer.disconnected, true);
+});
+
+test('畫面外收到新裝備，回到可見狀態時必須仍由右端入場', () => {
+  let observer;
+  const h = harness({ IntersectionObserver: class {
+    constructor(callback) { this.callback = callback; observer = this; }
+    observe() {} disconnect() {}
+  } });
+  h.update(); observer.callback([{ isIntersecting: false }]); h.step(100);
+  h.fu.belt = [{ id: 'new-while-hidden' }]; h.update(); h.step(500);
+  observer.callback([{ isIntersecting: true }]);
+  const item = h.entries()[0]; assert.equal(h.x(item), 352);
+  h.step(500); assert.ok(h.x(item) > 0 && h.x(item) < 352);
+});
+
+test('高速熔爐在入場途中消耗裝備，仍完成可見的右至左路徑', () => {
+  const h = harness(); h.fu.cycleDurationSec = .05; h.fu.cycleRemainingSec = .01;
+  h.fu.belt = [{ id: 'fast' }]; h.update(); h.step(20);
+  h.fu.belt = []; h.update(); h.step(100);
+  assert.equal(h.entries().length, 1, '不得在180ms內壓縮整段傳送帶路徑');
+  assert.ok(h.x(h.entries()[0]) > 0 && h.x(h.entries()[0]) < 352);
+  h.step(1000); assert.equal(h.entries().length, 0, '已消耗的演出節點最終必須清除');
 });

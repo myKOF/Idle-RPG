@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## FORGE-ENTRY-REGRESSION-20261018 — 修正隱藏恢復與高速入帶跳位
+
+- Owner：Codex；Done，單一開發者。使用者回報合併後裝備仍似直接出現在左端；沿前輪熔爐移動診斷，不假設是快取。工作區／分支起始乾淨，四檔預檢無衝突。
+- 允許js/ui-newforge-visuals.js僅入場／可見性／退出插補、tests/new-forge-visuals.test.cjs、index.html僅對應腳本快取及本紀錄；禁止熔爐數值／Worker／Protocol／存檔／爐火外觀／天堂威能或其他副本，不合併推送develop。
+- 驗收：先重現畫面外新裝備回畫面時直接置左、短週期件在入場結束前被移除而快速跳出；修正後保留右端起點並完成可見路徑，切頁／Resize／停用／Esc／減少動態、真實T10零件週期與同ID節點／過期清理皆正常。相依回歸、Build、隔離瀏覽器實際Observer與高速快照、Console、diff後Commit，後續使用者審閱整合。
+
+- 根因與修正：舊版以render(reduced || !visible)處理畫面外狀態，永久把新件from壓到左端to；加速週期又會在入場完成前把出帶壓成80–200ms。現在不可見時暫停顯示時間／保留右端起點，初次加入DOM先寫transform，恢復時重新設定待入場件；可見入場至少600ms，已被權威消耗的件完成剩餘路程後清除。隱藏時不保留已消耗件，避免累積。減少動態偏好仍沿既有靜態模式，實際速度／結算不延後。
+- 完成4檔：js/ui-newforge-visuals.js入場／可見性與退出插補；tests/new-forge-visuals.test.cjs新增2個先失敗後通過的回歸、調整提前消耗的剩餘路徑斷言；index.html對應腳本快取1.0.0→1.0.1；本紀錄。沒有爐火外觀／天堂威能修改。
+- 測試指令／結果：`node --test tests/new-forge-visuals.test.cjs tests/new-forge-ui.test.cjs tests/newforge-panel-performance.test.cjs tests/new-forge.test.cjs tests/game-clock.test.cjs`46/46通過；`node --test tests/init-ui-smoke.test.cjs`2/2通過；`npm.cmd run build`538檔通過；`git diff --check`通過。新測試在修正前分別重現x=0與120ms時節點已消失，修正後9個顯示層測試全部通過。
+- 瀏覽器：隔離headless Edge／隨機localhost／seed1018新角色，不讀真人存檔。原生IntersectionObserver讓卡片移出畫面、收到新件再恢復；舊版hidden x=0／shown x=0，修正後hidden x=367／shown 60ms x=355.84。正式Worker載入引擎fixture的T10加速齒輪，實際週期0.5s；裝備位置358→281→173→56→清除，途中權威快照belt=0／salvaged=1仍保留剩餘顯示路程。Console error／warning、pageerror及HTTP錯誤0。服務／瀏覽器已關閉，未留下測試腳本。
+- 唯讀未改：共通規範／工作流／Agent文件、Worker熔爐投影與Protocol、熔爐權威邏輯／存檔、Canvas爐火、CSS、天堂威能、既有UI／效能／核心／GameClock／初始化回歸與模擬引擎。無未完成修正或已知阻擋；顯示最長會比高速權威結算稍晚清除，屬刻意保留可見演出，不更改資源。未驗全部實體裝置或完整測試庫。可供審查合併，尚未合併／推送develop。Commit為本紀錄所在`[Codex] fix: 修正熔爐入場被可見性與加速跳過`，回覆附實際編號。
+
 ## HEAVEN-POWER-DARK-APPLY-20261018 — 接入暗金聖印背景
 
 - Owner：Codex；Done，單一開發者。使用者選定最新暗色候選第1張（A暗金聖印），授權接入天堂威能星盤；前置a9653a39與已確認母圖完成。遊戲／素材庫工作區乾淨，修改目標預檢無其他副本衝突。

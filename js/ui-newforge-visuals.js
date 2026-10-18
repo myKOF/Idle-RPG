@@ -4,6 +4,7 @@ var NewForgeVisuals = (function () {
   var states = [], frame = null;
   var clock = typeof GameClock !== 'undefined' ? GameClock : globalThis;
   var pitch = 44;
+  var minimumEntryMs = 600;
 
   function now() { return typeof clock.now === 'function' ? clock.now() : performance.now(); }
   function active() { return (typeof UI === 'undefined' || UI.tab === 'newforge') && !document.hidden; }
@@ -13,7 +14,7 @@ var NewForgeVisuals = (function () {
     return entry.from + (entry.to - entry.from) * p;
   }
   function advance(state, time) {
-    if (state.enabled && active()) state.time += Math.max(0, time - state.lastAt);
+    if (state.enabled && state.visible && active()) state.time += Math.max(0, time - state.lastAt);
     state.lastAt = time;
   }
   function move(entry, target, duration, time) {
@@ -164,7 +165,8 @@ var NewForgeVisuals = (function () {
     var max = Math.max(1, Math.floor((width + 4) / pitch));
     var cycle = Math.max(.01, Number(fu.cycleDurationSec) || NEW_FORGE_INTERVAL);
     var remaining = Number(fu.cycleRemainingSec);
-    var duration = Math.max(180, (Number.isFinite(remaining) && remaining > 0 ? remaining : cycle) * 1000);
+    // 拆解可比畫面更新更快；顯示層至少保留一段能辨識的入場，不延後權威結算。
+    var duration = Math.max(minimumEntryMs, (Number.isFinite(remaining) && remaining > 0 ? remaining : cycle) * 1000);
     var shown = new Set(), incoming = 0;
     items.slice(0, max).forEach(function (item, i) {
       var key = keys[i], entry = state.entries.get(key);
@@ -172,9 +174,18 @@ var NewForgeVisuals = (function () {
       if (!entry) {
         var chip = makeChip(item);
         chip.setAttribute('data-nf-item-id', item.id === undefined ? key : String(item.id));
+        var origin = width + incoming++ * pitch;
+        chip.style.transform = 'translate3d(' + origin + 'px,-50%,0)';
         node.appendChild(chip);
-        entry = { node: chip, from: width + incoming++ * pitch, to: i * pitch, at: state.time, duration: duration };
+        entry = { node: chip, from: origin, to: i * pitch, at: state.time, duration: duration,
+          pendingEnter: !state.visible || !active() };
         state.entries.set(key, entry);
+      } else if (entry.pendingEnter && state.visible && active()) {
+        entry.from = width + incoming++ * pitch;
+        entry.to = i * pitch;
+        entry.at = state.time;
+        entry.duration = duration;
+        entry.pendingEnter = false;
       } else if (entry.exiting || entry.to !== i * pitch || state.cycle !== cycle) {
         move(entry, i * pitch, duration, state.time);
       }
@@ -182,14 +193,17 @@ var NewForgeVisuals = (function () {
     });
     state.entries.forEach(function (entry, key) {
       if (shown.has(key)) return;
-      if (live.has(key)) { entry.node.remove(); state.entries.delete(key); }
+      if (live.has(key) || !state.visible || !active()) { entry.node.remove(); state.entries.delete(key); }
       else if (!entry.exiting) {
-        move(entry, -pitch, Math.max(80, Math.min(200, cycle * 250)), state.time);
+        var entering = Math.max(0, entry.at + entry.duration - state.time);
+        move(entry, -pitch, entering + Math.max(80, Math.min(200, cycle * 250)), state.time);
         entry.exiting = true;
       }
     });
     state.cycle = cycle;
-    render(state, reduced() || !state.visible);
+    state.empty.hidden = state.entries.size > 0;
+    // Observer尚未回報可見時不可用「減少動態」代替隱藏，否則會永久把新件置左。
+    if (state.visible && active()) render(state, reduced());
     if (frame === null && active() && state.visible && state.enabled && !reduced()) frame = clock.requestAnimationFrame(tick);
   }
   if (typeof matchMedia === 'function') {
