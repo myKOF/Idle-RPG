@@ -224,7 +224,9 @@ function gresDetailHTML(snapshot, headerSnapshot, state, sel) {
     var g = slot.gems[i];
     h += g
       ? '<button type="button" class="gres-gem" data-gres-take="' + i + '" aria-label="' + esc(GEM_NAMES[g.level] + GEM_TYPES[g.type].name + '，點擊取下') +
-        '" data-tt-title="' + esc(GEM_NAMES[g.level] + GEM_TYPES[g.type].name) + '" data-tt-desc="' + esc(gresStatText(g.type, gemStatValue(g.type, g.level)) + '；點擊取下') + '">' + gemIconHTML(g.type, g.level, 'gi-slot') + '</button>'
+        '" data-tt-title="' + esc(GEM_NAMES[g.level] + GEM_TYPES[g.type].name) + '" data-tt-desc="' + esc(gresStatText(g.type, gemStatValue(g.type, g.level)) + '；點擊取下') + '">' + gemIconHTML(g.type, g.level, 'gi-slot') +
+        '<span class="gres-gem-info"><span class="gres-gem-name">' + esc(GEM_NAMES[g.level] + GEM_TYPES[g.type].name) + '</span>' +
+        '<span class="gres-gem-stat">' + gresStatText(g.type, gemStatValue(g.type, g.level)) + '</span></span></button>'
       : '<div class="gres-gem is-empty">鑲孔</div>';
   }
   h += '</div>';

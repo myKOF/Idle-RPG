@@ -128,8 +128,12 @@
   border: 1px solid #68665f; border-radius: 2px; background: #0e1013;
   color: #ece6d8; font: inherit; font-size: 12px; text-align: left;
 }
-button.gres-gem { cursor: pointer; }
+button.gres-gem { cursor: pointer; width: 100%; box-sizing: border-box; height: 38px; justify-content: flex-start; gap: 6px; }
 button.gres-gem:hover { border-color: #7a6440; }
+.gres-gem-info { flex: 1; min-width: 0; line-height: 1.25; }
+.gres-gem-name, .gres-gem-stat { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gres-gem-name { font-size: 11px; }
+.gres-gem-stat { font-size: 10px; color: #bcb6a8; }
 .gres-gem.is-empty { color: #c9c3b5; }
 .gres-upgrade .btn { width: 100%; }
 .gres-upgrade .btn:disabled { pointer-events: none; }

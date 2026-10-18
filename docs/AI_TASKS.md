@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## GEM-RESONANCE-SLOT-TEXT-20261018 — 等高鑲孔顯示寶石名稱與能力
+
+- Owner：Codex；Done，單一開發者。使用者要求右側已鑲寶石欄加寬，圖示旁以小字顯示寶石名稱與自身能力，不能增加格高。前置共鳴資訊已完成，工作區乾淨、七檔預檢乾淨。
+- 允許js/ui-gem-resonance.js僅已鑲欄文字、css/gems.css僅欄位排列、index.html快取、既有tests/gem-resonance-ui.test.cjs斷言、docs/GEM_RESONANCE.md、PATCH.md與本紀錄；禁止規則／數值／Worker／Protocol／存檔／配置／素材及其他副本，不合併推送。
+- 方式／驗收：已鑲欄使用資訊區可用寬度，保持原32px圖示及38px格高，名稱／本身能力分兩行小字；原逐顆取下與完整Tooltip保留。既有共鳴／初始化回歸、Build／diff，隔離瀏覽器量測新舊格高／長文字／多顆／寬窄視窗／取下後Commit；後續使用者重載檢視。無新素材或素材庫變更。
+- 完成7檔：共鳴UI在圖示旁加上名稱與未計相鄰加成的自身能力；gems CSS僅已鑲按鈕填滿欄寬、固定38px高／32px原圖示，名稱11px／能力10px、兩行不換行，保留完整Tooltip。index gems CSS1.0.15→16／共鳴UI1.0.13→14；兩份說明與既有UI測試依新需求同步，不加鏡像測試。原逐顆取下、共鳴規則／Worker及存檔不變。
+- 指令／結果：`node --test tests/gem-resonance-ui.test.cjs tests/gem-resonance.test.cjs tests/init-ui-smoke.test.cjs`35/35通過；`npm.cmd run build`535檔通過，`git diff --check`通過。隔離headless Edge／隨機localhost／seed新角色、GM供兩種6階寶石，正式鑲入魔法中心兩孔；1920×900由原46px寬變180px寬，與HEAD舊CSS影子DOM對照高度均38px。1366×768／390×844亦維持38px版面高度，隨原全頁縮放呈現。全部寶石種類1～10階、各6顆的純UI fixture在180px欄寬均完整顯示兩行、無文字截斷或格高增加；點名稱／能力都可正常逐顆取下。Console warning／error、pageerror／HTTP錯誤0。
+- 唯讀未改：AI規範／工作流／Agent文件、gemStatValue／gresStatText／圖示、原取下命令與Tooltip、共鳴權威規則及資料。素材庫無本次變更，無素材庫Commit。預覽保留本聊天visualizations/gem-resonance-slot-text.png；瀏覽器／服務及臨時腳本已清理。未實測其他瀏覽器／實體觸控，無新增已知風險或未完成項。Commit為本紀錄所在`[Codex] fix: 共鳴鑲孔等高顯示寶石名稱與能力`，回覆附編號；可供Review／合併，未合併推送。使用者追加暴擊傷害寶石分類調整另立任務，接續完成。
+
 ## NPC-WALL-NATURAL-20261018 — 縮窄築牆並改為自然岩壁
 
 - Owner：Codex；Done，單一開發者。使用者要求NPC築牆岩塊寬度縮減35%、長方形並改善方正造型；依牆短軸厚度6→3.9米處理，長度18米／四塊／2~3面／7秒沿既有規則。前置四塊岩壁已完成，開始副本乾淨，全部目標衝突預檢乾淨。

@@ -209,7 +209,9 @@ test('精簡資訊仍提供正確費用Tooltip、禁用／滿級／鎖定原因�
  assert.match(detail(),/data-tt-title="升級鑲孔"/);assert.match(detail(),/金幣：5000/);assert.match(detail(),/材料：一級鑽石 ×3/);
  assert.doesNotMatch(detail(),/data-gres-upgrade="1" disabled/);
  nodes['gem-focus'].handlers.click({target:element({'data-gres-gem':'diamond:6'})});
- assert.match(detail(),/aria-label="六級鑽石，點擊取下"/);assert.doesNotMatch(detail(),/<span>|<small>/);
+ assert.match(detail(),/aria-label="六級鑽石，點擊取下"/);
+ assert.match(detail(),/<span class="gres-gem-name">六級鑽石<\/span>/);
+ assert.ok(detail().includes('<span class="gres-gem-stat">'+c.gresStatText('diamond',c.gemStatValue('diamond',6))+'</span>'));
  nodes['gres-detail'].handlers.click({target:element({'data-gres-take':'0'})});assert.equal(c.G.player.gems.diamond[6],2);
  c.G.player.gold=0;c.renderGems();assert.match(detail(),/金幣：5000（持有 0）/);assert.match(detail(),/金幣或材料不足/);assert.match(detail(),/data-gres-upgrade="1" disabled/);
  let shown,hidden=0;c.showStatTooltip=(...args)=>shown=args;c.hideTooltip=()=>hidden++;
