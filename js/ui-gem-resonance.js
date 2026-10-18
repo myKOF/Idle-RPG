@@ -41,9 +41,19 @@ function gresHexPoints(c, radius) {
 function gresSnapshotState(snapshot) {
   return (snapshot && snapshot.resonance) || { holes: {} };
 }
+function gresDefaultHole() {
+  for (var r = 0; r < GEM_RESONANCE_REGIONS.length; r++) {
+    if (GEM_RESONANCE_REGIONS[r].id === 'phys') return [r, 6];
+  }
+  return [0, 6];
+}
+function gresResetSelection() {
+  UI.gemBrowse.resHole = gresDefaultHole();
+  UI.gemBrowse.resFilter = 'all';
+}
 function gresSelected() {
   var sel = UI.gemBrowse.resHole;
-  return (sel && resonanceValidHole(sel[0], sel[1])) ? sel : [GEM_RESONANCE_REGIONS.length - 1, 0];
+  return (sel && resonanceValidHole(sel[0], sel[1])) ? sel : gresDefaultHole();
 }
 
 function gresStatText(type, value) {
@@ -204,7 +214,7 @@ function gresDetailHTML(snapshot, headerSnapshot, state, sel) {
   var cap = resonanceHoleCap(region, hole);
   var min = resonanceHoleMinLevel(region, hole);
   var locked = resonanceRegionLockReason(state, region);
-  var bonusPct = locked ? 0 : Math.round(resonanceBonusMult(slot.lv) * 100);
+  var bonusPct = locked || !slot.gems.length ? 0 : Math.round(resonanceBonusMult(slot.lv) * 100);
   var h = '<div class="gres-summary"><div class="gres-title">' + esc(reg.name + (reg.types ? '型' : '類型')) + min + '級以上寶石</div>' +
     '<div class="gres-level">等級 Lv.' + slot.lv + '</div>' +
     '<div class="gres-bonus">獲得相鄰寶石能力+' + bonusPct + '%</div></div>';
@@ -238,10 +248,11 @@ function gresDetailHTML(snapshot, headerSnapshot, state, sel) {
     '<button type="button" class="btn" data-gres-upgrade="1"' + (ok ? '' : ' disabled') + '>升級鑲孔</button></div>';
 }
 
-/* 共鳴總加成：把所有貢獻依能力合併顯示（未計寶石鑲嵌效率，實際數值以屬性面板為準）。 */
-function gresTotalHTML(state) {
+/* 所選孔的相鄰額外加成依能力合併，不含自身寶石與其他孔位。 */
+function gresTotalHTML(state, sel) {
+  sel = sel || gresSelected();
   var sums = {}, order = [];
-  resonanceEntries(state).forEach(function (e) {
+  resonanceHoleBonusEntries(state, sel[0], sel[1]).forEach(function (e) {
     var gt = GEM_TYPES[e.type];
     if (!gt) return;
     if (!(e.type in sums)) { sums[e.type] = 0; order.push(e.type); }
@@ -260,8 +271,7 @@ function renderGemResonance(gemsSnapshot, headerSnapshot) {
   var help = $id('gres-help');
   if (help && !help._set) {
     help._set = true;
-    help.setAttribute('data-tt-desc', '把寶石鑲進共鳴孔：孔內寶石直接提供自己的能力；升級孔，還會額外獲得相鄰孔寶石的能力（每級 +' +
-      GEM_RESONANCE_SETTINGS.perLevelPct + '%，最高 +' + GEM_RESONANCE_SETTINGS.maxPct + '%）。外圍六區各限定寶石種類，中央區不限；孔上的數字是強化等級，0級不顯示。最低寶石階級見右側需求。外圍全部鑲孔達強化等級' + resonanceMaxHoleLevel() + '後，中央七孔才開放；鎖定時不提供加成，也不可鑲嵌或升級。外圍空孔也能升級。點孔查看與操作。');
+    help.setAttribute('data-tt-desc', '把寶石鑲入共鳴鑲孔中以獲取寶石能力。<br>升級鑲孔可獲得相鄰寶石效果的額外加成。<br>中央區將在周圍六大區鑲孔都升至10級時解鎖。');
   }
   var state = gresSnapshotState(gemsSnapshot);
   var sel = gresSelected();
@@ -271,7 +281,7 @@ function renderGemResonance(gemsSnapshot, headerSnapshot) {
   var detailH = gresDetailHTML(gemsSnapshot, headerSnapshot, state, sel);
   if (detail && detail._lastH !== detailH) { detail._lastH = detailH; detail.innerHTML = detailH; }
   var total = $id('gres-total');
-  var totalH = gresTotalHTML(state);
+  var totalH = gresTotalHTML(state, sel);
   if (total && total._lastH !== totalH) { total._lastH = totalH; total.innerHTML = totalH; }
 }
 

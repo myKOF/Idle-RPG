@@ -213,7 +213,7 @@ test('舊中央資料鎖定時不提供自身／相鄰能力，可取下且保�
  c.G.player.resonance.holes={'6:0':{lv:2,gems:[{type:'catseye',level:10}]},'6:1':{lv:10,gems:[]}};
  assert.deepEqual(plain(c.resonanceEntries(c.G.player.resonance)),[]);assert.equal(c.computeStats().hit,base);
  const original=JSON.stringify(c.G.player.resonance.holes['6:0']);maxOuter(c);
- assert.ok(Math.abs(c.computeStats().hit-base-c.gemStatValue('catseye',10)*1.3)<1e-6);
+ assert.ok(Math.abs(c.computeStats().hit-base-c.gemStatValue('catseye',10))<1e-6); // 滿級空鄰孔不能接收共鳴
  assert.equal(JSON.stringify(c.G.player.resonance.holes['6:0']),original);
  c.G.player.resonance.holes['0:0'].lv=9;assert.equal(c.computeStats().hit,base);
  assert.equal(c.unsocketResonanceGem(6,0,0),null);assert.equal(c.gemCount('catseye',10),1);assert.equal(c.G.player.resonance.holes['6:0'].lv,2);
@@ -275,4 +275,45 @@ test('配置表：CSV 與 js/gem_resonance_data.js 語意一致、非法內容�
   assert.throws(bad((r) => { r.splice(regionRow, 1); }), /7 列區域/);
   const upRow = rows.findIndex((r) => r[0] === '升級');
   assert.throws(bad((r) => { r[upRow][1] = '5'; }), /從 1 起連續/);
+});
+
+test('單孔共鳴只接收同區相鄰的每顆寶石，不含自身／其他孔，也不因接收孔有兩顆而倍乘',()=>{
+ const c=game(),state={holes:{
+  '0:0':{lv:4,gems:[{type:'sapphire',level:6},{type:'sapphire',level:7}]},
+  '0:1':{lv:10,gems:[{type:'amethyst',level:4}]},
+  '0:2':{lv:0,gems:[{type:'sapphire',level:4}]},
+  '0:4':{lv:0,gems:[{type:'iolite',level:5}]},
+  '1:1':{lv:10,gems:[{type:'diamond',level:4}]}
+ }};
+ assert.deepEqual(plain(c.resonanceHoleBonusEntries(state,0,0)),[
+  {type:'amethyst',level:4,mult:.12},{type:'sapphire',level:4,mult:.12},{type:'iolite',level:5,mult:.12}
+ ]);
+ assert.deepEqual(plain(c.resonanceHoleBonusEntries(state,0,1)),[
+  {type:'sapphire',level:6,mult:.3},{type:'sapphire',level:7,mult:.3},{type:'sapphire',level:4,mult:.3}
+ ]);
+ assert.deepEqual(plain(c.resonanceHoleBonusEntries(state,0,2)),[]); // 已鑲但0級
+ assert.deepEqual(plain(c.resonanceHoleBonusEntries(state,0,3)),[]); // 空孔
+ state.holes['0:3']={lv:10,gems:[]};assert.deepEqual(plain(c.resonanceHoleBonusEntries(state,0,3)),[]);
+ assert.deepEqual(plain(c.resonanceHoleBonusEntries(state,1,1)),[]); // 沒有相鄰寶石
+ assert.deepEqual(plain(c.resonanceHoleBonusEntries(state,99,1)),[]);
+ state.holes['6:0']={lv:10,gems:[{type:'ruby',level:10}]};state.holes['6:1']={lv:10,gems:[{type:'ruby',level:8}]};
+ assert.deepEqual(plain(c.resonanceHoleBonusEntries(state,6,0)),[]); // 中央尚未解鎖
+});
+
+test('空孔升級無共鳴；正式鑲入、升級與取下立即改變實際屬性，取下保留強化等級',()=>{
+ const c=game({catseye:{1:100,2:100,4:2,6:2}});
+ c.G.equipment=c.SLOT_LIST.reduce((m,s)=>{m[s]=null;return m;},{});
+ const base=c.computeStats().hit,value=lv=>c.gemStatValue('catseye',lv);
+ assert.equal(c.socketResonanceGem(5,0,'catseye',6),null);
+ assert.equal(c.upgradeResonanceHole(5,6),null);
+ assert.ok(Math.abs(c.computeStats().hit-base-value(6))<1e-6);
+ assert.deepEqual(plain(c.resonanceHoleBonusEntries(c.G.player.resonance,5,6)),[]);
+ assert.equal(c.socketResonanceGem(5,6,'catseye',4),null);
+ assert.ok(Math.abs(c.computeStats().hit-base-value(4)-value(6)*1.03)<1e-6);
+ assert.equal(c.upgradeResonanceHole(5,6),null);
+ assert.ok(Math.abs(c.computeStats().hit-base-value(4)-value(6)*1.06)<1e-6);
+ assert.equal(c.unsocketResonanceGem(5,6,0),null);
+ assert.equal(c.G.player.resonance.holes['5:6'].lv,2);
+ assert.equal(c.gemCount('catseye',4),2);
+ assert.ok(Math.abs(c.computeStats().hit-base-value(6))<1e-6);
 });

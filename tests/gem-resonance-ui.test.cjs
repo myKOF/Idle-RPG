@@ -18,7 +18,7 @@ function ui(gems={diamond:{3:8,4:2,7:1},ruby:{10:3}}){
  vm.runInContext(source.slice(source.indexOf('var GEM_LIB_FILTERS ='),source.indexOf('function gemAbilityText(')),c);
  for(const name of ['fillGemTypeSelect','renderFuseInfo','renderGemConvert','renderGemDismantle','renderGemFusion','renderGemShop'])c[name]=()=>{};
  const nodes={};function element(attrs={}){return {attrs,innerHTML:'',handlers:{},addEventListener(k,f){this.handlers[k]=f;},getAttribute(k){return this.attrs[k];},setAttribute(k,v){this.attrs[k]=v;},closest(k){const key=k.slice(1,-1);return this.attrs[key]!==undefined?this:null;},classList:{add(){},remove(){}},querySelector(){return null;},querySelectorAll(){return [];},contains(){return true;}};}
- for(const id of ['gres-board','gres-detail','gres-total','gem-table','gres-library-note','gem-focus','gem-filter','gem-owned-only','tab-gems','gem-total','gem-kinds'])nodes[id]=element();
+ for(const id of ['gres-board','gres-detail','gres-total','gres-help','gem-table','gres-library-note','gem-focus','gem-filter','gem-owned-only','tab-gems','gem-total','gem-kinds'])nodes[id]=element();
  c.$id=id=>nodes[id]||null;c.uiGemsPanelSnapshot=()=>({gems:c.G.player.gems,resonance:c.G.player.resonance});
  c.resolveGemsPanelSnapshot=s=>s||c.uiGemsPanelSnapshot();c.uiHeaderPanelSnapshot=()=>({player:c.G.player});
  c.setTextIfChanged=(n,t)=>{if(n)n.textContent=t;};
@@ -218,4 +218,43 @@ test('精簡資訊仍提供正確費用Tooltip、禁用／滿級／鎖定原因�
  c.G.player.resonance.holes['1:0']={lv:10,gems:[]};c.renderGems();assert.match(detail(),/已達強化等級上限/);assert.match(detail(),/data-gres-upgrade="1" disabled/);
  c.gresSelectHole(6,0);assert.match(detail(),/外圍六區.*全部鑲孔.*10/);assert.match(detail(),/獲得相鄰寶石能力\+0%/);assert.match(detail(),/data-gres-upgrade="1" disabled/);
  assert.equal(nodes['gres-total'].innerHTML,'<div class="sec-sub">共鳴效果：</div><div class="gres-list"></div>');
+});
+
+test('右側共鳴效果只合計所選孔的額外相鄰能力；空孔／0級／取下無效果，插入與升級即刷新',()=>{
+ const {c,nodes,element}=ui({diamond:{1:100,2:100,4:2,6:3},ruby:{4:1}});
+ const holes=c.G.player.resonance.holes;
+ holes['1:0']={lv:0,gems:[{type:'diamond',level:6},{type:'diamond',level:6}]};
+ holes['1:2']={lv:0,gems:[{type:'diamond',level:4}]};
+ holes['1:4']={lv:0,gems:[{type:'moonstone',level:5}]}; // 與孔1不相鄰
+ holes['5:6']={lv:10,gems:[{type:'ruby',level:4}]}; // 其他區
+ holes['1:1']={lv:1,gems:[]};c.gresSelectHole(1,1);
+ const empty='<div class="sec-sub">共鳴效果：</div><div class="gres-list"></div>';
+ assert.equal(nodes['gres-total'].innerHTML,empty);assert.match(nodes['gres-detail'].innerHTML,/能力\+0%/);
+ const put=()=>nodes['gem-focus'].handlers.click({target:element({'data-gres-gem':'diamond:4'})});
+ put();
+ const check=rate=>{
+  const match=nodes['gres-total'].innerHTML.match(/^<div class="sec-sub">共鳴效果：<\/div><div class="gres-list"><div>物理防禦 \+([\d.]+)<\/div><\/div>$/);
+  assert.ok(match,nodes['gres-total'].innerHTML);
+  assert.ok(Math.abs(Number(match[1])-(c.gemStatValue('diamond',6)*2+c.gemStatValue('diamond',4))*rate)<1e-8);
+ };
+ check(.03);assert.match(nodes['gres-detail'].innerHTML,/能力\+3%/);
+ nodes['gres-detail'].handlers.click({target:element({'data-gres-upgrade':'1'})});
+ check(.06);assert.match(nodes['gres-detail'].innerHTML,/能力\+6%/);
+ c.gresSelectHole(1,0);assert.equal(nodes['gres-total'].innerHTML,empty); // 有自身寶石但0級
+ c.gresSelectHole(5,6);assert.equal(nodes['gres-total'].innerHTML,empty); // 有等級、無鄰珠
+ c.gresSelectHole(1,1);check(.06);
+ nodes['gres-detail'].handlers.click({target:element({'data-gres-take':'0'})});
+ assert.equal(nodes['gres-total'].innerHTML,empty);assert.match(nodes['gres-detail'].innerHTML,/能力\+0%/);
+ assert.equal(holes['1:1'].lv,2);
+});
+
+test('說明精確三句；切入共鳴預設物傷左上孔、重入重設，頁內選孔與刷新保持原選擇',()=>{
+ const {c,nodes}=ui();
+ assert.equal(nodes['gres-help'].attrs['data-tt-desc'],'把寶石鑲入共鳴鑲孔中以獲取寶石能力。<br>升級鑲孔可獲得相鄰寶石效果的額外加成。<br>中央區將在周圍六大區鑲孔都升至10級時解鎖。');
+ c.UI.gemBrowse.resHole=undefined;assert.deepEqual(Array.from(c.gresSelected()),[5,6]);
+ c.setGemTool('compose');c.UI.gemBrowse.resHole=[1,2];c.UI.gemBrowse.resFilter='def';c.setGemTool('resonance');
+ assert.deepEqual(Array.from(c.UI.gemBrowse.resHole),[5,6]);assert.equal(c.UI.gemBrowse.resFilter,'all');
+ assert.match(nodes['gres-detail'].innerHTML,/物理傷害型4級以上寶石/);
+ c.gresSelectHole(0,2);c.renderGems();c.setGemTool('resonance');assert.deepEqual(Array.from(c.UI.gemBrowse.resHole),[0,2]);
+ c.setGemTool('compose');c.setGemTool('resonance');assert.deepEqual(Array.from(c.UI.gemBrowse.resHole),[5,6]);
 });

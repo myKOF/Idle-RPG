@@ -2688,6 +2688,7 @@ function switchTab(name) {
     var talentSnapshot = uiTalentPanelSnapshot();
     if (!talentSnapshot || talentViewReincarnations(talentSnapshot) < 1) name = 'equip';
   }
+  if (name === 'gems' && UI.tab !== 'gems' && UI.gemBrowse && UI.gemBrowse.tool === 'resonance' && typeof gresResetSelection === 'function') gresResetSelection();
   UI.tab = name;
   mountInventoryBox(name === 'forge');
   uiInvalidateFloatLayout();   // 切分頁會改變版面，浮字幾何快取要作廢
@@ -10651,6 +10652,7 @@ function setGemFuseLevel(lv) {
 
 function setGemTool(tool) {
   if (GEM_TOOLS.indexOf(tool) < 0) return;
+  if (tool === 'resonance' && UI.gemBrowse.tool !== tool && typeof gresResetSelection === 'function') gresResetSelection();
   if (UI.gemBrowse.resDrag) {
     UI.gemBrowse.resDrag = null;
     var board = $id('gres-board');
