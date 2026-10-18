@@ -50,8 +50,8 @@
 - 轉生後升級經驗需求倍率：各轉相對上一轉的倍數由參數表「1-成長經驗／轉生經驗倍率」a~j 欄逐轉制定（`REINCARNATION_EXP_STEP_MULTS`），累積倍率＝連乘。目前 1~9 轉各 ×10、10 轉 ×100（累積：1~9 轉 = `10^轉生次數`、10 轉 = `10^11`）。
 - 玩家升級經驗需求：`xpForLevel(l) = floor((30 × l^2.2 + 40) × 轉生經驗倍率 + 升級經驗基礎增加值)`，其中 l 為目前等級；升級經驗基礎增加值依轉生次數（0轉為 0，1~10轉為 `100000 × 3^(轉生次數-1)`）於括號外相加。
 - 轉生後每升一級獲得 1 點轉生天賦點；轉生威能點用於天堂威能；威能為十級制，成本見 §10。
-- 裝備套裝解鎖：第 1 套自角色建立即開放；第 2 套需角色等級 ≥ `EQUIP_SET_UNLOCK_LEVELS[1]`（目前 Lv.500）；第 3 套需至少 1 轉且角色等級 ≥ `EQUIP_SET_UNLOCK_LEVELS[2]`（目前 1 轉 Lv.500）。
-- 神鑄系統需**同時滿足兩個條件**才開放：角色等級 ≥ `FORGE_UNLOCK_LEVEL`（目前 Lv.1）**且**轉生次數 ≥ `FORGE_UNLOCK_REINCARNATION`（目前 1 轉）；開放後永久保留，轉生不會關閉（`config/CSV/game_parameters.csv:7`）。
+- 裝備套裝解鎖：第 1/2/3 套自角色建立即預設全開放（`EQUIP_SET_UNLOCK_LEVELS = [1, 1, 1]`、`EQUIP_SET_UNLOCK_REINCARNATIONS = [0, 0, 0]`）。
+- 神鑄系統需**同時滿足兩個條件**才開放：角色等級 ≥ `FORGE_UNLOCK_LEVEL`（目前 Lv.1）**且**轉生次數 ≥ `FORGE_UNLOCK_REINCARNATION`（目前 1 轉），即 1 轉後即刻開放；開放後永久保留，轉生不會關閉（`config/CSV/game_parameters.csv:7`）。
 
 ---
 

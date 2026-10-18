@@ -333,3 +333,4 @@ AI 完成目前任務後，不以 P0、P1、P2 編號決定是否繼續。
 - 省略必要測試或風險回報
 - 讓特效出現第三種來源：特效只能是配置表填入的，或程式碼寫死並登記在
   `docs/vfx/VFX_PRESET_USAGE_OUTSIDE_TABLES.md` 的（見 `AI_RULES.md` 第 8.4 節）
+- 新增系統功能、修改既有功能或調整其解鎖條件時，遺漏同步更新 `LV_upgrade_system.md`（見 `AI_RULES.md` 第 8.9 節）
