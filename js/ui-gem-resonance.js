@@ -11,6 +11,8 @@ var GRES_BOARD_SCALE = 1.18;                            // 孔位盤面等比放
 var GRES_VIEW = 273;                                   // 母圖在共用座標中的半邊長，不隨顯示範圍改動。
 var GRES_VIEW_BOX = '-257 -230 514 450';                 // 收去母圖外透明留白，四邊保留安全距離。
 var GRES_REGION_COLORS = [266, 214, 176, 37, 132, 355, 46]; // 各區色相（與區域順序一致）
+var GRES_BACKPLATE_SRC = 'images/ui/gem-resonance/hex-backplate.png';
+var GRES_BACKPLATE_IMAGE = null;
 
 /* 方位 i（0＝正上方，順時針每 60°）的單位向量。 */
 function gresDir(i) {
@@ -121,10 +123,16 @@ function gresHoleGemsHTML(c, gems, region, hole) {
   return h + '</g></g>';
 }
 
-function gresBoardHTML(state, sel) {
+function gresBoardHTML(state, sel, socketsHTML) {
   var h = '<svg viewBox="' + GRES_VIEW_BOX + '" class="gres-svg" role="group" aria-label="寶石共鳴盤面">';
-  h += gresMaterialDefs() + '<image class="gres-backplate" aria-hidden="true" href="images/ui/gem-resonance/hex-backplate.png" x="' + (-GRES_VIEW) + '" y="' + (-GRES_VIEW) + '" width="' + (GRES_VIEW * 2) + '" height="' + (GRES_VIEW * 2) + '"/>';
+  h += gresMaterialDefs() + '<image class="gres-backplate" aria-hidden="true" href="' + GRES_BACKPLATE_SRC + '" x="' + (-GRES_VIEW) + '" y="' + (-GRES_VIEW) + '" width="' + (GRES_VIEW * 2) + '" height="' + (GRES_VIEW * 2) + '"/>';
   h += '<g class="gres-sockets" transform="scale(' + GRES_BOARD_SCALE + ')">';
+  return h + (socketsHTML == null ? gresSocketsHTML(state, sel) : socketsHTML) + '</g></svg>';
+}
+
+/* 背板與材質defs固定保留，選孔／鑲入／升級只更新孔位，避免重新建立圖片。 */
+function gresSocketsHTML(state, sel) {
+  var h = '';
   GEM_RESONANCE_REGIONS.forEach(function (reg, r) {
     var hue = GRES_REGION_COLORS[r % GRES_REGION_COLORS.length];
     var unlocked = resonanceRegionUnlocked(state, r);
@@ -143,7 +151,7 @@ function gresBoardHTML(state, sel) {
     }
   });
   // 最後才畫選中框，避免相鄰孔的填色蓋住共用邊；此層不攔截點擊或拖放。
-  return h + '<polygon class="gres-selection-outline' + (resonanceRegionUnlocked(state, sel[0]) ? '' : ' is-locked') + '" aria-hidden="true" points="' + gresHexPoints(gresHoleCenter(sel[0], sel[1])) + '"/></g></svg>';
+  return h + '<polygon class="gres-selection-outline' + (resonanceRegionUnlocked(state, sel[0]) ? '' : ' is-locked') + '" aria-hidden="true" points="' + gresHexPoints(gresHoleCenter(sel[0], sel[1])) + '"/>';
 }
 
 /* ---- 類型選取與十階列鑲嵌：共用同一份可用性判斷 ---- */
@@ -277,8 +285,13 @@ function renderGemResonance(gemsSnapshot, headerSnapshot) {
   }
   var state = gresSnapshotState(gemsSnapshot);
   var sel = gresSelected();
-  var boardH = gresBoardHTML(state, sel);
-  if (board._lastH !== boardH) { board._lastH = boardH; board.innerHTML = boardH; }
+  var socketsH = gresSocketsHTML(state, sel);
+  if (board._lastH !== socketsH) {
+    var sockets = board.querySelector('.gres-sockets');
+    if (sockets) sockets.innerHTML = socketsH;
+    else board.innerHTML = gresBoardHTML(state, sel, socketsH);
+    board._lastH = socketsH;
+  }
   var detail = $id('gres-detail');
   var detailH = gresDetailHTML(gemsSnapshot, headerSnapshot, state, sel);
   if (detail && detail._lastH !== detailH) { detail._lastH = detailH; detail.innerHTML = detailH; }
@@ -288,6 +301,13 @@ function renderGemResonance(gemsSnapshot, headerSnapshot) {
 }
 
 function initGemResonanceUi() {
+  // 消費主頁的低優先預載並提前解碼，不等切入寶石頁；不阻塞遊戲開機。
+  if (typeof Image === 'function' && !GRES_BACKPLATE_IMAGE) {
+    GRES_BACKPLATE_IMAGE = new Image();
+    GRES_BACKPLATE_IMAGE.decoding = 'async';
+    GRES_BACKPLATE_IMAGE.src = GRES_BACKPLATE_SRC;
+    if (typeof GRES_BACKPLATE_IMAGE.decode === 'function') GRES_BACKPLATE_IMAGE.decode().catch(function () {});
+  }
   var board = $id('gres-board'), detail = $id('gres-detail'), focus = $id('gem-focus');
   var dragImage = null;
   function clearDragImage() {

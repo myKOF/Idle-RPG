@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## GEM-RESONANCE-BACKPLATE-LOAD-20261018 — 提前載入並保留共鳴背板
+
+- Owner：Codex；Done，單一開發者。使用者回報每次切入共鳴六角背板晚幾秒出現並詢問原因。查到2,070,831-byte PNG沒有預載、寶石面板渲染才插入SVG image，選孔更新又重建整個SVG。前置共鳴已完成，工作區乾淨、五檔預檢乾淨。
+- 允許index.html僅圖片預載／共鳴UI快取、js/ui-gem-resonance.js僅分離固定背板與動態孔位更新、docs/GEM_RESONANCE.md／PATCH.md與本紀錄；禁止玩法／數值／Worker／Protocol／存檔／配置／圖片素材及其他副本，不合併推送。
+- 方式／驗收：啟動以低優先預載既有PNG，不增加等待啟動的Promise；固定SVG／defs／image保持節點，只更新孔位內容，保留事件委派與初始完整建構。既有共鳴／初始化回歸、Build／diff；隔離瀏覽器以冷快取與可控2秒圖片回應比較請求時機／首次切頁，選孔／重入背板節點保持相同、沒有重複下載，49孔及原操作正常後Commit。無圖片或素材庫變更，後續使用者重載驗收。
+- 完成5檔：index.html新增原背板PNG的as=image／fetchpriority=low預載，共鳴UI快取1.0.14→15。js/ui-gem-resonance.js在UI初始化用保留參考的Image消費預載並非同步decode，無await啟動，decode失敗不產生未處理Promise；拆出gresSocketsHTML，第一次建立完整SVG／材質／背板，之後只更新gres-sockets內容，保留父SVG與背板。docs/GEM_RESONANCE.md、PATCH.md及本紀錄同步。事件仍委派在外層，座標／圖片／49孔／選中輪廓／多寶石clipPath與規則未變，沒有素材內容或素材庫變更，無素材庫Commit。
+- 指令／結果：`node --test tests/gem-resonance-ui.test.cjs tests/gem-resonance.test.cjs tests/init-ui-smoke.test.cjs`37/37通過；`npm.cmd run build`535檔通過，`git diff --check`通過。沿用既有完整互動回歸與實際瀏覽器確認DOM持續性，不新增鏡像測試。
+- 瀏覽器：獨立headless Edge／隨機localhost／seed新角色，原HEAD index與共鳴UI作before、工作檔作after，各全新context冷快取；測試服務只對背板人工延遲2000ms，開機後停留2100ms再開寶石／共鳴。before進寶石前無圖片請求，切入後SVG image的load事件晚2055ms；after進寶石前已請求並解碼，切入後34ms收到SVG image load。這是控制延遲的行為比較，不是對使用者實際裝置的耗時保證；首次測試200ms絕對門檻在機器繁忙時量到303.6ms，改以改善幅度超過一半驗證，正式程式未為此改動。
+- before選孔／重入均替換背板節點；after從初始至選孔／合成重入／角色返回／正式GM供資源後鑲入／取下／升級／原生拖曳皆維持相同SVG與背板，背板節點僅建立1次，兩版各只下載1次（舊版問題包含晚開始載入及節點重建，不宣稱每次都重新下載2MB）。1920×900／1366×768／390×844皆49孔中心hit-test通過。兩版Console warning／error、pageerror、HTTP錯誤均0；preload已被Image實際使用，未出現未使用預載警告。
+- 唯讀未改：AI規範／工作流／Agent文件、原PNG檔案大小及引用、renderGems／工具切換／委派事件、共鳴資料及權威規則、既有初始化與互動回歸。所有目標收尾預檢乾淨；隔離瀏覽器／服務與臨時測試腳本已清理，未讀真人存檔。無未完成本次需求；剛開機立即切入且網路仍未載完圖片時仍會等待，未實測其他瀏覽器／實體觸控／低階裝置。Commit為本紀錄所在`[Codex] fix: 提前載入並保留共鳴背板`，回覆附編號；可供Review／合併，未合併推送。下一步重新整理遊戲後切寶石→共鳴驗收。
+
 ## GEM-RESONANCE-CRIT-PHYS-20261018 — 暴擊傷害寶石移至物理區
 
 - Owner：Codex；Done，單一開發者。使用者追加要求暴擊傷害寶石歸物理區；確認為石榴石garnet／critDmg，從magic移至phys。前置共鳴與鑲孔文字397d5f58已完成，工作區乾淨、擴充目標預檢乾淨。
