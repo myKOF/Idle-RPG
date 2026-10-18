@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## HEAVEN-POWER-BOARD-LIFT-20261018 — 星盤上移與滿轉中央整體高亮
+
+- Owner：Codex；Done；單一開發者。使用者回報最下方選中威能的加減鈕碰到邊框，要求整體稍微上移；追加滿轉時中央整個圓盤高亮。前置現行滿轉is-complete狀態與加成已完成；工作區乾淨、fetch及三檔預檢乾淨。
+- 允許css/ashen-forge.css僅星盤定位／滿轉中央底色文字光暈、index.html僅相應CSS快取及本紀錄；禁止數值／JS／Worker／Protocol／存檔／素材／其他頁面，不合併推送。
+- 方式／驗收：中央、軌道、連線與全部威能使用同一上移量，保持整體對齊並留足上下空間；滿轉改明顯金色漸層實心亮底與文字／光暈，降級恢復原底色。實際短高畫面重現底部裁切、8／10節點選中最下方與全控件邊界／命中，滿轉升降級與Tooltip，既有回歸／Build／Console／diff後Commit供使用者合併。純CSS、不新增素材或測試。
+
+- 完成3檔：css/ashen-forge.css新增共用--center-y，將中央／軌道／連線／全部威能同步上移24 CSS px，半徑與圖示／按鈕大小不變；滿轉is-complete使用金色徑向亮底、內外光暈（僅中央覆寫工作區全域陰影停用），文字改深色保持對比。index.html僅CSS89→90與本紀錄；沒有修改JS、數值、滿轉判斷或素材。
+- 指令／結果：`node --test --test-reporter=dot tests/talents.test.cjs tests/talents-perf-equivalence.test.cjs tests/power-rework.test.cjs tests/init-ui-smoke.test.cjs` **43/43**通過；`npm.cmd run build` **538檔**通過；`git diff --check`通過。純CSS可逆修改沿用現有回歸與實際瀏覽器，不新增鏡像測試。
+- 瀏覽器：依browser技能嘗試IAB無backend後改隔離headless Edge／隨機localhost、seed1018新角色由正式Worker LOAD載入，不讀真人存檔。1920×869還原使用者46/80、底部物防6級選中，將共用中心暫設舊50%重現按鈕超出0.97px；套新CSS後底部餘22.21px、上方餘35.73px，中心命中全true。8節點在1920×869／1920×700／1366×768／1086×768／390×844均上下內含與中心命中正常；10節點最下暗影同於1920×869／1366×768／390×844通過，最小實測底部留白16.36px。滿轉時整個中央背景為金色徑向漸層、外部28px光暈正常，文字rgb(77,49,14)與進度rgb(81,58,25)清楚；實際降級恢復原暗色背景／無陰影／79/80，再升級恢復金光，hover滿轉25%提示正常。最終Console error／warning、pageerror及HTTP錯誤0；已目視本聊天visualizations/heaven-complete-core-lit.png，亦保留heaven-board-lifted.png，瀏覽器與服務已關閉、無臨時測試檔。
+- 唯讀未改：AI規範／AGENTS／工作流／prompts/codex.md、js/ui.js現有滿轉class／盤面DOM、talents.js判定與25%公式、Worker／Protocol／存檔／解鎖條件、既有84張圖與背景、上述四份回歸。素材庫status乾淨、無新素材或素材Commit。自我Review確認位移四處共用同一中心、狀態CSS不依賴新增JS／Timer／動畫，半徑未縮小且底部按鈕保留操作空間。
+- 交付：無未完成項目或新增已知阻擋，可供審閱合併；未合併／推送。限制為只實測Edge、未跑全庫／全部實體裝置。下一步使用者整合並重載威能頁；Commit為本紀錄所在`[Codex] fix: 上移威能星盤並點亮滿轉中央圓盤`，回覆附實際編號。
+
 ## HEAVEN-POWER-COMPLETE-BONUS-20261018 — 滿轉威能加成25%與精簡中央提示
 
 - Owner：Codex；Done；單一開發者。使用者要求中央僅保留轉數／升級總量、hover說明全滿25%、移除威能tips操作提示，並讓滿轉25%實際生效且在tips另列綠字額外效果。前輪單欄／紫框／數字角標保留；工作區乾淨、fetch與全部目標衝突預檢乾淨。

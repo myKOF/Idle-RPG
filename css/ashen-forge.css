@@ -5320,6 +5320,7 @@ html *::-webkit-scrollbar-corner {
 
 #tab-talents .tlx-board {
   --r: calc(min(50cqw,50cqh) - 94px);
+  --center-y: calc(50% - 24px);
   position: relative;
   min-width: 0;
   min-height: 440px;
@@ -5356,7 +5357,7 @@ html *::-webkit-scrollbar-corner {
 
 #tab-talents .tlx-orbit {
   position: absolute;
-  top: 50%;
+  top: var(--center-y);
   left: 50%;
   width: calc(var(--r)*2);
   height: calc(var(--r)*2);
@@ -5376,7 +5377,7 @@ html *::-webkit-scrollbar-corner {
 
 #tab-talents .tlx-spoke {
   position: absolute;
-  top: 50%;
+  top: var(--center-y);
   left: 50%;
   width: var(--r);
   height: 1px;
@@ -5393,7 +5394,7 @@ html *::-webkit-scrollbar-corner {
 
 #tab-talents .tlx-core {
   position: absolute;
-  top: 50%;
+  top: var(--center-y);
   left: 50%;
   display: flex;
   flex-direction: column;
@@ -5408,6 +5409,21 @@ html *::-webkit-scrollbar-corner {
   background: radial-gradient(circle at 50% 30%,#5a6252,#243545 68%);
   box-shadow: 0 0 0 7px #c9bd9130,0 0 0 8px #e9dca861,0 0 45px #fff0bd38,inset 0 0 18px #ffe4a124;
   cursor: help;
+}
+
+#tab-talents .tlx-core.is-complete {
+  border-color: #fff2b8;
+  background: radial-gradient(circle at 42% 32%,#fff2b8,#d5af57 56%,#8d652b);
+  box-shadow: 0 0 0 7px #e1bd6559,0 0 28px 6px #ffd66b70,inset 0 0 22px #fff6d58c !important;
+}
+
+#tab-talents .tlx-core.is-complete b {
+  color: #4d310e;
+  text-shadow: 0 1px 1px #fff5c9;
+}
+
+#tab-talents .tlx-core.is-complete span {
+  color: #513a19;
 }
 
 #tab-talents .tlx-core::before,#tab-talents .tlx-core::after {
@@ -5446,7 +5462,7 @@ html *::-webkit-scrollbar-corner {
 
 #tab-talents .tlx-node {
   position: absolute;
-  top: calc(50% + var(--r)*sin(var(--a)));
+  top: calc(var(--center-y) + var(--r)*sin(var(--a)));
   left: calc(50% + var(--r)*cos(var(--a)));
   width: 108px;
   transform: translate(-50%,-34px);
