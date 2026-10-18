@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## HEAVEN-POWER-SELECT-20261018 — 選中外框高亮與兩張背景提案
+
+- Owner：Codex；Done，單一開發者。使用者要求選中威能外框明顯高亮，另畫兩張天堂背景供挑選，背景明確先不接入。前置6eac2a7b已完成；熔爐任務已提交0d83bef3，工作區乾淨，三檔預檢無其他副本衝突。
+- 允許css/ashen-forge.css僅選中框樣式、index.html僅該CSS快取、本紀錄；禁止玩法／JS／Worker／Protocol／存檔／其他功能、背景引用與素材匯出，不合併推送。驗收0級／已學／滿級選中皆金色高亮、換選移除前框、移開滑鼠不消失、原升降級／Tooltip正常，既有回歸／Build／瀏覽器／diff後獨立Commit。
+- 美術：已檢查專案優先RPG Mote Studio可存取，其UI以像素Sprite／逐幀編輯為主，不適合本次完整繪景，使用imagegen內建工具各產一張原創方形場景。A白金聖殿／晨曦雲海、B星空聖域／月光雲海；中央保留星盤閱讀空間，無文字／角色／UI。兩張僅預覽，保留於本聊天generated_images，等待使用者選擇，不寫入遊戲或素材庫，不宣稱已接入。
+
+- 完成3檔：選中樣式獨立置於滿級樣式之後，金色底框＋2px淡金外描邊＋光暈；僅單一選中框以!important覆寫工作區全域box-shadow:none，原先選中／滿級陰影被該全域規則移除是提示不清楚的原因。CSS快取84→85；移開游標／已學／滿級仍保持，改選恢復舊框。沒有背景接線或數值／存檔變更。
+- 指令／結果：`node --test --test-reporter=dot tests/talents.test.cjs tests/power-rework.test.cjs tests/init-ui-smoke.test.cjs`34/34通過；`npm.cmd run build`538檔通過；`git diff --check`通過。純CSS低風險微調沿既有回歸及實際樣式驗證，不新增鏡像測試。
+- 瀏覽器：隔離headless Edge／隨機localhost／seed1018新角色，正式index及Worker讀隔離fixture，0級／升至1級／滿級選取皆outline2px solid rgb(255,240,171)，實際光暈非none；改選後舊框outline-style:none。原升級正常、移開游標保持高亮，Console error／warning及pageerror0。已目視本聊天visualizations/heaven-selected-highlight.png；首次驗證把未選取的outline-width預期為0，瀏覽器none樣式仍回報中值3px，改查outline-style:none與選中色；產品沒有為此改動。首次光暈驗證發現全域!important停用，已於選中單框精確覆寫並重驗通過。
+- 背景預覽（內建imagegen）：A=`C:/Users/alway/.codex/generated_images/01a14ec5-b5ca-7d70-98b4-b808ac4d2225/exec-adfd3b1a-8ca1-4c2e-932b-3a24a0a72897.png`，B=`C:/Users/alway/.codex/generated_images/01a14ec5-b5ca-7d70-98b4-b808ac4d2225/exec-a544029d-83f8-4183-8963-501928f5b8ec.png`。提示主題為原創方形天堂環境繪景、兩側白金石柱與遠景浮空聖殿、中央低對比供星盤疊放；A晨曦金光雲海、B月光星空雲海。已逐張目視、無文字／角色／UI，保留原檔；使用者要求只預覽，未納遊戲、未素材庫提交。
+- 唯讀未改：AI規範／工作流／Agent文件、威能DOM／選取狀態與升降級、全域陰影規則、上述3份回歸及既有背景。無本次未完成需求或新增已知風險，未驗所有實體裝置／完整測試庫；背景待使用者選擇再另行接入。可供審查合併，未合併推送；Commit為本紀錄所在`[Codex] fix: 強化威能選中外框高亮`，回覆附實際編號。測試服務／瀏覽器與暫存腳本清理，兩張候選原圖與高亮預覽保留。
+
 ## HEAVEN-POWER-UI-20261018 — 天堂威能星盤與直接升降級
 
 - Owner：Codex；Done，單一開發者。使用者六項需求：天堂質感背景／框與技能圖、刪除11～20轉標籤、取消整轉滿級效果加倍、刪升級彈窗改選取圖下圓形−／＋、魔物威能字級加2與共用紫焰威脅符號、節點只留威脅及等級。前置既有威能／Worker已完成，工作區乾淨。

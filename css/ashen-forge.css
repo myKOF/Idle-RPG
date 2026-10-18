@@ -5554,7 +5554,8 @@ html *::-webkit-scrollbar-corner {
   object-fit: cover;
 }
 
-#tab-talents .tlx-node-select:hover .tlx-node-ring,#tab-talents .tlx-node-select:focus-visible .tlx-node-ring,#tab-talents .tlx-node.is-selected .tlx-node-ring {
+#tab-talents .tlx-node-select:hover .tlx-node-ring,
+#tab-talents .tlx-node-select:focus-visible .tlx-node-ring {
   box-shadow: 0 0 0 3px #f8e1a0,0 0 24px #ffedaa70;
 }
 
@@ -5568,6 +5569,15 @@ html *::-webkit-scrollbar-corner {
 
 #tab-talents .tlx-node.maxed .tlx-node-ring {
   box-shadow: 0 0 0 3px #f8e1a04d,0 0 20px #f8e1a052;
+}
+
+/* 選中狀態置於滿級樣式之後；僅此框覆寫工作區的全域陰影停用。 */
+#tab-talents .tlx-node.is-selected .tlx-node-ring {
+  border-color: #fff3ba;
+  outline: 2px solid #fff0ab;
+  outline-offset: 3px;
+  background: conic-gradient(#ffe59b var(--p), #bda05f var(--p));
+  box-shadow: 0 0 0 3px #a87926, 0 0 18px 5px #ffd56a99, inset 0 0 0 3px #6b5229 !important;
 }
 
 #tab-talents .tlx-node.is-selected {
