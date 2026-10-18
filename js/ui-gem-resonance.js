@@ -7,7 +7,7 @@
 var GRES_CELL = 22;                                    // 六角孔外接圓半徑（SVG 單位）
 var GRES_SPACING = Math.sqrt(3) * GRES_CELL;           // 相鄰孔中心距
 var GRES_REGION_DIST = GRES_SPACING * 3.15;            // 外圍區中心到中央區中心的距離（略大於三格，區與區之間留縫）
-var GRES_LABEL_DIST = GRES_REGION_DIST + GRES_SPACING + GRES_CELL + 12;
+var GRES_BOARD_SCALE = 1.18;                            // 孔位盤面等比放大，填入底板內緣。
 var GRES_VIEW = 273;                                   // 母圖在共用座標中的半邊長，不隨顯示範圍改動。
 var GRES_VIEW_BOX = '-257 -230 514 450';                 // 收去母圖外透明留白，四邊保留安全距離。
 var GRES_REGION_COLORS = [266, 214, 176, 37, 132, 355, 46]; // 各區色相（與區域順序一致）
@@ -90,6 +90,7 @@ function gresSocketArt(c, region) {
 function gresBoardHTML(state, sel) {
   var h = '<svg viewBox="' + GRES_VIEW_BOX + '" class="gres-svg" role="group" aria-label="寶石共鳴盤面">';
   h += gresMaterialDefs() + '<image class="gres-backplate" aria-hidden="true" href="images/ui/gem-resonance/hex-backplate.png" x="' + (-GRES_VIEW) + '" y="' + (-GRES_VIEW) + '" width="' + (GRES_VIEW * 2) + '" height="' + (GRES_VIEW * 2) + '"/>';
+  h += '<g class="gres-sockets" transform="scale(' + GRES_BOARD_SCALE + ')">';
   GEM_RESONANCE_REGIONS.forEach(function (reg, r) {
     var hue = GRES_REGION_COLORS[r % GRES_REGION_COLORS.length];
     for (var hole = 0; hole < RESONANCE_HOLE_COUNT; hole++) {
@@ -110,16 +111,9 @@ function gresBoardHTML(state, sel) {
       // 最上層透明命中面覆蓋切面與寶石，整個孔都沿同一個互動入口。
       h += '<polygon class="gres-hit" points="' + gresHexPoints(c) + '"/></g>';
     }
-    var lc;
-    if (r >= 6) lc = { x: 0, y: 0 };
-    else { var d = gresDir(r); lc = { x: d.x * GRES_LABEL_DIST, y: d.y * GRES_LABEL_DIST }; }
-    if (r < 6) {
-      var anchor = 'middle';
-      h += '<text class="gres-region" style="--h:' + hue + '" x="' + lc.x.toFixed(1) + '" y="' + (lc.y + 4).toFixed(1) + '" text-anchor="' + anchor + '">' + esc(reg.name) + '</text>';
-    }
   });
   // 最後才畫選中框，避免相鄰孔的填色蓋住共用邊；此層不攔截點擊或拖放。
-  return h + '<polygon class="gres-selection-outline" aria-hidden="true" points="' + gresHexPoints(gresHoleCenter(sel[0], sel[1])) + '"/>' + '</svg>';
+  return h + '<polygon class="gres-selection-outline" aria-hidden="true" points="' + gresHexPoints(gresHoleCenter(sel[0], sel[1])) + '"/></g></svg>';
 }
 
 /* ---- 類型選取與十階列鑲嵌：共用同一份可用性判斷 ---- */

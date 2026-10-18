@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## GEM-RESONANCE-REGION-LAYOUT-20261018 — 移除區名並放大孔位盤面
+
+- Owner：Codex；Done，單一開發者。使用者要求移除盤面區域類型文字、放大盤面至符合六角背景；前置共鳴與底板已完成，工作區乾淨、六個目標衝突預檢乾淨。
+- 允許js/ui-gem-resonance.js、css/gems.css、index.html、docs/GEM_RESONANCE.md、PATCH.md與本紀錄；禁止數值／配置表／Worker／協議／存檔／素材與其他副本，不合併推送。
+- 方式：移除六個外圍區名與無用標籤配置，孔位／寶石／選中框共用SVG群組等比放大，底板沿原尺寸；保留孔位aria-label與右側所選孔資訊。無新增素材或素材庫變更。
+- 驗收：既有共鳴UI／規則／初始化回歸、Build、瀏覽器確認背景內含／49孔命中／點選與鑲入／窄畫面／Console與diff，完成獨立Commit；後續使用者重新載入驗收及整合。
+- 完成6檔：移除六個gres-region區名、標籤距離常數與樣式；孔位／切面／寶石／選中框置於同一SVG群組等比放大18%，透明命中面沿相同變換。底板原圖／viewBox與右側資訊保留，index僅gems CSS1.0.10→11、共鳴JS1.0.6→7。無素材修改／素材庫Commit。
+- 指令／結果：`node --test tests/gem-resonance-ui.test.cjs tests/gem-resonance.test.cjs tests/init-ui-smoke.test.cjs`22/22；`npm.cmd run build`534檔通過；`git diff --check`通過。沿用既有行為回歸，不新增可逆樣式的鏡像測試。
+- 瀏覽器：獨立headless Edge／隨機localhost／seed新角色，正式index／UI／Worker、GM測試庫存；1920×900、2560×1080、1366×768、390×844皆49孔、區名0、孔位完整內含且與詳情分離，49孔中心hit-test全通過。點擊選孔／上方鑲入／取下／原生拖曳／Enter選孔通過；正式驗收Console error／warning及pageerror皆0。截圖保留本聊天visualizations/gem-resonance-region-layout.png，服務／瀏覽器及臨時腳本收尾清理，未動真人存檔。
+- 自我Review／唯讀：AI規範／工作流／Agent文件、原UI回歸與規則、母圖、孔位事件委派及工坊盒模型；無玩法／資料／協議變更。收尾同工作區出現另一聊天SYNC-INDEX-RECOVERY任務，工具／測試及任務區段保留，不納入本提交；文件只stage本任務區段，更新前後取另一任務區段為theirs的git merge-file -p乾跑退出0、兩區段皆保留。無本次未完成項或新增已知風險，可供審閱合併，未合併推送；限制為未做真人長戰／實體觸控拖曳。Commit為本紀錄所在[Codex] fix提交，回覆附編號；下一步重新載入寶石→共鳴驗收。
+
 ## GEM-RESONANCE-BOARD-FIT-20261018 — 放大共鳴盤與移除重複種類說明
 
 - Owner：Codex；Done，單一開發者。使用者要求整張共鳴盤放大接近上下框邊緣、不遮右側文字，並刪除右側重複的可鑲寶石類型清單。前置介面改造已完成；工作區與全部目標衝突預檢乾淨。
