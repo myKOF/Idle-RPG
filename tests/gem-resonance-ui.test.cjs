@@ -100,3 +100,37 @@ test('切回合成只選階級、不鑲嵌，並取消殘留拖曳與共鳴置�
  c.setGemFuseLevel(2);assert.equal(c.UI.gemBrowse.fuseLv,2);assert.equal(c.calls.length,0);assert.equal(c.UI.gemBrowse.filter,'atk');
  drop(f,'1:2');assert.equal(c.calls.length,0);
 });
+
+test('左鍵按下即選孔，放開click不重選；右鍵／非主要指標不選孔，鍵盤與輔助click保留',()=>{
+ const {c,nodes,element}=ui();const board=nodes['gres-board'];
+ const target=element({'data-gres-hole':'0:2'});
+ board.handlers.pointerdown({target,button:2,isPrimary:true});assert.deepEqual(Array.from(c.UI.gemBrowse.resHole),[1,1]);
+ board.handlers.pointerdown({target,button:0,isPrimary:false});assert.deepEqual(Array.from(c.UI.gemBrowse.resHole),[1,1]);
+ board.handlers.pointerdown({target,button:0,isPrimary:true});assert.deepEqual(Array.from(c.UI.gemBrowse.resHole),[0,2]);assert.equal(c.calls.length,0);
+ const renders=c.renders;board.handlers.click({target,detail:1});assert.equal(c.renders,renders);
+ let prevented=false;board.handlers.keydown({target:element({'data-gres-hole':'5:3'}),key:' ',preventDefault(){prevented=true;}});
+ assert.equal(prevented,true);assert.deepEqual(Array.from(c.UI.gemBrowse.resHole),[5,3]);
+ board.handlers.keydown({target,key:'Enter',preventDefault(){}});assert.deepEqual(Array.from(c.UI.gemBrowse.resHole),[0,2]);
+ board.handlers.click({target:element({'data-gres-hole':'6:0'}),detail:0});assert.deepEqual(Array.from(c.UI.gemBrowse.resHole),[6,0]);assert.equal(c.calls.length,0);
+});
+
+test('兩顆與六顆真實鑲入後每顆都顯示，取下後保留其餘寶石且不顯示數量',()=>{
+ const {c,nodes,element}=ui({sapphire:{6:2},ruby:{10:6}});
+ const put=key=>nodes['gem-focus'].handlers.click({target:element({'data-gres-gem':key})});
+ const partCount=(r,h)=>{const html=c.gresHoleGemsHTML(c.gresHoleCenter(r,h),c.G.player.resonance.holes[r+':'+h].gems,r,h);return (html.match(/class="gres-gem-part"/g)||[]).length;};
+ c.gresSelectHole(0,0);put('sapphire:6');assert.equal(partCount(0,0),0);
+ put('sapphire:6');assert.equal(partCount(0,0),2);assert.equal(c.G.player.gems.sapphire[6],0);
+ assert.doesNotMatch(nodes['gres-board'].innerHTML,/gres-cap/);
+ c.gresSelectHole(6,0);
+ for(let i=1;i<=6;i++){
+  put('ruby:10');const state=c.G.player.resonance.holes['6:0'];assert.equal(state.gems.length,i);
+  assert.equal(partCount(6,0),i===1?0:i);
+  const art=c.gresHoleGemsHTML(c.gresHoleCenter(6,0),state.gems,6,0);assert.equal((art.match(/<image /g)||[]).length,i);
+ }
+ assert.equal(c.G.player.gems.ruby[10],0);assert.doesNotMatch(nodes['gres-board'].innerHTML,/gres-cap/);
+ assert.equal((nodes['gres-board'].innerHTML.match(/data-gres-hole=/g)||[]).length,49);
+ nodes['gres-detail'].handlers.click({target:element({'data-gres-take':'2'})});assert.equal(c.G.player.gems.ruby[10],1);assert.equal(partCount(6,0),5);
+ c.gresSelectHole(0,0);nodes['gres-detail'].handlers.click({target:element({'data-gres-take':'0'})});assert.equal(c.G.player.gems.sapphire[6],1);assert.equal(partCount(0,0),0);
+ const gems=[{type:'ruby',level:10},{type:'sapphire',level:9},{type:'diamond',level:8}];
+ const art=c.gresHoleGemsHTML({x:0,y:0},gems,6,0);for(const gem of gems)assert.ok(art.includes(c.gemIconSrc(gem.type,gem.level)));
+});

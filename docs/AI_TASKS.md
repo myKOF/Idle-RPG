@@ -21,6 +21,17 @@
 - 瀏覽器：獨立headless Edge／隨機localhost／seed新角色，正式index／UI／Worker、GM測試庫存；1920×900、2560×1080、1366×768、390×844皆49孔、區名0、孔位完整內含且與詳情分離，49孔中心hit-test全通過。點擊選孔／上方鑲入／取下／原生拖曳／Enter選孔通過；正式驗收Console error／warning及pageerror皆0。截圖保留本聊天visualizations/gem-resonance-region-layout.png，服務／瀏覽器及臨時腳本收尾清理，未動真人存檔。
 - 自我Review／唯讀：AI規範／工作流／Agent文件、原UI回歸與規則、母圖、孔位事件委派及工坊盒模型；無玩法／資料／協議變更。收尾同工作區出現另一聊天SYNC-INDEX-RECOVERY任務，工具／測試及任務區段保留，不納入本提交；文件只stage本任務區段，更新前後取另一任務區段為theirs的git merge-file -p乾跑退出0、兩區段皆保留。無本次未完成項或新增已知風險，可供審閱合併，未合併推送；限制為未做真人長戰／實體觸控拖曳。Commit為本紀錄所在[Codex] fix提交，回覆附編號；下一步重新載入寶石→共鳴驗收。
 
+## GEM-RESONANCE-MULTI-SLOTS-20261018 — 按下選孔與多寶石分區顯示
+
+- Owner：Codex；Done，單一開發者。使用者要求移除原生白色焦點矩形、左鍵按下即選孔、刪除孔內數量、兩顆／六顆直接分區顯示；前置共鳴UI已完成，目標預檢乾淨。保留既有六角選中提示、鍵盤及拖曳。
+- 允許js/ui-gem-resonance.js、css/gems.css、index.html、tests/gem-resonance-ui.test.cjs、docs/GEM_RESONANCE.md、PATCH.md及本紀錄；禁止玩法／數值／資料表／Worker／協議／存檔／素材／其他副本，不合併推送。另一聊天同步工具任務及其文件區段保留，僅提交本任務。
+- 方式：委派左鍵pointerdown即選孔，click只保留鍵盤／輔助操作入口；SVG多寶石等分繪製，各顆獨立完整縮圖、裝飾不攔截命中，數量標示刪除。無新素材，沿用正式寶石圖。
+- 驗收：新增選孔時機／按鍵過濾／多顆及部分填入／無重複指令與真實鑲嵌取下回歸；既有共鳴與初始化測試、Build／diff，隔離瀏覽器按住未放開即切孔、白框／分區／拖曳／鍵盤與窄畫面驗證後Commit。後續使用者重載及整合。
+- 完成7檔：pointerdown只接受主要指標左鍵，按下立即重畫選孔；實體click不重選，輔助click與Enter／Space保留。focus及focus-visible均去掉原生outline，沿用六角輪廓。移除gres-cap及樣式，SVG依實際顆數切分並逐顆顯示既有圖片，2顆左右對分、6顆六扇區，3～5顆亦各自顯示；外框與命中面共用原孔，不新增指令。多於2顆時孔等級縮小置中。index僅gems CSS1.0.11→12／共鳴JS1.0.7→8；同步說明與PATCH，無新素材／素材庫Commit。
+- 指令／結果：`node --test tests/gem-resonance-ui.test.cjs tests/gem-resonance.test.cjs tests/init-ui-smoke.test.cjs`24/24通過（新增2項涵蓋按下／放開／右鍵／多指標／鍵盤及正式1～6顆鑲入取下）；`npm.cmd run build`535檔通過；`git diff --check`通過。自我Review確認原命令、容量、庫存與數值不變。
+- 瀏覽器：隔離headless Edge／隨機localhost／seed新角色，正式index／UI／CSS／Worker與GM庫存；左鍵按住未放開已切孔、右鍵不選、指標及鍵盤focus outline為none、外圍兩顆不同寶石／中央六種各1顆／數量標示0／升級等級標籤／逐顆取下剩5顆／原生拖曳皆通過。1920×900、2560×1080、1366×768、390×844各49孔中心hit-test全通過、與詳情分離；Console error／warning、pageerror、HTTP錯誤皆0。預覽保留本聊天visualizations/gem-resonance-multi-slots.png，測試服務／瀏覽器／臨時腳本清理，不動真人存檔。
+- 唯讀未改：AI規範／工作流／Agent文件、共鳴資料與權威規則、既有回歸、正式寶石圖與背景。另一聊天SYNC-INDEX-RECOVERY與本紀錄不同區段、無語意相依，分段修改及只stage本任務；git merge-file -p三方試跑退出0、完整保留兩任務區段。無本次未完成項或新增已知風險，可供審閱合併，未合併推送；限制為未實測實體觸控／真人長戰。Commit為本紀錄所在[Codex] fix提交，回覆附編號；下一步重新載入寶石→共鳴驗收。
+
 ## GEM-RESONANCE-BOARD-FIT-20261018 — 放大共鳴盤與移除重複種類說明
 
 - Owner：Codex；Done，單一開發者。使用者要求整張共鳴盤放大接近上下框邊緣、不遮右側文字，並刪除右側重複的可鑲寶石類型清單。前置介面改造已完成；工作區與全部目標衝突預檢乾淨。

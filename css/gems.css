@@ -111,7 +111,9 @@
 .gres-hole .gres-min { fill: hsl(var(--h) 65% 78%); font: 12px Georgia, 'Times New Roman', serif; paint-order: stroke; stroke: #070b13; stroke-width: .7; }
 .gres-hole.is-sel .gres-min { fill: #fff1bd; font-weight: 700; }
 .gres-lv { fill: #f0cf86; font-size: 9px; font-weight: 700; }
-.gres-hole .gres-cap { fill: #e8e2d4; font-size: 8px; }
+.gres-hole .gres-lv.is-center { font-size: 6px; paint-order: stroke; stroke: #070b13; stroke-width: 1.5; }
+.gres-gems { pointer-events: none; }
+.gres-gem-section { fill: #050b1326; stroke: #d0d8e65c; stroke-width: .6; }
 .gres-detail { display: flex; flex-direction: column; gap: 10px; }
 .gres-title { color: #ece6d8; }
 .gres-sub { margin-left: 8px; color: #8d877a; font-size: 12px; }
@@ -143,7 +145,7 @@ button.gres-gem:hover { border-color: #7a6440; }
 .gres-library-hint { color: #a39d90; font-size: 12px; line-height: 1.7; }
 .gres-hole.is-drop .gres-hit { fill: #76e6a126; stroke: #a9edbd; stroke-width: 4; }
 .gres-hole.is-reject .gres-hit { fill: #e0685c1a; stroke: #e0685c; stroke-width: 3; }
-.gres-hole:focus-visible { outline: none; }
+.gres-hole:focus, .gres-hole:focus-visible { outline: none; }
 .gres-hole:focus-visible .gres-hit { stroke: #fff1c4; stroke-width: 4; }
 @media (max-width: 1500px) {
   .gres-layout { display: flex; flex: 0 0 auto; flex-direction: column; }
