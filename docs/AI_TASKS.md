@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## GEM-CONVERT-WHITE-FLASH-20261018 — 放大轉換白光並完全蓋住寶石
+
+- Owner：Codex；Done，單一開發者。使用者要求白光更大更明顯、可溢出格子，最亮時完全蓋住寶石圖示。前置GEM-CONVERT-GLOW完成，工作區乾淨、五檔預檢乾淨。
+- 允許css/gems.css僅白光層／發光／減少動態、index.html僅CSS快取、PATCH.md／本紀錄與docs/vfx/VFX_PRESET_USAGE_OUTSIDE_TABLES.md效果登記；禁止JS狀態／時長／數值／Worker／存檔／素材及其他副本，不合併推送。
+- 方式：播放中解除格子裁切，以格上方不透明白色核心及大範圍漸層光暈覆蓋整個icon；保持原2秒及成功文字，沿原具名時長。原料及產出共用，不新增Preset／素材。驗收正式Worker轉換、最亮時核心覆蓋／溢出、末段清除／綠字、減少動態與回歸／Build／Console後Commit。後續使用者重載檢視。
+- 完成五檔：gems.css播放中overflow改visible，加入z-index3的::after白光，漸層28px半徑內為完全不透明白色、外緣延至72px；峰值38%～68%固定全亮，末段擴散淡出，原亮框及icon增亮同步加強。狀態文字置較高層保持可讀，減少動態關閉新白光、保留原靜態亮框。index僅gems CSS18→19；PATCH／用途登記與本紀錄同步。沒有JS／時長／權威規則／素材變更，無素材庫Commit。
+- 指令／結果：`node --test tests/gem-convert-shift.test.cjs tests/game-clock.test.cjs tests/init-ui-smoke.test.cjs`17/17通過，`npm.cmd run build`535檔通過，`git diff --check`通過。純CSS效果微調沿既有回歸及真實瀏覽器像素驗收，未新增鏡像測試或改動斷言。
+- 瀏覽器：隔離headless Edge／隨機localhost／seed新角色、正式Worker轉換11顆一級紅寶石＋5顆二級藍寶石為5／2顆蛋白石，原料各留1顆。測試於播放1秒透過共享時鐘凍結，固定真實CSS動畫currentTime=1000ms取圖；四格白光computed尺寸皆142×142px（原格48×48）、opacity1、z-index3、overflow visible。Pillow唯讀檢查整個36×36 icon矩形，所有RGB通道最小值分別254／255／254／255，確認整顆被白光蓋住；超出各格邊界16px的取樣仍為197～202亮灰，確認光暈未被格子裁切。僅讀取像素，沒有編修圖片。
+- 恢復時鐘後展示正常清除、綠字仍在，減少動態::after為display:none；Console warning／error、pageerror及HTTP錯誤0。預覽保留本聊天visualizations/gem-convert-white-flash.png。隔離瀏覽器／服務關閉，臨時gem-white-flash-check.cjs及meta.json核對確切路徑後清理。
+- 唯讀未改：AI規範／AGENTS／工作流與既有任務、ui.js展示狀態與共用計時、原樣式堆疊／disabled、VFX用途文件與GameClock暫停、上列回歸；未修改JS／Worker／數值／存檔或其他副本。自我Review確認不透明核心覆蓋icon四角、外光不裁切、裝飾不接滑鼠事件、綠字位於光層之上。限制：未實測其他瀏覽器／實體觸控及低階裝置效能，本次無未完成項或已知新增功能風險。
+- 交付：Commit為本紀錄所在`[Codex] feat: 放大寶石轉換白光並覆蓋圖示`，回覆附編號；可供Review／合併，未合併推送。下一步整合重載，檢視白光峰值與格外光暈。
+
 ## GEM-CONVERT-GLOW-20261018 — 轉換成功保留寶石並播放兩秒發光轉場
 
 - Owner：Codex；Done，單一開發者。使用者要求轉換後寶石保留約2秒、發光轉場結束才消失，同時於產出下方以綠色顯示「轉換成功！」。前置GEM-CONVERT-TWO已完成，工作區乾淨、七檔預檢乾淨。

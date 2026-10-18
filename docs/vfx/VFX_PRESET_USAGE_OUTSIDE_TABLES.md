@@ -130,4 +130,4 @@ grep 找得到「哪裡寫死了這個 id」，寫不出「是誰在用」：下
 
 ## 程式寫死的介面轉場
 
-- 寶石轉換成功：js/ui.js 的 runGemConvert 在權威成功後啟動，css/gems.css 的 gconv-convert-glow／gconv-convert-icon 以CSS畫鑲格發光、寶石增亮與淡出；時長由 GEM_CONVERT_FX_MS 同時供CSS與清理計時。用於九宮格原料及右側產出，不使用圖片或戰場Preset；減少動態時改為靜態亮框，仍保留成功展示時間。
+- 寶石轉換成功：js/ui.js 的 runGemConvert 在權威成功後啟動，css/gems.css 的 gconv-convert-glow／gconv-convert-icon／gconv-convert-flash 以CSS畫白色亮框、寶石增亮、不透明白光核心及溢出格子的大光暈，最亮時完全蓋住寶石，末段淡出；時長由 GEM_CONVERT_FX_MS 同時供CSS與清理計時。用於九宮格原料及右側產出，不使用圖片或戰場Preset；減少動態時改為靜態亮框，仍保留成功展示時間。
