@@ -8619,23 +8619,9 @@ function talentTierTabsHTML(snapshot) {
   return h;
 }
 
-/* 圖示重用專案自製技能圖；同類屬性在不同轉數保有相同視覺語意。 */
+/* 威能專用原創聖印，以威能ID對應素材庫匯出圖；三處顯示共用此入口。 */
 function talentIconHTML(def) {
-  var icons = {
-    strPct: 'cleave', agiPct: 'gale', intPct: 'thunderorb', vitPct: 'rockarmor',
-    defPct: 'earthguard', mdefPct: 'stormbarrier', pRes: 'rockarmor', mRes: 'frostnova',
-    critRate: 'knife', critDmg: 'bloodblade', evasion: 'dualdance', hit: 'icearrow',
-    hpPct: 'waterball', shieldEff: 'earthguard', normalDmg: 'cleave', eliteDmg: 'thrust',
-    bossDmg: 'vacuumslash', normalDmgRed: 'counter', eliteDmgRed: 'rockarmor',
-    bossDmgRed: 'earthguard', elemRes: 'stormbarrier', globalDmgRed: 'earthguard',
-    patkPct: 'cleave', matkPct: 'thunderorb', totalDmgPct: 'bloodblade', gemEff: 'thunderorb',
-    skillPhys: 'thrust', skillMagic: 'fireball', skillDef: 'earthguard',
-    skillSpecial: 'stormbarrier', skillPassive: 'counter'
-  };
-  var elements = { Fire: 'fireball', Ice: 'icearrow', Lightning: 'chainlightning',
-    Poison: 'mire', Light: 'thunderstrike', Dark: 'bloodblade', Earth: 'earthguard', Wind: 'gale' };
-  var suffix = String(def.stat || '').replace(/^(elem|dmgVs|resVs)/, '');
-  return skillIconHTML(icons[def.stat] || elements[suffix] || 'stormbarrier', def.emoji);
+  return '<img class="talent-icon-img" src="images/ui/heaven-power/icons/' + encodeURIComponent(def.id) + '.png?v=1" alt="" aria-hidden="true" draggable="false">';
 }
 
 function talentThreatIconHTML() {
