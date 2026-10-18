@@ -13,7 +13,7 @@ test('四個舊潛力解鎖威能已刪除，不阻擋整轉全滿', () => {
     assert.equal(c.talentDef(id),null); assert.match(c.talentUpgrade(id),/找不到/);
   }
   for(const def of c.TALENT_TREES[3]) if(!def.disabled) c.G.player.talents.levels[def.id]=10;
-  assert.equal(c.talentTreeComplete(3),true); assert.equal(c.talentCompleteMultiplier(3),1);
+  assert.equal(c.talentTreeComplete(3),true); assert.equal(c.talentCompleteMultiplier(3),1.25);
 });
 
 function loadContext() {
@@ -74,12 +74,12 @@ test('天賦資料包含 1～10 轉節點（元素轉 10 個、其餘 8 個）�
   assert.ok(unlockDefs.every(e => e.def.disabled && e.def.unlocks === undefined));
 });
 
-test('威能十級均使用每級增加值，整轉啟用節點全滿仍依表值', () => {
+test('威能十級使用表值，整轉啟用節點全滿額外提升25%', () => {
   const c=loadContext(),def=c.talentDef('t1_str'); assert.equal(def.per,0.5);
   assert.equal(c.talentLevelValue(def,0),0); assert.equal(c.talentLevelValue(def,1),0.5);
   assert.equal(c.talentLevelValue(def,10),5); assert.equal(c.talentLevelValue(def,100),5);
   for(const node of c.TALENT_TREES[1]) c.G.player.talents.levels[node.id]=10;
-  assert.equal(c.talentStatBonuses().strPct,5);
+  assert.equal(c.talentStatBonuses().strPct,6.25);
 });
 
 test('威能升到N級消耗N點，滿級55點，降級與清除精確退點', () => {
@@ -301,7 +301,7 @@ test('所有威能0級Tooltip顯示1級表值與成本，圖示上不顯示名�
     const source = 'images/ui/heaven-power/icons/' + def.id + '.png?v=1';
     assert.ok(node.includes(source), def.id + '星盤圖示');
     assert.ok(tip.innerHTML.includes(source), def.id + 'Tooltip圖示');
-    assert.ok(c.talentEffectsHTML(turn, talentPanelSnapshot(c)).includes(source), def.id + '效果列表圖示');
+    assert.doesNotMatch(node, /class="tlx-node-lv"/, def.id + '0級不顯示角標');
     assert.doesNotMatch(c.talentIconHTML(def), /images\/skills\//);
     assert.ok(fs.existsSync(path.join(root, source.split('?')[0])), def.id + '正式輸出存在');
     sources.add(source);
@@ -334,6 +334,9 @@ test('滿級Tooltip隱藏下一級及成本；圖下可降級但不可升級', (
   c.showTalentTooltip('t2_crit', tipAnchor);
   assert.match(tip.innerHTML, /已達最高等級/);
   assert.doesNotMatch(tip.innerHTML, /下一級：|消耗.*點威能點/);
+  const node = c.talentNodeHTML(c.talentDef('t2_crit'), 2, talentPanelSnapshot(c));
+  assert.match(node, /class="tlx-node-lv" aria-hidden="true">10<\/span>/);
+  assert.doesNotMatch(node, />Lv\.|>\d+\/10</);
   const h = c.talentInlineActionsHTML(c.talentDef('t2_crit'), talentPanelSnapshot(c));
   assert.match(h, /data-talent-up="t2_crit"[^>]* disabled/);
   assert.doesNotMatch(h, /data-talent-down="t2_crit"[^>]* disabled/);
@@ -446,7 +449,7 @@ test('直接升降級依成本、鎖定、滿級與pending停用，不顯示舊�
   assert.match(html(), /data-talent-down="t6_boss"[^>]* disabled/);
 });
 
-test('各轉全滿與差一級僅增加該級表值，UI快照與實際加成一致', () => {
+test('十轉全滿加成與差一級撤除，84個UI快照值與實際加成一致', () => {
   const c = loadContext(); loadTalentUi(c);
   c.G.player.reincarnations = 10;
   for (const [turn, tree] of Object.entries(c.TALENT_TREES)) {
@@ -454,12 +457,65 @@ test('各轉全滿與差一級僅增加該級表值，UI快照與實際加成一
     for (const def of tree) c.G.player.talents.levels[def.id] = 10;
     const full = c.talentStatBonuses();
     for (const def of tree) {
-      assert.equal(c.talentDescriptionValue(def,10,+turn,talentPanelSnapshot(c)), def.per*10);
+      assert.equal(c.talentDescriptionValue(def,10,+turn,talentPanelSnapshot(c)), def.per*10*1.25);
       c.G.player.talents.levels[def.id] = 9;
       const almost = c.talentStatBonuses();
-      assert.ok(Math.abs(full[def.stat]-almost[def.stat]-def.per) < 1e-8, def.id);
+      assert.equal(c.talentViewCompleteMultiplier(talentPanelSnapshot(c),+turn),1);
+      for (const peer of tree) {
+        const base = peer.per*(peer.id===def.id ? 9 : 10);
+        assert.equal(c.talentDescriptionValue(peer,peer.id===def.id ? 9 : 10,+turn,talentPanelSnapshot(c)),base);
+        const expected = tree.filter(node=>node.stat===peer.stat).reduce((sum,node)=>sum+node.per*(node.id===def.id?9:10),0);
+        assert.ok(Math.abs(almost[peer.stat]-expected)<1e-8, peer.id+'差一級撤除全轉加成');
+        assert.ok(Math.abs(full[peer.stat]-tree.filter(node=>node.stat===peer.stat).reduce((sum,node)=>sum+node.per*10*1.25,0))<1e-8);
+      }
       c.G.player.talents.levels[def.id] = 10;
     }
-    assert.doesNotMatch(c.talentBoardHTML(+turn,talentPanelSnapshot(c)) + c.talentEffectsHTML(+turn,talentPanelSnapshot(c)), /×2|加倍/);
+    assert.doesNotMatch(c.talentBoardHTML(+turn,talentPanelSnapshot(c)), /×2|加倍/);
   }
+});
+
+test('全滿Tooltip依快照另列綠字加成，中央精簡且下一級可預覽滿轉效果', () => {
+  const c=loadContext(), tip=loadTalentUi(c);
+  c.G.player.reincarnations=2;
+  for(const def of c.TALENT_TREES[1]) c.G.player.talents.levels[def.id]=10;
+  const snapshot=JSON.parse(JSON.stringify(talentPanelSnapshot(c)));
+  c.uiTalentPanelSnapshot=()=>snapshot;
+  c.G=null;
+  c.showTalentTooltip('t1_str',tipAnchor);
+  assert.match(tip.innerHTML, /力量總值額外提高5%/);
+  assert.match(tip.innerHTML, /class="skt-desc tlx-tip-bonus">力量總值額外提高1\.25%/);
+  assert.doesNotMatch(tip.innerHTML,/選取圖示|使用下方|調整等級/);
+  assert.equal(c.talentDescriptionValue(c.talentDef('t1_str'),10,1,snapshot),6.25);
+  const board=c.talentBoardHTML(1,snapshot);
+  assert.match(board,/data-tt-desc="所有威能升至滿級時效果提升25%"/);
+  assert.match(board,/<span>80\/80<\/span>/);
+  assert.doesNotMatch(board,/>\d+%|<em>天堂威能/);
+  snapshot.talents.levels.t1_str=9;
+  c.showTalentTooltip('t1_str',tipAnchor);
+  assert.doesNotMatch(tip.innerHTML,/tlx-tip-bonus/);
+  assert.match(tip.innerHTML,/下一級：力量總值額外提高6\.25%/);
+  assert.equal(snapshot.talents.levels.t1_str,9,'預覽不能修改快照');
+  snapshot.talents.levels.t1_agi=9;
+  c.showTalentTooltip('t1_str',tipAnchor);
+  assert.match(tip.innerHTML,/下一級：力量總值額外提高5%/);
+  for(const def of c.TALENT_TREES[10])snapshot.talents.levels[def.id]=10;
+  c.showTalentTooltip('t10_str',tipAnchor);
+  assert.match(tip.innerHTML,/力量總值額外提高1\.875%/);
+});
+
+test('全滿倍率按轉獨立，空轉與全停用不啟用、停用節點不阻擋', () => {
+  const c=loadContext();loadTalentUi(c);
+  assert.equal(c.talentCompleteMultiplier(99),1);
+  for(const def of c.TALENT_TREES[1]) c.G.player.talents.levels[def.id]=10;
+  c.G.player.talents.levels.t3_def=10;
+  assert.equal(c.talentCompleteMultiplier(1),1.25);
+  assert.equal(c.talentCompleteMultiplier(3),1);
+  assert.equal(c.talentStatBonuses().defPct,11.25,'同屬性跨轉各自乘倍率後相加');
+  const skipped=c.TALENT_TREES[1][0];skipped.disabled=true;
+  c.G.player.talents.levels[skipped.id]=0;
+  assert.equal(c.talentCompleteMultiplier(1),1.25);
+  assert.equal(c.talentStatBonuses().strPct,0);
+  for(const def of c.TALENT_TREES[1])def.disabled=true;
+  assert.equal(c.talentCompleteMultiplier(1),1);
+  assert.equal(c.talentViewCompleteMultiplier(talentPanelSnapshot(c),1),1);
 });

@@ -8414,7 +8414,7 @@ function talentViewTreeComplete(snapshot, turn) {
 }
 
 function talentViewCompleteMultiplier(snapshot, turn) {
-  return 1;
+  return talentViewTreeComplete(snapshot, turn) ? TALENT_COMPLETE_EFFECT_MULTIPLIER : 1;
 }
 
 function pendingUiButtonAttributes(key) {
@@ -8521,9 +8521,9 @@ function talentEffectLabel(def, value) {
     elemFire: '火焰', elemIce: '寒冰', elemLightning: '雷電',
     elemPoison: '劇毒', elemLight: '聖光', elemDark: '暗影', elemEarth: '大地'
   };
-  // 天賦每級可能是小數（總傷害額外 0.5% 等），fmt 會捨去小數 → 一律保留至多 2 位小數
-  if (elementTalentNames[def.stat]) return String(Math.round(value * 100) / 100) + '%' + elementTalentNames[def.stat] + '傷害';
-  return String(Math.round(value * 100) / 100) + '%';
+  // 小數表值與滿轉加成可能產生三位小數，不以fmt截去精度。
+  if (elementTalentNames[def.stat]) return String(Math.round(value * 1000) / 1000) + '%' + elementTalentNames[def.stat] + '傷害';
+  return String(Math.round(value * 1000) / 1000) + '%';
 }
 
 function talentEffectDescription(def, value) {
@@ -8652,13 +8652,13 @@ function talentNodeHTML(def, turn, snapshot, index, count) {
   var lockText = def.disabled ? (def.disabledReason || '目前暫不開放升級') : '需 ' + turn + ' 轉';
   var aria = def.name + ' Lv.' + lv + '/' + TALENT_MAX_LEVEL + (locked ? '（' + lockText + '）' : '');
   var angle = count ? -90 + (index || 0) * 360 / count : -90;
-  var pct = Math.round(lv / TALENT_MAX_LEVEL * 100);
   return '<div class="tlx-node' + (selected ? ' is-selected' : '') + (lv > 0 ? ' learned' : '') + (lv >= TALENT_MAX_LEVEL ? ' maxed' : '') + (locked ? ' locked' : '') +
-    '" style="--a:' + angle + 'deg;--p:' + pct + '%">' +
+    '" style="--a:' + angle + 'deg">' +
     '<button type="button" class="tlx-node-select" data-talent-select="talent:' + def.id + '" data-talent-tip="' + def.id + '" aria-pressed="' + selected + '" aria-label="' + esc(aria) + '">' +
-    '<span class="tlx-node-ring"><span class="tlx-node-glyph">' + talentIconHTML(def) + '</span></span>' +
+    '<span class="tlx-node-ring"><span class="tlx-node-glyph">' + talentIconHTML(def) +
+    (lv > 0 ? '<span class="tlx-node-lv" aria-hidden="true">' + lv + '</span>' : '') + '</span></span>' +
     '<span class="tlx-node-meta"><span class="tlx-node-threat" aria-label="威脅值 +' + (def.disabled ? 0 : Math.max(0, Number(def.threat) || 0)) + '">' + talentThreatIconHTML() + '<span>+' + (def.disabled ? 0 : Math.max(0, Number(def.threat) || 0)) + '</span></span>' +
-    '<span class="tlx-node-lv">Lv.' + lv + '/' + TALENT_MAX_LEVEL + '</span></span></button>' +
+    '</span></button>' +
     (selected ? talentInlineActionsHTML(def, snapshot) : '') + '</div>';
 }
 
@@ -8675,30 +8675,10 @@ function talentBoardHTML(turn, snapshot) {
     nodes += talentNodeHTML(def, turn, snapshot, i, tree.length);
   });
   return '<span class="tlx-board-caption" aria-hidden="true">✦ 天堂聖域 ✦</span><span class="tlx-orbit" aria-hidden="true"></span><span class="tlx-orbit is-inner" aria-hidden="true"></span>' + spokes +
-    '<div class="tlx-core' + (complete ? ' is-complete' : '') + '">' +
+    '<div class="tlx-core' + (complete ? ' is-complete' : '') + '" tabindex="0" data-tt-title="本轉威能加成" data-tt-desc="所有威能升至滿級時效果提升' + Math.round((TALENT_COMPLETE_EFFECT_MULTIPLIER - 1) * 100) + '%">' +
       '<b>' + turn + ' 轉</b>' +
-      '<span>' + (max ? Math.floor(total / max * 100) : 0) + '%・' + fmtFull(total) + ' / ' + fmtFull(max) + '</span>' +
-      '<em>天堂威能</em>' +
+      '<span>' + fmtFull(total) + '/' + fmtFull(max) + '</span>' +
     '</div>' + nodes;
-}
-
-function talentEffectsHTML(turn, snapshot) {
-  var tree = TALENT_TREES[turn] || [];
-  var complete = talentViewTreeComplete(snapshot, turn);
-  var rows = tree.map(function (def) {
-    var lv = talentViewLevel(snapshot, def.id);
-    var text = lv > 0
-      ? talentEffectDescription(def, talentDescriptionValue(def, lv, turn, snapshot))
-      : '尚未學習';
-    return '<div class="tlx-eff' + (lv > 0 ? '' : ' is-empty') + '" data-talent-tip="' + def.id + '">' +
-      '<span class="tlx-eff-head"><span class="tlx-eff-name"><span class="tlx-eff-icon">' + talentIconHTML(def) + '</span>' + esc(def.name) + '</span><span>Lv.' + lv + '</span></span>' +
-      '<span class="tlx-eff-val">' + text + '</span></div>';
-  }).join('');
-  return '<div class="tlx-side-title"><b>本轉效果</b></div>' +
-    '<div class="tlx-side-note' + (complete ? ' is-complete' : '') + '">' +
-      '每級神力，皆由你的選擇凝聚。' + '</div>' +
-    '<div class="tlx-effs">' + rows + '</div>' +
-    '<div class="tlx-side-foot">選取威能後，使用圖示下方 −／＋ 調整等級</div>';
 }
 
 function renderTalents() {
@@ -8720,8 +8700,7 @@ function renderTalents() {
     '<button type="button" class="pg-help" aria-label="威能說明" data-tt-title="天堂威能" data-tt-desc="1 轉後開放；轉生後每升 1 級獲得 1 點轉生威能點。威能最高10級，升至第N級消耗N點威能點，升滿共55點。每級效果依表定增加值累加。每個威能首次點亮增加表定威脅值，後續升級不再增加。">?</button></div>';
   if (rc < 1) h += '<div class="tlx-locked-banner">🔒 威能系統將於完成 1 轉後開放。</div>';
   h += '<div class="tlx-tiers" role="tablist" aria-label="轉數">' + talentTierTabsHTML(snapshot) + '</div>';
-  h += '<div class="tlx"><div class="tlx-board">' + talentBoardHTML(turn, snapshot) + '</div>' +
-    '<aside class="tlx-side">' + talentEffectsHTML(turn, snapshot) + '</aside></div>';
+  h += '<div class="tlx"><div class="tlx-board">' + talentBoardHTML(turn, snapshot) + '</div></div>';
   if (root._lastH !== h) {
     if (UI.tooltipAnchor && root.contains && root.contains(UI.tooltipAnchor)) hideTooltip();
     root._lastH = h;
@@ -9703,11 +9682,19 @@ function showTalentTooltip(ref, anchorEl) {
   var title = turn + ' 轉威能';
   var h = '<div class="skt-name"><span class="tlx-tip-icon">' + talentIconHTML(def) + '</span>' + esc(def.name) +
     ' <span class="dim-text">Lv.' + lv + '/' + maxLv + '｜' + title + '</span></div>';
+  var base = talentLevelValue(def, displayLv);
   var current = talentDescriptionValue(def, displayLv, turn, snapshot);
-  h += '<div class="skt-desc">' + talentEffectDescription(def, current) + '</div>';
-  if (lv < maxLv) h += '<div class="skt-desc">下一級：' + talentEffectDescription(def, talentDescriptionValue(def, lv + 1, turn, snapshot)) + '</div>';
+  h += '<div class="skt-desc">' + talentEffectDescription(def, base) + '</div>';
+  if (current > base) h += '<div class="skt-desc tlx-tip-bonus">' + talentEffectDescription(def, current - base) + '</div>';
+  if (lv < maxLv) {
+    // 下一級可能正好完成整轉，預覽也必須包含那次啟用的全滿倍率。
+    var nextLevels = Object.assign({}, talentViewLevels(snapshot));
+    nextLevels[id] = lv + 1;
+    var nextSnapshot = { talents: { levels: nextLevels } };
+    h += '<div class="skt-desc">下一級：' + talentEffectDescription(def, talentDescriptionValue(def, lv + 1, turn, nextSnapshot)) + '</div>';
+  }
   if (!talentViewUnlocked(snapshot, id)) h += '<div class="skt-lock">🔒 需要達到 ' + turn + ' 轉</div>';
-  h += '<div class="skt-hint">' + (lv >= maxLv ? '已達最高等級' : '升至下一級消耗 ' + talentUpgradeCost(id, lv + 1) + ' 點威能點') + '<br>選取圖示後，使用下方 −／＋ 調整等級</div>';
+  h += '<div class="skt-hint">' + (lv >= maxLv ? '已達最高等級' : '升至下一級消耗 ' + talentUpgradeCost(id, lv + 1) + ' 點威能點') + '</div>';
   tip.innerHTML = h;
   tip.style.display = 'block';
   UI.tooltipAnchor = anchorEl;

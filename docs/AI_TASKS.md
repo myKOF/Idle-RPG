@@ -1,5 +1,29 @@
 # AI_TASKS.md
 
+## HEAVEN-POWER-COMPLETE-BONUS-20261018 — 滿轉威能加成25%與精簡中央提示
+
+- Owner：Codex；Done；單一開發者。使用者要求中央僅保留轉數／升級總量、hover說明全滿25%、移除威能tips操作提示，並讓滿轉25%實際生效且在tips另列綠字額外效果。前輪單欄／紫框／數字角標保留；工作區乾淨、fetch與全部目標衝突預檢乾淨。
+- 範圍：js/talents.js全滿倍率與聚合、js/ui.js快照倍率／中央／Tooltip、css/ashen-forge.css僅中央／額外效果樣式、js/worker/sim.worker.js僅talents匯入快取、js/bridge.js與index.html必要快取、tests/talents.test.cjs／potential-removal.test.cjs／talents-perf-equivalence.test.cjs相依回歸、game_formula.md／LV_upgrade_system.md／本紀錄。禁止其他數值／表格／素材／存檔格式／Protocol欄位／其他頁面，不合併推送。
+- 語意：僅該轉所有啟用威能達滿級，該轉原效果乘1.25；無節點／全停用不啟用，停用節點不參與。降級立即撤除、既有滿轉讀檔自動套用，不增加威脅或升級成本；例基礎5%＋綠字1.25%，實際6.25%。UI讀Worker快照，不讀主端G。驗收十轉／各屬性／差一級／升降級／跨轉隔離／Tooltip與實際統計一致、回歸／Build／瀏覽器／自我Review，完成後Commit供使用者合併。
+
+- 完成12檔：js/talents.js新增共用TALENT_COMPLETE_EFFECT_MULTIPLIER，talentCompleteMultiplier依該轉全滿判定，聚合時每轉僅計算一次倍率；js/ui.js以相同常數與Worker快照算顯示值，中央刪百分比／天堂威能字樣、加hover提示，節點tips保留原值並另列綠字增加值、刪操作提示，最後一級預覽投影該次全滿倍率且不改快照，小數保留至三位以顯示1.875等精確值；css/ashen-forge.css刪舊中央em樣式、加help游標及綠字。js/worker/sim.worker.js僅talents匯入快取，js/bridge.js僅Worker資源快取，index.html同步CSS88→89／talents7→8／UI183→184／Bridge304→305。三份回歸、game_formula.md（同步滿轉公式及移除舊元素×2文字）、LV_upgrade_system.md與本紀錄。
+- 驗證：`node --test --test-reporter=dot tests/talents.test.cjs tests/talents-perf-equivalence.test.cjs tests/power-rework.test.cjs tests/potential-removal.test.cjs tests/init-ui-smoke.test.cjs tests/ui-worker-g-dependency.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/ui-worker-events.test.cjs tests/ui-command-pending.test.cjs` **86/86**通過；`npm.cmd run build` **538檔**通過；`git diff --check`通過。覆蓋十轉84項滿級／逐項缺一級撤除全轉／跨轉同屬性分別聚合／停用與空轉／主端G=null／下一級全滿預覽／綠字三位小數；正式Worker最後一級改變其他威能的實際getStats、降級撤除與存檔重開保留。舊期望依本次明確需求改為1.25，未弱化成本／威脅／戰鬥斷言；參數表接線、Protocol版本58與94指令不變。
+- 瀏覽器：依browser技能嘗試IAB無backend後，改隔離headless Edge／隨機localhost，seed1018新角色由正式Worker LOAD載入、不讀真人存檔。1轉79/80時力量5%無綠字，魔抗9級預覽下一級6.25%；實點魔抗升10完成80/80後力量tips為5%＋綠字1.25%（rgb164,231,91），角色力量4848→4905，點數20000→19990；降回9級時綠字消失、力量回4848、點數回20000，威脅未變。2轉未滿的致命直覺仍5%且無綠字；中央hover確實顯示「所有威能升至滿級時效果提升25%」。1920／1366／1086／390寬中央皆僅轉數與80/80、無溢出，8節點／2按鈕／中央11個中心命中與內含皆true，沒有恢復總覽。最終Console error／warning、pageerror與HTTP錯誤0；已目視本聊天visualizations/heaven-complete-bonus.png及heaven-core-bonus-tip.png；服務／瀏覽器關閉，未建立臨時測試檔。
+- 唯讀未改：AI規範／AGENTS／工作流／prompts/codex.md、js/data.js與Talents表值／成本／威脅、formula.js原各屬性乘區與統計、save.js／player.js既有遷移、Worker Protocol與docs/WORKER_PROTOCOL.md、素材與匯出流程、上述未列修改的七份回歸。素材庫status乾淨、無素材Commit。自我Review確認倍率只套一次、每轉隔離且無持久化倍率快取、只按levels即時計算；現有滿轉讀檔自動生效，不改存檔、不新增Timer／事件或Protocol欄位。
+- 交付：無未完成項目或新增已知阻擋，可供審閱合併；未合併／推送。限制為實際瀏覽器只驗Edge，未跑全庫或全部實體裝置。下一步使用者整合並重載驗收；Commit為本紀錄所在`[Codex] feat: 滿轉威能效果提升25%並顯示額外加成`，回覆附實際編號。
+
+## HEAVEN-POWER-NODE-LEVELS-20261018 — 精簡威能星盤與紫色等級框
+
+- Owner：Codex；Done；單一開發者。使用者要求刪除右側總覽、1～9級淺紫框／10級深紫框、圖示右下僅顯示當前等級且0級隱藏；前輪84枚圖示已接入。工作區乾淨、fetch與五檔衝突預檢乾淨。
+- 範圍：js/ui.js威能DOM與移除效果列表函式、css/ashen-forge.css威能單欄／等級框／角標及移除廢棄列表樣式、index.html必要快取、tests/talents.test.cjs既有相關斷言與本紀錄。禁止數值／解鎖條件／Worker／Protocol／存檔／其他頁面／素材，不合併推送。
+- 方式／驗收：星盤填滿原總覽空間；升降級依快照即時更新灰／淺紫／深紫框與角標，保留外層金色選中提示、威脅圖示、Tooltip及圓形加減按鈕。既有回歸／Build、正式UI升降級0↔1與9↔10、選取／切轉／窄寬畫面／Console後Commit；使用者後續審閱合併。無新素材或素材庫變更。
+
+- 完成5檔：js/ui.js刪除talentEffectsHTML及右側aside，改單欄星盤；移除圖下Lv.x/10、圖示內右下角僅在大於0級時渲染當前數字，保留無障礙完整等級與Tooltip。css/ashen-forge.css刪除廢棄總覽樣式，星盤填滿容器；1～9級框#c99aee、10級框#6b299b，金色選取outline在外層且不覆蓋等級框，數字角標定位於圖示內；移除不再使用的節點進度色。index.html僅CSS87→88／UI182→183；tests/talents.test.cjs將移除列表的舊斷言改為84個0級角標皆不存在、滿級只顯示數字，保留原效果與成本斷言；本紀錄。
+- 指令／結果：`node --test --test-reporter=spec tests/talents.test.cjs tests/power-rework.test.cjs tests/init-ui-smoke.test.cjs` **34/34**通過；`npm.cmd run build` **538檔**通過；`git diff --check`通過。查詢UI／CSS／回歸無talentEffectsHTML或tlx-side／tlx-eff殘留；沒有為通過測試更改玩法或放寬原數值斷言。
+- 瀏覽器：依已讀browser技能嘗試IAB，無backend後改隔離headless Edge／隨機localhost，seed1018新角色由正式Worker LOAD載入，不讀真人存檔。實際升0→1→9→10、降10→9→0，分別確認無角標／1／9／10及灰rgb(119,134,144)／淺紫rgb(201,154,238)／深紫rgb(107,41,155)正確切換；所選外框一直有金色2px outline，角標全在圖示邊界內，圖示可見文字只有數字與威脅。升滿扣55、退完回原20000點、滿級升級停用。選滿級鋼骨時深紫保留、Tooltip滿級提示及原創圖正常。1920／1366／1086／390寬十節點頁，星盤寬等於容器、右側總覽0個、無溢出，10節點與2按鈕全內含且中心命中true、0級角標0個；最終Console error／warning、pageerror及HTTP錯誤0。已目視本聊天visualizations/heaven-level-frames.png，保留0／1／9／10同畫面供驗收；服務與瀏覽器已關閉，未產生臨時測試檔。
+- 唯讀未改：AI規範／AGENTS／工作流／prompts/codex.md、js/data.js／talents.js數值與解鎖、LV_upgrade_system.md（解鎖未變）、Worker／Protocol／存檔、原創84張圖與背景／匯出流程、上述其他兩份回歸。素材庫git status乾淨，無素材變更或空Commit。自我Review確認無新增狀態／Timer／事件，Tooltip原內容與升降級仍讀同一Worker快照。
+- 交付：無未完成項目或新增已知阻擋，可供審閱合併；未合併／推送。限制為只實測Edge，未跑全測試庫或全部實體裝置。下一步使用者整合並重載威能頁；Commit為本紀錄所在`[Codex] feat: 精簡威能星盤並以紫框與角標顯示等級`，回覆附實際編號。
+
 ## HEAVEN-POWER-ICONS-APPLY-20261018 — 接入84枚原創天堂威能圖示
 
 - Owner：Codex；Done；單一開發者。使用者已確認本聊天84枚圖集並授權全部接入，母圖與ID對照已完成。遊戲與素材庫工作區乾淨，fetch及目標衝突預檢乾淨。

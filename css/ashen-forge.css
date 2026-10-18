@@ -5227,7 +5227,7 @@ html *::-webkit-scrollbar-corner {
   font-size: 12px;
 }
 
-/* ==== 天堂威能：雲海聖殿／白金星盤 ==== */
+/* ==== 天堂威能：暗金聖印星盤 ==== */
 #workspace-area main > #tab-talents.active {
   height: 100%;
   min-height: 0;
@@ -5313,8 +5313,7 @@ html *::-webkit-scrollbar-corner {
 
 #tab-talents .tlx {
   display: grid;
-  grid-template-columns: minmax(0,1fr) 224px;
-  gap: 12px;
+  grid-template-columns: minmax(0,1fr);
   flex: 1 1 auto;
   min-height: 0;
 }
@@ -5408,6 +5407,7 @@ html *::-webkit-scrollbar-corner {
   border-radius: 50%;
   background: radial-gradient(circle at 50% 30%,#5a6252,#243545 68%);
   box-shadow: 0 0 0 7px #c9bd9130,0 0 0 8px #e9dca861,0 0 45px #fff0bd38,inset 0 0 18px #ffe4a124;
+  cursor: help;
 }
 
 #tab-talents .tlx-core::before,#tab-talents .tlx-core::after {
@@ -5439,10 +5439,9 @@ html *::-webkit-scrollbar-corner {
   color: #e4dcbf;
 }
 
-#tab-talents .tlx-core em {
-  font: 10px var(--af-serif);
-  letter-spacing: 3px;
-  color: #c0cacc;
+#sk-tooltip .tlx-tip-bonus {
+  margin-top: 8px;
+  color: #a4e75b;
 }
 
 #tab-talents .tlx-node {
@@ -5472,18 +5471,21 @@ html *::-webkit-scrollbar-corner {
 }
 
 #tab-talents .tlx-node-ring {
+  --talent-rim: #778690;
+  --talent-edge: #eedeb1a8;
   display: grid;
   place-items: center;
   width: 68px;
   height: 68px;
-  border: 1px solid #eedeb1a8;
+  border: 1px solid var(--talent-edge);
   border-radius: 16px;
-  background: conic-gradient(#fff0b9 var(--p),#778690 var(--p));
+  background: var(--talent-rim);
   box-shadow: 0 3px 9px #020d1b99,inset 0 0 0 3px #152d3dcc,0 0 0 3px #d4d8c225;
   transition: box-shadow .15s;
 }
 
 #tab-talents .tlx-node-glyph {
+  position: relative;
   display: block;
   width: 56px;
   height: 56px;
@@ -5510,19 +5512,19 @@ html *::-webkit-scrollbar-corner {
 }
 
 #tab-talents .tlx-node.learned .tlx-node-ring {
-  border-color: #fff1ba;
+  --talent-rim: #c99aee;
+  --talent-edge: #e7c8ff;
 }
 
 #tab-talents .tlx-node.maxed .tlx-node-ring {
-  box-shadow: 0 0 0 3px #f8e1a04d,0 0 20px #f8e1a052;
+  --talent-rim: #6b299b;
+  --talent-edge: #ae77d3;
 }
 
 /* 選中狀態置於滿級樣式之後；僅此框覆寫工作區的全域陰影停用。 */
 #tab-talents .tlx-node.is-selected .tlx-node-ring {
-  border-color: #fff3ba;
   outline: 2px solid #fff0ab;
   outline-offset: 3px;
-  background: conic-gradient(#ffe59b var(--p), #bda05f var(--p));
   box-shadow: 0 0 0 3px #a87926, 0 0 18px 5px #ffd56a99, inset 0 0 0 3px #6b5229 !important;
 }
 
@@ -5553,8 +5555,20 @@ html *::-webkit-scrollbar-corner {
 }
 
 #tab-talents .tlx-node-lv {
-  font-size: 11px;
-  color: #f2e5bb;
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  min-width: 18px;
+  padding: 0 2px;
+  border: 1px solid #dcc7ffb3;
+  border-radius: 4px;
+  background: #0a0b12e8;
+  color: #f4eaff;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  pointer-events: none;
 }
 
 #tab-talents .tlx-node.locked .tlx-node-glyph {
@@ -5635,65 +5649,7 @@ html *::-webkit-scrollbar-corner {
   height: 21px;
 }
 
-#tab-talents .tlx-side {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  min-height: 0;
-  padding: 15px 12px;
-  border: 1px solid #bba9734d;
-  border-radius: 8px;
-  background: linear-gradient(160deg,#263641e8,#101b26f2);
-  box-shadow: inset 0 1px #e5dbb41a;
-}
-
-#tab-talents .tlx-side-title b {
-  font: 16px var(--af-serif);
-  letter-spacing: 3px;
-  color: #f1deb0;
-}
-
-#tab-talents .tlx-side-note {
-  font-size: 11px;
-  color: #adb9bd;
-}
-
-#tab-talents .tlx-effs {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  min-height: 0;
-  overflow-y: auto;
-}
-
-#tab-talents .tlx-eff {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  padding: 9px 2px;
-  border-bottom: 1px solid #a6b4b51c;
-}
-
-#tab-talents .tlx-eff-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: 12px;
-  color: #ede6d5;
-}
-
-#tab-talents .tlx-eff-head > span:last-child {
-  color: #a8b4bd;
-}
-
-#tab-talents .tlx-eff-name {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-}
-
-#tab-talents .tlx-eff-icon,.tlx-tip-icon {
+.tlx-tip-icon {
   display: inline-block;
   flex: 0 0 auto;
   width: 24px;
@@ -5706,22 +5662,6 @@ html *::-webkit-scrollbar-corner {
 
 .tlx-tip-icon {
   margin-right: 6px;
-}
-
-#tab-talents .tlx-eff-val {
-  font-size: 12px;
-  line-height: 1.45;
-  color: #adddc6;
-}
-
-#tab-talents .tlx-eff.is-empty .tlx-eff-val {
-  color: #84939e;
-}
-
-#tab-talents .tlx-side-foot {
-  font-size: 11px;
-  line-height: 1.7;
-  color: #b0b9b7;
 }
 
 /* ==== 技能圖示（2026-10 技能圖改造）：skills2 群組改用 images/skills/<群組id>.png，其餘技能仍是 emoji ==== */
