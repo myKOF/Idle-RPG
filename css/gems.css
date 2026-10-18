@@ -19,6 +19,32 @@
 .gi-slot { width: 32px; height: 32px; }
 .gx-socket.is-out .gi-slot { width: 42px; height: 42px; }
 .gi-conv { width: 38px; height: 38px; }
+
+/* 轉換沿上方十階列選原料，九宮格與成品均使用48px庫存格尺寸。 */
+#tab-gems [data-gem-panel="convert"] { position: relative; }
+#tab-gems .gconv-help { position: absolute; top: 12px; right: 12px; }
+#tab-gems .gconv-layout { gap: 32px; margin: 26px 10px 12px; align-items: stretch; }
+#tab-gems .gconv-input { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+#tab-gems .gconv-grid { grid-template-columns: repeat(3, 48px); grid-template-rows: repeat(3, 48px); }
+#tab-gems .gconv-slot {
+  position: relative; width: 48px; height: 48px; min-width: 0; min-height: 0;
+  box-sizing: border-box; padding: 0; gap: 0; overflow: hidden; border-radius: 0;
+}
+#tab-gems .gconv-slot.filled { border-color: var(--c); }
+#tab-gems .gconv-slot .gi-conv { width: 36px; height: 36px; pointer-events: none; }
+#tab-gems .gconv-n { position: absolute; top: 2px; left: 3px; font-size: 9px; color: #fbbf24; text-shadow: 0 0 3px #000, 1px 1px 2px #000; }
+#tab-gems .gconv-level { position: absolute; bottom: 2px; left: 0; right: 0; color: #bcb6a8; font-size: 10px; text-shadow: 0 0 3px #000; }
+#tab-gems .gconv-side { flex: 0 1 300px; max-width: none; gap: 10px; }
+#tab-gems .gconv-side .sec-sub { margin: 0; }
+#tab-gems #gconv-output { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 6px; flex: 1; min-height: 96px; }
+#tab-gems #gconv-output .gconv-slot { cursor: default; pointer-events: auto; }
+#tab-gems #gconv-output .gconv-slot:hover { filter: none; }
+#tab-gems #gconv-clear, #tab-gems #gconv-btn { width: 112px; min-height: 30px; margin-top: auto; align-self: center; }
+#tab-gems .gconv-shortcut { margin: 0 10px; font-size: 12px; }
+#tab-gems .gconv-grid.is-drop { border-color: #d5b66d; box-shadow: 0 0 9px #d5b66d55; }
+#tab-gems[data-gem-tool="convert"] .gx-curve-cell[draggable="true"] { cursor: grab; }
+#tab-gems[data-gem-tool="convert"] .gx-curve-cell[draggable="true"]:active { cursor: grabbing; }
+#tab-gems[data-gem-tool="convert"] .gx-curve-cell.is-unavailable { filter: grayscale(1); opacity: .32; cursor: not-allowed; }
 .gi-shop { width: 50px; height: 50px; }
 .gi-row { width: 24px; height: 24px; }
 .gem-ico.gi-inline,

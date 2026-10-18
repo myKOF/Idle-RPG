@@ -23,12 +23,12 @@ function makeGemInventory(gemTypes) {
   return gems;
 }
 
-test('全部類型合成：逐種類處理、不會混合不同種類；合成頁改用獨立的「全部類型合成」按鈕', () => {
+test('移除全部類型合成介面，舊指令仍逐種類處理、不混合種類', () => {
   const root = path.resolve(__dirname, '..');
   const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
   const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  assert.match(index, /id="fuse-alltypes-btn"/);
-  assert.match(ui, /\$id\('fuse-alltypes-btn'\)[\s\S]*?gem\.composeAll[\s\S]*?type: GEM_TYPE_ALL/);
+  assert.doesNotMatch(index, /id="fuse-alltypes-btn"/);
+  assert.doesNotMatch(ui, /fuse-alltypes-btn|全部類型合計可合成/);
 
   const context = loadGameContext();
   const gems = makeGemInventory(context.GEM_TYPES);
@@ -140,7 +140,6 @@ test('寶石合成介面與紀錄使用共用逐階配方，寶石頁只保留�
   const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
   const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 
-  assert.match(ui, /Math\.floor\(gemsViewCount\(gemsSnapshot, allType, lv\) \/ needed\)/);
   assert.match(ui, /Math\.floor\(n \/ needed\)/);
   assert.match(ui, /gemComposeInputCount\(lv\)[\s\S]*sendGemUiCommand\(\s*['"]gem\.composeAll['"]/);
   assert.deepEqual([...index.matchAll(/data-gem-tool-btn="([^"]+)"/g)].map(m=>m[1]),['compose','convert','dismantle','resonance']);

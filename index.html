@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="css/ashen-forge-flat.css?v=1.0.3">
   <link rel="stylesheet" href="css/battle-hud.css?v=1.0.18">
   <link rel="stylesheet" href="css/runeword.css?v=1.0.6">
-  <link rel="stylesheet" href="css/gems.css?v=1.0.16">
+  <link rel="stylesheet" href="css/gems.css?v=1.0.17">
   <link rel="stylesheet" href="css/dialogs.css?v=1.0.3">
 </head>
 
@@ -363,29 +363,24 @@
                 <div class="gx-actions">
                   <button id="fuse-btn" class="btn">合成一次</button>
                   <button id="fuse-all-btn" class="btn">全部合成</button>
-                  <button id="fuse-alltypes-btn" class="btn" data-tip="這一階的所有寶石種類逐種合成">全部類型合成</button>
                 </div>
               </div>
 
               <div class="gx-panel" data-gem-panel="convert">
-                <div class="hint">把九宮格中的寶石一次轉換為右側選擇的種類（<b>同階轉換</b>、數量不變）。每格放一種「同種類同等級」寶石、上限 1000 顆；點下方庫存寶石放入，點格子取出。<b>融合寶石無法轉換</b>。</div>
+                <button type="button" class="pg-help gconv-help" aria-label="寶石轉換說明" data-tt-title="寶石轉換" data-tt-desc="選擇上方的寶石放入九宮格中進行轉換，2個任意寶石可轉換1個指定寶石。">!</button>
                 <div class="gconv-layout">
-                  <div id="gconv-grid" class="gconv-grid"></div>
-                  <div class="gconv-side">
-                    <div class="gconv-arrow" aria-hidden="true">➜</div>
-                    <div class="sec-sub">轉換為</div>
-                    <select id="gconv-target"></select>
-                    <button id="gconv-btn" class="btn">一鍵轉換</button>
+                  <div class="gconv-input">
+                    <div id="gconv-grid" class="gconv-grid" aria-label="轉換原料九宮格"></div>
                     <button id="gconv-clear" class="btn sm">清空</button>
-                    <div id="gconv-result" class="gem-result">尚未進行轉換</div>
+                  </div>
+                  <div class="gconv-side">
+                    <label class="sec-sub" for="gconv-target">轉換為</label>
+                    <select id="gconv-target"></select>
+                    <div id="gconv-output" aria-label="轉換後可獲得的寶石"></div>
+                    <button id="gconv-btn" class="btn">一鍵轉換</button>
                   </div>
                 </div>
-                <div class="node-info" id="gconv-info"></div>
-                <div class="sec-sub gx-pool-head">
-                  <span>庫存寶石（點擊放入九宮格）</span>
-                  <button id="btn-gem-sort" class="btn sm">排序：類型優先</button>
-                </div>
-                <div id="gconv-pool" class="chip-row"></div>
+                <div class="gconv-shortcut" id="gconv-info">Shift+左鍵：單顆放入／取下</div>
               </div>
 
               <div class="gx-panel" data-gem-panel="dismantle">
@@ -946,7 +941,7 @@
   <script src="js/status.js?v=1.0.33"></script>
   <script src="js/runeword_data.js?v=1.0.15"></script>
   <script src="js/gem_resonance_data.js?v=1.0.1"></script>
-  <script src="js/formula.js?v=1.0.62"></script>
+  <script src="js/formula.js?v=1.0.63"></script>
   <script src="js/battlefield.js?v=1.4.13"></script>
   <script src="js/game-clock.js?v=1.0.1"></script>
   <script src="js/vfx.js?v=1.0.81"></script>
@@ -972,7 +967,7 @@
   <script src="js/battle-elite.js?v=1.0.7"></script>
   <script src="js/battle-renderer.js?v=1.6.189"></script>
   <script src="js/stats.js?v=1.0.4"></script>
-  <script src="js/item.js?v=1.0.23"></script>
+  <script src="js/item.js?v=1.0.24"></script>
   <script src="js/gem_resonance.js?v=1.0.3"></script>
   <script src="js/runeword.js?v=1.0.14"></script>
   <script src="js/skills.js?v=1.0.42"></script>
@@ -985,7 +980,7 @@
   <script src="js/potential.js?v=1.0.9"></script>
   <script src="js/tower.js?v=1.0.31"></script>
   <script src="js/save.js?v=1.0.17"></script>
-  <script src="js/ui.js?v=1.0.171"></script>
+  <script src="js/ui.js?v=1.0.172"></script>
   <script src="js/ui-runeword.js?v=1.0.11"></script>
   <script src="js/ui-gem-resonance.js?v=1.0.15"></script>
   <script src="js/param_autoreload.js"></script>
@@ -1000,7 +995,7 @@
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
-  <script src="js/bridge.js?v=1.0.296"></script>
+  <script src="js/bridge.js?v=1.0.297"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->

@@ -2355,6 +2355,26 @@ function maxAffixesFor(it) {
    一級等值為各階合成素材數的連乘，拆解沿用同一成本。 */
 var GEM_CONVERT_SLOTS = 9;     // 寶石轉換九宮格格數
 var GEM_CONVERT_STACK = 1000;   // 每格同種同級寶石上限
+var GEM_CONVERT_INPUT_COUNT = 2; // 同階任意兩顆換一顆指定種類
+
+// 共用轉換計畫：各階獨立湊組，依槽位順序扣完整組，未成組寶石不扣除。
+// 呼叫端先驗證槽位種類、階級、數量及庫存；本函式不讀寫狀態。
+function gemConvertPlan(slots) {
+  var totals = {}, outputs = {}, remainingToConsume = {}, consumed = [], remaining = [];
+  slots.forEach(function (s) { totals[s.lv] = (totals[s.lv] || 0) + s.n; });
+  Object.keys(totals).forEach(function (lv) {
+    var n = Math.floor(totals[lv] / GEM_CONVERT_INPUT_COUNT);
+    if (n) outputs[lv] = n;
+    remainingToConsume[lv] = n * GEM_CONVERT_INPUT_COUNT;
+  });
+  slots.forEach(function (s) {
+    var n = Math.min(s.n, remainingToConsume[s.lv]);
+    if (n) consumed.push({ type: s.type, lv: s.lv, n: n });
+    if (n < s.n) remaining.push({ type: s.type, lv: s.lv, n: s.n - n });
+    remainingToConsume[s.lv] -= n;
+  });
+  return { outputs: outputs, consumed: consumed, remaining: remaining };
+}
 var GEM_DISMANTLE_KEEP = 0.7;  // 拆解保留比例（損失 30%）
 
 function gemComposeInputCount(lv) {

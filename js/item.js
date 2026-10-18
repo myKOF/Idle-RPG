@@ -78,24 +78,30 @@ function composeGems(type, lv) {
 }
 
 /* 寶石轉換（九宮格）：多組 {type, lv, n} 一次性轉換為目標種類
-   規則：同階轉換、數量不變；每格一種（同種同級）上限 1000 顆；融合寶石不可轉換。
+   規則：同階任意兩顆換一顆指定種類，未成組不扣；每格同種同級，融合寶石不可轉換。
    回傳 null=成功，否則錯誤訊息 */
 function convertGems(slots, targetType) {
-  if (!GEM_TYPES[targetType]) return '未知目標種類';
+  if (!Object.prototype.hasOwnProperty.call(GEM_TYPES, targetType)) return '未知目標種類';
   if (!isGemEnabled(targetType)) return '目標寶石已關閉，無法轉換';
-  if (!slots || !slots.length) return '請先將寶石放入九宮格';
+  if (!Array.isArray(slots) || !slots.length) return '請先將寶石放入九宮格';
   if (slots.length > GEM_CONVERT_SLOTS) return '最多 ' + GEM_CONVERT_SLOTS + ' 格';
+  var requested = {};
   for (var i = 0; i < slots.length; i++) {
     var s = slots[i];
-    if (!GEM_TYPES[s.type]) return '未知寶石種類';
+    if (!s || !Object.prototype.hasOwnProperty.call(GEM_TYPES, s.type)) return '未知寶石種類';
     if (!isGemEnabled(s.type)) return '此寶石已關閉，無法轉換';
-    if (!(s.n >= 1) || s.n > GEM_CONVERT_STACK) return '每格 1~' + GEM_CONVERT_STACK + ' 顆';
-    if (gemCount(s.type, s.lv) < s.n) return '「' + GEM_NAMES[s.lv] + GEM_TYPES[s.type].name + '」庫存不足';
+    if (!Number.isInteger(s.lv) || s.lv < 1 || s.lv > GEM_FORGE_MAX_LEVEL) return '寶石階級須為 1~' + GEM_FORGE_MAX_LEVEL;
+    if (!Number.isInteger(s.n) || s.n < 1 || s.n > GEM_CONVERT_STACK) return '每格 1~' + GEM_CONVERT_STACK + ' 顆';
+    var key = s.type + ':' + s.lv;
+    requested[key] = (requested[key] || 0) + s.n;
+    if (gemCount(s.type, s.lv) < requested[key]) return '「' + GEM_NAMES[s.lv] + GEM_TYPES[s.type].name + '」庫存不足';
   }
-  slots.forEach(function (s) {
+  var plan = gemConvertPlan(slots);
+  if (!plan.consumed.length) return '同階寶石至少需要 ' + GEM_CONVERT_INPUT_COUNT + ' 顆';
+  plan.consumed.forEach(function (s) {
     addGem(s.type, s.lv, -s.n);
-    addGem(targetType, s.lv, s.n);
   });
+  Object.keys(plan.outputs).forEach(function (lv) { addGem(targetType, Number(lv), plan.outputs[lv]); });
   UI.dirty.gems = true; UI.dirty.header = true;
   return null;
 }

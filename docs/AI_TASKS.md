@@ -1,5 +1,28 @@
 # AI_TASKS.md
 
+## NPC-SHIELD-THIN-20261018 — 護盾黑底修正、亮邊減半與BOSS解鎖技能驗證
+
+- Owner：Codex；In Progress，單一開發者。使用者要求NPC護盾光點去掉黑方塊、整體亮邊厚度減半，追加檢查BOSS會否施放解鎖技能，特別第32層冰霜女皇的霹靂一閃。前置既有NPC護盾／BOSS技能已完成，fetch與目標衝突預檢乾淨。
+- 允許en-gold-dome Preset、兩張原創細邊SVG及素材庫對應素材／Preset／SOURCE、asset-index／shipped-assets與匯出標記、vfx-runtime資料版號／index與Editor快取、boss-player-skill回歸及本紀錄。BOSS先唯讀驗證；若有實際缺陷再預檢並記錄具體修正。禁止戰鬥數值／其他技能／Excel／Protocol／存檔及其他副本，不合併推送。
+- 方式：黑底星芒改add，球殼與外圈以原尺寸／同外緣的原創SVG將半高寬各減半；保留金色、光暈、星芒與持續／免疫規則。Mote Studio可存取但為像素編輯器，此次精確環形漸層採原創SVG，無外部新素材。素材庫先保存、正式scanner增量索引／export匯出及先素材庫後遊戲Commit。
+- 驗收：Core／Pixi正常及放大預覽、像素半高寬、透明／混色、Editor舊頁防覆寫、BOSS全部解鎖對照與實際自動施放、32層全技能60秒、相關回歸／Build／Console／diff。保留另一聊天GEM-CONVERT-TWO修改，index／本紀錄只分段提交並做三方試跑，後續使用者重載與審閱整合。
+
+## GEM-CONVERT-TWO-20261018 — 九宮格轉換改為同階二換一
+
+- Owner：Codex；Done，單一開發者。使用者要求刪除全部類型合成入口／合計，轉換依示意縮小九宮格、右上驚嘆號精確說明、目標下方圖示數量、上方十階列點擊／拖入及Shift單顆操作，移除下方庫存池／排序／文字預覽。
+- 前置既有十階合成已完成，工作區乾淨、13檔衝突預檢乾淨。允許js/formula.js／item.js僅共用二換一計畫與權威扣除、js/ui.js／css/gems.css／index.html上述介面、Worker／Bridge／index相應快取、tests/gem-convert-stack.test.cjs／gem-convert-shift.test.cjs／gem-compose-all.test.cjs、game_formula.md／PATCH.md與本紀錄；禁止其他數值／配置表／Protocol／存檔格式／素材及其他副本，不合併推送。
+- 方式：同階不同種類可合併湊2顆，逐階向下取整、只扣完整組，多出單顆保留庫存；預覽與權威共用純函式。先完整驗證數量／階級／種類與合計庫存再原子扣除，保留既有命令形狀。上方列轉換時顯示尚可放入數，拖曳只用圖示，清空與轉換分置兩欄底部。移除全部類型合成玩家入口，保留舊命令相容。
+- 驗收：混種類同階／不同階不混／奇數／不足兩顆／重複槽超扣／無效或關閉寶石／上限／同目標類型、預覽一致；實際Worker、點擊／Shift／拖曳／取下／清空／目標切換與窄版、Tooltip／共鳴回歸／Build／diff後Commit。無素材變更，後續使用者審閱整合。
+- 擴充：唯讀發現game_parameters第234列仍宣稱數量不變；兩檔追加預檢乾淨，允許config/CSV/game_parameters.csv與config/Excel/game_parameters.xlsx僅同步該列公式文字／說明，保留a/b等既有值與接線。Excel使用原生API改「計算表」來源兩格，主表公式不改，正常重開／資料格式往返驗證；不新增或變更參數接線。
+- 相依回歸擴充：tests/gem-tooltip.test.cjs原測已移除的庫存池、tests/pen-gem-flow.test.cjs原預期2換2；兩檔預檢乾淨，允許同步驗新版上方列／九宮格／成品Tooltip及穿透寶石2換1，不放寬原業務斷言。
+- 完成17檔：formula.js提供gemConvertPlan，各階獨立2換1、依槽序扣完整組；item.js驗整數／階級／開放種類／重複槽合計庫存後才扣除，沒有成組時不改狀態，同目標種類亦照實扣2加1。ui.js刪合成全部類型按鈕綁定及合計；轉換來源改上方十階列，顯示尚可放入數、保留真實持有量Tooltip，滿九格仍可追加既有槽，庫存／容量失效即禁用；原生拖影只有同尺寸圖示、拖放重驗與取消清理。九宮格保留未變節點，預覽共用計畫、按數字階級排序，少於2顆的階級不顯示產出。
+- index.html／gems.css依示意改48px九宮格與成品格，清空／轉換置兩欄底部，右上驚嘆號精確指定提示，僅保留Shift操作文字，移除原料池／排序／舊文字預覽／成功訊息框（成功沿既有日誌回饋）。Worker formula／item import更新gem-convert-two，Bridge版本保留築牆／十階合成標記並追加convert-two；index formula63／item24／UI172／Bridge297／gems CSS17，Protocol及存檔格式不變。game_formula.md、PATCH及本紀錄同步，無素材／素材庫變更或素材庫Commit。
+- 參數Excel／CSV僅改轉換列的規則及說明，a/b等所有數值與接線不變。原生Excel改計算表E235/F235、主表E234/F234沿原公式重算；兩輪正常重開皆RepairMode=false。原生全格Value2／Formula比較只兩個來源文字及兩個鏡像快取變更；唯讀ZIP驗styles.xml、兩表結構／列欄設定逐位元／結構一致，主表全列與CSV語意一致。首次來源列誤認234，寫入前名稱哨兵即中止並恢復原位元組，確認真正來源235後完成，沒有寫壞公式或資料，無手工XML寫入。使用記憶體備份及還原，無新增Excel暫存檔。
+- 指令／結果：`node --test tests/gem-convert-stack.test.cjs tests/gem-convert-shift.test.cjs tests/gem-compose-all.test.cjs tests/gem-enabled.test.cjs tests/gem-resonance-ui.test.cjs tests/gem-resonance.test.cjs tests/gem-tooltip.test.cjs tests/pen-gem-flow.test.cjs tests/init-ui-smoke.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs`105/105通過；新增5項涵蓋跨種類同階／不同階／奇數／十級／原子拒絕／重複槽／同目標與正式Worker、上方限制與拖影／取消／失效重驗。舊Shift指令替身補缺少的bossFightBlocksCommand，不放寬斷言。最後持有量Tooltip修正後相依28項重跑通過；`npm.cmd run build`535檔通過，`node tools/apply_params.cjs`564項一致、將變更0、錨點問題0；本輪未改接線，無需因8.2重跑全庫。`git diff --check`通過。
+- 瀏覽器：隔離headless Edge／隨機localhost／seed新角色、正式UI／Worker，GM供測試原料，不讀真人存檔。Shift連點放1顆／取1顆、一般整堆、清空、上方原生拖入、混種類同階湊組、多階成品圖示／數量、真正扣除及奇數餘數均通過。紅1×11＋藍1×7＋紅2×5＋紅10×3實轉蛋白石1級9顆／2級2顆／10級1顆，紅2及紅10各留1顆；九個原料堆上限1000與滿格正常。九格computed尺寸皆48×48，提示hover內容精確、原清單不在DOM；1920×1000／1366×768／390×844排版量測元件內含（沿既有全頁縮放）。共鳴49孔正常、全部類型合成按鈕不存在，Console warning／error、pageerror、HTTP錯誤0。初次GM回傳被測試誤認null，改依正式回傳ok=true後完整驗收；產品未因此修改。
+- 唯讀未改：AI規範／AGENTS／工作流／專屬文件、Worker協議與派送、共鳴原生拖曳及規則、舊融合／商店、CSS原庫存格尺寸、參數接線、離線策略與相關原測試。自我Review確認預覽與扣除同源、錯誤不部分扣庫存；舊全部類型命令僅保留相容、玩家入口已刪。預覽保留本聊天visualizations/gem-convert-two.png；臨時腳本gem-convert-two-check.cjs已核對確切路徑後移除、隔離服務／瀏覽器正常結束，未新增殘留測試產物。
+- 交付：Commit為本紀錄所在`[Codex] feat: 寶石轉換改為二換一並精簡工坊介面`，回覆附編號；本次需求無未完成項，可供Review／合併，未合併推送。限制：未重跑已有失敗的全庫、未做其他瀏覽器／實體觸控及長時間離線策略平衡驗證；必要回歸及正式UI已通過。下一步整合後重載寶石頁驗收二換一及新九宮格。
+
 ## GEM-COMPOSE-TEN-20261018 — 全十階直接合成與精簡寶石頁籤
 
 - Owner：Codex；Done，單一開發者。使用者要求6～9級成品各耗4顆前一階、10級耗6顆9級，保留2～5級既有配方；隱藏寶石頁融合／商店；追加所有配方均照圖逐顆原料＋金幣箭頭＋成品顯示。前置既有寶石功能已完成，工作區乾淨、16檔預檢乾淨。

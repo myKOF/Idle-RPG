@@ -61,39 +61,48 @@ function makeGemInventory(gemTypes) {
   return gems;
 }
 
-test('conversion gem inventory chips expose gem ability values in tooltip text', () => {
+test('轉換的上方來源、九宮格原料與成品都提供名稱及能力Tooltip', () => {
   const { context, elements } = loadGameContext();
   const gems = makeGemInventory(context.GEM_TYPES);
   gems.ruby[3] = 2;
   gems.opal[4] = 1;
-  context.UI.convertSlots = [];
+  context.UI.gemBrowse.tool = 'convert';
+  const snapshot = { gems, fusedGems: [] };
+  const source = context.gemFocusHTML(snapshot, 'ruby', 2) + context.gemFocusHTML(snapshot, 'opal', 1);
+  assert.match(source, /data-gconv-gem="ruby:3"/);
+  assert.match(source, /三級紅寶石｜物理攻擊 \+20/);
+  assert.match(source, /四級蛋白石｜攻擊速度 \+5%/);
+  context.UI.convertSlots = [{ type: 'ruby', lv: 3, n: 2 }, { type: 'opal', lv: 4, n: 1 }];
   context.document.getElementById('gconv-target').value = 'ruby';
 
   context.renderGemConvert({ gems, fusedGems: [] });
 
-  const html = elements.get('gconv-pool').innerHTML;
+  const html = elements.get('gconv-grid').innerHTML;
   assert.match(html, /data-tip="/);
   assert.match(html, /三級紅寶石/);
   assert.match(html, /物理攻擊 \+20/);
   assert.match(html, /四級蛋白石/);
   assert.match(html, /攻擊速度 \+5%/);
+  assert.match(elements.get('gconv-output').innerHTML, /三級紅寶石｜物理攻擊 \+20｜×1/);
+  assert.doesNotMatch(elements.get('gconv-output').innerHTML, /四級/);
 });
 
-test('一般寶石庫存顯示神鑄六階寶石並使用方形圖示', () => {
+test('轉換九宮格可顯示六階寶石圖示、數量及階級，未成組不產出', () => {
   const { context, elements } = loadGameContext();
   const gems = makeGemInventory(context.GEM_TYPES);
   gems.garnet[6] = 1;
-  context.UI.convertSlots = [];
+  context.UI.convertSlots = [{ type: 'garnet', lv: 6, n: 1 }];
+  context.document.getElementById('gconv-target').value = 'ruby';
 
   context.renderGemConvert({ gems, fusedGems: [] });
 
-  const html = elements.get('gconv-pool').innerHTML;
+  const html = elements.get('gconv-grid').innerHTML;
   assert.match(html, /六級石榴石/);
-  assert.match(html, /gem-inventory-cell/);
-  assert.match(html, /gem-chip-emoji/);
-  assert.match(html, /gem-chip-count/);
-  assert.match(html, /gem-chip-level/);
-  assert.doesNotMatch(html, /gem-chip-label/);
+  assert.match(html, /gem-garnet-06.png/);
+  assert.match(html, /class="gconv-n">×1/);
+  assert.match(html, /class="gconv-level">6/);
+  assert.equal(elements.get('gconv-output').innerHTML, '');
+  assert.equal(elements.get('gconv-btn').disabled, true);
 });
 
 test('寶石融合素材池使用相同的方形圖示資訊', () => {
