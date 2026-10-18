@@ -301,7 +301,7 @@ test('所有威能0級Tooltip顯示1級表值與成本，圖示上不顯示名�
     const source = 'images/ui/heaven-power/icons/' + def.id + '.png?v=1';
     assert.ok(node.includes(source), def.id + '星盤圖示');
     assert.ok(tip.innerHTML.includes(source), def.id + 'Tooltip圖示');
-    assert.ok(c.talentEffectsHTML(turn, talentPanelSnapshot(c)).includes(source), def.id + '效果列表圖示');
+    assert.doesNotMatch(node, /class="tlx-node-lv"/, def.id + '0級不顯示角標');
     assert.doesNotMatch(c.talentIconHTML(def), /images\/skills\//);
     assert.ok(fs.existsSync(path.join(root, source.split('?')[0])), def.id + '正式輸出存在');
     sources.add(source);
@@ -334,6 +334,9 @@ test('滿級Tooltip隱藏下一級及成本；圖下可降級但不可升級', (
   c.showTalentTooltip('t2_crit', tipAnchor);
   assert.match(tip.innerHTML, /已達最高等級/);
   assert.doesNotMatch(tip.innerHTML, /下一級：|消耗.*點威能點/);
+  const node = c.talentNodeHTML(c.talentDef('t2_crit'), 2, talentPanelSnapshot(c));
+  assert.match(node, /class="tlx-node-lv" aria-hidden="true">10<\/span>/);
+  assert.doesNotMatch(node, />Lv\.|>\d+\/10</);
   const h = c.talentInlineActionsHTML(c.talentDef('t2_crit'), talentPanelSnapshot(c));
   assert.match(h, /data-talent-up="t2_crit"[^>]* disabled/);
   assert.doesNotMatch(h, /data-talent-down="t2_crit"[^>]* disabled/);
@@ -460,6 +463,6 @@ test('各轉全滿與差一級僅增加該級表值，UI快照與實際加成一
       assert.ok(Math.abs(full[def.stat]-almost[def.stat]-def.per) < 1e-8, def.id);
       c.G.player.talents.levels[def.id] = 10;
     }
-    assert.doesNotMatch(c.talentBoardHTML(+turn,talentPanelSnapshot(c)) + c.talentEffectsHTML(+turn,talentPanelSnapshot(c)), /×2|加倍/);
+    assert.doesNotMatch(c.talentBoardHTML(+turn,talentPanelSnapshot(c)), /×2|加倍/);
   }
 });
