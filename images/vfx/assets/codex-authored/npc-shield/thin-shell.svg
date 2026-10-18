@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- White tintable shell; the bright radial band spans 217..229 (half the former 24px band). -->
+  <defs>
+    <radialGradient id="shell" gradientUnits="userSpaceOnUse" cx="256" cy="256" r="231">
+      <stop offset="0" stop-color="white" stop-opacity="0.04"/>
+      <stop offset="0.904762" stop-color="white" stop-opacity="0.04"/>
+      <stop offset="0.939394" stop-color="white" stop-opacity="0.5"/>
+      <stop offset="0.965368" stop-color="white"/>
+      <stop offset="0.991342" stop-color="white" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="white" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <circle cx="256" cy="256" r="231" fill="url(#shell)"/>
+</svg>

@@ -6,7 +6,7 @@
     "name": "asset-scanner",
     "version": "1.0.0"
   },
-  "assetCount": 2450,
+  "assetCount": 2463,
   "assets": [
     {
       "assetId": "antigravity-authored/ice/ice-arrow-spike.png",
@@ -1553,6 +1553,44 @@
       "format": "svg",
       "fileSize": 942,
       "contentHash": "sha256:22ce17bfc33b34bb61e262b35abd6bf95bf7fc150bde42e443aae5d21ca832d7",
+      "facts": {
+        "dimensions": {
+          "width": 512,
+          "height": 512
+        },
+        "dimensionsSource": "attributes",
+        "colorModel": null,
+        "bitDepth": null,
+        "hasAlphaChannel": null,
+        "pixelsAnalyzed": false
+      }
+    },
+    {
+      "assetId": "codex-authored/npc-shield/thin-rim.svg",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/npc-shield/thin-rim.svg",
+      "format": "svg",
+      "fileSize": 787,
+      "contentHash": "sha256:5ca389108341ba646779f7ce708192c6f1c3ff0e84ee276cd76e7a2a805f85bc",
+      "facts": {
+        "dimensions": {
+          "width": 512,
+          "height": 512
+        },
+        "dimensionsSource": "attributes",
+        "colorModel": null,
+        "bitDepth": null,
+        "hasAlphaChannel": null,
+        "pixelsAnalyzed": false
+      }
+    },
+    {
+      "assetId": "codex-authored/npc-shield/thin-shell.svg",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/npc-shield/thin-shell.svg",
+      "format": "svg",
+      "fileSize": 769,
+      "contentHash": "sha256:e4ef1e367c92cddef026028dc0f3eaec8371a61f0e9a9604fa8749adedcd0dfc",
       "facts": {
         "dimensions": {
           "width": 512,

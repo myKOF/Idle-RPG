@@ -2,10 +2,17 @@
 
 ## NPC-SHIELD-THIN-20261018 — 護盾黑底修正、亮邊減半與BOSS解鎖技能驗證
 
-- Owner：Codex；In Progress，單一開發者。使用者要求NPC護盾光點去掉黑方塊、整體亮邊厚度減半，追加檢查BOSS會否施放解鎖技能，特別第32層冰霜女皇的霹靂一閃。前置既有NPC護盾／BOSS技能已完成，fetch與目標衝突預檢乾淨。
+- Owner：Codex；Done，單一開發者。使用者要求NPC護盾光點去掉黑方塊、整體亮邊厚度減半，追加檢查BOSS會否施放解鎖技能，特別第32層冰霜女皇的霹靂一閃。前置既有NPC護盾／BOSS技能已完成，fetch與目標衝突預檢乾淨。
 - 允許en-gold-dome Preset、兩張原創細邊SVG及素材庫對應素材／Preset／SOURCE、asset-index／shipped-assets與匯出標記、vfx-runtime資料版號／index與Editor快取、boss-player-skill回歸及本紀錄。BOSS先唯讀驗證；若有實際缺陷再預檢並記錄具體修正。禁止戰鬥數值／其他技能／Excel／Protocol／存檔及其他副本，不合併推送。
 - 方式：黑底星芒改add，球殼與外圈以原尺寸／同外緣的原創SVG將半高寬各減半；保留金色、光暈、星芒與持續／免疫規則。Mote Studio可存取但為像素編輯器，此次精確環形漸層採原創SVG，無外部新素材。素材庫先保存、正式scanner增量索引／export匯出及先素材庫後遊戲Commit。
 - 驗收：Core／Pixi正常及放大預覽、像素半高寬、透明／混色、Editor舊頁防覆寫、BOSS全部解鎖對照與實際自動施放、32層全技能60秒、相關回歸／Build／Console／diff。保留另一聊天GEM-CONVERT-TWO修改，index／本紀錄只分段提交並做三方試跑，後續使用者重載與審閱整合。
+- 完成：en-gold-dome的shell／rim換為兩張512×512原創白色漸層SVG、glints normal→add。保持原位置／縮放／tint／alpha／發射量／持續及免疫規則；SVG亮邊外緣對齊原圖，中心改為透明薄膜。sharp對水平半高寬插值量測：shell24.4118→12.2698px（50.26%）、rim33.4070→16.8974px（50.58%），原縮放不變，因此各顯示倍率均維持減半。資料版本20261018-npc-shield-thin，主頁／Editor Runtime快取皆1.0.213；無Worker／Protocol／存檔與戰鬥邏輯變更。
+- BOSS：全部69個解鎖選項對照與主動／被動施放既有回歸通過。新增BPS-16透過正式startTowerFight／towerTick跑32層，種子1／32／167／2026／1018各保留全部NPC隨機技能與原冷卻，僅提高測試玩家及BOSS血量以打完整場；五場均自動宣告霹靂一閃、派送表定beam-gale-thunder-flash且實際命中扣血，無吞例外。沒有發現需修正的BOSS程式缺陷。首次fixture只改實體血量，被正常回血上限還原而提前死亡；同步測試getStats生命上限後通過，未啟用無敵或放寬扣血斷言。
+- 指令／結果：`node --test tests/boss-player-skill.test.cjs tests/elite-data.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/vfx-core.test.cjs`187/187；`npm.cmd run build`535檔通過；`node tools/vfx/export-assets.cjs --check`353份Preset／187素材最新；雙倉diff check通過。Editor guard涵蓋舊分頁／外部Preset更新拒寫、備份與重載保護；交付提醒先下載未存編輯備份再重載。
+- 目視：獨立headless Edge／隨機localhost，正式Core／Pixi後端載入實際Preset／shipped素材，固定同seed及1.2秒，1倍與2.5倍前後比較可見黑方塊消失／兩層細邊；使用示意角色，非正式實戰截圖。Console error／warning及pageerror均0。首輪預覽fixture使用錯誤的play位置鍵及favicon404，已修正測試頁再重跑，正式程式未因此改動。預覽保存本聊天visualizations/npc-shield-before-after.png；臨時服務／瀏覽器及Mote檢查頁已關閉，不讀真人存檔。
+- 素材：正式scanner只掃新資料夾，增量加入兩項事實後正式export匯出，兩端SVG與Preset SHA256一致。原assetCount欄2450但實際2461項，重算為2463（只新增2項，無額外素材列）。素材庫Preset落後於遊戲，這次同步遊戲已有loop／位置／glow／混色設定並記錄SOURCE，未反向覆蓋遊戲。未使用新第三方素材；Mote為像素編輯器，精確向量環形採SVG。
+- 唯讀未改：AI規範／工作流／prompts/codex.md、Status.eInvuln／Skills2超神配置、elite_data／elite／elite_boss／recipes／tower／battle-renderer／Worker載入、Core／Pixi、作者工具／scanner／exporter及Editor儲存防護。修改檔案為Preset、兩張匯出SVG、asset-index／shipped-assets、Runtime版號、主頁／Editor快取、boss-player-skill測試及本紀錄；素材庫為兩SVG／SOURCE、Preset與舊SOURCE增補。無未完成需求或已知新增風險；限制為未做真人長戰／其他瀏覽器及實體裝置。可供Review／合併，未合併推送；下一步重載遊戲及妥善備份後重載編輯器。
+- 並行交接：GEM-CONVERT-TWO於過程中自行完成1987184f，順帶提交本任務初始紀錄；本次只提交其後本任務變更。index不同script與UI區段無語意相依，以c0c52178作base／本次Runtime hunk作ours／1987184f作theirs，git merge-file -p退出0且結果等於目前index；本紀錄GEM-CONVERT-TWO起的其他全部區段與1987184f雜湊相同，完整保留對方結果。素材庫先提交7ed897e；遊戲Commit為本紀錄所在[Codex] fix提交，回覆附編號。雙倉僅提交本次內容，無未完成項；臨時驗證腳本與合併試跑檔已清理，保留正式比較預覽。
 
 ## GEM-CONVERT-TWO-20261018 — 九宮格轉換改為同階二換一
 
