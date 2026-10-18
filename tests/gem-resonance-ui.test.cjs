@@ -40,7 +40,7 @@ test('左側每種寶石只列一列且只切類型；上方保留十階與各�
  assert.equal((nodes['gem-focus'].innerHTML.match(/data-gem-lv=/g)||[]).length,10);
  assert.match(tier(nodes,4),/data-gres-gem="diamond:4" draggable="true"/);
  const detail=c.gresDetailHTML(c.uiGemsPanelSnapshot(),c.uiHeaderPanelSnapshot(),c.G.player.resonance,[1,1]);
- assert.doesNotMatch(detail,/gres-pool|data-gres-put/);assert.match(detail,/上方十階列/);
+ assert.doesNotMatch(detail,/gres-pool|data-gres-put|gres-library-hint/);assert.match(detail,/防禦型4級以上寶石/);
 });
 
 test('不符最低階／缺庫存／滿孔在十階列禁用，類型列不因階級拆列或滿孔消失',()=>{
@@ -198,4 +198,24 @@ test('孔內只畫非零強化數字，最低階不再畫出；中央鎖定UI拒
  nodes['gem-focus'].handlers.click({target:element({'data-gres-gem':'ruby:10'})});assert.equal(c.calls.length,1);
  nodes['gres-detail'].handlers.click({target:element({'data-gres-upgrade':'1'})});assert.equal(c.calls.length,2);assert.equal(c.G.player.resonance.holes['6:0'].lv,1);
  assert.match(nodes['gres-board'].innerHTML,/<text[^>]*class="gres-lv"[^>]*>1<\/text>/);assert.doesNotMatch(nodes['gres-board'].innerHTML,/>Lv|gres-min/);
+});
+
+test('精簡資訊仍提供正確費用Tooltip、禁用／滿級／鎖定原因及逐顆取下，鍵盤可查看費用',()=>{
+ const {c,nodes,element}=ui({diamond:{1:10,6:2}});c.gresSelectHole(1,0);
+ const detail=()=>nodes['gres-detail'].innerHTML;
+ assert.match(detail(),/防禦型6級以上寶石/);assert.match(detail(),/等級 Lv\.0/);assert.match(detail(),/獲得相鄰寶石能力\+0%/);
+ assert.equal((detail().match(/>鑲孔<\/div>/g)||[]).length,2);
+ assert.doesNotMatch(detail(),/gres-sub|gres-cost|gres-lvrow|gres-library-hint|gres-lock-note|外圈孔|容量|共鳴總加成/);
+ assert.match(detail(),/data-tt-title="升級鑲孔"/);assert.match(detail(),/金幣：5000/);assert.match(detail(),/材料：一級鑽石 ×3/);
+ assert.doesNotMatch(detail(),/data-gres-upgrade="1" disabled/);
+ nodes['gem-focus'].handlers.click({target:element({'data-gres-gem':'diamond:6'})});
+ assert.match(detail(),/aria-label="六級鑽石，點擊取下"/);assert.doesNotMatch(detail(),/<span>|<small>/);
+ nodes['gres-detail'].handlers.click({target:element({'data-gres-take':'0'})});assert.equal(c.G.player.gems.diamond[6],2);
+ c.G.player.gold=0;c.renderGems();assert.match(detail(),/金幣：5000（持有 0）/);assert.match(detail(),/金幣或材料不足/);assert.match(detail(),/data-gres-upgrade="1" disabled/);
+ let shown,hidden=0;c.showStatTooltip=(...args)=>shown=args;c.hideTooltip=()=>hidden++;
+ const tip=element({'data-gres-upgrade-tip':'1','data-tt-title':'升級鑲孔','data-tt-desc':'金幣：5000'});
+ nodes['gres-detail'].handlers.focusin({target:tip});assert.equal(shown[0],'升級鑲孔');assert.equal(shown[1],'金幣：5000');nodes['gres-detail'].handlers.focusout({target:tip});assert.equal(hidden,1);
+ c.G.player.resonance.holes['1:0']={lv:10,gems:[]};c.renderGems();assert.match(detail(),/已達強化等級上限/);assert.match(detail(),/data-gres-upgrade="1" disabled/);
+ c.gresSelectHole(6,0);assert.match(detail(),/外圍六區.*全部鑲孔.*10/);assert.match(detail(),/獲得相鄰寶石能力\+0%/);assert.match(detail(),/data-gres-upgrade="1" disabled/);
+ assert.equal(nodes['gres-total'].innerHTML,'<div class="sec-sub">共鳴效果：</div><div class="gres-list"></div>');
 });

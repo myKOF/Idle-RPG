@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## GEM-RESONANCE-SIDE-INFO-20261018 — 精簡鑲孔資訊與外移說明按鈕
+
+- Owner：Codex；Done，單一開發者。使用者要求依示意圖只保留右側寶石類型／最低階、等級Lv、相鄰加成、鑲孔、升級按鈕及共鳴效果；費用改Tooltip，i移到資訊左外側。前置共鳴功能已完成，工作區乾淨、七檔預檢乾淨。
+- 允許js/ui-gem-resonance.js、css/gems.css、index.html、tests/gem-resonance-ui.test.cjs、docs/GEM_RESONANCE.md、PATCH.md與本紀錄；禁止規則／數值／Worker／協議／存檔／素材及其他副本，不合併推送。
+- 方式：精簡右側可見文字及孔內寶石卡，保留原逐顆取下；升級所需金幣／材料／不足及中央鎖定原因改由按鈕Tooltip呈現，禁用狀態亦可查看。共鳴效果依原算法以綠字列出；說明按鈕置於不捲動的外側容器，寬窄排列皆保留可點範圍，不改盤面與權威操作。
+- 驗收：既有共鳴／初始化回歸、費用Tooltip與禁用／滿級／鎖定、鑲入／取下／升級，Build／diff；隔離瀏覽器比對可見資訊、實際hover費用／i、欄位與盤面不重疊、捲動及寬窄視窗，完成Commit後使用者重載整合。無新素材或素材庫變更。
+- 完成7檔：gresDetailHTML依指定順序顯示「防禦型X級以上寶石」等動態類型、等級Lv.X、綠字相鄰加成、直列鑲孔、升級鑲孔；刪除常駐孔位編號／中心外圈／容量／上限／花費／操作提示。已鑲孔只畫icon，沿原index逐顆取下，名稱能力移至懸停提示。升級費用與持有量／不足／滿級／中央鎖定原因移至按鈕外層Tooltip，disabled按鈕不攔截懸停、外層可鍵盤focus查看；實際升級指令不變。中央鎖定加成綠字顯示0，與既有停用規則一致。總加成標題改共鳴效果、內容綠字，原合計數值與順序不變。
+- i移入不捲動的gres-side-wrap，位在資訊左外36px；寬畫面不改盤面欄寬，窄畫面資訊左留36px給i，不擋文字或孔位。index僅gems CSS1.0.14→15、共鳴UI1.0.11→12；同步說明及PATCH，無規則／資料／Worker／Protocol／存檔／素材變更，無素材庫Commit。
+- 指令／結果：`node --test tests/gem-resonance-ui.test.cjs tests/gem-resonance.test.cjs tests/init-ui-smoke.test.cjs`31/31通過；新增1項費用／持有量／禁用／滿級／中央鎖定Tooltip、鍵盤查看及原取下規則回歸；舊測試僅將已移除的操作說明預期改驗新類型標題。`npm.cmd run build`535檔通過；`git diff --check`通過。自我Review確認實際鑲嵌／升級與共鳴計算沿原函式。
+- 瀏覽器：獨立headless Edge／隨機localhost／seed新角色、正式index／UI／CSS／Worker與GM資源；DOM innerText逐行比對空孔1級右側恰為指定7行，無容量／編號／花費／操作提示。實際鑲入／icon按鈕取下／升級正常，Tooltip可查看金幣與材料、缺金幣時仍可hover、鍵盤focus可看、中央鎖定原因不在正文而在Tooltip；外側i說明正常。1920×900、2560×1080、1366×768、390×844皆i右緣在資訊左側、中心hit-test可點、盤面與資訊分離、49孔中心hit-test全通過。另以臨時長內容DOM probe促成真正side捲動，i的Y不變，probe隨即移除。Console warning／error、pageerror及HTTP錯誤0。
+- 唯讀未改：AI規範／工作流／Agent文件、原Tooltip事件與格式、gemFocusHTML／圖示／權威規則、共鳴狀態及原回歸；未修改其他副本。收尾預檢乾淨、截圖保留本聊天visualizations/gem-resonance-side-info.png，測試服務／瀏覽器／臨時腳本清理，不動真人存檔。無本次未完成項或新增已知風險；未實測其他瀏覽器／實體觸控。Commit為本紀錄所在[Codex] fix提交，回覆附編號；可供Review／合併，未合併推送，下一步重載寶石→共鳴檢視新資訊與Tooltip。
+
 ## GEM-RESONANCE-CORE-LOCK-20261018 — 強化數字與中央區解鎖條件
 
 - Owner：Codex；Done，單一開發者。使用者要求孔內改顯示純強化數字、0級不顯示；中央7孔需外圍6區全部42孔升到10級後才可使用，之前置灰且禁止鑲嵌／升級。前置共鳴已完成，工作區與11個目標預檢乾淨。
