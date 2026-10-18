@@ -10068,10 +10068,6 @@ textarea:disabled,
 }
 
 
-#talent-modal .modal-box {
-  width: min(460px, 92vw);
-}
-
 /* ---- ?��??��?確�?彈�? ---- */
 .offline-modal-box {
   width: min(520px, 94vw);
@@ -10108,12 +10104,6 @@ textarea:disabled,
   min-width: 120px;
 }
 
-#talent-modal-body {
-  min-height: 282px;
-  display: grid;
-  grid-template-rows: 48px auto 1fr 28px 66px;
-}
-
 .talent-modal-head {
   display: flex;
   align-items: center;
@@ -10135,64 +10125,6 @@ textarea:disabled,
   border: 1px solid var(--border-light);
   background: rgba(10, 12, 18, .8);
   font-size: 27px;
-}
-
-.talent-modal-desc {
-  color: var(--text);
-  line-height: 1.55;
-  padding: 4px 2px;
-}
-
-.talent-modal-copy {
-  min-height: 80px;
-  color: var(--dim);
-  line-height: 1.8;
-  padding: 8px 2px;
-}
-
-.talent-modal-copy-maxed:empty {
-  min-height: 0;
-  padding: 0;
-}
-
-.talent-modal-current {
-  color: #facc15;
-}
-
-.talent-modal-complete {
-  color: var(--good);
-}
-
-.talent-modal-disabled {
-  color: #facc15;
-  font-weight: 700;
-}
-
-.talent-modal-points {
-  align-self: end;
-  text-align: right;
-  color: #facc15;
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.talent-modal-actions {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
-  margin-top: 8px;
-}
-
-.talent-modal-actions .btn,
-.talent-modal-actions>div {
-  min-width: 0;
-  min-height: 26px;
-}
-
-.talent-modal-actions .btn {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 @media (max-width: 760px) {

@@ -13,7 +13,7 @@ test('四個舊潛力解鎖威能已刪除，不阻擋整轉全滿', () => {
     assert.equal(c.talentDef(id),null); assert.match(c.talentUpgrade(id),/找不到/);
   }
   for(const def of c.TALENT_TREES[3]) if(!def.disabled) c.G.player.talents.levels[def.id]=10;
-  assert.equal(c.talentTreeComplete(3),true); assert.equal(c.talentCompleteMultiplier(3),2);
+  assert.equal(c.talentTreeComplete(3),true); assert.equal(c.talentCompleteMultiplier(3),1);
 });
 
 function loadContext() {
@@ -74,12 +74,12 @@ test('天賦資料包含 1～10 轉節點（元素轉 10 個、其餘 8 個）�
   assert.ok(unlockDefs.every(e => e.def.disabled && e.def.unlocks === undefined));
 });
 
-test('威能十級均使用每級增加值，整轉啟用節點全滿時效果加倍', () => {
+test('威能十級均使用每級增加值，整轉啟用節點全滿仍依表值', () => {
   const c=loadContext(),def=c.talentDef('t1_str'); assert.equal(def.per,0.5);
   assert.equal(c.talentLevelValue(def,0),0); assert.equal(c.talentLevelValue(def,1),0.5);
   assert.equal(c.talentLevelValue(def,10),5); assert.equal(c.talentLevelValue(def,100),5);
   for(const node of c.TALENT_TREES[1]) c.G.player.talents.levels[node.id]=10;
-  assert.equal(c.talentStatBonuses().strPct,10);
+  assert.equal(c.talentStatBonuses().strPct,5);
 });
 
 test('威能升到N級消耗N點，滿級55點，降級與清除精確退點', () => {
@@ -276,25 +276,29 @@ test('5/9 轉元素天賦使用攻擊附加元素傷害的完整說明', () => {
   }
 });
 
-test('所有一般天賦在 0 級時的目前效果改顯示 1 級效果', () => {
-  const c = loadContext();
-  const body = { innerHTML: '' };
-  const overlay = { style: { display: 'flex' } };
-  c.document = {
-    getElementById: (id) => id === 'talent-modal-body' ? body : (id === 'talent-modal' ? overlay : null)
-  };
-  vm.runInContext(fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8'), c, { filename: 'js/ui.js' });
-  c.G.player.reincarnations = 10;
+function loadTalentUi(c) {
+  vm.runInContext(fs.readFileSync(path.join(root, 'js/skills2.js'), 'utf8'), c);
+  const tip = { innerHTML: '', style: {}, offsetWidth: 250, offsetHeight: 150 };
+  c.document = { getElementById: id => id === 'sk-tooltip' ? tip : null };
+  c.innerWidth = 1280; c.innerHeight = 800;
+  vm.runInContext(fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8'), c);
+  c.uiTalentPanelSnapshot = () => talentPanelSnapshot(c);
+  return tip;
+}
+const tipAnchor = { getBoundingClientRect: () => ({ top: 100, left: 100, right: 160 }) };
 
-  for (const [turn, tree] of Object.entries(c.TALENT_TREES)) {
-    for (const def of tree) {
-      c.G.player.talents.levels[def.id] = 0;
-      c.UI.selTalent = { kind: 'talent', id: def.id };
-      c.renderTalentModal(talentPanelSnapshot(c));
-      const expectedValue = c.talentDescriptionValue(def, 1, Number(turn));
-      const expected = c.talentEffectDescription(def, expectedValue);
-      assert.match(body.innerHTML, new RegExp('<div class="talent-modal-desc"><b>' + expected.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '</b>'));
-    }
+test('所有威能0級Tooltip顯示1級表值與成本，圖示上不顯示名稱', () => {
+  const c = loadContext(), tip = loadTalentUi(c);
+  c.G.player.reincarnations = 10;
+  for (const {turn, def} of c.talentList()) {
+    c.showTalentTooltip(def.id, tipAnchor);
+    assert.ok(tip.innerHTML.includes(c.talentEffectDescription(def, def.per)));
+    assert.match(tip.innerHTML, /下一級/);
+    assert.match(tip.innerHTML, /消耗 1 點威能點/);
+    const node = c.talentNodeHTML(def, turn, talentPanelSnapshot(c), 0, c.TALENT_TREES[turn].length);
+    assert.doesNotMatch(node, /tlx-node-name/);
+    assert.match(node, /images\/skills\//);
+    assert.match(node, /tlx-threat-flame/);
   }
 });
 
@@ -314,23 +318,17 @@ test('天賦與潛力圖示使用正式 tooltip，不再使用原生 title 提�
   assert.match(ui, /showTalentTooltip\(talentTipHover\.getAttribute\('data-talent-tip'\), talentTipHover\)/);
 });
 
-test('天賦滿級時標示完成並隱藏下一級與升級消耗', () => {
-  const c = loadContext();
-  const body = { innerHTML: '' };
-  const overlay = { style: { display: 'flex' } };
-  c.document = {
-    getElementById: (id) => id === 'talent-modal-body' ? body : (id === 'talent-modal' ? overlay : null)
-  };
-  vm.runInContext(fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8'), c, { filename: 'js/ui.js' });
+test('滿級Tooltip隱藏下一級及成本；圖下可降級但不可升級', () => {
+  const c = loadContext(), tip = loadTalentUi(c);
   c.G.player.reincarnations = 2;
-  c.G.player.talents.levels.t2_crit = 100;
+  c.G.player.talents.levels.t2_crit = 10;
   c.UI.selTalent = { kind: 'talent', id: 't2_crit' };
-  c.renderTalentModal(talentPanelSnapshot(c));
-
-  assert.match(body.innerHTML, /talent-modal-complete">已滿級！/);
-  assert.doesNotMatch(body.innerHTML, /下一級：/);
-  assert.doesNotMatch(body.innerHTML, /消耗威能點：/);
-  assert.match(body.innerHTML, /轉生威能點：/);
+  c.showTalentTooltip('t2_crit', tipAnchor);
+  assert.match(tip.innerHTML, /已達最高等級/);
+  assert.doesNotMatch(tip.innerHTML, /下一級：|消耗.*點威能點/);
+  const h = c.talentInlineActionsHTML(c.talentDef('t2_crit'), talentPanelSnapshot(c));
+  assert.match(h, /data-talent-up="t2_crit"[^>]* disabled/);
+  assert.doesNotMatch(h, /data-talent-down="t2_crit"[^>]* disabled/);
 });
 
 test('傷害偏折/絕對偏折為乘算：全局減傷 = 裝備總值 × (1 + 天賦%/100)', () => {
@@ -414,21 +412,46 @@ test('爆擊/閃避/命中威能與屬性加成直接相加；爆傷每級75', (
   assert.equal(st.evasion, base.evasion + 150);
 });
 
-test('威能升級彈窗顯示下一級的威能點成本', () => {
-  const c = loadContext();
-  const body = { innerHTML: '' };
-  const overlay = { style: { display: 'flex' } };
-  c.document = {
-    getElementById: (id) => id === 'talent-modal-body' ? body : (id === 'talent-modal' ? overlay : null)
-  };
-  vm.runInContext(fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8'), c, { filename: 'js/ui.js' });
+test('直接升降級依成本、鎖定、滿級與pending停用，不顯示舊彈窗', () => {
+  const c = loadContext(); loadTalentUi(c);
+  const def = c.talentDef('t6_boss');
+  c.UI.selTalent = { kind:'talent', id:def.id };
+  const html = () => c.talentInlineActionsHTML(def, talentPanelSnapshot(c));
+  c.G.player.reincarnations = 5; c.G.player.reincarnationTalentPoints = 99;
+  assert.match(html(), /data-talent-up="t6_boss"[^>]* disabled/);
+  assert.match(html(), /data-talent-down="t6_boss"[^>]* disabled/);
   c.G.player.reincarnations = 6;
-  c.UI.selTalent = { kind: 'talent', id: 't6_boss' };
-  c.renderTalentModal(talentPanelSnapshot(c));
-  assert.match(body.innerHTML, /消耗威能點：1/);
+  assert.doesNotMatch(html(), /data-talent-up="t6_boss"[^>]* disabled/);
+  c.G.player.talents.levels.t6_boss = 9; c.G.player.reincarnationTalentPoints = 9;
+  assert.match(html(), /需要 10 點/); assert.match(html(), /data-talent-up="t6_boss"[^>]* disabled/);
+  c.G.player.reincarnationTalentPoints = 10;
+  assert.doesNotMatch(html(), /data-talent-up="t6_boss"[^>]* disabled/);
+  c.isUiCommandPending = () => true;
+  assert.match(html(), /data-talent-up="t6_boss"[^>]* disabled/);
+  assert.match(html(), /data-talent-down="t6_boss"[^>]* disabled/);
+  assert.doesNotMatch(fs.readFileSync(path.join(root,'index.html'),'utf8'), /id="talent-modal/);
+  assert.equal(c.renderTalentModal, undefined);
+  c.isUiCommandPending = () => false;
+  c.bossFightConfigLocked = () => true;
+  assert.match(html(), /BOSS 戰中不可變更戰鬥配置/);
+  assert.match(html(), /data-talent-up="t6_boss"[^>]* disabled/);
+  assert.match(html(), /data-talent-down="t6_boss"[^>]* disabled/);
+});
 
-  // 九級升十級的下一級成本。
-  c.G.player.talents.levels.t6_boss = 9;
-  c.renderTalentModal(talentPanelSnapshot(c));
-  assert.match(body.innerHTML, /消耗威能點：10/);
+test('各轉全滿與差一級僅增加該級表值，UI快照與實際加成一致', () => {
+  const c = loadContext(); loadTalentUi(c);
+  c.G.player.reincarnations = 10;
+  for (const [turn, tree] of Object.entries(c.TALENT_TREES)) {
+    c.G.player.talents.levels = {};
+    for (const def of tree) c.G.player.talents.levels[def.id] = 10;
+    const full = c.talentStatBonuses();
+    for (const def of tree) {
+      assert.equal(c.talentDescriptionValue(def,10,+turn,talentPanelSnapshot(c)), def.per*10);
+      c.G.player.talents.levels[def.id] = 9;
+      const almost = c.talentStatBonuses();
+      assert.ok(Math.abs(full[def.stat]-almost[def.stat]-def.per) < 1e-8, def.id);
+      c.G.player.talents.levels[def.id] = 10;
+    }
+    assert.doesNotMatch(c.talentBoardHTML(+turn,talentPanelSnapshot(c)) + c.talentEffectsHTML(+turn,talentPanelSnapshot(c)), /×2|加倍/);
+  }
 });

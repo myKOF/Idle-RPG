@@ -1,5 +1,20 @@
 # AI_TASKS.md
 
+## HEAVEN-POWER-UI-20261018 — 天堂威能星盤與直接升降級
+
+- Owner：Codex；Done，單一開發者。使用者六項需求：天堂質感背景／框與技能圖、刪除11～20轉標籤、取消整轉滿級效果加倍、刪升級彈窗改選取圖下圓形−／＋、魔物威能字級加2與共用紫焰威脅符號、節點只留威脅及等級。前置既有威能／Worker已完成，工作區乾淨。
+- 允許js/ui.js威能顯示／事件、talents.js實際倍率、data.js僅註釋、css/ashen-forge.css威能區與css/style.css刪舊彈窗專用樣式、index.html刪彈窗及必要快取、bridge.js／sim.worker.js僅快取、相關talents／power／potential／Esc回歸、PATCH／game_formula及本紀錄；禁止配置數值、存檔格式、Protocol、其他功能／副本，不合併推送。
+- 驗收：全轉滿級實際及UI不加倍、升降級成本／退點／首次威脅、鎖定／滿級／不足／pending與重選、正式Worker及Tooltip、十個頁籤／無彈窗、畫面內含／Console、Build／diff後Commit。背景與紫焰用程式／CSS，圖示沿既有技能素材，不新增獨立美術資源，素材庫無變更。
+- 預檢：UI／CSS／威能／快取／回歸／任務乾淨；data／game_formula／PATCH僅與Antigravity a5da341f同檔不同區段，對方改套裝解鎖與神鑄說明；本次改威能註釋／第10節與獨立PATCH條目，寫入前候選與對方三方合併乾跑0才落檔，無語意相依。後續使用者審閱合併。
+
+- 完成16檔：UI以既有技能圖重畫全部節點，白金圓角框／雲海拱門與聖光背景皆自製CSS；共用紫焰形狀、魔物威能12→14px，節點只留威脅與等級。選取才出現同層27px圓形−／＋，刪彈窗DOM／函式／事件／專用CSS（離線收益共用標題樣式保留）；鎖定／不足／0級／滿級／pending／BOSS戰停用，保留正式Worker命令與退點。實際talentStatBonuses直接加總per×lv，整轉完成只作進度；Tooltip／右側／分頁與核心均移除加倍，1～10轉十個頁籤。存檔／表值／Protocol不改，素材庫無本次變更、不需素材庫Commit。
+- 指令：`node --test tests/talents.test.cjs tests/power-rework.test.cjs tests/potential-removal.test.cjs tests/talents-perf-equivalence.test.cjs tests/esc-shortcut.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/ui-worker-events.test.cjs tests/ui-worker-g-dependency.test.cjs tests/init-ui-smoke.test.cjs`84/84；`npm.cmd run build`536檔通過，同副本輸送帶新增後538檔通過；`git diff --check`通過。新增全轉最後一級僅增加表值／UI同值、0級全部Tooltip／成本、鎖定／滿級／不足／pending／BOSS戰按鈕驗證；舊彈窗與×2斷言依使用者新規格改測直接控制，未降低成本或退點斷言。
+- 瀏覽器：完整讀browser skill並嘗試IAB但無backend，改獨立headless Edge／隨機localhost／seed1018新角色，正式index／Worker載入引擎產生測試fixture，不讀真人存檔。實點升降級扣1退1、威能100→102→100%、改選只保留一組控制、快速雙擊只升1級、逐級升滿55點／滿級禁用／降級退10／重新開放升級、Tooltip精確下一級成本與原名稱。元素四頁10節點，1920／1366／1086／390寬12個節點及控制中心hit-test全true、皆在星盤內且無溢出、停用游標default；Console error／warning及pageerror0。已目視本聊天visualizations/heaven-power-updated.png與elements預覽；沿全遊戲既有等比縮放，非手機版重製。首次fixture10轉觸發既有migrateSave神界進度補11轉，僅修正隔離測試fixture為2轉，不改該既有存檔規則或擴大需求。
+- 唯讀未改：專案規範／工作流／prompts/codex.md、Talents Excel／CSV及生成入口、技能圖工具與既有技能素材、Worker投影／指令／pending／BOSS戰封鎖、計算及存檔／遷移、其他上述回歸。無本次未完成需求，限制為未跑已有失敗的全庫／真人長時間或所有實體裝置；可供Review／合併，未合併推送。建議重載威能頁驗收，Commit為本紀錄所在`[Codex] feat: 改造天堂威能星盤與直接升降級`，回覆附實際編號。
+- 同副本共享：FORGE-BELT-MOTION後續改熔爐UI／CSS／Worker投影，與本次威能為不同區段；UI／CSS／Worker及任務紀錄分離候選後git merge-file -p退出0且結果等於現檔。版本已由對方保留heaven-power並追加forge-belt-motion；本次只stage原本威能對應快取（UI178／Bridge301／CSS83／Protocol56不變），目前工作檔較新版本與其進行中功能完整保留，對方可接續獨立Commit。
+
+- 獨立提交驗證：唯讀fs hook載入本次16檔候選，其他進行中檔案回到HEAD；相同84項再跑全過，確認不依賴輸送帶修改。首次只隔離本次檔案時混入對方Protocol57造成單一56斷言不符；補齊所有他方檔案的HEAD隔離後通過，沒有改產品協議或放寬斷言。
+
 ## FORGE-BELT-ICONS-20261018 — 正式裝備輸送帶與雙新增入口
 
 - Owner：Codex；Done，單一開發者。使用者要求輸送帶改用正式裝備icon並放大至零件格尺寸、熔爐區增高、最後一爐下方新增按鈕；達目前上限時下方隱藏、右上置灰顯示「已達最大數」。前置既有熔爐／裝備圖示與Worker快照已完成，工作區乾淨、相關檔案衝突預檢乾淨。

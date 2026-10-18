@@ -1,14 +1,4 @@
-/* talentStatBonuses 的熱路徑重構（2026-08-03）：把 levels 表、節點清單、
-   每一轉的「全滿倍率」都提到迴圈外。
-
-   為什麼要動它：這一支在 computeStats 裡，而 computeStats 是全遊戲最熱的路徑——
-   AI 模擬器的評估器每次規劃要跑約 47 次。改造前每個節點都各自呼叫一次
-   talentCompleteMultiplier，而它內部要查 8 個節點的等級，80 個節點就是 640 次
-   等級查找、其中 632 次是重複的。實測天賦查找佔 headless 總 CPU 的 17%。
-
-   這支測試釘的是「只快了、沒變」：拿**改造前的寫法**當參照實作，逐欄比對。
-   邊界情況要一起比，因為全滿倍率（×2）正是被提出迴圈的那一項——
-   只比「都沒點」的話，那個倍率永遠是 1，改壞了也測不出來。 */
+/* 威能熱路徑：靜態節點快取與逐欄加總等價；滿轉只增加表定的最後一級。 */
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -58,25 +48,25 @@ test('零散點數：與改造前逐欄相同', () => {
   assert.ok(any, '前提：這組點數要真的產生加成，否則比對證明不了任何事');
 });
 
-test('某一轉剛好全滿（×2 倍率邊界）：與改造前逐欄相同', () => {
+test('某一轉剛好全滿（只增加最後一級）：與改造前逐欄相同', () => {
   const MAX = ctx.TALENT_MAX_LEVEL;
   const tree1 = ctx.TALENT_TREES[1] || [];
-  assert.ok(tree1.length === 8, '前提：1 轉樹要有 8 個節點，全滿倍率才會生效');
+  assert.ok(tree1.length === 8, '前提：1 轉樹要有 8 個節點，檢查完整一轉');
 
-  /* 差一級：不該有 ×2 */
+  /* 差一級：少最後一級 */
   const almost = {};
   tree1.forEach((def, i) => { almost[def.id] = i === 0 ? MAX - 1 : MAX; });
   setLevels(almost);
   const a = compare('1 轉差一級');
 
-  /* 剛好全滿：該有 ×2 */
+  /* 剛好全滿：只增加一級表值 */
   const full = {};
   tree1.forEach((def) => { full[def.id] = MAX; });
   setLevels(full);
   const b = compare('1 轉剛好全滿');
 
   const sum = (o) => Object.keys(o).reduce((s, k) => s + o[k], 0);
-  assert.ok(sum(b) > sum(a), '全滿倍率必須真的讓數值跳上去（否則這個邊界沒被測到）');
+  assert.equal(sum(b) - sum(a), 0.5, '全滿只增加力量最後一級，不讓其他節點翻倍');
 });
 
 test('全部滿級：與改造前逐欄相同', () => {
