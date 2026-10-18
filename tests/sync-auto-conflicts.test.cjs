@@ -6,12 +6,12 @@ const {spawnSync,execFileSync}=require('node:child_process');
 const source=path.resolve(__dirname,'..');
 const windows=process.platform==='win32';
 function git(cwd,...args){return execFileSync('git',['-C',cwd,...args],{encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim();}
-function fixture({conflict=true,buildFails=false}={}){
+function fixture({conflict=true,buildFails=false,incomingWhitespace=false}={}){
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'sync auto conflicts '));
  const repo=path.join(root,'develop'),remote=path.join(root,'remote.git');
  fs.mkdirSync(repo);git(repo,'init','-b','develop');git(repo,'config','user.name','Sync Test');git(repo,'config','user.email','sync@example.invalid');
  fs.mkdirSync(path.join(repo,'tools'));
- for(const name of ['sync_ai_worktrees.ps1','resolve-sync-conflicts.ps1','invoke-sync-with-report.ps1','sync-index-recovery.ps1'])fs.copyFileSync(path.join(source,'tools',name),path.join(repo,'tools',name));
+ for(const name of ['sync_ai_worktrees.ps1','resolve-sync-conflicts.ps1','sync-codex-cli.ps1','invoke-sync-with-report.ps1','sync-index-recovery.ps1'])fs.copyFileSync(path.join(source,'tools',name),path.join(repo,'tools',name));
  fs.copyFileSync(path.join(source,'sync_ai_worktrees.bat'),path.join(repo,'sync_ai_worktrees.bat'));
  fs.writeFileSync(path.join(repo,'.gitignore'),'logs/\n');
  fs.writeFileSync(path.join(repo,'tools','build_check.cjs'),`process.exit(${buildFails?1:0});\n`);
@@ -22,13 +22,17 @@ function fixture({conflict=true,buildFails=false}={}){
  const initialRemote=git(repo,'rev-parse','refs/remotes/origin/develop');
  if(conflict){
   fs.writeFileSync(path.join(repo,'state.txt'),'ours\n');git(repo,'add','state.txt');git(repo,'commit','-m','ours');
-  const agent=path.join(root,'codex');fs.writeFileSync(path.join(agent,'state.txt'),'theirs\n');git(agent,'add','state.txt');git(agent,'commit','-m','theirs');
+  const agent=path.join(root,'codex');fs.writeFileSync(path.join(agent,'state.txt'),'theirs\n');git(agent,'add','state.txt');
+  if(incomingWhitespace){fs.mkdirSync(path.join(agent,'.agents'));fs.writeFileSync(path.join(agent,'.agents','AGENTS.md'),'preserved incoming content\n\n');git(agent,'add','.agents/AGENTS.md');}
+  git(agent,'commit','-m','theirs');
  }
  const original=git(repo,'rev-parse','HEAD'),incoming=git(repo,'rev-parse','ai/codex');
  const fake=path.join(root,'fake codex.cmd');
  fs.writeFileSync(path.join(root,'fake-codex.cjs'),String.raw`
 const fs=require('fs'),path=require('path'),cp=require('child_process');
 const args=process.argv.slice(2),arg=n=>args[args.indexOf(n)+1];
+if(args.includes('--version')){console.log('codex-cli 0.0.0-test');process.exit(0);}
+if(args.includes('--help')){console.log('--ignore-user-config --ephemeral --sandbox --add-dir --output-schema --output-last-message');process.exit(0);}
 const repo=arg('--cd'),mode=process.env.SYNC_FAKE_MODE||'resolved';
 const assets=process.env.SYNC_FAKE_ASSET_ROOT;
 const prompt=fs.readFileSync(0,'utf8');
@@ -45,7 +49,13 @@ if(!['blocked','unmerged'].includes(mode)){
  if(mode==='commit')git('commit','-m','unexpected agent commit');
 }
 if(assets)fs.writeFileSync(path.join(assets,'new.json'),'{"saved":true}\n');
-fs.writeFileSync(arg('--output-last-message'),JSON.stringify({status:mode==='blocked'?'blocked':'resolved',summary:mode,tests:['fixture regression passed'],files:mode==='escape'?['../outside.txt']:['state.txt'],asset_files:assets?['new.json']:[]}));
+const files=mode==='escape'?['../outside.txt']:['state.txt'];
+if(fs.existsSync(path.join(repo,'.agents','AGENTS.md'))){
+ if(!prompt.includes('git diff HEAD --check'))process.exit(9);
+ // The controller must fix protected instruction files before the model starts.
+ if(mode!=='blocked'&&fs.readFileSync(path.join(repo,'.agents','AGENTS.md'),'utf8').replace(/\r\n/g,'\n')!=='preserved incoming content\n')process.exit(10);
+}
+fs.writeFileSync(arg('--output-last-message'),JSON.stringify({status:mode==='blocked'?'blocked':'resolved',summary:mode,tests:['fixture regression passed'],files,asset_files:assets?['new.json']:[]}));
 `);
  fs.writeFileSync(fake,'@echo off\r\n"'+process.execPath+'" "'+path.join(root,'fake-codex.cjs')+'" %*\r\nexit /b %ERRORLEVEL%\r\n');
  const run=(mode='resolved',extra=[])=>spawnSync('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',path.join(repo,'tools','sync_ai_worktrees.ps1'),'-RepositoryPath',repo,'-SyncRemoteFirst','-SkipAssetLibrary','-CodexCommand',fake,...extra],{encoding:'utf8',timeout:90000,env:{...process.env,SYNC_FAKE_MODE:mode}});
@@ -60,7 +70,7 @@ fs.writeFileSync(arg('--output-last-message'),JSON.stringify({status:mode==='blo
 test('PowerShell scripts parse and BAT stays ASCII/CRLF', {skip:!windows},()=>{
  const bat=fs.readFileSync(path.join(source,'sync_ai_worktrees.bat'));
  assert.ok([...bat].every(n=>n<128));assert.ok(!/(?<!\r)\n/.test(bat.toString()));
- for(const file of ['sync_ai_worktrees.ps1','resolve-sync-conflicts.ps1','invoke-sync-with-report.ps1','sync-index-recovery.ps1']){
+ for(const file of ['sync_ai_worktrees.ps1','resolve-sync-conflicts.ps1','sync-codex-cli.ps1','invoke-sync-with-report.ps1','sync-index-recovery.ps1']){
   const p=path.join(source,'tools',file).replace(/'/g,"''");
   const cmd=`$t=$null;$e=$null;[System.Management.Automation.Language.Parser]::ParseFile('${p}',[ref]$t,[ref]$e)>$null;if($e.Count){$e|%{$_.Message};exit 1}`;
   const r=spawnSync('powershell.exe',['-NoProfile','-Command',cmd],{encoding:'utf8'});assert.equal(r.status,0,r.stdout+r.stderr);
@@ -80,6 +90,86 @@ function readReport(f){
  assert.equal(files.length,1);assert.equal(fs.readFileSync(path.join(dir,files[0]),'utf8'),latest);
  return latest;
 }
+
+function withoutCodexOnPath(f){
+ const inherited=process.env.PATH||'';
+ const cleanPath=inherited.split(path.delimiter).filter(dir=>!['codex.cmd','codex.exe','codex.bat'].some(name=>fs.existsSync(path.join(dir,name)))).join(path.delimiter);
+ // Override both spellings because Windows environment keys are case insensitive.
+ const env={PATH:cleanPath,Path:cleanPath,APPDATA:path.join(f.root,'profile with spaces'),LOCALAPPDATA:path.join(f.root,'local profile')};
+ const npm=path.join(env.APPDATA,'npm');fs.mkdirSync(npm,{recursive:true});
+ fs.copyFileSync(path.join(f.root,'fake codex.cmd'),path.join(npm,'codex.cmd'));
+ return env;
+}
+
+for(const resume of [false,true])test(`Real BAT discovers npm CLI outside PATH and ${resume?'resumes a preserved conflict':'resolves a new conflict'} through merge, push and all worktree syncs`,{skip:!windows},()=>{
+ const f=fixture();try{
+  if(resume){const first=f.run('blocked');assert.notEqual(first.status,0,f.log(first));assert.equal(f.pending(),true);}
+  const env=withoutCodexOnPath(f);
+  const r=runReported(f,['-SkipAssetLibrary'],'resolved',true,env);
+  assert.equal(r.status,0,f.log(r));assert.equal(f.pending(),false);
+  const head=git(f.repo,'rev-parse','HEAD');assert.equal(f.remoteHead(),head);
+  assert.equal(git(f.repo,'show','HEAD:state.txt'),'ours + theirs');
+  for(const branch of ['antigravity','claude','codex']){
+   const tree=path.join(f.root,branch);assert.equal(git(tree,'rev-parse','HEAD'),head);assert.equal(git(tree,'status','--porcelain'),'');
+   assert.equal(git(f.remote,'rev-parse','ai/'+branch),head);
+  }
+  assert.equal(git(f.repo,'status','--porcelain'),'');
+  assert.match(fs.readFileSync(path.join(f.repo,'logs','sync-ai-worktrees','latest.md'),'utf8'),/npm\\codex.cmd \(codex-cli 0.0.0-test\)/);
+  assert.equal(fs.readFileSync(path.join(f.root,'calls.txt'),'utf8'),resume?'blocked\nresolved\n':'resolved\n');
+ }finally{f.clean();}
+});
+
+test('Explicit missing Codex path does not silently use an installed npm CLI and preserves the merge', {skip:!windows},()=>{
+ const f=fixture();try{
+  const env=withoutCodexOnPath(f);
+  const r=runReported(f,['-SkipAssetLibrary','-CodexCommand',path.join(f.root,'missing codex.cmd')],'resolved',true,env);
+  assert.notEqual(r.status,0,f.log(r));assert.equal(f.pending(),true);assert.equal(f.remoteHead(),f.initialRemote);
+  assert.equal(git(f.repo,'rev-parse','HEAD'),f.original);assert.ok(!fs.existsSync(path.join(f.root,'calls.txt')));
+  assert.match(readReport(f),/Cannot find Codex CLI/);
+ }finally{f.clean();}
+});
+
+test('Desktop CLI discovery skips broken npm and incompatible newer installations without changing PATH', {skip:!windows},()=>{
+ const f=fixture({conflict:false});try{
+  const env=withoutCodexOnPath(f),npm=path.join(env.APPDATA,'npm','codex.cmd');
+  fs.writeFileSync(npm,'@echo off\r\nexit /b 7\r\n');
+  const bin=path.join(env.LOCALAPPDATA,'OpenAI','Codex','bin');
+  const old=path.join(bin,'compatible version'),newer=path.join(bin,'incompatible version');
+  fs.mkdirSync(old,{recursive:true});fs.mkdirSync(newer);
+  const quote=s=>"'"+s.replace(/'/g,"''")+"'";
+  for(const [dir,compatible] of [[old,true],[newer,false]]){
+   const cs='public class Program { public static int Main(string[] args) { if (args[0] == "--version") System.Console.WriteLine("codex-cli 0.0.0-test"); else System.Console.WriteLine("'+(compatible?'--ignore-user-config --ephemeral --sandbox --add-dir --output-schema --output-last-message':'--sandbox')+'"); return 0; } }';
+   const compile=spawnSync('powershell.exe',['-NoProfile','-Command',`Add-Type -TypeDefinition ${quote(cs)} -OutputAssembly ${quote(path.join(dir,'codex.exe'))} -OutputType ConsoleApplication`],{encoding:'utf8'});
+   assert.equal(compile.status,0,compile.stdout+compile.stderr);
+  }
+  const before=new Date(Date.now()-10000);fs.utimesSync(old,before,before);
+  const helper=path.join(source,'tools','sync-codex-cli.ps1');
+  const command=`$ErrorActionPreference='Stop';. ${quote(helper)};$originalPath=$env:PATH;$cli=Find-SyncCodexCli;if($cli -ne ${quote(path.join(old,'codex.exe'))}){throw 'Wrong CLI'};if($env:PATH -ne $originalPath){throw 'PATH was changed'}`;
+  const r=spawnSync('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-Command',command],{encoding:'utf8',env:{...process.env,...env},timeout:30000});
+  assert.equal(r.status,0,f.log(r));assert.match(r.stdout,/compatible version/);
+ }finally{f.clean();}
+});
+
+test('Resolver checks the complete merged diff and repairs whitespace in already staged incoming files before commit', {skip:!windows},()=>{
+ const f=fixture({incomingWhitespace:true});try{
+  const r=f.run();assert.equal(r.status,0,f.log(r));assert.equal(f.pending(),false);
+  assert.equal(git(f.repo,'show','HEAD:.agents/AGENTS.md'),'preserved incoming content');
+  assert.equal(git(f.repo,'diff','HEAD^','HEAD','--check'),'');
+  assert.equal(f.remoteHead(),git(f.repo,'rev-parse','HEAD'));assert.equal(git(f.repo,'status','--porcelain'),'');
+ }finally{f.clean();}
+});
+
+test('Incoming whitespace cleanup preserves a manually edited instruction file and the pending merge', {skip:!windows},()=>{
+ const f=fixture({incomingWhitespace:true});try{
+  assert.notEqual(spawnSync('git',['-C',f.repo,'merge','--no-ff','ai/codex'],{encoding:'utf8'}).status,0);
+  const file=path.join(f.repo,'.agents','AGENTS.md'),manual=Buffer.from('manual content 中文\r\n\r\n');fs.writeFileSync(file,manual);
+  const indexBefore=git(f.repo,'rev-parse',':.agents/AGENTS.md');
+  const r=spawnSync('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',path.join(f.repo,'tools','resolve-sync-conflicts.ps1'),'-Worktree',f.repo,'-IncomingSha',f.incoming,'-CodexCommand',path.join(f.root,'fake codex.cmd')],{encoding:'utf8',timeout:30000,env:{...process.env,SYNC_FAKE_MODE:'blocked'}});
+  assert.notEqual(r.status,0,f.log(r));assert.match(f.log(r),/Automatic resolution stopped: blocked/);
+  assert.deepEqual(fs.readFileSync(file),manual);assert.equal(git(f.repo,'rev-parse',':.agents/AGENTS.md'),indexBefore);
+  assert.equal(f.pending(),true);assert.equal(git(f.repo,'rev-parse','HEAD'),f.original);assert.equal(f.remoteHead(),f.initialRemote);
+ }finally{f.clean();}
+});
 test('Markdown report: real BAT keeps successful sync, logs UTF-8 and leaves every worktree clean',{skip:!windows},()=>{
  const f=fixture({conflict:false});try{
   const r=runReported(f,['-SkipAssetLibrary'], 'resolved',true);assert.equal(r.status,0,f.log(r));

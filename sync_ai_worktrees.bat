@@ -2,6 +2,8 @@
 rem Syncs the AI worktrees AND the VFX asset library (Effects-Materials).
 rem Sync logic: tools\sync_ai_worktrees.ps1. The launcher also saves reports.
 rem Develop merge conflicts are resolved automatically by the local Codex CLI.
+rem Finds CLI via PATH, npm or Codex desktop; no manual PATH setup is needed.
+rem Re-running resumes a known pending merge, then completes the normal sync.
 rem Pass -NoAutoResolve to stop on conflicts instead. Failures preserve the merge.
 rem Every run exports logs\sync-ai-worktrees\latest.md for sharing diagnostics.
 rem Failed fast-forward index writes are verified, backed up and repaired automatically.
