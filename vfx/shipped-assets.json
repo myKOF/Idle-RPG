@@ -24,85 +24,85 @@
       "assetId": "claude-authored/rock-wall/wall-slab-000.svg",
       "relativePath": "claude-authored/rock-wall/wall-slab-000.svg",
       "package": "claude-authored",
-      "contentHash": "sha256:60fdca464b88b5b20a31e529e21caa87914a99c69ff10e038b3b5c5ffe2b1ac2",
-      "fileSize": 155100
+      "contentHash": "sha256:30bc3e1d398b6d7d95fbe6a24a0cbec8fd25f46f308fbde48d041fc2b30591da",
+      "fileSize": 528393
     },
     {
       "assetId": "claude-authored/rock-wall/wall-slab-015.svg",
       "relativePath": "claude-authored/rock-wall/wall-slab-015.svg",
       "package": "claude-authored",
-      "contentHash": "sha256:a2c79d841938d6dfa22a0e3ddd206bb3c666e5083c3bb575f7ddeaef1f7904e1",
-      "fileSize": 193241
+      "contentHash": "sha256:f668af7819650b530b63c90ec77307993117705ba44614c6043d7974dbb30b01",
+      "fileSize": 528642
     },
     {
       "assetId": "claude-authored/rock-wall/wall-slab-030.svg",
       "relativePath": "claude-authored/rock-wall/wall-slab-030.svg",
       "package": "claude-authored",
-      "contentHash": "sha256:827b9c029af020d0e673af0e4fca99c6ce528f643f5ca1efd9c9343d5b241fb8",
-      "fileSize": 193290
+      "contentHash": "sha256:4b4664eb376577acf98cd26f76afa629f553618d2cbd7528e4a0010acbf52cf8",
+      "fileSize": 454432
     },
     {
       "assetId": "claude-authored/rock-wall/wall-slab-045.svg",
       "relativePath": "claude-authored/rock-wall/wall-slab-045.svg",
       "package": "claude-authored",
-      "contentHash": "sha256:67f71a362706ff123fae29d713a81f58df778ee3fc19a41a22941918891fc7f3",
-      "fileSize": 193566
+      "contentHash": "sha256:712dfa0dd3b7abf9c2a6361681a5954037ca11915e8c774053abee83683b077b",
+      "fileSize": 528519
     },
     {
       "assetId": "claude-authored/rock-wall/wall-slab-060.svg",
       "relativePath": "claude-authored/rock-wall/wall-slab-060.svg",
       "package": "claude-authored",
-      "contentHash": "sha256:5072313ec0b2cfc682a40eba4e350930317332e476f4095a2505d7c1aa7e53a3",
-      "fileSize": 193615
+      "contentHash": "sha256:96880356e8aeeec9608ce75b93f462e9bdbd059f4db7d8eaae808b316a686d9b",
+      "fileSize": 455213
     },
     {
       "assetId": "claude-authored/rock-wall/wall-slab-075.svg",
       "relativePath": "claude-authored/rock-wall/wall-slab-075.svg",
       "package": "claude-authored",
-      "contentHash": "sha256:a8bd799943710635c6cfb6e87fd1cfb1c94a031750ca05dee09043b0610e83f8",
-      "fileSize": 193623
+      "contentHash": "sha256:74fe9d776c1b2133c4270b1e0740029f8a426aa06c7254abfc95d99f3a347cb3",
+      "fileSize": 455962
     },
     {
       "assetId": "claude-authored/rock-wall/wall-slab-090.svg",
       "relativePath": "claude-authored/rock-wall/wall-slab-090.svg",
       "package": "claude-authored",
-      "contentHash": "sha256:b3bb8444899e6eb02cc70559dea529044fc6093246aecf34bea70a300fb5ae93",
-      "fileSize": 155771
+      "contentHash": "sha256:209349161912f831d945790ceeed43b16e20489d25bf3711eb76692a1f18ad5a",
+      "fileSize": 456439
     },
     {
       "assetId": "claude-authored/rock-wall/wall-slab-105.svg",
       "relativePath": "claude-authored/rock-wall/wall-slab-105.svg",
       "package": "claude-authored",
-      "contentHash": "sha256:a37ea14ef702c60826386aa3ac0ae6ea5901db98e9f824fe62629968d8bad643",
-      "fileSize": 193803
+      "contentHash": "sha256:3fda4b97257095fdaff5f5db85b46611df49838fdb277fa727b8438569d8bb98",
+      "fileSize": 456250
     },
     {
       "assetId": "claude-authored/rock-wall/wall-slab-120.svg",
       "relativePath": "claude-authored/rock-wall/wall-slab-120.svg",
       "package": "claude-authored",
-      "contentHash": "sha256:7258308f562e429148247c3c75618aab79323b46000a94c272051867b58e401c",
-      "fileSize": 193720
+      "contentHash": "sha256:ca65174dcd7863f79c5b2d418dc40ff4669bff6747c02635e5f39e0eb62fe5b2",
+      "fileSize": 529519
     },
     {
       "assetId": "claude-authored/rock-wall/wall-slab-135.svg",
       "relativePath": "claude-authored/rock-wall/wall-slab-135.svg",
       "package": "claude-authored",
-      "contentHash": "sha256:61175806e15c2edb050fa86127a757d499f5c2ce22896a44e103a0a05495a25b",
-      "fileSize": 193219
+      "contentHash": "sha256:fcdd349728908282f25f0b0d679d153e51c251ec0f3e009f5166b1c97a92b261",
+      "fileSize": 528364
     },
     {
       "assetId": "claude-authored/rock-wall/wall-slab-150.svg",
       "relativePath": "claude-authored/rock-wall/wall-slab-150.svg",
       "package": "claude-authored",
-      "contentHash": "sha256:b5dc44ec1d46b81ae38ff658395048d5c805347b556988891df8ec28505e3bf1",
-      "fileSize": 155991
+      "contentHash": "sha256:4236c782a489abc716b431361dbd0ed1e329ded38256dee8ff3d3fbdea731398",
+      "fileSize": 454346
     },
     {
       "assetId": "claude-authored/rock-wall/wall-slab-165.svg",
       "relativePath": "claude-authored/rock-wall/wall-slab-165.svg",
       "package": "claude-authored",
-      "contentHash": "sha256:8bb67ae61ef4c2f98aaf94880cfef61e76bf4772208bae39e142701e6b621c3b",
-      "fileSize": 193203
+      "contentHash": "sha256:56fb11d521225eb0ce9568634273e35ccf81853d9588281396220567069823ca",
+      "fileSize": 528787
     },
     {
       "assetId": "codex-authored/cleave/sharp-cyclone.png",

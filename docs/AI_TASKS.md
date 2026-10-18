@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## NPC-WALL-NATURAL-20261018 — 縮窄築牆並改為自然岩壁
+
+- Owner：Codex；Done，單一開發者。使用者要求NPC築牆岩塊寬度縮減35%、長方形並改善方正造型；依牆短軸厚度6→3.9米處理，長度18米／四塊／2~3面／7秒沿既有規則。前置四塊岩壁已完成，開始副本乾淨，全部目標衝突預檢乾淨。
+- 允許rock-wall-slabs.cjs／enemy-skills.cjs、12張wall-slab SVG與素材庫同路徑、12份en-stone-wall Preset／en-wall-warn、asset-index／shipped-assets／匯出標記、Skills2 Excel／CSV／skills2.js僅築牆厚度與描述、elite.js僅過時製作註解、VFXRuntime／Bridge／Worker／index僅快取、rock-wall-art／elite-engine回歸及本紀錄。禁止其他技能數值／Protocol／存檔／其他副本，不合併推送。
+- 方式：短軸幾何／預警／實際阻擋共用新厚度，保留原錨點與角度；岩石使用原創不規則基座、斜切肩部、破碎起伏頂緣與分面，沿既有向量工具確定性重建。RPG Mote Studio可用，但像素畫布不適合此批多角度向量幾何。Excel依使用者規範8.5透過既有原生API逐格更新／正常重開驗證，不改封裝XML。
+- 驗收：12角度／四塊／輪廓／尺寸／索引雜湊、實際牆判定與事件39厚、預警與素材一致、相關回歸／Build／瀏覽器畫面與Console；先素材庫後遊戲Commit。後續使用者重新載入遊戲整合，若VFX編輯器有未存內容先備份再重載。
+- 完成：rock-wall-slabs以43.55短軸製作四塊不規則基座／收窄斜肩／高低破碎頂緣與礦石切面；保持256×200、腳底(128,140)、原12個角度與資產ID。enemy-skills製作定義、12份牆Preset與預警的authored短軸／陰影／底光／警示帶同步，沒有新增Preset或來源。正式匯出12張SVG與兩份索引的大小／SHA256同步，素材庫與遊戲逐位元一致，export-assets --check最新。
+- 資料：既有excel-update-sheets.ps1以原生Excel API僅寫Skills2!AV241效果JSON與AW241描述，兩輪正常儲存重開／全格比對成功。唯讀比較所有工作表，僅上述2格內容變更，樣式XML完全相同；Excel正常儲存造成欄寬／預設列高細微精度正規化，以HEAD副本零格修改走同流程可重現，與該原生往返基線比對後列欄／驗證／工作表結構全相同。CSV僅e_walls一列、config_tables --apply Skills2 --write僅敵人技能1項語意變更，乾跑重建2字面值／語意0。elite.js僅修正過時三塊註解；實際碰撞／推離／移動直接沿原d.thick，沒有加新公式。
+- 快取：index VFXRuntime211→212／skills2 322→323／bridge292→293，DATA_VERSION／WORKER_ASSET_VERSION同步20261018-wall-natural-narrow，Worker skills2／elite import查詢同步。Worker Protocol仍53、事件及存檔形狀不變。新增1項厚度邊界回歸，驗舊厚度邊帶通行、新牆內近戰阻擋／穿牆及玩家身體外擴；原牆測試改釘39厚事件與預警，岩壁回歸驗12個素材／四塊／透明／輪廓／確定性／錨點／索引及Runtime縮放高度不被額外壓扁。
+- 指令／結果：`node --test tests/rock-wall-art.test.cjs tests/elite-engine.test.cjs`33/33；`npm.cmd run build`535檔通過；`node tools/vfx/export-assets.cjs --check`最新；`git diff --check`兩倉庫通過。擴大執行`node --test tests/vfx-runtime.test.cjs tests/vfx-core.test.cjs tests/vfx-editor-save.test.cjs tests/vfx-preset-usage.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs`372項366過／1跳過／5既有失敗。跳過為本機符號連結權限；失敗為16b ground-ice-spike非canonical、FIELD測試期望zone但實際field走fx、CATALOG-3 bolt-sky-purple layout有2頂層、CHAIN金色雷鏈色碼斷言、STARFALL-TAIL拖尾形狀斷言。唯讀fs攔截所有本輪JS／Preset改為git show HEAD原內容，依同名pattern重跑5項，全部相同失敗與原因，未放寬或擴大修復。Editor舊頁儲存防覆寫既有回歸其餘通過。
+- 瀏覽器：CUA／IAB隔離localhost臨時頁，正式VFXRuntime＋VFXCore＋PixiBackend＋shipped resolver＋12份正式Preset，以實際180×39事件同時播放全部角度；四塊／新斜肩頂緣／狹長比例／錨點正常、Console warning／error0。預覽保留本聊天visualizations/npc-wall-natural.png，無真人存檔操作，未做真人長戰或低階裝置壓測。自製向量幾何，無外部素材；RPG Mote Studio可用但像素畫布不適合此向量編輯，未套用imagegen或外部圖。
+- 唯讀未改：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、battlefield.js阻擋與原eliteWallHit／ClampMove／PushOut、VFX Core／Pixi後端／resolver與sizing／匯出Root解析、原layout／Editor儲存防覆寫、Excel原生工具及上述既有回歸。所有目標預檢與fetch後origin/develop比對乾淨，無其他副本修改。素材庫先Commit4224fdb，遊戲Commit為本紀錄所在[Codex] fix提交，回覆附編號；無未完成本次需求，可供Review／合併，未合併推送。已知限制為上述既有5項回歸與未做低階真人長戰效能；下一步整合並重載遊戲檢視，VFX編輯器有未存內容時先另存備份再重載，避免舊頁覆蓋新版。
+
 ## GEM-RESONANCE-SIDE-INFO-20261018 — 精簡鑲孔資訊與外移說明按鈕
 
 - Owner：Codex；Done，單一開發者。使用者要求依示意圖只保留右側寶石類型／最低階、等級Lv、相鄰加成、鑲孔、升級按鈕及共鳴效果；費用改Tooltip，i移到資訊左外側。前置共鳴功能已完成，工作區乾淨、七檔預檢乾淨。

@@ -389,11 +389,11 @@ test('ELITE-ENGINE-14 築牆：近戰隔著牆打不到（雙方），遠程不�
   assert.equal(c.ELITE_RT.walls.length, 0);
 });
 
-test('ELITE-ENGINE-14b 築牆：每次 2~3 面整塊岩壁，每面 18 米長、6 米厚（四塊岩石）', () => {
+test('ELITE-ENGINE-14b 築牆：每次 2~3 面整塊岩壁，每面 18 米長、3.9 米厚（四塊岩石）', () => {
   const c = fresh();
   const m = quiet(makeElite(c, ['e_walls'], { x: 200, y: 0, hp: 1e9 }));
   const d = c.ELITE_AFFIXES.e_walls;
-  assert.deepEqual([d.len, d.thick], [180, 60], '18 米長、6 米厚');
+  assert.deepEqual([d.len, d.thick], [180, 39], '18 米長、厚度縮減35%');
   const seen = new Set();
   for (let k = 0; k < 40; k++) {
     c.ELITE_RT.walls.length = 0;
@@ -401,23 +401,45 @@ test('ELITE-ENGINE-14b 築牆：每次 2~3 面整塊岩壁，每面 18 米長、
     stepElite(c, d.warn + 0.2);
     const ws = c.ELITE_RT.walls;
     assert.ok(ws.length === 2 || ws.length === 3, '一次 2 或 3 面：' + ws.length);
-    ws.forEach((w) => { assert.equal(w.len, 180, '每面 18 米'); assert.equal(w.thick, 60, '厚 6 米'); });
+    ws.forEach((w) => { assert.equal(w.len, 180, '每面 18 米'); assert.equal(w.thick, 39, '厚 3.9 米'); });
     seen.add(ws.length);
     stepElite(c, 7.5);
   }
   assert.ok(seen.has(2) && seen.has(3), '平行 2 面與 U 型 3 面都會出現');
-  // 牆的畫面：寬長比跟 Preset 一致（18:6＝3:1），岩塊不會被拉歪
+  // 牆的畫面與權威阻擋使用同一長寬。
   c.ELITE_RT.walls.length = 0;
   c.eliteCastWalls(m, d);
   stepElite(c, d.warn + 0.2);
   const fx = c.vfx.filter((v) => v.vfx && /^en-stone-wall-\d+$/.test(v.vfx.ground) && v.area && v.area.w > 0);
-  assert.ok(fx.length >= 2 && fx.every((v) => Math.abs(v.area.w / v.area.h - 3) < 1e-6), '矩形比例 18:6');
+  assert.ok(fx.length >= 2 && fx.every((v) => v.area.w === 180 && v.area.h === 39), '矩形比例 18:3.9');
   for (const v of fx) {
     const preset = JSON.parse(fs.readFileSync(path.join(ROOT, 'vfx/presets', v.vfx.ground + '.json'), 'utf8'));
     const slab = preset.layers.find(l => l.id === 'slab');
     const svg = fs.readFileSync(path.join(ROOT, 'images/vfx/assets', slab.assetId), 'utf8');
     assert.equal([...svg.matchAll(/data-rock="\d+"/g)].length, 4, '權威牆事件選到的素材實際含四塊岩石');
   }
+});
+
+test('ELITE-ENGINE-14b2 縮窄後預警與牆事件一致，舊厚度邊帶可通行、穿牆仍被阻擋', () => {
+  const c = fresh();
+  const m = quiet(makeElite(c, ['e_walls'], { x: 200, y: 0, hp: 1e9 }));
+  const d = c.ELITE_AFFIXES.e_walls;
+  c.eliteCastWalls(m, d);
+  const warns = c.vfx.filter(v => v.vfx && v.vfx.ground === 'en-wall-warn');
+  assert.ok(warns.length >= 2 && warns.every(v => v.area.w === 180 && v.area.h === 39));
+  stepElite(c, d.warn + .2);
+  const w = c.ELITE_RT.walls[0];
+  const point = (u,v) => ({ x:w.x+u*Math.cos(w.a)-v*Math.sin(w.a), y:w.y+u*Math.sin(w.a)+v*Math.cos(w.a) });
+  const hit = (u0,v0,u1,v1,pad=0) => {
+    const a=point(u0,v0), b=point(u1,v1);
+    return c.eliteWallHit(w,a.x,a.y,b.x,b.y,pad);
+  };
+  assert.equal(hit(-40,25,40,25), false, '舊厚度內、新牆外的路徑可穿過');
+  assert.equal(hit(-40,19,40,19), true, '新牆內仍擋近戰');
+  assert.equal(hit(0,-40,0,40), true, '橫越短軸仍擋住');
+  const pad = c.ELITE_PLAYER_BODY_R * .6;
+  assert.equal(hit(-40,19.5+pad+1,40,19.5+pad+1,pad), false, '玩家身體外擴後亦沿新厚度通行');
+  assert.equal(hit(-40,19.5+pad-1,40,19.5+pad-1,pad), true, '身體仍不能碰進新牆');
 });
 
 test('ELITE-ENGINE-14c 築牆：牆角度吸附到 15° 倍數，並使用對應角度那張整面岩壁 Preset', () => {

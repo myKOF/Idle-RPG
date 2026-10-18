@@ -11,7 +11,7 @@
       "zIndex": 0,
       "scale": {
         "x": 0.4199,
-        "y": 0.1563
+        "y": 0.1016
       },
       "alpha": 0.55,
       "tint": "#9a6cff",
@@ -43,7 +43,7 @@
       "zIndex": 1,
       "scale": {
         "x": 0.4102,
-        "y": 0.1367
+        "y": 0.0889
       },
       "alpha": 0.9,
       "tint": "#e0ccff",
@@ -61,7 +61,7 @@
       "zIndex": 2,
       "scale": {
         "x": 0.4102,
-        "y": 0.043
+        "y": 0.0279
       },
       "alpha": 1,
       "tint": "#f2e8ff",
@@ -89,7 +89,7 @@
         0.7
       ],
       "spawn": {
-        "height": 50,
+        "height": 32.5,
         "shape": "box",
         "width": 190
       },
@@ -121,7 +121,7 @@
   ],
   "sizing": {
     "authored": {
-      "height": 67,
+      "height": 43.55,
       "width": 200
     },
     "shape": "rectangle"
