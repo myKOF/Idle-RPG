@@ -475,7 +475,7 @@ test('三套裝備面板與遊戲一致：解鎖條件、使用中套別', () =>
   assert.equal(P.count, c.EQUIP_SET_COUNT);
   assert.equal(P.active, c.G.equipActive || 0);
   for (let i = 0; i < P.count; i++) assert.equal(P.unlocked[i], !!c.equipmentSetUnlocked(i), '第 ' + (i + 1) + ' 套解鎖狀態要等於遊戲');
-  assert.deepEqual(JSON.parse(JSON.stringify(P.unlocked)), [true, false, false], '新角色只有第 1 套（第 2 套 500 級、第 3 套 500 級＋1 轉）');
+  assert.deepEqual(JSON.parse(JSON.stringify(P.unlocked)), [true, true, true], '三套裝備預設全解鎖');
 });
 
 

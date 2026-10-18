@@ -10992,3 +10992,14 @@ Worker 存活且頁面正常完成載入。
 - 最新來源更新：驗收期間天堂威能完成`79c95a76`暗金聖印背景，將尚未提交的乾淨合併重建為此最新提交，保留原紀錄並重新驗證；新增2.47MB背景PNG、來源匯出檢查工具與相應CSS／主頁快取／節點背景接線均沿來源提交，不改素材本體。
 
 - 最終交付：來源固定`79c95a76`，無衝突，所有功能檔與該來源逐檔一致；重跑18份相依測試151/151與Build538檔皆通過。`node tools/heaven-power/export-source.cjs --check`母圖／匯出紀錄／develop背景SHA256皆d28e94add06fd5503d06a4f15740f3ab58740b988faf9125329ba7da7a805bed，素材庫已提交c4b733a且status乾淨。正式Edge再驗背景URL正確、1254×1254成功解碼、天堂威能標題保留、Console error／warning與pageerror0；隔離服務／瀏覽器已關閉。沒有本次未完成或新增風險，未推送。
+
+## MERGE-RULES-EQUIP-20261018 — 本輪 develop 衝突整合
+
+- 控制器續驗（Codex，2026-10-18）：開始時已無 unmerged entries，既有整合與 `.agents/AGENTS.md` EOF 空白修正完整保留；重新比對共同 base d9a7b85e、指定 HEAD／MERGE_HEAD，確認 incoming 三套裝備全解鎖與 ours 功能變更並存。本輪僅補本紀錄，不改其他內容、不 stage／commit／寫 Git metadata。重跑 `node --test tests/unlock-thresholds.test.cjs tests/sim-skill-plan.test.cjs tests/worker-protocol.test.cjs tests/potential-removal.test.cjs tests/worker-shim.test.cjs` 69/69 通過，`npm.cmd run build` 538 檔通過；完整 `git -c safe.directory="D:/MyGame/Idle-RPG/develop" diff HEAD --check` 通過。無測試失敗、無需基準失敗比對；未執行瀏覽器或全庫測試。無素材庫變更，交由控制器暫存全部 14 個變更檔並建立 merge commit。
+
+- Owner：Codex；In Progress。使用者指定本 pending merge 整合者，不委派、不 stage／commit／改 Git metadata；前置 HEAD e3c9316f804357aa420f9e980f6dc1c3e505b8a1、MERGE_HEAD a5da341f33b4e9ebbfaad2ed9e677b45cc1514a3 已確認。
+- 比對 index stage 1／2／3 與雙方差異：共同基底無 8.8／8.9；ours 新增不可操作游標規範、theirs 新增系統解鎖權威總表規範，兩節完整保留並分隔。已知衝突來源由使用者明確授權處理，本輪不再執行可能寫入 Git metadata 的合併試跑。
+- 保留既有九份已合併變更及裝備三方案預設全開放意圖；僅額外更新 index data／bridge、Worker data import 與 Worker asset 快取，禁止其他玩法、Excel、素材與其他副本變更。無素材庫交付。驗收：解鎖／技能方案／Worker 回歸、build、衝突標記與 diff 檢查。後續由控制腳本 stage 並建立 merge commit。
+- 完成／Done：`node --test tests/unlock-thresholds.test.cjs tests/sim-skill-plan.test.cjs tests/worker-protocol.test.cjs tests/potential-removal.test.cjs tests/worker-shim.test.cjs` 69/69 通過；`npm.cmd run build` 538 檔通過；`git -c safe.directory="D:/MyGame/Idle-RPG/develop" diff --check` 通過（僅既有 CRLF 正規化提示）。另以 inline Node assert 比對 stage 2 的 8.8 與 stage 3 的 8.9 原文完整保留、所有相對 HEAD 變更檔無衝突標記、主頁 data 89／bridge 303 與 Worker 新快取均存在，全部通過。無測試失敗、未放寬斷言、未新增測試或暫存檔。
+- 實際額外編修：AI_RULES.md、docs/AI_TASKS.md、index.html、js/bridge.js、js/worker/sim.worker.js；原先已合併九份變更完整保留並列入控制器交付清單。唯讀檢查共通規範／AGENTS／workflow／prompts、base／ours／theirs、incoming 解鎖與測試差異、主頁與 Worker 載入鏈及相依測試。沒有 editor 載入此 data 檔的版本引用，未改 Protocol／Preset／Excel／素材。
+- HEAD／MERGE_HEAD 再驗維持原指定值，UU 索引為預期（控制器尚未 stage）；未建立 Commit、未操作其他 worktree 或素材庫。無新增已知風險或未完成整合項；僅執行相關套件，未跑全庫／瀏覽器。可由控制腳本 stage 報告檔案並建立本輪 merge commit。

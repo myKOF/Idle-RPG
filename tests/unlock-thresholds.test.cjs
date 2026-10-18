@@ -18,27 +18,15 @@ function loadContext() {
 
 const saveSource = fs.readFileSync(path.join(__dirname, '..', 'js', 'save.js'), 'utf8');
 
-test('裝備套裝依序在 Lv.1、Lv.500、1轉 Lv.500 開放', () => {
+test('裝備套裝預設全解鎖（第 1/2/3 套開局即開放）', () => {
   const context = loadContext();
-  context.G = { player: { level: 499, reincarnations: 0 } };
+  context.G = { player: { level: 1, reincarnations: 0 } };
   assert.equal(context.equipmentSetUnlocked(0), true);
-  assert.equal(context.equipmentSetUnlocked(1), false);
-  assert.equal(context.equipmentSetUnlocked(2), false);
-
-  context.G.player.level = 500;
   assert.equal(context.equipmentSetUnlocked(1), true);
-  assert.equal(context.equipmentSetUnlocked(2), false);
-
-  context.G.player.level = 500;
-  context.G.player.reincarnations = 1;
   assert.equal(context.equipmentSetUnlocked(2), true);
-  assert.equal(context.equipmentSetUnlockedAtLevel(1, 500, 0), true);
-  assert.equal(context.equipmentSetUnlockedAtLevel(2, 500, 0), false);
-  assert.equal(context.equipmentSetUnlockedAtLevel(2, 500, 1), true);
-  context.G.player.reincarnations = 0;
-  assert.equal(context.equipmentSetUnlocked(2), false);
-  context.G.player.reincarnations = 1;
-  assert.equal(context.equipmentSetUnlocked(2), true);
+  assert.equal(context.equipmentSetUnlockedAtLevel(0, 1, 0), true);
+  assert.equal(context.equipmentSetUnlockedAtLevel(1, 1, 0), true);
+  assert.equal(context.equipmentSetUnlockedAtLevel(2, 1, 0), true);
   assert.match(saveSource, /equipmentSetUnlockedAtLevel/);
   assert.match(saveSource, /data\.player\s*&&\s*data\.player\.reincarnations/);
 });

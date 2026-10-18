@@ -17,7 +17,7 @@ if (typeof GameClock !== 'undefined') {
   globalThis.clearTimeout = GameClock.clearTimeout;
 }
 importScripts(
-  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261018-heaven-power', '../runeword_data.js?v=20261013-rune-all-elem-color', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261018-potential-remove', '../formula.js?v=20261018-potential-remove-gem-workshop', '../battlefield.js?v=20261016-npc-retaliate-refill', '../stats.js?v=20261003-rename-weineng',
+  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261018-merge-equip-unlock', '../runeword_data.js?v=20261013-rune-all-elem-color', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261018-potential-remove', '../formula.js?v=20261018-potential-remove-gem-workshop', '../battlefield.js?v=20261016-npc-retaliate-refill', '../stats.js?v=20261003-rename-weineng',
   '../item.js?v=20261018-gem-workshop', '../gem_resonance.js?v=20261018-resonance-hole-effects','../runeword.js?v=20261014-develop-integration',
   '../skills.js?v=20261018-potential-remove', '../skills2.js?v=20261018-potential-remove', '../elite_data.js?v=20261016-wall-rock', '../talents.js?v=20261018-heaven-power',
   '../player.js?v=20261018-potential-remove', '../special_rules.js',
