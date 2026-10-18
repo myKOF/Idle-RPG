@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## FORGE-BELT-ICONS-20261018 — 正式裝備輸送帶與雙新增入口
+
+- Owner：Codex；Done，單一開發者。使用者要求輸送帶改用正式裝備icon並放大至零件格尺寸、熔爐區增高、最後一爐下方新增按鈕；達目前上限時下方隱藏、右上置灰顯示「已達最大數」。前置既有熔爐／裝備圖示與Worker快照已完成，工作區乾淨、相關檔案衝突預檢乾淨。
+- 允許js/ui.js熔爐顯示／事件、css/ashen-forge.css熔爐樣式、index.html底部入口／必要快取、js/worker/sim.worker.js熔爐belt新增weaponType顯示欄位、protocol.js／bridge.js必要版本、docs/WORKER_PROTOCOL.md、本紀錄及相依測試；禁止熔爐數值／路由／存檔／素材及其他副本，不合併推送。
+- 驗收：正式武器分類／其他裝備圖示與背包同源、40px格子與較高卡片，空爐／未滿／當前上限／絕對上限／移除後恢復與雙入口防重送；相關回歸、Build、隔離瀏覽器畫面／Console與diff後Commit。無新素材或素材庫變更；後續使用者審閱整合。
+- 使用者追加：爐口火焰改精緻圖像、運作時循環動態。沿既有已匯出particle-pack flame_04／flame_01灰階圖做CSS彩色遮罩、雙層火舌與上升火星；來源素材庫particle-pack/License.txt明訂CC0。停用停止、Esc菜單沿共用暫停、減少動態改靜態。只修改程式／CSS，不產出或編修獨立美術資源、不新增Preset，無素材庫變更。
+- 完成：裝備格22→40px、正式圖36px；輸送帶36→52px、卡片垂直padding14→18px，實測卡片高211px。與背包共用itemIconFile／weaponIconForItem；Worker僅額外傳weaponType，不帶完整裝備與詞條。Protocol55→56、指令仍94條，UI177／Bridge300／CSS82與Worker匯入快取同步。底部按鈕位於可捲動主欄、空爐亦可新增，兩入口共用pending；滿額時移除pending接管避免ACK解鎖已滿按鈕，移除／轉生提高上限後恢復。
+- 修改12檔：css/ashen-forge.css、index.html、js/ui.js、js/bridge.js、js/worker/protocol.js、js/worker/sim.worker.js、docs/WORKER_PROTOCOL.md、本紀錄、tests/new-forge-ui.test.cjs、newforge-panel-performance.test.cjs、worker-protocol.test.cjs、potential-removal.test.cjs（最後兩份只同步版本斷言）。新增測試覆蓋雙入口各狀態、12種正式武器／所有部位與舊快照退化；投影測試驗法杖類型且仍不複製完整詞條／佇列。
+- 指令／結果：`node --test tests/new-forge-ui.test.cjs tests/new-forge.test.cjs tests/newforge-panel-performance.test.cjs tests/worker-protocol.test.cjs tests/potential-removal.test.cjs tests/init-ui-smoke.test.cjs tests/game-clock.test.cjs`55/55；`node --test tests/worker-shim.test.cjs tests/ui-worker-events.test.cjs tests/ui-worker-g-dependency.test.cjs tests/ui-command-pending.test.cjs`27/27；`npm.cmd run build`536檔通過、`git diff --check`通過。首次新圖示測試替身漏rarityTag已補上，無放寬圖示／數值斷言。未跑全庫或修改參數接線。
+- 瀏覽器：browser技能IAB無backend，改獨立headless Edge／隨機localhost／seed1018新角色與引擎產生fixture、正式Worker載入，不讀真人存檔。12類武器圖示正確、裝備／零件computed皆40px；1920／1366／390寬主欄scrollWidth=clientWidth（728／548／548），沿既有整頁縮放。實際上下新增、滿2/2隱藏下方及上方disabled、移除後恢復；同一輪兩入口點擊只送1次新增，ACK後上方仍停用。火舌200ms間transform有變化，停用paused／啟用running、Esc菜單paused、減少動態animation none；Console error／warning與pageerror0。已目視預覽，本聊天visualizations/forge-belt-updated.png／forge-belt-full.png保留，測試服務及瀏覽器已關閉。
+- 唯讀檢查未改：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、js/data.js武器圖、js/player.js品質標籤、js/newforge.js路由與增刪、scripts/sim/engine.js、css/style.css與dialogs.css共用暫停、素材庫解析／CC0授權及既有火焰圖。素材庫status乾淨，無素材Commit。自我Review確認沒有更動存檔／數值／路由，所有預檢仍乾淨；限制為未實測其他瀏覽器、實體觸控與長戰效能。無未完成需求或新增已知阻擋，可供審查合併；Commit為本紀錄所在`[Codex] feat: 改善熔爐輸送帶與動態爐火`，回覆附編號。未合併／推送，下一步使用者整合並重載驗收。
+
 ## GEM-WORKSHOP-SCALE-20261018 — 放大轉換與拆解工坊資訊
 
 - Owner：Codex；Done；單一開發者。使用者依紅框要求整區含icon／文字／數量放大，沿前次置中工坊完成狀態調整；開始工作區乾淨、三檔衝突預檢乾淨。

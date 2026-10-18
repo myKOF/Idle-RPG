@@ -87,7 +87,9 @@
    gems 面板新增 resonance＝{ holes }（G.player.resonance，存檔欄位同名；舊快照缺欄視為空）。 */
 /* v55（2026-10-18 寶石工坊）：保留v54潛力移除，新增gem.dismantleSlots九宮格原子拆解（93→94）；
    無損回前一階，預覽及產出沿共用合成逆配方，快照與存檔格式不變。 */
-var WORKER_PROTOCOL_VERSION = 55;
+/* v56（2026-10-18 熔爐圖示）：newforge.furnaces[].belt[]新增可選weaponType，
+   顯示層沿用正式裝備圖示；舊快照缺欄時退回部位圖示，指令／存檔不變。 */
+var WORKER_PROTOCOL_VERSION = 56;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {

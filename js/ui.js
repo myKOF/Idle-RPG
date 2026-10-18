@@ -6419,14 +6419,17 @@ function nfQualityChipsHTML(fu) {
   return '<div class="nf-quals"><span class="nf-label" data-tip="勾選品質的裝備會自動進入傳送帶拆解；未勾選＝保留入包。上鎖與神鑄創世永遠保留。">拆解</span>' + chips + '</div>';
 }
 
-// 傳送帶批次圖示（帶頭在左＝即將入爐；與原版輸送帶樣式一致，縮小尺寸多顯示件數）。
+// 傳送帶批次圖示（帶頭在左＝即將入爐；沿用背包的正式裝備與武器類型圖示）。
 // 帶尾另有固定寬度的 +N 區（nf-belt-more，由 nfUpdateBelts 更新），版面不隨數字增減變動。
 function nfBeltChipsHTML(fu) {
   var show = fu.belt.slice(0, NEW_FORGE_BELT_SHOW);
   var chips = show.map(function (it) {
     var r = RARITIES[it.rarity];
+    var info = SLOT_INFO[it.slot];
+    var iconFile = itemIconFile(it, info);
+    var icon = iconFile ? '<img src="images/' + esc(iconFile) + '" class="nf-belt-icon" alt="">' : info.emoji;
     return '<span class="conv-chip" style="border-color:' + r.color + ';color:' + r.color + '" data-tip="' +
-      esc(rarityTag(it)) + '">' + SLOT_INFO[it.slot].emoji + '</span>';
+      esc(rarityTag(it)) + '">' + icon + '</span>';
   }).join('');
   return chips || '<span class="nf-belt-empty dim-text">（傳送帶空）</span>';
 }
@@ -6513,7 +6516,7 @@ function nfFurnaceHTML(fu, nf, factory, player) {
     '<button class="btn sm warn nf-remove" data-nf-remove="' + fu.id + '"' +
     pendingUiButtonAttributes(furnacePendingKey(fu.id)) + '>移除</button></div>';
   var main = nfQualityChipsHTML(fu) +
-    '<div class="nf-belt"><span class="nf-belt-mouth" data-tip="熔爐入口：帶頭裝備由此入爐拆解">' + NEW_FORGE_EMOJI + '</span>' +
+    '<div class="nf-belt"><span class="nf-belt-mouth" data-tip="熔爐入口：帶頭裝備由此入爐拆解"><span class="nf-mouth-fire" aria-hidden="true"><i class="nf-mouth-flame"></i><i class="nf-mouth-flame nf-mouth-flame-core"></i><i class="nf-mouth-embers"></i></span></span>' +
     '<span class="nf-belt-items" data-nf-belt="' + fu.id + '"></span>' +
     '<span class="nf-belt-more" data-nf-more="' + fu.id + '"></span></div>' +
     nfPartSlotsHTML(fu, nf, factory, player) +
@@ -6543,8 +6546,19 @@ function renderNewForge() {
   setTextIfChanged($id('nf-salvaged'), fmt(nf.stats.salvaged));
   setTextIfChanged($id('nf-kept'), fmt(nf.stats.kept));
   var addBtn = $id('nf-add-btn');
+  var full = nf.furnaces.length >= allowed;
+  var addKey = nodePendingKey('newforge-add');
+  var addBottom = $id('nf-add-bottom-btn');
+  [addBtn, addBottom].forEach(function (button) {
+    if (!button) return;
+    // 上限鎖定不交給pending解鎖，以免ACK抵達後重新啟用已滿的入口。
+    if (full) button.removeAttribute('data-ui-pending-key');
+    else button.setAttribute('data-ui-pending-key', addKey);
+    button.disabled = full || isUiCommandPending(addKey);
+  });
+  if (addBottom) addBottom.hidden = full;
   if (addBtn) {
-    var full = nf.furnaces.length >= allowed;
+    setTextIfChanged(addBtn, full ? '已達最大數' : '＋ 添加熔爐');
     var addTip = full
       ? '已達目前上限 ' + allowed + ' 座（0 轉 2 座、每轉生 1 次 +1 座，最多 ' + NEW_FORGE_MAX + ' 座）'
       : '新增一座熔爐（目前上限 ' + allowed + ' 座，最多 ' + NEW_FORGE_MAX + ' 座）';
@@ -6695,6 +6709,7 @@ function bindNewForgeEvents() {
     var el = e.target && e.target.closest ? e.target.closest('button') : null;
     if (!el) return;
     if (el.hasAttribute('data-nf-add')) {
+      if (el.disabled || isUiCommandPending(nodePendingKey('newforge-add'))) return;
       {
         sendUiCommand('newforge.addFurnace', {}, {
           keys: [nodePendingKey('newforge-add')],

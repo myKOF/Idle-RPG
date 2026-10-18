@@ -10,7 +10,7 @@
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-importScripts('protocol.js?v=20261018-potential-remove-gem-workshop', '../game-clock.js?v=1.0.1', 'shim.js?v=20261018-potential-remove');
+importScripts('protocol.js?v=20261018-forge-belt-icons', '../game-clock.js?v=1.0.1', 'shim.js?v=20261018-potential-remove');
 // 離線結算等分批工作亦共用暫停時鐘；訊息與loop仍能回應存檔及PING。
 if (typeof GameClock !== 'undefined') {
   globalThis.setTimeout = GameClock.setTimeout;
@@ -833,7 +833,7 @@ function newForgePanelView(nf) {
         partSlots: Number(fu.partSlots) || 0,
         queueCount: Array.isArray(fu.queue) ? fu.queue.length : 0,
         belt: (Array.isArray(fu.belt) ? fu.belt : []).slice(0, NEW_FORGE_BELT_SHOW).map(function (it) {
-          return it ? { rarity: it.rarity, slot: it.slot, name: it.name } : null;
+          return it ? { rarity: it.rarity, slot: it.slot, name: it.name, weaponType: it.weaponType || null } : null;
         }).filter(Boolean)
       };
     }),

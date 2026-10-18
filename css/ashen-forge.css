@@ -4062,6 +4062,22 @@ html *::-webkit-scrollbar-corner {
   margin-left: 0;
 }
 
+#tab-newforge .nf-add-btn:disabled {
+  border-color: #3a3d44;
+  background: #22252b;
+  color: #8a857a;
+  opacity: .6;
+  cursor: default;
+}
+
+#tab-newforge .nf-add-bottom-btn {
+  margin: 16px 0 4px;
+}
+
+#tab-newforge .nf-add-bottom-btn[hidden] {
+  display: none;
+}
+
 #tab-newforge .nfx {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 272px;
@@ -4097,7 +4113,7 @@ html *::-webkit-scrollbar-corner {
   flex-direction: column;
   gap: 12px;
   margin: 0;
-  padding: 14px;
+  padding: 18px 14px;
   border: 1px solid #5a3a24;
   border-radius: 8px;
   background: linear-gradient(160deg, #1d1712, #121418 55%);
@@ -4289,7 +4305,8 @@ html *::-webkit-scrollbar-corner {
 #tab-newforge .nf-belt {
   position: relative;
   gap: 0;
-  height: 36px;
+  height: 52px;
+  flex-shrink: 0;
   margin: 0;
   padding: 0;
   overflow: hidden;
@@ -4328,12 +4345,75 @@ html *::-webkit-scrollbar-corner {
   position: relative;
   z-index: 1;
   display: flex;
-  flex: 0 0 38px;
+  flex: 0 0 48px;
   align-items: center;
   justify-content: center;
   height: 100%;
-  background: radial-gradient(circle at 30% 50%, #ff8a3a, #7a240c 60%, #2a0c06);
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 85%, #bd491c, #39180e 58%, #120e0c);
   font-size: 16px;
+}
+
+/* 沿用已匯出的CC0 particle-pack火焰遮罩；只以CSS染色／播放，不另製素材或Preset。 */
+#tab-newforge .nf-mouth-fire {
+  position: relative;
+  width: 46px;
+  height: 48px;
+  pointer-events: none;
+}
+
+#tab-newforge .nf-mouth-flame {
+  position: absolute;
+  inset: -4px -6px -8px;
+  background: linear-gradient(0deg, #fff8c5 15%, #ffcd58 38%, #ff6b18 65%, #c92708 90%);
+  mask: url("../images/vfx/assets/particle-pack/PNG (Black background)/flame_04.png") center / contain no-repeat;
+  mask-mode: luminance;
+  transform-origin: 50% 85%;
+  animation: nfMouthFlame .78s ease-in-out infinite alternate;
+  animation-play-state: paused;
+}
+
+#tab-newforge .nf-mouth-flame-core {
+  inset: 5px 0 -7px;
+  background: linear-gradient(0deg, #fffde6 20%, #ffe38a 50%, #ff951d 85%);
+  mask-image: url("../images/vfx/assets/particle-pack/PNG (Black background)/flame_01.png");
+  animation-duration: .53s;
+  animation-delay: -.3s;
+  animation-direction: alternate-reverse;
+}
+
+#tab-newforge .nf-mouth-embers {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: #ffe8a1;
+  box-shadow: 16px -4px #ffbd51, 7px 4px #fff4bd;
+  opacity: 0;
+  animation: nfMouthEmbers 1.1s ease-out infinite;
+  animation-play-state: paused;
+}
+
+#tab-newforge .nf-furnace:not(.nf-line-off) .nf-mouth-fire > i {
+  animation-play-state: running;
+}
+
+@keyframes nfMouthFlame {
+  0% { transform: scale(.9, .88) skewX(-4deg); opacity: .8; }
+  45% { transform: scale(1.04, 1.1) skewX(3deg); opacity: 1; }
+  100% { transform: scale(.97, 1.02) skewX(-2deg); opacity: .9; }
+}
+
+@keyframes nfMouthEmbers {
+  0% { transform: translate(0, 0); opacity: 0; }
+  20% { opacity: .9; }
+  100% { transform: translate(3px, -30px); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #tab-newforge .nf-mouth-fire > i { animation: none; }
 }
 
 #tab-newforge .nf-line-off .nf-belt-mouth {
@@ -4349,11 +4429,17 @@ html *::-webkit-scrollbar-corner {
 }
 
 #tab-newforge .nf-belt .conv-chip {
-  width: 22px;
-  height: 22px;
+  width: 40px;
+  height: 40px;
   border-radius: 4px;
   background: #0c0d10;
   font-size: 12px;
+}
+
+#tab-newforge .nf-belt-icon {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
 }
 
 #tab-newforge .nf-belt-more {
