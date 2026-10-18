@@ -25,7 +25,7 @@
 #tab-gems [data-gem-panel="compose"] { padding-top: 42px; }
 #tab-gems .gem-holy-cell { position: relative; }
 #tab-gems .gconv-help { position: absolute; top: 12px; right: 12px; }
-#tab-gems .gconv-layout { gap: 32px; margin: 26px 10px 12px; align-items: stretch; }
+#tab-gems .gconv-layout { width: min(514px, calc(100% - 20px)); gap: 32px; margin: 26px auto 12px; align-items: stretch; justify-content: center; }
 #tab-gems .gconv-input { display: flex; flex-direction: column; align-items: center; gap: 14px; }
 #tab-gems .gconv-grid { grid-template-columns: repeat(3, 48px); grid-template-rows: repeat(3, 48px); }
 #tab-gems .gconv-slot {
@@ -36,7 +36,7 @@
 #tab-gems .gconv-slot .gi-conv { width: 36px; height: 36px; pointer-events: none; }
 #tab-gems .gconv-n { position: absolute; top: 2px; left: 3px; font-size: 9px; color: #fbbf24; text-shadow: 0 0 3px #000, 1px 1px 2px #000; }
 #tab-gems .gconv-level { position: absolute; bottom: 2px; left: 0; right: 0; color: #bcb6a8; font-size: 10px; text-shadow: 0 0 3px #000; }
-#tab-gems .gconv-side { flex: 0 1 300px; max-width: none; gap: 10px; }
+#tab-gems .gconv-side { flex: 1 1 190px; max-width: 300px; gap: 10px; }
 #tab-gems .gconv-side .sec-sub { margin: 0; }
 #tab-gems .gconv-result-area { flex: 1; min-height: 96px; }
 #tab-gems :is(#gconv-output, .gem-grid-output) { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 6px; }
@@ -74,11 +74,11 @@
 #tab-gems :is(#gconv-output, .gem-grid-output) .gconv-slot { cursor: default; pointer-events: auto; }
 #tab-gems :is(#gconv-output, .gem-grid-output) .gconv-slot:hover { filter: none; }
 #tab-gems #gconv-clear, #tab-gems #gconv-btn, #tab-gems .gem-grid-action { width: 112px; min-height: 30px; margin-top: auto; align-self: center; }
-#tab-gems .gconv-shortcut { margin: 0 10px; font-size: 12px; }
+#tab-gems .gconv-shortcut { width: min(514px, calc(100% - 20px)); margin: 0 auto; font-size: 12px; }
 #tab-gems .gconv-grid.is-drop { border-color: #d5b66d; box-shadow: 0 0 9px #d5b66d55; }
 #tab-gems:is([data-gem-tool="convert"], [data-gem-tool="dismantle"]) .gx-curve-cell[draggable="true"] { cursor: grab; }
 #tab-gems:is([data-gem-tool="convert"], [data-gem-tool="dismantle"]) .gx-curve-cell[draggable="true"]:active { cursor: grabbing; }
-#tab-gems:is([data-gem-tool="convert"], [data-gem-tool="dismantle"]) .gx-curve-cell.is-unavailable { filter: grayscale(1); opacity: .32; cursor: not-allowed; }
+#tab-gems:is([data-gem-tool="convert"], [data-gem-tool="dismantle"]) .gx-curve-cell.is-unavailable { filter: grayscale(1); opacity: .32; cursor: default; }
 .gi-shop { width: 50px; height: 50px; }
 .gi-row { width: 24px; height: 24px; }
 .gem-ico.gi-inline,
@@ -146,7 +146,7 @@
 
 #tab-gems .gx-actions .btn:disabled {
   opacity: .45;
-  cursor: not-allowed;
+  cursor: default;
 }
 
 /* ---- 寶石共鳴（js/ui-gem-resonance.js）---- */
@@ -207,7 +207,7 @@ button.gres-gem:hover { border-color: #7a6440; }
 #tab-gems[data-gem-tool="resonance"] .gres-library-note { display: block; }
 #tab-gems[data-gem-tool="resonance"] .gx-curve-cell[draggable="true"] { cursor: grab; }
 #tab-gems[data-gem-tool="resonance"] .gx-curve-cell[draggable="true"]:active { cursor: grabbing; }
-#tab-gems[data-gem-tool="resonance"] .gx-curve-cell.is-unavailable { filter: grayscale(1); opacity: .32; cursor: not-allowed; }
+#tab-gems[data-gem-tool="resonance"] .gx-curve-cell.is-unavailable { filter: grayscale(1); opacity: .32; cursor: default; }
 .gres-empty-tier { display: flex; align-items: center; justify-content: center; }
 .gres-hole.is-drop .gres-hit { fill: #76e6a126; stroke: #a9edbd; stroke-width: 4; }
 .gres-hole.is-reject .gres-hit { fill: #e0685c1a; stroke: #e0685c; stroke-width: 3; }

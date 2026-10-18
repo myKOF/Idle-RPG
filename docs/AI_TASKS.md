@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## GEM-WORKSHOP-CENTER-CURSOR-20261018 — 工坊置中與移除禁止游標
+
+- Owner：Codex；Done；單一開發者。使用者要求轉換／拆解九宮格與相關資訊整組右移置中，上方不可用寶石保持一般游標，全遊戲清查移除禁止游標，並寫入共通規範。前置既有工坊完成；開始工作區乾淨，fetch後四檔衝突預檢乾淨。
+- 允許css/gems.css工坊排版及禁止游標、index.html相應CSS快取、AI_RULES.md游標規範、本紀錄；若清查發現其他來源，先預檢再納入本次相同需求。禁止配方／數值／Worker／Protocol／存檔／素材及其他副本，不合併推送。
+- 驗收：兩工具九宮格／產出／按鈕／快捷提示整組水平置中，窄版不溢出；不可用寶石／停用按鈕維持置灰與不可操作，游標default，可拖曳維持grab；全遊戲自製CSS／JS／HTML無not-allowed或no-drop設定。既有寶石回歸、Build、瀏覽器畫面／Console、diff檢查後獨立Commit。後續使用者審閱整合；無素材變更。
+- 完成／修改4檔：css/gems.css將兩工具布局與快捷提示共用514px最大寬度、左右auto置中，結果欄可隨可用空間縮窄，保留九宮格／結果並排與既有不足寬度折行；將全部3處禁止游標（轉換／拆解十階來源、共鳴十階來源、合成停用按鈕）改default，原灰階／透明度／disabled與拖曳grab／grabbing保留。AI_RULES.md第8.8節記錄使用者規則；index.html僅gems CSS快取21→22；本紀錄同步。無新增程式檔、無素材或素材庫變更／Commit。
+- 清查：rg掃全庫not-allowed／no-drop，僅上述3處執行期CSS及PATCH歷史說明；修改後遊戲CSS／JS／HTML無設定殘留。另查cursor賦值／自訂url圖案及各拖放接線，未發現其他自製禁止游標來源。遊戲內文字狀態標記不是滑鼠游標，沿用原回饋。
+- 指令／結果：`node --test tests/gem-workshop.test.cjs tests/gem-convert-shift.test.cjs tests/gem-convert-stack.test.cjs tests/gem-resonance-ui.test.cjs tests/gem-tooltip.test.cjs tests/gem-compose-all.test.cjs`54/54通過；`npm.cmd run build`535檔語法／編譯檢查通過；`git diff --check`通過。純CSS可逆變更採既有回歸與實際瀏覽器驗證，未新增鏡像測試或改業務斷言。
+- 瀏覽器：browser技能IAB連線無backend後改隔離headless Edge、隨機localhost／seed1018新角色，使用正式index／Worker／GM測試原料。轉換與拆解布局／提示中心對齊面板，2400寬中心恰1013px，1366／1086誤差<0.001px、390寬誤差0；四尺寸面板scrollWidth不大於clientWidth、九格保留、兩欄並排。不可用來源實際disabled=true／opacity .32／cursor default，合法來源grab；合成最高階兩按鈕default／opacity .45，共鳴8個不可用來源全default且disabled。當頁所有元素的計算游標無禁止值；Console error／warning及pageerror皆0。兩工具正式畫面已目視，預覽保留本聊天visualizations/gem-workshop-dismantle-centered.png與gem-workshop-convert-centered.png；臨時服務／瀏覽器／驗證腳本已清理，不讀真人存檔。
+- 唯讀未改：AGENTS.md／docs/AI_WORKFLOW.md／prompts/codex.md、css/style.css與ashen-forge.css原工坊布局、js/ui.js／ui-gem-workshop.js／ui-gem-resonance.js來源禁用與拖放、gm_exec.js／main.js／bridge.js／sim.worker.js測試啟動與隔離、ui-scale.js既有縮放、上述六份回歸。無新增已知風險或未完成需求；限制為未實測所有瀏覽器／實體裝置，390寬仍沿全遊戲既有等比縮小，非手機版重製。Commit為本紀錄所在`[Codex] fix: 寶石工坊置中並移除禁止游標`，回覆附實際編號；可供Review／合併，未合併推送，建議整合後重載寶石頁驗收。
+
 ## POTENTIAL-REMOVE-20261018 — 完整移除潛力技能系統
 
 - Owner：Codex；Done；使用者明確要求刪除全部潛力技能、威能解鎖節點、點數與配置，追加指定清除 Skills 主表。單一開發者；目標衝突預檢乾淨，本副本其他寶石工作保留、共用檔只分段處理。
