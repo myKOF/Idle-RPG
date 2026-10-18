@@ -1,5 +1,6 @@
 'use strict';
 /* ============ 天堂威能：使用轉生威能點 ============ */
+var TALENT_COMPLETE_EFFECT_MULTIPLIER = 1.25;
 
 /* 升到目標等級的單級成本 = 目標等級。 */
 function talentUpgradeCost(id, targetLv) {
@@ -141,7 +142,7 @@ function talentTreeComplete(turn, levels) {
 }
 
 function talentCompleteMultiplier(turn, levels) {
-  return 1;
+  return talentTreeComplete(turn, levels) ? TALENT_COMPLETE_EFFECT_MULTIPLIER : 1;
 }
 
 /* GM 直接切換轉生次數時沒有完整的歷史升級紀錄，
@@ -188,14 +189,18 @@ function talentBonusesTemplate() {
   return t;
 }
 
-/* computeStats 熱路徑：levels 表與靜態節點清單各取一次，直接累加每級效果。 */
+/* computeStats 熱路徑：每轉只判斷一次全滿倍率，再累加各節點效果。 */
 function talentStatBonuses() {
   var out = talentBonusesTemplate();
   var levels = talentState().levels;
   var list = talentList();
+  var multipliers = {};
+  for (var turn = 1; turn <= TALENT_IMPLEMENTED_REINCARNATIONS; turn++) {
+    multipliers[turn] = talentCompleteMultiplier(turn, levels);
+  }
   for (var j = 0; j < list.length; j++) {
     var def = list[j].def;
-    var value = def.disabled ? 0 : talentLevelValue(def, talentLevelIn(levels, def.id));
+    var value = def.disabled ? 0 : talentLevelValue(def, talentLevelIn(levels, def.id)) * multipliers[list[j].turn];
     if (out[def.stat] !== undefined) out[def.stat] += value;
   }
   return out;

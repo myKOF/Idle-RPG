@@ -5407,6 +5407,7 @@ html *::-webkit-scrollbar-corner {
   border-radius: 50%;
   background: radial-gradient(circle at 50% 30%,#5a6252,#243545 68%);
   box-shadow: 0 0 0 7px #c9bd9130,0 0 0 8px #e9dca861,0 0 45px #fff0bd38,inset 0 0 18px #ffe4a124;
+  cursor: help;
 }
 
 #tab-talents .tlx-core::before,#tab-talents .tlx-core::after {
@@ -5438,10 +5439,9 @@ html *::-webkit-scrollbar-corner {
   color: #e4dcbf;
 }
 
-#tab-talents .tlx-core em {
-  font: 10px var(--af-serif);
-  letter-spacing: 3px;
-  color: #c0cacc;
+#sk-tooltip .tlx-tip-bonus {
+  margin-top: 8px;
+  color: #a4e75b;
 }
 
 #tab-talents .tlx-node {
