@@ -122,7 +122,7 @@ function gresBoardHTML(state, sel) {
       var slot = resonanceHoleState(state, r, hole);
       var min = resonanceHoleMinLevel(r, hole);
       var on = sel[0] === r && sel[1] === hole;
-      h += '<g class="gres-hole' + (slot.gems.length ? ' is-filled' : '') + (on ? ' is-sel' : '') + '" data-gres-hole="' + r + ':' + hole + '" role="button" tabindex="0" aria-pressed="' + on + '" aria-label="' + esc(reg.name + '區' + (hole === 0 ? '中心孔' : '外圈孔 ' + hole)) + '" style="--h:' + hue + '">' +
+      h += '<g class="gres-hole' + (slot.gems.length ? ' is-filled' : '') + (r === sel[0] ? ' is-region-active' : '') + (on ? ' is-sel' : '') + '" data-gres-hole="' + r + ':' + hole + '" role="button" tabindex="0" aria-pressed="' + on + '" aria-label="' + esc(reg.name + '區' + (hole === 0 ? '中心孔' : '外圈孔 ' + hole)) + '" style="--h:' + hue + '">' +
         gresSocketArt(c, r);
       if (slot.gems.length) {
         h += gresHoleGemsHTML(c, slot.gems, r, hole);

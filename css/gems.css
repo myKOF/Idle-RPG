@@ -105,6 +105,8 @@
 .gres-rim-light { fill: none; stroke: hsl(var(--h) 75% 84% / .75); stroke-width: .65; }
 .gres-inner-light { fill: none; stroke: hsl(var(--h) 80% 69% / .38); stroke-width: .5; }
 .gres-hole.is-filled .gres-face, .gres-hole:hover .gres-art { filter: brightness(1.15); }
+.gres-hole.is-region-active .gres-art { filter: brightness(1.45) saturate(1.2) drop-shadow(0 0 2px hsl(var(--h) 80% 65% / .6)); }
+.gres-hole.is-region-active .gres-socket-body { stroke: hsl(var(--h) 90% 82%); stroke-width: 1.25; }
 .gres-hit { fill: transparent; stroke: none; pointer-events: all; }
 .gres-selection-outline { fill: none; stroke: #fff7cf; stroke-width: 5; pointer-events: none; }
 .gres-hole text { pointer-events: none; text-anchor: middle; font-size: 11px; }

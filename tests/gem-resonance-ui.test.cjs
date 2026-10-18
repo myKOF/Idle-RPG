@@ -156,3 +156,23 @@ test('拖曳影像只有原寶石圖、維持畫面尺寸及中心熱點，成�
  const created=attached.length;const invalidSource=start(3);assert.equal(invalidSource.prevented,true);assert.equal(attached.length,created);
  c.bossFightConfigLocked=()=>true;assert.equal(start().prevented,true);assert.equal(attached.length,created);assert.ok(attached.every(n=>n.removed));
 });
+
+test('選孔僅加亮所選區7孔，切區／同區換孔／鍵盤／拖曳皆跟隨同一選孔與篩選狀態',()=>{
+ const {c,nodes,element}=ui({sapphire:{6:3},diamond:{6:3},ruby:{10:3}});
+ function check(region,hole){
+  const tags=nodes['gres-board'].innerHTML.match(/<g class="gres-hole[^>]+>/g);assert.equal(tags.length,49);
+  const active=tags.filter(t=>t.includes(' is-region-active'));assert.equal(active.length,7);
+  for(let h=0;h<7;h++)assert.ok(active.some(t=>t.includes('data-gres-hole="'+region+':'+h+'"')));
+  const selected=tags.filter(t=>t.includes(' is-sel'));assert.equal(selected.length,1);assert.ok(selected[0].includes('data-gres-hole="'+region+':'+hole+'"'));
+ }
+ for(let r=0;r<7;r++){
+  nodes['gres-board'].handlers.pointerdown({target:element({'data-gres-hole':r+':1'}),button:0,isPrimary:true});check(r,1);
+  c.gresSelectHole(r,0);check(r,0);
+  for(const key of nodes['gem-table'].innerHTML.matchAll(/data-gem-pick="([^"]+)"/g))assert.equal(c.resonanceTypeAllowed(r,key[1]),true);
+ }
+ c.G.player.resonance.holes['0:0']={lv:1,gems:[{type:'sapphire',level:6},{type:'sapphire',level:6}]};
+ c.gresSelectHole(0,0);check(0,0);assert.equal((nodes['gem-focus'].innerHTML.match(/ disabled/g)||[]).length,10);
+ c.gresSelectHole(1,1);drag({c,nodes,element},'diamond',6);drop({c,nodes,element},'6:1');assert.equal(c.calls.length,0);check(1,1);
+ nodes['gres-board'].handlers.keydown({target:element({'data-gres-hole':'0:2'}),key:'Enter',preventDefault(){}});check(0,2);
+ drag({c,nodes,element},'sapphire',6);drop({c,nodes,element},'0:3');check(0,3);assert.equal(c.calls.length,1);
+});

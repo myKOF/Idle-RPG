@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## GEM-RESONANCE-REGION-GLOW-20261018 — 選孔後整區亮起
+
+- Owner：Codex；Done，單一開發者。使用者要求選中一區任一孔後，整區7孔亮起，提示左側篩選寶石對應的鑲嵌區域；前置共鳴選孔／篩選已完成。工作區乾淨、七檔預檢乾淨。
+- 允許js/ui-gem-resonance.js、css/gems.css、index.html、tests/gem-resonance-ui.test.cjs、docs/GEM_RESONANCE.md、PATCH.md與本紀錄；禁止規則／數值／配置／Worker／協議／存檔／素材及其他副本，不合併推送。
+- 方式：同一權威resHole選孔狀態驅動整區7孔的亮度與原色邊緣，跨區切換即移除上一區亮起；原單孔六角選中框與拖曳合法／拒絕提示保留，不把整區提示當作庫存／階級／容量可用性判定。無新素材或素材庫變更。
+- 驗收：回歸驗7區各7孔／單孔選中／區域切換及篩選同步；既有共鳴與初始化回歸、Build／diff；隔離瀏覽器實際點按／鍵盤／拖曳、空孔與已鑲孔亮度、49孔命中、窄視窗及Console，完成Commit後使用者重載及整合。
+- 完成7檔：gresBoardHTML依原sel[0]為所選區7孔附is-region-active，CSS增加原色切面亮度／飽和度／邊緣柔光及亮邊；跨區或拖放選孔後沿原render更新，無新狀態／事件／Timer。原單孔頂層5px輪廓、透明命中面、拖曳綠／紅提示與所有庫存／容量／階級判斷保留。index僅gems CSS1.0.12→13、共鳴JS1.0.9→10；回歸、操作說明、PATCH及本紀錄同步，無素材變更／素材庫Commit。
+- 指令／結果：`node --test tests/gem-resonance-ui.test.cjs tests/gem-resonance.test.cjs tests/init-ui-smoke.test.cjs`26/26通過；新增1項實際經pointerdown／鍵盤／拖曳走七區各7孔與單孔選中，驗篩選種類、滿孔仍亮且上方禁用、不符拖放不切區、合法拖放同步選孔；`npm.cmd run build`535檔通過；`git diff --check`通過。
+- 瀏覽器：隔離headless Edge／隨機localhost／seed新角色、正式index／UI／CSS／Worker與GM測試庫存；七區逐區點選恰7個active／1個selected，computed filter及亮邊生效，鍵盤及原生dragTo鑲入後同步。空孔與已鑲孔同區皆亮、單孔框保留；1920×900、2560×1080、1366×768、390×844均49孔中心hit-test全通過、盤面與詳情無重疊，Console warning／error、pageerror與HTTP錯誤0。實際截圖本聊天visualizations/gem-resonance-region-glow.png；服務／瀏覽器／臨時腳本清理，不讀真人存檔。
+- 自我Review／唯讀：AI規範／工作流／Agent文件、原resHole／篩選與庫存禁用／拖曳判定、SVG切面與命中層、共鳴規則及原回歸；數值／資料／Protocol／存檔與素材未改。收尾預檢仍無其他副本或分支修改；無本次未完成項或新增已知風險，未實測其他瀏覽器／實體觸控及低階裝置長戰。Commit為本紀錄所在[Codex] fix提交，回覆附編號；可供Review／合併，未合併推送，下一步重載寶石→共鳴選孔查看整區提示。
+
 ## GEM-RESONANCE-DRAG-ICON-20261018 — 拖曳只顯示寶石圖示
 
 - Owner：Codex；Done，單一開發者。使用者要求共鳴上方寶石拖曳時只帶icon，移除卡片框線、階級／能力／庫存文字。前置拖曳鑲嵌已完成，工作區乾淨、目標預檢乾淨。
