@@ -433,7 +433,7 @@ test('USAGE-16e 技能的顯示名稱只有一份實作', function () {
    舊寫法是「傳說連鎖閃電」——那不是任何東西的名字，是人在文件上取的描述，
    於是下拉上標著一個在遊戲裡查不到的詞（使用者回報：找遍特效也沒有這個名字）。
    實際在用的是傳奇特效【迅雷穿刺】（原本還有【閃電飛越】，2026-09-29 已隨舊版技能刪除），名稱在 Equipment_Affix.csv 上；
-   潛力技能的名稱在 Skills.csv 上。設計師改名時這一條要當場轉紅。
+   設計師改名時這一條要當場轉紅。
    ============================================================ */
 function csvRows(file, want) {
   const rows = U.csvParse(fs.readFileSync(path.join(REPO, file), 'utf8'));
@@ -452,13 +452,10 @@ function csvRows(file, want) {
   });
 }
 
-test('USAGE-17 標成傳奇／神鑄特效或潛力技能的用途，名字要在對應的表上找得到', function () {
-  const names = { 傳奇特效: new Set(), 神鑄特效: new Set(), 潛力技能: new Set() };
+test('USAGE-17 標成傳奇／神鑄特效的用途，名字要在對應的表上找得到', function () {
+  const names = { 傳奇特效: new Set(), 神鑄特效: new Set() };
   csvRows('config/CSV/Equipment_Affix.csv', { pool: '池', name: '名稱' }).forEach(function (r) {
     if (names[r.pool] && r.name) names[r.pool].add(r.name);
-  });
-  csvRows('config/CSV/Skills.csv', { cat: '系統分類', name: '名稱' }).forEach(function (r) {
-    if (r.cat === 'potential' && r.name) names['潛力技能'].add(r.name);
   });
   Object.keys(names).forEach(function (kind) {
     assert.ok(names[kind].size > 0, kind + '：一個名稱都讀不到，欄位對應壞了');
@@ -468,16 +465,18 @@ test('USAGE-17 標成傳奇／神鑄特效或潛力技能的用途，名字要�
      這樣寫而不是列出 preset 清單：之後新增的列自動受同一條規則管。 */
   const checked = [];
   const bad = [];
+  const checkedKinds = new Set();
   U.readOutsideTables(REPO).forEach(function (row) {
     Object.keys(names).forEach(function (kind) {
       if (row.where.indexOf(kind) < 0) return;
+      checkedKinds.add(kind);
       checked.push(row.id + '＝' + row.label);
       if (!names[kind].has(row.label)) {
         bad.push(row.id + ' 的「' + row.label + '」不是' + kind + '的名稱');
       }
     });
   });
-  assert.ok(checked.length >= 4, '應該有好幾列標著傳奇／神鑄特效或潛力技能，實際 ' + checked.length + ' 列');
+  assert.deepEqual(Array.from(checkedKinds).sort(), Object.keys(names).sort(), '現行傳奇／神鑄兩種來源都要檢查到');
   assert.deepEqual(bad, [],
     '這幾列的標籤在遊戲的表上查不到——用表上的名稱，不要自己取一個描述');
 });

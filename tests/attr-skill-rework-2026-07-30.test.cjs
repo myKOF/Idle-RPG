@@ -294,7 +294,7 @@ test('penUp 增益同時加成物理與魔法穿透，且各攻擊來源都吃�
   assert.equal(c.effectivePPen(st, ent), 125);
   assert.equal(c.effectiveMPen(st, ent), 55);
   assert.equal(c.effectivePPen(st, null), 100);      // 無實體時只用屬性值
-  ['js/combat.js', 'js/skills2.js', 'js/legendary.js', 'js/potential.js'].forEach((f) => {
+  ['js/combat.js', 'js/skills2.js', 'js/legendary.js', ].forEach((f) => {
     const src = read(f);
     assert.ok(/effective[PM]Pen\(/.test(src), f + ' 未套用 penUp 增益');
     assert.doesNotMatch(src, /pen: st\.[pm]Pen\b/);

@@ -81,14 +81,14 @@ function newGameState() {
        登錄與清理條件見 ONE_TIME_MIGRATIONS.md。 */
     loadoutCapClampV1: true,   // 裝載欄上限下修後裁切超額格數
     legacySkillRemovalV1: true, // 舊版技能系統移除：清除舊技能／融合技、任務進度索引平移
-    powerThreatV1: true, // 威能十級制與潛力改用威能點
+    powerThreatV1: true, // 威能十級制
 
     savedAt: Date.now(),
     player: {
       level: 1, xp: 0,
       reincarnations: 0,
       reincarnationTalentPoints: 0,
-      talents: { levels: {}, potentialLevels: {} },
+      talents: { levels: {} },
       gold: INITIAL_GOLD, scrap: INITIAL_SCRAP, essence: INITIAL_ESSENCE, ancientEssence: 0, soulOrigin: 0,
       dust: 0,                // 魔塵（神鑄材料）
       gems: gems,
@@ -99,10 +99,8 @@ function newGameState() {
       gemShop: { level: 1, items: [], refreshCount: 0, hourStart: Date.now() },
       books: books,
       invUpgrades: 0,
-      // 技能點由「技能熟練度」提供（2026-07-30 改制）；目前只用於潛力技能
-      skillPoints: 0,
-      skillMastery: { level: 0, xp: 0 }, // 技能熟練度：打怪/道具給經驗，每級 1 技能點，0~1000 級
-      loadout: [],  // 裝載欄：'sg:<群組id>'（新版技能）與 'potential:<id>'（潛力技能）
+      skillMastery: { level: 0, xp: 0 }, // 技能熟練度：打怪/道具給經驗，等級上限由參數表控制
+      loadout: [],  // 裝載欄：'sg:<群組id>'（新版技能）
       /* 新版技能群組（2026-08-13 技能改造，js/skills2.js）：
          levels = { 群組id: [各階等級] }。空字典＝各群組採預設（第 1 階 Lv.1、其餘 0），
          內容於升級時才建立——避免 mergeDefaults 深合併把玩家調過的值「復活」回預設。 */

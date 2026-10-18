@@ -7,10 +7,10 @@ const root = path.resolve(__dirname, '..');
 
 /* 天堂威能十級制：固定每級效果與逐級成本。 */
 
-test('四個舊潛力解鎖威能保留資料並停用，不阻擋整轉全滿', () => {
+test('四個舊潛力解鎖威能已刪除，不阻擋整轉全滿', () => {
   const c=loadContext(); c.G.player.reincarnations=10; c.G.player.reincarnationTalentPoints=999;
   for(const id of ['t3_potential','t4_potential','t7_potential','t10_potential']) {
-    assert.equal(c.talentDef(id).disabled,true); assert.match(c.talentUpgrade(id),/停用/);
+    assert.equal(c.talentDef(id),null); assert.match(c.talentUpgrade(id),/找不到/);
   }
   for(const def of c.TALENT_TREES[3]) if(!def.disabled) c.G.player.talents.levels[def.id]=10;
   assert.equal(c.talentTreeComplete(3),true); assert.equal(c.talentCompleteMultiplier(3),2);
@@ -49,9 +49,9 @@ function talentPanelSnapshot(context) {
 /* 節點數：帶「每個元素一個節點」的 5/6/8/9 轉＝元素數 + 2，其餘六轉維持 8 個。
    2026-08-07 新增地屬性後為 9 個，2026-08-18 新增風屬性後為 10 個。
    節點數量寫死在測試裡是為了擋住「漏補某一轉」的疏失，所以逐轉列出而不是只檢查「全部相等」。 */
-const TALENT_TREE_SIZES = { 1: 8, 2: 8, 3: 8, 4: 8, 5: 10, 6: 10, 7: 8, 8: 10, 9: 10, 10: 8 };
+const TALENT_TREE_SIZES = { 1: 8, 2: 8, 3: 7, 4: 7, 5: 10, 6: 10, 7: 7, 8: 10, 9: 10, 10: 7 };
 
-test('天賦資料包含 1～10 轉節點（元素轉 10 個、其餘 8 個）與 10 個潛力節點', () => {
+test('天賦資料包含 1～10 轉節點（元素轉 10 個、其餘 8 個）；不再有潛力節點', () => {
   const c = loadContext();
   assert.deepEqual(Object.keys(c.TALENT_TREES).map(Number), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
   for (const [turn, size] of Object.entries(TALENT_TREE_SIZES)) {
@@ -66,11 +66,11 @@ test('天賦資料包含 1～10 轉節點（元素轉 10 個、其餘 8 個）�
     }
   }
   assert.equal(c.TALENT_IMPLEMENTED_REINCARNATIONS, 10);
-  assert.equal(c.POTENTIAL_TALENTS.length, 10);
+  assert.equal(c.POTENTIAL_TALENTS, undefined);
   assert.equal(c.TALENT_MAX_LEVEL, 10);
   // 潛力解鎖節點：3/4/7 轉各解鎖 3 個、10 轉解鎖 1 個，合計 10
   const unlockDefs = c.talentList().filter((e) => e.def.stat === 'potentialUnlock');
-  assert.deepEqual(Array.from(unlockDefs, (e) => e.turn), [3, 4, 7, 10]);
+  assert.deepEqual(Array.from(unlockDefs), []);
   assert.ok(unlockDefs.every(e => e.def.disabled && e.def.unlocks === undefined));
 });
 
@@ -97,56 +97,12 @@ test('威能升到N級消耗N點，滿級55點，降級與清除精確退點', (
   assert.match(c.talentUpgrade('t1_str'),/需要 3 點/);
 });
 
-test('威能仍依轉數開放，所有潛力無解鎖限制並使用威能點', () => {
-  const c=loadContext(); assert.match(c.talentUpgrade('t2_crit'),/尚未達到 2 轉/);
-  c.G.player.reincarnations=0; c.G.player.reincarnationTalentPoints=55; c.G.player.gold=0;
-  assert.equal(c.potentialUnlockedCount(),10); assert.equal(c.potentialUnlockLimit(),10);
-  const id=c.POTENTIAL_TALENTS[9].id; assert.equal(c.potentialUnlocked(id),true);
-  assert.equal(c.potentialMax(id),null); assert.equal(c.potentialLevel(id),10);
-  assert.equal(c.G.player.gold,0); assert.equal(c.G.player.reincarnationTalentPoints,0);
-  assert.equal(c.potentialDowngrade(id),null); assert.equal(c.G.player.reincarnationTalentPoints,10);
-  assert.equal(c.potentialDelete(id),null); assert.equal(c.G.player.reincarnationTalentPoints,55);
-});
 
-test('停用節點不再給技能點，潛力投入不佔用技能點預算', () => {
-  const c=loadContext(); c.G.player.talents.levels.t3_potential=10;
-  c.G.player.talents.potentialLevels[c.POTENTIAL_TALENTS[0].id]=10;
-  assert.equal(c.talentSkillPointBonus(),0); assert.equal(c.potentialSpentSkillPoints(),0);
-  assert.equal(c.spentSkillPoints(),0); assert.equal(c.talentSpentPoints(),110);
-});
 
-test('舊潛力解鎖威能tips說明停用原因', () => {
-  const c=loadContext(); c.document={getElementById:()=>null};
-  vm.runInContext(fs.readFileSync(path.join(root,'js/ui.js'),'utf8'),c);
-  for(const id of ['t3_potential','t4_potential','t7_potential','t10_potential']) assert.match(c.talentEffectDescription(c.talentDef(id),0),/停用/);
-});
 
 /* 改版前潛力是「聚合到 talentStatBonuses 的被動加成」（b.potentialCdr / b.potentialInvCap）。
    3fdf419 實裝後改為主動技能：有冷卻、持續時間與機制鍵，效果在施放時生效，
    不再有任何 potential* 的衍生加成鍵。本測試改為鎖住現行模型。 */
-test('潛力技能為主動技能，不再彙總為衍生加成', () => {
-  const c = loadContext();
-  c.G.player.reincarnations = 5;
-  const [pot1] = c.POTENTIAL_TALENTS.map((p) => p.id);
-  c.G.player.talents.potentialLevels[pot1] = 3;
-
-  const b = c.talentStatBonuses();
-  const potentialKeys = Object.keys(b).filter((k) => /^potential/.test(k));
-  assert.deepEqual(potentialKeys, [], 'talentStatBonuses 不應再有 potential* 鍵');
-
-  /* 10 個潛力技能分三種型別：active（8）、passiveTrigger（1）、passive（1）。
-     共通點是都掛在 potential 分類、都有機制鍵；只有非純被動才有冷卻。 */
-  const byType = {};
-  for (const def of c.POTENTIAL_TALENTS) {
-    assert.equal(def.cat, 'potential');
-    assert.ok(typeof def.mech === 'string' && def.mech, def.id + ' 應有機制鍵');
-    if (def.type !== 'passive') {
-      assert.ok(Number(def.cd) > 0, def.id + '（' + def.type + '）應有冷卻時間');
-    }
-    byType[def.type] = (byType[def.type] || 0) + 1;
-  }
-  assert.deepEqual(byType, { active: 8, passiveTrigger: 1, passive: 1 });
-});
 
 /* ---- computeStats 接線（V2 乘算/加總語意） ---- */
 
@@ -282,14 +238,11 @@ test('GM 變更轉生次數會清空天賦並依新轉生次數重算天賦點',
   c.G.player.level = 1234;
   c.G.player.reincarnationTalentPoints = 999999;
   // 潛力 id 以 POTENTIAL_TALENTS 為準：清除只走真實存在的鍵，塞假 id 不會被清
-  const [pot1] = c.POTENTIAL_TALENTS.map((p) => p.id);
   c.G.player.talents.levels.t1_str = 8;
-  c.G.player.talents.potentialLevels[pot1] = 4;
 
   c.resetTalentsForReincarnationGM(3);
 
   assert.equal(c.G.player.talents.levels.t1_str, 0);
-  assert.equal(c.G.player.talents.potentialLevels[pot1], 0);
   assert.equal(c.G.player.reincarnationTalentPoints, (3 - 1) * (c.REINCARNATION_LEVEL - 1) + (Math.min(1234, c.REINCARNATION_LEVEL) - 1));
 
   c.G.player.level = c.REINCARNATION_LEVEL;
@@ -297,73 +250,8 @@ test('GM 變更轉生次數會清空天賦並依新轉生次數重算天賦點',
   assert.equal(c.G.player.reincarnationTalentPoints, 0);
 });
 
-test('全部潛力技能的效果文字清楚標示數值意義', () => {
-  const c = loadContext();
-  const ui = fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8');
-  c.document = { getElementById: () => null };
-  vm.runInContext(ui, c, { filename: 'js/ui.js' });
 
-  const expectedByMechanic = {
-    aspd: /攻速加成/,
-    chainLightning: /魔攻/,
-    cdrUncap: /冷卻縮減/,
-    invuln: /無敵結界/,
-    undyingGuard: /免除死亡/,
-    enemySlow: /敵人攻速降低/,
-    crossCore: /雷霆過載的雷擊額外獲得.*物理攻擊力/,
-    omega: /爆擊率%/,
-    sacredInvert: /生命與法力回復/,
-    timeStop: /所有敵人靜止/
-  };
-  for (const def of c.POTENTIAL_TALENTS) {
-    assert.match(c.describePotentialSkill(def, 1), expectedByMechanic[def.mech], def.id);
-  }
-});
 
-test('潛力區塊位於技能界面，天賦界面不再顯示潛力面板與技能點摘要', () => {
-  const ui = fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8');
-  const talentStart = ui.indexOf('function renderTalents()');
-  const skillsStart = ui.indexOf('function renderSkills()');
-  const modalStart = ui.indexOf('/* ----', talentStart);
-  const talentRender = ui.slice(talentStart, modalStart);
-  const skillsRender = ui.slice(skillsStart, ui.indexOf('/* ----', skillsStart));
-
-  assert.doesNotMatch(talentRender, /POTENTIAL_TALENTS\.map/);
-  assert.match(skillsRender, /potential-skill-panel/);
-  assert.match(skillsRender, /POTENTIAL_TALENTS\.map\(function \(def, index\)/);
-});
-
-test('潛力技能沿用一般技能的升級彈窗與操作流程', () => {
-  const ui = fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8');
-  const talentModalStart = ui.indexOf('function renderTalentModal()');
-  const talentModalEnd = ui.indexOf('function renderTalents()', talentModalStart);
-  const skillModalStart = ui.indexOf('function renderSkillModal()');
-  const skillModalEnd = ui.indexOf('/* ---- 技能懸停提示 ---- */', skillModalStart);
-  const talentModal = ui.slice(talentModalStart, talentModalEnd);
-  const skillModal = ui.slice(skillModalStart, skillModalEnd);
-
-  assert.match(ui, /openSkillModal\('potential:' \+ id\)/);
-  assert.match(ui, /function potentialSkillId/);
-  assert.match(skillModal, /class="skd-head"/);
-  assert.match(skillModal, /class="skill-modal-copy"/);
-  assert.match(skillModal, /class="skill-modal-points"/);
-  assert.match(skillModal, /skill-modal-actions/);
-  /* 2026-09-29：舊技能系統移除後，彈窗只剩「新版技能群組（sg:）」與「潛力技能」兩條分支；
-     潛力分支的按鈕全部帶裝載欄鍵 loadoutRef（＝'potential:<id>'），不再有一般技能的 skillRef。 */
-  assert.match(skillModal, /var loadoutRef = 'potential:' \+ id;/);
-  ['learn', 'max', 'downgrade', 'delete', 'equip', 'unequip'].forEach((action) => {
-    assert.match(skillModal, new RegExp('data-skill-' + action + '="\' \\+ loadoutRef'), '潛力技能彈窗缺少 ' + action + ' 按鈕');
-  });
-  assert.doesNotMatch(skillModal, /skillRef/, '彈窗不該再有舊一般技能的 skillRef');
-  assert.doesNotMatch(talentModal, /potential-modal|data-potential-/);
-
-  // 操作流程：彈窗按鈕的點擊處理走既有的 talent.potential* 指令（升級／滿級／降級／重置），不是已刪除的 skill.* 指令
-  ['potentialUpgrade', 'potentialMax', 'potentialDowngrade', 'potentialDelete'].forEach((cmd) => {
-    assert.match(ui, new RegExp("'talent\\." + cmd + "', \\w+, \\w+, " + cmd), '缺少 talent.' + cmd + ' 的點擊接線');
-  });
-  assert.match(ui, /'skill\.equipLoadout', equipRef,/);
-  assert.doesNotMatch(ui, /'skill\.(learn|maxUpgrade|downgrade|delete|fuse|deleteFusion)'/, '舊技能指令已刪除，UI 不得再送');
-});
 
 test('5/9 轉元素天賦使用攻擊附加元素傷害的完整說明', () => {
   const c = loadContext();
@@ -419,12 +307,9 @@ test('天賦與潛力圖示使用正式 tooltip，不再使用原生 title 提�
   const snapshot = talentPanelSnapshot(c);
   const headerSnapshot = { player: { level: c.REINCARNATION_LEVEL || 9999, reincarnations: 10 } };
   const talentHtml = c.talentNodeHTML(c.talentDef('t5_fire'), 5, snapshot);
-  const potentialHtml = c.potentialNodeHTML(c.potentialDef('velocityForce'), 0, snapshot, headerSnapshot);
 
   assert.match(talentHtml, /data-talent-tip="t5_fire"/);
-  assert.match(potentialHtml, /data-sk="potential:velocityForce"/);
   assert.doesNotMatch(talentHtml, /\stitle=/);
-  assert.doesNotMatch(potentialHtml, /\stitle=/);
   assert.match(ui, /function showTalentTooltip\(ref, anchorEl\)/);
   assert.match(ui, /showTalentTooltip\(talentTipHover\.getAttribute\('data-talent-tip'\), talentTipHover\)/);
 });

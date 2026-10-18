@@ -43,23 +43,23 @@ test('角色死亡期間技能冷卻持續遞減，復活時不回到死亡瞬�
   };
   context.getStats = () => ({ hp: 100, mp: 100, aspd: 1 });
   context.FIELD.player = context.newPlayerEntity({ hp: 0, mp: 0, aspd: 1 });
-  context.FIELD.player.skillCds = { 'sg:thrust': 4.4, 'potential:chronoPilfer': 2.2 };
+  context.FIELD.player.skillCds = { 'sg:thrust': 4.4, 'sg:knife': 2.2 };
   context.FIELD.reviveCd = 5;
   context.FIELD.despawnCd = 0;
 
   context.fieldTick(1);
   assertClose(context.FIELD.player.skillCds['sg:thrust'], 3.4);
-  assertClose(context.FIELD.player.skillCds['potential:chronoPilfer'], 1.2);
+  assertClose(context.FIELD.player.skillCds['sg:knife'], 1.2);
   assert.equal(context.FIELD.reviveCd, 4);
 
   context.fieldTick(3);
   assertClose(context.FIELD.player.skillCds['sg:thrust'], 0.4);
-  assert.equal(context.FIELD.player.skillCds['potential:chronoPilfer'], 0);
+  assert.equal(context.FIELD.player.skillCds['sg:knife'], 0);
   assert.equal(context.FIELD.reviveCd, 1);
 
   context.fieldTick(1);
   assert.equal(context.FIELD.reviveCd, 0);
   assert.equal(context.FIELD.player.skillCds['sg:thrust'], 0);
-  assert.equal(context.FIELD.player.skillCds['potential:chronoPilfer'], 0);
+  assert.equal(context.FIELD.player.skillCds['sg:knife'], 0);
   assert.equal(context.FIELD.player.hp, 100);
 });

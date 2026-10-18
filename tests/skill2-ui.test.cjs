@@ -135,7 +135,7 @@ function detail(c, gid, snap, tier, gold, focus) {
 
 function loadoutClickHarness(c, snap) {
   const start = ui.indexOf("  var uq = e.target.closest('[data-skill-unequip]');");
-  const end = ui.indexOf('// 點擊技能樹節點', start);
+  const end = ui.indexOf('// 敵人情報 Tooltip', start);
   assert.ok(start >= 0 && end > start, '使用正式委派的卸下與快捷格點擊分支');
   vm.runInContext('function clickLoadout(e) {\n' + ui.slice(start, end) + '\n}', c);
   const state = { renders: 0, selected: null, detail: '', scrolls: [], commands: [] };

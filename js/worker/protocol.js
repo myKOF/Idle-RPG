@@ -19,8 +19,7 @@
    退回泛用受擊爆點會變成滿畫面的火花。26 → 27。
    v26（2026-09-03 VFX Preset 化）：VFX 事件新增可選欄位 vfx＝{ cast, attack, projectile, hit, ground }
    （角色 → vfx/presets/<id>.json 的 preset id），值來自技能表／狀態表新增的特效欄
-   （config/CSV/Skills.csv、Skills2.csv 五欄；Status.csv 三欄），由發送端（skillVfxSpec／
-   sgEmitVfx／sgEmitPlayerVfx）依「這一發屬於表上哪一列」帶出。顯示層（Runtime Adapter）
+   （config/CSV/Skills2.csv 五欄；Status.csv 三欄），由發送端（sgEmitVfx／sgEmitPlayerVfx）依「這一發屬於表上哪一列」帶出。顯示層（Runtime Adapter）
    有 vfx 就播 Preset、沒有就退回既有的程式畫法；舊事件缺此欄位＝完全沿用舊畫法。
    fxKind／variant 仍然決定行為與時序（飛行、落下、跟隨、持續），vfx 只決定「長什麼樣」。
    v25（2026-08-26 火狩圈距與火神降臨）：VFX 環形 area 再新增 rGrowTo／rGrowSec
@@ -66,7 +65,7 @@
 /* v39：可選 vfx.area.chainId（連鎖閃電同一條鏈的識別）。
    v40（2026-09-29 舊版技能系統移除）：刪除 skill.learn／maxUpgrade／downgrade／delete／fuse／deleteFusion
    與參數型別 'ids'（僅融合技使用）；TICK_VIEW_KEYS 移除 magicScroll；skills 面板投影只剩
-   loadout／loadoutSize／skills2／points／budget／mastery。指令表 93 → 87。 */
+   loadout／loadoutSize／skills2／mastery。指令表 93 → 87。 */
 /* v41（吸血／吸魔改定值）：passivePanel 移除 hpDrainBase／mpDrainBase／hpDrain／mpDrain；
    lifesteal／manaSteal 改為套用汲取倍率後「每次回復的定值」（不再是百分比，也不再依每秒回復換算）。
    主執行緒讀欄位一律帶 fallback，舊快照缺欄時退回基礎值。 */
@@ -86,7 +85,7 @@
    戰中拒絕配置變更，沿用既有錯誤封包，指令數／參數／快照與存檔格式不變。 */
 /* v53（2026-10-17 寶石共鳴）：新增指令 gem.resonanceSocket／resonanceUnsocket／resonanceUpgrade（94 → 97）；
    gems 面板新增 resonance＝{ holes }（G.player.resonance，存檔欄位同名；舊快照缺欄視為空）。 */
-var WORKER_PROTOCOL_VERSION = 53;
+var WORKER_PROTOCOL_VERSION = 54;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -160,7 +159,7 @@ var EVENT_KINDS = {
      fxKind  特效原型：projectile 投射物／slash 斬擊／burst 爆發／beam 貫穿／
              rain 天降／aura 領域／selfBuff 我方增益／curse 敵身詛咒（v17）／
              chain 連鎖雷鏈（v17，targets 順序即彈跳路徑）／impact 純受擊（v17）。
-             由 skillVfxSpec() 依技能資料推導；普攻與天罰由 combat.js 直接組事件。
+             由技能發送端依技能資料決定；普攻與天罰由 combat.js 直接組事件。
              （欄位不能叫 kind——shim 會把事件種類寫進 event.kind，會被蓋掉。）
      targets 目標圖層 id 陣列（mv-float-N／tb-float），定址方式與 FLOAT 一致——
              同樣不得帶實體參照，理由見上。
@@ -174,7 +173,7 @@ var EVENT_KINDS = {
      elem（v17，可選）：元素鍵 fire/ice/lightning/poison/light/dark/earth 或 null。
              顯示層據此挑選元素化畫法（火球拖焰／冰晶碎裂／電花／毒泡／聖光／暗渦）
              與命中時的受擊特效；null 時退回 color 單色畫法。
-     cat（v17，可選）：技能分類（phys/magic/def/special/fusion/potential）或
+     cat（v17，可選）：技能分類（phys/magic/def/special/fusion）或
              'basic'（普攻）／'enemy'（敵方動作），供顯示層微調風格。
      variant（v17，可選）：特效變體字串（meteor/pillar/chain/cyclone/…，清單見
              js/vfx.js 各原型的變體畫法）。顯示層不認得的 variant 一律
@@ -216,7 +215,7 @@ var EVENT_KINDS = {
              ⚠️ 這組數字就是模擬層實際判定的傷害範圍，顯示層不得再套第二組縮放。
      vfx（v28，可選）：{ cast, attack, projectile, hit, ground, field } 角色 → Preset id
              （vfx/presets/<id>.json），每個鍵都可省略。值來自技能表／狀態表的特效欄，
-             發送端依「這一發屬於表上哪一列」帶出（js/skills.js skillVfxSpec、
+             發送端依「這一發屬於表上哪一列」帶出（
              js/skills2.js sgVfxRoles）。顯示層有這個欄位就以 VFX Core 播 Preset，
              fxKind／variant／travelMs／area 仍決定行為與時序；沒有欄位＝退回程式畫法。
              只放 id 字串，不放路徑、不放 Preset 內容。
@@ -226,7 +225,7 @@ var EVENT_KINDS = {
   VFX: 'vfx',
   /* { act, elId, target, lockMs }  角色動作（v36）。模擬層只說「發生了什麼動作」，
      姿勢與播放時序完全由顯示層決定（js/battle-renderer.js onAct）。
-     act     'cast'＝開始施放技能（js/skills.js beginSkillCast：施放硬直的起點，新版、舊版、潛能技能共用）。
+     act     'cast'＝開始施放技能（js/skills.js beginSkillCast：施放硬直的起點，技能共用）。
              超神重複施放、暴風之舞化身這類自動連發不送：每一下都播施法姿勢會一直從頭抽搐。
      elId    施放者的浮字圖層（pv-float＝野外、tp-float＝高塔），定址同 FLOAT。
      target  主要目標的圖層 id（mv-float-N／tb-float），沒有就 null；顯示層據此面向目標。
@@ -369,7 +368,7 @@ var COMMANDS = {
 
   /* -- 新版技能群組（v19，js/skills2.js）--
      group 是群組定義鍵（SKILLS2 的鍵）、tier 是格位索引 0~7；裝載沿用
-     skill.equipLoadout／skill.unequipLoadout（id 帶 'sg:' 前綴，比照 'potential:'）。
+     skill.equipLoadout／skill.unequipLoadout（id 帶 'sg:' 前綴）。
      ⚠️ tier 上限 7 是「超神進化」那一格（SG_ULT_SLOT，2026-08-19）：它不是 tiers 的
      第 8 個元素，而是群組層的三選一效果；Worker 端各指令自己以 sgIsUltSlot 分流，
      沒有開放超神進化的群組傳 7 會被該指令回「未知階數」。 */
@@ -388,10 +387,6 @@ var COMMANDS = {
   'talent.max':            { fn: 'talentMax',        args: { id: 'str' },                         dirty: ['talents', 'header'] },
   'talent.downgrade':      { fn: 'talentDowngrade',  args: { id: 'str' },                         dirty: ['talents', 'header'] },
   'talent.delete':         { fn: 'talentDelete',     args: { id: 'str' },                         dirty: ['talents', 'header'] },
-  'talent.potentialUpgrade':   { fn: 'potentialUpgrade',   args: { id: 'str' },                   dirty: ['talents', 'header'] },
-  'talent.potentialMax':       { fn: 'potentialMax',       args: { id: 'str' },                   dirty: ['talents', 'header'] },
-  'talent.potentialDowngrade': { fn: 'potentialDowngrade', args: { id: 'str' },                   dirty: ['talents', 'header'] },
-  'talent.potentialDelete':    { fn: 'potentialDelete',    args: { id: 'str' },                   dirty: ['talents', 'header'] },
 
   /* -- 煉獄之塔 -- */
   /* fn:null：手動挑戰同時代表「取消等待中的連挑」（ui.js 現行是先清 TOWER.auto 再開打）。
@@ -492,7 +487,7 @@ var INTERNAL_ONLY = ['addToInventory', 'rollGemShop', 'shopHourlyReset', 'forgeL
 /* ---- 查詢函式（惰性初始化，不是指令）----
    forgeState / gemShop 會在第一次呼叫時建立子狀態；它們只能在 Worker 端執行，
    主執行緒改由 snapshot 取得結果。 */
-var LAZY_QUERIES = ['forgeState', 'gemShop', 'availableSkillPoints'];
+var LAZY_QUERIES = ['forgeState', 'gemShop'];
 
 function commandSpec(name) {
   return Object.prototype.hasOwnProperty.call(COMMANDS, name) ? COMMANDS[name] : null;
@@ -590,7 +585,6 @@ function bossFightBlocksCommand(name) {
     'gem.socket', 'gem.socketFused', 'gem.unsocket', 'rune.socket', 'rune.erase',
     'gem.resonanceSocket', 'gem.resonanceUnsocket',
     'talent.upgrade', 'talent.max', 'talent.downgrade', 'talent.delete',
-    'talent.potentialUpgrade', 'talent.potentialMax', 'talent.potentialDowngrade', 'talent.potentialDelete'
   ].indexOf(name) !== -1;
 }
 

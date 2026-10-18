@@ -68,7 +68,6 @@
    規則：
      - 每階上限 SG_TIER_MAX_LV 級，固定不隨轉生提高
      - 前一階至少 Lv.1 才可投資下一階；第 1 階預設開啟（恆視為至少 Lv.1）
-     - 裝載欄鍵前綴 'sg:<群組id>'（比照潛力技能 'potential:' 的並行前例）
 
    分工：
      - 數值 SSOT：下方 SKILLS2 純資料 literal
@@ -709,8 +708,7 @@ function sgAfterSkillChange() {
 }
 
 /* ---- 「你造成的所有傷害提高」的唯一加總入口 ----
-   目前四個來源：潛力【時空凝滯】allDmgUp、超神進化【死亡收割者】sgDeathReaper、
-   超神進化【殺神領域】sgSlayerMark、傳奇【不屈之誓】sgDeathDefer。
+   來源包含符文真言 allDmgUp、超神進化與傳奇效果。
    普攻（js/combat.js playerAtkCfg）與新版技能（sgAtkCfg）都讀這一支——
    兩邊各自列舉的話，下次新增來源必然會漏掉其中一邊。 */
 function skills2AllDamageUpPct(pEnt) {
@@ -1515,7 +1513,7 @@ function skills2Cooldown(gid, lvs, pEnt) {
   var base = Number(g.cd) || 10;
   if (gid === 'gale' && lvs[5] > 0) base = Math.max(1, base - sgVal(g.tiers[5].fx, 'sec', lvs[5]));
   var cd = (typeof skillCdFor === 'function')
-    ? skillCdFor({ cd: base }, (typeof buffVal === 'function' ? buffVal(pEnt, 'chronoCdr') : 0))
+    ? skillCdFor({ cd: base })
     : base;
   // 符文真言的冷卻乘區（js/runeword.js）：乘算、突破冷卻縮減上限；仍受最低施放間隔約束
   if (typeof rwCooldownFactor === 'function') cd *= rwCooldownFactor();
@@ -1608,7 +1606,7 @@ function skill2VulnACfg(aCfg, target) {
 
 /* 狂風斬（疾風斬第 5 階）與嗜血狂怒（bloodrage 第 1 階）攻速乘算因子：
    突破攻速上限、與自身攻速相乘（兩者並存時再彼此相乘）。
-   掛點：combat.js／tower.js 的普攻頻率乘算區（potentialVelocityFactor 旁）。 */
+   掛點：combat.js／tower.js 的普攻頻率乘算區。 */
 function skill2AspdFactor(pEnt) {
   if (typeof buffVal !== 'function') return 1;
   // 狂怒的攻速以 RT 為權威（增益只是投影）：殘留的增益不得繼續給值
@@ -7614,7 +7612,7 @@ function sgEarthguardKillCdr(pEnt, lvs, lg) {
 
 /* 傳奇【不滅意志】：天地共生的無敵期間，每殺 1 個敵人無敵時間延長。
    只延長**天地共生給的那一段**（SKILL2_RT.rebirthInvuln 是它的時戳），
-   其他來源的無敵（潛力、神鑄、【大地之心】）不受影響。 */
+   其他來源的無敵（神鑄、【大地之心】）不受影響。 */
 function sgEarthguardKillInvuln(pEnt, lg) {
   var w = lg.egKillInvuln;
   if (!w || !pEnt) return;

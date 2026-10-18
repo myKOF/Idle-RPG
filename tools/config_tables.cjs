@@ -2,7 +2,7 @@
 /* =============================================================================
    config_tables.cjs — 六系統（技能/寶石/天賦/裝備詞條/NPC/任務）配置撥離管線
    -----------------------------------------------------------------------------
-   將 js/skills.js、js/data.js 與 js/status.js 中的內容資料表撥離成獨立、可用 Excel 編輯的
+   將 js/skills2.js、js/data.js 與 js/status.js 中的內容資料表撥離成獨立、可用 Excel 編輯的
    xlsx + CSV；並能把編輯後的表單「回寫」進遊戲 JS（雙向）。
 
    模式：
@@ -12,11 +12,10 @@
      node tools/config_tables.cjs --apply --write    # 實際寫回 JS（先備份、寫入後 node --check、失敗還原）
 
    九表 ↔ JS 字面值：
-     Skills            ← POTENTIAL_TALENTS（js/skills.js；2026-09-29 起只剩潛力技能）
      Skills2           ← SKILLS2（js/skills2.js，2026-08-13 新版主動技能系統）
      Status            ← STATUS（js/status.js，2026-08-11 技能及狀態改造）
      Gems              ← GEM_TYPES（js/data.js）
-     Talents           ← TALENT_TREES + POTENTIAL_TALENTS（js/data.js）
+     Talents           ← TALENT_TREES（js/data.js）
      Equipment_Affix   ← AFFIX_POOL + PASSIVE_POOL + GODFORGE_POOL（js/data.js）
      NPC               ← 各地圖 NPC pool（js/data.js）
      Task              ← TASKS（js/data.js，2026-08-05 任務系統）
@@ -39,7 +38,6 @@ const CSV_DIR = path.join(ROOT, 'config', 'CSV');
 const XLSX_DIR = path.join(ROOT, 'config', 'Excel');
 const JS = {
   data: path.join(ROOT, 'js', 'data.js'),
-  skills: path.join(ROOT, 'js', 'skills.js'),
   skills2: path.join(ROOT, 'js', 'skills2.js'),
   status: path.join(ROOT, 'js', 'status.js'),
   runes: path.join(ROOT, 'js', 'runeword_data.js'),
@@ -608,7 +606,7 @@ SCHEMAS.Gems = {
   }
 };
 
-/* ---- Talents ← TALENT_TREES + POTENTIAL_TALENTS ---- */
+/* ---- Talents ← TALENT_TREES ---- */
 SCHEMAS.Talents = {
   name: 'Talents', jsFile: 'data', sheet: 'Talents', vars: ['TALENT_TREES'],
   noXlsxGen: true,
@@ -623,7 +621,6 @@ SCHEMAS.Talents = {
           t.disabled ? 'TRUE' : '', t.disabledReason || '', t.desc]);
       });
     });
-    // 潛力技能 V3 已移至 Skills 表（js/skills.js 的 POTENTIAL_TALENTS）。
     return rows;
   },
   rebuild(dataRows, header) {
@@ -632,11 +629,8 @@ SCHEMAS.Talents = {
     dataRows.forEach(r => {
       const kind = get(r, '類型').trim(); const id = get(r, 'id').trim();
       if (id === '') return;
-      if (kind === '潛力天賦') {
-        // 舊版殘留列（潛力已移至 Skills 表）：略過，避免誤併入天賦樹。
-        console.log('  – Talents：略過舊潛力列 ' + id + '（潛力已移至 Skills 表）');
-        return;
-      } else {
+      if (kind !== '轉生天賦') throw new Error('Talents 類型僅允許轉生天賦：' + id);
+      {
         const turn = String(toNum(get(r, '轉數')));
         const o = { id: id, name: get(r, '名稱'), emoji: get(r, 'icon圖號'), stat: get(r, '屬性桶'),
           per: toNum(get(r, '每級增加值')), threat: toNum(get(r, '威脅值')) };
@@ -736,61 +730,8 @@ SCHEMAS.Equipment_Affix = {
   }
 };
 
-/* ---- Skills ← POTENTIAL_TALENTS（潛力技能）----
-   2026-09-29：舊版一般技能（物理／魔法／防禦／特殊／被動五類，SKILLS＋UNLOCKS）已整批移除，
-   本表只剩「系統分類＝potential」的潛力技能；新版技能在 Skills2 表。 */
-/* Skills.xlsx 第 2 工作表「變量定義」：潛力技能欄位與 fx 變量的中文定義（僅供人閱讀，sync/apply 只讀第 1 表）。 */
-/* 標籤欄供值：以 JS 內 POTENTIAL_TALENTS 的 tags 陣列為唯一準據（SSOT＝js/skills.js）。 */
-function skillTagsForConfig(s) {
-  return Array.isArray(s.tags) ? s.tags : [];
-}
-function skillUnlockLevelForConfig(s) {
-  if (s && s.unlockLv != null && isFinite(Number(s.unlockLv))) return Math.max(0, Math.floor(Number(s.unlockLv)));
-  return 0;
-}
-const FX_GLOSSARY_ROWS = [
-  ['Skills 表（潛力技能）欄位與參數定義'],
-  ['本表只剩「系統分類＝potential」的潛力技能（列順序＝解鎖順序）；舊版一般技能已於 2026-09-29 整批移除，新版技能請看 Skills2 表。'],
-  ['本頁為說明頁，程式不讀取；第一頁「Skills」才是資料來源。'],
-  [''],
-  ['標籤'],
-  ['用途：潛力技能的元素系別標籤；格式：使用元素鍵值，若有多個標籤以半形分號「;」分隔（例：fire;poison）；空白＝沒有元素系別標籤；'],
-  ['fire＝火系／ice＝冰系／lightning＝雷系／poison＝毒系／light＝聖系／dark＝暗系；'],
-  ['解鎖等級：潛力技能固定填 0（由潛力節點規則控制解鎖）；'],
-  [''],
-  ['基礎fx(JSON)【潛力技能】'],
-  ['type=類型(active=主動/passive=被動/passiveTrigger=被動觸發)；'],
-  ['base=效果基準值；'],
-  ['per=每級效果增量；'],
-  ['atkBase=本體攻擊傷害%基準(雷霆過載：魔攻%)；'],
-  ['atkPer=每級本體攻擊傷害%增量；'],
-  ['bounces=本體攻擊彈跳次數(每跳完整傷害)；'],
-  ['dur=增益持續秒；'],
-  ['dmgType=傷害類型(phys=物理/magic=魔法)；'],
-  ['mech=戰鬥機制代號(接線鍵勿改)；'],
-  ['en=英文名；'],
-  ['desc=質變說明(面板顯示的完整敘述)；'],
-  [''],
-  ['冷卻＝主動潛力技能的冷卻秒數；說明文字＝風味文字；完整描述＝給編表者看的註記欄（不寫回程式）。']
-];
-
-/* 「完整描述」是給人看的註記欄，不寫回 JS。--gen 會整份重建表格，若不特別保留就會被清空
-   （同 Task 表的「備註」欄）——因此重建時從現有 CSV 依 id 帶回來。 */
-function skillFullDescMap() {
-  const map = {};
-  try {
-    const rows = csvParse(readUtf8(csvPathOf('Skills')));
-    if (!rows.length) return map;
-    const idIdx = rows[0].findIndex(h => String(h).split('\n')[0].trim() === 'id');
-    const dIdx = rows[0].findIndex(h => String(h).split('\n')[0].trim() === '完整描述');
-    if (idIdx < 0 || dIdx < 0) return map;
-    rows.slice(1).forEach(r => { const id = (r[idIdx] || '').trim(); if (id) map[id] = r[dIdx] || ''; });
-  } catch (e) { /* 沒有現成 CSV（首次 bootstrap）就留空 */ }
-  return map;
-}
-
 /* ---- 特效欄位（2026-09-03 VFX Preset 化）----
-   技能表（Skills／Skills2 每一列）六欄：施放特效／攻擊特效／飛行子彈／受擊特效／地板特效／持續場域特效；
+   技能表（Skills2 每一列）六欄：施放特效／攻擊特效／飛行子彈／受擊特效／地板特效／持續場域特效；
    狀態表三欄：施加特效／持續特效／作用特效。每一格填 vfx/presets/<id>.json 的檔名（不含 .json，
    填了 .json 也接受）。留白＝這一列在該角色沒有特效；整列都留白時 JS 字面值不寫 vfx 欄位。
    JS 端的形狀：技能 sk.vfx = { cast, attack, projectile, hit, ground, field }、狀態 st.vfx = { apply, aura, tick }。
@@ -868,71 +809,13 @@ function validateVfxTable(name, dataRows, header, options = {}) {
   return issues;
 }
 
-SCHEMAS.Skills = {
-  name: 'Skills', jsFile: 'skills', sheet: 'Skills', vars: ['POTENTIAL_TALENTS'],
-  extraSheets: [{ name: '變量定義', rows: FX_GLOSSARY_ROWS }],
-  header: ['id', '系統分類', '標籤', '解鎖等級', '名稱', 'icon圖號', '冷卻', '說明文字', '基礎fx(JSON)', '完整描述'],
-  extract(src) {
-    const POTENTIAL_TALENTS = evalLiteral(extractLiteral(src, 'POTENTIAL_TALENTS').literal);
-    const fullDesc = skillFullDescMap();
-    // 潛力技能 V3（系統分類=potential；列順序＝解鎖順序）：
-    // 共用欄放 名稱/icon/冷卻/說明文字(風味)，其餘機制參數（type/base/per/dur/dmgType/mech/en/desc）收進「基礎fx(JSON)」。
-    return POTENTIAL_TALENTS.map(t => {
-      const fx = { type: t.type || 'active', base: t.base == null ? 0 : t.base, per: t.per == null ? 0 : t.per };
-      if (t.atkBase != null) fx.atkBase = t.atkBase;
-      if (t.atkPer != null) fx.atkPer = t.atkPer;
-      if (t.bounces != null) fx.bounces = t.bounces;
-      if (t.dur != null) fx.dur = t.dur;
-      if (t.dmgType) fx.dmgType = t.dmgType;
-      fx.mech = t.mech || '';
-      if (t.en) fx.en = t.en;
-      if (t.desc) fx.desc = t.desc;
-      return [t.id, 'potential', joinList(skillTagsForConfig(t)), skillUnlockLevelForConfig(t), t.name, t.emoji,
-        t.cd == null ? '' : numStr(t.cd), t.flavor || '', JSON.stringify(fx), fullDesc[t.id] || ''];
-    });
-  },
-  rebuild(dataRows, header) {
-    const get = rowGetter(header);
-    const potentials = [];
-    dataRows.forEach(r => {
-      const id = get(r, 'id').trim(); if (id === '') return;
-      if (get(r, '系統分類').trim() !== 'potential') {
-        throw new Error('Skills 表只允許「系統分類＝potential」的列（舊版一般技能已移除），第 ' + id + ' 列不符');
-      }
-      // 潛力 fx JSON → 依 js/skills.js 欄位順序組裝：id,name,[en],emoji,cat,type,[cd],base,per,[dmgType],[dur],mech,desc,flavor
-      const fxRaw = get(r, '基礎fx(JSON)').trim();
-      if (fxRaw === '') throw new Error('潛力列「' + id + '」缺基礎fx(JSON)');
-      const fx = parseJsonCell(fxRaw, id + ' 潛力fx');
-      const unlockLvRaw = get(r, '解鎖等級').trim();
-      const o = { id: id, name: get(r, '名稱'), tags: splitList(get(r, '標籤')), unlockLv: unlockLvRaw === '' ? 0 : Math.max(0, Math.floor(toNum(unlockLvRaw))) };
-      if (fx.en) o.en = String(fx.en);
-      o.emoji = get(r, 'icon圖號'); o.cat = 'potential';
-      o.type = fx.type || 'active';
-      const cd = get(r, '冷卻'); if (String(cd).trim() !== '') o.cd = toNum(cd);
-      o.base = toNum(fx.base == null ? '0' : fx.base);
-      o.per = toNum(fx.per == null ? '0' : fx.per);
-      if (fx.atkBase != null) o.atkBase = toNum(fx.atkBase);
-      if (fx.atkPer != null) o.atkPer = toNum(fx.atkPer);
-      if (fx.bounces != null) o.bounces = toNum(fx.bounces);
-      if (fx.dmgType) o.dmgType = String(fx.dmgType);
-      if (fx.dur != null) o.dur = toNum(fx.dur);
-      o.mech = fx.mech == null ? '' : String(fx.mech);
-      o.desc = fx.desc == null ? '' : String(fx.desc);
-      const flavor = get(r, '說明文字'); if (flavor !== '') o.flavor = flavor;
-      potentials.push(o);
-    });
-    return {
-      POTENTIAL_TALENTS: 'var POTENTIAL_TALENTS = [\n' + potentials.map(o => '  ' + jsLit(o)).join(',\n') + '\n];'
-    };
-  }
-};
 function parseJsonCell(s, label) {
   try { return JSON.parse(s); }
   catch (e) { throw new Error(label + ' JSON 解析失敗：' + e.message + '\n  內容：' + s); }
 }
 
 /* ---- Task 表的「參數定義」說明頁（xlsx 第二頁；程式不讀取，僅供編表者查閱）----
-   與 Skills 的「變量定義」同慣例：內容登錄在此，--gen 重生表格時一併寫出。
+   與其他配置說明頁同慣例：內容登錄在此，--gen 重生表格時一併寫出。
    同步流程只讀第一頁（readXlsxRows 取第一張表），本頁不影響管線。 */
 const TASK_GLOSSARY_ROWS = [
   ['任務表（Task）欄位與參數定義'],
@@ -1058,7 +941,7 @@ const STATUS_GLOSSARY_ROWS = [
   ['shield＝吸收護盾（占施法者最大生命%，吃護盾效率；被打完或時間到就消失）；'],
   [''],
   ['效果鍵值'],
-  ['狀態效果＝stat 時填增益鍵：atkUp/defUp/aspdUp/evasionUp/critDmgUp/blockUp/thornsUp/lootUp/penUp/atkDown/defDown/enemyAspdDown 等；'],
+  ['狀態效果＝stat 時填增益鍵：atkUp/defUp/aspdUp/evasionUp/critDmgUp/blockUp/thornsUp/lootUp/penUp/atkDown/defDown 等；'],
   ['狀態效果＝ctrl 時填 stun（暈眩）/slow（減速）/invuln（無敵）；'],
   ['狀態效果＝hot 時固定填 hot；shield 時固定填 shield；dot 留空；'],
   ['注意：這是接線鍵，對應戰鬥程式讀取的欄位，不要自行改名；'],
@@ -1252,7 +1135,7 @@ const SKILLS2_GLOSSARY_ROWS = [
 ];
 /* 「冷卻時間」是群組層欄位：程式只讀階數=1 那一列，其餘列**僅供對照**，
    因此編表者可以在後續列寫自己的註記（例如各階原本設想的冷卻曲線）。
-   --gen 會整份重建表格，若不特別保留就會被群組值蓋掉——比照 Skills 表的「完整描述」，
+   --gen 會整份重建表格，若不特別保留就會被群組值蓋掉——沿用既有註記保留規則，
    重建時從現有 CSV 依「群組ID+階數」帶回來。
    ⚠️「施法消耗」自 2026-08-19 起改為**每階真欄位**（tiers[i].cost）：群組層仍取階數=1
    那一列（castSkill2 的施放成本），但每一列同時是該階的「觸發消耗」，被動技能（反擊）
@@ -2162,7 +2045,7 @@ SCHEMAS.Gem_resonance = {
   }
 };
 
-const TABLE_ORDER = ['Skills', 'Skills2', 'Status', 'Gems', 'Talents', 'Equipment_Affix', 'NPC', 'Task', 'Runes', 'Gem_resonance'];
+const TABLE_ORDER = ['Skills2', 'Status', 'Gems', 'Talents', 'Equipment_Affix', 'NPC', 'Task', 'Runes', 'Gem_resonance'];
 
 /* ===========================================================================
    模式：--gen / --sync / --apply
@@ -2307,6 +2190,10 @@ function pseudoStamp() {
 
 /* ---- 進入點 ---- */
 if (require.main === module) {
+if (process.argv.slice(2).includes('Skills')) {
+  console.error('Skills 表已移除，現行技能請使用 Skills2。');
+  process.exit(1);
+}
 if (process.argv.includes('--dump-json')) {
   const at = process.argv.indexOf('--dump-json');
   cmdDumpJson(process.argv[at + 1], process.argv[at + 2]);
@@ -2320,7 +2207,7 @@ if (mode === 'gen') cmdGen(only);
 else if (mode === 'sync') cmdSync();
 else if (mode === 'apply') cmdApply(only);
 else {
-  console.log('用法：node tools/config_tables.cjs [--gen | --sync | --apply [--write]] [Skills|Skills2|Status|Gems|Talents|Equipment_Affix|NPC|Task|Runes|Gem_resonance]');
+  console.log('用法：node tools/config_tables.cjs [--gen | --sync | --apply [--write]] [Skills2|Status|Gems|Talents|Equipment_Affix|NPC|Task|Runes|Gem_resonance]');
   process.exit(1);
 }
 

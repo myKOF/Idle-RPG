@@ -1,7 +1,7 @@
 'use strict';
 /* VFX 特效目錄（設計定案）——驅動兩件事：
    1. 要製作哪些 Preset（PRESETS：id → 家族／製作簡述／名目尺寸）
-   2. 技能表／狀態表每一列的特效欄位填什麼（SKILLS_VFX／SKILLS2_VFX／STATUS_VFX／COMBAT_DEFAULTS）
+   2. 技能表／狀態表每一列的特效欄位填什麼（SKILLS2_VFX／STATUS_VFX／COMBAT_DEFAULTS）
 
    欄位（角色）語意：
      cast        施放特效：施放當下在施法者身上（自身增益的光環、施法閃光）
@@ -470,7 +470,7 @@ s('sgThunderQuake', 'hit-lightning', 'st-lightning', '');
 s('sgWaterPrison', 'hit-ice', 'st-water-prison', '');
 s('sgWindErode', 'hit-wind', 'st-wind-rend', '');
 
-/* ---------- 普攻／敵方／潛力（不在表裡的固定對應，寫進 js/data.js VFX_COMBAT_DEFAULTS） ---------- */
+/* ---------- 普攻／敵方（不在表裡的固定對應，寫進 js/data.js VFX_COMBAT_DEFAULTS） ---------- */
 const COMBAT_DEFAULTS = {
   basicAttack: { projectile: 'proj-swordwave', attack: 'slash-phys-big', hit: 'hit-phys' },
   basicAttackExtra: { projectile: 'proj-swordwave', attack: 'slash-phys', hit: 'hit-phys' },
@@ -479,7 +479,6 @@ const COMBAT_DEFAULTS = {
   enemyProjectile: { projectile: 'proj-enemy-bolt', hit: 'hit-enemy' },
   enemyProjectileByElem: { fire: 'proj-fire', ice: 'proj-ice-shard', lightning: 'proj-lightning', poison: 'proj-poison-drop', light: 'proj-light-orb', dark: 'proj-dark-orb', earth: 'proj-earth-rock', wind: 'proj-wind-crescent' },
   enemyHitByElem: { fire: 'hit-fire', ice: 'hit-ice', lightning: 'hit-lightning', poison: 'hit-poison', light: 'hit-light', dark: 'hit-dark', earth: 'hit-earth', wind: 'hit-wind' },
-  chainLightning: { attack: 'bolt-sky-lightning', projectile: 'bolt-chain-lightning', hit: 'hit-lightning' },
   legendaryLightningChain: { projectile: 'bolt-chain-lightning', hit: 'hit-lightning' },
   /* 小隕石：Runtime 依 variant fireball-small／meteor-impact 取用，不佔表上的欄位。 */
   meteorSmall: { projectile: 'proj-meteor-small', hit: 'hit-fire-explosion' }

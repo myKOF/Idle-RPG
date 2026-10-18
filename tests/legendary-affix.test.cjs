@@ -45,7 +45,7 @@ function loadLegendaryContext() {
     player: {
       level: 1,
       reincarnations: 0,
-      talents: { levels: {}, potentialLevels: {} },
+      talents: { levels: {} },
       loadout: []
     },
     stage: { current: 1 },

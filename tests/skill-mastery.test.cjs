@@ -29,7 +29,7 @@ function loadGameContext() {
       level: 999, xp: 0, reincarnations: 3,
       gold: 10000000,
       skillMastery: { level: 0, xp: 0 },
-      talents: { levels: {}, potentialLevels: {} },
+      talents: { levels: {} },
       loadout: []
     },
     stage: { current: 1 }
@@ -37,18 +37,13 @@ function loadGameContext() {
   return context;
 }
 
-test('技能熟練度：經驗升級給點、上限封頂；技能點 = 基礎點數 + 熟練度', () => {
+test('技能熟練度：經驗升級與上限封頂，不再產生技能點', () => {
   const c = loadGameContext();
   const p = c.G.player;
-  const base = c.SKILL_POINT_BASE;
-  assert.equal(c.totalSkillPoints(), base);
+  assert.equal(c.totalSkillPoints, undefined);
   c.gainSkillMasteryXp(c.skillMasteryXpForLevel(0)); // 升 1 級
   assert.equal(p.skillMastery.level, 1);
-  assert.equal(c.totalSkillPoints(), base + 1);
-  // 潛力改用威能點，不再佔用技能點。
-  p.talents.potentialLevels.velocityForce = 2;
-  assert.equal(c.spentSkillPoints(), 0);
-  assert.equal(c.availableSkillPoints(), base + 1);
+  assert.equal(p.skillPoints, undefined);
   // 上限封頂
   p.skillMastery.level = c.SKILL_MASTERY_MAX_LEVEL;
   c.gainSkillMasteryXp(999999999);
@@ -56,11 +51,6 @@ test('技能熟練度：經驗升級給點、上限封頂；技能點 = 基礎�
   assert.equal(p.skillMastery.xp, 0);
 });
 
-test('沒有潛力技能投入時，已用技能點為 0（舊版技能等級不再佔點）', () => {
-  const c = loadGameContext();
-  assert.equal(c.spentSkillPoints(), 0);
-  assert.equal(c.availableSkillPoints(), c.totalSkillPoints());
-});
 
 test('技能熟練度未升級時也刷新技能面板進度', () => {
   const c = loadGameContext();
@@ -75,13 +65,4 @@ test('熟練度經驗需求依參數表：⌊30×L³+20⌋', () => {
   assert.equal(c.skillMasteryXpForLevel(0), 20);
   assert.equal(c.skillMasteryXpForLevel(1), 50);
   assert.equal(c.skillMasteryXpForLevel(10), 30020);
-});
-
-test('skillMaxLvForRc：潛力技能等級上限查轉生對照表，隨轉數成長並在表尾封頂', () => {
-  const c = loadGameContext();
-  const table = Array.from(c.REINCARNATION_SKILL_MAX_LEVELS);
-  assert.equal(c.skillMaxLvForRc(0), table[0]);
-  assert.equal(c.skillMaxLvForRc(1), table[1]);
-  assert.equal(c.skillMaxLvForRc(999), table[table.length - 1]);
-  assert.ok(c.skillMaxLvForRc(3) > c.skillMaxLvForRc(0));
 });

@@ -27,7 +27,7 @@ test('Talents Excel／CSV／生成資料一致，新欄位與停用列可往返'
   const rebuilt=tables.SCHEMAS.Talents.rebuild(rows.slice(1),rows[0]).TALENT_TREES;
   const sandbox={}; vm.runInNewContext(rebuilt,sandbox);
   assert.deepEqual(JSON.parse(JSON.stringify(sandbox.TALENT_TREES)),JSON.parse(JSON.stringify(c.TALENT_TREES)));
-  assert.equal(c.talentList().filter(x=>x.def.disabled).length,4);
+  assert.equal(c.talentList().filter(x=>x.def.disabled).length,0);
 });
 test('首次點亮才增加威脅，升滿不重複增加，降到零與清除移除威脅',()=>{
   const e=engine(),c=e.ctx; c.G.player.reincarnations=10; c.G.player.reincarnationTalentPoints=200;
@@ -90,34 +90,25 @@ test('正在戰鬥的封魔塔BOSS即時加級且保留血量比例',()=>{
   assert.equal(b.level,old+2); assert.equal(b.hp/b.maxHp,0.25);
   assert.ok(Math.abs(b.maxHp/(hp*c.bossStatsFor(101).hp/rawHp)-1)<1e-12);
 });
-test('潛力與威能共用55點預算，零轉／零金幣可升級並正常生效及退點',()=>{
-  const e=engine(),c=e.ctx; c.G.player.reincarnations=0; c.G.player.gold=0; c.G.player.reincarnationTalentPoints=55;
-  const id=c.POTENTIAL_TALENTS.find(x=>x.type==='passive').id;
-  assert.equal(e.cmd('talent.potentialMax',{id}).ok,true); assert.equal(c.potentialLevel(id),10);
-  assert.equal(c.potentialSkillActive(id),true); assert.equal(c.potentialSkillMaxLv(),10);
-  assert.equal(c.G.player.gold,0); assert.equal(c.G.player.reincarnationTalentPoints,0); assert.equal(c.talentSpentPoints(),55);
-  assert.equal(c.potentialSpentSkillPoints(),0); assert.equal(c.talentThreatTotal(),0);
-  assert.equal(e.cmd('talent.potentialDelete',{id}).ok,true); assert.equal(c.G.player.reincarnationTalentPoints,55);
-  assert.equal(c.potentialSkillActive(id),false);
-});
 test('舊檔在夾限前按舊制退點與潛力金幣，重新配置後持久化不重複退款',()=>{
   const e=engine(), c=e.ctx, raw=JSON.parse(e.saveJson()); delete raw.powerThreatV1;
   raw.player.reincarnations=10; raw.player.reincarnationTalentPoints=7; raw.player.gold=123;
   raw.player.talents.levels={t1_str:100,t2_crit:51,t10_str:1};
-  const id=c.POTENTIAL_TALENTS[0].id; raw.player.talents.potentialLevels={[id]:3};
+  const id='velocityForce'; raw.player.talents.potentialLevels={[id]:3};
   raw.player.loadout=['potential:'+id];
-  const gold=123+c.skillUpgradeCost(0)+c.skillUpgradeCost(1)+c.skillUpgradeCost(2);
+  const gold=123+20+1026+2036;
   const migrated=c.migrateSave(raw);
   assert.equal(migrated.player.reincarnationTalentPoints,7+1500+572+19); assert.equal(migrated.player.gold,gold);
-  assert.equal(migrated.player.talents.levels.t1_str,0); assert.equal(migrated.player.talents.potentialLevels[id],0);
+  assert.equal(migrated.player.talents.levels.t1_str,0); assert.equal(migrated.player.talents.potentialLevels,undefined);
   assert.equal(migrated.player.loadout.length,0); assert.equal(migrated.powerThreatV1,true); assert.ok(migrated._talentRespecConfirm);
   delete migrated._talentRespecConfirm; delete migrated._talentRespecNotice;
   const again=c.migrateSave(JSON.parse(JSON.stringify(migrated)));
   assert.equal(again.player.reincarnationTalentPoints,migrated.player.reincarnationTalentPoints);
   assert.equal(again.player.gold,gold); assert.equal(again._talentRespecNotice,undefined);
-  again.player.talents.levels.t1_str=3; again.player.talents.potentialLevels[id]=4;
+  again.player.talents.levels.t1_str=3; again.player.talents.potentialLevels={[id]:4};
   const e2=createEngine({seed:18}); e2.boot(JSON.parse(JSON.stringify(again)));
-  assert.equal(e2.ctx.talentLevel('t1_str'),3); assert.equal(e2.ctx.potentialLevel(id),4);
+  assert.equal(e2.ctx.talentLevel('t1_str'),3); assert.equal(e2.ctx.G.player.talents.potentialLevels,undefined);
+  assert.equal(e2.ctx.G.player.reincarnationTalentPoints,again.player.reincarnationTalentPoints+10);
 });
 test('舊檔低等級也必須退點，新局預帶遷移旗標',()=>{
   const e=engine(),c=e.ctx; assert.equal(c.G.powerThreatV1,true);
@@ -132,15 +123,8 @@ test('UI由Worker快照顯示魔物威能百分比、精確tips、圖下威脅�
   c.renderTalents(); const h=elements['talent-root'].innerHTML;
   assert.match(h,/魔物威能 <b>120%/); assert.match(h,/地獄大軍感受到你接收了天堂神力而倍感憤怒/);
   assert.match(h,/魔物威能每增加10%則敵人強度\+1級/); assert.match(h,/tlx-node-threat">威脅值 \+2/);
-  assert.equal(c.talentViewPotentialUnlocked(snapshot,c.POTENTIAL_TALENTS[9].id),true);
-  assert.equal(c.skillViewPotentialMaxLevel(0),10); assert.equal(c.skillViewPotentialMaxLevel(10),10);
   c.G.player.talents.levels={}; assert.equal(c.talentThreatTotal(c.talentViewLevels(snapshot)),20,'快照不讀主端G');
-  const id=c.POTENTIAL_TALENTS[0].id; snapshot.talents.potentialLevels[id]=2; snapshot.talentPoints=2;
-  c.UI.selSkill='potential:'+id; elements['skill-modal']={style:{display:'flex'}}; elements['skill-modal-body']={innerHTML:''};
-  c.renderSkillModal(e.panel('skills'),snapshot,e.panel('header'));
-  const modal=elements['skill-modal-body'].innerHTML;
-  assert.match(modal,/轉生威能點：2/); assert.match(modal,/花費 3 點威能點/); assert.match(modal,/退回 2 點威能點/);
-  assert.match(modal,/data-skill-learn="potential:[^"]+"[^>]* disabled/); assert.doesNotMatch(modal,/花費.*金幣/);
+
 });
 
 test('主端G為null或不存在時威脅／塔預覽均安全且使用傳入的Worker快照',()=>{

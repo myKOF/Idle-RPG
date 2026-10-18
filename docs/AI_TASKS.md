@@ -1,5 +1,21 @@
 # AI_TASKS.md
 
+## POTENTIAL-REMOVE-20261018 — 完整移除潛力技能系統
+
+- Owner：Codex；Done；使用者明確要求刪除全部潛力技能、威能解鎖節點、點數與配置，追加指定清除 Skills 主表。單一開發者；目標衝突預檢乾淨，本副本其他寶石工作保留、共用檔只分段處理。
+- 允許：潛力執行期及所有直接引用、Skills Excel／CSV與輸出副本刪除、Talents／Status／參數表相關列或欄位清理、讀表工具、舊存檔遷移與退還已投入威能點、Worker指令／投影與協議版號、UI／CSS、必要快取、相依測試與現行公式／協議文件、PATCH及本紀錄。禁止：現行Skills2技能規則、無關寶石轉換、既有美術素材、其他副本與合併推送。
+- 驗收：舊存檔潛力資料／裝載清除且退點只一次，威能等級／威脅／滿級加倍不變，新角色無潛力欄位，舊指令拒絕，野外／高塔／UI皆無殘留；Skills表無法再生成，Excel與CSV一致且原生開啟無修復；必要回歸／參數錨點／Build／Console／diff後獨立Commit。後續使用者審閱整合。
+- 完成：刪除js/potential.js、Skills.xlsx／Skills.csv及outputs/skills-descriptions/Skills.xlsx；移除十個技能定義／戰鬥掛點、四個威能解鎖節點、舊技能點預算／UI／查詢與四條潛力指令，清掉專用狀態／模態窗／樣式／讀表schema與模擬器預覽引用。Skills2及技能熟練度保留；allDmgUp也被符文真言使用，改成通用名稱並保留正確效果。只留歷史存檔遷移所需的鍵名及退款成本，沒有可呼叫的潛力功能。
+- 存檔：現代存檔按舊十級制累計投入退回原威能池，刪除potentialLevels／舊點數／四個解鎖節點，裝載改為null並只去尾端空格；正常威能、熟練度與Skills2不受影響。早期powerThreatV1前存檔保留原威能及潛力金幣退款，連同四個已刪除的舊節點按歷史成本處理。重讀、存回及再次開機不重複退款。協議53→54、97→93指令，主頁與Worker快取同步。
+- Excel：使用原生Excel API刪Talents四列、Status五列（保留並改名通用allDmgUp）、參數表主頁／計算表各三列，清零轉生表舊技能上限e並清說明。保留原生格式與鏡像公式；刪列後預覽抓到編號鏈兩處#REF，依原始穩定ID修復兩條公式，原生全工作表公式錯誤掃描清零，兩輪正常開啟皆RepairMode=false。主表存續資料只43格變更（說明及21個停用e值），刪除三列，其餘數值保持；Excel／CSV往返一致，前後預覽已目視。
+- 驗證：待提交來源隔離匯出後，`node --test --test-reporter=tap`執行26份相依測試（potential-removal／worker-protocol／legacy-skill-removal-migration／power-rework／talents／skill-gcd／skill-cooldown-death／skill-mastery／skill2-ui／skill-hit／skill-hit-timing／skill-tree-layout／skill-vfx／boss-skill-lock／gm-skill-unlock／init-ui-smoke／offline-rewards／save-migration-persistence-verification／combat-log／player-event-float／float-no-skill-icon／esc-shortcut／rune-slots-config／gem-compose-all／pen-gem-flow／runeword-engine）236/236通過。`npm.cmd run build`533檔通過；`node tools/apply_params.cjs`558項、將變更0／錨點問題0（原564，移除六個廢棄接線）；`--check-anchors`擾動510個值後558錨點仍各命中一次；staged diff check通過。
+- 瀏覽器：隔離headless Edge／隨機localhost／待提交來源／seed1018，以正式Worker載入含潛力10級、舊解鎖2級與正常威能3級的測試存檔；原7點退回58點後65點，兩個現行技能原位保留、中間潛力格清空，熟練度123保留。技能頁無潛力區／點數／舊彈窗，威能頁無四個舊節點；已目視兩頁完整畫面。產品Console error／warning、pageerror及HTTP錯誤0（headless驅動診斷另外排除）。首次fixture因既有神位遷移將10轉校正為11轉、神鑄公告擋住頁面，加上隔離匯出漏params_version.txt而未完成流程；修正測試等待／關閉公告／補供既有版本檔後正式驗證通過，未為測試改產品規則。圖片保留本聊天visualizations/potential-removed-skills.png及potential-removed-talents.png，不使用真人存檔。
+- 並行隔離：GEM-CONVERT-HOLY-LIGHT於過程自行提交72cbb191；後續GEM-WORKSHOP-DOWNSTEP開始修改寶石區段。以72cbb191為共同base，UI／formula／protocol／sim.worker／index的功能區段做三方合併試跑，全部退出0、結果等於當時完整工作檔；不碰其寶石公式／派送／DOM／腳本／CSS／測試／文件。快取按潛力v54與工坊後續v55分段stage，只提交本次v54與相應來源快取；本副本保留工坊較新的工作版本。驗收以確切待提交內容進行，避免另一工作尚未完成的狀態干擾結果。
+- 唯讀未改：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、Skills2 Excel／CSV、符文真言與資料、headless engine、現行特效Preset／素材。自我Review確認共享allDmgUp未誤刪、野外／高塔冷卻仍推進、威能滿級／威脅正確、退款冪等且不重發早期點數、Skills生成入口明確拒絕舊表。無新增或修改美術素材，無素材庫變更／Commit。
+- 補充清理：移除VFX_COMBAT_DEFAULTS與作者目錄中僅潛力使用的chainLightning組，以及用途登記三筆雷霆過載標籤；保留天罰／迅雷穿刺共用的Preset素材。同步調整用途測試，要求仍存在的傳奇／神鑄兩種來源都必須實際掃到，不以舊總列數代替覆蓋檢查。`node --test --test-reporter=tap tests/talent-elem-attach.test.cjs tests/vfx-preset-usage.test.cjs`35/35通過，連同236主回歸為271項通過。另12份補充回歸曾有8項與HEAD隔離基準相同的既有失敗（控場舊配置、NPC乾跑及啟動器編碼）；本次新增的兩項相依失敗均已修正並回歸通過。
+- 最後盤點同步清除四份模擬策略JSON中的潛力升級規則／已刪節點／描述，及command_coverage.json的三個退休指令登記。保留並行工坊新增的gem.dismantleSlots登記在工作檔、未納入本Commit；覆蓋登記三方試跑乾淨。新增防止策略重新引用潛力的斷言，sim-command-coverage五項通過；完整相依合計276/276通過。這些是直接相依清理，沒有修改其他模擬策略規則。
+- 限制／交付：全庫嘗試存在大量既有失敗與耗時模擬案例，沒有宣稱全庫通過；本次236項相依回歸與編譯均通過。尚未實測其他瀏覽器／觸控或真人長期存檔；本次需求無未完成項。Commit為本紀錄所在`[Codex] refactor: 完整移除潛力技能系統與配置`，回覆附實際編號。可供Review／合併；未合併／推送，下一步整合並重新載入遊戲確認介面。
+
 ## GEM-CONVERT-HOLY-LIGHT-20261018 — 降低三成亮度、即時聖光與結束後成功提示
 
 - Owner：Codex；Done，單一開發者。使用者要求亮度降低30%、黃白聖光、查明按下後全寶石先閃再播放原因，改為按下直接播放、約2秒結束後才提示成功。前置轉換白光已完成，工作區乾淨、七檔預檢乾淨。

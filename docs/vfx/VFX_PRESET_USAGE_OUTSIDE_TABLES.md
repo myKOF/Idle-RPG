@@ -50,11 +50,8 @@ grep 找得到「哪裡寫死了這個 id」，寫不出「是誰在用」：下
 | `field-water-prison-dome` | 水牢天瀑罩子分層 | Status 表的水牢持續特效；`js/vfx-runtime.js` 將同一份 Preset 的地板和透明罩子拆為前後子部件播放，共用權威半徑及位置。 |
 | `hit-basic-irregular` | 普攻 | 我方普通攻擊的命中爆點（含連擊的額外段） |
 | `bolt-sky-lightning` | 天罰 | 神鑄特效【天罰】追加的落雷（`js/combat.js`） |
-| `bolt-sky-lightning` | 雷霆過載 | 潛力技能【雷霆過載】的本體雷擊（`js/potential.js`） |
-| `bolt-chain-lightning` | 雷霆過載 | 潛力技能【雷霆過載】在敵人之間跳躍的電弧 |
 | `bolt-chain-lightning` | 迅雷穿刺 | 傳奇特效【迅雷穿刺】突刺命中時附加的連鎖閃電（`js/skills2.js` 呼叫 `js/legendary.js` 的 `legendaryScheduleChain`） |
 | `hit-lightning` | 天罰 | 天罰落雷的命中爆點 |
-| `hit-lightning` | 雷霆過載 | 潛力技能【雷霆過載】的命中爆點 |
 | `hit-lightning` | 迅雷穿刺 | 傳奇特效【迅雷穿刺】連鎖的命中爆點 |
 | `proj-meteor-small` | 小隕石 | 由 Runtime 依 variant 取用的小隕石投射物 |
 | `hit-fire-explosion` | 小隕石 | 小隕石落地的爆點 |
@@ -86,7 +83,7 @@ grep 找得到「哪裡寫死了這個 id」，寫不出「是誰在用」：下
 除了 `js/vfx-runtime.js` 那三列，上面全部來自 `js/data.js` 的
 `VFX_COMBAT_DEFAULTS`（2026-09-03 建立，目錄來源是 `tools/vfx/authoring/vfx-catalog.cjs` 的
 `COMBAT_DEFAULTS`）。各組是誰在用：`basicAttack` 在 `js/combat.js`（普攻）、`smite` 在
-`js/combat.js`（神鑄特效天罰）、`chainLightning` 在 `js/potential.js`（雷霆過載）、
+`js/combat.js`（神鑄特效天罰）、
 `legendaryLightningChain` 在 `js/legendary.js`（傳奇【迅雷穿刺】的連鎖閃電）、敵方的幾組經由 `vfxEnemyRoles()` 在 `js/combat.js`、
 `meteorSmall` 由 Runtime 依 variant 取用。
 

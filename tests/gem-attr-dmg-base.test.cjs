@@ -60,7 +60,7 @@ test('鑲嵌一般屬性寶石以新 base 動態計算（無需遷移）', () =>
   const c = loadFormulaContext();
   c.itemEnchants = () => [];
   c.G = {
-    player: { level: 1, reincarnations: 0, skills: {}, talents: { levels: {}, potentialLevels: {} } },
+    player: { level: 1, reincarnations: 0, skills: {}, talents: { levels: {} } },
     equipment: c.SLOT_LIST.reduce((eq, s) => { eq[s] = null; return eq; }, {})
   };
   c.G.equipment.helmet = { affixes: [], sockets: [{ type: 'spinel', level: 5 }] };

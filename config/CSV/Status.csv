@@ -19,17 +19,12 @@ blockUp,格擋,🔰,buff,stat,blockUp,,,0,,0,12,6,0,refresh,1,,,,格擋率提高
 thornsUp,反震,🌵,buff,stat,thornsUp,,,0,,0,15,6,0,refresh,1,,,,反震傷害提高。
 lootUp,掉寶,🎁,buff,stat,lootUp,,,0,,0,15,10,0,refresh,1,,,,掉寶率提高。
 penUp,物理/魔法穿透,🗡️,buff,stat,penUp,,,0,,0,25,5,0,refresh,1,,,,物理與魔法穿透提高。
-allDmgUp,時空凝滯·所有傷害,🌌,buff,stat,allDmgUp,,,0,,0,0,5,0,refresh,1,,,,潛力【時空凝滯】：所有傷害提高。
-velocitySurge,極速之力·攻速,💨,buff,stat,velocitySurge,,,0,,0,0,5,0,refresh,1,,,,潛力【極速之力】：攻速提高。
-lightningOverload,雷霆過載·雷電傷害,🌩️,buff,stat,lightningOverload,lightning,,0,,0,0,5,0,refresh,1,,,,潛力【雷霆過載】：雷電傷害提高。
-chronoCdr,時間坍縮·冷卻縮減,⏱️,buff,stat,chronoCdr,,,0,,0,0,5,0,refresh,1,,,,潛力【時間坍縮】：冷卻縮減。
-sacredInvert,聖療逆轉·回復/溢傷,🕊️,buff,stat,sacredInvert,light,,0,,0,0,5,0,refresh,1,,,,潛力【聖療逆轉】：回復與溢傷轉換。
+allDmgUp,所有傷害提高,🌌,buff,stat,allDmgUp,,,0,,0,0,5,0,refresh,1,,,,符文真言增益：所有傷害提高。
 legendaryDarkUp,暗影強化,🌑,buff,stat,legendaryDarkUp,dark,,0,,0,0,5,0,refresh,1,,,,傳奇特效：暗屬性傷害提高。
 legendaryGuardRed,守護減傷,🛡️,buff,stat,legendaryGuardRed,,,0,,0,0,5,0,refresh,1,,,,傳奇特效：受到的傷害降低。
 legendaryLightShieldRed,聖盾減傷,🔆,buff,stat,legendaryLightShieldRed,light,,0,,0,0,5,0,refresh,1,,,,傳奇特效：受到的傷害降低。
 atkDown,攻擊,⚔️,debuff,stat,atkDown,,,0,,0,18,6,0,refresh,1,,,,目標攻擊力下降。
 defDown,防禦,🛡️,debuff,stat,defDown,,,0,,0,0,6,0,refresh,1,,,,目標防禦力下降（舊存檔融合技快照相容保留，新設計改用穿透提升）。
-enemyAspdDown,時間結界·攻速,⏳,debuff,stat,enemyAspdDown,,,0,,0,0,5,0,refresh,1,,,,潛力【時間結界】：目標攻擊速度下降。
 sgBleed,血刃流血,🩸,debuff,dot,,,skill,30,,0,0,5,1,strongest,1,,,,新版技能【血刃斬】：每次作用造成技能傷害一定比例的傷害；每跳量與間隔由技能各階決定（引擎以 dps 覆寫）。
 sgPoison,血刃劇毒,☠️,debuff,dot,,poison,skill,25,,0,0,4,0.5,strongest,1,curse-poison,,hit-poison,新版技能【血毒刃】：毒屬性持續傷害；每跳量與間隔由技能各階決定（引擎以 dps 覆寫）。
 sgIronBleed,鐵血裂傷,🗡️,debuff,dot,,,maxHp,3.5,,0,0,3,0.35,refresh,1,,,,新版技能【鐵血之舞】：占最大生命比例的流血；自身流血直接扣生命、不吃護盾。

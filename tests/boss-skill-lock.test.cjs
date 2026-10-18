@@ -15,13 +15,13 @@ function fn(source, name) {
 }
 const changes = [
   ['skill.equipLoadout', { id: 'sg:fireball' }],
-  ['skill.unequipLoadout', { id: 'potential:power' }],
+  ['skill.unequipLoadout', { id: 'sg:knife' }],
   ['skill.reorderLoadout', { from: 0, to: 1 }]
 ];
 
 test('Worker 登場、戰鬥暫停與結算未退出時拒絕裝上／卸下／排序，不改裝載或排程；退出後恢復', () => {
   let calls = 0;
-  const c = { G: { tower: { active: true }, player: { loadout: ['sg:cleave', 'potential:power'] } },
+  const c = { G: { tower: { active: true }, player: { loadout: ['sg:cleave', 'sg:knife'] } },
     TOWER: { introCd: 2.4, showingResult: false, player: { skillCds: { 'sg:cleave': 1 } } },
     COMMAND_IMPL: { 'skill.reorderLoadout': () => { calls++; return true; } },
     equipSkillToLoadout() { calls++; return null; }, unequipSkillFromLoadout() { calls++; },
@@ -112,7 +112,6 @@ const configCommands = [
   'item.upgrade', 'item.rerollAffix', 'item.enchant', 'item.removeEnchant',
   'gem.socket', 'gem.socketFused', 'gem.unsocket', 'gem.resonanceSocket', 'gem.resonanceUnsocket', 'rune.socket', 'rune.erase',
   'talent.upgrade', 'talent.max', 'talent.downgrade', 'talent.delete',
-  'talent.potentialUpgrade', 'talent.potentialMax', 'talent.potentialDowngrade', 'talent.potentialDelete'
 ];
 function configEnvironment() {
   const c = { Promise, Error, G: { tower: { active: true }, equipment: { weapon: 'old' },

@@ -829,16 +829,8 @@ function ccLockOn(ent, cat) {
     if (!ccTracked(ent)) return true;
     return !!(ent.ccLock && (ent.ccLock[cat] || 0) > GT);
 }
-/* 強制讓某類控場生效 dur 秒：不計次、不遞減（時空凝滯這類「任何敵人都無法免疫」的大絕用）。 */
-function ccForceLock(ent, cat, dur) {
-    if (!ccTracked(ent) || !(dur > 0)) return;
-    if (!ent.ccLock) { ent.ccDr = ent.ccDr || {}; ent.ccLock = {}; }
-    ent.ccLock[cat] = Math.max(ent.ccLock[cat] || 0, GT + dur);
-}
 /* 敵人現在是不是被限制行動（無法普攻與施放技能）。暈眩狀態還在，但「無法行動」的控場已經遞減掉時回傳 false。 */
 function ccActionLocked(ent) { return effectActive(ent, 'stun') && ccLockOn(ent, 'act'); }
-/* 潛力【時間結界】的敵人攻速降低%（拉長攻擊間隔用）：攻速控場失效時為 0。 */
-function enemyAspdDownPct(ent) { return ccLockOn(ent, 'aspd') ? buffVal(ent, 'enemyAspdDown') : 0; }
 
 /* 控制類狀態的寫入：狀態一律以完整持續時間寫入，控場遞減另記在 ccLock（見上）。
    BOSS 對攻擊頻率類控制完全免疫（回傳 false）；其餘一律成功並回傳狀態的持續秒數。 */
@@ -867,8 +859,7 @@ function logEnemyDirectDamage(ent, source, damage, killed) {
     blog('☠️ ' + target + ' 受到' + (source || '直接傷害') + '，' + shown +
         ' 傷害' + (killed ? '（擊殺）' : '') + '。', 'log-player-skill', 'combat');
 }
-/* 淨化：只清除負面狀態（狀態表 kind＝debuff／ctrl），不誤傷自身增益。
-   改造前是把 effects 整包清空，連潛力技能的「無敵」也會被自己的聖光淨化打掉。 */
+/* 淨化：只清除負面狀態（狀態表 kind＝debuff／ctrl），不誤傷自身增益。 */
 function cleanse(ent) {
     if (!ent) return;
     var k;
@@ -1314,7 +1305,7 @@ function playerAtkCfg(pEnt) {
         annihilate: st.passives.annihilate || 0,
         eliteDmg: st.eliteDmg, bossDmg: st.bossDmg, normalDmg: st.normalDmg,
         /* 「你造成的所有傷害提高」的來源由 js/skills2.js skills2AllDamageUpPct 統一加總
-          （時空凝滯／死亡收割者／殺神領域／不屈之誓）；新版技能的 sgAtkCfg 讀同一支。 */
+          （符文真言／死亡收割者／殺神領域／不屈之誓）；新版技能的 sgAtkCfg 讀同一支。 */
         totalDmgPct: (st.totalDmgPct || 0) + ((typeof skills2AllDamageUpPct === 'function')
             ? skills2AllDamageUpPct(pEnt) : buffVal(pEnt, 'allDmgUp')),
         dmgVsElem: st.dmgVsElem,
@@ -1342,8 +1333,6 @@ function playerDefCfg(pEnt) {
         /* 超神進化【幻影八方陣】的絕對閃避：與命中率無關的獨立擲骰（formula.js resolveHit
            在命中判定之前先擲一次）。這裡是它唯一的出口，因此野外與高塔一體生效。 */
         absDodge: (typeof buffVal === 'function') ? Math.max(0, buffVal(pEnt, 'sgPhantomDodge')) : 0,
-        undyingGuard: (typeof potentialSkillActive === 'function' && potentialSkillActive('lastStandUndying')),
-        undyingGuardCd: (typeof potentialUndyingCd === 'function' ? potentialUndyingCd() : 90),
         normalDmgRed: st.normalDmgRed, eliteDmgRed: st.eliteDmgRed, bossDmgRed: st.bossDmgRed, // 敵種傷害抗性 → formula.js §3
         resVsElem: st.resVsElem, // 對屬性敵人抗性（8 轉天賦）→ formula.js §3
         // 新版技能【嗜血反震】：反震傷害乘算（js/skills2.js，狂怒期間生效）
@@ -1448,7 +1437,6 @@ function basicDamageFloatGroupClass(cls, groupId) {
 /* 冷卻推進與近戰動畫共用實際攻速倍率。 */
 function playerBasicAttackRate(p, st) {
     return slowFactor(p) * (1 + buffVal(p, 'aspdUp') / 100) *
-        (typeof potentialVelocityFactor === 'function' ? potentialVelocityFactor(p, st) : 1) *
         (typeof legendaryAttackSpeedMultiplier === 'function' ? legendaryAttackSpeedMultiplier(p, st) : 1) *
         (typeof skill2AspdFactor === 'function' ? skill2AspdFactor(p) : 1);
 }
@@ -1831,8 +1819,7 @@ function fieldMonsterAttack(m, p) {
     var attackTarget = (typeof legendaryChooseEnemyAttackTarget === 'function')
         ? legendaryChooseEnemyAttackTarget(p) : p;
     doMonsterAttack(m, attackTarget, 'pv-float');
-    // 潛力【時間結界】：敵攻速降低 → 拉長攻擊間隔（降低後攻速 = 原攻速/(1+降低%)）
-    m.atkCd += (1 / m.aspd) * (1 + enemyAspdDownPct(m) / 100);
+    m.atkCd += (1 / m.aspd);
     if (p.hp <= 0) { onPlayerFieldDeath(); return true; }
     if (m.hp <= 0) onFieldKill(m); // 反震擊殺
     return false;
@@ -1918,7 +1905,7 @@ function fieldTick(dt) {
     var hot = buffVal(p, 'hot');
     healPlayer(p, (playerHpRegenPerSec(st) + st.hp * hot / 100) * dt, st, { noShield: true });
     gainPlayerMana(p, playerMpRegenPerSec(st) * dt, st);
-    tickSkillCds(p, dt); // 潛力技能冷卻共用 skillCds（鍵 'potential:<id>'），一併在此遞減
+    tickSkillCds(p, dt);
 
     /* 普攻冷卻：每個 tick 都要走完，而且只夾在 0（＝ready），不累積負數欠債。
        ⚠️ 這一段必須留在「場上沒有可交戰敵人就 return」與「施放技能中」兩道閘門之**前**——
@@ -1930,7 +1917,6 @@ function fieldTick(dt) {
        夾在 0 是 2026-08-16「追擊遠方敵人累積負數冷卻」修正的核心，必須保留：
        等待期間只保持 ready，不會在抵達當下連續補攻。
        暈眩期間維持停住（無法行動就不該累積 ready），與下方玩家行動閘門一致。
-       ── 潛力【極速之力】施放期間以倍率放大攻擊頻率（突破一般攻速上限）；
           新版技能【狂風斬】同樣是突破上限的攻速乘算（js/skills2.js skill2AspdFactor）。
        ── 例外：**剛好在這一步歸零**時，超過 0 的那一點要留著（最多一步的量），出手後從週期裡扣掉。
           出手只發生在步與步的交界（一步 0.1 秒），整個夾掉的話，週期只要比步長的倍數多一點點
@@ -2067,26 +2053,13 @@ function fieldTick(dt) {
     enemies = combatFieldEnemies();
     if (!enemies.length) return;
 
-    // 潛力【聖療逆轉】溢出傷害（持續效果，不受暈眩影響）
-    var regenKilled = false;
-    if (typeof tickPotentialRegen === 'function') {
-        regenKilled = tickPotentialRegen(p, st, dt, enemies, 'mv-float');
-        combatDebugAuditFieldDeaths(debugFieldTick, 'potential overheal damage');
-        if (regenKilled) { onFieldDeaths(); enemies = combatFieldEnemies(); if (!enemies.length) return; }
-    }
-    // 潛力【雷霆過載】持續轟擊（增益期間依固定間隔一輪；持續效果，不受暈眩影響）
-    if (typeof tickPotentialOverdrive === 'function') {
-        var odRes = tickPotentialOverdrive(p, enemies, 'mv-float');
-        combatDebugAuditFieldDeaths(debugFieldTick, 'potential overdrive');
-        if (odRes && odRes.killed) { onFieldDeaths(); enemies = combatFieldEnemies(); if (!enemies.length) return; }
-    }
     // 玩家行動（受減速時依減速比例放慢；時間扭曲等攻速增益加速）
     //（45 新技能共用排程器已上移至「出怪」空場檢查之前，避免波次間隙排程停擺）
     /* 復甦演出期間：普攻與技能一起停。
        倒地時普攻與技能共用同一個行動閘門。 */
     if (!playerActionControlBlocked(p, true) &&
         (typeof skillCastInProgress !== 'function' || !skillCastInProgress(p))) {
-        // 技能優先（依裝載順序；含裝載的潛力技能）
+        // 技能優先（依裝載順序）
         var sres = pickAndCastSkill(p, enemies, 'mv-float');
         combatDebugAuditFieldDeaths(debugFieldTick, 'skill cast');
         if (sres && sres.killed) {
@@ -2616,8 +2589,7 @@ function flushRunSummary(nextMaxStage) {
 
 /* ---- 玩家技能增益取得 ---- */
 var PLAYER_BUFF_ORDER = ['atkUp', 'defUp', 'aspdUp', 'evasionUp', 'critDmgUp', 'blockUp', 'thornsUp', 'lootUp', 'hot',
-    // 潛力技能增益（極速之力/雷霆過載/時間坍縮/聖療逆轉/時空凝滯）
-    'velocitySurge', 'lightningOverload', 'chronoCdr', 'sacredInvert', 'allDmgUp',
+    'allDmgUp', // 符文真言共用的所有傷害增益
     // 新版技能增益（狂風斬/狂暴之舞/暴風之舞/嗜血狂怒，js/skills2.js）
     'sgGale', 'sgCritUp', 'sgCritDmgUp', 'sgStorm', 'sgBloodrage',
     // 超神進化【幻影八方陣】：施放突刺後的短時間絕對閃避（2 秒，玩家要看得到還剩幾秒）

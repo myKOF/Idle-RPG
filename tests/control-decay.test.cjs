@@ -172,30 +172,7 @@ test('控場失效時（狀態還在）：攻速倍率與移速倍率回到 1', 
   assert.equal(c.slowFactor(player), 0.5);
 });
 
-test('潛力【時間結界】的攻速降低%：控場失效時不再拉長敵人攻擊間隔', () => {
-  const c = loadCtx();
-  const m = foe();
-  c.GT = 0; c.applyBuff(m, 'enemyAspdDown', 40, 5);
-  c.GT = 1;
-  assert.equal(c.enemyAspdDownPct(m), 40);
-  const immune = foe({ ccDr: { aspd: { n: 20, last: -1e9, f: 0 } }, ccLock: {} });
-  c.GT = 0; c.applyBuff(immune, 'enemyAspdDown', 40, 5);
-  c.GT = 1;
-  assert.equal(c.enemyAspdDownPct(immune), 0);
-});
 
-test('強制控場（時空凝滯）：不計次、不遞減；對 BOSS 也能生效', () => {
-  const c = loadCtx();
-  const boss = foe({ isBoss: true });
-  c.GT = 0;
-  boss.effects.stun = 5;               // potential.js 直接寫入的狀態時戳
-  c.ccForceLock(boss, 'act', 5);
-  c.GT = 1;
-  assert.ok(c.ccActionLocked(boss));
-  assert.equal(boss.ccDr && boss.ccDr.act, undefined); // 沒有計次
-  c.GT = 6;
-  assert.ok(!c.ccActionLocked(boss));
-});
 
 test('BOSS 對攻擊頻率類控制的完全免疫維持不變；非控制效果不受影響', () => {
   const c = loadCtx();

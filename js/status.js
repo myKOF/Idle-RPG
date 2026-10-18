@@ -51,6 +51,7 @@ var STATUS_DEFAULT_INTERVAL = 1;
    ⚠️ strongest（取高並重新計時）不在文檔的三條規則內，是既有持續傷害的歷史行為；
       本次不更動既有狀態的疊加規則（會改動已調校完成的數值），新增狀態一律依上表選規則。 */
 var STATUS = {
+  allDmgUp: { name: '所有傷害提高', icon: '🌌', kind: 'buff', effect: 'stat', key: 'allDmgUp', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 5, interval: 0, stack: 'refresh', maxStacks: 1, desc: '符文真言增益：所有傷害提高。' },
   bleed: { name: '流血', icon: '🩸', kind: 'debuff', effect: 'dot', key: '', elem: '', dmgSource: 'skill', dmg: 25, capStat: '', capMult: 0, val: 0, dur: 5, interval: 1, stack: 'strongest', maxStacks: 1, desc: '傷口持續失血，每次作用造成技能傷害的一部分。' },
   burn: { name: '燃燒', icon: '🔥', kind: 'debuff', effect: 'dot', key: '', elem: 'fire', dmgSource: 'skill', dmg: 20, capStat: '', capMult: 0, val: 0, dur: 4, interval: 1, stack: 'strongest', maxStacks: 1, desc: '火焰持續灼燒，每次作用造成火屬性傷害。' },
   poison: { name: '中毒', icon: '☠️', kind: 'debuff', effect: 'dot', key: '', elem: 'poison', dmgSource: 'skill', dmg: 40, capStat: '', capMult: 0, val: 0, dur: 6, interval: 1, stack: 'strongest', maxStacks: 1, desc: '毒素侵蝕血脈，每次作用造成毒屬性傷害。' },
@@ -71,17 +72,11 @@ var STATUS = {
   thornsUp: { name: '反震', icon: '🌵', kind: 'buff', effect: 'stat', key: 'thornsUp', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 15, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '反震傷害提高。' },
   lootUp: { name: '掉寶', icon: '🎁', kind: 'buff', effect: 'stat', key: 'lootUp', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 15, dur: 10, interval: 0, stack: 'refresh', maxStacks: 1, desc: '掉寶率提高。' },
   penUp: { name: '物理/魔法穿透', icon: '🗡️', kind: 'buff', effect: 'stat', key: 'penUp', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 25, dur: 5, interval: 0, stack: 'refresh', maxStacks: 1, desc: '物理與魔法穿透提高。' },
-  allDmgUp: { name: '時空凝滯·所有傷害', icon: '🌌', kind: 'buff', effect: 'stat', key: 'allDmgUp', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 5, interval: 0, stack: 'refresh', maxStacks: 1, desc: '潛力【時空凝滯】：所有傷害提高。' },
-  velocitySurge: { name: '極速之力·攻速', icon: '💨', kind: 'buff', effect: 'stat', key: 'velocitySurge', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 5, interval: 0, stack: 'refresh', maxStacks: 1, desc: '潛力【極速之力】：攻速提高。' },
-  lightningOverload: { name: '雷霆過載·雷電傷害', icon: '🌩️', kind: 'buff', effect: 'stat', key: 'lightningOverload', elem: 'lightning', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 5, interval: 0, stack: 'refresh', maxStacks: 1, desc: '潛力【雷霆過載】：雷電傷害提高。' },
-  chronoCdr: { name: '時間坍縮·冷卻縮減', icon: '⏱️', kind: 'buff', effect: 'stat', key: 'chronoCdr', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 5, interval: 0, stack: 'refresh', maxStacks: 1, desc: '潛力【時間坍縮】：冷卻縮減。' },
-  sacredInvert: { name: '聖療逆轉·回復/溢傷', icon: '🕊️', kind: 'buff', effect: 'stat', key: 'sacredInvert', elem: 'light', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 5, interval: 0, stack: 'refresh', maxStacks: 1, desc: '潛力【聖療逆轉】：回復與溢傷轉換。' },
   legendaryDarkUp: { name: '暗影強化', icon: '🌑', kind: 'buff', effect: 'stat', key: 'legendaryDarkUp', elem: 'dark', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 5, interval: 0, stack: 'refresh', maxStacks: 1, desc: '傳奇特效：暗屬性傷害提高。' },
   legendaryGuardRed: { name: '守護減傷', icon: '🛡️', kind: 'buff', effect: 'stat', key: 'legendaryGuardRed', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 5, interval: 0, stack: 'refresh', maxStacks: 1, desc: '傳奇特效：受到的傷害降低。' },
   legendaryLightShieldRed: { name: '聖盾減傷', icon: '🔆', kind: 'buff', effect: 'stat', key: 'legendaryLightShieldRed', elem: 'light', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 5, interval: 0, stack: 'refresh', maxStacks: 1, desc: '傳奇特效：受到的傷害降低。' },
   atkDown: { name: '攻擊', icon: '⚔️', kind: 'debuff', effect: 'stat', key: 'atkDown', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 18, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '目標攻擊力下降。' },
   defDown: { name: '防禦', icon: '🛡️', kind: 'debuff', effect: 'stat', key: 'defDown', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '目標防禦力下降（舊存檔融合技快照相容保留，新設計改用穿透提升）。' },
-  enemyAspdDown: { name: '時間結界·攻速', icon: '⏳', kind: 'debuff', effect: 'stat', key: 'enemyAspdDown', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 5, interval: 0, stack: 'refresh', maxStacks: 1, desc: '潛力【時間結界】：目標攻擊速度下降。' },
   sgBleed: { name: '血刃流血', icon: '🩸', kind: 'debuff', effect: 'dot', key: '', elem: '', dmgSource: 'skill', dmg: 30, capStat: '', capMult: 0, val: 0, dur: 5, interval: 1, stack: 'strongest', maxStacks: 1, desc: '新版技能【血刃斬】：每次作用造成技能傷害一定比例的傷害；每跳量與間隔由技能各階決定（引擎以 dps 覆寫）。' },
   sgPoison: { name: '血刃劇毒', icon: '☠️', kind: 'debuff', effect: 'dot', key: '', elem: 'poison', dmgSource: 'skill', dmg: 25, capStat: '', capMult: 0, val: 0, dur: 4, interval: 0.5, stack: 'strongest', maxStacks: 1, desc: '新版技能【血毒刃】：毒屬性持續傷害；每跳量與間隔由技能各階決定（引擎以 dps 覆寫）。', vfx: { apply: 'curse-poison', tick: 'hit-poison' } },
   sgIronBleed: { name: '鐵血裂傷', icon: '🗡️', kind: 'debuff', effect: 'dot', key: '', elem: '', dmgSource: 'maxHp', dmg: 3.5, capStat: '', capMult: 0, val: 0, dur: 3, interval: 0.35, stack: 'refresh', maxStacks: 1, desc: '新版技能【鐵血之舞】：占最大生命比例的流血；自身流血直接扣生命、不吃護盾。' },
@@ -206,7 +201,7 @@ function statusIsDebuff(sid) { var d = statusDef(sid); return !!d && d.kind === 
    新增會限制敵人行動或降低其攻速／移速的狀態時，要把效果鍵登記到這裡，否則不會吃到控場遞減。 */
 var CC_CATS_BY_KEY = {
   stun: ['act'],
-  slow: ['aspd'], aspdDown: ['aspd'], attackSpeedDown: ['aspd'], enemyAspdDown: ['aspd'],
+  slow: ['aspd'], aspdDown: ['aspd'], attackSpeedDown: ['aspd'],
   sgMire: ['aspd', 'move'], sgFrost: ['aspd', 'move'], sgStiffen: ['aspd', 'move'],
   sgWindRend: ['move'], sgWindSlow: ['move']
 };

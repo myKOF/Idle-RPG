@@ -7,7 +7,7 @@
   <title>無限征途：合成之巔</title>
   <link rel="icon" href="images/icon_avatar.png" type="image/png">
   <link rel="preload" as="image" href="images/ui/gem-resonance/hex-backplate.png" fetchpriority="low">
-  <link rel="stylesheet" href="css/style.css?v=1.0.75">
+  <link rel="stylesheet" href="css/style.css?v=1.0.76">
   <link rel="stylesheet" href="css/inventory-offset.css">
   <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.81">
   <link rel="stylesheet" href="css/ashen-forge-flat.css?v=1.0.3">
@@ -495,8 +495,7 @@
         <section id="tab-skills" class="tab">
           <div class="sgb-top">
             <h2 class="sgb-title">技能</h2>
-            <span class="sgb-pill" data-tt-title="技能點" data-tt-desc="技能熟練度每升 1 級 +1 點；技能點用於升級潛力技能">可用技能點 <b id="sp-count">0</b></span>
-            <span class="sgb-pill sgb-mastery" data-tt-title="技能熟練度" data-tt-desc="打怪獲得技能經驗，每升 1 級 +1 技能點">技能熟練度 <span id="mastery-level"></span>
+            <span class="sgb-pill sgb-mastery" data-tt-title="技能熟練度" data-tt-desc="打怪獲得技能經驗並提升熟練度">技能熟練度 <span id="mastery-level"></span>
               <span id="mastery-bar" class="mastery-bar"><span id="mastery-bar-fill" class="mastery-bar-fill"></span><span id="mastery-bar-text" class="mastery-bar-text"></span></span>
             </span>
           </div>
@@ -796,8 +795,7 @@
               <p><b>🏭 熔爐：</b>掉落裝備自動進入熔爐佇列，依各熔爐勾選的品質送入傳送帶拆解（未勾選＝保留入包）。拆解依裝備品質與零件加成產出碎片、金幣與附魔精華，不會產出寶石。熔爐數量與轉生連動（0 轉 2 座、每轉 +1、上限 12），每爐零件格可用金幣解鎖至 8 格。</p>
               <p><b>🔷 符文：</b>符文取代了原本的附魔（附魔功能已關閉）。符文從野外擊殺與封魔塔通關掉落，同種數顆可合成為下一階。在「裝備」分頁點選裝備 → 按「符文」→ 點符文即可鑲入符文孔（孔數依品質，一般裝備最多 4 孔），點擊已鑲的符文可取下。
                 把指定的符文依指定順序鑲滿，且裝備類型符合，就會成形為「符文真言」，獲得額外屬性與特殊威能。配方與效果記在「符文」分頁的圖鑑裡，成形過一次才會顯示。</p>
-              <p><b>🧠 技能：</b>54 個技能以五系技能樹呈現（每階需在該系投入點數解鎖）。每升 1 級獲得 1 技能點，技能上限 Lv.10 — 前期升級加基礎數值，Lv.4 解鎖附加狀態、Lv.8
-                強化該狀態。裝載欄初始 2 格，每 20 級再 +1 格，最多 20 格；戰鬥中依順序自動施放；治療/護盾類會等血量偏低才施放；被動學會即永久生效。</p>
+              <p><b>🧠 技能：</b>技能以群組與進化階段呈現，使用金幣升級；裝入技能列後自動施放，超神進化依各技能條件解鎖。</p>
               <p><b>⚗️ 技能融合：</b>放入 2~4
                 個已學主動技能融合成專屬奧義：繼承素材部分效果（以素材當前等級計，等級越高繼承越強），並有機率覺醒變異效果（冰與火之歌、雷鳴回響、劇毒綻放…每次僅一種）。融合技初始等級＝素材加總、可再升 20
                 級；素材歸零可重學；刪除融合技會歸還所有投入點數。</p>
@@ -812,14 +810,7 @@
     </div>
   </div>
 
-  <!-- 技能升級彈窗 -->
-  <div id="skill-modal" class="modal-overlay" style="display:none">
-    <div class="modal-box">
-      <button id="skill-modal-close" class="modal-x" aria-label="關閉">✕</button>
-      <div id="skill-modal-body"></div>
-    </div>
-  </div>
-  <!-- 天賦／潛力升級彈窗 -->
+  <!-- 天賦升級彈窗 -->
   <div id="talent-modal" class="modal-overlay" style="display:none">
     <div class="modal-box">
       <button id="talent-modal-close" class="modal-x" aria-label="關閉">✕</button>
@@ -932,7 +923,7 @@
   <!-- P5：模擬層只在 Worker 內執行（見 js/worker/sim.worker.js 的 importScripts）。
        主執行緒這裡只留渲染還用得到的部分：
          util / data / formula  文字格式化與敘述表
-         item / skills / talents / player / combat / potential / tower
+         item / skills / talents / player / combat / tower
                                  產生顯示字串與衍生值的輔助函式
          stats                  統計面板 HTML
          save                   SaveStorage 重用其 I/O 與存檔索引
@@ -940,14 +931,14 @@
          special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/util.js?v=1.0.3"></script>
   <script src="js/ui-scale.js?v=1.0.1"></script>
-  <script src="js/data.js?v=1.0.86"></script>
-  <script src="js/status.js?v=1.0.33"></script>
+  <script src="js/data.js?v=1.0.87"></script>
+  <script src="js/status.js?v=1.0.34"></script>
   <script src="js/runeword_data.js?v=1.0.15"></script>
   <script src="js/gem_resonance_data.js?v=1.0.1"></script>
-  <script src="js/formula.js?v=1.0.63"></script>
+  <script src="js/formula.js?v=1.0.64"></script>
   <script src="js/battlefield.js?v=1.4.13"></script>
   <script src="js/game-clock.js?v=1.0.1"></script>
-  <script src="js/vfx.js?v=1.0.81"></script>
+  <script src="js/vfx.js?v=1.0.82"></script>
   <!-- PixiJS（本地 vendor，零建置專案不用 CDN）＋ Canvas 戰鬥渲染器。
        渲染器只在主執行緒跑，模擬層與 Worker 完全不知道它存在。 -->
   <script src="js/vendor/pixi.min.js"></script>
@@ -968,22 +959,21 @@
   <!-- 封魔塔魔王祭壇（BOSS 戰專用場景）：沿用 battle-decor 的繪圖工具，battle-renderer 的 init() 會建立它。 -->
   <script src="js/battle-arena.js?v=1.0.6"></script>
   <script src="js/battle-elite.js?v=1.0.7"></script>
-  <script src="js/battle-renderer.js?v=1.6.189"></script>
+  <script src="js/battle-renderer.js?v=1.6.190"></script>
   <script src="js/stats.js?v=1.0.4"></script>
   <script src="js/item.js?v=1.0.24"></script>
   <script src="js/gem_resonance.js?v=1.0.3"></script>
   <script src="js/runeword.js?v=1.0.14"></script>
-  <script src="js/skills.js?v=1.0.42"></script>
+  <script src="js/skills.js?v=1.0.43"></script>
   <!-- 新版主動技能系統（2026-08-13 技能改造第一批）：定義表＋引擎＋純函式說明 -->
-  <script src="js/skills2.js?v=1.0.323"></script>
+  <script src="js/skills2.js?v=1.0.324"></script>
   <script src="js/elite_data.js?v=1.0.6"></script>
-  <script src="js/talents.js?v=1.0.5"></script>
-  <script src="js/player.js?v=1.0.15"></script>
-  <script src="js/combat.js?v=1.0.87"></script>
-  <script src="js/potential.js?v=1.0.9"></script>
-  <script src="js/tower.js?v=1.0.31"></script>
-  <script src="js/save.js?v=1.0.17"></script>
-  <script src="js/ui.js?v=1.0.174"></script>
+  <script src="js/talents.js?v=1.0.6"></script>
+  <script src="js/player.js?v=1.0.16"></script>
+  <script src="js/combat.js?v=1.0.88"></script>
+  <script src="js/tower.js?v=1.0.32"></script>
+  <script src="js/save.js?v=1.0.18"></script>
+  <script src="js/ui.js?v=1.0.175"></script>
   <script src="js/ui-runeword.js?v=1.0.11"></script>
   <script src="js/ui-gem-resonance.js?v=1.0.15"></script>
   <script src="js/param_autoreload.js"></script>
@@ -993,12 +983,12 @@
        正式遊玩是空殼。必須排在 ui.js（用它的 isInternalVersion）之後、VFX Runtime 建立（main 開機）之前。 -->
   <script src="js/battle-perf.js?v=1.0.3"></script>
   <!-- 模擬 Worker 的協議與橋接。bridge.js 於 DOMContentLoaded 開機 -->
-  <script src="js/worker/protocol.js?v=53"></script>
+  <script src="js/worker/protocol.js?v=54"></script>
   <script src="js/storage.js?v=1.0.1"></script>
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
-  <script src="js/bridge.js?v=1.0.297"></script>
+  <script src="js/bridge.js?v=1.0.298"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->

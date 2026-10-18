@@ -8,7 +8,7 @@ const uiSource = fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8');
 const simulationFiles = [
   'util.js', 'data.js', 'formula.js', 'stats.js', 'item.js', 'skills.js',
   'talents.js', 'player.js', 'special_rules.js', 'combat.js', 'legendary.js',
-  'potential.js', 'tower.js', 'factory.js', 'newforge.js', 'forge.js', 'save.js'
+  'tower.js', 'factory.js', 'newforge.js', 'forge.js', 'save.js'
 ];
 
 function codeMask(source) {
@@ -198,8 +198,6 @@ test('遞迴掃描 UI 呼叫的模擬層 G 相依，無未守衛路徑', () => {
     'findSaveRecordV2',
     'loadSaveRecord',
     'openSaveFolder',
-    'potentialSkillMaxLv',
-    'potentialSkillValue',
     'reincarnationRankName',
     'reincarnationTotalMultiplier',
     'talentSystemUnlocked',
@@ -221,7 +219,7 @@ test('遞迴掃描 UI 呼叫的模擬層 G 相依，無未守衛路徑', () => {
   assert.ok(getStatsPath && getStatsPath.length > 1,
     '掃描器必須遞迴找出 getStats 間接呼叫讀 G 的函式');
   assert.equal(getStatsPath.at(-1), 'computeStats');
-  for (const name of ['getStats', 'talentLevel', 'potentialUnlocked', 'talentCompleteMultiplier']) {
+  for (const name of ['getStats', 'talentLevel', 'talentCompleteMultiplier']) {
     assert.equal(uiCalls.has(name), false, `ui.js 不得呼叫 ${name}`);
   }
 

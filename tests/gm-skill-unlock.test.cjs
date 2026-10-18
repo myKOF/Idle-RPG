@@ -28,7 +28,7 @@ function loadContext(initialFloor) {
       level: 1,
       reincarnations: 0,
       skills2: { levels: {}, ult: {} },
-      talents: { levels: {}, potentialLevels: {} },
+      talents: { levels: {} },
       loadout: []
     },
     tower: { highest: initialFloor || 0, active: false },
@@ -108,11 +108,6 @@ test('skill_unlock 開啟時：1級角色可升級、裝配及使用高等級/�
   // 5. 裝載欄滿槽解鎖
   assert.equal(c.loadoutSize(), c.LOADOUT_SIZE.max, '裝載欄解鎖上限6格');
 
-  // 6. 潛力技能解鎖與升級（原需3轉）
-  assert.equal(c.potentialUnlocked('velocityForce'), true);
-  c.G.player.skillMastery = { level: 10, xp: 0 };
-  c.G.player.reincarnationTalentPoints = 1;
-  assert.equal(c.potentialUpgrade('velocityForce'), null, '0轉即可升級潛力技能');
 });
 
 test('skill_unlock 再次執行關閉時：恢復為正常限制條件', () => {
@@ -138,7 +133,4 @@ test('skill_unlock 再次執行關閉時：恢復為正常限制條件', () => {
   c.G.player.level = 1;
   assert.equal(c.loadoutSize(), 4);
 
-  // 潛力無轉生解鎖限制，仍需支付威能點。
-  c.G.player.reincarnationTalentPoints = 1;
-  assert.equal(c.potentialUpgrade('velocityForce'), null, '潛力無轉生解鎖限制，仍需支付威能點');
 });

@@ -23,7 +23,7 @@ const CSV_PATH = process.env.PARAMS_CSV || path.join(ROOT, 'config', 'CSV', 'gam
 const FILES = {
   data: path.join(ROOT, 'js', 'data.js'), formula: path.join(ROOT, 'js', 'formula.js'),
   combat: path.join(ROOT, 'js', 'combat.js'), item: path.join(ROOT, 'js', 'item.js'),
-  skills: path.join(ROOT, 'js', 'skills.js'), player: path.join(ROOT, 'js', 'player.js'),
+  player: path.join(ROOT, 'js', 'player.js'),
   save: path.join(ROOT, 'js', 'save.js'), renderer: path.join(ROOT, 'js', 'battle-renderer.js')
 };
 const WRITE = process.argv.includes('--write');
@@ -571,12 +571,6 @@ function getReincarnationCell(n, paramIdx) {
   }
   arrayContent('data', 'REINCARNATION_EXP_MULTIPLIERS', g.join(', '), 'REINCARNATION_EXP_MULTIPLIERS');
 }
-// REINCARNATION_SKILL_MAX_LEVELS = [20, 30, ...]（0~20 取 CSV 轉生對照表 param e＝潛力技能上限）
-{
-  const g = [];
-  for (let n = 0; n <= 20; n++) g.push(Number(getReincarnationCell(n, 4)));
-  arrayContent('data', 'REINCARNATION_SKILL_MAX_LEVELS', g.join(', '), 'REINCARNATION_SKILL_MAX_LEVELS');
-}
 /* 每波敵人數量：小怪／菁英／BOSS 三張獨立權重表。
    欄位寫法 {數量,權重} 或 {下限~上限,權重}（也接受 = 當分隔，與本表其他區間欄位一致）。
    例：{1~4,10} 代表 1~4 隻的權重都是 10。留空或 0 的欄位略過。 */
@@ -1052,9 +1046,6 @@ objFieldML('formula', 'FORGE_GEM_COST = {', 'perTier', '6-神鑄', '寶石神鑄
    改成具名常數之後，錨點綁的是變數名，與算式怎麼寫無關。 */
 
 /* ---- §9 技能 ---- */
-objFieldML('formula', 'SKILL_UPGRADE_COST = {', 'coef', '9-技能', '升級費用', 0, '技升-係數');
-objFieldML('formula', 'SKILL_UPGRADE_COST = {', 'base', '9-技能', '升級費用', 1, '技升-底');
-objFieldML('formula', 'SKILL_UPGRADE_COST = {', 'divisor', '9-技能', '升級費用', 2, '技升-除數');
 objFieldML('formula', 'LOADOUT_SIZE = {', 'perLevels', '1-成長經驗', '技能裝載欄', 0, '裝載欄-每級');
 objFieldML('formula', 'LOADOUT_SIZE = {', 'min', '1-成長經驗', '技能裝載欄', 1, '裝載欄-下限');
 objFieldML('formula', 'LOADOUT_SIZE = {', 'base', '1-成長經驗', '技能裝載欄', 1, '裝載欄-基準');
@@ -1100,10 +1091,6 @@ scalar('formula', 'PEN_IGNORE_A', '3-戰鬥核心', '穿透忽略防禦', 0);
 scalar('formula', 'ELITE_DROP_MULT', '4-野外怪物', '野外菁英掉落倍率', 0);
 // 寶石商店刷新週期（item.js，單一常數）
 scalar('item', 'GEM_SHOP_REFRESH_HOURS', '8-寶石商店', '刷新週期', 0);
-// 技能點（2026-07-30 熟練度制）：a=基礎點數(skills.js SKILL_POINT_BASE)；b 已停用（升級不再給點）；
-// c=舊制上限常數（data.js SKILL_POINT_BUDGET_CAP，改制後僅保留相容）
-scalar('skills', 'SKILL_POINT_BASE', '1-成長經驗', '技能點總預算', 0);
-scalar('data', 'SKILL_POINT_BUDGET_CAP', '1-成長經驗', '技能點總預算', 2);
 // 技能熟練度（2026-07-30）：經驗需求 ⌊a×L^b+c⌋；上限等級與擊殺經驗率（formula.js §9）
 scalar('formula', 'SKILL_MASTERY_XP_A', '1-成長經驗', '技能熟練度經驗需求', 0);
 scalar('formula', 'SKILL_MASTERY_XP_B', '1-成長經驗', '技能熟練度經驗需求', 1);

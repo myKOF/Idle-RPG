@@ -542,22 +542,30 @@ function migrateSave(data) {
   data.player.reincarnationTalentPoints = Math.max(0, Math.floor(Number(data.player.reincarnationTalentPoints) || 0));
   data.powerThreatV1 = hadPowerThreatV1;
   if (typeof migratePowerSave === 'function') migratePowerSave(data);
-  if (!data.player.talents || typeof data.player.talents !== 'object') data.player.talents = { levels: {}, potentialLevels: {} };
+  if (!data.player.talents || typeof data.player.talents !== 'object') data.player.talents = { levels: {} };
   if (!data.player.talents.levels || typeof data.player.talents.levels !== 'object') data.player.talents.levels = {};
-  if (!data.player.talents.potentialLevels || typeof data.player.talents.potentialLevels !== 'object') data.player.talents.potentialLevels = {};
+  // 潛力系統移除：按舊投入退回威能點；刪除欄位後再次讀檔不會重複退點。
+  var removedPotentialIds = ['velocityForce', 'lightningOverdrive', 'chronoCollapse', 'absoluteSanctuary',
+    'lastStandUndying', 'timeBarrier', 'dualCoreFusion', 'omegaImpact', 'sacredInversion', 'chronosStasis'];
+  var removedPotentialLevels = data.player.talents.potentialLevels || {};
+  var removedPotentialRefund = 0;
+  removedPotentialIds.forEach(function (id) {
+    var lv = clamp(Math.floor(Number(removedPotentialLevels[id]) || 0), 0, 10);
+    removedPotentialRefund += lv * (lv + 1) / 2;
+  });
+  ['t3_potential', 't4_potential', 't7_potential', 't10_potential'].forEach(function (id) {
+    var lv = clamp(Math.floor(Number(data.player.talents.levels[id]) || 0), 0, 10);
+    removedPotentialRefund += lv * (lv + 1) / 2;
+    delete data.player.talents.levels[id];
+  });
+  data.player.reincarnationTalentPoints += removedPotentialRefund;
+  delete data.player.talents.potentialLevels;
+  delete data.player.potentialPoints;
+  delete data.player.skillPoints;
   if (typeof talentList === 'function') {
     talentList().forEach(function (entry) {
       data.player.talents.levels[entry.def.id] = clamp(Math.floor(Number(data.player.talents.levels[entry.def.id]) || 0), 0, TALENT_MAX_LEVEL);
     });
-  }
-  if (typeof POTENTIAL_TALENTS !== 'undefined') {
-    // 潛力技能：只保留現有鍵並夾回威能等級上限。
-    var potMaxLv = TALENT_MAX_LEVEL;
-    var cleaned = {};
-    POTENTIAL_TALENTS.forEach(function (def) {
-      cleaned[def.id] = clamp(Math.floor(Number(data.player.talents.potentialLevels[def.id]) || 0), 0, potMaxLv);
-    });
-    data.player.talents.potentialLevels = cleaned;
   }
   // 2026-07-30 技能熟練度制：技能點不再依角色等級補建（舊 skillPointBudget 於下方轉換為熟練度等級）。
   // 經驗值是目前等級的「剩餘經驗」，不是累積總經驗；讀檔先轉回有限非負數，
@@ -656,7 +664,7 @@ function migrateSave(data) {
      舊版技能系統（SKILLS 表的物理／魔法／防禦／特殊／被動五類技能、融合技、45 機制族）已整批移除。
      1) 已學等級（player.skills）、人物等級解鎖紀錄（skillUnlocks）、融合技記錄（fusions）全部刪除；
         技能點是「總預算 − 已投入」的推導制，等級刪除即自動全額退還，不需另外發點。
-     2) 裝載欄只留新版技能群組（'sg:'）與潛力技能（'potential:'）；舊技能一律卸下，
+     2) 裝載欄只留新版技能群組（'sg:'）；舊技能一律卸下，
         其餘格位保持不動（空格允許，由 unequip 慣例在尾端壓實）。
      3) 融合專用資源魔法卷軸（magicScroll）一併刪除。
      4) 主線任務：移除兩個以舊技能為目標的任務（原索引 6、16），已領取進度依此平移，
@@ -673,7 +681,7 @@ function migrateSave(data) {
   legacyStats.scrolls = Math.max(0, Math.floor(Number(data.player.magicScroll) || 0));
   if (Array.isArray(data.player.loadout)) {
     data.player.loadout = data.player.loadout.map(function (loId) {
-      if (typeof loId === 'string' && (loId.indexOf('sg:') === 0 || loId.indexOf('potential:') === 0)) return loId;
+      if (typeof loId === 'string' && loId.indexOf('sg:') === 0) return loId;
       if (loId) legacyStats.equipped++;
       return null;
     });
@@ -716,28 +724,18 @@ function migrateSave(data) {
     }
   }
   data.loadoutCapClampV1 = true;
-  // 技能點改制：舊 skillPointBudget → 熟練度等級（總點數 = 基礎點數 + 熟練度 + 天賦加成）。
-  // 基礎點數以 skills.js 的 SKILL_POINT_BASE 為準，不得寫死。
-  var spBase = (typeof SKILL_POINT_BASE === 'number') ? SKILL_POINT_BASE : 2;
-  var spSpentAll = 0;
-  spSpentAll = Math.max(0, Math.floor(spSpentAll));
+  // 保留歷史 skillPointBudget → 熟練度遷移；不再建立任何技能點欄位。
+  var spBase = 3; // 舊版預算轉熟練度的固定歷史基數
   if (!data.player.skillMastery || typeof data.player.skillMastery !== 'object') data.player.skillMastery = { level: 0, xp: 0 };
   var mgMastery = data.player.skillMastery;
   mgMastery.level = Math.max(0, Math.min(SKILL_MASTERY_MAX_LEVEL, Math.floor(Number(mgMastery.level) || 0)));
   mgMastery.xp = Math.max(0, Math.floor(Number(mgMastery.xp) || 0));
   if (!hadSkillMastery && hadSkillPointBudget) {
     var mgOldBudget = Math.max(0, Math.floor(Number(data.player.skillPointBudget) || 0));
-    mgMastery.level = Math.max(0, Math.min(SKILL_MASTERY_MAX_LEVEL, Math.max(mgOldBudget - spBase, spSpentAll - spBase)));
+    mgMastery.level = Math.max(0, Math.min(SKILL_MASTERY_MAX_LEVEL, mgOldBudget - spBase));
     mgMastery.xp = 0;
-    data._skillPointRepairNotice = '技能點改由技能熟練度提供：舊技能點預算已轉換為熟練度 Lv.' + mgMastery.level;
   }
-  // 保底：已花費點數不因改制而倒欠（熟練度至少覆蓋 已花費−基礎點數；超過 1000 級上限者於下方提示保護）
-  if (spSpentAll - spBase > mgMastery.level && mgMastery.level < SKILL_MASTERY_MAX_LEVEL) {
-    mgMastery.level = Math.min(SKILL_MASTERY_MAX_LEVEL, spSpentAll - spBase);
-  }
-  if (spSpentAll > spBase + mgMastery.level) {
-    data._skillPointRepairNotice = '技能投入 ' + spSpentAll + ' 點超過總點數上限，可用技能點已保護為 0；既有技能未刪除';
-  }
+  delete data._skillPointRepairNotice;
   delete data.player.skillPointBudget; // 改制後不再使用（新點數權威 = skillMastery）
   /* ---- 新版技能群組（skills2）結構常態化（2026-08-13，冪等）----
      等級一律整數並夾在 0..SG_TIER_MAX_LV；陣列長度補齊至階數；
@@ -1176,7 +1174,7 @@ function applyOfflineProgress(options) {
   elapsed = Math.min(elapsed, OFFLINE_MAX_HOURS * 3600);
 
   var st = getStats();
-  var kills = offlineKillCount(elapsed, 0); // 潛力技能 V3 起無離線收益加成（舊 potentialOffline 已移除）
+  var kills = offlineKillCount(elapsed, 0);
   if (kills < 1) return;
   var stage = Math.min(zoneMaxStage(G.stage.zone), offlineStageFor(G.stage.best));
   /* 怪物種類由參數表決定（formula.js §10 OFFLINE_ELITE）。掉落倍率一定要跟著同一個

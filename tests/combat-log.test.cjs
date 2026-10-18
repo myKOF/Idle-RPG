@@ -8,7 +8,6 @@ const root = path.resolve(__dirname, '..');
 test('戰鬥日誌分類與色彩樣式規則驗證', () => {
   const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
   const combat = fs.readFileSync(path.join(root, 'js/combat.js'), 'utf8');
-  const potential = fs.readFileSync(path.join(root, 'js/potential.js'), 'utf8');
   const tower = fs.readFileSync(path.join(root, 'js/tower.js'), 'utf8');
   const forge = fs.readFileSync(path.join(root, 'js/forge.js'), 'utf8');
   const worker = fs.readFileSync(path.join(root, 'js/worker/sim.worker.js'), 'utf8');
@@ -28,13 +27,10 @@ test('戰鬥日誌分類與色彩樣式規則驗證', () => {
   // 我方的技能: log-player-skill (黃色)。舊技能表已移除，現行來源：
   //   - 潛力技能的傷害類施放日誌（js/potential.js）
   //   - 對敵人的直接持續傷害（combat.js logEnemyDirectDamage）
-  const potentialCastLogs = potential.split(/\r?\n/).filter((line) => line.includes('你施放潛力【'));
-  assert.ok(potentialCastLogs.some((line) => /'log-player-skill',\s*'combat'\)/.test(line)), '潛力技能傷害類施放日誌應使用 log-player-skill');
   assert.match(combat, /function\s+logEnemyDirectDamage\([\s\S]*?'log-player-skill',\s*'combat'\);/);
   assert.match(css, /\.log-line\.log-player-skill\s*\{[\s\S]*?color:\s*#fde047;[\s\S]*?\}/);
 
   // 我方施放的buff及debuff: log-player-buff (淺綠色)：潛力技能的增益類施放日誌
-  assert.ok(potentialCastLogs.some((line) => /'log-player-buff',\s*'combat'\)/.test(line)), '潛力技能增益類施放日誌應使用 log-player-buff');
   assert.match(css, /\.log-line\.log-player-buff\s*\{[\s\S]*?color:\s*#86efac;[\s\S]*?\}/);
 
   // 敵方造成的傷害: log-enemy-damage (淡紅色)

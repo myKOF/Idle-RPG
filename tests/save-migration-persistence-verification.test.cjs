@@ -112,30 +112,11 @@ test('驗證 2：重複讀檔（第二次載入）不再裁切也不再產生公
   assert.equal(rawOldSave._loadoutCapClampNotice, undefined);
 });
 
-test('驗證 3：轉生確認窗的技能上限增量計算，10 轉之後（10轉升11轉）應該為 0（已封頂）', () => {
+test('轉生確認窗不再顯示已移除的潛力技能上限增量', () => {
   const c = loadContext();
-
-  // 測試 0 轉到 10 轉的每階增量
-  for (let rc = 0; rc <= 9; rc++) {
-    const curMax = c.skillMaxLvForRc(rc);
-    const nextMax = c.skillMaxLvForRc(rc + 1);
-    const add = Math.max(0, nextMax - curMax);
-    assert.equal(add, 2, `${rc} 轉升 ${rc + 1} 轉應增加 2 級上限`);
-  }
-
-  // 10 轉升 11 轉（晉階 10 轉）
-  const cur10Max = c.skillMaxLvForRc(10);
-  const next11Max = c.skillMaxLvForRc(11);
-  const add10to11 = Math.max(0, next11Max - cur10Max);
-  assert.equal(cur10Max, 30, '10 轉技能上限應為 30');
-  assert.equal(next11Max, 30, '11 轉技能上限應為 30');
-  assert.equal(add10to11, 0, '10 轉升 11 轉的技能上限增量應為 0（已封頂）');
-
-  // 15 轉升 16 轉
-  const cur15Max = c.skillMaxLvForRc(15);
-  const next16Max = c.skillMaxLvForRc(16);
-  const add15to16 = Math.max(0, next16Max - cur15Max);
-  assert.equal(add15to16, 0, '15 轉升 16 轉的技能上限增量應為 0（已封頂）');
+  assert.equal(c.skillMaxLvForRc, undefined);
+  const ui = fs.readFileSync(path.join(__dirname, '../js/ui.js'), 'utf8');
+  assert.doesNotMatch(ui, /skillMaxLvForRc|skillLimitLine/);
 });
 
 test('驗證 4：存檔持久化落盤後旗標 loadoutCapClampV1 是否正確寫入 JSON 並被保存', () => {

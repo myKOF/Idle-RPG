@@ -30,7 +30,7 @@ function loadGameContext() {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });
   context.G = {
-    player: { level: 1, reincarnations: 0, talents: { levels: {}, potentialLevels: {} }, loadout: [] },
+    player: { level: 1, reincarnations: 0, talents: { levels: {} }, loadout: [] },
     stage: { current: 1 },
     tower: { active: false }
   };

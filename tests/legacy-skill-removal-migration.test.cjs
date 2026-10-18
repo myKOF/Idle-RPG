@@ -53,11 +53,11 @@ test('舊技能、解鎖紀錄、融合技與魔法卷軸整批刪除', () => {
   assert.equal(data.legacySkillRemovalV1, true);
 });
 
-test('裝載欄：舊技能與融合技被卸下，新版技能群組與潛力技能原位保留', () => {
+test('裝載欄：舊技能、融合技與潛力技能被卸下，新版技能群組原位保留', () => {
   const c = loadMigrationContext();
   const data = legacySave(c);
   c.migrateSave(data);
-  assert.deepEqual(data.player.loadout, [null, 'sg:thrust', null, 'potential:velocityForce']);
+  assert.deepEqual(data.player.loadout, [null, 'sg:thrust']);
 });
 
 test('裝載欄尾端的舊技能卸下後不留空洞（與 unequip 慣例一致）', () => {
@@ -72,10 +72,10 @@ test('公告統計：清除幾個舊技能、幾個融合技、卸下幾個、�
   const data = legacySave(c);
   c.migrateSave(data);
   assert.deepEqual(JSON.parse(JSON.stringify(data._legacySkillRemoval)),
-    { skills: 4, fusions: 1, equipped: 3, scrolls: 12 });
+    { skills: 4, fusions: 1, equipped: 4, scrolls: 12 });
 });
 
-test('技能點自動退還：潛力改用威能點，不再佔用舊技能點', () => {
+test('潛力已投入的威能點退回原點數池，移除技能點欄位', () => {
   const c = loadMigrationContext();
   const data = legacySave(c, (d) => {
     d.player.reincarnations = 3;
@@ -83,8 +83,9 @@ test('技能點自動退還：潛力改用威能點，不再佔用舊技能點',
   });
   c.migrateSave(data);
   c.G = data;
-  assert.equal(c.spentSkillPoints(), 0);
-  assert.equal(c.availableSkillPoints(), c.totalSkillPoints());
+  assert.equal(data.player.reincarnationTalentPoints, 3);
+  assert.equal(data.player.skillPoints, undefined);
+  assert.equal(data.player.talents.potentialLevels, undefined);
 });
 
 test('主線任務索引：被移除的兩個任務（原索引 6、16）之後的已領取進度平移', () => {

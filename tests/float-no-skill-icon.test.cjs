@@ -131,12 +131,13 @@ function callArgs(source, openParen) {
   throw new Error('unterminated call');
 }
 
-const SCAN_FILES = ['js/skills2.js', 'js/potential.js', 'js/legendary.js', 'js/combat.js'];
+const SCAN_FILES = ['js/skills2.js', 'js/legendary.js', 'js/combat.js'];
 
 test('FI-6 原始碼掃描：沒有任何一個 floatEnemyEvent 的文字參數以圖示開頭或帶入 emoji', () => {
   let calls = 0;
   for (const file of SCAN_FILES) {
     const source = fs.readFileSync(path.join(root, file), 'utf8');
+    const beforeFile = calls;
     const re = /floatEnemyEvent\(/g;
     let m;
     while ((m = re.exec(source))) {
@@ -150,8 +151,9 @@ test('FI-6 原始碼掃描：沒有任何一個 floatEnemyEvent 的文字參數�
       assert.ok(!/\bemoji\b/.test(text), '引用了 emoji：' + where);
       assert.ok(!/^label\b/.test(text), '帶入了 label：' + where);
     }
+    assert.ok(calls > beforeFile, file + ' 未解析到敵人浮字');
   }
-  assert.ok(calls >= 15, '掃到的呼叫數太少（' + calls + '），解析可能壞了');
+  assert.ok(calls > 0, '現行來源應至少包含一處敵人浮字');
 });
 
 test('FI-7 我方頭頂「技能名稱＋總傷害」的圖示維持原樣（圖在名稱前，不是傷害數字前）', () => {

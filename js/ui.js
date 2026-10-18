@@ -3656,17 +3656,14 @@ function renderMpSkill(pEnt, prefix, stats, snapshotGt) {
     var talentSnapshot = uiTalentPanelSnapshot();
     for (var i = 0; i < lo.length; i++) {
       var entry = lo[i];
-      var isPotE = typeof entry === 'string' && entry.indexOf('potential:') === 0;
       var isSgE = typeof entry === 'string' && entry.indexOf('sg:') === 0;
       var sk = isSgE
         ? (typeof SKILLS2 !== 'undefined' ? SKILLS2[entry.slice(3)] : null)
-        : (isPotE && typeof potentialDef === 'function' ? potentialDef(entry.slice(10)) : null);
+        : null;
       if (!sk) continue;
       var timerE = uiBattleSkillTimer(entry, pEnt, snapshotGt, peekUiPanelData('battle'));
       var cd = timerE.remaining;
-      var lv = isSgE
-        ? sgbTotals(entry.slice(3), sgUiLevels(skillsSnapshot, entry.slice(3)), skillsSnapshot).total
-        : uiPotentialLevelFromSnapshot(talentSnapshot, sk.id);
+      var lv = sgbTotals(entry.slice(3), sgUiLevels(skillsSnapshot, entry.slice(3)), skillsSnapshot).total;
       /* 反擊法力門檻＝最高生效階段（含超神）的消耗，不逐階累加；
          恆時生效的被動（大地守護）沒有觸發消耗，門檻為 0。 */
       var isPassiveE = isSgE && (typeof skills2IsPassive === 'function') && skills2IsPassive(entry.slice(3));
@@ -3862,7 +3859,6 @@ function battleSkillSlotKey(state) {
 }
 
 /* 技能圖示：skills2 群組用畫好的圖（images/skills/<群組id>.png，由 tools/skill-icons/ 產生），
-   潛力技能等其餘技能沿用 emoji。entry 可為 'sg:<群組id>' 或群組 id；
    圖載入失敗（例如新群組還沒出圖）時退回 emoji。重新出圖後要把 SKILL_ICON_VER +1，否則玩家會看到快取的舊圖。 */
 var SKILL_ICON_VER = '7';
 function skillIconGid(entry) {
@@ -4051,11 +4047,10 @@ function renderBattleSkillBar(pEnt, snapshotGt) {
       continue;
     }
 
-    var isPotE = typeof entry === 'string' && entry.indexOf('potential:') === 0;
     var isSgE = typeof entry === 'string' && entry.indexOf('sg:') === 0;
     var sk = isSgE
       ? (typeof SKILLS2 !== 'undefined' ? SKILLS2[entry.slice(3)] : null)
-      : (isPotE && typeof potentialDef === 'function' ? potentialDef(entry.slice(10)) : null);
+      : null;
 
     if (!sk) {
       var invalidState = { kind: 'empty', index: i };
@@ -4067,9 +4062,7 @@ function renderBattleSkillBar(pEnt, snapshotGt) {
     var timer = uiBattleSkillTimer(entry, pEnt, snapshotGt, battleSnap);
     var rawCdVal = timer.raw;
     var cd = timer.remaining;
-    var lv = isSgE
-      ? sgbTotals(entry.slice(3), sgUiLevels(skillsSnapshot, entry.slice(3)), skillsSnapshot).total
-      : uiPotentialLevelFromSnapshot(talentSnapshot, sk.id);
+    var lv = sgbTotals(entry.slice(3), sgUiLevels(skillsSnapshot, entry.slice(3)), skillsSnapshot).total;
     /* 主動型被動（js/skills2.js SG_PASSIVE）：裝上即生效、不主動施放，
        在快捷列以旋轉流動外框和其他技能區分。反擊的法力門檻使用最高生效階段（含超神）的消耗。 */
     var isPassiveGroup = isSgE && (typeof skills2IsPassive === 'function') && skills2IsPassive(entry.slice(3));
@@ -8014,10 +8007,6 @@ function uiCurrentZoneDef(headerSnapshot) {
   return ZONES[zone] || ZONES.desert || { name: zone, emoji: '' };
 }
 
-function uiPotentialLevelFromSnapshot(talentSnapshot, id, maxLv) {
-  return talentViewPotentialLevel(talentSnapshot, id,
-    maxLv === undefined ? skillViewPotentialMaxLevel(uiReincarnationCount()) : maxLv);
-}
 
 function uiProjectedItemScore(item) {
   if (!item) return 0;
@@ -8385,21 +8374,12 @@ function talentViewLevels(snapshot) {
     : {};
 }
 
-function talentViewPotentialLevels(snapshot) {
-  return snapshot && snapshot.talents && snapshot.talents.potentialLevels
-    ? snapshot.talents.potentialLevels
-    : {};
-}
 
 function talentViewLevel(snapshot, id) {
   var value = talentViewLevels(snapshot)[id];
   return clamp(Math.floor(Number(value) || 0), 0, TALENT_MAX_LEVEL);
 }
 
-function talentViewPotentialLevel(snapshot, id, maxLv) {
-  var value = talentViewPotentialLevels(snapshot)[id];
-  return clamp(Math.floor(Number(value) || 0), 0, Math.max(0, maxLv || 0));
-}
 
 function talentViewUnlocked(snapshot, id) {
   var turn = talentTurn(id);
@@ -8426,23 +8406,8 @@ function talentViewCompleteMultiplier(snapshot, turn) {
   return talentViewTreeComplete(snapshot, turn) ? 2 : 1;
 }
 
-function talentViewPotentialUnlockLimit(snapshot) {
-  return POTENTIAL_TALENTS.length;
-}
 
-function talentViewPotentialUnlocked(snapshot, id) {
-  var index = POTENTIAL_TALENTS.map(function (def) { return def.id; }).indexOf(id);
-  return index >= 0 &&
-    index < talentViewPotentialUnlockLimit(snapshot) &&
-    !potentialTemporarilyDisabled(id);
-}
 
-function talentViewPotentialUnlockedCount(snapshot) {
-  var limit = talentViewPotentialUnlockLimit(snapshot);
-  return POTENTIAL_TALENTS.slice(0, limit).filter(function (def) {
-    return !potentialTemporarilyDisabled(def.id);
-  }).length;
-}
 
 function pendingUiButtonAttributes(key) {
   return ' data-ui-pending-key="' + esc(key) + '"' +
@@ -8537,96 +8502,19 @@ function runTalentUiAction(commandName, id, legacyAction) {
 }
 
 
-/* 潛力技能 V3：類型標籤與「當前等級效果」文字（供面板/提示/彈窗共用）。 */
-function potentialTypeLabel(def) {
-  return def && def.type === 'active' ? '主動' : (def && def.type === 'passiveTrigger' ? '被動觸發' : '被動');
-}
-// 潛力技能傷害類型標籤（雷霆過載＝魔法、必殺一擊＝物理）；無傷害型回空字串。
-function potentialDmgLabel(def) {
-  return def && def.dmgType ? '·' + (def.dmgType === 'magic' ? '魔法' : (def.dmgType === 'phys' ? '物理' : '真實')) : '';
-}
-/* 潛力技能描述（供技能提示／升級面板呼叫）：
-   效果直接寫在說明內、當前數值內嵌；
-   會隨升級變動的數值用 g()（藍），固定值用 s()（橘）。 */
-function describePotentialSkill(def, lv) {
-  if (!def) return '';
-  lv = Math.max(1, lv || 1);
-  var v = potentialSkillValue(def, lv);
-  function g(x) { return '<span class="txt-grow">' + fmt1(x) + '</span>'; }      // 藍：升級會變動
-  function s(x) { return '<span class="txt-static">' + x + '</span>'; }          // 橘：固定值
-  switch (def.mech) {
-    case 'aspd': {
-      var headerSnapshot = uiHeaderPanelSnapshot();
-      var stats = headerSnapshot && headerSnapshot.stats;
-      var base = stats ? (stats.aspdBonusBase || 0) : 0;
-      var total = base + v;
-      var perSec = (typeof ASPD_BASE !== 'undefined' ? ASPD_BASE : 1) * (1 + total / 100); // 突破上限後的實際攻速（次/秒）
-      return s(def.dur || 6) + ' 秒內突破 ' + s(5) + ' 次/秒攻速上限：攻速加成 +' + g(v) + '%，期間攻速總加成 ' + g(total) + '%（含玩家原始攻速，約 ' + g(perSec) + ' 次/秒）';
-    }
-    case 'chainLightning': {
-      var atkPct = (def.atkBase || 0) + (def.atkPer || 0) * lv;
-      return '凝聚過載雷霆轟落敵陣：造成 ' + g(atkPct) + '% 魔攻的' + s('魔法傷害') + '（' + s('電屬性佔 100%') + '），於敵群間彈跳 ' + s(def.bounces || 5) + ' 次、每跳皆為完整傷害，且 ' + s(def.dur || 8) + ' 秒內' + s('每 1 秒') + '持續轟擊一輪；期間雷電傷害額外提高 ' + g(v) + '%（含此技能自身）';
-    }
-    case 'cdrUncap':
-      return '所有技能的冷卻縮減額外提高 ' + g(v) + '%，可突破 ' + s(60) + '% 上限，持續 ' + s(def.dur || 3) + ' 秒';
-    case 'invuln':
-      return '展開無敵結界 ' + g(v) + ' 秒，期間免疫所有傷害與負面效果';
-    case 'undyingGuard':
-      return '受致命傷害時免除死亡並獲得 ' + s(1) + ' 秒無敵；觸發後冷卻 ' + g(Math.max(1, 90 - v)) + ' 秒（不受冷卻縮減影響）';
-    case 'enemySlow':
-      return '使敵人攻速降低 ' + g(v) + '%，持續 ' + s(def.dur || 8) + ' 秒';
-    case 'crossCore':
-      return '雷霆過載的雷擊額外獲得 ' + g(v) + '% 物理攻擊力';
-    case 'omega':
-      return '打出必殺一擊，造成 爆擊率% × ' + g(v) + '% 物攻 的' + s('物理傷害') + '（爆擊率愈高、傷害愈高）';
-    case 'sacredInvert':
-      return '生命與法力回復額外提高 ' + g(v) + '%，且溢出的回復量有 ' + g(v) + '% 轉為對敵造成真實傷害，持續 ' + s(def.dur || 6) + ' 秒';
-    case 'timeStop':
-      return '令所有敵人靜止行動（' + s('不可被免疫') + '，含 BOSS），期間你的所有傷害提高 ' + g(v) + '%，持續 ' + s(def.dur || 8) + ' 秒';
-  }
-  return esc(def.desc || '');
-}
 
-function potentialNodeHTML(def, index, talentSnapshot, headerSnapshot) {
-  if (!def) return '';
-  var usingSnapshot = !!talentSnapshot;
-  var reincarnations = usingSnapshot
-    ? skillViewReincarnations(headerSnapshot, talentSnapshot)
-    : 0;
-  var max = usingSnapshot
-    ? skillViewPotentialMaxLevel(reincarnations)
-    : 0;
-  var lv = usingSnapshot
-    ? talentViewPotentialLevel(talentSnapshot, def.id, max)
-    : 0;
-  var unlocked = usingSnapshot
-    ? talentViewPotentialUnlocked(talentSnapshot, def.id)
-    : false;
-  var disabled = potentialTemporarilyDisabled(def.id);
-  var cls = 'tree-cell potential-icon' + (lv > 0 ? ' learned' : '') + (!unlocked || disabled ? ' locked' : '') + (disabled ? ' temporarily-disabled' : '');
-  var aria = def.name + (disabled ? '（' + (def.disabledReason || '目前暫不開放升級') + '）' : '');
-  // 潛力技能沿用一般技能卡的互動（data-sk）：滑過＝showSkillTooltip、點擊＝openSkillModal，不另寫一套。
-  return '<div class="' + cls + '" data-sk="potential:' + def.id + '" aria-label="' + esc(aria) + '">' +
-    '<span class="tc-emoji">' + def.emoji + '</span>' +
-    (lv > 0 ? '<span class="tc-lv' + (lv >= max ? ' max-lv' : '') + '">' + lv + '</span>' : (!unlocked ? '<span class="tc-lock">🔒</span>' : '')) +
-    (disabled ? '<span class="tc-lock">🔒 暫不開放</span>' : '') +
-    '</div>';
-}
 
 function talentEffectLabel(def, value) {
-  if (def.stat === 'potentialUnlock') return '已停用';
   var elementTalentNames = {
     elemFire: '火焰', elemIce: '寒冰', elemLightning: '雷電',
     elemPoison: '劇毒', elemLight: '聖光', elemDark: '暗影', elemEarth: '大地'
   };
   // 天賦每級可能是小數（總傷害額外 0.5% 等），fmt 會捨去小數 → 一律保留至多 2 位小數
   if (elementTalentNames[def.stat]) return String(Math.round(value * 100) / 100) + '%' + elementTalentNames[def.stat] + '傷害';
-  // 除潛力解鎖外，所有一般天賦效果皆為百分比。
   return String(Math.round(value * 100) / 100) + '%';
 }
 
 function talentEffectDescription(def, value) {
-  // 潛力技能 V3 的效果文字由 potentialValueLine 產生（見潛力面板/提示/彈窗）；此處僅處理一般天賦與潛力解鎖節點。
   if (def.disabled) return esc(def.disabledReason || '此威能已停用');
   return esc(def.desc) + talentEffectLabel(def, value);
 }
@@ -8646,11 +8534,6 @@ function talentTreeLevelTotal(turn, snapshot) {
 }
 
 function openTalentModal(kind, id) {
-  if (kind === 'potential') {
-    UI.selTalent = null;
-    openSkillModal('potential:' + id);
-    return;
-  }
   UI.selTalent = { kind: kind, id: id };
   hideTooltip();
   var overlay = $id('talent-modal');
@@ -8869,12 +8752,11 @@ function renderTalents() {
     '<span class="pg-pill">轉生威能點 <b>' + fmtFull(snapshot.talentPoints || 0) + '</b></span>' +
     '<span class="pg-pill">已轉生 <b>' + rc + ' 轉</b></span>' +
     '<span class="pg-pill tlx-monster-power" tabindex="0" data-tt-title="魔物威能" data-tt-desc="地獄大軍感受到你接收了天堂神力而倍感憤怒&lt;br&gt;魔物威能每增加10%則敵人強度+1級">魔物威能 <b>' + (100 + talentThreatTotal(talentViewLevels(snapshot))) + '%</b></span>' +
-    '<button type="button" class="pg-help" aria-label="威能說明" data-tt-title="天堂威能" data-tt-desc="1 轉後開放；轉生後每升 1 級獲得 1 點轉生威能點。威能與潛力最高10級，升至第N級消耗N點威能點，升滿共55點。每級效果依表定增加值累加。本轉所有啟用威能升滿後效果加倍。潛力無解鎖限制，與威能共用點數。每個威能首次點亮增加表定威脅值，後續升級不再增加。">?</button></div>';
+    '<button type="button" class="pg-help" aria-label="威能說明" data-tt-title="天堂威能" data-tt-desc="1 轉後開放；轉生後每升 1 級獲得 1 點轉生威能點。威能最高10級，升至第N級消耗N點威能點，升滿共55點。每級效果依表定增加值累加。本轉所有啟用威能升滿後效果加倍。每個威能首次點亮增加表定威脅值，後續升級不再增加。">?</button></div>';
   if (rc < 1) h += '<div class="tlx-locked-banner">🔒 威能系統將於完成 1 轉後開放。</div>';
   h += '<div class="tlx-tiers" role="tablist" aria-label="轉數">' + talentTierTabsHTML(snapshot) + '</div>';
   h += '<div class="tlx"><div class="tlx-board">' + talentBoardHTML(turn, snapshot) + '</div>' +
     '<aside class="tlx-side">' + talentEffectsHTML(turn, snapshot) + '</aside></div>';
-  // 潛力屬於技能分類，天賦頁只保留轉生天賦點摘要。
   if (root._lastH !== h) {
     if (UI.tooltipAnchor && root.contains && root.contains(UI.tooltipAnchor)) hideTooltip();
     root._lastH = h;
@@ -8883,9 +8765,8 @@ function renderTalents() {
   renderTalentModal(snapshot);
 }
 
-/* ---- 技能分頁（新版技能群組 + 潛力） ---- */
-UI.selSkill = null;      // 目前選取的技能 id
-UI.selTalent = null;     // { kind: 'talent'|'potential', id }
+/* ---- 技能分頁（新版技能群組） ---- */
+UI.selTalent = null;     // { kind: 'talent', id }
 UI.optimisticSkillLoadout = null; // { values: [], acknowledged: bool }
 
 function uiSkillsPanelSnapshot() {
@@ -8899,13 +8780,7 @@ function skillViewReincarnations(headerSnapshot, talentSnapshot) {
   return Math.max(0, Math.floor(Number(player && player.reincarnations) || 0));
 }
 
-function skillViewPotentialMaxLevel(reincarnations) {
-  return TALENT_MAX_LEVEL;
-}
 
-function skillViewSpentPoints(skillsSnapshot, talentSnapshot, reincarnations) {
-  return 0;
-}
 
 function skillViewLoadoutSize(skillsSnapshot) {
   var cap = Number(skillsSnapshot && skillsSnapshot.loadoutSize);
@@ -9020,14 +8895,6 @@ function renderSkills() {
   }
   var player = headerSnapshot.player || {};
   var reincarnations = skillViewReincarnations(headerSnapshot, talentSnapshot);
-  var spentPoints = skillViewSpentPoints(skillsSnapshot, talentSnapshot, reincarnations);
-  var availablePoints = Math.max(0, Math.floor(Number(skillsSnapshot.points) || 0));
-  var totalPoints = Math.max(
-    Math.floor(Number(skillsSnapshot.budget) || 0),
-    availablePoints + spentPoints
-  );
-  $id('sp-count').textContent = availablePoints + '（共 ' + totalPoints + ' 點，已用 ' + spentPoints + '）';
-
   // 技能熟練度（2026-07-30）：等級＋經驗條（快照 mastery 由 Worker 投影）
   var mastery = skillsSnapshot.mastery || { level: 0, xp: 0, xpMax: 0, maxLevel: 1000 };
   var masteryLvEl = $id('mastery-level');
@@ -9078,11 +8945,10 @@ function renderSkills() {
       continue;
     }
 
-    var isPot0 = typeof id0 === 'string' && id0.indexOf('potential:') === 0;
     var isSg0 = typeof id0 === 'string' && id0.indexOf('sg:') === 0;
     var d0 = isSg0
       ? (typeof SKILLS2 !== 'undefined' ? SKILLS2[id0.slice(3)] : null)
-      : (isPot0 ? potentialDef(id0.slice(10)) : null);
+      : null;
 
     if (!d0) {
       lh += '<div class="battle-skill-slot empty" data-slot-index="' + i + '" data-index="' + i + '" data-tt-title="技能槽 #' + (i + 1) + '（未裝備）" data-tt-desc="點擊下方技能即可裝備">' +
@@ -9092,9 +8958,7 @@ function renderSkills() {
       continue;
     }
 
-    var loadoutLevel = isSg0
-      ? sgbTotals(id0.slice(3), sgUiLevels(skillsSnapshot, id0.slice(3)), skillsSnapshot).total
-      : talentViewPotentialLevel(talentSnapshot, d0.id, skillViewPotentialMaxLevel(reincarnations));
+    var loadoutLevel = sgbTotals(id0.slice(3), sgUiLevels(skillsSnapshot, id0.slice(3)), skillsSnapshot).total;
     var isPassive0 = isSg0 && (typeof skills2IsPassive === 'function') && skills2IsPassive(id0.slice(3));
     var isSelected = (selectedIndex === i);
 
@@ -9121,34 +8985,11 @@ function renderSkills() {
   // 新版技能群組（js/skills2.js）：左清單＋右進化之路的技能瀏覽器
   if (typeof SKILLS2 !== 'undefined') renderSkillBrowser(treesBox, skillsSnapshot, headerSnapshot);
 
-  // 潛力無解鎖限制，維持格狀面板與升級彈窗，放在瀏覽器下方。
-  var h = '';
-  {
-    var potentialCells = POTENTIAL_TALENTS.map(function (def, index) {
-      return potentialNodeHTML(def, index, talentSnapshot, headerSnapshot);
-    });
-    var potentialRows = '';
-    for (var pr = 0; pr < potentialCells.length; pr += 6) {
-      potentialRows += '<div class="tree-row">' + potentialCells.slice(pr, pr + 6).join('') + '</div>';
-    }
-    h += '<div class="tree-panel potential-skill-panel"><div class="tree-title">✨ 潛力 <span class="dim-text">無解鎖限制；最高10級，與天堂威能共用威能點　可用威能點 ' + fmtFull(talentSnapshot.talentPoints || 0) + '</span></div>' + potentialRows + '</div>';
-  }
-  var potentialBox = $id('sgb-potential') || treesBox;
-  if (potentialBox._lastH !== h) {
-    potentialBox.innerHTML = h;
-    potentialBox._lastH = h;
-  }
-
-  renderSkillModal(skillsSnapshot, talentSnapshot, headerSnapshot);
   if (typeof UIContainmentManager !== 'undefined') UIContainmentManager.apply();
   syncBossConfigControls();
 }
 
 /* ---- 技能升級彈窗 ---- */
-function potentialSkillId(ref) {
-  if (typeof ref !== 'string' || ref.indexOf('potential:') !== 0) return null;
-  return ref.slice('potential:'.length);
-}
 
 /* ---- 新版技能群組（'sg:<群組id>'，js/skills2.js）---- */
 function sgGroupIdOf(ref) {
@@ -9709,7 +9550,7 @@ function renderSkillBrowser(treesBox, skillsSnapshot, headerSnapshot) {
   if (!treesBox.querySelector('.sgb')) {
     treesBox.innerHTML = '<div class="sgb">' +
       '<div class="sgb-list"><div class="sgb-chips" id="sgb-chips"></div><div class="sgb-items" id="sgb-items"></div></div>' +
-      '<div class="sgb-detail" id="sgb-detail"></div></div><div id="sgb-potential"></div>';
+      '<div class="sgb-detail" id="sgb-detail"></div></div>';
   }
   var all = Object.keys(SKILLS2);
   if (UI.sgBrowse.filter !== 'all' && !all.some(function (id) { return sgbCategoryOf(id) === UI.sgBrowse.filter; })) {
@@ -9744,137 +9585,8 @@ function renderSkillBrowser(treesBox, skillsSnapshot, headerSnapshot) {
   syncBossConfigControls();
 }
 
-function openSkillModal(id) {
-  UI.selSkill = id;
-  UI.selTalent = null;
-  hideTooltip();
-  var overlay = $id('skill-modal');
-  if (overlay) overlay.style.display = 'flex';
-  renderSkillModal();
-}
-function closeSkillModal() {
-  hideTooltip();
-  var overlay = $id('skill-modal');
-  if (overlay) overlay.style.display = 'none';
-  UI.selSkill = null;
-}
 
-/* 潛力技能標籤：標題下方顯示技能類別與元素系別，文字來源沿用 ELEM_INFO。 */
-function skillTagsHTML(id, sk, lv) {
-  if (!sk) return '';
-  var tags = [];
-  tags.push({ text: '潛力', cls: 'skill-tag-category' });
 
-  var rawTags = Array.isArray(sk.tags) ? sk.tags : (typeof sk.tags === 'string' ? sk.tags.split(';') : []);
-  var elems = [];
-  function addElem(elem) {
-    if (elem && elems.indexOf(elem) < 0) elems.push(elem);
-  }
-  rawTags.forEach(function (tag) { addElem(String(tag).trim()); });
-  elems.sort(function (a, b) {
-    var ai = typeof ELEMENTS !== 'undefined' ? ELEMENTS.indexOf(a) : -1;
-    var bi = typeof ELEMENTS !== 'undefined' ? ELEMENTS.indexOf(b) : -1;
-    return (ai < 0 ? 999 : ai) - (bi < 0 ? 999 : bi);
-  });
-  elems.forEach(function (elem) {
-    if (typeof ELEM_INFO !== 'undefined' && ELEM_INFO[elem]) {
-      // §3.5 技能詳情顯示元素圖示＋系別（emoji＋「X系」；light 語境統一稱「聖」）
-      tags.push({
-        text: ELEM_INFO[elem].emoji + (ELEM_INFO[elem].short || ELEM_INFO[elem].name) + '系',
-        cls: 'skill-tag-element skill-tag-' + elem
-      });
-    } else if (elem) {
-      tags.push({ text: elem, cls: 'skill-tag-element skill-tag-custom' });
-    }
-  });
-
-  return '<div class="skill-tags">' + tags.map(function (tag) {
-    return '<span class="skill-tag ' + tag.cls + '">' + esc(tag.text) + '</span>';
-  }).join('') + '</div>';
-}
-
-function renderSkillModal() {
-  var body = $id('skill-modal-body');
-  var overlay = $id('skill-modal');
-  if (!body || !overlay || overlay.style.display === 'none') return;
-  if (UI.tooltipAnchor && body.contains(UI.tooltipAnchor)) hideTooltip();
-  var skillsSnapshot = arguments[0] || uiSkillsPanelSnapshot();
-  var talentSnapshot = arguments[1] || uiTalentPanelSnapshot();
-  var headerSnapshot = arguments[2] || uiHeaderPanelSnapshot();
-  if (!skillsSnapshot || !talentSnapshot || !headerSnapshot) return;
-  var ref = UI.selSkill;
-  // 新版技能群組（'sg:'）不再走彈窗：升級操作都在技能頁的技能瀏覽器裡（renderSkillBrowser）
-  if (sgGroupIdOf(ref) !== null) { closeSkillModal(); return; }
-  var id = potentialSkillId(ref);
-  var sk = id ? potentialDef(id) : null;
-  if (!sk) { closeSkillModal(); return; }
-  var reincarnations = skillViewReincarnations(headerSnapshot, talentSnapshot);
-  var maxLv = skillViewPotentialMaxLevel(reincarnations);
-  var lv = talentViewPotentialLevel(talentSnapshot, id, maxLv);
-  var lock = potentialTemporarilyDisabled(id) ? '此潛力技能目前暫不開放升級' : (talentViewPotentialUnlocked(talentSnapshot, id) ? null : '潛力節點尚未解鎖');
-  // 裝載欄鍵：潛力技能＝'potential:<id>'；主動潛力技能可裝載施放。
-  var loadoutRef = 'potential:' + id;
-  var canEquip = typeof potentialEquippable === 'function' && potentialEquippable(sk);
-  var inLoadout = skillViewLoadout(skillsSnapshot).indexOf(loadoutRef) >= 0;
-  var pendingAttrs = pendingUiButtonAttributes(nodePendingKey(loadoutRef));
-  var category = '潛力·' + potentialTypeLabel(sk) + potentialDmgLabel(sk);
-  var potentialMeta = sk.type === 'active' ? '<span class="sk-meta">⏱️ ' + sk.cd + 's</span>'
-    : (sk.type === 'passiveTrigger' ? '<span class="sk-meta">⏱️ 觸發冷卻 ' + sk.cd + 's</span>' : '');
-  var h = '<div class="skd-head"><span class="skd-emoji">' + sk.emoji + '</span><b>' + esc(sk.name) + '</b> ' +
-    '<span class="dim-text">Lv.' + lv + '/' + maxLv + '｜' + category + '</span>' + potentialMeta + '</div>';
-
-  h += skillTagsHTML(id, sk, Math.max(1, lv));
-  h += '<div class="skill-modal-copy">';
-  h += '<div class="sk-desc">' + describePotentialSkill(sk, Math.max(1, lv)) + '</div>';
-  if (lv > 0 && lv < maxLv) h += '<div class="skd-next dim-text">下一級：' + describePotentialSkill(sk, lv + 1) + '</div>';
-  if (sk.flavor) h += '<div class="sk-flavor">' + esc(sk.flavor) + '</div>';
-  if (lock) h += '<div class="hint skill-unlock-hint">🔒 ' + esc(lock) + '</div>';
-  h += '</div>';
-
-  h += '<div class="skill-modal-points">轉生威能點：' + fmtFull(talentSnapshot.talentPoints || 0) + '</div>';
-  h += '<div class="detail-actions skill-modal-actions">';
-  if (lv < maxLv && !lock) {
-    var cost = talentUpgradeCost(id, lv + 1);
-    var insufficientPoints = (Number(talentSnapshot.talentPoints) || 0) < cost;
-    h += '<button class="btn sm" data-skill-learn="' + loadoutRef + '" data-tip="花費 ' + fmt(cost) + ' 點威能點"' + pendingAttrs + (insufficientPoints ? ' disabled' : '') + '>' +
-      (lv === 0 ? '📖 學習' : '⬆️ 升級') + '</button>';
-    h += '<button class="btn sm" data-skill-max="' + loadoutRef + '" data-tip="自動消耗威能點，升到10級上限"' + pendingAttrs + (insufficientPoints ? ' disabled' : '') + '>⚡ 一鍵滿級</button>';
-  } else if (lv >= maxLv) {
-    h += '<div style="text-align:center; padding: 4px; color: var(--good); font-size: 12px;">已滿級</div>';
-    h += '<div style="visibility: hidden;"></div>'; // 保留一鍵滿級欄位，讓後方按鈕位置固定
-  } else {
-    h += '<div style="visibility: hidden;"></div><div style="visibility: hidden;"></div>'; // 升級與一鍵滿級欄位
-  }
-
-  if (lv > 0) {
-    h += '<button class="btn sm warn" data-skill-downgrade="' + loadoutRef + '" data-tip="退回 ' + lv + ' 點威能點"' + pendingAttrs + '>⬇️ 降級</button>';
-  } else {
-    h += '<div style="visibility: hidden;"></div>'; // empty grid cell
-  }
-
-  if (canEquip && lv > 0) {
-    var loadoutAttrs = skillLoadoutButtonAttributes(nodePendingKey(loadoutRef));
-    h += inLoadout
-      ? '<button class="btn sm warn" data-skill-unequip="' + loadoutRef + '"' + loadoutAttrs + '>卸下</button>'
-      : '<button class="btn sm" data-skill-equip="' + loadoutRef + '"' + loadoutAttrs + '>⚔️ 裝備</button>';
-  } else if (!canEquip && lv > 0) {
-    h += '<button class="btn sm" disabled data-tip="被動潛力技能學會即常駐生效">🌀 常駐</button>';
-  } else {
-    h += '<div style="visibility: hidden;"></div>'; // empty grid cell
-  }
-
-  h += '<div style="visibility: hidden;"></div>';
-
-  if (lv > 0) {
-    h += '<button class="btn sm danger" data-skill-delete="' + loadoutRef + '"' + pendingAttrs + '>🗑️ 刪除</button>';
-  } else {
-    h += '<div style="visibility: hidden;"></div>';
-  }
-
-  h += '</div>';
-  body.innerHTML = h;
-  syncBossConfigControls();
-}
 
 /* 提示框定位（技能／新版技能群組共用）：優先顯示在圖示右側，貼邊時翻到左側/上方。 */
 function positionSkTooltip(tip, anchorEl) {
@@ -10011,30 +9723,10 @@ function showSkillTooltip(ref, anchorEl) {
     showSkillTooltipHTML(tip, sgH, anchorEl);
     return;
   }
-  // 潛力技能沿用同一個技能提示元件（data-sk="potential:id"）。
-  var id = (typeof potentialSkillId === 'function') ? potentialSkillId(ref) : null;
-  var sk = id ? potentialDef(id) : null;
-  if (!sk) return;
-  var reincarnations = skillViewReincarnations(headerSnapshot, talentSnapshot);
-  var maxLv = skillViewPotentialMaxLevel(reincarnations);
-  var lv = talentViewPotentialLevel(talentSnapshot, id, maxLv);
-  var lock = potentialTemporarilyDisabled(id) ? '此潛力技能目前暫不開放升級'
-    : (talentViewPotentialUnlocked(talentSnapshot, id) ? null : '此潛力技能尚未開放');
-  var h = '<div class="skt-name">' + sk.emoji + ' ' + esc(sk.name) +
-    ' <span class="dim-text">Lv.' + lv + '/' + maxLv + '｜潛力·' + potentialTypeLabel(sk) + potentialDmgLabel(sk) + '</span></div>';
-  h += skillTagsHTML(id, sk, lv);
-  if (sk.type === 'active') h += '<div class="skt-meta">⏱️ ' + sk.cd + 's</div>';
-  else if (sk.type === 'passiveTrigger') h += '<div class="skt-meta">⏱️ 觸發冷卻 ' + sk.cd + 's</div>';
-  h += '<div class="skt-desc">' + describePotentialSkill(sk, Math.max(1, lv)) + '</div>';
-  if (lock) h += '<div class="skt-lock skill-unlock-hint">🔒 ' + esc(lock) + '</div>';
-  h += '<div class="skt-hint">點擊開啟升級面板</div>';
-  showSkillTooltipHTML(tip, h, anchorEl);
 }
 function showTalentTooltip(ref, anchorEl) {
   var tip = $id('sk-tooltip');
   if (!tip || !anchorEl || typeof ref !== 'string') return;
-  // 潛力技能改走一般技能提示（data-sk）；若仍有 potential: 參照進入，轉交共用提示。
-  if (ref.indexOf('potential:') === 0) { showSkillTooltip(ref, anchorEl); return; }
   var def = talentDef(ref);
   if (!def) return;
   var snapshot = uiTalentPanelSnapshot();
@@ -10180,7 +9872,7 @@ function refreshOpenStatTooltip() {
     hideTooltip();
     return;
   }
-  var modalParent = anchorEl.closest ? anchorEl.closest('.modal-overlay, .modal, #skill-modal, #talent-modal') : null;
+  var modalParent = anchorEl.closest ? anchorEl.closest('.modal-overlay, .modal, #talent-modal') : null;
   if (modalParent && modalParent.style.display === 'none') {
     hideTooltip();
     return;
@@ -11930,15 +11622,6 @@ function closeTopmostModalOrOverlay() {
     return true;
   }
 
-  // 9. 技能升級彈窗 (#skill-modal)
-  var skillModal = $id('skill-modal');
-  if (skillModal && skillModal.style.display !== 'none') {
-    if (typeof closeSkillModal === 'function') closeSkillModal();
-    else skillModal.style.display = 'none';
-    return true;
-  }
-
-  // 10. 天賦／潛力升級彈窗 (#talent-modal)
   var talentModal = $id('talent-modal');
   if (talentModal && talentModal.style.display !== 'none') {
     if (typeof closeTalentModal === 'function') closeTalentModal();
@@ -12150,18 +11833,11 @@ function initUI() {
       var isGodAction = count >= 10;
       var actTitle = isGodAction ? '晉階' : '轉生';
 
-      // 轉生確認窗要顯示「這次轉生潛力技能上限 +幾」，一律查表（超出表尾＝已封頂，差值自然為 0）
-      var curSkillMax = skillMaxLvForRc(count);
-      var nextSkillMax = skillMaxLvForRc(nextCount);
-      var skillAdd = Math.max(0, nextSkillMax - curSkillMax);
-      var skillLimitLine = skillAdd > 0 ? ('・潛力技能上限 +' + skillAdd + ' 級。\n') : '';
-
       showConfirmDialog(
         actTitle + '效果：\n' +
         '・人物等級回到 1 級，經驗歸零。\n' +
         '・生命、法力及力量、敏捷、體質、智力變為 ×' + reincarnationTotalMultiplier(nextCount) + '。\n' +
-        '・不再獲得技能點，改獲得轉生威能點。\n' +
-        skillLimitLine +
+        '・轉生後每升 1 級獲得 1 點轉生威能點。\n' +
         '・裝備、技能、資源與關卡進度保留。\n\n確定要進行' + actTitle + '嗎？',
         function () {
           sendUiCommand('player.reincarnate', {}, {
@@ -12362,36 +12038,12 @@ function initUI() {
       }, { title: '技能重置確認', danger: true });
       return;
     }
-    var mx = e.target.closest('[data-skill-max]');
-    if (mx) {
-      var maxRef = mx.getAttribute('data-skill-max');
-      var maxPotentialId = potentialSkillId(maxRef);
-      if (maxPotentialId !== null) {
-        runSkillUiAction(
-          'talent.potentialMax', maxPotentialId, maxRef, potentialMax,
-          ['skills', 'talents', 'header']
-        );
-      }
-      return;
-    }
-    var ln = e.target.closest('[data-skill-learn]');
-    if (ln) {
-      var learnRef = ln.getAttribute('data-skill-learn');
-      var learnPotentialId = potentialSkillId(learnRef);
-      if (learnPotentialId !== null) {
-        runSkillUiAction(
-          'talent.potentialUpgrade', learnPotentialId, learnRef, potentialUpgrade,
-          ['skills', 'talents', 'header']
-        );
-      }
-      return;
-    }
     var eq = e.target.closest('[data-skill-equip]');
     if (eq) {
       var equipRef = eq.getAttribute('data-skill-equip');
       runSkillUiAction(
         'skill.equipLoadout', equipRef,
-        potentialSkillId(equipRef) !== null ? equipRef : 'skill:' + equipRef,
+        'skill:' + equipRef,
         equipSkillToLoadout, ['skills']
       );
       return;
@@ -12402,7 +12054,7 @@ function initUI() {
       UI.selectedSkillLoadoutIndex = -1;
       runSkillUiAction(
         'skill.unequipLoadout', unequipRef,
-        potentialSkillId(unequipRef) !== null ? unequipRef : 'skill:' + unequipRef,
+        'skill:' + unequipRef,
         unequipSkillFromLoadout, ['skills']
       );
       return;
@@ -12424,12 +12076,6 @@ function initUI() {
           if (loadoutItem && typeof loadoutItem.scrollIntoView === 'function') loadoutItem.scrollIntoView({ block: 'nearest' });
         }
       }
-      return;
-    }
-    // 點擊技能樹節點 → 開啟升級彈窗（排除裝備欄 #skill-loadout 與戰鬥區快捷列 #battle-skill-bar）
-    var cell = e.target.closest('[data-sk]');
-    if (cell && !cell.closest('#skill-loadout') && !cell.closest('#battle-skill-bar')) {
-      openSkillModal(cell.getAttribute('data-sk'));
       return;
     }
     // 敵人情報 Tooltip（手機點擊支援）
@@ -12466,35 +12112,6 @@ function initUI() {
       } else {
         showEnemyBuffTooltip(ebtip);
         UI.tooltipOpenByClick = true;
-      }
-      return;
-    }
-    // 降級
-    var dg = e.target.closest('[data-skill-downgrade]');
-    if (dg) {
-      var downRef = dg.getAttribute('data-skill-downgrade');
-      var downPotentialId = potentialSkillId(downRef);
-      if (downPotentialId !== null) {
-        runSkillUiAction(
-          'talent.potentialDowngrade', downPotentialId, downRef, potentialDowngrade,
-          ['skills', 'talents', 'header']
-        );
-      }
-      return;
-    }
-    // 刪除/重置潛力技能
-    var fd = e.target.closest('[data-skill-delete]');
-    if (fd) {
-      var deleteRef = fd.getAttribute('data-skill-delete');
-      var actualId = potentialSkillId(deleteRef);
-      var skDefObj = actualId !== null ? potentialDef(actualId) : null;
-      if (skDefObj) {
-        showConfirmDialog('確定重置潛力「' + skDefObj.name + '」？等級將歸零，已投入的威能點將全額退還。', function () {
-          runSkillUiAction(
-            'talent.potentialDelete', actualId, deleteRef, potentialDelete,
-            ['skills', 'talents', 'header'], function () { UI.selSkill = null; }
-          );
-        }, { title: '技能重置確認', danger: true });
       }
       return;
     }
@@ -12602,15 +12219,6 @@ function initUI() {
   function panelScrollHoverSuppressed(e) {
     return !!(UI.panelScrolling && workspaceScroller && e && e.target &&
       workspaceScroller.contains(e.target));
-  }
-
-  // 技能彈窗：右上 X / 點擊遮罩關閉
-  var skModal = $id('skill-modal');
-  if (skModal) {
-    skModal.addEventListener('click', function (e) {
-      if (e.target === skModal) closeSkillModal();
-    });
-    $id('skill-modal-close').addEventListener('click', closeSkillModal);
   }
 
   // 天賦彈窗：右上 X / 點擊遮罩關閉

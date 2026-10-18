@@ -280,7 +280,7 @@ function computeStats(equipmentOverride) {
     });
   }
 
-  /* 天賦效果在裝備、寶石與被動技能彙總後套用；潛力不另設點數，僅提供技能分類與戰鬥衍生加成。
+  /* 天賦效果在裝備、寶石與被動技能彙總後套用。
      《天賦V2》語意：「額外」＝於對應總值上乘算（獨立乘區、無其他來源時不憑空提供定值）；
      沒寫「額外」＝與現有同類加成直接相加。加總類在此處理，乘算類於派生段套用。 */
   A.str *= 1 + (talent.strPct || 0) / 100;
@@ -349,14 +349,13 @@ function computeStats(equipmentOverride) {
   st.mPen = capValue(A.mPen, STAT_CAPS.mPen);
   st.hit = DERIVED_COEF.hitBase + st.agi * PRIMARY_STAT_EFFECTS.agiHit + A.hit;                          // 命中率：基礎 100% + 敏捷×a + 額外加成（無上限；戰鬥結算再 clamp 5~100）
   // 攻速：基礎攻速、敏捷係數與上限皆由 data.js 控制。
-  // 潛力技能【極速之力】＝主動 buff：施放後於效果期間由戰鬥端以 potentialVelocityFactor 解除攻速上限（js/potential.js）。
-  st.aspdBonusBase = A.aspdPct + st.agi * PRIMARY_STAT_EFFECTS.agiAspdPct; // 玩家原始攻速加成%（未夾 5 次/秒上限；供極速之力倍率與提示）
+  st.aspdBonusBase = A.aspdPct + st.agi * PRIMARY_STAT_EFFECTS.agiAspdPct; // 玩家原始攻速加成%（未夾攻速上限）
   st.aspd = ASPD_CAP > 0
     ? clamp(ASPD_BASE * (1 + st.aspdBonusBase / 100), ASPD_MIN, ASPD_CAP)
     : Math.max(ASPD_MIN, ASPD_BASE * (1 + st.aspdBonusBase / 100));
-  st.cdr = capValue(A.cdr, STAT_CAPS.cdr);       // 冷卻縮減上限（潛力【時間坍縮】於施放時另行突破，見 skills2.js 的冷卻計算）
   // 連擊數：暴擊率／攻速／冷卻縮減各自「溢出」門檻後的部分衍生（用未夾限的原始值：夾限吃掉的部分正是溢出）。僅普攻／技能直接傷害，持續傷害不計。
   st.comboHits = comboHitsTotal(st.critRate, st.aspdBonusBase, A.cdr);
+  st.cdr = capValue(A.cdr, STAT_CAPS.cdr);
   st.castSpeed = capValue(A.castSpeed, STAT_CAPS.castSpeed);                      // 施法速度上限（上限 0＝無上限）
   // 吸血／吸魔是定值（每次對敵人造成傷害回復的固定量），與每秒回復無關（§3 lifestealHealAmount）；不設上限（STAT_CAPS = 0）。
   st.lifesteal = capValue(A.lifesteal, STAT_CAPS.lifesteal);
@@ -433,17 +432,12 @@ function computeStats(equipmentOverride) {
   st.legendaryEffectMults = legendaryEffectMults;
   st.talent = talent;
   // 5/9 轉元素天賦：攻擊時附加「當次傷害 × 天賦%」的元素傷害（結算於 resolveHit 元素附加段）；
-  // 潛力「元素核心」把所有元素附加傷害（含裝備附魔的固定值元素攻擊）乘算提高。
   var talentElemMap = talentElemBucket(talent, 'elem');
-  var elemBoost = 1; // 潛力技能 V3 起，舊 potentialElemAtk 已移除。
   var elemDmgPct = {};
   ELEMENTS.forEach(function (e4) {
-    elemAtk[e4] *= elemBoost;
-    elemDmgPct[e4] = talentElemMap[e4] * elemBoost;
+    elemDmgPct[e4] = talentElemMap[e4];
   });
   st.elemDmgPct = elemDmgPct;
-  // 潛力技能【混沌雙修】：雷霆過載的雷擊額外獲得物攻加成（被動常駐；firePotentialLightning 引用）。
-  st.crossCore = (typeof potentialSkillActive === 'function' && potentialSkillActive('dualCoreFusion')) ? potentialSkillValue('dualCoreFusion') : 0;
   st.elemAtk = elemAtk;
   st.A = A;
   /* GM 測試屬性覆寫（僅本機 GM 指令 statset／maxstats；旗標存執行期 GM_TEST，
@@ -819,7 +813,6 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   if (dCfg.absDodge > 0 && chance(dCfg.absDodge)) { out.miss = true; return out; }
   var hitChance = clamp(attackerHit - defenderDodge, 5, 100);
   if (!chance(hitChance)) { out.miss = true; return out; }
-  // 潛力技能【絕對領域】／【不屈意志】無敵：免疫本次所有傷害。
   if (dCfg.invuln) { out.invuln = true; return out; }
   // Recovery procs are based on the attacker's current HP, never on dealt damage.
   var attackerCurrentHp = Math.max(0, Number(attacker && attacker.hp) || 0);
@@ -1040,13 +1033,6 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
       defender._undyingAt = GT;
       defender.hp = Math.max(1, Math.round((dCfg.maxHp || 1) * 0.3));
       out.procs.push('不朽');
-    } else if (dCfg.undyingGuard && (!defender._lastStandAt || GT - defender._lastStandAt >= (dCfg.undyingGuardCd || 90))) {
-      // 潛力技能【不屈意志】：致命傷害免死，保留 1 點生命並獲得 1 秒無敵；觸發後進入冷卻。
-      defender._lastStandAt = GT;
-      defender.hp = 1;
-      if (!defender.effects) defender.effects = {};
-      defender.effects.invuln = Math.max(defender.effects.invuln || 0, GT + 1);
-      out.procs.push('不屈意志');
     } else {
       defender.hp = 0; out.killed = true;
     }
@@ -2453,17 +2439,8 @@ function loadoutSize() {
   return loadoutSizeFor(lvl, rc);
 }
 
-// 技能升級金幣費用 = 20000 × 當前等級 + 20^(1 + 當前等級/10)
-/* 技能升級費用 = 係數 × 等級 + 底^(1 + 等級 ÷ 除數)。 */
-var SKILL_UPGRADE_COST = { coef: 1000, base: 20, divisor: 10 };
-function skillUpgradeCost(lv) {
-  var cost = Math.floor(SKILL_UPGRADE_COST.coef * lv + Math.pow(SKILL_UPGRADE_COST.base, 1 + lv / SKILL_UPGRADE_COST.divisor));
-  return Math.min(5000000, cost);
-}
-
-/* ---- 技能熟練度（2026-07-30 技能融合改造）----
-   技能點不再隨角色升級發放，改由技能熟練度提供：打怪／道具獲得技能經驗，
-   每升 1 級熟練度給 1 技能點；初始 0 級、上限 SKILL_MASTERY_MAX_LEVEL。
+/* ---- 技能熟練度 ----
+   打怪／道具獲得技能經驗；初始 0 級、上限 SKILL_MASTERY_MAX_LEVEL。
    經驗需求曲線先沿用玩家升級公式的未轉生版：a × L^b + c。 */
 var SKILL_MASTERY_MAX_LEVEL = 1000;   // 熟練度等級上限
 var SKILL_MASTERY_XP_A = 30;          // 熟練度經驗需求 係數 a
@@ -2474,35 +2451,9 @@ function skillMasteryXpForLevel(l) {
   return Math.floor(SKILL_MASTERY_XP_A * Math.pow(l, SKILL_MASTERY_XP_B) + SKILL_MASTERY_XP_C);
 }
 
-/* 技能等級上限的唯一入口：查轉生對照表（參數表「1-轉生對照表」param e，
-   見 js/data.js 的 REINCARNATION_SKILL_MAX_LEVELS）。
-
-   保底一律從表本身取值，不另寫公式：
-   - 轉數超出表長 → 取表尾。表尾本來就是封頂設計，往外推沒有依據。
-   - 轉數為負／非數字 → 取表首。
-   - 整張表不存在 → 只可能是 data.js 沒載入，此時回傳 SKILL_MAX_LV_NO_TABLE。
-     這個常數不是遊戲設定值，改參數表不必動它。
-
-   改制前 formula/talents/ui/save/skills 七處各自查表、各自帶著寫死的 fallback，
-   而且是兩種互不相同的舊制公式（一種是「未轉生固定值、轉生後再加固定值」，
-   另一種是轉生面板專用的等差式）。參數表改制後兩種都成了錯的，
-   偏偏只在對照表沒載入時才走到——不會報錯，安靜地給出對不上的數字。
-   tests/skill-max-level-lookup.test.cjs 會掃 js/ 擋住任何一種寫死公式復活
-   （所以這裡也不把舊算式原樣寫出來）。 */
-var SKILL_MAX_LV_NO_TABLE = 10;
-function skillMaxLvForRc(rc) {
-  if (typeof REINCARNATION_SKILL_MAX_LEVELS === 'undefined' ||
-    !REINCARNATION_SKILL_MAX_LEVELS || !REINCARNATION_SKILL_MAX_LEVELS.length) {
-    return SKILL_MAX_LV_NO_TABLE;
-  }
-  var i = Math.max(0, Math.floor(Number(rc)) || 0);
-  return REINCARNATION_SKILL_MAX_LEVELS[Math.min(i, REINCARNATION_SKILL_MAX_LEVELS.length - 1)];
-}
-
 // 技能冷卻基準值 = 技能冷卻 × (1 - 冷卻縮減%)；實際寫入時再套用每技能最低施放間隔。
-// extraCdr 為潛力【時間坍縮】施放時的額外 CDR（突破一般上限，總 CDR 另有上限）。
-function skillCdFor(sk, extraCdr) {
-  var cdr = Math.min(90, (getStats().cdr || 0) + (Number(extraCdr) || 0));
+function skillCdFor(sk) {
+  var cdr = Math.min(90, (getStats().cdr || 0));
   return sk.cd * (1 - cdr / 100);
 }
 /* ============================================================
@@ -2539,10 +2490,10 @@ function offlineStageFor(best) {
 // 離線是否結算菁英怪。掉落倍率也跟著這個旗標，才不會出現「普通怪卻吃菁英掉落倍率」。
 function offlineUsesElite() { return !!Number(OFFLINE_ELITE); }
 
-// 離線擊殺數 = ⌊有效離線秒數 / 擊殺間隔 × (1 + 離線預言%)⌋；每隻怪的掉落單獨擲骰（save.js）
-function offlineKillCount(elapsed, potentialOfflinePct) {
+// 離線擊殺數 = ⌊有效離線秒數 / 擊殺間隔⌋；每隻怪的掉落單獨擲骰（save.js）
+function offlineKillCount(elapsed) {
   var interval = Math.max(1, Number(OFFLINE_KILL_INTERVAL) || 1);
-  return Math.max(0, Math.floor(elapsed / interval * (1 + (Number(potentialOfflinePct) || 0) / 100)));
+  return Math.max(0, Math.floor(elapsed / interval));
 }
 
 /* 面板專用投影：只複製 stats，不覆寫戰鬥的基準回復與汲取倍率。

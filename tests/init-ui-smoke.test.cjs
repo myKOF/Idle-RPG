@@ -226,7 +226,7 @@ test('Worker Snapshot 完整但主執行緒 G 為空時 initUI 與 uiTick 不拋
   for (const file of [
     'util.js', 'data.js', 'formula.js', 'stats.js', 'item.js', 'skills.js',
     'talents.js', 'player.js', 'special_rules.js', 'combat.js', 'legendary.js',
-    'potential.js', 'tower.js', 'factory.js', 'newforge.js', 'forge.js', 'save.js'
+    'tower.js', 'factory.js', 'newforge.js', 'forge.js', 'save.js'
   ]) {
     vm.runInContext(fs.readFileSync(path.join(root, 'js', file), 'utf8'), context, { filename: 'js/' + file });
   }
@@ -272,7 +272,7 @@ test('Worker Snapshot 完整但主執行緒 G 為空時 initUI 與 uiTick 不拋
       shop: { level: 1, items: [], refreshes: 0, hourStart: Date.now() }
     },
     skills: { skills: {}, unlocks: {}, loadout: [], loadoutSize: 4, fusions: [], points: 0, budget: 0 },
-    talents: { talents: { levels: {}, potentialLevels: {} }, reincarnations: 0, talentPoints: 0 },
+    talents: { talents: { levels: {} }, reincarnations: 0, talentPoints: 0 },
     tower: { tower: { active: false }, player: null, monsters: [] }
   };
   assert.doesNotThrow(() => context.initUI());
@@ -319,7 +319,4 @@ test('Worker Snapshot 完整但主執行緒 G 為空時 initUI 與 uiTick 不拋
   assert.doesNotThrow(() => context.talentNodeHTML({
     id: 'missing-talent', name: '缺少 Snapshot', emoji: '🔒', disabled: false
   }, 1, null));
-  assert.doesNotThrow(() => context.potentialNodeHTML({
-    id: 'missing-potential', name: '缺少 Snapshot', emoji: '🔒'
-  }, 0, null, null));
 });

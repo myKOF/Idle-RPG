@@ -80,10 +80,6 @@
       "類別": "redundant",
       "理由": "talent.upgrade 重複送即等價"
     },
-    "talent.potentialMax": {
-      "類別": "redundant",
-      "理由": "talent.potentialUpgrade 重複送即等價"
-    },
     "rune.composeAll": {
       "類別": "redundant",
       "理由": "符文要保留 5 顆，不能全部合光；planRunes 逐次算好才送 rune.compose"
@@ -201,14 +197,6 @@
     "talent.delete": {
       "類別": "noRule",
       "理由": "回退／刪除會破壞累積進度，文件沒有重配規則"
-    },
-    "talent.potentialDowngrade": {
-      "類別": "noRule",
-      "理由": "回退會破壞累積進度，文件沒有重配規則"
-    },
-    "talent.potentialDelete": {
-      "類別": "noRule",
-      "理由": "刪除會破壞累積進度，文件沒有重配規則"
     },
     "skill.reorderLoadout": {
       "類別": "noRule",

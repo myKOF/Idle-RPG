@@ -10,19 +10,19 @@
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-importScripts('protocol.js?v=53', '../game-clock.js?v=1.0.1', 'shim.js?v=13');
+importScripts('protocol.js?v=20261018-potential-remove', '../game-clock.js?v=1.0.1', 'shim.js?v=20261018-potential-remove');
 // 離線結算等分批工作亦共用暫停時鐘；訊息與loop仍能回應存檔及PING。
 if (typeof GameClock !== 'undefined') {
   globalThis.setTimeout = GameClock.setTimeout;
   globalThis.clearTimeout = GameClock.clearTimeout;
 }
 importScripts(
-  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261018-gem-compose-ten', '../runeword_data.js?v=20261013-rune-all-elem-color', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261014-state-status', '../formula.js?v=20261018-gem-convert-two', '../battlefield.js?v=20261016-npc-retaliate-refill', '../stats.js?v=20261003-rename-weineng',
+  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261018-potential-remove', '../runeword_data.js?v=20261013-rune-all-elem-color', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261018-potential-remove', '../formula.js?v=20261018-potential-remove', '../battlefield.js?v=20261016-npc-retaliate-refill', '../stats.js?v=20261003-rename-weineng',
   '../item.js?v=20261018-gem-convert-two', '../gem_resonance.js?v=20261018-resonance-hole-effects','../runeword.js?v=20261014-develop-integration',
-  '../skills.js?v=20261015-boss-player-skill', '../skills2.js?v=20261018-wall-natural-narrow', '../elite_data.js?v=20261016-wall-rock', '../talents.js?v=20261015-boss-player-skill',
-  '../player.js?v=20261017-gem-resonance-wall-merge', '../special_rules.js',
-  '../combat.js?v=20261016-npc-retaliate-refill', '../elite.js?v=20261018-wall-natural-narrow', '../elite_boss.js?v=20261015-boss-player-skill', '../elite_boss_recipes.js?v=20261015-boss-player-skill', '../legendary.js?v=20261012-indomitable-guard', '../potential.js?v=20261005-cc-decay-count', '../tower.js?v=20261016-npc-vision',
-  '../factory.js?v=20261015-gem-enabled', '../newforge.js', '../forge.js?v=20261015-gem-enabled', '../save.js?v=20261017-gem-resonance-wall-merge',
+  '../skills.js?v=20261018-potential-remove', '../skills2.js?v=20261018-potential-remove', '../elite_data.js?v=20261016-wall-rock', '../talents.js?v=20261018-potential-remove',
+  '../player.js?v=20261018-potential-remove', '../special_rules.js',
+  '../combat.js?v=20261018-potential-remove', '../elite.js?v=20261018-wall-natural-narrow', '../elite_boss.js?v=20261015-boss-player-skill', '../elite_boss_recipes.js?v=20261015-boss-player-skill', '../legendary.js?v=20261012-indomitable-guard', '../tower.js?v=20261018-potential-remove',
+  '../factory.js?v=20261015-gem-enabled', '../newforge.js', '../forge.js?v=20261015-gem-enabled', '../save.js?v=20261018-potential-remove',
   '../tasks.js?v=20261007-runes4'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
@@ -1023,16 +1023,13 @@ function buildPanel(name, params) {
         shop: (typeof gemShop === 'function') ? gemShop() : p.gemShop
       };
     case 'skills':
-      // 2026-07-30 熟練度制：points/budget 由 skills.js 即時計算；mastery 供熟練度條。
-      // 技能點目前只用於潛力技能；一般（新版）技能以金幣升級，等級在 skills2 投影。
+      // mastery 供熟練度條；技能升級使用金幣。
       return {
         loadout: p.loadout,
         loadoutSize: (typeof loadoutSize === 'function') ? loadoutSize() : 0,
         /* 新版技能群組（v19，js/skills2.js）：只投影會變動的各階等級；
            名稱／說明／費用公式由兩端共載的 SKILLS2 表與純函式計算，不進協議。 */
         skills2: (typeof skills2PanelView === 'function') ? skills2PanelView() : null,
-        points: (typeof availableSkillPoints === 'function') ? availableSkillPoints() : p.skillPoints,
-        budget: (typeof totalSkillPoints === 'function') ? totalSkillPoints() : 0,
         mastery: (function () {
           var m = (typeof ensureSkillMastery === 'function') ? ensureSkillMastery() : (p.skillMastery || { level: 0, xp: 0 });
           return {
@@ -1047,7 +1044,7 @@ function buildPanel(name, params) {
       // 名稱、目標數量、獎勵文字由主執行緒讀共載的 TASKS 表（js/data.js）
       return (typeof taskPanelData === 'function') ? taskPanelData() : null;
     case 'talents':
-      // 天賦與潛能等級都在 player.talents 底下（levels / potentialLevels）
+      // 威能等級在 player.talents.levels。
       /* canReincarnate：轉生按鈕的亮燈條件，由遊戲算給面板。
          門檻（可轉生等級）是參數表的值，不該讓讀面板的一方自己抄一份——
          AI 策略就是靠這個欄位決定何時送 player.reincarnate。 */
@@ -1879,14 +1876,8 @@ function boot(msg) {
     if (lgs.equipped) lgsParts.push('裝載欄中的 ' + lgs.equipped + ' 個舊技能已卸下');
     if (lgs.scrolls) lgsParts.push('魔法卷軸 ' + lgs.scrolls + ' 張已移除');
     notices.push({ key: '_legacySkillRemoval', text: '🧹 舊版技能系統已移除：' + lgsParts.join('，') +
-      '。技能點已全額退還（目前可用 ' + (typeof availableSkillPoints === 'function' ? availableSkillPoints() : 0) +
-      ' 點）；請到「技能」頁改用新版技能與潛力技能。', cls: 'warn' });
+      '。請到「技能」頁使用新版技能。', cls: 'warn' });
     delete G._legacySkillRemoval;
-  }
-  if (G._skillPointRepairNotice) {
-    notices.push({ key: '_skillPointRepairNotice', text: '🧮 ' + G._skillPointRepairNotice + '；目前可用技能點 ' +
-      (typeof availableSkillPoints === 'function' ? availableSkillPoints() : 0) + ' 點。', cls: 'info' });
-    delete G._skillPointRepairNotice;
   }
   // ONE-TIME MIGRATION: loadoutCapClampV1 的公告（裝載欄上限下修，超額格數已卸下）
   if (G._loadoutCapClampNotice) {
@@ -1895,7 +1886,7 @@ function boot(msg) {
   }
   if (G._talentRespecNotice) {
     notices.push({ key: '_talentRespecNotice', text: '🌟 ' + G._talentRespecNotice +
-      '，威能與潛力均改為十級制，升至下一級消耗該級等量威能點。', cls: 'warn' });
+      '，威能改為十級制，升至下一級消耗該級等量威能點。', cls: 'warn' });
     delete G._talentRespecNotice;
   }
   /* 帶 modal 的公告要彈窗，不是寫進日誌，UI 端據此分辨。
