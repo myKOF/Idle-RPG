@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## GEM-CONVERT-GLOW-20261018 — 轉換成功保留寶石並播放兩秒發光轉場
+
+- Owner：Codex；Done，單一開發者。使用者要求轉換後寶石保留約2秒、發光轉場結束才消失，同時於產出下方以綠色顯示「轉換成功！」。前置GEM-CONVERT-TWO已完成，工作區乾淨、七檔預檢乾淨。
+- 允許js/ui.js僅轉換展示狀態／互動保護與計時、css/gems.css轉場與成功文字、index.html訊息區／快取、tests/gem-convert-shift.test.cjs相關非同步回歸、PATCH.md／本紀錄與docs/vfx/VFX_PRESET_USAGE_OUTSIDE_TABLES.md程式寫死UI效果登記；禁止Worker／數值／配方／Protocol／存檔／素材及其他副本，不合併推送。
+- 方式：送出即固定本次原料及產出，避免權威快照先到而清空；僅成功回覆啟動共用時鐘2秒CSS發光，期間鎖定重複提交／清空／取放／目標切換，結束只清展示。失敗即解除鎖定且不播放成功，訊息保留至下一次操作；CSS與清理時間讀同一具名時長，無新Preset／圖像素材。
+- 驗收：快照早於回覆／成功2秒期間多次刷新／只發一次指令／失敗及重試／切頁／暫停與減少動態、真實庫存即時結算且不重扣、綠字位置與動畫後清除；必要回歸／Build／隔離瀏覽器／Console／diff後Commit。後續使用者審閱整合。
+- 完成七檔：ui.js新增pending／playing展示狀態，送出即固定原料及目標；成功才清暫放資料並播放，利用GameClock與GEM_CONVERT_FX_MS同時供CSS及清理時間，期滿只清展示，不修改庫存。期間上方來源、原料取下、清空、目標及提交皆保護；錯誤沿原統一回報、解除展示鎖，保留合法暫放原料供重試。成功文字使用setTextIfChanged，避免刷新重複播報；保留至下一次放入／清空／換目標。
+- gems.css以程式自製鑲格亮框／光暈、寶石增亮、末段淡出，減少動態則靜態亮框、仍保留2秒；效果已登記docs/vfx/VFX_PRESET_USAGE_OUTSIDE_TABLES.md的介面轉場段，沒有新增Preset／圖像素材或素材庫變更／素材庫Commit。index加入輸出下方綠色role=status訊息區及包層，UI快取172→173、gems CSS17→18；PATCH與本紀錄同步。無Worker／Protocol／配方／數值／存檔格式變更。
+- 指令／結果：`node --test tests/gem-convert-shift.test.cjs tests/gem-tooltip.test.cjs tests/gem-compose-all.test.cjs tests/gem-resonance-ui.test.cjs tests/init-ui-smoke.test.cjs tests/game-menu.test.cjs tests/vfx-preset-usage.test.cjs`76/76通過；新增兩項非同步回歸驗快照先到／回覆延遲、2秒單次計時、多次刷新、重複提交、正確成功文字、完成後解除鎖、權威拒絕／連線失敗及重試。最後setTextIfChanged調整後，`node --test tests/gem-convert-shift.test.cjs tests/game-clock.test.cjs`15/15；合計82個不同案例通過。`npm.cmd run build`535檔通過，`git diff --check`通過；未重跑全庫，轉換實際規則未改。
+- 瀏覽器：隔離headless Edge／隨機localhost／seed新角色、正式UI／Worker，GM供原料，不讀真人存檔。11顆一級紅寶石與5顆二級藍寶石實轉5／2顆蛋白石，兩種原料各留1顆；回覆後兩個原料格、兩個成品格與綠字仍存在，CSS為2s，刷新四次維持相同DOM／動畫物件，連點／程式重送只發一次命令。一般完成時間以共享遊戲時鐘量得2006.1ms（非效能保證），期滿原料／產出清空、綠字保留；切工具後返回仍按原期滿清理。
+- 同次瀏覽器另外兩輪真實轉換各只送一次（總3次）：GameMenu暫停超過2200ms仍保持playing與寶石，恢復後依剩餘時間完成；reduced-motion動畫名none，頁內計時517ms仍保留寶石、2秒後清空。Console warning／error、pageerror及HTTP錯誤0。為截取明確動畫中畫面，測試於播放500ms透過共享時鐘暫停取圖再恢復，不增加產品測試旗標；初次跨工具往返的截圖已超過展示期間，改由頁內計時／取圖，正式程式未為此延長時長。預覽保留本聊天visualizations/gem-convert-glow.png。
+- 唯讀未改：AI規範／AGENTS／工作流／專屬文件、原sendGemUiCommand錯誤及權威面板更新、GameClock／GameMenu及全域CSS暫停、轉換純計畫與Worker規則、原VFX用途掃描及上述回歸。自我Review確認錯誤不顯示成功、展示資料與權威庫存分離、刷新不重新計時、舊回呼按狀態身分核對，不會清除後續操作。隔離瀏覽器／服務已關閉；臨時gem-convert-glow-check.cjs核對確切路徑後清理，沒有新增素材或其他工作區修改。
+- 交付：Commit為本紀錄所在`[Codex] feat: 寶石轉換加入兩秒發光與成功提示`，回覆附編號；本次需求無未完成項，可供Review／合併，未合併推送。限制：未實測其他瀏覽器／實體觸控及真人長時間遊玩；必要回歸／正式UI已通過。下一步整合後重載轉換頁，驗收發光、延後清空與綠字。
+
 ## NPC-SHIELD-THIN-20261018 — 護盾黑底修正、亮邊減半與BOSS解鎖技能驗證
 
 - Owner：Codex；Done，單一開發者。使用者要求NPC護盾光點去掉黑方塊、整體亮邊厚度減半，追加檢查BOSS會否施放解鎖技能，特別第32層冰霜女皇的霹靂一閃。前置既有NPC護盾／BOSS技能已完成，fetch與目標衝突預檢乾淨。

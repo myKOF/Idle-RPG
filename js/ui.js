@@ -10864,6 +10864,7 @@ function gemConvertPlaced(type, lv) {
 }
 
 function gemConvertBlockReason(snapshot, type, lv) {
+  if (UI.gemConvertFx) return '寶石轉換中';
   if (!GEM_TYPES[type] || !isGemEnabled(type)) return '此寶石已關閉';
   var placed = gemConvertPlaced(type, lv);
   if (gemsViewCount(snapshot, type, lv) <= placed) return '庫存已放完';
@@ -10879,6 +10880,7 @@ function stageGemConvert(type, lv, single) {
   if (reason) { blog('⚠️ ' + reason, 'warn'); return false; }
   var adjusted = adjustGemConvertPool(UI.convertSlots, type, lv, gemsViewCount(snapshot, type, lv), single, GEM_CONVERT_STACK, GEM_CONVERT_SLOTS);
   if (!adjusted.ok) return false;
+  UI.gemConvertSuccess = false;
   UI.convertSlots = adjusted.slots;
   renderGems();
   return true;
@@ -10896,28 +10898,74 @@ function renderGemConvert(gemsSnapshot) {
   if (!grid) return;
   gemsSnapshot = resolveGemsPanelSnapshot(gemsSnapshot);
   if (!gemsSnapshot) return;
+  var fx = UI.gemConvertFx;
   // 暫放不鎖庫存；其他操作消耗寶石時，預覽同步縮減，不能顯示不存在的產出。
-  UI.convertSlots = (UI.convertSlots || []).map(function (s) {
+  if (!fx) UI.convertSlots = (UI.convertSlots || []).map(function (s) {
     return { type: s.type, lv: s.lv, n: Math.min(s.n, gemsViewCount(gemsSnapshot, s.type, s.lv)) };
   }).filter(function (s) { return s.n > 0 && isGemEnabled(s.type); });
+  // 回覆前也固定畫面：Worker庫存快照可能先於成功回覆到達。
+  var displaySlots = fx ? fx.slots : UI.convertSlots;
   var keys = [], cells = [];
   for (var i = 0; i < GEM_CONVERT_SLOTS; i++) {
     keys.push('gconv-slot:' + i);
-    cells.push(UI.convertSlots[i] ? gemConvertCellHTML(UI.convertSlots[i], i) : '<div class="gconv-slot"></div>');
+    cells.push(displaySlots[i] ? gemConvertCellHTML(displaySlots[i], i) : '<div class="gconv-slot"></div>');
   }
   // 保留未改變的節點，避免 dirty.gems 更新吃掉按下至放開之間的點擊。
   syncItemGridCells(grid, keys, cells);
   var targetSel = $id('gconv-target'), target = targetSel ? targetSel.value : null;
-  var plan = gemConvertPlan(UI.convertSlots), output = $id('gconv-output');
+  if (fx) target = fx.target;
+  var plan = gemConvertPlan(displaySlots), output = $id('gconv-output');
   var levels = Object.keys(plan.outputs).map(Number).sort(function (a, b) { return a - b; });
   var html = GEM_TYPES[target] && isGemEnabled(target) ? levels.map(function (lv) {
     return gemConvertCellHTML({ type: target, lv: lv, n: plan.outputs[lv] });
   }).join('') : '';
   if (output && output._lastH !== html) { output._lastH = html; output.innerHTML = html; }
   var button = $id('gconv-btn');
-  if (button) button.disabled = !html;
+  if (button) button.disabled = !!fx || !html;
+  if (targetSel) targetSel.disabled = !!fx;
+  var clear = $id('gconv-clear');
+  if (clear) clear.disabled = !!fx;
+  grid.querySelectorAll('[data-gconv-slot]').forEach(function (cell) { cell.disabled = !!fx; });
+  [grid, output].forEach(function (el) {
+    if (!el) return;
+    if (el.style.setProperty) el.style.setProperty('--gconv-fx-duration', GEM_CONVERT_FX_MS + 'ms');
+    el.classList.toggle('is-converting', !!fx && fx.phase === 'playing');
+  });
+  var status = $id('gconv-status');
+  if (status) setTextIfChanged(status, UI.gemConvertSuccess ? '轉換成功！' : '');
   var info = $id('gconv-info');
   if (info) info.textContent = 'Shift+左鍵：單顆放入／取下';
+}
+
+var GEM_CONVERT_FX_MS = 2000;
+
+function runGemConvert() {
+  if (UI.gemConvertFx) return Promise.resolve(null);
+  var target = $id('gconv-target').value, slots = copyGemConvertSlots(UI.convertSlots);
+  if (!isGemEnabled(target) || !gemConvertPlan(slots).consumed.length) return Promise.resolve(null);
+  var fx = { slots: slots, target: target, phase: 'pending' };
+  UI.gemConvertFx = fx;
+  UI.gemConvertSuccess = false;
+  renderGems();
+  return sendGemUiCommand('gem.convert', { slots: slots, targetType: target }, 'gem-convert', ['gems'], function () {
+    if (UI.gemConvertFx !== fx) return;
+    blog('🔄 寶石轉換成功', 'good', 'factory');
+    UI.convertSlots = [];
+    UI.gemConvertSuccess = true;
+    fx.phase = 'playing';
+    renderGems();
+    UI_GAME_TIMING.setTimeout(function () {
+      if (UI.gemConvertFx !== fx) return;
+      UI.gemConvertFx = null;
+      renderGems();
+    }, GEM_CONVERT_FX_MS);
+  }).then(function () {
+    // sendGemUiCommand會統一回報失敗；成功null與失敗null以本次階段區別。
+    if (UI.gemConvertFx === fx && fx.phase === 'pending') {
+      UI.gemConvertFx = null;
+      renderGems();
+    }
+  });
 }
 
 function initGemConvertUi() {
@@ -10971,6 +11019,7 @@ function initGemConvertUi() {
     stopDrag();
   });
   grid.addEventListener('click', function (e) {
+    if (UI.gemConvertFx) return;
     var el = e.target.closest('[data-gconv-slot]');
     if (!el) return;
     var removed = removeGemConvertSlot(UI.convertSlots, Number(el.getAttribute('data-gconv-slot')), e.shiftKey);
@@ -10978,16 +11027,18 @@ function initGemConvertUi() {
     UI.convertSlots = removed.slots;
     renderGems();
   });
-  $id('gconv-btn').addEventListener('click', function () {
-    var target = $id('gconv-target').value, slots = copyGemConvertSlots(UI.convertSlots);
-    sendGemUiCommand('gem.convert', { slots: slots, targetType: target }, 'gem-convert', ['gems'], function () {
-      blog('🔄 寶石轉換成功', 'good', 'factory');
-      UI.convertSlots = [];
-      renderGems();
-    });
+  $id('gconv-btn').addEventListener('click', runGemConvert);
+  $id('gconv-clear').addEventListener('click', function () {
+    if (UI.gemConvertFx) return;
+    UI.convertSlots = [];
+    UI.gemConvertSuccess = false;
+    renderGems();
   });
-  $id('gconv-clear').addEventListener('click', function () { UI.convertSlots = []; renderGems(); });
-  $id('gconv-target').addEventListener('change', renderGemConvert);
+  $id('gconv-target').addEventListener('change', function () {
+    if (UI.gemConvertFx) { this.value = UI.gemConvertFx.target; return; }
+    UI.gemConvertSuccess = false;
+    renderGemConvert();
+  });
 }
 
 function renderGemDismantle(gemsSnapshot) {
