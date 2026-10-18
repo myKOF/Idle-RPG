@@ -23,8 +23,8 @@ test('新角色與正式 Worker 投影不建立潛力或技能點，也沒有潛
     assert.equal(c[fn], undefined, fn);
   }
   assert.deepEqual(Object.keys(e.panel('skills')).sort(), ['loadout', 'loadoutSize', 'mastery', 'skills2']);
-  assert.equal(Object.keys(c.COMMANDS).length, 93);
-  assert.equal(c.WORKER_PROTOCOL_VERSION, 54);
+  assert.equal(Object.keys(c.COMMANDS).length, 94);
+  assert.equal(c.WORKER_PROTOCOL_VERSION, 55);
   for (const command of ['Upgrade', 'Max', 'Downgrade', 'Delete']) {
     assert.equal(e.cmd('talent.potential' + command, { id: 'velocityForce' }).ok, false);
   }

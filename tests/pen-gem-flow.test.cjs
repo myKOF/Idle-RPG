@@ -103,14 +103,15 @@ test('3. 拆解 (Dismantle) 穿透寶石流程', () => {
   ctx.executeGMCommand('gem piercePhys 10 1');
   assert.equal(ctx.gemCount('piercePhys', 10), 1);
 
-  // 拆解 10 階穿透寶石（損失 30%）
+  // 拆解10階穿透寶石，無損回收前一階合成素材。
   const expectedYield = ctx.gemDismantleYield(10);
-  assert.equal(expectedYield, 87091, '10 階寶石拆解依逐階合成成本及30%損耗換算');
+  assert.equal(expectedYield, 6, '10階寶石應拆出6顆9階寶石');
 
   const res = ctx.dismantleGem('piercePhys', 10);
   assert.equal(res.n, expectedYield);
   assert.equal(ctx.gemCount('piercePhys', 10), 0, '原 10 階寶石應已消耗');
-  assert.equal(ctx.gemCount('piercePhys', 1), expectedYield, '拆解後應獲得指定數量 1 階物理穿透寶石');
+  assert.equal(ctx.gemCount('piercePhys', 9), expectedYield, '拆解後應獲得6顆9階物理穿透寶石');
+  assert.equal(ctx.gemCount('piercePhys', 1), 0, '不再拆成一階寶石');
 });
 
 test('4. 合成 (Combine) 穿透寶石流程', () => {

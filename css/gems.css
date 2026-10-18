@@ -21,7 +21,9 @@
 .gi-conv { width: 38px; height: 38px; }
 
 /* 轉換沿上方十階列選原料，九宮格與成品均使用48px庫存格尺寸。 */
-#tab-gems [data-gem-panel="convert"] { position: relative; }
+#tab-gems :is([data-gem-panel="convert"], [data-gem-panel="compose"], [data-gem-panel="dismantle"]) { position: relative; }
+#tab-gems [data-gem-panel="compose"] { padding-top: 42px; }
+#tab-gems .gem-holy-cell { position: relative; }
 #tab-gems .gconv-help { position: absolute; top: 12px; right: 12px; }
 #tab-gems .gconv-layout { gap: 32px; margin: 26px 10px 12px; align-items: stretch; }
 #tab-gems .gconv-input { display: flex; flex-direction: column; align-items: center; gap: 14px; }
@@ -37,11 +39,11 @@
 #tab-gems .gconv-side { flex: 0 1 300px; max-width: none; gap: 10px; }
 #tab-gems .gconv-side .sec-sub { margin: 0; }
 #tab-gems .gconv-result-area { flex: 1; min-height: 96px; }
-#tab-gems #gconv-output { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 6px; }
-#tab-gems #gconv-status { position: relative; z-index: 4; margin-top: 8px; min-height: 18px; font-size: 13px; color: #79e36b; }
-#tab-gems .is-converting .gconv-slot.filled { overflow: visible; z-index: 1; animation: gconv-convert-glow var(--gconv-fx-duration) ease-in-out both; pointer-events: none; }
-#tab-gems .is-converting .gconv-slot.filled .gi-conv { animation: gconv-convert-icon var(--gconv-fx-duration) ease-in-out both; }
-#tab-gems .is-converting .gconv-slot.filled::after {
+#tab-gems :is(#gconv-output, .gem-grid-output) { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 6px; }
+#tab-gems :is(#gconv-status, .gem-grid-status) { position: relative; z-index: 4; margin-top: 8px; min-height: 18px; font-size: 13px; color: #79e36b; }
+#tab-gems .is-converting :is(.gconv-slot.filled, .gem-holy-cell) { overflow: visible; z-index: 1; animation: gconv-convert-glow var(--gconv-fx-duration) ease-in-out both; pointer-events: none; }
+#tab-gems .is-converting :is(.gconv-slot.filled, .gem-holy-cell) .gem-ico { animation: gconv-convert-icon var(--gconv-fx-duration) ease-in-out both; }
+#tab-gems .is-converting :is(.gconv-slot.filled, .gem-holy-cell)::after {
   content: ''; position: absolute; inset: -48px; z-index: 3; border-radius: 50%; pointer-events: none;
   background: radial-gradient(circle, #fff8df 0 28px, #ffecc2f5 32px, #ffdfa0ad 42px, #ffd47740 56px, #ffcf6800 72px);
   animation: gconv-convert-flash var(--gconv-fx-duration) ease-in-out both;
@@ -65,18 +67,18 @@
   100% { opacity: 0; transform: scale(1.4); }
 }
 @media (prefers-reduced-motion: reduce) {
-  #tab-gems .is-converting .gconv-slot.filled { animation: none; box-shadow: inset 0 0 12px #f5d47788; border-color: #fff7d6; }
-  #tab-gems .is-converting .gconv-slot.filled .gi-conv { animation: none; }
-  #tab-gems .is-converting .gconv-slot.filled::after { display: none; animation: none; }
+  #tab-gems .is-converting :is(.gconv-slot.filled, .gem-holy-cell) { animation: none; box-shadow: inset 0 0 12px #f5d47788; border-color: #fff7d6; }
+  #tab-gems .is-converting :is(.gconv-slot.filled, .gem-holy-cell) .gem-ico { animation: none; }
+  #tab-gems .is-converting :is(.gconv-slot.filled, .gem-holy-cell)::after { display: none; animation: none; }
 }
-#tab-gems #gconv-output .gconv-slot { cursor: default; pointer-events: auto; }
-#tab-gems #gconv-output .gconv-slot:hover { filter: none; }
-#tab-gems #gconv-clear, #tab-gems #gconv-btn { width: 112px; min-height: 30px; margin-top: auto; align-self: center; }
+#tab-gems :is(#gconv-output, .gem-grid-output) .gconv-slot { cursor: default; pointer-events: auto; }
+#tab-gems :is(#gconv-output, .gem-grid-output) .gconv-slot:hover { filter: none; }
+#tab-gems #gconv-clear, #tab-gems #gconv-btn, #tab-gems .gem-grid-action { width: 112px; min-height: 30px; margin-top: auto; align-self: center; }
 #tab-gems .gconv-shortcut { margin: 0 10px; font-size: 12px; }
 #tab-gems .gconv-grid.is-drop { border-color: #d5b66d; box-shadow: 0 0 9px #d5b66d55; }
-#tab-gems[data-gem-tool="convert"] .gx-curve-cell[draggable="true"] { cursor: grab; }
-#tab-gems[data-gem-tool="convert"] .gx-curve-cell[draggable="true"]:active { cursor: grabbing; }
-#tab-gems[data-gem-tool="convert"] .gx-curve-cell.is-unavailable { filter: grayscale(1); opacity: .32; cursor: not-allowed; }
+#tab-gems:is([data-gem-tool="convert"], [data-gem-tool="dismantle"]) .gx-curve-cell[draggable="true"] { cursor: grab; }
+#tab-gems:is([data-gem-tool="convert"], [data-gem-tool="dismantle"]) .gx-curve-cell[draggable="true"]:active { cursor: grabbing; }
+#tab-gems:is([data-gem-tool="convert"], [data-gem-tool="dismantle"]) .gx-curve-cell.is-unavailable { filter: grayscale(1); opacity: .32; cursor: not-allowed; }
 .gi-shop { width: 50px; height: 50px; }
 .gi-row { width: 24px; height: 24px; }
 .gem-ico.gi-inline,

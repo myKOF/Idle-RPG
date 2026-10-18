@@ -1,4 +1,6 @@
-# Worker 協議 v54
+# Worker 協議 v55
+
+v55（2026-10-18 寶石工坊）：保留v54潛力移除，新增 `gem.dismantleSlots {slots:[{type,lv,n}]}` → `dismantleGems`（93→94條）；最多9格、每格1～1000顆、階級2～10。全部初始庫存驗證成功後，免費無損拆回前一階、數量沿合成逆配方；先扣所有原料才給產出，失敗不扣。dirty=`gems/header`，舊單顆／全部拆解沿同樣新公式。主端預覽共用 `gemDismantlePlan`，存檔格式不變。
 
 v54（2026-10-18 潛力系統移除）：刪除四條 `talent.potentialUpgrade/Max/Downgrade/Delete` 指令（97→93條）、惰性查詢 `availableSkillPoints`，`skills` 投影移除 `points/budget`，只保留 `loadout/loadoutSize/skills2/mastery`。`talents` 只投影現行威能等級，不再建立 `potentialLevels`；裝載只接受 `sg:`。舊潛力投入退回威能池、欄位刪除及裝載清理由讀檔遷移處理；主端／Worker快取同步失效。
 
@@ -196,7 +198,7 @@ v1 用「參數名叫 `itemId` 就自動解析」的慣例會出事——`forgeP
 
 ### 4.4 指令清單
 
-完整清單見 `js/worker/protocol.js` 的 `COMMANDS`，v23 起共 **93 條**
+完整清單見 `js/worker/protocol.js` 的 `COMMANDS`，現行共 **94 條**
 （v1 凍結時 67 條，v3 補 14 條、v4 再補 4 條、v8 補 1 條、v16 補 1 條、v18 補 1 條、v19 補 2 條、
 v21 補 2 條、v23 補 1 條）。
 

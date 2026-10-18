@@ -85,7 +85,9 @@
    戰中拒絕配置變更，沿用既有錯誤封包，指令數／參數／快照與存檔格式不變。 */
 /* v53（2026-10-17 寶石共鳴）：新增指令 gem.resonanceSocket／resonanceUnsocket／resonanceUpgrade（94 → 97）；
    gems 面板新增 resonance＝{ holes }（G.player.resonance，存檔欄位同名；舊快照缺欄視為空）。 */
-var WORKER_PROTOCOL_VERSION = 54;
+/* v55（2026-10-18 寶石工坊）：保留v54潛力移除，新增gem.dismantleSlots九宮格原子拆解（93→94）；
+   無損回前一階，預覽及產出沿共用合成逆配方，快照與存檔格式不變。 */
+var WORKER_PROTOCOL_VERSION = 55;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -324,6 +326,7 @@ var COMMANDS = {
   'gem.socketFused':       { fn: 'socketFusedGem',   args: { itemId: 'id', fusedId: 'id', index: 'int?' }, limit: { index: { min: 0 } }, resolve: ['itemId'], dirty: ['inv', 'equip', 'gems', 'header'] },
   'gem.unsocket':          { fn: 'unsocketGem',      args: { itemId: 'id', index: 'int' }, resolve: ['itemId'], dirty: ['inv', 'equip', 'gems', 'header'] },
   'gem.dismantle':         { fn: 'dismantleGem',     args: { type: 'str', level: 'int' },         dirty: ['gems', 'header'] },
+  'gem.dismantleSlots':    { fn: 'dismantleGems',    args: { slots: 'slots' },                    dirty: ['gems', 'header'] },
   'gem.dismantleFused':    { fn: 'dismantleFusedGem', args: { fusedId: 'id' },                    dirty: ['gems', 'header'] },
   'gem.convert':           { fn: 'convertGems',      args: { slots: 'slots', targetType: 'str' }, dirty: ['gems'] },
   'gem.compose':           { fn: 'composeGems',      args: { type: 'str', level: 'int' },         dirty: ['gems'] },

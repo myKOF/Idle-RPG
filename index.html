@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="css/ashen-forge-flat.css?v=1.0.3">
   <link rel="stylesheet" href="css/battle-hud.css?v=1.0.18">
   <link rel="stylesheet" href="css/runeword.css?v=1.0.6">
-  <link rel="stylesheet" href="css/gems.css?v=1.0.20">
+  <link rel="stylesheet" href="css/gems.css?v=1.0.21">
   <link rel="stylesheet" href="css/dialogs.css?v=1.0.3">
 </head>
 
@@ -357,8 +357,9 @@
               </div>
 
               <div class="gx-panel" data-gem-panel="compose">
-                <div class="hint">消耗「同種類、同等級」寶石＋金幣 → 1 顆同種類的<b>下一階</b>寶石。種類選左邊的寶石，階級<b>點上方的寶石圖</b>；原料數量及金幣見下方配方，最高可合成十級。</div>
+                <button type="button" class="pg-help gconv-help" aria-label="寶石合成說明" data-tt-title="寶石合成" data-tt-desc="選取上方寶石以合成更高階的寶石">!</button>
                 <div id="fuse-recipe" class="gx-recipe"></div>
+                <div id="fuse-status" class="gem-grid-status" role="status" aria-live="polite"></div>
                 <div class="node-info" id="fuse-info"></div>
                 <div class="gx-actions">
                   <button id="fuse-btn" class="btn">合成一次</button>
@@ -387,31 +388,22 @@
               </div>
 
               <div class="gx-panel" data-gem-panel="dismantle">
-                <div class="hint">將 2 階以上的寶石拆解為同種類 1 階寶石，數量<b>損失 30%</b>。融合寶石依「融合次數」推算 1 階總成本再打 7 折，並依其屬性種類均分。</div>
-                <div class="flt-row gx-row">
-                  <span>種類</span>
-                  <select id="gdis-type"></select>
-                  <span>等級</span>
-                  <select id="gdis-level">
-                    <option value="2">二級</option>
-                    <option value="3">三級</option>
-                    <option value="4">四級</option>
-                    <option value="5">五級</option>
-                    <option value="6">六級</option>
-                    <option value="7">七級</option>
-                    <option value="8">八級</option>
-                    <option value="9">九級</option>
-                    <option value="10">十級</option>
-                  </select>
+                <button type="button" class="pg-help gconv-help" aria-label="寶石拆解說明" data-tt-title="寶石拆解" data-tt-desc="選擇上方寶石進行拆解，可將高級寶石拆解為前一階寶石&#10;拆解過程不會產生任何損耗。">!</button>
+                <div class="gconv-layout">
+                  <div class="gconv-input">
+                    <div id="gdis-grid" class="gconv-grid" aria-label="拆解原料九宮格"></div>
+                    <button id="gdis-clear" class="btn sm gem-grid-action">清空</button>
+                  </div>
+                  <div class="gconv-side">
+                    <div class="sec-sub">拆解後可獲得</div>
+                    <div class="gconv-result-area">
+                      <div id="gdis-output" class="gem-grid-output" aria-label="拆解後可獲得的寶石"></div>
+                      <div id="gdis-status" class="gem-grid-status" role="status" aria-live="polite"></div>
+                    </div>
+                    <button id="gdis-btn" class="btn gem-grid-action">一鍵拆解</button>
+                  </div>
                 </div>
-                <div class="node-info" id="gdis-info"></div>
-                <div class="gx-actions">
-                  <button id="gdis-btn" class="btn">拆解一顆</button>
-                  <button id="gdis-all-btn" class="btn warn">全部拆解</button>
-                </div>
-                <div class="sec-sub">融合寶石拆解（點擊拆解，會先確認）</div>
-                <div id="gdis-fused" class="chip-row"></div>
-                <div id="gdis-result" class="gem-result gem-result-3">尚未進行拆解</div>
+                <div class="gconv-shortcut">Shift+左鍵：單顆放入／取下</div>
               </div>
 
               <div class="gx-panel" data-gem-panel="fusion" hidden>
@@ -935,7 +927,7 @@
   <script src="js/status.js?v=1.0.34"></script>
   <script src="js/runeword_data.js?v=1.0.15"></script>
   <script src="js/gem_resonance_data.js?v=1.0.1"></script>
-  <script src="js/formula.js?v=1.0.64"></script>
+  <script src="js/formula.js?v=1.0.65"></script>
   <script src="js/battlefield.js?v=1.4.13"></script>
   <script src="js/game-clock.js?v=1.0.1"></script>
   <script src="js/vfx.js?v=1.0.82"></script>
@@ -961,7 +953,7 @@
   <script src="js/battle-elite.js?v=1.0.7"></script>
   <script src="js/battle-renderer.js?v=1.6.190"></script>
   <script src="js/stats.js?v=1.0.4"></script>
-  <script src="js/item.js?v=1.0.24"></script>
+  <script src="js/item.js?v=1.0.25"></script>
   <script src="js/gem_resonance.js?v=1.0.3"></script>
   <script src="js/runeword.js?v=1.0.14"></script>
   <script src="js/skills.js?v=1.0.43"></script>
@@ -973,9 +965,10 @@
   <script src="js/combat.js?v=1.0.88"></script>
   <script src="js/tower.js?v=1.0.32"></script>
   <script src="js/save.js?v=1.0.18"></script>
-  <script src="js/ui.js?v=1.0.175"></script>
+  <script src="js/ui.js?v=1.0.176"></script>
   <script src="js/ui-runeword.js?v=1.0.11"></script>
   <script src="js/ui-gem-resonance.js?v=1.0.15"></script>
+  <script src="js/ui-gem-workshop.js?v=1.0.0"></script>
   <script src="js/param_autoreload.js"></script>
   <!-- GM 面板。指令執行層在 js/gm_exec.js，由 Worker importScripts 載入 -->
   <script src="js/gm.js?v=1.0.1"></script>
@@ -983,12 +976,12 @@
        正式遊玩是空殼。必須排在 ui.js（用它的 isInternalVersion）之後、VFX Runtime 建立（main 開機）之前。 -->
   <script src="js/battle-perf.js?v=1.0.3"></script>
   <!-- 模擬 Worker 的協議與橋接。bridge.js 於 DOMContentLoaded 開機 -->
-  <script src="js/worker/protocol.js?v=54"></script>
+  <script src="js/worker/protocol.js?v=55"></script>
   <script src="js/storage.js?v=1.0.1"></script>
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
-  <script src="js/bridge.js?v=1.0.298"></script>
+  <script src="js/bridge.js?v=1.0.299"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->

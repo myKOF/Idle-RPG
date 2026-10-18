@@ -62,10 +62,15 @@ test('戰鬥日誌分類與色彩樣式規則驗證', () => {
   assert.match(worker, /'gem\.composeAll'[\s\S]*blog\('♻️ 全部合成：'[\s\S]*'good',\s*'factory'\);/);
   assert.match(worker, /'gem\.dismantleAll'[\s\S]*blog\('⛏️ 全部拆解：'[\s\S]*'good',\s*'factory'\);/);
 
+  const workshop = fs.readFileSync(path.join(root, 'js/ui-gem-workshop.js'), 'utf8');
+  assert.match(workshop, /all \? 'gem\.composeAll' : 'gem\.compose'/);
+  assert.match(workshop, /startGemWorkshop\('dismantle', 'gem\.dismantleSlots'/);
+  assert.match(workshop, /sendGemUiCommand\(command, args/);
+  assert.match(workshop, /blog\(kind === 'compose' \? '💎 合成成功！' : '⛏️ 拆解成功！', 'good', 'factory'\)/);
+
   // 寶石 UI 只送協議指令；Worker 產生的 log Event 再由主執行緒分類與渲染
   for (const command of [
-    'gem.compose', 'gem.composeAll', 'gem.convert', 'gem.dismantle',
-    'gem.dismantleAll', 'gem.dismantleFused', 'gem.fuse',
+    'gem.convert', 'gem.fuse',
     'gem.shopBuyAll', 'gem.shopRefresh', 'gem.shopUpgrade'
   ]) {
     assert.match(ui, new RegExp("sendGemUiCommand\\(\\s*['\"]" + command.replace('.', '\\.') + "['\"]"));

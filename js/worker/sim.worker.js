@@ -10,15 +10,15 @@
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-importScripts('protocol.js?v=20261018-potential-remove', '../game-clock.js?v=1.0.1', 'shim.js?v=20261018-potential-remove');
+importScripts('protocol.js?v=20261018-potential-remove-gem-workshop', '../game-clock.js?v=1.0.1', 'shim.js?v=20261018-potential-remove');
 // 離線結算等分批工作亦共用暫停時鐘；訊息與loop仍能回應存檔及PING。
 if (typeof GameClock !== 'undefined') {
   globalThis.setTimeout = GameClock.setTimeout;
   globalThis.clearTimeout = GameClock.clearTimeout;
 }
 importScripts(
-  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261018-potential-remove', '../runeword_data.js?v=20261013-rune-all-elem-color', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261018-potential-remove', '../formula.js?v=20261018-potential-remove', '../battlefield.js?v=20261016-npc-retaliate-refill', '../stats.js?v=20261003-rename-weineng',
-  '../item.js?v=20261018-gem-convert-two', '../gem_resonance.js?v=20261018-resonance-hole-effects','../runeword.js?v=20261014-develop-integration',
+  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261018-potential-remove', '../runeword_data.js?v=20261013-rune-all-elem-color', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261018-potential-remove', '../formula.js?v=20261018-potential-remove-gem-workshop', '../battlefield.js?v=20261016-npc-retaliate-refill', '../stats.js?v=20261003-rename-weineng',
+  '../item.js?v=20261018-gem-workshop', '../gem_resonance.js?v=20261018-resonance-hole-effects','../runeword.js?v=20261014-develop-integration',
   '../skills.js?v=20261018-potential-remove', '../skills2.js?v=20261018-potential-remove', '../elite_data.js?v=20261016-wall-rock', '../talents.js?v=20261018-potential-remove',
   '../player.js?v=20261018-potential-remove', '../special_rules.js',
   '../combat.js?v=20261018-potential-remove', '../elite.js?v=20261018-wall-natural-narrow', '../elite_boss.js?v=20261015-boss-player-skill', '../elite_boss_recipes.js?v=20261015-boss-player-skill', '../legendary.js?v=20261012-indomitable-guard', '../tower.js?v=20261018-potential-remove',
@@ -1696,7 +1696,7 @@ var COMMAND_IMPL = {
     }
     if (count > 0) {
       blog('⛏️ 全部拆解：' + gemLabel(a.type, a.level) + ' ×' + count + ' → ' +
-        gemLabel(a.type, 1) + ' ×' + gain, 'good', 'factory');
+        gemLabel(a.type, a.level - 1) + ' ×' + gain, 'good', 'factory');
     }
     UI.dirty.gems = true;
     return { count: count, gain: gain, err: count > 0 ? null : (r && r.err) };

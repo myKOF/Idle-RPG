@@ -96,7 +96,8 @@ test('介面各處的寶石圖示改走 gemIconHTML；只剩純文字位置（�
     'gemIconHTML(s.type, s.lv, \'gi-conv\')', 'gemIconHTML(item.type, item.lv, \'gi-shop\')']) {
     assert.ok(ui.includes(fn), 'ui.js 缺少 ' + fn);
   }
-  assert.equal((ui.match(/fusedGemIconHTML\(fg, 'gi-chip'\)/g) || []).length, 3, '三處融合寶石小格');
+  assert.equal((ui.match(/fusedGemIconHTML\(fg, 'gi-chip'\)/g) || []).length, 2, '保留的融合與商店小格，拆解頁已移除融合清單');
+  assert.match(fs.readFileSync(path.join(root, 'js/ui-gem-workshop.js'), 'utf8'), /gemIconHTML\(s.type, s.lv, 'gi-conv'\)/);
   assert.match(stats, /gemIconHTML\(parts\[0\], \+parts\[1\], 'gi-inline'\)/);
 });
 
@@ -104,7 +105,7 @@ test('CSS：gems.css 為每個 gi-* 尺寸 class 定義大小，並在 index.htm
   const css = fs.readFileSync(path.join(root, 'css/gems.css'), 'utf8');
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   const used = new Set();
-  for (const f of ['js/ui.js', 'js/item.js', 'js/stats.js']) {
+  for (const f of ['js/ui.js', 'js/ui-gem-workshop.js', 'js/item.js', 'js/stats.js']) {
     for (const m of fs.readFileSync(path.join(root, f), 'utf8').matchAll(/'(gi-[a-z]+)'/g)) used.add(m[1]);
   }
   assert.ok(used.size >= 9, '用到的尺寸 class：' + [...used].join(','));

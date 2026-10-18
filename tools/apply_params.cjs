@@ -1065,7 +1065,7 @@ scalar('data', 'INVENTORY_EXPAND_COST_MULT', '7-容量', '背包擴充費用', 1
 scalar('data', 'INVENTORY_EXPAND_COST_RATE', '7-容量', '背包擴充費用', 2);
 scalar('formula', 'GEM_CONVERT_SLOTS', '8-寶石', '寶石轉換(九宮格)', 0);
 scalar('formula', 'GEM_CONVERT_STACK', '8-寶石', '寶石轉換(九宮格)', 1);
-scalar('formula', 'GEM_DISMANTLE_KEEP', '8-寶石', '寶石拆解(一般)', 0);
+scalar('formula', 'GEM_DISMANTLE_KEEP', '8-寶石', '寶石拆解(融合)', 0);
 
 /* ---- Batch2b：跨檔（formula/combat/item）補接 ---- */
 // 護盾（單一常數；使用者採表格值：溢出轉護盾 1%、護盾上限 10%）
