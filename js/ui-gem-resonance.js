@@ -284,11 +284,30 @@ function renderGemResonance(gemsSnapshot, headerSnapshot) {
 
 function initGemResonanceUi() {
   var board = $id('gres-board'), detail = $id('gres-detail'), focus = $id('gem-focus');
+  var dragImage = null;
+  function clearDragImage() {
+    if (dragImage) { dragImage.remove(); dragImage = null; }
+  }
+  function setDragIcon(source, transfer) {
+    clearDragImage();
+    var icon = source.querySelector('img.gem-ico');
+    if (!icon) return;
+    var rect = icon.getBoundingClientRect();
+    // 用同尺寸的透明容器拍攝圖片，避免 IMG 原始尺寸或卡片文字進入原生拖曳影像。
+    dragImage = document.createElement('div');
+    dragImage.setAttribute('aria-hidden', 'true');
+    dragImage.style.cssText = 'position:fixed;left:' + rect.left + 'px;top:' + rect.top + 'px;width:' + rect.width + 'px;height:' + rect.height + 'px;padding:0;margin:0;border:0;background:transparent;box-shadow:none;pointer-events:none;z-index:2147483647';
+    var image = icon.cloneNode(false);
+    image.style.cssText = 'display:block;width:100%;height:100%;margin:0;border:0;background:transparent;box-shadow:none;object-fit:contain';
+    dragImage.appendChild(image);
+    document.body.appendChild(dragImage);
+    transfer.setDragImage(dragImage, rect.width / 2, rect.height / 2);
+  }
   function holeAt(e) { return e.target && e.target.closest ? e.target.closest('[data-gres-hole]') : null; }
   function clearDrop() {
     if (board) board.querySelectorAll('.is-drop, .is-reject').forEach(function (n) { n.classList.remove('is-drop', 'is-reject'); });
   }
-  function stopDrag() { UI.gemBrowse.resDrag = null; clearDrop(); renderGems(); }
+  function stopDrag() { clearDragImage(); UI.gemBrowse.resDrag = null; clearDrop(); renderGems(); }
   function selectHole(hole) {
     if (!hole) return;
     var parts = hole.getAttribute('data-gres-hole').split(':');
@@ -311,6 +330,8 @@ function initGemResonanceUi() {
       UI.gemBrowse.resDrag = gem;
       e.dataTransfer.setData('application/x-idle-rpg-gem', JSON.stringify(gem));
       e.dataTransfer.effectAllowed = 'move';
+      setDragIcon(source, e.dataTransfer);
+      if (typeof hideTooltip === 'function') hideTooltip();
     });
     focus.addEventListener('dragend', stopDrag);
   }

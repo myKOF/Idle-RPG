@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## GEM-RESONANCE-DRAG-ICON-20261018 — 拖曳只顯示寶石圖示
+
+- Owner：Codex；Done，單一開發者。使用者要求共鳴上方寶石拖曳時只帶icon，移除卡片框線、階級／能力／庫存文字。前置拖曳鑲嵌已完成，工作區乾淨、目標預檢乾淨。
+- 允許js/ui-gem-resonance.js、index.html、tests/gem-resonance-ui.test.cjs、docs/GEM_RESONANCE.md、PATCH.md與本紀錄；禁止數值／資料／Worker／協議／存檔／素材及其他副本，不合併推送。
+- 方式：正式dragstart以原寶石圖片建立透明、同顯示尺寸的拖曳影像，隱藏懸浮說明；保留原payload／庫存與容量檢查，結束或放下清理臨時影像。無新素材／素材庫變更。
+- 驗收：回歸釘住影像只有IMG、尺寸與熱點、清理及拒絕來源不建立影像，既有拖曳與共鳴回歸、Build／diff；隔離瀏覽器原生拖曳攔截setDragImage確認內容／透明／縮放尺寸、鑲入與取消／失敗清理及Console，完成後Commit，使用者重載及整合。
+- 完成6檔：拖曳開始用來源IMG複本建立透明、無框無文字的原生drag image，按實際畫面尺寸呈現、游標置中；不複製卡片內容，立即hideTooltip。drop／dragend清理，下一次dragstart亦先清理殘留；庫存／容量／payload與既有來源DOM保護不變。index僅共鳴JS1.0.8→9，回歸／操作說明／PATCH與本紀錄同步。無新素材或素材庫Commit。
+- 指令／結果：`node --test tests/gem-resonance-ui.test.cjs tests/gem-resonance.test.cjs tests/init-ui-smoke.test.cjs`25/25通過；新增1項驗只有一個原IMG、無卡片文字、尺寸／熱點、重建清理、成功／拒絕／取消清理與BOSS／無效來源不建影像；`npm.cmd run build`535檔通過；`git diff --check`通過。
+- 瀏覽器：獨立headless Edge／隨機localhost／seed新角色，正式index／UI／CSS／Worker與GM測試庫存；原生dragTo成功鑲入，攔截後仍呼叫原生setDragImage，確認影像只含IMG且text為空、背景透明、border0／shadow none；1920視窗尺寸40×40、1366視窗28.453125×28.453125，皆與來源screen rect一致，熱點位於中心。拒絕不符區域／Esc取消不鑲入、影像均移除，拖曳時sk-tooltip隱藏；Console warning／error、pageerror、HTTP錯誤0。未讀真人存檔，測試服務／瀏覽器／臨時腳本清理；原生系統拖曳影像不在頁面截圖內，驗證採實際事件及原生影像設定內容，未宣稱截得OS浮動圖。
+- 自我Review／唯讀：AI規範／工作流／Agent文件、gemFocusHTML／gemIconHTML、寶石圖片路徑與尺寸CSS、Tooltip與共鳴規則／拖曳命中；上述未列修改範圍者均未改。全部目標衝突預檢乾淨，無本次未完成項或新增已知風險；未實測其他瀏覽器／實體觸控。Commit為本紀錄所在[Codex] fix提交，回覆附編號；可供Review／合併，未合併推送，下一步重新載入寶石→共鳴並拖曳上方寶石。
+
 ## SYNC-INDEX-RECOVERY-20261018 — 同步時自動修復半完成的 fast-forward index
 
 - Owner：Codex；Done，單一開發者。使用者要求將本次index寫入失敗的修復納入sync_ai_worktrees.bat，未來自動處理並接續同步；前置既有同步／Markdown報告，已滿足，目標預檢全乾淨。只在Codex修改工具與文件，禁止遊戲玩法／素材／其他工作區開發內容，不執行正式合併或推送。

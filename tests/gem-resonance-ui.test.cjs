@@ -17,7 +17,7 @@ function ui(gems={diamond:{3:8,4:2,7:1},ruby:{10:3}}){
  // 使用正式 renderGems／類型列／十階列，只有無關的工坊面板採空實作。
  vm.runInContext(source.slice(source.indexOf('var GEM_LIB_FILTERS ='),source.indexOf('function gemAbilityText(')),c);
  for(const name of ['fillGemTypeSelect','renderFuseInfo','renderGemConvert','renderGemDismantle','renderGemFusion','renderGemShop'])c[name]=()=>{};
- const nodes={};function element(attrs={}){return {attrs,innerHTML:'',handlers:{},addEventListener(k,f){this.handlers[k]=f;},getAttribute(k){return this.attrs[k];},setAttribute(k,v){this.attrs[k]=v;},closest(k){const key=k.slice(1,-1);return this.attrs[key]!==undefined?this:null;},classList:{add(){},remove(){}},querySelectorAll(){return [];},contains(){return true;}};}
+ const nodes={};function element(attrs={}){return {attrs,innerHTML:'',handlers:{},addEventListener(k,f){this.handlers[k]=f;},getAttribute(k){return this.attrs[k];},setAttribute(k,v){this.attrs[k]=v;},closest(k){const key=k.slice(1,-1);return this.attrs[key]!==undefined?this:null;},classList:{add(){},remove(){}},querySelector(){return null;},querySelectorAll(){return [];},contains(){return true;}};}
  for(const id of ['gres-board','gres-detail','gres-total','gem-table','gres-library-note','gem-focus','gem-filter','gem-owned-only','tab-gems','gem-total','gem-kinds'])nodes[id]=element();
  c.$id=id=>nodes[id]||null;c.uiGemsPanelSnapshot=()=>({gems:c.G.player.gems,resonance:c.G.player.resonance});
  c.resolveGemsPanelSnapshot=s=>s||c.uiGemsPanelSnapshot();c.uiHeaderPanelSnapshot=()=>({player:c.G.player});
@@ -133,4 +133,26 @@ test('兩顆與六顆真實鑲入後每顆都顯示，取下後保留其餘寶�
  c.gresSelectHole(0,0);nodes['gres-detail'].handlers.click({target:element({'data-gres-take':'0'})});assert.equal(c.G.player.gems.sapphire[6],1);assert.equal(partCount(0,0),0);
  const gems=[{type:'ruby',level:10},{type:'sapphire',level:9},{type:'diamond',level:8}];
  const art=c.gresHoleGemsHTML({x:0,y:0},gems,6,0);for(const gem of gems)assert.ok(art.includes(c.gemIconSrc(gem.type,gem.level)));
+});
+
+test('拖曳影像只有原寶石圖、維持畫面尺寸及中心熱點，成功／拒絕／取消均清理',()=>{
+ const f=ui(),{c,nodes,element}=f,attached=[];let hidden=0;c.hideTooltip=()=>hidden++;
+ c.document={createElement(tag){return {tagName:tag.toUpperCase(),style:{},children:[],setAttribute(){},appendChild(n){this.children.push(n);},remove(){this.removed=true;}};},body:{appendChild(n){attached.push(n);}}};
+ const image={tagName:'IMG',src:c.gemIconSrc('diamond',4),style:{}};
+ const icon={getBoundingClientRect(){return {left:23,top:61,width:32,height:32};},cloneNode(deep){assert.equal(deep,false);return {...image,style:{}};}};
+ function start(level=4){
+  const source=element({'data-gres-gem':'diamond:'+level});source.querySelector=s=>{assert.equal(s,'img.gem-ico');return icon;};
+  const transfer={setData(k,v){this.payload=JSON.parse(v);},setDragImage(node,x,y){this.image=node;this.hotspot=[x,y];}};
+  nodes['gem-focus'].handlers.dragstart({target:source,dataTransfer:transfer,preventDefault(){transfer.prevented=true;}});return transfer;
+ }
+ const first=start();assert.deepEqual(first.payload,{type:'diamond',level:4});assert.deepEqual(first.hotspot,[16,16]);
+ assert.equal(first.image.children.length,1);assert.equal(first.image.children[0].tagName,'IMG');assert.equal(first.image.children[0].src,image.src);
+ assert.match(first.image.style.cssText,/width:32px;height:32px/);assert.match(first.image.style.cssText,/border:0;background:transparent/);assert.equal(hidden,1);
+ const second=start();assert.equal(first.image.removed,true);assert.equal(second.image.removed,undefined);
+ drop(f,'1:2');assert.equal(second.image.removed,true);assert.equal(c.calls.length,1);assert.equal(c.G.player.resonance.holes['1:2'].gems[0].type,'diamond');
+ c.gresSelectHole(1,1);
+ const invalidTarget=start();drop(f,'5:1');assert.equal(invalidTarget.image.removed,true);assert.equal(c.calls.length,1);
+ const cancelled=start();nodes['gem-focus'].handlers.dragend();assert.equal(cancelled.image.removed,true);
+ const created=attached.length;const invalidSource=start(3);assert.equal(invalidSource.prevented,true);assert.equal(attached.length,created);
+ c.bossFightConfigLocked=()=>true;assert.equal(start().prevented,true);assert.equal(attached.length,created);assert.ok(attached.every(n=>n.removed));
 });
