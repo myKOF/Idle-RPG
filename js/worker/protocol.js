@@ -89,7 +89,9 @@
    無損回前一階，預覽及產出沿共用合成逆配方，快照與存檔格式不變。 */
 /* v56（2026-10-18 熔爐圖示）：newforge.furnaces[].belt[]新增可選weaponType，
    顯示層沿用正式裝備圖示；舊快照缺欄時退回部位圖示，指令／存檔不變。 */
-var WORKER_PROTOCOL_VERSION = 56;
+/* v57（2026-10-18 輸送帶移動）：belt[]新增id，furnaces[]新增cycleDurationSec／cycleRemainingSec；
+   只供顯示插補，拆解時機／速度／存檔與指令不變，舊快照按外觀退化。 */
+var WORKER_PROTOCOL_VERSION = 57;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {

@@ -21,7 +21,7 @@ function extractFunction(source, name) {
 }
 
 test('熔爐面板只傳佇列摘要，不複製大量完整裝備物件', () => {
-  const context = { NEW_FORGE_BELT_SHOW: 30 };
+  const context = { NEW_FORGE_BELT_SHOW: 30, NEW_FORGE_INTERVAL: 2, newForgeFurnaceSpeed: () => 2 };
   vm.createContext(context);
   vm.runInContext(extractFunction(worker, 'newForgePanelView'), context);
 
@@ -31,6 +31,7 @@ test('熔爐面板只傳佇列摘要，不複製大量完整裝備物件', () =>
     furnaces: [{
       id: 1,
       enabled: true,
+      timer: 1.6,
       qualities: [true, false],
       parts: [{ key: 'speedGear', tier: 5 }],
       partSlots: 3,
@@ -46,8 +47,10 @@ test('熔爐面板只傳佇列摘要，不複製大量完整裝備物件', () =>
   });
 
   assert.equal(view.queueCount, 8415);
+  assert.equal(view.furnaces[0].cycleDurationSec, 1);
+  assert.equal(view.furnaces[0].cycleRemainingSec, .8);
   assert.equal(view.furnaces[0].queueCount, 9999);
-  assert.equal(JSON.stringify(view.furnaces[0].belt[0]), JSON.stringify({ rarity: 2, slot: 'weapon', name: '保留名稱', weaponType: 'staff2h' }));
+  assert.equal(JSON.stringify(view.furnaces[0].belt[0]), JSON.stringify({ id: 'full-item', rarity: 2, slot: 'weapon', name: '保留名稱', weaponType: 'staff2h' }));
   assert.equal(JSON.stringify(view.furnaces[0].parts), JSON.stringify([{ key: 'speedGear' }]));
   assert.equal(view.furnaces[0].belt[0].affixes, undefined);
   assert.equal(view.furnaces[0].queue, undefined);

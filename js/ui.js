@@ -6420,7 +6420,7 @@ function nfQualityChipsHTML(fu) {
 }
 
 // 傳送帶批次圖示（帶頭在左＝即將入爐；沿用背包的正式裝備與武器類型圖示）。
-// 帶尾另有固定寬度的 +N 區（nf-belt-more，由 nfUpdateBelts 更新），版面不隨數字增減變動。
+// 帶尾 +N 區由 nfUpdateBelts 更新；沒有等待佇列時收起，讓裝備由輸送帶最右端入場。
 function nfBeltChipsHTML(fu) {
   var show = fu.belt.slice(0, NEW_FORGE_BELT_SHOW);
   var chips = show.map(function (it) {
@@ -6516,7 +6516,7 @@ function nfFurnaceHTML(fu, nf, factory, player) {
     '<button class="btn sm warn nf-remove" data-nf-remove="' + fu.id + '"' +
     pendingUiButtonAttributes(furnacePendingKey(fu.id)) + '>移除</button></div>';
   var main = nfQualityChipsHTML(fu) +
-    '<div class="nf-belt"><span class="nf-belt-mouth" data-tip="熔爐入口：帶頭裝備由此入爐拆解"><span class="nf-mouth-fire" aria-hidden="true"><i class="nf-mouth-flame"></i><i class="nf-mouth-flame nf-mouth-flame-core"></i><i class="nf-mouth-embers"></i></span></span>' +
+    '<div class="nf-belt"><span class="nf-belt-mouth" data-tip="熔爐入口：帶頭裝備由此入爐拆解"><canvas class="nf-mouth-canvas" width="96" height="104" aria-hidden="true"></canvas></span>' +
     '<span class="nf-belt-items" data-nf-belt="' + fu.id + '"></span>' +
     '<span class="nf-belt-more" data-nf-more="' + fu.id + '"></span></div>' +
     nfPartSlotsHTML(fu, nf, factory, player) +
@@ -6583,7 +6583,7 @@ function renderNewForge() {
   }
 }
 
-// 傳送帶批次定點更新（每輪執行；容器內無互動元件，覆寫不影響操作）
+// 傳送帶保留裝備節點，由顯示模組依ID連續插補；快照只更新目的地。
 function nfUpdateBelts(list, snapshot) {
   var nodes = list.querySelectorAll('[data-nf-belt]');
   if (!nodes.length) return;
@@ -6591,16 +6591,12 @@ function nfUpdateBelts(list, snapshot) {
     var node = nodes[i];
     var fu = newForgeViewFurnace(snapshot, parseInt(node.getAttribute('data-nf-belt'), 10));
     if (!fu) continue;
-    var html = nfBeltChipsHTML(fu);
-    if (node._nfBeltHTML !== html) {
-      node._nfBeltHTML = html;
-      node.innerHTML = html;
-    }
+    NewForgeVisuals.update(node, fu);
     var belt = node.parentNode;
     var moving = !!(fu.enabled && fu.belt && fu.belt.length);
     if (belt && belt.classList && belt.classList.contains('is-moving') !== moving) belt.classList.toggle('is-moving', moving);
   }
-  // 帶尾固定 +N 區：只換文字，空間恆定不變動版面。
+  // 帶尾 +N 區只換文字；沒有等待佇列時由CSS收起，ResizeObserver同步可見容量。
   // +N＝該爐「專屬佇列」真實件數（各爐獨立，非共用計數；顯示封頂 +9999、tooltip 精確）。
   var mores = list.querySelectorAll('[data-nf-more]');
   for (var m = 0; m < mores.length; m++) {

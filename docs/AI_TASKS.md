@@ -10922,3 +10922,22 @@ Worker 存活且頁面正常完成載入。
 - 收尾共享檢查：潛力任務後續自行移除模擬策略舊potential登記，與本次gem.dismantleSlots新增為不同區段；HEAD／本次候選／現工作檔三方乾跑0且結果等於現檔。策略覆蓋套件回跑5/5通過，UI面板寶石子項通過、只剩兩項相同基線的裝備替身失敗。其暫存內容保留，沒有把其他任務納入寶石提交。
 
 - 最終交付：潛力任務先獨立提交362c33f5，寶石27檔差異逐檔確認，沒有潛力本體變更；其完整功能保留。最終補跑上述寶石／Worker／潛力相依及sim-command-coverage共148/148，參數558一致／0變更。修改檔案：PATCH.md、config/CSV/game_parameters.csv、config/Excel/game_parameters.xlsx、css/gems.css、docs/AI_TASKS.md、docs/WORKER_PROTOCOL.md、docs/vfx/VFX_PRESET_USAGE_OUTSIDE_TABLES.md、game_formula.md、index.html、js/bridge.js、js/formula.js、js/item.js、js/ui.js、js/worker/protocol.js、js/worker/sim.worker.js、scripts/sim/command_coverage.json、tests/combat-log.test.cjs、tests/confirm-dialog.test.cjs、tests/gem-compose-all.test.cjs、tests/gem-icons.test.cjs、tests/pen-gem-flow.test.cjs、tests/potential-removal.test.cjs、tests/ui-worker-panels.test.cjs、tests/worker-protocol.test.cjs、tools/apply_params.cjs、js/ui-gem-workshop.js、tests/gem-workshop.test.cjs。任務GEM-WORKSHOP-DOWNSTEP-20261018完成、無未完成需求，可審查合併；建議重載遊戲驗收。
+
+
+## FORGE-BELT-MOTION-20261018 — 右側入帶與程序粒子爐火
+
+- Owner：Codex；Done，單一開發者。延續前次熔爐顯示，使用者要求裝備由最右入帶並平滑向左、重做爐口且明確接受粒子火焰；不改拆解數值或時機。前置既有正式圖示／Worker完成。同副本天堂威能進行中，保留全部修改。
+- 允許js/ui-newforge-visuals.js、js/ui.js僅熔爐接線、css/ashen-forge.css僅熔爐、index必要腳本／快取、sim.worker.js僅熔爐投影ID／週期／剩餘秒、protocol／bridge必要版本、WORKER_PROTOCOL及相依熔爐／版本測試與本紀錄；禁止威能本體、存檔／數值／拆解計算、素材及其他副本，不合併推送。使用者同意保留兩功能合併版本；功能區段以HEAD為base／本次候選ours／當時工作檔theirs，git merge-file -p退出0才寫入。
+- 方式／驗收：按裝備ID持有節點與位置，右側進入、頭端出帶、缺省快照退化；週期沿Worker權威倒數／速度，顯示插補不更動權威結算。單一GameClock rAF共用、離頁停止、停用／Esc暫停、減少動態靜態、Resize與同外觀不同ID不閃跳；Canvas自繪火舌粒子／焰心／火星，無素材或Preset。相依回歸、Build、正式隔離Worker瀏覽器／Console／預覽、diff後獨立Commit，後續使用者審閱整合。
+
+- 完成：新增NewForgeVisuals純顯示模組，依實例ID保留DOM／當前位置，新件由最右端進入、頭件向左出帶、後件平滑補位；只呈現容器可容納的件數，其餘保留於權威帶中。無等待佇列時收起+N空區，入場點貼齊帶尾。ResizeObserver調整容量、卡片重建搬回節點，同外觀不同ID可區分，舊快照按外觀＋序號相容。Worker只新增belt.id及沿newForgeFurnaceSpeed推導的週期／剩餘實秒，Protocol56→57、94指令與原拆解時機／存檔不變。
+- 爐火：移除上次灰階遮罩與CSS擺動，改Canvas程序生成橘紅火舌／金白焰心／炭床／上升火星；單一GameClock rAF共用、火焰30Hz，停用與Esc不動，離頁停止排程、減少動態靜態，零素材／零Preset。沒有編修獨立美術資源或素材庫變更。
+- 修改13檔：js/ui-newforge-visuals.js、js/ui.js僅熔爐、css/ashen-forge.css僅熔爐、index.html必要腳本與快取、js/worker/sim.worker.js熔爐投影及Protocol匯入、js/worker/protocol.js、js/bridge.js快取、docs/WORKER_PROTOCOL.md、本紀錄、tests/new-forge-visuals.test.cjs、newforge-panel-performance.test.cjs、worker-protocol.test.cjs及potential-removal.test.cjs（後兩份只版本斷言）。UI179／CSS84／Bridge302與Worker標記保留兩任務；天堂威能程式、樣式、說明與其他測試不納入本次提交。
+- 驗證：`node --test tests/new-forge-visuals.test.cjs tests/new-forge-ui.test.cjs tests/new-forge.test.cjs tests/newforge-panel-performance.test.cjs tests/worker-protocol.test.cjs tests/potential-removal.test.cjs tests/init-ui-smoke.test.cjs tests/game-clock.test.cjs tests/worker-shim.test.cjs tests/ui-worker-events.test.cjs tests/ui-worker-g-dependency.test.cjs`88/88；新增6項涵蓋連續左移／節點保持／同名不同ID／出帶補位／停用恢復／離頁清理／Resize／減少動態恢復不倒退／加速同步／舊快照。另以唯讀fs攔截將其他任務檔還原af6d4de1、注入本次獨立來源重跑相同88項全部通過。`npm.cmd run build`及相同隔離來源的`node tools/build_check.cjs`均538檔通過；diff檢查通過。沒有放寬數值或原拆解斷言、未跑全庫。
+- 瀏覽器：browser技能IAB無backend，使用隔離headless Edge／隨機localhost／seed1018新角色及原生engine fixture、正式Worker，不讀真人存檔。單件同ID／同DOM位置313→268→212→156px（315px帶寬）連續遞減；收起空+N後入場364/367px、距帶尾9px內距。停用及Esc後逐像素Canvas和圖示位置相同、減少動態靜態；1366／390／1920主欄scrollWidth等於clientWidth（548／548／585）、Resize可見容量6／6／7。Console error／warning與pageerror0，已目視新粒子火焰與裝備在途畫面。動態預覽保留本聊天visualizations/forge-conveyor-particles.gif，服務與瀏覽器關閉。
+- 唯讀檢查未改：共通規範／工作流／AGENTS／prompts/codex.md、newforge.js路由／拆解／速度、GameClock／菜單暫停、原裝備圖示與data常數、sim engine／build工具、既有熔爐與Worker測試；未修改配置、權威數值、存檔或素材。與同副本天堂威能共享UI／CSS／Worker／紀錄但功能區段不同，修改前及後續更新三方試跑皆0、無語意相依；共用版本依使用者授權保留雙功能，提交僅stage本次差異。
+- 交付：無未完成需求或新增已知阻擋，可供審查合併。限制為未驗其他瀏覽器／實體觸控／12爐長時間效能；舊無ID快照僅按外觀退化。Commit為本紀錄所在`[Codex] fix: 熔爐裝備由右入帶並改用粒子爐火`，回覆附編號；未合併／推送。後續使用者整合並重載驗收兩項功能。
+
+- 收尾：天堂威能已先獨立提交`6eac2a7b`，本次13檔工作差異均為熔爐。其提交後，以目前完整來源追加`tests/talents.test.cjs tests/talents-perf-equivalence.test.cjs tests/power-rework.test.cjs tests/esc-shortcut.test.cjs`四份相依驗證，連同上列11份共127/127通過；本次功能與天堂威能完整共存，不需等待或重複詢問。
+
+- 最終效能收尾：IntersectionObserver使畫面外爐火停止重繪，隱藏帶項直接清理、不累積退出節點，捲回恢復且移除時釋放觀察。新增第7項顯示回歸；最終15份相依套件128/128通過。正式Edge將卡片移出可視區後Canvas位元保持一致，回可視區後繼續變化，Console error／warning及pageerror0。此收尾不改上列移動／粒子外觀，動態預覽保持相同。
