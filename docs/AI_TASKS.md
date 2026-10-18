@@ -1,5 +1,21 @@
 # AI_TASKS.md
 
+## RUNEWORD-UNLOCK-20261018 — 符文真言永久解鎖與圖鑑數量
+
+- Owner：Codex；Done；單一開發者。使用者授權完整修改符文資訊解鎖；前置既有成形記錄、封魔塔與配置管線已完成，工作區乾淨、所有目標預檢無其他副本修改。
+- 範圍：js/ui-runeword.js、runeword.js、runeword_data.js、tower.js、save.js、Worker gems 註釋／協議語意與必要快取、index.html、css/runeword.css、tools/config_tables.cjs、config/Excel/Runes.xlsx／CSV、LV_upgrade_system.md、相依回歸與協議／本紀錄。禁止無關數值／戰鬥／素材／其他副本，不合併推送。
+- 行為：成功成形或通關表定封魔塔層數任一即可永久揭露，沿用 player.runewordSeen、讀檔補既有塔進度；正式／內測同規則。頁首已解鎖／總數不計內測全部預覽，詳細開關右移。每列可調封魔塔解鎖層數，暫依序每三層一組，留白／0 僅自行成形（超過目前塔上限仍可自行成形）。
+- 驗收：實際塔勝敗、成形失敗／成功與永久性、舊存檔補記／往返、正式問號／揭露與計數去重、配置驗證與 Excel 正常開啟、相關測試／Build／隔離瀏覽器／Console／diff；驗證後獨立 Commit，後續使用者審查合併。
+- 完成：頁首原開關位置新增已解鎖符文真言 X/總數，開關以剩餘空間靠右、說明鈕相鄰。兩種解鎖沿用同一永久 map、成功塔戰立即補記並提示新增數、失敗不記；舊存檔補既有塔最高通關進度。拆裝／調高門檻不撤銷，內測預覽／品質／材料篩選不影響解鎖數；解鎖資訊不賦予戰鬥能力。正式／內測共用規則，內測全部預覽仍僅顯示用途。
+- 表格：Runes.xlsx 第一頁新增 U 欄「封魔塔解鎖層數」，65列依現有順序3～195；第二頁追加欄位說明。CSV與JS經原配置管線產生，新增非負整數驗證、缺欄拒絕以防舊表清空設定；留白／0只由自行成形解鎖。所有既有配方／屬性／能力均逐項比對保持相同。同步LV_upgrade_system與docs/RUNEWORD_DESIGN.md；Protocol57→58明訂map語意、94指令與存檔欄位結構不變，主頁／Worker快取同步。
+- Excel：先讀取試算表技能與嘗試Artifact Tool，發現原檔匯入／匯出會將812個既有空白格誤填21，故該輸出未採用。依AI_RULES8.5改用受支援Excel COM API在原活頁簿上增欄、保留格式／頁籤／既有資料；完全未手工寫入XML。原2240格與說明頁48列逐格相同，抽查標頭／中段／末段字型／色彩／格式／寬高保持；Excel正常模式重開兩次、確認3與195及U欄22寬，無修復提示。暫存工具與錯誤候選已清理，未交付。
+- 修改22檔：LV_upgrade_system.md、config/CSV/Runes.csv、config/Excel/Runes.xlsx、css/runeword.css、docs/AI_TASKS.md、docs/RUNEWORD_DESIGN.md、docs/WORKER_PROTOCOL.md、index.html、js/bridge.js、js/runeword.js、js/runeword_data.js、js/save.js、js/tower.js、js/ui-runeword.js、js/worker/protocol.js、js/worker/sim.worker.js、tests/config-runes-table.test.cjs、tests/potential-removal.test.cjs、tests/runeword-seen.test.cjs、tests/runeword-ui.test.cjs、tests/worker-protocol.test.cjs、tools/config_tables.cjs。五份回歸檔新增／調整驗證，無放寬既有配方或戰鬥斷言。
+- 指令／結果：`node tools/config_tables.cjs --apply Runes --write`後再試跑語意變更0；`node tools/apply_params.cjs`558參數一致、將變更0／錨點問題0；`node tools/apply_params.cjs --check-anchors`擾動510值後558錨點全命中一次。`npm.cmd run build`538檔通過。`node --test --test-reporter=spec tests/runeword-seen.test.cjs tests/runeword-ui.test.cjs tests/config-runes-table.test.cjs tests/runeword-data.test.cjs tests/worker-protocol.test.cjs tests/potential-removal.test.cjs`73/73；另`node --test --test-reporter=spec tests/runeword-engine.test.cjs tests/runeword-all-words.test.cjs tests/rune-slots-config.test.cjs tests/sim-rune-plan.test.cjs tests/equip-socket-ui.test.cjs tests/worker-shim.test.cjs tests/ui-worker-events.test.cjs tests/skill2-tower-unlock.test.cjs tests/purgatory-tower.test.cjs tests/tower-xp.test.cjs`195/195，共268/268。追加重跑seen11/11確認雙來源重疊不計第二次。
+- 完整庫：`node --test --test-reporter=dot "tests/*.test.cjs"`已跑完、439項失敗；為辨識來源另以TAP跑438份（排除5份正在全庫執行的長測試）4496項：4055通過／439失敗／2跳過。439項失敗全部在唯讀HEAD覆蓋來源、原測試與原Excel的基準重現（92份失敗檔分兩批，374＋65項）；完整庫與TAP皆無新增失敗名稱。未更改既有失敗測試、未提交基準覆蓋器或日誌。全庫未全綠為既有風險，不宣稱全部通過。
+- 瀏覽器：已讀browser技能、IAB初始化因kernel assets路徑錯誤失敗，改隔離headless Edge／隨機localhost服務，正式index與Worker、seed1018新角色fixture，不讀真人存檔。正式host以本機解析的example保留網域測試（隔離瀏覽器將此測試origin視為安全以啟用navigator.locks）；塔75層舊檔兩環境皆25/65，初啼揭露／創世紀問號，正式無預覽開關；內測實點開／關全部預覽但計數不變。1366寬開關x585位於數量右側、與說明鈕約7px；390／1920無面板橫向溢出，最終Console error／warning及pageerror0。預覽目視確認；服務／瀏覽器關閉，臨時產物清理。
+- 唯讀未改：AI規範／AGENTS／Workflow／prompts/codex.md、js/player.js預設map、ui.js訂閱與內測判斷、formula／item／stats成形與屬性聚合、模擬engine／shim／GameClock／storage／GM、原Excel及其格式、上述未列修改的十份回歸。無素材或素材庫變更，不需素材庫Commit。既有同檔／語意衝突來源皆無，無委派。
+- 交付：無本次未完成項目，可供Review／合併；已知限制為表定151～195超過目前150層塔上限，末15組仍可自行成形解鎖，以及完整庫439項既有失敗。下一步使用者重載遊戲驗收、於Runes.xlsx U欄調整門檻後儲存並執行「套用參數.bat」。Commit為本紀錄所在`[Codex] feat: 符文真言加入封魔塔永久解鎖與圖鑑計數`，回覆附實際編號；不合併／不推送。
+
 ## FORGE-ENTRY-REGRESSION-20261018 — 修正隱藏恢復與高速入帶跳位
 
 - Owner：Codex；Done，單一開發者。使用者回報合併後裝備仍似直接出現在左端；沿前輪熔爐移動診斷，不假設是快取。工作區／分支起始乾淨，四檔預檢無衝突。

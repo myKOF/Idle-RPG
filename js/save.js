@@ -419,7 +419,7 @@ function migrateSave(data) {
   }
   data.player.resonance = { holes: resHoles };
   }
-  // 已激活的符文真言（2026-10-07，js/runeword.js §2）：{ 真言id: 1 }。舊存檔沒有這欄；已刪除的真言 id 丟掉，
+  // 資訊已解鎖的符文真言（js/runeword.js §2）：{ 真言id: 1 }。舊存檔沒有這欄；已刪除的真言 id 丟掉，
   // 下面逐件整理裝備時，目前已成形的再補記進來（記錄功能上線前就成形的不必重鑲）
   var rwSeen = {};
   if (data.player.runewordSeen && typeof data.player.runewordSeen === 'object' && !Array.isArray(data.player.runewordSeen)) {
@@ -428,6 +428,8 @@ function migrateSave(data) {
     });
   }
   data.player.runewordSeen = rwSeen;
+  // 舊存檔依最高已通關封魔塔樓層補記；已解鎖項目不因表定門檻調高而撤銷。
+  if (typeof rwSeenFromTower === 'function') rwSeenFromTower(rwSeen, data.tower && data.tower.highest);
   data.player.soulOrigin = Math.max(0, Math.floor(Number(data.player.soulOrigin) || 0));
   // 逐件裝備整理：
   // 1) 太古機制改版（2026-07-23）：洗煉不再使用太古精華，載入時清除殘留欄位。

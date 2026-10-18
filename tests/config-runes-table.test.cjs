@@ -208,3 +208,18 @@ test('備註欄有能力中文名稱說明：符文列＝兩側屬性中文名�
   edited.find((r) => r[1] === 'r01')[rows[0].indexOf('武器倍率')] = '2';
   assert.match(cfg.annotateRuneRows(edited).find((r) => r[1] === 'r01')[note], /命中率×2｜/);
 });
+
+
+test('封魔塔資訊解鎖：每列暫設每三層一組；可改為非負整數，缺欄及錯值拒絕', () => {
+  const words=lit(dataSrc,'RUNEWORDS');
+  assert.deepEqual(words.map(w=>w.towerUnlockFloor),Array.from({length:65},(_,i)=>(i+1)*3));
+  for(const value of ['', '0', '17','200']) {
+    const rebuilt=rebuildFrom(mutate((rows,col)=>{findRow(rows,'符文真言','rw_firstcry')[col('封魔塔解鎖層數')]=value;}));
+    assert.equal(rebuilt.RUNEWORDS[0].towerUnlockFloor,value===''?0:Number(value));
+  }
+  for(const value of ['-1','1.5','abc','Infinity']) {
+    assert.throws(()=>rebuildFrom(mutate((rows,col)=>{findRow(rows,'符文真言','rw_firstcry')[col('封魔塔解鎖層數')]=value;})),/封魔塔解鎖層數/);
+  }
+  const rows=csvRows();
+  assert.throws(()=>schema.rebuild(rows.slice(1),rows[0].slice(0,20)),/缺少.*封魔塔解鎖層數/);
+});

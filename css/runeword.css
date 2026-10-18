@@ -4,6 +4,7 @@
 /* ---- 頁面骨架 ---- */
 /* 頁首「詳細說明」開關（內測專用；正式版沒有，index.html 預設 hidden，由 js/ui-runeword.js 決定要不要顯示） */
 #tab-runes .rx-detail-toggle {
+  margin-left: auto;
   height: 26px;
   padding: 0 12px;
   border: 1px solid #2a2d34;
@@ -17,6 +18,7 @@
 }
 
 #tab-runes .rx-detail-toggle[hidden] { display: none; }
+#tab-runes .rx-detail-toggle:not([hidden]) + .pg-help { margin-left: 0; }
 #tab-runes .rx-detail-toggle:hover { border-color: #7a6440; color: #ece6d8; }
 #tab-runes .rx-detail-toggle[aria-pressed="true"] { border-color: #7a6440; background: #2a2218; color: #f0cf86; }
 

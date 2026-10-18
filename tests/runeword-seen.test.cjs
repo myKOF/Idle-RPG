@@ -117,3 +117,60 @@ test('Worker 的 gems 面板快照帶 runewordSeen（主執行緒圖鑑的資料
   assert.match(block, /runes: p\.runes \|\| \{\}/);
   assert.match(block, /runewordSeen: p\.runewordSeen \|\| \{\}/);
 });
+
+
+test('塔解鎖：最高已通關層數達標才寫入；重複通關／拆裝不撤銷，僅標資訊不賦予能力', () => {
+  const c = loadRuneEnv();
+  assert.equal(c.rwUnlockTowerWords(2), 0);
+  assert.equal(c.rwUnlockTowerWords(3), 1);
+  assert.deepEqual(seenIds(c), ['rw_firstcry']);
+  assert.equal(c.rwUnlockTowerWords(3), 0);
+  assert.equal(c.rwMarkSeen('rw_firstcry'), false, '塔解鎖後自行成形共用同一筆，不重複增加');
+  assert.equal(c.rwUnlockTowerWords(6), 1);
+  assert.deepEqual(seenIds(c), ['rw_firstcry','rw_nightwatch']);
+  c.RUNEWORD_BY_ID.rw_firstcry.towerUnlockFloor = 100;
+  c.RUNEWORD_BY_ID.rw_frostwhisper.towerUnlockFloor = 0;
+  assert.equal(c.rwUnlockTowerWords(9), 0);
+  assert.equal(c.rwHasSeen('rw_firstcry'), true);
+  assert.equal(c.rwHasSeen('rw_frostwhisper'), false);
+  assert.equal(c.rwActiveWord(makeItem(c)), null);
+  assert.equal(c.UI.dirty.gems, true);
+  for (const bad of [undefined, NaN, Infinity, -1]) assert.equal(c.rwSeenFromTower({},bad),0);
+});
+
+test('舊存檔：塔進度補記與自行成形聯集；儲存／讀檔保留且門檻變高不撤銷', () => {
+  const c = loadRuneEnv();
+  const raw = { version: 2, player: {level:100, runewordSeen:{rw_viperkiss:1}}, tower:{highest:6}, equipment:{}, inventory:[] };
+  const out = c.migrateSave(raw);
+  assert.deepEqual(Object.keys(out.player.runewordSeen).sort(), ['rw_firstcry','rw_nightwatch','rw_viperkiss']);
+  c.RUNEWORD_BY_ID.rw_firstcry.towerUnlockFloor = 300;
+  out.tower.highest = 0;
+  const again = c.migrateSave(JSON.parse(JSON.stringify(out)));
+  assert.deepEqual(Object.keys(again.player.runewordSeen).sort(), Object.keys(out.player.runewordSeen).sort());
+});
+
+test('實際塔結算：失敗／未過門檻不解鎖，達標勝利立即解鎖且只發一次提示', () => {
+  const c = loadRuneEnv();
+  c.showTowerResultModal = () => {};
+  const end = (floor, win) => {
+    c.G.tower.active = true;
+    c.TOWER.floor = floor;
+    c.TOWER.boss = {hp:win?0:100,maxHp:100,xp:0};
+    c.TOWER.player = {hp:100,maxHp:100};
+    c.TOWER.elapsed = 1;
+    c.TOWER.dmgDealt = 100;
+    c.TOWER.bossDmgDealt = 0;
+    c.TOWER.auto = null;
+    c.endTowerFight(win,win?null:'timeout');
+    return c.TOWER.result;
+  };
+  end(3,false);
+  assert.deepEqual(seenIds(c), []);
+  end(2,true);
+  assert.deepEqual(seenIds(c), []);
+  let result=end(3,true);
+  assert.deepEqual(seenIds(c), ['rw_firstcry']);
+  assert.ok(result.rewards.some(s=>s.includes('解鎖符文真言資訊 ×1')));
+  result=end(3,true);
+  assert.ok(!result.rewards.some(s=>s.includes('解鎖符文真言資訊')));
+});

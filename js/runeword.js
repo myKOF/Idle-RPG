@@ -3,8 +3,8 @@
    資料表在 js/runeword_data.js（符文、符文真言、效果詞彙）。本檔負責：
      §1 符文庫存與合成／拆解     （G.player.runes = { 符文id: 數量 }，隨存檔）
      §2 符文孔、鑲嵌與符文真言判定（符文孔 it.runes = [符文id|null, …]，孔數依稀有度（RARITIES.runeSlots，雙手武器再加 twoHandBonusSlots），與寶石鑲孔 it.sockets 分開；
-                                    符文真言是當場判定的衍生狀態，不存檔；唯一存檔的是「成形過哪幾組」
-                                    G.player.runewordSeen，圖鑑靠它決定要不要顯示配方與效果）
+                                    符文真言是當場判定的衍生狀態，不存檔；資訊解鎖進度存於
+                                    G.player.runewordSeen，含成形與封魔塔解鎖，圖鑑據此顯示配方與效果）
      §3 屬性聚合                 （computeStats 呼叫 rwNewAggregate／rwAddItem／rwFinishAggregate）
      §4 戰鬥掛勾                 （傷害乘區、攻速、冷卻、法力、受擊、死亡、事件觸發 rwFire）
      §5 掉落
@@ -146,9 +146,9 @@ function socketRune(it, runeId, index) {
   return null;
 }
 
-/* ---- 已激活記錄（G.player.runewordSeen = { 真言id: 1 }）----
-   成形過一次就永久記下，之後不論拆掉符文、換裝都不會消失。圖鑑與符文庫用它決定要不要顯示配方與效果
-   （未激活的只顯示問號；內測版的開關可以無視它，見 js/ui-runeword.js）。記錄只增不減。 */
+/* ---- 資訊已解鎖記錄（G.player.runewordSeen = { 真言id: 1 }）----
+   成形過一次或通關表定封魔塔層數就永久記下，拆符文、換裝、調高表定門檻都不會撤銷。
+   正式版與內測版共用；內測全部預覽只管顯示，不寫入解鎖記錄。 */
 function rwHasSeen(id) {
   var m = (typeof G !== 'undefined' && G && G.player) ? G.player.runewordSeen : null;
   return !!(m && m[id]);
@@ -167,6 +167,28 @@ function rwSeenFromItem(seen, it) {
   if (!act || seen[act.word.id]) return 0;
   seen[act.word.id] = 1;
   return 1;
+}
+
+/* 依最高已通關樓層補記資訊解鎖；只改傳入的記錄，不讀寫 G，供讀檔與通關共用。
+   留白／0 停用塔解鎖，仍可自行成形；允許預先配置超過目前塔上限的門檻。 */
+function rwSeenFromTower(seen, highest) {
+  var floor = Number(highest);
+  if (!Number.isFinite(floor) || floor < 1) return 0;
+  var count = 0;
+  for (var i = 0; i < RUNEWORDS.length; i++) {
+    var w = RUNEWORDS[i], need = w.towerUnlockFloor;
+    if (Number.isInteger(need) && need > 0 && floor >= need && !seen[w.id]) {
+      seen[w.id] = 1;
+      count++;
+    }
+  }
+  return count;
+}
+function rwUnlockTowerWords(highest) {
+  if (!G.player.runewordSeen || typeof G.player.runewordSeen !== 'object' || Array.isArray(G.player.runewordSeen)) G.player.runewordSeen = {};
+  var count = rwSeenFromTower(G.player.runewordSeen, highest);
+  if (count && typeof UI !== 'undefined' && UI.dirty) { UI.dirty.gems = true; UI.dirty.equip = true; }
+  return count;
 }
 
 /* 抹除一顆已刻印符文的費用：{ gold, scrap, essence }（配置表 Runes 設定列 erase_*，0＝不收）。純函式（UI 顯示與 Worker 扣款共用同一個算式）。

@@ -1604,7 +1604,7 @@ SCHEMAS.Skills2 = {
 /* 「類型」欄的符文真言列：新名稱「符文真言」，舊名稱「符文之語」仍讀得進來（Excel 還沒改過名時 --sync 不會壞；寫回一律用新名稱）。 */
 const RUNEWORD_KINDS = ['符文真言', '符文之語'];
 const RUNE_TABLE_HEADER = ['類型', 'id', '名稱', '階／級距', '武器詞條', '武器倍率', '防具詞條', '防具倍率', '飾品詞條', '飾品倍率',
-  '配方', '適用裝備', '屬性加成', '被動', '傳奇特效', '靜態效果', '事件觸發(JSON)', '風味文字', '設定值', '備註'];
+  '配方', '適用裝備', '屬性加成', '被動', '傳奇特效', '靜態效果', '事件觸發(JSON)', '風味文字', '設定值', '備註', '封魔塔解鎖層數'];
 const RUNE_SETTING_NOTES = {
   maxSlots: '符文孔數的硬上限，也是符文真言最多能有幾顆符文。各稀有度的符文孔數不在這張表：在 game_parameters.xlsx「表-稀有度」各列的參數g。',
   twoHandBonusSlots: '雙手武器的符文孔比一般裝備多幾個（加法，不是倍數；0＝一樣多）。只加在本來就有符文孔的稀有度上（孔數 0 的稀有度，雙手武器也沒有符文孔）；最多孔稀有度的孔數加上它不得超過符文孔數上限。',
@@ -1651,6 +1651,7 @@ const RUNE_GLOSSARY_ROWS = [
   ['單獨鑲著就有效；組成符文真言時，符文真言的屬性與能力另外並存。'],
   [''],
   ['── 符文真言列 ──'],
+  ['封魔塔解鎖層數：非負整數；通關該層 BOSS 即永久解鎖該真言配方與效果資訊（正式版與內測版皆適用）。留白或 0＝不由塔解鎖，仍可自行成功成形解鎖；允許預先填超過目前塔上限的層數。已解鎖不因門檻調高而撤銷。'],
   ['級距：1 普通／2 精良／3 史詩／4 傳說（沿用裝備品質的名稱與顏色）。只影響圖鑑的分組與顏色，不影響數值（強度要自己調屬性加成與效果）。'],
   ['配方：符文名稱依序用「;」分隔（也可填 id）。至少 2 顆、最多＝符文孔數上限；順序不同就是不同配方，不得與別的符文真言完全相同。成形條件＝依序放進連續的符文孔，且裝備類型符合。'],
   ['適用裝備：用「;」分隔，多項為「或」。標記：any 任意、armor 八件防具、jewelry 戒指＋項鍊、mainHand 主手與雙手武器、twoHand 雙手武器、oneHand 單手武器、offHand 副手、melee 近戰武器、caster 施法類武器／副手；'],
@@ -1797,7 +1798,7 @@ SCHEMAS.Runes = {
     });
     WORDS.forEach(w => {
       rows.push(mk('符文真言', {
-        id: w.id, 名稱: w.name, '階／級距': String(w.tier),
+        id: w.id, 名稱: w.name, '階／級距': String(w.tier), '封魔塔解鎖層數': numStr(w.towerUnlockFloor || 0),
         配方: w.runes.map(id => nameById[id] || id).join(';'), 適用裝備: joinList(w.bases),
         屬性加成: runePairsText(w.stats), 被動: runeObjText(w.passives), 傳奇特效: joinList(w.legend),
         靜態效果: runeObjText(w.fx), '事件觸發(JSON)': w.procs ? JSON.stringify(w.procs) : '', 風味文字: w.flavor || ''
@@ -1808,6 +1809,7 @@ SCHEMAS.Runes = {
   rebuild(dataRows, header) {
     const get = rowGetter(header);
     const V = runeTableVocab();
+    if (!header.includes('封魔塔解鎖層數')) throw new Error('Runes 表缺少「封魔塔解鎖層數」欄，請先更新 Excel，避免清空塔解鎖設定');
     const rarities = runeTableRarities();
     const fail = msg => { throw new Error(msg); };
     const setRows = [], runeRows = [], wordRows = [];
@@ -1906,7 +1908,10 @@ SCHEMAS.Runes = {
       bases.forEach(b => {
         if (!(V.baseTokens.has(b) || RUNE_SLOT_TOKENS.indexOf(b) >= 0 || V.weaponTypes.has(b))) fail(w + '：適用裝備「' + b + '」不是已知標記、裝備欄位或武器類型');
       });
-      const o = { id: it.id, name: it.name, tier: tier, runes: recipe, bases: bases };
+      const unlockText = get(it.r, '封魔塔解鎖層數').trim();
+      const unlockFloor = unlockText === '' ? 0 : Number(unlockText);
+      if (!Number.isSafeInteger(unlockFloor) || unlockFloor < 0) fail(w + '：「封魔塔解鎖層數」必須為非負整數，留白／0＝僅自行成形解鎖');
+      const o = { id: it.id, name: it.name, tier: tier, runes: recipe, bases: bases, towerUnlockFloor: unlockFloor };
       const stats = runeParsePairs(get(it.r, '屬性加成'), w, V.affix, '屬性加成');
       if (stats.length) o.stats = stats;
       const passives = runeParsePairs(get(it.r, '被動'), w, V.passiveKeys, '被動');
@@ -1957,7 +1962,7 @@ SCHEMAS.Runes = {
         wordLines.push((i ? '\n' : '') + '  /* ===== 第' + ['', '一', '二', '三', '四'][w.tier] + '級　' + RUNE_TIER_NAMES_FOR_TABLE[w.tier] + ' ===== */');
       }
       const head = '{ id: ' + quoteStr(w.id) + ', name: ' + quoteStr(w.name) + ', tier: ' + w.tier + ', runes: ' + jsLit(w.runes) + ', bases: ' + jsLit(w.bases);
-      const rest = ['stats', 'passives', 'fx', 'procs', 'legend', 'flavor'].filter(k => w[k] !== undefined).map(k => k + ': ' + jsLit(w[k]));
+      const rest = ['towerUnlockFloor', 'stats', 'passives', 'fx', 'procs', 'legend', 'flavor'].filter(k => w[k] !== undefined).map(k => k + ': ' + jsLit(w[k]));
       wordLines.push('  ' + head + (rest.length ? ',\n' + rest.map(l => '    ' + l).join(',\n') : '') + ' }' + (i < words.length - 1 ? ',' : ''));
     });
     const wordsText = 'var RUNEWORDS = [\n' + wordLines.join('\n') + '\n];';

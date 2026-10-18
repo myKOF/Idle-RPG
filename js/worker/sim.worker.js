@@ -10,19 +10,19 @@
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-importScripts('protocol.js?v=20261018-forge-belt-motion', '../game-clock.js?v=1.0.1', 'shim.js?v=20261018-potential-remove');
+importScripts('protocol.js?v=20261018-rune-tower-unlock', '../game-clock.js?v=1.0.1', 'shim.js?v=20261018-potential-remove');
 // 離線結算等分批工作亦共用暫停時鐘；訊息與loop仍能回應存檔及PING。
 if (typeof GameClock !== 'undefined') {
   globalThis.setTimeout = GameClock.setTimeout;
   globalThis.clearTimeout = GameClock.clearTimeout;
 }
 importScripts(
-  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261018-merge-equip-unlock', '../runeword_data.js?v=20261013-rune-all-elem-color', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261018-potential-remove', '../formula.js?v=20261018-potential-remove-gem-workshop', '../battlefield.js?v=20261016-npc-retaliate-refill', '../stats.js?v=20261003-rename-weineng',
-  '../item.js?v=20261018-gem-workshop', '../gem_resonance.js?v=20261018-resonance-hole-effects','../runeword.js?v=20261014-develop-integration',
+  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261018-merge-equip-unlock', '../runeword_data.js?v=20261018-rune-tower-unlock', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261018-potential-remove', '../formula.js?v=20261018-potential-remove-gem-workshop', '../battlefield.js?v=20261016-npc-retaliate-refill', '../stats.js?v=20261003-rename-weineng',
+  '../item.js?v=20261018-gem-workshop', '../gem_resonance.js?v=20261018-resonance-hole-effects','../runeword.js?v=20261018-rune-tower-unlock',
   '../skills.js?v=20261018-potential-remove', '../skills2.js?v=20261018-potential-remove', '../elite_data.js?v=20261016-wall-rock', '../talents.js?v=20261018-heaven-power',
   '../player.js?v=20261018-potential-remove', '../special_rules.js',
-  '../combat.js?v=20261018-potential-remove', '../elite.js?v=20261018-wall-natural-narrow', '../elite_boss.js?v=20261015-boss-player-skill', '../elite_boss_recipes.js?v=20261015-boss-player-skill', '../legendary.js?v=20261012-indomitable-guard', '../tower.js?v=20261018-potential-remove',
-  '../factory.js?v=20261015-gem-enabled', '../newforge.js', '../forge.js?v=20261015-gem-enabled', '../save.js?v=20261018-potential-remove',
+  '../combat.js?v=20261018-potential-remove', '../elite.js?v=20261018-wall-natural-narrow', '../elite_boss.js?v=20261015-boss-player-skill', '../elite_boss_recipes.js?v=20261015-boss-player-skill', '../legendary.js?v=20261012-indomitable-guard', '../tower.js?v=20261018-rune-tower-unlock',
+  '../factory.js?v=20261015-gem-enabled', '../newforge.js', '../forge.js?v=20261015-gem-enabled', '../save.js?v=20261018-rune-tower-unlock',
   '../tasks.js?v=20261007-runes4'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
@@ -1022,7 +1022,7 @@ function buildPanel(name, params) {
       return {
         gems: p.gems, fusedGems: p.fusedGems, runes: p.runes || {},
         resonance: p.resonance || { holes: {} },   // v53：寶石共鳴孔位
-        runewordSeen: p.runewordSeen || {},   // v48：成形過的符文真言 { id: 1 }，圖鑑據此決定顯示配方或問號
+        runewordSeen: p.runewordSeen || {},   // v58：資訊已永久解鎖（成功成形或封魔塔通關）{ id: 1 }
         shop: (typeof gemShop === 'function') ? gemShop() : p.gemShop
       };
     case 'skills':
