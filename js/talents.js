@@ -1,5 +1,5 @@
 'use strict';
-/* ============ 天堂威能與潛力：共用轉生威能點 ============ */
+/* ============ 天堂威能：使用轉生威能點 ============ */
 
 /* 升到目標等級的單級成本 = 目標等級。 */
 function talentUpgradeCost(id, targetLv) {
@@ -45,17 +45,9 @@ function talentTurn(id) {
   return found ? found.turn : 0;
 }
 
-function potentialDef(id) {
-  for (var i = 0; i < POTENTIAL_TALENTS.length; i++) {
-    if (POTENTIAL_TALENTS[i].id === id) return POTENTIAL_TALENTS[i];
-  }
-  return null;
-}
-
 function talentState() {
   if (!G.player.talents || typeof G.player.talents !== 'object') G.player.talents = {};
   if (!G.player.talents.levels || typeof G.player.talents.levels !== 'object') G.player.talents.levels = {};
-  if (!G.player.talents.potentialLevels || typeof G.player.talents.potentialLevels !== 'object') G.player.talents.potentialLevels = {};
   return G.player.talents;
 }
 
@@ -68,12 +60,6 @@ function talentLevelIn(levels, id) {
 
 function talentLevel(id) {
   return talentLevelIn(talentState().levels, id);
-}
-
-function potentialLevel(id) {
-  var max = potentialSkillMaxLv(id);
-  var v = talentState().potentialLevels[id];
-  return clamp(Math.floor(Number(v) || 0), 0, max);
 }
 
 function reincarnationCountSafe() {
@@ -111,20 +97,27 @@ function monsterPowerLevelBonus() {
 function migratePowerSave(data) {
   if (data.powerThreatV1) return;
   var p = data.player;
-  var state = p.talents || { levels: {}, potentialLevels: {} };
+  var state = p.talents || { levels: {} };
   var refund = 0, goldRefund = 0;
   talentList().forEach(function (entry) {
     var lv = clamp(Math.floor(Number((state.levels || {})[entry.def.id]) || 0), 0, 100);
     refund += (Math.min(lv, 50) + Math.max(0, lv - 50) * 2) * (entry.turn + 9);
   });
-  var oldMax = skillMaxLvForRc(p.reincarnations || 0);
-  POTENTIAL_TALENTS.forEach(function (def) {
-    var lv = clamp(Math.floor(Number((state.potentialLevels || {})[def.id]) || 0), 0, oldMax);
-    for (var i = 0; i < lv; i++) goldRefund += skillUpgradeCost(i);
+  // 已刪除的四個舊解鎖節點仍依歷史成本退還，避免早期存檔遺失投資。
+  [3, 4, 7, 10].forEach(function (turn) {
+    var lv = clamp(Math.floor(Number((state.levels || {})['t' + turn + '_potential']) || 0), 0, 100);
+    refund += (Math.min(lv, 50) + Math.max(0, lv - 50) * 2) * (turn + 9);
+  });
+  var oldMax = Math.min(30, 10 + Math.max(0, Math.floor(Number(p.reincarnations) || 0)) * 2);
+  var oldLevels = state.potentialLevels || {};
+  ['velocityForce', 'lightningOverdrive', 'chronoCollapse', 'absoluteSanctuary', 'lastStandUndying',
+    'timeBarrier', 'dualCoreFusion', 'omegaImpact', 'sacredInversion', 'chronosStasis'].forEach(function (id) {
+    var lv = clamp(Math.floor(Number(oldLevels[id]) || 0), 0, oldMax);
+    for (var i = 0; i < lv; i++) goldRefund += Math.min(5000000, Math.floor(1000 * i + Math.pow(20, 1 + i / 10)));
   });
   p.reincarnationTalentPoints = Math.max(0, Number(p.reincarnationTalentPoints) || 0) + refund;
   p.gold = Math.max(0, Number(p.gold) || 0) + goldRefund;
-  p.talents = { levels: {}, potentialLevels: {} };
+  p.talents = { levels: {} };
   p.loadout = (p.loadout || []).filter(function (ref) { return typeof ref !== 'string' || ref.indexOf('potential:') !== 0; });
   data.powerThreatV1 = true;
   if (refund || goldRefund) {
@@ -151,55 +144,11 @@ function talentCompleteMultiplier(turn, levels) {
   return talentTreeComplete(turn, levels) ? 2 : 1;
 }
 
-function potentialUnlockedCount() {
-  return POTENTIAL_TALENTS.filter(function (def) {
-    return !potentialTemporarilyDisabled(def.id);
-  }).length;
-}
-
-function potentialTemporarilyDisabled(id) {
-  var def = potentialDef(id);
-  return !!(def && def.disabled);
-}
-
-function potentialUnlockLimit() {
-  return POTENTIAL_TALENTS.length;
-}
-
-function talentSkillPointBonus() {
-  return 0;
-}
-
-function potentialUnlocked(id) {
-  if (typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.skillUnlock) return true;
-  var idx = POTENTIAL_TALENTS.map(function (def) { return def.id; }).indexOf(id);
-  return idx >= 0 && idx < potentialUnlockLimit() && !potentialTemporarilyDisabled(id);
-}
-
-/* 潛力與威能共用等級上限。 */
-function potentialSkillMaxLv() {
-  return TALENT_MAX_LEVEL;
-}
-
-/* 潛力技能當前生效數值 = base + per × 等級（等級已夾在 0~上限；不再另設數值上限）。 */
-function potentialSkillValue(idOrDef, lvArg) {
-  var def = (idOrDef && typeof idOrDef === 'object') ? idOrDef : potentialDef(idOrDef);
-  if (!def) return 0;
-  var lv = (lvArg === undefined) ? potentialLevel(def.id) : clamp(Math.floor(Number(lvArg) || 0), 0, potentialSkillMaxLv());
-  return (Number(def.base) || 0) + (Number(def.per) || 0) * lv;
-}
-
-/* 潛力技能是否已學會且已解鎖（供戰鬥模組與 computeStats 判定被動效果生效）。 */
-function potentialSkillActive(id) {
-  return potentialLevel(id) > 0 && potentialUnlocked(id) && !potentialTemporarilyDisabled(id);
-}
-
 /* GM 直接切換轉生次數時沒有完整的歷史升級紀錄，
    以前置轉生都已升到可轉生等級、目前轉生依目前等級計算，重建可用天賦點。 */
 function resetTalentsForReincarnationGM(count) {
   var state = talentState();
   talentList().forEach(function (entry) { state.levels[entry.def.id] = 0; });
-  POTENTIAL_TALENTS.forEach(function (def) { state.potentialLevels[def.id] = 0; });
 
   var turns = Math.max(0, Math.floor(Number(count) || 0));
   var reincarnationLevel = Math.max(1, Math.floor(Number(REINCARNATION_LEVEL) || 1));
@@ -215,12 +164,7 @@ function talentSpentPoints() {
   talentList().forEach(function (entry) {
     spent += talentTotalCost(entry.def.id, talentLevel(entry.def.id));
   });
-  POTENTIAL_TALENTS.forEach(function (def) { spent += talentTotalCost(def.id, potentialLevel(def.id)); });
   return spent;
-}
-
-function potentialSpentSkillPoints() {
-  return 0;
 }
 
 /* ⚠️ 這份範本同時是「白名單」：talentStatBonuses 只累加 out[stat] !== undefined 的欄位，
@@ -263,10 +207,8 @@ function talentStatBonuses() {
   for (var j = 0; j < list.length; j++) {
     var def = list[j].def;
     var value = def.disabled ? 0 : talentLevelValue(def, talentLevelIn(levels, def.id)) * multByTurn[list[j].turn];
-    if (def.stat !== 'potentialUnlock' && out[def.stat] !== undefined) out[def.stat] += value;
+    if (out[def.stat] !== undefined) out[def.stat] += value;
   }
-  // 潛力技能 V3 不再透過 talentStatBonuses 提供被動數值；
-  // 其被動效果（極速之力攻速／混沌雙修）於 computeStats 直接併入，主動效果由 js/potential.js 於戰鬥中施放。
   return out;
 }
 
@@ -349,48 +291,6 @@ function talentDelete(id) {
   return null;
 }
 
-function potentialUpgrade(id) {
-  var def = potentialDef(id);
-  if (!def) return '找不到潛力技能';
-  if (potentialTemporarilyDisabled(id)) return '此潛力技能目前暫不開放升級';
-  if (!potentialUnlocked(id)) return '潛力節點尚未解鎖';
-  var lv = potentialLevel(id);
-  if (lv >= potentialSkillMaxLv(id)) return '已達最高等級';
-  var cost = talentUpgradeCost(id, lv + 1);
-  if ((G.player.reincarnationTalentPoints || 0) < cost) return '轉生威能點不足，需要 ' + cost + ' 點';
-  G.player.reincarnationTalentPoints -= cost;
-  talentState().potentialLevels[id] = lv + 1;
-  talentRefresh();
-  return null;
-}
-
-function potentialMax(id) {
-  var start = potentialLevel(id), changed = false;
-  while (potentialLevel(id) < potentialSkillMaxLv(id) && potentialUpgrade(id) === null) changed = true;
-  return changed ? null : (start >= potentialSkillMaxLv(id) ? '已達最高等級' : '轉生威能點不足');
-}
-
-function potentialDowngrade(id) {
-  if (!potentialDef(id)) return '找不到潛力技能';
-  var lv = potentialLevel(id);
-  if (!lv) return '潛力技能目前是 0 級';
-  talentState().potentialLevels[id] = lv - 1;
-  G.player.reincarnationTalentPoints = (G.player.reincarnationTalentPoints || 0) + talentUpgradeCost(id, lv);
-  if (lv - 1 <= 0 && typeof unequipSkillFromLoadout === 'function') unequipSkillFromLoadout('potential:' + id); // 遺忘 → 卸下裝載
-  talentRefresh();
-  return null;
-}
-
-function potentialDelete(id) {
-  if (!potentialDef(id)) return '找不到潛力技能';
-  G.player.reincarnationTalentPoints = (G.player.reincarnationTalentPoints || 0) + talentTotalCost(id, potentialLevel(id));
-  talentState().potentialLevels[id] = 0;
-  if (typeof unequipSkillFromLoadout === 'function') unequipSkillFromLoadout('potential:' + id); // 刪除 → 卸下裝載
-  talentRefresh();
-  return null;
-}
-
 function inventoryCapacityWithTalents(base) {
-  // 潛力技能 V3 起，潛力不再提供背包容量加成（舊 potentialInvCap 已移除）。
   return (base === undefined ? INVENTORY_CAP + (G.player.invUpgrades || 0) : base);
 }

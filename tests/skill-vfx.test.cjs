@@ -24,90 +24,16 @@ function loadContext() {
   vm.createContext(context);
   ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js', 'js/combat.js', 'js/skills.js']
     .forEach((f) => vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), context, { filename: f }));
-  context.G = { player: { level: 1, loadout: [], talents: { levels: {}, potentialLevels: {} } }, stage: { current: 1 }, tower: { active: false } };
+  context.G = { player: { level: 1, loadout: [], talents: { levels: {} } }, stage: { current: 1 }, tower: { active: false } };
   return context;
 }
 
-test('特效原型由傷害範圍推導：單體/方框/直線/全場各走各的', () => {
-  const c = loadContext();
-  const phys = { id: 'x', name: '測試', emoji: '🗡️', cat: 'phys', tags: [] };
-  const magic = { id: 'y', name: '測試', emoji: '🔮', cat: 'magic', tags: [] };
-  const dmg = { dmgType: 'phys', stat: 'atk' };
-  const mdmg = { dmgType: 'magic', stat: 'matk' };
 
-  assert.equal(c.skillVfxKind(phys, dmg, ''), 'slash', '物理單體＝斬擊');
-  assert.equal(c.skillVfxKind(magic, mdmg, ''), 'projectile', '魔法單體＝投射物');
-  assert.equal(c.skillVfxKind(phys, dmg, '3*3'), 'burst', '方框＝爆發');
-  assert.equal(c.skillVfxKind(phys, dmg, '2*2'), 'burst');
-  assert.equal(c.skillVfxKind(phys, dmg, '1*3'), 'beam', '一直線＝貫穿');
-  assert.equal(c.skillVfxKind(phys, dmg, '3*1'), 'beam');
-  assert.equal(c.skillVfxKind(magic, mdmg, 'all'), 'rain', '全場＝天降');
-});
 
-test('沒有傷害段的技能（增益／治療／護盾）走我方光暈', () => {
-  const c = loadContext();
-  const def = { id: 'z', name: '護體', emoji: '🛡️', cat: 'def', tags: [] };
-  assert.equal(c.skillVfxKind(def, { shieldPctMax: 10 }, ''), 'selfBuff');
-  assert.equal(c.skillVfxKind(def, { buff: { key: 'atkUp' } }, '3*3'), 'selfBuff', '沒傷害就不看範圍');
-  assert.equal(c.skillVfxKind(def, {}, ''), 'selfBuff');
-});
 
-test('顏色：帶屬性取屬性色，無屬性取系統分類色', () => {
-  const c = loadContext();
-  const fire = { id: 'a', name: '火', emoji: '🔥', cat: 'magic', tags: ['fire'] };
-  assert.equal(c.skillVfxColor(fire, { dmgType: 'magic' }), c.ELEM_INFO.fire.color);
-  const plain = { id: 'b', name: '斬', emoji: '🗡️', cat: 'phys', tags: [] };
-  assert.equal(c.skillVfxColor(plain, { dmgType: 'phys' }), c.VFX_CAT_COLORS.phys);
-  const heal = { id: 'c', name: '療', emoji: '💚', cat: 'def', tags: [] };
-  assert.equal(c.skillVfxColor(heal, {}), c.VFX_CAT_COLORS.def);
-});
 
-test('特效事件是純資料：不含實體參照，欄位齊全且可 JSON 化', () => {
-  const c = loadContext();
-  const sk = { id: 'a', name: '火球', emoji: '🔥', cat: 'magic', tags: ['fire'] };
-  const spec = c.skillVfxSpec(sk, { dmgType: 'magic', hits: 2 }, '', ['mv-float-0', 'mv-float-2'],
-    [{ col: 1, row: 2 }]);
-  assert.equal(spec.fxKind, 'projectile');
-  assert.equal(spec.glyph, '🔥');
-  assert.equal(spec.color, c.ELEM_INFO.fire.color);
-  assert.deepEqual(JSON.parse(JSON.stringify(spec.targets)), ['mv-float-0', 'mv-float-2']);
-  assert.equal(spec.count, 2, 'count 取技能段數');
-  assert.ok(spec.dur > 0);
-  // 整包必須能 structured clone（協議要求），JSON 化不丟東西即可視為純資料
-  assert.doesNotThrow(() => JSON.stringify(spec));
-});
 
-test('count 夾在 1~5：段數再多也不會生成一堆節點', () => {
-  const c = loadContext();
-  const sk = { id: 'a', name: '亂舞', emoji: '⚔️', cat: 'phys', tags: [] };
-  assert.equal(c.skillVfxSpec(sk, { dmgType: 'phys', hits: 99 }, '', [], null).count, 5);
-  assert.equal(c.skillVfxSpec(sk, { dmgType: 'phys' }, '', [], null).count, 1);
-});
 
-test('潛力技能也有特效（castPotentialSkill 自己組事件），全表覆蓋且欄位合法', () => {
-  const c = loadContext();
-  // v17 新增 curse（純詛咒／減益畫在敵人身上）；chain/impact 由 potential.js 直接組事件，不經推導
-  const KINDS = ['projectile', 'slash', 'burst', 'beam', 'rain', 'aura', 'selfBuff', 'curse'];
-  assert.ok(c.POTENTIAL_TALENTS.length > 0);
-  c.POTENTIAL_TALENTS.forEach((t) => {
-    // 與 castPotentialSkill 相同的組法：系統分類固定 potential、傷害類型取表上的 dmgType
-    const sk = { id: t.id, name: t.name, emoji: t.emoji, cat: 'potential', tags: t.tags || [] };
-    const spec = c.skillVfxSpec(sk, { dmgType: t.dmgType || null }, null, ['mv-float-0'], null);
-    assert.ok(KINDS.indexOf(spec.fxKind) >= 0, t.id + ' 的特效原型不合法：' + spec.fxKind);
-    assert.ok(typeof spec.color === 'string' && /^#[0-9a-f]{3,8}$/i.test(spec.color), t.id + ' 顏色不合法：' + spec.color);
-    assert.ok(typeof spec.glyph === 'string' && spec.glyph.length > 0, t.id + ' 缺少圖案');
-    assert.ok(spec.dur > 0 && spec.count >= 1, t.id + ' 時長或段數不合法');
-  });
-});
-
-test('沒有配置 Preset 的技能特效事件帶空表，不讓顯示層自行補畫法', () => {
-  const c = loadContext();
-  const sk = { id: 'a', name: '火球', emoji: '🔥', cat: 'magic', tags: ['fire'] };
-  assert.deepEqual(JSON.parse(JSON.stringify(c.skillVfxSpec(sk, { dmgType: 'magic' }, '', [], null).vfx)), {});
-  const configured = { id: 'b', name: '斬', emoji: '🗡️', cat: 'phys', tags: [], vfx: { cast: 'preset-a', hit: 'preset-b' } };
-  assert.deepEqual(JSON.parse(JSON.stringify(c.skillVfxSpec(configured, { dmgType: 'phys' }, '', [], null).vfx)),
-    { cast: 'preset-a', hit: 'preset-b' });
-});
 
 /* 高塔（單體 BOSS、無座標）：新版技能的場域特效仍要以 BOSS 圖層 'tb-float' 為錨點，
    不能退回玩家或野外場景（原本用舊「領域」機制驗，改用新版火柱驗同一個約定）。 */

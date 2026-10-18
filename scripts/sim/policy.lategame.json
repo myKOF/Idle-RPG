@@ -48,7 +48,6 @@
       "t3_normal",
       "t3_elite",
       "t3_boss",
-      "t3_potential",
       "t3_allres",
       "t3_def",
       "t3_mdef",
@@ -58,7 +57,6 @@
       "t4_def",
       "t4_special",
       "t4_passive",
-      "t4_potential",
       "t4_normalred",
       "t4_elitered"
     ],

@@ -82,7 +82,6 @@ var DEMON_SEED_BOSS_RATE_CAP = 100;
    生命與四維在原始總值完成後套用最終倍率：
    1～10 轉分別為 ×10、×20、×40、×80、×160、×320、×640、×1280、×2560、×5120。 */
 var MAX_LEVEL = 1000;             // 角色等級上限（升級所需經驗 參數 d）
-var SKILL_POINT_BUDGET_CAP = 10000; // 技能點總預算上限（技能點總預算 參數 c）
 var REINCARNATION_LEVEL = 1000;   // 可轉生等級：達此級可轉生（可轉生等級 參數 a）
 var REINCARNATION_MAX = 20;
 var REINCARNATION_RANKS = ['冒險者', '勇者', '大劍師', '破世者', '不朽者', '王者', '大主宰', '神聖尊者', '大聖王', '至高主宰', '位面創世神', '神位1階', '神位2階', '神位3階', '神位4階', '神位5階', '神位6階', '神位7階', '神位8階', '神位9階', '神位終階'];
@@ -90,18 +89,13 @@ var REINCARNATION_EXTRA_MULTIPLIERS = [0, 1.5, 2.5, 3.5, 5, 7, 10, 14, 18, 24, 3
 // 升級經驗基礎增加值：升級所需經驗在括號外再加此值（依轉生次數；轉生 0 次為 0，1~10 次見轉生對照表 參數 c）。
 var REINCARNATION_EXP_BASE_ADD = [0, 500000, 1500000, 3000000, 6000000, 12000000, 24000000, 48000000, 96000000, 192000000, 384000000, 768000000, 1536000000, 3072000000, 6144000000, 12288000000, 24576000000, 49152000000, 98304000000, 196608000000, 393216000000];
 var REINCARNATION_EXP_MULTIPLIERS = [1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 1e11, 1e13, 1e15, 1e17, 1e19, 1e21, 1e23, 1e25, 1e27, 1e29, 1e33];
-// 潛力技能的等級上限，依轉生次數查表（參數表「1-轉生對照表」param e）。
-var REINCARNATION_SKILL_MAX_LEVELS = [10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30];
 
 /* ---- 天堂威能（轉生後依轉數開放） ----
    等級上限由 TALENT_MAX_LEVEL 定義；升級成本為目標等級，效果為 per × 等級。
    本轉所有啟用節點全滿時效果加倍；首次點亮累加 threat。
-   「額外」字樣 = 於對應總值上乘算；沒寫「額外」= 與現有同類加成相加。
-   潛力無解鎖限制並共用威能點；舊解鎖節點保留資料並停用。 */
+   「額外」字樣 = 於對應總值上乘算；沒寫「額外」= 與現有同類加成相加。 */
 var TALENT_MAX_LEVEL = 10;
 var TALENT_IMPLEMENTED_REINCARNATIONS = 10;
-var POTENTIAL_NODE_COUNT = 10;
-var POTENTIAL_SKILL_BASE_MAX_LEVEL = 20; // 舊制潛力技能基礎上限；2026-07-30 改制後統一走 REINCARNATION_SKILL_MAX_LEVELS，保留供相容
 var TALENT_TREES = {
   1: [
     { id: 't1_str', name: '力量淬鍊', emoji: '💪', stat: 'strPct', per: 0.5, threat: 2, desc: '力量總值額外提高' },
@@ -127,7 +121,6 @@ var TALENT_TREES = {
     { id: 't3_normal', name: '清場法則', emoji: '⚔️', stat: 'normalDmg', per: 0.5, threat: 2, desc: '對普通敵人傷害額外提高' },
     { id: 't3_elite', name: '破菁法則', emoji: '🗡️', stat: 'eliteDmg', per: 0.5, threat: 2, desc: '對菁英傷害額外提高' },
     { id: 't3_boss', name: '弒王法則', emoji: '👑', stat: 'bossDmg', per: 1, threat: 2, desc: '對 BOSS 傷害額外提高' },
-    { id: 't3_potential', name: '潛力啟示', emoji: '🔓', stat: 'potentialUnlock', per: 2, threat: 2, desc: '解鎖新類型技能「潛力」三個並給予技能點', disabled: true, disabledReason: '潛力已無解鎖限制，改用威能點，此舊解鎖威能停用' },
     { id: 't3_allres', name: '全域適應', emoji: '🧿', stat: 'elemRes', per: 0.5, threat: 2, desc: '全屬性抗性額外提高' },
     { id: 't3_def', name: '重甲共鳴', emoji: '🛡️', stat: 'defPct', per: 0.5, threat: 2, desc: '物理防禦總值額外提高' },
     { id: 't3_mdef', name: '魔鎧共鳴', emoji: '🔰', stat: 'mdefPct', per: 0.5, threat: 2, desc: '魔法防禦總值額外提高' },
@@ -139,7 +132,6 @@ var TALENT_TREES = {
     { id: 't4_def', name: '守護昇華', emoji: '🛡️', stat: 'skillDef', per: 0.5, threat: 2, desc: '防禦與治療類技能效果額外提高' },
     { id: 't4_special', name: '奇策昇華', emoji: '🎲', stat: 'skillSpecial', per: 0.5, threat: 2, desc: '特殊類技能效果額外提高' },
     { id: 't4_passive', name: '被動昇華', emoji: '🧬', stat: 'skillPassive', per: 0.5, threat: 2, desc: '被動類技能效果額外提高' },
-    { id: 't4_potential', name: '潛力覺醒', emoji: '🌠', stat: 'potentialUnlock', per: 2, threat: 2, desc: '解鎖新類型技能「潛力」三個並給予技能點', disabled: true, disabledReason: '潛力已無解鎖限制，改用威能點，此舊解鎖威能停用' },
     { id: 't4_normalred', name: '獵人壁壘', emoji: '🐺', stat: 'normalDmgRed', per: 2, threat: 2, desc: '對普通敵人抗性額外提高' },
     { id: 't4_elitered', name: '鎮壓壁壘', emoji: '🦁', stat: 'eliteDmgRed', per: 2, threat: 2, desc: '對菁英敵人抗性額外提高' }
   ],
@@ -174,7 +166,6 @@ var TALENT_TREES = {
     { id: 't7_evasion', name: '無影迷蹤', emoji: '💨', stat: 'evasion', per: 10, threat: 2, desc: '閃避率提高' },
     { id: 't7_hit', name: '天眼鎖定', emoji: '🎯', stat: 'hit', per: 10, threat: 2, desc: '命中率提高' },
     { id: 't7_global', name: '絕對偏折', emoji: '🕳️', stat: 'globalDmgRed', per: 2, threat: 2, desc: '全局減傷額外提高' },
-    { id: 't7_potential', name: '潛力爆發', emoji: '💥', stat: 'potentialUnlock', per: 2, threat: 2, desc: '解鎖新類型技能「潛力」三個並給予技能點', disabled: true, disabledReason: '潛力已無解鎖限制，改用威能點，此舊解鎖威能停用' },
     { id: 't7_totaldmg', name: '破壞本源', emoji: '☄️', stat: 'totalDmgPct', per: 0.25, threat: 2, desc: '總傷害額外增加' }
   ],
   8: [
@@ -209,10 +200,8 @@ var TALENT_TREES = {
     { id: 't10_bossred', name: '屠龍神鎧', emoji: '🐉', stat: 'bossDmgRed', per: 10, threat: 2, desc: '對 BOSS 敵人抗性額外提高' },
     { id: 't10_gemeff', name: '寶石共鳴', emoji: '💎', stat: 'gemEff', per: 10, threat: 2, desc: '寶石鑲嵌效率提高' },
     { id: 't10_totaldmg', name: '毀滅本源', emoji: '☄️', stat: 'totalDmgPct', per: 1, threat: 2, desc: '總傷害額外增幅' },
-    { id: 't10_potential', name: '潛力昇華', emoji: '🌌', stat: 'potentialUnlock', per: 2, threat: 2, desc: '解鎖新類型技能「潛力」一個並給予技能點', disabled: true, disabledReason: '潛力已無解鎖限制，改用威能點，此舊解鎖威能停用' }
   ]
 };
-/* ---- 潛力技能定義已移至 js/skills.js（隨 Skills.xlsx 調適；解鎖/等級/施放邏輯不變） ---- */
 
 /* ---- 每波敵人數量（依敵種各自擲骰）----
    小怪／菁英／BOSS 三種**分開**設定：同樣出 16 隻，小怪還打得動，菁英根本打不了，
@@ -1702,7 +1691,6 @@ var VFX_CAT_COLORS = {
   def: '#7ff0c0',       // 防禦與治療：生命綠
   special: '#ffc773',   // 特殊
   passive: '#c9c9c9',
-  potential: '#ff9de2'  // 潛力技能
 };
 
 /* ---- Preset 化 VFX：不在表上的固定對應（2026-09-03）----
@@ -1725,7 +1713,6 @@ var VFX_COMBAT_DEFAULTS = {
     fire: 'hit-fire', ice: 'hit-ice', lightning: 'hit-lightning', poison: 'hit-poison',
     light: 'hit-light', dark: 'hit-dark', earth: 'hit-earth', wind: 'hit-wind'
   },
-  chainLightning: { attack: 'bolt-sky-lightning', projectile: 'bolt-chain-lightning', hit: 'hit-lightning' },
   legendaryLightningChain: { projectile: 'bolt-chain-lightning', hit: 'hit-lightning' },
   /* 小隕石：由 Runtime 依 variant 取用，不佔表上的欄位。 */
   meteorSmall: { projectile: 'proj-meteor-small', hit: 'hit-fire-explosion' }
@@ -2182,7 +2169,6 @@ var TOWER_CHALLENGE_COST_TIERS = [
 var TOWER_HELL_SOUL_ORIGIN_BASE_RATE = 5;
 var TOWER_HELL_SOUL_ORIGIN_PER_FLOOR = 1;
 // 高塔限時（秒）：各塔獨立（TOWER_BOSS_*.timeLimit），依樓層選塔。
-// 潛力技能 V3 起，潛力不再提供高塔限時加成（舊 potentialTowerTime 已移除）。
 function towerTimeLimitWithTalents(floor) {
   return towerBossCfg(floor).timeLimit;
 }

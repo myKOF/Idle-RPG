@@ -859,7 +859,7 @@ function vfxProjectileCls(spec) {
   /* 超神【火神降臨】的普攻星環：旋轉的火焰圓環（Canvas 端另有專屬畫法）。 */
   if (v === 'firehunt-ring') return 'vfx-proj-fire vfx-proj-firehunt-ring';
   if (spec.elem && VFX_ELEM_THEME[spec.elem]) return 'vfx-proj-' + spec.elem;
-  if (spec.cat === 'special' || spec.cat === 'potential' || spec.cat === 'fusion') return 'vfx-proj-glyph';
+  if (spec.cat === 'special' || spec.cat === 'fusion') return 'vfx-proj-glyph';
   return 'vfx-proj-plain';
 }
 

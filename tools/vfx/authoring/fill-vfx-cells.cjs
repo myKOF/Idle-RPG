@@ -79,7 +79,7 @@ function put(row, idx, id) { if (!id) { row[idx] = ''; return; } if (!presetIds.
   console.log('Status.csv 填了', filled, '列');
 }
 
-/* 目錄裡沒被任何表引用的 preset（普攻／敵方／潛力走 VFX_COMBAT_DEFAULTS） */
+/* 目錄裡沒被任何表引用的 preset（普攻／敵方走 VFX_COMBAT_DEFAULTS） */
 const defaults = new Set();
 Object.values(cat.COMBAT_DEFAULTS).forEach(v => Object.values(v).forEach(x => defaults.add(x)));
 const unreferenced = [...presetIds].filter(id => !referenced.has(id) && !defaults.has(id));

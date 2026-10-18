@@ -206,7 +206,7 @@ function towerTick(dt) {
   if (st.hpRegen > 0 || hot > 0) {
     healPlayer(p, (st.hpRegen * regenHpMul + st.hp * hot / 100) * dt, st, { noShield: true });
   }
-  tickSkillCds(p, dt); // 潛力技能冷卻共用 skillCds（鍵 'potential:<id>'），一併在此遞減
+  tickSkillCds(p, dt);
 
   // 持續傷害
   var towerPlayerDotDeath = tickStatuses(p, dt);
@@ -222,17 +222,6 @@ function towerTick(dt) {
   if (typeof eliteTick === 'function') {
     if (eliteTick(dt)) { endTowerFight(false, 'death'); return; }
     if (b.hp <= 0) { endTowerFight(true); return; }
-  }
-  // 潛力【聖療逆轉】溢出傷害（持續效果）
-  if (typeof tickPotentialRegen === 'function' && tickPotentialRegen(p, st, dt, [b], 'tb-float')) { endTowerFight(true); return; }
-
-  // 潛力【雷霆過載】持續轟擊（增益期間每 1 秒一輪）
-  if (typeof tickPotentialOverdrive === 'function') {
-    var odRes = tickPotentialOverdrive(p, [b], 'tb-float');
-    if (odRes) {
-      TOWER.dmgDealt += Math.max(0, odRes.dmg || 0);
-      if (odRes.killed) { endTowerFight(true); return; }
-    }
   }
   // 技能排程器（js/skills2.js tickSkill2；鏡射 combat.js fieldTick 掛點）
   if (typeof tickSkillSchedulers === 'function') {
@@ -287,10 +276,8 @@ function towerTick(dt) {
       if (sres.killed) { endTowerFight(true); return; }
       if (p.hp <= 0) { endTowerFight(false, 'death'); return; } // 自傷技能
     }
-    // 潛力【極速之力】：施放期間以倍率放大攻擊頻率（突破 5 次/秒上限）
     // 新版技能【狂風斬】攻速乘算：與 combat.js 野外掛點鏡射
     p.atkCd -= dt * slowFactor(p) * (1 + buffVal(p, 'aspdUp') / 100) *
-      (typeof potentialVelocityFactor === 'function' ? potentialVelocityFactor(p, st) : 1) *
       (typeof legendaryAttackSpeedMultiplier === 'function' ? legendaryAttackSpeedMultiplier(p, st) : 1) *
       (typeof skill2AspdFactor === 'function' ? skill2AspdFactor(p) : 1);
     /* 普攻是近戰：還沒走到 BOSS 面前就不出手，冷卻只保持在 ready、不累積欠債，
@@ -324,8 +311,7 @@ function towerTick(dt) {
       var bossHit = doMonsterAttack(b, bossTarget, 'tp-float', mult);
       // 使用攻擊結果的實際輸出，包含護盾吸收與擊殺時超出生命的溢出傷害。
       TOWER.bossDmgDealt += Math.max(0, (bossHit.dmg || 0));
-      // 潛力【時間結界】：敵攻速降低 → 拉長攻擊間隔。
-      b.atkCd += (1 / b.aspd) * (1 + enemyAspdDownPct(b) / 100);
+      b.atkCd += (1 / b.aspd);
       if (p.hp <= 0) { endTowerFight(false, 'death'); return; }
       if (b.hp <= 0) { endTowerFight(true); return; } // 反震擊殺
     }

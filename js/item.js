@@ -106,17 +106,32 @@ function convertGems(slots, targetType) {
   return null;
 }
 
-// 寶石拆解：1 顆 2 階以上寶石 → 同種 1 階寶石（損失 30%，公式見 formula.js §8）
-function dismantleGem(type, lv) {
-  if (!GEM_TYPES[type]) return { err: '未知寶石種類' };
-  if (!isGemEnabled(type)) return { err: '此寶石已關閉，無法拆解' };
-  if (lv < 2 || lv > GEM_FORGE_MAX_LEVEL) return { err: '只能拆解 2 階以上的寶石' };
-  if (gemCount(type, lv) < 1) return { err: '沒有「' + GEM_NAMES[lv] + GEM_TYPES[type].name + '」' };
-  var y = gemDismantleYield(lv);
-  addGem(type, lv, -1);
-  addGem(type, 1, y);
+// 九宮格普通寶石拆解：原子驗證所有初始庫存，免費無損拆回前一階。
+function dismantleGems(slots) {
+  if (!Array.isArray(slots) || !slots.length) return { err: '請先將寶石放入九宮格' };
+  if (slots.length > GEM_CONVERT_SLOTS) return { err: '最多 ' + GEM_CONVERT_SLOTS + ' 格' };
+  var requested = {};
+  for (var i = 0; i < slots.length; i++) {
+    var s = slots[i];
+    if (!s || !Object.prototype.hasOwnProperty.call(GEM_TYPES, s.type)) return { err: '未知寶石種類' };
+    if (!isGemEnabled(s.type)) return { err: '此寶石已關閉，無法拆解' };
+    if (!Number.isInteger(s.lv) || s.lv < 2 || s.lv > GEM_FORGE_MAX_LEVEL) return { err: '只能拆解 2 階以上的寶石' };
+    if (!Number.isInteger(s.n) || s.n < 1 || s.n > GEM_CONVERT_STACK) return { err: '每格 1~' + GEM_CONVERT_STACK + ' 顆' };
+    var key = s.type + ':' + s.lv;
+    requested[key] = (requested[key] || 0) + s.n;
+    if (gemCount(s.type, s.lv) < requested[key]) return { err: '「' + GEM_NAMES[s.lv] + GEM_TYPES[s.type].name + '」庫存不足' };
+  }
+  var plan = gemDismantlePlan(slots);
+  slots.forEach(function (s) { addGem(s.type, s.lv, -s.n); });
+  plan.outputs.forEach(function (s) { addGem(s.type, s.lv, s.n); });
   UI.dirty.gems = true; UI.dirty.header = true;
-  return { n: y };
+  return plan;
+}
+
+// 舊單顆／全部指令相容，同樣使用無損前一階規則。
+function dismantleGem(type, lv) {
+  var result = dismantleGems([{ type: type, lv: lv, n: 1 }]);
+  return result.err ? result : { n: result.outputs[0].n, level: lv - 1 };
 }
 
 // 融合寶石拆解：依融合次數推算 1 階總成本 × 0.7，依其屬性種類均分（餘數給第一種）

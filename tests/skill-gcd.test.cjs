@@ -33,7 +33,7 @@ function loadGameContext() {
   context.window = context;
   vm.createContext(context);
 
-  ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js', 'js/combat.js', 'js/skills.js', 'js/potential.js'].forEach((file) => {
+  ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js', 'js/combat.js', 'js/skills.js', ].forEach((file) => {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });
 
@@ -91,25 +91,11 @@ function stubSkills2(context, defs, opts) {
   return calls;
 }
 
-/* 潛力技能的替身：資料表 POTENTIAL_TALENTS 用真的，talents.js 的查詢與 castPotentialSkill 本體換掉，
-   冷卻仍走真的 potentialActiveCd（吃冷卻縮減與最短間隔）。 */
-function stubPotential(context) {
-  const calls = [];
-  context.potentialDef = (id) => context.POTENTIAL_TALENTS.find((t) => t.id === id) || null;
-  context.potentialSkillActive = () => true;
-  context.castPotentialSkill = (player, target, def, floatSel, loadoutKey) => {
-    calls.push(loadoutKey);
-    player.skillCds[loadoutKey] = context.potentialActiveCd(def);
-    return { killed: false, dmg: 0 };
-  };
-  return calls;
-}
 
 test('different skills keep independent cooldowns while cast lock comes from config', () => {
   const context = loadGameContext();
-  const sgCalls = stubSkills2(context, { alpha: {} }, { cds: { alpha: 8 } });
-  const potCalls = stubPotential(context);
-  context.G.player.loadout = ['sg:alpha', 'potential:velocityForce'];
+  const sgCalls = stubSkills2(context, { alpha: {}, beta: {} }, { cds: { alpha: 8, beta: 24 } });
+  context.G.player.loadout = ['sg:alpha', 'sg:beta'];
   const player = playerEntity();
 
   const first = context.pickAndCastSkill(player, [{ hp: 1000 }], 'float-layer');
@@ -127,9 +113,9 @@ test('different skills keep independent cooldowns while cast lock comes from con
   assert.equal(second.casting, true);
   assert.equal(second.castTime, context.SKILL_CAST_LOCK);
   context.tickSkillCast(player, context.SKILL_CAST_LOCK);
-  assert.deepEqual(potCalls, ['potential:velocityForce']);
-  // 潛力技冷卻＝表定 60 秒吃 60% 冷卻縮減（stub 的 getStats.cdr）
-  assertClose(player.skillCds['potential:velocityForce'], 60 * (1 - 0.6));
+  assert.deepEqual(sgCalls, ['alpha', 'beta']);
+  // 第二個技能有自己的冷卻。
+  assertClose(player.skillCds['sg:beta'], 60 * (1 - 0.6));
   assert.equal(player.skillCds['sg:alpha'], 8, '第二個技能的施放不得動到第一個技能的冷卻');
   assert.equal(player.skillGcd, undefined);
   assert.equal(player.atkCd, 0, '技能自身冷卻與普攻計時器應彼此獨立');
@@ -234,7 +220,6 @@ test('the same skill is still blocked by its own cooldown and receives the minim
   assert.equal(context.pickAndCastSkill(player, target, 'float-layer'), null);
   assert.equal(player.skillGcd, undefined);
   assert.equal(context.skillCooldownWithMinimum(0.1), context.SKILL_MIN_CAST_INTERVAL);
-  assert.equal(context.potentialActiveCd({ cd: 0.1 }), context.SKILL_MIN_CAST_INTERVAL);
 });
 
 test('技能可用 castTime: 0 明確略過預設施法停頓', () => {

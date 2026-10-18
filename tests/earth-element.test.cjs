@@ -31,7 +31,7 @@ function loadFormulaContext() {
 function loadStatsContext() {
   const context = loadContext(['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js', 'js/talents.js']);
   context.G = {
-    player: { level: 1, reincarnations: 10, skills: {}, talents: { levels: {}, potentialLevels: {} } },
+    player: { level: 1, reincarnations: 10, skills: {}, talents: { levels: {} } },
     equipment: context.SLOT_LIST.reduce((eq, slot) => { eq[slot] = null; return eq; }, {})
   };
   return context;

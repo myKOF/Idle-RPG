@@ -1,14 +1,6 @@
 'use strict';
 /* ============ 技能共用執行期 ============
-   舊版技能系統（SKILLS 表、融合技、45 機制族）已於 2026-09-29 整批移除；
-   技能本體全部由 js/skills2.js（新版技能群組 'sg:<群組id>'）與 js/potential.js（潛力技能 'potential:<id>'）提供。
-   本檔只保留兩者共用的部分：
-     - 冷卻／就緒佇列／施法硬直（pickAndCastSkill、beginSkillCast、tickSkillCast、tickSkillCds）
-     - 裝載欄（equipSkillToLoadout／unequipSkillFromLoadout）
-     - 舊技能點預算相容；潛力使用威能點
-     - 潛力技能資料表 POTENTIAL_TALENTS（來源 config/CSV/Skills.csv）
-     - 技能特效事件組裝（skillVfxSpec／emitSkillVfx，潛力技能使用）
-   數值公式（loadoutSize、skillUpgradeCost、skillMaxLvForRc、skillCdFor…）→ js/formula.js §9 */
+   新版技能群組由 js/skills2.js 提供；本檔管理熟練度、裝載、冷卻與施法排程。 */
 
 /* 自動施放的預設施放硬直由 formula.js 的 SKILL_CAST_LOCK 讀取參數表；
    就緒監視器只負責讓 CD 歸零且條件成立的技能立即進入施放，不再因裝載欄長度延後。
@@ -43,37 +35,6 @@ function tickSkillSchedulers(dt, ctx) {
   if (typeof tickSkill2 === 'function') tickSkill2(dt, ctx); // 新版技能（js/skills2.js）：暴風之舞自動施放、場域與環繞體結算
 }
 
-/* ---- 技能系別判定 ----
-   帶標籤（tags[0]）即算該系；無標籤＝null（維持純物理／純魔法）。
-   目前由 skillVfxSpec 取系別配色，潛力技能經由這裡。 */
-function skillElemOf(sk) {
-  return (sk && Array.isArray(sk.tags) && sk.tags.length) ? sk.tags[0] : null;
-}
-
-/* ---- 潛力技能（主動＝需裝入裝載欄施放、被動＝學會即常駐；無解鎖限制）----
-   定義來源＝config/Excel/Skills.xlsx（→ config/CSV/Skills.csv，只剩 系統分類=potential 的列）；
-   欄位：type active/passive/passiveTrigger；cd 冷卻秒；base 起始值；per 每級增量（等級上限共用 TALENT_MAX_LEVEL）；
-   dmgType 傷害類型；dur 主動增益持續秒；mech 對應戰鬥機制（js/potential.js / formula.js / skills.js 依此分派）。
-   數值來源＝天賦V3.xlsx 第 2 頁；戰鬥公式與詮釋見 game_formula.md §潛力技能。 */
-var POTENTIAL_TALENTS = [
-  { id: 'velocityForce', name: '極速之力', tags: [], unlockLv: 1, en: 'Velocity Force', emoji: '⚡', cat: 'potential', type: 'active', cd: 60, base: 0, per: 5, dur: 6, mech: 'aspd', desc: '在 6 秒內突破速度極限——你的攻速在此刻可以突破 5 次/秒的限制、直抵無限，至於能達到什麼程度，得看你的領悟了。每級 +5% 攻速加成。', flavor: '突破速度極限，攻速掙脫 5 次/秒的枷鎖，能達到什麼程度端看你的領悟。' },
-  { id: 'lightningOverdrive', name: '雷霆過載', tags: ['lightning'], unlockLv: 1, en: 'Lightning Overdrive', emoji: '🌩️', cat: 'potential', type: 'active', cd: 45, base: 100, per: 5, atkBase: 70000, atkPer: 4000, bounces: 5, dmgType: 'magic', dur: 8, mech: 'chainLightning', desc: '雷霆過載，萬雷臨世——凝聚過載雷能轟落敵陣，造成大量電屬性魔法傷害並於敵群間彈跳撕裂，持續時間內每一秒皆再度轟落；其間雷能縈繞不散，雷電傷害大幅提升，愈戰愈烈、生生不息。', flavor: '過載的雷能在敵群間肆意跳躍，愈是激烈愈難止息。' },
-  { id: 'chronoCollapse', name: '時間坍縮', tags: [], unlockLv: 1, en: 'Chronostasis', emoji: '🕳️', cat: 'potential', type: 'active', cd: 75, base: 0, per: 0.2, dur: 3, mech: 'cdrUncap', desc: '打破時空的禁錮——冷卻縮減自此突破 60% 的天塹，所有技能的冷卻如坍縮的星辰般急速消融，持續 3 秒。每級額外 −0.2% 冷卻。（不縮減自身冷卻，但仍受一般冷卻縮減加成）', flavor: '此技能對自身冷卻不生效，但冷卻縮減仍可作用於它。' },
-  { id: 'absoluteSanctuary', name: '絕對領域', tags: [], unlockLv: 1, en: 'Absolute Sanctuary', emoji: '🛡️', cat: 'potential', type: 'active', cd: 75, base: 0.5, per: 0.025, mech: 'invuln', desc: '降臨絕對的領域，展開無敵結界——其間免疫一切傷害與負面效果，任何攻擊都無法觸及你分毫。基礎 0.5 秒，每級 +0.025 秒。', flavor: '在絕對的領域中，任何傷害都無法觸及你分毫。' },
-  { id: 'lastStandUndying', name: '不屈意志', tags: [], unlockLv: 1, en: 'Last Undying Stand', emoji: '💀', cat: 'potential', type: 'passiveTrigger', cd: 90, base: 0, per: 0.4, mech: 'undyingGuard', desc: '意志不屈者，縱使命懸一線亦絕不倒下——受到致命傷害時免除死亡，並獲得 1 秒無敵。觸發後進入冷卻，每級 −0.4 秒。（不受冷卻縮減影響）', flavor: '意志不屈者，縱使命懸一線也絕不倒下。（此技能不受冷卻縮減影響）' },
-  { id: 'timeBarrier', name: '時間結界', tags: [], unlockLv: 1, en: 'Time Barrier', emoji: '⏱️', cat: 'potential', type: 'active', cd: 45, base: 0, per: 1, dur: 8, mech: 'enemySlow', desc: '編織拖曳時光的結界，敵人的動作被無情延緩，攻速大幅降低，持續 8 秒。每級敵人攻速 −1%。（敵降低後攻速 = 原攻速 /(1+降低%)）', flavor: '結界之內，敵人的時間被無情拖曳。' },
-  { id: 'dualCoreFusion', name: '混沌雙修', tags: [], unlockLv: 1, en: 'Dual-Core Fusion', emoji: '☯️', cat: 'potential', type: 'passive', base: 0, per: 0.6, mech: 'crossCore', desc: '雙核交融，物理與魔法的界限就此崩解——雷霆過載的雷擊額外承載物攻之威。每級 +0.6%。', flavor: '雙核交融，物理與魔法在你手中不再涇渭分明。' },
-  { id: 'omegaImpact', name: '必殺一擊', tags: [], unlockLv: 1, en: 'Omega Impact', emoji: '🎯', cat: 'potential', type: 'active', cd: 60, base: 100, per: 3, dmgType: 'phys', mech: 'omega', desc: '凝聚全身之力於一擊，依你的爆擊率轟出毀天滅地的必殺——造成「爆擊率% × 必殺傷害加成%」的物理傷害；爆擊率愈高，此擊愈是無可匹敵。必殺傷害加成 = 100% + 每級 +3%。', flavor: '爆擊率愈高，這一擊便愈是毀天滅地。' },
-  { id: 'sacredInversion', name: '聖療逆轉', tags: ['light'], unlockLv: 1, en: 'Sacred Inversion', emoji: '✨', cat: 'potential', type: 'active', cd: 45, base: 0, per: 0.5, dur: 6, mech: 'sacredInvert', desc: '聖療之光賜福於身，生命與法力回復大幅提升；滿溢的療癒之力逆轉為裁決，化作同等傷害傾瀉於敵，持續 6 秒。每級 +0.5%。', flavor: '滿溢的聖光既能療癒自身，亦能化為裁決敵人的利刃。' },
-  { id: 'chronosStasis', name: '時空凝滯', tags: [], unlockLv: 1, en: 'Chronos Stasis', emoji: '🌀', cat: 'potential', type: 'active', cd: 120, base: 40, per: 0.5, dur: 8, mech: 'timeStop', desc: '封鎖周遭的時空，令萬物靜止——唯有承神之賜福者能自由行動；凝滯之間你的所有傷害大幅提升，敵人動彈不得，持續 8 秒。每級 +0.5% 所有傷害。', flavor: '唯有獲得神之賜福者，方能在凝滯的時空中行動自如。' }
-];
-
-/* ---- 技能點（2026-07-30 技能熟練度制）----
-   技能點不再隨角色升級發放：總預算 = 基礎 3 點
-   + 技能熟練度等級；潛力改用威能點後不再消耗此預算。
-   已使用：潛力技能等級總和；可用 = 總預算 - 已使用。 */
-var SKILL_POINT_BASE = 3; // 固定基礎點數（歷史上等於開局自帶的 3 個 1 級技能；舊技能移除後保留為基礎預算，與參數表「技能點總預算」a 同步）
-
 function ensureSkillMastery() {
   var p = G.player;
   if (!p.skillMastery || typeof p.skillMastery !== 'object') p.skillMastery = { level: 0, xp: 0 };
@@ -83,7 +44,7 @@ function ensureSkillMastery() {
   return m;
 }
 
-/* 技能熟練度經驗入帳：滿足需求即升級（每級 1 技能點），滿級後不再累積。 */
+/* 技能熟練度經驗入帳：滿足需求即升級，滿級後不再累積。 */
 function gainSkillMasteryXp(n) {
   n = Math.floor(Number(n) || 0);
   if (n <= 0) return;
@@ -100,24 +61,9 @@ function gainSkillMasteryXp(n) {
   // 經驗未達升級門檻時也要刷新技能面板；否則降低獲得倍率後，進度條會長時間停在舊快照。
   UI.dirty.skills = true;
   if (leveled > 0) {
-    blog('📚 技能熟練度提升至 Lv.' + m.level + '（獲得 ' + leveled + ' 技能點）', 'good');
+    blog('📚 技能熟練度提升至 Lv.' + m.level, 'good');
     UI.dirty.header = true;
   }
-}
-
-function totalSkillPoints() {
-  var m = ensureSkillMastery();
-  var talentBonus = typeof talentSkillPointBonus === 'function' ? talentSkillPointBonus() : 0;
-  return Math.max(0, SKILL_POINT_BASE + m.level + talentBonus);
-}
-function spentSkillPoints() {
-  // 潛力改用威能點；新版技能群組也不消耗此舊技能點預算。
-  return 0;
-}
-function availableSkillPoints() {
-  var available = Math.max(0, totalSkillPoints() - spentSkillPoints());
-  G.player.skillPoints = available;
-  return available;
 }
 
 /* ---- 裝載 ---- */
@@ -131,13 +77,6 @@ function equipSkillToLoadout(id) {
     var sgId = id.slice(3);
     if (typeof SKILLS2 === 'undefined' || !SKILLS2[sgId]) return '未知技能群組';
     if (typeof skills2Castable === 'function' && !skills2Castable(sgId)) return '尚未學習';
-  } else if (typeof id === 'string' && id.indexOf('potential:') === 0) {
-    var pid = id.slice(10);
-    var pdef = (typeof potentialDef === 'function') ? potentialDef(pid) : null;
-    if (!pdef) return '未知技能';
-    if (typeof potentialEquippable !== 'function' || !potentialEquippable(pdef)) return '被動潛力技能學會即常駐，無需裝備';
-    if (!potentialLevel(pid)) return '尚未學習';
-    if (typeof potentialSkillActive === 'function' && !potentialSkillActive(pid)) return '潛力節點尚未解鎖';
   } else {
     return '未知技能';
   }
@@ -171,62 +110,6 @@ function unequipSkillFromLoadout(id) {
     if (typeof markStatsDirty === 'function') markStatsDirty();
     UI.dirty.skills = true;
   }
-}
-
-/* ---- 技能特效事件（潛力技能使用）----
-   模擬層只負責「發生了什麼」，畫法在 js/vfx.js。特效種類不逐一手寫，而是由範圍決定形狀、
-   系統分類與屬性決定顏色、技能自己的 emoji 當投射物圖案。
-   實際播放的 Preset 只來自表格欄位（sk.vfx = { cast, attack, projectile, hit, ground }）；
-   沒有配置特效就是空表，不得讓顯示層自行補畫法。 */
-function skillVfxColor(sk, fx) {
-  var elem = skillElemOf(sk);
-  if (elem && typeof ELEM_INFO !== 'undefined' && ELEM_INFO[elem]) return ELEM_INFO[elem].color;
-  var cat = (sk && sk.cat) || 'phys';
-  if (typeof VFX_CAT_COLORS !== 'undefined' && VFX_CAT_COLORS[cat]) return VFX_CAT_COLORS[cat];
-  return '#ffffff';
-}
-
-/* 由技能資料推導特效原型：
-     沒有傷害段（純增益／治療／護盾）          → selfBuff（我方身上的光暈）
-     全場                                      → rain（天降）
-     一直線（1*N 或 N*1）                      → beam（貫穿）
-     方框（N*M 皆 >1）                         → burst（爆發）
-     單體：物理系 → slash（斬擊）、其餘 → projectile（投射物） */
-function skillVfxKind(sk, fx, shape) {
-  if (!fx || !fx.dmgType) return 'selfBuff';
-  var sp = (typeof bfParseShape === 'function') ? bfParseShape(shape) : { kind: 'single', w: 1, h: 1 };
-  if (sp.kind === 'all') return 'rain';
-  if (sp.kind === 'box') {
-    if (sp.w > 1 && sp.h > 1) return 'burst';
-    return 'beam';
-  }
-  return (sk && sk.cat === 'phys') ? 'slash' : 'projectile';
-}
-
-/* 回傳可直接送上協議的特效事件內容（純資料，不含實體參照）。
-   targetIds 由呼叫端以 enemyEventFloatTarget 解析完成；area 為範圍落點的圓（非區域類傳 null）。 */
-function skillVfxSpec(sk, fx, shape, targetIds, area, extra) {
-  var spec = {
-    fxKind: skillVfxKind(sk, fx, shape),
-    glyph: (sk && sk.emoji) || '✨',
-    color: skillVfxColor(sk, fx),
-    // 屬性與分類（協議 v17）：顯示層據此挑選元素化畫法與受擊特效；缺欄位時退回 color 單色畫法。
-    elem: skillElemOf(sk),
-    cat: (sk && sk.cat) || null,
-    targets: targetIds || [],
-    area: area || null,
-    dur: 0.5,
-    count: Math.max(1, Math.min(5, (fx && fx.hits) || 1))
-  };
-  if (extra) for (var k2 in extra) spec[k2] = extra[k2];
-  spec.vfx = (sk && sk.vfx && typeof sk.vfx === 'object') ? sk.vfx : {};
-  if (spec.fxKind === 'rain') spec.dur = 0.75;
-  return spec;
-}
-
-/* 送出特效事件；Worker 端由 shim 轉成協議事件，Node 測試環境沒有這支就靜靜略過。 */
-function emitSkillVfx(spec) {
-  if (spec && typeof playCombatVfx === 'function') playCombatVfx(spec);
 }
 
 /* 技能就緒監視器（執行期狀態，不入存檔）：
@@ -313,14 +196,11 @@ function skillCastInProgress(pEnt) {
 function executeSkillCastJob(job) {
   if (!job) return null;
   if (job.kind === 'skill2') return castSkill2(job.pEnt, job.target, job.skillId, job.floatSel, job.opts);
-  if (job.kind === 'potential') {
-    return castPotentialSkill(job.pEnt, job.target, job.def, job.floatSel, job.loadoutKey);
-  }
   return null;
 }
 
 /* 施法動作（協議 v36 act:'cast'，2026-09-22 主角換成有施法動作的騎士）。
-   在這裡送而不是在各技能裡送：新版與潛力技能都經過 beginSkillCast，而且只有這裡知道硬直多長。
+   在這裡送而不是在各技能裡送：技能經過 beginSkillCast，而且只有這裡知道硬直多長。
    顯示層據此面向目標、播施法姿勢，並把「釋放」那一幀對到硬直結束（技能真的放出去、特效出現）的那一刻。
    主要目標與 castSkill2 同一套挑法（先看鎖定目標），只用來決定面向。 */
 function skillCastActEmit(job, lockSec) {
@@ -417,7 +297,7 @@ function pickAndCastSkill(pEnt, target, floatSel, opts) {
       continue;
     }
     // 新版技能群組（裝載欄鍵 'sg:<群組id>'，js/skills2.js）：依冷卻／法力／存活目標施放，沿用同一套排序。
-    // 前綴用字面值（比照 'potential:'）——本檔可能在未載入 skills2.js 的測試環境單獨執行。
+    // 前綴用字面值——本檔可能在未載入 skills2.js 的測試環境單獨執行。
     if (typeof id === 'string' && id.indexOf('sg:') === 0) {
       if ((pEnt.skillCds[id] || 0) > 0) continue;
       var sgId = id.slice(3);
@@ -452,21 +332,6 @@ function pickAndCastSkill(pEnt, target, floatSel, opts) {
         // ready queue uses the loadout key ('sg:<id>'); keep the bare id for castSkill2,
         // but dequeue the exact key so the skill can re-enter when its cooldown ends.
         loadoutKey: id
-      });
-    }
-    // 潛力技能（裝載欄鍵 'potential:<id>'）：無法力消耗，依冷卻與存活目標施放，其餘沿用同一套排序。
-    // 其他鍵（不屬於 sg: 或 potential:）一律略過——存檔讀入時已清除，這裡只是防呆。
-    if (typeof id === 'string' && id.indexOf('potential:') === 0) {
-      if ((pEnt.skillCds[id] || 0) > 0) continue;
-      var pDef = (typeof potentialDef === 'function') ? potentialDef(id.slice(10)) : null;
-      if (!pDef || typeof potentialSkillActive !== 'function' || !potentialSkillActive(pDef.id)) continue;
-      var hasLiveTarget = Array.isArray(target)
-        ? target.some(function (ent) { return ent && ent.hp > 0; })
-        : !!(target && target.hp > 0);
-      if (!hasLiveTarget) continue;
-      return beginSkillCast({
-        kind: 'potential', pEnt: pEnt, target: target, skillId: id,
-        floatSel: floatSel, def: pDef, loadoutKey: id
       });
     }
   }

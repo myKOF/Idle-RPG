@@ -47,11 +47,11 @@ test('離線計算等級：歷史最高階段扣減後捨去到取整單位，�
   assert.equal(c.offlineStageFor(1), 1, '下限永遠是 1');
 });
 
-test('離線擊殺數依擊殺速率換算，並吃離線預言潛力加成', () => {
+test('離線擊殺數僅依擊殺速率換算，舊加成參數不再作用', () => {
   const c = loadGameContext();
   const iv = c.OFFLINE_KILL_INTERVAL;
   assert.equal(c.offlineKillCount(3600, 0), expectKills(c, 3600));
-  assert.equal(c.offlineKillCount(3600, 10), Math.floor(3600 / iv * 1.1), '離線預言 +10%');
+  assert.equal(c.offlineKillCount(3600, 10), expectKills(c, 3600), '已移除的加成不影響擊殺數');
   assert.equal(c.offlineKillCount(iv - 1, 0), 0, '不足一個間隔就是 0 隻');
 });
 

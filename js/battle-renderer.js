@@ -2478,7 +2478,7 @@ var BattleRenderer = (function () {
     var core;
     var glyphOnly = spec.glyph && (spec.variant === 'glyph' ||
       spec.variant === 'knife' || spec.variant === 'knife-bounce' ||
-      (!spec.elem && (spec.cat === 'special' || spec.cat === 'potential' || spec.cat === 'fusion')));
+      (!spec.elem && (spec.cat === 'special' || spec.cat === 'fusion')));
     if (glyphOnly) {
       core = new PIXI.Text({ text: spec.glyph, style: { fontSize: 20 } });
       core.anchor.set(0.5);

@@ -71,7 +71,7 @@ test('合成頁沒有種類與等級下拉：種類取自寶石庫的選擇，�
   assert.match(ui, /gemIconHTML\(type, lv, 'gi-curve'\)/);
   assert.match(ui, /t\.closest\('\[data-gem-lv\]'\)[\s\S]*?setGemFuseLevel\(/);
   // 合成指令取自 UI.gemBrowse.sel／fuseLv
-  assert.match(ui, /function fuseTarget\(\) \{ return \{ t: UI\.gemBrowse\.sel, lv: UI\.gemBrowse\.fuseLv \|\| 1 \}; \}/);
+  assert.match(fs.readFileSync(path.resolve(__dirname, '../js/ui-gem-workshop.js'), 'utf8'), /var type = UI\.gemBrowse\.sel, lv = UI\.gemBrowse\.fuseLv \|\| 1;/);
 });
 
 test('合成配方逐顆顯示原料與金幣箭頭，所有階級均可直接合成，十階是最高階', () => {
@@ -97,7 +97,7 @@ test('合成配方逐顆顯示原料與金幣箭頭，所有階級均可直接�
 
   for (let lv=1;lv<10;lv++) {
     const recipe=context.fuseRecipeHTML('ruby',lv),needed=lv<5?3:lv<9?4:6;
-    assert.equal(count(recipe,/class="gx-socket(?: is-out)?"/g),needed+1,'source '+lv+' 原料＋成品');
+    assert.equal(count(recipe,/class="gx-socket gem-holy-cell(?: is-out)?"/g),needed+1,'source '+lv+' 原料＋成品');
     assert.match(recipe,/gx-recipe-arrow/);assert.ok(recipe.includes('>'+context.FUSE_GOLD_COST[lv]+'</span>'));
     assert.doesNotMatch(recipe,/gx-recipe-mult|神鑄/);
   }
@@ -127,10 +127,10 @@ test('全部類型寶石全部合成時會逐種類處理可合成庫存', () =>
   assert.equal(gems.sapphire[2], 1);
 });
 
-test('合成鏈與拆解返還依 3:1 比例換算', () => {
+test('合成鏈等值保留，一般拆解無損回前階，舊融合拆解維持相容', () => {
   const context = loadGameContext();
   assert.deepEqual([1, 2, 3, 4, 5].map(context.gemL1Worth), [1, 3, 9, 27, 81]);
-  assert.deepEqual([2, 3, 4, 5].map(context.gemDismantleYield), [2, 6, 18, 56]);
+  assert.deepEqual([2, 3, 4, 5].map(context.gemDismantleYield), [3, 3, 3, 3]);
   assert.equal(context.fusedGemL1Worth({ leaves: 2 }), 162);
   assert.equal(context.fusedGemDismantleYield({ leaves: 2 }), 113);
 });
@@ -141,7 +141,9 @@ test('寶石合成介面與紀錄使用共用逐階配方，寶石頁只保留�
   const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 
   assert.match(ui, /Math\.floor\(n \/ needed\)/);
-  assert.match(ui, /gemComposeInputCount\(lv\)[\s\S]*sendGemUiCommand\(\s*['"]gem\.composeAll['"]/);
+  const workshop = fs.readFileSync(path.join(root, 'js/ui-gem-workshop.js'), 'utf8');
+  assert.match(workshop, /gemComposeInputCount\(lv\)/);
+  assert.match(workshop, /all \? 'gem\.composeAll' : 'gem\.compose'/);
   assert.deepEqual([...index.matchAll(/data-gem-tool-btn="([^"]+)"/g)].map(m=>m[1]),['compose','convert','dismantle','resonance']);
   assert.match(index,/data-gem-panel="fusion" hidden/);assert.match(index,/data-gem-panel="shop" hidden/);
 });
@@ -189,7 +191,7 @@ test('直接合成全部階級：不足素材／不足金幣不扣資源，恰�
  }
  for(const lv of [0,-1,10,11,1.5,NaN,Infinity,'5']){const before=JSON.stringify(c.G);assert.equal(typeof c.composeGems('ruby',lv),'string');assert.equal(JSON.stringify(c.G),before);}
  assert.deepEqual(Array.from({length:10},(_,i)=>c.gemL1Worth(i+1)),[1,3,9,27,81,324,1296,5184,20736,124416]);
- for(let lv=2;lv<=10;lv++)assert.equal(c.gemDismantleYield(lv),Math.floor(c.gemL1Worth(lv)*.7));
+ for(let lv=2;lv<=10;lv++)assert.equal(c.gemDismantleYield(lv),c.gemComposeInputCount(lv-1));
  assert.equal(c.gemL1Worth(Infinity),0);
 });
 

@@ -25,7 +25,7 @@ function loadContext() {
   ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js', 'js/combat.js', 'js/skills.js']
     .forEach((f) => vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), context, { filename: f }));
   context.G = {
-    player: { level: 1, loadout: [], talents: { levels: {}, potentialLevels: {} } },
+    player: { level: 1, loadout: [], talents: { levels: {} } },
     stage: { current: 1 }, tower: { active: false }
   };
   context.getStats = () => ({

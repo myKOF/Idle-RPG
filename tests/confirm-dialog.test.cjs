@@ -62,10 +62,10 @@ test('ui confirmations use shared custom modal instead of native confirm', () =>
   assert.doesNotMatch(ui, /\bconfirm\s*\(/);
   assert.match(ui, /function showConfirmDialog/);
   assert.match(ui, /showConfirmDialog\(\s*actTitle \+ '效果：/);
-  assert.match(ui, /showConfirmDialog\('確定拆解「'/);
+  assert.doesNotMatch(ui, /gdis-fused-list/); // 拆解改為免費無損九宮格，不再有融合寶石拆解確認入口。
   assert.match(ui, /showConfirmDialog\('確定要重新開局嗎/);
   assert.match(ui, /dialogClass: 'reincarnation-confirm'/);
-  assert.match(ui, /title: '寶石拆解確認'/);
+  assert.match(ui, /initGemWorkshopUi\(\)/);
   assert.match(ui, /title: '重新開局確認'/);
 });
 

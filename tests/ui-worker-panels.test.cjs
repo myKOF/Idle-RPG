@@ -25,6 +25,11 @@ test('寶石頁由 Worker panel 投影渲染並以 Command 修改狀態', () => 
   const renderGems = functionBody('renderGems');
   const renderShop = functionBody('renderGemShop');
   const countdown = functionBody('updateShopCountdown');
+  const workshop = fs.readFileSync(path.join(root, 'js/ui-gem-workshop.js'), 'utf8');
+  assert.match(workshop, /all \? 'gem\.composeAll' : 'gem\.compose'/);
+  assert.match(workshop, /startGemWorkshop\('dismantle', 'gem\.dismantleSlots'/);
+  assert.match(workshop, /sendGemUiCommand\(command, args/);
+  assert.doesNotMatch(workshop, /\b(?:composeGems|dismantleGems|addGem)\(/);
 
   assert.match(ui, /gems:\s*\['gems', 'header'\]/);
   assert.match(renderGems, /uiGemsPanelSnapshot\(\)/);
@@ -33,8 +38,7 @@ test('寶石頁由 Worker panel 投影渲染並以 Command 修改狀態', () => 
   assert.doesNotMatch(countdown, /\b(?:gemShop|shopHourlyReset)\(/);
 
   for (const command of [
-    'gem.compose', 'gem.composeAll', 'gem.convert', 'gem.dismantle',
-    'gem.dismantleAll', 'gem.dismantleFused', 'gem.fuse',
+    'gem.convert', 'gem.fuse',
     'gem.shopBuy', 'gem.shopBuyAll', 'gem.shopRefresh', 'gem.shopUpgrade'
   ]) {
     assert.match(ui, new RegExp("sendGemUiCommand\\(\\s*'" + command.replace('.', '\\.') + "'"));

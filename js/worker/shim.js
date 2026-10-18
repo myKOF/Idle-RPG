@@ -345,13 +345,6 @@ function clearTowerFloatLayers() { _diag(SHIM_DIAG.ui, 'clearTowerFloatLayers');
 function renderSaveList() { _diag(SHIM_DIAG.ui, 'renderSaveList'); }
 function refreshSaveFolderFilesV2() { _diag(SHIM_DIAG.ui, 'refreshSaveFolderFilesV2'); }
 
-/* potential.js 呼叫 ui.js 的文字產生函式，屬於相依方向顛倒（模擬層要 UI 幫忙產字串）。
-   P3 應把它搬進模擬層或改由主執行緒渲染時再產生。 */
-function describePotentialSkill() {
-  _diag(SHIM_DIAG.ui, 'describePotentialSkill');
-  return '';
-}
-
 /* ---- 掉落統計替身（combat.js 有 11 處 window.recordLootX）---- */
 function _lootRecorder(name) {
   return function () {

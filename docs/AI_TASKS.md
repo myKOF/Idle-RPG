@@ -1,5 +1,62 @@
 # AI_TASKS.md
 
+## POTENTIAL-REMOVE-20261018 — 完整移除潛力技能系統
+
+- Owner：Codex；Done；使用者明確要求刪除全部潛力技能、威能解鎖節點、點數與配置，追加指定清除 Skills 主表。單一開發者；目標衝突預檢乾淨，本副本其他寶石工作保留、共用檔只分段處理。
+- 允許：潛力執行期及所有直接引用、Skills Excel／CSV與輸出副本刪除、Talents／Status／參數表相關列或欄位清理、讀表工具、舊存檔遷移與退還已投入威能點、Worker指令／投影與協議版號、UI／CSS、必要快取、相依測試與現行公式／協議文件、PATCH及本紀錄。禁止：現行Skills2技能規則、無關寶石轉換、既有美術素材、其他副本與合併推送。
+- 驗收：舊存檔潛力資料／裝載清除且退點只一次，威能等級／威脅／滿級加倍不變，新角色無潛力欄位，舊指令拒絕，野外／高塔／UI皆無殘留；Skills表無法再生成，Excel與CSV一致且原生開啟無修復；必要回歸／參數錨點／Build／Console／diff後獨立Commit。後續使用者審閱整合。
+- 完成：刪除js/potential.js、Skills.xlsx／Skills.csv及outputs/skills-descriptions/Skills.xlsx；移除十個技能定義／戰鬥掛點、四個威能解鎖節點、舊技能點預算／UI／查詢與四條潛力指令，清掉專用狀態／模態窗／樣式／讀表schema與模擬器預覽引用。Skills2及技能熟練度保留；allDmgUp也被符文真言使用，改成通用名稱並保留正確效果。只留歷史存檔遷移所需的鍵名及退款成本，沒有可呼叫的潛力功能。
+- 存檔：現代存檔按舊十級制累計投入退回原威能池，刪除potentialLevels／舊點數／四個解鎖節點，裝載改為null並只去尾端空格；正常威能、熟練度與Skills2不受影響。早期powerThreatV1前存檔保留原威能及潛力金幣退款，連同四個已刪除的舊節點按歷史成本處理。重讀、存回及再次開機不重複退款。協議53→54、97→93指令，主頁與Worker快取同步。
+- Excel：使用原生Excel API刪Talents四列、Status五列（保留並改名通用allDmgUp）、參數表主頁／計算表各三列，清零轉生表舊技能上限e並清說明。保留原生格式與鏡像公式；刪列後預覽抓到編號鏈兩處#REF，依原始穩定ID修復兩條公式，原生全工作表公式錯誤掃描清零，兩輪正常開啟皆RepairMode=false。主表存續資料只43格變更（說明及21個停用e值），刪除三列，其餘數值保持；Excel／CSV往返一致，前後預覽已目視。
+- 驗證：待提交來源隔離匯出後，`node --test --test-reporter=tap`執行26份相依測試（potential-removal／worker-protocol／legacy-skill-removal-migration／power-rework／talents／skill-gcd／skill-cooldown-death／skill-mastery／skill2-ui／skill-hit／skill-hit-timing／skill-tree-layout／skill-vfx／boss-skill-lock／gm-skill-unlock／init-ui-smoke／offline-rewards／save-migration-persistence-verification／combat-log／player-event-float／float-no-skill-icon／esc-shortcut／rune-slots-config／gem-compose-all／pen-gem-flow／runeword-engine）236/236通過。`npm.cmd run build`533檔通過；`node tools/apply_params.cjs`558項、將變更0／錨點問題0（原564，移除六個廢棄接線）；`--check-anchors`擾動510個值後558錨點仍各命中一次；staged diff check通過。
+- 瀏覽器：隔離headless Edge／隨機localhost／待提交來源／seed1018，以正式Worker載入含潛力10級、舊解鎖2級與正常威能3級的測試存檔；原7點退回58點後65點，兩個現行技能原位保留、中間潛力格清空，熟練度123保留。技能頁無潛力區／點數／舊彈窗，威能頁無四個舊節點；已目視兩頁完整畫面。產品Console error／warning、pageerror及HTTP錯誤0（headless驅動診斷另外排除）。首次fixture因既有神位遷移將10轉校正為11轉、神鑄公告擋住頁面，加上隔離匯出漏params_version.txt而未完成流程；修正測試等待／關閉公告／補供既有版本檔後正式驗證通過，未為測試改產品規則。圖片保留本聊天visualizations/potential-removed-skills.png及potential-removed-talents.png，不使用真人存檔。
+- 並行隔離：GEM-CONVERT-HOLY-LIGHT於過程自行提交72cbb191；後續GEM-WORKSHOP-DOWNSTEP開始修改寶石區段。以72cbb191為共同base，UI／formula／protocol／sim.worker／index的功能區段做三方合併試跑，全部退出0、結果等於當時完整工作檔；不碰其寶石公式／派送／DOM／腳本／CSS／測試／文件。快取按潛力v54與工坊後續v55分段stage，只提交本次v54與相應來源快取；本副本保留工坊較新的工作版本。驗收以確切待提交內容進行，避免另一工作尚未完成的狀態干擾結果。
+- 唯讀未改：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、Skills2 Excel／CSV、符文真言與資料、headless engine、現行特效Preset／素材。自我Review確認共享allDmgUp未誤刪、野外／高塔冷卻仍推進、威能滿級／威脅正確、退款冪等且不重發早期點數、Skills生成入口明確拒絕舊表。無新增或修改美術素材，無素材庫變更／Commit。
+- 補充清理：移除VFX_COMBAT_DEFAULTS與作者目錄中僅潛力使用的chainLightning組，以及用途登記三筆雷霆過載標籤；保留天罰／迅雷穿刺共用的Preset素材。同步調整用途測試，要求仍存在的傳奇／神鑄兩種來源都必須實際掃到，不以舊總列數代替覆蓋檢查。`node --test --test-reporter=tap tests/talent-elem-attach.test.cjs tests/vfx-preset-usage.test.cjs`35/35通過，連同236主回歸為271項通過。另12份補充回歸曾有8項與HEAD隔離基準相同的既有失敗（控場舊配置、NPC乾跑及啟動器編碼）；本次新增的兩項相依失敗均已修正並回歸通過。
+- 最後盤點同步清除四份模擬策略JSON中的潛力升級規則／已刪節點／描述，及command_coverage.json的三個退休指令登記。保留並行工坊新增的gem.dismantleSlots登記在工作檔、未納入本Commit；覆蓋登記三方試跑乾淨。新增防止策略重新引用潛力的斷言，sim-command-coverage五項通過；完整相依合計276/276通過。這些是直接相依清理，沒有修改其他模擬策略規則。
+- 限制／交付：全庫嘗試存在大量既有失敗與耗時模擬案例，沒有宣稱全庫通過；本次236項相依回歸與編譯均通過。尚未實測其他瀏覽器／觸控或真人長期存檔；本次需求無未完成項。Commit為本紀錄所在`[Codex] refactor: 完整移除潛力技能系統與配置`，回覆附實際編號。可供Review／合併；未合併／推送，下一步整合並重新載入遊戲確認介面。
+
+## GEM-CONVERT-HOLY-LIGHT-20261018 — 降低三成亮度、即時聖光與結束後成功提示
+
+- Owner：Codex；Done，單一開發者。使用者要求亮度降低30%、黃白聖光、查明按下後全寶石先閃再播放原因，改為按下直接播放、約2秒結束後才提示成功。前置轉換白光已完成，工作區乾淨、七檔預檢乾淨。
+- 允許js/ui.js僅轉換展示／回覆與完成時序／避免來源重繪閃爍、css/gems.css光色強度與起始幀、index.html相應快取、tests/gem-convert-shift.test.cjs相關非同步回歸、PATCH.md／本紀錄與效果登記；禁止Worker／轉換比例／數值／存檔／素材及其他副本，不合併推送。
+- 方式：點擊立即啟動2秒處理光效，成功訊息須同時滿足動畫結束及權威成功；延遲回覆不重播，失敗取消展示／計時並解鎖，不報假成功。轉場期間保留上方來源節點及外觀，以inert／操作檢查鎖定，避免全列置灰重建。黃白光暈峰值強度為原70%，移除前段無光空檔。驗原版與新版即時來源樣式／節點及動畫啟動、正常／晚回覆／失敗／重試與既有兩秒／暫停／減少動態，回歸／Build／正式瀏覽器及Console後Commit；後續使用者重載驗收。
+- 根因：原runGemConvert先設pending並renderGems，gemConvertBlockReason回報busy令十階列全部disabled／is-unavailable，整列innerHTML重建、opacity從1變.32並grayscale(1)；權威庫存到達又重建整個左側清單。光效直到成功回覆才啟動，原keyframes前8%（160ms）opacity0，更像先閃一下才亮。不是寶石資料實際消失再回填。
+- 完成七檔：ui.js改為按下直接renderGemConvert並開始共用兩秒計時，保留本次來源／產出；renderGems在轉換展示期間保留十階列及左側類型列節點，以inert及既有操作檢查鎖定而不改來源外觀。新增finishGemConvert，需elapsed與acknowledged同時成立才清空展示、記錄成功並顯示綠字；早回覆不重播，晚回覆不重設計時，失敗取消計時並恢復操作，舊回呼按身分檢查不會清除重試中的畫面。
+- gems.css保留142px溢出範圍，白光改暖白核心RGB255/248/223與金黃外光；峰值opacity1→.7、各段強度及亮框光暈同比減30%，icon峰值brightness4→2.8。起始opacity.12、scale.55直接帶光，移除無光等待段。index UI173→174／CSS19→20，PATCH／用途登記與本紀錄同步；沒有Worker／Protocol／配方／存檔／素材變更，無素材庫Commit。
+- 指令／結果：`node --test tests/gem-convert-shift.test.cjs tests/gem-resonance-ui.test.cjs tests/gem-tooltip.test.cjs tests/init-ui-smoke.test.cjs tests/game-clock.test.cjs tests/game-menu.test.cjs tests/vfx-preset-usage.test.cjs`73/73通過。兩項舊非同步斷言依新規格改為立即播放／成功延後／失敗取消，新增晚回覆不得假報成功或重播回歸；保留原子性與重試斷言。最後補上左側清單保留後，相依gem-convert-shift／gem-resonance-ui／init-ui-smoke重跑29/29、`node --check js/ui.js`通過；`npm.cmd run build`535檔通過，`git diff --check`通過。未重跑全庫，沒有參數接線變更。
+- 瀏覽器：隔離headless Edge／隨機localhost／兩個全新context／seed新角色，正式UI／Worker；測試服務before僅回傳HEAD的index／UI／CSS，after回傳工作檔，其他檔相同，不讀真人存檔。GM供11顆一級紅寶石及5顆二級紅寶石等測試料；只在測試包裝gem.convert成功回覆延遲600ms，實際權威立即結算，故能重現快照早到與顯示等待。
+- before按下立即phase=pending、十階來源節點更換、opacity.32／grayscale(1)、白光animation=none；750ms時左側清單節點亦更換、白光仍opacity0而成功文字已先出現。after按下立即phase=playing、白光opacity.12，來源及清單節點維持相同、來源opacity1／filter none；回覆到達後仍同節點且不先顯示成功。峰值讀到opacity.7、暖白核心RGB255/248/223、寬142px。透過共享時鐘暫停及固定真實CSS動畫至1000ms取圖；沒有修改產品時長或加入測試旗標。
+- after恢復後原料及成品清空，才出現「轉換成功！」，第一輪只送一次命令、紅寶石餘1顆；另一輪reduced-motion無::after動畫仍正常完成後提示。Console warning／error、pageerror及HTTP錯誤0。預覽保留本聊天visualizations/gem-convert-holy-light.png；隔離瀏覽器／服務正常結束，臨時gem-holy-light-check.cjs核對確切路徑後移除。
+- 唯讀未改：AI規範／AGENTS／工作流／專屬文件、權威轉換與Worker回覆／dirty流程、GameClock／GameMenu、原樣式層疊與來源渲染、VFX用途掃描及上列回歸。自我Review確認來源鎖定只在轉換工具生效、其他工具仍可正常刷新；光效是處理中展示，權威失敗不假報成功；權威結算不延遲或重扣。無本次未完成項，可供Review／合併，未合併推送。限制：未實測其他瀏覽器／實體觸控／低階長戰及慢網實機；已以延遲回覆及非同步回歸驗邊界。
+- 交付：Commit為本紀錄所在`[Codex] fix: 轉換聖光降低三成並修正播放與成功時序`，回覆附編號；下一步整合後重載，確認按下連續亮起、暖色強度及兩秒後的綠字。
+
+## GEM-CONVERT-WHITE-FLASH-20261018 — 放大轉換白光並完全蓋住寶石
+
+- Owner：Codex；Done，單一開發者。使用者要求白光更大更明顯、可溢出格子，最亮時完全蓋住寶石圖示。前置GEM-CONVERT-GLOW完成，工作區乾淨、五檔預檢乾淨。
+- 允許css/gems.css僅白光層／發光／減少動態、index.html僅CSS快取、PATCH.md／本紀錄與docs/vfx/VFX_PRESET_USAGE_OUTSIDE_TABLES.md效果登記；禁止JS狀態／時長／數值／Worker／存檔／素材及其他副本，不合併推送。
+- 方式：播放中解除格子裁切，以格上方不透明白色核心及大範圍漸層光暈覆蓋整個icon；保持原2秒及成功文字，沿原具名時長。原料及產出共用，不新增Preset／素材。驗收正式Worker轉換、最亮時核心覆蓋／溢出、末段清除／綠字、減少動態與回歸／Build／Console後Commit。後續使用者重載檢視。
+- 完成五檔：gems.css播放中overflow改visible，加入z-index3的::after白光，漸層28px半徑內為完全不透明白色、外緣延至72px；峰值38%～68%固定全亮，末段擴散淡出，原亮框及icon增亮同步加強。狀態文字置較高層保持可讀，減少動態關閉新白光、保留原靜態亮框。index僅gems CSS18→19；PATCH／用途登記與本紀錄同步。沒有JS／時長／權威規則／素材變更，無素材庫Commit。
+- 指令／結果：`node --test tests/gem-convert-shift.test.cjs tests/game-clock.test.cjs tests/init-ui-smoke.test.cjs`17/17通過，`npm.cmd run build`535檔通過，`git diff --check`通過。純CSS效果微調沿既有回歸及真實瀏覽器像素驗收，未新增鏡像測試或改動斷言。
+- 瀏覽器：隔離headless Edge／隨機localhost／seed新角色、正式Worker轉換11顆一級紅寶石＋5顆二級藍寶石為5／2顆蛋白石，原料各留1顆。測試於播放1秒透過共享時鐘凍結，固定真實CSS動畫currentTime=1000ms取圖；四格白光computed尺寸皆142×142px（原格48×48）、opacity1、z-index3、overflow visible。Pillow唯讀檢查整個36×36 icon矩形，所有RGB通道最小值分別254／255／254／255，確認整顆被白光蓋住；超出各格邊界16px的取樣仍為197～202亮灰，確認光暈未被格子裁切。僅讀取像素，沒有編修圖片。
+- 恢復時鐘後展示正常清除、綠字仍在，減少動態::after為display:none；Console warning／error、pageerror及HTTP錯誤0。預覽保留本聊天visualizations/gem-convert-white-flash.png。隔離瀏覽器／服務關閉，臨時gem-white-flash-check.cjs及meta.json核對確切路徑後清理。
+- 唯讀未改：AI規範／AGENTS／工作流與既有任務、ui.js展示狀態與共用計時、原樣式堆疊／disabled、VFX用途文件與GameClock暫停、上列回歸；未修改JS／Worker／數值／存檔或其他副本。自我Review確認不透明核心覆蓋icon四角、外光不裁切、裝飾不接滑鼠事件、綠字位於光層之上。限制：未實測其他瀏覽器／實體觸控及低階裝置效能，本次無未完成項或已知新增功能風險。
+- 交付：Commit為本紀錄所在`[Codex] feat: 放大寶石轉換白光並覆蓋圖示`，回覆附編號；可供Review／合併，未合併推送。下一步整合重載，檢視白光峰值與格外光暈。
+
+## GEM-CONVERT-GLOW-20261018 — 轉換成功保留寶石並播放兩秒發光轉場
+
+- Owner：Codex；Done，單一開發者。使用者要求轉換後寶石保留約2秒、發光轉場結束才消失，同時於產出下方以綠色顯示「轉換成功！」。前置GEM-CONVERT-TWO已完成，工作區乾淨、七檔預檢乾淨。
+- 允許js/ui.js僅轉換展示狀態／互動保護與計時、css/gems.css轉場與成功文字、index.html訊息區／快取、tests/gem-convert-shift.test.cjs相關非同步回歸、PATCH.md／本紀錄與docs/vfx/VFX_PRESET_USAGE_OUTSIDE_TABLES.md程式寫死UI效果登記；禁止Worker／數值／配方／Protocol／存檔／素材及其他副本，不合併推送。
+- 方式：送出即固定本次原料及產出，避免權威快照先到而清空；僅成功回覆啟動共用時鐘2秒CSS發光，期間鎖定重複提交／清空／取放／目標切換，結束只清展示。失敗即解除鎖定且不播放成功，訊息保留至下一次操作；CSS與清理時間讀同一具名時長，無新Preset／圖像素材。
+- 驗收：快照早於回覆／成功2秒期間多次刷新／只發一次指令／失敗及重試／切頁／暫停與減少動態、真實庫存即時結算且不重扣、綠字位置與動畫後清除；必要回歸／Build／隔離瀏覽器／Console／diff後Commit。後續使用者審閱整合。
+- 完成七檔：ui.js新增pending／playing展示狀態，送出即固定原料及目標；成功才清暫放資料並播放，利用GameClock與GEM_CONVERT_FX_MS同時供CSS及清理時間，期滿只清展示，不修改庫存。期間上方來源、原料取下、清空、目標及提交皆保護；錯誤沿原統一回報、解除展示鎖，保留合法暫放原料供重試。成功文字使用setTextIfChanged，避免刷新重複播報；保留至下一次放入／清空／換目標。
+- gems.css以程式自製鑲格亮框／光暈、寶石增亮、末段淡出，減少動態則靜態亮框、仍保留2秒；效果已登記docs/vfx/VFX_PRESET_USAGE_OUTSIDE_TABLES.md的介面轉場段，沒有新增Preset／圖像素材或素材庫變更／素材庫Commit。index加入輸出下方綠色role=status訊息區及包層，UI快取172→173、gems CSS17→18；PATCH與本紀錄同步。無Worker／Protocol／配方／數值／存檔格式變更。
+- 指令／結果：`node --test tests/gem-convert-shift.test.cjs tests/gem-tooltip.test.cjs tests/gem-compose-all.test.cjs tests/gem-resonance-ui.test.cjs tests/init-ui-smoke.test.cjs tests/game-menu.test.cjs tests/vfx-preset-usage.test.cjs`76/76通過；新增兩項非同步回歸驗快照先到／回覆延遲、2秒單次計時、多次刷新、重複提交、正確成功文字、完成後解除鎖、權威拒絕／連線失敗及重試。最後setTextIfChanged調整後，`node --test tests/gem-convert-shift.test.cjs tests/game-clock.test.cjs`15/15；合計82個不同案例通過。`npm.cmd run build`535檔通過，`git diff --check`通過；未重跑全庫，轉換實際規則未改。
+- 瀏覽器：隔離headless Edge／隨機localhost／seed新角色、正式UI／Worker，GM供原料，不讀真人存檔。11顆一級紅寶石與5顆二級藍寶石實轉5／2顆蛋白石，兩種原料各留1顆；回覆後兩個原料格、兩個成品格與綠字仍存在，CSS為2s，刷新四次維持相同DOM／動畫物件，連點／程式重送只發一次命令。一般完成時間以共享遊戲時鐘量得2006.1ms（非效能保證），期滿原料／產出清空、綠字保留；切工具後返回仍按原期滿清理。
+- 同次瀏覽器另外兩輪真實轉換各只送一次（總3次）：GameMenu暫停超過2200ms仍保持playing與寶石，恢復後依剩餘時間完成；reduced-motion動畫名none，頁內計時517ms仍保留寶石、2秒後清空。Console warning／error、pageerror及HTTP錯誤0。為截取明確動畫中畫面，測試於播放500ms透過共享時鐘暫停取圖再恢復，不增加產品測試旗標；初次跨工具往返的截圖已超過展示期間，改由頁內計時／取圖，正式程式未為此延長時長。預覽保留本聊天visualizations/gem-convert-glow.png。
+- 唯讀未改：AI規範／AGENTS／工作流／專屬文件、原sendGemUiCommand錯誤及權威面板更新、GameClock／GameMenu及全域CSS暫停、轉換純計畫與Worker規則、原VFX用途掃描及上述回歸。自我Review確認錯誤不顯示成功、展示資料與權威庫存分離、刷新不重新計時、舊回呼按狀態身分核對，不會清除後續操作。隔離瀏覽器／服務已關閉；臨時gem-convert-glow-check.cjs核對確切路徑後清理，沒有新增素材或其他工作區修改。
+- 交付：Commit為本紀錄所在`[Codex] feat: 寶石轉換加入兩秒發光與成功提示`，回覆附編號；本次需求無未完成項，可供Review／合併，未合併推送。限制：未實測其他瀏覽器／實體觸控及真人長時間遊玩；必要回歸／正式UI已通過。下一步整合後重載轉換頁，驗收發光、延後清空與綠字。
+
 ## NPC-SHIELD-THIN-20261018 — 護盾黑底修正、亮邊減半與BOSS解鎖技能驗證
 
 - Owner：Codex；Done，單一開發者。使用者要求NPC護盾光點去掉黑方塊、整體亮邊厚度減半，追加檢查BOSS會否施放解鎖技能，特別第32層冰霜女皇的霹靂一閃。前置既有NPC護盾／BOSS技能已完成，fetch與目標衝突預檢乾淨。
@@ -10793,3 +10850,27 @@ Worker 存活且頁面正常完成載入。
 - Done????`node --test tests/gem-resonance.test.cjs tests/battle-camera-distance.test.cjs tests/battle-fullscreen.test.cjs tests/fullscreen-toggle.test.cjs tests/esc-shortcut.test.cjs tests/stage-jump-ui.test.cjs tests/tower-battlefield.test.cjs tests/elite-engine.test.cjs tests/rock-wall-art.test.cjs` 67/67?`node --test tests/gem-resonance.test.cjs tests/worker*.test.cjs` ??41/41?`npm.cmd run build` 533??????Worker?????? `node --check js/worker/sim.worker.js` ???`git diff --check` ??????????????
 - ???`node tools/vfx/export-assets.cjs --check` ??????????????? `node tools/vfx/export-assets.cjs` ??check???353 Preset?185???????? images/vfx/assets/.vfx-export-root.json??????????????????????asset_files??Excel?CSV???JS???????????Excel????????
 - ??????? index.html?js/bridge.js?js/worker/sim.worker.js?images/vfx/assets/.vfx-export-root.json?????????staged??????????????index?CSS???Worker import?HEAD?MERGE_HEAD????????????index unmerged entries??controller???????????Commit???controller??merge????????????????????????canonical????????????????worktree?ownership??????trust?
+
+
+## GEM-WORKSHOP-DOWNSTEP-20261018 — 合成聖光與無損前一階拆解九宮格
+
+- Owner：Codex；Done，單一開發者。使用者要求合成沿相同黃白聖光、播放2秒後綠字「合成成功！」，指定右上說明；拆解改同轉換九宮格與上方點擊／拖入／Shift單顆，只保留清空及一鍵拆解，免費無損拆回前一階、數量沿合成配方，指定兩行右上說明。
+- 前置既有轉換／十階合成完成；本副本POTENTIAL-REMOVE進行中，開始時其未提交修改存在，全部保留。預檢未發現其他副本衝突；共享UI寶石區、formula寶石公式、Worker寶石派送、參數寶石列與潛力移除不同區段且無語意相依，修改前以HEAD為base／本次候選為ours／當時工作檔為theirs跑git merge-file -p，僅退出0才寫入。版本／快取等同值區段先不改，待對方完成或取得明確合併授權。
+- 允許js/ui-gem-workshop.js、ui.js寶石接線、item.js／formula.js拆解、css/gems.css、index寶石DOM／必要快取、Worker Protocol及sim.worker.js相應寶石指令／紀錄／快取、bridge.js快取、game_parameters Excel／CSV僅寶石拆解說明／參數連結、tools/apply_params.cjs僅拆解具名連結、tests/gem-workshop.test.cjs／gem-compose-all.test.cjs／gem-tooltip.test.cjs／pen-gem-flow.test.cjs／worker-protocol.test.cjs必要相依回歸、WORKER_PROTOCOL／game_formula／PATCH／效果用途及本紀錄。禁止潛力移除本體／其他數值／存檔格式／素材／其他副本，不合併推送。
+- 方式：一般拆解共用gemComposeInputCount(lv-1)，2～5級回3顆、6～9級回4顆、10級回6顆；批量先驗全部初始庫存再扣全部原料、最後加全部產出，不使用新產出連拆。下方只顯示依原料推導的寶石與數量，不需種類／階級下拉或融合清單。舊融合拆解底層相容保留，從寶石頁移除入口。合成／拆解沿既有2秒計時及確認成功雙條件，不重扣或假報成功；上方來源保留節點避免閃爍。
+- 驗收：全階逆配方／免費／無損／混種類多階不連拆／非法階級數量／重複槽超扣／關閉種類／原子失敗、Worker與UI預覽同源；合成單次／全部的2秒、快照先到、失敗／重試／晚回覆、上方點擊／Shift／拖曳、清空與禁用一級、精確Tooltip／綠字／窄版／Console；Excel原生API逐格、格式與正常重開、參數乾跑／錨點／必要全套（修改連結時）／Build／diff後獨立Commit。後續使用者審閱整合，無新增素材。
+
+- 版本授權：使用者明確回覆「允許合併版本，保留兩項功能」，依AI_RULES3.2合併Protocol55（潛力移除後93＋寶石拆解1＝94條）、Worker標記保留potential-remove並追加gem-workshop，Bridge299／UI176／formula65／item25；其他潛力改動原樣保留。
+
+- 追加相依範圍：tests/gem-icons.test.cjs與confirm-dialog.test.cjs同步已移除的融合拆解入口；tests/ui-worker-panels.test.cjs與combat-log.test.cjs改驗新工坊仍走Worker指令與factory紀錄。combat-log與潛力移除為不同區段，git merge-file -p退出0；potential-removal.test.cjs只同步已核准Protocol55／94條，不改潛力斷言。scripts/sim/command_coverage.json只登記新拆解指令沿現行「策略無拆解規則」，其他項不改。
+- 完成實作：js/ui-gem-workshop.js集中合成／拆解計時與UI，合成單次／全部保留原配方直到聖光2秒且權威成功；失敗取消計時、不報成功，來源DOM保留且inert。拆解48px九宮格支援上方點入／原生拖曳／Shift單顆取放、清空、固定前階產出預覽，僅兩按鈕、禁用一級，舊下拉／融合清單／確認入口移除。兩份指定提示逐字保留於右上驚嘆號。純CSS共用既有70%黃白聖光，登記用途，無新素材或Preset。
+- 數值／資料：gemDismantleYield／Plan共用合成逆配方；item先驗所有初始庫存及重複槽合計，再扣原料／發產出，失敗原子拒絕，金幣不變。舊單顆／全部API同步前階及紀錄階級，融合API保留舊相容行為。參數連結由一般拆解a移到融合a（0.7不變），一般不再使用保留率；Excel原生API僅改來源4格＋公式鏡像4格，兩次正常模式重開無RepairMode、其餘全格／公式／Shape／尺寸一致，styles.xml及表格版面位元相同；CSV僅兩列同步，未覆蓋潛力任務編號修正。
+- 指令／驗證：`node --test tests/potential-removal.test.cjs tests/worker-protocol.test.cjs tests/gem*.test.cjs tests/pen-gem-flow.test.cjs tests/confirm-dialog.test.cjs tests/combat-log.test.cjs tests/init-ui-smoke.test.cjs`143/143；新工坊9項含正式createEngine指令、全階逆配方與無損等值、多種多階不連拆、非法整批不扣、2秒／晚回覆／失敗重試／DOM鎖定。`node tools/apply_params.cjs --dry-run`558一致／0變更／0錨點問題；`--check-anchors`擾動510值後558錨點全部唯一命中；`npm.cmd run build`535檔通過，diff檢查通過。
+- 正式瀏覽器：隔離localhost新角色、真實Worker／快照／GameClock，不讀真人存檔；單次／全部合成立即聖光、來源節點相同、聖光中無成功文字、結束後綠字；黃白CSS色與暫停展示確認。拆解Shift放1、普通放滿、Shift取1、清空、原生拖入、混類型及預覽／實際數量一致，金幣保持，禁用一級、九格／兩按鈕確認，1366與390寬格子不溢出，Console error／warning0。預覽在本聊天visualizations/gem-compose-holy.png與gem-dismantle-grid.png，已視覺檢查。
+
+- 全套稽核：逐檔外部30秒watchdog、4並行跑完441份測試，首輪333份全過／97份失敗／11份逾時；回報4361項3914過／446失敗／1跳過，未把此結果宣稱全綠。以唯讀fs攔截還原本次修改、保留潛力移除狀態，比對全部108份未通過檔；找到6項本次新增差異（合成指令改由工坊派送、移除融合清單／確認、指令數量／版號及策略登記），已同步規格並回跑通過。VFX rename／save兩份原逾時隔離重跑65項63過／1跳過／1同基線canonical失敗，沒有新逾時；其餘9份逾時均在基線重現。不相關既有／潛力移除中回歸（含sim指令表三條舊potential登記、裝備快照替身等）不擴大修正、保留原斷言。上述UI面板與策略套件回跑只剩相同基線3項，本次寶石子項已過；沒有本次未解的新失敗。
+- 唯讀檢查：專案規範／工作流／prompts/codex.md、既有轉換狀態機及聖光、GameClock、共鳴UI與純公式、Worker派送／engine、Excel工具、寶石資料與上述測試；未修改潛力本體／真人存檔或引入美術。限制為未做真人長時間操作／全部裝置，既有全套未全綠如上。後續審查合併；本需求無未完成功能，Commit為本紀錄所在 `[Codex] feat: 寶石合成聖光與無損前階拆解`，回覆附實際編號；可供Review／合併，不合併或推送。
+
+- 收尾共享檢查：潛力任務後續自行移除模擬策略舊potential登記，與本次gem.dismantleSlots新增為不同區段；HEAD／本次候選／現工作檔三方乾跑0且結果等於現檔。策略覆蓋套件回跑5/5通過，UI面板寶石子項通過、只剩兩項相同基線的裝備替身失敗。其暫存內容保留，沒有把其他任務納入寶石提交。
+
+- 最終交付：潛力任務先獨立提交362c33f5，寶石27檔差異逐檔確認，沒有潛力本體變更；其完整功能保留。最終補跑上述寶石／Worker／潛力相依及sim-command-coverage共148/148，參數558一致／0變更。修改檔案：PATCH.md、config/CSV/game_parameters.csv、config/Excel/game_parameters.xlsx、css/gems.css、docs/AI_TASKS.md、docs/WORKER_PROTOCOL.md、docs/vfx/VFX_PRESET_USAGE_OUTSIDE_TABLES.md、game_formula.md、index.html、js/bridge.js、js/formula.js、js/item.js、js/ui.js、js/worker/protocol.js、js/worker/sim.worker.js、scripts/sim/command_coverage.json、tests/combat-log.test.cjs、tests/confirm-dialog.test.cjs、tests/gem-compose-all.test.cjs、tests/gem-icons.test.cjs、tests/pen-gem-flow.test.cjs、tests/potential-removal.test.cjs、tests/ui-worker-panels.test.cjs、tests/worker-protocol.test.cjs、tools/apply_params.cjs、js/ui-gem-workshop.js、tests/gem-workshop.test.cjs。任務GEM-WORKSHOP-DOWNSTEP-20261018完成、無未完成需求，可審查合併；建議重載遊戲驗收。
