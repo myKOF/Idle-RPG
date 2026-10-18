@@ -1,5 +1,54 @@
 # AI_TASKS.md
 
+## NPC-SHIELD-THIN-20261018 — 護盾黑底修正、亮邊減半與BOSS解鎖技能驗證
+
+- Owner：Codex；Done，單一開發者。使用者要求NPC護盾光點去掉黑方塊、整體亮邊厚度減半，追加檢查BOSS會否施放解鎖技能，特別第32層冰霜女皇的霹靂一閃。前置既有NPC護盾／BOSS技能已完成，fetch與目標衝突預檢乾淨。
+- 允許en-gold-dome Preset、兩張原創細邊SVG及素材庫對應素材／Preset／SOURCE、asset-index／shipped-assets與匯出標記、vfx-runtime資料版號／index與Editor快取、boss-player-skill回歸及本紀錄。BOSS先唯讀驗證；若有實際缺陷再預檢並記錄具體修正。禁止戰鬥數值／其他技能／Excel／Protocol／存檔及其他副本，不合併推送。
+- 方式：黑底星芒改add，球殼與外圈以原尺寸／同外緣的原創SVG將半高寬各減半；保留金色、光暈、星芒與持續／免疫規則。Mote Studio可存取但為像素編輯器，此次精確環形漸層採原創SVG，無外部新素材。素材庫先保存、正式scanner增量索引／export匯出及先素材庫後遊戲Commit。
+- 驗收：Core／Pixi正常及放大預覽、像素半高寬、透明／混色、Editor舊頁防覆寫、BOSS全部解鎖對照與實際自動施放、32層全技能60秒、相關回歸／Build／Console／diff。保留另一聊天GEM-CONVERT-TWO修改，index／本紀錄只分段提交並做三方試跑，後續使用者重載與審閱整合。
+- 完成：en-gold-dome的shell／rim換為兩張512×512原創白色漸層SVG、glints normal→add。保持原位置／縮放／tint／alpha／發射量／持續及免疫規則；SVG亮邊外緣對齊原圖，中心改為透明薄膜。sharp對水平半高寬插值量測：shell24.4118→12.2698px（50.26%）、rim33.4070→16.8974px（50.58%），原縮放不變，因此各顯示倍率均維持減半。資料版本20261018-npc-shield-thin，主頁／Editor Runtime快取皆1.0.213；無Worker／Protocol／存檔與戰鬥邏輯變更。
+- BOSS：全部69個解鎖選項對照與主動／被動施放既有回歸通過。新增BPS-16透過正式startTowerFight／towerTick跑32層，種子1／32／167／2026／1018各保留全部NPC隨機技能與原冷卻，僅提高測試玩家及BOSS血量以打完整場；五場均自動宣告霹靂一閃、派送表定beam-gale-thunder-flash且實際命中扣血，無吞例外。沒有發現需修正的BOSS程式缺陷。首次fixture只改實體血量，被正常回血上限還原而提前死亡；同步測試getStats生命上限後通過，未啟用無敵或放寬扣血斷言。
+- 指令／結果：`node --test tests/boss-player-skill.test.cjs tests/elite-data.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/vfx-core.test.cjs`187/187；`npm.cmd run build`535檔通過；`node tools/vfx/export-assets.cjs --check`353份Preset／187素材最新；雙倉diff check通過。Editor guard涵蓋舊分頁／外部Preset更新拒寫、備份與重載保護；交付提醒先下載未存編輯備份再重載。
+- 目視：獨立headless Edge／隨機localhost，正式Core／Pixi後端載入實際Preset／shipped素材，固定同seed及1.2秒，1倍與2.5倍前後比較可見黑方塊消失／兩層細邊；使用示意角色，非正式實戰截圖。Console error／warning及pageerror均0。首輪預覽fixture使用錯誤的play位置鍵及favicon404，已修正測試頁再重跑，正式程式未因此改動。預覽保存本聊天visualizations/npc-shield-before-after.png；臨時服務／瀏覽器及Mote檢查頁已關閉，不讀真人存檔。
+- 素材：正式scanner只掃新資料夾，增量加入兩項事實後正式export匯出，兩端SVG與Preset SHA256一致。原assetCount欄2450但實際2461項，重算為2463（只新增2項，無額外素材列）。素材庫Preset落後於遊戲，這次同步遊戲已有loop／位置／glow／混色設定並記錄SOURCE，未反向覆蓋遊戲。未使用新第三方素材；Mote為像素編輯器，精確向量環形採SVG。
+- 唯讀未改：AI規範／工作流／prompts/codex.md、Status.eInvuln／Skills2超神配置、elite_data／elite／elite_boss／recipes／tower／battle-renderer／Worker載入、Core／Pixi、作者工具／scanner／exporter及Editor儲存防護。修改檔案為Preset、兩張匯出SVG、asset-index／shipped-assets、Runtime版號、主頁／Editor快取、boss-player-skill測試及本紀錄；素材庫為兩SVG／SOURCE、Preset與舊SOURCE增補。無未完成需求或已知新增風險；限制為未做真人長戰／其他瀏覽器及實體裝置。可供Review／合併，未合併推送；下一步重載遊戲及妥善備份後重載編輯器。
+- 並行交接：GEM-CONVERT-TWO於過程中自行完成1987184f，順帶提交本任務初始紀錄；本次只提交其後本任務變更。index不同script與UI區段無語意相依，以c0c52178作base／本次Runtime hunk作ours／1987184f作theirs，git merge-file -p退出0且結果等於目前index；本紀錄GEM-CONVERT-TWO起的其他全部區段與1987184f雜湊相同，完整保留對方結果。素材庫先提交7ed897e；遊戲Commit為本紀錄所在[Codex] fix提交，回覆附編號。雙倉僅提交本次內容，無未完成項；臨時驗證腳本與合併試跑檔已清理，保留正式比較預覽。
+
+## GEM-CONVERT-TWO-20261018 — 九宮格轉換改為同階二換一
+
+- Owner：Codex；Done，單一開發者。使用者要求刪除全部類型合成入口／合計，轉換依示意縮小九宮格、右上驚嘆號精確說明、目標下方圖示數量、上方十階列點擊／拖入及Shift單顆操作，移除下方庫存池／排序／文字預覽。
+- 前置既有十階合成已完成，工作區乾淨、13檔衝突預檢乾淨。允許js/formula.js／item.js僅共用二換一計畫與權威扣除、js/ui.js／css/gems.css／index.html上述介面、Worker／Bridge／index相應快取、tests/gem-convert-stack.test.cjs／gem-convert-shift.test.cjs／gem-compose-all.test.cjs、game_formula.md／PATCH.md與本紀錄；禁止其他數值／配置表／Protocol／存檔格式／素材及其他副本，不合併推送。
+- 方式：同階不同種類可合併湊2顆，逐階向下取整、只扣完整組，多出單顆保留庫存；預覽與權威共用純函式。先完整驗證數量／階級／種類與合計庫存再原子扣除，保留既有命令形狀。上方列轉換時顯示尚可放入數，拖曳只用圖示，清空與轉換分置兩欄底部。移除全部類型合成玩家入口，保留舊命令相容。
+- 驗收：混種類同階／不同階不混／奇數／不足兩顆／重複槽超扣／無效或關閉寶石／上限／同目標類型、預覽一致；實際Worker、點擊／Shift／拖曳／取下／清空／目標切換與窄版、Tooltip／共鳴回歸／Build／diff後Commit。無素材變更，後續使用者審閱整合。
+- 擴充：唯讀發現game_parameters第234列仍宣稱數量不變；兩檔追加預檢乾淨，允許config/CSV/game_parameters.csv與config/Excel/game_parameters.xlsx僅同步該列公式文字／說明，保留a/b等既有值與接線。Excel使用原生API改「計算表」來源兩格，主表公式不改，正常重開／資料格式往返驗證；不新增或變更參數接線。
+- 相依回歸擴充：tests/gem-tooltip.test.cjs原測已移除的庫存池、tests/pen-gem-flow.test.cjs原預期2換2；兩檔預檢乾淨，允許同步驗新版上方列／九宮格／成品Tooltip及穿透寶石2換1，不放寬原業務斷言。
+- 完成17檔：formula.js提供gemConvertPlan，各階獨立2換1、依槽序扣完整組；item.js驗整數／階級／開放種類／重複槽合計庫存後才扣除，沒有成組時不改狀態，同目標種類亦照實扣2加1。ui.js刪合成全部類型按鈕綁定及合計；轉換來源改上方十階列，顯示尚可放入數、保留真實持有量Tooltip，滿九格仍可追加既有槽，庫存／容量失效即禁用；原生拖影只有同尺寸圖示、拖放重驗與取消清理。九宮格保留未變節點，預覽共用計畫、按數字階級排序，少於2顆的階級不顯示產出。
+- index.html／gems.css依示意改48px九宮格與成品格，清空／轉換置兩欄底部，右上驚嘆號精確指定提示，僅保留Shift操作文字，移除原料池／排序／舊文字預覽／成功訊息框（成功沿既有日誌回饋）。Worker formula／item import更新gem-convert-two，Bridge版本保留築牆／十階合成標記並追加convert-two；index formula63／item24／UI172／Bridge297／gems CSS17，Protocol及存檔格式不變。game_formula.md、PATCH及本紀錄同步，無素材／素材庫變更或素材庫Commit。
+- 參數Excel／CSV僅改轉換列的規則及說明，a/b等所有數值與接線不變。原生Excel改計算表E235/F235、主表E234/F234沿原公式重算；兩輪正常重開皆RepairMode=false。原生全格Value2／Formula比較只兩個來源文字及兩個鏡像快取變更；唯讀ZIP驗styles.xml、兩表結構／列欄設定逐位元／結構一致，主表全列與CSV語意一致。首次來源列誤認234，寫入前名稱哨兵即中止並恢復原位元組，確認真正來源235後完成，沒有寫壞公式或資料，無手工XML寫入。使用記憶體備份及還原，無新增Excel暫存檔。
+- 指令／結果：`node --test tests/gem-convert-stack.test.cjs tests/gem-convert-shift.test.cjs tests/gem-compose-all.test.cjs tests/gem-enabled.test.cjs tests/gem-resonance-ui.test.cjs tests/gem-resonance.test.cjs tests/gem-tooltip.test.cjs tests/pen-gem-flow.test.cjs tests/init-ui-smoke.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs`105/105通過；新增5項涵蓋跨種類同階／不同階／奇數／十級／原子拒絕／重複槽／同目標與正式Worker、上方限制與拖影／取消／失效重驗。舊Shift指令替身補缺少的bossFightBlocksCommand，不放寬斷言。最後持有量Tooltip修正後相依28項重跑通過；`npm.cmd run build`535檔通過，`node tools/apply_params.cjs`564項一致、將變更0、錨點問題0；本輪未改接線，無需因8.2重跑全庫。`git diff --check`通過。
+- 瀏覽器：隔離headless Edge／隨機localhost／seed新角色、正式UI／Worker，GM供測試原料，不讀真人存檔。Shift連點放1顆／取1顆、一般整堆、清空、上方原生拖入、混種類同階湊組、多階成品圖示／數量、真正扣除及奇數餘數均通過。紅1×11＋藍1×7＋紅2×5＋紅10×3實轉蛋白石1級9顆／2級2顆／10級1顆，紅2及紅10各留1顆；九個原料堆上限1000與滿格正常。九格computed尺寸皆48×48，提示hover內容精確、原清單不在DOM；1920×1000／1366×768／390×844排版量測元件內含（沿既有全頁縮放）。共鳴49孔正常、全部類型合成按鈕不存在，Console warning／error、pageerror、HTTP錯誤0。初次GM回傳被測試誤認null，改依正式回傳ok=true後完整驗收；產品未因此修改。
+- 唯讀未改：AI規範／AGENTS／工作流／專屬文件、Worker協議與派送、共鳴原生拖曳及規則、舊融合／商店、CSS原庫存格尺寸、參數接線、離線策略與相關原測試。自我Review確認預覽與扣除同源、錯誤不部分扣庫存；舊全部類型命令僅保留相容、玩家入口已刪。預覽保留本聊天visualizations/gem-convert-two.png；臨時腳本gem-convert-two-check.cjs已核對確切路徑後移除、隔離服務／瀏覽器正常結束，未新增殘留測試產物。
+- 交付：Commit為本紀錄所在`[Codex] feat: 寶石轉換改為二換一並精簡工坊介面`，回覆附編號；本次需求無未完成項，可供Review／合併，未合併推送。限制：未重跑已有失敗的全庫、未做其他瀏覽器／實體觸控及長時間離線策略平衡驗證；必要回歸及正式UI已通過。下一步整合後重載寶石頁驗收二換一及新九宮格。
+
+## GEM-COMPOSE-TEN-20261018 — 全十階直接合成與精簡寶石頁籤
+
+- Owner：Codex；Done，單一開發者。使用者要求6～9級成品各耗4顆前一階、10級耗6顆9級，保留2～5級既有配方；隱藏寶石頁融合／商店；追加所有配方均照圖逐顆原料＋金幣箭頭＋成品顯示。前置既有寶石功能已完成，工作區乾淨、16檔預檢乾淨。
+- 允許js/data.js／formula.js／item.js僅合成配方與拆解等值、js/ui.js合成／工具入口、Worker批量紀錄／import、Bridge／index快取與寶石頁入口／提示、config/Excel/game_parameters.xlsx與CSV合成配方／高階金幣／拆解說明、tools/apply_params.cjs相應具名接線、tests/gem-compose-all.test.cjs／pen-gem-flow.test.cjs／gem-resonance-ui.test.cjs、game_formula.md／PATCH.md／本紀錄；禁止其他系統數值／神鑄舊功能／Worker Protocol／存檔格式／素材與其他副本，不合併推送。
+- 方式：共用逐階素材數量供權威單次／批量、UI配方／數量／紀錄及拆解成本；原金幣前五筆保留，高階沿既有逐階三倍趨勢延伸。保持全部類型逐種類、不混合素材。融合／商店的底層功能與舊資料保留，只移除寶石介面頁籤及入口。Excel以專案原生API逐格更新並正常重開驗證。
+- 驗收：每個素材階級數量不足／恰足／餘數／金幣不足／10級封頂／單次／同類及全部類型批量／紀錄一致；配方逐顆顯示3／4／6原料，四個可見工具、隱藏功能不能選入。參數基線562項將變更0／錨點問題0；新增接線後乾跑、擾動錨點與全套回歸（依AI_RULES8.2），必要測試／Build／表格往返／隔離瀏覽器後Commit。無素材變更。
+- 實作16檔：data.js新增高階／最高階素材參數並延伸金幣陣列；formula.js新增gemComposeInputCount共用來源階級配方，gemL1Worth改為逐階連乘並拒絕非整數／超界輸入，拆解沿原保留率計算。item.js單次與全部種類候選均讀同一配方，無效階級／素材不足／金幣不足不寫狀態。Worker批量紀錄按實際素材數計量，既有批量上限／逐種類處理與命令形狀保留。
+- UI：所有可升階配方逐顆畫原料圖示，金幣箭頭與成品沿原示意；不再把高階導向神鑄，最高階三個合成按鈕禁用。數量預覽、可合成次數、單次與批量按鈕共用配方。index移除融合／商店頁籤、內層面板標hidden，GEM_TOOLS只允許compose／convert／dismantle／resonance，拒絕程式選入隱藏工具；融合／商店底層與存檔資料保留。data／formula／item／UI／Bridge快取分別86／62／23／171／296，Worker相應import更新gem-compose-ten，Bridge保留築牆標記並更新本次版本；Protocol不變。
+- 參數：CSV只改「8-寶石」合成素材、金幣、一般拆解說明三列；新增兩個scalar具名錨點，原金幣陣列接線延伸a～i。乾跑564項（一致564、將變更0、錨點問題0），較基線562只增兩項；--check-anchors擾動515個數值後，564個錨點仍各命中一次。依新合成成本，十級一級等值124416、拆解87091；五級及以下、融合等值與舊神鑄功能不變，game_formula.md與PATCH同步。
+- Excel：主表game_parameters由「計算表」公式連結，改用原生Excel API只寫計算表來源12格（E/F/H/I233、E/F/L/M/N/O234、E/F236），重算後主表相應12格自動更新；兩輪正常模式重開逐格／公式驗證通過。與原檔零修改原生往返基線唯讀比對，所有公式、styles.xml、兩表結構／列欄設定相同，只有12來源值及12鏡像快取值不同，沒有手工XML寫入。原檔一格有2.2000000000000002／CSV2.2的浮點表示差異，數值相同，保留來源型別／格式；344列與CSV語意一致。初次泛用工具會將主表公式替換為值，驗證發現後已從本次原始備份恢復，改寫真正來源，最終公式完整保留。
+- 必要測試：`node --test tests/gem-compose-all.test.cjs tests/gem-enabled.test.cjs tests/gem-resonance-ui.test.cjs tests/pen-gem-flow.test.cjs tests/init-ui-smoke.test.cjs`48/48通過，新增2項各階資源原子性／高階批量與紀錄回歸；舊配方視覺斷言及穿透寶石拆解固定值依新規格同步。`npm.cmd run build`535檔通過，`git diff --check`通過。
+- 瀏覽器：隔離headless Edge／隨機localhost／seed新角色，正式index／UI／Worker，GM供測試金幣及素材，不讀真人存檔。1～9級素材均逐顆顯示正確3／4／6原料、金幣箭頭與下一階；實際5→6至9→10各合成一次，逐次扣4／4／4／4／6及8100／24300／72900／218700／656100金幣。9級同類批量產出2顆並留餘數，全部類型再合成藍寶石2顆且不混種類；10級三按鈕均禁用。可見工具恰四個、兩個隱藏工具不可選入，共鳴49孔保持正常。1920×900／1366×768／390×844的六原料＋箭頭／成品皆內含；Console warning／error、pageerror及HTTP錯誤0。預覽本聊天visualizations/gem-compose-ten.png。
+- 全套回歸（依8.2要求）：已執行`node --test --test-concurrency=4 "tests/*.test.cjs"`，長時間同步模擬持續佔用執行槽；Node --test-timeout亦不能及時結束同步模擬，確認後僅結束本次測試的父子行程。改以外部逐檔30秒watchdog／4並行跑完全部441檔，再以唯讀fs hook載入修改前f063dd91的16個來源／測試／參數檔重跑同一批，不修改工作區或原斷言。hook先驗原合成套件8/8，確認真正讀到舊配方。
+- 本版：341檔通過／92檔失敗／8檔超時，完成統計的4465項為4022通過／441失敗／2跳過；基線：340檔通過／92檔失敗／9檔超時，完成統計4417項為3977通過／439失敗／1跳過。兩版失敗名稱僅VFX Editor因隨機禁用埠與超時有差異：本版案例3／4為fetch bad port、基線該檔30秒超時；以`--test-name-pattern "^(3 |4 |16b )" tests/vfx-editor-save.test.cjs`針對兩版重跑，均2通過／1相同既有失敗（ground-ice-spike非canonical），3／4皆恢復通過；其餘失敗名稱一致，未觀察到新增回歸，不擴大修復或放寬斷言。
+- 兩版共有8個30秒超時檔：equip-no-duplicate、sim-bag-cache、sim-evaluator、sim-dead-stock、sim-policy-smoke、sync-auto-conflicts、sync-index-recovery、vfx-preset-coverage；基線另有vfx-editor-save超時。全套未全綠，不能把超時視為通過。相依九套gem-compose-all／gem-enabled／gem-resonance／gem-shop／gem-resonance-ui／pen-gem-flow／init-ui-smoke／worker-protocol／worker-shim合計95/95通過。
+- 自我Review／唯讀未改：AI規範／工作流／Agent文件、Excel主表引用公式與原生更新工具、神鑄舊路徑、融合／商店底層、共鳴規則／拖放／Tooltip／現有快取版本、Worker協議與存檔格式及其餘全套測試。無素材或素材庫變更、無素材庫Commit。隔離服務／瀏覽器及測試行程已結束；正式預覽保留本聊天visualizations，未讀真人存檔或改動其他副本。
+- 暫存清理限制：自動安全審核拒絕已檢查路徑的遞迴清理，改為僅清理目錄內已核對的測試日誌亦被拒絕，工具僅回報blocked by policy，未提供更具體理由；沒有繞過限制。系統Temp下gem-compose-ten-*的Excel副本／腳本／基準JSON／日誌及gem-compose-ten-suite-output仍保留；另有本次泛用Excel工具在讀取JSON失敗前留下的excel-update-2ab404a8-10d5-4aa5-b25b-1c49555a9634.xlsx，已比對雜湊確認是本次原始工作簿副本，亦未刪除。這些都在工作區外，未stage或納入交付。
+- 交付：Commit為本紀錄所在`[Codex] feat: 寶石直接合成至十級並隱藏融合商店頁籤`，回覆附編號；功能需求完成，可供Review／合併，未合併推送。已知限制為上述既有全套失敗／超時、受阻的暫存清理及未實測其他瀏覽器／實體觸控，必要95項與正式UI操作已通過。下一步整合後重載寶石頁，選5～9級素材確認4／6顆配方及四個頁籤。
+
 ## GEM-RESONANCE-BACKPLATE-LOAD-20261018 — 提前載入並保留共鳴背板
 
 - Owner：Codex；Done，單一開發者。使用者回報每次切入共鳴六角背板晚幾秒出現並詢問原因。查到2,070,831-byte PNG沒有預載、寶石面板渲染才插入SVG image，選孔更新又重建整個SVG。前置共鳴已完成，工作區乾淨、五檔預檢乾淨。

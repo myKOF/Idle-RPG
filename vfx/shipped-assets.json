@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 185,
+  "assetCount": 187,
   "assets": [
     {
       "assetId": "claude-authored/dragon-devour/vortex-ring.png",
@@ -187,6 +187,20 @@
       "package": "codex-authored",
       "contentHash": "sha256:4c226fe5bcc428ad8859f49832c1a933e31450dc0bafca8ab33610d15d3ea876",
       "fileSize": 28122
+    },
+    {
+      "assetId": "codex-authored/npc-shield/thin-rim.svg",
+      "relativePath": "codex-authored/npc-shield/thin-rim.svg",
+      "package": "codex-authored",
+      "contentHash": "sha256:5ca389108341ba646779f7ce708192c6f1c3ff0e84ee276cd76e7a2a805f85bc",
+      "fileSize": 787
+    },
+    {
+      "assetId": "codex-authored/npc-shield/thin-shell.svg",
+      "relativePath": "codex-authored/npc-shield/thin-shell.svg",
+      "package": "codex-authored",
+      "contentHash": "sha256:e4ef1e367c92cddef026028dc0f3eaec8371a61f0e9a9604fa8749adedcd0dfc",
+      "fileSize": 769
     },
     {
       "assetId": "codex-authored/rockarmor-objects/glow.png",

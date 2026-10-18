@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="css/ashen-forge-flat.css?v=1.0.3">
   <link rel="stylesheet" href="css/battle-hud.css?v=1.0.18">
   <link rel="stylesheet" href="css/runeword.css?v=1.0.6">
-  <link rel="stylesheet" href="css/gems.css?v=1.0.16">
+  <link rel="stylesheet" href="css/gems.css?v=1.0.17">
   <link rel="stylesheet" href="css/dialogs.css?v=1.0.3">
 </head>
 
@@ -338,7 +338,7 @@
             <h2 class="pg-title">寶石</h2>
             <span class="pg-pill">持有 <b id="gem-total">0</b> 顆</span>
             <span class="pg-pill">已收集 <b id="gem-kinds">0</b> 種</span>
-            <button type="button" class="pg-help" aria-label="寶石說明" data-tt-title="寶石" data-tt-desc="寶石可鑲嵌到裝備的插槽：到「裝備」分頁點選裝備即可鑲嵌，點擊已鑲寶石可取下；「寶石鑲嵌效率」屬性會放大鑲嵌加成。分解裝備時，鑲在上面的寶石會自動取回。6～10 階為神鑄寶石，只能在神鑄法陣以 6 顆同種同階合成。">?</button>
+            <button type="button" class="pg-help" aria-label="寶石說明" data-tt-title="寶石" data-tt-desc="寶石可鑲嵌到裝備的插槽：到「裝備」分頁點選裝備即可鑲嵌，點擊已鑲寶石可取下；「寶石鑲嵌效率」屬性會放大鑲嵌加成。分解裝備時，鑲在上面的寶石會自動取回。合成可直接升至十級，所需素材與金幣見當前配方。">?</button>
           </div>
           <div class="gx">
             <div class="gx-lib">
@@ -353,41 +353,34 @@
                 <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="compose">合成</button>
                 <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="convert">轉換</button>
                 <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="dismantle">拆解</button>
-                <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="fusion" id="gem-tool-fusion">融合</button>
-                <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="shop">商店</button>
                 <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="resonance">共鳴</button>
               </div>
 
               <div class="gx-panel" data-gem-panel="compose">
-                <div class="hint">消耗 3 顆「同種類、同等級」寶石＋金幣 → 1 顆同種類的<b>下一階</b>寶石。種類就是左邊選的寶石，階級<b>點上方的寶石圖</b>選擇（例如點五級，下面就是五級升六級；五級以上要到神鑄）。</div>
+                <div class="hint">消耗「同種類、同等級」寶石＋金幣 → 1 顆同種類的<b>下一階</b>寶石。種類選左邊的寶石，階級<b>點上方的寶石圖</b>；原料數量及金幣見下方配方，最高可合成十級。</div>
                 <div id="fuse-recipe" class="gx-recipe"></div>
                 <div class="node-info" id="fuse-info"></div>
                 <div class="gx-actions">
                   <button id="fuse-btn" class="btn">合成一次</button>
                   <button id="fuse-all-btn" class="btn">全部合成</button>
-                  <button id="fuse-alltypes-btn" class="btn" data-tip="這一階的所有寶石種類逐種合成">全部類型合成</button>
                 </div>
               </div>
 
               <div class="gx-panel" data-gem-panel="convert">
-                <div class="hint">把九宮格中的寶石一次轉換為右側選擇的種類（<b>同階轉換</b>、數量不變）。每格放一種「同種類同等級」寶石、上限 1000 顆；點下方庫存寶石放入，點格子取出。<b>融合寶石無法轉換</b>。</div>
+                <button type="button" class="pg-help gconv-help" aria-label="寶石轉換說明" data-tt-title="寶石轉換" data-tt-desc="選擇上方的寶石放入九宮格中進行轉換，2個任意寶石可轉換1個指定寶石。">!</button>
                 <div class="gconv-layout">
-                  <div id="gconv-grid" class="gconv-grid"></div>
-                  <div class="gconv-side">
-                    <div class="gconv-arrow" aria-hidden="true">➜</div>
-                    <div class="sec-sub">轉換為</div>
-                    <select id="gconv-target"></select>
-                    <button id="gconv-btn" class="btn">一鍵轉換</button>
+                  <div class="gconv-input">
+                    <div id="gconv-grid" class="gconv-grid" aria-label="轉換原料九宮格"></div>
                     <button id="gconv-clear" class="btn sm">清空</button>
-                    <div id="gconv-result" class="gem-result">尚未進行轉換</div>
+                  </div>
+                  <div class="gconv-side">
+                    <label class="sec-sub" for="gconv-target">轉換為</label>
+                    <select id="gconv-target"></select>
+                    <div id="gconv-output" aria-label="轉換後可獲得的寶石"></div>
+                    <button id="gconv-btn" class="btn">一鍵轉換</button>
                   </div>
                 </div>
-                <div class="node-info" id="gconv-info"></div>
-                <div class="sec-sub gx-pool-head">
-                  <span>庫存寶石（點擊放入九宮格）</span>
-                  <button id="btn-gem-sort" class="btn sm">排序：類型優先</button>
-                </div>
-                <div id="gconv-pool" class="chip-row"></div>
+                <div class="gconv-shortcut" id="gconv-info">Shift+左鍵：單顆放入／取下</div>
               </div>
 
               <div class="gx-panel" data-gem-panel="dismantle">
@@ -418,7 +411,7 @@
                 <div id="gdis-result" class="gem-result gem-result-3">尚未進行拆解</div>
               </div>
 
-              <div class="gx-panel" data-gem-panel="fusion">
+              <div class="gx-panel" data-gem-panel="fusion" hidden>
                 <div id="gx-fusion-locked" class="gx-locked">寶石融合在 3 轉後開放。</div>
                 <div id="gem-fusion-panel" style="display:none">
                   <div class="hint">兩顆不同屬性 → 雙屬性融合寶石（數值隨機，不一定更高）；兩顆同屬性 → 數值介於兩者之間、上限 2 倍。雙屬性寶石只能與相同雙屬性、或含其屬性的單一寶石融合。基礎成功率 60%，成品每成功融合一次 -10%（最低 10%）。<b>失敗時較弱的寶石會降解</b>為 4~8 顆 1 級或 2~4 顆 2 級同屬性寶石。5 階以上寶石均可，含神鑄寶石。</div>
@@ -447,7 +440,7 @@
                 </div>
               </div>
 
-              <div class="gx-panel" data-gem-panel="shop">
+              <div class="gx-panel" data-gem-panel="shop" hidden>
                 <div class="shop-title-row">
                   <div class="sec-sub">商店刷新 <span class="dim-text" id="shop-reset-cd"></span></div>
                   <div class="shop-upgrade-box">
@@ -944,11 +937,11 @@
          special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/util.js?v=1.0.3"></script>
   <script src="js/ui-scale.js?v=1.0.1"></script>
-  <script src="js/data.js?v=1.0.85"></script>
+  <script src="js/data.js?v=1.0.86"></script>
   <script src="js/status.js?v=1.0.33"></script>
   <script src="js/runeword_data.js?v=1.0.15"></script>
   <script src="js/gem_resonance_data.js?v=1.0.1"></script>
-  <script src="js/formula.js?v=1.0.61"></script>
+  <script src="js/formula.js?v=1.0.63"></script>
   <script src="js/battlefield.js?v=1.4.13"></script>
   <script src="js/game-clock.js?v=1.0.1"></script>
   <script src="js/vfx.js?v=1.0.81"></script>
@@ -961,7 +954,7 @@
   <script src="js/vfx-water-tornado.js?v=1.0.4"></script>
   <script src="js/vfx-core.js?v=20261007-deform-prep"></script>
   <script src="js/vfx-pixi-backend.js?v=20261007-deform-prep"></script>
-  <script src="js/vfx-runtime.js?v=1.0.212"></script>
+  <script src="js/vfx-runtime.js?v=1.0.213"></script>
   <!-- 高塔的第二個 Pixi 疊層：卡片版面沒有座標，尺寸規則也另立一組（見檔頭）。 -->
   <script src="js/vfx-tower.js?v=1.0.3"></script>
   <!-- 戰場地形裝飾（地面色塊／擺件／天氣）：battle-renderer 的 init() 會建立它。
@@ -974,7 +967,7 @@
   <script src="js/battle-elite.js?v=1.0.7"></script>
   <script src="js/battle-renderer.js?v=1.6.189"></script>
   <script src="js/stats.js?v=1.0.4"></script>
-  <script src="js/item.js?v=1.0.22"></script>
+  <script src="js/item.js?v=1.0.24"></script>
   <script src="js/gem_resonance.js?v=1.0.3"></script>
   <script src="js/runeword.js?v=1.0.14"></script>
   <script src="js/skills.js?v=1.0.42"></script>
@@ -987,7 +980,7 @@
   <script src="js/potential.js?v=1.0.9"></script>
   <script src="js/tower.js?v=1.0.31"></script>
   <script src="js/save.js?v=1.0.17"></script>
-  <script src="js/ui.js?v=1.0.170"></script>
+  <script src="js/ui.js?v=1.0.172"></script>
   <script src="js/ui-runeword.js?v=1.0.11"></script>
   <script src="js/ui-gem-resonance.js?v=1.0.15"></script>
   <script src="js/param_autoreload.js"></script>
@@ -1002,7 +995,7 @@
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
-  <script src="js/bridge.js?v=1.0.295"></script>
+  <script src="js/bridge.js?v=1.0.297"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->

@@ -17,8 +17,8 @@ if (typeof GameClock !== 'undefined') {
   globalThis.clearTimeout = GameClock.clearTimeout;
 }
 importScripts(
-  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261016-npc-retaliate-refill', '../runeword_data.js?v=20261013-rune-all-elem-color', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261014-state-status', '../formula.js?v=20261017-gem-resonance-wall-merge', '../battlefield.js?v=20261016-npc-retaliate-refill', '../stats.js?v=20261003-rename-weineng',
-  '../item.js?v=20261015-gem-enabled', '../gem_resonance.js?v=20261018-resonance-hole-effects','../runeword.js?v=20261014-develop-integration',
+  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261018-gem-compose-ten', '../runeword_data.js?v=20261013-rune-all-elem-color', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261014-state-status', '../formula.js?v=20261018-gem-convert-two', '../battlefield.js?v=20261016-npc-retaliate-refill', '../stats.js?v=20261003-rename-weineng',
+  '../item.js?v=20261018-gem-convert-two', '../gem_resonance.js?v=20261018-resonance-hole-effects','../runeword.js?v=20261014-develop-integration',
   '../skills.js?v=20261015-boss-player-skill', '../skills2.js?v=20261018-wall-natural-narrow', '../elite_data.js?v=20261016-wall-rock', '../talents.js?v=20261015-boss-player-skill',
   '../player.js?v=20261017-gem-resonance-wall-merge', '../special_rules.js',
   '../combat.js?v=20261016-npc-retaliate-refill', '../elite.js?v=20261018-wall-natural-narrow', '../elite_boss.js?v=20261015-boss-player-skill', '../elite_boss_recipes.js?v=20261015-boss-player-skill', '../legendary.js?v=20261012-indomitable-guard', '../potential.js?v=20261005-cc-decay-count', '../tower.js?v=20261016-npc-vision',
@@ -1670,7 +1670,7 @@ var COMMAND_IMPL = {
     if (made > 0) {
       // 「全部類型寶石」不是 GEM_TYPES 的鍵，gemLabel 查不到會拋例外（合成已完成卻回報失敗）。
       var all = a.type === GEM_TYPE_ALL;
-      blog('♻️ 全部合成：' + (all ? GEM_NAMES[a.level] + '全部類型寶石' : gemLabel(a.type, a.level)) + ' ×' + (made * GEM_COMPOSE_INPUT_COUNT) +
+      blog('♻️ 全部合成：' + (all ? GEM_NAMES[a.level] + '全部類型寶石' : gemLabel(a.type, a.level)) + ' ×' + (made * gemComposeInputCount(a.level)) +
         ' → ' + (all ? GEM_NAMES[a.level + 1] + '同類型寶石' : gemLabel(a.type, a.level + 1)) + ' ×' + made, 'good', 'factory');
     }
     UI.dirty.gems = true;

@@ -105,7 +105,7 @@ test('3. 拆解 (Dismantle) 穿透寶石流程', () => {
 
   // 拆解 10 階穿透寶石（損失 30%）
   const expectedYield = ctx.gemDismantleYield(10);
-  assert.equal(expectedYield, 13778, '10 階寶石拆解依 30% 損耗公式應獲得 13778 顆 1 階寶石');
+  assert.equal(expectedYield, 87091, '10 階寶石拆解依逐階合成成本及30%損耗換算');
 
   const res = ctx.dismantleGem('piercePhys', 10);
   assert.equal(res.n, expectedYield);
@@ -147,7 +147,7 @@ test('5. 九宮格轉換 (Grid Transform) 穿透寶石流程', () => {
   const res = ctx.convertGems(convertSlots, 'piercePhys');
   assert.equal(res, null, '九宮格轉換為 piercePhys 應成功');
   assert.equal(ctx.gemCount('ruby', 5), 0, '原紅寶石應被消耗');
-  assert.equal(ctx.gemCount('piercePhys', 5), 2, '應獲得 2 顆 5 階物理穿透寶石');
+  assert.equal(ctx.gemCount('piercePhys', 5), 1, '2顆原料應獲得1顆同階物理穿透寶石');
 });
 
 test('6. 融合 (Fusion) 穿透寶石流程與 fusedStatValue 5 階等值倍率運算', () => {

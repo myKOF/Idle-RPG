@@ -45,16 +45,19 @@ function gemLabel(type, lv) {
 
 function fuseableGemTypesAtLevel(lv) {
   var types = [];
+  var needed = gemComposeInputCount(lv);
+  if (!needed) return types;
   for (var type in GEM_TYPES) {
-    if (isGemEnabled(type) && gemCount(type, lv) >= GEM_COMPOSE_INPUT_COUNT) types.push(type);
+    if (isGemEnabled(type) && gemCount(type, lv) >= needed) types.push(type);
   }
   return types;
 }
 
-// 寶石合成：3 顆同種同級 → 1 顆同種下一級（消耗金幣）。回傳 null=成功
+// 寶石合成：依階級配方消耗同種同級素材與金幣，產出同種下一級。回傳 null=成功。
 // 選擇全部類型時，每次挑選一種目前足夠的寶石，絕不混合種類。
 function composeGems(type, lv) {
-  if (lv < 1 || lv >= GEM_MAX_LEVEL) return '五級寶石已是最高階';
+  var needed = gemComposeInputCount(lv);
+  if (!needed) return lv === GEM_FORGE_MAX_LEVEL ? '十級寶石已是最高階' : '無效寶石階級';
   if (type === GEM_TYPE_ALL) {
     var availableTypes = fuseableGemTypesAtLevel(lv);
     if (!availableTypes.length) return '沒有任何種類的寶石足夠合成';
@@ -62,11 +65,11 @@ function composeGems(type, lv) {
   }
   if (!GEM_TYPES[type]) return '未知寶石種類';
   if (!isGemEnabled(type)) return '此寶石已關閉，無法合成';
-  if (gemCount(type, lv) < GEM_COMPOSE_INPUT_COUNT) return '「' + GEM_NAMES[lv] + GEM_TYPES[type].name + '」不足 ' + GEM_COMPOSE_INPUT_COUNT + ' 顆';
+  if (gemCount(type, lv) < needed) return '「' + GEM_NAMES[lv] + GEM_TYPES[type].name + '」不足 ' + needed + ' 顆';
   var cost = FUSE_GOLD_COST[lv];
   if (G.player.gold < cost) return '金幣不足（需要 ' + fmt(cost) + '）';
   G.player.gold -= cost;
-  addGem(type, lv, -GEM_COMPOSE_INPUT_COUNT);
+  addGem(type, lv, -needed);
   addGem(type, lv + 1, 1);
   // 任務進度：累計合成次數（與 upgraded / enchanted 同住 factory.stats）
   if (G.factory && G.factory.stats) G.factory.stats.gemComposed = (G.factory.stats.gemComposed || 0) + 1;
@@ -75,24 +78,30 @@ function composeGems(type, lv) {
 }
 
 /* 寶石轉換（九宮格）：多組 {type, lv, n} 一次性轉換為目標種類
-   規則：同階轉換、數量不變；每格一種（同種同級）上限 1000 顆；融合寶石不可轉換。
+   規則：同階任意兩顆換一顆指定種類，未成組不扣；每格同種同級，融合寶石不可轉換。
    回傳 null=成功，否則錯誤訊息 */
 function convertGems(slots, targetType) {
-  if (!GEM_TYPES[targetType]) return '未知目標種類';
+  if (!Object.prototype.hasOwnProperty.call(GEM_TYPES, targetType)) return '未知目標種類';
   if (!isGemEnabled(targetType)) return '目標寶石已關閉，無法轉換';
-  if (!slots || !slots.length) return '請先將寶石放入九宮格';
+  if (!Array.isArray(slots) || !slots.length) return '請先將寶石放入九宮格';
   if (slots.length > GEM_CONVERT_SLOTS) return '最多 ' + GEM_CONVERT_SLOTS + ' 格';
+  var requested = {};
   for (var i = 0; i < slots.length; i++) {
     var s = slots[i];
-    if (!GEM_TYPES[s.type]) return '未知寶石種類';
+    if (!s || !Object.prototype.hasOwnProperty.call(GEM_TYPES, s.type)) return '未知寶石種類';
     if (!isGemEnabled(s.type)) return '此寶石已關閉，無法轉換';
-    if (!(s.n >= 1) || s.n > GEM_CONVERT_STACK) return '每格 1~' + GEM_CONVERT_STACK + ' 顆';
-    if (gemCount(s.type, s.lv) < s.n) return '「' + GEM_NAMES[s.lv] + GEM_TYPES[s.type].name + '」庫存不足';
+    if (!Number.isInteger(s.lv) || s.lv < 1 || s.lv > GEM_FORGE_MAX_LEVEL) return '寶石階級須為 1~' + GEM_FORGE_MAX_LEVEL;
+    if (!Number.isInteger(s.n) || s.n < 1 || s.n > GEM_CONVERT_STACK) return '每格 1~' + GEM_CONVERT_STACK + ' 顆';
+    var key = s.type + ':' + s.lv;
+    requested[key] = (requested[key] || 0) + s.n;
+    if (gemCount(s.type, s.lv) < requested[key]) return '「' + GEM_NAMES[s.lv] + GEM_TYPES[s.type].name + '」庫存不足';
   }
-  slots.forEach(function (s) {
+  var plan = gemConvertPlan(slots);
+  if (!plan.consumed.length) return '同階寶石至少需要 ' + GEM_CONVERT_INPUT_COUNT + ' 顆';
+  plan.consumed.forEach(function (s) {
     addGem(s.type, s.lv, -s.n);
-    addGem(targetType, s.lv, s.n);
   });
+  Object.keys(plan.outputs).forEach(function (lv) { addGem(targetType, Number(lv), plan.outputs[lv]); });
   UI.dirty.gems = true; UI.dirty.header = true;
   return null;
 }

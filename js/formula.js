@@ -2350,16 +2350,46 @@ function maxAffixesFor(it) {
   return MAX_AFFIXES + bonus;
 }
 
-/* ---- 寶石合成 / 轉換 / 拆解換算（2026-07-09 改版）----
-   合成鏈：GEM_COMPOSE_INPUT_COUNT 顆同種同級 → 1 顆同種下一級（消耗金幣 FUSE_GOLD_COST[素材等級]），
-   故 1 顆 N 級寶石的合成總成本 = GEM_COMPOSE_INPUT_COUNT^(N-1) 顆 1 級（3 合 1 時，5 級 = 81 顆）。 */
+/* ---- 寶石合成 / 轉換 / 拆解換算 ----
+   合成素材數依目標階級決定；金幣依 FUSE_GOLD_COST[素材等級]。
+   一級等值為各階合成素材數的連乘，拆解沿用同一成本。 */
 var GEM_CONVERT_SLOTS = 9;     // 寶石轉換九宮格格數
 var GEM_CONVERT_STACK = 1000;   // 每格同種同級寶石上限
+var GEM_CONVERT_INPUT_COUNT = 2; // 同階任意兩顆換一顆指定種類
+
+// 共用轉換計畫：各階獨立湊組，依槽位順序扣完整組，未成組寶石不扣除。
+// 呼叫端先驗證槽位種類、階級、數量及庫存；本函式不讀寫狀態。
+function gemConvertPlan(slots) {
+  var totals = {}, outputs = {}, remainingToConsume = {}, consumed = [], remaining = [];
+  slots.forEach(function (s) { totals[s.lv] = (totals[s.lv] || 0) + s.n; });
+  Object.keys(totals).forEach(function (lv) {
+    var n = Math.floor(totals[lv] / GEM_CONVERT_INPUT_COUNT);
+    if (n) outputs[lv] = n;
+    remainingToConsume[lv] = n * GEM_CONVERT_INPUT_COUNT;
+  });
+  slots.forEach(function (s) {
+    var n = Math.min(s.n, remainingToConsume[s.lv]);
+    if (n) consumed.push({ type: s.type, lv: s.lv, n: n });
+    if (n < s.n) remaining.push({ type: s.type, lv: s.lv, n: s.n - n });
+    remainingToConsume[s.lv] -= n;
+  });
+  return { outputs: outputs, consumed: consumed, remaining: remaining };
+}
 var GEM_DISMANTLE_KEEP = 0.7;  // 拆解保留比例（損失 30%）
 
-// 1 顆 lv 級寶石換算多少顆 1 級寶石
-function gemL1Worth(lv) { return Math.pow(GEM_COMPOSE_INPUT_COUNT, lv - 1); }
-// 一般寶石拆解產出（同種 1 級寶石）= ⌊合成比例^(等級-1) × 回收率⌋
+function gemComposeInputCount(lv) {
+  if (!Number.isInteger(lv) || lv < 1 || lv >= GEM_FORGE_MAX_LEVEL) return 0;
+  if (lv === GEM_FORGE_MAX_LEVEL - 1) return GEM_COMPOSE_TOP_INPUT_COUNT;
+  return lv >= GEM_MAX_LEVEL ? GEM_COMPOSE_HIGH_INPUT_COUNT : GEM_COMPOSE_INPUT_COUNT;
+}
+// 1 顆 lv 級寶石換算多少顆 1 級寶石。
+function gemL1Worth(lv) {
+  if (!Number.isInteger(lv) || lv < 1 || lv > GEM_FORGE_MAX_LEVEL) return 0;
+  var worth = 1;
+  for (var from = 1; from < lv; from++) worth *= gemComposeInputCount(from);
+  return worth;
+}
+// 一般寶石拆解產出（同種 1 級寶石）= ⌊合成成本 × 回收率⌋。
 function gemDismantleYield(lv) { return Math.floor(gemL1Worth(lv) * GEM_DISMANTLE_KEEP); }
 /* 融合寶石拆解：融合素材樹的葉子都是 5 階寶石（3 合 1 時各值 81 顆 1 級）。
    fg.leaves 記錄素材 5 階總數（融合時雙方相加；不計成功率，一律視為 100%）

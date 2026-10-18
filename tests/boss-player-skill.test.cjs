@@ -337,6 +337,44 @@ test('BPS-14 野外菁英也能帶玩家技能（GM 測試用）：效果照常�
   assert.equal(c.ELITE_RT.errors, 0);
 });
 
+test('BPS-16 第32層冰霜女皇保留全部NPC技能，整場會自動施放霹靂一閃並派送雷電與命中', () => {
+  for (const seed of [1, 32, 167, 2026, 1018]) {
+    const c = loadEliteEnv();
+    let state = seed;
+    c.Math = Object.create(Math);
+    c.Math.random = () => ((state = (Math.imul(state, 1664525) + 1013904223) >>> 0) / 4294967296);
+    const errors = [], logs = [], hits = [];
+    c.console = { error: (...a) => errors.push(a.map(String).join(' ')), log() {}, warn() {} };
+    c.blog = (t) => logs.push(String(t));
+    const originalStats = c.getStats;
+    c.getStats = () => Object.assign({}, originalStats(), { hp: 1e15 });
+    run(c, 'G.tower.highest = 31; G.player.gold = 1e30; UI = { dirty: {} }; startTowerFight(32);' +
+      'TOWER.boss.hp = TOWER.boss.maxHp = 1e15; TOWER.player.hp = 1e15;');
+    const b = c.TOWER.boss;
+    assert.match(b.name, /冰霜女皇/);
+    assert.ok(b.affixes.includes('ps_thunderFlash'));
+    assert.ok(b.affixes.some((id) => id.startsWith('e_')), '保留NPC技能競爭施放時機');
+    const original = c.eliteHitPlayer;
+    c.eliteHitPlayer = (m, o) => {
+      const before = c.TOWER.player.hp;
+      const result = original(m, o);
+      if (o.label === '霹靂一閃') hits.push({ mult: o.mult, lost: before - c.TOWER.player.hp });
+      return result;
+    };
+    for (let i = 0; i < 600 && c.G.tower.active && !c.TOWER.showingResult; i++) {
+      c.GT = Math.round((c.GT + 0.1) * 1000) / 1000;
+      c.towerTick(0.1);
+    }
+    assert.ok(c.TOWER.elapsed > 50, 'seed ' + seed + ' 打滿整場');
+    assert.ok(logs.some((l) => /施放【💨霹靂一閃】/.test(l)), 'seed ' + seed + ' 自動施放');
+    const beam = c.SKILLS2.gale.ult.find((u) => u.id === 'thunderFlash').triggerVfx.attack;
+    assert.ok(c.vfx.some((v) => Object.values(v.vfx || {}).includes(beam)), 'seed ' + seed + ' 雷電特效');
+    assert.ok(hits.some((h) => h.mult > 0 && h.lost > 0), 'seed ' + seed + ' 實際命中扣血');
+    assert.deepEqual(errors, []);
+    assert.equal(c.ELITE_RT.errors, 0);
+  }
+});
+
 test('BPS-15 整體強度旋鈕在參數表「封魔塔BOSS玩家技能」一列，與 data.js ELITE_GROUP、程式預設值三處一致', () => {
   const csv = fs.readFileSync(path.join(root, 'config/CSV/game_parameters.csv'), 'utf8');
   const line = csv.split(/\r?\n/).find((l) => l.indexOf(',4-菁英群組,封魔塔BOSS玩家技能,') >= 0);

@@ -23,12 +23,12 @@ function makeGemInventory(gemTypes) {
   return gems;
 }
 
-test('全部類型合成：逐種類處理、不會混合不同種類；合成頁改用獨立的「全部類型合成」按鈕', () => {
+test('移除全部類型合成介面，舊指令仍逐種類處理、不混合種類', () => {
   const root = path.resolve(__dirname, '..');
   const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
   const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  assert.match(index, /id="fuse-alltypes-btn"/);
-  assert.match(ui, /\$id\('fuse-alltypes-btn'\)[\s\S]*?gem\.composeAll[\s\S]*?type: GEM_TYPE_ALL/);
+  assert.doesNotMatch(index, /id="fuse-alltypes-btn"/);
+  assert.doesNotMatch(ui, /fuse-alltypes-btn|全部類型合計可合成/);
 
   const context = loadGameContext();
   const gems = makeGemInventory(context.GEM_TYPES);
@@ -74,7 +74,7 @@ test('合成頁沒有種類與等級下拉：種類取自寶石庫的選擇，�
   assert.match(ui, /function fuseTarget\(\) \{ return \{ t: UI\.gemBrowse\.sel, lv: UI\.gemBrowse\.fuseLv \|\| 1 \}; \}/);
 });
 
-test('合成配方：1～4 階 3 合 1，五階以上顯示「×6 神鑄」並升到下一階，十階是最高階', () => {
+test('合成配方逐顆顯示原料與金幣箭頭，所有階級均可直接合成，十階是最高階', () => {
   const root = path.resolve(__dirname, '..');
   const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
   const context = loadGameContext();
@@ -95,11 +95,12 @@ test('合成配方：1～4 階 3 合 1，五階以上顯示「×6 神鑄」並�
   assert.match(r1, /gem-ruby-02\.png/);
   assert.match(r1, /gx-recipe-cost"><img[^>]*>100/, '一級升二級的金幣');
 
-  const r5 = context.fuseRecipeHTML('ruby', 5);
-  assert.match(r5, /gem-ruby-05\.png/);
-  assert.match(r5, /gem-ruby-06\.png/, '五級升六級');
-  assert.match(r5, /gx-recipe-mult">×6</, '神鑄要 6 顆');
-  assert.match(r5, /gx-recipe-cost">神鑄</);
+  for (let lv=1;lv<10;lv++) {
+    const recipe=context.fuseRecipeHTML('ruby',lv),needed=lv<5?3:lv<9?4:6;
+    assert.equal(count(recipe,/class="gx-socket(?: is-out)?"/g),needed+1,'source '+lv+' 原料＋成品');
+    assert.match(recipe,/gx-recipe-arrow/);assert.ok(recipe.includes('>'+context.FUSE_GOLD_COST[lv]+'</span>'));
+    assert.doesNotMatch(recipe,/gx-recipe-mult|神鑄/);
+  }
 
   const r10 = context.fuseRecipeHTML('ruby', 10);
   assert.match(r10, /gem-ruby-10\.png/);
@@ -134,15 +135,15 @@ test('合成鏈與拆解返還依 3:1 比例換算', () => {
   assert.equal(context.fusedGemDismantleYield({ leaves: 2 }), 113);
 });
 
-test('寶石合成介面與紀錄使用共用 3 合 1參數', () => {
+test('寶石合成介面與紀錄使用共用逐階配方，寶石頁只保留四種工具', () => {
   const root = path.resolve(__dirname, '..');
   const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
   const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 
-  assert.match(ui, /Math\.floor\(gemsViewCount\(gemsSnapshot, allType, lv\) \/ GEM_COMPOSE_INPUT_COUNT\)/);
-  assert.match(ui, /Math\.floor\(n \/ GEM_COMPOSE_INPUT_COUNT\)/);
-  assert.match(ui, /GEM_COMPOSE_INPUT_COUNT[\s\S]*sendGemUiCommand\(\s*['"]gem\.composeAll['"]/);
-  assert.match(index, /消耗 3 顆「同種類、同等級」寶石/);
+  assert.match(ui, /Math\.floor\(n \/ needed\)/);
+  assert.match(ui, /gemComposeInputCount\(lv\)[\s\S]*sendGemUiCommand\(\s*['"]gem\.composeAll['"]/);
+  assert.deepEqual([...index.matchAll(/data-gem-tool-btn="([^"]+)"/g)].map(m=>m[1]),['compose','convert','dismantle','resonance']);
+  assert.match(index,/data-gem-panel="fusion" hidden/);assert.match(index,/data-gem-panel="shop" hidden/);
 });
 
 test('Worker 全部合成選「全部類型寶石」時，紀錄文字不查 GEM_TYPES（合成完成卻拋例外）', () => {
@@ -156,7 +157,7 @@ test('Worker 全部合成選「全部類型寶石」時，紀錄文字不查 GEM
     const logs = [];
     let calls = 0;
     const ctx = {
-      GEM_TYPE_ALL: '__all__', GEM_NAMES: ['', '一級', '二級', '三級'], GEM_COMPOSE_INPUT_COUNT: 3,
+      GEM_TYPE_ALL: '__all__', GEM_NAMES: ['', '一級', '二級', '三級'], gemComposeInputCount: () => 3,
       GEM_TYPES: { ruby: { emoji: '🔴', name: '紅寶石' } },
       gemLabel(t, lv) {
         if (!ctx.GEM_TYPES[t]) throw new TypeError('unknown gem ' + t);
@@ -175,4 +176,33 @@ test('Worker 全部合成選「全部類型寶石」時，紀錄文字不查 GEM
   assert.match(all.logs[0], /一級全部類型寶石 ×6 → 二級同類型寶石 ×2/);
   const ruby = run('ruby');
   assert.match(ruby.logs[0], /一級紅寶石 ×6 → 二級紅寶石 ×2/);
+});
+
+test('直接合成全部階級：不足素材／不足金幣不扣資源，恰足按配方扣款產出，最高階與非法階級拒絕',()=>{
+ const c=loadGameContext();
+ for(let lv=1;lv<10;lv++){
+  const needed=lv<5?3:lv<9?4:6,cost=c.FUSE_GOLD_COST[lv];assert.ok(Number.isFinite(cost)&&cost>0);
+  const gems=makeGemInventory(c.GEM_TYPES);gems.ruby[lv]=needed-1;c.G={player:{gold:cost,gems},factory:{stats:{}}};
+  const before=JSON.stringify(c.G);assert.match(c.composeGems('ruby',lv),new RegExp('不足 '+needed+' 顆'));assert.equal(JSON.stringify(c.G),before);
+  gems.ruby[lv]=needed;c.G.player.gold=cost-1;const poor=JSON.stringify(c.G);assert.match(c.composeGems('ruby',lv),/金幣不足/);assert.equal(JSON.stringify(c.G),poor);
+  c.G.player.gold=cost;assert.equal(c.composeGems('ruby',lv),null);assert.equal(gems.ruby[lv],0);assert.equal(gems.ruby[lv+1],1);assert.equal(c.G.player.gold,0);assert.equal(c.G.factory.stats.gemComposed,1);
+ }
+ for(const lv of [0,-1,10,11,1.5,NaN,Infinity,'5']){const before=JSON.stringify(c.G);assert.equal(typeof c.composeGems('ruby',lv),'string');assert.equal(JSON.stringify(c.G),before);}
+ assert.deepEqual(Array.from({length:10},(_,i)=>c.gemL1Worth(i+1)),[1,3,9,27,81,324,1296,5184,20736,124416]);
+ for(let lv=2;lv<=10;lv++)assert.equal(c.gemDismantleYield(lv),Math.floor(c.gemL1Worth(lv)*.7));
+ assert.equal(c.gemL1Worth(Infinity),0);
+});
+
+test('Worker高階全部合成與全部類型合成使用實際配方、保留餘數、正確紀錄並受金幣限制',()=>{
+ const src=fs.readFileSync(path.resolve(__dirname,'../js/worker/sim.worker.js'),'utf8'),key="'gem.composeAll': ",start=src.indexOf(key)+key.length,end=src.indexOf('\n  },',start)+4;
+ for(const lv of [5,6,7,8,9])for(const all of [false,true]){
+  const c=loadGameContext(),gems=makeGemInventory(c.GEM_TYPES),needed=lv===9?6:4,cost=c.FUSE_GOLD_COST[lv],logs=[];
+  gems.ruby[lv]=needed*2+1;gems.sapphire[lv]=needed;gems.emerald[lv]=needed-1;
+  c.G={player:{gold:cost*2,gems}};c.blog=m=>logs.push(m);const batch=vm.runInContext('('+src.slice(start,end)+')',c);
+  const result=batch({type:all?c.GEM_TYPE_ALL:'ruby',level:lv});assert.equal(result.made,2);assert.equal(result.err,null);assert.equal(c.G.player.gold,0);
+  assert.equal(gems.ruby[lv],1);assert.equal(gems.ruby[lv+1],2);assert.equal(gems.sapphire[lv],needed);assert.equal(gems.emerald[lv],needed-1);
+  assert.ok(logs[0].includes('×'+(needed*2)+' → '),logs[0]);
+  c.G.player.gold=cost;const next=batch({type:all?c.GEM_TYPE_ALL:'ruby',level:lv});assert.equal(next.made,all?1:0);
+  assert.equal(gems.sapphire[lv+1],all?1:0);
+ }
 });
