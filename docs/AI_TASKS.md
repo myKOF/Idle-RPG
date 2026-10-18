@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## GEM-WORKSHOP-SCALE-20261018 — 放大轉換與拆解工坊資訊
+
+- Owner：Codex；Done；單一開發者。使用者依紅框要求整區含icon／文字／數量放大，沿前次置中工坊完成狀態調整；開始工作區乾淨、三檔衝突預檢乾淨。
+- 允許css/gems.css轉換／拆解共用尺寸與文字、index.html相應CSS快取、本紀錄；禁止配方／數值／Worker／Protocol／存檔／素材／其他頁面與其他副本，不合併推送。以64px格子、48px圖示與更大階級／數量／按鈕放大整組，維持居中與窄版可用。
+- 驗收：兩工具原料及產出同尺寸，數量／階級清楚、按鈕／選單／提示同步放大，既有點擊／Shift／拖放與不可用游標規則保持；相依回歸、Build、隔離瀏覽器視覺與Console、diff檢查後獨立Commit。後續使用者審閱整合，無素材變更。
+- 完成／修改3檔：css/gems.css格子48→64px、圖示36→48px，數量9→13px、階級10→14px；格距／框內距及兩欄間距同步增加，整組最大寬514→580px且保持置中。按鈕112×30→144×40px／15px字、選單38px高／15px字、結果標題及成功提示15px、快捷說明14px。僅兩個工坊既有共用class，未改合成／共鳴或上方十階列；index.html僅gems CSS22→23、本紀錄同步。無素材或素材庫變更／Commit。
+- 指令／結果：`node --test tests/gem-workshop.test.cjs tests/gem-convert-shift.test.cjs tests/gem-tooltip.test.cjs`23/23通過；`npm.cmd run build`535檔語法／編譯檢查通過；`git diff --check`通過。純CSS視覺調整使用既有回歸與實際瀏覽器驗證，未新增鏡像測試。
+- 瀏覽器：依browser技能嘗試IAB仍無backend，改隔離headless Edge／隨機localhost／seed1018新角色、正式index／Worker與GM原料，不讀真人存檔。2100×1000測紅寶石5級9顆、堇青石3級154顆／4級61顆，三種產出462／183／27顆；數量／階級與icon清楚無疊字、雙欄／按鈕完整，轉換選單與77顆成品同步放大。另10級1000顆拆解預覽6000顆，文字仍在格內；1366／1086／390寬兩工具面板皆scrollWidth=clientWidth=538、中心誤差<0.001px且保持雙欄。不可用來源cursor default保留。Console error／warning及pageerror0；已目視兩頁預覽，保留本聊天visualizations/gem-workshop-dismantle-enlarged.png與gem-workshop-convert-enlarged.png；臨時服務／瀏覽器／腳本已清理。
+- 唯讀未改：前次已讀共通規範／工作流／Agent文件、css/style.css與ashen-forge.css原布局、js/ui.js／ui-gem-workshop.js的點擊／Shift／拖放與回饋、index兩工坊原DOM、tools/build_check.cjs、上述三份回歸。無新增已知風險或未完成需求；限制為未實測全部瀏覽器／實體裝置，窄螢幕仍沿既有整頁等比縮放。Commit為本紀錄所在`[Codex] fix: 放大寶石轉換與拆解資訊`，回覆附編號；可供Review／合併，未合併推送，下一步整合後重載驗收放大尺寸。
+
 ## GEM-WORKSHOP-CENTER-CURSOR-20261018 — 工坊置中與移除禁止游標
 
 - Owner：Codex；Done；單一開發者。使用者要求轉換／拆解九宮格與相關資訊整組右移置中，上方不可用寶石保持一般游標，全遊戲清查移除禁止游標，並寫入共通規範。前置既有工坊完成；開始工作區乾淨，fetch後四檔衝突預檢乾淨。

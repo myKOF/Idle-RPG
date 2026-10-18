@@ -20,26 +20,28 @@
 .gx-socket.is-out .gi-slot { width: 42px; height: 42px; }
 .gi-conv { width: 38px; height: 38px; }
 
-/* 轉換沿上方十階列選原料，九宮格與成品均使用48px庫存格尺寸。 */
+/* 轉換／拆解沿上方十階列選原料，九宮格與成品共用放大的資訊格。 */
 #tab-gems :is([data-gem-panel="convert"], [data-gem-panel="compose"], [data-gem-panel="dismantle"]) { position: relative; }
 #tab-gems [data-gem-panel="compose"] { padding-top: 42px; }
 #tab-gems .gem-holy-cell { position: relative; }
 #tab-gems .gconv-help { position: absolute; top: 12px; right: 12px; }
-#tab-gems .gconv-layout { width: min(514px, calc(100% - 20px)); gap: 32px; margin: 26px auto 12px; align-items: stretch; justify-content: center; }
-#tab-gems .gconv-input { display: flex; flex-direction: column; align-items: center; gap: 14px; }
-#tab-gems .gconv-grid { grid-template-columns: repeat(3, 48px); grid-template-rows: repeat(3, 48px); }
+#tab-gems .gconv-layout { width: min(580px, calc(100% - 20px)); gap: 36px; margin: 26px auto 16px; align-items: stretch; justify-content: center; }
+#tab-gems .gconv-input { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+#tab-gems .gconv-grid { grid-template-columns: repeat(3, 64px); grid-template-rows: repeat(3, 64px); gap: 8px; padding: 12px; }
 #tab-gems .gconv-slot {
-  position: relative; width: 48px; height: 48px; min-width: 0; min-height: 0;
+  position: relative; width: 64px; height: 64px; min-width: 0; min-height: 0;
   box-sizing: border-box; padding: 0; gap: 0; overflow: hidden; border-radius: 0;
 }
 #tab-gems .gconv-slot.filled { border-color: var(--c); }
-#tab-gems .gconv-slot .gi-conv { width: 36px; height: 36px; pointer-events: none; }
-#tab-gems .gconv-n { position: absolute; top: 2px; left: 3px; font-size: 9px; color: #fbbf24; text-shadow: 0 0 3px #000, 1px 1px 2px #000; }
-#tab-gems .gconv-level { position: absolute; bottom: 2px; left: 0; right: 0; color: #bcb6a8; font-size: 10px; text-shadow: 0 0 3px #000; }
-#tab-gems .gconv-side { flex: 1 1 190px; max-width: 300px; gap: 10px; }
-#tab-gems .gconv-side .sec-sub { margin: 0; }
+#tab-gems .gconv-slot .gi-conv { width: 48px; height: 48px; pointer-events: none; }
+#tab-gems .gconv-n { position: absolute; top: 3px; left: 4px; font-size: 13px; color: #fbbf24; text-shadow: 0 0 3px #000, 1px 1px 2px #000; }
+#tab-gems .gconv-level { position: absolute; bottom: 2px; left: 0; right: 0; color: #bcb6a8; font-size: 14px; text-shadow: 0 0 3px #000; }
+#tab-gems .gconv-side { flex: 1 1 190px; max-width: 306px; gap: 12px; }
+#tab-gems .gconv-side .sec-sub { margin: 0; font-size: 15px; }
+#tab-gems .gconv-side select { min-height: 38px; font-size: 15px; }
 #tab-gems .gconv-result-area { flex: 1; min-height: 96px; }
-#tab-gems :is(#gconv-output, .gem-grid-output) { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 6px; }
+#tab-gems :is(#gconv-output, .gem-grid-output) { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 8px; }
+#tab-gems .gconv-side :is(#gconv-status, .gem-grid-status) { font-size: 15px; }
 #tab-gems :is(#gconv-status, .gem-grid-status) { position: relative; z-index: 4; margin-top: 8px; min-height: 18px; font-size: 13px; color: #79e36b; }
 #tab-gems .is-converting :is(.gconv-slot.filled, .gem-holy-cell) { overflow: visible; z-index: 1; animation: gconv-convert-glow var(--gconv-fx-duration) ease-in-out both; pointer-events: none; }
 #tab-gems .is-converting :is(.gconv-slot.filled, .gem-holy-cell) .gem-ico { animation: gconv-convert-icon var(--gconv-fx-duration) ease-in-out both; }
@@ -73,8 +75,8 @@
 }
 #tab-gems :is(#gconv-output, .gem-grid-output) .gconv-slot { cursor: default; pointer-events: auto; }
 #tab-gems :is(#gconv-output, .gem-grid-output) .gconv-slot:hover { filter: none; }
-#tab-gems #gconv-clear, #tab-gems #gconv-btn, #tab-gems .gem-grid-action { width: 112px; min-height: 30px; margin-top: auto; align-self: center; }
-#tab-gems .gconv-shortcut { width: min(514px, calc(100% - 20px)); margin: 0 auto; font-size: 12px; }
+#tab-gems #gconv-clear, #tab-gems #gconv-btn, #tab-gems .gem-grid-action { width: 144px; min-height: 40px; font-size: 15px; margin-top: auto; align-self: center; }
+#tab-gems .gconv-shortcut { width: min(580px, calc(100% - 20px)); margin: 0 auto; font-size: 14px; }
 #tab-gems .gconv-grid.is-drop { border-color: #d5b66d; box-shadow: 0 0 9px #d5b66d55; }
 #tab-gems:is([data-gem-tool="convert"], [data-gem-tool="dismantle"]) .gx-curve-cell[draggable="true"] { cursor: grab; }
 #tab-gems:is([data-gem-tool="convert"], [data-gem-tool="dismantle"]) .gx-curve-cell[draggable="true"]:active { cursor: grabbing; }
