@@ -7,13 +7,14 @@
   <title>無限征途：合成之巔</title>
   <link rel="icon" href="images/icon_avatar.png" type="image/png">
   <link rel="preload" as="image" href="images/ui/gem-resonance/hex-backplate.png" fetchpriority="low">
-  <link rel="stylesheet" href="css/style.css?v=1.0.76">
+  <link rel="preload" as="image" href="images/ui/heaven-power/dark-gold-seal.png?v=1" fetchpriority="low">
+  <link rel="stylesheet" href="css/style.css?v=1.0.77">
   <link rel="stylesheet" href="css/inventory-offset.css">
-  <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.81">
+  <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.86">
   <link rel="stylesheet" href="css/ashen-forge-flat.css?v=1.0.3">
   <link rel="stylesheet" href="css/battle-hud.css?v=1.0.18">
   <link rel="stylesheet" href="css/runeword.css?v=1.0.6">
-  <link rel="stylesheet" href="css/gems.css?v=1.0.21">
+  <link rel="stylesheet" href="css/gems.css?v=1.0.23">
   <link rel="stylesheet" href="css/dialogs.css?v=1.0.3">
 </head>
 
@@ -256,6 +257,7 @@
           <div class="nfx">
             <div class="nfx-main">
               <div id="nf-furnaces"></div>
+              <button type="button" id="nf-add-bottom-btn" class="btn sm nf-add-btn nf-add-bottom-btn" data-nf-add="1" hidden>＋ 添加熔爐</button>
             </div>
             <aside class="nfx-side">
               <div id="nf-part-upgrades" class="nfx-card"></div>
@@ -802,14 +804,6 @@
     </div>
   </div>
 
-  <!-- 天賦升級彈窗 -->
-  <div id="talent-modal" class="modal-overlay" style="display:none">
-    <div class="modal-box">
-      <button id="talent-modal-close" class="modal-x" aria-label="關閉">✕</button>
-      <div id="talent-modal-body"></div>
-    </div>
-  </div>
-
   <!-- 離線收益確認彈窗 -->
   <div id="offline-modal" class="modal-overlay" style="display:none">
     <div class="modal-box offline-modal-box">
@@ -923,7 +917,7 @@
          special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/util.js?v=1.0.3"></script>
   <script src="js/ui-scale.js?v=1.0.1"></script>
-  <script src="js/data.js?v=1.0.87"></script>
+  <script src="js/data.js?v=1.0.88"></script>
   <script src="js/status.js?v=1.0.34"></script>
   <script src="js/runeword_data.js?v=1.0.15"></script>
   <script src="js/gem_resonance_data.js?v=1.0.1"></script>
@@ -960,15 +954,16 @@
   <!-- 新版主動技能系統（2026-08-13 技能改造第一批）：定義表＋引擎＋純函式說明 -->
   <script src="js/skills2.js?v=1.0.324"></script>
   <script src="js/elite_data.js?v=1.0.6"></script>
-  <script src="js/talents.js?v=1.0.6"></script>
+  <script src="js/talents.js?v=1.0.7"></script>
   <script src="js/player.js?v=1.0.16"></script>
   <script src="js/combat.js?v=1.0.88"></script>
   <script src="js/tower.js?v=1.0.32"></script>
   <script src="js/save.js?v=1.0.18"></script>
-  <script src="js/ui.js?v=1.0.176"></script>
+  <script src="js/ui.js?v=1.0.181"></script>
   <script src="js/ui-runeword.js?v=1.0.11"></script>
   <script src="js/ui-gem-resonance.js?v=1.0.15"></script>
   <script src="js/ui-gem-workshop.js?v=1.0.0"></script>
+  <script src="js/ui-newforge-visuals.js?v=1.0.0"></script>
   <script src="js/param_autoreload.js"></script>
   <!-- GM 面板。指令執行層在 js/gm_exec.js，由 Worker importScripts 載入 -->
   <script src="js/gm.js?v=1.0.1"></script>
@@ -976,12 +971,12 @@
        正式遊玩是空殼。必須排在 ui.js（用它的 isInternalVersion）之後、VFX Runtime 建立（main 開機）之前。 -->
   <script src="js/battle-perf.js?v=1.0.3"></script>
   <!-- 模擬 Worker 的協議與橋接。bridge.js 於 DOMContentLoaded 開機 -->
-  <script src="js/worker/protocol.js?v=55"></script>
+  <script src="js/worker/protocol.js?v=57"></script>
   <script src="js/storage.js?v=1.0.1"></script>
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
-  <script src="js/bridge.js?v=1.0.299"></script>
+  <script src="js/bridge.js?v=1.0.302"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->

@@ -92,7 +92,7 @@ var REINCARNATION_EXP_MULTIPLIERS = [1, 10, 100, 1000, 10000, 100000, 1000000, 1
 
 /* ---- 天堂威能（轉生後依轉數開放） ----
    等級上限由 TALENT_MAX_LEVEL 定義；升級成本為目標等級，效果為 per × 等級。
-   本轉所有啟用節點全滿時效果加倍；首次點亮累加 threat。
+   首次點亮累加 threat；整轉滿級不另加倍率。
    「額外」字樣 = 於對應總值上乘算；沒寫「額外」= 與現有同類加成相加。 */
 var TALENT_MAX_LEVEL = 10;
 var TALENT_IMPLEMENTED_REINCARNATIONS = 10;

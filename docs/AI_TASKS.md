@@ -1,5 +1,88 @@
 # AI_TASKS.md
 
+## HEAVEN-POWER-DARK-APPLY-20261018 — 接入暗金聖印背景
+
+- Owner：Codex；Done，單一開發者。使用者選定最新暗色候選第1張（A暗金聖印），授權接入天堂威能星盤；前置a9653a39與已確認母圖完成。遊戲／素材庫工作區乾淨，修改目標預檢無其他副本衝突。
+- 允許css/ashen-forge.css僅星盤背景、js/ui.js僅移除舊背景裝飾DOM、index.html僅背景預載／必要快取、images/ui/heaven-power/dark-gold-seal.png、tools/heaven-power/export-source.cjs與本紀錄；素材庫僅新增codex-authored/heaven-power母圖／來源／匯出紀錄。禁止玩法／數值／Worker／Protocol／存檔／其他頁面及其他素材，不合併推送。
+- 方式／驗收：原樣保存使用者確認的內建imagegen原創母圖，沿既有UI素材匯出流程與Root resolver，SHA256核對遊戲輸出；替換舊CSS強光／霧白／拱門，保留動態星盤進度／線／圖示／選中框。正式UI／升降級／Tooltip、不同畫面比例、冷載入與Console、相關回歸／Build／diff；先素材庫Commit再遊戲Commit。後續使用者重載審閱合併。
+
+- 完成遊戲6檔：css/ashen-forge.css星盤改center/cover讀dark-gold-seal.png，移除舊霧白／強光與拱門CSS；js/ui.js僅刪舊tlx-sanctum裝飾DOM，動態進度／軌道／線與全部按鈕保留；index.html低優先背景預載、CSS85→86／UI180→181；images/ui/heaven-power/dark-gold-seal.png；tools/heaven-power/export-source.cjs；本紀錄。沿既有tools/gem-resonance/export-source.cjs模式，固定相對路徑、不寫入本機Root。
+- 素材庫3檔：codex-authored/heaven-power/originals/dark-gold-seal.png、SOURCE.md、exports.json。使用者選定原創母圖1254×1254／2,469,522 bytes原樣保存、匯出不裁切／改色／縮放；SHA256 d28e94add06fd5503d06a4f15740f3ab58740b988faf9125329ba7da7a805bed兩邊一致。先完成素材庫Commit c4b733a `[Codex] feat: 保存天堂威能暗金聖印背景母圖`，再遊戲獨立提交；沒有第三方素材、新Preset或素材庫其他變更。
+- 指令／結果：`node tools/heaven-power/export-source.cjs --apply`與`--check`通過、母圖／匯出紀錄／遊戲三者hash一致；`node --check tools/heaven-power/export-source.cjs`通過；`node --test --test-reporter=dot tests/talents.test.cjs tests/power-rework.test.cjs tests/init-ui-smoke.test.cjs`34/34；`npm.cmd run build`538檔通過；兩倉庫diff檢查通過。純背景接入沿既有回歸與實際瀏覽器驗證，未新增鏡像測試。
+- 瀏覽器：隔離headless Edge／隨機localhost／seed1018新角色，正式index／Worker載入引擎fixture、不讀真人存檔。實際background-image為正式PNG、size=cover／底色rgb(11,18,25)，舊before content:none／after background:none、舊拱門DOM0；原圖只請求1次、切頁／改選無重載。升級扣1／降級退1、Tooltip原名稱與金色選中外框正常；1920／1366／1086／390寬十節點頁12個節點與按鈕均內含、中心hit-test全true、無溢出。Console error／warning／pageerror與HTTP錯誤0；已目視本聊天visualizations/heaven-dark-gold-integrated.png，背景低調且文字／圖示可讀。
+- 唯讀未改：規範／工作流／Agent文件、素材Root與既有匯出流程、前輪選定母圖、既有威能數值／升降級／Tooltip與三份回歸、Worker／Protocol／存檔。無未完成需求或新增已知阻擋，可供審查合併、未合併推送；限制為原PNG約2.47MB低優先預載、窄高面板cover會裁切兩側裝飾（不裁切操作節點），未做慢網／所有實體裝置或完整測試庫。服務／瀏覽器及臨時腳本已清理，預覽保留；建議重載威能頁驗收。遊戲Commit為本紀錄所在`[Codex] feat: 接入天堂威能暗金聖印背景`，回覆附實際編號。
+
+## HEAVEN-POWER-DARK-CONCEPT-20261018 — 天堂威能標題與暗色神力背景提案
+
+- Owner：Codex；Done，單一開發者。使用者要求左上標題改「天堂威能」，再畫兩張更低調、幽暗、有魔法陣／神力加持氛圍的背景；依前次約定只供預覽、待回覆再接入。前置既有威能介面已完成，工作區乾淨，三檔預檢無其他副本衝突。
+- 允許js/ui.js僅威能頁h2、index.html僅UI快取、本紀錄；禁止側邊分頁名／玩法／數值／Worker／Protocol／存檔／CSS背景或新素材接線，不合併推送。純文字修改以正式renderTalents輸出與既有威能／初始化回歸、Build及diff驗證；完成後獨立Commit。
+- 繪圖使用已讀imagegen技能的內建工具，前輪已確認優先Mote Studio為像素Sprite編輯、不適合本次場景繪景。附圖僅參考簡潔背景／暗黑配色與留白，生成原創圖、不保留任何原UI。A為暗金聖印：低亮藍灰石紋、細金刻痕同心魔法陣、薄霧與微弱上方神光；B為寂靜神佑：幽暗石紋、淡金聖印及上方抽象羽翼幾何、稀薄環形加持。兩張保持深色低對比，不使用城市／風景／亮白雲海，中央留白；僅聊天預覽、未接入遊戲與素材庫。
+
+- 完成3檔：js/ui.js的renderTalents頁首h2由「威能」改為「天堂威能」，index.html對應UI快取179→180，本紀錄同步。側邊分頁維持原名，背景／CSS及所有遊戲規則不變。
+- 驗證：以正式createEngine＋vm載入ui.js，renderTalents輸出包含精確新h2且不再含舊h2，通過；`node --test --test-reporter=dot tests/talents.test.cjs tests/power-rework.test.cjs tests/init-ui-smoke.test.cjs`34/34通過；`npm.cmd run build`538檔通過；`git diff --check`通過。首次node -e的PowerShell引號造成測試腳本正規式語法錯誤，改以here-string標準輸入重驗通過，產品檔未因此修改。低風險單文字改動未新增鏡像測試或重跑完整庫，沒有宣稱實機瀏覽器驗證。
+- 原創背景候選已逐張目視：A=`C:/Users/alway/.codex/generated_images/01a14ec5-b5ca-7d70-98b4-b808ac4d2225/exec-049f17ed-1260-4efd-8729-304cc84fcc2a.png`；B=`C:/Users/alway/.codex/generated_images/01a14ec5-b5ca-7d70-98b4-b808ac4d2225/exec-ea9f7f04-b8da-4e1e-ba2d-e9f42017460d.png`。工具內建生成、附圖只作參考，深色細金刻痕／魔法環／微光神力，不含UI、文字或角色；與前輪明亮聖殿不同，降低背景搶眼程度。原檔保留於聊天generated_images，未接入／匯出／提交素材庫，符合只預覽要求。
+- 唯讀未改：AI規範／AGENTS／工作流／Agent文件、CSS既有背景與選中框、上述三份測試、原始截圖及前輪候選。無本次未完成需求或新增已知風險；背景等待使用者選擇後才另行接入。可供審查合併，未合併推送；Commit為本紀錄所在`[Codex] fix: 威能頁標題改為天堂威能`，回覆附實際編號，後續重載查看標題並選擇背景。
+
+## HEAVEN-POWER-SELECT-20261018 — 選中外框高亮與兩張背景提案
+
+- Owner：Codex；Done，單一開發者。使用者要求選中威能外框明顯高亮，另畫兩張天堂背景供挑選，背景明確先不接入。前置6eac2a7b已完成；熔爐任務已提交0d83bef3，工作區乾淨，三檔預檢無其他副本衝突。
+- 允許css/ashen-forge.css僅選中框樣式、index.html僅該CSS快取、本紀錄；禁止玩法／JS／Worker／Protocol／存檔／其他功能、背景引用與素材匯出，不合併推送。驗收0級／已學／滿級選中皆金色高亮、換選移除前框、移開滑鼠不消失、原升降級／Tooltip正常，既有回歸／Build／瀏覽器／diff後獨立Commit。
+- 美術：已檢查專案優先RPG Mote Studio可存取，其UI以像素Sprite／逐幀編輯為主，不適合本次完整繪景，使用imagegen內建工具各產一張原創方形場景。A白金聖殿／晨曦雲海、B星空聖域／月光雲海；中央保留星盤閱讀空間，無文字／角色／UI。兩張僅預覽，保留於本聊天generated_images，等待使用者選擇，不寫入遊戲或素材庫，不宣稱已接入。
+
+- 完成3檔：選中樣式獨立置於滿級樣式之後，金色底框＋2px淡金外描邊＋光暈；僅單一選中框以!important覆寫工作區全域box-shadow:none，原先選中／滿級陰影被該全域規則移除是提示不清楚的原因。CSS快取84→85；移開游標／已學／滿級仍保持，改選恢復舊框。沒有背景接線或數值／存檔變更。
+- 指令／結果：`node --test --test-reporter=dot tests/talents.test.cjs tests/power-rework.test.cjs tests/init-ui-smoke.test.cjs`34/34通過；`npm.cmd run build`538檔通過；`git diff --check`通過。純CSS低風險微調沿既有回歸及實際樣式驗證，不新增鏡像測試。
+- 瀏覽器：隔離headless Edge／隨機localhost／seed1018新角色，正式index及Worker讀隔離fixture，0級／升至1級／滿級選取皆outline2px solid rgb(255,240,171)，實際光暈非none；改選後舊框outline-style:none。原升級正常、移開游標保持高亮，Console error／warning及pageerror0。已目視本聊天visualizations/heaven-selected-highlight.png；首次驗證把未選取的outline-width預期為0，瀏覽器none樣式仍回報中值3px，改查outline-style:none與選中色；產品沒有為此改動。首次光暈驗證發現全域!important停用，已於選中單框精確覆寫並重驗通過。
+- 背景預覽（內建imagegen）：A=`C:/Users/alway/.codex/generated_images/01a14ec5-b5ca-7d70-98b4-b808ac4d2225/exec-adfd3b1a-8ca1-4c2e-932b-3a24a0a72897.png`，B=`C:/Users/alway/.codex/generated_images/01a14ec5-b5ca-7d70-98b4-b808ac4d2225/exec-a544029d-83f8-4183-8963-501928f5b8ec.png`。提示主題為原創方形天堂環境繪景、兩側白金石柱與遠景浮空聖殿、中央低對比供星盤疊放；A晨曦金光雲海、B月光星空雲海。已逐張目視、無文字／角色／UI，保留原檔；使用者要求只預覽，未納遊戲、未素材庫提交。
+- 唯讀未改：AI規範／工作流／Agent文件、威能DOM／選取狀態與升降級、全域陰影規則、上述3份回歸及既有背景。無本次未完成需求或新增已知風險，未驗所有實體裝置／完整測試庫；背景待使用者選擇再另行接入。可供審查合併，未合併推送；Commit為本紀錄所在`[Codex] fix: 強化威能選中外框高亮`，回覆附實際編號。測試服務／瀏覽器與暫存腳本清理，兩張候選原圖與高亮預覽保留。
+
+## HEAVEN-POWER-UI-20261018 — 天堂威能星盤與直接升降級
+
+- Owner：Codex；Done，單一開發者。使用者六項需求：天堂質感背景／框與技能圖、刪除11～20轉標籤、取消整轉滿級效果加倍、刪升級彈窗改選取圖下圓形−／＋、魔物威能字級加2與共用紫焰威脅符號、節點只留威脅及等級。前置既有威能／Worker已完成，工作區乾淨。
+- 允許js/ui.js威能顯示／事件、talents.js實際倍率、data.js僅註釋、css/ashen-forge.css威能區與css/style.css刪舊彈窗專用樣式、index.html刪彈窗及必要快取、bridge.js／sim.worker.js僅快取、相關talents／power／potential／Esc回歸、PATCH／game_formula及本紀錄；禁止配置數值、存檔格式、Protocol、其他功能／副本，不合併推送。
+- 驗收：全轉滿級實際及UI不加倍、升降級成本／退點／首次威脅、鎖定／滿級／不足／pending與重選、正式Worker及Tooltip、十個頁籤／無彈窗、畫面內含／Console、Build／diff後Commit。背景與紫焰用程式／CSS，圖示沿既有技能素材，不新增獨立美術資源，素材庫無變更。
+- 預檢：UI／CSS／威能／快取／回歸／任務乾淨；data／game_formula／PATCH僅與Antigravity a5da341f同檔不同區段，對方改套裝解鎖與神鑄說明；本次改威能註釋／第10節與獨立PATCH條目，寫入前候選與對方三方合併乾跑0才落檔，無語意相依。後續使用者審閱合併。
+
+- 完成16檔：UI以既有技能圖重畫全部節點，白金圓角框／雲海拱門與聖光背景皆自製CSS；共用紫焰形狀、魔物威能12→14px，節點只留威脅與等級。選取才出現同層27px圓形−／＋，刪彈窗DOM／函式／事件／專用CSS（離線收益共用標題樣式保留）；鎖定／不足／0級／滿級／pending／BOSS戰停用，保留正式Worker命令與退點。實際talentStatBonuses直接加總per×lv，整轉完成只作進度；Tooltip／右側／分頁與核心均移除加倍，1～10轉十個頁籤。存檔／表值／Protocol不改，素材庫無本次變更、不需素材庫Commit。
+- 指令：`node --test tests/talents.test.cjs tests/power-rework.test.cjs tests/potential-removal.test.cjs tests/talents-perf-equivalence.test.cjs tests/esc-shortcut.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/ui-worker-events.test.cjs tests/ui-worker-g-dependency.test.cjs tests/init-ui-smoke.test.cjs`84/84；`npm.cmd run build`536檔通過，同副本輸送帶新增後538檔通過；`git diff --check`通過。新增全轉最後一級僅增加表值／UI同值、0級全部Tooltip／成本、鎖定／滿級／不足／pending／BOSS戰按鈕驗證；舊彈窗與×2斷言依使用者新規格改測直接控制，未降低成本或退點斷言。
+- 瀏覽器：完整讀browser skill並嘗試IAB但無backend，改獨立headless Edge／隨機localhost／seed1018新角色，正式index／Worker載入引擎產生測試fixture，不讀真人存檔。實點升降級扣1退1、威能100→102→100%、改選只保留一組控制、快速雙擊只升1級、逐級升滿55點／滿級禁用／降級退10／重新開放升級、Tooltip精確下一級成本與原名稱。元素四頁10節點，1920／1366／1086／390寬12個節點及控制中心hit-test全true、皆在星盤內且無溢出、停用游標default；Console error／warning及pageerror0。已目視本聊天visualizations/heaven-power-updated.png與elements預覽；沿全遊戲既有等比縮放，非手機版重製。首次fixture10轉觸發既有migrateSave神界進度補11轉，僅修正隔離測試fixture為2轉，不改該既有存檔規則或擴大需求。
+- 唯讀未改：專案規範／工作流／prompts/codex.md、Talents Excel／CSV及生成入口、技能圖工具與既有技能素材、Worker投影／指令／pending／BOSS戰封鎖、計算及存檔／遷移、其他上述回歸。無本次未完成需求，限制為未跑已有失敗的全庫／真人長時間或所有實體裝置；可供Review／合併，未合併推送。建議重載威能頁驗收，Commit為本紀錄所在`[Codex] feat: 改造天堂威能星盤與直接升降級`，回覆附實際編號。
+- 同副本共享：FORGE-BELT-MOTION後續改熔爐UI／CSS／Worker投影，與本次威能為不同區段；UI／CSS／Worker及任務紀錄分離候選後git merge-file -p退出0且結果等於現檔。版本已由對方保留heaven-power並追加forge-belt-motion；本次只stage原本威能對應快取（UI178／Bridge301／CSS83／Protocol56不變），目前工作檔較新版本與其進行中功能完整保留，對方可接續獨立Commit。
+
+- 獨立提交驗證：唯讀fs hook載入本次16檔候選，其他進行中檔案回到HEAD；相同84項再跑全過，確認不依賴輸送帶修改。首次只隔離本次檔案時混入對方Protocol57造成單一56斷言不符；補齊所有他方檔案的HEAD隔離後通過，沒有改產品協議或放寬斷言。
+
+## FORGE-BELT-ICONS-20261018 — 正式裝備輸送帶與雙新增入口
+
+- Owner：Codex；Done，單一開發者。使用者要求輸送帶改用正式裝備icon並放大至零件格尺寸、熔爐區增高、最後一爐下方新增按鈕；達目前上限時下方隱藏、右上置灰顯示「已達最大數」。前置既有熔爐／裝備圖示與Worker快照已完成，工作區乾淨、相關檔案衝突預檢乾淨。
+- 允許js/ui.js熔爐顯示／事件、css/ashen-forge.css熔爐樣式、index.html底部入口／必要快取、js/worker/sim.worker.js熔爐belt新增weaponType顯示欄位、protocol.js／bridge.js必要版本、docs/WORKER_PROTOCOL.md、本紀錄及相依測試；禁止熔爐數值／路由／存檔／素材及其他副本，不合併推送。
+- 驗收：正式武器分類／其他裝備圖示與背包同源、40px格子與較高卡片，空爐／未滿／當前上限／絕對上限／移除後恢復與雙入口防重送；相關回歸、Build、隔離瀏覽器畫面／Console與diff後Commit。無新素材或素材庫變更；後續使用者審閱整合。
+- 使用者追加：爐口火焰改精緻圖像、運作時循環動態。沿既有已匯出particle-pack flame_04／flame_01灰階圖做CSS彩色遮罩、雙層火舌與上升火星；來源素材庫particle-pack/License.txt明訂CC0。停用停止、Esc菜單沿共用暫停、減少動態改靜態。只修改程式／CSS，不產出或編修獨立美術資源、不新增Preset，無素材庫變更。
+- 完成：裝備格22→40px、正式圖36px；輸送帶36→52px、卡片垂直padding14→18px，實測卡片高211px。與背包共用itemIconFile／weaponIconForItem；Worker僅額外傳weaponType，不帶完整裝備與詞條。Protocol55→56、指令仍94條，UI177／Bridge300／CSS82與Worker匯入快取同步。底部按鈕位於可捲動主欄、空爐亦可新增，兩入口共用pending；滿額時移除pending接管避免ACK解鎖已滿按鈕，移除／轉生提高上限後恢復。
+- 修改12檔：css/ashen-forge.css、index.html、js/ui.js、js/bridge.js、js/worker/protocol.js、js/worker/sim.worker.js、docs/WORKER_PROTOCOL.md、本紀錄、tests/new-forge-ui.test.cjs、newforge-panel-performance.test.cjs、worker-protocol.test.cjs、potential-removal.test.cjs（最後兩份只同步版本斷言）。新增測試覆蓋雙入口各狀態、12種正式武器／所有部位與舊快照退化；投影測試驗法杖類型且仍不複製完整詞條／佇列。
+- 指令／結果：`node --test tests/new-forge-ui.test.cjs tests/new-forge.test.cjs tests/newforge-panel-performance.test.cjs tests/worker-protocol.test.cjs tests/potential-removal.test.cjs tests/init-ui-smoke.test.cjs tests/game-clock.test.cjs`55/55；`node --test tests/worker-shim.test.cjs tests/ui-worker-events.test.cjs tests/ui-worker-g-dependency.test.cjs tests/ui-command-pending.test.cjs`27/27；`npm.cmd run build`536檔通過、`git diff --check`通過。首次新圖示測試替身漏rarityTag已補上，無放寬圖示／數值斷言。未跑全庫或修改參數接線。
+- 瀏覽器：browser技能IAB無backend，改獨立headless Edge／隨機localhost／seed1018新角色與引擎產生fixture、正式Worker載入，不讀真人存檔。12類武器圖示正確、裝備／零件computed皆40px；1920／1366／390寬主欄scrollWidth=clientWidth（728／548／548），沿既有整頁縮放。實際上下新增、滿2/2隱藏下方及上方disabled、移除後恢復；同一輪兩入口點擊只送1次新增，ACK後上方仍停用。火舌200ms間transform有變化，停用paused／啟用running、Esc菜單paused、減少動態animation none；Console error／warning與pageerror0。已目視預覽，本聊天visualizations/forge-belt-updated.png／forge-belt-full.png保留，測試服務及瀏覽器已關閉。
+- 唯讀檢查未改：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、js/data.js武器圖、js/player.js品質標籤、js/newforge.js路由與增刪、scripts/sim/engine.js、css/style.css與dialogs.css共用暫停、素材庫解析／CC0授權及既有火焰圖。素材庫status乾淨，無素材Commit。自我Review確認沒有更動存檔／數值／路由，所有預檢仍乾淨；限制為未實測其他瀏覽器、實體觸控與長戰效能。無未完成需求或新增已知阻擋，可供審查合併；Commit為本紀錄所在`[Codex] feat: 改善熔爐輸送帶與動態爐火`，回覆附編號。未合併／推送，下一步使用者整合並重載驗收。
+
+## GEM-WORKSHOP-SCALE-20261018 — 放大轉換與拆解工坊資訊
+
+- Owner：Codex；Done；單一開發者。使用者依紅框要求整區含icon／文字／數量放大，沿前次置中工坊完成狀態調整；開始工作區乾淨、三檔衝突預檢乾淨。
+- 允許css/gems.css轉換／拆解共用尺寸與文字、index.html相應CSS快取、本紀錄；禁止配方／數值／Worker／Protocol／存檔／素材／其他頁面與其他副本，不合併推送。以64px格子、48px圖示與更大階級／數量／按鈕放大整組，維持居中與窄版可用。
+- 驗收：兩工具原料及產出同尺寸，數量／階級清楚、按鈕／選單／提示同步放大，既有點擊／Shift／拖放與不可用游標規則保持；相依回歸、Build、隔離瀏覽器視覺與Console、diff檢查後獨立Commit。後續使用者審閱整合，無素材變更。
+- 完成／修改3檔：css/gems.css格子48→64px、圖示36→48px，數量9→13px、階級10→14px；格距／框內距及兩欄間距同步增加，整組最大寬514→580px且保持置中。按鈕112×30→144×40px／15px字、選單38px高／15px字、結果標題及成功提示15px、快捷說明14px。僅兩個工坊既有共用class，未改合成／共鳴或上方十階列；index.html僅gems CSS22→23、本紀錄同步。無素材或素材庫變更／Commit。
+- 指令／結果：`node --test tests/gem-workshop.test.cjs tests/gem-convert-shift.test.cjs tests/gem-tooltip.test.cjs`23/23通過；`npm.cmd run build`535檔語法／編譯檢查通過；`git diff --check`通過。純CSS視覺調整使用既有回歸與實際瀏覽器驗證，未新增鏡像測試。
+- 瀏覽器：依browser技能嘗試IAB仍無backend，改隔離headless Edge／隨機localhost／seed1018新角色、正式index／Worker與GM原料，不讀真人存檔。2100×1000測紅寶石5級9顆、堇青石3級154顆／4級61顆，三種產出462／183／27顆；數量／階級與icon清楚無疊字、雙欄／按鈕完整，轉換選單與77顆成品同步放大。另10級1000顆拆解預覽6000顆，文字仍在格內；1366／1086／390寬兩工具面板皆scrollWidth=clientWidth=538、中心誤差<0.001px且保持雙欄。不可用來源cursor default保留。Console error／warning及pageerror0；已目視兩頁預覽，保留本聊天visualizations/gem-workshop-dismantle-enlarged.png與gem-workshop-convert-enlarged.png；臨時服務／瀏覽器／腳本已清理。
+- 唯讀未改：前次已讀共通規範／工作流／Agent文件、css/style.css與ashen-forge.css原布局、js/ui.js／ui-gem-workshop.js的點擊／Shift／拖放與回饋、index兩工坊原DOM、tools/build_check.cjs、上述三份回歸。無新增已知風險或未完成需求；限制為未實測全部瀏覽器／實體裝置，窄螢幕仍沿既有整頁等比縮放。Commit為本紀錄所在`[Codex] fix: 放大寶石轉換與拆解資訊`，回覆附編號；可供Review／合併，未合併推送，下一步整合後重載驗收放大尺寸。
+
+## GEM-WORKSHOP-CENTER-CURSOR-20261018 — 工坊置中與移除禁止游標
+
+- Owner：Codex；Done；單一開發者。使用者要求轉換／拆解九宮格與相關資訊整組右移置中，上方不可用寶石保持一般游標，全遊戲清查移除禁止游標，並寫入共通規範。前置既有工坊完成；開始工作區乾淨，fetch後四檔衝突預檢乾淨。
+- 允許css/gems.css工坊排版及禁止游標、index.html相應CSS快取、AI_RULES.md游標規範、本紀錄；若清查發現其他來源，先預檢再納入本次相同需求。禁止配方／數值／Worker／Protocol／存檔／素材及其他副本，不合併推送。
+- 驗收：兩工具九宮格／產出／按鈕／快捷提示整組水平置中，窄版不溢出；不可用寶石／停用按鈕維持置灰與不可操作，游標default，可拖曳維持grab；全遊戲自製CSS／JS／HTML無not-allowed或no-drop設定。既有寶石回歸、Build、瀏覽器畫面／Console、diff檢查後獨立Commit。後續使用者審閱整合；無素材變更。
+- 完成／修改4檔：css/gems.css將兩工具布局與快捷提示共用514px最大寬度、左右auto置中，結果欄可隨可用空間縮窄，保留九宮格／結果並排與既有不足寬度折行；將全部3處禁止游標（轉換／拆解十階來源、共鳴十階來源、合成停用按鈕）改default，原灰階／透明度／disabled與拖曳grab／grabbing保留。AI_RULES.md第8.8節記錄使用者規則；index.html僅gems CSS快取21→22；本紀錄同步。無新增程式檔、無素材或素材庫變更／Commit。
+- 清查：rg掃全庫not-allowed／no-drop，僅上述3處執行期CSS及PATCH歷史說明；修改後遊戲CSS／JS／HTML無設定殘留。另查cursor賦值／自訂url圖案及各拖放接線，未發現其他自製禁止游標來源。遊戲內文字狀態標記不是滑鼠游標，沿用原回饋。
+- 指令／結果：`node --test tests/gem-workshop.test.cjs tests/gem-convert-shift.test.cjs tests/gem-convert-stack.test.cjs tests/gem-resonance-ui.test.cjs tests/gem-tooltip.test.cjs tests/gem-compose-all.test.cjs`54/54通過；`npm.cmd run build`535檔語法／編譯檢查通過；`git diff --check`通過。純CSS可逆變更採既有回歸與實際瀏覽器驗證，未新增鏡像測試或改業務斷言。
+- 瀏覽器：browser技能IAB連線無backend後改隔離headless Edge、隨機localhost／seed1018新角色，使用正式index／Worker／GM測試原料。轉換與拆解布局／提示中心對齊面板，2400寬中心恰1013px，1366／1086誤差<0.001px、390寬誤差0；四尺寸面板scrollWidth不大於clientWidth、九格保留、兩欄並排。不可用來源實際disabled=true／opacity .32／cursor default，合法來源grab；合成最高階兩按鈕default／opacity .45，共鳴8個不可用來源全default且disabled。當頁所有元素的計算游標無禁止值；Console error／warning及pageerror皆0。兩工具正式畫面已目視，預覽保留本聊天visualizations/gem-workshop-dismantle-centered.png與gem-workshop-convert-centered.png；臨時服務／瀏覽器／驗證腳本已清理，不讀真人存檔。
+- 唯讀未改：AGENTS.md／docs/AI_WORKFLOW.md／prompts/codex.md、css/style.css與ashen-forge.css原工坊布局、js/ui.js／ui-gem-workshop.js／ui-gem-resonance.js來源禁用與拖放、gm_exec.js／main.js／bridge.js／sim.worker.js測試啟動與隔離、ui-scale.js既有縮放、上述六份回歸。無新增已知風險或未完成需求；限制為未實測所有瀏覽器／實體裝置，390寬仍沿全遊戲既有等比縮小，非手機版重製。Commit為本紀錄所在`[Codex] fix: 寶石工坊置中並移除禁止游標`，回覆附實際編號；可供Review／合併，未合併推送，建議整合後重載寶石頁驗收。
+
 ## POTENTIAL-REMOVE-20261018 — 完整移除潛力技能系統
 
 - Owner：Codex；Done；使用者明確要求刪除全部潛力技能、威能解鎖節點、點數與配置，追加指定清除 Skills 主表。單一開發者；目標衝突預檢乾淨，本副本其他寶石工作保留、共用檔只分段處理。
@@ -10874,3 +10957,38 @@ Worker 存活且頁面正常完成載入。
 - 收尾共享檢查：潛力任務後續自行移除模擬策略舊potential登記，與本次gem.dismantleSlots新增為不同區段；HEAD／本次候選／現工作檔三方乾跑0且結果等於現檔。策略覆蓋套件回跑5/5通過，UI面板寶石子項通過、只剩兩項相同基線的裝備替身失敗。其暫存內容保留，沒有把其他任務納入寶石提交。
 
 - 最終交付：潛力任務先獨立提交362c33f5，寶石27檔差異逐檔確認，沒有潛力本體變更；其完整功能保留。最終補跑上述寶石／Worker／潛力相依及sim-command-coverage共148/148，參數558一致／0變更。修改檔案：PATCH.md、config/CSV/game_parameters.csv、config/Excel/game_parameters.xlsx、css/gems.css、docs/AI_TASKS.md、docs/WORKER_PROTOCOL.md、docs/vfx/VFX_PRESET_USAGE_OUTSIDE_TABLES.md、game_formula.md、index.html、js/bridge.js、js/formula.js、js/item.js、js/ui.js、js/worker/protocol.js、js/worker/sim.worker.js、scripts/sim/command_coverage.json、tests/combat-log.test.cjs、tests/confirm-dialog.test.cjs、tests/gem-compose-all.test.cjs、tests/gem-icons.test.cjs、tests/pen-gem-flow.test.cjs、tests/potential-removal.test.cjs、tests/ui-worker-panels.test.cjs、tests/worker-protocol.test.cjs、tools/apply_params.cjs、js/ui-gem-workshop.js、tests/gem-workshop.test.cjs。任務GEM-WORKSHOP-DOWNSTEP-20261018完成、無未完成需求，可審查合併；建議重載遊戲驗收。
+
+
+## FORGE-BELT-MOTION-20261018 — 右側入帶與程序粒子爐火
+
+- Owner：Codex；Done，單一開發者。延續前次熔爐顯示，使用者要求裝備由最右入帶並平滑向左、重做爐口且明確接受粒子火焰；不改拆解數值或時機。前置既有正式圖示／Worker完成。同副本天堂威能進行中，保留全部修改。
+- 允許js/ui-newforge-visuals.js、js/ui.js僅熔爐接線、css/ashen-forge.css僅熔爐、index必要腳本／快取、sim.worker.js僅熔爐投影ID／週期／剩餘秒、protocol／bridge必要版本、WORKER_PROTOCOL及相依熔爐／版本測試與本紀錄；禁止威能本體、存檔／數值／拆解計算、素材及其他副本，不合併推送。使用者同意保留兩功能合併版本；功能區段以HEAD為base／本次候選ours／當時工作檔theirs，git merge-file -p退出0才寫入。
+- 方式／驗收：按裝備ID持有節點與位置，右側進入、頭端出帶、缺省快照退化；週期沿Worker權威倒數／速度，顯示插補不更動權威結算。單一GameClock rAF共用、離頁停止、停用／Esc暫停、減少動態靜態、Resize與同外觀不同ID不閃跳；Canvas自繪火舌粒子／焰心／火星，無素材或Preset。相依回歸、Build、正式隔離Worker瀏覽器／Console／預覽、diff後獨立Commit，後續使用者審閱整合。
+
+- 完成：新增NewForgeVisuals純顯示模組，依實例ID保留DOM／當前位置，新件由最右端進入、頭件向左出帶、後件平滑補位；只呈現容器可容納的件數，其餘保留於權威帶中。無等待佇列時收起+N空區，入場點貼齊帶尾。ResizeObserver調整容量、卡片重建搬回節點，同外觀不同ID可區分，舊快照按外觀＋序號相容。Worker只新增belt.id及沿newForgeFurnaceSpeed推導的週期／剩餘實秒，Protocol56→57、94指令與原拆解時機／存檔不變。
+- 爐火：移除上次灰階遮罩與CSS擺動，改Canvas程序生成橘紅火舌／金白焰心／炭床／上升火星；單一GameClock rAF共用、火焰30Hz，停用與Esc不動，離頁停止排程、減少動態靜態，零素材／零Preset。沒有編修獨立美術資源或素材庫變更。
+- 修改13檔：js/ui-newforge-visuals.js、js/ui.js僅熔爐、css/ashen-forge.css僅熔爐、index.html必要腳本與快取、js/worker/sim.worker.js熔爐投影及Protocol匯入、js/worker/protocol.js、js/bridge.js快取、docs/WORKER_PROTOCOL.md、本紀錄、tests/new-forge-visuals.test.cjs、newforge-panel-performance.test.cjs、worker-protocol.test.cjs及potential-removal.test.cjs（後兩份只版本斷言）。UI179／CSS84／Bridge302與Worker標記保留兩任務；天堂威能程式、樣式、說明與其他測試不納入本次提交。
+- 驗證：`node --test tests/new-forge-visuals.test.cjs tests/new-forge-ui.test.cjs tests/new-forge.test.cjs tests/newforge-panel-performance.test.cjs tests/worker-protocol.test.cjs tests/potential-removal.test.cjs tests/init-ui-smoke.test.cjs tests/game-clock.test.cjs tests/worker-shim.test.cjs tests/ui-worker-events.test.cjs tests/ui-worker-g-dependency.test.cjs`88/88；新增6項涵蓋連續左移／節點保持／同名不同ID／出帶補位／停用恢復／離頁清理／Resize／減少動態恢復不倒退／加速同步／舊快照。另以唯讀fs攔截將其他任務檔還原af6d4de1、注入本次獨立來源重跑相同88項全部通過。`npm.cmd run build`及相同隔離來源的`node tools/build_check.cjs`均538檔通過；diff檢查通過。沒有放寬數值或原拆解斷言、未跑全庫。
+- 瀏覽器：browser技能IAB無backend，使用隔離headless Edge／隨機localhost／seed1018新角色及原生engine fixture、正式Worker，不讀真人存檔。單件同ID／同DOM位置313→268→212→156px（315px帶寬）連續遞減；收起空+N後入場364/367px、距帶尾9px內距。停用及Esc後逐像素Canvas和圖示位置相同、減少動態靜態；1366／390／1920主欄scrollWidth等於clientWidth（548／548／585）、Resize可見容量6／6／7。Console error／warning與pageerror0，已目視新粒子火焰與裝備在途畫面。動態預覽保留本聊天visualizations/forge-conveyor-particles.gif，服務與瀏覽器關閉。
+- 唯讀檢查未改：共通規範／工作流／AGENTS／prompts/codex.md、newforge.js路由／拆解／速度、GameClock／菜單暫停、原裝備圖示與data常數、sim engine／build工具、既有熔爐與Worker測試；未修改配置、權威數值、存檔或素材。與同副本天堂威能共享UI／CSS／Worker／紀錄但功能區段不同，修改前及後續更新三方試跑皆0、無語意相依；共用版本依使用者授權保留雙功能，提交僅stage本次差異。
+- 交付：無未完成需求或新增已知阻擋，可供審查合併。限制為未驗其他瀏覽器／實體觸控／12爐長時間效能；舊無ID快照僅按外觀退化。Commit為本紀錄所在`[Codex] fix: 熔爐裝備由右入帶並改用粒子爐火`，回覆附編號；未合併／推送。後續使用者整合並重載驗收兩項功能。
+
+- 收尾：天堂威能已先獨立提交`6eac2a7b`，本次13檔工作差異均為熔爐。其提交後，以目前完整來源追加`tests/talents.test.cjs tests/talents-perf-equivalence.test.cjs tests/power-rework.test.cjs tests/esc-shortcut.test.cjs`四份相依驗證，連同上列11份共127/127通過；本次功能與天堂威能完整共存，不需等待或重複詢問。
+
+- 最終效能收尾：IntersectionObserver使畫面外爐火停止重繪，隱藏帶項直接清理、不累積退出節點，捲回恢復且移除時釋放觀察。新增第7項顯示回歸；最終15份相依套件128/128通過。正式Edge將卡片移出可視區後Canvas位元保持一致，回可視區後繼續變化，Console error／warning及pageerror0。此收尾不改上列移動／粒子外觀，動態預覽保持相同。
+
+
+## MERGE-FORGE-HEAVEN-20261018 — 整合熔爐並保留天堂威能
+
+- Owner：Codex；Done；使用者明確授權本輪熔爐合併develop並保留天堂威能，不推送。依git worktree實際位置於D:/MyGame/Idle-RPG/develop（develop）整合；Codex與develop開始皆乾淨，fetch後develop與origin/develop一致。merge-tree乾跑0無衝突、develop為ai/codex祖先。
+- 範圍：正常合併ai/codex至79c95a76，保留兩筆熔爐af6d4de1／0d83bef3、天堂威能6eac2a7b及後續高亮d75fc85a／標題a9653a39，連同分支先前已完成的寶石工坊樣式9e4f9acf／59714a4b；只新增本整合紀錄，不另改玩法、存檔、素材或其他副本。主程式／CSS／Worker及Protocol沿來源已驗證版本，不降版。
+- 驗收：合併後熔爐／威能／寶石相關回歸、Build、正式隔離瀏覽器的右側進場／粒子火焰與天堂威能標題／高亮／直升降、Console、diff及工作區清潔；完成後建立有Codex前綴的merge commit，再由使用者決定推送。
+
+- 完成：正常無衝突合併，27份來源檔及本紀錄同步；功能檔與ai/codex來源79c95a76完全一致，保留熔爐右入左移／粒子／雙新增入口，以及天堂威能／選中高亮／標題全部修改。沒有重寫或接受單邊覆蓋、背景沿來源既有素材庫提交c4b733a，未重製素材或另建素材庫Commit。
+- 測試指令：`node --test tests/new-forge-visuals.test.cjs tests/new-forge-ui.test.cjs tests/new-forge.test.cjs tests/newforge-panel-performance.test.cjs tests/worker-protocol.test.cjs tests/potential-removal.test.cjs tests/init-ui-smoke.test.cjs tests/game-clock.test.cjs tests/worker-shim.test.cjs tests/ui-worker-events.test.cjs tests/ui-worker-g-dependency.test.cjs tests/talents.test.cjs tests/talents-perf-equivalence.test.cjs tests/power-rework.test.cjs tests/esc-shortcut.test.cjs tests/gem-workshop.test.cjs tests/gem-convert-shift.test.cjs tests/gem-tooltip.test.cjs`151/151通過；`npm.cmd run build`538檔通過；merge-tree與staged diff檢查通過。沒有改寫測試斷言。
+- 正式瀏覽器：IAB無backend後使用隔離headless Edge／隨機localhost／seed1018新角色及正式Worker，伺服器只讀develop；裝備x361.88→311.66連續向左、Canvas兩次位元不同確認爐火動態。天堂威能h2正確、選中有三層box-shadow、原彈窗不存在，50點fixture實際t1_str由0→1→0、直接＋／−正常。最後Console error／warning、pageerror及HTTP錯誤0，瀏覽器／服務已關閉。初次該副本缺gitignored params_version.txt發出既有404，測試攔截該唯讀請求提供Codex既有版本文字後正式驗收零錯；未新增或修改develop的忽略檔，也未改產品輪詢。
+- 唯讀檢查：AI規範／工作流／任務、worktree／分支／遠端同步、八筆來源提交、UI／CSS／Worker版本與上述測試、原GM及參數重載流程；不修改Codex或其他副本。無未完成整合項、可用；已知限制沿來源未測其他瀏覽器／12爐長時間效能。Merge Commit為本紀錄所在`[Codex] merge: 整合熔爐並保留天堂威能修改`，回覆附實際編號；不推送。下一步使用者重載develop驗收，遠端發布待另行指示。
+
+- 最新來源更新：驗收期間天堂威能完成`79c95a76`暗金聖印背景，將尚未提交的乾淨合併重建為此最新提交，保留原紀錄並重新驗證；新增2.47MB背景PNG、來源匯出檢查工具與相應CSS／主頁快取／節點背景接線均沿來源提交，不改素材本體。
+
+- 最終交付：來源固定`79c95a76`，無衝突，所有功能檔與該來源逐檔一致；重跑18份相依測試151/151與Build538檔皆通過。`node tools/heaven-power/export-source.cjs --check`母圖／匯出紀錄／develop背景SHA256皆d28e94add06fd5503d06a4f15740f3ab58740b988faf9125329ba7da7a805bed，素材庫已提交c4b733a且status乾淨。正式Edge再驗背景URL正確、1254×1254成功解碼、天堂威能標題保留、Console error／warning與pageerror0；隔離服務／瀏覽器已關閉。沒有本次未完成或新增風險，未推送。

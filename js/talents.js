@@ -141,7 +141,7 @@ function talentTreeComplete(turn, levels) {
 }
 
 function talentCompleteMultiplier(turn, levels) {
-  return talentTreeComplete(turn, levels) ? 2 : 1;
+  return 1;
 }
 
 /* GM 直接切換轉生次數時沒有完整的歷史升級紀錄，
@@ -188,25 +188,14 @@ function talentBonusesTemplate() {
   return t;
 }
 
-/* ⚠️ 這一支在 computeStats 裡，而 computeStats 是全遊戲最熱的路徑
-   （每次屬性刷新、模擬器的每個評估探針各一次）。所以三件事都提到迴圈外：
-   levels 表取一次、節點清單取一次、每一轉的「全滿倍率」算一次。
-
-   改造前每個節點都各自呼叫一次 talentCompleteMultiplier，而它內部要查 8 個節點的
-   等級——80 個節點就是 640 次等級查找，其中 632 次是重複的。
-   輸出逐欄相同（tests/talents-perf-equivalence 以整份 bonuses 與 getStats 反證）。 */
+/* computeStats 熱路徑：levels 表與靜態節點清單各取一次，直接累加每級效果。 */
 function talentStatBonuses() {
   var out = talentBonusesTemplate();
   var levels = talentState().levels;
   var list = talentList();
-  var multByTurn = {};
-  for (var i = 0; i < list.length; i++) {
-    var turn = list[i].turn;
-    if (multByTurn[turn] === undefined) multByTurn[turn] = talentCompleteMultiplier(turn, levels);
-  }
   for (var j = 0; j < list.length; j++) {
     var def = list[j].def;
-    var value = def.disabled ? 0 : talentLevelValue(def, talentLevelIn(levels, def.id)) * multByTurn[list[j].turn];
+    var value = def.disabled ? 0 : talentLevelValue(def, talentLevelIn(levels, def.id));
     if (out[def.stat] !== undefined) out[def.stat] += value;
   }
   return out;

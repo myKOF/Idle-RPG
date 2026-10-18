@@ -24,7 +24,7 @@ test('新角色與正式 Worker 投影不建立潛力或技能點，也沒有潛
   }
   assert.deepEqual(Object.keys(e.panel('skills')).sort(), ['loadout', 'loadoutSize', 'mastery', 'skills2']);
   assert.equal(Object.keys(c.COMMANDS).length, 94);
-  assert.equal(c.WORKER_PROTOCOL_VERSION, 55);
+  assert.equal(c.WORKER_PROTOCOL_VERSION, 57);
   for (const command of ['Upgrade', 'Max', 'Downgrade', 'Delete']) {
     assert.equal(e.cmd('talent.potential' + command, { id: 'velocityForce' }).ok, false);
   }
@@ -79,14 +79,14 @@ test('早期威能遷移保留舊解鎖節點退款與潛力升級金幣，不�
   assert.equal(raw.player.gold, 3182);
 });
 
-test('威能整轉全滿與威脅沿用原規則，移除的四個節點不參與判斷', () => {
+test('威能整轉全滿不加倍且威脅沿表值，移除的四個節點不參與判斷', () => {
   const c = engine().ctx;
   c.G.player.reincarnations = 10;
   for (const turn of [3, 4, 7, 10]) {
     assert.equal(c.TALENT_TREES[turn].length, 7);
     assert.equal(c.talentDef('t' + turn + '_potential'), null);
     for (const def of c.TALENT_TREES[turn]) c.G.player.talents.levels[def.id] = 10;
-    assert.equal(c.talentCompleteMultiplier(turn), 2);
+    assert.equal(c.talentCompleteMultiplier(turn), 1);
   }
   assert.equal(c.talentThreatTotal(), 56);
   assert.equal(c.talentSpentPoints(), 1540);

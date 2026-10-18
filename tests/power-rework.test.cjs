@@ -116,13 +116,13 @@ test('舊檔低等級也必須退點，新局預帶遷移旗標',()=>{
   c.migratePowerSave(data); assert.equal(data.player.reincarnationTalentPoints,22);
   c.migratePowerSave(data); assert.equal(data.player.reincarnationTalentPoints,22);
 });
-test('UI由Worker快照顯示魔物威能百分比、精確tips、圖下威脅及潛力成本',()=>{
+test('UI由Worker快照顯示魔物威能百分比、精確tips、圖下紫焰威脅',()=>{
   const e=engine(),c=e.ctx, elements=ui(e); activate(c,10);
   const snapshot=JSON.parse(JSON.stringify(e.panel('talents')));
   elements['talent-root']={innerHTML:''}; c.uiTalentPanelSnapshot=()=>snapshot; c.uiHeaderPanelSnapshot=()=>e.panel('header');
   c.renderTalents(); const h=elements['talent-root'].innerHTML;
   assert.match(h,/魔物威能 <b>120%/); assert.match(h,/地獄大軍感受到你接收了天堂神力而倍感憤怒/);
-  assert.match(h,/魔物威能每增加10%則敵人強度\+1級/); assert.match(h,/tlx-node-threat">威脅值 \+2/);
+  assert.match(h,/魔物威能每增加10%則敵人強度\+1級/); assert.match(h,/tlx-node-threat" aria-label="威脅值 \+2"><span class="tlx-threat-flame"/);
   c.G.player.talents.levels={}; assert.equal(c.talentThreatTotal(c.talentViewLevels(snapshot)),20,'快照不讀主端G');
 
 });

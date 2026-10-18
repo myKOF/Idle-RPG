@@ -10,16 +10,16 @@
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-importScripts('protocol.js?v=20261018-potential-remove-gem-workshop', '../game-clock.js?v=1.0.1', 'shim.js?v=20261018-potential-remove');
+importScripts('protocol.js?v=20261018-forge-belt-motion', '../game-clock.js?v=1.0.1', 'shim.js?v=20261018-potential-remove');
 // 離線結算等分批工作亦共用暫停時鐘；訊息與loop仍能回應存檔及PING。
 if (typeof GameClock !== 'undefined') {
   globalThis.setTimeout = GameClock.setTimeout;
   globalThis.clearTimeout = GameClock.clearTimeout;
 }
 importScripts(
-  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261018-potential-remove', '../runeword_data.js?v=20261013-rune-all-elem-color', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261018-potential-remove', '../formula.js?v=20261018-potential-remove-gem-workshop', '../battlefield.js?v=20261016-npc-retaliate-refill', '../stats.js?v=20261003-rename-weineng',
+  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261018-heaven-power', '../runeword_data.js?v=20261013-rune-all-elem-color', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261018-potential-remove', '../formula.js?v=20261018-potential-remove-gem-workshop', '../battlefield.js?v=20261016-npc-retaliate-refill', '../stats.js?v=20261003-rename-weineng',
   '../item.js?v=20261018-gem-workshop', '../gem_resonance.js?v=20261018-resonance-hole-effects','../runeword.js?v=20261014-develop-integration',
-  '../skills.js?v=20261018-potential-remove', '../skills2.js?v=20261018-potential-remove', '../elite_data.js?v=20261016-wall-rock', '../talents.js?v=20261018-potential-remove',
+  '../skills.js?v=20261018-potential-remove', '../skills2.js?v=20261018-potential-remove', '../elite_data.js?v=20261016-wall-rock', '../talents.js?v=20261018-heaven-power',
   '../player.js?v=20261018-potential-remove', '../special_rules.js',
   '../combat.js?v=20261018-potential-remove', '../elite.js?v=20261018-wall-natural-narrow', '../elite_boss.js?v=20261015-boss-player-skill', '../elite_boss_recipes.js?v=20261015-boss-player-skill', '../legendary.js?v=20261012-indomitable-guard', '../tower.js?v=20261018-potential-remove',
   '../factory.js?v=20261015-gem-enabled', '../newforge.js', '../forge.js?v=20261015-gem-enabled', '../save.js?v=20261018-potential-remove',
@@ -825,15 +825,18 @@ function newForgePanelView(nf) {
     queueCount: Array.isArray(nf.queue) ? nf.queue.length : 0,
     furnaces: furnaces.map(function (fu) {
       fu = fu || {};
+      var speed = newForgeFurnaceSpeed(fu);
       return {
         id: fu.id,
         enabled: !!fu.enabled,
+        cycleDurationSec: NEW_FORGE_INTERVAL / speed,
+        cycleRemainingSec: Math.max(0, Number(fu.timer) || 0) / speed,
         qualities: Array.isArray(fu.qualities) ? fu.qualities.slice() : [],
         parts: Array.isArray(fu.parts) ? fu.parts.map(function (p) { return p && p.key ? { key: p.key } : null; }).filter(Boolean) : [],
         partSlots: Number(fu.partSlots) || 0,
         queueCount: Array.isArray(fu.queue) ? fu.queue.length : 0,
         belt: (Array.isArray(fu.belt) ? fu.belt : []).slice(0, NEW_FORGE_BELT_SHOW).map(function (it) {
-          return it ? { rarity: it.rarity, slot: it.slot, name: it.name } : null;
+          return it ? { id: it.id, rarity: it.rarity, slot: it.slot, name: it.name, weaponType: it.weaponType || null } : null;
         }).filter(Boolean)
       };
     }),
