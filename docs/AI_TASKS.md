@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## SYNC-INDEX-RECOVERY-20261018 — 同步時自動修復半完成的 fast-forward index
+
+- Owner：Codex；Done，單一開發者。使用者要求將本次index寫入失敗的修復納入sync_ai_worktrees.bat，未來自動處理並接續同步；前置既有同步／Markdown報告，已滿足，目標預檢全乾淨。只在Codex修改工具與文件，禁止遊戲玩法／素材／其他工作區開發內容，不執行正式合併或推送。
+- 允許BAT說明、tools/sync_ai_worktrees.ps1、新tools/sync-index-recovery.ps1、同步回歸與新tests/sync-index-recovery.test.cjs、docs/SYNC_AI_WORKTREES.md及本紀錄。保留原有AI解衝突與報告，素材庫同步策略不變。同工作區另有共鳴UI聊天，保留其檔案及任務區段，分段stage本次紀錄。
+- 方式／驗收：ff-only前備份index並記錄原HEAD、固定目標、分支與index雜湊；只接管unable to write new index file。獨立index完整比對檔案／未追蹤／隱藏旗標，確認父提交、index、目標未變且無進行中Git操作後，以read-tree及帶舊值檢查的update-ref修正metadata，保留工作檔與旗標。保存紀錄供重跑，預檢／停用不修復，不刪鎖或改權限。真Git遠端＋故障注入驗證當次／重跑成功、額外修改／untracked／鎖／HEAD或index變動／其他Git錯誤拒絕、CAS防回退、Markdown與原有同步回歸、Build／diff後Commit。無新素材／素材庫變更。
+- 完成7檔：BAT沿原啟動鏈、核心統一攔截ff-only、新增獨立修復模組與故障注入測試、既有fixture納入新模組／PS語法檢查、操作文件及本區段。修復有同工作區控制器互斥、固定SHA／雜湊／暫存樹保護、獨立index比對、保留skip-worktree／assume-unchanged及中文路徑／CRLF、備份及待接續紀錄；NoIndexRecovery與NoAutoResolve獨立。正常無更新步驟直接回報最新，不額外重建index。
+- 指令／結果：node --test --test-reporter=tap tests/sync-index-recovery.test.cjs，14/14通過；其後新增控制器互斥並加強中文捷徑／雙旗標案例，以--test-name-pattern="CRLF|another controller"再跑2/2通過（其中1項重跑），合計15個不同index案例。node --test --test-reporter=tap tests/sync-auto-conflicts.test.cjs tests/sync-ai-worktrees.test.cjs tests/merge-ai-tasks.test.cjs，39/39通過；共54個不同案例。npm.cmd run build：535檔通過；PS解析／BAT ASCII與CRLF／git diff --check通過。故障注入使用真Git本機遠端及獨立index實際更新檔案，驗證成功後全部AI工作區、刪除／新增檔和提交相符；分支競寫由真update-ref CAS拒絕，不降低斷言。
+- 自我Review／限制：唯讀檢查既有同步／報告及AI_TASKS合併測試，不改原Codex解衝突或報告包裝程序。只處理有本工具紀錄且完整符合目標的ff-only index錯誤；未知／未記錄現場、持續鎖定／權限錯誤、稀疏簽出與其他錯誤仍安全停止並報告。完整比對可能需數分鐘；備份存各工作區Git metadata，不覆蓋額外修改、不改素材庫策略。
+- 交付：Commit為本紀錄所在[Codex] feat提交，回覆附編號；無本次未完成項，可供審閱合併，無素材庫變更／不需素材Commit，未執行正式同步／合併／推送。其他聊天的共鳴UI進行中工作完整保留，不納入提交；下一步完成其他工作後執行Codex的新版BAT即可使用並透過原同步流程整合到其他工作區。
+
 ## GEM-RESONANCE-REGION-LAYOUT-20261018 — 移除區名並放大孔位盤面
 
 - Owner：Codex；Done，單一開發者。使用者要求移除盤面區域類型文字、放大盤面至符合六角背景；前置共鳴與底板已完成，工作區乾淨、六個目標衝突預檢乾淨。

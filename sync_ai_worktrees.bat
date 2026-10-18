@@ -4,6 +4,8 @@ rem Sync logic: tools\sync_ai_worktrees.ps1. The launcher also saves reports.
 rem Develop merge conflicts are resolved automatically by the local Codex CLI.
 rem Pass -NoAutoResolve to stop on conflicts instead. Failures preserve the merge.
 rem Every run exports logs\sync-ai-worktrees\latest.md for sharing diagnostics.
+rem Failed fast-forward index writes are verified, backed up and repaired automatically.
+rem Pass -NoIndexRecovery to disable index recovery.
 rem Comments here stay ASCII on purpose: after chcp 65001, multi-byte text on a
 rem non-echo line can be re-parsed as a command. See test W8 in vfx-editor-save.
 chcp 65001 >nul
