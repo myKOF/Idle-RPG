@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## GEM-RESONANCE-CRIT-PHYS-20261018 — 暴擊傷害寶石移至物理區
+
+- Owner：Codex；Done，單一開發者。使用者追加要求暴擊傷害寶石歸物理區；確認為石榴石garnet／critDmg，從magic移至phys。前置共鳴與鑲孔文字397d5f58已完成，工作區乾淨、擴充目標預檢乾淨。
+- 允許config/Excel/Gem_resonance.xlsx／config/CSV/Gem_resonance.csv／js/gem_resonance_data.js僅區域種類，js/bridge.js／js/worker/sim.worker.js／index.html僅快取，既有兩份共鳴回歸、docs/GEM_RESONANCE.md／PATCH.md／本紀錄；禁止能力數值／其他寶石分類／核心公式／存檔格式／Protocol／素材及其他副本，不合併推送。
+- 方式／驗收：沿專案Excel原生逐格更新工具改兩格，正常模式重開並保持格式，CSV及JS同步同一配置，主執行緒與Worker更新快取。驗魔法區拒絕／物理區接受／中央原不限、UI篩選與拖放／直接Worker命令一致；舊魔法區石榴石沿既有存檔整理退回庫存、不丟失。規則／UI／存檔及Worker回歸、Build／表格往返一致、隔離瀏覽器後Commit；後續使用者重載檢視。無新素材或素材庫變更。
+- 完成11檔：Gem_resonance Excel／CSV與資料JS僅magic.types移除garnet、phys.types加入garnet；暴擊傷害能力與數值、紫水晶等其他種類保持不變，中央原不限。沿原權威種類檢查與UI篩選，不新增第二套分類。舊魔法孔石榴石經原migrateSave退回庫存，強化與同孔其他合法寶石保留，物理／中央已鑲石榴石保持原位。兩份測試、共鳴說明、PATCH與本紀錄同步。
+- Excel：`tools/excel-update-sheets.ps1`原生API只寫Gem_resonance!D4／D9共2格，兩輪正常重開／全格比對通過，沒有XML手工寫入。styles.xml逐位元不變，原檔來自舊機器，Excel正常儲存造成預設列高16.2→16.5、欄寬14.77734375→14.75與dyDescent正規化；以原檔副本零格修改走同原生往返可重現，與基線比較全表結構／列欄設定完全一致，只有D4／D9內容不同。Excel與CSV全部20列逐格一致。既有工具`node tools/config_tables.cjs --apply Gem_resonance --write`僅1個字面值語意變更，後續乾跑3字面值／語意變更0。
+- 快取：index資料JS1.0.0→1／Bridge1.0.294→295，Worker資料import更新20261018-resonance-crit-phys，Bridge追加crit-phys並保留已合併築牆／單孔共鳴標記；Worker實際請求驗證新版本。Protocol與存檔格式不變，無素材變更／素材庫Commit。
+- 指令／結果：`node --test tests/gem-resonance-ui.test.cjs tests/gem-resonance.test.cjs tests/init-ui-smoke.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs`61/61通過，新增2項分類／拒絕不扣庫存／正式鑲嵌取下／舊存檔退回與保留回歸；`npm.cmd run build`535檔通過，`git diff --check`通過。自我Review確認修改只在種類配置與快取，未修改公式或存檔遷移實作。
+- 瀏覽器：獨立headless Edge／隨機localhost／seed新角色，正式index／UI／Worker，GM供4階石榴石；物理左側可見並鑲入、右側38px格內顯示四級石榴石與暴擊傷害+32%，魔法左側不顯示、原生拖到魔法孔拒絕，直接Worker指令亦拒絕且庫存不變，點能力取下完整退回。Console warning／error、pageerror與HTTP錯誤0；初次臨時HTTP服務未解碼含空白的無關VFX路徑，修正測試服務後重跑通過，正式程式未修改。預覽保留本聊天visualizations/gem-resonance-crit-phys.png。
+- 唯讀未改：AI規範／工作流／Agent文件、原Excel更新與配置工具、data.js石榴石數值、權威socket／共鳴公式、save.js合法性整理、UI種類篩選／Tooltip及Worker協議。所有目標預檢乾淨，沒有其他副本或分支衝突。隔離瀏覽器／服務與臨時腳本／Excel副本／JSON已清理，不動真人存檔。無未完成本次需求或新增已知風險；未實測其他瀏覽器／實體觸控／真人長戰。Commit為本紀錄所在`[Codex] fix: 暴擊傷害石榴石改歸物理共鳴區`，回覆附編號；可供Review／合併，未合併推送。下一步重新載入遊戲，舊魔法區石榴石可從庫存改鑲至物理區。
+
 ## GEM-RESONANCE-SLOT-TEXT-20261018 — 等高鑲孔顯示寶石名稱與能力
 
 - Owner：Codex；Done，單一開發者。使用者要求右側已鑲寶石欄加寬，圖示旁以小字顯示寶石名稱與自身能力，不能增加格高。前置共鳴資訊已完成，工作區乾淨、七檔預檢乾淨。

@@ -317,3 +317,24 @@ test('空孔升級無共鳴；正式鑲入、升級與取下立即改變實際�
  assert.equal(c.gemCount('catseye',4),2);
  assert.ok(Math.abs(c.computeStats().hit-base-value(6))<1e-6);
 });
+
+test('暴擊傷害石榴石只歸物理區與不限種類中央區；舊魔法孔退回庫存並保留強化及其他寶石',()=>{
+ const c=game({garnet:{4:2}});
+ assert.equal(c.GEM_TYPES.garnet.stat,'critDmg');
+ for(let r=0;r<7;r++)assert.equal(c.resonanceTypeAllowed(r,'garnet'),r===5||r===6);
+ const before=JSON.stringify(c.G);assert.match(c.socketResonanceGem(0,1,'garnet',4),/不能鑲/);assert.equal(JSON.stringify(c.G),before);
+ assert.equal(c.socketResonanceGem(5,6,'garnet',4),null);assert.equal(c.gemCount('garnet',4),1);
+ for(const p of ['js/skills.js','js/talents.js','js/player.js','js/save.js'])vm.runInContext(read(p),c,{filename:p});
+ const data=c.newGameState();data.player.gems.garnet[6]=3;
+ data.player.resonance={holes:{
+  '0:0':{lv:5,gems:[{type:'garnet',level:6},{type:'sapphire',level:6}]},
+  '5:0':{lv:2,gems:[{type:'garnet',level:6}]},
+  '6:0':{lv:1,gems:[{type:'garnet',level:10}]}
+ }};
+ const out=c.migrateSave(plain(data));assert.equal(out.player.gems.garnet[6],4);
+ assert.deepEqual(plain(out.player.resonance.holes),{
+  '0:0':{lv:5,gems:[{type:'sapphire',level:6}]},
+  '5:0':{lv:2,gems:[{type:'garnet',level:6}]},
+  '6:0':{lv:1,gems:[{type:'garnet',level:10}]}
+ });
+});

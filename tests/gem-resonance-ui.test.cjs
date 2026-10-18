@@ -260,3 +260,15 @@ test('說明精確三句；切入共鳴預設物傷左上孔、重入重設，�
  c.gresSelectHole(0,2);c.renderGems();c.setGemTool('resonance');assert.deepEqual(Array.from(c.UI.gemBrowse.resHole),[0,2]);
  c.setGemTool('compose');c.setGemTool('resonance');assert.deepEqual(Array.from(c.UI.gemBrowse.resHole),[5,6]);
 });
+
+test('石榴石在物理區篩選可見並可鑲入，魔法區不顯示且拒絕拖放，取下退回',()=>{
+ const f=ui({garnet:{4:2}}),{c,nodes,element}=f;
+ c.gresSelectHole(0,1);assert.doesNotMatch(nodes['gem-table'].innerHTML,/data-gem-pick="garnet"/);
+ c.gresSelectHole(5,6);assert.match(nodes['gem-table'].innerHTML,/data-gem-pick="garnet"/);
+ assert.match(tier(nodes,4),/data-gres-gem="garnet:4" draggable="true"/);
+ drag(f,'garnet',4);drop(f,'0:1');assert.equal(c.calls.length,0);assert.equal(c.gemCount('garnet',4),2);
+ nodes['gem-focus'].handlers.click({target:element({'data-gres-gem':'garnet:4'})});assert.equal(c.calls.length,1);
+ assert.equal(c.G.player.resonance.holes['5:6'].gems[0].type,'garnet');assert.match(nodes['gres-detail'].innerHTML,/四級石榴石/);
+ assert.ok(nodes['gres-detail'].innerHTML.includes('<span class="gres-gem-stat">'+c.gresStatText('garnet',c.gemStatValue('garnet',4))+'</span>'));
+ nodes['gres-detail'].handlers.click({target:element({'data-gres-take':'0'})});assert.equal(c.gemCount('garnet',4),2);
+});
