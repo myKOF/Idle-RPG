@@ -91,13 +91,15 @@
 
 /* ---- 寶石共鳴（js/ui-gem-resonance.js）---- */
 #tab-gems .gx-panel[data-gem-panel="resonance"] { position: relative; container-type: inline-size; }
-.gres-help { position: absolute; top: 10px; right: 12px; z-index: 1; }
+.gres-help { position: absolute; top: 8px; left: -36px; z-index: 1; }
 .gres-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(180px, .36fr); flex: 1 1 auto; gap: 14px; grid-template-rows: minmax(0, 1fr); align-items: stretch; min-height: 0; }
 .gres-board { position: relative; width: 100%; min-width: 0; min-height: 0; }
-.gres-side { min-width: 0; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; padding: 8px 22px 0 0; overflow-wrap: anywhere; }
+.gres-side-wrap { position: relative; display: flex; min-width: 0; min-height: 0; }
+.gres-side { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 24px; overflow-y: auto; padding: 8px 0 0; overflow-wrap: anywhere; }
 .gres-svg { position: absolute; inset: 0; display: block; width: 100%; height: 100%; overflow: hidden; }
-.gres-backplate, .gres-art, .gres-hole image, .gres-region { pointer-events: none; }
+.gres-backplate, .gres-art, .gres-hole image { pointer-events: none; }
 .gres-hole { cursor: pointer; }
+.gres-hole.is-locked { filter: grayscale(1); opacity: .38; }
 .gres-socket-shadow { fill: #020608; stroke: #020406; stroke-width: 2; }
 .gres-socket-frame { fill: url(#gres-metal); stroke: #080d10; stroke-width: .7; }
 .gres-socket-body { stroke: hsl(var(--h) 46% 58% / .8); stroke-width: .55; }
@@ -105,33 +107,39 @@
 .gres-rim-light { fill: none; stroke: hsl(var(--h) 75% 84% / .75); stroke-width: .65; }
 .gres-inner-light { fill: none; stroke: hsl(var(--h) 80% 69% / .38); stroke-width: .5; }
 .gres-hole.is-filled .gres-face, .gres-hole:hover .gres-art { filter: brightness(1.15); }
+.gres-hole.is-region-active .gres-art { filter: brightness(1.45) saturate(1.2) drop-shadow(0 0 2px hsl(var(--h) 80% 65% / .6)); }
+.gres-hole.is-region-active .gres-socket-body { stroke: hsl(var(--h) 90% 82%); stroke-width: 1.25; }
 .gres-hit { fill: transparent; stroke: none; pointer-events: all; }
 .gres-selection-outline { fill: none; stroke: #fff7cf; stroke-width: 5; pointer-events: none; }
+.gres-selection-outline.is-locked { stroke: #8a8d92; stroke-width: 2; }
 .gres-hole text { pointer-events: none; text-anchor: middle; font-size: 11px; }
-.gres-hole .gres-min { fill: hsl(var(--h) 65% 78%); font: 12px Georgia, 'Times New Roman', serif; paint-order: stroke; stroke: #070b13; stroke-width: .7; }
-.gres-hole.is-sel .gres-min { fill: #fff1bd; font-weight: 700; }
-.gres-lv { fill: #f0cf86; font-size: 9px; font-weight: 700; }
-.gres-hole .gres-cap { fill: #e8e2d4; font-size: 8px; }
-.gres-region { fill: hsl(var(--h) 75% 77%); font-size: 11px; font-weight: 600; paint-order: stroke; stroke: #090e11; stroke-width: 3; }
-.gres-detail { display: flex; flex-direction: column; gap: 10px; }
-.gres-title { color: #ece6d8; }
-.gres-sub { margin-left: 8px; color: #8d877a; font-size: 12px; }
-.gres-slots { display: flex; flex-wrap: wrap; gap: 6px; }
+.gres-hole .gres-lv { fill: #f0cf86; font-size: 9px; font-weight: 700; paint-order: stroke; stroke: #070b13; stroke-width: 1.5; }
+.gres-hole .gres-lv.is-center { font-size: 12px; }
+.gres-hole.is-filled .gres-lv.is-center { font-size: 6px; }
+.gres-gems { pointer-events: none; }
+.gres-gem-section { fill: #050b1326; stroke: #d0d8e65c; stroke-width: .6; }
+.gres-detail { display: flex; flex-direction: column; gap: 0; }
+.gres-summary { color: #ece6d8; font-size: 14px; line-height: 1.5; }
+.gres-bonus, .gres-list { color: #79e36b; }
+.gres-bonus { font-size: 12px; }
+.gres-slots { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin: 22px 0; }
 .gres-gem {
-  display: flex; align-items: center; gap: 6px; padding: 4px 8px;
-  border: 1px solid #2a2d34; border-radius: 6px; background: #0e1013;
+  display: flex; align-items: center; justify-content: center; min-width: 44px; min-height: 26px; padding: 2px 6px;
+  border: 1px solid #68665f; border-radius: 2px; background: #0e1013;
   color: #ece6d8; font: inherit; font-size: 12px; text-align: left;
 }
-button.gres-gem { cursor: pointer; }
+button.gres-gem { cursor: pointer; width: 100%; box-sizing: border-box; height: 38px; justify-content: flex-start; gap: 6px; }
 button.gres-gem:hover { border-color: #7a6440; }
-.gres-gem small { display: block; color: #a39d90; }
-.gres-gem.is-empty { color: #5c5f66; padding: 10px 14px; }
-.gres-lvrow { display: flex; justify-content: space-between; gap: 8px; color: #ece6d8; font-size: 13px; }
-.gres-lvrow span { color: #a39d90; }
-.gres-cost { color: #c9c3b5; font-size: 12px; line-height: 1.7; }
-.gres-cost .is-short { color: #e0685c; }
-.gres-empty { color: #8d877a; font-size: 12px; }
-.gres-list { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: #c9c3b5; }
+.gres-gem-info { flex: 1; min-width: 0; line-height: 1.25; }
+.gres-gem-name, .gres-gem-stat { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gres-gem-name { font-size: 11px; }
+.gres-gem-stat { font-size: 10px; color: #bcb6a8; }
+.gres-gem.is-empty { color: #c9c3b5; }
+.gres-upgrade .btn { width: 100%; }
+.gres-upgrade .btn:disabled { pointer-events: none; }
+.gres-upgrade:focus-visible { outline: 1px solid #d7bf82; outline-offset: 3px; }
+.gres-total .sec-sub { margin-bottom: 6px; color: #ece6d8; }
+.gres-list { display: flex; flex-direction: column; gap: 4px; font-size: 12px; line-height: 1.6; }
 
 /* 共鳴沿用左側類型列與上方十階列，工具頁籤的位置與其他工具一致。 */
 .gres-library-note { color: #d9c9a0; font-size: 12px; line-height: 1.5; }
@@ -141,19 +149,22 @@ button.gres-gem:hover { border-color: #7a6440; }
 #tab-gems[data-gem-tool="resonance"] .gx-curve-cell[draggable="true"]:active { cursor: grabbing; }
 #tab-gems[data-gem-tool="resonance"] .gx-curve-cell.is-unavailable { filter: grayscale(1); opacity: .32; cursor: not-allowed; }
 .gres-empty-tier { display: flex; align-items: center; justify-content: center; }
-.gres-library-hint { color: #a39d90; font-size: 12px; line-height: 1.7; }
 .gres-hole.is-drop .gres-hit { fill: #76e6a126; stroke: #a9edbd; stroke-width: 4; }
 .gres-hole.is-reject .gres-hit { fill: #e0685c1a; stroke: #e0685c; stroke-width: 3; }
-.gres-hole:focus-visible { outline: none; }
+.gres-hole:focus, .gres-hole:focus-visible { outline: none; }
 .gres-hole:focus-visible .gres-hit { stroke: #fff1c4; stroke-width: 4; }
 @media (max-width: 1500px) {
   .gres-layout { display: flex; flex: 0 0 auto; flex-direction: column; }
   .gres-board { flex: 0 0 auto; aspect-ratio: 514 / 450; }
-  .gres-side { overflow: visible; padding: 0 22px 0 0; }
+  .gres-side-wrap { margin-left: 36px; }
+  .gres-help { top: 0; }
+  .gres-side { overflow: visible; padding: 0; }
 }
 /* 工坊可由使用者縮窄，不能只依整個視窗寬度判斷左右排列。 */
 @container (max-width: 650px) {
   .gres-layout { display: flex; flex: 0 0 auto; flex-direction: column; }
   .gres-board { flex: 0 0 auto; aspect-ratio: 514 / 450; }
-  .gres-side { overflow: visible; padding: 0 22px 0 0; }
+  .gres-side-wrap { margin-left: 36px; }
+  .gres-help { top: 0; }
+  .gres-side { overflow: visible; padding: 0; }
 }

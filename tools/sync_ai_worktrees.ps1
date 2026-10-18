@@ -7,6 +7,7 @@ param(
     [switch]$SyncRemoteFirst,
     [switch]$SkipAssetLibrary,
     [switch]$NoAutoResolve,
+    [switch]$NoIndexRecovery,
     [string]$CodexCommand = 'codex.cmd'
 )
 
@@ -16,9 +17,11 @@ param(
 #   sync_ai_worktrees.bat                         # 預設先同步所有必要的遠端分支
 #   sync_ai_worktrees.bat -SkipAssetLibrary       # 只同步程式碼，不碰 VFX 素材庫
 #   sync_ai_worktrees.bat -NoAutoResolve          # 衝突時停止，不呼叫 Codex
+#   sync_ai_worktrees.bat -NoIndexRecovery        # 停用 fast-forward index 自動修復
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'sync-index-recovery.ps1')
 
 if ($Host.Name -eq 'ConsoleHost') {
     $Host.UI.RawUI.WindowTitle = 'Idle RPG - 同步 AI Worktree'
@@ -50,6 +53,10 @@ function Invoke-Git {
         [string[]]$GitArguments
     )
 
+    if ($GitArguments.Count -eq 3 -and $GitArguments[0] -eq 'merge' -and $GitArguments[1] -eq '--ff-only') {
+        Invoke-SyncFastForward -Worktree $Worktree -Ref $GitArguments[2]
+        return
+    }
     Write-Host ('git -C "{0}" {1}' -f $Worktree, ($GitArguments -join ' ')) -ForegroundColor DarkGray
     & git -C $Worktree @GitArguments
     if ($LASTEXITCODE -ne 0) {
@@ -368,11 +375,13 @@ try {
 
     Write-Step '檢查分支與工作區狀態'
     foreach ($branch in $agentBranches) {
+        Resume-SyncIndexRecovery -Worktree $worktrees[$branch] -ReadOnly:$ValidateOnly
         Assert-CleanWorktree -Worktree $worktrees[$branch] -ExpectedBranch $branch
         Write-Host ('[正常] {0}' -f $branch) -ForegroundColor Green
     }
 
     $developWorktree = $worktrees[$developBranch]
+    Resume-SyncIndexRecovery -Worktree $developWorktree -ReadOnly:$ValidateOnly
     Resume-DevelopConflict -Worktree $developWorktree
     Assert-CleanWorktree -Worktree $developWorktree -ExpectedBranch $developBranch
     Write-Host ('[正常] {0}' -f $developBranch) -ForegroundColor Green

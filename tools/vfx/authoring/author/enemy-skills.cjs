@@ -334,27 +334,27 @@ NEW['en-mortar-mark'] = () => ({
   ]
 });
 
-/* 築牆預警：牆體升起前的地面標記（矩形，18×6 米＝authored 200×67）：紫色警示帶＋虛線框＋飛起的碎石。 */
+/* 築牆預警：牆體升起前的地面標記，與岩壁共用短軸比例。 */
 NEW['en-wall-warn'] = () => ({
-  id: 'en-wall-warn', duration: 0.8, loop: true, sizing: rectSizing(200, 67),
+  id: 'en-wall-warn', duration: 0.8, loop: true, sizing: rectSizing(200, 43.55),
   layers: [
-    withGround(kit.sprite({ id: 'fill', asset: A.discB, z: 0, sizeX: 215, sizeY: 80, alpha: 0.55, tint: '#9a6cff', blend: 'add', duration: 0.8, alphaOverLife: [[0, 0.4], [0.5, 0.7], [1, 0.4]] })),
-    withGround(kit.sprite({ id: 'edge', asset: A.reticleDashed, z: 1, sizeX: 210, sizeY: 70, alpha: 0.9, tint: '#e0ccff', blend: 'add', duration: 0.8 })),
-    withGround(kit.sprite({ id: 'line', asset: A.trace06H, z: 2, sizeX: 210, sizeY: 22, alpha: 1, tint: '#f2e8ff', blend: 'add', duration: 0.8 })),
-    kit.particle({ id: 'dust', asset: A.dirt01, z: 3, rate: 26, lifetime: [0.4, 0.7], spawnBox: [190, 50], speed: [14, 40], direction: -90, spread: 60, startPx: [16, 26], alpha: 0.8, tint: '#cdbcf0', blend: 'add', alphaOverLife: [[0, 0], [0.3, 1], [1, 0]] })
+    withGround(kit.sprite({ id: 'fill', asset: A.discB, z: 0, sizeX: 215, sizeY: 52, alpha: 0.55, tint: '#9a6cff', blend: 'add', duration: 0.8, alphaOverLife: [[0, 0.4], [0.5, 0.7], [1, 0.4]] })),
+    withGround(kit.sprite({ id: 'edge', asset: A.reticleDashed, z: 1, sizeX: 210, sizeY: 45.5, alpha: 0.9, tint: '#e0ccff', blend: 'add', duration: 0.8 })),
+    withGround(kit.sprite({ id: 'line', asset: A.trace06H, z: 2, sizeX: 210, sizeY: 14.3, alpha: 1, tint: '#f2e8ff', blend: 'add', duration: 0.8 })),
+    kit.particle({ id: 'dust', asset: A.dirt01, z: 3, rate: 26, lifetime: [0.4, 0.7], spawnBox: [190, 32.5], speed: [14, 40], direction: -90, spread: 60, startPx: [16, 26], alpha: 0.8, tint: '#cdbcf0', blend: 'add', alphaOverLife: [[0, 0], [0.3, 1], [1, 0]] })
   ]
 });
 
-/* 石牆：升起後持續存在的整塊岩壁。18×6 米（authored 200×67）＝四塊約 4.5×6 米的粗切岩塊拼成一整面。
+/* 石牆：升起後持續存在的整塊岩壁，四塊帶斜肩與破碎頂緣的岩石拼成狹長牆體。
    岩塊是立體的，牆斜著放時接縫與側面都會變，所以每 15° 畫一張整面牆（claude-authored/rock-wall/wall-slab-NNN.svg，
    由 rock-wall-slabs.cjs 用斜俯視幾何算出，四塊在接縫處連續），做成 12 份 Preset（en-stone-wall-0～165）。
    模擬層（js/elite.js eliteCastWalls）把牆角度吸附到 15° 的倍數，依角度挑對應那份；牆長寬由 len／thick 決定，
-   比例就是 18:6。圖本身不轉（followDirection:false、不套地面投影），因為斜俯視的形狀已經畫在圖裡。 */
+   地面短軸與判定同步。圖本身不轉（followDirection:false、不套地面投影），因為斜俯視的形狀已經畫在圖裡。 */
 const WALL_DEGS = []; for (let d = 0; d < 180; d += 15) WALL_DEGS.push(d);
 const stoneWall = deg => () => {
   const layers = [
-    withGround(kit.sprite({ id: 'shadow', asset: A.discB, z: 0, sizeX: 215, sizeY: 84, alpha: 0.6, tint: '#150f2a', blend: 'add', duration: 1.2 })),
-    withGround(kit.sprite({ id: 'base', asset: A.discB, z: 1, sizeX: 200, sizeY: 60, alpha: 0.35, tint: '#7a64a8', blend: 'add', duration: 1.2 }))
+    withGround(kit.sprite({ id: 'shadow', asset: A.discB, z: 0, sizeX: 215, sizeY: 54.6, alpha: 0.6, tint: '#150f2a', blend: 'add', duration: 1.2 })),
+    withGround(kit.sprite({ id: 'base', asset: A.discB, z: 1, sizeX: 200, sizeY: 39, alpha: 0.35, tint: '#7a64a8', blend: 'add', duration: 1.2 }))
   ];
   /* 素材 256×200，地面中心在 (128,140)；kit 的 size 以 512 貼圖為基準，這裡直接給縮放 1（authored 單位 1:1）。 */
   const slab = kit.sprite({ id: 'slab', asset: 'claude-authored/rock-wall/wall-slab-' + String(deg).padStart(3, '0') + '.svg', z: 2, x: 0, y: 0, sx: 1, sy: 1, anchor: { x: 0.5, y: 0.7 }, alpha: 1, duration: 1.2 });
@@ -362,7 +362,7 @@ const stoneWall = deg => () => {
   layers.push(slab);
   layers.push(withGround(kit.sprite({ id: 'rim', asset: A.trace06H, z: 12, y: -6, sizeX: 205, sizeY: 14, alpha: 0.55, tint: '#e6d6ff', blend: 'add', duration: 1.2, alphaOverLife: [[0, 0.4], [0.5, 0.7], [1, 0.4]] })));
   layers.push(kit.particle({ id: 'dust', asset: A.dirt01, z: 20, rate: 8, lifetime: [0.5, 0.9], spawnBox: [190, 6], speed: [6, 16], direction: -90, spread: 50, startPx: [14, 22], alpha: 0.5, tint: '#c4b4e4', blend: 'add', alphaOverLife: [[0, 0], [0.3, 0.7], [1, 0]] }));
-  return { id: 'en-stone-wall-' + deg, duration: 1.2, loop: true, sizing: rectSizing(200, 67), layers };
+  return { id: 'en-stone-wall-' + deg, duration: 1.2, loop: true, sizing: rectSizing(200, 43.55), layers };
 };
 WALL_DEGS.forEach(d => { NEW['en-stone-wall-' + d] = stoneWall(d); });
 

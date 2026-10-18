@@ -7,10 +7,12 @@
 var GRES_CELL = 22;                                    // 六角孔外接圓半徑（SVG 單位）
 var GRES_SPACING = Math.sqrt(3) * GRES_CELL;           // 相鄰孔中心距
 var GRES_REGION_DIST = GRES_SPACING * 3.15;            // 外圍區中心到中央區中心的距離（略大於三格，區與區之間留縫）
-var GRES_LABEL_DIST = GRES_REGION_DIST + GRES_SPACING + GRES_CELL + 12;
+var GRES_BOARD_SCALE = 1.18;                            // 孔位盤面等比放大，填入底板內緣。
 var GRES_VIEW = 273;                                   // 母圖在共用座標中的半邊長，不隨顯示範圍改動。
 var GRES_VIEW_BOX = '-257 -230 514 450';                 // 收去母圖外透明留白，四邊保留安全距離。
 var GRES_REGION_COLORS = [266, 214, 176, 37, 132, 355, 46]; // 各區色相（與區域順序一致）
+var GRES_BACKPLATE_SRC = 'images/ui/gem-resonance/hex-backplate.png';
+var GRES_BACKPLATE_IMAGE = null;
 
 /* 方位 i（0＝正上方，順時針每 60°）的單位向量。 */
 function gresDir(i) {
@@ -41,9 +43,19 @@ function gresHexPoints(c, radius) {
 function gresSnapshotState(snapshot) {
   return (snapshot && snapshot.resonance) || { holes: {} };
 }
+function gresDefaultHole() {
+  for (var r = 0; r < GEM_RESONANCE_REGIONS.length; r++) {
+    if (GEM_RESONANCE_REGIONS[r].id === 'phys') return [r, 6];
+  }
+  return [0, 6];
+}
+function gresResetSelection() {
+  UI.gemBrowse.resHole = gresDefaultHole();
+  UI.gemBrowse.resFilter = 'all';
+}
 function gresSelected() {
   var sel = UI.gemBrowse.resHole;
-  return (sel && resonanceValidHole(sel[0], sel[1])) ? sel : [GEM_RESONANCE_REGIONS.length - 1, 0];
+  return (sel && resonanceValidHole(sel[0], sel[1])) ? sel : gresDefaultHole();
 }
 
 function gresStatText(type, value) {
@@ -87,44 +99,66 @@ function gresSocketArt(c, region) {
     '<path class="gres-inner-light" d="M ' + [inner[2], inner[1], inner[0]].join(' L ') + '"/></g>';
 }
 
-function gresBoardHTML(state, sel) {
+/* 多顆寶石在同一孔內分區；每顆維持完整縮圖，裁切僅限制在孔內與自己的區塊。 */
+function gresHoleGemsHTML(c, gems, region, hole) {
+  if (gems.length === 1) return '<image href="' + gemIconSrc(gems[0].type, gems[0].level) + '" x="' + (c.x - 14).toFixed(1) + '" y="' + (c.y - 15).toFixed(1) + '" width="28" height="28"/>';
+  var id = 'gres-gems-' + region + '-' + hole;
+  var h = '<g class="gres-gems" aria-hidden="true"><defs><clipPath id="' + id + '" clipPathUnits="userSpaceOnUse"><polygon points="' + gresHexPoints(c, 19) + '"/></clipPath></defs><g clip-path="url(#' + id + ')">';
+  gems.forEach(function (gem, i) {
+    var count = gems.length;
+    var angle = count === 2 ? Math.PI * (1 - i) : -Math.PI / 2 + i * Math.PI * 2 / count;
+    var half = Math.PI / count, radius = 45;
+    var a = angle - half, b = angle + half;
+    var sector = 'M ' + c.x.toFixed(1) + ' ' + c.y.toFixed(1) + ' L ' +
+      (c.x + Math.cos(a) * radius).toFixed(1) + ' ' + (c.y + Math.sin(a) * radius).toFixed(1) +
+      ' A ' + radius + ' ' + radius + ' 0 0 1 ' + (c.x + Math.cos(b) * radius).toFixed(1) + ' ' + (c.y + Math.sin(b) * radius).toFixed(1) + ' Z';
+    var size = count === 2 ? 15 : (count === 3 ? 13 : 10);
+    var offset = count === 2 ? 9 : 10.5;
+    var x = c.x + Math.cos(angle) * offset - size / 2, y = c.y + Math.sin(angle) * offset - size / 2;
+    var part = id + '-' + i;
+    h += '<defs><clipPath id="' + part + '" clipPathUnits="userSpaceOnUse"><path d="' + sector + '"/></clipPath></defs>' +
+      '<g class="gres-gem-part" clip-path="url(#' + part + ')"><path class="gres-gem-section" d="' + sector + '"/>' +
+      '<image href="' + gemIconSrc(gem.type, gem.level) + '" x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + size + '" height="' + size + '"/></g>';
+  });
+  return h + '</g></g>';
+}
+
+function gresBoardHTML(state, sel, socketsHTML) {
   var h = '<svg viewBox="' + GRES_VIEW_BOX + '" class="gres-svg" role="group" aria-label="寶石共鳴盤面">';
-  h += gresMaterialDefs() + '<image class="gres-backplate" aria-hidden="true" href="images/ui/gem-resonance/hex-backplate.png" x="' + (-GRES_VIEW) + '" y="' + (-GRES_VIEW) + '" width="' + (GRES_VIEW * 2) + '" height="' + (GRES_VIEW * 2) + '"/>';
+  h += gresMaterialDefs() + '<image class="gres-backplate" aria-hidden="true" href="' + GRES_BACKPLATE_SRC + '" x="' + (-GRES_VIEW) + '" y="' + (-GRES_VIEW) + '" width="' + (GRES_VIEW * 2) + '" height="' + (GRES_VIEW * 2) + '"/>';
+  h += '<g class="gres-sockets" transform="scale(' + GRES_BOARD_SCALE + ')">';
+  return h + (socketsHTML == null ? gresSocketsHTML(state, sel) : socketsHTML) + '</g></svg>';
+}
+
+/* 背板與材質defs固定保留，選孔／鑲入／升級只更新孔位，避免重新建立圖片。 */
+function gresSocketsHTML(state, sel) {
+  var h = '';
   GEM_RESONANCE_REGIONS.forEach(function (reg, r) {
     var hue = GRES_REGION_COLORS[r % GRES_REGION_COLORS.length];
+    var unlocked = resonanceRegionUnlocked(state, r);
     for (var hole = 0; hole < RESONANCE_HOLE_COUNT; hole++) {
       var c = gresHoleCenter(r, hole);
       var slot = resonanceHoleState(state, r, hole);
-      var min = resonanceHoleMinLevel(r, hole);
       var on = sel[0] === r && sel[1] === hole;
-      h += '<g class="gres-hole' + (slot.gems.length ? ' is-filled' : '') + (on ? ' is-sel' : '') + '" data-gres-hole="' + r + ':' + hole + '" role="button" tabindex="0" aria-pressed="' + on + '" aria-label="' + esc(reg.name + '區' + (hole === 0 ? '中心孔' : '外圈孔 ' + hole)) + '" style="--h:' + hue + '">' +
+      h += '<g class="gres-hole' + (slot.gems.length ? ' is-filled' : '') + (!unlocked ? ' is-locked' : '') + (unlocked && r === sel[0] ? ' is-region-active' : '') + (on ? ' is-sel' : '') + '" data-gres-hole="' + r + ':' + hole + '" role="button" tabindex="0" aria-pressed="' + on + '" aria-label="' + esc(reg.name + '區' + (hole === 0 ? '中心孔' : '外圈孔 ' + hole) + (unlocked ? '' : '（未解鎖）')) + '" style="--h:' + hue + '">' +
         gresSocketArt(c, r);
       if (slot.gems.length) {
-        var g = slot.gems[0];
-        h += '<image href="' + gemIconSrc(g.type, g.level) + '" x="' + (c.x - 14).toFixed(1) + '" y="' + (c.y - 15).toFixed(1) + '" width="28" height="28"/>';
-        if (resonanceHoleCap(r, hole) > 1) h += '<text class="gres-cap" x="' + (c.x + 12).toFixed(1) + '" y="' + (c.y - 9).toFixed(1) + '">' + slot.gems.length + '/' + resonanceHoleCap(r, hole) + '</text>';
-      } else {
-        h += '<text class="gres-min" x="' + c.x.toFixed(1) + '" y="' + (c.y + 5).toFixed(1) + '">' + min + '</text>';
+        h += gresHoleGemsHTML(c, slot.gems, r, hole);
       }
-      if (slot.lv) h += '<text class="gres-lv" x="' + c.x.toFixed(1) + '" y="' + (c.y + 16).toFixed(1) + '">Lv' + slot.lv + '</text>';
+      if (slot.lv) h += '<text class="gres-lv' + (!slot.gems.length || slot.gems.length > 2 ? ' is-center' : '') + '" x="' + c.x.toFixed(1) + '" y="' + (c.y + (!slot.gems.length || slot.gems.length > 2 ? 4 : 16)).toFixed(1) + '">' + slot.lv + '</text>';
       // 最上層透明命中面覆蓋切面與寶石，整個孔都沿同一個互動入口。
       h += '<polygon class="gres-hit" points="' + gresHexPoints(c) + '"/></g>';
     }
-    var lc;
-    if (r >= 6) lc = { x: 0, y: 0 };
-    else { var d = gresDir(r); lc = { x: d.x * GRES_LABEL_DIST, y: d.y * GRES_LABEL_DIST }; }
-    if (r < 6) {
-      var anchor = 'middle';
-      h += '<text class="gres-region" style="--h:' + hue + '" x="' + lc.x.toFixed(1) + '" y="' + (lc.y + 4).toFixed(1) + '" text-anchor="' + anchor + '">' + esc(reg.name) + '</text>';
-    }
   });
   // 最後才畫選中框，避免相鄰孔的填色蓋住共用邊；此層不攔截點擊或拖放。
-  return h + '<polygon class="gres-selection-outline" aria-hidden="true" points="' + gresHexPoints(gresHoleCenter(sel[0], sel[1])) + '"/>' + '</svg>';
+  return h + '<polygon class="gres-selection-outline' + (resonanceRegionUnlocked(state, sel[0]) ? '' : ' is-locked') + '" aria-hidden="true" points="' + gresHexPoints(gresHoleCenter(sel[0], sel[1])) + '"/>';
 }
 
 /* ---- 類型選取與十階列鑲嵌：共用同一份可用性判斷 ---- */
 function gresSocketBlockReason(snapshot, region, hole, gem) {
   if (!snapshot || !resonanceValidHole(region, hole)) return '尚未取得共鳴孔資料';
+  var locked = resonanceRegionLockReason(gresSnapshotState(snapshot), region);
+  if (locked) return locked;
   if (!gem || !GEM_TYPES[gem.type]) return '請先選擇寶石類型';
   if (!isGemEnabled(gem.type) || !resonanceTypeAllowed(region, gem.type)) return '此孔無法鑲入這個寶石類型';
   var min = resonanceHoleMinLevel(region, hole);
@@ -143,7 +177,7 @@ function gresRenderLibrary(snapshot, box, totals) {
   var note = $id('gres-library-note');
   if (note) {
     note.hidden = false;
-    note.textContent = GEM_RESONANCE_REGIONS[sel[0]].name + '區・' + (sel[1] ? '外圈孔 ' + sel[1] : '中心孔') + '｜' + GEM_NAMES[resonanceHoleMinLevel(sel[0], sel[1])] + '以上';
+    note.textContent = resonanceRegionLockReason(gresSnapshotState(snapshot), sel[0]) || GEM_RESONANCE_REGIONS[sel[0]].name + '區・' + (sel[1] ? '外圈孔 ' + sel[1] : '中心孔') + '｜' + GEM_NAMES[resonanceHoleMinLevel(sel[0], sel[1])] + '以上';
   }
   // 拖曳完成前保留類型與來源階級，最新庫存仍會在放開時重新驗證。
   if (st.resDrag) return;
@@ -187,58 +221,54 @@ function gresDetailHTML(snapshot, headerSnapshot, state, sel) {
   var slot = resonanceHoleState(state, region, hole);
   var cap = resonanceHoleCap(region, hole);
   var min = resonanceHoleMinLevel(region, hole);
-  var s = GEM_RESONANCE_SETTINGS;
-  var h = '<div class="gres-title"><b>' + esc(reg.name) + '區</b>・' + (hole === 0 ? '中心孔' : '外圈孔 ' + hole) +
-    '<span class="gres-sub">需 ' + esc(GEM_NAMES[min]) + '以上｜容量 ' + cap + '</span></div>';
+  var locked = resonanceRegionLockReason(state, region);
+  var bonusPct = locked || !slot.gems.length ? 0 : Math.round(resonanceBonusMult(slot.lv) * 100);
+  var h = '<div class="gres-summary"><div class="gres-title">' + esc(reg.name + (reg.types ? '型' : '類型')) + min + '級以上寶石</div>' +
+    '<div class="gres-level">等級 Lv.' + slot.lv + '</div>' +
+    '<div class="gres-bonus">獲得相鄰寶石能力+' + bonusPct + '%</div></div>';
 
   h += '<div class="gres-slots">';
   for (var i = 0; i < cap; i++) {
     var g = slot.gems[i];
     h += g
-      ? '<button type="button" class="gres-gem" data-gres-take="' + i + '" data-tip="點擊取下">' + gemIconHTML(g.type, g.level, 'gi-slot') +
-        '<span>' + esc(GEM_NAMES[g.level] + GEM_TYPES[g.type].name) + '<small>' + gresStatText(g.type, gemStatValue(g.type, g.level)) + '</small></span></button>'
-      : '<div class="gres-gem is-empty">空孔</div>';
+      ? '<button type="button" class="gres-gem" data-gres-take="' + i + '" aria-label="' + esc(GEM_NAMES[g.level] + GEM_TYPES[g.type].name + '，點擊取下') +
+        '" data-tt-title="' + esc(GEM_NAMES[g.level] + GEM_TYPES[g.type].name) + '" data-tt-desc="' + esc(gresStatText(g.type, gemStatValue(g.type, g.level)) + '；點擊取下') + '">' + gemIconHTML(g.type, g.level, 'gi-slot') +
+        '<span class="gres-gem-info"><span class="gres-gem-name">' + esc(GEM_NAMES[g.level] + GEM_TYPES[g.type].name) + '</span>' +
+        '<span class="gres-gem-stat">' + gresStatText(g.type, gemStatValue(g.type, g.level)) + '</span></span></button>'
+      : '<div class="gres-gem is-empty">鑲孔</div>';
   }
   h += '</div>';
 
-  var bonusPct = Math.round(resonanceBonusMult(slot.lv) * 100);
-  h += '<div class="gres-lvrow"><b>孔等級 Lv.' + slot.lv + ' / ' + resonanceMaxHoleLevel() + '</b>' +
-    '<span>相鄰加成 +' + bonusPct + '%（上限 ' + s.maxPct + '%）</span></div>';
   var cost = resonanceUpgradeCost(slot.lv);
-  if (!cost) {
-    h += '<div class="gres-cost">已達等級上限</div>';
-  } else {
+  var ok = false, upgradeTip = locked || '已達強化等級上限';
+  if (cost) {
     var count = function (t, lv) { return gemsViewCount(snapshot, t, lv); };
     var type = resonanceUpgradePayType(region, slot, cost, count);
     var player = headerSnapshot && headerSnapshot.player;
     var gold = player ? player.gold : 0;
     var have = type ? count(type, cost.gemLv) : 0;
-    var ok = gold >= cost.gold && !!type && have >= cost.gemCount;
+    ok = !locked && gold >= cost.gold && !!type && have >= cost.gemCount;
     var gemText = type
-      ? gemIconHTML(type, cost.gemLv, 'gi-inline') + esc(GEM_NAMES[cost.gemLv] + GEM_TYPES[type].name) + ' ×' + cost.gemCount + '（持有 ' + fmt(have) + '）'
-      : esc(GEM_NAMES[cost.gemLv]) + '本區寶石 ×' + cost.gemCount + '（任一種，目前不足）';
-    h += '<div class="gres-cost">升到 Lv.' + (slot.lv + 1) + '：<span class="' + (gold >= cost.gold ? '' : 'is-short') + '"><img src="images/icon_gold.png" class="res-icon">' + fmt(cost.gold) + '</span>＋' +
-      '<span class="' + (type && have >= cost.gemCount ? '' : 'is-short') + '">' + gemText + '</span></div>' +
-      '<button type="button" class="btn" data-gres-upgrade="1"' + (ok ? '' : ' disabled') + '>⬆️ 升級此孔</button>';
+      ? GEM_NAMES[cost.gemLv] + GEM_TYPES[type].name + ' ×' + cost.gemCount + '（持有 ' + fmt(have) + '）'
+      : GEM_NAMES[cost.gemLv] + '本區可用寶石 ×' + cost.gemCount + '（目前不足）';
+    upgradeTip = (locked ? esc(locked) + '<br>' : '') + '金幣：' + fmt(cost.gold) + '（持有 ' + fmt(gold) + '）<br>材料：' + esc(gemText);
+    if (!locked && !ok) upgradeTip += '<br>金幣或材料不足';
   }
-
-  h += '<div class="gres-library-hint">' + (slot.gems.length < cap
-    ? '左側選擇寶石類型，再點擊上方十階列鑲入，或拖曳至盤面孔位。'
-    : '此孔已滿；點擊孔內寶石取下，或選擇其他孔位。') + '</div>';
-  return h;
+  return h + '<div class="gres-upgrade" tabindex="0" data-gres-upgrade-tip="1" data-tt-title="升級鑲孔" data-tt-desc="' + esc(upgradeTip) + '">' +
+    '<button type="button" class="btn" data-gres-upgrade="1"' + (ok ? '' : ' disabled') + '>升級鑲孔</button></div>';
 }
 
-/* 共鳴總加成：把所有貢獻依能力合併顯示（未計寶石鑲嵌效率，實際數值以屬性面板為準）。 */
-function gresTotalHTML(state) {
+/* 所選孔的相鄰額外加成依能力合併，不含自身寶石與其他孔位。 */
+function gresTotalHTML(state, sel) {
+  sel = sel || gresSelected();
   var sums = {}, order = [];
-  resonanceEntries(state).forEach(function (e) {
+  resonanceHoleBonusEntries(state, sel[0], sel[1]).forEach(function (e) {
     var gt = GEM_TYPES[e.type];
     if (!gt) return;
     if (!(e.type in sums)) { sums[e.type] = 0; order.push(e.type); }
     sums[e.type] += gemStatValue(e.type, e.level) * e.mult;
   });
-  if (!order.length) return '<div class="gres-empty">尚未鑲入任何寶石</div>';
-  return '<div class="sec-sub">共鳴總加成（未計鑲嵌效率）</div><div class="gres-list">' +
+  return '<div class="sec-sub">共鳴效果：</div><div class="gres-list">' +
     order.map(function (t) { return '<div>' + gresStatText(t, sums[t]) + '</div>'; }).join('') + '</div>';
 }
 
@@ -251,28 +281,63 @@ function renderGemResonance(gemsSnapshot, headerSnapshot) {
   var help = $id('gres-help');
   if (help && !help._set) {
     help._set = true;
-    help.setAttribute('data-tt-desc', '把寶石鑲進共鳴孔：孔內寶石直接提供自己的能力；升級孔，還會額外獲得相鄰孔寶石的能力（每級 +' +
-      GEM_RESONANCE_SETTINGS.perLevelPct + '%，最高 +' + GEM_RESONANCE_SETTINGS.maxPct + '%）。外圍六區各限定寶石種類，中央區不限；孔上的數字是該孔要求的最低寶石階級。孔不需要鑲寶石也能升級。點孔查看與操作。');
+    help.setAttribute('data-tt-desc', '把寶石鑲入共鳴鑲孔中以獲取寶石能力。<br>升級鑲孔可獲得相鄰寶石效果的額外加成。<br>中央區將在周圍六大區鑲孔都升至10級時解鎖。');
   }
   var state = gresSnapshotState(gemsSnapshot);
   var sel = gresSelected();
-  var boardH = gresBoardHTML(state, sel);
-  if (board._lastH !== boardH) { board._lastH = boardH; board.innerHTML = boardH; }
+  var socketsH = gresSocketsHTML(state, sel);
+  if (board._lastH !== socketsH) {
+    var sockets = board.querySelector('.gres-sockets');
+    if (sockets) sockets.innerHTML = socketsH;
+    else board.innerHTML = gresBoardHTML(state, sel, socketsH);
+    board._lastH = socketsH;
+  }
   var detail = $id('gres-detail');
   var detailH = gresDetailHTML(gemsSnapshot, headerSnapshot, state, sel);
   if (detail && detail._lastH !== detailH) { detail._lastH = detailH; detail.innerHTML = detailH; }
   var total = $id('gres-total');
-  var totalH = gresTotalHTML(state);
+  var totalH = gresTotalHTML(state, sel);
   if (total && total._lastH !== totalH) { total._lastH = totalH; total.innerHTML = totalH; }
 }
 
 function initGemResonanceUi() {
+  // 消費主頁的低優先預載並提前解碼，不等切入寶石頁；不阻塞遊戲開機。
+  if (typeof Image === 'function' && !GRES_BACKPLATE_IMAGE) {
+    GRES_BACKPLATE_IMAGE = new Image();
+    GRES_BACKPLATE_IMAGE.decoding = 'async';
+    GRES_BACKPLATE_IMAGE.src = GRES_BACKPLATE_SRC;
+    if (typeof GRES_BACKPLATE_IMAGE.decode === 'function') GRES_BACKPLATE_IMAGE.decode().catch(function () {});
+  }
   var board = $id('gres-board'), detail = $id('gres-detail'), focus = $id('gem-focus');
+  var dragImage = null;
+  function clearDragImage() {
+    if (dragImage) { dragImage.remove(); dragImage = null; }
+  }
+  function setDragIcon(source, transfer) {
+    clearDragImage();
+    var icon = source.querySelector('img.gem-ico');
+    if (!icon) return;
+    var rect = icon.getBoundingClientRect();
+    // 用同尺寸的透明容器拍攝圖片，避免 IMG 原始尺寸或卡片文字進入原生拖曳影像。
+    dragImage = document.createElement('div');
+    dragImage.setAttribute('aria-hidden', 'true');
+    dragImage.style.cssText = 'position:fixed;left:' + rect.left + 'px;top:' + rect.top + 'px;width:' + rect.width + 'px;height:' + rect.height + 'px;padding:0;margin:0;border:0;background:transparent;box-shadow:none;pointer-events:none;z-index:2147483647';
+    var image = icon.cloneNode(false);
+    image.style.cssText = 'display:block;width:100%;height:100%;margin:0;border:0;background:transparent;box-shadow:none;object-fit:contain';
+    dragImage.appendChild(image);
+    document.body.appendChild(dragImage);
+    transfer.setDragImage(dragImage, rect.width / 2, rect.height / 2);
+  }
   function holeAt(e) { return e.target && e.target.closest ? e.target.closest('[data-gres-hole]') : null; }
   function clearDrop() {
     if (board) board.querySelectorAll('.is-drop, .is-reject').forEach(function (n) { n.classList.remove('is-drop', 'is-reject'); });
   }
-  function stopDrag() { UI.gemBrowse.resDrag = null; clearDrop(); renderGems(); }
+  function stopDrag() { clearDragImage(); UI.gemBrowse.resDrag = null; clearDrop(); renderGems(); }
+  function selectHole(hole) {
+    if (!hole) return;
+    var parts = hole.getAttribute('data-gres-hole').split(':');
+    gresSelectHole(Number(parts[0]), Number(parts[1]));
+  }
   if (focus) {
     focus.addEventListener('click', function (e) {
       var source = e.target.closest ? e.target.closest('[data-gres-gem]') : null;
@@ -290,18 +355,22 @@ function initGemResonanceUi() {
       UI.gemBrowse.resDrag = gem;
       e.dataTransfer.setData('application/x-idle-rpg-gem', JSON.stringify(gem));
       e.dataTransfer.effectAllowed = 'move';
+      setDragIcon(source, e.dataTransfer);
+      if (typeof hideTooltip === 'function') hideTooltip();
     });
     focus.addEventListener('dragend', stopDrag);
   }
   if (board) {
+    board.addEventListener('pointerdown', function (e) {
+      if (e.button !== 0 || e.isPrimary === false) return;
+      selectHole(holeAt(e));
+    });
     board.addEventListener('click', function (e) {
-      var hole = holeAt(e);
-      if (!hole) return;
-      var parts = hole.getAttribute('data-gres-hole').split(':');
-      gresSelectHole(Number(parts[0]), Number(parts[1]));
+      // 實體指標在按下時已選孔；保留輔助工具的無指標 click。
+      if (e.detail === 0) selectHole(holeAt(e));
     });
     board.addEventListener('keydown', function (e) {
-      if ((e.key === 'Enter' || e.key === ' ') && holeAt(e)) { e.preventDefault(); holeAt(e).dispatchEvent(new MouseEvent('click', { bubbles: true })); }
+      if ((e.key === 'Enter' || e.key === ' ') && holeAt(e)) { e.preventDefault(); selectHole(holeAt(e)); }
     });
     board.addEventListener('dragover', function (e) {
       var hole = holeAt(e), gem = UI.gemBrowse.resDrag;
@@ -327,6 +396,13 @@ function initGemResonanceUi() {
     });
   }
   if (detail) {
+    detail.addEventListener('focusin', function (e) {
+      var tip = e.target && e.target.closest ? e.target.closest('[data-gres-upgrade-tip]') : null;
+      if (tip && typeof showStatTooltip === 'function') showStatTooltip(tip.getAttribute('data-tt-title'), tip.getAttribute('data-tt-desc'), tip);
+    });
+    detail.addEventListener('focusout', function (e) {
+      if (e.target && e.target.closest && e.target.closest('[data-gres-upgrade-tip]') && typeof hideTooltip === 'function') hideTooltip();
+    });
     detail.addEventListener('click', function (e) {
       var t = e.target;
       if (!t || !t.closest) return;
@@ -336,7 +412,7 @@ function initGemResonanceUi() {
         sendGemUiCommand('gem.resonanceUnsocket', { region: base.region, hole: base.hole, index: parseInt(take.getAttribute('data-gres-take'), 10) }, 'gem-resonance');
         return;
       }
-      if (t.closest('[data-gres-upgrade]')) sendGemUiCommand('gem.resonanceUpgrade', base, 'gem-resonance');
+      if (t.closest('[data-gres-upgrade]') && resonanceRegionUnlocked(gresSnapshotState(uiGemsPanelSnapshot()), sel[0])) sendGemUiCommand('gem.resonanceUpgrade', base, 'gem-resonance');
     });
   }
 }

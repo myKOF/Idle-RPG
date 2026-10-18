@@ -11,7 +11,7 @@
       "zIndex": 0,
       "scale": {
         "x": 0.4199,
-        "y": 0.1641
+        "y": 0.1066
       },
       "alpha": 0.6,
       "tint": "#150f2a",
@@ -29,7 +29,7 @@
       "zIndex": 1,
       "scale": {
         "x": 0.3906,
-        "y": 0.1172
+        "y": 0.0762
       },
       "alpha": 0.35,
       "tint": "#7a64a8",
@@ -146,7 +146,7 @@
   ],
   "sizing": {
     "authored": {
-      "height": 67,
+      "height": 43.55,
       "width": 200
     },
     "shape": "rectangle"

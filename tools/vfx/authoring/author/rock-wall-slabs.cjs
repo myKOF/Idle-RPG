@@ -1,13 +1,13 @@
 'use strict';
-/* 原創四塊岩壁：同一組斜俯視幾何產生12朝向，保留既有畫布／錨點與判定尺寸。
+/* 原創四塊岩壁：同一組斜俯視幾何產生12朝向，保留既有畫布／錨點，短軸對應判定厚度。
    向量削角、逐面光照、礦物顆粒、斷層與裂隙；不使用第三方素材。
    node tools/vfx/authoring/author/rock-wall-slabs.cjs [輸出資料夾] */
 const fs = require('node:fs');
 const path = require('node:path');
 const { resolveLibraryRoot } = require('../../vfx-library-root.cjs');
 const W = 256, H = 200, OX = 128, OY = 140;
-const LEN = 200, THICK = 67, BLOCKS = 4;
-const HEIGHTS = [53, 63, 56, 60];
+const LEN = 200, THICK = 43.55, BLOCKS = 4;
+const HEIGHTS = [48, 64, 52, 58];
 const f = v => Math.round(v * 100) / 100;
 const pts = a => a.map(p => p.map(f).join(',')).join(' ');
 const mix = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
@@ -38,13 +38,13 @@ function slab(deg) {
     const xs = poly.map(p => p[0]), ys = poly.map(p => p[1]);
     const x0 = Math.min(...xs), y0 = Math.min(...ys), width = Math.max(...xs) - x0, height = Math.max(...ys) - y0;
     // 大尺度礦物色斑讓石面有深淺與材質差異。
-    for (let k = 0; k < 20; k++) {
+    for (let k = 0; k < (top ? 10 : 20); k++) {
       const x = x0 + r() * width, y = y0 + r() * height, sx = 3 + r() * 13, sy = 2 + r() * 8;
       const patch = [[x-sx,y], [x-sx*.4,y-sy], [x+sx*.6,y-sy*.65], [x+sx,y+sy*.4], [x,y+sy]];
       art += `<polygon points="${pts(patch)}" fill="${k % 3 ? '#d2c8ac' : '#303c38'}" opacity="${f(.035 + r() * .095)}"/>`;
     }
     // 細小石英／暗色礦物顆粒保持低對比。
-    for (let k = 0; k < 65; k++) {
+    for (let k = 0; k < (top ? 24 : 65); k++) {
       const x = x0 + r() * width, y = y0 + r() * height;
       art += `<ellipse cx="${f(x)}" cy="${f(y)}" rx="${f(.12+r()*.52)}" ry="${f(.1+r()*.33)}" fill="${k % 3 ? '#e4ddc6' : '#172421'}" opacity="${f(.1+r()*.19)}"/>`;
     }
@@ -64,22 +64,34 @@ function slab(deg) {
   }
   const blocks = Array.from({ length: BLOCKS }, (_, i) => {
     const u0 = -LEN/2+i*LEN/BLOCKS, u1 = u0+LEN/BLOCKS, v0 = -THICK/2, v1 = THICK/2;
-    const ring = [[u0+4,v0], [u1-6,v0], [u1,v0+7], [u1,v1-7], [u1-5,v1], [u0+5,v1], [u0,v1-6], [u0,v0+7]];
-    return { i, ring, heights: ring.map(() => HEIGHTS[i]+(R()-.5)*6), depth: scr((u0+u1)/2,0)[1] };
+    const span = u1-u0, mid = (u0+u1)/2;
+    const ring = [[u0+5,v0+3], [u0+span*.32,v0], [u0+span*.7,v0+2], [u1-5,v0+1],
+      [u1,v0+9], [u1-2,v1-9], [u1-7,v1-1], [u0+span*.58,v1-3],
+      [u0+span*.23,v1], [u0+3,v1-5], [u0,v1-13], [u0+2,v0+12]];
+    // 同一基座往上收成破碎斜肩；每個頂點獨立起伏，避免整排直立方柱。
+    const shoulder = ring.map(p => [mid+(p[0]-mid)*(.9+R()*.1), p[1]*(.86+R()*.14), HEIGHTS[i]*(.48+R()*.15)]);
+    const crown = ring.map(p => [mid+(p[0]-mid)*(.64+R()*.24)+(R()-.5)*4,
+      p[1]*(.5+R()*.3)+(R()-.5)*3, HEIGHTS[i]*(.74+R()*.28)]);
+    return { i, ring, shoulder, crown, mid, depth: scr(mid,0)[1] };
   }).sort((a,b) => a.depth-b.depth);
   for (const b of blocks) {
     let rock = '';
-    const upper = b.ring.map((p,k) => scr(p[0],p[1],b.heights[k]));
+    const upper = b.crown.map(p => scr(...p));
     for (let j = 0; j < b.ring.length; j++) {
       const next = (j+1)%b.ring.length, a = b.ring[j], c = b.ring[next];
       const du = c[0]-a[0], dv = c[1]-a[1], mag = Math.hypot(du,dv);
       const nx = (dv*co+du*si)/mag, ny = (dv*si-du*co)/mag;
       if (ny <= .00001) continue;
       const light = Math.max(0,-nx*.65+ny*.4);
-      rock += face([scr(...a),scr(...c),upper[next],upper[j]], mix(DARK,LIT,.36+light*.64), `r${b.i}s${j}`,211+b.i*37+j,false);
+      const ma = scr(...b.shoulder[j]), mc = scr(...b.shoulder[next]);
+      rock += face([scr(...a),scr(...c),mc,ma], mix(DARK,LIT,.36+light*.64), `r${b.i}s${j}`,211+b.i*37+j,false);
+      rock += face([ma,mc,upper[next],upper[j]], mix(DARK,LIT,.43+light*.5), `r${b.i}shoulder${j}`,501+b.i*37+j,false);
       rock += `<polyline points="${pts([upper[j],upper[next]])}" fill="none" stroke="#c9c4ac" stroke-width="1.3" opacity=".32"/>`;
     }
-    rock += face(upper,mix(TOP,LIT,b.i*.055),`r${b.i}top`,901+b.i*17,true);
+    const ridge = scr(b.mid-4, -2, HEIGHTS[b.i]*1.07);
+    for (let j = 0; j < upper.length; j += 3) {
+      rock += face([upper[j],upper[j+1],upper[j+2],upper[(j+3)%upper.length],ridge],mix(TOP,LIT,.12+(j%4)*.1),`r${b.i}top${j}`,901+b.i*37+j,true);
+    }
     for (let j = 0; j < upper.length; j += 2) {
       const a = upper[j], c = upper[(j+1)%upper.length];
       rock += `<polygon points="${pts([a,[a[0]+(c[0]-a[0])*.4,a[1]+(c[1]-a[1])*.4],[a[0]+2,a[1]+3]])}" fill="#e1d9bd" opacity=".3"/>`;

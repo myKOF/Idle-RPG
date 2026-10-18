@@ -1,5 +1,142 @@
 # AI_TASKS.md
 
+## GEM-RESONANCE-BACKPLATE-LOAD-20261018 — 提前載入並保留共鳴背板
+
+- Owner：Codex；Done，單一開發者。使用者回報每次切入共鳴六角背板晚幾秒出現並詢問原因。查到2,070,831-byte PNG沒有預載、寶石面板渲染才插入SVG image，選孔更新又重建整個SVG。前置共鳴已完成，工作區乾淨、五檔預檢乾淨。
+- 允許index.html僅圖片預載／共鳴UI快取、js/ui-gem-resonance.js僅分離固定背板與動態孔位更新、docs/GEM_RESONANCE.md／PATCH.md與本紀錄；禁止玩法／數值／Worker／Protocol／存檔／配置／圖片素材及其他副本，不合併推送。
+- 方式／驗收：啟動以低優先預載既有PNG，不增加等待啟動的Promise；固定SVG／defs／image保持節點，只更新孔位內容，保留事件委派與初始完整建構。既有共鳴／初始化回歸、Build／diff；隔離瀏覽器以冷快取與可控2秒圖片回應比較請求時機／首次切頁，選孔／重入背板節點保持相同、沒有重複下載，49孔及原操作正常後Commit。無圖片或素材庫變更，後續使用者重載驗收。
+- 完成5檔：index.html新增原背板PNG的as=image／fetchpriority=low預載，共鳴UI快取1.0.14→15。js/ui-gem-resonance.js在UI初始化用保留參考的Image消費預載並非同步decode，無await啟動，decode失敗不產生未處理Promise；拆出gresSocketsHTML，第一次建立完整SVG／材質／背板，之後只更新gres-sockets內容，保留父SVG與背板。docs/GEM_RESONANCE.md、PATCH.md及本紀錄同步。事件仍委派在外層，座標／圖片／49孔／選中輪廓／多寶石clipPath與規則未變，沒有素材內容或素材庫變更，無素材庫Commit。
+- 指令／結果：`node --test tests/gem-resonance-ui.test.cjs tests/gem-resonance.test.cjs tests/init-ui-smoke.test.cjs`37/37通過；`npm.cmd run build`535檔通過，`git diff --check`通過。沿用既有完整互動回歸與實際瀏覽器確認DOM持續性，不新增鏡像測試。
+- 瀏覽器：獨立headless Edge／隨機localhost／seed新角色，原HEAD index與共鳴UI作before、工作檔作after，各全新context冷快取；測試服務只對背板人工延遲2000ms，開機後停留2100ms再開寶石／共鳴。before進寶石前無圖片請求，切入後SVG image的load事件晚2055ms；after進寶石前已請求並解碼，切入後34ms收到SVG image load。這是控制延遲的行為比較，不是對使用者實際裝置的耗時保證；首次測試200ms絕對門檻在機器繁忙時量到303.6ms，改以改善幅度超過一半驗證，正式程式未為此改動。
+- before選孔／重入均替換背板節點；after從初始至選孔／合成重入／角色返回／正式GM供資源後鑲入／取下／升級／原生拖曳皆維持相同SVG與背板，背板節點僅建立1次，兩版各只下載1次（舊版問題包含晚開始載入及節點重建，不宣稱每次都重新下載2MB）。1920×900／1366×768／390×844皆49孔中心hit-test通過。兩版Console warning／error、pageerror、HTTP錯誤均0；preload已被Image實際使用，未出現未使用預載警告。
+- 唯讀未改：AI規範／工作流／Agent文件、原PNG檔案大小及引用、renderGems／工具切換／委派事件、共鳴資料及權威規則、既有初始化與互動回歸。所有目標收尾預檢乾淨；隔離瀏覽器／服務與臨時測試腳本已清理，未讀真人存檔。無未完成本次需求；剛開機立即切入且網路仍未載完圖片時仍會等待，未實測其他瀏覽器／實體觸控／低階裝置。Commit為本紀錄所在`[Codex] fix: 提前載入並保留共鳴背板`，回覆附編號；可供Review／合併，未合併推送。下一步重新整理遊戲後切寶石→共鳴驗收。
+
+## GEM-RESONANCE-CRIT-PHYS-20261018 — 暴擊傷害寶石移至物理區
+
+- Owner：Codex；Done，單一開發者。使用者追加要求暴擊傷害寶石歸物理區；確認為石榴石garnet／critDmg，從magic移至phys。前置共鳴與鑲孔文字397d5f58已完成，工作區乾淨、擴充目標預檢乾淨。
+- 允許config/Excel/Gem_resonance.xlsx／config/CSV/Gem_resonance.csv／js/gem_resonance_data.js僅區域種類，js/bridge.js／js/worker/sim.worker.js／index.html僅快取，既有兩份共鳴回歸、docs/GEM_RESONANCE.md／PATCH.md／本紀錄；禁止能力數值／其他寶石分類／核心公式／存檔格式／Protocol／素材及其他副本，不合併推送。
+- 方式／驗收：沿專案Excel原生逐格更新工具改兩格，正常模式重開並保持格式，CSV及JS同步同一配置，主執行緒與Worker更新快取。驗魔法區拒絕／物理區接受／中央原不限、UI篩選與拖放／直接Worker命令一致；舊魔法區石榴石沿既有存檔整理退回庫存、不丟失。規則／UI／存檔及Worker回歸、Build／表格往返一致、隔離瀏覽器後Commit；後續使用者重載檢視。無新素材或素材庫變更。
+- 完成11檔：Gem_resonance Excel／CSV與資料JS僅magic.types移除garnet、phys.types加入garnet；暴擊傷害能力與數值、紫水晶等其他種類保持不變，中央原不限。沿原權威種類檢查與UI篩選，不新增第二套分類。舊魔法孔石榴石經原migrateSave退回庫存，強化與同孔其他合法寶石保留，物理／中央已鑲石榴石保持原位。兩份測試、共鳴說明、PATCH與本紀錄同步。
+- Excel：`tools/excel-update-sheets.ps1`原生API只寫Gem_resonance!D4／D9共2格，兩輪正常重開／全格比對通過，沒有XML手工寫入。styles.xml逐位元不變，原檔來自舊機器，Excel正常儲存造成預設列高16.2→16.5、欄寬14.77734375→14.75與dyDescent正規化；以原檔副本零格修改走同原生往返可重現，與基線比較全表結構／列欄設定完全一致，只有D4／D9內容不同。Excel與CSV全部20列逐格一致。既有工具`node tools/config_tables.cjs --apply Gem_resonance --write`僅1個字面值語意變更，後續乾跑3字面值／語意變更0。
+- 快取：index資料JS1.0.0→1／Bridge1.0.294→295，Worker資料import更新20261018-resonance-crit-phys，Bridge追加crit-phys並保留已合併築牆／單孔共鳴標記；Worker實際請求驗證新版本。Protocol與存檔格式不變，無素材變更／素材庫Commit。
+- 指令／結果：`node --test tests/gem-resonance-ui.test.cjs tests/gem-resonance.test.cjs tests/init-ui-smoke.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs`61/61通過，新增2項分類／拒絕不扣庫存／正式鑲嵌取下／舊存檔退回與保留回歸；`npm.cmd run build`535檔通過，`git diff --check`通過。自我Review確認修改只在種類配置與快取，未修改公式或存檔遷移實作。
+- 瀏覽器：獨立headless Edge／隨機localhost／seed新角色，正式index／UI／Worker，GM供4階石榴石；物理左側可見並鑲入、右側38px格內顯示四級石榴石與暴擊傷害+32%，魔法左側不顯示、原生拖到魔法孔拒絕，直接Worker指令亦拒絕且庫存不變，點能力取下完整退回。Console warning／error、pageerror與HTTP錯誤0；初次臨時HTTP服務未解碼含空白的無關VFX路徑，修正測試服務後重跑通過，正式程式未修改。預覽保留本聊天visualizations/gem-resonance-crit-phys.png。
+- 唯讀未改：AI規範／工作流／Agent文件、原Excel更新與配置工具、data.js石榴石數值、權威socket／共鳴公式、save.js合法性整理、UI種類篩選／Tooltip及Worker協議。所有目標預檢乾淨，沒有其他副本或分支衝突。隔離瀏覽器／服務與臨時腳本／Excel副本／JSON已清理，不動真人存檔。無未完成本次需求或新增已知風險；未實測其他瀏覽器／實體觸控／真人長戰。Commit為本紀錄所在`[Codex] fix: 暴擊傷害石榴石改歸物理共鳴區`，回覆附編號；可供Review／合併，未合併推送。下一步重新載入遊戲，舊魔法區石榴石可從庫存改鑲至物理區。
+
+## GEM-RESONANCE-SLOT-TEXT-20261018 — 等高鑲孔顯示寶石名稱與能力
+
+- Owner：Codex；Done，單一開發者。使用者要求右側已鑲寶石欄加寬，圖示旁以小字顯示寶石名稱與自身能力，不能增加格高。前置共鳴資訊已完成，工作區乾淨、七檔預檢乾淨。
+- 允許js/ui-gem-resonance.js僅已鑲欄文字、css/gems.css僅欄位排列、index.html快取、既有tests/gem-resonance-ui.test.cjs斷言、docs/GEM_RESONANCE.md、PATCH.md與本紀錄；禁止規則／數值／Worker／Protocol／存檔／配置／素材及其他副本，不合併推送。
+- 方式／驗收：已鑲欄使用資訊區可用寬度，保持原32px圖示及38px格高，名稱／本身能力分兩行小字；原逐顆取下與完整Tooltip保留。既有共鳴／初始化回歸、Build／diff，隔離瀏覽器量測新舊格高／長文字／多顆／寬窄視窗／取下後Commit；後續使用者重載檢視。無新素材或素材庫變更。
+- 完成7檔：共鳴UI在圖示旁加上名稱與未計相鄰加成的自身能力；gems CSS僅已鑲按鈕填滿欄寬、固定38px高／32px原圖示，名稱11px／能力10px、兩行不換行，保留完整Tooltip。index gems CSS1.0.15→16／共鳴UI1.0.13→14；兩份說明與既有UI測試依新需求同步，不加鏡像測試。原逐顆取下、共鳴規則／Worker及存檔不變。
+- 指令／結果：`node --test tests/gem-resonance-ui.test.cjs tests/gem-resonance.test.cjs tests/init-ui-smoke.test.cjs`35/35通過；`npm.cmd run build`535檔通過，`git diff --check`通過。隔離headless Edge／隨機localhost／seed新角色、GM供兩種6階寶石，正式鑲入魔法中心兩孔；1920×900由原46px寬變180px寬，與HEAD舊CSS影子DOM對照高度均38px。1366×768／390×844亦維持38px版面高度，隨原全頁縮放呈現。全部寶石種類1～10階、各6顆的純UI fixture在180px欄寬均完整顯示兩行、無文字截斷或格高增加；點名稱／能力都可正常逐顆取下。Console warning／error、pageerror／HTTP錯誤0。
+- 唯讀未改：AI規範／工作流／Agent文件、gemStatValue／gresStatText／圖示、原取下命令與Tooltip、共鳴權威規則及資料。素材庫無本次變更，無素材庫Commit。預覽保留本聊天visualizations/gem-resonance-slot-text.png；瀏覽器／服務及臨時腳本已清理。未實測其他瀏覽器／實體觸控，無新增已知風險或未完成項。Commit為本紀錄所在`[Codex] fix: 共鳴鑲孔等高顯示寶石名稱與能力`，回覆附編號；可供Review／合併，未合併推送。使用者追加暴擊傷害寶石分類調整另立任務，接續完成。
+
+## NPC-WALL-NATURAL-20261018 — 縮窄築牆並改為自然岩壁
+
+- Owner：Codex；Done，單一開發者。使用者要求NPC築牆岩塊寬度縮減35%、長方形並改善方正造型；依牆短軸厚度6→3.9米處理，長度18米／四塊／2~3面／7秒沿既有規則。前置四塊岩壁已完成，開始副本乾淨，全部目標衝突預檢乾淨。
+- 允許rock-wall-slabs.cjs／enemy-skills.cjs、12張wall-slab SVG與素材庫同路徑、12份en-stone-wall Preset／en-wall-warn、asset-index／shipped-assets／匯出標記、Skills2 Excel／CSV／skills2.js僅築牆厚度與描述、elite.js僅過時製作註解、VFXRuntime／Bridge／Worker／index僅快取、rock-wall-art／elite-engine回歸及本紀錄。禁止其他技能數值／Protocol／存檔／其他副本，不合併推送。
+- 方式：短軸幾何／預警／實際阻擋共用新厚度，保留原錨點與角度；岩石使用原創不規則基座、斜切肩部、破碎起伏頂緣與分面，沿既有向量工具確定性重建。RPG Mote Studio可用，但像素畫布不適合此批多角度向量幾何。Excel依使用者規範8.5透過既有原生API逐格更新／正常重開驗證，不改封裝XML。
+- 驗收：12角度／四塊／輪廓／尺寸／索引雜湊、實際牆判定與事件39厚、預警與素材一致、相關回歸／Build／瀏覽器畫面與Console；先素材庫後遊戲Commit。後續使用者重新載入遊戲整合，若VFX編輯器有未存內容先備份再重載。
+- 完成：rock-wall-slabs以43.55短軸製作四塊不規則基座／收窄斜肩／高低破碎頂緣與礦石切面；保持256×200、腳底(128,140)、原12個角度與資產ID。enemy-skills製作定義、12份牆Preset與預警的authored短軸／陰影／底光／警示帶同步，沒有新增Preset或來源。正式匯出12張SVG與兩份索引的大小／SHA256同步，素材庫與遊戲逐位元一致，export-assets --check最新。
+- 資料：既有excel-update-sheets.ps1以原生Excel API僅寫Skills2!AV241效果JSON與AW241描述，兩輪正常儲存重開／全格比對成功。唯讀比較所有工作表，僅上述2格內容變更，樣式XML完全相同；Excel正常儲存造成欄寬／預設列高細微精度正規化，以HEAD副本零格修改走同流程可重現，與該原生往返基線比對後列欄／驗證／工作表結構全相同。CSV僅e_walls一列、config_tables --apply Skills2 --write僅敵人技能1項語意變更，乾跑重建2字面值／語意0。elite.js僅修正過時三塊註解；實際碰撞／推離／移動直接沿原d.thick，沒有加新公式。
+- 快取：index VFXRuntime211→212／skills2 322→323／bridge292→293，DATA_VERSION／WORKER_ASSET_VERSION同步20261018-wall-natural-narrow，Worker skills2／elite import查詢同步。Worker Protocol仍53、事件及存檔形狀不變。新增1項厚度邊界回歸，驗舊厚度邊帶通行、新牆內近戰阻擋／穿牆及玩家身體外擴；原牆測試改釘39厚事件與預警，岩壁回歸驗12個素材／四塊／透明／輪廓／確定性／錨點／索引及Runtime縮放高度不被額外壓扁。
+- 指令／結果：`node --test tests/rock-wall-art.test.cjs tests/elite-engine.test.cjs`33/33；`npm.cmd run build`535檔通過；`node tools/vfx/export-assets.cjs --check`最新；`git diff --check`兩倉庫通過。擴大執行`node --test tests/vfx-runtime.test.cjs tests/vfx-core.test.cjs tests/vfx-editor-save.test.cjs tests/vfx-preset-usage.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs`372項366過／1跳過／5既有失敗。跳過為本機符號連結權限；失敗為16b ground-ice-spike非canonical、FIELD測試期望zone但實際field走fx、CATALOG-3 bolt-sky-purple layout有2頂層、CHAIN金色雷鏈色碼斷言、STARFALL-TAIL拖尾形狀斷言。唯讀fs攔截所有本輪JS／Preset改為git show HEAD原內容，依同名pattern重跑5項，全部相同失敗與原因，未放寬或擴大修復。Editor舊頁儲存防覆寫既有回歸其餘通過。
+- 瀏覽器：CUA／IAB隔離localhost臨時頁，正式VFXRuntime＋VFXCore＋PixiBackend＋shipped resolver＋12份正式Preset，以實際180×39事件同時播放全部角度；四塊／新斜肩頂緣／狹長比例／錨點正常、Console warning／error0。預覽保留本聊天visualizations/npc-wall-natural.png，無真人存檔操作，未做真人長戰或低階裝置壓測。自製向量幾何，無外部素材；RPG Mote Studio可用但像素畫布不適合此向量編輯，未套用imagegen或外部圖。
+- 唯讀未改：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、battlefield.js阻擋與原eliteWallHit／ClampMove／PushOut、VFX Core／Pixi後端／resolver與sizing／匯出Root解析、原layout／Editor儲存防覆寫、Excel原生工具及上述既有回歸。所有目標預檢與fetch後origin/develop比對乾淨，無其他副本修改。素材庫先Commit4224fdb，遊戲Commit為本紀錄所在[Codex] fix提交，回覆附編號；無未完成本次需求，可供Review／合併，未合併推送。已知限制為上述既有5項回歸與未做低階真人長戰效能；下一步整合並重載遊戲檢視，VFX編輯器有未存內容時先另存備份再重載，避免舊頁覆蓋新版。
+
+## GEM-RESONANCE-SIDE-INFO-20261018 — 精簡鑲孔資訊與外移說明按鈕
+
+- Owner：Codex；Done，單一開發者。使用者要求依示意圖只保留右側寶石類型／最低階、等級Lv、相鄰加成、鑲孔、升級按鈕及共鳴效果；費用改Tooltip，i移到資訊左外側。前置共鳴功能已完成，工作區乾淨、七檔預檢乾淨。
+- 允許js/ui-gem-resonance.js、css/gems.css、index.html、tests/gem-resonance-ui.test.cjs、docs/GEM_RESONANCE.md、PATCH.md與本紀錄；禁止規則／數值／Worker／協議／存檔／素材及其他副本，不合併推送。
+- 方式：精簡右側可見文字及孔內寶石卡，保留原逐顆取下；升級所需金幣／材料／不足及中央鎖定原因改由按鈕Tooltip呈現，禁用狀態亦可查看。共鳴效果依原算法以綠字列出；說明按鈕置於不捲動的外側容器，寬窄排列皆保留可點範圍，不改盤面與權威操作。
+- 驗收：既有共鳴／初始化回歸、費用Tooltip與禁用／滿級／鎖定、鑲入／取下／升級，Build／diff；隔離瀏覽器比對可見資訊、實際hover費用／i、欄位與盤面不重疊、捲動及寬窄視窗，完成Commit後使用者重載整合。無新素材或素材庫變更。
+- 完成7檔：gresDetailHTML依指定順序顯示「防禦型X級以上寶石」等動態類型、等級Lv.X、綠字相鄰加成、直列鑲孔、升級鑲孔；刪除常駐孔位編號／中心外圈／容量／上限／花費／操作提示。已鑲孔只畫icon，沿原index逐顆取下，名稱能力移至懸停提示。升級費用與持有量／不足／滿級／中央鎖定原因移至按鈕外層Tooltip，disabled按鈕不攔截懸停、外層可鍵盤focus查看；實際升級指令不變。中央鎖定加成綠字顯示0，與既有停用規則一致。總加成標題改共鳴效果、內容綠字，原合計數值與順序不變。
+- i移入不捲動的gres-side-wrap，位在資訊左外36px；寬畫面不改盤面欄寬，窄畫面資訊左留36px給i，不擋文字或孔位。index僅gems CSS1.0.14→15、共鳴UI1.0.11→12；同步說明及PATCH，無規則／資料／Worker／Protocol／存檔／素材變更，無素材庫Commit。
+- 指令／結果：`node --test tests/gem-resonance-ui.test.cjs tests/gem-resonance.test.cjs tests/init-ui-smoke.test.cjs`31/31通過；新增1項費用／持有量／禁用／滿級／中央鎖定Tooltip、鍵盤查看及原取下規則回歸；舊測試僅將已移除的操作說明預期改驗新類型標題。`npm.cmd run build`535檔通過；`git diff --check`通過。自我Review確認實際鑲嵌／升級與共鳴計算沿原函式。
+- 瀏覽器：獨立headless Edge／隨機localhost／seed新角色、正式index／UI／CSS／Worker與GM資源；DOM innerText逐行比對空孔1級右側恰為指定7行，無容量／編號／花費／操作提示。實際鑲入／icon按鈕取下／升級正常，Tooltip可查看金幣與材料、缺金幣時仍可hover、鍵盤focus可看、中央鎖定原因不在正文而在Tooltip；外側i說明正常。1920×900、2560×1080、1366×768、390×844皆i右緣在資訊左側、中心hit-test可點、盤面與資訊分離、49孔中心hit-test全通過。另以臨時長內容DOM probe促成真正side捲動，i的Y不變，probe隨即移除。Console warning／error、pageerror及HTTP錯誤0。
+- 唯讀未改：AI規範／工作流／Agent文件、原Tooltip事件與格式、gemFocusHTML／圖示／權威規則、共鳴狀態及原回歸；未修改其他副本。收尾預檢乾淨、截圖保留本聊天visualizations/gem-resonance-side-info.png，測試服務／瀏覽器／臨時腳本清理，不動真人存檔。無本次未完成項或新增已知風險；未實測其他瀏覽器／實體觸控。Commit為本紀錄所在[Codex] fix提交，回覆附編號；可供Review／合併，未合併推送，下一步重載寶石→共鳴檢視新資訊與Tooltip。
+
+## GEM-RESONANCE-HOLE-EFFECTS-20261018 — 單孔共鳴效果與預設選孔
+
+- Owner：Codex；Done，單一開發者。使用者要求右側只顯示所選孔獲得的相鄰寶石額外加成；空孔不產生共鳴加成，說明替換指定3行，每次切入預設物傷左上孔（phys區第6孔）。前置共鳴UI已完成。
+- 允許js/gem_resonance.js、js/ui-gem-resonance.js、js/ui.js僅共鳴入口、js/bridge.js與js/worker/sim.worker.js僅快取、index.html、tests/gem-resonance.test.cjs、tests/gem-resonance-ui.test.cjs、docs/GEM_RESONANCE.md、PATCH.md與本紀錄；禁止NPC築牆／配置／素材／其他技能／Protocol及存檔格式，不合併推送。
+- 方式：單孔相鄰貢獻共用純函式供UI及實際屬性計算；自身寶石能力仍正常，空接收孔不獲相鄰加成；不改最低階／容量／中央鎖。入口重設物傷左上孔、工具內選孔與刷新不重設；說明精確3句。
+- 衝突：同副本NPC-WALL-NATURAL修改Bridge／Worker／index快取及本文件。使用者已明確同意合併Worker版本為20261018-wall-natural-narrow-resonance-hole-effects、Bridge載入293→294。index不同腳本快取乾跑0；Worker import為相鄰cache行乾跑1，依已授權快取合併保留Skills2／Elite與共鳴兩邊；其他NPC檔案及文件區段不動，分段stage。
+- 驗收：選孔只列相鄰額外能力、不含自身／其他區／整盤；空孔／0級／無鄰珠／鎖孔為空，插入／取下／升級後UI及computeStats一致，滿孔不倍乘、同類合計。入口預設／重入／切回其他頁／精確說明、共鳴及Worker回歸／Build、隔離瀏覽器及Console後Commit；使用者重載整合。無本次素材變更。
+- 完成11檔：js/gem_resonance.js新增純函式resonanceHoleBonusEntries，同區相鄰每顆按接收孔強化比例計入，接收孔未鑲／0級／中央鎖定時不產生；全盤resonanceEntries仍保留自身能力，額外加成共用該函式。js/ui-gem-resonance.js右側只合計所選孔相鄰加成，同類合併，不含自身與其他孔；空孔加成率顯示0。說明精確三行；js/ui.js從其他工具或主分頁進入共鳴時重設phys:6，頁內重繪與重按目前工具保留選擇。
+- 快取與文件：index.html僅共鳴規則1.0.2→3／ui1.0.169→170／共鳴UI1.0.12→13／bridge1.0.293→294；js/bridge.js合併已授權兩個版本、js/worker/sim.worker.js僅共鳴import更新，保留築牆Skills2／Elite。docs/GEM_RESONANCE.md、PATCH.md、本紀錄與兩份共鳴測試同步。築牆已由另一聊天提交2868a290，因此本次diff只包含自身區段；未提交或改動築牆內容。Protocol／存檔／配置／素材不變，無本次素材庫變更或素材庫Commit。
+- 指令／結果：`node --test tests/gem-resonance-ui.test.cjs tests/gem-resonance.test.cjs tests/init-ui-smoke.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs`59/59通過；新增4項完整規則／屬性與UI行為測試。舊中央解鎖測試將滿級空鄰孔的舊1.3倍預期改為自身1倍，符合新規格；初次UI回歸因測試fmt=String導致6.9與6.8999999999999995浮點比較差異，改驗精確單項HTML及數值誤差<1e-8，未修改產品格式或放寬業務條件。`npm.cmd run build`535檔通過；`git diff --check`通過。
+- 瀏覽器：獨立headless Edge／隨機localhost／seed新角色，正式index／UI／Worker、GM供測試庫存與金幣，不讀真人存檔。實際hover說明精確3行；空孔升1級無效果，點擊鑲入後顯示鄰孔紅寶石與貓眼石3%能力、升2級變6%，其他區／不相鄰／自身排除；取下後保留2級且效果清空。從合成重入與角色頁返回皆預設物傷左上孔，頁內刷新與重按共鳴保留選擇。1920×900、1366×768、390×844皆49孔中心hit-test全通過、盤面與詳情無重疊。Console warning／error、pageerror與HTTP錯誤0，實際請求確認合併Worker版本及新共鳴import。
+- 自我Review／唯讀未改：AI規範／工作流／Agent文件、GEM_RESONANCE_REGIONS與UPGRADES、formula.js實際鑲嵌效率與computeStats、Worker協議／命令派送／面板快照、原Tooltip與gemFocusHTML、GM命令及原回歸。截圖保留本聊天visualizations/gem-resonance-hole-effects.png與gem-resonance-hole-empty.png；隔離瀏覽器／服務及臨時驗證腳本／快取基準備份已清理。無未完成本次需求或新增已知風險；未實測其他瀏覽器／實體觸控／真人長戰。Commit為本紀錄所在`[Codex] fix: 共鳴效果改為所選鑲孔的相鄰加成`，回覆附編號；可供Review／合併，未合併推送。下一步整合後重新載入寶石→共鳴驗收。
+
+## GEM-RESONANCE-CORE-LOCK-20261018 — 強化數字與中央區解鎖條件
+
+- Owner：Codex；Done，單一開發者。使用者要求孔內改顯示純強化數字、0級不顯示；中央7孔需外圍6區全部42孔升到10級後才可使用，之前置灰且禁止鑲嵌／升級。前置共鳴已完成，工作區與11個目標預檢乾淨。
+- 允許js/gem_resonance.js、js/ui-gem-resonance.js、css/gems.css、js/bridge.js及js/worker/sim.worker.js僅快取、index.html、tests/gem-resonance.test.cjs、tests/gem-resonance-ui.test.cjs、docs/GEM_RESONANCE.md、PATCH.md與本紀錄；禁止配置數值／Excel／CSV／協議格式／存檔格式／素材與其他副本，不合併推送。
+- 方式：中央開放由共用純函式核對全部外圍孔達既有滿級值（配置目前10），UI／Worker指令／能力計算共用。舊中央寶石及孔等級保留，鎖定時無加成但可取下；不新增存檔欄位。孔位只畫強化數字，最低階需求保留在右側及十階禁用判斷；鎖孔可點選看解鎖條件，鑲入／拖放／升級皆封鎖。
+- 驗收：外圍任一缺孔／未滿級、41孔滿＋1孔9級、最後一級解鎖；Worker直接呼叫不可扣資源或變更狀態、解鎖後正常，UI禁用／置灰／數字、舊資料保留與能力停用恢復。共鳴／Worker回歸、Build／diff、隔離瀏覽器正式指令與畫面，快取同步後Commit。無新素材，後續使用者重載及整合。
+- 完成11檔：共用resonanceRegionUnlocked／LockReason由目前外圍等級推導，不新增解鎖欄位。鑲嵌／升級在任何資源與state寫入前檢查，resonanceEntries跳過鎖定中央，因此Worker實際屬性及UI總加成一致。中央灰階／低亮、無整區亮起，仍可選孔查看條件及取下舊寶石；十階、拖放與升級均封鎖。移除SVG最低階數字，只畫非零孔強化數字，空孔置中／單顆下方／多顆中央小字；右側需求及原最低階規則保留。
+- 快取：index gems CSS1.0.13→14／共鳴規則JS1.0.1→2／共鳴UI1.0.10→11／bridge1.0.291→292；bridge WORKER_ASSET_VERSION與Worker對gem_resonance.js的import查詢同步20261018-resonance-core-lock。Protocol仍v53、命令及快照形狀不變，沒有修改配置／Excel／CSV／素材／存檔格式，無素材庫Commit。
+- 指令／結果：`node --test tests/gem-resonance-ui.test.cjs tests/gem-resonance.test.cjs tests/init-ui-smoke.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs`54/54通過（其中共鳴及初始化30/30，新增3項規則／存檔及1項UI回歸）；`npm.cmd run build`535檔通過；`git diff --check`通過。舊中央升級測試改驗新鎖定規則，同時刪除未發生扣款的退款fixture；原多顆顯示／整區亮起測試明確建立外圍滿級前置，未降低斷言。
+- 擴大回歸：額外含`tests/ui-worker-panels.test.cjs`共62項60通過／2既有失敗。該檔未修改；唯讀攔截fs.readFileSync載入git show HEAD的UI／規則／Bridge／Worker基準，重跑原檔仍同兩項失敗：裝備gem.socket命令原始碼斷言過期，以及item.upgrade測試VM未定義UI。不擴大修復、不放寬斷言，必要功能回歸54項全通過。
+- 瀏覽器：獨立headless Edge／隨機localhost／seed新角色，正式index／UI／Worker與GM資源，不讀真人存檔。初始0級全部留白、中央7孔gray/opacity生效、右側升級及十階禁用；直接14條中央鑲入／升級指令皆回鎖定且庫存／金幣／孔位不變，原生拖放亦拒絕。以正式升級指令將42外孔升級：41孔10級＋末孔9級仍鎖，最後9→10立即解鎖，中央原生點擊鑲入與升級成功顯示純1。1920×900、1366×768、390×844皆49孔中心hit-test通過、孔內數字皆1～10；Console warning／error、pageerror與HTTP錯誤0。截圖保留本聊天visualizations/gem-resonance-core-locked.png及core-unlocked.png；服務／瀏覽器／臨時腳本清理。
+- 自我Review／唯讀：AI規範／工作流／Agent文件、Worker runCommand／protocol及gems面板、save migrate中央合法資料、computeStats共用貢獻與髒標記、GM資源、既有UI／規則／Worker回歸均已核對；上述未列修改檔案保持原樣。鎖定孔保留可選取的語意以查看原因，只有實際鑲入與升級控制標為disabled。收尾全部目標預檢乾淨；無本次未完成項，可供Review／合併，未合併推送。已知限制為上述2項既有裝備測試、未實測其他瀏覽器／實體觸控／真人長戰；舊中央加成在未解鎖時依新規則暫停。Commit為本紀錄所在[Codex] fix提交，回覆附編號；下一步重新載入寶石→共鳴驗收。
+
+## GEM-RESONANCE-REGION-GLOW-20261018 — 選孔後整區亮起
+
+- Owner：Codex；Done，單一開發者。使用者要求選中一區任一孔後，整區7孔亮起，提示左側篩選寶石對應的鑲嵌區域；前置共鳴選孔／篩選已完成。工作區乾淨、七檔預檢乾淨。
+- 允許js/ui-gem-resonance.js、css/gems.css、index.html、tests/gem-resonance-ui.test.cjs、docs/GEM_RESONANCE.md、PATCH.md與本紀錄；禁止規則／數值／配置／Worker／協議／存檔／素材及其他副本，不合併推送。
+- 方式：同一權威resHole選孔狀態驅動整區7孔的亮度與原色邊緣，跨區切換即移除上一區亮起；原單孔六角選中框與拖曳合法／拒絕提示保留，不把整區提示當作庫存／階級／容量可用性判定。無新素材或素材庫變更。
+- 驗收：回歸驗7區各7孔／單孔選中／區域切換及篩選同步；既有共鳴與初始化回歸、Build／diff；隔離瀏覽器實際點按／鍵盤／拖曳、空孔與已鑲孔亮度、49孔命中、窄視窗及Console，完成Commit後使用者重載及整合。
+- 完成7檔：gresBoardHTML依原sel[0]為所選區7孔附is-region-active，CSS增加原色切面亮度／飽和度／邊緣柔光及亮邊；跨區或拖放選孔後沿原render更新，無新狀態／事件／Timer。原單孔頂層5px輪廓、透明命中面、拖曳綠／紅提示與所有庫存／容量／階級判斷保留。index僅gems CSS1.0.12→13、共鳴JS1.0.9→10；回歸、操作說明、PATCH及本紀錄同步，無素材變更／素材庫Commit。
+- 指令／結果：`node --test tests/gem-resonance-ui.test.cjs tests/gem-resonance.test.cjs tests/init-ui-smoke.test.cjs`26/26通過；新增1項實際經pointerdown／鍵盤／拖曳走七區各7孔與單孔選中，驗篩選種類、滿孔仍亮且上方禁用、不符拖放不切區、合法拖放同步選孔；`npm.cmd run build`535檔通過；`git diff --check`通過。
+- 瀏覽器：隔離headless Edge／隨機localhost／seed新角色、正式index／UI／CSS／Worker與GM測試庫存；七區逐區點選恰7個active／1個selected，computed filter及亮邊生效，鍵盤及原生dragTo鑲入後同步。空孔與已鑲孔同區皆亮、單孔框保留；1920×900、2560×1080、1366×768、390×844均49孔中心hit-test全通過、盤面與詳情無重疊，Console warning／error、pageerror與HTTP錯誤0。實際截圖本聊天visualizations/gem-resonance-region-glow.png；服務／瀏覽器／臨時腳本清理，不讀真人存檔。
+- 自我Review／唯讀：AI規範／工作流／Agent文件、原resHole／篩選與庫存禁用／拖曳判定、SVG切面與命中層、共鳴規則及原回歸；數值／資料／Protocol／存檔與素材未改。收尾預檢仍無其他副本或分支修改；無本次未完成項或新增已知風險，未實測其他瀏覽器／實體觸控及低階裝置長戰。Commit為本紀錄所在[Codex] fix提交，回覆附編號；可供Review／合併，未合併推送，下一步重載寶石→共鳴選孔查看整區提示。
+
+## GEM-RESONANCE-DRAG-ICON-20261018 — 拖曳只顯示寶石圖示
+
+- Owner：Codex；Done，單一開發者。使用者要求共鳴上方寶石拖曳時只帶icon，移除卡片框線、階級／能力／庫存文字。前置拖曳鑲嵌已完成，工作區乾淨、目標預檢乾淨。
+- 允許js/ui-gem-resonance.js、index.html、tests/gem-resonance-ui.test.cjs、docs/GEM_RESONANCE.md、PATCH.md與本紀錄；禁止數值／資料／Worker／協議／存檔／素材及其他副本，不合併推送。
+- 方式：正式dragstart以原寶石圖片建立透明、同顯示尺寸的拖曳影像，隱藏懸浮說明；保留原payload／庫存與容量檢查，結束或放下清理臨時影像。無新素材／素材庫變更。
+- 驗收：回歸釘住影像只有IMG、尺寸與熱點、清理及拒絕來源不建立影像，既有拖曳與共鳴回歸、Build／diff；隔離瀏覽器原生拖曳攔截setDragImage確認內容／透明／縮放尺寸、鑲入與取消／失敗清理及Console，完成後Commit，使用者重載及整合。
+- 完成6檔：拖曳開始用來源IMG複本建立透明、無框無文字的原生drag image，按實際畫面尺寸呈現、游標置中；不複製卡片內容，立即hideTooltip。drop／dragend清理，下一次dragstart亦先清理殘留；庫存／容量／payload與既有來源DOM保護不變。index僅共鳴JS1.0.8→9，回歸／操作說明／PATCH與本紀錄同步。無新素材或素材庫Commit。
+- 指令／結果：`node --test tests/gem-resonance-ui.test.cjs tests/gem-resonance.test.cjs tests/init-ui-smoke.test.cjs`25/25通過；新增1項驗只有一個原IMG、無卡片文字、尺寸／熱點、重建清理、成功／拒絕／取消清理與BOSS／無效來源不建影像；`npm.cmd run build`535檔通過；`git diff --check`通過。
+- 瀏覽器：獨立headless Edge／隨機localhost／seed新角色，正式index／UI／CSS／Worker與GM測試庫存；原生dragTo成功鑲入，攔截後仍呼叫原生setDragImage，確認影像只含IMG且text為空、背景透明、border0／shadow none；1920視窗尺寸40×40、1366視窗28.453125×28.453125，皆與來源screen rect一致，熱點位於中心。拒絕不符區域／Esc取消不鑲入、影像均移除，拖曳時sk-tooltip隱藏；Console warning／error、pageerror、HTTP錯誤0。未讀真人存檔，測試服務／瀏覽器／臨時腳本清理；原生系統拖曳影像不在頁面截圖內，驗證採實際事件及原生影像設定內容，未宣稱截得OS浮動圖。
+- 自我Review／唯讀：AI規範／工作流／Agent文件、gemFocusHTML／gemIconHTML、寶石圖片路徑與尺寸CSS、Tooltip與共鳴規則／拖曳命中；上述未列修改範圍者均未改。全部目標衝突預檢乾淨，無本次未完成項或新增已知風險；未實測其他瀏覽器／實體觸控。Commit為本紀錄所在[Codex] fix提交，回覆附編號；可供Review／合併，未合併推送，下一步重新載入寶石→共鳴並拖曳上方寶石。
+
+## SYNC-INDEX-RECOVERY-20261018 — 同步時自動修復半完成的 fast-forward index
+
+- Owner：Codex；Done，單一開發者。使用者要求將本次index寫入失敗的修復納入sync_ai_worktrees.bat，未來自動處理並接續同步；前置既有同步／Markdown報告，已滿足，目標預檢全乾淨。只在Codex修改工具與文件，禁止遊戲玩法／素材／其他工作區開發內容，不執行正式合併或推送。
+- 允許BAT說明、tools/sync_ai_worktrees.ps1、新tools/sync-index-recovery.ps1、同步回歸與新tests/sync-index-recovery.test.cjs、docs/SYNC_AI_WORKTREES.md及本紀錄。保留原有AI解衝突與報告，素材庫同步策略不變。同工作區另有共鳴UI聊天，保留其檔案及任務區段，分段stage本次紀錄。
+- 方式／驗收：ff-only前備份index並記錄原HEAD、固定目標、分支與index雜湊；只接管unable to write new index file。獨立index完整比對檔案／未追蹤／隱藏旗標，確認父提交、index、目標未變且無進行中Git操作後，以read-tree及帶舊值檢查的update-ref修正metadata，保留工作檔與旗標。保存紀錄供重跑，預檢／停用不修復，不刪鎖或改權限。真Git遠端＋故障注入驗證當次／重跑成功、額外修改／untracked／鎖／HEAD或index變動／其他Git錯誤拒絕、CAS防回退、Markdown與原有同步回歸、Build／diff後Commit。無新素材／素材庫變更。
+- 完成7檔：BAT沿原啟動鏈、核心統一攔截ff-only、新增獨立修復模組與故障注入測試、既有fixture納入新模組／PS語法檢查、操作文件及本區段。修復有同工作區控制器互斥、固定SHA／雜湊／暫存樹保護、獨立index比對、保留skip-worktree／assume-unchanged及中文路徑／CRLF、備份及待接續紀錄；NoIndexRecovery與NoAutoResolve獨立。正常無更新步驟直接回報最新，不額外重建index。
+- 指令／結果：node --test --test-reporter=tap tests/sync-index-recovery.test.cjs，14/14通過；其後新增控制器互斥並加強中文捷徑／雙旗標案例，以--test-name-pattern="CRLF|another controller"再跑2/2通過（其中1項重跑），合計15個不同index案例。node --test --test-reporter=tap tests/sync-auto-conflicts.test.cjs tests/sync-ai-worktrees.test.cjs tests/merge-ai-tasks.test.cjs，39/39通過；共54個不同案例。npm.cmd run build：535檔通過；PS解析／BAT ASCII與CRLF／git diff --check通過。故障注入使用真Git本機遠端及獨立index實際更新檔案，驗證成功後全部AI工作區、刪除／新增檔和提交相符；分支競寫由真update-ref CAS拒絕，不降低斷言。
+- 自我Review／限制：唯讀檢查既有同步／報告及AI_TASKS合併測試，不改原Codex解衝突或報告包裝程序。只處理有本工具紀錄且完整符合目標的ff-only index錯誤；未知／未記錄現場、持續鎖定／權限錯誤、稀疏簽出與其他錯誤仍安全停止並報告。完整比對可能需數分鐘；備份存各工作區Git metadata，不覆蓋額外修改、不改素材庫策略。
+- 交付：Commit為本紀錄所在[Codex] feat提交，回覆附編號；無本次未完成項，可供審閱合併，無素材庫變更／不需素材Commit，未執行正式同步／合併／推送。其他聊天的共鳴UI進行中工作完整保留，不納入提交；下一步完成其他工作後執行Codex的新版BAT即可使用並透過原同步流程整合到其他工作區。
+
+## GEM-RESONANCE-REGION-LAYOUT-20261018 — 移除區名並放大孔位盤面
+
+- Owner：Codex；Done，單一開發者。使用者要求移除盤面區域類型文字、放大盤面至符合六角背景；前置共鳴與底板已完成，工作區乾淨、六個目標衝突預檢乾淨。
+- 允許js/ui-gem-resonance.js、css/gems.css、index.html、docs/GEM_RESONANCE.md、PATCH.md與本紀錄；禁止數值／配置表／Worker／協議／存檔／素材與其他副本，不合併推送。
+- 方式：移除六個外圍區名與無用標籤配置，孔位／寶石／選中框共用SVG群組等比放大，底板沿原尺寸；保留孔位aria-label與右側所選孔資訊。無新增素材或素材庫變更。
+- 驗收：既有共鳴UI／規則／初始化回歸、Build、瀏覽器確認背景內含／49孔命中／點選與鑲入／窄畫面／Console與diff，完成獨立Commit；後續使用者重新載入驗收及整合。
+- 完成6檔：移除六個gres-region區名、標籤距離常數與樣式；孔位／切面／寶石／選中框置於同一SVG群組等比放大18%，透明命中面沿相同變換。底板原圖／viewBox與右側資訊保留，index僅gems CSS1.0.10→11、共鳴JS1.0.6→7。無素材修改／素材庫Commit。
+- 指令／結果：`node --test tests/gem-resonance-ui.test.cjs tests/gem-resonance.test.cjs tests/init-ui-smoke.test.cjs`22/22；`npm.cmd run build`534檔通過；`git diff --check`通過。沿用既有行為回歸，不新增可逆樣式的鏡像測試。
+- 瀏覽器：獨立headless Edge／隨機localhost／seed新角色，正式index／UI／Worker、GM測試庫存；1920×900、2560×1080、1366×768、390×844皆49孔、區名0、孔位完整內含且與詳情分離，49孔中心hit-test全通過。點擊選孔／上方鑲入／取下／原生拖曳／Enter選孔通過；正式驗收Console error／warning及pageerror皆0。截圖保留本聊天visualizations/gem-resonance-region-layout.png，服務／瀏覽器及臨時腳本收尾清理，未動真人存檔。
+- 自我Review／唯讀：AI規範／工作流／Agent文件、原UI回歸與規則、母圖、孔位事件委派及工坊盒模型；無玩法／資料／協議變更。收尾同工作區出現另一聊天SYNC-INDEX-RECOVERY任務，工具／測試及任務區段保留，不納入本提交；文件只stage本任務區段，更新前後取另一任務區段為theirs的git merge-file -p乾跑退出0、兩區段皆保留。無本次未完成項或新增已知風險，可供審閱合併，未合併推送；限制為未做真人長戰／實體觸控拖曳。Commit為本紀錄所在[Codex] fix提交，回覆附編號；下一步重新載入寶石→共鳴驗收。
+
+## GEM-RESONANCE-MULTI-SLOTS-20261018 — 按下選孔與多寶石分區顯示
+
+- Owner：Codex；Done，單一開發者。使用者要求移除原生白色焦點矩形、左鍵按下即選孔、刪除孔內數量、兩顆／六顆直接分區顯示；前置共鳴UI已完成，目標預檢乾淨。保留既有六角選中提示、鍵盤及拖曳。
+- 允許js/ui-gem-resonance.js、css/gems.css、index.html、tests/gem-resonance-ui.test.cjs、docs/GEM_RESONANCE.md、PATCH.md及本紀錄；禁止玩法／數值／資料表／Worker／協議／存檔／素材／其他副本，不合併推送。另一聊天同步工具任務及其文件區段保留，僅提交本任務。
+- 方式：委派左鍵pointerdown即選孔，click只保留鍵盤／輔助操作入口；SVG多寶石等分繪製，各顆獨立完整縮圖、裝飾不攔截命中，數量標示刪除。無新素材，沿用正式寶石圖。
+- 驗收：新增選孔時機／按鍵過濾／多顆及部分填入／無重複指令與真實鑲嵌取下回歸；既有共鳴與初始化測試、Build／diff，隔離瀏覽器按住未放開即切孔、白框／分區／拖曳／鍵盤與窄畫面驗證後Commit。後續使用者重載及整合。
+- 完成7檔：pointerdown只接受主要指標左鍵，按下立即重畫選孔；實體click不重選，輔助click與Enter／Space保留。focus及focus-visible均去掉原生outline，沿用六角輪廓。移除gres-cap及樣式，SVG依實際顆數切分並逐顆顯示既有圖片，2顆左右對分、6顆六扇區，3～5顆亦各自顯示；外框與命中面共用原孔，不新增指令。多於2顆時孔等級縮小置中。index僅gems CSS1.0.11→12／共鳴JS1.0.7→8；同步說明與PATCH，無新素材／素材庫Commit。
+- 指令／結果：`node --test tests/gem-resonance-ui.test.cjs tests/gem-resonance.test.cjs tests/init-ui-smoke.test.cjs`24/24通過（新增2項涵蓋按下／放開／右鍵／多指標／鍵盤及正式1～6顆鑲入取下）；`npm.cmd run build`535檔通過；`git diff --check`通過。自我Review確認原命令、容量、庫存與數值不變。
+- 瀏覽器：隔離headless Edge／隨機localhost／seed新角色，正式index／UI／CSS／Worker與GM庫存；左鍵按住未放開已切孔、右鍵不選、指標及鍵盤focus outline為none、外圍兩顆不同寶石／中央六種各1顆／數量標示0／升級等級標籤／逐顆取下剩5顆／原生拖曳皆通過。1920×900、2560×1080、1366×768、390×844各49孔中心hit-test全通過、與詳情分離；Console error／warning、pageerror、HTTP錯誤皆0。預覽保留本聊天visualizations/gem-resonance-multi-slots.png，測試服務／瀏覽器／臨時腳本清理，不動真人存檔。
+- 唯讀未改：AI規範／工作流／Agent文件、共鳴資料與權威規則、既有回歸、正式寶石圖與背景。另一聊天SYNC-INDEX-RECOVERY與本紀錄不同區段、無語意相依，分段修改及只stage本任務；git merge-file -p三方試跑退出0、完整保留兩任務區段。無本次未完成項或新增已知風險，可供審閱合併，未合併推送；限制為未實測實體觸控／真人長戰。Commit為本紀錄所在[Codex] fix提交，回覆附編號；下一步重新載入寶石→共鳴驗收。
+
 ## GEM-RESONANCE-BOARD-FIT-20261018 — 放大共鳴盤與移除重複種類說明
 
 - Owner：Codex；Done，單一開發者。使用者要求整張共鳴盤放大接近上下框邊緣、不遮右側文字，並刪除右側重複的可鑲寶石類型清單。前置介面改造已完成；工作區與全部目標衝突預檢乾淨。

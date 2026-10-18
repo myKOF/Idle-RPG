@@ -14,12 +14,12 @@
                          陣列長度＝孔的等級上限。 */
 var GEM_RESONANCE_SETTINGS = { perLevelPct: 3, maxPct: 30 };
 var GEM_RESONANCE_REGIONS = [
-  { id: 'magic', name: '魔法傷害', types: ['sapphire', 'pierceMagic', 'iolite', 'amethyst', 'garnet'], centerCap: 2, minLv: [6, 4, 4, 5, 5, 5, 4] },
+  { id: 'magic', name: '魔法傷害', types: ['sapphire', 'pierceMagic', 'iolite', 'amethyst'], centerCap: 2, minLv: [6, 4, 4, 5, 5, 5, 4] },
   { id: 'defense', name: '防禦', types: ['diamond', 'lapis', 'topaz', 'moonstone', 'jade', 'pearl', 'malachite', 'fluorite'], centerCap: 2, minLv: [6, 4, 4, 4, 5, 5, 5] },
   { id: 'elemRes', name: '元素抗性', types: ['wardFire', 'wardIce', 'wardLightning', 'wardPoison', 'wardDark', 'wardLight', 'wardEarth', 'wardWind', 'wardAll'], centerCap: 2, minLv: [6, 5, 4, 4, 4, 5, 5] },
   { id: 'elemDmg', name: '屬性傷害', types: ['spinel', 'aquamarine', 'amazonite', 'peridot', 'citrine', 'tourmaline', 'tigerEye', 'moldavite', 'coreFire', 'coreIce', 'coreLightning', 'corePoison', 'coreLight', 'coreDark', 'coreEarth', 'coreWind'], centerCap: 2, minLv: [6, 5, 5, 4, 4, 4, 5] },
   { id: 'recover', name: '回復', types: ['emerald', 'kyanite', 'onyx', 'manastone'], centerCap: 2, minLv: [6, 5, 5, 5, 4, 4, 4] },
-  { id: 'phys', name: '物理傷害', types: ['ruby', 'piercePhys', 'opal', 'catseye'], centerCap: 2, minLv: [6, 4, 5, 5, 5, 4, 4] },
+  { id: 'phys', name: '物理傷害', types: ['ruby', 'piercePhys', 'opal', 'catseye', 'garnet'], centerCap: 2, minLv: [6, 4, 5, 5, 5, 4, 4] },
   { id: 'core', name: '任意', types: null, centerCap: 6, minLv: [10, 8, 8, 8, 8, 8, 8] }
 ];
 var GEM_RESONANCE_UPGRADES = [

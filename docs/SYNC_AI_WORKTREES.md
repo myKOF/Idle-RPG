@@ -36,6 +36,19 @@ Windows sandbox 實作沿用既有 `config.toml` 的 `[windows].sandbox` 設定�
 
 BAT 透過 `tools/invoke-sync-with-report.ps1` 包裝原同步程序，保留其非零結束碼及原同步流程。直接執行 `tools/sync_ai_worktrees.ps1` 不經報告包裝；需要報告時請使用 BAT，或執行 `powershell -NoProfile -ExecutionPolicy Bypass -File tools/invoke-sync-with-report.ps1 -ValidateOnly`。
 
+## 自動修復 index 寫入失敗
+
+BAT 已包含本次 `error: unable to write new index file` 的修復。適用於 develop 或 AI 工作區在 fast-forward 時，檔案已完整更新，但 Git index／分支仍停在原提交的情況，不會呼叫 Codex 或消耗模型額度。
+
+1. 每次有實際更新的 fast-forward 前，先保存 index、原 HEAD、固定目標提交、分支、index 雜湊與執行紀錄。
+2. 只有 Git 回報上述 index 寫入錯誤才接手。使用獨立 index 完整核對工作檔案（包含被 skip-worktree／assume-unchanged 隱藏的修改）及目標之外的未追蹤檔案。
+3. 檔案完整符合固定目標、原 HEAD／目標／index 均未被其他工作改動，且沒有 index.lock、合併／rebase 等 Git 操作時，才重建正式 index，再以帶原值檢查的 `update-ref` 完成 fast-forward。工作檔不被重新簽出或覆蓋，既有 index 旗標保留；若另一程序移動分支，更新會失敗，不回退他人提交。
+4. 成功後自動繼續其餘分支同步。失敗時保留備份與現場，下次執行同一個 BAT，會先接續已記錄的修復；不依工作檔外觀看起來相似就猜測修復來源。
+
+備份、獨立驗證 index、原始 Git 輸出與 `record.json` 位於各工作區 Git metadata 的 `sync-index-recovery/<識別碼>/`，不進版控；主控台與 Markdown 報告會顯示路徑。尚未完成的修復另有 `pending.json`，成功後自動移除該待處理指標，歷史備份繼續保留。完整內容比對可能花幾分鐘，請等執行結束再關閉視窗。
+
+持續被鎖定／權限不足、額外修改、分支或 index 已變、稀疏簽出、未知 Git 錯誤都會停止並匯出報告；不刪除鎖定檔、不調整權限、不執行 hard reset。`-ValidateOnly` 不執行修復，`-NoIndexRecovery` 可停用這項自動修復；此選項與 develop 的 `-NoAutoResolve` 各自獨立。
+
 ## 失敗後重跑
 
 處理完登入、連線、額度或 Excel 鎖定等原因後，再執行同一個 BAT。若 develop 的單一 `MERGE_HEAD` 仍對應某個已知 AI 分支目前的本機或遠端提交，腳本會自動接續原合併。來源已移動、未知分支或其他 Git 操作的現場不會被自行猜測處理。
@@ -49,6 +62,7 @@ BAT 透過 `tools/invoke-sync-with-report.ps1` 包裝原同步程序，保留其
 ```bat
 sync_ai_worktrees.bat -ValidateOnly
 sync_ai_worktrees.bat -NoAutoResolve
+sync_ai_worktrees.bat -NoIndexRecovery
 sync_ai_worktrees.bat -SkipAssetLibrary
 sync_ai_worktrees.bat -CodexCommand "C:\path\to\codex.cmd"
 ```

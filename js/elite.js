@@ -1308,7 +1308,7 @@ function eliteCastMortar(m, d) {
 }
 
 /* ============ 築牆：在你周圍升起 2～3 面整塊岩壁（平行 2 面或 U 型 3 面） ============
-   每面 len（18 米）× thick（6 米），由三塊約 6×6 米的岩塊組成（畫面見 en-stone-wall）。n＝一次升起幾面（2＝平行、3＝U 型）。
+   每面 len × thick，由四塊不規則岩石組成（畫面見 en-stone-wall）。n＝一次升起幾面（2＝平行、3＝U 型）。
    牆擋住「近戰」：雙方都不能隔著牆近戰攻擊（遠程不受影響），玩家也走不過牆（battlefield.js 呼叫 eliteWallBlocks／eliteClampMove）。 */
 var ELITE_WALL_STEP = Math.PI / 12;           // 牆的朝向吸附到 15° 的倍數：每個角度各有一張畫好的整面岩壁（en-stone-wall-度數）
 function eliteWallPreset(d, a) {

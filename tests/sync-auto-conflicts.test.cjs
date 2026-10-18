@@ -11,7 +11,7 @@ function fixture({conflict=true,buildFails=false}={}){
  const repo=path.join(root,'develop'),remote=path.join(root,'remote.git');
  fs.mkdirSync(repo);git(repo,'init','-b','develop');git(repo,'config','user.name','Sync Test');git(repo,'config','user.email','sync@example.invalid');
  fs.mkdirSync(path.join(repo,'tools'));
- for(const name of ['sync_ai_worktrees.ps1','resolve-sync-conflicts.ps1','invoke-sync-with-report.ps1'])fs.copyFileSync(path.join(source,'tools',name),path.join(repo,'tools',name));
+ for(const name of ['sync_ai_worktrees.ps1','resolve-sync-conflicts.ps1','invoke-sync-with-report.ps1','sync-index-recovery.ps1'])fs.copyFileSync(path.join(source,'tools',name),path.join(repo,'tools',name));
  fs.copyFileSync(path.join(source,'sync_ai_worktrees.bat'),path.join(repo,'sync_ai_worktrees.bat'));
  fs.writeFileSync(path.join(repo,'.gitignore'),'logs/\n');
  fs.writeFileSync(path.join(repo,'tools','build_check.cjs'),`process.exit(${buildFails?1:0});\n`);
@@ -60,7 +60,7 @@ fs.writeFileSync(arg('--output-last-message'),JSON.stringify({status:mode==='blo
 test('PowerShell scripts parse and BAT stays ASCII/CRLF', {skip:!windows},()=>{
  const bat=fs.readFileSync(path.join(source,'sync_ai_worktrees.bat'));
  assert.ok([...bat].every(n=>n<128));assert.ok(!/(?<!\r)\n/.test(bat.toString()));
- for(const file of ['sync_ai_worktrees.ps1','resolve-sync-conflicts.ps1','invoke-sync-with-report.ps1']){
+ for(const file of ['sync_ai_worktrees.ps1','resolve-sync-conflicts.ps1','invoke-sync-with-report.ps1','sync-index-recovery.ps1']){
   const p=path.join(source,'tools',file).replace(/'/g,"''");
   const cmd=`$t=$null;$e=$null;[System.Management.Automation.Language.Parser]::ParseFile('${p}',[ref]$t,[ref]$e)>$null;if($e.Count){$e|%{$_.Message};exit 1}`;
   const r=spawnSync('powershell.exe',['-NoProfile','-Command',cmd],{encoding:'utf8'});assert.equal(r.status,0,r.stdout+r.stderr);

@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
+const { resolveSizing } = require('../js/vfx-runtime.js');
 const { slab } = require('../tools/vfx/authoring/author/rock-wall-slabs.cjs');
 const ROOT = path.resolve(__dirname, '..');
 const read = p => fs.readFileSync(path.join(ROOT, p), 'utf8');
@@ -17,7 +18,7 @@ test('岩壁全部12個角度均有四塊、透明背景及原畫布，製作結
     assert.equal(svg, slab(deg), id + ' 由正式工具重現');
     assert.deepEqual([...svg.matchAll(/data-rock="(\d+)"/g)].map(m => +m[1]).sort(), [0, 1, 2, 3]);
     assert.match(svg, /width="256" height="200" viewBox="0 0 256 200"/);
-    assert.match(svg, /data-wall-length="200" data-wall-thickness="67"/);
+    assert.match(svg, /data-wall-length="200" data-wall-thickness="43.55"/);
     assert.doesNotMatch(svg, /NaN|Infinity|<image|<rect|href=/);
     // 真正輪廓座標不得被畫布截斷；陰影／顆粒的裁切範圍另由各石面定義。
     for (const m of svg.matchAll(/<clipPath[^>]*><polygon points="([^"]+)"/g)) {
@@ -44,6 +45,12 @@ test('四塊岩壁沿原Preset的足跡、角度與腳底錨點播放', () => {
     assert.equal(layer.followDirection, false);
     assert.deepEqual(layer.anchor, { x: .5, y: .7 });
     assert.equal(preset.sizing.authored.width, 200);
-    assert.equal(preset.sizing.authored.height, 67);
+    assert.equal(preset.sizing.authored.height, 43.55);
+    // 只縮地面短軸：12朝向的高度與長軸不能再被Runtime額外壓扁。
+    const dimensions = resolveSizing(preset.sizing, { w: 180, h: 39 }, 10);
+    assert.equal(dimensions.scaleX, .9);
+    assert.ok(Math.abs(dimensions.scaleY - 60/67) < 1e-12);
   }
+  const warn = JSON.parse(read('vfx/presets/en-wall-warn.json'));
+  assert.deepEqual(warn.sizing.authored, { height: 43.55, width: 200 });
 });
