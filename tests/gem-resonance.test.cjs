@@ -28,6 +28,12 @@ function game(gems) {
   return c;
 }
 const plain = (v) => JSON.parse(JSON.stringify(v));
+function maxOuter(c) {
+  for (let r=0;r<6;r++) for(let h=0;h<7;h++) {
+    const key=r+':'+h;
+    c.G.player.resonance.holes[key]={...c.G.player.resonance.holes[key],lv:10,gems:c.G.player.resonance.holes[key]?.gems||[]};
+  }
+}
 
 test('版面：7 區 × 7 孔，外圍區環繞中央區；相鄰＝中心與外圈互連、外圈左右相鄰', () => {
   const c = game();
@@ -135,8 +141,7 @@ test('升級：空孔也能升級（扣本區任一種寶石）；扣金幣與�
   assert.equal(c.gemCount('sapphire', c0.gemLv), 10 - c0.gemCount);             // 本區唯一有庫存的種類被扣
   c.addGem('sapphire', c0.gemLv, c0.gemCount);
   assert.match(c.upgradeResonanceHole(c.GEM_RESONANCE_REGIONS.findIndex((r) => r.id === 'phys'), 1), /庫存不足/);
-  assert.equal(c.upgradeResonanceHole(6, 3), null);                              // 中央區不限種類
-  c.addGem('sapphire', c0.gemLv, c0.gemCount);
+  assert.match(c.upgradeResonanceHole(6, 3), /尚未解鎖/);                       // 中央區另有外圍滿級門檻
   c.socketResonanceGem(magic, 1, 'sapphire', 4);
   const cost = c.GEM_RESONANCE_UPGRADES[0];
   const gold = c.G.player.gold;
@@ -172,6 +177,53 @@ test('存檔整理：未知種類丟掉、不符規則的寶石退回庫存、�
   assert.equal(holes[magic + ':1'].gems.length, 1);
   assert.equal(holes[magic + ':1'].lv, c.resonanceMaxHoleLevel());
   assert.equal(out.player.gems.sapphire[4], before + 2);
+});
+
+test('中央七孔需全部42個外圍孔滿10級，鎖定指令不扣資源／不改狀態，最後一級才解鎖',()=>{
+ const c=game({ruby:{1:100,8:20,10:20},sapphire:{6:100}});
+ assert.equal(c.resonanceRegionUnlocked(undefined,6),false);
+ assert.equal(c.resonanceRegionUnlocked({holes:{}},0),true);
+ maxOuter(c);
+ for(let r=0;r<6;r++)for(let h=0;h<7;h++){
+  const key=r+':'+h,slot=c.G.player.resonance.holes[key];
+  delete c.G.player.resonance.holes[key];assert.equal(c.resonanceRegionUnlocked(c.G.player.resonance,6),false,key+'缺漏');
+  c.G.player.resonance.holes[key]={gems:[],lv:9};assert.equal(c.resonanceRegionUnlocked(c.G.player.resonance,6),false,key+'9級');
+  c.G.player.resonance.holes[key]=slot;
+ }
+ c.G.player.resonance.holes['5:6'].lv=9;
+ const before=JSON.stringify(c.G),dirty=c.dirtyCount();
+ for(let h=0;h<7;h++){
+  assert.match(c.socketResonanceGem(6,h,'ruby',10),/尚未解鎖/);
+  assert.match(c.upgradeResonanceHole(6,h),/尚未解鎖/);
+ }
+ assert.equal(JSON.stringify(c.G),before);assert.equal(c.dirtyCount(),dirty);
+ assert.equal(c.upgradeResonanceHole(5,6),null);assert.equal(c.G.player.resonance.holes['5:6'].lv,10);
+ assert.equal(c.resonanceRegionUnlocked(c.G.player.resonance,6),true);
+ for(let h=0;h<7;h++){
+  assert.equal(c.socketResonanceGem(6,h,'ruby',h===0?10:8),null);
+  assert.equal(c.upgradeResonanceHole(6,h),null);
+ }
+ assert.match(c.socketResonanceGem(6,1,'ruby',8),/已滿/);
+ assert.equal(c.G.player.resonance.holes['6:0'].lv,1);
+});
+
+test('舊中央資料鎖定時不提供自身／相鄰能力，可取下且保留孔等級；解鎖後恢復能力',()=>{
+ const c=game({});c.G.equipment=c.SLOT_LIST.reduce((m,s)=>{m[s]=null;return m;},{});
+ const base=c.computeStats().hit;
+ c.G.player.resonance.holes={'6:0':{lv:2,gems:[{type:'catseye',level:10}]},'6:1':{lv:10,gems:[]}};
+ assert.deepEqual(plain(c.resonanceEntries(c.G.player.resonance)),[]);assert.equal(c.computeStats().hit,base);
+ const original=JSON.stringify(c.G.player.resonance.holes['6:0']);maxOuter(c);
+ assert.ok(Math.abs(c.computeStats().hit-base-c.gemStatValue('catseye',10)*1.3)<1e-6);
+ assert.equal(JSON.stringify(c.G.player.resonance.holes['6:0']),original);
+ c.G.player.resonance.holes['0:0'].lv=9;assert.equal(c.computeStats().hit,base);
+ assert.equal(c.unsocketResonanceGem(6,0,0),null);assert.equal(c.gemCount('catseye',10),1);assert.equal(c.G.player.resonance.holes['6:0'].lv,2);
+});
+
+test('舊中央寶石與孔等級可正常載入；中央鎖定不修改存檔內容或吞掉寶石',()=>{
+ const c=load([...LOGIC,'js/skills.js','js/talents.js','js/player.js','js/save.js']);
+ const data=c.newGameState();data.player.resonance={holes:{'6:0':{lv:5,gems:[{type:'ruby',level:10}]}}};
+ const out=c.migrateSave(plain(data));assert.deepEqual(plain(out.player.resonance),plain(data.player.resonance));
+ assert.equal(c.resonanceRegionUnlocked(out.player.resonance,6),false);assert.deepEqual(plain(c.resonanceEntries(out.player.resonance)),[]);
 });
 
 test('協議：三條指令、版本、BOSS 配置鎖與 gems 面板欄位', () => {

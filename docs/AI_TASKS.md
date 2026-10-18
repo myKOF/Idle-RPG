@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## GEM-RESONANCE-CORE-LOCK-20261018 — 強化數字與中央區解鎖條件
+
+- Owner：Codex；Done，單一開發者。使用者要求孔內改顯示純強化數字、0級不顯示；中央7孔需外圍6區全部42孔升到10級後才可使用，之前置灰且禁止鑲嵌／升級。前置共鳴已完成，工作區與11個目標預檢乾淨。
+- 允許js/gem_resonance.js、js/ui-gem-resonance.js、css/gems.css、js/bridge.js及js/worker/sim.worker.js僅快取、index.html、tests/gem-resonance.test.cjs、tests/gem-resonance-ui.test.cjs、docs/GEM_RESONANCE.md、PATCH.md與本紀錄；禁止配置數值／Excel／CSV／協議格式／存檔格式／素材與其他副本，不合併推送。
+- 方式：中央開放由共用純函式核對全部外圍孔達既有滿級值（配置目前10），UI／Worker指令／能力計算共用。舊中央寶石及孔等級保留，鎖定時無加成但可取下；不新增存檔欄位。孔位只畫強化數字，最低階需求保留在右側及十階禁用判斷；鎖孔可點選看解鎖條件，鑲入／拖放／升級皆封鎖。
+- 驗收：外圍任一缺孔／未滿級、41孔滿＋1孔9級、最後一級解鎖；Worker直接呼叫不可扣資源或變更狀態、解鎖後正常，UI禁用／置灰／數字、舊資料保留與能力停用恢復。共鳴／Worker回歸、Build／diff、隔離瀏覽器正式指令與畫面，快取同步後Commit。無新素材，後續使用者重載及整合。
+- 完成11檔：共用resonanceRegionUnlocked／LockReason由目前外圍等級推導，不新增解鎖欄位。鑲嵌／升級在任何資源與state寫入前檢查，resonanceEntries跳過鎖定中央，因此Worker實際屬性及UI總加成一致。中央灰階／低亮、無整區亮起，仍可選孔查看條件及取下舊寶石；十階、拖放與升級均封鎖。移除SVG最低階數字，只畫非零孔強化數字，空孔置中／單顆下方／多顆中央小字；右側需求及原最低階規則保留。
+- 快取：index gems CSS1.0.13→14／共鳴規則JS1.0.1→2／共鳴UI1.0.10→11／bridge1.0.291→292；bridge WORKER_ASSET_VERSION與Worker對gem_resonance.js的import查詢同步20261018-resonance-core-lock。Protocol仍v53、命令及快照形狀不變，沒有修改配置／Excel／CSV／素材／存檔格式，無素材庫Commit。
+- 指令／結果：`node --test tests/gem-resonance-ui.test.cjs tests/gem-resonance.test.cjs tests/init-ui-smoke.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs`54/54通過（其中共鳴及初始化30/30，新增3項規則／存檔及1項UI回歸）；`npm.cmd run build`535檔通過；`git diff --check`通過。舊中央升級測試改驗新鎖定規則，同時刪除未發生扣款的退款fixture；原多顆顯示／整區亮起測試明確建立外圍滿級前置，未降低斷言。
+- 擴大回歸：額外含`tests/ui-worker-panels.test.cjs`共62項60通過／2既有失敗。該檔未修改；唯讀攔截fs.readFileSync載入git show HEAD的UI／規則／Bridge／Worker基準，重跑原檔仍同兩項失敗：裝備gem.socket命令原始碼斷言過期，以及item.upgrade測試VM未定義UI。不擴大修復、不放寬斷言，必要功能回歸54項全通過。
+- 瀏覽器：獨立headless Edge／隨機localhost／seed新角色，正式index／UI／Worker與GM資源，不讀真人存檔。初始0級全部留白、中央7孔gray/opacity生效、右側升級及十階禁用；直接14條中央鑲入／升級指令皆回鎖定且庫存／金幣／孔位不變，原生拖放亦拒絕。以正式升級指令將42外孔升級：41孔10級＋末孔9級仍鎖，最後9→10立即解鎖，中央原生點擊鑲入與升級成功顯示純1。1920×900、1366×768、390×844皆49孔中心hit-test通過、孔內數字皆1～10；Console warning／error、pageerror與HTTP錯誤0。截圖保留本聊天visualizations/gem-resonance-core-locked.png及core-unlocked.png；服務／瀏覽器／臨時腳本清理。
+- 自我Review／唯讀：AI規範／工作流／Agent文件、Worker runCommand／protocol及gems面板、save migrate中央合法資料、computeStats共用貢獻與髒標記、GM資源、既有UI／規則／Worker回歸均已核對；上述未列修改檔案保持原樣。鎖定孔保留可選取的語意以查看原因，只有實際鑲入與升級控制標為disabled。收尾全部目標預檢乾淨；無本次未完成項，可供Review／合併，未合併推送。已知限制為上述2項既有裝備測試、未實測其他瀏覽器／實體觸控／真人長戰；舊中央加成在未解鎖時依新規則暫停。Commit為本紀錄所在[Codex] fix提交，回覆附編號；下一步重新載入寶石→共鳴驗收。
+
 ## GEM-RESONANCE-REGION-GLOW-20261018 — 選孔後整區亮起
 
 - Owner：Codex；Done，單一開發者。使用者要求選中一區任一孔後，整區7孔亮起，提示左側篩選寶石對應的鑲嵌區域；前置共鳴選孔／篩選已完成。工作區乾淨、七檔預檢乾淨。

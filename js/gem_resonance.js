@@ -60,12 +60,30 @@ function resonanceHoleState(state, region, hole) {
   return { gems: (h && Array.isArray(h.gems)) ? h.gems : [], lv: (h && h.lv) || 0 };
 }
 
+/* 中央區需所有外圍鑲孔滿級才開放；不另存解鎖旗標，避免與孔等級不同步。 */
+function resonanceRegionUnlocked(state, region) {
+  if (!Number.isInteger(region) || region < 0 || region >= resonanceRegionCount()) return false;
+  if (GEM_RESONANCE_REGIONS[region].id !== 'core') return true;
+  for (var r = 0; r < resonanceRegionCount(); r++) {
+    if (GEM_RESONANCE_REGIONS[r].id === 'core') continue;
+    for (var h = 0; h < RESONANCE_HOLE_COUNT; h++) {
+      if (resonanceHoleState(state, r, h).lv < resonanceMaxHoleLevel()) return false;
+    }
+  }
+  return true;
+}
+
+function resonanceRegionLockReason(state, region) {
+  return resonanceRegionUnlocked(state, region) ? '' : '中央區尚未解鎖：外圍六區的全部鑲孔需強化至 ' + resonanceMaxHoleLevel() + ' 級';
+}
+
 /* 共鳴對屬性的貢獻清單：[{ type, level, mult }]，每項＝「這種寶石的 level 階能力 × mult」。
    自己孔裡的寶石 mult＝1；孔等級帶來的相鄰加成逐顆寶石各列一項。 */
 function resonanceEntries(state) {
   var out = [];
   if (!state || !state.holes) return out;
   for (var r = 0; r < resonanceRegionCount(); r++) {
+    if (!resonanceRegionUnlocked(state, r)) continue;
     for (var h = 0; h < RESONANCE_HOLE_COUNT; h++) {
       var self = resonanceHoleState(state, r, h);
       if (!self.gems.length && !self.lv) continue;
@@ -102,6 +120,8 @@ function resonanceTouched() {
 /* 鑲嵌：level 省略時取庫存裡「達到該孔最低階」的最低一階（不浪費高階寶石）。 */
 function socketResonanceGem(region, hole, type, level) {
   if (!resonanceValidHole(region, hole)) return '無效的共鳴孔位';
+  var locked = resonanceRegionLockReason(G.player.resonance, region);
+  if (locked) return locked;
   if (!GEM_TYPES[type] || !isGemEnabled(type)) return '此寶石已關閉或不存在，無法鑲嵌';
   if (!resonanceTypeAllowed(region, type)) return GEM_RESONANCE_REGIONS[region].name + '區不能鑲這種寶石';
   var min = resonanceHoleMinLevel(region, hole);
@@ -153,6 +173,8 @@ function resonanceUpgradePayType(region, slot, cost, countOf) {
 /* 升級：金幣＋指定階級的寶石（種類見 resonanceUpgradePayType）。孔不必鑲寶石也能升級。 */
 function upgradeResonanceHole(region, hole) {
   if (!resonanceValidHole(region, hole)) return '無效的共鳴孔位';
+  var locked = resonanceRegionLockReason(G.player.resonance, region);
+  if (locked) return locked;
   var st = resonanceEnsure();
   var key = resonanceHoleKey(region, hole);
   var slot = st.holes[key];

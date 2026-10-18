@@ -23,12 +23,13 @@ function ui(gems={diamond:{3:8,4:2,7:1},ruby:{10:3}}){
  c.resolveGemsPanelSnapshot=s=>s||c.uiGemsPanelSnapshot();c.uiHeaderPanelSnapshot=()=>({player:c.G.player});
  c.setTextIfChanged=(n,t)=>{if(n)n.textContent=t;};
  const render=c.renderGems;c.renders=0;c.renderGems=()=>{c.renders++;render();};
- c.calls=[];c.sendGemUiCommand=(name,args)=>{c.calls.push({name,args});let error;if(name==='gem.resonanceSocket')error=c.socketResonanceGem(args.region,args.hole,args.type,args.level);if(name==='gem.resonanceUnsocket')error=c.unsocketResonanceGem(args.region,args.hole,args.index);assert.equal(error,null);c.renderGems();};
+ c.calls=[];c.sendGemUiCommand=(name,args)=>{c.calls.push({name,args});let error;if(name==='gem.resonanceSocket')error=c.socketResonanceGem(args.region,args.hole,args.type,args.level);if(name==='gem.resonanceUnsocket')error=c.unsocketResonanceGem(args.region,args.hole,args.index);if(name==='gem.resonanceUpgrade')error=c.upgradeResonanceHole(args.region,args.hole);assert.equal(error,null);c.renderGems();};
  vm.runInContext(read('js/ui-gem-resonance.js'),c);c.initGemResonanceUi();c.renderGems();return {c,nodes,element};
 }
 function tier(nodes,level){const tag=nodes['gem-focus'].innerHTML.match(new RegExp('<button[^>]*data-gem-lv="'+level+'"[^>]*>'));assert.ok(tag,'tier '+level);return tag[0];}
 function drag(f,type='diamond',level=4){const transfer={setData(){},dropEffect:''};let prevented=false;f.nodes['gem-focus'].handlers.dragstart({target:f.element({'data-gres-gem':type+':'+level}),dataTransfer:transfer,preventDefault(){prevented=true;}});return {transfer,prevented};}
 function drop(f,hole){f.nodes['gres-board'].handlers.drop({target:f.element({'data-gres-hole':hole}),preventDefault(){}});}
+function maxOuter(c){for(let r=0;r<6;r++)for(let h=0;h<7;h++){const key=r+':'+h;c.G.player.resonance.holes[key]={...c.G.player.resonance.holes[key],lv:10,gems:c.G.player.resonance.holes[key]?.gems||[]};}}
 
 test('左側每種寶石只列一列且只切類型；上方保留十階與各階庫存',()=>{
  const {c,nodes}=ui();const html=nodes['gem-table'].innerHTML;
@@ -121,7 +122,7 @@ test('兩顆與六顆真實鑲入後每顆都顯示，取下後保留其餘寶�
  c.gresSelectHole(0,0);put('sapphire:6');assert.equal(partCount(0,0),0);
  put('sapphire:6');assert.equal(partCount(0,0),2);assert.equal(c.G.player.gems.sapphire[6],0);
  assert.doesNotMatch(nodes['gres-board'].innerHTML,/gres-cap/);
- c.gresSelectHole(6,0);
+ maxOuter(c);c.gresSelectHole(6,0);
  for(let i=1;i<=6;i++){
   put('ruby:10');const state=c.G.player.resonance.holes['6:0'];assert.equal(state.gems.length,i);
   assert.equal(partCount(6,0),i===1?0:i);
@@ -159,6 +160,7 @@ test('拖曳影像只有原寶石圖、維持畫面尺寸及中心熱點，成�
 
 test('選孔僅加亮所選區7孔，切區／同區換孔／鍵盤／拖曳皆跟隨同一選孔與篩選狀態',()=>{
  const {c,nodes,element}=ui({sapphire:{6:3},diamond:{6:3},ruby:{10:3}});
+ maxOuter(c);c.renderGems();
  function check(region,hole){
   const tags=nodes['gres-board'].innerHTML.match(/<g class="gres-hole[^>]+>/g);assert.equal(tags.length,49);
   const active=tags.filter(t=>t.includes(' is-region-active'));assert.equal(active.length,7);
@@ -175,4 +177,25 @@ test('選孔僅加亮所選區7孔，切區／同區換孔／鍵盤／拖曳皆�
  c.gresSelectHole(1,1);drag({c,nodes,element},'diamond',6);drop({c,nodes,element},'6:1');assert.equal(c.calls.length,0);check(1,1);
  nodes['gres-board'].handlers.keydown({target:element({'data-gres-hole':'0:2'}),key:'Enter',preventDefault(){}});check(0,2);
  drag({c,nodes,element},'sapphire',6);drop({c,nodes,element},'0:3');check(0,3);assert.equal(c.calls.length,1);
+});
+
+test('孔內只畫非零強化數字，最低階不再畫出；中央鎖定UI拒絕鑲入／拖放／升級，解鎖後恢復',()=>{
+ const f=ui({ruby:{1:20,10:10},sapphire:{6:4}}),{c,nodes,element}=f;
+ assert.doesNotMatch(nodes['gres-board'].innerHTML,/<text|gres-min|>Lv/);
+ c.G.player.resonance.holes['0:2']={gems:[],lv:4};
+ c.G.player.resonance.holes['0:0']={gems:[{type:'sapphire',level:6}],lv:2};c.renderGems();
+ const numbers=[...nodes['gres-board'].innerHTML.matchAll(/<text[^>]*>([^<]+)<\/text>/g)].map(m=>m[1]);assert.deepEqual(numbers,['2','4']);
+ c.gresSelectHole(6,0);
+ assert.equal((nodes['gres-board'].innerHTML.match(/class="gres-hole[^\"]* is-locked/g)||[]).length,7);
+ assert.equal((nodes['gem-focus'].innerHTML.match(/ disabled/g)||[]).length,10);
+ assert.match(nodes['gres-detail'].innerHTML,/外圍六區.*全部鑲孔.*10/);assert.match(nodes['gres-detail'].innerHTML,/data-gres-upgrade="1" disabled/);
+ nodes['gem-focus'].handlers.click({target:element({'data-gres-gem':'ruby:10'})});
+ nodes['gres-detail'].handlers.click({target:element({'data-gres-upgrade':'1'})});assert.equal(c.calls.length,0);assert.equal(drag(f,'ruby',10).prevented,true);
+ c.gresSelectHole(5,1);drag(f,'ruby',10);drop(f,'6:1');assert.equal(c.calls.length,0);assert.deepEqual(Array.from(c.UI.gemBrowse.resHole),[5,1]);
+ maxOuter(c);c.G.player.resonance.holes['5:6'].lv=9;c.gresSelectHole(6,0);assert.match(nodes['gres-detail'].innerHTML,/data-gres-upgrade="1" disabled/);
+ c.G.player.resonance.holes['5:6'].lv=10;c.renderGems();assert.doesNotMatch(nodes['gres-board'].innerHTML,/ is-locked/);
+ assert.doesNotMatch(tier(nodes,10),/ disabled/);assert.doesNotMatch(nodes['gres-detail'].innerHTML,/data-gres-upgrade="1" disabled/);
+ nodes['gem-focus'].handlers.click({target:element({'data-gres-gem':'ruby:10'})});assert.equal(c.calls.length,1);
+ nodes['gres-detail'].handlers.click({target:element({'data-gres-upgrade':'1'})});assert.equal(c.calls.length,2);assert.equal(c.G.player.resonance.holes['6:0'].lv,1);
+ assert.match(nodes['gres-board'].innerHTML,/<text[^>]*class="gres-lv"[^>]*>1<\/text>/);assert.doesNotMatch(nodes['gres-board'].innerHTML,/>Lv|gres-min/);
 });
