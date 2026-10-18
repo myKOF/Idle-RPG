@@ -5493,7 +5493,8 @@ html *::-webkit-scrollbar-corner {
   background: #102333;
 }
 
-#tab-talents .tlx-node-glyph .skill-icon-img {
+.talent-icon-img {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;

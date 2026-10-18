@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## HEAVEN-POWER-ICONS-APPLY-20261018 — 接入84枚原創天堂威能圖示
+
+- Owner：Codex；Done；單一開發者。使用者已確認本聊天84枚圖集並授權全部接入，母圖與ID對照已完成。遊戲與素材庫工作區乾淨，fetch及目標衝突預檢乾淨。
+- 範圍：js/ui.js僅威能圖示來源、css/ashen-forge.css僅圖示尺寸、index.html必要快取、images/ui/heaven-power/icons/、tools/heaven-power/export-icons.cjs、tests/talents.test.cjs及本紀錄；素材庫新增codex-authored/heaven-power/icons/母圖／提示詞／來源與匯出清單。禁止技能圖示／玩法／數值／Worker／Protocol／存檔／其他頁面，不合併推送。
+- 方式：原樣保留已確認的十張imagegen原創分組母圖，依既有84個威能ID逐格裁切匯出，星盤／效果列表／Tooltip共用相同圖示。只參考外部素材一般材質，正式輸出不含第三方像素；此輪不重畫。
+- 驗收：84枚ID完整且各有專屬輸出、母圖hash與匯出hash可重現；正式UI十轉圖示／升降級／Tooltip／選中與滿級框、窄寬畫面與Console；相關回歸／Build／diff。先素材庫Commit再遊戲Commit，後續使用者審閱合併。
+
+- 完成遊戲90檔：js/ui.js移除共用技能圖的屬性映射，依既有威能ID讀取獨立PNG，星盤／效果列表／Tooltip沿同一入口；css/ashen-forge.css以talent-icon-img套用三處圖示尺寸；index.html僅CSS86→87／UI181→182；images/ui/heaven-power/icons/新增84張128×128；tools/heaven-power/export-icons.cjs新增既有素材庫Root解析、裁切／匯出／核對三模式；tests/talents.test.cjs既有84項迴圈補驗三處對應／正式檔案／不再使用技能圖；本紀錄。沒有數值、存檔、Protocol或解鎖條件變更。
+- 素材庫99檔：codex-authored/heaven-power/icons/保存十張核定原稿、核定圖集、84張正式輸出、SOURCE.md、prompts.json、layout.json與exports.json。原稿原樣保存，裁切範圍與84個ID／名稱逐項對照js/data.js；正式圖共3,012,620 bytes，84個檔案具有84個不同SHA256。外部4000 icon僅作前輪一般輪廓／材質觀察，無第三方像素或技能圖混入。本輪只標準裁切縮小，不重新作圖；未觸及其他素材。先素材庫Commit **55ff210** `[Codex] feat: 保存84枚天堂威能原創聖印與正式匯出`，再遊戲獨立提交。
+- 指令／結果：設定既有Node依賴NODE_PATH後，`node tools/heaven-power/export-icons.cjs --make-icons`／`--apply`／`--check`通過；十張母圖hash、裁切配置hash、84張素材庫與遊戲輸出hash均核對。`node --check tools/heaven-power/export-icons.cjs`通過；`node --test --test-reporter=spec tests/talents.test.cjs tests/power-rework.test.cjs tests/init-ui-smoke.test.cjs` **34/34**；`npm.cmd run build` **538檔**通過；兩庫diff檢查通過。未放寬功能斷言或跑無關全庫。
+- 瀏覽器：已讀browser技能並嘗試IAB，因無backend改隔離headless Edge／隨機localhost，seed1018新角色透過正式Worker LOAD載入，不讀真人存檔。以正式GM轉10，逐轉實點確認8／8／7／7／10／10／7／10／10／7張星盤圖及相同列表全部載入、naturalWidth128、無重複路徑。Tooltip同ID且顯示正常，星盤圖54px／列表22px內容（容器各含邊框56／24px）。升級扣1、降級退1，連升10級扣55、滿級升級disabled且降級enabled、金色2px outline與光暈保留；鍵盤Enter亦選中同圖。等待Resize幀完成後，1920／1366／1086／390寬均無面板溢出、10節點與2按鈕內含且中心命中全部true。最終Console error／warning、pageerror及HTTP錯誤0；已目視本聊天visualizations的heaven-original-icons-integrated.png與heaven-original-icons-turn5.png，服務／瀏覽器與臨時準備腳本均關閉清理。
+- 唯讀未改：AI規範／AGENTS／工作流／prompts/codex.md、js/data.js的TALENT_TREES、js/talents.js及玩法、LV_upgrade_system.md（開放條件未變）、Worker／Protocol／存檔、既有技能圖與共用skillIconHTML、素材庫Root解析器與既有背景匯出流程、既有power-rework與初始化回歸。自我Review確認只更換美術來源，沒有新增狀態／Timer／事件，三處維持同源。
+- 交付：本次無未完成項目或新增已知阻擋，可供Review／合併；未合併／推送。限制為實際瀏覽器只驗Edge、未跑所有實體裝置或完整測試庫。下一步使用者整合本分支並重載威能頁；遊戲Commit為本紀錄所在`[Codex] feat: 接入84枚天堂威能專屬原創圖示`，回覆附實際編號。
+
 ## RUNEWORD-UNLOCK-20261018 — 符文真言永久解鎖與圖鑑數量
 
 - Owner：Codex；Done；單一開發者。使用者授權完整修改符文資訊解鎖；前置既有成形記錄、封魔塔與配置管線已完成，工作區乾淨、所有目標預檢無其他副本修改。

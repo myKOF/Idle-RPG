@@ -290,6 +290,7 @@ const tipAnchor = { getBoundingClientRect: () => ({ top: 100, left: 100, right: 
 test('所有威能0級Tooltip顯示1級表值與成本，圖示上不顯示名稱', () => {
   const c = loadContext(), tip = loadTalentUi(c);
   c.G.player.reincarnations = 10;
+  const sources = new Set();
   for (const {turn, def} of c.talentList()) {
     c.showTalentTooltip(def.id, tipAnchor);
     assert.ok(tip.innerHTML.includes(c.talentEffectDescription(def, def.per)));
@@ -297,9 +298,16 @@ test('所有威能0級Tooltip顯示1級表值與成本，圖示上不顯示名�
     assert.match(tip.innerHTML, /消耗 1 點威能點/);
     const node = c.talentNodeHTML(def, turn, talentPanelSnapshot(c), 0, c.TALENT_TREES[turn].length);
     assert.doesNotMatch(node, /tlx-node-name/);
-    assert.match(node, /images\/skills\//);
+    const source = 'images/ui/heaven-power/icons/' + def.id + '.png?v=1';
+    assert.ok(node.includes(source), def.id + '星盤圖示');
+    assert.ok(tip.innerHTML.includes(source), def.id + 'Tooltip圖示');
+    assert.ok(c.talentEffectsHTML(turn, talentPanelSnapshot(c)).includes(source), def.id + '效果列表圖示');
+    assert.doesNotMatch(c.talentIconHTML(def), /images\/skills\//);
+    assert.ok(fs.existsSync(path.join(root, source.split('?')[0])), def.id + '正式輸出存在');
+    sources.add(source);
     assert.match(node, /tlx-threat-flame/);
   }
+  assert.equal(sources.size, 84, '84個威能皆有專屬圖示');
 });
 
 test('天賦與潛力圖示使用正式 tooltip，不再使用原生 title 提示', () => {
