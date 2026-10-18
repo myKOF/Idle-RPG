@@ -8,7 +8,7 @@
      符文真言圖鑑  全部配方、需要的鑲孔、適用裝備與效果；標出材料已齊全與穿戴中成形的
 
    ---- 說明隱藏（2026-10-07）----
-   符文真言要「成形過一次」（快照 runewordSeen）才顯示配方與效果；在那之前：
+   符文真言「成形過一次」或通關表定封魔塔層數（快照 runewordSeen）即永久顯示配方與效果；在那之前：
      圖鑑卡片    名稱、品質、需要的孔數、適用裝備、風味文字照常顯示；配方的符文只留品質色外框、內容是「？」；
                  每條效果換成一行 8 個問號；材料齊全的提示也不給（否則等於洩漏配方）
      符文庫      「用在這些符文真言」的名稱換成問號，顏色是該真言的品質色，也不能點進圖鑑
@@ -44,7 +44,7 @@ function runeUiSetDetail(on) {
   runeUiState().detail = !!on;
   try { localStorage.setItem(RUNE_DETAIL_KEY, on ? '1' : '0'); } catch (e) { }
 }
-/* 這組符文真言的內容（配方、效果、用途）現在要不要顯示：開關攤開，或成形過一次。 */
+/* 這組符文真言的內容（配方、效果、用途）現在要不要顯示：內測預覽，或已永久解鎖。 */
 function runeUiRevealed(snapshot, wordId) {
   if (runeUiDetailOn()) return true;
   var seen = snapshot && snapshot.runewordSeen;
@@ -58,6 +58,13 @@ function runesViewCount(snapshot, id) {
 function runesViewTotal(snapshot) {
   var n = 0;
   for (var i = 0; i < RUNES.length; i++) n += runesViewCount(snapshot, RUNES[i].id);
+  return n;
+}
+/* 數量只看永久解鎖，與內測全部預覽、品質／材料篩選無關。 */
+function runeUiUnlockedCount(snapshot) {
+  var seen = snapshot && snapshot.runewordSeen;
+  var n = 0;
+  for (var i = 0; i < RUNEWORDS.length; i++) if (seen && seen[RUNEWORDS[i].id]) n++;
   return n;
 }
 
@@ -212,6 +219,7 @@ function renderRunes() {
   var wornCount = Object.keys(worn).length;
   setTextIfChanged($id('rune-total'), fmtFull(runesViewTotal(snapshot)));
   setTextIfChanged($id('rune-worn'), String(wornCount));
+  setTextIfChanged($id('rune-unlocked'), runeUiUnlockedCount(snapshot) + '/' + RUNEWORDS.length);
 
   var gridH = runeUiLibraryHTML(snapshot, st.sel);
   if (box._lastH !== gridH) { box._lastH = gridH; box.innerHTML = gridH; }
@@ -339,7 +347,7 @@ function runeUiHelpText() {
   }).join('、');
   return '符文鑲在裝備專屬的符文孔裡（取代原本的附魔位置，與寶石鑲孔分開，一般裝備最多 ' + rwRegularMaxSlots() + ' 孔' + (RUNE_SETTINGS.twoHandBonusSlots > 0 ? '、雙手武器多 ' + RUNE_SETTINGS.twoHandBonusSlots + ' 孔' : '') + '；在裝備頁按「符文」鑲入）。' +
     '把「指定的符文、依指定順序」鑲進連續的符文孔，且裝備類型符合，就會成形為符文真言，獲得額外屬性與特殊威能；拆下任何一顆就失效，換回來又恢復。' +
-    '每組符文真言要成形過一次，圖鑑才會顯示它的配方與效果；沒成形過的只看得到名稱、品質、需要的孔數與適用裝備。' +
+    '符文真言資訊有兩種永久解鎖方式：自行依正確條件成功成形，或通關指定的封魔塔層數。解鎖後可隨時查看配方與效果，拆下符文也不會再變回問號；尚未解鎖的只看得到名稱、品質、需要的孔數與適用裝備。正式版與內測版適用相同解鎖規則。' +
     '符文從野外擊殺與封魔塔通關掉落，' + RUNE_COMPOSE_COUNT + ' 顆同種可合成為下一階（第 ' + RUNE_COMPOSE_MAX_TIER + ' 階以上只能掉落）。' +
     '符文孔數由稀有度決定：' + slotText + '。';
 }

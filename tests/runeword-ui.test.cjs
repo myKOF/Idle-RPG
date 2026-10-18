@@ -27,7 +27,7 @@ function mount(opts) {
   const internal = !opts || opts.internal !== false;
   const els = {};
   ['tab-runes', 'rune-grid', 'rune-focus', 'rune-tier-filter', 'rune-ready-only', 'runeword-list',
-    'rune-total', 'rune-worn', 'rune-codex-count', 'rune-detail-toggle'].forEach((id) => { els[id] = el(id); });
+    'rune-total', 'rune-worn', 'rune-unlocked', 'rune-codex-count', 'rune-detail-toggle'].forEach((id) => { els[id] = el(id); });
   els['rune-detail-toggle'].hidden = true;
   const c = {
     console, Math: Object.create(Math), UI: { dirty: {} }, setTimeout() {}, clearTimeout() {},
@@ -471,4 +471,26 @@ test('符文石圖的接線：index.html 引用的 css／js 版號與快取、�
   const data = fs.readFileSync(path.join(root, 'js/runeword_data.js'), 'utf8');
   assert.match(data, /var RUNE_STONE_VER = \d+;/);
   assert.ok(fs.existsSync(path.join(root, 'tools/rune-stones/rune-stone-painter.js')), '產生器要隨專案保存');
+});
+
+
+test('永久解鎖數量：正式／內測同值，忽略未知ID與預覽開關，不受篩選影響', () => {
+  for (const internal of [false,true]) {
+    const c=mount({internal});
+    const seen={rw_firstcry:1,rw_nightwatch:1,rw_viperkiss:1,rw_deleted:1,rw_frostwhisper:0};
+    const snapshot={runes:{},runewordSeen:seen};
+    c.setPanels(snapshot);
+    c.initRuneUi();
+    c.renderRunes();
+    assert.equal(c.els['rune-unlocked'].textContent,'3/65');
+    c.runeUiState().tier=4;
+    c.runeUiState().ready=true;
+    c.renderRunes();
+    assert.equal(c.els['rune-unlocked'].textContent,'3/65');
+    if(internal)c.els['rune-detail-toggle'].listeners.click();
+    assert.equal(c.els['rune-unlocked'].textContent,'3/65');
+    assert.equal(Object.keys(seen).length,5,'顯示不可寫入解鎖記錄');
+    assert.equal(c.runeUiRevealed(snapshot,'rw_firstcry'),true,'塔解鎖與自行成形共用永久揭露');
+    assert.match(c.runeUiHelpText(),/通關指定的封魔塔層數/);
+  }
 });

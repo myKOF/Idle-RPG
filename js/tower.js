@@ -373,6 +373,10 @@ function endTowerFight(win, reason) {
       if (typeof sgAfterSkillChange === 'function') sgAfterSkillChange();
     }
     blog('🏆 通關封魔塔第 ' + floor + ' 層！', 'good');
+    if (typeof rwUnlockTowerWords === 'function') {
+      var unlockedWords = rwUnlockTowerWords(G.tower.highest);
+      if (unlockedWords) result.rewards.push('📜 解鎖符文真言資訊 ×' + unlockedWords);
+    }
     // 獎勵：資源（零件改由熔爐升級取得）
     var rw = towerRewardFor(floor, firstClear);
     var st2 = getStats();
