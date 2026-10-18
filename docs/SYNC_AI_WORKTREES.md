@@ -9,6 +9,10 @@
 - 可以連線使用 Codex，且帳號有可用額度；自動解衝突會使用帳號的 Codex 額度。
 - 三個 AI 工作區必須乾淨。請先提交正在做的工作；腳本不會自動提交那些未完成內容。
 
+BAT 自動尋找已安裝的 CLI：先查 `PATH` 的 `codex.cmd`／`codex.exe`，再查 `%APPDATA%\npm\codex.cmd` 與 `%LOCALAPPDATA%\OpenAI\Codex\bin\<版本>\codex.exe`（版本目錄依更新時間排序）。雙擊 BAT 時即使 Explorer 的 PATH 尚未更新，也可直接使用 npm 或桌面 App 已有的安裝；不另外安裝 CLI、不修改系統 PATH。每個候選先執行 `--version` 與 `exec --help`，確認可啟動並支援既有自動處理所需參數；失效的 npm shim 會跳過並繼續找桌面版。主控台及報告記錄最終 CLI 路徑與版本。使用 `-CodexCommand` 明確指定完整路徑時，只使用指定程式；無效時保留合併並回報。
+
+啟動 AI 前，控制器也會清除 Git 已回報的「新增檔尾空白行」，僅限已暫存、工作檔與 index 均完全等於本次來源提交的普通文字檔；有手動修改、合併後另有內容、符號連結或其他空白錯誤時不套用此整理。這讓 `.agents` 等受 AI 沙箱保護的指令檔不會因來源多帶空白行而卡住提交；不更改規範內容、不放寬沙箱與 Git diff 檢查。整理清單保存在本次 `controller-whitespace.txt`，控制器自行暫存這些明確檔案。AI 仍須以 `git diff HEAD --check` 檢查完整合併內容，包含原先已暫存的來源差異。
+
 自動程序以 `--ignore-user-config` 使用 CLI 自帶預設設定並沿用原登入，避免桌面 App 的模型別名與 CLI 不相容；不修改使用者設定檔。採 `workspace-write` sandbox 與 `never` approval policy，不跳出逐項確認，也不使用繞過 sandbox 的旗標。Git 共用目錄與已設定的素材庫列為必要的額外可寫路徑；帳號登入、權限限制或 Excel 鎖定等問題仍可能使這次處理失敗。
 
 Windows sandbox 實作沿用既有 `config.toml` 的 `[windows].sandbox` 設定，只以本次啟動參數傳入；不會自動改換權限較寬的模式。若執行命令被 sandbox 政策拒絕，Codex 會直接停止，不反覆換 shell 嘗試。

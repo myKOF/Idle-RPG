@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## SYNC-CLI-DISCOVERY-20261018 — 一鍵同步自動尋找 Codex 並續接合併
+
+- Owner：Codex；Done，單一開發者。使用者要求解決 develop 待完成合併，並將解法接入 sync_ai_worktrees.bat，日後一鍵自動解衝突與完成合併。前置：develop HEAD e3c9316f、MERGE_HEAD a5da341f，僅 AI_RULES.md 同位置新增兩項獨立規範衝突；同步報告顯示找不到 codex.cmd。
+- 允許 BAT、tools/sync-codex-cli.ps1、resolve-sync-conflicts.ps1、必要同步接線、相關同步測試、docs/SYNC_AI_WORKTREES.md 與本紀錄；develop 僅本次衝突、必要快取與整合紀錄，保留全部來源功能。禁止無關玩法／參數／存檔／素材修改、reset／abort／強推。修復先在 Codex 工作區獨立提交，再完成 develop 整合；不直接推送正式遠端。
+- 方式／驗收：自動搜尋 PATH、npm 固定安裝位置與桌面 App 版本目錄，以實際 CLI 版本及 exec 參數核對可用性；明確指定路徑失敗須回報。維持 sandbox 與獨立驗證後提交的原流程。隔離真 Git remote／Worktree 測試缺 PATH、安裝目錄含空白、失敗保留、重跑接續與合併／回同步；正式待完成合併執行相關測試與 Build、diff 檢查。後續使用者執行 BAT 即使用新流程。
+- 完成／修改6檔：sync_ai_worktrees.bat（保持ASCII／CRLF與原入口）、tools/sync-codex-cli.ps1（新增可用CLI搜尋與參數驗證）、tools/resolve-sync-conflicts.ps1（接線、完整合併diff檢查、受限的來源檔尾空白整理）、tests/sync-auto-conflicts.test.cjs、docs/SYNC_AI_WORKTREES.md、本紀錄。錯誤npm shim或不相容版本會跳過；明確指定無效路徑仍停止。未改系統PATH、使用者設定、登入或sandbox權限。
+- 正式整合：以本機實際CLI執行自動處理，完整保留AI_RULES兩側8.8／8.9、原有天堂威能與裝備三套全解鎖。首輪獨立驗證攔下來源.agents/AGENTS.md多餘檔尾空白，另查明AI sandbox保護該目錄；因此控制器僅對工作檔／index完全等於incoming且Git確實回報new blank line at EOF的非連結文字檔整理，再明確stage，手動修改不處理。新流程正式重跑通過、無放寬檢查，已完成develop merge `25aeb3f9`。14份整合檔為.agents/AGENTS.md、AGENTS.md、AI_RULES.md、LV_upgrade_system.md、PATCH.md、docs/AI_TASKS.md、game_formula.md、index.html、js/bridge.js、js/data.js、js/worker/sim.worker.js、player_strategy.md與兩份既有解鎖測試。主頁data89／bridge303及Worker新快取同步，Protocol與存檔不改。
+- 測試：`node --test tests/sync-auto-conflicts.test.cjs tests/sync-ai-worktrees.test.cjs tests/sync-index-recovery.test.cjs`最終52/52通過，含真BAT缺PATH找npm、空白路徑、失效npm與較新不相容桌面CLI退回可用版、重跑pending merge、完整合併EOF、手動指令檔不動、故障保留與index回復。臨時真Git remote驗證兩個merge父節點、develop推送及三個AI分支回同步，未碰正式遠端；臨時倉庫與測試exe均清理。
+- 正式來源驗證：`node --test tests/unlock-thresholds.test.cjs tests/sim-skill-plan.test.cjs tests/worker-protocol.test.cjs tests/potential-removal.test.cjs tests/worker-shim.test.cjs`69/69；另輪連同talents／power-rework／new-forge-visuals／new-forge-ui／init-ui-smoke共112/112。`npm.cmd run build`538檔通過，控制器獨立build亦通過；完整diff／雙規範原文保留／主頁與Worker快取／無衝突標記檢查通過。
+- 唯讀未改：AI規範／Workflow／prompts、原同步與報告／index復原工具、本機CLI版本與help、正式來源分支三方差異、上述回歸與OpenAI官方非互動文件。素材庫status乾淨，無本次素材變更與素材庫Commit。docs/AI_TASKS與develop既有尾端紀錄不同區段，候選git merge-file試跑0；工具其餘檔預檢無衝突。
+- 交付：工具Commit為本紀錄所在`[Codex] fix: 一鍵同步自動尋找 CLI 並續接衝突合併`，回覆附實際編號；可合併，並依使用者本輪整合授權合併進develop。不推送正式遠端。無本次未完成需求；限制為語意矛盾、未登入／無額度／離線或其他權限阻擋仍保留現場與報告，不保證任意設計衝突都能無人裁決。未跑全庫／瀏覽器。後續直接雙擊BAT，會依原流程解衝突、驗證、提交、同步及推送。
+
 ## HEAVEN-POWER-DARK-APPLY-20261018 — 接入暗金聖印背景
 
 - Owner：Codex；Done，單一開發者。使用者選定最新暗色候選第1張（A暗金聖印），授權接入天堂威能星盤；前置a9653a39與已確認母圖完成。遊戲／素材庫工作區乾淨，修改目標預檢無其他副本衝突。

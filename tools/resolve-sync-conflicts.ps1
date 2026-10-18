@@ -8,6 +8,7 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'sync-codex-cli.ps1')
 
 function Read-Git {
     param([string[]]$Arguments)
@@ -39,6 +40,56 @@ function Stage-ReportedFiles {
     }
 }
 
+function Repair-IncomingBlankEof {
+    # The model sandbox protects agent instruction directories. The controller can
+    # remove a purely mechanical Git whitespace error before starting the model,
+    # but only from a staged file still identical to the incoming commit.
+    $changed = Read-Git -Arguments @('diff', '--cached', '--name-only', '--diff-filter=AM', '-z')
+    foreach ($relativePath in ($changed -split "`0")) {
+        if (-not $relativePath -or [IO.Path]::IsPathRooted($relativePath) -or
+            $relativePath -match '(^|[\\/])\.git([\\/]|$)') { continue }
+        $fullPath = [IO.Path]::GetFullPath((Join-Path $Worktree $relativePath))
+        if (-not $fullPath.StartsWith($Worktree.TrimEnd('\', '/') + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase) -or
+            -not (Test-Path -LiteralPath $fullPath -PathType Leaf) -or
+            ((Get-Item -LiteralPath $fullPath).Attributes -band [IO.FileAttributes]::ReparsePoint)) { continue }
+        $directory = (Get-Item -LiteralPath $fullPath).Directory
+        $linkedParent = $false
+        while ($directory -and $directory.FullName.Length -ge $Worktree.Length) {
+            if ($directory.Attributes -band [IO.FileAttributes]::ReparsePoint) { $linkedParent = $true; break }
+            $directory = $directory.Parent
+        }
+        if ($linkedParent) { continue }
+        $incomingBlob = Read-Git -Arguments @('ls-tree', '--format=%(objectname)', $IncomingSha, '--', $relativePath)
+        $indexBlob = Read-Git -Arguments @('rev-parse', ":$relativePath")
+        if (-not $incomingBlob -or $indexBlob -ne $incomingBlob -or
+            (Read-Git -Arguments @('hash-object', "--path=$relativePath", '--', $fullPath)) -ne $incomingBlob) { continue }
+        $previousPreference = $ErrorActionPreference
+        try {
+            $ErrorActionPreference = 'Continue'
+            $check = (& git -C $Worktree -c core.quotePath=false diff HEAD --check -- $relativePath 2>&1 | Out-String)
+            if ($LASTEXITCODE -ne 2 -or $check -notmatch '(?m):\d+: new blank line at EOF\.') { continue }
+        } finally { $ErrorActionPreference = $previousPreference }
+        $bytes = [IO.File]::ReadAllBytes($fullPath)
+        if ($bytes -contains 0) { continue }
+        # Single-byte roundtrip preserves UTF-8/BOM and every non-newline byte.
+        $encoding = [Text.Encoding]::GetEncoding(28591)
+        $text = $encoding.GetString($bytes)
+        $fixed = [regex]::Replace($text, '(\r?\n)(?:[ \t]*\r?\n)+\z', '$1')
+        if ($fixed -eq $text) { continue }
+        Assert-MergeIdentity
+        # Recheck immediately before writing; preserve any concurrently edited file.
+        if ((Read-Git -Arguments @('hash-object', "--path=$relativePath", '--', $fullPath)) -ne $incomingBlob) {
+            throw "Incoming file changed during whitespace verification: $relativePath"
+        }
+        [IO.File]::WriteAllBytes($fullPath, $encoding.GetBytes($fixed))
+        # Persist this controller-owned correction in the index so a failed model
+        # invocation can be resumed without losing its exact staging provenance.
+        Stage-ReportedFiles -Root $Worktree -Files @($relativePath)
+        Write-Host "[Codex] Removed incoming blank line at EOF: $relativePath" -ForegroundColor DarkGray
+        $relativePath
+    }
+}
+
 $Worktree = (Resolve-Path -LiteralPath $Worktree).Path
 $originalHead = Read-Git -Arguments @('rev-parse', 'HEAD')
 Assert-MergeIdentity
@@ -50,10 +101,7 @@ if ($AssetLibraryRoot -and (Test-Path -LiteralPath (Join-Path $AssetLibraryRoot 
     & git -C $AssetLibraryRoot diff --cached --quiet
     $assetIndexWasClean = $LASTEXITCODE -eq 0
 }
-$command = Get-Command $CodexCommand -ErrorAction SilentlyContinue | Select-Object -First 1
-if (-not $command) {
-    throw 'Cannot find Codex CLI. Install/sign in to Codex, then run sync_ai_worktrees.bat again. The merge is preserved.'
-}
+$commandPath = Find-SyncCodexCli -Command $CodexCommand
 
 # Store outside tracked files, separately for each worktree and attempt.
 $gitDirectory = Read-Git -Arguments @('rev-parse', '--absolute-git-dir')
@@ -80,6 +128,8 @@ $schema = @{
 } | ConvertTo-Json -Depth 8
 [IO.File]::WriteAllText($schemaPath, $schema, $utf8)
 
+$normalizedIncomingFiles = @(Repair-IncomingBlankEof)
+[IO.File]::WriteAllText((Join-Path $runDirectory 'controller-whitespace.txt'), ($normalizedIncomingFiles -join "`n"), $utf8)
 $conflicts = Read-Git -Arguments @('diff', '--name-only', '--diff-filter=U')
 $prompt = @"
 The human user explicitly authorized sync_ai_worktrees.bat to resolve develop merge conflicts automatically.
@@ -88,8 +138,12 @@ Original HEAD: $originalHead
 Incoming MERGE_HEAD: $IncomingSha
 Initially conflicted paths:
 $conflicts
+The controller removed only extra blank lines at EOF from unchanged incoming files:
+$($normalizedIncomingFiles -join "`n")
+Preserve those mechanical corrections; protected instruction files do not need further editing for that whitespace.
 
 Read AI_RULES.md, AGENTS.md, docs/AI_WORKFLOW.md, docs/AI_TASKS.md and prompts/codex.md.
+Keep command output bounded; the task history is large, so locate relevant/current entries with rg and bounded reads.
 This instruction authorizes working in the develop integration worktree and handling the known conflict sources;
 do not ask again for permission for this merge. Work autonomously without delegating or creating chats.
 Inspect git status and the base/ours/theirs revisions before editing. Preserve both sides' intended changes.
@@ -103,6 +157,8 @@ If necessary assets need preserving, follow the existing asset-library workflow,
 Return only the required asset-library-relative paths in asset_files (empty array when none). The controller commits these before the game merge.
 The configured asset library is: $AssetLibraryRoot
 Run relevant tests and build. Compare known failing tests against the correct original baseline; never weaken assertions.
+Run git diff HEAD --check against the COMPLETE merged result, including originally staged incoming files.
+Repair whitespace errors there as necessary; git diff --check alone misses already staged incoming changes.
 Record the resolution and validation in docs/AI_TASKS.md. Return every edited/added/deleted file as a repository-relative path in files.
 DO NOT run git add, commit, or write Git metadata in either repository: the sandbox protects indexes; the controller stages reported files.
 DO NOT commit the GAME repository: the parent script verifies and creates the merge commit.
@@ -151,7 +207,7 @@ try {
     $env:GIT_CONFIG_GLOBAL = $gitConfigPath
     # Native stderr is diagnostic output, not a PowerShell exception.
     $ErrorActionPreference = 'Continue'
-    $prompt | & $command.Source @cliArguments 2>&1 | Tee-Object -FilePath $logPath | Out-Host
+    $prompt | & $commandPath @cliArguments 2>&1 | Tee-Object -FilePath $logPath | Out-Host
     $code = $LASTEXITCODE
 } finally {
     $OutputEncoding = $previousEncoding
@@ -167,7 +223,7 @@ if ($result.status -ne 'resolved' -or @($result.tests).Count -eq 0) {
 }
 Assert-MergeIdentity
 # Git metadata remains protected inside the model sandbox. Only this controller stages files.
-Stage-ReportedFiles -Root $Worktree -Files @($result.files)
+Stage-ReportedFiles -Root $Worktree -Files @(@($result.files) + $normalizedIncomingFiles | Select-Object -Unique)
 if (Read-Git -Arguments @('diff', '--name-only', '--diff-filter=U')) { throw "Unresolved files remain; see $logPath" }
 & git -C $Worktree diff --cached --check
 if ($LASTEXITCODE -ne 0) { throw 'Staged diff contains whitespace errors or conflict markers.' }
