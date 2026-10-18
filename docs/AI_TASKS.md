@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## HEAVEN-POWER-DARK-CONCEPT-20261018 — 天堂威能標題與暗色神力背景提案
+
+- Owner：Codex；Done，單一開發者。使用者要求左上標題改「天堂威能」，再畫兩張更低調、幽暗、有魔法陣／神力加持氛圍的背景；依前次約定只供預覽、待回覆再接入。前置既有威能介面已完成，工作區乾淨，三檔預檢無其他副本衝突。
+- 允許js/ui.js僅威能頁h2、index.html僅UI快取、本紀錄；禁止側邊分頁名／玩法／數值／Worker／Protocol／存檔／CSS背景或新素材接線，不合併推送。純文字修改以正式renderTalents輸出與既有威能／初始化回歸、Build及diff驗證；完成後獨立Commit。
+- 繪圖使用已讀imagegen技能的內建工具，前輪已確認優先Mote Studio為像素Sprite編輯、不適合本次場景繪景。附圖僅參考簡潔背景／暗黑配色與留白，生成原創圖、不保留任何原UI。A為暗金聖印：低亮藍灰石紋、細金刻痕同心魔法陣、薄霧與微弱上方神光；B為寂靜神佑：幽暗石紋、淡金聖印及上方抽象羽翼幾何、稀薄環形加持。兩張保持深色低對比，不使用城市／風景／亮白雲海，中央留白；僅聊天預覽、未接入遊戲與素材庫。
+
+- 完成3檔：js/ui.js的renderTalents頁首h2由「威能」改為「天堂威能」，index.html對應UI快取179→180，本紀錄同步。側邊分頁維持原名，背景／CSS及所有遊戲規則不變。
+- 驗證：以正式createEngine＋vm載入ui.js，renderTalents輸出包含精確新h2且不再含舊h2，通過；`node --test --test-reporter=dot tests/talents.test.cjs tests/power-rework.test.cjs tests/init-ui-smoke.test.cjs`34/34通過；`npm.cmd run build`538檔通過；`git diff --check`通過。首次node -e的PowerShell引號造成測試腳本正規式語法錯誤，改以here-string標準輸入重驗通過，產品檔未因此修改。低風險單文字改動未新增鏡像測試或重跑完整庫，沒有宣稱實機瀏覽器驗證。
+- 原創背景候選已逐張目視：A=`C:/Users/alway/.codex/generated_images/01a14ec5-b5ca-7d70-98b4-b808ac4d2225/exec-049f17ed-1260-4efd-8729-304cc84fcc2a.png`；B=`C:/Users/alway/.codex/generated_images/01a14ec5-b5ca-7d70-98b4-b808ac4d2225/exec-ea9f7f04-b8da-4e1e-ba2d-e9f42017460d.png`。工具內建生成、附圖只作參考，深色細金刻痕／魔法環／微光神力，不含UI、文字或角色；與前輪明亮聖殿不同，降低背景搶眼程度。原檔保留於聊天generated_images，未接入／匯出／提交素材庫，符合只預覽要求。
+- 唯讀未改：AI規範／AGENTS／工作流／Agent文件、CSS既有背景與選中框、上述三份測試、原始截圖及前輪候選。無本次未完成需求或新增已知風險；背景等待使用者選擇後才另行接入。可供審查合併，未合併推送；Commit為本紀錄所在`[Codex] fix: 威能頁標題改為天堂威能`，回覆附實際編號，後續重載查看標題並選擇背景。
+
 ## HEAVEN-POWER-SELECT-20261018 — 選中外框高亮與兩張背景提案
 
 - Owner：Codex；Done，單一開發者。使用者要求選中威能外框明顯高亮，另畫兩張天堂背景供挑選，背景明確先不接入。前置6eac2a7b已完成；熔爐任務已提交0d83bef3，工作區乾淨，三檔預檢無其他副本衝突。

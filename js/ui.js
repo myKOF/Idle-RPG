@@ -8727,7 +8727,7 @@ function renderTalents() {
   var rc = talentViewReincarnations(snapshot);
   if (!UI.talentBrowse.turn || !TALENT_TREES[UI.talentBrowse.turn]) UI.talentBrowse.turn = talentDefaultTurn(snapshot);
   var turn = UI.talentBrowse.turn;
-  var h = '<div class="pg-top"><h2 class="pg-title">威能</h2>' +
+  var h = '<div class="pg-top"><h2 class="pg-title">天堂威能</h2>' +
     '<span class="pg-pill">轉生威能點 <b>' + fmtFull(snapshot.talentPoints || 0) + '</b></span>' +
     '<span class="pg-pill">已轉生 <b>' + rc + ' 轉</b></span>' +
     '<span class="pg-pill tlx-monster-power" tabindex="0" data-tt-title="魔物威能" data-tt-desc="地獄大軍感受到你接收了天堂神力而倍感憤怒&lt;br&gt;魔物威能每增加10%則敵人強度+1級">' + talentThreatIconHTML() + '魔物威能 <b>' + (100 + talentThreatTotal(talentViewLevels(snapshot))) + '%</b></span>' +
