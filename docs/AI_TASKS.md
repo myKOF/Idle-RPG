@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## HEAVEN-POWER-DARK-APPLY-20261018 — 接入暗金聖印背景
+
+- Owner：Codex；Done，單一開發者。使用者選定最新暗色候選第1張（A暗金聖印），授權接入天堂威能星盤；前置a9653a39與已確認母圖完成。遊戲／素材庫工作區乾淨，修改目標預檢無其他副本衝突。
+- 允許css/ashen-forge.css僅星盤背景、js/ui.js僅移除舊背景裝飾DOM、index.html僅背景預載／必要快取、images/ui/heaven-power/dark-gold-seal.png、tools/heaven-power/export-source.cjs與本紀錄；素材庫僅新增codex-authored/heaven-power母圖／來源／匯出紀錄。禁止玩法／數值／Worker／Protocol／存檔／其他頁面及其他素材，不合併推送。
+- 方式／驗收：原樣保存使用者確認的內建imagegen原創母圖，沿既有UI素材匯出流程與Root resolver，SHA256核對遊戲輸出；替換舊CSS強光／霧白／拱門，保留動態星盤進度／線／圖示／選中框。正式UI／升降級／Tooltip、不同畫面比例、冷載入與Console、相關回歸／Build／diff；先素材庫Commit再遊戲Commit。後續使用者重載審閱合併。
+
+- 完成遊戲6檔：css/ashen-forge.css星盤改center/cover讀dark-gold-seal.png，移除舊霧白／強光與拱門CSS；js/ui.js僅刪舊tlx-sanctum裝飾DOM，動態進度／軌道／線與全部按鈕保留；index.html低優先背景預載、CSS85→86／UI180→181；images/ui/heaven-power/dark-gold-seal.png；tools/heaven-power/export-source.cjs；本紀錄。沿既有tools/gem-resonance/export-source.cjs模式，固定相對路徑、不寫入本機Root。
+- 素材庫3檔：codex-authored/heaven-power/originals/dark-gold-seal.png、SOURCE.md、exports.json。使用者選定原創母圖1254×1254／2,469,522 bytes原樣保存、匯出不裁切／改色／縮放；SHA256 d28e94add06fd5503d06a4f15740f3ab58740b988faf9125329ba7da7a805bed兩邊一致。先完成素材庫Commit c4b733a `[Codex] feat: 保存天堂威能暗金聖印背景母圖`，再遊戲獨立提交；沒有第三方素材、新Preset或素材庫其他變更。
+- 指令／結果：`node tools/heaven-power/export-source.cjs --apply`與`--check`通過、母圖／匯出紀錄／遊戲三者hash一致；`node --check tools/heaven-power/export-source.cjs`通過；`node --test --test-reporter=dot tests/talents.test.cjs tests/power-rework.test.cjs tests/init-ui-smoke.test.cjs`34/34；`npm.cmd run build`538檔通過；兩倉庫diff檢查通過。純背景接入沿既有回歸與實際瀏覽器驗證，未新增鏡像測試。
+- 瀏覽器：隔離headless Edge／隨機localhost／seed1018新角色，正式index／Worker載入引擎fixture、不讀真人存檔。實際background-image為正式PNG、size=cover／底色rgb(11,18,25)，舊before content:none／after background:none、舊拱門DOM0；原圖只請求1次、切頁／改選無重載。升級扣1／降級退1、Tooltip原名稱與金色選中外框正常；1920／1366／1086／390寬十節點頁12個節點與按鈕均內含、中心hit-test全true、無溢出。Console error／warning／pageerror與HTTP錯誤0；已目視本聊天visualizations/heaven-dark-gold-integrated.png，背景低調且文字／圖示可讀。
+- 唯讀未改：規範／工作流／Agent文件、素材Root與既有匯出流程、前輪選定母圖、既有威能數值／升降級／Tooltip與三份回歸、Worker／Protocol／存檔。無未完成需求或新增已知阻擋，可供審查合併、未合併推送；限制為原PNG約2.47MB低優先預載、窄高面板cover會裁切兩側裝飾（不裁切操作節點），未做慢網／所有實體裝置或完整測試庫。服務／瀏覽器及臨時腳本已清理，預覽保留；建議重載威能頁驗收。遊戲Commit為本紀錄所在`[Codex] feat: 接入天堂威能暗金聖印背景`，回覆附實際編號。
+
 ## HEAVEN-POWER-DARK-CONCEPT-20261018 — 天堂威能標題與暗色神力背景提案
 
 - Owner：Codex；Done，單一開發者。使用者要求左上標題改「天堂威能」，再畫兩張更低調、幽暗、有魔法陣／神力加持氛圍的背景；依前次約定只供預覽、待回覆再接入。前置既有威能介面已完成，工作區乾淨，三檔預檢無其他副本衝突。

@@ -8688,7 +8688,7 @@ function talentBoardHTML(turn, snapshot) {
     spokes += '<span class="tlx-spoke' + (lv > 0 ? ' is-lit' : '') + (lv >= TALENT_MAX_LEVEL ? ' is-max' : '') + '" style="--a:' + angle + 'deg"></span>';
     nodes += talentNodeHTML(def, turn, snapshot, i, tree.length);
   });
-  return '<div class="tlx-sanctum" aria-hidden="true"><i></i><i></i><i></i><i></i></div><span class="tlx-board-caption" aria-hidden="true">✦ 天堂聖域 ✦</span><span class="tlx-orbit" aria-hidden="true"></span><span class="tlx-orbit is-inner" aria-hidden="true"></span>' + spokes +
+  return '<span class="tlx-board-caption" aria-hidden="true">✦ 天堂聖域 ✦</span><span class="tlx-orbit" aria-hidden="true"></span><span class="tlx-orbit is-inner" aria-hidden="true"></span>' + spokes +
     '<div class="tlx-core' + (complete ? ' is-complete' : '') + '">' +
       '<b>' + turn + ' 轉</b>' +
       '<span>' + (max ? Math.floor(total / max * 100) : 0) + '%・' + fmtFull(total) + ' / ' + fmtFull(max) + '</span>' +

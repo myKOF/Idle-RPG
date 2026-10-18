@@ -5329,20 +5329,11 @@ html *::-webkit-scrollbar-corner {
   isolation: isolate;
   border: 1px solid #a99a705e;
   border-radius: 10px;
-  background: radial-gradient(ellipse at 50% 10%,#f0e7b842,transparent 38%),radial-gradient(ellipse at 50% 49%,#b7d1d620,transparent 55%),linear-gradient(180deg,#283e50,#172e40 48%,#485564);
+  background: #0b1219 url("../images/ui/heaven-power/dark-gold-seal.png?v=1") center / cover no-repeat;
   box-shadow: inset 0 0 80px #07152180,inset 0 1px #f8e4ae38;
 }
 
-/* 靜態背景由CSS描繪：光束、雲層、拱門。無計時器或外部素材。 */
-#tab-talents .tlx-board::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background: repeating-conic-gradient(from -30deg at 50% -10%,transparent 0deg 9deg,#fff3c009 10deg 14deg,transparent 16deg 25deg),radial-gradient(ellipse at 10% 88%,#d8e7ed5c,transparent 35%),radial-gradient(ellipse at 90% 84%,#dee9ed59,transparent 32%),radial-gradient(ellipse at 50% 112%,#e5edf094,transparent 48%);
-}
-
+/* 使用者確認的暗金聖印母圖；不疊加原先的霧白與強光。 */
 #tab-talents .tlx-board::after {
   content: "";
   position: absolute;
@@ -5351,52 +5342,6 @@ html *::-webkit-scrollbar-corner {
   border: 1px solid #d6c59635;
   border-radius: 7px;
   pointer-events: none;
-  background: radial-gradient(ellipse at 8% 100%,#ebf2ed35,transparent 32%),radial-gradient(ellipse at 96% 100%,#edf6f742,transparent 35%);
-}
-
-#tab-talents .tlx-sanctum {
-  position: absolute;
-  inset: 7% 12% -24%;
-  z-index: -1;
-  pointer-events: none;
-  opacity: .38;
-  border: double 8px #ddd9bc57;
-  border-radius: 50% 50% 0 0;
-  box-shadow: 0 0 0 10px #243648,inset 0 0 0 2px #e6dfbb4d,0 0 45px #e2d5a81a;
-}
-
-#tab-talents .tlx-sanctum::before {
-  content: "";
-  position: absolute;
-  inset: 14% 15% 0;
-  border: double 6px #d9d9c347;
-  border-radius: 50% 50% 0 0;
-  background: linear-gradient(90deg,transparent,#fff3bb10,transparent);
-}
-
-#tab-talents .tlx-sanctum i {
-  position: absolute;
-  top: 43%;
-  bottom: 0;
-  width: 13px;
-  border-inline: 3px double #f0e7ca61;
-  background: linear-gradient(90deg,#f6eacc26,#0e23315c,#e6e9d426);
-}
-
-#tab-talents .tlx-sanctum i:nth-child(1) {
-  left: -9%;
-}
-
-#tab-talents .tlx-sanctum i:nth-child(2) {
-  left: 6%;
-}
-
-#tab-talents .tlx-sanctum i:nth-child(3) {
-  right: 6%;
-}
-
-#tab-talents .tlx-sanctum i:nth-child(4) {
-  right: -9%;
 }
 
 #tab-talents .tlx-board-caption {
