@@ -338,7 +338,7 @@
             <h2 class="pg-title">寶石</h2>
             <span class="pg-pill">持有 <b id="gem-total">0</b> 顆</span>
             <span class="pg-pill">已收集 <b id="gem-kinds">0</b> 種</span>
-            <button type="button" class="pg-help" aria-label="寶石說明" data-tt-title="寶石" data-tt-desc="寶石可鑲嵌到裝備的插槽：到「裝備」分頁點選裝備即可鑲嵌，點擊已鑲寶石可取下；「寶石鑲嵌效率」屬性會放大鑲嵌加成。分解裝備時，鑲在上面的寶石會自動取回。6～10 階為神鑄寶石，只能在神鑄法陣以 6 顆同種同階合成。">?</button>
+            <button type="button" class="pg-help" aria-label="寶石說明" data-tt-title="寶石" data-tt-desc="寶石可鑲嵌到裝備的插槽：到「裝備」分頁點選裝備即可鑲嵌，點擊已鑲寶石可取下；「寶石鑲嵌效率」屬性會放大鑲嵌加成。分解裝備時，鑲在上面的寶石會自動取回。合成可直接升至十級，所需素材與金幣見當前配方。">?</button>
           </div>
           <div class="gx">
             <div class="gx-lib">
@@ -353,13 +353,11 @@
                 <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="compose">合成</button>
                 <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="convert">轉換</button>
                 <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="dismantle">拆解</button>
-                <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="fusion" id="gem-tool-fusion">融合</button>
-                <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="shop">商店</button>
                 <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="resonance">共鳴</button>
               </div>
 
               <div class="gx-panel" data-gem-panel="compose">
-                <div class="hint">消耗 3 顆「同種類、同等級」寶石＋金幣 → 1 顆同種類的<b>下一階</b>寶石。種類就是左邊選的寶石，階級<b>點上方的寶石圖</b>選擇（例如點五級，下面就是五級升六級；五級以上要到神鑄）。</div>
+                <div class="hint">消耗「同種類、同等級」寶石＋金幣 → 1 顆同種類的<b>下一階</b>寶石。種類選左邊的寶石，階級<b>點上方的寶石圖</b>；原料數量及金幣見下方配方，最高可合成十級。</div>
                 <div id="fuse-recipe" class="gx-recipe"></div>
                 <div class="node-info" id="fuse-info"></div>
                 <div class="gx-actions">
@@ -418,7 +416,7 @@
                 <div id="gdis-result" class="gem-result gem-result-3">尚未進行拆解</div>
               </div>
 
-              <div class="gx-panel" data-gem-panel="fusion">
+              <div class="gx-panel" data-gem-panel="fusion" hidden>
                 <div id="gx-fusion-locked" class="gx-locked">寶石融合在 3 轉後開放。</div>
                 <div id="gem-fusion-panel" style="display:none">
                   <div class="hint">兩顆不同屬性 → 雙屬性融合寶石（數值隨機，不一定更高）；兩顆同屬性 → 數值介於兩者之間、上限 2 倍。雙屬性寶石只能與相同雙屬性、或含其屬性的單一寶石融合。基礎成功率 60%，成品每成功融合一次 -10%（最低 10%）。<b>失敗時較弱的寶石會降解</b>為 4~8 顆 1 級或 2~4 顆 2 級同屬性寶石。5 階以上寶石均可，含神鑄寶石。</div>
@@ -447,7 +445,7 @@
                 </div>
               </div>
 
-              <div class="gx-panel" data-gem-panel="shop">
+              <div class="gx-panel" data-gem-panel="shop" hidden>
                 <div class="shop-title-row">
                   <div class="sec-sub">商店刷新 <span class="dim-text" id="shop-reset-cd"></span></div>
                   <div class="shop-upgrade-box">
@@ -944,11 +942,11 @@
          special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/util.js?v=1.0.3"></script>
   <script src="js/ui-scale.js?v=1.0.1"></script>
-  <script src="js/data.js?v=1.0.85"></script>
+  <script src="js/data.js?v=1.0.86"></script>
   <script src="js/status.js?v=1.0.33"></script>
   <script src="js/runeword_data.js?v=1.0.15"></script>
   <script src="js/gem_resonance_data.js?v=1.0.1"></script>
-  <script src="js/formula.js?v=1.0.61"></script>
+  <script src="js/formula.js?v=1.0.62"></script>
   <script src="js/battlefield.js?v=1.4.13"></script>
   <script src="js/game-clock.js?v=1.0.1"></script>
   <script src="js/vfx.js?v=1.0.81"></script>
@@ -974,7 +972,7 @@
   <script src="js/battle-elite.js?v=1.0.7"></script>
   <script src="js/battle-renderer.js?v=1.6.189"></script>
   <script src="js/stats.js?v=1.0.4"></script>
-  <script src="js/item.js?v=1.0.22"></script>
+  <script src="js/item.js?v=1.0.23"></script>
   <script src="js/gem_resonance.js?v=1.0.3"></script>
   <script src="js/runeword.js?v=1.0.14"></script>
   <script src="js/skills.js?v=1.0.42"></script>
@@ -987,7 +985,7 @@
   <script src="js/potential.js?v=1.0.9"></script>
   <script src="js/tower.js?v=1.0.31"></script>
   <script src="js/save.js?v=1.0.17"></script>
-  <script src="js/ui.js?v=1.0.170"></script>
+  <script src="js/ui.js?v=1.0.171"></script>
   <script src="js/ui-runeword.js?v=1.0.11"></script>
   <script src="js/ui-gem-resonance.js?v=1.0.15"></script>
   <script src="js/param_autoreload.js"></script>
@@ -1002,7 +1000,7 @@
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
-  <script src="js/bridge.js?v=1.0.295"></script>
+  <script src="js/bridge.js?v=1.0.296"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->

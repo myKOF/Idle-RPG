@@ -105,7 +105,7 @@ test('3. 拆解 (Dismantle) 穿透寶石流程', () => {
 
   // 拆解 10 階穿透寶石（損失 30%）
   const expectedYield = ctx.gemDismantleYield(10);
-  assert.equal(expectedYield, 13778, '10 階寶石拆解依 30% 損耗公式應獲得 13778 顆 1 階寶石');
+  assert.equal(expectedYield, 87091, '10 階寶石拆解依逐階合成成本及30%損耗換算');
 
   const res = ctx.dismantleGem('piercePhys', 10);
   assert.equal(res.n, expectedYield);

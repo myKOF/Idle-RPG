@@ -2261,9 +2261,9 @@ var NEW_FORGE_SLOT_COST_C = 2;
 var NEW_FORGE_SLOT_COST_D = 3;
 
 // ---- 寶石 ----
-/* GEM_MAX_LEVEL = 一般系統上限（掉落/商店/合成/轉換/拆解/融合皆以此為限）。
-   6~10 階為「神鑄寶石」：僅能由神鑄法陣以 6 顆同種同階（5 階起）合成，
-   每高 1 階能力 ×2（gemStatValue → js/formula.js §8）。 */
+/* GEM_MAX_LEVEL = 一般寶石與高階能力曲線的分界。
+   寶石頁可直接合成至 GEM_FORGE_MAX_LEVEL；神鑄法陣仍保留原有路徑。
+   高階能力曲線見 gemStatValue → js/formula.js §8。 */
 var GEM_MAX_LEVEL = 5;
 var GEM_FORGE_MAX_LEVEL = 10;
 var GEM_NAMES = ['', '一級', '二級', '三級', '四級', '五級', '六級', '七級', '八級', '九級', '十級'];
@@ -2343,10 +2343,12 @@ function gemIconSrc(type, level) {
   return 'images/gems/gem-' + type + '-' + (lv < 10 ? '0' : '') + lv + '.png?v=' + GEM_ICON_VER;
 }
 // 寶石數值/插槽/附魔欄位公式（gemStatValue、socketCountFor、enchantCapFor）→ js/formula.js §8
-// 寶石合成：3 顆「同種類、同等級」→ 1 顆同種類下一級；UI 另支援全部類型逐種類合成
+// 寶石合成：依目標階級決定同種同級素材數量；UI 另支援全部類型逐種類合成。
 var GEM_TYPE_ALL = '__all__';
-var GEM_COMPOSE_INPUT_COUNT = 3; // 每次手動合成所需的同種同級寶石數量
-var FUSE_GOLD_COST = [0, 100, 300, 900, 2700, 8100]; // 金幣費用，依素材等級
+var GEM_COMPOSE_INPUT_COUNT = 3; // 一般階級的合成素材數量
+var GEM_COMPOSE_HIGH_INPUT_COUNT = 4;
+var GEM_COMPOSE_TOP_INPUT_COUNT = 6;
+var FUSE_GOLD_COST = [0, 100, 300, 900, 2700, 8100, 24300, 72900, 218700, 656100]; // 金幣費用，依素材等級
 
 /* ---- 寶石融合 v2（僅限 5 階）----
    不同屬性 x2 → 雙屬性寶石（數值隨機）；同屬性 → 數值介於兩者間、上限 2 倍。

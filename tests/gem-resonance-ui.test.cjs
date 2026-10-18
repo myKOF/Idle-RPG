@@ -259,6 +259,7 @@ test('說明精確三句；切入共鳴預設物傷左上孔、重入重設，�
  assert.match(nodes['gres-detail'].innerHTML,/物理傷害型4級以上寶石/);
  c.gresSelectHole(0,2);c.renderGems();c.setGemTool('resonance');assert.deepEqual(Array.from(c.UI.gemBrowse.resHole),[0,2]);
  c.setGemTool('compose');c.setGemTool('resonance');assert.deepEqual(Array.from(c.UI.gemBrowse.resHole),[5,6]);
+ c.setGemTool('fusion');c.setGemTool('shop');assert.equal(c.UI.gemBrowse.tool,'resonance');
 });
 
 test('石榴石在物理區篩選可見並可鑲入，魔法區不顯示且拒絕拖放，取下退回',()=>{

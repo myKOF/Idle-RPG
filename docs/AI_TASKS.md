@@ -1,5 +1,24 @@
 # AI_TASKS.md
 
+## GEM-COMPOSE-TEN-20261018 — 全十階直接合成與精簡寶石頁籤
+
+- Owner：Codex；Done，單一開發者。使用者要求6～9級成品各耗4顆前一階、10級耗6顆9級，保留2～5級既有配方；隱藏寶石頁融合／商店；追加所有配方均照圖逐顆原料＋金幣箭頭＋成品顯示。前置既有寶石功能已完成，工作區乾淨、16檔預檢乾淨。
+- 允許js/data.js／formula.js／item.js僅合成配方與拆解等值、js/ui.js合成／工具入口、Worker批量紀錄／import、Bridge／index快取與寶石頁入口／提示、config/Excel/game_parameters.xlsx與CSV合成配方／高階金幣／拆解說明、tools/apply_params.cjs相應具名接線、tests/gem-compose-all.test.cjs／pen-gem-flow.test.cjs／gem-resonance-ui.test.cjs、game_formula.md／PATCH.md／本紀錄；禁止其他系統數值／神鑄舊功能／Worker Protocol／存檔格式／素材與其他副本，不合併推送。
+- 方式：共用逐階素材數量供權威單次／批量、UI配方／數量／紀錄及拆解成本；原金幣前五筆保留，高階沿既有逐階三倍趨勢延伸。保持全部類型逐種類、不混合素材。融合／商店的底層功能與舊資料保留，只移除寶石介面頁籤及入口。Excel以專案原生API逐格更新並正常重開驗證。
+- 驗收：每個素材階級數量不足／恰足／餘數／金幣不足／10級封頂／單次／同類及全部類型批量／紀錄一致；配方逐顆顯示3／4／6原料，四個可見工具、隱藏功能不能選入。參數基線562項將變更0／錨點問題0；新增接線後乾跑、擾動錨點與全套回歸（依AI_RULES8.2），必要測試／Build／表格往返／隔離瀏覽器後Commit。無素材變更。
+- 實作16檔：data.js新增高階／最高階素材參數並延伸金幣陣列；formula.js新增gemComposeInputCount共用來源階級配方，gemL1Worth改為逐階連乘並拒絕非整數／超界輸入，拆解沿原保留率計算。item.js單次與全部種類候選均讀同一配方，無效階級／素材不足／金幣不足不寫狀態。Worker批量紀錄按實際素材數計量，既有批量上限／逐種類處理與命令形狀保留。
+- UI：所有可升階配方逐顆畫原料圖示，金幣箭頭與成品沿原示意；不再把高階導向神鑄，最高階三個合成按鈕禁用。數量預覽、可合成次數、單次與批量按鈕共用配方。index移除融合／商店頁籤、內層面板標hidden，GEM_TOOLS只允許compose／convert／dismantle／resonance，拒絕程式選入隱藏工具；融合／商店底層與存檔資料保留。data／formula／item／UI／Bridge快取分別86／62／23／171／296，Worker相應import更新gem-compose-ten，Bridge保留築牆標記並更新本次版本；Protocol不變。
+- 參數：CSV只改「8-寶石」合成素材、金幣、一般拆解說明三列；新增兩個scalar具名錨點，原金幣陣列接線延伸a～i。乾跑564項（一致564、將變更0、錨點問題0），較基線562只增兩項；--check-anchors擾動515個數值後，564個錨點仍各命中一次。依新合成成本，十級一級等值124416、拆解87091；五級及以下、融合等值與舊神鑄功能不變，game_formula.md與PATCH同步。
+- Excel：主表game_parameters由「計算表」公式連結，改用原生Excel API只寫計算表來源12格（E/F/H/I233、E/F/L/M/N/O234、E/F236），重算後主表相應12格自動更新；兩輪正常模式重開逐格／公式驗證通過。與原檔零修改原生往返基線唯讀比對，所有公式、styles.xml、兩表結構／列欄設定相同，只有12來源值及12鏡像快取值不同，沒有手工XML寫入。原檔一格有2.2000000000000002／CSV2.2的浮點表示差異，數值相同，保留來源型別／格式；344列與CSV語意一致。初次泛用工具會將主表公式替換為值，驗證發現後已從本次原始備份恢復，改寫真正來源，最終公式完整保留。
+- 必要測試：`node --test tests/gem-compose-all.test.cjs tests/gem-enabled.test.cjs tests/gem-resonance-ui.test.cjs tests/pen-gem-flow.test.cjs tests/init-ui-smoke.test.cjs`48/48通過，新增2項各階資源原子性／高階批量與紀錄回歸；舊配方視覺斷言及穿透寶石拆解固定值依新規格同步。`npm.cmd run build`535檔通過，`git diff --check`通過。
+- 瀏覽器：隔離headless Edge／隨機localhost／seed新角色，正式index／UI／Worker，GM供測試金幣及素材，不讀真人存檔。1～9級素材均逐顆顯示正確3／4／6原料、金幣箭頭與下一階；實際5→6至9→10各合成一次，逐次扣4／4／4／4／6及8100／24300／72900／218700／656100金幣。9級同類批量產出2顆並留餘數，全部類型再合成藍寶石2顆且不混種類；10級三按鈕均禁用。可見工具恰四個、兩個隱藏工具不可選入，共鳴49孔保持正常。1920×900／1366×768／390×844的六原料＋箭頭／成品皆內含；Console warning／error、pageerror及HTTP錯誤0。預覽本聊天visualizations/gem-compose-ten.png。
+- 全套回歸（依8.2要求）：已執行`node --test --test-concurrency=4 "tests/*.test.cjs"`，長時間同步模擬持續佔用執行槽；Node --test-timeout亦不能及時結束同步模擬，確認後僅結束本次測試的父子行程。改以外部逐檔30秒watchdog／4並行跑完全部441檔，再以唯讀fs hook載入修改前f063dd91的16個來源／測試／參數檔重跑同一批，不修改工作區或原斷言。hook先驗原合成套件8/8，確認真正讀到舊配方。
+- 本版：341檔通過／92檔失敗／8檔超時，完成統計的4465項為4022通過／441失敗／2跳過；基線：340檔通過／92檔失敗／9檔超時，完成統計4417項為3977通過／439失敗／1跳過。兩版失敗名稱僅VFX Editor因隨機禁用埠與超時有差異：本版案例3／4為fetch bad port、基線該檔30秒超時；以`--test-name-pattern "^(3 |4 |16b )" tests/vfx-editor-save.test.cjs`針對兩版重跑，均2通過／1相同既有失敗（ground-ice-spike非canonical），3／4皆恢復通過；其餘失敗名稱一致，未觀察到新增回歸，不擴大修復或放寬斷言。
+- 兩版共有8個30秒超時檔：equip-no-duplicate、sim-bag-cache、sim-evaluator、sim-dead-stock、sim-policy-smoke、sync-auto-conflicts、sync-index-recovery、vfx-preset-coverage；基線另有vfx-editor-save超時。全套未全綠，不能把超時視為通過。相依九套gem-compose-all／gem-enabled／gem-resonance／gem-shop／gem-resonance-ui／pen-gem-flow／init-ui-smoke／worker-protocol／worker-shim合計95/95通過。
+- 自我Review／唯讀未改：AI規範／工作流／Agent文件、Excel主表引用公式與原生更新工具、神鑄舊路徑、融合／商店底層、共鳴規則／拖放／Tooltip／現有快取版本、Worker協議與存檔格式及其餘全套測試。無素材或素材庫變更、無素材庫Commit。隔離服務／瀏覽器及測試行程已結束；正式預覽保留本聊天visualizations，未讀真人存檔或改動其他副本。
+- 暫存清理限制：自動安全審核拒絕已檢查路徑的遞迴清理，改為僅清理目錄內已核對的測試日誌亦被拒絕，工具僅回報blocked by policy，未提供更具體理由；沒有繞過限制。系統Temp下gem-compose-ten-*的Excel副本／腳本／基準JSON／日誌及gem-compose-ten-suite-output仍保留；另有本次泛用Excel工具在讀取JSON失敗前留下的excel-update-2ab404a8-10d5-4aa5-b25b-1c49555a9634.xlsx，已比對雜湊確認是本次原始工作簿副本，亦未刪除。這些都在工作區外，未stage或納入交付。
+- 交付：Commit為本紀錄所在`[Codex] feat: 寶石直接合成至十級並隱藏融合商店頁籤`，回覆附編號；功能需求完成，可供Review／合併，未合併推送。已知限制為上述既有全套失敗／超時、受阻的暫存清理及未實測其他瀏覽器／實體觸控，必要95項與正式UI操作已通過。下一步整合後重載寶石頁，選5～9級素材確認4／6顆配方及四個頁籤。
+
 ## GEM-RESONANCE-BACKPLATE-LOAD-20261018 — 提前載入並保留共鳴背板
 
 - Owner：Codex；Done，單一開發者。使用者回報每次切入共鳴六角背板晚幾秒出現並詢問原因。查到2,070,831-byte PNG沒有預載、寶石面板渲染才插入SVG image，選孔更新又重建整個SVG。前置共鳴已完成，工作區乾淨、五檔預檢乾淨。

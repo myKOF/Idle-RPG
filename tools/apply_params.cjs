@@ -469,6 +469,8 @@ scalarValue('data', 'TOWER_ENRAGE_HP', 50, 'TOWER_ENRAGE_HP'); // 狂暴血量�
 scalar('data', 'GEM_MAX_LEVEL', '表-固定參數', '寶石一般上限 / 神鑄上限', 0);
 scalar('data', 'GEM_FORGE_MAX_LEVEL', '表-固定參數', '寶石一般上限 / 神鑄上限', 1);
 scalar('data', 'GEM_COMPOSE_INPUT_COUNT', '8-寶石', '寶石合成(手動)', 0);
+scalar('data', 'GEM_COMPOSE_HIGH_INPUT_COUNT', '8-寶石', '寶石合成(手動)', 1);
+scalar('data', 'GEM_COMPOSE_TOP_INPUT_COUNT', '8-寶石', '寶石合成(手動)', 2);
 scalar('data', 'GEM_FUSE_BASE_RATE', '8-寶石', '寶石融合成功率', 1);
 scalar('data', 'GEM_FUSE_RATE_DECAY', '8-寶石', '寶石融合成功率', 2);
 scalar('data', 'GEM_FUSE_MIN_RATE', '8-寶石', '寶石融合成功率', 0);
@@ -507,9 +509,9 @@ scalar('data', 'SYNTH_GREAT_BASE', '7-合成', '大成功率', 0);
 objField('data', 'REROLL_ESSENCE_COST = {', '6', '7-洗煉', '精華費用', 0, 'REROLL_ESSENCE_COST');
 objField('data', 'REROLL_ESSENCE_COST = {', '7', '7-洗煉', '精華費用', 1, 'REROLL_ESSENCE_COST');
 objField('data', 'REROLL_ESSENCE_COST = {', '8', '7-洗煉', '精華費用', 2, 'REROLL_ESSENCE_COST');
-// FUSE_GOLD_COST = [0, 100, 300, 900, 2700, 8100]
+// FUSE_GOLD_COST：各素材階級的合成金幣。
 {
-  const g = [0, 1, 2, 3, 4].map(i => P('8-寶石', '寶石合成金幣', i));
+  const g = Array.from({ length: 9 }, (_, i) => P('8-寶石', '寶石合成金幣', i));
   arrayContent('data', 'FUSE_GOLD_COST', '0, ' + g.join(', '), 'FUSE_GOLD_COST');
 }
 function parseExpMultiplier(raw) {

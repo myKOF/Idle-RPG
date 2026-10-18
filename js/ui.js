@@ -10541,7 +10541,7 @@ var GEM_LIB_FILTERS = [
   { id: 'res', label: '抗性' }
 ];
 var GEM_DEF_STATS = { hpFlat: 1, hpRegen: 1, defFlat: 1, mdefFlat: 1, evasion: 1, tenacity: 1, blockRate: 1, blockDmgRed: 1, shieldEff: 1, pRes: 1, mRes: 1 };
-var GEM_TOOLS = ['compose', 'convert', 'dismantle', 'fusion', 'shop', 'resonance'];
+var GEM_TOOLS = ['compose', 'convert', 'dismantle', 'resonance'];
 
 // 分類只看聚合桶：對屬性增傷與屬性傷害提升歸「元素」、元素抗性歸「抗性」，其餘依攻防分。
 function gemCategoryOf(type) {
@@ -10756,7 +10756,7 @@ function fillGemTypeSelect(sel) {
   }
   sel.innerHTML = h;
 }
-/* ---- 寶石合成（3 顆同種同級 → 下一階） ---- */
+/* ---- 寶石合成（素材數量由共用逐階配方決定） ---- */
 function gemSocketHTML(type, lv, extraClass) {
   var gt = GEM_TYPES[type];
   return '<span class="gx-socket' + (extraClass || '') + '" style="--c:' + (GEM_TIER_COLORS[lv] || '#3a3d44') + '">' +
@@ -10764,16 +10764,14 @@ function gemSocketHTML(type, lv, extraClass) {
     '<span class="gx-socket-lv">' + (GEM_NAMES[lv] || '') + '</span></span>';
 }
 
-/* 配方：lv 階 → lv+1 階。五階以上不能在這裡合成（要到神鑄用 FORGE_SLOTS 顆同階寶石鑄造），
-   但仍顯示「五級 → 六級」讓玩家看得到下一步在哪；十階是最高階，沒有下一階。 */
+/* 配方：每顆原料逐一顯示，再接金幣箭頭與下一階成品；最高階沒有下一階。 */
 function fuseRecipeHTML(type, lv) {
-  var ins = '', mid;
-  if (lv < GEM_MAX_LEVEL) {
-    for (var i = 0; i < GEM_COMPOSE_INPUT_COUNT; i++) ins += gemSocketHTML(type, lv, '');
+  var ins = '', mid = '', needed = gemComposeInputCount(lv);
+  if (needed) {
+    for (var i = 0; i < needed; i++) ins += gemSocketHTML(type, lv, '');
     mid = '<span class="gx-recipe-cost"><img src="images/icon_gold.png" class="res-icon">' + fmt(FUSE_GOLD_COST[lv]) + '</span>';
   } else {
-    ins = gemSocketHTML(type, lv, '') + (lv < GEM_FORGE_MAX_LEVEL ? '<span class="gx-recipe-mult">×' + FORGE_SLOTS + '</span>' : '');
-    mid = '<span class="gx-recipe-cost">神鑄</span>';
+    ins = gemSocketHTML(type, lv, '');
   }
   var out = lv < GEM_FORGE_MAX_LEVEL ? gemSocketHTML(type, lv + 1, ' is-out') : '<span class="gx-recipe-max">已是最高階</span>';
   return '<span class="gx-recipe-in">' + ins + '</span>' +
@@ -10787,13 +10785,14 @@ function renderFuseInfo(gemsSnapshot) {
   gemsSnapshot = resolveGemsPanelSnapshot(gemsSnapshot);
   if (!gemsSnapshot) return;
   var t = UI.gemBrowse.sel, lv = UI.gemBrowse.fuseLv || 1;
-  var canCompose = lv < GEM_MAX_LEVEL && isGemEnabled(t);
+  var needed = gemComposeInputCount(lv);
+  var canCompose = !!needed && isGemEnabled(t);
   var recipe = $id('fuse-recipe');
   var recipeH = fuseRecipeHTML(t, lv);
   if (recipe && recipe._lastH !== recipeH) { recipe._lastH = recipeH; recipe.innerHTML = recipeH; }
   ['fuse-btn', 'fuse-all-btn', 'fuse-alltypes-btn'].forEach(function (id) {
     var b = $id(id);
-    var allowed = id === 'fuse-alltypes-btn' ? lv < GEM_MAX_LEVEL : canCompose;
+    var allowed = id === 'fuse-alltypes-btn' ? !!needed : canCompose;
     if (b && b.disabled !== !allowed) b.disabled = !allowed;
   });
   if (!isGemEnabled(t)) {
@@ -10803,15 +10802,13 @@ function renderFuseInfo(gemsSnapshot) {
   var n = gemsViewCount(gemsSnapshot, t, lv);
   var head = '「' + gemIconHTML(t, lv, 'gi-inline') + esc(GEM_NAMES[lv] + GEM_TYPES[t].name) + '」庫存 ' + fmt(n) + ' 顆';
   if (!canCompose) {
-    info.innerHTML = head + (lv >= GEM_FORGE_MAX_LEVEL
-      ? '｜十級已是最高階，無法再升階'
-      : '｜' + GEM_NAMES[GEM_MAX_LEVEL] + '以上不能在這裡合成：到「神鑄」用 ' + FORGE_SLOTS + ' 顆同種同階寶石鑄造（基礎成功率 ' + (FORGE_GEM_BASE_RATE[lv] || 0) + '%，魔塵可提高）');
+    info.innerHTML = head + '｜十級已是最高階，無法再升階';
     return;
   }
   var allTypes = 0;
-  for (var allType in GEM_TYPES) if (isGemEnabled(allType)) allTypes += Math.floor(gemsViewCount(gemsSnapshot, allType, lv) / GEM_COMPOSE_INPUT_COUNT);
-  info.innerHTML = head + '｜每次消耗 ' + GEM_COMPOSE_INPUT_COUNT + ' 顆＋<img src="images/icon_gold.png" class="res-icon">' + fmt(FUSE_GOLD_COST[lv]) +
-    ' → 1 顆' + esc(GEM_NAMES[lv + 1] + GEM_TYPES[t].name) + '｜目前可合成 ' + Math.floor(n / GEM_COMPOSE_INPUT_COUNT) + ' 次' +
+  for (var allType in GEM_TYPES) if (isGemEnabled(allType)) allTypes += Math.floor(gemsViewCount(gemsSnapshot, allType, lv) / needed);
+  info.innerHTML = head + '｜每次消耗 ' + needed + ' 顆＋<img src="images/icon_gold.png" class="res-icon">' + fmt(FUSE_GOLD_COST[lv]) +
+    ' → 1 顆' + esc(GEM_NAMES[lv + 1] + GEM_TYPES[t].name) + '｜目前可合成 ' + Math.floor(n / needed) + ' 次' +
     '｜全部類型合計可合成 ' + allTypes + ' 次';
 }
 
@@ -12813,32 +12810,32 @@ function initUI() {
     }
   });
 
-  // 寶石合成（3 顆同種同級 → 同種下一階）：種類與階級都來自寶石庫與十階列的選擇，沒有下拉選單
+  // 寶石合成：種類與階級來自寶石庫與十階列，共用逐階配方。
   function fuseTarget() { return { t: UI.gemBrowse.sel, lv: UI.gemBrowse.fuseLv || 1 }; }
   var fuseBtn = $id('fuse-btn');
   if (fuseBtn) {
     fuseBtn.addEventListener('click', function () {
       var g = fuseTarget(), t = g.t, lv = g.lv;
-      if (!GEM_TYPES[t] || lv >= GEM_MAX_LEVEL) return;
+      if (!GEM_TYPES[t] || !gemComposeInputCount(lv)) return;
       sendGemUiCommand(
         'gem.compose',
         { type: t, level: lv },
         'gem-compose:' + t + ':' + lv,
         ['gems'],
         function () {
-          blog('💎 寶石合成：' + gemLabel(t, lv) + ' ×' + GEM_COMPOSE_INPUT_COUNT + ' → ' + gemLabel(t, lv + 1), 'info', 'factory');
+          blog('💎 寶石合成：' + gemLabel(t, lv) + ' ×' + gemComposeInputCount(lv) + ' → ' + gemLabel(t, lv + 1), 'info', 'factory');
         }
       );
     });
     $id('fuse-all-btn').addEventListener('click', function () {
       var g = fuseTarget(), t = g.t, lv = g.lv;
-      if (!GEM_TYPES[t] || lv >= GEM_MAX_LEVEL) return;
+      if (!GEM_TYPES[t] || !gemComposeInputCount(lv)) return;
       sendGemUiCommand('gem.composeAll', { type: t, level: lv }, 'gem-compose:' + t + ':' + lv, ['gems', 'header']);
     });
     // 這一階所有種類逐種合成（原本「種類」下拉的「全部類型寶石」選項，改成獨立按鈕）
     $id('fuse-alltypes-btn').addEventListener('click', function () {
       var lv = fuseTarget().lv;
-      if (lv >= GEM_MAX_LEVEL) return;
+      if (!gemComposeInputCount(lv)) return;
       sendGemUiCommand('gem.composeAll', { type: GEM_TYPE_ALL, level: lv }, 'gem-compose:' + GEM_TYPE_ALL + ':' + lv, ['gems', 'header']);
     });
   }
