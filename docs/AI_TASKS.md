@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## FIREGOD-TALLER-FLAMES-20261019 — 火神降臨火圈加高與強化燃燒感
+
+- Owner：Codex；Done；單一開發者。使用者要求火焰再高、明顯、燃燒感更強；僅調既有24個圈邊發射器的火焰高度／密度／亮色／升空，保留作用半徑、圈邊位置、角色跟隨、地面投影及傷害節拍。
+- 範圍：ground-domain-fire Preset與素材庫既有同路徑來源、Runtime DATA_VERSION、遊戲／Editor快取、GROUND_PROJECTION_AUDIT／LV_upgrade_system／本紀錄。禁止表格／模擬／Core／後端／其他Preset／貼圖／layout；不引入新素材，使用既有CC0 flame_04。預檢其餘乾淨；index與Claude ca9e0b65不同快取區段、無語意相依，三方乾跑確認後分段修改。保留使用者Skills2與Gem_resonance未提交修改，不合併推送。
+- 驗收：原生GPU Editor與正式Worker遊戲目視比對較高／較密／較亮、圈半徑不變／火焰直立、原生預算／用途／快取／投影及舊Editor防覆寫回歸、Build／diff／匯出檢查，素材庫先Commit再遊戲Commit。開著的Editor須先另存未儲存工作再重載。
+- 完成7檔：vfx/presets/ground-domain-fire.json的24層火焰縱向scale1.45→2.4、發射率9→12，尺寸／升速／壽命／亮黃橙色段提高；限制旋轉為Core實際使用的弧度小區間，避免高火焰翻倒。27層不變、粒子硬上限136→160，圈邊position／projection／authored.radius及其餘圖層逐欄一致。js/vfx-runtime DATA_VERSION更新tall-flame-ring、index.html與tools/vfx/editor/index.html快取216，docs/vfx/GROUND_PROJECTION_AUDIT.md／LV_upgrade_system.md／本紀錄同步。沒有表格、存檔、Worker或Protocol變更；原火焰圖片未改，組合配置自製，沿用前次驗證CC0素材，不涉及RPG Mote點陣繪製。
+- 測試指令：`node --test --test-reporter=tap tests/vfx-ground-plane.test.cjs tests/vfx-preset-cost.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-editor-guard.test.cjs`65/65，含地面／直立粒子投影、原生預算與用途、快取一致、舊版本／外部變更拒絕覆寫；最後調整旋轉後重跑同65項全過。`npm.cmd run build`544檔通過，`node tools/vfx/export-assets.cjs --check`已最新，diff通過；本次無新貼圖／資源索引修改，不重建匯出樹。index與Claude不同區段，三方merge-file乾跑exit0、無語意相依。
+- 瀏覽器：隱藏IAB GPU Editor與seed1019隔離遊戲、正式Worker／5Hz battle快照／Runtime目視。新版火焰直立向上、黃橙亮部更強、圈邊更密；角色／透明中心仍清楚，原半徑與跟隨不變。Editor與遊戲warning／error0，截圖visualizations/firegod-taller-flames.png已目視保存，分頁與測試服務關閉，未讀真人存檔。沒有新增測試檔或無關技能調整。
+- 唯讀未改：AI_RULES／工作流／Agent規範、VFX Core粒子旋轉與upright實作、layout／Status引用、模擬傷害／範圍、既有貼圖／CC0來源紀錄、library-root及匯出工具、上述原生回歸與舊Editor guard。自我Review確認未藉火焰加高擴大判定，沒有新增Preset來源／新增圖層，原生上限內，不會用舊Editor覆蓋新版；使用者其他未提交調整完整保留。
+- 交付：FIREGOD-TALLER-FLAMES-20261019完成，無未完成項目，可供Review／合併。素材庫Commit `9124cb3`，遊戲Commit為本紀錄所在`[Codex] feat: 加高火神降臨火焰並強化燃燒感`，回覆附兩個實際編號；未合併推送。限制為短場景目視，未驗多技能密集長戰；下一步重新整理8123，Editor先另存未儲存內容再重載。
+
 ## FIREGOD-FLAME-RING-20261019 — 火神降臨光圈改為冒焰火圈
 
 - Owner：Codex；Done；單一開發者。使用者附圖要求將火神降臨目前紅色光圈改造成向上冒火焰的火圈；只調既有ground-domain-fire Preset與layout，保留表引用、角色跟隨、判定半徑／傷害／節拍。沿用已出貨並在火神星環使用的flame_04素材，沒有點陣素材繪製／新外部素材；這是引擎原生發射器配置，RPG Mote繪圖匯出不適用此JSON與粒子投影。

@@ -171,8 +171,8 @@
         "y": 0
       },
       "scale": {
-        "x": 0.7,
-        "y": 1.45
+        "x": 0.8,
+        "y": 2.4
       },
       "anchor": {
         "x": 0.5,
@@ -184,39 +184,39 @@
       "duration": 1.85,
       "emission": {
         "mode": "rate",
-        "rate": 9
+        "rate": 12
       },
-      "maxParticles": 5,
+      "maxParticles": 6,
       "lifetime": [
-        0.28,
-        0.48
+        0.34,
+        0.5
       ],
       "spawn": {
         "shape": "circle",
         "radius": 3
       },
       "speed": [
-        12,
-        32
+        24,
+        44
       ],
       "direction": -90,
       "spread": 24,
       "gravity": {
         "x": 0,
-        "y": -22
+        "y": -35
       },
       "worldSpace": false,
       "startScale": [
-        0.052,
-        0.082
+        0.06,
+        0.09
       ],
       "rotationStart": [
-        -8,
-        8
+        -0.12,
+        0.12
       ],
       "rotationSpeed": [
-        -12,
-        12
+        -0.2,
+        0.2
       ],
       "projection": {
         "x": 1,
@@ -229,12 +229,12 @@
           0
         ],
         [
-          0.12,
-          0.95
+          0.1,
+          1
         ],
         [
-          0.58,
-          0.9
+          0.65,
+          1
         ],
         [
           1,
@@ -258,19 +258,19 @@
       "tintOverLife": [
         [
           0,
-          "#fff0a0"
+          "#fff4c0"
         ],
         [
           0.28,
-          "#ffbe38"
+          "#ffd45a"
         ],
         [
           0.65,
-          "#ff6a0a"
+          "#ff850c"
         ],
         [
           1,
-          "#b92506"
+          "#d63b08"
         ]
       ]
     },
@@ -284,8 +284,8 @@
         "y": 25.3643
       },
       "scale": {
-        "x": 0.7,
-        "y": 1.45
+        "x": 0.8,
+        "y": 2.4
       },
       "anchor": {
         "x": 0.5,
@@ -297,39 +297,39 @@
       "duration": 1.85,
       "emission": {
         "mode": "rate",
-        "rate": 9
+        "rate": 12
       },
-      "maxParticles": 5,
+      "maxParticles": 6,
       "lifetime": [
-        0.28,
-        0.48
+        0.34,
+        0.5
       ],
       "spawn": {
         "shape": "circle",
         "radius": 3
       },
       "speed": [
-        12,
-        32
+        24,
+        44
       ],
       "direction": -90,
       "spread": 24,
       "gravity": {
         "x": 0,
-        "y": -22
+        "y": -35
       },
       "worldSpace": false,
       "startScale": [
-        0.052,
-        0.082
+        0.06,
+        0.09
       ],
       "rotationStart": [
-        -8,
-        8
+        -0.12,
+        0.12
       ],
       "rotationSpeed": [
-        -12,
-        12
+        -0.2,
+        0.2
       ],
       "projection": {
         "x": 1,
@@ -342,12 +342,12 @@
           0
         ],
         [
-          0.12,
-          0.95
+          0.1,
+          1
         ],
         [
-          0.58,
-          0.9
+          0.65,
+          1
         ],
         [
           1,
@@ -371,19 +371,19 @@
       "tintOverLife": [
         [
           0,
-          "#fff0a0"
+          "#fff4c0"
         ],
         [
           0.28,
-          "#ffbe38"
+          "#ffd45a"
         ],
         [
           0.65,
-          "#ff6a0a"
+          "#ff850c"
         ],
         [
           1,
-          "#b92506"
+          "#d63b08"
         ]
       ]
     },
@@ -397,8 +397,8 @@
         "y": 49
       },
       "scale": {
-        "x": 0.7,
-        "y": 1.45
+        "x": 0.8,
+        "y": 2.4
       },
       "anchor": {
         "x": 0.5,
@@ -410,39 +410,39 @@
       "duration": 1.85,
       "emission": {
         "mode": "rate",
-        "rate": 9
+        "rate": 12
       },
-      "maxParticles": 5,
+      "maxParticles": 6,
       "lifetime": [
-        0.28,
-        0.48
+        0.34,
+        0.5
       ],
       "spawn": {
         "shape": "circle",
         "radius": 3
       },
       "speed": [
-        12,
-        32
+        24,
+        44
       ],
       "direction": -90,
       "spread": 24,
       "gravity": {
         "x": 0,
-        "y": -22
+        "y": -35
       },
       "worldSpace": false,
       "startScale": [
-        0.052,
-        0.082
+        0.06,
+        0.09
       ],
       "rotationStart": [
-        -8,
-        8
+        -0.12,
+        0.12
       ],
       "rotationSpeed": [
-        -12,
-        12
+        -0.2,
+        0.2
       ],
       "projection": {
         "x": 1,
@@ -455,12 +455,12 @@
           0
         ],
         [
-          0.12,
-          0.95
+          0.1,
+          1
         ],
         [
-          0.58,
-          0.9
+          0.65,
+          1
         ],
         [
           1,
@@ -484,19 +484,19 @@
       "tintOverLife": [
         [
           0,
-          "#fff0a0"
+          "#fff4c0"
         ],
         [
           0.28,
-          "#ffbe38"
+          "#ffd45a"
         ],
         [
           0.65,
-          "#ff6a0a"
+          "#ff850c"
         ],
         [
           1,
-          "#b92506"
+          "#d63b08"
         ]
       ]
     },
@@ -510,8 +510,8 @@
         "y": 69.2965
       },
       "scale": {
-        "x": 0.7,
-        "y": 1.45
+        "x": 0.8,
+        "y": 2.4
       },
       "anchor": {
         "x": 0.5,
@@ -523,39 +523,39 @@
       "duration": 1.85,
       "emission": {
         "mode": "rate",
-        "rate": 9
+        "rate": 12
       },
-      "maxParticles": 5,
+      "maxParticles": 6,
       "lifetime": [
-        0.28,
-        0.48
+        0.34,
+        0.5
       ],
       "spawn": {
         "shape": "circle",
         "radius": 3
       },
       "speed": [
-        12,
-        32
+        24,
+        44
       ],
       "direction": -90,
       "spread": 24,
       "gravity": {
         "x": 0,
-        "y": -22
+        "y": -35
       },
       "worldSpace": false,
       "startScale": [
-        0.052,
-        0.082
+        0.06,
+        0.09
       ],
       "rotationStart": [
-        -8,
-        8
+        -0.12,
+        0.12
       ],
       "rotationSpeed": [
-        -12,
-        12
+        -0.2,
+        0.2
       ],
       "projection": {
         "x": 1,
@@ -568,12 +568,12 @@
           0
         ],
         [
-          0.12,
-          0.95
+          0.1,
+          1
         ],
         [
-          0.58,
-          0.9
+          0.65,
+          1
         ],
         [
           1,
@@ -597,19 +597,19 @@
       "tintOverLife": [
         [
           0,
-          "#fff0a0"
+          "#fff4c0"
         ],
         [
           0.28,
-          "#ffbe38"
+          "#ffd45a"
         ],
         [
           0.65,
-          "#ff6a0a"
+          "#ff850c"
         ],
         [
           1,
-          "#b92506"
+          "#d63b08"
         ]
       ]
     },
@@ -623,8 +623,8 @@
         "y": 84.8705
       },
       "scale": {
-        "x": 0.7,
-        "y": 1.45
+        "x": 0.8,
+        "y": 2.4
       },
       "anchor": {
         "x": 0.5,
@@ -636,39 +636,39 @@
       "duration": 1.85,
       "emission": {
         "mode": "rate",
-        "rate": 9
+        "rate": 12
       },
-      "maxParticles": 5,
+      "maxParticles": 6,
       "lifetime": [
-        0.28,
-        0.48
+        0.34,
+        0.5
       ],
       "spawn": {
         "shape": "circle",
         "radius": 3
       },
       "speed": [
-        12,
-        32
+        24,
+        44
       ],
       "direction": -90,
       "spread": 24,
       "gravity": {
         "x": 0,
-        "y": -22
+        "y": -35
       },
       "worldSpace": false,
       "startScale": [
-        0.052,
-        0.082
+        0.06,
+        0.09
       ],
       "rotationStart": [
-        -8,
-        8
+        -0.12,
+        0.12
       ],
       "rotationSpeed": [
-        -12,
-        12
+        -0.2,
+        0.2
       ],
       "projection": {
         "x": 1,
@@ -681,12 +681,12 @@
           0
         ],
         [
-          0.12,
-          0.95
+          0.1,
+          1
         ],
         [
-          0.58,
-          0.9
+          0.65,
+          1
         ],
         [
           1,
@@ -710,19 +710,19 @@
       "tintOverLife": [
         [
           0,
-          "#fff0a0"
+          "#fff4c0"
         ],
         [
           0.28,
-          "#ffbe38"
+          "#ffd45a"
         ],
         [
           0.65,
-          "#ff6a0a"
+          "#ff850c"
         ],
         [
           1,
-          "#b92506"
+          "#d63b08"
         ]
       ]
     },
@@ -736,8 +736,8 @@
         "y": 94.6607
       },
       "scale": {
-        "x": 0.7,
-        "y": 1.45
+        "x": 0.8,
+        "y": 2.4
       },
       "anchor": {
         "x": 0.5,
@@ -749,39 +749,39 @@
       "duration": 1.85,
       "emission": {
         "mode": "rate",
-        "rate": 9
+        "rate": 12
       },
-      "maxParticles": 5,
+      "maxParticles": 6,
       "lifetime": [
-        0.28,
-        0.48
+        0.34,
+        0.5
       ],
       "spawn": {
         "shape": "circle",
         "radius": 3
       },
       "speed": [
-        12,
-        32
+        24,
+        44
       ],
       "direction": -90,
       "spread": 24,
       "gravity": {
         "x": 0,
-        "y": -22
+        "y": -35
       },
       "worldSpace": false,
       "startScale": [
-        0.052,
-        0.082
+        0.06,
+        0.09
       ],
       "rotationStart": [
-        -8,
-        8
+        -0.12,
+        0.12
       ],
       "rotationSpeed": [
-        -12,
-        12
+        -0.2,
+        0.2
       ],
       "projection": {
         "x": 1,
@@ -794,12 +794,12 @@
           0
         ],
         [
-          0.12,
-          0.95
+          0.1,
+          1
         ],
         [
-          0.58,
-          0.9
+          0.65,
+          1
         ],
         [
           1,
@@ -823,19 +823,19 @@
       "tintOverLife": [
         [
           0,
-          "#fff0a0"
+          "#fff4c0"
         ],
         [
           0.28,
-          "#ffbe38"
+          "#ffd45a"
         ],
         [
           0.65,
-          "#ff6a0a"
+          "#ff850c"
         ],
         [
           1,
-          "#b92506"
+          "#d63b08"
         ]
       ]
     },
@@ -849,8 +849,8 @@
         "y": 98
       },
       "scale": {
-        "x": 0.7,
-        "y": 1.45
+        "x": 0.8,
+        "y": 2.4
       },
       "anchor": {
         "x": 0.5,
@@ -862,39 +862,39 @@
       "duration": 1.85,
       "emission": {
         "mode": "rate",
-        "rate": 9
+        "rate": 12
       },
-      "maxParticles": 5,
+      "maxParticles": 6,
       "lifetime": [
-        0.28,
-        0.48
+        0.34,
+        0.5
       ],
       "spawn": {
         "shape": "circle",
         "radius": 3
       },
       "speed": [
-        12,
-        32
+        24,
+        44
       ],
       "direction": -90,
       "spread": 24,
       "gravity": {
         "x": 0,
-        "y": -22
+        "y": -35
       },
       "worldSpace": false,
       "startScale": [
-        0.052,
-        0.082
+        0.06,
+        0.09
       ],
       "rotationStart": [
-        -8,
-        8
+        -0.12,
+        0.12
       ],
       "rotationSpeed": [
-        -12,
-        12
+        -0.2,
+        0.2
       ],
       "projection": {
         "x": 1,
@@ -907,12 +907,12 @@
           0
         ],
         [
-          0.12,
-          0.95
+          0.1,
+          1
         ],
         [
-          0.58,
-          0.9
+          0.65,
+          1
         ],
         [
           1,
@@ -936,19 +936,19 @@
       "tintOverLife": [
         [
           0,
-          "#fff0a0"
+          "#fff4c0"
         ],
         [
           0.28,
-          "#ffbe38"
+          "#ffd45a"
         ],
         [
           0.65,
-          "#ff6a0a"
+          "#ff850c"
         ],
         [
           1,
-          "#b92506"
+          "#d63b08"
         ]
       ]
     },
@@ -962,8 +962,8 @@
         "y": 94.6607
       },
       "scale": {
-        "x": 0.7,
-        "y": 1.45
+        "x": 0.8,
+        "y": 2.4
       },
       "anchor": {
         "x": 0.5,
@@ -975,39 +975,39 @@
       "duration": 1.85,
       "emission": {
         "mode": "rate",
-        "rate": 9
+        "rate": 12
       },
-      "maxParticles": 5,
+      "maxParticles": 6,
       "lifetime": [
-        0.28,
-        0.48
+        0.34,
+        0.5
       ],
       "spawn": {
         "shape": "circle",
         "radius": 3
       },
       "speed": [
-        12,
-        32
+        24,
+        44
       ],
       "direction": -90,
       "spread": 24,
       "gravity": {
         "x": 0,
-        "y": -22
+        "y": -35
       },
       "worldSpace": false,
       "startScale": [
-        0.052,
-        0.082
+        0.06,
+        0.09
       ],
       "rotationStart": [
-        -8,
-        8
+        -0.12,
+        0.12
       ],
       "rotationSpeed": [
-        -12,
-        12
+        -0.2,
+        0.2
       ],
       "projection": {
         "x": 1,
@@ -1020,12 +1020,12 @@
           0
         ],
         [
-          0.12,
-          0.95
+          0.1,
+          1
         ],
         [
-          0.58,
-          0.9
+          0.65,
+          1
         ],
         [
           1,
@@ -1049,19 +1049,19 @@
       "tintOverLife": [
         [
           0,
-          "#fff0a0"
+          "#fff4c0"
         ],
         [
           0.28,
-          "#ffbe38"
+          "#ffd45a"
         ],
         [
           0.65,
-          "#ff6a0a"
+          "#ff850c"
         ],
         [
           1,
-          "#b92506"
+          "#d63b08"
         ]
       ]
     },
@@ -1075,8 +1075,8 @@
         "y": 84.8705
       },
       "scale": {
-        "x": 0.7,
-        "y": 1.45
+        "x": 0.8,
+        "y": 2.4
       },
       "anchor": {
         "x": 0.5,
@@ -1088,39 +1088,39 @@
       "duration": 1.85,
       "emission": {
         "mode": "rate",
-        "rate": 9
+        "rate": 12
       },
-      "maxParticles": 5,
+      "maxParticles": 6,
       "lifetime": [
-        0.28,
-        0.48
+        0.34,
+        0.5
       ],
       "spawn": {
         "shape": "circle",
         "radius": 3
       },
       "speed": [
-        12,
-        32
+        24,
+        44
       ],
       "direction": -90,
       "spread": 24,
       "gravity": {
         "x": 0,
-        "y": -22
+        "y": -35
       },
       "worldSpace": false,
       "startScale": [
-        0.052,
-        0.082
+        0.06,
+        0.09
       ],
       "rotationStart": [
-        -8,
-        8
+        -0.12,
+        0.12
       ],
       "rotationSpeed": [
-        -12,
-        12
+        -0.2,
+        0.2
       ],
       "projection": {
         "x": 1,
@@ -1133,12 +1133,12 @@
           0
         ],
         [
-          0.12,
-          0.95
+          0.1,
+          1
         ],
         [
-          0.58,
-          0.9
+          0.65,
+          1
         ],
         [
           1,
@@ -1162,19 +1162,19 @@
       "tintOverLife": [
         [
           0,
-          "#fff0a0"
+          "#fff4c0"
         ],
         [
           0.28,
-          "#ffbe38"
+          "#ffd45a"
         ],
         [
           0.65,
-          "#ff6a0a"
+          "#ff850c"
         ],
         [
           1,
-          "#b92506"
+          "#d63b08"
         ]
       ]
     },
@@ -1188,8 +1188,8 @@
         "y": 69.2965
       },
       "scale": {
-        "x": 0.7,
-        "y": 1.45
+        "x": 0.8,
+        "y": 2.4
       },
       "anchor": {
         "x": 0.5,
@@ -1201,39 +1201,39 @@
       "duration": 1.85,
       "emission": {
         "mode": "rate",
-        "rate": 9
+        "rate": 12
       },
-      "maxParticles": 5,
+      "maxParticles": 6,
       "lifetime": [
-        0.28,
-        0.48
+        0.34,
+        0.5
       ],
       "spawn": {
         "shape": "circle",
         "radius": 3
       },
       "speed": [
-        12,
-        32
+        24,
+        44
       ],
       "direction": -90,
       "spread": 24,
       "gravity": {
         "x": 0,
-        "y": -22
+        "y": -35
       },
       "worldSpace": false,
       "startScale": [
-        0.052,
-        0.082
+        0.06,
+        0.09
       ],
       "rotationStart": [
-        -8,
-        8
+        -0.12,
+        0.12
       ],
       "rotationSpeed": [
-        -12,
-        12
+        -0.2,
+        0.2
       ],
       "projection": {
         "x": 1,
@@ -1246,12 +1246,12 @@
           0
         ],
         [
-          0.12,
-          0.95
+          0.1,
+          1
         ],
         [
-          0.58,
-          0.9
+          0.65,
+          1
         ],
         [
           1,
@@ -1275,19 +1275,19 @@
       "tintOverLife": [
         [
           0,
-          "#fff0a0"
+          "#fff4c0"
         ],
         [
           0.28,
-          "#ffbe38"
+          "#ffd45a"
         ],
         [
           0.65,
-          "#ff6a0a"
+          "#ff850c"
         ],
         [
           1,
-          "#b92506"
+          "#d63b08"
         ]
       ]
     },
@@ -1301,8 +1301,8 @@
         "y": 49
       },
       "scale": {
-        "x": 0.7,
-        "y": 1.45
+        "x": 0.8,
+        "y": 2.4
       },
       "anchor": {
         "x": 0.5,
@@ -1314,39 +1314,39 @@
       "duration": 1.85,
       "emission": {
         "mode": "rate",
-        "rate": 9
+        "rate": 12
       },
-      "maxParticles": 5,
+      "maxParticles": 6,
       "lifetime": [
-        0.28,
-        0.48
+        0.34,
+        0.5
       ],
       "spawn": {
         "shape": "circle",
         "radius": 3
       },
       "speed": [
-        12,
-        32
+        24,
+        44
       ],
       "direction": -90,
       "spread": 24,
       "gravity": {
         "x": 0,
-        "y": -22
+        "y": -35
       },
       "worldSpace": false,
       "startScale": [
-        0.052,
-        0.082
+        0.06,
+        0.09
       ],
       "rotationStart": [
-        -8,
-        8
+        -0.12,
+        0.12
       ],
       "rotationSpeed": [
-        -12,
-        12
+        -0.2,
+        0.2
       ],
       "projection": {
         "x": 1,
@@ -1359,12 +1359,12 @@
           0
         ],
         [
-          0.12,
-          0.95
+          0.1,
+          1
         ],
         [
-          0.58,
-          0.9
+          0.65,
+          1
         ],
         [
           1,
@@ -1388,19 +1388,19 @@
       "tintOverLife": [
         [
           0,
-          "#fff0a0"
+          "#fff4c0"
         ],
         [
           0.28,
-          "#ffbe38"
+          "#ffd45a"
         ],
         [
           0.65,
-          "#ff6a0a"
+          "#ff850c"
         ],
         [
           1,
-          "#b92506"
+          "#d63b08"
         ]
       ]
     },
@@ -1414,8 +1414,8 @@
         "y": 25.3643
       },
       "scale": {
-        "x": 0.7,
-        "y": 1.45
+        "x": 0.8,
+        "y": 2.4
       },
       "anchor": {
         "x": 0.5,
@@ -1427,39 +1427,39 @@
       "duration": 1.85,
       "emission": {
         "mode": "rate",
-        "rate": 9
+        "rate": 12
       },
-      "maxParticles": 5,
+      "maxParticles": 6,
       "lifetime": [
-        0.28,
-        0.48
+        0.34,
+        0.5
       ],
       "spawn": {
         "shape": "circle",
         "radius": 3
       },
       "speed": [
-        12,
-        32
+        24,
+        44
       ],
       "direction": -90,
       "spread": 24,
       "gravity": {
         "x": 0,
-        "y": -22
+        "y": -35
       },
       "worldSpace": false,
       "startScale": [
-        0.052,
-        0.082
+        0.06,
+        0.09
       ],
       "rotationStart": [
-        -8,
-        8
+        -0.12,
+        0.12
       ],
       "rotationSpeed": [
-        -12,
-        12
+        -0.2,
+        0.2
       ],
       "projection": {
         "x": 1,
@@ -1472,12 +1472,12 @@
           0
         ],
         [
-          0.12,
-          0.95
+          0.1,
+          1
         ],
         [
-          0.58,
-          0.9
+          0.65,
+          1
         ],
         [
           1,
@@ -1501,19 +1501,19 @@
       "tintOverLife": [
         [
           0,
-          "#fff0a0"
+          "#fff4c0"
         ],
         [
           0.28,
-          "#ffbe38"
+          "#ffd45a"
         ],
         [
           0.65,
-          "#ff6a0a"
+          "#ff850c"
         ],
         [
           1,
-          "#b92506"
+          "#d63b08"
         ]
       ]
     },
@@ -1527,8 +1527,8 @@
         "y": 0
       },
       "scale": {
-        "x": 0.7,
-        "y": 1.45
+        "x": 0.8,
+        "y": 2.4
       },
       "anchor": {
         "x": 0.5,
@@ -1540,39 +1540,39 @@
       "duration": 1.85,
       "emission": {
         "mode": "rate",
-        "rate": 9
+        "rate": 12
       },
-      "maxParticles": 5,
+      "maxParticles": 6,
       "lifetime": [
-        0.28,
-        0.48
+        0.34,
+        0.5
       ],
       "spawn": {
         "shape": "circle",
         "radius": 3
       },
       "speed": [
-        12,
-        32
+        24,
+        44
       ],
       "direction": -90,
       "spread": 24,
       "gravity": {
         "x": 0,
-        "y": -22
+        "y": -35
       },
       "worldSpace": false,
       "startScale": [
-        0.052,
-        0.082
+        0.06,
+        0.09
       ],
       "rotationStart": [
-        -8,
-        8
+        -0.12,
+        0.12
       ],
       "rotationSpeed": [
-        -12,
-        12
+        -0.2,
+        0.2
       ],
       "projection": {
         "x": 1,
@@ -1585,12 +1585,12 @@
           0
         ],
         [
-          0.12,
-          0.95
+          0.1,
+          1
         ],
         [
-          0.58,
-          0.9
+          0.65,
+          1
         ],
         [
           1,
@@ -1614,19 +1614,19 @@
       "tintOverLife": [
         [
           0,
-          "#fff0a0"
+          "#fff4c0"
         ],
         [
           0.28,
-          "#ffbe38"
+          "#ffd45a"
         ],
         [
           0.65,
-          "#ff6a0a"
+          "#ff850c"
         ],
         [
           1,
-          "#b92506"
+          "#d63b08"
         ]
       ]
     },
@@ -1640,8 +1640,8 @@
         "y": -25.3643
       },
       "scale": {
-        "x": 0.7,
-        "y": 1.45
+        "x": 0.8,
+        "y": 2.4
       },
       "anchor": {
         "x": 0.5,
@@ -1653,39 +1653,39 @@
       "duration": 1.85,
       "emission": {
         "mode": "rate",
-        "rate": 9
+        "rate": 12
       },
-      "maxParticles": 5,
+      "maxParticles": 6,
       "lifetime": [
-        0.28,
-        0.48
+        0.34,
+        0.5
       ],
       "spawn": {
         "shape": "circle",
         "radius": 3
       },
       "speed": [
-        12,
-        32
+        24,
+        44
       ],
       "direction": -90,
       "spread": 24,
       "gravity": {
         "x": 0,
-        "y": -22
+        "y": -35
       },
       "worldSpace": false,
       "startScale": [
-        0.052,
-        0.082
+        0.06,
+        0.09
       ],
       "rotationStart": [
-        -8,
-        8
+        -0.12,
+        0.12
       ],
       "rotationSpeed": [
-        -12,
-        12
+        -0.2,
+        0.2
       ],
       "projection": {
         "x": 1,
@@ -1698,12 +1698,12 @@
           0
         ],
         [
-          0.12,
-          0.95
+          0.1,
+          1
         ],
         [
-          0.58,
-          0.9
+          0.65,
+          1
         ],
         [
           1,
@@ -1727,19 +1727,19 @@
       "tintOverLife": [
         [
           0,
-          "#fff0a0"
+          "#fff4c0"
         ],
         [
           0.28,
-          "#ffbe38"
+          "#ffd45a"
         ],
         [
           0.65,
-          "#ff6a0a"
+          "#ff850c"
         ],
         [
           1,
-          "#b92506"
+          "#d63b08"
         ]
       ]
     },
@@ -1753,8 +1753,8 @@
         "y": -49
       },
       "scale": {
-        "x": 0.7,
-        "y": 1.45
+        "x": 0.8,
+        "y": 2.4
       },
       "anchor": {
         "x": 0.5,
@@ -1766,39 +1766,39 @@
       "duration": 1.85,
       "emission": {
         "mode": "rate",
-        "rate": 9
+        "rate": 12
       },
-      "maxParticles": 5,
+      "maxParticles": 6,
       "lifetime": [
-        0.28,
-        0.48
+        0.34,
+        0.5
       ],
       "spawn": {
         "shape": "circle",
         "radius": 3
       },
       "speed": [
-        12,
-        32
+        24,
+        44
       ],
       "direction": -90,
       "spread": 24,
       "gravity": {
         "x": 0,
-        "y": -22
+        "y": -35
       },
       "worldSpace": false,
       "startScale": [
-        0.052,
-        0.082
+        0.06,
+        0.09
       ],
       "rotationStart": [
-        -8,
-        8
+        -0.12,
+        0.12
       ],
       "rotationSpeed": [
-        -12,
-        12
+        -0.2,
+        0.2
       ],
       "projection": {
         "x": 1,
@@ -1811,12 +1811,12 @@
           0
         ],
         [
-          0.12,
-          0.95
+          0.1,
+          1
         ],
         [
-          0.58,
-          0.9
+          0.65,
+          1
         ],
         [
           1,
@@ -1840,19 +1840,19 @@
       "tintOverLife": [
         [
           0,
-          "#fff0a0"
+          "#fff4c0"
         ],
         [
           0.28,
-          "#ffbe38"
+          "#ffd45a"
         ],
         [
           0.65,
-          "#ff6a0a"
+          "#ff850c"
         ],
         [
           1,
-          "#b92506"
+          "#d63b08"
         ]
       ]
     },
@@ -1866,8 +1866,8 @@
         "y": -69.2965
       },
       "scale": {
-        "x": 0.7,
-        "y": 1.45
+        "x": 0.8,
+        "y": 2.4
       },
       "anchor": {
         "x": 0.5,
@@ -1879,39 +1879,39 @@
       "duration": 1.85,
       "emission": {
         "mode": "rate",
-        "rate": 9
+        "rate": 12
       },
-      "maxParticles": 5,
+      "maxParticles": 6,
       "lifetime": [
-        0.28,
-        0.48
+        0.34,
+        0.5
       ],
       "spawn": {
         "shape": "circle",
         "radius": 3
       },
       "speed": [
-        12,
-        32
+        24,
+        44
       ],
       "direction": -90,
       "spread": 24,
       "gravity": {
         "x": 0,
-        "y": -22
+        "y": -35
       },
       "worldSpace": false,
       "startScale": [
-        0.052,
-        0.082
+        0.06,
+        0.09
       ],
       "rotationStart": [
-        -8,
-        8
+        -0.12,
+        0.12
       ],
       "rotationSpeed": [
-        -12,
-        12
+        -0.2,
+        0.2
       ],
       "projection": {
         "x": 1,
@@ -1924,12 +1924,12 @@
           0
         ],
         [
-          0.12,
-          0.95
+          0.1,
+          1
         ],
         [
-          0.58,
-          0.9
+          0.65,
+          1
         ],
         [
           1,
@@ -1953,19 +1953,19 @@
       "tintOverLife": [
         [
           0,
-          "#fff0a0"
+          "#fff4c0"
         ],
         [
           0.28,
-          "#ffbe38"
+          "#ffd45a"
         ],
         [
           0.65,
-          "#ff6a0a"
+          "#ff850c"
         ],
         [
           1,
-          "#b92506"
+          "#d63b08"
         ]
       ]
     },
@@ -1979,8 +1979,8 @@
         "y": -84.8705
       },
       "scale": {
-        "x": 0.7,
-        "y": 1.45
+        "x": 0.8,
+        "y": 2.4
       },
       "anchor": {
         "x": 0.5,
@@ -1992,39 +1992,39 @@
       "duration": 1.85,
       "emission": {
         "mode": "rate",
-        "rate": 9
+        "rate": 12
       },
-      "maxParticles": 5,
+      "maxParticles": 6,
       "lifetime": [
-        0.28,
-        0.48
+        0.34,
+        0.5
       ],
       "spawn": {
         "shape": "circle",
         "radius": 3
       },
       "speed": [
-        12,
-        32
+        24,
+        44
       ],
       "direction": -90,
       "spread": 24,
       "gravity": {
         "x": 0,
-        "y": -22
+        "y": -35
       },
       "worldSpace": false,
       "startScale": [
-        0.052,
-        0.082
+        0.06,
+        0.09
       ],
       "rotationStart": [
-        -8,
-        8
+        -0.12,
+        0.12
       ],
       "rotationSpeed": [
-        -12,
-        12
+        -0.2,
+        0.2
       ],
       "projection": {
         "x": 1,
@@ -2037,12 +2037,12 @@
           0
         ],
         [
-          0.12,
-          0.95
+          0.1,
+          1
         ],
         [
-          0.58,
-          0.9
+          0.65,
+          1
         ],
         [
           1,
@@ -2066,19 +2066,19 @@
       "tintOverLife": [
         [
           0,
-          "#fff0a0"
+          "#fff4c0"
         ],
         [
           0.28,
-          "#ffbe38"
+          "#ffd45a"
         ],
         [
           0.65,
-          "#ff6a0a"
+          "#ff850c"
         ],
         [
           1,
-          "#b92506"
+          "#d63b08"
         ]
       ]
     },
@@ -2092,8 +2092,8 @@
         "y": -94.6607
       },
       "scale": {
-        "x": 0.7,
-        "y": 1.45
+        "x": 0.8,
+        "y": 2.4
       },
       "anchor": {
         "x": 0.5,
@@ -2105,39 +2105,39 @@
       "duration": 1.85,
       "emission": {
         "mode": "rate",
-        "rate": 9
+        "rate": 12
       },
-      "maxParticles": 5,
+      "maxParticles": 6,
       "lifetime": [
-        0.28,
-        0.48
+        0.34,
+        0.5
       ],
       "spawn": {
         "shape": "circle",
         "radius": 3
       },
       "speed": [
-        12,
-        32
+        24,
+        44
       ],
       "direction": -90,
       "spread": 24,
       "gravity": {
         "x": 0,
-        "y": -22
+        "y": -35
       },
       "worldSpace": false,
       "startScale": [
-        0.052,
-        0.082
+        0.06,
+        0.09
       ],
       "rotationStart": [
-        -8,
-        8
+        -0.12,
+        0.12
       ],
       "rotationSpeed": [
-        -12,
-        12
+        -0.2,
+        0.2
       ],
       "projection": {
         "x": 1,
@@ -2150,12 +2150,12 @@
           0
         ],
         [
-          0.12,
-          0.95
+          0.1,
+          1
         ],
         [
-          0.58,
-          0.9
+          0.65,
+          1
         ],
         [
           1,
@@ -2179,19 +2179,19 @@
       "tintOverLife": [
         [
           0,
-          "#fff0a0"
+          "#fff4c0"
         ],
         [
           0.28,
-          "#ffbe38"
+          "#ffd45a"
         ],
         [
           0.65,
-          "#ff6a0a"
+          "#ff850c"
         ],
         [
           1,
-          "#b92506"
+          "#d63b08"
         ]
       ]
     },
@@ -2205,8 +2205,8 @@
         "y": -98
       },
       "scale": {
-        "x": 0.7,
-        "y": 1.45
+        "x": 0.8,
+        "y": 2.4
       },
       "anchor": {
         "x": 0.5,
@@ -2218,39 +2218,39 @@
       "duration": 1.85,
       "emission": {
         "mode": "rate",
-        "rate": 9
+        "rate": 12
       },
-      "maxParticles": 5,
+      "maxParticles": 6,
       "lifetime": [
-        0.28,
-        0.48
+        0.34,
+        0.5
       ],
       "spawn": {
         "shape": "circle",
         "radius": 3
       },
       "speed": [
-        12,
-        32
+        24,
+        44
       ],
       "direction": -90,
       "spread": 24,
       "gravity": {
         "x": 0,
-        "y": -22
+        "y": -35
       },
       "worldSpace": false,
       "startScale": [
-        0.052,
-        0.082
+        0.06,
+        0.09
       ],
       "rotationStart": [
-        -8,
-        8
+        -0.12,
+        0.12
       ],
       "rotationSpeed": [
-        -12,
-        12
+        -0.2,
+        0.2
       ],
       "projection": {
         "x": 1,
@@ -2263,12 +2263,12 @@
           0
         ],
         [
-          0.12,
-          0.95
+          0.1,
+          1
         ],
         [
-          0.58,
-          0.9
+          0.65,
+          1
         ],
         [
           1,
@@ -2292,19 +2292,19 @@
       "tintOverLife": [
         [
           0,
-          "#fff0a0"
+          "#fff4c0"
         ],
         [
           0.28,
-          "#ffbe38"
+          "#ffd45a"
         ],
         [
           0.65,
-          "#ff6a0a"
+          "#ff850c"
         ],
         [
           1,
-          "#b92506"
+          "#d63b08"
         ]
       ]
     },
@@ -2318,8 +2318,8 @@
         "y": -94.6607
       },
       "scale": {
-        "x": 0.7,
-        "y": 1.45
+        "x": 0.8,
+        "y": 2.4
       },
       "anchor": {
         "x": 0.5,
@@ -2331,39 +2331,39 @@
       "duration": 1.85,
       "emission": {
         "mode": "rate",
-        "rate": 9
+        "rate": 12
       },
-      "maxParticles": 5,
+      "maxParticles": 6,
       "lifetime": [
-        0.28,
-        0.48
+        0.34,
+        0.5
       ],
       "spawn": {
         "shape": "circle",
         "radius": 3
       },
       "speed": [
-        12,
-        32
+        24,
+        44
       ],
       "direction": -90,
       "spread": 24,
       "gravity": {
         "x": 0,
-        "y": -22
+        "y": -35
       },
       "worldSpace": false,
       "startScale": [
-        0.052,
-        0.082
+        0.06,
+        0.09
       ],
       "rotationStart": [
-        -8,
-        8
+        -0.12,
+        0.12
       ],
       "rotationSpeed": [
-        -12,
-        12
+        -0.2,
+        0.2
       ],
       "projection": {
         "x": 1,
@@ -2376,12 +2376,12 @@
           0
         ],
         [
-          0.12,
-          0.95
+          0.1,
+          1
         ],
         [
-          0.58,
-          0.9
+          0.65,
+          1
         ],
         [
           1,
@@ -2405,19 +2405,19 @@
       "tintOverLife": [
         [
           0,
-          "#fff0a0"
+          "#fff4c0"
         ],
         [
           0.28,
-          "#ffbe38"
+          "#ffd45a"
         ],
         [
           0.65,
-          "#ff6a0a"
+          "#ff850c"
         ],
         [
           1,
-          "#b92506"
+          "#d63b08"
         ]
       ]
     },
@@ -2431,8 +2431,8 @@
         "y": -84.8705
       },
       "scale": {
-        "x": 0.7,
-        "y": 1.45
+        "x": 0.8,
+        "y": 2.4
       },
       "anchor": {
         "x": 0.5,
@@ -2444,39 +2444,39 @@
       "duration": 1.85,
       "emission": {
         "mode": "rate",
-        "rate": 9
+        "rate": 12
       },
-      "maxParticles": 5,
+      "maxParticles": 6,
       "lifetime": [
-        0.28,
-        0.48
+        0.34,
+        0.5
       ],
       "spawn": {
         "shape": "circle",
         "radius": 3
       },
       "speed": [
-        12,
-        32
+        24,
+        44
       ],
       "direction": -90,
       "spread": 24,
       "gravity": {
         "x": 0,
-        "y": -22
+        "y": -35
       },
       "worldSpace": false,
       "startScale": [
-        0.052,
-        0.082
+        0.06,
+        0.09
       ],
       "rotationStart": [
-        -8,
-        8
+        -0.12,
+        0.12
       ],
       "rotationSpeed": [
-        -12,
-        12
+        -0.2,
+        0.2
       ],
       "projection": {
         "x": 1,
@@ -2489,12 +2489,12 @@
           0
         ],
         [
-          0.12,
-          0.95
+          0.1,
+          1
         ],
         [
-          0.58,
-          0.9
+          0.65,
+          1
         ],
         [
           1,
@@ -2518,19 +2518,19 @@
       "tintOverLife": [
         [
           0,
-          "#fff0a0"
+          "#fff4c0"
         ],
         [
           0.28,
-          "#ffbe38"
+          "#ffd45a"
         ],
         [
           0.65,
-          "#ff6a0a"
+          "#ff850c"
         ],
         [
           1,
-          "#b92506"
+          "#d63b08"
         ]
       ]
     },
@@ -2544,8 +2544,8 @@
         "y": -69.2965
       },
       "scale": {
-        "x": 0.7,
-        "y": 1.45
+        "x": 0.8,
+        "y": 2.4
       },
       "anchor": {
         "x": 0.5,
@@ -2557,39 +2557,39 @@
       "duration": 1.85,
       "emission": {
         "mode": "rate",
-        "rate": 9
+        "rate": 12
       },
-      "maxParticles": 5,
+      "maxParticles": 6,
       "lifetime": [
-        0.28,
-        0.48
+        0.34,
+        0.5
       ],
       "spawn": {
         "shape": "circle",
         "radius": 3
       },
       "speed": [
-        12,
-        32
+        24,
+        44
       ],
       "direction": -90,
       "spread": 24,
       "gravity": {
         "x": 0,
-        "y": -22
+        "y": -35
       },
       "worldSpace": false,
       "startScale": [
-        0.052,
-        0.082
+        0.06,
+        0.09
       ],
       "rotationStart": [
-        -8,
-        8
+        -0.12,
+        0.12
       ],
       "rotationSpeed": [
-        -12,
-        12
+        -0.2,
+        0.2
       ],
       "projection": {
         "x": 1,
@@ -2602,12 +2602,12 @@
           0
         ],
         [
-          0.12,
-          0.95
+          0.1,
+          1
         ],
         [
-          0.58,
-          0.9
+          0.65,
+          1
         ],
         [
           1,
@@ -2631,19 +2631,19 @@
       "tintOverLife": [
         [
           0,
-          "#fff0a0"
+          "#fff4c0"
         ],
         [
           0.28,
-          "#ffbe38"
+          "#ffd45a"
         ],
         [
           0.65,
-          "#ff6a0a"
+          "#ff850c"
         ],
         [
           1,
-          "#b92506"
+          "#d63b08"
         ]
       ]
     },
@@ -2657,8 +2657,8 @@
         "y": -49
       },
       "scale": {
-        "x": 0.7,
-        "y": 1.45
+        "x": 0.8,
+        "y": 2.4
       },
       "anchor": {
         "x": 0.5,
@@ -2670,39 +2670,39 @@
       "duration": 1.85,
       "emission": {
         "mode": "rate",
-        "rate": 9
+        "rate": 12
       },
-      "maxParticles": 5,
+      "maxParticles": 6,
       "lifetime": [
-        0.28,
-        0.48
+        0.34,
+        0.5
       ],
       "spawn": {
         "shape": "circle",
         "radius": 3
       },
       "speed": [
-        12,
-        32
+        24,
+        44
       ],
       "direction": -90,
       "spread": 24,
       "gravity": {
         "x": 0,
-        "y": -22
+        "y": -35
       },
       "worldSpace": false,
       "startScale": [
-        0.052,
-        0.082
+        0.06,
+        0.09
       ],
       "rotationStart": [
-        -8,
-        8
+        -0.12,
+        0.12
       ],
       "rotationSpeed": [
-        -12,
-        12
+        -0.2,
+        0.2
       ],
       "projection": {
         "x": 1,
@@ -2715,12 +2715,12 @@
           0
         ],
         [
-          0.12,
-          0.95
+          0.1,
+          1
         ],
         [
-          0.58,
-          0.9
+          0.65,
+          1
         ],
         [
           1,
@@ -2744,19 +2744,19 @@
       "tintOverLife": [
         [
           0,
-          "#fff0a0"
+          "#fff4c0"
         ],
         [
           0.28,
-          "#ffbe38"
+          "#ffd45a"
         ],
         [
           0.65,
-          "#ff6a0a"
+          "#ff850c"
         ],
         [
           1,
-          "#b92506"
+          "#d63b08"
         ]
       ]
     },
@@ -2770,8 +2770,8 @@
         "y": -25.3643
       },
       "scale": {
-        "x": 0.7,
-        "y": 1.45
+        "x": 0.8,
+        "y": 2.4
       },
       "anchor": {
         "x": 0.5,
@@ -2783,39 +2783,39 @@
       "duration": 1.85,
       "emission": {
         "mode": "rate",
-        "rate": 9
+        "rate": 12
       },
-      "maxParticles": 5,
+      "maxParticles": 6,
       "lifetime": [
-        0.28,
-        0.48
+        0.34,
+        0.5
       ],
       "spawn": {
         "shape": "circle",
         "radius": 3
       },
       "speed": [
-        12,
-        32
+        24,
+        44
       ],
       "direction": -90,
       "spread": 24,
       "gravity": {
         "x": 0,
-        "y": -22
+        "y": -35
       },
       "worldSpace": false,
       "startScale": [
-        0.052,
-        0.082
+        0.06,
+        0.09
       ],
       "rotationStart": [
-        -8,
-        8
+        -0.12,
+        0.12
       ],
       "rotationSpeed": [
-        -12,
-        12
+        -0.2,
+        0.2
       ],
       "projection": {
         "x": 1,
@@ -2828,12 +2828,12 @@
           0
         ],
         [
-          0.12,
-          0.95
+          0.1,
+          1
         ],
         [
-          0.58,
-          0.9
+          0.65,
+          1
         ],
         [
           1,
@@ -2857,19 +2857,19 @@
       "tintOverLife": [
         [
           0,
-          "#fff0a0"
+          "#fff4c0"
         ],
         [
           0.28,
-          "#ffbe38"
+          "#ffd45a"
         ],
         [
           0.65,
-          "#ff6a0a"
+          "#ff850c"
         ],
         [
           1,
-          "#b92506"
+          "#d63b08"
         ]
       ]
     }
