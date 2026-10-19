@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## FORGE-FIRE-REDUCED-MOTION-20261019 — 修正運轉中爐火被減少動態凍結
+
+- Owner：Codex；Done；單一開發者。使用者回報重新整理後爐火完全靜止、裝備仍有移動，要求開可連線測試服共同診斷。前置既有Canvas火焰與等速輸送帶已完成。
+- 診斷：本機8141臨時服只於HTTP回應插入播放計數／狀態回報，不改遊戲檔或存檔；已在可操作IAB讀到reduced=true、運轉／可見=true、context綁定正確且未失效，但draws=1、time=0、framePending=false。先前headless預設reduced=false因此未重現，非已確認為快取問題。
+- 允許js/ui-newforge-visuals.js僅火焰重繪／共用排程的減少動態條件、tests/new-forge-visuals.test.cjs對應回歸、index.html僅該腳本快取、LV_upgrade_system.md熔爐功能說明及本紀錄。禁止輸送帶速度／方向／減少動態定位、火焰造型、Worker／數值／存檔／Protocol／素材／其他副本修改，保留使用者Skills2 Excel調整；未授權合併推送。
+- 衝突預檢：index與Antigravity 0ddf5be7同檔不同區段（對方Esc內測金鑰面板／腳本，本次熔爐視覺快取），無語意相依；共同祖先三方merge-file含本次預定快取修改乾跑exit0、無衝突，依AI_RULES3.2分段處理免問。其他目標乾淨。
+- 驗收：減少動態開啟與關閉皆持續播放運轉中爐火，無裝備／無新快照也續播；輸送帶原偏好處理、熔爐停用／Esc／離頁／不可見仍停止，恢復續播。先失敗回歸、相依測試／Build、真實IAB reduced=true連線回報計數與目視、Console／diff後獨立Commit。後續使用者在8141驗收，臨時診斷服務保留供本次操作、不納入產品與Commit。
+
+- 完成5檔：js/ui-newforge-visuals.js將爐火重繪及共用排程與裝備的減少動態定位條件分開，仍沿GameClock與原可見／停用條件；index.html視覺腳本1.0.3→1.0.4；tests/new-forge-visuals.test.cjs新增空帶／無快照減少動態回歸、更新偏好測試僅爐火續播且裝備仍靜態的斷言；LV_upgrade_system.md熔爐功能說明與本紀錄。沒有新素材、Preset、Worker／Protocol或存檔格式變更，素材庫無本次變更、不需空Commit。
+- 測試：新增回歸與修改後的火焰斷言在舊產品碼各失敗一次，修正後`node --test tests/new-forge-visuals.test.cjs tests/new-forge-ui.test.cjs tests/newforge-panel-performance.test.cjs tests/new-forge.test.cjs tests/game-clock.test.cjs`47/47通過。`npm.cmd run build`546檔通過，git diff檢查通過。初始化smoke在修正前已有1/2失敗（initUI尚未收到面板時預期發出skills請求、實際空陣列），修正後同一既有失敗保留，不更改無關UI／斷言；未跑完整庫。
+- 實際IAB：同一8141測試頁reduced=true，修正前爐火只draws=1且framePending=false；透過Esc立即存檔成功後重載修正版，空帶持續draws135→163→191、phase5.19→6.18→7.18，共用排程true，無需新裝備／新快照。Esc開啟時draws連續4秒固定968且time固定，關閉後恢復至1490→1518，Console error／warning與診斷捕捉錯誤0。已保留可操作頁籤供使用者驗收；臨時服務只綁127.0.0.1:8141，PID28776，診斷僅本機記憶體40筆輪替，無存檔內容回傳，遊戲正式程式未加入診斷碼。動態造型沿原自製Canvas程序火焰，非新增圖像作畫，無外部參考／素材。
+- 唯讀未改：AI_RULES／AGENTS／工作流／prompts、GameClock／GameMenu、Worker／熔爐結算與投影、UI卡片／CSS／等速輸送帶、既有初始化／熔爐／UI／效能／GameClock回歸、Antigravity的Esc金鑰面板修改。自我Review確認只取消爐火的減少動態凍結，仍一個共用RAF、約30Hz重繪上限、移除／停用／不可見清理沿舊行為，未改輸送帶速度／方向或其偏好處理。
+- 交付：無本次未完成修正，使用者仍可在8141實際確認；已知限制為上述1項初始化既有失敗、未驗長時間多熔爐負載或全實體裝置。使用者Skills2 Excel未提交調整完整保留；本次5檔可供Review／合併，未合併推送develop。Commit為本段所在`[Codex] fix: 減少動態時仍播放運轉中的熔爐火焰`，回覆附編號；下一步直接操作8141或右側測試頁，診斷服待本次驗收結束再關閉清理。
+
 ## MIRE-INFERNO-FLAMES-20261019 — 深淵火池改為低負擔地面熔火
 
 - Owner：Codex；Done；單一開發者。使用者認為原火池不像燃燒，指定參考NPC瘟疫中心特效改黃紅色；看過初版後明確取消上冒火焰，為效能只保留地面熔火池，完成後提供動態預覽。前置7a55094e火池判定與精確壽命完成。

@@ -78,7 +78,7 @@ test('停用凍結圖示與程序火焰、恢復不補走停用時間，離頁�
   h.node.isConnected = false; h.step(16); assert.equal(h.jobs.size, 0);
 });
 
-test('窄帶限制可見節點、Resize後新節點從右進場，減少動態保留靜態', () => {
+test('窄帶限制可見節點、Resize後新節點從右進場，減少動態保持裝備靜態但爐火續播', () => {
   const h = harness(); h.node.clientWidth = 88;
   h.fu.belt = Array.from({ length: 30 }, (_, i) => ({ id: String(i) })); h.update();
   assert.equal(h.entries().length, 2); h.step(2000);
@@ -87,9 +87,23 @@ test('窄帶限制可見節點、Resize後新節點從右進場，減少動態�
   assert.equal(h.x(h.entries()[2]), 176);
   h.reduce(true); h.update();
   assert.deepEqual(h.entries().map(e => h.x(e)), [0, 44, 88, 132]);
-  const paints = h.paints(); h.step(1000); assert.equal(h.paints(), paints); assert.equal(h.jobs.size, 0);
+  const paints = h.paints(); h.step(1000); assert.ok(h.paints() > paints); assert.equal(h.jobs.size, 1);
+  assert.deepEqual(h.entries().map(e => h.x(e)), [0, 44, 88, 132]);
   h.reduce(false); h.update();
   assert.deepEqual(h.entries().map(e => h.x(e)), [0, 44, 88, 132], '恢復動態不得倒退回原進場位置');
+});
+
+test('減少動態開啟時空熔爐亦持續冒焰，不等待新快照，停用與離頁仍停止', () => {
+  const h = harness(); h.reduce(true); h.update();
+  let paints = h.paints();
+  h.step(100); assert.ok(h.paints() > paints, '不可只畫第一幀便凍結運轉中的爐火');
+  paints = h.paints(); h.step(100); assert.ok(h.paints() > paints);
+  h.fu.enabled = false; h.update(); paints = h.paints();
+  h.step(500); assert.equal(h.paints(), paints); assert.equal(h.jobs.size, 0);
+  h.fu.enabled = true; h.update(); h.step(100); assert.ok(h.paints() > paints);
+  h.context.UI.tab = 'equip'; h.step(100); paints = h.paints();
+  h.step(500); assert.equal(h.paints(), paints); assert.equal(h.jobs.size, 0);
+  h.context.UI.tab = 'newforge'; h.update(); h.step(100); assert.ok(h.paints() > paints);
 });
 
 test('變更週期時仍以同一等速續走', () => {
