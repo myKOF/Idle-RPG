@@ -1,5 +1,17 @@
 # PATCH.md
 
+## Esc 菜單新增內測專用 AI 自然語言 GM 金鑰設定（Antigravity 2026-10-19）
+
+- **Esc 菜單與設置面板整合**：
+  - 在按下 Esc 鍵呼叫的設置視窗（`#tab-settings`）最頂端新增「🤖 AI 自然語言 GM 金鑰」面板，包含 API Key 密碼輸入框、👁️ 顯示／隱藏眼睛切換、💾 保存、🔌 測試連線、🗑️ 清除及即時狀態提示。
+  - 在 Esc 遊戲菜單（`#game-menu`）新增快捷直達按鈕 `#game-menu-ai-key`，方便快速跳轉至設置面板。
+- **嚴格內測環境雙重防護**：
+  - 依照 `isInternalServer()`（僅限 `localhost`、`127.0.0.1`、本機或內部網段）安全防護，非內測環境下 DOM 元素預設 `display: none` 且完全不初始化監聽事件，保證正式服玩家看不到也無法操作。
+  - API Key 僅儲存於本地瀏覽器 `localStorage`（Key: `idle_rpg_gemini_api_key`），不寫入雲端、存檔或 Git 版本庫，確保金鑰安全。
+- **測試與驗證**：
+  - 新增 `tests/ai-key-setting.test.cjs` 涵蓋非內測環境防護、內測環境儲存/讀取/清除、DOM 結構預設隱藏等單元測試，並回歸驗證 `tests/game-menu.test.cjs`，全數通過。
+
+
 ## 神話裝備底色調整為橘紅暖灰（Codex 2026-10-19）
 
 - 神話裝備底色採用使用者確認的橘紅至暖褐灰漸層，提亮暗部；一般裝備格與雙手武器副手一致，保留原有金紅品質框與副手提示。
