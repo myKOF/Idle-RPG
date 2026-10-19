@@ -11266,3 +11266,15 @@ Worker 存活且頁面正常完成載入。
 - 唯讀未改：AI規範／Workflow／prompts、原同步與報告／index復原工具、本機CLI版本與help、正式來源分支三方差異、上述回歸與OpenAI官方非互動文件。素材庫status乾淨，無本次素材變更與素材庫Commit。docs/AI_TASKS與develop既有尾端紀錄不同區段，候選git merge-file試跑0；工具其餘檔預檢無衝突。
 - 交付：工具Commit為本紀錄所在`[Codex] fix: 一鍵同步自動尋找 CLI 並續接衝突合併`，回覆附實際編號；可合併，並依使用者本輪整合授權合併進develop。不推送正式遠端。無本次未完成需求；限制為語意矛盾、未登入／無額度／離線或其他權限阻擋仍保留現場與報告，不保證任意設計衝突都能無人裁決。未跑全庫／瀏覽器。後續直接雙擊BAT，會依原流程解衝突、驗證、提交、同步及推送。
 - 最終工具整合：來源`092dd55f`，以merge-tree及正常merge確認無衝突，工具五份實體檔與來源逐檔一致；僅新增本紀錄，保留develop原任務歷史格式。正式衝突已於`25aeb3f9`完成；本工具合併Commit見本紀錄所在`[Codex] merge: 整合一鍵同步自動解衝突修正`。未推送正式遠端。
+
+
+## MYTHIC-WARMER-LIGHTER-20261019 — 神話裝備橘紅與提亮暗部
+
+- Owner：Codex；Done；單一開發者。使用者選定Codex預覽版並要求黑色再淡、整體偏橘紅。前置既有神話CSS完成；已明確授權接手與Antigravity aca1b098同兩處底色重疊，採使用者選定配色，不合併該分支。
+- 允許css/style.css兩處神話底色、index.html僅style快取、LV_upgrade_system.md外觀紀錄及本段；禁止玩法／JS／表格／存檔／其他品質與素材變更，不合併推送。保留同副本泥沼任務與使用者Excel修改；本段於檔尾追加並獨立stage，不提交其他任務。
+- 驗收：既有裝備副手／選取框／圖示回歸、Build、以正式CSS及既有裝備圖示的獨立瀏覽器外觀／Console檢查、diff與獨立Commit。純CSS無新素材或素材庫Commit，後續使用者重載驗收。
+
+- 完成4檔：css/style.css兩處共用同一橘紅至暖褐灰漸層（#d47752／#ad5f48／#7d5849／#514540），底部比Codex初版#343234更亮；一般神話與雙手副手一致，副手金黃覆色／框線／選取提示沿用。index.html僅style快取77→78；LV_upgrade_system與本段同步。未修改JS／玩法／表格／素材，沒有素材庫變更。
+- 驗證指令：node --test tests/equipment-two-hand-display.test.cjs tests/equipment-selection-border.test.cjs tests/equipment-weapon-icons.test.cjs；12項10通過、2項既有fixture失敗（缺syncEquipmentSelectionMemory／UI_GAME_TIMING）。唯讀fs攔截只將CSS恢復HEAD，重跑同12項仍10過／相同2失敗，無新增失敗、未改測試。npm.cmd run build：545檔通過；git diff --check通過。
+- 瀏覽器：臨時localhost以正式CSS與原裝備圖示呈現13格及雙手副手，目視確認橘紅／提亮暗部與金紅框；Console warning／error均0。此為隔離外觀fixture，未載入玩家存檔、未做完整遊戲操作／跨瀏覽器／全庫驗證。截圖mythic-warm-light.png保存本聊天visualizations；臨時頁及服務關閉。
+- 唯讀檢查未改：共通規範／AGENTS／Workflow／prompts、Antigravity底色差異、ashen-forge底板與格位、ui的renderEquip／圖示／星等產生、data裝備圖示與上述三份回歸。已知限制為上述2項既有失敗，無本次未完成需求；可就外觀範圍Review／合併，未合併推送。Commit為本段所在[Codex] fix: 神話裝備改為較明亮的橘紅暖灰底色，回覆附編號；後續重新整理遊戲驗收。
