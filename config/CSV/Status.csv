@@ -34,7 +34,7 @@ sgFrenzyCd,狂暴·爆擊傷害,💥,buff,stat,sgCritDmgUp,,,0,,0,200,6,0,refres
 sgStorm,暴風化身,🌪️,buff,stat,sgStorm,,,0,,0,0,3,0,refresh,1,,ground-storm-dance,,新版技能【暴風亂舞】：化身暴風，期間自動施放雙刀亂舞、可以普攻及施放技能。
 sgBloodrage,嗜血狂怒,💢,buff,stat,sgBloodrage,,,0,,0,20,8,0,refresh,1,,aura-bloodrage,,新版技能【嗜血狂怒】：攻速乘算提高（突破攻速上限）；期間各階狂怒效果生效。
 sgArmorBrk,破甲,⚒️,debuff,stat,sgDefBrk,,,0,,0,25,4,0,stack,4,,,,新版技能【破甲擊】：防禦降低（可疊層，疊層時重置時間；獨立鍵、與舊 defDown 減益加總計算）。
-sgBurn,烈焰燃燒,🔥,debuff,dot,,fire,skill,20,,0,0,5,0.5,strongest,1,,,st-tick-fire,新版技能【火球術／火柱】：火屬性持續傷害；每跳量與間隔由技能各階決定（引擎以 dps 覆寫）。
+sgBurn,烈焰燃燒,🔥,debuff,dot,,fire,skill,20,,0,0,5,0.5,strongest,1,,,st-tick-fire,新版技能【火球術／火柱／無限星環】：火屬性持續傷害；每跳量與間隔由技能各階決定（引擎以 dps 覆寫）。
 sgFireAmp,火焰增幅,🔥,buff,stat,sgFireAmp,fire,,0,,0,0,4,0,stack,50,,,,新版技能【火焰增幅】：範圍內每次燃燒作用疊一層火屬性傷害提升，最多 50 層，每次觸發重置時間；與傳奇烈火狩各自計算層數。
 sgFirehunt,火狩,☄️,buff,stat,sgFirehunt,fire,,0,,0,0,4,0,refresh,1,,,,新版技能【火狩】：火狩環繞自身的剩餘時間；【再生】的擊殺延長會累加在這裡。
 sgRockArmor,岩甲,🪨,buff,stat,sgRockArmor,earth,,0,,0,0,10,0,refresh,1,,,,新版技能【岩甲術】：岩甲護盾的剩餘時間；第 3、5、6、7 階的效果只在此期間生效（護盾本身走「護盾」狀態）。

@@ -1,5 +1,29 @@
 # AI_TASKS.md
 
+## FIREGOD-FLAME-RING-20261019 — 火神降臨光圈改為冒焰火圈
+
+- Owner：Codex；Done；單一開發者。使用者附圖要求將火神降臨目前紅色光圈改造成向上冒火焰的火圈；只調既有ground-domain-fire Preset與layout，保留表引用、角色跟隨、判定半徑／傷害／節拍。沿用已出貨並在火神星環使用的flame_04素材，沒有點陣素材繪製／新外部素材；這是引擎原生發射器配置，RPG Mote繪圖匯出不適用此JSON與粒子投影。
+- 範圍：vfx/presets/ground-domain-fire.json及layout、由vfx-library-root解析素材庫中對應既有來源、Runtime資源版本／index與Editor快取、docs/vfx/GROUND_PROJECTION_AUDIT.md、LV_upgrade_system與本紀錄。禁止模擬／數值／表格／VFX Core或後端／其他Preset／素材貼圖與來源第三類；與同時執行的無限星環任務不同區段。預檢相關檔無其他來源變更，index與Claude不同快取且三方乾跑乾淨。
+- 驗收：圈邊持續橙黃火焰／火星、地面1:0.5且火焰直立、透明中心／原作用範圍與跟隨、原生Core／Runtime與瀏覽器GPU目視、粒子上限／表用途／匯出檢查／舊Editor防覆寫測試／Build，素材庫先Commit再遊戲Commit。提醒開著的Editor需保留未儲存工作另存後重載，不能直接以舊頁覆蓋新版。
+- 完成：24個沿圓周的原生particle發射點，黃→橙→紅淡出、持續上升／火星，弱化填色並取消內圈，保持authored.radius100與地面1:0.5，火焰upright只投影出生位置、worldSpace=false跟隨。27層／粒子硬上限136，未改Core／Renderer、表引用、範圍或計算；Runtime DATA_VERSION更新firegod-flame-ring，遊戲及Editor vfx-runtime快取215同步。素材採既有Kenney Particle Pack flame_04，素材庫License.txt確認CC0，無新貼圖、下載或改圖，圈邊組合為本次自行配置。
+- 修改檔：vfx/presets/ground-domain-fire.json、vfx/layouts/ground-domain-fire.json、js/vfx-runtime.js、index.html對應快取、tools/vfx/editor/index.html、docs/vfx/GROUND_PROJECTION_AUDIT.md、LV_upgrade_system.md、本紀錄；同一交付含下項無限星環燃燒。素材庫既有codex-authored/ground-projection/presets及layouts同路徑同步，兩端逐位元相同。唯讀未改：VFX schema／Core／Pixi後端、既有火神狀態與作用範圍、出貨索引及貼圖、Editor存檔guard與library-root／匯出工具。
+- 測試：`node --test --test-reporter=tap tests/vfx-ground-plane.test.cjs tests/vfx-preset-cost.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-editor-cache-versions.test.cjs`53/53；`node --test --test-reporter=tap tests/vfx-core.test.cjs tests/vfx-editor-guard.test.cjs`155/155，含舊版本／外部修改409拒寫與資料保留。`node tools/vfx/export-assets.cjs --check`已最新；無新素材故未重建匯出樹；`npm.cmd run build`544檔通過、diff通過。index與Claude不同快取區段，三方merge-file乾跑exit0。自我Review確認只有已登記表引用的原Preset變更，新增火焰不改判定或地面圓大小、核心硬上限與配置預算內。
+- 瀏覽器：IAB隱藏GPU Editor與seed1019隔離遊戲角色，目視圈邊持續橙黃冒焰／中心通透／直立火焰；原生Worker sgFireGodBody狀態與vfxR經正式battle面板／Runtime顯示角色周圍火圈，換成無限星環時原火圈撤回。暫停fixture補送原生5Hz battle快照以維持Runtime光環0.6秒保活，無產品程式變更；初版fixture停快照造成光環逾期，修正fixture後已實戰目視通過。Editor／遊戲Console error／warning0，visualizations/firegod-flame-ring-preview.png及firegod-flame-ring-game.png已保存；分頁與測試服務關閉，不讀真人存檔。
+- 交付：素材庫Commit `4779edf`，遊戲Commit為本紀錄所在`[Codex] feat: 無限星環附加燃燒並重做火神降臨火圈`，回覆附實際編號；無本次未完成功能、可Review／合併，未合併推送。未驗多人技能密集長戰；下一步重新整理8123，開著的Editor先另存未儲存工作再重載。
+
+## INFINITE-RING-BURN-20261019 — 無限星環命中附加六秒燃燒
+
+- Owner：Codex；Done；單一開發者。使用者要求無限星環命中附加6秒燃燒，每0.5秒造成200%火焰傷害；以火狩群組魔攻基準計算，未指定成長故固定200%，保留原螺旋／額外團數／伴生機制。
+- 範圍：skills2僅無限星環燃燒規格、環繞成功命中施加與狀態角色接線；Skills2／Status Excel／CSV及生成JS對應參數／狀態／說明，新增infinite-ring-burn原生回歸，index／bridge／Worker快取、game_formula／LV_upgrade_system／本紀錄。禁止其他技能調校／Protocol／存檔／素材／其他副本；使用者Skills2與Gem_resonance修改保留，隔離提交，不合併推送。
+- 預檢：其餘範圍無外部變更；index與Claude ca9e0b65不同快取區段且無語意相依，三方乾跑確認乾淨後分段修改。驗收原生200%每跳／6秒／0.5秒、成功命中／未命中／多敵人／延後生成／伴生、其他超神不燃燒、狀態角色與火焰增幅共用、表定值擾動、狀態快照與每跳特效／傷害一致；Excel精準修改與正常重開、配置往返／相依回歸／Worker瀏覽器／Build／自我Review後Commit。
+- 完成：無限星環列fx加入dotSec6／dotGap0.5／dotPct200與敵方sgBurn、兩欄描述同步；Status sgBurn僅說明補來源無限星環。場域以施放魔攻×dotPct÷dotGap保存burnSpec，成功命中才走sgApplyBurn；burn狀態角色登記，保留既有取強／刷新、爆燃與火焰增幅，不另做新狀態／特效來源。母體、伴生與延後放出的火狩共用同一場域規格，火狩離場不提早清掉已施加燃燒。
+- 修改檔：js/skills2.js／status.js、Skills2與Status Excel／CSV、tests/infinite-ring-burn.test.cjs、index.html／js/bridge.js／js/worker/sim.worker.js快取、game_formula.md／LV_upgrade_system.md／本紀錄。skills2快取332、status38、bridge313及Worker資源／匯入同步infinite-burn，無Protocol／存檔／解鎖改變。與上項視覺調整同一遊戲Commit。
+- Excel原生API：Skills2僅AU110／AV110／AW110／AX110，Status僅T37；正常重開Saved=True無修復提示。唯讀逐格值／公式／樣式／行高／欄寬／檢視／合併／篩選／驗證／註解比較均保留其他內容。HEAD工作簿副本原生同改產生提交資料，JS／CSV同源重建，驗證僅infiniteRing及sgBurn.desc有變；使用者其他Skills2與Gem_resonance調整保留未提交。兩表apply乾跑零語意差異。
+- 測試：`node --test --test-reporter=tap tests/infinite-ring-burn.test.cjs`4/4原生引擎；Lv.1／10固定200%魔攻、半秒前不跳傷／半秒1000傷（魔攻500）、六秒到期／到期不續傷、狀態圖示／dps／remain及Status每跳Preset事件一致，未命中／無接觸／其他超神不燃燒、多目標／刷新不疊層、後放／伴生、表定數值擾動／狀態換表與清空／火焰增幅識別通過。
+- 相依回歸：隔離提交資料執行`node --test --test-reporter=tap tests/infinite-ring-burn.test.cjs tests/firehunt-orb-pairs.test.cjs tests/skill2-magic-firehunt.test.cjs tests/fire-amplify-cap.test.cjs tests/status-system.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/ui-worker-events.test.cjs`83/83；Build544檔通過，未跑全庫。唯讀未改：通用applyDot／tickStatuses／burn取強與刷新、來源傷害及火焰增幅／爆燃出口、狀態每跳VFX收集、Worker Protocol／面板快照／shim及原有螺旋幾何。自我Review確認每跳量先除間隔轉dps、只在非miss且活敵時施加，不把200%再乘一次火狩直接傷害、不增加未指定每級倍率。
+- 瀏覽器：隨機localhost／seed1019隔離角色，正式Worker及原生跳傷／Status事件；魔攻2019時施加6秒／間隔0.5秒／每跳4038，半秒後實扣4038且剩5.5秒；最終場景魔攻2047時同樣每跳4094／實扣4094／剩5.5秒。visualizations/infinite-ring-burn.png保存，Console error／warning0，分頁及測試服務關閉，沒有真人存檔修改。
+- 交付：INFINITE-RING-BURN-20261019完成，無本次未完成項目，可Review／合併；Commit為本紀錄所在`[Codex] feat: 無限星環附加燃燒並重做火神降臨火圈`，回覆附實際編號。未合併推送；沿用既有燃燒到期與取強規則，未驗真人長戰；下一步重新整理8123。
+
 ## FIREHUNT-NO-BORN-COMPANION-20261019 — 狩神之舞取消自帶伴生
 
 - Owner：Codex；Done；單一開發者。使用者要求取消狩神之舞自帶伴生；保留伴生火狩命中機率、每母體一次及伴生不可再伴生，其他傷害／圈數／時間／超神／傳奇不變。

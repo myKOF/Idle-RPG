@@ -1,5 +1,11 @@
 # 地面特效投影交接：VFX-GROUND-20260922
 
+## 2026-10-19 火神降臨火圈
+
+`ground-domain-fire`保持既有Status sgFireGodBody引用與authored.radius=100，弱化填色、取消內圈，沿圓周配置24個持續冒焰發射點，使用已出貨的`particle-pack/png-black-background/flame_04.png`；火焰由黃轉橙紅、向上飄散，中心通透。圈邊保留地面投影1:0.5；火焰／火星以projection.upright只投影出生位置，外形與上升運動保持直立，worldSpace=false逐幀跟隨角色。27層、粒子硬上限136，無Core／後端或戰鬥參數修改、無新點陣貼圖。素材庫沿既有ground-projection/presets及layouts路徑同步，原圖層內圈已由新版取代。
+
+Runtime DATA_VERSION與遊戲／Editor載入快取同步。正在開啟此Preset的舊Editor須先下載複本或另存保留未存工作，再重載新版；禁止直接用舊分頁儲存覆蓋。現行版本／雜湊guard已驗證外部修改及過期版本儲存被409拒絕、資料保留，不需另改編輯器寫入邏輯。
+
 完成 83 份 Preset、185 個地面圖層。地面圓形採 1:0.5，方形先轉 45° 再壓縮，沿用場景透視。泥沼與暴風雪依使用者同意同步旋轉實際矩形判定；其他傷害數值與時序不變。直立本體及未列入範圍的飛行、斬擊與受擊球體未做投影。
 
 ## 實作與檢查

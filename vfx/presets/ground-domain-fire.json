@@ -13,22 +13,22 @@
         "x": 0.3906,
         "y": 0.3906
       },
-      "alpha": 0.1,
+      "alpha": 0.045,
       "tint": "#ffd447",
       "blendMode": "add",
       "duration": 1.85,
       "alphaOverLife": [
         [
           0,
-          0.1
+          0.035
         ],
         [
           0.5,
-          0.14
+          0.055
         ],
         [
           1,
-          0.1
+          0.035
         ]
       ],
       "scaleOverLife": [
@@ -59,22 +59,22 @@
         "x": 0.3906,
         "y": 0.3906
       },
-      "alpha": 0.75,
-      "tint": "#e63924",
+      "alpha": 0.58,
+      "tint": "#ff7c16",
       "blendMode": "add",
       "duration": 1.85,
       "alphaOverLife": [
         [
           0,
-          0.7
+          0.48
         ],
         [
           0.5,
-          0.9
+          0.65
         ],
         [
           1,
-          0.7
+          0.48
         ]
       ],
       "scaleOverLife": [
@@ -89,52 +89,6 @@
         [
           1,
           0.96
-        ]
-      ],
-      "projection": {
-        "x": 1,
-        "y": 0.5
-      }
-    },
-    {
-      "id": "inner",
-      "type": "sprite",
-      "assetId": "light-masks-1.0/default/ring_a.png",
-      "zIndex": 2,
-      "scale": {
-        "x": 0.293,
-        "y": 0.293
-      },
-      "alpha": 0.55,
-      "tint": "#ff6a2a",
-      "blendMode": "add",
-      "duration": 1.85,
-      "alphaOverLife": [
-        [
-          0,
-          0.5
-        ],
-        [
-          0.5,
-          0.7
-        ],
-        [
-          1,
-          0.5
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          1.04
-        ],
-        [
-          0.5,
-          0.96
-        ],
-        [
-          1,
-          1.04
         ]
       ],
       "projection": {
@@ -151,7 +105,7 @@
       "blendMode": "add",
       "emission": {
         "mode": "rate",
-        "rate": 10
+        "rate": 14
       },
       "lifetime": [
         0.7,
@@ -197,6 +151,2725 @@
         [
           1,
           0.4
+        ]
+      ],
+      "maxParticles": 16,
+      "projection": {
+        "x": 1,
+        "y": 0.5,
+        "upright": true
+      },
+      "worldSpace": false
+    },
+    {
+      "id": "rim-flame-01",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 4,
+      "position": {
+        "x": 98,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.7,
+        "y": 1.45
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      },
+      "alpha": 1,
+      "tint": "#ff9f1c",
+      "blendMode": "add",
+      "duration": 1.85,
+      "emission": {
+        "mode": "rate",
+        "rate": 9
+      },
+      "maxParticles": 5,
+      "lifetime": [
+        0.28,
+        0.48
+      ],
+      "spawn": {
+        "shape": "circle",
+        "radius": 3
+      },
+      "speed": [
+        12,
+        32
+      ],
+      "direction": -90,
+      "spread": 24,
+      "gravity": {
+        "x": 0,
+        "y": -22
+      },
+      "worldSpace": false,
+      "startScale": [
+        0.052,
+        0.082
+      ],
+      "rotationStart": [
+        -8,
+        8
+      ],
+      "rotationSpeed": [
+        -12,
+        12
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5,
+        "upright": true
+      },
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          0.95
+        ],
+        [
+          0.58,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#fff0a0"
+        ],
+        [
+          0.28,
+          "#ffbe38"
+        ],
+        [
+          0.65,
+          "#ff6a0a"
+        ],
+        [
+          1,
+          "#b92506"
+        ]
+      ]
+    },
+    {
+      "id": "rim-flame-02",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 4,
+      "position": {
+        "x": 94.6607,
+        "y": 25.3643
+      },
+      "scale": {
+        "x": 0.7,
+        "y": 1.45
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      },
+      "alpha": 1,
+      "tint": "#ff9f1c",
+      "blendMode": "add",
+      "duration": 1.85,
+      "emission": {
+        "mode": "rate",
+        "rate": 9
+      },
+      "maxParticles": 5,
+      "lifetime": [
+        0.28,
+        0.48
+      ],
+      "spawn": {
+        "shape": "circle",
+        "radius": 3
+      },
+      "speed": [
+        12,
+        32
+      ],
+      "direction": -90,
+      "spread": 24,
+      "gravity": {
+        "x": 0,
+        "y": -22
+      },
+      "worldSpace": false,
+      "startScale": [
+        0.052,
+        0.082
+      ],
+      "rotationStart": [
+        -8,
+        8
+      ],
+      "rotationSpeed": [
+        -12,
+        12
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5,
+        "upright": true
+      },
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          0.95
+        ],
+        [
+          0.58,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#fff0a0"
+        ],
+        [
+          0.28,
+          "#ffbe38"
+        ],
+        [
+          0.65,
+          "#ff6a0a"
+        ],
+        [
+          1,
+          "#b92506"
+        ]
+      ]
+    },
+    {
+      "id": "rim-flame-03",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 4,
+      "position": {
+        "x": 84.8705,
+        "y": 49
+      },
+      "scale": {
+        "x": 0.7,
+        "y": 1.45
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      },
+      "alpha": 1,
+      "tint": "#ff9f1c",
+      "blendMode": "add",
+      "duration": 1.85,
+      "emission": {
+        "mode": "rate",
+        "rate": 9
+      },
+      "maxParticles": 5,
+      "lifetime": [
+        0.28,
+        0.48
+      ],
+      "spawn": {
+        "shape": "circle",
+        "radius": 3
+      },
+      "speed": [
+        12,
+        32
+      ],
+      "direction": -90,
+      "spread": 24,
+      "gravity": {
+        "x": 0,
+        "y": -22
+      },
+      "worldSpace": false,
+      "startScale": [
+        0.052,
+        0.082
+      ],
+      "rotationStart": [
+        -8,
+        8
+      ],
+      "rotationSpeed": [
+        -12,
+        12
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5,
+        "upright": true
+      },
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          0.95
+        ],
+        [
+          0.58,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#fff0a0"
+        ],
+        [
+          0.28,
+          "#ffbe38"
+        ],
+        [
+          0.65,
+          "#ff6a0a"
+        ],
+        [
+          1,
+          "#b92506"
+        ]
+      ]
+    },
+    {
+      "id": "rim-flame-04",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 4,
+      "position": {
+        "x": 69.2965,
+        "y": 69.2965
+      },
+      "scale": {
+        "x": 0.7,
+        "y": 1.45
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      },
+      "alpha": 1,
+      "tint": "#ff9f1c",
+      "blendMode": "add",
+      "duration": 1.85,
+      "emission": {
+        "mode": "rate",
+        "rate": 9
+      },
+      "maxParticles": 5,
+      "lifetime": [
+        0.28,
+        0.48
+      ],
+      "spawn": {
+        "shape": "circle",
+        "radius": 3
+      },
+      "speed": [
+        12,
+        32
+      ],
+      "direction": -90,
+      "spread": 24,
+      "gravity": {
+        "x": 0,
+        "y": -22
+      },
+      "worldSpace": false,
+      "startScale": [
+        0.052,
+        0.082
+      ],
+      "rotationStart": [
+        -8,
+        8
+      ],
+      "rotationSpeed": [
+        -12,
+        12
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5,
+        "upright": true
+      },
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          0.95
+        ],
+        [
+          0.58,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#fff0a0"
+        ],
+        [
+          0.28,
+          "#ffbe38"
+        ],
+        [
+          0.65,
+          "#ff6a0a"
+        ],
+        [
+          1,
+          "#b92506"
+        ]
+      ]
+    },
+    {
+      "id": "rim-flame-05",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 4,
+      "position": {
+        "x": 49,
+        "y": 84.8705
+      },
+      "scale": {
+        "x": 0.7,
+        "y": 1.45
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      },
+      "alpha": 1,
+      "tint": "#ff9f1c",
+      "blendMode": "add",
+      "duration": 1.85,
+      "emission": {
+        "mode": "rate",
+        "rate": 9
+      },
+      "maxParticles": 5,
+      "lifetime": [
+        0.28,
+        0.48
+      ],
+      "spawn": {
+        "shape": "circle",
+        "radius": 3
+      },
+      "speed": [
+        12,
+        32
+      ],
+      "direction": -90,
+      "spread": 24,
+      "gravity": {
+        "x": 0,
+        "y": -22
+      },
+      "worldSpace": false,
+      "startScale": [
+        0.052,
+        0.082
+      ],
+      "rotationStart": [
+        -8,
+        8
+      ],
+      "rotationSpeed": [
+        -12,
+        12
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5,
+        "upright": true
+      },
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          0.95
+        ],
+        [
+          0.58,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#fff0a0"
+        ],
+        [
+          0.28,
+          "#ffbe38"
+        ],
+        [
+          0.65,
+          "#ff6a0a"
+        ],
+        [
+          1,
+          "#b92506"
+        ]
+      ]
+    },
+    {
+      "id": "rim-flame-06",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 4,
+      "position": {
+        "x": 25.3643,
+        "y": 94.6607
+      },
+      "scale": {
+        "x": 0.7,
+        "y": 1.45
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      },
+      "alpha": 1,
+      "tint": "#ff9f1c",
+      "blendMode": "add",
+      "duration": 1.85,
+      "emission": {
+        "mode": "rate",
+        "rate": 9
+      },
+      "maxParticles": 5,
+      "lifetime": [
+        0.28,
+        0.48
+      ],
+      "spawn": {
+        "shape": "circle",
+        "radius": 3
+      },
+      "speed": [
+        12,
+        32
+      ],
+      "direction": -90,
+      "spread": 24,
+      "gravity": {
+        "x": 0,
+        "y": -22
+      },
+      "worldSpace": false,
+      "startScale": [
+        0.052,
+        0.082
+      ],
+      "rotationStart": [
+        -8,
+        8
+      ],
+      "rotationSpeed": [
+        -12,
+        12
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5,
+        "upright": true
+      },
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          0.95
+        ],
+        [
+          0.58,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#fff0a0"
+        ],
+        [
+          0.28,
+          "#ffbe38"
+        ],
+        [
+          0.65,
+          "#ff6a0a"
+        ],
+        [
+          1,
+          "#b92506"
+        ]
+      ]
+    },
+    {
+      "id": "rim-flame-07",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 4,
+      "position": {
+        "x": 0,
+        "y": 98
+      },
+      "scale": {
+        "x": 0.7,
+        "y": 1.45
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      },
+      "alpha": 1,
+      "tint": "#ff9f1c",
+      "blendMode": "add",
+      "duration": 1.85,
+      "emission": {
+        "mode": "rate",
+        "rate": 9
+      },
+      "maxParticles": 5,
+      "lifetime": [
+        0.28,
+        0.48
+      ],
+      "spawn": {
+        "shape": "circle",
+        "radius": 3
+      },
+      "speed": [
+        12,
+        32
+      ],
+      "direction": -90,
+      "spread": 24,
+      "gravity": {
+        "x": 0,
+        "y": -22
+      },
+      "worldSpace": false,
+      "startScale": [
+        0.052,
+        0.082
+      ],
+      "rotationStart": [
+        -8,
+        8
+      ],
+      "rotationSpeed": [
+        -12,
+        12
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5,
+        "upright": true
+      },
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          0.95
+        ],
+        [
+          0.58,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#fff0a0"
+        ],
+        [
+          0.28,
+          "#ffbe38"
+        ],
+        [
+          0.65,
+          "#ff6a0a"
+        ],
+        [
+          1,
+          "#b92506"
+        ]
+      ]
+    },
+    {
+      "id": "rim-flame-08",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 4,
+      "position": {
+        "x": -25.3643,
+        "y": 94.6607
+      },
+      "scale": {
+        "x": 0.7,
+        "y": 1.45
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      },
+      "alpha": 1,
+      "tint": "#ff9f1c",
+      "blendMode": "add",
+      "duration": 1.85,
+      "emission": {
+        "mode": "rate",
+        "rate": 9
+      },
+      "maxParticles": 5,
+      "lifetime": [
+        0.28,
+        0.48
+      ],
+      "spawn": {
+        "shape": "circle",
+        "radius": 3
+      },
+      "speed": [
+        12,
+        32
+      ],
+      "direction": -90,
+      "spread": 24,
+      "gravity": {
+        "x": 0,
+        "y": -22
+      },
+      "worldSpace": false,
+      "startScale": [
+        0.052,
+        0.082
+      ],
+      "rotationStart": [
+        -8,
+        8
+      ],
+      "rotationSpeed": [
+        -12,
+        12
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5,
+        "upright": true
+      },
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          0.95
+        ],
+        [
+          0.58,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#fff0a0"
+        ],
+        [
+          0.28,
+          "#ffbe38"
+        ],
+        [
+          0.65,
+          "#ff6a0a"
+        ],
+        [
+          1,
+          "#b92506"
+        ]
+      ]
+    },
+    {
+      "id": "rim-flame-09",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 4,
+      "position": {
+        "x": -49,
+        "y": 84.8705
+      },
+      "scale": {
+        "x": 0.7,
+        "y": 1.45
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      },
+      "alpha": 1,
+      "tint": "#ff9f1c",
+      "blendMode": "add",
+      "duration": 1.85,
+      "emission": {
+        "mode": "rate",
+        "rate": 9
+      },
+      "maxParticles": 5,
+      "lifetime": [
+        0.28,
+        0.48
+      ],
+      "spawn": {
+        "shape": "circle",
+        "radius": 3
+      },
+      "speed": [
+        12,
+        32
+      ],
+      "direction": -90,
+      "spread": 24,
+      "gravity": {
+        "x": 0,
+        "y": -22
+      },
+      "worldSpace": false,
+      "startScale": [
+        0.052,
+        0.082
+      ],
+      "rotationStart": [
+        -8,
+        8
+      ],
+      "rotationSpeed": [
+        -12,
+        12
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5,
+        "upright": true
+      },
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          0.95
+        ],
+        [
+          0.58,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#fff0a0"
+        ],
+        [
+          0.28,
+          "#ffbe38"
+        ],
+        [
+          0.65,
+          "#ff6a0a"
+        ],
+        [
+          1,
+          "#b92506"
+        ]
+      ]
+    },
+    {
+      "id": "rim-flame-10",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 4,
+      "position": {
+        "x": -69.2965,
+        "y": 69.2965
+      },
+      "scale": {
+        "x": 0.7,
+        "y": 1.45
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      },
+      "alpha": 1,
+      "tint": "#ff9f1c",
+      "blendMode": "add",
+      "duration": 1.85,
+      "emission": {
+        "mode": "rate",
+        "rate": 9
+      },
+      "maxParticles": 5,
+      "lifetime": [
+        0.28,
+        0.48
+      ],
+      "spawn": {
+        "shape": "circle",
+        "radius": 3
+      },
+      "speed": [
+        12,
+        32
+      ],
+      "direction": -90,
+      "spread": 24,
+      "gravity": {
+        "x": 0,
+        "y": -22
+      },
+      "worldSpace": false,
+      "startScale": [
+        0.052,
+        0.082
+      ],
+      "rotationStart": [
+        -8,
+        8
+      ],
+      "rotationSpeed": [
+        -12,
+        12
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5,
+        "upright": true
+      },
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          0.95
+        ],
+        [
+          0.58,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#fff0a0"
+        ],
+        [
+          0.28,
+          "#ffbe38"
+        ],
+        [
+          0.65,
+          "#ff6a0a"
+        ],
+        [
+          1,
+          "#b92506"
+        ]
+      ]
+    },
+    {
+      "id": "rim-flame-11",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 4,
+      "position": {
+        "x": -84.8705,
+        "y": 49
+      },
+      "scale": {
+        "x": 0.7,
+        "y": 1.45
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      },
+      "alpha": 1,
+      "tint": "#ff9f1c",
+      "blendMode": "add",
+      "duration": 1.85,
+      "emission": {
+        "mode": "rate",
+        "rate": 9
+      },
+      "maxParticles": 5,
+      "lifetime": [
+        0.28,
+        0.48
+      ],
+      "spawn": {
+        "shape": "circle",
+        "radius": 3
+      },
+      "speed": [
+        12,
+        32
+      ],
+      "direction": -90,
+      "spread": 24,
+      "gravity": {
+        "x": 0,
+        "y": -22
+      },
+      "worldSpace": false,
+      "startScale": [
+        0.052,
+        0.082
+      ],
+      "rotationStart": [
+        -8,
+        8
+      ],
+      "rotationSpeed": [
+        -12,
+        12
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5,
+        "upright": true
+      },
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          0.95
+        ],
+        [
+          0.58,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#fff0a0"
+        ],
+        [
+          0.28,
+          "#ffbe38"
+        ],
+        [
+          0.65,
+          "#ff6a0a"
+        ],
+        [
+          1,
+          "#b92506"
+        ]
+      ]
+    },
+    {
+      "id": "rim-flame-12",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 4,
+      "position": {
+        "x": -94.6607,
+        "y": 25.3643
+      },
+      "scale": {
+        "x": 0.7,
+        "y": 1.45
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      },
+      "alpha": 1,
+      "tint": "#ff9f1c",
+      "blendMode": "add",
+      "duration": 1.85,
+      "emission": {
+        "mode": "rate",
+        "rate": 9
+      },
+      "maxParticles": 5,
+      "lifetime": [
+        0.28,
+        0.48
+      ],
+      "spawn": {
+        "shape": "circle",
+        "radius": 3
+      },
+      "speed": [
+        12,
+        32
+      ],
+      "direction": -90,
+      "spread": 24,
+      "gravity": {
+        "x": 0,
+        "y": -22
+      },
+      "worldSpace": false,
+      "startScale": [
+        0.052,
+        0.082
+      ],
+      "rotationStart": [
+        -8,
+        8
+      ],
+      "rotationSpeed": [
+        -12,
+        12
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5,
+        "upright": true
+      },
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          0.95
+        ],
+        [
+          0.58,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#fff0a0"
+        ],
+        [
+          0.28,
+          "#ffbe38"
+        ],
+        [
+          0.65,
+          "#ff6a0a"
+        ],
+        [
+          1,
+          "#b92506"
+        ]
+      ]
+    },
+    {
+      "id": "rim-flame-13",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 4,
+      "position": {
+        "x": -98,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.7,
+        "y": 1.45
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      },
+      "alpha": 1,
+      "tint": "#ff9f1c",
+      "blendMode": "add",
+      "duration": 1.85,
+      "emission": {
+        "mode": "rate",
+        "rate": 9
+      },
+      "maxParticles": 5,
+      "lifetime": [
+        0.28,
+        0.48
+      ],
+      "spawn": {
+        "shape": "circle",
+        "radius": 3
+      },
+      "speed": [
+        12,
+        32
+      ],
+      "direction": -90,
+      "spread": 24,
+      "gravity": {
+        "x": 0,
+        "y": -22
+      },
+      "worldSpace": false,
+      "startScale": [
+        0.052,
+        0.082
+      ],
+      "rotationStart": [
+        -8,
+        8
+      ],
+      "rotationSpeed": [
+        -12,
+        12
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5,
+        "upright": true
+      },
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          0.95
+        ],
+        [
+          0.58,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#fff0a0"
+        ],
+        [
+          0.28,
+          "#ffbe38"
+        ],
+        [
+          0.65,
+          "#ff6a0a"
+        ],
+        [
+          1,
+          "#b92506"
+        ]
+      ]
+    },
+    {
+      "id": "rim-flame-14",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 2,
+      "position": {
+        "x": -94.6607,
+        "y": -25.3643
+      },
+      "scale": {
+        "x": 0.7,
+        "y": 1.45
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      },
+      "alpha": 1,
+      "tint": "#ff9f1c",
+      "blendMode": "add",
+      "duration": 1.85,
+      "emission": {
+        "mode": "rate",
+        "rate": 9
+      },
+      "maxParticles": 5,
+      "lifetime": [
+        0.28,
+        0.48
+      ],
+      "spawn": {
+        "shape": "circle",
+        "radius": 3
+      },
+      "speed": [
+        12,
+        32
+      ],
+      "direction": -90,
+      "spread": 24,
+      "gravity": {
+        "x": 0,
+        "y": -22
+      },
+      "worldSpace": false,
+      "startScale": [
+        0.052,
+        0.082
+      ],
+      "rotationStart": [
+        -8,
+        8
+      ],
+      "rotationSpeed": [
+        -12,
+        12
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5,
+        "upright": true
+      },
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          0.95
+        ],
+        [
+          0.58,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#fff0a0"
+        ],
+        [
+          0.28,
+          "#ffbe38"
+        ],
+        [
+          0.65,
+          "#ff6a0a"
+        ],
+        [
+          1,
+          "#b92506"
+        ]
+      ]
+    },
+    {
+      "id": "rim-flame-15",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 2,
+      "position": {
+        "x": -84.8705,
+        "y": -49
+      },
+      "scale": {
+        "x": 0.7,
+        "y": 1.45
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      },
+      "alpha": 1,
+      "tint": "#ff9f1c",
+      "blendMode": "add",
+      "duration": 1.85,
+      "emission": {
+        "mode": "rate",
+        "rate": 9
+      },
+      "maxParticles": 5,
+      "lifetime": [
+        0.28,
+        0.48
+      ],
+      "spawn": {
+        "shape": "circle",
+        "radius": 3
+      },
+      "speed": [
+        12,
+        32
+      ],
+      "direction": -90,
+      "spread": 24,
+      "gravity": {
+        "x": 0,
+        "y": -22
+      },
+      "worldSpace": false,
+      "startScale": [
+        0.052,
+        0.082
+      ],
+      "rotationStart": [
+        -8,
+        8
+      ],
+      "rotationSpeed": [
+        -12,
+        12
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5,
+        "upright": true
+      },
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          0.95
+        ],
+        [
+          0.58,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#fff0a0"
+        ],
+        [
+          0.28,
+          "#ffbe38"
+        ],
+        [
+          0.65,
+          "#ff6a0a"
+        ],
+        [
+          1,
+          "#b92506"
+        ]
+      ]
+    },
+    {
+      "id": "rim-flame-16",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 2,
+      "position": {
+        "x": -69.2965,
+        "y": -69.2965
+      },
+      "scale": {
+        "x": 0.7,
+        "y": 1.45
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      },
+      "alpha": 1,
+      "tint": "#ff9f1c",
+      "blendMode": "add",
+      "duration": 1.85,
+      "emission": {
+        "mode": "rate",
+        "rate": 9
+      },
+      "maxParticles": 5,
+      "lifetime": [
+        0.28,
+        0.48
+      ],
+      "spawn": {
+        "shape": "circle",
+        "radius": 3
+      },
+      "speed": [
+        12,
+        32
+      ],
+      "direction": -90,
+      "spread": 24,
+      "gravity": {
+        "x": 0,
+        "y": -22
+      },
+      "worldSpace": false,
+      "startScale": [
+        0.052,
+        0.082
+      ],
+      "rotationStart": [
+        -8,
+        8
+      ],
+      "rotationSpeed": [
+        -12,
+        12
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5,
+        "upright": true
+      },
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          0.95
+        ],
+        [
+          0.58,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#fff0a0"
+        ],
+        [
+          0.28,
+          "#ffbe38"
+        ],
+        [
+          0.65,
+          "#ff6a0a"
+        ],
+        [
+          1,
+          "#b92506"
+        ]
+      ]
+    },
+    {
+      "id": "rim-flame-17",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 2,
+      "position": {
+        "x": -49,
+        "y": -84.8705
+      },
+      "scale": {
+        "x": 0.7,
+        "y": 1.45
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      },
+      "alpha": 1,
+      "tint": "#ff9f1c",
+      "blendMode": "add",
+      "duration": 1.85,
+      "emission": {
+        "mode": "rate",
+        "rate": 9
+      },
+      "maxParticles": 5,
+      "lifetime": [
+        0.28,
+        0.48
+      ],
+      "spawn": {
+        "shape": "circle",
+        "radius": 3
+      },
+      "speed": [
+        12,
+        32
+      ],
+      "direction": -90,
+      "spread": 24,
+      "gravity": {
+        "x": 0,
+        "y": -22
+      },
+      "worldSpace": false,
+      "startScale": [
+        0.052,
+        0.082
+      ],
+      "rotationStart": [
+        -8,
+        8
+      ],
+      "rotationSpeed": [
+        -12,
+        12
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5,
+        "upright": true
+      },
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          0.95
+        ],
+        [
+          0.58,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#fff0a0"
+        ],
+        [
+          0.28,
+          "#ffbe38"
+        ],
+        [
+          0.65,
+          "#ff6a0a"
+        ],
+        [
+          1,
+          "#b92506"
+        ]
+      ]
+    },
+    {
+      "id": "rim-flame-18",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 2,
+      "position": {
+        "x": -25.3643,
+        "y": -94.6607
+      },
+      "scale": {
+        "x": 0.7,
+        "y": 1.45
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      },
+      "alpha": 1,
+      "tint": "#ff9f1c",
+      "blendMode": "add",
+      "duration": 1.85,
+      "emission": {
+        "mode": "rate",
+        "rate": 9
+      },
+      "maxParticles": 5,
+      "lifetime": [
+        0.28,
+        0.48
+      ],
+      "spawn": {
+        "shape": "circle",
+        "radius": 3
+      },
+      "speed": [
+        12,
+        32
+      ],
+      "direction": -90,
+      "spread": 24,
+      "gravity": {
+        "x": 0,
+        "y": -22
+      },
+      "worldSpace": false,
+      "startScale": [
+        0.052,
+        0.082
+      ],
+      "rotationStart": [
+        -8,
+        8
+      ],
+      "rotationSpeed": [
+        -12,
+        12
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5,
+        "upright": true
+      },
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          0.95
+        ],
+        [
+          0.58,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#fff0a0"
+        ],
+        [
+          0.28,
+          "#ffbe38"
+        ],
+        [
+          0.65,
+          "#ff6a0a"
+        ],
+        [
+          1,
+          "#b92506"
+        ]
+      ]
+    },
+    {
+      "id": "rim-flame-19",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 2,
+      "position": {
+        "x": 0,
+        "y": -98
+      },
+      "scale": {
+        "x": 0.7,
+        "y": 1.45
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      },
+      "alpha": 1,
+      "tint": "#ff9f1c",
+      "blendMode": "add",
+      "duration": 1.85,
+      "emission": {
+        "mode": "rate",
+        "rate": 9
+      },
+      "maxParticles": 5,
+      "lifetime": [
+        0.28,
+        0.48
+      ],
+      "spawn": {
+        "shape": "circle",
+        "radius": 3
+      },
+      "speed": [
+        12,
+        32
+      ],
+      "direction": -90,
+      "spread": 24,
+      "gravity": {
+        "x": 0,
+        "y": -22
+      },
+      "worldSpace": false,
+      "startScale": [
+        0.052,
+        0.082
+      ],
+      "rotationStart": [
+        -8,
+        8
+      ],
+      "rotationSpeed": [
+        -12,
+        12
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5,
+        "upright": true
+      },
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          0.95
+        ],
+        [
+          0.58,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#fff0a0"
+        ],
+        [
+          0.28,
+          "#ffbe38"
+        ],
+        [
+          0.65,
+          "#ff6a0a"
+        ],
+        [
+          1,
+          "#b92506"
+        ]
+      ]
+    },
+    {
+      "id": "rim-flame-20",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 2,
+      "position": {
+        "x": 25.3643,
+        "y": -94.6607
+      },
+      "scale": {
+        "x": 0.7,
+        "y": 1.45
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      },
+      "alpha": 1,
+      "tint": "#ff9f1c",
+      "blendMode": "add",
+      "duration": 1.85,
+      "emission": {
+        "mode": "rate",
+        "rate": 9
+      },
+      "maxParticles": 5,
+      "lifetime": [
+        0.28,
+        0.48
+      ],
+      "spawn": {
+        "shape": "circle",
+        "radius": 3
+      },
+      "speed": [
+        12,
+        32
+      ],
+      "direction": -90,
+      "spread": 24,
+      "gravity": {
+        "x": 0,
+        "y": -22
+      },
+      "worldSpace": false,
+      "startScale": [
+        0.052,
+        0.082
+      ],
+      "rotationStart": [
+        -8,
+        8
+      ],
+      "rotationSpeed": [
+        -12,
+        12
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5,
+        "upright": true
+      },
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          0.95
+        ],
+        [
+          0.58,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#fff0a0"
+        ],
+        [
+          0.28,
+          "#ffbe38"
+        ],
+        [
+          0.65,
+          "#ff6a0a"
+        ],
+        [
+          1,
+          "#b92506"
+        ]
+      ]
+    },
+    {
+      "id": "rim-flame-21",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 2,
+      "position": {
+        "x": 49,
+        "y": -84.8705
+      },
+      "scale": {
+        "x": 0.7,
+        "y": 1.45
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      },
+      "alpha": 1,
+      "tint": "#ff9f1c",
+      "blendMode": "add",
+      "duration": 1.85,
+      "emission": {
+        "mode": "rate",
+        "rate": 9
+      },
+      "maxParticles": 5,
+      "lifetime": [
+        0.28,
+        0.48
+      ],
+      "spawn": {
+        "shape": "circle",
+        "radius": 3
+      },
+      "speed": [
+        12,
+        32
+      ],
+      "direction": -90,
+      "spread": 24,
+      "gravity": {
+        "x": 0,
+        "y": -22
+      },
+      "worldSpace": false,
+      "startScale": [
+        0.052,
+        0.082
+      ],
+      "rotationStart": [
+        -8,
+        8
+      ],
+      "rotationSpeed": [
+        -12,
+        12
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5,
+        "upright": true
+      },
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          0.95
+        ],
+        [
+          0.58,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#fff0a0"
+        ],
+        [
+          0.28,
+          "#ffbe38"
+        ],
+        [
+          0.65,
+          "#ff6a0a"
+        ],
+        [
+          1,
+          "#b92506"
+        ]
+      ]
+    },
+    {
+      "id": "rim-flame-22",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 2,
+      "position": {
+        "x": 69.2965,
+        "y": -69.2965
+      },
+      "scale": {
+        "x": 0.7,
+        "y": 1.45
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      },
+      "alpha": 1,
+      "tint": "#ff9f1c",
+      "blendMode": "add",
+      "duration": 1.85,
+      "emission": {
+        "mode": "rate",
+        "rate": 9
+      },
+      "maxParticles": 5,
+      "lifetime": [
+        0.28,
+        0.48
+      ],
+      "spawn": {
+        "shape": "circle",
+        "radius": 3
+      },
+      "speed": [
+        12,
+        32
+      ],
+      "direction": -90,
+      "spread": 24,
+      "gravity": {
+        "x": 0,
+        "y": -22
+      },
+      "worldSpace": false,
+      "startScale": [
+        0.052,
+        0.082
+      ],
+      "rotationStart": [
+        -8,
+        8
+      ],
+      "rotationSpeed": [
+        -12,
+        12
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5,
+        "upright": true
+      },
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          0.95
+        ],
+        [
+          0.58,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#fff0a0"
+        ],
+        [
+          0.28,
+          "#ffbe38"
+        ],
+        [
+          0.65,
+          "#ff6a0a"
+        ],
+        [
+          1,
+          "#b92506"
+        ]
+      ]
+    },
+    {
+      "id": "rim-flame-23",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 2,
+      "position": {
+        "x": 84.8705,
+        "y": -49
+      },
+      "scale": {
+        "x": 0.7,
+        "y": 1.45
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      },
+      "alpha": 1,
+      "tint": "#ff9f1c",
+      "blendMode": "add",
+      "duration": 1.85,
+      "emission": {
+        "mode": "rate",
+        "rate": 9
+      },
+      "maxParticles": 5,
+      "lifetime": [
+        0.28,
+        0.48
+      ],
+      "spawn": {
+        "shape": "circle",
+        "radius": 3
+      },
+      "speed": [
+        12,
+        32
+      ],
+      "direction": -90,
+      "spread": 24,
+      "gravity": {
+        "x": 0,
+        "y": -22
+      },
+      "worldSpace": false,
+      "startScale": [
+        0.052,
+        0.082
+      ],
+      "rotationStart": [
+        -8,
+        8
+      ],
+      "rotationSpeed": [
+        -12,
+        12
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5,
+        "upright": true
+      },
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          0.95
+        ],
+        [
+          0.58,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#fff0a0"
+        ],
+        [
+          0.28,
+          "#ffbe38"
+        ],
+        [
+          0.65,
+          "#ff6a0a"
+        ],
+        [
+          1,
+          "#b92506"
+        ]
+      ]
+    },
+    {
+      "id": "rim-flame-24",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 2,
+      "position": {
+        "x": 94.6607,
+        "y": -25.3643
+      },
+      "scale": {
+        "x": 0.7,
+        "y": 1.45
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.85
+      },
+      "alpha": 1,
+      "tint": "#ff9f1c",
+      "blendMode": "add",
+      "duration": 1.85,
+      "emission": {
+        "mode": "rate",
+        "rate": 9
+      },
+      "maxParticles": 5,
+      "lifetime": [
+        0.28,
+        0.48
+      ],
+      "spawn": {
+        "shape": "circle",
+        "radius": 3
+      },
+      "speed": [
+        12,
+        32
+      ],
+      "direction": -90,
+      "spread": 24,
+      "gravity": {
+        "x": 0,
+        "y": -22
+      },
+      "worldSpace": false,
+      "startScale": [
+        0.052,
+        0.082
+      ],
+      "rotationStart": [
+        -8,
+        8
+      ],
+      "rotationSpeed": [
+        -12,
+        12
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5,
+        "upright": true
+      },
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          0.95
+        ],
+        [
+          0.58,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#fff0a0"
+        ],
+        [
+          0.28,
+          "#ffbe38"
+        ],
+        [
+          0.65,
+          "#ff6a0a"
+        ],
+        [
+          1,
+          "#b92506"
         ]
       ]
     }
