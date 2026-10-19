@@ -2583,6 +2583,44 @@ html *::-webkit-scrollbar-corner {
   margin-bottom: 10px;
 }
 
+/* 技能全解鎖開關（內測專用；正式版隱藏，index.html 預設 hidden，由 js 依 isInternalServer/isGMHost 判定） */
+#tab-skills .sgb-unlock-toggle {
+  margin-left: auto;
+  height: 26px;
+  padding: 0 12px;
+  border: 1px solid #2a2d34;
+  border-radius: 999px;
+  background: #121418;
+  color: #a39d90;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all .15s ease;
+  user-select: none;
+}
+
+#tab-skills .sgb-unlock-toggle[hidden] {
+  display: none;
+}
+
+#tab-skills .sgb-unlock-toggle:hover {
+  border-color: #7a6440;
+  color: #ece6d8;
+}
+
+#tab-skills .sgb-unlock-toggle[aria-pressed="true"] {
+  border-color: #e7c47c;
+  background: linear-gradient(180deg, #2a2218 0%, #1e1912 100%);
+  color: #f0cf86;
+  box-shadow: 0 0 10px rgba(231, 196, 124, 0.15);
+}
+
 #tab-skills .sgb-title {
   margin: 0 6px 0 0;
   font-family: var(--af-serif);

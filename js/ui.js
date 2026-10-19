@@ -8826,12 +8826,114 @@ function runSkillUiAction(commandName, id, pendingRef, legacyAction, panels, onS
 }
 
 
+/* 技能全解鎖開關（內測專用，功能等同 GM 指令 skill_unlock） */
+function isSkillUnlockToggleAvailable() {
+  return (typeof isGMHost === 'function' && isGMHost()) ||
+         (typeof isInternalServer === 'function' && isInternalServer());
+}
+
+function syncSkillUnlockToggle(isUnlocked) {
+  var btn = $id('skill-unlock-toggle');
+  if (!btn) return;
+  var allowed = isSkillUnlockToggleAvailable();
+  if (btn.hidden !== !allowed) {
+    btn.hidden = !allowed;
+  }
+  if (!allowed) return;
+
+  var on = !!isUnlocked;
+  var targetText = on ? '🔓 技能全解鎖：開' : '技能全解鎖：關';
+  if (btn.textContent !== targetText) {
+    btn.textContent = targetText;
+  }
+  if (btn.getAttribute('aria-pressed') !== String(on)) {
+    btn.setAttribute('aria-pressed', String(on));
+  }
+}
+
+function toggleSkillUnlockDev() {
+  if (!isSkillUnlockToggleAvailable()) return;
+  var snap = (typeof uiSkillsPanelSnapshot === 'function') ? uiSkillsPanelSnapshot() : null;
+  var curUnlocked = (snap && snap.skills2 && typeof snap.skills2.skillUnlock === 'boolean')
+    ? snap.skills2.skillUnlock
+    : !!(typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.skillUnlock);
+  var nextState = !curUnlocked;
+  if (typeof WorkerBridge !== 'undefined' && typeof WorkerBridge.send === 'function') {
+    WorkerBridge.send('gm.exec', { line: 'skill_unlock ' + (nextState ? 'on' : 'off') }).then(function (res) {
+      if (res && res.skillUnlock !== undefined) {
+        if (typeof window !== 'undefined') {
+          if (!window.GM_TEST) window.GM_TEST = {};
+          window.GM_TEST.skillUnlock = res.skillUnlock;
+        }
+        var s = (typeof uiSkillsPanelSnapshot === 'function') ? uiSkillsPanelSnapshot() : null;
+        if (s && s.skills2) s.skills2.skillUnlock = res.skillUnlock;
+        syncSkillUnlockToggle(res.skillUnlock);
+      }
+      if (res && res.message && typeof blog === 'function') {
+        blog('⚡ [內測] ' + res.message, res.ok ? 'good' : 'bad');
+      }
+      if (typeof renderSkills === 'function') {
+        renderSkills();
+      }
+    }).catch(function (err) {
+      if (typeof blog === 'function') {
+        blog('⚡ [內測] 技能解鎖切換失敗：' + (err && err.message ? err.message : err), 'bad');
+      }
+    });
+  } else if (typeof executeGMCommand === 'function') {
+    var res = executeGMCommand('skill_unlock ' + (nextState ? 'on' : 'off'));
+    if (res && res.skillUnlock !== undefined) {
+      if (typeof window !== 'undefined') {
+        if (!window.GM_TEST) window.GM_TEST = {};
+        window.GM_TEST.skillUnlock = res.skillUnlock;
+      }
+      var s2 = (typeof uiSkillsPanelSnapshot === 'function') ? uiSkillsPanelSnapshot() : null;
+      if (s2 && s2.skills2) s2.skills2.skillUnlock = res.skillUnlock;
+      syncSkillUnlockToggle(res.skillUnlock);
+    }
+    if (typeof renderSkills === 'function') {
+      renderSkills();
+    }
+  }
+}
+
+function initSkillUnlockToggle() {
+  var btn = $id('skill-unlock-toggle');
+  if (!btn) return;
+  var allowed = isSkillUnlockToggleAvailable();
+  btn.hidden = !allowed;
+  if (!allowed) return;
+  var snap = (typeof uiSkillsPanelSnapshot === 'function') ? uiSkillsPanelSnapshot() : null;
+  var isUnlocked = (snap && snap.skills2 && typeof snap.skills2.skillUnlock === 'boolean')
+    ? snap.skills2.skillUnlock
+    : !!(typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.skillUnlock);
+  syncSkillUnlockToggle(isUnlocked);
+}
+
+if (typeof window !== 'undefined') {
+  window.isSkillUnlockToggleAvailable = isSkillUnlockToggleAvailable;
+  window.syncSkillUnlockToggle = syncSkillUnlockToggle;
+  window.toggleSkillUnlockDev = toggleSkillUnlockDev;
+  window.initSkillUnlockToggle = initSkillUnlockToggle;
+}
+
+
 function renderSkills() {
   var treesBox = $id('skill-trees');
   if (!treesBox) return;
   var skillsSnapshot = uiSkillsPanelSnapshot();
   var talentSnapshot = uiTalentPanelSnapshot();
   var headerSnapshot = uiHeaderPanelSnapshot();
+
+  var isSkillUnlock = (skillsSnapshot && skillsSnapshot.skills2 && typeof skillsSnapshot.skills2.skillUnlock === 'boolean')
+    ? skillsSnapshot.skills2.skillUnlock
+    : !!(typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.skillUnlock);
+  if (typeof window !== 'undefined') {
+    if (!window.GM_TEST) window.GM_TEST = {};
+    window.GM_TEST.skillUnlock = isSkillUnlock;
+  }
+  syncSkillUnlockToggle(isSkillUnlock);
+
   if (!skillsSnapshot || !talentSnapshot || !headerSnapshot) {
     treesBox.innerHTML = '<div class="panel hint">正在載入技能 Snapshot…</div>';
     return;
@@ -11880,6 +11982,12 @@ function initUI() {
       renderSkills();
       return;
     }
+    // 內測專用：技能全解鎖開關（等同 GM 指令 skill_unlock）
+    var s2UnlockToggle = e.target.closest('#skill-unlock-toggle');
+    if (s2UnlockToggle) {
+      toggleSkillUnlockDev();
+      return;
+    }
     // 內測專用：新版技能群組整列一鍵滿級
     var s2RowMax = e.target.closest('[data-sg-max-group]');
     if (s2RowMax) {
@@ -13371,6 +13479,7 @@ function initUI() {
   }
 
   initAttrHideZeroToggle();
+  initSkillUnlockToggle();
 
   var keywordFilter = $id('inv-keyword-filter');
   if (keywordFilter) {
