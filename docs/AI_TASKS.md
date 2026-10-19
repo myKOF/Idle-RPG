@@ -11282,10 +11282,13 @@ Worker 存活且頁面正常完成載入。
 
 ## MERGE-MYTHIC-WARM-20261019 — 神話配色整合、移除重複與推送
 
-- Owner：Codex；In Progress；使用者已確認3e3000bb配色，明確授權推送、移除Antigravity重複修改及合併develop。開始develop／Codex／Antigravity皆乾淨，fetch成功且develop與origin/develop一致。實際develop工作區D:/MyGame/Idle-RPG/develop；不納入Codex後續泥沼349f87e3。
+- Owner：Codex；Done（本地整合完成，遠端推送依本輪交付確認）；使用者已確認3e3000bb配色，明確授權推送、移除Antigravity重複修改及合併develop。開始develop／Codex／Antigravity皆乾淨，fetch成功且develop與origin/develop一致。實際develop工作區D:/MyGame/Idle-RPG/develop；不納入Codex後續泥沼349f87e3。
 - 範圍：合併3e3000bb、Antigravity以還原提交移除aca1b098的兩處CSS與相應PATCH差異，再將已還原分支納入develop並同步其工作區；本紀錄與PATCH記錄已確認橘紅暖灰。禁止其他玩法／表格／JS／素材變更、重寫歷史或強推；不修改Codex既有提交。前置merge-tree配色來源退出0，重疊為使用者本輪明確授權處理的兩份配色；其餘副本沒有未提交修改。
 - 驗收：精確核對正式CSS／版本與3e3000bb一致、去除Antigravity重複差異、相關裝備測試與基準既有失敗、Build、隔離正式樣式瀏覽器與Console、diff／乾淨工作區；完成後正常推送develop與ai/antigravity，不推其他分支。素材未變，無素材庫Commit。後續使用者重載develop遊戲。
 
 - 第一階段完成：Antigravity以be4af554精確還原aca1b098兩檔，該分支完整tree與b5d395df相同，沒有移除其他功能或重寫歷史。develop合併3e3000bb無衝突，css/style.css／index.html／LV_upgrade_system與確認來源完全一致；PATCH首段更新為最終橘紅暖灰並移除過期重複說明。
 - 驗證：node --test tests/equipment-two-hand-display.test.cjs tests/equipment-selection-border.test.cjs tests/equipment-weapon-icons.test.cjs共12項10通過／2項相同既有fixture失敗（syncEquipmentSelectionMemory／UI_GAME_TIMING缺失）；UI與三份測試相較原b5d395df逐位元相同，沿原配色任務的HEAD CSS唯讀基準結果，無新增失敗、未改測試。npm.cmd run build為545檔通過；staged及worktree diff檢查通過。
 - 瀏覽器：臨時localhost讀取develop正式CSS及既有圖示的13格外觀fixture，橘紅／暖灰底、金紅框與副手覆色正確，Console warning／error0；截圖mythic-develop-merged.png保存本聊天visualizations。未載玩家存檔／未驗完整戰鬥，服務與分頁已關閉。唯讀檢查規範／workflow、worktree／分支／遠端、兩份來源提交與還原差異、原圖示／格位／UI及三份測試；沒有新素材或素材庫變更。
+
+- 最終整合：第一筆merge 1bcae9db納入確認配色；第二筆merge納入Antigravity原提交及be4af554還原，合併乾跑／實際合併無衝突且第二次程式差異0。合併後再次npm.cmd run build為545檔通過，diff檢查通過，未新增測試失敗。實際修改為css/style.css、index.html、LV_upgrade_system.md、PATCH.md及本紀錄；無新增功能／素材／其他分支修改。
+- 交付方式：本紀錄所在[Codex] merge: 完成神話配色整合並消除重複修改為最終整合Commit，回覆附實際編號；正常快轉同步乾淨的Antigravity工作區，再以atomic push推送develop及ai/antigravity，遠端SHA核對結果以工具及最終交付為準。Codex後續泥沼提交與工作區保持原狀。已知限制仍為2項既有fixture失敗及未做完整遊戲／跨瀏覽器測試；無本次整合缺項，可用，後續使用者重載develop驗收。
