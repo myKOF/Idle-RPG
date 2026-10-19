@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## WAR-GOD-BODY-THREE-SECOND-20261019 — 戰神體三秒生命與護盾損失轉反擊增傷
+
+- Owner：Codex；Done；單一開發者。使用者要求三秒內損失的生命／護盾百分比加成到接下來三秒的所有反擊，附加比例基值100%、每級+10%；已確認保留每0.5秒自動流失1%最大生命，並補進技能說明。追加角色無敵時不觸發任何反擊（含招架及追加效果），在反擊共用入口阻擋，不短路其他技能。使用者確認生命損失除以最大生命、護盾損失除以最大護盾後相加。
+- 前置：既有分段失血排程與實際扣血掛點完成。範圍js/skills2.js僅戰神體記錄／倍率／生成資料、js/formula.js僅受擊護盾記錄、Skills2 Excel／CSV僅戰神體參數與說明、tests/skill2-ult-evolution.test.cjs受影響四項與tests/war-god-body.test.cjs、index／bridge／Worker快取、game_formula／LV_upgrade_system／本紀錄。禁止其他技能規則／存檔或Protocol格式／素材／Preset／其他副本，不合併推送；預檢無外部衝突，使用者Skills2與Gem_resonance.xlsx修改保留，提交隔離。
+- 驗收：固定三秒分段、半秒自傷保留與可致死、生命／護盾實際損失含完全破盾、回復不倒扣、減傷／無敵／未命中／自傷與DOT／反傷／補拍／死亡卸下重置、等級成長與實際反擊／飄字相符，Excel原生API精準改格／重開／逐格樣式檢查、兩端配置往返／Worker與瀏覽器／相依回歸／Build／diff，獨立Commit供使用者整合。
+- 完成12檔：Skills2 Excel的戰神體AV71／AW71／AX71改三秒分段、pct100／pctPer10及含自傷／各自分母／無敵例外說明，基本反擊AW62／AX62亦補無敵例外；CSV及skills2生成資料同步。skills2損失收集加入護盾與其受擊前上限，按pct等級值換算加成，反擊入口阻擋現行invuln／復甦無敵／受擊結果invuln；formula在破盾清空上限前保存分母並一次記錄HP與護盾。index快取formula66／skills2 328／bridge309、Worker資源／匯入同步；新增war-god-body回歸、調整既有四項、更新game_formula與LV_upgrade_system及本紀錄。倍率沿用基值＋成長×等級，Lv.1 110%、Lv.10 200%；Protocol、存檔、素材及解鎖不變，無素材庫Commit。
+- 測試：`node --test --test-reporter=tap --test-name-pattern='戰神體|無敵.*反擊' tests/skill2-ult-evolution.test.cjs tests/war-god-body.test.cjs`9/9；隔離提交資料版本重跑同9項通過。原生引擎驗生命10%＋盾50%=60%、純盾受傷與完全破盾、回復不抵銷、未命中／無敵／法力承擔不計、自然到期不計、3秒所有反擊真實傷害及飄字一致、Lv.1／10、無敵仍自傷、三種超神與無超神均阻擋反擊／不扣魔／不授盾／不發子彈且到期恢復，舊測驗野外／高塔、定時補拍／致死／GM鎖血／卸下／重置。`node --test --test-reporter=tap tests/shield-max.test.cjs tests/status-system.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/ui-worker-events.test.cjs`53/53；`npm.cmd run build`541檔通過、Skills2 apply零語意差異、diff通過。
+- 擴大回歸：另加skill2-counter-bloodrage與新測共84項77通過7失敗；用任務前skills2與HEAD formula唯讀替換重跑原79項72通過同7失敗，確認原有反擊盾預期5.5／11、反擊各階／超神與追加費用五項、血飲自傷一項失敗，本次未放寬斷言或修改無關規則。未跑全庫，這7項仍待獨立修正。
+- 瀏覽器：IAB隱藏分頁、隨機localhost／seed1019隔離角色、正式Worker及顯示管線，不讀真人存檔。實測損失60%／前三秒0加成，3秒含6%自傷結算滿級132%；正常反擊2斬傷320618／耗魔1200，無敵時追加帶格擋與吸盾的通知反擊傷0／耗魔0／斬擊數不增且仍扣1%生命；無敵到期2斬仍傷320618／耗魔1200，原生說明為0.5秒／1%／3秒／滿級200%與無敵例外。Console error／warning 0，截圖本聊天visualizations/warbody-invuln.png已目視，分頁／服務關閉。
+- Excel與隔離交付：原生Excel API精準改5格，正常重開Saved=True無修復提示；唯讀比對任務前後所有資料格／公式／樣式及合併／欄寬／篩選／驗證／註解均保留（只允許上述5格文字／JSON變更）。提交資料由HEAD副本原生同改5格產生，語意比對僅counter.ult[2]與基本反擊desc改變，其他使用者Skills2／Gem_resonance修改完整保留未提交。
+- 唯讀檢查未改：AI規範／AGENTS／工作流／prompts/codex.md、combat的playerDefCfg與shieldMax更新／到期、status的DOT扣血、counter命中／飄字及共用VFX事件、Worker shim／Protocol、geometry參數接線、上述五份相依回歸。自我Review確認單一受擊只記一次、最後破盾分母有效、舊直接扣血呼叫相容、無敵入口先於機率／付費／副作用且保留其他技能處理。
+- 交付：任務WAR-GOD-BODY-THREE-SECOND-20261019完成，無本次未完成功能，可供Review／合併；Commit為本紀錄所在`[Codex] feat: 調整戰神體三秒增傷並禁止無敵期間反擊`，回覆附編號。未合併推送。限制為隔離角色短流程、未跑真人長戰／全庫，上述7項既有回歸失敗保留；下一步使用者重載8123測試。
+
 ## FLAME-KAGURA-FIRE-ATTR-20261019 — 神樂灼焰期間將敵人改為火屬性
 
 - Owner：Codex；Done；單一開發者。使用者要求火之神樂的神樂灼焰除持續火傷外，生效期間也改變敵人屬性為火；前置既有灼焰疊層及共用屬性改寫已完成。
