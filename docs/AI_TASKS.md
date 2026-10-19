@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## SHIELD-AMP-LIFE-ONLY-20261019 — 護盾增幅限生命護盾與岩之再生觸發確認
+
+- Owner：Codex；Done；單一開發者。使用者要求護盾增幅只對生命護盾生效、不含岩甲護盾本身；追加確認岩之再生僅生命損失補盾、護盾損失不觸發。前置現行共用護盾效率／岩甲受擊掛點完成。
+- 允許js/skills2.js僅岩甲施放排除T4增幅與說明、Skills2 Excel／CSV僅T4說明、tests/skill2-earth.test.cjs相關回歸、index／bridge／sim.worker必要快取、game_formula／LV_upgrade_system與本紀錄。禁止其他技能數值／Protocol／存檔／Preset／素材／其他副本；保留本副本進行中岩甲排序修改，只提交本任務，不合併推送。
+- 預檢除index外無外部來源；index與Claude 68038f1d僅不同script快取、無語意相依，擬議修改三方merge-file乾跑exit0。驗收實際派生效率／生命護盾量與上限保留、岩甲排除T4但保留裝備／天賦／重岩甲／金剛不壞加成，純扣盾／扣血／打穿只依生命損失補盾，畫面浮字／shieldMax一致、配置往返／原生Excel重開、相關回歸／Build／diff與獨立Commit，後續使用者Review整合。
+- 完成10檔：js/skills2.js岩甲施放使用獨立屬性副本，僅將護盾效率除以T4倍率，生命護盾的既有算法與共用面板值不變；Skills2 Excel／CSV僅T4兩格說明同步「生命護盾效率、不影響岩甲護盾本身」。tests/skill2-earth新增實際派生效率／岩甲量／生命盾與溢出上限／卸下T4／浮字與shieldMax，以及真正resolveHit→doMonsterAttack→受擊掛點的純扣盾／純扣血／打穿案例。岩之再生原邏輯已符合要求，未改戰鬥受擊算法。index skills2 333／bridge 314、bridge Worker資源版與sim.worker skills2 token同步shield-life-only，game_formula／LV_upgrade_system與本紀錄同步；未改解鎖、Protocol、存檔、Preset或素材。
+- 驗證：`node --test --test-name-pattern='護盾增幅|岩之再生：實際|重岩甲|大地之心|尖刺甲' tests/skill2-earth.test.cjs tests/skill2-firehunt-rock-legendary.test.cjs`6/6；`node --test tests/shield-max.test.cjs tests/status-system.test.cjs tests/earth-element.test.cjs tests/player-shield-bar.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs`57/57。`npm.cmd run build`545檔通過；`node tools/config_tables.cjs --apply Skills2`語意變更0、diff檢查通過。新岩甲增幅回歸在唯讀攔截恢復舊施放算法時確實失敗，其餘護盾入口未改。未做瀏覽器／長時間實戰，不宣稱全庫全綠。
+- 擴大九檔回歸133項99過／34失敗；以相同工作資料、僅唯讀還原本次岩甲施放修正重跑，98過／35失敗，多出的唯一失敗就是新岩甲回歸，沒有新增既有案例失敗。34項集中舊地系／光耀之堂／火狩與岩甲傳奇的過期數值、施放fixture或畫面舊斷言；本輪不擴大修復、未放寬斷言。使用者另調岩甲數值後與之前31項相比增加的3項也在同資料基準出現。
+- Excel：使用者儲存關閉後，保留其岩甲第一階／第六階／金剛不壞／超重力場數值與文案。依AI_RULES 8.5使用原生Excel API精準改AW115／AX115兩格，副本儲存後正常模式重開、Saved=true；逐格核對所有工作表公式／資料僅兩格改變，原格樣式／格式／列高／欄寬與各表圖形數保留。獨立提交另從HEAD工作簿經同原生API只改兩格，正常重開驗證通過；沒有手工ZIP／XML修改。工作檔CSV／JS已依使用者最新Excel同步，但Commit的Excel／CSV／JS資料只納入本次T4說明，其餘使用者調整保留未提交。
+- 提交版獨立驗證：以暫存唯讀fs攔截讀取Git index的Skills2 JS／CSV，相關6項全部通過、配置apply語意差異0，Excel與CSV所有儲存格相符、JS字面值相較HEAD僅T4說明不同；提交JS語法與index diff檢查通過。工作區保留的三檔使用者資料（Excel／CSV／JS）只含其餘岩甲調整，未混入Commit；臨時驗證程式／候選不交付。
+- 唯讀檢查未改：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、js/formula.js效率派生／grantShield／healPlayer／resolveHit、js/combat.js扣盾扣血與延後受擊、js/status.js配置角色、js/ui.js護盾條、Worker Protocol／shim與相關既有回歸。自我Review確認施放副本不回寫Stats、RT.base／浮字／血條均用實得護盾量。素材庫無本次變更，無素材Commit。同副本岩甲排序任務另由原任務提交cd9015f9，本次未混入其內容；期間觀察到自動同步提交，不由本任務發起合併／推送。
+- 交付：SHIELD-AMP-LIFE-ONLY-20261019完成，無本次未完成實作，可供Review／合併；本次Commit見所在`[Codex] fix: 護盾增幅僅作用於生命護盾`，回覆附編號。已知限制為上述34項基準失敗與未瀏覽器實測；下一步重新整理遊戲驗收生命護盾與岩甲差異，其他副本需整合本Commit。本任務未合併／推送。
+
 ## ROCKARMOR-OCCLUSION-20261019 — 岩甲石碑與角色及彼此前後排序
 
 - Owner：Codex；Done；單一開發者。使用者兩張圖要求近側石碑遮住角色、遠側石碑在角色後，石碑彼此依順時針軌道實際遠近換位。已修正固定zIndex不換序、角色穿透輪廓獨立頂層蓋住近側石碑；保持既有軌跡／大小／配色／轉速／技能規則。

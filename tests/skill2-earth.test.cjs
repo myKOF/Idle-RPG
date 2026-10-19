@@ -185,6 +185,69 @@ test('護盾增幅（T4）：主動型被動——裝配才生效，且對護盾
   assert.ok(Math.abs(c.skill2ShieldEffFactor() - 1.165) < 1e-9);
 });
 
+test('護盾增幅只增幅生命護盾；岩甲保留裝備與天賦效率，且不修改共用屬性', () => {
+  const c = loadContext();
+  c.G.player.level = 650;
+  c.G.player.skills = {};
+  c.G.equipment = c.SLOT_LIST.reduce((eq, slot) => { eq[slot] = null; return eq; }, {});
+  c.G.equipment.helmet = { affixes: [{ key: 'shieldEff', val: 100 }], sockets: [] };
+  c.itemEnchants = () => [];
+  c.talentStatBonuses = () => ({ shieldEff: 10 });
+  setLevels(c, 'rockarmor', [1, 1, 1, 1, 0, 0, 0]);
+  equip(c, 'rockarmor');
+  assert.match(c.describeSkill2Tier('rockarmor', 3, 1), /生命護盾效率.*不影響岩甲護盾本身/);
+  const st = Object.assign(c.computeStats(), { hp: 1000, mp: 10000 });
+  assert.ok(Math.abs(st.shieldEff - 139.8) < 1e-9, '面板生命護盾效率保留T4乘區');
+  c.getStats = () => st;
+  const events = [];
+  c.floatPlayerEvent = (target, text, kind) => events.push({ target, text, kind });
+  const p = playerEnt(); p.mp = st.mp;
+  assert.ok(c.castSkill2(p, [enemy(1e9, 10, 0)], 'rockarmor', 'mv-float'));
+  const rockPct = table.fx('rockarmor', 1, 'pct', 1) + table.fx('rockarmor', 2, 'pct', 1);
+  assert.ok(Math.abs(p.shield - 1000 * rockPct / 100 * 2.2) < 1e-9, '表定岩甲比例 × 裝備／天賦效率，不含T4');
+  assert.equal(p.shieldMax, p.shield, '血條上限採實得岩甲量');
+  assert.equal(c.SKILL2_RT.rock.base, p.shield);
+  assert.ok(events.some(e => e.kind === 'shield' && e.text === '🪨+' + c.fmt(p.shield)), '浮字採實得岩甲量');
+  assert.ok(Math.abs(st.shieldEff - 139.8) < 1e-9, '岩甲不得回寫共用效率');
+  const life = playerEnt();
+  assert.ok(Math.abs(c.grantShield(life, 100, st) - 239.8) < 1e-9, '生命護盾仍吃完整增幅');
+  const overflow = playerEnt();
+  c.healPlayer(overflow, 1e8, st);
+  assert.ok(Math.abs(overflow.shield - 239.8) < 1e-9, '治療轉盾上限仍吃完整增幅');
+  setLevels(c, 'rockarmor', [1, 1, 1, 0, 0, 0, 0]);
+  const unamplified = Object.assign(c.computeStats(), { hp: 1000, mp: 10000 });
+  c.getStats = () => unamplified;
+  assert.ok(Math.abs(c.grantShield(playerEnt(), 100, unamplified) - 220) < 1e-9, '移除T4後生命護盾回到原效率');
+  const withoutT4 = playerEnt(); withoutT4.mp = unamplified.mp;
+  assert.ok(c.castSkill2(withoutT4, [enemy(1e9, 10, 0)], 'rockarmor', 'mv-float'));
+  assert.ok(Math.abs(withoutT4.shield - p.shield) < 1e-9, '有無T4不影響岩甲本身');
+});
+
+test('岩之再生：實際受擊純扣盾不補盾，純扣血與打穿只依生命損失補盾', () => {
+  for (const initialShield of [300, 0, 50]) {
+    const c = loadContext();
+    c.Math.random = () => 0.5;
+    c.chance = pct => pct >= 100;
+    const p = playerEnt(); p.shield = initialShield; p.shieldMax = initialShield;
+    const m = enemy(1e9, 10, 0);
+    setLevels(c, 'rockarmor', [1, 1, 1, 1, 1, 0, 0]);
+    equip(c, 'rockarmor');
+    c.SKILL2_RT.rock = { until: 10, pEnt: p, base: 550, amp: 0 };
+    c.monsterAtkCfg = () => ({ atk: 100, dmgType: 'phys', level: 1, hit: 100, critRate: 0 });
+    c.playerDefCfg = () => ({ isPlayer: true, maxHp: 1000, def: 0, mdef: 0, dodge: 0,
+      pRes: 0, mRes: 0, resist: {} });
+    c.floatPlayerEvent = () => {};
+    const hpBefore = p.hp;
+    const result = c.doMonsterAttack(m, p, 'pv-float');
+    const hpLoss = hpBefore - p.hp;
+    assert.equal(result.absorbed, Math.min(initialShield, result.dmg));
+    if (initialShield === 300) assert.equal(hpLoss, 0, '護盾完全吸收時不扣血');
+    else assert.ok(hpLoss > 0, '確實測到生命損失');
+    const regen = p.shield - (initialShield - result.absorbed);
+    assert.ok(Math.abs(regen - hpLoss * 0.55) < 1e-9, `補盾只計實際生命損失，不計護盾吸收：${JSON.stringify({ initialShield, hpLoss, regen, result })}`);
+  }
+});
+
 test('岩之再生（T5）：岩甲期間每減少 1% 生命換得 1.1% 最大生命的護盾', () => {
   const c = loadContext();
   stubHits(c);
