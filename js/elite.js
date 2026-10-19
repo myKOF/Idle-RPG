@@ -48,6 +48,7 @@ function eliteReset() {
   ELITE_RT.sparks.length = 0;
   ELITE_RT.walls.length = 0;
   ELITE_RT.pull = null;
+  if (typeof bfPlayerPos === 'function') bfPlayerPos().lift = 0;
 }
 
 /* ---------------- 小工具 ---------------- */
@@ -1420,19 +1421,20 @@ function eliteCastPull(m, d) {
     var stop = elitePullStop(m);
     if (dist <= stop) { eliteHitPlayer(m, { mult: d.dmg, elem: d.elem, sure: true, stun: d.stun, label: d.name }); return; }
     var ux = (pp.x - mp2.x) / dist, uy = (pp.y - mp2.y) / dist;
-    ELITE_RT.pull = { owner: m, def: d, tx: mp2.x + ux * stop, ty: mp2.y + uy * stop, speed: d.speed || 600 };
+    var tx = mp2.x + ux * stop, ty = mp2.y + uy * stop;
+    ELITE_RT.pull = { owner: m, def: d, tx: tx, ty: ty, speed: d.speed || 600, sx: pp.x, sy: pp.y, total: eliteDist(pp.x, pp.y, tx, ty) };
     floatPlayerEvent(elitePF(), '被拉扯!', 'debuff');
   });
 }
 function elitePullTick(dt) {
   var pl = ELITE_RT.pull;
   if (!pl) return;
-  if (!elitePlayerAlive()) { ELITE_RT.pull = null; return; }
+  if (!elitePlayerAlive()) { ELITE_RT.pull = null; elitePos().lift = 0; return; }
   var pp = elitePos();
   var dx = pl.tx - pp.x, dy = pl.ty - pp.y, dl = Math.sqrt(dx * dx + dy * dy);
   var step = pl.speed * dt;
   if (dl <= step + 1) {
-    pp.x = pl.tx; pp.y = pl.ty;
+    pp.x = pl.tx; pp.y = pl.ty; pp.lift = 0;
     ELITE_RT.pull = null;
     var mp = eliteMonsterPos(pl.owner) || pp;
     eliteBurstFx(mp.x, mp.y, 70, pl.def.v.attack, 0, pl.def.elem);
@@ -1440,6 +1442,11 @@ function elitePullTick(dt) {
     return;
   }
   pp.x += dx / dl * step; pp.y += dy / dl * step;
+  /* 低拋物線：離地高度隨已走比例 k 走 4·h·k·(1-k)，起點與終點貼地、中點最高 arcH（座標單位，表上填米）。 */
+  if (pl.def.arcH > 0 && pl.total > 0) {
+    var k = Math.max(0, Math.min(1, 1 - dl / pl.total));
+    pp.lift = 4 * pl.def.arcH * k * (1 - k);
+  }
 }
 /* 被拉扯中：玩家自己的走位暫停（battlefield.js bfTickPlayer 呼叫）。 */
 function elitePlayerLocked() { return !!ELITE_RT.pull; }

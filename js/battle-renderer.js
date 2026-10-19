@@ -558,12 +558,13 @@ var BattleRenderer = (function () {
   var POS_MAX_EXTRAP_MS = 240;   // 資料斷了才短暫外推，避免整個畫面凍住
   var POS_KEEP = 16;             // 每個實體保留幾個取樣（5Hz × 16 ≈ 3 秒）
 
-  function posTrack(ent, x, y) {
+  function posTrack(ent, x, y, lift) {
     if (!ent.samples) ent.samples = [];
     var t = nowMs();
     var last = ent.samples[ent.samples.length - 1];
-    if (last && t - last.t < 1) { last.x = x; last.y = y; return; }   // 同一毫秒內連續兩包
-    ent.samples.push({ t: t, x: x, y: y });
+    lift = lift > 0 ? lift : 0;   // 離地高度（被漩渦拋物線拉扯時），跟座標一起內插
+    if (last && t - last.t < 1) { last.x = x; last.y = y; last.lift = lift; return; }   // 同一毫秒內連續兩包
+    ent.samples.push({ t: t, x: x, y: y, lift: lift });
     while (ent.samples.length > POS_KEEP) ent.samples.shift();
   }
 
@@ -572,24 +573,25 @@ var BattleRenderer = (function () {
   function posSolve(ent, renderT) {
     var sm = ent.samples;
     if (!sm || !sm.length) return { x: ent.wx, y: ent.wy };
-    if (sm.length === 1 || renderT <= sm[0].t) return { x: sm[0].x, y: sm[0].y };
+    if (sm.length === 1 || renderT <= sm[0].t) return { x: sm[0].x, y: sm[0].y, lift: sm[0].lift || 0 };
     var newest = sm[sm.length - 1];
     if (renderT >= newest.t) {
       var prev = sm[sm.length - 2];
       var span = newest.t - prev.t;
       var over = Math.min(renderT - newest.t, POS_MAX_EXTRAP_MS);
-      if (span <= 0) return { x: newest.x, y: newest.y };
+      if (span <= 0) return { x: newest.x, y: newest.y, lift: newest.lift || 0 };
       var k = over / span;
-      return { x: newest.x + (newest.x - prev.x) * k, y: newest.y + (newest.y - prev.y) * k };
+      return { x: newest.x + (newest.x - prev.x) * k, y: newest.y + (newest.y - prev.y) * k, lift: newest.lift || 0 };
     }
     for (var i = sm.length - 1; i > 0; i--) {
       var b = sm[i], a = sm[i - 1];
       if (renderT >= a.t && renderT <= b.t) {
         var f = (b.t - a.t) > 0 ? (renderT - a.t) / (b.t - a.t) : 1;
-        return { x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f };
+        var la = a.lift || 0, lb = b.lift || 0;
+        return { x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f, lift: la + (lb - la) * f };
       }
     }
-    return { x: newest.x, y: newest.y };
+    return { x: newest.x, y: newest.y, lift: newest.lift || 0 };
   }
 
   /* 目前這一幀要播放的時刻。 */
@@ -1995,7 +1997,7 @@ var BattleRenderer = (function () {
       var pp = field.playerPos;
       if (pp && isFinite(pp.x) && isFinite(pp.y)) {
         if (!p.samples || !p.samples.length) { p.wx = pp.x; p.wy = pp.y; }   // 第一次直接就位
-        posTrack(p, pp.x, pp.y);
+        posTrack(p, pp.x, pp.y, pp.lift);
       }
     }
 
@@ -6374,7 +6376,7 @@ var BattleRenderer = (function () {
       if (!p.dead) {
         var pAt = posSolve(p, rClock);
         var pdx = pAt.x - p.wx, pdy = pAt.y - p.wy;
-        p.wx = pAt.x; p.wy = pAt.y;
+        p.wx = pAt.x; p.wy = pAt.y; p.liftY = pAt.lift || 0;
         var pStep = Math.sqrt(pdx * pdx + pdy * pdy);
         /* 動畫遲滯：一有位移就立刻切走路，但要連續靜止一小段才切回站立。
            少了這段，位移在門檻上下抖動時走路／站立會逐幀互閃，
@@ -6417,7 +6419,7 @@ var BattleRenderer = (function () {
         }
       }
       p.bodyWrap.x = lungeX + (p.jolt > 0 ? (Math.random() * 2 - 1) * (p.joltX || HIT_JOLT_X) : 0);
-      p.bodyWrap.y = lungeY + (p.jolt > 0 ? (Math.random() * 2 - 1) * (p.joltY || HIT_JOLT_Y) : 0);
+      p.bodyWrap.y = lungeY - (p.dead ? 0 : (p.liftY || 0)) + (p.jolt > 0 ? (Math.random() * 2 - 1) * (p.joltY || HIT_JOLT_Y) : 0);
       if (p.revival) {
         var revivalLeft = typeof uiCountdownRemain === 'function'
           ? uiCountdownRemain(p.revival.endAt - p.revivalGt, p.revivalGt)
