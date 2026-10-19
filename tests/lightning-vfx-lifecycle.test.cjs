@@ -216,6 +216,28 @@ test('落雷保留明確施放延遲與死亡／缺失目標取消，其他技�
   } finally { r.adapter.destroy(); }
 });
 
+test('Worker 未指定倍率的零值仍顯示原尺寸落雷，正倍率繼續按指定大小播放', () => {
+  const widths = [];
+  for (const multiplier of [undefined, .5, 2]) {
+    const wire = [];
+    const c = { _diag() {}, SHIM_DIAG: { ui: 0 }, shimPushEvent: (kind, spec) => wire.push(spec) };
+    vm.runInNewContext(extractFunction(read('js/worker/shim.js'), 'playCombatVfx'), c);
+    c.playCombatVfx({ ...THUNDER_BODY, sizeMult: multiplier });
+    assert.equal(wire[0].sizeMult, multiplier || 0, '使用正式 Worker 的未指定倍率編碼');
+    const r = thunderRenderer();
+    try {
+      r.send(wire[0]);
+      r.advance(80);
+      const core = r.nodes.find(n => n.spec.assetUrl?.endsWith('spark_05.png'));
+      const visible = core?.frames.filter(t => t.visible !== false && t.alpha > 0 && t.scaleY > 0);
+      assert.ok(visible?.length, 'Worker 的 sizeMult=' + wire[0].sizeMult + ' 必須有可見雷柱');
+      widths.push(visible.at(-1).scaleX);
+    } finally { r.adapter.destroy(); }
+  }
+  assert.ok(Math.abs(widths[1] / widths[0] - .5) < 1e-6);
+  assert.ok(Math.abs(widths[2] / widths[0] - 2) < 1e-6);
+});
+
 test('永恒雷獄真實初次／免費重施事件均啟動落雷本體，傷害與命中仍等落地', () => {
   const events = [], hits = [], repeats = [];
   const c = { console, Math: Object.create(Math), setTimeout() {}, clearTimeout() {},
@@ -231,7 +253,10 @@ test('永恒雷獄真實初次／免費重施事件均啟動落雷本體，傷�
     loadout: ['sg:thunderstrike'] }, stage: { current: 1 } };
   c.getStats = () => ({ atk: 1000, matk: 500, hp: 1000, mp: 1000000, level: 10, cdr: 0,
     passives: {}, legendaryEffects: {}, legendaryEffectMults: {}, elemDmgUp: {} });
-  c.playCombatVfx = spec => events.push({ at: c.GT, spec });
+  c._diag = () => {};
+  c.SHIM_DIAG = { ui: 0 };
+  c.shimPushEvent = (kind, spec) => events.push({ at: c.GT, spec });
+  vm.runInContext(extractFunction(read('js/worker/shim.js'), 'playCombatVfx'), c);
   c.enemyEventFloatTarget = () => 'target';
   c.playerEventFloatTarget = sel => sel;
   c.trackDps = c.recordRunDamage = c.floatEnemyEvent = c.floatPlayerEvent = () => {};
@@ -276,6 +301,10 @@ test('永恒雷獄真實初次／免費重施事件均啟動落雷本體，傷�
       r.send(event.spec);
       assert.equal(r.adapter.stats().played, 1, '實際初次與重施事件都立即接入正式雷柱');
       assert.equal(r.pending.length, 0);
+      assert.equal(event.spec.sizeMult, 0);
+      r.advance(80);
+      assert.ok(r.nodes.some(n => n.spec.assetUrl?.endsWith('spark_05.png') &&
+        n.frames.some(t => t.visible !== false && t.alpha > 0 && t.scaleY > 0)), '正式 Worker 初次／重施雷柱可見');
     } finally { r.adapter.destroy(); }
   }
   assert.ok(events.some(e => e.spec.variant === 'thunder-impact' && e.spec.vfx.hit === 'hit-thunder-blue'));

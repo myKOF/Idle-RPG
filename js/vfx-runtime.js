@@ -865,9 +865,11 @@ var VFXRuntime = (function () {
         return !!play(rt, presetId, Object.assign(defaultSize(presetId, 1), { position: areaCentre(spec.area) }));
       }
       var ids = Array.isArray(spec.targets) ? spec.targets : [];
+      // Worker 以零表示未指定倍率；普通落雷與免費重施都應維持原尺寸。
+      var sizeMult = Number(spec.sizeMult) > 0 ? Number(spec.sizeMult) : 1;
       ids.forEach(function (id) {
         if (ctx.chainPoint && !ctx.chainPoint(id)) return;
-        var ref = play(rt, presetId, Object.assign(defaultSize(presetId, num(spec.sizeMult, 1)), { position: footOf(id) }));
+        var ref = play(rt, presetId, Object.assign(defaultSize(presetId, sizeMult), { position: footOf(id) }));
         if (ref) follows.push({ ref: ref, key: id, until: clock + presetDurations[presetId], requireVisible: true });
       });
       return true;
