@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## PARAM-PATCH-QUEUE-20261019 — Excel 開啟時暫存 Agent 修改並於套用時合併
+
+- Owner：Codex；Done；單一開發者。使用者要求 Agent 遇到 Excel 鎖定可先保存修改，待使用者儲存關閉後，以套用參數.bat 合併；追加要求所有 AI 共用規範預設差異協作、同格重疊必須詢問確認保留哪一方。前置既有 Excel→CSV→遊戲管線；不改遊戲規則或解鎖，LV_upgrade_system 無需變更。
+- 允許新增 tools/param-patches.cjs、tools/merge-param-patches.ps1、tests/param-patches.test.cjs、tests/fixtures/param-patches-excel.ps1、config/param-patches/.gitignore、docs/PARAM_PATCHES.md；僅接線套用參數.bat、AI_RULES 第8.5節及本紀錄。禁止修改現有 Excel／CSV／遊戲JS、使用者 Skills2 未提交設定、其他副本與素材；不合併推送。
+- 衝突預檢無其他來源。差異包含 Agent／任務、主鍵／欄名／原值／新值，原生 Excel API 副本編修、重新開啟驗證、來源鎖定與版本檢查、備份及重跑冪等；同格重疊（含相同新值）或結構不符整批停止，不更新 CSV／遊戲。驗收獨立合併規則測試、Windows 原生 Excel 隔離整合（鎖定／格式／非首列主鍵定位／衝突／重跑）、BAT前置接線、Build與diff後獨立Commit；交付使用者／其他Agent按新規範使用。
+- 完成9檔：AI_RULES第8.5節明訂所有AI預設暫存差異、同格必問並記錄保留選擇，不得改before或以按BAT視為同意；套用參數.bat新增前置合併與失敗中止；tools/param-patches.cjs實作請求驗證／唯一檔名暫存／整批決策／使用者approval與失效檢查；tools/merge-param-patches.ps1原生Excel副本精準改格、正常重開、全來源獨占鎖／SHA256檢查、故障回復與收據續跑；config/param-patches/.gitignore僅排除本機archive與鎖；docs/PARAM_PATCHES完整操作／批准／復原；tests/param-patches.test.cjs與tests/fixtures/param-patches-excel.ps1隔離驗收；本紀錄。沒有改現有Excel、CSV、遊戲JS、快取、Protocol、存檔或素材，素材庫無本次變更／Commit。
+- 驗證：`node --test tests/param-patches.test.cjs`最終7/7，包含輸入／路徑與型別限制、不同格合併、同格相同與不同提案必問、現值即使等於after仍必問、明確批准保留Excel或Agent與現值／提案變更後失效、真實Excel開啟與檔案獨占鎖阻擋、含空白目錄、真BAT失敗不匯出、雙工作簿任一衝突均不寫入、主鍵重複失敗、原請求收據安全續跑。原生Excel正常重開Saved=true／RepairMode=false，逐項核對其他資料、公式計算、NumberFormat／色彩／註解／驗證／列高／欄寬／換行／篩選／隱藏表保留；等號開頭文字不變公式。`npm.cmd run build`550檔通過；`git diff --check`通過。隔離測試檔與服務程序均清理，未對正式配置執行寫入，也未跑全庫／遊戲瀏覽器（本次僅本機工具）。
+- 唯讀未改：AGENTS、AI_WORKFLOW、prompts/codex、.claude/check-conflicts、tools/config_tables.cjs、xlsx_to_csv.cjs、build_check.cjs、package.json、原.gitignore及LV_upgrade_system章節。自我Review檢查批准不能默認／不能以現值等於after猜測重跑、跨檔案寫回前全數鎖定與版本核對、失敗保留／回復、保留來源公式與格式；沒有委派或跨副本操作。
+- 限制／風險：需要Windows與Microsoft Excel；只支援既有資料格，不支援新增／刪除列欄或修改主鍵／合併格；不能從最終檔辨識改過又改回原值的歷史；無跨檔案斷電原子性，保存備份及收據供復原；後續遊戲匯出失敗不回復已合併Excel。請求僅目前worktree，其他AI分支需正常整合；既有使用者Skills2未提交變更原狀保留、不納入本次Commit。
+- 交付：無本次未完成項，可Review／合併，Commit為本段所在`[Codex] feat: 暫存配置表差異並於套用前確認同格衝突`，回覆附實際編號；未合併推送。下一步整合本Commit後，所有AI依共用規範保存待套用JSON，使用者儲存關閉Excel並執行原BAT；同格衝突須由使用者明確決定後才續跑。
+
 ## EARTHGUARD-REBIRTH-GUARD-20261019 — 天地共生復活無敵改五秒半傷
 
 - Owner：Codex；Done；單一開發者。使用者要求天地共生完成復活後取消無敵，改為五秒內受到傷害減少50%，並確認不滅意志改為每擊殺延長減傷0.5秒。前置既有五秒復甦已完成；交付使用者驗收與整合。
