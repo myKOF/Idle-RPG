@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## MIRE-RANGE-VULN-WEAKEN-20261019 — 泥沼動態範圍說明、本體易傷與虛弱降攻
+
+- Owner：Codex；Done；單一開發者。使用者要求泥沼術範圍說明讀取實際配置、本體新增受傷+10%每級+1%、第二階虛弱改為敵人攻擊力-15%每級-1.5%。前置現行泥沼場域／範圍參數／受傷與敵方攻擊乘區完成；沿既有基值＋每級增量×等級。
+- 允許js/skills2.js僅泥沼效果與矩形範圍說明模板、Skills2 Excel／CSV的mire第一／第二階設定與第六階累加說明、tests/skill2-earth.test.cjs與skill2-mire-earthguard-legendary相應回歸、index／bridge／sim.worker必要快取、game_formula／LV_upgrade_system與本紀錄。禁止其他技能數值／場域尺寸與移動規則／Protocol／存檔／Preset／素材與其他副本；保留使用者已儲存的泥沼第一階文案，不合併推送。
+- 衝突預檢所有目標無外部來源；使用者已儲存關閉Excel，工作簿目前僅mire第一階文案另有修改。驗收範圍含矩形各軸／每級成長與純主端描述、出生場域／命中／畫面事件同源；T1單獨生效／全等級成長、T2不再易傷且攻擊降幅正確／場外與過期回復、重力與腐化易傷保留加算、傳奇削弱與僵化維持獨立相乘、物理／魔法與技能倍率、配置往返／原生Excel重開、相關回歸與基準／Build／diff後獨立Commit，後續使用者Review整合。
+- 完成11檔：js/skills2.js的describeSkill2Tier加入rangeLength／rangeWidth模板、以sgRange讀取群組範圍與等級各軸增量（不讀G）；skill2MireVulnPct改讀T1表定pct，保留T6及傳奇腐化加算；skill2MireWeakenFactor改為T2攻擊下降與既有傳奇削弱獨立相乘。Skills2 Excel／CSV僅mire/1效果JSON與第一／第二／第六階各兩格文案，新增pct=10／pctPer=1；T2維持表定15／1.5並改為降攻；T6文案改與第一階累加。兩份地系回歸、index／bridge／sim.worker快取、game_formula／LV_upgrade_system及本紀錄同步，沒有改其他技能數值、實際場域尺寸、Protocol、存檔、Status表、Preset或素材。
+- 專項：`node --test --test-name-pattern='泥沼術本體|泥沼範圍說明|泥沼本體易傷|【削弱】|【腐化】' tests/skill2-earth.test.cjs tests/skill2-mire-earthguard-legendary.test.cjs`5/5。包含Lv1～10本體11～20%易傷／虛弱16.5～30%降攻、真正resolveHit命中傷害、物理／魔法／重擊技能組態、場外與離場到期恢復、無T2仍有本體易傷、重力／腐化加算及三種降攻乘區。範圍測試變更為非正方形且雙軸每級成長，核對實際場域／首拍VFX area及無G主端說明一致。將受測skills2唯讀換回修改前HEAD重跑，五項均失敗，修正版全過。
+- 擴大回歸：上述兩檔全跑63項41過／22失敗；修改前原測試＋HEAD受測來源61項38過／23失敗，失敗案例集合比對沒有新增，移除的是本輪授權更新的舊T2易傷案例（同時將其不足的施放法力fixture補足，不放寬斷言）。`node --test --test-reporter=tap tests/skills2-geometry.test.cjs tests/skills2-vfx-schema.test.cjs tests/skill-vfx-inheritance.test.cjs tests/status-system.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs`61項60過／1失敗；唯一連鎖閃電舊速度數值斷言，以HEAD JS／CSV／Excel唯讀映射重跑相同失敗。合計124項101過／23既有失敗，未改權威數值配合舊測試；既有失敗另含地系／大地守護舊數值、施放fixture及泥沼超神舊行為，不擴修。
+- 其他驗證：`npm.cmd run build`545檔通過；`node tools/config_tables.cjs --apply Skills2`語意變更0、diff檢查通過。主頁skills2 334／bridge315，Worker資源版與skills2 import token加mire-vuln-weaken-range，Protocol內容與版本無變動。資料逐值比對只允許T1新增兩個pct鍵及三階文案，其他群組／階級逐值不變；Excel與CSV所有資料格相符、重建JS一致。
+- Excel：使用者儲存關閉後使用原生Excel COM API改AW122／AX122／AV122、AW123／AX123、AW127／AX127共七格；沿使用者第一階去除射程片語的文案改為動態範圍與新增效果。副本儲存後正常模式重開Saved=true，全工作簿公式／值只改七格，各表UsedRange／圖形數及改動格樣式名稱／NumberFormat／WrapText／列高／欄寬原樣保留；無手工ZIP／XML修改。來源雜湊與獨占鎖檢查後才覆寫，沒有覆蓋尚未儲存工作；未重新設計工作簿格式。
+- 唯讀檢查未改：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、js/combat.js的monsterAtkCfg及命中入口、js/formula.js實際傷害、Status表／js/status.js、tools/skills2-geometry.cjs範圍映射、config_tables及xlsx_to_csv管線、Worker Protocol／shim及既有地系／傳奇／幾何回歸。自我Review確認兩種效果不互相混用、只有泥沼第二階虛弱改降攻（血刃斬同名技能未動）、現有慢速狀態到期規則與範圍／畫面事件不變、主端說明不依賴Worker狀態。無素材變更，不需素材庫Commit。
+- 交付：MIRE-RANGE-VULN-WEAKEN-20261019完成，無本次未完成實作；Commit為本紀錄所在`[Codex] feat: 調整泥沼易傷與虛弱並同步範圍說明`，回覆附編號，可供Review／合併；未合併推送。限制為23項已基準確認的既有失敗、未瀏覽器及長時間戰鬥驗證；下一步重載遊戲查看泥沼各級說明與實戰效果，其他副本需整合本Commit。
+
 ## SHIELD-AMP-LIFE-ONLY-20261019 — 護盾增幅限生命護盾與岩之再生觸發確認
 
 - Owner：Codex；Done；單一開發者。使用者要求護盾增幅只對生命護盾生效、不含岩甲護盾本身；追加確認岩之再生僅生命損失補盾、護盾損失不觸發。前置現行共用護盾效率／岩甲受擊掛點完成。

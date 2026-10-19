@@ -346,19 +346,83 @@ test('緩速：站在沼澤裡的敵人攻速與移速同時下降；重力泥�
   assert.ok(Math.abs(c2.skill2MoveSlowFactor(m2) - 0.5) < 1e-9, '重力泥沼：移動速度 -50%');
 });
 
-test('虛弱（T2）＋重力泥沼（T6）：受泥沼影響的敵人受到的傷害累加提高', () => {
+test('泥沼術本體（T1）＋重力泥沼（T6）：受泥沼影響的敵人受到的傷害累加提高', () => {
   const c = loadContext();
   stubHits(c);
   const p = playerEnt();
+  p.mp = 10000;
   const m = enemy(1e9, 5 * M, 0);
   setLevels(c, 'mire', [1, 1, 1, 1, 1, 1, 0]);
 
   assert.equal(c.skill2MireVulnPct(m), 0, '沒踩進沼澤就沒有增傷');
-  c.castSkill2(p, [m], 'mire', 'mv-float');
+  assert.ok(c.castSkill2(p, [m], 'mire', 'mv-float'));
   run(c, p, [m], 0.6);
-  assert.equal(c.skill2MireVulnPct(m), 38.5, '16.5% + 22% 累加');
+  assert.equal(c.skill2MireVulnPct(m), 33, '本體11% + 重力22%；虛弱不再提供易傷');
   const aCfg = c.skill2VulnACfg({ totalDmgPct: 0 }, m);
-  assert.equal(aCfg.totalDmgPct, 38.5, '收斂進同一個 totalDmgPct');
+  assert.equal(aCfg.totalDmgPct, 33, '收斂進同一個 totalDmgPct');
+});
+
+test('泥沼範圍說明讀取配置及每級各軸成長，與場域及畫面事件同源', () => {
+  const c = loadContext();
+  const events = [];
+  c.playCombatVfx = event => events.push(event);
+  c.enemyEventFloatTarget = ent => ent.name;
+  const [length, width] = table.geometry('mire', 1, '傷害範圍（米）', 1);
+  assert.ok(c.describeSkill2Tier('mire', 0, 1).includes(`${length}×${width} 米`));
+  c.SKILLS2.mire.range = '14*8,2*0.5';
+  for (const [lv, expectedLength, expectedWidth] of [[1, 16, 8.5], [5, 24, 10.5]]) {
+    setLevels(c, 'mire', [lv, 0, 0, 0, 0, 0, 0]);
+    const p = playerEnt();
+    const target = enemy(1e9, 50, 0);
+    assert.ok(c.castSkill2(p, [target], 'mire', 'mv-float'));
+    const field = c.SKILL2_RT.grounds[c.SKILL2_RT.grounds.length - 1];
+    assert.equal(field.length, expectedLength * M);
+    assert.equal(field.width, expectedWidth * M);
+    run(c, p, [target], 0.6);
+    const event = events.find(e => e.area && e.area.id === field.vfxId);
+    assert.ok(event, '首個作用節拍送出範圍畫面事件');
+    assert.equal(event.area.w, field.length);
+    assert.equal(event.area.h, field.width);
+    assert.ok(c.describeSkill2Tier('mire', 0, lv).includes(`${expectedLength}×${expectedWidth} 米`));
+  }
+  c.G = undefined;
+  assert.match(c.describeSkill2Tier('mire', 0, 5), /24×10.5 米/, '主執行緒無G時仍讀相同範圍');
+});
+
+test('泥沼本體易傷與虛弱降攻逐級生效，場外與狀態到期恢復', () => {
+  for (let lv = 1; lv <= 10; lv++) {
+    const c = loadContext();
+    c.Math.random = () => 0.5;
+    const p = playerEnt(); p.mp = 10000;
+    const target = enemy(1e9, 50, 0);
+    const outside = enemy(1e9, 10000, 0);
+    target.atk = outside.atk = 1000;
+    setLevels(c, 'mire', [lv, lv, 0, 0, 0, 0, 0]);
+    assert.ok(c.castSkill2(p, [target, outside], 'mire', 'mv-float'));
+    run(c, p, [target, outside], 0.6);
+    const vuln = 10 + lv;
+    const attack = 1 - (15 + 1.5 * lv) / 100;
+    assert.equal(c.skill2MireVulnPct(target), vuln);
+    assert.equal(c.skill2MireVulnPct(outside), 0);
+    assert.ok(Math.abs(c.monsterAtkCfg(target, 2).atk - 2000 * attack) < 1e-9, '物理攻擊與重擊共用降攻');
+    target.magic = true;
+    assert.ok(Math.abs(c.monsterAtkCfg(target, 3).atk - 3000 * attack) < 1e-9, '魔法攻擊與技能倍率共用降攻');
+    assert.equal(c.monsterAtkCfg(outside, 1).atk, 1000);
+    const ownAttack = c.sgAtkCfg(p, c.getStats(), 1000, target, 0, 'fireball');
+    assert.equal(ownAttack.totalDmgPct, vuln, '實際技能命中組態採本體易傷');
+    const hit = c.resolveHit(p, target, ownAttack, { def: 0, mdef: 0, dodge: 0, pRes: 0, mRes: 0, resist: {} });
+    assert.equal(hit.dmg, 1000 + vuln * 10, '實際傷害依易傷提高');
+    assert.match(c.describeSkill2Tier('mire', 0, lv), new RegExp(`傷害提高 ${vuln}%`));
+    assert.match(c.describeSkill2Tier('mire', 1, lv), new RegExp(`攻擊力降低 ${15 + 1.5 * lv}%`));
+    setLevels(c, 'mire', [lv, 0, 0, 0, 0, 0, 0]);
+    assert.equal(c.skill2MireVulnPct(target), vuln, '只有第一階也有易傷');
+    assert.equal(c.monsterAtkCfg(target, 1).atk, 1000, '未投資虛弱不降攻');
+    setLevels(c, 'mire', [lv, lv, 0, 0, 0, 0, 0]);
+    target.pos.x = 10000;
+    run(c, p, [target, outside], 1.2);
+    assert.equal(c.skill2MireVulnPct(target), 0, '離開後原狀態到期，易傷消失');
+    assert.equal(c.monsterAtkCfg(target, 1).atk, 1000, '離開後原狀態到期，攻擊力恢復');
+  }
 });
 
 test('毒沼術（T3）／熔岩沼（T7）：以中毒與燃燒兩個狀態發傷害，且吃魔攻', () => {
