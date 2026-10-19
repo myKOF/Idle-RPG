@@ -1,5 +1,20 @@
 # AI_TASKS.md
 
+## BLOODFEAST-ASURA-REWORK-20261019 — 狂血盛宴百層失血增傷與霸王拳必定觸發連擊
+
+- Owner：Codex；Done；單一開發者。使用者要求狂血盛宴保留擊殺延長狂怒、失血每1%增傷基值1%／每級+0.1%且最高100層，移除原描述的每連擊數追加附近普攻目標；阿修羅霸王拳保留定時全傷／持續時間／擊殺延長，新增期間連擊觸發率100%，連擊數及不足一次的小數機率沿用原規則。失血沿用當前生命缺口口徑，治療降低加成。
+- 前置：狂怒失血乘區、獨立霸王拳狀態與擊殺延時已存在。允許skills2僅上述規則／生成資料、formula僅連擊觸發率接線、Skills2及Status Excel／CSV與status.js對應描述、相依既有回歸與新增bloodfeast-asura-rework、index／bridge／Worker快取、game_formula／LV_upgrade_system／本紀錄。禁止其他技能數值／存檔或Protocol格式／素材／Preset／其他副本，不合併推送。保留使用者Skills2與Gem_resonance未提交修改，隔離提交。
+- 衝突預檢：其餘範圍無外部來源；index與Claude ca9e0b65同檔不同區段，對方只改ui-newforge-visuals快取，本次只改status／formula／skills2／bridge快取，無語意相依；使用共同祖先及對方分支現況作三方merge-file乾跑exit0，依AI_RULES3.2分段修改免問。
+- 驗收：失血0／小數／100層／升級／治療／過期／擊殺延長與取消額外目標；霸王拳觸發前後／小數連擊／無狂怒亦可發動／角色野外高塔／擊殺延長／自然到期／卸下失效／狀態角色換表，實際傷害與VFX／飄字／光殼同源。Excel原生API精準修改、正常重開與格式／內容比較、兩端配置往返、正式Worker與瀏覽器隔離驗證、相依回歸／Build／自我Review／Commit供使用者整合。
+- 完成18檔：skills2將狂血盛宴依當前失血百分比的動態加成限制為表定maxStacks、取消連擊數追加附近目標，僅殺神降臨保留範圍普攻；VFX同時撤掉普通狂怒的範圍幾何、保留表內爆發與命中素材。新增純查詢skill2ComboTriggerChance，formula的rollComboHits先讀同一霸王拳狀態角色提高整體觸發率，整數／小數追加與獨立doubleHit規則不變；霸王拳全傷、光殼、擊殺延長改用狀態角色與效果鍵，並記錄持有者以在卸下／換實體／reset撤回自身狀態。combat僅更新失效的附近目標註解。
+- 配置與文件：Skills2僅AV78／AW78／AX78及AV81／AW81／AX81（新maxStacks100、移除count、加入comboChance100與說明），Status僅T72的霸王拳說明；CSV／skills2及status生成資料同步。保留原sec、pct／pctPer、killSec／gap等未指定數值，狂血盛宴每層Lv.1=1.1%、Lv.10=2%沿用既有等級公式。index快取status36／formula67／skills2 329／combat90／bridge310，Worker資源與相應匯入同升；game_formula與LV_upgrade_system同步，無Protocol／存檔／素材變更或素材庫Commit。新增bloodfeast-asura-rework、更新bloodfeast-vfx及兩份既有回歸；後者VFX測試補足超神所需塔層進度，未削弱解鎖判定。
+- 測試：`node --test --test-reporter=tap tests/combo-hits.test.cjs tests/status-system.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/ui-worker-events.test.cjs tests/bloodfeast-asura-rework.test.cjs tests/bloodfeast-vfx.test.cjs tests/war-god-body.test.cjs`隔離提交資料版本76/76；`node --test --test-reporter=tap --test-name-pattern='狂血盛宴|狂怒擊殺|嗜血狂怒的|超神自動|阿修羅' tests/skill2-counter-bloodrage.test.cjs tests/skill2-ult-evolution.test.cjs`6/6。新增原生引擎測試覆蓋等級1／10、治療／100層及擾動上限參數、狂熱者與殺神降臨相容、野外／高塔100%觸發率與小數追加、零連擊數不創造次數、到期／卸下／重置／狀態換表、真實主攻擊＋兩次連擊的傷害／飄字／命中事件一致。最後追加高塔查詢後新6項再次通過；`npm.cmd run build`542檔通過，兩表配置往返零語意差異、diff通過。
+- 擴大回歸限制：skill2-counter-bloodrage完整26項在隔離提交資料為21過／5失敗；用HEAD四支JS與原測試唯讀重跑同為21過及相同5失敗（舊超神／基本／追加反擊費用四項、血飲自傷一項），本次未修改無關規則或放寬斷言。使用者現行工作資料為18過／8失敗，另外是既有未提交反擊盾／費用調整及本次Excel儲存前已存在的血飲術pct50／pctPer10與舊測預期30／3不符；精準前後格值比對確認這些表值未由本次修改，保留使用者調整。
+- 瀏覽器：隱藏IAB／隨機localhost／seed1019隔離角色、正式Worker及顯示管線，不讀真人存檔。固定連擊數2／擲骰0.99，普通連擊率25%命中1次傷4834；狂怒半血顯示每層2%／上限100層、普攻目標1且area=null；霸王拳在狂怒已到期後仍按週期觸發，全傷+600%、連擊率100%，實際3次命中傷101520；擊殺延長2→2.1秒且增傷／連擊維持，12.1秒到期後歸零並恢復25%／1次命中／4834傷。Console error／warning 0，截圖本聊天visualizations/asura-combo-100.png已目視；分頁與服務關閉。
+- Excel／隔離交付：Excel鎖檔時保留原檔，使用者確認儲存關閉後以原生API僅改上述7格；兩本正常重開Saved=True無修復提示。唯讀比對其餘所有格值／公式／樣式、行高／欄寬／檢視／合併／篩選／驗證／註解均保留。提交用HEAD工作簿副本原生同改7格產生，語意檢查僅bloodrage.tiers[6]／ult[2]與sgAsuraFist.desc，其他使用者Skills2及Gem_resonance修改保留未提交。
+- 唯讀未改：AI規範／AGENTS／工作流／prompts/codex.md、combo原公式與參數表、stat快取／普通與高塔普攻共用入口、Status狀態施加／角色鍵、Worker shim／Protocol／VFX持續狀態同步、原有表內Preset與上述未列修改的相依回歸。自我Review確認增傷無重複乘算、未改連擊次數、擊殺不能復活過期增益、重施不截短已延長時間、場景／讀檔不殘留新連擊加成。
+- 交付：任務BLOODFEAST-ASURA-REWORK-20261019完成，無本次未完成功能，可供Review／合併；Commit為本紀錄所在`[Codex] feat: 調整狂血盛宴並讓霸王拳必定觸發連擊`，回覆附實際編號，未合併／推送。限制為隔離角色短測與上述既有回歸失敗、未跑全庫或真人長戰；下一步重載8123測試。
+
 ## WAR-GOD-BODY-THREE-SECOND-20261019 — 戰神體三秒生命與護盾損失轉反擊增傷
 
 - Owner：Codex；Done；單一開發者。使用者要求三秒內損失的生命／護盾百分比加成到接下來三秒的所有反擊，附加比例基值100%、每級+10%；已確認保留每0.5秒自動流失1%最大生命，並補進技能說明。追加角色無敵時不觸發任何反擊（含招架及追加效果），在反擊共用入口阻擋，不短路其他技能。使用者確認生命損失除以最大生命、護盾損失除以最大護盾後相加。

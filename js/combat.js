@@ -2077,7 +2077,7 @@ function fieldTick(dt) {
             if (primary && inReach) {
                 p.atkCd += 1 / st.aspd;
                 p._lockTarget = primary;
-                // 狂血盛宴：每 1 連擊數讓同一次普攻多攻擊 1 個敵人；追加目標不再遞迴觸發普攻特效。
+                // 殺神降臨追加範圍內目標；追加普攻不再遞迴觸發普攻特效。
                 var basicTargets = (typeof skill2RageBasicAttackTargets === 'function')
                     ? skill2RageBasicAttackTargets(primary, combatFieldEnemies()) : [primary];
                 var feastVfx = (typeof skill2BloodfeastVfx === 'function') ? skill2BloodfeastVfx(primary) : null;

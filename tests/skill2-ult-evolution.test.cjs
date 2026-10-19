@@ -2277,15 +2277,14 @@ test('嗜血狂怒的三個超神進化：殺神降臨、戰神屠錄、阿修�
   const p = playerEnt(); p.mp = 1e9;
   c.FIELD = { player: p };
   const primary = enemy(1e12, 3 * M, 0);
-  /* mid 刻意放在「近戰範圍外、殺神降臨範圍內」——滿階時【狂血盛宴】也會追加目標，
-     不隔開的話就分不出多打到的那一個是誰加的。實際間距由下面的前提斷言把關。 */
+  // mid 在殺神降臨範圍內，far 在範圍外；只有該超神追加範圍普攻目標。
   const mid = enemy(1e12, 3 * M + 100, 0);
   const far = enemy(1e12, 3 * M + 300, 0);
   const pool = [primary, mid, far];
   c.castSkill2(p, pool, 'bloodrage', 'mv-float');
 
   assert.deepEqual(Array.from(c.skill2RageBasicAttackTargets(primary, pool)), [primary],
-    '沒選超神進化時，mid 應落在【狂血盛宴】的近戰範圍外');
+    '沒選超神進化時，狂血盛宴不再追加任何附近目標');
   const plainCfg = c.skill2RageBasicAtkACfg({ atk: 1000 });
   assert.equal(plainCfg.atk, 1000, '沒選超神進化時普攻傷害不變');
 

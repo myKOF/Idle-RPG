@@ -640,7 +640,9 @@ function rollComboHits(st) {
   var c = (st && st.comboHits) || 0;
   if (typeof skill2FrenzyComboBonus === 'function') c += skill2FrenzyComboBonus();
   if (c <= 0) return 0;
-  if (!chance(COMBO_HITS_COEF.trigger)) return 0;
+  var trigger = (typeof skill2ComboTriggerChance === 'function')
+    ? skill2ComboTriggerChance(COMBO_HITS_COEF.trigger) : COMBO_HITS_COEF.trigger;
+  if (!chance(trigger)) return 0;
   var n = Math.floor(c);
   if (chance((c - n) * 100)) n++;
   return n;

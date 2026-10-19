@@ -193,7 +193,7 @@ var SKILLS2 = {
   bloodblade: { name: '血刃斬', emoji: '🩸', range: '', cd: 8, cost: 25, tiers: [{ name: '血刃斬', unlock: { reinc: 0, lv: 200 }, cost: 25, fx: { pct: 200, pctPer: 15, dotPct: 30, dotSec: 5, dotGap: 1 }, goldBase: 100000, goldGrow: 1.5, desc: '對敵人造成 1 次 {pct}% 物理傷害，並附加流血：每 {dotGap} 秒造成技能傷害 {dotPct}% 的傷害，持續 {dotSec} 秒', vfx: { attack: 'hit-bloodblade-burst' }, status: { enemy: [{ id: 'sgBleed' }] } }, { name: '強化流血', unlock: { reinc: 0, lv: 250 }, cost: 60, fx: { sec: 1, secPer: 0.1, gapPct: 10, gapPctPer: 1 }, goldBase: 200000, goldGrow: 1.5, desc: '流血持續時間 +{sec} 秒，且流血作用間隔縮短 {gapPct}%（跳得更快、總傷更高）' }, { name: '虛弱', unlock: { reinc: 0, lv: 300 }, cost: 150, fx: { pct: 10, pctPer: 2 }, goldBase: 400000, goldGrow: 1.5, desc: '流血中的敵人受到的傷害提高 {pct}%' }, { name: '血毒刃', unlock: { reinc: 0, lv: 350 }, cost: 300, fx: { dotPct: 25, dotPctPer: 3, dotSec: 6, dotGap: 0.5 }, goldBase: 800000, goldGrow: 1.5, desc: '敵人流血的同時也會中毒：每 {dotGap} 秒造成技能傷害 {dotPct}% 的毒屬性傷害，持續 {dotSec} 秒', status: { enemy: [{ id: 'sgPoison' }] } }, { name: '毒霧感染', unlock: { reinc: 0, lv: 400 }, cost: 700, fx: { chance: 15, chancePer: 1.5, count: 1, speed: 50 }, goldBase: 1500000, goldGrow: 1.5, desc: '血毒刃的毒在每次作用時，有 {chance}% 機率傳染給附近的 {count} 個敵人', triggerVfx: { projectile: 'proj-poison-drop', hit: 'hit-poison' } }, { name: '死亡屍爆', unlock: { reinc: 0, lv: 450 }, cost: 1200, fx: { pct: 50, pctPer: 5, count: 2 }, goldBase: 3000000, goldGrow: 1.5, desc: '流血或中毒狀態的敵人死亡時爆炸，對附近 {count} 個敵人造成 {pct}% 技能傷害並傳染中毒', triggerVfx: { attack: 'burst-blood' } }, { name: '零日感染', unlock: { reinc: 0, lv: 500 }, cost: 3000, fx: { chance: 10, chancePer: 1, pct: 40, pctPer: 4, count: 1, m: 20 }, goldBase: 5000000, goldGrow: 1.5, desc: '流血或中毒狀態在每次作用時有 {chance}% 機率立即造成剩餘的持續傷害；作用結束後將流血及中毒傳染給 {m} 米內的隨機 {count} 個敵人，且流血與中毒傷害 +{pct}%', triggerVfx: { attack: 'burst-zero-infection' } }], ult: [{ id: 'slayerDomain', name: '殺神領域', cost: 10000, fx: { pct: 2, pctPer: 0.2, healPct: 2, healPctPer: 0.2, dur: 6, maxStacks: 100, m: 24 }, goldBase: 10000000, goldGrow: 1.5, desc: '永久展開 {m} 米的殺神領域：領域內的敵人死亡時堆疊【殺神】，每層使你造成的傷害 +{pct}%最多 {maxStacks} 層，持續 {dur} 秒，且領域內敵人死亡時可回復 {healPct}% 最大生命', unlock: { reinc: 0, lv: 500, tower: 23 }, status: { self: [{ id: 'sgSlayerMark' }, { id: 'sgSlayerDomain' }] } }, { id: 'venomDomain', name: '萬毒血霧', cost: 10000, fx: { pct: 150, pctPer: 15, dur: 10, maxStacks: 20, gap: 0.5, m: 30 }, goldBase: 10000000, goldGrow: 1.5, desc: '永久展開 {m} 米的萬毒領域：領域內的敵人每 {gap} 秒受到 {pct}% 中毒傷害，該中毒持續 {dur} 秒且可堆疊至 {maxStacks} 層', unlock: { reinc: 0, lv: 500, tower: 44 }, triggerVfx: { hit: 'hit-poison' }, status: { self: [{ id: 'sgVenomDomain' }], enemy: [{ id: 'sgVenomField' }] } }, { id: 'disintegrate', name: '崩解', cost: 10000, fx: { pct: 50, pctPer: 5, gapPct: 20, gapPctPer: 2, sec: 3, secPer: 0.3, m: 6 }, goldBase: 10000000, goldGrow: 1.5, desc: '中毒與流血作用間隔時間縮短 {gapPct}%，持續時間延長 {sec} 秒；作用結束後會爆炸對周圍 {m} 米內的敵人造成其持續時間內的 {pct}%總傷害', unlock: { reinc: 0, lv: 500, tower: 72 }, triggerVfx: { attack: 'burst-blood' } }] },
   dualdance: { name: '雙刀亂舞', emoji: '⚔️', range: '', cd: 8, cost: 25, tiers: [{ name: '雙刀亂舞', unlock: { reinc: 0, lv: 250 }, cost: 25, fx: { pct: 300, pctPer: 25, count: 2 }, goldBase: 100000, goldGrow: 1.5, desc: '在當前攻擊範圍內隨機選敵斬擊 {count} 次，每次造成 {pct}% 物理傷害；可重複選中同一目標，只有 1 個敵人時全部斬擊打向它', vfx: { attack: 'slash-dual' } }, { name: '疾風亂舞', unlock: { reinc: 0, lv: 300 }, cost: 60, fx: { add: 1, addPer: 0.2 }, goldBase: 200000, goldGrow: 1.5, desc: '額外增加 {add} 次斬擊，每次從當前攻擊範圍內隨機選敵，可重複選中同一目標（不足 1 次的部分以機率觸發）' }, { name: '強化雙刀', unlock: { reinc: 0, lv: 350 }, cost: 150, fx: { pct: 25, pctPer: 5 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化雙刀傷害，額外 +{pct}% 物理傷害' }, { name: '狂暴之舞', unlock: { reinc: 0, lv: 400 }, cost: 300, fx: { cr: 100, crPer: 10, add: 1, addPer: 0.1, sec: 6 }, goldBase: 800000, goldGrow: 1.5, desc: '讓你的暴擊率 +{cr}%、連擊數 +{add}，持續 {sec} 秒', status: { self: [{ id: 'sgFrenzyCr' }] } }, { name: '鐵血之舞', unlock: { reinc: 0, lv: 450 }, cost: 700, fx: { pct: 1, pctPer: 0.1, sec: 3, gap: 0.35, m: 5 }, goldBase: 1500000, goldGrow: 1.5, desc: '施放雙刀亂舞時使你以及附近 {m} 米內的所有敵人流血：每 {gap} 秒造成最大生命值 {pct}% 傷害，持續 {sec} 秒', vfx: { attack: 'slash-dual-red' }, status: { self: [{ id: 'sgIronBleed' }], enemy: [{ id: 'sgIronBleed' }] } }, { name: '嗜血狂化', unlock: { reinc: 0, lv: 500 }, cost: 1200, fx: { pct: 0.25, pctPer: 0.025, sec: 6 }, goldBase: 3000000, goldGrow: 1.5, desc: '施放雙刀亂舞後 {sec} 秒內，生命值或護盾每減少 1%，獲得 {pct}% 技能傷害提升' }, { name: '暴風亂舞', unlock: { reinc: 0, lv: 550 }, cost: 3000, fx: { sec: 3, secPer: 0.3, gap: 0.35 }, goldBase: 5000000, goldGrow: 1.5, desc: '化身暴風在敵人間穿梭 {sec} 秒：每 {gap} 秒自動施放 1 次雙刀亂舞；期間可以普攻及施放技能', vfx: { attack: 'slash-dual' }, status: { self: [{ id: 'sgStorm' }] } }], ult: [{ id: 'doomDance', name: '毀滅之舞', cost: 10000, fx: { hpPct: 10, hpPctPer: -0.5, pct: 200, pctPer: 20, add: 3 }, goldBase: 10000000, goldGrow: 1.5, desc: '每施放 1 次雙刀亂舞就失去當下 {hpPct}% 生命值（不會致死），但雙刀亂舞的傷害提高 {pct}%，且額外 +{add} 個攻擊目標（每刀在當前攻擊範圍內隨機選敵，可重複命中同一目標）', unlock: { reinc: 0, lv: 550, tower: 34 }, vfx: { attack: 'slash-dual-08' } }, { id: 'flameKagura', name: '火之神樂', cost: 10000, fx: { pct: 30, pctPer: 3, dur: 10, maxStacks: 10, gap: 0.5 }, goldBase: 10000000, goldGrow: 1.5, desc: '雙刀亂舞附加火焰：每次命中堆疊 1 層【神樂灼焰】，每層每 {gap} 秒造成 {pct}% 火屬性傷害，最多 {maxStacks} 層，持續 {dur} 秒；狀態生效期間將敵人屬性改為火屬性，結束後恢復', unlock: { reinc: 0, lv: 550, tower: 73 }, vfx: { attack: 'slash-dual-fire-09' }, status: { enemy: [{ id: 'sgKagura' }] } }, { id: 'asuraDance', name: '修羅亂舞', cost: 10000, fx: { pct: 20, pctPer: 2 }, goldBase: 10000000, goldGrow: 1.5, desc: '讓你可以同時裝備兩把雙手武器（主手與副手各一把），且雙手武器的詞條效果提升 {pct}%', unlock: { reinc: 0, lv: 550, tower: 94 }, vfx: { attack: 'slash-dual-10' } }] },
   counter: { name: '反擊', emoji: '🛡️', range: '', cd: 0, cost: 5, tiers: [{ name: '反擊', unlock: { reinc: 0, lv: 300 }, cost: 5, fx: { chance: 35, pct: 50, pctPer: 5 }, goldBase: 100000, goldGrow: 1.5, desc: '被動：受到傷害時有 {chance}% 機率對攻擊者反擊，造成 {pct}% 普攻傷害；無敵期間不觸發反擊。', vfx: { projectile: 'proj-counter-ripple', hit: 'hit-phys' } }, { name: '招架', unlock: { reinc: 0, lv: 350 }, cost: 10, fx: { mult: 300, multPer: 30 }, goldBase: 200000, goldGrow: 1.5, desc: '格擋時必定對敵人反擊，造成「格擋減傷值 × {mult}%」的普攻傷害' }, { name: '強化反擊', unlock: { reinc: 0, lv: 400 }, cost: 20, fx: { pct: 30, pctPer: 5 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步提升反擊傷害，額外 +{pct}% 反擊普攻傷害' }, { name: '反擊盾', unlock: { reinc: 0, lv: 450 }, cost: 50, fx: { pct: 1, pctPer: 0.1 }, goldBase: 800000, goldGrow: 1.5, desc: '觸發反擊時，回復自身最大生命 {pct}% 的護盾' }, { name: '破甲擊', unlock: { reinc: 0, lv: 500 }, cost: 100, fx: { chance: 35, def: 15, sec: 4, secPer: 0.4, max: 4 }, goldBase: 1500000, goldGrow: 1.5, desc: '格擋時有 {chance}% 機率造成破甲：防禦 -{def}%，持續 {sec} 秒，最多疊 {max} 層（疊層時重置時間）', vfx: { hit: 'hit-earth' }, status: { enemy: [{ id: 'sgArmorBrk' }] } }, { name: '二次反擊', unlock: { reinc: 0, lv: 550 }, cost: 200, fx: { chance: 25, chancePer: 2.5, count: 1 }, goldBase: 3000000, goldGrow: 1.5, desc: '反擊時有 {chance}% 機率再追加 {count} 次反擊（追加反擊不會再觸發反擊）' }, { name: '狂化反殺', unlock: { reinc: 0, lv: 600 }, cost: 400, fx: { pct: 50, pctPer: 5, count: 1, m: 80 }, goldBase: 5000000, goldGrow: 1.5, desc: '每次反擊時，額外對 {m} 米內隨機 {count} 個敵人反擊，造成 {pct}% 普攻傷害（不會再觸發反擊）' }], ult: [{ id: 'holyBody', name: '神聖之體', cost: 1000, fx: { count: 10, pct: 300, pctPer: 30, m: 8 }, goldBase: 10000000, goldGrow: 1.5, desc: '每 {count} 次反擊後朝目標射出一顆光彈，對其周圍 {m} 米內的敵人造成 {pct}% 神聖傷害', unlock: { reinc: 0, lv: 600, tower: 25 }, triggerVfx: { attack: 'burst-holy', projectile: 'proj-light-orb' } }, { id: 'indomitable', name: '不屈鬥魂', cost: 1000, fx: { sec: 2.5, secPer: 0.25, cd: 60, cdPer: -2, stunSec: 3, pushM: 30, pushSec: 0.25, lightSec: 2, m: 30 }, goldBase: 10000000, goldGrow: 1.5, desc: '面臨死亡時將範圍{m}米以內的敵人擊退{pushM}米並擊暈{stunSec}秒，同時獲得{sec}秒的無敵護盾，此招有{cd}秒冷卻時間；本招發動時不算死亡，戰鬥繼續', unlock: { reinc: 0, lv: 600, tower: 46 }, triggerVfx: { attack: 'burst-earth', hit: 'pillar-indomitable-white', ground: 'st-indomitable-gold' }, status: { self: [{ id: 'invuln' }], enemy: [{ id: 'stun' }] } }, { id: 'warGodBody', name: '戰神體', cost: 1000, fx: { sec: 3, hpPct: 1, pct: 100, pctPer: 10, gap: 0.5 }, goldBase: 10000000, goldGrow: 1.5, desc: '你每 {gap} 秒流失最大生命的 {hpPct}%；每 {sec} 秒累計損失的生命與護盾百分比，將其 {pct}% 附加為接下來 {sec} 秒內的反擊傷害加成；生命與護盾損失分別除以各自上限後相加；無敵期間不觸發反擊', unlock: { reinc: 0, lv: 600, tower: 74 } }] },
-  bloodrage: { name: '嗜血狂怒', emoji: '💢', range: '', cd: 40, cost: 25, tiers: [{ name: '嗜血狂怒', unlock: { reinc: 0, lv: 400 }, cost: 25, fx: { pct: 20, pctPer: 2, sec: 8 }, goldBase: 100000, goldGrow: 1.5, desc: '攻速額外 +{pct}%（乘算，不受攻速上限限制），持續 {sec} 秒', triggerVfx: { attack: 'burst-detonate' }, status: { self: [{ id: 'sgBloodrage' }] } }, { name: '狂暴', unlock: { reinc: 0, lv: 450 }, cost: 60, fx: { pct: 20, pctPer: 2 }, goldBase: 200000, goldGrow: 1.5, desc: '狂怒期間爆擊傷害額外 +{pct}%（乘算）', triggerVfx: {  } }, { name: '狂怒', unlock: { reinc: 0, lv: 500 }, cost: 150, fx: { pct: 20, pctPer: 2 }, goldBase: 400000, goldGrow: 1.5, desc: '狂怒期間總傷害額外 +{pct}%（乘算）', triggerVfx: {  } }, { name: '狂化連殺', unlock: { reinc: 0, lv: 550 }, cost: 300, fx: { add: 0.5, addPer: 0.1, kill: 0.1, killMax: 5 }, goldBase: 800000, goldGrow: 1.5, desc: '狂怒期間基礎連擊數 +{add}，且每擊殺 1 個敵人再 +{kill}（累計上限 +{killMax}；不足 1 次的部分以機率觸發）', triggerVfx: {  } }, { name: '嗜血反震', unlock: { reinc: 0, lv: 600 }, cost: 700, fx: { pct: 20, pctPer: 2 }, goldBase: 1500000, goldGrow: 1.5, desc: '狂怒期間反震傷害提高 {pct}%（乘算，可與其它反震加成疊加）', triggerVfx: {  } }, { name: '血飲術', unlock: { reinc: 0, lv: 650 }, cost: 1200, fx: { pct: 30, pctPer: 3, self: 0.1, m: 80 }, goldBase: 3000000, goldGrow: 1.5, desc: '狂怒期間傷害額外提高 {pct}%（乘算），但 {m} 米內的敵人每次受傷都會使你損失最大生命 {self}%（直接扣血，無法被護盾吸收）', triggerVfx: {  } }, { name: '狂血盛宴', unlock: { reinc: 0, lv: 700 }, cost: 3000, fx: { sec: 0.5, pct: 1, pctPer: 0.1, count: 1 }, goldBase: 5000000, goldGrow: 1.5, desc: '狂怒期間每擊殺 1 個敵人，持續時間延長 {sec} 秒；且生命值每減少 1%，傷害額外 +{pct}%（乘算，無限疊加），每 1 連擊數使普攻可同時攻擊 1 個敵人（無限疊加）', triggerVfx: { attack: 'burst-detonate-phys' } }], ult: [{ id: 'slayerAdvent', name: '殺神降臨', cost: 10000, fx: { pct: 100, pctPer: 10, m: 8 }, goldBase: 10000000, goldGrow: 1.5, desc: '狂怒期間普攻傷害 +{pct}%，且同時對目標周圍 {m} 米內的所有敵人造成傷害', unlock: { reinc: 0, lv: 700, tower: 36 }, triggerVfx: { attack: 'burst-detonate-phys-08' } }, { id: 'warGodRoll', name: '戰神屠錄', cost: 10000, fx: { pct: 2, pctPer: 0.2, maxStacks: 200, drain: 100, drainPer: 10 }, goldBase: 10000000, goldGrow: 1.5, desc: '狂怒期間你無法獲得護盾，但每殺死 1 個敵人使你造成的所有傷害 +{pct}%，最多 {maxStacks} 層；施放狂怒後吸血效果提升 {drain}%（與當前吸血乘算，不隨擊殺疊層），增傷層數與吸血加成持續到你死亡為止', unlock: { reinc: 0, lv: 700, tower: 75 }, triggerVfx: { attack: 'burst-detonate-dark-09' }, status: { self: [{ id: 'sgWarGodKill' }] } }, { id: 'asuraFist', name: '阿修羅霸王拳', cost: 10000, fx: { pct: 300, pctPer: 30, sec: 1, secPer: 0.1, killSec: 0.1, gap: 10 }, goldBase: 10000000, goldGrow: 1.5, desc: '每 {gap} 秒，你造成的所有傷害 +{pct}%，持續 {sec} 秒；效果期間每擊殺 1 個敵人，持續時間延長 {killSec} 秒', unlock: { reinc: 0, lv: 700, tower: 96 }, triggerVfx: { attack: 'burst-detonate-dark' }, status: { self: [{ id: 'sgAsuraFist' }] } }] },
+  bloodrage: { name: '嗜血狂怒', emoji: '💢', range: '', cd: 40, cost: 25, tiers: [{ name: '嗜血狂怒', unlock: { reinc: 0, lv: 400 }, cost: 25, fx: { pct: 20, pctPer: 2, sec: 8 }, goldBase: 100000, goldGrow: 1.5, desc: '攻速額外 +{pct}%（乘算，不受攻速上限限制），持續 {sec} 秒', triggerVfx: { attack: 'burst-detonate' }, status: { self: [{ id: 'sgBloodrage' }] } }, { name: '狂暴', unlock: { reinc: 0, lv: 450 }, cost: 60, fx: { pct: 20, pctPer: 2 }, goldBase: 200000, goldGrow: 1.5, desc: '狂怒期間爆擊傷害額外 +{pct}%（乘算）', triggerVfx: {  } }, { name: '狂怒', unlock: { reinc: 0, lv: 500 }, cost: 150, fx: { pct: 20, pctPer: 2 }, goldBase: 400000, goldGrow: 1.5, desc: '狂怒期間總傷害額外 +{pct}%（乘算）', triggerVfx: {  } }, { name: '狂化連殺', unlock: { reinc: 0, lv: 550 }, cost: 300, fx: { add: 0.5, addPer: 0.1, kill: 0.1, killMax: 5 }, goldBase: 800000, goldGrow: 1.5, desc: '狂怒期間基礎連擊數 +{add}，且每擊殺 1 個敵人再 +{kill}（累計上限 +{killMax}；不足 1 次的部分以機率觸發）', triggerVfx: {  } }, { name: '嗜血反震', unlock: { reinc: 0, lv: 600 }, cost: 700, fx: { pct: 20, pctPer: 2 }, goldBase: 1500000, goldGrow: 1.5, desc: '狂怒期間反震傷害提高 {pct}%（乘算，可與其它反震加成疊加）', triggerVfx: {  } }, { name: '血飲術', unlock: { reinc: 0, lv: 650 }, cost: 1200, fx: { pct: 30, pctPer: 3, self: 0.1, m: 80 }, goldBase: 3000000, goldGrow: 1.5, desc: '狂怒期間傷害額外提高 {pct}%（乘算），但 {m} 米內的敵人每次受傷都會使你損失最大生命 {self}%（直接扣血，無法被護盾吸收）', triggerVfx: {  } }, { name: '狂血盛宴', unlock: { reinc: 0, lv: 700 }, cost: 3000, fx: { sec: 0.5, pct: 1, pctPer: 0.1, maxStacks: 100 }, goldBase: 5000000, goldGrow: 1.5, desc: '狂怒期間每擊殺 1 個敵人，持續時間延長 {sec} 秒；且生命值每減少 1%，傷害額外 +{pct}%，最高 {maxStacks} 層', triggerVfx: { attack: 'burst-detonate-phys' } }], ult: [{ id: 'slayerAdvent', name: '殺神降臨', cost: 10000, fx: { pct: 100, pctPer: 10, m: 8 }, goldBase: 10000000, goldGrow: 1.5, desc: '狂怒期間普攻傷害 +{pct}%，且同時對目標周圍 {m} 米內的所有敵人造成傷害', unlock: { reinc: 0, lv: 700, tower: 36 }, triggerVfx: { attack: 'burst-detonate-phys-08' } }, { id: 'warGodRoll', name: '戰神屠錄', cost: 10000, fx: { pct: 2, pctPer: 0.2, maxStacks: 200, drain: 100, drainPer: 10 }, goldBase: 10000000, goldGrow: 1.5, desc: '狂怒期間你無法獲得護盾，但每殺死 1 個敵人使你造成的所有傷害 +{pct}%，最多 {maxStacks} 層；施放狂怒後吸血效果提升 {drain}%（與當前吸血乘算，不隨擊殺疊層），增傷層數與吸血加成持續到你死亡為止', unlock: { reinc: 0, lv: 700, tower: 75 }, triggerVfx: { attack: 'burst-detonate-dark-09' }, status: { self: [{ id: 'sgWarGodKill' }] } }, { id: 'asuraFist', name: '阿修羅霸王拳', cost: 10000, fx: { pct: 300, pctPer: 30, sec: 1, secPer: 0.1, killSec: 0.1, comboChance: 100, gap: 10 }, goldBase: 10000000, goldGrow: 1.5, desc: '每 {gap} 秒，你造成的所有傷害 +{pct}%，且連擊機率提升至 {comboChance}%，持續 {sec} 秒；效果期間每擊殺 1 個敵人，持續時間延長 {killSec} 秒', unlock: { reinc: 0, lv: 700, tower: 96 }, triggerVfx: { attack: 'burst-detonate-dark' }, status: { self: [{ id: 'sgAsuraFist' }] } }] },
   fireball: { name: '火球術', emoji: '🔥', range: '', dmgType: 'magic', elem: 'fire', cd: 8, cost: 25, tiers: [{ name: '火球術', unlock: { reinc: 0, lv: 1 }, cost: 25, fx: { pct: 150, pctPer: 15, castM: 30, speed: 65.52, m: 6 }, goldBase: 100000, goldGrow: 1.5, desc: '射出一顆火球（射程 {castM} 米），命中時爆炸，對目標及 {m} 米內的敵人造成 {pct}% 火焰傷害', vfx: { attack: 'hit-fireball-rupture', projectile: 'proj-dragon-devour' } }, { name: '燃燒', unlock: { reinc: 0, lv: 1 }, cost: 60, fx: { dotPct: 20, dotPctPer: 2, dotSec: 5, dotGap: 0.5 }, goldBase: 200000, goldGrow: 1.5, desc: '被火球擊中的敵人陷入燃燒：每 {dotGap} 秒造成技能傷害 {dotPct}% 的火焰傷害，持續 {dotSec} 秒', status: { enemy: [{ id: 'sgBurn' }] } }, { name: '火球爆裂', unlock: { reinc: 0, lv: 50 }, cost: 150, fx: { pct: 30, pctPer: 3, count: 3, m: 20 }, goldBase: 400000, goldGrow: 1.5, desc: '火球爆炸後分裂出 {count} 個小火球，射向目標 {m} 米內的敵人，每個造成原始火球 {pct}% 的傷害', vfx: { attack: 'hit-fireball-rupture', projectile: 'proj-dragon-devour', hit: 'hit-fireball-rupture' } }, { name: '強化燃燒', unlock: { reinc: 0, lv: 100 }, cost: 300, fx: { gap: 0.4, gapPer: -0.015 }, goldBase: 800000, goldGrow: 1.5, desc: '燃燒的作用間隔縮短至 {gap} 秒（跳得更快＝總傷更高）' }, { name: '爆燃', unlock: { reinc: 0, lv: 150 }, cost: 700, fx: { pct: 50, pctPer: 5, count: 2, m: 12 }, goldBase: 1500000, goldGrow: 1.5, desc: '燃燒結束或敵人死亡時爆炸，對我方 {m} 米內的 {count} 個敵人造成該敵人整段燃燒累積傷害 {pct}% 的傷害', vfx: { attack: 'burst-fire', hit: 'hit-fire' } }, { name: '火焰增幅', unlock: { reinc: 0, lv: 200 }, cost: 1200, fx: { pct: 0.25, pctPer: 0.025, sec: 4, m: 20 }, goldBase: 3000000, goldGrow: 1.5, desc: '我方 {m} 米內每有 1 次燃燒作用，你的火焰傷害 +{pct}%，持續 {sec} 秒（無限疊加，每次疊加時重置時間）', status: { self: [{ id: 'sgFireAmp' }] } }, { name: '殞石術', unlock: { reinc: 0, lv: 250 }, cost: 3000, fx: { pct: 250, pctPer: 25, count: 3, castM: 20, speed: 36, m: 15 }, goldBase: 5000000, goldGrow: 1.5, desc: '改為召喚 {count} 顆巨大火殞石從天而降（射程 {castM} 米），每顆對目標 {m} 米內的敵人造成 {pct}% 火焰傷害，且殞石造成的燃燒傷害為 2 倍（第 2~6 階效果仍然生效）', vfx: { attack: 'burst-fire', projectile: 'proj-meteor-inferno', hit: 'burst-meteor-inferno', ground: 'mark-red' } }], ult: [{ id: 'meteorFall', name: '火殞天落', cost: 10000, fx: { count: 8, size: 30, pct: 50, pctPer: 5 }, goldBase: 10000000, goldGrow: 1.5, desc: '殞石的體積 +{size}%、造成的傷害 +{pct}%，且每次施放額外連續落下 {count} 顆巨大殞石', unlock: { reinc: 0, lv: 250, tower: 20 } }, { id: 'starfallCataclysm', name: '地爆天星', cost: 10000, fx: { normal: 80, elite: 40, boss: 20, gap: 50, gapPer: -3 }, goldBase: 10000000, goldGrow: 1.5, desc: '每 {gap} 秒，天空落下一顆超巨型殞石造成海量傷害：普通敵人 -{normal}% 生命、菁英 -{elite}% 生命、BOSS -{boss}% 生命', unlock: { reinc: 0, lv: 250, tower: 41 }, vfx: { projectile: 'proj-starfall', hit: 'burst-fire', ground: 'ground-starfall-shadow' }, triggerVfx: { attack: 'burst-fire-shockwave' }, status: { self: [{ id: 'sgStarfall' }] } }, { id: 'phoenixPrairie', name: '天火流星', cost: 10000, fx: { count: 1, balls: 10, ballsPer: 1, pct: 100, pctPer: 10 }, goldBase: 10000000, goldGrow: 1.5, desc: '殞石數量 +{count} 顆，且每顆殞石落下時伴隨 {balls} 顆火球一同落下；火球與殞石造成的傷害 +{pct}%', unlock: { reinc: 0, lv: 250, tower: 79 }, vfx: { projectile: 'proj-dragon-devour', hit: 'hit-fire-explosion' } }] },
   firepillar: { name: '火龍捲', emoji: '🌋', range: '', dmgType: 'magic', elem: 'fire', cd: 8, cost: 25, tiers: [{ name: '火龍捲', unlock: { reinc: 0, lv: 50 }, cost: 25, fx: { pct: 60, pctPer: 6, hits: 6, sec: 3, castM: 30, m: 3 }, goldBase: 100000, goldGrow: 1.5, desc: '在敵人腳下召喚一道火柱（射程 {castM} 米），對目標 {m} 米內的敵人連續造成 {hits} 段傷害，每段 {pct}% 火焰傷害（全程約 {sec} 秒）', vfx: { hit: 'hit-fire', field: 'fire-tornado-inferno' } }, { name: '龍捲噴發', unlock: { reinc: 0, lv: 100 }, cost: 60, fx: { pct: 10, pctPer: 2 }, goldBase: 200000, goldGrow: 1.5, desc: '火柱的傷害範圍擴大 {pct}%' }, { name: '雙重龍捲', unlock: { reinc: 0, lv: 150 }, cost: 150, fx: { count: 2, pct: 20, pctPer: 2, m: 20 }, goldBase: 400000, goldGrow: 1.5, desc: '可同時對 {m} 米內的 {count} 個目標施放火柱，且火焰傷害額外 +{pct}%' }, { name: '燃燒', unlock: { reinc: 0, lv: 200 }, cost: 300, fx: { chance: 20, chancePer: 2, dotPct: 20, dotSec: 4, dotGap: 0.5 }, goldBase: 800000, goldGrow: 1.5, desc: '火柱每次作用時有 {chance}% 機率使敵人燃燒：每 {dotGap} 秒造成技能傷害 {dotPct}% 的火焰傷害，持續 {dotSec} 秒', status: { enemy: [{ id: 'sgBurn' }] } }, { name: '烈焰衝擊', unlock: { reinc: 0, lv: 250 }, cost: 700, fx: { pct: 100, pctPer: 10, m: 12 }, goldBase: 1500000, goldGrow: 1.5, desc: '火龍捲消失時，對周圍 {m} 米內的敵人造成 {pct}% 火焰傷害', vfx: { hit: 'hit-fire' }, triggerVfx: { attack: 'burst-fire-shockwave', hit: 'hit-fire' } }, { name: '重生', unlock: { reinc: 0, lv: 300 }, cost: 1200, fx: { chance: 25, chancePer: 2.5, m: 20 }, goldBase: 3000000, goldGrow: 1.5, desc: '火柱消失後有 {chance}% 機率在我方 {m} 米內的敵人身上重生' }, { name: '無限火龍', unlock: { reinc: 0, lv: 350 }, cost: 3000, fx: { hitsAdd: 6, pct: 100, pctPer: 10, respawn: 1, sec: 6, speed: 6 }, goldBase: 5000000, goldGrow: 1.5, desc: '火龍捲持續 {sec} 秒，傷害段數 +{hitsAdd} 段，每段 {pct}% 火焰傷害；以每秒 {speed} 米持續隨機追敵，單一敵人時在其附近移動；消散後再召喚 {respawn} 次（再召喚不可連鎖），火焰轉為暗紅色', vfx: { hit: 'hit-fire', field: 'fire-tornado-infinite' } }], ult: [{ id: 'infernoTempest', name: '烈焰暴風', cost: 10000, fx: { pct: 200, pctPer: 20, count: 1, m: 6, searchM: 36, gap: 0.33, speed: 36 }, goldBase: 10000000, goldGrow: 1.5, desc: '火龍捲每 {gap} 秒向 {searchM} 米內每次重新隨機選取最多 {count} 名敵人發射追蹤必中火球，命中後爆炸，對周圍 {m} 米內的敵人造成 {pct}% 火焰傷害', unlock: { reinc: 0, lv: 350, tower: 25 }, triggerVfx: { attack: 'burst-fire', projectile: 'proj-dragon-devour' } }, { id: 'eternalInferno', name: '永劫火獄', cost: 10000, fx: { pct: 200, pctPer: 20, sec: 6, gap: 0.5, m: 20 }, goldBase: 10000000, goldGrow: 1.5, desc: '火龍捲會在附近 {m} 米內隨機游走，並在移動軌跡上留下火池：每 {gap} 秒造成 {pct}% 火焰傷害，持續 {sec} 秒', unlock: { reinc: 0, lv: 350, tower: 45 }, triggerVfx: { ground: 'ground-mire-lava' } }, { id: 'dragonDevour', name: '融火之心', cost: 10000, fx: { pct: 200, pctPer: 20, sec: 8, ballPct: 400, ballM: 6, ballMin: 2, ballMax: 4, ballSec: 0.9, m: 15, pullM: 35, ballRange: 20, arcM: 12, gap: 0.35 }, goldBase: 10000000, goldGrow: 1.5, desc: '改為召喚一個半徑 {m} 米的巨型火漩渦（新施放取代舊漩渦），每 {gap} 秒造成 {pct}% 火焰傷害，持續聚攏 {pullM} 米內的敵人，持續 {sec} 秒。每秒隨機噴出 {ballMin}～{ballMax} 顆小火球，以拋物線飛向 {ballRange} 米內的隨機地面，落地對半徑 {ballM} 米造成 {ballPct}% 火焰傷害。', unlock: { reinc: 0, lv: 350, tower: 65 }, vfx: { projectile: 'proj-dragon-devour', field: 'field-dragon-devour' }, triggerVfx: { attack: 'burst-dragon-devour' } }] },
   firehunt: { name: '火狩', emoji: '☄️', range: '3*3', dmgType: 'magic', elem: 'fire', cd: 8, cost: 25, tiers: [{ name: '火狩', unlock: { reinc: 0, lv: 100 }, cost: 25, fx: { pct: 100, pctPer: 10, count: 2, sec: 4, rps: 0.455, castM: 8, m: 8 }, goldBase: 100000, goldGrow: 1.5, desc: '召喚 {count} 團火狩環繞自身（環繞半徑 {m} 米、每秒 {rps} 圈），碰到敵人即命中一次，每次造成 {pct}% 火焰傷害，持續 {sec} 秒', vfx: { attack: 'burst-fire', projectile: 'orb-firehunt', hit: 'hit-fire-explosion', ground: 'ground-orbit-ring-fire' }, status: { self: [{ id: 'sgFirehunt' }] } }, { name: '強化火狩', unlock: { reinc: 0, lv: 150 }, cost: 60, fx: { pct: 15, pctPer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '火狩的體積與環繞範圍同步擴大 {pct}%' }, { name: '伴生火狩', unlock: { reinc: 0, lv: 200 }, cost: 150, fx: { chance: 20, chancePer: 2, m: 1 }, goldBase: 400000, goldGrow: 1.5, desc: '火狩命中時有 {chance}% 機率在母體外緣後方留 {m} 米間隙伴生一團火狩（每團只能伴生一次，伴生出的不再伴生）', triggerVfx: { projectile: 'orb-firehunt-companion' } }, { name: '三重火狩', unlock: { reinc: 0, lv: 250 }, cost: 300, fx: { count: 3, pct: 120, pctPer: 12, sec: 4 }, goldBase: 800000, goldGrow: 1.5, desc: '改為召喚 {count} 團火狩，每團造成 {pct}% 火焰傷害，持續 {sec} 秒' }, { name: '極速火狩', unlock: { reinc: 0, lv: 300 }, cost: 700, fx: { pct: 25, pctPer: 2.5 }, goldBase: 1500000, goldGrow: 1.5, desc: '火狩的旋轉速度 +{pct}%' }, { name: '再生', unlock: { reinc: 0, lv: 350 }, cost: 1200, fx: { sec: 0.4, secPer: 0.04 }, goldBase: 3000000, goldGrow: 1.5, desc: '火狩每擊殺 1 個敵人，全部火狩的持續時間延長 {sec} 秒' }, { name: '狩神之舞', unlock: { reinc: 0, lv: 400 }, cost: 3000, fx: { rings: 2, pct: 150, pctPer: 15, sec: 6, m: 6 }, goldBase: 5000000, goldGrow: 1.5, desc: '改為一次施放 {rings} 道火狩（外圈距內圈 {m} 米、兩道旋轉方向相反），每團造成 {pct}% 火焰傷害、出現時自帶伴生，持續 {sec} 秒' }], ult: [{ id: 'solarRing', name: '烈陽星環', cost: 10000, fx: { count: 1, grow: 60, growSec: 4, spin: 30, pct: 50, pctPer: 10 }, goldBase: 10000000, goldGrow: 1.5, desc: '火狩數量 +{count} 團，體積在 {growSec} 秒內逐漸增大最多 {grow}%，環繞速度 +{spin}%，且造成傷害 +{pct}%', unlock: { reinc: 0, lv: 400, tower: 35 }, vfx: { projectile: 'orb-firehunt-solar' }, triggerVfx: { projectile: 'orb-firehunt-solar-companion' } }, { id: 'infiniteRing', name: '無限星環', cost: 10000, fx: { count: 10, countPer: 1, m: 40 }, goldBase: 10000000, goldGrow: 1.5, desc: '火狩改為從自身中心呈螺旋狀向外擴散（在 {m} 米處達到最外圈），並於持續時間內不斷放出火狩，最多額外 +{count} 團', unlock: { reinc: 0, lv: 400, tower: 55 }, triggerVfx: { projectile: 'orb-firehunt-companion' } }, { id: 'fireGodDescend', name: '火神降臨', cost: 10000, fx: { pct: 300, pctPer: 30, orbs: 3, orbsPer: 0.3, rps: 0.5, gap: 0.5, speed: 24, m: 6, flyM: 50, orbitM: 8 }, goldBase: 10000000, goldGrow: 1.5, desc: '你的身體被火焰包裹：每 {gap} 秒對周圍 {m} 米內的敵人造成 {pct}% 火焰傷害；普攻同時朝目標射出 {orbs} 顆火狩星環，以半徑 {orbitM} 米組成圓環，每秒順時針旋轉 {rps} 圈，整組以 {speed} 米／秒貫穿飛行 {flyM} 米', unlock: { reinc: 0, lv: 400, tower: 78 }, vfx: { projectile: 'proj-firehunt-ring', hit: 'hit-fire' }, triggerVfx: { projectile: 'orb-firehunt-firegod-companion' }, status: { self: [{ id: 'sgFireGodBody' }] } }] },
@@ -293,6 +293,7 @@ function resetSkill2RT() {
      單場戰鬥走不完的持續時間——回收的唯一時機就是這裡（死亡／讀檔／進出塔）。
      少了這一段，玩家死一次之後那疊層會原封不動帶進下一場。 */
   if (SKILL2_RT && SKILL2_RT.warGod) sgDropRoleBuffs(SKILL2_RT.warGod.pEnt, ['warGodKill']);
+  if (SKILL2_RT && SKILL2_RT.asuraOwner) sgDropRoleBuffs(SKILL2_RT.asuraOwner, ['asuraFist']);
   /* 超神【地爆天星】的倒數狀態同樣是 RT 的投影：排程被清掉之後那個倒數就是假的，
      不撤掉的話玩家會看著一個永遠不會落下的倒數（死亡復活保留同一個戰鬥實體、提前離塔亦然）。 */
   if (SKILL2_RT && SKILL2_RT.starfall) sgDropRoleBuffs(SKILL2_RT.starfall.pEnt, ['starfall']);
@@ -337,6 +338,7 @@ function resetSkill2RT() {
                      // ——那個增益「持續到死亡為止」，狂怒本身早就回收了也還在，
                      // 所以得另外記住掛在誰身上，resetSkill2RT 才收得回來
     asuraFist: 0,    // 超神【阿修羅霸王拳】的下一次發動時刻（不入存檔）
+    asuraOwner: null, // 霸王拳狀態持有者，卸下／換實體／重置時撤回（不入存檔）
     starfall: null,  // 超神【地爆天星】的落下排程：{ at, fallSec, warned, dropped, pEnt }（不入存檔）
     hunt: null,      // 火狩兩個節拍型傳奇的時刻：{ launchAt, ampAt }（【伴生併發】【烈火狩】，不入存檔）
     fireGodAt: 0,    // 超神【火神降臨】領域的下一拍時刻（不入存檔）
@@ -716,7 +718,7 @@ function skills2AllDamageUpPct(pEnt) {
   return buffVal(pEnt, 'allDmgUp') + buffVal(pEnt, 'sgDeathReaper') +
     buffVal(pEnt, 'sgSlayerMark') + buffVal(pEnt, 'sgDeathDefer') +
     buffVal(pEnt, 'sgCounterWrath') + buffVal(pEnt, 'sgBurnBlood') +
-    buffVal(pEnt, 'sgWarGodKill') + buffVal(pEnt, 'sgAsuraFist');
+    buffVal(pEnt, 'sgWarGodKill') + sgRoleBuffVal(pEnt, 'asuraFist');
 }
 
 /* fx 參數在指定等級的值：<鍵> + <鍵>Per × 等級。等級至少以 1 計。
@@ -1688,21 +1690,19 @@ function skill2RageDamageMultiplier(attacker) {
     /* 傳奇【狂熱者】：用目前可用的連擊數放大【狂血盛宴】的「每 1% 失血」係數，
        而不是另外再乘一個乘區——設計文檔寫的是「提高狂血盛宴的傷害增加」。 */
     var perPct = sgVal(t[6].fx, 'pct', lvs[6]) * (1 + sgRageZealotBonus() / 100);
-    if (missPct > 0) mult *= 1 + missPct * perPct / 100;
+    var stacks = Math.min(missPct, Math.max(0, Number(t[6].fx.maxStacks) || 0));
+    if (stacks > 0) mult *= 1 + stacks * perPct / 100;
   }
   return mult;
 }
 
-/* 普攻的追加目標。兩個來源合併後去重（兩者的範圍會重疊，同一個敵人不得挨兩次）：
-     ・狂血盛宴（第 7 階）：每 1 連擊數再從主目標附近選 1 個額外敵人。
-       不設技能層上限，實際目標數受附近存活敵人限制。
-     ・超神【殺神降臨】：主目標周圍 m 米內的所有敵人，數量只受半徑限制。
+/* 普攻的追加目標僅來自超神【殺神降臨】：主目標周圍 m 米內的所有敵人。
    主攻擊本身仍鎖定主目標。掛點：combat.js 野外普攻入口。 */
 function skill2BloodfeastVfx(primary) {
   if (!skills2Equipped('bloodrage')) return null;
   var ult = skills2Ult('bloodrage');
   var p = sgCurrentPlayerEnt();
-  var asuraActive = ult && ult.id === 'asuraFist' && p && buffVal(p, 'sgAsuraFist') > 0;
+  var asuraActive = ult && ult.id === 'asuraFist' && p && sgRoleBuffActive(p, 'asuraFist');
   if (!skill2RageActive() && !asuraActive) return null;
   var lvs = skills2Levels('bloodrage'), roles = {};
   function overlay(row) {
@@ -1715,7 +1715,7 @@ function skill2BloodfeastVfx(primary) {
   var radius = bfMeterPx((typeof BF_MELEE_METERS === 'number' && BF_MELEE_METERS > 0) ? BF_MELEE_METERS : 5);
   var advent = sgUlt('bloodrage', 'slayerAdvent');
   if (advent) radius = Math.max(radius, bfMeterPx(sgUltVal(advent, 'm')));
-  return { roles: roles, area: skill2RageActive() && (lvs[6]>0 || advent) ? sgAreaAround(primary, radius) : null };
+  return { roles: roles, area: skill2RageActive() && advent ? sgAreaAround(primary, radius) : null };
 }
 function skill2RageBasicAttackTargets(primary, enemies) {
   if (!primary || primary.hp <= 0 || !Array.isArray(enemies)) return primary ? [primary] : [];
@@ -1729,26 +1729,16 @@ function skill2RageBasicAttackTargets(primary, enemies) {
     var inRange = bfNearestOthers(primary, enemies, enemies.length, bfMeterPx(sgUltVal(advent, 'm')));
     for (var ai = 0; ai < inRange.length; ai++) targets.push(inRange[ai]);
   }
-  if (lvs[6] > 0) {
-    var st = getStats();
-    var comboHits = Math.max(0, Number(st && st.comboHits) || 0);
-    // 狂化連殺提供的期間連擊數也屬於玩家目前可用的連擊數。
-    if (typeof skill2ComboBonus === 'function') comboHits += Math.max(0, Number(skill2ComboBonus()) || 0);
-    if (typeof skill2FrenzyComboBonus === 'function') comboHits += Math.max(0, Number(skill2FrenzyComboBonus()) || 0);
-    var perCombo = Number(SKILLS2.bloodrage.tiers[6].fx.count) || 1;
-    var extras = Math.floor(comboHits * perCombo);
-    if (extras > 0) {
-      var nearbyGap = (typeof bfMeterPx === 'function') ? bfMeterPx(
-        (typeof BF_MELEE_METERS === 'number' && BF_MELEE_METERS > 0) ? BF_MELEE_METERS : 5
-      ) : 0;
-      // 敘述是「每 1 連擊數使普攻可同時攻擊 1 個敵人」，沒有指定最近＝近戰範圍內隨機
-      var feast = bfRandomOthers(primary, enemies, extras, nearbyGap, null);
-      for (var fi = 0; fi < feast.length; fi++) {
-        if (targets.indexOf(feast[fi]) < 0) targets.push(feast[fi]);   // 兩個效果的範圍會重疊，不得重複打
-      }
-    }
-  }
   return targets;
+}
+
+/* 阿修羅霸王拳只提高連擊的整體觸發率；連擊數與小數追加機率沿用共用公式。 */
+function skill2ComboTriggerChance(base) {
+  var u = sgUlt('bloodrage', 'asuraFist'), pEnt = sgCurrentPlayerEnt();
+  if (!u || !skills2Equipped('bloodrage') || !pEnt || !(pEnt.hp > 0) ||
+      !SKILL2_RT || SKILL2_RT.asuraOwner !== pEnt ||
+      !sgRoleBuffActive(pEnt, 'asuraFist')) return base;
+  return Math.max(base, Math.min(100, Math.max(0, sgUltVal(u, 'comboChance'))));
 }
 
 /* 嗜血反震（第 5 階）：反震傷害乘算因子。掛點：combat.js playerDefCfg 的 thornsPct。 */
@@ -1764,9 +1754,8 @@ function skill2RageThornsFactor() {
   return factor;
 }
 
-/* 傳奇【狂熱者】：每 1 連擊數使【狂血盛宴】的失血係數再提高 rageZealotPct%。
-   連擊數的口徑與【狂血盛宴】自己挑追加目標時完全一致（面板值 ＋ 狂化連殺 ＋ 狂暴之舞），
-   否則會出現「多打到的目標數」與「加成」對不上的怪現象。 */
+/* 傳奇【狂熱者】：用目前可用連擊數提高【狂血盛宴】的失血係數。
+   連擊數＝面板值 ＋ 狂化連殺 ＋ 狂暴之舞，與普攻的連擊數口徑一致。 */
 function sgRageZealotBonus() {
   var per = Number(sgLegendTick('bloodrage').rageZealotPct) || 0;
   if (!(per > 0)) return 0;
@@ -11813,6 +11802,11 @@ function sgPauseSchedule(at, dt) {
   （設計文檔寫的是「每 10 秒」，沒有加上狂怒期間的限定）。 */
 function sgTickAsuraFist(ctx, dt) {
   var u = sgUlt('bloodrage', 'asuraFist');
+  if (SKILL2_RT.asuraOwner && (!u || !skills2Equipped('bloodrage') || SKILL2_RT.asuraOwner !== ctx.pEnt)) {
+    sgDropRoleBuffs(SKILL2_RT.asuraOwner, ['asuraFist']);
+    SKILL2_RT.asuraOwner = null;
+    SKILL2_RT.asuraFist = 0;
+  }
   if (!u || !skills2Equipped('bloodrage')) { SKILL2_RT.asuraFist = 0; return; }
   // 死亡／倒地：節拍往後推，剩餘時間不變（見 skills2AutoCastBlocked）
   if (skills2AutoCastBlocked(ctx.pEnt)) {
@@ -11826,11 +11820,13 @@ function sgTickAsuraFist(ctx, dt) {
   if (!ctx.pEnt || ctx.pEnt.hp <= 0) return;
   // 爆發期間的光殼是該狀態的「持續特效」（狀態表）
   var activeSid = sgSlotSid('bloodrage', 'asuraFist', 'self', 0);
-  var activeBuff = ctx.pEnt.buffs && ctx.pEnt.buffs[activeSid];
+  var activeKey = activeSid ? statusDef(activeSid).key : '';
+  var activeBuff = ctx.pEnt.buffs && ctx.pEnt.buffs[activeKey];
   var remaining = activeBuff ? Math.max(0, activeBuff.until - GT) : 0;
   sgApplySlot(ctx.pEnt, 'bloodrage', 'asuraFist', 'self', 0, {
     val: sgUltVal(u, 'pct'), dur: Math.max(0.1, sgUltVal(u, 'sec'), remaining)
   });
+  SKILL2_RT.asuraOwner = ctx.pEnt;
   if (typeof floatPlayerEvent === 'function') floatPlayerEvent('pv-float', '阿修羅霸王拳!', 'buff');
 }
 
@@ -12361,7 +12357,8 @@ function sgRageOnKill() {
   var pEnt = sgCurrentPlayerEnt();
   if (asura && skills2Equipped('bloodrage') && pEnt && pEnt.hp > 0) {
     var sid = sgSlotSid('bloodrage', 'asuraFist', 'self', 0);
-    var buff = pEnt.buffs && pEnt.buffs[sid];
+    var key = sid ? statusDef(sid).key : '';
+    var buff = pEnt.buffs && pEnt.buffs[key];
     if (buff && buff.until > GT) {
       sgApplySlot(pEnt, 'bloodrage', 'asuraFist', 'self', 0, {
         val: sgUltVal(asura, 'pct'), dur: buff.until - GT + Math.max(0, sgUltVal(asura, 'killSec'))
