@@ -1446,14 +1446,12 @@ var BattleRenderer = (function () {
     hpBar.y = 7;
     view.addChild(hpBar);
 
-    var elemEmoji = (data.attr && typeof ELEM_INFO !== 'undefined' && ELEM_INFO[data.attr])
-      ? ELEM_INFO[data.attr].emoji : '';
     /* 名條與狀態列同樣依密度縮放；格數多的時候不縮，字會糊成一片連在一起。
        字級有下限 8px，再小就完全看不出寫什麼了。 */
     var nameSize = Math.max(8, Math.round((isBoss ? 14 : 11) * dScale));
     var statusSize = Math.max(8, Math.round(11 * dScale));
     var name = new PIXI.Text({
-      text: 'Lv.' + data.level + ' ' + elemEmoji + (data.name || ''),
+      text: enemyNameText(data),
       style: {
         fontFamily: 'sans-serif', fontSize: nameSize, fontWeight: 'bold',
         fill: isBoss ? '#ffb3b3' : (tierName === 'elite_adv' ? '#ffe27a' : (isElite ? '#d9b3ff' : '#cfd6e4')),
@@ -1511,6 +1509,12 @@ var BattleRenderer = (function () {
     applyEntityBillboard(ent);   // 出生的那一幀就別歪（tickWorld 之後每幀會再算）
     drawHpBar(ent);
     return ent;
+  }
+
+  function enemyNameText(data) {
+    var attr = typeof skill2CurrentEnemyAttr === 'function' ? skill2CurrentEnemyAttr(data) : data.attr;
+    var icon = attr && typeof ELEM_INFO !== 'undefined' && ELEM_INFO[attr] ? ELEM_INFO[attr].emoji : '';
+    return 'Lv.' + data.level + ' ' + icon + (data.name || '');
   }
 
   function drawHpBar(ent) {
@@ -1909,6 +1913,8 @@ var BattleRenderer = (function () {
         if (d.pos && isFinite(d.pos.x)) posTrack(ent, d.pos.x, d.pos.y);
       }
       drawHpBar(ent);
+      var nameTxt = enemyNameText(d);
+      if (ent.nameText.text !== nameTxt) ent.nameText.text = nameTxt;
       var stTxt = statusTextOf(d);
       if (ent.statusText.text !== stTxt) ent.statusText.text = stTxt;
       if (!alive && ent.state !== 'dying' && ent.state !== 'gone') startDeath(ent, true);

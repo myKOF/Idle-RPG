@@ -1191,9 +1191,9 @@ var PASSIVE_POOL = {
     fx: { firehuntLaunch: { gap: 1, m: 20, aoeM: 10, pct: 300 } }
   },
   firehuntBlaze: {
-    name: '烈火狩', desc: '在火狩的持續時間內，每 0.5 秒你的火焰傷害提高 2%（火狩全部消失後結束）。',
+    name: '烈火狩', desc: '在火狩的持續時間內，每 0.5 秒你的火焰傷害提高 2%，最多 50 層（與火焰增幅各自計算層數，火狩全部消失後結束）。',
     base: 0, perR: 0, legendary: true, type: 'fire', relatedSkill: 'firehunt', weaponTypes: ['orb'],
-    fx: { firehuntFireAmp: { gap: 0.5, pct: 2 } }
+    fx: { firehuntFireAmp: { gap: 0.5, pct: 2, maxStacks: 50 } }
   },
   firehuntDetonate: {
     name: '炎爆', desc: '一個敵人被火狩命中 10 次後會爆炸，對其周圍 6 米內的敵人造成 250% 火焰傷害。',

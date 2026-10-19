@@ -24,13 +24,13 @@ var GEM_RESONANCE_REGIONS = [
 ];
 var GEM_RESONANCE_UPGRADES = [
   { gold: 5000, gemLv: 1, gemCount: 3 },
-  { gold: 15000, gemLv: 2, gemCount: 3 },
-  { gold: 45000, gemLv: 3, gemCount: 3 },
-  { gold: 135000, gemLv: 4, gemCount: 3 },
-  { gold: 405000, gemLv: 5, gemCount: 3 },
-  { gold: 1215000, gemLv: 6, gemCount: 1 },
-  { gold: 3645000, gemLv: 7, gemCount: 1 },
-  { gold: 10935000, gemLv: 8, gemCount: 1 },
-  { gold: 32805000, gemLv: 9, gemCount: 1 },
-  { gold: 98415000, gemLv: 10, gemCount: 1 }
+  { gold: 23000, gemLv: 2, gemCount: 3 },
+  { gold: 104000, gemLv: 3, gemCount: 3 },
+  { gold: 468000, gemLv: 4, gemCount: 3 },
+  { gold: 2106000, gemLv: 5, gemCount: 3 },
+  { gold: 9477000, gemLv: 6, gemCount: 1 },
+  { gold: 42647000, gemLv: 7, gemCount: 1 },
+  { gold: 191912000, gemLv: 8, gemCount: 1 },
+  { gold: 863604000, gemLv: 9, gemCount: 1 },
+  { gold: 3886218000, gemLv: 10, gemCount: 1 }
 ];

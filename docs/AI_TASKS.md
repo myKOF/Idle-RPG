@@ -1,5 +1,128 @@
 # AI_TASKS.md
 
+## FIREGOD-TALLER-FLAMES-20261019 — 火神降臨火圈加高與強化燃燒感
+
+- Owner：Codex；Done；單一開發者。使用者要求火焰再高、明顯、燃燒感更強；僅調既有24個圈邊發射器的火焰高度／密度／亮色／升空，保留作用半徑、圈邊位置、角色跟隨、地面投影及傷害節拍。
+- 範圍：ground-domain-fire Preset與素材庫既有同路徑來源、Runtime DATA_VERSION、遊戲／Editor快取、GROUND_PROJECTION_AUDIT／LV_upgrade_system／本紀錄。禁止表格／模擬／Core／後端／其他Preset／貼圖／layout；不引入新素材，使用既有CC0 flame_04。預檢其餘乾淨；index與Claude ca9e0b65不同快取區段、無語意相依，三方乾跑確認後分段修改。保留使用者Skills2與Gem_resonance未提交修改，不合併推送。
+- 驗收：原生GPU Editor與正式Worker遊戲目視比對較高／較密／較亮、圈半徑不變／火焰直立、原生預算／用途／快取／投影及舊Editor防覆寫回歸、Build／diff／匯出檢查，素材庫先Commit再遊戲Commit。開著的Editor須先另存未儲存工作再重載。
+- 完成7檔：vfx/presets/ground-domain-fire.json的24層火焰縱向scale1.45→2.4、發射率9→12，尺寸／升速／壽命／亮黃橙色段提高；限制旋轉為Core實際使用的弧度小區間，避免高火焰翻倒。27層不變、粒子硬上限136→160，圈邊position／projection／authored.radius及其餘圖層逐欄一致。js/vfx-runtime DATA_VERSION更新tall-flame-ring、index.html與tools/vfx/editor/index.html快取216，docs/vfx/GROUND_PROJECTION_AUDIT.md／LV_upgrade_system.md／本紀錄同步。沒有表格、存檔、Worker或Protocol變更；原火焰圖片未改，組合配置自製，沿用前次驗證CC0素材，不涉及RPG Mote點陣繪製。
+- 測試指令：`node --test --test-reporter=tap tests/vfx-ground-plane.test.cjs tests/vfx-preset-cost.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-editor-guard.test.cjs`65/65，含地面／直立粒子投影、原生預算與用途、快取一致、舊版本／外部變更拒絕覆寫；最後調整旋轉後重跑同65項全過。`npm.cmd run build`544檔通過，`node tools/vfx/export-assets.cjs --check`已最新，diff通過；本次無新貼圖／資源索引修改，不重建匯出樹。index與Claude不同區段，三方merge-file乾跑exit0、無語意相依。
+- 瀏覽器：隱藏IAB GPU Editor與seed1019隔離遊戲、正式Worker／5Hz battle快照／Runtime目視。新版火焰直立向上、黃橙亮部更強、圈邊更密；角色／透明中心仍清楚，原半徑與跟隨不變。Editor與遊戲warning／error0，截圖visualizations/firegod-taller-flames.png已目視保存，分頁與測試服務關閉，未讀真人存檔。沒有新增測試檔或無關技能調整。
+- 唯讀未改：AI_RULES／工作流／Agent規範、VFX Core粒子旋轉與upright實作、layout／Status引用、模擬傷害／範圍、既有貼圖／CC0來源紀錄、library-root及匯出工具、上述原生回歸與舊Editor guard。自我Review確認未藉火焰加高擴大判定，沒有新增Preset來源／新增圖層，原生上限內，不會用舊Editor覆蓋新版；使用者其他未提交調整完整保留。
+- 交付：FIREGOD-TALLER-FLAMES-20261019完成，無未完成項目，可供Review／合併。素材庫Commit `9124cb3`，遊戲Commit為本紀錄所在`[Codex] feat: 加高火神降臨火焰並強化燃燒感`，回覆附兩個實際編號；未合併推送。限制為短場景目視，未驗多技能密集長戰；下一步重新整理8123，Editor先另存未儲存內容再重載。
+
+## FIREGOD-FLAME-RING-20261019 — 火神降臨光圈改為冒焰火圈
+
+- Owner：Codex；Done；單一開發者。使用者附圖要求將火神降臨目前紅色光圈改造成向上冒火焰的火圈；只調既有ground-domain-fire Preset與layout，保留表引用、角色跟隨、判定半徑／傷害／節拍。沿用已出貨並在火神星環使用的flame_04素材，沒有點陣素材繪製／新外部素材；這是引擎原生發射器配置，RPG Mote繪圖匯出不適用此JSON與粒子投影。
+- 範圍：vfx/presets/ground-domain-fire.json及layout、由vfx-library-root解析素材庫中對應既有來源、Runtime資源版本／index與Editor快取、docs/vfx/GROUND_PROJECTION_AUDIT.md、LV_upgrade_system與本紀錄。禁止模擬／數值／表格／VFX Core或後端／其他Preset／素材貼圖與來源第三類；與同時執行的無限星環任務不同區段。預檢相關檔無其他來源變更，index與Claude不同快取且三方乾跑乾淨。
+- 驗收：圈邊持續橙黃火焰／火星、地面1:0.5且火焰直立、透明中心／原作用範圍與跟隨、原生Core／Runtime與瀏覽器GPU目視、粒子上限／表用途／匯出檢查／舊Editor防覆寫測試／Build，素材庫先Commit再遊戲Commit。提醒開著的Editor需保留未儲存工作另存後重載，不能直接以舊頁覆蓋新版。
+- 完成：24個沿圓周的原生particle發射點，黃→橙→紅淡出、持續上升／火星，弱化填色並取消內圈，保持authored.radius100與地面1:0.5，火焰upright只投影出生位置、worldSpace=false跟隨。27層／粒子硬上限136，未改Core／Renderer、表引用、範圍或計算；Runtime DATA_VERSION更新firegod-flame-ring，遊戲及Editor vfx-runtime快取215同步。素材採既有Kenney Particle Pack flame_04，素材庫License.txt確認CC0，無新貼圖、下載或改圖，圈邊組合為本次自行配置。
+- 修改檔：vfx/presets/ground-domain-fire.json、vfx/layouts/ground-domain-fire.json、js/vfx-runtime.js、index.html對應快取、tools/vfx/editor/index.html、docs/vfx/GROUND_PROJECTION_AUDIT.md、LV_upgrade_system.md、本紀錄；同一交付含下項無限星環燃燒。素材庫既有codex-authored/ground-projection/presets及layouts同路徑同步，兩端逐位元相同。唯讀未改：VFX schema／Core／Pixi後端、既有火神狀態與作用範圍、出貨索引及貼圖、Editor存檔guard與library-root／匯出工具。
+- 測試：`node --test --test-reporter=tap tests/vfx-ground-plane.test.cjs tests/vfx-preset-cost.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-editor-cache-versions.test.cjs`53/53；`node --test --test-reporter=tap tests/vfx-core.test.cjs tests/vfx-editor-guard.test.cjs`155/155，含舊版本／外部修改409拒寫與資料保留。`node tools/vfx/export-assets.cjs --check`已最新；無新素材故未重建匯出樹；`npm.cmd run build`544檔通過、diff通過。index與Claude不同快取區段，三方merge-file乾跑exit0。自我Review確認只有已登記表引用的原Preset變更，新增火焰不改判定或地面圓大小、核心硬上限與配置預算內。
+- 瀏覽器：IAB隱藏GPU Editor與seed1019隔離遊戲角色，目視圈邊持續橙黃冒焰／中心通透／直立火焰；原生Worker sgFireGodBody狀態與vfxR經正式battle面板／Runtime顯示角色周圍火圈，換成無限星環時原火圈撤回。暫停fixture補送原生5Hz battle快照以維持Runtime光環0.6秒保活，無產品程式變更；初版fixture停快照造成光環逾期，修正fixture後已實戰目視通過。Editor／遊戲Console error／warning0，visualizations/firegod-flame-ring-preview.png及firegod-flame-ring-game.png已保存；分頁與測試服務關閉，不讀真人存檔。
+- 交付：素材庫Commit `4779edf`，遊戲Commit為本紀錄所在`[Codex] feat: 無限星環附加燃燒並重做火神降臨火圈`，回覆附實際編號；無本次未完成功能、可Review／合併，未合併推送。未驗多人技能密集長戰；下一步重新整理8123，開著的Editor先另存未儲存工作再重載。
+
+## INFINITE-RING-BURN-20261019 — 無限星環命中附加六秒燃燒
+
+- Owner：Codex；Done；單一開發者。使用者要求無限星環命中附加6秒燃燒，每0.5秒造成200%火焰傷害；以火狩群組魔攻基準計算，未指定成長故固定200%，保留原螺旋／額外團數／伴生機制。
+- 範圍：skills2僅無限星環燃燒規格、環繞成功命中施加與狀態角色接線；Skills2／Status Excel／CSV及生成JS對應參數／狀態／說明，新增infinite-ring-burn原生回歸，index／bridge／Worker快取、game_formula／LV_upgrade_system／本紀錄。禁止其他技能調校／Protocol／存檔／素材／其他副本；使用者Skills2與Gem_resonance修改保留，隔離提交，不合併推送。
+- 預檢：其餘範圍無外部變更；index與Claude ca9e0b65不同快取區段且無語意相依，三方乾跑確認乾淨後分段修改。驗收原生200%每跳／6秒／0.5秒、成功命中／未命中／多敵人／延後生成／伴生、其他超神不燃燒、狀態角色與火焰增幅共用、表定值擾動、狀態快照與每跳特效／傷害一致；Excel精準修改與正常重開、配置往返／相依回歸／Worker瀏覽器／Build／自我Review後Commit。
+- 完成：無限星環列fx加入dotSec6／dotGap0.5／dotPct200與敵方sgBurn、兩欄描述同步；Status sgBurn僅說明補來源無限星環。場域以施放魔攻×dotPct÷dotGap保存burnSpec，成功命中才走sgApplyBurn；burn狀態角色登記，保留既有取強／刷新、爆燃與火焰增幅，不另做新狀態／特效來源。母體、伴生與延後放出的火狩共用同一場域規格，火狩離場不提早清掉已施加燃燒。
+- 修改檔：js/skills2.js／status.js、Skills2與Status Excel／CSV、tests/infinite-ring-burn.test.cjs、index.html／js/bridge.js／js/worker/sim.worker.js快取、game_formula.md／LV_upgrade_system.md／本紀錄。skills2快取332、status38、bridge313及Worker資源／匯入同步infinite-burn，無Protocol／存檔／解鎖改變。與上項視覺調整同一遊戲Commit。
+- Excel原生API：Skills2僅AU110／AV110／AW110／AX110，Status僅T37；正常重開Saved=True無修復提示。唯讀逐格值／公式／樣式／行高／欄寬／檢視／合併／篩選／驗證／註解比較均保留其他內容。HEAD工作簿副本原生同改產生提交資料，JS／CSV同源重建，驗證僅infiniteRing及sgBurn.desc有變；使用者其他Skills2與Gem_resonance調整保留未提交。兩表apply乾跑零語意差異。
+- 測試：`node --test --test-reporter=tap tests/infinite-ring-burn.test.cjs`4/4原生引擎；Lv.1／10固定200%魔攻、半秒前不跳傷／半秒1000傷（魔攻500）、六秒到期／到期不續傷、狀態圖示／dps／remain及Status每跳Preset事件一致，未命中／無接觸／其他超神不燃燒、多目標／刷新不疊層、後放／伴生、表定數值擾動／狀態換表與清空／火焰增幅識別通過。
+- 相依回歸：隔離提交資料執行`node --test --test-reporter=tap tests/infinite-ring-burn.test.cjs tests/firehunt-orb-pairs.test.cjs tests/skill2-magic-firehunt.test.cjs tests/fire-amplify-cap.test.cjs tests/status-system.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/ui-worker-events.test.cjs`83/83；Build544檔通過，未跑全庫。唯讀未改：通用applyDot／tickStatuses／burn取強與刷新、來源傷害及火焰增幅／爆燃出口、狀態每跳VFX收集、Worker Protocol／面板快照／shim及原有螺旋幾何。自我Review確認每跳量先除間隔轉dps、只在非miss且活敵時施加，不把200%再乘一次火狩直接傷害、不增加未指定每級倍率。
+- 瀏覽器：隨機localhost／seed1019隔離角色，正式Worker及原生跳傷／Status事件；魔攻2019時施加6秒／間隔0.5秒／每跳4038，半秒後實扣4038且剩5.5秒；最終場景魔攻2047時同樣每跳4094／實扣4094／剩5.5秒。visualizations/infinite-ring-burn.png保存，Console error／warning0，分頁及測試服務關閉，沒有真人存檔修改。
+- 交付：INFINITE-RING-BURN-20261019完成，無本次未完成項目，可Review／合併；Commit為本紀錄所在`[Codex] feat: 無限星環附加燃燒並重做火神降臨火圈`，回覆附實際編號。未合併推送；沿用既有燃燒到期與取強規則，未驗真人長戰；下一步重新整理8123。
+
+## FIREHUNT-NO-BORN-COMPANION-20261019 — 狩神之舞取消自帶伴生
+
+- Owner：Codex；Done；單一開發者。使用者要求取消狩神之舞自帶伴生；保留伴生火狩命中機率、每母體一次及伴生不可再伴生，其他傷害／圈數／時間／超神／傳奇不變。
+- 範圍：skills2僅出生伴生分支與表生成說明、Skills2 Excel／CSV對應說明、三份火狩相依測試、index／bridge／Worker快取、game_formula／LV_upgrade_system／本紀錄。禁止其他技能／數值／Protocol／存檔／素材／其他副本；保留使用者Skills2與Gem_resonance修改，隔離提交、不合併推送。
+- 預檢：其他範圍無外部修改；index與Claude ca9e0b65不同區段（對方熔爐視覺快取、本次skills2／bridge快取）且無語意相依，三方合併乾跑後分段處理。
+- 驗收：無命中時僅母體、命中失敗不伴生、正常命中成功仍伴生且不遞迴、各超神與傳奇消耗優先、逐團VFX數量一致；Excel原生精準改說明並重開驗證、配置往返、火狩回歸、Worker與Build、自我Review後獨立Commit。
+- 完成12檔：skills2移除狩神之舞出生伴生參數與通用場域出生伴生分支，保留第三階命中時機率生成的唯一入口。Skills2原生Excel僅移除第108列說明中的自帶伴生文字，CSV／JS生成資料同步；使用者AW108現有簡述原本已無該文字，工作簿實際只改AX108。提交由HEAD工作簿副本原生同改AW108／AX108，JS／CSV同源重建並驗僅tier7.desc變更，使用者其他資料與Gem_resonance保留未提交。
+- 修改檔：js/skills2.js、config/Excel/Skills2.xlsx、config/CSV/Skills2.csv、三份firehunt-orb-pairs／skill2-magic-firehunt／skill2-firehunt-rock-legendary測試、index.html、js/bridge.js、js/worker/sim.worker.js、game_formula.md、LV_upgrade_system.md、本紀錄。index skills2 331／bridge312，Worker資源及skills2匯入加hunt-no-born-companion；Protocol、存檔、素材／Preset及解鎖條件不變。魔法火狩測試fixture給足法力，以隔離高階費用與環繞機制；配對幾何fixture明確建立伴生，實際出生／機率則以原生引擎另驗。
+- 測試：隔離提交資料執行`node --test --test-reporter=tap tests/firehunt-orb-pairs.test.cjs tests/skill2-magic-firehunt.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/ui-worker-events.test.cjs tests/fire-amplify-cap.test.cjs`63/63；原生引擎驗未選超神／烈陽／無限／火神降臨出生無伴生、成功命中後伴生與表定配色、無接觸／未通過機率／未命中不伴生、重複命中與伴生不能遞迴。Lv.1狩神圈數／轉向／圈距／傷害／持續秒數、烈陽6→8母體、伴生併發消耗優先及原生逐團事件與取樣幾何通過。
+- 擴大三份火狩回歸53項50過／3失敗，失敗為火神降臨領域傷害400／500、金剛不壞減傷與火神星環貫穿次數3／1；唯讀以HEAD skills2替換重跑同3項，皆同樣失敗，未改無關規則或斷言。`npm.cmd run build`543檔通過，Skills2 apply乾跑零語意差異、diff通過；未跑全庫。
+- Excel：原生Excel API精準替換後正常重開Saved=True、無修復提示；唯讀逐格／公式／樣式及欄寬／行高／檢視／合併／篩選／驗證／註解比較，只有AX108文字變更。index與Claude不同快取區段，共同祖先三方merge-file乾跑exit0、無語意相依，按AI_RULES3.2分段修改。
+- 瀏覽器：IAB隱藏分頁、隨機localhost／seed1019隔離角色，正式Worker與顯示管線。施放2圈／6母體／0伴生，命中但未通過機率仍0伴生，成功觸發後6母體／1伴生，剩餘6秒與300%技能說明一致；Console warning／error0。截圖本聊天visualizations/firehunt-no-born-companion.png已目視；分頁／臨時服務關閉，不讀真人存檔。
+- 唯讀未改：AI規範／AGENTS／工作流／prompts/codex.md、spreadsheets操作規範、sgOrbitStep成功命中／一次伴生入口與場域到期、VFX原生映射／sampleOrbitMember、Worker Protocol／shim、火焰增幅疊層管線及相依回歸。自我Review確認移除的出生開關無其他產品呼叫端、每團母體canSpawn資格保留、伴生VFX只隨實際生成出現，無新增特效來源。
+- 交付：FIREHUNT-NO-BORN-COMPANION-20261019完成，無本次未完成功能，可供Review／合併；Commit為本紀錄所在`[Codex] feat: 狩神之舞取消出生自帶伴生`，回覆附實際編號。未合併推送。限制為上述3項既有回歸失敗、隔離角色短測未驗真人長戰；下一步使用者重新整理8123驗收。
+
+## FIRE-AMP-SEPARATE-CAPS-20261019 — 火焰增幅與烈火狩各自最多50層
+
+- Owner：Codex；Done；單一開發者。使用者明確確認火球術火焰增幅與傳奇烈火狩各自50層、不共用額度；保留原單層數值／觸發節奏／範圍／持續時間，滿層繼續刷新時間、不繼續增加傷害。
+- 前置：原本兩來源共用sgFireAmp總值；改用兩個原生stack狀態，火球術沿用原狀態及角色、烈火狩新增自身狀態，最終火傷出口加總兩者。允許skills2僅相關累計／查詢／生成資料、data的烈火狩生成資料、status生成資料，Skills2／Status／Equipment_Affix三表對應資料與說明、新fire-amplify-cap回歸與相關火系既有測試、index／bridge／Worker快取、game_formula／LV_upgrade_system／本紀錄。禁止其他技能規則／數值／存檔或Protocol／素材／Preset／其他副本，不合併推送；使用者Skills2與Gem_resonance修改保留，隔離提交。
+- 預檢其餘範圍乾淨；index與Claude ca9e0b65為不同區段快取（對方ui-newforge-visuals，本次data／status／skills2／bridge），無語意相依，依共同祖先三方merge-file乾跑exit0，分段修改免問。
+- 驗收：兩來源0／1／49／50／51及大量同拍、滿層刷新、分別到期／重啟／範圍與擊殺邊界、等級1／10及同時作用獨立額度，火傷出口／實際傷害與狀態快照一致，原生Excel精準修改／新增狀態列／重開無修復、其餘表格資料與格式保留，配置往返／正式Worker與瀏覽器隔離／相依回歸／Build／自我Review後Commit供使用者整合。
+- 完成17檔：火球術第6階以單層值交給原生stack狀態，上限讀Skills2 maxStacks50；Status sgFireAmp改stack／50，烈火狩改獨立sgFirehuntAmp狀態及Equipment_Affix firehuntBlaze maxStacks50，skill2FireAmpPct加總兩來源，保留原火傷唯一出口，不重複加成。兩者單層數值、範圍、節拍與持續時間不變，滿層仍刷新時間；新增狀態沿用既有圖示、無新素材或Preset。移除爆燃／岩甲增幅註解與爆燃狀態說明中已失效的火焰增幅疊法類比，其實際規則不變。
+- 配置：Skills2 AV87／AW87／AX87；Status O38／P38／T38及T74說明、新A96:T96烈火狩狀態列；Equipment_Affix M153／Q153。三份CSV／JS生成資料同源同步，data.js只改烈火狩條目、其他欄與既有註解完整保留。index快取data90／status37／skills2 330／bridge311，Worker資源及三模組匯入同升；game_formula／LV_upgrade_system及本紀錄同步。新增fire-amplify-cap回歸、修正既有火焰增幅測試從已生效燃燒開始的fixture（原本把法力／投射物命中時序混入疊層斷言），不放寬疊層數值。Protocol／存檔／取得與解鎖條件未改，無素材庫Commit。
+- 測試：`node --test --test-reporter=tap tests/fire-amplify-cap.test.cjs`4/4原生引擎，驗等級1／10的49→50→51、200次同拍作用、滿層刷新／到期重起、兩來源同時60次後各50層且分別到期、角色換表／擾動上限／範圍外／火狩消失不續期、真實火傷第50／51次相同及狀態快照stacks／val一致。單層值為明確測試fixture，以免使用者工作區調校改變機制驗收。`node --test --test-reporter=tap --test-name-pattern='火焰增幅|烈火狩' tests/skill2-magic-fire.test.cjs tests/skill2-firehunt-rock-legendary.test.cjs`隔離提交資料2/2通過。
+- 相依回歸：`node --test --test-reporter=tap tests/fire-amplify-cap.test.cjs tests/skill2-status-slots.test.cjs tests/status-system.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/ui-worker-events.test.cjs tests/flame-kagura-attribute.test.cjs tests/bloodfeast-asura-rework.test.cjs`隔離提交資料83項82過／1失敗；STATUS-VFX-4暴風屏障／暴風神體fixture缺少增益，唯讀以HEAD data／status／skills2重跑同項也同樣失敗，非本次造成且未改無關邏輯。`npm.cmd run build`543檔通過，三表apply均零語意差異、diff通過。未跑全庫。
+- Excel：Equipment_Affix鎖檔時保留原檔，使用者確認儲存關閉後完成原生Excel API精準修改，三本正常重開Saved=True無修復提示；唯讀比較原有全部格值／公式／有效樣式、欄寬／行高／檢視／合併／驗證／註解均保留，Status僅新增末列，原篩選狀態無變。Equipment_Affix在原生儲存時將重複的General樣式合併為預設General，逐格有效字型／格式／框線等簽章相同、值與公式未變；沒有手改內部XML。提交由HEAD副本原生同改產生，語意核對僅本任務條目；使用者Skills2及Gem_resonance調整保留未提交。
+- 瀏覽器：隱藏IAB、隨機localhost／seed1019隔離角色、正式Worker與顯示管線，不讀真人存檔。使用現行工作表的單層2%調校，兩來源49層各98%／總196%，50層各100%／總200%；再觸發10次仍各50層／總200%，剩餘時間分別4秒／1秒重新刷新，畫面兩個狀態圖示各顯示50。烈火狩先到期時只撤其100%，火焰增幅仍50層、再到期總加成歸零；原生說明正確顯示各自50層。Console error／warning0，截圖本聊天visualizations/fire-amplify-50.png已目視，分頁／服務關閉。
+- 唯讀未改：AI規範／AGENTS／工作流／prompts/codex.md、combat applyBuff／stackStep／statusEntries與圖示層數投影、legendaryElementDamageUp及雙手補償保護鍵maxStacks、Skills2狀態角色／範圍／燃燒與火狩生命週期、Worker shim／Protocol／VFX狀態同步及上述其餘相依測試、既有素材。自我Review確認獨立鍵不互相覆寫／延時或占額度、原生val=unit×stacks不變、兩來源在火傷出口各加一次、不產生無登記特效來源。
+- 交付：FIRE-AMP-SEPARATE-CAPS-20261019完成，無本次未完成功能，可供Review／合併；Commit為本紀錄所在`[Codex] feat: 火焰增幅與烈火狩各自限制五十層`，回覆附編號。未合併推送；限制為上述既有暴風屏障回歸失敗、隔離角色短測未驗真人長戰，下一步使用者重載8123。
+
+## BLOODFEAST-ASURA-REWORK-20261019 — 狂血盛宴百層失血增傷與霸王拳必定觸發連擊
+
+- Owner：Codex；Done；單一開發者。使用者要求狂血盛宴保留擊殺延長狂怒、失血每1%增傷基值1%／每級+0.1%且最高100層，移除原描述的每連擊數追加附近普攻目標；阿修羅霸王拳保留定時全傷／持續時間／擊殺延長，新增期間連擊觸發率100%，連擊數及不足一次的小數機率沿用原規則。失血沿用當前生命缺口口徑，治療降低加成。
+- 前置：狂怒失血乘區、獨立霸王拳狀態與擊殺延時已存在。允許skills2僅上述規則／生成資料、formula僅連擊觸發率接線、Skills2及Status Excel／CSV與status.js對應描述、相依既有回歸與新增bloodfeast-asura-rework、index／bridge／Worker快取、game_formula／LV_upgrade_system／本紀錄。禁止其他技能數值／存檔或Protocol格式／素材／Preset／其他副本，不合併推送。保留使用者Skills2與Gem_resonance未提交修改，隔離提交。
+- 衝突預檢：其餘範圍無外部來源；index與Claude ca9e0b65同檔不同區段，對方只改ui-newforge-visuals快取，本次只改status／formula／skills2／bridge快取，無語意相依；使用共同祖先及對方分支現況作三方merge-file乾跑exit0，依AI_RULES3.2分段修改免問。
+- 驗收：失血0／小數／100層／升級／治療／過期／擊殺延長與取消額外目標；霸王拳觸發前後／小數連擊／無狂怒亦可發動／角色野外高塔／擊殺延長／自然到期／卸下失效／狀態角色換表，實際傷害與VFX／飄字／光殼同源。Excel原生API精準修改、正常重開與格式／內容比較、兩端配置往返、正式Worker與瀏覽器隔離驗證、相依回歸／Build／自我Review／Commit供使用者整合。
+- 完成18檔：skills2將狂血盛宴依當前失血百分比的動態加成限制為表定maxStacks、取消連擊數追加附近目標，僅殺神降臨保留範圍普攻；VFX同時撤掉普通狂怒的範圍幾何、保留表內爆發與命中素材。新增純查詢skill2ComboTriggerChance，formula的rollComboHits先讀同一霸王拳狀態角色提高整體觸發率，整數／小數追加與獨立doubleHit規則不變；霸王拳全傷、光殼、擊殺延長改用狀態角色與效果鍵，並記錄持有者以在卸下／換實體／reset撤回自身狀態。combat僅更新失效的附近目標註解。
+- 配置與文件：Skills2僅AV78／AW78／AX78及AV81／AW81／AX81（新maxStacks100、移除count、加入comboChance100與說明），Status僅T72的霸王拳說明；CSV／skills2及status生成資料同步。保留原sec、pct／pctPer、killSec／gap等未指定數值，狂血盛宴每層Lv.1=1.1%、Lv.10=2%沿用既有等級公式。index快取status36／formula67／skills2 329／combat90／bridge310，Worker資源與相應匯入同升；game_formula與LV_upgrade_system同步，無Protocol／存檔／素材變更或素材庫Commit。新增bloodfeast-asura-rework、更新bloodfeast-vfx及兩份既有回歸；後者VFX測試補足超神所需塔層進度，未削弱解鎖判定。
+- 測試：`node --test --test-reporter=tap tests/combo-hits.test.cjs tests/status-system.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/ui-worker-events.test.cjs tests/bloodfeast-asura-rework.test.cjs tests/bloodfeast-vfx.test.cjs tests/war-god-body.test.cjs`隔離提交資料版本76/76；`node --test --test-reporter=tap --test-name-pattern='狂血盛宴|狂怒擊殺|嗜血狂怒的|超神自動|阿修羅' tests/skill2-counter-bloodrage.test.cjs tests/skill2-ult-evolution.test.cjs`6/6。新增原生引擎測試覆蓋等級1／10、治療／100層及擾動上限參數、狂熱者與殺神降臨相容、野外／高塔100%觸發率與小數追加、零連擊數不創造次數、到期／卸下／重置／狀態換表、真實主攻擊＋兩次連擊的傷害／飄字／命中事件一致。最後追加高塔查詢後新6項再次通過；`npm.cmd run build`542檔通過，兩表配置往返零語意差異、diff通過。
+- 擴大回歸限制：skill2-counter-bloodrage完整26項在隔離提交資料為21過／5失敗；用HEAD四支JS與原測試唯讀重跑同為21過及相同5失敗（舊超神／基本／追加反擊費用四項、血飲自傷一項），本次未修改無關規則或放寬斷言。使用者現行工作資料為18過／8失敗，另外是既有未提交反擊盾／費用調整及本次Excel儲存前已存在的血飲術pct50／pctPer10與舊測預期30／3不符；精準前後格值比對確認這些表值未由本次修改，保留使用者調整。
+- 瀏覽器：隱藏IAB／隨機localhost／seed1019隔離角色、正式Worker及顯示管線，不讀真人存檔。固定連擊數2／擲骰0.99，普通連擊率25%命中1次傷4834；狂怒半血顯示每層2%／上限100層、普攻目標1且area=null；霸王拳在狂怒已到期後仍按週期觸發，全傷+600%、連擊率100%，實際3次命中傷101520；擊殺延長2→2.1秒且增傷／連擊維持，12.1秒到期後歸零並恢復25%／1次命中／4834傷。Console error／warning 0，截圖本聊天visualizations/asura-combo-100.png已目視；分頁與服務關閉。
+- Excel／隔離交付：Excel鎖檔時保留原檔，使用者確認儲存關閉後以原生API僅改上述7格；兩本正常重開Saved=True無修復提示。唯讀比對其餘所有格值／公式／樣式、行高／欄寬／檢視／合併／篩選／驗證／註解均保留。提交用HEAD工作簿副本原生同改7格產生，語意檢查僅bloodrage.tiers[6]／ult[2]與sgAsuraFist.desc，其他使用者Skills2及Gem_resonance修改保留未提交。
+- 唯讀未改：AI規範／AGENTS／工作流／prompts/codex.md、combo原公式與參數表、stat快取／普通與高塔普攻共用入口、Status狀態施加／角色鍵、Worker shim／Protocol／VFX持續狀態同步、原有表內Preset與上述未列修改的相依回歸。自我Review確認增傷無重複乘算、未改連擊次數、擊殺不能復活過期增益、重施不截短已延長時間、場景／讀檔不殘留新連擊加成。
+- 交付：任務BLOODFEAST-ASURA-REWORK-20261019完成，無本次未完成功能，可供Review／合併；Commit為本紀錄所在`[Codex] feat: 調整狂血盛宴並讓霸王拳必定觸發連擊`，回覆附實際編號，未合併／推送。限制為隔離角色短測與上述既有回歸失敗、未跑全庫或真人長戰；下一步重載8123測試。
+
+## WAR-GOD-BODY-THREE-SECOND-20261019 — 戰神體三秒生命與護盾損失轉反擊增傷
+
+- Owner：Codex；Done；單一開發者。使用者要求三秒內損失的生命／護盾百分比加成到接下來三秒的所有反擊，附加比例基值100%、每級+10%；已確認保留每0.5秒自動流失1%最大生命，並補進技能說明。追加角色無敵時不觸發任何反擊（含招架及追加效果），在反擊共用入口阻擋，不短路其他技能。使用者確認生命損失除以最大生命、護盾損失除以最大護盾後相加。
+- 前置：既有分段失血排程與實際扣血掛點完成。範圍js/skills2.js僅戰神體記錄／倍率／生成資料、js/formula.js僅受擊護盾記錄、Skills2 Excel／CSV僅戰神體參數與說明、tests/skill2-ult-evolution.test.cjs受影響四項與tests/war-god-body.test.cjs、index／bridge／Worker快取、game_formula／LV_upgrade_system／本紀錄。禁止其他技能規則／存檔或Protocol格式／素材／Preset／其他副本，不合併推送；預檢無外部衝突，使用者Skills2與Gem_resonance.xlsx修改保留，提交隔離。
+- 驗收：固定三秒分段、半秒自傷保留與可致死、生命／護盾實際損失含完全破盾、回復不倒扣、減傷／無敵／未命中／自傷與DOT／反傷／補拍／死亡卸下重置、等級成長與實際反擊／飄字相符，Excel原生API精準改格／重開／逐格樣式檢查、兩端配置往返／Worker與瀏覽器／相依回歸／Build／diff，獨立Commit供使用者整合。
+- 完成12檔：Skills2 Excel的戰神體AV71／AW71／AX71改三秒分段、pct100／pctPer10及含自傷／各自分母／無敵例外說明，基本反擊AW62／AX62亦補無敵例外；CSV及skills2生成資料同步。skills2損失收集加入護盾與其受擊前上限，按pct等級值換算加成，反擊入口阻擋現行invuln／復甦無敵／受擊結果invuln；formula在破盾清空上限前保存分母並一次記錄HP與護盾。index快取formula66／skills2 328／bridge309、Worker資源／匯入同步；新增war-god-body回歸、調整既有四項、更新game_formula與LV_upgrade_system及本紀錄。倍率沿用基值＋成長×等級，Lv.1 110%、Lv.10 200%；Protocol、存檔、素材及解鎖不變，無素材庫Commit。
+- 測試：`node --test --test-reporter=tap --test-name-pattern='戰神體|無敵.*反擊' tests/skill2-ult-evolution.test.cjs tests/war-god-body.test.cjs`9/9；隔離提交資料版本重跑同9項通過。原生引擎驗生命10%＋盾50%=60%、純盾受傷與完全破盾、回復不抵銷、未命中／無敵／法力承擔不計、自然到期不計、3秒所有反擊真實傷害及飄字一致、Lv.1／10、無敵仍自傷、三種超神與無超神均阻擋反擊／不扣魔／不授盾／不發子彈且到期恢復，舊測驗野外／高塔、定時補拍／致死／GM鎖血／卸下／重置。`node --test --test-reporter=tap tests/shield-max.test.cjs tests/status-system.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/ui-worker-events.test.cjs`53/53；`npm.cmd run build`541檔通過、Skills2 apply零語意差異、diff通過。
+- 擴大回歸：另加skill2-counter-bloodrage與新測共84項77通過7失敗；用任務前skills2與HEAD formula唯讀替換重跑原79項72通過同7失敗，確認原有反擊盾預期5.5／11、反擊各階／超神與追加費用五項、血飲自傷一項失敗，本次未放寬斷言或修改無關規則。未跑全庫，這7項仍待獨立修正。
+- 瀏覽器：IAB隱藏分頁、隨機localhost／seed1019隔離角色、正式Worker及顯示管線，不讀真人存檔。實測損失60%／前三秒0加成，3秒含6%自傷結算滿級132%；正常反擊2斬傷320618／耗魔1200，無敵時追加帶格擋與吸盾的通知反擊傷0／耗魔0／斬擊數不增且仍扣1%生命；無敵到期2斬仍傷320618／耗魔1200，原生說明為0.5秒／1%／3秒／滿級200%與無敵例外。Console error／warning 0，截圖本聊天visualizations/warbody-invuln.png已目視，分頁／服務關閉。
+- Excel與隔離交付：原生Excel API精準改5格，正常重開Saved=True無修復提示；唯讀比對任務前後所有資料格／公式／樣式及合併／欄寬／篩選／驗證／註解均保留（只允許上述5格文字／JSON變更）。提交資料由HEAD副本原生同改5格產生，語意比對僅counter.ult[2]與基本反擊desc改變，其他使用者Skills2／Gem_resonance修改完整保留未提交。
+- 唯讀檢查未改：AI規範／AGENTS／工作流／prompts/codex.md、combat的playerDefCfg與shieldMax更新／到期、status的DOT扣血、counter命中／飄字及共用VFX事件、Worker shim／Protocol、geometry參數接線、上述五份相依回歸。自我Review確認單一受擊只記一次、最後破盾分母有效、舊直接扣血呼叫相容、無敵入口先於機率／付費／副作用且保留其他技能處理。
+- 交付：任務WAR-GOD-BODY-THREE-SECOND-20261019完成，無本次未完成功能，可供Review／合併；Commit為本紀錄所在`[Codex] feat: 調整戰神體三秒增傷並禁止無敵期間反擊`，回覆附編號。未合併推送。限制為隔離角色短流程、未跑真人長戰／全庫，上述7項既有回歸失敗保留；下一步使用者重載8123測試。
+
+## FLAME-KAGURA-FIRE-ATTR-20261019 — 神樂灼焰期間將敵人改為火屬性
+
+- Owner：Codex；Done；單一開發者。使用者要求火之神樂的神樂灼焰除持續火傷外，生效期間也改變敵人屬性為火；前置既有灼焰疊層及共用屬性改寫已完成。
+- 範圍：js/skills2.js屬性共用出口／顯示查詢及同源描述、js/status.js同源說明、Skills2與Status Excel／CSV僅神樂對應說明、js/ui.js與battle-renderer.js當前屬性標籤、index／bridge／Worker必要快取、tests/flame-kagura-attribute.test.cjs與既有火神樂回歸、game_formula／LV_upgrade_system與本紀錄。禁止傷害／層數／間隔／時長／其他技能規則／存檔格式／Protocol／Preset／素材／其他副本修改；不合併推送。預檢無其他副本衝突，本副本使用者Skills2未提交調整保留並隔離提交。
+- 規則：實際生效中的kagura角色狀態強制火屬性，普通燃燒不變；維持既有石化轉地優先、火系改寫高於寒冰逆轉，到期自動回到仍有效覆寫或原屬性。透過既有攻防配置出口影響對屬性傷害／抗性，不改原始attr或敵人攻擊元素分配；持續火傷與疊層不變。DOM／Pixi名稱及塔戰屬性標籤同步讀相同查詢，狀態變更不重建實體。
+- 驗收：正式Worker原生引擎驗施放／疊層／火傷／無敵／到期／刷新／覆寫優先／換表角色／對屬性傷害，主端顯示標籤更新與還原，Excel原生API精準修改、正常重開／逐格與樣式比對、配置往返／相依回歸／Build／diff，完成獨立Commit供使用者整合。
+- 完成15檔：skills2的skill2ForcedAttr加入實際生效kagura狀態，新增純查詢skill2CurrentEnemyAttr供DOM／Pixi共用；ui初次及重用敵人卡／塔戰標籤、renderer初次及重用實體名稱同步更新。Skills2 Excel／CSV／生成JS的火之神樂說明與Status Excel／CSV／status.js神樂說明同步；index快取Status35／Renderer192／Skills2 327／UI185／Bridge308與Worker匯入版本同步，game_formula／LV_upgrade_system／本紀錄及新增flame-kagura-attribute回歸。其餘數值與Protocol未改，沿用既有火之神樂外觀，無新素材／素材庫Commit。
+- 測試：`node --test --test-reporter=tap tests/flame-kagura-attribute.test.cjs`6/6（正式原生Worker，非傷害替身）；`node --test --test-reporter=tap --test-name-pattern='火之神樂|崩解|血刃斬子彈' tests/skill2-ult-evolution.test.cjs`8/8。新增測試驗純灼焰疊層每跳傷害、持續時間／層數上限不變、到期／刷新／無敵、換表角色、石化→火→冰→原屬性、真實施放與對火屬性增傷、DOM／Pixi文字生成及既有實體更新掛點。`npm.cmd run build`540檔通過；Skills2／Status apply皆零語意差異、diff通過。獨立提交資料版本重跑新專項與Status／Worker／UI事件五檔57/57及兩表往返，通過。
+- 擴大回歸：`node --test --test-reporter=tap tests/flame-kagura-attribute.test.cjs tests/skill2-status-slots.test.cjs tests/status-system.test.cjs tests/super-rock-art.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/ui-worker-events.test.cjs tests/init-ui-smoke.test.cjs`88項83過／5失敗。唯讀以修改前HEAD六支JS重跑同組為77過／11失敗，差異正是新增6項由失敗變成功；其他5項相同，無新增失敗。既有項為initUI面板預期、StormBarrier狀態施放fixture、岩柱兩項25.9072對26舊尺寸斷言、超重岩舊Worker版本字串，不降斷言、不擴大修復。不宣稱全庫全綠。
+- Excel：同聊天已確認artifact匯入不能保留本表空值，依AI_RULES 8.5改用Excel原生COM精準修改。使用者依檔案鎖定提示儲存關閉後，以最新已儲存版本備份；Skills2僅AW60／AX60、Status僅T65，數值／公式／樣式／其他頁／圖形幾何未改。只讀XML驗證差異三格；Excel正常重存另移除空註解文字框的預設direction:ltr，不改文字／形狀／幾何。兩份工作檔及兩份HEAD獨立提交副本均實際以Excel正常重開、Saved=true，無修復提示；未手工修改ZIP/XML。生成Status資料時額外重排allDmgUp的純格式變更已還原，最終僅神樂說明一列。
+- 瀏覽器：computer-use／IAB，隨機localhost＋seed1019全新拋棄式角色，完整正式Worker／Pixi／Runtime與原有素材，未讀寫真人存檔。650級／塔73、冰屬性敵人，正式施放雙刀亂舞後疊5層灼焰，攻方／守方／顯示查詢皆fire，原始attr仍ice；持續傷害照跳，到期三者都回ice。DOM模式實際同一張敵人卡由❄️變🔥且帶🎇神樂灼焰×5，到期回❄️；Console error／warn0。保留visualizations/kagura-fire-attribute.png與kagura-fire-attribute-dom.png驗收畫面；fixture／診斷／控制入口只由暫時HTTP服務提供，未進產品來源，頁面及服務已關閉。
+- 唯讀檢查未改：規範／AGENTS／工作流／prompts/codex、combat攻防配置與狀態結算、formula對屬性傷害乘區、status施加／疊層／有效性、現有石化／火獄／寒冰順序、原生sim engine／Worker shim／Protocol、現有Preset／素材及配置工具。使用者Skills2其他描述與數值調整完整保留在工作檔／生成JS，獨立提交資料以HEAD副本經Excel API僅改神樂說明產生，不混入使用者其他改動。
+- 交付：FLAME-KAGURA-FIRE-ATTR-20261019完成，無本次未完成項；Commit為本紀錄所在`[Codex] feat: 神樂灼焰期間將敵人轉為火屬性`，回覆附編號。可就本次範圍審查合併，已知5項既有測試失敗如上；未合併／推送。下一步使用者在8123重載測試，其他副本需整合本Commit。
+
+## DISINTEGRATE-END-ONCE-20261019 — 崩解只在狀態結束時爆炸一次並移除飛彈
+
+- Owner：Codex；Done；單一開發者。使用者確認崩解應縮短中毒／流血間隔，作用結束時才各爆炸一次範圍傷害，非每跳爆炸或飛彈彈射，追加持續時間基值+3秒、每級+0.3秒。前置現行DOT／零日感染與血刃感染飛行完成；已有Skills2 Excel／CSV／生成JS的使用者血刃調整，完整保留。
+- 允許js/combat.js僅狀態自然結束掛點、js/skills2.js僅崩解結算／生成同源資料／必要說明、Skills2 Excel／CSV僅崩解子彈／速度／說明、tools/skills2-vfx.cjs與skills2-geometry.cjs相應契約、相依回歸、主頁／bridge／Worker必要快取、LV_upgrade_system.md／game_formula.md／VFX欄位說明與本紀錄。禁止更改其他技能規則／使用者血刃數值／存檔格式／協議內容／Preset／素材／其他副本，不合併推送。衝突預檢無外部來源，本副本使用者未提交調整依原值保留。
+- 規則：每個中毒／流血狀態自然結束時一次，零日感染提前結清並移除也算結束且只一次；未結束不爆炸，保持加速與每跳傷害。爆炸按完整期間總傷及表定百分比對半徑內其他存活目標直接結算，中心只播一次配置爆炸，不發射崩解飛彈；毒霧感染自己的飛行流程保留。
+- 驗收：自然到期含無殘額、提前結清、重複tick不重炸、期間多跳／加速／無敵／非血毒／半徑／傷害／視覺一致及毒霧飛行回歸，Excel精準修改／來源往返／格式與開啟檢查，正式Worker與瀏覽器、Build／diff後獨立Commit供使用者審查。
+- 追加明確需求：崩解另延長流血與中毒持續時間，配置基值sec=3、secPer=0.3；沿既有基值＋每級增量×等級計算，延長時間計入爆炸完整期間總傷。納入同一修正、Skills2效果JSON／模板／說明與相關測試；初次塗抹及傳染只套一次。
+- 完成15檔：combat將崩解從每次跳傷改到自然到期補完殘額後；skills2移除崩解飛行佇列與命中錯開、保留零日提前結清的一次爆炸，DOT來源規格加入表定延長時間，傳染沿用規格不重加。Excel／CSV／生成JS僅崩解速度／子彈清空、sec=3／secPer=0.3與描述；tools兩份契約拒絕崩解飛彈／速度並更新觸發說明，兩份測試／VFX欄位文件／game_formula／LV_upgrade_system／任務紀錄及index／bridge／Worker快取同步（skills2 326、combat89、bridge307，Worker disintegrate-end-once-duration）。沒有修改其他技能行為、存檔／Protocol版本、解鎖、Preset或素材。
+- 測試指令／結果：`node --test --test-reporter=tap --test-name-pattern='崩解|血刃斬子彈|bloodblade poison spread|flight speed uses|migrated speed' tests/skill2-ult-evolution.test.cjs tests/skills2-flight-speed.test.cjs`10/10；`node --test --test-reporter=tap tests/skills2-vfx-schema.test.cjs tests/skill-vfx-inheritance.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/combat-dot-log.test.cjs tests/status-system.test.cjs`57/57，合計67/67。暫存的獨立提交版本也重跑同67項與Skills2 apply零語意差異，全部通過。`npm.cmd run build`539檔通過，diff檢查通過。新回歸用修改前HEAD runtime唯讀攔截時，作用期間誤炸／到期空餘額漏炸／零日飛彈與缺少延長時間確實失敗；沒有降低正確性或改權威數值配合測試。
+- 擴大回歸限制：上述八檔全跑共132項，修改後110過／22失敗；同一組測試對修改前HEAD runtime也有同22項其他技能既有失敗，另外5項本輪回歸失敗，修正後沒有新增失敗。既有失敗集中突刺／斬擊／飛刀／疾風／血刃其他傳奇／戰神體與冰箭飛行測試的舊數值或施放fixture，不擴大修改。本輪未跑全庫／長時間戰鬥。
+- 原生Excel驗收：Spreadsheets API試匯入將空格誤讀為331，候選檔被拒絕、未覆蓋來源，改依AI_RULES 8.5使用Excel COM API。使用者儲存關閉開啟中的Skills2後，精準改AG51／AP51／AV51／AW51／AX51／AY51六格（只在原效果JSON加sec／secPer）。與修改前使用者剛儲存的備份逐格比對僅六格改變，三頁公式、所有有效儲存格樣式及樣式／圖形／表格資源原樣保留；工作檔與獨立提交xlsx皆實際以Excel正常重開，無修復提示、Saved=true。Excel重存HEAD副本只另正規化既有空白註解文字框的預設direction:ltr，形狀數量／識別／幾何與內容保留。沒有手工寫ZIP/XML。
+- 正式Worker／瀏覽器：原生sim engine載入完整Worker，650級／72層／單流血配置，Lv10延長6秒、使用者表下持續11秒；多次跳傷爆炸0／飛行0，到期爆炸1／飛行0，後續重檢不重炸，爆炸200基準樣例與實際表定全期間傷害皆一致。IAB完整正式遊戲／Pixi／Runtime／配置素材、隨機localhost／seed1019隔離角色相同結果：延長6秒／11秒狀態、結束165083周邊傷害／僅burst-blood，毒霧感染對照仍產生proj-poison-drop飛行。Console error／warn0；診斷只記錄、配置fixture／控制入口僅暫時HTTP服務提供，未讀玩家存檔、未進產品來源。保留visualizations/disintegrate-end-once-duration.png驗證畫面，測試頁／服務已關閉。
+- 提交隔離：使用者同時編輯的飛刀／突刺／斬擊描述、飛刀冷卻增量與血刃數值完整保留在工作區／Excel，未混進本次Commit。以HEAD Excel副本經原生API只改本次六格，再生成相應CSV／JS literal供index提交；工作檔則仍保留使用者最新調整並同步JS。提交內容中只有崩解資料變更，其他群組／階級資料語意與HEAD相同。
+- 唯讀檢查未改：共通規範／AGENTS／AI_WORKFLOW／prompts/codex.md、Status表與狀態API、skills2傳染／零日／屍爆／延長原始規格、worker shim事件與Protocol、原生sim engine、正式battle-renderer／Core／Runtime及burst-blood／proj-poison-drop、build／配置工具來源。沒有新素材，Effects-Materials無本次修改、不需素材Commit。
+- 交付：DISINTEGRATE-END-ONCE-20261019功能完成，無本次未完成項；Commit為本紀錄所在`[Codex] fix: 修正崩解到期爆炸並延長血毒持續時間`，回覆附編號。可就本次範圍審查合併，擴大回歸22項既有失敗如上；未合併／推送，下一步使用者在8123重新載入驗收，其他副本須整合本Commit才會生效。
+
 ## THUNDER-WORKER-ZERO-SCALE-20261019 — 落雷共用本體被 Worker 未指定倍率縮成零
 
 - Owner：Codex；Done，單一開發者。延續前次回報：永恒雷獄與殛道落雷只有藍色受擊、仍無落雷本體。前次僅驗隔離事件、漏掉 Worker 的 sizeMult=0 訊息，原結論不足；本次以正式完整遊戲／Worker／鏡頭場景重現。使用者最後確認8123已恢復正常。

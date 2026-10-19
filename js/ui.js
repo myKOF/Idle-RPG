@@ -4562,6 +4562,10 @@ function enemyCellStyle(enemy) {
     ';grid-row:' + cell.row + ' / span ' + (cell.h || 1) + '"';
 }
 
+function enemyNameHTML(enemy) {
+  var attr = typeof skill2CurrentEnemyAttr === 'function' ? skill2CurrentEnemyAttr(enemy) : enemy.attr;
+  return (attr && ELEM_INFO[attr] ? ELEM_INFO[attr].emoji : '') + (enemy.name || '');
+}
 function enemyFloatLayerId(enemy, index) {
   var id = enemy && enemy.floatSel;
   return /^mv-float-\d+$/.test(id || '') ? id : 'mv-float-' + index;
@@ -4764,7 +4768,7 @@ function renderBattle() {
     partyHtml += '<div class="enemy-card enemy-rank-' + rank + '"' + enemyCellStyle(enemy) + '>' +
       '<div class="float-layer" id="' + enemyFloatLayerId(enemy, ei) + '"></div>' +
       '<div class="cb-level">' + (rankIcon ? '<span class="enemy-rank-icon">' + rankIcon + '</span>' : '') + 'Lv.' + enemy.level + '</div>' + icon +
-      '<div class="enemy-name">' + (enemy.attr && ELEM_INFO[enemy.attr] ? ELEM_INFO[enemy.attr].emoji : '') + enemy.name + '</div>' +
+      '<div class="enemy-name">' + enemyNameHTML(enemy) + '</div>' +
       '<div class="enemy-hp hp-bar"><div class="hp-fill monster" style="width:' + enemyHp + '%"></div><span class="hp-text">' + fmt(Math.max(0, enemy.hp)) + enemyShield + ' / ' + fmt(enemy.maxHp) + '</span></div>' +
       '<div class="enemy-status" data-enemy-buff-tip data-enemy-index="' + ei + '">' + entStatus(enemy) + '</div></div>';
   }
@@ -4792,6 +4796,7 @@ function renderBattle() {
     var fill = card.querySelector('.enemy-hp .hp-fill');
     var hpText = card.querySelector('.enemy-hp .hp-text');
     var status = card.querySelector('.enemy-status');
+    setHtmlIfChanged(card.querySelector('.enemy-name'), enemyNameHTML(liveEnemy));
     var liveEnemyFloatId = enemyFloatLayerId(liveEnemy, ci);
     var instantKillFloat = liveEnemy.hp <= 0 && hasRecentEnemyDamageFloat(liveEnemyFloatId, recentEnemyDamageFloats, recentEnemyDamageAt);
     if (instantKillFloat) {
@@ -7693,7 +7698,8 @@ function renderTowerFight() {
   setStyleIfChanged($id('tb-hp'), 'width', clamp(b.hp / b.maxHp * 100, 0, 100) + '%');
   var bSh = (b.shield > 0.5) ? '<span style="color:var(--info)">+' + fmt(Math.max(0, b.shield)) + '</span>' : '';
   setHtmlIfChanged($id('tb-hptext'), fmt(Math.max(0, b.hp)) + bSh + ' / ' + fmt(b.maxHp) + '（' + Math.round(b.hp / b.maxHp * 100) + '%）');
-  setHtmlIfChanged($id('tb-status'), entStatus(b) + (b.attr && ELEM_INFO[b.attr] ? ' 屬性:' + ELEM_INFO[b.attr].emoji + (ELEM_INFO[b.attr].short || ELEM_INFO[b.attr].name) : (b.elem ? ' 屬性:' + ENCHANTS[b.elem].emoji : ''))); // 屬性語境用 short（聖非光）
+  var bossAttr = typeof skill2CurrentEnemyAttr === 'function' ? skill2CurrentEnemyAttr(b) : b.attr;
+  setHtmlIfChanged($id('tb-status'), entStatus(b) + (bossAttr && ELEM_INFO[bossAttr] ? ' 屬性:' + ELEM_INFO[bossAttr].emoji + (ELEM_INFO[bossAttr].short || ELEM_INFO[bossAttr].name) : (b.elem ? ' 屬性:' + ENCHANTS[b.elem].emoji : ''))); // 屬性語境用 short（聖非光）
   setStyleIfChanged($id('tp-hp'), 'width', clamp(p.hp / st.hp * 100, 0, 100) + '%');
   renderPlayerShieldBar('tp', p, st);
   setHtmlIfChanged($id('tp-hptext'), fmt(Math.max(0, p.hp)) + playerShieldText(p) + ' / ' + fmt(st.hp));

@@ -640,7 +640,9 @@ function rollComboHits(st) {
   var c = (st && st.comboHits) || 0;
   if (typeof skill2FrenzyComboBonus === 'function') c += skill2FrenzyComboBonus();
   if (c <= 0) return 0;
-  if (!chance(COMBO_HITS_COEF.trigger)) return 0;
+  var trigger = (typeof skill2ComboTriggerChance === 'function')
+    ? skill2ComboTriggerChance(COMBO_HITS_COEF.trigger) : COMBO_HITS_COEF.trigger;
+  if (!chance(trigger)) return 0;
   var n = Math.floor(c);
   if (chance((c - n) * 100)) n++;
   return n;
@@ -987,6 +989,8 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   if (dCfg.isPlayer && dCfg.maxHitPct > 0 && dCfg.maxHp > 0) {
     dmg = Math.min(dmg, Math.max(1, Math.round(dCfg.maxHp * dCfg.maxHitPct / 100)));
   }
+  // 戰神體使用本次扣盾前的上限；破盾會在下方立即清空 shieldMax。
+  var shieldMaxBeforeHit = dCfg.isPlayer ? Math.max(0, defender.shieldMax || 0, defender.shield || 0) : 0;
   // 護盾吸收
   if (defender.shield && defender.shield > 0) {
     out.absorbed = Math.min(defender.shield, dmg);
@@ -1037,7 +1041,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
       defender.hp = 0; out.killed = true;
     }
   }
-  if (dCfg.isPlayer && typeof sgWarGodBodyOnDamaged === 'function') sgWarGodBodyOnDamaged(actualHpLoss, defender);
+  if (dCfg.isPlayer && typeof sgWarGodBodyOnDamaged === 'function') sgWarGodBodyOnDamaged(actualHpLoss, defender, out.absorbed, shieldMaxBeforeHit);
   // 所有普通／技能命中共用一次汲取；同一擊的物理與附加元素不重複計次。
   if (aCfg.isPlayer && defenderWasAlive && typeof playerDrainOnDamage === 'function') {
     playerDrainOnDamage(defender, out.dmg, attacker);

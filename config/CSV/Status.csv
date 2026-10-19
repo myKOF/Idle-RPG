@@ -34,8 +34,8 @@ sgFrenzyCd,狂暴·爆擊傷害,💥,buff,stat,sgCritDmgUp,,,0,,0,200,6,0,refres
 sgStorm,暴風化身,🌪️,buff,stat,sgStorm,,,0,,0,0,3,0,refresh,1,,ground-storm-dance,,新版技能【暴風亂舞】：化身暴風，期間自動施放雙刀亂舞、可以普攻及施放技能。
 sgBloodrage,嗜血狂怒,💢,buff,stat,sgBloodrage,,,0,,0,20,8,0,refresh,1,,aura-bloodrage,,新版技能【嗜血狂怒】：攻速乘算提高（突破攻速上限）；期間各階狂怒效果生效。
 sgArmorBrk,破甲,⚒️,debuff,stat,sgDefBrk,,,0,,0,25,4,0,stack,4,,,,新版技能【破甲擊】：防禦降低（可疊層，疊層時重置時間；獨立鍵、與舊 defDown 減益加總計算）。
-sgBurn,烈焰燃燒,🔥,debuff,dot,,fire,skill,20,,0,0,5,0.5,strongest,1,,,st-tick-fire,新版技能【火球術／火柱】：火屬性持續傷害；每跳量與間隔由技能各階決定（引擎以 dps 覆寫）。
-sgFireAmp,火焰增幅,🔥,buff,stat,sgFireAmp,fire,,0,,0,0,4,0,refresh,1,,,,新版技能【火焰增幅】：火屬性傷害提升（層數由引擎累加成單一數值，故用後蓋前並重置時間）。
+sgBurn,烈焰燃燒,🔥,debuff,dot,,fire,skill,20,,0,0,5,0.5,strongest,1,,,st-tick-fire,新版技能【火球術／火柱／無限星環】：火屬性持續傷害；每跳量與間隔由技能各階決定（引擎以 dps 覆寫）。
+sgFireAmp,火焰增幅,🔥,buff,stat,sgFireAmp,fire,,0,,0,0,4,0,stack,50,,,,新版技能【火焰增幅】：範圍內每次燃燒作用疊一層火屬性傷害提升，最多 50 層，每次觸發重置時間；與傳奇烈火狩各自計算層數。
 sgFirehunt,火狩,☄️,buff,stat,sgFirehunt,fire,,0,,0,0,4,0,refresh,1,,,,新版技能【火狩】：火狩環繞自身的剩餘時間；【再生】的擊殺延長會累加在這裡。
 sgRockArmor,岩甲,🪨,buff,stat,sgRockArmor,earth,,0,,0,0,10,0,refresh,1,,,,新版技能【岩甲術】：岩甲護盾的剩餘時間；第 3、5、6、7 階的效果只在此期間生效（護盾本身走「護盾」狀態）。
 sgRockAmp,岩甲增幅,🪨,buff,stat,sgRockAmp,,,0,,0,0,3,0,refresh,1,,,,新版技能【岩甲增幅】：損失護盾換得的傷害增幅（層數由引擎累加成單一數值，故用後蓋前並重置時間）。
@@ -62,16 +62,16 @@ sgDeathReaper,死亡收割,☠️,buff,stat,sgDeathReaper,,,0,,0,25,8,0,stack,20
 sgKnifeWaltz,輪舞刃,🔪,buff,stat,sgKnifeWaltz,,,0,,0,0,5,0,refresh,1,,,,傳奇特效【輪舞刃】：繞行在你周圍的飛刀還會留在場上多久（環繞場域的剩餘時間投影，比照火狩）。
 sgSlayerMark,殺神,⚰️,buff,stat,sgSlayerMark,,,0,,0,2,6,0,stack,100,,,,超神進化【殺神領域】：領域內的敵人死亡時疊 1 層，每層使你造成的所有傷害提高（效果值＝單層% × 層數）。
 sgVenomField,萬毒侵蝕,🧪,debuff,dot,,poison,skill,100,,0,0,6,0.5,stack,10,,,,超神進化【萬毒血霧】：領域內每次作用疊 1 層，每跳量＝單層量 × 層數（引擎以 dps 覆寫）。
-sgKagura,神樂灼焰,🎇,debuff,dot,,fire,skill,10,,0,0,6,0.5,stack,20,,,,超神進化【火之神樂】：雙刀亂舞每命中 1 次疊 1 層，每跳量＝單層量 × 層數（引擎以 dps 覆寫）。
+sgKagura,神樂灼焰,🎇,debuff,dot,,fire,skill,10,,0,0,6,0.5,stack,20,,,,超神進化【火之神樂】：雙刀亂舞每命中 1 次疊 1 層，每跳量＝單層量 × 層數（引擎以 dps 覆寫）；狀態生效期間將敵人屬性改為火屬性，結束後恢復。
 sgDeathDefer,不屈之誓,🕯️,buff,stat,sgDeathDefer,,,0,,0,100,10,0,refresh,1,,ground-cyclone-avatar,,傳奇【不屈之誓】：死亡延後生效的期間，你造成的所有傷害提高。
 sgBloodMist,血霧壟罩,🌫️,debuff,stat,sgBloodMist,,,0,,0,0,0.6,0,refresh,1,,,,傳奇【血霧】：站在血霧裡的標記，受傷時回復施放者生命。效果值＝血霧生成當下定版的回復比例%（沒有任何屬性讀這個鍵，它只是把數值帶在標記上）。
 sgCounterWrath,怒火,😡,buff,stat,sgCounterWrath,,,0,,0,30,6,0,refresh,1,,,,傳奇【怒火】：反擊累積達門檻時獲得，期間你造成的所有傷害提高。
 sgBurnBlood,燃血,🩸,buff,stat,sgBurnBlood,,,0,,0,1,4,0,stack,50,,,,傳奇【燃血】：【血飲術】每造成 1 次自身生命損失疊 1 層，每層使你造成的所有傷害提高（效果值＝單層% × 層數）。
 sgThornsRage,屠戮,🪓,buff,stat,sgThornsRage,,,0,,0,5,4,0,stack,10,,,,傳奇【屠戮者】：狂怒期間每擊殺 1 個敵人疊 1 層，每層使【嗜血反震】的效果提高（效果值＝單層% × 層數）。
 sgWarGodKill,戰神屠錄,📜,buff,stat,sgWarGodKill,,,0,,0,4,99999,0,stack,100,,,,超神進化【戰神屠錄】：狂怒期間每擊殺 1 個敵人疊 1 層，每層使你造成的所有傷害提高（效果值＝單層% × 層數）；設計為「持續到死亡為止」，因此持續時間給一個單場戰鬥不可能走完的值，實際回收靠死亡時的 resetSkill2RT。
-sgAsuraFist,阿修羅霸王拳,👊,buff,stat,sgAsuraFist,,,0,,0,500,1,0,refresh,1,,aura-bloodrage,,超神進化【阿修羅霸王拳】：每隔一段時間自動發動，短暫期間內你造成的所有傷害大幅提高。
+sgAsuraFist,阿修羅霸王拳,👊,buff,stat,sgAsuraFist,,,0,,0,500,1,0,refresh,1,,aura-bloodrage,,超神進化【阿修羅霸王拳】：每隔一段時間自動發動，作用期間你造成的所有傷害提高、連擊觸發率提升至 100%；連擊次數仍依目前連擊數，每擊殺 1 個敵人延長同一狀態的持續時間。
 sgStarfall,地爆天星,☄️,buff,stat,sgStarfall,fire,,0,,0,0,60,0,refresh,1,,,,超神進化【地爆天星】：距離下一顆超巨型殞石落下還有多久（剩餘時間即倒數，效果值本身沒有意義；比照【暴風化身】【火狩】的純計時狀態）。
-sgBurnAmp,爆燃,🔥,debuff,stat,sgBurnAmp,fire,,0,,0,10,4,0,refresh,1,,,,傳奇特效【爆燃】：火龍捲每造成 1 段傷害就疊 1 層，使該敵人受到的燃燒傷害提高（效果值＝目前的總提高%）。設計文檔未設層數上限，因此比照【火焰增幅】由引擎累加成單一數值後「後蓋前」，不使用狀態表的疊層規則。
+sgBurnAmp,爆燃,🔥,debuff,stat,sgBurnAmp,fire,,0,,0,10,4,0,refresh,1,,,,傳奇特效【爆燃】：火龍捲每造成 1 段傷害就疊 1 層，使該敵人受到的燃燒傷害提高（效果值＝目前的總提高%）。設計文檔未設層數上限，因此由引擎累加成單一數值後「後蓋前」，不使用狀態表的疊層規則。
 sgPetrify,石化,🗿,debuff,stat,sgPetrify,earth,,0,,0,1,2,0,refresh,1,,,,超神進化【超重岩之術】：石化期間無法行動且屬性標籤轉為地。行動限制沿用暈眩、BOSS免控、韌性與控場遞減；石化標記及轉地與實際暈眩時間一致，結束後恢復原屬性。不再附加地系易傷。
 sgStiffen,僵化,🌐,debuff,stat,sgStiffen,earth,,0,,0,65,5,0,refresh,1,,,,超神進化【超重力場】：重力場扭曲造成的僵化。移動速度、攻速與造成的傷害同時下降（效果值＝三者共用的下降%）；比照【泥沼緩速】不吃控場遞減與韌性。
 sgMireBleed,泥沼裂傷,🩸,debuff,dot,,,skill,150,,0,0,5,0.5,strongest,1,,,,傳奇特效【侵蝕】：泥沼術附加的流血；每跳量與間隔由特效參數決定（引擎以 dps 覆寫）。比照【穿心裂血】採「取高並重新計時」，因此每一拍重塗不會把剩餘時間鎖死在滿值。
@@ -93,3 +93,4 @@ eEnrage,狂暴,😡,buff,stat,eEnrage,,,0,,0,0,99999,0,refresh,1,en-burst-blood,
 eRage,怒意,🔥,buff,stat,eRage,,,0,,0,0,8,0,refresh,1,en-rage-burst,en-aura-rage,,敵人專用（高級敵人技能【血祭】【復仇】）：攻擊力提高的怒氣狀態（血祭＝限時、復仇＝每死一個同伴疊一次並持續到死亡）。這是畫面標記，數值由敵人技能引擎結算。
 eRegen,再生,💚,buff,stat,eRegen,,,0,,0,0,99999,2,refresh,1,,,en-burst-holy,敵人專用（高級敵人技能【再生】）：每隔一段時間回復最大生命的一個比例，直到死亡為止。這是畫面標記，回復由敵人技能引擎結算；每次回復播「作用特效」。
 eCurse,衰弱詛咒,🧿,debuff,stat,eCurse,,,0,,0,0,7,0,refresh,1,en-curse-dark,,,敵人專用（高級敵人技能【衰弱詛咒】）：被詛咒的玩家攻擊力與防禦力降低（降幅由「攻擊」「防禦」減益狀態結算）。這是畫面標記，用來顯示詛咒的上身特效與剩餘時間。
+sgFirehuntAmp,烈火狩,🔥,buff,stat,sgFirehuntAmp,fire,,0,,0,2,1,0,stack,50,,,,傳奇【烈火狩】：火狩持續期間按節拍疊加火屬性傷害提升，最多 50 層，滿層只刷新時間；火狩全部消失後到期，與火焰增幅各自計算層數。
