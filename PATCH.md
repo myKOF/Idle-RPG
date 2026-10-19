@@ -5,8 +5,9 @@
 - **GM 指令面板升級與 3 行高度加大**：
   - 將 `#gm-command-panel` 由單行 input 改為支援 3 行文字的 `<textarea>`（高度 68px，面板加寬至 520px），輸入長句白話文一目了然。
   - 按鍵行為最佳化：按 `Enter` 直接送出執行，按 `Shift + Enter` 支援換行，按 `Escape` 關閉面板。
-- **AI 自然語言轉譯與執行**：
-  - 於 `js/gm.js` 整合 Gemini 1.5 Flash 語意轉譯器（`AiKeySetting.parseNaturalCommand`）。
+- **AI 自然語言轉譯與執行（含模型動態適配）**：
+  - 於 `js/gm.js` 整合 Gemini 語意轉譯器（`AiKeySetting.parseNaturalCommand`）。
+  - 新增 `resolveAvailableModel` 自動查詢並匹配當前 API Key 支援的 Flash 模型名稱（相容 `gemini-1.5-flash-latest`、`gemini-1.5-flash-001/002`、`gemini-2.0-flash`），解決部分 Google Cloud 專案未開放靜態 `gemini-1.5-flash` 路由的問題。
   - 輸入中文白話文時自動調用 AI，轉譯為遊戲底層支援的標準指令陣列並依序執行；若未設定金鑰則友善提示導引至 Esc 設置。
 - **底層 equipset 裝備套裝指令擴充**：
   - 在 `js/gm_exec.js` 擴充 `equipset` 與 `equip` 參數：支援指定強化等級（0~1000）、太古詞條數（0~10）以及自動替換穿戴至全身（`wear`）。

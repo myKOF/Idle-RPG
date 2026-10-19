@@ -125,45 +125,83 @@
       '輸入：「技能全部滿級，給我100萬碎片」\n' +
       '輸出：["skillmax all", "scrap 1000000"]\n';
 
-    var url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + encodeURIComponent(key);
+    var cachedModelName = null;
 
-    var body = {
-      contents: [
-        {
-          parts: [
-            { text: systemInstruction + '\n玩家輸入：「' + userPrompt + '」\n輸出 JSON 陣列：' }
-          ]
-        }
-      ],
-      generationConfig: {
-        temperature: 0.1,
-        response_mime_type: 'application/json'
-      }
-    };
+    function resolveAvailableModel(targetKey) {
+      if (cachedModelName) return Promise.resolve(cachedModelName);
+      var listUrl = 'https://generativelanguage.googleapis.com/v1beta/models?key=' + encodeURIComponent(targetKey);
+      return fetch(listUrl, { method: 'GET' })
+        .then(function (res) {
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          return res.json();
+        })
+        .then(function (data) {
+          var models = (data && data.models) || [];
+          var candidates = models.filter(function (m) {
+            var methods = m.supportedGenerationMethods || [];
+            return methods.indexOf('generateContent') >= 0;
+          });
+          // 優先找 flash，其次為 1.5 系列，最後退回任意可用候選
+          var match = candidates.find(function (m) {
+            var name = (m.name || '').toLowerCase();
+            return name.indexOf('flash') >= 0;
+          }) || candidates.find(function (m) {
+            var name = (m.name || '').toLowerCase();
+            return name.indexOf('1.5') >= 0;
+          }) || candidates[0];
 
-    return fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    }).then(function (res) {
-      if (!res.ok) {
-        return res.json().catch(function () { return {}; }).then(function (data) {
-          var msg = (data && data.error && data.error.message) || ('HTTP ' + res.status);
-          throw new Error('Gemini API 錯誤：' + msg);
+          if (match && match.name) {
+            cachedModelName = match.name.replace(/^models\//, '');
+            return cachedModelName;
+          }
+          return 'gemini-1.5-flash-latest';
+        })
+        .catch(function () {
+          return 'gemini-1.5-flash-latest';
         });
-      }
-      return res.json();
-    }).then(function (data) {
-      var candidate = data && data.candidates && data.candidates[0];
-      var part = candidate && candidate.content && candidate.content.parts && candidate.content.parts[0];
-      var rawText = (part && part.text) || '';
-      if (!rawText.trim()) throw new Error('AI 未回傳任何指令');
-      var list = JSON.parse(rawText);
-      if (!Array.isArray(list)) {
-        if (typeof list === 'string') list = [list];
-        else throw new Error('AI 回傳格式不正確');
-      }
-      return list.map(function (c) { return String(c).trim(); }).filter(Boolean);
+    }
+
+    return resolveAvailableModel(key).then(function (modelName) {
+      var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(modelName) + ':generateContent?key=' + encodeURIComponent(key);
+
+      var body = {
+        contents: [
+          {
+            parts: [
+              { text: systemInstruction + '\n玩家輸入：「' + userPrompt + '」\n輸出 JSON 陣列：' }
+            ]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.1,
+          response_mime_type: 'application/json'
+        }
+      };
+
+      return fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      }).then(function (res) {
+        if (!res.ok) {
+          return res.json().catch(function () { return {}; }).then(function (data) {
+            var msg = (data && data.error && data.error.message) || ('HTTP ' + res.status);
+            throw new Error('Gemini API 錯誤：' + msg);
+          });
+        }
+        return res.json();
+      }).then(function (data) {
+        var candidate = data && data.candidates && data.candidates[0];
+        var part = candidate && candidate.content && candidate.content.parts && candidate.content.parts[0];
+        var rawText = (part && part.text) || '';
+        if (!rawText.trim()) throw new Error('AI 未回傳任何指令');
+        var list = JSON.parse(rawText);
+        if (!Array.isArray(list)) {
+          if (typeof list === 'string') list = [list];
+          else throw new Error('AI 回傳格式不正確');
+        }
+        return list.map(function (c) { return String(c).trim(); }).filter(Boolean);
+      });
     });
   }
 

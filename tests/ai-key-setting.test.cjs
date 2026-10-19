@@ -128,16 +128,27 @@ test('HTML 檔案確保預設包含 AI 金鑰相關節點且預設 display:none'
 test('parseNaturalCommand 成功透過 Gemini 轉譯白話指令為 GM 指令陣列', async () => {
   const { mod, ctx } = setup('localhost', { idle_rpg_gemini_api_key: 'AIzaFakeKey123' });
   ctx.fetch = async (url, opts) => {
-    assert.match(url, /gemini-1\.5-flash:generateContent/);
+    if (opts && opts.method === 'POST') {
+      assert.match(url, /:generateContent/);
+      return {
+        ok: true,
+        json: async () => ({
+          candidates: [
+            {
+              content: {
+                parts: [{ text: '["equipset mythic 500 50 4 wear", "gold 100000000000"]' }]
+              }
+            }
+          ]
+        })
+      };
+    }
+    // GET list models
     return {
       ok: true,
       json: async () => ({
-        candidates: [
-          {
-            content: {
-              parts: [{ text: '["equipset mythic 500 50 4 wear", "gold 100000000000"]' }]
-            }
-          }
+        models: [
+          { name: 'models/gemini-1.5-flash-latest', supportedGenerationMethods: ['generateContent'] }
         ]
       })
     };
