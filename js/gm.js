@@ -49,25 +49,89 @@
     return fn ? fn(parts) : null;
   }
 
-  /* 送出指令。遊戲狀態的權威在 Worker，所以一律送過去（畫面端指令除外，見上）；
-     回覆到達前先顯示執行中。 */
-  function submitGMCommand(text) {
-    var local = runClientCommand(text);
-    if (local) { setGMStatus(local.message, local.ok); return; }
+  function syncTestFlags(res) {
+    if (res && res.skillUnlock !== undefined && typeof window !== 'undefined') {
+      if (!window.GM_TEST) window.GM_TEST = {};
+      window.GM_TEST.skillUnlock = res.skillUnlock;
+      if (typeof UI !== 'undefined' && UI.dirty) {
+        UI.dirty.skills = true;
+        UI.dirty.battle = true;
+      }
+    }
+  }
+
+  function executeCommandSequence(commands, originPrompt) {
+    setGMStatus('🤖 AI 解析為：[' + commands.join('; ') + ']，執行中…', true);
+    var index = 0;
+    var results = [];
+
+    function next() {
+      if (index >= commands.length) {
+        var allOk = results.every(function (r) { return r.ok; });
+        var summary = results.map(function (r) { return r.message; }).join(' | ');
+        setGMStatus('🤖 已執行 [' + commands.join('; ') + ']：' + summary, allOk);
+        if (typeof blog === 'function') {
+          blog('🤖 [AI GM] ' + originPrompt + ' ➔ ' + commands.join('; '), allOk ? 'good' : 'bad');
+        }
+        return;
+      }
+      var cmd = commands[index++];
+      WorkerBridge.send('gm.exec', { line: cmd }).then(function (res) {
+        syncTestFlags(res);
+        results.push({ ok: !!(res && res.ok), message: res && res.message ? res.message : '成功' });
+        next();
+      }).catch(function (err) {
+        results.push({ ok: false, message: err && err.message ? err.message : '失敗' });
+        next();
+      });
+    }
+    next();
+  }
+
+  function executeSingleWorkerCommand(text) {
     setGMStatus('執行中…', true);
     WorkerBridge.send('gm.exec', { line: text }).then(function (res) {
-      if (res && res.skillUnlock !== undefined && typeof window !== 'undefined') {
-        if (!window.GM_TEST) window.GM_TEST = {};
-        window.GM_TEST.skillUnlock = res.skillUnlock;
-        if (typeof UI !== 'undefined' && UI.dirty) {
-          UI.dirty.skills = true;
-          UI.dirty.battle = true;
-        }
-      }
+      syncTestFlags(res);
       setGMStatus(res && res.message ? res.message : '已執行', !!(res && res.ok));
     }).catch(function (err) {
       setGMStatus(err && err.message ? err.message : '指令執行失敗', false);
     });
+  }
+
+  /* 送出指令。若為自然語言且本機具備 Gemini Key，透過 AI 轉譯後執行。 */
+  function submitGMCommand(text) {
+    var rawText = String(text || '').trim();
+    if (!rawText) return;
+
+    var local = runClientCommand(rawText);
+    if (local) { setGMStatus(local.message, local.ok); return; }
+
+    var hasChinese = /[^\x00-\x7F]/.test(rawText);
+    var firstWord = rawText.split(/\s+/)[0].toLowerCase();
+    var isKnownEnglishCmd = /^(gold|g|scrap|essence|dust|mat|material|gem|rune|runeword|book|equip|equipment|equipset|equip_set|set|suit|fullset|full_set|gearset|gear_set|part|bag|inv_cap|invcap|inv_size|invsize|inv_expand|bag_expand|expand_inv|stage_jump|stage|set_stage|setstage|stage_set|stageset|zone_jump|zone|kill|multikill|mk|k|reincarnation|reincarnate|turn|level|lv|skillxp|masterylv|skill2max|skillmax|skills2max|skill_unlock|tower_trial_clear|tower_hell_clear|tower_purgatory_clear|tower_trial_reset|tower_hell_reset|tower_purgatory_reset|tower_jump|god|spawn|spawnelite|clear|help|\?)$/i.test(firstWord);
+
+    if (hasChinese && !isKnownEnglishCmd) {
+      if (typeof AiKeySetting !== 'undefined' && typeof AiKeySetting.parseNaturalCommand === 'function') {
+        var apiKey = AiKeySetting.getApiKey();
+        if (!apiKey) {
+          setGMStatus('⚠️ 檢測到白話指令，但尚未設定 Gemini 金鑰。請按 Esc ➔ 設置貼上金鑰。', false);
+          return;
+        }
+        setGMStatus('🤖 AI 正在理解指令中…', true);
+        AiKeySetting.parseNaturalCommand(rawText).then(function (cmdList) {
+          if (!cmdList || !cmdList.length) {
+            setGMStatus('❌ AI 無法識別該指令，請換個說法試試。', false);
+            return;
+          }
+          executeCommandSequence(cmdList, rawText);
+        }).catch(function (err) {
+          setGMStatus('❌ AI 解析失敗：' + (err && err.message ? err.message : String(err)), false);
+        });
+        return;
+      }
+    }
+
+    executeSingleWorkerCommand(rawText);
   }
 
   function setGMStatus(message, ok) {
@@ -94,11 +158,11 @@
     var panel = document.createElement('div');
     panel.id = 'gm-command-panel';
     panel.style.display = 'none';
-    var input = document.createElement('input');
-    input.type = 'text';
+    var input = document.createElement('textarea');
+    input.rows = 3;
     input.autocomplete = 'off';
     input.spellcheck = false;
-    input.placeholder = 'GM 指令（help 查看）';
+    input.placeholder = 'GM 指令（可輸入白話文，例：加全身強化+50神話4太古裝備、加金幣1000億）';
     var status = document.createElement('div');
     status.className = 'gm-status';
     panel.appendChild(input);
@@ -106,7 +170,7 @@
     document.body.appendChild(panel);
 
     input.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') {
+      if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         e.stopPropagation();
         var val = input.value;

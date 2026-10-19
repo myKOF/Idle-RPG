@@ -124,3 +124,88 @@ test('HTML 檔案確保預設包含 AI 金鑰相關節點且預設 display:none'
   assert.match(html, /id="game-menu-ai-key"[^>]*style="display:none/);
   assert.match(html, /src="js\/ai-key-setting\.js/);
 });
+
+test('parseNaturalCommand 成功透過 Gemini 轉譯白話指令為 GM 指令陣列', async () => {
+  const { mod, ctx } = setup('localhost', { idle_rpg_gemini_api_key: 'AIzaFakeKey123' });
+  ctx.fetch = async (url, opts) => {
+    assert.match(url, /gemini-1\.5-flash:generateContent/);
+    return {
+      ok: true,
+      json: async () => ({
+        candidates: [
+          {
+            content: {
+              parts: [{ text: '["equipset mythic 500 50 4 wear", "gold 100000000000"]' }]
+            }
+          }
+        ]
+      })
+    };
+  };
+
+  const cmds = await mod.parseNaturalCommand('加全身強化+50的神話裝備，並都是4太古的詞條，並加金幣1000億');
+  assert.deepEqual([...cmds], ['equipset mythic 500 50 4 wear', 'gold 100000000000']);
+});
+
+test('js/gm_exec.js 的 equipset 支援強化等級、太古數與自動穿戴', () => {
+  const inventory = [];
+  const equipment = {};
+  const G = {
+    player: { level: 200 },
+    inventory: inventory,
+    equipment: equipment
+  };
+
+  const context = {
+    location: { hostname: 'localhost' },
+    G,
+    RARITIES: [
+      { key: 'common', name: '普通', affix: [1, 2] },
+      { key: 'uncommon', name: '精良', affix: [2, 3] },
+      { key: 'rare', name: '稀有', affix: [3, 4] },
+      { key: 'unique', name: '獨特', affix: [4, 5] },
+      { key: 'epic', name: '史詩', affix: [5, 6] },
+      { key: 'legendary', name: '傳說', affix: [6, 7] },
+      { key: 'mythic', name: '神話', affix: [7, 7] }
+    ],
+    pick: (arr) => arr[0],
+    makeEquipment: (lvl, opts) => ({
+      id: Math.random(),
+      level: lvl,
+      rarity: opts.rarity,
+      slot: opts.slot,
+      upgrade: 0,
+      ancientCount: opts.ancientCount || 0
+    }),
+    equipItem: (it, slotKey) => {
+      equipment[slotKey] = it;
+    },
+    markStatsDirty: () => {},
+    UI: { dirty: {} },
+    module: { exports: {} }
+  };
+  context.window = context;
+
+  vm.createContext(context);
+  const code = fs.readFileSync(path.join(root, 'js/gm_exec.js'), 'utf8');
+  vm.runInContext(code, context);
+  const exec = context.module.exports.executeGMCommand;
+
+  // 1. 發放到背包，帶強化 50 與 4 太古
+  const resInv = exec('equipset mythic 500 50 4 inv');
+  assert.equal(resInv.ok, true);
+  assert.match(resInv.message, /強化\+50/);
+  assert.match(resInv.message, /4太古/);
+  assert.equal(inventory.length, 13);
+  assert.equal(inventory[0].upgrade, 50);
+  assert.equal(inventory[0].ancientCount, 4);
+
+  // 2. 直接穿戴到全身 (wear)
+  const resWear = exec('equipset mythic 500 50 4 wear');
+  assert.equal(resWear.ok, true);
+  assert.match(resWear.message, /已自動替換並穿戴全身/);
+  assert.equal(equipment.weapon.upgrade, 50);
+  assert.equal(equipment.weapon.ancientCount, 4);
+  assert.equal(equipment.helmet.upgrade, 50);
+});
+

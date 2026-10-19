@@ -1,5 +1,20 @@
 # PATCH.md
 
+## 白話文 AI 自然語言 GM 指令實裝與 GM 面板 3 行文字加大（Antigravity 2026-10-19）
+
+- **GM 指令面板升級與 3 行高度加大**：
+  - 將 `#gm-command-panel` 由單行 input 改為支援 3 行文字的 `<textarea>`（高度 68px，面板加寬至 520px），輸入長句白話文一目了然。
+  - 按鍵行為最佳化：按 `Enter` 直接送出執行，按 `Shift + Enter` 支援換行，按 `Escape` 關閉面板。
+- **AI 自然語言轉譯與執行**：
+  - 於 `js/gm.js` 整合 Gemini 1.5 Flash 語意轉譯器（`AiKeySetting.parseNaturalCommand`）。
+  - 輸入中文白話文時自動調用 AI，轉譯為遊戲底層支援的標準指令陣列並依序執行；若未設定金鑰則友善提示導引至 Esc 設置。
+- **底層 equipset 裝備套裝指令擴充**：
+  - 在 `js/gm_exec.js` 擴充 `equipset` 與 `equip` 參數：支援指定強化等級（0~1000）、太古詞條數（0~10）以及自動替換穿戴至全身（`wear`）。
+  - 完美支援例如「加全身強化+50的神話裝備，並都是4太古的詞條」➔ `equipset mythic 500 50 4 wear`，以及「加金幣1000億」➔ `gold 100000000000`。
+- **文件與測試**：
+  - 更新 `GM_command.md` 記載 2.1 自然語言 GM 指令與 `equipset` 進階語法。
+  - 擴充 `tests/ai-key-setting.test.cjs` 與 `tests/gm-command.test.cjs`，22 項測試全部通過；語法編譯檢查 548 檔全數 PASS。
+
 ## Esc 菜單新增內測專用 AI 自然語言 GM 金鑰設定（Antigravity 2026-10-19）
 
 - **Esc 菜單與設置面板整合**：
