@@ -62,8 +62,106 @@
     if (n !== null) return n;
     for (var i = 0; i < RARITIES.length; i++) {
       if (String(RARITIES[i].key || '').toLowerCase() === key) return i;
+      if (RARITIES[i].name === raw || (RARITIES[i].name && RARITIES[i].name.toLowerCase() === key)) return i;
     }
+    var aliases = {
+      'godforge': 8,
+      'godforged': 8,
+      '神鑄': 8,
+      '神鑄創世': 8,
+      'genesis': 7,
+      '創世': 7,
+      'chaos': 9,
+      '混沌': 9,
+      'chaosgodforged': 10,
+      'chaos_godforged': 10,
+      'godforge_chaos': 10,
+      'godforged_chaos': 10,
+      'godforgechaos': 10,
+      '神鑄混沌': 10
+    };
+    if (aliases[key] !== undefined) return aliases[key];
     return null;
+  }
+
+  function gmSocketAll(rawGemLv, rawRune) {
+    if (!G || !G.equipment) return { ok: false, message: '目前找不到玩家裝備資料。' };
+    var gemLv = rawGemLv !== undefined ? gmNumber(rawGemLv, 1, 10) : 10;
+    if (gemLv === null) return { ok: false, message: '寶石等級範圍需為 1~10' };
+
+    var eqKeys = Object.keys(G.equipment);
+    var equippedCount = 0;
+    var socketCount = 0;
+    var runeCount = 0;
+
+    var validGemTypes = [];
+    if (typeof GEM_TYPES !== 'undefined' && GEM_TYPES) {
+      for (var gk in GEM_TYPES) {
+        if (GEM_TYPES[gk] && GEM_TYPES[gk].enabled !== false) validGemTypes.push(gk);
+      }
+    }
+    if (!validGemTypes.length) {
+      validGemTypes = ['ruby', 'sapphire', 'topaz', 'emerald', 'diamond', 'amethyst', 'garnet', 'opal'];
+    }
+
+    var validRunes = [];
+    if (typeof RUNES !== 'undefined' && Array.isArray(RUNES)) {
+      validRunes = RUNES.map(function (r) { return r.id; }).filter(Boolean);
+    }
+
+    for (var i = 0; i < eqKeys.length; i++) {
+      var it = G.equipment[eqKeys[i]];
+      if (!it || typeof it !== 'object') continue;
+      equippedCount++;
+
+      // 1. 寶石插槽
+      var maxSockets = 0;
+      if (typeof RARITIES !== 'undefined' && RARITIES[it.rarity]) {
+        maxSockets = Number(RARITIES[it.rarity].sockets) || 0;
+      }
+      if (maxSockets <= 0 && Array.isArray(it.sockets) && it.sockets.length > 0) {
+        maxSockets = it.sockets.length;
+      }
+      if (maxSockets > 0) {
+        if (!Array.isArray(it.sockets)) it.sockets = [];
+        while (it.sockets.length < maxSockets) it.sockets.push(null);
+        for (var si = 0; si < it.sockets.length; si++) {
+          var pickedGem = validGemTypes[Math.floor(Math.random() * validGemTypes.length)];
+          it.sockets[si] = { type: pickedGem, level: gemLv };
+          socketCount++;
+        }
+      }
+
+      // 2. 符文插槽
+      var maxRunes = 0;
+      if (typeof RARITIES !== 'undefined' && RARITIES[it.rarity]) {
+        maxRunes = Number(RARITIES[it.rarity].runeSlots) || 0;
+      }
+      if (maxRunes > 0 && validRunes.length > 0) {
+        if (!Array.isArray(it.runes)) it.runes = [];
+        while (it.runes.length < maxRunes) it.runes.push(null);
+        for (var ri = 0; ri < it.runes.length; ri++) {
+          var pickedRune = validRunes[Math.floor(Math.random() * validRunes.length)];
+          it.runes[ri] = pickedRune;
+          runeCount++;
+        }
+      }
+    }
+
+    if (equippedCount === 0) {
+      return { ok: false, message: '玩家身上尚未穿戴任何裝備，請先穿戴裝備（或使用 equipset）。' };
+    }
+
+    if (typeof markStatsDirty === 'function') markStatsDirty();
+    gmDirty();
+    if (typeof UI !== 'undefined' && UI.dirty) {
+      UI.dirty.equip = true;
+      UI.dirty.gems = true;
+    }
+    return {
+      ok: true,
+      message: '已將全身 ' + equippedCount + ' 件裝備全數鑲滿（共鑲嵌 ' + socketCount + ' 顆 Lv.' + gemLv + ' 寶石' + (runeCount > 0 ? '、' + runeCount + ' 枚高階符文' : '') + '）'
+    };
   }
 
   function gmAddCurrency(key, amount) {
@@ -626,6 +724,10 @@
 
     if (command === 'stage_jump' || command === 'stage' || command === 'set_stage' || command === 'setstage' || command === 'stage_set' || command === 'stageset' || command === 'zone_jump' || command === 'zone') {
       return gmJumpStage(args[0], args[1]);
+    }
+
+    if (command === 'socketall' || command === 'fillgems' || command === 'fillgem' || command === 'gemsocket' || command === 'sockets' || command === 'gemall') {
+      return gmSocketAll(args[0], args[1]);
     }
 
     var isSlashPattern = text.indexOf('/') >= 0;

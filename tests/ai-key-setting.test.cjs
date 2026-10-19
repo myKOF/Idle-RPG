@@ -266,3 +266,80 @@ test('js/gm_exec.js 的 equipset 支援強化等級、太古數與自動穿戴',
   assert.equal(equipment.helmet.upgrade, 50);
 });
 
+test('js/gm_exec.js 的 gmRarity 支援中文名與 godforge/chaosGodforged 等別名，且 socketall 可鑲滿全身裝備', () => {
+  const equipment = {
+    weapon: { id: 1, rarity: 10, sockets: [null, null], runes: [null] },
+    chest: { id: 2, rarity: 10, sockets: [], runes: [] }
+  };
+  const G = {
+    player: { level: 500 },
+    inventory: [],
+    equipment: equipment
+  };
+
+  const context = {
+    location: { hostname: 'localhost' },
+    G,
+    RARITIES: [
+      { key: 'common', name: '普通', affix: [1, 1], sockets: 0, runeSlots: 0 },
+      { key: 'uncommon', name: '精良', affix: [2, 2], sockets: 1, runeSlots: 1 },
+      { key: 'rare', name: '稀有', affix: [2, 2], sockets: 1, runeSlots: 1 },
+      { key: 'unique', name: '獨特', affix: [3, 3], sockets: 1, runeSlots: 1 },
+      { key: 'epic', name: '史詩', affix: [4, 4], sockets: 2, runeSlots: 2 },
+      { key: 'legendary', name: '傳說', affix: [5, 5], sockets: 2, runeSlots: 2 },
+      { key: 'mythic', name: '神話', affix: [6, 6], sockets: 2, runeSlots: 2 },
+      { key: 'genesis', name: '創世', affix: [7, 7], sockets: 3, runeSlots: 3 },
+      { key: 'godforged', name: '神鑄創世', affix: [8, 8], sockets: 3, runeSlots: 3 },
+      { key: 'chaos', name: '混沌', affix: [9, 9], sockets: 4, runeSlots: 4 },
+      { key: 'chaosGodforged', name: '神鑄混沌', affix: [10, 10], sockets: 4, runeSlots: 4 }
+    ],
+    GEM_TYPES: {
+      ruby: { name: '紅寶石', enabled: true },
+      topaz: { name: '黃玉', enabled: true }
+    },
+    RUNES: [
+      { id: 'r01', name: '艾爾' },
+      { id: 'r33', name: '查姆' }
+    ],
+    pick: (arr) => arr[0],
+    makeEquipment: (lvl, opts) => ({
+      id: Math.random(),
+      level: lvl,
+      rarity: opts.rarity,
+      slot: opts.slot,
+      sockets: [],
+      runes: []
+    }),
+    equipItem: (it, slotKey) => {
+      equipment[slotKey] = it;
+    },
+    markStatsDirty: () => {},
+    UI: { dirty: {} },
+    module: { exports: {} }
+  };
+  context.window = context;
+
+  vm.createContext(context);
+  const code = fs.readFileSync(path.join(root, 'js/gm_exec.js'), 'utf8');
+  vm.runInContext(code, context);
+  const exec = context.module.exports.executeGMCommand;
+
+  // 1. 別名 godforge
+  const resGf = exec('equipset godforge 500 100 0 wear');
+  assert.equal(resGf.ok, true, 'godforge 應成功識別為神鑄創世');
+  assert.match(resGf.message, /神鑄創世/);
+
+  // 2. 中文名稱 神鑄混沌
+  const resChaosGf = exec('equipset 神鑄混沌 500 100 4 wear');
+  assert.equal(resChaosGf.ok, true, '神鑄混沌 應成功識別');
+  assert.match(resChaosGf.message, /神鑄混沌/);
+
+  // 3. socketall 10
+  const resSocket = exec('socketall 10');
+  assert.equal(resSocket.ok, true);
+  assert.match(resSocket.message, /已將全身 \d+ 件裝備全數鑲滿/);
+  assert.equal(equipment.weapon.sockets.length, 4, '混沌神鑄應有 4 孔');
+  assert.equal(equipment.weapon.sockets[0].level, 10);
+  assert.equal(equipment.weapon.runes.length, 4);
+});
+

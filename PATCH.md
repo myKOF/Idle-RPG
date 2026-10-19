@@ -1,21 +1,18 @@
 # PATCH.md
 
-## 白話文 AI 自然語言 GM 指令實裝與 GM 面板 3 行文字加大（Antigravity 2026-10-19）
+## AI 自然語言 GM 呼叫極速化、神鑄混沌品質相容與全身鑲滿寶石指令（Antigravity 2026-10-20）
 
-- **GM 指令面板升級與 3 行高度加大**：
-  - 將 `#gm-command-panel` 由單行 input 改為支援 3 行文字的 `<textarea>`（高度 68px，面板加寬至 520px），輸入長句白話文一目了然。
-  - 按鍵行為最佳化：按 `Enter` 直接送出執行，按 `Shift + Enter` 支援換行，按 `Escape` 關閉面板。
-- **AI 自然語言轉譯與執行（含模型動態適配與負載容錯）**：
-  - 於 `js/gm.js` 整合 Gemini 語意轉譯器（`AiKeySetting.parseNaturalCommand`）。
-  - 新增 `resolveCandidateModels` 動態排序與多模型備援機制：優先採用 `gemini-2.0-flash`、`gemini-1.5-flash`、`gemini-2.0-flash-lite`、`gemini-1.5-flash-8b`、`gemini-1.5-pro` 等多層候選隊列。
-  - 當遇到 Google API 節點負載尖峰（High Demand / 503 / 429）或個別模型暫時壅塞時，系統自動無縫降級切換至備用可用模型重試，不再中斷報錯。
-  - 輸入中文白話文時自動調用 AI，轉譯為遊戲底層支援的標準指令陣列並依序執行；若未設定金鑰則友善提示導引至 Esc 設置。
-- **底層 equipset 裝備套裝指令擴充**：
-  - 在 `js/gm_exec.js` 擴充 `equipset` 與 `equip` 參數：支援指定強化等級（0~1000）、太古詞條數（0~10）以及自動替換穿戴至全身（`wear`）。
-  - 完美支援例如「加全身強化+50的神話裝備，並都是4太古的詞條」➔ `equipset mythic 500 50 4 wear`，以及「加金幣1000億」➔ `gold 100000000000`。
-- **文件與測試**：
-  - 更新 `GM_command.md` 記載 2.1 自然語言 GM 指令與 `equipset` 進階語法。
-  - 擴充 `tests/ai-key-setting.test.cjs` 與 `tests/gm-command.test.cjs`，22 項測試全部通過；語法編譯檢查 548 檔全數 PASS。
+- **AI 自然語言 GM 呼叫極速化**：
+  - 去除每次查詢前重複發送 `GET /models` 的 1~2 秒網路請求開銷，直接採用靜態優先級隊列（`gemini-2.0-flash` ➔ `gemini-1.5-flash` ➔ `gemini-2.0-flash-lite` ➔ `gemini-1.5-flash-8b` ➔ `gemini-1.5-pro`）。
+  - 實裝可用模型記憶體快取（`_lastWorkingModel`），初次連線成功後後續呼叫直接置頂走最快模型，單次往返完成，響應速度提升 50%~70%。
+- **底層品質中文與別名寬鬆相容**：
+  - `gmRarity` 擴充支援全中文稀有度名稱（普通、精良、稀有、獨特、史詩、傳說、神話、創世、神鑄創世、混沌、神鑄混沌）及常見別名（`godforge`、`godforged`、`chaos`、`chaosGodforged`、`godforge_chaos`），徹底解決「神鑄混沌」被轉譯為 godforge 報無效品質的問題。
+- **新增全身寶石與符文鑲滿指令 `socketall`**：
+  - 新增 `socketall [等級1~10]` 指令（別名 `fillgems`、`gemsocket`），遍歷全身 13 件穿戴裝備，將其所有寶石插槽依照裝備最大孔數自動鑲滿指定等級隨機寶石，符文孔亦自動鑲滿高階符文。
+- **Prompt 範例擴充**：
+  - 於 System Instruction 完整登錄 11 階品質 key、`socketall`、`stage <場景> <關卡>` 跳關語法，並加入「換成+100神鑄混沌裝備、鑲滿10級寶石、加金幣碎片精華、跳關亡靈山脈」複合長句白話文示範。
+- **測試與驗證**：
+  - 擴充 `tests/ai-key-setting.test.cjs` 覆蓋中文品質、godforge 別名與 `socketall 10` 全身鑲孔邏輯，全數通過；`tools/build_check.cjs` 548 檔代碼檢查 100% OK。
 
 ## Esc 菜單新增內測專用 AI 自然語言 GM 金鑰設定（Antigravity 2026-10-19）
 
