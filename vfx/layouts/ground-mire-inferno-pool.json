@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "ground-mire-inferno-pool",
+  "groups": [
+    {
+      "id": "ground-mire-inferno-pool",
+      "name": "ground-mire-inferno-pool",
+      "layerIds": [
+        "burning-ground",
+        "red-embers"
+      ]
+    }
+  ],
+  "order": [
+    "group:ground-mire-inferno-pool"
+  ]
+}

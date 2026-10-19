@@ -60,7 +60,7 @@ test('深淵火池：落地才出生，空場及原目標死亡仍在固定落�
   assert.equal(visuals.length, 3, '出生立即顯示，不等首個傷害節拍');
   visuals.forEach(e => {
     assert.deepEqual(Object.keys(e.vfx), ['ground']);
-    assert.equal(e.vfx.ground, 'ground-mire-lava');
+    assert.equal(e.vfx.ground, 'ground-mire-inferno-pool');
     assert.equal(e.elem, 'fire'); assert.equal(e.hit, false);
     assert.equal(e.area.r, 60); assert.equal(e.area.w, 120); assert.equal(e.area.h, 120);
     assert.equal(e.dur, 4);
@@ -160,7 +160,9 @@ test('深淵火池：實際Runtime按六米圓形縮放、續命不重播爆炸�
   s.shimVfx(visual);
   const wire = JSON.parse(JSON.stringify(s.c.shimDrainUrgentVisualEvents())).find(e => e.variant === 'mire-inferno-pool');
   assert.equal(wire.dur, 4); assert.equal(wire.area.lifeSec, 4); assert.equal(wire.area.r, 60);
-  const preset = JSON.parse(fs.readFileSync(path.join(__dirname, '../vfx/presets/ground-mire-lava.json')));
+  const preset = JSON.parse(fs.readFileSync(path.join(__dirname, '../vfx/presets/ground-mire-inferno-pool.json')));
+  assert.equal(preset.layers.length, 2, '地面熔火池只需兩個sprite');
+  assert.ok(preset.layers.every(l => l.type === 'sprite' && l.projection.y === .5), '沒有火焰、煙霧或火星粒子');
   const transforms = [];
   const backend = { createNode: spec => ({ spec }), updateNode: (node, t) => transforms.push({ ...t }), destroyNode() {} };
   const adapter = Runtime.create({ core: Core, resolver: { has: () => true, resolve: id => id }, fxBackend: backend, zoneBackend: backend,
@@ -170,8 +172,8 @@ test('深淵火池：實際Runtime按六米圓形縮放、續命不重播爆炸�
   adapter.update(.01);
   assert.ok(adapter.stats().zone.activeEffects > 0);
   assert.ok(transforms.some(t => Math.abs(t.scaleX) > 0));
-  assert.ok(Math.abs(transforms[0].scaleX - preset.layers[0].scale.x * .6) < 1e-8,
-    '作者半徑100像素縮至權威六米／60像素，不使用Preset原本三米半徑');
+  assert.ok(Math.abs(transforms[1].scaleX - preset.layers[1].scale.x) < 1e-8,
+    '作者半徑60像素對齊權威六米／60像素');
   // 最後一個非到期節拍只剩半秒，禁止Runtime一般場域的多拍緩衝續命。
   adapter.update(3.49);
   s.c.GT = f.bornAt + 3.5;

@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## MIRE-INFERNO-FLAMES-20261019 — 深淵火池改為低負擔地面熔火
+
+- Owner：Codex；Done；單一開發者。使用者認為原火池不像燃燒，指定參考NPC瘟疫中心特效改黃紅色；看過初版後明確取消上冒火焰，為效能只保留地面熔火池，完成後提供動態預覽。前置7a55094e火池判定與精確壽命完成。
+- 允許新增專用ground-mire-inferno-pool Preset／單根layout／可重現author、素材庫對應SOURCE與來源、Skills2 Excel／CSV僅深淵火獄觸發地板、生成JS及必要主頁／Worker／Runtime／Editor快取、原火池回歸相應外觀斷言、LV_upgrade_system與本紀錄；必要匯出索引僅本次來源。禁止NPC原瘟疫／其他火池外觀、傷害／範圍／節拍／壽命／存檔／Protocol與其他副本修改。保留使用者Excel既有調整，未經指示不合併推送。
+- 預檢目標無外部來源；沿en-toxic-pool地面兩層既有CC0 light-masks組合自製紅橙熔火池，不引入新圖片；最終僅兩個sprite，移除全部火焰／煙霧／火星粒子，保留地面壓縮與既有輕微流動。RPG Mote點陣繪製不適用引擎原生配置JSON。驗收Preset／layout／資源合法、零粒子／雙sprite、六米範圍與四秒事件不變、Core動態預覽及相依回歸／Build／Excel原生重開、素材庫先行獨立Commit及遊戲Commit。後續使用者看預覽與遊戲驗收。
+- 完成14檔：新增vfx/presets/ground-mire-inferno-pool.json、同名layout與tools/vfx/authoring/author/mire-inferno-pool.cjs；Preset僅burning-ground／red-embers兩個貼地sprite，原生輕微呼吸／慢速紋理旋轉，零particle／煙霧／火舌／火星，沿NPC瘟疫CC0噪聲圓／透明圓改紅橙色。單根群組含全部兩層，sizing圓形radiusM6／authored.radius60，以原權威r60事件播放，沒有修改NPC原Preset或共享ground-mire-lava。Skills2 Excel／CSV僅AR130改新檔名，js/skills2.js僅生成資料對應引用；js/vfx-runtime.js僅DATA_VERSION、index.html與tools/vfx/editor/index.html快取219（主頁skills2 336／bridge317），js/bridge.js及js/worker/sim.worker.js Worker／import token同步；原火池測試補零粒子與兩層貼地、相應檔名與實際縮放斷言，LV_upgrade_system與本紀錄同步。原火球、傷害／六米半徑／半秒八拍／四秒精確消失及其他技能完全不變。
+- 驗證：`node --test tests/mire-inferno-pool.test.cjs`6/6；`node --test tests/skills2-vfx-schema.test.cjs tests/skill-vfx-inheritance.test.cjs`以唯讀fs映射僅本次AR130的提交Excel候選，13/13，主工作簿仍保留使用者六格未套用調整。`node --test --test-reporter=tap tests/vfx-core.test.cjs tests/vfx-editor-save.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-editor-guard.test.cjs`231項229過／1既有失敗／1既有skip；唯一失敗為aura-earth-reversal.json既有canonical格式，確認該檔逐位元等於HEAD且HEAD內容本身亦非canonical，沒有修改或放寬斷言。本次新Preset經Core serialise逐位元相等。合計250項248過／1既有失敗／1skip。
+- `npm.cmd run build`546檔通過；`node tools/config_tables.cjs --apply Skills2`語意變更0；`node tools/vfx/export-assets.cjs --check`354份Preset／187份貼圖，已是最新，不需新增／重匯出圖片或索引。git diff／staged diff檢查通過。Excel用原生COM只改AR130、正常重開Saved=true；全工作簿資料只變此格、各格style索引／列高／欄寬／凍結／合併完全保留，來源雜湊及獨占鎖檢查後覆寫。提交Excel由HEAD副本原生只改AR130，使用者泥沼其他文案與黃泉沼數值留在工作區。
+- 已提供最終4秒Core動態GIF：本聊天visualizations/mire-molten-ground-preview.gif，只有地面熔火池、人形作比例（放大2倍）及消失後重播；無正式遊戲Pixi／瀏覽器Console／大量火池FPS量測／全庫測試，僅確認每池兩個sprite、零粒子，不宣稱已量測FPS提升。前一個上冒版本未進入正式素材或提交。素材庫由vfx-library-root解析，保存至codex-authored/mire-inferno-pool，含presets／layouts／author／NPC參考快照及SOURCE.md，遊戲與素材庫Preset／layout逐位元一致；Preset SHA256=41d91e918fcef338f4838b3a980e627ed9fd414b699cf0dcdfc606bbd35797a8。沿既有Kenney light-masks CC0貼圖，沒有新外部素材或點陣圖。
+- 唯讀未改：共通規範／工作流／prompts、NPC瘟疫資料與en-toxic-pool、ground-mire-lava／ground-domain-fire、VFX Core／kit／preset-render／Runtime幾何／shipped-assets與asset-index、素材庫PROVENANCE及既有貼圖、config_tables／Worker shim／Protocol／Excel管線與既有檢查。自我Review確認只有本技能引用新圖、兩層平面不生粒子、圖片均已出貨、模擬與顯示範圍／壽命不變。無本次未完成項，可就本範圍Review／合併；既有canonical失敗與未正式瀏覽器／FPS驗收為限制。素材庫已先提交020afe3且工作區乾淨；遊戲Commit為本段所在`[Codex] feat: 深淵火池改為雙圖層地面熔火`，回覆附編號；未合併推送。後續重載遊戲看最終預覽；若開著Editor，先另存備份未儲存內容再重載，不以舊頁覆寫新版。
+
 ## MIRE-INFERNO-POOL-20261019 — 深淵火獄落地火池
 
 - Owner：Codex；Done；單一開發者。使用者要求每顆深淵火獄火球落地爆炸後，在落點生成半徑6米火池，每0.5秒造成200%火焰傷害，持續4秒。前置固定落點火球與共用火池機制已完成；沿用既有場域及配置特效，無Protocol／存檔變更。
