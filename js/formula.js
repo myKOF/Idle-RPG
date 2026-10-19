@@ -764,6 +764,9 @@ function applyEnemyHpDamage(ent, damage, drainHits) {
   if (ent && ent.maxHp > 0 && typeof skill2AbyssDamageTakenMultiplier === 'function') {
     amount *= skill2AbyssDamageTakenMultiplier(ent);
   }
+  if (ent && !(ent.maxHp > 0) && typeof skill2RebirthDamageTakenMultiplier === 'function') {
+    amount *= skill2RebirthDamageTakenMultiplier(ent);
+  }
   amount = towerBossHpDamage(ent, amount);
   // 菁英詞條（js/elite.js）：減傷／無敵／鏈結分擔；持續傷害與衍生傷害也要吃到
   if (ent && ent.affixes && typeof eliteIncomingDamage === 'function') amount = eliteIncomingDamage(ent, amount, null);

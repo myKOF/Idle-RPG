@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## EARTHGUARD-REBIRTH-GUARD-20261019 — 天地共生復活無敵改五秒半傷
+
+- Owner：Codex；Done；單一開發者。使用者要求天地共生完成復活後取消無敵，改為五秒內受到傷害減少50%，並確認不滅意志改為每擊殺延長減傷0.5秒。前置既有五秒復甦已完成；交付使用者驗收與整合。
+- 允許skills2的復活／減傷／擊殺延長與狀態角色、formula共用直接扣血入口、Status獨立狀態、Skills2／Status／Equipment_Affix／Runes Excel與CSV相關列、data傳奇說明、必要主頁／Worker快取、地系與復活／傳奇回歸、game_formula／LV_upgrade_system／符文說明及本紀錄。禁止其他技能規則、存檔／Protocol／素材／其他副本修改；保留Skills2既有未提交內容並隔離提交，不合併推送。
+- 衝突預檢目標無外部來源；本副本Skills2既有修改不覆蓋。驗收五秒復甦保留、完成起算五秒獨立半傷、普通／元素／持續傷害與護盾／法力承傷、不免疫控制、野外／高塔與UI狀態倒數、擊殺僅延長本次減傷且不得復活過期狀態、重置清理；配置往返／Excel原生正常重開及內容樣式保留、相依測試／Build／diff後獨立Commit。無素材變更。
+- 完成23檔：js/skills2.js以rebirthGuard狀態角色施加復活減傷並提供獨立乘區，刪除原復活無敵與重複到期時戳，保留原復甦演出／補滿HP與MP／充能及冷卻；不滅意志只延長該次有效狀態，沿用egKillInvuln配置鍵維持舊裝備相容，重置回收持有者的減傷。js/formula.js共用直接扣血入口套同乘區，js/status.js新增sgRebirthGuard（無無敵視覺）。Skills2／Status／Equipment_Affix／Runes各Excel與CSV同步相關列；js/data.js同步傳奇說明；index.html只bump data91／status39／formula68／skills2 337／bridge318，bridge與sim.worker同步資源版。三份測試、game_formula／LV_upgrade_system／兩份符文說明及本紀錄同步。無Protocol／存檔／素材或解鎖變更，素材庫無變更、不需素材Commit。
+- 測試：`node --test --test-name-pattern='天地共生|不滅意志|逆轉乾坤|地之心' tests/skill2-earth.test.cjs tests/skill2-mire-earthguard-legendary.test.cjs`7/7；`node --test tests/earthguard-revival.test.cjs tests/status-system.test.cjs tests/shield-max.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/ui-worker-events.test.cjs`58/58（最後補護盾／法力與火屬性斷言後earthguard-revival再5/5）。覆蓋野外與高塔原場復甦／滿HP及MP、傷害半減與獨立乘算、火屬性／DOT／直接傷害／先減傷再扣盾與魔法盾、可暈眩、五秒到期、狀態面板同值同倒數、擊殺不延長其他無敵／別人狀態／過期狀態、換表角色與重置。`npm.cmd run build`548檔通過，四表各`node tools/config_tables.cjs --apply <表名>`均零語意差異，四本Excel主表／CSV逐格相同，git diff檢查通過。
+- 擴大回歸：skill2-earth／skill2-mire-earthguard-legendary／skill-cooldown-display／vfx-runtime共204項171過33失敗；以唯讀fs hook載入HEAD產品碼／原測試／CSV重跑亦171過及相同33個失敗名稱。包含舊岩甲／泥沼／魔法盾測值、超神冷卻解鎖及既有VFX素材斷言，本次未修改無關規則或放寬舊斷言；未跑全庫。
+- Excel：透過Excel原生API在副本精準改格，正常模式重開Saved=True、資料／公式與逐格樣式／註解／合併／篩選／驗證保留，原生開啟前後行高欄寬及圖形數相同；另以唯讀解析比對，少量既有Excel檔保存時自動正規化預設行高16.5→16.2、欄寬不足0.1字元及自動列高／未定義高度，不是手工XML修改或全表重排。Skills2只動AT138／AV138／AW138／AX138及欄位定義A52；Status新增第97列；Equipment_Affix僅M170；Runes僅V102。Skills2提交候選自HEAD副本原生同改五格，排除使用者其他未提交設定；工作檔保留原設定。Artifact工具檢查／渲染變更區並目視，沿既有狹窄列高／長說明顯示，不另改格式。
+- 唯讀未改：AI_RULES／AGENTS／AI_WORKFLOW／prompts、combat／tower判死與DOT／狀態UI／battle-renderer復甦動畫、Worker Protocol／shim／panel、runeword_data與原獨立兩秒無敵／低血觸發、config_tables與xlsx_to_csv／技能表helpers、其他既有回歸與Preset。自我Review確認無敵來源不被移除、半傷不重複乘算、滿血回復／倒數起點／擊殺延長及重置一致。
+- 交付：功能完成、可供Review／合併，Commit為本段所在`[Codex] feat: 天地共生復活後改為五秒半傷並延長減傷`，回覆附實際編號；未合併推送。已知限制是上述33項既有失敗、未做瀏覽器Console／實際畫面或真人長戰驗收；無本次未完成程式，使用者Skills2其他修改仍未提交。下一步重載遊戲驗收復活後減傷與不滅意志。
+
 ## MIRE-POOL-WARM-YELLOW-20261019 — 熔火池稍微偏黃
 
 - Owner：Codex；Done；單一開發者。使用者要求已確認的雙圖層熔火池稍微偏黃，保留橘紅底色。前置地面版275ed352完成。允許專用Preset兩個tint、同名author及素材庫對應來源／SOURCE、Runtime資料版與主頁／Editor快取、LV_upgrade_system與本紀錄；禁止其他技能／表格／數值／幾何／層數／動畫／粒子／存檔／Protocol修改。

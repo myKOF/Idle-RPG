@@ -174,7 +174,7 @@ all_lock＝全鎖定（不會出現在任何裝備部位上，也不會出現在
 傳奇特效,earthguardLifeFeed,生命滋養,0,,,,,,,0,,大地守護會使溢出的 10% 生命轉為你的法力值。,earth,earthguard,shield,"{""egHpOverflowMana"":{""pct"":10}}"
 傳奇特效,earthguardSoulLink,靈魂連結,0,,,,,,,0,,【生命反射之盾】可以額外對 1 個敵人產生作用。,earth,earthguard,shield,"{""egReflectAdd"":{""count"":1}}"
 傳奇特效,earthguardHeartOfEarth,地之心,0,,,,,,,0,,每殺死 1 個敵人，【天地共生】的復活冷卻時間 -1 秒。,earth,earthguard,shield,"{""egKillCdr"":{""sec"":1}}"
-傳奇特效,earthguardUndyingWill,不滅意志,0,,,,,,,0,,【天地共生】復活後的無敵時間內，每殺死 1 個敵人則無敵時間 +0.5 秒。,earth,earthguard,shield,"{""egKillInvuln"":{""sec"":0.5}}"
+傳奇特效,earthguardUndyingWill,不滅意志,0,,,,,,,0,,【天地共生】復活後的減傷時間內，每殺死 1 個敵人則減傷時間 +0.5 秒。,earth,earthguard,shield,"{""egKillInvuln"":{""sec"":0.5}}"
 傳奇特效,chainlightningSurge,電荷連鎖,0,,,,,,,0,,連鎖閃電的彈射數 +2 次。,lightning,chainlightning,sword1h,"{""chainLinkAdd"":{""count"":2}}"
 傳奇特效,chainlightningVolley,電擊,0,,,,,,,0,,連鎖閃電的發射數量 +2 道。,lightning,chainlightning,sword1h,"{""chainBoltAdd"":{""count"":2}}"
 傳奇特效,chainlightningScatter,雷散落,0,,,,,,,0,,【電殛擴散】額外對 1 個敵人造成傷害，且其傷害提高 50%。,lightning,chainlightning,sword1h,"{""chainSplashAdd"":{""count"":1},""chainSplashPct"":50}"
