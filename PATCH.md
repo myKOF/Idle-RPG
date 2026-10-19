@@ -1,5 +1,14 @@
 # PATCH.md
 
+## 神話裝備底色調整為柔和珊瑚淺紅（Antigravity 2026-10-19）
+
+- **神話品質背景漸層優化**：
+  - 調整 `css/style.css` 中 `.eff-mythic::after` 與 `.eq-slot.eff-mythic::after` 的底色漸層，由原本暗沉且偏濃重的血紅漸層（`rgba(160, 20, 20) -> rgba(80, 10, 10)`）調淺為更柔和清透的珊瑚淺紅漸層（`rgba(255, 80, 80, 0.85) -> rgba(185, 45, 45, 0.9) -> var(--panel) 80%`），精確對齊企劃提供之參考色 `#ff5050`。
+  - 同步更新雙手武器副手 duplicate 複製槽（`.eff-mythic.twohand-duplicate::after`）的底層漸層色彩，維持整體視覺一致。
+- **測試與驗證**：
+  - `node tools/build_check.cjs` 544 檔語法與編譯檢查通過。
+  - 產出前後效果對比預覽截圖驗證視覺呈現無誤。
+
 ## 技能介面右上角新增內測專用技能全解鎖開關（Antigravity 2026-10-19）
 
 - **技能全解鎖開關按鈕**：
