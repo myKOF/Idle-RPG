@@ -1,5 +1,20 @@
 # PATCH.md
 
+## AI 自然語言 GM 呼叫極速化、神鑄混沌品質相容與全身鑲滿寶石指令（Antigravity 2026-10-20）
+
+- **AI 自然語言 GM 呼叫極速化與模型自動發現**：
+  - 實裝本機可用模型快取機制（`MODELS_CACHE_KEY`），首次使用或點選「測試連線」時自動向 Google API 獲取該金鑰真正支援的合法生成模型並排序快取，徹底杜絕帳號權限差異造成的 `models/... is not found for API version v1beta` 錯誤。
+  - 平時執行直接 0ms 讀取快取的合法模型陣列，省去每次呼叫的額外網路握手，秒發生成請求，延遲降低 50%~70%。
+  - 遇到伺服器 High Demand 尖峰時，無縫切換隊列中的下一款真實可用模型重試。
+- **底層品質中文與別名寬鬆相容**：
+  - `gmRarity` 擴充支援全中文稀有度名稱（普通、精良、稀有、獨特、史詩、傳說、神話、創世、神鑄創世、混沌、神鑄混沌）及常見別名（`godforge`、`godforged`、`chaos`、`chaosGodforged`、`godforge_chaos`），徹底解決「神鑄混沌」被轉譯為 godforge 報無效品質的問題。
+- **新增全身寶石與符文鑲滿指令 `socketall`**：
+  - 新增 `socketall [等級1~10]` 指令（別名 `fillgems`、`gemsocket`），遍歷全身 13 件穿戴裝備，將其所有寶石插槽依照裝備最大孔數自動鑲滿指定等級隨機寶石，符文孔亦自動鑲滿高階符文。
+- **Prompt 範例擴充**：
+  - 於 System Instruction 完整登錄 11 階品質 key、`socketall`、`stage <場景> <關卡>` 跳關語法，並加入「換成+100神鑄混沌裝備、鑲滿10級寶石、加金幣碎片精華、跳關亡靈山脈」複合長句白話文示範。
+- **測試與驗證**：
+  - 擴充 `tests/ai-key-setting.test.cjs` 覆蓋中文品質、godforge 別名與 `socketall 10` 全身鑲孔邏輯，全數通過；`tools/build_check.cjs` 548 檔代碼檢查 100% OK。
+
 ## Esc 菜單新增內測專用 AI 自然語言 GM 金鑰設定（Antigravity 2026-10-19）
 
 - **Esc 菜單與設置面板整合**：

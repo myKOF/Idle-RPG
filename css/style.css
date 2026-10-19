@@ -9719,7 +9719,7 @@ textarea:disabled,
   left: 12px;
   bottom: 12px;
   z-index: 10000;
-  width: min(420px, calc(100vw - 24px));
+  width: min(520px, calc(100vw - 24px));
   padding: 8px;
   border: 1px solid #b8860b;
   border-radius: 5px;
@@ -9727,6 +9727,7 @@ textarea:disabled,
   box-shadow: 0 0 14px rgba(0, 0, 0, 0.8), inset 0 0 10px rgba(184, 134, 11, 0.15);
 }
 
+#gm-command-panel textarea,
 #gm-command-panel input {
   width: 100%;
   box-sizing: border-box;
@@ -9735,10 +9736,18 @@ textarea:disabled,
   padding: 6px 8px;
   background: #0d0b09;
   color: var(--text);
-  font: 13px Consolas, monospace;
+  font: 13px/1.45 Consolas, "PingFang TC", "Microsoft JhengHei", monospace;
   outline: none;
+  resize: none;
 }
 
+#gm-command-panel textarea {
+  height: 68px;
+  line-height: 1.45;
+  display: block;
+}
+
+#gm-command-panel textarea:focus,
 #gm-command-panel input:focus {
   border-color: #ffd700;
   box-shadow: 0 0 6px rgba(255, 215, 0, 0.35);
