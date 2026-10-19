@@ -43,26 +43,26 @@ function harness(overrides = {}) {
   };
 }
 
-test('單件從目標格右側一格入場並等速左移，重複快照不重建或重設進度', () => {
+test('單件從最右側進場並連續左移，重複快照不重建或重設進度', () => {
   const h = harness(); h.fu.belt = [{ id: 'a' }]; h.update();
   const a = h.entries()[0];
-  assert.equal(h.x(a), 44);
-  h.step(500); assert.equal(h.x(a), 33);
+  assert.equal(h.x(a), 352);
+  h.step(500); assert.equal(h.x(a), 264);
   h.fu.cycleRemainingSec = 1.5; h.update();
-  assert.equal(h.entries()[0], a); assert.equal(h.x(a), 33);
-  h.step(500); assert.equal(h.x(a), 22);
-  h.step(500); assert.equal(h.x(a), 11);
+  assert.equal(h.entries()[0], a); assert.equal(h.x(a), 264);
+  h.step(500); assert.equal(h.x(a), 176);
+  h.step(500); assert.equal(h.x(a), 88);
   h.step(500); assert.equal(h.x(a), 0);
 });
 
 test('相同外觀不同ID分別入帶，消耗頭件後出帶而後件續移', () => {
   const h = harness(); h.fu.belt = [{ id: 'a', name: '同名' }]; h.update(); h.step(1000);
   const a = h.entries()[0]; h.fu.belt.push({ id: 'b', name: '同名' }); h.update();
-  const b = h.entries()[1]; assert.notEqual(a, b); assert.equal(h.x(b), 88);
+  const b = h.entries()[1]; assert.notEqual(a, b); assert.equal(h.x(b), 352);
   h.step(500); const before = h.x(b);
   h.fu.belt.shift(); h.update(); assert.equal(h.entries().length, 2);
   h.step(200); assert.equal(h.entries().length, 2, '提前消耗仍保留頭件的剩餘入場路徑');
-  h.step(3500); assert.equal(h.entries().length, 1); assert.equal(h.entries()[0], b);
+  h.step(1800); assert.equal(h.entries().length, 1); assert.equal(h.entries()[0], b);
   assert.ok(h.x(b) < before); assert.ok(h.x(b) >= 0);
 });
 
@@ -71,7 +71,7 @@ test('停用凍結圖示與程序火焰、恢復不補走停用時間，離頁�
   const a = h.entries()[0], x = h.x(a); h.fu.enabled = false; h.update();
   const paints = h.paints(); h.step(1000);
   assert.equal(h.x(a), x); assert.equal(h.paints(), paints); assert.equal(h.jobs.size, 0);
-  h.fu.enabled = true; h.update(); h.step(500); assert.equal(h.x(a), x - 11);
+  h.fu.enabled = true; h.update(); h.step(500); assert.equal(h.x(a), x - 88);
   assert.ok(h.paints() > paints); assert.equal(h.jobs.size, 1);
   h.context.UI.tab = 'inv'; h.step(500); assert.equal(h.jobs.size, 0);
   h.context.UI.tab = 'newforge'; h.update(); assert.equal(h.jobs.size, 1);
@@ -84,7 +84,7 @@ test('窄帶限制可見節點、Resize後新節點從右進場，減少動態�
   assert.equal(h.entries().length, 2); h.step(2000);
   const first = h.entries()[0]; h.node.clientWidth = 176; h.update();
   assert.equal(h.entries().length, 4); assert.equal(h.entries()[0], first);
-  assert.equal(h.x(h.entries()[2]), 132);
+  assert.equal(h.x(h.entries()[2]), 176);
   h.reduce(true); h.update();
   assert.deepEqual(h.entries().map(e => h.x(e)), [0, 44, 88, 132]);
   const paints = h.paints(); h.step(1000); assert.equal(h.paints(), paints); assert.equal(h.jobs.size, 0);
@@ -92,12 +92,13 @@ test('窄帶限制可見節點、Resize後新節點從右進場，減少動態�
   assert.deepEqual(h.entries().map(e => h.x(e)), [0, 44, 88, 132], '恢復動態不得倒退回原進場位置');
 });
 
-test('加速零件變更週期時從當前位置續走，改以新週期的等速抵達', () => {
+test('變更週期時仍以同一等速續走', () => {
   const h = harness(); h.fu.belt = [{ id: 'a' }]; h.update(); h.step(500);
-  const a = h.entries()[0]; assert.equal(h.x(a), 33);
+  const a = h.entries()[0]; assert.equal(h.x(a), 264);
   h.fu.cycleDurationSec = 1; h.fu.cycleRemainingSec = .75; h.update();
-  assert.equal(h.x(a), 33);
-  h.step(250); assert.equal(h.x(a), 22);
+  assert.equal(h.x(a), 264);
+  h.step(250); assert.equal(h.x(a), 220);
+  h.step(1000); assert.equal(h.x(a), 44);
   h.step(500); assert.equal(h.x(a), 0);
 });
 
@@ -127,7 +128,7 @@ test('捲出畫面不重繪粒子，捲回恢復，移除時釋放可見性觀�
   h.node.isConnected = false; h.step(16); assert.equal(observer.disconnected, true);
 });
 
-test('畫面外收到新裝備，回到可見狀態時必須仍從入場格重新滑入', () => {
+test('畫面外收到新裝備，回到可見狀態時必須仍由右端入場', () => {
   let observer;
   const h = harness({ IntersectionObserver: class {
     constructor(callback) { this.callback = callback; observer = this; }
@@ -136,8 +137,8 @@ test('畫面外收到新裝備，回到可見狀態時必須仍從入場格重�
   h.update(); observer.callback([{ isIntersecting: false }]); h.step(100);
   h.fu.belt = [{ id: 'new-while-hidden' }]; h.update(); h.step(500);
   observer.callback([{ isIntersecting: true }]);
-  const item = h.entries()[0]; assert.equal(h.x(item), 44);
-  h.step(500); assert.ok(h.x(item) > 0 && h.x(item) < 44);
+  const item = h.entries()[0]; assert.equal(h.x(item), 352);
+  h.step(500); assert.ok(h.x(item) > 0 && h.x(item) < 352);
 });
 
 test('高速熔爐在入場途中消耗裝備，仍完成可見的右至左路徑', () => {

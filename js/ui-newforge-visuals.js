@@ -18,10 +18,11 @@ var NewForgeVisuals = (function () {
     if (state.enabled && state.visible && active()) state.time += Math.max(0, time - state.lastAt);
     state.lastAt = time;
   }
-  // 輸送帶等速：每週期前進一格，所有位移（換位、入場、退場）都以同一速度換算時間，
-  // 不再用「剩餘週期」當時長（距離不同→速度忽快忽慢）。
+  // 輸送帶等速：新件從最右端出現，所有位移（入場、換位、退場）以同一速度（px/秒）換算時間，
+  // 帶上裝備一律等速、靠到前一件後停下；不再用「剩餘週期」當時長（距離不同→速度忽快忽慢）。
+  var beltSpeed = 176;
   function travelMs(distance, cycle) {
-    return Math.max(minimumEntryMs * Math.min(1, distance / pitch), distance / pitch * cycle * 1000);
+    return distance / Math.max(beltSpeed, pitch / cycle) * 1000;
   }
   function move(entry, target, cycle, time) {
     entry.from = position(entry, time);
@@ -38,6 +39,14 @@ var NewForgeVisuals = (function () {
       counts[key] = (counts[key] || 0) + 1;
       return 'legacy:' + key + ':' + counts[key];
     });
+  }
+  // 最右端出現；若前一件尚未離開入口，排在它後面一格，避免重疊。
+  function spawnX(state, width, incoming) {
+    var edge = width;
+    state.entries.forEach(function (e) {
+      if (!e.exiting && !e.pendingEnter) edge = Math.max(edge, position(e, state.time) + pitch);
+    });
+    return edge + incoming * pitch;
   }
   function makeChip(item) {
     var holder = document.createElement('div');
@@ -177,15 +186,14 @@ var NewForgeVisuals = (function () {
       if (!entry) {
         var chip = makeChip(item);
         chip.setAttribute('data-nf-item-id', item.id === undefined ? key : String(item.id));
-        // 新件從目標格右側一格滑入（與帶上其他件同速），不再從畫面右緣飛奔而來。
-        var origin = Math.min(width + incoming++ * pitch, i * pitch + pitch);
+        var origin = spawnX(state, width, incoming++);
         chip.style.transform = 'translate3d(' + origin + 'px,-50%,0)';
         node.appendChild(chip);
         entry = { node: chip, from: origin, to: i * pitch, at: state.time, duration: travelMs(origin - i * pitch, cycle),
           pendingEnter: !state.visible || !active() };
         state.entries.set(key, entry);
       } else if (entry.pendingEnter && state.visible && active()) {
-        entry.from = Math.min(width + incoming++ * pitch, i * pitch + pitch);
+        entry.from = spawnX(state, width, incoming++);
         entry.to = i * pitch;
         entry.at = state.time;
         entry.duration = travelMs(entry.from - entry.to, cycle);
