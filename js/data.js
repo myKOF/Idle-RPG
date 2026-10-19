@@ -1281,7 +1281,7 @@ var PASSIVE_POOL = {
     fx: { egKillCdr: { sec: 1 } }
   },
   earthguardUndyingWill: {
-    name: '不滅意志', desc: '【天地共生】復活後的無敵時間內，每殺死 1 個敵人則無敵時間 +0.5 秒。',
+    name: '不滅意志', desc: '【天地共生】復活後的減傷時間內，每殺死 1 個敵人則減傷時間 +0.5 秒。',
     base: 0, perR: 0, legendary: true, type: 'earth', relatedSkill: 'earthguard', weaponTypes: ['shield'],
     fx: { egKillInvuln: { sec: 0.5 } }
   },

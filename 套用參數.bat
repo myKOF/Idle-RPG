@@ -7,6 +7,10 @@ echo ================================================
 echo    套用遊戲參數（Excel -^> CSV -^> 遊戲）
 echo ================================================
 echo.
+echo [0/3] 合併 Agent 待套用修改（請先儲存並關閉相關 Excel）...
+node tools/param-patches.cjs --merge
+if errorlevel 1 goto patchfail
+echo.
 echo [1/3] 撥離七表（技能/狀態/寶石/天賦/裝備詞條/NPC/任務）：xlsx -^> CSV -^> 遊戲 ...
 echo       config\Excel\Skills.xlsx / Gems.xlsx / Talents.xlsx / Equipment_Affix.xlsx / NPC.xlsx / Task.xlsx
 echo       Remaining Excel files are scanned automatically.
@@ -27,6 +31,12 @@ echo.
 echo 完成。若遊戲頁面開著（本機），約 2 秒內會自動重新整理，不必手動 F5。
 echo.
 echo （請自行檢視上方訊息，關閉此視窗即可。）
+pause
+goto end
+:patchfail
+echo.
+echo [合併未完成] 請查看上方鎖定或衝突資訊。待套用修改與備份已保留。
+echo 尚未執行 Excel 轉 CSV 及遊戲參數更新；請處理後重跑。
 pause
 goto end
 :cfgsyncfail

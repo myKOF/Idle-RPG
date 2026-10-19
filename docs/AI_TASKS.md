@@ -1,5 +1,37 @@
 # AI_TASKS.md
 
+## PARAM-PATCH-QUEUE-20261019 — Excel 開啟時暫存 Agent 修改並於套用時合併
+
+- Owner：Codex；Done；單一開發者。使用者要求 Agent 遇到 Excel 鎖定可先保存修改，待使用者儲存關閉後，以套用參數.bat 合併；追加要求所有 AI 共用規範預設差異協作、同格重疊必須詢問確認保留哪一方。前置既有 Excel→CSV→遊戲管線；不改遊戲規則或解鎖，LV_upgrade_system 無需變更。
+- 允許新增 tools/param-patches.cjs、tools/merge-param-patches.ps1、tests/param-patches.test.cjs、tests/fixtures/param-patches-excel.ps1、config/param-patches/.gitignore、docs/PARAM_PATCHES.md；僅接線套用參數.bat、AI_RULES 第8.5節及本紀錄。禁止修改現有 Excel／CSV／遊戲JS、使用者 Skills2 未提交設定、其他副本與素材；不合併推送。
+- 衝突預檢無其他來源。差異包含 Agent／任務、主鍵／欄名／原值／新值，原生 Excel API 副本編修、重新開啟驗證、來源鎖定與版本檢查、備份及重跑冪等；同格重疊（含相同新值）或結構不符整批停止，不更新 CSV／遊戲。驗收獨立合併規則測試、Windows 原生 Excel 隔離整合（鎖定／格式／非首列主鍵定位／衝突／重跑）、BAT前置接線、Build與diff後獨立Commit；交付使用者／其他Agent按新規範使用。
+- 完成9檔：AI_RULES第8.5節明訂所有AI預設暫存差異、同格必問並記錄保留選擇，不得改before或以按BAT視為同意；套用參數.bat新增前置合併與失敗中止；tools/param-patches.cjs實作請求驗證／唯一檔名暫存／整批決策／使用者approval與失效檢查；tools/merge-param-patches.ps1原生Excel副本精準改格、正常重開、全來源獨占鎖／SHA256檢查、故障回復與收據續跑；config/param-patches/.gitignore僅排除本機archive與鎖；docs/PARAM_PATCHES完整操作／批准／復原；tests/param-patches.test.cjs與tests/fixtures/param-patches-excel.ps1隔離驗收；本紀錄。沒有改現有Excel、CSV、遊戲JS、快取、Protocol、存檔或素材，素材庫無本次變更／Commit。
+- 驗證：`node --test tests/param-patches.test.cjs`最終7/7，包含輸入／路徑與型別限制、不同格合併、同格相同與不同提案必問、現值即使等於after仍必問、明確批准保留Excel或Agent與現值／提案變更後失效、真實Excel開啟與檔案獨占鎖阻擋、含空白目錄、真BAT失敗不匯出、雙工作簿任一衝突均不寫入、主鍵重複失敗、原請求收據安全續跑。原生Excel正常重開Saved=true／RepairMode=false，逐項核對其他資料、公式計算、NumberFormat／色彩／註解／驗證／列高／欄寬／換行／篩選／隱藏表保留；等號開頭文字不變公式。`npm.cmd run build`550檔通過；`git diff --check`通過。隔離測試檔與服務程序均清理，未對正式配置執行寫入，也未跑全庫／遊戲瀏覽器（本次僅本機工具）。
+- 唯讀未改：AGENTS、AI_WORKFLOW、prompts/codex、.claude/check-conflicts、tools/config_tables.cjs、xlsx_to_csv.cjs、build_check.cjs、package.json、原.gitignore及LV_upgrade_system章節。自我Review檢查批准不能默認／不能以現值等於after猜測重跑、跨檔案寫回前全數鎖定與版本核對、失敗保留／回復、保留來源公式與格式；沒有委派或跨副本操作。
+- 限制／風險：需要Windows與Microsoft Excel；只支援既有資料格，不支援新增／刪除列欄或修改主鍵／合併格；不能從最終檔辨識改過又改回原值的歷史；無跨檔案斷電原子性，保存備份及收據供復原；後續遊戲匯出失敗不回復已合併Excel。請求僅目前worktree，其他AI分支需正常整合；既有使用者Skills2未提交變更原狀保留、不納入本次Commit。
+- 交付：無本次未完成項，可Review／合併，Commit為本段所在`[Codex] feat: 暫存配置表差異並於套用前確認同格衝突`，回覆附實際編號；未合併推送。下一步整合本Commit後，所有AI依共用規範保存待套用JSON，使用者儲存關閉Excel並執行原BAT；同格衝突須由使用者明確決定後才續跑。
+
+## EARTHGUARD-REBIRTH-GUARD-20261019 — 天地共生復活無敵改五秒半傷
+
+- Owner：Codex；Done；單一開發者。使用者要求天地共生完成復活後取消無敵，改為五秒內受到傷害減少50%，並確認不滅意志改為每擊殺延長減傷0.5秒。前置既有五秒復甦已完成；交付使用者驗收與整合。
+- 允許skills2的復活／減傷／擊殺延長與狀態角色、formula共用直接扣血入口、Status獨立狀態、Skills2／Status／Equipment_Affix／Runes Excel與CSV相關列、data傳奇說明、必要主頁／Worker快取、地系與復活／傳奇回歸、game_formula／LV_upgrade_system／符文說明及本紀錄。禁止其他技能規則、存檔／Protocol／素材／其他副本修改；保留Skills2既有未提交內容並隔離提交，不合併推送。
+- 衝突預檢目標無外部來源；本副本Skills2既有修改不覆蓋。驗收五秒復甦保留、完成起算五秒獨立半傷、普通／元素／持續傷害與護盾／法力承傷、不免疫控制、野外／高塔與UI狀態倒數、擊殺僅延長本次減傷且不得復活過期狀態、重置清理；配置往返／Excel原生正常重開及內容樣式保留、相依測試／Build／diff後獨立Commit。無素材變更。
+- 完成23檔：js/skills2.js以rebirthGuard狀態角色施加復活減傷並提供獨立乘區，刪除原復活無敵與重複到期時戳，保留原復甦演出／補滿HP與MP／充能及冷卻；不滅意志只延長該次有效狀態，沿用egKillInvuln配置鍵維持舊裝備相容，重置回收持有者的減傷。js/formula.js共用直接扣血入口套同乘區，js/status.js新增sgRebirthGuard（無無敵視覺）。Skills2／Status／Equipment_Affix／Runes各Excel與CSV同步相關列；js/data.js同步傳奇說明；index.html只bump data91／status39／formula68／skills2 337／bridge318，bridge與sim.worker同步資源版。三份測試、game_formula／LV_upgrade_system／兩份符文說明及本紀錄同步。無Protocol／存檔／素材或解鎖變更，素材庫無變更、不需素材Commit。
+- 測試：`node --test --test-name-pattern='天地共生|不滅意志|逆轉乾坤|地之心' tests/skill2-earth.test.cjs tests/skill2-mire-earthguard-legendary.test.cjs`7/7；`node --test tests/earthguard-revival.test.cjs tests/status-system.test.cjs tests/shield-max.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/ui-worker-events.test.cjs`58/58（最後補護盾／法力與火屬性斷言後earthguard-revival再5/5）。覆蓋野外與高塔原場復甦／滿HP及MP、傷害半減與獨立乘算、火屬性／DOT／直接傷害／先減傷再扣盾與魔法盾、可暈眩、五秒到期、狀態面板同值同倒數、擊殺不延長其他無敵／別人狀態／過期狀態、換表角色與重置。`npm.cmd run build`548檔通過，四表各`node tools/config_tables.cjs --apply <表名>`均零語意差異，四本Excel主表／CSV逐格相同，git diff檢查通過。
+- 擴大回歸：skill2-earth／skill2-mire-earthguard-legendary／skill-cooldown-display／vfx-runtime共204項171過33失敗；以唯讀fs hook載入HEAD產品碼／原測試／CSV重跑亦171過及相同33個失敗名稱。包含舊岩甲／泥沼／魔法盾測值、超神冷卻解鎖及既有VFX素材斷言，本次未修改無關規則或放寬舊斷言；未跑全庫。
+- Excel：透過Excel原生API在副本精準改格，正常模式重開Saved=True、資料／公式與逐格樣式／註解／合併／篩選／驗證保留，原生開啟前後行高欄寬及圖形數相同；另以唯讀解析比對，少量既有Excel檔保存時自動正規化預設行高16.5→16.2、欄寬不足0.1字元及自動列高／未定義高度，不是手工XML修改或全表重排。Skills2只動AT138／AV138／AW138／AX138及欄位定義A52；Status新增第97列；Equipment_Affix僅M170；Runes僅V102。Skills2提交候選自HEAD副本原生同改五格，排除使用者其他未提交設定；工作檔保留原設定。Artifact工具檢查／渲染變更區並目視，沿既有狹窄列高／長說明顯示，不另改格式。
+- 唯讀未改：AI_RULES／AGENTS／AI_WORKFLOW／prompts、combat／tower判死與DOT／狀態UI／battle-renderer復甦動畫、Worker Protocol／shim／panel、runeword_data與原獨立兩秒無敵／低血觸發、config_tables與xlsx_to_csv／技能表helpers、其他既有回歸與Preset。自我Review確認無敵來源不被移除、半傷不重複乘算、滿血回復／倒數起點／擊殺延長及重置一致。
+- 交付：功能完成、可供Review／合併，Commit為本段所在`[Codex] feat: 天地共生復活後改為五秒半傷並延長減傷`，回覆附實際編號；未合併推送。已知限制是上述33項既有失敗、未做瀏覽器Console／實際畫面或真人長戰驗收；無本次未完成程式，使用者Skills2其他修改仍未提交。下一步重載遊戲驗收復活後減傷與不滅意志。
+
+## MIRE-POOL-WARM-YELLOW-20261019 — 熔火池稍微偏黃
+
+- Owner：Codex；Done；單一開發者。使用者要求已確認的雙圖層熔火池稍微偏黃，保留橘紅底色。前置地面版275ed352完成。允許專用Preset兩個tint、同名author及素材庫對應來源／SOURCE、Runtime資料版與主頁／Editor快取、LV_upgrade_system與本紀錄；禁止其他技能／表格／數值／幾何／層數／動畫／粒子／存檔／Protocol修改。
+- 衝突預檢所有目標無外部來源，遊戲與素材庫工作區乾淨。驗收兩個顏色之外Preset逐值不變、作者重建一致／單根layout不變、既有火池及快取回歸／Build／diff、同尺度動態預覽；素材庫先提交、遊戲獨立提交，不合併推送。後續使用者查看新版預覽。
+- 完成7檔：vfx/presets/ground-mire-inferno-pool.json僅兩個tint由#ff3b09／#b42c08改為#ff5810／#c4460c，增加少量黃色並保留橘紅；tools/vfx/authoring/author/mire-inferno-pool.cjs同步。js/vfx-runtime.js僅DATA_VERSION加warm-yellow，index.html與tools/vfx/editor/index.html只將Runtime快取220，LV_upgrade_system.md僅配色文字及本紀錄更新。剔除兩個tint後Preset逐值等於HEAD，單根layout逐位元等於HEAD；沒有改圖片、粒子、alpha、範圍、節拍、壽命、傷害、解鎖、Excel／CSV或其他技能。
+- 驗證指令：`node tools/vfx/authoring/author/mire-inferno-pool.cjs`成功重建；`node --test tests/mire-inferno-pool.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-editor-guard.test.cjs`21/21；`npm.cmd run build`548檔通過；git diff／staged diff檢查通過。沒有新增測試或測試失敗。以既有preset-render／VFX Core渲染同樣六米／放大2倍／4秒GIF，本聊天visualizations/mire-molten-ground-warmer-preview.gif已完成；仍為兩sprite／零particle。未做正式遊戲Pixi／Console／FPS／全庫驗證，不宣稱實機顏色或效能已驗收。
+- 素材庫沿vfx-library-root解析，更新codex-authored/mire-inferno-pool內Preset／author／SOURCE，保留layout及NPC參考快照；兩端Preset／layout逐位元相同。Preset SHA256=4777b55ee3d5b4af3b95984982d0cb517cd5d73bd3b234eb02d56fd3ecfeddc5；素材庫已先提交dd2cdd4且工作區乾淨。沿既有Kenney CC0圖片，只調引擎原生JSON色彩，不需RPG Mote點陣繪圖或新素材匯出。
+- 唯讀未改：共通規範／工作流／prompts、NPC en-toxic-pool、原專用layout、VFX Core／kit／preset-render、三份回歸、素材庫PROVENANCE及SOURCE參考快照、Skills2表格／模擬／Worker。自我Review無本次未完成或新增風險，可Review／合併；限制為未正式瀏覽器／FPS驗收。遊戲Commit為本段所在`[Codex] fix: 熔火池稍微調黃並保留橘紅底色`，回覆附編號；未合併推送。下一步重新整理遊戲看配色；若Editor仍開啟，先另存未儲存工作再重載，避免用舊頁覆寫新色彩。
+
 ## FORGE-FIRE-REDUCED-MOTION-20261019 — 修正運轉中爐火被減少動態凍結
 
 - Owner：Codex；Done；單一開發者。使用者回報重新整理後爐火完全靜止、裝備仍有移動，要求開可連線測試服共同診斷。前置既有Canvas火焰與等速輸送帶已完成。

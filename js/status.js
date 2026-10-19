@@ -51,6 +51,7 @@ var STATUS_DEFAULT_INTERVAL = 1;
    ⚠️ strongest（取高並重新計時）不在文檔的三條規則內，是既有持續傷害的歷史行為；
       本次不更動既有狀態的疊加規則（會改動已調校完成的數值），新增狀態一律依上表選規則。 */
 var STATUS = {
+  sgRebirthGuard: { name: '天地共生減傷', icon: '🛡️', kind: 'buff', effect: 'stat', key: 'sgRebirthGuard', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 50, dur: 5, interval: 0, stack: 'refresh', maxStacks: 1, desc: '天地共生復活後受到的傷害降低；不滅意志擊殺可延長持續時間。' },
   bleed: { name: '流血', icon: '🩸', kind: 'debuff', effect: 'dot', key: '', elem: '', dmgSource: 'skill', dmg: 25, capStat: '', capMult: 0, val: 0, dur: 5, interval: 1, stack: 'strongest', maxStacks: 1, desc: '傷口持續失血，每次作用造成技能傷害的一部分。' },
   burn: { name: '燃燒', icon: '🔥', kind: 'debuff', effect: 'dot', key: '', elem: 'fire', dmgSource: 'skill', dmg: 20, capStat: '', capMult: 0, val: 0, dur: 4, interval: 1, stack: 'strongest', maxStacks: 1, desc: '火焰持續灼燒，每次作用造成火屬性傷害。' },
   poison: { name: '中毒', icon: '☠️', kind: 'debuff', effect: 'dot', key: '', elem: 'poison', dmgSource: 'skill', dmg: 40, capStat: '', capMult: 0, val: 0, dur: 6, interval: 1, stack: 'strongest', maxStacks: 1, desc: '毒素侵蝕血脈，每次作用造成毒屬性傷害。' },

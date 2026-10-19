@@ -30,6 +30,8 @@ test('天地共生五秒演出保留原場敵人與關卡，HP 從零回滿後�
   assert.equal(p.mp, c.getStats().mp);
   assert.equal(c.buildPanel('battle').field.player.mp, c.getStats().mp);
   assert.equal(p._sgRevival, undefined);
+  assert.equal(c.effectActive(p, 'invuln'), false);
+  assert.equal(c.sgRoleBuffVal(p, 'rebirthGuard'), 50);
   assert.equal(c.FIELD.reviveCd, 0);
   assert.equal(c.G.stage.current, stage);
   assert.deepEqual(c.FIELD.monsters, enemies);
@@ -70,6 +72,79 @@ test('高塔復甦五秒保留同一位 BOSS，倒數結束才繼續挑戰', () 
   assert.equal(p.hp,c.getStats().hp);
   assert.equal(p.mp,c.getStats().mp);
   assert.equal(p._sgRevival,undefined);
+  assert.equal(c.effectActive(p,'invuln'),false);
+  assert.equal(c.sgRoleBuffVal(p,'rebirthGuard'),50);
   assert.equal(c.TOWER.boss,boss);
   assert.equal(c.G.tower.active,true);
+});
+
+test('復活半傷涵蓋普通、元素、持續與直接傷害，獨立乘算且不免疫控制', () => {
+  const {ctx:c} = createEngine({seed:42}).boot(null);
+  c.G.player.skills2.levels.earthguard=Array(7).fill(1);
+  c.G.player.loadout=['sg:earthguard'];c.G.player.level=1000;c.markStatsDirty();c.initFieldPlayer();
+  const p=c.FIELD.player;
+  p.hp=0;c.skills2TryRebirth(p);c.GT=5;c.sgTickEarthguardRevival(p);
+  assert.equal(c.skill2RebirthDamageTakenMultiplier(p),0.5);
+  const base=c.skill2PassiveDamageTakenMultiplier();
+  assert.equal(c.skill2DamageTakenMultiplier(p),base*0.5);
+  assert.ok(c.applyStatus(p,'stun',{dur:1}),'減傷不免疫控制');
+  assert.ok(c.effectActive(p,'stun'));
+  const attacker={hp:1000,maxHp:1000,effects:{},buffs:{},dots:[]};
+  const a={atk:100,matk:100,hit:100,level:1,critRate:0,critDmg:150,passives:{}};
+  const d={isPlayer:true,hp:1e6,mp:0,def:0,mdef:0,level:1,dodge:0,blockRate:0,resist:{},passives:{}};
+  c.Math.random=()=>0;
+  for(const [type,skillElem] of [['physical',undefined],['magic',undefined],['magic','fire']]){
+    p.hp=1e6;p.mp=0;p.shield=0;p.shieldMax=0;
+    const guarded=c.resolveHit(attacker,p,{...a,dmgType:type,skillElem},d).dmg;
+    const b=p.buffs.sgRebirthGuard;delete p.buffs.sgRebirthGuard;
+    p.hp=1e6;const plain=c.resolveHit(attacker,p,{...a,dmgType:type,skillElem},d).dmg;
+    p.buffs.sgRebirthGuard=b;
+    assert.equal(guarded,Math.round(plain/2),type);
+  }
+  p.hp=1e6;p.mp=0;p.shield=1000;p.shieldMax=1000;
+  const shieldHit=c.resolveHit(attacker,p,{...a,dmgType:'physical'},d);
+  assert.equal(shieldHit.absorbed,36,'半傷後才扣生命護盾');
+  assert.equal(p.shield,964);assert.equal(p.hp,1e6);
+  p.shield=0;p.shieldMax=0;p.mp=c.getStats().mp;
+  const manaBefore=p.mp;
+  const manaHit=c.resolveHit(attacker,p,{...a,dmgType:'physical'},d);
+  assert.equal(manaHit.hpDamage,26.1,'半傷後才由 Lv.1 魔法盾承擔27.5%傷害');
+  assert.ok(p.mp<manaBefore);assert.ok(manaHit.manaShield>0);
+  p.hp=1e6;p.mp=0;
+  assert.equal(c.applyEnemyHpDamage(p,200),100,'直接傷害半傷且不重複乘算');
+  assert.equal(p.hp,1e6-100);
+  p.dots=[];c.applyStatus(p,'burn',{dps:200,dur:2,interval:0});
+  const before=p.hp;c.tickStatuses(p,0.5);
+  assert.equal(before-p.hp,50,'持續傷害半傷');
+  p.dots=[];c.GT=9.999;assert.equal(c.skill2RebirthDamageTakenMultiplier(p),0.5);
+  c.GT=10;assert.equal(c.skill2RebirthDamageTakenMultiplier(p),1,'滿五秒到期');
+  assert.equal(c.applyEnemyHpDamage(p,200),200);
+});
+
+test('復活減傷狀態與面板一致，角色換表延長與重置清理沿用狀態角色',()=>{
+  const {ctx:c}=createEngine({seed:9}).boot(null);
+  c.G.player.skills2.levels.earthguard=Array(7).fill(1);
+  c.G.player.loadout=['sg:earthguard'];c.G.player.level=1000;c.markStatsDirty();c.initFieldPlayer();
+  const p=c.FIELD.player;p.hp=0;c.skills2TryRebirth(p);c.GT=5;c.sgTickEarthguardRevival(p);
+  const projected=c.buildPanel('battle').field.player;
+  assert.equal(projected.buffs.sgRebirthGuard.val,50);
+  assert.equal(projected.buffs.sgRebirthGuard.until,10);
+  assert.equal(projected.buffs.sgRebirthGuard.sid,'sgRebirthGuard');
+  assert.equal(c.statusDef('sgRebirthGuard').name,'天地共生減傷');
+  assert.equal(c.statusDef('sgRebirthGuard').effect,'stat');
+  assert.equal(c.statusDef('sgRebirthGuard').vfx,undefined,'不沿用無敵視覺');
+  c.sgEarthguardKillGuard(p,{egKillInvuln:{sec:0.5}});
+  assert.equal(p.buffs.sgRebirthGuard.until,10.5);
+  const foreign={buffs:{sgRebirthGuard:{sid:'sgRebirthGuard',val:50,until:10}},effects:{}};
+  c.sgEarthguardKillGuard(foreign,{egKillInvuln:{sec:0.5}});
+  assert.equal(foreign.buffs.sgRebirthGuard.until,10,'不能延長別人的狀態');
+  c.resetSkill2RT();assert.equal(c.sgRoleBuffVal(p,'rebirthGuard'),0);
+  assert.equal(c.skill2RebirthDamageTakenMultiplier(p),1);
+  assert.equal(c.buildPanel('battle').field.player.buffs.sgRebirthGuard,undefined);
+  c.SKILLS2.earthguard.tiers[6].status.self[0].id='legendaryGuardRed';c.sgStatusSlotsReset();
+  p.skillCds['sg:earthguard']=0;p.hp=0;c.skills2TryRebirth(p);c.GT=10;c.sgTickEarthguardRevival(p);
+  assert.equal(p.buffs.legendaryGuardRed.val,50,'減傷跟隨狀態角色');
+  c.sgEarthguardKillGuard(p,{egKillInvuln:{sec:0.5}});
+  assert.equal(p.buffs.legendaryGuardRed.until,15.5,'延長也跟隨狀態角色');
+  c.resetSkill2RT();assert.equal(p.buffs.legendaryGuardRed,undefined);
 });

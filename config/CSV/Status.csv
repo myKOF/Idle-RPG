@@ -94,3 +94,4 @@ eRage,怒意,🔥,buff,stat,eRage,,,0,,0,0,8,0,refresh,1,en-rage-burst,en-aura-r
 eRegen,再生,💚,buff,stat,eRegen,,,0,,0,0,99999,2,refresh,1,,,en-burst-holy,敵人專用（高級敵人技能【再生】）：每隔一段時間回復最大生命的一個比例，直到死亡為止。這是畫面標記，回復由敵人技能引擎結算；每次回復播「作用特效」。
 eCurse,衰弱詛咒,🧿,debuff,stat,eCurse,,,0,,0,0,7,0,refresh,1,en-curse-dark,,,敵人專用（高級敵人技能【衰弱詛咒】）：被詛咒的玩家攻擊力與防禦力降低（降幅由「攻擊」「防禦」減益狀態結算）。這是畫面標記，用來顯示詛咒的上身特效與剩餘時間。
 sgFirehuntAmp,烈火狩,🔥,buff,stat,sgFirehuntAmp,fire,,0,,0,2,1,0,stack,50,,,,傳奇【烈火狩】：火狩持續期間按節拍疊加火屬性傷害提升，最多 50 層，滿層只刷新時間；火狩全部消失後到期，與火焰增幅各自計算層數。
+sgRebirthGuard,天地共生減傷,🛡️,buff,stat,sgRebirthGuard,,,0,,0,50,5,0,refresh,1,,,,天地共生復活後受到的傷害降低；不滅意志擊殺可延長持續時間。

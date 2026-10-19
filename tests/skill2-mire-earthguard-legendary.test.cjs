@@ -387,20 +387,25 @@ test('【地之心】：每擊殺 1 個敵人縮短【天地共生】的復活�
   assert.equal(p.skillCds[c.SG_PREFIX + 'earthguard'], 29);
 });
 
-test('【不滅意志】：只延長【天地共生】給的那段無敵', () => {
+test('【不滅意志】：只延長【天地共生】給的那段減傷', () => {
   const c = earthguardCtx(['earthguardUndyingWill']);
   const p = playerEnt();
   // 其他來源的無敵不該被延長
   p.effects.invuln = c.GT + 3;
   c.skills2OnEnemyKill(p, enemy(100, 10, 0));
   assert.equal(p.effects.invuln, c.GT + 3, '非天地共生的無敵不受影響');
-  // 天地共生的那一段才算
+  // 天地共生的減傷才延長，原有無敵不變
   p.hp = 0;
   c.skills2TryRebirth(p);
   c.GT += 5;c.sgTickEarthguardRevival(p);
-  const before = p.effects.invuln;
+  const before = p.buffs.sgRebirthGuard.until;
   c.skills2OnEnemyKill(p, enemy(100, 10, 0));
-  assert.equal(Math.round((p.effects.invuln - before) * 10), 5, '每擊殺 +0.5 秒');
+  assert.equal(Math.round((p.buffs.sgRebirthGuard.until - before) * 10), 5, '每擊殺 +0.5 秒');
+  assert.equal(p.buffs.sgRebirthGuard.val, 50, '只延長時間，不疊加強度');
+  assert.equal(p.effects.invuln, 3, '其他來源無敵不延長');
+  c.GT = p.buffs.sgRebirthGuard.until;
+  c.skills2OnEnemyKill(p, enemy(100, 10, 0));
+  assert.equal(p.buffs.sgRebirthGuard.until, c.GT, '到期後擊殺不重新啟動減傷');
 });
 
 /* ===========================================================================
