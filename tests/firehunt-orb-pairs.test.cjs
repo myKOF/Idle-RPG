@@ -7,11 +7,12 @@
 const test = require('node:test'), assert = require('node:assert/strict');
 const { createEngine } = require('../scripts/sim/engine');
 
-function cast(ultId) {
+function cast(ultId, trigger = true) {
   const c = createEngine({ seed: 7 }).boot(null).ctx;
   c.G.player.level = 1000;
   c.G.player.loadout = ['sg:firehunt'];
-  c.G.player.skills2.levels.firehunt = Array(7).fill(10);         // 第七階狩神之舞：出生即帶伴生
+  c.G.player.skills2.levels.firehunt = Array(7).fill(10);
+  c.G.tower = Object.assign(c.G.tower || {}, { highest: 100 });
   c.G.player.skills2.ult = ultId ? { firehunt: { pick: c.sgUltIndexOfId('firehunt', ultId), lv: 1 } } : {};
   c.initFieldPlayer();
   c.gmArenaSpawn(1, 'elite', 1e9);
@@ -20,9 +21,16 @@ function cast(ultId) {
   const events = [];
   c.playCombatVfx = (s) => events.push(s);
   c.castSkill2(c.FIELD.player, c.FIELD.monsters, 'firehunt', 'mv-float');
-  const packet = events.filter((e) => e.variant === 'firehunt' && e.area && e.area.members).at(-1);
+  const field = c.SKILL2_RT.orbits.at(-1);
+  assert.ok(field.orbs.every(o => !o.companion && o.canSpawn), '各超神施放時皆只有可觸發伴生的母體');
+  assert.ok(events.filter(e => e.variant === 'firehunt').every(e => e.area.members.every(m => !m.companion)), '出生事件不得帶伴生');
+  if (!trigger) return { c, field, events };
+  c.chance = () => true;
+  c.FIELD.monsters[0].pos = c.sgOrbitPos(field.orbs[0], c.bfPlayerPos());
+  c.sgOrbitStep(field, c.FIELD.monsters, 0, {});
+  const packet = events.filter((e) => e.variant === 'firehunt' && e.area && e.area.members.some(m => m.companion)).at(-1);
   assert.ok(packet, '施放後應送出環繞事件');
-  return { c, packet, field: c.SKILL2_RT.orbits.at(-1) };
+  return { c, packet, field };
 }
 
 const SK = cast('').c.SKILLS2.firehunt;
@@ -44,7 +52,7 @@ const CASES = [
 for (const k of CASES) {
   test('火狩雙色組合（' + (k.ult || '未選超神') + '）：母體讀飛行子彈、伴生讀觸發子彈', () => {
     const { c, packet, field } = cast(k.ult);
-    assert.ok(packet.area.members.some((m) => m.companion), '第七階應出生即帶伴生');
+    assert.ok(packet.area.members.some((m) => m.companion), '第三階命中成功後才生成伴生並送出事件');
     assert.equal(packet.vfx.projectile, k.mother(), '母體');
     assert.equal(packet.area.companionPreset, k.companion(), '伴生');
     assert.notEqual(packet.area.companionPreset, packet.vfx.projectile, '母體與伴生應是兩種外觀');
@@ -58,4 +66,32 @@ for (const k of CASES) {
 test('火神降臨的普攻星環不會變成環繞母體', () => {
   const { packet } = cast('fireGodDescend');
   assert.notEqual(packet.vfx.projectile, ult('fireGodDescend').vfx.projectile);
+});
+
+test('狩神之舞：無接觸、機率未通過、未命中都不伴生，之後成功命中仍可伴生', () => {
+  const { c, field: f } = cast('', false);
+  const m = c.FIELD.monsters[0];
+  c.sgOrbitStep(f, [], .1, {});
+  assert.equal(f.orbs.filter(o => o.companion).length, 0);
+  m.pos = c.sgOrbitPos(f.orbs[0], c.bfPlayerPos());
+  c.chance = () => false;
+  c.sgOrbitStep(f, [m], 0, {});
+  assert.equal(f.orbs.filter(o => o.companion).length, 0, '未通過伴生機率');
+  assert.ok(f.orbs[0].canSpawn);
+  c.sgOrbitStep(f, [], 0, {});
+  const resolve = c.resolveHit;
+  c.resolveHit = () => ({ miss: true, dmg: 0 });
+  c.chance = () => true;
+  c.sgOrbitStep(f, [m], 0, {});
+  assert.equal(f.orbs.filter(o => o.companion).length, 0, '未命中不消耗伴生資格');
+  assert.ok(f.orbs[0].canSpawn);
+  c.resolveHit = resolve;
+  c.sgOrbitStep(f, [], 0, {});
+  c.sgOrbitStep(f, [m], 0, {});
+  assert.equal(f.orbs.filter(o => o.companion).length, 1, '真實傷害命中後伴生');
+  assert.equal(f.orbs[0].canSpawn, false);
+  assert.equal(f.orbs.at(-1).canSpawn, false, '伴生不能再伴生');
+  c.sgOrbitStep(f, [], 0, {});
+  c.sgOrbitStep(f, [m], 0, {});
+  assert.equal(f.orbs.filter(o => o.companion).length, 1, '母體重複命中不重複伴生');
 });

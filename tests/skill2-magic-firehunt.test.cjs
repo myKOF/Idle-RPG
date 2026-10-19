@@ -53,7 +53,8 @@ function enemy(hp, x, y, name) {
   };
 }
 function playerEnt() {
-  return { hp: 1000, mp: 500, shield: 0, shieldMax: 0, skillCds: {}, buffs: {}, dots: [], effects: {}, _lockTarget: null };
+  // 本檔測環繞機制；提供足夠法力，避免高階施法費用阻擋待驗證行為。
+  return { hp: 1000, mp: 1e9, shield: 0, shieldMax: 0, skillCds: {}, buffs: {}, dots: [], effects: {}, _lockTarget: null };
 }
 
 /* 傷害管線替身：記下每一次命中的目標與攻擊組態，測「機制與範圍」不測「公式」。 */
@@ -251,11 +252,17 @@ test('伴生逐團事件：反向外圈、體積成長與消耗與實際幾何�
   c.playCombatVfx = spec => events.push(spec);
   c.sgSpawnOrbitField(playerEnt(), {}, 'firehunt', {
     rings: [{ r: 80, spin: 2 }, { r: 140, spin: -2 }], count: 1,
-    bodyR: 15, companionPx: 10, bornWithCompanion: true, lifeSec: 6,
+    bodyR: 15, companionPx: 10, lifeSec: 6,
     ringGapPx: 60, bodyGrowTo: 2, bodyGrowSec: 4
   });
   const f = c.SKILL2_RT.orbits[0];
-  const initial = events.filter(e => e.variant === 'firehunt');
+  // 幾何fixture明確準備母體／伴生配對，不經已移除的出生伴生開關。
+  for (const mother of f.orbs.slice()) {
+    mother.canSpawn = false;
+    f.orbs.push(c.sgOrbitCompanion(f, mother));
+  }
+  c.sgOrbitEmitVfx(f);
+  const initial = events.filter(e => e.variant === 'firehunt').slice(-2);
   assert.notEqual(initial[0].area.id, initial[1].area.id);
   assert.equal(f.orbs[3].ringIdx, 1);
   for (let n = 1; n <= 20; n++) {
@@ -373,7 +380,7 @@ test('火狩的持續時間以狀態呈現，剩餘時間隨【再生】的擊�
   assert.equal(firehuntState(), undefined, '火狩結束後狀態不得殘留');
 });
 
-test('狩神之舞：兩道反向火狩、圈距＝6 米 × 體積倍率、出現即自帶伴生、傷害與時間改讀第 7 階', () => {
+test('狩神之舞：兩道反向火狩、圈距＝6 米 × 體積倍率、不自帶伴生、傷害與時間改讀第 7 階', () => {
   const c = loadContext();
   const calls = stubHits(c);
   c.chance = () => false;
@@ -393,9 +400,8 @@ test('狩神之舞：兩道反向火狩、圈距＝6 米 × 體積倍率、出�
   assert.ok(Math.abs(f.rings[1].r - (f.rings[0].r + 6 * M * bodyScale)) < 1e-6,
     '第 2 道在「6 米 × 體積倍率」外的更外圈');
   assert.equal(Math.sign(f.rings[1].spin), -Math.sign(f.rings[0].spin), '兩道旋轉方向相反');
-  // 3 團／道 × 2 道，且每團出現時自帶伴生 → 12 團
-  assert.equal(f.orbs.length, 12);
-  assert.ok(f.orbs.every((o) => o.canSpawn === false), '自帶伴生後不再伴生');
+  assert.equal(f.orbs.length, 6, '3 團／道 × 2 道，出生時不附帶伴生');
+  assert.ok(f.orbs.every((o) => !o.companion && o.canSpawn), '保留每團母體命中後伴生的資格');
   assert.ok(Math.abs(f.until - 6) < 1e-9, '持續時間改讀第 7 階的 6 秒');
 
   run(c, p, [m], turnSec(c, 0.1));

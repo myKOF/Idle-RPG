@@ -1,5 +1,20 @@
 # AI_TASKS.md
 
+## FIREHUNT-NO-BORN-COMPANION-20261019 — 狩神之舞取消自帶伴生
+
+- Owner：Codex；Done；單一開發者。使用者要求取消狩神之舞自帶伴生；保留伴生火狩命中機率、每母體一次及伴生不可再伴生，其他傷害／圈數／時間／超神／傳奇不變。
+- 範圍：skills2僅出生伴生分支與表生成說明、Skills2 Excel／CSV對應說明、三份火狩相依測試、index／bridge／Worker快取、game_formula／LV_upgrade_system／本紀錄。禁止其他技能／數值／Protocol／存檔／素材／其他副本；保留使用者Skills2與Gem_resonance修改，隔離提交、不合併推送。
+- 預檢：其他範圍無外部修改；index與Claude ca9e0b65不同區段（對方熔爐視覺快取、本次skills2／bridge快取）且無語意相依，三方合併乾跑後分段處理。
+- 驗收：無命中時僅母體、命中失敗不伴生、正常命中成功仍伴生且不遞迴、各超神與傳奇消耗優先、逐團VFX數量一致；Excel原生精準改說明並重開驗證、配置往返、火狩回歸、Worker與Build、自我Review後獨立Commit。
+- 完成12檔：skills2移除狩神之舞出生伴生參數與通用場域出生伴生分支，保留第三階命中時機率生成的唯一入口。Skills2原生Excel僅移除第108列說明中的自帶伴生文字，CSV／JS生成資料同步；使用者AW108現有簡述原本已無該文字，工作簿實際只改AX108。提交由HEAD工作簿副本原生同改AW108／AX108，JS／CSV同源重建並驗僅tier7.desc變更，使用者其他資料與Gem_resonance保留未提交。
+- 修改檔：js/skills2.js、config/Excel/Skills2.xlsx、config/CSV/Skills2.csv、三份firehunt-orb-pairs／skill2-magic-firehunt／skill2-firehunt-rock-legendary測試、index.html、js/bridge.js、js/worker/sim.worker.js、game_formula.md、LV_upgrade_system.md、本紀錄。index skills2 331／bridge312，Worker資源及skills2匯入加hunt-no-born-companion；Protocol、存檔、素材／Preset及解鎖條件不變。魔法火狩測試fixture給足法力，以隔離高階費用與環繞機制；配對幾何fixture明確建立伴生，實際出生／機率則以原生引擎另驗。
+- 測試：隔離提交資料執行`node --test --test-reporter=tap tests/firehunt-orb-pairs.test.cjs tests/skill2-magic-firehunt.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/ui-worker-events.test.cjs tests/fire-amplify-cap.test.cjs`63/63；原生引擎驗未選超神／烈陽／無限／火神降臨出生無伴生、成功命中後伴生與表定配色、無接觸／未通過機率／未命中不伴生、重複命中與伴生不能遞迴。Lv.1狩神圈數／轉向／圈距／傷害／持續秒數、烈陽6→8母體、伴生併發消耗優先及原生逐團事件與取樣幾何通過。
+- 擴大三份火狩回歸53項50過／3失敗，失敗為火神降臨領域傷害400／500、金剛不壞減傷與火神星環貫穿次數3／1；唯讀以HEAD skills2替換重跑同3項，皆同樣失敗，未改無關規則或斷言。`npm.cmd run build`543檔通過，Skills2 apply乾跑零語意差異、diff通過；未跑全庫。
+- Excel：原生Excel API精準替換後正常重開Saved=True、無修復提示；唯讀逐格／公式／樣式及欄寬／行高／檢視／合併／篩選／驗證／註解比較，只有AX108文字變更。index與Claude不同快取區段，共同祖先三方merge-file乾跑exit0、無語意相依，按AI_RULES3.2分段修改。
+- 瀏覽器：IAB隱藏分頁、隨機localhost／seed1019隔離角色，正式Worker與顯示管線。施放2圈／6母體／0伴生，命中但未通過機率仍0伴生，成功觸發後6母體／1伴生，剩餘6秒與300%技能說明一致；Console warning／error0。截圖本聊天visualizations/firehunt-no-born-companion.png已目視；分頁／臨時服務關閉，不讀真人存檔。
+- 唯讀未改：AI規範／AGENTS／工作流／prompts/codex.md、spreadsheets操作規範、sgOrbitStep成功命中／一次伴生入口與場域到期、VFX原生映射／sampleOrbitMember、Worker Protocol／shim、火焰增幅疊層管線及相依回歸。自我Review確認移除的出生開關無其他產品呼叫端、每團母體canSpawn資格保留、伴生VFX只隨實際生成出現，無新增特效來源。
+- 交付：FIREHUNT-NO-BORN-COMPANION-20261019完成，無本次未完成功能，可供Review／合併；Commit為本紀錄所在`[Codex] feat: 狩神之舞取消出生自帶伴生`，回覆附實際編號。未合併推送。限制為上述3項既有回歸失敗、隔離角色短測未驗真人長戰；下一步使用者重新整理8123驗收。
+
 ## FIRE-AMP-SEPARATE-CAPS-20261019 — 火焰增幅與烈火狩各自最多50層
 
 - Owner：Codex；Done；單一開發者。使用者明確確認火球術火焰增幅與傳奇烈火狩各自50層、不共用額度；保留原單層數值／觸發節奏／範圍／持續時間，滿層繼續刷新時間、不繼續增加傷害。

@@ -202,16 +202,21 @@ test('【伴生併發】優先消耗伴生體，沒有伴生體才拿一般的�
   const c = loadContext();
   stubHits(c); stubVfx(c);
   setLegendary(c, ['firehuntConcurrent']);
-  // 第 7 階【狩神之舞】＝每團出現時自帶伴生，因此場上一定有伴生體可消耗
+  // 先依第三階命中機率產生伴生，才能驗證伴生併發的消耗優先序。
   maxLevels(c, 'firehunt');
   equip(c, 'firehunt');
   const p = playerEnt();
   const m = enemy(1e9, 60, 0);
   c.castSkill2(p, [m], 'firehunt', 'mv-float');
   const f = c.SKILL2_RT.orbits[0];
+  assert.ok(f.orbs.every(o => !o.companion), '狩神之舞不再自帶伴生');
+  c.chance = () => true;
+  m.pos = c.sgOrbitPos(f.orbs[0], { x: 0, y: 0 });
+  c.sgOrbitStep(f, [m], 0, {});
+  c.chance = () => false; // 後續只測消耗，避免新增伴生干擾數量。
   const companionsBefore = f.orbs.filter((o) => o.companion).length;
   const mothersBefore = f.orbs.filter((o) => !o.companion).length;
-  assert.ok(companionsBefore > 0 && mothersBefore > 0, '狩神之舞應同時有母體與伴生體');
+  assert.ok(companionsBefore > 0 && mothersBefore > 0, '命中後場上有母體與伴生體');
   advance(c, p, [m], 1.1);
   assert.equal(f.orbs.filter((o) => o.companion).length, companionsBefore - 1, '消耗的是伴生體');
   assert.equal(f.orbs.filter((o) => !o.companion).length, mothersBefore, '母體不動');
@@ -251,11 +256,10 @@ test('【烈陽星環】：＋1 團、體積隨時間長大、環繞更快、傷
   }
   const base = field(false);
   const solar = field(true);
-  /* 滿級＝第 7 階【狩神之舞】生效：2 道 × 3 團，且每團出現時自帶 1 個伴生 → 12 個環繞體。
-     ＋1 團之後是 2 道 × 4 團 ×（本體＋伴生）＝ 16 個。 */
+  /* 滿級狩神之舞出生僅2道×3團母體；烈陽每道+1團為2道×4團。 */
   assert.equal(base.rings.length, 2);
-  assert.equal(base.orbs.length, 12, '基準：2 道 × 3 團 × (本體＋伴生)');
-  assert.equal(solar.orbs.length, 16, '每一道多 1 團（伴生跟著多一個）');
+  assert.equal(base.orbs.length, 6, '基準：2 道 × 3 團母體');
+  assert.equal(solar.orbs.length, 8, '每一道多 1 團母體，無出生伴生');
   assert.equal(Math.round(solar.rings[0].spin / base.rings[0].spin * 100), 130, '環繞速度 +30%');
   assert.equal(Math.round(solar.dmgVal / base.dmgVal * 100), 160, 'Lv.1 傷害 +60%（50 ＋ 每級 10）');
   assert.equal(base.bodyGrowTo, 1, '沒選就不成長');
