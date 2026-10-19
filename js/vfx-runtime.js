@@ -420,6 +420,9 @@ var VFXRuntime = (function () {
       ? Core.createRuntime({backend:o.billboardBackend,resolver:o.resolver,budget:o.fxBudget || FX_BUDGET}) : rtAir;
     var rtEnemyAir = o.enemyAirBackend
       ? Core.createRuntime({backend:o.enemyAirBackend,resolver:o.resolver,budget:o.fxBudget || FX_BUDGET}) : rtAir;
+    // 近側實體須蓋過角色的穿透輪廓；其餘特效維持原有圖層。
+    var rtActorFront = o.actorFrontBackend
+      ? Core.createRuntime({backend:o.actorFrontBackend,resolver:o.resolver,budget:o.fxBudget || FX_BUDGET}) : rtFx;
     var known = Object.create(null);        // presetId → true（兩個 runtime 都註冊過）
     var billboardPresets = Object.create(null);   // presetId → 整份都標了 perspective: false
     /* 空物件不畫東西（它只是父物件），所以不列入判斷；一層可畫的都沒有時不算。 */
@@ -607,6 +610,7 @@ var VFXRuntime = (function () {
         billboardPresets[p.id] = allBillboard(p);
         // 雷幕事件也可將表定 attack 作為直立電柱；註冊不改變其他事件的路由。
         if (rtBillboard !== rtAir) rtBillboard.registerPreset(p);
+        if (rtActorFront !== rtFx) rtActorFront.registerPreset(p);
         known[p.id] = true;
         presetSizes[p.id] = p.sizing || null;
         presetDurations[p.id] = p.duration;
@@ -733,7 +737,7 @@ var VFXRuntime = (function () {
         // 前後石碑各自有透明度曲線；兩份必須跨在角色的畫面 Y 兩側，
         // 否則共用同一個 sortY 時會依加入順序一起蓋到角色上。
         var back = play(rtZone, presetId + '-back', rockDepthParams(params, -1), mult);
-        var front = play(rtFx, presetId + '-front', rockDepthParams(params, 1), mult);
+        var front = play(rtActorFront, presetId + '-front', rockDepthParams(params, 1), mult);
         if (!back || !front) { stopRef(back); stopRef(front); return null; }
         return { parts: [back, front] };
       }
@@ -2140,6 +2144,7 @@ var VFXRuntime = (function () {
       if (rtAir !== rtFx) rtAir.update(step);
       if (rtEnemyAir !== rtAir) rtEnemyAir.update(step);
       if (rtBillboard !== rtAir) rtBillboard.update(step);
+      if (rtActorFront !== rtFx) rtActorFront.update(step);
       rtZone.update(step);
     }
 
@@ -2160,6 +2165,7 @@ var VFXRuntime = (function () {
       if (rtFx.clearTails) rtFx.clearTails();
       if (rtAir !== rtFx && rtAir.clearTails) rtAir.clearTails();
       if (rtBillboard !== rtAir && rtBillboard.clearTails) rtBillboard.clearTails();
+      if (rtActorFront !== rtFx && rtActorFront.clearTails) rtActorFront.clearTails();
       projectiles.filter(function(p){return p.soulId;}).forEach(function(p){stopSoul(p.soulId);});
       Object.keys(orbits).forEach(stopOrbit);
       Object.keys(grounds).forEach(function (k) {
@@ -2186,6 +2192,7 @@ var VFXRuntime = (function () {
       if (rtAir !== rtFx) rtAir.stopAll();
       if (rtEnemyAir !== rtAir) rtEnemyAir.stopAll();
       if (rtBillboard !== rtAir) rtBillboard.stopAll();
+      if (rtActorFront !== rtFx) rtActorFront.stopAll();
       rtZone.stopAll();
     }
 
@@ -2195,6 +2202,7 @@ var VFXRuntime = (function () {
       if (rtAir !== rtFx) rtAir.destroy();
       if (rtEnemyAir !== rtAir) rtEnemyAir.destroy();
       if (rtBillboard !== rtAir) rtBillboard.destroy();
+      if (rtActorFront !== rtFx) rtActorFront.destroy();
       rtZone.destroy();
     }
 
@@ -2224,7 +2232,7 @@ var VFXRuntime = (function () {
           /* 第二輪：throttled＝被限頻／全場上限擋下的命中特效（已含在 capped 裡）、
              trailThinned＝拖尾變疏的飛行子彈、hitLive＝全場目前存活的命中特效數 */
           throttled: counters.throttled, trailThinned: counters.trailThinned, hitLive: hitAll.length,
-          fx: rtFx.stats(), zone: rtZone.stats(), air: rtAir.stats(), billboard: rtBillboard.stats(), enemyAir: rtEnemyAir.stats()
+          fx: rtFx.stats(), zone: rtZone.stats(), air: rtAir.stats(), billboard: rtBillboard.stats(), enemyAir: rtEnemyAir.stats(), actorFront: rtActorFront.stats()
         };
       }
     };
@@ -2276,7 +2284,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20261019-firegod-tall-flame-ring';
+  var DATA_VERSION = '20261019-rockarmor-depth';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';
@@ -2305,6 +2313,8 @@ var VFXRuntime = (function () {
              （見 battle-renderer）。沒給就是不補償——編輯器與測試本來就沒有畫面透視。 */
           fxBackend: VFXPixiBackend.createBackend({ container: opts.fxContainer, depthSort: true,
             depthParent: opts.fxDepthContainer, projectTransform: opts.projectSceneTransform }),
+          actorFrontBackend: opts.actorFrontContainer ? VFXPixiBackend.createBackend({container:opts.actorFrontContainer,
+            depthSort:true,projectTransform:opts.projectSceneTransform}) : null,
           // 場域與狀態特效按畫面 Y 與角色交錯；固定留在 presetZone 會全部蓋到角色後面。
           zoneBackend: VFXPixiBackend.createBackend({ container: opts.zoneContainer, depthSort: true,
             depthParent: opts.fxDepthContainer, projectTransform: opts.projectSceneTransform }),

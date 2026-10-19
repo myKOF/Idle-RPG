@@ -1,5 +1,11 @@
 # VFX_CORE_AND_PRESET_SCHEMA.md
 
+## 2026-10-19 動態繪製順序
+
+可繪圖層（sprite／procedural／particle）可選布林`sortByY`（預設false）。啟用時實際zIndex＝原zIndex＋當前投影後Y減特效原點Y；直接共用位置／位移曲線／縮放／旋轉／父子變換結果，無第二條軌道排序曲線。未填時輸出與既有固定zIndex相同；empty不支援。此欄位只改繪製順序，不改位置、碰撞或RNG，schemaVersion仍為1。Editor提供「依當前Y位置排序」勾選，需使用同版Core與Editor。
+
+岩甲石碑各組以當前Y作排序基準，plate／glow／rune只保留微小相對層差。Runtime維持同步遠近兩段，近側由可選actorFrontBackend播放，正式遊戲容器位於角色輪廓之後；無專用後端時回到原fx，其他Preset不走此路。所有註冊／更新／清除／銷毀及統計均涵蓋此後端。
+
 # VFX Core 架構 ＋ VFX Preset Schema v1
 
 ## 總時長自動推算（2026-10-03）

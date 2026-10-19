@@ -8,7 +8,7 @@
       "id": "stone-0-plate",
       "type": "sprite",
       "assetId": "codex-authored/rockarmor-objects/plate.png",
-      "zIndex": 0,
+      "zIndex": 1000,
       "position": {
         "x": 0,
         "y": -67.5213
@@ -354,13 +354,14 @@
           1,
           -7.050030133657464e-15
         ]
-      ]
+      ],
+      "sortByY": true
     },
     {
       "id": "stone-0-glow",
       "type": "sprite",
       "assetId": "codex-authored/rockarmor-objects/glow.png",
-      "zIndex": 1,
+      "zIndex": 1000.001,
       "position": {
         "x": 0,
         "y": -67.5213
@@ -706,13 +707,14 @@
           1,
           -7.050030133657464e-15
         ]
-      ]
+      ],
+      "sortByY": true
     },
     {
       "id": "stone-0-rune",
       "type": "sprite",
       "assetId": "codex-authored/rockarmor-objects/rune.png",
-      "zIndex": 2,
+      "zIndex": 1000.002,
       "position": {
         "x": 0,
         "y": -67.5213
@@ -1058,13 +1060,14 @@
           1,
           -7.050030133657464e-15
         ]
-      ]
+      ],
+      "sortByY": true
     },
     {
       "id": "stone-1-plate",
       "type": "sprite",
       "assetId": "codex-authored/rockarmor-objects/plate.png",
-      "zIndex": 3,
+      "zIndex": 1000,
       "position": {
         "x": 0,
         "y": -67.5213
@@ -1410,13 +1413,14 @@
           1,
           24.92761667055372
         ]
-      ]
+      ],
+      "sortByY": true
     },
     {
       "id": "stone-1-glow",
       "type": "sprite",
       "assetId": "codex-authored/rockarmor-objects/glow.png",
-      "zIndex": 4,
+      "zIndex": 1000.001,
       "position": {
         "x": 0,
         "y": -67.5213
@@ -1762,13 +1766,14 @@
           1,
           24.92761667055372
         ]
-      ]
+      ],
+      "sortByY": true
     },
     {
       "id": "stone-1-rune",
       "type": "sprite",
       "assetId": "codex-authored/rockarmor-objects/rune.png",
-      "zIndex": 5,
+      "zIndex": 1000.002,
       "position": {
         "x": 0,
         "y": -67.5213
@@ -2114,13 +2119,14 @@
           1,
           24.92761667055372
         ]
-      ]
+      ],
+      "sortByY": true
     },
     {
       "id": "stone-2-plate",
       "type": "sprite",
       "assetId": "codex-authored/rockarmor-objects/plate.png",
-      "zIndex": 6,
+      "zIndex": 1000,
       "position": {
         "x": 0,
         "y": -67.5213
@@ -2466,13 +2472,14 @@
           1,
           24.927616670553746
         ]
-      ]
+      ],
+      "sortByY": true
     },
     {
       "id": "stone-2-glow",
       "type": "sprite",
       "assetId": "codex-authored/rockarmor-objects/glow.png",
-      "zIndex": 7,
+      "zIndex": 1000.001,
       "position": {
         "x": 0,
         "y": -67.5213
@@ -2818,13 +2825,14 @@
           1,
           24.927616670553746
         ]
-      ]
+      ],
+      "sortByY": true
     },
     {
       "id": "stone-2-rune",
       "type": "sprite",
       "assetId": "codex-authored/rockarmor-objects/rune.png",
-      "zIndex": 8,
+      "zIndex": 1000.002,
       "position": {
         "x": 0,
         "y": -67.5213
@@ -3170,13 +3178,14 @@
           1,
           24.927616670553746
         ]
-      ]
+      ],
+      "sortByY": true
     },
     {
       "id": "stone-3-plate",
       "type": "sprite",
       "assetId": "codex-authored/rockarmor-objects/plate.png",
-      "zIndex": 9,
+      "zIndex": 1000,
       "position": {
         "x": 0,
         "y": -67.5213
@@ -3522,13 +3531,14 @@
           1,
           1.0575045200486195e-14
         ]
-      ]
+      ],
+      "sortByY": true
     },
     {
       "id": "stone-3-glow",
       "type": "sprite",
       "assetId": "codex-authored/rockarmor-objects/glow.png",
-      "zIndex": 10,
+      "zIndex": 1000.001,
       "position": {
         "x": 0,
         "y": -67.5213
@@ -3874,13 +3884,14 @@
           1,
           1.0575045200486195e-14
         ]
-      ]
+      ],
+      "sortByY": true
     },
     {
       "id": "stone-3-rune",
       "type": "sprite",
       "assetId": "codex-authored/rockarmor-objects/rune.png",
-      "zIndex": 11,
+      "zIndex": 1000.002,
       "position": {
         "x": 0,
         "y": -67.5213
@@ -4226,13 +4237,14 @@
           1,
           1.0575045200486195e-14
         ]
-      ]
+      ],
+      "sortByY": true
     },
     {
       "id": "stone-4-plate",
       "type": "sprite",
       "assetId": "codex-authored/rockarmor-objects/plate.png",
-      "zIndex": 12,
+      "zIndex": 1000,
       "position": {
         "x": 0,
         "y": -67.5213
@@ -4578,13 +4590,14 @@
           1,
           -24.92761667055371
         ]
-      ]
+      ],
+      "sortByY": true
     },
     {
       "id": "stone-4-glow",
       "type": "sprite",
       "assetId": "codex-authored/rockarmor-objects/glow.png",
-      "zIndex": 13,
+      "zIndex": 1000.001,
       "position": {
         "x": 0,
         "y": -67.5213
@@ -4930,13 +4943,14 @@
           1,
           -24.92761667055371
         ]
-      ]
+      ],
+      "sortByY": true
     },
     {
       "id": "stone-4-rune",
       "type": "sprite",
       "assetId": "codex-authored/rockarmor-objects/rune.png",
-      "zIndex": 14,
+      "zIndex": 1000.002,
       "position": {
         "x": 0,
         "y": -67.5213
@@ -5282,13 +5296,14 @@
           1,
           -24.92761667055371
         ]
-      ]
+      ],
+      "sortByY": true
     },
     {
       "id": "stone-5-plate",
       "type": "sprite",
       "assetId": "codex-authored/rockarmor-objects/plate.png",
-      "zIndex": 15,
+      "zIndex": 1000,
       "position": {
         "x": 0,
         "y": -67.5213
@@ -5634,13 +5649,14 @@
           1,
           -24.927616670553718
         ]
-      ]
+      ],
+      "sortByY": true
     },
     {
       "id": "stone-5-glow",
       "type": "sprite",
       "assetId": "codex-authored/rockarmor-objects/glow.png",
-      "zIndex": 16,
+      "zIndex": 1000.001,
       "position": {
         "x": 0,
         "y": -67.5213
@@ -5986,14 +6002,15 @@
           1,
           -24.927616670553718
         ]
-      ]
+      ],
+      "sortByY": true
     },
     {
       "id": "stone-5-rune",
       "type": "sprite",
       "enabled": true,
       "assetId": "codex-authored/rockarmor-objects/rune.png",
-      "zIndex": 17,
+      "zIndex": 1000.002,
       "position": {
         "x": 0,
         "y": -67.5213
@@ -6339,7 +6356,8 @@
           1,
           -24.927616670553718
         ]
-      ]
+      ],
+      "sortByY": true
     },
     {
       "id": "earth-shadow",

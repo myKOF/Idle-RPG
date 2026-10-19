@@ -432,6 +432,7 @@ var VFXCore = (function () {
       }
     }
     validateCurve(layer.alphaOverLife, where + '.alphaOverLife', errors, { nonNegative: true });
+    if (layer.sortByY !== undefined && typeof layer.sortByY !== 'boolean') errors.push(where + '.sortByY 必須是布林值');
     validateColorCurve(layer.tintOverLife, where + '.tintOverLife', errors);
     validateSheet(layer.sheet, where + '.sheet', errors);
     if (layer.radiusProfile !== undefined) {
@@ -726,7 +727,7 @@ var VFXCore = (function () {
     return config[key] === undefined ? DEFORMATION_FIELDS[key].default : config[key];
   }
   var PRESET_FIELDS = ['playback', 'deformation', 'schemaVersion', 'id', 'duration', 'loop', 'layers', 'sizing'];
-  var COMMON_LAYER_FIELDS = ['id', 'type', 'parent', 'enabled', 'assetId', 'zIndex', 'position',
+  var COMMON_LAYER_FIELDS = ['id', 'type', 'parent', 'enabled', 'assetId', 'zIndex', 'sortByY', 'position',
     'rotation', 'scale', 'anchor', 'alpha', 'tint', 'blendMode', 'delay', 'duration',
     'alphaOverLife', 'tintOverLife', 'scaleOverLife', 'rotationOverLife', 'sheet', 'projection',
     'perspective', 'cameraDepth', 'followDirection', 'followStretch'];
@@ -1108,7 +1109,7 @@ var VFXCore = (function () {
     }
   }
   var PRESET_KEY_ORDER = ['schemaVersion', 'id', 'duration', 'loop', 'deformation', 'layers'];
-  var LAYER_KEY_ORDER = ['id', 'type', 'parent', 'enabled', 'assetId', 'effect', 'zIndex',
+  var LAYER_KEY_ORDER = ['id', 'type', 'parent', 'enabled', 'assetId', 'effect', 'zIndex', 'sortByY',
     'position', 'rotation', 'scale', 'anchor', 'size', 'alpha', 'tint', 'blendMode',
     'delay', 'duration', 'loop', 'scrollSpeed',
     'emission', 'maxParticles', 'lifetime', 'spawn', 'speed', 'direction', 'spread',
@@ -1207,6 +1208,7 @@ var VFXCore = (function () {
       effect: layer.effect,
       water: layer.water,
       zIndex: layer.zIndex || 0,
+      sortByY: layer.sortByY === true,
       position: layer.position || { x: 0, y: 0 },
       rotation: layer.rotation || 0,
       scale: layer.scale || { x: 1, y: 1 },
@@ -1956,6 +1958,8 @@ var VFXCore = (function () {
         t.tileX = layer.scrollX;
         t.tileY = layer.scrollY;
       }
+      // 排序直接讀當前投影後位置，與軌道／父子變換共用同一份幾何。
+      if (d.sortByY) t.zIndex += t.y - effect.origin.y;
       backend.updateNode(layer.node, t);
     }
 
@@ -2320,6 +2324,7 @@ var VFXCore = (function () {
           t.x += (pc * bx - ps * by) * d.projection.x - bx;
           t.y += (ps * bx + pc * by) * d.projection.y - by;
         } else projectTransform(particleFrame, d.projection, t);
+        if (d.sortByY) t.zIndex += t.y - effect.origin.y;
         backend.updateNode(p.node, t);
         layer.particles[write++] = p;
       }
