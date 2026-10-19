@@ -148,7 +148,7 @@ test('parseNaturalCommand 成功透過 Gemini 轉譯白話指令為 GM 指令陣
       ok: true,
       json: async () => ({
         models: [
-          { name: 'models/gemini-3.8-flash', supportedGenerationMethods: ['generateContent'] }
+          { name: 'models/gemini-2.0-flash', supportedGenerationMethods: ['generateContent'] }
         ]
       })
     };
@@ -156,6 +156,52 @@ test('parseNaturalCommand 成功透過 Gemini 轉譯白話指令為 GM 指令陣
 
   const cmds = await mod.parseNaturalCommand('加全身強化+50的神話裝備，並都是4太古的詞條，並加金幣1000億');
   assert.deepEqual([...cmds], ['equipset mythic 500 50 4 wear', 'gold 100000000000']);
+});
+
+test('parseNaturalCommand 遇到首選模型 High Demand (503) 時能自動切換備用模型成功', async () => {
+  const { mod, ctx } = setup('localhost', { idle_rpg_gemini_api_key: 'AIzaFakeKey123' });
+  let callCount = 0;
+  ctx.fetch = async (url, opts) => {
+    if (opts && opts.method === 'POST') {
+      callCount++;
+      if (callCount === 1) {
+        // 第一個模型報 High Demand
+        return {
+          ok: false,
+          status: 503,
+          json: async () => ({
+            error: { message: 'This model is currently experiencing high demand. Spikes in demand are usually temporary.' }
+          })
+        };
+      }
+      // 第二個模型成功
+      return {
+        ok: true,
+        json: async () => ({
+          candidates: [
+            {
+              content: {
+                parts: [{ text: '["gold 999999"]' }]
+              }
+            }
+          ]
+        })
+      };
+    }
+    return {
+      ok: true,
+      json: async () => ({
+        models: [
+          { name: 'models/gemini-2.0-flash', supportedGenerationMethods: ['generateContent'] },
+          { name: 'models/gemini-1.5-flash', supportedGenerationMethods: ['generateContent'] }
+        ]
+      })
+    };
+  };
+
+  const cmds = await mod.parseNaturalCommand('加金幣999999');
+  assert.strictEqual(callCount, 2, '應自動呼叫下一個模型重試');
+  assert.deepEqual([...cmds], ['gold 999999']);
 });
 
 test('js/gm_exec.js 的 equipset 支援強化等級、太古數與自動穿戴', () => {

@@ -125,47 +125,58 @@
       '輸入：「技能全部滿級，給我100萬碎片」\n' +
       '輸出：["skillmax all", "scrap 1000000"]\n';
 
-    var cachedModelName = null;
-
-    function resolveAvailableModel(targetKey) {
-      if (cachedModelName) return Promise.resolve(cachedModelName);
+    function resolveCandidateModels(targetKey) {
+      var defaultList = [
+        'gemini-2.0-flash',
+        'gemini-1.5-flash',
+        'gemini-2.0-flash-lite',
+        'gemini-1.5-flash-8b',
+        'gemini-1.5-pro'
+      ];
       var listUrl = 'https://generativelanguage.googleapis.com/v1beta/models?key=' + encodeURIComponent(targetKey);
       return fetch(listUrl, { method: 'GET' })
         .then(function (res) {
-          if (!res.ok) throw new Error('HTTP ' + res.status);
+          if (!res.ok) return defaultList;
           return res.json();
         })
         .then(function (data) {
           var models = (data && data.models) || [];
-          var candidates = models.filter(function (m) {
+          var supported = models.filter(function (m) {
             var methods = m.supportedGenerationMethods || [];
-            return methods.indexOf('generateContent') >= 0;
-          });
-          // 優先找官方最新指定的 gemini-3.8-flash，避開對新用戶已退役的舊模型（如 2.5 系列）
-          var match = candidates.find(function (m) {
-            return (m.name || '').indexOf('gemini-3.8-flash') >= 0;
-          }) || candidates.find(function (m) {
             var name = (m.name || '').toLowerCase();
-            return name.indexOf('3.8') >= 0;
-          }) || candidates.find(function (m) {
-            var name = (m.name || '').toLowerCase();
-            return name.indexOf('flash') >= 0 && name.indexOf('2.5') === -1;
-          }) || candidates[0];
+            return methods.indexOf('generateContent') >= 0 &&
+              name.indexOf('embedding') === -1 &&
+              name.indexOf('imagen') === -1 &&
+              name.indexOf('aqa') === -1;
+          }).map(function (m) {
+            return (m.name || '').replace(/^models\//, '');
+          }).filter(Boolean);
 
-          if (match && match.name) {
-            cachedModelName = match.name.replace(/^models\//, '');
-            return cachedModelName;
-          }
-          return 'gemini-3.8-flash';
+          if (!supported.length) return defaultList;
+
+          // 排序：2.0-flash > 1.5-flash > 2.0-flash-lite > 1.5-flash-8b > 1.5-pro > 其他
+          var ranked = [];
+          ['2.0-flash', '1.5-flash', '2.0-flash-lite', '1.5-flash-8b', '1.5-pro', 'flash', 'pro'].forEach(function (kw) {
+            supported.forEach(function (name) {
+              if (name.indexOf(kw) >= 0 && ranked.indexOf(name) === -1) {
+                ranked.push(name);
+              }
+            });
+          });
+          supported.forEach(function (name) {
+            if (ranked.indexOf(name) === -1) ranked.push(name);
+          });
+          defaultList.forEach(function (name) {
+            if (ranked.indexOf(name) === -1) ranked.push(name);
+          });
+          return ranked.length ? ranked : defaultList;
         })
         .catch(function () {
-          return 'gemini-3.8-flash';
+          return defaultList;
         });
     }
 
-    return resolveAvailableModel(key).then(function (modelName) {
-      var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(modelName) + ':generateContent?key=' + encodeURIComponent(key);
-
+    return resolveCandidateModels(key).then(function (candidates) {
       var body = {
         contents: [
           {
@@ -180,30 +191,49 @@
         }
       };
 
-      return fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      }).then(function (res) {
-        if (!res.ok) {
-          return res.json().catch(function () { return {}; }).then(function (data) {
-            var msg = (data && data.error && data.error.message) || ('HTTP ' + res.status);
-            throw new Error('Gemini API 錯誤：' + msg);
-          });
+      function callSingleModel(modelName) {
+        var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(modelName) + ':generateContent?key=' + encodeURIComponent(key);
+        return fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        }).then(function (res) {
+          if (!res.ok) {
+            return res.json().catch(function () { return {}; }).then(function (data) {
+              var msg = (data && data.error && data.error.message) || ('HTTP ' + res.status);
+              throw new Error(msg);
+            });
+          }
+          return res.json();
+        }).then(function (data) {
+          var candidate = data && data.candidates && data.candidates[0];
+          var part = candidate && candidate.content && candidate.content.parts && candidate.content.parts[0];
+          var rawText = (part && part.text) || '';
+          if (!rawText.trim()) throw new Error('AI 未回傳任何指令');
+          var list = JSON.parse(rawText);
+          if (!Array.isArray(list)) {
+            if (typeof list === 'string') list = [list];
+            else throw new Error('AI 回傳格式不正確');
+          }
+          return list.map(function (c) { return String(c).trim(); }).filter(Boolean);
+        });
+      }
+
+      var lastError = null;
+      function tryModel(index) {
+        if (index >= candidates.length) {
+          var detailMsg = lastError ? (lastError.message || String(lastError)) : '所有備用模型均無法回應';
+          throw new Error('AI 解析失敗：Google Gemini 所有可用備用模型均處於尖峰或無法回應（' + detailMsg + '），請稍候 30 秒至 1 分鐘後再試。');
         }
-        return res.json();
-      }).then(function (data) {
-        var candidate = data && data.candidates && data.candidates[0];
-        var part = candidate && candidate.content && candidate.content.parts && candidate.content.parts[0];
-        var rawText = (part && part.text) || '';
-        if (!rawText.trim()) throw new Error('AI 未回傳任何指令');
-        var list = JSON.parse(rawText);
-        if (!Array.isArray(list)) {
-          if (typeof list === 'string') list = [list];
-          else throw new Error('AI 回傳格式不正確');
-        }
-        return list.map(function (c) { return String(c).trim(); }).filter(Boolean);
-      });
+        var modelName = candidates[index];
+        return callSingleModel(modelName).catch(function (err) {
+          lastError = new Error(modelName + ': ' + err.message);
+          console.warn('[AI GM] 模型 ' + modelName + ' 回應異常 (' + err.message + ')，自動切換至下一個備用模型...');
+          return tryModel(index + 1);
+        });
+      }
+
+      return tryModel(0);
     });
   }
 
