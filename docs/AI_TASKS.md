@@ -587,7 +587,6 @@
 - 瀏覽器：沿本聊天的獨立headless Chrome／隨機localhost來源，新角色、正式index／CSS／UI／Worker與GM測試庫存，不讀真人存檔。1920×900實際盤面492×432內，可見輪廓（母圖alpha>4）由347.94px高增至420.94px高（約21%），上／下留白6.15／4.91px，左右均有安全邊距。2560×1080、1920×1080、1366×768、390×844亦安全內含且與詳情無重疊；寬畫面49孔elementFromPoint全命中。點擊鑲入／取下／上方原生拖曳鑲入通過，右側gres-types節點0、十階工具頁籤Y維持343；Console error／warning、pageerror與資源404皆0。
 - 自我Review／交付：唯讀核對母圖可見輪廓、SVG共座標、孔位委派與既有回歸，沒有改母圖或其他副本，素材庫工作區乾淨、無需素材庫Commit。Commit為本紀錄所在[Codex] fix提交，回覆附編號；無未完成需求或已知新增風險，可供審閱合併，不合併推送。下一步重新載入寶石→共鳴；保留本聊天visualizations/gem-resonance-board-fit.png實際截圖，測試服務／瀏覽器已結束，臨時驗證腳本移除。
 
-
 ## GEM-RESONANCE-TIER-SOURCE-20261018 — 上方十階列作為共鳴鑲嵌入口
 
 - Owner：Codex；Done，單一開發者。使用者四項要求：保留上方1～10階與工具頁籤位置；左側只選符合孔位的寶石類型；由上方點擊／拖曳鑲嵌；無效階級置灰。前置視覺接入已完成，工作區乾淨，全部目標衝突預檢乾淨。
@@ -600,7 +599,6 @@
 - 瀏覽器：沿本聊天已採用的獨立headless Chrome／隨機localhost，新來源新角色，正式index／UI／CSS／Worker與本機GM給測試庫存，不讀真人存檔。左側點類型或dragTo皆未鑲入；低階／未持有置灰、上方點擊鑲入／滿孔全停用／取下恢復、上方原生拖曳合法孔成功／不符區域拒絕／切孔同步類型／中央十階鑲入／切回合成只選階級均通過。合成、共鳴與空分類工具頁籤Y皆343、上方區塊高皆179；1920×900、2560×1080、1366×768、390×844各十階完整且盤面／詳情不重疊。Console error／warning、pageerror與資源404皆0；未做真人長戰或觸控拖曳驗收。
 - 自我Review／交付：唯讀檢查既有寶石庫、階級選取、技能拖曳攔截、共鳴規則／Worker命令、工坊盒模型與相關回歸；無數值、協議、存檔或素材變動，素材庫工作區乾淨，無需素材庫Commit。遊戲Commit為本紀錄所在[Codex] feat提交，回覆附編號；不合併推送，無未完成需求或新增阻塞，可供審閱合併。下一步重新載入遊戲於寶石→共鳴操作；實際截圖保留visualizations/gem-resonance-tier-source.png，服務／瀏覽器已結束，臨時驗證腳本移除。
 
-
 ## GEM-RESONANCE-CRYSTAL-20261018 — 接入六邊形共鳴底板與水晶切面
 
 - Owner：Codex；Done，單一開發者。前置：使用者已確認六邊形底板與水晶切面的合成預覽並要求接入，工作區乾淨、全部目標衝突預檢乾淨。
@@ -612,7 +610,6 @@
 - 驗證：node --test tests/gem-resonance-ui.test.cjs tests/gem-resonance.test.cjs tests/gem-enabled.test.cjs tests/init-ui-smoke.test.cjs：32/32通過；npm.cmd run build：534檔通過；export-source.cjs --check母圖／紀錄／遊戲雜湊一致，git diff --check通過。啟動程序繼承舊素材庫環境值，工具呼叫採讀取已修正的User環境值，不改受管設定或系統設定。
 - 實機：工具缺少Node REPL，沿本聊天已用的獨立headless Chrome與隨機localhost來源，正式index／CSS／UI／Worker、新角色與正式本機GM命令，不讀真人存檔。點擊鑲入／取下、空孔升級、原生dragTo鑲入／不符區域拒絕、Space選孔均通過；49孔中心elementFromPoint皆命中正確孔，防禦選中框六邊中點像素皆#fff7cf，原有完整框未退化。1920×900、2560×1080、1366×768、390×844無盤面／詳情重疊；本遊戲窄畫面沿既有整體縮放，不宣稱手機介面重新設計。資源404、Console error／warning、pageerror皆0，未做真人長戰或觸控拖曳測試。
 - 自我Review：檢查既有共鳴規則、事件委派、disabled寶石、初始化smoke、工坊盒模型與素材匯出模式；無新增權威資料或規則來源、沒有其他副本修改。素材庫Commit d30b9d3先建立，遊戲Commit為本紀錄所在[Codex] feat提交，回覆附編號；兩倉庫不合併不推送。無未完成需求或新增阻塞，可供Review合併。下一步重新載入Codex工作區遊戲的寶石→共鳴；效果截圖保留於本聊天visualizations/gem-resonance-integrated.png，測試服務／瀏覽器已結束，臨時驗證腳本與JSON移除。
-
 
 ## GEM-RESONANCE-SELECTION-20261018 — 完整的亮黃白選中框
 
@@ -11184,7 +11181,6 @@ Worker 存活且頁面正常完成載入。
 - ???`node tools/vfx/export-assets.cjs --check` ??????????????? `node tools/vfx/export-assets.cjs` ??check???353 Preset?185???????? images/vfx/assets/.vfx-export-root.json??????????????????????asset_files??Excel?CSV???JS???????????Excel????????
 - ??????? index.html?js/bridge.js?js/worker/sim.worker.js?images/vfx/assets/.vfx-export-root.json?????????staged??????????????index?CSS???Worker import?HEAD?MERGE_HEAD????????????index unmerged entries??controller???????????Commit???controller??merge????????????????????????canonical????????????????worktree?ownership??????trust?
 
-
 ## GEM-WORKSHOP-DOWNSTEP-20261018 — 合成聖光與無損前一階拆解九宮格
 
 - Owner：Codex；Done，單一開發者。使用者要求合成沿相同黃白聖光、播放2秒後綠字「合成成功！」，指定右上說明；拆解改同轉換九宮格與上方點擊／拖入／Shift單顆，只保留清空及一鍵拆解，免費無損拆回前一階、數量沿合成配方，指定兩行右上說明。
@@ -11208,7 +11204,6 @@ Worker 存活且頁面正常完成載入。
 
 - 最終交付：潛力任務先獨立提交362c33f5，寶石27檔差異逐檔確認，沒有潛力本體變更；其完整功能保留。最終補跑上述寶石／Worker／潛力相依及sim-command-coverage共148/148，參數558一致／0變更。修改檔案：PATCH.md、config/CSV/game_parameters.csv、config/Excel/game_parameters.xlsx、css/gems.css、docs/AI_TASKS.md、docs/WORKER_PROTOCOL.md、docs/vfx/VFX_PRESET_USAGE_OUTSIDE_TABLES.md、game_formula.md、index.html、js/bridge.js、js/formula.js、js/item.js、js/ui.js、js/worker/protocol.js、js/worker/sim.worker.js、scripts/sim/command_coverage.json、tests/combat-log.test.cjs、tests/confirm-dialog.test.cjs、tests/gem-compose-all.test.cjs、tests/gem-icons.test.cjs、tests/pen-gem-flow.test.cjs、tests/potential-removal.test.cjs、tests/ui-worker-panels.test.cjs、tests/worker-protocol.test.cjs、tools/apply_params.cjs、js/ui-gem-workshop.js、tests/gem-workshop.test.cjs。任務GEM-WORKSHOP-DOWNSTEP-20261018完成、無未完成需求，可審查合併；建議重載遊戲驗收。
 
-
 ## FORGE-BELT-MOTION-20261018 — 右側入帶與程序粒子爐火
 
 - Owner：Codex；Done，單一開發者。延續前次熔爐顯示，使用者要求裝備由最右入帶並平滑向左、重做爐口且明確接受粒子火焰；不改拆解數值或時機。前置既有正式圖示／Worker完成。同副本天堂威能進行中，保留全部修改。
@@ -11226,7 +11221,6 @@ Worker 存活且頁面正常完成載入。
 - 收尾：天堂威能已先獨立提交`6eac2a7b`，本次13檔工作差異均為熔爐。其提交後，以目前完整來源追加`tests/talents.test.cjs tests/talents-perf-equivalence.test.cjs tests/power-rework.test.cjs tests/esc-shortcut.test.cjs`四份相依驗證，連同上列11份共127/127通過；本次功能與天堂威能完整共存，不需等待或重複詢問。
 
 - 最終效能收尾：IntersectionObserver使畫面外爐火停止重繪，隱藏帶項直接清理、不累積退出節點，捲回恢復且移除時釋放觀察。新增第7項顯示回歸；最終15份相依套件128/128通過。正式Edge將卡片移出可視區後Canvas位元保持一致，回可視區後繼續變化，Console error／warning及pageerror0。此收尾不改上列移動／粒子外觀，動態預覽保持相同。
-
 
 ## MERGE-FORGE-HEAVEN-20261018 — 整合熔爐並保留天堂威能
 
@@ -11267,7 +11261,6 @@ Worker 存活且頁面正常完成載入。
 - 交付：工具Commit為本紀錄所在`[Codex] fix: 一鍵同步自動尋找 CLI 並續接衝突合併`，回覆附實際編號；可合併，並依使用者本輪整合授權合併進develop。不推送正式遠端。無本次未完成需求；限制為語意矛盾、未登入／無額度／離線或其他權限阻擋仍保留現場與報告，不保證任意設計衝突都能無人裁決。未跑全庫／瀏覽器。後續直接雙擊BAT，會依原流程解衝突、驗證、提交、同步及推送。
 - 最終工具整合：來源`092dd55f`，以merge-tree及正常merge確認無衝突，工具五份實體檔與來源逐檔一致；僅新增本紀錄，保留develop原任務歷史格式。正式衝突已於`25aeb3f9`完成；本工具合併Commit見本紀錄所在`[Codex] merge: 整合一鍵同步自動解衝突修正`。未推送正式遠端。
 
-
 ## MYTHIC-WARMER-LIGHTER-20261019 — 神話裝備橘紅與提亮暗部
 
 - Owner：Codex；Done；單一開發者。使用者選定Codex預覽版並要求黑色再淡、整體偏橘紅。前置既有神話CSS完成；已明確授權接手與Antigravity aca1b098同兩處底色重疊，採使用者選定配色，不合併該分支。
@@ -11278,7 +11271,6 @@ Worker 存活且頁面正常完成載入。
 - 驗證指令：node --test tests/equipment-two-hand-display.test.cjs tests/equipment-selection-border.test.cjs tests/equipment-weapon-icons.test.cjs；12項10通過、2項既有fixture失敗（缺syncEquipmentSelectionMemory／UI_GAME_TIMING）。唯讀fs攔截只將CSS恢復HEAD，重跑同12項仍10過／相同2失敗，無新增失敗、未改測試。npm.cmd run build：545檔通過；git diff --check通過。
 - 瀏覽器：臨時localhost以正式CSS與原裝備圖示呈現13格及雙手副手，目視確認橘紅／提亮暗部與金紅框；Console warning／error均0。此為隔離外觀fixture，未載入玩家存檔、未做完整遊戲操作／跨瀏覽器／全庫驗證。截圖mythic-warm-light.png保存本聊天visualizations；臨時頁及服務關閉。
 - 唯讀檢查未改：共通規範／AGENTS／Workflow／prompts、Antigravity底色差異、ashen-forge底板與格位、ui的renderEquip／圖示／星等產生、data裝備圖示與上述三份回歸。已知限制為上述2項既有失敗，無本次未完成需求；可就外觀範圍Review／合併，未合併推送。Commit為本段所在[Codex] fix: 神話裝備改為較明亮的橘紅暖灰底色，回覆附編號；後續重新整理遊戲驗收。
-
 
 ## MERGE-MYTHIC-WARM-20261019 — 神話配色整合、移除重複與推送
 
@@ -11292,3 +11284,16 @@ Worker 存活且頁面正常完成載入。
 
 - 最終整合：第一筆merge 1bcae9db納入確認配色；第二筆merge納入Antigravity原提交及be4af554還原，合併乾跑／實際合併無衝突且第二次程式差異0。合併後再次npm.cmd run build為545檔通過，diff檢查通過，未新增測試失敗。實際修改為css/style.css、index.html、LV_upgrade_system.md、PATCH.md及本紀錄；無新增功能／素材／其他分支修改。
 - 交付方式：本紀錄所在[Codex] merge: 完成神話配色整合並消除重複修改為最終整合Commit，回覆附實際編號；正常快轉同步乾淨的Antigravity工作區，再以atomic push推送develop及ai/antigravity，遠端SHA核對結果以工具及最終交付為準。Codex後續泥沼提交與工作區保持原狀。已知限制仍為2項既有fixture失敗及未做完整遊戲／跨瀏覽器測試；無本次整合缺項，可用，後續使用者重載develop驗收。
+
+## MIRE-RANGE-VULN-WEAKEN-20261019 — 泥沼動態範圍說明、本體易傷與虛弱降攻
+
+- Owner：Codex；Done；單一開發者。使用者要求泥沼術範圍說明讀取實際配置、本體新增受傷+10%每級+1%、第二階虛弱改為敵人攻擊力-15%每級-1.5%。前置現行泥沼場域／範圍參數／受傷與敵方攻擊乘區完成；沿既有基值＋每級增量×等級。
+- 允許js/skills2.js僅泥沼效果與矩形範圍說明模板、Skills2 Excel／CSV的mire第一／第二階設定與第六階累加說明、tests/skill2-earth.test.cjs與skill2-mire-earthguard-legendary相應回歸、index／bridge／sim.worker必要快取、game_formula／LV_upgrade_system與本紀錄。禁止其他技能數值／場域尺寸與移動規則／Protocol／存檔／Preset／素材與其他副本；保留使用者已儲存的泥沼第一階文案，不合併推送。
+- 衝突預檢所有目標無外部來源；使用者已儲存關閉Excel，工作簿目前僅mire第一階文案另有修改。驗收範圍含矩形各軸／每級成長與純主端描述、出生場域／命中／畫面事件同源；T1單獨生效／全等級成長、T2不再易傷且攻擊降幅正確／場外與過期回復、重力與腐化易傷保留加算、傳奇削弱與僵化維持獨立相乘、物理／魔法與技能倍率、配置往返／原生Excel重開、相關回歸與基準／Build／diff後獨立Commit，後續使用者Review整合。
+- 完成11檔：js/skills2.js的describeSkill2Tier加入rangeLength／rangeWidth模板、以sgRange讀取群組範圍與等級各軸增量（不讀G）；skill2MireVulnPct改讀T1表定pct，保留T6及傳奇腐化加算；skill2MireWeakenFactor改為T2攻擊下降與既有傳奇削弱獨立相乘。Skills2 Excel／CSV僅mire/1效果JSON與第一／第二／第六階各兩格文案，新增pct=10／pctPer=1；T2維持表定15／1.5並改為降攻；T6文案改與第一階累加。兩份地系回歸、index／bridge／sim.worker快取、game_formula／LV_upgrade_system及本紀錄同步，沒有改其他技能數值、實際場域尺寸、Protocol、存檔、Status表、Preset或素材。
+- 專項：`node --test --test-name-pattern='泥沼術本體|泥沼範圍說明|泥沼本體易傷|【削弱】|【腐化】' tests/skill2-earth.test.cjs tests/skill2-mire-earthguard-legendary.test.cjs`5/5。包含Lv1～10本體11～20%易傷／虛弱16.5～30%降攻、真正resolveHit命中傷害、物理／魔法／重擊技能組態、場外與離場到期恢復、無T2仍有本體易傷、重力／腐化加算及三種降攻乘區。範圍測試變更為非正方形且雙軸每級成長，核對實際場域／首拍VFX area及無G主端說明一致。將受測skills2唯讀換回修改前HEAD重跑，五項均失敗，修正版全過。
+- 擴大回歸：上述兩檔全跑63項41過／22失敗；修改前原測試＋HEAD受測來源61項38過／23失敗，失敗案例集合比對沒有新增，移除的是本輪授權更新的舊T2易傷案例（同時將其不足的施放法力fixture補足，不放寬斷言）。`node --test --test-reporter=tap tests/skills2-geometry.test.cjs tests/skills2-vfx-schema.test.cjs tests/skill-vfx-inheritance.test.cjs tests/status-system.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs`61項60過／1失敗；唯一連鎖閃電舊速度數值斷言，以HEAD JS／CSV／Excel唯讀映射重跑相同失敗。合計124項101過／23既有失敗，未改權威數值配合舊測試；既有失敗另含地系／大地守護舊數值、施放fixture及泥沼超神舊行為，不擴修。
+- 其他驗證：`npm.cmd run build`545檔通過；`node tools/config_tables.cjs --apply Skills2`語意變更0、diff檢查通過。主頁skills2 334／bridge315，Worker資源版與skills2 import token加mire-vuln-weaken-range，Protocol內容與版本無變動。資料逐值比對只允許T1新增兩個pct鍵及三階文案，其他群組／階級逐值不變；Excel與CSV所有資料格相符、重建JS一致。
+- Excel：使用者儲存關閉後使用原生Excel COM API改AW122／AX122／AV122、AW123／AX123、AW127／AX127共七格；沿使用者第一階去除射程片語的文案改為動態範圍與新增效果。副本儲存後正常模式重開Saved=true，全工作簿公式／值只改七格，各表UsedRange／圖形數及改動格樣式名稱／NumberFormat／WrapText／列高／欄寬原樣保留；無手工ZIP／XML修改。來源雜湊與獨占鎖檢查後才覆寫，沒有覆蓋尚未儲存工作；未重新設計工作簿格式。
+- 唯讀檢查未改：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、js/combat.js的monsterAtkCfg及命中入口、js/formula.js實際傷害、Status表／js/status.js、tools/skills2-geometry.cjs範圍映射、config_tables及xlsx_to_csv管線、Worker Protocol／shim及既有地系／傳奇／幾何回歸。自我Review確認兩種效果不互相混用、只有泥沼第二階虛弱改降攻（血刃斬同名技能未動）、現有慢速狀態到期規則與範圍／畫面事件不變、主端說明不依賴Worker狀態。無素材變更，不需素材庫Commit。
+- 交付：MIRE-RANGE-VULN-WEAKEN-20261019完成，無本次未完成實作；Commit為本紀錄所在`[Codex] feat: 調整泥沼易傷與虛弱並同步範圍說明`，回覆附編號，可供Review／合併；未合併推送。限制為23項已基準確認的既有失敗、未瀏覽器及長時間戰鬥驗證；下一步重載遊戲查看泥沼各級說明與實戰效果，其他副本需整合本Commit。

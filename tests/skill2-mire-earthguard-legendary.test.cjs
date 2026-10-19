@@ -126,6 +126,9 @@ test('【削弱】：泥沼中的敵人造成的傷害降低，並與【僵化�
   assert.equal(Math.round(c.skill2EnemyDamageFactor(e) * 100), 70, '泥沼中＝ -30%');
   c.applyStatus(e, 'sgStiffen', { val: 50, dur: 5 });
   assert.equal(Math.round(c.skill2EnemyDamageFactor(e) * 100), 35, '與僵化相乘（0.7 × 0.5）');
+  setLevels(c, 'mire', [1, 1, 0, 0, 0, 0, 0]);
+  assert.ok(Math.abs(c.skill2EnemyDamageFactor(e) - 0.835 * 0.7 * 0.5) < 1e-9,
+    '第二階虛弱、傳奇削弱與僵化保持各自乘區');
 });
 
 test('【腐化】：只有「泥沼中且正在被控場」的敵人才多吃易傷', () => {
@@ -134,9 +137,9 @@ test('【腐化】：只有「泥沼中且正在被控場」的敵人才多吃�
   setLevels(c, 'mire', [1, 0, 0, 0, 0, 0, 0]);   // 不投資【虛弱】，才看得出是腐化給的
   const e = enemy(1000, 30, 0);
   c.applyStatus(e, 'sgMire', { val: 50, dur: 5 });
-  assert.equal(c.skill2MireVulnPct(e), 0, '沒被控場＝沒有加成');
+  assert.equal(c.skill2MireVulnPct(e), 11, '沒被控場仍有本體易傷，不追加腐化');
   c.applyEffect(e, 'stun', 2);
-  assert.equal(c.skill2MireVulnPct(e), 30, '暈眩中＝ +30%');
+  assert.equal(c.skill2MireVulnPct(e), 41, '暈眩中＝本體11% + 腐化30%');
   const outside = enemy(1000, 30, 0);
   c.applyEffect(outside, 'stun', 2);
   assert.equal(c.skill2MireVulnPct(outside), 0, '沒在泥沼裡就不算數');
