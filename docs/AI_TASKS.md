@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## THUNDER-PRISON-BODY-20261019 — 永恒雷獄落雷本體被顯示緩衝取消
+
+- Owner：Codex；Done，單一開發者。使用者回報永恒雷獄只有 NPC 藍色受擊、沒有落雷本體；前置現行重施／Preset 接線已完成。開始工作區乾淨、ai/codex；renderer／測試／index／本紀錄／解鎖總表衝突預檢全部乾淨。
+- 允許 js/battle-renderer.js 僅普通落雷起飛／命中緩衝、index.html 對應快取、tests/lightning-vfx-lifecycle.test.cjs 行為回歸、本紀錄及 LV_upgrade_system.md 技能表現說明。禁止技能規則／數值／法力／Worker／Protocol／存檔／配置／Preset／素材與其他副本修改，不合併推送。
+- 根因已重現：thunder-strike 延後 POS_BUFFER_MS 才交 Runtime，目標在權威落地時死亡則 fxGate 取消本體；同一事件存活時可播放。首次施放法力不足是另一條阻擋，使用者回報有受擊特效，本輪不改消耗。
+- 方式／驗收：普通落雷本體與獨立命中事件共用權威時序，不再額外套位置緩衝；明確 delayMs、死亡／缺失目標取消、其他事件緩衝及原傷害結果保留。驗證真實永恒雷獄事件／重施／命中時點、致死前本體可見、Core 正式素材與回收、相依測試／Build／diff；可用時瀏覽器驗證，完成後獨立 Commit 供使用者審查整合。
+- 完成5檔：js/battle-renderer.js 使 thunder-strike／thunder-impact 不再額外套 POS_BUFFER_MS，本體收到時仍檢查目標有效性，明確施放延遲到期時仍走原死亡檢查；index.html renderer 快取190→191；tests/lightning-vfx-lifecycle.test.cjs 新增3項端到端事件／正式素材／時序回歸；本紀錄與LV_upgrade_system.md同步。未改Runtime／Editor／Worker／Protocol／技能表／Preset／素材，無素材庫變更或Commit。
+- 驗證：`node --test --test-reporter=tap tests/lightning-vfx-lifecycle.test.cjs tests/battle-later-queue.test.cjs tests/battle-renderer-pause.test.cjs tests/skill-vfx-inheritance.test.cjs tests/skills2-vfx-schema.test.cjs tests/vfx-tower.test.cjs`43/43；`node --test --test-name-pattern='^THUNDER |^THUNDER-HIT|^THUNDER-TRIBULATION|^THUNDER-MATRIX' tests/vfx-runtime.test.cjs`4/4，合計47/47；`npm.cmd run build`538檔通過；diff檢查通過。使用唯讀fs攔截換回HEAD的renderer重跑本輪8項，既有5項通過、新增3項全部失敗，證明測試能攔住原問題。
+- 既有失敗：額外vfx-startup-loading六項皆因測試bootVfxRuntime環境缺skyEntryPoint；以同樣唯讀HEAD來源驗證六項相同失敗，未修改其斷言或順帶修復。上輪查因的寬範圍雷系測試另有法力fixture不足及金鏈色彩舊斷言，不宣稱全庫全綠。本輪新fixture足夠法力，驗原始表定首次10000消耗、129ms落地、免費重施／冷卻不重設及持續結束回收。
+- 瀏覽器：computer-use技能／IAB，本機隨機port隔離對照頁直接取HEAD與修正版onVfx／目標守門，使用正式Pixi後端／Core／Runtime／shipped素材與兩份雷擊Preset，沒有載入真人存檔。80ms舊版播放0、新版本體1；129ms致死舊版仍0、新版本體＋命中2，已目視完整藍白雷柱；500ms舊版僅藍色命中1、新版完整2，重現使用者描述。Console warn／error0。預覽保存本聊天visualizations/thunder-prison-body-fixed.png；測試頁／服務已關閉、未建立臨時專案檔。
+- 唯讀檢查未改：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、Skills2 CSV／js/skills2.js繼承與重施／法力／天降結算、js/worker/shim.js事件投影、js/vfx-runtime.js跟隨與角色派送、Core／Pixi backend、現行兩份雷擊Preset及shipped素材索引、上述相依回歸。收尾出現使用者config/Excel/Runes.xlsx變更，非本任務、完整保留未提交。
+- 交付：任務THUNDER-PRISON-BODY-20261019完成，無本次未完成功能，可供Review／合併；Commit為本紀錄所在`[Codex] fix: 修正永恒雷獄落雷本體被顯示緩衝取消`，回覆附編號。未合併／推送。限制為未載入真人存檔或跑整個遊戲長戰，瀏覽器採正式顯示管線的隔離事件對照；下一步整合後重載遊戲驗收。
+
 ## HEAVEN-POWER-BOARD-LIFT-20261018 — 星盤上移與滿轉中央整體高亮
 
 - Owner：Codex；Done；單一開發者。使用者回報最下方選中威能的加減鈕碰到邊框，要求整體稍微上移；追加滿轉時中央整個圓盤高亮。前置現行滿轉is-complete狀態與加成已完成；工作區乾淨、fetch及三檔預檢乾淨。

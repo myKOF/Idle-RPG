@@ -5587,7 +5587,8 @@ var BattleRenderer = (function () {
       if (!(S.vfxLoading && deferVfxUntilReady(spec)) && S.vfxrt) S.vfxrt.tryPlay(spec);
       return;
     }
-    if ((spec.variant === 'lightning-chain' || spec.variant === 'lightning-chain-hit') && fxGate(spec)) return;
+    var isThunderStrike = spec.variant === 'thunder-strike';
+    if ((spec.variant === 'lightning-chain' || spec.variant === 'lightning-chain-hit' || isThunderStrike) && fxGate(spec)) return;
     /* 背景分頁不畫特效（與 DOM 版 vfxSetEnabled(false) 同精神）；
        setTimeout 排進來的延遲段也會走到這裡被擋掉。 */
     if (documentHidden()) return;
@@ -5598,8 +5599,9 @@ var BattleRenderer = (function () {
     var isEnemyAttack = spec.cat === 'enemy' && spec.fxKind === 'enemy-attack';
     if (!spec._buffered) {
       spec._buffered = true;
-      // 雷鏈已在 Worker 抵達時結算；再加位置緩衝會讓弱怪先死亡、起手電弧被取消。
-      if (!isEnemyAttack && spec.variant !== 'lightning-chain' && spec.variant !== 'lightning-chain-hit' && spec.variant !== 'flying-thunder') {
+      // 雷鏈與落雷起落依 Worker 時序播放；額外緩衝會讓弱怪先死亡、起手本體被取消。
+      if (!isEnemyAttack && !isThunderStrike && spec.variant !== 'thunder-impact' &&
+          spec.variant !== 'lightning-chain' && spec.variant !== 'lightning-chain-hit' && spec.variant !== 'flying-thunder') {
         spec.delayMs = (spec.delayMs || 0) + POS_BUFFER_MS;
       }
     }
