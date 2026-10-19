@@ -5,6 +5,7 @@
 
 (function () {
   var STORAGE_KEY = 'idle_rpg_gemini_api_key';
+  var MODELS_CACHE_KEY = 'idle_rpg_gemini_models';
 
   function isInternal() {
     if (typeof isInternalServer === 'function') {
@@ -40,6 +41,7 @@
         } else {
           localStorage.removeItem(STORAGE_KEY);
         }
+        localStorage.removeItem(MODELS_CACHE_KEY);
         return true;
       }
     } catch (e) {}
@@ -55,12 +57,8 @@
     return key.slice(0, 6) + '...' + key.slice(-4);
   }
 
-  /* 測試金鑰是否可用 */
-  function testApiKey(key) {
-    var targetKey = key || getApiKey();
-    if (!targetKey) {
-      return Promise.reject(new Error('尚未輸入或儲存金鑰'));
-    }
+  /* 查詢 Google API 獲取該金鑰真正支援的可用生成模型，並快取至本機 */
+  function fetchAvailableModels(targetKey) {
     var url = 'https://generativelanguage.googleapis.com/v1beta/models?key=' + encodeURIComponent(targetKey);
     return fetch(url, { method: 'GET' })
       .then(function (res) {
@@ -73,8 +71,63 @@
         return res.json();
       })
       .then(function (data) {
-        return { ok: true, modelsCount: data.models ? data.models.length : 0 };
+        var models = (data && data.models) || [];
+        var supported = models.filter(function (m) {
+          var methods = m.supportedGenerationMethods || [];
+          var name = (m.name || '').toLowerCase();
+          return methods.indexOf('generateContent') >= 0 &&
+            name.indexOf('embedding') === -1 &&
+            name.indexOf('imagen') === -1 &&
+            name.indexOf('aqa') === -1;
+        }).map(function (m) {
+          return (m.name || '').replace(/^models\//, '');
+        }).filter(Boolean);
+
+        // 排序優先度：包含 flash 的優先（極速），其次 2.0、1.5、pro
+        var ranked = [];
+        ['2.0-flash', '1.5-flash', 'flash', '2.0', '1.5', 'pro'].forEach(function (kw) {
+          supported.forEach(function (name) {
+            if (name.toLowerCase().indexOf(kw) >= 0 && ranked.indexOf(name) === -1) {
+              ranked.push(name);
+            }
+          });
+        });
+        supported.forEach(function (name) {
+          if (ranked.indexOf(name) === -1) ranked.push(name);
+        });
+
+        if (ranked.length && typeof localStorage !== 'undefined') {
+          try { localStorage.setItem(MODELS_CACHE_KEY, JSON.stringify(ranked)); } catch (e) {}
+        }
+        return ranked;
       });
+  }
+
+  /* 取得候選模型：若本機已有快取則 0ms 立即回傳；無快取才連線發現一次 */
+  function getCandidateModels(targetKey) {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        var cached = JSON.parse(localStorage.getItem(MODELS_CACHE_KEY) || 'null');
+        if (Array.isArray(cached) && cached.length > 0) {
+          return Promise.resolve(cached);
+        }
+      }
+    } catch (e) {}
+
+    return fetchAvailableModels(targetKey).catch(function () {
+      return ['gemini-2.0-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-flash', 'gemini-2.5-flash'];
+    });
+  }
+
+  /* 測試金鑰是否可用並更新本機模型快取 */
+  function testApiKey(key) {
+    var targetKey = key || getApiKey();
+    if (!targetKey) {
+      return Promise.reject(new Error('尚未輸入或儲存金鑰'));
+    }
+    return fetchAvailableModels(targetKey).then(function (models) {
+      return { ok: true, modelsCount: models.length, topModel: models[0] || '無' };
+    });
   }
 
   /* 使用 Gemini 將白話文自然語言轉為標準 GM 指令陣列 */
@@ -126,78 +179,73 @@
       '輸入：「技能全部滿級，給我100萬碎片」\n' +
       '輸出：["skillmax all", "scrap 1000000"]\n';
 
-    // 極速模式：直接採用優先級隊列，省去每次 GET /models 的 1~2 秒網路握手開銷
-    var defaultCandidates = [
-      'gemini-2.0-flash',
-      'gemini-1.5-flash',
-      'gemini-2.0-flash-lite',
-      'gemini-1.5-flash-8b',
-      'gemini-1.5-pro'
-    ];
-
-    var candidates = defaultCandidates.slice();
-    if (AiKeySetting._lastWorkingModel && candidates.indexOf(AiKeySetting._lastWorkingModel) >= 0) {
-      candidates = [AiKeySetting._lastWorkingModel].concat(candidates.filter(function (m) { return m !== AiKeySetting._lastWorkingModel; }));
-    }
-
-    var body = {
-      contents: [
-        {
-          parts: [
-            { text: systemInstruction + '\n玩家輸入：「' + userPrompt + '」\n輸出 JSON 陣列：' }
-          ]
-        }
-      ],
-      generationConfig: {
-        temperature: 0.1,
-        response_mime_type: 'application/json'
+    return getCandidateModels(key).then(function (candidates) {
+      if (AiKeySetting._lastWorkingModel && candidates.indexOf(AiKeySetting._lastWorkingModel) >= 0) {
+        candidates = [AiKeySetting._lastWorkingModel].concat(candidates.filter(function (m) { return m !== AiKeySetting._lastWorkingModel; }));
       }
-    };
 
-    function callSingleModel(modelName) {
-      var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(modelName) + ':generateContent?key=' + encodeURIComponent(key);
-      return fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      }).then(function (res) {
-        if (!res.ok) {
-          return res.json().catch(function () { return {}; }).then(function (data) {
-            var msg = (data && data.error && data.error.message) || ('HTTP ' + res.status);
-            throw new Error(msg);
-          });
+      var body = {
+        contents: [
+          {
+            parts: [
+              { text: systemInstruction + '\n玩家輸入：「' + userPrompt + '」\n輸出 JSON 陣列：' }
+            ]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.1,
+          response_mime_type: 'application/json'
         }
-        return res.json();
-      }).then(function (data) {
-        var candidate = data && data.candidates && data.candidates[0];
-        var part = candidate && candidate.content && candidate.content.parts && candidate.content.parts[0];
-        var rawText = (part && part.text) || '';
-        if (!rawText.trim()) throw new Error('AI 未回傳任何指令');
-        var list = JSON.parse(rawText);
-        if (!Array.isArray(list)) {
-          if (typeof list === 'string') list = [list];
-          else throw new Error('AI 回傳格式不正確');
-        }
-        AiKeySetting._lastWorkingModel = modelName;
-        return list.map(function (c) { return String(c).trim(); }).filter(Boolean);
-      });
-    }
+      };
 
-    var lastError = null;
-    function tryModel(index) {
-      if (index >= candidates.length) {
-        var detailMsg = lastError ? (lastError.message || String(lastError)) : '所有備用模型均無法回應';
-        throw new Error('AI 解析失敗：Google Gemini 所有可用備用模型均處於尖峰或無法回應（' + detailMsg + '），請稍候 30 秒至 1 分鐘後再試。');
+      function callSingleModel(modelName) {
+        var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(modelName) + ':generateContent?key=' + encodeURIComponent(key);
+        return fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        }).then(function (res) {
+          if (!res.ok) {
+            return res.json().catch(function () { return {}; }).then(function (data) {
+              var msg = (data && data.error && data.error.message) || ('HTTP ' + res.status);
+              throw new Error(msg);
+            });
+          }
+          return res.json();
+        }).then(function (data) {
+          var candidate = data && data.candidates && data.candidates[0];
+          var part = candidate && candidate.content && candidate.content.parts && candidate.content.parts[0];
+          var rawText = (part && part.text) || '';
+          if (!rawText.trim()) throw new Error('AI 未回傳任何指令');
+          var list = JSON.parse(rawText);
+          if (!Array.isArray(list)) {
+            if (typeof list === 'string') list = [list];
+            else throw new Error('AI 回傳格式不正確');
+          }
+          AiKeySetting._lastWorkingModel = modelName;
+          return list.map(function (c) { return String(c).trim(); }).filter(Boolean);
+        });
       }
-      var modelName = candidates[index];
-      return callSingleModel(modelName).catch(function (err) {
-        lastError = new Error(modelName + ': ' + err.message);
-        console.warn('[AI GM] 模型 ' + modelName + ' 回應異常 (' + err.message + ')，自動切換至下一個備用模型...');
-        return tryModel(index + 1);
-      });
-    }
 
-    return tryModel(0);
+      var lastError = null;
+      function tryModel(index) {
+        if (index >= candidates.length) {
+          try {
+            if (typeof localStorage !== 'undefined') localStorage.removeItem(MODELS_CACHE_KEY);
+          } catch (e) {}
+          var detailMsg = lastError ? (lastError.message || String(lastError)) : '所有備用模型均無法回應';
+          throw new Error('AI 解析失敗：Google Gemini 所有可用備用模型均處於尖峰或無法回應（' + detailMsg + '），請稍候 30 秒至 1 分鐘後再試。');
+        }
+        var modelName = candidates[index];
+        return callSingleModel(modelName).catch(function (err) {
+          lastError = new Error(modelName + ': ' + err.message);
+          console.warn('[AI GM] 模型 ' + modelName + ' 回應異常 (' + err.message + ')，自動切換至下一個備用模型...');
+          return tryModel(index + 1);
+        });
+      }
+
+      return tryModel(0);
+    });
   }
 
   function updateStatusText(statusEl, inputEl) {
