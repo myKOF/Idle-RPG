@@ -1381,6 +1381,9 @@ var VFXRuntime = (function () {
       }
       if (spec.variant === 'water-tide-merge' && !spec.area) keep = Math.max(0, num(spec.dur, 0));
       if (staticVacuum && isFinite(spec.area.lifeSec)) keep = Math.max(0, Number(spec.area.lifeSec));
+      if (spec.variant === 'mire-inferno-pool') {
+        keep = Math.max(0, num(spec.dur, 0));
+      }
       var curtainColumn = role === 'attack' && spec.variant === 'thunder-curtain';
       // 舊事件缺 variant 時沿用既有月牙辨識；新素材依追蹤事件語意判斷。
       var windBody = !staticVacuum && (spec.variant === 'wind-blade-homing' || presetId === 'ground-homing-wind-crescent');
