@@ -373,7 +373,9 @@ test('火球術·火焰增幅：燃燒每作用 1 次疊 0.275% 火傷，且掛�
   const p = playerEnt();
   const m = enemy(100000, 100, 0);
 
-  c.castSkill2(p, [m], 'fireball', 'mv-float');
+  c.FIELD = { player: p };
+  // 本測試從已存在的燃燒開始，避免把投射物命中時間混入疊層節拍。
+  c.sgApplyBurn(m, { dps: 10, dur: 4, interval: .5 });
   assert.equal(c.skill2FireAmpPct(p), 0);
 
   c.GT = 0.5;
@@ -382,7 +384,7 @@ test('火球術·火焰增幅：燃燒每作用 1 次疊 0.275% 火傷，且掛�
 
   c.GT = 1.0;
   c.tickSkill2(0.5, tickCtx(c, p, [m]));
-  assert.equal(Math.round(c.skill2FireAmpPct(p) * 1000) / 1000, 0.55, '無限疊加：第二次作用再疊一層');
+  assert.equal(Math.round(c.skill2FireAmpPct(p) * 1000) / 1000, 0.55, '未達上限：第二次作用再疊一層');
 
   // 掛點：js/legendary.js 的 legendaryElementDamageUp 是全專案唯一的屬性傷害提升收斂點
   const legendary = fs.readFileSync(path.join(root, 'js/legendary.js'), 'utf8');

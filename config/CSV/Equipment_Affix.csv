@@ -157,7 +157,7 @@ all_lock＝全鎖定（不會出現在任何裝備部位上，也不會出現在
 傳奇特效,firepillarResonance,火龍共鳴,0,,,,,,,0,,場上每存在 1 道火龍捲，所有火龍捲造成的傷害 +4%。,fire,firepillar,staff2h,"{""firepillarResonancePct"":4}"
 傳奇特效,firehuntAmplify,增焰,0,,,,,,,0,,火狩的體積與環繞半徑 +25%。,fire,firehunt,orb,"{""firehuntScalePct"":25}"
 傳奇特效,firehuntConcurrent,伴生併發,0,,,,,,,0,,每 1 秒，你的 1 團火狩會飛出攻擊半徑 20 米內的敵人，對目標 10 米內的所有敵人造成 300% 火焰傷害。,fire,firehunt,orb,"{""firehuntLaunch"":{""gap"":1,""m"":20,""aoeM"":10,""pct"":300}}"
-傳奇特效,firehuntBlaze,烈火狩,0,,,,,,,0,,在火狩的持續時間內，每 0.5 秒你的火焰傷害提高 2%（火狩全部消失後結束）。,fire,firehunt,orb,"{""firehuntFireAmp"":{""gap"":0.5,""pct"":2}}"
+傳奇特效,firehuntBlaze,烈火狩,0,,,,,,,0,,在火狩的持續時間內，每 0.5 秒你的火焰傷害提高 2%，最多 50 層（與火焰增幅各自計算層數，火狩全部消失後結束）。,fire,firehunt,orb,"{""firehuntFireAmp"":{""gap"":0.5,""pct"":2,""maxStacks"":50}}"
 傳奇特效,firehuntDetonate,炎爆,0,,,,,,,0,,一個敵人被火狩命中 10 次後會爆炸，對其周圍 6 米內的敵人造成 250% 火焰傷害。,fire,firehunt,orb,"{""firehuntDetonate"":{""hits"":10,""m"":6,""pct"":250}}"
 傳奇特效,firehuntHunter,狩獵者,0,,,,,,,0,,你的火狩數量減半（無條件進位，至少 1 團），但造成的傷害額外 +150%。,fire,firehunt,orb,"{""firehuntHunter"":{""pct"":150}}"
 傳奇特效,rockHeavyArmor,重岩甲,0,,,,,,,0,,岩甲術獲得的生命護盾 +30%。,earth,rockarmor,focus,"{""rockShieldPct"":30}"

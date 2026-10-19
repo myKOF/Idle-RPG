@@ -1,5 +1,20 @@
 # AI_TASKS.md
 
+## FIRE-AMP-SEPARATE-CAPS-20261019 — 火焰增幅與烈火狩各自最多50層
+
+- Owner：Codex；Done；單一開發者。使用者明確確認火球術火焰增幅與傳奇烈火狩各自50層、不共用額度；保留原單層數值／觸發節奏／範圍／持續時間，滿層繼續刷新時間、不繼續增加傷害。
+- 前置：原本兩來源共用sgFireAmp總值；改用兩個原生stack狀態，火球術沿用原狀態及角色、烈火狩新增自身狀態，最終火傷出口加總兩者。允許skills2僅相關累計／查詢／生成資料、data的烈火狩生成資料、status生成資料，Skills2／Status／Equipment_Affix三表對應資料與說明、新fire-amplify-cap回歸與相關火系既有測試、index／bridge／Worker快取、game_formula／LV_upgrade_system／本紀錄。禁止其他技能規則／數值／存檔或Protocol／素材／Preset／其他副本，不合併推送；使用者Skills2與Gem_resonance修改保留，隔離提交。
+- 預檢其餘範圍乾淨；index與Claude ca9e0b65為不同區段快取（對方ui-newforge-visuals，本次data／status／skills2／bridge），無語意相依，依共同祖先三方merge-file乾跑exit0，分段修改免問。
+- 驗收：兩來源0／1／49／50／51及大量同拍、滿層刷新、分別到期／重啟／範圍與擊殺邊界、等級1／10及同時作用獨立額度，火傷出口／實際傷害與狀態快照一致，原生Excel精準修改／新增狀態列／重開無修復、其餘表格資料與格式保留，配置往返／正式Worker與瀏覽器隔離／相依回歸／Build／自我Review後Commit供使用者整合。
+- 完成17檔：火球術第6階以單層值交給原生stack狀態，上限讀Skills2 maxStacks50；Status sgFireAmp改stack／50，烈火狩改獨立sgFirehuntAmp狀態及Equipment_Affix firehuntBlaze maxStacks50，skill2FireAmpPct加總兩來源，保留原火傷唯一出口，不重複加成。兩者單層數值、範圍、節拍與持續時間不變，滿層仍刷新時間；新增狀態沿用既有圖示、無新素材或Preset。移除爆燃／岩甲增幅註解與爆燃狀態說明中已失效的火焰增幅疊法類比，其實際規則不變。
+- 配置：Skills2 AV87／AW87／AX87；Status O38／P38／T38及T74說明、新A96:T96烈火狩狀態列；Equipment_Affix M153／Q153。三份CSV／JS生成資料同源同步，data.js只改烈火狩條目、其他欄與既有註解完整保留。index快取data90／status37／skills2 330／bridge311，Worker資源及三模組匯入同升；game_formula／LV_upgrade_system及本紀錄同步。新增fire-amplify-cap回歸、修正既有火焰增幅測試從已生效燃燒開始的fixture（原本把法力／投射物命中時序混入疊層斷言），不放寬疊層數值。Protocol／存檔／取得與解鎖條件未改，無素材庫Commit。
+- 測試：`node --test --test-reporter=tap tests/fire-amplify-cap.test.cjs`4/4原生引擎，驗等級1／10的49→50→51、200次同拍作用、滿層刷新／到期重起、兩來源同時60次後各50層且分別到期、角色換表／擾動上限／範圍外／火狩消失不續期、真實火傷第50／51次相同及狀態快照stacks／val一致。單層值為明確測試fixture，以免使用者工作區調校改變機制驗收。`node --test --test-reporter=tap --test-name-pattern='火焰增幅|烈火狩' tests/skill2-magic-fire.test.cjs tests/skill2-firehunt-rock-legendary.test.cjs`隔離提交資料2/2通過。
+- 相依回歸：`node --test --test-reporter=tap tests/fire-amplify-cap.test.cjs tests/skill2-status-slots.test.cjs tests/status-system.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/ui-worker-events.test.cjs tests/flame-kagura-attribute.test.cjs tests/bloodfeast-asura-rework.test.cjs`隔離提交資料83項82過／1失敗；STATUS-VFX-4暴風屏障／暴風神體fixture缺少增益，唯讀以HEAD data／status／skills2重跑同項也同樣失敗，非本次造成且未改無關邏輯。`npm.cmd run build`543檔通過，三表apply均零語意差異、diff通過。未跑全庫。
+- Excel：Equipment_Affix鎖檔時保留原檔，使用者確認儲存關閉後完成原生Excel API精準修改，三本正常重開Saved=True無修復提示；唯讀比較原有全部格值／公式／有效樣式、欄寬／行高／檢視／合併／驗證／註解均保留，Status僅新增末列，原篩選狀態無變。Equipment_Affix在原生儲存時將重複的General樣式合併為預設General，逐格有效字型／格式／框線等簽章相同、值與公式未變；沒有手改內部XML。提交由HEAD副本原生同改產生，語意核對僅本任務條目；使用者Skills2及Gem_resonance調整保留未提交。
+- 瀏覽器：隱藏IAB、隨機localhost／seed1019隔離角色、正式Worker與顯示管線，不讀真人存檔。使用現行工作表的單層2%調校，兩來源49層各98%／總196%，50層各100%／總200%；再觸發10次仍各50層／總200%，剩餘時間分別4秒／1秒重新刷新，畫面兩個狀態圖示各顯示50。烈火狩先到期時只撤其100%，火焰增幅仍50層、再到期總加成歸零；原生說明正確顯示各自50層。Console error／warning0，截圖本聊天visualizations/fire-amplify-50.png已目視，分頁／服務關閉。
+- 唯讀未改：AI規範／AGENTS／工作流／prompts/codex.md、combat applyBuff／stackStep／statusEntries與圖示層數投影、legendaryElementDamageUp及雙手補償保護鍵maxStacks、Skills2狀態角色／範圍／燃燒與火狩生命週期、Worker shim／Protocol／VFX狀態同步及上述其餘相依測試、既有素材。自我Review確認獨立鍵不互相覆寫／延時或占額度、原生val=unit×stacks不變、兩來源在火傷出口各加一次、不產生無登記特效來源。
+- 交付：FIRE-AMP-SEPARATE-CAPS-20261019完成，無本次未完成功能，可供Review／合併；Commit為本紀錄所在`[Codex] feat: 火焰增幅與烈火狩各自限制五十層`，回覆附編號。未合併推送；限制為上述既有暴風屏障回歸失敗、隔離角色短測未驗真人長戰，下一步使用者重載8123。
+
 ## BLOODFEAST-ASURA-REWORK-20261019 — 狂血盛宴百層失血增傷與霸王拳必定觸發連擊
 
 - Owner：Codex；Done；單一開發者。使用者要求狂血盛宴保留擊殺延長狂怒、失血每1%增傷基值1%／每級+0.1%且最高100層，移除原描述的每連擊數追加附近普攻目標；阿修羅霸王拳保留定時全傷／持續時間／擊殺延長，新增期間連擊觸發率100%，連擊數及不足一次的小數機率沿用原規則。失血沿用當前生命缺口口徑，治療降低加成。
