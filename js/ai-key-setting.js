@@ -141,23 +141,25 @@
             var methods = m.supportedGenerationMethods || [];
             return methods.indexOf('generateContent') >= 0;
           });
-          // 優先找 flash，其次為 1.5 系列，最後退回任意可用候選
+          // 優先找官方最新指定的 gemini-3.8-flash，避開對新用戶已退役的舊模型（如 2.5 系列）
           var match = candidates.find(function (m) {
-            var name = (m.name || '').toLowerCase();
-            return name.indexOf('flash') >= 0;
+            return (m.name || '').indexOf('gemini-3.8-flash') >= 0;
           }) || candidates.find(function (m) {
             var name = (m.name || '').toLowerCase();
-            return name.indexOf('1.5') >= 0;
+            return name.indexOf('3.8') >= 0;
+          }) || candidates.find(function (m) {
+            var name = (m.name || '').toLowerCase();
+            return name.indexOf('flash') >= 0 && name.indexOf('2.5') === -1;
           }) || candidates[0];
 
           if (match && match.name) {
             cachedModelName = match.name.replace(/^models\//, '');
             return cachedModelName;
           }
-          return 'gemini-1.5-flash-latest';
+          return 'gemini-3.8-flash';
         })
         .catch(function () {
-          return 'gemini-1.5-flash-latest';
+          return 'gemini-3.8-flash';
         });
     }
 

@@ -148,7 +148,7 @@ test('parseNaturalCommand 成功透過 Gemini 轉譯白話指令為 GM 指令陣
       ok: true,
       json: async () => ({
         models: [
-          { name: 'models/gemini-1.5-flash-latest', supportedGenerationMethods: ['generateContent'] }
+          { name: 'models/gemini-3.8-flash', supportedGenerationMethods: ['generateContent'] }
         ]
       })
     };
