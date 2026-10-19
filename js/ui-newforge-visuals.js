@@ -10,6 +10,7 @@ var NewForgeVisuals = (function () {
   function active() { return (typeof UI === 'undefined' || UI.tab === 'newforge') && !document.hidden; }
   function reduced() { return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches; }
   function position(entry, time) {
+    if (!(entry.duration > 0)) return entry.to;
     var p = Math.max(0, Math.min(1, (time - entry.at) / entry.duration));
     return entry.from + (entry.to - entry.from) * p;
   }
@@ -17,11 +18,16 @@ var NewForgeVisuals = (function () {
     if (state.enabled && state.visible && active()) state.time += Math.max(0, time - state.lastAt);
     state.lastAt = time;
   }
-  function move(entry, target, duration, time) {
+  // 輸送帶等速：每週期前進一格，所有位移（換位、入場、退場）都以同一速度換算時間，
+  // 不再用「剩餘週期」當時長（距離不同→速度忽快忽慢）。
+  function travelMs(distance, cycle) {
+    return Math.max(minimumEntryMs * Math.min(1, distance / pitch), distance / pitch * cycle * 1000);
+  }
+  function move(entry, target, cycle, time) {
     entry.from = position(entry, time);
     entry.to = target;
     entry.at = time;
-    entry.duration = duration;
+    entry.duration = travelMs(Math.abs(target - entry.from), cycle);
   }
   function keysFor(items) {
     var counts = Object.create(null);
@@ -164,9 +170,6 @@ var NewForgeVisuals = (function () {
     var keys = keysFor(items), live = new Set(keys);
     var max = Math.max(1, Math.floor((width + 4) / pitch));
     var cycle = Math.max(.01, Number(fu.cycleDurationSec) || NEW_FORGE_INTERVAL);
-    var remaining = Number(fu.cycleRemainingSec);
-    // 拆解可比畫面更新更快；顯示層至少保留一段能辨識的入場，不延後權威結算。
-    var duration = Math.max(minimumEntryMs, (Number.isFinite(remaining) && remaining > 0 ? remaining : cycle) * 1000);
     var shown = new Set(), incoming = 0;
     items.slice(0, max).forEach(function (item, i) {
       var key = keys[i], entry = state.entries.get(key);
@@ -174,20 +177,21 @@ var NewForgeVisuals = (function () {
       if (!entry) {
         var chip = makeChip(item);
         chip.setAttribute('data-nf-item-id', item.id === undefined ? key : String(item.id));
-        var origin = width + incoming++ * pitch;
+        // 新件從目標格右側一格滑入（與帶上其他件同速），不再從畫面右緣飛奔而來。
+        var origin = Math.min(width + incoming++ * pitch, i * pitch + pitch);
         chip.style.transform = 'translate3d(' + origin + 'px,-50%,0)';
         node.appendChild(chip);
-        entry = { node: chip, from: origin, to: i * pitch, at: state.time, duration: duration,
+        entry = { node: chip, from: origin, to: i * pitch, at: state.time, duration: travelMs(origin - i * pitch, cycle),
           pendingEnter: !state.visible || !active() };
         state.entries.set(key, entry);
       } else if (entry.pendingEnter && state.visible && active()) {
-        entry.from = width + incoming++ * pitch;
+        entry.from = Math.min(width + incoming++ * pitch, i * pitch + pitch);
         entry.to = i * pitch;
         entry.at = state.time;
-        entry.duration = duration;
+        entry.duration = travelMs(entry.from - entry.to, cycle);
         entry.pendingEnter = false;
       } else if (entry.exiting || entry.to !== i * pitch || state.cycle !== cycle) {
-        move(entry, i * pitch, duration, state.time);
+        move(entry, i * pitch, cycle, state.time);
       }
       entry.exiting = false;
     });
@@ -195,8 +199,7 @@ var NewForgeVisuals = (function () {
       if (shown.has(key)) return;
       if (live.has(key) || !state.visible || !active()) { entry.node.remove(); state.entries.delete(key); }
       else if (!entry.exiting) {
-        var entering = Math.max(0, entry.at + entry.duration - state.time);
-        move(entry, -pitch, entering + Math.max(80, Math.min(200, cycle * 250)), state.time);
+        move(entry, -pitch, cycle, state.time);
         entry.exiting = true;
       }
     });
