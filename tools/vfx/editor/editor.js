@@ -934,6 +934,7 @@
     { key: 'enabled', label: 'enabled', kind: 'bool', default: true },
     { key: 'assetId', label: 'assetId', kind: 'asset' },
     num('zIndex', 'zIndex', 1),
+    { key: 'sortByY', label: '依當前 Y 位置排序', kind: 'bool', default: false },
     vec('position', 'position'),
     deg('rotation', 'rotation(°)'),
     vec('scale', 'scale'),

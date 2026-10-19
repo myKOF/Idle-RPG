@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## ROCKARMOR-OCCLUSION-20261019 — 岩甲石碑與角色及彼此前後排序
+
+- Owner：Codex；Done；單一開發者。使用者兩張圖要求近側石碑遮住角色、遠側石碑在角色後，石碑彼此依順時針軌道實際遠近換位。已修正固定zIndex不換序、角色穿透輪廓獨立頂層蓋住近側石碑；保持既有軌跡／大小／配色／轉速／技能規則。
+- 範圍：VFX Core通用sortByY布林與schema／Editor勾選控制，岩甲及天地逆返／三超神五份Preset與素材庫來源的排序資料、rockarmor-objects作者產生器；Runtime近側岩甲專用後端及battle-renderer輪廓後的近側容器，原生回歸rockarmor-depth，相關快取、VFX schema／岩甲交付文件／LV_upgrade_system／本紀錄。禁止模擬／表格／Protocol／存檔／素材圖片／其他技能特效；無新素材，保留全工作區其他修改，不合併推送。
+- 預檢允許範圍與文件全部無其他來源修改。驗收一圈與跨圈的六石碑排序／plate-glow-rune堆疊、近側遮角色輪廓／遠側不遮、續命不重播／移動／卸下回收、五Preset與Editor一致、未使用新排序欄的舊Preset逐值不變、schema／序列化／舊Editor拒寫、原生GPU及正式Worker隔離場景／Build／匯出檢查／自我Review，素材庫先Commit再遊戲Commit。
+- 修改檔案：js/vfx-core.js、js/vfx-runtime.js、js/battle-renderer.js、index.html、tools/vfx/editor/{editor.js,index.html}、tools/vfx/authoring/author/rockarmor-objects.cjs、vfx/presets/{aura-rockarmor-stone,aura-earth-reversal,aura-rockarmor-stone-08,aura-rockarmor-stone-09,aura-rockarmor-stone-10}.json、tests/rockarmor-depth.test.cjs、docs/vfx/VFX_CORE_AND_PRESET_SCHEMA.md、docs/ROCKARMOR_OBJECTS_VFX_TASK.md、LV_upgrade_system.md、本紀錄。素材庫同名五份Preset逐位元一致；基本岩甲來源同步目前遊戲已提交的位置，遊戲五份移除排序欄後逐值等於HEAD。沒有新圖片／第三方素材／layout修改。
+- 檢查未改：js/vfx-pixi-backend.js、tools/vfx/editor/save-guard.js、tests/vfx-runtime.test.cjs、tests/player-outline.test.cjs、vfx/shipped-assets.json及既有岩甲貼圖。同副本後續SHIELD-AMP-LIFE-ONLY任務的Skills2表／js/skills2.js／game_formula／skill2-earth回歸不屬本提交；共用LV／任務紀錄只提交本段。
+- 驗證：node --test --test-reporter=tap tests/rockarmor-depth.test.cjs，5/5通過（五Preset各165幀、實際Y／父子變換／投影／粒子、序列化／非法型別、移動續命／回收、輪廓容器路由）。擴大執行rockarmor-depth、vfx-core、vfx-core-hierarchy、vfx-runtime、vfx-ground-plane、vfx-background、vfx-editor-layers、vfx-editor-cache-versions、vfx-editor-guard、vfx-preset-usage、vfx-preset-cost、player-outline共442項：438通過、4項既有失敗；以HEAD三支程式唯讀載入重跑，FIELD持續本體分層、CATALOG-3 bolt-sky-purple根群組、CHAIN金雷色碼、STARFALL-TAIL出生位置／壽命四項同樣失敗，未擴修。
+- npm.cmd run build：545檔通過；node tools/vfx/export-assets.cjs --check：已最新；git diff --check：通過。原生GPU Editor檢查sortByY勾選與藍色石碑換序，正式Worker隔離場景確認天地逆返與超重岩之術石碑遮住角色及輪廓，兩頁console警告／錯誤均零；截圖rockarmor-depth-game.png／rockarmor-depth-editor.png保存於本次視覺交付目錄。自我Review確認近側專用後端僅岩甲使用、缺省回退原後端、生命週期清理完整。
+- 已知限制：擴大回歸上述4項既有失敗；未做長時間壓力測試。未完成：無本需求缺項。下一步：使用者重載127.0.0.1:8123檢視；Editor未儲存工作先下載／另存，再重載新版以免舊頁覆寫。可合併本任務，未合併／推送develop；遊戲Commit即本段首次加入的提交，素材庫Commit為321360b。
+
 ## FIREGOD-TALLER-FLAMES-20261019 — 火神降臨火圈加高與強化燃燒感
 
 - Owner：Codex；Done；單一開發者。使用者要求火焰再高、明顯、燃燒感更強；僅調既有24個圈邊發射器的火焰高度／密度／亮色／升空，保留作用半徑、圈邊位置、角色跟隨、地面投影及傷害節拍。

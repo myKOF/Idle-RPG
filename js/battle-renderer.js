@@ -6720,6 +6720,7 @@ var BattleRenderer = (function () {
        「沒有被 S.fx 追蹤」的孩子全部 destroy，Core 的節點會被當成孤兒清掉。 */
     var presetZone = new PIXI.Container();
     var presetFx = new PIXI.Container();
+    var actorFront = new PIXI.Container();
     var airBack = new PIXI.Container();
     airBack.sortableChildren = true;
     var airFx = new PIXI.Container();
@@ -6758,6 +6759,8 @@ var BattleRenderer = (function () {
     world.addChild(entity);
     world.addChild(groundOver); world.addChild(presetFx);
     world.addChild(outlineLayer);
+    // 近側石碑是實體遮擋，必須位於角色與穿透輪廓前方。
+    world.addChild(actorFront);
     /* 場景根＝地板＋world。開了輕微透視（見 PERSPECTIVE_TOP_SCALE）時它不掛在 stage 上，
        每幀先畫進離屏貼圖再由透視網格貼到畫面；沒開就直接掛在 stage 上。由 syncPerspective 決定。 */
     var sceneRoot = new PIXI.Container();
@@ -6828,7 +6831,7 @@ var BattleRenderer = (function () {
 
     S.layers = {
       world: world, zone: zone, entity: entity, fx: fx, float: floatLayer,
-      presetZone: presetZone, presetFx: presetFx, airBack: airBack, airPlayer: airPlayer,
+      presetZone: presetZone, presetFx: presetFx, actorFront: actorFront, airBack: airBack, airPlayer: airPlayer,
       airFx: airFx, enemyAir: enemyAir, presetAir: presetAir, presetBillboard: presetBillboard,
       groundUnder: groundUnder, groundOver: groundOver,
       outline: outlineLayer,
@@ -7449,6 +7452,7 @@ var BattleRenderer = (function () {
       projectSceneTransform: projectSceneTransform,
       fxContainer: S.layers.presetFx,
       fxDepthContainer: S.layers.entity,
+      actorFrontContainer: S.layers.actorFront,
       zoneContainer: S.layers.presetZone,
       groundScale: GROUND_Y_SCALE,
       ctx: {
