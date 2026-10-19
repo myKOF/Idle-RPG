@@ -1,5 +1,21 @@
 # AI_TASKS.md
 
+## DISINTEGRATE-END-ONCE-20261019 — 崩解只在狀態結束時爆炸一次並移除飛彈
+
+- Owner：Codex；Done；單一開發者。使用者確認崩解應縮短中毒／流血間隔，作用結束時才各爆炸一次範圍傷害，非每跳爆炸或飛彈彈射，追加持續時間基值+3秒、每級+0.3秒。前置現行DOT／零日感染與血刃感染飛行完成；已有Skills2 Excel／CSV／生成JS的使用者血刃調整，完整保留。
+- 允許js/combat.js僅狀態自然結束掛點、js/skills2.js僅崩解結算／生成同源資料／必要說明、Skills2 Excel／CSV僅崩解子彈／速度／說明、tools/skills2-vfx.cjs與skills2-geometry.cjs相應契約、相依回歸、主頁／bridge／Worker必要快取、LV_upgrade_system.md／game_formula.md／VFX欄位說明與本紀錄。禁止更改其他技能規則／使用者血刃數值／存檔格式／協議內容／Preset／素材／其他副本，不合併推送。衝突預檢無外部來源，本副本使用者未提交調整依原值保留。
+- 規則：每個中毒／流血狀態自然結束時一次，零日感染提前結清並移除也算結束且只一次；未結束不爆炸，保持加速與每跳傷害。爆炸按完整期間總傷及表定百分比對半徑內其他存活目標直接結算，中心只播一次配置爆炸，不發射崩解飛彈；毒霧感染自己的飛行流程保留。
+- 驗收：自然到期含無殘額、提前結清、重複tick不重炸、期間多跳／加速／無敵／非血毒／半徑／傷害／視覺一致及毒霧飛行回歸，Excel精準修改／來源往返／格式與開啟檢查，正式Worker與瀏覽器、Build／diff後獨立Commit供使用者審查。
+- 追加明確需求：崩解另延長流血與中毒持續時間，配置基值sec=3、secPer=0.3；沿既有基值＋每級增量×等級計算，延長時間計入爆炸完整期間總傷。納入同一修正、Skills2效果JSON／模板／說明與相關測試；初次塗抹及傳染只套一次。
+- 完成15檔：combat將崩解從每次跳傷改到自然到期補完殘額後；skills2移除崩解飛行佇列與命中錯開、保留零日提前結清的一次爆炸，DOT來源規格加入表定延長時間，傳染沿用規格不重加。Excel／CSV／生成JS僅崩解速度／子彈清空、sec=3／secPer=0.3與描述；tools兩份契約拒絕崩解飛彈／速度並更新觸發說明，兩份測試／VFX欄位文件／game_formula／LV_upgrade_system／任務紀錄及index／bridge／Worker快取同步（skills2 326、combat89、bridge307，Worker disintegrate-end-once-duration）。沒有修改其他技能行為、存檔／Protocol版本、解鎖、Preset或素材。
+- 測試指令／結果：`node --test --test-reporter=tap --test-name-pattern='崩解|血刃斬子彈|bloodblade poison spread|flight speed uses|migrated speed' tests/skill2-ult-evolution.test.cjs tests/skills2-flight-speed.test.cjs`10/10；`node --test --test-reporter=tap tests/skills2-vfx-schema.test.cjs tests/skill-vfx-inheritance.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/combat-dot-log.test.cjs tests/status-system.test.cjs`57/57，合計67/67。暫存的獨立提交版本也重跑同67項與Skills2 apply零語意差異，全部通過。`npm.cmd run build`539檔通過，diff檢查通過。新回歸用修改前HEAD runtime唯讀攔截時，作用期間誤炸／到期空餘額漏炸／零日飛彈與缺少延長時間確實失敗；沒有降低正確性或改權威數值配合測試。
+- 擴大回歸限制：上述八檔全跑共132項，修改後110過／22失敗；同一組測試對修改前HEAD runtime也有同22項其他技能既有失敗，另外5項本輪回歸失敗，修正後沒有新增失敗。既有失敗集中突刺／斬擊／飛刀／疾風／血刃其他傳奇／戰神體與冰箭飛行測試的舊數值或施放fixture，不擴大修改。本輪未跑全庫／長時間戰鬥。
+- 原生Excel驗收：Spreadsheets API試匯入將空格誤讀為331，候選檔被拒絕、未覆蓋來源，改依AI_RULES 8.5使用Excel COM API。使用者儲存關閉開啟中的Skills2後，精準改AG51／AP51／AV51／AW51／AX51／AY51六格（只在原效果JSON加sec／secPer）。與修改前使用者剛儲存的備份逐格比對僅六格改變，三頁公式、所有有效儲存格樣式及樣式／圖形／表格資源原樣保留；工作檔與獨立提交xlsx皆實際以Excel正常重開，無修復提示、Saved=true。Excel重存HEAD副本只另正規化既有空白註解文字框的預設direction:ltr，形狀數量／識別／幾何與內容保留。沒有手工寫ZIP/XML。
+- 正式Worker／瀏覽器：原生sim engine載入完整Worker，650級／72層／單流血配置，Lv10延長6秒、使用者表下持續11秒；多次跳傷爆炸0／飛行0，到期爆炸1／飛行0，後續重檢不重炸，爆炸200基準樣例與實際表定全期間傷害皆一致。IAB完整正式遊戲／Pixi／Runtime／配置素材、隨機localhost／seed1019隔離角色相同結果：延長6秒／11秒狀態、結束165083周邊傷害／僅burst-blood，毒霧感染對照仍產生proj-poison-drop飛行。Console error／warn0；診斷只記錄、配置fixture／控制入口僅暫時HTTP服務提供，未讀玩家存檔、未進產品來源。保留visualizations/disintegrate-end-once-duration.png驗證畫面，測試頁／服務已關閉。
+- 提交隔離：使用者同時編輯的飛刀／突刺／斬擊描述、飛刀冷卻增量與血刃數值完整保留在工作區／Excel，未混進本次Commit。以HEAD Excel副本經原生API只改本次六格，再生成相應CSV／JS literal供index提交；工作檔則仍保留使用者最新調整並同步JS。提交內容中只有崩解資料變更，其他群組／階級資料語意與HEAD相同。
+- 唯讀檢查未改：共通規範／AGENTS／AI_WORKFLOW／prompts/codex.md、Status表與狀態API、skills2傳染／零日／屍爆／延長原始規格、worker shim事件與Protocol、原生sim engine、正式battle-renderer／Core／Runtime及burst-blood／proj-poison-drop、build／配置工具來源。沒有新素材，Effects-Materials無本次修改、不需素材Commit。
+- 交付：DISINTEGRATE-END-ONCE-20261019功能完成，無本次未完成項；Commit為本紀錄所在`[Codex] fix: 修正崩解到期爆炸並延長血毒持續時間`，回覆附編號。可就本次範圍審查合併，擴大回歸22項既有失敗如上；未合併／推送，下一步使用者在8123重新載入驗收，其他副本須整合本Commit才會生效。
+
 ## THUNDER-WORKER-ZERO-SCALE-20261019 — 落雷共用本體被 Worker 未指定倍率縮成零
 
 - Owner：Codex；Done，單一開發者。延續前次回報：永恒雷獄與殛道落雷只有藍色受擊、仍無落雷本體。前次僅驗隔離事件、漏掉 Worker 的 sizeMult=0 訊息，原結論不足；本次以正式完整遊戲／Worker／鏡頭場景重現。使用者最後確認8123已恢復正常。

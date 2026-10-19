@@ -1338,13 +1338,13 @@ test('【萬毒血霧】：領域內每 0.5 秒疊一層萬毒侵蝕，且只作
   assert.equal(far.dots.length, 0, '領域外不受影響');
 });
 
-test('【崩解】：保留狀態、加速作用，每跳以完整期間總傷爆炸', () => {
+test('【崩解】：保留加速持續傷害，只在狀態結束時爆炸一次且不發射子彈', () => {
   const c = loadContext(['js/legendary.js']);
   stubHits(c); stubVfx(c);
   const hits = stubDerived(c);
   forceRolls(c, 0.999);
   maxLevels(c, 'bloodblade'); equip(c, 'bloodblade');
-  const p = playerEnt(); c.FIELD = { player: p };
+  const p = playerEnt(); p.mp = 1000000; c.FIELD = { player: p };
 
   const plain = enemy(1e12, 3 * M, 0);
   c.castSkill2(p, [plain], 'bloodblade', 'mv-float');
@@ -1352,7 +1352,7 @@ test('【崩解】：保留狀態、加速作用，每跳以完整期間總傷�
 
   setUlt(c, 'bloodblade', 'disintegrate');
   c.SKILLS2.bloodblade.ult[2].triggerVfx.projectile='configured-poison-flight';
-  hits.length = 0; p.mp = 200;
+  hits.length = 0; p.mp = 1000000;
   const main = enemy(1e12, 3 * M, 0);
   const bystander = enemy(1e12, 3 * M, 2 * M);      // 距離 2 米 < 6 米
   c.castSkill2(p, [main, bystander], 'bloodblade', 'mv-float');
@@ -1360,45 +1360,75 @@ test('【崩解】：保留狀態、加速作用，每跳以完整期間總傷�
   assert.equal(main.dots.length, 2);
   assert.equal(hits.length, 0, '塗抹不應當場結清或爆炸');
   const d=bleedOf(main);
-  assert.ok(Math.abs(d.interval-Math.max(.1,plainBleed.interval*.2))<1e-9);
+  const gapFactor=1-c.sgUltVal(c.sgUlt('bloodblade','disintegrate'),'gapPct')/100;
+  assert.ok(Math.abs(d.interval-Math.max(.1,plainBleed.interval*gapFactor))<1e-9);
   assert.ok(Math.abs(d.dps*d.interval-plainBleed.dps*plainBleed.interval)<1e-6,'每跳傷害不變');
-  assert.equal(d.dur,plainBleed.dur);
-  main.dots=[d]; // 分開驗證單種狀態的每次結算
+  assert.equal(d.dur,plainBleed.dur+c.sgUltVal(c.sgUlt('bloodblade','disintegrate'),'sec'));
+  main.dots=[d]; // 分開驗證單種狀態的結束
   c.GT=d.interval/2;c.tickStatuses(main,d.interval/2,{enemies:[main,bystander]});assert.equal(hits.length,0);
   c.GT=d.interval;c.tickStatuses(main,d.interval/2,{enemies:[main,bystander]});
-  assert.equal(hits.filter(h=>h.ent===bystander).length,0,'填入子彈時不得提前結算');
-  c.GT=Math.max(...c.SKILL2_RT.projectiles.map(p=>p.endAt))+.001;
-  c.sgTickFlyingProjectiles(.1,{getEnemies:()=>[main,bystander]});
+  assert.equal(hits.filter(h=>h.ent===bystander).length,0,'跳傷期間不爆炸');
+  c.GT+=d.interval*3;c.tickStatuses(main,d.interval*3,{enemies:[main,bystander]});
+  assert.equal(hits.filter(h=>h.ent===bystander).length,0,'同幀多跳也不提前爆炸');
+  c.GT=d.until;c.tickStatuses(main,.1,{enemies:[main,bystander]});
   const pct = c.sgVal(c.SKILLS2.bloodblade.ult[2].fx, 'pct', c.SG_TIER_MAX_LV);
   const onBystander = hits.filter((h) => h.ent === bystander).map((h) => h.amount);
-  assert.ok(onBystander.length >= 1, '周圍的敵人要被爆炸波及');
+  assert.equal(onBystander.length, 1, '周圍敵人在狀態結束時只被波及一次');
   assert.equal(onBystander[0],Math.round(d.dps*d.dur*pct/100));
-  hits.length=0;c.GT+=d.interval*3+.001;c.tickStatuses(main,d.interval*3+.001,{enemies:[main,bystander]});
-  c.GT=Math.max(...c.SKILL2_RT.projectiles.map(p=>p.endAt))+.001;
-  c.sgTickFlyingProjectiles(.1,{getEnemies:()=>[main,bystander]});
-  assert.equal(hits.filter(h=>h.ent===bystander).length,3,'三跳須爆炸三次');
+  assert.equal(c.SKILL2_RT.projectiles.length,0,'舊配置仍填子彈也不能生成崩解飛彈');
+  c.GT+=10;c.tickStatuses(main,10,{enemies:[main,bystander]});
+  assert.equal(hits.filter(h=>h.ent===bystander).length,1,'後續tick不重複爆炸');
 });
 
-test('【崩解】：中毒成長、傳染不重複加速、致死跳與半徑／特效一致',()=>{
+test('【崩解】：中毒成長、傳染不重複加速，到期致死仍只播一次範圍爆炸',()=>{
  const c=loadContext();const events=stubVfx(c);const hits=stubDerived(c);
  maxLevels(c,'bloodblade');equip(c,'bloodblade');c.FIELD={player:playerEnt()};
  setUlt(c,'bloodblade','disintegrate',1);
  c.SKILLS2.bloodblade.ult[2].triggerVfx.projectile='configured-poison-flight';
  const spec=c.sgBloodbladeDotSpec(c.getStats(),[10,10,10,10,10,10,10],c.SKILLS2.bloodblade.tiers,'poison');
- assert.ok(Math.abs(spec.interval-.28)<1e-8);
- const main=enemy(1,30,0),near=enemy(1e12,30,20),far=enemy(1e12,3000,0);
+ const gapPct=c.sgUltVal(c.sgUlt('bloodblade','disintegrate'),'gapPct');
+ assert.ok(Math.abs(spec.interval-Math.max(.1,c.SKILLS2.bloodblade.tiers[3].fx.dotGap*(1-gapPct/100)))<1e-8);
+ const main=enemy(1e12,30,0),near=enemy(1e12,30,20),far=enemy(1e12,3000,0);
  c.sgApplyBloodbladeDot(main,'poison',spec);
  c.sgApplyBloodbladeDot(near,'poison',main.dots[0],main.dots[0].dur);
  assert.equal(near.dots[0].interval,main.dots[0].interval);
- const dot=main.dots[0];c.GT=.28;
-  assert.equal(c.tickStatuses(main,.28,{enemies:[main,near,far]}),true);
+ const dot=main.dots[0];c.GT=spec.interval;
+  assert.equal(c.tickStatuses(main,spec.interval,{enemies:[main,near,far]}),false);
   assert.equal(hits.filter(h=>h.ent===near).length,0);
-  c.GT=Math.max(...c.SKILL2_RT.projectiles.map(p=>p.endAt))+.001;
-  c.sgTickFlyingProjectiles(.1,{getEnemies:()=>[near,far]});
+  assert.equal(events.filter(e=>e.variant==='blood-explosion').length,0);
+  main.hp=1;dot.acc=.1;c.GT=dot.until;
+  assert.equal(c.tickStatuses(main,.1,{enemies:[main,near,far]}),true);
  assert.equal(hits.filter(h=>h.ent===near)[0].amount,Math.round(dot.dps*dot.dur*.55));
  assert.equal(hits.filter(h=>h.ent===far).length,0);
  const boom=events.find(e=>e.variant==='blood-explosion');assert.ok(boom);
  assert.equal(boom.area.r,60);assert.equal(boom.preserveDeadTargets,true);
+ assert.equal(events.filter(e=>e.variant==='blood-explosion').length,1);
+ assert.equal(events.filter(e=>e.variant==='blood-flight').length,0);
+});
+
+test('【崩解】：流血與中毒延長3秒及每級0.3秒，傳染不重複延長',()=>{
+ const c=loadContext(),events=stubVfx(c);stubDerived(c);
+ maxLevels(c,'bloodblade');equip(c,'bloodblade');c.FIELD={player:playerEnt()};
+ const tiers=c.SKILLS2.bloodblade.tiers,lvs=[10,10,10,10,10,10,10],st=c.getStats();
+ const base={};for(const role of ['bleed','poison'])base[role]=c.sgBloodbladeDotSpec(st,lvs,tiers,role);
+ const fx=c.SKILLS2.bloodblade.ult[2].fx;assert.equal(fx.sec,3);assert.equal(fx.secPer,.3);
+ for(const lv of [1,10]){
+  setUlt(c,'bloodblade','disintegrate',lv);
+  for(const role of ['bleed','poison']){
+   const spec=c.sgBloodbladeDotSpec(st,lvs,tiers,role);
+   assert.equal(spec.dur,base[role].dur+3+.3*lv);
+   assert.ok(Math.abs(spec.dps*spec.interval-base[role].dps*base[role].interval)<1e-6);
+   const source=enemy(1e12,0,0),recipient=enemy(1e12,20,0);
+   c.sgApplyBloodbladeDot(source,role,spec);
+   c.sgApplyBloodbladeDot(recipient,role,source.dots[0],source.dots[0].dur);
+   assert.equal(recipient.dots[0].dur,spec.dur);
+   assert.equal(source.dots[0].until,c.GT+spec.dur);
+   c.GT=source.dots[0].until-(3+.3*lv);
+   c.tickStatuses(source,.1,{enemies:[source,recipient]});
+   assert.equal(source.dots.length,1,'原本持續時間到達時仍持續');
+   assert.equal(events.filter(e=>e.variant==='blood-explosion').length,0);
+  }
+ }
 });
 
 test('血刃斬子彈：來源座標與時間同步，抵達才感染，目標死亡不命中',()=>{
@@ -1433,6 +1463,39 @@ test('【崩解】：間隔保底且無敵不觸發爆炸，非血毒狀態不�
  c.tickStatuses(e,1,{enemies:[e]});assert.equal(events.length,0);
  c.effectActive=effectActive;e.dots[0].sid='sgBurn';
  c.tickStatuses(e,.1,{enemies:[e]});assert.equal(events.filter(x=>x.variant==='blood-explosion').length,0);
+});
+
+test('【崩解】：到期沒有跳傷殘額也各爆炸一次，提前死亡不冒充狀態到期',()=>{
+ const c=loadContext();const events=stubVfx(c);const hits=stubDerived(c);
+ maxLevels(c,'bloodblade');equip(c,'bloodblade');c.FIELD={player:playerEnt()};setUlt(c,'bloodblade','disintegrate',1);
+ const main=enemy(1e12,0,0),near=enemy(1e12,20,0);
+ for(const role of ['bleed','poison'])c.sgApplyBloodbladeDot(main,role,{dps:100,dur:2,interval:.5});
+ const until=main.dots[0].until;c.GT=until;
+ c.tickStatuses(main,.1,{enemies:[main,near]});
+ assert.equal(events.filter(e=>e.variant==='blood-explosion').length,2,'兩個結束的狀態各一次');
+ assert.equal(hits.filter(h=>h.ent===near).length,2);
+ assert.equal(main.dots.length,0);
+ c.tickStatuses(main,.1,{enemies:[main,near]});
+ assert.equal(events.filter(e=>e.variant==='blood-explosion').length,2,'同一時刻重跑也不重炸');
+ events.length=0;hits.length=0;
+ const weak=enemy(1,0,0);c.sgApplyBloodbladeDot(weak,'bleed',{dps:100,dur:2,interval:.5});
+ c.GT+=.5;c.tickStatuses(weak,.5,{enemies:[weak,near]});
+ assert.equal(weak.hp,0);assert.equal(events.filter(e=>e.variant==='blood-explosion').length,0);
+});
+
+test('【崩解】：零日感染提前結清時只爆炸一次，不等飛彈或再次到期',()=>{
+ const c=loadContext();const events=stubVfx(c);const hits=stubDerived(c);
+ maxLevels(c,'bloodblade');equip(c,'bloodblade');c.FIELD={player:playerEnt()};setUlt(c,'bloodblade','disintegrate',1);
+ forceRolls(c,0);
+ const main=enemy(1e12,0,0),near=enemy(1e12,20,0);
+ c.sgApplyBloodbladeDot(main,'bleed',{dps:100,dur:2,interval:.5});
+ c.GT=.5;c.sgTickBloodDots(.5,{pEnt:c.FIELD.player,getEnemies:()=>[main,near],floatSel:'mv-float'});
+ assert.equal(main.dots.length,0,'剩餘持續傷害結清後移除原狀態');
+ assert.equal(events.filter(e=>e.variant==='blood-explosion').length,1);
+ assert.equal(hits.filter(h=>h.ent===near)[0].amount,110,'以完整期間總傷乘表定爆炸比例');
+ assert.equal(c.SKILL2_RT.projectiles.length,0);
+ c.GT=3;c.tickStatuses(main,.1,{enemies:[main,near]});
+ assert.equal(events.filter(e=>e.variant==='blood-explosion').length,1);
 });
 
 /* ---- 13) 雙刀亂舞的五個傳奇特效 ---- */

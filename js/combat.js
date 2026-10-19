@@ -1161,12 +1161,14 @@ function tickStatuses(ent, dt, dotContext) {
     var total = 0, drainHits = 0;
     var dotNames = [];
     var dotDamageItems = [];
+    var endedDots = [];
     var live = [];
     for (var i = 0; i < ent.dots.length; i++) {
         var d = ent.dots[i];
         var expired = !(d.until > GT);
         var seconds = 0, tickCount = 0; // 本幀實際結算的秒數與作用次數
         if (expired) {
+            endedDots.push(d);
             // 到期：只補「存續期間已累積、還沒跳出來」的餘額，不多算本幀
             seconds = d.acc || 0;
             tickCount = seconds > 0 ? 1 : 0;
@@ -1237,20 +1239,17 @@ function tickStatuses(ent, dt, dotContext) {
         // 單一狀態直接報狀態名（例：「受到中毒」），多個才合併報「持續傷害（流血、燃燒）」
         logEnemyDirectDamage(ent, dotNames.length === 1 ? dotNames[0]
             : '持續傷害' + (dotNames.length ? '（' + dotNames.join('、') + '）' : ''), dotDealt, ent.hp <= 0);
-        // 只從權威跳傷結算觸發崩解，無敵／未到節拍不會產生空爆炸。
-        var disintegrate = ent.maxHp && typeof sgUlt === 'function' && sgUlt('bloodblade', 'disintegrate');
-        if (disintegrate && typeof sgDisintegrate === 'function') {
-            for (var bi = 0; bi < dotDamageItems.length; bi++) {
-                var bloodItem = dotDamageItems[bi], bloodDot = bloodItem.d;
-                // 血刃斬的流血／中毒以角色判定：Skills2 第 1／4 階「敵方狀態」換成別的狀態時跟著換
-                if (!skills2StatusRoleHas('bleed', bloodDot.sid) && !skills2StatusRoleHas('poison', bloodDot.sid)) continue;
-                for (var bt = 0; bt < bloodItem.tickCount; bt++) {
-                    sgDisintegrate(ent, bloodDot.sid, bloodDot, bloodDot.dur, disintegrate, dotContext);
-                }
-            }
-        }
-        if (ent.hp <= 0) { ent.hp = 0; return true; }
     }
+    // 崩解只在狀態結束並補完殘額後爆炸；沒有殘額的到期仍須觸發一次。
+    var disintegrate = endedDots.length && ent.maxHp && typeof sgUlt === 'function' && sgUlt('bloodblade', 'disintegrate');
+    if (disintegrate && typeof sgDisintegrate === 'function') {
+        for (var bi = 0; bi < endedDots.length; bi++) {
+            var bloodDot = endedDots[bi];
+            if (!skills2StatusRoleHas('bleed', bloodDot.sid) && !skills2StatusRoleHas('poison', bloodDot.sid)) continue;
+            sgDisintegrate(ent, bloodDot.sid, bloodDot, bloodDot.dur, disintegrate, dotContext);
+        }
+    }
+    if (total > 0 && ent.hp <= 0) { ent.hp = 0; return true; }
     return false;
 }
 

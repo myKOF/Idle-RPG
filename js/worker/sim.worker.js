@@ -19,9 +19,9 @@ if (typeof GameClock !== 'undefined') {
 importScripts(
   '../util.js?v=20260922-firegod-formation', '../data.js?v=20261018-merge-equip-unlock', '../runeword_data.js?v=20261018-rune-tower-unlock', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261018-potential-remove', '../formula.js?v=20261018-potential-remove-gem-workshop', '../battlefield.js?v=20261016-npc-retaliate-refill', '../stats.js?v=20261003-rename-weineng',
   '../item.js?v=20261018-gem-workshop', '../gem_resonance.js?v=20261018-resonance-hole-effects','../runeword.js?v=20261018-rune-tower-unlock',
-  '../skills.js?v=20261018-potential-remove', '../skills2.js?v=20261018-potential-remove', '../elite_data.js?v=20261016-wall-rock', '../talents.js?v=20261018-heaven-power-complete-bonus',
+  '../skills.js?v=20261018-potential-remove', '../skills2.js?v=20261019-disintegrate-end-once-duration', '../elite_data.js?v=20261016-wall-rock', '../talents.js?v=20261018-heaven-power-complete-bonus',
   '../player.js?v=20261018-potential-remove', '../special_rules.js',
-  '../combat.js?v=20261018-potential-remove', '../elite.js?v=20261018-wall-natural-narrow', '../elite_boss.js?v=20261015-boss-player-skill', '../elite_boss_recipes.js?v=20261015-boss-player-skill', '../legendary.js?v=20261012-indomitable-guard', '../tower.js?v=20261018-rune-tower-unlock',
+  '../combat.js?v=20261019-disintegrate-end-once', '../elite.js?v=20261018-wall-natural-narrow', '../elite_boss.js?v=20261015-boss-player-skill', '../elite_boss_recipes.js?v=20261015-boss-player-skill', '../legendary.js?v=20261012-indomitable-guard', '../tower.js?v=20261018-rune-tower-unlock',
   '../factory.js?v=20261015-gem-enabled', '../newforge.js', '../forge.js?v=20261015-gem-enabled', '../save.js?v=20261018-rune-tower-unlock',
   '../tasks.js?v=20261007-runes4'
 );

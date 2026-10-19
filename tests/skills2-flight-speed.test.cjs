@@ -9,24 +9,32 @@ function schema(){
  return ctx.api;
 }
 
-test('bloodblade poison spread and disintegrate speed columns compile and drive flight timing',()=>{
+test('bloodblade poison spread speed drives flight timing; disintegrate has no flight settings',()=>{
  const a=schema(),rows=a.parse(fs.readFileSync(root+'/config/CSV/Skills2.csv','utf8')),h=rows[0];
  const col=h.indexOf('飛行子彈速度（米／秒）');
- for(const stage of ['5','10'])rows.find(r=>r[0]==='bloodblade'&&r[h.indexOf('階數')]===stage)[col]='20,2';
+ const poison=rows.find(r=>r[0]==='bloodblade'&&r[h.indexOf('階數')]==='5');
+ const disintegrate=rows.find(r=>r[0]==='bloodblade'&&r[h.indexOf('階數')]==='10');
+ assert.equal(disintegrate[col],'');
+ assert.equal(disintegrate[h.indexOf('觸發子彈')],'');
+ disintegrate[col]='20,2';
+ assert.throws(()=>a.schema.rebuild(rows.slice(1),h),/bloodblade\/disintegrate 未接線.*飛行子彈速度/);
+ disintegrate[col]='';
+ poison[col]='20,2';
  const block=a.schema.rebuild(rows.slice(1),h).SKILLS2;
  const file=path.join(__dirname,'skill2-ult-evolution.test.cjs'),src=fs.readFileSync(file,'utf8');
  const ctx={require:createRequire(file),__dirname,console};vm.createContext(ctx);
  vm.runInContext(src.slice(0,src.indexOf('test('))+'\nthis.h={loadContext,maxLevels,equip,setUlt,stubVfx};',ctx);
  const c=ctx.h.loadContext();vm.runInContext(block,c);
  ctx.h.maxLevels(c,'bloodblade');ctx.h.equip(c,'bloodblade');ctx.h.stubVfx(c);
- for(const extra of [{vfxTier:5},{vfxUlt:'disintegrate'}]){
-  if(extra.vfxUlt)ctx.h.setUlt(c,'bloodblade','disintegrate',10);
-  const fx=extra.vfxUlt?c.SKILLS2.bloodblade.ult[2]:c.SKILLS2.bloodblade.tiers[4];
+ for(const extra of [{vfxTier:5}]){
+  const fx=c.SKILLS2.bloodblade.tiers[4];
   fx.triggerVfx={projectile:'configured-blood-projectile'};
   assert.equal(fx.fx.speed,20);assert.equal(fx.fx.speedPer,2);
   c.sgQueueBloodFlight({hp:1,pos:{x:0,y:0}},{hp:1,pos:{x:400,y:0}},extra,{damage:1},{});
   assert.equal(c.SKILL2_RT.projectiles.at(-1).endAt,1,'(20+2×10)米/秒，40米需1秒');
  }
+ assert.equal(c.SKILLS2.bloodblade.ult[2].fx.speed,undefined);
+ assert.equal(c.SKILLS2.bloodblade.ult[2].triggerVfx.projectile,undefined);
 });
 test('flight speed uses the merged column, rejects duplicate JSON and incomplete schemas',()=>{
  const a=schema(),rows=a.parse(fs.readFileSync(root+'/config/CSV/Skills2.csv','utf8')),header=rows[0];
