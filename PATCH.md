@@ -1,5 +1,17 @@
 # PATCH.md
 
+## 技能介面右上角新增內測專用技能全解鎖開關（Antigravity 2026-10-19）
+
+- **技能全解鎖開關按鈕**：
+  - 於技能介面頂欄（`.sgb-top`）右上角新增 `#skill-unlock-toggle` 開關按鈕，僅限內測環境（`localhost`、`127.0.0.1`、內部網段等 `isInternalServer()` / `isGMHost()`）顯示，正式版預設隱藏。
+  - 功能等同 GM 指令 `skill_unlock`：點擊後傳送至 Worker 執行指令，開啟時無需達到角色等級或封魔塔層數限制即可升級與裝備所有技能；再次點擊恢復正常限制。
+  - 視覺風格完全遵循灰燼鍛造深色美學：具備流暢 Hover 與點亮狀態（`🔓 技能全解鎖：開` 搭配柔和琥珀光感，`技能全解鎖：關` 暗金膠囊按鈕），並支援雙向即時狀態同步（GM 控制台或伺服器快照更新時自動同步 UI）。
+- **解鎖總表（LV_upgrade_system.md）同步更新**：
+  - 於「六、開局即有」技能系統項目中備註內測版本右上角提供「技能全解鎖」開關說明。
+- **測試與驗證**：
+  - 新增 `tests/skill-unlock-toggle.test.cjs` 涵蓋 DOM 結構預設隱藏、正式版隱藏防護、內測開關切換、快照刷新自動同步等 5 項單元測試，全數通過。
+  - 透過瀏覽器實機操作驗證技能分頁切換、開關初始狀態、開啟全解鎖、關閉還原等完整生命週期皆無誤。
+
 ## 系統解鎖條件總表更新與裝備套裝預設全解鎖（Antigravity 2026-10-18）
 
 - **裝備套裝預設全解鎖**：`js/data.js` 中 `EQUIP_SET_UNLOCK_LEVELS = [1, 1, 1]`、`EQUIP_SET_UNLOCK_REINCARNATIONS = [0, 0, 0]`，開局直接可用第 1/2/3 套方案；同步更新 `tests/unlock-thresholds.test.cjs`、`tests/sim-skill-plan.test.cjs`、`game_formula.md` 及 `player_strategy.md`。
