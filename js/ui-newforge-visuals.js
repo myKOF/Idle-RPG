@@ -113,11 +113,12 @@ var NewForgeVisuals = (function () {
       } else if (Math.abs(x - entry.to) > .01) moving = true;
     });
     state.empty.hidden = state.entries.size > 0;
-    if (state.visible && state.context && (state.fireAt === null || (!reduce && state.enabled && state.time - state.fireAt >= 1000 / 30))) {
+    // 爐火用來表示熔爐運轉；減少動態僅縮減裝備位移，不把運轉指示凍結成靜圖。
+    if (state.visible && state.context && (state.fireAt === null || (state.enabled && state.time - state.fireAt >= 1000 / 30))) {
       paintFire(state, state.time / 1000 + .35);
       state.fireAt = state.time;
     }
-    return state.enabled && (!reduce || moving);
+    return state.enabled && (!!state.context || !reduce || moving);
   }
   function tick(time) {
     frame = null;
@@ -215,7 +216,7 @@ var NewForgeVisuals = (function () {
     state.empty.hidden = state.entries.size > 0;
     // Observer尚未回報可見時不可用「減少動態」代替隱藏，否則會永久把新件置左。
     if (state.visible && active()) render(state, reduced());
-    if (frame === null && active() && state.visible && state.enabled && !reduced()) frame = clock.requestAnimationFrame(tick);
+    if (frame === null && active() && state.visible && state.enabled && (state.context || !reduced())) frame = clock.requestAnimationFrame(tick);
   }
   if (typeof matchMedia === 'function') {
     var motionPreference = matchMedia('(prefers-reduced-motion: reduce)');

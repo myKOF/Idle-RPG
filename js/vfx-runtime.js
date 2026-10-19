@@ -1381,6 +1381,9 @@ var VFXRuntime = (function () {
       }
       if (spec.variant === 'water-tide-merge' && !spec.area) keep = Math.max(0, num(spec.dur, 0));
       if (staticVacuum && isFinite(spec.area.lifeSec)) keep = Math.max(0, Number(spec.area.lifeSec));
+      if (spec.variant === 'mire-inferno-pool') {
+        keep = Math.max(0, num(spec.dur, 0));
+      }
       var curtainColumn = role === 'attack' && spec.variant === 'thunder-curtain';
       // 舊事件缺 variant 時沿用既有月牙辨識；新素材依追蹤事件語意判斷。
       var windBody = !staticVacuum && (spec.variant === 'wind-blade-homing' || presetId === 'ground-homing-wind-crescent');
@@ -2284,7 +2287,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20261019-rockarmor-depth';
+  var DATA_VERSION = '20261019-rockarmor-depth-mire-floor-pool';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

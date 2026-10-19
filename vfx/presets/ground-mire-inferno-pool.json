@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "id": "ground-mire-inferno-pool",
+  "duration": 3,
+  "loop": true,
+  "layers": [
+    {
+      "id": "burning-ground",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/circle_a_noise.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.2539,
+        "y": 0.2539
+      },
+      "alpha": 0.62,
+      "tint": "#ff3b09",
+      "blendMode": "add",
+      "duration": 3,
+      "scaleOverLife": [
+        [
+          0,
+          0.96
+        ],
+        [
+          0.5,
+          1.04
+        ],
+        [
+          1,
+          0.96
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0.50265
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "red-embers",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/transparent/circle_b.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.1641,
+        "y": 0.1641
+      },
+      "alpha": 0.48,
+      "tint": "#b42c08",
+      "blendMode": "add",
+      "duration": 3,
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "radius": 60
+    },
+    "radiusM": 6,
+    "shape": "circle"
+  }
+}

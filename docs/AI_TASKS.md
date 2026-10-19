@@ -1,5 +1,42 @@
 # AI_TASKS.md
 
+## FORGE-FIRE-REDUCED-MOTION-20261019 — 修正運轉中爐火被減少動態凍結
+
+- Owner：Codex；Done；單一開發者。使用者回報重新整理後爐火完全靜止、裝備仍有移動，要求開可連線測試服共同診斷。前置既有Canvas火焰與等速輸送帶已完成。
+- 診斷：本機8141臨時服只於HTTP回應插入播放計數／狀態回報，不改遊戲檔或存檔；已在可操作IAB讀到reduced=true、運轉／可見=true、context綁定正確且未失效，但draws=1、time=0、framePending=false。先前headless預設reduced=false因此未重現，非已確認為快取問題。
+- 允許js/ui-newforge-visuals.js僅火焰重繪／共用排程的減少動態條件、tests/new-forge-visuals.test.cjs對應回歸、index.html僅該腳本快取、LV_upgrade_system.md熔爐功能說明及本紀錄。禁止輸送帶速度／方向／減少動態定位、火焰造型、Worker／數值／存檔／Protocol／素材／其他副本修改，保留使用者Skills2 Excel調整；未授權合併推送。
+- 衝突預檢：index與Antigravity 0ddf5be7同檔不同區段（對方Esc內測金鑰面板／腳本，本次熔爐視覺快取），無語意相依；共同祖先三方merge-file含本次預定快取修改乾跑exit0、無衝突，依AI_RULES3.2分段處理免問。其他目標乾淨。
+- 驗收：減少動態開啟與關閉皆持續播放運轉中爐火，無裝備／無新快照也續播；輸送帶原偏好處理、熔爐停用／Esc／離頁／不可見仍停止，恢復續播。先失敗回歸、相依測試／Build、真實IAB reduced=true連線回報計數與目視、Console／diff後獨立Commit。後續使用者在8141驗收，臨時診斷服務保留供本次操作、不納入產品與Commit。
+
+- 完成5檔：js/ui-newforge-visuals.js將爐火重繪及共用排程與裝備的減少動態定位條件分開，仍沿GameClock與原可見／停用條件；index.html視覺腳本1.0.3→1.0.4；tests/new-forge-visuals.test.cjs新增空帶／無快照減少動態回歸、更新偏好測試僅爐火續播且裝備仍靜態的斷言；LV_upgrade_system.md熔爐功能說明與本紀錄。沒有新素材、Preset、Worker／Protocol或存檔格式變更，素材庫無本次變更、不需空Commit。
+- 測試：新增回歸與修改後的火焰斷言在舊產品碼各失敗一次，修正後`node --test tests/new-forge-visuals.test.cjs tests/new-forge-ui.test.cjs tests/newforge-panel-performance.test.cjs tests/new-forge.test.cjs tests/game-clock.test.cjs`47/47通過。`npm.cmd run build`546檔通過，git diff檢查通過。初始化smoke在修正前已有1/2失敗（initUI尚未收到面板時預期發出skills請求、實際空陣列），修正後同一既有失敗保留，不更改無關UI／斷言；未跑完整庫。
+- 實際IAB：同一8141測試頁reduced=true，修正前爐火只draws=1且framePending=false；透過Esc立即存檔成功後重載修正版，空帶持續draws135→163→191、phase5.19→6.18→7.18，共用排程true，無需新裝備／新快照。Esc開啟時draws連續4秒固定968且time固定，關閉後恢復至1490→1518，Console error／warning與診斷捕捉錯誤0。已保留可操作頁籤供使用者驗收；臨時服務只綁127.0.0.1:8141，PID28776，診斷僅本機記憶體40筆輪替，無存檔內容回傳，遊戲正式程式未加入診斷碼。動態造型沿原自製Canvas程序火焰，非新增圖像作畫，無外部參考／素材。
+- 唯讀未改：AI_RULES／AGENTS／工作流／prompts、GameClock／GameMenu、Worker／熔爐結算與投影、UI卡片／CSS／等速輸送帶、既有初始化／熔爐／UI／效能／GameClock回歸、Antigravity的Esc金鑰面板修改。自我Review確認只取消爐火的減少動態凍結，仍一個共用RAF、約30Hz重繪上限、移除／停用／不可見清理沿舊行為，未改輸送帶速度／方向或其偏好處理。
+- 交付：無本次未完成修正，使用者仍可在8141實際確認；已知限制為上述1項初始化既有失敗、未驗長時間多熔爐負載或全實體裝置。使用者Skills2 Excel未提交調整完整保留；本次5檔可供Review／合併，未合併推送develop。Commit為本段所在`[Codex] fix: 減少動態時仍播放運轉中的熔爐火焰`，回覆附編號；下一步直接操作8141或右側測試頁，診斷服待本次驗收結束再關閉清理。
+
+## MIRE-INFERNO-FLAMES-20261019 — 深淵火池改為低負擔地面熔火
+
+- Owner：Codex；Done；單一開發者。使用者認為原火池不像燃燒，指定參考NPC瘟疫中心特效改黃紅色；看過初版後明確取消上冒火焰，為效能只保留地面熔火池，完成後提供動態預覽。前置7a55094e火池判定與精確壽命完成。
+- 允許新增專用ground-mire-inferno-pool Preset／單根layout／可重現author、素材庫對應SOURCE與來源、Skills2 Excel／CSV僅深淵火獄觸發地板、生成JS及必要主頁／Worker／Runtime／Editor快取、原火池回歸相應外觀斷言、LV_upgrade_system與本紀錄；必要匯出索引僅本次來源。禁止NPC原瘟疫／其他火池外觀、傷害／範圍／節拍／壽命／存檔／Protocol與其他副本修改。保留使用者Excel既有調整，未經指示不合併推送。
+- 預檢目標無外部來源；沿en-toxic-pool地面兩層既有CC0 light-masks組合自製紅橙熔火池，不引入新圖片；最終僅兩個sprite，移除全部火焰／煙霧／火星粒子，保留地面壓縮與既有輕微流動。RPG Mote點陣繪製不適用引擎原生配置JSON。驗收Preset／layout／資源合法、零粒子／雙sprite、六米範圍與四秒事件不變、Core動態預覽及相依回歸／Build／Excel原生重開、素材庫先行獨立Commit及遊戲Commit。後續使用者看預覽與遊戲驗收。
+- 完成14檔：新增vfx/presets/ground-mire-inferno-pool.json、同名layout與tools/vfx/authoring/author/mire-inferno-pool.cjs；Preset僅burning-ground／red-embers兩個貼地sprite，原生輕微呼吸／慢速紋理旋轉，零particle／煙霧／火舌／火星，沿NPC瘟疫CC0噪聲圓／透明圓改紅橙色。單根群組含全部兩層，sizing圓形radiusM6／authored.radius60，以原權威r60事件播放，沒有修改NPC原Preset或共享ground-mire-lava。Skills2 Excel／CSV僅AR130改新檔名，js/skills2.js僅生成資料對應引用；js/vfx-runtime.js僅DATA_VERSION、index.html與tools/vfx/editor/index.html快取219（主頁skills2 336／bridge317），js/bridge.js及js/worker/sim.worker.js Worker／import token同步；原火池測試補零粒子與兩層貼地、相應檔名與實際縮放斷言，LV_upgrade_system與本紀錄同步。原火球、傷害／六米半徑／半秒八拍／四秒精確消失及其他技能完全不變。
+- 驗證：`node --test tests/mire-inferno-pool.test.cjs`6/6；`node --test tests/skills2-vfx-schema.test.cjs tests/skill-vfx-inheritance.test.cjs`以唯讀fs映射僅本次AR130的提交Excel候選，13/13，主工作簿仍保留使用者六格未套用調整。`node --test --test-reporter=tap tests/vfx-core.test.cjs tests/vfx-editor-save.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-editor-guard.test.cjs`231項229過／1既有失敗／1既有skip；唯一失敗為aura-earth-reversal.json既有canonical格式，確認該檔逐位元等於HEAD且HEAD內容本身亦非canonical，沒有修改或放寬斷言。本次新Preset經Core serialise逐位元相等。合計250項248過／1既有失敗／1skip。
+- `npm.cmd run build`546檔通過；`node tools/config_tables.cjs --apply Skills2`語意變更0；`node tools/vfx/export-assets.cjs --check`354份Preset／187份貼圖，已是最新，不需新增／重匯出圖片或索引。git diff／staged diff檢查通過。Excel用原生COM只改AR130、正常重開Saved=true；全工作簿資料只變此格、各格style索引／列高／欄寬／凍結／合併完全保留，來源雜湊及獨占鎖檢查後覆寫。提交Excel由HEAD副本原生只改AR130，使用者泥沼其他文案與黃泉沼數值留在工作區。
+- 已提供最終4秒Core動態GIF：本聊天visualizations/mire-molten-ground-preview.gif，只有地面熔火池、人形作比例（放大2倍）及消失後重播；無正式遊戲Pixi／瀏覽器Console／大量火池FPS量測／全庫測試，僅確認每池兩個sprite、零粒子，不宣稱已量測FPS提升。前一個上冒版本未進入正式素材或提交。素材庫由vfx-library-root解析，保存至codex-authored/mire-inferno-pool，含presets／layouts／author／NPC參考快照及SOURCE.md，遊戲與素材庫Preset／layout逐位元一致；Preset SHA256=41d91e918fcef338f4838b3a980e627ed9fd414b699cf0dcdfc606bbd35797a8。沿既有Kenney light-masks CC0貼圖，沒有新外部素材或點陣圖。
+- 唯讀未改：共通規範／工作流／prompts、NPC瘟疫資料與en-toxic-pool、ground-mire-lava／ground-domain-fire、VFX Core／kit／preset-render／Runtime幾何／shipped-assets與asset-index、素材庫PROVENANCE及既有貼圖、config_tables／Worker shim／Protocol／Excel管線與既有檢查。自我Review確認只有本技能引用新圖、兩層平面不生粒子、圖片均已出貨、模擬與顯示範圍／壽命不變。無本次未完成項，可就本範圍Review／合併；既有canonical失敗與未正式瀏覽器／FPS驗收為限制。素材庫已先提交020afe3且工作區乾淨；遊戲Commit為本段所在`[Codex] feat: 深淵火池改為雙圖層地面熔火`，回覆附編號；未合併推送。後續重載遊戲看最終預覽；若開著Editor，先另存備份未儲存內容再重載，不以舊頁覆寫新版。
+
+## MIRE-INFERNO-POOL-20261019 — 深淵火獄落地火池
+
+- Owner：Codex；Done；單一開發者。使用者要求每顆深淵火獄火球落地爆炸後，在落點生成半徑6米火池，每0.5秒造成200%火焰傷害，持續4秒。前置固定落點火球與共用火池機制已完成；沿用既有場域及配置特效，無Protocol／存檔變更。
+- 允許js/skills2.js的深淵火獄與共用火池必要接線、Skills2 Excel／CSV僅深淵火獄列、js/vfx-runtime.js的火池精確壽命、必要主頁／Worker／Editor快取、tests/mire-inferno-pool.test.cjs、game_formula.md、LV_upgrade_system.md及本紀錄。禁止其他技能數值／解鎖／素材／其他副本修改；保留使用者Excel既有修改，未經指示不合併推送。
+- 所有目標衝突預檢無外部來源，使用者已儲存關閉Excel。允許tools/skills2-vfx.cjs同步宣告新接上的觸發地板角色，預檢無衝突。驗收落地前無池／傷害、固定落點、圓形六米邊界、每半秒共八拍固定200%魔攻基準火傷、敵人離場／重新進入、空場及目標死亡仍留池、特效與判定同源且出生立即顯示／四秒到期、表格說明／Excel原生重開與格式保留、相關回歸／Build／diff後獨立Commit。後續使用者重載遊戲驗收。
+- 完成13檔：js/skills2.js在原火球出生時保存火池攻擊規格，落地後沿sgSpawnFirePool建立固定圓形場域，首拍延後一個節拍、共八拍，各池獨立結算；攻擊量為施放快照魔攻基準×poolPct%，不隨超神等級增加。Skill2 Excel／CSV只更新深淵火獄AR130／AV130／AW130／AX130／AY130五格，加入poolM=6／poolPct=200／poolGap=0.5／poolSec=4與觸發地板ground-mire-lava；對應生成JS同步，其他群組資料不變。tools/skills2-vfx.cjs加入此列ground角色。js/vfx-runtime.js依專用事件dur精確回收，無座標高塔亦適用；火池出生立即派送地板、每拍只續地板且到期最後傷害拍不續命，爆炸只在落地播放。index.html（skills2 335／Runtime218／bridge316）、js/bridge.js及js/worker/sim.worker.js的Worker資源／import token、tools/vfx/editor/index.html快取、game_formula.md／LV_upgrade_system.md與本紀錄同步；新增tests/mire-inferno-pool.test.cjs。沒有新增／修改Preset、素材、Protocol、存檔或解鎖條件。
+- 專項：`node --test tests/mire-inferno-pool.test.cjs`6/6，涵蓋落地前不生成／扣血、三顆各留池、目標移動死亡／空場、Lv1與10固定200%、圓形六米邊界／方形角落排除與離開再進入、完整八拍／重疊分別傷害、實際resolveHit扣血、可變配置／地板留白不繼承、主端說明、正式Worker shim序列化、正式Preset經Runtime的實際scaleX=作者倍率×0.6，以及四秒／無座標版面精確回收。唯讀fs映射把受測JS／Runtime／表格換回HEAD，新增六項全數失敗，修正版全過；未放寬權威數值。
+- 擴大回歸指令：`node --test --test-reporter=tap tests/mire-inferno-pool.test.cjs tests/skill2-mire-earthguard-legendary.test.cjs tests/skill2-fire-legendary.test.cjs tests/inferno-tempest.test.cjs tests/skills2-vfx-schema.test.cjs tests/skill-vfx-inheritance.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/vfx-runtime.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-editor-guard.test.cjs`。以唯讀fs映射本次獨立提交Excel候選（排除使用者既有其他調整）共243項222過／21失敗；修改前HEAD相同原有237項216過／21失敗，逐名稱集合比對無新增失敗。既有失敗為火系／泥沼超神fixture缺解鎖進度、舊場域／素材斷言等，不修改測試接受現況。工作區Excel含使用者尚未套用的其他儲存格，原本的Excel／CSV全表一致性測試仍會另失敗；提交候選該測試通過。
+- 其他驗證：`npm.cmd run build`546檔通過；`node tools/config_tables.cjs --apply Skills2`語意變更0；git diff／staged diff檢查通過。使用Excel原生COM只寫五格、正常模式重開Saved=true逐格驗證；全工作簿資料／公式只變五格、原圖形數0、UsedRange／列高／欄寬／凍結／合併保留；新填AR130由Excel沿既有相鄰文字格式建立儲存格，其餘style索引不變。來源hash核對後覆寫，未碰未儲存的使用者工作。獨立提交Excel從HEAD原生副本只套本次五格；工作檔保留使用者泥沼其他文案與黃泉沼hpPct=25，不納入提交。
+- 預覽：依使用者追加要求，沿既有VFX Core／preset-render將正式ground-mire-lava.json渲染為4秒動態GIF，附人形比例、六米半徑（預覽放大2倍）及消失後重播，已於聊天顯示；保存在本聊天visualizations/mire-inferno-pool-preview.gif。這是Core離線渲染，未做正式遊戲Pixi／瀏覽器Console／長時間戰鬥或全庫驗證，不能視為使用者已確認外觀。無外部參考或新美術素材，素材庫沒有本次變更、不需素材庫Commit。共用Runtime已同步Editor快取；開啟中的編輯器未存工作應另存備份再重載，不用舊頁覆寫新版。
+- 唯讀檢查未改：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、js/combat.js／formula.js命中與屬性管線、Worker shim／Protocol、VFX Core／sizing與既有ground-mire-lava.json／asset-index、sim engine、excel-update-sheets及config_tables工具、上述既有測試。自我Review完成，重用場域／火焰命中機制、觸發地板與落地爆炸分開、既有火池來源不增加壽命規則。無本次未完成實作，可就本次範圍Review／合併；已知限制為21項基準既有失敗、使用者Excel未套用差異與未正式瀏覽器驗收。Commit為本段所在`[Codex] feat: 深淵火獄落地生成持續火池`，回覆附實際編號；未合併推送，下一步使用者查看預覽並重載Codex遊戲驗收，其他副本需整合此Commit。
+
 ## SHIELD-AMP-LIFE-ONLY-20261019 — 護盾增幅限生命護盾與岩之再生觸發確認
 
 - Owner：Codex；Done；單一開發者。使用者要求護盾增幅只對生命護盾生效、不含岩甲護盾本身；追加確認岩之再生僅生命損失補盾、護盾損失不觸發。前置現行共用護盾效率／岩甲受擊掛點完成。
