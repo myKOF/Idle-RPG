@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## MIRE-POOL-WARM-YELLOW-20261019 — 熔火池稍微偏黃
+
+- Owner：Codex；Done；單一開發者。使用者要求已確認的雙圖層熔火池稍微偏黃，保留橘紅底色。前置地面版275ed352完成。允許專用Preset兩個tint、同名author及素材庫對應來源／SOURCE、Runtime資料版與主頁／Editor快取、LV_upgrade_system與本紀錄；禁止其他技能／表格／數值／幾何／層數／動畫／粒子／存檔／Protocol修改。
+- 衝突預檢所有目標無外部來源，遊戲與素材庫工作區乾淨。驗收兩個顏色之外Preset逐值不變、作者重建一致／單根layout不變、既有火池及快取回歸／Build／diff、同尺度動態預覽；素材庫先提交、遊戲獨立提交，不合併推送。後續使用者查看新版預覽。
+- 完成7檔：vfx/presets/ground-mire-inferno-pool.json僅兩個tint由#ff3b09／#b42c08改為#ff5810／#c4460c，增加少量黃色並保留橘紅；tools/vfx/authoring/author/mire-inferno-pool.cjs同步。js/vfx-runtime.js僅DATA_VERSION加warm-yellow，index.html與tools/vfx/editor/index.html只將Runtime快取220，LV_upgrade_system.md僅配色文字及本紀錄更新。剔除兩個tint後Preset逐值等於HEAD，單根layout逐位元等於HEAD；沒有改圖片、粒子、alpha、範圍、節拍、壽命、傷害、解鎖、Excel／CSV或其他技能。
+- 驗證指令：`node tools/vfx/authoring/author/mire-inferno-pool.cjs`成功重建；`node --test tests/mire-inferno-pool.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-editor-guard.test.cjs`21/21；`npm.cmd run build`548檔通過；git diff／staged diff檢查通過。沒有新增測試或測試失敗。以既有preset-render／VFX Core渲染同樣六米／放大2倍／4秒GIF，本聊天visualizations/mire-molten-ground-warmer-preview.gif已完成；仍為兩sprite／零particle。未做正式遊戲Pixi／Console／FPS／全庫驗證，不宣稱實機顏色或效能已驗收。
+- 素材庫沿vfx-library-root解析，更新codex-authored/mire-inferno-pool內Preset／author／SOURCE，保留layout及NPC參考快照；兩端Preset／layout逐位元相同。Preset SHA256=4777b55ee3d5b4af3b95984982d0cb517cd5d73bd3b234eb02d56fd3ecfeddc5；素材庫已先提交dd2cdd4且工作區乾淨。沿既有Kenney CC0圖片，只調引擎原生JSON色彩，不需RPG Mote點陣繪圖或新素材匯出。
+- 唯讀未改：共通規範／工作流／prompts、NPC en-toxic-pool、原專用layout、VFX Core／kit／preset-render、三份回歸、素材庫PROVENANCE及SOURCE參考快照、Skills2表格／模擬／Worker。自我Review無本次未完成或新增風險，可Review／合併；限制為未正式瀏覽器／FPS驗收。遊戲Commit為本段所在`[Codex] fix: 熔火池稍微調黃並保留橘紅底色`，回覆附編號；未合併推送。下一步重新整理遊戲看配色；若Editor仍開啟，先另存未儲存工作再重載，避免用舊頁覆寫新色彩。
+
 ## FORGE-FIRE-REDUCED-MOTION-20261019 — 修正運轉中爐火被減少動態凍結
 
 - Owner：Codex；Done；單一開發者。使用者回報重新整理後爐火完全靜止、裝備仍有移動，要求開可連線測試服共同診斷。前置既有Canvas火焰與等速輸送帶已完成。
