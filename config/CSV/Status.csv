@@ -62,7 +62,7 @@ sgDeathReaper,死亡收割,☠️,buff,stat,sgDeathReaper,,,0,,0,25,8,0,stack,20
 sgKnifeWaltz,輪舞刃,🔪,buff,stat,sgKnifeWaltz,,,0,,0,0,5,0,refresh,1,,,,傳奇特效【輪舞刃】：繞行在你周圍的飛刀還會留在場上多久（環繞場域的剩餘時間投影，比照火狩）。
 sgSlayerMark,殺神,⚰️,buff,stat,sgSlayerMark,,,0,,0,2,6,0,stack,100,,,,超神進化【殺神領域】：領域內的敵人死亡時疊 1 層，每層使你造成的所有傷害提高（效果值＝單層% × 層數）。
 sgVenomField,萬毒侵蝕,🧪,debuff,dot,,poison,skill,100,,0,0,6,0.5,stack,10,,,,超神進化【萬毒血霧】：領域內每次作用疊 1 層，每跳量＝單層量 × 層數（引擎以 dps 覆寫）。
-sgKagura,神樂灼焰,🎇,debuff,dot,,fire,skill,10,,0,0,6,0.5,stack,20,,,,超神進化【火之神樂】：雙刀亂舞每命中 1 次疊 1 層，每跳量＝單層量 × 層數（引擎以 dps 覆寫）。
+sgKagura,神樂灼焰,🎇,debuff,dot,,fire,skill,10,,0,0,6,0.5,stack,20,,,,超神進化【火之神樂】：雙刀亂舞每命中 1 次疊 1 層，每跳量＝單層量 × 層數（引擎以 dps 覆寫）；狀態生效期間將敵人屬性改為火屬性，結束後恢復。
 sgDeathDefer,不屈之誓,🕯️,buff,stat,sgDeathDefer,,,0,,0,100,10,0,refresh,1,,ground-cyclone-avatar,,傳奇【不屈之誓】：死亡延後生效的期間，你造成的所有傷害提高。
 sgBloodMist,血霧壟罩,🌫️,debuff,stat,sgBloodMist,,,0,,0,0,0.6,0,refresh,1,,,,傳奇【血霧】：站在血霧裡的標記，受傷時回復施放者生命。效果值＝血霧生成當下定版的回復比例%（沒有任何屬性讀這個鍵，它只是把數值帶在標記上）。
 sgCounterWrath,怒火,😡,buff,stat,sgCounterWrath,,,0,,0,30,6,0,refresh,1,,,,傳奇【怒火】：反擊累積達門檻時獲得，期間你造成的所有傷害提高。

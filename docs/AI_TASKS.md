@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## FLAME-KAGURA-FIRE-ATTR-20261019 — 神樂灼焰期間將敵人改為火屬性
+
+- Owner：Codex；Done；單一開發者。使用者要求火之神樂的神樂灼焰除持續火傷外，生效期間也改變敵人屬性為火；前置既有灼焰疊層及共用屬性改寫已完成。
+- 範圍：js/skills2.js屬性共用出口／顯示查詢及同源描述、js/status.js同源說明、Skills2與Status Excel／CSV僅神樂對應說明、js/ui.js與battle-renderer.js當前屬性標籤、index／bridge／Worker必要快取、tests/flame-kagura-attribute.test.cjs與既有火神樂回歸、game_formula／LV_upgrade_system與本紀錄。禁止傷害／層數／間隔／時長／其他技能規則／存檔格式／Protocol／Preset／素材／其他副本修改；不合併推送。預檢無其他副本衝突，本副本使用者Skills2未提交調整保留並隔離提交。
+- 規則：實際生效中的kagura角色狀態強制火屬性，普通燃燒不變；維持既有石化轉地優先、火系改寫高於寒冰逆轉，到期自動回到仍有效覆寫或原屬性。透過既有攻防配置出口影響對屬性傷害／抗性，不改原始attr或敵人攻擊元素分配；持續火傷與疊層不變。DOM／Pixi名稱及塔戰屬性標籤同步讀相同查詢，狀態變更不重建實體。
+- 驗收：正式Worker原生引擎驗施放／疊層／火傷／無敵／到期／刷新／覆寫優先／換表角色／對屬性傷害，主端顯示標籤更新與還原，Excel原生API精準修改、正常重開／逐格與樣式比對、配置往返／相依回歸／Build／diff，完成獨立Commit供使用者整合。
+- 完成15檔：skills2的skill2ForcedAttr加入實際生效kagura狀態，新增純查詢skill2CurrentEnemyAttr供DOM／Pixi共用；ui初次及重用敵人卡／塔戰標籤、renderer初次及重用實體名稱同步更新。Skills2 Excel／CSV／生成JS的火之神樂說明與Status Excel／CSV／status.js神樂說明同步；index快取Status35／Renderer192／Skills2 327／UI185／Bridge308與Worker匯入版本同步，game_formula／LV_upgrade_system／本紀錄及新增flame-kagura-attribute回歸。其餘數值與Protocol未改，沿用既有火之神樂外觀，無新素材／素材庫Commit。
+- 測試：`node --test --test-reporter=tap tests/flame-kagura-attribute.test.cjs`6/6（正式原生Worker，非傷害替身）；`node --test --test-reporter=tap --test-name-pattern='火之神樂|崩解|血刃斬子彈' tests/skill2-ult-evolution.test.cjs`8/8。新增測試驗純灼焰疊層每跳傷害、持續時間／層數上限不變、到期／刷新／無敵、換表角色、石化→火→冰→原屬性、真實施放與對火屬性增傷、DOM／Pixi文字生成及既有實體更新掛點。`npm.cmd run build`540檔通過；Skills2／Status apply皆零語意差異、diff通過。獨立提交資料版本重跑新專項與Status／Worker／UI事件五檔57/57及兩表往返，通過。
+- 擴大回歸：`node --test --test-reporter=tap tests/flame-kagura-attribute.test.cjs tests/skill2-status-slots.test.cjs tests/status-system.test.cjs tests/super-rock-art.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/ui-worker-events.test.cjs tests/init-ui-smoke.test.cjs`88項83過／5失敗。唯讀以修改前HEAD六支JS重跑同組為77過／11失敗，差異正是新增6項由失敗變成功；其他5項相同，無新增失敗。既有項為initUI面板預期、StormBarrier狀態施放fixture、岩柱兩項25.9072對26舊尺寸斷言、超重岩舊Worker版本字串，不降斷言、不擴大修復。不宣稱全庫全綠。
+- Excel：同聊天已確認artifact匯入不能保留本表空值，依AI_RULES 8.5改用Excel原生COM精準修改。使用者依檔案鎖定提示儲存關閉後，以最新已儲存版本備份；Skills2僅AW60／AX60、Status僅T65，數值／公式／樣式／其他頁／圖形幾何未改。只讀XML驗證差異三格；Excel正常重存另移除空註解文字框的預設direction:ltr，不改文字／形狀／幾何。兩份工作檔及兩份HEAD獨立提交副本均實際以Excel正常重開、Saved=true，無修復提示；未手工修改ZIP/XML。生成Status資料時額外重排allDmgUp的純格式變更已還原，最終僅神樂說明一列。
+- 瀏覽器：computer-use／IAB，隨機localhost＋seed1019全新拋棄式角色，完整正式Worker／Pixi／Runtime與原有素材，未讀寫真人存檔。650級／塔73、冰屬性敵人，正式施放雙刀亂舞後疊5層灼焰，攻方／守方／顯示查詢皆fire，原始attr仍ice；持續傷害照跳，到期三者都回ice。DOM模式實際同一張敵人卡由❄️變🔥且帶🎇神樂灼焰×5，到期回❄️；Console error／warn0。保留visualizations/kagura-fire-attribute.png與kagura-fire-attribute-dom.png驗收畫面；fixture／診斷／控制入口只由暫時HTTP服務提供，未進產品來源，頁面及服務已關閉。
+- 唯讀檢查未改：規範／AGENTS／工作流／prompts/codex、combat攻防配置與狀態結算、formula對屬性傷害乘區、status施加／疊層／有效性、現有石化／火獄／寒冰順序、原生sim engine／Worker shim／Protocol、現有Preset／素材及配置工具。使用者Skills2其他描述與數值調整完整保留在工作檔／生成JS，獨立提交資料以HEAD副本經Excel API僅改神樂說明產生，不混入使用者其他改動。
+- 交付：FLAME-KAGURA-FIRE-ATTR-20261019完成，無本次未完成項；Commit為本紀錄所在`[Codex] feat: 神樂灼焰期間將敵人轉為火屬性`，回覆附編號。可就本次範圍審查合併，已知5項既有測試失敗如上；未合併／推送。下一步使用者在8123重載測試，其他副本需整合本Commit。
+
 ## DISINTEGRATE-END-ONCE-20261019 — 崩解只在狀態結束時爆炸一次並移除飛彈
 
 - Owner：Codex；Done；單一開發者。使用者確認崩解應縮短中毒／流血間隔，作用結束時才各爆炸一次範圍傷害，非每跳爆炸或飛彈彈射，追加持續時間基值+3秒、每級+0.3秒。前置現行DOT／零日感染與血刃感染飛行完成；已有Skills2 Excel／CSV／生成JS的使用者血刃調整，完整保留。
