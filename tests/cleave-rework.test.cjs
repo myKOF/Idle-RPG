@@ -150,15 +150,28 @@ test('CLEAVE 刀波掃過後中央不保留傷害場域',()=>{
  assert(!h.hits.some(x=>x.e===inside),'波後內圈沒有持續傷害');
  assert.equal(h.hits.filter(x=>x.e===ahead).length,1,'外側敵人被前緣掃過時命中一次');
 });
-test('CLEAVE 傳奇飛行距離／連斬／旋風／暈眩／命中掛鉤保留',()=>{
- const h=setup([1,0,0,0,1,0,0],{cleaveFlyM:60,cleaveSlashAdd:2,cleaveWhirl:{powerPct:100,m:8},cleaveStunnedDmgPct:50});
- const whirl=[],stun=[],hooks=[];h.c.sgCleaveWhirlwind=()=>whirl.push(h.c.GT);h.c.sgTryStun=e=>stun.push(e);
+test('CLEAVE 傳奇飛行距離／連斬／暈眩／命中掛鉤保留',()=>{
+ const h=setup([1,0,0,0,1,0,0],{cleaveFlyM:60,cleaveSlashAdd:2,cleaveStunnedDmgPct:50});
+ const stun=[],hooks=[];h.c.sgTryStun=e=>stun.push(e);
  h.c.sgCleaveOnHit=(cfg,e)=>hooks.push(e);h.c.sgIsStunned=()=>true;h.c.chance=()=>true;h.cast();
  assert.equal(h.events[0].area.r,600);assert.equal(h.events[0].travelMs[0],2500);
  assert.equal(h.events[0].vfx.projectile,'slash-cleave-ring-warm');assert.equal(h.events.length,1);
  for(let i=0;i<=320;i++)h.tick(i/100);
  assert.equal(h.events.length,3);
- assert.equal(whirl.length,3);assert.equal(h.hits.length,12);assert.equal(stun.length,12);assert.equal(hooks.length,12);assert(h.hits.every(x=>x.bonus===50));
+ assert.equal(h.hits.length,12);assert.equal(stun.length,12);assert.equal(hooks.length,12);assert(h.hits.every(x=>x.bonus===50));
+});
+test('CLEAVE 傳奇【旋風劍舞】命中時機率產生 1 道風刃（單體風系傷害，不再有範圍旋風）',()=>{
+ const h=setup();const hit=[],vfx=[];
+ h.c.sgEmitVfx=(gid,targets,floatSel,extra)=>vfx.push(extra);h.c.sgHitOne=(...a)=>hit.push(a);
+ const target={hp:10},cfg={windBlade:{chance:25,powerPct:100},st:{atk:200},pEnt:{},floatSel:'',out:{}};
+ h.c.chance=()=>false;h.c.sgCleaveOnHit(cfg,target,{miss:false},null);
+ assert.equal(hit.length,0,'機率沒中就不產生風刃');
+ h.c.chance=()=>true;h.c.sgCleaveOnHit(cfg,target,{miss:true},null);
+ assert.equal(hit.length,0,'未命中不觸發');
+ h.c.sgCleaveOnHit(cfg,target,{miss:false},null);
+ assert.equal(hit.length,1);assert.equal(hit[0][3],200);assert.equal(hit[0][4],'cleave');assert.equal(hit[0][9],'wind');
+ assert.equal(vfx[0].variant,'wind-blade-homing');
+ assert.equal(typeof h.c.sgCleaveWhirlwind,'undefined','舊的旋風函式已移除');
 });
 test('CLEAVE 無座標高塔仍逐道結算且完成後回收',()=>{
  const h=setup([1,0,0,1,0,0,0]);h.enemies.forEach(e=>delete e.pos);h.cast();

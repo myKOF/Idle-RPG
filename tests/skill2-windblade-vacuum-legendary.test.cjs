@@ -155,7 +155,7 @@ test('第十一批的六個超神進化都在群組表上，且說明模板的�
    1) 風刃的五個傳奇特效
    =========================================================================== */
 
-test('【裂風】：同一道風刃每命中 1 次，後續命中的總傷加成再 +5%（上限 +100%）', () => {
+test('【裂風】：同一道風刃每命中 1 次，後續命中的總傷加成再 +2%（最多 20 層＝上限 +40%）', () => {
   const c = loadContext();
   stubVfx(c);
   const hits = stubHits(c);
@@ -170,12 +170,12 @@ test('【裂風】：同一道風刃每命中 1 次，後續命中的總傷加�
   const totals = hits.map((h) => h.total);
   assert.ok(totals.length >= 4, '貫穿路徑上至少命中四次');
   assert.equal(totals[0], 0, '第一次命中還沒有累加');
-  assert.equal(totals[1], 5, '第二次命中吃到一層');
-  assert.equal(totals[2], 10);
-  assert.equal(totals[3], 15);
+  assert.equal(totals[1], 2, '第二次命中吃到一層');
+  assert.equal(totals[2], 4);
+  assert.equal(totals[3], 6);
   // 上限：純函式直接驗，不必真的湊出 20 次命中
-  assert.equal(c.sgRampPct({ per: 5, max: 100, n: 19 }), 95);
-  assert.equal(c.sgRampPct({ per: 5, max: 100, n: 40 }), 100, '加成夾在 +100%');
+  assert.equal(c.sgRampPct({ per: 2, max: 40, n: 19 }), 38);
+  assert.equal(c.sgRampPct({ per: 2, max: 40, n: 40 }), 40, '20 層封頂：加成夾在 +40%');
 });
 
 test('【裂風】：追擊型風刃（第 5 階之後的主要形態）也吃得到累加', () => {

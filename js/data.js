@@ -895,64 +895,10 @@ var PASSIVE_POOL = {
      這一批的 relatedSkill 指向**新版技能群組 id**（js/skills2.js SKILLS2 的鍵）。
      生效路徑：js/legendary.js legendarySkill2Mods 把同群組的 fx 平坦合併後交給 castSkill2，
      施放端只讀通用參數鍵（見各 fx 的鍵名）。 */
-  piercingFocus: {
-    name: '凝鋒穿刺', desc: '突刺的長度 +30%、寬度 -15%，且造成的傷害 +30%。',
-    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'thrust', weaponTypes: ['dagger1h'],
-    fx: { thrustLenPct: 30, thrustWidthPct: -15, skillDamagePct: 30 }
-  },
-  thousandWounds: {
-    name: '千瘡百孔', desc: '每次突刺命中使敵人受到的傷害 +4%，持續 5 秒，最多疊加 10 層。',
-    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'thrust', weaponTypes: ['dagger1h'],
-    fx: { thrustVuln: { pct: 4, dur: 5, maxStacks: 10 } }
-  },
-  sunpiercerLance: {
-    name: '貫日之刺', desc: '四方突刺改為朝前方的 1 道巨型突刺，突刺範圍 +100%，且造成的傷害 +100%。',
-    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'thrust', weaponTypes: ['dagger1h'],
-    fx: { octaToSingle: true, thrustRangePct: 100, skillDamagePct: 100 }
-  },
-  thunderStab: {
-    name: '迅雷穿刺', desc: '每次突刺擊中敵人時有 15% 機率附加 1 道連鎖閃電。',
-    base: 0, perR: 0, legendary: true, type: 'lightning', relatedSkill: 'thrust', weaponTypes: ['dagger1h'],
-    fx: { thrustChain: { chance: 15, powerPct: 50, elem: 'lightning', bounces: 5, tickSec: 0.3, label: '迅雷穿刺' } }
-  },
-  heartrendBleed: {
-    name: '穿心裂血', desc: '突刺會附加流血，每 0.5 秒造成 50% 物理傷害，持續 5 秒。',
-    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'thrust', weaponTypes: ['dagger1h'],
-    fx: { thrustDot: { tickPowerPct: 50, tickSec: 0.5, dur: 5 } }
-  },
-  chainSpin: {
-    name: '連環迴旋', desc: '迴旋斬的斬擊次數 +2 次。',
-    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'cleave', weaponTypes: ['sword1h'],
-    fx: { cleaveSlashAdd: 2 }
-  },
-  galeBladeDance: {
-    name: '旋風劍舞', desc: '迴旋斬的每次斬擊會同時產生旋風，對周圍 8 米範圍內的所有敵人造成 100% 風系傷害。',
-    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'cleave', weaponTypes: ['sword1h'],
-    fx: { cleaveWhirl: { m: 8, powerPct: 100, elem: 'wind' } }
-  },
-  skyrendSlash: {
-    name: '裂空飛斬', desc: '迴旋斬的斬擊會向外飛出 60 米，命中路徑上的敵人。',
-    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'cleave', weaponTypes: ['sword1h'],
-    fx: { cleaveFlyM: 60 }
-  },
-  exploitWeakness: {
-    name: '乘虛之斬', desc: '迴旋斬對暈眩中的敵人造成額外的 50% 傷害。',
-    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'cleave', weaponTypes: ['sword1h'],
-    fx: { cleaveStunnedDmgPct: 50 }
-  },
-  gatheringVortex: {
-    name: '聚敵旋渦', desc: '迴旋斬會將 60 米內的所有敵人拉近至身邊 10 米範圍內。',
-    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'cleave', weaponTypes: ['sword1h'],
-    fx: { cleavePull: { m: 60, toM: 10 } }
-  },
-
-  /* ---- 新版技能改寫型 第二批（2026-08-20；設計來源「傳奇進化」頁籤）----
-     生效路徑與第一批相同（legendarySkill2Mods 平坦合併 → 施放端讀通用參數鍵）。
-     只出現在匕首（dagger1h＝飛刀）與單手魔劍（magicSword1h＝疾風斬）。 */
   knifeChain: {
-    name: '連鎖', desc: '飛刀的彈射數 +2 次。',
+    name: '連鎖', desc: '每把飛刀有 25% 機率再彈射 2 次。',
     base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'knife', weaponTypes: ['dagger1h'],
-    fx: { knifeBounceAdd: 2 }
+    fx: { knifeBounceProc: { chance: 25, count: 2 } }
   },
   knifeSplitter: {
     name: '分裂者', desc: '飛刀殺死敵人時會分裂出 2 把小型飛刀，每把造成 50% 傷害，且可彈射 2 次。',
@@ -974,15 +920,70 @@ var PASSIVE_POOL = {
     base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'knife', weaponTypes: ['dagger1h'],
     fx: { knifeOrbit: { m: 10, sec: 5 } }
   },
+  piercingFocus: {
+    name: '凝鋒穿刺', desc: '突刺的長度 +30%、寬度 -15%，且造成的傷害 +30%。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'thrust', weaponTypes: ['dagger1h'],
+    fx: { thrustLenPct: 30, thrustWidthPct: -15, skillDamagePct: 30 }
+  },
+  thousandWounds: {
+    name: '千瘡百孔', desc: '每次突刺命中使敵人受到的突刺傷害 +4%，持續 5 秒，最多疊加 10 層。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'thrust', weaponTypes: ['dagger1h'],
+    fx: { thrustVuln: { pct: 4, dur: 5, maxStacks: 10 } }
+  },
+  sunpiercerLance: {
+    name: '貫日之刺', desc: '突刺有 25% 機率使敵人重傷，使其受到的傷害 +20%，持續 5 秒。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'thrust', weaponTypes: ['dagger1h'],
+    fx: { thrustWound: { chance: 25, pct: 20, dur: 5 } }
+  },
+  thunderStab: {
+    name: '迅雷穿刺', desc: '每次突刺擊中敵人時有 15% 機率附加 1 道落雷。',
+    base: 0, perR: 0, legendary: true, type: 'lightning', relatedSkill: 'thrust', weaponTypes: ['dagger1h'],
+    fx: { thrustThunder: { chance: 15, powerPct: 200, label: '迅雷穿刺' } }
+  },
+  heartrendBleed: {
+    name: '穿心裂血', desc: '突刺會附加流血，每 0.5 秒造成 50% 物理傷害，持續 5 秒。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'thrust', weaponTypes: ['dagger1h'],
+    fx: { thrustDot: { tickPowerPct: 50, tickSec: 0.5, dur: 5 } }
+  },
+  chainSpin: {
+    name: '連環迴旋', desc: '迴旋斬的斬擊次數 +2 次。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'cleave', weaponTypes: ['sword1h'],
+    fx: { cleaveSlashAdd: 2 }
+  },
+  galeBladeDance: {
+    name: '旋風劍舞', desc: '迴旋斬命中時有 25% 機率產生 1 道風刃，造成 100% 風系傷害。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'cleave', weaponTypes: ['sword1h'],
+    fx: { cleaveWindBlade: { chance: 25, powerPct: 100 } }
+  },
+  skyrendSlash: {
+    name: '裂空飛斬', desc: '迴旋斬的斬擊會向外飛出 60 米，命中路徑上的敵人。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'cleave', weaponTypes: ['sword1h'],
+    fx: { cleaveFlyM: 60 }
+  },
+  exploitWeakness: {
+    name: '乘虛之斬', desc: '迴旋斬對暈眩中的敵人造成額外的 50% 傷害。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'cleave', weaponTypes: ['sword1h'],
+    fx: { cleaveStunnedDmgPct: 50 }
+  },
+  gatheringVortex: {
+    name: '聚敵旋渦', desc: '迴旋斬會將 36 米內的 2 個敵人拉近至身邊 10 米範圍內。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'cleave', weaponTypes: ['sword1h'],
+    fx: { cleavePull: { m: 36, toM: 10, count: 2 } }
+  },
+
+  /* ---- 新版技能改寫型 第二批（2026-08-20；設計來源「傳奇進化」頁籤）----
+     生效路徑與第一批相同（legendarySkill2Mods 平坦合併 → 施放端讀通用參數鍵）。
+     只出現在匕首（dagger1h＝飛刀）與單手魔劍（magicSword1h＝疾風斬）。
+     （飛刀五項已於 2026-10-20 依「傳奇進化」試算表的順序搬到本區最前面，這裡只剩疾風斬。） */
   galeWhirlwind: {
-    name: '風捲殘雲', desc: '疾風斬命中時有 35% 機率在目標處形成一道龍捲風，造成 4 段、每段 100% 風系傷害。',
+    name: '風捲殘雲', desc: '疾風斬命中時有 25% 機率在目標處形成 1 道真空斬，對周圍 6 米內的敵人造成 100% 風系傷害。',
     base: 0, perR: 0, legendary: true, type: 'wind', relatedSkill: 'gale', weaponTypes: ['magicSword1h'],
-    fx: { galeTornado: { chance: 35, hits: 4, pct: 100, m: 4, gap: 0.4 } }
+    fx: { galeVacuum: { chance: 25, pct: 100, m: 6 } }
   },
   galeExecute: {
-    name: '斬殺', desc: '疾風斬有 35% 機率可立即殺死生命值 20% 以下的非 BOSS 敵人。',
+    name: '斬殺', desc: '疾風斬有 20% 機率可立即殺死生命值 10% 以下的非 BOSS 敵人。',
     base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'gale', weaponTypes: ['magicSword1h'],
-    fx: { galeExecute: { chance: 35, hpPct: 20 } }
+    fx: { galeExecute: { chance: 20, hpPct: 10 } }
   },
   galeTwinShadow: {
     name: '雙影', desc: '疾風斬命中時有 50% 機率額外對附近 1 個敵人造成 50% 傷害。',
@@ -995,9 +996,9 @@ var PASSIVE_POOL = {
     fx: { galeWindRend: { cutPct: 50 } }
   },
   galeGodspeed: {
-    name: '神速斬', desc: '疾風斬每次命中時，疾風斬的冷卻時間 -0.1 秒。',
+    name: '神速斬', desc: '疾風斬每次命中時，疾風斬的冷卻時間 -0.05 秒。',
     base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'gale', weaponTypes: ['magicSword1h'],
-    fx: { galeCdrSec: 0.1 }
+    fx: { galeCdrSec: 0.05 }
   },
 
   /* ---- 新版技能改寫型 第三批（2026-08-20；設計來源「傳奇進化」頁籤）----
@@ -1013,14 +1014,14 @@ var PASSIVE_POOL = {
     fx: { bloodPoisonMist: { m: 6, pct: 50, sec: 3, gap: 0.5 } }
   },
   bloodVenomRite: {
-    name: '毒血祭', desc: '血刃斬的中毒每感染 1 個敵人就使自身生命值 -1%，但造成的中毒與流血傷害提高 50%。',
+    name: '毒血祭', desc: '血刃斬的中毒每感染 1 個敵人就使自身生命值 -0.5%，但造成的中毒與流血傷害提高 50%。',
     base: 0, perR: 0, legendary: true, type: 'poison', relatedSkill: 'bloodblade', weaponTypes: ['magicSword2h'],
-    fx: { bloodVenomRite: { hpPct: 1, pct: 50 } }
+    fx: { bloodVenomRite: { hpPct: 0.5, pct: 50 } }
   },
   bloodMist: {
-    name: '血霧', desc: '血刃斬造成流血的敵人死亡後留下一灘血霧，血霧內的敵人每次受傷都回復你 0.2% 生命值，持續 4 秒。',
+    name: '血霧', desc: '血刃斬造成流血的敵人死亡後留下一灘血霧，血霧內的敵人每次受傷都回復你 0.1% 生命值，持續 4 秒。',
     base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'bloodblade', weaponTypes: ['magicSword2h'],
-    fx: { bloodMistField: { m: 6, healPct: 0.2, sec: 4 } }
+    fx: { bloodMistField: { m: 6, healPct: 0.1, sec: 4 } }
   },
   bloodShadow: {
     name: '血影', desc: '血刃斬有 35% 機率揮出第 2 斬。',
@@ -1038,14 +1039,14 @@ var PASSIVE_POOL = {
     fx: { danceStormGap: { pct: 6 } }
   },
   danceBerserker: {
-    name: '狂戰士', desc: '鐵血之舞造成的生命損失與傷害同時提高 50%。',
+    name: '狂戰士', desc: '鐵血之舞造成的自身生命損失 -25%，且造成的傷害 +25%。',
     base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'dualdance', weaponTypes: ['greatsword2h'],
-    fx: { danceIronAmp: { pct: 50 } }
+    fx: { danceIronAmp: { pct: 25, reducePct: 25 } }
   },
   danceUnyielding: {
-    name: '不屈之誓', desc: '暴風之舞持續期間你的死亡延後 10 秒才生效，且這 10 秒內你的傷害提高 100%。',
+    name: '不屈之誓', desc: '暴風之舞持續期間你的死亡延後 8 秒才生效，且這 8 秒內你的傷害提高 50%。',
     base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'dualdance', weaponTypes: ['greatsword2h'],
-    fx: { danceDeathDefer: { sec: 10, pct: 100 } }
+    fx: { danceDeathDefer: { sec: 8, pct: 50 } }
   },
   danceThousandCuts: {
     name: '殺千刀', desc: '雙刀亂舞每殺死 1 個敵人就使暴風之舞的持續時間 +0.2 秒。',
@@ -1066,29 +1067,29 @@ var PASSIVE_POOL = {
          數值鍵自動 ×2（白名單鍵除外，見 js/legendary.js LEGENDARY_FX_NON_VALUE_KEYS），
          desc 寫的是**未乘補償**的底值，口徑與第三批一致。 */
   counterOath: {
-    name: '堅韌誓言', desc: '反擊 100 次後獲得無敵狀態，持續 3 秒。',
+    name: '堅韌誓言', desc: '反擊 200 次後獲得無敵狀態，持續 3 秒。',
     base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'counter', weaponTypes: ['shield'],
-    fx: { counterOath: { count: 100, sec: 3 } }
+    fx: { counterOath: { count: 200, sec: 3 } }
   },
   counterWrath: {
-    name: '怒火', desc: '反擊 100 次後獲得怒火狀態，造成的傷害提高 30%，持續 6 秒。',
+    name: '怒火', desc: '反擊 100 次後獲得怒火狀態，造成的傷害提高 30%，持續 4 秒。',
     base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'counter', weaponTypes: ['shield'],
-    fx: { counterWrath: { count: 100, pct: 30, sec: 6 } }
+    fx: { counterWrath: { count: 100, pct: 30, sec: 4 } }
   },
   counterPerfect: {
-    name: '完美姿態', desc: '每次反擊有 10% 機率造成完美反擊，該次反擊傷害提高 300%。',
+    name: '完美姿態', desc: '每次反擊有 5% 機率造成完美反擊，該次反擊傷害提高 500%。',
     base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'counter', weaponTypes: ['shield'],
-    fx: { counterPerfect: { chance: 10, pct: 300 } }
+    fx: { counterPerfect: { chance: 5, pct: 500 } }
   },
   counterBloodPay: {
-    name: '以血還血', desc: '每次反擊損失自身 1% 生命值，但反擊傷害提高 50%。',
+    name: '以血還血', desc: '每次反擊損失自身 0.25% 生命值，但反擊傷害提高 100%。',
     base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'counter', weaponTypes: ['shield'],
-    fx: { counterBloodPay: { hpPct: 1, pct: 50 } }
+    fx: { counterBloodPay: { hpPct: 0.25, pct: 100 } }
   },
   counterWindBody: {
-    name: '風之體', desc: '反擊有 10% 機率朝目標射出一道風刃，造成 100% 普攻傷害的風系傷害。',
-    base: 0, perR: 0, legendary: true, type: 'wind', relatedSkill: 'counter', weaponTypes: ['shield'],
-    fx: { counterWindBlade: { chance: 10, powerPct: 100 } }
+    name: '風之體', desc: '反擊有 20% 機率附加 1 顆火球射向目標，造成 100% 普攻傷害的火焰傷害。',
+    base: 0, perR: 0, legendary: true, type: 'fire', relatedSkill: 'counter', weaponTypes: ['shield'],
+    fx: { counterFireball: { chance: 20, powerPct: 100 } }
   },
   rageValor: {
     name: '英勇氣概', desc: '嗜血狂怒的攻速額外 +30%（與本體同為突破上限的乘算）。',
@@ -1101,19 +1102,19 @@ var PASSIVE_POOL = {
     fx: { rageBurnBlood: { pct: 1, maxStacks: 50, sec: 4 } }
   },
   rageBloodDebt: {
-    name: '血債償還', desc: '【血飲術】造成的自身生命損失降低 50%。',
+    name: '血債償還', desc: '【血飲術】造成的自身生命損失降低 25%。',
     base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'bloodrage', weaponTypes: ['greatsword2h'],
     /* reducePct 刻意不吃雙手補償（見 js/legendary.js 白名單）：×2 會讓 50% 變成 100%＝
        完全免除代價，一個取捨就變成純收益；而且【燃血】是靠「每次生命損失」疊層的，
        損失被歸零之後兩個特效會完全互斥——設計上顯然是要能並存的。 */
-    fx: { rageSelfCut: { reducePct: 50 } }
+    fx: { rageSelfCut: { reducePct: 25 } }
   },
   rageZealot: {
-    name: '狂熱者', desc: '每 0.1 連擊數使【狂血盛宴】的傷害加成再提高 5%（＝每 1 連擊數 +50%）。',
+    name: '狂熱者', desc: '每 0.5 連擊數使【狂血盛宴】的傷害加成再提高 10%（＝每 1 連擊數 +20%）。',
     base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'bloodrage', weaponTypes: ['greatsword2h'],
     /* 設計文檔寫「每 0.1 連擊數 +5%」，這裡換算成同義的「每 1 連擊數 +50%」收成單一數值鍵：
        用 { per: 0.1, pct: 5 } 這種形狀的話，雙手補償會把分母 per 也 ×2 而讓效果**變弱**。 */
-    fx: { rageZealotPct: 50 }
+    fx: { rageZealotPct: 20 }
   },
   rageSlaughterer: {
     name: '屠戮者', desc: '狂怒期間每殺死 1 個敵人使【嗜血反震】的效果提高 5%，最多疊 10 層，持續 4 秒。',
@@ -1126,9 +1127,9 @@ var PASSIVE_POOL = {
      規格物件裡走 LEGENDARY_FX_NON_VALUE_KEYS 的保護鍵（count／hits），
      比照雙手大劍的【雙生刃】danceTargetAdd：補償放大的是威力，不是次數。 */
   fireballBeadShot: {
-    name: '連珠火', desc: '火球及殞石的數量 +1 個。',
+    name: '連珠火', desc: '每次發射火球數量 +1 個，且累計每發射 5 個火球會再額外發射 1 個火球。',
     base: 0, perR: 0, legendary: true, type: 'fire', relatedSkill: 'fireball', weaponTypes: ['wand1h'],
-    fx: { fireballCountAdd: { count: 1 } }
+    fx: { fireballCountAdd: { count: 1, every: 5, extra: 1 } }
   },
   fireballEmber: {
     name: '燃燼', desc: '火球術造成的燃燒效果傷害 +50%。',
@@ -1151,9 +1152,9 @@ var PASSIVE_POOL = {
     fx: { fireballSplitAdd: { count: 3 } }
   },
   firepillarTracking: {
-    name: '追蹤烈焰', desc: '火龍捲會追蹤敵人，移動速度 12 米／秒。',
+    name: '追蹤烈焰', desc: '火龍捲移動速度 +50%。',
     base: 0, perR: 0, legendary: true, type: 'fire', relatedSkill: 'firepillar', weaponTypes: ['staff2h'],
-    fx: { firepillarChase: { mps: 12, m: 30 } }
+    fx: { firepillarSpeedPct: 50 }
   },
   firepillarSpread: {
     name: '火龍擴散', desc: '火龍捲的體積增加 30%。',
@@ -1171,9 +1172,9 @@ var PASSIVE_POOL = {
     fx: { firepillarBurnAmp: { pct: 10 } }
   },
   firepillarResonance: {
-    name: '火龍共鳴', desc: '場上每存在 1 道火龍捲，所有火龍捲造成的傷害 +4%。',
+    name: '火龍共鳴', desc: '場上每存在 1 道火龍捲，所有火龍捲造成的傷害 +10%。',
     base: 0, perR: 0, legendary: true, type: 'fire', relatedSkill: 'firepillar', weaponTypes: ['staff2h'],
-    fx: { firepillarResonancePct: 4 }
+    fx: { firepillarResonancePct: 10 }
   },
   /* ---- 傳奇進化第六批（2026-08-25）：魔法系第二批 ----
      水晶球→火狩（firehunt）／法器→岩甲術（rockarmor）。
@@ -1186,14 +1187,14 @@ var PASSIVE_POOL = {
     fx: { firehuntScalePct: 25 }
   },
   firehuntConcurrent: {
-    name: '伴生併發', desc: '每 1 秒，你的 1 團火狩會飛出攻擊半徑 20 米內的敵人，對目標 10 米內的所有敵人造成 300% 火焰傷害。',
+    name: '伴生併發', desc: '每 1 秒，你的 1 團火狩會飛出攻擊半徑 36 米內的任意敵人，對目標 10 米內的所有敵人造成 300% 火焰傷害。',
     base: 0, perR: 0, legendary: true, type: 'fire', relatedSkill: 'firehunt', weaponTypes: ['orb'],
-    fx: { firehuntLaunch: { gap: 1, m: 20, aoeM: 10, pct: 300 } }
+    fx: { firehuntLaunch: { gap: 1, m: 36, aoeM: 10, pct: 300 } }
   },
   firehuntBlaze: {
-    name: '烈火狩', desc: '在火狩的持續時間內，每 0.5 秒你的火焰傷害提高 2%，最多 50 層（與火焰增幅各自計算層數，火狩全部消失後結束）。',
+    name: '烈火狩', desc: '在火狩的持續時間內，每 1 秒你的火焰傷害提高 2%，最多 20 層（與火焰增幅各自計算層數，火狩全部消失後結束）。',
     base: 0, perR: 0, legendary: true, type: 'fire', relatedSkill: 'firehunt', weaponTypes: ['orb'],
-    fx: { firehuntFireAmp: { gap: 0.5, pct: 2, maxStacks: 50 } }
+    fx: { firehuntFireAmp: { gap: 1, pct: 2, maxStacks: 20 } }
   },
   firehuntDetonate: {
     name: '炎爆', desc: '一個敵人被火狩命中 10 次後會爆炸，對其周圍 6 米內的敵人造成 250% 火焰傷害。',
@@ -1206,7 +1207,7 @@ var PASSIVE_POOL = {
     fx: { firehuntHunter: { pct: 150 } }
   },
   rockHeavyArmor: {
-    name: '重岩甲', desc: '岩甲術獲得的生命護盾 +30%。',
+    name: '重岩甲', desc: '岩甲護盾效果 +30%。',
     base: 0, perR: 0, legendary: true, type: 'earth', relatedSkill: 'rockarmor', weaponTypes: ['focus'],
     fx: { rockShieldPct: 30 }
   },
@@ -1221,14 +1222,14 @@ var PASSIVE_POOL = {
     fx: { rockAmpStacksAdd: { maxStacks: 10 } }
   },
   rockSpikeArmor: {
-    name: '尖刺甲', desc: '【岩甲尖刺】的效果提高 100%。',
+    name: '尖刺甲', desc: '【岩甲尖刺】的效果提高 50%。',
     base: 0, perR: 0, legendary: true, type: 'earth', relatedSkill: 'rockarmor', weaponTypes: ['focus'],
-    fx: { rockSpikePct: 100 }
+    fx: { rockSpikePct: 50 }
   },
   rockEarthHeart: {
-    name: '大地之心', desc: '當你的生命護盾降至 0 時獲得無敵 2 秒；此效果每 30 秒只能觸發 1 次。',
+    name: '大地之心', desc: '當你的生命護盾降至 0 時獲得無敵 3 秒；此效果每 60 秒只能觸發 1 次。',
     base: 0, perR: 0, legendary: true, type: 'earth', relatedSkill: 'rockarmor', weaponTypes: ['focus'],
-    fx: { rockHeartInvuln: { sec: 2, cd: 30 } }
+    fx: { rockHeartInvuln: { sec: 3, cd: 60 } }
   },
   /* ---- 傳奇進化第七批（2026-08-25）：地系第二批 ----
      魔劍→泥沼術（mire）／盾牌→大地守護（earthguard）。
@@ -1241,19 +1242,19 @@ var PASSIVE_POOL = {
     fx: { mireScalePct: 25 }
   },
   mireWeaken: {
-    name: '削弱', desc: '在泥沼術範圍中的敵人造成的傷害 -30%。',
+    name: '削弱', desc: '在泥沼術範圍中的敵人造成的傷害 -20%。',
     base: 0, perR: 0, legendary: true, type: 'earth', relatedSkill: 'mire', weaponTypes: ['magicSword1h'],
-    fx: { mireWeaken: { reducePct: 30 } }
+    fx: { mireWeaken: { reducePct: 20 } }
   },
   mireCorrupt: {
-    name: '腐化', desc: '在泥沼術範圍內所有受到控場的敵人，受到的傷害 +30%。',
+    name: '腐化', desc: '在泥沼術範圍內所有受到控場的敵人，受到的傷害 +20%。',
     base: 0, perR: 0, legendary: true, type: 'earth', relatedSkill: 'mire', weaponTypes: ['magicSword1h'],
-    fx: { mireCorruptPct: 30 }
+    fx: { mireCorruptPct: 20 }
   },
   mireLavaBurn: {
-    name: '熔火', desc: '熔岩沼的火焰傷害 +70%。',
+    name: '熔火', desc: '熔岩沼的火焰傷害 +50%。',
     base: 0, perR: 0, legendary: true, type: 'earth', relatedSkill: 'mire', weaponTypes: ['magicSword1h'],
-    fx: { mireLavaPct: 70 }
+    fx: { mireLavaPct: 50 }
   },
   mireErode: {
     name: '侵蝕', desc: '泥沼術會附加流血，每 0.5 秒造成 150% 物理傷害，持續 5 秒。',
@@ -1261,14 +1262,14 @@ var PASSIVE_POOL = {
     fx: { mireBleed: { tickPowerPct: 150, tickSec: 0.5, dur: 5 } }
   },
   earthguardManaFeed: {
-    name: '魔力滋養', desc: '大地守護會使溢出的 50% 法力轉為你的生命護盾。',
+    name: '魔力滋養', desc: '大地守護會使溢出法力的 50% 轉為你的生命護盾。',
     base: 0, perR: 0, legendary: true, type: 'earth', relatedSkill: 'earthguard', weaponTypes: ['shield'],
     fx: { egManaOverflowShield: { pct: 50 } }
   },
   earthguardLifeFeed: {
-    name: '生命滋養', desc: '大地守護會使溢出的 10% 生命轉為你的法力值。',
+    name: '生命滋養', desc: '大地守護會使你額外獲得【魔力再生】法力回復加成的 20% 作為吸魔效果加成。',
     base: 0, perR: 0, legendary: true, type: 'earth', relatedSkill: 'earthguard', weaponTypes: ['shield'],
-    fx: { egHpOverflowMana: { pct: 10 } }
+    fx: { egManaDrainFromRegen: { pct: 20 } }
   },
   earthguardSoulLink: {
     name: '靈魂連結', desc: '【生命反射之盾】可以額外對 1 個敵人產生作用。',
@@ -1276,9 +1277,9 @@ var PASSIVE_POOL = {
     fx: { egReflectAdd: { count: 1 } }
   },
   earthguardHeartOfEarth: {
-    name: '地之心', desc: '每殺死 1 個敵人，【天地共生】的復活冷卻時間 -1 秒。',
+    name: '地之心', desc: '每殺死 1 個敵人，【天地共生】的復活冷卻時間 -0.2 秒。',
     base: 0, perR: 0, legendary: true, type: 'earth', relatedSkill: 'earthguard', weaponTypes: ['shield'],
-    fx: { egKillCdr: { sec: 1 } }
+    fx: { egKillCdr: { sec: 0.2 } }
   },
   earthguardUndyingWill: {
     name: '不滅意志', desc: '【天地共生】復活後的減傷時間內，每殺死 1 個敵人則減傷時間 +0.5 秒。',
@@ -1291,14 +1292,14 @@ var PASSIVE_POOL = {
      數字沿用設計文檔原值；仍把「次數／秒數／機率」放進 LEGENDARY_FX_NON_VALUE_KEYS
      的保護鍵，之後若改判為雙手也不會被放大成別的東西（比照第七批）。 */
   chainlightningSurge: {
-    name: '電荷連鎖', desc: '連鎖閃電的彈射數 +2 次。',
+    name: '電荷連鎖', desc: '連鎖閃電有 35% 機率再連鎖 2 次。',
     base: 0, perR: 0, legendary: true, type: 'lightning', relatedSkill: 'chainlightning', weaponTypes: ['sword1h'],
-    fx: { chainLinkAdd: { count: 2 } }
+    fx: { chainLinkProc: { chance: 35, count: 2 } }
   },
   chainlightningVolley: {
-    name: '電擊', desc: '連鎖閃電的發射數量 +2 道。',
+    name: '電擊', desc: '連鎖閃電有 50% 機率額外發射 2 道連鎖閃電。',
     base: 0, perR: 0, legendary: true, type: 'lightning', relatedSkill: 'chainlightning', weaponTypes: ['sword1h'],
-    fx: { chainBoltAdd: { count: 2 } }
+    fx: { chainBoltProc: { chance: 50, count: 2 } }
   },
   chainlightningScatter: {
     name: '雷散落', desc: '【電殛擴散】額外對 1 個敵人造成傷害，且其傷害提高 50%。',
@@ -1311,9 +1312,9 @@ var PASSIVE_POOL = {
     fx: { chainBouncePct: 10 }
   },
   chainlightningOverload: {
-    name: '過載', desc: '同一個敵人受到 5 次連鎖閃電的彈射後產生爆炸，對周圍 6 米內的敵人造成 200% 雷電傷害。',
+    name: '過載', desc: '同一個敵人受到 10 次連鎖閃電的彈射後產生爆炸，對周圍 10 米內的敵人造成 400% 雷電傷害。',
     base: 0, perR: 0, legendary: true, type: 'lightning', relatedSkill: 'chainlightning', weaponTypes: ['sword1h'],
-    fx: { chainOverload: { hits: 5, m: 6, pct: 200 } }
+    fx: { chainOverload: { hits: 10, m: 10, pct: 400 } }
   },
   thunderstrikeTriple: {
     name: '三重雷', desc: '【雙重落雷】的攻擊次數 +1 次。',
@@ -1321,9 +1322,9 @@ var PASSIVE_POOL = {
     fx: { thunderHitAdd: { count: 1 } }
   },
   thunderstrikeLock: {
-    name: '雷鎖', desc: '落雷術額外攻擊 1 個目標。',
+    name: '雷鎖', desc: '落雷術擊中時有 25% 機率在地上留下一個雷池，每 0.5 秒造成該道落雷 20% 的雷電傷害，持續 4 秒。',
     base: 0, perR: 0, legendary: true, type: 'lightning', relatedSkill: 'thunderstrike', weaponTypes: ['wand1h'],
-    fx: { thunderTargetAdd: { count: 1 } }
+    fx: { thunderPool: { chance: 25, pct: 20, m: 6, gap: 0.5, sec: 4 } }
   },
   thunderstrikeQuake: {
     name: '震雷', desc: '被落雷術擊中的敵人暈眩時間 +1 秒，且其在暈眩狀態下受到的傷害 +25%。',
@@ -1347,19 +1348,19 @@ var PASSIVE_POOL = {
      仍把「次數／秒數／機率」放進 LEGENDARY_FX_NON_VALUE_KEYS 的保護鍵，
      之後若改判為雙手也不會被放大成別的東西（比照第七、第八批）。 */
   thunderorbCore: {
-    name: '雷核', desc: '雷球的體積增大 30%。',
+    name: '雷核', desc: '雷球的體積增大 20%。',
     base: 0, perR: 0, legendary: true, type: 'lightning', relatedSkill: 'thunderorb', weaponTypes: ['orb'],
-    fx: { thunderorbScalePct: 30 }
+    fx: { thunderorbScalePct: 20 }
   },
   thunderorbOverload: {
-    name: '超載', desc: '場上每擁有 1 個雷球，你的雷電傷害 +3%。',
+    name: '超載', desc: '場上每擁有 1 個雷球，你的雷電傷害 +2%。',
     base: 0, perR: 0, legendary: true, type: 'lightning', relatedSkill: 'thunderorb', weaponTypes: ['orb'],
-    fx: { thunderorbFieldAmpPct: 3 }
+    fx: { thunderorbFieldAmpPct: 2 }
   },
   thunderorbShockCore: {
-    name: '感電核心', desc: '【伴生雷球】的持續時間增加 100%。',
+    name: '感電核心', desc: '【伴生雷球】的持續時間增加 50%。',
     base: 0, perR: 0, legendary: true, type: 'lightning', relatedSkill: 'thunderorb', weaponTypes: ['orb'],
-    fx: { thunderorbCompanionSecPct: 100 }
+    fx: { thunderorbCompanionSecPct: 50 }
   },
   thunderorbFallCount: {
     name: '雷殞落', desc: '【雷殞天落】降下的雷球數量 +1 顆。',
@@ -1377,14 +1378,14 @@ var PASSIVE_POOL = {
     fx: { icearrowCountAdd: { count: 2 } }
   },
   icearrowSeal: {
-    name: '冰封', desc: '寒冰箭傷害 +50%。',
+    name: '冰封', desc: '寒冰箭傷害 +30%。',
     base: 0, perR: 0, legendary: true, type: 'ice', relatedSkill: 'icearrow', weaponTypes: ['spellbook'],
-    fx: { icearrowDamagePct: 50 }
+    fx: { icearrowDamagePct: 30 }
   },
   icearrowWinter: {
-    name: '凜冬侵蝕', desc: '寒冰箭造成的寒霜狀態傷害與持續時間 +50%。',
+    name: '凜冬侵蝕', desc: '寒冰箭造成的寒霜狀態傷害與持續時間 +30%。',
     base: 0, perR: 0, legendary: true, type: 'ice', relatedSkill: 'icearrow', weaponTypes: ['spellbook'],
-    fx: { icearrowFrostPct: 50 }
+    fx: { icearrowFrostPct: 30 }
   },
   icearrowSplit: {
     name: '冰裂箭', desc: '寒冰箭擊中敵人後會再分裂出 2 支小型寒冰箭，向前方的敵人造成 150% 寒冰傷害。',
@@ -1392,9 +1393,9 @@ var PASSIVE_POOL = {
     fx: { icearrowSplit: { count: 2, pct: 150 } }
   },
   icearrowDeepFreeze: {
-    name: '深度凍結', desc: '寒冰箭擊中暈眩或凍結的敵人造成的傷害 +50%。',
+    name: '深度凍結', desc: '寒冰箭擊中暈眩或凍結的敵人造成的傷害 +30%。',
     base: 0, perR: 0, legendary: true, type: 'ice', relatedSkill: 'icearrow', weaponTypes: ['spellbook'],
-    fx: { icearrowControlPct: 50 }
+    fx: { icearrowControlPct: 30 }
   },
   /* ---- 傳奇進化第十批（2026-08-28）：冰系第二批 ----
      法器→水流彈（waterball）／雙手杖→冰霜新星（frostnova）。
@@ -1428,9 +1429,9 @@ var PASSIVE_POOL = {
     fx: { waterballTornadoProc: { chance: 10, hits: 4, pct: 100 } }
   },
   frostnovaShatter: {
-    name: '碎冰', desc: '冰霜新星的攻擊範圍 +30%。',
+    name: '碎冰', desc: '冰霜新星的攻擊範圍 +20%。',
     base: 0, perR: 0, legendary: true, type: 'ice', relatedSkill: 'frostnova', weaponTypes: ['staff2h'],
-    fx: { frostnovaScalePct: 30 }
+    fx: { frostnovaScalePct: 20 }
   },
   frostnovaTwinBurst: {
     name: '雙冰爆', desc: '冰霜新星擊中帶有寒霜狀態的敵人時，有 35% 機率在目標處再爆發 1 次冰霜新星。',
@@ -1448,9 +1449,9 @@ var PASSIVE_POOL = {
     fx: { frostnovaColdTide: { chance: 20 } }
   },
   frostnovaWinterFrost: {
-    name: '凜冬寒霜', desc: '暴風雪持續時間內會不斷對範圍內的敵人施加寒霜狀態，且寒霜狀態傷害 +30%。',
+    name: '凜冬寒霜', desc: '暴風雪對帶有寒霜狀態的敵人，每層寒霜傷害 +5%。',
     base: 0, perR: 0, legendary: true, type: 'ice', relatedSkill: 'frostnova', weaponTypes: ['staff2h'],
-    fx: { frostnovaBlizzardFrost: { stacks: 1 }, frostnovaFrostDmgPct: 30 }
+    fx: { frostnovaBlizzardLayer: { pct: 5 } }
   },
   /* ---- 傳奇進化第十一批（2026-08-28）：風系 ----
      單手魔杖→風刃（windblade）／雙手斧→真空斬（vacuumslash）。
@@ -1459,9 +1460,9 @@ var PASSIVE_POOL = {
      LEGENDARY_FX_NON_VALUE_KEYS 的保護鍵裡（count／hits／maxStacks／sec），
      被放大的只有威力與體積（比照第五批的火龍捲）。 */
   windbladeRend: {
-    name: '裂風', desc: '風刃每擊中敵人 1 次則傷害額外 +5%，最高為 +100%。',
+    name: '裂風', desc: '風刃每擊中敵人 1 次則傷害額外 +2%，最多疊加 20 層（最高 +40%）。',
     base: 0, perR: 0, legendary: true, type: 'wind', relatedSkill: 'windblade', weaponTypes: ['wand1h'],
-    fx: { windbladeRamp: { pct: 5, max: 100 } }
+    fx: { windbladeRamp: { pct: 2, max: 40 } }
   },
   windbladePressure: {
     name: '增壓', desc: '風刃的體積增大 25%，且飛行速度 +30%。',
@@ -1534,9 +1535,9 @@ var PASSIVE_POOL = {
     fx: { stormbarrierDefPct: 20 }
   },
   stormbarrierCore: {
-    name: '風暴核心', desc: '【暴風神體】的持續時間 +50%。',
+    name: '風暴核心', desc: '【暴風神體】的持續時間 +30%。',
     base: 0, perR: 0, legendary: true, type: 'wind', relatedSkill: 'stormbarrier', weaponTypes: ['shield'],
-    fx: { stormGodSecPct: 50 }
+    fx: { stormGodSecPct: 30 }
   }
 };
 
@@ -1713,7 +1714,6 @@ var VFX_COMBAT_DEFAULTS = {
     fire: 'hit-fire', ice: 'hit-ice', lightning: 'hit-lightning', poison: 'hit-poison',
     light: 'hit-light', dark: 'hit-dark', earth: 'hit-earth', wind: 'hit-wind'
   },
-  legendaryLightningChain: { projectile: 'bolt-chain-lightning', hit: 'hit-lightning' },
   /* 小隕石：由 Runtime 依 variant 取用，不佔表上的欄位。 */
   meteorSmall: { projectile: 'proj-meteor-small', hit: 'hit-fire-explosion' }
 };

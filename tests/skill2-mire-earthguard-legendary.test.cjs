@@ -123,11 +123,11 @@ test('【削弱】：泥沼中的敵人造成的傷害降低，並與【僵化�
   const e = enemy(1000, 30, 0);
   assert.equal(c.skill2EnemyDamageFactor(e), 1, '沒中泥沼＝不影響');
   c.applyStatus(e, 'sgMire', { val: 50, dur: 5 });
-  assert.equal(Math.round(c.skill2EnemyDamageFactor(e) * 100), 70, '泥沼中＝ -30%');
+  assert.equal(Math.round(c.skill2EnemyDamageFactor(e) * 100), 80, '泥沼中＝ -20%');
   c.applyStatus(e, 'sgStiffen', { val: 50, dur: 5 });
-  assert.equal(Math.round(c.skill2EnemyDamageFactor(e) * 100), 35, '與僵化相乘（0.7 × 0.5）');
+  assert.equal(Math.round(c.skill2EnemyDamageFactor(e) * 100), 40, '與僵化相乘（0.8 × 0.5）');
   setLevels(c, 'mire', [1, 1, 0, 0, 0, 0, 0]);
-  assert.ok(Math.abs(c.skill2EnemyDamageFactor(e) - 0.835 * 0.7 * 0.5) < 1e-9,
+  assert.ok(Math.abs(c.skill2EnemyDamageFactor(e) - 0.835 * 0.8 * 0.5) < 1e-9,
     '第二階虛弱、傳奇削弱與僵化保持各自乘區');
 });
 
@@ -139,7 +139,7 @@ test('【腐化】：只有「泥沼中且正在被控場」的敵人才多吃�
   c.applyStatus(e, 'sgMire', { val: 50, dur: 5 });
   assert.equal(c.skill2MireVulnPct(e), 11, '沒被控場仍有本體易傷，不追加腐化');
   c.applyEffect(e, 'stun', 2);
-  assert.equal(c.skill2MireVulnPct(e), 41, '暈眩中＝本體11% + 腐化30%');
+  assert.equal(c.skill2MireVulnPct(e), 31, '暈眩中＝本體11% + 腐化20%');
   const outside = enemy(1000, 30, 0);
   c.applyEffect(outside, 'stun', 2);
   assert.equal(c.skill2MireVulnPct(outside), 0, '沒在泥沼裡就不算數');
@@ -155,7 +155,7 @@ test('【熔火】：熔岩沼的每跳傷害提高，其餘狀態不受影響',
   const base = spec([]);
   const hot = spec(['mireLavaBurn']);
   assert.ok(base.lavaDps > 0, '練滿即有熔岩沼');
-  assert.equal(Math.round(hot.lavaDps / base.lavaDps * 100), 170, '熔岩每跳量 +70%');
+  assert.equal(Math.round(hot.lavaDps / base.lavaDps * 100), 150, '熔岩每跳量 +50%');
   assert.equal(hot.poisonDps, base.poisonDps, '毒沼不受影響');
 });
 
@@ -357,15 +357,30 @@ test('【魔力滋養】：溢出的法力轉為生命護盾', () => {
   assert.ok(p.shield > 0, '溢出的法力轉成護盾');
 });
 
-test('【生命滋養】：溢出的生命轉為法力（而且不會再倒灌回護盾）', () => {
+test('【生命滋養】（2026-10-20 改版）：吸魔額外 +【魔力再生】法力回復加成的 20%；不再轉換溢出的生命', () => {
+  const plain = earthguardCtx([]);
   const c = earthguardCtx(['earthguardLifeFeed']);
+  const tier = c.sgEarthguardRegenTier('mp');
+  assert.ok(tier, '練滿即有【魔力再生】');
+  const regenPct = c.sgVal(tier.fx, 'pct', tier.lv);          // 法力回復額外 +N%
+  const extra = regenPct * 20 / 10000;
+  assert.ok(extra > 0);
+  assert.ok(Math.abs(c.skill2DrainFactor('mp') - (plain.skill2DrainFactor('mp') + extra)) < 1e-9,
+    '吸魔倍率 +（法力回復加成 × 20%）');
+  assert.equal(c.skill2DrainFactor('hp'), plain.skill2DrainFactor('hp'), '吸血不受影響');
+  // 舊行為已移除：滿血時溢出的生命不再變成法力
   const p = playerEnt();
-  p.hp = c.getStats().hp;                    // 滿血
+  p.hp = c.getStats().hp;
   p.mp = 0;
   c.healPlayer(p, 500, c.getStats(), { noShield: true });
-  assert.equal(p.hp, c.getStats().hp, '生命仍夾在上限');
-  assert.equal(Math.round(p.mp), 50, '溢出 500 的 10% → 50 法力');
-  assert.equal(p.shield, 0, '沒有【魔力滋養】就不該憑空長出護盾');
+  assert.equal(p.mp, 0, '溢出的生命不再轉成法力');
+  assert.equal(p.shield, 0, '也不會長出護盾');
+  // 沒學【魔力再生】就沒有法力回復加成可以換算
+  const noTier = loadContext();
+  stubVfx(noTier);
+  setLevels(noTier, 'earthguard', [1, 0, 0, 0, 0, 0, 0]); equip(noTier, 'earthguard');
+  setLegendary(noTier, ['earthguardLifeFeed']);
+  assert.equal(noTier.skill2DrainFactor('mp'), 1);
 });
 
 test('【靈魂連結】：生命反射之盾多打一個敵人', () => {
@@ -384,7 +399,7 @@ test('【地之心】：每擊殺 1 個敵人縮短【天地共生】的復活�
   const p = playerEnt();
   p.skillCds[c.SG_PREFIX + 'earthguard'] = 30;
   c.skills2OnEnemyKill(p, enemy(100, 10, 0));
-  assert.equal(p.skillCds[c.SG_PREFIX + 'earthguard'], 29);
+  assert.ok(Math.abs(p.skillCds[c.SG_PREFIX + 'earthguard'] - 29.8) < 1e-9, '每殺 1 個縮短 0.2 秒');
 });
 
 test('【不滅意志】：只延長【天地共生】給的那段減傷', () => {

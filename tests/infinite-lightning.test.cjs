@@ -132,7 +132,8 @@ test('無限閃電：同一條鏈保留1～7階傷害、彈射、雷鳴與靜電
 
 test('無限閃電：傳奇多道不突破自動單鏈限制，普通付費施放仍可多道', () => {
   const h = load();
-  h.c.sgLegend = gid => gid === 'chainlightning' ? { chainBoltAdd: { count: 2 } } : {};
+  h.c.sgLegend = gid => gid === 'chainlightning' ? { chainBoltProc: { chance: 50, count: 2 } } : {};
+  h.c.chance = () => true;
   h.auto(0); h.auto(.94); assert.equal(h.bolts.length, 1);
   h.settle(); h.bolts.length = 0;
   h.p.mp = 100000;

@@ -29,7 +29,6 @@ function fixture(ult, legendary, noPositions) {
   c.playCombatVfx = e => events.push(e);
   c.enemyEventFloatTarget = e => e.name;
   if (ult) c.G.player.skills2.ult.thrust = { pick: c.sgUltIndexOfId('thrust', ult), lv: 10 };
-  if (legendary) c.sgLegend = () => ({ octaToSingle: true });
   const p = { hp: 1000, mp: 10000, skillCds: {}, buffs: {}, dots: [], effects: {}, shield: 0 };
   c.FIELD = { player: p };
   const targets = Array.from({ length: 8 }, (_, i) => ({ name: '方向' + i, hp: 1e9, maxHp: 1e9,
@@ -104,10 +103,11 @@ test('高塔缺少幾何座標時，多向事件仍明確傳固定世界方位',
   }
 });
 
-for (const [ult, legendary] of [[null, true], ['oneStrikeKill', false], ['phantomOcta', true], ['shadowExecutioner', false]]) {
-  test('突刺方向改寫相容：' + (ult || '貫日之刺') + (legendary && ult ? '＋貫日之刺' : ''), () => {
-    const f = fixture(ult, legendary);
-    const single = legendary || ult === 'oneStrikeKill';
+/* 傳奇【貫日之刺】已於 2026-10-20 改成重傷機率，不再改寫突刺方向；方向只剩超神【一擊必殺】會改成單向。 */
+for (const ult of [null, 'oneStrikeKill', 'phantomOcta', 'shadowExecutioner']) {
+  test('突刺方向改寫相容：' + (ult || '無超神'), () => {
+    const f = fixture(ult, false);
+    const single = ult === 'oneStrikeKill';
     assert.ok(f.waves.every(w => w.directionCount === (single ? 1 : 4)));
     assert.ok(f.waves.every(w => Math.abs(w.angle - (single ? Math.PI / 4 : 0)) < 1e-9));
   });

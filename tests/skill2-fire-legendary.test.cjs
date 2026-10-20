@@ -144,6 +144,22 @@ test('【連珠火】：火球與殞石的數量各 +1', () => {
   setLevels(c3, 'fireball', [1, 1, 1, 1, 1, 1, 1]);
   c3.castSkill2(playerEnt(), [enemy(1e9, 100, 0)], 'fireball', 'mv-float');
   assert.equal(c3.SKILL2_RT.meteors.length, 4, '【連珠火】：殞石 3 → 4 顆');
+
+  // 累計每發射 5 個再額外發射 1 個（2026-10-20 改版）：每次 2 顆 → 第 1、2 次各 2 顆，第 3 次累計 6 ≥ 5 → 多 1 顆
+  const c4 = loadContext();
+  stubHits(c4);
+  c4.chance = () => false;
+  setLegendary(c4, ['fireballBeadShot']);
+  setLevels(c4, 'fireball', [1, 0, 0, 0, 0, 0, 0]);
+  const counts = [];
+  for (let i = 0; i < 4; i++) {
+    const pl = playerEnt();
+    c4.SKILL2_RT.projectiles.length = 0;
+    c4.castSkill2(pl, [enemy(1e9, 100, 0)], 'fireball', 'mv-float');
+    counts.push(c4.SKILL2_RT.projectiles.length);
+  }
+  assert.deepEqual(counts, [2, 2, 3, 2], '累計 2、4、6（越過 5 → 多 1 顆）、8（8 與 6 同在 5～9 之間）');
+  assert.equal(c4.SKILL2_RT.fireballShots, 8, '額外那顆不計入累計');
 });
 
 test('【燃燼】：火球術造成的燃燒每跳量 ×1.5', () => {
@@ -454,7 +470,7 @@ test('【火鳳遼原】：殞石 +1 顆、每顆伴隨數顆火球落下，且�
    3) 火龍捲的五個傳奇特效
    =========================================================================== */
 
-test('【追蹤烈焰】：火龍捲取得追蹤移動能力', () => {
+test('【追蹤烈焰】（2026-10-20 改版）：火龍捲移動速度 +50%，不再改變移動方式', () => {
   const c = loadContext();
   stubHits(c);
   c.chance = () => false;
@@ -463,6 +479,7 @@ test('【追蹤烈焰】：火龍捲取得追蹤移動能力', () => {
   assert.equal(c.SKILL2_RT.grounds[0].chaseM, 0, '基準：釘在地板上不動');
   assert.equal(c.SKILL2_RT.grounds[0].speed, 0);
 
+  // 本來就不會動的形態：沒有速度可加，不會因此開始追人
   const c2 = loadContext();
   stubHits(c2);
   c2.chance = () => false;
@@ -470,8 +487,22 @@ test('【追蹤烈焰】：火龍捲取得追蹤移動能力', () => {
   setLevels(c2, 'firepillar', [1, 0, 0, 0, 0, 0, 0]);
   c2.castSkill2(playerEnt(), [enemy(1e9, 100, 0)], 'firepillar', 'mv-float');
   const f = c2.SKILL2_RT.grounds[0];
-  assert.equal(f.chaseM, c2.bfMeterPx(30), '追擊半徑 30 米');
-  assert.equal(f.speed, c2.bfMeterPx(12), '移動速度 12 米／秒');
+  assert.equal(f.chaseM, 0, '不再追擊');
+  assert.equal(f.speed, 0, '不動的火龍捲沒有速度可加');
+
+  // 會動的形態（第 7 階無限火龍，表定 6 米／秒）：速度 ×1.5
+  function infiniteSpeed(keys) {
+    const cc = loadContext();
+    stubHits(cc);
+    cc.chance = () => false;
+    if (keys) setLegendary(cc, keys);
+    setLevels(cc, 'firepillar', [1, 1, 1, 1, 1, 1, 1]);
+    cc.castSkill2(playerEnt(), [enemy(1e9, 100, 0)], 'firepillar', 'mv-float');
+    return cc.SKILL2_RT.grounds[0].speed;
+  }
+  const baseSpeed = infiniteSpeed(null);
+  assert.ok(baseSpeed > 0, '無限火龍本來就會動');
+  assert.ok(Math.abs(infiniteSpeed(['firepillarTracking']) / baseSpeed - 1.5) < 1e-9, '移動速度 +50%');
 });
 
 test('【火龍擴散】：火龍捲的判定體積 +30%', () => {
@@ -551,7 +582,7 @@ test('【火龍共鳴】：場上每存在 1 道火龍捲就替所有火龍捲�
   const gap = c.SKILL2_RT.grounds[0].gap;
   c.GT += gap; c.tickSkill2(gap, tickCtx(c, p, enemies));
   assert.ok(calls.length > 0, '應該有命中');
-  assert.equal(calls[0].total, 8, '場上 2 道 × 每道 +4% ＝ +8%');
+  assert.equal(calls[0].total, 20, '場上 2 道 × 每道 +10% ＝ +20%');
 });
 
 /* ===========================================================================
@@ -634,8 +665,8 @@ test('legendarySkill2Mods 只合併「同群組且已生效」的火系傳奇 fx
   setLegendary(c, ['fireballBeadShot', 'firepillarResonance', 'knifeChain']);
   const fb = c.legendarySkill2Mods('fireball');
   const fp = c.legendarySkill2Mods('firepillar');
-  assert.deepEqual(JSON.parse(JSON.stringify(fb)), { fireballCountAdd: { count: 1 } });
-  assert.deepEqual(JSON.parse(JSON.stringify(fp)), { firepillarResonancePct: 4 });
+  assert.deepEqual(JSON.parse(JSON.stringify(fb)), { fireballCountAdd: { count: 1, every: 5, extra: 1 } });
+  assert.deepEqual(JSON.parse(JSON.stringify(fp)), { firepillarResonancePct: 10 });
   assert.equal(fb.firepillarResonancePct, undefined, '不得跨群組外洩');
 });
 
@@ -648,5 +679,5 @@ test('數量／段數包在規格物件裡：雙手補償只放大威力，不�
   });
   const fp = c.legendarySkill2Mods('firepillar');
   assert.equal(fp.firepillarHitsAdd.hits, 3, '段數是受保護的鍵，不吃 ×2');
-  assert.equal(fp.firepillarResonancePct, 8, '威力照吃 ×2');
+  assert.equal(fp.firepillarResonancePct, 20, '威力照吃 ×2');
 });

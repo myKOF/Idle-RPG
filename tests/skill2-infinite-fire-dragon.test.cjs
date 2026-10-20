@@ -40,11 +40,11 @@ test('T7 respawns once, even if rebirth always succeeds; descendants retain move
  const child=c.SKILL2_RT.grounds[0];assert.equal(child.respawnLeft,0);assert.equal(child.fireHunt,true);assert.equal(child.speed,60);assert.equal(child.hits,12);
  c.SKILL2_RT.grounds=[];c.sgGroundExpire(child,[m],{});assert.equal(c.SKILL2_RT.grounds.length,0);
 });
-test('lower tiers stay stationary and keep six hits; legend speed and hits remain additive',()=>{
+test('lower tiers stay stationary and keep six hits; legend speed (+50%) and hits remain additive',()=>{
  const {c,f}=setup(0);assert.equal(f.hits,6);assert.equal(f.fireHunt,false);assert.equal(f.speed,0);
- const x=setup();x.c.sgLegend=()=>({firepillarHitsAdd:{hits:3},firepillarChase:{mps:12,m:30}});x.c.SKILL2_RT.grounds=[];
+ const x=setup();x.c.sgLegend=()=>({firepillarHitsAdd:{hits:3},firepillarSpeedPct:50});x.c.SKILL2_RT.grounds=[];
  x.c.sgCastFirepillar(x.p,{matk:500},x.c.SKILLS2.firepillar,[1,1,1,1,1,1,1],[x.m],x.m,'mv-float',{});
- assert.equal(x.c.SKILL2_RT.grounds[0].hits,15);assert.equal(x.c.SKILL2_RT.grounds[0].speed,120);
+ assert.equal(x.c.SKILL2_RT.grounds[0].hits,15);assert.equal(x.c.SKILL2_RT.grounds[0].speed,90);
 });
 test('infinite preset uses shared atlas without procedural generation',()=>{
  const p=JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets/fire-tornado-infinite.json')));
