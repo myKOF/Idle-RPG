@@ -10,7 +10,7 @@ function mount() {
 }
 test('快捷列超神滿級總80，只顯示第八階效果；其他技能群組提示保留完整進化',()=>{
   const c=mount();c.showSkillTooltip('sg:earthguard',{closest:s=>s==='#battle-skill-bar'?{}:null});
-  assert.match(c.tip.innerHTML,/總 Lv\.80 \/ 80/);assert.match(c.tip.innerHTML,/第8階【超神進化】/);
+  assert.match(c.tip.innerHTML,/總 Lv\.80 \/ 80/);assert.match(c.tip.innerHTML,/第8階【終極進化】/);
   assert.doesNotMatch(c.tip.innerHTML,/第[1-7]階|sg-tier-list/);
   c.showSkillTooltip('sg:earthguard',{closest:()=>null});assert.match(c.tip.innerHTML,/總 Lv\.80/);assert.match(c.tip.innerHTML,/第1階/);assert.match(c.tip.innerHTML,/第8階/);
 });

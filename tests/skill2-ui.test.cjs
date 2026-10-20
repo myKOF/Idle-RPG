@@ -3,7 +3,7 @@
 /* 技能頁（2026-10 改版）：左清單＋右「進化之路」的技能瀏覽器，取代逐列方格與群組升級彈窗。
    守住：
      1. 未解鎖的階只能查看、不產生升級鈕；滿級只剩降級／重置；第 1 階不能降到 0
-     2. 超神進化：未開放→顯示還差幾階；未選→三選一按鈕；已選→升級走 SG_ULT_SLOT
+     2. 終極進化：未開放→顯示還差幾階；未選→三選一按鈕；已選→升級走 SG_ULT_SLOT
      3. 主動型被動仍有裝備鈕與類型標籤（需裝配才生效）
      4. 清單與詳情分開快取（金幣變動只重繪詳情，清單捲動位置不跳）
      5. 技能列移到分頁底部；舊方格列與彈窗的程式與樣式已移除
@@ -319,13 +319,15 @@ test('第 1 階恆為至少 Lv.1，不能降到 0', () => {
   assert.match(h, /學習|升級/);
 });
 
-test('超神進化：未開放顯示還差幾階，未選三選一，已選升級走 SG_ULT_SLOT', () => {
+test('終極進化：未開放顯示還差幾階，未選三選一，已選升級走 SG_ULT_SLOT', () => {
   const c = loadContext();
   const locked = detail(c, 'thrust', snapshot({ thrust: [10, 10, 10, 10, 10, 10, 5] }), 0, undefined, 'ult');
   assert.match(locked, /前 7 階需全部滿級（目前 6／7 階已滿級）/);
   assert.doesNotMatch(locked, /data-skill2-ultpick/);
 
   const open = detail(c, 'thrust', snapshot({ thrust: Array(7).fill(10) }), 0, undefined, 'ult');
+  assert.match(open, /第 8 階 · 終極進化/);
+  assert.doesNotMatch(open, /超神進化/);
   assert.match(open, /data-skill2-ultpick="thrust:0"/);
   assert.equal((open.match(/class="sgb-ult-card[ "]/g) || []).length, 3);
 
@@ -374,7 +376,7 @@ test('切換二次確認顯示完整費用；取消不送指令，確認只送�
   const cost = c.skills2UltCost('frostnova', 2, 0);
   c.runSkill2UltSwitch('frostnova', 2);
   assert.equal(elements['confirm-modal'].style.display, 'flex');
-  assert.equal(elements['confirm-title'].textContent, '超神進化切換確認');
+  assert.equal(elements['confirm-title'].textContent, '終極進化切換確認');
   assert.equal(elements['confirm-ok'].textContent, '確認切換');
   const highlight = elements['confirm-message'].children[0];
   assert.equal(highlight.className, 'confirm-highlight');
@@ -515,7 +517,7 @@ test('戰鬥快捷列：主動型被動帶 active-passive class，不套冷卻�
   assert.match(css, /prefers-reduced-motion[\s\S]*?\.battle-skill-slot\.active-passive::before\s*\{[\s\S]*?animation:\s*none/);
 });
 
-test('技能上方的mp消耗顯示當前最高階技能的mp（含超神進化、一般階級與手動瀏覽不同階級時）', () => {
+test('技能上方的mp消耗顯示當前最高階技能的mp（含終極進化、一般階級與手動瀏覽不同階級時）', () => {
   const c = loadContext();
   const progressMax = { level: 900, reinc: 1, towerHighest: 150 };
   // 1. 僅學第 1 階：顯示第 1 階消耗 (25 MP)
@@ -528,7 +530,7 @@ test('技能上方的mp消耗顯示當前最高階技能的mp（含超神進化�
   let h7 = c.sgbDetailHTML('waterball', snap7, { player: { gold: 1e15 } });
   assert.match(h7, /<span class="sgb-meta"[^>]*>🔵 3000 MP　⏱️ 8s<\/span>/);
 
-  // 3. 超神進化生效（水牢天瀑）：頂部標頭應顯示超神進化的消耗 (10000 MP)
+  // 3. 終極進化生效（水牢天瀑）：頂部標頭應顯示終極進化的消耗 (10000 MP)
   const snapUlt = snapshot({ waterball: Array(7).fill(10) }, {
     skills2: {
       levels: { waterball: Array(7).fill(10) },

@@ -85,14 +85,14 @@
 var SG_PREFIX = 'sg:';
 var SG_TIER_MAX_LV = 10;      // 每階等級上限（固定，不隨轉生提高）
 var SG_TIER_COUNT = 7;        // 每群組階數
-/* ---- 超神進化（2026-08-19 第八批：技能第 8 階）----
+/* ---- 終極進化（2026-08-19 第八批：技能第 8 階）----
    結構上**不是** tiers 的第 8 個元素：前 7 階是「循序解鎖、全部同時生效、各自獨立升級」，
-   超神進化是「三選一、只有選中的那一個生效」，兩種語意混在同一個陣列裡會讓
+   終極進化是「三選一、只有選中的那一個生效」，兩種語意混在同一個陣列裡會讓
    sgEffectiveLevels 的級聯、存檔正規化與參數表的階數校驗全部長出例外分支。
    因此資料放在群組層的 g.ult（三個選項），等級與選擇放在 G.player.skills2.ult，
    UI 只在「格位」這一層把它畫成第 8 格（ref 仍是 sg:<gid>:7）。
    解鎖條件：該群組前 7 階全部練滿（目前不另設等級／轉生門檻）。 */
-var SG_ULT_SLOT = SG_TIER_COUNT;   // 超神進化在技能面板的格位索引（第 8 格）
+var SG_ULT_SLOT = SG_TIER_COUNT;   // 終極進化在技能面板的格位索引（第 8 格）
 var SG_ULT_OPTION_COUNT = 3;       // 三選一
 var SG_FLYING_PROJECTILE_SPEED = 240;
 var SG_MULTI_ATTACK_GAP_SEC = 0.2; // 未另訂節奏的多段／多次攻擊預設間隔
@@ -329,7 +329,7 @@ function resetSkill2RT() {
     rockPillars: null, // 超重岩之術四秒岩柱；與岩甲護盾分開計時，不入存檔
     valgrShield: 0, // 超神【瓦爾格之力】：已累積失去的護盾值（不入存檔）
     barrier: null, // 暴風屏障狀態：{ until, pEnt, nextAt, gap, floatSel }（nextAt＝下一拍護盾／撕裂的時刻）
-    ultAuto: {},  // 超神進化的自動施放節拍：{ <群組id>: 下一次自動施放的時刻 }（不入存檔）
+    ultAuto: {},  // 終極進化的自動施放節拍：{ <群組id>: 下一次自動施放的時刻 }（不入存檔）
     earthguardVfxAt: 0,
     radianceAt: 0, // 光耀之堂下一次回復時刻（不入存檔）
     bloodDomain: { venomAt: 0 }, // 血刃斬永久領域的節拍：萬毒的作用時刻（不入存檔）
@@ -510,13 +510,13 @@ function skills2Castable(gid) {
 }
 
 /* ===========================================================================
-   超神進化（第 8 格；三選一 × 10 級）
+   終極進化（第 8 格；三選一 × 10 級）
    ---------------------------------------------------------------------------
    純函式段落與 sgEffectiveLevels 同一個設計：主執行緒（UI）吃面板快照、
    Worker 端吃 G，兩邊呼叫同一支正規化，不會出現「畫面說可以、Worker 說不行」。
    =========================================================================== */
 
-/* 這個群組的三個超神進化選項（沒有＝該群組尚未開放超神進化）。 */
+/* 這個群組的三個終極進化選項（沒有＝該群組尚未開放終極進化）。 */
 function sgUltDefs(gid) {
   var g = SKILLS2[gid];
   return (g && Object.prototype.toString.call(g.ult) === '[object Array]' && g.ult.length) ? g.ult : null;
@@ -532,7 +532,7 @@ function sgUltIndexOfId(gid, id) {
   for (var i = 0; list && i < list.length; i++) if (list[i].id === id) return i;
   return -1;
 }
-/* 超神進化共同前置：普通階全部練滿；各選項另套自己的配置門檻。 */
+/* 終極進化共同前置：普通階全部練滿；各選項另套自己的配置門檻。 */
 function sgUltUnlockedBy(gid, lvs) {
   if (typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.skillUnlock) {
     var g0 = SKILLS2[gid];
@@ -575,7 +575,7 @@ function sgUltPickOf(raw, gid) {
   if (!isFinite(lv) || lv < 1) return null;
   return { idx: idx, id: list[idx].id, def: list[idx], lv: Math.min(SG_TIER_MAX_LV, lv) };
 }
-/* 生效中的超神進化：已選、普通階全滿、選項進度門檻達標；失效時保留存檔投資。 */
+/* 生效中的終極進化：已選、普通階全滿、選項進度門檻達標；失效時保留存檔投資。 */
 function sgEffectiveUlt(raw, gid, lvs, prog) {
   var pick = sgUltPickOf(raw, gid);
   return pick && sgUltOptionUnlockedBy(gid, pick.idx, lvs, prog) ? pick : null;
@@ -604,16 +604,16 @@ function skills2ManaCost(gid, lvs, ultRaw, prog) {
   for (var i = g.tiers.length - 1; i >= 0; i--) if (lvs[i] > 0) return skills2TierManaCost(gid, i);
   return 0;
 }
-/* 施放端的判定入口：這個群組現在生效的超神進化是不是指定的那一個。 */
+/* 施放端的判定入口：這個群組現在生效的終極進化是不是指定的那一個。 */
 function sgUlt(gid, id) {
   var u = skills2Ult(gid);
   return (u && u.id === id) ? u : null;
 }
-/* 超神進化的某個 fx 參數在目前等級的值（沒選中就回 0，呼叫端不必先判 null）。 */
+/* 終極進化的某個 fx 參數在目前等級的值（沒選中就回 0，呼叫端不必先判 null）。 */
 function sgUltVal(u, key) {
   return u ? sgVal(u.def.fx, key, u.lv) : 0;
 }
-/* 格位索引是不是超神進化那一格（UI／指令共用；沒有超神進化的群組一律回 false）。 */
+/* 格位索引是不是終極進化那一格（UI／指令共用；沒有終極進化的群組一律回 false）。 */
 function sgIsUltSlot(gid, slot) {
   return Math.floor(Number(slot)) === SG_ULT_SLOT && !!sgUltDefs(gid);
 }
@@ -623,7 +623,7 @@ function sgSlotCount(gid) {
   if (!g) return 0;
   return g.tiers.length + (sgUltDefs(gid) ? 1 : 0);
 }
-/* 「被超神進化改為被動技能」的查表。這一支是全專案唯一的判定入口。
+/* 「被終極進化改為被動技能」的查表。這一支是全專案唯一的判定入口。
      cleave／天霸風神斬     ：改由 sgTickUltAutoCast 每 N 秒自動施放
      windblade／天穹崩裂    ：沒有節拍，觸發時機是受到攻擊（sgSkyCollapseOnPlayerDamaged）
    ⚠️ 用「群組 → 選項 id」的查表而不是逐一 sgUlt(gid, id)：暴風屏障也有一個叫
@@ -673,12 +673,12 @@ function sgLegendCount(spec, key) {
   return Math.max(0, Math.floor(Number(spec[key || 'count']) || 0));
 }
 
-/* ---- 修羅亂舞（雙刀亂舞超神進化）：裝備規則的唯一判定入口 ----
+/* ---- 修羅亂舞（雙刀亂舞終極進化）：裝備規則的唯一判定入口 ----
    這是全專案唯一一個「技能狀態決定裝備規則」的效果，所以判定只寫在這裡：
    可裝欄位（js/data.js equipSlotsForItem）、副手佔用（slotBlockedByTwoHand）、
    穿戴互斥（js/player.js equipItem）與屬性聚合（js/formula.js computeStats）全部呼叫這一支。
    條件有二，缺一不可：
-     ・雙刀亂舞的超神進化選的是修羅亂舞且仍生效（前 7 階全滿，降級即自動失效）
+     ・雙刀亂舞的終極進化選的是修羅亂舞且仍生效（前 7 階全滿，降級即自動失效）
      ・雙刀亂舞**裝配在技能列上**——使用者決策 2026-08-20：卸下該技能後副手武器立刻不生效
    讀 G＝Worker 端權威。主執行緒沒有 G，面板一律自行以快照算好後傳參覆寫
   （js/data.js 的 asuraOverride 參數），不會出現「畫面說可以、Worker 說不行」。 */
@@ -692,7 +692,7 @@ function skills2AsuraAffixPct() {
 }
 
 /* ---- 新版技能狀態異動後的統一收尾 ----
-   為什麼屬性快取也要失效：超神進化【修羅亂舞】的生效條件是「選了它 ＋ 前 7 階全滿 ＋
+   為什麼屬性快取也要失效：終極進化【修羅亂舞】的生效條件是「選了它 ＋ 前 7 階全滿 ＋
    裝配在技能列上」，因此**任何**一階的升降、選擇的增刪都可能開關它，進而改變 computeStats
   （副手的雙手武器計不計入、雙手詞條要不要加成）。與其在每個異動點各自判斷是不是 dualdance，
    一律失效最便宜，也最不會漏——這裡少一個呼叫點，症狀是「面板數字停在舊值」而且沒有任何錯誤訊息。 */
@@ -713,7 +713,7 @@ function sgAfterSkillChange() {
 }
 
 /* ---- 「你造成的所有傷害提高」的唯一加總入口 ----
-   來源包含符文真言 allDmgUp、超神進化與傳奇效果。
+   來源包含符文真言 allDmgUp、終極進化與傳奇效果。
    普攻（js/combat.js playerAtkCfg）與新版技能（sgAtkCfg）都讀這一支——
    兩邊各自列舉的話，下次新增來源必然會漏掉其中一邊。 */
 function skills2AllDamageUpPct(pEnt) {
@@ -1320,7 +1320,7 @@ function skills2UpgradeCost(gid, tierIdx, curLv) {
   return Math.floor((Number(t.goldBase) || 0) * Math.pow(grow, Math.max(0, Number(curLv) || 0)));
 }
 
-/* 超神進化的升級費用：曲線與各階相同（goldBase × goldGrow^目前等級）。
+/* 終極進化的升級費用：曲線與各階相同（goldBase × goldGrow^目前等級）。
    optIdx 留白＝取目前已選的那一個；還沒選時由呼叫端（選擇畫面）指定要試算哪一個。 */
 function skills2UltCost(gid, optIdx, curLv) {
   var opt = sgUltOption(gid, optIdx);
@@ -1329,7 +1329,7 @@ function skills2UltCost(gid, optIdx, curLv) {
   return Math.floor((Number(opt.goldBase) || 0) * Math.pow(grow, Math.max(0, Number(curLv) || 0)));
 }
 
-/* 群組總投資等級（前端「同一個技能不斷變強」的顯示用；包含超神進化等級，全滿為 80 級）。 */
+/* 群組總投資等級（前端「同一個技能不斷變強」的顯示用；包含終極進化等級，全滿為 80 級）。 */
 function sgTotalLevel(lvs, gid) {
   if (typeof lvs === 'string') {
     gid = lvs;
@@ -1351,7 +1351,7 @@ function sgTotalLevel(lvs, gid) {
 
 /* ---- 指令實作（Worker 端；回傳 null＝成功、字串＝拒絕原因） ---- */
 
-/* 超神進化的存檔節點（惰性建立；沒有投資過的群組不佔存檔欄位）。 */
+/* 終極進化的存檔節點（惰性建立；沒有投資過的群組不佔存檔欄位）。 */
 function sgUltStore() {
   if (!G.player.skills2) G.player.skills2 = { levels: {} };
   if (!G.player.skills2.ult || typeof G.player.skills2.ult !== 'object') G.player.skills2.ult = {};
@@ -1363,20 +1363,20 @@ function sgUltStore() {
 function skills2UltPick(group, optIdx) {
   var g = SKILLS2[group];
   if (!g) return '未知技能群組';
-  if (!sgUltDefs(group)) return '此技能尚未開放超神進化';
+  if (!sgUltDefs(group)) return '此技能尚未開放終極進化';
   var lvs = skills2Levels(group);
-  if (!sgUltUnlockedBy(group, lvs)) return '需先將前 ' + g.tiers.length + ' 階全部練滿才能選擇超神進化';
-  if (sgUltPickOf(sgUltStore(), group)) return '已選擇超神進化；需先將其降至 Lv.0 才能重新選擇';
+  if (!sgUltUnlockedBy(group, lvs)) return '需先將前 ' + g.tiers.length + ' 階全部練滿才能選擇終極進化';
+  if (sgUltPickOf(sgUltStore(), group)) return '已選擇終極進化；需先將其降至 Lv.0 才能重新選擇';
   optIdx = Math.floor(Number(optIdx));
   var opt = sgUltOption(group, optIdx);
-  if (!opt) return '未知的超神進化選項';
-  if (!sgUltOptionUnlockedBy(group, optIdx, lvs)) return '需達到 ' + sgUnlockText(opt.unlock) + '才能解鎖此超神進化';
+  if (!opt) return '未知的終極進化選項';
+  if (!sgUltOptionUnlockedBy(group, optIdx, lvs)) return '需達到 ' + sgUnlockText(opt.unlock) + '才能解鎖此終極進化';
   var cost = skills2UltCost(group, optIdx, 0);
   if ((G.player.gold || 0) < cost) return '金幣不足';
   G.player.gold -= cost;
   sgUltStore()[group] = { pick: optIdx, lv: 1 };
   /* 修羅亂舞會改變屬性聚合（副手雙手武器是否生效、雙手詞條加成幾%），
-     因此超神進化的任何異動都必須讓屬性快取失效——不然玩家選／卸之後
+     因此終極進化的任何異動都必須讓屬性快取失效——不然玩家選／卸之後
      _statsCache 會沿用舊值，而且沒有任何機制會偵測到。 */
   if (typeof markStatsDirty === 'function') markStatsDirty();
   sgAfterSkillChange();
@@ -1387,14 +1387,14 @@ function skills2UltPick(group, optIdx) {
 function skills2UltSwitch(group, optIdx, fromOpt, fromLv, quotedCost) {
   var g = SKILLS2[group];
   if (!g) return '未知技能群組';
-  if (!sgUltDefs(group)) return '此技能尚未開放超神進化';
-  if (!sgUltUnlockedBy(group, skills2Levels(group))) return '需先將前 ' + g.tiers.length + ' 階全部練滿才能切換超神進化';
+  if (!sgUltDefs(group)) return '此技能尚未開放終極進化';
+  if (!sgUltUnlockedBy(group, skills2Levels(group))) return '需先將前 ' + g.tiers.length + ' 階全部練滿才能切換終極進化';
   var cur = sgUltPickOf(G.player.skills2 && G.player.skills2.ult, group);
-  if (!cur || cur.idx !== fromOpt || cur.lv !== fromLv) return '超神進化選擇或等級已變更，請重新確認切換';
+  if (!cur || cur.idx !== fromOpt || cur.lv !== fromLv) return '終極進化選擇或等級已變更，請重新確認切換';
   var opt = sgUltOption(group, optIdx);
-  if (!Number.isInteger(optIdx) || !opt) return '未知的超神進化選項';
-  if (!sgUltOptionUnlockedBy(group, optIdx, skills2Levels(group))) return '需達到 ' + sgUnlockText(opt.unlock) + '才能解鎖此超神進化';
-  if (cur.idx === optIdx) return '已選擇此超神進化';
+  if (!Number.isInteger(optIdx) || !opt) return '未知的終極進化選項';
+  if (!sgUltOptionUnlockedBy(group, optIdx, skills2Levels(group))) return '需達到 ' + sgUnlockText(opt.unlock) + '才能解鎖此終極進化';
+  if (cur.idx === optIdx) return '已選擇此終極進化';
   var cost = skills2UltCost(group, optIdx, 0);
   if (cost !== quotedCost) return '切換費用已變更，請重新確認';
   if ((G.player.gold || 0) < cost) return '金幣不足';
@@ -1404,38 +1404,38 @@ function skills2UltSwitch(group, optIdx, fromOpt, fromLv, quotedCost) {
   return null;
 }
 
-/* 超神進化升級（第 8 格的「升級」；尚未選擇時要先走 skills2UltPick）。 */
+/* 終極進化升級（第 8 格的「升級」；尚未選擇時要先走 skills2UltPick）。 */
 function skills2UltLearn(group) {
   var g = SKILLS2[group];
   if (!g) return '未知技能群組';
-  if (!sgUltDefs(group)) return '此技能尚未開放超神進化';
+  if (!sgUltDefs(group)) return '此技能尚未開放終極進化';
   var lvs = skills2Levels(group);
-  if (!sgUltUnlockedBy(group, lvs)) return '需先將前 ' + g.tiers.length + ' 階全部練滿才能投資超神進化';
+  if (!sgUltUnlockedBy(group, lvs)) return '需先將前 ' + g.tiers.length + ' 階全部練滿才能投資終極進化';
   var cur = sgUltPickOf(sgUltStore(), group);
-  if (!cur) return '請先選擇一個超神進化效果';
-  if (!sgUltOptionUnlockedBy(group, cur.idx, lvs)) return '需達到 ' + sgUnlockText(cur.def.unlock) + '才能解鎖此超神進化';
+  if (!cur) return '請先選擇一個終極進化效果';
+  if (!sgUltOptionUnlockedBy(group, cur.idx, lvs)) return '需達到 ' + sgUnlockText(cur.def.unlock) + '才能解鎖此終極進化';
   if (cur.lv >= SG_TIER_MAX_LV) return '此階已達等級上限';
   var cost = skills2UltCost(group, cur.idx, cur.lv);
   if ((G.player.gold || 0) < cost) return '金幣不足';
   G.player.gold -= cost;
   sgUltStore()[group] = { pick: cur.idx, lv: cur.lv + 1 };
   /* 修羅亂舞會改變屬性聚合（副手雙手武器是否生效、雙手詞條加成幾%），
-     因此超神進化的任何異動都必須讓屬性快取失效——不然玩家選／卸之後
+     因此終極進化的任何異動都必須讓屬性快取失效——不然玩家選／卸之後
      _statsCache 會沿用舊值，而且沒有任何機制會偵測到。 */
   if (typeof markStatsDirty === 'function') markStatsDirty();
   sgAfterSkillChange();
   return null;
 }
 
-/* 超神進化降級；降到 Lv.0 就整個清掉選擇（＝可以重新三選一，比照各階「降級不退金幣」）。 */
+/* 終極進化降級；降到 Lv.0 就整個清掉選擇（＝可以重新三選一，比照各階「降級不退金幣」）。 */
 function skills2UltDowngrade(group) {
   if (!SKILLS2[group]) return '未知技能群組';
   var cur = sgUltPickOf(sgUltStore(), group);
-  if (!cur) return '尚未選擇超神進化';
+  if (!cur) return '尚未選擇終極進化';
   if (cur.lv <= 1) { delete sgUltStore()[group]; }
   else sgUltStore()[group] = { pick: cur.idx, lv: cur.lv - 1 };
   /* 修羅亂舞會改變屬性聚合（副手雙手武器是否生效、雙手詞條加成幾%），
-     因此超神進化的任何異動都必須讓屬性快取失效——不然玩家選／卸之後
+     因此終極進化的任何異動都必須讓屬性快取失效——不然玩家選／卸之後
      _statsCache 會沿用舊值，而且沒有任何機制會偵測到。 */
   if (typeof markStatsDirty === 'function') markStatsDirty();
   sgAfterSkillChange();
@@ -1477,7 +1477,7 @@ function skills2Downgrade(group, tier) {
   if (tier === 0 && lvs[0] <= 1) return '第 1 階至少保持 Lv.1';
   if (lvs[tier] <= 0) return '此階尚未投資';
   if (lvs[tier] === 1 && tier + 1 < lvs.length && lvs[tier + 1] > 0) return '後續階數已投資，需先將其降至 Lv.0';
-  /* 前 7 階任何一階離開滿級，超神進化就失去解鎖條件（sgEffectiveUlt 會自動失效）；
+  /* 前 7 階任何一階離開滿級，終極進化就失去解鎖條件（sgEffectiveUlt 會自動失效）；
      等級與選擇一律保留在存檔裡，練回滿級就原樣回來——與各階「未達門檻視為 Lv.0」同一條規則。 */
   lvs[tier]--;
   if (!G.player.skills2) G.player.skills2 = { levels: {} };
@@ -1501,7 +1501,7 @@ function skills2PanelView() {
   var ultRaw = (G && G.player && G.player.skills2) ? G.player.skills2.ult : null;
   for (var gid in SKILLS2) {
     out.levels[gid] = skills2Levels(gid);
-    /* 超神進化送「存檔上的選擇」而不是「生效中的選擇」：解鎖條件由 UI 端以同一支
+    /* 終極進化送「存檔上的選擇」而不是「生效中的選擇」：解鎖條件由 UI 端以同一支
        sgUltUnlockedBy 重算，玩家把某一階降級時畫面才看得到「已選但暫時失效」。 */
     var pick = sgUltPickOf(ultRaw, gid);
     if (pick) out.ult[gid] = { pick: pick.idx, lv: pick.lv };
@@ -1953,7 +1953,7 @@ function sgBloodbladeDotSpec(st, lvs, tiers, role) {
 
 /* 血刃斬的 DOT 塗抹。三條路徑（初次塗抹／屍爆傳染／零日感染傳染）共用這一支，
    因此第三批的兩個效果都掛在這裡：
-     超神進化【崩解】：縮短間隔與延長時間已在來源規格計算，傳染不得重複套用
+     終極進化【崩解】：縮短間隔與延長時間已在來源規格計算，傳染不得重複套用
      傳奇【毒血祭】：每感染 1 個敵人付出自身生命
    保留完整持續狀態；崩解爆炸由狀態結束觸發。
    role＝'bleed'／'poison'：流血填在第 1 階、中毒填在第 4 階的「敵方狀態」第一格。 */
@@ -2313,7 +2313,7 @@ function sgQueueFlyingProjectile(pEnt, st, gid, dmgVal, origin, angle, length, f
     /* 命中時附加的減益（狂風碎裂的移速下降）：狀態鍵與數值由呼叫端指定。 */
     slowSlot: (extra && extra.slowSlot) || null,
     slowPct: Math.max(0, Number(extra && extra.slowPct) || 0),
-    /* 命中後掛鉤：與直接命中路徑共用同一支（傳奇特效／超神進化的命中觸發）。 */
+    /* 命中後掛鉤：與直接命中路徑共用同一支（傳奇特效／終極進化的命中觸發）。 */
     onHit: (extra && typeof extra.onHit === 'function') ? extra.onHit : null,
     /* 逐目標的總傷加成%（乘虛之斬對暈眩目標增傷）：命中的當下才算得準，
        因此存的是函式而不是數字。 */
@@ -2377,7 +2377,7 @@ function sgProjectileHit(projectile, target, ctx) {
     sgApplySlot(target, projectile.slowSlot.gid, projectile.slowSlot.tier, 'enemy', projectile.slowSlot.idx || 0,
       { val: projectile.slowPct });
   }
-  /* 命中後掛鉤（2026-08-19 傳奇特效／超神進化）：貫穿型技能的傷害在飛行物這裡結算，
+  /* 命中後掛鉤（2026-08-19 傳奇特效／終極進化）：貫穿型技能的傷害在飛行物這裡結算，
      直接命中的傷害在施放函式裡結算——兩條路徑共用同一支掛鉤，效果才不會只在其中一種
      形態下生效（突刺投資到第 4／6／7 階就整個改走飛行物）。 */
   if (projectile.onHit) projectile.onHit(target, res, ctx);
@@ -2586,7 +2586,7 @@ function sgTickFlyingProjectiles(dt, ctx) {
 /* ---- 施放總入口 ----
    pEnt 玩家戰鬥實體、target 為敵人陣列（野外）或單一實體（高塔）、gid 群組 id。
    opts.storm＝暴風之舞自動施放（不扣魔、不進自身冷卻、不重複觸發暴風）。
-   opts.repeat＝超神進化的重複施放（【天地雷鎖陣】【永恒雷獄】）：同樣不扣魔、不進冷卻，
+   opts.repeat＝終極進化的重複施放（【天地雷鎖陣】【永恒雷獄】）：同樣不扣魔、不進冷卻，
    且不再重新起算重複節拍——否則第一次施放就會把自己續成無限迴圈。
    回傳 { killed, dmg, crit } 或 null（無法施放）。 */
 function skills2DefensivePrecast(gid) {
@@ -2687,7 +2687,7 @@ function sgThrustOffsetOrigin(angle, offsetPx) {
   return { x: p.x + Math.cos(side) * offsetPx, y: p.y + Math.sin(side) * offsetPx };
 }
 
-/* 普通敵人（非精英、非 BOSS、非高塔 BOSS）：超神進化【一擊必殺】的處決對象判定。
+/* 普通敵人（非精英、非 BOSS、非高塔 BOSS）：終極進化【一擊必殺】的處決對象判定。
    旗標沿用 combat.js monsterDefCfg 的同一組欄位，不另建一套敵種分類。 */
 function sgIsNormalEnemy(ent) {
   return !!ent && !ent.elite && !ent.isBoss && !ent.towerBoss;
@@ -2705,7 +2705,7 @@ function sgEnemiesAround(center, enemies, radiusPx) {
   return res;
 }
 
-/* 突刺的「命中之後」掛鉤（傳奇特效 ＋ 超神進化）。
+/* 突刺的「命中之後」掛鉤（傳奇特效 ＋ 終極進化）。
    突刺一旦投資到第 4／6／7 階就整個改走飛行物結算，因此直接命中與貫穿飛行物
    兩條路徑必須共用同一支掛鉤，效果才不會只在其中一種形態下生效。
    cfg 由 sgCastThrust 一次算好（純資料，不含幾何）。 */
@@ -2760,7 +2760,7 @@ function sgThrustOnHit(cfg, target, res, ctx) {
 
 function sgCastThrust(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   var t = g.tiers;
-  /* 傳奇特效（唯一入口 sgLegend）與超神進化（唯一入口 sgUlt）：
+  /* 傳奇特效（唯一入口 sgLegend）與終極進化（唯一入口 sgUlt）：
      兩者都只改寫參數，幾何與傷害管線仍是同一套。 */
   var lg = sgLegend('thrust');
   var ultPhantom = sgUlt('thrust', 'phantomOcta');
@@ -3468,7 +3468,7 @@ function sgCastKnife(pEnt, st, g, lvs, pool, primary, floatSel, out) {
 
 /* ---- 疾風斬 ----
    本體斬擊、爆散、月牙均分與千鳥隨機打擊共用同一支命中掛鉤 sgGaleOnHit，
-   傳奇特效與超神進化才不會只在其中一種型態下生效（比照突刺／迴旋斬）。
+   傳奇特效與終極進化才不會只在其中一種型態下生效（比照突刺／迴旋斬）。
    cfg 由 sgCastGale 一次算好（純資料，不含幾何）。 */
 
 /* 傳奇【風捲殘雲】：命中處形成 1 道真空斬，對目標周圍 m 米內的敵人造成風系傷害。
@@ -3801,7 +3801,7 @@ function sgBloodbladeSlash(pEnt, st, g, lvs, pool, primary, floatSel, out, lg, d
      狂戰士   → 鐵血之舞的比例放大；生命損失與敵人流血同吃，因為兩者本來就是同一個 ironPct
      殺千刀   → 本次施放每殺 1 個敵人就延長暴風之舞
      不屈之誓 → 不在這裡：死亡攔截掛在 skills2TryDeathDefer（js/combat.js onPlayerFieldDeath）
-   超神進化：
+   終極進化：
      毀滅之舞 → 施放代價（當下生命%）＋ 本次施放的總傷加成與追加攻擊
      火之神樂 → 每次命中疊 1 層【神樂灼焰】
      修羅亂舞 → 不在施放路徑上：它改的是裝備規則（skills2AsuraDualWield） */
@@ -3815,7 +3815,7 @@ function sgCastDualdance(pEnt, st, g, lvs, pool, primary, floatSel, out, storm) 
   if (lvs[2] > 0) pct += sgVal(t[2].fx, 'pct', lvs[2]);
   var dmgVal = st.atk * pct / 100;
 
-  /* 超神進化【毀滅之舞】：每次施放都付出生命，換來本次施放的總傷加成。
+  /* 終極進化【毀滅之舞】：每次施放都付出生命，換來本次施放的總傷加成。
      代價取「當下生命」的比例並保底留 1 點，因此暴風之舞的自動施放（每 gap 秒一次）
      會讓生命指數逼近 1 點而不會踏過死亡線——這也讓它與同群組 T6【嗜血狂化】
     （生命／護盾每少 1% 就加技能傷害）形成刻意的正回饋，而不是變成自殺鍵。
@@ -3851,7 +3851,7 @@ function sgCastDualdance(pEnt, st, g, lvs, pool, primary, floatSel, out, storm) 
     var res = sgHitOne(pEnt, st, tgt, dmgVal, 'dualdance', floatSel, out, danceDelayMs, doomPct);
     if (!res || res.miss) continue;
     if (res.killed) { kills++; continue; }
-    // 超神進化【火之神樂】：每命中 1 次疊 1 層灼焰（疊層規則由狀態表的 stack 處理）
+    // 終極進化【火之神樂】：每命中 1 次疊 1 層灼焰（疊層規則由狀態表的 stack 處理）
     if (kaguraSpec) sgApplyKagura(tgt, kaguraSpec);
   }
   // 狂暴之舞／嗜血狂化：建立同一個 6 秒執行期狀態；技能傷害增幅依當下生命／護盾動態計算。
@@ -3933,9 +3933,9 @@ function sgDanceStormKillSec(lg) {
   return spec ? Math.max(0, Number(spec.sec) || 0) : 0;
 }
 
-/* 超神進化【火之神樂】的灼焰規格：每層每 gap 秒造成技能傷害 pct%。
+/* 終極進化【火之神樂】的灼焰規格：每層每 gap 秒造成技能傷害 pct%。
    疊層交給狀態表的 stack 規則（applyDot 會把 dps 換算成「單層值 × 層數」），
-   因此這裡給的一律是**單層**的每秒量。沒選這個超神進化就回 null。 */
+   因此這裡給的一律是**單層**的每秒量。沒選這個終極進化就回 null。 */
 function sgKaguraSpec(ult, dmgVal) {
   if (!ult || !(dmgVal > 0)) return null;
   var gap = Math.max(0.1, sgUltVal(ult, 'gap') || 0.5);
@@ -6219,7 +6219,7 @@ function sgTickOrbits(dt, ctx) {
 }
 
 /* ---------------------------------------------------------------------------
-   火狩的傳奇特效與超神進化（2026-08-25 第六批）
+   火狩的傳奇特效與終極進化（2026-08-25 第六批）
    ---------------------------------------------------------------------------
    三個「不在環繞判定裡」的效果各自獨立：
      ・【炎爆】跟著命中走，因此掛在 sgOrbitStep 的命中段（爆炸結算在本段下方）
@@ -6389,7 +6389,7 @@ function sgFirehuntLaunch(ctx, spec) {
 
 /* 超神【火神降臨】：常駐的火焰纏身領域，每 gap 秒對周圍 m 米內的敵人造成火焰傷害。
    與火狩本體是否在場無關（設計文檔：你的身體被火焰包裹），因此節拍不看 orbits，
-   只看「有沒有裝配 ＋ 有沒有選這個超神進化」——與血刃斬的永久領域同一套語意。 */
+   只看「有沒有裝配 ＋ 有沒有選這個終極進化」——與血刃斬的永久領域同一套語意。 */
 function sgTickFireGod(ctx, dt) {
   var u = sgUlt('firehunt', 'fireGodDescend');
   if (!u || !skills2Equipped('firehunt')) { SKILL2_RT.fireGodAt = 0; sgEndDomainStatus('fireGodBody'); return; }
@@ -6607,7 +6607,7 @@ function sgTickRockArmorAura(ctx) {
 }
 
 /* ---------------------------------------------------------------------------
-   岩甲術的傳奇特效與超神進化（2026-08-25 第六批）
+   岩甲術的傳奇特效與終極進化（2026-08-25 第六批）
    ---------------------------------------------------------------------------
    收斂點沿用岩甲術本來那一套：權威是 SKILL2_RT.rock（施放期），增益只是投影。
      ・【重岩甲】【金剛不壞】的護盾量 → 施放當下換算（sgCastRockarmor）
@@ -6635,7 +6635,7 @@ function sgRockBurstVictims(pool, m) {
   return out;
 }
 
-/* 目前生效中的岩甲領域是哪一個超神進化（兩者三選一、互斥）；沒有就回 null。 */
+/* 目前生效中的岩甲領域是哪一個終極進化（兩者三選一、互斥）；沒有就回 null。 */
 function sgRockFieldUlt() {
   if (!skills2Equipped('rockarmor')) return null;
   return sgUlt('rockarmor', 'superRockArt') || sgUlt('rockarmor', 'gravityField');
@@ -7033,7 +7033,7 @@ function sgMireBleedSpec(lg, st) {
 
 /* 超神【惡疫魔沼】：沼澤塗上的惡疫規格（沒選中＝null）。
    與泥沼的其他狀態不同，它「離開後仍會存在 sec 秒」，因此持續時間不是 f.gap × 2，
-   而是超神進化自己的 sec；每一拍重塗只是把剩餘時間推回滿值。 */
+   而是終極進化自己的 sec；每一拍重塗只是把剩餘時間推回滿值。 */
 function sgMirePlagueSpec(base) {
   var u = sgUlt('mire', 'plagueMire');
   if (!u) return null;
@@ -7245,7 +7245,7 @@ function skill2MireWeakenFactor(ent) {
    掛點：js/combat.js tickStatuses 的每一跳（依狀態表的「傷害屬性」欄分流）。
    走這裡而不是 resolveHit 既有的 skillElemAmp，是因為本專案的持續傷害一律是
    「施放當下定版的平坦 dps」、根本不經過 resolveHit——與【火焰增幅】對燃燒
-   的既有關係一致。放大量的權威是**目前的超神進化等級**（不存在狀態值上），
+   的既有關係一致。放大量的權威是**目前的終極進化等級**（不存在狀態值上），
    與【泥沼緩速】同一種做法。 */
 function skill2DotElemFactor(ent, sid) {
   var u = sgUlt('mire', 'plagueMire');
@@ -10035,7 +10035,7 @@ function sgTickRagingTide(ctx, dt) {
 
 /* ---- 超神【海淵葬界】：永久的寒冰領域 ----
    比照血刃斬的永久領域：**不建立場域實例**，每一拍直接以玩家為圓心做一次幾何查詢，
-   領域的權威就是超神進化本身，卸下就自動消失，不需要任何清理程式碼。
+   領域的權威就是終極進化本身，卸下就自動消失，不需要任何清理程式碼。
    每一拍塗的是水流彈自己那一份寒霜（與施放端共用 sgFrostSpec，數值不會漂移）。 */
 function sgTickAbyssDomain(ctx, dt) {
   var u = sgUlt('waterball', 'abyssBurial');
@@ -11768,7 +11768,7 @@ function sgCounterStrike(pEnt, st, target, pct, floatSel, out, delayMs, cfg) {
   return res;
 }
 
-/* ---- 反擊的傳奇進化與超神進化（2026-08-21 第四批）----
+/* ---- 反擊的傳奇進化與終極進化（2026-08-21 第四批）----
    盾牌是副手（cat offHand），**沒有**雙手武器補償，因此 fx 寫多少就是多少。 */
 
 /* 反擊的累計器。分開記每個效果的計數而不是共用一個總數，是因為門檻各自獨立
@@ -12139,7 +12139,7 @@ function tickSkill2(dt, ctx) {
        當前生命按同一個比例縮回去（施放時漲多少、到期就掉多少），整個循環不白賺相對生命。 */
     var adamantEnt = SKILL2_RT.rock.pEnt;
     /* ⚠️ 不能用 skill2RockMaxHpFactor()：那一支本身就以「岩甲還在不在」為前提，
-       到期這一刻它已經回 1 了。倍率要直接從超神進化的參數重算。 */
+       到期這一刻它已經回 1 了。倍率要直接從終極進化的參數重算。 */
     var adamantU = (typeof markStatsDirty === 'function') ? sgUlt('rockarmor', 'adamantBody') : null;
     var adamantRatio = adamantU ? 1 + sgUltVal(adamantU, 'hp') / 100 : 1;
     /* 岩甲到期回收。顯示層那一側不必也不能在這裡通知：模擬層跑在 Worker 內，
@@ -12192,11 +12192,11 @@ function tickSkill2(dt, ctx) {
   sgTickValgrShield(ctx);
 }
 
-/* 超神進化【地爆天星】：每隔一段時間，天空落下一顆超巨型殞石，
+/* 終極進化【地爆天星】：每隔一段時間，天空落下一顆超巨型殞石，
    對全場敵人依敵種扣掉一定比例的**最大生命**。
    節拍記在 SKILL2_RT.ultAuto（執行期，絕不入存檔），規則比照【天霸風神斬】：
      ・沒裝配在技能列就不生效
-     ・不扣魔、不進冷卻——這不是一次施放，是超神進化的常駐節拍
+     ・不扣魔、不進冷卻——這不是一次施放，是終極進化的常駐節拍
    扣血走 sgDerivedHit：這是「直接扣掉 N% 生命」而不是一次攻擊，因此不過防禦與爆擊；
    高塔 BOSS 的單次扣血上限由 applyEnemyHpDamage 自動接手（設計的 BOSS -20% 正好同值）。 */
 function sgStarfallArea(ctx, follow) {
@@ -12315,7 +12315,7 @@ function sgStarfallImpact(ctx, u) {
   if (out.killed && ctx.onDeaths) ctx.onDeaths();
 }
 
-/* 超神進化【天霸風神斬】：迴旋斬改為被動技能，每 N 秒自動施放 1 次。
+/* 終極進化【天霸風神斬】：迴旋斬改為被動技能，每 N 秒自動施放 1 次。
    節拍記在 SKILL2_RT.ultAuto（執行期，絕不入存檔），寫法比照暴風之舞：
      ・沒裝配在技能列就不生效（與其他主動型被動同一條代價）
      ・暈眩中跳過該次，錯過的不補發
@@ -12468,12 +12468,12 @@ function sgTickBloodDots(dt, ctx) {
 }
 
 /* ===========================================================================
-   血刃斬的兩個「永久領域」（超神進化：殺神領域／萬毒血霧）
+   血刃斬的兩個「永久領域」（終極進化：殺神領域／萬毒血霧）
    ---------------------------------------------------------------------------
    本專案的場域（SKILL2_RT.grounds／orbits）全部以剩餘段數或
    到期時間收斂，沒有任何永久物；把 hits 設成無限會多出一條沒有回收路徑的分支。
    因此永久領域**不建立實例**，改成每個節拍直接以玩家為圓心做一次幾何查詢：
-   領域的權威就是超神進化本身；玩家身上代表領域的狀態（畫面＝狀態表的持續特效）
+   領域的權威就是終極進化本身；玩家身上代表領域的狀態（畫面＝狀態表的持續特效）
    由 sgSyncDomainStatus／sgEndDomainStatus 跟著它掛上與撤掉。
    兩者都要求血刃斬**裝配在技能列上**（比照主動型被動的代價）。
    =========================================================================== */
@@ -12527,7 +12527,7 @@ function sgVenomDomainPulse(ult, enemies, ctx, radius, gap) {
   sgEmitVfx('bloodblade', victims, ctx.floatSel, { fxKind: 'curse', variant: 'poison', elem: 'poison', vfxUlt: 'venomDomain' });
 }
 
-/* 超神進化【殺神領域】：領域內的敵人死亡時疊 1 層【殺神】並回復生命。
+/* 終極進化【殺神領域】：領域內的敵人死亡時疊 1 層【殺神】並回復生命。
    掛在 skills2OnEnemyDeath，因此與屍爆等效果共用同一條既有邊界——
    那條鏈只由野外擊殺（js/combat.js onFieldKill）驅動，高塔沒有鏡射的死亡掛勾。 */
 function sgSlayerDomainOnDeath(deadEnt) {
@@ -12711,7 +12711,7 @@ function describeSkill2Tier(gid, tierIdx, lv) {
   });
 }
 
-/* 超神進化某個選項的說明：與各階同一套 {鍵} 模板規則。lv<1 時以 Lv.1 預覽。 */
+/* 終極進化某個選項的說明：與各階同一套 {鍵} 模板規則。lv<1 時以 Lv.1 預覽。 */
 function describeSkill2Ult(gid, optIdx, lv) {
   var opt = sgUltOption(gid, optIdx);
   if (!opt) return '';
@@ -12737,13 +12737,13 @@ function describeSkill2Group(gid, levels, ultRaw, prog) {
       (tierMp > 0 ? '　🔵' + tierMp + ' MP' : '');
     parts.push('<div class="' + cls + '"><b>' + head + '</b>　' + describeSkill2Tier(gid, i, lv) + '</div>');
   }
-  /* 超神進化（第 8 格）：只在該群組有開放時才列。ultRaw＝存檔／快照上的選擇字典。 */
+  /* 終極進化（第 8 格）：只在該群組有開放時才列。ultRaw＝存檔／快照上的選擇字典。 */
   if (sgUltDefs(gid)) {
     var pick = sgUltPickOf(ultRaw, gid);
     var ultOk = pick ? sgUltOptionUnlockedBy(gid, pick.idx, lvs, prog) :
       (sgUltDefs(gid) || []).some(function (opt, idx) { return sgUltOptionUnlockedBy(gid, idx, lvs, prog); });
     var ultCls = pick ? (ultOk ? 'sg-tier-on' : 'sg-tier-locked') : (ultOk ? 'sg-tier-off' : 'sg-tier-locked');
-    var ultHead = '第' + (g.tiers.length + 1) + '階【超神進化】' +
+    var ultHead = '第' + (g.tiers.length + 1) + '階【終極進化】' +
       (pick ? '（' + pick.def.name + '）Lv.' + pick.lv + (ultOk ? '' : '（解鎖條件未達，暫時失效）')
         : (ultOk ? '（可選擇已解鎖選項）' : '（需前 ' + g.tiers.length + ' 階全滿及達到選項門檻）'));
     parts.push('<div class="' + ultCls + '"><b>' + ultHead + '</b>　' +

@@ -1097,7 +1097,7 @@
           ELITE_AFFIX_ORDER.map(function (id) {
             return id.replace(/^e_/, '') + '＝' + ELITE_AFFIXES[id].name + (ELITE_AFFIXES[id].pool === 'random' ? '（隨機池）' : '');
           }).join('、') +
-          // 封魔塔 BOSS 的玩家技能（超神進化）：id 要寫完整的 ps_ 開頭，例 ps_petalStorm
+          // 封魔塔 BOSS 的玩家技能（終極進化）：id 要寫完整的 ps_ 開頭，例 ps_petalStorm
           (typeof bskOptionList === 'function' ? '｜玩家技能（' + bskOptionList().length + '，id 含 ps_ 前綴）：' +
             bskOptionList().map(function (o) { return bskIdOf(o.ult.id) + '＝' + o.ult.name; }).join('、') : '') };
       }
@@ -1168,7 +1168,7 @@
       return { ok: true, message: '新版技能等級設定：' + sgMsgs.join('；') };
     }
     if (command === 'sgult') {
-      /* 超神進化（第 8 階）直設（測試用，不扣金幣）。
+      /* 終極進化（第 8 階）直設（測試用，不扣金幣）。
          選擇本身是玩家決策，因此 maxskill2／sglv 一律不碰它——要測就用這一支。
          格式：sgult 群組|all 1|2|3|off [等級|max] */
       if (typeof SKILLS2 === 'undefined' || typeof sgUltDefs !== 'function') {
@@ -1192,7 +1192,7 @@
       for (var ulI = 0; ulI < ulGids.length; ulI++) {
         var ulGid = ulGids[ulI];
         var ulList = sgUltDefs(ulGid);
-        if (!ulList) continue;                       // 尚未開放超神進化的群組直接略過
+        if (!ulList) continue;                       // 尚未開放終極進化的群組直接略過
         if (ulOptRaw === 'off' || ulLv < 1) {
           delete G.player.skills2.ult[ulGid];
           ulMsgs.push(SKILLS2[ulGid].name + ' 已清除');
@@ -1205,10 +1205,10 @@
         G.player.skills2.ult[ulGid] = { pick: ulIdx, lv: ulLv };
         ulMsgs.push(SKILLS2[ulGid].name + '【' + ulList[ulIdx].name + '】Lv.' + ulLv);
       }
-      if (!ulMsgs.length) return { ok: false, message: '指定的群組尚未開放超神進化' };
+      if (!ulMsgs.length) return { ok: false, message: '指定的群組尚未開放終極進化' };
       if (typeof markStatsDirty === 'function') markStatsDirty();
       gmDirty();
-      return { ok: true, message: '超神進化設定：' + ulMsgs.join('；') };
+      return { ok: true, message: '終極進化設定：' + ulMsgs.join('；') };
     }
     return { ok: false, message: '未知指令：' + command + '（輸入 help 查看文件）' };
   }
