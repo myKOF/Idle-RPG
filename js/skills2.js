@@ -347,8 +347,8 @@ function resetSkill2RT() {
     rebirth: null,   // 超神【逆轉乾坤】累積的復活次數：{ charges }（不入存檔）
     earthguardRevival: null, // 【天地共生】五秒復甦演出（不入存檔）
     rebirthGuardOwner: null, // 【天地共生】復活減傷的持有者，重置時一起撤除
-    ultRepeat: {},   // 超神「持續 N 秒內每 gap 秒自動再施放 1 次」的節拍：
-                     // { <群組id>: { until, nextAt, gap } }（【天地雷鎖陣】【永恒雷獄】，不入存檔）
+    ultRepeat: {},   // 超神舊秒數配置的過渡節拍：{ <群組id>: { until, nextAt, gap } }（不入存檔）
+    infiniteLightningAt: 0, // 【無限閃電】下一道自動雷鏈的時刻（不入存檔）
     superconductFlight: null, // 獨立的持續往返投射物
     superconduct: null, // 超神【永恒超導體】疊層增益的持有者：{ pEnt }
                         // ——那個增益「持續到死亡為止」，所以得另外記住掛在誰身上（比照 warGod）
@@ -2636,7 +2636,7 @@ function castSkill2(pEnt, target, gid, floatSel, opts) {
     case 'firehunt': sgCastFirehunt(pEnt, st, g, lvs, pool, primary, floatSel, out); break;
     case 'rockarmor': sgCastRockarmor(pEnt, st, g, lvs, pool, primary, floatSel, out); break;
     case 'mire': sgCastMire(pEnt, st, g, lvs, pool, primary, floatSel, out); break;
-    case 'chainlightning': sgCastChainlightning(pEnt, st, g, lvs, pool, primary, floatSel, out); break;
+    case 'chainlightning': sgCastChainlightning(pEnt, st, g, lvs, pool, primary, floatSel, out, !!(opts && opts.singleChain)); break;
     case 'thunderstrike': sgCastThunderstrike(pEnt, st, g, lvs, pool, primary, floatSel, out); break;
     case 'thunderorb': sgCastThunderorb(pEnt, st, g, lvs, pool, primary, floatSel, out); break;
     case 'icearrow': sgCastIcearrow(pEnt, st, g, lvs, pool, primary, floatSel, out); break;
@@ -7692,7 +7692,7 @@ function sgEarthguardRebirthEnemy(mEnt, floatSel) {
    把走訪紀錄清空並繼續彈射（中繼那一下不消耗彈射數，落到敵人身上才算一次）。
    因此單一敵人時整條鏈仍打得完（A→自身→A→…），不必為此另設「單體加成」。
    =========================================================================== */
-function sgCastChainlightning(pEnt, st, g, lvs, pool, primary, floatSel, out) {
+function sgCastChainlightning(pEnt, st, g, lvs, pool, primary, floatSel, out, singleChain) {
   var t = g.tiers;
   var pct = sgVal(t[0].fx, 'pct', lvs[0]);
   if (lvs[1] > 0) pct += sgVal(t[1].fx, 'pct', lvs[1]);   // 強化閃電
@@ -7726,6 +7726,7 @@ function sgCastChainlightning(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   };
   var bolts = lvs[6] > 0 ? Math.max(1, Math.floor(Number(t[6].fx.count) || 3)) : 1;
   bolts += sgLegendCount(lg.chainBoltAdd);           // 傳奇【電擊】
+  if (singleChain) bolts = 1;
   /* 自我修復：場上已經沒有任何閃電鏈的待命命中時，計數不可能還大於 0（例如某條鏈的結束回呼因故沒被呼叫），
      歸零，免得上限被殘留計數永久占滿。 */
   if (SG_CHAIN_ACTIVE > 0 && !SKILL2_RT.meteors.some(function (m) { return m.gid === 'chainlightning'; })) SG_CHAIN_ACTIVE = 0;
@@ -7733,10 +7734,10 @@ function sgCastChainlightning(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   /* 【雷電暴風】：每次彈射有機率排入一條從該彈射目標起手的獨立閃電鏈。
      生成鏈也沿用相同規則，因此每條鏈的彈射都能再次觸發；上限只作為極端
      連續觸發時的防爆量保護，不影響表定 20% 機率。 */
-  cfg.spawnChance = lvs[6] > 0 ? sgVal(t[6].fx, 'chance', lvs[6]) : 0;
+  cfg.spawnChance = !singleChain && lvs[6] > 0 ? sgVal(t[6].fx, 'chance', lvs[6]) : 0;
   cfg.spawnQueue = [];
   cfg.chainCount = 0;
-  cfg.maxChains = 64;
+  cfg.maxChains = singleChain ? 1 : 64;
   for (var i = 0; i < bolts; i++) {
     if (cfg.chainCount >= cfg.maxChains) break;
     cfg.spawnQueue.push(starts[i % starts.length]);
@@ -8386,11 +8387,32 @@ function sgTickHeavenTribulation(ctx, dt) {
   if (out.killed && ctx.onDeaths) ctx.onDeaths();
 }
 
-/* ---- 超神「持續 N 秒內每 gap 秒自動再施放 1 次」的共用節拍（2026-08-26）----
-   目前兩個使用者：連鎖閃電【天地雷鎖陣】與落雷術【永恒雷獄】——設計文檔的敘述
-   一字不差（每隔 X 秒不斷施放，持續 Y 秒），因此收斂成一支而不是各寫一份。
-   手動施放時起算（castSkill2 的付費分支），重複施放走 opts.repeat：
-   不扣魔、不進冷卻、也不會再把自己續下去。 */
+/* 新版無限閃電沒有短期持續時間；讀取間隔與成長值，舊秒數配置仍走下方過渡路徑。 */
+function sgInfiniteLightningGap() {
+  var u = sgUlt('chainlightning', 'skyThunderArray');
+  if (!u || u.def.fx.sec !== undefined || u.def.fx.gap === undefined) return 0;
+  return Math.max(0.1, sgUltVal(u, 'gap'));
+}
+
+function sgTickInfiniteLightning(ctx, dt) {
+  var gap = sgInfiniteLightningGap();
+  if (!(gap > 0) || !skills2Equipped('chainlightning')) { SKILL2_RT.infiniteLightningAt = 0; return; }
+  if (skills2AutoCastBlocked(ctx.pEnt)) {
+    SKILL2_RT.infiniteLightningAt = sgPauseSchedule(SKILL2_RT.infiniteLightningAt, dt);
+    return;
+  }
+  if (!(SKILL2_RT.infiniteLightningAt > 0)) { SKILL2_RT.infiniteLightningAt = GT + gap; return; }
+  if (GT < SKILL2_RT.infiniteLightningAt) return;
+  SKILL2_RT.infiniteLightningAt = GT + gap;
+  if (typeof effectActive === 'function' && effectActive(ctx.pEnt, 'stun')) return;
+  var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
+  var res = castSkill2(ctx.pEnt, enemies, 'chainlightning', ctx.floatSel, { repeat: true, singleChain: true });
+  if (!res) return;
+  if (ctx.onDamage && res.dmg > 0) ctx.onDamage(res.dmg);
+  if (res.killed && ctx.onDeaths) ctx.onDeaths();
+}
+
+/* 舊秒數配置過渡：付費施放起算，opts.repeat不扣魔／不進冷卻／不重啟持續時間。 */
 var SG_ULT_REPEAT_IDS = { chainlightning: 'skyThunderArray', thunderstrike: 'eternalThunderPrison' };
 function sgArmUltRepeat(gid) {
   var id = SG_ULT_REPEAT_IDS[gid];
@@ -8398,6 +8420,7 @@ function sgArmUltRepeat(gid) {
   var u = sgUlt(gid, id);
   if (!u) return;
   if (gid === 'thunderstrike' && sgThunderPrisonSpec()) return;
+  if (gid === 'chainlightning' && sgInfiniteLightningGap() > 0) return;
   var sec = sgUltVal(u, 'sec');
   if (!(sec > 0)) return;
   var gap = Math.max(0.1, sgUltVal(u, 'gap'));
@@ -8410,7 +8433,8 @@ function sgTickUltRepeat(ctx, dt) {
   for (var gid in SKILL2_RT.ultRepeat) {
     var rp = SKILL2_RT.ultRepeat[gid];
     if (!rp || rp.until <= GT || !sgUlt(gid, SG_ULT_REPEAT_IDS[gid]) || !skills2Equipped(gid) ||
-        (gid === 'thunderstrike' && sgThunderPrisonSpec())) {
+        (gid === 'thunderstrike' && sgThunderPrisonSpec()) ||
+        (gid === 'chainlightning' && sgInfiniteLightningGap() > 0)) {
       delete SKILL2_RT.ultRepeat[gid];
       continue;
     }
@@ -11950,6 +11974,7 @@ function tickSkill2(dt, ctx) {
   sgTickHallOfRadiance(ctx);
   sgTickRockPillars(ctx);
   sgTickSuperconduct(ctx);
+  sgTickInfiniteLightning(ctx, dt);
   sgTickFlyingThunder(ctx, dt);
   sgWarGodBodyState(ctx.pEnt, GT - Math.max(0, Number(dt) || 0));
   sgTickVacuumWaves(ctx);

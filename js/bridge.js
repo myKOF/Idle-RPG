@@ -15,7 +15,7 @@ var WorkerBridge = (function () {
   /* Worker 與其模擬層不是由 bundler 產生，瀏覽器可能把舊的 Worker
      腳本留在快取裡。每次修改 Worker 啟動／核心邏輯時更新這個鍵，避免
      使用者刷新後仍執行舊版升級公式。 */
-  var WORKER_ASSET_VERSION = '20261019-wall-natural-narrow-gem-compose-ten-convert-two-potential-remove-gem-workshop-forge-belt-icons-heaven-power-forge-belt-motion-merge-equip-unlock-rune-tower-unlock-heaven-complete-bonus-disintegrate-end-once-duration-kagura-fire-attr-war-body-three-second-bloodfeast-asura-combo-fire-amp-50-hunt-no-born-companion-infinite-burn-shield-life-only-mire-vuln-weaken-range-inferno-pool-mire-floor-pool-earthguard-rebirth-guard-eternal-hit-chain';
+  var WORKER_ASSET_VERSION = '20261019-wall-natural-narrow-gem-compose-ten-convert-two-potential-remove-gem-workshop-forge-belt-icons-heaven-power-forge-belt-motion-merge-equip-unlock-rune-tower-unlock-heaven-complete-bonus-disintegrate-end-once-duration-kagura-fire-attr-war-body-three-second-bloodfeast-asura-combo-fire-amp-50-hunt-no-born-companion-infinite-burn-shield-life-only-mire-vuln-weaken-range-inferno-pool-mire-floor-pool-earthguard-rebirth-guard-eternal-hit-chain-infinite-single-chain';
   var _menuPaused = false;
   function setMenuPaused(value) {
     _menuPaused = !!value;

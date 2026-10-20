@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## INFINITE-LIGHTNING-20261020 — 無限閃電永久單道自動發射
+
+- Owner：Codex；程式完成／配置Pending；使用者要求每秒自動發射一道連鎖閃電，每級間隔-0.06秒，兼具1～7階效果但限一道。單一開發者；前置連鎖閃電逐跳命中／Worker飛行與配置差異管線完成，解鎖條件不改。使用者明確回覆「你照改，我改完再套用」，故本輪交付程式與待套用差異，不等待或代替使用者執行正式BAT。
+- 允許js/skills2.js自動節拍／單鏈選項與舊配置過渡、必要index／bridge／sim.worker快取、tests/infinite-lightning.test.cjs／落雷生命周期及舊重施測試、Skills2本超神差異JSON、game_formula／LV_upgrade_system／本紀錄。禁止其他技能／傳奇數值、Protocol／存檔／Preset／素材／其他副本；保留使用者既有Excel／CSV／JS文案，依AI_RULES8.5只暫存設定，待使用者BAT正式套用後驗收。
+- 衝突預檢所有目標無外部來源。沿既有永久自動技能節拍；裝配即開始計時，不需先施放且沒有短期截止；每拍只一條鏈，保留傷害／彈射數／附加命中／擴散，關閉此次自動鏈的T7多發與分裂及傳奇多道。普通施放保持原規則。驗收各級間隔、首拍／持續／死亡暫停／暈眩空場不補發、卸下換超神重置、免費／冷卻、T1～7與傳奇互動、單條chainId及真Worker可見飛行／抵達命中、差異原生Excel隔離套用與回歸／Build／diff後Commit；正式設定Pending。
+- 修改10檔：js/skills2.js新增infiniteLightningAt與永久節拍，透過既有castSkill2免費路徑加singleChain選項；傷害與彈射沿原sgCastChainlightning，僅限此次自動鏈一條且不分裂，T7與傳奇的多道不突破限制，普通付費施放仍保留。舊sec配置過渡保留，新gap配置停用並清掉舊重施。index（skills2 339／bridge320）、bridge／Worker import加infinite-single-chain，tests/infinite-lightning七項與舊秒數fixture、game_formula／LV_upgrade_system／本紀錄及配置JSON同步。沒有改Protocol／存檔／解鎖／Preset／素材。
+- 差異219ebd74-e75e-473f-b2cd-18587677ccfb.json共四格，以群組ID=chainlightning＋超神ID=skyThunderArray定位；效果JSON改空物件清除sec，間隔欄1,-0.06，兩格說明同步單道及進化效果。before取自磁碟已儲存工作簿，不改使用者現值、不寫正式Excel／CSV／JS配置。使用者稍後完成編輯再BAT；同格變更仍須由工具停止並詢問。正式技能新參數與最終實際Excel／CSV／JS一致性尚待該步，不宣稱啟用。
+- 隔離驗證：從已儲存Skills2副本透過真正param-patches工具與原生Excel套用四格、正常重開驗證；與該次archive原始檔逐格比較，只有AE151／AV151／AW151／AX151變更。期間使用者另存五格落雷文案／矩陣傷害，皆保留；不拿最新工作簿與較早快照誤判為本次覆寫，也不重寫差異before。另由HEAD原生產生僅本超神候選作可攜性檢查（含目前既有名稱），未寫入正式檔或納入本次提交。
+- 測試：`node --test tests/infinite-lightning.test.cjs`七項；使用者尚未套用時僅在測試記憶體按本任務差異JSON及正式geometry接線組成新配置，不改產品資料；原生隔離Excel實際編譯的新配置亦7/7。涵蓋Lv1=0.94／Lv5=0.7／Lv10=0.4秒、表格改值同說明、主tick首拍、不需先施放且超過舊截止、零法力／原冷卻與施法hook不變、7階3500基準傷害／7跳／2次雷鳴／50%靜電共27次命中、T7必定分裂仍單chainId、傳奇多道與普通施放、死亡／暈眩／空場／大步長／射程／卸裝換超神重置、舊節拍熱切換清除。真Worker shim→Renderer→Runtime→Core使用正式紫雷素材，1200世界速度及200距離對應飛行166.67ms，飛行中圖層可見且抵達前不扣血；不新增素材。突變只刪singleChain選項，七項全失敗，能攔住道數失守。
+- 核心回歸：`node --test --test-reporter=tap tests/infinite-lightning.test.cjs tests/eternal-thunder-prison.test.cjs tests/lightning-vfx-lifecycle.test.cjs tests/skills2-vfx-schema.test.cjs tests/skill-vfx-inheritance.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs`以真原生候選映射62/62；最後以Git index產品碼／未改的正式配置＋待套用fixture再驗相同62項。擴大三檔`skill2-lightning／skill2-chainlightning-thunder-legendary／skills2-geometry`82項50過32失敗；同新配置、唯讀換回本次修改前runtime，同樣32個失敗名稱逐項完全相同。舊秒數fixture明確給舊sec配置與足夠法力，沒有放寬其他斷言。`npm.cmd run build`552檔通過，最後測試helper調整另經node --check；配置dry-run與diff／語法檢查通過。
+- 檢查未改：AI共通規範／工作流／prompts、combat／formula傷害管線、battlefield幾何、Worker Protocol／shim來源、battle-renderer／VFX Runtime／Core與正式紫雷及命中素材、param-patches／Excel合併及config_tables／geometry工具。素材庫無本次變更，不需素材Commit。提交只含本任務10檔，js/skills2字面值保持HEAD配置，使用者既有Excel／CSV／JS及其他三份CSV全部留在工作區；沒有同步或切換分支／合併／推送。
+- 交付：程式及差異可Review／整合；Commit為本段所在`[Codex] feat: 無限閃電改為定時發射單道雷鏈`，回覆附編號。正式參數依使用者指示Pending，下一步使用者儲存關閉Excel並按BAT，之後核對正式配置與遊戲；未做完整瀏覽器長戰，另有32項已基準確認的既有失敗。不得把程式完成視為新參數已啟用。
+
 ## PARAM-PATCH-STALE-LOCK-20261020 — 殘留Excel鎖定檔誤擋與BAT失敗提示截斷
 
 - Owner：Codex；Done；使用者在永恒雷獄套用時附圖要求處理。真實來源可取得ReadWrite獨占鎖，但2026-09-18留下的~$Skills2.xlsx被當成仍開啟；BAT停止分支第二行UTF8長提示被CMD截斷成未識別指令。

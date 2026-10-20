@@ -238,14 +238,16 @@ test('【過載】：同一個敵人被閃電鏈打滿 5 次就在牠身上炸�
    2) 連鎖閃電的三個超神進化
    =========================================================================== */
 
-test('【天地雷鎖陣】：施放後每 gap 秒自動再施放，且重複施放不扣魔、不進冷卻', () => {
+test('【無限閃電】舊秒數配置過渡：短期重施不扣魔、不進冷卻', () => {
   const c = loadContext();
+  c.SKILLS2.chainlightning.ult.find(u => u.id === 'skyThunderArray').fx = { sec: 2, secPer: 0.2, gap: 1 };
   stubVfx(c);
   const calls = stubHits(c);
   maxLevels(c, 'chainlightning');
   equip(c, 'chainlightning');
   setUlt(c, 'chainlightning', 'skyThunderArray', 1);
   const p = playerEnt();
+  p.mp = 100000;
   const es = [];
   for (let i = 0; i < 8; i++) es.push(enemy(1e9, 20 + i * 5, 0, 'e' + i));
   c.castSkill2(p, es, 'chainlightning', 'mv-float');

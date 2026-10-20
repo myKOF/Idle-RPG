@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "agent": "Codex",
+  "task": "INFINITE-LIGHTNING-20261020",
+  "changes": [
+    {
+      "workbook": "Skills2.xlsx",
+      "sheet": "Skills2",
+      "headerRow": 1,
+      "key": {
+        "群組ID": "chainlightning",
+        "超神ID": "skyThunderArray"
+      },
+      "column": "效果參數(JSON)",
+      "before": "{\"sec\":2,\"secPer\":0.2}",
+      "after": "{}"
+    },
+    {
+      "workbook": "Skills2.xlsx",
+      "sheet": "Skills2",
+      "headerRow": 1,
+      "key": {
+        "群組ID": "chainlightning",
+        "超神ID": "skyThunderArray"
+      },
+      "column": "每段或每跳間隔（秒）",
+      "before": "1",
+      "after": "1,-0.06"
+    },
+    {
+      "workbook": "Skills2.xlsx",
+      "sheet": "Skills2",
+      "headerRow": 1,
+      "key": {
+        "群組ID": "chainlightning",
+        "超神ID": "skyThunderArray"
+      },
+      "column": "效果說明模板",
+      "before": "施放連鎖閃電後每隔 {gap} 秒自動再施放 1 次，持續 {sec} 秒。",
+      "after": "每 {gap} 秒自動發射 1 道連鎖閃電，兼具第1～7階的進化效果，但每次僅限1道閃電（不會多道發射或分裂增生）。"
+    },
+    {
+      "workbook": "Skills2.xlsx",
+      "sheet": "Skills2",
+      "headerRow": 1,
+      "key": {
+        "群組ID": "chainlightning",
+        "超神ID": "skyThunderArray"
+      },
+      "column": "作用方式與距離用途（唯讀說明）",
+      "before": "施放連鎖閃電後每 {gap} 秒自動再施放 1 次，持續 {sec} 秒（自動施放不扣法力、不進冷卻）",
+      "after": "每 {gap} 秒自動發射 1 道連鎖閃電，兼具第1～7階的進化效果，但每次僅限1道閃電（不會多道發射或分裂增生）。 自動發射不扣法力、不進冷卻；需裝配連鎖閃電。"
+    }
+  ]
+}
