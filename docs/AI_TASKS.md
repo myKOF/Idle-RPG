@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## MYTHIC-GLOW-A-20261020 — 神話tips與詳情套用30%白光
+
+- Owner：Codex；實作完成／待整合；使用者選擇A版，要求tips與裝備詳情同步套用，並授權合併develop，未授權推送。單一開發者；依賴前版外觀整合e9b8e3f4完成。允許css/style.css神話內層背景、index.html僅style快取、LV_upgrade_system.md及本紀錄；禁止裝備icon／框色／角飾／排版／玩法／配置／JS／Worker／存檔／其他品質與素材變更。
+- 修改前預檢僅出現本聊天前版整合提交：CSS逐位元同develop；index僅無關ashen快取不同，LV僅無關寶石功能列不同，docs為前版整合紀錄不同。以8489269f為基準merge-tree乾跑乾淨；本次分段修改不碰那些區段，不同步或切換有五份使用者未提交檔案的Codex副本。完成後僅移植本次提交至develop，排除先前b3203e94寶石放大十欄。
+- 依已確認A圖，光暈36/255、細紋3/255及亮灰底232/255／230/255／239/255三個alpha各乘0.3，底層用同圖#121418；tips／比較卡／詳情使用同一背景模板，移除舊tips半光局部覆寫，避免兩處亮度分歧。style84→85，無新增素材，素材庫無本次變更。
+- 驗收：正式八份CSS與itemDetailHTML確認tips／比較卡／詳情同底色，暖銅框及資訊位置保留；相關裝備六檔50項、Build、瀏覽器與Console／截圖、diff後獨立Commit，再以乾淨develop整合與檢查範圍。
+- 完成四檔，未新增或放寬測試。`node --test tests/equipment-detail-layout.test.cjs tests/equip-socket-ui.test.cjs tests/equip-reroll-ui.test.cjs tests/equipment-tooltip-compare.test.cjs tests/equipment-selection-border.test.cjs tests/equipment-weapon-icons.test.cjs`50/50；`npm.cmd run build`554檔通過，自身四檔diff檢查通過。唯讀未改js/ui.js／js/item.js、兩份ashen皮膚、上述六份回歸與配置；使用者五份未提交配置／技能檔保留。
+- 瀏覽器：browser-use舊backend仍無法發現IAB，沿本聊天CUA API完成正式八份CSS及itemDetailHTML隔離驗證，不載入玩家存檔。讀取計算樣式確認tips與詳情五層backgroundImage逐字一致，與已確認A版各層alpha一致；詳情位置與尺寸保持上一張A圖，詞條／特效／孔框可讀、外框角飾保留。Console warning／error0；截圖mythic-glow-a-applied.png保存在本聊天visualizations。未驗完整遊戲流程／跨瀏覽器／長時間效能，前輪兩項雙手fixture既有失敗未擴修。無未完成實作，可合併；接續僅移植此提交至乾淨develop。
+
 ## MYTHIC-SCROLL-FRAME-20261020 — 固定神話詳情外框與縮短紅色區
 
 - Owner：Codex；Done；使用者截圖回報詳情上下捲動時裝飾框移位，要求品質外框位於右側捲軸外側，並將icon紅色部分面積高度縮減40%。依賴5a1cb656完成；單一開發者。目標衝突預檢無外部來源，保留config/Excel/Skills2.xlsx未提交內容。
