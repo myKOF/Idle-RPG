@@ -9566,7 +9566,7 @@ function sgbSyncPath(detail) {
     detail.appendChild(svg);
   }
   var h = Math.ceil(Math.max.apply(null, segments.map(function (s) { return s.y2; }).concat(fork ? fork.branches.map(function (b) { return b.y; }) : [])) + 4);
-  svg.setAttribute('width', detail.clientWidth);
+  // 寬度交給 CSS（width:100%）即時跟著捲軸出現／消失；若在這裡補寬度，會慢一個影格而撐出橫向捲軸並反覆抖動。
   svg.setAttribute('height', h);
   var markup = '<path class="sgb-path-track" d="' + paths.track + '"/>';
   if (paths.lit) {
