@@ -7,10 +7,11 @@ const path = require('node:path');
 const vm = require('node:vm');
 const source = fs.readFileSync(path.join(__dirname, '../js/ui.js'), 'utf8');
 
-function tooltip(sourceName, item, target, checked = true) {
+function tooltip(sourceName, item, target, checked = true, equippedRarity = 5) {
   const tip = { style: {}, offsetWidth: 560, offsetHeight: 300 };
   const cards = [];
   const eq = { ring: { id: 'ring-worn-1' }, ring2: { id: 'ring-worn-2' }, chest: { id: 'chest-worn' }, weapon: { id: 'weapon-worn' } };
+  Object.values(eq).forEach(it => { it.rarity = equippedRarity; });
   const c = {
     UI: {}, window: { innerWidth: 1400, innerHeight: 900 },
     $id: id => id === 'sk-tooltip' ? tip : { checked },
@@ -52,4 +53,15 @@ test('關閉比較、空目標槽或相同裝備維持單卡', () => {
   assert.equal(tooltip('inv', { id: 'candidate' }, 'ring', false).cards.length, 1);
   assert.equal(tooltip('inv', { id: 'candidate' }, 'helmet').cards.length, 1);
   assert.equal(tooltip('inv', { id: 'ring-worn-1' }, 'ring').cards.length, 1);
+});
+
+test('混合品質比較各自保留神話框，單卡及其他高品質不誤用神話樣式', () => {
+  const classes = result => Array.from(result.tip.innerHTML.matchAll(/class="(equip-detail-card[^"]*)"/g), m => m[1]);
+  for (let rarity = 0; rarity <= 8; rarity++) {
+    const item = { id: 'candidate', rarity };
+    const expected = rarity === 6 ? 'equip-detail-card mythic-detail' : 'equip-detail-card';
+    assert.deepEqual(classes(tooltip('equip', item, 'weapon')), [expected]);
+    assert.deepEqual(classes(tooltip('inv', item, 'weapon', true, 6)), [expected, 'equip-detail-card mythic-detail']);
+    assert.deepEqual(classes(tooltip('inv', item, 'weapon', true, 5)), [expected, 'equip-detail-card']);
+  }
 });

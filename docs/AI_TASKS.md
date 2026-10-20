@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## MYTHIC-IVORY-COPPER-20261020 — 神話裝備銀白光邊與暖銅提示框
+
+- Owner：Codex；Done；單一開發者。使用者提供兩張裝備／tips參考圖，要求神話級外觀接近其銀白漸層亮邊、暖銅金框及深灰底；以自製CSS呈現，截圖只作視覺參考，不匯入外部素材。
+- 前置：既有神話品質格、裝備詳情與雙卡比較已存在；本副本開始乾淨，fetch後目標衝突預檢無外部來源。允許css/style.css神話樣式及提示框樣式、js/ui.js神話詳情分類、index.html必要快取、tests/equipment-tooltip-compare.test.cjs相關分類驗證、LV_upgrade_system.md與本紀錄；禁止玩法／數值／解鎖／其他品質外觀／Worker／配置表／存檔／素材變更，不合併推送。
+- 驗收：正式樣式的神話背包／裝備格與雙手副手、選取置灰狀態、神話單卡／混合品質比較卡及詳情換裝清除分類；裝備相關回歸、Build、瀏覽器外觀與Console檢查、diff後獨立Commit。無新素材，無素材庫Commit；後續使用者重載並Review／整合。
+- 第二輪：使用者看過初版後要求繼續細化，尤其tips過於簡單。於同一任務加強銀白亮邊的內外金屬線、以CSS內嵌自製向量繪製暖銅分叉角飾／雙層邊框，沿用既有石材紋理並補上標題分隔飾；不新增外部或獨立素材，保留原資訊與互動。
+- 完成6檔：css/style.css停用神話金紅旋轉，改為固定銀白至暖銅亮邊、灰黑內襯、細金屬線及小角飾；神話tips／比較卡／裝備詳情使用同一份自製內嵌SVG九宮格框，角飾保持尺寸、長邊延展，底層沿既有石材紋理。僅神話名稱／品質與等級顏色改暖金灰，詞條分類色不變；雙手副手覆色、選取與置灰保持。js/ui.js分別依候選與現有裝備品質加入mythic-detail，詳情換件／取消選取移除分類。index的style78→80、ui185→186，LV_upgrade_system及本紀錄同步；混合品質比較補一項回歸。不改Worker／配置／玩法／存檔，沒有獨立或外部素材變更，不需素材庫Commit。
+- 驗證指令：`node --test tests/equipment-tooltip-compare.test.cjs tests/equipment-selection-border.test.cjs tests/equipment-two-hand-display.test.cjs tests/equipment-weapon-icons.test.cjs tests/equipment-detail-layout.test.cjs tests/equip-socket-ui.test.cjs tests/equip-reroll-ui.test.cjs`53項51過／2失敗；兩項為原雙手武器fixture缺syncEquipmentSelectionMemory與UI_GAME_TIMING。將受測ui／CSS唯讀映射至修改前HEAD，該檔3項仍1過／相同2失敗，未改fixture或放寬斷言。細化完成再跑其餘6檔50/50；`npm.cmd run build`554檔通過，git diff --check通過。另以既有完整UI fixture呼叫正式renderDetail，確認神話→傳說→神話→取消選取分類正確，沒有框色殘留。
+- 瀏覽器：原browser-use舊backend連線失敗，改用可用的CUA瀏覽器API完成隔離本機預覽。載入正式全部8份CSS、正式itemCellHTML／itemDetailHTML與原裝備圖示；確認神話背包／裝備／副手／選取／置灰、六詞條三鑲孔詳情、混合品質比較、九宮格角飾與內文無遮擋。角飾改為內側定位，修正初次外側定位造成的額外捲軸；臨時診斷頁的字串換行錯誤已修正，最終全新載入Console warning／error0、圖示全載入。截圖mythic-ivory-copper-final.png保存在本聊天visualizations；臨時頁／基準preload及服務清理，不載入或修改玩家存檔。未做完整遊戲流程、跨瀏覽器與長時間效能驗證；參考風格為自製近似，沒有逐像素複製參考圖。
+- 唯讀未改：AI_RULES／AGENTS／AI_WORKFLOW／prompts、兩份ashen-forge皮膚、js/item.js詳情與圖示資料、雙手／選取／武器／裝備排版／洗煉／鑲嵌原回歸。自我Review確認品質分類獨立、裝飾pointer-events:none、未新增動畫與模糊陰影；已知限制為上述2項既有fixture失敗及未做完整遊戲驗證，無本次未完成實作。Commit為本段所在`[Codex] fix: 細化神話裝備銀白光邊與暖銅雕飾提示框`，回覆附編號；可供Review／合併，未合併推送。後續使用者重新載入本分支驗收，其他副本須先整合Commit。
+
 ## LEGEND-REWORK-20261020 — 傳奇特效依「傳奇進化」試算表改造＋Equipment_Affix 依試算表順序重排
 
 - Owner：Claude；程式／參數表完成。使用者提供 Google 試算表「傳奇進化」頁，「調整後效果」欄的紅字為要改的版本（49 列，其中【吸收】文字與原效果相同＝無變更；未填者不改），並要求 Equipment_Affix 的傳奇特效依試算表說明順序排列。單一開發者，依賴無。
