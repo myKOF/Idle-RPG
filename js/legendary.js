@@ -516,51 +516,35 @@ function legendaryEnsureDolls(pEnt, st) {
   }
 }
 
-/* 連鎖閃電排程器：新版技能【突刺】的傳奇特效【迅雷穿刺】（thrustChain）經 js/skills2.js sgThrustOnHit 呼叫。
-   2026-09-29 舊版技能移除時曾連同 lightningLeap 誤刪，由 skills2 的 typeof 守衛靜默略過，效果消失。 */
+/* 排程佇列：到期才結算的傳奇傷害（tickLegendaryEffects 每 tick 經 legendaryTickQueue 消化）。 */
 function legendaryQueue(at, resolve) {
   legendaryEnsureRT().queue.push({ at: at, resolve: resolve });
 }
 
-/* 連鎖閃電的畫面（2026-08-19 補）：本檔原本一發特效都不送，玩家只看得到敵人身上
-   憑空跳出傷害字。這裡送出與新版技能【連鎖閃電】同一種 chain 事件，
-   兩個渲染器（js/vfx.js 與 js/battle-renderer.js）都已認得 lightning-chain。
-   from 留白＝從我方出手點連到第一個目標。 */
-function legendaryEmitChainVfx(from, to, floatSel, elem) {
-  if (typeof playCombatVfx !== 'function' || typeof enemyEventFloatTarget !== 'function') return;
-  var ids = [];
-  if (from && from.hp > 0) ids.push(enemyEventFloatTarget(from, floatSel));
-  if (to) ids.push(enemyEventFloatTarget(to, floatSel));
-  if (!ids.length) return;
-  playCombatVfx({
-    fxKind: 'chain', variant: 'lightning-chain', glyph: '⚡',
-    color: (typeof VFX_CAT_COLORS !== 'undefined' && VFX_CAT_COLORS.magic) || '#f2b705',
-    cat: 'magic', elem: elem || 'lightning', targets: ids, area: null, dur: 0.35, count: 1,
-    vfx: (typeof vfxCombatRoles === 'function') ? vfxCombatRoles('legendaryLightningChain') : null
+/* 傳奇【迅雷穿刺】（新版技能【突刺】的傳奇特效，經 js/skills2.js sgThrustOnHit 以 typeof 守衛呼叫）：
+   對被突刺命中的敵人降下 1 道落雷。落雷是傳奇自帶的單道打擊——不要求玩家學過落雷術，
+   傷害以魔攻為基準、閃電屬性，畫面借用落雷術的落雷與落地爆點（比照 js/skills2.js sgQueueThunderBolt 的時序）。
+   2026-09-29 舊版技能移除時曾連同連鎖排程器誤刪，由 typeof 守衛靜默略過，效果消失；
+   tests/legendary-affix.test.cjs 直接釘住本函式存在。 */
+function legendaryThunderStrike(pEnt, target, spec, floatSel) {
+  if (!target || target.hp <= 0 || typeof sgEmitVfx !== 'function') return;
+  var fallSec = Math.round(420 * 0.4 / 1.3) / 1000;
+  sgEmitVfx('thunderstrike', [target], floatSel, {
+    fxKind: 'rain', variant: 'thunder-strike', elem: 'lightning', count: 1,
+    vfxBase: true, travelMs: [fallSec * 1000]
   });
-}
-
-function legendaryScheduleChain(pEnt, spec, floatSel) {
-  /* 連鎖記住上一跳打到誰，下一跳從「它以外的存活敵人」裡隨機挑一個 → js/battlefield.js。
-     【迅雷穿刺】（原本還有已刪除的【閃電飛越】）的敘述都沒有規定彈射範圍、也沒有寫「最近」，
-     所以候選是整個戰場、挑法是等機率隨機（使用者定調 2026-08-21）。 */
-  var chainState = { last: null };
-  for (var i = 0; i < spec.bounces; i++) {
-    (function (delayIndex) {
-      legendaryQueue(GT + spec.tickSec * (delayIndex + 1), function (ctx) {
-        var enemies = ctx && ctx.getEnemies ? ctx.getEnemies() : legendaryActiveEnemies();
-        if (!enemies.length) return;
-        var target = (typeof bfChainNext === 'function')
-          ? (bfChainNext(chainState.last, enemies) || enemies[0])
-          : enemies[Math.floor(Math.random() * enemies.length)];
-        legendaryEmitChainVfx(chainState.last, target, floatSel, spec.elem);
-        chainState.last = target;
-        legendaryDealDamage(pEnt, target, spec.powerPct, 'magic', spec.elem, floatSel,
-          spec.label || '迅雷穿刺', ctx);
-        if (target.hp <= 0 && ctx && typeof ctx.onDeaths === 'function') ctx.onDeaths();
+  legendaryQueue(GT + fallSec, function (ctx) {
+    if (!target || target.hp <= 0) return;
+    var res = legendaryDealDamage(pEnt, target, spec.powerPct, 'magic', 'lightning', floatSel,
+      spec.label || '迅雷穿刺', ctx);
+    if (res && !res.miss) {
+      sgEmitVfx('thunderstrike', [target], floatSel, {
+        fxKind: 'impact', variant: 'thunder-impact', elem: 'lightning', vfxBase: true,
+        preserveDeadTargets: true
       });
-    })(i);
-  }
+    }
+    if (target.hp <= 0 && ctx && typeof ctx.onDeaths === 'function') ctx.onDeaths();
+  });
 }
 
 function legendaryTickQueue(ctx) {

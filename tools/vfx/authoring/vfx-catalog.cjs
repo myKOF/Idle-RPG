@@ -479,7 +479,6 @@ const COMBAT_DEFAULTS = {
   enemyProjectile: { projectile: 'proj-enemy-bolt', hit: 'hit-enemy' },
   enemyProjectileByElem: { fire: 'proj-fire', ice: 'proj-ice-shard', lightning: 'proj-lightning', poison: 'proj-poison-drop', light: 'proj-light-orb', dark: 'proj-dark-orb', earth: 'proj-earth-rock', wind: 'proj-wind-crescent' },
   enemyHitByElem: { fire: 'hit-fire', ice: 'hit-ice', lightning: 'hit-lightning', poison: 'hit-poison', light: 'hit-light', dark: 'hit-dark', earth: 'hit-earth', wind: 'hit-wind' },
-  legendaryLightningChain: { projectile: 'bolt-chain-lightning', hit: 'hit-lightning' },
   /* 小隕石：Runtime 依 variant fireball-small／meteor-impact 取用，不佔表上的欄位。 */
   meteorSmall: { projectile: 'proj-meteor-small', hit: 'hit-fire-explosion' }
 };

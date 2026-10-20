@@ -222,7 +222,7 @@ test('【伴生併發】優先消耗伴生體，沒有伴生體才拿一般的�
   assert.equal(f.orbs.filter((o) => !o.companion).length, mothersBefore, '母體不動');
 });
 
-test('【烈火狩】：火狩在場期間每 0.5 秒把火焰傷害再堆高一層，火狩消失後退場', () => {
+test('【烈火狩】：火狩在場期間每 1 秒把火焰傷害再堆高一層（最多 20 層），火狩消失後退場', () => {
   const c = loadContext();
   stubHits(c); stubVfx(c);
   setLegendary(c, ['firehuntBlaze']);
@@ -233,9 +233,11 @@ test('【烈火狩】：火狩在場期間每 0.5 秒把火焰傷害再堆高一
   c.castSkill2(p, [m], 'firehunt', 'mv-float');
   assert.equal(c.skill2FireAmpPct(p), 0, '施放當下還沒堆');
   advance(c, p, [m], 0.6);
+  assert.equal(c.skill2FireAmpPct(p), 0, '0.6 秒還不到第一拍（每 1 秒一層）');
+  advance(c, p, [m], 0.5);
   const one = c.skill2FireAmpPct(p);
   assert.equal(one, 2, '第一拍 +2%');
-  advance(c, p, [m], 0.5);
+  advance(c, p, [m], 1);
   assert.equal(c.skill2FireAmpPct(p), 4, '第二拍再 +2%（累加成單一數值）');
   // 火焰增幅走 legendaryElementDamageUp 這個唯一收斂點
   assert.equal(c.legendaryElementDamageUp(c.BASE_STATS, p).fire, 4);
@@ -399,7 +401,7 @@ test('【輕飛甲】：岩甲護盾存在期間移動速度 +30%（護盾結束
   assert.equal(c2.skill2PlayerMoveFactor(b.p), 1, '沒有這個特效就沒有加速');
 });
 
-test('【尖刺甲】：岩甲尖刺的反擊傷害 ×2', () => {
+test('【尖刺甲】：岩甲尖刺的反擊傷害 ×1.5', () => {
   function spike(keys) {
     const c = loadContext();
     const calls = stubHits(c); stubVfx(c);
@@ -416,7 +418,7 @@ test('【尖刺甲】：岩甲尖刺的反擊傷害 ×2', () => {
   }
   const base = spike([]);
   const armored = spike(['rockSpikeArmor']);
-  assert.equal(Math.round(armored / base * 100), 200, '尖刺效果 +100%');
+  assert.equal(Math.round(armored / base * 100), 150, '尖刺效果 +50%');
 });
 
 test('【巨岩增幅】：岩甲增幅的可疊層數 +10 層（上限跟著提高）', () => {
@@ -442,7 +444,7 @@ test('【巨岩增幅】：岩甲增幅的可疊層數 +10 層（上限跟著提
   assert.equal(Math.round(boosted / per), 40, '30 → 40 層');
 });
 
-test('【大地之心】：護盾被打光的那一下給無敵，且 30 秒內只觸發一次', () => {
+test('【大地之心】：護盾被打光的那一下給無敵，且 60 秒內只觸發一次', () => {
   const c = loadContext();
   stubHits(c); stubVfx(c);
   setLegendary(c, ['rockEarthHeart']);
@@ -460,7 +462,7 @@ test('【大地之心】：護盾被打光的那一下給無敵，且 30 秒內�
   c.skills2OnPlayerDamaged(m, p, 0, false, { absorbed: 1 }, 'mv-float');
   assert.equal(!!c.effectActive(p, 'invuln'), true, '護盾歸零給無敵');
   const until = c.SKILL2_RT.rockHeartAt;
-  assert.ok(until >= 30, '內部冷卻 30 秒');
+  assert.ok(until >= 60, '內部冷卻 60 秒');
   // 冷卻中不再觸發
   delete p.buffs.invuln;
   delete p.effects.invuln;

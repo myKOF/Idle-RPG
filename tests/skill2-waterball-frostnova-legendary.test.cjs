@@ -417,7 +417,7 @@ test('【海淵葬界】：永久領域逐拍塗寒霜，且領域內可額外�
    3) 冰霜新星的五個傳奇特效
    =========================================================================== */
 
-test('【碎冰】：冰霜新星的攻擊範圍 +30%', () => {
+test('【碎冰】：冰霜新星的攻擊範圍 +20%', () => {
   function radius(keys) {
     const c = loadContext();
     const specs = stubVfx(c);
@@ -431,7 +431,7 @@ test('【碎冰】：冰霜新星的攻擊範圍 +30%', () => {
   }
   const base = radius([]);
   assert.ok(base > 0);
-  assert.equal(Math.round(radius(['frostnovaShatter'])), Math.round(base * 1.3));
+  assert.equal(Math.round(radius(['frostnovaShatter'])), Math.round(base * 1.2));
 });
 
 test('【雙冰爆】【寒潮】：兩個特效的機率相加，並在目標處再爆一次新星', () => {
@@ -482,25 +482,34 @@ test('【寒冰衝擊】：新星殺死凍結中的敵人時昇起冰錐（沒�
   assert.equal(run(false).length, 0, '沒凍結就不昇');
 });
 
-test('【凜冬寒霜】：暴風雪逐拍塗寒霜，且寒霜狀態傷害走共用層 +30%', () => {
-  function run(keys) {
-    const c = loadContext();
-    stubVfx(c); stubHits(c);
-    setLegendary(c, keys);
-    c.chance = () => false;
-    maxLevels(c, 'frostnova');
-    equip(c, 'frostnova');
-    const p = playerEnt();
-    const e = enemy(1e9, 40, 0, 'a');
-    c.castSkill2(p, [e], 'frostnova', 'mv-float');
-    const blizzard = grounds(c, 'frostnova', 'blizzard')[0];
-    return { frostSpec: blizzard.frostSpec, factor: c.skill2FrostDmgFactor() };
-  }
-  const base = run([]);
-  const winter = run(['frostnovaWinterFrost']);
-  assert.equal(base.frostSpec, null, '表定的暴風雪不塗寒霜');
-  assert.ok(winter.frostSpec && winter.frostSpec.dps > 0, '暴風雪每一拍順便塗寒霜');
-  assert.equal(Math.round(winter.factor / base.factor * 100), 130, '寒霜狀態傷害 +30%（共用層）');
+test('【凜冬寒霜】（2026-10-20 改版）：暴風雪對帶寒霜的敵人每層寒霜 +5% 傷害，不再塗寒霜也不放大寒霜傷害', () => {
+  const c = loadContext();
+  stubVfx(c);
+  const calls = stubHits(c);
+  setLegendary(c, ['frostnovaWinterFrost']);
+  // 生成端：規格只帶「每層 +5%」，不再帶寒霜規格
+  const lvs = [10, 10, 10, 10, 10, 10, 10];
+  c.sgSpawnBlizzard(playerEnt(), c.getStats(), c.SKILLS2.frostnova, lvs, 'mv-float', c.sgLegend('frostnova'));
+  const blizzard = grounds(c, 'frostnova', 'blizzard')[0];
+  assert.ok(blizzard, '暴風雪場域應生成');
+  assert.equal(blizzard.frostSpec, null, '改版後暴風雪不再塗寒霜');
+  assert.equal(blizzard.frostLayerPct, 5, '每層寒霜 +5%');
+  const plain = loadContext();
+  stubVfx(plain);
+  plain.sgSpawnBlizzard(playerEnt(), plain.getStats(), plain.SKILLS2.frostnova, lvs, 'mv-float', {});
+  assert.equal(grounds(plain, 'frostnova', 'blizzard')[0].frostLayerPct, 0, '沒裝特效就沒有每層加成');
+  assert.equal(c.skill2FrostDmgFactor(), plain.skill2FrostDmgFactor(), '共用層的寒霜傷害不再被放大');
+  // 結算端：目標帶 3 層寒霜 → 這一拍吃 +15% 總傷；沒寒霜 → 0
+  const victim = enemy(1e9, 40, 0, 'a');
+  const bare = enemy(1e9, 40, 0, 'b');
+  victim.buffs.sgFrost = { until: c.GT + 10, stacks: 3, val: 20 };
+  assert.equal(c.sgFrostStacks(victim), 3);
+  c.GT += blizzard.gap;
+  c.sgGroundTick(blizzard, [victim, bare], { onDamage() {}, onDeaths() {} });
+  const byEnt = (e) => calls.filter((k) => k.ent === e);
+  assert.ok(byEnt(victim).length > 0 && byEnt(bare).length > 0, '兩個目標都在暴風雪裡');
+  assert.equal(byEnt(victim)[0].total, 15, '總傷加成 ＝ 5% × 3 層');
+  assert.equal(byEnt(bare)[0].total, 0, '沒有寒霜的敵人不加成');
 });
 
 /* ===========================================================================
@@ -593,7 +602,7 @@ test('十個傳奇特效落在正確的部位與關聯技能，且都帶得動�
     frostnovaTwinBurst: ['staff2h', 'frostnova', 'frostnovaTwinBurst'],
     frostnovaIceSpike: ['staff2h', 'frostnova', 'frostnovaKillSpike'],
     frostnovaColdTide: ['staff2h', 'frostnova', 'frostnovaColdTide'],
-    frostnovaWinterFrost: ['staff2h', 'frostnova', 'frostnovaBlizzardFrost']
+    frostnovaWinterFrost: ['staff2h', 'frostnova', 'frostnovaBlizzardLayer']
   };
   Object.keys(expect).forEach((key) => {
     const def = c.PASSIVE_POOL[key];

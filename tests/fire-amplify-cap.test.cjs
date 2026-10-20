@@ -45,15 +45,16 @@ test('火焰增幅：各等級在49／50／51層與大量同拍都封頂，滿�
   }
 });
 
-test('烈火狩與火焰增幅各自50層、合計火傷不重複，時間與額度互不占用', () => {
+test('烈火狩（每 1 秒一層、最多 20 層）與火焰增幅（50 層）各自封頂、合計火傷不重複，時間與額度互不占用', () => {
   const { c, p, e, ctx } = setup(); hunt(c, p, e, ctx);
   for (let i = 0; i < 60; i++) { burn(c, ctx); c.sgTickFirehuntLegend(ctx, .5); }
-  assert.equal(p.buffs.sgFireAmp.stacks, 50); assert.equal(p.buffs.sgFirehuntAmp.stacks, 50);
-  assert.equal(p.buffs.sgFireAmp.val, 25); assert.equal(p.buffs.sgFirehuntAmp.val, 100);
-  assert.equal(c.skill2FireAmpPct(p), 125);
-  close(c.legendaryElementDamageUp(c.getStats(), p).fire, 125);
+  assert.equal(p.buffs.sgFireAmp.stacks, 50); assert.equal(p.buffs.sgFirehuntAmp.stacks, 20);
+  assert.equal(p.buffs.sgFireAmp.val, 25); assert.equal(p.buffs.sgFirehuntAmp.val, 40);
+  assert.equal(c.skill2FireAmpPct(p), 65);
+  close(c.legendaryElementDamageUp(c.getStats(), p).fire, 65);
   const entries = c.statusEntries(p);
-  for (const sid of ['sgFireAmp', 'sgFirehuntAmp']) assert.equal(entries.find(s => s.sid === sid).stacks, 50);
+  assert.equal(entries.find(s => s.sid === 'sgFireAmp').stacks, 50);
+  assert.equal(entries.find(s => s.sid === 'sgFirehuntAmp').stacks, 20);
   const fireUntil = p.buffs.sgFireAmp.until, huntUntil = p.buffs.sgFirehuntAmp.until;
   assert.ok(huntUntil < fireUntil);
   c.GT = huntUntil; assert.equal(c.skill2FireAmpPct(p), 25, '烈火狩先到期不清掉火焰增幅');
@@ -74,10 +75,10 @@ test('火焰增幅按狀態角色與表定上限疊加，範圍外不疊，烈�
   e.pos.x += 10000; burn(c, ctx);
   assert.equal(p.buffs.ampTestKey.until, until, '範圍外不疊層也不刷新時間');
   e.pos.x -= 10000;
-  hunt(c, p, e, ctx); c.GT += .5; c.sgTickFirehuntLegend(ctx, .5);
+  hunt(c, p, e, ctx); c.GT += 1; c.sgTickFirehuntLegend(ctx, 1);
   assert.equal(p.buffs.sgFirehuntAmp.stacks, 1);
   const huntUntil = p.buffs.sgFirehuntAmp.until;
-  c.SKILL2_RT.orbits = []; c.GT += .5; c.sgTickFirehuntLegend(ctx, .5);
+  c.SKILL2_RT.orbits = []; c.GT += 1; c.sgTickFirehuntLegend(ctx, 1);
   assert.equal(p.buffs.sgFirehuntAmp.until, huntUntil);
 });
 

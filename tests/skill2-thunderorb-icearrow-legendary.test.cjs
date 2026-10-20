@@ -179,7 +179,7 @@ test('雷殞觸發角色與普通／環繞雷球分離，所有超神及永久�
    1) 雷球的五個傳奇特效
    =========================================================================== */
 
-test('【雷核】：雷球的體積 +30%（與第 2 階【擴增雷球】相乘）', () => {
+test('【雷核】：雷球的體積 +20%（與第 2 階【擴增雷球】相乘）', () => {
   function radius(keys, levels) {
     const c = loadContext();
     stubVfx(c); stubHits(c);
@@ -191,18 +191,18 @@ test('【雷核】：雷球的體積 +30%（與第 2 階【擴增雷球】相乘
   const solo = [1, 0, 0, 0, 0, 0, 0];
   const base = radius([], solo);
   assert.equal(base,table.number('thunderorb',1,'傷害範圍（米）',1)*M,'依表定傷害半徑');
-  assert.equal(radius(['thunderorbCore'], solo), base * 1.3, '體積 ×1.3');
+  assert.equal(radius(['thunderorbCore'], solo), base * 1.2, '體積 ×1.2');
   // 與第 2 階相乘而不是相加：兩者都是「體積 +N%」
   const tier2 = radius([], [1, 1, 0, 0, 0, 0, 0]);
   assert.ok(tier2 > base);
   assert.equal(
     Math.round(radius(['thunderorbCore'], [1, 1, 0, 0, 0, 0, 0]) * 1e6),
-    Math.round(tier2 * 1.3 * 1e6),
+    Math.round(tier2 * 1.2 * 1e6),
     '兩個體積%相乘'
   );
 });
 
-test('【超載】：場上每存在 1 個雷球，雷電傷害 +3%（雷球消失即歸零）', () => {
+test('【超載】：場上每存在 1 個雷球，雷電傷害 +2%（雷球消失即歸零）', () => {
   const c = loadContext();
   stubVfx(c); stubHits(c);
   setLegendary(c, ['thunderorbOverload']);
@@ -213,7 +213,7 @@ test('【超載】：場上每存在 1 個雷球，雷電傷害 +3%（雷球消�
   c.castSkill2(p, es, 'thunderorb', 'mv-float');
   const n = orbFields(c).length;
   assert.ok(n >= 2, '表定一次召喚 2 個雷球');
-  assert.equal(c.skill2LightningDamageUpPct(p), 3 * n, '每個雷球各給一份');
+  assert.equal(c.skill2LightningDamageUpPct(p), 2 * n, '每個雷球各給一份');
   // 雷球打完就消失，加成同步歸零（沒有殘留的常駐增益）
   advance(c, p, es, 20);
   assert.equal(orbFields(c).length, 0);
@@ -230,7 +230,7 @@ test('【超載】沒裝特效時完全不加成（場上有雷球也一樣）',
   assert.equal(c.skill2LightningDamageUpPct(p), 0);
 });
 
-test('【感電核心】：伴生雷球的持續時間 ×2（作用拍數跟著加倍）', () => {
+test('【感電核心】：伴生雷球的持續時間 ×1.5（作用拍數跟著變 1.5 倍）', () => {
   function companionHits(keys) {
     const c = loadContext();
     stubVfx(c); stubHits(c);
@@ -247,7 +247,7 @@ test('【感電核心】：伴生雷球的持續時間 ×2（作用拍數跟著�
   const base = companionHits([]);
   const long = companionHits(['thunderorbShockCore']);
   assert.ok(base.length > 0 && long.length > 0, '應該生出伴生雷球');
-  assert.equal(long[0], base[0] * 2, '持續時間 +100% ＝ 拍數 ×2');
+  assert.equal(long[0], Math.round(base[0] * 1.5), '持續時間 +50% ＝ 拍數 ×1.5');
 });
 
 test('雷殞降速一半，視覺飛行與傷害落地使用相同時間', () => {
@@ -597,7 +597,7 @@ test('【連射】：射出的寒冰箭 +2 支', () => {
   assert.equal(arrows(['icearrowVolley']), 4, '+2 支');
 });
 
-test('【冰封】：寒冰箭傷害 ×1.5（乘在第 1 階＋冰系強化的加總之後）', () => {
+test('【冰封】：寒冰箭傷害 ×1.3（乘在第 1 階＋冰系強化的加總之後）', () => {
   function atk(keys) {
     const c = loadContext();
     stubVfx(c);
@@ -610,10 +610,10 @@ test('【冰封】：寒冰箭傷害 ×1.5（乘在第 1 階＋冰系強化的�
     advance(c,p,es,.1);
     return calls[0].atk;
   }
-  assert.equal(Math.round(atk(['icearrowSeal']) / atk([]) * 100), 150);
+  assert.equal(Math.round(atk(['icearrowSeal']) / atk([]) * 100), 130);
 });
 
-test('【凜冬侵蝕】：寒冰箭塗出來的寒霜，每跳量與持續時間各 ×1.5', () => {
+test('【凜冬侵蝕】：寒冰箭塗出來的寒霜，每跳量與持續時間各 ×1.3', () => {
   function frost(keys) {
     const c = loadContext();
     stubVfx(c);
@@ -630,8 +630,8 @@ test('【凜冬侵蝕】：寒冰箭塗出來的寒霜，每跳量與持續時�
   const base = frost([]);
   const winter = frost(['icearrowWinter']);
   assert.ok(base && winter, '第 2 階【寒霜箭】應該塗上凍傷');
-  assert.equal(Math.round(winter.dps / base.dps * 100), 150, '每跳量 ×1.5');
-  assert.equal(Math.round(winter.dur / base.dur * 100), 150, '命中時授予的持續時間 ×1.5');
+  assert.equal(Math.round(winter.dps / base.dps * 100), 130, '每跳量 ×1.3');
+  assert.equal(Math.round(winter.dur / base.dur * 100), 130, '命中時授予的持續時間 ×1.3');
 });
 
 test('【冰裂箭】：命中後往前分裂 2 支小箭，打的是前方而不是身後的敵人', () => {
@@ -657,7 +657,7 @@ test('【冰裂箭】：命中後往前分裂 2 支小箭，打的是前方而�
   assert.ok(splitAtk < bodyAtk, '小箭比本體弱');
 });
 
-test('【深度凍結】：擊中暈眩或凍結中的敵人時 +50%，未控場則不加', () => {
+test('【深度凍結】：擊中暈眩或凍結中的敵人時 +30%，未控場則不加', () => {
   function bonus(keys, control) {
     const c = loadContext();
     stubVfx(c);
@@ -673,8 +673,8 @@ test('【深度凍結】：擊中暈眩或凍結中的敵人時 +50%，未控場
     return calls[0].total;
   }
   assert.equal(bonus(['icearrowDeepFreeze'], null), 0, '沒有控場就沒有加成');
-  assert.equal(bonus(['icearrowDeepFreeze'], 'stun'), 50, '暈眩中 +50%');
-  assert.equal(bonus(['icearrowDeepFreeze'], 'frozen'), 50, '凍結中 +50%');
+  assert.equal(bonus(['icearrowDeepFreeze'], 'stun'), 30, '暈眩中 +30%');
+  assert.equal(bonus(['icearrowDeepFreeze'], 'frozen'), 30, '凍結中 +30%');
   assert.equal(bonus([], 'stun'), 0, '沒裝特效就不加');
 });
 
@@ -689,7 +689,7 @@ test('【深度凍結】與【冰裂箭】在追擊冰箭（第 7 階）那一�
   c.castSkill2(playerEnt(), line(4, 5 * M), 'icearrow', 'mv-float');
   const homing = c.SKILL2_RT.grounds.filter((f) => f.kind === 'icearrow');
   assert.ok(homing.length > 0, '第 7 階應該生出追擊場域');
-  assert.equal(homing[0].ctrlPct, 50, '控場增傷帶進場域');
+  assert.equal(homing[0].ctrlPct, 30, '控場增傷帶進場域');
   assert.equal(typeof homing[0].onHit, 'function', '分裂箭掛在場域的命中後回呼');
 });
 

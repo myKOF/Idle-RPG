@@ -129,11 +129,13 @@ function countFor(calls, ent) {
    1) 連鎖閃電的五個傳奇特效
    =========================================================================== */
 
-test('【電荷連鎖】：閃電鏈的彈射數 +2（總命中次數跟著多 2 次）', () => {
-  function hits(keys) {
+test('【電荷連鎖】：35% 機率閃電鏈的彈射數 +2（總命中次數跟著多 2 次）', () => {
+  function hits(keys, roll) {
     const c = loadContext();
     stubVfx(c);
     const calls = stubHits(c);
+    const realChance = c.chance;
+    c.chance = (pct) => (pct === 35 ? roll : realChance(pct));   // 只控制【電荷連鎖】的 35%
     setLegendary(c, keys);
     setLevels(c, 'chainlightning', [1, 0, 0, 0, 0, 0, 0]);
     // 敵人夠多才彈得完：表定彈射 4 次，加傳奇後 6 次
@@ -144,15 +146,19 @@ test('【電荷連鎖】：閃電鏈的彈射數 +2（總命中次數跟著多 2
     settleChain(c);
     return calls.length;
   }
-  assert.equal(hits([]), 4, '表定 4 次彈射');
-  assert.equal(hits(['chainlightningSurge']), 6, '+2 次');
+  const base = hits([], true);
+  assert.ok(base >= 3, '表定彈射數（依表格）');
+  assert.equal(hits(['chainlightningSurge'], true), base + 2, '機率命中：+2 次');
+  assert.equal(hits(['chainlightningSurge'], false), base, '機率沒中：維持表定');
 });
 
-test('【電擊】：同時射出的閃電鏈道數 +2（第 7 階沒學也照加）', () => {
-  function bolts(keys) {
+test('【電擊】：50% 機率同時射出的閃電鏈道數 +2（第 7 階沒學也照加）', () => {
+  function bolts(keys, roll) {
     const c = loadContext();
     const specs = stubVfx(c);
     stubHits(c);
+    const realChance = c.chance;
+    c.chance = (pct) => (pct === 50 ? roll : realChance(pct));   // 只控制【電擊】的 50%
     setLegendary(c, keys);
     setLevels(c, 'chainlightning', [1, 0, 0, 0, 0, 0, 0]);
     const es = [];
@@ -164,8 +170,9 @@ test('【電擊】：同時射出的閃電鏈道數 +2（第 7 階沒學也照�
        正好等於道數（後續每一跳都是兩點式，且帶 delayMs）。 */
     return specs.filter((s) => s.variant === 'lightning-chain' && s.targets.length === 1 && !s.delayMs).length;
   }
-  assert.equal(bolts([]), 1, '第 1 階只有 1 道');
-  assert.equal(bolts(['chainlightningVolley']), 3, '+2 道');
+  assert.equal(bolts([], true), 1, '第 1 階只有 1 道');
+  assert.equal(bolts(['chainlightningVolley'], true), 3, '機率命中：+2 道');
+  assert.equal(bolts(['chainlightningVolley'], false), 1, '機率沒中：維持 1 道');
 });
 
 test('【雷散落】：電殛擴散多打 1 個敵人，且擴散傷害 +50%', () => {
@@ -214,7 +221,7 @@ test('【超導】：同一道鏈每彈射 1 次，之後每一擊的傷害再�
   });
 });
 
-test('【過載】：同一個敵人被閃電鏈打滿 5 次就在牠身上炸開（爆炸是衍生傷害）', () => {
+test('【過載】：同一個敵人被閃電鏈打滿 10 次就在牠身上炸開（爆炸是衍生傷害）', () => {
   const c = loadContext();
   stubVfx(c);
   stubHits(c);
@@ -223,15 +230,15 @@ test('【過載】：同一個敵人被閃電鏈打滿 5 次就在牠身上炸�
   setLevels(c, 'chainlightning', [1, 0, 0, 0, 0, 0, 0]);
   const p = playerEnt();
   const hub = enemy(1e9, 20, 0, 'hub');
-  const near = enemy(1e9, 24, 0, 'near');   // 距離 hub 4 單位＝ 0.4 米，在 6 米爆炸範圍內
+  const near = enemy(1e9, 24, 0, 'near');   // 距離 hub 4 單位＝ 0.4 米，在 10 米爆炸範圍內
   const far = enemy(1e9, 300, 0, 'far');    // 30 米外，不吃爆炸
-  // 場上只有這三個，主鏈每次施放都從最近的 hub 起手；累積打滿 5 次即爆
-  for (let i = 0; i < 6; i++) { c.castSkill2(p, [hub, near, far], 'chainlightning', 'mv-float'); settleChain(c); }
+  // 場上只有這三個，主鏈每次施放都從最近的 hub 起手；累積打滿 10 次即爆
+  for (let i = 0; i < 12; i++) { c.castSkill2(p, [hub, near, far], 'chainlightning', 'mv-float'); settleChain(c); }
   assert.ok(derived.length > 0, '應該炸過至少一次');
   assert.ok(derived.every((h) => h.ent !== undefined), '爆炸有受害者');
   assert.ok(!derived.some((h) => h.ent === far), '30 米外的敵人不吃爆炸');
   // 計數跨施放累積：打滿一次就歸零重算，因此計數恆小於門檻
-  assert.ok((hub._sgChainHits || 0) < 5 && (near._sgChainHits || 0) < 5, '計數打滿即歸零');
+  assert.ok((hub._sgChainHits || 0) < 10 && (near._sgChainHits || 0) < 10, '計數打滿即歸零');
 });
 
 /* ===========================================================================
@@ -392,19 +399,36 @@ test('【三重雷】：每個目標的攻擊次數 +1（不以【雙重落雷�
   assert.equal(hits(['thunderstrikeTriple']), 4, '每個目標各 +1 次');
 });
 
-test('【雷鎖】：落雷術的目標數 +1', () => {
-  function targets(keys) {
+test('【雷鎖】（2026-10-20 改版）：落雷擊中時機率在地上留下雷池，不再增加目標數', () => {
+  function run(keys, roll) {
     const c = loadContext();
     stubVfx(c);
     const calls = stubHits(c);
+    c.chance = () => roll;
     setLegendary(c, keys);
     setLevels(c, 'thunderstrike', [1, 0, 0, 0, 0, 0, 0]);
     const es = [enemy(1e9, 20, 0, 'a'), enemy(1e9, 40, 0, 'b'), enemy(1e9, 60, 0, 'c')];
-    castThunder(c, playerEnt(), es);
-    return calls.length;
+    castThunder(c, playerEnt(), es, 0.6);          // 落雷剛落地，雷池剛生成（0.5 秒一拍，還來不及打）
+    return { c, calls, pools: c.SKILL2_RT.grounds.filter((g) => g.kind === 'thunderpool') };
   }
-  assert.equal(targets([]), 2);
-  assert.equal(targets(['thunderstrikeLock']), 3, '+1 個目標');
+  const none = run([], true);
+  assert.equal(none.calls.length, 2, '表定仍是 2 個目標（雷鎖不再 +1 目標）');
+  assert.equal(none.pools.length, 0, '沒裝雷鎖沒有雷池');
+  const miss = run(['thunderstrikeLock'], false);
+  assert.equal(miss.pools.length, 0, '機率沒中就沒有雷池');
+  const hit = run(['thunderstrikeLock'], true);
+  assert.equal(hit.calls.length, 2 + 0, '雷池第一拍之前只有落雷本身的 2 次命中');
+  assert.equal(hit.pools.length, 2, '每道擊中的落雷各擲一次，兩道都中 → 兩個雷池');
+  const pool = hit.pools[0];
+  assert.equal(pool.hitElem, 'lightning');
+  assert.equal(pool.gap, 0.5);
+  assert.equal(pool.hits, 8, '0.5 秒一拍、持續 4 秒 → 8 拍');
+  assert.equal(pool.radius, hit.c.bfMeterPx(6));
+  // 每拍傷害 ＝ 落雷傷害的 20%（落雷術 1 階的 pct% 魔攻）
+  const bolt = hit.c.sgGroupBaseStat(hit.c.SKILLS2.thunderstrike, hit.c.getStats()) *
+    hit.c.sgVal(hit.c.SKILLS2.thunderstrike.tiers[0].fx, 'pct', 1) / 100;
+  assert.ok(Math.abs(pool.dmgVal - bolt * 0.2) < 1e-6, '每拍 20% 落雷傷害');
+  assert.equal(hit.c.sgGroundLabel ? hit.c.sgGroundLabel(pool) : '雷池', '雷池');
 });
 
 test('【震雷】：暈眩時間 +1 秒，且該敵人在暈眩中受到的傷害提高', () => {
@@ -723,9 +747,10 @@ test('第八批十個傳奇特效：各自只出現在指定武器類型，且�
 test('legendarySkill2Mods：兩個雷系群組的傳奇 fx 不互相汙染', () => {
   const c = loadContext();
   setLegendary(c, ['chainlightningSurge', 'thunderstrikeLock']);
-  assert.equal(c.legendarySkill2Mods('chainlightning').chainLinkAdd.count, 2);
-  assert.equal(c.legendarySkill2Mods('chainlightning').thunderTargetAdd, undefined, '不跨群組');
-  assert.equal(c.legendarySkill2Mods('thunderstrike').thunderTargetAdd.count, 1);
+  assert.equal(c.legendarySkill2Mods('chainlightning').chainLinkProc.count, 2);
+  assert.equal(c.legendarySkill2Mods('chainlightning').chainLinkProc.chance, 35);
+  assert.equal(c.legendarySkill2Mods('chainlightning').thunderPool, undefined, '不跨群組');
+  assert.equal(c.legendarySkill2Mods('thunderstrike').thunderPool.chance, 25);
   assert.equal(c.legendarySkill2Mods('thunderorb'), null, '沒有關聯特效的群組回 null');
 });
 

@@ -313,6 +313,7 @@ function resetSkill2RT() {
     projectiles: [], // 飛出斬擊／貫穿突刺的執行期飛行物（不入存檔）
     galeStrikes: [], // 疾風斬逐段結算，換場時隨 Runtime 重建
     thunderLaunches: [], // 每道落雷到發動時才選敵，換場隨 Runtime 清除
+    fireballShots: 0, // 傳奇【連珠火】：累計發射的火球數（每 every 個再多發 extra 個）
     waterballs: [], // 固定落點水彈：起飛與落地分開處理，落地才查詢敵人
     vacuumWaves: [], // 真空三重奏：後續波次到節拍才查詢範圍、播放及結算
     windChaserSpins: [], // 逐風者：鎖定命中敵人的真空迴旋後續傷害
@@ -1574,10 +1575,13 @@ function skill2VulnPct(target) {
 }
 /* 疊層型的「受到的傷害提高」：傳奇【千瘡百孔】與超神【暗影絕殺者】。
    兩者都是掛在敵人身上的增益鍵（值＝單層值 × 層數），因此直接讀 buffVal 即可，
-   不必知道目前疊了幾層。 */
-function skill2StackVulnPct(target) {
+   不必知道目前疊了幾層。
+   【千瘡百孔】只放大「突刺」自己的傷害（2026-10-20 改版），所以要知道這一擊出自哪個技能群組：
+   gid 不是 'thrust'（普攻、反擊、其他技能）就不算；靈魂撕裂沒有這個限制。 */
+function skill2StackVulnPct(target, gid) {
   if (!target || typeof buffVal !== 'function') return 0;
-  return Math.max(0, buffVal(target, 'sgThrustVuln')) + Math.max(0, buffVal(target, 'sgSoulRend'));
+  var thrust = gid === 'thrust' ? Math.max(0, buffVal(target, 'sgThrustVuln')) : 0;
+  return thrust + Math.max(0, buffVal(target, 'sgSoulRend'));
 }
 
 /* 傳奇【震雷】：被落雷術擊中的敵人在「暈眩中」才吃這一份增傷。
@@ -1588,17 +1592,19 @@ function skill2ThunderQuakeVulnPct(target) {
   return (pct > 0 && sgIsStunned(target)) ? pct : 0;
 }
 
-function skill2VulnACfg(aCfg, target) {
-  /* 「目標受到的傷害提高」目前有七個來源：血刃斬【虛弱】、泥沼術【本體／重力泥沼】、
-     傳奇【千瘡百孔】、超神【暗影絕殺者】、傳奇【震雷】、超神【水牢天瀑】與傳奇【風蝕】。
+function skill2VulnACfg(aCfg, target, gid) {
+  /* 「目標受到的傷害提高」目前有八個來源：血刃斬【虛弱】、泥沼術【本體／重力泥沼】、
+     傳奇【千瘡百孔】（僅限 gid 為 thrust 的突刺傷害）、超神【暗影絕殺者】、傳奇【震雷】、
+     超神【水牢天瀑】、傳奇【風蝕】與傳奇【貫日之刺】的重傷。
      全部加算進同一個 totalDmgPct，收斂在這一支——呼叫端（普攻 doPlayerAttack ／
      新版技能 sgAtkCfg）不必逐一補判。 */
   var pct = skill2VulnPct(target) +
     ((typeof skill2MireVulnPct === 'function') ? skill2MireVulnPct(target) : 0) +
-    skill2StackVulnPct(target) + skill2ThunderQuakeVulnPct(target) +
+    skill2StackVulnPct(target, gid) + skill2ThunderQuakeVulnPct(target) +
     /* 水牢與風蝕都沒有附加條件：狀態在身上就算數（與【震雷】要同時暈眩中不同）。 */
     ((typeof buffVal === 'function')
-      ? Math.max(0, buffVal(target, 'sgWaterPrison')) + Math.max(0, buffVal(target, 'sgWindErode'))
+      ? Math.max(0, buffVal(target, 'sgWaterPrison')) + Math.max(0, buffVal(target, 'sgWindErode')) +
+        Math.max(0, buffVal(target, 'sgThrustWound'))
       : 0);
   if (pct > 0) aCfg.totalDmgPct = (aCfg.totalDmgPct || 0) + pct;
   /* 只針對「某一個屬性」的受傷增幅走另一條路：水流彈【寒冰逆轉】的 +X% 寒冰傷害
@@ -2104,7 +2110,7 @@ function sgAtkCfg(pEnt, st, dmgVal, target, bonusTotalPct, gid, elemOverride) {
   if (elem) aCfg.skillElem = elem;
   if (gid === 'windblade' && elem === 'wind') aCfg = sgWindbladeMountainACfg(aCfg);
   if (typeof skill2WindAmpACfg === 'function') aCfg = skill2WindAmpACfg(aCfg, pEnt);
-  return skill2VulnACfg(aCfg, target);
+  return skill2VulnACfg(aCfg, target, gid);
 }
 
 /* 一次獨立命中（走完整 resolveHit 傷害管線：防禦、爆擊、格擋、護盾、敵種倍率）。
@@ -2722,9 +2728,13 @@ function sgThrustOnHit(cfg, target, res, ctx) {
       dps: cfg.bleed.dps, dur: cfg.bleed.dur, interval: cfg.bleed.interval
     });
   }
-  /* 傳奇【迅雷穿刺】：機率附加一道連鎖閃電（重用傳奇特效既有的連鎖排程器）。 */
-  if (cfg.chain && chance(cfg.chain.chance) && typeof legendaryScheduleChain === 'function') {
-    legendaryScheduleChain(cfg.pEnt, cfg.chain, cfg.floatSel);
+  /* 傳奇【迅雷穿刺】：機率附加 1 道落雷（傳奇自帶的單道落雷，不要求學過落雷術）。 */
+  if (cfg.thunder && chance(cfg.thunder.chance) && typeof legendaryThunderStrike === 'function') {
+    legendaryThunderStrike(cfg.pEnt, target, cfg.thunder, cfg.floatSel);
+  }
+  /* 傳奇【貫日之刺】：機率使敵人重傷，受到的傷害提高（不疊層，重複命中只刷新時間）。 */
+  if (cfg.wound && target.hp > 0 && chance(cfg.wound.chance) && typeof applyStatus === 'function') {
+    applyStatus(target, 'sgThrustWound', { val: cfg.wound.pct, dur: cfg.wound.dur });
   }
   /* 超神【幻影八方陣】：傷害同時擴散到該敵人周圍範圍內的所有敵人（衍生傷害，不再過防禦）。 */
   if (cfg.phantomPx > 0 && res.dmg > 0) {
@@ -2758,7 +2768,7 @@ function sgCastThrust(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   var pct = sgVal(t[0].fx, 'pct', lvs[0]);
   if (lvs[2] > 0) pct += sgVal(t[2].fx, 'pct', lvs[2]);
   if (lvs[6] > 0) pct += sgVal(t[6].fx, 'pct', lvs[6]);
-  // 傳奇【凝鋒穿刺】＋【貫日之刺】的技能傷害提升（同鍵相加，見 legendarySkill2Mods）
+  // 傳奇【凝鋒穿刺】的技能傷害提升（同鍵相加，見 legendarySkill2Mods）
   pct += Number(lg.skillDamagePct) || 0;
 
   // 次數依各階配置逐項累加：本體、四方突刺，以及連刺機率觸發的追加次數。
@@ -2775,7 +2785,7 @@ function sgCastThrust(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   var geomOk = baseAngle !== null;
   var baseRange = sgRange(g.range, lvs[0]);
   var rangeScale = lvs[3] > 0 ? 1 + sgVal(t[3].fx, 'range', lvs[3]) / 100 : 1;
-  // 傳奇【貫日之刺】：突刺範圍（長與寬同時）提升
+  // 突刺範圍（長與寬同時）提升（thrustRangePct 目前沒有傳奇特效使用，保留為通用參數鍵）
   rangeScale *= 1 + (Number(lg.thrustRangePct) || 0) / 100;
   var lineLen = bfMeterPx(baseRange.length || 6) * rangeScale;
   if (lvs[5] > 0) lineLen += bfMeterPx(sgVal(t[5].fx, 'm', lvs[5]));
@@ -2785,9 +2795,9 @@ function sgCastThrust(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   lineLen = Math.max(1, lineLen * (1 + (Number(lg.thrustLenPct) || 0) / 100));
   lineWidth = Math.max(1, lineWidth * (1 + (Number(lg.thrustWidthPct) || 0) / 100));
   var isMultiWay = lvs[6] > 0;
-  /* 四方突刺「改為 1 道」：傳奇【貫日之刺】與超神【一擊必殺】各自都能把它改回單向，
-     兩者同時存在時效果相同（方向數本來就只會是 1）。傷害加成仍照第 7 階計算。 */
-  var octaSingle = isMultiWay && (!!lg.octaToSingle || !!ultKill);
+  /* 四方突刺「改為 1 道」：只剩超神【一擊必殺】會把它改回單向（傳奇【貫日之刺】已於 2026-10-20 改成重傷機率，
+     不再改突刺形態）。傷害加成仍照第 7 階計算。 */
+  var octaSingle = isMultiWay && !!ultKill;
   // 平行路徑與徑向突刺可以同時存在；幻影八方陣提升方向數，單向改寫仍沿用既有優先順序。
   var isParallel = lvs[3] > 0;
   var directions = [0];
@@ -2857,7 +2867,8 @@ function sgCastThrust(pEnt, st, g, lvs, pool, primary, floatSel, out) {
       dur: Math.max(0.2, Number(lg.thrustDot.dur) || 0),
       interval: Math.max(0.1, Number(lg.thrustDot.tickSec) || 1)
     } : null,
-    chain: lg.thrustChain || null,
+    thunder: lg.thrustThunder || null,
+    wound: lg.thrustWound || null,
     soulRend: ultSoul ? {
       perStack: sgUltVal(ultSoul, 'perStack'),
       maxStacks: Math.max(1, Math.floor(sgUltVal(ultSoul, 'maxStacks'))),
@@ -2916,34 +2927,23 @@ function sgCastThrust(pEnt, st, g, lvs, pool, primary, floatSel, out) {
 
 /* ---- 迴旋斬 ---- */
 
-/* 傳奇【旋風劍舞】：每一次斬擊同時在自身周圍捲起一道旋風。
-   旋風是「即刻結算的範圍段」而不是場域（設計文檔沒有持續時間），
-   因此直接走 sgHitOne＋屬性覆寫，一次斬擊一次。 */
-function sgCleaveWhirlwind(pEnt, st, whirl, pool, floatSel, out, hitIdx) {
-  if (!whirl || !(Number(whirl.powerPct) > 0)) return;
-  var radius = bfMeterPx(Number(whirl.m) || 0);
-  if (!(radius > 0)) return;
-  var victims = (typeof bfEnemiesInArea === 'function' && typeof bfPlayerPos === 'function' &&
-    typeof bfLiveList === 'function')
-    ? bfEnemiesInArea({ x: bfPlayerPos().x, y: bfPlayerPos().y, r: radius }, bfLiveList(pool))
-    : (pool || []).filter(function (e) { return e && e.hp > 0; });
-  if (!victims.length) return;
-  /* 特效沿用真空斬【迴旋斬】那一階的 wind-spin（圍繞周身的一整圈）：
-     它掛在 fxKind 'slash' 的分派下，寫成 'aura' 會被兩個渲染器的
-     「風系泛用 aura 一律不畫方框」守衛擋掉，變成完全沒有畫面。 */
-  sgEmitVfx('cleave', victims, floatSel, {
-    fxKind: 'slash', variant: 'wind-spin', elem: 'wind', dur: 0.35,
-    vfxGid: 'vacuumslash', vfxTier: 4
+/* 傳奇【旋風劍舞】：迴旋斬命中時機率產生 1 道風刃，射向被命中的敵人（單體）。
+   特效沿用風刃技能自己的追蹤風刃畫面（比照反擊【風之體】舊版的借用方式）。 */
+function sgCleaveWindBlade(cfg, target) {
+  var spec = cfg.windBlade;
+  var dmg = cfg.st.atk * (Number(spec.powerPct) || 0) / 100;
+  if (!(dmg > 0)) return;
+  sgEmitVfx('cleave', [target], cfg.floatSel, {
+    fxKind: 'projectile', variant: 'wind-blade-homing', elem: 'wind', dur: 0.5,
+    vfxGid: 'windblade', vfxTier: 1
   });
-  var dmg = st.atk * Number(whirl.powerPct) / 100;
-  for (var i = 0; i < victims.length; i++) {
-    sgHitOne(pEnt, st, victims[i], dmg, 'cleave', floatSel, out, sgStaggerMs(hitIdx + i), 0, 'wind');
-  }
+  sgHitOne(cfg.pEnt, cfg.st, target, dmg, 'cleave', cfg.floatSel, cfg.out, 0, 0, 'wind');
 }
 
 /* 迴旋斬的「命中之後」掛鉤：直接命中與飛出斬擊兩條路徑共用（同突刺的理由）。 */
 function sgCleaveOnHit(cfg, target, res, ctx) {
   if (!target || !res || res.miss) return;
+  if (cfg.windBlade && target.hp > 0 && chance(Number(cfg.windBlade.chance) || 0)) sgCleaveWindBlade(cfg, target);
   if (!cfg.vacuum || target.hp <= 0 || !chance(cfg.vacuum.chance)) return;
   var hits = Math.max(1, Math.floor(cfg.vacuum.hits)), gap = cfg.vacuum.gap;
   sgCleaveSpinHit(cfg, target, ctx, hits * gap);
@@ -3002,7 +3002,23 @@ function sgCastCleave(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   var t = g.tiers, lg = sgLegend('cleave');
   var ultVoid = sgUlt('cleave', 'voidShatter'), ultWind = sgUlt('cleave', 'windChaser');
   if (lg.cleavePull && typeof bfPullEnemies === 'function') {
-    bfPullEnemies(pool, bfMeterPx(Number(lg.cleavePull.m) || 0), bfMeterPx(Number(lg.cleavePull.toM) || 0));
+    /* 傳奇【聚敵旋渦】：只拉近 m 米內隨機 count 個敵人（count 留白＝範圍內全部）。
+       範圍判定與 bfPullEnemies 同一口徑（玩家到敵人中心的距離）。 */
+    var pullPx = bfMeterPx(Number(lg.cleavePull.m) || 0);
+    var pullPool = pool, pullMax = Math.max(0, Math.floor(Number(lg.cleavePull.count) || 0));
+    var pullFrom = (pullMax > 0 && typeof bfPlayerPos === 'function' && typeof bfLiveList === 'function') ? bfPlayerPos() : null;
+    if (pullFrom) {
+      pullPool = bfLiveList(pool).filter(function (e) {
+        var ep = bfPos(e);
+        return ep && Math.hypot(ep.x - pullFrom.x, ep.y - pullFrom.y) <= pullPx;
+      });
+      for (var pi = pullPool.length - 1; pi > 0; pi--) {
+        var pj = Math.floor(Math.random() * (pi + 1)), swap = pullPool[pi];
+        pullPool[pi] = pullPool[pj]; pullPool[pj] = swap;
+      }
+      pullPool = pullPool.slice(0, pullMax);
+    }
+    bfPullEnemies(pullPool, pullPx, bfMeterPx(Number(lg.cleavePull.toM) || 0));
   }
   var pct = sgVal(t[0].fx, 'pct', lvs[0]);
   if (lvs[2] > 0) pct += sgVal(t[2].fx, 'pct', lvs[2]);
@@ -3034,7 +3050,7 @@ function sgCastCleave(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   else delete roles.projectile;
   var stunnedBonusPct = Math.max(0, Number(lg.cleaveStunnedDmgPct) || 0);
   var bonusFor = function(target) { return stunnedBonusPct > 0 && sgIsStunned(target) ? stunnedBonusPct : 0; };
-  var hookCfg = { pEnt:pEnt, st:st, floatSel:floatSel, out:out, vacuum:ultWind ? {
+  var hookCfg = { pEnt:pEnt, st:st, floatSel:floatSel, out:out, windBlade:lg.cleaveWindBlade || null, vacuum:ultWind ? {
     chance:sgUltVal(ultWind,'chance'), pct:sgUltVal(ultWind,'pct'),
     hits:sgUltVal(ultWind,'hits'), gap:sgUltVal(ultWind,'gap')
   } : null };
@@ -3070,7 +3086,6 @@ function sgCastCleave(pEnt, st, g, lvs, pool, primary, floatSel, out) {
             projectile.endAt = projectile.startAt + travel;
             emitWave(at);
           }
-          if(lg.cleaveWhirl)sgCleaveWhirlwind(pEnt,st,lg.cleaveWhirl,livePool,floatSel,out,0);
         }
       },out);
     })(wave > 0);
@@ -3438,7 +3453,7 @@ function sgCastKnife(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     sgQueueKnifeFlight(cfg,null,target,dmgVal,0,false,'knife',function(res,angle){
       if((res&&res.miss)||bouncePct<=0)return;
       var bounces=Math.max(1,Math.floor(Number(t[2].fx.count)||1))+
-        (lvs[3]>0?sgRollCount(sgVal(t[3].fx,'add',lvs[3])):0)+Math.max(0,Math.floor(Number(lg.knifeBounceAdd)||0));
+        (lvs[3]>0?sgRollCount(sgVal(t[3].fx,'add',lvs[3])):0)+((lg.knifeBounceProc&&chance(Number(lg.knifeBounceProc.chance)||0))?sgLegendCount(lg.knifeBounceProc):0);  // 傳奇【連鎖】：每把飛刀各擲一次機率
       var chainMax=lvs[5]>0?Math.max(0,Math.floor(Number(t[5].fx.max)||4)):0;
       var chainChance=lvs[5]>0?sgVal(t[5].fx,'chance',lvs[5]):0;
       sgKnifeBounceChain(cfg,target,dmgVal*bouncePct/100,0,bounces,chainMax,chainChance,false,
@@ -3454,18 +3469,23 @@ function sgCastKnife(pEnt, st, g, lvs, pool, primary, floatSel, out) {
    傳奇特效與超神進化才不會只在其中一種型態下生效（比照突刺／迴旋斬）。
    cfg 由 sgCastGale 一次算好（純資料，不含幾何）。 */
 
-/* 傳奇【風捲殘雲】：命中處生成一道龍捲風（地板場域，逐段結算風系傷害）。
-   保留逐風者表內的地板欄作為既有龍捲風來源，與逐風者真空斬分別派送。 */
-function sgGaleTornado(cfg, target) {
-  if (typeof sgSpawnGround !== 'function') return;
-  var spec = cfg.tornado;
-  sgSpawnGround(cfg.pEnt, cfg.st, 'gale', {
-    tgt: target, floatSel: cfg.floatSel, kind: 'windtornado',
-    radius: bfMeterPx(Number(spec.m) || 0), dmgVal: cfg.dmgVal * (Number(spec.pct) || 0) / 100,
-    hits: Math.max(1, Math.floor(Number(spec.hits) || 1)), gap: Number(spec.gap) || 0.4,
-    hitElem: 'wind',
-    vfxGid: 'cleave', vfxUlt: 'windChaser'
+/* 傳奇【風捲殘雲】：命中處形成 1 道真空斬，對目標周圍 m 米內的敵人造成風系傷害。
+   畫面沿用真空斬【迴旋斬】那一階的 wind-spin（以目標為中心的一整圈）。 */
+function sgGaleVacuumSlash(cfg, target) {
+  var spec = cfg.legendVacuum;
+  var r = bfMeterPx(Number(spec.m) || 0);
+  var victims = sgEnemiesAround(target, cfg.pool, r);
+  if (target.hp > 0) victims.push(target);
+  if (!victims.length) return;
+  sgEmitVfx('gale', victims, cfg.floatSel, {
+    fxKind: 'slash', variant: 'wind-spin', elem: 'wind', dur: 0.45,
+    area: (typeof sgAreaAround === 'function') ? sgAreaAround(target, r) : null,
+    vfxGid: 'vacuumslash', vfxTier: 4
   });
+  var dmg = cfg.dmgVal * (Number(spec.pct) || 0) / 100;
+  for (var i = 0; i < victims.length; i++) {
+    sgHitOne(cfg.pEnt, cfg.st, victims[i], dmg, 'gale', cfg.floatSel, cfg.out, sgStaggerMs(i), 0, 'wind');
+  }
 }
 
 /* 超神【雷神之怒】：命中後依表定機率降下落雷，視覺倍率不改傷害半徑。 */
@@ -3491,8 +3511,8 @@ function sgGaleOnHit(cfg, target, res) {
   if (!target || !res || res.miss) return;
   /* 傳奇【神速斬】：每次命中使疾風斬的冷卻時間 -N 秒（沿用第 6 階【極速斬】的同一個冷卻鍵）。 */
   sgReduceSkillCooldownOnHit(cfg.pEnt, cfg.cdKey, cfg.cdrSec);
-  /* 傳奇【風捲殘雲】：機率在目標處形成龍捲風。 */
-  if (cfg.tornado && chance(Number(cfg.tornado.chance) || 0)) sgGaleTornado(cfg, target);
+  /* 傳奇【風捲殘雲】：機率在目標處形成 1 道真空斬。 */
+  if (cfg.legendVacuum && chance(Number(cfg.legendVacuum.chance) || 0)) sgGaleVacuumSlash(cfg, target);
   /* 傳奇【風行者】：附加風切狀態。移速／命中率折減與層數規則的唯一權威是
      sgApplyWindRend（真空斬與暴風屏障用的是同一支），這裡只提供每跳傷害。 */
   if (cfg.windRend && target.hp > 0 && typeof sgApplyWindRend === 'function') {
@@ -3548,7 +3568,7 @@ function sgCastGale(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     // 傳奇【神速斬】：每次命中的冷卻縮減秒數
     cdrSec: Math.max(0, Number(lg.galeCdrSec) || 0),
     // 傳奇【風捲殘雲】／【雙影】／【斬殺】
-    tornado: lg.galeTornado || null,
+    legendVacuum: lg.galeVacuum || null,
     twin: lg.galeTwin || null,
     execute: lg.galeExecute || null,
     /* 傳奇【風行者】：風切的每跳傷害＝本體技能傷害 × cutPct%，換算成每秒量交給狀態引擎；
@@ -3842,9 +3862,12 @@ function sgCastDualdance(pEnt, st, g, lvs, pool, primary, floatSel, out, storm) 
   }
   // 鐵血之舞：自身與附近所有敵人流血（占最大生命比例；自身流血直接扣生命、不吃護盾）
   if (lvs[4] > 0) {
-    /* 傳奇【狂戰士】：生命損失與傷害「同時」提高——兩者本來就共用這一個比例，
-       放大它就同時放大兩邊，不必分開處理。 */
-    var ironPct = sgVal(t[4].fx, 'pct', lvs[4]) * (1 + sgDanceIronAmpPct(lg) / 100);
+    /* 傳奇【狂戰士】：鐵血之舞的生命損失與傷害共用同一個比例，改版後兩邊各自調整：
+       自身流血的損失比例降低 reducePct%、敵人流血的傷害提高 pct%。 */
+    var ironAmp = sgDanceIronAmp(lg);
+    var ironBase = sgVal(t[4].fx, 'pct', lvs[4]);
+    var ironPct = ironBase * (1 - ironAmp.cut / 100);       // 自身
+    var ironFoePct = ironBase * (1 + ironAmp.dmg / 100);    // 敵人
     var ironDur = Number(t[4].fx.sec) || 3;
     var ironGap = Math.max(0.1, sgGeometryNumber(t[4].fx, 'gap') || 0.35);
     var ironR = bfMeterPx(sgGeometryNumber(t[4].fx, 'm') || 5);
@@ -3854,7 +3877,7 @@ function sgCastDualdance(pEnt, st, g, lvs, pool, primary, floatSel, out, storm) 
       if (!e || e.hp <= 0) continue;
       var p = (typeof bfPos === 'function') ? bfPos(e) : null;
       if (p && typeof bfEntityDistance === 'function' && bfEntityDistance(e) > ironR) continue;
-      sgApplySlot(e, 'dualdance', '5', 'enemy', 0, { dps: (e.maxHp || 0) * ironPct / 100 / ironGap, dur: ironDur, interval: ironGap });
+      sgApplySlot(e, 'dualdance', '5', 'enemy', 0, { dps: (e.maxHp || 0) * ironFoePct / 100 / ironGap, dur: ironDur, interval: ironGap });
     }
   }
   // 暴風之舞：化身狀態（自動施放由 tickSkill2 驅動；不可由化身內的自動施放再觸發）
@@ -3889,10 +3912,13 @@ function sgDanceTargetAdd(lg) {
   var spec = lg && lg.danceTargetAdd;
   return spec ? Math.max(0, Math.floor(Number(spec.count) || 0)) : 0;
 }
-/* 傳奇【狂戰士】：鐵血之舞的比例加成%。 */
-function sgDanceIronAmpPct(lg) {
+/* 傳奇【狂戰士】：鐵血之舞的兩個旋鈕。dmg＝敵人流血傷害提高%，cut＝自身生命損失降低%（夾在 100 以內）。 */
+function sgDanceIronAmp(lg) {
   var spec = lg && lg.danceIronAmp;
-  return spec ? Math.max(0, Number(spec.pct) || 0) : 0;
+  return {
+    dmg: spec ? Math.max(0, Number(spec.pct) || 0) : 0,
+    cut: spec ? Math.min(100, Math.max(0, Number(spec.reducePct) || 0)) : 0
+  };
 }
 /* 傳奇【狂舞】：暴風之舞每施放 1 次縮短的間隔比例%（夾在 90% 以內，避免一次歸零）。 */
 function sgDanceStormGapPct(lg) {
@@ -4520,10 +4546,19 @@ function sgCastFireball(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   if (ultFall && meteor) radius *= 1 + sgUltVal(ultFall, 'size') / 100;
   /* 數量：傳奇【連珠火】火球與殞石都 +N；超神【火鳳遼原】殞石 +N；
      超神【火殞天落】再額外連續落下 N 顆（後兩者都只在殞石型態成立）。 */
-  var countAdd = Math.max(0, Math.floor(Number(lg.fireballCountAdd && lg.fireballCountAdd.count) || 0));
+  var countAdd = sgLegendCount(lg.fireballCountAdd);
   var volleys = (meteor ? Math.max(1, Math.floor(Number(t[6].fx.count) || 3)) : 1) + countAdd;
   if (meteor && ultPhoenix) volleys += Math.max(0, sgRollCount(sgUltVal(ultPhoenix, 'count')));
   if (meteor && ultFall) volleys += Math.max(0, Math.floor(sgUltVal(ultFall, 'count')));
+  /* 傳奇【連珠火】的第二段：累計每發射 every 個火球（含殞石），就再額外發射 extra 個。
+     額外那幾個不計入累計，避免「為了湊數而自我放大」。計數器是整場戰鬥的執行期狀態。 */
+  var beadEvery = Math.max(0, Math.floor(Number(lg.fireballCountAdd && lg.fireballCountAdd.every) || 0));
+  if (beadEvery > 0) {
+    var firedBefore = SKILL2_RT.fireballShots || 0;
+    SKILL2_RT.fireballShots = firedBefore + volleys;
+    volleys += (Math.floor(SKILL2_RT.fireballShots / beadEvery) - Math.floor(firedBefore / beadEvery)) *
+      Math.max(1, Math.floor(Number(lg.fireballCountAdd.extra) || 1));
+  }
   /* 一般火球只建立標準平射飛行物計畫；殞石的落地計時完全走另一個分支。 */
   var fireballPlan = meteor ? null : sgFireballProjectilePlan(primary);
   var travelMs = 0;
@@ -4673,17 +4708,14 @@ function sgCastFirepillar(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   // 「可同時對 m 米內的 count 個目標施放火柱」沒有指定最近＝範圍內隨機
   if (count > 1) spots = spots.concat(bfRandomOthers(primary, pool, count - 1, spreadPx, null));
 
-  /* 移動：傳奇【追蹤烈焰】追著敵人跑；超神【永劫火獄】在附近隨機游走並沿路留下火池。
-     兩者同時成立時以追蹤為準——追蹤是更明確的行為指定，而火池只看「移動軌跡」，
-     不論走的是追蹤路徑還是游走路徑都照留。 */
-  var chase = lg.firepillarChase || null;
-  var chasePx = chase ? bfMeterPx(sgGeometryNumber(chase, 'm') || 30) : 0;
+  /* 移動：超神【永劫火獄】在附近隨機游走並沿路留下火池；無限火龍自己會獵殺敵人。
+     傳奇【追蹤烈焰】（2026-10-20 改版）不再改變移動方式，只讓上述移動速度 +N%——
+     火龍捲本來就不會動的形態（普通火龍捲）沒有東西可加。 */
   var wanderPx = ultInferno ? bfMeterPx(sgUltVal(ultInferno, 'm')) : 0;
   /* 游走速度設計文檔沒有指定，取「一個壽命剛好走完一次游走半徑」＝ 游走半徑 ÷ 壽命，
-     不另外發明一個數字；追蹤有明確的 12 米／秒就直接用它。 */
-  var speedPx = chase ? bfMeterPx(Number(chase.mps) || 0)
-    : infinite ? bfMeterPx(sgGeometryNumber(t[6].fx, 'speed') || 6)
-    : (wanderPx > 0 ? wanderPx / lifeSec : 0);
+     不另外發明一個數字。 */
+  var speedPx = (infinite ? bfMeterPx(sgGeometryNumber(t[6].fx, 'speed') || 6)
+    : (wanderPx > 0 ? wanderPx / lifeSec : 0)) * (1 + Math.max(0, Number(lg.firepillarSpeedPct) || 0) / 100);
   var trailSpec = ultInferno ? {
     radiusPx: bfMeterPx(sgVal(t[0].fx, 'm', lvs[0])) * scale,  // 火池大小＝火龍捲自己的判定範圍
     gap: sgGeometryNumber(ultInferno.def.fx, 'gap') || 0.5,
@@ -4710,7 +4742,7 @@ function sgCastFirepillar(pEnt, st, g, lvs, pool, primary, floatSel, out) {
       burnSpec: burnSpec, burnChance: lvs[3] > 0 ? sgSlotChance('firepillar', '4', 'enemy', 0, sgVal(t[3].fx, 'chance', lvs[3])) : 0,
       respawnLeft: infinite ? Math.max(0, Math.floor(Number(t[6].fx.respawn) || 0)) : 0,
       delaySec: i * gap * 0.2,
-      fireHunt: infinite, chaseM: chasePx, wanderM: chasePx > 0 ? 0 : wanderPx, speed: speedPx,
+      fireHunt: infinite, chaseM: 0, wanderM: wanderPx, speed: speedPx,
       trail: trailSpec, burnAmp: burnAmp, tempest: tempest
     });
   }
@@ -4980,6 +5012,8 @@ function sgSpawnGround(pEnt, st, gid, cfg) {
     pulseVariant: cfg.pulseVariant || '',
     nextPulseAt: GT + startDelaySec + Math.max(0.05, Number(cfg.pulseGap) || 0.5),
     frostSpec: cfg.frostSpec || null,
+    /* 對帶寒霜的敵人「每層寒霜」的額外傷害百分點（傳奇【凜冬寒霜】的暴風雪）；層數讀命中當下的 sgFrostStacks。 */
+    frostLayerPct: Math.max(0, Number(cfg.frostLayerPct) || 0),
     /* ---- 傳奇進化第五批（火龍捲）----
        wanderM＝超神【永劫火獄】的隨機游走半徑（以 home 為圓心；chaseM 優先，兩者不並用）
        home＝游走的圓心（出生座標的快照，之後 pos 會一直變）
@@ -5380,7 +5414,6 @@ function sgGroundHitSubType(f) {
     if (f.kind === 'icespike') return '冰錐';
   }
   if (f.gid === 'windblade') {
-    if (f.kind === 'windtornado') return '龍捲風';
     if (f.kind === 'windblade') return '追擊風刃';
   }
   if (f.gid === 'vacuumslash') {
@@ -5396,6 +5429,7 @@ function sgGroundHitSubType(f) {
   if (f.gid === 'thunderorb') {
     if (f.kind === 'orb') return '衍生雷球';
   }
+  if (f.gid === 'thunderstrike' && f.kind === 'thunderpool') return '雷池';
   if (f.gid === 'mire') {
     if (f.kind === 'mire') return '泥沼術';
     if (f.kind === 'poisonmist') return '毒霧';
@@ -5409,7 +5443,8 @@ function sgGroundHitSubType(f) {
        因此仍完整經過防禦、抗性與爆擊，不是事後再乘一次的獨立傷害。 */
     var bonusPct = ((f.frozenMult > 1 && sgFrozenOn(victims[i])) ? (f.frozenMult - 1) * 100 : 0) +
       resonancePct + sgRampPct(f.ramp) +
-      ((f.ctrlPct > 0 && sgIceControlled(victims[i])) ? f.ctrlPct : 0);
+      ((f.ctrlPct > 0 && sgIceControlled(victims[i])) ? f.ctrlPct : 0) +
+      (f.frostLayerPct > 0 ? f.frostLayerPct * sgFrostStacks(victims[i]) : 0);
     var iceFrostBefore = f.kind === 'icearrow' && sgFrostOn(victims[i]);
     var groundSubType = sgGroundHitSubType(f);
     var res = sgHitOne(f.pEnt, f.st, victims[i], f.dmgVal, f.gid, f.floatSel, out,
@@ -5461,10 +5496,6 @@ function sgGroundVfxSpec(f) {
   if (f.kind === 'tidetornado') {
     spec.vfxRoles = { field: sgVfxRoles('waterball', { vfxUlt: 'ragingTide' }).field };
   }
-  if (f.kind === 'windtornado') {
-    var tornadoRoles = sgVfxRoles(f.gid, spec);
-    spec.vfxRoles = { ground: tornadoRoles.ground, field: tornadoRoles.field };
-  }
   // 追蹤段是冰箭本體：保留本體／所選超神外觀，不讀第7階冰爆的觸發欄。
   if (f.kind === 'icearrow') spec.vfxRoles = sgVfxRoles(f.gid);
   if(f.kind==='windblade'||f.kind==='vacuumfield'){
@@ -5489,15 +5520,13 @@ function sgGroundVfxShape(f) {
      kind 用 thunderwall 而不是 wall：wall 會讓 sgGroundExpire 去跑火龍捲樹的第 5／6 階。 */
   if (f.kind === 'thunderwall') return { fxKind: 'aura', variant: 'thunder-curtain', elem: 'lightning', dur: f.gap, area: area };
   if (f.kind === 'orb') return { fxKind: 'aura', variant: 'thunder-orb', dur: f.gap, area: area };
+  if (f.kind === 'thunderpool') return { fxKind: 'aura', variant: 'thunder-orb', elem: 'lightning', dur: f.gap, area: area };
   if (f.kind === 'tornado') return { fxKind: 'aura', variant: 'water-tornado', elem: 'ice', dur: f.gap, area: area };
   /* 巨型水柱由超神列的獨立特效表達；不算入下一次合併的普通水龍捲門檻。 */
   if (f.kind === 'tidetornado') return { fxKind: 'aura', variant: 'water-tornado', elem: 'ice', dur: f.gap, area: area };
   /* 冰錐（傳奇【寒冰衝擊】／超神【冰皇領域】）：從地面昇起的柱狀物，語意與水龍捲同一種
      「立在地上的柱子」，因此沿用它的既有畫法，不自創顯示層不認得的變體。 */
   if (f.kind === 'icespike') return { fxKind: 'aura', variant: 'water-tornado', elem: 'ice', dur: f.gap, area: area };
-  /* 風捲殘雲的龍捲風：沿用水龍捲的柱狀畫法，只換屬性配色（顯示層不認得 wind-tornado
-     時會退回預設畫法，仍看得到範圍）。 */
-  if (f.kind === 'windtornado') return { fxKind: 'aura', variant: 'wind-tornado', elem: 'wind', dur: f.gap, area: area };
   /* 火池（傳奇【火池】／超神【永劫火獄】）：地板上的一灘火，語意與熔岩沼相同，
      因此沿用 mire-lava 的既有畫法，不自創顯示層不認得的 variant。 */
   if (f.kind === 'firepool') return { fxKind: 'aura', variant: 'mire-lava', elem: 'fire', dur: f.gap, area: area };
@@ -6318,8 +6347,8 @@ function sgFirehuntLaunch(ctx, spec) {
   var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
   var live = (typeof bfLiveList === 'function') ? bfLiveList(enemies) : (enemies || []);
   var reach = bfMeterPx(Math.max(0, Number(spec.m) || 0));
-  /* 射程內的敵群先篩出來，再交給既有的選敵規則挑主目標——
-     直接取陣列第一個會變成「永遠打最早生成的那隻」，與其他技能的選敵行為不一致。 */
+  /* 射程內的敵群先篩出來再挑主目標。傳奇【伴生併發】改版後是「飛出攻擊半徑內的任意敵人」，
+     因此在射程內等機率隨機挑一個（不再套用普攻的最近優先鎖定）。 */
   var inRange = [];
   for (var i = 0; i < live.length; i++) {
     var e = live[i];
@@ -6329,8 +6358,7 @@ function sgFirehuntLaunch(ctx, spec) {
     inRange.push(e);
   }
   if (!inRange.length) return;
-  var tgt = (typeof bfPickPrimary === 'function') ? bfPickPrimary(inRange, null) : inRange[0];
-  if (!tgt) tgt = inRange[0];
+  var tgt = inRange[Math.floor(Math.random() * inRange.length)];
   var victims = [tgt];
   if (typeof bfNearestOthers === 'function' && live.length) {
     var near = bfNearestOthers(tgt, live, live.length, bfMeterPx(Math.max(0, Number(spec.aoeM) || 0)));
@@ -7384,7 +7412,6 @@ function sgTickHallOfRadiance(ctx) {
    掛點：formula.js 的 healPlayer（生命）與 gainPlayerMana（法力）——本專案
    「我方資源入帳」的唯二出口，每秒回復、吸血、吸魔、過關回復全部經過它們。
      ・傳奇【魔力滋養】：溢出法力的 pct% → 生命護盾
-     ・傳奇【生命滋養】：溢出生命的 pct% → 法力
      ・超神【光耀之堂】：溢出的生命**與**法力各以 conv% → 生命護盾
    護盾一律走 grantShield（護盾的唯一入口，因此吃護盾效率、技能護盾上限
    與【戰神屠錄】的封鎖）。 */
@@ -7396,15 +7423,6 @@ function skills2OnResourceOverflow(pEnt, st, kind, over) {
   if (kind === 'mp') {
     var mf = lg.egManaOverflowShield;
     if (mf) shield += over * Math.max(0, Number(mf.pct) || 0) / 100;
-  } else {
-    var hf = lg.egHpOverflowMana;
-    if (hf) {
-      /* 直接寫 mp 而不是再呼叫一次 gainPlayerMana：那會讓
-         「生命溢出 → 法力溢出 → 生命護盾」互相餵食成一個迴圈。
-         這一條路上的法力溢出直接捨棄。 */
-      var toMana = over * Math.max(0, Number(hf.pct) || 0) / 100;
-      if (toMana > 0) pEnt.mp = Math.min(Number(st.mp) || 0, (Number(pEnt.mp) || 0) + toMana);
-    }
   }
   var u = sgUlt('earthguard', 'hallOfRadiance');
   if (u) shield += over * Math.max(0, sgUltVal(u, 'conv')) / 100;
@@ -7413,6 +7431,12 @@ function skills2OnResourceOverflow(pEnt, st, kind, over) {
 function skill2DrainFactor(kind) {
   var t = sgEarthguardRegenTier(kind);
   var factor = t ? 1 + sgVal(t.fx, 'drain', t.lv) / 100 : 1;
+  /* 傳奇【生命滋養】（2026-10-20 改版）：吸魔額外 +【魔力再生】那一階「法力回復額外 +N%」的 pct%。
+     以該階已學為前提——沒學魔力再生就沒有「法力回復加成」可以換算。 */
+  if (kind === 'mp' && t) {
+    var feed = sgLegendTick('earthguard').egManaDrainFromRegen;
+    if (feed) factor += sgVal(t.fx, 'pct', t.lv) * Math.max(0, Number(feed.pct) || 0) / 10000;
+  }
   var warGod = SKILL2_RT && SKILL2_RT.warGod;
   if (kind === 'hp' && warGod && warGod.pEnt && warGod.pEnt.hp > 0) {
     factor *= 1 + Math.max(0, Number(warGod.drainPct) || 0) / 100;
@@ -7702,7 +7726,7 @@ function sgCastChainlightning(pEnt, st, g, lvs, pool, primary, floatSel, out, si
   var links = Math.max(1, Math.floor(Number(t[0].fx.count) || 4));
   if (lvs[3] > 0) links += sgRollCount(sgVal(t[3].fx, 'add', lvs[3]));
   if (lvs[6] > 0) links += sgRollCount(sgVal(t[6].fx, 'add', lvs[6]));
-  links += sgLegendCount(lg.chainLinkAdd);           // 傳奇【電荷連鎖】
+  if (lg.chainLinkProc && chance(Number(lg.chainLinkProc.chance) || 0)) links += sgLegendCount(lg.chainLinkProc);   // 傳奇【電荷連鎖】（每次施放擲一次）
   var splashPct = lvs[4] > 0 ? sgVal(t[4].fx, 'pct', lvs[4]) : 0;
   var cfg = {
     dmgVal: sgGroupBaseStat(g, st) * pct / 100,
@@ -7725,7 +7749,7 @@ function sgCastChainlightning(pEnt, st, g, lvs, pool, primary, floatSel, out, si
     pool: pool, floatSel: floatSel, out: out, pEnt: pEnt, st: st
   };
   var bolts = lvs[6] > 0 ? Math.max(1, Math.floor(Number(t[6].fx.count) || 3)) : 1;
-  bolts += sgLegendCount(lg.chainBoltAdd);           // 傳奇【電擊】
+  if (lg.chainBoltProc && chance(Number(lg.chainBoltProc.chance) || 0)) bolts += sgLegendCount(lg.chainBoltProc);   // 傳奇【電擊】（每次施放擲一次）
   if (singleChain) bolts = 1;
   /* 自我修復：場上已經沒有任何閃電鏈的待命命中時，計數不可能還大於 0（例如某條鏈的結束回呼因故沒被呼叫），
      歸零，免得上限被殘留計數永久占滿。 */
@@ -8072,7 +8096,6 @@ function sgCastThunderstrike(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   var lg = sgLegend('thunderstrike');
   var targetCount = Math.max(1, Math.floor(Number(t[0].fx.count) || 2));
   if (lvs[1] > 0) targetCount += sgRollCount(sgVal(t[1].fx, 'add', lvs[1]));
-  targetCount += sgLegendCount(lg.thunderTargetAdd);   // 傳奇【雷鎖】
   var hitsPer = 1;
   if (lvs[2] > 0) hitsPer += sgRollCount(sgVal(t[2].fx, 'add', lvs[2]));
   /* 傳奇【三重雷】：直接加在「每個目標的攻擊次數」這個計數上。
@@ -8182,6 +8205,7 @@ function sgQueueThunderBolt(pEnt, st, g, lvs, dmgVal, target, pool, floatSel, ou
   }
   var regenMax = Math.max(0, Math.floor(Number(t[5].fx.max) || 5));
   var rod = sgThunderRodSpec(lg);
+  var poolSpec = lg.thunderPool || null;   // 傳奇【雷鎖】：落雷擊中時機率留下雷池
   var prisonFollowup = !!(prisonChain && prisonChain.visited.length > 1);
   if (prisonChain === undefined) {
     var prison = sgThunderPrisonSpec();
@@ -8224,6 +8248,9 @@ function sgQueueThunderBolt(pEnt, st, g, lvs, dmgVal, target, pool, floatSel, ou
           for (var si = 0; si < extra.length; si++) stunned.push(extra[si]);
           for (var vi = 0; vi < stunned.length; vi++) sgTryStun(stunned[vi], stunSec, SG_THUNDER_STUN_SLOT);
         }
+        if (poolSpec && hitVictims && hitVictims.length && chance(Number(poolSpec.chance) || 0)) {
+          sgSpawnThunderPool(m.pEnt, m.st, poolSpec, m.floatSel, m.target, m.dmgVal);
+        }
         sgThunderPrisonContinue(m, hitVictims, ctx, prisonChain, regenDone);
         // 【迅雷重生】：每次再生也從當下射程內重新選敵。
         if (regenChance > 0 && regenDone < regenMax && chance(regenChance)) {
@@ -8236,6 +8263,21 @@ function sgQueueThunderBolt(pEnt, st, g, lvs, dmgVal, target, pool, floatSel, ou
         }
       }
     });
+}
+
+/* 傳奇【雷鎖】的雷池：落雷落點留下一灘閃電場域，每 gap 秒對範圍內的敵人造成落雷傷害的 pct%。
+   場域本身沿用既有的地板場域管線（節拍、結算、場上數量上限都是同一套），畫面借用雷球的電場畫法。 */
+function sgSpawnThunderPool(pEnt, st, spec, floatSel, tgt, boltDmg) {
+  if (!SKILL2_RT || SKILL2_RT.grounds.length >= SG_GROUND_MAX_FIELDS || !(boltDmg > 0)) return;
+  var gap = Math.max(0.1, Number(spec.gap) || 0.5);
+  var sec = Math.max(gap, Number(spec.sec) || 4);
+  sgSpawnGround(pEnt, st, 'thunderstrike', {
+    kind: 'thunderpool', tgt: tgt || null, floatSel: floatSel,
+    radius: bfMeterPx(Number(spec.m) || 6),
+    dmgVal: boltDmg * (Number(spec.pct) || 0) / 100,
+    hits: Math.max(1, Math.round(sec / gap)), gap: gap,
+    hitElem: 'lightning'
+  });
 }
 
 /* 永恒雷獄的新配置只讀道數與搜敵距離；舊秒數配置尚未套用時保留原重施行為。 */
@@ -8911,13 +8953,9 @@ function sgBuffActive(ent, key) {
 
 /* 【極致寒霜】（冰霜新星 T4）：文檔寫的是「寒霜狀態的傷害／持續時間」，沒有限定
    是哪一棵樹塗上的，因此掛在寒霜共用層——三個群組塗出來的寒霜一起被放大。 */
-/* 傳奇【凜冬寒霜】的「寒霜狀態傷害 +N%」同樣沒有限定是哪一棵樹塗上的，
-   因此掛在同一個共用層（比照上面【極致寒霜】的既有裁定），兩者相乘。 */
 function skill2FrostDmgFactor() {
   var lvs = skills2Levels('frostnova');
-  var tier = (lvs && lvs[3] >= 1) ? 1 + sgVal(SKILLS2.frostnova.tiers[3].fx, 'dmgPct', lvs[3]) / 100 : 1;
-  var lg = sgLegendTick('frostnova');
-  return tier * (1 + Math.max(0, Number(lg.frostnovaFrostDmgPct) || 0) / 100);
+  return (lvs && lvs[3] >= 1) ? 1 + sgVal(SKILLS2.frostnova.tiers[3].fx, 'dmgPct', lvs[3]) / 100 : 1;
 }
 function skill2FrostDurFactor() {
   var lvs = skills2Levels('frostnova');
@@ -10225,8 +10263,7 @@ function sgSpawnIceSpike(pEnt, st, gid, spec, floatSel, tgt, from) {
 }
 
 /* 【暴風雪】（冰霜新星 T7）：跟隨我方的正方形地板場域（follow＝圓心恆等於玩家當下座標）。
-   超神【冰皇領域】把邊長放大；傳奇【凜冬寒霜】讓它每一拍順便塗寒霜——
-   塗的是這棵樹自己那一份寒霜規格（與施放端共用 sgFrostSpec，數值不會漂移）。 */
+   超神【冰皇領域】把邊長放大；傳奇【凜冬寒霜】讓它對帶寒霜的敵人依寒霜層數增傷。 */
 function sgSpawnBlizzard(pEnt, st, g, lvs, floatSel, lg) {
   var fx = g.tiers[6].fx;
   var u = sgUlt('frostnova', 'iceKingDomain');
@@ -10239,8 +10276,8 @@ function sgSpawnBlizzard(pEnt, st, g, lvs, floatSel, lg) {
     length: side, width: side * (sgGeometryNumber(fx, 'sideWidth') || sgGeometryNumber(fx, 'side') || 20) / (sgGeometryNumber(fx, 'side') || 20),
     dmgVal: sgGroupBaseStat(g, st) * sgVal(fx, 'pct', lvs[6]) / 100,
     hits: Math.max(1, Math.round(lifeSec / gap)), gap: gap, follow: true,
-    frostSpec: (lg && lg.frostnovaBlizzardFrost)
-      ? sgFrostSpec(g, lvs, 0, sgFrostnovaBodyDamage(g, st, lvs)) : null,
+    // 傳奇【凜冬寒霜】：暴風雪對帶寒霜的敵人，每層寒霜再 +N% 傷害
+    frostLayerPct: (lg && lg.frostnovaBlizzardLayer) ? Math.max(0, Number(lg.frostnovaBlizzardLayer.pct) || 0) : 0,
     vfxTier: 7
   });
 }
@@ -11705,7 +11742,7 @@ function sgCounterLegendCfg(enemies) {
   return {
     perfect: lg.counterPerfect || null,
     bloodPay: lg.counterBloodPay || null,
-    wind: lg.counterWindBlade || null,
+    fireball: lg.counterFireball || null,
     oath: lg.counterOath || null,
     wrath: lg.counterWrath || null,
     holy: sgUlt('counter', 'holyBody'),
@@ -11742,8 +11779,8 @@ function sgCounterAfterStrike(pEnt, st, target, cfg, floatSel, out, delayMs) {
   if (!cfg || !pEnt) return;
   var rt = sgCounterRT();
   rt.hits++;
-  if (cfg.wind && typeof chance === 'function' && chance(Number(cfg.wind.chance) || 0)) {
-    sgCounterWindBlade(pEnt, st, target, cfg.wind, floatSel, out, delayMs);
+  if (cfg.fireball && typeof chance === 'function' && chance(Number(cfg.fireball.chance) || 0)) {
+    sgCounterFireball(pEnt, st, target, cfg.fireball, floatSel, out, delayMs);
   }
   if (cfg.oath) {
     rt.oath++;
@@ -11772,17 +11809,21 @@ function sgCounterAfterStrike(pEnt, st, target, cfg, floatSel, out, delayMs) {
   }
 }
 
-/* 傳奇【風之體】：朝目標射出一道風刃。走 sgHitOne 的正規結算（可爆擊、吃屬性抗性），
-   統計併入 skill2:counter；傷害基準是普攻攻擊力（反擊群組為物理群組）。 */
-function sgCounterWindBlade(pEnt, st, target, spec, floatSel, out, delayMs) {
+/* 傳奇【風之體】（2026-10-20 改版）：朝目標射出一顆火球。走 sgHitOne 的正規結算（可爆擊、吃屬性抗性），
+   統計併入 skill2:counter；傷害基準是普攻攻擊力（反擊群組為物理群組）。
+   畫面借用火球術的小火球；火球先飛、傷害與飄字延到抵達那一刻。 */
+function sgCounterFireball(pEnt, st, target, spec, floatSel, out, delayMs) {
   if (!target || target.hp <= 0) return;
   var dmgVal = sgGroupBaseStat(SKILLS2.counter, st) * (Number(spec.powerPct) || 0) / 100;
   if (!(dmgVal > 0)) return;
-  sgEmitVfx('counter', [target], floatSel, {
-    fxKind: 'projectile', variant: 'wind-blade-homing', elem: 'wind', dur: 0.5,
-    vfxGid: 'windblade', vfxTier: 1
+  var delay = Math.max(0, Number(delayMs) || 0);
+  var travelMs = (typeof bfTravelSeconds === 'function' && typeof bfPos === 'function' && bfPos(target))
+    ? Math.max(1, Math.round(bfTravelSeconds(target) * 1000)) : 0;
+  sgEmitVfx('fireball', [target], floatSel, {
+    fxKind: 'projectile', variant: 'fireball-small', elem: 'fire', count: 1,
+    travelMs: [travelMs], projectile: true, delayMs: delay
   });
-  sgHitOne(pEnt, st, target, dmgVal, 'counter', floatSel, out, delayMs, 0, 'wind');
+  sgHitOne(pEnt, st, target, dmgVal, 'counter', floatSel, out, delay + travelMs, 0, 'fire');
 }
 
 /* 超神【神聖之體】：每 count 次反擊射出一顆光彈，對目標周圍 m 米內的敵人造成神聖傷害。

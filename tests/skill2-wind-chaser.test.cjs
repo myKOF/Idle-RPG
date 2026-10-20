@@ -225,14 +225,18 @@ test('逐風者直接與飛行刀波對多個敵人各派送追加斬擊，不�
   }
 });
 
-test('疾風傳奇風捲殘雲仍保留龍捲場域，不混入逐風者真空迴旋特效', () => {
+test('疾風傳奇風捲殘雲改為真空斬：即時範圍風系傷害，不建立龍捲風場域也不混入逐風者真空迴旋特效', () => {
   const f = fixture();
-  f.c.sgGaleTornado({ pEnt: f.p, st: f.st, dmgVal: 1000, floatSel: 'mv-float',
-    tornado: { m: 4, pct: 50, hits: 3, gap: 0.4 } }, f.enemy);
-  assert.equal(f.c.SKILL2_RT.grounds.length, 1);
-  advance(f, 0.5);
-  const tornado = f.events.filter(e => e.variant === 'wind-tornado');
-  assert.ok(tornado.length > 0);
-  assert.deepEqual(tornado[0].vfx, { ground: 'slash-cleave-ring-warm-09-hit' });
+  const hits = [];
+  f.c.sgHitOne = (...args) => { hits.push(args); return { miss: false }; };
+  f.c.sgGaleVacuumSlash({ pEnt: f.p, st: f.st, dmgVal: 1000, floatSel: 'mv-float', pool: [f.enemy], out: { dmg: 0 },
+    legendVacuum: { m: 6, pct: 50 } }, f.enemy);
+  assert.equal(f.c.SKILL2_RT.grounds.length, 0, '不再建立龍捲風場域');
+  assert.equal(typeof f.c.sgGaleTornado, 'undefined', '舊的龍捲風函式已移除');
+  assert.equal(hits.length, 1);
+  assert.equal(hits[0][3], 500, '傷害 ＝ 本體 × 50%');
+  assert.equal(hits[0][4], 'gale');
+  assert.equal(hits[0][9], 'wind', '風系傷害');
+  assert.ok(f.events.some(e => e.variant === 'wind-spin'), '畫面借真空斬的 wind-spin');
   assert.equal(f.events.some(e => e.variant === 'wind-chaser-spin'), false);
 });

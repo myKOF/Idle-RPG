@@ -233,11 +233,12 @@ test('關聯技能改寫集中由 legendarySkill2Mods 提供：同鍵數字相�
   context.getStats = () => st;
 
   const mods = context.legendarySkill2Mods('thrust');
-  assert.equal(mods.skillDamagePct, 130, '凝鋒穿刺 +30% 與貫日之刺 +100% 同鍵數字相加');
+  assert.equal(mods.skillDamagePct, 30, '只剩凝鋒穿刺 +30%；貫日之刺已改成重傷機率，不再加傷害與範圍');
   assert.equal(mods.thrustLenPct, 30);
   assert.equal(mods.thrustWidthPct, -15);
-  assert.equal(mods.thrustRangePct, 100);
-  assert.equal(mods.octaToSingle, true);
+  assert.equal(mods.thrustRangePct, undefined);
+  assert.equal(mods.octaToSingle, undefined);
+  assert.deepEqual(JSON.parse(JSON.stringify(mods.thrustWound)), { chance: 25, pct: 20, dur: 5 });
   assert.deepEqual(JSON.parse(JSON.stringify(mods.thrustVuln)), { pct: 4, dur: 5, maxStacks: 10 });
   assert.equal(mods.cleaveSlashAdd, undefined, '迴旋斬群組的特效不會混進突刺');
 
@@ -258,42 +259,53 @@ test('傳奇特效資料表與介面標籤統一使用「傳奇特效」', () =>
   assert.doesNotMatch(formulaDoc, /特殊被動/);
 });
 
-test('迅雷穿刺的連鎖閃電：排程器依 tickSec 逐跳結算，並由 tickLegendaryEffects 消化排程佇列', () => {
-  /* 迅雷穿刺（thrustChain）由 js/skills2.js sgThrustOnHit 以 typeof 守衛呼叫 legendaryScheduleChain；
+test('迅雷穿刺的落雷：機率附加 1 道落雷，落雷落地後才結算，並由 tickLegendaryEffects 消化排程佇列', () => {
+  /* 迅雷穿刺（thrustThunder）由 js/skills2.js sgThrustOnHit 以 typeof 守衛呼叫 legendaryThunderStrike；
      守衛會讓「函式被誤刪」變成靜默略過（2026-09-29 舊技能移除時真的發生過），所以這裡直接釘住它。 */
   const context = loadLegendaryContext();
   const st = { hp: 1000, mp: 1000, legendaryEffects: { thunderStab: true }, passives: {}, skillTriggers: {}, elemDmgUp: {} };
   context.getStats = () => st;
   context.GT = 0;
-  const spec = context.legendarySkill2Mods('thrust').thrustChain;
-  assert.equal(spec.bounces, 5);
-  assert.equal(typeof context.legendaryScheduleChain, 'function', 'sgThrustOnHit 依賴它');
+  const spec = context.legendarySkill2Mods('thrust').thrustThunder;
+  assert.equal(spec.chance, 15);
+  assert.equal(spec.powerPct, 200);
+  assert.equal(typeof context.legendaryThunderStrike, 'function', 'sgThrustOnHit 依賴它');
+  assert.equal(context.legendarySkill2Mods('thrust').thrustChain, undefined, '舊的連鎖閃電參數已移除');
 
+  const vfx = [];
+  context.sgEmitVfx = (gid, targets, floatSel, extra) => vfx.push({ gid, extra });
   const hits = [];
   context.legendaryDealDamage = (pEnt, target, powerPct, dmgType, elem, floatSel, label) => {
     hits.push({ target, powerPct, dmgType, elem, label });
     return { killed: false };
   };
-  const enemies = [{ hp: 100, maxHp: 100 }, { hp: 100, maxHp: 100 }, { hp: 100, maxHp: 100 }];
-  const ctx = { pEnt: { hp: 1, shield: 0 }, floatSel: 'pv-float', getEnemies: () => enemies };
+  const target = { hp: 100, maxHp: 100 };
+  const ctx = { pEnt: { hp: 1, shield: 0 }, floatSel: 'pv-float' };
 
-  context.legendaryScheduleChain(ctx.pEnt, spec, 'pv-float');
-  assert.equal(context.LEGENDARY_RT.queue.length, 5, '每一跳各排一筆');
+  context.legendaryThunderStrike(ctx.pEnt, target, spec, 'pv-float');
+  assert.equal(context.LEGENDARY_RT.queue.length, 1, '落雷落地才結算：只排一筆');
+  assert.equal(vfx[0].extra.variant, 'thunder-strike', '先送落雷畫面');
 
-  context.GT = spec.tickSec * 1.01;
   context.legendaryTickQueue(ctx);
-  assert.equal(hits.length, 1, '第一個 tickSec 到期只結算第一跳');
+  assert.equal(hits.length, 0, '還沒落地不結算');
+  context.GT = 1;
+  context.legendaryTickQueue(ctx);
+  assert.equal(hits.length, 1);
+  assert.equal(hits[0].target, target);
   assert.equal(hits[0].label, '迅雷穿刺');
   assert.equal(hits[0].elem, 'lightning');
-  assert.equal(hits[0].powerPct, 50);
-
-  context.GT = spec.tickSec * 5.01;
-  context.legendaryTickQueue(ctx);
-  assert.equal(hits.length, 5, '五跳全數結算');
+  assert.equal(hits[0].dmgType, 'magic');
+  assert.equal(hits[0].powerPct, 200);
+  assert.equal(vfx[1].extra.variant, 'thunder-impact', '落地後送爆點');
   assert.equal(context.LEGENDARY_RT.queue.length, 0, '佇列清空');
-  for (let i = 1; i < hits.length; i++) {
-    assert.notEqual(hits[i].target, hits[i - 1].target, '連鎖不會連續打同一個目標');
-  }
+
+  // 目標在落地前死亡就不結算
+  const dying = { hp: 100, maxHp: 100 };
+  context.legendaryThunderStrike(ctx.pEnt, dying, spec, 'pv-float');
+  dying.hp = 0;
+  context.GT = 2;
+  context.legendaryTickQueue(ctx);
+  assert.equal(hits.length, 1);
 
   const src = fs.readFileSync(path.join(root, 'js/legendary.js'), 'utf8');
   const tickBody = src.slice(src.indexOf('function tickLegendaryEffects'));

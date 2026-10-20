@@ -581,15 +581,16 @@ test('legendarySkill2Mods：只合併「同群組且已生效」的 fx，同名�
   assert.equal(mods.thrustLenPct, 30);
   assert.equal(mods.skillDamagePct, 30);
   assert.equal(c.legendarySkill2Mods('cleave'), null, '不同群組的不得混進來');
-  // 兩個都改「技能傷害%」的特效同時生效時相加（30 + 100）
+  // 貫日之刺（2026-10-20 改版）不再加技能傷害／範圍，只多一個重傷機率規格
   setLegendary(c, ['piercingFocus', 'sunpiercerLance']);
   mods = c.legendarySkill2Mods('thrust');
-  assert.equal(mods.skillDamagePct, 130);
-  assert.equal(mods.octaToSingle, true);
-  assert.equal(mods.thrustRangePct, 100);
+  assert.equal(mods.skillDamagePct, 30);
+  assert.equal(mods.octaToSingle, undefined);
+  assert.equal(mods.thrustRangePct, undefined);
+  assert.deepEqual(JSON.parse(JSON.stringify(mods.thrustWound)), { chance: 25, pct: 20, dur: 5 });
 });
 
-test('突刺的五個傳奇特效：長寬與傷害改寫、命中疊易傷、流血、連鎖閃電、八方改單道', () => {
+test('突刺的五個傳奇特效：長寬與傷害改寫、命中疊突刺易傷、流血、落雷、重傷', () => {
   const c = loadContext(['js/legendary.js']);
   const calls = stubHits(c); const specs = stubVfx(c);
   forceRolls(c, 0.999);
@@ -603,6 +604,7 @@ test('突刺的五個傳奇特效：長寬與傷害改寫、命中疊易傷、�
   const baseSpec = specs.find((s) => s.fxKind === 'slash');
 
   // 凝鋒穿刺：長度 +30%、寬度 -15%、傷害 +30%
+  p.skillCds = {}; p.mp = 1e9;
   setLegendary(c, ['piercingFocus']);
   calls.length = 0; specs.length = 0;
   c.castSkill2(p, [e], 'thrust', 'mv-float');
@@ -611,16 +613,20 @@ test('突刺的五個傳奇特效：長寬與傷害改寫、命中疊易傷、�
   assert.ok(Math.abs(calls[0].atk - (baseAtk + 1000 * 0.3)) < 1e-6, '傷害 +30%（物攻百分比相加）');
 
   // 千瘡百孔：命中疊易傷
+  p.skillCds = {}; p.mp = 1e9;
   setLegendary(c, ['thousandWounds']);
   const e2 = enemy(1e12, 3 * M, 0);
   c.castSkill2(p, [e2], 'thrust', 'mv-float');
   assert.ok(e2.buffs.sgThrustVuln, '命中應疊上千瘡百孔');
   assert.ok(Math.abs(e2.buffs.sgThrustVuln.unit - 4) < 1e-9, '單層 +4%');
   assert.ok(e2.buffs.sgThrustVuln.stacks >= 2, '一次施放多段命中要能疊多層');
-  const aCfg = c.skill2VulnACfg({ totalDmgPct: 0 }, e2);
+  const aCfg = c.skill2VulnACfg({ totalDmgPct: 0 }, e2, 'thrust');
   assert.ok(aCfg.totalDmgPct > 0, '易傷要進 totalDmgPct');
+  assert.equal(c.skill2VulnACfg({ totalDmgPct: 0 }, e2).totalDmgPct, 0, '沒帶技能群組（普攻、反擊等）不吃千瘡百孔');
+  assert.equal(c.skill2VulnACfg({ totalDmgPct: 0 }, e2, 'cleave').totalDmgPct, 0, '其他技能也不吃，只放大突刺');
 
   // 穿心裂血：附加流血
+  p.skillCds = {}; p.mp = 1e9;
   setLegendary(c, ['heartrendBleed']);
   const e3 = enemy(1e12, 3 * M, 0);
   c.castSkill2(p, [e3], 'thrust', 'mv-float');
@@ -628,21 +634,35 @@ test('突刺的五個傳奇特效：長寬與傷害改寫、命中疊易傷、�
   assert.ok(dot, '應附加穿心裂血的流血');
   assert.ok(Math.abs(dot.dps * 0.5 - 1000 * 0.5) < 1e-6, '每 0.5 秒 ＝ 50% 物攻');
 
-  // 迅雷穿刺：機率附加連鎖閃電（機率擲骰吃 Math.random，設成必中）
+  // 迅雷穿刺：機率附加 1 道落雷（機率擲骰吃 Math.random，設成必中）
+  p.skillCds = {}; p.mp = 1e9;
   setLegendary(c, ['thunderStab']);
   forceRolls(c, 0);
   const e4 = enemy(1e12, 3 * M, 0);
   c.legendaryTick = c.legendaryTick || function () {};
   c.castSkill2(p, [e4], 'thrust', 'mv-float');
-  assert.ok(c.LEGENDARY_RT.queue.length > 0, '應排入連鎖閃電');
+  assert.ok(c.LEGENDARY_RT.queue.length > 0, '應排入落雷');
   forceRolls(c, 0.999);
 
-  // 貫日之刺：八方連刺改為前方 1 道
+  // 貫日之刺：機率使敵人重傷（受到的傷害提高，不改突刺形態）
+  p.skillCds = {}; p.mp = 1e9;
   setLegendary(c, ['sunpiercerLance']);
   maxLevels(c, 'thrust');
   specs.length = 0;
-  c.castSkill2(p, [e], 'thrust', 'mv-float');
-  assert.equal(specs.find((s) => s.fxKind === 'slash').directionCount, 1, '八方改單道');
+  forceRolls(c, 0);
+  const e5 = enemy(1e12, 3 * M, 0);
+  c.castSkill2(p, [e5], 'thrust', 'mv-float');
+  run(c, p, [e5], 1);                       // 滿階突刺走飛行物結算，要推進時間才命中
+  assert.ok(e5.buffs.sgThrustWound, '命中應有機率上重傷');
+  assert.equal(e5.buffs.sgThrustWound.unit === undefined ? c.buffVal(e5, 'sgThrustWound') : e5.buffs.sgThrustWound.unit, 20, '重傷 +20%');
+  assert.ok(c.skill2VulnACfg({ totalDmgPct: 0 }, e5).totalDmgPct >= 20, '重傷對所有傷害生效（不限突刺）');
+  assert.ok(specs.find((s) => s.fxKind === 'slash').directionCount > 1, '突刺形態不再被改成單道');
+  forceRolls(c, 0.999);
+  const e6 = enemy(1e12, 3 * M, 0);
+  p.skillCds = {};
+  c.castSkill2(p, [e6], 'thrust', 'mv-float');
+  run(c, p, [e6], 1);
+  assert.ok(!e6.buffs.sgThrustWound, '機率沒中就不上重傷');
 });
 
 test('迴旋斬的五個傳奇特效：斬擊次數、旋風、飛出距離、暈眩增傷、拉近敵人', () => {
@@ -663,15 +683,22 @@ test('迴旋斬的五個傳奇特效：斬擊次數、旋風、飛出距離、�
   run(c,p,[e],1);
   assert.equal(calls.length, baseHits + 2 * baseHits / 1, '每一次斬擊都多打 2 輪');
 
-  // 旋風劍舞：每次斬擊對周圍造成風系傷害
+  // 旋風劍舞（2026-10-20 改版）：命中時機率產生 1 道風刃（單體風系段）
   setLegendary(c, ['galeBladeDance']);
   calls.length = 0; specs.length = 0;
   const near = enemy(1e12, 5 * M, 0, '近');
+  forceRolls(c, 0.999);
   c.castSkill2(p, [near], 'cleave', 'mv-float');
   run(c,p,[near],1);
-  assert.ok(calls.some((x) => x.elem === 'wind'), '旋風是風系段');
-  assert.ok(specs.some((s) => s.variant === 'wind-spin' && s.fxKind === 'slash'),
-    '旋風沿用 wind-spin（掛在 slash 分派下，寫成 aura 會被風系守衛擋掉）');
+  assert.ok(!calls.some((x) => x.elem === 'wind'), '機率沒中就沒有風刃');
+  forceRolls(c, 0);
+  calls.length = 0; specs.length = 0;
+  c.castSkill2(p, [near], 'cleave', 'mv-float');
+  run(c,p,[near],1);
+  assert.ok(calls.some((x) => x.elem === 'wind'), '風刃是風系段');
+  assert.ok(specs.some((s) => s.variant === 'wind-blade-homing'), '風刃沿用追蹤風刃畫面');
+  assert.ok(!specs.some((s) => s.variant === 'wind-spin'), '不再有周身旋風');
+  forceRolls(c, 0.999);
 
   // 裂空飛斬：斬擊向外飛出（改走飛行物路徑）
   setLegendary(c, ['skyrendSlash']);
@@ -693,15 +720,21 @@ test('迴旋斬的五個傳奇特效：斬擊次數、旋風、飛出距離、�
   run(c,p,[stunned],1);
   assert.ok(Math.abs(calls[0].total - 50) < 1e-9, '暈眩中的敵人吃到 +50% 總傷');
 
-  /* 聚敵旋渦：拉近 60 米內的敵人。
+  /* 聚敵旋渦（2026-10-20 改版）：只拉近 36 米內的 2 個敵人。
      ⚠️ 技能本身仍要打得到人才會施放（castSkill2 的起手主目標必須在施法距離內），
      所以場上要有一個近戰距離內的敵人，遠方那一隻才會被拉過來。 */
   setLegendary(c, ['gatheringVortex']);
   const anchor = enemy(1e12, 2 * M, 0, '近身');
-  const far = enemy(1e12, 40 * M, 0, '遠');
-  c.castSkill2(p, [anchor, far], 'cleave', 'mv-float');
-  assert.ok(far.pos.x <= 10 * M + 1e-6, '被拉到 10 米內');
-  assert.ok(far.pos.x > 0, '不會被拉到玩家身上（保留停止距離）');
+  const far = enemy(1e12, 30 * M, 0, '遠');
+  const far2 = enemy(1e12, 33 * M, 0, '遠2');
+  const far3 = enemy(1e12, 35 * M, 0, '遠3');
+  const beyond = enemy(1e12, 40 * M, 0, '範圍外');
+  c.castSkill2(p, [anchor, far, far2, far3, beyond], 'cleave', 'mv-float');
+  const pulled = [far, far2, far3].filter((x) => x.pos.x <= 10 * M + 1e-6);
+  /* 候選是 36 米內的 4 個敵人（含近身的 anchor），隨機取 2 個 → 遠方三隻裡被拉近的是 1～2 隻，絕不會是 3 隻。 */
+  assert.ok(pulled.length >= 1 && pulled.length <= 2, '一次只拉近 2 個敵人（遠方三隻不會全被拉）：' + pulled.length);
+  assert.ok(pulled.every((x) => x.pos.x > 0), '不會被拉到玩家身上（保留停止距離）');
+  assert.ok(beyond.pos.x > 39 * M, '超過 36 米的不會被拉');
 });
 
 /* ---- 6) 存檔正規化 ---- */
@@ -809,14 +842,14 @@ test('飛刀的五個傳奇特效：彈射數、擊殺分裂、優先高血量�
 
 /* ---- 7) 疾風斬的五個傳奇特效 ---- */
 
-test('疾風斬的五個傳奇特效：龍捲風、斬殺、雙影、風切、冷卻縮減', () => {
+test('疾風斬的五個傳奇特效：真空斬、斬殺、雙影、風切、冷卻縮減', () => {
   const c = loadContext(['js/legendary.js']);
   const calls = stubHits(c); stubVfx(c);
   const derived = stubDerived(c);
   setLevels(c, 'gale', [10, 0, 0, 0, 0, 0, 0]); equip(c, 'gale');
   const p = playerEnt(); c.FIELD = { player: p };
 
-  /* 神速斬：每次命中使疾風斬的冷卻時間 -0.1 秒。
+  /* 神速斬：每次命中使疾風斬的冷卻時間 -0.05 秒。
      castSkill2 會在施放時把冷卻重設為表定值，因此比較的是「同一次施放之後的剩餘冷卻」。 */
   forceRolls(c, 0.999);
   c.castSkill2(p, [enemy(1e12, 3 * M, 0)], 'gale', 'mv-float');
@@ -826,14 +859,18 @@ test('疾風斬的五個傳奇特效：龍捲風、斬殺、雙影、風切、�
   c.castSkill2(p, [enemy(1e12, 3 * M, 0)], 'gale', 'mv-float');
   assert.ok(p.skillCds[c.SG_PREFIX + 'gale'] < baseCd, '命中應縮短冷卻');
 
-  // 風捲殘雲：命中時機率生成龍捲風（地板場域）
+  // 風捲殘雲（2026-10-20 改版）：命中時機率在目標處形成 1 道真空斬（即時風系範圍傷害，不再建立龍捲風場域）
   setLegendary(c, ['galeWhirlwind']);
   forceRolls(c, 0.01);                      // chance() 一律通過
   c.SKILL2_RT.grounds.length = 0;
+  calls.length = 0;
+  const vacSpecs = [];
+  const emitVfx = c.sgEmitVfx; c.sgEmitVfx = (gid, t, f, x) => { vacSpecs.push(x); return emitVfx(gid, t, f, x); };
   c.castSkill2(p, [enemy(1e12, 3 * M, 0)], 'gale', 'mv-float');
-  assert.ok(c.SKILL2_RT.grounds.length > 0, '應生成龍捲風場域');
-  assert.equal(c.SKILL2_RT.grounds[0].kind, 'windtornado');
-  assert.equal(c.SKILL2_RT.grounds[0].hitElem, 'wind', '龍捲風打的是風系傷害');
+  assert.equal(c.SKILL2_RT.grounds.length, 0, '不再建立龍捲風場域');
+  assert.ok(calls.some((k) => k.elem === 'wind'), '真空斬打的是風系傷害');
+  assert.ok(vacSpecs.some((x) => x && x.variant === 'wind-spin' && x.vfxGid === 'vacuumslash'), '畫面借用真空斬的 wind-spin');
+  c.sgEmitVfx = emitVfx;
 
   // 風行者：附加風切狀態（移速／命中率折減 ＋ 風系持續傷害）
   setLegendary(c, ['galeWindwalker']);
@@ -853,16 +890,20 @@ test('疾風斬的五個傳奇特效：龍捲風、斬殺、雙影、風切、�
   assert.ok(calls.some((k) => k.ent === side && Math.abs(k.atk - body * 0.5) < 1e-6),
     '應對附近敵人追加 50% 傷害');
 
-  // 斬殺：機率立即殺死生命值 20% 以下的非 BOSS 敵人
+  // 斬殺：機率立即殺死生命值 10% 以下的非 BOSS 敵人
   setLegendary(c, ['galeExecute']);
   derived.length = 0;
-  const weak = enemy(1e6, 3 * M, 0); weak.hp = 1e5;                   // 10% ≤ 20%
+  const mid = enemy(1e6, 3 * M, 0); mid.hp = 1.5e5;                   // 15% > 10%：舊版 20% 門檻會斬、現在不斬
+  c.castSkill2(p, [mid], 'gale', 'mv-float');
+  assert.ok(mid.hp > 0, '超過 10% 門檻的不得被斬殺');
+  derived.length = 0;
+  const weak = enemy(1e6, 3 * M, 0); weak.hp = 0.9e5;                 // 9% ≤ 10%
   c.castSkill2(p, [weak], 'gale', 'mv-float');
   assert.equal(weak.hp, 0, '門檻以下的普通敵人應被斬殺');
   assert.ok(derived.length > 0, '斬殺走的是衍生傷害（不再過防禦）');
   // BOSS 不吃斬殺
   derived.length = 0;
-  const boss = enemy(1e6, 3 * M, 0, 'BOSS', 'boss'); boss.hp = 1e5;   // 同樣在門檻內
+  const boss = enemy(1e6, 3 * M, 0, 'BOSS', 'boss'); boss.hp = 0.9e5;  // 同樣在門檻內
   c.castSkill2(p, [boss], 'gale', 'mv-float');
   assert.ok(boss.hp > 0, 'BOSS 不得被斬殺');
 });
@@ -1517,7 +1558,7 @@ test('【雙生刃】：擊中目標數量 +2', () => {
   assert.equal(calls.length, base + c.PASSIVE_POOL.danceTwinBlades.fx.danceTargetAdd.count);
 });
 
-test('【狂戰士】：鐵血之舞的生命損失與敵人流血同步放大', () => {
+test('【狂戰士】：鐵血之舞的自身生命損失降低、敵人流血傷害提高（各自調整）', () => {
   const c = loadContext(['js/legendary.js']);
   stubHits(c); stubVfx(c);
   forceRolls(c, 0.999);
@@ -1530,14 +1571,16 @@ test('【狂戰士】：鐵血之舞的生命損失與敵人流血同步放大',
   const baseSelf = p.dots.filter((d) => d.sid === 'sgIronBleed')[0].dps;
 
   setLegendary(c, ['danceBerserker']);
-  const k = 1 + c.PASSIVE_POOL.danceBerserker.fx.danceIronAmp.pct / 100;
+  const amp = c.PASSIVE_POOL.danceBerserker.fx.danceIronAmp;
+  const k = 1 + amp.pct / 100, kSelf = 1 - amp.reducePct / 100;
+  assert.ok(k > 1 && kSelf < 1, '改版後兩邊方向相反：傷害上升、損失下降');
   const e2 = enemy(1e12, 3 * M, 0);
   p.dots.length = 0; p.mp = 10000;
   c.castSkill2(p, [e2], 'dualdance', 'mv-float');
-  assert.ok(Math.abs(e2.dots.filter((d) => d.sid === 'sgIronBleed')[0].dps - baseEnemy * k) < 1e-6,
+  assert.ok(Math.abs(e2.dots.filter((d) => d.sid === 'sgIronBleed')[0].dps / (baseEnemy * k) - 1) < 1e-9,
     '敵人流血要 ×' + k);
-  assert.ok(Math.abs(p.dots.filter((d) => d.sid === 'sgIronBleed')[0].dps - baseSelf * k) < 1e-6,
-    '自身生命損失也要 ×' + k);
+  assert.ok(Math.abs(p.dots.filter((d) => d.sid === 'sgIronBleed')[0].dps / (baseSelf * kSelf) - 1) < 1e-9,
+    '自身生命損失要 ×' + kSelf);
 });
 
 test('【狂舞】與【殺千刀】：只在暴風之舞持續期間作用，分別縮短節拍與延長化身', () => {
@@ -1783,7 +1826,7 @@ test('【修羅亂舞】：只有「選了它且雙刀亂舞裝配在技能列�
 
 /* ---- 10) 參數表往返 ---- */
 
-test('反擊的五個傳奇特效：完美姿態、以血還血、風之體、堅韌誓言、怒火', () => {
+test('反擊的五個傳奇特效：完美姿態、以血還血、風之體（火球）、堅韌誓言、怒火', () => {
   const c = loadContext(['js/legendary.js']);
   const calls = stubHits(c); stubVfx(c);
   const p = counterFirstTierOnly(c);
@@ -1814,30 +1857,38 @@ test('反擊的五個傳奇特效：完美姿態、以血還血、風之體、�
   assert.equal(p.hp, 1000 - Math.round(c.getStats().hp * pay.hpPct / 100),
     '每一次反擊都要付出自身最大生命的 ' + pay.hpPct + '%');
 
-  // 【風之體】：反擊之外再飛一道風系傷害（走正規結算，因此看得到 skillElem）
+  // 【風之體】（2026-10-20 改版）：反擊之外再射出一顆火球（走正規結算，因此看得到 skillElem）
   setLegendary(c, ['counterWindBody']);
   calls.length = 0;
   c.skills2OnPlayerDamaged(m, p, 50, false, hitRes(), 'pv-float');
-  const wind = calls.filter((x) => x.elem === 'wind');
-  assert.equal(wind.length, 1, '風之體要多打出一道風系傷害');
-  assert.ok(Math.abs(wind[0].atk -
-    c.getStats().atk * c.PASSIVE_POOL.counterWindBody.fx.counterWindBlade.powerPct / 100) < 1e-6);
+  const fire = calls.filter((x) => x.elem === 'fire');
+  assert.equal(fire.length, 1, '風之體要多打出一顆火球的火焰傷害');
+  assert.equal(calls.filter((x) => x.elem === 'wind').length, 0, '不再有風刃');
+  assert.ok(Math.abs(fire[0].atk -
+    c.getStats().atk * c.PASSIVE_POOL.counterWindBody.fx.counterFireball.powerPct / 100) < 1e-6);
 
-  // 【堅韌誓言】／【怒火】：累積到門檻才兌現一次，兌現後歸零重新累積
+  // 【堅韌誓言】／【怒火】：各自累積到門檻才兌現一次（2026-10-20 起門檻不同：怒火 100、誓言 200）
   setLegendary(c, ['counterOath', 'counterWrath']);
   const oathN = c.PASSIVE_POOL.counterOath.fx.counterOath.count;
+  const wrathN = c.PASSIVE_POOL.counterWrath.fx.counterWrath.count;
+  assert.ok(wrathN < oathN, '怒火門檻比誓言低，才測得出各自累積');
   p.hp = 1000; p.buffs = {}; p.effects = {};
-  for (let i = 0; i < oathN - 1; i++) {
+  for (let i = 0; i < wrathN - 1; i++) {
     c.skills2OnPlayerDamaged(m, p, 50, false, hitRes(), 'pv-float');
   }
-  assert.ok(!c.effectActive(p, 'invuln'), '差一次就不算：' + (oathN - 1) + ' 次還不能給無敵');
-  assert.equal(c.buffVal(p, 'sgCounterWrath'), 0, '差一次就不算：怒火也還不能上');
+  assert.equal(c.buffVal(p, 'sgCounterWrath'), 0, '差一次就不算：怒火還不能上');
   c.skills2OnPlayerDamaged(m, p, 50, false, hitRes(), 'pv-float');
-  assert.ok(c.effectActive(p, 'invuln'), '第 ' + oathN + ' 次反擊要給無敵');
   assert.equal(c.buffVal(p, 'sgCounterWrath'), c.PASSIVE_POOL.counterWrath.fx.counterWrath.pct);
+  assert.ok(!c.effectActive(p, 'invuln'), '怒火達標時誓言還沒到');
   // 怒火直接進入「造成的所有傷害提高」乘區
   assert.ok(c.skills2AllDamageUpPct(p) >= c.buffVal(p, 'sgCounterWrath'),
     '怒火必須進 skills2AllDamageUpPct');
+  for (let i = wrathN; i < oathN - 1; i++) {
+    c.skills2OnPlayerDamaged(m, p, 50, false, hitRes(), 'pv-float');
+  }
+  assert.ok(!c.effectActive(p, 'invuln'), '差一次就不算：' + (oathN - 1) + ' 次還不能給無敵');
+  c.skills2OnPlayerDamaged(m, p, 50, false, hitRes(), 'pv-float');
+  assert.ok(c.effectActive(p, 'invuln'), '第 ' + oathN + ' 次反擊要給無敵');
 });
 
 test('【神聖之體】：每 N 次反擊射出一顆光彈，對目標周圍打出神聖傷害', () => {
