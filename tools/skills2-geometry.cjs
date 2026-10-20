@@ -21,7 +21,7 @@ route('damage',`thrust/phantomOcta cleave/1 cleave/windChaser gale/1 gale/7 gale
  waterball/7 waterball/ragingTide frostnova/1 frostnova/2 frostnova/crystalResonance frostnova/iceKingDomain windblade/6 vacuumslash/4 stormbarrier/2 stormbarrier/skyfallStars`);
 route('search',`knife/3 knife/soulhunterBlade gale/4 gale/thunderFlash gale/chidori bloodblade/7 counter/7
  fireball/3 fireball/5 firepillar/3 firepillar/6 mire/4 earthguard/6 chainlightning/1 chainlightning/5
- chainlightning/eternalSuperconductor thunderstrike/heavenTribulation
+ chainlightning/eternalSuperconductor thunderstrike/heavenTribulation thunderstrike/eternalThunderPrison
  thunderorb/thunderBurst waterball/5 vacuumslash/1 stormbarrier/5`);
 route('effect',`counter/indomitable dualdance/5 rockarmor/superRockArt rockarmor/gravityField thunderstrike/5 waterball/waterPrisonFall waterball/abyssBurial`);
 route('damage','firepillar/dragonDevour firepillar/infernoTempest');

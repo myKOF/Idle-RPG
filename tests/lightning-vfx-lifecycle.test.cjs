@@ -238,7 +238,7 @@ test('Worker 未指定倍率的零值仍顯示原尺寸落雷，正倍率繼續�
   assert.ok(Math.abs(widths[2] / widths[0] - 2) < 1e-6);
 });
 
-test('永恒雷獄真實初次／免費重施事件均啟動落雷本體，傷害與命中仍等落地', () => {
+test('永恒雷獄舊重施與新接續的真實Worker事件皆有可見落雷且傷害等落地', () => {
   const events = [], hits = [], repeats = [];
   const c = { console, Math: Object.create(Math), setTimeout() {}, clearTimeout() {},
     document: { addEventListener() {}, getElementById() { return null; }, querySelectorAll() { return []; } },
@@ -251,6 +251,7 @@ test('永恒雷獄真實初次／免費重施事件均啟動落雷本體，傷�
   c.G = { player: { gold: 0, skills2: { levels: { thunderstrike: [10, 10, 10, 10, 10, 10, 10] },
     ult: { thunderstrike: { pick: c.sgUltIndexOfId('thunderstrike', 'eternalThunderPrison'), lv: 1 } } },
     loadout: ['sg:thunderstrike'] }, stage: { current: 1 } };
+  c.SKILLS2.thunderstrike.ult[2].fx = { sec: 3, secPer: 0.3, gap: 1, gapPer: -0.05 };
   c.getStats = () => ({ atk: 1000, matk: 500, hp: 1000, mp: 1000000, level: 10, cdr: 0,
     passives: {}, legendaryEffects: {}, legendaryEffectMults: {}, elemDmgUp: {} });
   c._diag = () => {};
@@ -308,4 +309,45 @@ test('永恒雷獄真實初次／免費重施事件均啟動落雷本體，傷�
     } finally { r.adapter.destroy(); }
   }
   assert.ok(events.some(e => e.spec.variant === 'thunder-impact' && e.spec.vfx.hit === 'hit-thunder-blue'));
+  // 新接續配置穿過同一個正式 Worker shim、Renderer、Runtime 與 Core。
+  c.resetSkill2RT();
+  c.GT = 0; events.length = 0; hits.length = 0; repeats.length = 0;
+  c.SKILLS2.thunderstrike.ult[2].fx = { count: 2, countPer: 0.2, m: 30 };
+  c.SKILLS2.thunderstrike.tiers[5].fx.chance = 0;
+  c.SKILLS2.thunderstrike.tiers[5].fx.chancePer = 0;
+  const pool = [target, ...['second', 'third'].map((name, i) => ({ ...target, name,
+    pos: { x: 220 + i * 220, y: 0 }, buffs: {}, effects: {}, dots: [] }))];
+  const chainTargets = [];
+  c.enemyEventFloatTarget = ent => ent.name;
+  c.resolveHit = (attacker, victim) => {
+    hits.push(c.GT); chainTargets.push(victim.name);
+    return { dmg: 100, crit: false, miss: false, killed: false };
+  };
+  const out = { dmg: 0, killed: false };
+  c.sgQueueThunderBolt(p, c.getStats(), c.SKILLS2.thunderstrike,
+    [10, 10, 10, 10, 10, 10, 10], 1000, target, pool, 'mv-float', out, 0, 0);
+  c.sgArmUltRepeat('thunderstrike');
+  assert.equal(c.SKILL2_RT.ultRepeat.thunderstrike, undefined);
+  for (let i = 1; i <= 100; i++) {
+    c.GT = i / 100;
+    c.sgTickMeteors({ pEnt: p, getEnemies: () => pool, onDeaths() {}, onDamage() {} });
+  }
+  assert.deepEqual(chainTargets, ['target', 'second', 'third']);
+  assert.deepEqual(hits, [.13, .26, .39]);
+  assert.equal(out._pendingProjectiles, 0);
+  assert.equal(p.mp, paid); assert.equal(p.skillCds['sg:thunderstrike'], cd);
+  const bolts = events.filter(e => e.spec.variant === 'thunder-strike');
+  assert.equal(bolts.length, 3);
+  for (const event of bolts) {
+    const r = thunderRenderer();
+    try {
+      for (const victim of pool) r.c.S.entities[victim.name] = { state: 'idle' };
+      assert.equal(event.spec.travelMs[0], 129);
+      assert.equal(event.spec.vfx.attack, 'bolt-thunderstrike-bluewhite');
+      r.send(event.spec); r.advance(80);
+      assert.equal(r.adapter.stats().played, 1);
+      assert.ok(r.nodes.some(n => n.spec.assetUrl?.endsWith('spark_05.png') &&
+        n.frames.some(t => t.visible !== false && t.alpha > 0 && t.scaleY > 0)), '接續落雷的正式素材可見');
+    } finally { r.adapter.destroy(); }
+  }
 });

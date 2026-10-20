@@ -238,14 +238,16 @@ test('【過載】：同一個敵人被閃電鏈打滿 5 次就在牠身上炸�
    2) 連鎖閃電的三個超神進化
    =========================================================================== */
 
-test('【天地雷鎖陣】：施放後每 gap 秒自動再施放，且重複施放不扣魔、不進冷卻', () => {
+test('【無限閃電】舊秒數配置過渡：短期重施不扣魔、不進冷卻', () => {
   const c = loadContext();
+  c.SKILLS2.chainlightning.ult.find(u => u.id === 'skyThunderArray').fx = { sec: 2, secPer: 0.2, gap: 1 };
   stubVfx(c);
   const calls = stubHits(c);
   maxLevels(c, 'chainlightning');
   equip(c, 'chainlightning');
   setUlt(c, 'chainlightning', 'skyThunderArray', 1);
   const p = playerEnt();
+  p.mp = 100000;
   const es = [];
   for (let i = 0; i < 8; i++) es.push(enemy(1e9, 20 + i * 5, 0, 'e' + i));
   c.castSkill2(p, es, 'chainlightning', 'mv-float');
@@ -665,14 +667,16 @@ test('【雷霆天劫】普通落雷保留本體特效，不被天劫觸發欄�
   }
 });
 
-test('【永恒雷獄】：施放落雷術後每 gap 秒自動再施放，持續時間走完就停', () => {
+test('【永恒雷獄】舊秒數配置過渡：每 gap 秒免費重施，持續時間走完就停', () => {
   const c = loadContext();
+  c.SKILLS2.thunderstrike.ult[2].fx = { sec: 3, secPer: 0.3, gap: 1, gapPer: -0.05 };
   stubVfx(c);
   stubHits(c);
   maxLevels(c, 'thunderstrike');
   equip(c, 'thunderstrike');
   setUlt(c, 'thunderstrike', 'eternalThunderPrison', 1);
   const p = playerEnt();
+  p.mp = 100000;
   const es = [enemy(1e9, 20, 0, 'a')];
   const mpBefore = p.mp;
   c.castSkill2(p, es, 'thunderstrike', 'mv-float');

@@ -223,12 +223,12 @@ test('未命中的真空斬及暴風撕裂只播攻擊本體，不播受害者�
  }
 });
 
-test('追擊風刃及沿途脈衝只在成功命中時播受害者特效，空場及MISS仍保留本體',()=>{
- const {c,p,events,enemies}=setup('windblade',7,'stormMyriad');c.resolveHit=()=>({miss:true,dmg:0});c.castSkill2(p,enemies,'windblade','mv-float');h.advance(c,p,enemies,1);
+test('追擊及直射風刃MISS時保留本體，不播命中或已移除的沿途脈衝',()=>{
+ const {c,p,events,enemies}=setup('windblade',7,'stormMyriad');p.mp=100000;c.resolveHit=()=>({miss:true,dmg:0});c.castSkill2(p,enemies,'windblade','mv-float');h.advance(c,p,enemies,1);
  assert.ok(events.some(e=>e.variant==='wind-blade-homing'&&e.vfx.ground));
- assert.ok(events.some(e=>e.variant==='wind-burst'&&e.vfx.attack));assert.ok(events.every(e=>!e.vfx?.hit));
- const direct=setup('windblade',6);direct.c.resolveHit=()=>({miss:true,dmg:0});direct.c.castSkill2(direct.p,direct.enemies,'windblade','mv-float');h.advance(direct.c,direct.p,direct.enemies,1);
- assert.ok(direct.events.some(e=>e.variant==='wind-burst'));assert.ok(direct.events.every(e=>!e.vfx?.hit));
+ assert.ok(!events.some(e=>e.variant==='wind-burst'||e.variant==='wind-burst-hit'));assert.ok(events.every(e=>!e.vfx?.hit));
+ const direct=setup('windblade',6);direct.p.mp=100000;direct.c.resolveHit=()=>({miss:true,dmg:0});direct.c.castSkill2(direct.p,direct.enemies,'windblade','mv-float');h.advance(direct.c,direct.p,direct.enemies,1);
+ assert.ok(direct.events.some(e=>e.variant==='wind-blade'));assert.ok(!direct.events.some(e=>e.variant==='wind-burst'||e.variant==='wind-burst-hit'));assert.ok(direct.events.every(e=>!e.vfx?.hit));
 });
 
 test('真空斬與震波使用世界半徑／角度後單次投影，傾斜不可再次縮短斬擊',()=>{

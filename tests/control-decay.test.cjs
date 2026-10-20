@@ -104,10 +104,10 @@ test('三類各自計次：暈眩不影響攻速／移速的次數，泥沼同�
   assert.equal(m.ccDr.aspd.n, 1);
   assert.equal(m.ccDr.move.n, 1);
   assert.equal(m.ccDr.act.n, 1);
-  // 風切只管移速
+  // 狂風碎裂同時管攻速與移速（風切仍只有移速）。
   const w = foe();
   c.applyBuff(w, 'sgWindSlow', 60, 3);
-  assert.deepEqual(Object.keys(w.ccDr), ['move']);
+  assert.deepEqual(Object.keys(w.ccDr), ['aspd', 'move']);
   // 其他類別的比率調整不互相牽動：只把移速類改成 20%
   c.CONTROL_DECAY_PER_HIT_MOVE = 20;
   c.GT = 10; c.applyBuff(m, 'sgMire', 50, 1);  // 上一輪 1 秒已到期 → 新的一次
@@ -218,7 +218,7 @@ test('控場分類登記表：只收「讓敵人傷害降低或移動變慢」�
   assert.deepEqual(Array.from(c.statusControlCats('stun')), ['act']);
   assert.deepEqual(Array.from(c.statusControlCats('slow')), ['aspd']);
   assert.deepEqual(Array.from(c.statusControlCats('sgMire')), ['aspd', 'move']);
-  assert.deepEqual(Array.from(c.statusControlCats('sgWindSlow')), ['move']);
+  assert.deepEqual(Array.from(c.statusControlCats('sgWindSlow')), ['aspd', 'move']);
   assert.equal(c.statusControlCats('atkDown'), null);
   assert.equal(c.statusControlCats('sgFrozen'), null); // 凍結只是標記，行動限制由暈眩承擔
   // 登記表裡的每個鍵都真的是狀態表上的效果鍵（打錯字或狀態改名會在這裡被抓到）

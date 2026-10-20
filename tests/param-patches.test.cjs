@@ -129,6 +129,7 @@ test('native Excel: keyed merge, formatting, conflicts, locked source and retry'
         const bat = spawnSync('cmd.exe', ['/d', '/c', 'call', '套用參數.bat'],
           { cwd: root, input: '\r\n', encoding: 'utf8', windowsHide: true, timeout: 30000 });
         assert.match(bat.stdout, /\[合併未完成\]/, bat.stdout + bat.stderr);
+        assert.doesNotMatch(bat.stdout + bat.stderr, /is not recognized|不是內部或外部命令/);
         assert.equal(fs.existsSync(path.join(root, 'unexpected-export')), false);
       }
       const closed = new Promise(resolve => holder.once('exit', resolve));
@@ -136,8 +137,12 @@ test('native Excel: keyed merge, formatting, conflicts, locked source and retry'
       assert.equal(hash(file), beforeLock);
     }
     // A COM snapshot finds alpha on row 3, not the first data row (beta).
+    const staleOwner = path.join(root, 'config/Excel/~$Test.xlsx');
+    fs.writeFileSync(staleOwner, 'stale owner marker');
     let result = run(['--merge', root]);
     assert.equal(result.status, 0, result.stdout + result.stderr);
+    assert.equal(fs.readFileSync(staleOwner, 'utf8'), 'stale owner marker', '忽略殘留標記時不刪除檔案');
+    fs.unlinkSync(staleOwner); // 只清除本測試建立的標記，避免影響後續 Excel 寫入 fixture。
     const after = JSON.parse(ps(root, 'inspect'));
     assert.equal(after.alpha, 12); assert.equal(after.beta, 20);
     assert.equal(after.text, '=literal text'); assert.equal(after.textFormula, false);

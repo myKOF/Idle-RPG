@@ -1,5 +1,55 @@
 # AI_TASKS.md
 
+## WINDBLADE-FRACTURE-SLOW-20261020 — 狂風碎裂改為命中雙緩速
+
+- Owner：Codex；程式完成／配置Pending；使用者要求風刃命中使移速與攻速各-20%，每級各再-2%，移除每秒周圍傷害。沿既有sgWindSlow狀態共用同幅度數值，保留原持續時間；主／小型／追擊／被動小風刃成功命中均適用，不影響其他技能借用的小風刃。沿上一輪使用者「你照改，我改完再套用」，交付程式與待套用差異，不代跑正式BAT。
+- 允許js/skills2.js風刃緩速與脈衝移除、status.js控場分類、必要index／bridge／Worker快取、tools/skills2-vfx.cjs用途說明、Skills2／Status既有格差異JSON、tests/windblade-fracture／skill2-wind／windblade-vacuum-legendary／control-decay／wind-skill-audit相關案例、game_formula／LV_upgrade_system／本紀錄；禁止其他技能公式、Protocol／存檔／Preset／素材／其他副本修改。所有目標衝突預檢無外部來源。
+- 前置飛行物／追擊接觸命中與狀態控場遞減已存在；驗收各級雙緩速／實際移動攻速收斂、命中才生效／MISS無敵致死、大小直射與大小追擊／被動小風刃／跨樹隔離、沒有沿途脈衝傷害或爆點、Boss攻速免疫／兩類遞減／到期與刷新、Worker狀態顯示與本體事件、原生Excel隔離合併／回歸基準／Build／diff後獨立Commit。正式新參數待使用者BAT，解鎖不變。
+- 修改15檔：skills2新增依第6階等級計算的共用雙緩速值，大小直射／大小追擊／被動追擊皆在實際成功命中後套原狀態；MISS／無敵／致死不附加，其他樹借用不帶風刃減益。移速仍沿bfEnemySpeedFactor，攻速接skill2SlowAspdFactor→slowFactor，Boss保持攻速免疫；status.js把sgWindSlow登記aspd與move兩類，分別計次／遞減。刪除主刃／追擊刃所有脈衝規格產生與轉送，殘留舊pct／gap／m也不會重啟；本體傷害／幾何／飛行與命中特效不變。共用舊pulse欄維持相容且新風刃皆為零，T6觸發特效仍供天落繁星借用，沒有移除其他技能落地爆點。
+- tools/skills2-vfx同步T6／暴風萬刃／嵐之山用途，不再宣稱沿途風爆，保留舊欄相容與巨大風刃借用來源；index status40／skills2 340／bridge321、bridge／Worker兩支import更新windblade-double-slow，四份既有測試及新增七項、game_formula／LV_upgrade_system／本紀錄與差異JSON同步。沒有修改Protocol／存檔／其他技能數值／Preset／素材，素材庫無本次變更，不需素材Commit。
+- 待套用a2b43e6c-0150-481a-92a7-f063e6578540.json共10格：Skills2第6階效果move20／movePer2（同一值控制兩個同幅度減益）、舊傷害半徑／間隔清空、兩格說明與三列特效用途；Status的sgWindSlow預設值20及雙緩速說明，三秒與refresh不變。不覆寫正式Excel／CSV／JS字面值，也不移動上一輪無限閃電待套用檔。
+- 原生隔離：從已儲存兩本工作簿複製，真param-patches與Excel合併並正常重開；逐格與本次archive原始檔比較恰為Skills2八格（Q207／AE207／AV207／AW207／AX207／AY207／AY209／AY210）及Status兩格（L53／T53），沒有其他資料差異。最初table讀取器將數值格統一字串化，Status.before誤記為字串60而原生值為數字60，隔離安全檢查因此拒絕；原生snapshot確認型別、正式Status與隔離original逐位元相同後，修正自己尚未提交請求的讀取型別before=60／after=20數字，再原生套用10格通過。這是讀取型別錯誤修正，沒有改使用者現值／放寬同格比較／捏造approval；正式BAT日後仍保留完整衝突檢查。
+- 專項：`node --test tests/windblade-fracture.test.cjs`7/7；Pending時僅在測試記憶體讀自己JSON的已備妥參數，另以實際原生Excel編譯的新Skills2／Status映射同樣7/7。涵蓋Lv1=22%／Lv5=30%／Lv10=40%、實際bf移速與slowFactor攻速、抵達前無狀態、大小直射／大小追擊／被動與跨樹隔離、四形態殘留舊參數不能生風爆、MISS／無敵／致死／未學、三秒refresh／單層／到期恢復／狀態列同值、兩類獨立遞減與Boss、啟用前後本體命中傷害及幾何逐值相同／離路敵人不受傷，事件穿正式Worker shim保留本體／命中且無風爆。初次fixture把被動小刃傷害一併關掉及離路敵人仍在放大後刃寬，調整測試場景後通過，沒有降低產品正確性。
+- 核心：`node --test --test-reporter=tap tests/windblade-fracture.test.cjs tests/status-system.test.cjs tests/skills2-vfx-schema.test.cjs tests/skill-vfx-inheritance.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/infinite-lightning.test.cjs tests/eternal-thunder-prison.test.cjs`原生隔離編譯映射76/76，提交index來源＋正式舊配置及待套用fixture再驗同76項。另`--test-name-pattern='大型風刃改為全場追擊|追擊及直射風刃MISS|狂風碎裂'`三份既有風系測試3/3，相關兩個fixture補足實際施法所需法力才進入受測邏輯，未放寬數量／傷害／事件斷言。
+- 擴大121項（skill2-wind／skill2-windblade-vacuum-legendary／wind-skill-audit 106項＋control-decay15項）74過／47既有失敗；以相同新配置、唯讀換回本次修改前skills2／status程式，同名集合比對無新增失敗。基準72過／49失敗，多出的兩項是已改要求的T6雙緩速及控場分類；既有失敗集中舊風系數值／解鎖法力fixture、舊素材斷言，以及控場測試仍預期5%而現行參數為10%。沒有調整權威參數或放寬無關測試。新增七項在舊程式下五項失敗，保留原本正確的兩項仍通過，能攔住舊單緩速／小風刃漏接／殘留脈衝／攻速分類。
+- 其他：`npm.cmd run build`553檔通過，最後測試補強另檢語法；兩表config_tables dry-run語意差異0與diff通過。唯讀未改：AI規範／工作流／prompts、combat／formula的傷害及控場規則、battlefield幾何、Worker Protocol／shim來源、VFX Runtime／Core／renderer與素材、geometry／config_tables及Excel工具。使用者所有既有Excel／CSV／JS文案與其他三CSV保留，提交只收本任務15檔、Skills2與Status正式字面值保持HEAD；沒有切換分支／合併／推送。
+- 交付：程式及差異可Review／整合，Commit為本段所在`[Codex] feat: 狂風碎裂改為命中雙緩速並移除沿途傷害`，回覆附編號。正式參數依使用者安排Pending；待其完成Skills2／Status編輯並儲存關閉後，可與無限閃電一併按BAT合併，之後再核對正式設定。不宣稱新參數已啟用，未做完整瀏覽器長戰，另有上述47項既有失敗。
+
+## INFINITE-LIGHTNING-20261020 — 無限閃電永久單道自動發射
+
+- Owner：Codex；程式完成／配置Pending；使用者要求每秒自動發射一道連鎖閃電，每級間隔-0.06秒，兼具1～7階效果但限一道。單一開發者；前置連鎖閃電逐跳命中／Worker飛行與配置差異管線完成，解鎖條件不改。使用者明確回覆「你照改，我改完再套用」，故本輪交付程式與待套用差異，不等待或代替使用者執行正式BAT。
+- 允許js/skills2.js自動節拍／單鏈選項與舊配置過渡、必要index／bridge／sim.worker快取、tests/infinite-lightning.test.cjs／落雷生命周期及舊重施測試、Skills2本超神差異JSON、game_formula／LV_upgrade_system／本紀錄。禁止其他技能／傳奇數值、Protocol／存檔／Preset／素材／其他副本；保留使用者既有Excel／CSV／JS文案，依AI_RULES8.5只暫存設定，待使用者BAT正式套用後驗收。
+- 衝突預檢所有目標無外部來源。沿既有永久自動技能節拍；裝配即開始計時，不需先施放且沒有短期截止；每拍只一條鏈，保留傷害／彈射數／附加命中／擴散，關閉此次自動鏈的T7多發與分裂及傳奇多道。普通施放保持原規則。驗收各級間隔、首拍／持續／死亡暫停／暈眩空場不補發、卸下換超神重置、免費／冷卻、T1～7與傳奇互動、單條chainId及真Worker可見飛行／抵達命中、差異原生Excel隔離套用與回歸／Build／diff後Commit；正式設定Pending。
+- 修改10檔：js/skills2.js新增infiniteLightningAt與永久節拍，透過既有castSkill2免費路徑加singleChain選項；傷害與彈射沿原sgCastChainlightning，僅限此次自動鏈一條且不分裂，T7與傳奇的多道不突破限制，普通付費施放仍保留。舊sec配置過渡保留，新gap配置停用並清掉舊重施。index（skills2 339／bridge320）、bridge／Worker import加infinite-single-chain，tests/infinite-lightning七項與舊秒數fixture、game_formula／LV_upgrade_system／本紀錄及配置JSON同步。沒有改Protocol／存檔／解鎖／Preset／素材。
+- 差異219ebd74-e75e-473f-b2cd-18587677ccfb.json共四格，以群組ID=chainlightning＋超神ID=skyThunderArray定位；效果JSON改空物件清除sec，間隔欄1,-0.06，兩格說明同步單道及進化效果。before取自磁碟已儲存工作簿，不改使用者現值、不寫正式Excel／CSV／JS配置。使用者稍後完成編輯再BAT；同格變更仍須由工具停止並詢問。正式技能新參數與最終實際Excel／CSV／JS一致性尚待該步，不宣稱啟用。
+- 隔離驗證：從已儲存Skills2副本透過真正param-patches工具與原生Excel套用四格、正常重開驗證；與該次archive原始檔逐格比較，只有AE151／AV151／AW151／AX151變更。期間使用者另存五格落雷文案／矩陣傷害，皆保留；不拿最新工作簿與較早快照誤判為本次覆寫，也不重寫差異before。另由HEAD原生產生僅本超神候選作可攜性檢查（含目前既有名稱），未寫入正式檔或納入本次提交。
+- 測試：`node --test tests/infinite-lightning.test.cjs`七項；使用者尚未套用時僅在測試記憶體按本任務差異JSON及正式geometry接線組成新配置，不改產品資料；原生隔離Excel實際編譯的新配置亦7/7。涵蓋Lv1=0.94／Lv5=0.7／Lv10=0.4秒、表格改值同說明、主tick首拍、不需先施放且超過舊截止、零法力／原冷卻與施法hook不變、7階3500基準傷害／7跳／2次雷鳴／50%靜電共27次命中、T7必定分裂仍單chainId、傳奇多道與普通施放、死亡／暈眩／空場／大步長／射程／卸裝換超神重置、舊節拍熱切換清除。真Worker shim→Renderer→Runtime→Core使用正式紫雷素材，1200世界速度及200距離對應飛行166.67ms，飛行中圖層可見且抵達前不扣血；不新增素材。突變只刪singleChain選項，七項全失敗，能攔住道數失守。
+- 核心回歸：`node --test --test-reporter=tap tests/infinite-lightning.test.cjs tests/eternal-thunder-prison.test.cjs tests/lightning-vfx-lifecycle.test.cjs tests/skills2-vfx-schema.test.cjs tests/skill-vfx-inheritance.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs`以真原生候選映射62/62；最後以Git index產品碼／未改的正式配置＋待套用fixture再驗相同62項。擴大三檔`skill2-lightning／skill2-chainlightning-thunder-legendary／skills2-geometry`82項50過32失敗；同新配置、唯讀換回本次修改前runtime，同樣32個失敗名稱逐項完全相同。舊秒數fixture明確給舊sec配置與足夠法力，沒有放寬其他斷言。`npm.cmd run build`552檔通過，最後測試helper調整另經node --check；配置dry-run與diff／語法檢查通過。
+- 檢查未改：AI共通規範／工作流／prompts、combat／formula傷害管線、battlefield幾何、Worker Protocol／shim來源、battle-renderer／VFX Runtime／Core與正式紫雷及命中素材、param-patches／Excel合併及config_tables／geometry工具。素材庫無本次變更，不需素材Commit。提交只含本任務10檔，js/skills2字面值保持HEAD配置，使用者既有Excel／CSV／JS及其他三份CSV全部留在工作區；沒有同步或切換分支／合併／推送。
+- 交付：程式及差異可Review／整合；Commit為本段所在`[Codex] feat: 無限閃電改為定時發射單道雷鏈`，回覆附編號。正式參數依使用者指示Pending，下一步使用者儲存關閉Excel並按BAT，之後核對正式配置與遊戲；未做完整瀏覽器長戰，另有32項已基準確認的既有失敗。不得把程式完成視為新參數已啟用。
+
+## PARAM-PATCH-STALE-LOCK-20261020 — 殘留Excel鎖定檔誤擋與BAT失敗提示截斷
+
+- Owner：Codex；Done；使用者在永恒雷獄套用時附圖要求處理。真實來源可取得ReadWrite獨占鎖，但2026-09-18留下的~$Skills2.xlsx被當成仍開啟；BAT停止分支第二行UTF8長提示被CMD截斷成未識別指令。
+- 允許tools/merge-param-patches.ps1、套用參數.bat、tests/param-patches.test.cjs及本紀錄；三檔衝突預檢乾淨。禁止修改正式Excel／CSV／遊戲配置與其他工具規則，不刪使用者鎖定檔或終止Excel程序；不涉及遊戲系統功能／解鎖，LV_upgrade_system無需另記工具修正。
+- 修正以來源實際獨占鎖判定，成功時保留owner檔並略過其提示，真實占用仍停止；同格比較／approval／備份／回復不變。BAT移除重複提示並維持CRLF。測試追加保留stale owner仍可合併、真CMD停止分支不得出現未識別指令，既有真Excel開啟／讀寫鎖仍拒絕、同格衝突／批准／重跑與格式保留全流程回歸。使用者已獲知可重跑，後續核對正式套用結果；與永恒功能分開Commit，不合併推送。
+- 驗證：`node --test tests/param-patches.test.cjs`最終7/7，含Windows原生Excel真正開啟／檔案獨占鎖阻擋、殘留owner不刪檔且成功合併、公式／樣式與資料保留、同格批准失效、雙工作簿停止與收據重跑。新增測試首次因自己的假owner留到後段Excel寫入fixture而逾時；改在驗完保留後清除測試自建標記，未改產品鎖定正確性，整套83秒通過。另以真CMD隔離對照：舊BAT（正規CRLF）精確重現截圖的「參數更新…不是內部指令」exit9009，新BAT只顯示正確停止訊息、exit1，無未識別命令。`npm.cmd run build`551檔與diff檢查通過。
+- 檢查未改：AI_RULES 8.5／PARAM_PATCHES流程、param-patches.cjs決策與approval、正式Excel內容／殘留owner、CSV／JS及使用者Excel程序；本次未直接合併正式差異。無新素材或素材Commit，無未完成工具修正，可供Review／合併；工具Commit `df77771a`，本交接紀錄隨後續永恒任務一併保存。使用者重跑時截圖一度仍在Excel背景階段，實際約12秒完成五格合併，使用者回覆「可以了」且完整BAT成功，正式永恒任務後續驗收完成。
+
+## ETERNAL-THUNDER-CHAIN-20261020 — 永恒雷獄改為命中接續落雷
+
+- Owner：Codex；Done；單一開發者。使用者要求命中的敵人再引發一道落雷，隨機攻擊其30米內敵人，最多連續2道、每級+0.2道；沿既有小數道數機率規則。前置落雷本體／命中時序與參數差異佇列已完成。
+- 允許js/skills2.js僅永恒命中接續、天降命中結果掛點與舊配置過渡；tools/skills2-geometry.cjs永恒搜敵欄接線、config/param-patches本任務差異JSON、永恒／既有落雷生命週期及傳奇測試、主頁／bridge／Worker快取、game_formula／LV_upgrade_system及本紀錄。禁止直接改正式Excel／CSV／SKILLS2配置字面值、其他技能規則／Protocol／存檔／Preset／素材與其他副本；依AI_RULES 8.5由使用者BAT套用，新配置未合併前維持Pending驗收，不合併推送。
+- 目標衝突預檢乾淨；每道原始落雷各自持有有限接續預算，命中後從被擊中敵人周圍隨機選其他存活敵人，延用原落雷傷害／暈眩／再生／本體命中特效與落地時間。驗收整數／機率增量、非玩家圓心30米、隨機與重複輪次、致死命中／閃避／無敵／無目標／死亡卸裝重置、再生互動不重設預算、不自動重施及免費／冷卻保留、真Worker畫面事件／可見性、差異隔離原生Excel套用與往返、回歸基準／Build／diff後Commit；正式設定待使用者套用並完成驗收。
+- 使用者執行BAT遇阻並附圖，納入本輪必要工具修正：merge-param-patches.ps1／param-patches測試／套用參數.bat。已查~$Skills2.xlsx為2026-09-18殘留、來源可取得ReadWrite獨占鎖；將以實際鎖為準，仍阻擋真正開啟中的Excel、保留殘留owner檔，不改同格衝突保護；刪除失敗分支重複提示，避免截圖的UTF8指令截斷，並驗真CMD停止分支無未識別命令。三檔追加預檢乾淨。
+- 完成13檔：js/skills2.js新增永恒命中接續規格／有限共用預算，Meteor掛點附實際成功命中清單，閃避／無敵不續接、致死可續接；追加沿原sgQueueThunderBolt／129ms落地／殛道／暈眩／引雷針與本體命中特效，T6再生共用原預算。每原始落雷各自建立追加數、本輪先不重複、無未選者才重新一輪且排除自己；沒有其他敵人停止，追加已發出後目標死亡離場／玩家死亡卸下換超神取消，倒地不在復活後補打。新count配置不啟動舊自動重施，舊sec配置保持相容；天地雷鎖陣不變。tools/skills2-geometry.cjs接搜敵欄m，Skills2 Excel／CSV新fx與說明、三份落雷測試、主頁／bridge／Worker快取及game_formula／LV_upgrade_system／本紀錄同步。無Protocol、存檔、原Preset或素材變更。
+- 配置：先依AI_RULES 8.5建立08fb0905-6c67-414b-a1db-076d1f5880f0.json共五格差異（效果JSON=count:2/countPer:0.2、搜敵30、舊gap清空及兩格說明），沒有先改正式資料。使用者重跑BAT於2026-10-20完成合併並回覆「可以了」；正式Excel／CSV／生成JS的count=2、countPer=0.2、m=30及新說明一致。使用者在這段期間重排了雷系超神實體列，工具依群組ID＋超神ID找到正確格，不依原列號。原始／候選／決策與收據保留在config/param-patches/archive/2026-10-20T01-58-53-653Z-d355d34d-9658-4488-9bcb-7b86d8c76b80；無待套用差異遺留。
+- 驗證：`node --test tests/eternal-thunder-prison.test.cjs`9/9，覆蓋Lv1兩道或20%第三道／Lv5三道／Lv10四道、正式施放只扣一次表定10000法力及冷卻、實際命中後才發射／每道129ms、命中敵人圓心且可接到玩家射程外、30米體型邊緣內外、隨機與不重複輪次、無目標／閃避／無敵／致死、再生共用預算、取消與倒地清除／復活不補落地、說明30米及2.2道。`node --test --test-reporter=tap tests/eternal-thunder-prison.test.cjs tests/lightning-vfx-lifecycle.test.cjs tests/skills2-vfx-schema.test.cjs tests/skill-vfx-inheritance.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs`正式套用後核心回歸通過（新增第9項後最終55項）；生命週期測試讓舊配置與新接續皆穿過正式Worker shim→Renderer→Runtime→Core／原素材，確實看到可見雷柱，.13／.26／.39秒才命中、保留傷害與付費時序，不借用循環雷柱。
+- 隔離／突變：先在暫存獨立根目錄以真實param-patches工具與原生Excel合併5格，正常重開後由SCHEMA生成新資料，映射該實際Excel生成來源跑當時8項新回歸全過；相同測試換回HEAD舊受測邏輯時7項失敗／僅幾何映射1項通過，確實能攔住未接續。最後另自HEAD工作簿原生套相同五格產生提交候選，排除使用者其他調整；提交Excel／CSV／JS只改eternalThunderPrison的fx／說明，其餘群組與階級逐值一致，不手工修改ZIP／XML。
+- 擴大回歸：`node --test --test-reporter=tap tests/skill2-lightning.test.cjs tests/skill2-chainlightning-thunder-legendary.test.cjs tests/skills2-geometry.test.cjs`82項49過／33失敗；相同正式工作資料、唯讀換回HEAD舊runtime再跑，33個失敗名稱完全相同，無新增失敗。集中雷系舊數值、法力fixture及雷球／雷鏈舊行為；本輪只更新永恒舊配置相容fixture與足夠法力、未放寬其他斷言。套用前另有使用者Excel未匯出造成的schema不一致，BAT完成後該項已通過，不列未解風險。
+- 其他檢查：`npm.cmd run build`551檔通過，配置`node tools/config_tables.cjs --apply Skills2`語意變更0、主頁skills2 338／bridge319，Worker資源版與skills2 import token同步eternal-hit-chain，diff與提交JS語法檢查通過。唯讀未改：AI規範／流程／Agent文件、js/combat.js／formula.js傷害收斂、battlefield隨機／體型距離、worker Protocol與shim來源、battle-renderer／VFX Runtime／Core與原bolt-thunderstrike-bluewhite／hit-thunder-blue、config_tables／xlsx_to_csv及狀態／其他技能數值。素材庫無本次變更，不需素材Commit。
+- 交付：功能與正式設定已完成，無本次未完成實作，可Review／合併。Commit見所在`[Codex] feat: 永恒雷獄改為命中後接續落雷`，回覆附編號；工具修正df77771a另已提交，未合併推送。已知限制為33項已基準確認的既有失敗、未做完整瀏覽器長戰；使用者其他文案、超神列排序及BAT重匯出的其他CSV原樣留在工作區，不混入此Commit。下一步重載遊戲確認連鎖感受，其他副本需整合本Commit。
+
 ## PARAM-PATCH-QUEUE-20261019 — Excel 開啟時暫存 Agent 修改並於套用時合併
 
 - Owner：Codex；Done；單一開發者。使用者要求 Agent 遇到 Excel 鎖定可先保存修改，待使用者儲存關閉後，以套用參數.bat 合併；追加要求所有 AI 共用規範預設差異協作、同格重疊必須詢問確認保留哪一方。前置既有 Excel→CSV→遊戲管線；不改遊戲規則或解鎖，LV_upgrade_system 無需變更。
