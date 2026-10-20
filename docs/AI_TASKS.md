@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## VOID-ANNIHILATION-FLIGHT-20261020 — 虛空滅界隨機直射虛空斬
+
+- Owner：Codex；程式完成／配置Pending；使用者要求每0.5秒隨機發射2個虛空斬、每級數量+0.2；每個獨立360度隨機方向，不看敵人，發射後以12米／秒固定直線走滿60米消失。沿現行道數小數機率規則，保留普通T7環繞及其他超神／借用形態，僅本超神自動批次改直射。依前次使用者安排，設定差異待其稍後BAT套用。
+- 允許js/skills2.js虛空傷害共用／本超神直射與有限飛行取消、必要index／bridge／Worker快取、tools/skills2-geometry及skills2-vfx接表、Skills2既有格差異JSON、tests/void-annihilation-flight與舊超神過渡測試、game_formula／LV_upgrade_system／本紀錄；禁止其他技能數值／普通T7軌道／Protocol／存檔／Preset／素材／其他副本。所有目標衝突預檢無外部來源，Skills2.xlsx使用者既有未提交內容保留。
+- 前置貫穿飛行物的掃掠碰撞與Preset方向型直線／固定起終點已完成，可共用而不新增移動系統。驗收每批數量與成長／隨機方向與空場、半秒首拍／永續／死亡暫停／暈眩空場與卸下、12米速度／60米終點／五秒回收及大步長掃掠、不追人跟人、T7傷害與體積同源／舊增傷移除、免費與冷卻不變、普通T7／借用形態不變、正式Worker→Renderer→Runtime→Core的可見飛行／縮放／準時消失、參數原生Excel隔離與回歸／Build／diff後Commit；正式設定Pending。
+- 修改12檔：skills2把T7基準傷害抽成共用函式，新自動批次依表定count及countPer機率取整，每道獨立隨機角度並保存發射時起點與60米終點；共用貫穿飛行物的連續掃掠及完整傷害流程，同敵人每道只命中一次。新增取消旗標只用於本批飛行物，倒地時結束在途傷害／待回收計數；既有節拍保持免費／冷卻、倒地暫停及卸下重置，不需敵人才發射。普通T7環繞與借用plain傷害覆寫不變，沒有count的舊參數過渡保持單道環繞及pct增傷；新JSON沒有pct，因此不再額外增傷。
+- tools/skills2-geometry新增本超神飛行距離／速度欄接線，既有gap接線沿用；skills2-vfx登記本超神觸發子彈／命中獨立用途，空欄不回退T7。沿用表定orb-void-disc與hit-wind，不新增Preset或素材。index skills2 341／bridge322及bridge／Worker import加void-random-flight；新增八項測試、舊配置過渡案例、game_formula／LV_upgrade_system／本紀錄及配置差異同步。沒有修改Protocol／存檔／解鎖／普通T7移動形態／其他技能數值。
+- 待套用fbcc32d9-74b1-45c7-8b0c-56a1bc8021d0.json共10格：本超神效果count2／countPer0.2、gap0.5、speed12、flyM60、兩格動態說明、兩個觸發角色及特效用途；T7僅同步特效用途說明。本次原生Excel隔離副本讀取Value2取得before型別，再以真正param-patches合併10格並正常重開；與同次archive原始工作簿逐格比較只有AY218及V220／AE220／AG220／AP220／AQ220／AV220／AW220／AX220／AY220。正式Excel／CSV／JS設定字面值沒有寫入，使用者Skills2未提交內容保留；未修改真實archive或放寬同格衝突，日後同格不同仍會停止。
+- 專項`node --test tests/void-annihilation-flight.test.cjs`8/8，實際原生Excel編譯候選映射亦8/8。涵蓋Lv1兩個或20%第三個／Lv5三個／Lv10四個、半秒首拍與永續空場、零法力／冷卻不變、四象限獨立方向／鎖定無關、玩家移動後起點不變、120世界單位／秒及600世界單位／五秒、抵達前不命中／大步長掃掠／同敵一次／路外不命中／不追蹤、T7傷害及體積接表／空觸發欄不補素材、死亡暫停與在途取消／暈眩／卸裝及重置、普通T7／跨樹借用不變。真Worker→Renderer→Runtime→Core以正式圓盤素材核對空場四向飛行、世界座標投影及五秒結束；節點按既有機制隱藏入池，無活動飛行物或特效殘留。突變只把角度改成固定0，八項中兩項失敗，能攔住方向失效；沒有更改產品Runtime或Renderer配合測試。
+- 核心`node --test --test-reporter=tap tests/void-annihilation-flight.test.cjs tests/windblade-fracture.test.cjs tests/status-system.test.cjs tests/skills2-vfx-schema.test.cjs tests/skill-vfx-inheritance.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/infinite-lightning.test.cjs tests/eternal-thunder-prison.test.cjs`原生候選映射84/84，最後提交index產品碼＋同一原生候選配置再驗亦84/84；`--test-name-pattern=虛空滅界 tests/skill2-windblade-vacuum-legendary.test.cjs`舊配置過渡1/1。該舊案例明確注入舊fx並補足基準普通施法所需法力，原傷害倍率斷言不放寬。另提交index搭配正式尚未套用資料為81/84：兩項schema斷言要求新登記事件已具triggerVfx，需BAT後才成立；一項正式Excel與CSV內容不同是使用者尚在編輯、以修改前全部程式及接表工具也可重現。未以改權威表或放寬schema斷言隱藏Pending狀態。
+- 擴大`skill2-wind／skill2-windblade-vacuum-legendary／wind-skill-audit／vacuum-omen-vfx`124項70過54失敗；同一新候選配置換回本次修改前runtime重跑，亦70過54失敗且失敗名稱完全相同。既有問題包括風系舊數值／解鎖法力fixture、靜止斬觸發與文案斷言，沒有調整無關權威參數或放寬測試。`npm.cmd run build`554檔通過；原生候選config_tables dry-run語意差異0，正式舊表dry-run僅新增本次登記事件的空triggerVfx物件一處、無數值變動；正式SKILLS2字面值與HEAD逐值相同，diff檢查通過。
+- 唯讀未改：AI規範／工作流／prompts、battlefield幾何、combat／formula傷害管線、Worker shim／Protocol、Renderer／Runtime／Core及Preset素材、config_tables與Excel合併工具；沒有跨副本修改／切換分支／合併／推送。交付可供Review／整合，Commit為本段所在`[Codex] feat: 虛空滅界改為隨機直線發射虛空斬`，回覆附編號；正式參數仍依使用者「我改完再套用」Pending，之後可儲存關閉Skills2再按BAT。已知限制是上述54項既有失敗與未做完整瀏覽器長戰；不宣稱正式參數已啟用。
+
 ## WINDBLADE-FRACTURE-SLOW-20261020 — 狂風碎裂改為命中雙緩速
 
 - Owner：Codex；程式完成／配置Pending；使用者要求風刃命中使移速與攻速各-20%，每級各再-2%，移除每秒周圍傷害。沿既有sgWindSlow狀態共用同幅度數值，保留原持續時間；主／小型／追擊／被動小風刃成功命中均適用，不影響其他技能借用的小風刃。沿上一輪使用者「你照改，我改完再套用」，交付程式與待套用差異，不代跑正式BAT。

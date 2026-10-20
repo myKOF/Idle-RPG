@@ -510,8 +510,9 @@ test('【萬象風劫】：命中時機率在該處留下一道會長大的靜�
   assert.ok(f.radius >= r0 * 1.9, '結束前半徑已經長到接近 2 倍');
 });
 
-test('【虛空滅界】：每 2 秒自動斬出 1 道虛空斬，且虛空斬傷害額外 +100%', () => {
+test('【虛空滅界】舊配置過渡：每2秒自動環繞單道並保留舊增傷', () => {
   const c = loadContext();
+  c.SKILLS2.vacuumslash.ult.find(u => u.id === 'voidAnnihilation').fx = { pct: 100, pctPer: 10, gap: 2 };
   stubVfx(c);
   stubHits(c);
   maxLevels(c, 'vacuumslash');
@@ -526,7 +527,8 @@ test('【虛空滅界】：每 2 秒自動斬出 1 道虛空斬，且虛空斬�
   stubVfx(plain); stubHits(plain);
   maxLevels(plain, 'vacuumslash');
   equip(plain, 'vacuumslash');
-  plain.castSkill2(playerEnt(), [enemy(1e9, 20, 0, 'a')], 'vacuumslash', 'mv-float');
+  const plainPlayer = playerEnt(); plainPlayer.mp = 100000;
+  plain.castSkill2(plainPlayer, [enemy(1e9, 20, 0, 'a')], 'vacuumslash', 'mv-float');
   const baseDmg = plain.SKILL2_RT.orbits[0].dmgVal;
   assert.ok(Math.abs(c.SKILL2_RT.orbits[0].dmgVal - baseDmg * 2.1) < 1e-6);
   // 沒裝配在技能列就不生效

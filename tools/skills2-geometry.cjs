@@ -67,6 +67,7 @@ function bindings(gid,stage){
  if(id==='windblade/4')b.push(['body',['lenM','widthM']]);
  if(['icearrow/7','vacuumslash/7'].includes(id))b.push(['body',['bodyM','bodyM']]);
  if(id==='vacuumslash/7')b.push(['grow',['growM']]);
+ if(id==='vacuumslash/voidAnnihilation')b.push(['travel',['flyM']],['speed',['speed']]);
  if(stage==='1'&&['thrust','mire','firehunt','thunderorb','windblade'].includes(gid))b.push([['thrust','mire'].includes(gid)?'damage':'body',['@range']]);
  return b;
 }

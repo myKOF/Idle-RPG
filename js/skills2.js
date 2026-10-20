@@ -2261,6 +2261,7 @@ function sgQueueFlyingProjectile(pEnt, st, gid, dmgVal, origin, angle, length, f
     hitFn: extra && typeof extra.hitFn === 'function' ? extra.hitFn : null,
     radialCurve: extra && extra.radialCurve || null,
     onStart: extra && extra.onStart || null,
+    cancelOnPlayerDown: !!(extra && extra.cancelOnPlayerDown),
     rehit: !(extra && extra.singleHit),
     waitForEnd: !!(extra && extra.waitForEnd),
     targetOnly: !!(extra && extra.targetOnly),
@@ -11070,6 +11071,15 @@ function sgVoidDiscBodyRadius(g) {
   return bfMeterPx(Math.max(1, sgGeometryNumber(g.tiers[6].fx, 'bodyM') || 6)) / 2;
 }
 
+/* 虛空斬共用傷害：其他技能借用時保留明確覆寫，舊超神增傷配置沿用其乘區。 */
+function sgVoidDiscDamage(st, g, lvs, opts) {
+  opts = opts || {};
+  var annihilate = opts.plain ? null : sgUlt('vacuumslash', 'voidAnnihilation');
+  return Number(opts.dmgVal) > 0 ? Number(opts.dmgVal)
+    : sgGroupBaseStat(g, st) * sgVal(g.tiers[6].fx, 'pct', lvs[6]) / 100
+      * (annihilate ? 1 + sgUltVal(annihilate, 'pct') / 100 : 1);
+}
+
 /* 【虛空斬】：四道以自身為圓心、半徑從 m 米起每秒擴大 growM 米的圓盤，
    每秒繞行 rps 圈，四道皆順時針並以 90 度間隔錯開。
    起始角取主目標方位（文檔：從前方目標出現後開始旋轉）。 */
@@ -11081,12 +11091,8 @@ function sgSpawnVoidDiscs(pEnt, st, g, lvs, floatSel, baseAngle, opts) {
   var plain = !!opts.plain;
   var gid = opts.gid || 'vacuumslash';
   var lg = plain ? {} : sgLegendTick('vacuumslash');
-  var annihilate = plain ? null : sgUlt('vacuumslash', 'voidAnnihilation');
   var collapse = plain ? null : sgUlt('vacuumslash', 'spacetimeCollapse');
-  // 超神【虛空滅界】：虛空斬傷害額外 +N%（獨立乘區，比照【極寒冰爆】）
-  var dmgVal = (Number(opts.dmgVal) > 0) ? Number(opts.dmgVal)
-    : sgGroupBaseStat(g, st) * sgVal(fx, 'pct', lvs[6]) / 100
-      * (annihilate ? 1 + sgUltVal(annihilate, 'pct') / 100 : 1);
+  var dmgVal = sgVoidDiscDamage(st, g, lvs, opts);
   if (!(dmgVal > 0)) return;
   var discs = Math.max(1, Math.floor(Number(opts.discs) > 0 ? opts.discs : (Number(fx.count) || 2)));
   // 傳奇【虛空漲落】：持續時間 +N 秒；超神【時空崩解】：再額外 +N%
@@ -11191,11 +11197,47 @@ function sgTickSkyfallStars(ctx, dt) {
   }
 }
 
-/* ---- 超神【虛空滅界】：每 gap 秒自動斬出 1 道虛空斬 ----
-   不走 castSkill2——設計寫的是「自動施放 1 道虛空斬」而不是再施放一次真空斬，
-   因此直接呼叫第 7 階自己的生成函式（傷害乘區也在那一支，兩條路不會漂移）。
-   其餘規則比照既有的自動施放：沒裝配在技能列不生效、倒地時節拍往後推。
-   顯示層的合併鍵另外給序號，否則每一道都會被當成同一道而只延長既有圓盤的壽命。 */
+/* 新版虛空滅界：道數、世界速度與飛行距離取自超神列；沒有count的是舊環繞配置。 */
+function sgVoidAnnihilationFlightSpec(u) {
+  if (!u || u.def.fx.count === undefined) return null;
+  return { count: Math.max(0, sgUltVal(u, 'count')),
+    speed: bfMeterPx(Math.max(0, sgUltVal(u, 'speed'))),
+    length: bfMeterPx(Math.max(0, sgUltVal(u, 'flyM'))) };
+}
+
+function sgSpawnVoidFlights(pEnt, st, g, lvs, floatSel, spec) {
+  if (!(spec.speed > 0) || !(spec.length > 0)) return;
+  var origin = typeof bfPlayerPos === 'function' ? bfPlayerPos() : null;
+  if (!origin && typeof bfPos === 'function') origin = bfPos(pEnt);
+  if (!origin) return;
+  var dmgVal = sgVoidDiscDamage(st, g, lvs);
+  if (!(dmgVal > 0)) return;
+  var count = sgRollCount(spec.count), radius = sgVoidDiscBodyRadius(g);
+  var travelMs = spec.length / spec.speed * 1000;
+  var roles = sgVfxRoles('vacuumslash', { vfxUlt: 'voidAnnihilation' });
+  var out = { dmg: 0, killed: false, crit: false };
+  for (var i = 0; i < count; i++) {
+    var angle = Math.random() * Math.PI * 2;
+    var area = { id: 'void-anni-flight-' + (++SG_VOID_DISC_SEQ), fixedLanding: true,
+      sourceX: origin.x, sourceY: origin.y,
+      x: origin.x + Math.cos(angle) * spec.length, y: origin.y + Math.sin(angle) * spec.length };
+    sgEmitVfx('vacuumslash', [], floatSel, {
+      fxKind: 'projectile', variant: 'void-disc-flight', elem: 'wind', count: 1, projectile: true,
+      angle: angle, lineLength: spec.length, lineWidth: radius * 2, travelMs: [travelMs],
+      dur: travelMs / 1000, area: area, hit: false, vfxRoles: { projectile: roles.projectile }
+    });
+    sgQueueFlyingProjectile(pEnt, st, 'vacuumslash', dmgVal, origin, angle, spec.length, floatSel, [], {
+      speed: spec.speed, halfWidthPx: radius, singleHit: true, cancelOnPlayerDown: true,
+      onHit: function (target, res) {
+        if (!res || res.miss || res.invuln) return;
+        sgEmitVfx('vacuumslash', [target], floatSel, { fxKind: 'impact', variant: 'void-disc-flight-hit',
+          elem: 'wind', vfxRoles: { hit: roles.hit }, preserveDeadTargets: true });
+      }
+    }, out);
+  }
+}
+
+/* 自動批次不扣魔／不改冷卻；沒裝配就停止，倒地保留下一批的剩餘等待時間。 */
 function sgTickVoidAnnihilation(ctx, dt) {
   var u = sgUlt('vacuumslash', 'voidAnnihilation');
   if (!u || !skills2Equipped('vacuumslash')) { SKILL2_RT.voidAnnihilateAt = 0; return; }
@@ -11211,6 +11253,12 @@ function sgTickVoidAnnihilation(ctx, dt) {
   var lvs = skills2Levels('vacuumslash');
   var st = (typeof getStats === 'function') ? getStats() : null;
   if (!lvs || lvs[6] < 1 || !st) return;
+  var flight = sgVoidAnnihilationFlightSpec(u);
+  if (flight) {
+    sgSpawnVoidFlights(ctx.pEnt, st, SKILLS2.vacuumslash, lvs, ctx.floatSel, flight);
+    return;
+  }
+  // 舊配置合併前保留環繞單道，不把尚未套用的參數寫死在程式裡。
   sgSpawnVoidDiscs(ctx.pEnt, st, SKILLS2.vacuumslash, lvs, ctx.floatSel, 0, {
     discs: 1, keyPrefix: 'void-anni-' + (++SG_VOID_DISC_SEQ) + '-'
   });
@@ -11977,6 +12025,10 @@ function tickSkill2(dt, ctx) {
   sgTickVacuumWaves(ctx);
   sgTickWindChaserSpins(ctx);
   if (!(ctx.pEnt.hp > 0)) {
+    SKILL2_RT.projectiles = SKILL2_RT.projectiles.filter(function (shot) {
+      if (!shot.cancelOnPlayerDown) return true;
+      sgFinishSkillCastFloat(shot.out); return false;
+    });
     SKILL2_RT.grounds.forEach(function(f) {
       if (f.gid === 'waterball' && (f.kind === 'tornado' || f.kind === 'tidetornado')) sgPauseWaterTornado(f, dt);
     });
