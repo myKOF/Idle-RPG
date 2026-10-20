@@ -2998,26 +2998,27 @@ textarea#save-io {
 
 .eff-mythic,
 .mythic-detail {
-  --mythic-corner-frame: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22160%22%20height%3D%22160%22%20viewBox%3D%220%200%20160%20160%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22metal%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%22.7%22%20y2%3D%221%22%3E%3Cstop%20stop-color%3D%22%23fff1d5%22%2F%3E%3Cstop%20offset%3D%22.25%22%20stop-color%3D%22%23e9bf91%22%2F%3E%3Cstop%20offset%3D%22.55%22%20stop-color%3D%22%238c6246%22%2F%3E%3Cstop%20offset%3D%22.78%22%20stop-color%3D%22%23e4bd95%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%236c503a%22%2F%3E%3C%2FlinearGradient%3E%3Cg%20id%3D%22corner%22%20fill%3D%22none%22%20stroke-linejoin%3D%22miter%22%3E%3Cpath%20d%3D%22M3%2041V3H41L28%208L36%2010L23%2012L29%2017L18%2015L20%2025L14%2020L10%2036L8%2028Z%22%20fill%3D%22%239f77552b%22%20stroke%3D%22%23352c23%22%20stroke-width%3D%223%22%2F%3E%3Cpath%20d%3D%22M3%2041V3H41L28%208L36%2010L23%2012L29%2017L18%2015L20%2025L14%2020L10%2036L8%2028Z%22%20stroke%3D%22url(%23metal)%22%20stroke-width%3D%221.3%22%2F%3E%3Cpath%20d%3D%22M7%2029V7H29M7%207L20%2020M12%2012L24%2014M12%2012L14%2024M6%2018L10%2013M18%206L13%2010M4%2034L8%2021M34%204L21%208M4%2013L7%2010M13%204L10%207M3%203L15%205M3%203L5%2015%22%20stroke%3D%22%23f3d6b1%22%20stroke-width%3D%22.8%22%2F%3E%3Cpath%20d%3D%22M11%2033L14%2025M33%2011L25%2014M16%2018L18%2031M18%2016L31%2018M7%2036L8%2030M36%207L30%208%22%20stroke%3D%22%23bf956f%22%20stroke-width%3D%22.7%22%2F%3E%3Cpath%20d%3D%22M4%2012V4H12%22%20stroke%3D%22%23fff1dc%22%20stroke-width%3D%221.2%22%2F%3E%3C%2Fg%3E%3C%2Fdefs%3E%3Cpath%20d%3D%22M3%2040V120M157%2040V120M40%203H120M40%20157H120%22%20fill%3D%22none%22%20stroke%3D%22%23302820%22%20stroke-width%3D%223%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%226%22%20width%3D%22148%22%20height%3D%22148%22%20fill%3D%22none%22%20stroke%3D%22url(%23metal)%22%20stroke-width%3D%221.4%22%2F%3E%3Crect%20x%3D%229.85057471264368%22%20y%3D%229.85057471264368%22%20width%3D%22140.29885057471265%22%20height%3D%22140.29885057471265%22%20fill%3D%22none%22%20stroke%3D%22%23171c18%22%20stroke-width%3D%221.5%22%2F%3E%3Crect%20x%3D%2211.775862068965518%22%20y%3D%2211.775862068965518%22%20width%3D%22136.44827586206895%22%20height%3D%22136.44827586206895%22%20fill%3D%22none%22%20stroke%3D%22%23b698746e%22%20stroke-width%3D%22.7%22%2F%3E%3Cuse%20href%3D%22%23corner%22%2F%3E%3Cuse%20href%3D%22%23corner%22%20transform%3D%22translate(160%200)%20scale(-1%201)%22%2F%3E%3Cuse%20href%3D%22%23corner%22%20opacity%3D%22.8%22%20transform%3D%22translate(0%20160)%20scale(1%20-1)%22%2F%3E%3Cuse%20href%3D%22%23corner%22%20opacity%3D%22.8%22%20transform%3D%22translate(160%20160)%20scale(-1%20-1)%22%2F%3E%3C%2Fsvg%3E");
+  --mythic-corner-frame: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22160%22%20height%3D%22160%22%20viewBox%3D%220%200%20160%20160%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22metal%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%22.7%22%20y2%3D%221%22%3E%3Cstop%20stop-color%3D%22%23fff1d5%22%2F%3E%3Cstop%20offset%3D%22.25%22%20stop-color%3D%22%23e9bf91%22%2F%3E%3Cstop%20offset%3D%22.55%22%20stop-color%3D%22%238c6246%22%2F%3E%3Cstop%20offset%3D%22.78%22%20stop-color%3D%22%23e4bd95%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%236c503a%22%2F%3E%3C%2FlinearGradient%3E%3Cg%20id%3D%22corner%22%20fill%3D%22none%22%20stroke-linejoin%3D%22miter%22%3E%3Cpath%20d%3D%22M3%2041V3H41L28%208L36%2010L23%2012L29%2017L18%2015L20%2025L14%2020L10%2036L8%2028Z%22%20fill%3D%22%239f77552b%22%20stroke%3D%22%23352c23%22%20stroke-width%3D%223%22%2F%3E%3Cpath%20d%3D%22M3%2041V3H41L28%208L36%2010L23%2012L29%2017L18%2015L20%2025L14%2020L10%2036L8%2028Z%22%20stroke%3D%22url(%23metal)%22%20stroke-width%3D%221.3%22%2F%3E%3Cpath%20d%3D%22M7%2029V7H29M7%207L20%2020M12%2012L24%2014M12%2012L14%2024M6%2018L10%2013M18%206L13%2010M4%2034L8%2021M34%204L21%208M4%2013L7%2010M13%204L10%207M3%203L15%205M3%203L5%2015%22%20stroke%3D%22%23f3d6b1%22%20stroke-width%3D%22.8%22%2F%3E%3Cpath%20d%3D%22M11%2033L14%2025M33%2011L25%2014M16%2018L18%2031M18%2016L31%2018M7%2036L8%2030M36%207L30%208%22%20stroke%3D%22%23bf956f%22%20stroke-width%3D%22.7%22%2F%3E%3Cpath%20d%3D%22M4%2012V4H12%22%20stroke%3D%22%23fff1dc%22%20stroke-width%3D%221.2%22%2F%3E%3C%2Fg%3E%3C%2Fdefs%3E%3Cpath%20d%3D%22M3%2040V120M157%2040V120M40%203H120M40%20157H120%22%20fill%3D%22none%22%20stroke%3D%22%23302820%22%20stroke-width%3D%223%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%226%22%20width%3D%22148%22%20height%3D%22148%22%20fill%3D%22none%22%20stroke%3D%22url(%23metal)%22%20stroke-width%3D%221.4%22%2F%3E%3Crect%20x%3D%228.126436781609195%22%20y%3D%228.126436781609195%22%20width%3D%22143.7471264367816%22%20height%3D%22143.7471264367816%22%20fill%3D%22none%22%20stroke%3D%22%23171c18%22%20stroke-width%3D%221.5%22%2F%3E%3Crect%20x%3D%229.189655172413794%22%20y%3D%229.189655172413794%22%20width%3D%22141.6206896551724%22%20height%3D%22141.6206896551724%22%20fill%3D%22none%22%20stroke%3D%22%23b698746e%22%20stroke-width%3D%22.7%22%2F%3E%3Cuse%20href%3D%22%23corner%22%2F%3E%3Cuse%20href%3D%22%23corner%22%20transform%3D%22translate(160%200)%20scale(-1%201)%22%2F%3E%3Cuse%20href%3D%22%23corner%22%20opacity%3D%22.8%22%20transform%3D%22translate(0%20160)%20scale(1%20-1)%22%2F%3E%3Cuse%20href%3D%22%23corner%22%20opacity%3D%22.8%22%20transform%3D%22translate(160%20160)%20scale(-1%20-1)%22%2F%3E%3C%2Fsvg%3E");
 }
 
 .eff-mythic::before {
   inset: 0;
   width: auto;
   height: auto;
-  background:
-    radial-gradient(ellipse at 14% 0%, #fff 0%, #fffe 15%, transparent 46%),
-    radial-gradient(ellipse at 88% 0%, #fff 0%, #fffc 12%, transparent 42%),
-    radial-gradient(ellipse at 50% 100%, #f0aa97 0%, #c57161b3 25%, transparent 56%),
-    linear-gradient(to bottom, #fff 0%, #f3f5ef 10%, #b7c3bb 25%, #777c73 48%, #a87868 74%, #e6a08c 100%);
+  background: var(--mythic-frame-metal);
   animation: none;
+}
+
+.eff-mythic,
+.mythic-detail {
+  --mythic-frame-metal: linear-gradient(to bottom, #f9ddba, #8d7256 12%, #655746 48%, #be946b 88%, #e8c39b);
 }
 
 .eff-mythic {
   --mythic-slot-surface:
     radial-gradient(ellipse at 50% 0%, #f1f5efaa, transparent 60%),
-    radial-gradient(ellipse at 50% 100%, #bb655659, transparent 54%),
-    linear-gradient(to bottom, #4d534e 0%, #303531 42%, #2d2926 74%, #593b35 100%);
+    radial-gradient(ellipse at 50% 100%, #bf5d4b96, transparent 68%),
+    linear-gradient(to bottom, #4d534e 0%, #34302d 42%, #442b28 74%, #733d32 100%);
 }
 
 .eff-genesis::before {
@@ -3040,14 +3041,14 @@ textarea#save-io {
   inset: 2px;
   border-radius: 2px;
   border: 1px solid #202723;
-  border-top-color: #e6e7dba6;
-  border-bottom-color: #c599718a;
+  border-top-color: #eed1aca6;
+  border-bottom-color: #be946b8a;
   border-image-source: var(--mythic-corner-frame);
   border-image-slice: 40;
   border-image-width: 9px;
   background:
-    linear-gradient(135deg, transparent 43%, #faf5dcbb 48%, transparent 54%) left top / 9px 9px no-repeat,
-    linear-gradient(225deg, transparent 43%, #faf5dcbb 48%, transparent 54%) right top / 9px 9px no-repeat,
+    linear-gradient(135deg, transparent 43%, #f7dcbabb 48%, transparent 54%) left top / 9px 9px no-repeat,
+    linear-gradient(225deg, transparent 43%, #f7dcbabb 48%, transparent 54%) right top / 9px 9px no-repeat,
     var(--mythic-slot-surface);
 }
 
@@ -5816,7 +5817,7 @@ textarea:disabled,
     repeating-linear-gradient(107deg, #d7ceb003 0px, #d7ceb003 1px, transparent 1px, transparent 4px) padding-box,
     linear-gradient(110deg, #363833e8, #282c2ae6 60%, #30312def) padding-box,
     var(--af-stone) center / 320px padding-box,
-    linear-gradient(to bottom, #f9ddba, #8d7256 12%, #655746 48%, #be946b 88%, #e8c39b) border-box !important;
+    var(--mythic-frame-metal) border-box !important;
   padding: 21px 18px 18px !important;
   box-shadow: none !important;
 }
@@ -5840,7 +5841,7 @@ textarea:disabled,
   inset: 0;
   border: 23.2px solid transparent;
   pointer-events: none;
-  /* 角飾縮為原80%；向量內線同步校正，使雙框間距減少1px，長邊仍獨立延展。 */
+  /* 角飾維持前版尺寸；雙框中心線距1.85px並保留可見空隙，長邊仍獨立延展。 */
   border-image: var(--mythic-corner-frame) 40 stretch;
 }
 
