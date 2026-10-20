@@ -1,11 +1,44 @@
 # AI_TASKS.md
 
+## MERGE-SKILLS2-PARAMS-20261021 — develop 技能參數合併（Done）
+
+- Owner：Codex；使用者明確要求解決本次同步衝突，於 develop 主整合副本完成既有 pending merge；HEAD 62fcd23b、incoming c8f57186、base 5a1cb656。未委派、不推送、不修改其他工作區；預檢來源均屬此次授權整合的分支，其他副本無未提交修改。
+- 上次自動處理因 Excel COM 0x80070520 停止；本次原生 Excel 16.0 已可啟動。先保存三方工作簿及現有工作檔，再以 Excel API 僅更新差異格，保留原格式與其他工作表，不手改 XML。修復本段先前日誌寫入的問號亂碼，保留兩側其他任務紀錄。
+- 整合：保留 incoming 護盾成長 0.1、亂風切 count=2／countPer=0.2、暴風神體 red=40、瓦爾格 red=15／redPer=1.5；保留 HEAD 颶風屏障 heal=0.9／healPer=0.1、瓦爾格 lostPct=200／cut=10／24 米及執行邏輯。說明保留對應實際行為的回血、失盾、減傷乘區、分數機率與虛空直線飛行語意，其餘標點調整保留 incoming。
+- 範圍：Skills2.xlsx／CSV／js/skills2.js、docs/AI_TASKS.md、主頁與 Worker 快取、LV_upgrade_system.md、tests/skill2-wind.test.cjs；保留既有 staged ashen-forge.css、LV 與 index 的 incoming 改動。護盾測試僅將已授權平衡修改的精確預期由 2% 同步成 1.1%，不放寬斷言。無新功能設計、Protocol／存檔／素材變更，素材庫無此次修改。
+- Excel：原生 Excel 16.0 寫入候選副本 13 格後正常重開，RepairMode=False；13 格值與格式、所有工作表／使用範圍／欄寬／列高／篩選／表格／圖形數均核對一致，再以來源 SHA256 防並行覆寫後置換。283 列 Excel→CSV 逐格比對及 SCHEMA 生成 JS 通過，`node tools/config_tables.cjs --apply Skills2` 重建 2 個字面值、語意變更 0；沒有手寫 XLSX XML。
+- 測試：`node --test --test-reporter=tap tests/skill2-wind.test.cjs tests/skill2-stormbarrier-legendary.test.cjs tests/void-annihilation-flight.test.cjs tests/skills2-vfx-schema.test.cjs tests/skills2-geometry.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/equipment-detail-layout.test.cjs tests/equip-socket-ui.test.cjs tests/equip-reroll-ui.test.cjs tests/equipment-tooltip-compare.test.cjs tests/equipment-selection-border.test.cjs tests/equipment-weapon-icons.test.cjs` 共 139 項，116 通過／23 既有失敗。以相同未修改測試及唯讀來源映射對照原 HEAD 62fcd23b 為 115 通過／24 失敗；最終 23 項全屬原失敗集合，新增失敗 0，並修復原本 Excel／CSV 不一致項。舊風系測試的狀態 fixture／消耗與既有功能差異不在本次擴修範圍。
+- 額外驗證：隔離檢查正式生成資料中的全部平衡／回血／失盾參數；實際屏障半秒回血 5（最大生命 1000、Lv1=1%/秒）、noShield=true、失盾 1999 不觸發／2000 觸發且消耗門檻、24 米範圍均通過；生成表以外的 skills2 執行邏輯與 HEAD 逐位元一致，兩側任務標題全數保留。`npm.cmd run build` 554 檔通過，diff／衝突標記檢查通過。
+- 交付：9 檔本機合併 Commit 為本段所在 `[Codex] merge: 解決技能平衡與屏障功能的合併衝突`，不推送。唯讀未改：共通規範、工作流程、tools/config_tables.cjs、xlsx_to_csv.cjs、formula.js／status.js／skills2-geometry.cjs 及上述其他測試。復原原檔、三方工作簿、逐格計畫與測試證據存於本 worktree Git metadata 的 sync-auto-conflicts/20261021-002554-bd7257247f864a0e8f3576b166c4a0a3/manual-resolution。此次衝突無未完成項目，可完成本機合併；已知限制是上述 23 項既有失敗，未執行完整遊戲瀏覽器流程／長時間戰鬥。下一步可重跑同步 BAT，推送仍依使用者授權。
+
 ## MYTHIC-DEVELOP-MERGE-20261020 — 神話裝備外觀整合至 develop
 
 - Owner：Codex；Done；使用者明確授權將本次神話裝備外觀合併至 develop，未授權推送。整合 a3888a30／119a26a0／5a1cb656 及 8489269f 的神話外觀、固定捲動外框、原資訊位置、圖示紅區縮短與懸浮 tips 白光減半；最後一筆以 cf54c9ba 保留原提交來源，排除中間 b3203e94 的寶石／符文十欄放大修改。
 - 修改／整合檔案：css/style.css、js/ui.js、index.html、tests/equipment-tooltip-compare.test.cjs、LV_upgrade_system.md、本紀錄。衝突預檢來源僅為本聊天已授權整合的提交；merge-tree 及實際合併均乾淨，ashen-forge.css 與其快取保持 develop 原值。Codex 副本使用者既有五份未提交配置／技能檔完全保留；無新增素材，素材庫無變更。
 - 驗證：`node --test tests/equipment-detail-layout.test.cjs tests/equip-socket-ui.test.cjs tests/equip-reroll-ui.test.cjs tests/equipment-tooltip-compare.test.cjs tests/equipment-selection-border.test.cjs tests/equipment-weapon-icons.test.cjs`50/50；`npm.cmd run build`及 diff 檢查通過。唯讀檢查 ashen-forge.css、原配置與 Git 整合範圍；先前兩項雙手武器 fixture 既有失敗維持前輪紀錄，未擴修。可合併範圍已整合本機 develop，不推送。
 - 後續使用者更正白光仍太強，要求再降低70%與完全無白光兩張圖：僅以相同正式內容／邊框製作隔離候選截圖，未將任一候選套用至程式或此次合併。圖片保存在本聊天 visualizations，後續依使用者選擇另行調整；沒有未完成的已授權合併項目。
+
+## MYTHIC-GLOW-A-20261020 — 神話tips與詳情套用30%白光
+
+- Owner：Codex；實作完成／待整合；使用者選擇A版，要求tips與裝備詳情同步套用，並授權合併develop，未授權推送。單一開發者；依賴前版外觀整合e9b8e3f4完成。允許css/style.css神話內層背景、index.html僅style快取、LV_upgrade_system.md及本紀錄；禁止裝備icon／框色／角飾／排版／玩法／配置／JS／Worker／存檔／其他品質與素材變更。
+- 修改前預檢僅出現本聊天前版整合提交：CSS逐位元同develop；index僅無關ashen快取不同，LV僅無關寶石功能列不同，docs為前版整合紀錄不同。以8489269f為基準merge-tree乾跑乾淨；本次分段修改不碰那些區段，不同步或切換有五份使用者未提交檔案的Codex副本。完成後僅移植本次提交至develop，排除先前b3203e94寶石放大十欄。
+- 依已確認A圖，光暈36/255、細紋3/255及亮灰底232/255／230/255／239/255三個alpha各乘0.3，底層用同圖#121418；tips／比較卡／詳情使用同一背景模板，移除舊tips半光局部覆寫，避免兩處亮度分歧。style84→85，無新增素材，素材庫無本次變更。
+- 驗收：正式八份CSS與itemDetailHTML確認tips／比較卡／詳情同底色，暖銅框及資訊位置保留；相關裝備六檔50項、Build、瀏覽器與Console／截圖、diff後獨立Commit，再以乾淨develop整合與檢查範圍。
+- 完成四檔，未新增或放寬測試。`node --test tests/equipment-detail-layout.test.cjs tests/equip-socket-ui.test.cjs tests/equip-reroll-ui.test.cjs tests/equipment-tooltip-compare.test.cjs tests/equipment-selection-border.test.cjs tests/equipment-weapon-icons.test.cjs`50/50；`npm.cmd run build`554檔通過，自身四檔diff檢查通過。唯讀未改js/ui.js／js/item.js、兩份ashen皮膚、上述六份回歸與配置；使用者五份未提交配置／技能檔保留。
+- 瀏覽器：browser-use舊backend仍無法發現IAB，沿本聊天CUA API完成正式八份CSS及itemDetailHTML隔離驗證，不載入玩家存檔。讀取計算樣式確認tips與詳情五層backgroundImage逐字一致，與已確認A版各層alpha一致；詳情位置與尺寸保持上一張A圖，詞條／特效／孔框可讀、外框角飾保留。Console warning／error0；截圖mythic-glow-a-applied.png保存在本聊天visualizations。未驗完整遊戲流程／跨瀏覽器／長時間效能，前輪兩項雙手fixture既有失敗未擴修。無未完成實作，可合併；接續僅移植此提交至乾淨develop。
+
+## MYTHIC-SCROLL-FRAME-20261020 — 固定神話詳情外框與縮短紅色區
+
+- Owner：Codex；Done；使用者截圖回報詳情上下捲動時裝飾框移位，要求品質外框位於右側捲軸外側，並將icon紅色部分面積高度縮減40%。依賴5a1cb656完成；單一開發者。目標衝突預檢無外部來源，保留config/Excel/Skills2.xlsx未提交內容。
+- 允許css/style.css神話固定框／內部捲動與紅色區高度、index.html新增詳情外框容器及style快取、tests/equipment-detail-layout.test.cjs必要回歸、LV_upgrade_system.md及本段；禁止JS／玩法／配置／Worker／存檔／其他品質外觀／獨立素材變更，不合併推送。將詳情框裝飾移至非捲動父容器，保留detail-pane ID及一般／洗煉／鑲嵌／符文既有互動；外框包住捲軸，tips懸浮卡維持原樣。
+- 驗收：正式CSS長內容頂／中／底捲動、外框與角飾固定且在捲軸外側、最後內容可達與操作列不移、神話切其他品質與空狀態、鑲嵌／符文容器不溢出；紅色區高度剩60%、裝備格及副手一致；相關裝備回歸、Build、瀏覽器Console及截圖、diff後獨立Commit。後續使用者重載及Review／整合，無素材庫Commit。
+- 追加需求：使用者再附圖要求資訊位置／間距回復原版，只替換邊框造型。固定框採原1px佔位，內文回復原12px／14px起點，額外留給捲軸的右側空間由內容右內距抵銷；移除詳情面板額外標題留白／菱形分隔，不改懸浮tips樣式。驗收以同一份資料比對原版與神話版的標題／副標／詞條起點，包含長內容、非神話與鑲嵌頁。
+- 再追加需求：使用者附懸浮tips截圖，要求內層白光透明度降半以利閱讀。僅#sk-tooltip內的神話卡將頂端光暈alpha36/255→18/255、細紋alpha3/255→1.5/255，透過同一背景模板的局部變數處理；暖銅外框與詳情面板底色不改，並檢查正式計算樣式與長文字可讀性。
+- 完成4檔：index新增equip-detail-frame固定父容器，保留原detail-pane ID及指令／增量更新目標，style82→84。CSS以父容器承載原向量角飾與品質框，overflow:clip防止框本身變成捲動容器；子面板獨立捲動，品質框位於右側捲軸外側。父框沿原1px佔位，面板上12px／左14px原內距不變，預留捲軸空間以右內距抵銷；移除面板多出的副標留白及菱形分隔，懸浮tips造型保留。一般與神話鑲嵌頁皆固定在父容器高度內，避免新增父層後height:auto讓內容溢出。紅色反光圖層背景高度100%→60%、底色紅段起點42%→65.2%及74%→84.4%，上下層紅區均以底部為錨壓縮40%，副手共用；tips光暈與細紋alpha降半。LV_upgrade_system與本段同步，JS／配置／獨立素材未改，無素材庫Commit。
+- 測試：`node --test tests/equipment-detail-layout.test.cjs tests/equip-socket-ui.test.cjs tests/equip-reroll-ui.test.cjs tests/equipment-tooltip-compare.test.cjs tests/equipment-selection-border.test.cjs tests/equipment-weapon-icons.test.cjs`50/50（一般／洗煉／鑲嵌／符文模式、pending與增量節點保留均含）；最終`npm.cmd run build`554檔通過，git diff --check通過。未新增或放寬測試，也沒有更改玩法配合驗證；未跑全庫及前輪已知失敗的雙手武器fixture。
+- 瀏覽器：沿本聊天已載入的規範與CUA API，以正式index詳情區段、8份CSS、itemDetailHTML／itemCellHTML／itemSocketHTML建立隔離壓力頁；14詞條與18孔僅作長內容壓力資料，不宣稱為合法產出裝備，不寫入玩家存檔。用同一份資料先顯示原版樣式再套神話框，標題／副標／首條詞條的x、y偏移均0。實際按頂部／中段／底部，內容捲動約0／80.8／160.8px時，外框頂底與操作列座標完全不動；最末鑲孔可見、無水平溢出、捲軸位於品質框內。神話及一般鑲嵌長頁亦能到底、取消選取不殘框。外框曾因絕對定位角飾產生1px隱藏捲動範圍，改clip後嘗試令其scrollTop=20仍維持0，避免焦點移動再帶動裝飾。確認tips局部alpha值、光暈減半及icon紅區高度，Console warning／error0。
+- 預覽證據：mythic-detail-fixed-top.png與mythic-detail-scroll-bottom.png保存在本聊天visualizations；臨時壓力頁及服務已清理。未做完整遊戲流程／跨瀏覽器／長時間效能驗證。唯讀未改：js/ui.js／js/item.js、兩份ashen-forge皮膚、裝備排版／選取／武器／比較／洗煉／鑲嵌六份測試。無本次未完成實作，可供Review／合併，未合併推送。
+- 同副本協作：執行中另有鑲嵌每行十格修改及參數套用；index的ashen快取行、LV_upgrade_system寶石功能列與本輪修改是不同區段，三方merge-file乾跑退出0且結果與工作區逐位元一致。對方以b3203e94獨立提交後，再核對最新HEAD，僅提交本輪4檔的自身差異，保留其提交與其他未提交Excel／CSV／skills2內容；未使用先前HEAD的暫存候選覆蓋新提交。交付Commit為本段所在`[Codex] fix: 修正神話詳情捲動與排版並降低tips白光`，回覆附編號。後續使用者重載本分支驗收，其他副本須整合Commit。
 
 ## MYTHIC-COPPER-RED-20261020 — 神話雙框再收窄與銅框紅底
 
@@ -11506,3 +11539,12 @@ Worker 存活且頁面正常完成載入。
 - 完成四檔，未新增或放寬測試。`node --test tests/equipment-detail-layout.test.cjs tests/equip-socket-ui.test.cjs tests/equip-reroll-ui.test.cjs tests/equipment-tooltip-compare.test.cjs tests/equipment-selection-border.test.cjs tests/equipment-weapon-icons.test.cjs`50/50；`npm.cmd run build`554檔通過，自身四檔diff檢查通過。唯讀未改js/ui.js／js/item.js、兩份ashen皮膚、上述六份回歸與配置；使用者五份未提交配置／技能檔保留。
 - 瀏覽器：browser-use舊backend仍無法發現IAB，沿本聊天CUA API完成正式八份CSS及itemDetailHTML隔離驗證，不載入玩家存檔。讀取計算樣式確認tips與詳情五層backgroundImage逐字一致，與已確認A版各層alpha一致；詳情位置與尺寸保持上一張A圖，詞條／特效／孔框可讀、外框角飾保留。Console warning／error0；截圖mythic-glow-a-applied.png保存在本聊天visualizations。未驗完整遊戲流程／跨瀏覽器／長時間效能，前輪兩項雙手fixture既有失敗未擴修。無未完成實作，可合併；接續僅移植此提交至乾淨develop。
 - 整合：來源faf4d880在獨立worktree從develop移植為6e98789b，merge-tree及實際合併均乾淨；本地develop僅上述四檔有差異，index只有style84→85，ashen皮膚／其快取與寶石功能列維持develop原值，沒有帶入b3203e94。整合後同六檔再次50/50及Build554通過，CSS與已驗收來源逐位元一致。臨時HTML／服務／頁籤已清理、截圖保留；本段隨`[Codex] merge: 合併神話tips與詳情三成白光A版`提交，無未完成合併項目，未推送。後續重新整理develop遊戲即可檢視。
+
+
+## SOCKET-ICON-TEN-20261020 — 寶石與符文鑲嵌選取圖示放大
+
+- Owner：Codex；Done；使用者要求鑲嵌選取圖示放大至每行約10個。依賴既有共用格完成，單一開發者。
+- 允許css/ashen-forge.css選取格、index.html僅ashen-forge快取、LV_upgrade_system.md寶石外觀說明及本段；禁止JS／配置／存檔／Worker／素材及其他進行中修改。預檢無外部來源；本副本其他任務修改保留，分段提交本次內容。
+- 驗收：寶石／融合寶石／符文每行10格、圖示放大、角標可讀、窄面板不橫向溢出；相關鑲嵌回歸、Build與隔離瀏覽器排版；獨立Commit交使用者Review／整合，不合併推送，無素材庫變更。
+- 完成：共用格改為10欄等寬正方形，寶石／融合寶石與符文圖示跟隨格子放大；局部提高符文圖示選擇器優先度，避免被後載runeword.css固定32px蓋回。index僅ashen-forge90→91，系統總表與任務紀錄同步，共4檔；其他進行中修改保持未提交，無素材庫變更。
+- 驗證：`node --test tests/equip-socket-ui.test.cjs tests/gem-socket-height-compact.test.cjs tests/socket-target.test.cjs tests/runeword-ui.test.cjs`51/51；`npm.cmd run build`554檔通過；git diff --check通過。沿正式CSS及既有圖片的隔離瀏覽器預覽，600px面板格53.44px／圖47.84px、360px面板格29.44px／圖23.84px，寶石符文均每行10格、圖片載入成功、無橫向溢出，Console warning／error0。截圖socket-icons-ten.png保存在本聊天visualizations。未操作完整遊戲或玩家存檔，未做跨瀏覽器驗收；純CSS低風險，可供Review／合併，後續使用者重載分支驗收。唯讀檢查AI規範／流程、prompts/codex.md、css/style.css／gems.css／runeword.css／ashen-forge-flat.css、js/ui.js及上述測試。Commit為本段所在「[Codex] fix: 放大鑲嵌寶石與符文並改為每行十格」。

@@ -493,7 +493,7 @@ test('暴風屏障：每一拍給護盾，且期間帶傷害減免', () => {
   c.castSkill2(p, [e], 'stormbarrier', 'mv-float');
   assert.ok(p.shield > 0, '施放當下就先給一拍護盾（不必等 0.5 秒）');
   const first = p.shield;
-  assert.ok(Math.abs(first - 1000 * 0.02) < 1e-6, '最大生命 (1+1×Lv1)% ＝ 2%');
+  assert.ok(Math.abs(first - 1000 * 0.011) < 1e-6, '最大生命 (1+0.1×Lv1)% ＝ 1.1%');
   assert.equal(c.buffVal(p, 'sgStormBarrier'), 11, '傷害減免 (10+1×Lv1)%');
   assert.ok(Math.abs(c.skill2DamageTakenMultiplier(p) - 0.89) < 1e-9, '減免掛在我方受擊乘區');
   run(c, p, [e], 1.0);
