@@ -1,5 +1,43 @@
 # AI_TASKS.md
 
+## MYTHIC-DEVELOP-MERGE-20261020 — 神話裝備外觀整合至 develop
+
+- Owner：Codex；Done；使用者明確授權將本次神話裝備外觀合併至 develop，未授權推送。整合 a3888a30／119a26a0／5a1cb656 及 8489269f 的神話外觀、固定捲動外框、原資訊位置、圖示紅區縮短與懸浮 tips 白光減半；最後一筆以 cf54c9ba 保留原提交來源，排除中間 b3203e94 的寶石／符文十欄放大修改。
+- 修改／整合檔案：css/style.css、js/ui.js、index.html、tests/equipment-tooltip-compare.test.cjs、LV_upgrade_system.md、本紀錄。衝突預檢來源僅為本聊天已授權整合的提交；merge-tree 及實際合併均乾淨，ashen-forge.css 與其快取保持 develop 原值。Codex 副本使用者既有五份未提交配置／技能檔完全保留；無新增素材，素材庫無變更。
+- 驗證：`node --test tests/equipment-detail-layout.test.cjs tests/equip-socket-ui.test.cjs tests/equip-reroll-ui.test.cjs tests/equipment-tooltip-compare.test.cjs tests/equipment-selection-border.test.cjs tests/equipment-weapon-icons.test.cjs`50/50；`npm.cmd run build`及 diff 檢查通過。唯讀檢查 ashen-forge.css、原配置與 Git 整合範圍；先前兩項雙手武器 fixture 既有失敗維持前輪紀錄，未擴修。可合併範圍已整合本機 develop，不推送。
+- 後續使用者更正白光仍太強，要求再降低70%與完全無白光兩張圖：僅以相同正式內容／邊框製作隔離候選截圖，未將任一候選套用至程式或此次合併。圖片保存在本聊天 visualizations，後續依使用者選擇另行調整；沒有未完成的已授權合併項目。
+
+## MYTHIC-COPPER-RED-20261020 — 神話雙框再收窄與銅框紅底
+
+- Owner：Codex；Done；使用者要求tips雙框再縮減1～2px但不貼合，裝備icon邊框比照tips外框色，並增加紅色系。依賴119a26a0完成；單一開發者。目標衝突預檢無外部來源，保留使用者未提交的config/Excel/Skills2.xlsx。
+- 允許css/style.css神話框距／品質框與底色、index.html僅style快取、LV_upgrade_system.md及本紀錄；禁止JS／玩法／配置／Worker／存檔／其他品質／獨立素材變更，不合併推送。雙框再收窄1.5px，角飾尺寸沿前版；圖示格與tips共用同一暖銅外框漸層，格內上方白光保留、下部紅銅範圍與濃度增加，副手提示／選取與置灰保留。
+- 驗收：正式CSS雙框線距保留空隙、外框色同源、裝備格／副手／選取置灰與混合比較；既有裝備回歸、Build、隔離瀏覽器外觀及Console、diff後獨立Commit。後續使用者重載與Review／整合，無獨立素材或素材庫Commit。
+- 完成4檔：CSS既有SVG內框／暗線移近外框，tips框線中心距3.35→1.85px（減1.5px），扣除筆畫後仍有約1.24px可見空隙，23.2px角飾尺寸不變。神話格與tips共用mythic-frame-metal，外框統一暖銅金色；格內保留上方白光，下部紅銅漸層提高濃度與範圍，普通格／副手沿同一mythic-slot-surface，副手提示及選取置灰保留。index僅style81→82，LV_upgrade_system與本段同步。JS／表格／其他品質／獨立素材未變，使用者Skills2.xlsx保持未提交，無素材庫Commit。
+- 驗證：`node --test tests/equipment-tooltip-compare.test.cjs tests/equipment-selection-border.test.cjs tests/equipment-weapon-icons.test.cjs tests/equipment-detail-layout.test.cjs`18/18；`npm.cmd run build`554檔通過，git diff --check通過。沒有新增或放寬測試；本輪所跑測試無失敗，先前雙手武器兩項fixture依賴缺失未擴修。
+- 瀏覽器：沿前輪瀏覽器規範及可用CUA API建立正式8份CSS、原裝備圖示與正式詳情產生器的隔離預覽；確認框距仍可見、暖銅同框、下方紅色加強、六詞條三孔tips／混合品質比較及副手／選取／置灰。DOM計算樣式核對裝備格與tips共用框色值完全相同、角飾23.2px與pointer-events:none；Console warning／error0，圖示全部載入。截圖mythic-copper-red.png保存在本聊天visualizations；臨時頁與服務清理，不碰玩家存檔。未做完整遊戲流程／跨瀏覽器／長時間效能驗證。
+- 唯讀未改：前輪任務、js/ui.js／js/item.js、兩份ashen-forge皮膚與上述四份測試。自我Review確認只改神話顯示、兩種底色同源、框色不再分歧、未新增動畫或模糊陰影；無本次未完成實作，可供Review／合併，未合併推送。Commit為本段所在`[Codex] fix: 統一神話銅框並收窄框距與加強紅色`，回覆附編號；後續使用者重載本分支驗收，其他副本須整合Commit。
+
+## MYTHIC-FRAME-TUNE-20261020 — 神話角飾縮小、框距收窄與上白下紅
+
+- Owner：Codex；Done；使用者確認前版方向後，要求神話tips四角三角雕飾縮小20%、雙框間距縮減1px，裝備格上方白光加強、下方泛紅。依賴a3888a30已完成；單一開發者，開始工作區乾淨，目標衝突預檢無外部來源。
+- 允許css/style.css神話角飾尺寸／框距與裝備格色調、index.html僅style快取、LV_upgrade_system.md外觀紀錄及本段；禁止JS／玩法／配置表／Worker／存檔／其他品質／獨立素材變更，不合併推送。沿既有自製內嵌向量與CSS，神話提示、比較卡及詳情保持一致，副手提示／選取與置灰保留。
+- 驗收：角飾尺寸為原80%、雙層向量框距換算減少1個CSS像素、正式樣式裝備格上白下紅及副手；既有相關裝備回歸／Build、隔離瀏覽器外觀與Console、diff後獨立Commit。後續使用者重載本分支與Review／整合；無獨立素材，不需素材庫Commit。
+- 完成4檔：CSS的神話詳情／比較／tips九宮格角飾29→23.2px（原80%）；沿既有同一份自製SVG校正內框及暗線座標，配合新切片尺寸令兩條框線距離4.35→3.35px，未新增第二份圖稿。裝備格外緣加強兩處頂端白光、內襯擴大銀白霧光並加入下緣紅銅反光；一般格與雙手副手共用mythic-slot-surface，副手仍疊既有金黃提示。index僅style80→81，LV_upgrade_system與本段同步；JS／數值／其他品質／圖示圖片沒有變更，不需素材庫Commit。
+- 驗證：`node --test tests/equipment-tooltip-compare.test.cjs tests/equipment-selection-border.test.cjs tests/equipment-weapon-icons.test.cjs tests/equipment-detail-layout.test.cjs`18/18；`npm.cmd run build`554檔通過，git diff --check通過。沒有新增或放寬測試；上輪已確認的兩個雙手武器fixture依賴缺失未於本輪擴修，本輪執行的測試無失敗。
+- 瀏覽器：沿前輪已載入的瀏覽器規範與可用CUA API，以正式8份CSS、正式itemCellHTML／itemDetailHTML及現有圖示建立隔離預覽；目視確認上白下紅、縮小角飾與收窄雙框、六詞條三孔tips與其他品質比較、雙手副手／選取／置灰。讀取正式DOM計算樣式確認角飾23.2px、切片40、卡寬280px及pointer-events:none，Console warning／error0，圖示全部成功載入。截圖mythic-frame-tuned.png保存本聊天visualizations；臨時頁與服務清理，不碰玩家存檔。未做完整遊戲流程／跨瀏覽器／長時間效能驗證。
+- 唯讀未改：前輪任務紀錄、js/ui.js與js/item.js既有呈現、兩份ashen-forge皮膚及上述四份測試。自我Review確認底色共用、SVG僅改框線座標、未新增動畫／模糊陰影或外部素材；無本次未完成實作，可供Review／合併，未合併推送。Commit為本段所在`[Codex] fix: 縮小神話角飾並強化上白下紅光暈`，回覆附編號；後續使用者重載本分支驗收，其他副本須整合Commit。
+
+## MYTHIC-IVORY-COPPER-20261020 — 神話裝備銀白光邊與暖銅提示框
+
+- Owner：Codex；Done；單一開發者。使用者提供兩張裝備／tips參考圖，要求神話級外觀接近其銀白漸層亮邊、暖銅金框及深灰底；以自製CSS呈現，截圖只作視覺參考，不匯入外部素材。
+- 前置：既有神話品質格、裝備詳情與雙卡比較已存在；本副本開始乾淨，fetch後目標衝突預檢無外部來源。允許css/style.css神話樣式及提示框樣式、js/ui.js神話詳情分類、index.html必要快取、tests/equipment-tooltip-compare.test.cjs相關分類驗證、LV_upgrade_system.md與本紀錄；禁止玩法／數值／解鎖／其他品質外觀／Worker／配置表／存檔／素材變更，不合併推送。
+- 驗收：正式樣式的神話背包／裝備格與雙手副手、選取置灰狀態、神話單卡／混合品質比較卡及詳情換裝清除分類；裝備相關回歸、Build、瀏覽器外觀與Console檢查、diff後獨立Commit。無新素材，無素材庫Commit；後續使用者重載並Review／整合。
+- 第二輪：使用者看過初版後要求繼續細化，尤其tips過於簡單。於同一任務加強銀白亮邊的內外金屬線、以CSS內嵌自製向量繪製暖銅分叉角飾／雙層邊框，沿用既有石材紋理並補上標題分隔飾；不新增外部或獨立素材，保留原資訊與互動。
+- 完成6檔：css/style.css停用神話金紅旋轉，改為固定銀白至暖銅亮邊、灰黑內襯、細金屬線及小角飾；神話tips／比較卡／裝備詳情使用同一份自製內嵌SVG九宮格框，角飾保持尺寸、長邊延展，底層沿既有石材紋理。僅神話名稱／品質與等級顏色改暖金灰，詞條分類色不變；雙手副手覆色、選取與置灰保持。js/ui.js分別依候選與現有裝備品質加入mythic-detail，詳情換件／取消選取移除分類。index的style78→80、ui185→186，LV_upgrade_system及本紀錄同步；混合品質比較補一項回歸。不改Worker／配置／玩法／存檔，沒有獨立或外部素材變更，不需素材庫Commit。
+- 驗證指令：`node --test tests/equipment-tooltip-compare.test.cjs tests/equipment-selection-border.test.cjs tests/equipment-two-hand-display.test.cjs tests/equipment-weapon-icons.test.cjs tests/equipment-detail-layout.test.cjs tests/equip-socket-ui.test.cjs tests/equip-reroll-ui.test.cjs`53項51過／2失敗；兩項為原雙手武器fixture缺syncEquipmentSelectionMemory與UI_GAME_TIMING。將受測ui／CSS唯讀映射至修改前HEAD，該檔3項仍1過／相同2失敗，未改fixture或放寬斷言。細化完成再跑其餘6檔50/50；`npm.cmd run build`554檔通過，git diff --check通過。另以既有完整UI fixture呼叫正式renderDetail，確認神話→傳說→神話→取消選取分類正確，沒有框色殘留。
+- 瀏覽器：原browser-use舊backend連線失敗，改用可用的CUA瀏覽器API完成隔離本機預覽。載入正式全部8份CSS、正式itemCellHTML／itemDetailHTML與原裝備圖示；確認神話背包／裝備／副手／選取／置灰、六詞條三鑲孔詳情、混合品質比較、九宮格角飾與內文無遮擋。角飾改為內側定位，修正初次外側定位造成的額外捲軸；臨時診斷頁的字串換行錯誤已修正，最終全新載入Console warning／error0、圖示全載入。截圖mythic-ivory-copper-final.png保存在本聊天visualizations；臨時頁／基準preload及服務清理，不載入或修改玩家存檔。未做完整遊戲流程、跨瀏覽器與長時間效能驗證；參考風格為自製近似，沒有逐像素複製參考圖。
+- 唯讀未改：AI_RULES／AGENTS／AI_WORKFLOW／prompts、兩份ashen-forge皮膚、js/item.js詳情與圖示資料、雙手／選取／武器／裝備排版／洗煉／鑲嵌原回歸。自我Review確認品質分類獨立、裝飾pointer-events:none、未新增動畫與模糊陰影；已知限制為上述2項既有fixture失敗及未做完整遊戲驗證，無本次未完成實作。Commit為本段所在`[Codex] fix: 細化神話裝備銀白光邊與暖銅雕飾提示框`，回覆附編號；可供Review／合併，未合併推送。後續使用者重新載入本分支驗收，其他副本須先整合Commit。
+
 ## LEGEND-REWORK-20261020 — 傳奇特效依「傳奇進化」試算表改造＋Equipment_Affix 依試算表順序重排
 
 - Owner：Claude；程式／參數表完成。使用者提供 Google 試算表「傳奇進化」頁，「調整後效果」欄的紅字為要改的版本（49 列，其中【吸收】文字與原效果相同＝無變更；未填者不改），並要求 Equipment_Affix 的傳奇特效依試算表說明順序排列。單一開發者，依賴無。
@@ -11445,3 +11483,16 @@ Worker 存活且頁面正常完成載入。
 - 衝突僅 `js/bridge.js` 與 `js/worker/sim.worker.js` 的快取版本字串。保留HEAD的傳奇改造所需data／status／legendary Worker imports，也保留incoming的虛空滅界skills2程式與表格設定；skills2 Worker token與bridge Worker資源版統一更新為新的合併版本 `20261020-legend-rework-void-random-flight-merge`，主頁skills2／bridge版本更新為`1.0.342`／`1.0.323`，避免任一側舊快取覆蓋合併結果。衝突預檢來源即本次授權整合的ai/codex，沒有擴大功能修改。
 - 驗證：`node --test --test-reporter=tap tests/void-annihilation-flight.test.cjs tests/legendary-affix.test.cjs tests/skill-vfx-inheritance.test.cjs tests/status-system.test.cjs tests/skills2-vfx-schema.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/skill2-windblade-vacuum-legendary.test.cjs tests/hall-of-radiance.test.cjs tests/infinite-lightning.test.cjs tests/eternal-thunder-prison.test.cjs tests/windblade-fracture.test.cjs`共123項、107通過、16失敗。失敗集中於風刃／真空傳奇與光耀之堂；使用相同測試配合原HEAD的js／工具／CSV來源唯讀映射重跑兩個失敗檔，31項14過17失敗，目前16項失敗全部屬於原HEAD失敗集合，新增失敗0，未放寬測試或更改無關數值。驗證備份及TAP留在本worktree Git metadata的`merge-legend-void-verify-l6Zl7V`。
 - `npm.cmd run build`554個檔案全數通過；另檢查衝突標記、兩側差異與diff空白。Excel／CSV的Git blob與incoming完全相同，沒有額外編輯Excel或素材；`LV_upgrade_system.md`及`game_formula.md`保留incoming功能說明。本機merge Commit為本紀錄所在`[Codex] merge: 解決傳奇改造與虛空滅界快取衝突`。唯讀檢查規範／流程、相關測試及設定；已知限制為上述16項既有失敗及未做瀏覽器長戰驗證。衝突處理無未完成項目，可供Review；下一步可依使用者需要執行同步BAT。
+
+## MYTHIC-SCROLL-FRAME-20261020 — 固定神話詳情外框與縮短紅色區
+
+- Owner：Codex；Done；使用者截圖回報詳情上下捲動時裝飾框移位，要求品質外框位於右側捲軸外側，並將icon紅色部分面積高度縮減40%。依賴5a1cb656完成；單一開發者。目標衝突預檢無外部來源，保留config/Excel/Skills2.xlsx未提交內容。
+- 允許css/style.css神話固定框／內部捲動與紅色區高度、index.html新增詳情外框容器及style快取、tests/equipment-detail-layout.test.cjs必要回歸、LV_upgrade_system.md及本段；禁止JS／玩法／配置／Worker／存檔／其他品質外觀／獨立素材變更，不合併推送。將詳情框裝飾移至非捲動父容器，保留detail-pane ID及一般／洗煉／鑲嵌／符文既有互動；外框包住捲軸，tips懸浮卡維持原樣。
+- 驗收：正式CSS長內容頂／中／底捲動、外框與角飾固定且在捲軸外側、最後內容可達與操作列不移、神話切其他品質與空狀態、鑲嵌／符文容器不溢出；紅色區高度剩60%、裝備格及副手一致；相關裝備回歸、Build、瀏覽器Console及截圖、diff後獨立Commit。後續使用者重載及Review／整合，無素材庫Commit。
+- 追加需求：使用者再附圖要求資訊位置／間距回復原版，只替換邊框造型。固定框採原1px佔位，內文回復原12px／14px起點，額外留給捲軸的右側空間由內容右內距抵銷；移除詳情面板額外標題留白／菱形分隔，不改懸浮tips樣式。驗收以同一份資料比對原版與神話版的標題／副標／詞條起點，包含長內容、非神話與鑲嵌頁。
+- 再追加需求：使用者附懸浮tips截圖，要求內層白光透明度降半以利閱讀。僅#sk-tooltip內的神話卡將頂端光暈alpha36/255→18/255、細紋alpha3/255→1.5/255，透過同一背景模板的局部變數處理；暖銅外框與詳情面板底色不改，並檢查正式計算樣式與長文字可讀性。
+- 完成4檔：index新增equip-detail-frame固定父容器，保留原detail-pane ID及指令／增量更新目標，style82→84。CSS以父容器承載原向量角飾與品質框，overflow:clip防止框本身變成捲動容器；子面板獨立捲動，品質框位於右側捲軸外側。父框沿原1px佔位，面板上12px／左14px原內距不變，預留捲軸空間以右內距抵銷；移除面板多出的副標留白及菱形分隔，懸浮tips造型保留。一般與神話鑲嵌頁皆固定在父容器高度內，避免新增父層後height:auto讓內容溢出。紅色反光圖層背景高度100%→60%、底色紅段起點42%→65.2%及74%→84.4%，上下層紅區均以底部為錨壓縮40%，副手共用；tips光暈與細紋alpha降半。LV_upgrade_system與本段同步，JS／配置／獨立素材未改，無素材庫Commit。
+- 測試：`node --test tests/equipment-detail-layout.test.cjs tests/equip-socket-ui.test.cjs tests/equip-reroll-ui.test.cjs tests/equipment-tooltip-compare.test.cjs tests/equipment-selection-border.test.cjs tests/equipment-weapon-icons.test.cjs`50/50（一般／洗煉／鑲嵌／符文模式、pending與增量節點保留均含）；最終`npm.cmd run build`554檔通過，git diff --check通過。未新增或放寬測試，也沒有更改玩法配合驗證；未跑全庫及前輪已知失敗的雙手武器fixture。
+- 瀏覽器：沿本聊天已載入的規範與CUA API，以正式index詳情區段、8份CSS、itemDetailHTML／itemCellHTML／itemSocketHTML建立隔離壓力頁；14詞條與18孔僅作長內容壓力資料，不宣稱為合法產出裝備，不寫入玩家存檔。用同一份資料先顯示原版樣式再套神話框，標題／副標／首條詞條的x、y偏移均0。實際按頂部／中段／底部，內容捲動約0／80.8／160.8px時，外框頂底與操作列座標完全不動；最末鑲孔可見、無水平溢出、捲軸位於品質框內。神話及一般鑲嵌長頁亦能到底、取消選取不殘框。外框曾因絕對定位角飾產生1px隱藏捲動範圍，改clip後嘗試令其scrollTop=20仍維持0，避免焦點移動再帶動裝飾。確認tips局部alpha值、光暈減半及icon紅區高度，Console warning／error0。
+- 預覽證據：mythic-detail-fixed-top.png與mythic-detail-scroll-bottom.png保存在本聊天visualizations；臨時壓力頁及服務已清理。未做完整遊戲流程／跨瀏覽器／長時間效能驗證。唯讀未改：js/ui.js／js/item.js、兩份ashen-forge皮膚、裝備排版／選取／武器／比較／洗煉／鑲嵌六份測試。無本次未完成實作，可供Review／合併，未合併推送。
+- 同副本協作：執行中另有鑲嵌每行十格修改及參數套用；index的ashen快取行、LV_upgrade_system寶石功能列與本輪修改是不同區段，三方merge-file乾跑退出0且結果與工作區逐位元一致。對方以b3203e94獨立提交後，再核對最新HEAD，僅提交本輪4檔的自身差異，保留其提交與其他未提交Excel／CSV／skills2內容；未使用先前HEAD的暫存候選覆蓋新提交。交付Commit為本段所在`[Codex] fix: 修正神話詳情捲動與排版並降低tips白光`，回覆附編號。後續使用者重載本分支驗收，其他副本須整合Commit。

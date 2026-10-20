@@ -5863,6 +5863,8 @@ function renderDetail() {
     requestPanelData('inv', true, { detailIds: [it.id] });
     return;
   }
+  if (it && it.rarity === 6) pane.classList.add('mythic-detail');
+  else pane.classList.remove('mythic-detail');
   if (!it) pane.classList.remove('is-socket-page');
   if (!it || !UI.sel || UI.affixPoolItemId !== it.id) {
     hideAffixPool();
@@ -9985,9 +9987,9 @@ function showItemTooltip(it, anchorEl, opts) {
   }
 
   var h = '';
-  var mainCard = '<div class="equip-detail-card">' + detailHtml + '</div>';
+  var mainCard = '<div class="equip-detail-card' + (it.rarity === 6 ? ' mythic-detail' : '') + '">' + detailHtml + '</div>';
   if (compareItem && compareItem.id !== it.id) {
-    var compCard = '<div class="equip-detail-card">' + itemDetailHTML(compareItem, null, {
+    var compCard = '<div class="equip-detail-card' + (compareItem.rarity === 6 ? ' mythic-detail' : '') + '">' + itemDetailHTML(compareItem, null, {
       isEquipped: true,
       showAffixReroll: false,
       gold: tooltipPlayer && tooltipPlayer.gold,
