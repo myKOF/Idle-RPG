@@ -36,7 +36,6 @@ goto end
 :patchfail
 echo.
 echo [合併未完成] 請查看上方鎖定或衝突資訊。待套用修改與備份已保留。
-echo 尚未執行 Excel 轉 CSV 及遊戲參數更新；請處理後重跑。
 pause
 goto end
 :cfgsyncfail

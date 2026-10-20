@@ -67,8 +67,9 @@ try {
       if ($sources.ContainsKey($c.workbook)) { continue }
       $source = Join-Path (Join-Path $Root 'config/Excel') $c.workbook
       $owner = Join-Path (Split-Path -Parent $source) ('~$' + $c.workbook)
-      if (Test-Path -LiteralPath $owner) { throw "請先儲存並關閉 Excel：$($c.workbook)（偵測到 Excel 鎖定檔）" }
-      $s = [IO.File]::Open($source, 'Open', 'ReadWrite', 'None')
+      try { $s = [IO.File]::Open($source, 'Open', 'ReadWrite', 'None') }
+      catch { throw "請先儲存並關閉 Excel：$($c.workbook)（來源仍被占用：$($_.Exception.Message)）" }
+      if (Test-Path -LiteralPath $owner) { Write-Output "[param-patches] 來源已取得獨占鎖，保留並略過殘留鎖定檔：$owner" }
       try {
         $backup = Join-Path $run ('original-' + $c.workbook)
         $copy = [IO.File]::Create($backup)
