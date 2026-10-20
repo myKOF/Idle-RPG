@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## MYTHIC-FRAME-TUNE-20261020 — 神話角飾縮小、框距收窄與上白下紅
+
+- Owner：Codex；Done；使用者確認前版方向後，要求神話tips四角三角雕飾縮小20%、雙框間距縮減1px，裝備格上方白光加強、下方泛紅。依賴a3888a30已完成；單一開發者，開始工作區乾淨，目標衝突預檢無外部來源。
+- 允許css/style.css神話角飾尺寸／框距與裝備格色調、index.html僅style快取、LV_upgrade_system.md外觀紀錄及本段；禁止JS／玩法／配置表／Worker／存檔／其他品質／獨立素材變更，不合併推送。沿既有自製內嵌向量與CSS，神話提示、比較卡及詳情保持一致，副手提示／選取與置灰保留。
+- 驗收：角飾尺寸為原80%、雙層向量框距換算減少1個CSS像素、正式樣式裝備格上白下紅及副手；既有相關裝備回歸／Build、隔離瀏覽器外觀與Console、diff後獨立Commit。後續使用者重載本分支與Review／整合；無獨立素材，不需素材庫Commit。
+- 完成4檔：CSS的神話詳情／比較／tips九宮格角飾29→23.2px（原80%）；沿既有同一份自製SVG校正內框及暗線座標，配合新切片尺寸令兩條框線距離4.35→3.35px，未新增第二份圖稿。裝備格外緣加強兩處頂端白光、內襯擴大銀白霧光並加入下緣紅銅反光；一般格與雙手副手共用mythic-slot-surface，副手仍疊既有金黃提示。index僅style80→81，LV_upgrade_system與本段同步；JS／數值／其他品質／圖示圖片沒有變更，不需素材庫Commit。
+- 驗證：`node --test tests/equipment-tooltip-compare.test.cjs tests/equipment-selection-border.test.cjs tests/equipment-weapon-icons.test.cjs tests/equipment-detail-layout.test.cjs`18/18；`npm.cmd run build`554檔通過，git diff --check通過。沒有新增或放寬測試；上輪已確認的兩個雙手武器fixture依賴缺失未於本輪擴修，本輪執行的測試無失敗。
+- 瀏覽器：沿前輪已載入的瀏覽器規範與可用CUA API，以正式8份CSS、正式itemCellHTML／itemDetailHTML及現有圖示建立隔離預覽；目視確認上白下紅、縮小角飾與收窄雙框、六詞條三孔tips與其他品質比較、雙手副手／選取／置灰。讀取正式DOM計算樣式確認角飾23.2px、切片40、卡寬280px及pointer-events:none，Console warning／error0，圖示全部成功載入。截圖mythic-frame-tuned.png保存本聊天visualizations；臨時頁與服務清理，不碰玩家存檔。未做完整遊戲流程／跨瀏覽器／長時間效能驗證。
+- 唯讀未改：前輪任務紀錄、js/ui.js與js/item.js既有呈現、兩份ashen-forge皮膚及上述四份測試。自我Review確認底色共用、SVG僅改框線座標、未新增動畫／模糊陰影或外部素材；無本次未完成實作，可供Review／合併，未合併推送。Commit為本段所在`[Codex] fix: 縮小神話角飾並強化上白下紅光暈`，回覆附編號；後續使用者重載本分支驗收，其他副本須整合Commit。
+
 ## MYTHIC-IVORY-COPPER-20261020 — 神話裝備銀白光邊與暖銅提示框
 
 - Owner：Codex；Done；單一開發者。使用者提供兩張裝備／tips參考圖，要求神話級外觀接近其銀白漸層亮邊、暖銅金框及深灰底；以自製CSS呈現，截圖只作視覺參考，不匯入外部素材。
