@@ -756,6 +756,13 @@ function gmHpLockActive(ent) {
 function gmMpLockActive(ent) {
   return !!(ent && typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.mpLock);
 }
+/* 系統內建隱藏設定：「直接扣減目標生命百分比」類效果（占敵人最大生命 N% 的扣血／流血）對 BOSS 的倍率。
+   不進設定表。⚠️ 新增這類效果時，扣血量必須乘 bossPctHpFactor(目標)；
+   清單見 docs/BOSS_PCT_HP_EFFECTS.md。 */
+var BOSS_PCT_HP_DAMAGE_MULT = 0.5;
+function bossPctHpFactor(ent) {
+  return (ent && (ent.isBoss || ent.towerBoss)) ? BOSS_PCT_HP_DAMAGE_MULT : 1;
+}
 // 非 resolveHit 的直接傷害也必須經過同一個高塔 BOSS 上限。
 function applyEnemyHpDamage(ent, damage, drainHits) {
   HIT_DIRECT++;
@@ -1045,6 +1052,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
     }
   }
   if (dCfg.isPlayer && typeof sgWarGodBodyOnDamaged === 'function') sgWarGodBodyOnDamaged(actualHpLoss, defender, out.absorbed, shieldMaxBeforeHit);
+  if (dCfg.isPlayer && out.absorbed > 0 && typeof sgValgrOnShieldLost === 'function') sgValgrOnShieldLost(out.absorbed);
   // 所有普通／技能命中共用一次汲取；同一擊的物理與附加元素不重複計次。
   if (aCfg.isPlayer && defenderWasAlive && typeof playerDrainOnDamage === 'function') {
     playerDrainOnDamage(defender, out.dmg, attacker);

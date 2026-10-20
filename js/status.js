@@ -230,7 +230,7 @@ function statusDps(ent, def, ctx) {
   if (ctx.dps !== undefined && ctx.dps !== null) return Number(ctx.dps) * mult;
   var amount = statusNum(ctx.dmg, def.dmg);
   var per;
-  if (def.dmgSource === 'maxHp') per = (Number(ent && ent.maxHp) || 0) * amount / 100;
+  if (def.dmgSource === 'maxHp') per = (Number(ent && ent.maxHp) || 0) * amount / 100 * (typeof bossPctHpFactor === 'function' ? bossPctHpFactor(ent) : 1);
   else if (def.dmgSource === 'value') per = amount;
   else per = statusNum(ctx.base, 0) * amount / 100;
   if (def.capStat && def.capMult > 0 && ctx.stats) {
