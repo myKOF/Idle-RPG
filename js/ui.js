@@ -70,7 +70,7 @@ var UI_PANEL_MIGRATION_ORDER = [
  * command still needs an authoritative response.
  */
 var UI_PANEL_SUBSCRIPTIONS_BY_TAB = {
-  /* equip 頁多訂閱 skills：修羅亂舞（雙刀亂舞超神進化）決定副手能不能放第二把雙手武器，
+  /* equip 頁多訂閱 skills：修羅亂舞（雙刀亂舞終極進化）決定副手能不能放第二把雙手武器，
      而那個判定只能從 skills 面板快照重算。沒訂閱的話開機第一次畫裝備格必定判成「沒生效」。 */
   equip: ['equip', 'inv', 'gems', 'header', 'skills'],
   gems: ['gems', 'header'],
@@ -3804,7 +3804,8 @@ function renderBattleBuffBar(pEnt, snapshotGt) {
     var cdDeg = cdDegString(cdRatio);
 
     var ttTitle = (e.icon || '✨') + ' ' + (e.name || e.sid) + (e.effect === 'stat' && e.val ? (e.kind === 'debuff' ? '↓' : '↑') : '') + stackText;
-    var ttDesc = (def && def.desc ? def.desc + ' ' : '') +
+    // 舊配置保留原文，狀態提示統一使用目前的進化分類名稱。
+    var ttDesc = (def && def.desc ? def.desc.replace(/超神進化/g, '終極進化') + ' ' : '') +
       (valText ? (e.effect === 'shield' ? '護盾吸收量：' : '數值：') + valText : '');
 
     states.push({
@@ -7380,7 +7381,7 @@ function towerDetailHTML(fl, highest) {
     bossSkillNote = fixedSkills.length
       ? 'BOSS 專屬技能：' + fixedSkills.join('')
       : (fl >= BSK_RANDOM_FROM_FLOOR
-        ? 'BOSS 每場隨機施放 ' + BSK_RANDOM_PLAYER_COUNT + ' 個玩家超神進化技能'
+        ? 'BOSS 每場隨機施放 ' + BSK_RANDOM_PLAYER_COUNT + ' 個玩家終極進化技能'
         : 'BOSS 額外隨機施放 ' + BSK_EXTRA_NPC_COUNT + ' 個隨機技能');
   }
   return '<div class="twx-boss" style="--c:' + color + '">' +
@@ -8765,7 +8766,7 @@ function runSkill2UiAction(commandName, group, tier) {
   });
 }
 
-/* 超神進化三選一：與 runSkill2UiAction 同一條錯誤處理路徑，只是參數名不同（opt 不是 tier）。 */
+/* 終極進化三選一：與 runSkill2UiAction 同一條錯誤處理路徑，只是參數名不同（opt 不是 tier）。 */
 function runSkill2UltPick(group, opt) {
   var panels = ['skills', 'header'];
   return sendUiCommand('skill2.ultPick', { group: group, opt: opt }, {
@@ -8775,12 +8776,12 @@ function runSkill2UltPick(group, opt) {
   }).then(function (result) {
     var error = uiCommandResultError(result);
     if (error) {
-      reportUiCommandFailure('超神進化選擇失敗', error, panels);
+      reportUiCommandFailure('終極進化選擇失敗', error, panels);
       return false;
     }
     return true;
   }, function (error) {
-    reportUiCommandFailure('超神進化選擇失敗', error, panels);
+    reportUiCommandFailure('終極進化選擇失敗', error, panels);
     return false;
   });
 }
@@ -8795,7 +8796,7 @@ function runSkill2UltSwitch(group, opt) {
   var panels = ['skills', 'header'];
   var args = { group: group, opt: opt, fromOpt: pick.idx, fromLv: pick.lv, cost: cost };
   showConfirmDialog(
-    '確定將超神進化「' + pick.def.name + '」Lv.' + pick.lv + ' 切換為「' + target.name + '」Lv.1？\n\n' +
+    '確定將終極進化「' + pick.def.name + '」Lv.' + pick.lv + ' 切換為「' + target.name + '」Lv.1？\n\n' +
     '此操作視同重選：原技能與等級將清除，已投入的金幣不退還；前 7 階不受影響。\n' +
     costText + '。', function () {
       sendUiCommand('skill2.ultSwitch', args, {
@@ -8804,11 +8805,11 @@ function runSkill2UltSwitch(group, opt) {
         panels: panels
       }).then(function (result) {
         var error = uiCommandResultError(result);
-        if (error) reportUiCommandFailure('超神進化切換失敗', error, panels);
+        if (error) reportUiCommandFailure('終極進化切換失敗', error, panels);
       }, function (error) {
-        reportUiCommandFailure('超神進化切換失敗', error, panels);
+        reportUiCommandFailure('終極進化切換失敗', error, panels);
       });
-    }, { title: '超神進化切換確認', okText: '確認切換', highlightText: costText, danger: true });
+    }, { title: '終極進化切換確認', okText: '確認切換', highlightText: costText, danger: true });
 }
 
 function runSkill2MaxAction(group, tier) {
@@ -9075,7 +9076,7 @@ function sgTierIndexOf(ref) {
   return isFinite(tier) ? tier : null;
 }
 
-/* ---- 超神進化（第 8 格）的 UI 側讀取 ----
+/* ---- 終極進化（第 8 格）的 UI 側讀取 ----
    主執行緒沒有 G，一律吃面板快照（skills2.ult）；解鎖條件用共載的 sgUltUnlockedBy
    自己重算，與 Worker 端同一支純函式，不會出現「畫面說可以、Worker 卻擋著」。 */
 function sgUiUltRaw(skillsSnapshot) {
@@ -9106,7 +9107,7 @@ function skillTowerUnlockHintHTML(row, skillsSnapshot) {
   return '<div class="skill-tower-hint' + (cleared ? ' is-cleared' : '') + '">' +
     (cleared ? '已通行封魔塔第' + floor + '層' : '需通關封魔塔第' + floor + '層解鎖') + '</div>';
 }
-/* 超神進化【修羅亂舞】（雙刀亂舞，js/skills2.js）目前是否生效。
+/* 終極進化【修羅亂舞】（雙刀亂舞，js/skills2.js）目前是否生效。
    主執行緒沒有 G，不能直接呼叫 skills2AsuraDualWield（那支讀 G，在這裡永遠回 false），
    因此以面板快照重算，條件逐項對齊 Worker 端：
      ①選的是修羅亂舞 ②普通階全滿且選項門檻達標 ③雙刀亂舞裝配在技能列上。 */
@@ -9117,14 +9118,14 @@ function uiAsuraDualWield() {
   if (!sgUiUltUnlocked('dualdance', sgUiLevels(sk, 'dualdance'), sk, pick.idx)) return false;
   return skillViewLoadout(sk).indexOf(SG_PREFIX + 'dualdance') >= 0;
 }
-/* 這個格位是不是超神進化那一格。 */
+/* 這個格位是不是終極進化那一格。 */
 function sgUiIsUltSlot(gid, slot) {
   return (typeof sgIsUltSlot === 'function') && sgIsUltSlot(gid, slot);
 }
 
 /* 這一階能不能投資：前一階至少 Lv.1，加上配置的轉生／等級／塔層門檻。
    未解鎖時 sgUiLevels 已經把該階算成 Lv.0，但第 1 階要靠這裡才擋得住（它的預設開啟）。
-   超神進化另要求普通階全滿及各選項自己的門檻。 */
+   終極進化另要求普通階全滿及各選項自己的門檻。 */
 function sgStageUnlocked(gid, lvs, tierIndex, skillsSnapshot) {
   var g = (typeof SKILLS2 !== 'undefined') ? SKILLS2[gid] : null;
   if (sgUiIsUltSlot(gid, tierIndex)) return sgUiUltUnlocked(gid, lvs, skillsSnapshot);
@@ -9141,7 +9142,7 @@ function sgStageLockReason(gid, tierIndex, skillsSnapshot) {
     var lvs = sgUiLevels(skillsSnapshot, gid);
     if (sgUltUnlockedBy(gid, lvs)) {
       var pick = sgUiUltPick(skillsSnapshot, gid);
-      return pick ? '需達到 ' + sgUnlockText(pick.def.unlock) + '才能解鎖' : '需達到各超神進化選項的解鎖門檻';
+      return pick ? '需達到 ' + sgUnlockText(pick.def.unlock) + '才能解鎖' : '需達到各終極進化選項的解鎖門檻';
     }
     return '需先將前 ' + (g ? g.tiers.length : 7) + ' 階全部練滿';
   }
@@ -9163,7 +9164,7 @@ function isGMHost() {
 
 /* ---- 技能頁：技能瀏覽器（2026-10 照設計稿改版，取代逐列方格與群組升級彈窗） ----
    左：技能群組清單（可依元素篩選）；右：選中群組的「進化之路」——7 階由上而下以菱形節點
-   串連，已投資的段落點亮，第 8 階超神進化畫成三岔。點某一階就地展開說明與操作。
+   串連，已投資的段落點亮，第 8 階終極進化畫成三岔。點某一階就地展開說明與操作。
    所有按鈕沿用既有的 data-skill2-*／data-skill-equip 屬性，指令與確認流程完全不變。 */
 /* focus：同一時間只展開一段說明——'tier'＝展開 tier 那一階，'ult'＝展開超神選項 ultFocus（各階收起），
    這樣最長的階說明加最長的超神說明不會同時出現，整頁不必捲動就讀得完。 */
@@ -9188,7 +9189,7 @@ function sgbHasUlt(gid) {
   return !!g && (typeof sgSlotCount === 'function') && sgSlotCount(gid) > g.tiers.length;
 }
 
-/* 群組總等級（各階＋超神進化）與上限 */
+/* 群組總等級（各階＋終極進化）與上限 */
 function sgbTotals(gid, lvs, skillsSnapshot) {
   var hasUlt = sgbHasUlt(gid);
   var pick = hasUlt ? sgUiUltPick(skillsSnapshot, gid) : null;
@@ -9364,7 +9365,7 @@ function sgbTierRowHTML(gid, i, lvs, skillsSnapshot, gold, pendingAttrs, hasUltP
     }
     // 已在第 1 階保底時，仍可重置以清除舊存檔殘留的超神投資。
     if (canDowngrade || (i === 0 && hasUltPick)) {
-      h += '<button class="btn sgb-btn-quiet sgb-btn-danger" data-skill2-delete="' + gid + ':' + i + '" data-tip="重置此階及後續階級，清除超神進化（不退還金幣）"' + pendingAttrs + '>重置</button>';
+      h += '<button class="btn sgb-btn-quiet sgb-btn-danger" data-skill2-delete="' + gid + ':' + i + '" data-tip="重置此階及後續階級，清除終極進化（不退還金幣）"' + pendingAttrs + '>重置</button>';
     }
     h += '</div></div>';
   }
@@ -9383,7 +9384,7 @@ function sgbUltHTML(gid, lvs, skillsSnapshot, gold, pendingAttrs) {
   var ultOpen = UI.sgBrowse.focus === 'ult';
   var h = '<div class="sgb-ult">' +
     '<div class="sgb-ult-head"><span class="sgb-rail" aria-hidden="true"><span class="sgb-line sgb-line-full' + (activePick ? ' is-lit' : '') + '"></span></span>' +
-    '<b>第 ' + (g.tiers.length + 1) + ' 階 · 超神進化</b><span class="sgb-ult-sub">三選一</span></div>';
+    '<b>第 ' + (g.tiers.length + 1) + ' 階 · 終極進化</b><span class="sgb-ult-sub">三選一</span></div>';
   // 分岔：橫線從節點欄接到被選中的那一張卡，三張卡各自往上接一小段
   var litTo = pick ? ((2 * pick.idx + 1) / (2 * list.length) * 100) : 0;
   h += '<div class="sgb-fork" aria-hidden="true"><span class="sgb-fork-bar"></span>' +
@@ -9417,7 +9418,7 @@ function sgbUltHTML(gid, lvs, skillsSnapshot, gold, pendingAttrs) {
     for (var mi = 0; mi < g.tiers.length; mi++) if ((lvs[mi] || 0) >= tierMax) maxed++;
     h += '<span class="sgb-lock">🔒 前 ' + g.tiers.length + ' 階需全部滿級（目前 ' + maxed + '／' + g.tiers.length + ' 階已滿級）</span>';
   } else if (!unlocked) {
-    h += '<span class="sgb-lock">🔒 需達到 ' + esc(sgUnlockText(list[f].unlock)) + '才能解鎖此超神進化</span>';
+    h += '<span class="sgb-lock">🔒 需達到 ' + esc(sgUnlockText(list[f].unlock)) + '才能解鎖此終極進化</span>';
   } else if (!pick) {
     var pickCost = (typeof skills2UltCost === 'function') ? skills2UltCost(gid, f, 0) : 0;
     h += '<button class="btn sgb-btn-primary" data-skill2-ultpick="' + gid + ':' + f + '"' + pendingAttrs +
@@ -9433,7 +9434,7 @@ function sgbUltHTML(gid, lvs, skillsSnapshot, gold, pendingAttrs) {
       h += '<span class="sgb-done">已滿級</span>';
     }
     h += '<button class="btn sgb-btn-quiet" data-skill2-downgrade="' + gid + ':' + SG_ULT_SLOT + '" data-tip="降 1 級（不退還金幣）；降到 Lv.0 會清除選擇，可重新三選一"' + pendingAttrs + '>降級</button>';
-    h += '<button class="btn sgb-btn-quiet sgb-btn-danger" data-skill2-delete="' + gid + ':' + SG_ULT_SLOT + '" data-tip="清除超神進化選擇（不退還金幣），之後可重新三選一"' + pendingAttrs + '>重選</button>';
+    h += '<button class="btn sgb-btn-quiet sgb-btn-danger" data-skill2-delete="' + gid + ':' + SG_ULT_SLOT + '" data-tip="清除終極進化選擇（不退還金幣），之後可重新三選一"' + pendingAttrs + '>重選</button>';
   } else {
     var switchCost = skills2UltCost(gid, f, 0);
     h += '<button class="btn sgb-btn-primary" data-skill2-ultswitch="' + gid + ':' + f + '"' + pendingAttrs +
@@ -9685,7 +9686,7 @@ function battleSkillGroupTooltipHTML(gid, levels, skillsSnapshot) {
   var pick = totals.pick;
   var heading = '', description = '';
   if (pick && sgUiUltUnlocked(gid, lvs, skillsSnapshot)) {
-    heading = '第' + (group.tiers.length + 1) + '階【超神進化】（' + pick.def.name + '）Lv.' + pick.lv;
+    heading = '第' + (group.tiers.length + 1) + '階【終極進化】（' + pick.def.name + '）Lv.' + pick.lv;
     description = describeSkill2Ult(gid, pick.idx, pick.lv);
   } else {
     for (var i = group.tiers.length - 1; i >= 0; i--) {
@@ -9726,7 +9727,7 @@ function showSkillTooltip(ref, anchorEl) {
     if (sgUiIsUltSlot(sgTipGid, sgTipTier)) {
       var sgUltPick = sgUiUltPick(skillsSnapshot, sgTipGid);
       var sgUltOk = sgUiUltUnlocked(sgTipGid, sgLvs, skillsSnapshot);
-      var sgUltH = '<div class="skt-name">🌟 ' + esc(sgUltPick ? sgUltPick.def.name : '超神進化') +
+      var sgUltH = '<div class="skt-name">🌟 ' + esc(sgUltPick ? sgUltPick.def.name : '終極進化') +
         ' <span class="dim-text">第' + (sgG.tiers.length + 1) + '階｜Lv.' +
         (sgUltPick ? sgUltPick.lv : 0) + '/' + SG_TIER_MAX_LV + '</span></div>';
       sgUltH += '<div class="skt-meta">' + esc(sgG.name) + '　三選一，選定後可再升 ' + SG_TIER_MAX_LV + ' 級</div>';
@@ -11962,7 +11963,7 @@ function initUI() {
       }
       return;
     }
-    // 技能瀏覽器：切換篩選／群組／展開的階／超神進化選項（純介面狀態，不送指令）
+    // 技能瀏覽器：切換篩選／群組／展開的階／終極進化選項（純介面狀態，不送指令）
     var sgbFilter = e.target.closest('[data-sgb-filter]');
     if (sgbFilter) {
       UI.sgBrowse.filter = sgbFilter.getAttribute('data-sgb-filter') || 'all';
@@ -12020,7 +12021,7 @@ function initUI() {
       }
       return;
     }
-    // 新版技能群組：超神進化三選一（屬性值格式 "群組id:選項索引"）
+    // 新版技能群組：終極進化三選一（屬性值格式 "群組id:選項索引"）
     var s2up = e.target.closest('[data-skill2-ultpick]');
     if (s2up) {
       if (!s2up.disabled) {
@@ -12057,8 +12058,8 @@ function initUI() {
       var tierObj = gObj && gObj.tiers[delTier];
       var tierName = tierObj ? tierObj.name : '技能';
       var confirmMsg = sgIsUltSlot(delGid, delTier)
-        ? '確定清除超神進化的選擇與等級？前 7 階不受影響，不退還金幣。'
-        : '確定重置技能階級【' + tierName + '】？此階及所有後續階級將重置，超神進化的選擇與等級也會清除（第 1 階保留 Lv.1，不退還金幣）。';
+        ? '確定清除終極進化的選擇與等級？前 7 階不受影響，不退還金幣。'
+        : '確定重置技能階級【' + tierName + '】？此階及所有後續階級將重置，終極進化的選擇與等級也會清除（第 1 階保留 Lv.1，不退還金幣）。';
       showConfirmDialog(confirmMsg, function () {
         runSkill2DeleteAction(delGid, delTier);
       }, { title: '技能重置確認', danger: true });

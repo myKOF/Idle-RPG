@@ -1,5 +1,24 @@
 # AI_TASKS.md
 
+## ULTIMATE-EVOLUTION-NAME-20261021 — 第8階三選一改稱終極進化
+
+- Owner：Codex；Done；使用者要求每個技能第8階三選一「超神進化」改名為「終極進化」。前置既有三選一／切換／提示流程完成，單一開發者，所有目標衝突預檢無外部來源。
+- 允許 js/ui.js、js/skills2.js、js/gm_exec.js 的分類名稱／提示／訊息，index.html／js/bridge.js／js/worker/sim.worker.js 必要快取與遊戲說明、tests/skill2-ui.test.cjs／battle-skill-summary.test.cjs 既有名稱預期、game_formula.md／LV_upgrade_system.md／本紀錄。狀態舊說明僅在UI投影時換分類名稱，不改配置原值。禁止技能效果／數值／選項實名／解鎖／配置表／Protocol／存檔欄位／素材與其他副本；不合併推送。
+- 驗收技能三岔標題、提示、切換／重置確認及錯誤、戰鬥摘要與舊配置狀態說明的新名稱；既有技能UI／切換／進化／Worker回歸與Build／diff後獨立Commit。交使用者重載驗收及主協調者Review／整合。
+- 完成11檔：技能三岔標題、懸浮提示／完整進化摘要／戰鬥最高階摘要、選擇／升級／切換／重置訊息、BOSS玩家技能與GM訊息同步「終極進化」；舊Status配置說明在狀態徽章UI投影時換稱，不回寫配置。主頁skills2 344／ui187／bridge326、Worker skills2／gm_exec及資源版同步；game_formula分類說明及系統總表更新。既有資料鍵ult／sgult、三選一索引／等級／效果與存檔原樣沿用，無配置或素材變更，不需BAT或素材庫Commit。
+- 驗證：`node --test tests/skill2-ui.test.cjs tests/battle-skill-summary.test.cjs tests/skill2-ult-switch.test.cjs tests/skill2-ult-evolution.test.cjs tests/gm-skill-unlock.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs`139項115過／24失敗；同一原HEAD產品碼及原測試以唯讀fs映射重跑亦115過／24失敗，失敗名稱逐項完全相同，無新增失敗。既有失敗包括缺塔進度的戰鬥摘要fixture及技能舊數值／法力條件，未擴修或放寬斷言。
+- 核心`node --test tests/skill2-ui.test.cjs tests/skill2-ult-switch.test.cjs tests/gm-skill-unlock.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/active-buffs-panel.test.cjs tests/runeword-aspd-stacks.test.cjs`85/85。直接執行正式UI與摘要函式逐一核對23群組、69選項皆使用新名稱；狀態徽章新稱且原配置說明未改。`npm.cmd run build`555檔及diff檢查通過，未新增測試檔；僅更新既有名稱預期及三岔標題斷言。
+- 唯讀未改：AI規範／流程／prompts/codex.md、js/status.js／player.js／elite_data.js／elite_boss.js、tools/config_tables.cjs、Skills2／Status CSV、docs/PARAM_PATCHES.md及上述其餘既有測試。無本次未完成實作，可供Review／合併，未合併推送；Commit為本段所在`[Codex] fix: 技能第八階三選一改名為終極進化`，回覆附編號。已知限制為上述24項既有失敗，未做完整瀏覽器流程；下一步重載本分支遊戲，其他副本需整合本Commit。
+
+## EQUIPMENT-QUALITY-NAME-20261021 — 裝備品質名稱前綴統一為級
+
+- Owner：Codex；Done；使用者要求所有裝備品質名稱前綴由「○○的」改成「○○級」。前置既有產裝、讀檔及工廠品質提升流程已完成，單一開發者；所有目標衝突預檢無外部來源。
+- 允許 js/data.js 前綴表與共用辨識、js/save.js 既有名稱修復（含三套裝備）、js/factory.js 品質提升名稱、index.html／js/bridge.js／js/worker/sim.worker.js 必要快取、tests/equipment-quality-name.test.cjs、LV_upgrade_system.md 及本紀錄。禁止品質數值／解鎖／Protocol／存檔結構／配置表／素材與其他副本修改；不合併推送。
+- 驗收新產出全部品質、舊／新名稱重複讀檔不疊前綴、三套裝備／背包／工廠／熔爐／神鑄槽與保留中的品質提升流程，執行相關回歸及 Build／diff 後獨立 Commit。後續使用者重載分支驗收，交使用者或主協調者 Review／整合。
+- 完成9檔：11種品質前綴全改為級，共用新舊前綴辨識供讀檔／品質提升使用；三套裝備、背包、生產佇列／熔爐傳送帶、神鑄槽及上次裝備產物皆同步名稱，寶石產物跳過。保留舊存檔欄位及歷史前綴相容，JSON往返重複讀檔不疊字；主頁data93／save20／bridge325及Worker資料／工廠／存檔資源快取同步。系統總表更新；無配置、素材或素材庫變更。
+- 測試：`node --test tests/equipment-quality-name.test.cjs tests/two-hand-save-migration.test.cjs tests/effect-value-storage.test.cjs tests/item-detail-html.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/save-compression.test.cjs`共65項63過／2項既有失敗，新專項4/4。以唯讀fs映射載入HEAD原data／factory／save重跑雙手遷移原測試，亦1過2失敗，斷言位置及5≠8／3≠8完全相同；未改該測試或配置掩蓋問題。`npm.cmd run build`555檔通過，`git diff --check`通過。
+- 唯讀未改：AI規範／工作流／prompts/codex.md、js/item.js／player.js／newforge.js／forge.js／formula.js及上述既有回歸檔；沒有跨副本修改或合併推送。本次無未完成實作，可供Review／合併；Commit為本段所在`[Codex] fix: 裝備品質名稱前綴統一改為級`，回覆附編號。已知限制為上述兩項既有雙手鑲孔測試失敗，未跑完整瀏覽器流程；下一步重載本分支遊戲，其他副本需整合本Commit。
+
 ## MERGE-SKILLS2-PARAMS-20261021 — develop 技能參數合併（Done）
 
 - Owner：Codex；使用者明確要求解決本次同步衝突，於 develop 主整合副本完成既有 pending merge；HEAD 62fcd23b、incoming c8f57186、base 5a1cb656。未委派、不推送、不修改其他工作區；預檢來源均屬此次授權整合的分支，其他副本無未提交修改。

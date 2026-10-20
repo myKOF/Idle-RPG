@@ -836,17 +836,20 @@ function migrateSave(data) {
   var taskMax = (typeof TASKS !== 'undefined' && TASKS) ? TASKS.length : 0;
   data.taskState.idx = clamp(Math.floor(Number(data.taskState.idx) || 0), 0, taskMax);
   
-  // 修正舊有裝備名稱前綴（「神鑄創世的」須排最前，避免被「神鑄的/創世的」截半）
+  // 統一新舊裝備名稱前綴，重複讀檔不疊加「級」。
   var fixName = function(it) {
     if (!it) return;
-    it.name = RARITY_PREFIX[it.rarity] + it.name.replace(/^(神鑄混沌的|混沌的|神鑄創世的|粗糙的|堅實的|精工的|奇異的|大師級|傳世的|神鑄的|創世的|普通的|精良的|稀有的|獨特的|史詩的|傳說的|神話的)/, '');
+    it.name = RARITY_PREFIX[it.rarity] + it.name.replace(RARITY_PREFIX_PATTERN, '');
   };
-  for (var k in data.equipment) fixName(data.equipment[k]);
+  data.equipmentSets.forEach(function (set) {
+    for (var k in set) fixName(set[k]);
+  });
   data.inventory.forEach(fixName);
   data.factory.conveyor.forEach(fixName);
   data.factory.synthBuffer.forEach(fixName);
   (typeof newForgeAllQueuedItems === 'function' ? newForgeAllQueuedItems(data) : ((data.newForge && data.newForge.queue) || [])).forEach(fixName);
   ((data.forge && data.forge.slots) || []).forEach(function (it) { if (it && it.kind !== 'gem') fixName(it); });
+  if (data.forge && data.forge.result && data.forge.result.kind !== 'gem') fixName(data.forge.result);
 
   return data;
 }
