@@ -2363,9 +2363,9 @@ function sgProjectileHit(projectile, target, ctx) {
   if (projectile.stunChance > 0 && chance(projectile.stunChance)) {
     sgTryStun(target, projectile.stunSec, projectile.stunSlot);
   }
-  /* 命中時附加的減益（狂風碎裂的移速下降）：施加哪一個狀態由呼叫端指定的表格位置決定，
+  /* 命中時附加的減益（狂風碎裂的雙緩速）：施加哪一個狀態由呼叫端指定的表格位置決定，
      因此不必為了一個減益再多寫一支 hitFn。 */
-  if (projectile.slowSlot && projectile.slowPct > 0 && target.hp > 0) {
+  if (!res.invuln && projectile.slowSlot && projectile.slowPct > 0 && target.hp > 0) {
     sgApplySlot(target, projectile.slowSlot.gid, projectile.slowSlot.tier, 'enemy', projectile.slowSlot.idx || 0,
       { val: projectile.slowPct });
   }
@@ -5426,8 +5426,8 @@ function sgGroundHitSubType(f) {
     }
     /* 傳奇【裂風】：命中後才累加，因此這一次命中吃到的仍是累加前的加成。 */
     if (f.ramp) f.ramp.n++;
-    /* 第 6 階【狂風碎裂】：追擊型風刃的移速下降（與飛行物那條路同一個狀態鍵）。 */
-    if (f.slowSlot && f.slowPct > 0 && victims[i].hp > 0) {
+    /* 第 6 階【狂風碎裂】：追擊型風刃的雙緩速（與飛行物那條路同一個狀態鍵）。 */
+    if (!res.invuln && f.slowSlot && f.slowPct > 0 && victims[i].hp > 0) {
       sgApplySlot(victims[i], f.slowSlot.gid, f.slowSlot.tier, 'enemy', f.slowSlot.idx || 0, { val: f.slowPct });
     }
     if (f.burnSpec && f.burnChance > 0 && chance(f.burnChance)) sgApplyBurn(victims[i], f.burnSpec);
@@ -9056,7 +9056,7 @@ function skill2FrostAspdFactor(ent) {
 function skill2FrostSlowFactor(ent) {
   return skill2FrostMoveFactor(ent);
 }
-function skill2SlowAspdFactor(ent) { return skill2MireAspdFactor(ent) * skill2FrostAspdFactor(ent) * skill2StiffenFactor(ent); }
+function skill2SlowAspdFactor(ent) { return skill2MireAspdFactor(ent) * skill2FrostAspdFactor(ent) * skill2StiffenFactor(ent) * skill2WindAspdFactor(ent); }
 function skill2SlowMoveFactor(ent) {
   return skill2MoveSlowFactor(ent) * skill2FrostMoveFactor(ent) * skill2WindMoveFactor(ent) *
     skill2StiffenFactor(ent);
@@ -10466,6 +10466,9 @@ function sgApplyWindErode(ent, spec) {
 /* 第 6 階【狂風碎裂】的命中緩速：施加哪一個狀態由 Skills2 第 6 階「敵方狀態」第一格決定，
    飛行物與追擊場域兩條路共用同一個位置。 */
 var SG_WINDBLADE_SLOW_SLOT = { gid: 'windblade', tier: '6' };
+function sgWindbladeSlowPct(g, lvs) {
+  return lvs && lvs[5] > 0 ? Math.max(0, sgVal(g.tiers[5].fx, 'move', lvs[5])) : 0;
+}
 function sgWindbladeProjectileHit(ramp, erode) {
   if (!ramp && !erode) return null;
   return function (target) {
@@ -10600,6 +10603,12 @@ function skill2WindMoveFactor(ent) {
   if (gale > 0) f *= Math.max(0.05, 1 - Math.min(95, gale) / 100);
   return f;
 }
+/* 狂風碎裂的同一狀態值同時降低移速與攻速；攻速沿既有slowFactor控場遞減出口。 */
+function skill2WindAspdFactor(ent) {
+  if (typeof isBossControlImmune === 'function' && isBossControlImmune(ent)) return 1;
+  var pct = typeof buffVal === 'function' ? Math.max(0, buffVal(ent, 'sgWindSlow')) : 0;
+  return Math.max(0.05, 1 - Math.min(95, pct) / 100);
+}
 
 /* ---- 我方風系減免與風系增傷（暴風屏障 T1／T7）---- */
 /* 風系類型的傷害減免%：屏障與神體**先相加**（設計文檔：只會與風系類型的傷害減免相加總），
@@ -10666,9 +10675,10 @@ function sgWindbladeGeom(g, lvs, lg) {
 }
 
 /* 射出一道風刃：傷害、幾何與特效走同一組參數，因此模擬層與顯示層不會走鐘。
-   small＝小型風刃（體積較小、傷害為原風刃的一部分、不帶狂風碎裂的效果）。 */
+   small＝小型風刃（體積較小、傷害為原風刃的一部分，同樣可附加狂風碎裂）。 */
 function sgLaunchWindBlade(pEnt, st, gid, cfg, floatSel, out) {
   var geom = cfg.geom;
+  var slowPct = gid === 'windblade' ? sgWindbladeSlowPct(SKILLS2.windblade, skills2Levels('windblade')) : 0;
   /* 額外的彈體倍率（1＝原本的體積），判定與特效共用。 */
   var sizeMult = Math.max(0.1, Number(cfg.sizeMult) || 1);
   var halfPx = (cfg.small ? geom.smallHalfPx : geom.halfWidthPx) * sizeMult;
@@ -10691,9 +10701,7 @@ function sgLaunchWindBlade(pEnt, st, gid, cfg, floatSel, out) {
   sgQueueFlyingProjectile(pEnt, st, gid, cfg.dmgVal, geomOk ? origin : null, cfg.angle,
     geom.lenPx, floatSel, cfg.fallback || [], {
       halfWidthPx: halfPx, speed: geom.speedPx, beginSec: cfg.beginSec || 0,
-      slowSlot: cfg.slowPct > 0 ? SG_WINDBLADE_SLOW_SLOT : null, slowPct: cfg.slowPct || 0,
-      pulseGap: cfg.pulseGap || 0, pulseRadius: cfg.pulseRadius || 0,
-      pulseDmg: cfg.pulseDmg || 0, pulseVariant: 'wind-burst',
+      slowSlot: slowPct > 0 ? SG_WINDBLADE_SLOW_SLOT : null, slowPct: slowPct,
       /* 傳奇【裂風】的加成在命中前讀、【風蝕】與累加在命中後做。 */
       bonusPctFn: cfg.ramp ? function () { return sgRampPct(cfg.ramp); } : null,
       onHit: function(victim,res,projectile,ctx){
@@ -10706,10 +10714,11 @@ function sgLaunchWindBlade(pEnt, st, gid, cfg, floatSel, out) {
 
 /* 【追跡風刃】：小型風刃改為在場上隨機追擊（追擊場域＋接觸判定，與追蹤冰箭同一套）。
    超神【暴風萬刃】把大型風刃也送進這一支（opts 覆寫體積、壽命與追擊半徑，
-   並帶上第 6 階【狂風碎裂】的緩速與沿途脈衝）——兩種風刃的追擊行為因此只有一份實作。 */
+   並帶上第 6 階【狂風碎裂】的命中雙緩速）——兩種風刃的追擊行為因此只有一份實作。 */
 function sgSpawnWindChaser(pEnt, st, g, lvs, angle, dmgVal, geom, floatSel, opts) {
   opts = opts || {};
   var fx = g.tiers[4].fx;
+  var slowPct = sgWindbladeSlowPct(g, lvs);
   var lifeSec = Math.max(0.5, Number(opts.sec) > 0 ? Number(opts.sec) : sgVal(fx, 'sec', lvs[4]));
   var gap = Math.max(0.05, sgGeometryNumber(fx, 'gap') || 0.1);
   var from = (typeof bfPlayerPos === 'function') ? bfPlayerPos() : null;
@@ -10722,9 +10731,7 @@ function sgSpawnWindChaser(pEnt, st, g, lvs, angle, dmgVal, geom, floatSel, opts
     dmgVal: dmgVal, hits: Math.max(1, Math.round(lifeSec / gap)), gap: gap,
     speed: geom.speedPx, chaseM: chaseM, contact: true,
     ramp: opts.ramp || null, onHit: opts.onHit || null,
-    slowSlot: (opts.slowPct > 0) ? SG_WINDBLADE_SLOW_SLOT : null, slowPct: opts.slowPct || 0,
-    pulseGap: opts.pulseGap || 0, pulseRadius: opts.pulseRadius || 0,
-    pulseDmg: opts.pulseDmg || 0, pulseVariant: 'wind-burst',
+    slowSlot: slowPct > 0 ? SG_WINDBLADE_SLOW_SLOT : null, slowPct: slowPct,
     startDelaySec: Math.max(0,Number(opts.beginSec)||0),
     vfxTier: 5, vfxUlt: (opts && opts.vfxUlt) || ''
   });
@@ -10781,23 +10788,20 @@ function sgWindbladeKillHeal(pEnt, st, floatSel) {
 }
 
 /* 射出一道大型風刃。超神【暴風萬刃】把它改成全場追擊的場域，其餘情況照舊直線飛出；
-   兩條路都帶著第 6 階【狂風碎裂】的緩速與沿途脈衝，以及傳奇【裂風】【風蝕】的掛鉤。 */
+   兩條路都帶著第 6 階【狂風碎裂】的命中雙緩速，以及傳奇【裂風】【風蝕】的掛鉤。 */
 function sgFireWindBlade(pEnt, st, g, lvs, cfg, floatSel, out) {
   var ramp = sgWindbladeRamp(cfg.lg);
   if (cfg.myriad) {
     sgSpawnWindChaser(pEnt, st, g, lvs, cfg.angle, cfg.dmgVal, cfg.geom, floatSel, {
       sec: sgUltVal(cfg.myriad, 'sec'), chaseM: sgUltVal(cfg.myriad, 'chaseM'), beginSec: cfg.beginSec,
       radius: cfg.geom.halfWidthPx, ramp: ramp, onHit: sgWindbladeGroundHit(cfg.erode),
-      slowPct: cfg.slowPct, pulseGap: cfg.pulseGap,
-      pulseRadius: cfg.pulseRadius, pulseDmg: cfg.pulseDmg,
       vfxUlt: 'stormMyriad'
     });
     return;
   }
   sgLaunchWindBlade(pEnt, st, 'windblade', {
     geom: cfg.geom, angle: cfg.angle, dmgVal: cfg.dmgVal, pool: cfg.pool, geomOk: cfg.geomOk,
-    fallback: [cfg.primary], beginSec: cfg.beginSec || 0, slowPct: cfg.slowPct,
-    pulseGap: cfg.pulseGap, pulseRadius: cfg.pulseRadius, pulseDmg: cfg.pulseDmg,
+    fallback: [cfg.primary], beginSec: cfg.beginSec || 0,
     sizeMult: cfg.sizeMult, ramp: ramp, onHit: sgWindbladeProjectileHit(ramp, cfg.erode)
   }, floatSel, out);
 }
@@ -10833,12 +10837,6 @@ function sgCastWindblade(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   // 超神【暴風萬刃】：每個方向每次發射的大小風刃同步增加，沿用原波次間隔。
   if (myriad) volleys += Math.max(0, Math.floor(sgUltVal(myriad, 'add')));
 
-  // 【狂風碎裂】：命中的敵人移速下降，且風刃沿途每 gap 秒炸一次周圍（只有主風刃有）
-  var slowPct = lvs[5] > 0 ? Math.max(0, Number(t[5].fx.move) || 0) : 0;
-  var pulseGap = lvs[5] > 0 ? Math.max(0.05, sgVal(t[5].fx, 'gap', lvs[5])) : 0;
-  var pulseRadius = lvs[5] > 0 ? bfMeterPx(sgGeometryNumber(t[5].fx, 'm') || 6) : 0;
-  var pulseDmg = lvs[5] > 0 ? dmgVal * (Number(t[5].fx.pct) || 0) / 100 : 0;
-
   /* 【亂披風】：小型風刃朝主風刃一側 deg 度；傷害為原風刃的一部分。
      傳奇【風之痕】：另一側再補一道（sides），且小型風刃傷害獨立乘算。 */
   var smallDmg = lvs[3] > 0
@@ -10855,8 +10853,7 @@ function sgCastWindblade(pEnt, st, g, lvs, pool, primary, floatSel, out) {
       var beginSec = vi * volleyGap;
       sgFireWindBlade(pEnt, st, g, lvs, {
         geom: geom, angle: dirs[di], dmgVal: dmgVal, pool: pool, geomOk: geomOk,
-        primary: primary, beginSec: beginSec, slowPct: slowPct,
-        pulseGap: pulseGap, pulseRadius: pulseRadius, pulseDmg: pulseDmg,
+        primary: primary, beginSec: beginSec,
         lg: lg, erode: erode, myriad: myriad
       }, floatSel, out);
       if (smallDmg <= 0) continue;

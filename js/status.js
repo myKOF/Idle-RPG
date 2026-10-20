@@ -205,7 +205,7 @@ var CC_CATS_BY_KEY = {
   stun: ['act'],
   slow: ['aspd'], aspdDown: ['aspd'], attackSpeedDown: ['aspd'],
   sgMire: ['aspd', 'move'], sgFrost: ['aspd', 'move'], sgStiffen: ['aspd', 'move'],
-  sgWindRend: ['move'], sgWindSlow: ['move']
+  sgWindRend: ['move'], sgWindSlow: ['aspd', 'move']
 };
 function statusControlCats(key) { return CC_CATS_BY_KEY[key] || null; }
 

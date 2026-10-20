@@ -297,21 +297,22 @@ test('追擊場域有轉彎半徑：體積越大轉得越開，且不做原地�
   assert.ok(sawTurn, '敵人在身後時必須真的轉向（不是一路直線飛走）');
 });
 
-test('【狂風碎裂】：命中附加移速減益，並在飛行途中沿路脈衝', () => {
+test('【狂風碎裂】：命中附加隨等級成長的雙緩速，不再產生沿途脈衝', () => {
   const c = loadContext(); const calls = stubHits(c); const specs = stubVfx(c);
+  // 正式參數稍後由使用者BAT合併，這裡先隔離本次提案。
+  c.SKILLS2.windblade.tiers[5].fx = { move: 20, movePer: 2 };
   setLevels(c, 'windblade', [1, 1, 1, 1, 1, 1, 0]); equip(c, 'windblade');
-  const p = playerEnt(); c.FIELD.player = p;
+  const p = playerEnt(); p.mp = 100000; c.FIELD.player = p;
   const e = enemy(1e9, 10 * M, 0);
   c.castSkill2(p, [e], 'windblade', 'mv-float');
   run(c, p, [e], 2);
-  assert.equal(c.buffVal(e, 'sgWindSlow'), 60, '文檔：降低 60% 移動速度');
-  assert.ok(Math.abs(c.skill2WindMoveFactor(e) - 0.4) < 1e-9, '移速倍率 0.4');
-  assert.ok(Math.abs(c.skill2SlowMoveFactor(e) - 0.4) < 1e-9, '通用緩速收斂點吃得到風系');
+  assert.equal(c.buffVal(e, 'sgWindSlow'), 22, '基值20%，Lv1再加2%');
+  assert.ok(Math.abs(c.skill2WindMoveFactor(e) - 0.78) < 1e-9);
+  assert.ok(Math.abs(c.skill2SlowMoveFactor(e) - 0.78) < 1e-9);
+  assert.ok(Math.abs(c.slowFactor(e) - 0.78) < 1e-9, '實際攻擊冷卻收斂點讀到雙緩速');
   const pulses = specs.filter((s) => s.variant === 'wind-burst');
-  assert.ok(pulses.length >= 2, '每 (0.6-0.03×Lv) 秒脈衝一次');
-  const main = 500 * (2.2 + 0.6);
-  const pulseHits = calls.filter((x) => Math.abs(x.atk - main * 0.5) < 1e-6);
-  assert.ok(pulseHits.length >= 1, '脈衝傷害 ＝ 風刃傷害的 50%');
+  assert.equal(pulses.length, 0);
+  assert.ok(calls.length > 0, '本體仍正常命中');
 });
 
 test('【暴風真空刃】：四方向各連續兩道，第 2 道之後延遲發射', () => {

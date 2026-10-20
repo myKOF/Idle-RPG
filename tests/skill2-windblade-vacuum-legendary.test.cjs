@@ -292,6 +292,7 @@ test('【暴風萬刃】：大型風刃改為全場追擊、每方向多 1 道�
     equip(c, 'windblade');
     if (withUlt) setUlt(c, 'windblade', 'stormMyriad', 1);
     const p = playerEnt();
+    p.mp = 100000;
     const list = [enemy(1e9, 20, 0, 'a')];
     c.castSkill2(p, list, 'windblade', 'mv-float');
     const geom = c.sgWindbladeGeom(c.SKILLS2.windblade, c.skills2Levels('windblade'), {});
@@ -305,7 +306,7 @@ test('【暴風萬刃】：大型風刃改為全場追擊、每方向多 1 道�
   assert.equal(bigChasers.length, 12, '大型風刃改走追擊場域，體積仍是大型的判定半寬');
   bigChasers.forEach((f) => {
     assert.equal(f.chaseM, 60, '追擊半徑取超神自己的表定值');
-    assert.ok(f.pulseDmg > 0, '第 6 階【狂風碎裂】的沿途脈衝要跟著換到這條路上');
+    assert.equal(f.pulseDmg, 0, '狂風碎裂不再產生沿途脈衝');
     // 緩速也一起帶過來：施加哪個狀態讀第 6 階的敵方狀態（物件來自 vm context，逐欄比對）
     assert.equal(f.slowSlot && f.slowSlot.gid, 'windblade');
     assert.equal(f.slowSlot && f.slowSlot.tier, '6');

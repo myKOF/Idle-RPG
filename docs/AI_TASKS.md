@@ -1,5 +1,20 @@
 # AI_TASKS.md
 
+## WINDBLADE-FRACTURE-SLOW-20261020 — 狂風碎裂改為命中雙緩速
+
+- Owner：Codex；程式完成／配置Pending；使用者要求風刃命中使移速與攻速各-20%，每級各再-2%，移除每秒周圍傷害。沿既有sgWindSlow狀態共用同幅度數值，保留原持續時間；主／小型／追擊／被動小風刃成功命中均適用，不影響其他技能借用的小風刃。沿上一輪使用者「你照改，我改完再套用」，交付程式與待套用差異，不代跑正式BAT。
+- 允許js/skills2.js風刃緩速與脈衝移除、status.js控場分類、必要index／bridge／Worker快取、tools/skills2-vfx.cjs用途說明、Skills2／Status既有格差異JSON、tests/windblade-fracture／skill2-wind／windblade-vacuum-legendary／control-decay／wind-skill-audit相關案例、game_formula／LV_upgrade_system／本紀錄；禁止其他技能公式、Protocol／存檔／Preset／素材／其他副本修改。所有目標衝突預檢無外部來源。
+- 前置飛行物／追擊接觸命中與狀態控場遞減已存在；驗收各級雙緩速／實際移動攻速收斂、命中才生效／MISS無敵致死、大小直射與大小追擊／被動小風刃／跨樹隔離、沒有沿途脈衝傷害或爆點、Boss攻速免疫／兩類遞減／到期與刷新、Worker狀態顯示與本體事件、原生Excel隔離合併／回歸基準／Build／diff後獨立Commit。正式新參數待使用者BAT，解鎖不變。
+- 修改15檔：skills2新增依第6階等級計算的共用雙緩速值，大小直射／大小追擊／被動追擊皆在實際成功命中後套原狀態；MISS／無敵／致死不附加，其他樹借用不帶風刃減益。移速仍沿bfEnemySpeedFactor，攻速接skill2SlowAspdFactor→slowFactor，Boss保持攻速免疫；status.js把sgWindSlow登記aspd與move兩類，分別計次／遞減。刪除主刃／追擊刃所有脈衝規格產生與轉送，殘留舊pct／gap／m也不會重啟；本體傷害／幾何／飛行與命中特效不變。共用舊pulse欄維持相容且新風刃皆為零，T6觸發特效仍供天落繁星借用，沒有移除其他技能落地爆點。
+- tools/skills2-vfx同步T6／暴風萬刃／嵐之山用途，不再宣稱沿途風爆，保留舊欄相容與巨大風刃借用來源；index status40／skills2 340／bridge321、bridge／Worker兩支import更新windblade-double-slow，四份既有測試及新增七項、game_formula／LV_upgrade_system／本紀錄與差異JSON同步。沒有修改Protocol／存檔／其他技能數值／Preset／素材，素材庫無本次變更，不需素材Commit。
+- 待套用a2b43e6c-0150-481a-92a7-f063e6578540.json共10格：Skills2第6階效果move20／movePer2（同一值控制兩個同幅度減益）、舊傷害半徑／間隔清空、兩格說明與三列特效用途；Status的sgWindSlow預設值20及雙緩速說明，三秒與refresh不變。不覆寫正式Excel／CSV／JS字面值，也不移動上一輪無限閃電待套用檔。
+- 原生隔離：從已儲存兩本工作簿複製，真param-patches與Excel合併並正常重開；逐格與本次archive原始檔比較恰為Skills2八格（Q207／AE207／AV207／AW207／AX207／AY207／AY209／AY210）及Status兩格（L53／T53），沒有其他資料差異。最初table讀取器將數值格統一字串化，Status.before誤記為字串60而原生值為數字60，隔離安全檢查因此拒絕；原生snapshot確認型別、正式Status與隔離original逐位元相同後，修正自己尚未提交請求的讀取型別before=60／after=20數字，再原生套用10格通過。這是讀取型別錯誤修正，沒有改使用者現值／放寬同格比較／捏造approval；正式BAT日後仍保留完整衝突檢查。
+- 專項：`node --test tests/windblade-fracture.test.cjs`7/7；Pending時僅在測試記憶體讀自己JSON的已備妥參數，另以實際原生Excel編譯的新Skills2／Status映射同樣7/7。涵蓋Lv1=22%／Lv5=30%／Lv10=40%、實際bf移速與slowFactor攻速、抵達前無狀態、大小直射／大小追擊／被動與跨樹隔離、四形態殘留舊參數不能生風爆、MISS／無敵／致死／未學、三秒refresh／單層／到期恢復／狀態列同值、兩類獨立遞減與Boss、啟用前後本體命中傷害及幾何逐值相同／離路敵人不受傷，事件穿正式Worker shim保留本體／命中且無風爆。初次fixture把被動小刃傷害一併關掉及離路敵人仍在放大後刃寬，調整測試場景後通過，沒有降低產品正確性。
+- 核心：`node --test --test-reporter=tap tests/windblade-fracture.test.cjs tests/status-system.test.cjs tests/skills2-vfx-schema.test.cjs tests/skill-vfx-inheritance.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/infinite-lightning.test.cjs tests/eternal-thunder-prison.test.cjs`原生隔離編譯映射76/76，提交index來源＋正式舊配置及待套用fixture再驗同76項。另`--test-name-pattern='大型風刃改為全場追擊|追擊及直射風刃MISS|狂風碎裂'`三份既有風系測試3/3，相關兩個fixture補足實際施法所需法力才進入受測邏輯，未放寬數量／傷害／事件斷言。
+- 擴大121項（skill2-wind／skill2-windblade-vacuum-legendary／wind-skill-audit 106項＋control-decay15項）74過／47既有失敗；以相同新配置、唯讀換回本次修改前skills2／status程式，同名集合比對無新增失敗。基準72過／49失敗，多出的兩項是已改要求的T6雙緩速及控場分類；既有失敗集中舊風系數值／解鎖法力fixture、舊素材斷言，以及控場測試仍預期5%而現行參數為10%。沒有調整權威參數或放寬無關測試。新增七項在舊程式下五項失敗，保留原本正確的兩項仍通過，能攔住舊單緩速／小風刃漏接／殘留脈衝／攻速分類。
+- 其他：`npm.cmd run build`553檔通過，最後測試補強另檢語法；兩表config_tables dry-run語意差異0與diff通過。唯讀未改：AI規範／工作流／prompts、combat／formula的傷害及控場規則、battlefield幾何、Worker Protocol／shim來源、VFX Runtime／Core／renderer與素材、geometry／config_tables及Excel工具。使用者所有既有Excel／CSV／JS文案與其他三CSV保留，提交只收本任務15檔、Skills2與Status正式字面值保持HEAD；沒有切換分支／合併／推送。
+- 交付：程式及差異可Review／整合，Commit為本段所在`[Codex] feat: 狂風碎裂改為命中雙緩速並移除沿途傷害`，回覆附編號。正式參數依使用者安排Pending；待其完成Skills2／Status編輯並儲存關閉後，可與無限閃電一併按BAT合併，之後再核對正式設定。不宣稱新參數已啟用，未做完整瀏覽器長戰，另有上述47項既有失敗。
+
 ## INFINITE-LIGHTNING-20261020 — 無限閃電永久單道自動發射
 
 - Owner：Codex；程式完成／配置Pending；使用者要求每秒自動發射一道連鎖閃電，每級間隔-0.06秒，兼具1～7階效果但限一道。單一開發者；前置連鎖閃電逐跳命中／Worker飛行與配置差異管線完成，解鎖條件不改。使用者明確回覆「你照改，我改完再套用」，故本輪交付程式與待套用差異，不等待或代替使用者執行正式BAT。
