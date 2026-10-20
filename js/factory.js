@@ -359,7 +359,7 @@ function tryHybridSynthesis() {
     it.rarity++;
     ensureSockets(it); // 稀有度提升 → 插槽數同步增加
     normalizeTwoHandItemCounts(it); // 雙手武器：詞條數同步補至新稀有度基準 +1（非雙手為 no-op）
-    it.name = RARITY_PREFIX[it.rarity] + it.name.replace(/^(神鑄創世的|粗糙的|堅實的|精工的|奇異的|大師級|傳世的|神鑄的|創世的|普通的|精良的|稀有的|獨特的|史詩的|傳說的|神話的)/, '');
+    it.name = RARITY_PREFIX[it.rarity] + it.name.replace(RARITY_PREFIX_PATTERN, '');
     // 升至傳說級後補傳奇特效，並遵守武器類型限制。
     if (it.rarity >= PASSIVE_MIN_RARITY && !it.passive) {
       var passiveKeys = passiveKeysForItem(it);

@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## EQUIPMENT-QUALITY-NAME-20261021 — 裝備品質名稱前綴統一為級
+
+- Owner：Codex；Done；使用者要求所有裝備品質名稱前綴由「○○的」改成「○○級」。前置既有產裝、讀檔及工廠品質提升流程已完成，單一開發者；所有目標衝突預檢無外部來源。
+- 允許 js/data.js 前綴表與共用辨識、js/save.js 既有名稱修復（含三套裝備）、js/factory.js 品質提升名稱、index.html／js/bridge.js／js/worker/sim.worker.js 必要快取、tests/equipment-quality-name.test.cjs、LV_upgrade_system.md 及本紀錄。禁止品質數值／解鎖／Protocol／存檔結構／配置表／素材與其他副本修改；不合併推送。
+- 驗收新產出全部品質、舊／新名稱重複讀檔不疊前綴、三套裝備／背包／工廠／熔爐／神鑄槽與保留中的品質提升流程，執行相關回歸及 Build／diff 後獨立 Commit。後續使用者重載分支驗收，交使用者或主協調者 Review／整合。
+- 完成9檔：11種品質前綴全改為級，共用新舊前綴辨識供讀檔／品質提升使用；三套裝備、背包、生產佇列／熔爐傳送帶、神鑄槽及上次裝備產物皆同步名稱，寶石產物跳過。保留舊存檔欄位及歷史前綴相容，JSON往返重複讀檔不疊字；主頁data93／save20／bridge325及Worker資料／工廠／存檔資源快取同步。系統總表更新；無配置、素材或素材庫變更。
+- 測試：`node --test tests/equipment-quality-name.test.cjs tests/two-hand-save-migration.test.cjs tests/effect-value-storage.test.cjs tests/item-detail-html.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/save-compression.test.cjs`共65項63過／2項既有失敗，新專項4/4。以唯讀fs映射載入HEAD原data／factory／save重跑雙手遷移原測試，亦1過2失敗，斷言位置及5≠8／3≠8完全相同；未改該測試或配置掩蓋問題。`npm.cmd run build`555檔通過，`git diff --check`通過。
+- 唯讀未改：AI規範／工作流／prompts/codex.md、js/item.js／player.js／newforge.js／forge.js／formula.js及上述既有回歸檔；沒有跨副本修改或合併推送。本次無未完成實作，可供Review／合併；Commit為本段所在`[Codex] fix: 裝備品質名稱前綴統一改為級`，回覆附編號。已知限制為上述兩項既有雙手鑲孔測試失敗，未跑完整瀏覽器流程；下一步重載本分支遊戲，其他副本需整合本Commit。
+
 ## MERGE-SKILLS2-PARAMS-20261021 — develop 技能參數合併（Done）
 
 - Owner：Codex；使用者明確要求解決本次同步衝突，於 develop 主整合副本完成既有 pending merge；HEAD 62fcd23b、incoming c8f57186、base 5a1cb656。未委派、不推送、不修改其他工作區；預檢來源均屬此次授權整合的分支，其他副本無未提交修改。
