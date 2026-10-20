@@ -11496,3 +11496,13 @@ Worker 存活且頁面正常完成載入。
 - 瀏覽器：沿本聊天已載入的規範與CUA API，以正式index詳情區段、8份CSS、itemDetailHTML／itemCellHTML／itemSocketHTML建立隔離壓力頁；14詞條與18孔僅作長內容壓力資料，不宣稱為合法產出裝備，不寫入玩家存檔。用同一份資料先顯示原版樣式再套神話框，標題／副標／首條詞條的x、y偏移均0。實際按頂部／中段／底部，內容捲動約0／80.8／160.8px時，外框頂底與操作列座標完全不動；最末鑲孔可見、無水平溢出、捲軸位於品質框內。神話及一般鑲嵌長頁亦能到底、取消選取不殘框。外框曾因絕對定位角飾產生1px隱藏捲動範圍，改clip後嘗試令其scrollTop=20仍維持0，避免焦點移動再帶動裝飾。確認tips局部alpha值、光暈減半及icon紅區高度，Console warning／error0。
 - 預覽證據：mythic-detail-fixed-top.png與mythic-detail-scroll-bottom.png保存在本聊天visualizations；臨時壓力頁及服務已清理。未做完整遊戲流程／跨瀏覽器／長時間效能驗證。唯讀未改：js/ui.js／js/item.js、兩份ashen-forge皮膚、裝備排版／選取／武器／比較／洗煉／鑲嵌六份測試。無本次未完成實作，可供Review／合併，未合併推送。
 - 同副本協作：執行中另有鑲嵌每行十格修改及參數套用；index的ashen快取行、LV_upgrade_system寶石功能列與本輪修改是不同區段，三方merge-file乾跑退出0且結果與工作區逐位元一致。對方以b3203e94獨立提交後，再核對最新HEAD，僅提交本輪4檔的自身差異，保留其提交與其他未提交Excel／CSV／skills2內容；未使用先前HEAD的暫存候選覆蓋新提交。交付Commit為本段所在`[Codex] fix: 修正神話詳情捲動與排版並降低tips白光`，回覆附編號。後續使用者重載本分支驗收，其他副本須整合Commit。
+
+## MYTHIC-GLOW-A-20261020 — 神話tips與詳情套用30%白光
+
+- Owner：Codex；Done；使用者選擇A版，要求tips與裝備詳情同步套用，並授權合併develop，未授權推送。單一開發者；依賴前版外觀整合e9b8e3f4完成。允許css/style.css神話內層背景、index.html僅style快取、LV_upgrade_system.md及本紀錄；禁止裝備icon／框色／角飾／排版／玩法／配置／JS／Worker／存檔／其他品質與素材變更。
+- 修改前預檢僅出現本聊天前版整合提交：CSS逐位元同develop；index僅無關ashen快取不同，LV僅無關寶石功能列不同，docs為前版整合紀錄不同。以8489269f為基準merge-tree乾跑乾淨；本次分段修改不碰那些區段，不同步或切換有五份使用者未提交檔案的Codex副本。完成後僅移植本次提交至develop，排除先前b3203e94寶石放大十欄。
+- 依已確認A圖，光暈36/255、細紋3/255及亮灰底232/255／230/255／239/255三個alpha各乘0.3，底層用同圖#121418；tips／比較卡／詳情使用同一背景模板，移除舊tips半光局部覆寫，避免兩處亮度分歧。style84→85，無新增素材，素材庫無本次變更。
+- 驗收：正式八份CSS與itemDetailHTML確認tips／比較卡／詳情同底色，暖銅框及資訊位置保留；相關裝備六檔50項、Build、瀏覽器與Console／截圖、diff後獨立Commit，再以乾淨develop整合與檢查範圍。
+- 完成四檔，未新增或放寬測試。`node --test tests/equipment-detail-layout.test.cjs tests/equip-socket-ui.test.cjs tests/equip-reroll-ui.test.cjs tests/equipment-tooltip-compare.test.cjs tests/equipment-selection-border.test.cjs tests/equipment-weapon-icons.test.cjs`50/50；`npm.cmd run build`554檔通過，自身四檔diff檢查通過。唯讀未改js/ui.js／js/item.js、兩份ashen皮膚、上述六份回歸與配置；使用者五份未提交配置／技能檔保留。
+- 瀏覽器：browser-use舊backend仍無法發現IAB，沿本聊天CUA API完成正式八份CSS及itemDetailHTML隔離驗證，不載入玩家存檔。讀取計算樣式確認tips與詳情五層backgroundImage逐字一致，與已確認A版各層alpha一致；詳情位置與尺寸保持上一張A圖，詞條／特效／孔框可讀、外框角飾保留。Console warning／error0；截圖mythic-glow-a-applied.png保存在本聊天visualizations。未驗完整遊戲流程／跨瀏覽器／長時間效能，前輪兩項雙手fixture既有失敗未擴修。無未完成實作，可合併；接續僅移植此提交至乾淨develop。
+- 整合：來源faf4d880在獨立worktree從develop移植為6e98789b，merge-tree及實際合併均乾淨；本地develop僅上述四檔有差異，index只有style84→85，ashen皮膚／其快取與寶石功能列維持develop原值，沒有帶入b3203e94。整合後同六檔再次50/50及Build554通過，CSS與已驗收來源逐位元一致。臨時HTML／服務／頁籤已清理、截圖保留；本段隨`[Codex] merge: 合併神話tips與詳情三成白光A版`提交，無未完成合併項目，未推送。後續重新整理develop遊戲即可檢視。
