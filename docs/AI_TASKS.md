@@ -1,5 +1,27 @@
 # AI_TASKS.md
 
+## PARAM-PATCH-STALE-LOCK-20261020 — 殘留Excel鎖定檔誤擋與BAT失敗提示截斷
+
+- Owner：Codex；Done；使用者在永恒雷獄套用時附圖要求處理。真實來源可取得ReadWrite獨占鎖，但2026-09-18留下的~$Skills2.xlsx被當成仍開啟；BAT停止分支第二行UTF8長提示被CMD截斷成未識別指令。
+- 允許tools/merge-param-patches.ps1、套用參數.bat、tests/param-patches.test.cjs及本紀錄；三檔衝突預檢乾淨。禁止修改正式Excel／CSV／遊戲配置與其他工具規則，不刪使用者鎖定檔或終止Excel程序；不涉及遊戲系統功能／解鎖，LV_upgrade_system無需另記工具修正。
+- 修正以來源實際獨占鎖判定，成功時保留owner檔並略過其提示，真實占用仍停止；同格比較／approval／備份／回復不變。BAT移除重複提示並維持CRLF。測試追加保留stale owner仍可合併、真CMD停止分支不得出現未識別指令，既有真Excel開啟／讀寫鎖仍拒絕、同格衝突／批准／重跑與格式保留全流程回歸。使用者已獲知可重跑，後續核對正式套用結果；與永恒功能分開Commit，不合併推送。
+- 驗證：`node --test tests/param-patches.test.cjs`最終7/7，含Windows原生Excel真正開啟／檔案獨占鎖阻擋、殘留owner不刪檔且成功合併、公式／樣式與資料保留、同格批准失效、雙工作簿停止與收據重跑。新增測試首次因自己的假owner留到後段Excel寫入fixture而逾時；改在驗完保留後清除測試自建標記，未改產品鎖定正確性，整套83秒通過。另以真CMD隔離對照：舊BAT（正規CRLF）精確重現截圖的「參數更新…不是內部指令」exit9009，新BAT只顯示正確停止訊息、exit1，無未識別命令。`npm.cmd run build`551檔與diff檢查通過。
+- 檢查未改：AI_RULES 8.5／PARAM_PATCHES流程、param-patches.cjs決策與approval、正式Excel內容／殘留owner、CSV／JS及使用者Excel程序；本次未直接合併正式差異。無新素材或素材Commit，無未完成工具修正，可供Review／合併；工具Commit `df77771a`，本交接紀錄隨後續永恒任務一併保存。使用者重跑時截圖一度仍在Excel背景階段，實際約12秒完成五格合併，使用者回覆「可以了」且完整BAT成功，正式永恒任務後續驗收完成。
+
+## ETERNAL-THUNDER-CHAIN-20261020 — 永恒雷獄改為命中接續落雷
+
+- Owner：Codex；Done；單一開發者。使用者要求命中的敵人再引發一道落雷，隨機攻擊其30米內敵人，最多連續2道、每級+0.2道；沿既有小數道數機率規則。前置落雷本體／命中時序與參數差異佇列已完成。
+- 允許js/skills2.js僅永恒命中接續、天降命中結果掛點與舊配置過渡；tools/skills2-geometry.cjs永恒搜敵欄接線、config/param-patches本任務差異JSON、永恒／既有落雷生命週期及傳奇測試、主頁／bridge／Worker快取、game_formula／LV_upgrade_system及本紀錄。禁止直接改正式Excel／CSV／SKILLS2配置字面值、其他技能規則／Protocol／存檔／Preset／素材與其他副本；依AI_RULES 8.5由使用者BAT套用，新配置未合併前維持Pending驗收，不合併推送。
+- 目標衝突預檢乾淨；每道原始落雷各自持有有限接續預算，命中後從被擊中敵人周圍隨機選其他存活敵人，延用原落雷傷害／暈眩／再生／本體命中特效與落地時間。驗收整數／機率增量、非玩家圓心30米、隨機與重複輪次、致死命中／閃避／無敵／無目標／死亡卸裝重置、再生互動不重設預算、不自動重施及免費／冷卻保留、真Worker畫面事件／可見性、差異隔離原生Excel套用與往返、回歸基準／Build／diff後Commit；正式設定待使用者套用並完成驗收。
+- 使用者執行BAT遇阻並附圖，納入本輪必要工具修正：merge-param-patches.ps1／param-patches測試／套用參數.bat。已查~$Skills2.xlsx為2026-09-18殘留、來源可取得ReadWrite獨占鎖；將以實際鎖為準，仍阻擋真正開啟中的Excel、保留殘留owner檔，不改同格衝突保護；刪除失敗分支重複提示，避免截圖的UTF8指令截斷，並驗真CMD停止分支無未識別命令。三檔追加預檢乾淨。
+- 完成13檔：js/skills2.js新增永恒命中接續規格／有限共用預算，Meteor掛點附實際成功命中清單，閃避／無敵不續接、致死可續接；追加沿原sgQueueThunderBolt／129ms落地／殛道／暈眩／引雷針與本體命中特效，T6再生共用原預算。每原始落雷各自建立追加數、本輪先不重複、無未選者才重新一輪且排除自己；沒有其他敵人停止，追加已發出後目標死亡離場／玩家死亡卸下換超神取消，倒地不在復活後補打。新count配置不啟動舊自動重施，舊sec配置保持相容；天地雷鎖陣不變。tools/skills2-geometry.cjs接搜敵欄m，Skills2 Excel／CSV新fx與說明、三份落雷測試、主頁／bridge／Worker快取及game_formula／LV_upgrade_system／本紀錄同步。無Protocol、存檔、原Preset或素材變更。
+- 配置：先依AI_RULES 8.5建立08fb0905-6c67-414b-a1db-076d1f5880f0.json共五格差異（效果JSON=count:2/countPer:0.2、搜敵30、舊gap清空及兩格說明），沒有先改正式資料。使用者重跑BAT於2026-10-20完成合併並回覆「可以了」；正式Excel／CSV／生成JS的count=2、countPer=0.2、m=30及新說明一致。使用者在這段期間重排了雷系超神實體列，工具依群組ID＋超神ID找到正確格，不依原列號。原始／候選／決策與收據保留在config/param-patches/archive/2026-10-20T01-58-53-653Z-d355d34d-9658-4488-9bcb-7b86d8c76b80；無待套用差異遺留。
+- 驗證：`node --test tests/eternal-thunder-prison.test.cjs`9/9，覆蓋Lv1兩道或20%第三道／Lv5三道／Lv10四道、正式施放只扣一次表定10000法力及冷卻、實際命中後才發射／每道129ms、命中敵人圓心且可接到玩家射程外、30米體型邊緣內外、隨機與不重複輪次、無目標／閃避／無敵／致死、再生共用預算、取消與倒地清除／復活不補落地、說明30米及2.2道。`node --test --test-reporter=tap tests/eternal-thunder-prison.test.cjs tests/lightning-vfx-lifecycle.test.cjs tests/skills2-vfx-schema.test.cjs tests/skill-vfx-inheritance.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs`正式套用後核心回歸通過（新增第9項後最終55項）；生命週期測試讓舊配置與新接續皆穿過正式Worker shim→Renderer→Runtime→Core／原素材，確實看到可見雷柱，.13／.26／.39秒才命中、保留傷害與付費時序，不借用循環雷柱。
+- 隔離／突變：先在暫存獨立根目錄以真實param-patches工具與原生Excel合併5格，正常重開後由SCHEMA生成新資料，映射該實際Excel生成來源跑當時8項新回歸全過；相同測試換回HEAD舊受測邏輯時7項失敗／僅幾何映射1項通過，確實能攔住未接續。最後另自HEAD工作簿原生套相同五格產生提交候選，排除使用者其他調整；提交Excel／CSV／JS只改eternalThunderPrison的fx／說明，其餘群組與階級逐值一致，不手工修改ZIP／XML。
+- 擴大回歸：`node --test --test-reporter=tap tests/skill2-lightning.test.cjs tests/skill2-chainlightning-thunder-legendary.test.cjs tests/skills2-geometry.test.cjs`82項49過／33失敗；相同正式工作資料、唯讀換回HEAD舊runtime再跑，33個失敗名稱完全相同，無新增失敗。集中雷系舊數值、法力fixture及雷球／雷鏈舊行為；本輪只更新永恒舊配置相容fixture與足夠法力、未放寬其他斷言。套用前另有使用者Excel未匯出造成的schema不一致，BAT完成後該項已通過，不列未解風險。
+- 其他檢查：`npm.cmd run build`551檔通過，配置`node tools/config_tables.cjs --apply Skills2`語意變更0、主頁skills2 338／bridge319，Worker資源版與skills2 import token同步eternal-hit-chain，diff與提交JS語法檢查通過。唯讀未改：AI規範／流程／Agent文件、js/combat.js／formula.js傷害收斂、battlefield隨機／體型距離、worker Protocol與shim來源、battle-renderer／VFX Runtime／Core與原bolt-thunderstrike-bluewhite／hit-thunder-blue、config_tables／xlsx_to_csv及狀態／其他技能數值。素材庫無本次變更，不需素材Commit。
+- 交付：功能與正式設定已完成，無本次未完成實作，可Review／合併。Commit見所在`[Codex] feat: 永恒雷獄改為命中後接續落雷`，回覆附編號；工具修正df77771a另已提交，未合併推送。已知限制為33項已基準確認的既有失敗、未做完整瀏覽器長戰；使用者其他文案、超神列排序及BAT重匯出的其他CSV原樣留在工作區，不混入此Commit。下一步重載遊戲確認連鎖感受，其他副本需整合本Commit。
+
 ## PARAM-PATCH-QUEUE-20261019 — Excel 開啟時暫存 Agent 修改並於套用時合併
 
 - Owner：Codex；Done；單一開發者。使用者要求 Agent 遇到 Excel 鎖定可先保存修改，待使用者儲存關閉後，以套用參數.bat 合併；追加要求所有 AI 共用規範預設差異協作、同格重疊必須詢問確認保留哪一方。前置既有 Excel→CSV→遊戲管線；不改遊戲規則或解鎖，LV_upgrade_system 無需變更。

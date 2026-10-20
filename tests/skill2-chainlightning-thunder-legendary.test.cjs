@@ -665,14 +665,16 @@ test('【雷霆天劫】普通落雷保留本體特效，不被天劫觸發欄�
   }
 });
 
-test('【永恒雷獄】：施放落雷術後每 gap 秒自動再施放，持續時間走完就停', () => {
+test('【永恒雷獄】舊秒數配置過渡：每 gap 秒免費重施，持續時間走完就停', () => {
   const c = loadContext();
+  c.SKILLS2.thunderstrike.ult[2].fx = { sec: 3, secPer: 0.3, gap: 1, gapPer: -0.05 };
   stubVfx(c);
   stubHits(c);
   maxLevels(c, 'thunderstrike');
   equip(c, 'thunderstrike');
   setUlt(c, 'thunderstrike', 'eternalThunderPrison', 1);
   const p = playerEnt();
+  p.mp = 100000;
   const es = [enemy(1e9, 20, 0, 'a')];
   const mpBefore = p.mp;
   c.castSkill2(p, es, 'thunderstrike', 'mv-float');

@@ -201,7 +201,7 @@ var SKILLS2 = {
   mire: { name: '泥沼術', emoji: '🟤', range: '18*18', dmgType: 'magic', elem: 'earth', cd: 8, cost: 25, tiers: [{ name: '泥沼術', unlock: { reinc: 0, lv: 200 }, cost: 25, fx: { sec: 4, secPer: 0.4, move: 30, aspd: 50, pct: 10, pctPer: 1, castM: 24 }, goldBase: 100000, goldGrow: 1.5, desc: '在敵人腳下召喚一片 {rangeLength}×{rangeWidth} 米的沼澤，沼澤中的敵人陷入緩速（移動速度 -{move}%、攻速 -{aspd}%），受到的傷害提高 {pct}%，持續 {sec} 秒。', vfx: { ground: 'ground-mire-earth' }, status: { enemy: [{ id: 'sgMire' }] } }, { name: '虛弱', unlock: { reinc: 0, lv: 250 }, cost: 60, fx: { pct: 15, pctPer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '受泥沼緩速影響的敵人，攻擊力降低 {pct}%。' }, { name: '毒沼術', unlock: { reinc: 0, lv: 300 }, cost: 150, fx: { dotPct: 25, dotPctPer: 2.5, dotGap: 0.5 }, goldBase: 400000, goldGrow: 1.5, desc: '沼澤持續放出毒氣：沼澤中的敵人每 {dotGap} 秒受到魔法攻擊 {dotPct}% 的毒性傷害。', vfx: { ground: 'ground-mire-venom' }, status: { enemy: [{ id: 'sgMirePoison' }] } }, { name: '毒沼增生', unlock: { reinc: 0, lv: 350 }, cost: 300, fx: { add: 1, addPer: 0.1, m: 40 }, goldBase: 800000, goldGrow: 1.5, desc: '沼澤結束時傳染給 {m} 米內較近的敵人，最多傳染 {add} 次（不足 1 次的部分以機率觸發）' }, { name: '沼澤漫延', unlock: { reinc: 0, lv: 400 }, cost: 700, fx: { sec: 6, pct: 40, pctPer: 4, growSec: 4 }, goldBase: 1500000, goldGrow: 1.5, desc: '沼澤持續時間提高至 {sec} 秒，且在 {growSec} 秒內逐步擴大，最大擴增 {pct}%。' }, { name: '重力泥沼', unlock: { reinc: 0, lv: 450 }, cost: 1200, fx: { move: 50, aspd: 75, pct: 20, pctPer: 2 }, goldBase: 3000000, goldGrow: 1.5, desc: '緩速強化為移動速度 -{move}%、攻速 -{aspd}%，且受影響目標受到的傷害再提高 {pct}%。' }, { name: '熔岩沼', unlock: { reinc: 0, lv: 500 }, cost: 3000, fx: { sec: 8, pct: 20, pctPer: 2, dotPct: 70, dotPctPer: 7, dotGap: 0.4 }, goldBase: 5000000, goldGrow: 1.5, desc: '沼澤轉變為岩漿：持續時間提高至 {sec} 秒、範圍再擴增 {pct}%，其中的目標每 {dotGap} 秒額外受到 {dotPct}% 的火焰傷害。', vfx: { ground: 'ground-mire-magma' }, status: { enemy: [{ id: 'sgMireLava' }] } }], ult: [{ id: 'plagueMire', name: '惡疫魔沼', cost: 10000, fx: { pct: 200, pctPer: 20, amp: 100, ampPer: 10, sec: 8, gap: 0.35 }, goldBase: 10000000, goldGrow: 1.5, desc: '沼澤範圍內的敵人染上【瘟疫】：每 {gap} 秒受到魔法攻擊 {pct}% 的毒性傷害，且受到的毒性傷害額外 +{amp}%；離開沼澤後仍持續 {sec} 秒。', unlock: { reinc: 0, lv: 500, tower: 27 }, vfx: { ground: 'ground-mire-venom-08' }, status: { enemy: [{ id: 'sgPlague' }] } }, { id: 'abyssInferno', name: '深淵火獄', cost: 10000, fx: { count: 3, pct: 300, pctPer: 30, ballSec: 0.9, poolM: 6, poolPct: 200, poolGap: 0.5, poolSec: 4, gap: 1, m: 6, arcM: 12 }, goldBase: 10000000, goldGrow: 1.5, desc: '熔岩沼每 {gap} 秒向範圍內{count} 名敵人噴出火球，對附近敵人造成 {pct}% 火焰傷害。火球爆炸後形成火池，每 {poolGap} 秒造成 {poolPct}% 火焰傷害，持續 {poolSec} 秒。', unlock: { reinc: 0, lv: 500, tower: 48 }, vfx: { projectile: 'proj-dragon-devour', ground: 'ground-mire-magma-09' }, triggerVfx: { attack: 'burst-dragon-devour', ground: 'ground-mire-inferno-pool' } }, { id: 'netherMire', name: '黃泉沼', cost: 10000, fx: { hpPct: 25, chance: 0.5, chancePer: 0.05, add: 0.5, addPer: 0.05 }, goldBase: 10000000, goldGrow: 1.5, desc: '沼澤範圍內生命值 {hpPct}% 以下的敵人，每次受到傷害有 {chance}% 機率直接被斬殺，且該機率每次受傷再累加 {add}%', unlock: { reinc: 0, lv: 500, tower: 67 }, vfx: { ground: 'ground-mire-magma-10' } }] },
   earthguard: { name: '大地守護', emoji: '🌍', range: '', dmgType: 'magic', elem: 'earth', cd: 0, cost: 25, tiers: [{ name: '大地守護', unlock: { reinc: 0, lv: 250 }, cost: 25, fx: { pct: 10, pctPer: 1, hp: 10, hpPer: 1 }, goldBase: 100000, goldGrow: 1.5, desc: '自身傷害減免額外 +{pct}%、生命上限額外 +{hp}%。' }, { name: '大地祝福', unlock: { reinc: 0, lv: 300 }, cost: 60, fx: { pct: 15, pctPer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '全屬性傷害額外提高{pct}%。' }, { name: '生命再生', unlock: { reinc: 0, lv: 350 }, cost: 150, fx: { pct: 50, pctPer: 5, drain: 20, drainPer: 2 }, goldBase: 400000, goldGrow: 1.5, desc: '生命回復額外 +{pct}%、吸血額外 +{drain}%。' }, { name: '魔力再生', unlock: { reinc: 0, lv: 400 }, cost: 300, fx: { pct: 50, pctPer: 5, drain: 20, drainPer: 2 }, goldBase: 800000, goldGrow: 1.5, desc: '法力回復額外 +{pct}%、吸魔額外 +{drain}%。' }, { name: '魔法盾', unlock: { reinc: 0, lv: 450 }, cost: 700, fx: { pct: 25, pctPer: 2.5, manaRed: 35, manaRedPer: 3.5 }, goldBase: 1500000, goldGrow: 1.5, desc: '受到的傷害有 {pct}% 可轉由法力承擔，且承擔的法力消耗降低 {manaRed}%。' }, { name: '生命反射之盾', unlock: { reinc: 0, lv: 500 }, cost: 1200, fx: { pct: 1, pctPer: 0.1, count: 1, m: 20 }, goldBase: 3000000, goldGrow: 1.5, desc: '你每消耗 1% 生命或護盾，{m} 米內的 {count} 個敵人同步損失 {pct}% 最大生命。', vfx: { attack: 'beam-light', hit: 'hit-light' } }, { name: '天地共生', unlock: { reinc: 0, lv: 550 }, cost: 3000, fx: { riseSec: 5, sec: 5, cd: 60, cdPer: -3, red: 50 }, goldBase: 5000000, goldGrow: 1.5, desc: '死亡時進入 {riseSec} 秒復甦：生命從 0 漸漸回到 100%，角色浮空並由倒地逐漸站起；完成後落地繼續原戰鬥，並獲得 {sec} 秒受到傷害 -{red}% 的效果；此招自身冷卻 {cd} 秒（顯示於技能格）', vfx: { attack: 'pillar-light', hit: 'hit-light' }, status: { self: [{ id: 'sgRebirthGuard' }] } }], ult: [{ id: 'hallOfRadiance', name: '光耀之堂', cost: 10000, fx: { pct: 2, pctPer: 0.2, conv: 25, sec: 2 }, goldBase: 10000000, goldGrow: 1.5, desc: '每{sec}秒回復{pct}%生命與法力，且溢出的生命與法力以 {conv}% 轉為你的生命護盾', unlock: { reinc: 0, lv: 550, tower: 37 } }, { id: 'worldRebirth', name: '天地再造', cost: 10000, fx: { chance: 15, chancePer: 15, hp: 80, hpPer: -3 }, goldBase: 10000000, goldGrow: 1.5, desc: '被你殺死的普通與菁英敵人有 {chance}% 機率（上限 100%）以 {hp}% 生命重生（同一個敵人只會重生一次）', unlock: { reinc: 0, lv: 550, tower: 57 }, vfx: { attack: 'pillar-earth', hit: 'hit-earth' } }, { id: 'fateReversal', name: '逆轉乾坤', cost: 10000, fx: { max: 2, maxPer: 0.1 }, goldBase: 10000000, goldGrow: 1.5, desc: '【天地共生】的冷卻結束後可累積復活次數，最多累積 {max} 次（小數四捨五入取整）', unlock: { reinc: 0, lv: 550, tower: 80 } }] },
   chainlightning: { name: '連鎖閃電', emoji: '⚡', range: '', dmgType: 'magic', elem: 'lightning', cd: 6, cost: 25, tiers: [{ name: '連鎖閃電', unlock: { reinc: 0, lv: 300 }, cost: 25, fx: { pct: 150, pctPer: 15, count: 3, castM: 40, speed: 120, m: 40 }, goldBase: 100000, goldGrow: 1.5, desc: '丟出一道閃電鏈（射程 {castM} 米），在最多 {count} 個目標間彈射（每段彈射範圍 {m} 米），每擊造成 {pct}% 雷電傷害', vfx: { projectile: 'bolt-chain-travel-bluewhite', hit: 'hit-lightning-blue' } }, { name: '強化閃電', unlock: { reinc: 0, lv: 350 }, cost: 60, fx: { pct: 50, pctPer: 5 }, goldBase: 200000, goldGrow: 1.5, desc: '強化閃電威力，閃電鏈傷害進一步 +{pct}% 雷電傷害' }, { name: '雷鳴術', unlock: { reinc: 0, lv: 400 }, cost: 150, fx: { add: 1, addPer: 0.1 }, goldBase: 400000, goldGrow: 1.5, desc: '被閃電鏈擊中的敵人額外再受到 {add} 次雷電傷害（不足 1 次的部分以機率觸發）' }, { name: '鎖定', unlock: { reinc: 0, lv: 450 }, cost: 300, fx: { add: 1, addPer: 0.2 }, goldBase: 800000, goldGrow: 1.5, desc: '閃電鏈的彈射數額外 +{add} 次（不足 1 次的部分以機率觸發）' }, { name: '靜電', unlock: { reinc: 0, lv: 500 }, cost: 700, fx: { pct: 25, pctPer: 2.5, count: 1, m: 6 }, goldBase: 1500000, goldGrow: 1.5, desc: '閃電鏈每次彈射時，額外對 {m} 米內的 {count} 個敵人造成閃電鏈 {pct}% 的雷電傷害', vfx: { hit: 'hit-lightning-blue' } }, { name: '電殛', unlock: { reinc: 0, lv: 550 }, cost: 1200, fx: { pct: 50, pctPer: 5 }, goldBase: 3000000, goldGrow: 1.5, desc: '閃電鏈傷害額外 +{pct}% 雷電傷害；沒有可彈射的敵人時立即終止', vfx: { ground: 'aura-lightning-relay' } }, { name: '雷電暴風', unlock: { reinc: 0, lv: 600 }, cost: 3000, fx: { count: 2, add: 0.5, addPer: 0.05, pct: 100, pctPer: 10, chance: 10 }, goldBase: 5000000, goldGrow: 1.5, desc: '同時發射 {count} 道閃電鏈，彈射數額外 +{add} 次，且閃電傷害額外 +{pct}%；每次彈射有 {chance}% 機率生成 1 條閃電鏈' }], ult: [{ id: 'skyThunderArray', name: '天地雷鎖陣', cost: 10000, fx: { sec: 2, secPer: 0.2, gap: 1 }, goldBase: 10000000, goldGrow: 1.5, desc: '施放連鎖閃電後每 {gap} 秒自動再施放 1 次，持續 {sec} 秒', unlock: { reinc: 0, lv: 600, tower: 24 }, vfx: { projectile: 'bolt-chain-travel-bluewhite-08', hit: 'hit-lightning-08' } }, { id: 'eternalSuperconductor', name: '永恒超導體', cost: 10000, fx: { pct: 2, pctPer: 0.2, maxStacks: 100, m: 30 }, goldBase: 10000000, goldGrow: 1.5, desc: '額外射出 1 道無限彈射的閃電鏈：在自身與 {m} 米內的任意敵人之間往返彈射，每經過自身 1 次使你的雷電傷害 +{pct}%，最多 {maxStacks} 層（持續到你死亡為止）', unlock: { reinc: 0, lv: 600, tower: 45 }, triggerVfx: { projectile: 'bolt-chain-lightning', hit: 'hit-lightning' }, status: { self: [{ id: 'sgSuperconduct' }] } }, { id: 'flyingThunderGod', name: '飛雷神', cost: 10000, fx: { count: 4, countMax: 6, interval: 3, tick: 0.5, pct: 300, pctPer: 30, sec: 3, gap: 0.25, len: 200, wid: 30 }, goldBase: 10000000, goldGrow: 1.5, desc: '每 {interval} 秒額外產生 {count}～{countMax} 道巨大閃電，每道間隔 {gap} 秒；出生時隨機選擇兩名不同敵人，沿兩敵連線貫穿全場，寬 {wid} 米，保持形態逐漸淡出，持續 {sec} 秒，每 {tick} 秒對路徑上的敵人造成 {pct}% 雷電傷害；只有一名敵人時改用玩家與該敵人連線，零敵人時才不生成', unlock: { reinc: 0, lv: 600, tower: 83 }, triggerVfx: { field: 'beam-flying-thunder-god' } }] },
-  thunderstrike: { name: '落雷術', emoji: '🌩️', range: '', dmgType: 'magic', elem: 'lightning', cd: 8, cost: 25, tiers: [{ name: '落雷術', unlock: { reinc: 0, lv: 350 }, cost: 25, fx: { pct: 200, pctPer: 20, count: 2, castM: 30, gap: 0.2 }, goldBase: 100000, goldGrow: 1.5, desc: '對 {castM} 米內的 {count} 個目標降下落雷（每道間隔 {gap} 秒），每道造成 {pct}% 雷電傷害', vfx: { attack: 'bolt-thunderstrike-bluewhite' } }, { name: '落雷連鎖', unlock: { reinc: 0, lv: 400 }, cost: 60, fx: { add: 1, addPer: 0.1 }, goldBase: 200000, goldGrow: 1.5, desc: '攻擊目標額外 +{add} 個（不足 1 個的部分以機率觸發）' }, { name: '雙重落雷', unlock: { reinc: 0, lv: 450 }, cost: 150, fx: { add: 1, addPer: 0.1 }, goldBase: 400000, goldGrow: 1.5, desc: '對每個目標的攻擊次數額外 +{add} 次（不足 1 次的部分以機率觸發）' }, { name: '閃電增幅', unlock: { reinc: 0, lv: 500 }, cost: 300, fx: { pct: 100, pctPer: 10 }, goldBase: 800000, goldGrow: 1.5, desc: '進一步強化落雷傷害，額外 +{pct}% 雷電傷害' }, { name: '雷電脈衝', unlock: { reinc: 0, lv: 550 }, cost: 700, fx: { sec: 1.5, secPer: 0.15, count: 2, m: 6 }, goldBase: 1500000, goldGrow: 1.5, desc: '落雷落地時產生衝擊波，震暈目標本身與 {m} 米內共 {count} 個敵人 {sec} 秒', status: { enemy: [{ id: 'stun' }] } }, { name: '迅雷重生', unlock: { reinc: 0, lv: 600 }, cost: 1200, fx: { chance: 20, chancePer: 2, max: 5 }, goldBase: 3000000, goldGrow: 1.5, desc: '每道落雷結束後有 {chance}% 機率再產生 1 道落雷（同一次施放最多再生 {max} 道）' }, { name: '殛道落電', unlock: { reinc: 0, lv: 650 }, cost: 3000, fx: { mult: 2, pct: 50, pctPer: 5, m: 6 }, goldBase: 5000000, goldGrow: 1.5, desc: '落雷擊中時對目標 {m} 米內的所有敵人造成傷害；攻擊次數與目標數量 ×{mult}，且命中暈眩中的敵人時傷害額外 +{pct}%（與原傷害乘算）', vfx: { hit: 'hit-thunder-blue' } }], ult: [{ id: 'thunderMatrix', name: '雷電矩陣', cost: 10000, fx: { count: 2, countPer: 0.2, pct: 300, pctPer: 30, speed: 30, wid: 6 }, goldBase: 10000000, goldGrow: 1.5, desc: '施放落雷術時同時召喚橫向與直向各 {count} 道雷幕橫掃全場（每道寬 {wid} 米、{speed} 米／秒，相鄰兩道由反方向交錯掃過），對掃過的所有敵人各造成 1 次 {pct}% 雷電傷害', unlock: { reinc: 0, lv: 650, tower: 29 }, vfx: { attack: 'bolt-curtain-lightning', ground: 'ground-thunder-curtain' } }, { id: 'heavenTribulation', name: '雷霆天劫', cost: 10000, fx: { pct: 400, pctPer: 40, count: 2, gap: 0.25, m: 30, radiusM: 8 }, goldBase: 10000000, goldGrow: 1.5, desc: '額外召喚 {count} 道永久持續的天劫雷電：每 {gap} 秒同時追擊 {m} 米內生命值最低的不同敵人（僅一名時兩道可瞄準同一敵人）；每道對落點半徑 {radiusM} 米內所有敵人造成 {pct}% 雷電傷害，重疊範圍可重複命中', unlock: { reinc: 0, lv: 650, tower: 50 }, triggerVfx: { attack: 'bolt-sky-purple', hit: 'hit-thunder-purple' } }, { id: 'eternalThunderPrison', name: '永恒雷獄', cost: 10000, fx: { sec: 3, secPer: 0.3, gap: 1, gapPer: -0.05 }, goldBase: 10000000, goldGrow: 1.5, desc: '施放落雷術後每 {gap} 秒自動再施放 1 次，持續 {sec} 秒（自動施放不扣法力、不進冷卻）', unlock: { reinc: 0, lv: 650, tower: 69 } }] },
+  thunderstrike: { name: '落雷術', emoji: '🌩️', range: '', dmgType: 'magic', elem: 'lightning', cd: 8, cost: 25, tiers: [{ name: '落雷術', unlock: { reinc: 0, lv: 350 }, cost: 25, fx: { pct: 200, pctPer: 20, count: 2, castM: 30, gap: 0.2 }, goldBase: 100000, goldGrow: 1.5, desc: '對 {castM} 米內的 {count} 個目標降下落雷（每道間隔 {gap} 秒），每道造成 {pct}% 雷電傷害', vfx: { attack: 'bolt-thunderstrike-bluewhite' } }, { name: '落雷連鎖', unlock: { reinc: 0, lv: 400 }, cost: 60, fx: { add: 1, addPer: 0.1 }, goldBase: 200000, goldGrow: 1.5, desc: '攻擊目標額外 +{add} 個（不足 1 個的部分以機率觸發）' }, { name: '雙重落雷', unlock: { reinc: 0, lv: 450 }, cost: 150, fx: { add: 1, addPer: 0.1 }, goldBase: 400000, goldGrow: 1.5, desc: '對每個目標的攻擊次數額外 +{add} 次（不足 1 次的部分以機率觸發）' }, { name: '閃電增幅', unlock: { reinc: 0, lv: 500 }, cost: 300, fx: { pct: 100, pctPer: 10 }, goldBase: 800000, goldGrow: 1.5, desc: '進一步強化落雷傷害，額外 +{pct}% 雷電傷害' }, { name: '雷電脈衝', unlock: { reinc: 0, lv: 550 }, cost: 700, fx: { sec: 1.5, secPer: 0.15, count: 2, m: 6 }, goldBase: 1500000, goldGrow: 1.5, desc: '落雷落地時產生衝擊波，震暈目標本身與 {m} 米內共 {count} 個敵人 {sec} 秒', status: { enemy: [{ id: 'stun' }] } }, { name: '迅雷重生', unlock: { reinc: 0, lv: 600 }, cost: 1200, fx: { chance: 20, chancePer: 2, max: 5 }, goldBase: 3000000, goldGrow: 1.5, desc: '每道落雷結束後有 {chance}% 機率再產生 1 道落雷（同一次施放最多再生 {max} 道）' }, { name: '殛道落電', unlock: { reinc: 0, lv: 650 }, cost: 3000, fx: { mult: 2, pct: 50, pctPer: 5, m: 6 }, goldBase: 5000000, goldGrow: 1.5, desc: '落雷擊中時對目標 {m} 米內的所有敵人造成傷害；攻擊次數與目標數量 ×{mult}，且命中暈眩中的敵人時傷害額外 +{pct}%（與原傷害乘算）', vfx: { hit: 'hit-thunder-blue' } }], ult: [{ id: 'thunderMatrix', name: '雷電矩陣', cost: 10000, fx: { count: 2, countPer: 0.2, pct: 300, pctPer: 30, speed: 30, wid: 6 }, goldBase: 10000000, goldGrow: 1.5, desc: '施放落雷術時同時召喚橫向與直向各 {count} 道雷幕橫掃全場（每道寬 {wid} 米、{speed} 米／秒，相鄰兩道由反方向交錯掃過），對掃過的所有敵人各造成 1 次 {pct}% 雷電傷害', unlock: { reinc: 0, lv: 650, tower: 29 }, vfx: { attack: 'bolt-curtain-lightning', ground: 'ground-thunder-curtain' } }, { id: 'heavenTribulation', name: '雷霆天劫', cost: 10000, fx: { pct: 400, pctPer: 40, count: 2, gap: 0.25, m: 30, radiusM: 8 }, goldBase: 10000000, goldGrow: 1.5, desc: '額外召喚 {count} 道永久持續的天劫雷電：每 {gap} 秒同時追擊 {m} 米內生命值最低的不同敵人（僅一名時兩道可瞄準同一敵人）；每道對落點半徑 {radiusM} 米內所有敵人造成 {pct}% 雷電傷害，重疊範圍可重複命中', unlock: { reinc: 0, lv: 650, tower: 50 }, triggerVfx: { attack: 'bolt-sky-purple', hit: 'hit-thunder-purple' } }, { id: 'eternalThunderPrison', name: '永恒雷獄', cost: 10000, fx: { count: 2, countPer: 0.2, m: 30 }, goldBase: 10000000, goldGrow: 1.5, desc: '被落雷擊中的敵人會再引發另一道落雷，隨機攻擊其 {m} 米內的其他敵人，最多連續引發 {count} 道落雷（不足1道的部分以機率觸發）', unlock: { reinc: 0, lv: 650, tower: 69 } }] },
   thunderorb: { name: '雷球', emoji: '🔵', range: '6*6', dmgType: 'magic', elem: 'lightning', cd: 8, cost: 25, tiers: [{ name: '雷球', unlock: { reinc: 0, lv: 400 }, cost: 25, fx: { pct: 50, pctPer: 5, count: 2, sec: 2, castM: 30, gap: 0.35, speed: 6, m: 4 }, goldBase: 100000, goldGrow: 1.5, desc: '召喚 {count} 個雷球緩慢飛向目標（射程 {castM} 米、飛行速度 {speed} 米/秒），途中每 {gap} 秒對半徑 {m} 米內的所有敵人造成 {pct}% 雷電傷害，抵達後停留 {sec} 秒才消散', vfx: { field: 'lightning-orb-field' } }, { name: '擴增雷球', unlock: { reinc: 0, lv: 450 }, cost: 60, fx: { pct: 15, pctPer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '雷球的體積擴大 {pct}%' }, { name: '多重雷球', unlock: { reinc: 0, lv: 500 }, cost: 150, fx: { add: 1, addPer: 0.1 }, goldBase: 400000, goldGrow: 1.5, desc: '雷球數量額外 +{add} 個（不足 1 個的部分以機率觸發）' }, { name: '環體電球', unlock: { reinc: 0, lv: 550 }, cost: 300, fx: { count: 2, pct: 100, pctPer: 10, sec: 6, rps: 0.7, m: 8 }, goldBase: 800000, goldGrow: 1.5, desc: '額外召喚 {count} 個電球環繞自身（環繞半徑 {m} 米、每秒 {rps} 圈），碰到敵人即命中一次，每次造成 {pct}% 雷電傷害，持續 {sec} 秒', vfx: { projectile: 'orb-thunder' }, status: { self: [{ id: 'sgThunderOrb' }] } }, { name: '強化雷球', unlock: { reinc: 0, lv: 600 }, cost: 700, fx: { pct: 30, pctPer: 3 }, goldBase: 1500000, goldGrow: 1.5, desc: '所有雷球與電球的雷電傷害額外 +{pct}%' }, { name: '伴生雷球', unlock: { reinc: 0, lv: 650 }, cost: 1200, fx: { chance: 15, chancePer: 1.5, sec: 2 }, goldBase: 3000000, goldGrow: 1.5, desc: '環體電球命中時有 {chance}% 機率在該處生成一個靜止雷球，持續 {sec} 秒（每次作用只判定一次機率）', vfx: { field: 'lightning-orb-field' } }, { name: '雷殞天落', unlock: { reinc: 0, lv: 700 }, cost: 3000, fx: { count: 2, pct: 300, pctPer: 30, sec: 3, m: 15 }, goldBase: 5000000, goldGrow: 1.5, desc: '額外召喚 {count} 個巨大雷球從天而降，各對 {m} 米內的敵人造成 {pct}% 雷電傷害，並以衝擊波擊暈 {sec} 秒', triggerVfx: { projectile: 'proj-thunderfall-sky', hit: 'hit-thunderfall-impact', ground: 'mark-blue' }, status: { enemy: [{ id: 'stun' }] } }], ult: [{ id: 'criticalThunderbolt', name: '臨界雷劫', cost: 10000, fx: { sec: 10, chance: 5, chancePer: 0.5, pct: 50, pctPer: 5, childSec: 3, speed: 3 }, goldBase: 10000000, goldGrow: 1.5, desc: '環體電球觸發的電球持續 {sec} 秒，並以生成時角色為中心向外緩慢移動（每秒 {speed} 米）；每次命中有 {chance}% 機率在自身位置形成 1 個靜止電球，持續 {childSec} 秒且不移動、不再生成電球；同一緩速電球成功生成後冷卻 0.75 秒；所有雷球與電球傷害額外 +{pct}%', unlock: { reinc: 0, lv: 700, tower: 39 }, vfx: { field: 'lightning-orb-field-purple' } }, { id: 'thunderBurst', name: '連鎖雷爆', cost: 10000, fx: { chance: 10, chancePer: 1, bounces: 6, pct: 200, pctPer: 20, speedMult: 20, m: 30 }, goldBase: 10000000, goldGrow: 1.5, desc: '每次被雷球命中的敵人有 {chance}% 機率觸發 1 道連鎖閃電，以一般雷球 {speedMult} 倍速度在附近 {m} 米範圍內逐段追蹤彈射，抵達目標才造成 {pct}% 雷電傷害，最多命中 {bounces} 次（含原目標）；使用一般連鎖閃電特效與尺寸', unlock: { reinc: 0, lv: 700, tower: 59 }, triggerVfx: { projectile: 'bolt-chain-travel-bluewhite-08', hit: 'hit-lightning-08' } }, { id: 'thunderfallShatter', name: '雷殞天地碎', cost: 10000, fx: { scale: 50, pct: 200, pctPer: 20, gap: 1 }, goldBase: 10000000, goldGrow: 1.5, desc: '【雷殞天落】的雷殞石體積增大 {scale}%、傷害額外 +{pct}%，並額外每 {gap} 秒不斷再降下 1 顆', unlock: { reinc: 0, lv: 700, tower: 82 } }] },
   icearrow: { name: '寒冰箭', emoji: '❄️', range: '', dmgType: 'magic', elem: 'ice', cd: 10, cost: 25, tiers: [{ name: '寒冰箭', unlock: { reinc: 0, lv: 450 }, cost: 25, fx: { pct: 250, pctPer: 25, count: 2, castM: 30, deg: 15, speed: 58.5 }, goldBase: 100000, goldGrow: 1.5, desc: '朝前方射出 {count} 支寒冰箭，每支箭夾角 {deg} 度（射程 {castM} 米、飛行速度 {speed} 米／秒），每支對 1 個敵人造成 {pct}% 寒冰傷害', vfx: { projectile: 'proj-icearrow-frost', hit: 'hit-icearrow-shatter' } }, { name: '寒霜箭', unlock: { reinc: 0, lv: 500 }, cost: 60, fx: { frostPct: 50, frostPctPer: 5, stacks: 1 }, goldBase: 200000, goldGrow: 1.5, desc: '被寒冰箭擊中的敵人附加 {stacks} 層寒霜狀態：每跳造成寒冰箭傷害 {frostPct}% 的寒冰傷害，每層使移動與攻速下降，疊滿層數時凍結', status: { enemy: [{ id: 'sgFrost' }, { id: 'sgFrostBite' }, { id: 'sgFrozen' }, { id: 'stun' }] } }, { name: '冰系強化', unlock: { reinc: 0, lv: 550 }, cost: 150, fx: { pct: 100, pctPer: 10 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化寒冰箭，額外 +{pct}% 寒冰傷害（與第 1 階累加）' }, { name: '貫穿冰箭', unlock: { reinc: 0, lv: 600 }, cost: 300, fx: { m: 10, mPer: 2 }, goldBase: 800000, goldGrow: 1.5, desc: '寒冰箭改為貫穿攻擊，貫穿路徑上的所有敵人，貫穿長度 {m} 米（不足以打到主目標時自動延長到主目標）', vfx: { projectile: 'proj-icearrow-frost', hit: 'hit-icearrow-shatter' } }, { name: '冰箭散射', unlock: { reinc: 0, lv: 650 }, cost: 700, fx: { add: 1, addPer: 0.1 }, goldBase: 1500000, goldGrow: 1.5, desc: '射出的寒冰箭數量額外 +{add} 支（不足 1 支的部分以機率觸發）' }, { name: '寒霜凍結', unlock: { reinc: 0, lv: 700 }, cost: 1200, fx: { stacks: 1, stacksPer: 0.4 }, goldBase: 3000000, goldGrow: 1.5, desc: '寒冰箭射中帶寒霜狀態的敵人時，立即再疊 {stacks} 層寒霜，並造成該敵人寒霜剩餘的全部寒冰傷害（不足 1 層的部分以機率觸發）' }, { name: '寒冰爆裂箭', unlock: { reinc: 0, lv: 750 }, cost: 3000, fx: { pct: 300, pctPer: 30, sec: 3, waves: 3, waveGap: 0.3, gap: 0.1, m: 6, chaseM: 30, bodyM: 1.5 }, goldBase: 5000000, goldGrow: 1.5, desc: '寒冰爆裂箭連射 {waves} 波，每波間隔 {waveGap} 秒；寒冰箭變為追蹤冰箭，在 {chaseM} 米內來回穿梭追擊敵人 {sec} 秒（碰到才算一次命中）；敵人的凍結結束時產生冰爆，對其周圍 {m} 米內的所有敵人造成 {pct}% 寒冰傷害', vfx: { hit: 'hit-ice' }, triggerVfx: { attack: 'burst-icearrow-crystal' } }], ult: [{ id: 'absoluteZeroBurst', name: '極寒冰爆', cost: 10000, fx: { durPct: 30, durPctPer: 3, rangePct: 25, pct: 200, pctPer: 20 }, goldBase: 10000000, goldGrow: 1.5, desc: '冰箭的持續時間 +{durPct}%，每次命中敵人必定造成冰爆；冰爆範圍 +{rangePct}%，傷害額外 +{pct}%（與第7階寒冰爆裂箭的冰爆傷害百分比相加）', unlock: { reinc: 0, lv: 750, tower: 26 } }, { id: 'infiniteIceRift', name: '無限冰裂', cost: 10000, fx: { sec: 0.01 }, goldBase: 10000000, goldGrow: 1.5, desc: '寒冰箭每造成 1 次傷害就使寒冰箭的冷卻時間 -{sec} 秒', unlock: { reinc: 0, lv: 750, tower: 47 } }, { id: 'tearsOfIce', name: '冰之淚', cost: 10000, fx: { waves: 10, pct: 200, pctPer: 20, count: 10, gap: 0.35, m: 30 }, goldBase: 10000000, goldGrow: 1.5, desc: '施放寒冰箭時同時召喚 {waves} 波寒冰箭雨從天射下（每波間隔 {gap} 秒，每波 {count} 支冰箭錯落落下），各箭選擇我方 {m} 米內的1名敵人，抵達自己的目標時造成 {pct}% 寒冰傷害（敵人不足時可重複選中）', unlock: { reinc: 0, lv: 750, tower: 85 }, triggerVfx: { projectile: 'proj-icearrow-frost', hit: 'hit-icearrow-shatter' } }] },
   waterball: { name: '水流彈', emoji: '💧', range: '', dmgType: 'magic', elem: 'ice', cd: 8, cost: 25, tiers: [{ name: '水流彈', unlock: { reinc: 0, lv: 500 }, cost: 25, fx: { pct: 200, pctPer: 20, castM: 30, speed: 57.96, m: 6 }, goldBase: 100000, goldGrow: 1.5, desc: '朝敵人起飛時的座標拋出水彈（射程 {castM} 米、每段弧高為該段飛行距離的四分之一），途中不追蹤；落地時對落點半徑 {m} 米內的所有敵人造成 {pct}% 寒冰傷害', vfx: { projectile: 'proj-waterball-flow', hit: 'hit-waterball-splash' } }, { name: '寒冰逆轉', unlock: { reinc: 0, lv: 550 }, cost: 60, fx: { pct: 20, pctPer: 2, sec: 6 }, goldBase: 200000, goldGrow: 1.5, desc: '被水流彈擊中的敵人強制轉變為寒冰屬性，且受到的寒冰傷害 +{pct}%，持續 {sec} 秒', status: { enemy: [{ id: 'sgIceRevert' }] } }, { name: '寒流彈', unlock: { reinc: 0, lv: 600 }, cost: 150, fx: { frostPct: 50, frostPctPer: 20, stacks: 1 }, goldBase: 400000, goldGrow: 1.5, desc: '被水流彈擊中的敵人附加 {stacks} 層寒霜狀態：每跳造成水流彈傷害 {frostPct}% 的寒冰傷害', status: { enemy: [{ id: 'sgFrost' }, { id: 'sgFrostBite' }, { id: 'sgFrozen' }, { id: 'stun' }] } }, { name: '寒流爆散', unlock: { reinc: 0, lv: 650 }, cost: 300, fx: { bounce: 2, bouncePer: 0.2, m: 6 }, goldBase: 800000, goldGrow: 1.5, desc: '水流彈落地後再彈射 {bounce} 次（不足 1 次以機率觸發）；每次起飛重新鎖定敵人當下座標，途中不追蹤，落地造成半徑 {m} 米範圍傷害', vfx: { projectile: 'proj-waterball-flow', hit: 'hit-waterball-splash' }, triggerVfx: {  } }, { name: '寒霜擴散', unlock: { reinc: 0, lv: 700 }, cost: 700, fx: { chance: 25, chancePer: 2.5, count: 1, m: 10 }, goldBase: 1500000, goldGrow: 1.5, desc: '寒霜狀態每次作用時有 {chance}% 機率擴散至目標 {m} 米內的 {count} 個敵人', triggerVfx: { projectile: 'proj-ice-shard', hit: 'hit-ice' } }, { name: '三重流水', unlock: { reinc: 0, lv: 750 }, cost: 1200, fx: { add: 1, addPer: 0.2 }, goldBase: 3000000, goldGrow: 1.5, desc: '朝隨機目標額外丟出 {add} 顆水流彈（不足 1 顆的部分以機率觸發）' }, { name: '水龍捲', unlock: { reinc: 0, lv: 800 }, cost: 3000, fx: { count: 4, hits: 8, pct: 200, pctPer: 10, frozen: 2, gap: 0.35, m: 5, side: 10, sideWidth: 10 }, goldBase: 5000000, goldGrow: 1.5, desc: '額外在我方 {side}×{side} 米正方形的四個頂點召喚 {count} 道水龍捲（傷害半徑 {m} 米），每道造成連續 {hits} 段 {pct}% 寒冰傷害，且對凍結中的敵人傷害為 {frozen} 倍', triggerVfx: { field: 'field-water-tornado' } }], ult: [{ id: 'waterPrisonFall', name: '水牢天瀑', cost: 10000, fx: { rangedRed: 30, rangedRedPer: 3, atkRed: 30, vuln: 50, vulnPer: 5, sec: 6, m: 20 }, goldBase: 10000000, goldGrow: 1.5, desc: '施放水流彈時在周圍 {m} 米展開水牢天瀑：受到的遠程傷害 -{rangedRed}%，範圍內敵人攻擊力 -{atkRed}%且受到的傷害 +{vuln}%，持續 {sec} 秒', unlock: { reinc: 0, lv: 800, tower: 31 }, status: { self: [{ id: 'sgWaterPrisonDomain' }], enemy: [{ id: 'atkDown' }, { id: 'sgWaterPrison' }] } }, { id: 'ragingTide', name: '怒海狂濤', cost: 10000, fx: { need: 12, durAdd: 6, durAddPer: 0.6, pct: 400, pctPer: 40, sec: 6, mergeDelay: 1.5, gap: 0.25, m: 30 }, goldBase: 10000000, goldGrow: 1.5, desc: '水龍捲的持續時間 +{durAdd} 秒；場上同時有 {need} 道水龍捲時，清除場上所有水龍捲並在中央合併成一道巨型水龍捲，每 {gap} 秒對周圍 {m} 米內的敵人造成 {pct}% 寒冰傷害，持續 {sec} 秒（巨型水龍捲持續時間固定，不受水龍捲延長效果影響）', unlock: { reinc: 0, lv: 800, tower: 52 }, triggerVfx: { ground: 'cast-water-tide-merge', field: 'field-water-tide-column' } }, { id: 'abyssBurial', name: '海淵葬界', cost: 10000, fx: { stacks: 10, stacksPer: 1, vuln: 50, vulnPer: 5, pullSpeed: 3, pullStopM: 8, pullExtraM: 10, gap: 0.35, m: 30 }, goldBase: 10000000, goldGrow: 1.5, desc: '展開一道 {m} 米的永久寒冰領域，每 {gap} 秒對領域內的敵人施加寒霜狀態；領域內敵人可額外再疊 {stacks} 層寒霜，且受到所有傷害 +{vuln}%。寒冰領域會緩慢將敵人往中心吸入', unlock: { reinc: 0, lv: 800, tower: 71 }, triggerVfx: { hit: 'st-tick-ice' }, status: { self: [{ id: 'sgAbyssDomain' }] } }] },
@@ -4222,6 +4222,7 @@ function sgQueueMeteor(pEnt, st, dmgVal, target, pool, radius, burnSpec, floatSe
     onImpact: (extra && extra.onImpact) || null,
     cancelIf: (extra && extra.cancelIf) || null,
     onCancel: (extra && extra.onCancel) || null,
+    cancelOnPlayerDown: !!(extra && extra.cancelOnPlayerDown),
     homing: (extra && extra.homing) || null,
     /* 特效欄位的列標記（見 sgVfxRoles）：落地爆點要讀「發出這一顆的那一階」的受擊特效。 */
     vfxTier: (extra && extra.vfxTier) || 0,
@@ -4266,6 +4267,7 @@ function sgTickMeteors(ctx) {
     var currentPool = (chainHit || m.fixedPos) && ctx.getEnemies ? ctx.getEnemies() : m.pool;
     var chainCancelled = chainHit && (m.pEnt !== ctx.pEnt || !(m.pEnt.hp > 0) ||
       !m.target || !(m.target.hp > 0) || (currentPool || []).indexOf(m.target) < 0);
+    var hitVictims = m.onImpact ? [] : null;
     var victims = chainCancelled ? [] : (m.radius > 0 && typeof bfTargetsAround === 'function')
       ? bfTargetsAround(m.fixedPos?{pos:m.fixedPos}:m.target, currentPool || [], m.radius)
       : ((m.target && m.target.hp > 0) ? [m.target] : []);
@@ -4274,6 +4276,7 @@ function sgTickMeteors(ctx) {
       if (!target || target.hp <= 0) continue;
       var bonusPct = m.bonusPctFn ? m.bonusPctFn(target) : 0;
       var res = sgHitOne(m.pEnt, m.st, target, m.dmgVal, m.gid, m.floatSel, m.out, 0, bonusPct, m.elem);
+      if (hitVictims && res && !res.miss && !res.invuln) hitVictims.push(target);
       if (res && !res.miss && m.burnSpec) sgApplyBurn(target, m.burnSpec);
       if (res && res.killed) killed = true;
     }
@@ -4283,7 +4286,7 @@ function sgTickMeteors(ctx) {
         vfxTier: m.vfxTier, vfxUlt: m.vfxUlt, vfxGid: m.vfxGid, vfxBase: m.vfxBase, vfxRoles: m.vfxRoles, preserveDeadTargets: true
       });
     }
-    if (m.onImpact) m.onImpact(m, victims, ctx);
+    if (m.onImpact) m.onImpact(m, victims, ctx, hitVictims);
     if (ctx.onDamage && m.out.dmg > before) ctx.onDamage(m.out.dmg - before);
     if (killed && ctx.onDeaths) ctx.onDeaths();
     sgFinishSkillCastFloat(m.out);
@@ -8155,7 +8158,7 @@ function sgThunderRodBonusPct(target, spec) {
 
 /* 一道落雷：排程落地結算，並掛上【雷電脈衝】的暈眩與【迅雷重生】的再生。
    regenDone＝這一條落雷鏈已經再生過幾道（上限來自表格 max，避免無限接力）。 */
-function sgQueueThunderBolt(pEnt, st, g, lvs, dmgVal, target, pool, floatSel, out, castDelayMs, regenDone) {
+function sgQueueThunderBolt(pEnt, st, g, lvs, dmgVal, target, pool, floatSel, out, castDelayMs, regenDone, prisonChain) {
   if (!target || target.hp <= 0) return;
   var t = g.tiers;
   var lg = sgLegend('thunderstrike');
@@ -8178,6 +8181,11 @@ function sgQueueThunderBolt(pEnt, st, g, lvs, dmgVal, target, pool, floatSel, ou
   }
   var regenMax = Math.max(0, Math.floor(Number(t[5].fx.max) || 5));
   var rod = sgThunderRodSpec(lg);
+  var prisonFollowup = !!(prisonChain && prisonChain.visited.length > 1);
+  if (prisonChain === undefined) {
+    var prison = sgThunderPrisonSpec();
+    prisonChain = prison ? { remaining: sgRollCount(prison.count), radius: prison.radius, visited: [target] } : null;
+  }
 
   sgEmitVfx('thunderstrike', [target], floatSel, {
     fxKind: 'rain', variant: 'thunder-strike', elem: 'lightning', count: 1,
@@ -8187,12 +8195,18 @@ function sgQueueThunderBolt(pEnt, st, g, lvs, dmgVal, target, pool, floatSel, ou
   sgQueueMeteor(pEnt, st, dmgVal, target, pool, impactRadius, null, floatSel, out,
     GT + (castDelayMs + timing.fallMs) / 1000, {
       gid: 'thunderstrike', variant: 'thunder-impact', elem: 'lightning', vfxBase: true,
+      cancelOnPlayerDown: prisonFollowup,
+      cancelIf: prisonFollowup ? function (ctx) {
+        var current = ctx.getEnemies ? ctx.getEnemies() : pool;
+        return pEnt !== ctx.pEnt || !(pEnt.hp > 0) || !skills2Equipped('thunderstrike') ||
+          !sgThunderPrisonSpec() || !(target.hp > 0) || (current || []).indexOf(target) < 0;
+      } : null,
       /* 【殛道落雷】：加成在落地當下才判定——先落的雷把人暈住，後落的才吃得到。
          傳奇【引雷針】的加傷走同一條路（同樣是落地當下的狀態決定）。 */
       bonusPctFn: (vulnPct > 0 || rod) ? function (tgt) {
         return (vulnPct > 0 && sgIsStunned(tgt) ? vulnPct : 0) + sgThunderRodBonusPct(tgt, rod);
       } : null,
-      onImpact: function (m, victims, ctx) {
+      onImpact: function (m, victims, ctx, hitVictims) {
         /* 傳奇【震雷】：被落雷擊中的敵人留下雷痕，暈眩中受到的傷害提高。
            塗在「所有被這道雷打到的敵人」身上，而不是只有被暈的那幾個——
            設計文檔寫的是「受到落雷術擊中的敵人」。 */
@@ -8209,17 +8223,44 @@ function sgQueueThunderBolt(pEnt, st, g, lvs, dmgVal, target, pool, floatSel, ou
           for (var si = 0; si < extra.length; si++) stunned.push(extra[si]);
           for (var vi = 0; vi < stunned.length; vi++) sgTryStun(stunned[vi], stunSec, SG_THUNDER_STUN_SLOT);
         }
+        sgThunderPrisonContinue(m, hitVictims, ctx, prisonChain, regenDone);
         // 【迅雷重生】：每次再生也從當下射程內重新選敵。
         if (regenChance > 0 && regenDone < regenMax && chance(regenChance)) {
           var nextPool = ctx.getEnemies ? ctx.getEnemies() : m.pool;
           var next = sgThunderTargets(null, nextPool, skills2Levels('thunderstrike'), 1, sgLegend('thunderstrike'))[0];
           if (next) {
             sgQueueThunderBolt(m.pEnt, m.st, SKILLS2.thunderstrike, skills2Levels('thunderstrike'),
-              m.dmgVal, next, nextPool, m.floatSel, m.out, 0, regenDone + 1);
+              m.dmgVal, next, nextPool, m.floatSel, m.out, 0, regenDone + 1, prisonChain);
           }
         }
       }
     });
+}
+
+/* 永恒雷獄的新配置只讀道數與搜敵距離；舊秒數配置尚未套用時保留原重施行為。 */
+function sgThunderPrisonSpec() {
+  var u = sgUlt('thunderstrike', 'eternalThunderPrison');
+  if (!u || !(Number(u.def.fx.count) > 0) || !(sgUltVal(u, 'm') > 0)) return null;
+  return { count: Math.max(0, sgUltVal(u, 'count')), radius: bfMeterPx(sgUltVal(u, 'm')) };
+}
+
+/* 每道原始落雷的接續預算共用於其再生與接續分支，不因追加落雷重新起算。
+   每次命中只接續一道；命中致死仍能從落點接續，閃避／無敵不觸發。 */
+function sgThunderPrisonContinue(m, hitVictims, ctx, chain, regenDone) {
+  if (!chain || !(chain.remaining > 0) || !hitVictims || !hitVictims.length ||
+      m.pEnt !== ctx.pEnt || !(m.pEnt.hp > 0) || !skills2Equipped('thunderstrike') || !sgThunderPrisonSpec()) return;
+  var source = hitVictims.indexOf(m.target) >= 0 ? m.target : hitVictims[0];
+  var pool = ctx.getEnemies ? ctx.getEnemies() : m.pool;
+  var next = bfRandomOther(source, pool || [], chain.radius, chain.visited);
+  if (!next) {
+    next = bfRandomOther(source, pool || [], chain.radius, null);
+    if (next) chain.visited = [source];
+  }
+  if (!next) return;
+  chain.remaining--;
+  chain.visited.push(next);
+  sgQueueThunderBolt(m.pEnt, m.st, SKILLS2.thunderstrike, skills2Levels('thunderstrike'),
+    m.dmgVal, next, pool, m.floatSel, m.out, 0, regenDone, chain);
 }
 
 /* ---- 超神【雷電矩陣】（2026-08-26 使用者裁定）----
@@ -8356,6 +8397,7 @@ function sgArmUltRepeat(gid) {
   if (!id) return;
   var u = sgUlt(gid, id);
   if (!u) return;
+  if (gid === 'thunderstrike' && sgThunderPrisonSpec()) return;
   var sec = sgUltVal(u, 'sec');
   if (!(sec > 0)) return;
   var gap = Math.max(0.1, sgUltVal(u, 'gap'));
@@ -8367,7 +8409,8 @@ function sgTickUltRepeat(ctx, dt) {
   if (!SKILL2_RT.ultRepeat) { SKILL2_RT.ultRepeat = {}; return; }
   for (var gid in SKILL2_RT.ultRepeat) {
     var rp = SKILL2_RT.ultRepeat[gid];
-    if (!rp || rp.until <= GT || !sgUlt(gid, SG_ULT_REPEAT_IDS[gid]) || !skills2Equipped(gid)) {
+    if (!rp || rp.until <= GT || !sgUlt(gid, SG_ULT_REPEAT_IDS[gid]) || !skills2Equipped(gid) ||
+        (gid === 'thunderstrike' && sgThunderPrisonSpec())) {
       delete SKILL2_RT.ultRepeat[gid];
       continue;
     }
@@ -11923,7 +11966,7 @@ function tickSkill2(dt, ctx) {
     });
     // 雷爆是短暫的逐跳彈射，死亡時取消未抵達段，不在復活後補打。
     SKILL2_RT.meteors = SKILL2_RT.meteors.filter(function(m){
-      if (m.variant !== 'thunder-burst') return true;
+      if (m.variant !== 'thunder-burst' && !m.cancelOnPlayerDown) return true;
       if (m.onCancel) m.onCancel();
       sgFinishSkillCastFloat(m.out); return false;
     });
