@@ -11476,3 +11476,12 @@ Worker 存活且頁面正常完成載入。
 - 衝突僅 `js/bridge.js` 與 `js/worker/sim.worker.js` 的快取版本字串。保留HEAD的傳奇改造所需data／status／legendary Worker imports，也保留incoming的虛空滅界skills2程式與表格設定；skills2 Worker token與bridge Worker資源版統一更新為新的合併版本 `20261020-legend-rework-void-random-flight-merge`，主頁skills2／bridge版本更新為`1.0.342`／`1.0.323`，避免任一側舊快取覆蓋合併結果。衝突預檢來源即本次授權整合的ai/codex，沒有擴大功能修改。
 - 驗證：`node --test --test-reporter=tap tests/void-annihilation-flight.test.cjs tests/legendary-affix.test.cjs tests/skill-vfx-inheritance.test.cjs tests/status-system.test.cjs tests/skills2-vfx-schema.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/skill2-windblade-vacuum-legendary.test.cjs tests/hall-of-radiance.test.cjs tests/infinite-lightning.test.cjs tests/eternal-thunder-prison.test.cjs tests/windblade-fracture.test.cjs`共123項、107通過、16失敗。失敗集中於風刃／真空傳奇與光耀之堂；使用相同測試配合原HEAD的js／工具／CSV來源唯讀映射重跑兩個失敗檔，31項14過17失敗，目前16項失敗全部屬於原HEAD失敗集合，新增失敗0，未放寬測試或更改無關數值。驗證備份及TAP留在本worktree Git metadata的`merge-legend-void-verify-l6Zl7V`。
 - `npm.cmd run build`554個檔案全數通過；另檢查衝突標記、兩側差異與diff空白。Excel／CSV的Git blob與incoming完全相同，沒有額外編輯Excel或素材；`LV_upgrade_system.md`及`game_formula.md`保留incoming功能說明。本機merge Commit為本紀錄所在`[Codex] merge: 解決傳奇改造與虛空滅界快取衝突`。唯讀檢查規範／流程、相關測試及設定；已知限制為上述16項既有失敗及未做瀏覽器長戰驗證。衝突處理無未完成項目，可供Review；下一步可依使用者需要執行同步BAT。
+
+
+## SOCKET-ICON-TEN-20261020 — 寶石與符文鑲嵌選取圖示放大
+
+- Owner：Codex；Done；使用者要求鑲嵌選取圖示放大至每行約10個。依賴既有共用格完成，單一開發者。
+- 允許css/ashen-forge.css選取格、index.html僅ashen-forge快取、LV_upgrade_system.md寶石外觀說明及本段；禁止JS／配置／存檔／Worker／素材及其他進行中修改。預檢無外部來源；本副本其他任務修改保留，分段提交本次內容。
+- 驗收：寶石／融合寶石／符文每行10格、圖示放大、角標可讀、窄面板不橫向溢出；相關鑲嵌回歸、Build與隔離瀏覽器排版；獨立Commit交使用者Review／整合，不合併推送，無素材庫變更。
+- 完成：共用格改為10欄等寬正方形，寶石／融合寶石與符文圖示跟隨格子放大；局部提高符文圖示選擇器優先度，避免被後載runeword.css固定32px蓋回。index僅ashen-forge90→91，系統總表與任務紀錄同步，共4檔；其他進行中修改保持未提交，無素材庫變更。
+- 驗證：`node --test tests/equip-socket-ui.test.cjs tests/gem-socket-height-compact.test.cjs tests/socket-target.test.cjs tests/runeword-ui.test.cjs`51/51；`npm.cmd run build`554檔通過；git diff --check通過。沿正式CSS及既有圖片的隔離瀏覽器預覽，600px面板格53.44px／圖47.84px、360px面板格29.44px／圖23.84px，寶石符文均每行10格、圖片載入成功、無橫向溢出，Console warning／error0。截圖socket-icons-ten.png保存在本聊天visualizations。未操作完整遊戲或玩家存檔，未做跨瀏覽器驗收；純CSS低風險，可供Review／合併，後續使用者重載分支驗收。唯讀檢查AI規範／流程、prompts/codex.md、css/style.css／gems.css／runeword.css／ashen-forge-flat.css、js/ui.js及上述測試。Commit為本段所在「[Codex] fix: 放大鑲嵌寶石與符文並改為每行十格」。
