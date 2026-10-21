@@ -1103,6 +1103,21 @@ function eliteChainPick(d, len, cur) {
   if (cur !== undefined && cur !== best && Math.abs(Math.log(vars[cur].n / want)) < Math.log(1.25)) return cur;   // 差不多就別換
   return best;
 }
+/* 同一群的活怪連成一圈：2 隻＝一條線、3 隻＝三角形、4 隻＝四邊形…（依繞群體中心的角度排序，邊不會交叉）。
+   群裡只要有一隻帶火鏈就會連整圈；單條邊太長（超過最長鏈環數 × linkLen × 2）就不畫那一條。 */
+function eliteChainRing(m) {
+  var mem = eliteGroupMembers(m, true).filter(function (e) { return e.hp > 0 && eliteMonsterPos(e); });
+  if (mem.length < 2) return [];
+  if (mem.length === 2) return [[mem[0], mem[1]]];
+  var cx = 0, cy = 0;
+  mem.forEach(function (e) { var p = eliteMonsterPos(e); cx += p.x; cy += p.y; });
+  cx /= mem.length; cy /= mem.length;
+  var ang = function (e) { var p = eliteMonsterPos(e); return Math.atan2(p.y - cy, p.x - cx); };
+  mem.sort(function (u, v) { return ang(u) - ang(v); });
+  var out = [];
+  for (var i = 0; i < mem.length; i++) out.push([mem[i], mem[(i + 1) % mem.length]]);
+  return out;
+}
 function eliteChainsTick(dt, list) {
   var want = {};
   var player = elitePlayerAlive();
@@ -1112,20 +1127,24 @@ function eliteChainsTick(dt, list) {
     if (!m || !(m.hp > 0)) continue;
     var d = eliteArch(m, 'chain');
     if (!d || !eliteReady(m)) continue;
-    var other = eliteChainPartner(m);
-    if (!other) continue;
-    var key = [m.floatSel, other.floatSel].sort().join('|');
-    if (want[key]) continue;
-    want[key] = { a: m, b: other, d: d };
+    var vars = eliteChainVariants(d);
+    var maxLen = vars[vars.length - 1].n * (d.linkLen > 0 ? d.linkLen : 15) * 2;
+    eliteChainRing(m).forEach(function (pr) {
+      var pa = eliteMonsterPos(pr[0]), pb = eliteMonsterPos(pr[1]);
+      if (eliteDist(pa.x, pa.y, pb.x, pb.y) > maxLen) return;
+      var key = [pr[0].floatSel, pr[1].floatSel].sort().join('|');
+      if (want[key]) return;
+      want[key] = { a: pr[0], b: pr[1], d: d, o: m };
+    });
   }
   var keep = [];
   ELITE_RT.chains.forEach(function (c) {
-    if (want[c.key]) { c.a = want[c.key].a; c.b = want[c.key].b; c.d = want[c.key].d; delete want[c.key]; keep.push(c); }
+    if (want[c.key]) { c.a = want[c.key].a; c.b = want[c.key].b; c.d = want[c.key].d; c.o = want[c.key].o; delete want[c.key]; keep.push(c); }
     else if (c.vis) c.vis.until = 0;
   });
   Object.keys(want).forEach(function (key) {
     var w = want[key];
-    var c = { key: key, a: w.a, b: w.b, d: w.d, nextTick: 0, vis: null };
+    var c = { key: key, a: w.a, b: w.b, d: w.d, o: w.o, nextTick: 0, vis: null };
     c.varIdx = undefined;
     keep.push(c);
   });
@@ -1148,7 +1167,7 @@ function eliteChainsTick(dt, list) {
     if (c.nextTick > 0 || !player) return;
     c.nextTick = c.d.tick || 0.25;
     if (eliteSegmentDist(ap.x, ap.y, bp.x, bp.y, pp.x, pp.y) <= c.d.wid / 2 + ELITE_PLAYER_BODY_R) {
-      var res = eliteHitPlayer(c.a, { mult: c.d.dmg, elem: c.d.elem, sure: true, quiet: true, label: c.d.name });
+      var res = eliteHitPlayer(c.o || c.a, { mult: c.d.dmg, elem: c.d.elem, sure: true, quiet: true, label: c.d.name });
       if (res && !res.miss && !res.invuln && c.d.v.hit) eliteHitFx(elitePF(), c.d.v.hit);
     }
   });

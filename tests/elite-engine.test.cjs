@@ -108,6 +108,23 @@ test('ELITE-ENGINE-3b 跑位時加速（repoSpeed）：目標點跟著玩家走�
   assert.ok(Math.abs(minion.pos.x - n0) > Math.abs(m.pos.x - m0) * 3, '小兵被擠開、跑位中的高級敵人幾乎不動');
 });
 
+test('ELITE-ENGINE-4c 火鏈連成一圈：2 隻一條線、3 隻三角形、4 隻四邊形', () => {
+  [[2, 1], [3, 3], [4, 4], [5, 5]].forEach(([n, edges]) => {
+    const c = fresh();
+    const pts = [[-120, -80], [130, -60], [110, 120], [-100, 100], [0, 200]];
+    for (let i = 0; i < n; i++) {
+      const m = makeElite(c, i === 0 ? ['e_firechain'] : ['e_vitality'], { x: pts[i][0], y: pts[i][1], hp: 1e9 });
+      if (i === 0) { m._el.repoAt = Infinity; m._el.cd.e_firechain = 999; }
+    }
+    run(c, 'FIELD.monsters.forEach(function (e) { e._enterCd = 0; });');
+    stepElite(c, 1);
+    assert.equal(c.ELITE_RT.chains.length, edges, n + ' 隻 → ' + edges + ' 條鏈');
+    const deg = {};
+    c.ELITE_RT.chains.forEach((k) => { [k.a, k.b].forEach((e) => { deg[e.floatSel] = (deg[e.floatSel] || 0) + 1; }); });
+    if (n >= 3) Object.keys(deg).forEach((k) => assert.equal(deg[k], 2, '每隻連兩條，圍成一圈'));
+  });
+});
+
 test('ELITE-ENGINE-4b 火鏈：距離越遠鏈環越多（換鏈環數不同的 Preset），鏈環本身只小幅拉長', () => {
   const c = fresh();
   const d = c.ELITE_AFFIXES.e_firechain;
