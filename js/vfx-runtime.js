@@ -346,6 +346,7 @@ var VFXRuntime = (function () {
       if (isNum(a.w)) b.w = a.w * projectedLength(isNum(a.a) ? a.a : 0, k);
       if (isNum(a.a)) b.a = projectedAngle(a.a, k);
       if (isNum(a.moveA)) b.moveA = projectedAngle(a.moveA, k);
+      ['holdAngle', 'startAngle'].forEach(function (f) { if (isNum(a[f])) b[f] = projectedAngle(a[f], k); });
       out.area = b;
     }
     return out;
@@ -1133,7 +1134,7 @@ var VFXRuntime = (function () {
       var arcHeight = Math.max(0,num(spec.arcM,0)) * (typeof bfMeterPx === 'function' ? bfMeterPx(1) : 10);
       if (arcHeight > 0) ctrl = {x:(from.x+to.x)/2,y:(from.y+to.y)/2-2*arcHeight};
       var mult = spec.fxKind === 'rain' ? profile.skyScale : profile.scale;
-      var facing = curveHeading(from, ctrl, to, 0);
+      var facing = isNum(spec.area && spec.area.startAngle) ? spec.area.startAngle : curveHeading(from, ctrl, to, 0);
       var dimensions = projectileDimensions(presetId, spec);
       // 敵方普攻與神聖光彈只表現飛行，不表達碰撞範圍；與編輯器共用製作尺寸。
       // 有權威彈體尺寸的事件仍沿用上面的幾何換算。
@@ -1149,7 +1150,7 @@ var VFXRuntime = (function () {
       params.motionFacing = !!skyEntry || /^wind-blade(?:-|$)/.test(spec.variant||'');
       if (flightOrbit) params.particleOrigin = {x:flightOrbit.origin.x,y:flightOrbit.origin.y*groundScale};
       // 飛行動畫壽命隨權威飛行時間伸縮，避免抵達之前先消失。
-      if ((flightOrbit || presetId === 'proj-wind-crescent' || knifeFlight || holyFlight || (fixedLanding && spec.variant === 'fireball-small') || /^knife(?:-|$)/.test(spec.variant || '')) && travel > 0) params.timeScale = presetDurations[presetId] / travel;
+      if ((flightOrbit || presetId === 'proj-wind-crescent' || knifeFlight || holyFlight || (fixedLanding && spec.variant === 'fireball-small') || /^knife(?:-|$)/.test(spec.variant || '')) && travel > 0 && spec.variant !== 'elite-missile-flight') params.timeScale = presetDurations[presetId] / travel;
       // 敵方出手的彈體不降：那是玩家要看清楚的威脅。
       if (spec.fxKind !== 'enemy-attack') {
         var td = trailDensity();
@@ -1167,7 +1168,9 @@ var VFXRuntime = (function () {
         previousTarget:spec.area&&spec.area.homingSpeed>0?{x:to.x,y:to.y/groundScale}:null,
         dur: travel > 0 ? travel : 0.001,
         mult: mult, enterAngle: enterAngle, facing: facing, arcHeight: arcHeight,
-        dimensions: dimensions, knifeFlight: knifeFlight, knifeTail: /^knife(?:-|$)/.test(spec.variant || '') || presetId === 'proj-dragon-devour' || !!flightOrbit, control: knifeControl, lastTo: to,
+        holdSec: Math.max(0, num(spec.area && spec.area.holdSec, 0)),
+        brake: !!(spec.area && spec.area.brake), holdAngle: spec.area && spec.area.holdAngle,
+        dimensions: dimensions, knifeFlight: knifeFlight, knifeTail: spec.variant === 'elite-missile-flight' || /^knife(?:-|$)/.test(spec.variant || '') || presetId === 'proj-dragon-devour' || !!flightOrbit, control: knifeControl, lastTo: to,
         settleTail: spec.fxKind === 'rain' && (spec.variant === 'meteor' || spec.variant === 'thunder-fall'),
         soulId: spec.area && spec.area.soulId, soulLife: spec.area && spec.area.soulLife,
         soulReturn: spec.area && spec.area.soulReturn, orbitAngle: spec.area && spec.area.orbitAngle, orbitR: spec.area && spec.area.orbitR
@@ -2015,7 +2018,7 @@ var VFXRuntime = (function () {
         var k = Math.min(1, pr.t / pr.dur);
         var to = pr.to || ctx.posOf(pr.targetId);
         if(pr.knifeFlight) {
-          var livePoint=ctx.chainPoint?ctx.chainPoint(pr.targetId):ctx.posOf(pr.targetId);
+          var livePoint=pr.targetId ? (ctx.chainPoint?ctx.chainPoint(pr.targetId):ctx.posOf(pr.targetId)) : null;
           to=livePoint?(ctx.footOf?ctx.footOf(pr.targetId):livePoint):pr.lastTo;
           if(pr.soulReturn) {
             var centre=footOf('pv-float');
@@ -2025,7 +2028,8 @@ var VFXRuntime = (function () {
         }
         var ctrl = pr.homingSpeed>0 ? null : pr.knifeFlight ? pr.control : curveControl(pr.from, to, pr.enterAngle, curveTuning(pr.ref.presetId));
         if (pr.arcHeight > 0) ctrl = {x:(pr.from.x+to.x)/2,y:(pr.from.y+to.y)/2-2*pr.arcHeight};
-        var at = pr.homingSpeed>0 ? null : curvePoint(pr.from, ctrl, to, k);
+        var pathK = pr.brake ? 1 - Math.pow(1 - k, 3) : k;
+        var at = pr.homingSpeed>0 ? null : curvePoint(pr.from, ctrl, to, pathK);
         if(pr.homingSpeed>0&&homingStep){
           var worldTarget={x:to.x,y:to.y/groundScale};
           var next=homingStep(pr.homingPosition,pr.previousTarget,worldTarget,pr.homingSpeed,step);
@@ -2055,13 +2059,14 @@ var VFXRuntime = (function () {
           at = {x:pr.from.x+Math.cos(pr.facing)*tailDistance,y:pr.from.y+Math.sin(pr.facing)*tailDistance};
           movingDimensions = {scaleX:pr.dimensions.scaleX*Math.min(1,distance/pr.thrustBody),scaleY:pr.dimensions.scaleY};
         }
-        if(!pr.flightOrbit && !(pr.homingSpeed>0))pr.facing = pr.arcHeight > 0 ? curveHeading(pr.from, ctrl, to, k) : approachAngle(pr.facing, curveHeading(pr.from, ctrl, to, k),
+        var wantFacing = k >= 1 && pr.holdSec > 0 && isNum(pr.holdAngle) ? pr.holdAngle : curveHeading(pr.from, ctrl, to, pathK);
+        if(!pr.flightOrbit && !(pr.homingSpeed>0))pr.facing = pr.arcHeight > 0 ? curveHeading(pr.from, ctrl, to, pathK) : approachAngle(pr.facing, wantFacing,
           step, tuning(pr.ref.presetId,'facingTau'));
         var alive = moveRef(pr.ref, Object.assign({
           position: { x: at.x, y: at.y },
           rotation: pr.facing
         }, movingDimensions), pr.mult);
-        if (!alive || k >= 1 || (pr.soulId && pr.t>=pr.soulLife)) {
+        if (!alive || (pr.holdSec > 0 ? pr.t >= pr.dur + pr.holdSec : k >= 1) || (pr.soulId && pr.t>=pr.soulLife)) {
           /* 抵達時的航向留給連鎖的下一段接手（見 playProjectile 的 enterAngle）。 */
           if (k >= 1 && pr.targetId) arrivals[pr.targetId] = { angle: pr.facing, at: clock };
           if (alive) {
@@ -2312,7 +2317,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20261021-bolt-storm-deform';
+  var DATA_VERSION = '20261021-missile-salvo';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

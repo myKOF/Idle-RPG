@@ -146,8 +146,12 @@ function eliteFlightFx(preset, x0, y0, x1, y1, travelSec, o) {
   o = o || {};
   var area = { sourceX: x0, sourceY: y0, x: x1, y: y1, knifeFlight: true };
   if (o.ctrl) { area.controlX = o.ctrl.x; area.controlY = o.ctrl.y; }
+  if (o.holdSec > 0) area.holdSec = o.holdSec;
+  if (o.brake) area.brake = true;
+  if (isFinite(o.holdAngle)) area.holdAngle = o.holdAngle;
+  if (isFinite(o.startAngle)) area.startAngle = o.startAngle;
   eliteFx({
-    fxKind: 'projectile', variant: 'elite-flight', elem: o.elem || null, count: 1, dur: travelSec, hit: false,
+    fxKind: 'projectile', variant: o.variant || 'elite-flight', elem: o.elem || null, count: 1, dur: travelSec, hit: false,
     delayMs: o.delaySec > 0 ? Math.round(o.delaySec * 1000) : 0, travelMs: [Math.round(Math.max(0.05, travelSec) * 1000)],
     lineWidth: o.bodyD || 0, arcM: o.arcM || 0, area: area, vfx: { projectile: preset }
   });
@@ -1556,42 +1560,58 @@ function eliteCastSummon(m, d) {
   });
 }
 
-/* ============ 飛彈：祕法導彈先朝後方緩慢飛出，再轉彎加速衝向你 ============ */
+/* ============ 飛彈：快速後退、剎停待機後整批齊射 ============ */
 function eliteCastMissiles(m, d) {
   var rng = eliteRange(d.n, [3, 5]);
   var n = eliteRandInt(rng[0], rng[1]);
-  eliteBusy(m, 0.9 + n * 0.12, false);
+  var leg1 = d.leg1 || 0.55, leg2 = d.leg2 || 0.38;
+  var hold = Math.max(0, Number(d.hold) || 0);
+  var windup = 0.2;
+  eliteBusy(m, windup + leg1 + hold + leg2, false);
   var presets = (d.presets && d.presets.length) ? d.presets : [d.v.proj];
-  for (var i = 0; i < n; i++) {
-    (function (index) {
-      eliteLater(0.2 + index * 0.14, function () {
-        if (!(m.hp > 0) || !elitePlayerAlive()) return;
-        var mp = eliteMonsterPos(m), pp = elitePos();
-        if (!mp) return;
-        var preset = presets[Math.floor(Math.random() * presets.length)];
-        var ax = mp.x - pp.x, ay = mp.y - pp.y, al = Math.sqrt(ax * ax + ay * ay) || 1;
-        ax /= al; ay /= al;                                   // 玩家 → 怪物（往後方）
-        var side = (Math.random() < 0.5 ? -1 : 1) * (0.25 + Math.random() * 0.55);
-        var back = d.back || 32;
-        var bx = mp.x + ax * back - ay * back * side, by = mp.y + ay * back + ax * back * side;
-        var leg1 = d.leg1 || 0.55, leg2 = d.leg2 || 0.38;
-        eliteFlightFx(preset, mp.x, mp.y, bx, by, leg1, { ctrl: { x: mp.x + ax * back * 0.5, y: mp.y + ay * back * 0.5 }, bodyD: d.bodyD });
-        eliteLater(leg1, function () {
-          if (!(m.hp > 0) || !elitePlayerAlive()) return;
-          var tp = elitePos();
-          var lx = tp.x, ly = tp.y;                           // 轉彎的當下鎖定落點：走位就躲得掉
-          var mx = (bx + lx) / 2 - (ly - by) * 0.25 * side, my = (by + ly) / 2 + (lx - bx) * 0.25 * side;
-          eliteFlightFx(preset, bx, by, lx, ly, leg2, { ctrl: { x: mx, y: my }, bodyD: d.bodyD });
-          eliteLater(leg2, function () {
-            eliteBurstFx(lx, ly, d.r * 1.3, d.v.attack, 0, d.elem);
-            if (!eliteInCircle(lx, ly, d.r)) return;
-            var res = eliteHitPlayer(m, { mult: d.dmg, elem: d.elem, sure: false, label: d.name, quiet: index > 0 });
-            if (res && !res.miss && !res.invuln && d.v.hit) eliteHitFx(elitePF(), d.v.hit);
-          });
+  eliteLater(windup, function () {
+    if (!(m.hp > 0) || !elitePlayerAlive()) return;
+    var mp = eliteMonsterPos(m), pp = elitePos();
+    if (!mp) return;
+    var ax = mp.x - pp.x, ay = mp.y - pp.y, al = Math.sqrt(ax * ax + ay * ay) || 1;
+    ax /= al; ay /= al;
+    var back = d.back || 32, missiles = [];
+    for (var i = 0; i < n; i++) {
+      var preset = presets[Math.floor(Math.random() * presets.length)];
+      // 在原本的左右偏移範圍內均勻展開，避免停駐時擠成同一顆。
+      var side = n > 1 ? -0.8 + 1.6 * i / (n - 1) : 0;
+      var bx = mp.x + ax * back - ay * back * side;
+      var by = mp.y + ay * back + ax * back * side;
+      var facing = Math.atan2(pp.y - by, pp.x - bx);
+      missiles.push({ preset: preset, x: bx, y: by, side: side, facing: facing });
+      eliteFlightFx(preset, mp.x, mp.y, bx, by, leg1, {
+        variant: 'elite-missile-flight', bodyD: d.bodyD,
+        ctrl: { x: mp.x + ax * back * 0.5, y: mp.y + ay * back * 0.5 },
+        brake: true, holdSec: hold, holdAngle: facing
+      });
+    }
+    eliteLater(leg1 + hold, function () {
+      if (!(m.hp > 0) || !elitePlayerAlive()) return;
+      var tp = elitePos(), lx = tp.x, ly = tp.y; // 齊射這一拍才共同鎖定落點。
+      missiles.forEach(function (shot, index) {
+        var mx = (shot.x + lx) / 2 - (ly - shot.y) * 0.25 * shot.side;
+        var my = (shot.y + ly) / 2 + (lx - shot.x) * 0.25 * shot.side;
+        eliteFlightFx(shot.preset, shot.x, shot.y, lx, ly, leg2, {
+          variant: 'elite-missile-flight', bodyD: d.bodyD,
+          ctrl: { x: mx, y: my }, startAngle: shot.facing
         });
       });
-    })(i);
-  }
+      eliteLater(leg2, function () {
+        if (!elitePlayerAlive()) return;
+        missiles.forEach(function (shot, index) {
+          eliteBurstFx(lx, ly, d.r * 1.3, d.v.attack, 0, d.elem);
+          if (!eliteInCircle(lx, ly, d.r)) return;
+          var res = eliteHitPlayer(m, { mult: d.dmg, elem: d.elem, sure: false, label: d.name, quiet: index > 0 });
+          if (res && !res.miss && !res.invuln && d.v.hit) eliteHitFx(elitePF(), d.v.hit);
+        });
+      });
+    });
+  });
 }
 
 /* ============ 帶電：每次被打到就向四周散出電火花 ============ */
