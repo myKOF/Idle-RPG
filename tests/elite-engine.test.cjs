@@ -210,6 +210,28 @@ test('ELITE-ENGINE-6 秘法加持：核心預警 → 順時針旋轉光束；站
   assert.equal(c.ELITE_RT.beams.length, 0, '6 秒後光束消失');
 });
 
+test('ELITE-ENGINE-7b 熔火火徑：一幀跑很遠也沿路補滿（不留斷層）；場域滿了先收自己最舊的', () => {
+  const c = fresh();
+  const m = makeElite(c, ['e_molten'], { x: 400, y: 0, hp: 1e9 });
+  const d = c.ELITE_AFFIXES.e_molten;
+  stepElite(c, 1);
+  const x0 = m.pos.x;
+  m.pos.x -= d.trailGap * 5.5;                        // 一口氣跑 5.5 格
+  stepElite(c, 0.05);
+  const xs = c.ELITE_RT.zones.map((z) => z.x).sort((p, q) => q - p);
+  assert.ok(xs.length >= 5, '沿路補了 5 塊：' + xs.length);
+  for (let i = 1; i < xs.length; i++) assert.ok(Math.abs(xs[i - 1] - xs[i]) <= d.trailGap + 1e-6, '相鄰兩塊間隔不超過 gap');
+  assert.ok(xs[0] <= x0 && xs[xs.length - 1] >= m.pos.x - 1e-6, '都在走過的路上');
+  // 場域數量到上限：新的照放、這隻最舊的被收掉
+  const cap = Math.floor(c.eliteG('maxZones', 48));
+  for (let i = 0; i < cap; i++) c.eliteZoneSpawn(m, d, 0, 0, 0);
+  const n0 = c.ELITE_RT.zones.length;
+  m.pos.x -= d.trailGap * 1.5;
+  stepElite(c, 0.05);
+  assert.ok(c.ELITE_RT.zones.length <= Math.max(n0, cap), '不超過上限');
+  assert.ok(c.ELITE_RT.zones.some((z) => Math.abs(z.x - m.pos.x) < d.trailGap * 1.6), '怪物身後仍有新火徑');
+});
+
 test('ELITE-ENGINE-7 熔火：移動留下火徑（10 秒），死亡後原地核心 3 秒後大範圍自爆', () => {
   const c = fresh();
   const m = makeElite(c, ['e_molten'], { x: 400, y: 0, hp: 1e9 });

@@ -21,7 +21,7 @@ importScripts(
   '../item.js?v=20261018-gem-workshop', '../gem_resonance.js?v=20261018-resonance-hole-effects','../runeword.js?v=20261018-rune-tower-unlock',
   '../skills.js?v=20261018-potential-remove', '../skills2.js?v=20261021-ultimate-evolution-name', '../elite_data.js?v=20261016-wall-rock', '../talents.js?v=20261018-heaven-power-complete-bonus',
   '../player.js?v=20261018-potential-remove', '../special_rules.js',
-  '../combat.js?v=20261019-disintegrate-end-once-bloodfeast-single-target', '../elite.js?v=20261021-chain-near', '../elite_boss.js?v=20261015-boss-player-skill', '../elite_boss_recipes.js?v=20261015-boss-player-skill', '../legendary.js?v=20261012-indomitable-guard-legend-rework-1020', '../tower.js?v=20261018-rune-tower-unlock',
+  '../combat.js?v=20261019-disintegrate-end-once-bloodfeast-single-target', '../elite.js?v=20261021-trail-fill', '../elite_boss.js?v=20261015-boss-player-skill', '../elite_boss_recipes.js?v=20261015-boss-player-skill', '../legendary.js?v=20261012-indomitable-guard-legend-rework-1020', '../tower.js?v=20261018-rune-tower-unlock',
   '../factory.js?v=20261021-equipment-quality-name', '../newforge.js', '../forge.js?v=20261015-gem-enabled', '../save.js?v=20261021-equipment-quality-name',
   '../tasks.js?v=20261007-runes4'
 );

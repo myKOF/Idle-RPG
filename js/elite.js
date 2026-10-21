@@ -766,15 +766,32 @@ function eliteZonesTick(dt) {
   }
   ELITE_RT.zones = keep;
 }
-/* 熔火：移動時每隔一段距離留下一塊熔岩火徑。 */
+/* 熔火：移動時每隔一段距離留下一塊熔岩火徑。
+   怪物一幀可能跑很遠（跑位、衝刺），所以沿著「上次落點→現在位置」每隔 gap 補一塊，不然火徑會斷成一塊一塊、中間一大段空白；
+   場域數量到上限時，先收掉這隻怪自己最舊的一塊（火徑尾端先消失），不是不放新的（那樣怪物身後就是斷層）。 */
 function eliteTrailTick(m, d, rt, dt) {
   var mp = eliteMonsterPos(m);
   if (!mp) return;
   if (rt.trailX === null) { rt.trailX = mp.x; rt.trailY = mp.y; return; }
-  if (eliteDist(mp.x, mp.y, rt.trailX, rt.trailY) < Math.max(8, d.trailGap || 30)) return;
-  rt.trailX = mp.x; rt.trailY = mp.y;
-  if (ELITE_RT.zones.length >= Math.max(1, Math.floor(eliteG('maxZones', 48)))) return;
-  eliteZoneSpawn(m, d, mp.x, mp.y, 0);
+  var gap = Math.max(8, d.trailGap || 30);
+  var dist = eliteDist(mp.x, mp.y, rt.trailX, rt.trailY);
+  if (dist < gap) return;
+  var n = Math.min(8, Math.floor(dist / gap));
+  var cap = Math.max(1, Math.floor(eliteG('maxZones', 48)));
+  var ux = (mp.x - rt.trailX) / dist, uy = (mp.y - rt.trailY) / dist;
+  var x0 = rt.trailX, y0 = rt.trailY;
+  for (var k = 1; k <= n; k++) {
+    if (ELITE_RT.zones.length >= cap) {
+      var old = -1;
+      for (var i = 0; i < ELITE_RT.zones.length; i++) if (ELITE_RT.zones[i].owner === m && ELITE_RT.zones[i].def === d) { old = i; break; }
+      if (old < 0) break;
+      ELITE_RT.zones[old].vis.until = 0;
+      ELITE_RT.zones.splice(old, 1);
+    }
+    eliteZoneSpawn(m, d, x0 + ux * gap * k, y0 + uy * gap * k, 0);
+  }
+  rt.trailX = x0 + ux * gap * n; rt.trailY = y0 + uy * gap * n;
+  if (dist > gap * 8) { rt.trailX = mp.x; rt.trailY = mp.y; }   // 瞬間移動等超長距離：不補，直接從新位置開始
 }
 /* 熔火：死亡時原地留下熔岩核心，coreDelay 秒後引發大範圍自爆。 */
 function eliteMoltenCore(m, d) {
