@@ -95,7 +95,7 @@ function adapter(presetList = presets, context) {
   const rt = Runtime.create({ core: Core, resolver: { has: () => true, resolve: id => '/' + id },
     fxBackend: {
       createNode(spec) { const n = { spec, history: [] }; nodes.push(n); return n; },
-      updateNode(node, t) { if (t && t.visible !== false) node.history.push({ ...t }); },
+      updateNode(node, t) { node.visible = !!t && t.visible !== false; if (node.visible) node.history.push({ ...t }); },
       destroyNode() {}, destroy() {}
     }, ctx: context || { posOf: () => null, footOf: () => null, chainPoint: () => null, playerPos: () => ({ x: 0, y: 0 }) }
   });
@@ -111,6 +111,8 @@ function curve(a, k) {
 test('MISSILE-SALVO 真實Preset平滑剎停／原地停留／轉向，尾跡自然消散不洩漏', () => {
   const x = scene(); x.c.eliteCastMissiles(x.m, x.d); x.until(.21);
   const ev = flights(x.log)[0].spec;
+  x.until(1.49);
+  const forward = flights(x.log)[4].spec;
   for (const preset of presets) {
     const { rt, nodes } = adapter();
     rt.tryPlay({ ...ev, vfx: { projectile: preset.id } });
@@ -130,13 +132,22 @@ test('MISSILE-SALVO 真實Preset平滑剎停／原地停留／轉向，尾跡自
         assert.ok(Math.abs(turn) < .5, '待機轉向連續');
       }
       maxParticles = Math.max(maxParticles, rt.stats().fx.activeParticles);
+      if (i === 192) {
+        const cones = nodes.filter(n => n.spec.assetUrl.endsWith('cone_composed_c.png'));
+        assert.ok(cones.length >= 2 && cones.every(n => !n.visible), '停駐後光錐消退');
+        assert.equal(rt.stats().fx.activeParticles, 0, '停駐後舊光點散完，不持續噴出硬尾');
+      }
     }
     assert.equal(rt.stats().projectiles, 1, '停留尚未結束不提前消失');
     const p = core.history.at(-1);
     assert.ok(Math.abs(Math.atan2(Math.sin(p.rotation-ev.area.holdAngle), Math.cos(p.rotation-ev.area.holdAngle))) < .01);
     assert.ok(maxParticles > 0 && maxParticles <= 48, '尾跡有發射且受預算限制');
     rt.update(.01); assert.equal(rt.stats().projectiles, 0);
-    assert.ok(rt.stats().fx.activeParticles > 0, '彈體移除後舊尾跡繼續淡出');
+    assert.equal(rt.stats().fx.activeParticles, 0, '待機結束時沒有殘留長尾');
+    rt.tryPlay({ ...forward, vfx: { projectile: preset.id } });
+    for (let i = 0; i < 100; i++) rt.update(1/240);
+    assert.equal(rt.stats().projectiles, 0);
+    assert.ok(rt.stats().fx.activeParticles > 0, '衝刺抵達後，飛行留下的光點自然淡出');
     rt.update(1); assert.equal(rt.stats().fx.activeEffects, 0); assert.equal(rt.stats().fx.activeParticles, 0);
     assert.equal(rt.stats().missing, 0); rt.destroy();
   }
@@ -158,7 +169,7 @@ test('MISSILE-SALVO 舊事件保持原曲線與壽命，角度投影不修改原
   assert.equal(spec.area.holdAngle, .8);
 });
 
-test('MISSILE-SALVO 四色Preset可重製，光暈縮小、光尾細長且無新增素材來源', () => {
+test('MISSILE-SALVO 四色Preset可重製，柔光錐取代硬尾且無新增素材來源', () => {
   const author = require('../tools/vfx/authoring/author/enemy-skills.cjs');
   for (const p of presets) {
     const original = author.NEW[p.id](); original.schemaVersion = 1;
@@ -166,10 +177,16 @@ test('MISSILE-SALVO 四色Preset可重製，光暈縮小、光尾細長且無新
     assert.equal(p.loop, true);
     const glow = p.layers.find(l => l.id === 'glow');
     assert.ok(glow.scale.x <= .0859*.41); assert.ok(glow.alpha <= .45);
-    const tail = p.layers.find(l => l.id === 'tail-core');
-    assert.ok(tail.scale.x / tail.scale.y > 15);
+    assert.equal(p.layers.some(l => l.id === 'tail-core'), false, '移除原固定光棒');
+    const cone = p.layers.find(l => l.id === 'tail-cone');
+    assert.ok(cone.assetId.endsWith('cone_composed_c.png'));
+    assert.equal(cone.anchor.y, 1, '錐尖接在彈頭端');
+    assert.ok(Math.abs(cone.rotation + Math.PI/2) < 1e-6, '光錐朝向彈頭後方');
+    assert.ok(cone.duration <= .4);
+    assert.equal(cone.alphaOverLife.at(-1)[1], 0, '光錐逐漸消退');
     const trail = p.layers.find(l => l.id === 'trail');
-    assert.ok(trail.lifetime[0] >= .3); assert.ok(trail.startScale[1] < .02);
+    assert.ok(trail.lifetime[1] <= .35); assert.ok(trail.startScale[1] < .02);
+    assert.ok(trail.speed[1] <= 1, '光點留在路徑，避免自行拉成噴射直棒');
     const layout = JSON.parse(fs.readFileSync(path.join(ROOT, 'vfx/layouts', p.id + '.json')));
     assert.deepEqual(layout.groups[0].layerIds, p.layers.map(l => l.id));
   }
@@ -190,4 +207,45 @@ test('MISSILE-SALVO Worker實際派送保留剎停、等待、轉向及完整飛
   assert.equal(rt.tryPlay(events[0]), true);
   rt.update(.8); assert.equal(rt.stats().projectiles, 1);
   rt.update(.6); assert.equal(rt.stats().projectiles, 0); rt.destroy();
+});
+
+
+test('MISSILE-SALVO 停駐位置不隨NPC或玩家移動，齊射從原停駐點出發', () => {
+  const s = scene(); s.c.eliteCastMissiles(s.m, s.d); s.until(.6);
+  const back = flights(s.log);
+  const pads = back.map(e => ({ x: e.spec.area.x, y: e.spec.area.y }));
+  s.m.pos.x = 900; s.m.pos.y = -400;
+  s.c.bfPlayerPos().x = -120; s.c.bfPlayerPos().y = 75;
+  s.until(1.47);
+  assert.equal(flights(s.log).length, 4, '移動不提早結束待機');
+  s.until(1.49);
+  const salvo = flights(s.log).slice(4);
+  for (let i = 0; i < 4; i++) {
+    assert.equal(back[i].spec.area.sourceX, 100, '事件起點沒有引用NPC的可變pos物件');
+    assert.equal(back[i].spec.area.x, pads[i].x);
+    assert.equal(back[i].spec.area.y, pads[i].y);
+    assert.equal(salvo[i].spec.area.sourceX, pads[i].x, '從原停駐點起飛');
+    assert.equal(salvo[i].spec.area.sourceY, pads[i].y);
+    assert.equal(salvo[i].spec.area.x, -120, '齊射當下才取玩家位置');
+    assert.equal(salvo[i].spec.area.y, 75);
+  }
+  // 真Runtime與Core：連備援位置查詢也隨NPC移動，仍只能使用事件的固定世界位置。
+  const npc = { x: 100, y: 0 }, player = { x: 0, y: 0 };
+  const { rt, nodes } = adapter(presets, {
+    posOf: () => npc, footOf: () => npc, chainPoint: () => npc, playerPos: () => player
+  });
+  rt.tryPlay(back[0].spec);
+  for (let i = 1; i <= 300; i++) {
+    npc.x += 11; npc.y -= 3; player.x -= 4; player.y += 2;
+    rt.update(1/240);
+    if (i >= 67) {
+      const core = nodes.find(n => n.spec.assetUrl.endsWith('circle_05.png'));
+      assert.ok(core && core.visible);
+      const p = core.history.at(-1);
+      assert.ok(Math.abs(p.x - pads[0].x) < 1e-7, '停駐X不跟隨NPC／玩家');
+      assert.ok(Math.abs(p.y - pads[0].y) < 1e-7, '停駐Y不跟隨NPC／玩家');
+    }
+  }
+  assert.equal(rt.stats().projectiles, 1, '保持待機至同一輪齊射');
+  rt.update(.03); assert.equal(rt.stats().projectiles, 0); rt.destroy();
 });

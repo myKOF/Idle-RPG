@@ -24,6 +24,22 @@
 - 唯讀未改：共通規範／Workflow／Agent文件、Skills2來源Excel／CSV／生成JS、elite_data、battle-renderer與tower上下文、Core／Backend／Editor guard與Server、既有elite／Runtime／schema／shim回歸、素材PNG／索引及PROVENANCE。只改worker-protocol既有版本預期，其他原測試保持；其他副本完全未動。重疊檔皆以實際候選、HEAD共同內容及develop工作檔merge-file試跑0，對方毒十字／GM快取與進行中合併保留。
 - 交付：素材庫先Commit 689d9cf（9檔Preset／layout／SOURCE）；遊戲Commit為本段所在「[Codex] feat: 飛彈縮光暈長尾跡與剎停齊射（參數待套用）」，回覆附編號。沒有合併或推送。程式與素材可Review；正式新參數／更新說明仍待BAT及套用後驗收，尚不可宣稱需求完整已上線。下一步由使用者套用參數並重新載入遊戲；Editor先備份未存內容再重載，其他電腦同步兩個倉庫。
 
+
+## MISSILE-SOFT-CONE-20261021 — 飛彈硬尾改柔光錐
+
+- Owner：Codex；Done（本輪外觀修正），單一開發者。使用者指出上一版尾巴像硬棒，隨後澄清可保留尾部造型但應更好看，例如光錐；以既有CC0錐形漸層做短柔光錐＋世界座標淡散光點，起飛／齊射短暫出現，剎停後消散。
+- 允許四份missile Preset／layout、既有作者、既有missile專項、Runtime僅DATA_VERSION與主頁／Editor快取、LV及本紀錄；素材庫只同步missile-salvo的同名來源。禁止戰鬥／時序／Protocol／Core／Backend、配置與待套用patch／解鎖／存檔／其他素材／其他副本，不合併推送。
+- 驗收正式Renderer GIF、光錐朝向／淡散／停駐消失／命中後回收、來源與canonical／素材庫雜湊、舊Editor拒絕覆寫、既有相關回歸與Build。所有重疊檔以develop pending merge已包含的本HEAD共同內容＋候選＋對方工作檔merge-file乾跑乾淨才寫。上一輪新速度／停留參數仍待BAT，不冒充已套用。
+
+- 完成15檔：四份missile Preset／layout移除tail-core，改雙層柔光錐（錐尖接彈頭、外彩內亮、往後展開與淡出）＋世界座標薄霧／微光點。光錐與尾跡只在每次起飛／齊射短窗出現，停駐後退場；彈頭保持可見、由原事件移除。尾跡速度降為低漂移，留在真實飛行路徑；沿用小光暈與四色、製作尺寸契約，沒有傷害／時序變更。
+- 原作者可重製；Runtime只改DATA_VERSION，主頁與Editor快取225→226。沒有Core／Backend／Protocol／Worker、配置或先前param-patch修改。既有尾芯的細長比例斷言依本次使用者新要求改驗柔光錐、尖端朝向與消退，原行為／傷害測試保留；新增停駐0.8秒時錐層不可見且粒子0、齊射後再出光點並自然收束的真Core驗證。
+- 測試：node --test tests/missile-salvo.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/skills2-vfx-schema.test.cjs，51/51通過；新外觀對應6項全過。以修改前Preset／作者／layout的唯讀fs映射重跑新專項，4過2失敗，確實抓到停駐仍留硬尾及缺少柔錐，不以變更數值／放寬斷言掩蓋。未擴跑有既有失敗的無關全庫。
+- npm.cmd run build：564檔全過；export-assets --check：192個assetId均最新；新用的cone_composed_c已出貨，無新增PNG／索引變更。四份Preset與layout canonical、素材庫逐位元／SHA256與兩倉庫diff檢查通過。全部素材沿用PROVENANCE記錄的Kenney CC0／既有CC0組合，沒有參考／匯入外部素材；僅調Preset，不產出獨立繪圖資源。
+- 動態驗收：本聊天visualizations/npc-missile-soft-cone.gif，113格960×570／0.5倍慢速；正式Pixi／Core／Backend／Runtime與真elite事件，候選leg1=0.275／hold=1。目視起飛光錐、停駐無長尾、齊射淡散路徑，Console error0／missing0。依序對四份舊Editor基準送正式隔離Server PUT，均409且磁碟不變；未操作使用者分頁，重新載入前須下載未存備份。測試服務／瀏覽器已關閉；承接前輪清理策略阻擋，暫存預覽幀只留聊天目錄，不入兩倉庫。未做完整真人存檔長戰／手機GPU驗收。
+- 衝突預檢：develop正在整合並已包含本HEAD飛彈內容，git分支共同祖先尚停在更舊提交；以pending merge已包含的本HEAD共同內容＋各候選＋develop工作檔merge-file乾跑全部0，與毒十字／GM及整合紀錄不同區段、無語意相依。未同步／合併／改其他副本。執行途中使用者的config/Excel/Status.xlsx有新修改，原樣保留不stage；沒有讀改該工作簿或要求關閉Excel。
+- 唯讀未改：AI規範／Workflow／Agent文件、elite事件與Worker／shim、Core／Backend／Editor guard與Server、原時序參數與param-patch、素材索引／圖片／PROVENANCE、上述其餘既有回歸。LV與本紀錄同步；遊戲仍需上一輪BAT套用新速度／停留參數，這是既有待辦，本輪外觀可獨立Review／合併。
+- 交付：素材庫先Commit c7dcbc3（9檔同名Preset／layout與SOURCE）；遊戲Commit為本段所在「[Codex] fix: 飛彈硬尾改為柔光錐與淡散光點」，回覆附編號，未合併推送。下一步先備份VFX Editor未存內容再重載，遊戲重新整理看柔光錐；前輪時序仍待使用者BAT，無本輪未完成外觀項目，效能／完整實戰限制如上。
+
 ## ARCANE-REFERENCE-20261021 — 白熱紫色光束參考風格
 
 - Owner：Codex；Done，單一開發者。使用者提供紫白雷射截圖，希望祕法棒接近該效果；看過arcane-reference-preview.png後確認「好，連我的一起commit」。本輪正式保存參考風格與全部使用者已儲存修改，兩倉庫提交，不合併推送。
@@ -48,6 +64,15 @@
 - 圖像／Build：正式Core／Pixi與出貨索引的三時點預覽，僅在預覽固定朝向比較，深淺背景均READY且後端錯誤0；本聊天visualizations/arcane-tip-current-dark.png及light.png。實際Preset旋轉保持使用者值。npm.cmd run build：563檔通過；三份變更Preset及layout驗證、素材匯出與兩庫diff檢查完成。沒有完整玩家存檔長測或手機GPU量測。未操作使用者原開編輯器，測試頁與服務清理。
 - 未修改但檢查：AI規範／工作流、Skills2與elite判定資料、Core父層／sheet／投影、PixiBackend、原專項與Editor guard。素材庫保存兩SVG、來源說明及同Preset／layout；使用者另兩份VFX保存user-vfx-tuning-20261021快照。先素材庫後遊戲Commit，編號於回覆與下方紀錄；不合併推送。可Review／合併，原有2項差異如上；下一步備份Editor未存內容再重新載入，以取得新的貼圖與電流圖層。
 - 素材庫已提交02174cf（10檔）；遊戲Commit為本段所在「[Codex] feat: 祕法棒前端收尖並加上紫色表面電流」，回覆附編號。沒有本次未完成實作，提交後核對兩庫status。
+
+## METEOR-CRATER-SUBTLE-20261021 — 隕石坑49%與使用者調整
+
+- Owner：Codex；Done。使用者確認49%預覽並要求連已儲存修改一起commit。地板alpha由1改0.49，保留原版自製熔岩SVG配色、裂痕、柔邊、alphaOverLife、4秒與尺寸，爆炸／尾煙／傷害不變，無新增外部素材。
+- 遊戲9檔：meteor-impact-crater.cjs、burst-meteor-inferno Preset、LV與本段；使用者Status.xlsx、en-burst-fire-shockwave-small及proj-meteor-inferno Preset／layout一併保存。震波改橘色並移除smoke；隕石調整頭部火焰位置、移除golden-tail-stream與lava-flow-0、加兩層rolling-flame-tail複本。保留使用者原值與canonical，未重製外觀。Status工作簿唯讀first-sheet儲存格與HEAD無差異，保留原始二進位修改，未寫Excel／CSV／生成JS，不需套用BAT。
+- 素材庫：同名meteor Preset／layout同步、IMPACT_SOURCE更新確認；兩份使用者VFX於既有user-vfx-tuning-20261021快照保存。SVG／PNG與原版相同、素材引用／索引不變，無需新匯出素材。文件僅本任務不同區段，與develop工作檔三方試跑0後寫入，無合併推送。
+- 驗收：正式Core／Pixi單顆及3顆重疊、落地1.5秒的70%與49%對照，READY並保存meteor-crater-original49.png，使用者已確認。3份Preset／layout validate、canonical與完整layerIds通過；node --test tests/meteor-tail-impact.test.cjs tests/meteor-tail-flow.test.cjs tests/meteor-entry-origin.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-asset-export.test.cjs＝83項81過／1失敗／1Windows符號連結略過。失敗是tail-flow仍指定使用者已刪除golden-tail-stream，註冊單層undefined，與地板alpha無關；不恢復已刪圖層、不降低斷言。命中／尾跡續播／4秒回收5項全過，其餘粒子預算與入口測試通過。
+- npm.cmd run build 564檔通過；export-assets --check 192個assetId最新，兩倉diff --check通過。唯讀檢查Core／Runtime、原版SVG與Preset、Layout與配置工具、既有測試；無本次未完成實作，已知限制為上述舊圖層測試、未做真人存檔長戰／手機GPU。使用者修改均保留，臨時頁／服務／三方證明檔清理，僅保留已確認預覽證據。
+- Commit：素材庫先提交2cfd797（9檔），遊戲為本段所在「[Codex] fix: 隕石坑淡化至49%並保存使用者修改」（9檔），實際編號在回覆；未合併推送。可供Review／整合；下一步重新整理遊戲，Editor有未存內容先下載備份再重載；其他電腦同步兩倉庫。
 
 ## METEOR-IMPACT-AFTERMATH-20261021 — 隕石落地尾跡續播與四秒坑痕
 
@@ -136,6 +161,23 @@
 - 驗證：`node --test tests/skill2-ui.test.cjs tests/battle-skill-summary.test.cjs tests/skill2-ult-switch.test.cjs tests/skill2-ult-evolution.test.cjs tests/gm-skill-unlock.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs`139項115過／24失敗；同一原HEAD產品碼及原測試以唯讀fs映射重跑亦115過／24失敗，失敗名稱逐項完全相同，無新增失敗。既有失敗包括缺塔進度的戰鬥摘要fixture及技能舊數值／法力條件，未擴修或放寬斷言。
 - 核心`node --test tests/skill2-ui.test.cjs tests/skill2-ult-switch.test.cjs tests/gm-skill-unlock.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/active-buffs-panel.test.cjs tests/runeword-aspd-stacks.test.cjs`85/85。直接執行正式UI與摘要函式逐一核對23群組、69選項皆使用新名稱；狀態徽章新稱且原配置說明未改。`npm.cmd run build`555檔及diff檢查通過，未新增測試檔；僅更新既有名稱預期及三岔標題斷言。
 - 唯讀未改：AI規範／流程／prompts/codex.md、js/status.js／player.js／elite_data.js／elite_boss.js、tools/config_tables.cjs、Skills2／Status CSV、docs/PARAM_PATCHES.md及上述其餘既有測試。無本次未完成實作，可供Review／合併，未合併推送；Commit為本段所在`[Codex] fix: 技能第八階三選一改名為終極進化`，回覆附編號。已知限制為上述24項既有失敗，未做完整瀏覽器流程；下一步重載本分支遊戲，其他副本需整合本Commit。
+
+
+
+## MISSILE-FIXED-WORLD-20261021 — 接入確認與停駐不跟隨NPC
+
+- Owner：Codex；固定座標驗收完成／正式時序參數Blocked（Skills2.xlsx被其他程序占用），單一開發者。使用者確認柔光錐版本接入，要求飛彈停駐後固定位置、不跟隨NPC。現有elite已把起點／停駐點存成獨立數值，Runtime按事件世界座標播放；先以NPC／玩家在等待期間移動的計算與真Core回歸釘住，不為補測試而改動已正確的行為。
+- 允許既有missile專項、LV及本段；若配置可安全套用，依正式param-patches工具處理已授權的飛彈請求及生成／快取，不手寫Excel。其餘配置／使用者Status與火焰Preset／layout原樣保留；禁止其他技能、Protocol、存檔／解鎖及其他副本，不合併推送。
+- 預檢目標的外部分支內容為既有整合／較舊版本，本次僅新增獨立測試與文件列，實際HEAD共同內容＋候選＋develop工作檔merge-file乾跑0才寫。Skills2.xlsx獨占唯讀開啟測試回報其他程序占用；不強行解除鎖、不刪owner檔、不覆寫未存內容，參數保留待套用並完成可獨立驗收的工作。
+- 驗收NPC移動後停駐點不變、齊射從原位置發出、只在齊射當下鎖定玩家；真Runtime與Core在NPC／玩家移動期間位置固定，既有回歸／Build／diff後獨立Commit；正式參數是否已套用如實回報。
+
+- 完成3檔：既有missile專項新增NPC／玩家同時移動回歸，LV明訂停駐採固定世界座標，本段完成交付。現行elite已把每顆停駐點存成獨立x／y，齊射只取shot.x／shot.y；Runtime沒有targetId時不用ctx備援位置。這些實作原本就符合要求，因此沒有修改正確產品碼或快取、沒有新增素材／來源。
+- 新回歸：等待期間NPC移到(900,-400)、玩家移到(-120,75)，全部飛彈事件起點／停駐點不變，齊射從原停駐點發出、當拍才鎖定玩家。真Core／Runtime連續300幀，所有ctx備援位置跟著NPC移動，也不會拖動停駐彈體。把Runtime的targetId守門在記憶體中移除後，新測試因「停駐X不跟隨NPC／玩家」失敗，確認測試會抓到跟隨回歸。
+- 測試指令：node --test tests/missile-salvo.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/skills2-vfx-schema.test.cjs，52/52通過，新專項7/7；npm.cmd run build為564檔通過，git diff --check通過。沒有新增已知程式失敗，未跑有既有失敗的無關全庫／真人存檔長戰。
+- 正式套用已依本輪「接入」授權呼叫node tools/param-patches.cjs --merge；工具在取得來源獨占鎖時回報Skills2.xlsx被另一程序占用並停止，沒有啟動來源寫回／Excel→CSV→遊戲流程。待套用60873404-f290-452f-97c4-b972411a3a1f.json仍完整保留；失敗收據在config/param-patches/archive/2026-10-21T10-00-21-646Z-b705b049-ddaf-4b6b-93bb-7a11fa09504b。沒有關閉使用者Excel／解除鎖／刪owner檔或改before繞過保護。正式速度加倍與一秒等待尚未套用，不能宣稱整項需求完整生效；待使用者自行儲存關閉相關Excel後執行本分支套用參數.bat，再做正式配置與Excel相容性驗收。
+- 衝突預檢與乾跑：對方整合／較舊檔案沒有修改本次獨立測試或文件段落，HEAD共同內容＋候選＋develop工作檔merge-file乾跑0；任務新增改放未被對方追加的既有區段，避免與其檔尾追加整合紀錄相撞，未覆寫對方紀錄。未同步／切分支／合併推送。使用者Status.xlsx、en-burst-fire-shockwave-small Preset／layout及另一聊天進行中的隕石作者／Preset／SVG／索引／出貨與素材庫meteor更新，全數保留不stage。
+- 唯讀未改：規範／Workflow／Agent、elite／Runtime／Core與Pixi掛載層、Worker／Protocol／shim、Skills2 Excel／CSV／生成JS、原param-patch與套用工具、四份柔光錐Preset／layout及素材庫來源。素材沿用先前c7dcbc3，素材庫本輪沒有本任務變更，不另做空Commit，也不提交其他聊天的meteor改動。
+- 交付：遊戲Commit為本段所在「[Codex] test: 釘住飛彈停駐位置不跟隨NPC」，回覆附編號。柔光錐沿用6be49ba0／素材c7dcbc3，座標行為可Review；完整正式時序接入仍被Excel鎖阻擋，下一步使用者儲存關閉Skills2後BAT套用，無其他本輪未完成程式修改。沒有發布、合併或推送；重新載入VFX Editor前仍須備份未存內容。
 
 ## EQUIPMENT-QUALITY-NAME-20261021 — 裝備品質名稱前綴統一為級
 
@@ -11828,3 +11870,9 @@ Worker 存活且頁面正常完成載入。
 - 測試命令：node --test --test-reporter=tap tests/arcane-surface-current.test.cjs tests/arcane-rod-vfx.test.cjs tests/meteor-tail-impact.test.cjs tests/meteor-tail-flow.test.cjs tests/meteor-entry-origin.test.cjs tests/vfx-core.test.cjs tests/vfx-core-hierarchy.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/vfx-duration.test.cjs tests/vfx-projectile-perspective.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-asset-export.test.cjs tests/vfx-preset-usage.test.cjs tests/skills2-vfx-schema.test.cjs tests/skills2-vfx-usage.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/elite-engine.test.cjs tests/elite-data.test.cjs tests/status-system.test.cjs tests/active-buffs-panel.test.cjs tests/battle-ui-rework.test.cjs tests/battle-fullscreen.test.cjs tests/fullscreen-toggle.test.cjs。411項404通過、6失敗、1Windows符號連結略過。失敗為3個ARCANE-CYLINDER、ARCANE-CURRENT矩陣、ELITE-DATA-3及投影矩陣；以incoming來源差異唯讀映射重跑4個失敗檔為26項20過6失敗，名稱完全相同，新增失敗0。保留使用者參數／外觀，未改斷言或調值配合測試。npm.cmd run build：563檔通過；diff與衝突標記檢查通過。
 - node tools/vfx/export-assets.cjs --check：192個assetId已最新，前次祕法棒素材大小差異已隨incoming對應出貨版本解決。素材庫5706997乾淨，本輪未改素材庫／新增素材Commit；素材已由02174cf／13cf63e／5706997等既有Commit保存。
 - 唯讀檢查規範／Workflow／Agent、兩側原始Excel／CSV／生成JS、工具、索引及上述25檔測試。合併Commit為本段所在[Codex] merge: 整合祕法棒新版參數並保留毒十字說明；原pending merge無未完成衝突，可供Review。未推送／同步其他工作區；Codex飛彈任務的未提交內容保留，下一輪同步應待任務完成與工作區乾淨。限制為6項既有失敗、1略過及未做玩家長戰／新增瀏覽器驗收。
+
+## DEVELOP-MERGE-20261021-METEOR-MISSILE — 柔光錐、隕石坑與既有整合紀錄合併
+
+- Owner：Codex integrator；Resolved。依使用者對 `sync_ai_worktrees.bat` 的明確授權，整合 original HEAD `ea0abbe5d576d39b4fae71e11a55cf0734dd5b13`、incoming MERGE_HEAD `34c38d03ba86819c1cae4630e4b9010daea570bd`、共同基底 `d537a6d053a92345f6ac4cfada8433ca11699a94`；未委派、未操作 index／Commit／推送／其他 worktree 或素材庫。
+- 唯一衝突 `docs/AI_TASKS.md` 為獨立追加紀錄：保留 HEAD 的既有合併、狀態圖示與技能表紀錄，也保留 incoming 的飛彈柔光錐、隕石坑 49% 與飛彈停駐固定世界座標紀錄；沒有整側覆蓋。controller 對 unchanged incoming 檔案做的 EOF 空白整理原樣保留，其餘 staged incoming 功能檔未另行改寫。
+- 驗證：`node --test tests/missile-salvo.test.cjs tests/meteor-tail-impact.test.cjs tests/meteor-tail-flow.test.cjs tests/meteor-entry-origin.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-asset-export.test.cjs tests/skills2-vfx-schema.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs` 共 120 項，118 通過、1 失敗、1 Windows 符號連結略過。唯一失敗為 `METEOR-TAIL` 仍引用使用者已刪除的 `golden-tail-stream`，相關測試、Core 與 Preset 和 incoming MERGE_HEAD 完全相同，且 incoming 任務紀錄已明載同一基線失敗；未恢復已刪圖層或弱化斷言。`npm.cmd run build` 564 檔通過；完整 merged result 的 `git diff HEAD --check` 與衝突標記檢查通過。沒有新增素材庫檔案；controller 可依回報清單 stage 並建立 merge commit。

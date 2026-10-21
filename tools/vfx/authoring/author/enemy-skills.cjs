@@ -415,13 +415,32 @@ NEW['en-summon-circle'] = () => ({
 function missile(color, head, tail) {
   const id = 'en-missile-' + color;
   return {
-    id, duration: 1.2, loop: true, sizing: orbSizing(8),
+    id, duration: 4, loop: true, sizing: orbSizing(8),
     layers: [
-      kit.sprite({ id: 'glow', asset: A.glowSoft, z: 0, size: 17.6, alpha: 0.45, tint: tail, blend: 'add', duration: 1.2 }),
-      kit.sprite({ id: 'body', asset: A.flare16, z: 1, sizeX: 24, sizeY: 7, alpha: 0.85, tint: head, blend: 'add', duration: 1.2 }),
-      kit.sprite({ id: 'core', asset: A.dot, z: 2, size: 7, alpha: 1, tint: '#ffffff', blend: 'add', duration: 1.2 }),
-      kit.sprite({ id: 'tail-core', asset: A.flare16, z: -1, x: -25, sizeX: 56, sizeY: 3, alpha: 0.55, tint: tail, blend: 'add', duration: 1.2 }),
-      kit.particle({ id: 'trail', asset: A.smokeAdd, z: -2, rate: 70, maxParticles: 48, lifetime: [0.3, 0.5], spawnRadius: 0.5, speed: [20, 35], direction: 180, spread: 5, startPx: [6, 9], sx: 3, sy: 0.3, alpha: 0.6, tint: tail, blend: 'add', alphaOverLife: [[0, 0.6], [0.5, 0.35], [1, 0]], scaleOverLife: [[0, 1], [1, 0.2]] })
+      kit.sprite({ id: 'glow', asset: A.glowSoft, z: 0, size: 17.6, alpha: 0.45, tint: tail, blend: 'add', duration: 4 }),
+      kit.sprite({ id: 'body', asset: A.flare16, z: 1, sizeX: 24, sizeY: 7, alpha: 0.85, tint: head, blend: 'add', duration: 4 }),
+      kit.sprite({ id: 'core', asset: A.dot, z: 2, size: 7, alpha: 1, tint: '#ffffff', blend: 'add', duration: 4 }),
+      // 錐尖接彈頭，兩側往後展開並淡出；不再用長方形光條當尾巴。
+      kit.sprite({ id: 'tail-cone', asset: A.coneC, z: -1, x: -3,
+        anchor: { x: 0.5, y: 1 }, rotation: -Math.PI / 2,
+        sizeX: 21, sizeY: 36, alpha: 0.38, tint: tail, blend: 'add', duration: 0.35,
+        alphaOverLife: [[0, 0], [0.12, 0.8], [0.45, 0.6], [0.75, 0.3], [1, 0]],
+        scaleOverLife: [[0, 0.65], [0.25, 1], [1, 0.9]] }),
+      kit.sprite({ id: 'tail-cone-inner', asset: A.coneC, z: -1, x: -2,
+        anchor: { x: 0.5, y: 1 }, rotation: -Math.PI / 2,
+        sizeX: 8, sizeY: 22, alpha: 0.2, tint: head, blend: 'add', duration: 0.3,
+        alphaOverLife: [[0, 0], [0.12, 0.7], [0.5, 0.4], [1, 0]] }),
+      // 短時段發射，停駐後只留下已生成的世界粒子自行散去；不持續往後噴成直棒。
+      kit.particle({ id: 'trail', asset: A.smokeAdd, z: -2, rate: 90, maxParticles: 36,
+        duration: 0.35, lifetime: [0.18, 0.32], x: -3, spawnRadius: 0.7,
+        speed: [0, 1], direction: 180, spread: 120, startPx: [4, 7], sx: 1.3, sy: 0.8,
+        alpha: 0.4, tint: tail, blend: 'add',
+        alphaOverLife: [[0, 0], [0.12, 0.65], [0.5, 0.35], [1, 0]],
+        scaleOverLife: [[0, 0.5], [0.2, 1], [1, 1.35]] }),
+      kit.particle({ id: 'trailing-points', asset: A.dot, z: -2, rate: 18, maxParticles: 10,
+        duration: 0.35, lifetime: [0.16, 0.3], x: -3, spawnRadius: 1.2,
+        speed: [1, 4], direction: 180, spread: 90, startPx: [1, 2],
+        alpha: 0.65, tint: tail, blend: 'add', alphaOverLife: [[0, 0.8], [0.4, 0.55], [1, 0]] })
     ]
   };
 }
