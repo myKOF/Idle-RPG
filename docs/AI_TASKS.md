@@ -11592,3 +11592,19 @@ Worker 存活且頁面正常完成載入。
 - 驗證指令：node --test tests/equipment-detail-layout.test.cjs tests/equip-socket-ui.test.cjs tests/equip-reroll-ui.test.cjs tests/equipment-tooltip-compare.test.cjs tests/equipment-selection-border.test.cjs tests/equipment-weapon-icons.test.cjs，51/51通過；npm.cmd run build為555檔通過；git diff --check通過。未新增測試、未改斷言，未跑全庫。
 - 瀏覽器：同份隔離itemDetailHTML／正式UI與8份CSS，依次載入HEAD基準CSS及修改後CSS，淡金／銀藍tips計算底圖皆變深、整卡opacity仍1；兩種詳情backgroundImage與HEAD逐字相同，背包比較有2卡且套同局部內襯，Console warning／error0。截圖mythic-tips-color-20.png保存在本聊天visualizations；未載玩家存檔，未驗完整戰鬥／跨瀏覽器。臨時頁／服務／合併試跑檔已清理。
 - 唯讀檢查未改：共通規範／Workflow／prompts、8份皮膚載入順序、js/ui.js／item.js渲染、上述6份回歸及Claude b4de1d41實際index差異；與火鏈任務僅同檔不同版本行、三方merge-file退出0、無語意相依。無本次未完成項或新增已知風險，可供Review／合併；Commit為本段所在[Codex] fix: 將神話tips背景覆光降低八成，回覆附編號。未合併推送，下一步重新整理本分支遊戲驗收；其他副本需整合本Commit。
+
+
+## INVENTORY-MYTHIC-SKIN-CACHE-20261021 — 神話背包捲動背景共用快取
+
+- Owner：Codex；Done；使用者回報神話漸層格捲動明顯慢於普通格。前置既有神話外觀與虛擬捲動完成，單一開發者；保留本副本VFX未提交修改（開始3份、期間增為4份），不納入本任務。
+- 範圍：新增js/ui-inventory-skin.js背景快取、js/ui.js背包接線、css/style.css僅背包格快取顯示、index必要新腳本／CSS／UI快取、tests/inventory-mythic-skin.test.cjs生命週期回歸、LV_upgrade_system與本紀錄。禁止玩法／配置／Worker／Protocol／存檔／原裝備圖示／VFX／獨立美術素材，不合併推送。CSS與UI預檢無外部來源，index與Claude火鏈僅不同快取行、無語意相依，三方merge-file乾跑0後分段修改。
+- 診斷：1800格正式itemCellHTML／8份CSS的同頁3秒快速捲動，原樣式平均73.18ms、移除角飾／內陰影25ms、僅移除漸層41.9ms；共享SVG仍69.77ms，共享PNG快取31.58ms且保留外觀。數字為此隔離壓力環境，非玩家裝置效能保證。
+- 方式／驗收：從正式CSS計算樣式只讀一次底圖與角飾，SVG暫態繪入Canvas並共用同一PNG資料URL；只快取背景，不凍結圖示／星等／選取。依格寬／DPR重建、非同步舊結果不覆蓋新版、失敗回退原CSS，WeakMap及單一快取避免逐件堆積。正式虛擬背包／神鑄、選取／置灰／空格／Resize、生命週期／既有回歸、Build／瀏覽器測量與像素比對／Console／diff後獨立Commit。純執行期快取，沒有新獨立素材或素材庫Commit。
+
+- 完成7檔：js/ui-inventory-skin.js新增WeakMap背景快取，讀取正式before／after計算樣式（各邊框分別讀取以保留不同顏色）後以SVG foreignObject暫態繪入Canvas，所有神話格共用一個PNG data URL。只在首次／格寬／DPR改變時量測與生成；同幀請求合併、非同步revision拒絕舊尺寸含A→B→A、移除容器不寫入、解碼／Canvas失敗回原CSS且同key不反覆重試。
+- js/ui.js僅renderInventory結尾接線，CSS僅inventory-grid內非置灰的神話格停用重複pseudo繪製並使用共用圖；選取光暈／圖示／星等與文字仍沿原DOM，紙娃娃／tips／詳情及其他品質不變。index新增模組1.0.0並style87→88／UI188→189，LV_upgrade_system與本紀錄同步；新增tests/inventory-mythic-skin.test.cjs五項生命週期／範圍回歸。沒有新獨立素材或素材庫變更，PNG僅瀏覽器記憶體內的可重建快取，不寫入專案或存檔。
+- 最終測試指令：node --test tests/inventory-mythic-skin.test.cjs tests/inventory-visible-rows.test.cjs tests/forge-shared-inventory.test.cjs tests/inventory-ancient-filter-sort.test.cjs tests/inventory-detail-preservation.test.cjs tests/inventory-request-throttle.test.cjs tests/inventory-rarity-filter.test.cjs tests/inventory-command-pending.test.cjs tests/equipment-slot-selection.test.cjs tests/equipment-selection-memory.test.cjs tests/equipment-tooltip-compare.test.cjs tests/equipment-two-hand-display.test.cjs，55/55通過。npm.cmd run build：557檔通過；git diff --check通過。無測試失敗、未改既有斷言、未跑全庫；新測試涵蓋100次請求僅一次量測／點陣化、DPR、Resize過期／折返結果、失敗重試界線、卸載恢復及非目標區域。
+- 瀏覽器正式虛擬背包：1800件相同混合品質資料、renderInventory／virtualGridWindow／syncItemGridCells與8份正式CSS，交替兩輪各3秒同速捲動。原版平均195.94／202.23ms、p95為267.1／467ms；快取37.5／37.98ms、p95均83.4ms。兩端都是200個存活格、scrollHeight7232及終點scrollTop6712，沒有靠少顯示內容改善。數據是隔離壓測結果，未宣稱玩家實機固定幀率；未載真人存檔／完整戰鬥／跨瀏覽器／長時間驗收。
+- 外觀與狀態：最終PNG版與原CSS相同範圍像素比較平均每通道差2.4003/255（邊緣點陣與縮放取樣差異），漸層／框／角飾保留。窄面板clientWidth690、寬面板1070皆快取就緒且虛擬格數依原視窗改變；神鑄頁共用同背景。選部位後不匹配格的pseudo維持原block／opacity0.25，正常神話格pseudo為none；清空0格後恢復正常，Console warning／error0。圖inventory-skin-before.png／inventory-skin-after.png與量測JSON保存在本聊天visualizations；診斷頁／服務／試跑與廢棄近照皆清理。
+- 唯讀檢查未改：共通規範／workflow／prompts、原inventory虛擬視窗／scroll節流與增量格線、js/item.js／data.js圖示、其餘7份CSS及12份相依測試、Claude b4de1d41實際index差異；同檔不同快取區段，三方merge-file0且無語意相依。VFX四份使用者編輯保留未提交，不納入本次Commit。自我Review確認快取數量不隨裝備數成長、沒有每格量測／新常駐Timer或Observer、PNG解碼成功才啟用、失敗維持可操作。
+- 交付：無本次未完成實作，可供Review／合併；Commit為本段所在[Codex] fix: 快取神話背包底圖改善捲動效能，回覆附編號。未合併推送；後續重載本分支遊戲，其他副本需整合本Commit。限制為上述隔離壓測環境與少量邊緣取樣差異；不支援SVG轉Canvas的瀏覽器會保留原外觀但無本快取效益。

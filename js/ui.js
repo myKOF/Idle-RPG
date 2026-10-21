@@ -5539,6 +5539,7 @@ function renderInventory() {
     }
   }
   applyInventoryVisibleRows(box);
+  if (typeof InventorySkin !== 'undefined') InventorySkin.prepare(box, entryClientWidth);
   // 神鑄頁沒有詳情面板，格子也不套選取標示（updateSelectionUI 會跳過）
   if (inventoryForgeMode()) return;
   if (UI.inventoryScrolling) updateSelectionUI();
