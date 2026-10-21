@@ -201,3 +201,24 @@ test('6. 融合 (Fusion) 穿透寶石流程與 fusedStatValue 5 階等值倍率�
   const pPenDiff = Math.round((socketedStats.pPen - baseStats.pPen) * 100) / 100;
   assert.equal(pPenDiff, calculatedVal, '裝備鑲嵌穿透融合寶石後，玩家物理穿透應增加 fusedStatValue 算出的數值');
 });
+
+test('GM gem all：所有開放種類、1~10 階各發 N 顆；可限定單一等級；不發關閉的種類', () => {
+  const ctx = loadFullGameContext();
+  const enabled = Object.keys(ctx.GEM_TYPES).filter((k) => ctx.isGemEnabled(k));
+  const disabled = Object.keys(ctx.GEM_TYPES).filter((k) => !ctx.isGemEnabled(k));
+
+  const r1 = ctx.executeGMCommand('gem all 100');
+  assert.equal(r1.ok, true, r1.message);
+  enabled.forEach((k) => {
+    for (let lv = 1; lv <= 10; lv++) assert.equal(ctx.gemCount(k, lv), 100, k + ' Lv.' + lv);
+  });
+  disabled.forEach((k) => assert.equal(ctx.gemCount(k, 1), 0, k + ' 已關閉不應發放'));
+
+  const r2 = ctx.executeGMCommand('gem all 10 5');
+  assert.equal(r2.ok, true, r2.message);
+  assert.equal(ctx.gemCount(enabled[0], 10), 105);
+  assert.equal(ctx.gemCount(enabled[0], 9), 100);
+
+  assert.equal(ctx.executeGMCommand('gem all').ok, false, '缺數量應報格式錯誤');
+  assert.equal(ctx.executeGMCommand('gem all 11 5').ok, false, '等級超出範圍應報錯');
+});

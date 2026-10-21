@@ -130,6 +130,14 @@
     });
   }
 
+  /* 目前開放的寶石 key＋中文名，讓 AI 能把「紅寶石」對到 ruby；資料表沒載入時退回空字串 */
+  function gemKeyHint() {
+    if (typeof GEM_TYPES === 'undefined' || !GEM_TYPES) return '（見 GM_command.md）';
+    return Object.keys(GEM_TYPES).filter(function (k) {
+      return GEM_TYPES[k] && GEM_TYPES[k].enabled !== false;
+    }).map(function (k) { return k + '(' + GEM_TYPES[k].name + ')'; }).join('、');
+  }
+
   /* 使用 Gemini 將白話文自然語言轉為標準 GM 指令陣列 */
   function parseNaturalCommand(userPrompt, customKey) {
     if (!isInternal()) {
@@ -168,7 +176,22 @@
       '   - bag <容量>：例如 bag 2000\n' +
       '7. 技能與天賦：\n' +
       '   - skillmax all：所有新版技能群組滿級\n' +
-      '   - skill_unlock：切換技能全解鎖\n\n' +
+      '   - skill_unlock：切換技能全解鎖\n' +
+      '   - skillxp <數量>：加技能熟練度經驗；masterylv <等級>：設定熟練度等級\n' +
+      '8. 寶石（等級 1~10，數量為整數）：\n' +
+      '   - gem all <數量>：所有寶石種類、1~10 階全部各加 N 顆（玩家說「所有寶石」「全部寶石」且沒指定等級時用這個）\n' +
+      '   - gem all <等級> <數量>：所有寶石種類的指定等級各加 N 顆（例：「所有 10 級寶石各 100 個」）\n' +
+      '   - gem <寶石key> <等級> <數量>：單一種類寶石。可用 key：' + gemKeyHint() + '\n' +
+      '9. 符文與符文真言：\n' +
+      '   - rune all <數量>：33 種符文各加 N 顆；rune <r01~r33> <數量>：單一符文\n' +
+      '   - runeword list：列出符文真言；runeword <id>：發放該組配方符文\n' +
+      '10. 其他：\n' +
+      '   - xp <數量>：加角色經驗；mat <gold|scrap|essence|dust> <數量>：同貨幣指令\n' +
+      '   - part <階級> [salvage|synth] [數量]：加零件\n\n' +
+      '【規則】\n' +
+      '- 玩家說「所有／全部」某類東西且未指定細項，就用該類的 all 指令，不要拒絕或回傳空陣列。\n' +
+      '- 數量一律換算成純整數（「100個」->100，「1000億」->100000000000）。\n' +
+      '- 只有完全與遊戲無關時才回傳 []；只要有任何指令可近似，就輸出最接近的指令。\n\n' +
       '【轉換範例】\n' +
       '輸入：「把全身裝備換成+100神鑄混沌裝備，要500級裝備，而且寶石跟符文都要鑲滿10級寶石，寶石種類隨意就行，然後再把金幣、裝備碎片、附魔精華各加1000億個，最後幫我跳關到亡靈山脈240關」\n' +
       '輸出：["equipset chaosGodforged 500 100 4 wear", "socketall 10", "gold 100000000000", "scrap 100000000000", "essence 100000000000", "stage 亡靈山脈 240"]\n\n' +
@@ -177,7 +200,11 @@
       '輸入：「加金幣1000億」\n' +
       '輸出：["gold 100000000000"]\n\n' +
       '輸入：「技能全部滿級，給我100萬碎片」\n' +
-      '輸出：["skillmax all", "scrap 1000000"]\n';
+      '輸出：["skillmax all", "scrap 1000000"]\n\n' +
+      '輸入：「加所有寶石100個」\n' +
+      '輸出：["gem all 100"]\n\n' +
+      '輸入：「紅寶石10級給我50顆，符文每種10個」\n' +
+      '輸出：["gem ruby 10 50", "rune all 10"]\n';
 
     return getCandidateModels(key).then(function (candidates) {
       if (AiKeySetting._lastWorkingModel && candidates.indexOf(AiKeySetting._lastWorkingModel) >= 0) {
