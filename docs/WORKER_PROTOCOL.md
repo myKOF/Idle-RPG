@@ -1,4 +1,6 @@
-# Worker 協議 v58
+# Worker 協議 v59
+
+v59（2026-10-21 飛彈剎停齊射）：VFX `area.brake` 可選布林，飛行進度使用三次ease-out；`holdSec` 是抵達後停留秒數；`holdAngle`／`startAngle` 是判定平面弧度，由顯示層投影並平滑轉向。`elite-missile-flight` 使用真實時間播放粒子、抵達後尾跡自然淡出。新事件仍攜帶完整起終點／控制點／travelMs，齊射與命中時間均由模擬決定。缺欄維持原曲線與抵達即收束；指令、快照、存檔結構不變。
 
 v58（2026-10-18 符文資訊）：`gems.runewordSeen` 的 `{ id: 1 }` 表示資訊已永久解鎖，來源為成功成形或通關 Runes 表 `towerUnlockFloor` 指定樓層。塔勝利立即寫入、讀檔依最高已通關樓層補記；只增不減。正式／內測皆適用，內測全部預覽不寫記錄。欄位結構、存檔版本與 94 條指令不變。
 
@@ -15,7 +17,7 @@ v53（2026-10-17 寶石共鳴）：新增指令`gem.resonanceSocket {region,hole
 v52（2026-10-14 Esc全遊戲暫停）：新增主端訊息`MENU_PAUSE: menuPause {paused:bool}`，BOOT可攜帶`menuPaused`以維持Worker重啟時的菜單狀態。暫停整體loop與決定論loop，不改原combat paused；暫停時間不進catchup，既有欠帳保留，神鑄startedAt在恢復及暫停存檔時排除菜單時間。背景遊戲指令排隊，恢復後依序執行；save／settings／stats、面板與PING仍回應。Worker的分批timeout透過GameClock暫停，離線結算chunk也不繼續；主端同時暫停Pixi／DOM特效／遊戲計時器，WebGL以暫存單幀保持原畫面，恢復時釋放；設定返回菜單保持暫停，重啟先保存暫停快照再刷新。指令仍94條，存檔格式不變。
 
 v51（2026-10-14 Esc菜單）：新增`save.auto`（無參數，指令93→94），Worker從權威G產生auto_current快照，PERSIST.kind新增`autoNow`，ACK.result回傳persist token。主執行緒WorkerBridge.saveAutoNow()僅在該token的IndexedDB交易成功後resolve，寫入失敗／逾時reject，支援PERSIST完成早於ACK。不建立手動存檔、不要求資料夾，沿原自動存檔格式；此明確玩家操作不受測試模式的未要求自動寫入抑制。Esc離開必須先await成功，失敗不離開；定期資料夾同步沿原流程。
-> 協議版本：`WORKER_PROTOCOL_VERSION = 57`　最後更新：2026-10-18
+> 協議版本：`WORKER_PROTOCOL_VERSION = 59`　最後更新：2026-10-21
 
 v50（2026-10-08 BOSS 戰配置鎖）：新增共用判定 `bossFightBlocksCommand(name)`。`G.tower.active` 期間（含登場、暫停、結算未退出）既有換裝／換套、裝備強化／洗煉／附魔、寶石鑲卸與融合寶石、符文刻印／抹除、技能裝載與排序、技能降級／重置／超神進化切換、威能與潛力變更指令，均以既有錯誤封包 `{ok:false,error:'BOSS 戰中不可變更戰鬥配置'}` 拒絕，在解析物件與扣資源前守門。UI 共用同一判定並置灰入口；自動穿裝在戰中暫停。退出後恢復；純瀏覽、庫存素材合成、一般技能升級保留。指令仍 93 條，參數、快照、存檔格式不變。
 

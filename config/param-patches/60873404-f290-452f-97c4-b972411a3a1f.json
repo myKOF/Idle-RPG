@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "agent": "Codex",
+  "task": "MISSILE-SALVO-20261021",
+  "changes": [
+    {
+      "workbook": "Skills2.xlsx",
+      "sheet": "Skills2",
+      "headerRow": 1,
+      "key": {
+        "群組ID": "e_missile",
+        "階數": 1
+      },
+      "column": "效果參數(JSON)",
+      "before": "{\"pool\":\"random\",\"arch\":\"missiles\",\"kind\":\"active\",\"color\":\"#9ad0ff\",\"n\":[3,5],\"leg1\":0.55,\"leg2\":0.38,\"dmg\":0.5,\"presets\":[\"en-missile-white\",\"en-missile-blue\",\"en-missile-purple\",\"en-missile-yellow\"]}",
+      "after": "{\"pool\":\"random\",\"arch\":\"missiles\",\"kind\":\"active\",\"color\":\"#9ad0ff\",\"n\":[3,5],\"leg1\":0.275,\"leg2\":0.38,\"dmg\":0.5,\"presets\":[\"en-missile-white\",\"en-missile-blue\",\"en-missile-purple\",\"en-missile-yellow\"],\"hold\":1}"
+    },
+    {
+      "workbook": "Skills2.xlsx",
+      "sheet": "Skills2",
+      "headerRow": 1,
+      "key": {
+        "群組ID": "e_missile",
+        "階數": 1
+      },
+      "column": "效果說明模板",
+      "before": "發射 3~5 枚祕法導彈，顏色隨機為白、藍、紫、黃；導彈先緩慢朝後方飛出，再轉彎加速衝向你。",
+      "after": "發射3～5枚白、藍、紫、黃祕法導彈；快速朝後方展開並剎停，停留1秒後同時鎖定你的位置、整批齊射。鎖定後走出落點範圍可躲避。"
+    }
+  ]
+}

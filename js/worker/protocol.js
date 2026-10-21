@@ -92,7 +92,10 @@
 /* v57（2026-10-18 輸送帶移動）：belt[]新增id，furnaces[]新增cycleDurationSec／cycleRemainingSec；
    只供顯示插補，拆解時機／速度／存檔與指令不變，舊快照按外觀退化。 */
 /* v58（2026-10-18 符文資訊）：gems.runewordSeen 涵蓋成功成形或封魔塔通關永久解鎖；結構與指令不變。 */
-var WORKER_PROTOCOL_VERSION = 58;
+/* v59（飛彈剎停齊射）：area新增可選brake、holdSec、holdAngle、startAngle。
+   brake使用三次ease-out停駐；holdSec是到達後停留秒數；角度皆為判定平面弧度。
+   缺省保持原飛行；elite-missile-flight固定落點、粒子按真實時間播放。 */
+var WORKER_PROTOCOL_VERSION = 59;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {

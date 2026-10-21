@@ -415,12 +415,13 @@ NEW['en-summon-circle'] = () => ({
 function missile(color, head, tail) {
   const id = 'en-missile-' + color;
   return {
-    id, duration: 1.2, loop: false, sizing: orbSizing(8),
+    id, duration: 1.2, loop: true, sizing: orbSizing(8),
     layers: [
-      kit.sprite({ id: 'glow', asset: A.glowSoft, z: 0, size: 44, alpha: 0.9, tint: tail, blend: 'add', duration: 1.2, alphaOverLife: [[0, 0], [0.05, 1], [0.9, 1], [1, 0]] }),
-      kit.sprite({ id: 'body', asset: A.flare16, z: 1, sizeX: 30, sizeY: 14, alpha: 1, tint: head, blend: 'add', duration: 1.2, alphaOverLife: [[0, 0], [0.05, 1], [0.9, 1], [1, 0]] }),
-      kit.sprite({ id: 'core', asset: A.dot, z: 2, size: 12, alpha: 1, tint: '#ffffff', blend: 'add', duration: 1.2, alphaOverLife: [[0, 0], [0.05, 1], [0.9, 1], [1, 0]] }),
-      kit.particle({ id: 'trail', asset: A.smokeAdd, z: 3, rate: 40, lifetime: [0.25, 0.45], spawnRadius: 2, speed: [4, 14], direction: 180, spread: 20, startPx: [12, 22], alpha: 0.7, tint: tail, blend: 'add', alphaOverLife: [[0, 0.7], [1, 0]], scaleOverLife: [[0, 1], [1, 0.3]] })
+      kit.sprite({ id: 'glow', asset: A.glowSoft, z: 0, size: 17.6, alpha: 0.45, tint: tail, blend: 'add', duration: 1.2 }),
+      kit.sprite({ id: 'body', asset: A.flare16, z: 1, sizeX: 24, sizeY: 7, alpha: 0.85, tint: head, blend: 'add', duration: 1.2 }),
+      kit.sprite({ id: 'core', asset: A.dot, z: 2, size: 7, alpha: 1, tint: '#ffffff', blend: 'add', duration: 1.2 }),
+      kit.sprite({ id: 'tail-core', asset: A.flare16, z: -1, x: -25, sizeX: 56, sizeY: 3, alpha: 0.55, tint: tail, blend: 'add', duration: 1.2 }),
+      kit.particle({ id: 'trail', asset: A.smokeAdd, z: -2, rate: 70, maxParticles: 48, lifetime: [0.3, 0.5], spawnRadius: 0.5, speed: [20, 35], direction: 180, spread: 5, startPx: [6, 9], sx: 3, sy: 0.3, alpha: 0.6, tint: tail, blend: 'add', alphaOverLife: [[0, 0.6], [0.5, 0.35], [1, 0]], scaleOverLife: [[0, 1], [1, 0.2]] })
     ]
   };
 }

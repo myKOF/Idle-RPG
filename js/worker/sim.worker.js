@@ -10,7 +10,7 @@
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-importScripts('protocol.js?v=20261018-rune-tower-unlock', '../game-clock.js?v=1.0.1', 'shim.js?v=20261018-potential-remove');
+importScripts('protocol.js?v=20261021-missile-salvo', '../game-clock.js?v=1.0.1', 'shim.js?v=20261018-potential-remove');
 // 離線結算等分批工作亦共用暫停時鐘；訊息與loop仍能回應存檔及PING。
 if (typeof GameClock !== 'undefined') {
   globalThis.setTimeout = GameClock.setTimeout;
@@ -21,7 +21,7 @@ importScripts(
   '../item.js?v=20261018-gem-workshop', '../gem_resonance.js?v=20261018-resonance-hole-effects','../runeword.js?v=20261018-rune-tower-unlock',
   '../skills.js?v=20261018-potential-remove', '../skills2.js?v=20261021-arcane-reference', '../elite_data.js?v=20261021-chain-hover', '../talents.js?v=20261018-heaven-power-complete-bonus',
   '../player.js?v=20261018-potential-remove', '../special_rules.js',
-  '../combat.js?v=20261019-disintegrate-end-once-bloodfeast-single-target', '../elite.js?v=20261021-mortar-keepaway', '../elite_boss.js?v=20261015-boss-player-skill', '../elite_boss_recipes.js?v=20261015-boss-player-skill', '../legendary.js?v=20261012-indomitable-guard-legend-rework-1020', '../tower.js?v=20261018-rune-tower-unlock',
+  '../combat.js?v=20261019-disintegrate-end-once-bloodfeast-single-target', '../elite.js?v=20261021-missile-salvo', '../elite_boss.js?v=20261015-boss-player-skill', '../elite_boss_recipes.js?v=20261015-boss-player-skill', '../legendary.js?v=20261012-indomitable-guard-legend-rework-1020', '../tower.js?v=20261018-rune-tower-unlock',
   '../factory.js?v=20261021-equipment-quality-name', '../newforge.js', '../forge.js?v=20261015-gem-enabled', '../save.js?v=20261021-equipment-quality-name',
   '../tasks.js?v=20261007-runes4'
 );

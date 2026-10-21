@@ -1,5 +1,23 @@
 # AI_TASKS.md
 
+## MISSILE-SALVO-20261021 — 飛彈細光暈、長尾跡與剎停齊射
+
+- Owner：Codex；程式／素材完成，可Review；新參數Pending使用者BAT套用，尚未宣稱正式功能完整生效。單一開發者。使用者依動態預覽要求縮光暈、拉長尾跡、向後段至少快一倍，到達剎停後等1秒整批齊射；沿既有3～5枚、四色、傷害／半徑／冷卻與落點躲避規則。
+- 允許elite飛彈與共用flight helper、Runtime的新可選剎停／停留語意、Protocol及文件／版本／快取、四份missile Preset與既有作者、對應測試、LV及本紀錄；配置格僅以param-patches暫存leg1／hold／說明，不直接寫Excel／CSV／生成JS；素材庫僅保存四份Preset、配對layout與來源。禁止其他技能玩法／素材、Core／Backend、存檔／解鎖與其他副本，不合併推送。
+- 預檢：develop未提交bridge與本HEAD完全相同；其index與Worker僅GM獨立快取、elite／作者／測試僅毒十字區段；所有本次寫入先以本HEAD共同內容、候選、develop工作檔實際merge-file乾跑0才寫，保留對方修改。既有develop合併中的配置衝突不操作。
+- 驗收：權威事件同步剎停、1秒待機與同拍齊射／命中、移動可躲／死亡與重置取消；正式Runtime平滑位置／轉向／停留／尾跡回收及舊事件相容；新版GIF、舊Editor拒絕覆寫、相關回歸／Build／diff與雙倉庫Commit。正式新參數待使用者BAT套用，隔離候選驗證不冒充正式已套用。
+
+
+- 完成23檔：elite同批朝後方展開，在原左右範圍內均勻分開停駐點；到達剎停後等配置hold，再同一拍鎖定玩家／齊射，飛行結束同拍結算，維持3～5枚／四色、傷害／半徑／冷卻與走位可躲。Runtime接收brake／holdSec／holdAngle／startAngle並投影角度，三次ease-out剎停、等待期間不移位但平滑轉向；真實時間粒子、抵達後自然回收尾跡。無目標ID的明確路徑不採ctx備援點，避免無實體高塔場景把飛彈吸回備援座標。Core／Backend未改。
+- 四份Preset與layout：光暈直徑約40%、alpha由0.9降至0.45，光芯／彈頭收細；新增56×3製作座標的尾芯，細世界粒子延伸且有上限，四種顏色保持。原作者可重製，製作尺寸契約與事件bodyD不變；只調既有CC0素材組合，無新點陣圖或外部來源，無需繪圖工具。VFX資料快取、主頁／Editor Runtime快取、Worker與Protocol59同步；LV及兩份契約文件已更新。
+- 配置：60873404-f290-452f-97c4-b972411a3a1f.json由磁碟已儲存Skills2.xlsx唯讀取值後正式stage，僅效果JSON的leg1 0.55→0.275、hold新增1與說明格；完整before及主鍵／欄名保存。沒有寫Excel／CSV／js/skills2.js，沒有用新生成資料冒充套用。依AI_RULES8.5待使用者儲存關閉Excel，在此分支執行套用參數.bat，再驗收正式配置／Excel相容性；預覽與新時序測試採隔離候選，狀態維持Pending。
+- 驗證：node --test tests/missile-salvo.test.cjs、tests/vfx-editor-guard.test.cjs、tests/vfx-editor-cache-versions.test.cjs、tests/worker-protocol.test.cjs、tests/worker-shim.test.cjs、tests/skills2-vfx-schema.test.cjs，51/51通過。新增6項釘住3／4／5枚共同起飛／一秒停留／同拍鎖定齊射與延遲傷害、鎖定後走位／死亡／重置、正式Preset逐幀剎停與定點轉向／尾跡回收、舊事件與無實體備援／角度投影、作者重製與尺寸、真實Worker派送。最初死亡fixture因引擎清掉死亡敵人後重新夾回玩家maxHP，修為核對無爆發與受傷浮字；跨vm原型以純JSON資料比較，沒有改產品配合fixture。
+- 擴大8檔219項214過／5失敗；用修改前產品／原測試的唯讀fs映射重跑7檔214項209過／同5失敗，名稱完全一致：ELITE-DATA-3祕法棒使用者時長、FIELD、CATALOG-3、CHAIN金雷、STARFALL-TAIL。最後加無目標ID守門後Runtime與新專項3檔142項138過／相同4項既有失敗，新增失敗0。未改這些既有斷言；舊產品套入新6項測試全部失敗，確實能偵測缺少新行為。未跑全庫。
+- npm.cmd run build：564檔通過；export-assets --check：192個assetId均最新、無匯出差異；兩倉庫diff檢查通過。編輯器cache檢查曾抓到漏升Editor Runtime，已同步225並重跑核心51項全綠。四份Preset／layout通過Core／Layout canonical與素材庫逐位元／SHA256一致。
+- 預覽：本聊天visualizations/npc-missile-salvo.gif，正式Pixi8／Core／Backend／Runtime與實際elite事件、候選配置生成，113格960×570、0.5倍慢速循環，標示候選參數。目視停駐分離、小光暈、長尾與整批齊射；Console error0、missing0。四份舊Editor基準對正式隔離Server送PUT都409，回傳外部更新訊息且磁碟位元不變；未操作使用者分頁，需先下載未存備份再重載。測試服務與瀏覽器已關閉；自動審核以blocked by policy拒絕暫存預覽幀清理，未提供細節，因此保留聊天預覽目錄，未納入兩倉庫提交；未載真人存檔／完整野外與塔長戰／跨裝置效能，GIF不代表正式配置已套用。
+- 唯讀未改：共通規範／Workflow／Agent文件、Skills2來源Excel／CSV／生成JS、elite_data、battle-renderer與tower上下文、Core／Backend／Editor guard與Server、既有elite／Runtime／schema／shim回歸、素材PNG／索引及PROVENANCE。只改worker-protocol既有版本預期，其他原測試保持；其他副本完全未動。重疊檔皆以實際候選、HEAD共同內容及develop工作檔merge-file試跑0，對方毒十字／GM快取與進行中合併保留。
+- 交付：素材庫先Commit 689d9cf（9檔Preset／layout／SOURCE）；遊戲Commit為本段所在「[Codex] feat: 飛彈縮光暈長尾跡與剎停齊射（參數待套用）」，回覆附編號。沒有合併或推送。程式與素材可Review；正式新參數／更新說明仍待BAT及套用後驗收，尚不可宣稱需求完整已上線。下一步由使用者套用參數並重新載入遊戲；Editor先備份未存內容再重載，其他電腦同步兩個倉庫。
+
 ## ARCANE-REFERENCE-20261021 — 白熱紫色光束參考風格
 
 - Owner：Codex；Done，單一開發者。使用者提供紫白雷射截圖，希望祕法棒接近該效果；看過arcane-reference-preview.png後確認「好，連我的一起commit」。本輪正式保存參考風格與全部使用者已儲存修改，兩倉庫提交，不合併推送。

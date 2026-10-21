@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "en-missile-white",
   "duration": 1.2,
-  "loop": false,
+  "loop": true,
   "layers": [
     {
       "id": "glow",
@@ -10,31 +10,13 @@
       "assetId": "particle-pack/png-black-background/light_03.png",
       "zIndex": 0,
       "scale": {
-        "x": 0.0859,
-        "y": 0.0859
+        "x": 0.0344,
+        "y": 0.0344
       },
-      "alpha": 0.9,
+      "alpha": 0.45,
       "tint": "#cfe4ff",
       "blendMode": "add",
-      "duration": 1.2,
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.05,
-          1
-        ],
-        [
-          0.9,
-          1
-        ],
-        [
-          1,
-          0
-        ]
-      ]
+      "duration": 1.2
     },
     {
       "id": "body",
@@ -42,31 +24,13 @@
       "assetId": "new_materials/flare/flare_16.png",
       "zIndex": 1,
       "scale": {
-        "x": 0.0586,
-        "y": 0.0273
+        "x": 0.0469,
+        "y": 0.0137
       },
-      "alpha": 1,
+      "alpha": 0.85,
       "tint": "#ffffff",
       "blendMode": "add",
-      "duration": 1.2,
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.05,
-          1
-        ],
-        [
-          0.9,
-          1
-        ],
-        [
-          1,
-          0
-        ]
-      ]
+      "duration": 1.2
     },
     {
       "id": "core",
@@ -74,66 +38,75 @@
       "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": 2,
       "scale": {
-        "x": 0.0234,
-        "y": 0.0234
+        "x": 0.0137,
+        "y": 0.0137
       },
       "alpha": 1,
       "tint": "#ffffff",
       "blendMode": "add",
-      "duration": 1.2,
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.05,
-          1
-        ],
-        [
-          0.9,
-          1
-        ],
-        [
-          1,
-          0
-        ]
-      ]
+      "duration": 1.2
+    },
+    {
+      "id": "tail-core",
+      "type": "sprite",
+      "assetId": "new_materials/flare/flare_16.png",
+      "zIndex": -1,
+      "position": {
+        "x": -25,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.1094,
+        "y": 0.0059
+      },
+      "alpha": 0.55,
+      "tint": "#cfe4ff",
+      "blendMode": "add",
+      "duration": 1.2
     },
     {
       "id": "trail",
       "type": "particle",
       "assetId": "particle-pack/png-black-background/smoke_04.png",
-      "zIndex": 3,
-      "alpha": 0.7,
+      "zIndex": -2,
+      "scale": {
+        "x": 3,
+        "y": 0.3
+      },
+      "alpha": 0.6,
       "tint": "#cfe4ff",
       "blendMode": "add",
       "emission": {
         "mode": "rate",
-        "rate": 40
+        "rate": 70
       },
+      "maxParticles": 48,
       "lifetime": [
-        0.25,
-        0.45
+        0.3,
+        0.5
       ],
       "spawn": {
-        "radius": 2,
+        "radius": 0.5,
         "shape": "circle"
       },
       "speed": [
-        4,
-        14
+        20,
+        35
       ],
       "direction": 180,
-      "spread": 20,
+      "spread": 5,
       "startScale": [
-        0.0234,
-        0.043
+        0.0117,
+        0.0176
       ],
       "alphaOverLife": [
         [
           0,
-          0.7
+          0.6
+        ],
+        [
+          0.5,
+          0.35
         ],
         [
           1,
@@ -147,7 +120,7 @@
         ],
         [
           1,
-          0.3
+          0.2
         ]
       ]
     }
