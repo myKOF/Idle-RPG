@@ -11567,3 +11567,16 @@ Worker 存活且頁面正常完成載入。
 - 驗收：寶石／融合寶石／符文每行10格、圖示放大、角標可讀、窄面板不橫向溢出；相關鑲嵌回歸、Build與隔離瀏覽器排版；獨立Commit交使用者Review／整合，不合併推送，無素材庫變更。
 - 完成：共用格改為10欄等寬正方形，寶石／融合寶石與符文圖示跟隨格子放大；局部提高符文圖示選擇器優先度，避免被後載runeword.css固定32px蓋回。index僅ashen-forge90→91，系統總表與任務紀錄同步，共4檔；其他進行中修改保持未提交，無素材庫變更。
 - 驗證：`node --test tests/equip-socket-ui.test.cjs tests/gem-socket-height-compact.test.cjs tests/socket-target.test.cjs tests/runeword-ui.test.cjs`51/51；`npm.cmd run build`554檔通過；git diff --check通過。沿正式CSS及既有圖片的隔離瀏覽器預覽，600px面板格53.44px／圖47.84px、360px面板格29.44px／圖23.84px，寶石符文均每行10格、圖片載入成功、無橫向溢出，Console warning／error0。截圖socket-icons-ten.png保存在本聊天visualizations。未操作完整遊戲或玩家存檔，未做跨瀏覽器驗收；純CSS低風險，可供Review／合併，後續使用者重載分支驗收。唯讀檢查AI規範／流程、prompts/codex.md、css/style.css／gems.css／runeword.css／ashen-forge-flat.css、js/ui.js及上述測試。Commit為本段所在「[Codex] fix: 放大鑲嵌寶石與符文並改為每行十格」。
+
+
+## MYTHIC-GOLD-SHARED-20261021 — 淡金裝備與銀藍共用副手同步tips詳情
+
+- Owner：Codex；Done；使用者選定本聊天淡金統一／銀藍副手預覽，要求套用遊戲並同步tips與詳情。前置現有神話暖銅框／固定詳情框與雙手副手投影完成；單一開發者，開始工作區乾淨，允許目標衝突預檢無外部來源。
+- 範圍：css/style.css共用神話配色／銀藍副手／小標與文字區閱讀內襯、js/ui.js共用副手標記及tips／詳情欄位判斷、index.html必要CSS／UI快取、既有equipment-two-hand-display與equipment-tooltip-compare回歸、LV_upgrade_system與本紀錄。禁止品質／裝備規則／技能／配置／Worker／Protocol／存檔／外部素材／其他副本；不合併推送。
+- 驗收：正式紙娃娃／背包／工坊圖示同源淡金，主手與複製副手辨識、修羅亂舞／實裝副手不誤標；tips／比較卡／詳情同色且僅複製副手銀藍，切換來源／品質／空狀態不殘樣式。既有裝備／洗煉／鑲嵌／符文／選取回歸、Build、正式函式與八份CSS的隔離瀏覽器長內容／捲動／Console與截圖，diff後獨立Commit。既有圖示與內嵌向量沿用，無新素材或素材庫Commit；後續使用者重載驗收。
+
+- 完成7檔：css/style.css將原副手淡金覆光移為共用神話surface變數，紙娃娃／背包／工坊圖示同源；tips／比較卡／固定詳情框沿用同色源並加深文字內襯。複製副手改銀藍底／銀色框／圖示opacity0.72／連結SVG與雙手共用標記；tips與詳情依UI來源、slot、主手ID、實裝副手及修羅亂舞狀態判斷，僅虛擬複製副手套銀藍。刻印中同ID切主副手仍更新外觀，保留原孔位與增量同步。index CSS85→86／UI187→188，LV_upgrade_system與本紀錄同步。其餘品質底色／框、數值、裝備規則、Worker與存檔未改，沒有新素材或素材庫變更。
+- 測試指令：node --test tests/equipment-two-hand-display.test.cjs tests/equipment-tooltip-compare.test.cjs tests/equipment-detail-layout.test.cjs tests/equip-socket-ui.test.cjs tests/equip-reroll-ui.test.cjs tests/equipment-selection-border.test.cjs tests/equipment-weapon-icons.test.cjs tests/equipment-slot-selection.test.cjs tests/equipment-selection-memory.test.cjs，71/71通過。沿既有兩份測試增加實際共用副手標記／主手與背包不誤標／實裝副手與修羅切換回歸；補回雙手fixture缺少的syncEquipmentSelectionMemory與UI_GAME_TIMING依賴，原資料ID／閃光／選取斷言保留，沒有放寬產品行為。
+- 擴大相依檢查：node --test tests/detail-log.test.cjs tests/ui-performance.test.cjs tests/upgrade-animation.test.cjs tests/ui-worker-panels.test.cjs tests/init-ui-smoke.test.cjs共28項24過／4既有失敗。以唯讀fs映射恢復HEAD的UI／CSS／index重跑同5份，亦24過／同4失敗；名稱與原因一致（初始skills面板預期、uiTick舊正規式、gem.socket舊接線斷言、upgrade替身缺UI）。無新增失敗，不擴修其他功能；合計99項95過4既有失敗。npm.cmd run build最終555檔通過，git diff --check通過；未跑全庫。
+- 瀏覽器：臨時localhost載入正式renderEquip／renderDetail／showItemTooltip／itemDetailHTML與8份CSS，僅注入隔離快照，不讀寫玩家存檔。核對淡金與銀藍兩種tips／詳情backgroundImage逐字相同；背包比較確有2卡。主手、背包、修羅獨立副手、其他品質、空狀態皆不殘共用class或小標；刻印中切主手小標清除且仍為符文頁。副手詳情scrollTop0→11時固定框頂143.234375／底633.234375不移、無水平溢出；Console warning／error0。截圖equipment-gold-shared-applied.png與equipment-gold-detail-applied.png保存在本聊天visualizations；測試頁／服務／基準腳本皆清理。未驗完整戰鬥流程／跨瀏覽器／長時間效能。
+- 唯讀檢查未改：AI_RULES／AGENTS／AI_WORKFLOW／prompts、js/item.js／data.js圖示與雙手類型、ui-runeword與現有裝備選取／刻印增量流程、另7份CSS與其餘12份相依測試。自我Review確認主手與共用副手沿同一物品ID、不新增裝備或計算來源，tag不攔截滑鼠，選取與品質切換保留。無本次未完成需求，可供Review／合併；Commit為本段所在[Codex] feat: 套用淡金裝備與銀藍共用副手並同步詳情提示，回覆附編號。未合併推送，下一步重載本分支遊戲驗收，其他副本需整合本Commit；已知限制為上述4項既有測試失敗與隔離UI驗收範圍。

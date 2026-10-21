@@ -3016,11 +3016,15 @@ textarea#save-io {
   --mythic-frame-metal: linear-gradient(to bottom, #f9ddba, #8d7256 12%, #655746 48%, #be946b 88%, #e8c39b);
 }
 
-.eff-mythic {
-  --mythic-slot-surface:
-    radial-gradient(ellipse at 50% 0%, #f1f5efaa, transparent 60%),
-    radial-gradient(ellipse at 50% 100%, #bf5d4b96, transparent 68%) center bottom / 100% 60% no-repeat,
-    linear-gradient(to bottom, #4d534e 0%, #34302d 65.2%, #442b28 84.4%, #733d32 100%);
+.eff-mythic,
+.mythic-detail,
+.equip-detail-frame:has(> #detail-pane.has-detail.mythic-detail) {
+  --mythic-surface-tint: linear-gradient(rgba(253, 230, 138, 0.28), rgba(250, 204, 21, 0.18));
+  --mythic-surface-top: radial-gradient(ellipse at 50% 0%, #f1f5efaa, transparent 60%);
+  --mythic-surface-bottom: radial-gradient(ellipse at 50% 100%, #bf5d4b96, transparent 68%);
+  --mythic-surface-base: linear-gradient(to bottom, #4d534e 0%, #34302d 65.2%, #442b28 84.4%, #733d32 100%);
+  --mythic-slot-surface: var(--mythic-surface-tint), var(--mythic-surface-top),
+    var(--mythic-surface-bottom) center bottom / 100% 60% no-repeat, var(--mythic-surface-base);
 }
 
 .eff-genesis::before {
@@ -3060,7 +3064,7 @@ textarea#save-io {
   background: linear-gradient(to bottom, rgba(184, 134, 11, 0.9) 0%, rgba(139, 101, 8, 0.95) 45%, var(--panel) 80%);
 }
 
-/* 高品質效果會接管 ::after 與 border；雙手武器的副手複製格仍需保留紅色提示。 */
+/* 高品質效果會接管 ::after 與 border；雙手武器的副手複製格仍需保留佔用提示。 */
 .eq-slot.eff-mythic.twohand-duplicate,
 .eq-slot.eff-genesis.twohand-duplicate,
 .eq-slot.eff-godforged.twohand-duplicate {
@@ -3069,7 +3073,7 @@ textarea#save-io {
 }
 
 .eq-slot.eff-mythic.twohand-duplicate {
-  outline-color: #fde68a;
+  outline: none;
 }
 
 .eq-slot.eff-genesis.twohand-duplicate {
@@ -3081,9 +3085,61 @@ textarea#save-io {
 }
 
 .eff-mythic.twohand-duplicate::after {
-  background:
-    linear-gradient(rgba(253, 230, 138, 0.28), rgba(250, 204, 21, 0.18)),
-    var(--mythic-slot-surface);
+  background: var(--mythic-slot-surface);
+  border-top-color: #d7e9df99;
+  border-bottom-color: #92aaa680;
+}
+
+.eff-mythic.twohand-duplicate,
+.mythic-detail.twohand-shared,
+.equip-detail-frame:has(> #detail-pane.has-detail.mythic-detail.twohand-shared) {
+  --mythic-frame-metal: linear-gradient(to bottom, #e4e8dd, #9baead 14%, #526363 48%, #a1b8b4 88%, #d0dcd0);
+  --mythic-surface-tint: linear-gradient(transparent, transparent);
+  --mythic-surface-top: radial-gradient(ellipse at 50% 0%, #cbe5e064, transparent 66%);
+  --mythic-surface-bottom: linear-gradient(transparent, transparent);
+  --mythic-surface-base: linear-gradient(to bottom, #46565b, #2e3b40 64%, #334145 100%);
+}
+
+.eq-slot.twohand-duplicate .eq-icon {
+  opacity: 0.72;
+  filter: saturate(0.55) brightness(1.1);
+}
+
+.twohand-shared-tag {
+  position: absolute;
+  left: 5px;
+  right: 5px;
+  bottom: 6px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+  color: #d0dbcf;
+  background: linear-gradient(90deg, transparent, #1b292bd9 18%, #1b292bd9 82%, transparent);
+  border-top: 1px solid #a9c1b154;
+  border-bottom: 1px solid #a9c1b138;
+  font-size: 9px;
+  line-height: 18px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.twohand-shared-tag svg {
+  width: 13px;
+  height: 10px;
+  fill: none;
+  stroke: #c7d6c9;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+.twohand-shared-note {
+  position: static;
+  width: fit-content;
+  margin: 0 0 8px;
+  padding: 0 6px;
+  font-size: 11px;
 }
 
 .eff-genesis.twohand-duplicate::after {
@@ -5808,18 +5864,18 @@ textarea:disabled,
   position: relative !important;
 }
 
-/* 神話品質：銀白亮邊、暖銅細框與灰黑內襯。提高選擇器明確度，保留後載入面板皮膚的排版。 */
+/* 神話圖示、tips與詳情共用配色；文字區加深內襯，品質框與角飾保持獨立。 */
 #sk-tooltip .equip-detail-card.mythic-detail,
 #tab-equip .equip-detail-frame:has(> #detail-pane.has-detail.mythic-detail) {
   position: relative;
   border: 4px solid transparent !important;
   border-radius: 2px !important;
-  /* A版：內層光暈、細紋及亮灰底保留30%，深底與暖銅品質框分層。 */
   background:
-    radial-gradient(ellipse at 48% 0%, rgb(233 209 170 / 0.042352941), transparent 60%) padding-box,
-    repeating-linear-gradient(107deg, rgb(215 206 176 / 0.003529412) 0px, rgb(215 206 176 / 0.003529412) 1px, transparent 1px, transparent 4px) padding-box,
-    linear-gradient(110deg, rgb(54 56 51 / 0.272941176), rgb(40 44 42 / 0.270588235) 60%, rgb(48 49 45 / 0.281176471)) padding-box,
-    linear-gradient(#121418, #121418) padding-box,
+    linear-gradient(#07100db0, #07100d70) padding-box,
+    var(--mythic-surface-tint) padding-box,
+    var(--mythic-surface-top) padding-box,
+    var(--mythic-surface-bottom) center bottom / 100% 60% no-repeat padding-box,
+    var(--mythic-surface-base) padding-box,
     var(--mythic-frame-metal) border-box !important;
   padding: 21px 18px 18px !important;
   box-shadow: none !important;
