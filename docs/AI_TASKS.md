@@ -59,6 +59,15 @@
 - 未修改但檢查：AI規範／工作流、Skills2與elite判定資料、Core父層／sheet／投影、PixiBackend、原專項與Editor guard。素材庫保存兩SVG、來源說明及同Preset／layout；使用者另兩份VFX保存user-vfx-tuning-20261021快照。先素材庫後遊戲Commit，編號於回覆與下方紀錄；不合併推送。可Review／合併，原有2項差異如上；下一步備份Editor未存內容再重新載入，以取得新的貼圖與電流圖層。
 - 素材庫已提交02174cf（10檔）；遊戲Commit為本段所在「[Codex] feat: 祕法棒前端收尖並加上紫色表面電流」，回覆附編號。沒有本次未完成實作，提交後核對兩庫status。
 
+## METEOR-CRATER-SUBTLE-20261021 — 隕石坑49%與使用者調整
+
+- Owner：Codex；Done。使用者確認49%預覽並要求連已儲存修改一起commit。地板alpha由1改0.49，保留原版自製熔岩SVG配色、裂痕、柔邊、alphaOverLife、4秒與尺寸，爆炸／尾煙／傷害不變，無新增外部素材。
+- 遊戲9檔：meteor-impact-crater.cjs、burst-meteor-inferno Preset、LV與本段；使用者Status.xlsx、en-burst-fire-shockwave-small及proj-meteor-inferno Preset／layout一併保存。震波改橘色並移除smoke；隕石調整頭部火焰位置、移除golden-tail-stream與lava-flow-0、加兩層rolling-flame-tail複本。保留使用者原值與canonical，未重製外觀。Status工作簿唯讀first-sheet儲存格與HEAD無差異，保留原始二進位修改，未寫Excel／CSV／生成JS，不需套用BAT。
+- 素材庫：同名meteor Preset／layout同步、IMPACT_SOURCE更新確認；兩份使用者VFX於既有user-vfx-tuning-20261021快照保存。SVG／PNG與原版相同、素材引用／索引不變，無需新匯出素材。文件僅本任務不同區段，與develop工作檔三方試跑0後寫入，無合併推送。
+- 驗收：正式Core／Pixi單顆及3顆重疊、落地1.5秒的70%與49%對照，READY並保存meteor-crater-original49.png，使用者已確認。3份Preset／layout validate、canonical與完整layerIds通過；node --test tests/meteor-tail-impact.test.cjs tests/meteor-tail-flow.test.cjs tests/meteor-entry-origin.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-asset-export.test.cjs＝83項81過／1失敗／1Windows符號連結略過。失敗是tail-flow仍指定使用者已刪除golden-tail-stream，註冊單層undefined，與地板alpha無關；不恢復已刪圖層、不降低斷言。命中／尾跡續播／4秒回收5項全過，其餘粒子預算與入口測試通過。
+- npm.cmd run build 564檔通過；export-assets --check 192個assetId最新，兩倉diff --check通過。唯讀檢查Core／Runtime、原版SVG與Preset、Layout與配置工具、既有測試；無本次未完成實作，已知限制為上述舊圖層測試、未做真人存檔長戰／手機GPU。使用者修改均保留，臨時頁／服務／三方證明檔清理，僅保留已確認預覽證據。
+- Commit：素材庫先提交2cfd797（9檔），遊戲為本段所在「[Codex] fix: 隕石坑淡化至49%並保存使用者修改」（9檔），實際編號在回覆；未合併推送。可供Review／整合；下一步重新整理遊戲，Editor有未存內容先下載備份再重載；其他電腦同步兩倉庫。
+
 ## METEOR-IMPACT-AFTERMATH-20261021 — 隕石落地尾跡續播與四秒坑痕
 
 - Owner：Codex；Done，單一開發者。使用者要求石頭命中後煙火繼續下移播完、地板留下4秒坑痕，先看預覽；2026-10-21最後確認「好，接入吧」。依原授權連使用者已儲存修改一起提交，未合併／推送。

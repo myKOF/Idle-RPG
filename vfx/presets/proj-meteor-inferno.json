@@ -250,97 +250,6 @@
       ]
     },
     {
-      "id": "golden-tail-stream",
-      "type": "particle",
-      "assetId": "particle-pack/png-black-background/fire_01.png",
-      "zIndex": 3,
-      "position": {
-        "x": -20,
-        "y": 0
-      },
-      "scale": {
-        "x": 2.7,
-        "y": 0.75
-      },
-      "alpha": 0.4,
-      "tint": "#ffbd4b",
-      "blendMode": "add",
-      "duration": 1,
-      "emission": {
-        "mode": "rate",
-        "rate": 18
-      },
-      "maxParticles": 13,
-      "lifetime": [
-        0.3,
-        0.6
-      ],
-      "spawn": {
-        "height": 12,
-        "shape": "box",
-        "width": 10
-      },
-      "speed": [
-        200,
-        290
-      ],
-      "direction": 180,
-      "spread": 6,
-      "noise": {
-        "frequency": 0.03,
-        "scrollSpeed": 2.2,
-        "strength": 10
-      },
-      "startScale": [
-        0.0488,
-        0.0742
-      ],
-      "rotationStart": [
-        -0.1,
-        0.1
-      ],
-      "rotationSpeed": [
-        -0.3,
-        0.3
-      ],
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.12,
-          0.9
-        ],
-        [
-          0.5,
-          0.75
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.35
-        ],
-        [
-          0.25,
-          1
-        ],
-        [
-          0.65,
-          0.65
-        ],
-        [
-          1,
-          0.1
-        ]
-      ]
-    },
-    {
       "id": "white-tail-thread",
       "type": "particle",
       "assetId": "particle-pack/png-black-background/flame_04.png",
@@ -554,8 +463,8 @@
       "assetId": "particle-pack/png-black-background/fire_01.png",
       "zIndex": 9,
       "position": {
-        "x": 13,
-        "y": 0
+        "x": 3.5527,
+        "y": -8.5026
       },
       "rotation": -0.7,
       "scale": {
@@ -572,8 +481,8 @@
       "assetId": "particle-pack/png-black-background/fire_01.png",
       "zIndex": 10,
       "position": {
-        "x": 21,
-        "y": 0
+        "x": 15.3316,
+        "y": -0.9447
       },
       "rotation": 2.1,
       "scale": {
@@ -585,90 +494,13 @@
       "blendMode": "add"
     },
     {
-      "id": "lava-flow-0",
-      "type": "particle",
-      "assetId": "particle-pack/png-black-background/flame_04.png",
-      "zIndex": 11,
-      "position": {
-        "x": -16,
-        "y": -17
-      },
-      "alpha": 0.85,
-      "tint": "#ffe19a",
-      "blendMode": "add",
-      "duration": 1,
-      "emission": {
-        "mode": "rate",
-        "rate": 8
-      },
-      "lifetime": [
-        0.18,
-        0.38
-      ],
-      "spawn": {
-        "height": 5,
-        "shape": "box",
-        "width": 7
-      },
-      "speed": [
-        65,
-        110
-      ],
-      "direction": 180,
-      "spread": 14,
-      "startScale": [
-        0.043,
-        0.0723
-      ],
-      "rotationStart": [
-        -0.5,
-        0.5
-      ],
-      "rotationSpeed": [
-        -0.7,
-        0.7
-      ],
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.12,
-          0.9
-        ],
-        [
-          0.5,
-          0.75
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.6
-        ],
-        [
-          0.3,
-          1
-        ],
-        [
-          1,
-          0.15
-        ]
-      ]
-    },
-    {
       "id": "lava-flow-1",
       "type": "particle",
       "assetId": "particle-pack/png-black-background/flame_04.png",
       "zIndex": 12,
       "position": {
-        "x": 10,
-        "y": -12
+        "x": 1.9698,
+        "y": 18.7039
       },
       "alpha": 0.85,
       "tint": "#ffe19a",
@@ -744,8 +576,8 @@
       "assetId": "particle-pack/png-black-background/flame_04.png",
       "zIndex": 13,
       "position": {
-        "x": 0,
-        "y": 15
+        "x": 15.5882,
+        "y": -24.6788
       },
       "alpha": 0.85,
       "tint": "#ffe19a",
@@ -812,6 +644,160 @@
         [
           1,
           0.15
+        ]
+      ]
+    },
+    {
+      "id": "rolling-flame-tail-copy",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 2,
+      "position": {
+        "x": 17.5683,
+        "y": -17.0052
+      },
+      "alpha": 0.85,
+      "tint": "#ff951e",
+      "blendMode": "add",
+      "duration": 1,
+      "emission": {
+        "mode": "rate",
+        "rate": 32
+      },
+      "lifetime": [
+        0.4,
+        0.75
+      ],
+      "spawn": {
+        "height": 22,
+        "shape": "box",
+        "width": 16
+      },
+      "speed": [
+        210,
+        330
+      ],
+      "direction": 180,
+      "spread": 10,
+      "startScale": [
+        0.0742,
+        0.125
+      ],
+      "rotationStart": [
+        -0.4,
+        0.4
+      ],
+      "rotationSpeed": [
+        -0.6,
+        0.6
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          0.9
+        ],
+        [
+          0.5,
+          0.75
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.394947
+        ],
+        [
+          0.2994,
+          0.517819
+        ],
+        [
+          1,
+          0.18
+        ]
+      ]
+    },
+    {
+      "id": "rolling-flame-tail-copy-2",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 2,
+      "position": {
+        "x": 37.4078,
+        "y": -0.4723
+      },
+      "alpha": 0.85,
+      "tint": "#ff951e",
+      "blendMode": "add",
+      "duration": 1,
+      "emission": {
+        "mode": "rate",
+        "rate": 32
+      },
+      "lifetime": [
+        0.4,
+        0.75
+      ],
+      "spawn": {
+        "height": 22,
+        "shape": "box",
+        "width": 16
+      },
+      "speed": [
+        210,
+        330
+      ],
+      "direction": 180,
+      "spread": 10,
+      "startScale": [
+        0.0742,
+        0.125
+      ],
+      "rotationStart": [
+        -0.4,
+        0.4
+      ],
+      "rotationSpeed": [
+        -0.6,
+        0.6
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          0.9
+        ],
+        [
+          0.5,
+          0.75
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.394947
+        ],
+        [
+          0.2994,
+          0.517819
+        ],
+        [
+          1,
+          0.18
         ]
       ]
     }

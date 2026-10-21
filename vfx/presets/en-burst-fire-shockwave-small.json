@@ -18,7 +18,7 @@
         "y": 0.2977
       },
       "alpha": 0.6,
-      "tint": "#ff218d",
+      "tint": "#ff9500",
       "blendMode": "add",
       "duration": 0.6,
       "alphaOverLife": [
@@ -68,7 +68,7 @@
         "y": 0.2605
       },
       "alpha": 1,
-      "tint": "#bf0d76",
+      "tint": "#ff9500",
       "blendMode": "add",
       "duration": 0.6,
       "alphaOverLife": [
@@ -128,7 +128,7 @@
         "y": 0.2729
       },
       "alpha": 0.9,
-      "tint": "#ff145c",
+      "tint": "#ff9500",
       "blendMode": "add",
       "duration": 0.45,
       "alphaOverLife": [
@@ -182,7 +182,7 @@
         "y": 0.2729
       },
       "alpha": 0.85,
-      "tint": "#790849",
+      "tint": "#ff9500",
       "blendMode": "add",
       "delay": 0.12,
       "duration": 0.45,
@@ -237,7 +237,7 @@
         "y": 0.2729
       },
       "alpha": 0.6,
-      "tint": "#ff145c",
+      "tint": "#ff9500",
       "blendMode": "add",
       "delay": 0.26,
       "duration": 0.45,
@@ -292,7 +292,7 @@
         "y": 0.1489
       },
       "alpha": 1,
-      "tint": "#ff3d6f",
+      "tint": "#ff9500",
       "blendMode": "add",
       "duration": 0.25,
       "alphaOverLife": [
@@ -337,7 +337,7 @@
         "x": 0,
         "y": 0
       },
-      "tint": "#ff3d6f",
+      "tint": "#ff9500",
       "blendMode": "add",
       "emission": {
         "count": 18,
@@ -402,92 +402,6 @@
         [
           1,
           0.5
-        ]
-      ]
-    },
-    {
-      "id": "smoke",
-      "type": "particle",
-      "assetId": "particle-pack/png-transparent/smoke_04.png",
-      "zIndex": 7,
-      "position": {
-        "x": 0,
-        "y": 0
-      },
-      "tint": "#583444",
-      "blendMode": "normal",
-      "emission": {
-        "count": 6,
-        "mode": "burst"
-      },
-      "lifetime": [
-        0.5,
-        2
-      ],
-      "spawn": {
-        "radius": 7.6214,
-        "shape": "circle"
-      },
-      "speed": [
-        44.4581,
-        88.9162
-      ],
-      "direction": 0,
-      "spread": 360,
-      "gravity": {
-        "x": 0,
-        "y": -25.4046
-      },
-      "drag": 2.5,
-      "noise": {
-        "frequency": 0.02,
-        "scrollSpeed": 1.2,
-        "strength": 12
-      },
-      "startScale": [
-        0.0372,
-        0.067
-      ],
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.2,
-          0.55
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "tintOverLife": [
-        [
-          0,
-          "#ffffff"
-        ],
-        [
-          0.25,
-          "#c4377d"
-        ],
-        [
-          0.6,
-          "#684657"
-        ],
-        [
-          1,
-          "#3a3a3c"
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.6
-        ],
-        [
-          1,
-          1.3
         ]
       ]
     }

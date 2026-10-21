@@ -48,7 +48,7 @@ function write() {
   p.layers.unshift(
     { id: 'impact-ground-crater', type: 'sprite', assetId: 'codex-authored/meteor/crater-lava-soft.svg',
       zIndex: -2, duration: 4, scale: { x: .234375, y: .234375 }, projection: { x: 1, y: .5 },
-      alpha: 1, blendMode: 'normal', alphaOverLife: [[0, 0], [.04, 1], [.72, .9], [1, 0]] }
+      alpha: .49, blendMode: 'normal', alphaOverLife: [[0, 0], [.04, 1], [.72, .9], [1, 0]] }
   );
   const check = Core.validatePreset(p);
   if (!check.ok) throw Error(check.errors.join('\n'));
