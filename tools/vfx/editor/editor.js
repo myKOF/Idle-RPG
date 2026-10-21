@@ -3318,7 +3318,12 @@
       box.appendChild(makeField(desc.label, input));
     }
     var p = state.preset;
-    var defBox = section('程式變形／隨機鏡射',
+    /* 整份特效共用一組參數（2026-10-21 使用者回報：放在 Inspector 裡看起來像「選到的那個圖層」的設定，
+       分岔沒勾進作用圖層卻以為開了鏡射）。標題寫明共用；哪些圖層受影響，各圖層 Inspector 也看得到、勾得到
+       （renderDeformationMembership）。 */
+    var defBox = section('程式變形／隨機鏡射（整份特效共用）',
+      '整份特效共用一組參數：同一個座標在每個作用圖層上位移一樣多、同一道共用一次鏡射，拼接的分段與分岔才不會斷開或各翻各的。' +
+      '哪些圖層受影響：看下方「作用圖層」清單，或在各圖層的 Inspector 勾「受程式變形影響」。' +
       '作用於整份特效座標，包含圖層 position；關閉鏡射可固定方向。勾選時依圖層外框自動量出軸、範圍、中心線與振幅，並開一半機率鏡射，每道都會不一樣；改過圖層位置或大小後，取消再勾一次就會重新量。彎曲強度每次出生／形狀重抽時抽取，所有作用圖層共用；0 拉直中心線並保留粗細，1 保留原形。單一主幹的落雷可試下限 0.1～0.3（旁邊有分岔時分岔會被一起收進主幹）。編輯器要勾「預覽循環」才會每輪換一個形狀（⟲ Restart 固定重播同一個）。', !!p.deformation);
     var enabled = document.createElement('input'); enabled.type = 'checkbox'; enabled.checked = !!p.deformation;
     enabled.setAttribute('data-code-control', 'deformation.enabled');
@@ -3628,6 +3633,68 @@
   }
 
   /* 多選的標題：幾層、什麼型別；滑鼠停在標題上會列出全部 id。 */
+  /* 單選時在圖層欄位前放一行標題：上面是整份特效共用的 Preset 區，從這裡開始才是這個圖層自己的欄位。
+     少了這條分界，展開的「程式變形」看起來就像選到的圖層的設定。 */
+  function renderLayerHeader(host, layer) {
+    var title = document.createElement('div');
+    title.className = 'group-title keep-case layer-head';
+    title.textContent = '圖層：' + layer.id + '（' + layer.type + '）';
+    host.appendChild(title);
+  }
+
+  /* 「受程式變形影響」：這一層在不在 preset.deformation.layers 裡。
+     與 Preset 區最下面的「作用圖層」清單寫的是同一個欄位，只是從圖層這一側看得到、改得到。
+     只對 sprite 顯示（粒子、程序化圖層 Core 不收）；不能變形的 sprite 留著但變灰並說明原因。 */
+  function deformationBlockReason(layer) {
+    if (layer.type !== 'sprite') return null;               // 不顯示
+    if (VFXDeformationModel.eligibleLayers(state.preset).indexOf(layer) >= 0) return '';
+    if (layer.radiusProfile) return '有半徑輪廓（radiusProfile）的圖層不支援程式變形。';
+    if (layer.followDirection === false) return '關了「跟著發射方向轉」的圖層不支援程式變形（角度在變形矩陣裡，關不掉）。';
+    if (layer.enabled === false) return '圖層停用中。';
+    return '這一層關了畫面透視或鏡頭遠近，但整份特效不是每一層都關畫面透視：程式變形只能整份走 billboard 時才套得到。';
+  }
+  function renderDeformationMembership(host, targets) {
+    var p = state.preset;
+    var shown = targets.filter(function (l) { return deformationBlockReason(l) !== null; });
+    if (!shown.length) return;
+    var check = document.createElement('input');
+    check.type = 'checkbox';
+    check.setAttribute('data-deformation-member', shown.map(function (l) { return l.id; }).join(','));
+    var def = p.deformation;
+    if (!def) {
+      check.disabled = true;
+      check.title = '這份特效還沒啟用程式變形：先在上方 Preset 區勾「啟用整體變形」（會自動把所有可變形的圖層加進來）。';
+      host.appendChild(makeField('受程式變形影響', check));
+      return;
+    }
+    var usable = shown.filter(function (l) { return deformationBlockReason(l) === ''; });
+    var inside = usable.filter(function (l) { return def.layers.indexOf(l.id) >= 0; });
+    check.checked = usable.length > 0 && inside.length === usable.length;
+    check.indeterminate = inside.length > 0 && inside.length < usable.length;
+    if (!usable.length) {
+      check.disabled = true;
+      check.title = deformationBlockReason(shown[0]);
+    } else {
+      check.title = '勾選＝這一層跟著整份特效的程式變形一起彎曲、鏡射（參數在上方 Preset 區，整份共用）。' +
+        (usable.length < shown.length ? '（選取的圖層裡有幾層不能變形，不會被改到）' : '');
+    }
+    check.onchange = function () {
+      var ids = state.preset.deformation.layers.filter(function (id) {
+        return !usable.some(function (l) { return l.id === id; });
+      });
+      if (check.checked) usable.forEach(function (l) { ids.push(l.id); });
+      if (!ids.length) {
+        /* Core 要求作用圖層不能是空的：最後一層要拿掉，等於整個關掉，交給上面那一格做 */
+        check.checked = true;
+        setValidation('hint err', '這是最後一個作用圖層。要整個關掉程式變形，請到上方 Preset 區取消「啟用整體變形」。');
+        return;
+      }
+      commitCodeControl(['deformation', 'layers'], ids);
+      renderInspector();                    // 成功或被驗證擋下都重畫，勾選框回到實際狀態
+    };
+    host.appendChild(makeField('受程式變形影響', check));
+  }
+
   function renderMultiHeader(host, targets) {
     var counts = {};
     var types = [];
@@ -3636,7 +3703,7 @@
       counts[l.type]++;
     });
     var title = document.createElement('div');
-    title.className = 'group-title keep-case';
+    title.className = 'group-title keep-case layer-head';
     title.textContent = '多選：' + targets.length + ' 個圖層（' + (types.length === 1
       ? types[0] : types.map(function (t) { return t + ' ' + counts[t]; }).join('、')) + '）';
     title.title = targets.map(function (l) { return l.id; }).join('\n');
@@ -3668,6 +3735,8 @@
       return;
     }
     if (targets.length > 1) renderMultiHeader(host, targets);
+    else renderLayerHeader(host, targets[0]);
+    renderDeformationMembership(host, targets);
     /* lead 只拿來讀「單選時才會出現」的東西（id 欄位、水龍捲的來源標示）；
        欄位的寫入一律是 targets 的全部。 */
     var lead = targets[0];
