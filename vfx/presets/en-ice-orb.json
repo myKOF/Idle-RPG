@@ -9,9 +9,13 @@
       "type": "sprite",
       "assetId": "new_materials/smoke/smoke3_11.png",
       "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "scale": {
-        "x": 0.1953,
-        "y": 0.1953
+        "x": 0.259,
+        "y": 0.259
       },
       "alpha": 0.5,
       "tint": "#d8fff8",
@@ -47,9 +51,13 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/light_03.png",
       "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "scale": {
-        "x": 0.1563,
-        "y": 0.1563
+        "x": 0.2073,
+        "y": 0.2073
       },
       "alpha": 0.8,
       "tint": "#7ff0e0",
@@ -61,9 +69,13 @@
       "type": "sprite",
       "assetId": "new_materials/orb/sphere_41.png",
       "zIndex": 2,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "scale": {
-        "x": 0.0859,
-        "y": 0.0859
+        "x": 0.1139,
+        "y": 0.1139
       },
       "alpha": 0.95,
       "tint": "#b8fff4",
@@ -85,9 +97,13 @@
       "type": "sprite",
       "assetId": "new_materials/mask-shape/dingbats-459.png",
       "zIndex": 3,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "scale": {
-        "x": 0.0977,
-        "y": 0.0977
+        "x": 0.1296,
+        "y": 0.1296
       },
       "alpha": 0.9,
       "tint": "#ffffff",
@@ -109,6 +125,10 @@
       "type": "particle",
       "assetId": "particle-pack/png-black-background/star_04.png",
       "zIndex": 4,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "alpha": 0.9,
       "tint": "#ffffff",
       "blendMode": "add",
@@ -121,18 +141,18 @@
         0.9
       ],
       "spawn": {
-        "radius": 30,
+        "radius": 39.776,
         "shape": "circle"
       },
       "speed": [
-        10,
-        30
+        13.2587,
+        39.776
       ],
       "direction": -90,
       "spread": 180,
       "startScale": [
-        0.0117,
-        0.0234
+        0.0155,
+        0.031
       ],
       "alphaOverLife": [
         [

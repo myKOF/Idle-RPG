@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## ARCANE-REFERENCE-20261021 — 白熱紫色光束參考風格
+
+- Owner：Codex；Done，單一開發者。使用者提供紫白雷射截圖，希望祕法棒接近該效果；看過arcane-reference-preview.png後確認「好，連我的一起commit」。本輪正式保存參考風格與全部使用者已儲存修改，兩倉庫提交，不合併推送。
+- 完成：柱身SVG改白熱細光芯與半透明紫暈，8格電流增加不規則偏折與淡光；新emitter-flare.svg以不等長放射幾何、絕對座標徑向漸層與載入時柔化製作紫白起點爆光，替換hub材質並減淡大橢圓halo。僅觀察附件光色層次，不使用／描摹附件像素，素材皆原創SVG。沒有新粒子／Timer／Shader／Runtime／Core／Protocol分支；幾何與時間軸保持使用者設定。
+- 修改檔案：arcane-rod.cjs、cylinder.svg／surface-current.svg／emitter-flare.svg、en-arcane-beams-1 Preset／layout、素材索引／出貨、arcane-surface-current專項的新增素材雜湊檢查、LV與本段；另按授權保存使用者Skills2.xlsx／CSV／生成JS及en-ice-orb、en-ice-pulse、en-spark、hit-waterball-splash及proj-starfall Preset／layout。同步主頁skills2 351→352／bridge329→330，Worker asset key及skills2 import改為20261021-arcane-reference；無Core／Runtime更新。
+- 使用者修改完整保留：帶電半徑1.2→2米；冰凍脈衝範圍5→12米、間隔0.8→0.65秒、移速3→4米／秒；光棒柱身加寬、電流的獨立位置／寬度、sprite-7新增旋轉星芒。未重跑作者去覆蓋這些編輯。Excel與CSV逐格差異0，node tools/config_tables.cjs --apply Skills2為2個字面值語意變更0；此前預覽階段的Excel尚未套用問題已由使用者套用後解除。AI沒有編輯Excel或資料格，未重新開Excel驗證修復提示。
+- 預檢／Review：develop整合中的內容等於本分支祖先72559e95，沒有獨立改動；其GM ai-key-setting／gm_exec快取與本次skills2／bridge快取不同區段，候選＋共同祖先＋develop工作檔的實際merge-file乾跑皆0。自我唯讀Review材料引用、父層／sheet／投影、現有事件與判定、Backend及Editor guard；沒有改動表現引擎或減弱既有斷言。
+- 驗證：10檔126項＝122通過／3已確認的使用者自訂設定差異／1Windows符號連結略過。命令為node --test tests/arcane-surface-current.test.cjs tests/arcane-rod-vfx.test.cjs tests/vfx-core-hierarchy.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-asset-export.test.cjs tests/skills2-vfx-schema.test.cjs tests/config-vfx-diagnostics.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs。更新快取後另跑schema／protocol／shim30項全過，npm.cmd run build為563檔通過。
+- 3項差異：原arcane-rod的顯示／判定尺寸及作者canonical不一致（上輪已存在），另使用者最新獨立電流偏移／寬度，導致原要求電流矩陣逐值等於柱身的斷言失敗。以HEAD未修改版arcane-surface-current測試透過Module._compile在相同最新資料上唯讀重跑，同樣只有該矩陣項失敗，另2項通過；本次僅擴充素材雜湊清單，沒有更改該斷言。按使用者指示保留參數，不以重設參數或修改測試掩蓋。這些差異仍存在，未宣稱尺寸判定已全部吻合。
+- 素材／資料：6份變更Preset與配對layout通過正式Core／Layout驗證，export-assets --check最新（192個assetId），兩庫diff --check通過。三SVG／索引／出貨雜湊一致；素材庫arcane-rod保存原創材質、來源、最新Preset／layout，user-vfx-tuning-20261021保存5份使用者Preset／layout快照。素材庫無新外部素材，既有星芒沿Kenney CC0引用。
+- 預覽：正式Core／Pixi與出貨索引三時點深／淺背景均READY、後端無錯；arcane-reference-preview.png／arcane-reference-light.png在本聊天visualizations，僅預覽固定朝向比較，正式旋轉保持。使用者已確認該風格，其後自行加寬與加星芒的最新值一併保存，未逐份重新目視驗收。未做完整戰鬥長測／跨裝置效能測量；測試頁與服務、試跑檔已清理，未操作使用者原開編輯器。
+- 未修改但檢查：AI規範／工作流／Agent文件、配置讀表管線與Excel內容、原事件／判定、Core／Backend、Editor guard與既有回歸。可供Review／合併，無本次未完成實作；已知3項差異與驗收限制如上。下一步：遊戲重新整理，VFX Editor先下載未存內容備份再重新載入，其他電腦同步遊戲與素材庫。
+- Commit：素材庫已先提交13cf63e（15檔），另以5706997補存暫存時新增的proj-starfall快照；遊戲為本段所在「[Codex] feat: 祕法光束改為白熱紫光並保存使用者調整」，回覆附編號。最後確認兩庫工作區乾淨，無合併推送。
+
 ## ARCANE-TIP-CURRENT-20261021 — 祕法棒略尖前端與紫色表面電流
 
 - Owner：Codex；Done，單一開發者。使用者要求en-arcane-beams-1前端稍尖、表面有輕微紫色電流纏繞。完成短弧收尖與8格、12fps循環細電流；兩條不規則螺旋細線裁切在柱身表面，單一新增sprite，不加粒子／Timer／Shader。沿用原assetId的柱身SVG與新增surface-current.svg，無外部素材／描圖；Mote無原生SVG匯出，延續原創向量作者工具。

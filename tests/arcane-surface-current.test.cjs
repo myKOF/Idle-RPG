@@ -40,7 +40,7 @@ test('ARCANE-CURRENT 增補工具不重設使用者的柱身與父層設定，�
 
 test('ARCANE-CURRENT 自製圖集與出貨雜湊一致，圖集保留透明柱身裁切及8格', () => {
   const index = require('../vfx/shipped-assets.json');
-  for (const [name, source] of [['cylinder.svg', author.cylinderSVG()], ['surface-current.svg', author.currentSVG()]]) {
+  for (const [name, source] of [['cylinder.svg', author.cylinderSVG()], ['surface-current.svg', author.currentSVG()], ['emitter-flare.svg', author.emitterSVG()]]) {
     const entry = index.assets.find(a => a.assetId === 'codex-authored/arcane-rod/' + name);
     assert.ok(entry);
     const bytes = fs.readFileSync(require.resolve('../images/vfx/assets/' + entry.relativePath));

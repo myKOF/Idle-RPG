@@ -118,7 +118,7 @@
       "drag": 1.3,
       "startScale": [
         0.0137,
-        0.0332
+        0.0532
       ],
       "alphaOverLife": [
         [
@@ -186,96 +186,6 @@
         "x": 1,
         "y": 0.5
       }
-    },
-    {
-      "id": "foam-sparks",
-      "type": "particle",
-      "assetId": "new_materials/mask-shape/dingbats-489.png",
-      "alpha": 0.75,
-      "tint": "#d4fff4",
-      "blendMode": "add",
-      "emission": {
-        "count": 18,
-        "mode": "burst"
-      },
-      "lifetime": [
-        0.2,
-        0.55
-      ],
-      "spawn": {
-        "radius": 5,
-        "shape": "circle"
-      },
-      "speed": [
-        100,
-        215
-      ],
-      "direction": 0,
-      "spread": 360,
-      "startScale": [
-        0.0195,
-        0.0449
-      ],
-      "alphaOverLife": [
-        [
-          0,
-          1
-        ],
-        [
-          1,
-          0
-        ]
-      ]
-    },
-    {
-      "id": "water-spray",
-      "type": "particle",
-      "assetId": "particle-pack/png-transparent/smoke_04.png",
-      "alpha": 0.2,
-      "tint": "#60ddc3",
-      "blendMode": "normal",
-      "emission": {
-        "count": 16,
-        "mode": "burst"
-      },
-      "lifetime": [
-        0.25,
-        0.55
-      ],
-      "spawn": {
-        "radius": 8,
-        "shape": "circle"
-      },
-      "speed": [
-        65,
-        125
-      ],
-      "direction": 0,
-      "spread": 360,
-      "startScale": [
-        0.0469,
-        0.082
-      ],
-      "alphaOverLife": [
-        [
-          0,
-          1
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.3
-        ],
-        [
-          1,
-          1.4
-        ]
-      ]
     }
   ],
   "sizing": {
