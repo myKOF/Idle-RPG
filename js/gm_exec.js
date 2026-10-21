@@ -829,6 +829,22 @@
       return { ok: true, message: '技能熟練度設定為 Lv.' + level };
     }
     if (command === 'gem') {
+      // gem all [等級|all] 數量：所有開放種類 × 指定等級（省略或 all＝1~10 階）各給 N 顆
+      if (String(args[0] || '').toLowerCase() === 'all') {
+        var allLvArg = args.length >= 3 ? String(args[1]).toLowerCase() : 'all';
+        var allCntArg = args.length >= 3 ? args[2] : args[1];
+        count = gmNumber(allCntArg, 1, 1e300);
+        var lvFrom = 1, lvTo = GEM_FORGE_MAX_LEVEL;
+        if (allLvArg !== 'all') {
+          lvFrom = lvTo = gmNumber(allLvArg, 1, GEM_FORGE_MAX_LEVEL);
+        }
+        if (count === null || lvFrom === null) return { ok: false, message: '格式：gem all [等級|all] 數量（例：gem all 100、gem all 10 100）' };
+        var gemKinds = Object.keys(GEM_TYPES).filter(isGemEnabled);
+        gemKinds.forEach(function (k) {
+          for (var gl = lvFrom; gl <= lvTo; gl++) addGem(k, gl, count);
+        });
+        return { ok: true, message: '全部 ' + gemKinds.length + ' 種寶石 ' + (lvFrom === lvTo ? 'Lv.' + lvFrom : 'Lv.1~' + lvTo) + ' 各 +' + (typeof fmt === 'function' ? fmt(count) : count) };
+      }
       var rawType = String(args[0] || '');
       type = GEM_TYPES[rawType] ? rawType : (Object.keys(GEM_TYPES).find(function (k) { return k.toLowerCase() === rawType.toLowerCase(); }) || rawType);
       level = gmNumber(args[1], 1, GEM_FORGE_MAX_LEVEL);

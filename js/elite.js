@@ -163,7 +163,7 @@ function eliteVisEmit(v) {
   v.next = GT + (v.every > 0 ? v.every : ELITE_VIS_REFRESH_SEC);
   var area = { id: v.id, x: v.x, y: v.y };
   if (v.w > 0 && v.h > 0) { area.w = v.w; area.h = v.h; area.a = v.a || 0; }
-  else area.r = v.r;
+  else { area.r = v.r; if (v.a !== undefined) area.a = v.a; }      // 圓形場域也可以帶朝向（毒十字依敵人面向玩家的方向轉）
   /* 會移動的場域（火鏈）：把中心的移動速度與方向一起送過去，顯示層在兩則事件之間沿著它自走，不會一格一格跳。 */
   if (v.speed > 0 && isFinite(v.moveA)) { area.speed = v.speed; area.moveA = v.moveA; }
   if (v.curtain) {
@@ -1268,11 +1268,14 @@ function eliteCastCross(m, d) {
   var rr = Math.sqrt(Math.random()) * (d.throwRange || 120);
   var cx = pp.x + Math.cos(ang) * rr, cy = pp.y + Math.sin(ang) * rr;
   var warn = d.warn || 0.9, dur = d.dur || 6;
+  /* 十字的朝向：一條臂沿著「敵人 → 玩家」的方向，另一條與它垂直（斜向來的敵人就畫成斜十字，不是固定的正十字）。 */
+  var mp0 = eliteMonsterPos(m) || pp;
+  var ang0 = (Math.abs(pp.x - mp0.x) + Math.abs(pp.y - mp0.y) > 1) ? Math.atan2(pp.y - mp0.y, pp.x - mp0.x) : 0;
   eliteBusy(m, 0.6, false);
   var hub = eliteVisAdd({ id: eliteVisId('poisondot'), preset: d.v.ground, x: cx, y: cy, r: d.hubR || 28, until: GT + warn + dur });
   eliteLater(warn, function () {
-    var c = { owner: m, def: d, x: cx, y: cy, t0: GT, until: GT + dur, nextTick: 0, hub: hub };
-    c.vis = eliteVisAdd({ id: eliteVisId('cross'), preset: d.v.field, x: cx, y: cy, r: d.len || 360, until: c.until });
+    var c = { owner: m, def: d, x: cx, y: cy, a: ang0, t0: GT, until: GT + dur, nextTick: 0, hub: hub };
+    c.vis = eliteVisAdd({ id: eliteVisId('cross'), preset: d.v.field, x: cx, y: cy, r: d.len || 360, a: ang0, until: c.until });
     ELITE_RT.crosses.push(c);
   });
 }
@@ -1293,7 +1296,7 @@ function eliteCrossesTick(dt) {
     var ballR = c.def.ballR || 18;
     var hit = eliteDist(pp.x, pp.y, c.x, c.y) <= (c.def.hubR || 28) + ELITE_PLAYER_BODY_R;     // 中心的毒圈
     for (var arm = 0; arm < 4 && !hit; arm++) {
-      var th = arm * Math.PI / 2;
+      var th = (c.a || 0) + arm * Math.PI / 2;
       for (var b = 0; b < balls; b++) {
         var dist = (b + 1) * len / balls;
         if (dist > reach + 1e-6) break;          // 延伸前緣還沒到這一顆

@@ -264,7 +264,7 @@ NEW['en-poison-dot'] = () => ({
    一份 Preset 最多 32 個圖層，所以每臂 balls 顆（現為 5，球半徑＝中心毒圈半徑 4 米，相鄰兩顆略有重疊）、每顆一層；球出現的時間 ＝ 距離 ÷ 速度（delay），出現後固定在原地。
    座標：事件半徑 r＝len 米 ↔ authored 100px，所以 1 米 ＝ 100／len px。
    模擬層用同一組公式判定（js/elite.js eliteCrossesTick）：第 k 顆在 (k+1)×len/balls 米，距離 ≤ speed×t 才存在。
-   ⚠️ 不旋轉：靠「錨點偏移繞圈」做旋轉的小球，投影到地面時 mesh 會炸開（舞台範圍變成幾千像素），所以十字固定朝上下左右。 */
+   ⚠️ Preset 本身固定朝上下左右（不靠「錨點偏移繞圈」旋轉小球，投影到地面時 mesh 會炸開）；斜向的十字由模擬層把整份 Preset 以 area.a 轉過去（js/elite.js eliteCastCross：一條臂沿「敵人→玩家」）。 */
 function poisonCross(o) {
   const { dur, balls, len, speed, ballR } = o;
   const pxPerM = 100 / len, gapM = len / balls;
