@@ -8,6 +8,8 @@
       "layerIds": [
         "blue-corona",
         "white-core",
+        "branch",
+        "branch-copy",
         "side-fork"
       ]
     },
