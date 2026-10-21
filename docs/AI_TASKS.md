@@ -11734,3 +11734,13 @@ Worker 存活且頁面正常完成載入。
 - Owner：Codex integrator；Done。依使用者授權整合 original HEAD `94330a0789690db3261e45488fe0bdc8d76ef699` 與 incoming MERGE_HEAD `a3fffb58ed4021806a779eead3994770f9b81218`；不變更兩個 parent、不操作索引／Commit／推送／其他 worktree／素材庫。
 - 衝突僅 `docs/AI_TASKS.md` 的獨立追加紀錄。三方比對共同 base 後，保留 HEAD 檔尾的 VFX 圖層變形介面紀錄，也保留 incoming 檔首的使用者配置與 VFX、隕石拖尾、神話背包快取修補及殞石外觀紀錄；沒有以任一整側覆蓋另一側。controller 已處理的 incoming 檔案 EOF 空白整理原樣保留。
 - 驗證：`node --test tests/inventory-mythic-skin.test.cjs tests/meteor-tail-flow.test.cjs tests/vfx-editor-deformation.test.cjs tests/vfx-core.test.cjs tests/vfx-editor-guard.test.cjs tests/skills2-vfx-schema.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs` 209/209 通過；`npm.cmd run build` 560 檔通過。完整 merged result 的衝突標記與 `git diff HEAD --check` 檢查通過，沒有修改測試斷言或素材庫檔案；controller 可依回報檔案清單 stage 並建立 merge commit。
+
+## STATUS-ICONS-BOTTOM-UP-20261021 — 戰鬥狀態圖示由下往上換行
+
+- Owner：Codex；Done，單一開發者。使用者依截圖要求狀態icon由下往上排；前置既有戰鬥狀態列完成。允許css/style.css的battle-buff-bar換行方向、index.html僅style快取、LV_upgrade_system.md及本段；禁止JS／狀態數值／Worker／配置／存檔／VFX與其他進行中修改，不合併推送。
+- 保留每排由左到右、第一排靠經驗條，滿排後向上增加。驗收單排／多排與窄寬度、狀態既有回歸、Build及diff，完成後獨立Commit。與Claude4d6f84b8同index不同區段：本次style快取在第11行，對方ai-key-setting快取在第1012行，無語意相依；實際merge-base／候選／Claude工作區三方merge-file試跑0。既有隕石等未提交工作完整保留。
+- 完成4檔：css/style.css僅將戰鬥狀態列改為wrap-reverse，index僅style90→91，LV及本紀錄同步。沒有素材或素材庫變更、JS／狀態效果／解鎖變更。
+- 測試：node --test tests/status-system.test.cjs（16/16）；node --test tests/active-buffs-panel.test.cjs tests/battle-ui-rework.test.cjs tests/battle-fullscreen.test.cjs tests/fullscreen-toggle.test.cjs（13/13）；npm.cmd run build（562檔）；git diff --check通過。未新增低影響外觀測試、未改既有斷言、未跑全庫。
+- 瀏覽器隔離頁載入正式7份CSS與HUD結構：820px寬6個同排由左到右，底邊364.359375；32個每排10個，由底往上各排y為336.359375／303.359375／270.359375／237.359375；420px窄版11個圖示末個在上排。Console error／warning0。status-icons-bottom-up.png在本聊天visualizations。一般及全螢幕共用CSS；未載玩家存檔或完整戰鬥／跨瀏覽器驗收，預覽服務與分頁已清理。
+- 唯讀檢查未改：AI規範／Workflow／Agent文件、js/ui.js狀態渲染、css/ashen-forge.css／battle-hud.css及5份既有測試。自我Review確認狀態DOM順序／倒數／提示及原間距維持正常。原有隕石／配置／VFX工作完整保留未提交，只提交本次hunk。
+- 交付：無本次未完成實作或新增已知風險，可供Review／合併。Commit為本段所在[Codex] fix: 戰鬥狀態圖示改為由下往上排列，回覆附編號；未合併推送。下一步重新整理遊戲驗收，其他副本需整合本Commit。
