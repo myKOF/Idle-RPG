@@ -457,26 +457,8 @@ NEW['en-missile-burst'] = () => ({
   ]
 });
 
-/* 電火花（帶電）：一團藍白色的「電光網」——中心有電漿般的藍色亂紋，外圍分岔的白藍電弧快速閃爍、旋轉亂竄（參考暗黑 3 的帶電菁英），
-   不是圓球也不是一條直線。朝任何方向飛都一樣（圓形彈體，直徑由 Skills2 的 bodyD 決定）。變形週期 0.25 秒（快速閃爍抖動）。 */
-NEW['en-spark'] = () => {
-  const D = 0.25;
-  const flick = (shift) => [[0, 1], [0.12, 0.25], [0.26, 1], [0.4, 0.35], [0.55, 0.95], [0.7, 0.2], [0.85, 1], [1, 1]]
-    .map(([t, v]) => [+((t + shift) % 1).toFixed(3), v]).sort((x, y) => x[0] - y[0]);
-  const turn = (a0, a1) => [[0, a0], [0.33, a1], [0.66, a0 + 0.4], [1, a0 + 6.28319]];
-  return {
-    id: 'en-spark', duration: D, loop: true, sizing: orbSizing(22),
-    layers: [
-      kit.sprite({ id: 'glow', asset: A.glowSoft, z: 0, size: 90, alpha: 0.16, tint: '#2f56ff', blend: 'add', duration: D, scaleOverLife: C.breathe(0.12) }),
-      kit.sprite({ id: 'plasma', asset: A.plasmaBlue, z: 1, size: 54, alpha: 0.75, tint: '#7a98ff', blend: 'add', duration: D, alphaOverLife: flick(0.1), rotationOverLife: turn(0, 1.2) }),
-      kit.sprite({ id: 'web-a', asset: A.arc02, z: 2, size: 100, alpha: 1, tint: '#d8e6ff', blend: 'add', duration: D, alphaOverLife: flick(0.37), rotationOverLife: turn(1.0, 2.6) }),
-      kit.sprite({ id: 'web-b', asset: A.arc01, z: 3, size: 88, alpha: 1, tint: '#aac4ff', blend: 'add', duration: D, alphaOverLife: flick(0.71), rotationOverLife: turn(3.1, 1.9) }),
-      kit.sprite({ id: 'web-c', asset: A.arc03, z: 4, size: 92, alpha: 0.9, tint: '#c4d8ff', blend: 'add', duration: D, alphaOverLife: flick(0.55), rotationOverLife: turn(2.2, 0.4) }),
-      kit.sprite({ id: 'core', asset: A.dot, z: 5, size: 10, alpha: 1, tint: '#ffffff', blend: 'add', duration: D, alphaOverLife: flick(0.2) }),
-      kit.particle({ id: 'zap', asset: A.bolt04, z: 6, rate: 16, lifetime: [0.1, 0.22], spawnRadius: 14, speed: [30, 80], direction: 0, spread: 360, startPx: [10, 20], alpha: 1, tint: '#bcd4ff', blend: 'add', alphaOverLife: [[0, 1], [1, 0]] })
-    ]
-  };
-};
+/* 帶電：原創逐格鋸齒電流；由獨立作者保存素材與可重製的尺寸契約。 */
+NEW['en-spark'] = () => require('./electrified-spark.cjs').make();
 
 module.exports = { THEMES, RECOLORS, NEW, recolor, fireChain };
 

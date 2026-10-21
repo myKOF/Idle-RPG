@@ -9,9 +9,13 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/light_03.png",
       "zIndex": 0,
+      "position": {
+        "x": 0.2681,
+        "y": 0
+      },
       "scale": {
-        "x": 0.0344,
-        "y": 0.0344
+        "x": 0.0685,
+        "y": 0.0677
       },
       "alpha": 0.45,
       "tint": "#a64cff",
@@ -23,9 +27,13 @@
       "type": "sprite",
       "assetId": "new_materials/flare/flare_16.png",
       "zIndex": 1,
+      "position": {
+        "x": 0.2681,
+        "y": 0
+      },
       "scale": {
-        "x": 0.0469,
-        "y": 0.0137
+        "x": 0.0934,
+        "y": 0.027
       },
       "alpha": 0.85,
       "tint": "#f0c8ff",
@@ -37,9 +45,13 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": 2,
+      "position": {
+        "x": 0.2681,
+        "y": 0
+      },
       "scale": {
-        "x": 0.0137,
-        "y": 0.0137
+        "x": 0.0273,
+        "y": 0.027
       },
       "alpha": 1,
       "tint": "#ffffff",
@@ -52,13 +64,13 @@
       "assetId": "light-masks-1.0/default/cone_composed_c.png",
       "zIndex": -1,
       "position": {
-        "x": -3,
+        "x": -5.7104,
         "y": 0
       },
       "rotation": -1.5707963267948966,
       "scale": {
-        "x": 0.041,
-        "y": 0.0703
+        "x": 0.0818,
+        "y": 0.1384
       },
       "anchor": {
         "x": 0.5,
@@ -111,13 +123,13 @@
       "assetId": "light-masks-1.0/default/cone_composed_c.png",
       "zIndex": -1,
       "position": {
-        "x": -2,
+        "x": -3.7175,
         "y": 0
       },
       "rotation": -1.5707963267948966,
       "scale": {
-        "x": 0.0156,
-        "y": 0.043
+        "x": 0.031,
+        "y": 0.0846
       },
       "anchor": {
         "x": 0.5,
@@ -152,7 +164,7 @@
       "assetId": "particle-pack/png-black-background/smoke_04.png",
       "zIndex": -2,
       "position": {
-        "x": -3,
+        "x": -5.7104,
         "y": 0
       },
       "scale": {
@@ -173,18 +185,18 @@
         0.32
       ],
       "spawn": {
-        "radius": 0.7,
+        "radius": 1.3864,
         "shape": "circle"
       },
       "speed": [
         0,
-        1
+        1.9805
       ],
       "direction": 180,
       "spread": 120,
       "startScale": [
-        0.0078,
-        0.0137
+        0.0155,
+        0.0272
       ],
       "alphaOverLife": [
         [
@@ -225,7 +237,7 @@
       "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": -2,
       "position": {
-        "x": -3,
+        "x": -5.7104,
         "y": 0
       },
       "alpha": 0.65,
@@ -242,18 +254,18 @@
         0.3
       ],
       "spawn": {
-        "radius": 1.2,
+        "radius": 2.3769,
         "shape": "circle"
       },
       "speed": [
-        1,
-        4
+        1.9805,
+        7.9226
       ],
       "direction": 180,
       "spread": 90,
       "startScale": [
-        0.002,
-        0.0039
+        0.004,
+        0.0077
       ],
       "alphaOverLife": [
         [
