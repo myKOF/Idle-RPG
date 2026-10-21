@@ -1,5 +1,34 @@
 # AI_TASKS.md
 
+## METEOR-IMPACT-AFTERMATH-20261021 — 隕石落地尾跡續播與四秒坑痕
+
+- Owner：Codex；Done，單一開發者。使用者要求石頭命中後煙火繼續下移播完、地板留下4秒坑痕，先看預覽；2026-10-21最後確認「好，接入吧」。依原授權連使用者已儲存修改一起提交，未合併／推送。
+- 完成：Core的finish新增可選settleToOrigin，從最後繪製位置收束既有粒子、停止發射並移除石頭，沿剩餘生命期下降且不穿地。保留通用finish的3秒上限及尾跡預算（64段／1200顆），此隕石煙火在1.2秒內回收。Runtime依rain的meteor／thunder-fall到達時接線；同一表定受擊Preset的impact-ground圖層拆至zone，4秒地板與原爆炸獨立回收。不改隕石落點、傷害、Worker事件時序或解鎖。
+- 坑痕：burst-meteor-inferno新增單一地板sprite，採使用者確認的手繪風碎岩與橘紅熔岩。內建imagegen原創透明PNG，不採外部圖或附件像素；SVG內嵌PNG，以半徑56%至100%的透明遮罩柔化外圈，中央保持清楚。512×512材質僅載入時光柵化、各落點共享，不增加每幀filter／Shader。原稿與完整提示詞保存素材庫IMPACT_SOURCE.md；author/meteor-impact-crater.cjs可由原稿重製。先前幾何SVG／照片感候選未納正式素材。
+- 修改檔案：js/vfx-core.js、js/vfx-runtime.js、兩頁VFX快取、burst-meteor-inferno Preset／layout、crater作者／出貨SVG、asset-index／shipped-assets、tests/meteor-tail-impact.test.cjs、Runtime文件／LV與本紀錄。同步保留使用者Skills2.xlsx／CSV／生成JS、其他12份Preset及必要layout；寒冰體／極致寒霜共3個VFX格留空，祕法棒判定14×1.75米，僅同步柱身與外暈的寬度比例，保留使用者值。主頁skills2／bridge、WORKER_ASSET_VERSION與Worker import快取同步；Protocol未改。
+- 預檢／Review：目標無其他未提交來源。index.html與Claude4d6f84b8分別修改VFX／skills2／bridge及ai-key-setting快取，Worker只動skills2快取與對方gm_exec快取不同行；以merge-base＋候選＋Claude工作區實際merge-file乾跑皆0，無語意相依。使用者Skills2已儲存並套用，未重寫Excel或其資料格；唯讀Excel→CSV比對差異0，config_tables --apply Skills2為2個字面值語意變更0。自我唯讀Review粒子池重用、父層／worldSpace／投影、清場、重疊坑痕、爆炸時長及兩庫引用。
+- 專項驗證：node --test tests/meteor-tail-impact.test.cjs tests/meteor-tail-flow.test.cjs tests/meteor-entry-origin.test.cjs tests/vfx-editor-cache-versions.test.cjs，17項全通過（本次新增5項）。真引擎確認只在原落地時刻扣血；煙火續播、不新生／不穿地；坑痕直徑使用事件半徑、4秒回收；清場與粒子池重用正確。祕法棒3項包含真引擎場域、端點／直徑／旋轉與作者一致性也通過。
+- 最終22檔回歸：meteor-tail-impact、meteor-tail-flow、meteor-entry-origin、arcane-rod-vfx、vfx-core、vfx-core-hierarchy、vfx-runtime、vfx-runtime-screen-space、vfx-duration、vfx-performance、vfx-load-shedding、vfx-projectile-perspective、vfx-size、vfx-editor-guard、vfx-editor-cache-versions、vfx-asset-export、vfx-preset-usage、skills2-vfx-schema、skills2-vfx-usage、config-vfx-diagnostics、worker-protocol、worker-shim；507項＝501通過／5既有失敗／1略過。5項名稱與先前HEAD原Core／Runtime／受擊Preset唯讀基線相同：投影矩陣、FIELD持續與提示、CATALOG-3單根layout、CHAIN金色雷鏈、STARFALL-TAIL。略過為Windows符號連結限制，沒有降低斷言。未跑全庫。
+- Build／資料：npm.cmd run build為562檔通過，13份變更Preset及配對layout通過Core／Layout驗證，export-assets --check最新（191個assetId）、兩庫diff --check通過。出貨SVG／素材庫／內嵌PNG原稿逐位元一致，SVG SHA256=5c5c62c187ce3d083c119e05010e705271c7360ae1e1ff1d3624ccdad1f2e797。素材庫保存meteor原稿／SVG／來源／Preset／layout，arcane-rod同步Preset，另外11份使用者VFX與layout保存user-vfx-tuning-20261021快照。
+- 畫面驗收：正式Core／Runtime／Pixi與出貨索引，四階段落地預覽及最終深色石地／淺色地板／綠色地面融合，後端無錯誤；meteor-crater-soft-terrain.png在本聊天visualizations。使用者已確認外觀。測試頁與服務清理，未操作使用者原開Editor／存檔。未重新開Excel驗證修復提示（原檔由使用者保存，AI未編輯）、未做玩家長戰或手機GPU驗收。
+- 未修改但檢查：AI規範／工作流／Agent文件、Skills2隕石排程與權威尺寸、Backend、Editor guard／layout schema、配置工具、上述既有測試與素材授權紀錄。沒有本次未完成實作或新增已知缺陷；既有5項失敗及跨裝置效能限制如上，可供Review／合併。
+- Commit：素材庫已先提交ec3b1d5（29檔）；遊戲為本段所在「[Codex] feat: 接入隕石餘煙與熔岩坑痕並保存使用者調整」，回覆附編號。提交前確認全部必要修改已納入，最後核對兩庫status。下一步：遊戲重新整理；VFX Editor先下載未存內容備份，再重新載入，避免舊頁覆寫。其他電腦同步遊戲與素材庫兩倉庫。
+
+## ARCANE-CYLINDER-20261021 — 祕法加持圓柱光棒
+
+- Owner：Codex；Done，單一開發者。使用者要求旋轉秘法棒更有體積，光束呈圓柱光棒。前置敵人旋轉光束與表定接線完成。允許en-arcane-beams-1 Preset／layout、專用arcane-rod作者腳本與enemy-skills單一入口、素材索引／出貨素材、專項回歸、LV及本段；素材庫新增自製SVG與製作來源／Preset／layout。禁止戰鬥數值／Worker／Runtime／Core／Backend／配置與其他特效，不合併推送。
+- 全部目標衝突預檢無外部來源。以自製向量漸層與圓弧封口表現柱體（使用者追加：外層無虛線、尖端圓形），保留單側順時針／表定旋轉速度與持續時間；製作座標端點對齊名目半徑，再由原事件r縮放，驗收判定與畫面旋轉／尺寸、實際Pixi深淺背景、舊頁拒絕覆寫、素材雜湊／回歸／Build／雙倉庫Commit。指定Mote Studio可開，但僅提供PNG／sprite sheet／GIF、無SVG匯出，不適合本次可縮放原生向量梯度，使用SVG程式原作；不採集網站素材。
+
+- 完成10檔：本Preset／layout、自製出貨cylinder.svg、vfx/asset-index.json／shipped-assets.json、arcane-rod.cjs、enemy-skills.cjs的單一作者入口、tests/arcane-rod-vfx.test.cjs、LV_upgrade_system及本紀錄。5層＝halo、共享旋轉空父層、淡外暈、自帶明暗的圓柱本體、hub；使用者追加後移除兩個流動光環與尖端glint、端面邊線，改為半圓封口的連續柱身。只有向量素材與Preset，無Runtime／Core／Backend／配置／Worker修改，無需JS快取或BAT。
+- 尺寸／時序：從正式生成ENEMY_SKILLS2讀取len／wid／rot／dur；製作長度100、直徑=wid/len×100，底端為旋轉軸、頂端對應事件r，所有柱身元件共用父層旋轉並在旋轉後做地面投影。修正舊作者三張cone直接拉長造成畫面長度與名目半徑不同的問題；實際模擬的10.4米長／1.43米寬、50度每秒、6秒、單側與傷害判定全不改。
+- 測試：node --test tests/arcane-rod-vfx.test.cjs，3/3（五時點端點／直徑與權威傷害線段一致、素材與作者重製、真引擎場域事件穿過正式Runtime Adapter且刷新不重播）；node --test --test-reporter=dot --test-name-pattern="ELITE-ENGINE-6|ELITE-ENGINE-.*[Cc]ore|ELITE-DATA" tests/elite-engine.test.cjs tests/elite-data.test.cjs，10項通過。第一次新增Adapter測試補上必要ctx.posOf後通過，沒有改產品碼或既有斷言配合fixture。
+- 最終回歸：node --test --test-reporter=tap tests/arcane-rod-vfx.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-core-hierarchy.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-asset-export.test.cjs tests/vfx-runtime-screen-space.test.cjs，116項115通過／1略過／0失敗；略過為Windows環境不能建立符號連結的既有匯出測試。npm.cmd run build為561檔通過；export-assets --check最新（190個assetId），兩倉庫diff --check通過。未跑全庫、未新增特效來源。
+- 瀏覽器：正式Pixi8／Core／Backend＋出貨索引的隔離IAB，放大及兩種斜向、深淺背景驗收，最終READY標記確認讀到cylinder-body新版，無虛線外環與外伸光斑、圓弧尖端清楚，Console error／warning0。圖為本聊天visualizations/arcane-cylinder-dark.png及light.png。中途舊頁驗收fixture曾覆蓋預覽GET造成舊cone再次出現，已移除該fixture並由磁碟重新載入，最終截圖全部更新；不是產品回歸。未做玩家存檔長戰／手機GPU測量。
+- 舊頁防護：實際開舊cone版Editor，磁碟已新Preset時按儲存到repo，拒絕外部已更新內容且提供下載全部編輯備份，磁碟逐位元保持。使用者原開Editor未被重載或操作；套用前須先下載未存備份再重載。專用測試頁／服務於交付清理，未在專案留下預覽檔。
+- 素材庫codex-authored/arcane-rod保存自製SVG、SOURCE、Preset及layout；先d9801fc保存初版、再2e9324c保存使用者要求的無虛線／圓弧尖端最終版。素材庫／遊戲SVG與兩份JSON逐位元一致，SVG SHA256=de60e09f75b2b79728a471d21ac987ed440d09e2a18015ce12617f3c35bd96ac。原創SVG，既有光暈沿用Kenney CC0，無第三方新素材；Mote無SVG匯出故採原生向量。
+- 唯讀未改：AI規範／工作流／Agent文件、Skills2 Excel／CSV／js生成資料、elite_data.js／elite.js判定與場域事件、Runtime縮放與重播、Core父層矩陣／Backend／Editor guard及上述既有回歸。自我Review確認沒有新增粒子或Timer、父層單一旋轉避免拼接錯位，素材索引僅新增一筆，出貨只新增必要SVG。
+- 交付：無本次未完成項或新增已知缺陷，可供Review／合併；限制為未做完整實戰長測與跨裝置驗收。遊戲Commit為本段所在[Codex] feat: 祕法加持改為圓柱光棒，回覆附編號；素材庫最終2e9324c，未合併推送。下一步備份Editor未存內容後重新載入en-arcane-beams-1.json；其他副本同步遊戲與素材庫。
+
 ## USER-EDITS-COMMIT-20261021 — 一併保存使用者配置與VFX調整
 
 - Owner：Codex；Done。使用者追加「改好後，連我的修改一起commit」；前置拖尾25c29864／素材庫3af6e34已完成。允許提交目前全部必要使用者修改、同步必要素材庫Preset／layout及來源紀錄，僅補skills2／bridge／Worker快取、LV及本段；禁止重設或覆寫使用者美術／配置，不合併推送。
@@ -11719,3 +11748,23 @@ Worker 存活且頁面正常完成載入。
 - Owner：Codex integrator；Done。依使用者授權整合 original HEAD `94330a0789690db3261e45488fe0bdc8d76ef699` 與 incoming MERGE_HEAD `a3fffb58ed4021806a779eead3994770f9b81218`；不變更兩個 parent、不操作索引／Commit／推送／其他 worktree／素材庫。
 - 衝突僅 `docs/AI_TASKS.md` 的獨立追加紀錄。三方比對共同 base 後，保留 HEAD 檔尾的 VFX 圖層變形介面紀錄，也保留 incoming 檔首的使用者配置與 VFX、隕石拖尾、神話背包快取修補及殞石外觀紀錄；沒有以任一整側覆蓋另一側。controller 已處理的 incoming 檔案 EOF 空白整理原樣保留。
 - 驗證：`node --test tests/inventory-mythic-skin.test.cjs tests/meteor-tail-flow.test.cjs tests/vfx-editor-deformation.test.cjs tests/vfx-core.test.cjs tests/vfx-editor-guard.test.cjs tests/skills2-vfx-schema.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs` 209/209 通過；`npm.cmd run build` 560 檔通過。完整 merged result 的衝突標記與 `git diff HEAD --check` 檢查通過，沒有修改測試斷言或素材庫檔案；controller 可依回報檔案清單 stage 並建立 merge commit。
+
+## STATUS-ICONS-BOTTOM-UP-20261021 — 戰鬥狀態圖示由下往上換行
+
+- Owner：Codex；Done，單一開發者。使用者依截圖要求狀態icon由下往上排；前置既有戰鬥狀態列完成。允許css/style.css的battle-buff-bar換行方向、index.html僅style快取、LV_upgrade_system.md及本段；禁止JS／狀態數值／Worker／配置／存檔／VFX與其他進行中修改，不合併推送。
+- 保留每排由左到右、第一排靠經驗條，滿排後向上增加。驗收單排／多排與窄寬度、狀態既有回歸、Build及diff，完成後獨立Commit。與Claude4d6f84b8同index不同區段：本次style快取在第11行，對方ai-key-setting快取在第1012行，無語意相依；實際merge-base／候選／Claude工作區三方merge-file試跑0。既有隕石等未提交工作完整保留。
+- 完成4檔：css/style.css僅將戰鬥狀態列改為wrap-reverse，index僅style90→91，LV及本紀錄同步。沒有素材或素材庫變更、JS／狀態效果／解鎖變更。
+- 測試：node --test tests/status-system.test.cjs（16/16）；node --test tests/active-buffs-panel.test.cjs tests/battle-ui-rework.test.cjs tests/battle-fullscreen.test.cjs tests/fullscreen-toggle.test.cjs（13/13）；npm.cmd run build（562檔）；git diff --check通過。未新增低影響外觀測試、未改既有斷言、未跑全庫。
+- 瀏覽器隔離頁載入正式7份CSS與HUD結構：820px寬6個同排由左到右，底邊364.359375；32個每排10個，由底往上各排y為336.359375／303.359375／270.359375／237.359375；420px窄版11個圖示末個在上排。Console error／warning0。status-icons-bottom-up.png在本聊天visualizations。一般及全螢幕共用CSS；未載玩家存檔或完整戰鬥／跨瀏覽器驗收，預覽服務與分頁已清理。
+- 唯讀檢查未改：AI規範／Workflow／Agent文件、js/ui.js狀態渲染、css/ashen-forge.css／battle-hud.css及5份既有測試。自我Review確認狀態DOM順序／倒數／提示及原間距維持正常。原有隕石／配置／VFX工作完整保留未提交，只提交本次hunk。
+- 交付：無本次未完成實作或新增已知風險，可供Review／合併。Commit為本段所在[Codex] fix: 戰鬥狀態圖示改為由下往上排列，回覆附編號；未合併推送。下一步重新整理遊戲驗收，其他副本需整合本Commit。
+
+## MERGE-SKILLS2-XLSX-20261021 — 合併技能表的獨立儲存格修改
+
+- Owner：Codex；Done。依使用者快捷指令「1」解決develop既有pending merge：原HEAD `de574dab`、incoming `72559e95`、共同基底 `78eb9e7a`。原自動程序因Excel COM啟動錯誤停止；本輪在可啟動Excel的環境完成原生API儲存、正常重開及合併提交，不擴大合併到Codex後續三筆Commit。
+- 唯一衝突為`config/Excel/Skills2.xlsx`二進位。三方逐格比對：HEAD只有AW237的毒素加持斜向十字說明，incoming只有AL194／AJ195／AL195三格清空特效及Q233祕法棒14×1.75米；沒有同格不同值。以HEAD工作簿保留所有工作表與52欄，只補incoming四格，兩側五格全數保留。原自動草稿漏列的未命名第52欄未採用，重新由實際Git三側檔案建立完整目標資料。
+- 執行`powershell -NoProfile -ExecutionPolicy Bypass -File tools/excel-update-sheets.ps1 -DataPath <本輪Git metadata>/merge-plan.json -WorkbookPath config/Excel/Skills2.xlsx`：只寫四格，正常儲存重開、再次儲存重開皆逐格一致，繪圖物件0維持不變；沒有手改封裝XML。唯讀比較原檔與結果的全部工作表，值差異恰為四格，其他儲存格／公式／style、欄寬／列高／凍結窗格／篩選／資料驗證／合併與條件格式無意外變更。Excel與現有合併CSV全表一致；`node tools/config_tables.cjs --apply Skills2`試跑兩個字面值、語意變更0，不另生成CSV／JS。
+- 驗證指令：`node --test --test-reporter=tap tests/arcane-rod-vfx.test.cjs tests/meteor-tail-impact.test.cjs tests/meteor-tail-flow.test.cjs tests/meteor-entry-origin.test.cjs tests/vfx-core.test.cjs tests/vfx-core-hierarchy.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/vfx-duration.test.cjs tests/vfx-projectile-perspective.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-asset-export.test.cjs tests/vfx-preset-usage.test.cjs tests/skills2-vfx-schema.test.cjs tests/skills2-vfx-usage.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/elite-engine.test.cjs tests/elite-data.test.cjs tests/status-system.test.cjs tests/active-buffs-panel.test.cjs tests/battle-ui-rework.test.cjs tests/battle-fullscreen.test.cjs tests/fullscreen-toggle.test.cjs`共408項：406通過、1既有投影矩陣失敗、1Windows符號連結略過。相同投影測試換回原HEAD的Core／Runtime唯讀來源重跑為11項10過1失敗，失敗名稱相同，新增失敗0，沒有修改斷言。`npm.cmd run build`562檔通過；`git diff HEAD --check`通過。
+- 素材：遊戲出貨索引191份檔案逐份SHA256及大小吻合；原合併素材已由incoming紀錄的ec3b1d5等素材庫Commit保存，本輪素材庫5706997乾淨，沒有新增素材或素材庫Commit。另`node tools/vfx/export-assets.cjs --check`對目前共享素材庫回報祕法棒1031／1137 bytes不一致，原因是素材庫與ai/codex已含後續祕法棒改造，而本pending merge固定在72559e95；未改舊索引或降版共享素材來掩蓋，後續正常同步Codex其餘三筆即可整合對應出貨版本。
+- 本輪直接修改Skills2.xlsx及本段紀錄；其餘既有暫存合併結果保留。唯讀檢查規範／Workflow／Agent、配置工具、CSV／生成JS、兩側差異、相關回歸與素材索引；預檢來源即本次使用者授權的develop／ai/codex整合。原index／工作簿／任務紀錄、逐格決策、正常重開驗證、TAP與原`.merge-xlsx-inspect`診斷資料保存在Git metadata的`sync-xlsx-merge-20261021-Pa1Cj9`，未丟棄復原資料。
+- 交付：原pending merge衝突已解，可供Review；合併Commit為本紀錄所在`[Codex] merge: 整合技能表的獨立儲存格修改`。未推送／同步其他工作區，未合併其後三筆本機Codex提交。限制為上述既有失敗、略過及後續素材版本差異；沒有本次未完成衝突，下一步可再執行同步BAT整合後續已提交工作。未做玩家存檔長戰或新增瀏覽器驗收。

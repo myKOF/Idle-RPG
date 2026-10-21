@@ -464,6 +464,7 @@ var VFXRuntime = (function () {
     var counters = { played: 0, skipped: 0, missing: 0, dropped: 0, capped: 0, thinned: 0, throttled: 0, trailThinned: 0 };
 
     var presetDefinitions = Object.create(null);
+    var impactGroundParts = Object.create(null);
     function tuning(id, key) { return Core.playbackValue(presetDefinitions[id], key); }
 
     /* ---- 命中類特效的密度控制（見檔頭 DENSITY 那段）---- */
@@ -523,7 +524,10 @@ var VFXRuntime = (function () {
     function noteHit(presetId, targetId) {
       if (!targetId || !hitCountable(presetId)) return;
       var key = presetId + '|' + targetId;
-      var until = clock + (presetDurations[presetId] || 1);
+      var duration = impactGroundParts[presetId]
+        ? presetDurations[impactGroundParts[presetId].burst] || 0 : presetDurations[presetId] || 1;
+      if (!(duration > 0)) return;
+      var until = clock + duration;
       (hitLive[key] || (hitLive[key] = [])).push(until);
       hitLast[key] = clock;
       hitAll.push(until);
@@ -614,6 +618,17 @@ var VFXRuntime = (function () {
         known[p.id] = true;
         presetSizes[p.id] = p.sizing || null;
         presetDurations[p.id] = p.duration;
+        // 同一份落地Preset的坑痕走地板層，爆炸保留自己的時間軸與命中併發壽命。
+        var craterLayers = p.layers.filter(function(l) { return l.id.indexOf('impact-ground-') === 0; });
+        if (craterLayers.length && !/-impact-(?:ground|burst)$/.test(p.id)) {
+          var floor = JSON.parse(JSON.stringify(p)), burst = JSON.parse(JSON.stringify(p));
+          floor.id += '-impact-ground'; floor.layers = craterLayers;
+          burst.id += '-impact-burst'; burst.layers = burst.layers.filter(function(l) { return l.id.indexOf('impact-ground-') !== 0; });
+          floor.duration = Core.derivePresetDuration(floor);
+          if (burst.layers.length) burst.duration = Core.derivePresetDuration(burst);
+          impactGroundParts[p.id] = { ground: floor.id, burst: burst.layers.length ? burst.id : null };
+          registerPresets(burst.layers.length ? [floor, burst] : [floor]);
+        }
         // 每份 Preset 都保存自己的製作幾何；是否追蹤由播放事件決定。
         var front = p.layers.find(function(l) { return l.id === 'travelling-electric-front'; });
         trackedBeamWidths[p.id] = front ? 256 * num(front.scale && front.scale.x, 1) * num(front.scaleOverLife, 1) : num(p.sizing && p.sizing.authored && p.sizing.authored.width, NOMINAL_BEAM);
@@ -727,6 +742,12 @@ var VFXRuntime = (function () {
       return Object.assign({}, params, { projectionRotation: params.rotation, rotation: 0 });
     }
     function play(rt, presetId, params, mult) {
+      if (impactGroundParts[presetId]) {
+        var impact = impactGroundParts[presetId];
+        var bed = play(rtZone, impact.ground, params, mult);
+        var blast = impact.burst ? play(rt, impact.burst, params, mult) : null;
+        return bed || blast ? { parts: [bed, blast].filter(Boolean) } : null;
+      }
       if (presetId === 'field-water-prison-dome' && has(presetId + '-front')) {
         var floor = play(rtZone, presetId + '-back', rockDepthParams(params, -1), mult);
         var shell = play(rtBillboard, presetId + '-front', rockDepthParams(params, 1), mult);
@@ -758,10 +779,10 @@ var VFXRuntime = (function () {
       if (ref.parts) { ref.parts.forEach(stopRef); return; }
       ref.rt.stop(ref.handle);
     }
-    function finishRef(ref) {
+    function finishRef(ref, options) {
       if (!ref) return;
-      if (ref.parts) { ref.parts.forEach(finishRef); return; }
-      if (ref.rt.finish) ref.rt.finish(ref.handle); else ref.rt.stop(ref.handle);
+      if (ref.parts) { ref.parts.forEach(function(part) { finishRef(part, options); }); return; }
+      if (ref.rt.finish) ref.rt.finish(ref.handle, options); else ref.rt.stop(ref.handle);
     }
     /* setTransform 也要走同一條縮放，否則逐幀更新會把 play 時乘上的係數洗掉。 */
     function moveRef(ref, params, mult) {
@@ -1147,6 +1168,7 @@ var VFXRuntime = (function () {
         dur: travel > 0 ? travel : 0.001,
         mult: mult, enterAngle: enterAngle, facing: facing, arcHeight: arcHeight,
         dimensions: dimensions, knifeFlight: knifeFlight, knifeTail: /^knife(?:-|$)/.test(spec.variant || '') || presetId === 'proj-dragon-devour' || !!flightOrbit, control: knifeControl, lastTo: to,
+        settleTail: spec.fxKind === 'rain' && (spec.variant === 'meteor' || spec.variant === 'thunder-fall'),
         soulId: spec.area && spec.area.soulId, soulLife: spec.area && spec.area.soulLife,
         soulReturn: spec.area && spec.area.soulReturn, orbitAngle: spec.area && spec.area.orbitAngle, orbitR: spec.area && spec.area.orbitR
       });
@@ -2042,7 +2064,10 @@ var VFXRuntime = (function () {
         if (!alive || k >= 1 || (pr.soulId && pr.t>=pr.soulLife)) {
           /* 抵達時的航向留給連鎖的下一段接手（見 playProjectile 的 enterAngle）。 */
           if (k >= 1 && pr.targetId) arrivals[pr.targetId] = { angle: pr.facing, at: clock };
-          if (alive) (pr.knifeTail ? finishRef : stopRef)(pr.ref);
+          if (alive) {
+            if (k >= 1 && pr.settleTail) finishRef(pr.ref, { settleToOrigin: true });
+            else (pr.knifeTail ? finishRef : stopRef)(pr.ref);
+          }
           projectiles.splice(i, 1);
         }
       }

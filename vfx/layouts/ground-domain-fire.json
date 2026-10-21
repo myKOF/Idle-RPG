@@ -6,9 +6,7 @@
       "id": "ground-domain-fire",
       "name": "ground-domain-fire",
       "layerIds": [
-        "fill",
         "edge",
-        "motes",
         "rim-flame-01",
         "rim-flame-02",
         "rim-flame-03",

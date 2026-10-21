@@ -5,59 +5,13 @@
   "loop": true,
   "layers": [
     {
-      "id": "fill",
-      "type": "sprite",
-      "assetId": "light-masks-1.0/default/circle_b.png",
-      "zIndex": 0,
-      "scale": {
-        "x": 0.3906,
-        "y": 0.3906
-      },
-      "alpha": 0.045,
-      "tint": "#ffd447",
-      "blendMode": "add",
-      "duration": 1.85,
-      "alphaOverLife": [
-        [
-          0,
-          0.035
-        ],
-        [
-          0.5,
-          0.055
-        ],
-        [
-          1,
-          0.035
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.96
-        ],
-        [
-          0.5,
-          1.04
-        ],
-        [
-          1,
-          0.96
-        ]
-      ],
-      "projection": {
-        "x": 1,
-        "y": 0.5
-      }
-    },
-    {
       "id": "edge",
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/circle_02.png",
       "zIndex": 1,
       "scale": {
-        "x": 0.3906,
-        "y": 0.3906
+        "x": 0.4441,
+        "y": 0.4441
       },
       "alpha": 0.58,
       "tint": "#ff7c16",
@@ -97,71 +51,6 @@
       }
     },
     {
-      "id": "motes",
-      "type": "particle",
-      "assetId": "particle-pack/png-black-background/circle_05.png",
-      "zIndex": 3,
-      "tint": "#ff6a2a",
-      "blendMode": "add",
-      "emission": {
-        "mode": "rate",
-        "rate": 14
-      },
-      "lifetime": [
-        0.7,
-        1.1
-      ],
-      "spawn": {
-        "radius": 98,
-        "shape": "circle"
-      },
-      "speed": [
-        20,
-        50
-      ],
-      "direction": -90,
-      "spread": 50,
-      "gravity": {
-        "x": 0,
-        "y": -50
-      },
-      "startScale": [
-        0.0078,
-        0.0156
-      ],
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.2,
-          0.9
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          1
-        ],
-        [
-          1,
-          0.4
-        ]
-      ],
-      "maxParticles": 16,
-      "projection": {
-        "x": 1,
-        "y": 0.5,
-        "upright": true
-      },
-      "worldSpace": false
-    },
-    {
       "id": "rim-flame-01",
       "type": "particle",
       "assetId": "particle-pack/png-black-background/flame_04.png",
@@ -180,7 +69,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "add",
+      "blendMode": "screen",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -188,12 +77,12 @@
       },
       "maxParticles": 6,
       "lifetime": [
-        0.34,
-        0.5
+        0.2,
+        0.4
       ],
       "spawn": {
-        "shape": "circle",
-        "radius": 3
+        "radius": 3,
+        "shape": "circle"
       },
       "speed": [
         24,
@@ -205,7 +94,6 @@
         "x": 0,
         "y": -35
       },
-      "worldSpace": false,
       "startScale": [
         0.06,
         0.09
@@ -218,11 +106,7 @@
         -0.2,
         0.2
       ],
-      "projection": {
-        "x": 1,
-        "y": 0.5,
-        "upright": true
-      },
+      "worldSpace": false,
       "alphaOverLife": [
         [
           0,
@@ -239,20 +123,6 @@
         [
           1,
           0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.45
-        ],
-        [
-          0.28,
-          1
-        ],
-        [
-          1,
-          0.42
         ]
       ],
       "tintOverLife": [
@@ -272,7 +142,26 @@
           1,
           "#d63b08"
         ]
-      ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "projection": {
+        "upright": true,
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "rim-flame-02",
@@ -293,7 +182,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "add",
+      "blendMode": "screen",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -301,12 +190,12 @@
       },
       "maxParticles": 6,
       "lifetime": [
-        0.34,
-        0.5
+        0.2,
+        0.4
       ],
       "spawn": {
-        "shape": "circle",
-        "radius": 3
+        "radius": 3,
+        "shape": "circle"
       },
       "speed": [
         24,
@@ -318,7 +207,6 @@
         "x": 0,
         "y": -35
       },
-      "worldSpace": false,
       "startScale": [
         0.06,
         0.09
@@ -331,11 +219,7 @@
         -0.2,
         0.2
       ],
-      "projection": {
-        "x": 1,
-        "y": 0.5,
-        "upright": true
-      },
+      "worldSpace": false,
       "alphaOverLife": [
         [
           0,
@@ -352,20 +236,6 @@
         [
           1,
           0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.45
-        ],
-        [
-          0.28,
-          1
-        ],
-        [
-          1,
-          0.42
         ]
       ],
       "tintOverLife": [
@@ -385,7 +255,26 @@
           1,
           "#d63b08"
         ]
-      ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "projection": {
+        "upright": true,
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "rim-flame-03",
@@ -406,7 +295,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "add",
+      "blendMode": "screen",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -414,12 +303,12 @@
       },
       "maxParticles": 6,
       "lifetime": [
-        0.34,
-        0.5
+        0.2,
+        0.4
       ],
       "spawn": {
-        "shape": "circle",
-        "radius": 3
+        "radius": 3,
+        "shape": "circle"
       },
       "speed": [
         24,
@@ -431,7 +320,6 @@
         "x": 0,
         "y": -35
       },
-      "worldSpace": false,
       "startScale": [
         0.06,
         0.09
@@ -444,11 +332,7 @@
         -0.2,
         0.2
       ],
-      "projection": {
-        "x": 1,
-        "y": 0.5,
-        "upright": true
-      },
+      "worldSpace": false,
       "alphaOverLife": [
         [
           0,
@@ -465,20 +349,6 @@
         [
           1,
           0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.45
-        ],
-        [
-          0.28,
-          1
-        ],
-        [
-          1,
-          0.42
         ]
       ],
       "tintOverLife": [
@@ -498,7 +368,26 @@
           1,
           "#d63b08"
         ]
-      ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "projection": {
+        "upright": true,
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "rim-flame-04",
@@ -519,7 +408,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "add",
+      "blendMode": "screen",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -527,12 +416,12 @@
       },
       "maxParticles": 6,
       "lifetime": [
-        0.34,
-        0.5
+        0.2,
+        0.4
       ],
       "spawn": {
-        "shape": "circle",
-        "radius": 3
+        "radius": 3,
+        "shape": "circle"
       },
       "speed": [
         24,
@@ -544,7 +433,6 @@
         "x": 0,
         "y": -35
       },
-      "worldSpace": false,
       "startScale": [
         0.06,
         0.09
@@ -557,11 +445,7 @@
         -0.2,
         0.2
       ],
-      "projection": {
-        "x": 1,
-        "y": 0.5,
-        "upright": true
-      },
+      "worldSpace": false,
       "alphaOverLife": [
         [
           0,
@@ -578,20 +462,6 @@
         [
           1,
           0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.45
-        ],
-        [
-          0.28,
-          1
-        ],
-        [
-          1,
-          0.42
         ]
       ],
       "tintOverLife": [
@@ -611,7 +481,26 @@
           1,
           "#d63b08"
         ]
-      ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "projection": {
+        "upright": true,
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "rim-flame-05",
@@ -632,7 +521,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "add",
+      "blendMode": "screen",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -640,12 +529,12 @@
       },
       "maxParticles": 6,
       "lifetime": [
-        0.34,
-        0.5
+        0.2,
+        0.4
       ],
       "spawn": {
-        "shape": "circle",
-        "radius": 3
+        "radius": 3,
+        "shape": "circle"
       },
       "speed": [
         24,
@@ -657,7 +546,6 @@
         "x": 0,
         "y": -35
       },
-      "worldSpace": false,
       "startScale": [
         0.06,
         0.09
@@ -670,11 +558,7 @@
         -0.2,
         0.2
       ],
-      "projection": {
-        "x": 1,
-        "y": 0.5,
-        "upright": true
-      },
+      "worldSpace": false,
       "alphaOverLife": [
         [
           0,
@@ -691,20 +575,6 @@
         [
           1,
           0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.45
-        ],
-        [
-          0.28,
-          1
-        ],
-        [
-          1,
-          0.42
         ]
       ],
       "tintOverLife": [
@@ -724,7 +594,26 @@
           1,
           "#d63b08"
         ]
-      ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "projection": {
+        "upright": true,
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "rim-flame-06",
@@ -745,7 +634,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "add",
+      "blendMode": "screen",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -753,12 +642,12 @@
       },
       "maxParticles": 6,
       "lifetime": [
-        0.34,
-        0.5
+        0.2,
+        0.4
       ],
       "spawn": {
-        "shape": "circle",
-        "radius": 3
+        "radius": 3,
+        "shape": "circle"
       },
       "speed": [
         24,
@@ -770,7 +659,6 @@
         "x": 0,
         "y": -35
       },
-      "worldSpace": false,
       "startScale": [
         0.06,
         0.09
@@ -783,11 +671,7 @@
         -0.2,
         0.2
       ],
-      "projection": {
-        "x": 1,
-        "y": 0.5,
-        "upright": true
-      },
+      "worldSpace": false,
       "alphaOverLife": [
         [
           0,
@@ -804,20 +688,6 @@
         [
           1,
           0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.45
-        ],
-        [
-          0.28,
-          1
-        ],
-        [
-          1,
-          0.42
         ]
       ],
       "tintOverLife": [
@@ -837,7 +707,26 @@
           1,
           "#d63b08"
         ]
-      ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "projection": {
+        "upright": true,
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "rim-flame-07",
@@ -858,7 +747,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "add",
+      "blendMode": "screen",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -866,12 +755,12 @@
       },
       "maxParticles": 6,
       "lifetime": [
-        0.34,
-        0.5
+        0.2,
+        0.4
       ],
       "spawn": {
-        "shape": "circle",
-        "radius": 3
+        "radius": 3,
+        "shape": "circle"
       },
       "speed": [
         24,
@@ -883,7 +772,6 @@
         "x": 0,
         "y": -35
       },
-      "worldSpace": false,
       "startScale": [
         0.06,
         0.09
@@ -896,11 +784,7 @@
         -0.2,
         0.2
       ],
-      "projection": {
-        "x": 1,
-        "y": 0.5,
-        "upright": true
-      },
+      "worldSpace": false,
       "alphaOverLife": [
         [
           0,
@@ -917,20 +801,6 @@
         [
           1,
           0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.45
-        ],
-        [
-          0.28,
-          1
-        ],
-        [
-          1,
-          0.42
         ]
       ],
       "tintOverLife": [
@@ -950,7 +820,26 @@
           1,
           "#d63b08"
         ]
-      ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "projection": {
+        "upright": true,
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "rim-flame-08",
@@ -971,7 +860,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "add",
+      "blendMode": "screen",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -979,12 +868,12 @@
       },
       "maxParticles": 6,
       "lifetime": [
-        0.34,
-        0.5
+        0.2,
+        0.4
       ],
       "spawn": {
-        "shape": "circle",
-        "radius": 3
+        "radius": 3,
+        "shape": "circle"
       },
       "speed": [
         24,
@@ -996,7 +885,6 @@
         "x": 0,
         "y": -35
       },
-      "worldSpace": false,
       "startScale": [
         0.06,
         0.09
@@ -1009,11 +897,7 @@
         -0.2,
         0.2
       ],
-      "projection": {
-        "x": 1,
-        "y": 0.5,
-        "upright": true
-      },
+      "worldSpace": false,
       "alphaOverLife": [
         [
           0,
@@ -1030,20 +914,6 @@
         [
           1,
           0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.45
-        ],
-        [
-          0.28,
-          1
-        ],
-        [
-          1,
-          0.42
         ]
       ],
       "tintOverLife": [
@@ -1063,7 +933,26 @@
           1,
           "#d63b08"
         ]
-      ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "projection": {
+        "upright": true,
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "rim-flame-09",
@@ -1084,7 +973,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "add",
+      "blendMode": "screen",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -1092,12 +981,12 @@
       },
       "maxParticles": 6,
       "lifetime": [
-        0.34,
-        0.5
+        0.2,
+        0.4
       ],
       "spawn": {
-        "shape": "circle",
-        "radius": 3
+        "radius": 3,
+        "shape": "circle"
       },
       "speed": [
         24,
@@ -1109,7 +998,6 @@
         "x": 0,
         "y": -35
       },
-      "worldSpace": false,
       "startScale": [
         0.06,
         0.09
@@ -1122,11 +1010,7 @@
         -0.2,
         0.2
       ],
-      "projection": {
-        "x": 1,
-        "y": 0.5,
-        "upright": true
-      },
+      "worldSpace": false,
       "alphaOverLife": [
         [
           0,
@@ -1143,20 +1027,6 @@
         [
           1,
           0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.45
-        ],
-        [
-          0.28,
-          1
-        ],
-        [
-          1,
-          0.42
         ]
       ],
       "tintOverLife": [
@@ -1176,7 +1046,26 @@
           1,
           "#d63b08"
         ]
-      ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "projection": {
+        "upright": true,
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "rim-flame-10",
@@ -1197,7 +1086,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "add",
+      "blendMode": "screen",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -1205,12 +1094,12 @@
       },
       "maxParticles": 6,
       "lifetime": [
-        0.34,
-        0.5
+        0.2,
+        0.4
       ],
       "spawn": {
-        "shape": "circle",
-        "radius": 3
+        "radius": 3,
+        "shape": "circle"
       },
       "speed": [
         24,
@@ -1222,7 +1111,6 @@
         "x": 0,
         "y": -35
       },
-      "worldSpace": false,
       "startScale": [
         0.06,
         0.09
@@ -1235,11 +1123,7 @@
         -0.2,
         0.2
       ],
-      "projection": {
-        "x": 1,
-        "y": 0.5,
-        "upright": true
-      },
+      "worldSpace": false,
       "alphaOverLife": [
         [
           0,
@@ -1256,20 +1140,6 @@
         [
           1,
           0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.45
-        ],
-        [
-          0.28,
-          1
-        ],
-        [
-          1,
-          0.42
         ]
       ],
       "tintOverLife": [
@@ -1289,7 +1159,26 @@
           1,
           "#d63b08"
         ]
-      ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "projection": {
+        "upright": true,
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "rim-flame-11",
@@ -1310,7 +1199,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "add",
+      "blendMode": "screen",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -1318,12 +1207,12 @@
       },
       "maxParticles": 6,
       "lifetime": [
-        0.34,
-        0.5
+        0.2,
+        0.4
       ],
       "spawn": {
-        "shape": "circle",
-        "radius": 3
+        "radius": 3,
+        "shape": "circle"
       },
       "speed": [
         24,
@@ -1335,7 +1224,6 @@
         "x": 0,
         "y": -35
       },
-      "worldSpace": false,
       "startScale": [
         0.06,
         0.09
@@ -1348,11 +1236,7 @@
         -0.2,
         0.2
       ],
-      "projection": {
-        "x": 1,
-        "y": 0.5,
-        "upright": true
-      },
+      "worldSpace": false,
       "alphaOverLife": [
         [
           0,
@@ -1369,20 +1253,6 @@
         [
           1,
           0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.45
-        ],
-        [
-          0.28,
-          1
-        ],
-        [
-          1,
-          0.42
         ]
       ],
       "tintOverLife": [
@@ -1402,7 +1272,26 @@
           1,
           "#d63b08"
         ]
-      ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "projection": {
+        "upright": true,
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "rim-flame-12",
@@ -1423,7 +1312,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "add",
+      "blendMode": "screen",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -1431,12 +1320,12 @@
       },
       "maxParticles": 6,
       "lifetime": [
-        0.34,
-        0.5
+        0.2,
+        0.4
       ],
       "spawn": {
-        "shape": "circle",
-        "radius": 3
+        "radius": 3,
+        "shape": "circle"
       },
       "speed": [
         24,
@@ -1448,7 +1337,6 @@
         "x": 0,
         "y": -35
       },
-      "worldSpace": false,
       "startScale": [
         0.06,
         0.09
@@ -1461,11 +1349,7 @@
         -0.2,
         0.2
       ],
-      "projection": {
-        "x": 1,
-        "y": 0.5,
-        "upright": true
-      },
+      "worldSpace": false,
       "alphaOverLife": [
         [
           0,
@@ -1482,20 +1366,6 @@
         [
           1,
           0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.45
-        ],
-        [
-          0.28,
-          1
-        ],
-        [
-          1,
-          0.42
         ]
       ],
       "tintOverLife": [
@@ -1515,7 +1385,26 @@
           1,
           "#d63b08"
         ]
-      ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "projection": {
+        "upright": true,
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "rim-flame-13",
@@ -1536,7 +1425,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "add",
+      "blendMode": "screen",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -1544,12 +1433,12 @@
       },
       "maxParticles": 6,
       "lifetime": [
-        0.34,
-        0.5
+        0.2,
+        0.4
       ],
       "spawn": {
-        "shape": "circle",
-        "radius": 3
+        "radius": 3,
+        "shape": "circle"
       },
       "speed": [
         24,
@@ -1561,7 +1450,6 @@
         "x": 0,
         "y": -35
       },
-      "worldSpace": false,
       "startScale": [
         0.06,
         0.09
@@ -1574,11 +1462,7 @@
         -0.2,
         0.2
       ],
-      "projection": {
-        "x": 1,
-        "y": 0.5,
-        "upright": true
-      },
+      "worldSpace": false,
       "alphaOverLife": [
         [
           0,
@@ -1595,20 +1479,6 @@
         [
           1,
           0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.45
-        ],
-        [
-          0.28,
-          1
-        ],
-        [
-          1,
-          0.42
         ]
       ],
       "tintOverLife": [
@@ -1628,7 +1498,26 @@
           1,
           "#d63b08"
         ]
-      ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "projection": {
+        "upright": true,
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "rim-flame-14",
@@ -1649,7 +1538,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "add",
+      "blendMode": "screen",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -1657,12 +1546,12 @@
       },
       "maxParticles": 6,
       "lifetime": [
-        0.34,
-        0.5
+        0.2,
+        0.4
       ],
       "spawn": {
-        "shape": "circle",
-        "radius": 3
+        "radius": 3,
+        "shape": "circle"
       },
       "speed": [
         24,
@@ -1674,7 +1563,6 @@
         "x": 0,
         "y": -35
       },
-      "worldSpace": false,
       "startScale": [
         0.06,
         0.09
@@ -1687,11 +1575,7 @@
         -0.2,
         0.2
       ],
-      "projection": {
-        "x": 1,
-        "y": 0.5,
-        "upright": true
-      },
+      "worldSpace": false,
       "alphaOverLife": [
         [
           0,
@@ -1708,20 +1592,6 @@
         [
           1,
           0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.45
-        ],
-        [
-          0.28,
-          1
-        ],
-        [
-          1,
-          0.42
         ]
       ],
       "tintOverLife": [
@@ -1741,7 +1611,26 @@
           1,
           "#d63b08"
         ]
-      ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "projection": {
+        "upright": true,
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "rim-flame-15",
@@ -1762,7 +1651,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "add",
+      "blendMode": "screen",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -1770,12 +1659,12 @@
       },
       "maxParticles": 6,
       "lifetime": [
-        0.34,
-        0.5
+        0.2,
+        0.4
       ],
       "spawn": {
-        "shape": "circle",
-        "radius": 3
+        "radius": 3,
+        "shape": "circle"
       },
       "speed": [
         24,
@@ -1787,7 +1676,6 @@
         "x": 0,
         "y": -35
       },
-      "worldSpace": false,
       "startScale": [
         0.06,
         0.09
@@ -1800,11 +1688,7 @@
         -0.2,
         0.2
       ],
-      "projection": {
-        "x": 1,
-        "y": 0.5,
-        "upright": true
-      },
+      "worldSpace": false,
       "alphaOverLife": [
         [
           0,
@@ -1821,20 +1705,6 @@
         [
           1,
           0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.45
-        ],
-        [
-          0.28,
-          1
-        ],
-        [
-          1,
-          0.42
         ]
       ],
       "tintOverLife": [
@@ -1854,7 +1724,26 @@
           1,
           "#d63b08"
         ]
-      ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "projection": {
+        "upright": true,
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "rim-flame-16",
@@ -1875,7 +1764,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "add",
+      "blendMode": "screen",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -1883,12 +1772,12 @@
       },
       "maxParticles": 6,
       "lifetime": [
-        0.34,
-        0.5
+        0.2,
+        0.4
       ],
       "spawn": {
-        "shape": "circle",
-        "radius": 3
+        "radius": 3,
+        "shape": "circle"
       },
       "speed": [
         24,
@@ -1900,7 +1789,6 @@
         "x": 0,
         "y": -35
       },
-      "worldSpace": false,
       "startScale": [
         0.06,
         0.09
@@ -1913,11 +1801,7 @@
         -0.2,
         0.2
       ],
-      "projection": {
-        "x": 1,
-        "y": 0.5,
-        "upright": true
-      },
+      "worldSpace": false,
       "alphaOverLife": [
         [
           0,
@@ -1934,20 +1818,6 @@
         [
           1,
           0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.45
-        ],
-        [
-          0.28,
-          1
-        ],
-        [
-          1,
-          0.42
         ]
       ],
       "tintOverLife": [
@@ -1967,7 +1837,26 @@
           1,
           "#d63b08"
         ]
-      ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "projection": {
+        "upright": true,
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "rim-flame-17",
@@ -1988,7 +1877,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "add",
+      "blendMode": "screen",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -1996,12 +1885,12 @@
       },
       "maxParticles": 6,
       "lifetime": [
-        0.34,
-        0.5
+        0.2,
+        0.4
       ],
       "spawn": {
-        "shape": "circle",
-        "radius": 3
+        "radius": 3,
+        "shape": "circle"
       },
       "speed": [
         24,
@@ -2013,7 +1902,6 @@
         "x": 0,
         "y": -35
       },
-      "worldSpace": false,
       "startScale": [
         0.06,
         0.09
@@ -2026,11 +1914,7 @@
         -0.2,
         0.2
       ],
-      "projection": {
-        "x": 1,
-        "y": 0.5,
-        "upright": true
-      },
+      "worldSpace": false,
       "alphaOverLife": [
         [
           0,
@@ -2047,20 +1931,6 @@
         [
           1,
           0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.45
-        ],
-        [
-          0.28,
-          1
-        ],
-        [
-          1,
-          0.42
         ]
       ],
       "tintOverLife": [
@@ -2080,7 +1950,26 @@
           1,
           "#d63b08"
         ]
-      ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "projection": {
+        "upright": true,
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "rim-flame-18",
@@ -2101,7 +1990,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "add",
+      "blendMode": "screen",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -2109,12 +1998,12 @@
       },
       "maxParticles": 6,
       "lifetime": [
-        0.34,
-        0.5
+        0.2,
+        0.4
       ],
       "spawn": {
-        "shape": "circle",
-        "radius": 3
+        "radius": 3,
+        "shape": "circle"
       },
       "speed": [
         24,
@@ -2126,7 +2015,6 @@
         "x": 0,
         "y": -35
       },
-      "worldSpace": false,
       "startScale": [
         0.06,
         0.09
@@ -2139,11 +2027,7 @@
         -0.2,
         0.2
       ],
-      "projection": {
-        "x": 1,
-        "y": 0.5,
-        "upright": true
-      },
+      "worldSpace": false,
       "alphaOverLife": [
         [
           0,
@@ -2160,20 +2044,6 @@
         [
           1,
           0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.45
-        ],
-        [
-          0.28,
-          1
-        ],
-        [
-          1,
-          0.42
         ]
       ],
       "tintOverLife": [
@@ -2193,7 +2063,26 @@
           1,
           "#d63b08"
         ]
-      ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "projection": {
+        "upright": true,
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "rim-flame-19",
@@ -2214,7 +2103,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "add",
+      "blendMode": "screen",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -2222,12 +2111,12 @@
       },
       "maxParticles": 6,
       "lifetime": [
-        0.34,
-        0.5
+        0.2,
+        0.4
       ],
       "spawn": {
-        "shape": "circle",
-        "radius": 3
+        "radius": 3,
+        "shape": "circle"
       },
       "speed": [
         24,
@@ -2239,7 +2128,6 @@
         "x": 0,
         "y": -35
       },
-      "worldSpace": false,
       "startScale": [
         0.06,
         0.09
@@ -2252,11 +2140,7 @@
         -0.2,
         0.2
       ],
-      "projection": {
-        "x": 1,
-        "y": 0.5,
-        "upright": true
-      },
+      "worldSpace": false,
       "alphaOverLife": [
         [
           0,
@@ -2273,20 +2157,6 @@
         [
           1,
           0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.45
-        ],
-        [
-          0.28,
-          1
-        ],
-        [
-          1,
-          0.42
         ]
       ],
       "tintOverLife": [
@@ -2306,7 +2176,26 @@
           1,
           "#d63b08"
         ]
-      ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "projection": {
+        "upright": true,
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "rim-flame-20",
@@ -2327,7 +2216,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "add",
+      "blendMode": "screen",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -2335,12 +2224,12 @@
       },
       "maxParticles": 6,
       "lifetime": [
-        0.34,
-        0.5
+        0.2,
+        0.4
       ],
       "spawn": {
-        "shape": "circle",
-        "radius": 3
+        "radius": 3,
+        "shape": "circle"
       },
       "speed": [
         24,
@@ -2352,7 +2241,6 @@
         "x": 0,
         "y": -35
       },
-      "worldSpace": false,
       "startScale": [
         0.06,
         0.09
@@ -2365,11 +2253,7 @@
         -0.2,
         0.2
       ],
-      "projection": {
-        "x": 1,
-        "y": 0.5,
-        "upright": true
-      },
+      "worldSpace": false,
       "alphaOverLife": [
         [
           0,
@@ -2386,20 +2270,6 @@
         [
           1,
           0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.45
-        ],
-        [
-          0.28,
-          1
-        ],
-        [
-          1,
-          0.42
         ]
       ],
       "tintOverLife": [
@@ -2419,7 +2289,26 @@
           1,
           "#d63b08"
         ]
-      ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "projection": {
+        "upright": true,
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "rim-flame-21",
@@ -2440,7 +2329,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "add",
+      "blendMode": "screen",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -2448,12 +2337,12 @@
       },
       "maxParticles": 6,
       "lifetime": [
-        0.34,
-        0.5
+        0.2,
+        0.4
       ],
       "spawn": {
-        "shape": "circle",
-        "radius": 3
+        "radius": 3,
+        "shape": "circle"
       },
       "speed": [
         24,
@@ -2465,7 +2354,6 @@
         "x": 0,
         "y": -35
       },
-      "worldSpace": false,
       "startScale": [
         0.06,
         0.09
@@ -2478,11 +2366,7 @@
         -0.2,
         0.2
       ],
-      "projection": {
-        "x": 1,
-        "y": 0.5,
-        "upright": true
-      },
+      "worldSpace": false,
       "alphaOverLife": [
         [
           0,
@@ -2499,20 +2383,6 @@
         [
           1,
           0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.45
-        ],
-        [
-          0.28,
-          1
-        ],
-        [
-          1,
-          0.42
         ]
       ],
       "tintOverLife": [
@@ -2532,7 +2402,26 @@
           1,
           "#d63b08"
         ]
-      ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "projection": {
+        "upright": true,
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "rim-flame-22",
@@ -2553,7 +2442,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "add",
+      "blendMode": "screen",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -2561,12 +2450,12 @@
       },
       "maxParticles": 6,
       "lifetime": [
-        0.34,
-        0.5
+        0.2,
+        0.4
       ],
       "spawn": {
-        "shape": "circle",
-        "radius": 3
+        "radius": 3,
+        "shape": "circle"
       },
       "speed": [
         24,
@@ -2578,7 +2467,6 @@
         "x": 0,
         "y": -35
       },
-      "worldSpace": false,
       "startScale": [
         0.06,
         0.09
@@ -2591,11 +2479,7 @@
         -0.2,
         0.2
       ],
-      "projection": {
-        "x": 1,
-        "y": 0.5,
-        "upright": true
-      },
+      "worldSpace": false,
       "alphaOverLife": [
         [
           0,
@@ -2612,20 +2496,6 @@
         [
           1,
           0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.45
-        ],
-        [
-          0.28,
-          1
-        ],
-        [
-          1,
-          0.42
         ]
       ],
       "tintOverLife": [
@@ -2645,7 +2515,26 @@
           1,
           "#d63b08"
         ]
-      ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "projection": {
+        "upright": true,
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "rim-flame-23",
@@ -2666,7 +2555,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "add",
+      "blendMode": "screen",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -2674,12 +2563,12 @@
       },
       "maxParticles": 6,
       "lifetime": [
-        0.34,
-        0.5
+        0.2,
+        0.4
       ],
       "spawn": {
-        "shape": "circle",
-        "radius": 3
+        "radius": 3,
+        "shape": "circle"
       },
       "speed": [
         24,
@@ -2691,7 +2580,6 @@
         "x": 0,
         "y": -35
       },
-      "worldSpace": false,
       "startScale": [
         0.06,
         0.09
@@ -2704,11 +2592,7 @@
         -0.2,
         0.2
       ],
-      "projection": {
-        "x": 1,
-        "y": 0.5,
-        "upright": true
-      },
+      "worldSpace": false,
       "alphaOverLife": [
         [
           0,
@@ -2725,20 +2609,6 @@
         [
           1,
           0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.45
-        ],
-        [
-          0.28,
-          1
-        ],
-        [
-          1,
-          0.42
         ]
       ],
       "tintOverLife": [
@@ -2758,7 +2628,26 @@
           1,
           "#d63b08"
         ]
-      ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "projection": {
+        "upright": true,
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "rim-flame-24",
@@ -2779,7 +2668,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "add",
+      "blendMode": "screen",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -2787,12 +2676,12 @@
       },
       "maxParticles": 6,
       "lifetime": [
-        0.34,
-        0.5
+        0.2,
+        0.4
       ],
       "spawn": {
-        "shape": "circle",
-        "radius": 3
+        "radius": 3,
+        "shape": "circle"
       },
       "speed": [
         24,
@@ -2804,7 +2693,6 @@
         "x": 0,
         "y": -35
       },
-      "worldSpace": false,
       "startScale": [
         0.06,
         0.09
@@ -2817,11 +2705,7 @@
         -0.2,
         0.2
       ],
-      "projection": {
-        "x": 1,
-        "y": 0.5,
-        "upright": true
-      },
+      "worldSpace": false,
       "alphaOverLife": [
         [
           0,
@@ -2838,20 +2722,6 @@
         [
           1,
           0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.45
-        ],
-        [
-          0.28,
-          1
-        ],
-        [
-          1,
-          0.42
         ]
       ],
       "tintOverLife": [
@@ -2871,7 +2741,26 @@
           1,
           "#d63b08"
         ]
-      ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          0.42
+        ]
+      ],
+      "projection": {
+        "upright": true,
+        "x": 1,
+        "y": 0.5
+      }
     }
   ],
   "sizing": {

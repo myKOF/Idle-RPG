@@ -6,6 +6,7 @@
       "id": "burst-meteor-inferno",
       "name": "burst-meteor-inferno",
       "layerIds": [
+        "impact-ground-crater",
         "ground-heat-wave",
         "dark-smoke-puffs",
         "orange-fire-lobes",

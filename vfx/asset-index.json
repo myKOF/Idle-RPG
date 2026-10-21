@@ -6,7 +6,7 @@
     "name": "asset-scanner",
     "version": "1.0.0"
   },
-  "assetCount": 2463,
+  "assetCount": 2465,
   "assets": [
     {
       "assetId": "antigravity-authored/ice/ice-arrow-spike.png",
@@ -743,6 +743,25 @@
       }
     },
     {
+      "assetId": "codex-authored/arcane-rod/cylinder.svg",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/arcane-rod/cylinder.svg",
+      "format": "svg",
+      "fileSize": 1031,
+      "contentHash": "sha256:de60e09f75b2b79728a471d21ac987ed440d09e2a18015ce12617f3c35bd96ac",
+      "facts": {
+        "dimensions": {
+          "width": 144,
+          "height": 1024
+        },
+        "dimensionsSource": "attributes",
+        "colorModel": null,
+        "bitDepth": null,
+        "hasAlphaChannel": null,
+        "pixelsAnalyzed": false
+      }
+    },
+    {
       "assetId": "codex-authored/cleave/sharp-cyclone.png",
       "package": "codex-authored",
       "relativePath": "codex-authored/cleave/sharp-cyclone.png",
@@ -1165,6 +1184,25 @@
           "v": 1
         },
         "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "codex-authored/meteor/crater-lava-soft.svg",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/meteor/crater-lava-soft.svg",
+      "format": "svg",
+      "fileSize": 3492858,
+      "contentHash": "sha256:5c5c62c187ce3d083c119e05010e705271c7360ae1e1ff1d3624ccdad1f2e797",
+      "facts": {
+        "dimensions": {
+          "width": 512,
+          "height": 512
+        },
+        "dimensionsSource": "attributes",
+        "colorModel": null,
+        "bitDepth": null,
+        "hasAlphaChannel": null,
+        "pixelsAnalyzed": false
       }
     },
     {

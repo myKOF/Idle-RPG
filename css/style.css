@@ -10993,7 +10993,7 @@ body.battle-canvas-mode #combat-area .battle-scene-wrapper > #btn-toggle-damage 
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  flex-wrap: wrap;
+  flex-wrap: wrap-reverse;
   gap: 5px;
   pointer-events: auto;
   user-select: none;

@@ -265,219 +265,6 @@
       }
     },
     {
-      "id": "ground-ice-mist-0",
-      "type": "particle",
-      "assetId": "particle-pack/png-transparent/smoke_04.png",
-      "zIndex": 1,
-      "position": {
-        "x": 160.3714,
-        "y": -2.3042
-      },
-      "alpha": 0.26,
-      "tint": "#c2f2dd",
-      "blendMode": "normal",
-      "emission": {
-        "mode": "rate",
-        "rate": 5
-      },
-      "lifetime": [
-        0.7,
-        1.1
-      ],
-      "spawn": {
-        "height": 51.2588,
-        "shape": "box",
-        "width": 245.6157
-      },
-      "speed": [
-        38.4442,
-        64.0736
-      ],
-      "direction": 180,
-      "spread": 8,
-      "drag": 1,
-      "startScale": [
-        0.1,
-        0.1585
-      ],
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.25,
-          0.7
-        ],
-        [
-          0.7,
-          0.45
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.921543
-        ],
-        [
-          1,
-          2.445908
-        ]
-      ],
-      "projection": {
-        "rotation": 0.7853981633974483,
-        "upright": true,
-        "x": 1,
-        "y": 0.5
-      }
-    },
-    {
-      "id": "ground-ice-mist-1",
-      "type": "particle",
-      "assetId": "particle-pack/png-transparent/smoke_04.png",
-      "zIndex": 1,
-      "position": {
-        "x": 51.5497,
-        "y": 71.8514
-      },
-      "alpha": 0.26,
-      "tint": "#c2f2dd",
-      "blendMode": "normal",
-      "emission": {
-        "mode": "rate",
-        "rate": 5
-      },
-      "lifetime": [
-        0.7,
-        1.1
-      ],
-      "spawn": {
-        "height": 51.2588,
-        "shape": "box",
-        "width": 245.6157
-      },
-      "speed": [
-        38.4442,
-        64.0736
-      ],
-      "direction": 180,
-      "spread": 8,
-      "drag": 1,
-      "startScale": [
-        0.1,
-        0.1585
-      ],
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.25,
-          0.7
-        ],
-        [
-          0.7,
-          0.45
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0.0031,
-          0.974202
-        ],
-        [
-          1,
-          1.89582
-        ]
-      ],
-      "projection": {
-        "rotation": 0.7853981633974483,
-        "upright": true,
-        "x": 1,
-        "y": 0.5
-      }
-    },
-    {
-      "id": "ground-ice-mist-2",
-      "type": "particle",
-      "assetId": "particle-pack/png-transparent/smoke_04.png",
-      "zIndex": 1,
-      "position": {
-        "x": -57.2721,
-        "y": 146.0068
-      },
-      "alpha": 0.26,
-      "tint": "#c2f2dd",
-      "blendMode": "normal",
-      "emission": {
-        "mode": "rate",
-        "rate": 5
-      },
-      "lifetime": [
-        0.7,
-        1.1
-      ],
-      "spawn": {
-        "height": 51.2588,
-        "shape": "box",
-        "width": 245.6157
-      },
-      "speed": [
-        38.4442,
-        64.0736
-      ],
-      "direction": 180,
-      "spread": 8,
-      "drag": 1,
-      "startScale": [
-        0.1,
-        0.1585
-      ],
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.25,
-          0.7
-        ],
-        [
-          0.7,
-          0.45
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0.0031,
-          0.991755
-        ],
-        [
-          1,
-          2.386045
-        ]
-      ],
-      "projection": {
-        "rotation": 0.7853981633974483,
-        "upright": true,
-        "x": 1,
-        "y": 0.5
-      }
-    },
-    {
       "id": "driven-snow-0",
       "type": "particle",
       "assetId": "particle-pack/png-black-background/circle_05.png",
@@ -494,8 +281,8 @@
         "rate": 55
       },
       "lifetime": [
-        0.5,
-        0.85
+        0.2,
+        0.45
       ],
       "spawn": {
         "height": 192.2211,
@@ -542,8 +329,8 @@
       "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": 11,
       "position": {
-        "x": -27.901,
-        "y": -145.9263
+        "x": -69.8097,
+        "y": -80.33
       },
       "alpha": 0.8,
       "tint": "#eefef7",
@@ -553,8 +340,8 @@
         "rate": 55
       },
       "lifetime": [
-        0.5,
-        0.85
+        0.2,
+        0.45
       ],
       "spawn": {
         "height": 192.2211,
@@ -601,8 +388,8 @@
       "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": 12,
       "position": {
-        "x": 196.097,
-        "y": -128.0591
+        "x": 99.5247,
+        "y": -49.708
       },
       "alpha": 0.8,
       "tint": "#eefef7",
@@ -612,8 +399,8 @@
         "rate": 55
       },
       "lifetime": [
-        0.5,
-        0.85
+        0.2,
+        0.45
       ],
       "spawn": {
         "height": 192.2211,
@@ -676,8 +463,8 @@
         "rate": 18
       },
       "lifetime": [
-        0.6,
-        1
+        0.2,
+        0.5
       ],
       "spawn": {
         "height": 170.8631,
