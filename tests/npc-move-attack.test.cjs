@@ -47,7 +47,7 @@ function loadCombat() {
 test('NPC.csv 的移動速度／攻擊速度／攻擊距離與 NPC_CONFIG_TABLE 逐列一致', () => {
   const c = loadCombat();
   const rows = readNpcCsv();
-  assert.ok(rows.length >= 84);
+  assert.ok(rows.length === 120);
   for (const r of rows) {
     const npc = c.NPC_CONFIG_TABLE[r.id];
     assert.ok(npc, r.id + ' 不在 NPC_CONFIG_TABLE');
@@ -61,7 +61,7 @@ test('NPC.csv 的移動速度／攻擊速度／攻擊距離與 NPC_CONFIG_TABLE 
 test('套用流程能無損回寫三欄（dry-run 語意變更 0）', () => {
   const result = spawnSync(process.execPath, ['tools/config_tables.cjs', '--apply', 'NPC'], { cwd: root, encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr || result.stdout);
-  assert.match(result.stdout, /重建字面值 8 個（語意變更 0）/);
+  assert.match(result.stdout, /重建字面值 11 個（語意變更 0）/);
 });
 
 test('npcCombatProfile：表格值換成座標單位（1 米 = 10 單位），攻速為絕對值', () => {

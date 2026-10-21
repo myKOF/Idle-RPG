@@ -119,10 +119,10 @@ test('驗證 5: 舊存檔（已推過 100 關）載入後，50/100 關直接出�
     zoneProgress: { desert: { current: 105, best: 105 } }
   };
 
-  // 載入舊存檔 (舊存檔中無 cleared 欄位，由 migrateSave 補全為 best - 1 = 104)
+  // 載入舊存檔 (舊存檔中無 cleared 欄位，由 migrateSave 補全為 best - 1，再夾至新上限)
   c.G = c.migrateSave(legacySaveData);
 
-  assert.equal(c.zoneClearedStage('desert'), 104);
+  assert.equal(c.zoneClearedStage('desert'), 100);
 
   // 檢查 50 關
   c.G.stage.current = 50;

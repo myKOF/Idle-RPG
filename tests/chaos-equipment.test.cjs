@@ -17,10 +17,10 @@ function loadContext() {
 test('混沌裝備是地圖掉落表中的 R9，不再使用特殊掉落常數', () => {
   const context = loadContext();
 
-  assert.equal(context.fieldDropRatesFor(550, 1, 'god_battlefield')[9], 0);
-  assert.equal(context.fieldDropRatesFor(551, 1, 'god_battlefield')[9], 1);
-  assert.equal(context.fieldDropRatesFor(551, 1, 'god_chaos')[9], 1);
-  assert.equal(context.fieldDropRatesFor(601, 1, 'god_sanctuary')[9], 1);
+  assert.equal(context.fieldDropRatesFor(412, 1, 'god_battlefield')[9], 0);
+  assert.equal(context.fieldDropRatesFor(413, 1, 'god_battlefield')[9], 1);
+  assert.equal(context.fieldDropRatesFor(393, 1, 'god_chaos')[9], 1);
+  assert.equal(context.fieldDropRatesFor(451, 1, 'god_sanctuary')[9], 1);
   assert.equal(typeof context.CHAOS_FIELD_DROP_PCT, 'undefined');
 });
 

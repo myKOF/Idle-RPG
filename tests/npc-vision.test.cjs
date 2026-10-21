@@ -62,10 +62,10 @@ test('新敵人未發現狀態重置；沒有視野欄位的舊替身保留行�
   const legacy={hp:100,pos:{x:10000,y:0},runSpeed:120}; c.bfTickApproach([legacy],1);
   assert.equal(legacy.pos.x,9880);
 });
-test('NPC 配置 346 列全部預填 50 米，CSV／JS 各階級與塔 BOSS 一致',()=>{
+test('NPC 配置 490 列全部預填 50 米，CSV／JS 各階級與塔 BOSS 一致',()=>{
   const c=loadEliteEnv(),rows=cfg.csvParse(fs.readFileSync(path.join(root,'config/CSV/NPC.csv'),'utf8'));
   const h=rows.shift(),i=n=>h.indexOf(n);
-  assert.equal(rows.length,346);
+  assert.equal(rows.length,490);
   for(const r of rows){
     const id=r[i('NPC識別碼')],tier=r[i('類型')];
     assert.equal(r[i('視野範圍(米)')],'50',id+' '+tier);

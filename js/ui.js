@@ -3536,9 +3536,13 @@ var UI_ICON_PATHS = {
     '<path class="st" d="M3 12h18M12 3c3 2.8 3 15.2 0 18M12 3c-3 2.8-3 15.2 0 18"/>'
 };
 var UI_ZONE_ICON = {
+  mist_forest:'forest',lava_mountain:'volcano',thunder_peak:'storm',
   desert: 'desert', Icefield: 'icefield', swamp: 'swamp', undead_mountains: 'undead',
   god_battlefield: 'godwar', god_chaos: 'chaos', god_sanctuary: 'sanctuary'
 };
+UI_ICON_PATHS.forest='<path class="ln" d="M8 20v-5M17 20v-7M8 3l-5 8h3l-3 5h10l-3-5h3zM17 2l-4 7h2l-2 5h8l-3-5h3z"/>';
+UI_ICON_PATHS.volcano='<path class="ln" d="M2 20l7-12h6l7 12zM8 10l3 3 2-3 3 3M10 5L8 2M14 5l3-3M12 4V1"/>';
+UI_ICON_PATHS.storm='<path class="ln" d="M2 21l8-13 4 6 3-4 5 11zM14 2l-4 7h4l-2 7 7-10h-4l3-4z"/>';
 
 function uiIcon(name) {
   var paths = UI_ICON_PATHS[name];
@@ -3564,8 +3568,8 @@ function renderSceneTabs() {
   var activeRlm = activeRealm();
 
   var list = (header.player && header.player.reincarnations >= 11)
-    ? (activeRlm === 'god' ? ['god_battlefield', 'god_chaos', 'god_sanctuary'] : ['desert', 'Icefield', 'swamp', 'undead_mountains'])
-    : ['desert', 'Icefield', 'swamp', 'undead_mountains'];
+    ? (activeRlm === 'god' ? REALMS.god.zones : REALMS.human.zones)
+    : REALMS.human.zones;
 
   var html = list.map(function (z) {
     var zd = ZONES[z];
@@ -3579,11 +3583,7 @@ function renderSceneTabs() {
     }
     var elemTags = zoneElementTagsList(z);
     var elemText = elemTags.length > 0 ? ('主要敵人屬性：' + elemTags.map(function (t) { return t.label; }).join(' ')) : '';
-    var ttDesc = z === 'Icefield' ? '敵人更強；經驗、金幣與材料掉落 ×2' :
-      z === 'swamp' ? '敵人極強；經驗、金幣與材料掉落 ×3' :
-        z === 'god_battlefield' ? '神界戰場；神級敵人，經驗與獎勵 ×2.5' :
-          z === 'god_chaos' ? '神界混沌；極強虛空生物，經驗與獎勵 ×3.5' :
-            z === 'god_sanctuary' ? '神界聖域；諸神降臨，經驗與獎勵 ×5.0' : '';
+    var ttDesc = '關卡上限：' + zd.maxStage + '；經驗與金幣獎勵 ×' + zd.rewardMult;
 
     if (elemText) {
       ttDesc = elemText + (ttDesc ? ('\n' + ttDesc) : '');
@@ -4366,8 +4366,8 @@ function renderZoneBar() {
   if (!zoneBox) return;
 
   var list = isGodUnlocked
-    ? (activeRlm === 'god' ? ['god_battlefield', 'god_chaos', 'god_sanctuary'] : ['desert', 'Icefield', 'swamp', 'undead_mountains'])
-    : ['desert', 'Icefield', 'swamp', 'undead_mountains'];
+    ? (activeRlm === 'god' ? REALMS.god.zones : REALMS.human.zones)
+    : REALMS.human.zones;
 
   var html = list.map(function (z) {
     var zd = ZONES[z];
@@ -4381,11 +4381,7 @@ function renderZoneBar() {
     }
     var elemTags = zoneElementTagsList(z);
     var elemText = elemTags.length > 0 ? ('主要敵人屬性：' + elemTags.map(function (t) { return t.label; }).join(' ')) : '';
-    var ttDesc = z === 'Icefield' ? '敵人更強；經驗、金幣與材料掉落 ×2' :
-      z === 'swamp' ? '敵人極強；經驗、金幣與材料掉落 ×3' :
-        z === 'god_battlefield' ? '神界戰場；神級敵人，經驗與獎勵 ×2.5' :
-          z === 'god_chaos' ? '神界混沌；極強虛空生物，經驗與獎勵 ×3.5' :
-            z === 'god_sanctuary' ? '神界聖域；諸神降臨，經驗與獎勵 ×5.0' : '';
+    var ttDesc = '關卡上限：' + zd.maxStage + '；經驗與金幣獎勵 ×' + zd.rewardMult;
 
     if (elemText) {
       ttDesc = elemText + (ttDesc ? ('\n' + ttDesc) : '');

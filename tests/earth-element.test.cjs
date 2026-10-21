@@ -172,7 +172,7 @@ test('NPC 表已接入套用參數流程，且同步後 dry-run 不再有 JS 差
     cwd: root, encoding: 'utf8'
   });
   assert.equal(result.status, 0, result.stderr || result.stdout);
-  assert.match(result.stdout, /重建字面值 8 個（語意變更 0）/);
+  assert.match(result.stdout, /重建字面值 11 個（語意變更 0）/);
   const c = loadContext(['js/util.js', 'js/data.js']);
   assert.equal(c.NPC_CONFIG_TABLE.undead_1.hpMult, 1.05);
   // aspdMult 已被 NPC 表的「攻擊速度(次/秒)」取代；留著會變成兩套攻速並存

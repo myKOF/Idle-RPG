@@ -295,6 +295,7 @@ function migrateSave(data) {
   /* 舊版技能移除遷移旗標：同樣須在 mergeDefaults 前判斷（newGameState 預帶 true）。 */
   var hadLegacySkillRemovalV1 = !!(data.legacySkillRemovalV1);
   var hadPowerThreatV1 = !!data.powerThreatV1;
+  var hadFieldBiomesV2 = !!data.fieldBiomesV2;
   var originalEquipment = (data.equipment && typeof data.equipment === 'object') ? data.equipment : null; // 保留真正裝備參照
   var def = newGameState();
   
@@ -499,18 +500,30 @@ function migrateSave(data) {
   if (data.player.reincarnations === 10 && hasGodProgress) {
     data.player.reincarnations = 11;
   }
-  // 關卡改造：補齊新地圖進度，並將舊存檔進度限制在各地圖上限內。
+  // 十圖改版：已經走到後圖的舊玩家補通關插入的前圖，不讓既有進度反向鎖住。
+  if (!hadFieldBiomesV2) {
+    var reachedOld = ['swamp','undead_mountains','god_battlefield','god_chaos','god_sanctuary'];
+    reachedOld.forEach(function (key) {
+      var zp=data.zoneProgress[key];
+      if (curZ!==key && !(zp && (Number(zp.best)>1 || Number(zp.cleared)>0))) return;
+      var added=key==='swamp'?['mist_forest','lava_mountain']:['mist_forest','lava_mountain','thunder_peak'];
+      added.forEach(function (z) { var cap=zoneMaxStage(z);data.zoneProgress[z]={current:cap,best:cap,cleared:cap}; });
+    });
+    data.fieldBiomesV2=true;
+  }
+  // 關卡改造：先保留夾限前的真實通關量，再限制各地圖上限。
   Object.keys(ZONES).forEach(function (zoneKey) {
     if (!data.zoneProgress[zoneKey] || typeof data.zoneProgress[zoneKey] !== 'object') {
       data.zoneProgress[zoneKey] = { current: 1, best: 1 };
     }
     var zp = data.zoneProgress[zoneKey];
     var cap = zoneMaxStage(zoneKey);
+    var oldBest=Math.max(Number(zp.best)||1,zoneKey===curZ?Number(data.stage.best)||1:1);
     zp.best = clamp(Math.floor(Number(zp.best) || 1), 1, cap);
     zp.current = clamp(Math.floor(Number(zp.current) || 1), 1, zp.best);
     /* cleared＝實際通關的最高關（best 在最後一關會被 cap 夾住，分不出有沒有打贏它）。
        舊存檔沒有這欄，用 best-1 回推＝改版前 stageClear 的判定值，任務進度不倒退。 */
-    zp.cleared = clamp(Math.max(Math.floor(Number(zp.cleared) || 0), zp.best - 1), 0, cap);
+    zp.cleared = clamp(Math.max(Math.floor(Number(zp.cleared) || 0), Math.floor(oldBest)-1), 0, cap);
   });
   var savedZoneCleared = function(z) {
     var zp = data.zoneProgress && data.zoneProgress[z];
@@ -659,7 +672,7 @@ function migrateSave(data) {
     data.stage.zone = 'desert';
     data.zoneProgress.desert = {
       current: data.stage.current || 1, best: data.stage.best || 1,
-      cleared: Math.max(0, (Number(data.stage.best) || 1) - 1)   // 無場景概念的舊存檔：通關數由 best 回推
+      cleared: Math.max(Number(data.zoneProgress.desert && data.zoneProgress.desert.cleared)||0, (Number(data.stage.best) || 1) - 1)   // 保留前面按舊上限推回的通關量
     };
   }
   /* ---- ONE-TIME MIGRATION: legacySkillRemovalV1（2026-09-29）----

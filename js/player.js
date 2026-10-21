@@ -75,6 +75,7 @@ function newGameState() {
   for (var gt in GEM_TYPES) gems[gt] = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
   return {
     version: 1,
+    fieldBiomesV2: true,
     runId: 1,           // 第幾局（重新開局 +1；每局的自動存檔各自獨立，舊存檔以 mergeDefaults 補 1）
 
     /* 一次性遷移完成旗標：新帳號預先標記完成，遷移只作用於舊存檔。
@@ -120,7 +121,10 @@ function newGameState() {
     zoneProgress: {
       desert: { current: 1, best: 1, cleared: 0 },
       Icefield: { current: 1, best: 1, cleared: 0 },
+      mist_forest: { current: 1, best: 1, cleared: 0 },
+      lava_mountain: { current: 1, best: 1, cleared: 0 },
       swamp:  { current: 1, best: 1, cleared: 0 },
+      thunder_peak: { current: 1, best: 1, cleared: 0 },
       undead_mountains: { current: 1, best: 1, cleared: 0 },
       god_battlefield: { current: 1, best: 1, cleared: 0 },
       god_chaos: { current: 1, best: 1, cleared: 0 },

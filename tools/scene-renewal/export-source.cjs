@@ -11,11 +11,18 @@ const sourceRoot = path.join(resolveLibraryRoot({ libraryId: 'effects-materials'
 const read = file => fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
 const hash = (file, binary) => crypto.createHash('sha256').update(binary ? fs.readFileSync(file) : read(file)).digest('hex');
 const sprites = {willow:'willow',burnt:'burnt-tree',pine:'snow-pine',bones:'beast-bones',cactus:'cactus',ice:'ice-cluster',void:'void-crystal',log:'fallen-log',stump:'swamp-stump',monolith:'rune-stele',pillar:'stone-column',arch:'ruined-arch',wall:'ruined-wall',rubble:'fallen-masonry',urn:'weathered-urn',grave:'old-gravestone',arenaGate:'arena-gate',arenaBrazier:'arena-brazier',arenaSpire:'arena-spire',arenaCandles:'arena-candles'};
+Object.assign(sprites,{mistElder:'mist-elder',lavaOutcrop:'lava-outcrop',stormSpire:'storm-spire'});
+Object.assign(sprites,{rootArch:'root-arch',lavaVent:'lava-vent',windPine:'wind-pine'});
 async function main(){
   if(mode==='--make-sprites'){
     // 標準素材匯出：只裁透明留白／等比縮小，不重畫或修改AI素材的造型。
-    const sharp=require('sharp');const records=[];fs.mkdirSync(path.join(sourceRoot,'sprites'),{recursive:true});
+    const sharp=require('sharp');const only=process.argv.find(a=>a.startsWith('--only='));
+    const selected=only?only.slice(7).split(','):Object.keys(sprites);
+    if(selected.some(k=>!sprites[k]))throw new Error('未知的場景素材key');
+    const manifest=path.join(sourceRoot,'sprite-exports.json');
+    const records=only&&fs.existsSync(manifest)?JSON.parse(fs.readFileSync(manifest,'utf8')).filter(r=>!selected.includes(r.key)):[];fs.mkdirSync(path.join(sourceRoot,'sprites'),{recursive:true});
     for(const [key,name] of Object.entries(sprites)){
+      if(!selected.includes(key))continue;
       const source=path.join(sourceRoot,'originals',key+'.png');
       const {data,info}=await sharp(source).ensureAlpha().raw().toBuffer({resolveWithObject:true});
       if(info.width>1024||info.height>1024)throw new Error(key+' 母圖不得超過1024×1024');
@@ -29,7 +36,7 @@ async function main(){
     }
     fs.writeFileSync(path.join(sourceRoot,'sprite-exports.json'),JSON.stringify(records,null,2)+'\n');console.log(records.length+'份完整AI素材已縮小匯出，alpha保持透明。');return;
   }
-  const files=[['decor-nature.js','js/decor-nature.js',false],['gen_ground_tiles.py','tools/gen_ground_tiles.py',false]];
+  const files=[['decor-nature.js','js/decor-nature.js',false],['battle-decor.js','js/battle-decor.js',false],['gen_ground_tiles.py','tools/gen_ground_tiles.py',false]];
   for(const name of Object.values(sprites))files.push(['sprites/'+name+'.png','images/scene/'+name+'.png',true]);
   for(const zone of ['default','desert','Icefield','swamp','undead_mountains','god_battlefield','god_chaos','god_sanctuary'])files.push(['ground/ground_'+zone+'.png','images/ground/ground_'+zone+'.png',true]);
   for(const [sourceRel,targetRel,binary] of files){const source=path.join(sourceRoot,sourceRel),target=path.join(REPO_ROOT,targetRel);

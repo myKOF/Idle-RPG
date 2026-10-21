@@ -20,38 +20,27 @@ function load(files) {
   return context;
 }
 
-test('七張地圖依序排列並使用 200 起跳、每張增加 100 的有限上限', () => {
+test('十張地圖依圖片順序與100～600有限上限', () => {
   const c = load(['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js']);
   assert.deepEqual(JSON.parse(JSON.stringify(c.ZONE_LIST)), [
-    'desert', 'Icefield', 'swamp', 'undead_mountains',
+    'desert', 'Icefield', 'mist_forest', 'lava_mountain', 'swamp', 'thunder_peak', 'undead_mountains',
     'god_battlefield', 'god_chaos', 'god_sanctuary'
   ]);
-  assert.deepEqual(JSON.parse(JSON.stringify(c.ZONE_LIST.map((z) => c.ZONES[z].maxStage))), [200, 300, 400, 500, 600, 700, 800]);
+  assert.deepEqual(JSON.parse(JSON.stringify(c.ZONE_LIST.map((z) => c.ZONES[z].maxStage))), [100, 150, 200, 250, 300, 350, 400, 450, 500, 600]);
   assert.equal(c.ZONES.undead_mountains.name, '亡靈山脈');
   assert.equal(c.ZONES.god_battlefield.reqReincarnation, 11);
 });
 
-test('地圖解鎖需要前圖通關，神界地圖另需 11 轉', () => {
-  const c = load(['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js']);
-  c.G = {
-    player: { reincarnations: 0 },
-    stage: { zone: 'desert', best: 200 },
-    zoneProgress: { desert: { best: 200, cleared: 199 } }
-  };
-  assert.equal(c.isZoneUnlocked('Icefield'), false);
-  c.G.zoneProgress.desert.cleared = 200;
-  assert.equal(c.isZoneUnlocked('Icefield'), true);
-  assert.equal(c.isZoneUnlocked('swamp'), false);
-  c.G.zoneProgress.Icefield = { best: 300, cleared: 299 };
-  assert.equal(c.isZoneUnlocked('swamp'), false);
-  c.G.zoneProgress.Icefield.cleared = 300;
-  assert.equal(c.isZoneUnlocked('swamp'), true);
-  c.G.zoneProgress.swamp = { best: 400, cleared: 400 };
-  c.G.zoneProgress.undead_mountains = { best: 500, cleared: 499 };
-  assert.equal(c.isZoneUnlocked('god_battlefield'), false);
-  c.G.zoneProgress.undead_mountains.cleared = 500;
-  c.G.player.reincarnations = 11;
-  assert.equal(c.isZoneUnlocked('god_battlefield'), true);
+test('地圖解鎖需要前圖最後一關真正通關，神界另需11轉', () => {
+  const c=load(['js/util.js','js/data.js','js/status.js','js/formula.js']);
+  c.G={player:{reincarnations:0},stage:{zone:'desert',best:1},zoneProgress:{}};
+  for(let i=1;i<c.ZONE_LIST.length;i++){
+    const prev=c.ZONE_LIST[i-1],next=c.ZONE_LIST[i],cap=c.ZONES[prev].maxStage;
+    c.G.zoneProgress[prev]={best:cap,cleared:cap-1};assert.equal(c.isZoneUnlocked(next),false);
+    c.G.zoneProgress[prev].cleared=cap;
+    if(c.ZONES[next].realm==='god'){c.G.player.reincarnations=0;assert.equal(c.isZoneUnlocked(next),false);c.G.player.reincarnations=11;}
+    assert.equal(c.isZoneUnlocked(next),true);
+  }
 });
 
 test('NPC 配置表與地圖權重表可選出亡靈山脈指定 NPC', () => {
@@ -68,13 +57,13 @@ test('NPC 配置表與地圖權重表可選出亡靈山脈指定 NPC', () => {
 
 test('NPC CSV 集中所有地圖的基本資料，不重複存放公式倍率', () => {
   const lines = fs.readFileSync(path.join(root, 'config/CSV/NPC.csv'), 'utf8').replace(/^\uFEFF/, '').trim().split(/\r?\n/);
-  // 7 張圖 × 12 隻 × 4 種類型（normal／elite／elite_adv／boss，2026-10-13 起）＋封魔塔 BOSS 10 列＋標題列。
-  assert.equal(lines.length, 347);
+  // 10 張圖 × 12 隻 × 4 種類型（normal／elite／elite_adv／boss，2026-10-13 起）＋封魔塔 BOSS 10 列＋標題列。
+  assert.equal(lines.length, 491);
   assert.equal(lines[0].split(',').slice(0, 5).join(','), 'NPC識別碼,NPC名稱,所屬地圖識別碼,類型,屬性');
   assert.ok(lines.some((line) => line.startsWith('desert_1,史萊姆,desert,normal,')));
   assert.ok(lines.some((line) => line.startsWith('god_sanctuary_12,神聖執法官,god_sanctuary,boss,')));
   assert.ok(lines.some((line) => line.startsWith('tower_boss_1,烈焰魔君,tower,tower_boss,')));
-  assert.equal(Object.keys(load(['js/util.js', 'js/data.js']).NPC_CONFIG_TABLE).length, 84);
+  assert.equal(Object.keys(load(['js/util.js', 'js/data.js']).NPC_CONFIG_TABLE).length, 120);
 });
 
 test('地圖表承接場景專屬倍率與所有地圖的分段掉落資料', () => {
@@ -89,21 +78,21 @@ test('地圖表承接場景專屬倍率與所有地圖的分段掉落資料', ()
   assert.match(zones.find((line) => line.includes(',desert,')), /,0\.8,0\.8,1,1,1$/);
   assert.match(zones.find((line) => line.includes(',undead_mountains,')), /,20,50,10,1\.8,2\.25$/);
   assert.match(zones.find((line) => line.includes(',god_sanctuary,')), /,500,8000,100,2\.5,24$/);
-  // origin/develop 的 Zone_Stage_Drops.csv 現在包含 32 列資料，另加標題列。
-  assert.equal(drops.length, 33);
-  assert.ok(drops.some((line) => line.startsWith('god_sanctuary,601,800,')));
+  // 十圖版 Zone_Stage_Drops.csv 包含 44 列資料，另加標題列。
+  assert.equal(drops.length, 45);
+  assert.ok(drops.some((line) => line.startsWith('god_sanctuary,451,600,')));
 });
 
 test('掉落配置依地圖與關卡區間查表，且支援材料欄位', () => {
   const c = load(['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js']);
   const early = c.zoneStageDropConfigFor('undead_mountains', 100);
-  const late = c.zoneStageDropConfigFor('undead_mountains', 400);
-  // 亡靈山脈的新版分段為 1~199 與 400~449；數值由集中掉落表決定。
-  assert.equal(early.max, 199);
-  assert.equal(late.min, 400);
+  const late = c.zoneStageDropConfigFor('undead_mountains', 330);
+  // 亡靈山脈的新版分段為 1~159 與 320~359；數值由集中掉落表決定。
+  assert.equal(early.max, 159);
+  assert.equal(late.min, 320);
   assert.equal(late.materials.bookRate, 4);
   /* 2026-08-11（使用者確認）：神話（R6）掉落率 0.3 → 0.25。 */
-  assert.equal(c.fieldDropRatesFor(400, 400, 'undead_mountains')[6], 0.25);
+  assert.equal(c.fieldDropRatesFor(330, 330, 'undead_mountains')[6], 0.25);
 });
 
 /* 打贏地圖最後一關時 best 會被 maxStage 夾住，光看 best 分不出「打贏最後一關」與
@@ -113,24 +102,24 @@ test('通關關卡另記 cleared：最後一關打贏後 best 卡在上限，cle
   const c = load(['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js', 'js/combat.js']);
   c.G = {
     player: { reincarnations: 0 },
-    stage: { current: 199, best: 199, kills: 0, autoAdvance: true, zone: 'desert' },
-    zoneProgress: { desert: { current: 199, best: 199, cleared: 198 } },
+    stage: { current: 99, best: 99, kills: 0, autoAdvance: true, zone: 'desert' },
+    zoneProgress: { desert: { current: 99, best: 99, cleared: 98 } },
     tower: { active: false }
   };
   c.FIELD.player = null;                 // 略過過關回血，本測試只看關卡紀錄
   const clearOneWave = () => { c.FIELD._waveClearPending = true; c.completeFieldWave({ hp: 100, moveSpeed: 0 }); };
 
-  clearOneWave();                        // 打贏第 199 關
-  assert.equal(c.G.stage.best, 200);
-  assert.equal(c.G.stage.current, 200);
-  assert.equal(c.zoneClearedStage('desert'), 199);
+  clearOneWave();                        // 打贏第 99 關
+  assert.equal(c.G.stage.best, 100);
+  assert.equal(c.G.stage.current, 100);
+  assert.equal(c.zoneClearedStage('desert'), 99);
 
   // 關閉自動推進，讓本測試專注驗證最後一關的 best 夾限與 cleared 記錄；
   // 自動推進跨場景的行為由 multi-enemy.test.cjs 覆蓋。
   c.G.stage.autoAdvance = false;
-  clearOneWave();                        // 打贏第 200 關（＝荒漠上限）
-  assert.equal(c.G.stage.best, 200, 'best 被 maxStage 夾住，不會變成 201');
-  assert.equal(c.zoneClearedStage('desert'), 200, 'cleared 記下真正打贏的最後一關');
+  clearOneWave();                        // 打贏第 100 關（＝荒漠上限）
+  assert.equal(c.G.stage.best, 100, 'best 被 maxStage 夾住，不會變成 101');
+  assert.equal(c.zoneClearedStage('desert'), 100, 'cleared 記下真正打贏的最後一關');
 });
 
 /* 野外 BOSS 每張地圖只能打一次：BOSS 階通關後不再出 BOSS，退回既有菁英規則。

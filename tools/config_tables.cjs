@@ -367,7 +367,10 @@ const SCHEMAS = {};
 const NPC_POOL_DEFS = [
   { zone: 'desert', varName: 'DESERT_POOL' },
   { zone: 'Icefield', varName: 'ICEFIELD_POOL' },
+  { zone: 'mist_forest', varName: 'MIST_FOREST_POOL' },
+  { zone: 'lava_mountain', varName: 'LAVA_MOUNTAIN_POOL' },
   { zone: 'swamp', varName: 'SWAMP_POOL' },
+  { zone: 'thunder_peak', varName: 'THUNDER_PEAK_POOL' },
   { zone: 'undead_mountains', varName: 'UNDEAD_MOUNTAINS_POOL' },
   { zone: 'god_battlefield', varName: 'GOD_BATTLEFIELD_POOL' },
   { zone: 'god_chaos', varName: 'GOD_CHAOS_POOL' },
@@ -864,7 +867,7 @@ const TASK_GLOSSARY_ROWS = [
   ['0＝普通、1＝精良、2＝稀有、3＝獨特、4＝史詩、5＝傳說、6＝神話、7＝創世、8＝神鑄創世、9＝混沌、10＝神鑄混沌'],
   [''],
   ['── 地圖識別碼對照 ──'],
-  ['desert＝荒漠、Icefield＝冰原、swamp＝沼澤、undead_mountains＝亡靈山脈、god_battlefield＝太古戰場、god_chaos＝混沌界、god_sanctuary＝永恒神域'],
+  ['desert＝荒漠、Icefield＝冰原、mist_forest＝迷霧森林、lava_mountain＝熔岩山、swamp＝月影沼澤、thunder_peak＝落雷峰、undead_mountains＝亡靈山脈、god_battlefield＝太古戰場、god_chaos＝混沌界、god_sanctuary＝永恒神域'],
   [''],
   ['── 附魔書 id 對照 ──'],
   ['fire＝火焰附魔、ice＝冰凍附魔、lightning＝閃電附魔、poison＝毒液附魔、light＝聖光附魔、dark＝暗影附魔'],
@@ -2058,7 +2061,43 @@ SCHEMAS.Gem_resonance = {
   }
 };
 
-const TABLE_ORDER = ['Skills2', 'Status', 'Gems', 'Talents', 'Equipment_Affix', 'NPC', 'Task', 'Runes', 'Gem_resonance'];
+/* 地圖中繼資料也由 Excel 投影；上限／名稱／前置不再依賴手工同步。 */
+SCHEMAS.Zones = {
+  name:'Zones',jsFile:'data',sheet:'地圖',noXlsxGen:true,vars:['ZONES','ZONE_LIST','REALMS'],
+  header:['順序','地圖識別碼','地圖名稱','位面','關卡上限','前置地圖識別碼','前置通關關卡','最低轉生次數','生命倍率','攻擊倍率','防禦倍率','攻速倍率','經驗金幣獎勵倍率'],
+  evaluate(literal) {
+    const scope={ZONE_ENEMY_TABLES:Object.fromEntries(NPC_POOL_DEFS.map(d=>[d.zone,d.zone]))};
+    NPC_POOL_DEFS.forEach(d=>scope[d.varName]=d.varName);
+    return vm.runInNewContext('('+literal+')',scope);
+  },
+  rebuild(rows,header,src) {
+    const get=rowGetter(header),defs=Object.fromEntries(NPC_POOL_DEFS.map(d=>[d.zone,d]));
+    const emoji={desert:'🏜️',Icefield:'🧊',mist_forest:'🌲',lava_mountain:'🌋',swamp:'🌙',thunder_peak:'🌩️',undead_mountains:'⛰️',god_battlefield:'⚔️',god_chaos:'🌀',god_sanctuary:'✨'};
+    const ordered=rows.filter(r=>get(r,'地圖識別碼')).slice().sort((a,b)=>Number(get(a,'順序'))-Number(get(b,'順序')));
+    const seen=new Set(),zones=[],realmZones={human:[],god:[]};
+    for(const row of ordered) {
+      const id=get(row,'地圖識別碼'),realm=get(row,'位面'),cap=Number(get(row,'關卡上限')),req=get(row,'前置地圖識別碼');
+      if(!defs[id]||seen.has(id)||!realmZones[realm]||!Number.isInteger(cap)||cap<1)throw new Error('Zones 地圖識別碼／位面／上限無效：'+id);
+      if(req&&!seen.has(req))throw new Error('Zones 前置必須在本地圖之前：'+id+' → '+req);
+      const reqStage=Number(get(row,'前置通關關卡')),rebirth=Number(get(row,'最低轉生次數'));
+      if(!Number.isInteger(reqStage)||reqStage<0||req&&!reqStage||!Number.isInteger(rebirth)||rebirth<0)throw new Error('Zones 前置關卡／轉生次數必須為有效整數：'+id);
+      if(req&&reqStage>Number(get(ordered.find(r=>get(r,'地圖識別碼')===req),'關卡上限')))throw new Error('Zones 前置關卡超過上限：'+id);
+      seen.add(id);realmZones[realm].push(id);
+      const fields={name:get(row,'地圖名稱'),emoji:emoji[id],realm,maxStage:cap};
+      if(req){fields.reqZone=req;fields.reqStage=reqStage;}
+      if(rebirth)fields.reqReincarnation=rebirth;
+      for(const [field,label] of [['hpMult','生命倍率'],['atkMult','攻擊倍率'],['defMult','防禦倍率'],['aspdMult','攻速倍率'],['rewardMult','經驗金幣獎勵倍率']]){const n=Number(get(row,label));if(!Number.isFinite(n)||n<=0)throw new Error('Zones '+id+' '+label+' 必須大於0');fields[field]=n;}
+      zones.push('  '+id+': { pool: '+defs[id].varName+', enemyTable: ZONE_ENEMY_TABLES.'+id+', '+Object.entries(fields).map(([k,v])=>k+': '+JSON.stringify(v)).join(', ')+' }');
+    }
+    if(seen.size!==NPC_POOL_DEFS.length)throw new Error('Zones 缺少地圖資料');
+    return {ZONES:'var ZONES = {\n'+zones.join(',\n')+'\n};',ZONE_LIST:'var ZONE_LIST = '+JSON.stringify([...seen])+';',REALMS:'var REALMS = '+jsLit({human:{name:'凡人界',emoji:'🌍',zones:realmZones.human},god:{name:'神界',emoji:'✨',zones:realmZones.god}})+';'};
+  },
+  extract(src) {
+    const zones=this.evaluate(extractLiteral(src,'ZONES').literal),list=evalLiteral(extractLiteral(src,'ZONE_LIST').literal);
+    return list.map((id,i)=>{const z=zones[id];return [i+1,id,z.name,z.realm,z.maxStage,z.reqZone||'',z.reqStage||'',z.reqReincarnation||0,z.hpMult,z.atkMult,z.defMult,z.aspdMult,z.rewardMult].map(String);});
+  }
+};
+const TABLE_ORDER = ['Skills2', 'Status', 'Gems', 'Talents', 'Equipment_Affix', 'NPC', 'Zones', 'Task', 'Runes', 'Gem_resonance'];
 
 /* ===========================================================================
    模式：--gen / --sync / --apply
@@ -2152,8 +2191,9 @@ function cmdApply(only) {
       const newBlock = rebuilt[varName];
       // 語意比對：eval 舊/新字面值深度比較，數值/結構一致即視為無變更（僅格式差異不算）。
       // 僅在「語意有變更」時才就地替換該區塊，避免無編輯時仍反覆重排、抹掉手寫註解、產生無謂 diff。
-      const oldVal = evalLiteral(loc.literal);
-      const newVal = evalLiteral(extractLiteral(newBlock, varName).literal);
+      const evaluate = sc.evaluate || evalLiteral;
+      const oldVal = evaluate(loc.literal);
+      const newVal = evaluate(extractLiteral(newBlock, varName).literal);
       const changed = !deepEqual(oldVal, newVal);
       if (changed) newSrc[sc.jsFile] = newSrc[sc.jsFile].slice(0, loc.declStart) + newBlock + newSrc[sc.jsFile].slice(loc.end);
       changes.push({ name, varName, changed, file: sc.jsFile });

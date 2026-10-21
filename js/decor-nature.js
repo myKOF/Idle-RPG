@@ -5,6 +5,8 @@ var DecorNature = (function () {
   'use strict';
   var SPRITE_FILES={willow:'willow',deadTree:'burnt-tree',pine:'snow-pine',giantBones:'beast-bones',cactus:'cactus',ice:'ice-cluster',void:'void-crystal',log:'fallen-log',stump:'swamp-stump',runeStone:'rune-stele',pillar:'stone-column',arch:'ruined-arch',ruinWall:'ruined-wall',rubble:'fallen-masonry',urn:'weathered-urn',grave:'old-gravestone',arenaGate:'arena-gate',arenaBrazier:'arena-brazier',arenaSpire:'arena-spire',arenaCandles:'arena-candles'};
   var sprites={},loading=null;
+  SPRITE_FILES.mistTree='mist-elder';SPRITE_FILES.lavaOutcrop='lava-outcrop';SPRITE_FILES.stormSpire='storm-spire';
+  SPRITE_FILES.rootGate='root-arch';SPRITE_FILES.lavaVent='lava-vent';SPRITE_FILES.windPine='wind-pine';
   var scriptRoot=typeof document!=='undefined'&&document.currentScript?new URL('../',document.currentScript.src).href:null;
   function registerImages(images){Object.keys(images).forEach(function(key){sprites[key]=images[key];});}
   function loadImages(base,loader){

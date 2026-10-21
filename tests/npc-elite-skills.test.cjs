@@ -34,7 +34,7 @@ test('NPC-SKILL-2 每個 NPC 有 normal／elite／elite_adv／boss 四列；另�
   assert.equal(towers.length, 10);
   towers.forEach((id) => assert.deepEqual(byId[id], ['tower_boss'], id));
   const npcs = ids.filter((id) => !/^tower_boss_/.test(id));
-  assert.equal(npcs.length, 84);
+  assert.equal(npcs.length, 120);
   npcs.forEach((id) => assert.deepEqual(byId[id], ['normal', 'elite', 'elite_adv', 'boss'], id));
 });
 

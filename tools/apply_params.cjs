@@ -104,7 +104,7 @@ function zoneStageDropContent() {
     ];
     (grouped[zone] || (grouped[zone] = [])).push(row);
   });
-  const expectedZones = ['desert', 'Icefield', 'swamp', 'undead_mountains', 'god_battlefield', 'god_chaos', 'god_sanctuary'];
+  const expectedZones = Object.keys(zoneById);
   expectedZones.forEach(zone => {
     if (!grouped[zone] || !grouped[zone].length) throw new Error('Zone_Stage_Drops.csv 缺少地圖：' + zone);
     grouped[zone].sort((a, b) => a[0] - b[0]);
@@ -179,7 +179,7 @@ function zoneStageWaveContent() {
     if (!(cap >= 0)) throw new Error('Zone_Stage_Waves.csv 同時上限隻數不得為負（0＝不額外限制）：' + zone + ' = ' + cap);
     (grouped[zone] || (grouped[zone] = [])).push([min, max, sec, cap]);
   });
-  const expectedZones = ['desert', 'Icefield', 'swamp', 'undead_mountains', 'god_battlefield', 'god_chaos', 'god_sanctuary'];
+  const expectedZones = Object.keys(zoneById);
   expectedZones.forEach(zone => {
     if (!grouped[zone] || !grouped[zone].length) throw new Error('Zone_Stage_Waves.csv 缺少地圖：' + zone);
     grouped[zone].sort((a, b) => a[0] - b[0]);
@@ -356,15 +356,7 @@ scalar('renderer', 'BATTLE_CAMERA_DISTANCE_PERCENT', '8-戰鬥畫面', '戰鬥�
 scalar('player', 'INITIAL_SCRAP', '0-遊戲預設', '開場裝備碎片', 0);
 scalar('player', 'INITIAL_ESSENCE', '0-遊戲預設', '開場附魔精華', 0);
 
-const ZONE_KEYS = {
-  '荒漠': 'desert',
-  '冰原': 'Icefield',
-  '沼澤': 'swamp',
-  '亡靈山脈': 'undead_mountains',
-  '太古戰場': 'god_battlefield',
-  '混沌界': 'god_chaos',
-  '永恒神域': 'god_sanctuary'
-};
+const ZONE_KEYS = Object.fromEntries(Object.keys(zoneById).map(id => [ZP(id,'地圖名稱'),id]));
 Object.keys(ZONE_KEYS).forEach(nm => {
   const zoneKey = ZONE_KEYS[nm];
   const a = zoneKey + ':';
