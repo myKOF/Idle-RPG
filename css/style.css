@@ -5871,7 +5871,7 @@ textarea:disabled,
   border: 4px solid transparent !important;
   border-radius: 2px !important;
   background:
-    linear-gradient(#07100db0, #07100d70) padding-box,
+    var(--mythic-reading-veil, linear-gradient(#07100db0, #07100d70)) padding-box,
     var(--mythic-surface-tint) padding-box,
     var(--mythic-surface-top) padding-box,
     var(--mythic-surface-bottom) center bottom / 100% 60% no-repeat padding-box,
@@ -5879,6 +5879,11 @@ textarea:disabled,
     var(--mythic-frame-metal) border-box !important;
   padding: 21px 18px 18px !important;
   box-shadow: none !important;
+}
+
+#sk-tooltip .equip-detail-card.mythic-detail {
+  /* 原內襯後殘留的彩色背景只保留20%；文字、品質框與詳情不受影響。 */
+  --mythic-reading-veil: linear-gradient(rgb(7 16 13 / 0.938039216), rgb(7 16 13 / 0.887843137));
 }
 
 #sk-tooltip .equip-detail-card.mythic-detail::before,

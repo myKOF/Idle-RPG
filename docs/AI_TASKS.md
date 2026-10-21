@@ -11580,3 +11580,15 @@ Worker 存活且頁面正常完成載入。
 - 擴大相依檢查：node --test tests/detail-log.test.cjs tests/ui-performance.test.cjs tests/upgrade-animation.test.cjs tests/ui-worker-panels.test.cjs tests/init-ui-smoke.test.cjs共28項24過／4既有失敗。以唯讀fs映射恢復HEAD的UI／CSS／index重跑同5份，亦24過／同4失敗；名稱與原因一致（初始skills面板預期、uiTick舊正規式、gem.socket舊接線斷言、upgrade替身缺UI）。無新增失敗，不擴修其他功能；合計99項95過4既有失敗。npm.cmd run build最終555檔通過，git diff --check通過；未跑全庫。
 - 瀏覽器：臨時localhost載入正式renderEquip／renderDetail／showItemTooltip／itemDetailHTML與8份CSS，僅注入隔離快照，不讀寫玩家存檔。核對淡金與銀藍兩種tips／詳情backgroundImage逐字相同；背包比較確有2卡。主手、背包、修羅獨立副手、其他品質、空狀態皆不殘共用class或小標；刻印中切主手小標清除且仍為符文頁。副手詳情scrollTop0→11時固定框頂143.234375／底633.234375不移、無水平溢出；Console warning／error0。截圖equipment-gold-shared-applied.png與equipment-gold-detail-applied.png保存在本聊天visualizations；測試頁／服務／基準腳本皆清理。未驗完整戰鬥流程／跨瀏覽器／長時間效能。
 - 唯讀檢查未改：AI_RULES／AGENTS／AI_WORKFLOW／prompts、js/item.js／data.js圖示與雙手類型、ui-runeword與現有裝備選取／刻印增量流程、另7份CSS與其餘12份相依測試。自我Review確認主手與共用副手沿同一物品ID、不新增裝備或計算來源，tag不攔截滑鼠，選取與品質切換保留。無本次未完成需求，可供Review／合併；Commit為本段所在[Codex] feat: 套用淡金裝備與銀藍共用副手並同步詳情提示，回覆附編號。未合併推送，下一步重載本分支遊戲驗收，其他副本需整合本Commit；已知限制為上述4項既有測試失敗與隔離UI驗收範圍。
+
+
+## MYTHIC-TIPS-COLOR-20-20261021 — tips背景覆光降低80%
+
+- Owner：Codex；Done；使用者回報tips底色模糊影響文字，要求透明度降低80%。僅將神話tips／比較卡原彩色底圖的可見份量降到20%，保留深色實底、文字／品質框不透明；詳情與icon維持既有版本。前置87fd426d完成，單一開發者。
+- 範圍css/style.css局部tips閱讀內襯、index僅style快取、LV_upgrade_system與本段；禁止JS／玩法／配置／其他外觀／素材，不合併推送。預檢CSS與文件無衝突；index與Claude b4de1d41火鏈快取為不同區段、無語意相依，以共同base三方merge-file乾跑0且保留兩端版本，分段修改。
+- 驗收：正式CSS／itemDetailHTML的淡金與銀藍tips底色可讀、比較卡一致、文字不套opacity、品質角飾與詳情底圖不變；相依裝備六份回歸／Build／隔離瀏覽器與Console／diff後獨立Commit。無素材庫變更，後續使用者重載驗收。
+
+- 完成4檔：CSS將文字內襯抽為可局部覆寫變數，僅sk-tooltip內神話卡使用加深覆層；按1−(1−原alpha)×0.2換算後讓原彩色背景的透出份量保留20%，不對整張卡／文字套opacity。index僅style86→87，LV_upgrade_system及本段同步；未改JS／獨立素材／其他品質，無素材庫變更。
+- 驗證指令：node --test tests/equipment-detail-layout.test.cjs tests/equip-socket-ui.test.cjs tests/equip-reroll-ui.test.cjs tests/equipment-tooltip-compare.test.cjs tests/equipment-selection-border.test.cjs tests/equipment-weapon-icons.test.cjs，51/51通過；npm.cmd run build為555檔通過；git diff --check通過。未新增測試、未改斷言，未跑全庫。
+- 瀏覽器：同份隔離itemDetailHTML／正式UI與8份CSS，依次載入HEAD基準CSS及修改後CSS，淡金／銀藍tips計算底圖皆變深、整卡opacity仍1；兩種詳情backgroundImage與HEAD逐字相同，背包比較有2卡且套同局部內襯，Console warning／error0。截圖mythic-tips-color-20.png保存在本聊天visualizations；未載玩家存檔，未驗完整戰鬥／跨瀏覽器。臨時頁／服務／合併試跑檔已清理。
+- 唯讀檢查未改：共通規範／Workflow／prompts、8份皮膚載入順序、js/ui.js／item.js渲染、上述6份回歸及Claude b4de1d41實際index差異；與火鏈任務僅同檔不同版本行、三方merge-file退出0、無語意相依。無本次未完成項或新增已知風險，可供Review／合併；Commit為本段所在[Codex] fix: 將神話tips背景覆光降低八成，回覆附編號。未合併推送，下一步重新整理本分支遊戲驗收；其他副本需整合本Commit。
