@@ -189,8 +189,10 @@ function fireChain(n, linkAsset) {
     if (pulse[pulse.length - 1][0] < 1) pulse.push([1, pulse[0][1]]);
     layers.push(withGround(kit.sprite({ id: 'link' + i, asset: linkAsset, z: 2 + i, x: x, y: dy, sizeX: sx, sizeY: sy, alpha: 1, tint: wide ? '#ffb02a' : '#fff1a8', blend: 'add', duration: D, alphaOverLife: pulse })));
   }
+  /* 兩端節點：整份 Preset 會被拉成 長度×linkH，x 方向的倍率隨鏈環數增加（約 n/7）；節點的 sizeX 先除掉這個倍率，
+     拉伸後才會是圓的（之前不除，長鏈兩端的光團被拉成一根長橢圓）。 */
   [-100, 100].forEach((x, k) => {
-    layers.push(withGround(kit.sprite({ id: 'node' + k, asset: A.glowSoft, z: 100 + k, x: x, size: 46, alpha: 0.95, tint: '#ffa030', blend: 'add', duration: D, scaleOverLife: C.breathe(0.18) })));
+    layers.push(withGround(kit.sprite({ id: 'node' + k, asset: A.glowSoft, z: 100 + k, x: x, sizeX: 46 * 200 / (28 * n), sizeY: 46, alpha: 0.95, tint: '#ffa030', blend: 'add', duration: D, scaleOverLife: C.breathe(0.18) })));
   });
   layers.push(kit.particle({ id: 'embers', asset: A.flame04, z: 110, rate: 10 + n, lifetime: [0.35, 0.7], spawnBox: [190, 8], speed: [18, 46], direction: -90, spread: 40, startPx: [18, 30],
     alpha: 0.9, tint: '#ff5a1a', blend: 'add', alphaOverLife: [[0, 0], [0.2, 0.9], [1, 0]] }));
