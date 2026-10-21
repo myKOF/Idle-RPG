@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 189,
+  "assetCount": 190,
   "assets": [
     {
       "assetId": "claude-authored/dragon-devour/vortex-ring.png",
@@ -103,6 +103,13 @@
       "package": "claude-authored",
       "contentHash": "sha256:56fb11d521225eb0ce9568634273e35ccf81853d9588281396220567069823ca",
       "fileSize": 528787
+    },
+    {
+      "assetId": "codex-authored/arcane-rod/cylinder.svg",
+      "relativePath": "codex-authored/arcane-rod/cylinder.svg",
+      "package": "codex-authored",
+      "contentHash": "sha256:de60e09f75b2b79728a471d21ac987ed440d09e2a18015ce12617f3c35bd96ac",
+      "fileSize": 1031
     },
     {
       "assetId": "codex-authored/cleave/sharp-cyclone.png",

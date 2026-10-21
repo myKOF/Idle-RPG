@@ -5,7 +5,7 @@
    讓玩家在戰鬥裡一眼分得出「這是怪物放的」。所以這裡有兩種做法：
      1. 換色版：把玩家技能已有的 Preset 複製一份、把所有 tint 搬到「敵人配色」，id 一律 en- 開頭
      2. 新作：玩家沒有對應畫面的（火鏈、旋轉光束、毒十字、築牆、飛彈…）用現有素材組新 Preset
-   ⚠️ 只用已經在素材庫（vfx/shipped-assets.json）裡的素材，不新增圖檔。
+   素材沿用既有素材庫；祕法圓柱另由 arcane-rod.cjs 製作原創SVG，再經正式素材匯出。
    用法：node tools/vfx/authoring/author/enemy-skills.cjs [id ...]   （沒給 id＝全部重生） */
 const fs = require('node:fs');
 const path = require('node:path');
@@ -214,26 +214,8 @@ NEW['en-arcane-core'] = () => ({
   ]
 });
 
-/* 旋轉光束：N 根從核心向外的白紫光束，順時針掃過 dur 秒（轉速 rot 度／秒與 JSON 一致）。
-   光束用漸層光柱素材（cone_a：底端最亮、向上漸淡）以底端為軸心，旋轉 90 度讓它朝 +X 長出去。
-   光束長度 authored 100px＝事件半徑（地板圓 r＝光束長度）。 */
-function arcaneBeams(arms, dur, rot) {
-  const id = 'en-arcane-beams-' + arms;
-  const layers = [
-    withGround(kit.sprite({ id: 'halo', asset: A.discB, z: 0, size: 44, alpha: 0.5, tint: '#c850ff', blend: 'add', duration: dur, scaleOverLife: C.breathe(0.1) })),
-    kit.sprite({ id: 'hub', asset: A.glowSoft, z: 9, size: 26, alpha: 0.9, tint: '#ffd0ff', blend: 'add', duration: dur })
-  ];
-  const turn = rot * dur * D2R;
-  for (let i = 0; i < arms; i++) {
-    const base = i * 2 * Math.PI / arms + Math.PI / 2;      // +90°：把「向上」的光柱轉成「朝 +X」
-    const spin = [[0, +base.toFixed(5)], [1, +(base + turn).toFixed(5)]];
-    layers.push(withGround(kit.sprite({ id: 'beam' + i + '-glow', asset: A.barA, z: 1 + i * 3, anchor: { x: 0.5, y: 1 }, sizeX: 62, sizeY: 100, alpha: 0.7, tint: '#c850ff', blend: 'add', duration: dur, rotationOverLife: spin })));
-    layers.push(withGround(kit.sprite({ id: 'beam' + i + '-body', asset: A.barA, z: 2 + i * 3, anchor: { x: 0.5, y: 1 }, sizeX: 34, sizeY: 100, alpha: 0.95, tint: '#e8b6ff', blend: 'add', duration: dur, rotationOverLife: spin })));
-    layers.push(withGround(kit.sprite({ id: 'beam' + i + '-core', asset: A.barB, z: 3 + i * 3, anchor: { x: 0.5, y: 1 }, sizeX: 14, sizeY: 100, alpha: 1, tint: '#ffffff', blend: 'add', duration: dur, rotationOverLife: spin })));
-  }
-  return { id, duration: dur, loop: false, sizing: circleSizing(100), layers };
-}
-NEW['en-arcane-beams-1'] = () => arcaneBeams(1, 6, 50);
+/* 祕法圓柱光棒：專用作者與正式Preset共用表定尺寸、轉速及持續時間。 */
+NEW['en-arcane-beams-1'] = () => require('./arcane-rod.cjs').make();
 
 /* 熔岩核心預警：死亡怪物原地的核心膨脹倒數（3 秒），外圈＝爆炸範圍。 */
 NEW['en-molten-core-warn'] = () => ({

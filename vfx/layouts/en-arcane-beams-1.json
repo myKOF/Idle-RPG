@@ -7,10 +7,10 @@
       "name": "en-arcane-beams-1",
       "layerIds": [
         "halo",
-        "hub",
-        "beam0-glow",
-        "beam0-body",
-        "beam0-core"
+        "rod-axis",
+        "barrel-aura",
+        "cylinder-body",
+        "hub"
       ]
     }
   ],

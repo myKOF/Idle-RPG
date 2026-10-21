@@ -1,5 +1,20 @@
 # AI_TASKS.md
 
+## ARCANE-CYLINDER-20261021 — 祕法加持圓柱光棒
+
+- Owner：Codex；Done，單一開發者。使用者要求旋轉秘法棒更有體積，光束呈圓柱光棒。前置敵人旋轉光束與表定接線完成。允許en-arcane-beams-1 Preset／layout、專用arcane-rod作者腳本與enemy-skills單一入口、素材索引／出貨素材、專項回歸、LV及本段；素材庫新增自製SVG與製作來源／Preset／layout。禁止戰鬥數值／Worker／Runtime／Core／Backend／配置與其他特效，不合併推送。
+- 全部目標衝突預檢無外部來源。以自製向量漸層與圓弧封口表現柱體（使用者追加：外層無虛線、尖端圓形），保留單側順時針／表定旋轉速度與持續時間；製作座標端點對齊名目半徑，再由原事件r縮放，驗收判定與畫面旋轉／尺寸、實際Pixi深淺背景、舊頁拒絕覆寫、素材雜湊／回歸／Build／雙倉庫Commit。指定Mote Studio可開，但僅提供PNG／sprite sheet／GIF、無SVG匯出，不適合本次可縮放原生向量梯度，使用SVG程式原作；不採集網站素材。
+
+- 完成10檔：本Preset／layout、自製出貨cylinder.svg、vfx/asset-index.json／shipped-assets.json、arcane-rod.cjs、enemy-skills.cjs的單一作者入口、tests/arcane-rod-vfx.test.cjs、LV_upgrade_system及本紀錄。5層＝halo、共享旋轉空父層、淡外暈、自帶明暗的圓柱本體、hub；使用者追加後移除兩個流動光環與尖端glint、端面邊線，改為半圓封口的連續柱身。只有向量素材與Preset，無Runtime／Core／Backend／配置／Worker修改，無需JS快取或BAT。
+- 尺寸／時序：從正式生成ENEMY_SKILLS2讀取len／wid／rot／dur；製作長度100、直徑=wid/len×100，底端為旋轉軸、頂端對應事件r，所有柱身元件共用父層旋轉並在旋轉後做地面投影。修正舊作者三張cone直接拉長造成畫面長度與名目半徑不同的問題；實際模擬的10.4米長／1.43米寬、50度每秒、6秒、單側與傷害判定全不改。
+- 測試：node --test tests/arcane-rod-vfx.test.cjs，3/3（五時點端點／直徑與權威傷害線段一致、素材與作者重製、真引擎場域事件穿過正式Runtime Adapter且刷新不重播）；node --test --test-reporter=dot --test-name-pattern="ELITE-ENGINE-6|ELITE-ENGINE-.*[Cc]ore|ELITE-DATA" tests/elite-engine.test.cjs tests/elite-data.test.cjs，10項通過。第一次新增Adapter測試補上必要ctx.posOf後通過，沒有改產品碼或既有斷言配合fixture。
+- 最終回歸：node --test --test-reporter=tap tests/arcane-rod-vfx.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-core-hierarchy.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-asset-export.test.cjs tests/vfx-runtime-screen-space.test.cjs，116項115通過／1略過／0失敗；略過為Windows環境不能建立符號連結的既有匯出測試。npm.cmd run build為561檔通過；export-assets --check最新（190個assetId），兩倉庫diff --check通過。未跑全庫、未新增特效來源。
+- 瀏覽器：正式Pixi8／Core／Backend＋出貨索引的隔離IAB，放大及兩種斜向、深淺背景驗收，最終READY標記確認讀到cylinder-body新版，無虛線外環與外伸光斑、圓弧尖端清楚，Console error／warning0。圖為本聊天visualizations/arcane-cylinder-dark.png及light.png。中途舊頁驗收fixture曾覆蓋預覽GET造成舊cone再次出現，已移除該fixture並由磁碟重新載入，最終截圖全部更新；不是產品回歸。未做玩家存檔長戰／手機GPU測量。
+- 舊頁防護：實際開舊cone版Editor，磁碟已新Preset時按儲存到repo，拒絕外部已更新內容且提供下載全部編輯備份，磁碟逐位元保持。使用者原開Editor未被重載或操作；套用前須先下載未存備份再重載。專用測試頁／服務於交付清理，未在專案留下預覽檔。
+- 素材庫codex-authored/arcane-rod保存自製SVG、SOURCE、Preset及layout；先d9801fc保存初版、再2e9324c保存使用者要求的無虛線／圓弧尖端最終版。素材庫／遊戲SVG與兩份JSON逐位元一致，SVG SHA256=de60e09f75b2b79728a471d21ac987ed440d09e2a18015ce12617f3c35bd96ac。原創SVG，既有光暈沿用Kenney CC0，無第三方新素材；Mote無SVG匯出故採原生向量。
+- 唯讀未改：AI規範／工作流／Agent文件、Skills2 Excel／CSV／js生成資料、elite_data.js／elite.js判定與場域事件、Runtime縮放與重播、Core父層矩陣／Backend／Editor guard及上述既有回歸。自我Review確認沒有新增粒子或Timer、父層單一旋轉避免拼接錯位，素材索引僅新增一筆，出貨只新增必要SVG。
+- 交付：無本次未完成項或新增已知缺陷，可供Review／合併；限制為未做完整實戰長測與跨裝置驗收。遊戲Commit為本段所在[Codex] feat: 祕法加持改為圓柱光棒，回覆附編號；素材庫最終2e9324c，未合併推送。下一步備份Editor未存內容後重新載入en-arcane-beams-1.json；其他副本同步遊戲與素材庫。
+
 ## USER-EDITS-COMMIT-20261021 — 一併保存使用者配置與VFX調整
 
 - Owner：Codex；Done。使用者追加「改好後，連我的修改一起commit」；前置拖尾25c29864／素材庫3af6e34已完成。允許提交目前全部必要使用者修改、同步必要素材庫Preset／layout及來源紀錄，僅補skills2／bridge／Worker快取、LV及本段；禁止重設或覆寫使用者美術／配置，不合併推送。

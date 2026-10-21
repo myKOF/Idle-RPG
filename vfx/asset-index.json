@@ -6,7 +6,7 @@
     "name": "asset-scanner",
     "version": "1.0.0"
   },
-  "assetCount": 2463,
+  "assetCount": 2464,
   "assets": [
     {
       "assetId": "antigravity-authored/ice/ice-arrow-spike.png",
@@ -734,6 +734,25 @@
         "dimensions": {
           "width": 256,
           "height": 200
+        },
+        "dimensionsSource": "attributes",
+        "colorModel": null,
+        "bitDepth": null,
+        "hasAlphaChannel": null,
+        "pixelsAnalyzed": false
+      }
+    },
+    {
+      "assetId": "codex-authored/arcane-rod/cylinder.svg",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/arcane-rod/cylinder.svg",
+      "format": "svg",
+      "fileSize": 1031,
+      "contentHash": "sha256:de60e09f75b2b79728a471d21ac987ed440d09e2a18015ce12617f3c35bd96ac",
+      "facts": {
+        "dimensions": {
+          "width": 144,
+          "height": 1024
         },
         "dimensionsSource": "attributes",
         "colorModel": null,
