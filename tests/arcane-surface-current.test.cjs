@@ -31,16 +31,17 @@ test('ARCANE-CURRENT 表面電流逐格流動，完整貼合已編輯柱身的�
 
 test('ARCANE-CURRENT 增補工具不重設使用者的柱身與父層設定，重跑不重複圖層', () => {
   const base = JSON.parse(JSON.stringify(preset));
-  base.layers = base.layers.filter(l => l.id !== 'surface-current');
+  base.layers = base.layers.filter(l => l.id !== 'surface-current' && l.id !== 'outer-arcs');
   const result = author.enhance(base);
-  assert.deepEqual(result.layers.filter(l => l.id !== 'surface-current'), base.layers);
+  assert.deepEqual(result.layers.filter(l => l.id !== 'surface-current' && l.id !== 'outer-arcs'), base.layers);
+  assert.ok(result.layers.some(l => l.id === 'outer-arcs'), '外圍電弧圖層會被補上');
   assert.deepEqual(author.enhance(result), result);
   assert.ok(Core.validatePreset(result).ok);
 });
 
 test('ARCANE-CURRENT 自製圖集與出貨雜湊一致，圖集保留透明柱身裁切及8格', () => {
   const index = require('../vfx/shipped-assets.json');
-  for (const [name, source] of [['cylinder.svg', author.cylinderSVG()], ['surface-current.svg', author.currentSVG()], ['emitter-flare.svg', author.emitterSVG()]]) {
+  for (const [name, source] of [['cylinder.svg', author.cylinderSVG()], ['surface-current.svg', author.currentSVG()], ['emitter-flare.svg', author.emitterSVG()], ['outer-arcs.svg', author.arcsSVG()]]) {
     const entry = index.assets.find(a => a.assetId === 'codex-authored/arcane-rod/' + name);
     assert.ok(entry);
     const bytes = fs.readFileSync(require.resolve('../images/vfx/assets/' + entry.relativePath));
@@ -48,5 +49,6 @@ test('ARCANE-CURRENT 自製圖集與出貨雜湊一致，圖集保留透明柱�
     assert.equal('sha256:' + crypto.createHash('sha256').update(bytes).digest('hex'), entry.contentHash);
   }
   assert.equal((author.currentSVG().match(/clip-path="url\(#body\)"/g) || []).length, 8);
-  assert.match(author.cylinderSVG(), /72 0 C96 17/);
+  assert.match(author.cylinderSVG(), /M72 0 C80 110 124 250 124 430/);   // 前端為長錐形尖端
+  assert.equal((author.arcsSVG().match(/<g transform="translate\(/g) || []).length, 8);
 });

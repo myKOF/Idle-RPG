@@ -8,10 +8,10 @@
   <stop offset=".8" stop-color="#973aff" stop-opacity=".3"/><stop offset="1" stop-color="#7622ff" stop-opacity="0"/>
  </linearGradient>
  <linearGradient id="axial" x1="0" y1="0" x2="0" y2="1">
-  <stop stop-color="#f6cbff" stop-opacity=".1"/><stop offset=".5" stop-color="#ffffff" stop-opacity=".45"/>
-  <stop offset="1" stop-color="#f6cbff" stop-opacity=".1"/>
+  <stop stop-color="#ffffff" stop-opacity=".95"/><stop offset=".45" stop-color="#ffffff" stop-opacity=".7"/>
+  <stop offset="1" stop-color="#f6cbff" stop-opacity=".12"/>
  </linearGradient>
 </defs>
-<path d="M20 88 C20 51 48 17 72 0 C96 17 124 51 124 88 V972 A52 52 0 0 1 20 972 Z" fill="url(#barrel)"/>
-<path d="M72 90 V966" stroke="url(#axial)" stroke-width="5" stroke-linecap="round"/>
+<path d="M72 0 C80 110 124 250 124 430 V972 A52 52 0 0 1 20 972 V430 C20 250 64 110 72 0 Z" fill="url(#barrel)"/>
+<path d="M72 0 C75 130 80 460 80 640 L64 640 C64 460 69 130 72 0 Z" fill="url(#axial)"/>
 </svg>
