@@ -14,7 +14,7 @@
         "y": 0
       },
       "alpha": 0.72,
-      "tint": "#ff0b7e",
+      "tint": "#ff9500",
       "blendMode": "screen",
       "duration": 1,
       "emission": {
@@ -26,9 +26,9 @@
         0.38
       ],
       "spawn": {
-        "height": 33.737,
+        "height": 1,
         "shape": "box",
-        "width": 30.67
+        "width": 1
       },
       "speed": [
         168.685,
@@ -66,20 +66,7 @@
           0
         ]
       ],
-      "scaleOverLife": [
-        [
-          0,
-          0.6
-        ],
-        [
-          0.25,
-          1
-        ],
-        [
-          1,
-          0.15
-        ]
-      ]
+      "scaleOverLife": 0.4125
     },
     {
       "id": "ember-shell",
@@ -91,12 +78,13 @@
         "y": 0
       },
       "scale": {
-        "x": 0.1946,
-        "y": 0.1946
+        "x": 0.0847,
+        "y": 0.0847
       },
       "alpha": 0.8,
-      "tint": "#ff1286",
-      "blendMode": "screen"
+      "tint": "#ffcc14",
+      "blendMode": "screen",
+      "duration": 1
     },
     {
       "id": "molten-heart",
@@ -108,12 +96,13 @@
         "y": 0
       },
       "scale": {
-        "x": 0.1198,
-        "y": 0.1198
+        "x": 0.0521,
+        "y": 0.0521
       },
       "alpha": 0.95,
-      "tint": "#ff598d",
-      "blendMode": "screen"
+      "tint": "#ff5900",
+      "blendMode": "screen",
+      "duration": 1
     },
     {
       "id": "surface-flames",
@@ -121,11 +110,15 @@
       "assetId": "particle-pack/png-black-background/flame_04.png",
       "zIndex": 3,
       "position": {
-        "x": 9.0695,
-        "y": 0
+        "x": -7.2284,
+        "y": 2.9633
+      },
+      "scale": {
+        "x": 0.5,
+        "y": 0.5
       },
       "alpha": 0.6,
-      "tint": "#ff256c",
+      "tint": "#ff7b24",
       "blendMode": "screen",
       "duration": 1,
       "emission": {
@@ -137,9 +130,9 @@
         0.25
       ],
       "spawn": {
-        "height": 36.804,
+        "height": 1,
         "shape": "box",
-        "width": 30.67
+        "width": 1
       },
       "speed": [
         23.0025,
@@ -171,53 +164,6 @@
       ]
     },
     {
-      "id": "trailing-embers",
-      "type": "particle",
-      "assetId": "particle-pack/png-transparent/circle_05.png",
-      "zIndex": 4,
-      "position": {
-        "x": -21.6005,
-        "y": 0
-      },
-      "alpha": 0.85,
-      "tint": "#ff2273",
-      "blendMode": "screen",
-      "duration": 1,
-      "emission": {
-        "mode": "rate",
-        "rate": 17
-      },
-      "lifetime": [
-        0.2,
-        0.4
-      ],
-      "spawn": {
-        "height": 39.871,
-        "shape": "box",
-        "width": 30.67
-      },
-      "speed": [
-        199.355,
-        352.705
-      ],
-      "direction": 180,
-      "spread": 34,
-      "startScale": [
-        0.006,
-        0.015
-      ],
-      "alphaOverLife": [
-        [
-          0,
-          1
-        ],
-        [
-          1,
-          0
-        ]
-      ]
-    },
-    {
       "id": "sprite-6",
       "type": "sprite",
       "assetId": "light-masks-1.0/transparent/circle_c_noise.png",
@@ -226,12 +172,13 @@
         "y": 0
       },
       "scale": {
-        "x": 0.1958,
-        "y": 0.1958
+        "x": 0.0852,
+        "y": 0.0852
       },
       "alpha": 0.9,
-      "tint": "#ff2a7d",
-      "blendMode": "normal"
+      "tint": "#f56e00",
+      "blendMode": "normal",
+      "duration": 1
     },
     {
       "id": "tail",
@@ -239,17 +186,18 @@
       "assetId": "particle-pack/png-black-background/rotated/muzzle_02_rotated.png",
       "zIndex": 1,
       "position": {
-        "x": -9.5918,
-        "y": 2.2743
+        "x": -13.0014,
+        "y": 1.0151
       },
+      "rotation": 3.141593,
       "scale": {
-        "x": 0.3415,
-        "y": 0.1504
+        "x": 0.1292,
+        "y": 0.0624
       },
       "alpha": 0.85,
-      "tint": "#ff1b7a",
+      "tint": "#f8a10d",
       "blendMode": "screen",
-      "duration": 1.5,
+      "duration": 1,
       "alphaOverLife": [
         [
           0,
@@ -300,12 +248,13 @@
         "y": 0
       },
       "scale": {
-        "x": 0.0909,
-        "y": 0.0909
+        "x": 0.055,
+        "y": 0.055
       },
       "alpha": 0.9,
-      "tint": "#f70060",
-      "blendMode": "screen"
+      "tint": "#f8a10d",
+      "blendMode": "screen",
+      "duration": 1
     }
   ],
   "sizing": {

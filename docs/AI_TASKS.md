@@ -11638,3 +11638,19 @@ Worker 存活且頁面正常完成載入。
 - 附帶：`--apply --write` 把 52 個敵人技能的 fx 鍵順序重排成「JSON 在前、欄位參數在後」（983374e0 搬欄位的必然結果，任何一次套用參數都會產生；語意只有迫擊變）。ELITE-DATA-3 兩個過期斷言更新（毒素加持 6→16 秒、火徑 10→8 秒，都是先前改了資料沒改測試），由紅轉綠。
 - 文件：ELITE_AFFIXES.md 重生（產生器用語「最小射程」改成「先拉開到 24m 外再放（最多跑 3s）」）、Antigravity 測試案例的迫擊三處同步。快取：Worker 的 skills2.js／elite.js、`WORKER_ASSET_VERSION`、index.html 的 skills2.js／bridge.js 版號都升。
 - 測試：ELITE-ENGINE-13 改寫、新增 13b（10 米處施放→先退，0.6 秒退到 26 米即放）、13c（玩家一直貼在 8 米旁→約 3 秒後直接放、放完不再後退、進冷卻）、13d（本來就在 24 米外→直接放不跑位），用真的 `bfTickApproach` 移動。6 個突變全部抓到。相關 52 檔測試的失敗名單與 HEAD 相比只少不多（ELITE-DATA-3、光耀之堂快取同步轉綠）。build_check 559 檔通過。未在真瀏覽器實機跑（行為由引擎測試以真實移動程式碼驗證）。
+## MYTHIC-DETAIL-MATCH-TIPS-20261021 — 裝備詳情同步tips深色底
+
+- Owner：Codex；Done；使用者要求裝備詳情使用tips同樣底色。前置神話tips閱讀內襯完成，單一開發者；允許css/style.css神話詳情覆層、index僅CSS快取、LV_upgrade_system與本紀錄；禁止JS／圖示／玩法／配置／存檔／VFX／其他副本，不合併推送。四檔衝突預檢無外部來源，保留既有vfx/presets/en-spark.json未提交內容。
+- 驗收：淡金及銀藍共用副手詳情與tips計算底圖一致，固定框／捲動與文字保持正常；六份裝備回歸、Build、隔離瀏覽器及Console／diff後Commit。無外部或新增獨立素材，後續使用者重載驗收。
+
+- 完成4檔：css/style.css將既有tips深色閱讀內襯同步套用神話詳情固定父框，淡金及銀藍共用副手沿各自底圖；文字／角飾不套opacity，背包快取未變。index僅style88→89，LV_upgrade_system及本紀錄同步。純CSS局部修改，無新素材或素材庫Commit。
+- 測試指令：node --test tests/equipment-detail-layout.test.cjs tests/equip-socket-ui.test.cjs tests/equip-reroll-ui.test.cjs tests/equipment-tooltip-compare.test.cjs tests/equipment-selection-border.test.cjs tests/equipment-weapon-icons.test.cjs，51/51通過；npm.cmd run build為557檔通過；git diff --check通過。未新增低影響外觀測試，未改既有斷言，未跑全庫。
+- 瀏覽器：localhost隔離載入正式renderDetail／showItemTooltip／itemDetailHTML及8份CSS，淡金／銀藍詳情與tips的backgroundImage逐字一致、整卡opacity仍1；背包比較2卡，其他品質移除神話class及內襯，無水平溢出。窄高度捲動0→70正常，框仍由父容器承載；Console warning／error0。截圖mythic-detail-match-tips.png保存在本聊天visualizations。未載玩家存檔／完整戰鬥／跨瀏覽器，臨時頁與服務已關閉。
+- 唯讀檢查未改：共通規範／Workflow、js/ui.js／item.js及既有6份回歸、其他7份CSS。自我Review確認只有神話詳情覆層加入共用selector，沒有遊戲規則、數值或圖示變更。既有vfx/presets/en-spark.json修改保留，不納入Commit。
+- 交付：無本次未完成實作或新增已知風險，可供Review／合併；Commit為本段所在[Codex] fix: 裝備詳情同步tips深色底，回覆附編號。未合併推送；下一步重新整理本分支遊戲驗收，其他副本需整合本Commit。
+
+## MERGE-CODEX-20261021-3e0d929d — pending develop merge
+
+- Owner：Codex integrator；Done。整合 original HEAD `586bfabe483d973ffe59f965160bda55de3fe77c` 與 incoming MERGE_HEAD `3e0d929dcbf5bf6f0c5984afeb32a54413018d42`；不變更兩個 parent、不操作索引／Commit／推送／其他 worktree／素材庫。
+- 衝突僅 `docs/AI_TASKS.md` 檔尾的獨立追加紀錄：保留 incoming 的 VFX 整體變形、敵人技能欄位與迫擊拉距三段，也保留 HEAD 的裝備詳情同步 tips 深色底紀錄；沒有以任一整側覆蓋另一側。controller 已處理的 incoming 檔案 EOF 空白整理原樣保留。
+- 驗證：VFX／裝備相關 12 檔共 388 項，381 通過／7 失敗；裝備範圍全綠，7 項均為任務歷史已記錄的既有基線（素材語意索引不同步、LAYOUT-1／3、FIELD、CATALOG-3、CHAIN 金雷、STARFALL-TAIL），新增失敗 0。`npm.cmd run build` 559 檔通過；完整 merged result 的 `git diff HEAD --check` 與衝突標記檢查通過。沒有修改斷言或新增素材庫檔案；controller 可依回報檔案清單 stage 並建立 merge commit。
