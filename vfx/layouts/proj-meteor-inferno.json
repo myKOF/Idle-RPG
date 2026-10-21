@@ -7,17 +7,19 @@
       "name": "proj-meteor-inferno",
       "layerIds": [
         "smoke-wake",
+        "comet-tail-envelope",
         "rolling-flame-tail",
+        "golden-tail-stream",
+        "white-tail-thread",
         "trailing-embers",
         "meteor-flame-halo",
-        "meteor-halo-gold-rim",
-        "inferno-meteor-core-ring",
         "cracked-meteor-core",
+        "meteor-halo-gold-rim",
+        "white-hot-leading-face",
+        "leading-hot-core",
         "lava-flow-0",
         "lava-flow-1",
-        "lava-flow-2",
-        "lava-flow-3",
-        "lava-flow-4"
+        "lava-flow-2"
       ]
     }
   ],

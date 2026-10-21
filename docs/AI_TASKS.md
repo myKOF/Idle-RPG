@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## METEOR-COMET-VFX-20261021 — 殞石術白熱火球與長煙火尾跡
+
+- Owner：Codex；Done；使用者提供斜向墜落殞石參考圖，要求殞石術外觀類似。以既有表定proj-meteor-inferno重新製作白黃高溫前端、橘紅火焰外層、長火尾與轉灰煙跡，僅參考造型與層次、不使用附件像素。單一開發者，沿用已登記CC0素材；參數、傷害、數量、飛行／命中時間與尺寸契約不改。
+- 修改範圍：本Preset與單一根群組layout、新authoring/author/meteor-comet.cjs可重製腳本、LV_upgrade_system及本紀錄；素材庫codex-authored/meteor內同名Preset／layout與製作來源說明。禁止修改Runtime／Core／Worker／Protocol／配置／落地爆炸Preset／巨型地爆天星／其他素材。目標衝突預檢無外部來源，保留本副本六份既有其他VFX未提交變更，不併入本Commit。
+- 開始前確認RPG Mote Studio可開啟，主要為像素圖／序列幀及.mote／Aseprite；本次不需繪製新貼圖，既有動態粒子Preset與完整落地時序需沿專案VFX工具製作，改用既有Core／kit與正式Pixi預覽。驗收明暗背景可讀性／斜向與水平飛行／多顆、身後尾跡與白熱前端、正式表定引用及傷害時序不變、合法canonical／分組／素材匯出／舊分頁防覆寫、相關回歸／Build／diff，先素材庫再專案各自Commit。新特效附截圖及可複製檔名，已開編輯器需保留未存內容後重載。
+- 完成遊戲5檔：proj-meteor-inferno Preset／layout、meteor-comet.cjs製作腳本、LV_upgrade_system及本紀錄。14層分為灰煙、長外焰、黃色內焰、白熱細流、餘燼及前端火球／表面火舌，保留同一根群組；本體sizing（custom14×14米／authored60×60）、duration1／loop逐值與原版相同。降低全白過曝並用透明版外焰維持輪廓；素材均為原庫CC0，沒有新增／修改PNG、shader、Runtime或新的特效來源。此Preset同時供天穹崩裂火殞石使用，該共用外觀隨之更新；雷殞石、敵方小殞石、地爆天星各自Preset及原落地爆炸未改。沒有修改Excel／CSV／JS配置、不需BAT；主執行緒Preset載入已有cache:no-store，無JS變更需bump快取。
+- 素材庫同步codex-authored/meteor/presets及layouts同名JSON，另附SOURCE.md記錄參考與自製界線、CC0來源及重製指令；兩倉庫兩份JSON逐位元相同。`node tools/vfx/export-assets.cjs --check`通過，188個已出貨assetId涵蓋本次所有引用，無需新增貼圖或更新出貨索引。Core.validatePreset／serialisePreset、Layout.validateLayout及單根完整layerIds通過，kit.probe最多54粒子，製作座標bbox x[-371,59]／y[-62,63]（含尾跡），不以尾跡長度充當碰撞／傷害範圍。離線三時點深色預覽最高過曝約0.2%。
+- 瀏覽器：正式Editor載入14層並顯示合法，以36米／秒檢查水平飛行；另使用正式Pixi8＋Core／Backend／Runtime建立隔離單顆／三顆斜向預覽，採引擎sgFireMeteorFallTiming的1000ms及既有350ms連發間隔，不寫玩家存檔。核對火尾在身後、灰煙逐漸淡出、深／淺背景、原表定mark-red與burst-meteor-inferno／burst-fire的起飛及獨立落地事件；t=0.78秒活動彈體1／3，t=1.78秒皆0且原爆炸可見，missing0。深色背景火焰層次最清楚，淺背景白熱亮部較淡，保留橘色輪廓與煙跡。初版臨時預覽先修正Pixi8非同步init、改用與遊戲相同不透明畫布、拆開起飛／落地事件；這些均為驗證fixture修正，沒有改產品程式配合預覽。
+- 舊分頁驗收：保留最初載入的Editor，磁碟Preset更新後實際按「儲存到repo」，顯示「特效或分組檔已由外部更新，已阻止舊內容覆寫」，保留未存內容並提供下載全部編輯備份；兩份JSON雜湊與素材庫仍一致。Guard.check也拒絕原始版本base／peer-base。該Agent分頁僅調檢視速度／格線、無美術編輯內容，之後載入最終版本作交付；使用者其他舊Editor若有未存內容，應先下載備份／另存，再重載，避免儲存舊內容。
+- 測試：`node --test --test-reporter=tap tests/vfx-core.test.cjs tests/meteor-entry-origin.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-runtime-screen-space.test.cjs`最終193/193；包含每顆獨立天降起點、平滑位置與抵達時間、原飛行／命中事件、快取／尺寸及編輯器防覆寫。擴大再含vfx-editor-save／meteor-impact-timing／starfall-vfx／skill2-vfx共285項273過11失敗1略過；唯讀映射本次修改前Preset／layout重跑，結果及11個失敗名稱完全相同。既有失敗為火球／伴生火球／地爆天星及其他技能舊斷言，另aura-earth-reversal既有非canonical；未改無關Preset或放寬測試。最後調色後重驗上述193核心及本次Preset／layout canonical，無新增失敗，不寫鏡像低價值測試。
+- 交付證據：本聊天visualizations的meteor-comet-flight.jpg與meteor-comet-impact.jpg，前者已先行貼給使用者；臨時預覽頁及非必要測試產物提交前清理。保留專用Editor服務與最新版頁供Review，不中斷使用者其他Editor；未做完整遊戲長戰／跨瀏覽器／手機效能。唯讀未改skills2／battle-renderer／Runtime／Core／Backend、Worker／Protocol、參數與既有測試、素材PNG及落地／巨型殞石Preset；其他使用者進行中的Excel及VFX原樣保留，不合併推送。
+- `npm.cmd run build`559檔通過，兩倉庫diff檢查通過；素材庫先提交12f4426（3檔：Preset／layout／SOURCE.md），遊戲Commit為本段所在`[Codex] feat: 殞石術改為白熱火球與長煙火尾跡`（5檔），回覆附編號。執行期間既有自動同步納入f90b5339的裝備樣式及其他VFX提交，僅收最新HEAD下本任務差異，未用舊版覆蓋；本Agent沒有切分支、主動合併或推送。無本次未完成實作，可Review／整合；下一步重載遊戲看實際戰鬥密度與美術感受，其他電腦須同步遊戲與素材庫兩倉庫。已知限制為上述11項既有失敗、1略過與未做完整實戰驗收。
+
 ## ULTIMATE-EVOLUTION-NAME-20261021 — 第8階三選一改稱終極進化
 
 - Owner：Codex；Done；使用者要求每個技能第8階三選一「超神進化」改名為「終極進化」。前置既有三選一／切換／提示流程完成，單一開發者，所有目標衝突預檢無外部來源。
