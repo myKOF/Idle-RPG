@@ -5061,6 +5061,19 @@ function syncItemGridCells(box, keys, htmls) {
   }
 }
 
+function twoHandSharedBadgeHTML(detail) {
+  return '<span class="twohand-shared-tag' + (detail ? ' twohand-shared-note' : '') + '">' +
+    '<svg viewBox="0 0 20 12" aria-hidden="true"><path d="M8 3H5a3 3 0 000 6h3m4-6h3a3 3 0 010 6h-3M6 6h8"></path></svg>雙手共用</span>';
+}
+
+function uiIsTwoHandSharedSlot(it, source, slot) {
+  if (!it || source !== 'equip' || slot !== 'weapon2' || uiAsuraDualWield()) return false;
+  var snapshot = uiEquipPanelSnapshot();
+  var eq = snapshot && equipViewEquipment(snapshot);
+  return !!(eq && !eq.weapon2 && eq.weapon && eq.weapon.id === it.id &&
+    typeof isTwoHandItem === 'function' && isTwoHandItem(eq.weapon));
+}
+
 function renderEquip() {
   var equipSnapshot = uiEquipPanelSnapshot();
   var headerSnapshot = uiHeaderPanelSnapshot();
@@ -5092,6 +5105,7 @@ function renderEquip() {
       var flashHtml = equipFlashActive(slot) ? '<span class="equip-flash-overlay" aria-hidden="true"></span>' : '';
       h += '<div class="eq-slot filled' + effClass + (twoHandDuplicate ? ' twohand-duplicate' : '') + (inert ? ' eq-inert' : '') + ' slot-' + slot + '" data-id="' + it.id + '" data-src="equip" data-slot="' + slot + '" style="border-color:' + r.color + '; box-shadow: inset 0 0 15px ' + r.color + '40">' +
         iconHtml + ancientStarBadgeHTML(it) + flashHtml +
+        (twoHandDuplicate ? twoHandSharedBadgeHTML(false) : '') +
         (inert ? '<span class="th-occupied-mark" title="未裝備【修羅亂舞】，副手的雙手武器不生效">🚫</span>' : '') +
         '</div>';
     } else {
@@ -5525,6 +5539,7 @@ function renderInventory() {
     }
   }
   applyInventoryVisibleRows(box);
+  if (typeof InventorySkin !== 'undefined') InventorySkin.prepare(box, entryClientWidth);
   // 神鑄頁沒有詳情面板，格子也不套選取標示（updateSelectionUI 會跳過）
   if (inventoryForgeMode()) return;
   if (UI.inventoryScrolling) updateSelectionUI();
@@ -5851,11 +5866,13 @@ function equipRuneGridHTML(it, gemsSnapshot, draft) {
 function renderDetail() {
   var pane = $id('detail-pane');
   var it = findSelItem();
+  var twoHandShared = uiIsTwoHandSharedSlot(it, UI.sel && UI.sel.source, UI.sel && UI.sel.slot);
   // 逐顆刻印的裝備與庫存快照分開抵達；整批完成才更新目前符文頁，避免空孔及庫存跳動。
   var engravingMode = UI.equipMatMode;
   var renderedSocket = pane._equipSocketRender;
   if (engravingMode && engravingMode.engraving && UI.sel && UI.sel.id === engravingMode.itemId &&
-      renderedSocket && renderedSocket.itemId === engravingMode.itemId && renderedSocket.kind === 'rune') {
+      renderedSocket && renderedSocket.itemId === engravingMode.itemId && renderedSocket.kind === 'rune' &&
+      pane.classList.contains('twohand-shared') === twoHandShared) {
     if (it) syncEquipSocketControls(it, engravingMode);
     return;
   }
@@ -5866,6 +5883,8 @@ function renderDetail() {
   }
   if (it && it.rarity === 6) pane.classList.add('mythic-detail');
   else pane.classList.remove('mythic-detail');
+  if (twoHandShared) pane.classList.add('twohand-shared');
+  else pane.classList.remove('twohand-shared');
   if (!it) pane.classList.remove('is-socket-page');
   if (!it || !UI.sel || UI.affixPoolItemId !== it.id) {
     hideAffixPool();
@@ -5919,12 +5938,13 @@ function renderDetail() {
   var slotMode = socketMode || runeMode;   // 鑲嵌頁（寶石或符文）：標題＋孔列＋下方素材格，取代一般詳情
   var matMode = !rerollMode && UI.equipMatMode && UI.equipMatMode.itemId === it.id ? UI.equipMatMode.mode : null;
   syncEquipActionCooldown(it, rerollMode ? 'reroll-affix' : (matMode || 'upgrade'));
-  var slotHeaderHtml = slotMode ? itemHeaderHTML(it, { justUpgraded: justUpgraded }) : null;
+  var sharedNoteHtml = twoHandShared ? twoHandSharedBadgeHTML(true) : '';
+  var slotHeaderHtml = slotMode ? sharedNoteHtml + itemHeaderHTML(it, { justUpgraded: justUpgraded }) : null;
   var slotHolesHtml = slotMode ? (socketMode ? itemSocketHTML(it, { selIdx: -1, pending: false }) : itemRuneHTML(it, { selIdx: -1, pending: false, draft: runeMode.draft })) : null;
   var slotStockHtml = slotMode ? (socketMode ? equipGemGridHTML(gemsSnapshot) : equipRuneGridHTML(it, gemsSnapshot, runeMode.draft)) : null;
   var h = slotMode ?
     '<div class="equip-socket-header">' + slotHeaderHtml + '</div><div class="equip-socket-page">' + slotHolesHtml + '</div><div class="equip-socket-gems">' + slotStockHtml + '</div>' :
-    itemDetailHTML(it, null, {
+    sharedNoteHtml + itemDetailHTML(it, null, {
       gold: player && player.gold,
       essence: player && player.essence,
       justUpgraded: justUpgraded,
@@ -9988,7 +10008,10 @@ function showItemTooltip(it, anchorEl, opts) {
   }
 
   var h = '';
-  var mainCard = '<div class="equip-detail-card' + (it.rarity === 6 ? ' mythic-detail' : '') + '">' + detailHtml + '</div>';
+  var twoHandShared = uiIsTwoHandSharedSlot(it, tooltipSource, anchorEl && anchorEl.getAttribute('data-slot'));
+  var mainCard = '<div class="equip-detail-card' + (it.rarity === 6 ? ' mythic-detail' : '') +
+    (twoHandShared ? ' twohand-shared' : '') + '">' +
+    (twoHandShared ? twoHandSharedBadgeHTML(true) : '') + detailHtml + '</div>';
   if (compareItem && compareItem.id !== it.id) {
     var compCard = '<div class="equip-detail-card' + (compareItem.rarity === 6 ? ' mythic-detail' : '') + '">' + itemDetailHTML(compareItem, null, {
       isEquipped: true,

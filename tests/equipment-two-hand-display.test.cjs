@@ -42,12 +42,13 @@ test('雙手武器在副手欄顯示同一把武器，但仍以視覺 duplicate 
     ancientStarBadgeHTML: () => '',
     renderEquipSetTabs: () => {},
     renderDetail: () => {},
+    syncEquipmentSelectionMemory: () => {},
     $id: (id) => id === 'equip-grid' ? equipGrid : null,
     // 修羅亂舞（js/skills2.js）沒生效＝副手仍由主手的雙手武器佔用，本測試驗的就是那個狀態
     uiAsuraDualWield: () => false
   };
   vm.createContext(context);
-  vm.runInContext(functionBody('renderEquip'), context);
+  vm.runInContext(functionBody('twoHandSharedBadgeHTML') + '\n' + functionBody('renderEquip'), context);
   context.renderEquip();
 
   const html = equipGrid.innerHTML;
@@ -56,6 +57,8 @@ test('雙手武器在副手欄顯示同一把武器，但仍以視覺 duplicate 
   assert.match(html, /data-slot="weapon2"/);
   assert.match(html, /data-slot="weapon2"[^>]*>[\s\S]*equip-flash-overlay/);
   assert.doesNotMatch(html, /slot-weapon2[^>]*twohand-occupied/);
+  assert.equal((html.match(/雙手共用/g) || []).length, 1);
+  assert.match(html, /slot-weapon2[\s\S]*twohand-shared-tag/);
 });
 
 test('雙手武器裝備成功時，主手與副手都進入閃光狀態', () => {
@@ -65,6 +68,7 @@ test('雙手武器裝備成功時，主手與副手都進入閃光狀態', () =>
     setTimeout: () => 1,
     clearTimeout: () => {}
   };
+  context.UI_GAME_TIMING = context;
   vm.createContext(context);
   vm.runInContext(functionBody('equipFlashActive') + '\n' + functionBody('triggerEquipFlash'), context);
 
@@ -75,13 +79,16 @@ test('雙手武器裝備成功時，主手與副手都進入閃光狀態', () =>
   assert.equal(context.UI.dirty.equip, true);
 });
 
-test('雙手武器副手 duplicate 使用淡紅提示樣式', () => {
+test('神話裝備共用淡金色，複製副手使用銀藍底與清楚可見的共用標記', () => {
   assert.match(css, /\.eq-slot\.twohand-duplicate\s*\{[\s\S]*border-color:\s*#f87171\s*!important/);
   assert.match(css, /\.eq-slot\.twohand-duplicate::after\s*\{[\s\S]*background:\s*rgba\(185,\s*28,\s*28,/);
-  assert.match(css, /\.eq-slot\.eff-mythic\.twohand-duplicate\s*\{[\s\S]*outline-color:\s*#fde68a/);
+  assert.match(css, /\.eq-slot\.eff-mythic\.twohand-duplicate\s*\{\s*outline:\s*none/);
   assert.match(css, /\.eq-slot\.eff-genesis\.twohand-duplicate\s*\{[\s\S]*outline-color:\s*#a5f3fc/);
   assert.match(css, /\.eq-slot\.eff-godforged\.twohand-duplicate\s*\{[\s\S]*outline-color:\s*#f5d0fe/);
-  assert.match(css, /\.eff-mythic\.twohand-duplicate::after\s*\{[\s\S]*linear-gradient\(rgba\(253,\s*230,\s*138,\s*0\.28\)/);
+  assert.match(css, /--mythic-surface-tint:\s*linear-gradient\(rgba\(253,\s*230,\s*138,\s*0\.28\)/);
+  assert.match(css, /\.eff-mythic\.twohand-duplicate::after\s*\{\s*background:\s*var\(--mythic-slot-surface\)/);
+  assert.match(css, /\.eff-mythic\.twohand-duplicate,[\s\S]*?--mythic-surface-base:\s*linear-gradient\(to bottom, #46565b, #2e3b40 64%, #334145 100%\)/);
+  assert.match(css, /\.eq-slot\.twohand-duplicate \.eq-icon\s*\{\s*opacity:\s*0\.72/);
   assert.match(css, /\.eff-genesis\.twohand-duplicate::after\s*\{[\s\S]*linear-gradient\(rgba\(165,\s*243,\s*252,\s*0\.25\)/);
   assert.match(css, /\.eff-godforged\.twohand-duplicate::after\s*\{[\s\S]*linear-gradient\(rgba\(245,\s*208,\s*254,\s*0\.25\)/);
   assert.match(css, /\.eq-slot\.selected\.eff-mythic\.twohand-duplicate,[\s\S]*outline:\s*3px\s+solid\s+#fff/);

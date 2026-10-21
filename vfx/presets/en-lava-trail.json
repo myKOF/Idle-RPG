@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "en-lava-trail",
-  "duration": 2.1,
+  "duration": 3.5,
   "loop": true,
   "layers": [
     {
@@ -10,25 +10,25 @@
       "assetId": "splat-pack/png/double-512px/splat05.png",
       "zIndex": 0,
       "scale": {
-        "x": 0.3906,
-        "y": 0.3906
+        "x": 0.2982,
+        "y": 0.2982
       },
-      "alpha": 0.5,
-      "tint": "#860b4c",
-      "blendMode": "normal",
+      "alpha": 0.35,
+      "tint": "#ff6600",
+      "blendMode": "add",
       "duration": 2.1,
       "alphaOverLife": [
         [
           0,
-          0.5
+          0.965426
         ],
         [
-          0.5,
-          0.58
+          0.5093,
+          0.649468
         ],
         [
           1,
-          0.5
+          0.965426
         ]
       ],
       "projection": {
@@ -42,25 +42,25 @@
       "assetId": "particle-pack/png-black-background/circle_01.png",
       "zIndex": 1,
       "scale": {
-        "x": 0.3906,
-        "y": 0.3906
+        "x": 0.4121,
+        "y": 0.4121
       },
-      "alpha": 0.55,
-      "tint": "#ff218a",
+      "alpha": 0.9,
+      "tint": "#ff8800",
       "blendMode": "add",
       "duration": 2.1,
       "alphaOverLife": [
         [
           0,
-          0.55
+          0.977128
         ],
         [
           0.5,
-          0.4
+          0.860106
         ],
         [
           1,
-          0.55
+          0.953723
         ]
       ],
       "projection": {
@@ -78,7 +78,7 @@
         "y": 0.3906
       },
       "alpha": 0.45,
-      "tint": "#ff3d84",
+      "tint": "#fe8a06",
       "blendMode": "add",
       "duration": 2.1,
       "alphaOverLife": [
@@ -128,7 +128,7 @@
         "y": 0.3906
       },
       "alpha": 0.4,
-      "tint": "#ff3d84",
+      "tint": "#fe8a06",
       "blendMode": "add",
       "delay": 0.7,
       "duration": 2.1,
@@ -179,7 +179,7 @@
         "y": 0.3906
       },
       "alpha": 0.35,
-      "tint": "#ff3d84",
+      "tint": "#fe8a06",
       "blendMode": "add",
       "delay": 1.4,
       "duration": 2.1,
@@ -219,129 +219,6 @@
         "x": 1,
         "y": 0.5
       }
-    },
-    {
-      "id": "bubbles",
-      "type": "particle",
-      "assetId": "new_materials/orb/sphere_28.png",
-      "zIndex": 5,
-      "tint": "#ff76a5",
-      "blendMode": "normal",
-      "emission": {
-        "mode": "rate",
-        "rate": 3
-      },
-      "lifetime": [
-        0.9,
-        1.4
-      ],
-      "spawn": {
-        "height": 90,
-        "shape": "box",
-        "width": 180
-      },
-      "speed": [
-        4,
-        14
-      ],
-      "direction": -90,
-      "spread": 60,
-      "startScale": [
-        0.0137,
-        0.0254
-      ],
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.2,
-          0.85
-        ],
-        [
-          0.8,
-          0.7
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.5
-        ],
-        [
-          1,
-          1.1
-        ]
-      ],
-      "projection": {
-        "upright": true,
-        "x": 1,
-        "y": 0.5
-      }
-    },
-    {
-      "id": "embers",
-      "type": "particle",
-      "assetId": "particle-pack/png-black-background/circle_05.png",
-      "zIndex": 7,
-      "tint": "#ff3d84",
-      "blendMode": "add",
-      "emission": {
-        "mode": "rate",
-        "rate": 6
-      },
-      "lifetime": [
-        0.5,
-        0.9
-      ],
-      "spawn": {
-        "height": 80,
-        "shape": "box",
-        "width": 180
-      },
-      "speed": [
-        20,
-        50
-      ],
-      "direction": -90,
-      "spread": 50,
-      "gravity": {
-        "x": 0,
-        "y": -40
-      },
-      "startScale": [
-        0.0059,
-        0.0117
-      ],
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.2,
-          1
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          1
-        ],
-        [
-          1,
-          0.4
-        ]
-      ]
     }
   ],
   "sizing": {
