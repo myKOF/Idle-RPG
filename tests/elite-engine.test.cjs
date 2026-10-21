@@ -155,6 +155,18 @@ test('ELITE-ENGINE-4 火鏈：同群夥伴之間常駐一條鏈，玩家踩上�
   assert.equal(c.ELITE_RT.chains.length, 0, '夥伴死了鏈條消失');
 });
 
+test('ELITE-ENGINE-4b 火鏈夥伴挑最近的，且太遠（超過最長鏈環數的兩倍長）就不連', () => {
+  const c = fresh();
+  const a = makeElite(c, ['e_firechain'], { x: -100, y: 0, hp: 1e9 });
+  const far = makeElite(c, ['e_vitality'], { x: 100, y: 0, hp: 1e9 });
+  const near = makeElite(c, ['e_vitality'], { x: -140, y: 20, hp: 1e9 });
+  assert.equal(c.eliteChainPartner(a), near, '挑最近的');
+  near.hp = 0;
+  assert.equal(c.eliteChainPartner(a), far, '最近的死了換下一隻');
+  far.pos.x = 5000;
+  assert.equal(c.eliteChainPartner(a), null, '太遠不連');
+});
+
 test('ELITE-ENGINE-5 火鏈的跑位：施放時先跑到玩家另一側（夥伴→玩家連線的延伸線）', () => {
   const c = fresh();
   const a = makeElite(c, ['e_firechain'], { x: -200, y: 0, hp: 1e9 });

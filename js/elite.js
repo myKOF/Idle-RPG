@@ -1034,16 +1034,30 @@ function eliteRegenTick(m, d, rt, dt, id) {
 /* ============ 火鏈：同群夥伴之間拉出一條火鏈，持續到怪物死亡 ============
    鏈條本身是常駐的（eliteChainsTick 維護）；「施放」＝跑位到玩家另一側，讓鏈條掃過你身上。
    畫面角色：持續場域特效＝鏈條本體（矩形，長度＝兩端距離）；施放特效＝施法者身上；受擊特效＝打中玩家 */
+/* 火鏈夥伴：同群裡「最近」的活著的怪，且距離不超過鏈條最長長度（最多鏈環數 × linkLen × 2，最長那份最多拉長一倍）。
+   以前是挑名單上的下一隻，群散得很開時（熔火怪跑得快）鏈條會被拉得極長、鏈環變成巨大的環，中間一個怪都沒有。
+   太遠就不連：鏈條不出現，等牠們靠近再連上。 */
 function eliteChainPartner(m) {
   var mem = eliteGroupMembers(m, true);
-  if (mem.length < 2) return null;
-  var idx = mem.indexOf(m);
-  if (idx < 0) return null;
-  for (var k = 1; k < mem.length; k++) {
-    var e = mem[(idx + k) % mem.length];
-    if (e !== m && e.hp > 0 && eliteMonsterPos(e)) return e;
+  if (mem.length < 2 || mem.indexOf(m) < 0) return null;
+  var mp = eliteMonsterPos(m);
+  if (!mp) return null;
+  var d = eliteArch(m, 'chain');
+  var maxLen = Infinity;
+  if (d) {
+    var vars = eliteChainVariants(d);
+    maxLen = vars[vars.length - 1].n * (d.linkLen > 0 ? d.linkLen : 15) * 2;
   }
-  return null;
+  var best = null, bd = Infinity;
+  for (var k = 0; k < mem.length; k++) {
+    var e = mem[k];
+    if (e === m || !(e.hp > 0)) continue;
+    var ep = eliteMonsterPos(e);
+    if (!ep) continue;
+    var dd = eliteDist(mp.x, mp.y, ep.x, ep.y);
+    if (dd < bd) { bd = dd; best = e; }
+  }
+  return best && bd <= maxLen ? best : null;
 }
 function eliteCastChain(m, d) {
   eliteBusy(m, 0.2, false);
