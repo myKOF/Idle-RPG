@@ -232,7 +232,7 @@ test('ELITE-ENGINE-7b 熔火火徑：一幀跑很遠也沿路補滿（不留斷�
   assert.ok(c.ELITE_RT.zones.some((z) => Math.abs(z.x - m.pos.x) < d.trailGap * 1.6), '怪物身後仍有新火徑');
 });
 
-test('ELITE-ENGINE-7 熔火：移動留下火徑（10 秒），死亡後原地核心 3 秒後大範圍自爆', () => {
+test('ELITE-ENGINE-7 熔火：移動留下火徑（8 秒），死亡後原地核心 3 秒後大範圍自爆', () => {
   const c = fresh();
   const m = makeElite(c, ['e_molten'], { x: 400, y: 0, hp: 1e9 });
   const d = c.ELITE_AFFIXES.e_molten;
@@ -241,7 +241,7 @@ test('ELITE-ENGINE-7 熔火：移動留下火徑（10 秒），死亡後原地�
   stepElite(c, 0.2);
   assert.ok(c.ELITE_RT.zones.length >= 1, '走路留下火徑');
   const z = c.ELITE_RT.zones[0];
-  assert.equal(Math.round(z.until - c.GT), d.life, '火徑持續 10 秒');
+  assert.equal(Math.round(z.until - c.GT), 8, '火徑持續 8 秒');
   // 死亡 → 核心
   m.pos.x = 100; m.pos.y = 0;
   c.eliteOnDeath(m);
