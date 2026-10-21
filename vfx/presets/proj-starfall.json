@@ -106,8 +106,8 @@
       "assetId": "particle-pack/png-transparent/fire_01.png",
       "zIndex": 2,
       "scale": {
-        "x": 0.332,
-        "y": 0.332
+        "x": 0.4144,
+        "y": 0.4144
       },
       "alpha": 1,
       "tint": "#5c0a06",
@@ -148,8 +148,8 @@
       "assetId": "particle-pack/png-black-background/flame_04.png",
       "zIndex": 3,
       "scale": {
-        "x": 0.1816,
-        "y": 0.1816
+        "x": 0.2267,
+        "y": 0.2267
       },
       "alpha": 1,
       "tint": "#e0451a",
@@ -241,7 +241,7 @@
         "x": 0.1445,
         "y": 0.334
       },
-      "alpha": 0.75,
+      "alpha": 0.4,
       "tint": "#ffb257",
       "blendMode": "add",
       "duration": 3,

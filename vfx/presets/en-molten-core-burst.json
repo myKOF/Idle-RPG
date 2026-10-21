@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "en-molten-core-burst",
-  "duration": 0.7,
+  "duration": 0.62,
   "loop": false,
   "layers": [
     {
@@ -13,8 +13,8 @@
         "x": 0.2441,
         "y": 0.2441
       },
-      "alpha": 0.7,
-      "tint": "#e81f79",
+      "alpha": 0.8,
+      "tint": "#e87b21",
       "blendMode": "normal",
       "duration": 0.55,
       "alphaOverLife": [
@@ -56,7 +56,7 @@
       "assetId": "particle-pack/png-transparent/smoke_04.png",
       "zIndex": 1,
       "alpha": 0.48,
-      "tint": "#56414e",
+      "tint": "#e87b21",
       "blendMode": "normal",
       "duration": 0.48,
       "emission": {
@@ -117,7 +117,7 @@
       "assetId": "particle-pack/png-black-background/fire_01.png",
       "zIndex": 2,
       "alpha": 0.65,
-      "tint": "#ff0e7f",
+      "tint": "#e87b21",
       "blendMode": "add",
       "duration": 0.36,
       "emission": {
@@ -194,7 +194,7 @@
         "y": 0.1211
       },
       "alpha": 0.75,
-      "tint": "#ff6b9b",
+      "tint": "#e87b21",
       "blendMode": "add",
       "duration": 0.13,
       "alphaOverLife": [
@@ -213,60 +213,6 @@
       ]
     },
     {
-      "id": "flying-sparks",
-      "type": "particle",
-      "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
-      "zIndex": 4,
-      "alpha": 0.85,
-      "tint": "#ff367b",
-      "blendMode": "add",
-      "duration": 0.4,
-      "emission": {
-        "count": 13,
-        "mode": "burst"
-      },
-      "lifetime": [
-        0.18,
-        0.4
-      ],
-      "spawn": {
-        "height": 14,
-        "shape": "box",
-        "width": 14
-      },
-      "speed": [
-        110,
-        250
-      ],
-      "direction": 0,
-      "spread": 360,
-      "startScale": [
-        0.0195,
-        0.0488
-      ],
-      "alignToVelocity": true,
-      "alphaOverLife": [
-        [
-          0,
-          1
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          1
-        ],
-        [
-          1,
-          0.1
-        ]
-      ]
-    },
-    {
       "id": "ascending-impact-flames",
       "type": "particle",
       "assetId": "particle-pack/png-black-background/flame_04.png",
@@ -276,7 +222,7 @@
         "y": 0.4723
       },
       "alpha": 0.65,
-      "tint": "#ff1c7c",
+      "tint": "#e87b21",
       "blendMode": "add",
       "duration": 0.5,
       "emission": {
@@ -341,7 +287,7 @@
       "assetId": "particle-pack/png-black-background/flame_04.png",
       "zIndex": 6,
       "alpha": 0.65,
-      "tint": "#ff1672",
+      "tint": "#e87b21",
       "blendMode": "add",
       "delay": 0.04,
       "duration": 0.58,
@@ -411,7 +357,7 @@
       "assetId": "particle-pack/png-black-background/flame_04.png",
       "zIndex": 7,
       "alpha": 0.65,
-      "tint": "#ff1672",
+      "tint": "#e87b21",
       "blendMode": "add",
       "delay": 0.04,
       "duration": 0.58,
@@ -481,7 +427,7 @@
       "assetId": "particle-pack/png-black-background/flame_04.png",
       "zIndex": 8,
       "alpha": 0.65,
-      "tint": "#ff1672",
+      "tint": "#e87b21",
       "blendMode": "add",
       "delay": 0.04,
       "duration": 0.58,
@@ -551,7 +497,7 @@
       "assetId": "particle-pack/png-black-background/flame_04.png",
       "zIndex": 9,
       "alpha": 0.65,
-      "tint": "#ff1672",
+      "tint": "#e87b21",
       "blendMode": "add",
       "delay": 0.04,
       "duration": 0.58,
@@ -621,7 +567,7 @@
       "assetId": "particle-pack/png-black-background/flame_04.png",
       "zIndex": 10,
       "alpha": 0.65,
-      "tint": "#ff1672",
+      "tint": "#e87b21",
       "blendMode": "add",
       "delay": 0.04,
       "duration": 0.58,
@@ -691,7 +637,7 @@
       "assetId": "particle-pack/png-black-background/flame_04.png",
       "zIndex": 11,
       "alpha": 0.65,
-      "tint": "#ff1672",
+      "tint": "#e87b21",
       "blendMode": "add",
       "delay": 0.04,
       "duration": 0.58,
@@ -761,7 +707,7 @@
       "assetId": "particle-pack/png-black-background/flame_04.png",
       "zIndex": 12,
       "alpha": 0.65,
-      "tint": "#ff1672",
+      "tint": "#e87b21",
       "blendMode": "add",
       "delay": 0.04,
       "duration": 0.58,
@@ -831,7 +777,7 @@
       "assetId": "particle-pack/png-black-background/flame_04.png",
       "zIndex": 13,
       "alpha": 0.65,
-      "tint": "#ff1672",
+      "tint": "#e87b21",
       "blendMode": "add",
       "delay": 0.04,
       "duration": 0.58,
@@ -901,7 +847,7 @@
       "assetId": "particle-pack/png-black-background/flame_04.png",
       "zIndex": 14,
       "alpha": 0.65,
-      "tint": "#ff1672",
+      "tint": "#e87b21",
       "blendMode": "add",
       "delay": 0.04,
       "duration": 0.58,
@@ -971,7 +917,7 @@
       "assetId": "particle-pack/png-black-background/flame_04.png",
       "zIndex": 15,
       "alpha": 0.65,
-      "tint": "#ff1672",
+      "tint": "#e87b21",
       "blendMode": "add",
       "delay": 0.04,
       "duration": 0.58,
@@ -1041,7 +987,7 @@
       "assetId": "particle-pack/png-black-background/flame_04.png",
       "zIndex": 16,
       "alpha": 0.65,
-      "tint": "#ff1672",
+      "tint": "#e87b21",
       "blendMode": "add",
       "delay": 0.04,
       "duration": 0.58,
@@ -1111,7 +1057,7 @@
       "assetId": "particle-pack/png-black-background/flame_04.png",
       "zIndex": 17,
       "alpha": 0.65,
-      "tint": "#ff1672",
+      "tint": "#e87b21",
       "blendMode": "add",
       "delay": 0.04,
       "duration": 0.58,
@@ -1174,6 +1120,98 @@
           0.482713
         ]
       ]
+    },
+    {
+      "id": "ground-heat-wave-copy",
+      "type": "sprite",
+      "assetId": "particle-pack/png-transparent/circle_02.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.3075,
+        "y": 0.3075
+      },
+      "alpha": 0.6,
+      "tint": "#e87b21",
+      "blendMode": "normal",
+      "duration": 0.55,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.15
+        ],
+        [
+          0.45,
+          1
+        ],
+        [
+          1,
+          1.4
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "ground-heat-wave-copy-2",
+      "type": "sprite",
+      "assetId": "particle-pack/png-transparent/circle_02.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.3696,
+        "y": 0.3696
+      },
+      "alpha": 0.4,
+      "tint": "#e87b21",
+      "blendMode": "normal",
+      "duration": 0.55,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.15
+        ],
+        [
+          0.45,
+          1
+        ],
+        [
+          1,
+          1.4
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
     }
   ],
   "sizing": {

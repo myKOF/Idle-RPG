@@ -10,7 +10,9 @@
         "rod-axis",
         "barrel-aura",
         "cylinder-body",
-        "hub"
+        "surface-current",
+        "hub",
+        "sprite-7"
       ]
     }
   ],

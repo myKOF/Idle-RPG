@@ -7,10 +7,11 @@
       "name": "en-molten-core-burst",
       "layerIds": [
         "ground-heat-wave",
+        "ground-heat-wave-copy",
+        "ground-heat-wave-copy-2",
         "dark-smoke-puffs",
         "orange-fire-lobes",
         "brief-hot-core",
-        "flying-sparks",
         "ascending-impact-flames",
         "expanding-fire-wave-0",
         "expanding-fire-wave-1",

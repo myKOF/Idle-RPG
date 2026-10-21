@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 191,
+  "assetCount": 192,
   "assets": [
     {
       "assetId": "claude-authored/dragon-devour/vortex-ring.png",
@@ -108,8 +108,22 @@
       "assetId": "codex-authored/arcane-rod/cylinder.svg",
       "relativePath": "codex-authored/arcane-rod/cylinder.svg",
       "package": "codex-authored",
-      "contentHash": "sha256:de60e09f75b2b79728a471d21ac987ed440d09e2a18015ce12617f3c35bd96ac",
-      "fileSize": 1031
+      "contentHash": "sha256:9f56e878a50c4e40d18276a1f4b3132b4400e8a1e76762c0e3e3d8b4f7dec066",
+      "fileSize": 1137
+    },
+    {
+      "assetId": "codex-authored/arcane-rod/emitter-flare.svg",
+      "relativePath": "codex-authored/arcane-rod/emitter-flare.svg",
+      "package": "codex-authored",
+      "contentHash": "sha256:c84bedaf1b4f911806b13b4a647ec23eb946ba00b15bc3d3dc169db7ec3c7436",
+      "fileSize": 2924
+    },
+    {
+      "assetId": "codex-authored/arcane-rod/surface-current.svg",
+      "relativePath": "codex-authored/arcane-rod/surface-current.svg",
+      "package": "codex-authored",
+      "contentHash": "sha256:5661a3356f676f2e174fc7c9157a323c56744f10f72f35adc7817c645e56518d",
+      "fileSize": 37072
     },
     {
       "assetId": "codex-authored/cleave/sharp-cyclone.png",
@@ -733,13 +747,6 @@
       "package": "new_materials",
       "contentHash": "sha256:7267c424bc649a50befdc6da596b3b3acef6709a0b995abd66c2155c978beaf7",
       "fileSize": 1169
-    },
-    {
-      "assetId": "new_materials/mask-shape/dingbats-489.png",
-      "relativePath": "new_materials/mask-shape/dingbats-489.png",
-      "package": "new_materials",
-      "contentHash": "sha256:ef9a518d04a5e6b266218985bb545f8e979872b18aa7c904f10a27a83580b438",
-      "fileSize": 2525
     },
     {
       "assetId": "new_materials/mask-shape/dingbats-493.png",

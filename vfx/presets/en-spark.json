@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "en-spark",
-  "duration": 0.25,
+  "duration": 0.5,
   "loop": true,
   "layers": [
     {
@@ -20,7 +20,7 @@
       "alpha": 0.16,
       "tint": "#2f56ff",
       "blendMode": "add",
-      "duration": 0.25,
+      "duration": 0.5,
       "scaleOverLife": [
         [
           0,
@@ -52,7 +52,7 @@
       "alpha": 0.75,
       "tint": "#7a98ff",
       "blendMode": "add",
-      "duration": 0.25,
+      "duration": 0.5,
       "alphaOverLife": [
         [
           0.1,
@@ -123,7 +123,7 @@
       "alpha": 1,
       "tint": "#d8e6ff",
       "blendMode": "add",
-      "duration": 0.25,
+      "duration": 0.5,
       "alphaOverLife": [
         [
           0.07,
@@ -193,7 +193,7 @@
       "alpha": 1,
       "tint": "#aac4ff",
       "blendMode": "add",
-      "duration": 0.25,
+      "duration": 0.5,
       "alphaOverLife": [
         [
           0.11,
@@ -263,7 +263,7 @@
       "alpha": 0.9,
       "tint": "#c4d8ff",
       "blendMode": "add",
-      "duration": 0.25,
+      "duration": 0.5,
       "alphaOverLife": [
         [
           0.1,
@@ -333,7 +333,7 @@
       "alpha": 1,
       "tint": "#ffffff",
       "blendMode": "add",
-      "duration": 0.25,
+      "duration": 0.5,
       "alphaOverLife": [
         [
           0.05,
@@ -381,6 +381,7 @@
       "alpha": 1,
       "tint": "#bcd4ff",
       "blendMode": "add",
+      "duration": 0.25,
       "emission": {
         "mode": "rate",
         "rate": 16

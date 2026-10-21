@@ -1,5 +1,30 @@
 # AI_TASKS.md
 
+## ARCANE-REFERENCE-20261021 — 白熱紫色光束參考風格
+
+- Owner：Codex；Done，單一開發者。使用者提供紫白雷射截圖，希望祕法棒接近該效果；看過arcane-reference-preview.png後確認「好，連我的一起commit」。本輪正式保存參考風格與全部使用者已儲存修改，兩倉庫提交，不合併推送。
+- 完成：柱身SVG改白熱細光芯與半透明紫暈，8格電流增加不規則偏折與淡光；新emitter-flare.svg以不等長放射幾何、絕對座標徑向漸層與載入時柔化製作紫白起點爆光，替換hub材質並減淡大橢圓halo。僅觀察附件光色層次，不使用／描摹附件像素，素材皆原創SVG。沒有新粒子／Timer／Shader／Runtime／Core／Protocol分支；幾何與時間軸保持使用者設定。
+- 修改檔案：arcane-rod.cjs、cylinder.svg／surface-current.svg／emitter-flare.svg、en-arcane-beams-1 Preset／layout、素材索引／出貨、arcane-surface-current專項的新增素材雜湊檢查、LV與本段；另按授權保存使用者Skills2.xlsx／CSV／生成JS及en-ice-orb、en-ice-pulse、en-spark、hit-waterball-splash及proj-starfall Preset／layout。同步主頁skills2 351→352／bridge329→330，Worker asset key及skills2 import改為20261021-arcane-reference；無Core／Runtime更新。
+- 使用者修改完整保留：帶電半徑1.2→2米；冰凍脈衝範圍5→12米、間隔0.8→0.65秒、移速3→4米／秒；光棒柱身加寬、電流的獨立位置／寬度、sprite-7新增旋轉星芒。未重跑作者去覆蓋這些編輯。Excel與CSV逐格差異0，node tools/config_tables.cjs --apply Skills2為2個字面值語意變更0；此前預覽階段的Excel尚未套用問題已由使用者套用後解除。AI沒有編輯Excel或資料格，未重新開Excel驗證修復提示。
+- 預檢／Review：develop整合中的內容等於本分支祖先72559e95，沒有獨立改動；其GM ai-key-setting／gm_exec快取與本次skills2／bridge快取不同區段，候選＋共同祖先＋develop工作檔的實際merge-file乾跑皆0。自我唯讀Review材料引用、父層／sheet／投影、現有事件與判定、Backend及Editor guard；沒有改動表現引擎或減弱既有斷言。
+- 驗證：10檔126項＝122通過／3已確認的使用者自訂設定差異／1Windows符號連結略過。命令為node --test tests/arcane-surface-current.test.cjs tests/arcane-rod-vfx.test.cjs tests/vfx-core-hierarchy.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-asset-export.test.cjs tests/skills2-vfx-schema.test.cjs tests/config-vfx-diagnostics.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs。更新快取後另跑schema／protocol／shim30項全過，npm.cmd run build為563檔通過。
+- 3項差異：原arcane-rod的顯示／判定尺寸及作者canonical不一致（上輪已存在），另使用者最新獨立電流偏移／寬度，導致原要求電流矩陣逐值等於柱身的斷言失敗。以HEAD未修改版arcane-surface-current測試透過Module._compile在相同最新資料上唯讀重跑，同樣只有該矩陣項失敗，另2項通過；本次僅擴充素材雜湊清單，沒有更改該斷言。按使用者指示保留參數，不以重設參數或修改測試掩蓋。這些差異仍存在，未宣稱尺寸判定已全部吻合。
+- 素材／資料：6份變更Preset與配對layout通過正式Core／Layout驗證，export-assets --check最新（192個assetId），兩庫diff --check通過。三SVG／索引／出貨雜湊一致；素材庫arcane-rod保存原創材質、來源、最新Preset／layout，user-vfx-tuning-20261021保存5份使用者Preset／layout快照。素材庫無新外部素材，既有星芒沿Kenney CC0引用。
+- 預覽：正式Core／Pixi與出貨索引三時點深／淺背景均READY、後端無錯；arcane-reference-preview.png／arcane-reference-light.png在本聊天visualizations，僅預覽固定朝向比較，正式旋轉保持。使用者已確認該風格，其後自行加寬與加星芒的最新值一併保存，未逐份重新目視驗收。未做完整戰鬥長測／跨裝置效能測量；測試頁與服務、試跑檔已清理，未操作使用者原開編輯器。
+- 未修改但檢查：AI規範／工作流／Agent文件、配置讀表管線與Excel內容、原事件／判定、Core／Backend、Editor guard與既有回歸。可供Review／合併，無本次未完成實作；已知3項差異與驗收限制如上。下一步：遊戲重新整理，VFX Editor先下載未存內容備份再重新載入，其他電腦同步遊戲與素材庫。
+- Commit：素材庫已先提交13cf63e（15檔），另以5706997補存暫存時新增的proj-starfall快照；遊戲為本段所在「[Codex] feat: 祕法光束改為白熱紫光並保存使用者調整」，回覆附編號。最後確認兩庫工作區乾淨，無合併推送。
+
+## ARCANE-TIP-CURRENT-20261021 — 祕法棒略尖前端與紫色表面電流
+
+- Owner：Codex；Done，單一開發者。使用者要求en-arcane-beams-1前端稍尖、表面有輕微紫色電流纏繞。完成短弧收尖與8格、12fps循環細電流；兩條不規則螺旋細線裁切在柱身表面，單一新增sprite，不加粒子／Timer／Shader。沿用原assetId的柱身SVG與新增surface-current.svg，無外部素材／描圖；Mote無原生SVG匯出，延續原創向量作者工具。
+- 修改檔案：arcane-rod.cjs、cylinder.svg／surface-current.svg、en-arcane-beams-1 Preset／layout、asset-index／shipped-assets、tests/arcane-surface-current.test.cjs、LV與本段。CLI以enhance增補現有Preset，不用canonical make重設使用者尺寸／旋轉／透明度。電流複製實際柱身的所有幾何與時間軸，只改素材、層級、透明度及sheet；尺寸／旋轉／投影逐幀完全貼合。沒有Core／Backend／Runtime／配置／傷害修改，無JS快取變更。
+- 預檢：develop整合中的未提交檔案全部與本分支HEAD逐位元一致，沒有獨立外部改動；以該共同HEAD內容＋本次候選＋develop工作檔實際merge-file乾跑（作者、Preset、layout、兩索引、文件）皆0。僅本副本使用者的en-arcane-beams-1、burst-frost-freeze及ground-domain-fire Preset／layout正在調整，依原「連我的修改一起commit」保存，不重製其外觀。
+- 新驗收3項通過：node --test tests/arcane-surface-current.test.cjs；不等比縮放／父層／實際分層旋轉下電流與柱身的畫面矩陣逐值相同、至少5個不同動畫frame；增補保留其他圖層且重跑不重複；原創圖集／端點／出貨雜湊一致。另含arcane-rod-vfx、vfx-core-hierarchy、vfx-editor-guard、vfx-editor-cache-versions、vfx-asset-export、skills2-vfx-schema的7檔回歸共97項，94通過／2既有失敗／1Windows符號連結略過。新專項與相關94項集合無失敗。
+- 基線與風險：改檔前先跑原arcane-rod-vfx，已因使用者預先改動出現2項失敗：顯示端點與判定尺寸不同（起初153.0858對140，後續仍有使用者縮放調整）、已編輯Preset與作者canonical不同；真引擎場域測試通過。完成後同2項失敗，未降低斷言、未重設使用者設定來消除。這個原有顯示／判定差異仍存在，本次只保持新電流與實際柱身一致；未宣稱判定尺寸已全部吻合。
+- 圖像／Build：正式Core／Pixi與出貨索引的三時點預覽，僅在預覽固定朝向比較，深淺背景均READY且後端錯誤0；本聊天visualizations/arcane-tip-current-dark.png及light.png。實際Preset旋轉保持使用者值。npm.cmd run build：563檔通過；三份變更Preset及layout驗證、素材匯出與兩庫diff檢查完成。沒有完整玩家存檔長測或手機GPU量測。未操作使用者原開編輯器，測試頁與服務清理。
+- 未修改但檢查：AI規範／工作流、Skills2與elite判定資料、Core父層／sheet／投影、PixiBackend、原專項與Editor guard。素材庫保存兩SVG、來源說明及同Preset／layout；使用者另兩份VFX保存user-vfx-tuning-20261021快照。先素材庫後遊戲Commit，編號於回覆與下方紀錄；不合併推送。可Review／合併，原有2項差異如上；下一步備份Editor未存內容再重新載入，以取得新的貼圖與電流圖層。
+- 素材庫已提交02174cf（10檔）；遊戲Commit為本段所在「[Codex] feat: 祕法棒前端收尖並加上紫色表面電流」，回覆附編號。沒有本次未完成實作，提交後核對兩庫status。
+
 ## METEOR-IMPACT-AFTERMATH-20261021 — 隕石落地尾跡續播與四秒坑痕
 
 - Owner：Codex；Done，單一開發者。使用者要求石頭命中後煙火繼續下移播完、地板留下4秒坑痕，先看預覽；2026-10-21最後確認「好，接入吧」。依原授權連使用者已儲存修改一起提交，未合併／推送。
@@ -11768,3 +11793,14 @@ Worker 存活且頁面正常完成載入。
 - 素材：遊戲出貨索引191份檔案逐份SHA256及大小吻合；原合併素材已由incoming紀錄的ec3b1d5等素材庫Commit保存，本輪素材庫5706997乾淨，沒有新增素材或素材庫Commit。另`node tools/vfx/export-assets.cjs --check`對目前共享素材庫回報祕法棒1031／1137 bytes不一致，原因是素材庫與ai/codex已含後續祕法棒改造，而本pending merge固定在72559e95；未改舊索引或降版共享素材來掩蓋，後續正常同步Codex其餘三筆即可整合對應出貨版本。
 - 本輪直接修改Skills2.xlsx及本段紀錄；其餘既有暫存合併結果保留。唯讀檢查規範／Workflow／Agent、配置工具、CSV／生成JS、兩側差異、相關回歸與素材索引；預檢來源即本次使用者授權的develop／ai/codex整合。原index／工作簿／任務紀錄、逐格決策、正常重開驗證、TAP與原`.merge-xlsx-inspect`診斷資料保存在Git metadata的`sync-xlsx-merge-20261021-Pa1Cj9`，未丟棄復原資料。
 - 交付：原pending merge衝突已解，可供Review；合併Commit為本紀錄所在`[Codex] merge: 整合技能表的獨立儲存格修改`。未推送／同步其他工作區，未合併其後三筆本機Codex提交。限制為上述既有失敗、略過及後續素材版本差異；沒有本次未完成衝突，下一步可再執行同步BAT整合後續已提交工作。未做玩家存檔長戰或新增瀏覽器驗收。
+
+
+## MERGE-LATEST-SKILLS2-20261021 — 整合新版祕法棒與技能參數
+
+- Owner：Codex；Done。使用者以「1」授權解決develop pending merge，原HEAD 36555e3f、incoming b354ef23。四個衝突為Skills2.xlsx／CSV、js/skills2.js及docs/AI_TASKS.md；保留毒十字斜向說明與incoming全部參數／祕法棒特效及雙方紀錄。未納入或修改Codex進行中的MISSILE-SALVO任務。
+- Excel三方比對沒有同格不同值：HEAD保留AW237；incoming套用AV233／AW233祕法棒8秒、AV234熔火核心半徑12米、Q236帶電2米及Q239／AE239／AG239冰凍脈衝12米／0.65秒／4米每秒。excel-update-sheets原生API只寫7格，兩次正常儲存重開全表一致；全部工作表、52欄、公式／style／列高／欄寬／凍結／篩選／驗證保持，未手改XML。備份與決策在Git metadata的sync-latest-xlsx-20261021-2ACZVg。
+- CSV經正式readXlsxRows／csvStringify由合併Excel產生；js/skills2.js先取HEAD衝突hunk恢復可解析，再以node tools/config_tables.cjs --apply Skills2 --write重建ENEMY_SKILLS2；其後不帶--write試跑為2個字面值語意變更0。其餘程式邏輯保持；index skills2／bridge為353／331，Worker資源鍵及skills2 import同步20261021-poison-arcane-settings-merge，Protocol不變。
+- 直接修改四個衝突檔及index.html／js/bridge.js／js/worker/sim.worker.js快取，其餘暫存合併結果保留。兩側任務段落核對缺漏0；本段與Codex飛彈紀錄分別在檔尾／檔首，以incoming為base的實際merge-file乾跑0才寫入，沒有語意相依。
+- 測試命令：node --test --test-reporter=tap tests/arcane-surface-current.test.cjs tests/arcane-rod-vfx.test.cjs tests/meteor-tail-impact.test.cjs tests/meteor-tail-flow.test.cjs tests/meteor-entry-origin.test.cjs tests/vfx-core.test.cjs tests/vfx-core-hierarchy.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/vfx-duration.test.cjs tests/vfx-projectile-perspective.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-asset-export.test.cjs tests/vfx-preset-usage.test.cjs tests/skills2-vfx-schema.test.cjs tests/skills2-vfx-usage.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/elite-engine.test.cjs tests/elite-data.test.cjs tests/status-system.test.cjs tests/active-buffs-panel.test.cjs tests/battle-ui-rework.test.cjs tests/battle-fullscreen.test.cjs tests/fullscreen-toggle.test.cjs。411項404通過、6失敗、1Windows符號連結略過。失敗為3個ARCANE-CYLINDER、ARCANE-CURRENT矩陣、ELITE-DATA-3及投影矩陣；以incoming來源差異唯讀映射重跑4個失敗檔為26項20過6失敗，名稱完全相同，新增失敗0。保留使用者參數／外觀，未改斷言或調值配合測試。npm.cmd run build：563檔通過；diff與衝突標記檢查通過。
+- node tools/vfx/export-assets.cjs --check：192個assetId已最新，前次祕法棒素材大小差異已隨incoming對應出貨版本解決。素材庫5706997乾淨，本輪未改素材庫／新增素材Commit；素材已由02174cf／13cf63e／5706997等既有Commit保存。
+- 唯讀檢查規範／Workflow／Agent、兩側原始Excel／CSV／生成JS、工具、索引及上述25檔測試。合併Commit為本段所在[Codex] merge: 整合祕法棒新版參數並保留毒十字說明；原pending merge無未完成衝突，可供Review。未推送／同步其他工作區；Codex飛彈任務的未提交內容保留，下一輪同步應待任務完成與工作區乾淨。限制為6項既有失敗、1略過及未做玩家長戰／新增瀏覽器驗收。
