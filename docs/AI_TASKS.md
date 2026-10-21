@@ -11608,3 +11608,14 @@ Worker 存活且頁面正常完成載入。
 - 外觀與狀態：最終PNG版與原CSS相同範圍像素比較平均每通道差2.4003/255（邊緣點陣與縮放取樣差異），漸層／框／角飾保留。窄面板clientWidth690、寬面板1070皆快取就緒且虛擬格數依原視窗改變；神鑄頁共用同背景。選部位後不匹配格的pseudo維持原block／opacity0.25，正常神話格pseudo為none；清空0格後恢復正常，Console warning／error0。圖inventory-skin-before.png／inventory-skin-after.png與量測JSON保存在本聊天visualizations；診斷頁／服務／試跑與廢棄近照皆清理。
 - 唯讀檢查未改：共通規範／workflow／prompts、原inventory虛擬視窗／scroll節流與增量格線、js/item.js／data.js圖示、其餘7份CSS及12份相依測試、Claude b4de1d41實際index差異；同檔不同快取區段，三方merge-file0且無語意相依。VFX四份使用者編輯保留未提交，不納入本次Commit。自我Review確認快取數量不隨裝備數成長、沒有每格量測／新常駐Timer或Observer、PNG解碼成功才啟用、失敗維持可操作。
 - 交付：無本次未完成實作，可供Review／合併；Commit為本段所在[Codex] fix: 快取神話背包底圖改善捲動效能，回覆附編號。未合併推送；後續重載本分支遊戲，其他副本需整合本Commit。限制為上述隔離壓測環境與少量邊緣取樣差異；不支援SVG轉Canvas的瀏覽器會保留原外觀但無本快取效益。
+
+## Claude｜勾「啟用整體變形」自動帶入隨機變形參數＋en-bolt-storm 每道隨機變形（VFX-DEFORM-SUGGEST-20261021）
+
+- Owner：Claude；Done。使用者回報 bolt-thunderstrike-bluewhite 調了半天「還是一樣」，並要求：①把 en-bolt-storm 調成每道都隨機變形 ②勾選「啟用整體變形」時預設值就該是會隨機變形的參數。
+- 根因：舊的勾選預設是 x 軸、0～200、振幅 0、不鏡射——勾了等於沒勾。bolt-thunderstrike-bluewhite 的範圍是 -330～0，主幹卻從 -543 畫到 0，上面四成在包絡外，怎麼調都是直的；en-bolt-storm 則根本沒有變形設定。遊戲裡每道雷本來就有自己的種子（Core 的 nextEffectId），缺的只是參數。
+- 新增 `tools/vfx/editor/deformation-model.js`（純計算）：以 Core 驗證會收的全部 sprite 的聯集外框量出軸（較長的一邊）、範圍（兩端取整，包絡兩端為 0，頂端與落點不被甩開）、中心線（以沿軸長度加權的橫向中心，鏡射與寬度變化繞著它）、振幅（範圍 8%，Core 上限 15%），開鏡射＋0.5 機率、寬度 ±8%。彎曲強度刻意留 1（拉直會把分岔收進主幹）。不用「方框細長＝筆畫」挑主幹：spark 素材是正方形貼圖，方框方向與閃電無關（紫色落雷會被判成橫向）。不用 Gizmo 的 groupBounds：小圖層會被撐到 MIN_BOX。
+- 編輯器：勾選時呼叫 `VFXDeformationModel.suggest(p, sizeOf, spaceOf)`（與 Gizmo 同一套尺寸與父層座標）；量不出來（沒有 sprite）就退回未勾並提示。取消再勾＝依目前圖層重新量。提示文字補上「要勾預覽循環才會每輪換形狀（Restart 固定同一個種子）」。
+- en-bolt-storm：以使用者 codex 副本目前存檔的版本（藍色、拉高約兩倍）為底，套上同一組建議值（y、-926～34、pivot 3、振幅 76.8、15 層），其餘內容與 codex 副本逐欄相同。`DATA_VERSION` 與兩頁的 `vfx-runtime.js?v` 一起升。
+- 測試：新增 `tests/vfx-editor-deformation.test.cjs`（DEF-1～6，含全部正式 Preset 套上建議值都通過 Core 驗證——342 份，不釘任何一份內容）。9 個突變全部抓到（第一輪「不轉角」活下來，補 DEF-4B）。editor／preset／runtime 測試 641 項中 9 項失敗，與 HEAD 的失敗名單完全相同（既有基線）。build_check 558 檔通過。
+- 實機（本機編輯器 28362）：真的點擊「啟用整體變形」，帶入值通過驗證；同一份 en-bolt-storm 以 5 個種子並排，五道彎法各不相同，頂端的球與地面落點都留在原位。
+- 衝突注意：codex 副本的 en-bolt-storm.json 有未提交的修改（使用者自己的調整）。本分支的版本已包含那些修改＋變形；使用者之後若在 codex 又改了同幾行，合併時以 codex 為準、保留 `deformation` 這一段即可。
