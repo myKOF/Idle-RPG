@@ -208,3 +208,44 @@ test('MISSILE-SALVO Worker實際派送保留剎停、等待、轉向及完整飛
   rt.update(.8); assert.equal(rt.stats().projectiles, 1);
   rt.update(.6); assert.equal(rt.stats().projectiles, 0); rt.destroy();
 });
+
+
+test('MISSILE-SALVO 停駐位置不隨NPC或玩家移動，齊射從原停駐點出發', () => {
+  const s = scene(); s.c.eliteCastMissiles(s.m, s.d); s.until(.6);
+  const back = flights(s.log);
+  const pads = back.map(e => ({ x: e.spec.area.x, y: e.spec.area.y }));
+  s.m.pos.x = 900; s.m.pos.y = -400;
+  s.c.bfPlayerPos().x = -120; s.c.bfPlayerPos().y = 75;
+  s.until(1.47);
+  assert.equal(flights(s.log).length, 4, '移動不提早結束待機');
+  s.until(1.49);
+  const salvo = flights(s.log).slice(4);
+  for (let i = 0; i < 4; i++) {
+    assert.equal(back[i].spec.area.sourceX, 100, '事件起點沒有引用NPC的可變pos物件');
+    assert.equal(back[i].spec.area.x, pads[i].x);
+    assert.equal(back[i].spec.area.y, pads[i].y);
+    assert.equal(salvo[i].spec.area.sourceX, pads[i].x, '從原停駐點起飛');
+    assert.equal(salvo[i].spec.area.sourceY, pads[i].y);
+    assert.equal(salvo[i].spec.area.x, -120, '齊射當下才取玩家位置');
+    assert.equal(salvo[i].spec.area.y, 75);
+  }
+  // 真Runtime與Core：連備援位置查詢也隨NPC移動，仍只能使用事件的固定世界位置。
+  const npc = { x: 100, y: 0 }, player = { x: 0, y: 0 };
+  const { rt, nodes } = adapter(presets, {
+    posOf: () => npc, footOf: () => npc, chainPoint: () => npc, playerPos: () => player
+  });
+  rt.tryPlay(back[0].spec);
+  for (let i = 1; i <= 300; i++) {
+    npc.x += 11; npc.y -= 3; player.x -= 4; player.y += 2;
+    rt.update(1/240);
+    if (i >= 67) {
+      const core = nodes.find(n => n.spec.assetUrl.endsWith('circle_05.png'));
+      assert.ok(core && core.visible);
+      const p = core.history.at(-1);
+      assert.ok(Math.abs(p.x - pads[0].x) < 1e-7, '停駐X不跟隨NPC／玩家');
+      assert.ok(Math.abs(p.y - pads[0].y) < 1e-7, '停駐Y不跟隨NPC／玩家');
+    }
+  }
+  assert.equal(rt.stats().projectiles, 1, '保持待機至同一輪齊射');
+  rt.update(.03); assert.equal(rt.stats().projectiles, 0); rt.destroy();
+});

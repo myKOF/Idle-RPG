@@ -147,6 +147,23 @@
 - 核心`node --test tests/skill2-ui.test.cjs tests/skill2-ult-switch.test.cjs tests/gm-skill-unlock.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/active-buffs-panel.test.cjs tests/runeword-aspd-stacks.test.cjs`85/85。直接執行正式UI與摘要函式逐一核對23群組、69選項皆使用新名稱；狀態徽章新稱且原配置說明未改。`npm.cmd run build`555檔及diff檢查通過，未新增測試檔；僅更新既有名稱預期及三岔標題斷言。
 - 唯讀未改：AI規範／流程／prompts/codex.md、js/status.js／player.js／elite_data.js／elite_boss.js、tools/config_tables.cjs、Skills2／Status CSV、docs/PARAM_PATCHES.md及上述其餘既有測試。無本次未完成實作，可供Review／合併，未合併推送；Commit為本段所在`[Codex] fix: 技能第八階三選一改名為終極進化`，回覆附編號。已知限制為上述24項既有失敗，未做完整瀏覽器流程；下一步重載本分支遊戲，其他副本需整合本Commit。
 
+
+
+## MISSILE-FIXED-WORLD-20261021 — 接入確認與停駐不跟隨NPC
+
+- Owner：Codex；固定座標驗收完成／正式時序參數Blocked（Skills2.xlsx被其他程序占用），單一開發者。使用者確認柔光錐版本接入，要求飛彈停駐後固定位置、不跟隨NPC。現有elite已把起點／停駐點存成獨立數值，Runtime按事件世界座標播放；先以NPC／玩家在等待期間移動的計算與真Core回歸釘住，不為補測試而改動已正確的行為。
+- 允許既有missile專項、LV及本段；若配置可安全套用，依正式param-patches工具處理已授權的飛彈請求及生成／快取，不手寫Excel。其餘配置／使用者Status與火焰Preset／layout原樣保留；禁止其他技能、Protocol、存檔／解鎖及其他副本，不合併推送。
+- 預檢目標的外部分支內容為既有整合／較舊版本，本次僅新增獨立測試與文件列，實際HEAD共同內容＋候選＋develop工作檔merge-file乾跑0才寫。Skills2.xlsx獨占唯讀開啟測試回報其他程序占用；不強行解除鎖、不刪owner檔、不覆寫未存內容，參數保留待套用並完成可獨立驗收的工作。
+- 驗收NPC移動後停駐點不變、齊射從原位置發出、只在齊射當下鎖定玩家；真Runtime與Core在NPC／玩家移動期間位置固定，既有回歸／Build／diff後獨立Commit；正式參數是否已套用如實回報。
+
+- 完成3檔：既有missile專項新增NPC／玩家同時移動回歸，LV明訂停駐採固定世界座標，本段完成交付。現行elite已把每顆停駐點存成獨立x／y，齊射只取shot.x／shot.y；Runtime沒有targetId時不用ctx備援位置。這些實作原本就符合要求，因此沒有修改正確產品碼或快取、沒有新增素材／來源。
+- 新回歸：等待期間NPC移到(900,-400)、玩家移到(-120,75)，全部飛彈事件起點／停駐點不變，齊射從原停駐點發出、當拍才鎖定玩家。真Core／Runtime連續300幀，所有ctx備援位置跟著NPC移動，也不會拖動停駐彈體。把Runtime的targetId守門在記憶體中移除後，新測試因「停駐X不跟隨NPC／玩家」失敗，確認測試會抓到跟隨回歸。
+- 測試指令：node --test tests/missile-salvo.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/skills2-vfx-schema.test.cjs，52/52通過，新專項7/7；npm.cmd run build為564檔通過，git diff --check通過。沒有新增已知程式失敗，未跑有既有失敗的無關全庫／真人存檔長戰。
+- 正式套用已依本輪「接入」授權呼叫node tools/param-patches.cjs --merge；工具在取得來源獨占鎖時回報Skills2.xlsx被另一程序占用並停止，沒有啟動來源寫回／Excel→CSV→遊戲流程。待套用60873404-f290-452f-97c4-b972411a3a1f.json仍完整保留；失敗收據在config/param-patches/archive/2026-10-21T10-00-21-646Z-b705b049-ddaf-4b6b-93bb-7a11fa09504b。沒有關閉使用者Excel／解除鎖／刪owner檔或改before繞過保護。正式速度加倍與一秒等待尚未套用，不能宣稱整項需求完整生效；待使用者自行儲存關閉相關Excel後執行本分支套用參數.bat，再做正式配置與Excel相容性驗收。
+- 衝突預檢與乾跑：對方整合／較舊檔案沒有修改本次獨立測試或文件段落，HEAD共同內容＋候選＋develop工作檔merge-file乾跑0；任務新增改放未被對方追加的既有區段，避免與其檔尾追加整合紀錄相撞，未覆寫對方紀錄。未同步／切分支／合併推送。使用者Status.xlsx、en-burst-fire-shockwave-small Preset／layout及另一聊天進行中的隕石作者／Preset／SVG／索引／出貨與素材庫meteor更新，全數保留不stage。
+- 唯讀未改：規範／Workflow／Agent、elite／Runtime／Core與Pixi掛載層、Worker／Protocol／shim、Skills2 Excel／CSV／生成JS、原param-patch與套用工具、四份柔光錐Preset／layout及素材庫來源。素材沿用先前c7dcbc3，素材庫本輪沒有本任務變更，不另做空Commit，也不提交其他聊天的meteor改動。
+- 交付：遊戲Commit為本段所在「[Codex] test: 釘住飛彈停駐位置不跟隨NPC」，回覆附編號。柔光錐沿用6be49ba0／素材c7dcbc3，座標行為可Review；完整正式時序接入仍被Excel鎖阻擋，下一步使用者儲存關閉Skills2後BAT套用，無其他本輪未完成程式修改。沒有發布、合併或推送；重新載入VFX Editor前仍須備份未存內容。
+
 ## EQUIPMENT-QUALITY-NAME-20261021 — 裝備品質名稱前綴統一為級
 
 - Owner：Codex；Done；使用者要求所有裝備品質名稱前綴由「○○的」改成「○○級」。前置既有產裝、讀檔及工廠品質提升流程已完成，單一開發者；所有目標衝突預檢無外部來源。
