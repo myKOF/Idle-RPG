@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## USER-EDITS-COMMIT-20261021 — 一併保存使用者配置與VFX調整
+
+- Owner：Codex；Done。使用者追加「改好後，連我的修改一起commit」；前置拖尾25c29864／素材庫3af6e34已完成。允許提交目前全部必要使用者修改、同步必要素材庫Preset／layout及來源紀錄，僅補skills2／bridge／Worker快取、LV及本段；禁止重設或覆寫使用者美術／配置，不合併推送。
+- 檢查原始diff為火／雷隕石名稱文字及VFX美術設定，Excel→CSV→JS試跑語意變更0。驗收變更Preset／layout合法、素材來源與兩庫雜湊一致、核心／協議／配置回歸、Build與diff。共用快取預檢乾淨；文件與Claude僅獨立首尾追加，merge-file試跑0。
+
+- 保存使用者Skills2 Excel／CSV／生成JS、6份Preset、2份layout、shipped-assets與circle_d.png；其他3份CSV僅行尾差異，git正常化後無內容差異。使用者原始數值／外觀不重寫。skills2只改火／雷隕石文案，補主頁skills2 349→350／bridge327→328、WORKER_ASSET_VERSION及Worker import快取。LV與本紀錄同步，共18個遊戲檔案。
+- 驗證：node tools/config_tables.cjs --apply Skills2試跑語意變更0；6份Preset及layout通過正式Core／Layout驗證，12份素材庫Preset／layout複本逐位元一致。circle_d.png為既有Kenney light-masks CC0素材，來源／遊戲PNG／出貨索引SHA256一致，沒有新繪圖或未授權引用。node tools/vfx/export-assets.cjs --check已最新（189個assetId）。
+- 測試：node --test --test-reporter=dot tests/meteor-tail-flow.test.cjs tests/vfx-core.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/skills2-vfx-schema.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs全過；npm.cmd run build為560檔通過，兩倉庫diff --check通過。未修改測試或重新繪製外觀；未逐份新增美術做瀏覽器重驗／重開Excel，這是使用者已保存內容的提交與一致性驗證。
+- 素材庫先提交ee64345（10檔），保存6份使用者Preset及必要layout／SOURCE清單；既有相同的gale與en-bolt-storm等layout不製造空差異。遊戲Commit為本段所在[Codex] chore: 一併提交使用者配置與特效調整；包含先前拖尾25c29864／素材3af6e34之後的全部必要現有修改。最終兩倉庫status確認乾淨，未合併推送。
+- 唯讀檢查未改：配置工具／素材庫PROVENANCE、Core／Backend／Runtime、Editor guard與layout schema、上述7份測試；Worker只換skills2快取，不改Protocol或戰鬥邏輯。無未完成項，可供合併；下一步先備份舊Editor未存內容再重載，其他電腦同步遊戲與素材庫。已知限制為沒有完整戰鬥長測及使用者各美術調整逐份視覺驗收。
+
 ## METEOR-TAIL-FLOW-20261021 — 隕石靜態拖尾改為流動粒子
 
 - Owner：Codex；Done；單一開發者。使用者要求橘紅拖尾應拉長或飄動。既有殞石完成，三層靜態尾焰改向後發射、伸展消散並以流動噪聲擾動。

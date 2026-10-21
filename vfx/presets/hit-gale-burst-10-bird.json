@@ -576,10 +576,10 @@
       "assetId": "light-masks-1.0/transparent/cone_composed_e.png",
       "position": {
         "x": 0.1878,
-        "y": -102.6803
+        "y": -65.6699
       },
       "scale": {
-        "x": 0.184,
+        "x": 0.2025,
         "y": 0.1273
       },
       "alpha": 0.8,
@@ -718,10 +718,10 @@
       "assetId": "light-masks-1.0/transparent/cone_composed_c.png",
       "position": {
         "x": -0.7569,
-        "y": -48.2701
+        "y": -11.2597
       },
       "scale": {
-        "x": 0.184,
+        "x": 0.2025,
         "y": 0.1273
       },
       "alpha": 0.8,
@@ -833,10 +833,10 @@
       "assetId": "light-masks-1.0/transparent/cone_composed_c.png",
       "position": {
         "x": -0.4454,
-        "y": -80.3449
+        "y": -43.3345
       },
       "scale": {
-        "x": 0.184,
+        "x": 0.2025,
         "y": 0.1273
       },
       "alpha": 0.8,

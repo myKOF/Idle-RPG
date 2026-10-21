@@ -1,22 +1,26 @@
 {
   "schemaVersion": 1,
   "id": "bolt-thunderstrike-bluewhite",
-  "duration": 0.35,
+  "duration": 0.5,
   "loop": false,
   "deformation": {
-    "amplitude": 45,
+    "amplitude": 30,
     "axis": "y",
-    "bendStrengthMin": 0.3,
+    "bendStrengthMin": 0.5,
     "end": 0,
     "layers": [
       "blue-corona",
       "white-core",
-      "side-fork"
+      "side-fork",
+      "branch",
+      "branch-copy",
+      "seg-b",
+      "seg-c"
     ],
     "mirror": true,
     "mirrorChance": 0.5,
     "motionAmplitude": 15,
-    "motionSpeed": 1,
+    "motionSpeed": 0,
     "pivot": 1,
     "start": -330,
     "widthJitter": 0.15
@@ -28,7 +32,7 @@
       "enabled": true,
       "assetId": "particle-pack/png-black-background/spark_05.png",
       "position": {
-        "x": 1.1912,
+        "x": 8.1622,
         "y": -543.3767
       },
       "scale": {
@@ -654,19 +658,20 @@
     {
       "id": "impact-core",
       "type": "sprite",
-      "assetId": "light-masks-1.0/default/circle_a.png",
+      "assetId": "light-masks-1.0/default/circle_d.png",
       "zIndex": 5,
       "position": {
         "x": 0,
         "y": 0
       },
       "scale": {
-        "x": 0.2194,
-        "y": 0.0558
+        "x": 0.4194,
+        "y": 0.1067
       },
-      "tint": "#d4f1ff",
+      "alpha": 0.75,
+      "tint": "#52a5ff",
       "blendMode": "add",
-      "duration": 0.14,
+      "duration": 0.3,
       "alphaOverLife": [
         [
           0,
@@ -685,8 +690,8 @@
       "assetId": "particle-pack/png-black-background/spark_04.png",
       "zIndex": 4,
       "position": {
-        "x": -6.9517,
-        "y": -380.7524
+        "x": -23.15,
+        "y": -402.3501
       },
       "rotation": 1.376393,
       "scale": {
@@ -749,8 +754,8 @@
       "assetId": "particle-pack/png-black-background/spark_04.png",
       "zIndex": 4,
       "position": {
-        "x": -8.9517,
-        "y": -252.7524
+        "x": -21.7319,
+        "y": -205.1172
       },
       "rotation": -1.36854,
       "scale": {
@@ -805,6 +810,135 @@
           "#60104a"
         ]
       ],
+      "perspective": false
+    },
+    {
+      "id": "seg-b",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/spark_05.png",
+      "zIndex": 2,
+      "position": {
+        "x": 9.0166,
+        "y": -374.9696
+      },
+      "scale": {
+        "x": 0.6584,
+        "y": 0.4689
+      },
+      "alpha": 1,
+      "tint": "#52abff",
+      "blendMode": "add",
+      "duration": 0.5,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.05,
+          1
+        ],
+        [
+          0.2,
+          0.35
+        ],
+        [
+          0.32,
+          1
+        ],
+        [
+          0.6,
+          0.5
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#ffffff"
+        ],
+        [
+          0.08,
+          "#ffe8f8"
+        ],
+        [
+          0.35,
+          "#fc84dd"
+        ],
+        [
+          1,
+          "#60104a"
+        ]
+      ],
+      "rotationYOverLife": 0,
+      "perspective": false
+    },
+    {
+      "id": "seg-c",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/spark_05.png",
+      "zIndex": 3,
+      "position": {
+        "x": 3.6091,
+        "y": -128.7318
+      },
+      "rotation": 0,
+      "scale": {
+        "x": 0.4195,
+        "y": 0.4957
+      },
+      "alpha": 1,
+      "tint": "#52abff",
+      "blendMode": "add",
+      "duration": 0.5,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.05,
+          1
+        ],
+        [
+          0.2,
+          0.35
+        ],
+        [
+          0.32,
+          1
+        ],
+        [
+          0.6,
+          0.5
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#ffffff"
+        ],
+        [
+          0.08,
+          "#ffe8f8"
+        ],
+        [
+          0.35,
+          "#fc84dd"
+        ],
+        [
+          1,
+          "#60104a"
+        ]
+      ],
+      "rotationYOverLife": 0,
       "perspective": false
     }
   ]

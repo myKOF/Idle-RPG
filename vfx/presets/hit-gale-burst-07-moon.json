@@ -722,14 +722,14 @@
     {
       "id": "sprite-12-copy",
       "type": "sprite",
-      "assetId": "light-masks-1.0/transparent/cone_composed_c.png",
+      "assetId": "particle-pack/png-black-background/slash_02.png",
       "position": {
         "x": 0.7241,
         "y": -30.9691
       },
       "scale": {
         "x": 0.1872,
-        "y": 0.1295
+        "y": 0.2527
       },
       "alpha": 0.8,
       "tint": "#e634fe",
@@ -836,14 +836,14 @@
     {
       "id": "sprite-12-copy-2",
       "type": "sprite",
-      "assetId": "light-masks-1.0/transparent/cone_composed_c.png",
+      "assetId": "particle-pack/png-black-background/slash_02.png",
       "position": {
-        "x": -0.1237,
-        "y": -55.5563
+        "x": 0.6171,
+        "y": -60.0012
       },
       "scale": {
         "x": 0.1872,
-        "y": 0.1295
+        "y": 0.2021
       },
       "alpha": 0.8,
       "tint": "#e634fe",
