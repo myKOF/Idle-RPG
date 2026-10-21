@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## ELECTRIFIED-CURRENT-20261021 — NPC帶電改為重疊雙電流
+
+- Owner：Codex；Done，單一開發者。使用者指定en-spark、參考藍色電流，先要求預覽，再於2026-10-22核准「兩條幾乎重疊、各自隨機扭動、幅度＋30%」並要求接入；允許正式匯出及雙倉庫Commit，不合併推送。原表定帶電與投影契約已完成；所有既有檔／新檔衝突預檢無外部來源。
+- 完成遊戲11檔：vfx/presets/en-spark.json／layouts/en-spark.json、自製images/vfx/assets/codex-authored/electrified-spark/current.svg、asset-index／shipped-assets、新electrified-spark.cjs作者、enemy-skills.cjs的單一製作入口、tests/electrified-spark-vfx.test.cjs、LV_upgrade_system及本紀錄，另由正式匯出移除已無Preset引用的plasma出貨副本（原素材庫來源保留）。禁止且未改Core／Runtime／Backend／Worker／配置／技能數值／存檔與其他使用者素材。
+- 最終外觀：單一sprite包含兩條獨立種子電流，基準軸幾乎重疊；依圈選線段延長50%、四道描邊各加粗1倍，扭動幅度由19改24.7（＋30%），基準軸距由24縮至2。平滑插值隨機節點、64格32fps／16列×4行，圖層自身2秒loop，Preset保留原0.5秒loop／projectile-circle／authored.radius22，飛行位置／本體大小／壽命沿用真實事件。不再有旋轉雪花、電網外環或粒子；沒有新VFX來源。
+- 美術為原創SVG，只觀察使用者截圖的電流形狀與藍色層次，沒有使用／描摹第三方像素。已實際開Mote Studio檢查Export，只有PNG／圖集／GIF、無SVG，故沿既有原生向量作者流程製作。素材庫codex-authored/electrified-spark保存SVG／SOURCE／正式Preset／layout，四檔先Commit e435d52；新SVG／Preset／layout與遊戲逐位元一致，作者可重製。
+- 測試：node --test tests/electrified-spark-vfx.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-asset-export.test.cjs tests/vfx-preset-usage.test.cjs共96項，95過／1既有Windows符號連結略過／0失敗。node --test --test-name-pattern='ELITE-ENGINE-9' tests/elite-engine.test.cjs，1/1。新增3項涵蓋正式Preset／作者／素材SHA與單根分組、兩條獨立變形及長度／粗細、64格選格、36個實例五秒無粒子累積與回收、真實elite受擊飛行事件經正式Adapter沿原路徑／壽命／尺寸播放，完整回收且missing0。沒有修改既有斷言；未跑全庫。
+- 驗收：核准預覽en-spark-overlap-current-preview.gif保存在本聊天visualizations/spark-current；正式Pixi8／Core／Backend再改讀正式Preset與出貨shipped-assets，截圖spark-current-integrated.png確認最終畫面。API以接入前真實舊Editor基準PUT原Preset，得到409／written:false，正式檔逐位元保持。使用者其他Editor未操作；須先下載未存編輯備份，再重新載入en-spark.json，不能以舊內容覆蓋新版。
+- npm.cmd run build：565檔通過；node tools/vfx/export-assets.cjs --check最新，目前含使用者尚未提交設定的工作區為194個assetId；本次staged索引193個與Commit內Preset／runtime登記完整相符，已獨立比對資源集合。兩庫diff --check通過。正式匯出相對使用者既有狀態只新增current.svg、移除舊plasma出貨副本，其他素材索引entry不變。shared shipped-assets只stage本次增減；原有HUD／配置特效／祕法棒等未提交內容與素材庫arcane-rod修改逐檔保留，沒有一起提交。新JS僅離線作者，遊戲與Editor程式未改；Preset／出貨索引已有no-store，不需Runtime／Worker快取變更。
+- 唯讀檢查未改：共通規範／工作流／Agent、Skills2與elite.js權威帶電事件／命中、Core／Runtime／Backend／Editor guard及既有回歸。自我Review確認圖層loop跨Preset週期仍完整播64格，既有飛行結束取消並回收，圖集格距留足邊界。專用瀏覽器／預覽服務已關閉，臨時錄製幀與服務腳本清理，正式作者與測試保留。
+- 交付：無本次未完成項或新增已知缺陷，可Review／合併；限制為未載玩家存檔長戰、跨裝置／手機GPU測量，另1既有測試略過。遊戲Commit為本紀錄所在[Codex] fix: 帶電改為重疊扭動雙電流，回覆附編號；素材庫e435d52。未合併推送，下一步重新整理遊戲驗收，Editor先備份再重載；其他電腦同步遊戲與素材庫兩個Commit。
+
 ## ICEFIELD-SHORE-20261021 — 冰面與地表自然銜接
 
 - Owner：Codex；Done，單一開發者。使用者依冰原／沼澤截圖要求改善冰面貼片感，預覽後確認「這版不錯，接入」；既有場景圖集完成，前置依賴已滿足。

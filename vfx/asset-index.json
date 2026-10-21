@@ -6,7 +6,7 @@
     "name": "asset-scanner",
     "version": "1.0.0"
   },
-  "assetCount": 2468,
+  "assetCount": 2469,
   "assets": [
     {
       "assetId": "antigravity-authored/ice/ice-arrow-spike.png",
@@ -1019,6 +1019,25 @@
           "v": 1
         },
         "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "codex-authored/electrified-spark/current.svg",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/electrified-spark/current.svg",
+      "format": "svg",
+      "fileSize": 134407,
+      "contentHash": "sha256:ddf7507aab49bc679ead59e0f88a7ec5d315bfdb0e499016cf80c0e1adfbe02d",
+      "facts": {
+        "dimensions": {
+          "width": 4096,
+          "height": 1024
+        },
+        "dimensionsSource": "attributes",
+        "colorModel": null,
+        "bitDepth": null,
+        "hasAlphaChannel": null,
+        "pixelsAnalyzed": false
       }
     },
     {
