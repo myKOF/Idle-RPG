@@ -5892,8 +5892,9 @@ textarea:disabled,
   box-shadow: none !important;
 }
 
-#sk-tooltip .equip-detail-card.mythic-detail {
-  /* 原內襯後殘留的彩色背景只保留20%；文字、品質框與詳情不受影響。 */
+#sk-tooltip .equip-detail-card.mythic-detail,
+#tab-equip .equip-detail-frame:has(> #detail-pane.has-detail.mythic-detail) {
+  /* tips與詳情共用深色內襯，彩色背景只保留20%；文字與品質框不受影響。 */
   --mythic-reading-veil: linear-gradient(rgb(7 16 13 / 0.938039216), rgb(7 16 13 / 0.887843137));
 }
 
