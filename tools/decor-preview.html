@@ -16,8 +16,8 @@
 </head>
 <body>
 <script src="../js/decor-sculpt.js"></script>
-<script src="../js/decor-nature.js?v=1.0.7"></script>
-<script src="../js/battle-decor.js?v=1.0.19"></script>
+<script src="../js/decor-nature.js?v=1.0.9"></script>
+<script src="../js/battle-decor.js?v=1.0.23"></script>
 <script>
   (async function () {
     await DecorNature.loadImages();
@@ -29,7 +29,7 @@
     var noDecal = q.get('decal') === '0';
     // 各地圖的地面底色（約略對應 images/ground_*.png 的平均色）
     var GROUND = {
-      desert: '#6e5a40', Icefield: '#5a6a7a', swamp: '#2e3a26', undead_mountains: '#2e2c32',
+      mist_forest:'#273b31',lava_mountain:'#382c2b',thunder_peak:'#3f4a58',desert: '#6e5a40', Icefield: '#5a6a7a', swamp: '#2e3a26', undead_mountains: '#2e2c32',
       god_battlefield: '#3a2c24', god_chaos: '#241c30', god_sanctuary: '#8a8478'
     };
     // 共用正式圖集，把接觸區投影到地面，再疊同腳點的直立物件。

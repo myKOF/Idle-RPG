@@ -296,7 +296,7 @@ test('migrateSave：舊存檔補 zoneProgress.cleared（由 best-1 回推）', (
     zoneProgress: { desert: { current: 100, best: 120 } }
   };
   const m = c.migrateSave(old);
-  assert.equal(m.zoneProgress.desert.cleared, 119);
+  assert.equal(m.zoneProgress.desert.cleared, 100);
   assert.equal(m.zoneProgress.Icefield.cleared, 0); // 未開的地圖補 0
   // 已有 cleared 的存檔不被 best-1 蓋掉（打贏最後一關的情形）
   const c2 = loadContext();
@@ -305,7 +305,7 @@ test('migrateSave：舊存檔補 zoneProgress.cleared（由 best-1 回推）', (
     stage: { current: 200, best: 200, zone: 'desert' },
     zoneProgress: { desert: { current: 200, best: 200, cleared: 200 } }
   };
-  assert.equal(c2.migrateSave(saved).zoneProgress.desert.cleared, 200);
+  assert.equal(c2.migrateSave(saved).zoneProgress.desert.cleared, 100);
 });
 
 test('migrateSave：地圖改名後將舊 plains/desert 進度搬到荒漠/冰原，且重複讀檔不再搬移', () => {
@@ -326,12 +326,12 @@ test('migrateSave：地圖改名後將舊 plains/desert 進度搬到荒漠/冰�
 
   const migrated = c.migrateSave(old);
   assert.equal(migrated.zoneProgress.plains, undefined);
-  assert.equal(migrated.zoneProgress.desert.best, 200);
-  assert.equal(migrated.zoneProgress.desert.cleared, 200);
-  assert.equal(migrated.zoneProgress.Icefield.best, 300);
-  assert.equal(migrated.zoneProgress.Icefield.cleared, 300);
-  assert.equal(migrated.zoneProgress.swamp.best, 400);
-  assert.equal(migrated.zoneProgress.undead_mountains.best, 460);
+  assert.equal(migrated.zoneProgress.desert.best, 100);
+  assert.equal(migrated.zoneProgress.desert.cleared, 100);
+  assert.equal(migrated.zoneProgress.Icefield.best, 150);
+  assert.equal(migrated.zoneProgress.Icefield.cleared, 150);
+  assert.equal(migrated.zoneProgress.swamp.best, 300);
+  assert.equal(migrated.zoneProgress.undead_mountains.best, 400);
   assert.equal(migrated.stage.zone, 'undead_mountains');
 
   const again = c.migrateSave(migrated);

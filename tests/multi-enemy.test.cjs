@@ -499,8 +499,8 @@ test('自動推進打通地圖上限後切到下一張地圖第 1 關', () => {
   const context = loadCombatContext();
   context.G = {
     player: { gold: 0, reincarnations: 0 },
-    stage: { current: 200, best: 200, kills: 0, autoAdvance: true, zone: 'desert' },
-    zoneProgress: { desert: { current: 200, best: 200, cleared: 199 } },
+    stage: { current: 100, best: 100, kills: 0, autoAdvance: true, zone: 'desert' },
+    zoneProgress: { desert: { current: 100, best: 100, cleared: 99 } },
     tower: { active: false }
   };
   context.FIELD.player = context.newPlayerEntity({ hp: 100, mp: 0, aspd: 1 });
@@ -515,17 +515,17 @@ test('自動推進打通地圖上限後切到下一張地圖第 1 關', () => {
   assert.equal(context.G.stage.zone, 'Icefield');
   assert.equal(context.G.stage.current, 1);
   assert.equal(context.G.stage.best, 1);
-  assert.equal(context.G.zoneProgress.desert.cleared, 200);
+  assert.equal(context.G.zoneProgress.desert.cleared, 100);
   assert.equal(context.FIELD.mapComplete, false);
   assert.equal(context.FIELD.monsters.length, 0);
 });
 
-test('後續地圖尚未解鎖時，亡靈山脈 500 關通關後留在 500 關重複挑戰', () => {
+test('後續地圖尚未解鎖時，亡靈山脈 400 關通關後留在 400 關重複挑戰', () => {
   const context = loadCombatContext();
   context.G = {
     player: { gold: 0, reincarnations: 10 },
-    stage: { current: 500, best: 500, kills: 0, autoAdvance: true, zone: 'undead_mountains' },
-    zoneProgress: { undead_mountains: { current: 500, best: 500, cleared: 499 } },
+    stage: { current: 400, best: 400, kills: 0, autoAdvance: true, zone: 'undead_mountains' },
+    zoneProgress: { undead_mountains: { current: 400, best: 400, cleared: 399 } },
     tower: { active: false }
   };
   context.FIELD.player = context.newPlayerEntity({ hp: 100, mp: 0, aspd: 1 });
@@ -539,9 +539,9 @@ test('後續地圖尚未解鎖時，亡靈山脈 500 關通關後留在 500 關�
   context.completeFieldWave(context.getStats());
 
   assert.equal(context.G.stage.zone, 'undead_mountains');
-  assert.equal(context.G.stage.current, 500);
-  assert.equal(context.G.stage.best, 500);
-  assert.equal(context.G.zoneProgress.undead_mountains.cleared, 500);
+  assert.equal(context.G.stage.current, 400);
+  assert.equal(context.G.stage.best, 400);
+  assert.equal(context.G.zoneProgress.undead_mountains.cleared, 400);
   assert.equal(context.FIELD.mapComplete, false);
   /* 過關之後下一波要隔 FIELD_STAGE_SWITCH_DELAY（參數表「出怪間隔」的 b）才出現，
      場上既有的敵人照樣留著。出怪只看 spawnCd 一個計時器。 */
@@ -552,8 +552,8 @@ test('真正最後一張地圖通關後仍標記完成並停止出怪', () => {
   const context = loadCombatContext();
   context.G = {
     player: { gold: 0, reincarnations: 11 },
-    stage: { current: 800, best: 800, kills: 0, autoAdvance: true, zone: 'god_sanctuary' },
-    zoneProgress: { god_sanctuary: { current: 800, best: 800, cleared: 799 } },
+    stage: { current: 600, best: 600, kills: 0, autoAdvance: true, zone: 'god_sanctuary' },
+    zoneProgress: { god_sanctuary: { current: 600, best: 600, cleared: 599 } },
     tower: { active: false }
   };
   context.FIELD.player = context.newPlayerEntity({ hp: 100, mp: 0, aspd: 1 });
@@ -564,8 +564,8 @@ test('真正最後一張地圖通關後仍標記完成並停止出怪', () => {
   assert.equal(context.hasConfiguredHigherZone('god_sanctuary'), false);
   context.completeFieldWave(context.getStats());
 
-  assert.equal(context.G.stage.current, 800);
-  assert.equal(context.G.zoneProgress.god_sanctuary.cleared, 800);
+  assert.equal(context.G.stage.current, 600);
+  assert.equal(context.G.zoneProgress.god_sanctuary.cleared, 600);
   assert.equal(context.FIELD.mapComplete, true);
   assert.equal(context.FIELD.spawnCd, Infinity, '整張地圖打完就停止出怪');
 });
@@ -667,7 +667,7 @@ test('可直接前進到目前場景最高階段', () => {
   context.G.stage.best = 280;
   context.G.stage.kills = 7;
   context.stageGoMax();
-  assert.equal(context.G.stage.current, 200);
+  assert.equal(context.G.stage.current, 100);
   assert.equal(context.G.stage.kills, 0);
   assert.equal(context.FIELD.monsters.length, 0);
 });

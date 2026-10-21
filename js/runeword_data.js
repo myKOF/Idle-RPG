@@ -127,7 +127,7 @@ var RUNE_SETTINGS = {
   composeMaxTier: 20,
   dismantleYield: 1,
   statScale: 1,
-  drop: { basePct: 0.3, towerBossPct: 35, tierSpread: 0.74, progressPerTier: 4.6 }
+  drop: { basePct: 0.3, towerBossPct: 35, tierSpread: 0.74, progressPerTier: 3.2 }
 };
 /* 既有程式使用的具名常數：全部由上面的設定衍生（唯一來源），不要在別處另寫數字。 */
 var RUNE_MAX_SLOTS = RUNE_SETTINGS.maxSlots;

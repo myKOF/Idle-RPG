@@ -1311,6 +1311,75 @@ var BattleDecor = (function () {
   var DARK_SPIRE = { base: '#565260' };
   var CHAOS_SPIRE = { base: '#6a3a8a', glow: '#d070ff', spec: 0.45, smooth: true, amb: 0.34, shift: 26 };
 
+  /* 新地貌的原創浮雕。共用材質打光，但輪廓／結構各自製作；不借用舊圖的本體貼圖。 */
+  function drawFanFern(g,w,h,r,pal) {
+    var fy=h-FOOT,cx=w/2;
+    shadowEllipse(g,cx,fy,w*.4,w*.09,.3);
+    for(var i=0;i<11;i++) {
+      var a=-Math.PI*.95+i/10*Math.PI*.9,len=h*range(r,.55,.95),ex=cx+Math.cos(a)*w*.46,ey=fy+Math.sin(a)*len;
+      g.strokeStyle='#72937a';g.lineWidth=1.3;g.beginPath();g.moveTo(cx,fy);g.quadraticCurveTo(cx,ey,ex,ey);g.stroke();
+      for(var j=1;j<9;j++) {
+        var t=j/9,x=lerp(cx,ex,t*t),y=lerp(fy,ey,2*t-t*t),s=Math.sin(t*Math.PI)*w*.09;
+        for(var k=-1;k<=1;k+=2){g.fillStyle=k<0?'#345f51':'#6a9270';g.beginPath();g.moveTo(x,y+2);g.quadraticCurveTo(x+k*s,y-5,x+k*s*.9,y-8);g.quadraticCurveTo(x+k*s*.4,y-5,x,y);g.fill();}
+      }
+    }
+  }
+  function drawBasalt(g,w,h,r,pal) {
+    var S=sculpt(w,h),fy=h-FOOT,stone=M(pal.base||'#403d40',{bump:1.5,amb:.25,spec:.04,shift:16,hiLift:.22});
+    shadowEllipse(g,w/2,fy,w*.44,w*.12,.5);
+    for(var i=0;i<4;i++) {
+      var x=w*(.22+i/3*.56),hh=h*range(r,.3,.8),y=fy-range(r,0,h*.05);
+      rockFacets(S,r,x,y,w*range(r,.25,.38),hh,i*4,stone,{bevel:.7,tex:noiseTex('grain',1.3,1.3,r)});
+    }
+    S.render(g,{footY:fy,footAO:10});
+    if(pal.glow){g.strokeStyle=pal.glow;g.lineWidth=1.4;for(var j=0;j<5;j++){var xx=w*(.2+j*.14);g.beginPath();g.moveTo(xx,fy-3);g.lineTo(xx-3,fy-h*.18);g.lineTo(xx+1,fy-h*.26);g.stroke();}}
+  }
+  function drawObsidian(g,w,h,r,pal) {
+    var fy=h-FOOT,S=sculpt(w,h),glass=M('#292430',{bump:.6,amb:.2,hiLift:.16,spec:.08});
+    shadowEllipse(g,w/2,fy,w*.4,w*.1,.4);
+    for(var i=0;i<4;i++)rockFacets(S,r,w*(.25+i*.17),fy,w*range(r,.2,.3),h*range(r,.4,.85),i*5,glass,{bevel:.5,tex:noiseTex('grain',1.7,.6,r)});
+    S.render(g,{footY:fy,footAO:8});
+    g.strokeStyle='rgba(196,104,70,.5)';g.lineWidth=.7;g.beginPath();g.moveTo(w*.48,fy-h*.48);g.lineTo(w*.52,fy-h*.27);g.lineTo(w*.46,fy-3);g.stroke();
+  }
+  function drawFulgurite(g,w,h,r,pal) {
+    var fy=h-FOOT,S=sculpt(w,h),mat=M('#536779',{bump:1.7,amb:.32,spec:.06,hiLift:.2});
+    shadowEllipse(g,w/2,fy,w*.35,w*.1,.4);
+    for(var i=0;i<4;i++){var x=w*.5+range(r,-w*.2,w*.2),y=fy-h*range(r,.4,.78),ex=x+range(r,-w*.28,w*.28),ey=y-h*range(r,.08,.17);S.capsule(w*.5,fy,w*.045,x,y,w*.027,0,mat,{tex:noiseTex('grain',.8,1.3,r)});S.capsule(x,y,w*.027,ex,ey,w*.01,3,mat,{tex:noiseTex('grain',.8,1.3,r)});}
+    rockFacets(S,r,w*.5,fy,w*.58,h*.18,6,M('#4e586b',{bump:1.5,amb:.25,hiLift:.24}),{tex:noiseTex('grain',1,1.3,r)});
+    S.render(g,{footY:fy,footAO:7});
+  }
+  function decalBiomass(g,w,h,r,pal) {
+    var forest=pal.kind==='forest',lava=pal.kind==='lava';
+    for(var i=0;i<90;i++) {
+      var a=r()*Math.PI*2,d=Math.sqrt(r()),x=w/2+Math.cos(a)*w*.46*d,y=h/2+Math.sin(a)*h*.46*d;
+      var alpha=(1-d)*.7;g.fillStyle=rgba(pick(r,forest?['#45664a','#6e7954','#334b3d']:lava?['#423c42','#625552','#2b2c33']:['#525e71','#82929d','#394557']),alpha);
+      g.beginPath();g.ellipse(x,y,range(r,2,9),range(r,1,4),r()*Math.PI,0,Math.PI*2);g.fill();
+    }
+    if(lava){
+      var pts=blob(w/2,h/2,w*.28,h*.15,16,.4,r);pathSmooth(g,pts);g.save();g.clip();
+      var heat=g.createRadialGradient(w/2,h/2,0,w/2,h/2,w*.3);heat.addColorStop(0,'rgba(218,100,43,.8)');heat.addColorStop(.6,'rgba(139,50,32,.65)');heat.addColorStop(1,'rgba(57,35,34,0)');g.fillStyle=heat;g.fillRect(0,0,w,h);
+      for(var j=0;j<22;j++){var x=w/2+range(r,-w*.3,w*.3),y=h/2+range(r,-h*.17,h*.17);pathPoly(g,blob(x,y,range(r,4,12),range(r,3,8),7,.35,r));g.fillStyle=pick(r,['#3d3032','#4b3635','#302b31']);g.fill();}
+      g.restore();
+    }
+  }
+  /* 可平鋪的週期雜訊地表，不用方向性波紋，避免投影後看起來像水面或規則格線。 */
+  function buildGround(zoneKey) {
+    var colors={mist_forest:[39,59,49],lava_mountain:[56,44,43],thunder_peak:[63,74,88]};
+    var c=colors[zoneKey];if(!c)return null;
+    var canvas=document.createElement('canvas');canvas.width=canvas.height=256;var g=canvas.getContext('2d'),im=g.createImageData(256,256);
+    function periodic(x,y,cells){
+      var gx=x/256*cells,gy=y/256*cells,ix=Math.floor(gx),iy=Math.floor(gy),tx=gx-ix,ty=gy-iy;
+      tx=tx*tx*(3-2*tx);ty=ty*ty*(3-2*ty);
+      function n(a,b){return hash3(a%cells,b%cells,173)/4294967296;}
+      return lerp(lerp(n(ix,iy),n(ix+1,iy),tx),lerp(n(ix,iy+1),n(ix+1,iy+1),tx),ty)-.5;
+    }
+    for(var y=0;y<256;y++)for(var x=0;x<256;x++){
+      var n=periodic(x,y,4)*10+periodic(x,y,16)*6+periodic(x,y,64)*3+(hash3(x,y,37)/4294967296-.5)*2;
+      var k=(y*256+x)*4;for(var j=0;j<3;j++)im.data[k+j]=c[j]+n;im.data[k+3]=255;
+    }
+    g.putImageData(im,0,0);return canvas;
+  }
+
   var KITS = {
     desert: {
       tint: 0xffffff, deepTint: 0x8a7f78,
@@ -1337,6 +1406,31 @@ var BattleDecor = (function () {
         ['snow', 2, 280, { color: '#dcecff' }], ['light', 1.4, 220, { color: '#7ad0ff' }]],
       ambient: { kind: 'snow', count: 50, color: 0xffffff, fog: 2, fogTint: 0xdfeaf6, fogAlpha: 0.12, fogWind: -1 },
       deepAmbient: { kind: 'motes', count: 30, color: 0x9ad8ff }
+    },
+    mist_forest: {
+      tint:0xffffff,deepTint:0x819d96,
+      props:[['mistTree',4,172,215,{}],['fanFern',4,86,54,{}],['rootGate',1,148,115,{}]],
+      deepProps:[['rootGate',3,168,128,{}],['fanFern',3,86,54,{}],['mistTree',1,145,180,{}]],
+      decals:[['biomass',6,280,{kind:'forest'}],['patch',4,330,{color:'#102c24',alpha:.22}],['roots',2,170,{}]],
+      deepDecals:[['biomass',5,260,{kind:'forest'}],['roots',3,190,{}],['light',1.3,210,{color:'#86c7b3'}]],
+      ambient:{kind:'fireflies',count:18,color:0xb8dac3,fog:5,fogTint:0x98c4b9,fogAlpha:.18,fogWind:1,rays:2,rayColor:0xb8d8bd},
+      deepAmbient:{kind:'wisps',count:16,color:0x9ed5c7,fog:4,fogTint:0x6fada8,fogAlpha:.15},motion:{wind:.6,local:'gas'}
+    },
+    lava_mountain: {
+      tint:0xffffff,deepTint:0xb39a98,
+      props:[['lavaOutcrop',3.5,125,158,{}],['lavaVent',2,110,78,{}],['obsidian',2.5,80,107,{}],['basalt',1.5,62,48,{base:'#49434c'}]],
+      deepProps:[['lavaOutcrop',3,145,178,{}],['lavaVent',3,112,86,{}],['obsidian',3,88,122,{}]],
+      decals:[['biomass',4,230,{kind:'lava'}],['crack',4,210,{dark:'#4d201c',rim:'#c27046',glow:'#ef6b26'}],['patch',4,320,{color:'#1d1820',alpha:.25}]],
+      deepDecals:[['biomass',5,270,{kind:'lava'}],['crack',5,220,{dark:'#4d201c',rim:'#db9c65',glow:'#ff842d'}],['light',1.5,220,{color:'#d86630'}]],
+      ambient:{kind:'embers',count:36,color:0xf8a15b,fog:3,fogTint:0x84706b,fogAlpha:.15,fogWind:-1},deepAmbient:{kind:'embers',count:42,color:0xffb35d,fog:2,fogTint:0x725453,fogAlpha:.17},motion:{wind:.4,local:'smoke'}
+    },
+    thunder_peak: {
+      tint:0xffffff,deepTint:0x8695b3,
+      props:[['stormSpire',3.8,120,156,{}],['fulgurite',1.5,90,106,{}],['windPine',2.3,158,145,{}],['stormGrass',2,60,40,{base:'#77867f'}]],
+      deepProps:[['fulgurite',4,105,128,{}],['stormSpire',3,132,172,{}],['basalt',2.5,115,130,{base:'#586274',glow:'#a6b8dd'}]],
+      decals:[['biomass',5,250,{kind:'storm'}],['crack',3,175,{dark:'#222a3c',rim:'#96a8be'}],['patch',4,310,{color:'#1c293b',alpha:.22}]],
+      deepDecals:[['biomass',5,240,{kind:'storm'}],['crack',3,190,{dark:'#242a40',rim:'#b1c5e2',glow:'#8ba3d9'}],['light',1,220,{color:'#9fb9da'}]],
+      ambient:{kind:'rain',count:70,color:0xb9d3eb,fog:3,fogTint:0x91a7bf,fogAlpha:.15,fogWind:-1},deepAmbient:{kind:'motes',count:25,color:0xacc6eb,fog:2,fogTint:0x6e7da4,fogAlpha:.12},motion:{wind:1.6,local:'frost'}
     },
     swamp: {
       tint: 0xffffff, deepTint: 0x7c8a78,
@@ -1450,6 +1544,9 @@ var BattleDecor = (function () {
       style.stone = '#718171'; style.light = '#b3b69b'; style.dark = '#2e443b'; style.soil = '#55563a';
       if (deep) style.cap = '#456f69';
     }
+    if (kitKey==='mist_forest') Object.assign(style,{stone:'#677e70',light:'#a3af98',dark:'#263c34',soil:'#3c5343',moss:true});
+    if (kitKey==='lava_mountain') Object.assign(style,{stone:'#54464b',light:'#8b7169',dark:'#211d26',soil:'#493b39'});
+    if (kitKey==='thunder_peak') Object.assign(style,{stone:'#707d8f',light:'#a6b5bd',dark:'#2c3749',soil:'#4c5b6d'});
     return style;
   }
   Object.keys(KITS).filter(function (k) { return k && k !== 'swamp'; }).forEach(function (key) {
@@ -1490,21 +1587,27 @@ var BattleDecor = (function () {
     }
   };
   var LANDMARK_CHANCE = 0.14;
+  LANDMARKS.mist_forest={surface:[['mistTree',1,230,280,{}]],deep:[['rootGate',1,250,255,{}]]};
+  LANDMARKS.lava_mountain={surface:[['lavaOutcrop',1,220,260,{}],['lavaVent',1,235,165,{}]],deep:[['lavaVent',1,260,185,{}],['lavaOutcrop',1,220,265,{}]]};
+  LANDMARKS.thunder_peak={surface:[['stormSpire',1,205,265,{}],['windPine',1,230,260,{}]],deep:[['stormSpire',1,210,270,{}]]};
   var LANDMARK_VARIANTS = 2;
 
   var PROP_DRAW = {
+    stormGrass:drawGrass,
+    fanFern:drawFanFern,basalt:drawBasalt,obsidian:drawObsidian,fulgurite:drawFulgurite,
     rock: drawRock, pillar: drawPillar, deadTree: drawDeadTree, cactus: drawCactus, crystals: drawCrystals,
     grave: drawGrave, skullPile: drawSkullPile, mushrooms: drawMushrooms, reeds: drawReeds, stump: drawStump,
     brazier: drawBrazier, ruinWall: drawRuinWall, sword: drawSword, banner: drawBanner, runeStone: drawRuneStone, grass: drawGrass,
     arch: drawArch, giantBones: drawGiantBones, spire: drawSpire, urn: drawUrn, rubble: drawRubble
   };
   var DECAL_DRAW = {
+    biomass:decalBiomass,
     patch: decalPatch, crack: decalCrack, pebbles: decalPebbles, bones: decalBones, puddle: decalPuddle,
     runes: decalRunes, tiles: decalTiles, light: decalLight, snow: decalSnow
   };
   /* 背景建圖 Worker（相對於 index.html）。改了 decor-sculpt／decor-nature／battle-decor 要一起更新
      這裡的版本與 Worker 檔內 importScripts 的版本字串，否則 Worker 會吃到快取的舊畫法。 */
-  var ATLAS_WORKER_URL = 'js/worker/decor-atlas.worker.js?v=1.0.10';
+  var ATLAS_WORKER_URL = 'js/worker/decor-atlas.worker.js?v=1.0.14';
   var VARIANTS = 3;          // 每種擺件／地面裝飾畫幾個變體
   var TEX_SCALE = 1.5;       // 圖集解析度（畫面放大或高 DPI 時仍清楚；開 mipmap 避免縮小時閃爍）
 
@@ -1537,7 +1640,7 @@ var BattleDecor = (function () {
       for (var v = 0; v < nv; v++) specs.push({ kind: 'decal', key: 'd' + i + '_' + v, type: d[0], w: d[2], h: d[2], pal: d[3], seed: strHash(kitKey + d[0] + i + '_' + v + (deep ? 'd' : '')) });
     });
     var style = natureStyle(kitKey, deep);
-    var natureProps = ['rock','stump','log','fern','reeds','mushrooms','grass','willow','pine','deadTree','shrub','dryGrass','cactus','pillar','grave','urn','arch','ruinWall','rubble','runeStone','crystals','spire','skullPile','giantBones','banner','sword'];
+    var natureProps = ['mistTree','rootGate','lavaVent','windPine','lavaOutcrop','stormSpire','rock','stump','log','fern','reeds','mushrooms','grass','willow','pine','deadTree','shrub','dryGrass','cactus','pillar','grave','urn','arch','ruinWall','rubble','runeStone','crystals','spire','skullPile','giantBones','banner','sword'];
     var contacts = [];
     specs.forEach(function (s) {
       s.natureStyle = style;
@@ -1927,6 +2030,9 @@ var BattleDecor = (function () {
         ps._naturePhase = (hash3(cx,cy,Math.floor(px+py))>>>0)/4294967296*Math.PI*2;
         var localKind = (D.atlas.kit.motion || {}).local;
         var localSource = localKind==='smoke'?p[0]==='deadTree':localKind==='gas'?p[0]==='stump':localKind==='frost'?p[0]==='crystals':localKind==='void'?p[0]==='crystals'||p[0]==='runeStone':localKind==='petal'?p[0]==='shrub':p[0]==='dryGrass';
+        if(D.kitKey==='mist_forest')localSource=p[0]==='rootGate';
+        if(D.kitKey==='lava_mountain')localSource=p[0]==='lavaVent'||p[0]==='lavaOutcrop';
+        if(D.kitKey==='thunder_peak')localSource=p[0]==='fulgurite'||p[0]==='stormSpire';
         if(D.kitKey==='desert'&&p[0]==='dryGrass'){localKind='dust';localSource=true;}
         if(localSource)chunk.emitters.push({key:cx+':'+cy+':p'+texKey+':'+px,x:px,y:py,height:localKind==='smoke'?p[3]*k*.65:8,kind:localKind,seed:hash3(cx,cy,Math.floor(px))});
         var groundTex = texFor('foot_' + texKey);
@@ -2104,7 +2210,7 @@ var BattleDecor = (function () {
     /* ---- 天氣粒子（螢幕座標；鏡頭移動時跟著反向漂，看起來釘在場景裡） ----
        每種天氣用自己的貼圖：雪＝雪花（遠近兩層，近的大而快）、餘燼＝拉長的火星（沿速度方向轉、加法混色、閃爍）、
        螢火蟲／幽魂＝亮核光暈、魔力微粒＝四芒星（閃爍縮放）。聖域另有幾道緩慢明滅的斜射光柱。 */
-    var AMB_TEX = { snow: 'flake', dust: 'dot', embers: 'streak', fireflies: 'glow', wisps: 'glow', motes: 'spark' };
+    var AMB_TEX = { rain:'streak', snow: 'flake', dust: 'dot', embers: 'streak', fireflies: 'glow', wisps: 'glow', motes: 'spark' };
     var AMB_ADD = { embers: true, fireflies: true, motes: true };
     function clearParticles() {
       D.particles.forEach(function (p) { p.s.destroy(); });
@@ -2159,7 +2265,7 @@ var BattleDecor = (function () {
       var r = p.r, kind = D.ambient.kind;
       var W = D.lastW || 800, H = D.lastH || 800;
       p.x = r() * W;
-      p.y = anywhere ? r() * H : (kind === 'snow' ? -10 : (kind === 'embers' || kind === 'motes' || kind === 'wisps' ? H + 10 : r() * H));
+      p.y = anywhere ? r() * H : (kind === 'snow' || kind === 'rain' ? -10 : (kind === 'embers' || kind === 'motes' || kind === 'wisps' ? H + 10 : r() * H));
       p.life = 0;
       p.maxLife = range(r, 4, 9);
       p.phase = r() * 10;
@@ -2169,6 +2275,7 @@ var BattleDecor = (function () {
         if (p.near) { p.vx = range(r, -22, 8); p.vy = range(r, 62, 96); size = range(r, 6, 10); p.a = range(r, 0.7, 0.95); }
         else { p.vx = range(r, -12, 6); p.vy = range(r, 26, 52); size = range(r, 2.5, 5); p.a = range(r, 0.45, 0.75); }
       }
+      else if (kind === 'rain') { p.vx=range(r,-105,-70);p.vy=range(r,220,320);size=range(r,16,26);p.a=range(r,.16,.35); }
       else if (kind === 'dust') { p.vx = range(r, -42, -16); p.vy = range(r, -5, 5); size = range(r, 2, 5); p.a = range(r, 0.2, 0.45); }
       else if (kind === 'embers') { p.vx = range(r, -14, 14); p.vy = range(r, -62, -24); size = range(r, 7, 12); p.a = range(r, 0.6, 1); }
       else if (kind === 'fireflies') { p.vx = range(r, -14, 14); p.vy = range(r, -10, 10); size = range(r, 11, 18); p.a = range(r, 0.55, 1); }
@@ -2210,7 +2317,8 @@ var BattleDecor = (function () {
         p.s.alpha = Math.max(0, fade) * p.a * mul;
         p.s.x = p.x + sway;
         p.s.y = p.y;
-        if (kind === 'embers') {
+        if (kind === 'rain') { p.s.rotation=Math.atan2(p.vy,p.vx); }
+        else if (kind === 'embers') {
           // 火星沿著飛行方向拉長
           p.s.rotation = Math.atan2(p.vy, p.vx + Math.cos(T * 2.3 + p.phase) * 18);
         } else if (kind === 'motes') {
@@ -2358,6 +2466,7 @@ var BattleDecor = (function () {
     KITS: KITS,
     // 給預覽頁與測試用：畫出某張地圖（地表／地下）的整張圖集
     buildAtlas: buildAtlas,
+    buildGround: buildGround,
     STAGE_BAND: STAGE_BAND,
     /* 程序化繪圖的小工具與共用畫法：封魔塔的魔王祭壇（js/battle-arena.js）沿用同一套筆觸，
        不另寫第二份（畫風才會一致）。只放純函式，不含任何執行期狀態。 */

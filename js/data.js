@@ -1789,22 +1789,21 @@ var ENCHANT_RES_MAP = {
 
 // ---- 怪物（magic: 以魔法攻擊，對玩家魔防；attr: 屬性標籤（七大屬性），供「對X屬性敵人傷害」加成與 tips 顯示 ----
 var DESERT_POOL = [
-  { name: '史萊姆', emoji: '🟢', attr: 'earth', weight: 10, id: 'desert_1', magic: true, runSpeed: 12, atkSpeed: 0.75, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_poisonspit'], rnd: [3, 3] } } },
+  { name: '史萊姆', emoji: '🟢', attr: 'ice', weight: 10, id: 'desert_1', magic: true, runSpeed: 12, atkSpeed: 0.75, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_poisonspit'], rnd: [3, 3] } } },
   { name: '哥布林', emoji: '👺', attr: 'fire', weight: 1, id: 'desert_2', magic: false, runSpeed: 12, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_fireball'], rnd: [3, 3] } } },
-  { name: '野狼', emoji: '🐺', attr: 'earth', weight: 1, id: 'desert_3', magic: true, runSpeed: 24, atkSpeed: 1.5, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_charge'], rnd: [3, 3] } } },
-  { name: '骷髏兵', emoji: '💀', attr: 'earth', weight: 1, id: 'desert_4', magic: false, runSpeed: 6, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_splitter'], rnd: [3, 3] } } },
+  { name: '野狼', emoji: '🐺', attr: 'ice', weight: 1, id: 'desert_3', magic: true, runSpeed: 24, atkSpeed: 1.5, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_charge'], rnd: [3, 3] } } },
+  { name: '骷髏兵', emoji: '💀', attr: 'fire', weight: 1, id: 'desert_4', magic: false, runSpeed: 6, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_splitter'], rnd: [3, 3] } } },
   { name: '暗影蝠', emoji: '🦇', magic: true, attr: 'fire', weight: 1, id: 'desert_5', runSpeed: 18, atkSpeed: 1, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_vampiric'], rnd: [3, 3] } } },
-  { name: '樹妖', emoji: '🌳', magic: false, attr: 'earth', weight: 1, id: 'desert_6', runSpeed: 12, atkSpeed: 0.75, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_regen'], rnd: [3, 3] } } },
+  { name: '樹妖', emoji: '🌳', magic: false, attr: 'fire', weight: 1, id: 'desert_6', runSpeed: 12, atkSpeed: 0.75, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_regen'], rnd: [3, 3] } } },
   { name: '蜥蜴戰士', emoji: '🦎', attr: 'fire', weight: 10, id: 'desert_7', magic: true, runSpeed: 12, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_moltenblast'], rnd: [3, 3] } } },
-  { name: '半獸人', emoji: '🐗', attr: 'earth', weight: 1, id: 'desert_8', magic: false, runSpeed: 24, atkSpeed: 1.5, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_enrage'], rnd: [3, 3] } } },
+  { name: '半獸人', emoji: '🐗', attr: 'fire', weight: 1, id: 'desert_8', magic: false, runSpeed: 24, atkSpeed: 1.5, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_enrage'], rnd: [3, 3] } } },
   { name: '幽靈', emoji: '👻', magic: true, attr: 'fire', weight: 1, id: 'desert_9', runSpeed: 6, atkSpeed: 0.75, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_darkorbs'], rnd: [3, 3] } } },
-  { name: '石像鬼', emoji: '🗿', attr: 'earth', weight: 1, id: 'desert_10', magic: false, runSpeed: 18, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_quake'], rnd: [3, 3] } } },
+  { name: '石像鬼', emoji: '🗿', attr: 'fire', weight: 1, id: 'desert_10', magic: false, runSpeed: 18, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_quake'], rnd: [3, 3] } } },
   { name: '牛頭人', emoji: '🐂', attr: 'fire', weight: 1, id: 'desert_11', magic: true, runSpeed: 12, atkSpeed: 1.5, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_charge'], rnd: [3, 3] } } },
   { name: '雙足飛龍', emoji: '🐉', magic: false, attr: 'fire', weight: 1, id: 'desert_12', runSpeed: 12, atkSpeed: 1, atkRange: 36, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_meteor'], rnd: [3, 3] } } }
 ];
 /* ---- 戰鬥場景 ----
-   冰原/沼澤敵人更強；經驗、金幣、材料（寶石/附魔書/精華）掉落 x2 / x3，
-   裝備掉落表不變。各場景獨立保存推進進度與最高階段。 */
+   地圖倍率與分段掉落由配置表管理，各場景獨立保存推進進度與最高階段。 */
 var ICEFIELD_POOL = [
   { name: '寒霜狼', emoji: '🐺', attr: 'lightning', weight: 10, id: 'Icefield_1', magic: true, runSpeed: 24, atkSpeed: 1, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_iceshards'], rnd: [3, 3] } } },
   { name: '雪原巨熊', emoji: '🐻‍❄️', attr: 'ice', weight: 1, id: 'Icefield_2', magic: false, runSpeed: 6, atkSpeed: 0.75, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_frostnova'], rnd: [3, 3] } } },
@@ -1821,17 +1820,17 @@ var ICEFIELD_POOL = [
 ];
 var SWAMP_POOL = [
   { name: '劇毒蛙', emoji: '🐸', attr: 'poison', weight: 10, id: 'swamp_1', magic: true, runSpeed: 18, atkSpeed: 0.75, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_poisonspit'], rnd: [3, 3] } } },
-  { name: '沼澤鱷', emoji: '🐊', attr: 'dark', weight: 10, id: 'swamp_2', magic: false, runSpeed: 12, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_charge'], rnd: [3, 3] } } },
-  { name: '巨型水蛭', emoji: '🪱', attr: 'dark', weight: 1, id: 'swamp_3', magic: true, runSpeed: 12, atkSpeed: 1.5, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_vampiric'], rnd: [3, 3] } } },
+  { name: '沼澤鱷', emoji: '🐊', attr: 'ice', weight: 10, id: 'swamp_2', magic: false, runSpeed: 12, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_charge'], rnd: [3, 3] } } },
+  { name: '巨型水蛭', emoji: '🪱', attr: 'ice', weight: 1, id: 'swamp_3', magic: true, runSpeed: 12, atkSpeed: 1.5, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_vampiric'], rnd: [3, 3] } } },
   { name: '瘴氣幽魂', emoji: '👻', magic: false, attr: 'poison', weight: 1, id: 'swamp_4', runSpeed: 24, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_curse'], rnd: [3, 3] } } },
   { name: '食人花', emoji: '🌺', attr: 'poison', weight: 1, id: 'swamp_5', magic: true, runSpeed: 6, atkSpeed: 1, atkRange: 36, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_poisonspit'], rnd: [3, 3] } } },
-  { name: '泥漿怪', emoji: '🫠', attr: 'dark', weight: 1, id: 'swamp_6', magic: false, runSpeed: 18, atkSpeed: 0.75, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_splitter'], rnd: [3, 3] } } },
+  { name: '泥漿怪', emoji: '🫠', attr: 'poison', weight: 1, id: 'swamp_6', magic: false, runSpeed: 18, atkSpeed: 0.75, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_splitter'], rnd: [3, 3] } } },
   { name: '毒蚊群', emoji: '🦟', attr: 'poison', weight: 1, id: 'swamp_7', magic: true, runSpeed: 12, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_haste'], rnd: [3, 3] } } },
-  { name: '沼澤巫婆', emoji: '🧙', magic: false, attr: 'dark', weight: 1, id: 'swamp_8', runSpeed: 12, atkSpeed: 1.5, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_curse'], rnd: [3, 3] } } },
+  { name: '沼澤巫婆', emoji: '🧙', magic: false, attr: 'ice', weight: 1, id: 'swamp_8', runSpeed: 12, atkSpeed: 1.5, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_curse'], rnd: [3, 3] } } },
   { name: '腐爛樹人', emoji: '🌳', magic: true, attr: 'poison', weight: 1, id: 'swamp_9', runSpeed: 24, atkSpeed: 0.75, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_regen'], rnd: [3, 3] } } },
-  { name: '蜥蜴薩滿', emoji: '🦎', magic: false, attr: 'dark', weight: 1, id: 'swamp_10', runSpeed: 6, atkSpeed: 1, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_heal'], rnd: [3, 3] } } },
+  { name: '蜥蜴薩滿', emoji: '🦎', magic: false, attr: 'poison', weight: 1, id: 'swamp_10', runSpeed: 6, atkSpeed: 1, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_heal'], rnd: [3, 3] } } },
   { name: '深沼水蛇', emoji: '🐍', attr: 'poison', weight: 1, id: 'swamp_11', magic: true, runSpeed: 18, atkSpeed: 1.5, atkRange: 36, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_poisonspit'], rnd: [3, 3] } } },
-  { name: '沼澤霸主', emoji: '🐲', magic: false, attr: 'dark', weight: 1, id: 'swamp_12', runSpeed: 12, atkSpeed: 1, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_splitter'], rnd: [3, 3] } } }
+  { name: '沼澤霸主', emoji: '🐲', magic: false, attr: 'ice', weight: 1, id: 'swamp_12', runSpeed: 12, atkSpeed: 1, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_splitter'], rnd: [3, 3] } } }
 ];
 /* ---- 神界練功場景敵人（11轉及以上解鎖） ---- */
 // ---- 亡靈山脈 NPC ----
@@ -1852,13 +1851,13 @@ var UNDEAD_MOUNTAINS_POOL = [
 ];
 
 var GOD_BATTLEFIELD_POOL = [
-  { name: '太古戰魂', emoji: '👻', attr: 'earth', weight: 10, id: 'god_battlefield_1', magic: true, runSpeed: 6, atkSpeed: 0.75, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_quake'], rnd: [3, 3] } } },
-  { name: '遠古神兵', emoji: '🗡️', attr: 'earth', weight: 1, id: 'god_battlefield_2', magic: false, runSpeed: 18, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_petrify'], rnd: [3, 3] } } },
-  { name: '破天戰將', emoji: '🛡️', attr: 'earth', weight: 1, id: 'god_battlefield_3', magic: true, runSpeed: 12, atkSpeed: 1.5, atkRange: 36, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_shockwave'], rnd: [3, 3] } } },
+  { name: '太古戰魂', emoji: '👻', attr: 'light', weight: 10, id: 'god_battlefield_1', magic: true, runSpeed: 6, atkSpeed: 0.75, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_quake'], rnd: [3, 3] } } },
+  { name: '遠古神兵', emoji: '🗡️', attr: 'fire', weight: 1, id: 'god_battlefield_2', magic: false, runSpeed: 18, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_petrify'], rnd: [3, 3] } } },
+  { name: '破天戰將', emoji: '🛡️', attr: 'light', weight: 1, id: 'god_battlefield_3', magic: true, runSpeed: 12, atkSpeed: 1.5, atkRange: 36, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_shockwave'], rnd: [3, 3] } } },
   { name: '烈焰神衛', emoji: '💥', magic: false, attr: 'fire', weight: 1, id: 'god_battlefield_4', runSpeed: 12, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_meteor'], rnd: [3, 3] } } },
-  { name: '狂暴泰坦', emoji: '🗿', attr: 'earth', weight: 1, id: 'god_battlefield_5', magic: true, runSpeed: 24, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_knockback'], rnd: [3, 3] } } },
+  { name: '狂暴泰坦', emoji: '🗿', attr: 'light', weight: 1, id: 'god_battlefield_5', magic: true, runSpeed: 24, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_knockback'], rnd: [3, 3] } } },
   { name: '神魔殘骸', emoji: '☠️', attr: 'fire', weight: 1, id: 'god_battlefield_6', magic: false, runSpeed: 6, atkSpeed: 0.75, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_moltenblast'], rnd: [3, 3] } } },
-  { name: '不朽英靈', emoji: '🌟', magic: true, attr: 'earth', weight: 1, id: 'god_battlefield_7', runSpeed: 18, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_charge'], rnd: [3, 3] } } },
+  { name: '不朽英靈', emoji: '🌟', magic: true, attr: 'light', weight: 1, id: 'god_battlefield_7', runSpeed: 18, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_charge'], rnd: [3, 3] } } },
   { name: '裁決之劍', emoji: '⚔️', attr: 'fire', weight: 10, id: 'god_battlefield_8', magic: false, runSpeed: 12, atkSpeed: 1.5, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_fireball'], rnd: [3, 3] } } },
   { name: '滅世魔將', emoji: '👹', magic: true, attr: 'fire', weight: 1, id: 'god_battlefield_9', runSpeed: 12, atkSpeed: 0.75, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_bomber'], rnd: [3, 3] } } },
   { name: '太古龍魂', emoji: '🐉', magic: false, attr: 'fire', weight: 1, id: 'god_battlefield_10', runSpeed: 24, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_phoenix'], rnd: [3, 3] } } },
@@ -1866,36 +1865,78 @@ var GOD_BATTLEFIELD_POOL = [
   { name: '殞星巨獸', emoji: '☄️', magic: false, attr: 'fire', weight: 1, id: 'god_battlefield_12', runSpeed: 18, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_moltenblast'], rnd: [3, 3] } } }
 ];
 var GOD_CHAOS_POOL = [
-  { name: '混沌幼獸', emoji: '🐾', attr: 'lightning', weight: 10, id: 'god_chaos_1', magic: true, runSpeed: 12, atkSpeed: 1, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_thunderorb'], rnd: [3, 3] } } },
+  { name: '混沌幼獸', emoji: '🐾', attr: 'poison', weight: 10, id: 'god_chaos_1', magic: true, runSpeed: 12, atkSpeed: 1, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_thunderorb'], rnd: [3, 3] } } },
   { name: '虛空行者', emoji: '🌌', magic: false, attr: 'ice', weight: 1, id: 'god_chaos_2', runSpeed: 12, atkSpeed: 0.75, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_frostnova'], rnd: [3, 3] } } },
   { name: '時空魔靈', emoji: '⏱️', magic: true, attr: 'ice', weight: 1, id: 'god_chaos_3', runSpeed: 24, atkSpeed: 1, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_blizzard'], rnd: [3, 3] } } },
   { name: '裂縫幻影', emoji: '👥', attr: 'ice', weight: 1, id: 'god_chaos_4', magic: false, runSpeed: 6, atkSpeed: 1.5, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_iceshards'], rnd: [3, 3] } } },
-  { name: '混沌噬魂獸', emoji: '👾', attr: 'lightning', weight: 1, id: 'god_chaos_5', magic: true, runSpeed: 18, atkSpeed: 0.75, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_thunderwall'], rnd: [3, 3] } } },
+  { name: '混沌噬魂獸', emoji: '👾', attr: 'light', weight: 1, id: 'god_chaos_5', magic: true, runSpeed: 18, atkSpeed: 0.75, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_thunderwall'], rnd: [3, 3] } } },
   { name: '蝕天巨煞', emoji: '👹', magic: false, attr: 'ice', weight: 1, id: 'god_chaos_6', runSpeed: 12, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_waterprison'], rnd: [3, 3] } } },
-  { name: '虛空之眼', emoji: '👁️', magic: true, attr: 'lightning', weight: 1, id: 'god_chaos_7', runSpeed: 12, atkSpeed: 1.5, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_lightningspear'], rnd: [3, 3] } } },
-  { name: '元素狂暴體', emoji: '⚡', magic: false, attr: 'lightning', weight: 10, id: 'god_chaos_8', runSpeed: 24, atkSpeed: 1, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_chainlightning'], rnd: [3, 3] } } },
-  { name: '混沌使者', emoji: '🔮', magic: true, attr: 'lightning', weight: 1, id: 'god_chaos_9', runSpeed: 6, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_thunderorb'], rnd: [3, 3] } } },
+  { name: '虛空之眼', emoji: '👁️', magic: true, attr: 'poison', weight: 1, id: 'god_chaos_7', runSpeed: 12, atkSpeed: 1.5, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_lightningspear'], rnd: [3, 3] } } },
+  { name: '元素狂暴體', emoji: '⚡', magic: false, attr: 'light', weight: 10, id: 'god_chaos_8', runSpeed: 24, atkSpeed: 1, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_chainlightning'], rnd: [3, 3] } } },
+  { name: '混沌使者', emoji: '🔮', magic: true, attr: 'ice', weight: 1, id: 'god_chaos_9', runSpeed: 6, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_thunderorb'], rnd: [3, 3] } } },
   { name: '星雲魔獸', emoji: '🌌', magic: false, attr: 'ice', weight: 1, id: 'god_chaos_10', runSpeed: 18, atkSpeed: 0.75, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_frostnova'], rnd: [3, 3] } } },
-  { name: '創世餘燼', emoji: '🔥', magic: true, attr: 'lightning', weight: 1, id: 'god_chaos_11', runSpeed: 12, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_thunderwall'], rnd: [3, 3] } } },
+  { name: '創世餘燼', emoji: '🔥', magic: true, attr: 'light', weight: 1, id: 'god_chaos_11', runSpeed: 12, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_thunderwall'], rnd: [3, 3] } } },
   { name: '混沌大天尊', emoji: '☸️', magic: false, attr: 'ice', weight: 1, id: 'god_chaos_12', runSpeed: 12, atkSpeed: 1.5, atkRange: 36, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_blizzard'], rnd: [3, 3] } } }
 ];
 var GOD_SANCTUARY_POOL = [
   { name: '巡天聖光', emoji: '💫', magic: true, attr: 'light', weight: 10, id: 'god_sanctuary_1', runSpeed: 24, atkSpeed: 0.75, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_heal'], rnd: [3, 3] } } },
   { name: '天使', emoji: '👼', magic: false, attr: 'light', weight: 5, id: 'god_sanctuary_2', runSpeed: 6, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_lightningspear'], rnd: [3, 3] } } },
-  { name: '天使巡狩', emoji: '👼‍♀️', magic: true, attr: 'fire', weight: 5, id: 'god_sanctuary_3', runSpeed: 18, atkSpeed: 1.5, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_fireball'], rnd: [3, 3] } } },
-  { name: '審判使者', emoji: '⚖️', attr: 'ice', weight: 1, id: 'god_sanctuary_4', magic: false, runSpeed: 12, atkSpeed: 1, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_iceshards'], rnd: [3, 3] } } },
+  { name: '天使巡狩', emoji: '👼‍♀️', magic: true, attr: 'lightning', weight: 5, id: 'god_sanctuary_3', runSpeed: 18, atkSpeed: 1.5, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_fireball'], rnd: [3, 3] } } },
+  { name: '審判使者', emoji: '⚖️', attr: 'dark', weight: 1, id: 'god_sanctuary_4', magic: false, runSpeed: 12, atkSpeed: 1, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_iceshards'], rnd: [3, 3] } } },
   { name: '聖域守衛', emoji: '🛡️', attr: 'light', weight: 5, id: 'god_sanctuary_5', magic: true, runSpeed: 12, atkSpeed: 1, atkRange: 36, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_phoenix'], rnd: [3, 3] } } },
   { name: '曜光巨龍', emoji: '🐉', magic: false, attr: 'light', weight: 1, id: 'god_sanctuary_6', runSpeed: 24, atkSpeed: 0.75, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_manadrain'], rnd: [3, 3] } } },
-  { name: '巨靈像', emoji: '🏛️', attr: 'ice', weight: 5, id: 'god_sanctuary_7', magic: true, runSpeed: 6, atkSpeed: 1, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_waterprison'], rnd: [3, 3] } } },
-  { name: '永恒靈體', emoji: '🕊️', magic: false, attr: 'fire', weight: 1, id: 'god_sanctuary_8', runSpeed: 18, atkSpeed: 1.5, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_bomber'], rnd: [3, 3] } } },
+  { name: '巨靈像', emoji: '🏛️', attr: 'dark', weight: 5, id: 'god_sanctuary_7', magic: true, runSpeed: 6, atkSpeed: 1, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_waterprison'], rnd: [3, 3] } } },
+  { name: '永恒靈體', emoji: '🕊️', magic: false, attr: 'light', weight: 1, id: 'god_sanctuary_8', runSpeed: 18, atkSpeed: 1.5, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_bomber'], rnd: [3, 3] } } },
   { name: '聖地執法者', emoji: '📜', magic: true, attr: 'light', weight: 1, id: 'god_sanctuary_9', runSpeed: 12, atkSpeed: 1, atkRange: 36, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_heal'], rnd: [3, 3] } } },
   { name: '神王護衛長', emoji: '👑', attr: 'light', weight: 1, id: 'god_sanctuary_10', magic: false, runSpeed: 24, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_lightningspear'], rnd: [3, 3] } } },
-  { name: '智慧晶體', emoji: '🌟', magic: true, attr: 'ice', weight: 1, id: 'god_sanctuary_11', runSpeed: 6, atkSpeed: 1, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_frostnova'], rnd: [3, 3] } } },
+  { name: '智慧晶體', emoji: '🌟', magic: true, attr: 'light', weight: 1, id: 'god_sanctuary_11', runSpeed: 6, atkSpeed: 1, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_frostnova'], rnd: [3, 3] } } },
   { name: '神聖執法官', emoji: '🌌', magic: false, attr: 'light', weight: 1, id: 'god_sanctuary_12', runSpeed: 18, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_phoenix'], rnd: [3, 3] } } }
 ];
 
 /* NPC_CONFIG_TABLE 是所有可出現在野外的 NPC 基本資料表。
    舊場景的既有怪物仍保留原名稱/外觀，並由這裡補上穩定 id；新 NPC 可直接在此表新增。 */
+var MIST_FOREST_POOL = [
+  { id: 'mist_forest_1', name: '霧角鹿', attr: 'wind', emoji: '🦌', magic: true, weight: 10, runSpeed: 18, atkSpeed: 1.25, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_windblades'], rnd: [3, 3] } } },
+  { id: 'mist_forest_2', name: '盤根樹衛', attr: 'earth', emoji: '🌳', magic: false, weight: 1, runSpeed: 12, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_quake'], rnd: [3, 3] } } },
+  { id: 'mist_forest_3', name: '苔背甲蟲', attr: 'earth', emoji: '🪲', magic: false, weight: 1, runSpeed: 12, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_petrify'], rnd: [3, 3] } } },
+  { id: 'mist_forest_4', name: '林間風靈', attr: 'wind', emoji: '🍃', magic: true, weight: 1, runSpeed: 18, atkSpeed: 1.25, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_tornado'], rnd: [3, 3] } } },
+  { id: 'mist_forest_5', name: '古藤行者', attr: 'earth', emoji: '🌿', magic: false, weight: 1, runSpeed: 12, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_regen'], rnd: [3, 3] } } },
+  { id: 'mist_forest_6', name: '迷霧飛蛾', attr: 'wind', emoji: '🦋', magic: false, weight: 1, runSpeed: 12, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_haste'], rnd: [3, 3] } } },
+  { id: 'mist_forest_7', name: '蕨葉獵手', attr: 'wind', emoji: '🧝', magic: true, weight: 1, runSpeed: 18, atkSpeed: 1.25, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_windblades'], rnd: [3, 3] } } },
+  { id: 'mist_forest_8', name: '森岩巨像', attr: 'earth', emoji: '🗿', magic: false, weight: 1, runSpeed: 12, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_shockwave'], rnd: [3, 3] } } },
+  { id: 'mist_forest_9', name: '霧翼梟', attr: 'wind', emoji: '🦉', magic: false, weight: 1, runSpeed: 12, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_knockback'], rnd: [3, 3] } } },
+  { id: 'mist_forest_10', name: '根鬚守望者', attr: 'earth', emoji: '🪵', magic: true, weight: 1, runSpeed: 18, atkSpeed: 1.25, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_petrify'], rnd: [3, 3] } } },
+  { id: 'mist_forest_11', name: '翠風妖狐', attr: 'wind', emoji: '🦊', magic: false, weight: 1, runSpeed: 12, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_tornado'], rnd: [3, 3] } } },
+  { id: 'mist_forest_12', name: '千年森靈', attr: 'earth', emoji: '🌲', magic: false, weight: 1, runSpeed: 12, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_quake'], rnd: [3, 3] } } }
+];
+var LAVA_MOUNTAIN_POOL = [
+  { id: 'lava_mountain_1', name: '熔岩史萊姆', attr: 'fire', emoji: '🔴', magic: true, weight: 10, runSpeed: 18, atkSpeed: 1.25, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_fireball'], rnd: [3, 3] } } },
+  { id: 'lava_mountain_2', name: '玄武岩衛', attr: 'earth', emoji: '🗿', magic: false, weight: 1, runSpeed: 12, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_quake'], rnd: [3, 3] } } },
+  { id: 'lava_mountain_3', name: '炭焰蜥蜴', attr: 'fire', emoji: '🦎', magic: false, weight: 1, runSpeed: 12, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_moltenblast'], rnd: [3, 3] } } },
+  { id: 'lava_mountain_4', name: '火山甲蟲', attr: 'earth', emoji: '🪲', magic: true, weight: 1, runSpeed: 18, atkSpeed: 1.25, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_petrify'], rnd: [3, 3] } } },
+  { id: 'lava_mountain_5', name: '灰燼飛蝠', attr: 'fire', emoji: '🦇', magic: false, weight: 1, runSpeed: 12, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_meteor'], rnd: [3, 3] } } },
+  { id: 'lava_mountain_6', name: '黑曜石魔像', attr: 'earth', emoji: '💎', magic: false, weight: 1, runSpeed: 12, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_shockwave'], rnd: [3, 3] } } },
+  { id: 'lava_mountain_7', name: '烈焰獵犬', attr: 'fire', emoji: '🐕', magic: true, weight: 1, runSpeed: 18, atkSpeed: 1.25, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_fireball'], rnd: [3, 3] } } },
+  { id: 'lava_mountain_8', name: '熔核巨蟹', attr: 'earth', emoji: '🦀', magic: false, weight: 1, runSpeed: 12, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_charge'], rnd: [3, 3] } } },
+  { id: 'lava_mountain_9', name: '火山祭司', attr: 'fire', emoji: '🧙', magic: false, weight: 1, runSpeed: 12, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_fireball'], rnd: [3, 3] } } },
+  { id: 'lava_mountain_10', name: '燼翼火鳥', attr: 'fire', emoji: '🔥', magic: true, weight: 1, runSpeed: 18, atkSpeed: 1.25, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_phoenix'], rnd: [3, 3] } } },
+  { id: 'lava_mountain_11', name: '裂地巨人', attr: 'earth', emoji: '👹', magic: false, weight: 1, runSpeed: 12, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_quake'], rnd: [3, 3] } } },
+  { id: 'lava_mountain_12', name: '熔山領主', attr: 'fire', emoji: '🌋', magic: false, weight: 1, runSpeed: 12, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_moltenblast'], rnd: [3, 3] } } }
+];
+var THUNDER_PEAK_POOL = [
+  { id: 'thunder_peak_1', name: '雷羽鷹', attr: 'lightning', emoji: '🦅', magic: true, weight: 10, runSpeed: 18, atkSpeed: 1.25, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_lightningspear'], rnd: [3, 3] } } },
+  { id: 'thunder_peak_2', name: '疾風山羊', attr: 'wind', emoji: '🐐', magic: false, weight: 1, runSpeed: 12, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_charge'], rnd: [3, 3] } } },
+  { id: 'thunder_peak_3', name: '雷擊石靈', attr: 'lightning', emoji: '🗿', magic: false, weight: 1, runSpeed: 12, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_thunderorb'], rnd: [3, 3] } } },
+  { id: 'thunder_peak_4', name: '嵐翼飛蛇', attr: 'wind', emoji: '🐍', magic: true, weight: 1, runSpeed: 18, atkSpeed: 1.25, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_windblades'], rnd: [3, 3] } } },
+  { id: 'thunder_peak_5', name: '電光獵豹', attr: 'lightning', emoji: '🐆', magic: false, weight: 1, runSpeed: 12, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_chainlightning'], rnd: [3, 3] } } },
+  { id: 'thunder_peak_6', name: '風蝕守衛', attr: 'wind', emoji: '🛡️', magic: false, weight: 1, runSpeed: 12, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_whirlwind'], rnd: [3, 3] } } },
+  { id: 'thunder_peak_7', name: '積雨雲靈', attr: 'lightning', emoji: '☁️', magic: true, weight: 1, runSpeed: 18, atkSpeed: 1.25, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_chainlightning'], rnd: [3, 3] } } },
+  { id: 'thunder_peak_8', name: '暴風女妖', attr: 'wind', emoji: '🧝', magic: false, weight: 1, runSpeed: 12, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_tornado'], rnd: [3, 3] } } },
+  { id: 'thunder_peak_9', name: '鳴雷戰士', attr: 'lightning', emoji: '⚡', magic: false, weight: 1, runSpeed: 12, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_thunderwall'], rnd: [3, 3] } } },
+  { id: 'thunder_peak_10', name: '峰巔風靈', attr: 'wind', emoji: '🌀', magic: true, weight: 1, runSpeed: 18, atkSpeed: 1.25, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_haste'], rnd: [3, 3] } } },
+  { id: 'thunder_peak_11', name: '奔雷麒麟', attr: 'lightning', emoji: '🦄', magic: false, weight: 1, runSpeed: 12, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_thunderorb'], rnd: [3, 3] } } },
+  { id: 'thunder_peak_12', name: '天嵐之主', attr: 'wind', emoji: '🐉', magic: false, weight: 1, runSpeed: 12, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_tornado'], rnd: [3, 3] } } }
+];
 var NPC_CONFIG_TABLE = {};
 function registerNpcPool(zoneKey, pool) {
   (pool || []).forEach(function (entry, index) {
@@ -1926,6 +1967,9 @@ function registerNpcPool(zoneKey, pool) {
 }
 registerNpcPool('desert', DESERT_POOL);
 registerNpcPool('Icefield', ICEFIELD_POOL);
+registerNpcPool('mist_forest', MIST_FOREST_POOL);
+registerNpcPool('lava_mountain', LAVA_MOUNTAIN_POOL);
+registerNpcPool('thunder_peak', THUNDER_PEAK_POOL);
 registerNpcPool('swamp', SWAMP_POOL);
 registerNpcPool('undead_mountains', UNDEAD_MOUNTAINS_POOL);
 registerNpcPool('god_battlefield', GOD_BATTLEFIELD_POOL);
@@ -1938,6 +1982,9 @@ function weightedNpcEntries(pool) {
   });
 }
 var ZONE_ENEMY_TABLES = {
+  thunder_peak: weightedNpcEntries(THUNDER_PEAK_POOL),
+  lava_mountain: weightedNpcEntries(LAVA_MOUNTAIN_POOL),
+  mist_forest: weightedNpcEntries(MIST_FOREST_POOL),
   desert: weightedNpcEntries(DESERT_POOL),
   Icefield: weightedNpcEntries(ICEFIELD_POOL),
   swamp: weightedNpcEntries(SWAMP_POOL),
@@ -1949,19 +1996,19 @@ var ZONE_ENEMY_TABLES = {
 
 // 關卡設計的唯一入口：每張地圖都是有限關卡，後圖要求前圖通關。
 // 倍率、關卡上限與前置條件由 config/CSV/Zones.csv 經 tools/apply_params.cjs 投影進來。
-var ZONE_LIST = ['desert', 'Icefield', 'swamp', 'undead_mountains', 'god_battlefield', 'god_chaos', 'god_sanctuary'];
-var REALMS = {
-  human: { name: '凡人界', emoji: '🌍', zones: ['desert', 'Icefield', 'swamp', 'undead_mountains'] },
-  god: { name: '神界', emoji: '✨', zones: ['god_battlefield', 'god_chaos', 'god_sanctuary'] }
-};
+var ZONE_LIST = ["desert","Icefield","mist_forest","lava_mountain","swamp","thunder_peak","undead_mountains","god_battlefield","god_chaos","god_sanctuary"];
+var REALMS = { human: { name: '凡人界', emoji: '🌍', zones: ['desert', 'Icefield', 'mist_forest', 'lava_mountain', 'swamp', 'thunder_peak', 'undead_mountains'] }, god: { name: '神界', emoji: '✨', zones: ['god_battlefield', 'god_chaos', 'god_sanctuary'] } };
 var ZONES = {
-  desert: { name: '荒漠', emoji: '🏜️', pool: DESERT_POOL, enemyTable: ZONE_ENEMY_TABLES.desert, realm: 'human', hpMult: 0.8, atkMult: 0.8, defMult: 1, aspdMult: 1, rewardMult: 1, maxStage: 200 },
-  Icefield: { name: '冰原', emoji: '🧊', pool: ICEFIELD_POOL, enemyTable: ZONE_ENEMY_TABLES.Icefield, realm: 'human', hpMult: 2.5, atkMult: 3, defMult: 1.6, aspdMult: 1.4, rewardMult: 1.2, maxStage: 300, reqZone: 'desert', reqStage: 200 },
-  swamp: { name: '沼澤', emoji: '🦠', pool: SWAMP_POOL, enemyTable: ZONE_ENEMY_TABLES.swamp, realm: 'human', hpMult: 7, atkMult: 10, defMult: 3.2, aspdMult: 1.6, rewardMult: 1.5, maxStage: 400, reqZone: 'Icefield', reqStage: 300 },
-  undead_mountains: { name: '亡靈山脈', emoji: '⛰️', pool: UNDEAD_MOUNTAINS_POOL, enemyTable: ZONE_ENEMY_TABLES.undead_mountains, realm: 'human', hpMult: 20, atkMult: 50, defMult: 10, aspdMult: 1.8, rewardMult: 2.25, maxStage: 500, reqZone: 'swamp', reqStage: 400 },
-  god_battlefield: { name: '太古戰場', emoji: '⚔️', pool: GOD_BATTLEFIELD_POOL, enemyTable: ZONE_ENEMY_TABLES.god_battlefield, realm: 'god', hpMult: 50, atkMult: 200, defMult: 25, aspdMult: 2, rewardMult: 4, maxStage: 600, reqZone: 'undead_mountains', reqStage: 500, reqReincarnation: 11 },
-  god_chaos: { name: '混沌界', emoji: '🌀', pool: GOD_CHAOS_POOL, enemyTable: ZONE_ENEMY_TABLES.god_chaos, realm: 'god', hpMult: 150, atkMult: 1000, defMult: 50, aspdMult: 2.2, rewardMult: 10, maxStage: 700, reqZone: 'god_battlefield', reqStage: 600, reqReincarnation: 11 },
-  god_sanctuary: { name: '永恒神域', emoji: '✨', pool: GOD_SANCTUARY_POOL, enemyTable: ZONE_ENEMY_TABLES.god_sanctuary, realm: 'god', hpMult: 500, atkMult: 8000, defMult: 100, aspdMult: 2.5, rewardMult: 24, maxStage: 800, reqZone: 'god_chaos', reqStage: 700, reqReincarnation: 11 }
+  desert: { pool: DESERT_POOL, enemyTable: ZONE_ENEMY_TABLES.desert, name: "荒漠", emoji: "🏜️", realm: "human", maxStage: 100, hpMult: 0.8, atkMult: 0.8, defMult: 1, aspdMult: 1, rewardMult: 1 },
+  Icefield: { pool: ICEFIELD_POOL, enemyTable: ZONE_ENEMY_TABLES.Icefield, name: "冰原", emoji: "🧊", realm: "human", maxStage: 150, reqZone: "desert", reqStage: 100, hpMult: 2.5, atkMult: 3, defMult: 1.6, aspdMult: 1.4, rewardMult: 1.2 },
+  mist_forest: { pool: MIST_FOREST_POOL, enemyTable: ZONE_ENEMY_TABLES.mist_forest, name: "迷霧森林", emoji: "🌲", realm: "human", maxStage: 200, reqZone: "Icefield", reqStage: 150, hpMult: 4, atkMult: 4.5, defMult: 2, aspdMult: 1.45, rewardMult: 1.3 },
+  lava_mountain: { pool: LAVA_MOUNTAIN_POOL, enemyTable: ZONE_ENEMY_TABLES.lava_mountain, name: "熔岩山", emoji: "🌋", realm: "human", maxStage: 250, reqZone: "mist_forest", reqStage: 200, hpMult: 5.5, atkMult: 7, defMult: 2.6, aspdMult: 1.5, rewardMult: 1.4 },
+  swamp: { pool: SWAMP_POOL, enemyTable: ZONE_ENEMY_TABLES.swamp, name: "月影沼澤", emoji: "🌙", realm: "human", maxStage: 300, reqZone: "lava_mountain", reqStage: 250, hpMult: 7, atkMult: 10, defMult: 3.2, aspdMult: 1.6, rewardMult: 1.5 },
+  thunder_peak: { pool: THUNDER_PEAK_POOL, enemyTable: ZONE_ENEMY_TABLES.thunder_peak, name: "落雷峰", emoji: "🌩️", realm: "human", maxStage: 350, reqZone: "swamp", reqStage: 300, hpMult: 12, atkMult: 24, defMult: 6, aspdMult: 1.7, rewardMult: 1.85 },
+  undead_mountains: { pool: UNDEAD_MOUNTAINS_POOL, enemyTable: ZONE_ENEMY_TABLES.undead_mountains, name: "亡靈山脈", emoji: "⛰️", realm: "human", maxStage: 400, reqZone: "thunder_peak", reqStage: 350, hpMult: 20, atkMult: 50, defMult: 10, aspdMult: 1.8, rewardMult: 2.25 },
+  god_battlefield: { pool: GOD_BATTLEFIELD_POOL, enemyTable: ZONE_ENEMY_TABLES.god_battlefield, name: "太古戰場", emoji: "⚔️", realm: "god", maxStage: 450, reqZone: "undead_mountains", reqStage: 400, reqReincarnation: 11, hpMult: 50, atkMult: 200, defMult: 25, aspdMult: 2, rewardMult: 4 },
+  god_chaos: { pool: GOD_CHAOS_POOL, enemyTable: ZONE_ENEMY_TABLES.god_chaos, name: "混沌界", emoji: "🌀", realm: "god", maxStage: 500, reqZone: "god_battlefield", reqStage: 450, reqReincarnation: 11, hpMult: 150, atkMult: 1000, defMult: 50, aspdMult: 2.2, rewardMult: 10 },
+  god_sanctuary: { pool: GOD_SANCTUARY_POOL, enemyTable: ZONE_ENEMY_TABLES.god_sanctuary, name: "永恒神域", emoji: "✨", realm: "god", maxStage: 600, reqZone: "god_chaos", reqStage: 500, reqReincarnation: 11, hpMult: 500, atkMult: 8000, defMult: 100, aspdMult: 2.5, rewardMult: 24 }
 };
 
 function zoneMaxStage(zoneKey) {
@@ -1974,8 +2021,8 @@ function zoneBestProgress(zoneKey) {
   return Math.max(1, Number(G.zoneProgress && G.zoneProgress[zoneKey] && G.zoneProgress[zoneKey].best) || 1);
 }
 /* ---- 該地圖「實際已通關的最高關卡」（zoneProgress[zone].cleared）----
-   best 是「可挑戰的最高關」＝已通關+1，且被地圖上限夾住：打贏荒漠第 200 關（上限 200）
-   之後 best 仍是 200，和「只打到 199 關」分不出來。任務「通關第 N 關」必須能判定最後
+   best 是「可挑戰的最高關」＝已通關+1，且被地圖上限夾住：打贏最後一關後 best 仍停在上限，
+   和「只打到倒數第二關」分不出來。任務「通關第 N 關」必須能判定最後
    一關，所以另存本欄。best 的語意與消費端（推關 UI、離線收益、地圖解鎖）完全不動。
    舊存檔沒有 cleared：以 best-1 回推——那正是本欄出現前 stageClear 的判定值，
    既有玩家的任務進度不會倒退（save.js sanitize 也做同一件事，這裡是保險）。 */
@@ -2015,13 +2062,16 @@ function isZoneUnlocked(zoneKey) {
 }
 /* 依地圖與關卡區間的掉落配置。每一列為 [min, max, 裝備0~10機率, gem1~5, 附魔書, 太古精華, 魔塵]。
    以資料表集中管理，新增地圖或調整區間不需要改戰鬥公式。 */
-var ZONE_STAGE_DROP_PROFILES = {  desert: [[1,20,[25,15,10,0,0,0,0,0,0,0,0],[4,0.8,0.3,0,0],0,0,0],[21,99,[35,20,15,5,0,0,0,0,0,0,0],[4,0.8,0.3,0,0],1,0,0],[40,49,[0,0,0,0,2,0,0,0,0,0,0],[0,0,0,0,0],0,0,0],[50,99,[0,0,0,0,1,0,0,0,0,0,0],[0,0,0,0,0],0,0,0],[100,149,[40,30,20,10,1.5,0,0,0,0,0,0],[6,1.1,0.4,0,0],1,0,1],[150,200,[50,40,30,15,2.5,1,0,0,0,0,0],[8,1.4,0.5,0.1,0],2,0,1]],
-  Icefield: [[1,199,[50,40,30,15,5,0.5,0,0,0,0,0],[8,1.4,0.5,0.1,0],1,0,1],[200,249,[50,40,30,15,10,1.5,0.1,0,0,0,0],[10,2,1,0.5,0.1],2,1,1],[250,300,[50,40,30,15,10,3,0.25,0,0,0,0],[12,2,1,0.6,0.1],2,1,1]],
-  swamp: [[1,199,[50,40,30,15,5,1,0,0,0,0,0],[8,1.4,0.5,0.1,0],1,0,1],[200,249,[50,40,30,15,10,1.5,0.1,0,0,0,0],[10,2,1,0.5,0.1],2,1,1],[250,349,[50,40,30,15,10,3,0.25,0,0,0,0],[12,2,1,0.6,0.1],3,2,1],[350,400,[50,40,30,15,10,3,0.35,0.1,0,0,0],[12,2,0.7,0.3,0.2],4,3,1]],
-  undead_mountains: [[1,199,[50,40,30,15,5,1,0,0,0,0,0],[8,1.4,0.5,0.1,0],1,0,1],[200,299,[50,40,30,15,10,1.5,0.1,0,0,0,0],[10,2,1,0.5,0.1],2,1,1],[300,399,[50,40,30,15,10,3,0.2,0,0,0,0],[12,2,1,0.6,0.1],3,2,1],[400,449,[50,40,30,15,10,3,0.25,0.1,0,0,0],[12,2,0.7,0.3,0.2],4,3,1],[450,500,[50,40,30,15,10,3,0.3,0.1,0,0,0],[14,3,1,0.4,0.25],4,3,1]],
-  god_battlefield: [[1,150,[53,48,47,10,3,1,0.08,0,0,0,0],[11,1.7,0.6,0.1,0.08],7,3,1],[151,300,[61,51,49,20,6,2,0.16,0,0,0,0],[14,2.4,0.8,0.2,0.16],9,4,1],[301,450,[69,54,51,30,9,3,0.24,0,0,0,0],[17,3.1,1,0.3,0.24],11,5,1],[451,550,[77,57,53,40,12,4,0.32,0,0,0,0],[20,3.8,1.2,0.4,0.32],13,6,1],[551,600,[77,57,53,40,12,4,0.32,2,0,1,0],[20,3.8,1.2,0.4,0.32],13,6,1]],
-  god_chaos: [[1,175,[61,56,55,10,3,1,0.08,0,0,0,0],[11,1.7,0.6,0.1,0.08],7,3,1],[176,350,[69,59,57,20,6,2,0.16,0,0,0,0],[14,2.4,0.8,0.2,0.16],9,4,1],[351,525,[77,62,59,30,9,3,0.24,0,0,0,0],[17,3.1,1,0.3,0.24],11,5,1],[526,550,[85,65,61,40,12,4,0.32,0,0,0,0],[20,3.8,1.2,0.4,0.32],13,6,1],[551,700,[85,65,61,40,12,4,0.32,2,0,1,0],[20,3.8,1.2,0.4,0.32],13,6,1]],
-  god_sanctuary: [[1,200,[69,64,63,10,3,1,0.08,0,0,0,0],[11,1.7,0.6,0.1,0.08],7,3,1],[201,400,[77,67,65,20,6,2,0.16,0,0,0,0],[14,2.4,0.8,0.2,0.16],9,4,1],[401,600,[85,70,67,30,9,3,0.24,0,0,0,0],[17,3.1,1,0.3,0.24],11,5,1],[601,800,[93,73,69,40,12,4,0.32,2,0,1,0],[20,3.8,1.2,0.4,0.32],13,6,1]]
+var ZONE_STAGE_DROP_PROFILES = {  desert: [[1,10,[25,15,10,0,0,0,0,0,0,0,0],[4,0.8,0.3,0,0],0,0,0],[11,49,[35,20,15,5,0,0,0,0,0,0,0],[4,0.8,0.3,0,0],1,0,0],[20,24,[0,0,0,0,2,0,0,0,0,0,0],[0,0,0,0,0],0,0,0],[25,49,[0,0,0,0,1,0,0,0,0,0,0],[0,0,0,0,0],0,0,0],[50,74,[40,30,20,10,1.5,0,0,0,0,0,0],[6,1.1,0.4,0,0],1,0,1],[75,100,[50,40,30,15,2.5,1,0,0,0,0,0],[8,1.4,0.5,0.1,0],2,0,1]],
+  Icefield: [[1,99,[50,40,30,15,5,0.5,0,0,0,0,0],[8,1.4,0.5,0.1,0],1,0,1],[100,124,[50,40,30,15,10,1.5,0.1,0,0,0,0],[10,2,1,0.5,0.1],2,1,1],[125,150,[50,40,30,15,10,3,0.25,0,0,0,0],[12,2,1,0.6,0.1],2,1,1]],
+  mist_forest: [[1,132,[50,40,30,15,5,0.5,0,0,0,0,0],[8,1.4,0.5,0.1,0],1,0,1],[133,166,[50,40,30,15,10,1.5,0.1,0,0,0,0],[10,2,1,0.5,0.1],2,1,1],[167,200,[50,40,30,15,10,3,0.25,0,0,0,0],[12,2,1,0.6,0.1],2,1,1]],
+  lava_mountain: [[1,124,[50,40,30,15,5,1,0,0,0,0,0],[8,1.4,0.5,0.1,0],1,0,1],[125,155,[50,40,30,15,10,1.5,0.1,0,0,0,0],[10,2,1,0.5,0.1],2,1,1],[156,218,[50,40,30,15,10,3,0.25,0,0,0,0],[12,2,1,0.6,0.1],3,2,1],[219,250,[50,40,30,15,10,3,0.35,0.1,0,0,0],[12,2,0.7,0.3,0.2],4,3,1]],
+  swamp: [[1,149,[50,40,30,15,5,1,0,0,0,0,0],[8,1.4,0.5,0.1,0],1,0,1],[150,186,[50,40,30,15,10,1.5,0.1,0,0,0,0],[10,2,1,0.5,0.1],2,1,1],[187,261,[50,40,30,15,10,3,0.25,0,0,0,0],[12,2,1,0.6,0.1],3,2,1],[262,300,[50,40,30,15,10,3,0.35,0.1,0,0,0],[12,2,0.7,0.3,0.2],4,3,1]],
+  thunder_peak: [[1,139,[50,40,30,15,5,1,0,0,0,0,0],[8,1.4,0.5,0.1,0],1,0,1],[140,209,[50,40,30,15,10,1.5,0.1,0,0,0,0],[10,2,1,0.5,0.1],2,1,1],[210,279,[50,40,30,15,10,3,0.2,0,0,0,0],[12,2,1,0.6,0.1],3,2,1],[280,314,[50,40,30,15,10,3,0.25,0.1,0,0,0],[12,2,0.7,0.3,0.2],4,3,1],[315,350,[50,40,30,15,10,3,0.3,0.1,0,0,0],[14,3,1,0.4,0.25],4,3,1]],
+  undead_mountains: [[1,159,[50,40,30,15,5,1,0,0,0,0,0],[8,1.4,0.5,0.1,0],1,0,1],[160,239,[50,40,30,15,10,1.5,0.1,0,0,0,0],[10,2,1,0.5,0.1],2,1,1],[240,319,[50,40,30,15,10,3,0.2,0,0,0,0],[12,2,1,0.6,0.1],3,2,1],[320,359,[50,40,30,15,10,3,0.25,0.1,0,0,0],[12,2,0.7,0.3,0.2],4,3,1],[360,400,[50,40,30,15,10,3,0.3,0.1,0,0,0],[14,3,1,0.4,0.25],4,3,1]],
+  god_battlefield: [[1,112,[53,48,47,10,3,1,0.08,0,0,0,0],[11,1.7,0.6,0.1,0.08],7,3,1],[113,225,[61,51,49,20,6,2,0.16,0,0,0,0],[14,2.4,0.8,0.2,0.16],9,4,1],[226,337,[69,54,51,30,9,3,0.24,0,0,0,0],[17,3.1,1,0.3,0.24],11,5,1],[338,412,[77,57,53,40,12,4,0.32,0,0,0,0],[20,3.8,1.2,0.4,0.32],13,6,1],[413,450,[77,57,53,40,12,4,0.32,2,0,1,0],[20,3.8,1.2,0.4,0.32],13,6,1]],
+  god_chaos: [[1,125,[61,56,55,10,3,1,0.08,0,0,0,0],[11,1.7,0.6,0.1,0.08],7,3,1],[126,250,[69,59,57,20,6,2,0.16,0,0,0,0],[14,2.4,0.8,0.2,0.16],9,4,1],[251,375,[77,62,59,30,9,3,0.24,0,0,0,0],[17,3.1,1,0.3,0.24],11,5,1],[376,392,[85,65,61,40,12,4,0.32,0,0,0,0],[20,3.8,1.2,0.4,0.32],13,6,1],[393,500,[85,65,61,40,12,4,0.32,2,0,1,0],[20,3.8,1.2,0.4,0.32],13,6,1]],
+  god_sanctuary: [[1,150,[69,64,63,10,3,1,0.08,0,0,0,0],[11,1.7,0.6,0.1,0.08],7,3,1],[151,300,[77,67,65,20,6,2,0.16,0,0,0,0],[14,2.4,0.8,0.2,0.16],9,4,1],[301,450,[85,70,67,30,9,3,0.24,0,0,0,0],[17,3.1,1,0.3,0.24],11,5,1],[451,600,[93,73,69,40,12,4,0.32,2,0,1,0],[20,3.8,1.2,0.4,0.32],13,6,1]]
 };
 var ZONE_STAGE_DROP_TABLE = {};
 Object.keys(ZONE_STAGE_DROP_PROFILES).forEach(function (zoneKey) {
@@ -2040,7 +2090,10 @@ Object.keys(ZONE_STAGE_DROP_PROFILES).forEach(function (zoneKey) {
    新角色在前幾關就會被打死到完全推不動。找不到對應區間時退回下面兩個預設值。 */
 var ZONE_STAGE_WAVE_PROFILES = {  desert: [[1,9999,0,0]],
   Icefield: [[1,9999,0,0]],
+  mist_forest: [[1,9999,0,0]],
+  lava_mountain: [[1,9999,0,0]],
   swamp: [[1,9999,0,0]],
+  thunder_peak: [[1,9999,0,0]],
   undead_mountains: [[1,9999,0,0]],
   god_battlefield: [[1,9999,0,0]],
   god_chaos: [[1,9999,0,0]],
@@ -2754,17 +2807,17 @@ var TASKS = [
   { order: 23, name: '強化裝備40次', type: 'upgradeCount', count: 30, rewardType: 'scrap', rewardQty: 500, rewardLabel: '裝備碎片+500' },
   { order: 24, name: '裝備鑲嵌任意寶石20顆', type: 'socketCount', count: 10, rewardType: 'gem', rewardParam: '1', rewardQty: 40, rewardLabel: '任意1級寶石×40' },
   { order: 25, name: '強化裝備100次', type: 'upgradeCount', count: 100, rewardType: 'essence', rewardQty: 300, rewardLabel: '附魔精華+300' },
-  { order: 26, name: '挑戰荒漠第150關BOSS成功', type: 'stageClear', param: 'desert', count: 150, rewardType: 'equip', rewardParam: '5|150|3', rewardQty: 1, rewardLabel: '任意3太古傳說150級裝備×1' },
+  { order: 26, name: '挑戰冰原第150關BOSS成功', type: 'stageClear', param: 'Icefield', count: 150, rewardType: 'equip', rewardParam: '5|150|3', rewardQty: 1, rewardLabel: '任意3太古傳說150級裝備×1' },
   { order: 27, name: '挑戰高塔BOSS第5層成功', type: 'towerFloor', count: 5, rewardType: 'gem', rewardParam: '2', rewardQty: 15, rewardLabel: '任意2級寶石×15' },
   { order: 28, name: '將全身的裝備替換成150級傳說品質', type: 'equipSlots', param: '5|150', count: 13, rewardType: 'scrap', rewardQty: 50000, rewardLabel: '裝備碎片+50000' },
   { order: 29, name: '洗煉裝備100次', type: 'rerollCount', count: 100, rewardType: 'essence', rewardQty: 300, rewardLabel: '附魔精華+300' },
   { order: 30, name: '升級熔爐任意零件至3級', type: 'forgePartLevel', count: 3, rewardType: 'gold', rewardQty: 2000000, rewardLabel: '金幣+2000000' },
-  { order: 31, name: '挑戰荒漠第200關BOSS成功', type: 'stageClear', param: 'desert', count: 200, rewardType: 'equip', rewardParam: '5|200|3', rewardQty: 1, rewardLabel: '任意3太古傳說200級裝備×1' },
+  { order: 31, name: '挑戰迷霧森林第200關BOSS成功', type: 'stageClear', param: 'mist_forest', count: 200, rewardType: 'equip', rewardParam: '5|200|3', rewardQty: 1, rewardLabel: '任意3太古傳說200級裝備×1' },
   { order: 32, name: '升級熔爐任意零件至4級', type: 'forgePartLevel', count: 4, rewardType: 'gold', rewardQty: 2000000, rewardLabel: '金幣+3000000' },
-  { order: 33, name: '挑戰冰原第250關BOSS成功', type: 'stageClear', param: 'Icefield', count: 250, rewardType: 'equip', rewardParam: '5|250|4', rewardQty: 1, rewardLabel: '任意4太古傳說250級裝備×1' },
-  { order: 34, name: '挑戰冰原第300關BOSS成功', type: 'stageClear', param: 'Icefield', count: 300, rewardType: 'equip', rewardParam: '5|300|4', rewardQty: 1, rewardLabel: '任意4太古傳說300級裝備×1' },
-  { order: 35, name: '挑戰沼澤第350關BOSS成功', type: 'stageClear', param: 'swamp', count: 350, rewardType: 'equip', rewardParam: '6|350|4', rewardQty: 1, rewardLabel: '任意4太古神話350級裝備×1' },
-  { order: 36, name: '挑戰沼澤第400關BOSS成功', type: 'stageClear', param: 'swamp', count: 400, rewardType: 'equip', rewardParam: '6|400|4', rewardQty: 1, rewardLabel: '任意4太古神話400級裝備×1' },
-  { order: 37, name: '挑戰亡靈山脈第450關BOSS成功', type: 'stageClear', param: 'undead_mountains', count: 450, rewardType: 'equip', rewardParam: '7|450|4', rewardQty: 1, rewardLabel: '任意4太古創世450級裝備×1' },
-  { order: 38, name: '挑戰亡靈山脈第500關BOSS成功', type: 'stageClear', param: 'undead_mountains', count: 500, rewardType: 'equip', rewardParam: '7|500|4', rewardQty: 1, rewardLabel: '任意4太古創世500級裝備×1' }
+  { order: 33, name: '挑戰熔岩山第250關BOSS成功', type: 'stageClear', param: 'lava_mountain', count: 250, rewardType: 'equip', rewardParam: '5|250|4', rewardQty: 1, rewardLabel: '任意4太古傳說250級裝備×1' },
+  { order: 34, name: '挑戰月影沼澤第300關BOSS成功', type: 'stageClear', param: 'swamp', count: 300, rewardType: 'equip', rewardParam: '5|300|4', rewardQty: 1, rewardLabel: '任意4太古傳說300級裝備×1' },
+  { order: 35, name: '挑戰落雷峰第350關BOSS成功', type: 'stageClear', param: 'thunder_peak', count: 350, rewardType: 'equip', rewardParam: '6|350|4', rewardQty: 1, rewardLabel: '任意4太古神話350級裝備×1' },
+  { order: 36, name: '挑戰亡靈山脈第400關BOSS成功', type: 'stageClear', param: 'undead_mountains', count: 400, rewardType: 'equip', rewardParam: '6|400|4', rewardQty: 1, rewardLabel: '任意4太古神話400級裝備×1' },
+  { order: 37, name: '挑戰太古戰場第450關BOSS成功', type: 'stageClear', param: 'god_battlefield', count: 450, rewardType: 'equip', rewardParam: '7|450|4', rewardQty: 1, rewardLabel: '任意4太古創世450級裝備×1' },
+  { order: 38, name: '挑戰混沌界第500關BOSS成功', type: 'stageClear', param: 'god_chaos', count: 500, rewardType: 'equip', rewardParam: '7|500|4', rewardQty: 1, rewardLabel: '任意4太古創世500級裝備×1' }
 ];

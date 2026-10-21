@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## BATTLE-BIOMES-20261022 — 十張野外地圖與三種新地貌
+
+- Owner：Codex；Done；單一開發者。使用者圖片指定迷霧森林／熔岩山／落雷峰、月影沼澤改名、十張地圖元素及100～600關上限；使用者明確授權遇到決策採推薦方案持續實作。現有七圖渲染／配置流程完成，依賴已滿足；衝突預檢全部無外部來源。
+- 允許：battle-decor／renderer場景、ui地圖入口、data新NPC／地圖與存檔進度相容、必要save相容、配置工具與五份Excel／CSV（Zones／NPC／Task／Zone_Stage_Drops／Zone_Stage_Waves）、對應快取與預覽工具、專項回歸、LV與本紀錄。禁止其他技能／傷害公式／VFX Preset／玩家裝備、其他副本；不合併推送。
+- 採原生Excel API完成本次結構新增及同批相關格位，保留原本所有欄位／其他表；不以Pending差異冒充完整功能。新地貌原創程序繪製，沿現有圖集／Worker／物件池；保留舊地圖及NPC識別碼，縮短上限後既有任務改至可到達地圖。
+- 驗收：十圖順序／元素／上限／解鎖、NPC四類型及配置再套用、舊存檔／任務、三張地表地下畫面及Worker同像素／回收、相關回歸／錨點／Build／Console／diff，自我Review後Commit。接手者為使用者Review與正常整合。
+- 必要延伸：實機品質確認後新增六件內建image_gen原創PNG，沿scene-nature既有匯出／雙倉庫保存；並同步js/player初始新圖旗標、對應既有回歸。全庫比對發現符文進度增量沿七圖設計導致第七圖提早滿33階，允許同批Runes.xlsx／CSV及生成runeword_data的drop_progressPerTier改3.2，使十圖各自成長且最終圖滿33階，其他符文配置不改。上述延伸皆已預檢無外部來源，依使用者全權採推薦方案授權實作。
+- 完成：三張地表／地下場景、六件原創物件、36種新NPC各四類型、十圖順序／元素／上限／前置、月影沼澤改名、任務及掉落可達性、舊存檔一次性相容。六份Excel均用原生API正常儲存／重開兩次並與CSV逐格一致；Task參數定義A47同步十圖；LV與符文設計文件同步。完整修改清單、決策及驗收見docs/BATTLE_BIOMES_20261022.md。
+- 驗證：直接相關76／76；最終美術／新圖契約／Worker57／57；573錨點一致、0變更／0問題；Zones／NPC／Task／Runes再套用語意變更0；npm.cmd run build 566檔通過；二十份圖集主執行緒／Worker像素完全一致，正式遊戲與六種場景Console無新增warning／error。全庫4764項＝4299過／463失敗／2略過，與HEAD唯讀基線比對新增失敗0；未降低斷言掩蓋既有紅燈。原生Excel測試暫存清理EPERM隔離重跑7／7通過。
+- 唯讀檢查未改：共通規範／Workflow／Agent／prompts/codex、衝突檢查器、素材庫解析／來源／匯出、battle主迴圈與區域解鎖、rune掉落／任務引擎、VFX Core／Runtime及既有Protocol、其餘Excel輔助頁與既有回歸。自我Review過程檢查舊NPC識別碼／技能、前圖最後一關、存檔夾限及幂等、掉落區間、地面無縫及圖集回收；未新增Protocol或VFX來源。
+- 交付：素材庫先Commit 03e1820（24檔），遊戲Commit為本段所在「[Codex] feat: 新增三張戰鬥場景並更新十圖進度」，回覆附編號。無本次未完成實作，可供Review／合併；未合併推送。既有全庫紅燈仍在，未做真人存檔長戰／手機GPU／跨瀏覽器／新版符文時間模擬。下一步由使用者Review並正常整合，重新整理遊戲驗收；其他電腦同步兩倉庫。
+- 暫存：專用瀏覽器與測試服務已關閉，七份工作區作者／稽核暫存腳本已移存Git中繼資料，不入Commit。自動核准審查拒絕含暫存刪除的批次命令，只回覆blocked by policy、未提供細節；未重試刪除，保留測試Temp資料夾，功能與提交不受影響。
+
 ## USER-EDITS-COMMIT-20261022 — 一併保存使用者VFX與素材庫修改
 
 - Owner：Codex；Done。使用者明確要求其他修改及必要素材庫一起Commit；本輪保存全部已儲存的12份Preset、3份修改layout、2張新增出貨PNG、1張舊出貨副本移除與出貨索引，素材庫原有arcane-rod修改及配對快照。前置帶電接入完成；單一開發者，不合併推送。

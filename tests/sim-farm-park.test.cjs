@@ -55,11 +55,11 @@ test('floor 取兩個階梯的交集：掉落區間與裝等分段不對齊時�
 });
 
 test('floor 認得「多列疊加」的掉落區間，不是只看裝等分段', () => {
-  /* 荒漠 40~49 是額外疊上去的一列（史詩 +2%），41~49 與 21~39 掉的東西不同，
-     所以 45 關的 floor 是 40 而不是裝等分段的 1。
+  /* 荒漠 20~24 是額外疊上去的一列（史詩 +2%），21~24 與 11~19 掉的東西不同，
+     所以 23 關的 floor 是 20 而不是裝等分段的 1。
      只看 equipmentTierLevel 的話會錯退到關卡 1，把那 2% 史詩丟掉。 */
-  assert.equal(tierAt('desert', 45).tier.farmFloorStage, 40);
-  assert.equal(tierAt('desert', 45).tier.itemLevelHere, 1);
+  assert.equal(tierAt('desert', 23).tier.farmFloorStage, 20);
+  assert.equal(tierAt('desert', 23).tier.itemLevelHere, 1);
 });
 
 test('站在 floor 上時 farmFloorHpRatio 是 null，不是 1', () => {

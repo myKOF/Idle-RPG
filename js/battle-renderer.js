@@ -1263,6 +1263,11 @@ var BattleRenderer = (function () {
     var name = zoneKey ? ('ground_' + zoneKey) : 'ground_default';
     if (_groundTexCache[name] === 'failed') return;
     if (_groundTexCache[name]) { applyGroundTexture(_groundTexCache[name]); return; }
+    var generated = typeof BattleDecor !== 'undefined' && BattleDecor.buildGround && BattleDecor.buildGround(zoneKey);
+    if (generated) {
+      var groundTex = new PIXI.Texture({source:new PIXI.CanvasSource({resource:generated,scaleMode:'linear',addressMode:'repeat'})});
+      _groundTexCache[name]=groundTex;applyGroundTexture(groundTex);return;
+    }
     _groundTexCache[name] = 'loading';
     PIXI.Assets.load('images/ground/' + name + '.png?v=' + GROUND_ASSET_VERSION).then(function (tex) {
       _groundTexCache[name] = tex;

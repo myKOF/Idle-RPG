@@ -28,11 +28,11 @@ test('DECOR-IMAGE-LOAD 完整素材載入去重、失敗重試只補缺圖，等
   const nature=ctx.DecorNature,calls=[],pending=[];
   const loader=url=>{calls.push(url);return new Promise((resolve,reject)=>pending.push({url,resolve,reject}));};
   const first=nature.loadImages('https://game.test/',loader),second=nature.loadImages('https://game.test/',loader);
-  assert.equal(first,second);assert.equal(calls.length,20);
+  assert.equal(first,second);assert.equal(calls.length,26);
   for(const p of pending)if(p.url.includes('/willow.png'))p.reject(new Error('network'));else p.resolve({width:200,height:100});
   await assert.rejects(first,/network/);await Promise.resolve();
   await nature.loadImages('https://game.test/',url=>{calls.push(url);return Promise.resolve({width:100,height:200});});
-  assert.equal(calls.length,21);assert.ok(calls.every(url=>url.startsWith('https://game.test/images/scene/')));
+  assert.equal(calls.length,27);assert.ok(calls.every(url=>url.startsWith('https://game.test/images/scene/')));
   await nature.loadImages('https://game.test/',()=>{throw new Error('已載入不應重新請求');});
   const draws=[],g=fakeContext();g.drawImage=(...args)=>draws.push(args);
   nature.drawBody(g,'willow',0,0,100,120,1,{});
@@ -354,7 +354,7 @@ test('DECOR-NATURE-1 每張地圖的直立物件都有獨立接觸區，苔沼�
       for (const p of props) {
         const foot = plan.specs.find(s => s.key === 'foot_' + p.key);
         assert.equal(foot.propW, p.w);
-        assert.equal(foot.natureStyle.moss, zone === 'swamp');
+        assert.equal(foot.natureStyle.moss, zone === 'swamp' || zone === 'mist_forest');
         assert.equal(foot.natureStyle.snow, zone === 'Icefield');
         assert.ok(foot.w > p.w && foot.h > p.w * .5, '接觸區必須容納漸隱留白');
         if (p.type === 'rock') assert.equal(p.nature, true, '各地圖岩石都走新版風化畫法');

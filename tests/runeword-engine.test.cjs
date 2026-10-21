@@ -754,12 +754,12 @@ test('掉落階數：進度越深上限越高、永遠在 1~33；階越高越稀
   const c = loadRuneEnv();
   assert.equal(c.runeDropTierMax('desert', 1) >= 1, true);
   let prev = 0;
-  ['desert', 'Icefield', 'swamp', 'undead_mountains', 'god_battlefield', 'god_chaos', 'god_sanctuary'].forEach((z) => {
+  ['desert', 'Icefield', 'mist_forest', 'lava_mountain', 'swamp', 'thunder_peak', 'undead_mountains', 'god_battlefield', 'god_chaos', 'god_sanctuary'].forEach((z) => {
     const t = c.runeDropTierMax(z, c.zoneMaxStage(z));
     assert.ok(t > prev, `${z} 的最高階應高於前一張圖`);
     prev = t;
   });
-  assert.equal(c.runeDropTierMax('god_sanctuary', 800), 33);
+  assert.equal(c.runeDropTierMax('god_sanctuary', 600), 33);
   const counts = {};
   let seed = 7;
   c.Math.random = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
