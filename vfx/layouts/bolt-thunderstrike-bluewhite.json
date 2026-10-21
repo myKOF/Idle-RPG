@@ -6,6 +6,8 @@
       "id": "bolt-thunderstrike-bluewhite",
       "name": "bolt-thunderstrike-bluewhite",
       "layerIds": [
+        "seg-b",
+        "seg-c",
         "blue-corona",
         "white-core",
         "branch",

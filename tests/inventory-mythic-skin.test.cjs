@@ -12,7 +12,10 @@ function mount() {
   const sample = { width: 62.5 };
   const box = {
     isConnected: true,
-    querySelector: () => sample,
+    querySelector: selector => {
+      if (sample.dimmed && selector.includes(':not(.dimmed)')) return null;
+      return sample;
+    },
     classList: { add: n => classes.add(n), remove: n => classes.delete(n) },
     style: { setProperty: (k, v) => properties.set(k, v), removeProperty: k => properties.delete(k) }
   };
@@ -76,16 +79,38 @@ test('Resize及DPR變更重建；舊非同步結果與A→B→A不覆蓋目前�
   assert.equal(m.canvases[1].width, 162);
 });
 
-test('解碼或Canvas失敗回到原CSS且不反覆重試；Resize後可重建', () => {
+test('暫時性解碼或Canvas失敗在同尺寸後續渲染可恢復', () => {
   const m = mount();
   m.c.InventorySkin.prepare(m.box, 1080); m.flush(); m.images[0].onload();
   m.c.InventorySkin.prepare(m.box, 900); m.flush(); m.fail(true); m.images[1].onload();
   assert.equal(m.classes.size, 0); assert.equal(m.properties.size, 0);
-  m.c.InventorySkin.prepare(m.box, 900); assert.equal(m.frames.length, 0);
-  m.fail(false); m.c.InventorySkin.prepare(m.box, 800); m.flush(); m.images[2].onerror();
+  m.c.InventorySkin.prepare(m.box, 900); m.flush(); m.images[2].onerror();
   assert.equal(m.classes.size, 0);
+  m.fail(false);
   m.c.InventorySkin.prepare(m.box, 900); m.flush(); m.images[3].onload();
   assert.ok(m.classes.has('inventory-mythic-skin-ready'));
+});
+
+test('永久不支援時每尺寸最多三次，停止反覆生成；Resize後可重新嘗試', () => {
+  const m = mount();
+  for (let i = 0; i < 3; i++) {
+    m.c.InventorySkin.prepare(m.box, 1080); m.flush(); m.images[i].onerror();
+  }
+  for (let i = 0; i < 100; i++) m.c.InventorySkin.prepare(m.box, 1080);
+  assert.equal(m.frames.length, 0); assert.equal(m.images.length, 3);
+  assert.equal(m.classes.size, 0); assert.equal(m.properties.size, 0);
+  m.c.InventorySkin.prepare(m.box, 900); m.flush(); m.images[3].onload();
+  assert.ok(m.classes.has('inventory-mythic-skin-ready'));
+});
+
+test('所有神話格因選取部位置灰時仍可生成底圖，恢復選取不重複生成', () => {
+  const m = mount(); m.sample.dimmed = true;
+  m.c.InventorySkin.prepare(m.box, 1080); m.flush();
+  assert.equal(m.images.length, 1);
+  m.images[0].onload(); assert.ok(m.classes.has('inventory-mythic-skin-ready'));
+  m.sample.dimmed = false;
+  m.c.InventorySkin.prepare(m.box, 1080);
+  assert.equal(m.frames.length, 0); assert.equal(m.canvases.length, 1);
 });
 
 test('空格、未顯示與移除的容器不建立背景，重新掛載後正常恢復', () => {
@@ -101,12 +126,13 @@ test('空格、未顯示與移除的容器不建立背景，重新掛載後正�
   assert.ok(m.classes.has('inventory-mythic-skin-ready'));
 });
 
-test('快取只作用背包神話格，置灰、其他品質、紙娃娃與tips維持原路徑', () => {
+test('快取只作用背包神話格，選取置灰共用底圖，關鍵字不符合格沿用隱藏底圖', () => {
   const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
   const rules = css.match(/#inventory-grid\.inventory-mythic-skin-ready[^}]+}/g);
   assert.equal(rules.length, 2);
   for (const rule of rules) {
-    assert.match(rule, /\.item-cell\.eff-mythic:not\(\.dimmed\):not\(\.item-cell-dimmed\)/);
+    assert.match(rule, /\.item-cell\.eff-mythic:not\(\.item-cell-dimmed\)/);
+    assert.doesNotMatch(rule, /:not\(\.dimmed\)/);
     assert.doesNotMatch(rule, /\.eq-slot|#sk-tooltip|\.selected/);
   }
   const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');

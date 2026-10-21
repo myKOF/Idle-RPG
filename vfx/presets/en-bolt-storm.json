@@ -4,7 +4,7 @@
   "duration": 0.65,
   "loop": false,
   "deformation": {
-    "amplitude": 76.8,
+    "amplitude": 10,
     "axis": "y",
     "end": 34,
     "layers": [

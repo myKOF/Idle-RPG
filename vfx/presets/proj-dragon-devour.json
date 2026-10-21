@@ -233,6 +233,21 @@
       },
       "alpha": 0.15,
       "tint": "#ff7300"
+    },
+    {
+      "id": "sprite-6",
+      "type": "sprite",
+      "assetId": "new_materials/impact-ring/impact_5.png",
+      "position": {
+        "x": -2,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.0213,
+        "y": 0.0213
+      },
+      "alpha": 0.15,
+      "tint": "#ff7300"
     }
   ],
   "sizing": {

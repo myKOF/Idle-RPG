@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 188,
+  "assetCount": 189,
   "assets": [
     {
       "assetId": "claude-authored/dragon-devour/vortex-ring.png",
@@ -306,6 +306,13 @@
       "package": "light-masks-1.0",
       "contentHash": "sha256:2450b7e27800fbf015880e3057fff913ab5de38b567b186c2c6c614eedc8093a",
       "fileSize": 52687
+    },
+    {
+      "assetId": "light-masks-1.0/default/circle_d.png",
+      "relativePath": "light-masks-1.0/Default/circle_d.png",
+      "package": "light-masks-1.0",
+      "contentHash": "sha256:a42904beb5418373a7f045778a1b70e5485e1527e45c5523b404829316b0eb01",
+      "fileSize": 42574
     },
     {
       "assetId": "light-masks-1.0/default/circle_rings_a.png",

@@ -566,8 +566,8 @@
       "type": "sprite",
       "assetId": "light-masks-1.0/transparent/cone_composed_e.png",
       "position": {
-        "x": 0.7351,
-        "y": -55.4126
+        "x": 0.1863,
+        "y": -37.3018
       },
       "scale": {
         "x": 0.1901,
@@ -620,16 +620,18 @@
     {
       "id": "sprite-13",
       "type": "sprite",
-      "assetId": "light-masks-1.0/transparent/shape_a.png",
+      "assetId": "codex-authored/moon-opaque/moon-original-02.png",
       "position": {
         "x": 0,
-        "y": -32.6245
+        "y": -40.6245
       },
       "scale": {
-        "x": 0.0881,
-        "y": 0.0881
+        "x": 0.1449,
+        "y": 0.1449
       },
-      "tint": "#fefee1",
+      "alpha": 0.4,
+      "tint": "#ffff5c",
+      "blendMode": "add",
       "duration": 0.27,
       "offsetYOverLife": [
         [

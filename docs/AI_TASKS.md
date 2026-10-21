@@ -1,5 +1,54 @@
 # AI_TASKS.md
 
+## USER-EDITS-COMMIT-20261021 — 一併保存使用者配置與VFX調整
+
+- Owner：Codex；Done。使用者追加「改好後，連我的修改一起commit」；前置拖尾25c29864／素材庫3af6e34已完成。允許提交目前全部必要使用者修改、同步必要素材庫Preset／layout及來源紀錄，僅補skills2／bridge／Worker快取、LV及本段；禁止重設或覆寫使用者美術／配置，不合併推送。
+- 檢查原始diff為火／雷隕石名稱文字及VFX美術設定，Excel→CSV→JS試跑語意變更0。驗收變更Preset／layout合法、素材來源與兩庫雜湊一致、核心／協議／配置回歸、Build與diff。共用快取預檢乾淨；文件與Claude僅獨立首尾追加，merge-file試跑0。
+
+- 保存使用者Skills2 Excel／CSV／生成JS、6份Preset、2份layout、shipped-assets與circle_d.png；其他3份CSV僅行尾差異，git正常化後無內容差異。使用者原始數值／外觀不重寫。skills2只改火／雷隕石文案，補主頁skills2 349→350／bridge327→328、WORKER_ASSET_VERSION及Worker import快取。LV與本紀錄同步，共18個遊戲檔案。
+- 驗證：node tools/config_tables.cjs --apply Skills2試跑語意變更0；6份Preset及layout通過正式Core／Layout驗證，12份素材庫Preset／layout複本逐位元一致。circle_d.png為既有Kenney light-masks CC0素材，來源／遊戲PNG／出貨索引SHA256一致，沒有新繪圖或未授權引用。node tools/vfx/export-assets.cjs --check已最新（189個assetId）。
+- 測試：node --test --test-reporter=dot tests/meteor-tail-flow.test.cjs tests/vfx-core.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/skills2-vfx-schema.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs全過；npm.cmd run build為560檔通過，兩倉庫diff --check通過。未修改測試或重新繪製外觀；未逐份新增美術做瀏覽器重驗／重開Excel，這是使用者已保存內容的提交與一致性驗證。
+- 素材庫先提交ee64345（10檔），保存6份使用者Preset及必要layout／SOURCE清單；既有相同的gale與en-bolt-storm等layout不製造空差異。遊戲Commit為本段所在[Codex] chore: 一併提交使用者配置與特效調整；包含先前拖尾25c29864／素材3af6e34之後的全部必要現有修改。最終兩倉庫status確認乾淨，未合併推送。
+- 唯讀檢查未改：配置工具／素材庫PROVENANCE、Core／Backend／Runtime、Editor guard與layout schema、上述7份測試；Worker只換skills2快取，不改Protocol或戰鬥邏輯。無未完成項，可供合併；下一步先備份舊Editor未存內容再重載，其他電腦同步遊戲與素材庫。已知限制為沒有完整戰鬥長測及使用者各美術調整逐份視覺驗收。
+
+## METEOR-TAIL-FLOW-20261021 — 隕石靜態拖尾改為流動粒子
+
+- Owner：Codex；Done；單一開發者。使用者要求橘紅拖尾應拉長或飄動。既有殞石完成，三層靜態尾焰改向後發射、伸展消散並以流動噪聲擾動。
+- 允許proj-meteor-inferno Preset、meteor-comet.cjs、新動態回歸、LV_upgrade_system及本段；素材庫只同步codex-authored/meteor同名Preset及SOURCE。禁止Core／Runtime／Backend／Worker／配置／爆炸／其他未提交內容，不合併推送。驗收動態與方向、預算／回收、水平與斜向Pixi預覽、舊頁防覆寫、相關回歸／Build／diff；先素材庫後遊戲Commit，交使用者Review整合。
+- 預檢Preset／腳本／新測試／LV無其他來源。文件與Claude defe8304分別檔首、檔尾追加且無語意相依，實際merge-base＋候選＋Claude工作區merge-file乾跑0才寫入。其他配置／VFX未提交修改保留；Editor未存內容先下載備份再重載。
+
+- 完成5檔：vfx/presets/proj-meteor-inferno.json、tools/vfx/authoring/author/meteor-comet.cjs、tests/meteor-tail-flow.test.cjs、LV_upgrade_system.md及本紀錄。只替換橘紅／金色／白熱三層，其餘圖層、14層layout ID、sizing與時長逐值保持；腳本可重製完全相同canonical結果。沿用既有CC0素材，無新PNG／外部來源／新特效引用，不需JS快取或BAT。天穹崩裂共用火殞石外觀亦更新。
+- 測試：node --test tests/meteor-tail-flow.test.cjs tests/vfx-core.test.cjs tests/meteor-entry-origin.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-runtime-screen-space.test.cjs，195/195通過；新2項驗證逐顆火舌向後移動、初生伸展、噪聲橫向位移、三種航向、循環後仍發射、三顆5秒預算與命中停止全回收。以唯讀fs映射HEAD舊Preset，新測試因must flow backward失敗；新測試最後調整基線比較對照後2/2再驗通過。沒有修改既有斷言，未跑全庫。npm.cmd run build為560檔通過；node tools/vfx/export-assets.cjs --check已最新；git diff --check通過。
+- 動態預覽：正式Editor載入合法、飛行36米/秒；隔離Edge載入正式Pixi8／Core／Backend，完整彈體、橘紅層獨立、60度朝向分別驗收流動，Console error／warning0、貼圖missing0。kit.probe連續5輪最高85粒子、bbox x[-427,59]/y[-69,66]，三顆回歸無drop且停後全清。截圖與GIF位於本聊天visualizations/meteor-tail-flow，並保留editor截圖；預覽先修正fixture伺服器不提供遊戲images目錄與GPU首幀尚未呈現，改走正式Editor素材庫路由並待貼圖畫出，產品程式未改。未載玩家存檔／完整戰鬥長測／手機效能。
+- 舊頁保護：隔離Editor實際以舊Sprite資料載入→解除GET攔截→按儲存到repo，顯示外部已更新、拒絕舊內容覆寫，磁碟Preset逐位元保持。使用者其他開啟的編輯器未刷新或操作；未存內容須先下載備份再重載。專用瀏覽器／測試服務與暫存幀提交前清理。
+- 素材庫codex-authored/meteor/presets/proj-meteor-inferno.json與SOURCE.md先提交3af6e34，兩倉庫Preset SHA256相同（d0af0339933c907b6d5ccec62d57dc2072ff36f59e5356710b3e5d529fb9d9db），layout無變更。素材庫status乾淨，無新點陣素材；既有CC0素材來源沿用PROVENANCE。
+- 唯讀未改：AI規範／流程／Agent文件、js/vfx-core.js／vfx-pixi-backend.js／vfx-runtime.js／battle-renderer.js、Skills2／Worker命中時序、Editor guard／server、layout／asset-index／素材PNG及既有5份測試。自我Review確認無引擎／協議／判定變更，3層均有速率、生命週期與上限；其他使用者配置與VFX（包括期間新儲存的雷電layout及shipped-assets）均保留且不納本Commit。
+- 交付：本次無未完成項或新增已知缺陷，可供Review／合併；限制為粒子增加（單顆原54→85）且尚未長戰實機效能驗收。遊戲Commit為本段所在[Codex] fix: 隕石拖尾改為持續流動火舌，回覆附編號；未合併推送，下一步先備份未存編輯內容再重載Editor／遊戲，其他副本整合遊戲Commit及素材庫3af6e34。
+
+## INVENTORY-MYTHIC-SKIN-RECOVERY-20261021 — 修補神話背包快取退化路徑
+
+- Owner：Codex；Done。使用者要求檢查79269f0d1並修復特殊底色神話裝備捲動再次變慢；8123服務確認讀取本Codex副本，原Commit完整存在。前置既有快取與虛擬背包完成，單一開發者。
+- 允許js/ui-inventory-skin.js生命週期、css/style.css背包快取範圍、index必要快取、tests/inventory-mythic-skin.test.cjs、LV_upgrade_system與本紀錄；禁止玩法／數值／配置／Worker／Protocol／存檔／素材／其他副本。不合併推送，保留其他聊天與使用者未提交配置及VFX。
+- 修補選取部位後dimmed神話格退出快取，以及首次Image／Canvas失敗同尺寸永不重試；關鍵字不符合格仍隱藏特殊底圖。驗收真瀏覽器首次／選取置灰／Resize／重試、回歸／Build／Console／diff後獨立Commit，交使用者Review／整合。docs與Claude defe8304僅檔首新增與檔尾新增、無語意相依，候選以實際merge-base三方merge-file試跑乾淨才寫入。
+- 完成6檔：CSS讓選取造成的dimmed共用快取底圖（父格opacity0.25與grayscale／brightness保持不變），仍排除隱藏特殊底圖的item-cell-dimmed；JS可從置灰格讀取背景，即使全數置灰也能初始化。生成失敗同key允許後續render重試，三次失敗停止，Resize／DPR變更重設次數；保留既有revision防過期、單幀合併與WeakMap生命週期。index僅style89→90／skin0→1、LV與本紀錄同步，沒有玩法、配置、存檔、素材或素材庫變更。
+- 測試指令：`node --test tests/inventory-mythic-skin.test.cjs tests/inventory-visible-rows.test.cjs tests/forge-shared-inventory.test.cjs tests/inventory-ancient-filter-sort.test.cjs tests/inventory-detail-preservation.test.cjs tests/inventory-request-throttle.test.cjs tests/inventory-rarity-filter.test.cjs tests/inventory-command-pending.test.cjs tests/equipment-slot-selection.test.cjs tests/equipment-selection-memory.test.cjs tests/equipment-tooltip-compare.test.cjs tests/equipment-two-hand-display.test.cjs`57/57；`node --test tests/inventory-keyword-filter.test.cjs tests/inventory-expand-display.test.cjs tests/inventory-detail-params.test.cjs`9/9。新增全置灰初始化與永久失敗限次回歸，原失敗測試明確改驗同尺寸恢復；沒有放寬其他斷言。`npm.cmd run build`559檔通過；最後將失敗計數集中至failed後，專項7/7與`node --check js/ui-inventory-skin.js`再驗通過，`git diff --check`通過。未跑全庫。
+- 瀏覽器：同頁1800個神話格、8份正式CSS與正式InventorySkin；選取置灰前正常格快取成功。舊版全置灰即變成before／after:block，同速3秒捲動17幀、平均183.34ms、p95 250.1ms；新版置灰仍none，同條件102幀、平均29.41ms、p95 49.8ms。相同scrollHeight8257、寬950、格寬61.8438，沒有少畫格子；這是非虛擬格的隔離繪製壓測，不能當成玩家實際FPS。Resize690↔950均重建成功。注入一次Canvas生成失敗、且全部置灰，新版首輪回退CSS，下一次同尺寸prepare即恢復PNG；Console warning／error0。截圖inventory-skin-repaired.png在本聊天visualizations，臨時頁／測試服務／三方試跑檔清理。
+- 唯讀檢查未改：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、js/ui.js的renderInventory／虛擬捲動／增量格線／updateSelectionUI／mountInventoryBox、其餘7份CSS、8123服務來源與回傳檔、上述相依測試及79269f0d1後歷史。自我Review確認不快取圖示／星等／選取，重試無常駐Timer／Observer，永久失敗不逐幀重新生成。與Claude僅同紀錄不同位置新增，實際merge-base乾跑0；不納其他聊天或使用者配置／VFX修改。
+- 交付：Commit為本段所在`[Codex] fix: 修補神話背包底圖快取退化路徑`，回覆附編號。修補與回歸可Review／合併，未合併推送；沒有本次未完成實作。尚未以使用者瀏覽器的真人存檔重現／驗收、未做跨瀏覽器與長戰效能，永久不支援SVG轉Canvas時仍回原CSS。下一步重新整理8123驗收；若仍卡頓，需在該瀏覽器針對實際快取是否啟用與捲動錄製繼續定位，不能把本次隔離結果當成使用者現場全部根因已證實。
+
+## METEOR-COMET-VFX-20261021 — 殞石術白熱火球與長煙火尾跡
+
+- Owner：Codex；Done；使用者提供斜向墜落殞石參考圖，要求殞石術外觀類似。以既有表定proj-meteor-inferno重新製作白黃高溫前端、橘紅火焰外層、長火尾與轉灰煙跡，僅參考造型與層次、不使用附件像素。單一開發者，沿用已登記CC0素材；參數、傷害、數量、飛行／命中時間與尺寸契約不改。
+- 修改範圍：本Preset與單一根群組layout、新authoring/author/meteor-comet.cjs可重製腳本、LV_upgrade_system及本紀錄；素材庫codex-authored/meteor內同名Preset／layout與製作來源說明。禁止修改Runtime／Core／Worker／Protocol／配置／落地爆炸Preset／巨型地爆天星／其他素材。目標衝突預檢無外部來源，保留本副本六份既有其他VFX未提交變更，不併入本Commit。
+- 開始前確認RPG Mote Studio可開啟，主要為像素圖／序列幀及.mote／Aseprite；本次不需繪製新貼圖，既有動態粒子Preset與完整落地時序需沿專案VFX工具製作，改用既有Core／kit與正式Pixi預覽。驗收明暗背景可讀性／斜向與水平飛行／多顆、身後尾跡與白熱前端、正式表定引用及傷害時序不變、合法canonical／分組／素材匯出／舊分頁防覆寫、相關回歸／Build／diff，先素材庫再專案各自Commit。新特效附截圖及可複製檔名，已開編輯器需保留未存內容後重載。
+- 完成遊戲5檔：proj-meteor-inferno Preset／layout、meteor-comet.cjs製作腳本、LV_upgrade_system及本紀錄。14層分為灰煙、長外焰、黃色內焰、白熱細流、餘燼及前端火球／表面火舌，保留同一根群組；本體sizing（custom14×14米／authored60×60）、duration1／loop逐值與原版相同。降低全白過曝並用透明版外焰維持輪廓；素材均為原庫CC0，沒有新增／修改PNG、shader、Runtime或新的特效來源。此Preset同時供天穹崩裂火殞石使用，該共用外觀隨之更新；雷殞石、敵方小殞石、地爆天星各自Preset及原落地爆炸未改。沒有修改Excel／CSV／JS配置、不需BAT；主執行緒Preset載入已有cache:no-store，無JS變更需bump快取。
+- 素材庫同步codex-authored/meteor/presets及layouts同名JSON，另附SOURCE.md記錄參考與自製界線、CC0來源及重製指令；兩倉庫兩份JSON逐位元相同。`node tools/vfx/export-assets.cjs --check`通過，188個已出貨assetId涵蓋本次所有引用，無需新增貼圖或更新出貨索引。Core.validatePreset／serialisePreset、Layout.validateLayout及單根完整layerIds通過，kit.probe最多54粒子，製作座標bbox x[-371,59]／y[-62,63]（含尾跡），不以尾跡長度充當碰撞／傷害範圍。離線三時點深色預覽最高過曝約0.2%。
+- 瀏覽器：正式Editor載入14層並顯示合法，以36米／秒檢查水平飛行；另使用正式Pixi8＋Core／Backend／Runtime建立隔離單顆／三顆斜向預覽，採引擎sgFireMeteorFallTiming的1000ms及既有350ms連發間隔，不寫玩家存檔。核對火尾在身後、灰煙逐漸淡出、深／淺背景、原表定mark-red與burst-meteor-inferno／burst-fire的起飛及獨立落地事件；t=0.78秒活動彈體1／3，t=1.78秒皆0且原爆炸可見，missing0。深色背景火焰層次最清楚，淺背景白熱亮部較淡，保留橘色輪廓與煙跡。初版臨時預覽先修正Pixi8非同步init、改用與遊戲相同不透明畫布、拆開起飛／落地事件；這些均為驗證fixture修正，沒有改產品程式配合預覽。
+- 舊分頁驗收：保留最初載入的Editor，磁碟Preset更新後實際按「儲存到repo」，顯示「特效或分組檔已由外部更新，已阻止舊內容覆寫」，保留未存內容並提供下載全部編輯備份；兩份JSON雜湊與素材庫仍一致。Guard.check也拒絕原始版本base／peer-base。該Agent分頁僅調檢視速度／格線、無美術編輯內容，之後載入最終版本作交付；使用者其他舊Editor若有未存內容，應先下載備份／另存，再重載，避免儲存舊內容。
+- 測試：`node --test --test-reporter=tap tests/vfx-core.test.cjs tests/meteor-entry-origin.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-runtime-screen-space.test.cjs`最終193/193；包含每顆獨立天降起點、平滑位置與抵達時間、原飛行／命中事件、快取／尺寸及編輯器防覆寫。擴大再含vfx-editor-save／meteor-impact-timing／starfall-vfx／skill2-vfx共285項273過11失敗1略過；唯讀映射本次修改前Preset／layout重跑，結果及11個失敗名稱完全相同。既有失敗為火球／伴生火球／地爆天星及其他技能舊斷言，另aura-earth-reversal既有非canonical；未改無關Preset或放寬測試。最後調色後重驗上述193核心及本次Preset／layout canonical，無新增失敗，不寫鏡像低價值測試。
+- 交付證據：本聊天visualizations的meteor-comet-flight.jpg與meteor-comet-impact.jpg，前者已先行貼給使用者；臨時預覽頁及非必要測試產物提交前清理。保留專用Editor服務與最新版頁供Review，不中斷使用者其他Editor；未做完整遊戲長戰／跨瀏覽器／手機效能。唯讀未改skills2／battle-renderer／Runtime／Core／Backend、Worker／Protocol、參數與既有測試、素材PNG及落地／巨型殞石Preset；其他使用者進行中的Excel及VFX原樣保留，不合併推送。
+- `npm.cmd run build`559檔通過，兩倉庫diff檢查通過；素材庫先提交12f4426（3檔：Preset／layout／SOURCE.md），遊戲Commit為本段所在`[Codex] feat: 殞石術改為白熱火球與長煙火尾跡`（5檔），回覆附編號。執行期間既有自動同步納入f90b5339的裝備樣式及其他VFX提交，僅收最新HEAD下本任務差異，未用舊版覆蓋；本Agent沒有切分支、主動合併或推送。無本次未完成實作，可Review／整合；下一步重載遊戲看實際戰鬥密度與美術感受，其他電腦須同步遊戲與素材庫兩倉庫。已知限制為上述11項既有失敗、1略過與未做完整實戰驗收。
+
 ## ULTIMATE-EVOLUTION-NAME-20261021 — 第8階三選一改稱終極進化
 
 - Owner：Codex；Done；使用者要求每個技能第8階三選一「超神進化」改名為「終極進化」。前置既有三選一／切換／提示流程完成，單一開發者，所有目標衝突預檢無外部來源。
@@ -11664,3 +11713,9 @@ Worker 存活且頁面正常完成載入。
   3. 新啟用時預設全部可變形圖層都在裡面（VFX-DEFORM-SUGGEST-20261021 已是如此）。
 - 修改 `tools/vfx/editor/editor.js`（renderLayerHeader、deformationBlockReason、renderDeformationMembership）、`editor.css`、編輯器頁版號、`tests/vfx-editor-deformation.test.cjs`（DEF-7～7E：真函式＋假 DOM 驗加入／移出／最後一層／多選半勾／不顯示與變灰／Inspector 順序）。8 個突變全部抓到。編輯器測試失敗名單與 HEAD 相同（3 項既有）。build_check 559 檔通過。
 - 實機（本機編輯器 28362，bolt-thunderstrike-bluewhite，branch 原本不在作用圖層）：點選 branch → 看到分界標題與未勾的「受程式變形影響」→ 勾下去後作用圖層變成 4 層、下方清單同步打勾、可 Ctrl+Z。
+
+## MERGE-CODEX-20261021-a3fffb58 — pending develop merge
+
+- Owner：Codex integrator；Done。依使用者授權整合 original HEAD `94330a0789690db3261e45488fe0bdc8d76ef699` 與 incoming MERGE_HEAD `a3fffb58ed4021806a779eead3994770f9b81218`；不變更兩個 parent、不操作索引／Commit／推送／其他 worktree／素材庫。
+- 衝突僅 `docs/AI_TASKS.md` 的獨立追加紀錄。三方比對共同 base 後，保留 HEAD 檔尾的 VFX 圖層變形介面紀錄，也保留 incoming 檔首的使用者配置與 VFX、隕石拖尾、神話背包快取修補及殞石外觀紀錄；沒有以任一整側覆蓋另一側。controller 已處理的 incoming 檔案 EOF 空白整理原樣保留。
+- 驗證：`node --test tests/inventory-mythic-skin.test.cjs tests/meteor-tail-flow.test.cjs tests/vfx-editor-deformation.test.cjs tests/vfx-core.test.cjs tests/vfx-editor-guard.test.cjs tests/skills2-vfx-schema.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs` 209/209 通過；`npm.cmd run build` 560 檔通過。完整 merged result 的衝突標記與 `git diff HEAD --check` 檢查通過，沒有修改測試斷言或素材庫檔案；controller 可依回報檔案清單 stage 並建立 merge commit。

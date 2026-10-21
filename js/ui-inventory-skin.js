@@ -4,6 +4,7 @@
 var InventorySkin = (function () {
   var states = new WeakMap();
   var readyClass = 'inventory-mythic-skin-ready';
+  var maxAttempts = 3;
   var skinProperties = ['background', 'box-shadow', 'border-top', 'border-right',
     'border-bottom', 'border-left', 'border-radius', 'border-image-source', 'border-image-slice',
     'border-image-width', 'border-image-repeat', 'box-sizing'];
@@ -32,6 +33,7 @@ var InventorySkin = (function () {
       state.requestedKey = key;
       state.pendingKey = null;
       state.failedKey = null;
+      state.attempts = 0;
       state.revision++;
     }
     if (state.readyKey === key || state.pendingKey === key || state.failedKey === key) return;
@@ -44,13 +46,16 @@ var InventorySkin = (function () {
       var requestedKey = state.pendingKey;
       var revision = state.revision;
       if (!requestedKey) return;
-      var sample = box.querySelector('.item-cell.eff-mythic:not(.dimmed):not(.item-cell-dimmed)');
+      // 置灰只改父格的 opacity/filter，底圖相同；即使目前全部置灰仍能建立共用快取。
+      var sample = box.querySelector('.item-cell.eff-mythic');
       if (!sample || !box.isConnected) { state.pendingKey = null; return; }
 
       function failed() {
         if (state.revision !== revision) return;
         state.pendingKey = null;
-        state.failedKey = requestedKey;
+        state.attempts++;
+        // 暫時性解碼／Canvas失敗可在下次render重試，但永久不支援時不逐幀重建。
+        state.failedKey = state.attempts >= maxAttempts ? requestedKey : null;
         state.readyKey = null;
         box.classList.remove(readyClass);
         box.style.removeProperty('--inventory-mythic-skin');

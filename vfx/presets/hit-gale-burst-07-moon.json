@@ -26,11 +26,11 @@
       "zIndex": 0,
       "position": {
         "x": 0,
-        "y": -2.5729
+        "y": -6.2978
       },
       "scale": {
-        "x": 0.1798,
-        "y": 0.1798
+        "x": 0.144,
+        "y": 0.144
       },
       "alpha": 1,
       "tint": "#6600ff",
@@ -94,12 +94,12 @@
       "zIndex": 1,
       "position": {
         "x": 0,
-        "y": -2.5729
+        "y": -6.2978
       },
       "rotation": 0.3142,
       "scale": {
-        "x": 0.2223,
-        "y": 0.2223
+        "x": 0.1781,
+        "y": 0.1781
       },
       "alpha": 1,
       "tint": "#ffffff",
@@ -153,12 +153,12 @@
       "zIndex": 2,
       "position": {
         "x": 0,
-        "y": -2.5729
+        "y": -6.2978
       },
       "rotation": -0.2269,
       "scale": {
-        "x": 0.1568,
-        "y": 0.1568
+        "x": 0.1256,
+        "y": 0.1256
       },
       "alpha": 0.9,
       "tint": "#ffffff",
@@ -212,11 +212,11 @@
       "zIndex": 3,
       "position": {
         "x": 0,
-        "y": -2.5729
+        "y": -6.2978
       },
       "scale": {
-        "x": 0.1177,
-        "y": 0.1177
+        "x": 0.0943,
+        "y": 0.0943
       },
       "alpha": 1,
       "tint": "#ffffff",
@@ -270,11 +270,11 @@
       "zIndex": 4,
       "position": {
         "x": 0,
-        "y": -2.5729
+        "y": -6.2978
       },
       "scale": {
-        "x": 0.0522,
-        "y": 0.0522
+        "x": 0.0418,
+        "y": 0.0418
       },
       "alpha": 1,
       "tint": "#f5a700",
@@ -327,13 +327,13 @@
       "assetId": "particle-pack/png-black-background/rotated/spark_06_rotated.png",
       "zIndex": 5,
       "position": {
-        "x": 20.0832,
-        "y": -2.5729
+        "x": 16.0887,
+        "y": -6.2978
       },
       "rotation": 0,
       "scale": {
-        "x": 0.0785,
-        "y": 0.0147
+        "x": 0.0629,
+        "y": 0.0118
       },
       "alpha": 0.55,
       "tint": "#ffe2a0",
@@ -367,13 +367,13 @@
       "assetId": "particle-pack/png-black-background/rotated/spark_06_rotated.png",
       "zIndex": 6,
       "position": {
-        "x": 6.3326,
-        "y": 16.4858
+        "x": 5.073,
+        "y": 8.9701
       },
       "rotation": 1.25,
       "scale": {
-        "x": 0.0785,
-        "y": 0.0147
+        "x": 0.0629,
+        "y": 0.0118
       },
       "alpha": 0.55,
       "tint": "#ffe2a0",
@@ -407,13 +407,13 @@
       "assetId": "particle-pack/png-black-background/rotated/spark_06_rotated.png",
       "zIndex": 7,
       "position": {
-        "x": -16.0895,
-        "y": 9.4464
+        "x": -12.8893,
+        "y": 3.3308
       },
       "rotation": 2.5,
       "scale": {
-        "x": 0.0785,
-        "y": 0.0147
+        "x": 0.0629,
+        "y": 0.0118
       },
       "alpha": 0.55,
       "tint": "#ffe2a0",
@@ -447,13 +447,13 @@
       "assetId": "particle-pack/png-black-background/rotated/spark_06_rotated.png",
       "zIndex": 8,
       "position": {
-        "x": -16.4795,
-        "y": -14.0516
+        "x": -13.2017,
+        "y": -15.4934
       },
       "rotation": 3.75,
       "scale": {
-        "x": 0.0785,
-        "y": 0.0147
+        "x": 0.0629,
+        "y": 0.0118
       },
       "alpha": 0.55,
       "tint": "#ffe2a0",
@@ -487,13 +487,13 @@
       "assetId": "particle-pack/png-black-background/rotated/spark_06_rotated.png",
       "zIndex": 9,
       "position": {
-        "x": 5.6968,
-        "y": -21.8311
+        "x": 4.5637,
+        "y": -21.7256
       },
       "rotation": 5,
       "scale": {
-        "x": 0.0785,
-        "y": 0.0147
+        "x": 0.0629,
+        "y": 0.0118
       },
       "alpha": 0.55,
       "tint": "#ffe2a0",
@@ -528,7 +528,7 @@
       "zIndex": 10,
       "position": {
         "x": 0,
-        "y": -2.5729
+        "y": -6.2978
       },
       "tint": "#ffd475",
       "blendMode": "add",
@@ -542,19 +542,19 @@
         0.2
       ],
       "spawn": {
-        "radius": 6.6944,
+        "radius": 5.3629,
         "shape": "circle"
       },
       "speed": [
-        58.5759,
-        133.8878
+        46.9252,
+        107.2575
       ],
       "direction": 0,
       "spread": 360,
       "drag": 4,
       "startScale": [
-        0.0049,
-        0.0115
+        0.0039,
+        0.0092
       ],
       "alignToVelocity": true,
       "alphaOverLife": [
@@ -584,12 +584,12 @@
       "type": "sprite",
       "assetId": "light-masks-1.0/transparent/cone_composed_e.png",
       "position": {
-        "x": 0.7241,
-        "y": -72.513
+        "x": -0.221,
+        "y": -42.2993
       },
       "scale": {
-        "x": 0.1872,
-        "y": 0.1295
+        "x": 0.15,
+        "y": 0.1037
       },
       "alpha": 0.8,
       "tint": "#e634fe",
@@ -626,11 +626,11 @@
       "offsetYOverLife": [
         [
           0.0031,
-          -22.085196742088534
+          -17.692451110087127
         ],
         [
           1,
-          22.447249147696542
+          17.982491292219702
         ]
       ],
       "perspective": false
@@ -641,22 +641,22 @@
       "assetId": "light-masks-1.0/transparent/shape_a.png",
       "position": {
         "x": 0,
-        "y": -32.2612
+        "y": -30.0811
       },
       "scale": {
-        "x": 0.0868,
-        "y": 0.0868
+        "x": 0.0695,
+        "y": 0.0695
       },
       "tint": "#fd0dc9",
       "duration": 0.27,
       "offsetYOverLife": [
         [
           0,
-          -20.999039525264507
+          -16.8223305636894
         ],
         [
           0.9938,
-          29.68829725985671
+          23.78329493487121
         ]
       ],
       "perspective": false
@@ -668,11 +668,11 @@
       "zIndex": 4,
       "position": {
         "x": 0,
-        "y": -2.5729
+        "y": -6.2978
       },
       "scale": {
-        "x": 0.1605,
-        "y": 0.1605
+        "x": 0.1286,
+        "y": 0.1286
       },
       "alpha": 1,
       "tint": "#ffe53d",
@@ -722,14 +722,14 @@
     {
       "id": "sprite-12-copy",
       "type": "sprite",
-      "assetId": "light-masks-1.0/transparent/cone_composed_c.png",
+      "assetId": "particle-pack/png-black-background/slash_02.png",
       "position": {
-        "x": 0.7241,
-        "y": -30.9691
+        "x": 0.5801,
+        "y": -29.046
       },
       "scale": {
-        "x": 0.1872,
-        "y": 0.1295
+        "x": 0.15,
+        "y": 0.2024
       },
       "alpha": 0.8,
       "tint": "#e634fe",
@@ -766,11 +766,11 @@
       "offsetYOverLife": [
         [
           0.0031,
-          -22.085196742088534
+          -17.692451110087127
         ],
         [
           1,
-          22.447249147696542
+          17.982491292219702
         ]
       ],
       "perspective": false
@@ -782,11 +782,11 @@
       "zIndex": 0,
       "position": {
         "x": 0,
-        "y": -2.5729
+        "y": -6.2978
       },
       "scale": {
-        "x": 0.1431,
-        "y": 0.1431
+        "x": 0.1146,
+        "y": 0.1146
       },
       "alpha": 0.8,
       "tint": "#2b00ff",
@@ -836,14 +836,14 @@
     {
       "id": "sprite-12-copy-2",
       "type": "sprite",
-      "assetId": "light-masks-1.0/transparent/cone_composed_c.png",
+      "assetId": "particle-pack/png-black-background/slash_02.png",
       "position": {
-        "x": -0.1237,
-        "y": -55.5563
+        "x": 0.4944,
+        "y": -52.3036
       },
       "scale": {
-        "x": 0.1872,
-        "y": 0.1295
+        "x": 0.15,
+        "y": 0.1619
       },
       "alpha": 0.8,
       "tint": "#e634fe",
@@ -880,11 +880,11 @@
       "offsetYOverLife": [
         [
           0.0031,
-          -22.085196742088534
+          -17.692451110087127
         ],
         [
           1,
-          22.447249147696542
+          17.982491292219702
         ]
       ],
       "perspective": false
