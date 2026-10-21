@@ -11608,3 +11608,33 @@ Worker 存活且頁面正常完成載入。
 - 外觀與狀態：最終PNG版與原CSS相同範圍像素比較平均每通道差2.4003/255（邊緣點陣與縮放取樣差異），漸層／框／角飾保留。窄面板clientWidth690、寬面板1070皆快取就緒且虛擬格數依原視窗改變；神鑄頁共用同背景。選部位後不匹配格的pseudo維持原block／opacity0.25，正常神話格pseudo為none；清空0格後恢復正常，Console warning／error0。圖inventory-skin-before.png／inventory-skin-after.png與量測JSON保存在本聊天visualizations；診斷頁／服務／試跑與廢棄近照皆清理。
 - 唯讀檢查未改：共通規範／workflow／prompts、原inventory虛擬視窗／scroll節流與增量格線、js/item.js／data.js圖示、其餘7份CSS及12份相依測試、Claude b4de1d41實際index差異；同檔不同快取區段，三方merge-file0且無語意相依。VFX四份使用者編輯保留未提交，不納入本次Commit。自我Review確認快取數量不隨裝備數成長、沒有每格量測／新常駐Timer或Observer、PNG解碼成功才啟用、失敗維持可操作。
 - 交付：無本次未完成實作，可供Review／合併；Commit為本段所在[Codex] fix: 快取神話背包底圖改善捲動效能，回覆附編號。未合併推送；後續重載本分支遊戲，其他副本需整合本Commit。限制為上述隔離壓測環境與少量邊緣取樣差異；不支援SVG轉Canvas的瀏覽器會保留原外觀但無本快取效益。
+
+## Claude｜勾「啟用整體變形」自動帶入隨機變形參數＋en-bolt-storm 每道隨機變形（VFX-DEFORM-SUGGEST-20261021）
+
+- Owner：Claude；Done。使用者回報 bolt-thunderstrike-bluewhite 調了半天「還是一樣」，並要求：①把 en-bolt-storm 調成每道都隨機變形 ②勾選「啟用整體變形」時預設值就該是會隨機變形的參數。
+- 根因：舊的勾選預設是 x 軸、0～200、振幅 0、不鏡射——勾了等於沒勾。bolt-thunderstrike-bluewhite 的範圍是 -330～0，主幹卻從 -543 畫到 0，上面四成在包絡外，怎麼調都是直的；en-bolt-storm 則根本沒有變形設定。遊戲裡每道雷本來就有自己的種子（Core 的 nextEffectId），缺的只是參數。
+- 新增 `tools/vfx/editor/deformation-model.js`（純計算）：以 Core 驗證會收的全部 sprite 的聯集外框量出軸（較長的一邊）、範圍（兩端取整，包絡兩端為 0，頂端與落點不被甩開）、中心線（以沿軸長度加權的橫向中心，鏡射與寬度變化繞著它）、振幅（範圍 8%，Core 上限 15%），開鏡射＋0.5 機率、寬度 ±8%。彎曲強度刻意留 1（拉直會把分岔收進主幹）。不用「方框細長＝筆畫」挑主幹：spark 素材是正方形貼圖，方框方向與閃電無關（紫色落雷會被判成橫向）。不用 Gizmo 的 groupBounds：小圖層會被撐到 MIN_BOX。
+- 編輯器：勾選時呼叫 `VFXDeformationModel.suggest(p, sizeOf, spaceOf)`（與 Gizmo 同一套尺寸與父層座標）；量不出來（沒有 sprite）就退回未勾並提示。取消再勾＝依目前圖層重新量。提示文字補上「要勾預覽循環才會每輪換形狀（Restart 固定同一個種子）」。
+- en-bolt-storm：以使用者 codex 副本目前存檔的版本（藍色、拉高約兩倍）為底，套上同一組建議值（y、-926～34、pivot 3、振幅 76.8、15 層），其餘內容與 codex 副本逐欄相同。`DATA_VERSION` 與兩頁的 `vfx-runtime.js?v` 一起升。
+- 測試：新增 `tests/vfx-editor-deformation.test.cjs`（DEF-1～6，含全部正式 Preset 套上建議值都通過 Core 驗證——342 份，不釘任何一份內容）。9 個突變全部抓到（第一輪「不轉角」活下來，補 DEF-4B）。editor／preset／runtime 測試 641 項中 9 項失敗，與 HEAD 的失敗名單完全相同（既有基線）。build_check 558 檔通過。
+- 實機（本機編輯器 28362）：真的點擊「啟用整體變形」，帶入值通過驗證；同一份 en-bolt-storm 以 5 個種子並排，五道彎法各不相同，頂端的球與地面落點都留在原位。
+- 衝突注意：codex 副本的 en-bolt-storm.json 有未提交的修改（使用者自己的調整）。本分支的版本已包含那些修改＋變形；使用者之後若在 codex 又改了同幾行，合併時以 codex 為準、保留 `deformation` 這一段即可。
+
+## Claude｜敵人技能的範圍、速度、間隔改填 Skills2 欄位（ENEMY-SKILL-COLUMNS-20261021）
+
+- Owner：Claude；Done。使用者指出：NPC（敵人）技能的作用範圍、速度、作用間隔都寫死在效果參數(JSON)，應填進表格對應欄位，表格沒有適合的欄位才留在 JSON。
+- 架構：沿用玩家技能那套「逐技能明確接線」（`tools/skills2-geometry.cjs`），不另做第二套。新增 `enemyRoutes`（35 個技能、84 個參數：傷害範圍 31、每段或每跳間隔 23、碰撞體尺寸 9、生成位置範圍 7、飛行子彈速度 6、飛行距離／生成環間間距／拋物線高度各 2、狀態控制範圍與每秒半徑擴張各 1）、`enemyExtract`／`enemyApply`。匯入規則與玩家一樣嚴：JSON 留著已接線的鍵、填了沒接線的欄位、填了「,每級增量」（敵人只有一階）、速度 ≤ 0 都拒絕。
+- 留在 JSON 的距離類參數列在 `enemyJsonKeep`（鍵→原因）：守位距離 hover、鏈環高度 linkH、熔火自爆第二半徑 coreR、最小射程 minRange、漩渦最近距離 minPull 與畫面半徑 r、擊退距離 push／dist、火球爆炸畫面 burstR；時間長度（life／dur／warn…）表格沒有欄位。
+- 資料流不變：欄位值（米、秒、米／秒）併回 fx 後照舊由 `js/elite_data.js` 換成座標單位。`config_tables --apply` 回報「語意變更 0」，`js/skills2.js` 一個字都沒改；引擎拿到的參數與改之前完全相同。
+- Excel：先 COM 唯讀傾印，依表頭名稱（不寫死欄位位置）改 52 個敵人列，`excel-update-sheets.ps1` 回報寫入 119 格（84 格欄位＋35 格 JSON），與預期完全相同；「欄位定義」頁前 152 行與程式產生的一字不差才整頁換新（只改敵人技能那段說明）。`--sync` 後其他表只有行尾差異，已還原。
+- 判斷待使用者確認（沒意見就照現在）：①`bodyD`（飛彈／隕石／迫擊的彈體直徑）放「碰撞體尺寸」——敵人飛行物目前只用它決定彈體畫面大小，命中看傷害範圍；②漩渦的拉扯速度、衝撞的衝刺速度、龍捲／雷球的追擊速度、冰球跟隨速度放「飛行子彈速度」；③毒素加持的毒水球往外長的速度放「每秒半徑擴張」、最長長度放「飛行距離」；④飛彈先往後飛的距離 `back` 放「飛行距離」。
+- 修改 `tools/skills2-geometry.cjs`、`tools/config_tables.cjs`（讀表與重生兩個方向＋欄位定義頁說明）、`config/Excel/Skills2.xlsx`、`config/CSV/Skills2.csv`，`docs/ELITE_AFFIXES.md` 重生（築牆說明先前改過卻沒重生）。新增 `tests/skills2-enemy-columns.test.cjs`（ENEMY-COL-1～7：Excel／CSV／JS 一致、表格有欄位就不能留在 JSON、接線只指向存在的技能、全部往返不掉參數、匯入拒絕規則、長*寬與一格寫兩鍵、說明頁）；9 個突變全部抓到。相關測試 6 檔的失敗名單與 HEAD 完全相同（19 項既有基線）。build_check 559 檔通過。
+
+## Claude｜迫擊施放前先拉開到 24 米外，被追 3 秒拉不開就直接放（ELITE-MORTAR-KEEPAWAY-20261021）
+
+- Owner：Claude；Done。使用者規則：用迫擊的 NPC 施放前至少要離玩家 24 米；在 24 米內就先跑到外面再放，3 秒後還跑不出去（例如被玩家追著）就直接放。
+- 改法（重用既有跑位機制，不另做一套移動）：`js/elite.js` 新增 `eliteKeepAway`——技能有 `minRange` 且玩家太近時，用 `eliteRepoPick(m,'away',minRange)` 沿「玩家→牠」方向往外退（±20° 偏角、目標點多留 2 米，目標點是相對玩家的極座標，玩家追過來會跟著退），並掛 `pend.away`，期限 `backoff` 秒（預設 3）。到位就放；超時就停下來直接放（清掉還沒跑完的 `_rp`）。迫擊的施放前提不再擋距離（舊版太近時每 0.6 秒重試，被追著就永遠放不出來）。另一個技能正在跑位等施放時不搶它的 pend；不會跑位的怪直接放。
+- 資料：Skills2 迫擊 `minRange` 14→24、新增 `backoff: 3`，說明文字同步（Excel COM 寫入 2 格）。誰會帶迫擊不變：NPC 攻擊距離只有 6／24／36 米，門檻 24 米時近戰仍抽不到、遠程仍抽得到。`enemyJsonKeep.minRange` 的原因改寫。
+- 附帶：`--apply --write` 把 52 個敵人技能的 fx 鍵順序重排成「JSON 在前、欄位參數在後」（983374e0 搬欄位的必然結果，任何一次套用參數都會產生；語意只有迫擊變）。ELITE-DATA-3 兩個過期斷言更新（毒素加持 6→16 秒、火徑 10→8 秒，都是先前改了資料沒改測試），由紅轉綠。
+- 文件：ELITE_AFFIXES.md 重生（產生器用語「最小射程」改成「先拉開到 24m 外再放（最多跑 3s）」）、Antigravity 測試案例的迫擊三處同步。快取：Worker 的 skills2.js／elite.js、`WORKER_ASSET_VERSION`、index.html 的 skills2.js／bridge.js 版號都升。
+- 測試：ELITE-ENGINE-13 改寫、新增 13b（10 米處施放→先退，0.6 秒退到 26 米即放）、13c（玩家一直貼在 8 米旁→約 3 秒後直接放、放完不再後退、進冷卻）、13d（本來就在 24 米外→直接放不跑位），用真的 `bfTickApproach` 移動。6 個突變全部抓到。相關 52 檔測試的失敗名單與 HEAD 相比只少不多（ELITE-DATA-3、光耀之堂快取同步轉綠）。build_check 559 檔通過。未在真瀏覽器實機跑（行為由引擎測試以真實移動程式碼驗證）。

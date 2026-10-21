@@ -125,6 +125,45 @@ test('ELITE-ENGINE-4c 火鏈連成一圈：2 隻一條線、3 隻三角形、4 �
   });
 });
 
+test('ELITE-ENGINE-4d 火鏈：有怪物死亡、整圈重排時，剩下的鏈條角度不變（不會轉 180°）；移動中的鏈條帶著速度', () => {
+  const c = fresh();
+  const pts = [[130, -60], [-120, -80], [110, 120]];
+  const ms = pts.map((q, i) => makeElite(c, i === 0 ? ['e_firechain'] : ['e_vitality'], { x: q[0], y: q[1], hp: 1e9 }));
+  ms[0]._el.repoAt = Infinity; ms[0]._el.cd.e_firechain = 999;
+  run(c, 'FIELD.monsters.forEach(function (e) { e._enterCd = 0; });');
+  stepElite(c, 1);
+  assert.equal(c.ELITE_RT.chains.length, 3);
+  const before = {};
+  c.ELITE_RT.chains.forEach((k) => { before[k.key] = k.vis.a; });
+  ms[2].hp = 0;
+  stepElite(c, 0.5);
+  assert.equal(c.ELITE_RT.chains.length, 1, '剩一條');
+  const k = c.ELITE_RT.chains[0];
+  const d = Math.atan2(Math.sin(k.vis.a - before[k.key]), Math.cos(k.vis.a - before[k.key]));
+  assert.ok(Math.abs(d) < 0.05, '角度不變：' + d);
+  ms[0].pos.x += 20; ms[1].pos.x += 20;
+  stepElite(c, 0.1);
+  assert.ok(k.vis.speed > 0 && Math.abs(Math.cos(k.vis.moveA)) > 0.9, '帶著移動速度與方向');
+});
+
+test('ELITE-ENGINE-4e 火鏈怪：跑位間隔 1.5~3 秒（比全域短）、守在 hover 距離而不是貼臉', () => {
+  const c = fresh();
+  const a = makeElite(c, ['e_firechain'], { x: -200, y: 0, hp: 1e9 });
+  makeElite(c, ['e_vitality'], { x: -260, y: 40, hp: 1e9 });
+  run(c, 'FIELD.monsters.forEach(function (e) { e._enterCd = 0; });');
+  const d = c.ELITE_AFFIXES.e_firechain;
+  assert.equal(d.hover, 80); assert.equal(d.repoGap[0], 1.5); assert.equal(d.repoGap[1], 3);
+  a._el.cd.e_firechain = 999; a._el.repoAt = c.GT + 0.2;
+  stepElite(c, 0.5);
+  assert.equal(a._hover, 80, '守在 8 米外');
+  assert.ok(a._rp, '跑位開始了');
+  assert.ok(a._rp.dist >= 60 - 1e-6 && a._rp.dist <= 80 + 1e-6, '目標距離在 hover 附近：' + a._rp.dist);
+  a._rp = null; a._rpDone = true;
+  stepElite(c, 0.05);
+  const gap = a._el.repoAt - c.GT;
+  assert.ok(gap > 1 && gap <= 3.05, '下一次跑位在 1.5~3 秒後：' + gap);
+});
+
 test('ELITE-ENGINE-4b 火鏈：距離越遠鏈環越多（換鏈環數不同的 Preset），鏈環本身只小幅拉長', () => {
   const c = fresh();
   const d = c.ELITE_AFFIXES.e_firechain;
@@ -394,13 +433,14 @@ test('ELITE-ENGINE-12 冰凍脈衝：冰球追著玩家飄，周圍定時脈衝�
   assert.equal(m._el.orbs, 0);
 });
 
-test('ELITE-ENGINE-13 迫擊：貼臉（小於 14 米）放不出來；夠遠才拋射，落點先預警', () => {
+test('ELITE-ENGINE-13 迫擊：拋射數顆火球，落點先預警，第一發落在玩家腳下', () => {
   const c = fresh();
-  const m = makeElite(c, ['e_mortar'], { x: 100, y: 0, hp: 1e9 });
+  const m = makeElite(c, ['e_mortar'], { x: 300, y: 0, hp: 1e9 });
   const d = c.ELITE_AFFIXES.e_mortar;
-  assert.equal(c.eliteCanCast(m, d), false, '10 米內放不出來');
+  /* 2026-10-21：距離不再是「放不放得出來」的前提，太近改成先跑開（見 13b／13c） */
+  m.pos.x = 100;
+  assert.equal(c.eliteCanCast(m, d), true, '10 米內也不會被擋死');
   m.pos.x = 300;
-  assert.equal(c.eliteCanCast(m, d), true);
   c.eliteCastMortar(m, d);
   assert.ok(c.vfx.filter((v) => v.vfx && v.vfx.ground === d.v.ground).length >= 3, '落點預警');
   const flights = c.vfx.filter((v) => v.vfx && v.vfx.projectile === d.v.proj);
@@ -408,6 +448,68 @@ test('ELITE-ENGINE-13 迫擊：貼臉（小於 14 米）放不出來；夠遠才
   const mark = hpLost(c);
   stepElite(c, 3);
   assert.ok(hpLost(c) > mark, '第一發落在玩家腳下');
+});
+
+/* 使用者 2026-10-21：放迫擊前至少要離玩家 24 米；在 24 米內就先跑到外面再放，
+   3 秒後還跑不出去（例如被玩家追著）就直接放。 */
+function mortarFlights(c, d) { return c.vfx.filter((v) => v.vfx && v.vfx.projectile === d.v.proj).length; }
+function distToPlayer(c, m) { const p = c.bfPlayerPos(); return Math.hypot(m.pos.x - p.x, m.pos.y - p.y); }
+
+test('ELITE-ENGINE-13b 迫擊：在 24 米內先往外跑，跑到 24 米外才放', () => {
+  const c = fresh();
+  const m = makeElite(c, ['e_mortar'], { x: 100, y: 0, hp: 1e9 });
+  run(c, 'FIELD.monsters.forEach(function (e) { e._enterCd = 0; });');
+  const d = c.ELITE_AFFIXES.e_mortar;
+  assert.equal(d.minRange, 240, '24 米');
+  assert.equal(d.backoff, 3, '最多跑 3 秒');
+  force(c, m, 'e_mortar');
+  stepElite(c, 0.1);
+  assert.equal(mortarFlights(c, d), 0, '太近：這一下先不放');
+  assert.ok(m._rp && m._el.pend && m._el.pend.id === 'e_mortar' && m._el.pend.away, '開始往外跑');
+  assert.ok(m._rp.dist >= 240, '目標點在 24 米外：' + m._rp.dist);
+  let castAt = -1, distAtCast = 0;
+  /* 先看上一格有沒有放（放的那一刻的距離），再移動——放完牠會照常走回攻擊距離 */
+  stepElite(c, 3.2, { before: (i) => {
+    if (castAt < 0 && mortarFlights(c, d) > 0) { castAt = i; distAtCast = distToPlayer(c, m); }
+    run(c, 'bfTickApproach(FIELD.monsters, 0.1);');
+  } });
+  if (castAt < 0 && mortarFlights(c, d) > 0) { castAt = 32; distAtCast = distToPlayer(c, m); }
+  assert.ok(castAt >= 0, '跑到了就放');
+  assert.ok(castAt < 30, '跑到了就放，不必等滿 3 秒：第 ' + castAt + ' 格');
+  assert.ok(distAtCast >= 240, '放的時候已經在 24 米外：' + (distAtCast / 10).toFixed(1) + ' 米');
+});
+
+test('ELITE-ENGINE-13c 迫擊：被玩家追著 3 秒還拉不開，就直接放（停下來，不再繼續退）', () => {
+  const c = fresh();
+  const m = makeElite(c, ['e_mortar'], { x: 100, y: 0, hp: 1e9 });
+  run(c, 'FIELD.monsters.forEach(function (e) { e._enterCd = 0; });');
+  const d = c.ELITE_AFFIXES.e_mortar;
+  force(c, m, 'e_mortar');
+  stepElite(c, 0.1);
+  assert.ok(m._el.pend && m._el.pend.away);
+  const started = c.GT;
+  let castAfter = -1;
+  /* 玩家一直貼在牠 8 米旁邊：怎麼跑都拉不開 */
+  stepElite(c, 4, { before: () => {
+    run(c, 'bfTickApproach(FIELD.monsters, 0.1);');
+    const p = c.bfPlayerPos(); p.x = m.pos.x - 80; p.y = m.pos.y;
+    if (castAfter < 0 && mortarFlights(c, d) > 0) castAfter = c.GT - started;
+  } });
+  assert.ok(castAfter > 0, '最後還是放了');
+  assert.ok(castAfter >= 2.9 && castAfter <= 3.3, '大約 3 秒後放：' + castAfter.toFixed(2));
+  assert.equal(m._rp, null, '放完就不再繼續往外退');
+  assert.ok(m._el.cd.e_mortar > 0, '放完進入冷卻');
+});
+
+test('ELITE-ENGINE-13d 迫擊：本來就在 24 米外，直接放、不跑位', () => {
+  const c = fresh();
+  const m = makeElite(c, ['e_mortar'], { x: 300, y: 0, hp: 1e9 });
+  run(c, 'FIELD.monsters.forEach(function (e) { e._enterCd = 0; });');
+  const d = c.ELITE_AFFIXES.e_mortar;
+  force(c, m, 'e_mortar');
+  stepElite(c, 0.1);
+  assert.ok(mortarFlights(c, d) >= 3, '立刻拋射');
+  assert.ok(!(m._el.pend && m._el.pend.away), '不必跑開');
 });
 
 test('ELITE-ENGINE-14 築牆：近戰隔著牆打不到（雙方），遠程不受影響；玩家走不過牆；牆 7 秒後消失', () => {

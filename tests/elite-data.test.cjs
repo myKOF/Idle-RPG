@@ -62,16 +62,16 @@ test('ELITE-DATA-3 文件規則逐項核對（冷卻、數量、距離、持續�
   // 距離單位：表上是米，載入後 ×10 變座標單位
   assert.equal(A.e_arcane.throwRange, 180, '秘法棒丟到玩家 18 米內');
   assert.equal(A.e_arcane.dur, 6, '秘法棒持續 6 秒');
-  assert.equal(A.e_poisoncross.dur, 6, '毒水球持續 6 秒');
+  assert.equal(A.e_poisoncross.dur, 16, '毒水球持續 16 秒（6ae5a4df 由 6 改 16）');
   assert.deepEqual(Array.from(A.e_frostburst.grow), [2, 3].map((v) => v), '冰晶膨脹 2~3 秒');
-  assert.equal(A.e_mortar.minRange, 140, '迫擊最小射程 14 米');
+  assert.equal(A.e_mortar.minRange, 240, '迫擊施放前要拉開到 24 米外');
   assert.equal(A.e_vortex.speed, 600, '漩渦拉扯速度 60 米/秒');
   assert.equal(A.e_vortex.arcH, 30, '漩渦拋物線高度約 3 米');
   assert.equal(A.e_shield.dur, 3, '護盾持續 3 秒');
   assert.equal(A.e_vitality.hp, 1.5, '強命 +50% 生命');
   assert.equal(A.e_avenger.size, 0.2); assert.equal(A.e_avenger.atk, 0.2); assert.equal(A.e_avenger.aspd, 0.2);
   assert.equal(A.e_plague.life, 20, '毒水窪持續 20 秒');
-  assert.equal(A.e_molten.life, 10, '火徑持續 10 秒');
+  assert.equal(A.e_molten.life, 8, '火徑持續 8 秒（6dbdd642 由 10 改 8）');
   assert.equal(A.e_molten.coreDelay, 3, '熔岩核心約 3 秒後自爆');
   assert.deepEqual(Array.from(A.e_summon.n), [2, 4], '召喚每次 2~4 隻');
   assert.equal(A.e_summon.hpCut, 0.9, '召喚者死後小怪最大生命 −90%');
@@ -133,7 +133,7 @@ test('ELITE-DATA-7 要同伴才有意義的技能（火鏈、復仇…）有標 
     c.eliteRollSkills({ skills: { elite: { rnd: [6, 6] } } }, 'elite', { stage: 50, group: 1, tower: false, atkRange: 60 }).forEach((id) => picked.add(id));
   }
   assert.ok(!picked.has('e_firechain') && !picked.has('e_avenger'), '單獨一隻不該抽到需要同伴的技能');
-  assert.ok(!picked.has('e_mortar'), '射程 6 米的近戰怪抽不到最小射程 14 米的迫擊');
+  assert.ok(!picked.has('e_mortar'), '射程 6 米的近戰怪抽不到要拉開 24 米才放的迫擊');
   const withGroup = new Set();
   for (let i = 0; i < 400; i++) {
     c.eliteRollSkills({ skills: { elite: { rnd: [6, 6] } } }, 'elite', { stage: 50, group: 3, tower: false, atkRange: 240 }).forEach((id) => withGroup.add(id));

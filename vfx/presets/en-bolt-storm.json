@@ -3,6 +3,33 @@
   "id": "en-bolt-storm",
   "duration": 0.65,
   "loop": false,
+  "deformation": {
+    "amplitude": 76.8,
+    "axis": "y",
+    "end": 34,
+    "layers": [
+      "glow",
+      "seg-a",
+      "seg-b",
+      "seg-c",
+      "branch",
+      "flash",
+      "seg-a-copy",
+      "seg-a-copy-2",
+      "flash-copy",
+      "electric-fork-0",
+      "electric-fork-1",
+      "electric-fork-2",
+      "electric-fork-3",
+      "electric-fork-4",
+      "impact-core"
+    ],
+    "mirror": true,
+    "mirrorChance": 0.5,
+    "pivot": 3,
+    "start": -926,
+    "widthJitter": 0.08
+  },
   "layers": [
     {
       "id": "glow",
@@ -10,19 +37,19 @@
       "assetId": "light-masks-1.0/default/cone_e_blur.png",
       "zIndex": 0,
       "position": {
-        "x": -8.1394,
-        "y": -2.9366
+        "x": -4.6539,
+        "y": -5.4142
       },
       "scale": {
-        "x": 0.3822,
-        "y": 0.912
+        "x": 0.3057,
+        "y": 1.7976
       },
       "anchor": {
         "x": 0.5,
         "y": 1
       },
       "alpha": 0.24,
-      "tint": "#ea33b8",
+      "tint": "#3492ea",
       "blendMode": "add",
       "duration": 0.65,
       "alphaOverLife": [
@@ -52,15 +79,15 @@
       "assetId": "particle-pack/png-black-background/spark_05.png",
       "zIndex": 1,
       "position": {
-        "x": 0.0035,
-        "y": -330.5711
+        "x": 3.489,
+        "y": -651.1818
       },
       "scale": {
         "x": 0.5569,
-        "y": 0.3094
+        "y": 0.6098
       },
       "alpha": 1,
-      "tint": "#ffffff",
+      "tint": "#3492ea",
       "blendMode": "add",
       "duration": 0.5,
       "alphaOverLife": [
@@ -116,15 +143,15 @@
       "assetId": "particle-pack/png-black-background/spark_05.png",
       "zIndex": 2,
       "position": {
-        "x": 5.5311,
-        "y": -190.433
+        "x": 9.0166,
+        "y": -374.9696
       },
       "scale": {
         "x": 0.6584,
-        "y": 0.2379
+        "y": 0.4689
       },
       "alpha": 1,
-      "tint": "#ffffff",
+      "tint": "#3492ea",
       "blendMode": "add",
       "duration": 0.5,
       "alphaOverLife": [
@@ -180,16 +207,16 @@
       "assetId": "particle-pack/png-black-background/spark_05.png",
       "zIndex": 3,
       "position": {
-        "x": 0.1236,
-        "y": -65.5026
+        "x": 3.6091,
+        "y": -128.7318
       },
       "rotation": 0,
       "scale": {
         "x": 0.4195,
-        "y": 0.2515
+        "y": 0.4957
       },
       "alpha": 1,
-      "tint": "#ffffff",
+      "tint": "#3492ea",
       "blendMode": "add",
       "duration": 0.5,
       "alphaOverLife": [
@@ -245,16 +272,16 @@
       "assetId": "particle-pack/png-black-background/spark_04.png",
       "zIndex": 4,
       "position": {
-        "x": 33.5628,
-        "y": -229.8966
+        "x": 37.0483,
+        "y": -452.7524
       },
       "rotation": 0.5934,
       "scale": {
         "x": 0.3123,
-        "y": 0.105
+        "y": 0.207
       },
       "alpha": 0.85,
-      "tint": "#ffffff",
+      "tint": "#3492ea",
       "blendMode": "add",
       "duration": 0.35,
       "alphaOverLife": [
@@ -309,15 +336,15 @@
       "assetId": "particle-pack/png-black-background/scorch_02.png",
       "zIndex": 6,
       "position": {
-        "x": 0.4628,
-        "y": -0.6771
+        "x": 3.9483,
+        "y": -0.9607
       },
       "scale": {
         "x": 0.6999,
-        "y": 0.069
+        "y": 0.136
       },
       "alpha": 1,
-      "tint": "#f075bc",
+      "tint": "#3492ea",
       "blendMode": "add",
       "delay": 0.03,
       "duration": 0.2,
@@ -357,15 +384,15 @@
       "assetId": "new_materials/orb/energyball_1.png",
       "zIndex": 1,
       "position": {
-        "x": -3.6958,
-        "y": -407.4235
+        "x": -0.2103,
+        "y": -802.6579
       },
       "scale": {
         "x": 0.1509,
-        "y": 0.0382
+        "y": 0.0753
       },
       "alpha": 1,
-      "tint": "#ffffff",
+      "tint": "#3492ea",
       "blendMode": "add",
       "duration": 0.5,
       "alphaOverLife": [
@@ -420,15 +447,15 @@
       "assetId": "new_materials/orb/energyball_1.png",
       "zIndex": 1,
       "position": {
-        "x": -3.6958,
-        "y": -407.4235
+        "x": -0.2103,
+        "y": -802.6579
       },
       "scale": {
         "x": 0.1509,
-        "y": 0.0382
+        "y": 0.0753
       },
       "alpha": 1,
-      "tint": "#ff70ce",
+      "tint": "#3492ea",
       "blendMode": "add",
       "duration": 0.5,
       "alphaOverLife": [
@@ -483,15 +510,15 @@
       "assetId": "particle-pack/png-black-background/scorch_02.png",
       "zIndex": 6,
       "position": {
-        "x": -1.6194,
-        "y": -1.3769
+        "x": 1.8661,
+        "y": -2.34
       },
       "scale": {
         "x": 0.333,
-        "y": 0.069
+        "y": 0.136
       },
       "alpha": 1,
-      "tint": "#ffffff",
+      "tint": "#3492ea",
       "blendMode": "add",
       "delay": 0.03,
       "duration": 0.2,
@@ -531,10 +558,10 @@
       "assetId": "light-masks-1.0/default/circle_a.png",
       "zIndex": 4,
       "position": {
-        "x": -2.0391,
-        "y": 0
+        "x": 1.4464,
+        "y": 0.3738
       },
-      "tint": "#ff4dc0",
+      "tint": "#3492ea",
       "blendMode": "add",
       "duration": 0.08,
       "emission": {
@@ -547,22 +574,22 @@
         0.75
       ],
       "spawn": {
-        "radius": 3.9783,
+        "radius": 5.9098,
         "shape": "circle"
       },
       "speed": [
-        139.2405,
-        291.742
+        206.8418,
+        433.3827
       ],
       "direction": -90,
       "spread": 155,
       "gravity": {
         "x": 0,
-        "y": 260
+        "y": 512.46
       },
       "startScale": [
-        0.0093,
-        0.0199
+        0.0138,
+        0.0296
       ],
       "worldSpace": true,
       "alphaOverLife": [
@@ -587,10 +614,10 @@
       "assetId": "light-masks-1.0/default/circle_a.png",
       "zIndex": 4,
       "position": {
-        "x": -2.0391,
-        "y": 0
+        "x": 1.4464,
+        "y": 0.3738
       },
-      "tint": "#faf0ff",
+      "tint": "#3492ea",
       "blendMode": "add",
       "duration": 0.08,
       "emission": {
@@ -603,22 +630,22 @@
         0.75
       ],
       "spawn": {
-        "radius": 3.9783,
+        "radius": 5.9098,
         "shape": "circle"
       },
       "speed": [
-        139.2405,
-        291.742
+        206.8418,
+        433.3827
       ],
       "direction": -90,
       "spread": 155,
       "gravity": {
         "x": 0,
-        "y": 260
+        "y": 512.46
       },
       "startScale": [
-        0.0093,
-        0.0199
+        0.0138,
+        0.0296
       ],
       "worldSpace": true,
       "alphaOverLife": [
@@ -643,20 +670,20 @@
       "assetId": "particle-pack/png-black-background/spark_05.png",
       "zIndex": 2,
       "position": {
-        "x": -2.0391,
-        "y": 0
+        "x": 1.4464,
+        "y": 0.3738
       },
       "rotation": -1.06,
       "scale": {
         "x": 0.0497,
-        "y": 0.0482
+        "y": 0.095
       },
       "anchor": {
         "x": 0.5,
         "y": 1
       },
       "alpha": 0.9,
-      "tint": "#ff70cc",
+      "tint": "#3492ea",
       "blendMode": "add",
       "delay": 0,
       "duration": 0.26,
@@ -712,20 +739,20 @@
       "assetId": "particle-pack/png-black-background/spark_05.png",
       "zIndex": 2,
       "position": {
-        "x": -2.0391,
-        "y": 0
+        "x": 1.4464,
+        "y": 0.3738
       },
       "rotation": -0.53,
       "scale": {
         "x": 0.0497,
-        "y": 0.0622
+        "y": 0.1226
       },
       "anchor": {
         "x": 0.5,
         "y": 1
       },
       "alpha": 0.9,
-      "tint": "#ff70cc",
+      "tint": "#3492ea",
       "blendMode": "add",
       "delay": 0.018,
       "duration": 0.26,
@@ -781,20 +808,20 @@
       "assetId": "particle-pack/png-black-background/spark_05.png",
       "zIndex": 2,
       "position": {
-        "x": -2.0391,
-        "y": 0
+        "x": 1.4464,
+        "y": 0.3738
       },
       "rotation": 0,
       "scale": {
         "x": 0.0497,
-        "y": 0.0762
+        "y": 0.1502
       },
       "anchor": {
         "x": 0.5,
         "y": 1
       },
       "alpha": 0.9,
-      "tint": "#ff70cc",
+      "tint": "#3492ea",
       "blendMode": "add",
       "delay": 0.036,
       "duration": 0.26,
@@ -850,20 +877,20 @@
       "assetId": "particle-pack/png-black-background/spark_05.png",
       "zIndex": 2,
       "position": {
-        "x": -2.0391,
-        "y": 0
+        "x": 1.4464,
+        "y": 0.3738
       },
       "rotation": 0.53,
       "scale": {
         "x": 0.0497,
-        "y": 0.0482
+        "y": 0.095
       },
       "anchor": {
         "x": 0.5,
         "y": 1
       },
       "alpha": 0.9,
-      "tint": "#ff70cc",
+      "tint": "#3492ea",
       "blendMode": "add",
       "delay": 0.05399999999999999,
       "duration": 0.26,
@@ -919,20 +946,20 @@
       "assetId": "particle-pack/png-black-background/spark_05.png",
       "zIndex": 2,
       "position": {
-        "x": -2.0391,
-        "y": 0
+        "x": 1.4464,
+        "y": 0.3738
       },
       "rotation": 1.06,
       "scale": {
         "x": 0.0497,
-        "y": 0.0622
+        "y": 0.1226
       },
       "anchor": {
         "x": 0.5,
         "y": 1
       },
       "alpha": 0.9,
-      "tint": "#ff70cc",
+      "tint": "#3492ea",
       "blendMode": "add",
       "delay": 0.072,
       "duration": 0.26,
@@ -988,14 +1015,14 @@
       "assetId": "light-masks-1.0/default/circle_a.png",
       "zIndex": 5,
       "position": {
-        "x": -2.0391,
-        "y": 0
+        "x": 1.4464,
+        "y": 0.3738
       },
       "scale": {
         "x": 0.0628,
-        "y": 0.023
+        "y": 0.0453
       },
-      "tint": "#f1d4ff",
+      "tint": "#3492ea",
       "blendMode": "add",
       "duration": 0.14,
       "alphaOverLife": [

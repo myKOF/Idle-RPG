@@ -3319,12 +3319,22 @@
     }
     var p = state.preset;
     var defBox = section('程式變形／隨機鏡射',
-      '作用於整份特效座標，包含圖層 position；關閉鏡射可固定方向。彎曲強度每次出生／形狀重抽時抽取，所有作用圖層共用；0 拉直中心線並保留粗細，1 保留原形。紫色落雷可試下限 0.1、上限 1。', !!p.deformation);
+      '作用於整份特效座標，包含圖層 position；關閉鏡射可固定方向。勾選時依圖層外框自動量出軸、範圍、中心線與振幅，並開一半機率鏡射，每道都會不一樣；改過圖層位置或大小後，取消再勾一次就會重新量。彎曲強度每次出生／形狀重抽時抽取，所有作用圖層共用；0 拉直中心線並保留粗細，1 保留原形。單一主幹的落雷可試下限 0.1～0.3（旁邊有分岔時分岔會被一起收進主幹）。編輯器要勾「預覽循環」才會每輪換一個形狀（⟲ Restart 固定重播同一個）。', !!p.deformation);
     var enabled = document.createElement('input'); enabled.type = 'checkbox'; enabled.checked = !!p.deformation;
     enabled.setAttribute('data-code-control', 'deformation.enabled');
+    /* 勾下去就是一組會隨機變形的參數（2026-10-21 使用者要求）：範圍、軸、中心線與振幅
+       依圖層實際外框量出來，鏡射一半機率——算法與取捨在 deformation-model.js。
+       取消再勾一次＝依目前的圖層重新量。 */
     enabled.onchange = function () {
-      var ids = p.layers.filter(function (l) { return l.type === 'sprite' && !l.radiusProfile && l.followDirection !== false; }).map(function (l) { return l.id; });
-      var def = enabled.checked ? {axis:'x',start:0,end:200,amplitude:0,widthJitter:0,mirror:false,layers:ids} : undefined;
+      var def;
+      if (enabled.checked) {
+        def = VFXDeformationModel.suggest(p, sizeOf, spaceOf);
+        if (!def) {
+          enabled.checked = false;
+          setValidation('hint err', '這份特效沒有可以變形的 sprite 圖層（粒子、程序化圖層不支援）。');
+          return;
+        }
+      }
       if (commitCodeControl(['deformation'], def)) renderInspector(); else enabled.checked = !!p.deformation;
     };
     defBox.appendChild(makeField('啟用整體變形', enabled));

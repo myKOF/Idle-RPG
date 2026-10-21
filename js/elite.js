@@ -164,6 +164,8 @@ function eliteVisEmit(v) {
   var area = { id: v.id, x: v.x, y: v.y };
   if (v.w > 0 && v.h > 0) { area.w = v.w; area.h = v.h; area.a = v.a || 0; }
   else area.r = v.r;
+  /* 會移動的場域（火鏈）：把中心的移動速度與方向一起送過去，顯示層在兩則事件之間沿著它自走，不會一格一格跳。 */
+  if (v.speed > 0 && isFinite(v.moveA)) { area.speed = v.speed; area.moveA = v.moveA; }
   if (v.curtain) {
     /* 雷牆：顯示層對 variant 'thunder-curtain' 會沿牆面排一列落雷柱（attack 角色），不是平貼地面的 Preset。 */
     eliteFx({
@@ -285,7 +287,7 @@ function eliteSkillEligible(d, o) {
   if (d.needs === 'group' && !(o.group >= 2)) return false;
   if (d.noTower && o.tower) return false;
   if (d.minStage && o.stage < d.minStage) return false;
-  if (d.minRange > 0 && o.atkRange > 0 && o.atkRange < d.minRange) return false;   // 例：迫擊最小射程 14 米，近戰怪永遠放不出來
+  if (d.minRange > 0 && o.atkRange > 0 && o.atkRange < d.minRange) return false;   // 例：迫擊要拉開到 24 米才放，射程 6 米的近戰怪不配這種技能
   return true;
 }
 /* 依 NPC 表的設定替一隻敵人配技能。
@@ -418,7 +420,12 @@ function eliteRepoPick(m, mode, ref) {
   if (mode === 'through' && ref) {
     /* 火鏈：站到「夥伴 → 玩家」連線延伸出去的那一側，鏈條就會掃過玩家身上 */
     ang = Math.atan2(pp.y - ref.y, pp.x - ref.x);
-    dist = Math.max(30, stop * 0.9);
+    dist = m._hover > 0 ? Math.max(30, m._hover * (0.75 + Math.random() * 0.25)) : Math.max(30, stop * 0.9);
+  } else if (mode === 'away' && ref > 0) {
+    /* 拉開距離（迫擊這類施放前要離玩家夠遠的技能）：沿「玩家 → 牠」的方向往外退，稍微偏一點角度才不像一直線倒退；
+       目標點多留 2 米，到了之後距離才確定夠。ref＝要拉開到的距離（座標單位）。 */
+    ang = cur + (Math.random() * 2 - 1) * Math.PI / 9;
+    dist = ref + 20;
   } else {
     var turn = (Math.PI / 3 + Math.random() * Math.PI * 2 / 3) * (Math.random() < 0.5 ? -1 : 1);
     ang = cur + turn;
@@ -432,12 +439,19 @@ function eliteRepoPick(m, mode, ref) {
 function eliteRepoTick(m) {
   var rt = m._el;
   if (m._rp && GT - m._rp.t0 > 6) { m._rp = null; m._rpDone = true; }     // 走不到（被擠住）就放棄
+  /* 帶火鏈的怪：跑位間隔改用火鏈自己的 repoGap（比全域短得多），而且每次都跑到「夥伴→玩家」延伸線上，
+     目的是讓鏈條掃過玩家，不是貼臉近戰；平時只守在 hover 距離（見 battlefield.js）。 */
+  var chain = eliteArch(m, 'chain');
+  m._hover = chain && chain.hover > 0 ? chain.hover : 0;
+  var gap = chain && chain.repoGap ? eliteRange(chain.repoGap, [1.5, 3]) : [Math.max(0.5, eliteG('repoMin', 4)), Math.max(eliteG('repoMin', 4), eliteG('repoMax', 8))];
   if (m._rpDone) {
     m._rpDone = false;
-    rt.repoAt = GT + rnd(Math.max(0.5, eliteG('repoMin', 4)), Math.max(eliteG('repoMin', 4), eliteG('repoMax', 8)));
+    rt.repoAt = GT + rnd(gap[0], Math.max(gap[0], gap[1]));
   }
   if (m._rp || rt.pend || !(GT >= rt.repoAt) || !elitePlayerAlive()) return;
-  eliteRepoPick(m, 'random');
+  var pr = chain ? eliteChainPartner(m) : null;
+  var ref = pr ? eliteMonsterPos(pr) : null;
+  eliteRepoPick(m, ref ? 'through' : 'random', ref);
 }
 
 /* ---------------- 主迴圈 ---------------- */
@@ -534,6 +548,7 @@ function eliteTickOne(m, dt) {
   if (rt.pend && acting && (!m._rp || GT >= rt.pend.until)) {
     var pd = eliteDef(rt.pend.id);
     var pid = rt.pend.id;
+    if (rt.pend.away && m._rp) { m._rp = null; m._rpDone = true; }   // 超時還沒跑完：停下來直接放
     rt.pend = null;
     if (pd && ELITE_RT.budget > 0 && elitePlayerAlive() && eliteCanCast(m, pd)) {
       ELITE_RT.budget--;
@@ -553,6 +568,7 @@ function eliteTickOne(m, dt) {
     if (rt.cd[id] > 0 || !acting) continue;
     if (rt.busyUntil > GT || ELITE_RT.budget <= 0 || !elitePlayerAlive()) continue;
     if (!eliteCanCast(m, d)) { rt.cd[id] = 0.6; continue; }
+    if (eliteKeepAway(m, d, id)) continue;
     if (d.repo && !rt.pend && !m._rp) {
       /* 要跑位的技能：先開始跑位，到位後才施放（見上面） */
       var ref = null;
@@ -567,6 +583,18 @@ function eliteTickOne(m, dt) {
 }
 function eliteRollCd(d) {
   return rnd(d.cd[0], Math.max(d.cd[0], d.cd[1])) * eliteCdScale();
+}
+/* 施放前要離玩家夠遠的技能（效果參數 minRange，例：迫擊 24 米）：太近就先往外跑，
+   跑到了就放；被追著 backoff 秒（預設 3）還拉不開就直接放（使用者 2026-10-21）。
+   回傳 true＝已經開始跑開，這一輪不施放（到位或超時由 eliteTickOne 的 pend 結算）。 */
+function eliteKeepAway(m, d, id) {
+  if (!(d.minRange > 0)) return false;
+  var rt = m._el, mp = eliteMonsterPos(m), pp = elitePos();
+  if (!mp || eliteDist(mp.x, mp.y, pp.x, pp.y) >= d.minRange) return false;
+  if (rt.pend) { rt.cd[id] = 0.4; return true; }           // 另一個技能正在跑位等施放：不搶它的 pend
+  if (!eliteMoves(m) || !eliteRepoPick(m, 'away', d.minRange)) return false;   // 不會跑位的怪：直接放
+  rt.pend = { id: id, until: GT + (d.backoff > 0 ? d.backoff : 3), away: true };
+  return true;
 }
 
 /* 施放前提：有些技能要有同伴或有空間才有意義。 */
@@ -583,10 +611,7 @@ function eliteCanCast(m, d) {
     case 'zone': return ELITE_RT.zones.length < Math.max(1, Math.floor(eliteG('maxZones', 48)));
     case 'puddle': return ELITE_RT.zones.length < Math.max(1, Math.floor(eliteG('maxZones', 48)));
     case 'icepulse': return (m._el.orbs || 0) < Math.max(1, d.maxActive || 1);
-    case 'mortar': {
-      var mp = eliteMonsterPos(m);
-      return !!mp && eliteDist(mp.x, mp.y, elitePos().x, elitePos().y) >= (d.minRange || 0);
-    }
+    case 'mortar': return !!eliteMonsterPos(m);   // 距離不夠時先跑開再放（eliteKeepAway），不在這裡擋
     case 'chain': return !!eliteChainPartner(m);
     case 'pull': {
       /* 玩家已經貼在牠身邊（拉不動）或離太遠（超出拉扯範圍）都是白放：只在「拉得動、拉得有感」時才抽這個技能 */
@@ -1134,7 +1159,10 @@ function eliteChainsTick(dt, list) {
       if (eliteDist(pa.x, pa.y, pb.x, pb.y) > maxLen) return;
       var key = [pr[0].floatSel, pr[1].floatSel].sort().join('|');
       if (want[key]) return;
-      want[key] = { a: pr[0], b: pr[1], d: d, o: m };
+      /* 兩端的順序固定（依 floatSel 排序），不隨整圈排列改變：鏈條的角度由 a→b 決定，順序一翻就轉了 180°，
+         有怪物死亡、整圈重排時剩下的鏈條會忽然旋轉。 */
+      var lo = String(pr[0].floatSel) <= String(pr[1].floatSel);
+      want[key] = { a: lo ? pr[0] : pr[1], b: lo ? pr[1] : pr[0], d: d, o: m };
     });
   }
   var keep = [];
@@ -1160,7 +1188,16 @@ function eliteChainsTick(dt, list) {
       c.vis = { id: eliteVisId('chain'), preset: eliteChainVariants(c.d)[vi].id, x: 0, y: 0, w: 1, h: 1, a: 0, until: GT + 9999, every: 0.12, next: 0 };
       ELITE_RT.vis.push(c.vis);
     }
-    c.vis.x = (ap.x + bp.x) / 2; c.vis.y = (ap.y + bp.y) / 2;
+    var mx = (ap.x + bp.x) / 2, my = (ap.y + bp.y) / 2;
+    if (c.lastX !== undefined && dt > 0) {
+      c.vx = (c.vx || 0) * 0.5 + (mx - c.lastX) / dt * 0.5;
+      c.vy = (c.vy || 0) * 0.5 + (my - c.lastY) / dt * 0.5;
+    }
+    c.lastX = mx; c.lastY = my;
+    var csp = Math.sqrt((c.vx || 0) * (c.vx || 0) + (c.vy || 0) * (c.vy || 0));
+    c.vis.speed = csp > 3 ? csp : 0;
+    c.vis.moveA = csp > 3 ? Math.atan2(c.vy, c.vx) : NaN;
+    c.vis.x = mx; c.vis.y = my;
     c.vis.w = len; c.vis.h = c.d.linkH > 0 ? c.d.linkH : Math.max(24, c.d.wid * 2.2);
     c.vis.a = Math.atan2(bp.y - ap.y, bp.x - ap.x);
     c.nextTick -= dt;
@@ -1333,7 +1370,7 @@ function eliteOrbsTick(dt) {
   ELITE_RT.orbs = keep;
 }
 
-/* ============ 迫擊：高角度拋射數顆火球，有最小射程 ============ */
+/* ============ 迫擊：高角度拋射數顆火球；施放前先拉開到 minRange 以外（eliteKeepAway） ============ */
 function eliteCastMortar(m, d) {
   var mp = eliteMonsterPos(m), pp = elitePos();
   if (!mp) return;

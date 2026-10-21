@@ -1283,7 +1283,8 @@ SKILLS2_GLOSSARY_ROWS.splice(SKILLS2_VFX_USAGE_HELP.length, 0, ...skills2StatusH
    敵人列只有一階（階數＝1），沿用同一批欄位：
      群組ID／群組名稱／群組圖標／傷害類型／傷害屬性／冷卻時間（單一數字，或「最短~最長」秒）／效果參數(JSON)／效果說明模板
      十一個特效欄（本體六欄＋觸發五欄）＝這個技能各個畫面角色用的 Preset，角色語意見「欄位定義」頁。
-   JSON 內的距離一律用「米」、時間用「秒」（引擎換算成座標單位）。其餘欄位（解鎖、金幣、範圍用途欄、狀態欄）敵人列不使用。 */
+   範圍、速度、間隔填在範圍用途欄（2026-10-21，接線見 tools/skills2-geometry.cjs 的 enemyRoutes），其餘參數留在 JSON；
+   距離一律用「米」、時間用「秒」（引擎換算成座標單位）。解鎖、金幣欄敵人列不使用。 */
 const ENEMY_CLASS = 'enemy';
 const ENEMY_VFX_ROLES = SKILL_VFX_COLUMNS.concat(skills2Vfx.columns);   // 本體六欄＋觸發五欄（敵人列全部可填，不受玩家技能接線限制）
 function parseEnemyCd(raw, where) {
@@ -1311,6 +1312,9 @@ function enemyDefFromRow(get, r, gid, catalog) {
   catch (e) { throw new Error(where + '「效果參數(JSON)」解析失敗：' + e.message); }
   if (!fx.arch) throw new Error(where + '「效果參數(JSON)」缺 arch（行為原型）');
   if (fx.pool !== 'random' && fx.pool !== 'exclusive') throw new Error(where + '「效果參數(JSON)」的 pool 只能是 random（隨機技能池）或 exclusive（專屬技能）');
+  /* 範圍、速度、間隔填在表格欄位（2026-10-21），併回引擎參數；接線與「留在 JSON 的原因」見 tools/skills2-geometry.cjs 的 enemyRoutes。 */
+  try { fx = skills2Geometry.enemyApply(gid, fx, label => get(r, label)); }
+  catch (e) { throw new Error(where + '：' + e.message); }
   const dmgType = get(r, '傷害類型').trim();
   if (dmgType && !/^(phys|magic)$/.test(dmgType)) throw new Error(where + '：傷害類型只能是 phys 或 magic');
   const d = { name: get(r, '群組名稱'), emoji: get(r, '群組圖標') };
@@ -1349,13 +1353,15 @@ SKILLS2_GLOSSARY_ROWS.push(
   ['類別留白＝玩家技能；填 enemy＝敵人專用技能，只給菁英、高級菁英、野外 BOSS、封魔塔 BOSS 使用，不會出現在玩家的技能欄。群組ID 一律 e_ 開頭，只有一階（階數＝1）。'],
   ['敵人技能的來源與用法在 NPC 表：「專屬技能」填這裡的群組ID（這種敵人一定會有）；「隨機技能下限／上限」是從「隨機技能池」（效果參數 pool＝random 的那些）抽幾個。'],
   ['冷卻時間：填一個秒數，或「最短~最長」（例 3~6＝每次施放後隨機等 3 到 6 秒）；被動技能留白。傷害類型 phys／magic、傷害屬性沿用玩家技能的寫法。'],
-  ['效果參數(JSON)：距離一律用「米」、時間用「秒」。共通鍵：pool（random 隨機技能池／exclusive 專屬）、arch（行為原型，程式裡有對應才有效）、kind（active 主動／passive 被動）、color（光環與日誌用色）、'],
-  ['　dmg（傷害倍率，乘敵人攻擊力）、warn（預警秒數）、r（傷害半徑）、repo（1＝施放前先跑位）、needs（group＝需要同群夥伴才有意義，單獨一隻的 BOSS 抽不到）。其餘鍵依 arch 而不同，見 js/elite.js 與 docs/ELITE_AFFIXES.md。'],
+  ['範圍、速度、間隔填在表格欄位（2026-10-21）：傷害範圍、狀態／控制範圍、生成位置範圍、碰撞體尺寸、飛行距離、生成／環間間距、拋物線高度、每秒半徑擴張、每段或每跳間隔、飛行子彈速度。'],
+  ['　單位同欄名（米、秒、米／秒），敵人只有一階所以只填底值（不收「,每級增量」）；長*寬的欄位填 18*3.9。每個技能用哪幾欄、各代表什麼，見 tools/skills2-geometry.cjs 的 enemyRoutes；填了沒接線的欄位、或 JSON 裡還留著已接線的鍵，都會拒絕匯入。'],
+  ['效果參數(JSON)：只放表格沒有對應欄位的參數（距離用「米」、時間用「秒」）。共通鍵：pool（random 隨機技能池／exclusive 專屬）、arch（行為原型，程式裡有對應才有效）、kind（active 主動／passive 被動）、color（光環與日誌用色）、'],
+  ['　dmg（傷害倍率，乘敵人攻擊力）、warn（預警秒數）、life／dur（持續秒數）、repo（1＝施放前先跑位）、needs（group＝需要同群夥伴才有意義，單獨一隻的 BOSS 抽不到）。其餘鍵依 arch 而不同，見 js/elite.js 與 docs/ELITE_AFFIXES.md。'],
   ['特效欄位（敵人列十一欄全可填，檢查只看 Preset 檔案存在）：施放特效＝施法者身上；攻擊特效＝爆發／落點；飛行子彈＝彈體本身；受擊特效＝玩家被打中；'],
   ['　地板特效＝預警圈／地面標記；持續場域特效＝持續存在的場域本體；觸發特效／觸發子彈／觸發命中特效／觸發地板特效／觸發持續場域特效＝第二層（各技能怎麼用見該列「效果說明模板」與 docs/ELITE_AFFIXES.md）。'],
   ['敵人技能的特效不要和玩家技能相同：同形態時也要換顏色（敵人專用 Preset 以 en- 開頭，見 tools/vfx/authoring/author/enemy-skills.cjs）。額外用到的 Preset（例如飛彈的四種顏色）填在效果參數的 presets 陣列。'],
   ['我方狀態／敵方狀態（敵人列也能填）：我方狀態＝施放者自己身上的狀態（例：護盾→eInvuln）；敵方狀態＝玩家身上的狀態（例：衰弱詛咒→eCurse）。格式同玩家技能（狀態ID，可帶 dur 等參數）。狀態上身、持續、作用的畫面一律填在 Status 表，不填在這裡。'],
-  ['這些列的解鎖、金幣、範圍用途欄不使用（留白）。']
+  ['這些列的解鎖、金幣欄不使用（留白）。']
 );
 
 function skills2UnlockCell(unlock) {
@@ -1410,8 +1416,10 @@ SCHEMAS.Skills2 = {
     const header = this.header;
     Object.keys(enemyDefs).forEach(gid => {
       const d = enemyDefs[gid];
+      const split = skills2Geometry.enemyExtract(gid, d.fx || {});
       const byName = { '群組ID': gid, '類別': ENEMY_CLASS, '群組名稱': d.name, '階段名稱': d.name, '群組圖標': d.emoji, '傷害類型': d.dmgType || '', '傷害屬性': d.elem || '',
-        '冷卻時間': enemyCdCell(d.cd), '階數': '1', '效果參數(JSON)': JSON.stringify(d.fx || {}), '效果說明模板': d.desc || '' };
+        '冷卻時間': enemyCdCell(d.cd), '階數': '1', '效果參數(JSON)': JSON.stringify(split.fx), '效果說明模板': d.desc || '' };
+      Object.keys(split.cells).forEach(label => { if (split.cells[label] !== '') byName[label] = split.cells[label]; });
       SKILL_VFX_COLUMNS.forEach(c => { byName[c[0]] = (d.vfx && d.vfx[c[1]]) || ''; });
       skills2Vfx.columns.forEach(c => { byName[c[0]] = (d.triggerVfx && d.triggerVfx[c[1]]) || ''; });
       SKILLS2_STATUS_COLUMNS.forEach(c => { byName[c[0]] = skills2StatusCell(d.status && d.status[c[1]]); });
