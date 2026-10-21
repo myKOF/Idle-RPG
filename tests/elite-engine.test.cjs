@@ -146,6 +146,24 @@ test('ELITE-ENGINE-4d 火鏈：有怪物死亡、整圈重排時，剩下的鏈�
   assert.ok(k.vis.speed > 0 && Math.abs(Math.cos(k.vis.moveA)) > 0.9, '帶著移動速度與方向');
 });
 
+test('ELITE-ENGINE-4e 火鏈怪：跑位間隔 1.5~3 秒（比全域短）、守在 hover 距離而不是貼臉', () => {
+  const c = fresh();
+  const a = makeElite(c, ['e_firechain'], { x: -200, y: 0, hp: 1e9 });
+  makeElite(c, ['e_vitality'], { x: -260, y: 40, hp: 1e9 });
+  run(c, 'FIELD.monsters.forEach(function (e) { e._enterCd = 0; });');
+  const d = c.ELITE_AFFIXES.e_firechain;
+  assert.equal(d.hover, 80); assert.equal(d.repoGap[0], 1.5); assert.equal(d.repoGap[1], 3);
+  a._el.cd.e_firechain = 999; a._el.repoAt = c.GT + 0.2;
+  stepElite(c, 0.5);
+  assert.equal(a._hover, 80, '守在 8 米外');
+  assert.ok(a._rp, '跑位開始了');
+  assert.ok(a._rp.dist >= 60 - 1e-6 && a._rp.dist <= 80 + 1e-6, '目標距離在 hover 附近：' + a._rp.dist);
+  a._rp = null; a._rpDone = true;
+  stepElite(c, 0.05);
+  const gap = a._el.repoAt - c.GT;
+  assert.ok(gap > 1 && gap <= 3.05, '下一次跑位在 1.5~3 秒後：' + gap);
+});
+
 test('ELITE-ENGINE-4b 火鏈：距離越遠鏈環越多（換鏈環數不同的 Preset），鏈環本身只小幅拉長', () => {
   const c = fresh();
   const d = c.ELITE_AFFIXES.e_firechain;

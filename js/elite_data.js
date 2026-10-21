@@ -21,7 +21,7 @@
 var ELITE_METER = 10;   // 1 米＝10 座標單位（同 js/battlefield.js BF_SYSTEM_UNITS_PER_METER）
 /* 表上以「米」填寫的參數鍵（換成座標單位）。速度類（speed／move／expand）是「米／秒」，同樣乘 10。 */
 var ELITE_METER_KEYS = ['r', 'spread', 'w2', 'h2', 'len', 'wid', 'width', 'dist', 'drift', 'hitR', 'speed', 'pull', 'pullR', 'minPull', 'linkLen', 'linkH', 'hubR', 'push', 'bodyD',
-  'burstR', 'trailGap', 'back', 'throwRange', 'coreR', 'minRange', 'thick', 'ballR', 'ballGap', 'move', 'expand', 'arcH', 'arc'];
+  'burstR', 'trailGap', 'back', 'throwRange', 'coreR', 'minRange', 'thick', 'ballR', 'ballGap', 'hover', 'move', 'expand', 'arcH', 'arc'];
 var ELITE_ROLE_OF = {
   cast: 'cast', attack: 'attack', projectile: 'proj', hit: 'hit', ground: 'ground', field: 'field'
 };

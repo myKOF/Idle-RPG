@@ -420,7 +420,7 @@ function eliteRepoPick(m, mode, ref) {
   if (mode === 'through' && ref) {
     /* 火鏈：站到「夥伴 → 玩家」連線延伸出去的那一側，鏈條就會掃過玩家身上 */
     ang = Math.atan2(pp.y - ref.y, pp.x - ref.x);
-    dist = Math.max(30, stop * 0.9);
+    dist = m._hover > 0 ? Math.max(30, m._hover * (0.75 + Math.random() * 0.25)) : Math.max(30, stop * 0.9);
   } else {
     var turn = (Math.PI / 3 + Math.random() * Math.PI * 2 / 3) * (Math.random() < 0.5 ? -1 : 1);
     ang = cur + turn;
@@ -434,12 +434,19 @@ function eliteRepoPick(m, mode, ref) {
 function eliteRepoTick(m) {
   var rt = m._el;
   if (m._rp && GT - m._rp.t0 > 6) { m._rp = null; m._rpDone = true; }     // 走不到（被擠住）就放棄
+  /* 帶火鏈的怪：跑位間隔改用火鏈自己的 repoGap（比全域短得多），而且每次都跑到「夥伴→玩家」延伸線上，
+     目的是讓鏈條掃過玩家，不是貼臉近戰；平時只守在 hover 距離（見 battlefield.js）。 */
+  var chain = eliteArch(m, 'chain');
+  m._hover = chain && chain.hover > 0 ? chain.hover : 0;
+  var gap = chain && chain.repoGap ? eliteRange(chain.repoGap, [1.5, 3]) : [Math.max(0.5, eliteG('repoMin', 4)), Math.max(eliteG('repoMin', 4), eliteG('repoMax', 8))];
   if (m._rpDone) {
     m._rpDone = false;
-    rt.repoAt = GT + rnd(Math.max(0.5, eliteG('repoMin', 4)), Math.max(eliteG('repoMin', 4), eliteG('repoMax', 8)));
+    rt.repoAt = GT + rnd(gap[0], Math.max(gap[0], gap[1]));
   }
   if (m._rp || rt.pend || !(GT >= rt.repoAt) || !elitePlayerAlive()) return;
-  eliteRepoPick(m, 'random');
+  var pr = chain ? eliteChainPartner(m) : null;
+  var ref = pr ? eliteMonsterPos(pr) : null;
+  eliteRepoPick(m, ref ? 'through' : 'random', ref);
 }
 
 /* ---------------- 主迴圈 ---------------- */

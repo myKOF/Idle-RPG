@@ -326,8 +326,9 @@ function bfTickApproach(enemies, dt) {
         p.x += (rdx / rd) * rstep;
         p.y += (rdy / rd) * rstep;
       }
-    } else if (d > stop && d > 0.0001) {
-      var step = Math.min(d - stop, bfEnemyRunSpeed(ent) * bfEnemySpeedFactor(ent) * dt);
+    } else if (d > (ent._hover > 0 ? Math.max(stop, ent._hover) : stop) && d > 0.0001) {
+      var hoverStop = ent._hover > 0 ? Math.max(stop, ent._hover) : stop;   // 帶火鏈的怪守在 hover 距離，不貼臉
+      var step = Math.min(d - hoverStop, bfEnemyRunSpeed(ent) * bfEnemySpeedFactor(ent) * dt);
       p.x -= (dx0 / d) * step;
       p.y -= (dy0 / d) * step;
     }
