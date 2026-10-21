@@ -6,7 +6,7 @@
     "name": "asset-scanner",
     "version": "1.0.0"
   },
-  "assetCount": 2464,
+  "assetCount": 2465,
   "assets": [
     {
       "assetId": "antigravity-authored/ice/ice-arrow-spike.png",
@@ -1184,6 +1184,25 @@
           "v": 1
         },
         "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "codex-authored/meteor/crater-lava-soft.svg",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/meteor/crater-lava-soft.svg",
+      "format": "svg",
+      "fileSize": 3492858,
+      "contentHash": "sha256:5c5c62c187ce3d083c119e05010e705271c7360ae1e1ff1d3624ccdad1f2e797",
+      "facts": {
+        "dimensions": {
+          "width": 512,
+          "height": 512
+        },
+        "dimensionsSource": "attributes",
+        "colorModel": null,
+        "bitDepth": null,
+        "hasAlphaChannel": null,
+        "pixelsAnalyzed": false
       }
     },
     {

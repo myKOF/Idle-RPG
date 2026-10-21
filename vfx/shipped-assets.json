@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 190,
+  "assetCount": 191,
   "assets": [
     {
       "assetId": "claude-authored/dragon-devour/vortex-ring.png",
@@ -152,6 +152,13 @@
       "package": "codex-authored",
       "contentHash": "sha256:a8cdf4c18bc74f5a9ec01077afad43b4093e76ac63371de13e56e513cba8f996",
       "fileSize": 592
+    },
+    {
+      "assetId": "codex-authored/meteor/crater-lava-soft.svg",
+      "relativePath": "codex-authored/meteor/crater-lava-soft.svg",
+      "package": "codex-authored",
+      "contentHash": "sha256:5c5c62c187ce3d083c119e05010e705271c7360ae1e1ff1d3624ccdad1f2e797",
+      "fileSize": 3492858
     },
     {
       "assetId": "codex-authored/mire/mud-flow-magma.png",

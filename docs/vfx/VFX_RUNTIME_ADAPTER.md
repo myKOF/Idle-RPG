@@ -654,3 +654,15 @@ Core 將每顆球的中心放入各節點的 `sortY`；球體、光暈與電弧�
 飛行朝向跟隨移動方向，空中圖層另沿用航向的FOV校正。依variant判定，配置更換Preset仍生效；明確`sourceX/sourceY`起點優先。
 沒有viewport回呼的編輯器／headless環境保留Preset的fallHeight／fallAngle；無效回呼也維持原行為。
 地爆天星`meteor-starfall`的垂直落下、落雷、菁英殞石及從爆點拋出的`fireball-small`不套此規則。
+
+### 隕石落地後的尾煙與坑痕（2026-10-21）
+
+上述`rain`的`meteor`／`thunder-fall`彈體到達落點後，呼叫Core的`finish(handle, {settleToOrigin:true})`。
+石頭等sprite立即回收，停止發射新粒子；既有粒子從最後畫出的座標，依剩餘生命期朝特效原點收束，同時沿原透明度曲線消散。
+已超過落地平面的粒子回收，其他粒子不越過落點；沿用finish既有的實際時間、尾跡預算與最長3秒回收限制（此隕石Preset的尾煙在1.2秒內回收）。
+這是表現層收尾，不改`travelMs`或模擬傷害時刻；清場／destroy仍立即刪除所有尾跡，其他finish呼叫保持原行為。
+
+表定`burst-meteor-inferno`新增`impact-ground-`前綴的地板圖層。註冊時將同一Preset拆成內部`-impact-ground`與`-impact-burst`兩部分，
+地板部分走zone、爆炸保留原後端，各自派生壽命，兩者共用原事件落點及尺寸。坑痕4秒與爆炸原時間軸分離，不延長爆炸或命中併發計數。
+坑痕來自原受擊欄位內的原創手繪風熔岩貼圖，SVG內嵌生成PNG並以漸層透明遮罩讓外圈融入各種地板。
+中央熔岩與碎岩保持細節，外圈逐漸透明；無額外配置來源或新傷害事件，重疊落地各自回收。

@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## METEOR-IMPACT-AFTERMATH-20261021 — 隕石落地尾跡續播與四秒坑痕
+
+- Owner：Codex；Done，單一開發者。使用者要求石頭命中後煙火繼續下移播完、地板留下4秒坑痕，先看預覽；2026-10-21最後確認「好，接入吧」。依原授權連使用者已儲存修改一起提交，未合併／推送。
+- 完成：Core的finish新增可選settleToOrigin，從最後繪製位置收束既有粒子、停止發射並移除石頭，沿剩餘生命期下降且不穿地。保留通用finish的3秒上限及尾跡預算（64段／1200顆），此隕石煙火在1.2秒內回收。Runtime依rain的meteor／thunder-fall到達時接線；同一表定受擊Preset的impact-ground圖層拆至zone，4秒地板與原爆炸獨立回收。不改隕石落點、傷害、Worker事件時序或解鎖。
+- 坑痕：burst-meteor-inferno新增單一地板sprite，採使用者確認的手繪風碎岩與橘紅熔岩。內建imagegen原創透明PNG，不採外部圖或附件像素；SVG內嵌PNG，以半徑56%至100%的透明遮罩柔化外圈，中央保持清楚。512×512材質僅載入時光柵化、各落點共享，不增加每幀filter／Shader。原稿與完整提示詞保存素材庫IMPACT_SOURCE.md；author/meteor-impact-crater.cjs可由原稿重製。先前幾何SVG／照片感候選未納正式素材。
+- 修改檔案：js/vfx-core.js、js/vfx-runtime.js、兩頁VFX快取、burst-meteor-inferno Preset／layout、crater作者／出貨SVG、asset-index／shipped-assets、tests/meteor-tail-impact.test.cjs、Runtime文件／LV與本紀錄。同步保留使用者Skills2.xlsx／CSV／生成JS、其他12份Preset及必要layout；寒冰體／極致寒霜共3個VFX格留空，祕法棒判定14×1.75米，僅同步柱身與外暈的寬度比例，保留使用者值。主頁skills2／bridge、WORKER_ASSET_VERSION與Worker import快取同步；Protocol未改。
+- 預檢／Review：目標無其他未提交來源。index.html與Claude4d6f84b8分別修改VFX／skills2／bridge及ai-key-setting快取，Worker只動skills2快取與對方gm_exec快取不同行；以merge-base＋候選＋Claude工作區實際merge-file乾跑皆0，無語意相依。使用者Skills2已儲存並套用，未重寫Excel或其資料格；唯讀Excel→CSV比對差異0，config_tables --apply Skills2為2個字面值語意變更0。自我唯讀Review粒子池重用、父層／worldSpace／投影、清場、重疊坑痕、爆炸時長及兩庫引用。
+- 專項驗證：node --test tests/meteor-tail-impact.test.cjs tests/meteor-tail-flow.test.cjs tests/meteor-entry-origin.test.cjs tests/vfx-editor-cache-versions.test.cjs，17項全通過（本次新增5項）。真引擎確認只在原落地時刻扣血；煙火續播、不新生／不穿地；坑痕直徑使用事件半徑、4秒回收；清場與粒子池重用正確。祕法棒3項包含真引擎場域、端點／直徑／旋轉與作者一致性也通過。
+- 最終22檔回歸：meteor-tail-impact、meteor-tail-flow、meteor-entry-origin、arcane-rod-vfx、vfx-core、vfx-core-hierarchy、vfx-runtime、vfx-runtime-screen-space、vfx-duration、vfx-performance、vfx-load-shedding、vfx-projectile-perspective、vfx-size、vfx-editor-guard、vfx-editor-cache-versions、vfx-asset-export、vfx-preset-usage、skills2-vfx-schema、skills2-vfx-usage、config-vfx-diagnostics、worker-protocol、worker-shim；507項＝501通過／5既有失敗／1略過。5項名稱與先前HEAD原Core／Runtime／受擊Preset唯讀基線相同：投影矩陣、FIELD持續與提示、CATALOG-3單根layout、CHAIN金色雷鏈、STARFALL-TAIL。略過為Windows符號連結限制，沒有降低斷言。未跑全庫。
+- Build／資料：npm.cmd run build為562檔通過，13份變更Preset及配對layout通過Core／Layout驗證，export-assets --check最新（191個assetId）、兩庫diff --check通過。出貨SVG／素材庫／內嵌PNG原稿逐位元一致，SVG SHA256=5c5c62c187ce3d083c119e05010e705271c7360ae1e1ff1d3624ccdad1f2e797。素材庫保存meteor原稿／SVG／來源／Preset／layout，arcane-rod同步Preset，另外11份使用者VFX與layout保存user-vfx-tuning-20261021快照。
+- 畫面驗收：正式Core／Runtime／Pixi與出貨索引，四階段落地預覽及最終深色石地／淺色地板／綠色地面融合，後端無錯誤；meteor-crater-soft-terrain.png在本聊天visualizations。使用者已確認外觀。測試頁與服務清理，未操作使用者原開Editor／存檔。未重新開Excel驗證修復提示（原檔由使用者保存，AI未編輯）、未做玩家長戰或手機GPU驗收。
+- 未修改但檢查：AI規範／工作流／Agent文件、Skills2隕石排程與權威尺寸、Backend、Editor guard／layout schema、配置工具、上述既有測試與素材授權紀錄。沒有本次未完成實作或新增已知缺陷；既有5項失敗及跨裝置效能限制如上，可供Review／合併。
+- Commit：素材庫已先提交ec3b1d5（29檔）；遊戲為本段所在「[Codex] feat: 接入隕石餘煙與熔岩坑痕並保存使用者調整」，回覆附編號。提交前確認全部必要修改已納入，最後核對兩庫status。下一步：遊戲重新整理；VFX Editor先下載未存內容備份，再重新載入，避免舊頁覆寫。其他電腦同步遊戲與素材庫兩倉庫。
+
 ## ARCANE-CYLINDER-20261021 — 祕法加持圓柱光棒
 
 - Owner：Codex；Done，單一開發者。使用者要求旋轉秘法棒更有體積，光束呈圓柱光棒。前置敵人旋轉光束與表定接線完成。允許en-arcane-beams-1 Preset／layout、專用arcane-rod作者腳本與enemy-skills單一入口、素材索引／出貨素材、專項回歸、LV及本段；素材庫新增自製SVG與製作來源／Preset／layout。禁止戰鬥數值／Worker／Runtime／Core／Backend／配置與其他特效，不合併推送。

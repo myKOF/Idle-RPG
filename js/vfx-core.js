@@ -2090,6 +2090,8 @@ var VFXCore = (function () {
          是「加上去」不是「取代」——子層自己的 speed／direction 仍然有效。 */
       if (at) { p.vx += at.vx; p.vy += at.vy; }
       p.life = 0;
+      p.settleTail = false;
+      p.drawX = p.drawY = NaN;
       p.maxLife = sampleRange(d.lifetime, rng);
       p.rotation = sampleRange(d.rotationStart, rng);
       p.rotationSpeed = sampleRange(d.rotationSpeed, rng);
@@ -2324,6 +2326,13 @@ var VFXCore = (function () {
           t.x += (pc * bx - ps * by) * d.projection.x - bx;
           t.y += (ps * bx + pc * by) * d.projection.y - by;
         } else projectTransform(particleFrame, d.projection, t);
+        if (p.settleTail) {
+          // 已畫出的煙火從原位收束到命中點，不重發射、不把粒子留在空中或帶穿地板。
+          var settle = Math.min(1, effect.drainAge / p.drainLife);
+          t.x = p.drainX + (effect.origin.x - p.drainX) * settle;
+          t.y = p.drainY + (effect.origin.y - p.drainY) * settle;
+        }
+        p.drawX = t.x; p.drawY = t.y;
         if (d.sortByY) t.zIndex += t.y - effect.origin.y;
         backend.updateNode(p.node, t);
         layer.particles[write++] = p;
@@ -2396,7 +2405,7 @@ var VFXCore = (function () {
     }
 
     // 結束發射但保留已存在的粒子；不複製節點，沿用既有預算與回收池。
-    function finish(handle) {
+    function finish(handle, options) {
       var effect = findEffect(handle);
       if (!effect) return false;
       if (effect.draining) return true;
@@ -2420,6 +2429,13 @@ var VFXCore = (function () {
         layer.particles.forEach(function (p) {
           // 尾跡使用實際秒數，避免飛行動畫的慢速 timeScale 令粒子長時間滯留。
           p.drainLife = Math.max(0.001, Math.min(3, p.maxLife - p.life));
+          if (options && options.settleToOrigin && isFiniteNumber(p.drawX) && isFiniteNumber(p.drawY)) {
+            p.settleTail = true;
+            p.drainX = p.drawX; p.drainY = p.drawY;
+            // 已越過命中平面的前端火舌直接回收，避免反向吸回地面。
+            if ((p.drawX - effect.origin.x) * Math.cos(effect.rotation) +
+                (p.drawY - effect.origin.y) * Math.sin(effect.rotation) >= 0) p.life = p.maxLife;
+          }
           remaining++;
         });
       });

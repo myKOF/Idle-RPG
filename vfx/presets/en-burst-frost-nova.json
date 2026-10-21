@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "en-burst-frost-nova",
-  "duration": 1.05,
+  "duration": 1.131,
   "loop": false,
   "layers": [
     {
@@ -161,6 +161,7 @@
       "alpha": 0.18,
       "tint": "#b9ead4",
       "blendMode": "normal",
+      "duration": 1.05,
       "emission": {
         "count": 10,
         "mode": "burst"
@@ -222,10 +223,12 @@
       "tint": "#e7faf2",
       "blendMode": "normal",
       "delay": 0.045,
+      "duration": 1.05,
       "emission": {
         "count": 5,
         "mode": "burst"
       },
+      "maxParticles": 2,
       "lifetime": [
         0.5,
         0.85
@@ -295,10 +298,12 @@
       "tint": "#aef0d4",
       "blendMode": "normal",
       "delay": 0.063,
+      "duration": 1.05,
       "emission": {
         "count": 5,
         "mode": "burst"
       },
+      "maxParticles": 2,
       "lifetime": [
         0.5,
         0.85
@@ -368,10 +373,12 @@
       "tint": "#e7faf2",
       "blendMode": "normal",
       "delay": 0.08099999999999999,
+      "duration": 1.05,
       "emission": {
         "count": 5,
         "mode": "burst"
       },
+      "maxParticles": 2,
       "lifetime": [
         0.5,
         0.85
@@ -441,10 +448,12 @@
       "tint": "#aef0d4",
       "blendMode": "normal",
       "delay": 0.045,
+      "duration": 1.05,
       "emission": {
         "count": 5,
         "mode": "burst"
       },
+      "maxParticles": 2,
       "lifetime": [
         0.5,
         0.85
@@ -514,10 +523,12 @@
       "tint": "#e7faf2",
       "blendMode": "normal",
       "delay": 0.063,
+      "duration": 1.05,
       "emission": {
         "count": 5,
         "mode": "burst"
       },
+      "maxParticles": 2,
       "lifetime": [
         0.5,
         0.85
@@ -587,10 +598,12 @@
       "tint": "#aef0d4",
       "blendMode": "normal",
       "delay": 0.08099999999999999,
+      "duration": 1.05,
       "emission": {
         "count": 5,
         "mode": "burst"
       },
+      "maxParticles": 2,
       "lifetime": [
         0.5,
         0.85
@@ -2204,109 +2217,6 @@
         [
           1,
           0.7
-        ]
-      ]
-    },
-    {
-      "id": "shattered-ice",
-      "type": "particle",
-      "assetId": "codex-authored/icearrow/icicle.png",
-      "alpha": 0.9,
-      "tint": "#defdf1",
-      "blendMode": "normal",
-      "emission": {
-        "count": 26,
-        "mode": "burst"
-      },
-      "lifetime": [
-        0.25,
-        0.62
-      ],
-      "spawn": {
-        "radius": 18,
-        "shape": "circle"
-      },
-      "speed": [
-        110,
-        220
-      ],
-      "direction": 0,
-      "spread": 360,
-      "gravity": {
-        "x": 0,
-        "y": 95
-      },
-      "drag": 2,
-      "startScale": [
-        0.0176,
-        0.0449
-      ],
-      "rotationSpeed": [
-        -5,
-        5
-      ],
-      "alphaOverLife": [
-        [
-          0,
-          1
-        ],
-        [
-          0.45,
-          0.9
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          1
-        ],
-        [
-          1,
-          0.25
-        ]
-      ]
-    },
-    {
-      "id": "cold-glints",
-      "type": "particle",
-      "assetId": "particle-pack/png-black-background/star_04.png",
-      "alpha": 0.65,
-      "tint": "#f0fef8",
-      "blendMode": "add",
-      "emission": {
-        "count": 12,
-        "mode": "burst"
-      },
-      "lifetime": [
-        0.16,
-        0.4
-      ],
-      "spawn": {
-        "radius": 12,
-        "shape": "circle"
-      },
-      "speed": [
-        70,
-        180
-      ],
-      "direction": 0,
-      "spread": 360,
-      "startScale": [
-        0.0098,
-        0.0195
-      ],
-      "alphaOverLife": [
-        [
-          0,
-          0.8
-        ],
-        [
-          1,
-          0
         ]
       ]
     }

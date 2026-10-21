@@ -35,7 +35,7 @@
         "mode": "rate",
         "rate": 160
       },
-      "maxParticles": 120,
+      "maxParticles": 40,
       "lifetime": [
         0.24,
         1.5

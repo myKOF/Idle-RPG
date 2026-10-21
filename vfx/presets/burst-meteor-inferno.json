@@ -1,9 +1,44 @@
 {
   "schemaVersion": 1,
   "id": "burst-meteor-inferno",
-  "duration": 0.7,
+  "duration": 4,
   "loop": false,
   "layers": [
+    {
+      "id": "impact-ground-crater",
+      "type": "sprite",
+      "assetId": "codex-authored/meteor/crater-lava-soft.svg",
+      "zIndex": -2,
+      "scale": {
+        "x": 0.234375,
+        "y": 0.234375
+      },
+      "alpha": 1,
+      "blendMode": "normal",
+      "duration": 4,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.04,
+          1
+        ],
+        [
+          0.72,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
     {
       "id": "ground-heat-wave",
       "type": "sprite",
