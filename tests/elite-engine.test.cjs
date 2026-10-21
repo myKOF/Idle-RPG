@@ -108,6 +108,23 @@ test('ELITE-ENGINE-3b 跑位時加速（repoSpeed）：目標點跟著玩家走�
   assert.ok(Math.abs(minion.pos.x - n0) > Math.abs(m.pos.x - m0) * 3, '小兵被擠開、跑位中的高級敵人幾乎不動');
 });
 
+test('ELITE-ENGINE-4c 火鏈連成一圈：2 隻一條線、3 隻三角形、4 隻四邊形', () => {
+  [[2, 1], [3, 3], [4, 4], [5, 5]].forEach(([n, edges]) => {
+    const c = fresh();
+    const pts = [[-120, -80], [130, -60], [110, 120], [-100, 100], [0, 200]];
+    for (let i = 0; i < n; i++) {
+      const m = makeElite(c, i === 0 ? ['e_firechain'] : ['e_vitality'], { x: pts[i][0], y: pts[i][1], hp: 1e9 });
+      if (i === 0) { m._el.repoAt = Infinity; m._el.cd.e_firechain = 999; }
+    }
+    run(c, 'FIELD.monsters.forEach(function (e) { e._enterCd = 0; });');
+    stepElite(c, 1);
+    assert.equal(c.ELITE_RT.chains.length, edges, n + ' 隻 → ' + edges + ' 條鏈');
+    const deg = {};
+    c.ELITE_RT.chains.forEach((k) => { [k.a, k.b].forEach((e) => { deg[e.floatSel] = (deg[e.floatSel] || 0) + 1; }); });
+    if (n >= 3) Object.keys(deg).forEach((k) => assert.equal(deg[k], 2, '每隻連兩條，圍成一圈'));
+  });
+});
+
 test('ELITE-ENGINE-4b 火鏈：距離越遠鏈環越多（換鏈環數不同的 Preset），鏈環本身只小幅拉長', () => {
   const c = fresh();
   const d = c.ELITE_AFFIXES.e_firechain;
@@ -155,6 +172,18 @@ test('ELITE-ENGINE-4 火鏈：同群夥伴之間常駐一條鏈，玩家踩上�
   assert.equal(c.ELITE_RT.chains.length, 0, '夥伴死了鏈條消失');
 });
 
+test('ELITE-ENGINE-4b 火鏈夥伴挑最近的，且太遠（超過最長鏈環數的兩倍長）就不連', () => {
+  const c = fresh();
+  const a = makeElite(c, ['e_firechain'], { x: -100, y: 0, hp: 1e9 });
+  const far = makeElite(c, ['e_vitality'], { x: 100, y: 0, hp: 1e9 });
+  const near = makeElite(c, ['e_vitality'], { x: -140, y: 20, hp: 1e9 });
+  assert.equal(c.eliteChainPartner(a), near, '挑最近的');
+  near.hp = 0;
+  assert.equal(c.eliteChainPartner(a), far, '最近的死了換下一隻');
+  far.pos.x = 5000;
+  assert.equal(c.eliteChainPartner(a), null, '太遠不連');
+});
+
 test('ELITE-ENGINE-5 火鏈的跑位：施放時先跑到玩家另一側（夥伴→玩家連線的延伸線）', () => {
   const c = fresh();
   const a = makeElite(c, ['e_firechain'], { x: -200, y: 0, hp: 1e9 });
@@ -198,7 +227,29 @@ test('ELITE-ENGINE-6 秘法加持：核心預警 → 順時針旋轉光束；站
   assert.equal(c.ELITE_RT.beams.length, 0, '6 秒後光束消失');
 });
 
-test('ELITE-ENGINE-7 熔火：移動留下火徑（10 秒），死亡後原地核心 3 秒後大範圍自爆', () => {
+test('ELITE-ENGINE-7b 熔火火徑：一幀跑很遠也沿路補滿（不留斷層）；場域滿了先收自己最舊的', () => {
+  const c = fresh();
+  const m = makeElite(c, ['e_molten'], { x: 400, y: 0, hp: 1e9 });
+  const d = c.ELITE_AFFIXES.e_molten;
+  stepElite(c, 1);
+  const x0 = m.pos.x;
+  m.pos.x -= d.trailGap * 5.5;                        // 一口氣跑 5.5 格
+  stepElite(c, 0.05);
+  const xs = c.ELITE_RT.zones.map((z) => z.x).sort((p, q) => q - p);
+  assert.ok(xs.length >= 5, '沿路補了 5 塊：' + xs.length);
+  for (let i = 1; i < xs.length; i++) assert.ok(Math.abs(xs[i - 1] - xs[i]) <= d.trailGap + 1e-6, '相鄰兩塊間隔不超過 gap');
+  assert.ok(xs[0] <= x0 && xs[xs.length - 1] >= m.pos.x - 1e-6, '都在走過的路上');
+  // 場域數量到上限：新的照放、這隻最舊的被收掉
+  const cap = Math.floor(c.eliteG('maxZones', 48));
+  for (let i = 0; i < cap; i++) c.eliteZoneSpawn(m, d, 0, 0, 0);
+  const n0 = c.ELITE_RT.zones.length;
+  m.pos.x -= d.trailGap * 1.5;
+  stepElite(c, 0.05);
+  assert.ok(c.ELITE_RT.zones.length <= Math.max(n0, cap), '不超過上限');
+  assert.ok(c.ELITE_RT.zones.some((z) => Math.abs(z.x - m.pos.x) < d.trailGap * 1.6), '怪物身後仍有新火徑');
+});
+
+test('ELITE-ENGINE-7 熔火：移動留下火徑（8 秒），死亡後原地核心 3 秒後大範圍自爆', () => {
   const c = fresh();
   const m = makeElite(c, ['e_molten'], { x: 400, y: 0, hp: 1e9 });
   const d = c.ELITE_AFFIXES.e_molten;
@@ -207,7 +258,7 @@ test('ELITE-ENGINE-7 熔火：移動留下火徑（10 秒），死亡後原地�
   stepElite(c, 0.2);
   assert.ok(c.ELITE_RT.zones.length >= 1, '走路留下火徑');
   const z = c.ELITE_RT.zones[0];
-  assert.equal(Math.round(z.until - c.GT), d.life, '火徑持續 10 秒');
+  assert.equal(Math.round(z.until - c.GT), 8, '火徑持續 8 秒');
   // 死亡 → 核心
   m.pos.x = 100; m.pos.y = 0;
   c.eliteOnDeath(m);
@@ -266,11 +317,11 @@ test('ELITE-ENGINE-9 帶電：每次被擊中向四周散出 2~4 顆電火花；
   assert.ok(c.ELITE_RT.sparks.length <= d.cap);
 });
 
-test('ELITE-ENGINE-10 毒素加持：中心毒圈（半徑 4 米）→ 十字毒球以 12 米／秒向外長到 36 米，固定不旋轉、持續 6 秒', () => {
+test('ELITE-ENGINE-10 毒素加持：中心毒圈（半徑 4 米）→ 十字毒球以 12 米／秒向外長到 36 米，固定不旋轉、持續 16 秒', () => {
   const c = fresh();
   const m = quiet(makeElite(c, ['e_poisoncross'], { x: 150, y: 0, hp: 1e9 }));
   const d = c.ELITE_AFFIXES.e_poisoncross;
-  assert.deepEqual([d.hubR, d.len, d.speed, d.balls], [40, 360, 120, 7], '毒圈半徑 4 米、36 米、12 米/秒、每臂 7 顆');
+  assert.deepEqual([d.hubR, d.len, d.speed, d.balls], [40, 360, 120, 5], '毒圈半徑 4 米、36 米、12 米/秒、每臂 5 顆');
   c.eliteCastCross(m, d);
   const hubFx = c.vfx.filter((v) => v.vfx && v.vfx.ground === d.v.ground && v.area && v.area.r > 0);
   assert.ok(hubFx.length && hubFx[0].area.r === d.hubR, '預警：中心毒圈，半徑 4 米');
@@ -302,7 +353,7 @@ test('ELITE-ENGINE-10 毒素加持：中心毒圈（半徑 4 米）→ 十字毒
   const m2 = hpLost(c);
   stepElite(c, 0.2);
   assert.equal(hpLost(c), m2, '兩臂之間是安全的');
-  stepElite(c, 7);
+  stepElite(c, 17);
   assert.equal(c.ELITE_RT.crosses.length, 0);
 });
 

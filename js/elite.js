@@ -766,15 +766,32 @@ function eliteZonesTick(dt) {
   }
   ELITE_RT.zones = keep;
 }
-/* 熔火：移動時每隔一段距離留下一塊熔岩火徑。 */
+/* 熔火：移動時每隔一段距離留下一塊熔岩火徑。
+   怪物一幀可能跑很遠（跑位、衝刺），所以沿著「上次落點→現在位置」每隔 gap 補一塊，不然火徑會斷成一塊一塊、中間一大段空白；
+   場域數量到上限時，先收掉這隻怪自己最舊的一塊（火徑尾端先消失），不是不放新的（那樣怪物身後就是斷層）。 */
 function eliteTrailTick(m, d, rt, dt) {
   var mp = eliteMonsterPos(m);
   if (!mp) return;
   if (rt.trailX === null) { rt.trailX = mp.x; rt.trailY = mp.y; return; }
-  if (eliteDist(mp.x, mp.y, rt.trailX, rt.trailY) < Math.max(8, d.trailGap || 30)) return;
-  rt.trailX = mp.x; rt.trailY = mp.y;
-  if (ELITE_RT.zones.length >= Math.max(1, Math.floor(eliteG('maxZones', 48)))) return;
-  eliteZoneSpawn(m, d, mp.x, mp.y, 0);
+  var gap = Math.max(8, d.trailGap || 30);
+  var dist = eliteDist(mp.x, mp.y, rt.trailX, rt.trailY);
+  if (dist < gap) return;
+  var n = Math.min(8, Math.floor(dist / gap));
+  var cap = Math.max(1, Math.floor(eliteG('maxZones', 48)));
+  var ux = (mp.x - rt.trailX) / dist, uy = (mp.y - rt.trailY) / dist;
+  var x0 = rt.trailX, y0 = rt.trailY;
+  for (var k = 1; k <= n; k++) {
+    if (ELITE_RT.zones.length >= cap) {
+      var old = -1;
+      for (var i = 0; i < ELITE_RT.zones.length; i++) if (ELITE_RT.zones[i].owner === m && ELITE_RT.zones[i].def === d) { old = i; break; }
+      if (old < 0) break;
+      ELITE_RT.zones[old].vis.until = 0;
+      ELITE_RT.zones.splice(old, 1);
+    }
+    eliteZoneSpawn(m, d, x0 + ux * gap * k, y0 + uy * gap * k, 0);
+  }
+  rt.trailX = x0 + ux * gap * n; rt.trailY = y0 + uy * gap * n;
+  if (dist > gap * 8) { rt.trailX = mp.x; rt.trailY = mp.y; }   // 瞬間移動等超長距離：不補，直接從新位置開始
 }
 /* 熔火：死亡時原地留下熔岩核心，coreDelay 秒後引發大範圍自爆。 */
 function eliteMoltenCore(m, d) {
@@ -1034,16 +1051,30 @@ function eliteRegenTick(m, d, rt, dt, id) {
 /* ============ 火鏈：同群夥伴之間拉出一條火鏈，持續到怪物死亡 ============
    鏈條本身是常駐的（eliteChainsTick 維護）；「施放」＝跑位到玩家另一側，讓鏈條掃過你身上。
    畫面角色：持續場域特效＝鏈條本體（矩形，長度＝兩端距離）；施放特效＝施法者身上；受擊特效＝打中玩家 */
+/* 火鏈夥伴：同群裡「最近」的活著的怪，且距離不超過鏈條最長長度（最多鏈環數 × linkLen × 2，最長那份最多拉長一倍）。
+   以前是挑名單上的下一隻，群散得很開時（熔火怪跑得快）鏈條會被拉得極長、鏈環變成巨大的環，中間一個怪都沒有。
+   太遠就不連：鏈條不出現，等牠們靠近再連上。 */
 function eliteChainPartner(m) {
   var mem = eliteGroupMembers(m, true);
-  if (mem.length < 2) return null;
-  var idx = mem.indexOf(m);
-  if (idx < 0) return null;
-  for (var k = 1; k < mem.length; k++) {
-    var e = mem[(idx + k) % mem.length];
-    if (e !== m && e.hp > 0 && eliteMonsterPos(e)) return e;
+  if (mem.length < 2 || mem.indexOf(m) < 0) return null;
+  var mp = eliteMonsterPos(m);
+  if (!mp) return null;
+  var d = eliteArch(m, 'chain');
+  var maxLen = Infinity;
+  if (d) {
+    var vars = eliteChainVariants(d);
+    maxLen = vars[vars.length - 1].n * (d.linkLen > 0 ? d.linkLen : 15) * 2;
   }
-  return null;
+  var best = null, bd = Infinity;
+  for (var k = 0; k < mem.length; k++) {
+    var e = mem[k];
+    if (e === m || !(e.hp > 0)) continue;
+    var ep = eliteMonsterPos(e);
+    if (!ep) continue;
+    var dd = eliteDist(mp.x, mp.y, ep.x, ep.y);
+    if (dd < bd) { bd = dd; best = e; }
+  }
+  return best && bd <= maxLen ? best : null;
 }
 function eliteCastChain(m, d) {
   eliteBusy(m, 0.2, false);
@@ -1072,6 +1103,21 @@ function eliteChainPick(d, len, cur) {
   if (cur !== undefined && cur !== best && Math.abs(Math.log(vars[cur].n / want)) < Math.log(1.25)) return cur;   // 差不多就別換
   return best;
 }
+/* 同一群的活怪連成一圈：2 隻＝一條線、3 隻＝三角形、4 隻＝四邊形…（依繞群體中心的角度排序，邊不會交叉）。
+   群裡只要有一隻帶火鏈就會連整圈；單條邊太長（超過最長鏈環數 × linkLen × 2）就不畫那一條。 */
+function eliteChainRing(m) {
+  var mem = eliteGroupMembers(m, true).filter(function (e) { return e.hp > 0 && eliteMonsterPos(e); });
+  if (mem.length < 2) return [];
+  if (mem.length === 2) return [[mem[0], mem[1]]];
+  var cx = 0, cy = 0;
+  mem.forEach(function (e) { var p = eliteMonsterPos(e); cx += p.x; cy += p.y; });
+  cx /= mem.length; cy /= mem.length;
+  var ang = function (e) { var p = eliteMonsterPos(e); return Math.atan2(p.y - cy, p.x - cx); };
+  mem.sort(function (u, v) { return ang(u) - ang(v); });
+  var out = [];
+  for (var i = 0; i < mem.length; i++) out.push([mem[i], mem[(i + 1) % mem.length]]);
+  return out;
+}
 function eliteChainsTick(dt, list) {
   var want = {};
   var player = elitePlayerAlive();
@@ -1081,20 +1127,24 @@ function eliteChainsTick(dt, list) {
     if (!m || !(m.hp > 0)) continue;
     var d = eliteArch(m, 'chain');
     if (!d || !eliteReady(m)) continue;
-    var other = eliteChainPartner(m);
-    if (!other) continue;
-    var key = [m.floatSel, other.floatSel].sort().join('|');
-    if (want[key]) continue;
-    want[key] = { a: m, b: other, d: d };
+    var vars = eliteChainVariants(d);
+    var maxLen = vars[vars.length - 1].n * (d.linkLen > 0 ? d.linkLen : 15) * 2;
+    eliteChainRing(m).forEach(function (pr) {
+      var pa = eliteMonsterPos(pr[0]), pb = eliteMonsterPos(pr[1]);
+      if (eliteDist(pa.x, pa.y, pb.x, pb.y) > maxLen) return;
+      var key = [pr[0].floatSel, pr[1].floatSel].sort().join('|');
+      if (want[key]) return;
+      want[key] = { a: pr[0], b: pr[1], d: d, o: m };
+    });
   }
   var keep = [];
   ELITE_RT.chains.forEach(function (c) {
-    if (want[c.key]) { c.a = want[c.key].a; c.b = want[c.key].b; c.d = want[c.key].d; delete want[c.key]; keep.push(c); }
+    if (want[c.key]) { c.a = want[c.key].a; c.b = want[c.key].b; c.d = want[c.key].d; c.o = want[c.key].o; delete want[c.key]; keep.push(c); }
     else if (c.vis) c.vis.until = 0;
   });
   Object.keys(want).forEach(function (key) {
     var w = want[key];
-    var c = { key: key, a: w.a, b: w.b, d: w.d, nextTick: 0, vis: null };
+    var c = { key: key, a: w.a, b: w.b, d: w.d, o: w.o, nextTick: 0, vis: null };
     c.varIdx = undefined;
     keep.push(c);
   });
@@ -1117,7 +1167,7 @@ function eliteChainsTick(dt, list) {
     if (c.nextTick > 0 || !player) return;
     c.nextTick = c.d.tick || 0.25;
     if (eliteSegmentDist(ap.x, ap.y, bp.x, bp.y, pp.x, pp.y) <= c.d.wid / 2 + ELITE_PLAYER_BODY_R) {
-      var res = eliteHitPlayer(c.a, { mult: c.d.dmg, elem: c.d.elem, sure: true, quiet: true, label: c.d.name });
+      var res = eliteHitPlayer(c.o || c.a, { mult: c.d.dmg, elem: c.d.elem, sure: true, quiet: true, label: c.d.name });
       if (res && !res.miss && !res.invuln && c.d.v.hit) eliteHitFx(elitePF(), c.d.v.hit);
     }
   });

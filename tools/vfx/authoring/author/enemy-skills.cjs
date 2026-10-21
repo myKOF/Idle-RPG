@@ -189,8 +189,10 @@ function fireChain(n, linkAsset) {
     if (pulse[pulse.length - 1][0] < 1) pulse.push([1, pulse[0][1]]);
     layers.push(withGround(kit.sprite({ id: 'link' + i, asset: linkAsset, z: 2 + i, x: x, y: dy, sizeX: sx, sizeY: sy, alpha: 1, tint: wide ? '#ffb02a' : '#fff1a8', blend: 'add', duration: D, alphaOverLife: pulse })));
   }
+  /* 兩端節點：整份 Preset 會被拉成 長度×linkH，x 方向的倍率隨鏈環數增加（約 n/7）；節點的 sizeX 先除掉這個倍率，
+     拉伸後才會是圓的（之前不除，長鏈兩端的光團被拉成一根長橢圓）。 */
   [-100, 100].forEach((x, k) => {
-    layers.push(withGround(kit.sprite({ id: 'node' + k, asset: A.glowSoft, z: 100 + k, x: x, size: 46, alpha: 0.95, tint: '#ffa030', blend: 'add', duration: D, scaleOverLife: C.breathe(0.18) })));
+    layers.push(withGround(kit.sprite({ id: 'node' + k, asset: A.glowSoft, z: 100 + k, x: x, sizeX: 46 * 200 / (28 * n), sizeY: 46, alpha: 0.95, tint: '#ffa030', blend: 'add', duration: D, scaleOverLife: C.breathe(0.18) })));
   });
   layers.push(kit.particle({ id: 'embers', asset: A.flame04, z: 110, rate: 10 + n, lifetime: [0.35, 0.7], spawnBox: [190, 8], speed: [18, 46], direction: -90, spread: 40, startPx: [18, 30],
     alpha: 0.9, tint: '#ff5a1a', blend: 'add', alphaOverLife: [[0, 0], [0.2, 0.9], [1, 0]] }));
@@ -259,7 +261,7 @@ NEW['en-poison-dot'] = () => ({
 
 /* 毒十字：從中心向上下左右四個方向「長出」一排毒水球（朝外延伸、速度 speed 米／秒，最終長度 len 米），長成後固定不動。
    中心的毒圈是另一份 Preset（en-poison-dot，由模擬層放在同一點）。
-   一份 Preset 最多 32 個圖層，所以每臂 balls 顆（預設 7）、每顆一層；球出現的時間 ＝ 距離 ÷ 速度（delay），出現後固定在原地。
+   一份 Preset 最多 32 個圖層，所以每臂 balls 顆（現為 5，球半徑＝中心毒圈半徑 4 米，相鄰兩顆略有重疊）、每顆一層；球出現的時間 ＝ 距離 ÷ 速度（delay），出現後固定在原地。
    座標：事件半徑 r＝len 米 ↔ authored 100px，所以 1 米 ＝ 100／len px。
    模擬層用同一組公式判定（js/elite.js eliteCrossesTick）：第 k 顆在 (k+1)×len/balls 米，距離 ≤ speed×t 才存在。
    ⚠️ 不旋轉：靠「錨點偏移繞圈」做旋轉的小球，投影到地面時 mesh 會炸開（舞台範圍變成幾千像素），所以十字固定朝上下左右。 */
@@ -283,7 +285,7 @@ function poisonCross(o) {
   layers.push(kit.particle({ id: 'drips', asset: A.dot, z: z++, rate: 10, lifetime: [0.6, 1.1], spawnRadius: 14, speed: [4, 14], direction: -90, spread: 50, startPx: [3, 6], alpha: 0.9, tint: '#c8ff6a', blend: 'add', alphaOverLife: [[0, 0], [0.3, 1], [1, 0]] }));
   return { id: 'en-poison-cross', duration: dur, loop: false, sizing: circleSizing(100), layers };
 }
-NEW['en-poison-cross'] = () => poisonCross({ dur: 6, balls: 7, len: 36, speed: 12, ballR: 1.8 });
+NEW['en-poison-cross'] = () => poisonCross({ dur: 16, balls: 5, len: 36, speed: 12, ballR: 4 });
 
 /* 冰晶：地面生出的冰晶持續膨脹（2~3 秒），外圈＝炸裂範圍。 */
 NEW['en-ice-crystal'] = () => {

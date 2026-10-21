@@ -326,7 +326,7 @@ var ELITE_GROUP = {
   },
   normalGroupCount: [[1, 75], [2, 22], [3, 3]],
   leaders: 1, minionHp: 1, minionAtk: 1, minionReward: 1,
-  skillDmgPct: 100, cdPct: 100, firstCastMax: 3.5, maxZones: 48, summonCap: 10, linkBeam: 1,
+  skillDmgPct: 100, cdPct: 100, firstCastMax: 3.5, maxZones: 100, summonCap: 10, linkBeam: 1,
   advChance: [6, 20], advHp: 8, advAtk: 3, advReward: 4,
   sizeElite: 1.6, sizeAdv: 2.2, sizeBoss: 3.4, sizeTower: [5, 7],
   repoMin: 4, repoMax: 8, repoSpeed: 1.6,
