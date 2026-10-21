@@ -162,3 +162,116 @@ test('DEF-6 編輯器勾選時用建議值，沒有可變形圖層就不寫入',
   const editor = html.indexOf('/tools/vfx/editor/editor.js');
   assert.ok(gizmo >= 0 && model > gizmo && editor > model, '載入順序：gizmo-model → deformation-model → editor');
 });
+
+/* ============================================================
+   各圖層的「受程式變形影響」（2026-10-21 使用者：開了隨機鏡射，選到的圖層卻完全沒變——
+   它沒有被勾進作用圖層，而變形參數放在 Inspector 裡看起來像那個圖層自己的設定）
+   ============================================================ */
+
+function extractFn(src, name) {
+  const at = src.indexOf('function ' + name + '(');
+  assert.ok(at >= 0, '找不到 function ' + name);
+  let depth = 0;
+  for (let i = src.indexOf('{', at); i < src.length; i++) {
+    if (src[i] === '{') depth++;
+    else if (src[i] === '}' && --depth === 0) return src.slice(at, i + 1);
+  }
+  throw new Error(name + ' 的大括號沒有配對');
+}
+
+function membershipSandbox(p) {
+  const vm = require('node:vm');
+  const calls = { commit: [], render: 0, validation: [] };
+  const host = { children: [], appendChild(el) { this.children.push(el); } };
+  const el = () => ({ attrs: {}, setAttribute(k, v) { this.attrs[k] = v; }, checked: false, indeterminate: false, disabled: false, title: '' });
+  const ctx = {
+    state: { preset: p }, VFXDeformationModel: D,
+    document: { createElement: el },
+    makeField: (label, control) => ({ label, control }),
+    commitCodeControl: (path, v) => { calls.commit.push([path.join('.'), v]); p.deformation.layers = v; return true; },
+    renderInspector: () => { calls.render++; },
+    setValidation: (cls, text) => calls.validation.push(text)
+  };
+  vm.createContext(ctx);
+  const src = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.js'), 'utf8');
+  vm.runInContext(extractFn(src, 'deformationBlockReason') + '\n' + extractFn(src, 'renderDeformationMembership'), ctx);
+  return {
+    calls,
+    render(targets) { host.children.length = 0; ctx.renderDeformationMembership(host, targets); return host.children[0]; }
+  };
+}
+
+test('DEF-7 選到沒加入的圖層：勾選框未勾，勾下去就加進作用圖層', function () {
+  const p = bolt();
+  p.deformation = D.suggest(p, sizeOf);
+  p.deformation.layers = ['seg-a', 'seg-b', 'seg-c'];
+  const sb = membershipSandbox(p);
+  const branch = p.layers.find(l => l.id === 'branch');
+  const field = sb.render([branch]);
+  assert.strictEqual(field.label, '受程式變形影響');
+  assert.strictEqual(field.control.checked, false);
+  assert.strictEqual(field.control.disabled, false);
+  field.control.checked = true;
+  field.control.onchange();
+  assert.deepStrictEqual(sb.calls.commit, [['deformation.layers', ['seg-a', 'seg-b', 'seg-c', 'branch']]]);
+  assert.strictEqual(sb.calls.render, 1, '重畫，下方清單與這一格同步');
+  assert.strictEqual(sb.render([branch]).control.checked, true);
+});
+
+test('DEF-7B 取消勾選就移出；最後一層不能拿掉（Core 不收空清單），改提示去上面關', function () {
+  const p = bolt();
+  p.deformation = D.suggest(p, sizeOf);
+  p.deformation.layers = ['seg-a', 'branch'];
+  const sb = membershipSandbox(p);
+  const branch = p.layers.find(l => l.id === 'branch');
+  let f = sb.render([branch]);
+  f.control.checked = false; f.control.onchange();
+  assert.deepStrictEqual(sb.calls.commit.pop(), ['deformation.layers', ['seg-a']]);
+  const segA = p.layers.find(l => l.id === 'seg-a');
+  f = sb.render([segA]);
+  f.control.checked = false; f.control.onchange();
+  assert.strictEqual(sb.calls.commit.length, 0, '不送出空清單');
+  assert.strictEqual(f.control.checked, true, '勾選框回到勾著');
+  assert.ok(/啟用整體變形/.test(sb.calls.validation[0]), '告訴使用者去哪裡關');
+});
+
+test('DEF-7C 多選：一半在裡面顯示半勾，勾下去把能變形的全部加進來、不能變形的不動', function () {
+  const p = bolt();
+  p.layers.push(sprite('ring', 0, 0, 0.5, 0.5, { radiusProfile: { centerScale: 1 } }));
+  p.deformation = D.suggest(p, sizeOf);
+  p.deformation.layers = ['seg-a', 'seg-b'];
+  const sb = membershipSandbox(p);
+  const pick = ids => p.layers.filter(l => ids.indexOf(l.id) >= 0);
+  const f = sb.render(pick(['seg-b', 'branch', 'flash', 'ring', 'sparks']));
+  assert.strictEqual(f.control.indeterminate, true);
+  f.control.checked = true; f.control.onchange();
+  const got = sb.calls.commit[0][1];
+  assert.deepStrictEqual(got.slice().sort(), ['branch', 'flash', 'seg-a', 'seg-b'], '粒子與 radiusProfile 不加：' + got);
+});
+
+test('DEF-7D 不顯示／變灰：粒子層沒有這一格；還沒啟用變形時變灰並指路', function () {
+  const p = bolt();
+  const sb = membershipSandbox(p);
+  assert.strictEqual(sb.render([p.layers.find(l => l.type === 'particle')]), undefined, '粒子層不顯示');
+  const f = sb.render([p.layers[0]]);
+  assert.strictEqual(f.control.disabled, true, '還沒啟用程式變形');
+  assert.ok(/啟用整體變形/.test(f.control.title));
+  p.layers.push(sprite('ring', 0, 0, 0.5, 0.5, { radiusProfile: { centerScale: 1 } }));
+  p.deformation = D.suggest(p, sizeOf);
+  const ring = sb.render([p.layers[p.layers.length - 1]]);
+  assert.strictEqual(ring.control.disabled, true);
+  assert.ok(/radiusProfile/.test(ring.control.title), '說明為什麼不能變形');
+});
+
+test('DEF-7E Inspector：參數區標明整份共用；圖層欄位前有分界標題與這一格', function () {
+  const src = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.js'), 'utf8');
+  assert.ok(/section\('程式變形／隨機鏡射（整份特效共用）'/.test(src));
+  const ins = extractFn(src, 'renderInspector');
+  const header = ins.indexOf('renderLayerHeader(host, targets[0])');
+  const member = ins.indexOf('renderDeformationMembership(host, targets)');
+  const fields = ins.indexOf('inspectorFields(targets)');
+  assert.ok(header > 0 && member > header && fields > member, '分界標題 → 受程式變形影響 → 圖層欄位');
+  assert.ok(/layer-head/.test(extractFn(src, 'renderLayerHeader')));
+  const css = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.css'), 'utf8');
+  assert.ok(/\.group-title\.layer-head\s*\{[^}]*border-top/.test(css), '分界要看得出來');
+});

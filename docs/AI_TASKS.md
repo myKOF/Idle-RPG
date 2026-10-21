@@ -11654,3 +11654,13 @@ Worker 存活且頁面正常完成載入。
 - Owner：Codex integrator；Done。整合 original HEAD `586bfabe483d973ffe59f965160bda55de3fe77c` 與 incoming MERGE_HEAD `3e0d929dcbf5bf6f0c5984afeb32a54413018d42`；不變更兩個 parent、不操作索引／Commit／推送／其他 worktree／素材庫。
 - 衝突僅 `docs/AI_TASKS.md` 檔尾的獨立追加紀錄：保留 incoming 的 VFX 整體變形、敵人技能欄位與迫擊拉距三段，也保留 HEAD 的裝備詳情同步 tips 深色底紀錄；沒有以任一整側覆蓋另一側。controller 已處理的 incoming 檔案 EOF 空白整理原樣保留。
 - 驗證：VFX／裝備相關 12 檔共 388 項，381 通過／7 失敗；裝備範圍全綠，7 項均為任務歷史已記錄的既有基線（素材語意索引不同步、LAYOUT-1／3、FIELD、CATALOG-3、CHAIN 金雷、STARFALL-TAIL），新增失敗 0。`npm.cmd run build` 559 檔通過；完整 merged result 的 `git diff HEAD --check` 與衝突標記檢查通過。沒有修改斷言或新增素材庫檔案；controller 可依回報檔案清單 stage 並建立 merge commit。
+
+## Claude｜程式變形：標明整份共用＋各圖層可直接勾「受程式變形影響」（VFX-DEFORM-MEMBER-20261021）
+
+- Owner：Claude；Done。使用者回報：branch 開了隨機鏡射卻完全沒變——它沒被勾進作用圖層，而變形參數放在 Inspector 裡，看起來像選到的那個圖層自己的設定。問「不應該是我選了哪個圖層就是哪個圖層嗎？」，同意以下三點改法。
+- 設計維持「整份特效共用一組參數」：同一個座標在每個作用圖層上位移一樣多、同一道共用一次鏡射，拼接的分段與分岔才不會斷開或各翻各的。改的是介面：
+  1. 參數區（本來就在 Preset 區塊）標題改成「程式變形／隨機鏡射（整份特效共用）」，提示寫明共用的原因與去哪裡看哪些圖層受影響；圖層欄位前加「圖層：<id>（<type>）」分界標題（`.layer-head`，上框線＋藍字），多選標題同樣處理。
+  2. 每個 sprite 圖層的 Inspector 新增「受程式變形影響」：與 Preset 區最下面的作用圖層清單寫同一個欄位。多選時半勾、勾下去只加能變形的；最後一層不能拿掉（Core 不收空清單），提示去上面取消；還沒啟用變形時變灰並指路；不能變形的 sprite（radiusProfile、followDirection 關、透視只關一部分）變灰並說明原因；粒子／程序化圖層不顯示。
+  3. 新啟用時預設全部可變形圖層都在裡面（VFX-DEFORM-SUGGEST-20261021 已是如此）。
+- 修改 `tools/vfx/editor/editor.js`（renderLayerHeader、deformationBlockReason、renderDeformationMembership）、`editor.css`、編輯器頁版號、`tests/vfx-editor-deformation.test.cjs`（DEF-7～7E：真函式＋假 DOM 驗加入／移出／最後一層／多選半勾／不顯示與變灰／Inspector 順序）。8 個突變全部抓到。編輯器測試失敗名單與 HEAD 相同（3 項既有）。build_check 559 檔通過。
+- 實機（本機編輯器 28362，bolt-thunderstrike-bluewhite，branch 原本不在作用圖層）：點選 branch → 看到分界標題與未勾的「受程式變形影響」→ 勾下去後作用圖層變成 4 層、下方清單同步打勾、可 Ctrl+Z。
