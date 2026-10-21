@@ -50,7 +50,7 @@ function knobs(d) {
   if (d.life !== undefined) k.push('持續 ' + d.life + 's');
   if (d.dur !== undefined && d.arch !== 'curse') k.push(d.dur + 's');
   if (d.throwRange !== undefined) k.push('丟 ≤' + m(d.throwRange) + 'm');
-  if (d.minRange !== undefined) k.push('最小射程 ' + m(d.minRange) + 'm');
+  if (d.minRange !== undefined) k.push('先拉開到 ' + m(d.minRange) + 'm 外再放' + (d.backoff ? '（最多跑 ' + d.backoff + 's）' : ''));
   if (d.speed !== undefined && d.arch === 'pull') k.push('拉速 ' + m(d.speed) + 'm/s');
   if (d.hp !== undefined && d.arch === 'vital') k.push('生命×' + d.hp);
   if (d.stun) k.push('暈眩 ' + d.stun + 's');
