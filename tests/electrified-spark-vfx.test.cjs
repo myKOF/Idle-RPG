@@ -8,7 +8,9 @@ test('ELECTRIFIED-CURRENT 兩條獨立隨機扭動電流，各自保留核准長
   assert.equal(Core.validatePreset(preset).ok, true);
   assert.equal(Core.serialisePreset(author.make()), Core.serialisePreset(preset));
   assert.equal(Core.serialisePreset(require('../tools/vfx/authoring/author/enemy-skills.cjs').NEW['en-spark']()), Core.serialisePreset(preset));
-  assert.equal(preset.duration, .5); assert.equal(preset.loop, true);
+  assert.equal(preset.duration, 2); assert.equal(preset.loop, true);
+  assert.deepEqual(preset.layers[0].scale, { x: .7115, y: .3785 });
+  assert.equal(preset.layers[0].rotation, .693156);
   assert.equal(preset.sizing.shape, 'projectile-circle'); assert.equal(preset.sizing.authored.radius, 22);
   const frames = Array.from({ length: 64 }, (_, i) => author.framePaths(i));
   assert.equal(new Set(frames.map(f => JSON.stringify(f.paths))).size, 64, '每格必須有不同電流路徑');
@@ -52,7 +54,7 @@ test('ELECTRIFIED-CURRENT 36顆連續五秒持續選動畫格、不旋轉星芒�
   for (let i = 0; i < 300; i++) {
     rt.update(1 / 60);
     assert.equal(rt.stats().activeEffects, 36); assert.equal(rt.stats().activeParticles, 0);
-    assert.equal(alive, 36); assert.ok(nodes.every(n => n.t.rotation === 0));
+    assert.equal(alive, 36); assert.ok(nodes.every(n => n.t.rotation === preset.layers[0].rotation));
   }
   assert.equal(seen.size, 64); rt.stopAll(); rt.update(1);
   assert.equal(rt.stats().activeEffects, 0); rt.destroy(); assert.equal(alive, 0);

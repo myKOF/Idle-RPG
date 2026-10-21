@@ -6,7 +6,6 @@
       "id": "en-mark-storm",
       "name": "en-mark-storm",
       "layerIds": [
-        "fill",
         "edge"
       ]
     }

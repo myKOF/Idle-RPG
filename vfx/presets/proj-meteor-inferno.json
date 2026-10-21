@@ -104,8 +104,8 @@
       },
       "maxParticles": 18,
       "lifetime": [
-        0.45,
-        0.8
+        0.25,
+        0.5
       ],
       "spawn": {
         "height": 16,
@@ -190,8 +190,8 @@
         "rate": 32
       },
       "lifetime": [
-        0.4,
-        0.75
+        0.2,
+        0.45
       ],
       "spawn": {
         "height": 22,
@@ -653,7 +653,7 @@
       "assetId": "particle-pack/png-black-background/flame_04.png",
       "zIndex": 2,
       "position": {
-        "x": 17.5683,
+        "x": 31.5683,
         "y": -17.0052
       },
       "alpha": 0.85,
@@ -730,7 +730,7 @@
       "assetId": "particle-pack/png-black-background/flame_04.png",
       "zIndex": 2,
       "position": {
-        "x": 37.4078,
+        "x": 40.4078,
         "y": -0.4723
       },
       "alpha": 0.85,
@@ -800,6 +800,24 @@
           0.18
         ]
       ]
+    },
+    {
+      "id": "cracked-meteor-core-copy",
+      "type": "sprite",
+      "assetId": "new_materials/orb/sphere_23.png",
+      "zIndex": 7,
+      "position": {
+        "x": 3.3079,
+        "y": 1.4556
+      },
+      "rotation": 2.356194,
+      "scale": {
+        "x": 0.1387,
+        "y": 0.125
+      },
+      "alpha": 0.55,
+      "tint": "#ffbb63",
+      "blendMode": "add"
     }
   ],
   "sizing": {

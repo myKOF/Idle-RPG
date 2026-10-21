@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## USER-EDITS-COMMIT-20261022 — 一併保存使用者VFX與素材庫修改
+
+- Owner：Codex；Done。使用者明確要求其他修改及必要素材庫一起Commit；本輪保存全部已儲存的12份Preset、3份修改layout、2張新增出貨PNG、1張舊出貨副本移除與出貨索引，素材庫原有arcane-rod修改及配對快照。前置帶電接入完成；單一開發者，不合併推送。
+- 來源確認：PDAlpha_017.png原PROVENANCE標待確認，依AI_RULES先詢問；使用者2026-10-22直接回覆「已授權」，已記錄於素材庫PROVENANCE.md，僅確認指定檔案、不推定整包CC0。window_b.png為既有Kenney CC0，其他沿既有自製／出貨來源；原來源素材保留，僅同步使用者已儲存的出貨增減。
+- 遊戲23檔：12份Preset（祕法棒、火震波、火領域、雷暴標記、四色飛彈、帶電、毒窪、築牆預警、火隕石）、3份layout（雷暴標記／築牆／火隕石）、兩個出貨PNG、舊target_11出貨副本移除、shipped-assets、帶電作者與專項、LV及本紀錄。保留所有使用者美術值；只將離線帶電作者預設同步為使用者2秒、固定rotation0.693156與scale0.7115×0.3785，未執行作者重製覆蓋遊戲；測試繼續驗證固定朝向不隨時間旋轉、64格動態／回收及原引擎路徑。無Core／Runtime／Backend／Worker／配置／傷害／存檔修改，不需遊戲JS快取。
+- 素材庫43檔：原有arcane-rod的SOURCE、3份SVG與正式Preset／layout同步；electrified-spark、meteor、missile-salvo的最新Preset／layout與SOURCE同步；codex-authored/user-vfx-tuning-20261022另保存12份Preset＋12份配對layout、SOURCE及SHA清單；PROVENANCE記錄本次直接授權。24份快照逐位元等於遊戲；包含期間新保存的飛彈藍版，先刷新快照再stage，沒有用舊副本覆蓋使用者內容。
+- 驗證：Core.validatePreset／Layout.validateLayout與圖層ID配對12份全合法，194份出貨素材逐份與素材庫來源及索引SHA256一致；node tools/vfx/export-assets.cjs --check最新。node --test tests/electrified-spark-vfx.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-asset-export.test.cjs tests/vfx-preset-usage.test.cjs共96項95過／1既有Windows符號連結略過／0失敗；npm.cmd run build 565檔通過；兩庫diff --check通過。初跑帶電專項2項因作者仍舊預設及測試假設零角度失敗，已依使用者明確新值同步作者、保留固定旋轉與動態驗證後3/3通過；沒有退回使用者值或移除行為檢查。
+- 唯讀檢查：共通規範／Workflow／Agent、素材庫解析／來源紀錄、所有修改diff、Core／Layout／正式匯出與既有guard／usage／export回歸。沒有新增生成美術或外部素材下載，也沒有逐份新做瀏覽器美術驗收／玩家存檔長戰／手機GPU測量；本輪為使用者已保存修改的一致性與雙倉庫提交。
+- 交付：素材庫先Commit 90fbb12（43檔），遊戲Commit為本段所在[Codex] chore: 一併提交使用者特效調整（23檔），回覆附兩筆編號；無本輪未完成項，可供Review／合併。未合併推送。若仍有舊Editor未存內容，先下載備份再重載；其他電腦須同步兩個倉庫。最後確認兩倉庫乾淨，沒有排除使用者此次授權的必要檔案。
+
 ## ELECTRIFIED-CURRENT-20261021 — NPC帶電改為重疊雙電流
 
 - Owner：Codex；Done，單一開發者。使用者指定en-spark、參考藍色電流，先要求預覽，再於2026-10-22核准「兩條幾乎重疊、各自隨機扭動、幅度＋30%」並要求接入；允許正式匯出及雙倉庫Commit，不合併推送。原表定帶電與投影契約已完成；所有既有檔／新檔衝突預檢無外部來源。

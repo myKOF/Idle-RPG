@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 193,
+  "assetCount": 194,
   "assets": [
     {
       "assetId": "claude-authored/dragon-devour/vortex-ring.png",
@@ -525,6 +525,13 @@
       "fileSize": 48319
     },
     {
+      "assetId": "light-masks-1.0/transparent/window_b.png",
+      "relativePath": "light-masks-1.0/Transparent/window_b.png",
+      "package": "light-masks-1.0",
+      "contentHash": "sha256:a40902dea3a5a0600aee5200f6ad97819939eac0b5a8f96d4ad52553d466f837",
+      "fileSize": 227
+    },
+    {
       "assetId": "light-masks-1.0/transparent/window_h.png",
       "relativePath": "light-masks-1.0/Transparent/window_h.png",
       "package": "light-masks-1.0",
@@ -649,13 +656,6 @@
       "package": "new_materials",
       "contentHash": "sha256:4c41f5d04bbfa3c8b6edfa9347fe574a4db5b4a7c2d07f219e7f8b205d253bc3",
       "fileSize": 171037
-    },
-    {
-      "assetId": "new_materials/hud-reticle/target_11.png",
-      "relativePath": "new_materials/hud-reticle/target_11.png",
-      "package": "new_materials",
-      "contentHash": "sha256:67d88f581ba5a65956aa287da2079b564159b666668a08fcadea9fc2b034f82d",
-      "fileSize": 15084
     },
     {
       "assetId": "new_materials/hud-reticle/target_19.png",
@@ -1300,6 +1300,13 @@
       "package": "sci-fi-effects",
       "contentHash": "sha256:994440b153cb59ba5547dedeb5ec201d7f0ae646ac1c02beeb69a8a80d16a0f7",
       "fileSize": 131779
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_017.png",
+      "relativePath": "shape-alpha/PDAlpha_017.png",
+      "package": "shape-alpha",
+      "contentHash": "sha256:26b1f14dc212315e7bbfe3d015353c84a20798b118a59f7a0c2bc5a17457a662",
+      "fileSize": 74588
     },
     {
       "assetId": "shape-alpha/pdalpha_142.png",

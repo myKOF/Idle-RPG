@@ -14,7 +14,7 @@
         "y": 0.3906
       },
       "alpha": 0.1,
-      "tint": "#ff3d63",
+      "tint": "#ff4000",
       "blendMode": "add",
       "duration": 1.85,
       "alphaOverLife": [
@@ -60,7 +60,7 @@
         "y": 0.3906
       },
       "alpha": 0.75,
-      "tint": "#e51d86",
+      "tint": "#ff4000",
       "blendMode": "add",
       "duration": 1.85,
       "alphaOverLife": [
@@ -106,7 +106,7 @@
         "y": 0.293
       },
       "alpha": 0.55,
-      "tint": "#ff2180",
+      "tint": "#ff4000",
       "blendMode": "add",
       "duration": 1.85,
       "alphaOverLife": [
@@ -147,7 +147,7 @@
       "type": "particle",
       "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": 3,
-      "tint": "#ff2180",
+      "tint": "#ff4000",
       "blendMode": "add",
       "emission": {
         "mode": "rate",

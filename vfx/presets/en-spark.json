@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "en-spark",
-  "duration": 0.5,
+  "duration": 2,
   "loop": true,
   "layers": [
     {
@@ -9,9 +9,14 @@
       "type": "sprite",
       "assetId": "codex-authored/electrified-spark/current.svg",
       "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": 0.693156,
       "scale": {
-        "x": 0.22,
-        "y": 0.11
+        "x": 0.7115,
+        "y": 0.3785
       },
       "alpha": 1,
       "blendMode": "add",

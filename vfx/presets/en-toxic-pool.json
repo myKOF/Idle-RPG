@@ -9,12 +9,16 @@
       "type": "sprite",
       "assetId": "light-masks-1.0/default/circle_a_noise.png",
       "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "scale": {
-        "x": 0.2539,
-        "y": 0.2539
+        "x": 0.3386,
+        "y": 0.3386
       },
       "alpha": 0.85,
-      "tint": "#a8d014",
+      "tint": "#eeff00",
       "blendMode": "add",
       "duration": 3,
       "scaleOverLife": [
@@ -51,9 +55,13 @@
       "type": "sprite",
       "assetId": "light-masks-1.0/transparent/circle_b.png",
       "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "scale": {
-        "x": 0.1641,
-        "y": 0.1641
+        "x": 0.2188,
+        "y": 0.2188
       },
       "alpha": 0.55,
       "tint": "#26340a",
@@ -69,9 +77,13 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/circle_01.png",
       "zIndex": 2,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "scale": {
-        "x": 0.25,
-        "y": 0.25
+        "x": 0.3334,
+        "y": 0.3334
       },
       "alpha": 0.7,
       "tint": "#e2ff5a",
@@ -101,6 +113,10 @@
       "type": "particle",
       "assetId": "particle-pack/png-black-background/circle_02.png",
       "zIndex": 3,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "alpha": 0.9,
       "tint": "#f0ff8a",
       "blendMode": "add",
@@ -113,16 +129,16 @@
         0.9
       ],
       "spawn": {
-        "radius": 44,
+        "radius": 58.6696,
         "shape": "circle"
       },
       "speed": [
         0,
-        4
+        5.3336
       ],
       "startScale": [
-        0.0273,
-        0.0508
+        0.0364,
+        0.0677
       ],
       "alphaOverLife": [
         [
@@ -158,6 +174,10 @@
       "type": "particle",
       "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": 4,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "alpha": 0.9,
       "tint": "#dfff6a",
       "blendMode": "add",
@@ -170,18 +190,18 @@
         1.4
       ],
       "spawn": {
-        "radius": 40,
+        "radius": 53.336,
         "shape": "circle"
       },
       "speed": [
-        10,
-        24
+        13.334,
+        32.0016
       ],
       "direction": -90,
       "spread": 30,
       "startScale": [
-        0.0156,
-        0.0313
+        0.0208,
+        0.0417
       ],
       "alphaOverLife": [
         [
@@ -203,6 +223,10 @@
       "type": "particle",
       "assetId": "new_materials/smoke/smoke3_11.png",
       "zIndex": 5,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "alpha": 0.35,
       "tint": "#b4d040",
       "blendMode": "add",
@@ -215,18 +239,18 @@
         1.8
       ],
       "spawn": {
-        "radius": 34,
+        "radius": 45.3356,
         "shape": "circle"
       },
       "speed": [
-        6,
-        14
+        8.0004,
+        18.6676
       ],
       "direction": -90,
       "spread": 40,
       "startScale": [
-        0.0781,
-        0.1367
+        0.1041,
+        0.1823
       ],
       "alphaOverLife": [
         [

@@ -152,8 +152,12 @@
       "parent": "rod-axis",
       "assetId": "codex-authored/arcane-rod/outer-arcs.svg",
       "zIndex": 4,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "scale": {
-        "x": 0.1757,
+        "x": 0.0856,
         "y": 0.1353
       },
       "anchor": {

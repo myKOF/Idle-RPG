@@ -53,10 +53,11 @@ function currentSVG(options = {}) {
 ${cells.join('\n')}</svg>\n`;
 }
 function make() {
-  return { schemaVersion: 1, id: 'en-spark', duration: .5, loop: true,
+  return { schemaVersion: 1, id: 'en-spark', duration: 2, loop: true,
     sizing: { authored: { radius: 22 }, shape: 'projectile-circle' },
     layers: [{ id: 'current', type: 'sprite', assetId, zIndex: 0,
-      scale: { x: .22, y: .11 }, alpha: 1, blendMode: 'add', duration: 2, loop: true,
+      position: { x: 0, y: 0 }, rotation: .693156,
+      scale: { x: .7115, y: .3785 }, alpha: 1, blendMode: 'add', duration: 2, loop: true,
       sheet: { columns: COLUMNS, rows: FRAMES / COLUMNS, count: FRAMES, mode: 'fps', fps: 32, loop: true } }] };
 }
 function writeSource() {

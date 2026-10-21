@@ -7,14 +7,18 @@
     {
       "id": "fill",
       "type": "sprite",
-      "assetId": "light-masks-1.0/default/circle_b.png",
+      "assetId": "light-masks-1.0/transparent/window_b.png",
       "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "scale": {
-        "x": 0.4199,
-        "y": 0.1016
+        "x": 0.6722,
+        "y": 0.1287
       },
       "alpha": 0.55,
-      "tint": "#9a6cff",
+      "tint": "#ff0000",
       "blendMode": "add",
       "duration": 0.8,
       "alphaOverLife": [
@@ -39,84 +43,24 @@
     {
       "id": "edge",
       "type": "sprite",
-      "assetId": "new_materials/hud-reticle/target_11.png",
+      "assetId": "shape-alpha/pdalpha_017.png",
       "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "scale": {
-        "x": 0.4102,
-        "y": 0.0889
+        "x": 0.1175,
+        "y": 0.0257
       },
       "alpha": 0.9,
-      "tint": "#e0ccff",
+      "tint": "#4d4600",
       "blendMode": "add",
       "duration": 0.8,
       "projection": {
         "x": 1,
         "y": 0.5
       }
-    },
-    {
-      "id": "line",
-      "type": "sprite",
-      "assetId": "particle-pack/png-black-background/rotated/trace_06_rotated.png",
-      "zIndex": 2,
-      "scale": {
-        "x": 0.4102,
-        "y": 0.0279
-      },
-      "alpha": 1,
-      "tint": "#f2e8ff",
-      "blendMode": "add",
-      "duration": 0.8,
-      "projection": {
-        "x": 1,
-        "y": 0.5
-      }
-    },
-    {
-      "id": "dust",
-      "type": "particle",
-      "assetId": "particle-pack/png-black-background/dirt_01.png",
-      "zIndex": 3,
-      "alpha": 0.8,
-      "tint": "#cdbcf0",
-      "blendMode": "add",
-      "emission": {
-        "mode": "rate",
-        "rate": 26
-      },
-      "lifetime": [
-        0.4,
-        0.7
-      ],
-      "spawn": {
-        "height": 32.5,
-        "shape": "box",
-        "width": 190
-      },
-      "speed": [
-        14,
-        40
-      ],
-      "direction": -90,
-      "spread": 60,
-      "startScale": [
-        0.0313,
-        0.0508
-      ],
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.3,
-          1
-        ],
-        [
-          1,
-          0
-        ]
-      ]
     }
   ],
   "sizing": {
