@@ -123,4 +123,94 @@ const help=[
  ['間隔、發射夾角、飛行速度及範圍百分比也採底值,每級增量。發射夾角不是傷害扇形。'],
  ['效果JSON不再存放上述幾何鍵。舊資料可讀取遷移，但新版表格是唯一編輯入口。']
 ];
-module.exports={labels,columns,legacy,bindings,parse,extract,strip,apply,help,spatialKeys};
+/* ---------------- 敵人技能（類別＝enemy）的欄位接線 ----------------
+   2026-10-21 使用者要求：作用範圍、速度、間隔這些參數要填在表格欄位，表格沒有適合的欄位才留在效果參數(JSON)。
+   與玩家技能同一套規則：每個技能逐一接線（不依鍵名猜用途），JSON 裡出現已接線的鍵、或填了沒接線的欄位，都拒絕匯入。
+   敵人技能只有一階，所以欄位只收底值（不收「,每級增量」）。單位與 JSON 相同（米、秒、米／秒），
+   js/elite_data.js 照舊把米換成座標單位——引擎拿到的參數一個字都不變。
+
+   接線格式：[用途, 鍵]＝單值；[用途, [長鍵, 寬鍵]]＝「長*寬」；[用途, [鍵, 鍵…], 'same']＝一個值同時寫進幾個鍵。
+
+   留在 JSON 的距離／速度類參數（表格沒有對應用途）：
+     hover（火鏈守位距離）、linkH（鏈環高度，純畫面）、coreR（熔火死亡自爆的第二個半徑；傷害範圍欄已給火徑）、
+     minRange（迫擊最小射程）、minPull（漩渦拉不動的最近距離）、r（漩渦的畫面半徑，不是作用範圍）、
+     push／dist（擊退距離）、burstR（火球爆炸畫面大小，命中看 hitR）、rot（光束每秒轉幾度）、
+     以及所有時間長度（life／dur／warn／windup／travel／coreDelay）——表格沒有「持續時間」欄。 */
+const enemyRoutes={
+ e_firechain:[['gap','tick'],['body','wid'],['spacing','linkLen']],
+ e_arcane:[['placement','throwRange'],['damage',['len','wid']],['gap','tick']],
+ e_molten:[['spacing','trailGap'],['damage','r'],['gap','tick']],
+ e_plague:[['damage','r'],['gap','tick']],
+ e_electrified:[['speed','speed'],['damage','r'],['body','bodyD'],['gap','gap']],
+ e_poisoncross:[['placement','throwRange'],['damage',['hubR','ballR'],'same'],['travel','len'],['grow','speed'],['gap','tick']],
+ e_frostburst:[['placement','spread'],['damage','r']],
+ e_frostpulse:[['speed','move'],['damage','r'],['gap','pulse']],
+ e_mortar:[['placement','spread'],['gap','step'],['damage','r'],['body','bodyD'],['height','arc']],
+ e_walls:[['body',['len','thick']],['placement','dist']],
+ e_vortex:[['effect','pullR'],['height','arcH'],['speed','speed']],
+ e_missile:[['travel','back'],['damage','r'],['body','bodyD']],
+ e_thunderstorm:[['placement','spread'],['gap','step'],['damage','r']],
+ e_meteor:[['placement','spread'],['gap','step'],['damage','r'],['body','bodyD']],
+ e_moltenblast:[['damage','r']], e_frostnova:[['damage','r']], e_quake:[['damage','r']],
+ e_petrify:[['damage','r']], e_shockwave:[['damage','r']],
+ e_blizzard:[['damage','r'],['gap','tick']], e_darkzone:[['damage','r'],['gap','tick']],
+ e_waterprison:[['damage','r'],['gap','tick']],
+ e_tornado:[['damage','r'],['gap','tick'],['speed','drift']],
+ e_thunderorb:[['damage','r'],['gap','tick'],['speed','drift']],
+ e_thunderwall:[['damage',['w2','h2']],['gap','tick']],
+ e_darkorbs:[['gap','gap'],['damage','hitR'],['body','bodyD']],
+ e_poisonspit:[['gap','gap'],['damage','hitR']],
+ e_iceshards:[['gap','gap'],['damage','hitR']],
+ e_fireball:[['gap','gap'],['damage','hitR'],['body','bodyD']],
+ e_windblades:[['gap','gap'],['damage','hitR']],
+ e_lightningspear:[['gap','gap'],['damage','hitR']],
+ e_charge:[['speed','speed'],['damage','hitR']],
+ e_whirlwind:[['damage','r'],['gap','gap']],
+ e_manadrain:[['body','bodyD']],
+ e_bomber:[['damage','r']]
+};
+/* 留在 JSON 的距離／速度／間隔類鍵（表格沒有對應用途）；鍵 → 原因。tests/skills2-enemy-columns.test.cjs 用它守住
+   「表格有欄位就不能寫在 JSON」：新增技能用到距離類參數時，不是接線到欄位，就是在這裡寫明為什麼留在 JSON。 */
+const enemyJsonKeep={
+ hover:'守位距離（離玩家多遠站著），不是施放距離',
+ linkH:'鏈環高度，純畫面',
+ coreR:'熔火死亡自爆的第二個半徑（傷害範圍欄已給火徑）',
+ minRange:'最小射程（貼臉打不到），表格只有最大的施放距離',
+ minPull:'漩渦拉不動的最近距離',
+ r:'只有漩渦：畫面半徑，不是作用範圍（拉扯範圍是狀態／控制範圍欄）',
+ push:'擊退距離', dist:'擊退距離（擊退詞條）',
+ burstR:'火球爆炸的畫面大小，命中看傷害範圍欄'
+};
+function enemyBindings(gid){return enemyRoutes[gid]||[];}
+function enemyKeys(gid){const out=[];for(const b of enemyBindings(gid))(Array.isArray(b[1])?b[1]:[b[1]]).forEach(k=>out.push(k));return out;}
+function numCell(v){return String(Math.round(v*1e6)/1e6);}
+/* 敵人列：由引擎參數（效果參數 JSON 的全部鍵）拆成「欄位格子」與「留在 JSON 的部分」。 */
+function enemyExtract(gid,fx){
+ const cells=Object.fromEntries(columns.map(c=>[c,''])),rest={...fx};
+ for(const [kind,keys,mode] of enemyBindings(gid)){
+  const list=Array.isArray(keys)?keys:[keys];
+  if(list.every(k=>fx[k]===undefined))continue;
+  if(list.some(k=>typeof fx[k]!=='number'))throw Error(gid+'：「'+list.join('／')+'」要是數字才能放進「'+labels[kind]+'」');
+  if(mode==='same'&&list.some(k=>fx[k]!==fx[list[0]]))throw Error(gid+'：「'+list.join('／')+'」共用「'+labels[kind]+'」一格，值必須相同');
+  cells[labels[kind]]=mode==='same'||list.length===1?numCell(fx[list[0]]):list.map(k=>numCell(fx[k])).join('*');
+  list.forEach(k=>delete rest[k]);
+ }
+ return {cells,fx:rest};
+}
+/* 敵人列：JSON（已不含欄位參數）＋欄位格子 → 引擎參數。 */
+function enemyApply(gid,fx,get){
+ const out={...fx},used=new Set();
+ for(const [kind,keys,mode] of enemyBindings(gid)){
+  const label=labels[kind],list=Array.isArray(keys)?keys:[keys];used.add(label);
+  list.forEach(k=>{if(fx[k]!==undefined)throw Error(gid+'：「'+k+'」已改填「'+label+'」欄，請從效果參數(JSON)移除');});
+  const raw=String(get(label)||'').trim();if(!raw)continue;
+  if(raw.indexOf(',')>=0)throw Error(gid+'「'+label+'」：敵人技能只有一階，只填底值（不收「,每級增量」）：'+raw);
+  const v=parse(raw,list.length===2&&mode!=='same');
+  if(kind==='speed'&&v.base[0]<=0)throw Error(gid+'「'+label+'」必須大於零');
+  list.forEach((k,i)=>{out[k]=mode==='same'?v.base[0]:v.base[i];});
+ }
+ for(const c of columns)if(!used.has(c)&&String(get(c)||'').trim())throw Error(gid+' 未接線「'+c+'」，不可填入而不生效（接線在 tools/skills2-geometry.cjs 的 enemyRoutes）');
+ return out;
+}
+module.exports={labels,columns,legacy,bindings,parse,extract,strip,apply,help,spatialKeys,
+ enemyRoutes,enemyJsonKeep,enemyBindings,enemyKeys,enemyExtract,enemyApply};

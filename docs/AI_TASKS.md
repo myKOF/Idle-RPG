@@ -11619,3 +11619,13 @@ Worker 存活且頁面正常完成載入。
 - 測試：新增 `tests/vfx-editor-deformation.test.cjs`（DEF-1～6，含全部正式 Preset 套上建議值都通過 Core 驗證——342 份，不釘任何一份內容）。9 個突變全部抓到（第一輪「不轉角」活下來，補 DEF-4B）。editor／preset／runtime 測試 641 項中 9 項失敗，與 HEAD 的失敗名單完全相同（既有基線）。build_check 558 檔通過。
 - 實機（本機編輯器 28362）：真的點擊「啟用整體變形」，帶入值通過驗證；同一份 en-bolt-storm 以 5 個種子並排，五道彎法各不相同，頂端的球與地面落點都留在原位。
 - 衝突注意：codex 副本的 en-bolt-storm.json 有未提交的修改（使用者自己的調整）。本分支的版本已包含那些修改＋變形；使用者之後若在 codex 又改了同幾行，合併時以 codex 為準、保留 `deformation` 這一段即可。
+
+## Claude｜敵人技能的範圍、速度、間隔改填 Skills2 欄位（ENEMY-SKILL-COLUMNS-20261021）
+
+- Owner：Claude；Done。使用者指出：NPC（敵人）技能的作用範圍、速度、作用間隔都寫死在效果參數(JSON)，應填進表格對應欄位，表格沒有適合的欄位才留在 JSON。
+- 架構：沿用玩家技能那套「逐技能明確接線」（`tools/skills2-geometry.cjs`），不另做第二套。新增 `enemyRoutes`（35 個技能、84 個參數：傷害範圍 31、每段或每跳間隔 23、碰撞體尺寸 9、生成位置範圍 7、飛行子彈速度 6、飛行距離／生成環間間距／拋物線高度各 2、狀態控制範圍與每秒半徑擴張各 1）、`enemyExtract`／`enemyApply`。匯入規則與玩家一樣嚴：JSON 留著已接線的鍵、填了沒接線的欄位、填了「,每級增量」（敵人只有一階）、速度 ≤ 0 都拒絕。
+- 留在 JSON 的距離類參數列在 `enemyJsonKeep`（鍵→原因）：守位距離 hover、鏈環高度 linkH、熔火自爆第二半徑 coreR、最小射程 minRange、漩渦最近距離 minPull 與畫面半徑 r、擊退距離 push／dist、火球爆炸畫面 burstR；時間長度（life／dur／warn…）表格沒有欄位。
+- 資料流不變：欄位值（米、秒、米／秒）併回 fx 後照舊由 `js/elite_data.js` 換成座標單位。`config_tables --apply` 回報「語意變更 0」，`js/skills2.js` 一個字都沒改；引擎拿到的參數與改之前完全相同。
+- Excel：先 COM 唯讀傾印，依表頭名稱（不寫死欄位位置）改 52 個敵人列，`excel-update-sheets.ps1` 回報寫入 119 格（84 格欄位＋35 格 JSON），與預期完全相同；「欄位定義」頁前 152 行與程式產生的一字不差才整頁換新（只改敵人技能那段說明）。`--sync` 後其他表只有行尾差異，已還原。
+- 判斷待使用者確認（沒意見就照現在）：①`bodyD`（飛彈／隕石／迫擊的彈體直徑）放「碰撞體尺寸」——敵人飛行物目前只用它決定彈體畫面大小，命中看傷害範圍；②漩渦的拉扯速度、衝撞的衝刺速度、龍捲／雷球的追擊速度、冰球跟隨速度放「飛行子彈速度」；③毒素加持的毒水球往外長的速度放「每秒半徑擴張」、最長長度放「飛行距離」；④飛彈先往後飛的距離 `back` 放「飛行距離」。
+- 修改 `tools/skills2-geometry.cjs`、`tools/config_tables.cjs`（讀表與重生兩個方向＋欄位定義頁說明）、`config/Excel/Skills2.xlsx`、`config/CSV/Skills2.csv`，`docs/ELITE_AFFIXES.md` 重生（築牆說明先前改過卻沒重生）。新增 `tests/skills2-enemy-columns.test.cjs`（ENEMY-COL-1～7：Excel／CSV／JS 一致、表格有欄位就不能留在 JSON、接線只指向存在的技能、全部往返不掉參數、匯入拒絕規則、長*寬與一格寫兩鍵、說明頁）；9 個突變全部抓到。相關測試 6 檔的失敗名單與 HEAD 完全相同（19 項既有基線）。build_check 559 檔通過。
