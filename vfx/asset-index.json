@@ -6,7 +6,7 @@
     "name": "asset-scanner",
     "version": "1.0.0"
   },
-  "assetCount": 2467,
+  "assetCount": 2468,
   "assets": [
     {
       "assetId": "antigravity-authored/ice/ice-arrow-spike.png",
@@ -747,8 +747,8 @@
       "package": "codex-authored",
       "relativePath": "codex-authored/arcane-rod/cylinder.svg",
       "format": "svg",
-      "fileSize": 1137,
-      "contentHash": "sha256:9f56e878a50c4e40d18276a1f4b3132b4400e8a1e76762c0e3e3d8b4f7dec066",
+      "fileSize": 1152,
+      "contentHash": "sha256:d6da70dd51527269b121ed9e9f35c06dfcf7f2b030d713f1acdb91ae14bfe365",
       "facts": {
         "dimensions": {
           "width": 144,
@@ -781,12 +781,31 @@
       }
     },
     {
+      "assetId": "codex-authored/arcane-rod/outer-arcs.svg",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/arcane-rod/outer-arcs.svg",
+      "format": "svg",
+      "fileSize": 73624,
+      "contentHash": "sha256:ef905576c9ea96c2f8077128ae57cdb542b3829575c9be5769143133266e8f77",
+      "facts": {
+        "dimensions": {
+          "width": 3200,
+          "height": 1024
+        },
+        "dimensionsSource": "attributes",
+        "colorModel": null,
+        "bitDepth": null,
+        "hasAlphaChannel": null,
+        "pixelsAnalyzed": false
+      }
+    },
+    {
       "assetId": "codex-authored/arcane-rod/surface-current.svg",
       "package": "codex-authored",
       "relativePath": "codex-authored/arcane-rod/surface-current.svg",
       "format": "svg",
-      "fileSize": 37072,
-      "contentHash": "sha256:5661a3356f676f2e174fc7c9157a323c56744f10f72f35adc7817c645e56518d",
+      "fileSize": 68234,
+      "contentHash": "sha256:9d58468fad48e511748cba7462e508efb15986ae847134e6442e53396ce44b6f",
       "facts": {
         "dimensions": {
           "width": 1152,

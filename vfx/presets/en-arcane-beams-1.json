@@ -147,6 +147,43 @@
       }
     },
     {
+      "id": "outer-arcs",
+      "type": "sprite",
+      "parent": "rod-axis",
+      "assetId": "codex-authored/arcane-rod/outer-arcs.svg",
+      "zIndex": 4,
+      "scale": {
+        "x": 0.1757,
+        "y": 0.1353
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "alpha": 1,
+      "blendMode": "add",
+      "duration": 8,
+      "loop": true,
+      "rotationSpeed": 1.0471975511965976,
+      "scaleXOverLife": 1,
+      "scaleYOverLife": 1,
+      "outerScale": {
+        "x": 1,
+        "y": 0.6
+      },
+      "perspective": false,
+      "followDirection": false,
+      "followStretch": false,
+      "sheet": {
+        "columns": 8,
+        "count": 8,
+        "fps": 14,
+        "loop": true,
+        "mode": "fps",
+        "rows": 1
+      }
+    },
+    {
       "id": "hub",
       "type": "sprite",
       "assetId": "codex-authored/arcane-rod/emitter-flare.svg",
