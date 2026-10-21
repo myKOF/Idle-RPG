@@ -396,6 +396,28 @@ test('ELITE-ENGINE-10 毒素加持：中心毒圈（半徑 4 米）→ 十字毒
   assert.equal(c.ELITE_RT.crosses.length, 0);
 });
 
+test('ELITE-ENGINE-10b 毒素加持：十字朝向＝敵人面對玩家的方向（斜來就是斜十字），Preset 與判定同角度', () => {
+  const c = fresh();
+  const m = quiet(makeElite(c, ['e_poisoncross'], { x: 200, y: 200, hp: 1e9 }));   // 敵人在右下 45°
+  const d = c.ELITE_AFFIXES.e_poisoncross;
+  c.eliteCastCross(m, d);
+  stepElite(c, d.warn + 0.1);
+  const x = c.ELITE_RT.crosses[0];
+  const want = Math.atan2(c.bfPlayerPos().y - 200, c.bfPlayerPos().x - 200);
+  assert.ok(Math.abs(x.a - want) < 1e-6, '十字朝向＝敵人→玩家：' + x.a);
+  const fx = c.vfx.filter((v) => v.vfx && v.vfx.ground === d.v.field && v.area && v.area.a !== undefined);
+  assert.ok(fx.length && Math.abs(fx[fx.length - 1].area.a - want) < 1e-6, '送給顯示層的 area.a 同角度');
+  // 沿朝向走 36 米遠的那顆在、正上方（正十字的位置）沒有
+  stepElite(c, 3.2);
+  const R = d.len - 1;
+  c.bfPlayerPos().x = x.x + Math.cos(want) * R; c.bfPlayerPos().y = x.y + Math.sin(want) * R;
+  let mark = hpLost(c); stepElite(c, 0.3);
+  assert.ok(hpLost(c) > mark, '斜向那條臂的最遠一顆打得到');
+  c.bfPlayerPos().x = x.x; c.bfPlayerPos().y = x.y - R;
+  mark = hpLost(c); stepElite(c, 0.3);
+  assert.equal(hpLost(c), mark, '正上方不是臂的位置，安全');
+});
+
 test('ELITE-ENGINE-11 冰爆：多顆冰晶先膨脹 2~3 秒，炸裂時範圍內的玩家被冰凍；離開範圍不受影響', () => {
   const c = fresh();
   const m = makeElite(c, ['e_frostburst'], { x: 150, y: 0, hp: 1e9 });
