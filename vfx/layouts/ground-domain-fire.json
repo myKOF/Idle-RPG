@@ -7,7 +7,6 @@
       "name": "ground-domain-fire",
       "layerIds": [
         "edge",
-        "rim-flame-01",
         "rim-flame-02",
         "rim-flame-03",
         "rim-flame-04",
@@ -20,8 +19,6 @@
         "rim-flame-11",
         "rim-flame-12",
         "rim-flame-13",
-        "rim-flame-14",
-        "rim-flame-15",
         "rim-flame-16",
         "rim-flame-17",
         "rim-flame-18",
@@ -29,8 +26,7 @@
         "rim-flame-20",
         "rim-flame-21",
         "rim-flame-22",
-        "rim-flame-23",
-        "rim-flame-24"
+        "rim-flame-23"
       ]
     }
   ],

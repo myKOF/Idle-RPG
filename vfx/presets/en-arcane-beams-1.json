@@ -9,25 +9,38 @@
       "type": "sprite",
       "assetId": "light-masks-1.0/default/circle_b.png",
       "zIndex": 0,
+      "position": {
+        "x": 0.6773,
+        "y": 0
+      },
       "scale": {
-        "x": 0.07,
-        "y": 0.07
+        "x": 0.0918,
+        "y": 0.0541
       },
       "alpha": 0.25,
       "tint": "#c850ff",
       "blendMode": "add",
       "duration": 6,
+      "rotationSpeed": 1.0471975511965976,
       "projection": {
         "x": 1,
-        "y": 0.5
+        "y": 1
       }
     },
     {
       "id": "rod-axis",
       "type": "empty",
+      "position": {
+        "x": 0.6773,
+        "y": 0
+      },
       "rotation": 1.5707963267948966,
+      "scale": {
+        "x": 1.7244,
+        "y": 1.7244
+      },
       "duration": 6,
-      "rotationSpeed": 0.8726646259971648,
+      "rotationSpeed": 0,
       "outerScale": {
         "x": 1,
         "y": 0.5
@@ -40,8 +53,8 @@
       "assetId": "codex-authored/arcane-rod/cylinder.svg",
       "zIndex": 1,
       "scale": {
-        "x": 0.18629807692307693,
-        "y": 0.09765625
+        "x": 0.1863,
+        "y": 0.1353
       },
       "anchor": {
         "x": 0.5,
@@ -50,8 +63,18 @@
       "alpha": 0.24,
       "tint": "#b866ff",
       "blendMode": "add",
-      "duration": 6,
-      "loop": true
+      "duration": 8,
+      "loop": true,
+      "rotationSpeed": 1.0471975511965976,
+      "scaleXOverLife": 1,
+      "scaleYOverLife": 1,
+      "outerScale": {
+        "x": 1,
+        "y": 0.6
+      },
+      "perspective": false,
+      "followDirection": false,
+      "followStretch": false
     },
     {
       "id": "cylinder-body",
@@ -60,29 +83,80 @@
       "assetId": "codex-authored/arcane-rod/cylinder.svg",
       "zIndex": 2,
       "scale": {
-        "x": 0.1201923076923077,
-        "y": 0.09765625
+        "x": 0.1202,
+        "y": 0.1353
       },
       "anchor": {
         "x": 0.5,
         "y": 1
       },
-      "alpha": 0.98,
+      "alpha": 0.9,
       "blendMode": "normal",
-      "duration": 6,
-      "loop": true
+      "duration": 8,
+      "loop": true,
+      "rotationSpeed": 1.0471975511965976,
+      "scaleXOverLife": 1,
+      "scaleYOverLife": 1,
+      "outerScale": {
+        "x": 1,
+        "y": 0.6
+      },
+      "perspective": false,
+      "followDirection": false,
+      "followStretch": false
+    },
+    {
+      "id": "surface-current",
+      "type": "sprite",
+      "parent": "rod-axis",
+      "assetId": "codex-authored/arcane-rod/surface-current.svg",
+      "zIndex": 3,
+      "scale": {
+        "x": 0.1202,
+        "y": 0.1353
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "alpha": 0.55,
+      "blendMode": "normal",
+      "duration": 8,
+      "loop": true,
+      "rotationSpeed": 1.0471975511965976,
+      "scaleXOverLife": 1,
+      "scaleYOverLife": 1,
+      "outerScale": {
+        "x": 1,
+        "y": 0.6
+      },
+      "perspective": false,
+      "followDirection": false,
+      "followStretch": false,
+      "sheet": {
+        "columns": 8,
+        "count": 8,
+        "fps": 12,
+        "loop": true,
+        "mode": "fps",
+        "rows": 1
+      }
     },
     {
       "id": "hub",
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/light_03.png",
       "zIndex": 9,
-      "scale": {
-        "x": 0.047,
-        "y": 0.047
+      "position": {
+        "x": 0.6773,
+        "y": 0
       },
-      "alpha": 0.75,
-      "tint": "#f8d8ff",
+      "scale": {
+        "x": 0.0429,
+        "y": 0.0429
+      },
+      "alpha": 1,
+      "tint": "#e583fb",
       "blendMode": "add",
       "duration": 6
     }

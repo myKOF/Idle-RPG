@@ -51,126 +51,13 @@
       }
     },
     {
-      "id": "rim-flame-01",
-      "type": "particle",
-      "assetId": "particle-pack/png-black-background/flame_04.png",
-      "zIndex": 4,
-      "position": {
-        "x": 98,
-        "y": 0
-      },
-      "scale": {
-        "x": 0.8,
-        "y": 2.4
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.85
-      },
-      "alpha": 1,
-      "tint": "#ff9f1c",
-      "blendMode": "screen",
-      "duration": 1.85,
-      "emission": {
-        "mode": "rate",
-        "rate": 12
-      },
-      "maxParticles": 6,
-      "lifetime": [
-        0.2,
-        0.4
-      ],
-      "spawn": {
-        "radius": 3,
-        "shape": "circle"
-      },
-      "speed": [
-        24,
-        44
-      ],
-      "direction": -90,
-      "spread": 24,
-      "gravity": {
-        "x": 0,
-        "y": -35
-      },
-      "startScale": [
-        0.06,
-        0.09
-      ],
-      "rotationStart": [
-        -0.12,
-        0.12
-      ],
-      "rotationSpeed": [
-        -0.2,
-        0.2
-      ],
-      "worldSpace": false,
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.1,
-          1
-        ],
-        [
-          0.65,
-          1
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "tintOverLife": [
-        [
-          0,
-          "#fff4c0"
-        ],
-        [
-          0.28,
-          "#ffd45a"
-        ],
-        [
-          0.65,
-          "#ff850c"
-        ],
-        [
-          1,
-          "#d63b08"
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.45
-        ],
-        [
-          0.28,
-          1
-        ],
-        [
-          1,
-          0.42
-        ]
-      ],
-      "projection": {
-        "upright": true,
-        "x": 1,
-        "y": 0.5
-      }
-    },
-    {
       "id": "rim-flame-02",
       "type": "particle",
       "assetId": "particle-pack/png-black-background/flame_04.png",
       "zIndex": 4,
       "position": {
-        "x": 94.6607,
-        "y": 25.3643
+        "x": 90.2702,
+        "y": 13.2904
       },
       "scale": {
         "x": 0.8,
@@ -182,7 +69,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "screen",
+      "blendMode": "add",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -295,7 +182,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "screen",
+      "blendMode": "add",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -408,7 +295,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "screen",
+      "blendMode": "add",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -521,7 +408,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "screen",
+      "blendMode": "add",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -634,7 +521,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "screen",
+      "blendMode": "add",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -747,7 +634,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "screen",
+      "blendMode": "add",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -860,7 +747,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "screen",
+      "blendMode": "add",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -973,7 +860,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "screen",
+      "blendMode": "add",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -1086,7 +973,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "screen",
+      "blendMode": "add",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -1199,7 +1086,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "screen",
+      "blendMode": "add",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -1299,8 +1186,8 @@
       "assetId": "particle-pack/png-black-background/flame_04.png",
       "zIndex": 4,
       "position": {
-        "x": -94.6607,
-        "y": 25.3643
+        "x": -90.2702,
+        "y": 18.7786
       },
       "scale": {
         "x": 0.8,
@@ -1312,7 +1199,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "screen",
+      "blendMode": "add",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -1412,8 +1299,8 @@
       "assetId": "particle-pack/png-black-background/flame_04.png",
       "zIndex": 4,
       "position": {
-        "x": -98,
-        "y": 0
+        "x": -85.2474,
+        "y": -38.2577
       },
       "scale": {
         "x": 0.8,
@@ -1425,233 +1312,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "screen",
-      "duration": 1.85,
-      "emission": {
-        "mode": "rate",
-        "rate": 12
-      },
-      "maxParticles": 6,
-      "lifetime": [
-        0.2,
-        0.4
-      ],
-      "spawn": {
-        "radius": 3,
-        "shape": "circle"
-      },
-      "speed": [
-        24,
-        44
-      ],
-      "direction": -90,
-      "spread": 24,
-      "gravity": {
-        "x": 0,
-        "y": -35
-      },
-      "startScale": [
-        0.06,
-        0.09
-      ],
-      "rotationStart": [
-        -0.12,
-        0.12
-      ],
-      "rotationSpeed": [
-        -0.2,
-        0.2
-      ],
-      "worldSpace": false,
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.1,
-          1
-        ],
-        [
-          0.65,
-          1
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "tintOverLife": [
-        [
-          0,
-          "#fff4c0"
-        ],
-        [
-          0.28,
-          "#ffd45a"
-        ],
-        [
-          0.65,
-          "#ff850c"
-        ],
-        [
-          1,
-          "#d63b08"
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.45
-        ],
-        [
-          0.28,
-          1
-        ],
-        [
-          1,
-          0.42
-        ]
-      ],
-      "projection": {
-        "upright": true,
-        "x": 1,
-        "y": 0.5
-      }
-    },
-    {
-      "id": "rim-flame-14",
-      "type": "particle",
-      "assetId": "particle-pack/png-black-background/flame_04.png",
-      "zIndex": 2,
-      "position": {
-        "x": -94.6607,
-        "y": -25.3643
-      },
-      "scale": {
-        "x": 0.8,
-        "y": 2.4
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.85
-      },
-      "alpha": 1,
-      "tint": "#ff9f1c",
-      "blendMode": "screen",
-      "duration": 1.85,
-      "emission": {
-        "mode": "rate",
-        "rate": 12
-      },
-      "maxParticles": 6,
-      "lifetime": [
-        0.2,
-        0.4
-      ],
-      "spawn": {
-        "radius": 3,
-        "shape": "circle"
-      },
-      "speed": [
-        24,
-        44
-      ],
-      "direction": -90,
-      "spread": 24,
-      "gravity": {
-        "x": 0,
-        "y": -35
-      },
-      "startScale": [
-        0.06,
-        0.09
-      ],
-      "rotationStart": [
-        -0.12,
-        0.12
-      ],
-      "rotationSpeed": [
-        -0.2,
-        0.2
-      ],
-      "worldSpace": false,
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.1,
-          1
-        ],
-        [
-          0.65,
-          1
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "tintOverLife": [
-        [
-          0,
-          "#fff4c0"
-        ],
-        [
-          0.28,
-          "#ffd45a"
-        ],
-        [
-          0.65,
-          "#ff850c"
-        ],
-        [
-          1,
-          "#d63b08"
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.45
-        ],
-        [
-          0.28,
-          1
-        ],
-        [
-          1,
-          0.42
-        ]
-      ],
-      "projection": {
-        "upright": true,
-        "x": 1,
-        "y": 0.5
-      }
-    },
-    {
-      "id": "rim-flame-15",
-      "type": "particle",
-      "assetId": "particle-pack/png-black-background/flame_04.png",
-      "zIndex": 2,
-      "position": {
-        "x": -84.8705,
-        "y": -49
-      },
-      "scale": {
-        "x": 0.8,
-        "y": 2.4
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.85
-      },
-      "alpha": 1,
-      "tint": "#ff9f1c",
-      "blendMode": "screen",
+      "blendMode": "add",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -1764,7 +1425,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "screen",
+      "blendMode": "add",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -1877,7 +1538,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "screen",
+      "blendMode": "add",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -1990,7 +1651,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "screen",
+      "blendMode": "add",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -2103,7 +1764,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "screen",
+      "blendMode": "add",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -2216,7 +1877,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "screen",
+      "blendMode": "add",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -2329,7 +1990,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "screen",
+      "blendMode": "add",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -2442,7 +2103,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "screen",
+      "blendMode": "add",
       "duration": 1.85,
       "emission": {
         "mode": "rate",
@@ -2542,8 +2203,8 @@
       "assetId": "particle-pack/png-black-background/flame_04.png",
       "zIndex": 2,
       "position": {
-        "x": 84.8705,
-        "y": -49
+        "x": 83.5952,
+        "y": -38.7979
       },
       "scale": {
         "x": 0.8,
@@ -2555,120 +2216,7 @@
       },
       "alpha": 1,
       "tint": "#ff9f1c",
-      "blendMode": "screen",
-      "duration": 1.85,
-      "emission": {
-        "mode": "rate",
-        "rate": 12
-      },
-      "maxParticles": 6,
-      "lifetime": [
-        0.2,
-        0.4
-      ],
-      "spawn": {
-        "radius": 3,
-        "shape": "circle"
-      },
-      "speed": [
-        24,
-        44
-      ],
-      "direction": -90,
-      "spread": 24,
-      "gravity": {
-        "x": 0,
-        "y": -35
-      },
-      "startScale": [
-        0.06,
-        0.09
-      ],
-      "rotationStart": [
-        -0.12,
-        0.12
-      ],
-      "rotationSpeed": [
-        -0.2,
-        0.2
-      ],
-      "worldSpace": false,
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.1,
-          1
-        ],
-        [
-          0.65,
-          1
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "tintOverLife": [
-        [
-          0,
-          "#fff4c0"
-        ],
-        [
-          0.28,
-          "#ffd45a"
-        ],
-        [
-          0.65,
-          "#ff850c"
-        ],
-        [
-          1,
-          "#d63b08"
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.45
-        ],
-        [
-          0.28,
-          1
-        ],
-        [
-          1,
-          0.42
-        ]
-      ],
-      "projection": {
-        "upright": true,
-        "x": 1,
-        "y": 0.5
-      }
-    },
-    {
-      "id": "rim-flame-24",
-      "type": "particle",
-      "assetId": "particle-pack/png-black-background/flame_04.png",
-      "zIndex": 2,
-      "position": {
-        "x": 94.6607,
-        "y": -25.3643
-      },
-      "scale": {
-        "x": 0.8,
-        "y": 2.4
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.85
-      },
-      "alpha": 1,
-      "tint": "#ff9f1c",
-      "blendMode": "screen",
+      "blendMode": "add",
       "duration": 1.85,
       "emission": {
         "mode": "rate",

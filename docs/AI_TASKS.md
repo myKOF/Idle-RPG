@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## ARCANE-TIP-CURRENT-20261021 — 祕法棒略尖前端與紫色表面電流
+
+- Owner：Codex；Done，單一開發者。使用者要求en-arcane-beams-1前端稍尖、表面有輕微紫色電流纏繞。完成短弧收尖與8格、12fps循環細電流；兩條不規則螺旋細線裁切在柱身表面，單一新增sprite，不加粒子／Timer／Shader。沿用原assetId的柱身SVG與新增surface-current.svg，無外部素材／描圖；Mote無原生SVG匯出，延續原創向量作者工具。
+- 修改檔案：arcane-rod.cjs、cylinder.svg／surface-current.svg、en-arcane-beams-1 Preset／layout、asset-index／shipped-assets、tests/arcane-surface-current.test.cjs、LV與本段。CLI以enhance增補現有Preset，不用canonical make重設使用者尺寸／旋轉／透明度。電流複製實際柱身的所有幾何與時間軸，只改素材、層級、透明度及sheet；尺寸／旋轉／投影逐幀完全貼合。沒有Core／Backend／Runtime／配置／傷害修改，無JS快取變更。
+- 預檢：develop整合中的未提交檔案全部與本分支HEAD逐位元一致，沒有獨立外部改動；以該共同HEAD內容＋本次候選＋develop工作檔實際merge-file乾跑（作者、Preset、layout、兩索引、文件）皆0。僅本副本使用者的en-arcane-beams-1、burst-frost-freeze及ground-domain-fire Preset／layout正在調整，依原「連我的修改一起commit」保存，不重製其外觀。
+- 新驗收3項通過：node --test tests/arcane-surface-current.test.cjs；不等比縮放／父層／實際分層旋轉下電流與柱身的畫面矩陣逐值相同、至少5個不同動畫frame；增補保留其他圖層且重跑不重複；原創圖集／端點／出貨雜湊一致。另含arcane-rod-vfx、vfx-core-hierarchy、vfx-editor-guard、vfx-editor-cache-versions、vfx-asset-export、skills2-vfx-schema的7檔回歸共97項，94通過／2既有失敗／1Windows符號連結略過。新專項與相關94項集合無失敗。
+- 基線與風險：改檔前先跑原arcane-rod-vfx，已因使用者預先改動出現2項失敗：顯示端點與判定尺寸不同（起初153.0858對140，後續仍有使用者縮放調整）、已編輯Preset與作者canonical不同；真引擎場域測試通過。完成後同2項失敗，未降低斷言、未重設使用者設定來消除。這個原有顯示／判定差異仍存在，本次只保持新電流與實際柱身一致；未宣稱判定尺寸已全部吻合。
+- 圖像／Build：正式Core／Pixi與出貨索引的三時點預覽，僅在預覽固定朝向比較，深淺背景均READY且後端錯誤0；本聊天visualizations/arcane-tip-current-dark.png及light.png。實際Preset旋轉保持使用者值。npm.cmd run build：563檔通過；三份變更Preset及layout驗證、素材匯出與兩庫diff檢查完成。沒有完整玩家存檔長測或手機GPU量測。未操作使用者原開編輯器，測試頁與服務清理。
+- 未修改但檢查：AI規範／工作流、Skills2與elite判定資料、Core父層／sheet／投影、PixiBackend、原專項與Editor guard。素材庫保存兩SVG、來源說明及同Preset／layout；使用者另兩份VFX保存user-vfx-tuning-20261021快照。先素材庫後遊戲Commit，編號於回覆與下方紀錄；不合併推送。可Review／合併，原有2項差異如上；下一步備份Editor未存內容再重新載入，以取得新的貼圖與電流圖層。
+- 素材庫已提交02174cf（10檔）；遊戲Commit為本段所在「[Codex] feat: 祕法棒前端收尖並加上紫色表面電流」，回覆附編號。沒有本次未完成實作，提交後核對兩庫status。
+
 ## METEOR-IMPACT-AFTERMATH-20261021 — 隕石落地尾跡續播與四秒坑痕
 
 - Owner：Codex；Done，單一開發者。使用者要求石頭命中後煙火繼續下移播完、地板留下4秒坑痕，先看預覽；2026-10-21最後確認「好，接入吧」。依原授權連使用者已儲存修改一起提交，未合併／推送。

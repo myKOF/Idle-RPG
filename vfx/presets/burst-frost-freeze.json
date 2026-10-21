@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "burst-frost-freeze",
-  "duration": 1.05,
+  "duration": 1.131,
   "loop": false,
   "layers": [
     {
@@ -177,10 +177,12 @@
       "alpha": 0.18,
       "tint": "#a9d7e9",
       "blendMode": "normal",
+      "duration": 1.05,
       "emission": {
         "count": 10,
         "mode": "burst"
       },
+      "maxParticles": 1,
       "lifetime": [
         0.35,
         0.65
@@ -238,13 +240,15 @@
       "tint": "#d6eff9",
       "blendMode": "normal",
       "delay": 0.045,
+      "duration": 1.05,
       "emission": {
         "count": 5,
         "mode": "burst"
       },
+      "maxParticles": 1,
       "lifetime": [
-        0.5,
-        0.85
+        0.2,
+        0.45
       ],
       "spawn": {
         "radius": 4.1287,
@@ -311,13 +315,15 @@
       "tint": "#9cd9f2",
       "blendMode": "normal",
       "delay": 0.063,
+      "duration": 1.05,
       "emission": {
         "count": 5,
         "mode": "burst"
       },
+      "maxParticles": 1,
       "lifetime": [
-        0.5,
-        0.85
+        0.2,
+        0.45
       ],
       "spawn": {
         "radius": 4.1287,
@@ -384,13 +390,15 @@
       "tint": "#d6eff9",
       "blendMode": "normal",
       "delay": 0.08099999999999999,
+      "duration": 1.05,
       "emission": {
         "count": 5,
         "mode": "burst"
       },
+      "maxParticles": 1,
       "lifetime": [
-        0.5,
-        0.85
+        0.2,
+        0.45
       ],
       "spawn": {
         "radius": 4.1287,
@@ -457,13 +465,15 @@
       "tint": "#9cd9f2",
       "blendMode": "normal",
       "delay": 0.045,
+      "duration": 1.05,
       "emission": {
         "count": 5,
         "mode": "burst"
       },
+      "maxParticles": 1,
       "lifetime": [
-        0.5,
-        0.85
+        0.2,
+        0.45
       ],
       "spawn": {
         "radius": 4.1287,
@@ -530,13 +540,15 @@
       "tint": "#d6eff9",
       "blendMode": "normal",
       "delay": 0.063,
+      "duration": 1.05,
       "emission": {
         "count": 5,
         "mode": "burst"
       },
+      "maxParticles": 1,
       "lifetime": [
-        0.5,
-        0.85
+        0.2,
+        0.45
       ],
       "spawn": {
         "radius": 4.1287,
@@ -603,13 +615,15 @@
       "tint": "#9cd9f2",
       "blendMode": "normal",
       "delay": 0.08099999999999999,
+      "duration": 1.05,
       "emission": {
         "count": 5,
         "mode": "burst"
       },
+      "maxParticles": 1,
       "lifetime": [
-        0.5,
-        0.85
+        0.2,
+        0.45
       ],
       "spawn": {
         "radius": 4.1287,
@@ -2234,6 +2248,7 @@
       "alpha": 0.9,
       "tint": "#caedff",
       "blendMode": "normal",
+      "duration": 1.05,
       "emission": {
         "count": 26,
         "mode": "burst"
@@ -2287,50 +2302,6 @@
         [
           1,
           0.25
-        ]
-      ]
-    },
-    {
-      "id": "cold-glints",
-      "type": "particle",
-      "assetId": "particle-pack/png-black-background/star_04.png",
-      "position": {
-        "x": 0,
-        "y": -2.7343
-      },
-      "alpha": 0.65,
-      "tint": "#e5f8ff",
-      "blendMode": "add",
-      "emission": {
-        "count": 12,
-        "mode": "burst"
-      },
-      "lifetime": [
-        0.16,
-        0.4
-      ],
-      "spawn": {
-        "radius": 8.2574,
-        "shape": "circle"
-      },
-      "speed": [
-        48.1683,
-        123.8614
-      ],
-      "direction": 0,
-      "spread": 360,
-      "startScale": [
-        0.0067,
-        0.0134
-      ],
-      "alphaOverLife": [
-        [
-          0,
-          0.8
-        ],
-        [
-          1,
-          0
         ]
       ]
     }
