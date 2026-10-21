@@ -164,6 +164,8 @@ function eliteVisEmit(v) {
   var area = { id: v.id, x: v.x, y: v.y };
   if (v.w > 0 && v.h > 0) { area.w = v.w; area.h = v.h; area.a = v.a || 0; }
   else area.r = v.r;
+  /* 會移動的場域（火鏈）：把中心的移動速度與方向一起送過去，顯示層在兩則事件之間沿著它自走，不會一格一格跳。 */
+  if (v.speed > 0 && isFinite(v.moveA)) { area.speed = v.speed; area.moveA = v.moveA; }
   if (v.curtain) {
     /* 雷牆：顯示層對 variant 'thunder-curtain' 會沿牆面排一列落雷柱（attack 角色），不是平貼地面的 Preset。 */
     eliteFx({
@@ -1134,7 +1136,10 @@ function eliteChainsTick(dt, list) {
       if (eliteDist(pa.x, pa.y, pb.x, pb.y) > maxLen) return;
       var key = [pr[0].floatSel, pr[1].floatSel].sort().join('|');
       if (want[key]) return;
-      want[key] = { a: pr[0], b: pr[1], d: d, o: m };
+      /* 兩端的順序固定（依 floatSel 排序），不隨整圈排列改變：鏈條的角度由 a→b 決定，順序一翻就轉了 180°，
+         有怪物死亡、整圈重排時剩下的鏈條會忽然旋轉。 */
+      var lo = String(pr[0].floatSel) <= String(pr[1].floatSel);
+      want[key] = { a: lo ? pr[0] : pr[1], b: lo ? pr[1] : pr[0], d: d, o: m };
     });
   }
   var keep = [];
@@ -1160,7 +1165,16 @@ function eliteChainsTick(dt, list) {
       c.vis = { id: eliteVisId('chain'), preset: eliteChainVariants(c.d)[vi].id, x: 0, y: 0, w: 1, h: 1, a: 0, until: GT + 9999, every: 0.12, next: 0 };
       ELITE_RT.vis.push(c.vis);
     }
-    c.vis.x = (ap.x + bp.x) / 2; c.vis.y = (ap.y + bp.y) / 2;
+    var mx = (ap.x + bp.x) / 2, my = (ap.y + bp.y) / 2;
+    if (c.lastX !== undefined && dt > 0) {
+      c.vx = (c.vx || 0) * 0.5 + (mx - c.lastX) / dt * 0.5;
+      c.vy = (c.vy || 0) * 0.5 + (my - c.lastY) / dt * 0.5;
+    }
+    c.lastX = mx; c.lastY = my;
+    var csp = Math.sqrt((c.vx || 0) * (c.vx || 0) + (c.vy || 0) * (c.vy || 0));
+    c.vis.speed = csp > 3 ? csp : 0;
+    c.vis.moveA = csp > 3 ? Math.atan2(c.vy, c.vx) : NaN;
+    c.vis.x = mx; c.vis.y = my;
     c.vis.w = len; c.vis.h = c.d.linkH > 0 ? c.d.linkH : Math.max(24, c.d.wid * 2.2);
     c.vis.a = Math.atan2(bp.y - ap.y, bp.x - ap.x);
     c.nextTick -= dt;

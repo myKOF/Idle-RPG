@@ -125,6 +125,27 @@ test('ELITE-ENGINE-4c 火鏈連成一圈：2 隻一條線、3 隻三角形、4 �
   });
 });
 
+test('ELITE-ENGINE-4d 火鏈：有怪物死亡、整圈重排時，剩下的鏈條角度不變（不會轉 180°）；移動中的鏈條帶著速度', () => {
+  const c = fresh();
+  const pts = [[130, -60], [-120, -80], [110, 120]];
+  const ms = pts.map((q, i) => makeElite(c, i === 0 ? ['e_firechain'] : ['e_vitality'], { x: q[0], y: q[1], hp: 1e9 }));
+  ms[0]._el.repoAt = Infinity; ms[0]._el.cd.e_firechain = 999;
+  run(c, 'FIELD.monsters.forEach(function (e) { e._enterCd = 0; });');
+  stepElite(c, 1);
+  assert.equal(c.ELITE_RT.chains.length, 3);
+  const before = {};
+  c.ELITE_RT.chains.forEach((k) => { before[k.key] = k.vis.a; });
+  ms[2].hp = 0;
+  stepElite(c, 0.5);
+  assert.equal(c.ELITE_RT.chains.length, 1, '剩一條');
+  const k = c.ELITE_RT.chains[0];
+  const d = Math.atan2(Math.sin(k.vis.a - before[k.key]), Math.cos(k.vis.a - before[k.key]));
+  assert.ok(Math.abs(d) < 0.05, '角度不變：' + d);
+  ms[0].pos.x += 20; ms[1].pos.x += 20;
+  stepElite(c, 0.1);
+  assert.ok(k.vis.speed > 0 && Math.abs(Math.cos(k.vis.moveA)) > 0.9, '帶著移動速度與方向');
+});
+
 test('ELITE-ENGINE-4b 火鏈：距離越遠鏈環越多（換鏈環數不同的 Preset），鏈環本身只小幅拉長', () => {
   const c = fresh();
   const d = c.ELITE_AFFIXES.e_firechain;
