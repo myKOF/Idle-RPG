@@ -9,14 +9,19 @@
       "type": "sprite",
       "assetId": "light-masks-1.0/default/circle_b.png",
       "zIndex": 0,
+      "position": {
+        "x": 1.3499,
+        "y": 5.2592
+      },
       "scale": {
-        "x": 0.0859,
-        "y": 0.0859
+        "x": 0.1545,
+        "y": 0.1545
       },
       "alpha": 0.5,
       "tint": "#c850ff",
       "blendMode": "add",
       "duration": 6,
+      "loop": true,
       "scaleOverLife": [
         [
           0,
@@ -41,23 +46,32 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/light_03.png",
       "zIndex": 9,
+      "position": {
+        "x": 1.3499,
+        "y": 2.6296
+      },
       "scale": {
-        "x": 0.0508,
-        "y": 0.0508
+        "x": 0.0914,
+        "y": 0.0914
       },
       "alpha": 0.9,
       "tint": "#ffd0ff",
       "blendMode": "add",
-      "duration": 6
+      "duration": 6,
+      "loop": true
     },
     {
       "id": "beam0-glow",
       "type": "sprite",
       "assetId": "light-masks-1.0/default/cone_a.png",
       "zIndex": 1,
+      "position": {
+        "x": 1.3499,
+        "y": 5.2592
+      },
       "scale": {
-        "x": 0.1211,
-        "y": 0.1953
+        "x": 0.324,
+        "y": 0.5223
       },
       "anchor": {
         "x": 0.5,
@@ -67,16 +81,8 @@
       "tint": "#c850ff",
       "blendMode": "add",
       "duration": 6,
-      "rotationOverLife": [
-        [
-          0,
-          1.5708
-        ],
-        [
-          1,
-          6.80678
-        ]
-      ],
+      "loop": true,
+      "rotationSpeed": 0.8726646259971648,
       "projection": {
         "x": 1,
         "y": 0.5
@@ -87,9 +93,13 @@
       "type": "sprite",
       "assetId": "light-masks-1.0/default/cone_a.png",
       "zIndex": 2,
+      "position": {
+        "x": 1.3499,
+        "y": 5.2592
+      },
       "scale": {
-        "x": 0.0664,
-        "y": 0.1953
+        "x": 0.1777,
+        "y": 0.5223
       },
       "anchor": {
         "x": 0.5,
@@ -99,16 +109,8 @@
       "tint": "#e8b6ff",
       "blendMode": "add",
       "duration": 6,
-      "rotationOverLife": [
-        [
-          0,
-          1.5708
-        ],
-        [
-          1,
-          6.80678
-        ]
-      ],
+      "loop": true,
+      "rotationSpeed": 0.8726646259971648,
       "projection": {
         "x": 1,
         "y": 0.5
@@ -119,9 +121,13 @@
       "type": "sprite",
       "assetId": "light-masks-1.0/default/cone_b.png",
       "zIndex": 3,
+      "position": {
+        "x": 1.3499,
+        "y": 5.2592
+      },
       "scale": {
-        "x": 0.0273,
-        "y": 0.1953
+        "x": 0.073,
+        "y": 0.5223
       },
       "anchor": {
         "x": 0.5,
@@ -131,16 +137,8 @@
       "tint": "#ffffff",
       "blendMode": "add",
       "duration": 6,
-      "rotationOverLife": [
-        [
-          0,
-          1.5708
-        ],
-        [
-          1,
-          6.80678
-        ]
-      ],
+      "loop": true,
+      "rotationSpeed": 0.8726646259971648,
       "projection": {
         "x": 1,
         "y": 0.5
