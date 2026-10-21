@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## METEOR-TAIL-FLOW-20261021 — 隕石靜態拖尾改為流動粒子
+
+- Owner：Codex；Done；單一開發者。使用者要求橘紅拖尾應拉長或飄動。既有殞石完成，三層靜態尾焰改向後發射、伸展消散並以流動噪聲擾動。
+- 允許proj-meteor-inferno Preset、meteor-comet.cjs、新動態回歸、LV_upgrade_system及本段；素材庫只同步codex-authored/meteor同名Preset及SOURCE。禁止Core／Runtime／Backend／Worker／配置／爆炸／其他未提交內容，不合併推送。驗收動態與方向、預算／回收、水平與斜向Pixi預覽、舊頁防覆寫、相關回歸／Build／diff；先素材庫後遊戲Commit，交使用者Review整合。
+- 預檢Preset／腳本／新測試／LV無其他來源。文件與Claude defe8304分別檔首、檔尾追加且無語意相依，實際merge-base＋候選＋Claude工作區merge-file乾跑0才寫入。其他配置／VFX未提交修改保留；Editor未存內容先下載備份再重載。
+
+- 完成5檔：vfx/presets/proj-meteor-inferno.json、tools/vfx/authoring/author/meteor-comet.cjs、tests/meteor-tail-flow.test.cjs、LV_upgrade_system.md及本紀錄。只替換橘紅／金色／白熱三層，其餘圖層、14層layout ID、sizing與時長逐值保持；腳本可重製完全相同canonical結果。沿用既有CC0素材，無新PNG／外部來源／新特效引用，不需JS快取或BAT。天穹崩裂共用火殞石外觀亦更新。
+- 測試：node --test tests/meteor-tail-flow.test.cjs tests/vfx-core.test.cjs tests/meteor-entry-origin.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-runtime-screen-space.test.cjs，195/195通過；新2項驗證逐顆火舌向後移動、初生伸展、噪聲橫向位移、三種航向、循環後仍發射、三顆5秒預算與命中停止全回收。以唯讀fs映射HEAD舊Preset，新測試因must flow backward失敗；新測試最後調整基線比較對照後2/2再驗通過。沒有修改既有斷言，未跑全庫。npm.cmd run build為560檔通過；node tools/vfx/export-assets.cjs --check已最新；git diff --check通過。
+- 動態預覽：正式Editor載入合法、飛行36米/秒；隔離Edge載入正式Pixi8／Core／Backend，完整彈體、橘紅層獨立、60度朝向分別驗收流動，Console error／warning0、貼圖missing0。kit.probe連續5輪最高85粒子、bbox x[-427,59]/y[-69,66]，三顆回歸無drop且停後全清。截圖與GIF位於本聊天visualizations/meteor-tail-flow，並保留editor截圖；預覽先修正fixture伺服器不提供遊戲images目錄與GPU首幀尚未呈現，改走正式Editor素材庫路由並待貼圖畫出，產品程式未改。未載玩家存檔／完整戰鬥長測／手機效能。
+- 舊頁保護：隔離Editor實際以舊Sprite資料載入→解除GET攔截→按儲存到repo，顯示外部已更新、拒絕舊內容覆寫，磁碟Preset逐位元保持。使用者其他開啟的編輯器未刷新或操作；未存內容須先下載備份再重載。專用瀏覽器／測試服務與暫存幀提交前清理。
+- 素材庫codex-authored/meteor/presets/proj-meteor-inferno.json與SOURCE.md先提交3af6e34，兩倉庫Preset SHA256相同（d0af0339933c907b6d5ccec62d57dc2072ff36f59e5356710b3e5d529fb9d9db），layout無變更。素材庫status乾淨，無新點陣素材；既有CC0素材來源沿用PROVENANCE。
+- 唯讀未改：AI規範／流程／Agent文件、js/vfx-core.js／vfx-pixi-backend.js／vfx-runtime.js／battle-renderer.js、Skills2／Worker命中時序、Editor guard／server、layout／asset-index／素材PNG及既有5份測試。自我Review確認無引擎／協議／判定變更，3層均有速率、生命週期與上限；其他使用者配置與VFX（包括期間新儲存的雷電layout及shipped-assets）均保留且不納本Commit。
+- 交付：本次無未完成項或新增已知缺陷，可供Review／合併；限制為粒子增加（單顆原54→85）且尚未長戰實機效能驗收。遊戲Commit為本段所在[Codex] fix: 隕石拖尾改為持續流動火舌，回覆附編號；未合併推送，下一步先備份未存編輯內容再重載Editor／遊戲，其他副本整合遊戲Commit及素材庫3af6e34。
+
 ## INVENTORY-MYTHIC-SKIN-RECOVERY-20261021 — 修補神話背包快取退化路徑
 
 - Owner：Codex；Done。使用者要求檢查79269f0d1並修復特殊底色神話裝備捲動再次變慢；8123服務確認讀取本Codex副本，原Commit完整存在。前置既有快取與虛擬背包完成，單一開發者。
