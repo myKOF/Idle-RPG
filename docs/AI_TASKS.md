@@ -18,6 +18,22 @@
 - 唯讀未改：共通規範／Workflow／Agent文件、Skills2來源Excel／CSV／生成JS、elite_data、battle-renderer與tower上下文、Core／Backend／Editor guard與Server、既有elite／Runtime／schema／shim回歸、素材PNG／索引及PROVENANCE。只改worker-protocol既有版本預期，其他原測試保持；其他副本完全未動。重疊檔皆以實際候選、HEAD共同內容及develop工作檔merge-file試跑0，對方毒十字／GM快取與進行中合併保留。
 - 交付：素材庫先Commit 689d9cf（9檔Preset／layout／SOURCE）；遊戲Commit為本段所在「[Codex] feat: 飛彈縮光暈長尾跡與剎停齊射（參數待套用）」，回覆附編號。沒有合併或推送。程式與素材可Review；正式新參數／更新說明仍待BAT及套用後驗收，尚不可宣稱需求完整已上線。下一步由使用者套用參數並重新載入遊戲；Editor先備份未存內容再重載，其他電腦同步兩個倉庫。
 
+
+## MISSILE-SOFT-CONE-20261021 — 飛彈硬尾改柔光錐
+
+- Owner：Codex；Done（本輪外觀修正），單一開發者。使用者指出上一版尾巴像硬棒，隨後澄清可保留尾部造型但應更好看，例如光錐；以既有CC0錐形漸層做短柔光錐＋世界座標淡散光點，起飛／齊射短暫出現，剎停後消散。
+- 允許四份missile Preset／layout、既有作者、既有missile專項、Runtime僅DATA_VERSION與主頁／Editor快取、LV及本紀錄；素材庫只同步missile-salvo的同名來源。禁止戰鬥／時序／Protocol／Core／Backend、配置與待套用patch／解鎖／存檔／其他素材／其他副本，不合併推送。
+- 驗收正式Renderer GIF、光錐朝向／淡散／停駐消失／命中後回收、來源與canonical／素材庫雜湊、舊Editor拒絕覆寫、既有相關回歸與Build。所有重疊檔以develop pending merge已包含的本HEAD共同內容＋候選＋對方工作檔merge-file乾跑乾淨才寫。上一輪新速度／停留參數仍待BAT，不冒充已套用。
+
+- 完成15檔：四份missile Preset／layout移除tail-core，改雙層柔光錐（錐尖接彈頭、外彩內亮、往後展開與淡出）＋世界座標薄霧／微光點。光錐與尾跡只在每次起飛／齊射短窗出現，停駐後退場；彈頭保持可見、由原事件移除。尾跡速度降為低漂移，留在真實飛行路徑；沿用小光暈與四色、製作尺寸契約，沒有傷害／時序變更。
+- 原作者可重製；Runtime只改DATA_VERSION，主頁與Editor快取225→226。沒有Core／Backend／Protocol／Worker、配置或先前param-patch修改。既有尾芯的細長比例斷言依本次使用者新要求改驗柔光錐、尖端朝向與消退，原行為／傷害測試保留；新增停駐0.8秒時錐層不可見且粒子0、齊射後再出光點並自然收束的真Core驗證。
+- 測試：node --test tests/missile-salvo.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/skills2-vfx-schema.test.cjs，51/51通過；新外觀對應6項全過。以修改前Preset／作者／layout的唯讀fs映射重跑新專項，4過2失敗，確實抓到停駐仍留硬尾及缺少柔錐，不以變更數值／放寬斷言掩蓋。未擴跑有既有失敗的無關全庫。
+- npm.cmd run build：564檔全過；export-assets --check：192個assetId均最新；新用的cone_composed_c已出貨，無新增PNG／索引變更。四份Preset與layout canonical、素材庫逐位元／SHA256與兩倉庫diff檢查通過。全部素材沿用PROVENANCE記錄的Kenney CC0／既有CC0組合，沒有參考／匯入外部素材；僅調Preset，不產出獨立繪圖資源。
+- 動態驗收：本聊天visualizations/npc-missile-soft-cone.gif，113格960×570／0.5倍慢速；正式Pixi／Core／Backend／Runtime與真elite事件，候選leg1=0.275／hold=1。目視起飛光錐、停駐無長尾、齊射淡散路徑，Console error0／missing0。依序對四份舊Editor基準送正式隔離Server PUT，均409且磁碟不變；未操作使用者分頁，重新載入前須下載未存備份。測試服務／瀏覽器已關閉；承接前輪清理策略阻擋，暫存預覽幀只留聊天目錄，不入兩倉庫。未做完整真人存檔長戰／手機GPU驗收。
+- 衝突預檢：develop正在整合並已包含本HEAD飛彈內容，git分支共同祖先尚停在更舊提交；以pending merge已包含的本HEAD共同內容＋各候選＋develop工作檔merge-file乾跑全部0，與毒十字／GM及整合紀錄不同區段、無語意相依。未同步／合併／改其他副本。執行途中使用者的config/Excel/Status.xlsx有新修改，原樣保留不stage；沒有讀改該工作簿或要求關閉Excel。
+- 唯讀未改：AI規範／Workflow／Agent文件、elite事件與Worker／shim、Core／Backend／Editor guard與Server、原時序參數與param-patch、素材索引／圖片／PROVENANCE、上述其餘既有回歸。LV與本紀錄同步；遊戲仍需上一輪BAT套用新速度／停留參數，這是既有待辦，本輪外觀可獨立Review／合併。
+- 交付：素材庫先Commit c7dcbc3（9檔同名Preset／layout與SOURCE）；遊戲Commit為本段所在「[Codex] fix: 飛彈硬尾改為柔光錐與淡散光點」，回覆附編號，未合併推送。下一步先備份VFX Editor未存內容再重載，遊戲重新整理看柔光錐；前輪時序仍待使用者BAT，無本輪未完成外觀項目，效能／完整實戰限制如上。
+
 ## ARCANE-REFERENCE-20261021 — 白熱紫色光束參考風格
 
 - Owner：Codex；Done，單一開發者。使用者提供紫白雷射截圖，希望祕法棒接近該效果；看過arcane-reference-preview.png後確認「好，連我的一起commit」。本輪正式保存參考風格與全部使用者已儲存修改，兩倉庫提交，不合併推送。

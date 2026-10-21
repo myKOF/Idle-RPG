@@ -9,8 +9,10 @@
         "glow",
         "body",
         "core",
-        "tail-core",
-        "trail"
+        "tail-cone",
+        "tail-cone-inner",
+        "trail",
+        "trailing-points"
       ]
     }
   ],
