@@ -146,6 +146,23 @@ test('ELITE-ENGINE-4d 火鏈：有怪物死亡、整圈重排時，剩下的鏈�
   assert.ok(k.vis.speed > 0 && Math.abs(Math.cos(k.vis.moveA)) > 0.9, '帶著移動速度與方向');
 });
 
+test('ELITE-ENGINE-4f 火鏈：怪物多時中點瞬移（夥伴換人／被擠開）不會被估成極大速度而讓鏈條飛出畫面', () => {
+  const c = fresh();
+  const ms = [[130, -60], [-120, -80]].map((q, i) => makeElite(c, i === 0 ? ['e_firechain'] : ['e_vitality'], { x: q[0], y: q[1], hp: 1e9 }));
+  ms[0]._el.repoAt = Infinity; ms[0]._el.cd.e_firechain = 999;
+  run(c, 'FIELD.monsters.forEach(function (e) { e._enterCd = 0; });');
+  stepElite(c, 1);
+  const k = c.ELITE_RT.chains[0];
+  ms[0].pos.x += 20; ms[1].pos.x += 20;
+  stepElite(c, 0.1);
+  assert.ok(k.vis.speed > 0, '正常走動有速度');
+  ms[0].pos.x += 400; ms[0].pos.y += 300; ms[1].pos.x += 400; ms[1].pos.y += 300;     // 一拍位移 500：瞬移
+  stepElite(c, 0.1);
+  assert.equal(k.vis.speed, 0, '瞬移不帶速度');
+  for (let i = 0; i < 5; i++) { ms[0].pos.x += 40; ms[1].pos.x += 40; stepElite(c, 0.1); }
+  assert.ok(k.vis.speed <= c.eliteChainMaxDriftSpeed(ms[0], ms[1]) + 1e-6, '速度不超過上限：' + k.vis.speed);
+});
+
 test('ELITE-ENGINE-4e 火鏈怪：跑位間隔 1.5~3 秒（比全域短）、守在 hover 距離而不是貼臉', () => {
   const c = fresh();
   const a = makeElite(c, ['e_firechain'], { x: -200, y: 0, hp: 1e9 });

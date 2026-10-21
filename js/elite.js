@@ -1147,6 +1147,13 @@ function eliteChainRing(m) {
   for (var i = 0; i < mem.length; i++) out.push([mem[i], mem[(i + 1) % mem.length]]);
   return out;
 }
+/* 火鏈顯示自走的速度上限：兩端怪物跑位時的最高速度（跑速 × 跑位加速），再多留 20% 餘裕；
+   超過就是瞬移（衝刺、重排），不是走路。 */
+function eliteChainMaxDriftSpeed(a, b) {
+  var run = typeof bfEnemyRunSpeed === 'function' ? Math.max(bfEnemyRunSpeed(a), bfEnemyRunSpeed(b)) : 210;
+  var rsp = (typeof ELITE_GROUP !== 'undefined' && ELITE_GROUP && ELITE_GROUP.repoSpeed > 1) ? ELITE_GROUP.repoSpeed : 1;
+  return run * rsp * 1.2;
+}
 function eliteChainsTick(dt, list) {
   var want = {};
   var player = elitePlayerAlive();
@@ -1193,12 +1200,20 @@ function eliteChainsTick(dt, list) {
       ELITE_RT.vis.push(c.vis);
     }
     var mx = (ap.x + bp.x) / 2, my = (ap.y + bp.y) / 2;
-    if (c.lastX !== undefined && dt > 0) {
+    /* 速度只用來讓顯示層在兩則事件之間自走。怪物多時夥伴會換、整圈會重排、怪被擠開，中點一拍就跳一大段，
+       若照位移除以 dt 估速度，顯示層會沿著那個離譜的速度一路飛出畫面。所以：兩端換人、換 Preset、
+       或這一拍中點位移超過合理速度，就視為瞬移，速度歸零；其餘也不超過上限。 */
+    var maxDrift = eliteChainMaxDriftSpeed(c.a, c.b);
+    var jumped = c.lastX === undefined || c.lastA !== c.a || c.lastB !== c.b || vi !== c.lastVi ||
+      !(dt > 0) || eliteDist(mx, my, c.lastX, c.lastY) > maxDrift * dt;
+    if (jumped) { c.vx = 0; c.vy = 0; }
+    else {
       c.vx = (c.vx || 0) * 0.5 + (mx - c.lastX) / dt * 0.5;
       c.vy = (c.vy || 0) * 0.5 + (my - c.lastY) / dt * 0.5;
     }
-    c.lastX = mx; c.lastY = my;
+    c.lastX = mx; c.lastY = my; c.lastA = c.a; c.lastB = c.b; c.lastVi = vi;
     var csp = Math.sqrt((c.vx || 0) * (c.vx || 0) + (c.vy || 0) * (c.vy || 0));
+    if (csp > maxDrift) { c.vx *= maxDrift / csp; c.vy *= maxDrift / csp; csp = maxDrift; }
     c.vis.speed = csp > 3 ? csp : 0;
     c.vis.moveA = csp > 3 ? Math.atan2(c.vy, c.vx) : NaN;
     c.vis.x = mx; c.vis.y = my;
