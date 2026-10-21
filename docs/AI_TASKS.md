@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## ICEFIELD-SHORE-20261021 — 冰面與地表自然銜接
+
+- Owner：Codex；Done，單一開發者。使用者依冰原／沼澤截圖要求改善冰面貼片感，預覽後確認「這版不錯，接入」；既有場景圖集完成，前置依賴已滿足。
+- 允許：js/battle-decor.js冰原puddle畫法與圖集Worker快取、js/worker/decor-atlas.worker.js匯入快取、js/bridge.js僅Worker資源快取、index.html／tools/scene-preview.html／tools/decor-preview.html對應快取、LV_upgrade_system.md及本段。禁止戰鬥／Worker模擬／配置／存檔／解鎖／其他地貌畫法／獨立素材，不合併推送；衝突預檢全部無外部來源。
+- 將完整白色亮框與大反光改為不規則凍結岸線、低對比冰色、霜雪與碎石漸散過渡；沿用執行期Canvas靜態圖集，不新增外部素材或VFX來源。驗收地表／地下、主執行緒與圖集Worker一致、既有場景回歸、Build／Console／diff後獨立Commit；接手者為使用者Review與整合。
+- 完成8檔：冰原地表及地下puddle以frozen分流至同一個薄冰畫法，不規則輪廓、半透明冷藍、細短冰紋與斷續霜粒；其他地貌走原分支，尺寸、權重、區塊種子、投影及粒子生命週期保持。主頁、兩個預覽工具、圖集Worker URL／import與規範要求的bridge資源快取同步，Protocol未變。LV同步；只改程式繪製，不產生獨立圖片或必要素材庫檔案，無素材庫變更／Commit，無新增外部素材。
+- 測試：node --test tests/battle-decor.test.cjs tests/scene-startup-ready.test.cjs tests/tower-scene-intro.test.cjs，26/26通過。加跑tests/battle-ground-projection.test.cjs為11項10過1既有失敗（PROJ-9的skyEntryPoint fixture未定義），以HEAD原battle-renderer唯讀映射重跑同檔得到完全相同失敗，新增失敗0。沒有改測試斷言或新增低影響外觀測試；npm.cmd run build 564檔通過，git diff --check通過。收尾bridge快取另跑node --test tests/worker-protocol.test.cjs tests/worker-shim.test.cjs，24/24通過；最終Build仍為564檔通過。
+- 瀏覽器：正式BattleRenderer隔離預覽驗收冰原地表／地下、Worker on且sceneReady true；內建Atlas後端未連線，改由可用的CUA IAB操作同一預覽。內建「驗證全場景圖集」14份主執行緒／OffscreenCanvas Worker逐像素比對皆alpha差0、預乘RGB差0；Console warning／error0。同種子地表／地下各3變體的前後比較保存在本聊天visualizations/icefield-shore-before-after.png，使用者已確認外觀。沒有載入玩家存檔、長戰或跨裝置驗收；臨時比較頁／舊版JS與服務提交前清理。
+- 唯讀檢查未改：AI_RULES／AGENTS／Workflow／prompts/codex、js/decor-nature.js／decor-sculpt.js／battle-renderer.js、地板原PNG、上述場景及投影測試；自我Review確認新增運算只在靜態建圖時執行，無Timer／逐幀重繪／獨立素材。可供Review／合併，無本次未完成項或新增已知缺陷；限制為既有投影測試失敗及未做玩家長戰。Commit為本段所在[Codex] fix: 冰原冰面加入自然凍土岸線，回覆附編號；未合併推送，下一步重載本分支遊戲驗收，其他副本正常整合本Commit。
+
 ## DEVELOP-MERGE-20261021-MISSILE-SALVO — 飛彈齊射與既有毒／祕法設定整合
 
 - Owner：Codex；Resolved。使用者明確授權 `sync_ai_worktrees.bat` 自動解決此次 develop pending merge；整合 HEAD `aea74a036d53d459425790ddffb77999c4726fe9`、incoming `d537a6d053a92345f6ac4cfada8433ca11699a94`、base `b354ef23b32ad49c7c15b42154eb70333728110f`。未委派、未執行同步腳本、未寫入 Git index／metadata、未提交或推送。

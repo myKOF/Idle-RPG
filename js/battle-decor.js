@@ -1031,7 +1031,53 @@ var BattleDecor = (function () {
     S.render(g, { footAO: 0, ao: 0.25 });
   }
 
+  // 凍土上的薄冰：岸線由碎霜漸散，不用完整亮框把冰面圈成獨立物件。
+  function decalFrozenPuddle(g, w, h, r, pal) {
+    var cx = w / 2, cy = h / 2;
+    var pts = blob(cx, cy, w * 0.35, h * 0.30, 28, 0.32, r);
+    g.save();
+    g.lineJoin = 'round';
+    // 先鋪低對比的凍土過渡，再疊內部冰色；外緣保留地板紋理。
+    [0.12, 0.16, 0.20].forEach(function (alpha, i) {
+      pathSmooth(g, pts);
+      g.strokeStyle = rgba('#3e5362', alpha);
+      g.lineWidth = w * (0.10 - i * 0.03); g.stroke();
+    });
+    pathSmooth(g, pts);
+    var gr = g.createLinearGradient(cx, h * 0.2, cx, h * 0.8);
+    gr.addColorStop(0, rgba(pal.color, 0.24));
+    gr.addColorStop(0.5, rgba('#426379', 0.48));
+    gr.addColorStop(1, rgba('#273f50', 0.35));
+    g.fillStyle = gr; g.fill();
+    g.save(); pathSmooth(g, pts); g.clip();
+    // 霧化冰紋與短裂隙，避免橫跨整面的玻璃反光。
+    speckle(g, r, w * 0.1, h * 0.1, w * 0.8, h * 0.8, 150, 'rgba(173,199,210,0.13)', 1.2);
+    for (var i = 0; i < 4; i++) {
+      var x = w * range(r, 0.28, 0.70), y = h * range(r, 0.30, 0.68);
+      var dx = w * range(r, 0.04, 0.10), dy = h * range(r, -0.05, 0.05);
+      g.strokeStyle = 'rgba(160,190,205,0.16)'; g.lineWidth = 0.65;
+      g.beginPath(); g.moveTo(x, y); g.lineTo(x + dx * 0.45, y + dy);
+      g.lineTo(x + dx, y + dy * 0.6); g.stroke();
+    }
+    g.restore();
+    // 取平滑岸線上的點，讓斷續霜粒跨過內外兩側，保持缺口與深淺變化。
+    for (var j = 0; j < pts.length; j++) {
+      var prev = pts[(j + pts.length - 1) % pts.length], p = pts[j], next = pts[(j + 1) % pts.length];
+      var bx = (prev[0] + p[0] * 6 + next[0]) / 8, by = (prev[1] + p[1] * 6 + next[1]) / 8;
+      if (r() < 0.25) continue;
+      for (var k = 0; k < 7; k++) {
+        var spread = w * range(r, 0.015, 0.05);
+        var sx = bx + range(r, -spread, spread), sy = by + range(r, -spread, spread);
+        var size = range(r, 0.45, 1.7);
+        g.fillStyle = pick(r, ['rgba(161,187,201,0.28)', 'rgba(200,216,222,0.24)', 'rgba(78,101,117,0.38)']);
+        g.beginPath(); g.ellipse(sx, sy, size * 1.5, size, r() * Math.PI, 0, Math.PI * 2); g.fill();
+      }
+    }
+    g.restore();
+  }
+
   function decalPuddle(g, w, h, r, pal) {
+    if (pal.frozen) { decalFrozenPuddle(g, w, h, r, pal); return; }
     var pts = blob(w / 2, h / 2, w * 0.38, h * 0.32, 12, 0.18, r);
     pathSmooth(g, pts);
     var gr = g.createRadialGradient(w * 0.45, h * 0.42, 0, w / 2, h / 2, w * 0.42);
@@ -1286,8 +1332,8 @@ var BattleDecor = (function () {
       deepProps: [['crystals', 5, 80, 118, { light: '#f0fbff', base: '#7ab8e8', dark: '#1e4a7a', glow: '#7ad0ff', rock: '#4a5a6c' }], ['spire', 3, 60, 118, ICE_SPIRE_GLOW],
         ['rock', 3, 70, 56, ICEROCK, { snow: true }], ['pillar', 1.2, 60, 128, { base: '#9ab0c4' }], ['brazier', 1, 58, 80, { metal: '#5a6474', fire: '#4ab0ff', fire2: '#d8f4ff' }]],
       decals: [['snow', 6, 340, { color: '#eef6ff' }], ['patch', 3, 300, { color: '#203448', alpha: 0.16 }], ['crack', 3, 160, { dark: 'rgba(20,40,70,0.75)', rim: '#ffffff', glow: '#9ad8ff' }],
-        ['puddle', 1.5, 150, { color: '#9ccbe8', rim: '#ffffff' }], ['pebbles', 2, 80, { color: '#8aa0b4' }]],
-      deepDecals: [['crack', 4, 170, { dark: 'rgba(10,30,60,0.8)', rim: '#cfefff', glow: '#7ad0ff' }], ['puddle', 3, 170, { color: '#6aa8d8', rim: '#e8f8ff' }], ['patch', 4, 320, { color: '#0e1a2a', alpha: 0.22 }],
+        ['puddle', 1.5, 150, { color: '#9ccbe8', frozen: true }], ['pebbles', 2, 80, { color: '#8aa0b4' }]],
+      deepDecals: [['crack', 4, 170, { dark: 'rgba(10,30,60,0.8)', rim: '#cfefff', glow: '#7ad0ff' }], ['puddle', 3, 170, { color: '#6aa8d8', frozen: true }], ['patch', 4, 320, { color: '#0e1a2a', alpha: 0.22 }],
         ['snow', 2, 280, { color: '#dcecff' }], ['light', 1.4, 220, { color: '#7ad0ff' }]],
       ambient: { kind: 'snow', count: 50, color: 0xffffff, fog: 2, fogTint: 0xdfeaf6, fogAlpha: 0.12, fogWind: -1 },
       deepAmbient: { kind: 'motes', count: 30, color: 0x9ad8ff }
@@ -1458,7 +1504,7 @@ var BattleDecor = (function () {
   };
   /* 背景建圖 Worker（相對於 index.html）。改了 decor-sculpt／decor-nature／battle-decor 要一起更新
      這裡的版本與 Worker 檔內 importScripts 的版本字串，否則 Worker 會吃到快取的舊畫法。 */
-  var ATLAS_WORKER_URL = 'js/worker/decor-atlas.worker.js?v=1.0.9';
+  var ATLAS_WORKER_URL = 'js/worker/decor-atlas.worker.js?v=1.0.10';
   var VARIANTS = 3;          // 每種擺件／地面裝飾畫幾個變體
   var TEX_SCALE = 1.5;       // 圖集解析度（畫面放大或高 DPI 時仍清楚；開 mipmap 避免縮小時閃爍）
 
