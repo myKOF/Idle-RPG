@@ -317,11 +317,11 @@ test('ELITE-ENGINE-9 帶電：每次被擊中向四周散出 2~4 顆電火花；
   assert.ok(c.ELITE_RT.sparks.length <= d.cap);
 });
 
-test('ELITE-ENGINE-10 毒素加持：中心毒圈（半徑 4 米）→ 十字毒球以 12 米／秒向外長到 36 米，固定不旋轉、持續 6 秒', () => {
+test('ELITE-ENGINE-10 毒素加持：中心毒圈（半徑 4 米）→ 十字毒球以 12 米／秒向外長到 36 米，固定不旋轉、持續 16 秒', () => {
   const c = fresh();
   const m = quiet(makeElite(c, ['e_poisoncross'], { x: 150, y: 0, hp: 1e9 }));
   const d = c.ELITE_AFFIXES.e_poisoncross;
-  assert.deepEqual([d.hubR, d.len, d.speed, d.balls], [40, 360, 120, 7], '毒圈半徑 4 米、36 米、12 米/秒、每臂 7 顆');
+  assert.deepEqual([d.hubR, d.len, d.speed, d.balls], [40, 360, 120, 5], '毒圈半徑 4 米、36 米、12 米/秒、每臂 5 顆');
   c.eliteCastCross(m, d);
   const hubFx = c.vfx.filter((v) => v.vfx && v.vfx.ground === d.v.ground && v.area && v.area.r > 0);
   assert.ok(hubFx.length && hubFx[0].area.r === d.hubR, '預警：中心毒圈，半徑 4 米');
@@ -353,7 +353,7 @@ test('ELITE-ENGINE-10 毒素加持：中心毒圈（半徑 4 米）→ 十字毒
   const m2 = hpLost(c);
   stepElite(c, 0.2);
   assert.equal(hpLost(c), m2, '兩臂之間是安全的');
-  stepElite(c, 7);
+  stepElite(c, 17);
   assert.equal(c.ELITE_RT.crosses.length, 0);
 });
 

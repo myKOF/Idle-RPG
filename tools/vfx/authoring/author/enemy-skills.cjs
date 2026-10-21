@@ -261,7 +261,7 @@ NEW['en-poison-dot'] = () => ({
 
 /* 毒十字：從中心向上下左右四個方向「長出」一排毒水球（朝外延伸、速度 speed 米／秒，最終長度 len 米），長成後固定不動。
    中心的毒圈是另一份 Preset（en-poison-dot，由模擬層放在同一點）。
-   一份 Preset 最多 32 個圖層，所以每臂 balls 顆（預設 7）、每顆一層；球出現的時間 ＝ 距離 ÷ 速度（delay），出現後固定在原地。
+   一份 Preset 最多 32 個圖層，所以每臂 balls 顆（現為 5，球半徑＝中心毒圈半徑 4 米，相鄰兩顆略有重疊）、每顆一層；球出現的時間 ＝ 距離 ÷ 速度（delay），出現後固定在原地。
    座標：事件半徑 r＝len 米 ↔ authored 100px，所以 1 米 ＝ 100／len px。
    模擬層用同一組公式判定（js/elite.js eliteCrossesTick）：第 k 顆在 (k+1)×len/balls 米，距離 ≤ speed×t 才存在。
    ⚠️ 不旋轉：靠「錨點偏移繞圈」做旋轉的小球，投影到地面時 mesh 會炸開（舞台範圍變成幾千像素），所以十字固定朝上下左右。 */
@@ -285,7 +285,7 @@ function poisonCross(o) {
   layers.push(kit.particle({ id: 'drips', asset: A.dot, z: z++, rate: 10, lifetime: [0.6, 1.1], spawnRadius: 14, speed: [4, 14], direction: -90, spread: 50, startPx: [3, 6], alpha: 0.9, tint: '#c8ff6a', blend: 'add', alphaOverLife: [[0, 0], [0.3, 1], [1, 0]] }));
   return { id: 'en-poison-cross', duration: dur, loop: false, sizing: circleSizing(100), layers };
 }
-NEW['en-poison-cross'] = () => poisonCross({ dur: 6, balls: 7, len: 36, speed: 12, ballR: 1.8 });
+NEW['en-poison-cross'] = () => poisonCross({ dur: 16, balls: 5, len: 36, speed: 12, ballR: 4 });
 
 /* 冰晶：地面生出的冰晶持續膨脹（2~3 秒），外圈＝炸裂範圍。 */
 NEW['en-ice-crystal'] = () => {
