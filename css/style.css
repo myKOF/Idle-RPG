@@ -2798,13 +2798,13 @@ textarea#save-io {
 }
 
 /* 重複格共用一張背景快取；文字、選取與置灰仍由原 DOM／CSS 即時呈現。 */
-#inventory-grid.inventory-mythic-skin-ready .item-cell.eff-mythic:not(.dimmed):not(.item-cell-dimmed) {
+#inventory-grid.inventory-mythic-skin-ready .item-cell.eff-mythic:not(.item-cell-dimmed) {
   background: var(--inventory-mythic-skin) center / 100% 100% no-repeat !important;
   isolation: auto;
 }
 
-#inventory-grid.inventory-mythic-skin-ready .item-cell.eff-mythic:not(.dimmed):not(.item-cell-dimmed)::before,
-#inventory-grid.inventory-mythic-skin-ready .item-cell.eff-mythic:not(.dimmed):not(.item-cell-dimmed)::after {
+#inventory-grid.inventory-mythic-skin-ready .item-cell.eff-mythic:not(.item-cell-dimmed)::before,
+#inventory-grid.inventory-mythic-skin-ready .item-cell.eff-mythic:not(.item-cell-dimmed)::after {
   display: none;
 }
 

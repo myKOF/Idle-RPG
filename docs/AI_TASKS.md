@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## INVENTORY-MYTHIC-SKIN-RECOVERY-20261021 — 修補神話背包快取退化路徑
+
+- Owner：Codex；Done。使用者要求檢查79269f0d1並修復特殊底色神話裝備捲動再次變慢；8123服務確認讀取本Codex副本，原Commit完整存在。前置既有快取與虛擬背包完成，單一開發者。
+- 允許js/ui-inventory-skin.js生命週期、css/style.css背包快取範圍、index必要快取、tests/inventory-mythic-skin.test.cjs、LV_upgrade_system與本紀錄；禁止玩法／數值／配置／Worker／Protocol／存檔／素材／其他副本。不合併推送，保留其他聊天與使用者未提交配置及VFX。
+- 修補選取部位後dimmed神話格退出快取，以及首次Image／Canvas失敗同尺寸永不重試；關鍵字不符合格仍隱藏特殊底圖。驗收真瀏覽器首次／選取置灰／Resize／重試、回歸／Build／Console／diff後獨立Commit，交使用者Review／整合。docs與Claude defe8304僅檔首新增與檔尾新增、無語意相依，候選以實際merge-base三方merge-file試跑乾淨才寫入。
+- 完成6檔：CSS讓選取造成的dimmed共用快取底圖（父格opacity0.25與grayscale／brightness保持不變），仍排除隱藏特殊底圖的item-cell-dimmed；JS可從置灰格讀取背景，即使全數置灰也能初始化。生成失敗同key允許後續render重試，三次失敗停止，Resize／DPR變更重設次數；保留既有revision防過期、單幀合併與WeakMap生命週期。index僅style89→90／skin0→1、LV與本紀錄同步，沒有玩法、配置、存檔、素材或素材庫變更。
+- 測試指令：`node --test tests/inventory-mythic-skin.test.cjs tests/inventory-visible-rows.test.cjs tests/forge-shared-inventory.test.cjs tests/inventory-ancient-filter-sort.test.cjs tests/inventory-detail-preservation.test.cjs tests/inventory-request-throttle.test.cjs tests/inventory-rarity-filter.test.cjs tests/inventory-command-pending.test.cjs tests/equipment-slot-selection.test.cjs tests/equipment-selection-memory.test.cjs tests/equipment-tooltip-compare.test.cjs tests/equipment-two-hand-display.test.cjs`57/57；`node --test tests/inventory-keyword-filter.test.cjs tests/inventory-expand-display.test.cjs tests/inventory-detail-params.test.cjs`9/9。新增全置灰初始化與永久失敗限次回歸，原失敗測試明確改驗同尺寸恢復；沒有放寬其他斷言。`npm.cmd run build`559檔通過；最後將失敗計數集中至failed後，專項7/7與`node --check js/ui-inventory-skin.js`再驗通過，`git diff --check`通過。未跑全庫。
+- 瀏覽器：同頁1800個神話格、8份正式CSS與正式InventorySkin；選取置灰前正常格快取成功。舊版全置灰即變成before／after:block，同速3秒捲動17幀、平均183.34ms、p95 250.1ms；新版置灰仍none，同條件102幀、平均29.41ms、p95 49.8ms。相同scrollHeight8257、寬950、格寬61.8438，沒有少畫格子；這是非虛擬格的隔離繪製壓測，不能當成玩家實際FPS。Resize690↔950均重建成功。注入一次Canvas生成失敗、且全部置灰，新版首輪回退CSS，下一次同尺寸prepare即恢復PNG；Console warning／error0。截圖inventory-skin-repaired.png在本聊天visualizations，臨時頁／測試服務／三方試跑檔清理。
+- 唯讀檢查未改：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、js/ui.js的renderInventory／虛擬捲動／增量格線／updateSelectionUI／mountInventoryBox、其餘7份CSS、8123服務來源與回傳檔、上述相依測試及79269f0d1後歷史。自我Review確認不快取圖示／星等／選取，重試無常駐Timer／Observer，永久失敗不逐幀重新生成。與Claude僅同紀錄不同位置新增，實際merge-base乾跑0；不納其他聊天或使用者配置／VFX修改。
+- 交付：Commit為本段所在`[Codex] fix: 修補神話背包底圖快取退化路徑`，回覆附編號。修補與回歸可Review／合併，未合併推送；沒有本次未完成實作。尚未以使用者瀏覽器的真人存檔重現／驗收、未做跨瀏覽器與長戰效能，永久不支援SVG轉Canvas時仍回原CSS。下一步重新整理8123驗收；若仍卡頓，需在該瀏覽器針對實際快取是否啟用與捲動錄製繼續定位，不能把本次隔離結果當成使用者現場全部根因已證實。
+
 ## METEOR-COMET-VFX-20261021 — 殞石術白熱火球與長煙火尾跡
 
 - Owner：Codex；Done；使用者提供斜向墜落殞石參考圖，要求殞石術外觀類似。以既有表定proj-meteor-inferno重新製作白黃高溫前端、橘紅火焰外層、長火尾與轉灰煙跡，僅參考造型與層次、不使用附件像素。單一開發者，沿用已登記CC0素材；參數、傷害、數量、飛行／命中時間與尺寸契約不改。
