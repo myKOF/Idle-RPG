@@ -104,6 +104,19 @@
 - 唯讀未改：共通規範／Workflow／prompts/codex、PARAM_PATCHES／官方合併與配置工具、elite_data既有米轉座標、Core／Runtime／battle-renderer鏡頭及投影、四色Preset／layout／素材、上述其餘回歸。自我Review確認橫向只乘1.5、後退只乘2、事件和傷害時序共用正式配置，停駐仍為數值世界座標；沒有新VFX來源／素材庫檔案或素材庫Commit。
 - 交付：本段所在「[Codex] feat: 正式套用飛彈兩秒停駐與加寬後退」Commit，回覆附編號。無本輪未完成項，可供Review／合併；未合併推送。限制為上述4項既有測試失敗，以及未做真人存檔長戰／多技能混戰／跨裝置驗收。下一步正常整合及重新載入遊戲；其他任務未提交內容保留。
 
+## POISON-BANK-PLUS10-20261022 — 毒水岸邊凹凸微增10%
+
+- Owner：Codex；Done，單一開發者。前置為使用者已認可無縫接段／表面流動版，僅把固定岸邊凹凸振幅乘1.10；不改種子／空間頻率／主軸／寬度／時間微擾／流速／接段／判定。
+- 允許：毒水作者與同名SVG／SOURCE及兩索引、Runtime只資料快取與兩頁對應快取、LV與本段；必要既有毒水回歸期望。禁止其他技能／Core／Backend／Editor程式／模擬／配置／Protocol／存檔、其他副本，不合併推送。沿用已批准共用快取與僅毒水索引列更新，保留其他素材與總數。
+- 驗收：與已認可版本逐點確認振幅精確+10%、其餘動態／Preset不變、可重製與正式Pixi局部對比、相關回歸／Build／匯出check與雙倉庫Commit；後續使用者Review與正常整合。
+
+- 完成10檔：roughBankAt回傳值只乘1.10，空間波形／相位及表面材質不變；同名SVG與兩索引雜湊／大小更新、素材數2470／出貨195保持。Preset／layout完全相同未改，Runtime只DATA_VERSION保留thunder-crater／missile-crystal共同版本，兩頁Runtime同步升1.0.237；LV與本段同步。素材庫僅SVG／SOURCE兩檔。
+- 驗證：以已認可6e59906a來源唯讀載入，比對2050個兩岸取樣，全部精確為舊值×1.10（誤差<1e-12），最大額外0.420714材質像素；全64格與循環端點的主軸／寬度／大輪廓／flowOffset／時間微擾相同。將兩版SVG的岸邊輪廓路徑抽除後位元相同，確認沒有改到內部色塊／流紋／泡沫；make()的Preset完全一致。audit.json在Git metadata保存，不增低影響鏡像測試。
+- 測試：node --test tests/poison-trail.test.cjs tests/vfx-editor-cache-versions.test.cjs，12/12過；npm.cmd run build，569檔過；node tools/vfx/export-assets.cjs --check已最新；diff檢查過。既有岸邊上限從4.5+0.22同步為4.5×1.10+0.22，僅對應使用者指定的幅度，原中心／寬度／微擾與行為斷言保留。
+- 預覽：正式Core／Runtime／Pixi隔離單臂對比、局部1.9倍，上為已認可前版／下為+10%；poison-bank-plus10.png保存在本聊天visualizations，Console warning／error0。先前臨時預覽靜止時漏刷非同步貼圖，已僅修正驗收頁在暫停時update(0)後重新擷取；正式程式／Editor未改。未操作玩家存檔、未做長戰／手機／跨裝置效能驗收；節點與素材記憶體規格保持前版。
+- 協作／唯讀：修改前逐檔預檢，Claude同索引總數差異及Runtime快取沿此聊天已授權整合，僅改毒水索引列與已批准共用版本行，不動其他來源或副本；同副本無其他進行中差異混入。檢查但未改：規範／Workflow／prompts/codex、Core／Backend／Renderer／Editor、毒水Preset／layout與既有碰撞事件。原創向量作者沿前版流程，附件只作參考，無新增外部素材。
+- 交付：本輪實作完成，可供Review／合併；遊戲Commit為本段所在「[Codex] fix: 毒水岸邊凹凸幅度微增百分之十」，素材庫先Commit 57e012a兩檔，遊戲編號見回覆。未合併／推送；下一步正常整合後重新整理，Editor先備份未存內容再重載。無本輪未完成項，限制如上述隔離驗收。
+
 ## POISON-SEGMENT-FLOW-20261022 — 毒水無縫接段與可見表面流動
 
 - Owner：Codex；Done，單一開發者。使用者追加：固定比例毒水逐段銜接顯露，不能整條拉長；內部須看得到流動，保留近直線、細碎岸邊。前置前版毒水完成。

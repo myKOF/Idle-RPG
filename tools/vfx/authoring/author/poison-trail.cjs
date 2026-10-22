@@ -14,7 +14,7 @@ function roughBankAt(x, side) {
     function value(j) { const h=Math.sin((j%count)*127.1+side*311.7+salt)*43758.5453;return (h-Math.floor(h))*2-1; }
     return value(i)+(value(i+1)-value(i))*smooth;
   }
-  return noise(9,17)*2.8+noise(21,63)*1.7;
+  return (noise(9,17)*2.8+noise(21,63)*1.7)*1.10;
 }
 // 固定水窪形狀。動畫只擾動邊界，不能讓中心與寬度跟著相位改變。
 function surfaceAt(x, frame = 0) {
@@ -101,7 +101,7 @@ function writeSource() {
   const root = require('../../vfx-library-root.cjs').resolveLibraryRoot().root;
   const folder = path.join(root, 'codex-authored/poison-trail'), svg = liquidSVG();
   fs.mkdirSync(folder, { recursive: true }); fs.writeFileSync(path.join(root, assetId), svg);
-  fs.writeFileSync(path.join(folder, 'SOURCE.md'), "# 毒素加持：無縫接段與表面內流\n\n2026-10-22 Codex 原創SVG，64格／16fps／4秒循環。附件僅用於觀察狹長水道、適度不平整岸邊與流動明暗，沒有複製／描摹／挪用參考像素。Mote Studio已確認PNG／sheet／GIF匯出，不支援此原生SVG；沿用專案向量作者。\n\n每臂3段固定比例貼圖，岸邊形狀／材質首尾週期相同；UV與網格頂點同步裁切顯露，已鋪部分不伸縮，前端延伸到下一段。前端／根部圓收，內部接縫無重疊透明度或重播閃爍。四臂共用一張16MiB RGBA圖集，12節點、零粒子。\n\n主要明暗團塊、流紋與細泡沫均單向平移；4秒流過一個完整短段（正式尺寸每秒40世界單位，伸展速度仍120）。整體水道近直線，兩岸固定細碎凹凸加0.22材質像素微擾，沒有整條蛇行／呼吸。材質相位與前端生長獨立，續送事件不重播。\n\n表定長度／半寬／速度／壽命與判定保持，非正式素材未加入遊戲。重製：node tools/vfx/authoring/author/poison-trail.cjs；node tools/vfx/export-assets.cjs。\n");
+  fs.writeFileSync(path.join(folder, 'SOURCE.md'), "# 毒素加持：無縫接段與表面內流\n\n2026-10-22 Codex 原創SVG，64格／16fps／4秒循環。附件僅用於觀察狹長水道、適度不平整岸邊與流動明暗，沒有複製／描摹／挪用參考像素。Mote Studio已確認PNG／sheet／GIF匯出，不支援此原生SVG；沿用專案向量作者。\n\n每臂3段固定比例貼圖，岸邊形狀／材質首尾週期相同；UV與網格頂點同步裁切顯露，已鋪部分不伸縮，前端延伸到下一段。前端／根部圓收，內部接縫無重疊透明度或重播閃爍。四臂共用一張16MiB RGBA圖集，12節點、零粒子。\n\n主要明暗團塊、流紋與細泡沫均單向平移；4秒流過一個完整短段（正式尺寸每秒40世界單位，伸展速度仍120）。整體水道近直線，兩岸固定細碎凹凸振幅依使用者要求較已認可接段版微增10%（乘1.10），空間頻率／種子不變；另加原有0.22材質像素微擾，沒有整條蛇行／呼吸。材質相位與前端生長獨立，續送事件不重播。\n\n表定長度／半寬／速度／壽命與判定保持，非正式素材未加入遊戲。重製：node tools/vfx/authoring/author/poison-trail.cjs；node tools/vfx/export-assets.cjs。\n");
   const scanner = require('../../asset-scanner.cjs'), file = path.join(repo, 'vfx/asset-index.json');
   const index = JSON.parse(fs.readFileSync(file)), bytes = Buffer.from(svg);
   const entry = { assetId, package: scanner.derivePackage(assetId), relativePath: assetId, format: 'svg',

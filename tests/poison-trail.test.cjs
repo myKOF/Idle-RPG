@@ -69,7 +69,8 @@ test('POISON-FINE-BANK 順直主輪廓上保有可見的小凹凸，兩岸不共
   for(let x=55;x<=457;x+=.5) {
     const s=author.surfaceAt(x,0),u=s.upper-s.smoothUpper,l=s.lower-s.smoothLower;
     upper.push(u);lower.push(l);
-    assert.ok(Math.abs(u)<=4.72 && Math.abs(l)<=4.72,'凹凸限於局部，不能重回大幅蛇行');
+    const bankLimit=4.5*1.10+.22; // 已認可的固定凹凸只增加10%；時間微擾維持0.22。
+    assert.ok(Math.abs(u)<=bankLimit && Math.abs(l)<=bankLimit,'凹凸限於局部，不能重回大幅蛇行');
     assert.ok(Math.abs(u-author.roughBankAt(x,0))<=.220001);
     assert.ok(Math.abs(l-author.roughBankAt(x,1))<=.220001);
   }
