@@ -19,7 +19,7 @@
         "y": 0.4268
       },
       "alpha": 0.9,
-      "tint": "#a92d76",
+      "tint": "#0925fb",
       "blendMode": "add",
       "duration": 0.7,
       "alphaOverLife": [
@@ -87,7 +87,7 @@
         "y": 0.3246
       },
       "alpha": 1,
-      "tint": "#04000a",
+      "tint": "#100029",
       "blendMode": "normal",
       "duration": 0.7,
       "alphaOverLife": [
@@ -141,7 +141,7 @@
         "y": 0.7684
       },
       "alpha": 0.9,
-      "tint": "#cc3ea7",
+      "tint": "#0033cc",
       "blendMode": "add",
       "delay": 0.24,
       "duration": 0.46,
@@ -196,7 +196,7 @@
         "y": 0.4869
       },
       "alpha": 1,
-      "tint": "#d13db5",
+      "tint": "#3da5d1",
       "blendMode": "add",
       "delay": 0.24,
       "duration": 0.24,
@@ -248,7 +248,7 @@
         "y": 0.4268
       },
       "alpha": 0.9,
-      "tint": "#a92d76",
+      "tint": "#582da9",
       "blendMode": "add",
       "duration": 0.7,
       "alphaOverLife": [
