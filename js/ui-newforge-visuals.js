@@ -187,7 +187,17 @@ var NewForgeVisuals = (function () {
     state.enabled = !!fu.enabled;
     state.visible = node.clientWidth > 0 && state.inView !== false;
     var width = node.clientWidth;
+    // 離開分頁（或捲出畫面）期間帶上若有貨，回來時舊件早已被消耗；
+    // 不播「舊件左退＋新件從右慢慢走進來」，而是直接以目前帶上內容鋪滿，維持離開前的滿帶外觀。
+    var here = !!width && state.visible && active();
+    if (!here) { if (state.entries.size) state.away = true; }
     if (!width) return;
+    var snap = false;
+    if (here && state.away) {
+      state.away = false; snap = true;
+      state.entries.forEach(function (entry) { entry.node.remove(); });
+      state.entries.clear();
+    }
     var items = (fu.belt || []).slice(0, NEW_FORGE_BELT_SHOW);
     var keys = keysFor(items), live = new Set(keys);
     var max = Math.max(1, Math.floor((width + 4) / pitch));
@@ -200,7 +210,7 @@ var NewForgeVisuals = (function () {
       if (!entry) {
         var chip = makeChip(item);
         chip.setAttribute('data-nf-item-id', item.id === undefined ? key : String(item.id));
-        var origin = base + incoming++ * pitch;
+        var origin = snap ? i * pitch : base + incoming++ * pitch;
         chip.style.transform = 'translate3d(' + origin + 'px,-50%,0)';
         node.appendChild(chip);
         entry = { node: chip, from: origin, to: i * pitch, at: state.time, duration: travelMs(origin - i * pitch, cycle),

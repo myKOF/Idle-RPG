@@ -185,3 +185,14 @@ test('帶上放不下的件數由 hiddenCount 回報，供 +N 排隊數加總', 
   h.fu.belt = [{ id: 'q0' }]; h.update();
   assert.equal(h.context.NewForgeVisuals.hiddenCount(1), 0);
 });
+
+test('離開分頁再切回：帶上原本滿的，回來直接鋪滿目前內容，不清空重走', () => {
+  const h = harness(); h.fu.belt = Array.from({ length: 30 }, (_, i) => ({ id: 'a' + i })); h.update(); h.step(3000);
+  const full = h.entries().length; assert.ok(full >= 8);
+  h.context.UI.tab = 'skills'; h.node.clientWidth = 0; h.update(); h.step(100);
+  h.fu.belt = Array.from({ length: 30 }, (_, i) => ({ id: 'b' + i }));
+  h.context.UI.tab = 'newforge'; h.node.clientWidth = 352; h.update();
+  const now = h.entries();
+  assert.equal(now.length, full);
+  now.forEach((e, i) => assert.equal(h.x(e), i * 44, '回來即在定位'));
+});
