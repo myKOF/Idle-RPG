@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## NPC-RANK-SOFT-GLOW-20261022 — 階級光暈柔化與向內漸淡
+
+- Owner：Codex；Done（柔化與預覽完成），單一開發者。使用者指出前版偏描邊，要求柔化光暈、顏色沿輪廓向內漸淡並保留細節，改好提供新預覽；依賴NPC-RANK-GLOW已完成。
+- 允許：Renderer僅遮罩漸層生成、index／scene-preview僅Renderer快取、必要輪廓回歸、LV及本段；禁止改階級色、模擬／Worker／配置／技能Preset／存檔及其他副本。驗收同尺度前後畫面、向內多點alpha漸淡、動畫／快取／回收、相關回歸／Build／Console。交使用者預覽與正常整合。
+- 衝突預檢：Renderer／測試／預覽／任務紀錄乾淨；index與LV僅Claude d720da40／f5b4be9a威能區段，本次僅Renderer快取及既有NPC說明。develop與雙方實際內容候選merge-file試跑均0，沒有語意相依，分段修改。
+- 完成5檔：Renderer移除窄亮描邊，改為六個距離的柔化內緣漸層與兩層模糊外暈；內光裁回本體alpha，中央淡染降低、留白增加以容納柔暈。index與scene-preview快取=1.6.199，LV及本段同步。階級色／節點數／動畫生命週期／共用快取不變，沒有新增美術素材或Preset，素材庫無變更、不建空Commit。
+- 驗證：`node --test tests/npc-rank-glow.test.cjs tests/battle-renderer-pause.test.cjs tests/battle-elite.test.cjs tests/battle-perspective.test.cjs`30/30通過；`npm.cmd run build`574檔通過，`git diff --check`通過。唯讀檢查前述測試、既有mask快取／姿勢／載圖／死亡流程、規範與Claude差異，未改任何測試斷言。
+- 隔離Edge／正式Renderer以完全相同站位與動畫幀切換前後遮罩，重繪透視離屏畫面後截圖，已目視新光暈柔化、內部五官仍可辨。矩形輪廓向內2／3／4／6／8／12像素的alpha依次114／97／75／41／14／6，中央由舊18降到6；外側1像素188→106，四角／鄰格0。像素漸淡／中央減染／外緣降低等斷言通過，180輪穩態同步建立Canvas0；Console warning／error與pageerror0。npc-ranks-soft.png、同場舊版npc-ranks-before.png及verification.json在本聊天visualizations/npc-rank-soft，未讀寫存檔或操作使用者分頁，驗收暫存腳本收尾移除。
+- 交付Commit為本段所在「[Codex] fix: NPC階級光暈柔化並向內漸淡」，回覆附編號；無本次未完成實作，可Review／合併，未合併推送。限制沿前版Canvas路徑與未做手機GPU／長戰壓測，遮罩留白略增且初次生成增加合成次數，穩態沒有新增重畫或精靈；下一步使用者檢視本輪預覽後正常整合。
+
 ## NPC-RANK-GLOW-20261022 — NPC模型輪廓階級辨識
 
 - Owner：Codex；Done，單一開發者。使用者三張截圖僅作效果參考：一般菁英藍光、高級菁英黃光、BOSS紅色外框與金紅內光；邊緣亮、內部淡，保留模型細節。依賴既有NPC階級與Pixi本體已完成。

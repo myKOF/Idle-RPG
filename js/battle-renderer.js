@@ -1375,7 +1375,7 @@ var BattleRenderer = (function () {
     var res = tex.source.resource, f = tex.frame, orig = tex.orig || f;
     if (!f || !orig.width || !orig.height) return null;
     /* 統一遮罩解析度，外框不隨原始圖片像素密度而忽粗忽細；留白防止貼邊裁切。 */
-    var k = 128 / Math.max(orig.width, orig.height), pad = 6;
+    var k = 128 / Math.max(orig.width, orig.height), pad = 14;
     var w = Math.ceil(orig.width * k), h = Math.ceil(orig.height * k);
     function canvas() {
       var c = document.createElement('canvas'); c.width = w + pad * 2; c.height = h + pad * 2; return c;
@@ -1386,7 +1386,7 @@ var BattleRenderer = (function () {
     mc.drawImage(res, f.x * r, f.y * r, f.width * r, f.height * r,
       pad + (trim ? trim.x : 0) * k, pad + (trim ? trim.y : 0) * k, f.width * k, f.height * k);
     mc.globalCompositeOperation = 'source-in'; mc.fillStyle = '#ffffff'; mc.fillRect(0, 0, mask.width, mask.height);
-    /* 多個距離的侵蝕／膨脹差形成漸層：深處僅淡染，內緣較亮，外緣細亮框＋柔暈。
+    /* 多個距離的侵蝕／膨脹差形成柔光：顏色從輪廓往內漸淡，深處僅淡染。
        全程Canvas合成，不讀ImageData；也不會把序列圖相鄰格的像素帶進來。 */
     function band(radius, inside) {
       var c = canvas(), ctx = c.getContext('2d');
@@ -1403,12 +1403,15 @@ var BattleRenderer = (function () {
       ctx.globalCompositeOperation = 'destination-out'; ctx.drawImage(mask, 0, 0); return c;
     }
     var inner = canvas(), ic = inner.getContext('2d');
-    ic.globalAlpha = 0.07; ic.drawImage(mask, 0, 0);
-    ic.globalAlpha = 0.27; ic.drawImage(band(3, true), 0, 0);
-    ic.globalAlpha = 0.58; ic.drawImage(band(1, true), 0, 0);
+    ic.globalAlpha = 0.025; ic.drawImage(mask, 0, 0);
+    ic.filter = 'blur(2px)'; ic.globalAlpha = 0.13;
+    [2, 4, 6, 8, 11, 15].forEach(function (radius) { ic.drawImage(band(radius, true), 0, 0); });
+    /* 柔化後再裁回本體，保留透明孔洞與模型外的留白。 */
+    ic.filter = 'none'; ic.globalAlpha = 1;
+    ic.globalCompositeOperation = 'destination-in'; ic.drawImage(mask, 0, 0);
     var outer = canvas(), oc = outer.getContext('2d');
-    oc.globalAlpha = 0.32; oc.filter = 'blur(1px)'; oc.drawImage(band(3, false), 0, 0);
-    oc.globalAlpha = 0.9; oc.filter = 'none'; oc.drawImage(band(1.2, false), 0, 0);
+    oc.globalAlpha = 0.65; oc.filter = 'blur(2.4px)'; oc.drawImage(band(3, false), 0, 0);
+    oc.globalAlpha = 0.35; oc.filter = 'blur(1.1px)'; oc.drawImage(band(1.2, false), 0, 0);
     var result = { inner: PIXI.Texture.from(inner), outer: PIXI.Texture.from(outer),
       width: orig.width, height: orig.height, k: k, pad: pad };
     NPC_RANK_MASKS.set(tex, result);
