@@ -7937,6 +7937,16 @@ function uiTick() {
   if ((d.gems || d.equip) && UI.tab === 'runes' && typeof renderRunes === 'function') { renderRunes(); d.gems = false; d.equip = false; }
   if (UI.tab === 'gems') updateShopCountdown(); // 商店重置倒數即時更新
   if (d.skills && UI.tab === 'skills') { renderSkills(); d.skills = false; }
+  if (UI.tab === 'talents' && !d.talents) {
+    // 金幣隨收入變動、升級按鈕的可否按取決於金幣；每秒最多重算一次（金幣沒變就不重畫）。
+    var talentNow = Date.now();
+    if (talentNow - (UI._talentGoldAt || 0) >= 1000) {
+      UI._talentGoldAt = talentNow;
+      var talentHeader = uiHeaderPanelSnapshot();
+      var talentGold = talentHeader && talentHeader.player ? Math.floor(Number(talentHeader.player.gold) || 0) : 0;
+      if (talentGold !== UI._talentGoldSeen) { UI._talentGoldSeen = talentGold; d.talents = true; }
+    }
+  }
   if (d.talents && UI.tab === 'talents') { renderTalents(); d.talents = false; }
 
   // 本地測試服承傷顯示實時更新
@@ -8451,6 +8461,13 @@ function talentViewLevels(snapshot) {
 }
 
 
+/* 威能升級花金幣：以 header 面板的即時金幣為準（它隨收入更新），威能面板快照的 gold 只當備援。 */
+function talentViewGold(snapshot) {
+  var hs = uiHeaderPanelSnapshot();
+  if (hs && hs.player && hs.player.gold !== undefined) return Number(hs.player.gold) || 0;
+  return Number(snapshot && snapshot.gold) || 0;
+}
+
 function talentViewLevel(snapshot, id) {
   var value = talentViewLevels(snapshot)[id];
   return clamp(Math.floor(Number(value) || 0), 0, TALENT_MAX_LEVEL);
@@ -8701,12 +8718,12 @@ function talentInlineActionsHTML(def, snapshot) {
   var bossLocked = bossFightConfigLocked();
   var cost = talentUpgradeCost(def.id, lv + 1);
   var upReason = bossLocked ? 'BOSS 戰中不可變更戰鬥配置' : locked ? '尚未開放' : (lv >= TALENT_MAX_LEVEL ? '已達最高等級' :
-    ((snapshot.talentPoints || 0) < cost ? '威能點不足，需要 ' + cost + ' 點' : '消耗 ' + cost + ' 點威能點'));
-  var downReason = bossLocked ? 'BOSS 戰中不可變更戰鬥配置' : lv > 0 ? '退還 ' + talentUpgradeCost(def.id, lv) + ' 點威能點' : '目前為 0 級';
+    (talentViewGold(snapshot) < cost ? '金幣不足，需要 ' + fmtFull(cost) + ' 金幣' : '消耗 ' + fmtFull(cost) + ' 金幣'));
+  var downReason = bossLocked ? 'BOSS 戰中不可變更戰鬥配置' : lv > 0 ? '退還 ' + fmtFull(talentUpgradeCost(def.id, lv)) + ' 金幣' : '目前為 0 級';
   // 不交由 pending 通用邏輯重新啟用：每次快照重算資源／等級限制。
   return '<div class="tlx-node-actions" role="group" aria-label="調整' + esc(def.name) + '等級">' +
     '<button type="button" class="tlx-adjust" data-talent-down="' + def.id + '" aria-label="降低' + esc(def.name) + '等級" data-tt-title="降級" data-tt-desc="' + downReason + '"' + (pending || bossLocked || lv <= 0 ? ' disabled' : '') + '>−</button>' +
-    '<button type="button" class="tlx-adjust" data-talent-up="' + def.id + '" aria-label="升高' + esc(def.name) + '等級" data-tt-title="升級" data-tt-desc="' + upReason + '"' + (pending || bossLocked || locked || lv >= TALENT_MAX_LEVEL || (snapshot.talentPoints || 0) < cost ? ' disabled' : '') + '>+</button></div>';
+    '<button type="button" class="tlx-adjust" data-talent-up="' + def.id + '" aria-label="升高' + esc(def.name) + '等級" data-tt-title="升級" data-tt-desc="' + upReason + '"' + (pending || bossLocked || locked || lv >= TALENT_MAX_LEVEL || talentViewGold(snapshot) < cost ? ' disabled' : '') + '>+</button></div>';
 }
 
 // 按鈕與升降級控制為同層，避免巢狀 button；以圖示中心定位星盤。
@@ -8759,10 +8776,10 @@ function renderTalents() {
   if (!UI.talentBrowse.turn || !TALENT_TREES[UI.talentBrowse.turn]) UI.talentBrowse.turn = talentDefaultTurn(snapshot);
   var turn = UI.talentBrowse.turn;
   var h = '<div class="pg-top"><h2 class="pg-title">天堂威能</h2>' +
-    '<span class="pg-pill">轉生威能點 <b>' + fmtFull(snapshot.talentPoints || 0) + '</b></span>' +
+    '<span class="pg-pill">金幣 <b>' + fmtFull(talentViewGold(snapshot)) + '</b></span>' +
     '<span class="pg-pill">已轉生 <b>' + rc + ' 轉</b></span>' +
     '<span class="pg-pill tlx-monster-power" tabindex="0" data-tt-title="魔物威能" data-tt-desc="地獄大軍感受到你接收了天堂神力而倍感憤怒&lt;br&gt;魔物威能每增加10%則敵人強度+1級">' + talentThreatIconHTML() + '魔物威能 <b>' + (100 + talentThreatTotal(talentViewLevels(snapshot))) + '%</b></span>' +
-    '<button type="button" class="pg-help" aria-label="威能說明" data-tt-title="天堂威能" data-tt-desc="1 轉後開放；轉生後每升 1 級獲得 1 點轉生威能點。威能最高10級，升至第N級消耗N點威能點，升滿共55點。每級效果依表定增加值累加。每個威能首次點亮增加表定威脅值，後續升級不再增加。">?</button></div>';
+    '<button type="button" class="pg-help" aria-label="威能說明" data-tt-title="天堂威能" data-tt-desc="1 轉後開放。威能最高10級，升級消耗金幣（費用依威能表的升級金幣基數與倍率，越高轉數的威能越貴），降級或清除會全額退還金幣。每級效果依表定增加值累加。每個威能首次點亮增加表定威脅值，後續升級不再增加。">?</button></div>';
   if (rc < 1) h += '<div class="tlx-locked-banner">🔒 威能系統將於完成 1 轉後開放。</div>';
   h += '<div class="tlx-tiers" role="tablist" aria-label="轉數">' + talentTierTabsHTML(snapshot) + '</div>';
   h += '<div class="tlx"><div class="tlx-board">' + talentBoardHTML(turn, snapshot) + '</div></div>';
@@ -9861,7 +9878,7 @@ function showTalentTooltip(ref, anchorEl) {
     h += '<div class="skt-desc">下一級：' + talentEffectDescription(def, talentDescriptionValue(def, lv + 1, turn, nextSnapshot)) + '</div>';
   }
   if (!talentViewUnlocked(snapshot, id)) h += '<div class="skt-lock">🔒 需要達到 ' + turn + ' 轉</div>';
-  h += '<div class="skt-hint">' + (lv >= maxLv ? '已達最高等級' : '升至下一級消耗 ' + talentUpgradeCost(id, lv + 1) + ' 點威能點') + '</div>';
+  h += '<div class="skt-hint">' + (lv >= maxLv ? '已達最高等級' : '升至下一級消耗 ' + fmtFull(talentUpgradeCost(id, lv + 1)) + ' 金幣') + '</div>';
   tip.innerHTML = h;
   tip.style.display = 'block';
   UI.tooltipAnchor = anchorEl;
@@ -11904,7 +11921,6 @@ function initUI() {
         actTitle + '效果：\n' +
         '・人物等級回到 1 級，經驗歸零。\n' +
         '・生命、法力及力量、敏捷、體質、智力變為 ×' + reincarnationTotalMultiplier(nextCount) + '。\n' +
-        '・轉生後每升 1 級獲得 1 點轉生威能點。\n' +
         '・裝備、技能、資源與關卡進度保留。\n\n確定要進行' + actTitle + '嗎？',
         function () {
           sendUiCommand('player.reincarnate', {}, {

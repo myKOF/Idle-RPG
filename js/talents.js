@@ -1,16 +1,24 @@
 'use strict';
-/* ============ 天堂威能：使用轉生威能點 ============ */
+/* ============ 天堂威能：升級消耗金幣（2026-10-22 取消轉生威能點） ============ */
 var TALENT_COMPLETE_EFFECT_MULTIPLIER = 1.25;
 
-/* 升到目標等級的單級成本 = 目標等級。 */
+/* 升到目標等級的金幣成本 = 升級金幣基數 × 升級金幣倍率^(目標等級 - 1)（威能表欄位，取整）。
+   Lv.1 費用＝基數；目標等級 0 以下或超過上限＝0。 */
 function talentUpgradeCost(id, targetLv) {
-  return clamp(Math.floor(Number(targetLv) || 0), 0, TALENT_MAX_LEVEL);
+  targetLv = Math.floor(Number(targetLv) || 0);
+  if (targetLv < 1 || targetLv > TALENT_MAX_LEVEL) return 0;
+  var def = (typeof talentDef === 'function') ? talentDef(id) : null;
+  if (!def) return 0;
+  var grow = Number(def.goldGrow) || 1;
+  return Math.floor((Number(def.goldBase) || 0) * Math.pow(grow, targetLv - 1));
 }
 
-/* 升到 Lv.lv 的累計天賦點成本（清除退點與已投入點數計算用） */
+/* 升到 Lv.lv 的累計金幣成本（清除退還與已投入金額計算用） */
 function talentTotalCost(id, lv) {
   lv = clamp(Math.floor(Number(lv) || 0), 0, TALENT_MAX_LEVEL);
-  return lv * (lv + 1) / 2;
+  var sum = 0;
+  for (var i = 1; i <= lv; i++) sum += talentUpgradeCost(id, i);
+  return sum;
 }
 
 /* 天賦節點清單（轉數 + 定義）。內容只由 TALENT_TREES 與 TALENT_IMPLEMENTED_REINCARNATIONS
@@ -145,22 +153,14 @@ function talentCompleteMultiplier(turn, levels) {
   return talentTreeComplete(turn, levels) ? TALENT_COMPLETE_EFFECT_MULTIPLIER : 1;
 }
 
-/* GM 直接切換轉生次數時沒有完整的歷史升級紀錄，
-   以前置轉生都已升到可轉生等級、目前轉生依目前等級計算，重建可用天賦點。 */
+/* GM 直接切換轉生次數：威能升級改花金幣後沒有點數池可重建，只清空等級。 */
 function resetTalentsForReincarnationGM(count) {
   var state = talentState();
   talentList().forEach(function (entry) { state.levels[entry.def.id] = 0; });
-
-  var turns = Math.max(0, Math.floor(Number(count) || 0));
-  var reincarnationLevel = Math.max(1, Math.floor(Number(REINCARNATION_LEVEL) || 1));
-  var currentLevel = clamp(Math.floor(Number(G.player.level) || 1), 1, reincarnationLevel);
-  var completedTurnPoints = Math.max(0, turns - 1) * Math.max(0, reincarnationLevel - 1);
-  var currentTurnPoints = turns > 0 ? currentLevel - 1 : 0;
-  G.player.reincarnationTalentPoints = completedTurnPoints + currentTurnPoints;
   talentRefresh();
 }
 
-function talentSpentPoints() {
+function talentSpentGold() {
   var spent = 0;
   talentList().forEach(function (entry) {
     spent += talentTotalCost(entry.def.id, talentLevel(entry.def.id));
@@ -250,8 +250,8 @@ function talentUpgrade(id) {
   var lv = talentLevel(id);
   if (lv >= TALENT_MAX_LEVEL) return '已達最高等級';
   var cost = talentUpgradeCost(id, lv + 1);
-  if ((G.player.reincarnationTalentPoints || 0) < cost) return '轉生威能點不足，需要 ' + cost + ' 點';
-  G.player.reincarnationTalentPoints -= cost;
+  if ((G.player.gold || 0) < cost) return '金幣不足，需要 ' + fmtFull(cost) + ' 金幣';
+  G.player.gold -= cost;
   talentState().levels[id] = lv + 1;
   talentRefresh();
   return null;
@@ -261,7 +261,7 @@ function talentMax(id) {
   var start = talentLevel(id), changed = false;
   while (talentLevel(id) < TALENT_MAX_LEVEL && talentUpgrade(id) === null) changed = true;
   if (changed) return null;
-  return start >= TALENT_MAX_LEVEL ? '已達最高等級' : '轉生威能點不足';
+  return start >= TALENT_MAX_LEVEL ? '已達最高等級' : '金幣不足';
 }
 
 function talentDowngrade(id) {
@@ -270,7 +270,7 @@ function talentDowngrade(id) {
   var lv = talentLevel(id);
   if (!lv) return '威能目前是 0 級';
   talentState().levels[id] = lv - 1;
-  G.player.reincarnationTalentPoints = (G.player.reincarnationTalentPoints || 0) + talentUpgradeCost(id, lv);
+  G.player.gold = (G.player.gold || 0) + talentUpgradeCost(id, lv);
   talentRefresh();
   return null;
 }
@@ -280,7 +280,7 @@ function talentDelete(id) {
   if (!def) return '找不到威能';
   var lv = talentLevel(id);
   talentState().levels[id] = 0;
-  G.player.reincarnationTalentPoints = (G.player.reincarnationTalentPoints || 0) + talentTotalCost(id, lv);
+  G.player.gold = (G.player.gold || 0) + talentTotalCost(id, lv);
   talentRefresh();
   return null;
 }

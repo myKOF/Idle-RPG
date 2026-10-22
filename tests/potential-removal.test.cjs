@@ -46,8 +46,9 @@ test('現代舊檔清除潛力與解鎖節點，精確退點、保留其他威�
   raw.player.loadout = ['sg:thrust', 'potential:velocityForce', 'sg:knife', 'potential:lightningOverdrive'];
   raw.player.skillMastery = { level: 123, xp: 45 };
   const migrated = e.ctx.migrateSave(raw);
-  assert.equal(migrated.player.reincarnationTalentPoints, 71); // 7 + 6 + 55 + 3
-  assert.equal(migrated.player.gold, 987654);
+  // 剩餘威能點 7 + 6 + 55 + 3 = 71，依 TALENT_POINT_GOLD_COMPAT 折成金幣，欄位移除
+  assert.equal(migrated.player.reincarnationTalentPoints, undefined);
+  assert.equal(migrated.player.gold, 987654 + 71 * e.ctx.TALENT_POINT_GOLD_COMPAT);
   assert.equal(migrated.player.talents.levels.t1_str, 3);
   assert.equal(migrated.player.talents.levels.t3_potential, undefined);
   assert.equal(migrated.player.talents.potentialLevels, undefined);
@@ -56,9 +57,9 @@ test('現代舊檔清除潛力與解鎖節點，精確退點、保留其他威�
   assert.deepEqual(plain(migrated.player.loadout), ['sg:thrust', null, 'sg:knife']);
   assert.deepEqual(plain(migrated.player.skillMastery), { level: 123, xp: 45 });
   const reloaded = engine(plain(migrated));
-  assert.equal(reloaded.ctx.G.player.reincarnationTalentPoints, 71);
+  assert.equal(reloaded.ctx.G.player.gold, 987654 + 71 * e.ctx.TALENT_POINT_GOLD_COMPAT);
   const savedAgain = engine(JSON.parse(reloaded.saveJson()));
-  assert.equal(savedAgain.ctx.G.player.reincarnationTalentPoints, 71);
+  assert.equal(savedAgain.ctx.G.player.gold, 987654 + 71 * e.ctx.TALENT_POINT_GOLD_COMPAT, '重讀不重複折算');
   assert.equal(savedAgain.ctx.G.player.talents.potentialLevels, undefined);
 });
 
@@ -89,7 +90,8 @@ test('威能整轉全滿提升25%且威脅沿表值，移除的四個節點不�
     assert.equal(c.talentCompleteMultiplier(turn), 1.25);
   }
   assert.equal(c.talentThreatTotal(), 56);
-  assert.equal(c.talentSpentPoints(), 1540);
+  const expectSpent = c.talentList().reduce((s, x) => s + c.talentTotalCost(x.def.id, 10), 0);
+  assert.equal(c.talentSpentGold(), expectSpent);
 });
 
 test('移除潛力專用狀態與戰鬥出口，同名通用符文增益仍作用於技能與普攻', () => {
