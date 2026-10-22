@@ -86,7 +86,34 @@ function bfBossRadius() { return bfNum('BF_BOSS_RADIUS', 52); }
 var BF_PLAYER = { x: 0, y: 0 };
 var BF_PLAYER_CHASING = false;     // 起步／停步的遲滯狀態（見 bfTickPlayer）
 function bfPlayerPos() { return BF_PLAYER; }
-function bfResetPlayer() { BF_PLAYER.x = 0; BF_PLAYER.y = 0; BF_PLAYER_CHASING = false; return BF_PLAYER; }
+function bfResetPlayer() { BF_PLAYER.x = 0; BF_PLAYER.y = 0; BF_PLAYER_CHASING = false; BF_PLAYER_OBS.id = 0; BF_PLAYER_OBS.side = 0; return BF_PLAYER; }
+
+/* ---- 地形障礙（js/battle-terrain.js）----
+   野外大型擺件（底座寬 ≥ BF_OBSTACLE_MIN_M 米，預設 12）是障礙：走路被擋住時沿邊緣滑開，
+   隔著障礙不能近戰普攻；技能、投射物、範圍判定一律不受影響。封魔塔沒有野外地形，不啟用。
+   位置與顯示層用的是同一份純函式（BattleTerrain.layoutChunk），所以看到的岩石就是擋路的岩石。
+   沒載入 BattleTerrain 或沒有 G（多數單元測試）＝恆為沒有障礙。 */
+var BF_PLAYER_OBS = { id: 0, side: 0 };     // 我方繞障礙的方向記憶（見 BattleTerrain.pushOut）
+var BF_TERRAIN_ACTIVE = false;
+/* 每個 tick 開頭呼叫一次（bfTickPlayer／bfTickApproach）：同步場景、門檻，並記下這個 tick 有沒有地形。 */
+function bfTerrainSync() {
+  var on = typeof BattleTerrain !== 'undefined' && typeof G !== 'undefined' && !!G && !!G.stage && !(G.tower && G.tower.active);
+  if (on) {
+    BattleTerrain.setScene(G.stage.zone || '', G.stage.current);
+    BattleTerrain.setMinWidth(bfNum('BF_OBSTACLE_MIN_M', 12) * BF_SYSTEM_UNITS_PER_METER);
+  }
+  BF_TERRAIN_ACTIVE = on;
+  return on;
+}
+/* 兩點之間有沒有障礙擋著（近戰判定用）。 */
+function bfTerrainBlocks(ax, ay, bx, by) {
+  return BF_TERRAIN_ACTIVE && BattleTerrain.segmentBlocked(ax, ay, bx, by);
+}
+/* 把一個實體從障礙裡推出來（goal＝牠想去的點，決定繞哪一側）。回傳是否被推動。 */
+function bfTerrainPushOut(pos, radius, goalX, goalY, state) {
+  return BF_TERRAIN_ACTIVE && BattleTerrain.pushOut(pos, radius, goalX, goalY, state);
+}
+function bfPlayerBodyRadius() { return (typeof ELITE_PLAYER_BODY_R === 'number' && ELITE_PLAYER_BODY_R > 0) ? ELITE_PLAYER_BODY_R : 18; }
 
 /* 體型半徑：BOSS 比較大，所以「邊緣」比中心更早進入接觸距離。 */
 function bfEntityRadius(ent) {
@@ -172,9 +199,11 @@ function bfInAttackRange(ent) {
 }
 /* 築牆：近戰攻擊不能隔著牆（遠程不受影響）。js/elite.js eliteWallBlocks 沒載入就恆為不擋。 */
 function bfWallBlocksMelee(ent) {
-  if (typeof eliteWallBlocks !== 'function' || bfEnemyIsRanged(ent)) return false;
+  if (bfEnemyIsRanged(ent)) return false;
   var p = bfPos(ent), c = bfPlayerPos();
-  return !!p && eliteWallBlocks(p.x, p.y, c.x, c.y);
+  if (!p) return false;
+  if (typeof eliteWallBlocks === 'function' && eliteWallBlocks(p.x, p.y, c.x, c.y)) return true;
+  return bfTerrainBlocks(p.x, p.y, c.x, c.y);     // 地形障礙：近戰一樣不能隔著打
 }
 
 /* 我方能不能打到這個目標（普攻是近戰）。 */
@@ -186,6 +215,8 @@ function bfPlayerCanReach(ent) {
     var p = bfPos(ent), c = bfPlayerPos();
     if (eliteWallBlocks(p.x, p.y, c.x, c.y)) return false;
   }
+  var q = bfPos(ent), h = bfPlayerPos();
+  if (bfTerrainBlocks(q.x, q.y, h.x, h.y)) return false;   // 地形障礙：隔著岩塊打不到
   return true;
 }
 
@@ -294,6 +325,7 @@ function bfTickApproach(enemies, dt) {
   var live = bfLiveList(enemies);
   var i, j;
   var home = bfPlayerPos();
+  bfTerrainSync();
   var justInRange = [];
   for (i = 0; i < live.length; i++) {
     var ent = live[i];
@@ -370,6 +402,16 @@ function bfTickApproach(enemies, dt) {
       b.x += ux * push * wb; b.y += uy * push * wb;
     }
   }
+  /* 地形障礙：走路、擊退、推擠之後統一把人推出岩塊（沿邊滑開，不會卡死）。
+     放在最後一道，才不會被同伴推擠又擠回岩塊裡。 */
+  if (BF_TERRAIN_ACTIVE) {
+    for (i = 0; i < live.length; i++) {
+      var te = live[i], tp = bfPos(te);
+      if (!tp) continue;
+      if (!te._obs) te._obs = { id: 0, side: 0 };
+      BattleTerrain.pushOut(tp, bfEntityRadius(te), home.x, home.y, te._obs);
+    }
+  }
   return justInRange;
 }
 
@@ -388,11 +430,13 @@ function bfTickPlayer(enemies, dt, preferred, pEnt) {
   if (typeof elitePlayerLocked === 'function' && elitePlayerLocked()) { BF_PLAYER_CHASING = false; return false; }   // 被漩渦拉扯中
   var home = bfPlayerPos();
   var ox0 = home.x, oy0 = home.y;
+  bfTerrainSync();
   var live = bfLiveList(enemies).filter(function (e) { return !!bfPos(e); });
   if (!live.length) {
     /* 空場：往前方（+x）推進，地板會跟著往後捲，不會呆站著等下一波。 */
     home.x += bfPlayerSpeed() * bfPlayerSpeedFactor(pEnt) * dt;
     if (typeof eliteClampMove === 'function') eliteClampMove(ox0, oy0, home);
+    bfTerrainPushOut(home, bfPlayerBodyRadius(), home.x + 1000, home.y, BF_PLAYER_OBS);
     BF_PLAYER_CHASING = true;
     return true;
   }
@@ -421,6 +465,7 @@ function bfTickPlayer(enemies, dt, preferred, pEnt) {
   home.x += (dx / len) * step;
   home.y += (dy / len) * step;
   if (typeof eliteClampMove === 'function' && eliteClampMove(ox0, oy0, home)) { BF_PLAYER_CHASING = false; return false; }   // 撞牆
+  bfTerrainPushOut(home, bfPlayerBodyRadius(), p.x, p.y, BF_PLAYER_OBS);   // 地形障礙：沿邊滑開
   /* 這一步就走到定位了：當下就解除追擊狀態，不要拖到下一個 tick——
      中間那一格空窗會讓「已經站定卻仍算在追」，遲滯就少了半拍。 */
   if (gap - step <= 0.0001) BF_PLAYER_CHASING = false;

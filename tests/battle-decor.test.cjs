@@ -67,6 +67,7 @@ function loadDecor(extra) {
   vm.runInContext(fs.readFileSync(path.join(root, 'js/decor-sculpt.js'), 'utf8'), ctx);
   vm.runInContext(fs.readFileSync(path.join(root, 'js/decor-nature.js'), 'utf8'), ctx);
   ctx.DecorNature.registerImages(Object.fromEntries(Object.keys(ctx.DecorNature.spriteFiles).map(key=>[key,{width:128,height:192}])));
+  vm.runInContext(fs.readFileSync(path.join(root, 'js/battle-terrain.js'), 'utf8'), ctx);   // 擺件位置清單（battle-decor 的 buildChunk 依它擺）
   vm.runInContext(fs.readFileSync(path.join(root, 'js/battle-decor.js'), 'utf8'), ctx);
   return { BattleDecor: ctx.BattleDecor, DecorSculpt: ctx.DecorSculpt, warnings, ctx };
 }
@@ -410,13 +411,16 @@ test('DECOR-NATURE-2 地面接觸區與本體同腳點、倍率與翻面，透�
 test('DECOR-NATURE-3 主頁、圖集 Worker 與開發工具載入同版原創畫法與 Decor', () => {
   const read = f => fs.readFileSync(path.join(root,f),'utf8');
   const html=read('index.html'), worker=read('js/worker/decor-atlas.worker.js'), tool=read('tools/decor-preview.html');
-  for (const file of ['decor-nature','battle-decor']) {
+  for (const file of ['decor-nature','battle-terrain','battle-decor']) {
     const token=html.match(new RegExp('js/'+file+'\\.js\\?v=([^"\\s]+)'))[1];
     assert.ok(worker.includes('../'+file+'.js?v='+token), file+' Worker 快取不同步');
     assert.ok(tool.includes('../js/'+file+'.js?v='+token),file+' 預覽工具快取不同步');
   }
   assert.ok(html.indexOf('js/decor-nature.js?v=')<html.indexOf('js/battle-decor.js?v='));
   assert.ok(worker.indexOf('../decor-nature.js?v=')<worker.indexOf('../battle-decor.js?v='));
+  // 擺件位置清單要在 battle-decor 之前載入（buildChunk 依它擺）
+  assert.ok(html.indexOf('js/battle-terrain.js?v=')<html.indexOf('js/battle-decor.js?v='));
+  assert.ok(worker.indexOf('../battle-terrain.js?v=')<worker.indexOf('../battle-decor.js?v='));
 });
 
 test('DECOR-BB 透視抵銷（opts.billboard）：擺件與火焰被抵銷後 Pixi 的 anchor 仍完好，切地圖重用物件池也不拋例外', () => {
@@ -447,7 +451,8 @@ test('DECOR-BB 透視抵銷（opts.billboard）：擺件與火焰被抵銷後 Pi
   assert.ok(props > 50, '要真的跑到擺件');
   assert.ok(flames > 0, '要真的跑到火焰（火盆在某些地圖才有），不然測不到零件');
   /* 抵銷真的有套上：本體 skew／縮放乘上 k，火焰位置經過同一個矩陣 */
-  const prop = layers.prop.children.find((s) => s._bbParent === undefined && s._bbX !== undefined);
+  // 會隨風擺動的種類（草、灌木…）每幀另外加一個擺動 skew，不在這條斷言要驗的範圍
+  const prop = layers.prop.children.find((s) => s._bbParent === undefined && s._bbX !== undefined && !s._natureSway);
   assert.ok(Math.abs(prop.skew.x - Math.atan2(shear, w)) < 1e-12);
   assert.ok(Math.abs(prop.scale.y - prop._bbY * Math.hypot(shear, w)) < 1e-12);
   const flame = layers.prop.children.find((s) => s._bbParent);
