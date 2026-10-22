@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## BATTLE-VIEWPORT-FIT-20261022 — 修正地圖列撐寬戰鬥區
+
+- Owner：Codex；Done；單一開發者。使用者回報新增場景後角色偏離中央、右側功能按鈕被裁切，要求修正尺寸。依賴十圖場景已完成；fetch後預檢無其他副本／分支修改來源。
+- 允許：css/style.css的戰鬥容器及地圖列尺寸、index.html僅CSS快取、LV_upgrade_system.md及本紀錄；必要隔離瀏覽器驗收暫存。禁止鏡頭倍率／戰鬥公式／Worker／配置／存檔／素材與其他副本；不合併推送。
+- 修正：允許battle-area依父容器縮小，地圖列換行並保留完整列高，讓Canvas與右側HUD採實際可見寬度。驗收十圖／兩種realm、一般／全螢幕及還原、畫布／按鈕邊界與中央投影，相關回歸／Build／Console／diff後獨立Commit。接手者為使用者Review及正常整合。
+- 完成四檔：css/style.css新增battle-area的min-width:0、zone-bar的wrap及不壓縮列高；index僅style快取91→92，LV及本紀錄同步。沿用原有ResizeObserver與鏡頭置中，不改Renderer／JS／倍率／戰鬥或解鎖；沒有新增素材或素材庫Commit。
+- 瀏覽器：隔離localhost正式遊戲／Worker，1920×1080舊CSS實測卡片863px、內容944.34375px、Canvas938px，按鈕右端1999.34375超出卡片1908；新版內容821px、Canvas815px、按鈕右端1876回到框內。1920×900、2560×1440、1280×720均驗卡片／畫布／控制列邊界正常；七張凡人界（含全部進度數字）換兩排，三張神界單排；全螢幕／還原同步resize。地圖解鎖數字僅由臨時驗收頁模擬面板，不寫玩家存檔。角色畫面置中目視通過，中央投影由既有CAMERA測試驗證。截圖battle-viewport-fixed.png保存在本聊天visualizations。
+- Console：重載臨時iframe時出現被中斷Worker匯入／自動重試與無來源MutationObserver訊息；另以全新正式index分頁正常啟動完成，Canvas與七圖均載入、warning／error0，沒有CSS相關新增錯誤。未對使用者原分頁或存檔操作。
+- 測試：node --test tests/battle-ui-rework.test.cjs tests/battle-fullscreen.test.cjs tests/fullscreen-toggle.test.cjs（8/8）；node --test tests/battle-camera-distance.test.cjs tests/new-battle-zones.test.cjs tests/battle-resource-orbs.test.cjs tests/battle-log-ui-layout.test.cjs（23/23）；npm.cmd run build（566檔）；git diff --check通過。未新增僅鏡像CSS的測試、未修改既有斷言、未跑已知有基線失敗的全庫。
+- 唯讀檢查未改：規範／Workflow／prompts/codex、js/ui.js的地圖與按鈕渲染、battle-renderer的viewport／resize／鏡頭、data十圖／realm資料、其他7份樣式與上述7份回歸。自我Review確認只修正Flex寬度與地圖換行，既有標題裝飾／浮字溢出策略保留。臨時驗收頁移存Git中繼資料，測試分頁及服務關閉。
+- 交付：無本次未完成實作／新增已知缺陷，可供Review／合併；Commit為本段所在「[Codex] fix: 修正地圖列撐寬戰鬥區與鏡頭偏移」，回覆附編號。限制為未做真人存檔長戰、手機／跨瀏覽器驗收。驗收期間新增的en-stone-wall-0 Preset／layout使用者修改原樣保留、不納入本次提交。未合併推送；下一步由使用者正常整合並重新整理遊戲。
+
 ## BATTLE-BIOMES-20261022 — 十張野外地圖與三種新地貌
 
 - Owner：Codex；Done；單一開發者。使用者圖片指定迷霧森林／熔岩山／落雷峰、月影沼澤改名、十張地圖元素及100～600關上限；使用者明確授權遇到決策採推薦方案持續實作。現有七圖渲染／配置流程完成，依賴已滿足；衝突預檢全部無外部來源。
