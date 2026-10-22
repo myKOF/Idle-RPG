@@ -75,15 +75,17 @@ test('公告統計：清除幾個舊技能、幾個融合技、卸下幾個、�
     { skills: 4, fusions: 1, equipped: 4, scrolls: 12 });
 });
 
-test('潛力已投入的威能點退回原點數池，移除技能點欄位', () => {
+test('潛力已投入的威能點折成金幣，移除技能點欄位', () => {
   const c = loadMigrationContext();
   const data = legacySave(c, (d) => {
     d.player.reincarnations = 3;
     d.player.talents = { levels: {}, potentialLevels: { velocityForce: 2 } };
   });
+  const goldBefore = Number(data.player.gold) || 0;
   c.migrateSave(data);
   c.G = data;
-  assert.equal(data.player.reincarnationTalentPoints, 3);
+  assert.equal(data.player.reincarnationTalentPoints, undefined);
+  assert.equal(data.player.gold, goldBefore + 3 * c.TALENT_POINT_GOLD_COMPAT); // 剩餘威能點折成金幣
   assert.equal(data.player.skillPoints, undefined);
   assert.equal(data.player.talents.potentialLevels, undefined);
 });

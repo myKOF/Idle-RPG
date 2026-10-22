@@ -17,12 +17,12 @@ if (typeof GameClock !== 'undefined') {
   globalThis.clearTimeout = GameClock.clearTimeout;
 }
 importScripts(
-  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261022-terrain', '../runeword_data.js?v=20261022-battle-biomes', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261019-kagura-fire-attr-asura-combo-fire-amp-50-infinite-burn-earthguard-rebirth-guard-windblade-double-slow-legend-rework-1020', '../formula.js?v=20261022-elem-proc-off', '../battle-terrain.js?v=20261022-lava-terrain-develop-merge', '../battlefield.js?v=20261022-lava-terrain-develop-merge', '../stats.js?v=20261003-rename-weineng',
+  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261022-talent-gold', '../runeword_data.js?v=20261022-battle-biomes', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261019-kagura-fire-attr-asura-combo-fire-amp-50-infinite-burn-earthguard-rebirth-guard-windblade-double-slow-legend-rework-1020', '../formula.js?v=20261022-elem-proc-off', '../battle-terrain.js?v=20261022-lava-terrain-develop-merge', '../battlefield.js?v=20261022-lava-terrain-develop-merge', '../stats.js?v=20261003-rename-weineng',
   '../item.js?v=20261018-gem-workshop', '../gem_resonance.js?v=20261018-resonance-hole-effects','../runeword.js?v=20261018-rune-tower-unlock',
-  '../skills.js?v=20261018-potential-remove', '../skills2.js?v=20261022-meteor-missile-integration', '../elite_data.js?v=20261021-chain-hover', '../talents.js?v=20261018-heaven-power-complete-bonus',
-  '../player.js?v=20261022-battle-biomes', '../special_rules.js',
+  '../skills.js?v=20261018-potential-remove', '../skills2.js?v=20261022-meteor-missile-integration', '../elite_data.js?v=20261021-chain-hover', '../talents.js?v=20261022-talent-gold-norefund',
+  '../player.js?v=20261022-talent-gold', '../special_rules.js',
   '../combat.js?v=20261019-disintegrate-end-once-bloodfeast-single-target', '../elite.js?v=20261022-stone-wall-fire-chain-follow', '../elite_boss.js?v=20261022-stone-wall-navigation', '../elite_boss_recipes.js?v=20261015-boss-player-skill', '../legendary.js?v=20261012-indomitable-guard-legend-rework-1020', '../tower.js?v=20261022-tower-rewards-no-gold',
-  '../factory.js?v=20261021-equipment-quality-name', '../newforge.js', '../forge.js?v=20261015-gem-enabled', '../save.js?v=20261022-battle-biomes',
+  '../factory.js?v=20261021-equipment-quality-name', '../newforge.js', '../forge.js?v=20261015-gem-enabled', '../save.js?v=20261022-talent-gold',
   '../tasks.js?v=20261007-runes4'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
@@ -1053,7 +1053,7 @@ function buildPanel(name, params) {
          AI 策略就是靠這個欄位決定何時送 player.reincarnate。 */
       return {
         talents: p.talents, reincarnations: p.reincarnations,
-        talentPoints: p.reincarnationTalentPoints,
+        gold: p.gold,
         canReincarnate: (typeof canReincarnateAt === 'function')
           ? canReincarnateAt(p.level, p.reincarnations) : false
       };
@@ -1889,7 +1889,7 @@ function boot(msg) {
   }
   if (G._talentRespecNotice) {
     notices.push({ key: '_talentRespecNotice', text: '🌟 ' + G._talentRespecNotice +
-      '，威能改為十級制，升至下一級消耗該級等量威能點。', cls: 'warn' });
+      '，威能改為十級制；威能升級已改為消耗金幣。', cls: 'warn' });
     delete G._talentRespecNotice;
   }
   /* 帶 modal 的公告要彈窗，不是寫進日誌，UI 端據此分辨。

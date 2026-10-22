@@ -30,7 +30,7 @@ test('Talents Excel／CSV／生成資料一致，新欄位與停用列可往返'
   assert.equal(c.talentList().filter(x=>x.def.disabled).length,0);
 });
 test('首次點亮才增加威脅，升滿不重複增加，降到零與清除移除威脅',()=>{
-  const e=engine(),c=e.ctx; c.G.player.reincarnations=10; c.G.player.reincarnationTalentPoints=200;
+  const e=engine(),c=e.ctx; c.G.player.reincarnations=10; c.G.player.gold=1e15;
   assert.equal(c.talentThreatTotal(),0);
   assert.equal(e.cmd('talent.upgrade',{id:'t1_str'}).ok,true); assert.equal(c.talentThreatTotal(),2);
   assert.equal(e.cmd('talent.max',{id:'t1_str'}).ok,true); assert.equal(c.talentThreatTotal(),2);
@@ -68,7 +68,7 @@ test('三座封魔塔的BOSS實際等級／基準強度同步提高，樓層與�
   }
 });
 test('高級菁英沿同一強度基準，配點立即同步場上敵人並保留血量比例與狀態',()=>{
-  const c=engine().ctx; c.G.player.reincarnations=10; c.G.player.reincarnationTalentPoints=100;
+  const c=engine().ctx; c.G.player.reincarnations=10; c.G.player.gold=1e15;
   c.G.stage.current=100; c.G.stage.zone='desert';
   c.spawnEliteWave(false,true);
   const enemies=c.fieldEnemyList(); assert.ok(enemies.length>0);
@@ -96,19 +96,19 @@ test('舊檔在夾限前按舊制退點與潛力金幣，重新配置後持久�
   raw.player.talents.levels={t1_str:100,t2_crit:51,t10_str:1};
   const id='velocityForce'; raw.player.talents.potentialLevels={[id]:3};
   raw.player.loadout=['potential:'+id];
-  const gold=123+20+1026+2036;
+  const gold=123+20+1026+2036+(7+1500+572+19)*c.TALENT_POINT_GOLD_COMPAT; // 舊威能點折金幣
   const migrated=c.migrateSave(raw);
-  assert.equal(migrated.player.reincarnationTalentPoints,7+1500+572+19); assert.equal(migrated.player.gold,gold);
+  assert.equal(migrated.player.reincarnationTalentPoints,undefined); assert.equal(migrated.player.gold,gold);
   assert.equal(migrated.player.talents.levels.t1_str,0); assert.equal(migrated.player.talents.potentialLevels,undefined);
   assert.equal(migrated.player.loadout.length,0); assert.equal(migrated.powerThreatV1,true); assert.ok(migrated._talentRespecConfirm);
   delete migrated._talentRespecConfirm; delete migrated._talentRespecNotice;
   const again=c.migrateSave(JSON.parse(JSON.stringify(migrated)));
-  assert.equal(again.player.reincarnationTalentPoints,migrated.player.reincarnationTalentPoints);
+  assert.equal(again.player.reincarnationTalentPoints,undefined);
   assert.equal(again.player.gold,gold); assert.equal(again._talentRespecNotice,undefined);
   again.player.talents.levels.t1_str=3; again.player.talents.potentialLevels={[id]:4};
   const e2=createEngine({seed:18}); e2.boot(JSON.parse(JSON.stringify(again)));
   assert.equal(e2.ctx.talentLevel('t1_str'),3); assert.equal(e2.ctx.G.player.talents.potentialLevels,undefined);
-  assert.equal(e2.ctx.G.player.reincarnationTalentPoints,again.player.reincarnationTalentPoints+10);
+  assert.equal(e2.ctx.G.player.reincarnationTalentPoints,undefined);
 });
 test('舊檔低等級也必須退點，新局預帶遷移旗標',()=>{
   const e=engine(),c=e.ctx; assert.equal(c.G.powerThreatV1,true);

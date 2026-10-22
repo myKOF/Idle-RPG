@@ -27,7 +27,6 @@ function loadContext() {
   context.G = {
     player: {
       reincarnations: 1,
-      reincarnationTalentPoints: 0,
       skillPointBudget: 10,
       skillPoints: 10,
       gold: 1000000,
@@ -42,7 +41,7 @@ function talentPanelSnapshot(context) {
   return {
     talents: context.G.player.talents,
     reincarnations: context.G.player.reincarnations,
-    talentPoints: context.G.player.reincarnationTalentPoints
+    gold: context.G.player.gold
   };
 }
 
@@ -82,19 +81,46 @@ test('威能十級使用表值，整轉啟用節點全滿額外提升25%', () =>
   assert.equal(c.talentStatBonuses().strPct,6.25);
 });
 
-test('威能升到N級消耗N點，滿級55點，降級與清除精確退點', () => {
+test('威能升級消耗金幣＝基數×倍率^(目標級-1)，降級與清除不退金幣', () => {
   const c=loadContext(); c.G.player.reincarnations=10;
   for(const id of ['t1_str','t2_crit','t10_str']) {
-    c.G.player.reincarnationTalentPoints=55;
-    for(let lv=1;lv<=10;lv++) { assert.equal(c.talentUpgradeCost(id,lv),lv); assert.equal(c.talentUpgrade(id),null); }
-    assert.equal(c.talentTotalCost(id,10),55); assert.equal(c.G.player.reincarnationTalentPoints,0);
+    const def=c.talentDef(id);
+    assert.ok(def.goldBase>0 && def.goldGrow>=1, id+'威能表有金幣欄位');
+    let total=0;
+    for(let lv=1;lv<=10;lv++) {
+      const cost=Math.floor(def.goldBase*Math.pow(def.goldGrow,lv-1));
+      assert.equal(c.talentUpgradeCost(id,lv),cost); total+=cost;
+    }
+    assert.equal(c.talentUpgradeCost(id,1),def.goldBase,'Lv.1費用＝基數');
+    assert.equal(c.talentUpgradeCost(id,0),0); assert.equal(c.talentUpgradeCost(id,11),0);
+    assert.equal(c.talentTotalCost(id,10),total);
+    c.G.player.gold=total;
+    for(let lv=1;lv<=10;lv++) assert.equal(c.talentUpgrade(id),null);
+    assert.equal(c.G.player.gold,0);
     assert.match(c.talentUpgrade(id),/最高/); assert.equal(c.talentDowngrade(id),null);
-    assert.equal(c.G.player.reincarnationTalentPoints,10); assert.equal(c.talentDelete(id),null);
-    assert.equal(c.G.player.reincarnationTalentPoints,55);
+    assert.equal(c.G.player.gold,0,'降級不退金幣'); assert.equal(c.talentDelete(id),null);
+    assert.equal(c.G.player.gold,0,'清除不退金幣');
+    assert.equal(c.talentSpentGold(),0);
   }
-  c.G.player.reincarnationTalentPoints=5; assert.equal(c.talentMax('t1_str'),null);
-  assert.equal(c.talentLevel('t1_str'),2); assert.equal(c.G.player.reincarnationTalentPoints,2);
-  assert.match(c.talentUpgrade('t1_str'),/需要 3 點/);
+  const def1=c.talentDef('t1_str');
+  c.G.player.gold=def1.goldBase+c.talentUpgradeCost('t1_str',2)+5; assert.equal(c.talentMax('t1_str'),null);
+  assert.equal(c.talentLevel('t1_str'),2); assert.equal(c.G.player.gold,5);
+  assert.match(c.talentUpgrade('t1_str'),/金幣不足/);
+  assert.equal(c.G.player.reincarnationTalentPoints,undefined,'不再有威能點');
+});
+
+test('越高轉數的威能越貴，且同轉內各節點費用由表欄位決定', () => {
+  const c=loadContext();
+  let prev=0;
+  for(let turn=1;turn<=10;turn++) {
+    const base=c.TALENT_TREES[turn][0].goldBase;
+    assert.ok(base>prev,turn+'轉基數應高於前一轉'); prev=base;
+  }
+});
+
+test('升級不再給轉生威能點', () => {
+  const c=loadContext(); c.G.player.reincarnations=1; c.G.player.level=1; c.G.player.xp=0;
+  assert.doesNotMatch(fs.readFileSync(path.join(root,'js/player.js'),'utf8'),/reincarnationTalentPoints/);
 });
 
 
@@ -233,21 +259,14 @@ test('寶石鑲嵌效率天賦與其他來源直接相加，放大鑲嵌寶石�
   assert.equal(withGem.A.atkFlat, gemVal * 2);
 });
 
-test('GM 變更轉生次數會清空天賦並依新轉生次數重算天賦點', () => {
+test('GM 變更轉生次數會清空天賦，不再重建點數池', () => {
   const c = loadContext();
-  c.G.player.level = 1234;
-  c.G.player.reincarnationTalentPoints = 999999;
-  // 潛力 id 以 POTENTIAL_TALENTS 為準：清除只走真實存在的鍵，塞假 id 不會被清
   c.G.player.talents.levels.t1_str = 8;
-
+  c.G.player.gold = 777;
   c.resetTalentsForReincarnationGM(3);
-
   assert.equal(c.G.player.talents.levels.t1_str, 0);
-  assert.equal(c.G.player.reincarnationTalentPoints, (3 - 1) * (c.REINCARNATION_LEVEL - 1) + (Math.min(1234, c.REINCARNATION_LEVEL) - 1));
-
-  c.G.player.level = c.REINCARNATION_LEVEL;
-  c.resetTalentsForReincarnationGM(0);
-  assert.equal(c.G.player.reincarnationTalentPoints, 0);
+  assert.equal(c.G.player.gold, 777, 'GM 重設不動金幣');
+  assert.equal(c.G.player.reincarnationTalentPoints, undefined);
 });
 
 
@@ -295,7 +314,7 @@ test('所有威能0級Tooltip顯示1級表值與成本，圖示上不顯示名�
     c.showTalentTooltip(def.id, tipAnchor);
     assert.ok(tip.innerHTML.includes(c.talentEffectDescription(def, def.per)));
     assert.match(tip.innerHTML, /下一級/);
-    assert.match(tip.innerHTML, /消耗 1 點威能點/);
+    assert.match(tip.innerHTML, /消耗 [\d,]+ 金幣/);
     const node = c.talentNodeHTML(def, turn, talentPanelSnapshot(c), 0, c.TALENT_TREES[turn].length);
     assert.doesNotMatch(node, /tlx-node-name/);
     const source = 'images/ui/heaven-power/icons/' + def.id + '.png?v=1';
@@ -428,14 +447,14 @@ test('直接升降級依成本、鎖定、滿級與pending停用，不顯示舊�
   const def = c.talentDef('t6_boss');
   c.UI.selTalent = { kind:'talent', id:def.id };
   const html = () => c.talentInlineActionsHTML(def, talentPanelSnapshot(c));
-  c.G.player.reincarnations = 5; c.G.player.reincarnationTalentPoints = 99;
+  c.G.player.reincarnations = 5; c.G.player.gold = 1e15;
   assert.match(html(), /data-talent-up="t6_boss"[^>]* disabled/);
   assert.match(html(), /data-talent-down="t6_boss"[^>]* disabled/);
   c.G.player.reincarnations = 6;
   assert.doesNotMatch(html(), /data-talent-up="t6_boss"[^>]* disabled/);
-  c.G.player.talents.levels.t6_boss = 9; c.G.player.reincarnationTalentPoints = 9;
-  assert.match(html(), /需要 10 點/); assert.match(html(), /data-talent-up="t6_boss"[^>]* disabled/);
-  c.G.player.reincarnationTalentPoints = 10;
+  c.G.player.talents.levels.t6_boss = 9; const need = c.talentUpgradeCost('t6_boss', 10); c.G.player.gold = need - 1;
+  assert.match(html(), /金幣不足，需要 [\d,]+ 金幣/); assert.match(html(), /data-talent-up="t6_boss"[^>]* disabled/);
+  c.G.player.gold = need;
   assert.doesNotMatch(html(), /data-talent-up="t6_boss"[^>]* disabled/);
   c.isUiCommandPending = () => true;
   assert.match(html(), /data-talent-up="t6_boss"[^>]* disabled/);

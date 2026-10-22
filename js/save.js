@@ -574,6 +574,11 @@ function migrateSave(data) {
     delete data.player.talents.levels[id];
   });
   data.player.reincarnationTalentPoints += removedPotentialRefund;
+  // 2026-10-22 威能升級改花金幣：舊存檔剩餘的轉生威能點按 TALENT_POINT_GOLD_COMPAT 折成金幣，
+  // 欄位刪除後再次讀檔不會重複折算（冪等，不設旗標）。已投入的威能等級原樣保留。
+  data.player.gold = Math.max(0, Number(data.player.gold) || 0) +
+    data.player.reincarnationTalentPoints * TALENT_POINT_GOLD_COMPAT;
+  delete data.player.reincarnationTalentPoints;
   delete data.player.talents.potentialLevels;
   delete data.player.potentialPoints;
   delete data.player.skillPoints;

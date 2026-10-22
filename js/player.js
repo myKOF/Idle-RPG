@@ -88,7 +88,6 @@ function newGameState() {
     player: {
       level: 1, xp: 0,
       reincarnations: 0,
-      reincarnationTalentPoints: 0,
       talents: { levels: {} },
       gold: INITIAL_GOLD, scrap: INITIAL_SCRAP, essence: INITIAL_ESSENCE, ancientEssence: 0, soulOrigin: 0,
       dust: 0,                // 魔塵（神鑄材料）
@@ -222,16 +221,12 @@ function settlePlayerXp(options) {
     p.level++;
     gained++;
     // 2026-07-30 技能熟練度制：升級不再給技能點（技能點改由技能熟練度提供，見 skills.js）
-    if (reincarnationCount() > 0) {
-      p.reincarnationTalentPoints = (p.reincarnationTalentPoints || 0) + 1;
-    }
+    // 2026-10-22 威能點取消：威能升級改花金幣（js/talents.js），升級不再給威能點。
   }
   if (p.level >= MAX_LEVEL) p.xp = 0;
   if (gained > 0) {
     markStatsDirty();
-    var reward = reincarnationCount() > 0
-      ? '、<span class="log-hl-good">轉生威能點 +' + gained + '</span>'
-      : '';
+    var reward = '';
     if (options.silent !== true && typeof blog === 'function') {
       blog('🎉 等級提升！目前等級 ' + p.level + '（四維主屬性 +2' + reward + '）', 'good');
     }
