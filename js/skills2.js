@@ -4308,9 +4308,13 @@ function sgTickMeteors(ctx) {
       if (res && !res.miss && m.burnSpec) sgApplyBurn(target, m.burnSpec);
       if (res && res.killed) killed = true;
     }
-    if (victims.length && !m.quiet) {
+    /* 殞石落地時範圍內已無活著的敵人（目標被前幾顆打死）：隕石本體照樣砸在地上，
+       爆炸與地裂依落點範圍播，不需要目標；少了這一段，後面幾顆落地後地面毫無痕跡。 */
+    var landingArea = sgAreaAround(m.fixedPos?{pos:m.fixedPos}:m.target, m.radius);
+    var emptyLanding = !victims.length && !chainCancelled && m.variant === 'meteor-impact' && !!landingArea;
+    if ((victims.length || emptyLanding) && !m.quiet) {
       sgEmitVfx(m.gid, victims, m.floatSel, {
-        fxKind: 'impact', variant: m.variant, elem: m.elem, area: sgAreaAround(m.fixedPos?{pos:m.fixedPos}:m.target, m.radius),
+        fxKind: 'impact', variant: m.variant, elem: m.elem, area: landingArea,
         vfxTier: m.vfxTier, vfxUlt: m.vfxUlt, vfxGid: m.vfxGid, vfxBase: m.vfxBase, vfxRoles: m.vfxRoles, preserveDeadTargets: true
       });
     }
