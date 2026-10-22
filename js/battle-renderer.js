@@ -1137,6 +1137,11 @@ var BattleRenderer = (function () {
   function setPerfMode(on) {
     perfMode = !!on;
     if (S.vfxrt && S.vfxrt.setPerfMode) S.vfxrt.setPerfMode(perfMode);
+    applyDecorMotion();
+  }
+  /* 地形裝飾的火焰／煙霧動畫在效能模式下停住（擺件本身照畫：它們是會擋路的障礙，不能隱藏）。 */
+  function applyDecorMotion() {
+    if (S.decor && S.decor.setMotionEnabled) S.decor.setMotionEnabled(!perfMode);
   }
   function fxLoad() {
     return S.fx.length / fxCap();
@@ -7667,6 +7672,7 @@ var BattleRenderer = (function () {
       setCameraViewport(Math.max(64, host.clientWidth || 640), Math.max(64, host.clientHeight || 480));
       buildScene();
       initDecor();
+      applyDecorMotion();
       initArena();
       initElite();
       initIris(host);
