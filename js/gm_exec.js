@@ -280,6 +280,434 @@
     return actionDesc + '【' + rName + extraDesc + '】Lv.' + level + ' 全身 13 件裝備套裝（主手、副手、頭盔、肩甲、胸甲、腰帶、護手、手腕、護腿、靴子、戒指x2、項鍊）';
   }
 
+  /* ============ 裝備直接修改 GM 指令（modequip / 改裝備） ============ */
+  var GM_SLOT_NAMES = {
+    weapon: 'weapon', weapon1: 'weapon', main: 'weapon', mainhand: 'weapon', '主手': 'weapon', '主手武器': 'weapon', '武器': 'weapon',
+    weapon2: 'weapon2', sub: 'weapon2', offhand: 'weapon2', '副手': 'weapon2', '副手裝備': 'weapon2', '盾牌': 'weapon2',
+    helmet: 'helmet', helm: 'helmet', head: 'helmet', '頭盔': 'helmet', '頭': 'helmet',
+    shoulder: 'shoulder', '肩甲': 'shoulder', '護肩': 'shoulder', '肩膀': 'shoulder',
+    chest: 'chest', body: 'chest', armor: 'chest', '胸甲': 'chest', '衣服': 'chest', '鎧甲': 'chest',
+    belt: 'belt', waist: 'belt', '腰帶': 'belt',
+    gloves: 'gloves', glove: 'gloves', hand: 'gloves', '護手': 'gloves', '手套': 'gloves',
+    wrist: 'wrist', wrists: 'wrist', bracer: 'wrist', '手腕': 'wrist', '護腕': 'wrist',
+    legs: 'legs', leg: 'legs', pants: 'legs', '護腿': 'legs', '褲子': 'legs', '腿部': 'legs',
+    boots: 'boots', boot: 'boots', feet: 'boots', shoes: 'boots', '靴子': 'boots', '鞋子': 'boots',
+    ring: 'ring', ring1: 'ring', '戒指': 'ring', '戒指1': 'ring', '戒指i': 'ring', '戒指Ⅰ': 'ring',
+    ring2: 'ring2', '戒指2': 'ring2', '戒指ii': 'ring2', '戒指Ⅱ': 'ring2',
+    amulet: 'amulet', neck: 'amulet', necklace: 'amulet', '項鍊': 'amulet'
+  };
+
+  function gmResolveSlotKey(raw) {
+    if (!raw) return null;
+    var str = String(raw).trim().toLowerCase();
+    if (GM_SLOT_NAMES[str]) return GM_SLOT_NAMES[str];
+    if (GM_SLOT_NAMES[raw]) return GM_SLOT_NAMES[raw];
+    var n = Number(str);
+    if (Number.isInteger(n) && n >= 1 && typeof SLOT_LIST !== 'undefined' && n <= SLOT_LIST.length) {
+      return SLOT_LIST[n - 1];
+    }
+    return null;
+  }
+
+  function gmSlotLabel(slotKey) {
+    if (typeof SLOT_INFO !== 'undefined' && SLOT_INFO[slotKey] && SLOT_INFO[slotKey].name) {
+      return SLOT_INFO[slotKey].name;
+    }
+    return slotKey || '裝備';
+  }
+
+  var GM_AFFIX_ALIASES = {
+    atk: 'atkFlat', '物攻': 'atkFlat', '攻擊': 'atkFlat', '物理攻擊': 'atkFlat',
+    matk: 'matkFlat', '魔攻': 'matkFlat', '魔法攻擊': 'matkFlat',
+    hp: 'hpFlat', '生命': 'hpFlat', '生命值': 'hpFlat', '血量': 'hpFlat',
+    def: 'defFlat', '物防': 'defFlat', '防禦': 'defFlat', '物理防禦': 'defFlat',
+    mdef: 'mdefFlat', '魔防': 'mdefFlat', '魔法防禦': 'mdefFlat',
+    crit: 'critRate', '暴擊': 'critRate', '暴擊率': 'critRate', '爆擊': 'critRate', '爆擊率': 'critRate',
+    critdmg: 'critDmg', '暴擊傷害': 'critDmg', '爆擊傷害': 'critDmg', '爆傷': 'critDmg', '暴傷': 'critDmg',
+    aspd: 'aspd', '攻速': 'aspd', '攻擊速度': 'aspd',
+    cdr: 'cdr', '冷卻': 'cdr', '冷卻縮減': 'cdr',
+    pen: 'pPen', ppen: 'pPen', '物穿': 'pPen', '物理穿透': 'pPen',
+    mpen: 'mPen', '魔穿': 'mPen', '魔法穿透': 'mPen',
+    hit: 'hit', '命中': 'hit', '命中率': 'hit',
+    aoe: 'aoeDmg', aoedmg: 'aoeDmg', '範圍傷害': 'aoeDmg', '範圍': 'aoeDmg',
+    block: 'blockRate', blockrate: 'blockRate', '格擋': 'blockRate', '格擋率': 'blockRate',
+    blockred: 'blockDmgRed', blockdmgred: 'blockDmgRed', '格擋減傷': 'blockDmgRed',
+    eva: 'evasion', evasion: 'evasion', '閃避': 'evasion', '閃避率': 'evasion',
+    str: 'str', '力量': 'str',
+    agi: 'agi', '敏捷': 'agi',
+    int: 'int', '智力': 'int',
+    vit: 'vit', '體質': 'vit',
+    luck: 'luck', '幸運': 'luck', '幸運值': 'luck',
+    movespeed: 'moveSpeed', '移速': 'moveSpeed', '移動速度': 'moveSpeed',
+    loot: 'loot', '掉寶': 'loot', '掉寶率': 'loot',
+    xpbonus: 'xpBonus', '經驗加成': 'xpBonus'
+  };
+
+  function gmResolveAffixKey(raw) {
+    if (!raw) return null;
+    var str = String(raw).trim();
+    if (typeof AFFIX_POOL !== 'undefined') {
+      if (AFFIX_POOL[str]) return str;
+      var lower = str.toLowerCase();
+      for (var k in AFFIX_POOL) {
+        if (k.toLowerCase() === lower) return k;
+        if (AFFIX_POOL[k].name === str || AFFIX_POOL[k].name.toLowerCase() === lower) return k;
+        var cleanName = AFFIX_POOL[k].name.replace(/%/g, '');
+        if (cleanName === str || cleanName.toLowerCase() === lower) return k;
+      }
+    }
+    var alias = GM_AFFIX_ALIASES[str] || GM_AFFIX_ALIASES[str.toLowerCase()];
+    if (alias) return alias;
+    return null;
+  }
+
+  function gmResolveEquipItem(args, selContext) {
+    if (!args || !args.length) {
+      if (selContext && selContext.source === 'inv' && selContext.id) {
+        var invItem = (G.inventory || []).find(function (it) { return it && it.id === selContext.id; });
+        if (invItem) return { item: invItem, desc: '背包選中裝備【' + invItem.name + '】', isEquip: false };
+      }
+      if (selContext && (selContext.source === 'equip' || selContext.source === 'equip-slot') && selContext.slot) {
+        var eqItem = (G.equipment || {})[selContext.slot];
+        return { item: eqItem, desc: '穿戴部位【' + gmSlotLabel(selContext.slot) + '】', isEquip: true, slotKey: selContext.slot };
+      }
+      var defSet = (typeof G.equipActive === 'number') ? G.equipActive : 0;
+      var defItem = ((G.equipmentSets && G.equipmentSets[defSet]) || G.equipment || {})['weapon'];
+      return { item: defItem, desc: '第 ' + (defSet + 1) + ' 套【' + gmSlotLabel('weapon') + '】（未指定部位）', isEquip: true, slotKey: 'weapon' };
+    }
+
+    var token = String(args[0]).toLowerCase();
+
+    // 1) 顯式指定背包裝備 inv / bag / 背包
+    if (token === 'inv' || token === 'bag' || token === '背包') {
+      args.shift();
+      if (!selContext || selContext.source !== 'inv' || !selContext.id) {
+        return { error: '❌ 背包裝備請先在背包清單中點擊選中該裝備。' };
+      }
+      var invTarget = (G.inventory || []).find(function (it) { return it && it.id === selContext.id; });
+      if (!invTarget) return { error: '❌ 找不到選中的背包裝備（可能已被分解或出售）。' };
+      return { item: invTarget, desc: '背包選中裝備【' + invTarget.name + '】', isEquip: false };
+    }
+
+    // 2) 顯式指定當前選中裝備 sel / selected / 選中
+    if (token === 'sel' || token === 'selected' || token === '選中' || token === 'this') {
+      args.shift();
+      if (!selContext) return { error: '❌ 目前尚未在畫面上選中任何裝備或穿戴部位。' };
+      if (selContext.source === 'inv') {
+        var selInv = (G.inventory || []).find(function (it) { return it && it.id === selContext.id; });
+        if (!selInv) return { error: '❌ 找不到選中的背包裝備。' };
+        return { item: selInv, desc: '背包選中裝備【' + selInv.name + '】', isEquip: false };
+      }
+      var selSlot = selContext.slot || 'weapon';
+      var selEq = (G.equipment || {})[selSlot];
+      return { item: selEq, desc: '選中部位【' + gmSlotLabel(selSlot) + '】', isEquip: true, slotKey: selSlot };
+    }
+
+    // 3) 指定第幾套：set1~set3 / 套1~套3 / 1~3 (若後面跟著部位)
+    var setMatch = token.match(/^(?:set|套)?([1-3])$/i);
+    if (setMatch) {
+      var setIdx = Number(setMatch[1]) - 1;
+      if (args.length >= 2) {
+        var possibleSlot = gmResolveSlotKey(args[1]);
+        if (possibleSlot) {
+          args.shift(); // 消耗 set
+          args.shift(); // 消耗 slot
+          var targetSet = (G.equipmentSets && G.equipmentSets[setIdx]) || G.equipment;
+          return { item: targetSet[possibleSlot], desc: '第 ' + (setIdx + 1) + ' 套【' + gmSlotLabel(possibleSlot) + '】', isEquip: (setIdx === (G.equipActive || 0)), slotKey: possibleSlot, setIdx: setIdx };
+        }
+      }
+      if (/^(?:set|套)[1-3]$/i.test(token)) {
+        args.shift();
+        var defaultSlot = (selContext && selContext.slot) ? selContext.slot : 'weapon';
+        var setObj = (G.equipmentSets && G.equipmentSets[setIdx]) || G.equipment;
+        return { item: setObj[defaultSlot], desc: '第 ' + (setIdx + 1) + ' 套【' + gmSlotLabel(defaultSlot) + '】', isEquip: (setIdx === (G.equipActive || 0)), slotKey: defaultSlot, setIdx: setIdx };
+      }
+    }
+
+    // 4) 直接指定部位名稱或部位序號 1~13（作用於當前檢視/使用中套裝）
+    var directSlot = gmResolveSlotKey(token);
+    if (directSlot) {
+      args.shift();
+      var activeSet = (typeof G.equipView === 'number') ? G.equipView : (G.equipActive || 0);
+      var activeSetObj = (G.equipmentSets && G.equipmentSets[activeSet]) || G.equipment;
+      return { item: activeSetObj[directSlot], desc: '第 ' + (activeSet + 1) + ' 套【' + gmSlotLabel(directSlot) + '】', isEquip: (activeSet === (G.equipActive || 0)), slotKey: directSlot, setIdx: activeSet };
+    }
+
+    // 5) 沒有指定部位或套裝：若畫面上選中了背包裝備或穿戴部位，優先作用於選中對象！
+    if (selContext && selContext.source === 'inv' && selContext.id) {
+      var autoInv = (G.inventory || []).find(function (it) { return it && it.id === selContext.id; });
+      if (autoInv) return { item: autoInv, desc: '背包選中裝備【' + autoInv.name + '】', isEquip: false };
+    }
+    if (selContext && (selContext.source === 'equip' || selContext.source === 'equip-slot') && selContext.slot) {
+      var autoEq = (G.equipment || {})[selContext.slot];
+      return { item: autoEq, desc: '選中部位【' + gmSlotLabel(selContext.slot) + '】', isEquip: true, slotKey: selContext.slot };
+    }
+
+    // 6) 都沒有則預設使用中套裝的主手武器
+    var curActive = (typeof G.equipActive === 'number') ? G.equipActive : 0;
+    var curActiveSet = (G.equipmentSets && G.equipmentSets[curActive]) || G.equipment;
+    return { item: curActiveSet['weapon'], desc: '第 ' + (curActive + 1) + ' 套【' + gmSlotLabel('weapon') + '】（預設主手）', isEquip: true, slotKey: 'weapon', setIdx: curActive };
+  }
+
+  function gmFinishEquipMod() {
+    if (typeof markStatsDirty === 'function') markStatsDirty();
+    gmDirty();
+    if (typeof UI !== 'undefined' && UI.dirty) {
+      UI.dirty.equip = true;
+      UI.dirty.inv = true;
+      UI.dirty.header = true;
+    }
+  }
+
+  function gmItemInfoText(item, targetDesc) {
+    var rName = (typeof RARITIES !== 'undefined' && RARITIES[item.rarity]) ? RARITIES[item.rarity].name : ('品質' + item.rarity);
+    var text = targetDesc + '【' + (item.name || '裝備') + '】（' + rName + ' Lv.' + (item.level || 1) + (item.upgrade ? (' +' + item.upgrade) : '') + '）\n';
+    text += '太古詞條數：' + ((typeof getItemAncientCount === 'function') ? getItemAncientCount(item) : (item.ancientCount || 0)) + '\n';
+    text += '詞條列表（' + (item.affixes ? item.affixes.length : 0) + ' 條）：\n';
+    if (!item.affixes || !item.affixes.length) {
+      text += '  (無詞條)\n';
+    } else {
+      for (var i = 0; i < item.affixes.length; i++) {
+        var a = item.affixes[i];
+        var val = (typeof affixValue === 'function') ? affixValue(item, a) : (Number(a.roll) || 0);
+        var def = (typeof AFFIX_POOL !== 'undefined') ? AFFIX_POOL[a.key] : null;
+        var n = def ? def.name : a.key;
+        var tag = a.ancient ? '✡ 太古' : '◆ 一般';
+        text += '  ' + (i + 1) + '. [' + tag + '] ' + n + ' +' + val + (def && def.pct ? '%' : '') + '\n';
+      }
+    }
+    return text.trim();
+  }
+
+  function gmModEquip(args, selContext) {
+    if (!G) return { ok: false, message: '遊戲狀態尚未載入。' };
+    var resolved = gmResolveEquipItem(args, selContext);
+    if (resolved.error) return { ok: false, message: resolved.error };
+    var item = resolved.item;
+    var targetDesc = resolved.desc;
+    if (!item) return { ok: false, message: targetDesc + ' 目前沒有裝備，無法修改屬性。' };
+
+    if (!args.length || args[0] === 'info' || args[0] === 'show' || args[0] === '資訊') {
+      return { ok: true, message: gmItemInfoText(item, targetDesc) };
+    }
+
+    var op = String(args[0]).toLowerCase();
+
+    // ---- 太古操作 ----
+    if (op === 'ancient' || op === '太古') {
+      args.shift();
+      var sub = String(args[0] || 'all').toLowerCase();
+      if (sub === 'all' || sub === '全部' || sub === '*') {
+        if (!item.affixes || !item.affixes.length) return { ok: false, message: targetDesc + ' 沒有任何詞條可設為太古。' };
+        item.affixes.forEach(function (a) {
+          a.ancient = true;
+          a.roll = (typeof STRENGTH_ROLL_MAX !== 'undefined') ? STRENGTH_ROLL_MAX : 1000;
+        });
+        item.ancientCount = item.affixes.length;
+        gmFinishEquipMod();
+        return { ok: true, message: targetDesc + '：已將全部 ' + item.ancientCount + ' 條詞條設為【太古】✡（滿值屬性）' };
+      }
+      if (sub === 'none' || sub === 'clear' || sub === '非太古') {
+        if (!item.affixes) item.affixes = [];
+        item.affixes.forEach(function (a) { a.ancient = false; });
+        item.ancientCount = 0;
+        gmFinishEquipMod();
+        return { ok: true, message: targetDesc + '：已將全部詞條設為【非太古】◆' };
+      }
+      var countNum = gmNumber(sub, 0, (item.affixes ? item.affixes.length : 10));
+      if (countNum !== null && args.length === 1) {
+        var n = Math.floor(countNum);
+        for (var ai = 0; ai < (item.affixes || []).length; ai++) {
+          item.affixes[ai].ancient = (ai < n);
+          if (ai < n) item.affixes[ai].roll = (typeof STRENGTH_ROLL_MAX !== 'undefined') ? STRENGTH_ROLL_MAX : 1000;
+        }
+        item.ancientCount = n;
+        gmFinishEquipMod();
+        return { ok: true, message: targetDesc + '：已設定前 ' + n + ' 條詞條為【太古】✡，其餘為【非太古】◆' };
+      }
+      args.shift();
+      var flag = args[0] ? String(args[0]).toLowerCase() : 'on';
+      var wantAncient = (flag === 'on' || flag === '1' || flag === 'true' || flag === '太古');
+      var targetAffix = null;
+      var idxNum = Number(sub);
+      if (Number.isInteger(idxNum) && idxNum >= 1 && idxNum <= (item.affixes || []).length) {
+        targetAffix = item.affixes[idxNum - 1];
+      } else {
+        var wantedKey = gmResolveAffixKey(sub);
+        if (wantedKey && item.affixes) {
+          targetAffix = item.affixes.find(function (a) { return a.key === wantedKey; });
+        }
+      }
+      if (!targetAffix) return { ok: false, message: '找不到指定詞條：' + sub + '（可指定 1~' + (item.affixes ? item.affixes.length : 0) + ' 或屬性名稱）' };
+      targetAffix.ancient = wantAncient;
+      if (wantAncient) targetAffix.roll = (typeof STRENGTH_ROLL_MAX !== 'undefined') ? STRENGTH_ROLL_MAX : 1000;
+      item.ancientCount = (item.affixes || []).filter(function (a) { return a && a.ancient; }).length;
+      gmFinishEquipMod();
+      var aName = (typeof AFFIX_POOL !== 'undefined' && AFFIX_POOL[targetAffix.key] && AFFIX_POOL[targetAffix.key].name) || targetAffix.key;
+      return { ok: true, message: targetDesc + '：已將【' + aName + '】設為' + (wantAncient ? '【太古】✡' : '【非太古】◆') };
+    }
+
+    // ---- 強化等級 upgrade / +N ----
+    if (op === 'upgrade' || op === '強化' || op.charAt(0) === '+') {
+      var upVal = (op.charAt(0) === '+') ? Number(op.slice(1)) : Number(args[1]);
+      if (isNaN(upVal) || upVal < 0 || upVal > 1000) return { ok: false, message: '強化等級範圍需為 0~1000' };
+      item.upgrade = Math.floor(upVal);
+      gmFinishEquipMod();
+      return { ok: true, message: targetDesc + '：強化等級已設定為 +' + item.upgrade };
+    }
+
+    // ---- 裝備等級 level / lv ----
+    if (op === 'level' || op === 'lv' || op === '等級') {
+      var lvVal = Number(args[1]);
+      if (isNaN(lvVal) || lvVal < 1 || lvVal > 100000) return { ok: false, message: '裝備等級範圍需為 1~100000' };
+      item.level = Math.floor(lvVal);
+      gmFinishEquipMod();
+      return { ok: true, message: targetDesc + '：裝備等級已設定為 Lv.' + item.level };
+    }
+
+    // ---- 品質 rarity ----
+    if (op === 'rarity' || op === '品質') {
+      var rVal = gmRarity(args[1]);
+      if (rVal === null) return { ok: false, message: '無效的品質：' + args[1] };
+      item.rarity = rVal;
+      if (typeof ensureSockets === 'function') ensureSockets(item);
+      gmFinishEquipMod();
+      return { ok: true, message: targetDesc + '：品質已設定為 ' + (RARITIES[rVal] ? RARITIES[rVal].name : rVal) };
+    }
+
+    // ---- 清空詞條 clear ----
+    if (op === 'clear' || op === '清空') {
+      item.affixes = [];
+      item.ancientCount = 0;
+      gmFinishEquipMod();
+      return { ok: true, message: targetDesc + '：所有詞條已清空' };
+    }
+
+    // ---- 刪除指定詞條 del / delete / 刪除 ----
+    if (op === 'del' || op === 'delete' || op === '刪除') {
+      var delTarget = String(args[1] || '');
+      var delIdx = Number(delTarget);
+      if (Number.isInteger(delIdx) && delIdx >= 1 && delIdx <= (item.affixes || []).length) {
+        var removed = item.affixes.splice(delIdx - 1, 1)[0];
+        item.ancientCount = (item.affixes || []).filter(function (a) { return a && a.ancient; }).length;
+        gmFinishEquipMod();
+        return { ok: true, message: targetDesc + '：已刪除第 ' + delIdx + ' 條詞條【' + (AFFIX_POOL[removed.key] ? AFFIX_POOL[removed.key].name : removed.key) + '】' };
+      }
+      var delKey = gmResolveAffixKey(delTarget);
+      if (delKey && item.affixes) {
+        var foundIdx = item.affixes.findIndex(function (a) { return a.key === delKey; });
+        if (foundIdx >= 0) {
+          item.affixes.splice(foundIdx, 1);
+          item.ancientCount = (item.affixes || []).filter(function (a) { return a && a.ancient; }).length;
+          gmFinishEquipMod();
+          return { ok: true, message: targetDesc + '：已刪除詞條【' + (AFFIX_POOL[delKey] ? AFFIX_POOL[delKey].name : delKey) + '】' };
+        }
+      }
+      return { ok: false, message: '找不到要刪除的詞條：' + delTarget };
+    }
+
+    // ---- 詞條數值修改 / 新增 ----
+    if (op === 'stat' || op === 'affix' || op === '詞條' || op === '屬性') args.shift();
+    if (!args.length) return { ok: false, message: '請指定要修改的屬性與數值，例如：modequip atkFlat 50000 [ancient]' };
+
+    var affixIndex = null;
+    var rawFirst = String(args[0]).trim();
+    var numIdx = Number(rawFirst);
+    if (Number.isInteger(numIdx) && numIdx >= 1 && numIdx <= ((item.affixes || []).length + 1)) {
+      affixIndex = numIdx - 1;
+      args.shift();
+    }
+
+    var targetAffixKey = null;
+    var targetValue = null;
+    var wantAncientOpt = null;
+
+    if (args.length > 0) {
+      var possibleKey = gmResolveAffixKey(args[0]);
+      if (possibleKey) {
+        targetAffixKey = possibleKey;
+        args.shift();
+      } else if (affixIndex !== null && item.affixes && item.affixes[affixIndex]) {
+        targetAffixKey = item.affixes[affixIndex].key;
+      }
+    } else if (affixIndex !== null && item.affixes && item.affixes[affixIndex]) {
+      targetAffixKey = item.affixes[affixIndex].key;
+    }
+
+    if (!targetAffixKey) {
+      return { ok: false, message: '未知屬性名稱或詞條序號：' + rawFirst + '（可輸入 atkFlat, matkFlat, hpFlat, critRate, aspd, cdr...）' };
+    }
+
+    if (args.length > 0) {
+      var vNum = gmNumber(args[0], -1e300, 1e300);
+      if (vNum !== null) {
+        targetValue = vNum;
+        args.shift();
+      }
+    }
+
+    if (args.length > 0) {
+      var ancToken = String(args[0]).toLowerCase();
+      if (ancToken === 'ancient' || ancToken === '太古' || ancToken === '1' || ancToken === 'on' || ancToken === 'true') {
+        wantAncientOpt = true;
+      } else if (ancToken === 'normal' || ancToken === '非太古' || ancToken === '0' || ancToken === 'off' || ancToken === 'false') {
+        wantAncientOpt = false;
+      }
+    }
+
+    if (!item.affixes) item.affixes = [];
+    var existingAffix = null;
+    if (affixIndex !== null && item.affixes[affixIndex]) {
+      existingAffix = item.affixes[affixIndex];
+      existingAffix.key = targetAffixKey;
+    } else {
+      existingAffix = item.affixes.find(function (a) { return a.key === targetAffixKey; });
+    }
+
+    var rawBaseV = (typeof affixBaseValue === 'function') ? affixBaseValue(targetAffixKey, item.level, item.rarity) : 1;
+    var twoHandMult = (typeof isTwoHandItem === 'function' && isTwoHandItem(item) && typeof TWO_HAND_AFFIX_VALUE_MULT === 'number')
+      ? TWO_HAND_AFFIX_VALUE_MULT : 1;
+    var baseV = rawBaseV * twoHandMult;
+    var actionDesc = '';
+
+    if (existingAffix) {
+      if (wantAncientOpt !== null) existingAffix.ancient = wantAncientOpt;
+      if (targetValue !== null) {
+        if (existingAffix.ancient && wantAncientOpt === null) existingAffix.ancient = false;
+        existingAffix.roll = (baseV > 0 && typeof strengthFromValue === 'function')
+          ? strengthFromValue(targetValue, baseV)
+          : Math.round(targetValue);
+      } else if (existingAffix.ancient) {
+        existingAffix.roll = (typeof STRENGTH_ROLL_MAX !== 'undefined') ? STRENGTH_ROLL_MAX : 1000;
+      }
+      actionDesc = '已修改詞條';
+    } else {
+      var isAnc = (wantAncientOpt === true);
+      var rollVal = isAnc
+        ? ((typeof STRENGTH_ROLL_MAX !== 'undefined') ? STRENGTH_ROLL_MAX : 1000)
+        : ((targetValue !== null && baseV > 0 && typeof strengthFromValue === 'function') ? strengthFromValue(targetValue, baseV) : 500);
+      existingAffix = {
+        key: targetAffixKey,
+        roll: rollVal,
+        ancient: isAnc
+      };
+      item.affixes.push(existingAffix);
+      actionDesc = '已追加詞條';
+    }
+
+    item.ancientCount = (item.affixes || []).filter(function (a) { return a && a.ancient; }).length;
+    gmFinishEquipMod();
+
+    var finalV = (typeof affixValue === 'function') ? affixValue(item, existingAffix) : (targetValue || 0);
+    var defInfo = (typeof AFFIX_POOL !== 'undefined') ? AFFIX_POOL[targetAffixKey] : null;
+    var aNameLabel = (defInfo && defInfo.name) || targetAffixKey;
+    var ancTag = existingAffix.ancient ? '【太古】✡' : '【一般】◆';
+    return {
+      ok: true,
+      message: targetDesc + '：' + actionDesc + ' ' + ancTag + ' ' + aNameLabel + ' = ' + finalV + ((defInfo && defInfo.pct) ? '%' : '')
+    };
+  }
+
   function gmGivePart(tier, node, count) {
     var keys = Object.keys(PART_TYPES).filter(function (key) { return !node || PART_TYPES[key].node === node; });
     if (!keys.length) return '此節點目前關閉或不存在：' + (node || '未知');
@@ -699,10 +1127,24 @@
     return { ok: true, message: '【' + g.name + '】全階層已升至滿級（Lv.' + maxLv + '）' };
   }
 
-  function executeGMCommand(raw) {
+  function executeGMCommand(raw, selOverride) {
     if (!isGMHost()) return { ok: false, message: 'GM 指令僅能在本機開發環境使用。' };
     var text = String(raw || '').trim();
     if (!text) return { ok: false, message: '指令不可為空白。' };
+
+    var selContext = selOverride || null;
+    var selMatch = text.match(/\s+@sel:([^\s]+)/);
+    if (selMatch) {
+      text = text.replace(/\s+@sel:[^\s]+/, '').trim();
+      var selParts = selMatch[1].split(':');
+      selContext = {
+        source: selParts[0],
+        target: selParts[1],
+        id: selParts[2] || (selParts[0] === 'inv' ? selParts[1] : null),
+        slot: (selParts[0] === 'equip' || selParts[0] === 'equip-slot') ? selParts[1] : null
+      };
+    }
+
     var args = text.split(/\s+/);
     var command = args.shift().toLowerCase();
     var amount, level, rarity, count, type, key, result, slot, node;
@@ -912,6 +1354,10 @@
       var setAncient = args[3] ? gmNumber(args[3], 0, 10) : 0;
       var autoWear = args[4] === 'wear' || args[4] === 'equip' || args[4] === 'on' || args[4] === 'true' || args[4] === '1';
       return { ok: true, message: gmGiveEquipmentSet(rarity, level, setUpgrade, setAncient, autoWear) };
+    }
+    if (command === 'modequip' || command === 'editequip' || command === 'equipmod' ||
+        command === 'setequip' || command === 'itemmod' || command === 'meq' || command === '改裝備') {
+      return gmModEquip(args, selContext);
     }
     if (command === 'part') {
       level = gmNumber(args[0], 1, PART_MAX_TIER);

@@ -401,6 +401,74 @@ set 6 100 20 2 （發放一套 100 級、強化+20、2太古神話套裝，使�
 fullset any （以當前等級發放隨機品質全身 13 件套裝）
 ```
 
+### 直接修改裝備屬性、數值與太古（modequip）
+
+可以直接指定穿戴中裝備（第幾套的第幾個部位）、選中的身上部位，或選中的背包裝備，並修改其詞條屬性、數值、太古/非太古狀態與強化等級。
+
+```text
+【指令格式】
+modequip [目標] <子指令/屬性名稱> [數值] [ancient|normal]
+```
+
+別名：`editequip`、`equipmod`、`setequip`、`itemmod`、`meq`、`改裝備`
+
+#### 1. 目標裝備解析規則（[目標]）
+- **指定套裝與部位**：
+  - `set<套數> <部位>`（例：`set1 weapon`、`set2 ring`、`set3 helmet`）
+  - `<套數> <部位序號1~13>`（例：`1 1` 代表第 1 套第 1 部位主手武器、`1 3` 代表第 1 套頭盔、`2 11` 代表第 2 套戒指）
+  - `<部位名稱>` 或 `<部位序號1~13>`（例：`weapon`、`helmet`、`主手`、`頭盔`，預設操作當前檢視/使用中套裝）
+- **背包裝備（一定要在背包清單中點擊選中才可修改）**：
+  - `inv`、`bag` 或在背包中點選裝備後省略目標。
+  - 若未在背包中選中裝備，指令會提示：`❌ 背包裝備請先在背包清單中點擊選中該裝備。`
+- **選中裝備**：
+  - `sel`、`selected`、`選中`：自動鎖定當前在畫面上選中的穿戴部位或背包裝備。
+  - **省略目標**：若未填寫目標，優先使用目前選中的裝備；若皆未選中，預設操作第 1 套主手武器。
+
+> 部位序號對照：
+> 1: `weapon`（主手）、2: `weapon2`（副手）、3: `helmet`（頭盔）、4: `shoulder`（肩甲）、5: `chest`（胸甲）、6: `belt`（腰帶）、7: `gloves`（護手）、8: `wrist`（手腕）、9: `legs`（護腿）、10: `boots`（靴子）、11: `ring`（戒指）、12: `ring2`（戒指Ⅱ）、13: `amulet`（項鍊）。
+
+#### 2. 修改詞條屬性與數值
+```text
+modequip [目標] <屬性名稱> <數值> [ancient|normal]
+modequip [目標] <詞條序號 1~N> <數值> [ancient|normal]
+modequip [目標] <詞條序號 1~N> <屬性名稱> <數值> [ancient|normal]
+```
+- 若裝備已有該詞條：直接修改數值（雙手武器自動按雙手倍率換算實際數值）。
+- 若裝備無該詞條：自動追加該詞條至裝備末尾。
+- 支援屬性別名與中文：`atkFlat`/`物攻`/`攻擊`、`atkPct`/`物攻%`、`matkFlat`/`魔攻`、`hpFlat`/`生命`、`defFlat`/`防禦`、`critRate`/`暴擊率`、`critDmg`/`暴擊傷害`、`aspd`/`攻速`、`cdr`/`冷卻`、`pPen`/`物穿`、`mPen`/`魔穿`、`hit`/`命中`、`aoeDmg`/`範圍傷害`、`blockRate`/`格擋率` 等所有詞條池屬性。
+
+#### 3. 修改太古或非太古
+```text
+modequip [目標] ancient all               （整件裝備所有詞條全部變為【太古】✡，滿值屬性）
+modequip [目標] ancient none              （整件裝備所有詞條全部變為【非太古】◆）
+modequip [目標] ancient <數量>            （設定太古詞條數，如 ancient 4 ＝ 前 4 條為太古，其餘非太古）
+modequip [目標] ancient <條號 1~N> [on|off] （將指定第 N 條詞條改為太古或非太古，例：ancient 1 on）
+modequip [目標] ancient <屬性key> [on|off] （將指定屬性改為太古或非太古，例：ancient atkFlat on）
+```
+
+#### 4. 強化等級、裝備等級、品質與管理
+```text
+modequip [目標] +<等級>                  （例：modequip 1 1 +100，強化等級設為 +100）
+modequip [目標] upgrade <等級>           （例：modequip sel upgrade 50）
+modequip [目標] level <等級>             （例：modequip sel level 500，裝備等級設為 500）
+modequip [目標] rarity <品質>            （例：modequip sel rarity mythic / godforged）
+modequip [目標] clear                    （清空裝備所有詞條）
+modequip [目標] del <條號 1~N|屬性key>   （刪除裝備指定詞條）
+modequip [目標] info                     （查看該裝備當前各項詞條、數值與太古狀態）
+```
+
+範例：
+```text
+modequip 1 1 atkFlat 50000 ancient     （第 1 套主手武器物攻設為 50000 且為太古）
+modequip set1 weapon +100              （第 1 套主手強化設為 +100）
+modequip set1 1 ancient all            （第 1 套第 1 部位主手所有詞條變為太古）
+modequip set2 helmet critRate 30       （第 2 套頭盔暴擊率設為 30%）
+modequip 2 3 ancient none              （第 2 套頭盔所有詞條改為非太古）
+modequip inv critDmg 200 ancient       （背包選中的裝備暴傷設為 200% 且為太古）
+modequip sel ancient 1 off             （選中的裝備第 1 條詞條改為非太古）
+modequip sel info                      （查看選中裝備資訊）
+```
+
 ### 擴充背包容量上限（可突破正常上限）
 
 ```text
