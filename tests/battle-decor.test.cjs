@@ -125,6 +125,9 @@ test('LAVA-FIRE 熔岩燃燒固定來源、換幀、暫停、減量與跨區塊�
         assert.ok(decor.stats().localSources<=(lite?2:6));
         assert.ok(decor.stats().localParticles<=(lite?2:18));
         const flames=layers.prop.children.filter(s=>s._natureTexture==='envFlame0');
+        const halos=layers.light.children.filter(s=>s._natureFireHalo);
+        assert.equal(halos.length,lite?0:flames.length,'一般每個火源一份貼地暖光，減量不增節點');
+        for(const s of halos){assert.equal(s.blendMode,'add');assert.equal(s.skew.x,0);assert.ok(Number.isFinite(s.x+s.y+s.scale.x));}
         for (const s of flames) {
           flamesSeen++;assert.equal(s.anchor.y,1);assert.equal(s.tint,0xffffff);
           assert.ok(Number.isFinite(s.x+s.y+s.scale.x+s.scale.y));
@@ -140,10 +143,13 @@ test('LAVA-FIRE 熔岩燃燒固定來源、換幀、暫停、減量與跨區塊�
         }
         decor.setMotionEnabled(false);
         const frozen=flames.map(s=>[s.texture,s.x,s.y,s.scale.x,s.scale.y,s.alpha]);
+        const frozenHalo=halos.map(s=>[s.x,s.y,s.alpha,s.scale.x,s.scale.y]);
         decor.update(moving);
         assert.deepEqual(flames.map(s=>[s.texture,s.x,s.y,s.scale.x,s.scale.y,s.alpha]),frozen);
+        assert.deepEqual(halos.map(s=>[s.x,s.y,s.alpha,s.scale.x,s.scale.y]),frozenHalo);
         decor.setVisible(false);decor.update(moving);
         assert.ok(layers.prop.children.every(s=>!s.visible));
+        assert.ok(halos.every(s=>!s.visible));
         decor.setVisible(true);decor.setMotionEnabled(true);
       }
     }

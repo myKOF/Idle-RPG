@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## LAVA-FIRE-VOLUME-20261022 — 熔岩山火焰去除貼片感
+
+- Owner：Codex；Done，沿codex/lava-terrain單一開發者。使用者指出前輪環境火焰太假、像平貼；前置九物件與接地已完成，沿已授權整合的分支修正，不動原副本其他聊天內容。
+- 允許：battle-decor僅熔岩環境火焰獨立畫法／局部動畫與暖光、必要圖集Worker／bridge／主頁／兩個預覽快取、場景回歸、SCENE_NATURE／LV／本紀錄，及scene-nature/battle-decor程序母來源。禁止既有火盆／祭壇火焰、地貌擺件／佔地、戰鬥／配置／VFX Preset／存檔／Protocol與其他分支；不合併推送。
+- 驗收：正式Renderer動態前後比較，柔邊透光、火舌錯開與循環、固定火根／透視、貼地暖光、停止／隱藏／lite／回收、主端與Worker一致；回歸／Build／Console／母來源一致與兩庫提交。原來源衝突已於前輪獲同意並整合，這輪只動新火焰區段與對應快取，原障礙／築牆區段保持。完成交使用者Review與整合。
+
+- 完成10檔：battle-decor新增專屬環境火畫法，以三股各自翻捲的半透明密度熱氣柱形成24幀循環；移除並排雙片尖頭火及整張縮放抖動，火根仍共用本體腳點／billboard。一般每組改為一火、一份地面加色暖光及一煙，共三精靈；lite一火，維持六組／十八與兩組／兩上限。火盆／祭壇原六幀畫法與其他地貌不變；不改九份PNG／擺件／障礙／技能Preset／傷害／存檔。其餘為index／bridge／圖集Worker／兩個預覽快取、battle-decor回歸、SCENE_NATURE／LV／本段。battle-decor=1.0.26、圖集Worker=1.0.17、bridge=1.0.343及新資源鍵；Protocol未變。
+- 測試：node --test tests/battle-decor.test.cjs tests/battle-terrain.test.cjs tests/battle-arena.test.cjs tests/scene-startup-ready.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs，**71/71通過**；保留原固定火根／透視／換幀／暫停／lite／回收斷言，另核對暖光屬於地面層、每源一份及停止／隱藏。初次回歸抓到把火alpha持續乘本體淡出值會破壞動畫凍結，已去除此依賴，原凍結斷言未放寬。npm.cmd run build：**571檔通過**；node tools/scene-renewal/export-source.cjs --check及兩庫diff --check通過。
+- 畫面：獨立無頭Chromium／正式BattleRenderer及Pixi軟體WebGL，相同地形種子與一般鏡頭比較前後；正常速度GIF為50幀×40ms、430×300原倍率裁切，真Ticker動態時間前後差2秒，沒有放慢火焰或放大畫面。地表與地下目視檢查、Console warning／error0；24張圖集幀hash各異，alpha最大206、四邊alpha0、每幀有大量半透明像素。主端OffscreenCanvas與Worker兩份圖集2048×3616／2048×3664逐像素alpha差0、預乘RGB差0。早期測試fixture把全域Worker設undefined使Renderer資源載入等待，已改為保留原Worker並在獨立context替換舊版JS比較；另因正式Renderer世界是離屏容器，錄影改為固定原倍率畫布區域，未修改遊戲遷就fixture。
+- 證據：本聊天visualizations/lava-fire-before.png、lava-fire-after.png、lava-fire-after-deep.png、lava-fire-volume.gif及lava-fire-volume-verification.json。沒有讀寫玩家存檔或操作其他分頁，專用預覽與錄製臨時輸出收尾清理。這次僅原創程序美術，無外部素材輸入／圖片或獨立Preset。
+- 素材庫只同步scene-nature/battle-decor.js母來源，先Commit **3c2a012**；其他thunder未追蹤內容保留。遊戲Commit為本段所在「[Codex] fix: 熔岩火焰改柔邊翻捲並銜接地面暖光」，回覆附編號。唯讀檢查未改AI_RULES／AGENTS／Workflow／prompts、decor-nature／decor-sculpt／battle-renderer／battle-arena、BattleTerrain／Worker模擬及既有九PNG、其餘五份回歸與匯出器；自我Review確認無每幀畫布／新Timer、回收與透視不變。
+- 交付：本次實作無未完成項，可Review／合併。仍位於codex/lava-terrain，未套回ai/codex或合併／推送develop；下一步整合此分支及素材庫3c2a012後重載驗收。限制：增加環境火圖集幀數與少量圖集容量，沒有增加局部節點數；尚未做真人混戰、手機GPU與跨瀏覽器效能長測，未以軟體WebGL或像素比對宣稱實戰FPS提升。
+
 ## LAVA-LANDSCAPE-20261022 — 熔岩山落地銜接、多樣地貌與持續燃燒
 
 - Owner：Codex；Done，單一開發者。使用者要求石柱自然接地、減少同物件縮放複用、增加岩漿池及燃燒枯木。已同意先整合Claude 4ef19b91障礙提交；原副本有飛彈進行中修改，改於獨立codex/lava-terrain工作副本處理，不覆蓋其他工作。

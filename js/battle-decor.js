@@ -648,6 +648,47 @@ var BattleDecor = (function () {
   // 舊介面（封魔塔祭壇 js/battle-arena.js 也在用）：第 0 幀
   function drawFlame(g, w, h, r, pal) { drawFlameFrame(g, w, h, r, pal, 0); }
 
+  // 環境火獨立於火盆：多股熱氣柱疊成半透明密度，頂部與邊緣自然散去。
+  var ENV_FIRE_FRAMES = 24;
+  function drawEnvironmentFire(g,w,h,frame) {
+    var scale=TEX_SCALE,W=Math.ceil(w*scale),H=Math.ceil(h*scale);
+    var cv=document.createElement('canvas');cv.width=W;cv.height=H;
+    var cg=cv.getContext('2d'),im=cg.createImageData?cg.createImageData(W,H):null;
+    if(!im||!im.data)return;
+    var pixels=im.data,phase=frame/ENV_FIRE_FRAMES*Math.PI*2;
+    var plumes=[[-.29,.17,.72,1.2],[.04,.25,.96,0],[.31,.15,.64,3.4]];
+    function smooth(a,b,x){var t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t);}
+    for(var py=0;py<H;py++){
+      var v=(h-2-py/scale)/(h*.93);
+      if(v<0||v>1.1)continue;
+      var row=[];
+      for(var p=0;p<plumes.length;p++){
+        var plume=plumes[p],top=plume[2]+Math.sin(phase*2+plume[3])*.09,t=v/top;
+        if(t<0||t>=1)continue;
+        var center=plume[0]+Math.sin(v*8-phase*2+plume[3])*v*.24+Math.sin(v*18-phase*3+p)*v*.045;
+        var radius=plume[1]*Math.pow(1-t,.64)*(1+.18*Math.sin(v*13-phase*3+p))+.009;
+        row.push([center,radius,1-smooth(.7,1,t)]);
+      }
+      for(var px=0;px<W;px++){
+        var u=(px/scale-w/2)/(w*.46),density=0;
+        for(var j=0;j<row.length;j++){
+          var dx=(u-row[j][0])/row[j][1];density+=Math.exp(-dx*dx*1.5)*row[j][2];
+        }
+        // 往上捲的明暗紋理與密度孔洞；時間皆為整數週期，尾幀回首幀不跳。
+        var eddy=Math.sin(u*17+v*22-phase*4)*.12+Math.sin(u*31-v*13+phase*3)*.065;
+        density=Math.max(0,density*(.86+eddy)-Math.max(0,eddy)*v*.35);
+        var alpha=smooth(.035,.7,density)*(1-smooth(.6,1,v))*(.82-v*.32)*smooth(-.018,.035,v);
+        if(alpha<.003)continue;
+        var heat=Math.min(1,density*.76)*(1-v*.63),o=(py*W+px)*4;
+        pixels[o]=255;
+        pixels[o+1]=Math.round(42+Math.pow(heat,.85)*190);
+        pixels[o+2]=Math.round(6+Math.pow(heat,2.4)*114);
+        pixels[o+3]=Math.round(Math.min(1,alpha)*255);
+      }
+    }
+    cg.putImageData(im,0,0);g.drawImage(cv,0,0,W,H,0,0,w,h);
+  }
+
   /* ---- 斷牆：一排排寬窄不一的斜角磚，色調略有差異；外形是參差的殘牆（中間高、兩端矮），上排缺磚，頂面露出厚度 ---- */
   function drawRuinWall(g, w, h, r, pal) {
     var fy = h - FOOT, cx = w / 2;
@@ -1619,7 +1660,7 @@ var BattleDecor = (function () {
   };
   /* 背景建圖 Worker（相對於 index.html）。改了 decor-sculpt／decor-nature／battle-decor 要一起更新
      這裡的版本與 Worker 檔內 importScripts 的版本字串，否則 Worker 會吃到快取的舊畫法。 */
-  var ATLAS_WORKER_URL = 'js/worker/decor-atlas.worker.js?v=1.0.16';
+  var ATLAS_WORKER_URL = 'js/worker/decor-atlas.worker.js?v=1.0.17';
   var VARIANTS = 3;          // 每種擺件／地面裝飾畫幾個變體
   var TEX_SCALE = 1.5;       // 圖集解析度（畫面放大或高 DPI 時仍清楚；開 mipmap 避免縮小時閃爍）
 
@@ -1648,7 +1689,7 @@ var BattleDecor = (function () {
       }
     });
     if (kitKey === 'lava_mountain') {
-      for (var ef=0;ef<FLAME_FRAMES;ef++) specs.push({kind:'flame',key:'envFlame'+ef,type:'flame',w:40,h:60,pal:{fire:'#ff6a1a',fire2:'#ffd27a'},seed:173,frame:ef});
+      for (var ef=0;ef<ENV_FIRE_FRAMES;ef++) specs.push({kind:'flame',key:'envFlame'+ef,type:'environmentFire',w:64,h:88,seed:173,frame:ef});
     }
     decals.forEach(function (d, i) {
       var nv = d[0] === 'light' ? 1 : VARIANTS;
@@ -1713,7 +1754,10 @@ var BattleDecor = (function () {
         DecorNature.drawSurface(g, s.type, s.w, s.h, s.seed, s.natureStyle);
       } else if (s.kind === 'prop') PROP_DRAW[s.type](g, s.w, s.h, r, s.pal, s.opt);
       else if (s.kind === 'decal') DECAL_DRAW[s.type](g, s.w, s.h, r, s.pal);
-      else if (s.kind === 'flame') drawFlameFrame(g, s.w, s.h, r, s.pal, s.frame);
+      else if (s.kind === 'flame') {
+        if(s.type==='environmentFire')drawEnvironmentFire(g,s.w,s.h,s.frame);
+        else drawFlameFrame(g, s.w, s.h, r, s.pal, s.frame);
+      }
       else PARTICLE_DRAW[s.type](g, s.w, s.h, r);
     } catch (e) {
       if (typeof console !== 'undefined') console.warn('[decor] 畫 ' + s.type + ' 失敗', e);
@@ -2415,13 +2459,15 @@ var BattleDecor = (function () {
           var e=wanted[key],sprites=[],n=lite?1:3;
           for(var i=0;i<n;i++){
             var bubble=e.kind==='gas'&&e.height===0&&i===0;
-            var fire=e.kind==='fire'&&i<2;
-            var texture=fire?'envFlame0':bubble?'ripple':e.kind==='void'?'glow':e.kind==='petal'?'petal':e.kind==='dust'?'dot':'fog';
-            var s=takeSprite('local',texFor(texture),bubble?decalLayer:propLayer);s.anchor.set(.5);
+            var fire=e.kind==='fire'&&i===0,halo=e.kind==='fire'&&i===1;
+            var texture=fire?'envFlame0':halo?'glow':bubble?'ripple':e.kind==='void'?'glow':e.kind==='petal'?'petal':e.kind==='dust'?'dot':'fog';
+            var s=takeSprite('local',texFor(texture),halo?(lightLayer||decalLayer):bubble?decalLayer:propLayer);s.anchor.set(.5);
             if(fire)s.anchor.set(.5,1);
-            s._bbParent=fire?e.anchor:null;s._bbOffY=-e.height;s._bbOffX=(i===0?-.13:.14)*e.width;
+            if(halo)s.blendMode='add';
+            s._bbParent=fire?e.anchor:null;s._bbOffY=-e.height;s._bbOffX=0;
             s._decorLocal=true;s._natureBubble=bubble;s._natureIndex=i;s._natureTexture=texture;
-            s.tint=fire?0xffffff:e.kind==='fire'?0x736460:e.kind==='gas'?0xa6b969:e.kind==='frost'?0xc5e6ee:e.kind==='void'?0xb297db:e.kind==='smoke'?0x9e9b8b:0xe5cfac;
+            s._natureFireHalo=halo;
+            s.tint=fire?0xffffff:halo?0xff661b:e.kind==='fire'?0x736460:e.kind==='gas'?0xa6b969:e.kind==='frost'?0xc5e6ee:e.kind==='void'?0xb297db:e.kind==='smoke'?0x9e9b8b:0xe5cfac;
             sprites.push(s);
           }
           D.localGroups.set(key,{source:e,sprites:sprites});
@@ -2433,13 +2479,16 @@ var BattleDecor = (function () {
           var age=(D.time*.22+phase+s._natureIndex/3)%1;
           var fade=Math.sin(age*Math.PI),side=Math.sin(age*3+phase*6);
           if(s._natureTexture==='envFlame0'){
-            var ft=D.time*8+phase*17+s._natureIndex*2.7;
-            s.texture=texFor('envFlame'+(Math.floor(ft)%FLAME_FRAMES));
-            var fs=(lite?.82:.7+s._natureIndex*.15)*e.scale/TEX_SCALE;
-            s._bbX=fs*(1+Math.sin(ft*1.3)*.09);s._bbY=fs*(1+Math.sin(ft*1.7)*.12);
-            s.x=e.x+(s._natureIndex===0?-.13:.14)*e.width;s.y=e.y*groundScale-e.height;
-            s.zIndex=e.y*groundScale+.2;s.alpha=.88;s.rotation=0;
+            var ft=D.time*24+phase*ENV_FIRE_FRAMES;
+            s.texture=texFor('envFlame'+(Math.floor(ft)%ENV_FIRE_FRAMES));
+            var fs=.63*e.scale/TEX_SCALE;
+            s._bbX=fs;s._bbY=fs;
+            s.x=e.x;s.y=e.y*groundScale-e.height;
+            s.zIndex=e.y*groundScale+.2;s.alpha=.78;s.rotation=0;
             billboardSprite(s,opts.billboard,s._bbX,s._bbY,s._bbParent,s._bbOffX,s._bbOffY);
+          }else if(s._natureFireHalo){
+            s.x=e.x;s.y=e.y;s.scale.set(e.width*.85/(PARTICLE_W.glow*TEX_SCALE));
+            s.alpha=.12+.025*Math.sin(D.time*5+phase*6);s.rotation=0;
           }else if(s._natureBubble){
             s.x=e.x;s.y=e.y;s.scale.set((.15+age*.65)/TEX_SCALE);s.alpha=fade*.32;s.rotation=0;
           }else{

@@ -15,7 +15,7 @@ self.document = {
   createElement: function () { return new OffscreenCanvas(1, 1); }
 };
 
-importScripts('../decor-sculpt.js?v=1.0.0', '../decor-nature.js?v=1.0.10', '../battle-terrain.js?v=1.0.1', '../battle-decor.js?v=1.0.25');
+importScripts('../decor-sculpt.js?v=1.0.0', '../decor-nature.js?v=1.0.10', '../battle-terrain.js?v=1.0.1', '../battle-decor.js?v=1.0.26');
 
 self.onmessage = async function (e) {
   var m = e.data || {};
