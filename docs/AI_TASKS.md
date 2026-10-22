@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## RUNEWORD-TIPS-20261022 — 符文庫真言提示顯示完整配方
+
+- Owner：Codex；Done，單一開發者。使用者要求已形成真言的tips直接顯示圖鑑卡片（組成符文／順序／條件／效果），未解鎖提示改為「尚未解鎖，需自行嘗試或挑戰更高階的封魔塔」。前置既有永久解鎖與圖鑑渲染完成，沿用內測預覽規則。
+- 允許：js/ui-runeword.js、css/runeword.css、index.html僅對應快取、tests/runeword-ui.test.cjs、LV_upgrade_system.md及本段。禁止改配置、傷害、解鎖條件、Worker／Protocol、存檔、素材與其他工作區；現有Talents.xlsx／en-burst-storm修改保留，不合併推送。
+- 驗收：重用圖鑑卡片，避免重複DOM id；未解鎖不得洩漏配方；材料／穿戴旗標、正式與內測回歸、Build、隔離瀏覽器hover與窄視窗／Console檢查，diff及自我Review後獨立Commit。後續使用者Review／正常整合。
+- 衝突：index與Claude b411b8e5同檔不同區段，對方僅formula快取，本次僅runeword CSS／UI快取，無語意相依；共同基底a9834e86、本次候選與Claude實際工作檔git merge-file -p退出0，兩邊快取均保留。其餘目標預檢乾淨，fetch後無遠端新增差異。
+- 完成5檔：ui-runeword重用原圖鑑卡片作為data-tip，提示副本省略id；runeword.css共用卡片樣式、提示寬度隨視窗調整；index只升CSS7→8／UI12→13，LV與本段同步。符文庫未知用途與圖鑑未知配方提示均更新；既有點擊跳圖鑑、材料齊全、穿戴中與內測預覽保持。沒有素材／素材庫變更，沒有改玩法或永久解鎖記錄。
+- 測試：`node --test tests/runeword-ui.test.cjs` 23/23通過。`node --test tests/runeword-ui.test.cjs tests/runeword-seen.test.cjs tests/runeword-engine.test.cjs tests/runeword-data.test.cjs tests/runeword-all-words.test.cjs tests/config-runes-table.test.cjs tests/rune-slots-config.test.cjs` 173項169過4失敗；4項為配置每3層／塔通關／舊存檔補記／塔結算解鎖，均對應既有配置門檻，未改配置或斷言。以Node唯讀readFileSync映射把本次5個修改檔還原HEAD內容，在隔離子程序重跑seen／config兩檔為22項18過4失敗，失敗名稱完全相同，新增失敗0。`npm.cmd run build` 571檔通過；`git diff --check`通過，沒有新增低影響外觀測試。
+- 瀏覽器：隔離無頭Edge，載正式CSS／UI腳本與本機測試快照，抽取正式mouseover／mouseout委派，未啟動Worker或讀寫玩家存檔。霜語提示與圖鑑卡片outerHTML（扣id）一致、霜痕→風語順序、孔數／適用／屬性／緩速／風味完整；材料齊全／缺料／穿戴旗標、未解鎖不洩漏配方、點擊跳圖鑑、內測開關通過。360×780提示x8／寬344／高201.67，完全位於視窗；Console error／warning與pageerror皆0。已目視formed截圖，3份預覽留聊天visualizations（runeword-tip-formed／locked／narrow.png），臨時HTTP與瀏覽器已關閉。
+- 唯讀未改：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex、ui.js提示委派與定位、item／runeword／runeword_data、7份既有回歸與helper、配置工具、Claude index。自我Review通過，無新增Timer／Event／資料權威或存檔變更；原Talents.xlsx與en-burst-storm修改未納本次提交。
+- 交付：本段所在`[Codex] fix: 符文真言提示直接顯示完整配方卡片`，回覆附Commit編號。無本次未完成實作，可供Review／合併，未合併推送；已知限制為4項既有測試失敗、未載玩家存檔長戰及未跨瀏覽器。下一步由使用者正常整合後重新整理遊戲驗收。
+
 ## LAVA-DEVELOP-MERGE-20261022 — 熔岩地貌與火焰分支整合
 
 - Owner：Codex；Done（合併與必要驗證完成，體感由使用者測試），使用者明確指定整合者並授權將codex/lava-terrain合併develop、處理衝突保留雙方，之後自行測試體感。基準develop=4536ed04、來源=d42d48b6；兩工作區乾淨，fetch後origin/develop仍4536ed04。
