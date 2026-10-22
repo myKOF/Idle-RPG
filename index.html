@@ -557,7 +557,7 @@
               <h2 class="pg-title">封魔塔</h2>
               <div id="tower-tiers" class="twx-tiers" role="tablist" aria-label="塔別"></div>
               <span class="pg-pill twx-highest">最高通關 <b id="tower-highest">尚未通關</b></span>
-              <button type="button" class="pg-help twx-help" aria-label="封魔塔說明" data-tt-title="封魔塔" data-tt-desc="限時擊敗 BOSS 即通關，首次通關金幣加倍。試煉之塔 1～50 層、地獄之塔 51～100 層、煉獄之塔 101～150 層；地獄之塔起可額外獲得「魔魂本源」，煉獄之塔 BOSS 可額外獲得「魔種」。戰鬥中 BOSS 血量偏高時會進入狂暴。連挑：自動重複挑戰同一層，金幣不足或次數用完自動停止並回到野外（戰鬥中按「撤退」可中止）。">?</button>
+              <button type="button" class="pg-help twx-help" aria-label="封魔塔說明" data-tt-title="封魔塔" data-tt-desc="限時擊敗 BOSS 即通關；通關不發放金幣，挑戰費用照常扣除。試煉之塔 1～50 層、地獄之塔 51～100 層、煉獄之塔 101～150 層；地獄之塔起可額外獲得「魔魂本源」，煉獄之塔 BOSS 可額外獲得「魔種」。戰鬥中 BOSS 血量偏高時會進入狂暴。連挑：自動重複挑戰同一層，金幣不足或次數用完自動停止並回到野外（戰鬥中按「撤退」可中止）。">?</button>
             </div>
             <div class="twx">
               <div id="tower-floors" class="twx-ladder"></div>
@@ -983,10 +983,10 @@
   <script src="js/talents.js?v=1.0.8"></script>
   <script src="js/player.js?v=1.0.17"></script>
   <script src="js/combat.js?v=1.0.90"></script>
-  <script src="js/tower.js?v=1.0.33"></script>
+  <script src="js/tower.js?v=1.0.34"></script>
   <script src="js/save.js?v=1.0.21"></script>
   <script src="js/ui-inventory-skin.js?v=1.0.1"></script>
-  <script src="js/ui.js?v=1.0.193"></script>
+  <script src="js/ui.js?v=1.0.194"></script>
   <script src="js/ui-runeword.js?v=1.0.13"></script>
   <script src="js/ui-gem-resonance.js?v=1.0.15"></script>
   <script src="js/ui-gem-workshop.js?v=1.0.0"></script>
@@ -1003,7 +1003,7 @@
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
-  <script src="js/bridge.js?v=1.0.346"></script>
+  <script src="js/bridge.js?v=1.0.347"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->

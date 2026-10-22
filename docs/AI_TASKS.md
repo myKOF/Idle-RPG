@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## TOWER-REWARDS-20261022 — 封魔塔精簡說明與真言解鎖展示
+
+- Owner：Codex；Done，單一開發者。使用者要求刪除樓層BOSS tips與BOSS專屬技能說明，顯示本層解鎖符文真言的等級及名稱，移除獎勵中符文機率／樓層說明，取消實際通關金幣獎勵。既有Runes配置towerUnlockFloor／tier／name為唯一來源。
+- 允許：ui.js塔樓層／獎勵／解鎖說明及提示接線、tower.js通關金幣結算、bridge與sim.worker僅快取、index塔說明與對應快取、tower相關必要回歸、game_formula與LV本功能說明、本段。禁止改技能施放／技能解鎖、符文掉落／真言門檻、配置／公式、Protocol／存檔、素材與其他副本；保留Talents.xlsx與storm現有修改，不合併推送。
+- 驗收：三塔首通／重複通關均不加金幣／不記金幣戰利品，費用照扣；其餘獎勵不變。單層多真言、空層、配置留白／0與未來門檻，顯示等級／名稱與正式配置一致，保留原技能解鎖。無BOSS樓層hover，點選／鍵盤操作保留。回歸／Build、隔離瀏覽器／Console、diff及自我Review後獨立Commit；後續使用者Review及正常整合。
+- 衝突：Claude b411b8e5與本次同檔不同區段：index對方formula快取、本次ui／tower／bridge；sim.worker對方formula import、本次tower import；game_formula對方元素特效、本次塔金幣列。三檔以develop與雙方實際內容git merge-file乾跑均0，無語意相依；其餘目標預檢乾淨。formula本次唯讀，保留既有參數接線，實際結算不再取用其舊gold欄位。
+- 完成10檔：移除樓層tooltip函式、hover資料／委派與殘留錨點，捲動定位改走既有data-tower-pick；移除BOSS技能施放說明，原技能解鎖保留。本層真言依正式配置顯示「第N級（品質）【名稱】」，支援同層多真言；未配置則不顯示，不洩漏配方。獎勵清單移除金幣與符文說明，實際結算刪除金幣入帳／戰利品記錄／結果文字；戰鬥BOSS提示獎勵、塔說明與已通關狀態同步清除金幣／首通加倍說法，其他資源與挑戰費用不變。
+- 快取：ui194／tower34／bridge347，Worker塔匯入與資源鍵20261022-tower-rewards-no-gold；Protocol不變。LV與game_formula同步，新8項回歸；tower-cost原本檢查被要求移除的tips字樣，改釘住挑戰按鈕仍取正式費用公式，未降低實際扣費驗證。
+- 測試：node --test --test-reporter=spec tests/tower-rewards-ui.test.cjs tests/tower-cost.test.cjs tests/tower-info-during-fight.test.cjs tests/tower-auto-result.test.cjs tests/tower-xp.test.cjs tests/tower-head-layout.test.cjs tests/tower-battlefield.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs，50/50通過；node --test --test-reporter=spec tests/purgatory-tower.test.cjs tests/skill2-tower-unlock.test.cjs tests/loot-event-accounting.test.cjs tests/ui-worker-g-dependency.test.cjs tests/runeword-engine.test.cjs，64/64通過。合計114/114、0略過；Build572檔全過、diff --check通過。
+- 新回歸覆蓋1／35／51／101／150層首通與重複通關真實start/end/confirm流程，金幣只減費用、金幣記錄0、精華／經驗仍發；全150層正式配置展示、空層／多真言／停用門檻、附魔開關／技能解鎖保留。未改RUNEWORDS配置或用測試接受缺失；formula舊gold欄位仍作相容資料保留但不再有通關消費端。
+- 瀏覽器：隔離Edge載正式HTML／全部CSS／ui-scale／ui與純資料模組，控制塔／角色快照，綁定原始塔click／keydown與mouseover委派，未啟動Worker或讀寫玩家存檔。35層顯示第2級（精良）【雷神之怒】與原【烈陽星環】技能解鎖；hover不出tips，無專屬技能／金幣／符文獎勵列；切36層無真言、Enter／Space回35層與焦點保持，720窄視窗文字不裁切。Console warning／error及pageerror0。已目視tower-35.png，tower-narrow.png與browser-verification.json保存本聊天visualizations/tower-adjust。
+- 唯讀未改：共通規範／AGENTS／Workflow／prompts、formula與參數錨點、Runes資料／runeword解鎖與掉落、skills2／elite_data技能設定、塔CSS與Worker Protocol、上述其餘回歸及Claude工作檔。自我Review確認只移除顯示與金幣結算、沒有改BOSS施放／資料契約／存檔或新增Timer／素材／VFX來源；素材庫無本次修改，不建空Commit。
+- 交付：本段所在「[Codex] fix: 精簡封魔塔資訊並取消通關金幣」Commit，回覆附編號。可供Review／合併，未合併推送；無本輪未完成項。限制：未做真人存檔長戰／跨瀏覽器驗收；本次不追補或扣回歷史金幣。下一步正常整合後重載遊戲驗收，Talents.xlsx／storm其他修改保留。
+
 ## TALENT-LEVEL-NO-FRAME-20261022 — 威能圖示等級移除外框
 
 - Owner：Codex；Done，單一開發者。使用者要求威能icon上的等級數字不加外框；前置既有右下角等級標記可用。允許css/ashen-forge.css僅tlx-node-lv、index.html僅對應CSS快取、LV_upgrade_system.md及本段；禁止JS／數值／解鎖／配置／素材／其他副本，不合併推送；原Talents.xlsx與en-burst-storm修改保留。
