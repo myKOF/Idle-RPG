@@ -433,7 +433,7 @@ var VFXCore = (function () {
     }
     validateCurve(layer.alphaOverLife, where + '.alphaOverLife', errors, { nonNegative: true });
     validateCurve(layer.revealXOverLife, where + '.revealXOverLife', errors);
-    ['revealRadius', 'revealStartRadius'].forEach(function(key) {
+    ['revealRadius', 'revealStartRadius', 'revealRoughness'].forEach(function(key) {
       if (layer[key] !== undefined && (!isFiniteNumber(layer[key]) || layer[key] < 0 || layer[key] > 1)) errors.push(where + '.' + key + ' 必須在0到1');
       if (layer[key] !== undefined && layer.revealXOverLife === undefined) errors.push(where + '.' + key + ' 需要revealXOverLife');
     });
@@ -758,7 +758,7 @@ var VFXCore = (function () {
   var OUTER_SCALE_FIELDS = ['outerScale'];
   var TYPE_ONLY_FIELDS = {
     sprite: PER_AXIS_SCALE_FIELDS.concat(OFFSET_FIELDS).concat(OUTER_SCALE_FIELDS)
-      .concat(['radiusProfile', 'revealXOverLife', 'revealRadius', 'revealStartRadius']),
+      .concat(['radiusProfile', 'revealXOverLife', 'revealRadius', 'revealStartRadius', 'revealRoughness']),
     particle: ['emission', 'maxParticles', 'lifetime', 'spawn', 'speed', 'direction',
       'spread', 'gravity', 'drag', 'radialSpeed', 'orbitalSpeed', 'noise',
       'startScale', 'rotationStart', 'rotationSpeed',
@@ -1295,6 +1295,7 @@ var VFXCore = (function () {
       revealXOverLife: layer.revealXOverLife,
       revealRadius: layer.revealRadius || 0,
       revealStartRadius: layer.revealStartRadius || 0,
+      revealRoughness: layer.revealRoughness || 0,
       outerScale: layer.outerScale,
       projection: layer.projection,
       /* 三個都是「沒填＝受影響」（既有 preset 行為不變），與 enabled 同一種預設寫法 */
@@ -1949,6 +1950,7 @@ var VFXCore = (function () {
       t.revealX = d.revealXOverLife === undefined ? undefined : sampleCurve(d.revealXOverLife, effect.revealProgress === undefined ? progress : effect.revealProgress);
       t.revealRadius = d.revealRadius || 0;
       t.revealStartRadius = d.revealStartRadius || 0;
+      t.revealRoughness = d.revealRoughness || 0;
       t.zIndex = d.zIndex;
       t.sortGroup = effect.handle; t.sortY = effect.depthY === null ? effect.origin.y : effect.depthY;
       t.elevation = effect.elevation || undefined;

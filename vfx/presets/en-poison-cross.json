@@ -38,6 +38,7 @@
         "rows": 8
       },
       "revealRadius": 0.25,
+      "revealRoughness": 0.014,
       "revealStartRadius": 0.25,
       "revealXOverLife": [
         [
@@ -88,6 +89,7 @@
         "rows": 8
       },
       "revealRadius": 0.25,
+      "revealRoughness": 0.014,
       "revealStartRadius": 0,
       "revealXOverLife": [
         [
@@ -138,6 +140,7 @@
         "rows": 8
       },
       "revealRadius": 0.25,
+      "revealRoughness": 0.014,
       "revealStartRadius": 0,
       "revealXOverLife": [
         [
@@ -188,6 +191,7 @@
         "rows": 8
       },
       "revealRadius": 0.25,
+      "revealRoughness": 0.014,
       "revealStartRadius": 0.25,
       "revealXOverLife": [
         [
@@ -238,6 +242,7 @@
         "rows": 8
       },
       "revealRadius": 0.25,
+      "revealRoughness": 0.014,
       "revealStartRadius": 0,
       "revealXOverLife": [
         [
@@ -288,6 +293,7 @@
         "rows": 8
       },
       "revealRadius": 0.25,
+      "revealRoughness": 0.014,
       "revealStartRadius": 0,
       "revealXOverLife": [
         [
@@ -338,6 +344,7 @@
         "rows": 8
       },
       "revealRadius": 0.25,
+      "revealRoughness": 0.014,
       "revealStartRadius": 0.25,
       "revealXOverLife": [
         [
@@ -388,6 +395,7 @@
         "rows": 8
       },
       "revealRadius": 0.25,
+      "revealRoughness": 0.014,
       "revealStartRadius": 0,
       "revealXOverLife": [
         [
@@ -438,6 +446,7 @@
         "rows": 8
       },
       "revealRadius": 0.25,
+      "revealRoughness": 0.014,
       "revealStartRadius": 0,
       "revealXOverLife": [
         [
@@ -488,6 +497,7 @@
         "rows": 8
       },
       "revealRadius": 0.25,
+      "revealRoughness": 0.014,
       "revealStartRadius": 0.25,
       "revealXOverLife": [
         [
@@ -538,6 +548,7 @@
         "rows": 8
       },
       "revealRadius": 0.25,
+      "revealRoughness": 0.014,
       "revealStartRadius": 0,
       "revealXOverLife": [
         [
@@ -588,6 +599,7 @@
         "rows": 8
       },
       "revealRadius": 0.25,
+      "revealRoughness": 0.014,
       "revealStartRadius": 0,
       "revealXOverLife": [
         [

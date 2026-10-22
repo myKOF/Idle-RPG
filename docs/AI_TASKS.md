@@ -104,6 +104,20 @@
 - 唯讀未改：共通規範／Workflow／prompts/codex、PARAM_PATCHES／官方合併與配置工具、elite_data既有米轉座標、Core／Runtime／battle-renderer鏡頭及投影、四色Preset／layout／素材、上述其餘回歸。自我Review確認橫向只乘1.5、後退只乘2、事件和傷害時序共用正式配置，停駐仍為數值世界座標；沒有新VFX來源／素材庫檔案或素材庫Commit。
 - 交付：本段所在「[Codex] feat: 正式套用飛彈兩秒停駐與加寬後退」Commit，回覆附編號。無本輪未完成項，可供Review／合併；未合併推送。限制為上述4項既有測試失敗，以及未做真人存檔長戰／多技能混戰／跨裝置驗收。下一步正常整合及重新載入遊戲；其他任務未提交內容保留。
 
+## POISON-ROUGH-TIP-20261022 — 毒水末端改細碎不規則收口
+
+- Owner：Codex；Done，單一開發者。前置為已認可+10%兩岸凹凸；使用者要求終端半圓不要太圓滑，做好直接套用。僅對前端收口增加少量固定凹口，保留圓收大輪廓、已鋪紋理／流速／側岸與判定。
+- 允許：Core／Pixi通用顯露裁切的可選收口凹凸參數、Editor對應欄位／schema文件、毒水作者／Preset與素材庫配對來源、必要快取、既有Core／後端／毒水回歸、LV與本段；禁止其他技能／模擬／配置／Protocol／存檔／其他副本，不合併推送。共用快取沿已批准整合，素材／索引無新增。
+- 驗收：僅前端出現小凹口、不把整條扭曲，接段縫合／UV比例／材質續播與34頂點保持；正式Pixi預覽、相關回歸／Build／匯出check，素材庫與遊戲獨立Commit後交使用者正常整合。
+
+- 完成13檔：毒水12層加revealRoughness=.014（貼圖寬度比例，正式最多2.24世界單位內凹），只對前端圓收疊固定細碎凹口，保留半圓大輪廓。Core可選欄位預設0、驗證／編譯／傳遞，Pixi在裁切前加凹口並納入快取；整段顯露後仍完整銜接，UV與位置同步、每段34頂點與12節點／零粒子不變。Editor可調同欄位，schema／LV同步；Runtime僅DATA_VERSION與兩頁對應快取，Core／Backend／Editor鍵20261022-poison-rough-tip、Runtime1.0.238。
+- 素材：同份Preset與素材庫配對來源／SOURCE更新，layout／SVG／兩索引沒有本任務變更；實際flow.svg與前版位元相同，側岸+10%、表面流動、16fps／4秒循環原樣保留。Mote原有匯出不支援此原生向量工作流，沿專案原創作者；附件只用來指出末端區域，沒有引入外部圖像或新素材來源。
+- 測試：node --test tests/poison-trail.test.cjs tests/vfx-pixi-sheet.test.cjs tests/vfx-core.test.cjs tests/vfx-core-hierarchy.test.cjs tests/vfx-deformation.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-preset-usage.test.cjs，244/244過；npm.cmd run build，569檔通過；node tools/vfx/export-assets.cjs --check最終已最新。後端實際網格驗收凹口上限／非均勻收口、固定不抖／完整段接縫不受影響／UV比例；真Runtime確認所有方向與不同幾何把參數送達、舊欄位預設0；保留既有判定／生長／續播／回收斷言。
+- 畫面：正式Core／Runtime／Pixi隔離單臂1.9倍局部對比，上前版／下新版，poison-rough-tip.png保存聊天visualizations；Console warning／error0。末端稍微不規則、側岸與內部完全沿前版；無新增Timer或時間擾動。未讀寫玩家存檔、未做真人長戰／手機／跨裝置效能實測，不宣稱FPS或硬時間門檻。
+- 協作：預檢Core／Backend／Editor／毒水作者與Preset／測試／文件均無外部來源；Runtime共用資料版本沿使用者既有批准，保留thunder-crater與missile-crystal。Claude主頁既有其他script差異不改。本副本另一MISSILE-COLOR任務的作者／四色Preset／新素材／兩索引／LV與AI_TASKS均分段保留不提交；首次全域匯出檢查恰逢該任務新素材匯出而過期，對方完成後再次check通過，沒有自行覆蓋其輸出。
+- 唯讀未改：共通規範／Workflow／prompts/codex、模擬eliteCross／事件與碰撞、Worker／Protocol／配置表、Runtime毒水成長邏輯、Renderer投影、Editor Guard／Server、素材索引與layout／原SVG；不改技能傷害／長度／寬度／速度／壽命。自我Review確認新增欄位只在啟用的根sprite上生效、未啟用完全沿舊版、無額外節點／貼圖／來源。
+- 交付：使用者已要求做好直接套用，本次已實作並可正常整合；素材庫先Commit f4191bc（Preset／SOURCE兩檔），遊戲Commit為本段所在「[Codex] fix: 毒水末端改為輕微不規則收口」，兩編號見回覆。無本輪未完成項；未合併／推送。下一步正常整合並重新整理遊戲，Editor先下載未存備份再重載，驗收限制如上。
+
 ## POISON-BANK-PLUS10-20261022 — 毒水岸邊凹凸微增10%
 
 - Owner：Codex；Done，單一開發者。前置為使用者已認可無縫接段／表面流動版，僅把固定岸邊凹凸振幅乘1.10；不改種子／空間頻率／主軸／寬度／時間微擾／流速／接段／判定。

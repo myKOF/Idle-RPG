@@ -276,12 +276,16 @@ var VFXPixiBackend = (function () {
       var m=node.__reveal,tex=node.texture,tw=tex.orig ? tex.orig.width : tex.width,th=tex.orig ? tex.orig.height : tex.height;
       if (!(tw>1 && th>1)) { node.visible=false; return; }
       var c=m.cache;
-      if(c.texture===tex && c.front===t.revealX && c.radius===t.revealRadius && c.start===t.revealStartRadius && c.ax===t.anchorX && c.ay===t.anchorY){node.visible=c.visible;return;}
+      if(c.texture===tex && c.front===t.revealX && c.radius===t.revealRadius && c.start===t.revealStartRadius && c.roughness===t.revealRoughness && c.ax===t.anchorX && c.ay===t.anchorY){node.visible=c.visible;return;}
       c.texture=tex;c.front=t.revealX;c.radius=t.revealRadius;c.start=t.revealStartRadius;c.ax=t.anchorX;c.ay=t.anchorY;
+      c.roughness=t.revealRoughness;
       var visible=false;
       for(var i=0;i<m.uvs.length;i+=2) {
         var u=m.baseUvs[i],v=m.baseUvs[i+1],bow=1-Math.sqrt(Math.max(0,1-Math.pow(v*2-1,2)));
-        var lo=(t.revealStartRadius||0)*bow,hi=Math.min(1,t.revealX-(t.revealRadius||0)*bow);
+        // Small fixed chips in the advancing cap; clamp after the cut so completed
+        // tiles retain their whole edge and meet the next tile without a seam.
+        var chips=(t.revealRoughness||0)*(.5+.3*Math.sin(v*37+1)+.2*Math.sin(v*71+2));
+        var lo=(t.revealStartRadius||0)*bow,hi=Math.min(1,t.revealX-(t.revealRadius||0)*bow-chips);
         hi=Math.max(lo,hi);visible=visible||hi>lo;
         u=lo+(hi-lo)*u;
         m.uvs[i]=u;m.uvs[i+1]=v;

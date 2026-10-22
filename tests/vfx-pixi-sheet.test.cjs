@@ -151,6 +151,17 @@ test('REVEAL 接段裁切同時移動UV與頂點，紋理不伸縮；未顯露�
   }
   const copy=mesh.positions.slice();t.frame=1;backend.updateNode(node,t);assert.deepEqual(mesh.positions,copy,'換幀只改材質，不挪動已鋪幾何');
   assert.notEqual(node.__frames[0],node.texture);
+  t.revealX=.5;backend.updateNode(node,t);const smooth=mesh.positions.slice();
+  t.revealRoughness=.014;backend.updateNode(node,t);const cuts=[];
+  for(let row=0;row<17;row++) {
+    const left=row*4,right=left+2,cut=smooth[right]-mesh.positions[right];
+    assert.equal(mesh.positions[left],smooth[left],'只有前端收口改變，後方紋理與接縫保持');
+    assert.ok(cut>0 && cut<=.014*256+.00002,'只加入少量內凹，不超出原前緣');cuts.push(cut);
+    assert.ok(Math.abs(mesh.positions[right]-(mesh.uvs[right]-.5)*256)<.00002,'收口凹凸仍保持UV比例');
+  }
+  assert.ok(Math.max(...cuts)-Math.min(...cuts)>1,'收口不是均勻縮短的光滑半圓');
+  const rough=mesh.positions.slice();backend.updateNode(node,t);assert.deepEqual(mesh.positions,rough,'凹口固定、不隨每幀扭動');
+  t.revealX=1.5;backend.updateNode(node,t);assert.deepEqual(mesh.positions,copy,'完成的段保持完整接縫，不在每段末端留下凹口');
   t.revealStartRadius=.25;backend.updateNode(node,t);assert.ok(mesh.uvs[0]>0,'第一段根部圓收');
   backend.destroyNode(node);assert.equal(destroyed,1);backend.destroy();
 });

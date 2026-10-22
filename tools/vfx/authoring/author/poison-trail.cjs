@@ -88,6 +88,7 @@ function make() {
       scale: { x: tileLength / WIDTH, y: 2 * radius / HEIGHT },
       revealXOverLife: [[0,(radius-start)/tileLength],[t,(length+radius-start)/tileLength],[1,(length+radius-start)/tileLength]],
       revealRadius: radius/tileLength, revealStartRadius: tile===0?radius/tileLength:0,
+      revealRoughness: .014,
       alpha: .95, blendMode: 'normal', duration,
       projection: { x: 1, y: .5 },
       sheet: { columns: COLUMNS, rows: FRAMES / COLUMNS, count: FRAMES, mode: 'fps', fps: FPS, loop: true }
@@ -101,7 +102,7 @@ function writeSource() {
   const root = require('../../vfx-library-root.cjs').resolveLibraryRoot().root;
   const folder = path.join(root, 'codex-authored/poison-trail'), svg = liquidSVG();
   fs.mkdirSync(folder, { recursive: true }); fs.writeFileSync(path.join(root, assetId), svg);
-  fs.writeFileSync(path.join(folder, 'SOURCE.md'), "# 毒素加持：無縫接段與表面內流\n\n2026-10-22 Codex 原創SVG，64格／16fps／4秒循環。附件僅用於觀察狹長水道、適度不平整岸邊與流動明暗，沒有複製／描摹／挪用參考像素。Mote Studio已確認PNG／sheet／GIF匯出，不支援此原生SVG；沿用專案向量作者。\n\n每臂3段固定比例貼圖，岸邊形狀／材質首尾週期相同；UV與網格頂點同步裁切顯露，已鋪部分不伸縮，前端延伸到下一段。前端／根部圓收，內部接縫無重疊透明度或重播閃爍。四臂共用一張16MiB RGBA圖集，12節點、零粒子。\n\n主要明暗團塊、流紋與細泡沫均單向平移；4秒流過一個完整短段（正式尺寸每秒40世界單位，伸展速度仍120）。整體水道近直線，兩岸固定細碎凹凸振幅依使用者要求較已認可接段版微增10%（乘1.10），空間頻率／種子不變；另加原有0.22材質像素微擾，沒有整條蛇行／呼吸。材質相位與前端生長獨立，續送事件不重播。\n\n表定長度／半寬／速度／壽命與判定保持，非正式素材未加入遊戲。重製：node tools/vfx/authoring/author/poison-trail.cjs；node tools/vfx/export-assets.cjs。\n");
+  fs.writeFileSync(path.join(folder, 'SOURCE.md'), "# 毒素加持：無縫接段與表面內流\n\n2026-10-22 Codex 原創SVG，64格／16fps／4秒循環。附件僅用於觀察狹長水道、適度不平整岸邊與流動明暗，沒有複製／描摹／挪用參考像素。Mote Studio已確認PNG／sheet／GIF匯出，不支援此原生SVG；沿用專案向量作者。\n\n每臂3段固定比例貼圖，岸邊形狀／材質首尾週期相同；UV與網格頂點同步裁切顯露，已鋪部分不伸縮，前端延伸到下一段。前端保留圓收大輪廓，加入固定微小凹口（revealRoughness=0.014貼圖寬度，正式最多2.24世界單位），修掉過於光滑的半圓；根部圓收與內部接縫不變，沒有重疊透明度或重播閃爍。四臂共用一張16MiB RGBA圖集，12節點、零粒子。\n\n主要明暗團塊、流紋與細泡沫均單向平移；4秒流過一個完整短段（正式尺寸每秒40世界單位，伸展速度仍120）。整體水道近直線，兩岸固定細碎凹凸振幅依使用者要求較已認可接段版微增10%（乘1.10），空間頻率／種子不變；另加原有0.22材質像素微擾，沒有整條蛇行／呼吸。材質相位與前端生長獨立，續送事件不重播。\n\n表定長度／半寬／速度／壽命與判定保持，非正式素材未加入遊戲。重製：node tools/vfx/authoring/author/poison-trail.cjs；node tools/vfx/export-assets.cjs。\n");
   const scanner = require('../../asset-scanner.cjs'), file = path.join(repo, 'vfx/asset-index.json');
   const index = JSON.parse(fs.readFileSync(file)), bytes = Buffer.from(svg);
   const entry = { assetId, package: scanner.derivePackage(assetId), relativePath: assetId, format: 'svg',

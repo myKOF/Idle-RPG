@@ -4425,9 +4425,9 @@
     if (targets.every(function(l) {return l.type==='sprite' && !l.parent && !l.radiusProfile;})) {
       curveSection(host, 'reveal', '逐步顯露 X（不拉伸貼圖）', function(body) {
         curveBlock(body,targets,'revealXOverLife',{min:null,max:null,baseline:[0,1],defaultValue:1,decimals:3,unit:''},'前緣');
-        [['revealRadius','前端圓收'],['revealStartRadius','根部圓收']].forEach(function(pair) {
+        [['revealRadius','前端圓收'],['revealStartRadius','根部圓收'],['revealRoughness','前端細碎凹凸']].forEach(function(pair) {
           var common=MX.commonValue(targets,function(l){return l[pair[0]]||0;}),input=document.createElement('input');
-          input.type='number';input.min=0;input.max=1;input.step=.01;input.value=common.mixed?'':common.value;
+          input.type='number';input.min=0;input.max=1;input.step=pair[0]==='revealRoughness'?.001:.01;input.value=common.mixed?'':common.value;
           input.oninput=function(){var v=Number(input.value);if(input.value===''||!Number.isFinite(v)||v<0||v>1)return;
             targets.forEach(function(l){if(l.revealXOverLife===undefined)l.revealXOverLife=1;l[pair[0]]=v;});onPresetChanged();};
           wireFieldTransaction(input,pair[1]);body.appendChild(makeField(pair[1]+'（貼圖寬度比例）',input));

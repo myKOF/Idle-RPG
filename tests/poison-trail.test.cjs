@@ -111,6 +111,7 @@ test('POISON-TRAIL 固定比例接段逐幀投影，已鋪紋理不拉長，續�
       assert.equal(nodes.length,4*segments);
       nodes.forEach((n,index)=>{
         const arm=Math.floor(index/segments),tile=index%segments,t=n.t,a=cross.a+arm*Math.PI/2;
+        near(t.revealRoughness,.014);
         const width=geometry.ballR*4;
         const center=width*(tile+.5)-geometry.ballR;
         near(t.x,e.area.x+Math.cos(a)*center); near(t.y,e.area.y*.5+Math.sin(a)*center*.5);
@@ -155,7 +156,7 @@ test('REVEAL 曲線存檔與Runtime覆寫分離，清除覆寫回到時間軸；
   rt.registerPreset(p);const h=rt.play(p.id,{revealProgress:.75});rt.update(.2);near(nodes[0].t.revealX,1.5);
   rt.setTransform(h,{revealProgress:null});rt.update(.2);near(nodes[0].t.revealX,.2);
   assert.equal(nodes[0].s.kind,'revealed');rt.destroy();
-  for(const delta of [{revealRadius:2},{revealStartRadius:-1},{parent:'other'},{radiusProfile:{}}]) {
+  for(const delta of [{revealRadius:2},{revealStartRadius:-1},{revealRoughness:-.1},{parent:'other'},{radiusProfile:{}}]) {
     const invalid=structuredClone(p);Object.assign(invalid.layers[0],delta);assert.equal(Core.validatePreset(invalid).ok,false);
   }
 });
