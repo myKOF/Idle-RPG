@@ -60,6 +60,9 @@ test('暴擊放大附傷基底：暴擊 ×200% → 附傷同步 ×2', () => {
 test('六系並存各自結算：對應元素抗性獨立減免、暗影汲取回復', () => {
   const c = loadFormulaContext();
   const all = { fire: 1, ice: 1, lightning: 1, poison: 1, light: 1, dark: 1 };
+  assert.equal(c.ELEM_PROC_ENABLED, false, '元素特效預設關閉');
+  assert.equal(hit(c, { elemDmgPct: all }, { resist: { fire: 50 } }).heal, 0, '關閉時暗影不汲取');
+  c.ELEM_PROC_ENABLED = true;
   const r = hit(c, { elemDmgPct: all }, { resist: { fire: 50 } });
   const expectedFire = 100 * (1 - c.elementalResistanceReduction(50, 1));
   assert.equal(r.dmg, Math.round(10000 + expectedFire + 100 * 5));
