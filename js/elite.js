@@ -194,6 +194,7 @@ function eliteVisEmit(v) {
   }
   eliteFx({
     fxKind: 'aura', variant: 'elite-ground', count: 1, dur: 0.2,
+    targets: v.targets,
     area: area, vfx: { ground: v.preset }
   });
 }
@@ -1239,6 +1240,7 @@ function eliteChainsTick(dt, list) {
     c.vis.speed = csp > 3 ? csp : 0;
     c.vis.moveA = csp > 3 ? Math.atan2(c.vy, c.vx) : NaN;
     c.vis.x = mx; c.vis.y = my;
+    c.vis.targets = [c.a.floatSel, c.b.floatSel];
     c.vis.w = len; c.vis.h = c.d.linkH > 0 ? c.d.linkH : Math.max(24, c.d.wid * 2.2);
     c.vis.a = Math.atan2(bp.y - ap.y, bp.x - ap.x);
     c.nextTick -= dt;

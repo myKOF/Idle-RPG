@@ -1528,6 +1528,7 @@ var VFXCore = (function () {
         frameNo: 0,
         origin: { x: 0, y: 0 },
         depthY: null,
+        elevation: 0,
         rotation: 0,
         motionFacing: false,
         facingBeforeOuterScale: false,
@@ -1611,6 +1612,7 @@ var VFXCore = (function () {
         if (p.position.y !== undefined) effect.origin.y = transformNumber(p.position.y, 'position.y');
       }
       if (p.depthY !== undefined) effect.depthY = transformNumber(p.depthY, 'depthY');
+      if (p.elevation !== undefined) effect.elevation = Math.max(0, transformNumber(p.elevation, 'elevation'));
       if (p.opacity !== undefined) effect.opacity = Math.max(0, Math.min(1, transformNumber(p.opacity, 'opacity')));
       if (p.rotation !== undefined) effect.rotation = transformNumber(p.rotation, 'rotation');
       if (p.motionFacing !== undefined) effect.motionFacing = p.motionFacing === true;
@@ -1935,6 +1937,7 @@ var VFXCore = (function () {
       t.anchorY = d.anchor.y;
       t.zIndex = d.zIndex;
       t.sortGroup = effect.handle; t.sortY = effect.depthY === null ? effect.origin.y : effect.depthY;
+      t.elevation = effect.elevation || undefined;
       t.width = undefined; t.height = undefined; t.tileX = undefined; t.tileY = undefined;
       t.generated = undefined;
       /* perspective 給顯示層（要不要抵銷畫面透視），followDirection 給下面的 projectTransform。
@@ -2305,6 +2308,7 @@ var VFXCore = (function () {
         t.anchorY = d.anchor.y;
         t.zIndex = d.zIndex;
         t.sortGroup = effect.handle; t.sortY = effect.depthY === null ? effect.origin.y : effect.depthY;
+        t.elevation = effect.elevation || undefined;
         t.width = undefined; t.height = undefined; t.tileX = undefined; t.tileY = undefined; t.generated = undefined;
         t.deformation = undefined;
         t.perspective = d.perspective;

@@ -677,3 +677,9 @@ Core 將每顆球的中心放入各節點的 `sortY`；球體、光暈與電弧�
 ### 敵方飛彈剎停與齊射（2026-10-21）
 
 `elite-missile-flight` 沿明確起終點與二次貝茲控制點飛行。`area.brake` 使進度為 `1-(1-k)^3`，到達時速度降至0；`holdSec` 秒內固定在終點，平滑轉向 `holdAngle`。齊射由模擬在同一拍送出第二段，使用 `startAngle` 銜接待機朝向；當拍鎖定玩家位置，抵達才結算傷害。角度使用判定平面，Adapter負責畫面投影。此變體的粒子不隨travelMs加速或減速，停駐及抵達後尾跡皆按真實時間淡出；Core／Backend不新增遊戲知識。舊事件缺欄時沿用原語意。
+
+## 火鏈端點追蹤（2026-10-22）
+
+elite-ground的elite-chain場域沿用既有targets陣列帶兩端floatSel；area仍是模擬層地面幾何與續命依據。Runtime逐幀讀取兩端目前補間後的footOf，同步中心／長度／世界平面角，移除第二次位置／尺寸／角度平滑；無targets的歷史事件維持原快照外推，無footOf的測試或舊Adapter亦退回快照。死亡或顯示錨點失效立即收掉，不讀取玩家備援位置。高度固定2米，不依NPC圖像縮放改變，也不改傷害。
+
+Core內部play／setTransform可帶elevation（非負有限世界單位，預設0），sprite／child／particle每次輸出都重設該欄，避免共用scratch洩漏。Renderer對有高度的billboard以各節鏈環當前y加回高度作地面錨點，投影後再扣高度×當地遠近倍率；sortY仍保留原深度排序。一般光柱保留整張錨點語意，不改Preset／Editor資料格式或Worker Protocol。

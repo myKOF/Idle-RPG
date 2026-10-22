@@ -1233,6 +1233,10 @@ var VFXRuntime = (function () {
         return;
       }
       var area = g.worldMotion && spec.area._worldMotion ? spec.area._worldMotion : spec.area;
+      if (g.fireChain) {
+        g.chainTargets = Array.isArray(spec.targets) && spec.targets.length === 2 && ctx.footOf ? spec.targets.slice() : null;
+        g.chainThickness = num(area.h, 0);
+      }
       if (g.poisonTrail) {
         g.trailArea = Object.assign({}, area);
         g.growthAt = clock - Math.max(0, num(area.growAge, 0));
@@ -1295,6 +1299,21 @@ var VFXRuntime = (function () {
     /* 釘在某個實體腳底的場域（高塔版面、follow 場域）每幀的權威座標。 */
     function groundAnchorPoint(g) {
       return footOf(g.anchor || 'pv-float');
+    }
+    // 與NPC共用已補間的腳點，兩端不再各走一套場域外推與平滑。
+    function aimFireChain(g) {
+      if (!chainTargetsAlive(g.chainTargets)) return false;
+      var a = ctx.footOf(g.chainTargets[0]), b = ctx.footOf(g.chainTargets[1]);
+      if (!a || !b || !isFinite(a.x) || !isFinite(a.y) || !isFinite(b.x) || !isFinite(b.y)) return false;
+      var dx = b.x - a.x, dy = (b.y - a.y) / groundScale;
+      g.x = (a.x + b.x) / 2; g.y = (a.y + b.y) / 2;
+      g.rot = Math.atan2(dy, dx);
+      var length = Math.max(0.001, Math.sqrt(dx * dx + dy * dy));
+      var size = sizeOf(g.presetId, { w: length, h: g.chainThickness });
+      g.uniform = false;
+      g.sx = size ? size.scaleX : length / NOMINAL_RECT_W;
+      g.sy = size ? size.scaleY : g.chainThickness / NOMINAL_RECT_H;
+      return true;
     }
     /* 推算基準的自走：沿模擬層當下的航向、用模擬層的速度前進；知道落點時不越過
        落點（等速直線飛向落點的場域抵達後就停駐，畫面必須跟著停）。 */
@@ -1367,7 +1386,8 @@ var VFXRuntime = (function () {
       if (g.fireChain) {
         var unit = typeof BF_SYSTEM_UNITS_PER_METER === 'number' && BF_SYSTEM_UNITS_PER_METER > 0 ? BF_SYSTEM_UNITS_PER_METER : 10;
         p.depthY = g.y;
-        p.position.y -= FIRE_CHAIN_HEIGHT_M * unit;
+        p.elevation = FIRE_CHAIN_HEIGHT_M * unit;
+        p.position.y -= p.elevation;
       }
       if(g.worldMotion){p.position.y*=groundScale;p.rotation=projectedAngle(g.rot,groundScale);}
       if(g.windBody){p.motionFacing=true;p.loop=true;}
@@ -1495,6 +1515,7 @@ var VFXRuntime = (function () {
       /* 出生的第一幀沒有推算歷史：畫面值＝權威值，殘差為 0。 */
       g.ox = 0; g.oy = 0;
       g.x = g.bx; g.y = g.by; g.rot = g.trot; g.sx = g.tsx; g.sy = g.tsy;
+      if (g.chainTargets && !aimFireChain(g)) return true;
       // 吞噬漩渦是貼地環帶，整體置於人物下方；其他直立場域維持原圖層。
       var flyingField = !staticVacuum && (spec.variant === 'thunder-orb' || spec.variant === 'ice-arrow-homing' || spec.variant === 'wind-blade-homing');
       // 雷球的電弧粒子也屬於球體；共用球心倍率，避免各自按高度投影而拉歪輪廓。
@@ -1633,6 +1654,10 @@ var VFXRuntime = (function () {
       Object.keys(grounds).forEach(function (k) {
         var g = grounds[k];
         if (g.expireAt <= clock) { stopRef(g.ref); delete grounds[k]; return; }
+        if (g.chainTargets) {
+          if (!aimFireChain(g) || !moveRef(g.ref, groundParams(g), g.mult)) { stopRef(g.ref); delete grounds[k]; }
+          return;
+        }
         var previousX = g.x, previousY = g.y;
         if (g.anchored) {
           var p = groundAnchorPoint(g);

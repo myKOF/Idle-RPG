@@ -1,5 +1,20 @@
 # AI_TASKS.md
 
+## FIRE-CHAIN-FOLLOW-20261022 — 火鏈兩端逐幀跟隨NPC
+
+- Owner：Codex；Done，單一開發者。使用者回報鏈端落後NPC，已定位獨立快照平滑與共用中點透視。依賴固定離地2米與環狀連線完成。允許elite火鏈事件帶既有targets、Runtime逐幀錨點、Core內部離地高度轉換與Renderer投影、必要Worker／主頁快取、火鏈專項／Runtime文件／LV及本段；禁止其他技能、配置／素材／存檔與進行中岩壁／毒水區段，不合併推送。
+- 驗收：實際事件保留端點ID，移動／轉向／跳位／大小／死亡、三四邊閉合、地面判定與各角落FOV投影及舊事件相容；正式Renderer動態畫面／Console、相關回歸／Build與獨立Commit。預檢index與Claude熔爐僅不同script快取行，merge-file乾跑0、無語意相依；其餘無外部分支來源，本副本其他修改採分段保留。
+
+- 完成12檔：elite每條鏈沿既有targets傳兩端ID，Runtime每幀共用Renderer當前補間腳點求中點／世界平面長度／角度，保留表定厚度與2米高度；不再疊場域外推及尺寸／旋轉低通。歷史無targets或舊Adapter無footOf保留快照路徑；缺失／死亡端點立即回收，不回退玩家。Core新增內部elevation轉換，sprite／child／particle均重設欄位；Renderer以每節鏈環自己地面落點換算FOV，普通光柱維持原整張錨點。沒有Preset／配置／傷害／解鎖／存檔或Protocol結構變更，沿既有Worker欄位，無素材庫變更／Commit。
+- 快取：主頁Core=20261022-fire-chain-follow、Runtime=1.0.233、Renderer=1.6.195、bridge=1.0.341；Editor共用Core／Runtime同步。bridge及Worker elite import均新鍵20261022-stone-wall-fire-chain-follow，Protocol仍59。Runtime文件與LV同步；Editor若仍開啟，先下載未存備份再重載，舊頁拒存由既有Guard與回歸確認，不操作使用者分頁。
+- 測試指令：node --test --test-reporter=tap tests/fire-chain-height.test.cjs tests/elite-engine.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/vfx-core.test.cjs tests/vfx-core-hierarchy.test.cjs tests/vfx-preset-usage.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/vfx-projectile-perspective.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-editor-guard.test.cjs，288項286過、2項既有失敗（ELITE-ENGINE-20飛彈舊時序與變形矩陣fixture）。以HEAD四支修改前來源唯讀映射，兩項同名同原因重現；同時新增移動錨點／FOV／Core高度三項皆在舊版失敗，確認能抓到缺陷。沒有改既有斷言。最終三四邊閉合加強後專項7/7通過；npm.cmd run build 569檔通過；diff檢查通過。
+- 動態驗收：正式bfTickApproach／eliteTick記錄240幀、353條火鏈事件，重播正式BattleRenderer／Pixi；每幀核對Core提交幾何兩端與當前NPC腳點，45190次取樣最大誤差8.56e-14座標單位（僅浮點誤差，非宣稱GPU逐像素一致）。靜態定格與移動畫面驗收、Console warning／error0，fire-chain-follow.png保存在本聊天visualizations。未讀寫玩家存檔；未做真人長戰／行動GPU／跨瀏覽器。
+- 唯讀檢查：規範／Workflow／Agent、Skills2／elite_data／battlefield／Worker shim與Protocol、Core生命週期／Pixi後端與投影、10份鏈條Preset及上述11份回歸。自我Review確認排序深度保留、共享scratch不洩漏高度、跟隨在實體位置更新之後、沒有新增Timer或獨立素材。其他聊天岩壁／毒水已提交內容及後續毒水未提交測試／LV紀錄原樣保留；本次僅stage自己的檔案／hunk。
+- 最終提交候選：以Git index內的Core／Runtime／Renderer／elite及兩頁快取唯讀映射重跑8檔（高度專項、Core、hierarchy、screen-space、Worker protocol／shim、Editor cache／guard），209/209通過；Runtime快取在同副本毒水提交後再升233，沒有提交其素材DATA_VERSION差異或覆蓋對方提交。
+- 交付：無本次未完成實作，可供Review／合併；Commit為本段所在「[Codex] fix: 火鏈端點逐幀跟隨NPC並修正透視偏移」，回覆附編號。未合併推送；下一步由使用者正常整合並重新整理遊戲（Editor另需備份後重載），限制為上述既有測試失敗及未做真人長戰。
+
+- 效能追驗（使用者追加）：同一台主機Node／正式Core與Adapter、正式23環Preset與Renderer投影函式，模擬後端不送GPU；4／20／60條各交錯舊新版3輪，每輪120幀暖機＋480幀取樣。三輪中位數之中位：4條0.7121→0.6152ms（p95 1.3666→1.1641）；20條3.4733→3.2772ms（5.2955→5.1359）；60條10.7010→9.9635ms（12.8693→12.1955）。活躍粒子分別51／237／690、兩版相同，未增加鏈環／特效數／Timer。此為隔離CPU計算＋投影比較，含vm跨環境呼叫成本、無GPU／貼圖與全戰鬥，且同機有其他工作；只能說此測試未見退化，不能宣稱完整FPS提高。詳細3輪數據保存在Git metadata的fire-chain-follow-work/performance.json，不入正式素材。
+
 ## STONE-WALL-FIVE-BLOCKS-20261022 — 五片深色岩壁與雙方阻擋
 
 - Owner：Codex；Review（外觀／程式完成；CD與文字Pending BAT），單一開發者。使用者要求每面5片岩石，全部角度依已編輯en-stone-wall-0僅留slab／dust、深色，另驗證阻擋玩家與NPC。前置既有12方向岩壁與旋轉矩形完成，fetch及逐檔預檢無外部來源；保留本副本使用者基準。
