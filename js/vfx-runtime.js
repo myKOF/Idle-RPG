@@ -439,6 +439,8 @@ var VFXRuntime = (function () {
        新增播放路徑時要一起用這支，不要再寫死 rtFx。 */
     function fxRtFor(presetId) { return billboardPresets[presetId] ? rtBillboard : rtFx; }
     var presetSizes = Object.create(null);
+    var poisonGrowthEnds = Object.create(null);
+    var poisonTilePresets = Object.create(null);
     var rainMarkSeq = 0;
     var planePresets = Object.create(null);
     var planeAngles = Object.create(null);
@@ -606,20 +608,27 @@ var VFXRuntime = (function () {
           p.layers.forEach(function (l) { if (l.projection) l.projection.y = groundScale; });
         }
         if (p.sizing) resolveSizing(p.sizing); // 載入即驗證，錯誤不可靜默變成 NaN
-        if (p.id === 'en-poison-cross' && p.layers.some(function(l) { return l.id === 'flow-0'; })) {
+        if (p.id === 'en-poison-cross' && p.layers.some(function(l) { return l.id === 'flow-0' || l.id === 'flow-0-0'; })) {
           // 同一份表定 Preset 的四臂，事件各自驅動長度與寬度；不產生額外素材來源。
           for (var arm = 0; arm < 4; arm++) {
             var part = JSON.parse(JSON.stringify(p));
             part.id += '-arm-' + arm;
-            part.layers = part.layers.filter(function(l) { return l.id === 'flow-' + arm; });
+            part.layers = part.layers.filter(function(l) { return l.id === 'flow-' + arm || l.id.indexOf('flow-' + arm + '-') === 0; });
+            var tiled = part.layers.some(function(l) { return l.revealXOverLife !== undefined; });
             part.layers.forEach(function(l) {
-              l.position = {x:0,y:0}; l.rotation = 0;
+              var angle=arm*Math.PI/2;
+              l.position = tiled ? {x:l.position.x*Math.cos(angle)+l.position.y*Math.sin(angle),y:0} : {x:0,y:0}; l.rotation = 0;
               delete l.offsetXOverLife; delete l.offsetYOverLife; delete l.scaleXOverLife;
             });
             // 圖集單格尺寸乘上作者縮放，保持編輯器與遊戲共用素材尺度。
             var layer = part.layers[0];
             if (!layer) continue;
-            var sourceWidth = 512 * layer.scale.x, sourceHeight = 128 * layer.scale.y;
+            var sourceHeight = 128 * layer.scale.y;
+            var sourceWidth = tiled ? p.sizing.authored.radius + sourceHeight : 512 * layer.scale.x;
+            if(tiled) {
+              poisonGrowthEnds[part.id] = Math.max.apply(null,part.layers.map(function(l) {return l.revealXOverLife[1][0];}));
+              poisonTilePresets[part.id] = {preset:part,length:p.sizing.authored.radius,radius:sourceHeight/2};
+            }
             part.sizing = {shape:'rectangle',authored:{width:sourceWidth,height:sourceHeight}};
             registerPresets([part]);
           }
@@ -1377,6 +1386,12 @@ var VFXRuntime = (function () {
         var length = Math.max(0, num(a._planeW, num(a.w, num(a.r, 0))));
         var radius = Math.max(0, num(a.h, 0)) / 2;
         var reach = length * (g.growSec > 0 ? Math.min(1, Math.max(0, clock - g.growthAt) / g.growSec) : 1);
+        if (poisonGrowthEnds[g.presetId]) {
+          // 紋理尺寸與已鋪出的座標固定，前緣只揭開下一塊；不縮放整張毒條。
+          var fixedSize=sizeOf(g.presetId,{w:length+radius*2,h:radius*2});
+          return Object.assign({position:{x:num(a.x,0),y:num(a.y,0)},rotation:angle,loop:true,
+            revealProgress:(length>0?reach/length:1)*poisonGrowthEnds[g.presetId]},fixedSize);
+        }
         var dimensions = sizeOf(g.presetId, {w:reach + radius * 2,h:radius * 2});
         return Object.assign({position:{x:num(a.x,0)+Math.cos(angle)*reach/2,
           y:num(a.y,0)+Math.sin(angle)*reach/2*groundScale}, rotation:angle, loop:true}, dimensions);
@@ -1426,6 +1441,31 @@ var VFXRuntime = (function () {
           if (!playGround(presetId + '-arm-' + arm, child, role)) result = false;
         }
         return result;
+      }
+      var tileSource=poisonTilePresets[presetId];
+      if(spec.variant==='elite-poison-trail' && tileSource && spec.area) {
+        var tileRadius=Math.max(0,num(spec.area.h,0))/2;
+        var tileLength=Math.max(0,num(spec.area._planeW,num(spec.area.w,num(spec.area.r,0))));
+        if(tileRadius>0 && Math.abs(tileLength/tileRadius-tileSource.length/tileSource.radius)>1e-8) {
+          // 表定長寬比不同時只增減整段，不能為了填滿場域拉伸段內紋理。
+          var geometryId=presetId+'-geometry-'+tileLength+'x'+tileRadius;
+          if(!has(geometryId)) {
+            var tiledPreset=JSON.parse(JSON.stringify(tileSource.preset));tiledPreset.id=geometryId;
+            var r=tileSource.radius,len=tileLength/tileRadius*r,span=4*r;
+            var template=tiledPreset.layers[0],end=poisonGrowthEnds[presetId];
+            tiledPreset.layers=[];
+            for(var tile=0;tile<Math.ceil((len+2*r)/span-1e-9);tile++) {
+              var l=JSON.parse(JSON.stringify(template)),start=-r+tile*span;
+              l.id='tile-'+tile;l.position={x:start+span/2,y:0};
+              l.revealStartRadius=tile===0?r/span:0;
+              l.revealXOverLife=[[0,(r-start)/span],[end,(len+r-start)/span],[1,(len+r-start)/span]];
+              tiledPreset.layers.push(l);
+            }
+            tiledPreset.sizing={shape:'rectangle',authored:{width:len+2*r,height:2*r}};
+            poisonGrowthEnds[geometryId]=end;registerPresets([tiledPreset]);
+          }
+          return playGround(geometryId,spec,role);
+        }
       }
       var skyfallMark = role === 'ground' && spec.fxKind === 'rain' && spec.area && spec.area.skyfallMark === true;
       if (skyfallMark) {
@@ -2397,7 +2437,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20261022-poison-fine-bank-thunder-crater-missile-crystal';
+  var DATA_VERSION = '20261022-poison-segment-flow-thunder-crater-missile-crystal';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

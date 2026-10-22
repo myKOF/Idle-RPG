@@ -1,4 +1,8 @@
 # VFX_RUNTIME_ADAPTER.md
+## 毒素加持固定接段（2026-10-22）
+
+en-poison-cross沿表引用，四臂各含三段首尾無縫材質；派生子部件不是獨立來源。elite-poison-trail沿權威growAge／travelMs取顯露曲線，整臂幾何縮放在出生時確定，逐幀只移動UV裁切前緣；surface sheet獨立續播。保留舊flow-0單條Preset的相容伸展路徑，舊事件無variant亦可播放。
+
 
 ### 毒素加持連續毒水（2026-10-22）
 

@@ -104,6 +104,21 @@
 - 唯讀未改：共通規範／Workflow／prompts/codex、PARAM_PATCHES／官方合併與配置工具、elite_data既有米轉座標、Core／Runtime／battle-renderer鏡頭及投影、四色Preset／layout／素材、上述其餘回歸。自我Review確認橫向只乘1.5、後退只乘2、事件和傷害時序共用正式配置，停駐仍為數值世界座標；沒有新VFX來源／素材庫檔案或素材庫Commit。
 - 交付：本段所在「[Codex] feat: 正式套用飛彈兩秒停駐與加寬後退」Commit，回覆附編號。無本輪未完成項，可供Review／合併；未合併推送。限制為上述4項既有測試失敗，以及未做真人存檔長戰／多技能混戰／跨裝置驗收。下一步正常整合及重新載入遊戲；其他任務未提交內容保留。
 
+## POISON-SEGMENT-FLOW-20261022 — 毒水無縫接段與可見表面流動
+
+- Owner：Codex；Done，單一開發者。使用者追加：固定比例毒水逐段銜接顯露，不能整條拉長；內部須看得到流動，保留近直線、細碎岸邊。前置前版毒水完成。
+- 允許：毒水作者／Preset／layout／同名SVG與素材庫／兩索引；Runtime毒水顯露與既有共用快取；Core／Pixi通用局部UV顯露及Editor對應曲線與文件、專項測試、LV與本段。禁止戰鬥判定／速度／壽命／配置／Protocol／存檔、飛彈與Claude雷隕石區段，不合併推送。
+- 驗收：首尾接縫逐幀連續、紋理比例固定／已鋪部分不伸縮、可見內流／循環；權威前緣／續播／晚加入／到期回收、正式Pixi動態預覽與Console、相關回歸／Build／雙倉庫Commit。沿用使用者已批准共用快取與僅毒水索引更新，保留其他項目與總數。後續接手為使用者Review與正常整合。
+
+- 完成19檔：每臂3段、固定比例材質首尾週期一致，前緣透過UV與頂點同步裁切逐步顯露，不再縮放整條；表定長寬比不同時以相同素材增減整段（已驗3／5段）。主要色塊／流紋／泡沫全部向外平移，16fps／4秒循環，正式尺寸40世界單位／秒；岸邊0.22材質像素微擾、固定細碎凹凸與近直線主軸保持。模擬／判定／表定120速度／36米長度／4米半寬／16秒壽命及Protocol／存檔未改。
+- 共用實作：Core一般根sprite支援revealXOverLife／兩端圓收與內部revealProgress覆寫，與deformation／parent／profile互斥且非法資料報錯；Pixi採2×17共34頂點、最多12節點／零粒子（正式幾何），保留共享圖集、投影／錨點／原片尺寸、快取／隱藏／回收。Editor可編顯露曲線與圓收，三份VFX文件／LV同步。舊flow-0單條Preset及無variant舊事件保留相容路徑。
+- 素材：沿用同一原創SVG資產ID，64格4096×1024，RGBA解碼16MiB共用；剔除單格外不會顯示的路徑後SVG2,638,429bytes。索引僅毒水雜湊／大小改變，素材總數2470／出貨195不動；同名Preset／layout／SOURCE同步素材庫。Mote先前已查驗匯出種類不支援原生SVG，附件只作風格參考、無外部圖像像素。
+- 測試：node --test tests/poison-trail.test.cjs tests/vfx-pixi-sheet.test.cjs tests/vfx-core.test.cjs tests/vfx-core-hierarchy.test.cjs tests/vfx-deformation.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-preset-usage.test.cjs，244/244過。新增驗收實際輸出色塊1秒前移128材質像素、每格兩端形狀全相位一致、3種幾何／4方向逐幀固定比例與權威前緣、續播／晚加入／到期、顯露UV不伸縮／隱藏快取／共享換幀／回收及曲線覆寫與存檔。先前fixture拼字及mock缺少Texture.orig已修正，沒有降低正式斷言。npm.cmd run build：569檔通過；正式匯出check與diff檢查通過。
+- 動態驗收：隔離localhost正式Runtime／Core／Pixi，左舊版／右新版正常尺度對比，未讀寫玩家存檔；8秒240幀依1/30秒逐幀實際渲染輸出，避免IAB背景ticker降幀產生錯誤慢放，再編碼正常8秒GIF。poison-surface-flow.gif與頁面PNG保存聊天visualizations；Console warning／error0、missing／dropped0。完整伸展後仍流動，首尾連續，沒有圓點堆疊或整條蛇行。此為隔離畫面，未做玩家長戰／手機GPU／跨裝置效能實測，不宣稱FPS改善或硬時間上限。
+- 衝突：修改前逐檔check-conflicts，Claude未合併Runtime僅DATA_VERSION同欄位，沿本聊天已批准共用快取合併；保留thunder-crater及另一聊天已提交missile-crystal，Runtime兩頁升1.0.236，Core／Backend／Editor升20261022-poison-reveal。兩素材索引的既有總數差異沿使用者允許僅改毒水列；完整三方仍顯示總數差異，未擅自合併。主頁外部完整試跑另有既存battle-terrain插入與共用快取鄰接衝突，本次只改Core／Backend／Runtime的script版號，既有其他行未動；Runtime去除已批准資料版本行後三方乾淨，毒水函式與對方無語意相依。沒有寫其他副本。
+- 唯讀未改：規範／Workflow／prompts/codex、eliteCross與碰撞／事件、Worker／Protocol、正式表資料、Renderer投影與Editor Guard／Server、全部354份Preset及相關回歸；自我Review確認每段用同一來源、四臂獨立方向、模擬數值不變且無新增Timer。保留其他聊天的飛彈Commit bcfcbdd5及素材庫未追蹤熔岩／雷坑內容；只提交本次19檔與素材庫4檔。
+- 素材庫先提交f53f61e（同名來源4檔）。交付：可供Review／合併，本輪無未完成實作；Commit為本段所在「[Codex] fix: 毒水改無縫接段顯露與持續表面流動」，回覆附遊戲與素材庫編號。沒有合併／推送。下一步由使用者正常整合並重新整理遊戲；Editor須先下載未存備份再重載，避免舊頁覆寫。
+
 ## POISON-FINE-BANK-20261022 — 順直水道加適度細碎不平整邊緣
 
 - Owner：Codex；Done，單一開發者。使用者指出前版太平滑，要求中間程度：整體順直，邊緣一點點不平整。保留慢流／固定平面／微擾與所有判定；只新增固定、短距離、不週期的兩岸凹凸，不能回到大幅蛇行或呼吸。允許毒水作者／SVG及兩索引／素材庫同名來源、專項回歸、Runtime僅資料快取與兩頁對應快取、LV與本段；禁止其他技能／Core／模擬／配置／Worker／存檔，保留所有其他進行中內容。

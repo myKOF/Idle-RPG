@@ -432,6 +432,12 @@ var VFXCore = (function () {
       }
     }
     validateCurve(layer.alphaOverLife, where + '.alphaOverLife', errors, { nonNegative: true });
+    validateCurve(layer.revealXOverLife, where + '.revealXOverLife', errors);
+    ['revealRadius', 'revealStartRadius'].forEach(function(key) {
+      if (layer[key] !== undefined && (!isFiniteNumber(layer[key]) || layer[key] < 0 || layer[key] > 1)) errors.push(where + '.' + key + ' 必須在0到1');
+      if (layer[key] !== undefined && layer.revealXOverLife === undefined) errors.push(where + '.' + key + ' 需要revealXOverLife');
+    });
+    if (layer.revealXOverLife !== undefined && (layer.radiusProfile || layer.parent || layer.type !== 'sprite')) errors.push(where + ' reveal 只支援一般根sprite');
     if (layer.sortByY !== undefined && typeof layer.sortByY !== 'boolean') errors.push(where + '.sortByY 必須是布林值');
     validateColorCurve(layer.tintOverLife, where + '.tintOverLife', errors);
     validateSheet(layer.sheet, where + '.sheet', errors);
@@ -752,7 +758,7 @@ var VFXCore = (function () {
   var OUTER_SCALE_FIELDS = ['outerScale'];
   var TYPE_ONLY_FIELDS = {
     sprite: PER_AXIS_SCALE_FIELDS.concat(OFFSET_FIELDS).concat(OUTER_SCALE_FIELDS)
-      .concat(['radiusProfile']),
+      .concat(['radiusProfile', 'revealXOverLife', 'revealRadius', 'revealStartRadius']),
     particle: ['emission', 'maxParticles', 'lifetime', 'spawn', 'speed', 'direction',
       'spread', 'gravity', 'drag', 'radialSpeed', 'orbitalSpeed', 'noise',
       'startScale', 'rotationStart', 'rotationSpeed',
@@ -883,7 +889,7 @@ var VFXCore = (function () {
        followDirection 對它們則完全沒有作用（角度也在變形矩陣裡），一律不收。 */
     var allFlat=preset.layers.every(function(l){return !l||l.type==='empty'||l.perspective===false;});
     c.layers.forEach(function(id){var l=preset.layers.find(function(l){return l&&l.id===id;});
-      if(!l||l.type!=='sprite'||l.radiusProfile)errors.push('deformation 只支援一般sprite圖層：'+id);
+      if(!l||l.type!=='sprite'||l.radiusProfile||l.revealXOverLife!==undefined)errors.push('deformation 只支援一般sprite圖層：'+id);
       else if(l.followDirection===false){
         errors.push('deformation 圖層不支援 followDirection（角度在變形矩陣裡，關不掉）：'+id);
       }
@@ -1286,6 +1292,9 @@ var VFXCore = (function () {
       rotationYOverLife: layer.rotationYOverLife,
       offsetXOverLife: layer.offsetXOverLife,
       offsetYOverLife: layer.offsetYOverLife,
+      revealXOverLife: layer.revealXOverLife,
+      revealRadius: layer.revealRadius || 0,
+      revealStartRadius: layer.revealStartRadius || 0,
       outerScale: layer.outerScale,
       projection: layer.projection,
       /* 三個都是「沒填＝受影響」（既有 preset 行為不變），與 enabled 同一種預設寫法 */
@@ -1589,6 +1598,7 @@ var VFXCore = (function () {
       return value;
     }
     function applyTransformParams(effect, p) {
+      if (Object.prototype.hasOwnProperty.call(p, 'revealProgress')) effect.revealProgress = p.revealProgress === null ? undefined : transformNumber(p.revealProgress, 'revealProgress');
       if (Object.prototype.hasOwnProperty.call(p, 'clipX')) effect.clipX = p.clipX
         ? { min: transformNumber(p.clipX.min, 'clipX.min'), max: transformNumber(p.clipX.max, 'clipX.max'),
           taper: Math.max(0, Number(p.clipX.taper) || 0) } : null;
@@ -1676,6 +1686,7 @@ var VFXCore = (function () {
         assetUrl: layer.def.effect === 'waterTornado' ? null : resolver.resolve(layer.def.assetId),
         blendMode: layer.def.blendMode
       };
+      if (layer.def.revealXOverLife !== undefined) spec.kind = 'revealed';
       /* 後端要靠這個把整張圖切成每一格的貼圖。同一張圖切成不同格線就是
          不同的節點規格，所以 poolKey 也要帶上——否則 8×8 的節點會被
          重用成 4×4 的，畫面上是「動畫突然變成別的東西」。 */
@@ -1935,6 +1946,9 @@ var VFXCore = (function () {
       t.frame = d.sheet ? sheetFrame(d.sheet, progress, elapsed, 0) : undefined;
       t.anchorX = d.anchor.x;
       t.anchorY = d.anchor.y;
+      t.revealX = d.revealXOverLife === undefined ? undefined : sampleCurve(d.revealXOverLife, effect.revealProgress === undefined ? progress : effect.revealProgress);
+      t.revealRadius = d.revealRadius || 0;
+      t.revealStartRadius = d.revealStartRadius || 0;
       t.zIndex = d.zIndex;
       t.sortGroup = effect.handle; t.sortY = effect.depthY === null ? effect.origin.y : effect.depthY;
       t.elevation = effect.elevation || undefined;

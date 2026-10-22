@@ -5,17 +5,17 @@
   "loop": false,
   "layers": [
     {
-      "id": "flow-0",
+      "id": "flow-0-0",
       "type": "sprite",
       "assetId": "codex-authored/poison-trail/flow.svg",
       "zIndex": 0,
       "position": {
-        "x": 0,
+        "x": 11.11111111111111,
         "y": 0
       },
       "rotation": 0,
       "scale": {
-        "x": 0.2387152777777778,
+        "x": 0.08680555555555555,
         "y": 0.1736111111111111
       },
       "anchor": {
@@ -25,48 +25,6 @@
       "alpha": 0.95,
       "blendMode": "normal",
       "duration": 16,
-      "scaleXOverLife": [
-        [
-          0,
-          0.1818181818181818
-        ],
-        [
-          0.1875,
-          1
-        ],
-        [
-          1,
-          1
-        ]
-      ],
-      "offsetXOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.1875,
-          50
-        ],
-        [
-          1,
-          50
-        ]
-      ],
-      "offsetYOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.1875,
-          0
-        ],
-        [
-          1,
-          0
-        ]
-      ],
       "projection": {
         "x": 1,
         "y": 0.5
@@ -74,24 +32,140 @@
       "sheet": {
         "columns": 8,
         "count": 64,
-        "fps": 8,
+        "fps": 16,
         "loop": true,
         "mode": "fps",
         "rows": 8
-      }
+      },
+      "revealRadius": 0.25,
+      "revealStartRadius": 0.25,
+      "revealXOverLife": [
+        [
+          0,
+          0.5
+        ],
+        [
+          0.1875,
+          2.7500000000000004
+        ],
+        [
+          1,
+          2.7500000000000004
+        ]
+      ]
     },
     {
-      "id": "flow-1",
+      "id": "flow-0-1",
+      "type": "sprite",
+      "assetId": "codex-authored/poison-trail/flow.svg",
+      "zIndex": 0,
+      "position": {
+        "x": 55.55555555555555,
+        "y": 0
+      },
+      "rotation": 0,
+      "scale": {
+        "x": 0.08680555555555555,
+        "y": 0.1736111111111111
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "alpha": 0.95,
+      "blendMode": "normal",
+      "duration": 16,
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      },
+      "sheet": {
+        "columns": 8,
+        "count": 64,
+        "fps": 16,
+        "loop": true,
+        "mode": "fps",
+        "rows": 8
+      },
+      "revealRadius": 0.25,
+      "revealStartRadius": 0,
+      "revealXOverLife": [
+        [
+          0,
+          -0.49999999999999994
+        ],
+        [
+          0.1875,
+          1.7500000000000002
+        ],
+        [
+          1,
+          1.7500000000000002
+        ]
+      ]
+    },
+    {
+      "id": "flow-0-2",
+      "type": "sprite",
+      "assetId": "codex-authored/poison-trail/flow.svg",
+      "zIndex": 0,
+      "position": {
+        "x": 100,
+        "y": 0
+      },
+      "rotation": 0,
+      "scale": {
+        "x": 0.08680555555555555,
+        "y": 0.1736111111111111
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "alpha": 0.95,
+      "blendMode": "normal",
+      "duration": 16,
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      },
+      "sheet": {
+        "columns": 8,
+        "count": 64,
+        "fps": 16,
+        "loop": true,
+        "mode": "fps",
+        "rows": 8
+      },
+      "revealRadius": 0.25,
+      "revealStartRadius": 0,
+      "revealXOverLife": [
+        [
+          0,
+          -1.4999999999999998
+        ],
+        [
+          0.1875,
+          0.7500000000000002
+        ],
+        [
+          1,
+          0.7500000000000002
+        ]
+      ]
+    },
+    {
+      "id": "flow-1-0",
       "type": "sprite",
       "assetId": "codex-authored/poison-trail/flow.svg",
       "zIndex": 1,
       "position": {
-        "x": 0,
-        "y": 0
+        "x": 6.803593328596406e-16,
+        "y": 11.11111111111111
       },
       "rotation": 1.5707963267948966,
       "scale": {
-        "x": 0.2387152777777778,
+        "x": 0.08680555555555555,
         "y": 0.1736111111111111
       },
       "anchor": {
@@ -101,48 +175,6 @@
       "alpha": 0.95,
       "blendMode": "normal",
       "duration": 16,
-      "scaleXOverLife": [
-        [
-          0,
-          0.1818181818181818
-        ],
-        [
-          0.1875,
-          1
-        ],
-        [
-          1,
-          1
-        ]
-      ],
-      "offsetXOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.1875,
-          0
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "offsetYOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.1875,
-          50
-        ],
-        [
-          1,
-          50
-        ]
-      ],
       "projection": {
         "x": 1,
         "y": 0.5
@@ -150,24 +182,140 @@
       "sheet": {
         "columns": 8,
         "count": 64,
-        "fps": 8,
+        "fps": 16,
         "loop": true,
         "mode": "fps",
         "rows": 8
-      }
+      },
+      "revealRadius": 0.25,
+      "revealStartRadius": 0.25,
+      "revealXOverLife": [
+        [
+          0,
+          0.5
+        ],
+        [
+          0.1875,
+          2.7500000000000004
+        ],
+        [
+          1,
+          2.7500000000000004
+        ]
+      ]
     },
     {
-      "id": "flow-2",
+      "id": "flow-1-1",
+      "type": "sprite",
+      "assetId": "codex-authored/poison-trail/flow.svg",
+      "zIndex": 1,
+      "position": {
+        "x": 3.401796664298203e-15,
+        "y": 55.55555555555555
+      },
+      "rotation": 1.5707963267948966,
+      "scale": {
+        "x": 0.08680555555555555,
+        "y": 0.1736111111111111
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "alpha": 0.95,
+      "blendMode": "normal",
+      "duration": 16,
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      },
+      "sheet": {
+        "columns": 8,
+        "count": 64,
+        "fps": 16,
+        "loop": true,
+        "mode": "fps",
+        "rows": 8
+      },
+      "revealRadius": 0.25,
+      "revealStartRadius": 0,
+      "revealXOverLife": [
+        [
+          0,
+          -0.49999999999999994
+        ],
+        [
+          0.1875,
+          1.7500000000000002
+        ],
+        [
+          1,
+          1.7500000000000002
+        ]
+      ]
+    },
+    {
+      "id": "flow-1-2",
+      "type": "sprite",
+      "assetId": "codex-authored/poison-trail/flow.svg",
+      "zIndex": 1,
+      "position": {
+        "x": 6.123233995736766e-15,
+        "y": 100
+      },
+      "rotation": 1.5707963267948966,
+      "scale": {
+        "x": 0.08680555555555555,
+        "y": 0.1736111111111111
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "alpha": 0.95,
+      "blendMode": "normal",
+      "duration": 16,
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      },
+      "sheet": {
+        "columns": 8,
+        "count": 64,
+        "fps": 16,
+        "loop": true,
+        "mode": "fps",
+        "rows": 8
+      },
+      "revealRadius": 0.25,
+      "revealStartRadius": 0,
+      "revealXOverLife": [
+        [
+          0,
+          -1.4999999999999998
+        ],
+        [
+          0.1875,
+          0.7500000000000002
+        ],
+        [
+          1,
+          0.7500000000000002
+        ]
+      ]
+    },
+    {
+      "id": "flow-2-0",
       "type": "sprite",
       "assetId": "codex-authored/poison-trail/flow.svg",
       "zIndex": 2,
       "position": {
-        "x": 0,
-        "y": 0
+        "x": -11.11111111111111,
+        "y": 1.3607186657192812e-15
       },
       "rotation": 3.141592653589793,
       "scale": {
-        "x": 0.2387152777777778,
+        "x": 0.08680555555555555,
         "y": 0.1736111111111111
       },
       "anchor": {
@@ -177,48 +325,6 @@
       "alpha": 0.95,
       "blendMode": "normal",
       "duration": 16,
-      "scaleXOverLife": [
-        [
-          0,
-          0.1818181818181818
-        ],
-        [
-          0.1875,
-          1
-        ],
-        [
-          1,
-          1
-        ]
-      ],
-      "offsetXOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.1875,
-          -50
-        ],
-        [
-          1,
-          -50
-        ]
-      ],
-      "offsetYOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.1875,
-          0
-        ],
-        [
-          1,
-          0
-        ]
-      ],
       "projection": {
         "x": 1,
         "y": 0.5
@@ -226,24 +332,140 @@
       "sheet": {
         "columns": 8,
         "count": 64,
-        "fps": 8,
+        "fps": 16,
         "loop": true,
         "mode": "fps",
         "rows": 8
-      }
+      },
+      "revealRadius": 0.25,
+      "revealStartRadius": 0.25,
+      "revealXOverLife": [
+        [
+          0,
+          0.5
+        ],
+        [
+          0.1875,
+          2.7500000000000004
+        ],
+        [
+          1,
+          2.7500000000000004
+        ]
+      ]
     },
     {
-      "id": "flow-3",
+      "id": "flow-2-1",
+      "type": "sprite",
+      "assetId": "codex-authored/poison-trail/flow.svg",
+      "zIndex": 2,
+      "position": {
+        "x": -55.55555555555555,
+        "y": 6.803593328596406e-15
+      },
+      "rotation": 3.141592653589793,
+      "scale": {
+        "x": 0.08680555555555555,
+        "y": 0.1736111111111111
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "alpha": 0.95,
+      "blendMode": "normal",
+      "duration": 16,
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      },
+      "sheet": {
+        "columns": 8,
+        "count": 64,
+        "fps": 16,
+        "loop": true,
+        "mode": "fps",
+        "rows": 8
+      },
+      "revealRadius": 0.25,
+      "revealStartRadius": 0,
+      "revealXOverLife": [
+        [
+          0,
+          -0.49999999999999994
+        ],
+        [
+          0.1875,
+          1.7500000000000002
+        ],
+        [
+          1,
+          1.7500000000000002
+        ]
+      ]
+    },
+    {
+      "id": "flow-2-2",
+      "type": "sprite",
+      "assetId": "codex-authored/poison-trail/flow.svg",
+      "zIndex": 2,
+      "position": {
+        "x": -100,
+        "y": 1.2246467991473532e-14
+      },
+      "rotation": 3.141592653589793,
+      "scale": {
+        "x": 0.08680555555555555,
+        "y": 0.1736111111111111
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "alpha": 0.95,
+      "blendMode": "normal",
+      "duration": 16,
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      },
+      "sheet": {
+        "columns": 8,
+        "count": 64,
+        "fps": 16,
+        "loop": true,
+        "mode": "fps",
+        "rows": 8
+      },
+      "revealRadius": 0.25,
+      "revealStartRadius": 0,
+      "revealXOverLife": [
+        [
+          0,
+          -1.4999999999999998
+        ],
+        [
+          0.1875,
+          0.7500000000000002
+        ],
+        [
+          1,
+          0.7500000000000002
+        ]
+      ]
+    },
+    {
+      "id": "flow-3-0",
       "type": "sprite",
       "assetId": "codex-authored/poison-trail/flow.svg",
       "zIndex": 3,
       "position": {
-        "x": 0,
-        "y": 0
+        "x": -2.041077998578922e-15,
+        "y": -11.11111111111111
       },
       "rotation": 4.71238898038469,
       "scale": {
-        "x": 0.2387152777777778,
+        "x": 0.08680555555555555,
         "y": 0.1736111111111111
       },
       "anchor": {
@@ -253,48 +475,6 @@
       "alpha": 0.95,
       "blendMode": "normal",
       "duration": 16,
-      "scaleXOverLife": [
-        [
-          0,
-          0.1818181818181818
-        ],
-        [
-          0.1875,
-          1
-        ],
-        [
-          1,
-          1
-        ]
-      ],
-      "offsetXOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.1875,
-          0
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "offsetYOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.1875,
-          -50
-        ],
-        [
-          1,
-          -50
-        ]
-      ],
       "projection": {
         "x": 1,
         "y": 0.5
@@ -302,11 +482,127 @@
       "sheet": {
         "columns": 8,
         "count": 64,
-        "fps": 8,
+        "fps": 16,
         "loop": true,
         "mode": "fps",
         "rows": 8
-      }
+      },
+      "revealRadius": 0.25,
+      "revealStartRadius": 0.25,
+      "revealXOverLife": [
+        [
+          0,
+          0.5
+        ],
+        [
+          0.1875,
+          2.7500000000000004
+        ],
+        [
+          1,
+          2.7500000000000004
+        ]
+      ]
+    },
+    {
+      "id": "flow-3-1",
+      "type": "sprite",
+      "assetId": "codex-authored/poison-trail/flow.svg",
+      "zIndex": 3,
+      "position": {
+        "x": -1.0205389992894608e-14,
+        "y": -55.55555555555555
+      },
+      "rotation": 4.71238898038469,
+      "scale": {
+        "x": 0.08680555555555555,
+        "y": 0.1736111111111111
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "alpha": 0.95,
+      "blendMode": "normal",
+      "duration": 16,
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      },
+      "sheet": {
+        "columns": 8,
+        "count": 64,
+        "fps": 16,
+        "loop": true,
+        "mode": "fps",
+        "rows": 8
+      },
+      "revealRadius": 0.25,
+      "revealStartRadius": 0,
+      "revealXOverLife": [
+        [
+          0,
+          -0.49999999999999994
+        ],
+        [
+          0.1875,
+          1.7500000000000002
+        ],
+        [
+          1,
+          1.7500000000000002
+        ]
+      ]
+    },
+    {
+      "id": "flow-3-2",
+      "type": "sprite",
+      "assetId": "codex-authored/poison-trail/flow.svg",
+      "zIndex": 3,
+      "position": {
+        "x": -1.8369701987210297e-14,
+        "y": -100
+      },
+      "rotation": 4.71238898038469,
+      "scale": {
+        "x": 0.08680555555555555,
+        "y": 0.1736111111111111
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "alpha": 0.95,
+      "blendMode": "normal",
+      "duration": 16,
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      },
+      "sheet": {
+        "columns": 8,
+        "count": 64,
+        "fps": 16,
+        "loop": true,
+        "mode": "fps",
+        "rows": 8
+      },
+      "revealRadius": 0.25,
+      "revealStartRadius": 0,
+      "revealXOverLife": [
+        [
+          0,
+          -1.4999999999999998
+        ],
+        [
+          0.1875,
+          0.7500000000000002
+        ],
+        [
+          1,
+          0.7500000000000002
+        ]
+      ]
     }
   ],
   "sizing": {
