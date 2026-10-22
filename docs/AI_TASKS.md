@@ -2,9 +2,14 @@
 
 ## LAVA-DEVELOP-MERGE-20261022 — 熔岩地貌與火焰分支整合
 
-- Owner：Codex；In Progress，使用者明確指定整合者並授權將codex/lava-terrain合併develop、處理衝突保留雙方，之後自行測試體感。基準develop=4536ed04、來源=d42d48b6；兩工作區乾淨，fetch後origin/develop仍4536ed04。
+- Owner：Codex；Done（合併與必要驗證完成，體感由使用者測試），使用者明確指定整合者並授權將codex/lava-terrain合併develop、處理衝突保留雙方，之後自行測試體感。基準develop=4536ed04、來源=d42d48b6；兩工作區乾淨，fetch後origin/develop仍4536ed04。
 - 範圍：主整合工作區D:/MyGame/Idle-RPG/develop，合併來源完整歷史及衝突解決；保留develop地形障礙／築牆繞行／效能模式／其他技能及來源新地貌／火焰／優化；整合快取、必要母來源及文件。禁止改傷害／配置／存檔／Protocol、刪任一方必要功能、操作其他工作副本或推送。素材庫已有966f6e1與前置素材提交，若合併修正母來源則先另提交素材庫。
 - 依賴與驗收：使用者已知0.15ms嚴格預算未過，允許先合併供體感測試，不將此風險改為通過。逐檔Review、障礙／築牆／場景／Worker相關回歸、Build、素材來源一致與diff／衝突標記檢查；確認雙父提交與來源祖先、最後工作區乾淨，留下Merge commit，不推送。後續接手為使用者重載遊戲與測試體感。
+- 衝突10檔逐處解決：任務紀錄保留雙方新增區段，原兩端每一條非空紀錄均核對存在；index／兩預覽／bridge／兩Worker及battle-decor更新為整合後唯一快取。battle-terrain合併新熔岩目錄與底座，與顯示目錄一致；battlefield保留develop原本的起點／換帶推出及滑邊註釋，移除自動合併重複插入的第二次bfTerrainSync。最後battlefield與develop合併前逐字相同，沒有刪除築牆繞行或地形碰撞。其餘為來源新地貌／九PNG／火焰／文件等，共24檔整合差異（相對合併前develop），沒有整檔取捨覆蓋功能。
+- 快取：主頁battle-decor=1.0.29、decor-nature=1.0.11、battle-terrain=1.0.2、battlefield=1.4.18、bridge=1.0.346；圖集Worker=1.0.20與import同步，sim Worker的地形／戰場及bridge資源鍵20261022-lava-terrain-develop-merge。主頁Renderer保留develop的1.6.197、場景預覽同步；其他技能／Runtime／UI快取保持develop較新值，Protocol未變。素材庫母來源僅圖集URL同步，先Commit **b36fdf6**，必要程序／九圖與匯出版SHA一致；其他聊天thunder未追蹤目錄未動。
+- 測試：node --test tests/battle-decor.test.cjs tests/battle-terrain.test.cjs tests/scene-startup-ready.test.cjs tests/tower-scene-intro.test.cjs tests/stone-wall-collision.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/battle-arena.test.cjs tests/battle-perspective.test.cjs tests/battlefield.test.cjs tests/battlefield-rt.test.cjs tests/npc-vision.test.cjs tests/tower-battlefield.test.cjs tests/vfx-hit-density.test.cjs，**182/182通過、0略過**。npm.cmd run build，571檔通過；export-source --check、兩庫diff --check及衝突標記檢查通過。任務紀錄首次完整核對遇Node預設輸出buffer不足，改16MiB上限後逐行核對通過，未略過紀錄。未新增／降低測試斷言，也未重測已知不符0.15ms的效能工具來挑選有利結果。
+- 實際Renderer：獨立無頭Edge、合併後真Pixi／BattleRenderer，地表69與地下59件擺件，均6源／18局部精靈；效能模式開啟後120幀motionTime完全不變、擺件及精靈數不變，關閉後60幀恢復前進；Console warning／error及pageerror均0。目視熔岩物件與持續火焰，lava-develop-merged.png及lava-develop-merge-verification.json存本聊天visualizations。未讀寫玩家存檔、未操作使用者分頁；暫存驗收腳本／日誌已清理，體感／實戰由使用者自行測試。
+- 唯讀核對：battlefield／battle-renderer／ui／elite／vfx-runtime／Worker Protocol與develop原內容相同；battle-terrain／decor-nature／battle-decor回歸與來源分支逐字相同，battle-decor與來源只差必要的新圖集URL。保留既有飛彈四色、毒水、熔爐、效能模式、隕石及地形障礙修正。任務預備紀錄Commit 2d4cf74b；本段所在Merge commit雙父為該提交與d42d48b6，回覆附編號。完成後develop乾淨、來源為祖先，不推送、不同步其他AI工作副本；已依使用者授權合併，可供從develop目錄啟動後測試。未完成的0.15ms嚴格上限仍是火焰原任務的已知限制，不是本次合併驗收通過項。
 
 ## MISSILE-COLOR-20261022 — 飛彈彈身與光暈四色一致
 
@@ -37,6 +42,56 @@
 - 舊Editor驗收：保留修改前四份Preset／layout與Guard版本，對真Editor Server分別PUT舊內容，四次均409，磁碟位元不變；專項守衛／快取回歸亦過。使用者若Editor尚未儲存，先下載備份，再重新載入；不以舊分頁覆寫新版本。
 - 唯讀未改：共通規範／Workflow／Agent／prompts、Skills2來源與生成資料／elite／Worker、Core／Pixi／Renderer投影與生命週期、Editor Server／Guard／Layout／成本模型、出貨與素材索引／PROVENANCE、原創icearrow來源及相關回歸。自我Review確認無新Timer、無額外來源、body固定局部原點且世界停駐不拖曳、齊射與傷害沿原表。另一聊天新增毒水Core／Backend／Runtime區段、作者與AI_TASKS段落保留且不提交。
 - 交付：素材庫先Commit 5956226（四色8份配對來源與SOURCE），同庫未追蹤thunder及毒水進行中修改不納入；遊戲提交為本段所在「[Codex] feat: 四色飛彈改為冰晶彈身與外層光暈」，回覆附編號。無本任務未完成項，可供Review／合併；未合併推送。下一步由使用者正常整合雙倉庫，備份Editor後重載遊戲驗收；硬體與混戰限制如上。
+
+## LAVA-FIRE-DENSE-20261022 — 濃厚火焰、火星與每份0.15ms預算
+
+- 續作（使用者允許繼續）：局部計算精簡完成，整體仍Review／0.15ms嚴格上限未通過。僅本任務環境火局部更新、對應快取／母來源／文件與原專項；以d0512d09為比較基準，先做CPU profile，再將固定屬性移至建立時，火焰／暖光不再計算未使用的煙霧三角函數。禁止調低0.15ms門檻或移除尖峰。Git自行核對：本地及已知origin的develop／ai分支4536ed04尚未包含d0512d09，git branch --all --contains僅列codex/lava-terrain；仍於此分支續作，不合併／修改develop。合併乾跑報告為既有地形／文件／快取重疊，未執行正式合併，沿原使用者已批准熔岩與地形整合範圍，只修改本段與新局部火函式。
+- 續作實作：每個火源每幀少算四次未使用的sin；火焰固定尺寸／zIndex／alpha及暖光固定位置／尺寸改於池取出時重設，種子phase每組快取；火根billboard仍每幀更新，不將鏡頭投影誤當固定值。沒有改火焰畫法／密度／24幀時序／火星／煙霧或來源／節點上限。新增停止動畫但改透視基底的回歸，保證火根與本體仍對齊；跨區塊／地表地下／lite／物件池重用及凍結沿原驗收。
+- 續作工具：benchmark新增LAVA_BENCHMARK_SOURCE_REF唯讀映射Git版本及來源SHA256、固定動畫起點、逐源最終幾何與十筆最長樣本、CPU更新／Pixi提交分列；隔離擺位時同步固定暖光／火焰深度。初輪ready旗標早於local源建立即取樣，兩case因源數不足失敗；已改成等待真實六火源ready後才停止Ticker，未略過／降低源數。三輪前後交錯、各case1800幀全部跑完，三輪最終幾何（位置、縮放、斜切、alpha、深度、圖集frame）逐項精確相同，pageerror0；報告lava-cpu-ready-before/after-1/2/3.json及comparison.json存本聊天visualizations。CPU profile只作定位，另存lava-cpu-profile.json.cpuprofile，沒有用帶profiler數據宣稱通過。
+- 續作結果：三輪六源CPU局部更新p95分別前0.020／0.020／0.015ms，後0.015／0.015／0.015ms；0.005ms解析度、存在主機波動，只能支持減少固定計算，不能宣稱整體FPS或尖峰必然改善。前版單源三輪最大0.662168／0.186144／0.332168ms，後版0.188312／0.691144／0.311144ms，均有超標；後版六源每份其中一輪仍最大0.193203ms，另外兩輪0.073203／0.023203ms。未刪除這輪不利結果。
+- 續作最終實際快取版本量測lava-cpu-optimized-final.json（來源SHA256 7be9c780fb2805d06c0c16fcc7a3ee3ac07dffeebedbf6ae43493073f1a652f5）：單源每份CPU＋GPU p95=0.066944ms、最大0.656144ms、11/1800超標；最大樣本局部更新0.005ms／Pixi提交0.645ms／GPU0.006144ms。六源每份p95=0.012540ms、最大0.063373ms、0/1800超標；空場最大CPU＋GPU0.325ms。這只能定位本輪最長單源樣本在提交階段，不能將全部尖峰斷言為OS，也不支持任意裝置每幀硬上限；工具仍withinBudget=false、退出1。
+- 續作驗證與交付：同上六份回歸71/71；補透視測試後battle-decor 19/19；npm.cmd run build 571檔、node --check兩來源、export-source --check及兩庫diff --check通過。修改11檔：上述9檔加既有battle-decor回歸／正式benchmark；另同步素材庫battle-decor母來源。battle-decor=1.0.28、bridge=1.0.345、圖集Worker=1.0.19、資源鍵20261022-lava-fire-update-cache；Protocol不變。沿使用者先提交供合併的指示提交局部精簡與可重跑診斷，不將未達標標成Done；素材庫先Commit **966f6e1**、遊戲後提交（本段所在「[Codex] perf: 精簡熔岩火源固定屬性與動畫計算」，編號見本輪回覆）。唯讀檢查原Renderer投影／Pixi setter與CPU profile、原本回歸／規範及各分支提交關係；未修改共用Renderer／Pixi、其他技能／效能模式／地形碰撞，未操作玩家存檔／分頁或發布。下一步仍為在整合後目標環境定位Pixi提交尖峰；不能宣稱0.15ms需求已完成。
+- Owner：Codex；Review（外觀完成，0.15ms嚴格上限未通過），單一開發者，沿已授權codex/lava-terrain。使用者要求前版火焰再濃、少量火光粒子，每份每幀不超過0.15ms。前置柔邊翻捲已完成；沿舊授權範圍，不變更其他分支／進行中任務。
+- 允許：battle-decor環境火密度／預烘火星及局部更新效能、必要主頁／Worker／預覽快取、既有回歸與可重跑的硬體瀏覽器效能工具、LV／SCENE_NATURE／本紀錄與scene-nature程序母來源。禁止火盆／祭壇／其他地貌美術、物件／障礙、戰鬥數值／配置／Preset／存檔／Protocol，不合併推送。
+- 驗收：同尺度正常速度動態，火焰增厚且柔邊仍透明、少量火星隨時間上升；同節點上限、暫停／隱藏／lite／回收、主端Worker一致，回歸／Build／Console／雙倉庫提交。效能獨立列單火源及六源合播，暖機後CPU更新／提交、硬體GPU時間與觀測尖峰，0.15ms為每份每幀預算；不以靜態估算或平均值掩蓋超標，不以有限主機測量宣稱所有硬體硬即時保證。
+
+- 完成候選：三股火舌加寬、提高密度與本體透明度至0.90；同24幀圖集內預烘四顆循環上升火星，無新增執行期粒子、Timer或繪製節點，一般六組／十八精靈、lite兩組／兩精靈不變。快取每組24份幀紋理，局部更新改索引迴圈，移除逐幀字串查圖與巢狀callback配置；母來源同步。主頁battle-decor=1.0.27、bridge=1.0.344，圖集Worker=1.0.18及import、兩個預覽同步；Worker資源鍵20261022-lava-fire-dense-embers，Protocol不變。
+- 修改：battle-decor、bridge、decor-atlas.worker、index、decor-preview／scene-preview、LV、SCENE_NATURE、本段；新增tools/scene-renewal/benchmark-lava-fire.cjs；素材庫只改codex-authored/scene-nature/battle-decor.js，未納入其他聊天thunder目錄。沒有新增外部素材，火焰與火星均既有Canvas程序作者產生。
+- 指令：node --test tests/battle-decor.test.cjs tests/battle-terrain.test.cjs tests/battle-arena.test.cjs tests/scene-startup-ready.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs，71/71通過；npm.cmd run build，571檔通過；node --check tools/scene-renewal/benchmark-lava-fire.cjs、node tools/scene-renewal/export-source.cjs --check、兩庫diff --check通過。唯讀檢查既有Renderer／Pixi投影、local生命週期、Worker建圖／Protocol／shim、上述六份回歸與專案規範，未改這些測試及渲染器。
+- 動態：獨立無頭Edge／正式Renderer以同種子與4b206105比較，25fps正常速度GIF；地表2048×3616、地下2048×3664，主端與圖集Worker的alpha／預乘RGB最大差皆0，Console warning／error0。第一幀圖集平均alpha 33.064→45.857、邊界alpha仍0（僅輔助量測，已目視動態）；lava-dense-fire.gif、before／after／deep PNG及visual-verification.json在本聊天visualizations，不讀寫玩家存檔。
+- 效能正式工具：設LAVA_PLAYWRIGHT_MODULE為本機playwright後執行node tools/scene-renewal/benchmark-lava-fire.cjs <報告絕對路徑>；預設Edge／硬體WebGL2，LAVA_BENCHMARK_PACED=1可改rAF取樣。GTX1050、920×760／DPR1，實際局部更新與原Renderer billboard、三真實精靈／源，隔離Pixi繪製，單源選最大火焰。各case三輪、每輪240暖機＋600取樣；CPU更新／繪製提交與EXT GPU elapsed分列，endQuery後flush；CPU+GPU保守相加（可能重疊），不扣空場、不刪尖峰。這不是完整戰鬥FPS或最低硬體認證。
+- **嚴格預算未達標**：最終lava-dense-performance-final.json，單源每份CPU+GPU p95=0.092168ms、p99=0.313464ms、最大3.799336ms，40/1800幀超過0.15ms；六源每份p95=0.018891ms、p99=0.043715ms、最大0.421872ms，1/1800幀超標。GPU本身單源p95=0.009248／最大0.024576ms，六源總計p95=0.013344／最大0.023520ms；空場CPU更新＋提交也有最大2.545ms。空場有尖峰只能表示共用提交／主機排程等因素需隔離，不能斷言全部是OS或用p95代替使用者上限。工具withinBudget=false並退出1，沒有改門檻掩蓋。早期未flush的GPU計時包含延後提交等待，僅保留診斷；較早corrected一輪六源最大0.136515ms不能代表最終通過，全部報告保留。
+- 交付：使用者已明確要求「先commit 清理unstaged區，我要合併」，因此依目前可檢視結果提交，**不代表0.15ms上限通過**；任務仍Review／效能待驗收。素材庫先Commit **2f77fc5**，遊戲Commit為本段所在「[Codex] fix: 熔岩火焰加濃並預烘上升火星」，回覆附編號；本次十檔完整提交，必要母來源一致，臨時預覽腳本／逐幀圖／日誌已清理，保留正式benchmark。前版遊戲4b206105／素材庫3c2a012仍在歷史。未完成項為0.15ms硬上限，下一步由使用者自行整合此分支並在目標裝置／可隔離主機以同工具定位CPU尖峰後驗收。成果仍僅codex/lava-terrain，未合併／推送、沒有套回其他聊天使用中的ai/codex。沿已同意的文檔／快取重疊範圍，只改本任務及熔岩段；其他聊天飛彈／毒水／熔爐及共享素材庫進行中的thunder目錄均不納入本提交。
+
+## LAVA-FIRE-VOLUME-20261022 — 熔岩山火焰去除貼片感
+
+- Owner：Codex；Done，沿codex/lava-terrain單一開發者。使用者指出前輪環境火焰太假、像平貼；前置九物件與接地已完成，沿已授權整合的分支修正，不動原副本其他聊天內容。
+- 允許：battle-decor僅熔岩環境火焰獨立畫法／局部動畫與暖光、必要圖集Worker／bridge／主頁／兩個預覽快取、場景回歸、SCENE_NATURE／LV／本紀錄，及scene-nature/battle-decor程序母來源。禁止既有火盆／祭壇火焰、地貌擺件／佔地、戰鬥／配置／VFX Preset／存檔／Protocol與其他分支；不合併推送。
+- 驗收：正式Renderer動態前後比較，柔邊透光、火舌錯開與循環、固定火根／透視、貼地暖光、停止／隱藏／lite／回收、主端與Worker一致；回歸／Build／Console／母來源一致與兩庫提交。原來源衝突已於前輪獲同意並整合，這輪只動新火焰區段與對應快取，原障礙／築牆區段保持。完成交使用者Review與整合。
+
+- 完成10檔：battle-decor新增專屬環境火畫法，以三股各自翻捲的半透明密度熱氣柱形成24幀循環；移除並排雙片尖頭火及整張縮放抖動，火根仍共用本體腳點／billboard。一般每組改為一火、一份地面加色暖光及一煙，共三精靈；lite一火，維持六組／十八與兩組／兩上限。火盆／祭壇原六幀畫法與其他地貌不變；不改九份PNG／擺件／障礙／技能Preset／傷害／存檔。其餘為index／bridge／圖集Worker／兩個預覽快取、battle-decor回歸、SCENE_NATURE／LV／本段。battle-decor=1.0.26、圖集Worker=1.0.17、bridge=1.0.343及新資源鍵；Protocol未變。
+- 測試：node --test tests/battle-decor.test.cjs tests/battle-terrain.test.cjs tests/battle-arena.test.cjs tests/scene-startup-ready.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs，**71/71通過**；保留原固定火根／透視／換幀／暫停／lite／回收斷言，另核對暖光屬於地面層、每源一份及停止／隱藏。初次回歸抓到把火alpha持續乘本體淡出值會破壞動畫凍結，已去除此依賴，原凍結斷言未放寬。npm.cmd run build：**571檔通過**；node tools/scene-renewal/export-source.cjs --check及兩庫diff --check通過。
+- 畫面：獨立無頭Chromium／正式BattleRenderer及Pixi軟體WebGL，相同地形種子與一般鏡頭比較前後；正常速度GIF為50幀×40ms、430×300原倍率裁切，真Ticker動態時間前後差2秒，沒有放慢火焰或放大畫面。地表與地下目視檢查、Console warning／error0；24張圖集幀hash各異，alpha最大206、四邊alpha0、每幀有大量半透明像素。主端OffscreenCanvas與Worker兩份圖集2048×3616／2048×3664逐像素alpha差0、預乘RGB差0。早期測試fixture把全域Worker設undefined使Renderer資源載入等待，已改為保留原Worker並在獨立context替換舊版JS比較；另因正式Renderer世界是離屏容器，錄影改為固定原倍率畫布區域，未修改遊戲遷就fixture。
+- 證據：本聊天visualizations/lava-fire-before.png、lava-fire-after.png、lava-fire-after-deep.png、lava-fire-volume.gif及lava-fire-volume-verification.json。沒有讀寫玩家存檔或操作其他分頁，專用預覽與錄製臨時輸出收尾清理。這次僅原創程序美術，無外部素材輸入／圖片或獨立Preset。
+- 素材庫只同步scene-nature/battle-decor.js母來源，先Commit **3c2a012**；其他thunder未追蹤內容保留。遊戲Commit為本段所在「[Codex] fix: 熔岩火焰改柔邊翻捲並銜接地面暖光」，回覆附編號。唯讀檢查未改AI_RULES／AGENTS／Workflow／prompts、decor-nature／decor-sculpt／battle-renderer／battle-arena、BattleTerrain／Worker模擬及既有九PNG、其餘五份回歸與匯出器；自我Review確認無每幀畫布／新Timer、回收與透視不變。
+- 交付：本次實作無未完成項，可Review／合併。仍位於codex/lava-terrain，未套回ai/codex或合併／推送develop；下一步整合此分支及素材庫3c2a012後重載驗收。限制：增加環境火圖集幀數與少量圖集容量，沒有增加局部節點數；尚未做真人混戰、手機GPU與跨瀏覽器效能長測，未以軟體WebGL或像素比對宣稱實戰FPS提升。
+
+## LAVA-LANDSCAPE-20261022 — 熔岩山落地銜接、多樣地貌與持續燃燒
+
+- Owner：Codex；Done，單一開發者。使用者要求石柱自然接地、減少同物件縮放複用、增加岩漿池及燃燒枯木。已同意先整合Claude 4ef19b91障礙提交；原副本有飛彈進行中修改，改於獨立codex/lava-terrain工作副本處理，不覆蓋其他工作。
+- 允許：整合該提交並保留既有築牆繞行；battle-decor熔岩山畫法／擺件與局部動態、battle-terrain熔岩目錄／底座、decor-nature完整素材與九份images/scene PNG、scene-renewal匯出接線、對應主頁／Worker／預覽快取、場景文件／LV／本段、必要回歸與素材庫scene-nature母來源。禁止其他地貌美術行為、技能數值／素材、配置、存檔／Protocol及其他副本；不合併推送develop。
+- 依賴：使用者已同意重疊檔案整合。驗收：地表／地下正式Renderer、圖集主端／Worker一致、地形清單一致、燃燒來源／暫停／lite上限／回收、既有地貌與障礙／築牆回歸、Build／Console／diff。完成後素材庫先提交，再遊戲獨立提交，交使用者Review與正常整合。
+
+- 完成：尖石柱加入不等高柱根、隨機破裂母岩與碎石；熔岩物件腳邊另以貼地灰燼漸散過渡。新增岩漿池、焦木、破裂熔岩塊各三個獨立原創造型，圖集variant明確對應A／B／C；大／小擺件皆加入新種類，降低舊岩壁／火山口權重，避免矮物只選同一灰岩。地表及地下均使用，不改場景解鎖與存檔。
+- 燃燒：岩漿、焦木、熔岩塊及既有熔岩源沿用Canvas圖集六幀火焰；每個已選源兩簇火與一煙、lite一簇火，維持六組／十八精靈與兩組／兩精靈上限。火根共用擺件腳點與billboard矩陣，鏡頭透視不分離；停止、隱藏及dt=0凍結，換圖／跨區塊回收；沒有新增Timer、逐幀畫布重繪或VFX Preset來源。
+- 障礙整合：於乾淨新副本套入使用者已同意的4ef19b91，保留原bfMoveToward築牆繞行與雙方推擠擋牆，另加地形pushOut；主頁及Worker同載BattleTerrain，新擺件CATALOG與顯示表同步，小岩漿池永遠可通行，焦木／熔岩塊依原底座門檻。原副本突然出現未提交內容時，Git拒絕的第一次套用沒有改檔，後續未同步／切換原副本分支。
+- 修改26檔：LV／本紀錄／SCENE_NATURE；index；battle-decor／battle-terrain／battlefield／bridge／data／decor-nature；兩支圖集／模擬Worker；battle-decor／battle-terrain兩份回歸；兩個場景預覽工具與匯出器；九份新PNG。主頁decor-nature=1.0.10、battle-decor=1.0.25、battle-terrain=1.0.1、battlefield=1.4.17、bridge=1.0.342；圖集Worker=1.0.16，Worker import／資源鍵同步，Protocol不變。
+- 素材：內建image_gen原創製作三張透明素材表，完整提示詞／來源SHA／裁切／九母圖SHA已存scene-nature/lava-generation-records.json；每種三個結構各異的造型，沒有外部圖片輸入、描摹或挪用。九母圖均小於1024×1024，只裁透明間隔／留白並等比縮至512內，經原export-source --make-sprites／--apply匯出。素材庫22檔先Commit **4bc538b**，包含九母圖／九正式PNG、兩份程序母來源、匯出清單與生成紀錄；遊戲與母來源文字LF及二進位SHA一致。新PNG共約3.28MiB，沿既有完整場景素材預載流程增加九圖；未宣稱記憶體不增加。其他聊天素材庫thunder目錄未納入。
+- 測試指令：node --test tests/battle-decor.test.cjs tests/battle-terrain.test.cjs tests/scene-startup-ready.test.cjs tests/tower-scene-intro.test.cjs tests/stone-wall-collision.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/battle-arena.test.cjs tests/battle-perspective.test.cjs tests/battlefield.test.cjs tests/battlefield-rt.test.cjs tests/npc-vision.test.cjs tests/tower-battlefield.test.cjs，**160/160通過**。最後火根共用投影修正後重跑node --test tests/battle-decor.test.cjs，**19/19通過**（含移動／透視／固定火根、幀切換、暫停、隱藏、lite數量與換圖完整回收）。既有圖片載入測試數量只隨新增九圖由26／27更新為35／36，未降低任何行為斷言。npm.cmd run build：571檔通過；node tools/scene-renewal/export-source.cjs --check及兩庫diff --check通過。
+- 畫面：內建IAB無法attach，改用獨立無頭Chromium／正式BattleRenderer與Pixi軟體WebGL，未讀寫玩家存檔、未控制其他分頁。地表／地下及十二格物件檢視已目視驗收；最終圖集2048×3451／2048×3553，主端OffscreenCanvas與圖集Worker逐像素alpha差0、預乘RGB差0，Console warning／error0。初次全場景驗證在忙碌主機30秒載圖逾時，改用獨立驗收120秒上限完成本次兩份熔岩圖集；沒有修改正式逾時或用略過掩蓋。畫面lava-landscape-surface.png／deep.png／objects.png及verification.json保存在本聊天visualizations。
+- 效能限制：局部源／精靈上限未增加；空場動態開／關／開三輪150幀CPU提交中位0.20／0.10／0.20ms，p95 1.0／0.4／3.0ms。同機有其他工作且採軟體WebGL，這不是GPU／實戰FPS驗收；未做真人長戰、手機GPU或跨瀏覽器測量。
+- 唯讀檢查未改：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex、decor-sculpt／battle-renderer／battle-arena、Worker Protocol與shim、既有PNG／地板、其他地貌與VFX來源及上述其餘11份回歸。自我Review確認種子／目錄一致、圖集不越界、透視腳點共用、隱藏與回收、無新增傷害／Timer／存檔欄位。
+- 交付：沒有本次未完成實作，可供Review／合併；遊戲Commit為本段所在「[Codex] feat: 熔岩山加入多樣地貌與持續燃燒」，回覆附編號。**成果分支codex/lava-terrain，位於D:/MyGame/Idle-RPG/codex-lava-terrain；尚未套回有其他進行中修改的ai/codex，也未合併／推送develop。** 下一步由使用者／整合者整合此分支及素材庫4bc538b，保留其他聊天的較新快取並產生整合後新鍵，再重載遊戲驗收。已知限制為上述預載增加與未做真人GPU長戰；既有其他聊天修改原樣保留。
 
 ## FIRE-CHAIN-FOLLOW-20261022 — 火鏈兩端逐幀跟隨NPC
 

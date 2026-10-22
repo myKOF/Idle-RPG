@@ -28,11 +28,11 @@ test('DECOR-IMAGE-LOAD 完整素材載入去重、失敗重試只補缺圖，等
   const nature=ctx.DecorNature,calls=[],pending=[];
   const loader=url=>{calls.push(url);return new Promise((resolve,reject)=>pending.push({url,resolve,reject}));};
   const first=nature.loadImages('https://game.test/',loader),second=nature.loadImages('https://game.test/',loader);
-  assert.equal(first,second);assert.equal(calls.length,26);
+  assert.equal(first,second);assert.equal(calls.length,35);
   for(const p of pending)if(p.url.includes('/willow.png'))p.reject(new Error('network'));else p.resolve({width:200,height:100});
   await assert.rejects(first,/network/);await Promise.resolve();
   await nature.loadImages('https://game.test/',url=>{calls.push(url);return Promise.resolve({width:100,height:200});});
-  assert.equal(calls.length,27);assert.ok(calls.every(url=>url.startsWith('https://game.test/images/scene/')));
+  assert.equal(calls.length,36);assert.ok(calls.every(url=>url.startsWith('https://game.test/images/scene/')));
   await nature.loadImages('https://game.test/',()=>{throw new Error('已載入不應重新請求');});
   const draws=[],g=fakeContext();g.drawImage=(...args)=>draws.push(args);
   nature.drawBody(g,'willow',0,0,100,120,1,{});
@@ -110,6 +110,66 @@ function makeDecor(BattleDecor, P, budget) {
 function view(camX, camY) {
   return { camX, camY, drawRect: { x: -120, y: -150, width: 1050, height: 1100 }, W: 813, H: 813, dt: 1 / 60, playerX: camX, playerScreenY: camY * 0.5 };
 }
+
+test('LAVA-FIRE 熔岩燃燒固定來源、換幀、暫停、減量與跨區塊回收', () => {
+  for (const lite of [false,true]) {
+    const {BattleDecor,warnings}=loadDecor({location:{search:lite?'?decor=lite':''}});
+    const P=fakePixi(),layers={decal:new P.Container(),light:new P.Container(),prop:new P.Container()};
+    let basis={w:.83,shear:.17,skew:Math.atan2(.17,.83),k:Math.hypot(.17,.83)};
+    const decor=BattleDecor.create({PIXI:P.PIXI,groundScale:.5,decalLayer:layers.decal,lightLayer:layers.light,propLayer:layers.prop,buildBudgetMs:Infinity,prebuildBudgetMs:0,
+      billboard:()=>basis});
+    let flamesSeen=0,changed=0;
+    for (const stage of [1,11]) {
+      decor.setScene('lava_mountain',stage);
+      for (const x of [0,560,2400,12000,0]) {
+        decor.update(view(x,0));
+        assert.ok(decor.stats().localSources<=(lite?2:6));
+        assert.ok(decor.stats().localParticles<=(lite?2:18));
+        const flames=layers.prop.children.filter(s=>s._natureTexture==='envFlame0');
+        const halos=layers.light.children.filter(s=>s._natureFireHalo);
+        assert.equal(halos.length,lite?0:flames.length,'一般每個火源一份貼地暖光，減量不增節點');
+        for(const s of halos){assert.equal(s.blendMode,'add');assert.equal(s.skew.x,0);assert.ok(Number.isFinite(s.x+s.y+s.scale.x));}
+        for (const s of flames) {
+          flamesSeen++;assert.equal(s.anchor.y,1);assert.equal(s.tint,0xffffff);assert.equal(s.alpha,.90);
+          assert.ok(Number.isFinite(s.x+s.y+s.scale.x+s.scale.y));
+          assert.ok(s._bbParent&&s._bbParent.parent===layers.prop,'火根共用物件腳點投影');
+          assert.ok(Math.abs(s.x-(s._bbParent.x+s._bbOffX+.17*s._bbOffY))<1e-9);
+          assert.ok(Math.abs(s.y-(s._bbParent.y+.83*s._bbOffY))<1e-9);
+        }
+        const before=flames.map(s=>({s,x:s.x,y:s.y,tex:s.texture,sy:s.scale.y}));
+        const moving=view(x,0);moving.dt=.1;decor.update(moving);
+        for (const b of before) {
+          assert.equal(b.s.x,b.x,'火根不能隨生命週期飄移');assert.equal(b.s.y,b.y);
+          if(b.tex!==b.s.texture)changed++;
+        }
+        decor.setMotionEnabled(false);
+        const frozen=flames.map(s=>[s.texture,s.x,s.y,s.scale.x,s.scale.y,s.alpha]);
+        const frozenHalo=halos.map(s=>[s.x,s.y,s.alpha,s.scale.x,s.scale.y]);
+        decor.update(moving);
+        assert.deepEqual(flames.map(s=>[s.texture,s.x,s.y,s.scale.x,s.scale.y,s.alpha]),frozen);
+        assert.deepEqual(halos.map(s=>[s.x,s.y,s.alpha,s.scale.x,s.scale.y]),frozenHalo);
+        // 固定來源的屬性可快取；停止動畫時改鏡頭投影，火根仍必須貼住本體。
+        const previousBasis=basis;
+        basis={w:.69,shear:-.23,skew:Math.atan2(-.23,.69),k:Math.hypot(-.23,.69)};
+        const projection=view(x+1,0);projection.dt=0;decor.update(projection);
+        for(const s of flames){
+          assert.ok(Math.abs(s.x-(s._bbParent.x+s._bbOffX+basis.shear*s._bbOffY))<1e-9);
+          assert.ok(Math.abs(s.y-(s._bbParent.y+basis.w*s._bbOffY))<1e-9);
+          assert.ok(Math.abs(s.scale.y-s.scale.x*basis.k)<1e-9);
+        }
+        basis=previousBasis;decor.update(moving);
+        decor.setVisible(false);decor.update(moving);
+        assert.ok(layers.prop.children.every(s=>!s.visible));
+        assert.ok(halos.every(s=>!s.visible));
+        decor.setVisible(true);decor.setMotionEnabled(true);
+      }
+    }
+    assert.ok(flamesSeen>0,'必須真的出現持續燃燒');assert.ok(changed>0,'火焰必須換幀');
+    decor.setScene('Icefield',1);decor.update(view(0,0));
+    assert.equal(layers.prop.children.filter(s=>s._natureTexture==='envFlame0').length,0,'換圖不得殘留火焰');
+    decor.destroy();assert.equal(P.alive(),0);assert.equal(layers.prop.children.length,0);assert.deepEqual(warnings,[]);
+  }
+});
 
 test('DECOR-1 每張地圖（ZONES）都有自己的地形組合，新增地圖時會被提醒', () => {
   const dataCtx = { console, Math };

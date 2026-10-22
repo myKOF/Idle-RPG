@@ -80,10 +80,10 @@ var BattleTerrain = (function () {
       ld: [['rootGate',1,250,255]]
     },
     lava_mountain: {
-      s: [['lavaOutcrop',3.5,125,158],['lavaVent',2,110,78],['obsidian',2.5,80,107],['basalt',1.5,62,48]],
-      d: [['lavaOutcrop',3,145,178],['lavaVent',3,112,86],['obsidian',3,88,122]],
-      ls: [['lavaOutcrop',1,220,260],['lavaVent',1,235,165]],
-      ld: [['lavaVent',1,260,185],['lavaOutcrop',1,220,265]]
+      s: [['lavaOutcrop',1.3,125,158],['lavaVent',1.1,110,78],['obsidian',1.5,80,107],['basalt',1.2,62,48],['magmaPool',2,142,94],['burningLog',2,126,98],['slagBoulder',1.8,102,83],['burningLog',.8,88,58],['slagBoulder',1,72,54],['magmaPool',.7,90,60]],
+      d: [['lavaOutcrop',1.5,145,178],['lavaVent',1.2,112,86],['obsidian',1.6,88,122],['basalt',1,68,50],['magmaPool',2.4,150,100],['burningLog',1.5,120,94],['slagBoulder',2,112,91],['burningLog',.8,88,58],['slagBoulder',1,72,54],['magmaPool',.7,90,60]],
+      ls: [['lavaOutcrop',1,220,260],['lavaVent',.6,235,165],['slagBoulder',1,190,145]],
+      ld: [['lavaVent',.7,260,185],['lavaOutcrop',1,220,265],['slagBoulder',1.2,205,158]]
     },
     thunder_peak: {
       s: [['stormSpire',3.8,120,156],['fulgurite',1.5,90,106],['windPine',2.3,158,145],['stormGrass',2,60,40]],
@@ -136,6 +136,7 @@ var BattleTerrain = (function () {
     arch: { span: 0.9, d: 0.6, legs: [[-0.34, 0.26], [0.34, 0.26]] },
     rootGate: { span: 0.9, d: 0.6, legs: [[-0.34, 0.26], [0.34, 0.26]] },
     lavaVent: { ground: true },
+    magmaPool: { ground: true }, burningLog: { span: 0.8, d: 0.35 }, slagBoulder: { span: 0.9, d: 0.7 },
     deadTree: { span: 0.2, d: 0.8 }, pine: { span: 0.2, d: 0.8 }, willow: { span: 0.2, d: 0.8 },
     mistTree: { span: 0.2, d: 0.8 }, windPine: { span: 0.2, d: 0.8 }
   };

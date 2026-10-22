@@ -7,6 +7,7 @@ var DecorNature = (function () {
   var sprites={},loading=null;
   SPRITE_FILES.mistTree='mist-elder';SPRITE_FILES.lavaOutcrop='lava-outcrop';SPRITE_FILES.stormSpire='storm-spire';
   SPRITE_FILES.rootGate='root-arch';SPRITE_FILES.lavaVent='lava-vent';SPRITE_FILES.windPine='wind-pine';
+  ['A','B','C'].forEach(function(v){SPRITE_FILES['magmaPool'+v]='magma-pool-'+v.toLowerCase();SPRITE_FILES['burningLog'+v]='burning-log-'+v.toLowerCase();SPRITE_FILES['slagBoulder'+v]='slag-boulder-'+v.toLowerCase();});
   var scriptRoot=typeof document!=='undefined'&&document.currentScript?new URL('../',document.currentScript.src).href:null;
   function registerImages(images){Object.keys(images).forEach(function(key){sprites[key]=images[key];});}
   function loadImages(base,loader){
@@ -286,10 +287,11 @@ var DecorNature = (function () {
       wrap(function(){stroke(g,pts,'rgba(0,0,0,.4)',1.5);});
     }
   }
-  function drawBody(g,type,x,y,w,h,seed,style) {
+  function drawBody(g,type,x,y,w,h,seed,style,variant) {
     style=style||DEFAULT_STYLE;
     var r=rng(seed);g.save();g.translate(x,y);
-    if(type==='skullPile')wholeSprite(g,'giantBones',w,h);
+    if(type==='magmaPool'||type==='burningLog'||type==='slagBoulder')wholeSprite(g,type+['A','B','C'][(variant||0)%3],w,h);
+    else if(type==='skullPile')wholeSprite(g,'giantBones',w,h);
     else if(SPRITE_FILES[type]&&(type!=='stump'||!style.snow))wholeSprite(g,type,w,h);
     else if(type==='crystals'||type==='spire'&&(style.theme==='Icefield'||style.theme==='god_chaos'))wholeSprite(g,style.theme==='Icefield'?'ice':'void',w,h);
     else if(type==='rock')rock(g,r,w,h,style);

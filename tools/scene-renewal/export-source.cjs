@@ -13,6 +13,7 @@ const hash = (file, binary) => crypto.createHash('sha256').update(binary ? fs.re
 const sprites = {willow:'willow',burnt:'burnt-tree',pine:'snow-pine',bones:'beast-bones',cactus:'cactus',ice:'ice-cluster',void:'void-crystal',log:'fallen-log',stump:'swamp-stump',monolith:'rune-stele',pillar:'stone-column',arch:'ruined-arch',wall:'ruined-wall',rubble:'fallen-masonry',urn:'weathered-urn',grave:'old-gravestone',arenaGate:'arena-gate',arenaBrazier:'arena-brazier',arenaSpire:'arena-spire',arenaCandles:'arena-candles'};
 Object.assign(sprites,{mistElder:'mist-elder',lavaOutcrop:'lava-outcrop',stormSpire:'storm-spire'});
 Object.assign(sprites,{rootArch:'root-arch',lavaVent:'lava-vent',windPine:'wind-pine'});
+for(const v of ['A','B','C'])Object.assign(sprites,{['magmaPool'+v]:'magma-pool-'+v.toLowerCase(),['burningLog'+v]:'burning-log-'+v.toLowerCase(),['slagBoulder'+v]:'slag-boulder-'+v.toLowerCase()});
 async function main(){
   if(mode==='--make-sprites'){
     // 標準素材匯出：只裁透明留白／等比縮小，不重畫或修改AI素材的造型。
