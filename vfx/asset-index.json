@@ -6,7 +6,7 @@
     "name": "asset-scanner",
     "version": "1.0.0"
   },
-  "assetCount": 2469,
+  "assetCount": 2471,
   "assets": [
     {
       "assetId": "antigravity-authored/ice/ice-arrow-spike.png",
@@ -2192,6 +2192,98 @@
         "edgeContinuity": {
           "u": 1,
           "v": 0.9745
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "codex-authored/thunder/crater-thunder-body.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/thunder/crater-thunder-body.png",
+      "format": "png",
+      "fileSize": 246481,
+      "contentHash": "sha256:d545ad62ff4be5c1446eaeefe37ad5119a18391b61ae6f623c2367b22bb99fed",
+      "facts": {
+        "dimensions": {
+          "width": 512,
+          "height": 512
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.467,
+          "visibleRatio": 0.7421,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.1214,
+          "max": 0.4651,
+          "borderMean": 0.0064,
+          "borderNearBlackRatio": 0.9374,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.4555,
+          "max": 0.7333
+        },
+        "contentBounds": {
+          "x": 7,
+          "y": 8,
+          "width": 498,
+          "height": 497
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "codex-authored/thunder/crater-thunder-glow.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/thunder/crater-thunder-glow.png",
+      "format": "png",
+      "fileSize": 39184,
+      "contentHash": "sha256:a6ff6a40b0c2ce2bf599304ea4cd274a79bedf9da5dd853c8b02733030631be8",
+      "facts": {
+        "dimensions": {
+          "width": 512,
+          "height": 512
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.0245,
+          "visibleRatio": 0.0631,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.6029,
+          "max": 0.9637,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.6301,
+          "max": 0.7647
+        },
+        "contentBounds": {
+          "x": 23,
+          "y": 43,
+          "width": 447,
+          "height": 452
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
         },
         "backgroundVariant": "transparent"
       }

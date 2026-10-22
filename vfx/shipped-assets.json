@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 194,
+  "assetCount": 196,
   "assets": [
     {
       "assetId": "claude-authored/dragon-devour/vortex-ring.png",
@@ -285,6 +285,20 @@
       "package": "codex-authored",
       "contentHash": "sha256:276c441dfbaece003571e9fb50aba21d0585823d0000c57bd2c96390b2d159fb",
       "fileSize": 276517
+    },
+    {
+      "assetId": "codex-authored/thunder/crater-thunder-body.png",
+      "relativePath": "codex-authored/thunder/crater-thunder-body.png",
+      "package": "codex-authored",
+      "contentHash": "sha256:d545ad62ff4be5c1446eaeefe37ad5119a18391b61ae6f623c2367b22bb99fed",
+      "fileSize": 246481
+    },
+    {
+      "assetId": "codex-authored/thunder/crater-thunder-glow.png",
+      "relativePath": "codex-authored/thunder/crater-thunder-glow.png",
+      "package": "codex-authored",
+      "contentHash": "sha256:a6ff6a40b0c2ce2bf599304ea4cd274a79bedf9da5dd853c8b02733030631be8",
+      "fileSize": 39184
     },
     {
       "assetId": "codex-authored/tornado/fire-flow.png",
