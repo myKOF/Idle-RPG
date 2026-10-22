@@ -241,33 +241,8 @@ NEW['en-poison-dot'] = () => ({
   ]
 });
 
-/* 毒十字：從中心向上下左右四個方向「長出」一排毒水球（朝外延伸、速度 speed 米／秒，最終長度 len 米），長成後固定不動。
-   中心的毒圈是另一份 Preset（en-poison-dot，由模擬層放在同一點）。
-   一份 Preset 最多 32 個圖層，所以每臂 balls 顆（現為 5，球半徑＝中心毒圈半徑 4 米，相鄰兩顆略有重疊）、每顆一層；球出現的時間 ＝ 距離 ÷ 速度（delay），出現後固定在原地。
-   座標：事件半徑 r＝len 米 ↔ authored 100px，所以 1 米 ＝ 100／len px。
-   模擬層用同一組公式判定（js/elite.js eliteCrossesTick）：第 k 顆在 (k+1)×len/balls 米，距離 ≤ speed×t 才存在。
-   ⚠️ Preset 本身固定朝上下左右（不靠「錨點偏移繞圈」旋轉小球，投影到地面時 mesh 會炸開）；斜向的十字由模擬層把整份 Preset 以 area.a 轉過去（js/elite.js eliteCastCross：一條臂沿「敵人→玩家」）。 */
-function poisonCross(o) {
-  const { dur, balls, len, speed, ballR } = o;
-  const pxPerM = 100 / len, gapM = len / balls;
-  const layers = [
-    withGround(kit.sprite({ id: 'hubglow', asset: A.discB, z: 0, size: 26, alpha: 0.55, tint: '#8cff2a', blend: 'add', duration: dur, scaleOverLife: C.breathe(0.12) }))
-  ];
-  let z = 1;
-  const dirs = [[1, 0], [0, 1], [-1, 0], [0, -1]];
-  for (let arm = 0; arm < 4; arm++) {
-    for (let b = 0; b < balls; b++) {
-      const distM = gapM * (b + 1), dist = distM * pxPerM;
-      const delay = +(distM / speed).toFixed(3);          // 球在延伸前緣到達的時候才冒出來
-      const d = Math.max(6, +(ballR * 2 * pxPerM).toFixed(2));   // 球直徑（px）
-      layers.push(withGround(kit.sprite({ id: 'ball' + arm + '-' + b, asset: A.bubble, z: z++, size: d, x: +(dirs[arm][0] * dist).toFixed(2), y: +(dirs[arm][1] * dist).toFixed(2), alpha: 0.95, tint: '#9dff3a', blend: 'add',
-        delay: delay, duration: +(dur - delay).toFixed(3), alphaOverLife: [[0, 0], [0.04, 1], [0.9, 1], [1, 0]], scaleOverLife: [[0, 0.3], [0.04, 1.15], [0.1, 1]] })));
-    }
-  }
-  layers.push(kit.particle({ id: 'drips', asset: A.dot, z: z++, rate: 10, lifetime: [0.6, 1.1], spawnRadius: 14, speed: [4, 14], direction: -90, spread: 50, startPx: [3, 6], alpha: 0.9, tint: '#c8ff6a', blend: 'add', alphaOverLife: [[0, 0], [0.3, 1], [1, 0]] }));
-  return { id: 'en-poison-cross', duration: dur, loop: false, sizing: circleSizing(100), layers };
-}
-NEW['en-poison-cross'] = () => poisonCross({ dur: 16, balls: 5, len: 36, speed: 12, ballR: 4 });
+/* 毒十字：原創連續毒水圖集；作者與正式遊戲共用同一來源。 */
+NEW['en-poison-cross'] = () => require('./poison-trail.cjs').make();
 
 /* 冰晶：地面生出的冰晶持續膨脹（2~3 秒），外圈＝炸裂範圍。 */
 NEW['en-ice-crystal'] = () => {
@@ -329,22 +304,18 @@ NEW['en-wall-warn'] = () => ({
   ]
 });
 
-/* 石牆：升起後持續存在的整塊岩壁，四塊帶斜肩與破碎頂緣的岩石拼成狹長牆體。
+/* 石牆：升起後持續存在的整塊岩壁，五片帶斜肩與破碎頂緣的岩石拼成狹長牆體。
    岩塊是立體的，牆斜著放時接縫與側面都會變，所以每 15° 畫一張整面牆（claude-authored/rock-wall/wall-slab-NNN.svg，
-   由 rock-wall-slabs.cjs 用斜俯視幾何算出，四塊在接縫處連續），做成 12 份 Preset（en-stone-wall-0～165）。
+   由 rock-wall-slabs.cjs 用斜俯視幾何算出，五片在接縫處連續），做成 12 份 Preset（en-stone-wall-0～165）。
    模擬層（js/elite.js eliteCastWalls）把牆角度吸附到 15° 的倍數，依角度挑對應那份；牆長寬由 len／thick 決定，
    地面短軸與判定同步。圖本身不轉（followDirection:false、不套地面投影），因為斜俯視的形狀已經畫在圖裡。 */
 const WALL_DEGS = []; for (let d = 0; d < 180; d += 15) WALL_DEGS.push(d);
 const stoneWall = deg => () => {
-  const layers = [
-    withGround(kit.sprite({ id: 'shadow', asset: A.discB, z: 0, sizeX: 215, sizeY: 54.6, alpha: 0.6, tint: '#150f2a', blend: 'add', duration: 1.2 })),
-    withGround(kit.sprite({ id: 'base', asset: A.discB, z: 1, sizeX: 200, sizeY: 39, alpha: 0.35, tint: '#7a64a8', blend: 'add', duration: 1.2 }))
-  ];
+  const layers = [];
   /* 素材 256×200，地面中心在 (128,140)；kit 的 size 以 512 貼圖為基準，這裡直接給縮放 1（authored 單位 1:1）。 */
-  const slab = kit.sprite({ id: 'slab', asset: 'claude-authored/rock-wall/wall-slab-' + String(deg).padStart(3, '0') + '.svg', z: 2, x: 0, y: 0, sx: 1, sy: 1, anchor: { x: 0.5, y: 0.7 }, alpha: 1, duration: 1.2 });
+  const slab = kit.sprite({ id: 'slab', asset: 'claude-authored/rock-wall/wall-slab-' + String(deg).padStart(3, '0') + '.svg', z: 2, x: 0, y: 0, sx: 1, sy: 1, anchor: { x: 0.5, y: 0.7 }, alpha: 1, tint: '#b5b5b5', duration: 1.2 });
   slab.followDirection = false;
   layers.push(slab);
-  layers.push(withGround(kit.sprite({ id: 'rim', asset: A.trace06H, z: 12, y: -6, sizeX: 205, sizeY: 14, alpha: 0.55, tint: '#e6d6ff', blend: 'add', duration: 1.2, alphaOverLife: [[0, 0.4], [0.5, 0.7], [1, 0.4]] })));
   layers.push(kit.particle({ id: 'dust', asset: A.dirt01, z: 20, rate: 8, lifetime: [0.5, 0.9], spawnBox: [190, 6], speed: [6, 16], direction: -90, spread: 50, startPx: [14, 22], alpha: 0.5, tint: '#c4b4e4', blend: 'add', alphaOverLife: [[0, 0], [0.3, 0.7], [1, 0]] }));
   return { id: 'en-stone-wall-' + deg, duration: 1.2, loop: true, sizing: rectSizing(200, 43.55), layers };
 };
@@ -412,37 +383,8 @@ NEW['en-summon-circle'] = () => ({
 });
 
 /* 飛彈：四種顏色（白藍紫黃）的祕法導彈，拖著光尾。朝 +X 飛。 */
-function missile(color, head, tail) {
-  const id = 'en-missile-' + color;
-  return {
-    id, duration: 4, loop: true, sizing: orbSizing(8),
-    layers: [
-      kit.sprite({ id: 'glow', asset: A.glowSoft, z: 0, size: 17.6, alpha: 0.45, tint: tail, blend: 'add', duration: 4 }),
-      kit.sprite({ id: 'body', asset: A.flare16, z: 1, sizeX: 24, sizeY: 7, alpha: 0.85, tint: head, blend: 'add', duration: 4 }),
-      kit.sprite({ id: 'core', asset: A.dot, z: 2, size: 7, alpha: 1, tint: '#ffffff', blend: 'add', duration: 4 }),
-      // 錐尖接彈頭，兩側往後展開並淡出；不再用長方形光條當尾巴。
-      kit.sprite({ id: 'tail-cone', asset: A.coneC, z: -1, x: -3,
-        anchor: { x: 0.5, y: 1 }, rotation: -Math.PI / 2,
-        sizeX: 21, sizeY: 36, alpha: 0.38, tint: tail, blend: 'add', duration: 0.35,
-        alphaOverLife: [[0, 0], [0.12, 0.8], [0.45, 0.6], [0.75, 0.3], [1, 0]],
-        scaleOverLife: [[0, 0.65], [0.25, 1], [1, 0.9]] }),
-      kit.sprite({ id: 'tail-cone-inner', asset: A.coneC, z: -1, x: -2,
-        anchor: { x: 0.5, y: 1 }, rotation: -Math.PI / 2,
-        sizeX: 8, sizeY: 22, alpha: 0.2, tint: head, blend: 'add', duration: 0.3,
-        alphaOverLife: [[0, 0], [0.12, 0.7], [0.5, 0.4], [1, 0]] }),
-      // 短時段發射，停駐後只留下已生成的世界粒子自行散去；不持續往後噴成直棒。
-      kit.particle({ id: 'trail', asset: A.smokeAdd, z: -2, rate: 90, maxParticles: 36,
-        duration: 0.35, lifetime: [0.18, 0.32], x: -3, spawnRadius: 0.7,
-        speed: [0, 1], direction: 180, spread: 120, startPx: [4, 7], sx: 1.3, sy: 0.8,
-        alpha: 0.4, tint: tail, blend: 'add',
-        alphaOverLife: [[0, 0], [0.12, 0.65], [0.5, 0.35], [1, 0]],
-        scaleOverLife: [[0, 0.5], [0.2, 1], [1, 1.35]] }),
-      kit.particle({ id: 'trailing-points', asset: A.dot, z: -2, rate: 18, maxParticles: 10,
-        duration: 0.35, lifetime: [0.16, 0.3], x: -3, spawnRadius: 1.2,
-        speed: [1, 4], direction: 180, spread: 90, startPx: [1, 2],
-        alpha: 0.65, tint: tail, blend: 'add', alphaOverLife: [[0, 0.8], [0.4, 0.55], [1, 0]] })
-    ]
-  };
+function missile(color) {
+  return require('./missile-crystal.cjs').make(color);
 }
 NEW['en-missile-white'] = () => missile('white', '#ffffff', '#cfe4ff');
 NEW['en-missile-blue'] = () => missile('blue', '#aee0ff', '#3a8cff');

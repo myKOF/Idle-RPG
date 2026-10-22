@@ -1,13 +1,13 @@
 'use strict';
-/* 原創四塊岩壁：同一組斜俯視幾何產生12朝向，保留既有畫布／錨點，短軸對應判定厚度。
+/* 原創五片岩壁：同一組斜俯視幾何產生12朝向，保留既有畫布／錨點，短軸對應判定厚度。
    向量削角、逐面光照、礦物顆粒、斷層與裂隙；不使用第三方素材。
    node tools/vfx/authoring/author/rock-wall-slabs.cjs [輸出資料夾] */
 const fs = require('node:fs');
 const path = require('node:path');
 const { resolveLibraryRoot } = require('../../vfx-library-root.cjs');
 const W = 256, H = 200, OX = 128, OY = 140;
-const LEN = 200, THICK = 43.55, BLOCKS = 4;
-const HEIGHTS = [48, 64, 52, 58];
+const LEN = 200, THICK = 43.55, BLOCKS = 5;
+const HEIGHTS = [48, 64, 52, 58, 54];
 const f = v => Math.round(v * 100) / 100;
 const pts = a => a.map(p => p.map(f).join(',')).join(' ');
 const mix = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
@@ -106,7 +106,7 @@ function slab(deg) {
     const stone = `<polygon points="${pts([[p[0]-r,p[1]],[p[0]-r*.4,p[1]-r],[p[0]+r*.7,p[1]-r*.7],[p[0]+r,p[1]+r*.3],[p[0],p[1]+r*.5]])}" fill="${hex(mix(DARK,LIT,rubbleR()))}" stroke="#333a30" stroke-width=".4"/>`;
     if (u*si+v*co > 0) front += stone; else back += stone;
   }
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" data-rock-count="${BLOCKS}" data-wall-length="${LEN}" data-wall-thickness="${THICK}"><!-- 原創四塊岩壁，${deg}度；同一地面尺寸與錨點。 --><defs>${defs}</defs>${back}<g filter="url(#mineral)">${body}</g>${front}</svg>\n`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" data-rock-count="${BLOCKS}" data-wall-length="${LEN}" data-wall-thickness="${THICK}"><!-- 原創五片岩壁，${deg}度；同一地面尺寸與錨點。 --><defs>${defs}</defs>${back}<g filter="url(#mineral)">${body}</g>${front}</svg>\n`;
 }
 function writeAll(out) {
   fs.mkdirSync(out,{recursive:true});

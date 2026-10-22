@@ -1,5 +1,228 @@
 # AI_TASKS.md
 
+## MISSILE-COLOR-20261022 — 飛彈彈身與光暈四色一致
+
+- Owner：Codex；Done，單一開發者。使用者指出四枚彈身均偏藍，要求白／藍／紫／黃一眼分明並與各自光暈一致。原因為原創冰箭PNG已帶藍色，乘色不能去除。沿用既有程序化晶體切面座標製作專用中性灰白SVG，彈身／光暈同色；原冰箭素材及技能不改，圖層／粒子與飛行、2秒停駐、間距／尺寸／判定不改。
+- 範圍：飛彈作者與專用SVG製作器／新SVG、四色Preset／layout、兩素材索引（新增專用一列及總數）、Runtime僅資料快取及兩頁Runtime快取、既有飛彈專項／LV與本段；素材庫專用SVG／8份配對來源及SOURCE。禁止Core／Backend／Editor程式、其他技能／配置／存檔／其他副本，不合併推送。同副本毒水進行中修改分段保留。
+- 衝突：飛彈來源與新增專用SVG預檢無外部變更；Runtime與Claude共用快取沿使用者前輪已批准合併，保留雙方鍵。使用者本輪已明確批准兩索引合併總數並保留雙方素材項目；本次只新增中性列與重算總數，既有所有entry欄位位元語意不變。對Claude工作區另製合併候選，原有assetId／內容雜湊全部保留，合計索引2472／出貨197；未將該分支的素材或其他腳本匯入本分支。主頁／Editor僅Runtime共用239版，不碰其他script。
+- 驗收：中性底圖各色乘色後沒有殘留藍調、body與halo同色；正式一般鏡頭／實際尺寸／正常速度GIF，沿既有真Pixi／WebGL工具重測15ms門檻；作者可重製、飛行／停駐／舊Editor保護／素材匯出／必要Build檢查。素材庫先Commit、遊戲後Commit，列雙編號與硬體限制；接手者為使用者Review及正常整合。
+
+- 完成15檔：專用743-byte SVG與作者、飛彈作者／四色Preset、既有專項、兩索引、Runtime資料快取與兩頁Runtime快取、LV及本段。SVG保留原創冰箭切面座標，RGB三通道等值，無冷色底／濾鏡；白#ffffff／藍#469fff／紫#bd69ff／黃#ffd342，body／halo／cone／mist同色，仍4層／粒子上限6。原冰箭PNG、傷害、bodyD22、後退64／間距129.6／停駐2秒沿正式配置。4份layout檢查與素材庫同步但內容相同，不製造空差異；無新Preset ID或第三種特效來源。
+- 驗證：node --test --test-reporter=tap tests/missile-salvo.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-asset-export.test.cjs，106項105過／1既有Windows符號連結略過／0失敗。提交候選以HEAD Core／Backend及Git index Runtime／兩頁／兩索引唯讀映射，再跑飛彈／Editor cache／guard 25/25；未納另一毒水任務尚未完成的通用程式。npm.cmd run build：569檔全過；node tools/vfx/export-assets.cjs --check：354份Preset／196項出貨、已最新；作者重製一致、兩倉庫SHA256配對、git diff --check通過。
+- 效能：沿tools/vfx/benchmark-missiles.cjs，本機Edge155／WebGL2／GTX1050／815×570／DPR1，真Core／Adapter／Pixi與正式事件，3輪各暖機120＋取樣600幀、每案例1800幀，含gl.finish等待GPU。白／藍／紫／黃p95為0.2／0.1／0.1／0.1ms，觀測最大1.6／1.1／1.3／1.0ms；四色合播p95 0.1ms、最大1.4ms。全部低於15ms、missing／pageerror0；僅本機隔離場景，不保證跨硬體或完整多技能混戰的硬即時上限，未測行動GPU／真人長戰。
+- 預覽：正式BattleRenderer一般鏡頭125%距離、原角色／特效尺寸及地面透視、113幀25fps／正常速度／未放大GIF，白／藍／紫／黃晶體與同色外暈清楚可辨。npc-missile-four-colors-real-game.gif、影格031.png、capture-audit.json／performance.json／source-audit.json保存在本聊天visualizations的missile-color，Console warning／error0；未讀寫玩家存檔或操作使用者原分頁。Mote先前已確認PNG／GIF能力，不提供此SVG流程；沿既有程式化切面製作器保留精確幾何，未引入外部圖像。
+- 舊Editor：真Server分別PUT HEAD四份舊Preset，沿舊canonical revision與layout peer，四次409、磁碟內容不變；未存備份可由Editor下載後再重載，不能用舊頁覆寫新版。共用Core／Backend修改另屬毒水任務，本次沒有調整Editor保護。
+- 唯讀未改：規範／AGENTS／Workflow／prompts、原icearrow-renew作者／原PNG／配對技能、配置與elite正式事件、Core／Pixi／Renderer、Editor Guard／Server／Layout、成本與既有真GPU工具、Asset匯出與素材來源。自我Review確認同一中性圖可共用貼圖與乘色，沒有額外Timer／過濾器／粒子／碰撞修改；兩索引既有項目完整保留。其他毒水進行中修改與其快取保留，只stage自己的區段。
+- 交付：素材庫先Commit 5660d2b（專用SVG／四色Preset與SOURCE共6檔），4份layout位元相同；其他未追蹤thunder保留。遊戲Commit為本段所在「[Codex] fix: 飛彈彈身與光暈統一四色」，回覆附編號。無本任務未完成項，可供Review／合併；未合併推送。下一步使用者正常整合雙倉庫，Editor先下載未存備份再重載，遊戲重新整理。
+
+## MISSILE-CRYSTAL-20261022 — 四色飛彈改晶體彈身並保留外暈
+
+- Owner：Codex；Done，單一開發者。使用者要求四枚飛彈類似寒冰箭子彈、外圍保留光暈，每份特效性能不超過15ms。沿既有四個Preset／表定尺寸、原生飛行及2秒停駐／間距129.6／後退64；採單份單實例每幀15ms為量測門檻，同測四色合播。
+- 允許：四色Preset／layout、敵人作者僅飛彈委派與新missile-crystal作者、既有missile專項、可重跑的瀏覽器效能工具、Runtime僅資料快取／兩頁Runtime快取、LV及本紀錄；素材庫只同步飛彈Preset／layout／來源。禁止傷害／時序／範圍／配置／Protocol／Core／Backend／其他技能與其他副本，不合併推送。
+- 設計：重用已出貨且本專案原創的寒冰箭icicle.png，不改原寒冰箭／不用新外來圖。四色獨立乘色、實體晶體切面彈身＋一層包覆外暈＋短光錐／少量世界光點；減少節點／批次／大面積加色。Mote Studio已實際開啟確認PNG／圖集／GIF匯出；此任務可直接以既有素材組Preset，不需重新繪製獨立圖片。
+- 衝突：Runtime DATA_VERSION與Claude雷隕石同欄位，使用者本輪明確允許合併特效快取版本；主頁其餘script行及其他副本內容分段保留。本任務僅Runtime行的快取差異映射至共同基底，對方同一快取行先採已批准235版，git merge-file乾跑0；完整舊分支另有歷史相鄰script差異，留整合時處理，不納本任務。asset-index／shipped只唯讀與check，不新增素材引用集合；素材庫原有thunder未追蹤內容保留。
+- 驗收：四色可辨識、晶體與外暈同時可見、原生停駐／轉向／飛行／回收、作者可重製、正式鏡頭與正常速度GIF及細節圖；Editor靜態估算分開列、暖機後CPU＋Pixi提交／同步GPU讀回的單份及四份量測、清楚標示主機／GC／其他硬體限制；舊Editor拒覆寫及原檔不變、相關回歸／Build／diff後雙倉庫Commit。接手者為使用者Review／正常整合與重載驗收。
+
+- 完成17檔：四色Preset與配對layout改為4層（實體晶體、柔外暈、起飛短光錐、世界微霧），粒子設定上限由合計46降至6。新增missile-crystal作者與可重跑真WebGL效能工具、原作者委派、飛彈專項、Runtime僅DATA_VERSION、主頁與Editor僅Runtime快取、LV及本段。原創冰箭圖重用，原PNG／冰箭Preset不改；既有CC0光暈／光錐／微霧來源沿PROVENANCE，無新圖與新特效ID。兩索引唯讀檢查仍195項，不改表內來源與傷害。
+- 效能實測：本機Windows／Edge155／WebGL2／GTX1050，815×570、DPR1、相機0.8，真Core／Adapter／Pixi與正式飛行事件；各案例3輪，每輪暖機120幀、取樣600幀，共1800幀。每幀量CPU／提交及gl.finish同步GPU完成；白／藍／紫／黃含GPU的p95為0.2／0.1／0.1／0.2ms，觀測最大1.6／1.6／1.5／0.8ms；四色合播p95 0.2ms、最大0.9ms。missing與pageerror均0，觀測最大皆低於15ms。Editor靜態模型各0.02745ms／7節點，與實測分列；約0.1ms計時解析度下的0並非零耗時。隔離場景無其他技能或戰鬥背景，不能當成手機／任意GPU／完整混戰硬即時保證；初版量測工具過早銷毀共用貼圖所有者，已修正為全部案例結束才回收，最終乾淨通過。
+- 畫面：正式BattleRenderer／Core／Pixi、原遊戲一般鏡頭125%距離、原角色大小與地面透視，113幀／25fps GIF正常速度，817×680含說明框，無畫面放大；停駐2秒後齊射，四種晶體與外暈可見。最終影格與npc-missile-crystal-real-game.gif、performance-final.json及capture-audit.json保存在本聊天visualizations的missile-crystal；Console warning／error0，未讀寫存檔或操作使用者原分頁。Mote唯讀確認後臨時分頁已關閉。
+- 測試指令：node --test tests/missile-salvo.test.cjs（10/10）；node --test --test-reporter=tap tests/vfx-editor-guard.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-asset-export.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs（120項119過、1既有Windows符號連結略過、0失敗）；npm.cmd run build（569檔全過）；node tools/vfx/export-assets.cjs --check（354份Preset、195素材、已最新）；node tools/vfx/benchmark-missiles.cjs（需Playwright與Edge，可由VFX_PLAYWRIGHT_MODULE指定本機套件；退出0）。git diff --check通過。
+- 提交候選追驗：另一聊天毒水開始改Core／Backend後，將HEAD兩來源、Git index的Runtime／兩頁快取唯讀映射，實體工作檔不動；飛彈／Editor快取／守衛25/25通過。同一效能工具重新量候選（各1800幀），白／藍／紫／黃p95為0.2／0.1／0.1／0.1ms、觀測最大2.2／0.7／1.0／1.2ms；四色合播p95 0.2ms、最大2.2ms，仍全低於15ms，missing與pageerror0。performance-candidate.json獨立保存，不混入另一任務尚未提交的引擎更新。
+- 舊Editor驗收：保留修改前四份Preset／layout與Guard版本，對真Editor Server分別PUT舊內容，四次均409，磁碟位元不變；專項守衛／快取回歸亦過。使用者若Editor尚未儲存，先下載備份，再重新載入；不以舊分頁覆寫新版本。
+- 唯讀未改：共通規範／Workflow／Agent／prompts、Skills2來源與生成資料／elite／Worker、Core／Pixi／Renderer投影與生命週期、Editor Server／Guard／Layout／成本模型、出貨與素材索引／PROVENANCE、原創icearrow來源及相關回歸。自我Review確認無新Timer、無額外來源、body固定局部原點且世界停駐不拖曳、齊射與傷害沿原表。另一聊天新增毒水Core／Backend／Runtime區段、作者與AI_TASKS段落保留且不提交。
+- 交付：素材庫先Commit 5956226（四色8份配對來源與SOURCE），同庫未追蹤thunder及毒水進行中修改不納入；遊戲提交為本段所在「[Codex] feat: 四色飛彈改為冰晶彈身與外層光暈」，回覆附編號。無本任務未完成項，可供Review／合併；未合併推送。下一步由使用者正常整合雙倉庫，備份Editor後重載遊戲驗收；硬體與混戰限制如上。
+
+## FIRE-CHAIN-FOLLOW-20261022 — 火鏈兩端逐幀跟隨NPC
+
+- Owner：Codex；Done，單一開發者。使用者回報鏈端落後NPC，已定位獨立快照平滑與共用中點透視。依賴固定離地2米與環狀連線完成。允許elite火鏈事件帶既有targets、Runtime逐幀錨點、Core內部離地高度轉換與Renderer投影、必要Worker／主頁快取、火鏈專項／Runtime文件／LV及本段；禁止其他技能、配置／素材／存檔與進行中岩壁／毒水區段，不合併推送。
+- 驗收：實際事件保留端點ID，移動／轉向／跳位／大小／死亡、三四邊閉合、地面判定與各角落FOV投影及舊事件相容；正式Renderer動態畫面／Console、相關回歸／Build與獨立Commit。預檢index與Claude熔爐僅不同script快取行，merge-file乾跑0、無語意相依；其餘無外部分支來源，本副本其他修改採分段保留。
+
+- 完成12檔：elite每條鏈沿既有targets傳兩端ID，Runtime每幀共用Renderer當前補間腳點求中點／世界平面長度／角度，保留表定厚度與2米高度；不再疊場域外推及尺寸／旋轉低通。歷史無targets或舊Adapter無footOf保留快照路徑；缺失／死亡端點立即回收，不回退玩家。Core新增內部elevation轉換，sprite／child／particle均重設欄位；Renderer以每節鏈環自己地面落點換算FOV，普通光柱維持原整張錨點。沒有Preset／配置／傷害／解鎖／存檔或Protocol結構變更，沿既有Worker欄位，無素材庫變更／Commit。
+- 快取：主頁Core=20261022-fire-chain-follow、Runtime=1.0.233、Renderer=1.6.195、bridge=1.0.341；Editor共用Core／Runtime同步。bridge及Worker elite import均新鍵20261022-stone-wall-fire-chain-follow，Protocol仍59。Runtime文件與LV同步；Editor若仍開啟，先下載未存備份再重載，舊頁拒存由既有Guard與回歸確認，不操作使用者分頁。
+- 測試指令：node --test --test-reporter=tap tests/fire-chain-height.test.cjs tests/elite-engine.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/vfx-core.test.cjs tests/vfx-core-hierarchy.test.cjs tests/vfx-preset-usage.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/vfx-projectile-perspective.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-editor-guard.test.cjs，288項286過、2項既有失敗（ELITE-ENGINE-20飛彈舊時序與變形矩陣fixture）。以HEAD四支修改前來源唯讀映射，兩項同名同原因重現；同時新增移動錨點／FOV／Core高度三項皆在舊版失敗，確認能抓到缺陷。沒有改既有斷言。最終三四邊閉合加強後專項7/7通過；npm.cmd run build 569檔通過；diff檢查通過。
+- 動態驗收：正式bfTickApproach／eliteTick記錄240幀、353條火鏈事件，重播正式BattleRenderer／Pixi；每幀核對Core提交幾何兩端與當前NPC腳點，45190次取樣最大誤差8.56e-14座標單位（僅浮點誤差，非宣稱GPU逐像素一致）。靜態定格與移動畫面驗收、Console warning／error0，fire-chain-follow.png保存在本聊天visualizations。未讀寫玩家存檔；未做真人長戰／行動GPU／跨瀏覽器。
+- 唯讀檢查：規範／Workflow／Agent、Skills2／elite_data／battlefield／Worker shim與Protocol、Core生命週期／Pixi後端與投影、10份鏈條Preset及上述11份回歸。自我Review確認排序深度保留、共享scratch不洩漏高度、跟隨在實體位置更新之後、沒有新增Timer或獨立素材。其他聊天岩壁／毒水已提交內容及後續毒水未提交測試／LV紀錄原樣保留；本次僅stage自己的檔案／hunk。
+- 最終提交候選：以Git index內的Core／Runtime／Renderer／elite及兩頁快取唯讀映射重跑8檔（高度專項、Core、hierarchy、screen-space、Worker protocol／shim、Editor cache／guard），209/209通過；Runtime快取在同副本毒水提交後再升233，沒有提交其素材DATA_VERSION差異或覆蓋對方提交。
+- 交付：無本次未完成實作，可供Review／合併；Commit為本段所在「[Codex] fix: 火鏈端點逐幀跟隨NPC並修正透視偏移」，回覆附編號。未合併推送；下一步由使用者正常整合並重新整理遊戲（Editor另需備份後重載），限制為上述既有測試失敗及未做真人長戰。
+
+- 效能追驗（使用者追加）：同一台主機Node／正式Core與Adapter、正式23環Preset與Renderer投影函式，模擬後端不送GPU；4／20／60條各交錯舊新版3輪，每輪120幀暖機＋480幀取樣。三輪中位數之中位：4條0.7121→0.6152ms（p95 1.3666→1.1641）；20條3.4733→3.2772ms（5.2955→5.1359）；60條10.7010→9.9635ms（12.8693→12.1955）。活躍粒子分別51／237／690、兩版相同，未增加鏈環／特效數／Timer。此為隔離CPU計算＋投影比較，含vm跨環境呼叫成本、無GPU／貼圖與全戰鬥，且同機有其他工作；只能說此測試未見退化，不能宣稱完整FPS提高。詳細3輪數據保存在Git metadata的fire-chain-follow-work/performance.json，不入正式素材。
+
+## STONE-WALL-FIVE-BLOCKS-20261022 — 五片深色岩壁與雙方阻擋
+
+- Owner：Codex；Review（外觀／程式完成；CD與文字Pending BAT），單一開發者。使用者要求每面5片岩石，全部角度依已編輯en-stone-wall-0僅留slab／dust、深色，另驗證阻擋玩家與NPC。前置既有12方向岩壁與旋轉矩形完成，fetch及逐檔預檢無外部來源；保留本副本使用者基準。
+- 允許：12份岩壁Preset／layout、兩份既有作者與12份SVG／索引／出貨及素材庫同名來源；elite／elite_boss／battlefield碰撞接線、專項與既有岩壁回歸、必要Runtime／Worker與兩頁快取、Skills2文字說明與CD20秒待套用差異、LV及本紀錄。禁止其他技能數值／解鎖／存檔／Protocol／其他副本；不合併推送。
+- 驗收：5片／12角度／兩層規格／顏色及正式Renderer；玩家與NPC追擊、跑位、遊走、推擠、強制位移、高速斜牆、升牆推離及到期通行，Worker同模擬；舊Editor儲存409及原檔不變；相關回歸／Build／Console／diff、雙倉庫Commit。配置文字依規範暫存，正式外觀與碰撞不依賴該說明。使用者追加：僅近戰普攻隔牆禁止，雙方需自動繞牆，效能最優先。採最多6面／25點、每Tick2份共用路網、16角色選路，共用路網／失敗路徑0.5秒快取；無路先停止，不做全地圖尋路。追加限制：每次隨機2～3面，同時最多2次（含預警占位、最多6面）；CD20秒以原Excel格位暫存，正式CD待BAT。後續由使用者正常整合與重新載入驗收。
+
+
+- 完成：12份Preset／layout統一使用者en-stone-wall-0兩層、#b5b5b5乘色及五片原創SVG；兩份作者可重製，保留200×43.55製作足跡、18×3.9米判定及7秒。全域最多2次築牆（預警即占名額）、每次仍均勻隨機2～3面，實測合計4／5／6面，到期或換場釋放。
+- 碰撞／繞牆：玩家與NPC普通追擊、NPC跑位／遊走／互斥推擠，雙方推拉／NPC擊退與普通及BOSS衝鋒均接既有旋轉矩形。升牆推出雙方；近戰普攻獨用視線限制，遠程普攻、火球飛行與雙方範圍傷害隔牆實際命中。普通移動採牆角繞行，強制位移只停在牆前、不另改技能路徑。
+- 效能：最多6牆／25節點、每Tick最多2份共用路網及16個角色選路；同體型／目標共用，成功路徑沿用至牆變動或目標移動、每0.25秒重查捷徑，失敗0.5秒後重試。200隻NPC分批取得路徑且無後排飢餓；六牆微量測整批中位0.32ms／p95約3.21ms、最大27.65ms，無牆基線最大4.95ms；當時其他聊天同時工作，含主機排程／GC，不代表FPS或硬時間保證。沒有全地圖網格／持續全員重算。
+- 測試指令：node --test tests/stone-wall-collision.test.cjs tests/rock-wall-art.test.cjs tests/elite-engine.test.cjs tests/battlefield.test.cjs tests/battlefield-rt.test.cjs tests/npc-vision.test.cjs tests/tower-battlefield.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-asset-export.test.cjs tests/vfx-preset-usage.test.cjs tests/skills2-vfx-schema.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs。隔離HEAD＋本任務候選239項238過／1Windows符號連結略過；最終快取優化及施放限制專項15/15（含新增漩渦位移被擋仍按原時刻命中）。最新共享HEAD較廣239項237過／1既有飛彈ELITE-ENGINE-20失敗／1Windows略過；該飛彈因另任務正式hold2後，舊測試沒有等完齊射，在HEAD原始elite／battlefield／elite_boss唯讀映射同樣失敗，新增失敗0，未修改斷言。npm.cmd run build：569檔通過；隔離asset索引194項來源／出貨SHA256核對，最新共享195項export-assets --check也已最新，12份作者／Preset／layout及diff檢查通過。舊來源唯讀映射的新回歸12項抓到11項缺漏，沒有降低原有行為斷言。
+- 實機預覽：正式Core／Pixi／Runtime、素材庫同雜湊來源載入12方向與slab／dust；stone-wall-five-rocks.png及stone-wall-detour.png保存在本聊天visualizations，後者為真實模擬位置的路徑記錄，非虛構路線，Console warning／error0。初次驗收頁誤用Editor禁止的images路徑，403後改正式asset-library端點；未改遊戲伺服器或素材來掩蓋。12份舊Editor基準送正式Server PUT均409且檔案位元不變（0度舊五層基準亦拒絕）。未操作使用者原分頁；先下載未存備份再重載，遊戲重新整理。
+- 配置待辦：config/param-patches/f80e1d63-82f2-47af-93ca-6ede8b76e16a.json同時暫存Skills2.xlsx／Skills2的e_walls、階數文字1之效果說明與冷卻時間，原CD文字6~10→數值20，說明改五片／隨機2～3／同時2次及攻擊規則。唯讀核對磁碟Excel型別及原值；沒有AI直接改Excel／CSV／生成JS，正式CD20秒與新說明須使用者儲存關閉Excel後執行套用參數.bat並驗收，不宣稱已套用。
+- 素材庫先Commit 83fdf93（37檔：12 SVG、24配對來源及SOURCE）；沿用原創程序化SVG，附件僅參考、無外部圖像或像素挪用。Mote已確認可用，像素畫布不適合此既有向量多角度幾何。遊戲提交僅本任務52檔／hunk，Commit編號見回覆；不合併或推送。
+- 協作：同副本飛彈兩秒參數已由另一聊天獨立提交81221796，保留其參數／程式／紀錄；毒水的eliteCross／Runtime／來源／Preset／索引與文件、火鏈離地及飛彈再加倍，後續也已各自提交（db3b1374／3cb933e0／420b03a8），保留且不納本任務。elite不同函式與兩索引不同asset列的實際候選／HEAD／去除我方差異的對方內容，git merge-file -p皆0、無語意相依；HTML／Runtime快取沿原先我方227基準及對方後續229的順序變更保留；最後沿最新HEAD，只提交battlefield主頁16、bridge340及Worker必要匯入，Runtime／Editor共用快取已由其他提交保存，不回寫舊值。
+- 唯讀檢查未改：AI_RULES／AGENTS／Workflow／prompts/codex、Skills2來源Excel／CSV與生成JS、Core／Backend／Editor Guard與Server／Layout、實際普攻／投射物／技能傷害入口、Worker Protocol／shim及素材匯出。自我Review確認新狀態只在ELITE_RT、換場清除、不進存檔／面板／Protocol；沒有新增特效引用。
+- 交付：外觀／上限／碰撞與有上限繞牆可Review／合併；CD20秒與說明仍Pending BAT。無路或選路預算用完先停、下一Tick重試；完整玩家長戰／手機GPU／跨裝置FPS未驗收，未聲稱複雜牆群一定能找到最佳路。其他聊天修改均保留，沒有納入本次差異；下一步正常整合本Commit與素材庫，再套用參數、備份Editor後重載驗收。
+
+
+## FIRE-CHAIN-HEIGHT-20261022 — 火鏈固定離地兩米
+
+- 追驗（2026-10-22，Done）：使用者指出前次驗收圖三隻僅兩鏈；確認臨時預覽漏送末尾閉合邊，正式eliteChainRing已有三邊。新增三NPC正式模擬→完整三條事件→Runtime同時懸空播放回歸，核對所有配對／中點／長度／3個billboard實例；修正臨時預覽為直接播放正式模擬生成的3條事件，正式Renderer圖明確閉合三角形，離地2米，Console warning／error 0。截圖fire-chain-triangle-2m.png保存於本聊天visualizations，前圖僅為高度比較，不能代表群體閉合驗收。node --test --test-reporter=spec --test-name-pattern="火鏈|ELITE-ENGINE-4" tests/fire-chain-height.test.cjs tests/elite-engine.test.cjs，11/11通過；git diff --check通過。僅修改本紀錄與高度專項測試，未改正式遊戲／配置／素材／LV／Worker／快取，無素材庫變更、無本次未完成項，可供Review／合併；未合併推送。唯讀檢查eliteChainRing／eliteChainsTick／eliteVisEmit、Runtime、既有閉合測試與臨時預覽；未做玩家存檔長戰。Commit為本段所在[Codex] test: 驗證三隻NPC火鏈完整閉合並更正預覽，回覆附編號。
+
+- Owner：Codex；Done，單一開發者。使用者要求火鏈不要貼地，採固定離地2米。前置既有火鏈與地面投影完成；fetch後四檔及專項測試預檢無外部來源。
+- 允許：js/vfx-runtime.js火鏈顯示高度／圖層，index僅Runtime快取，tests/fire-chain-height.test.cjs、LV及本紀錄；禁止其他技能、岩壁／毒水進行中區段、配置／素材／Worker／Protocol／傷害／存檔與其他副本。不合併推送。
+- 驗收：正式模擬火鏈事件、兩米離地且保留腳點深度、投影／移動／續播／回收，原傷害回歸、正式Renderer畫面及Console、Build與diff；只stage本任務hunk後獨立Commit，交使用者Review／正常整合。
+
+- 完成：Runtime依既有elite-chain場域ID辨識火鏈，固定抬高2米（BF_SYSTEM_UNITS_PER_METER換算），改走billboard後端並保留原地面depthY；各鏈環數／方向／長度、既有平滑追蹤與碰撞不變。未新增事件欄位、Preset引用、配置或素材，無素材庫變更／Commit。index Runtime快取更新至1.0.229，LV同步。
+- 驗證：node --test tests/fire-chain-height.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-core.test.cjs，176/176通過。專項涵蓋10版×3投影×3角度、實際模擬事件、移動／續播／隱藏回池及碰撞。另elite-engine為41項40過1既有飛彈時序失敗；擴充透視測試的變形矩陣fixture亦既有失敗。將Runtime唯讀映射HEAD後精準重跑兩項，完全相同失敗，新增失敗0，未改既有斷言。npm.cmd run build：569檔通過；diff檢查通過。
+- 畫面：隔離localhost正式BattleRenderer／Pixi與表內鏈條，水平／縱向貼地對照明確抬高至怪物身體，Console warning／error 0；未讀寫玩家存檔。fire-chain-height-2m.png保存在本聊天visualizations。唯讀檢查elite／elite_data／battlefield／protocol／Core／Pixi後端／Renderer／Skills2與10份鏈條Preset、規範／Workflow／Agent及相關測試。
+- 交付：無本次未完成實作，可供Review／合併；Commit為本段所在「[Codex] fix: 火鏈特效固定離地兩米」，回覆附編號。保留同副本岩壁／毒水未提交區段，不納入本次；快取採目前新版值。限制為上述兩項既有失敗、未做真人存檔長戰／跨裝置；下一步由使用者正常整合並重新整理遊戲。未合併推送。
+
+## BATTLE-VIEWPORT-FIT-20261022 — 修正地圖列撐寬戰鬥區
+
+- Owner：Codex；Done；單一開發者。使用者回報新增場景後角色偏離中央、右側功能按鈕被裁切，要求修正尺寸。依賴十圖場景已完成；fetch後預檢無其他副本／分支修改來源。
+- 允許：css/style.css的戰鬥容器及地圖列尺寸、index.html僅CSS快取、LV_upgrade_system.md及本紀錄；必要隔離瀏覽器驗收暫存。禁止鏡頭倍率／戰鬥公式／Worker／配置／存檔／素材與其他副本；不合併推送。
+- 修正：允許battle-area依父容器縮小，地圖列換行並保留完整列高，讓Canvas與右側HUD採實際可見寬度。驗收十圖／兩種realm、一般／全螢幕及還原、畫布／按鈕邊界與中央投影，相關回歸／Build／Console／diff後獨立Commit。接手者為使用者Review及正常整合。
+- 完成四檔：css/style.css新增battle-area的min-width:0、zone-bar的wrap及不壓縮列高；index僅style快取91→92，LV及本紀錄同步。沿用原有ResizeObserver與鏡頭置中，不改Renderer／JS／倍率／戰鬥或解鎖；沒有新增素材或素材庫Commit。
+- 瀏覽器：隔離localhost正式遊戲／Worker，1920×1080舊CSS實測卡片863px、內容944.34375px、Canvas938px，按鈕右端1999.34375超出卡片1908；新版內容821px、Canvas815px、按鈕右端1876回到框內。1920×900、2560×1440、1280×720均驗卡片／畫布／控制列邊界正常；七張凡人界（含全部進度數字）換兩排，三張神界單排；全螢幕／還原同步resize。地圖解鎖數字僅由臨時驗收頁模擬面板，不寫玩家存檔。角色畫面置中目視通過，中央投影由既有CAMERA測試驗證。截圖battle-viewport-fixed.png保存在本聊天visualizations。
+- Console：重載臨時iframe時出現被中斷Worker匯入／自動重試與無來源MutationObserver訊息；另以全新正式index分頁正常啟動完成，Canvas與七圖均載入、warning／error0，沒有CSS相關新增錯誤。未對使用者原分頁或存檔操作。
+- 測試：node --test tests/battle-ui-rework.test.cjs tests/battle-fullscreen.test.cjs tests/fullscreen-toggle.test.cjs（8/8）；node --test tests/battle-camera-distance.test.cjs tests/new-battle-zones.test.cjs tests/battle-resource-orbs.test.cjs tests/battle-log-ui-layout.test.cjs（23/23）；npm.cmd run build（566檔）；git diff --check通過。未新增僅鏡像CSS的測試、未修改既有斷言、未跑已知有基線失敗的全庫。
+- 唯讀檢查未改：規範／Workflow／prompts/codex、js/ui.js的地圖與按鈕渲染、battle-renderer的viewport／resize／鏡頭、data十圖／realm資料、其他7份樣式與上述7份回歸。自我Review確認只修正Flex寬度與地圖換行，既有標題裝飾／浮字溢出策略保留。臨時驗收頁移存Git中繼資料，測試分頁及服務關閉。
+- 交付：無本次未完成實作／新增已知缺陷，可供Review／合併；Commit為本段所在「[Codex] fix: 修正地圖列撐寬戰鬥區與鏡頭偏移」，回覆附編號。限制為未做真人存檔長戰、手機／跨瀏覽器驗收。驗收期間新增的en-stone-wall-0 Preset／layout使用者修改原樣保留、不納入本次提交。未合併推送；下一步由使用者正常整合並重新整理遊戲。
+
+## MISSILE-FINAL-SPREAD-20261022 — 飛彈橫向間距再加倍並提交
+
+- Owner：Codex；Done，單一開發者。使用者在前次正式套用後追加「間距再拉大1倍，然後就可以提交」，沿用已授權正式套用Excel流程；只將目前橫向spread乘2，停駐2秒／後退6.4米／時序與傷害保持。
+- 允許：Skills2.xlsx飛彈AA247「生成位置範圍（米）」6.48→12.96、正式CSV／skills2生成資料、飛彈專項既有幾何期望、必要skills2／Worker／bridge／index快取、LV及本段；原生Excel精準合併與稽核於archive。禁止其他技能、進行中岩壁／毒水／火鏈、素材／Protocol／存檔與其他副本；不合併推送。
+- 驗收：單格改動／保留格式、正常Excel重開、Excel／CSV／JS一致及冪等、四枚相鄰間距34.56→69.12世界單位（兩倍）、後退／停駐／齊射與Worker回歸、Build及分段diff／自我Review後Commit。使用者此次提交要求照常包含必要檔案；其他進行中任務尚未完成內容依規範保留不一起提交。接手者為使用者正常整合與重載驗收。
+- 正式完成：官方param-patches stage後僅把本次一格請求交原生Excel合併器，沒有套用岩壁Pending。Excel AA247數值6.48→12.96，其餘283列×52欄資料逐格完全相同、合併器保留格式且正常重開候選核值；正式檔SHA等於該原生Excel正常重開的候選。備份／收據與已消耗請求在archive/20261022-missile-final-4324b57d-0993-4bca-ac53-6e386dd7e7c2，沒有飛彈待套用殘留；殘留~$鎖檔保留不動。
+- 正式xlsx_to_csv與config_tables --apply --write Skills2僅改ENEMY_SKILLS2一行的spread 6.48→12.96；原生米轉換後spread129.6，四枚相鄰距離69.12，前後深度64與hold2不變。再次--apply為語意變更0；params_version依工具自增、原規則不入Git。未改elite行為／Preset／素材，沒有必要素材庫修改或Commit。
+- 測試：飛彈既有正式幾何斷言依使用者新值更新，未新增低影響鏡像測試；node --test --test-name-pattern='MISSILE-HOLD2|MISSILE-SPREAD|同批後退|齊射後不改落點|Worker實際派送' tests/missile-salvo.test.cjs，6/6。node --test tests/skills2-enemy-columns.test.cjs tests/skills2-vfx-schema.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/vfx-editor-cache-versions.test.cjs，40/40。新間距、四個方向、定點兩秒／原點齊射／命中與Excel／CSV／JS一致皆通過。完整飛彈套件前輪已知4項Preset舊斷言失敗，本輪未改相關斷言／外觀，未重跑該選集與全庫。
+- 衝突檢查：ai/claude的skills2.js未提交僅sgTickMeteors落地爆炸（4310行附近），本次只e_missile資料列；以共同祖先4f9e8e4c、本次候選與對方工作檔實際merge-file試跑0，兩邊意圖完整保留、無語意相依，未動對方副本。共用快取依前次使用者整合授權，bridge採20261022-stone-wall-final-missile-hold2-spread-x2、Worker只升skills2匯入20261022-missile-spread-x2、主頁skills2升355／bridge升339，其他進行中快取保留。
+- 唯讀檢查未改：共通規範／Workflow／prompts/codex、既有試算表技能與官方Excel／配置工具、elite_data米換算、eliteCastMissiles及Runtime固定座標、四色Preset／layout、Claude隕石區段、其餘相關回歸。自我Review確認僅橫向乘2，沒有新增VFX來源／Protocol／存檔／解鎖；本輪未再錄GIF或載真人存檔長戰。提交前只stage本次九檔及共享檔自己的hunk；岩壁／毒水進行中內容保留不提交，已完成火鏈由其任務獨立Commit 3cb933e0。
+- 完成交付：npm.cmd run build 569檔通過，本次staged diff --check通過；文件／LV分段試跑保留其他任務區段。另毒水任務隨後已獨立Commit db3b1374，不屬本次提交；岩壁仍進行中，原樣保留。本次九檔為Excel／CSV／skills2.js、飛彈測試、三份必要快取、LV及本紀錄。Commit為本段所在「[Codex] fix: 飛彈橫向散開間距再加倍」，回覆附編號。無本輪未完成項，可供Review／合併，未合併推送；限制為前述4項既有測試及未做真人存檔長戰。下一步正常整合並重載遊戲驗收。
+
+## MISSILE-HOLD2-DISTANCE-20261022 — 正式兩秒停駐、加寬與延長後退
+
+- Owner：Codex；Done，單一開發者。使用者明確要求正式套用停駐並改2秒、目前橫向間距再乘1.5、後退深度乘2，交付一般鏡頭／原尺寸／正常速度GIF。承接已完成飛彈接入與＋35%間距，使用者本輪正式套用要求優先於預設Pending；不需委派。
+- 允許：eliteCastMissiles僅獨立橫向spread參數、skills2-geometry的既有位置欄接線、Skills2.xlsx飛彈列四格與正式CSV／skills2.js匯出、舊飛彈Pending請求更新／封存與精準原生Excel合併、飛彈專項、必要Worker／主頁快取、params_version、LV及本段；GIF及稽核暫存於聊天目錄。禁止其他技能／素材／岩壁任務修改、傷害／解鎖／Protocol／存檔及其他副本；不合併推送。
+- 目標：hold=2、leg1沿先前核准0.275秒；back=6.4米，橫向spread=6.48米（原43.2座標單位×1.5），兩者獨立避免後退加倍又重複放大橫向。四枚相鄰間距34.56座標單位；仍固定世界停駐點。spread走已有「生成位置範圍」欄，時間走無獨立欄的JSON。
+- 驗收：Excel真實型別與原值、四格精準套用、正常Excel重開無RepairMode、Excel／CSV／JS一致與冪等、正式配置的事件／兩秒等待／同拍齊射與傷害、NPC移動不拖動停駐、Worker／schema／接線回歸及Build、實際鏡頭GIF和自我Review後獨立Commit。另一岩壁進行中區段保留，只stage本次hunk；先前使用者批准合併快取版本沿用於本輪必要新版本。
+- 正式配置完成：先用唯讀Excel COM核對Skills2的247列與F／V／AA／AV／AW格型別及格式，再由官方merge-param-patches.ps1精準套用飛彈請求四格，未套用另一岩壁請求。V247字串3.2→6.4、AA247空白→數值6.48、AV247的leg1 .55→.275／hold新增2、AW247同步說明。舊一秒請求已依使用者新要求取代並消耗，原請求、前後Excel、snapshot／decision／commit-started收據均保存於archive/20261022-missile-hold2-d615f641-adfd-4faf-9f79-0c59a76f8f10；沒有另留待套用飛彈提案。
+- Excel驗證：已取得來源獨占鎖，殘留~$鎖檔原樣保留。合併器以原生Excel API正常開啟候選、儲存後正常重開核值，再比對來源SHA寫回；另一次正常唯讀開啟正式來源，Saved=true、未進RepairMode，五個檢查格格式全部保持，資料全表比較只有上述四格改變。未操作使用者Excel實例／未存內容，沒有XML改寫或重建整本。依使用者指定正式套用走既有原生Excel合併器，以保留原表功能。
+- 完成12檔：Excel／CSV／skills2生成資料、已消耗舊請求的移除、skills2-geometry僅e_missile新增placement→spread、elite僅讀取獨立spread並保留舊事件fallback、飛彈專項、bridge／Worker／index快取、LV及本紀錄。xlsx_to_csv正常匯出283列×52欄；config_tables --apply --write Skills2僅ENEMY_SKILLS2一個字面值有變更，未變玩家技能或其他敵人；再次--apply語意變更0。params_version由官方工具自增且按原規則不入Git。
+- 測試：node --test tests/missile-salvo.test.cjs tests/skills2-enemy-columns.test.cjs tests/skills2-vfx-schema.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/vfx-editor-cache-versions.test.cjs，50項46過／4既有失敗；同前次基線的真實Preset絕對光芯座標、舊事件座標、作者重製及固定位置舊斷言，沒有新失敗／沒有改這些斷言或Preset。新兩項皆過：正式配置四個方向、後退／橫向獨立與2秒齊射／命中；真Runtime保留Preset自身偏移、NPC持續移動仍定點等待完整2秒及回收。相容fixture保留前一版幾何／1秒事件，不冒充正式配置。
+- npm.cmd run build：568檔全通過；diff --check通過。Worker資源與skills2／elite匯入採20261022-stone-wall-navigation-missile-hold2，index skills2升354、bridge升337；保留岩壁navigation及其他快取值、Protocol不變。進行中岩壁的函式／樣式／素材／作者／測試／Pending差異不納入本次Commit；同檔分段及使用者既有共用快取整合授權沿用。
+- 分段與補充驗證：elite／AI_TASKS／LV以HEAD、本次候選及保留岩壁的工作檔執行git merge-file -p，三檔退出0、結果皆等於工作檔；只stage本次12檔區段。唯讀語意比較其他ENEMY_SKILLS2項目全相等。飛彈有效選集6/6與tests/battle-camera-distance.test.cjs的7/7通過；與上述不重複測試合計57項53過／同4項既有失敗，沒有降低斷言或回退使用者外觀。
+- GIF：npc-missile-hold2-real-game.gif位於本聊天visualizations，181格817×680，正常40fps取樣（GIF20／30ms交替）、循環，完整後退→2秒定點停駐→齊射→消散。使用當前正式ELITE_AFFIXES而非候選覆寫，真elite事件與BattleRenderer／Core／Pixi／Runtime、地形／角色；一般鏡頭125%距離（cameraStage=.8）、地面投影.5、透視.82，Canvas815×570，原像素輸出沒有放大／慢放。Console error／warning0，missing／dropped0、最後projectiles0；已目視飛出、停駐、齊射及結束幀。服務與獨立瀏覽器已關閉，未讀寫真人存檔。
+- 唯讀未改：共通規範／Workflow／prompts/codex、PARAM_PATCHES／官方合併與配置工具、elite_data既有米轉座標、Core／Runtime／battle-renderer鏡頭及投影、四色Preset／layout／素材、上述其餘回歸。自我Review確認橫向只乘1.5、後退只乘2、事件和傷害時序共用正式配置，停駐仍為數值世界座標；沒有新VFX來源／素材庫檔案或素材庫Commit。
+- 交付：本段所在「[Codex] feat: 正式套用飛彈兩秒停駐與加寬後退」Commit，回覆附編號。無本輪未完成項，可供Review／合併；未合併推送。限制為上述4項既有測試失敗，以及未做真人存檔長戰／多技能混戰／跨裝置驗收。下一步正常整合及重新載入遊戲；其他任務未提交內容保留。
+
+## POISON-ROUGH-TIP-20261022 — 毒水末端改細碎不規則收口
+
+- Owner：Codex；Done，單一開發者。前置為已認可+10%兩岸凹凸；使用者要求終端半圓不要太圓滑，做好直接套用。僅對前端收口增加少量固定凹口，保留圓收大輪廓、已鋪紋理／流速／側岸與判定。
+- 允許：Core／Pixi通用顯露裁切的可選收口凹凸參數、Editor對應欄位／schema文件、毒水作者／Preset與素材庫配對來源、必要快取、既有Core／後端／毒水回歸、LV與本段；禁止其他技能／模擬／配置／Protocol／存檔／其他副本，不合併推送。共用快取沿已批准整合，素材／索引無新增。
+- 驗收：僅前端出現小凹口、不把整條扭曲，接段縫合／UV比例／材質續播與34頂點保持；正式Pixi預覽、相關回歸／Build／匯出check，素材庫與遊戲獨立Commit後交使用者正常整合。
+
+- 完成13檔：毒水12層加revealRoughness=.014（貼圖寬度比例，正式最多2.24世界單位內凹），只對前端圓收疊固定細碎凹口，保留半圓大輪廓。Core可選欄位預設0、驗證／編譯／傳遞，Pixi在裁切前加凹口並納入快取；整段顯露後仍完整銜接，UV與位置同步、每段34頂點與12節點／零粒子不變。Editor可調同欄位，schema／LV同步；Runtime僅DATA_VERSION與兩頁對應快取，Core／Backend／Editor鍵20261022-poison-rough-tip、Runtime1.0.238。
+- 素材：同份Preset與素材庫配對來源／SOURCE更新，layout／SVG／兩索引沒有本任務變更；實際flow.svg與前版位元相同，側岸+10%、表面流動、16fps／4秒循環原樣保留。Mote原有匯出不支援此原生向量工作流，沿專案原創作者；附件只用來指出末端區域，沒有引入外部圖像或新素材來源。
+- 測試：node --test tests/poison-trail.test.cjs tests/vfx-pixi-sheet.test.cjs tests/vfx-core.test.cjs tests/vfx-core-hierarchy.test.cjs tests/vfx-deformation.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-preset-usage.test.cjs，244/244過；npm.cmd run build，569檔通過；node tools/vfx/export-assets.cjs --check最終已最新。後端實際網格驗收凹口上限／非均勻收口、固定不抖／完整段接縫不受影響／UV比例；真Runtime確認所有方向與不同幾何把參數送達、舊欄位預設0；保留既有判定／生長／續播／回收斷言。
+- 畫面：正式Core／Runtime／Pixi隔離單臂1.9倍局部對比，上前版／下新版，poison-rough-tip.png保存聊天visualizations；Console warning／error0。末端稍微不規則、側岸與內部完全沿前版；無新增Timer或時間擾動。未讀寫玩家存檔、未做真人長戰／手機／跨裝置效能實測，不宣稱FPS或硬時間門檻。
+- 協作：預檢Core／Backend／Editor／毒水作者與Preset／測試／文件均無外部來源；Runtime共用資料版本沿使用者既有批准，保留thunder-crater與missile-crystal。Claude主頁既有其他script差異不改。本副本另一MISSILE-COLOR任務的作者／四色Preset／新素材／兩索引／LV與AI_TASKS均分段保留不提交；首次全域匯出檢查恰逢該任務新素材匯出而過期，對方完成後再次check通過，沒有自行覆蓋其輸出。
+- 唯讀未改：共通規範／Workflow／prompts/codex、模擬eliteCross／事件與碰撞、Worker／Protocol／配置表、Runtime毒水成長邏輯、Renderer投影、Editor Guard／Server、素材索引與layout／原SVG；不改技能傷害／長度／寬度／速度／壽命。自我Review確認新增欄位只在啟用的根sprite上生效、未啟用完全沿舊版、無額外節點／貼圖／來源。
+- 交付：使用者已要求做好直接套用，本次已實作並可正常整合；素材庫先Commit f4191bc（Preset／SOURCE兩檔），遊戲Commit為本段所在「[Codex] fix: 毒水末端改為輕微不規則收口」，兩編號見回覆。無本輪未完成項；未合併／推送。下一步正常整合並重新整理遊戲，Editor先下載未存備份再重載，驗收限制如上。
+
+## POISON-BANK-PLUS10-20261022 — 毒水岸邊凹凸微增10%
+
+- Owner：Codex；Done，單一開發者。前置為使用者已認可無縫接段／表面流動版，僅把固定岸邊凹凸振幅乘1.10；不改種子／空間頻率／主軸／寬度／時間微擾／流速／接段／判定。
+- 允許：毒水作者與同名SVG／SOURCE及兩索引、Runtime只資料快取與兩頁對應快取、LV與本段；必要既有毒水回歸期望。禁止其他技能／Core／Backend／Editor程式／模擬／配置／Protocol／存檔、其他副本，不合併推送。沿用已批准共用快取與僅毒水索引列更新，保留其他素材與總數。
+- 驗收：與已認可版本逐點確認振幅精確+10%、其餘動態／Preset不變、可重製與正式Pixi局部對比、相關回歸／Build／匯出check與雙倉庫Commit；後續使用者Review與正常整合。
+
+- 完成10檔：roughBankAt回傳值只乘1.10，空間波形／相位及表面材質不變；同名SVG與兩索引雜湊／大小更新、素材數2470／出貨195保持。Preset／layout完全相同未改，Runtime只DATA_VERSION保留thunder-crater／missile-crystal共同版本，兩頁Runtime同步升1.0.237；LV與本段同步。素材庫僅SVG／SOURCE兩檔。
+- 驗證：以已認可6e59906a來源唯讀載入，比對2050個兩岸取樣，全部精確為舊值×1.10（誤差<1e-12），最大額外0.420714材質像素；全64格與循環端點的主軸／寬度／大輪廓／flowOffset／時間微擾相同。將兩版SVG的岸邊輪廓路徑抽除後位元相同，確認沒有改到內部色塊／流紋／泡沫；make()的Preset完全一致。audit.json在Git metadata保存，不增低影響鏡像測試。
+- 測試：node --test tests/poison-trail.test.cjs tests/vfx-editor-cache-versions.test.cjs，12/12過；npm.cmd run build，569檔過；node tools/vfx/export-assets.cjs --check已最新；diff檢查過。既有岸邊上限從4.5+0.22同步為4.5×1.10+0.22，僅對應使用者指定的幅度，原中心／寬度／微擾與行為斷言保留。
+- 預覽：正式Core／Runtime／Pixi隔離單臂對比、局部1.9倍，上為已認可前版／下為+10%；poison-bank-plus10.png保存在本聊天visualizations，Console warning／error0。先前臨時預覽靜止時漏刷非同步貼圖，已僅修正驗收頁在暫停時update(0)後重新擷取；正式程式／Editor未改。未操作玩家存檔、未做長戰／手機／跨裝置效能驗收；節點與素材記憶體規格保持前版。
+- 協作／唯讀：修改前逐檔預檢，Claude同索引總數差異及Runtime快取沿此聊天已授權整合，僅改毒水索引列與已批准共用版本行，不動其他來源或副本；同副本無其他進行中差異混入。檢查但未改：規範／Workflow／prompts/codex、Core／Backend／Renderer／Editor、毒水Preset／layout與既有碰撞事件。原創向量作者沿前版流程，附件只作參考，無新增外部素材。
+- 交付：本輪實作完成，可供Review／合併；遊戲Commit為本段所在「[Codex] fix: 毒水岸邊凹凸幅度微增百分之十」，素材庫先Commit 57e012a兩檔，遊戲編號見回覆。未合併／推送；下一步正常整合後重新整理，Editor先備份未存內容再重載。無本輪未完成項，限制如上述隔離驗收。
+
+## POISON-SEGMENT-FLOW-20261022 — 毒水無縫接段與可見表面流動
+
+- Owner：Codex；Done，單一開發者。使用者追加：固定比例毒水逐段銜接顯露，不能整條拉長；內部須看得到流動，保留近直線、細碎岸邊。前置前版毒水完成。
+- 允許：毒水作者／Preset／layout／同名SVG與素材庫／兩索引；Runtime毒水顯露與既有共用快取；Core／Pixi通用局部UV顯露及Editor對應曲線與文件、專項測試、LV與本段。禁止戰鬥判定／速度／壽命／配置／Protocol／存檔、飛彈與Claude雷隕石區段，不合併推送。
+- 驗收：首尾接縫逐幀連續、紋理比例固定／已鋪部分不伸縮、可見內流／循環；權威前緣／續播／晚加入／到期回收、正式Pixi動態預覽與Console、相關回歸／Build／雙倉庫Commit。沿用使用者已批准共用快取與僅毒水索引更新，保留其他項目與總數。後續接手為使用者Review與正常整合。
+
+- 完成19檔：每臂3段、固定比例材質首尾週期一致，前緣透過UV與頂點同步裁切逐步顯露，不再縮放整條；表定長寬比不同時以相同素材增減整段（已驗3／5段）。主要色塊／流紋／泡沫全部向外平移，16fps／4秒循環，正式尺寸40世界單位／秒；岸邊0.22材質像素微擾、固定細碎凹凸與近直線主軸保持。模擬／判定／表定120速度／36米長度／4米半寬／16秒壽命及Protocol／存檔未改。
+- 共用實作：Core一般根sprite支援revealXOverLife／兩端圓收與內部revealProgress覆寫，與deformation／parent／profile互斥且非法資料報錯；Pixi採2×17共34頂點、最多12節點／零粒子（正式幾何），保留共享圖集、投影／錨點／原片尺寸、快取／隱藏／回收。Editor可編顯露曲線與圓收，三份VFX文件／LV同步。舊flow-0單條Preset及無variant舊事件保留相容路徑。
+- 素材：沿用同一原創SVG資產ID，64格4096×1024，RGBA解碼16MiB共用；剔除單格外不會顯示的路徑後SVG2,638,429bytes。索引僅毒水雜湊／大小改變，素材總數2470／出貨195不動；同名Preset／layout／SOURCE同步素材庫。Mote先前已查驗匯出種類不支援原生SVG，附件只作風格參考、無外部圖像像素。
+- 測試：node --test tests/poison-trail.test.cjs tests/vfx-pixi-sheet.test.cjs tests/vfx-core.test.cjs tests/vfx-core-hierarchy.test.cjs tests/vfx-deformation.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-preset-usage.test.cjs，244/244過。新增驗收實際輸出色塊1秒前移128材質像素、每格兩端形狀全相位一致、3種幾何／4方向逐幀固定比例與權威前緣、續播／晚加入／到期、顯露UV不伸縮／隱藏快取／共享換幀／回收及曲線覆寫與存檔。先前fixture拼字及mock缺少Texture.orig已修正，沒有降低正式斷言。npm.cmd run build：569檔通過；正式匯出check與diff檢查通過。
+- 動態驗收：隔離localhost正式Runtime／Core／Pixi，左舊版／右新版正常尺度對比，未讀寫玩家存檔；8秒240幀依1/30秒逐幀實際渲染輸出，避免IAB背景ticker降幀產生錯誤慢放，再編碼正常8秒GIF。poison-surface-flow.gif與頁面PNG保存聊天visualizations；Console warning／error0、missing／dropped0。完整伸展後仍流動，首尾連續，沒有圓點堆疊或整條蛇行。此為隔離畫面，未做玩家長戰／手機GPU／跨裝置效能實測，不宣稱FPS改善或硬時間上限。
+- 衝突：修改前逐檔check-conflicts，Claude未合併Runtime僅DATA_VERSION同欄位，沿本聊天已批准共用快取合併；保留thunder-crater及另一聊天已提交missile-crystal，Runtime兩頁升1.0.236，Core／Backend／Editor升20261022-poison-reveal。兩素材索引的既有總數差異沿使用者允許僅改毒水列；完整三方仍顯示總數差異，未擅自合併。主頁外部完整試跑另有既存battle-terrain插入與共用快取鄰接衝突，本次只改Core／Backend／Runtime的script版號，既有其他行未動；Runtime去除已批准資料版本行後三方乾淨，毒水函式與對方無語意相依。沒有寫其他副本。
+- 唯讀未改：規範／Workflow／prompts/codex、eliteCross與碰撞／事件、Worker／Protocol、正式表資料、Renderer投影與Editor Guard／Server、全部354份Preset及相關回歸；自我Review確認每段用同一來源、四臂獨立方向、模擬數值不變且無新增Timer。保留其他聊天的飛彈Commit bcfcbdd5及素材庫未追蹤熔岩／雷坑內容；只提交本次19檔與素材庫4檔。
+- 素材庫先提交f53f61e（同名來源4檔）。交付：可供Review／合併，本輪無未完成實作；Commit為本段所在「[Codex] fix: 毒水改無縫接段顯露與持續表面流動」，回覆附遊戲與素材庫編號。沒有合併／推送。下一步由使用者正常整合並重新整理遊戲；Editor須先下載未存備份再重載，避免舊頁覆寫。
+
+## POISON-FINE-BANK-20261022 — 順直水道加適度細碎不平整邊緣
+
+- Owner：Codex；Done，單一開發者。使用者指出前版太平滑，要求中間程度：整體順直，邊緣一點點不平整。保留慢流／固定平面／微擾與所有判定；只新增固定、短距離、不週期的兩岸凹凸，不能回到大幅蛇行或呼吸。允許毒水作者／SVG及兩索引／素材庫同名來源、專項回歸、Runtime僅資料快取與兩頁對應快取、LV與本段；禁止其他技能／Core／模擬／配置／Worker／存檔，保留所有其他進行中內容。
+- 預檢：Claude兩索引僅岩壁舊版本差異及兩份新雷坑素材，本次毒水assetId未被修改，無語意相依；修改前以本次候選／HEAD／Claude實際工作檔三方試跑確認。index既有skills2衝突沿使用者本聊天明確核准的分段快取處理，不動該欄位。驗收實際同尺度預覽先確認細碎凹凸可見、原微擾／慢流／判定回歸、Build／Console／匯出與雙倉庫獨立提交，不合併推送。
+- 完成：保留順直主軸與小幅寬度變化，兩岸各自加入不同種子的固定短距離凹凸；兩種尺度的平滑雜訊形成局部缺口／凸起，不拿來彎曲整條水道。岸邊使用較小模糊保留遊戲同尺度下的小細節；內部材質、8秒慢流、0.22像素微擾、64格／8fps、判定／伸展／壽命不變，仍每次4個sprite、沒有新增粒子。
+- 修改10檔：作者、SVG、asset-index／shipped-assets僅毒水條目、專項測試、Runtime僅DATA_VERSION、兩頁Runtime233→234、LV及本段；Preset／layout檢查後無差異。素材庫7256d17先提交SOURCE／SVG兩檔，SVG／Preset／layout來源及出貨SHA256一致。
+- 衝突處理：Claude舊副本沒有本分支毒水新條目，HEAD為base會出現既有modify/delete；真正共同base試跑只剩衍生assetCount2470／2471、195／196差異。使用者本輪明確核准只更新毒水條目、不動數量、不動Claude雷坑／其他素材；未操作Claude副本。共用快取沿本聊天已授權分段更新，保留skills2既有差異及其他進行中修改。候選相對HEAD與工作內容三方試跑0後獨立索引提交，保留其他stage／未stage內容。
+- 驗證：node --test tests/poison-trail.test.cjs tests/vfx-editor-cache-versions.test.cjs，11/11。保留主軸／寬度約束，改將大輪廓與局部岸邊分層驗證；新增實際surface殘差的最小可見RMS／最大幅度與兩岸差異回歸，防止再退成完全光滑或過度扭曲；原微擾／慢流／命中／投影／續送／回收全過。npm.cmd run build569檔、export-assets --check及遊戲／素材庫diff --check通過，沒有弱化判定或舊時間斷言。
+- 畫面：正式Core／Runtime／Pixi、同尺度完整十字＋局部1.9倍單臂上下對比，舊版取素材庫396ea6d原創SVG，新版岸邊有小凹凸且主軸不蛇行；Console error／warning0。poison-fine-bank.png與poison-fine-bank-detail.png保存在本聊天visualizations，不讀寫玩家存檔。使用者網路圖仍只作參考，未使用像素；沿前輪確認Mote不支援原生SVG的限制，用專案原創作者。
+- 唯讀檢查未改：AI規範／Workflow／Agent、Core／Backend／elite／Worker／Protocol、Preset／layout、素材庫解析與匯出、Claude兩索引的資產ID差異及既有快取差異。自我Review確認僅改短距離岸邊靜態細節，未增圖層、相位速度、戰鬥或解鎖。
+- 交付：本次程式／素材／預覽完成，可Review／合併；遊戲Commit為本段所在[Codex] fix: 毒水順直邊緣加入適度細碎凹凸，回覆附編號。未合併推送；沒有本次未完成實作。限制為未做真人長戰／跨瀏覽器／GPU量測，造型仍可依使用者預覽回饋續調。下一步正常整合與重載，舊Editor先備份未存內容再重載，勿覆寫新資料。
+
+## POISON-STRAIGHT-20261022 — 毒水水道整體接近直線
+
+- Owner：Codex；Done，單一開發者。使用者要求整體近直線，減少靜態邊緣的大幅歪曲；保留前輪固定平面、極輕邊緣擾動與慢流。允許poison-trail作者／SVG／索引／出貨及素材庫來源、專項回歸、Runtime僅資料快取及兩頁對應快取、LV與本紀錄；禁止模擬／傷害／範圍／壽命／Worker／Core／其他功能。
+- 預檢：其餘無外部來源；index完整分支三方試跑出現既有skills2快取355／354衝突，已依AI_RULES3.2詢問使用者是否只分段更新Runtime快取，未動該行。可獨立進行造型與預覽；本副本其他修改保留，不合併推送。
+- 完成：水道中心的長波彎曲大幅收斂，半寬改為小幅起伏；兩岸僅細碎局部變化，取消明顯蛇形與收腰。保留64格／8fps／8秒慢流、固定平面、邊緣極輕微擾；不改表定尺寸、壽命、伸展速度與命中。
+- 使用者已明確核准保留既有skills2差異、只更新本次Runtime快取231→232；其他script／Core／Worker快取與進行中程式全部保留。修改10檔：作者、SVG、asset-index／shipped-assets、專項測試、Runtime僅DATA_VERSION、兩頁Runtime快取、LV及本紀錄；Preset／layout無資料差異。
+- 驗證：node --test tests/poison-trail.test.cjs tests/vfx-editor-cache-versions.test.cjs 10/10；新增近直線主軸／側岸位移／無明顯收腰回歸，在舊造型會失敗，調整後通過。原有固定輪廓／微擾／慢流／命中／斜向投影／續送與回收測試全過。npm.cmd run build569檔通過，export-assets --check與兩庫diff --check通過；未弱化既有斷言，未重跑無變更的全庫。
+- 正式Core／Runtime／Pixi／出貨素材隔離預覽：左為05cf697自製上一版，右為近直線版，同尺寸、斜向朝向及慢流；PNG poison-straight-bank.png保存在本聊天visualizations，Console error／warning0，未讀寫玩家存檔。上一輪8秒動態及微擾設定保留；本輪重點為靜態輪廓，未另錄影片。
+- 素材先Commit396ea6d（SOURCE／SVG兩檔），SVG／Preset／layout來源及遊戲出貨SHA256一致。參考圖片僅觀察輪廓、未使用像素；沿前次確認Mote無原生SVG匯出，採專案原創向量作者。
+- 分段交付：候選相對HEAD只含本次區段，和工作內容三方merge-file試跑0，使用獨立暫存索引提交並保留其他已stage／未stage內容；沒有合併推送或修改其他副本。唯讀檢查未改AI規範／Workflow／Agent、elite／Worker／Protocol、Core／Backend／Editor guard、Preset／layout與素材庫解析／匯出。
+- 無本次未完成實作，可Review／合併；遊戲Commit為本段所在[Codex] fix: 毒水輪廓改為近直線並保留慢流，回覆附編號。限制為未做真人長戰／跨瀏覽器／GPU量測；造型可依預覽續調。下一步正常整合及重載；Editor未存內容先另存備份再重載，避免舊頁覆蓋。
+
+## POISON-FLAT-FLOW-20261022 — 固定平面毒水輪廓與緩慢內流
+
+- Owner：Codex；Done，單一開發者。使用者指出整條毒水扭動怪異，明確要求固定平面的輪廓，只讓邊緣非常輕微擾動、內部毒流緩慢流動。前置POISON-TRAIL已完成；允許poison-trail作者／SVG圖集／Preset／layout／索引／出貨及素材庫對應檔、專項回歸、Runtime僅資料快取、兩頁僅Runtime快取、LV與本紀錄。禁止修改命中、速度／範圍／壽命、Worker／Protocol／存檔、其他特效及其他副本；不合併推送。
+- 預檢：其他來源僅Claude 0d3a5445的index UI／熔爐快取985／989行；本次Runtime在959行，無語意相依，實際共同base／候選／Claude工作檔三方merge-file退出0。保留本副本岩壁其他修改，獨立分段提交；驗收整輪邊緣位移上限、固定中心／寬度、內流方向及低速、圖集循環／正式渲染、既有毒水回歸／快取／guard／Build與雙倉庫Commit，交使用者Review與預覽。
+- 完成：64格／8fps／8秒循環；水窪center與radius不隨動畫相位改變，邊緣單側振幅0.22材質像素、整輪最大位移0.44；底色／團塊固定，內部流紋以每秒8材質像素沿固定水路單向緩移，64像素週期無縫銜接。移除整條蛇行、寬度呼吸、內部大幅脈動與四臂14～17fps的快速差速。
+- 修改11檔：poison-trail.cjs作者、en-poison-cross Preset、flow.svg、asset-index／shipped-assets、專項測試、Runtime僅DATA_VERSION與兩頁Runtime229→230、LV及本紀錄。layout檢查後無差異；enemy-skills入口、elite模擬／事件／傷害／範圍／速度／持續與Worker／Protocol不改。素材庫3檔SOURCE／SVG／Preset先提交05cf697；SVG／Preset／layout與遊戲SHA256逐份一致。
+- 驗證：node --test tests/poison-trail.test.cjs tests/vfx-editor-cache-versions.test.cjs，9/9；node --test tests/vfx-editor-guard.test.cjs tests/vfx-duration.test.cjs tests/vfx-asset-export.test.cjs，77項76過1既有Windows符號連結略過，新增失敗0。新增兩項回歸釘住整輪固定center／radius、邊緣位移上限／首尾銜接、單向低速／8秒循環與四臂同速；其餘既有命中／投影／續送／回收測試維持通過。npm.cmd run build569檔、export-assets --check及兩庫diff --check通過，沒有改舊測試斷言掩蓋錯誤。
+- 實際預覽：正式Core／Runtime／Pixi／出貨SVG同尺度左右對比，左為素材庫5e11375的自製扭動版，右為本次固定平面慢流；錄製8秒Canvas動畫webm（1660692bytes）與PNG至本聊天visualizations，Console error／warning0，不讀寫真人存檔。使用者參考圖仍只作造型參考，不用第三方像素；沿前輪已確認的Mote無原生SVG限制，以專案作者製作。
+- 分段提交：index與Claude0d3a5445只在不同script快取行，實際三方merge-file退出0；本副本其他岩壁／火鏈／飛彈等修改保留，候選只帶本次資料／素材／快取／紀錄，以HEAD為base再與工作檔三方試跑0，分段stage。未修改或提交其他副本／進行中素材。
+- 唯讀檢查未改：AI規範／Workflow／AGENTS／prompts/codex、Core／PixiBackend／Editor guard、elite毒水與Worker Protocol／bridge、素材庫解析與匯出、既有layout及上述回歸。自我Review確認只有美術相位改變，貼地座標、伸展／判定與回收仍沿原事件。
+- 交付：本次修改與預覽完成，可Review／合併；遊戲Commit為本段所在[Codex] fix: 毒水固定平面輪廓並降低內流速度，回覆附編號，未合併推送。已知限制：1項略過，未驗真人長戰／跨瀏覽器／手機GPU；64格共享圖集未壓縮RGBA估16MiB，仍每次4個sprite、無新增粒子。無本次未完成實作，外觀可依使用者動態回饋續調；下一步正常整合並重載遊戲，舊Editor先備份未存內容再重載。
+
+## POISON-TRAIL-20261022 — 毒素加持改為連續流動毒水
+
+- Owner：Codex；Done，單一開發者。使用者參考圖要求將逐顆圓點改成連續毒水痕跡；原有毒十字、表定幾何及素材流程已完成。允許毒十字Preset／layout、新原創SVG及作者／索引／出貨與素材庫對應來源、elite毒十字及事件、Runtime相應接線、必要共用快取、專項回歸／文件／LV；禁止其他技能數值、配置工作簿、存檔、其他副本及岩壁功能。
+- 保留同副本岩壁進行中內容；使用者已明確允許合併共用快取版本。其他修改採分段、三方試跑及獨立提交。驗收連續伸展／寬度／斜向投影、傷害同步／壽命／回收、正式Renderer畫面、Editor舊分頁拒存、相關回歸／Build及雙倉庫Commit；交使用者Review／正常整合，不合併推送。
+
+- 完成：原創16格SVG改為蜿蜒中心、非對稱寬窄起伏、重疊混濁團塊、局部渦流、泡沫及柔霧邊緣；使用者指出第一版像刷漆後已移除等寬直條與平行流紋。四臂4個sprite、沒有持續粒子；替換原22層。長度／半寬／速度／持續與朝向仍讀表，命中改為中心至連續前緣的膠囊，舊balls保留相容但不再離散放球。新variant沿用既有w/h/a/growAge/lifeSec/travelMs，未新增Protocol欄位。
+- 修改檔案：js/elite.js毒十字與派送、js/vfx-runtime.js四臂派生／逐幀幾何／壽命／資料快取、enemy-skills.cjs及新poison-trail.cjs作者、Preset／layout、SVG／asset-index／shipped-assets、tests/poison-trail.test.cjs、兩頁Runtime快取、Adapter／用途登記／LV與本紀錄。Worker／bridge原先本輪快取已由另一飛彈提交81221796升為navigation-missile-hold2／337，涵蓋本次elite修改，不再覆寫共用欄位；Runtime兩頁採229。
+- 分段：本副本岩壁與火鏈仍進行中；毒十字函式／作者段落與其他功能不相依，候選相對HEAD三方merge-file試跑0並核對結果等於工作檔；僅stage本次候選與獨立檔。DATA_VERSION／兩頁快取依本輪使用者明確授權整合。保留其他全部修改與素材庫岩壁內容，不帶入提交。
+- 驗證：node --test tests/poison-trail.test.cjs 4/4；8檔核心相關251項249過2既有失敗（ELITE-DATA-3秘法棒舊6秒、ELITE-ENGINE-20飛彈兩段舊fixture），以修改前elite來源映射重跑兩名稱同樣失敗；未改既有斷言。guard／asset-export／兩份技能VFX／screen-space共78項77過1 Windows符號連結略過；Worker／Protocol／快取等追加檢查通過，期間另一火鏈任務主頁升229造成一次快取不一致，Editor同步229後3/3。npm.cmd run build 568檔通過；export-assets --check與兩庫diff --check通過。
+- 瀏覽器：隔離預覽使用正式Core／Runtime／Pixi與正式出貨SVG，完整3.4秒／伸展1.3秒及動畫到15秒已檢查；預覽PNG保存在本聊天visualizations，未讀寫真人存檔。初期預覽腳本的素材relativePath及重設共用backend造成載入／texture錯誤，已修正臨時腳本並以新分頁驗證無新增warning／error；正式遊戲程式沒有相應變更。Editor過期版本／外部Preset變更拒絕儲存409及備份保留由既有guard測試確認。
+- 素材交付：先建立素材庫Commit 5e11375，4檔自製來源／SVG／Preset／layout，三份出貨／來源SHA256一致；遊戲Commit為本段所在[Codex] feat: 毒素加持改為蜿蜒連續毒水，回覆附編號。參考圖僅觀察造型、未使用像素；Mote Studio已確認無原生SVG匯出，採向量作者。
+- 唯讀檢查未改：AI規範／Workflow／AGENTS／prompts/codex、Core／Backend／guard／server、Skills2表格及資料、Worker協議／shim、素材庫解析與匯出、elite-env及上述既有回歸；其他任務的battlefield／岩壁／火鏈／配置原樣保留。自我Review檢查判定前緣／斜向單次投影／事件續送／不同表定幾何／到期回收。
+- 交付：本次實作與預覽完成，可供Review／合併，未合併推送。已知限制：兩項既有失敗、一項略過；未驗真人長戰、手機GPU與跨瀏覽器，外觀仍可依使用者預覽回饋調整。下一步正常整合後重載遊戲；Editor未存內容先備份另存再重載，勿以舊分頁覆寫。
+
+## MISSILE-SPREAD-20261022 — 飛彈後退散開間距增加35%
+
+- Owner：Codex；Done，單一開發者。使用者要求四枚向後飛散的間距增加30～40%，採35%；沿既有飛彈接入，不依賴岩壁任務。
+- 允許：js/elite.js僅eliteCastMissiles的橫向展開、tests/missile-salvo.test.cjs、elite的Worker匯入／bridge／index快取、LV及本段。禁止其他技能、配置、Preset／素材、傷害／時序、Protocol／存檔與其他副本；不合併推送。
+- 驗收：四枚與各方向實際事件間距、齊射原停駐點、相關Worker回歸／Build／diff，自我Review後獨立Commit。岩壁進行中同檔區段保留，只stage本次hunk；接手者為使用者正常整合及重載驗收。
+- 完成7檔：eliteCastMissiles橫向spread=back×1.35，四枚相鄰間距由17.0667增至23.04（back=32），後退深度32、原side彎曲係數、時序及傷害不變。新增事件幾何回歸涵蓋0／90／180／斜向及NPC移動後齊射原點。LV同步，沒有新素材／配置差異／素材庫Commit。
+- 衝突：本副本另一岩壁任務修改elite不同函式及共用快取。使用者本輪明確批准合併快取版本，Worker資源及elite匯入採20261022-stone-wall-collision-missile-spread，bridge主頁升335；其餘岩壁／Runtime／Preset／作者修改保留、不納入本Commit。
+- 分段驗證：elite／AI_TASKS／LV以HEAD為共同基準、本次候選及保留岩壁的工作內容執行git merge-file -p，三檔皆退出0且結果逐位元等於正規化工作檔；index只stage bridge、Worker只stage elite匯入。共用快取行依使用者明確授權整合。
+- 測試：node --test --test-name-pattern='MISSILE-SPREAD|同批後退|齊射後不改落點|Worker實際派送' tests/missile-salvo.test.cjs，4/4；node --test tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/vfx-editor-cache-versions.test.cjs，27/27。完整上述四檔35項31過／4既有失敗，修改前飛彈7項同4項失敗（真實Preset剎停、舊事件、作者重製、固定位置的光芯絕對座標），未改既有斷言或使用者Preset；新增失敗0。npm.cmd run build，566檔通過；diff --check通過。
+- 唯讀檢查：AI_RULES／AGENTS／Workflow／prompts/codex、flight helper／Runtime、測試helper、現行配置與四份Preset、岩壁同檔差異。自我Review確認只加寬橫向、停駐仍用數值世界座標，未新增Timer／Protocol／存檔／VFX來源。沒有新做瀏覽器／真人存檔／長戰驗收；先前速度與hold參數仍由既有Pending差異處理，本輪不重寫配置。
+- 交付：本段所在「[Codex] fix: 飛彈後退散開間距增加35%」Commit，回覆附編號；本輪無未完成實作，可供Review／合併，既有4項Preset測試失敗仍需另行處理。未合併推送；下一步正常整合、重載遊戲看散開間距。其他任務未提交內容維持原樣。
+
 ## BATTLE-BIOMES-20261022 — 十張野外地圖與三種新地貌
 
 - Owner：Codex；Done；單一開發者。使用者圖片指定迷霧森林／熔岩山／落雷峰、月影沼澤改名、十張地圖元素及100～600關上限；使用者明確授權遇到決策採推薦方案持續實作。現有七圖渲染／配置流程完成，依賴已滿足；衝突預檢全部無外部來源。
@@ -11921,3 +12144,13 @@ Worker 存活且頁面正常完成載入。
 - Owner：Codex integrator；Resolved。依使用者對 `sync_ai_worktrees.bat` 的明確授權，整合 original HEAD `ea0abbe5d576d39b4fae71e11a55cf0734dd5b13`、incoming MERGE_HEAD `34c38d03ba86819c1cae4630e4b9010daea570bd`、共同基底 `d537a6d053a92345f6ac4cfada8433ca11699a94`；未委派、未操作 index／Commit／推送／其他 worktree 或素材庫。
 - 唯一衝突 `docs/AI_TASKS.md` 為獨立追加紀錄：保留 HEAD 的既有合併、狀態圖示與技能表紀錄，也保留 incoming 的飛彈柔光錐、隕石坑 49% 與飛彈停駐固定世界座標紀錄；沒有整側覆蓋。controller 對 unchanged incoming 檔案做的 EOF 空白整理原樣保留，其餘 staged incoming 功能檔未另行改寫。
 - 驗證：`node --test tests/missile-salvo.test.cjs tests/meteor-tail-impact.test.cjs tests/meteor-tail-flow.test.cjs tests/meteor-entry-origin.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-asset-export.test.cjs tests/skills2-vfx-schema.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs` 共 120 項，118 通過、1 失敗、1 Windows 符號連結略過。唯一失敗為 `METEOR-TAIL` 仍引用使用者已刪除的 `golden-tail-stream`，相關測試、Core 與 Preset 和 incoming MERGE_HEAD 完全相同，且 incoming 任務紀錄已明載同一基線失敗；未恢復已刪圖層或弱化斷言。`npm.cmd run build` 564 檔通過；完整 merged result 的 `git diff HEAD --check` 與衝突標記檢查通過。沒有新增素材庫檔案；controller 可依回報清單 stage 並建立 merge commit。
+
+## DEVELOP-MERGE-20261022-TERRAIN-VFX — 地形、築牆、毒水、飛彈與雷隕坑整合
+
+- Owner：Codex integrator；Done。使用者以「1」授權解決develop衝突，整合原HEAD 7b2ba45055ccd32df919fbf296567127b2df4afa、incoming ed5e7720e440ffde3952944ab83e924d452925bb、共同基底4f9e8e4c942128aebd173327df63e7c1e6393ce7。自動程序先完成語意整合，但controller對已暫存刪除的config/param-patches/60873404-f290-452f-97c4-b972411a3a1f.json再次git add失敗而停止；本輪核對並保留原刪除，接續驗證、暫存及本機合併提交，未操作其他worktree／推送。
+- 五個衝突保留兩側意圖：battle-terrain載入與地形推出、築牆waypoint／掃掠碰撞與近戰遮擋、毒水連續流動、四色飛彈及雷隕石四秒坑痕與incoming粒子調整。主頁／Editor／Worker imports及Runtime DATA_VERSION使用合併快取鍵；本輪另補WORKER_ASSET_VERSION為20261022-terrain-stone-wall-vfx-merge、主頁bridge342，避免已載入任一父版本的瀏覽器繼續用舊Worker。Protocol不變。
+- 本輪核對並stage五個衝突檔、docs/AI_TASKS.md、tools/vfx/editor/index.html、vfx/shipped-assets.json及js/bridge.js；其餘既有暫存incoming內容、已刪除／新增參數提案保留。未改動Excel：Skills2.xlsx blob與incoming相同，config_tables --apply Skills2 dry-run為2字面值語意變更0。LV_upgrade_system及相關功能文件沿已合併內容保留，沒有新增玩法。
+- 獨立擴大驗證：node --test --test-reporter=tap tests/battle-terrain.test.cjs tests/stone-wall-collision.test.cjs tests/battlefield.test.cjs tests/elite-engine.test.cjs tests/elite-data.test.cjs tests/fire-chain-height.test.cjs tests/missile-salvo.test.cjs tests/poison-trail.test.cjs tests/rock-wall-art.test.cjs tests/meteor-tail-impact.test.cjs tests/meteor-tail-flow.test.cjs tests/meteor-entry-origin.test.cjs tests/meteor-impact-timing.test.cjs tests/vfx-core.test.cjs tests/vfx-pixi-sheet.test.cjs tests/vfx-runtime.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/vfx-projectile-perspective.test.cjs tests/vfx-duration.test.cjs tests/vfx-size.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-asset-export.test.cjs tests/vfx-preset-usage.test.cjs tests/skills2-vfx-schema.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs。27檔605項＝593通過、11失敗、1Windows符號連結略過；地形與築牆專項皆綠。6個失敗測試檔以兩側原始來源唯讀映射重跑：incoming 200項187過13失敗，原HEAD 200項191過9失敗；目前11項失敗全部存在於兩側失敗集合，新增失敗0，未調參數或降低斷言。失敗涵蓋ELITE-DATA-3／ENGINE-20、火鳳主隕石、兩個METEOR-TAIL、投影矩陣、THUNDERFALL、FIELD、CATALOG-3、CHAIN與STARFALL-TAIL；完整名稱與TAP存於本輪備份。原自動程序另外28檔484項477過6既有失敗1略過的紀錄保留於原同步報告，與本輪測試範圍不同。
+- npm.cmd run build：571檔通過。export-assets --check：198個assetId已最新，逐份SHA256及fileSize全數吻合；衝突標記及git diff HEAD --check通過。沒有新增素材：本輪未寫共享素材庫，保持2f77fc5及原有未追蹤codex-authored/thunder兩PNG；兩PNG已在遊戲HEAD受追蹤，本次不代替其他任務提交其共享來源。素材庫仍ahead13且有未提交檔案，完整雙倉庫遠端同步尚未完成。
+- 唯讀檢查規範／流程／Agent、兩側差異、衝突預檢、controller／匯出工具、相關測試與素材索引；預檢來源即本次授權整合的ai/codex，未混入獨立codex/lava-terrain工作區。原index、工作檔、parents、測試及基線保存在Git metadata的merge-terrain-vfx-20261022-prQXoj。
+- 交付：原pending merge已解，可供Review；Commit為本段所在[Codex] merge: 整合地形障礙與築牆特效。develop工作區應乾淨，未推送／同步其他AI，未改自動同步工具。已知限制為11項既有失敗、1略過、素材庫未提交來源與未做新增瀏覽器／玩家長戰驗收；沒有本次未完成衝突。下一步可在各任務完成、素材庫來源提交後再跑同步BAT；VFX Editor重載前先備份未存內容。

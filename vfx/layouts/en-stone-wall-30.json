@@ -6,10 +6,7 @@
       "id": "en-stone-wall-30",
       "name": "en-stone-wall-30",
       "layerIds": [
-        "shadow",
-        "base",
         "slab",
-        "rim",
         "dust"
       ]
     }

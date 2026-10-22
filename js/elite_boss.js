@@ -426,7 +426,9 @@ function bskDomain(c, o) {
     if (d > o.r + ELITE_PLAYER_BODY_R) { acc = Math.min(acc + 0.1, o.tick || 0.5); return; }
     if (o.pull > 0 && d > 40) {
       var step = Math.min(d - 30, o.pull * 0.1);
+      var ox = pp.x, oy = pp.y;
       pp.x -= (pp.x - mp.x) / d * step; pp.y -= (pp.y - mp.y) / d * step;
+      eliteClampMove(ox, oy, pp);
     }
     acc += 0.1;
     if (acc + 1e-6 < (o.tick || 0.5)) return;
@@ -499,7 +501,7 @@ function bskNear(c, reach, fn) {
     if (!(m.hp > 0)) { m._elDash = null; return; }
     var dash = m._elDash;
     var pos = eliteMonsterPos(m);
-    if (dash && pos) { pos.x = dash.ex; pos.y = dash.ey; }
+    if (dash && pos) { var ox = pos.x, oy = pos.y; pos.x = dash.ex; pos.y = dash.ey; eliteClampMove(ox, oy, pos, bfEntityRadius(m) * 0.6); }
     m._elDash = null;
     if (bskAlive(m)) fn();
   });

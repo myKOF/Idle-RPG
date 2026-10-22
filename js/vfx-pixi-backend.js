@@ -271,7 +271,7 @@ var VFXPixiBackend = (function () {
     // edges preserve the stroke width; 98 vertices still fit the small batch.
     // Existing effects retain their original 85-vertex topology.
     function createWarpMesh(spec) {
-      var cols=spec.straightenBend?49:17,rows=spec.straightenBend?2:5;
+      var cols=spec.reveal?2:spec.straightenBend?49:17,rows=spec.reveal?17:spec.straightenBend?2:5;
       var positions=new Float32Array(cols*rows*2),uvs=new Float32Array(positions.length);
       var indices=new Uint32Array((cols-1)*(rows-1)*6),n=0;
       for(var y=0;y<rows;y++)for(var x=0;x<cols;x++){
@@ -282,6 +282,31 @@ var VFXPixiBackend = (function () {
       var node=new PixiLib.Mesh({geometry:geometry,texture:PixiLib.Texture.EMPTY});
       node.__warp={uvs:uvs,baseUvs:uvs.slice(),positions:positions,cache:{},point:{},geometry:geometry};
       return node;
+    }
+    // Crop UVs and geometry together in texture space, before any plane projection.
+    // Each tile keeps its texel size; only the advancing front is uncovered.
+    function updateReveal(node,t) {
+      var m=node.__reveal,tex=node.texture,tw=tex.orig ? tex.orig.width : tex.width,th=tex.orig ? tex.orig.height : tex.height;
+      if (!(tw>1 && th>1)) { node.visible=false; return; }
+      var c=m.cache;
+      if(c.texture===tex && c.front===t.revealX && c.radius===t.revealRadius && c.start===t.revealStartRadius && c.roughness===t.revealRoughness && c.ax===t.anchorX && c.ay===t.anchorY){node.visible=c.visible;return;}
+      c.texture=tex;c.front=t.revealX;c.radius=t.revealRadius;c.start=t.revealStartRadius;c.ax=t.anchorX;c.ay=t.anchorY;
+      c.roughness=t.revealRoughness;
+      var visible=false;
+      for(var i=0;i<m.uvs.length;i+=2) {
+        var u=m.baseUvs[i],v=m.baseUvs[i+1],bow=1-Math.sqrt(Math.max(0,1-Math.pow(v*2-1,2)));
+        // Small fixed chips in the advancing cap; clamp after the cut so completed
+        // tiles retain their whole edge and meet the next tile without a seam.
+        var chips=(t.revealRoughness||0)*(.5+.3*Math.sin(v*37+1)+.2*Math.sin(v*71+2));
+        var lo=(t.revealStartRadius||0)*bow,hi=Math.min(1,t.revealX-(t.revealRadius||0)*bow-chips);
+        hi=Math.max(lo,hi);visible=visible||hi>lo;
+        u=lo+(hi-lo)*u;
+        m.uvs[i]=u;m.uvs[i+1]=v;
+        m.positions[i]=(u-t.anchorX)*tw;m.positions[i+1]=(v-t.anchorY)*th;
+      }
+      node.visible=visible;
+      c.visible=visible;
+      m.geometry.getBuffer('aPosition').update();m.geometry.getBuffer('aUV').update();
     }
     // Read each texture/orientation once, never each frame or each bolt. Bright-core
     // centroids ignore transparent margins and low-intensity surrounding glow.
@@ -412,6 +437,8 @@ var VFXPixiBackend = (function () {
       var node;
       if (spec.kind === 'deformed') {
         node=createWarpMesh(spec);
+      } else if (spec.kind === 'revealed') {
+        node=createWarpMesh({reveal:true});node.__reveal=node.__warp;delete node.__warp;
       } else if (spec.kind === 'profiled' || spec.kind === 'generated') {
         node = new PixiLib.Container();
         node.__profileScales = spec.profileScales ? spec.profileScales.slice() : Array(64).fill(1);
@@ -492,6 +519,7 @@ var VFXPixiBackend = (function () {
         updateProfile(node);
       }
       if (node.__warp) updateWarp(node,t);
+      if (node.__reveal) updateReveal(node,t);
       if (t.width !== undefined) node.width = t.width;
       if (t.height !== undefined) node.height = t.height;
       if (t.tileX !== undefined && node.tilePosition) {
@@ -508,6 +536,7 @@ var VFXPixiBackend = (function () {
       node.__frames = null;
       node.__profileFrames = null;
       if(node.__warp)node.__warp.geometry.destroy();
+      if(node.__reveal)node.__reveal.geometry.destroy();
       node.destroy({ children: true });
     }
 

@@ -1,4 +1,14 @@
 # VFX_RUNTIME_ADAPTER.md
+## 毒素加持固定接段（2026-10-22）
+
+en-poison-cross沿表引用，四臂各含三段首尾無縫材質；派生子部件不是獨立來源。elite-poison-trail沿權威growAge／travelMs取顯露曲線，整臂幾何縮放在出生時確定，逐幀只移動UV裁切前緣；surface sheet獨立續播。保留舊flow-0單條Preset的相容伸展路徑，舊事件無variant亦可播放。
+
+
+### 毒素加持連續毒水（2026-10-22）
+
+`variant=elite-poison-trail` 沿用既有 area／travelMs 欄位：x/y 是固定中心，a 是判定平面朝向，w 是每臂最長長度，h 是水帶直徑，r 保留最長半徑供舊端退化，growAge 是本次伸展經過秒數，lifeSec 是剩餘壽命，travelMs[0] 是 len/speed 的完整伸展時間。四臂共用同一組權威數值，逐幀 reach=min(w,w*age/growSec)，每臂為中心到前緣的膠囊；ballR 繼續作半寬，舊 balls 參數保留但不再離散放球。未認得 variant 的舊端沿原 ground 處理，不猜另一套速度；沒有 travelMs 時顯示完整水帶。
+
+Runtime 將 en-poison-cross 的 flow 圖層拆成同一份 Preset 的四個子部件，不是新增 Preset 來源；中心到前緣逐幀伸展，既有 screenSpaceSpec 保留 _planeA／_planeW 後只做一次貼地投影，續送只校正 growAge、不重播圖集；lifeSec=0 立即清除。沒有新增協議欄位／存檔格式；依既有協議允許的新 variant 擴充。
 
 ## 超重岩之術（2026-10-12）
 
@@ -671,3 +681,9 @@ Core 將每顆球的中心放入各節點的 `sortY`；球體、光暈與電弧�
 ### 敵方飛彈剎停與齊射（2026-10-21）
 
 `elite-missile-flight` 沿明確起終點與二次貝茲控制點飛行。`area.brake` 使進度為 `1-(1-k)^3`，到達時速度降至0；`holdSec` 秒內固定在終點，平滑轉向 `holdAngle`。齊射由模擬在同一拍送出第二段，使用 `startAngle` 銜接待機朝向；當拍鎖定玩家位置，抵達才結算傷害。角度使用判定平面，Adapter負責畫面投影。此變體的粒子不隨travelMs加速或減速，停駐及抵達後尾跡皆按真實時間淡出；Core／Backend不新增遊戲知識。舊事件缺欄時沿用原語意。
+
+## 火鏈端點追蹤（2026-10-22）
+
+elite-ground的elite-chain場域沿用既有targets陣列帶兩端floatSel；area仍是模擬層地面幾何與續命依據。Runtime逐幀讀取兩端目前補間後的footOf，同步中心／長度／世界平面角，移除第二次位置／尺寸／角度平滑；無targets的歷史事件維持原快照外推，無footOf的測試或舊Adapter亦退回快照。死亡或顯示錨點失效立即收掉，不讀取玩家備援位置。高度固定2米，不依NPC圖像縮放改變，也不改傷害。
+
+Core內部play／setTransform可帶elevation（非負有限世界單位，預設0），sprite／child／particle每次輸出都重設該欄，避免共用scratch洩漏。Renderer對有高度的billboard以各節鏈環當前y加回高度作地面錨點，投影後再扣高度×當地遠近倍率；sortY仍保留原深度排序。一般光柱保留整張錨點語意，不改Preset／Editor資料格式或Worker Protocol。

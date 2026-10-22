@@ -1,4 +1,8 @@
 # VFX_CORE_AND_PRESET_SCHEMA.md
+## 固定紋理逐步顯露（2026-10-22）
+
+一般根sprite可用`revealXOverLife`數值曲線，0到1代表局部貼圖X顯露前緣，允許超出此範圍銜接相鄰段；省略時完全沿用原sprite。`revealRadius`與`revealStartRadius`是以貼圖寬度為單位的圓收半徑（0～1）。可選`revealRoughness`（0～1，預設0，以貼圖寬度為單位）僅在前端收口加入固定細碎內凹，整段顯露後保持完整接縫；不改UV比例、不隨時間抖動。使用2×17（34頂點）網格，UV和位置同步裁切，保留投影／大小／錨點；與radiusProfile、parent、deformation互斥。Runtime可用內部`revealProgress`覆寫曲線取樣進度（null解除），不影響sheet年齡。Editor曲線面板可修改顯露曲線。
+
 
 ## 2026-10-19 動態繪製順序
 

@@ -109,14 +109,14 @@
       "blendMode": "add",
       "emission": {
         "mode": "rate",
-        "rate": 50
+        "rate": 20
       },
       "lifetime": [
         0.18,
-        3
+        5
       ],
       "spawn": {
-        "radius": 5,
+        "radius": 10,
         "shape": "circle"
       },
       "speed": [

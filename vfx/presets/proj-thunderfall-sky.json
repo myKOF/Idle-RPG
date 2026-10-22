@@ -283,9 +283,9 @@
       "duration": 2,
       "emission": {
         "mode": "rate",
-        "rate": 24
+        "rate": 12
       },
-      "maxParticles": 16,
+      "maxParticles": 10,
       "lifetime": [
         0.28,
         0.5
@@ -736,58 +736,6 @@
         [
           0.6,
           0.8
-        ],
-        [
-          1,
-          0
-        ]
-      ]
-    },
-    {
-      "id": "trailing-charge",
-      "type": "particle",
-      "assetId": "particle-pack/png-black-background/circle_05.png",
-      "zIndex": 18,
-      "position": {
-        "x": -18.515,
-        "y": -0.8821
-      },
-      "alpha": 0.8,
-      "tint": "#7ebeff",
-      "blendMode": "add",
-      "duration": 2,
-      "emission": {
-        "mode": "rate",
-        "rate": 24
-      },
-      "maxParticles": 14,
-      "lifetime": [
-        0.25,
-        0.5
-      ],
-      "spawn": {
-        "height": 32.9916,
-        "shape": "box",
-        "width": 13.8912
-      },
-      "speed": [
-        121.548,
-        199.686
-      ],
-      "direction": 180,
-      "spread": 12,
-      "startScale": [
-        0.0034,
-        0.0085
-      ],
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.15,
-          1
         ],
         [
           1,

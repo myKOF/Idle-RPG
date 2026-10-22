@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "burst-dragon-devour",
-  "duration": 1,
+  "duration": 0.8,
   "loop": false,
   "layers": [
     {
@@ -13,7 +13,7 @@
       "blendMode": "screen",
       "duration": 0.7,
       "emission": {
-        "count": 24,
+        "count": 10,
         "mode": "burst"
       },
       "lifetime": [
@@ -79,7 +79,7 @@
       "blendMode": "screen",
       "duration": 0.5,
       "emission": {
-        "count": 14,
+        "count": 6,
         "mode": "burst"
       },
       "lifetime": [
@@ -123,7 +123,7 @@
       "blendMode": "add",
       "duration": 0.8,
       "emission": {
-        "count": 28,
+        "count": 12,
         "mode": "burst"
       },
       "lifetime": [

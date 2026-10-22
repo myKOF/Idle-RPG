@@ -148,7 +148,7 @@ const enemyRoutes={
  e_mortar:[['placement','spread'],['gap','step'],['damage','r'],['body','bodyD'],['height','arc']],
  e_walls:[['body',['len','thick']],['placement','dist']],
  e_vortex:[['effect','pullR'],['height','arcH'],['speed','speed']],
- e_missile:[['travel','back'],['damage','r'],['body','bodyD']],
+ e_missile:[['travel','back'],['placement','spread'],['damage','r'],['body','bodyD']],
  e_thunderstorm:[['placement','spread'],['gap','step'],['damage','r']],
  e_meteor:[['placement','spread'],['gap','step'],['damage','r'],['body','bodyD']],
  e_moltenblast:[['damage','r']], e_frostnova:[['damage','r']], e_quake:[['damage','r']],

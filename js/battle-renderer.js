@@ -7115,7 +7115,9 @@ var BattleRenderer = (function () {
   }
   // 直立光柱是整張 billboard：以敵人腳點決定遠近倍率，柱頂不再各自套一次透視。
   function projectBillboardTransform(t) {
-    var anchorY = isFinite(t.sortY) ? Number(t.sortY) : (t.y || 0);
+    // 懸空平面每節鏈環依自己正下方投影，不能共用整條鏈中點的遠近倍率。
+    var elevation = t.elevation > 0 ? t.elevation : 0;
+    var anchorY = elevation ? (t.y || 0) + elevation : isFinite(t.sortY) ? Number(t.sortY) : (t.y || 0);
     var p = airScreenPose(t.x || 0, anchorY);
     /* 關掉「受鏡頭遠近影響」的圖層維持原尺寸；離錨點的位移也一起不縮放，否則圖不變、位置卻縮，會和同伴分家 */
     var k = depthScaleOf(t, p.scale);
@@ -7128,9 +7130,11 @@ var BattleRenderer = (function () {
     if (t.deformation) {
       /* 與上面同一個道理，但 billboard 是「整張以錨點決定遠近」：原點照錨點投影，
          高於錨點的部分等比拉開，柱身／雷柱才是直的。 */
+      var q = elevation ? airScreenPose(t.deformation.originX || 0, (t.deformation.originY || 0) + elevation) : null;
       out.deformation = projectedWarp(t.deformation,
-        { x: airScreenPose(t.deformation.originX || 0, anchorY).x,
-          y: p.y + ((t.deformation.originY || 0) - anchorY) * k }, k);
+        q ? { x: q.x, y: q.y - elevation * depthScaleOf(t, q.scale) }
+          : { x: airScreenPose(t.deformation.originX || 0, anchorY).x,
+            y: p.y + ((t.deformation.originY || 0) - anchorY) * k }, q ? depthScaleOf(t, q.scale) : k);
     }
     return out;
   }

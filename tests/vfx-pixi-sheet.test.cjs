@@ -128,6 +128,44 @@ function setup(PIXI) {
   return { container, backend };
 }
 
+test('REVEAL 接段裁切同時移動UV與頂點，紋理不伸縮；未顯露快取／換幀／回收皆正確',async()=>{
+  const PIXI=makePixi();let destroyed=0,writes=0;
+  PIXI.MeshGeometry=class{constructor(o){Object.assign(this,o)}getBuffer(){return {update(){writes++}}}destroy(){destroyed++}};
+  PIXI.Mesh=class extends PIXI.Sprite{constructor(o){super(o.texture);this.geometry=o.geometry;this.position=this.scale=this.skew={set(){}}}};
+  const {backend}=setup(PIXI),node=backend.createNode({kind:'revealed',assetUrl:'/reveal.svg',sheet:{columns:2,rows:1}});
+  await Promise.resolve();await Promise.resolve();
+  node.__frames.forEach(t=>t.orig={width:t.frame.width,height:t.frame.height});
+  const t={anchorX:.5,anchorY:.5,revealX:-.3,revealRadius:.25,revealStartRadius:0,frame:0};
+  backend.updateNode(node,t);assert.equal(node.visible,false);
+  const hiddenWrites=writes;backend.updateNode(node,t);assert.equal(node.visible,false);assert.equal(writes,hiddenWrites,'快取不能令隱藏段重新出現');
+  const mesh=node.__reveal;
+  for(const front of [.05,.5,.99,1.5]) {
+    t.revealX=front;backend.updateNode(node,t);assert.equal(node.visible,true);
+    for(let i=0;i<mesh.uvs.length;i+=2) {
+      assert.ok(Math.abs(mesh.positions[i]-(mesh.uvs[i]-.5)*256)<.00002,'局部每一texel的比例不變');
+      assert.ok(Math.abs(mesh.positions[i+1]-(mesh.uvs[i+1]-.5)*256)<.00002);
+      assert.ok(mesh.uvs[i]>=0 && mesh.uvs[i]<=Math.min(1,front)+1e-6);
+    }
+    assert.equal(mesh.positions.length/2,34,'只沿圓收方向細分，保持小批次網格');
+    if(front===.5)assert.ok(mesh.uvs[2] < mesh.uvs[(8*2+1)*2],'前端沿橫向圓收');
+  }
+  const copy=mesh.positions.slice();t.frame=1;backend.updateNode(node,t);assert.deepEqual(mesh.positions,copy,'換幀只改材質，不挪動已鋪幾何');
+  assert.notEqual(node.__frames[0],node.texture);
+  t.revealX=.5;backend.updateNode(node,t);const smooth=mesh.positions.slice();
+  t.revealRoughness=.014;backend.updateNode(node,t);const cuts=[];
+  for(let row=0;row<17;row++) {
+    const left=row*4,right=left+2,cut=smooth[right]-mesh.positions[right];
+    assert.equal(mesh.positions[left],smooth[left],'只有前端收口改變，後方紋理與接縫保持');
+    assert.ok(cut>0 && cut<=.014*256+.00002,'只加入少量內凹，不超出原前緣');cuts.push(cut);
+    assert.ok(Math.abs(mesh.positions[right]-(mesh.uvs[right]-.5)*256)<.00002,'收口凹凸仍保持UV比例');
+  }
+  assert.ok(Math.max(...cuts)-Math.min(...cuts)>1,'收口不是均勻縮短的光滑半圓');
+  const rough=mesh.positions.slice();backend.updateNode(node,t);assert.deepEqual(mesh.positions,rough,'凹口固定、不隨每幀扭動');
+  t.revealX=1.5;backend.updateNode(node,t);assert.deepEqual(mesh.positions,copy,'完成的段保持完整接縫，不在每段末端留下凹口');
+  t.revealStartRadius=.25;backend.updateNode(node,t);assert.ok(mesh.uvs[0]>0,'第一段根部圓收');
+  backend.destroyNode(node);assert.equal(destroyed,1);backend.destroy();
+});
+
 const SHEET_SPEC = {
   kind: 'sprite', assetUrl: '/a/flame.png', blendMode: 'add',
   sheet: { columns: 4, rows: 2 }

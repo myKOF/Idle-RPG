@@ -10,7 +10,7 @@
       "assetId": "particle-pack/png-transparent/smoke_04.png",
       "zIndex": 0,
       "position": {
-        "x": -55,
+        "x": -14.9958,
         "y": 0
       },
       "alpha": 0.62,
@@ -102,10 +102,10 @@
         "mode": "rate",
         "rate": 20
       },
-      "maxParticles": 18,
+      "maxParticles": 10,
       "lifetime": [
-        0.25,
-        0.5
+        0.15,
+        0.4
       ],
       "spawn": {
         "height": 16,
@@ -187,11 +187,11 @@
       "duration": 1,
       "emission": {
         "mode": "rate",
-        "rate": 32
+        "rate": 15
       },
       "lifetime": [
         0.2,
-        0.45
+        0.3
       ],
       "spawn": {
         "height": 22,
@@ -268,12 +268,12 @@
       "duration": 1,
       "emission": {
         "mode": "rate",
-        "rate": 20
+        "rate": 10
       },
-      "maxParticles": 12,
+      "maxParticles": 15,
       "lifetime": [
         0.2,
-        0.5
+        0.4
       ],
       "spawn": {
         "height": 6,
@@ -337,57 +337,6 @@
         [
           1,
           0.08
-        ]
-      ]
-    },
-    {
-      "id": "trailing-embers",
-      "type": "particle",
-      "assetId": "particle-pack/png-transparent/circle_05.png",
-      "zIndex": 5,
-      "position": {
-        "x": -20,
-        "y": 0
-      },
-      "alpha": 0.85,
-      "tint": "#ffd478",
-      "blendMode": "add",
-      "duration": 1,
-      "emission": {
-        "mode": "rate",
-        "rate": 18
-      },
-      "lifetime": [
-        0.3,
-        0.65
-      ],
-      "spawn": {
-        "height": 35,
-        "shape": "box",
-        "width": 16
-      },
-      "speed": [
-        160,
-        280
-      ],
-      "direction": 180,
-      "spread": 18,
-      "startScale": [
-        0.0029,
-        0.0068
-      ],
-      "alphaOverLife": [
-        [
-          0,
-          1
-        ],
-        [
-          0.4,
-          0.85
-        ],
-        [
-          1,
-          0
         ]
       ]
     },
@@ -463,8 +412,8 @@
       "assetId": "particle-pack/png-black-background/fire_01.png",
       "zIndex": 9,
       "position": {
-        "x": 3.5527,
-        "y": -8.5026
+        "x": 2.8119,
+        "y": 1.128
       },
       "rotation": -0.7,
       "scale": {
@@ -657,16 +606,16 @@
         "y": -17.0052
       },
       "alpha": 0.85,
-      "tint": "#ff951e",
+      "tint": "#ff841f",
       "blendMode": "add",
       "duration": 1,
       "emission": {
         "mode": "rate",
-        "rate": 32
+        "rate": 15
       },
       "lifetime": [
-        0.4,
-        0.75
+        0.2,
+        0.45
       ],
       "spawn": {
         "height": 22,
@@ -739,7 +688,7 @@
       "duration": 1,
       "emission": {
         "mode": "rate",
-        "rate": 32
+        "rate": 15
       },
       "lifetime": [
         0.4,

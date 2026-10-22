@@ -20,6 +20,8 @@
 var ELITE_PLAYER_BODY_R = 18;     // 判定時把玩家當成半徑這麼大的圓（身體邊緣先碰到範圍就算中）
 var ELITE_VIS_REFRESH_SEC = 0.3;  // 場域特效的續命間隔（顯示層以 area.id 合併，超過約半秒沒續命就收掉）
 var ELITE_CASTS_PER_TICK = 3;     // 同一個 tick 最多開幾個新技能，避免整群同時開火
+var ELITE_MAX_WALL_CASTS = 2;
+var ELITE_WALL_NAV_LIMITS = { walls: 6, activeWalls: 6, meshes: 8, builds: 2, routes: 16, replan: 0.5, check: 0.25, goalMove: 24, radiusStep: 4 };
 
 var ELITE_RT = {
   jobs: [],      // 延遲事件 { at, fn }
@@ -31,6 +33,8 @@ var ELITE_RT = {
   orbs: [],      // 冰凍脈衝的追蹤冰球 { owner, x, y, until, nextPulse, vis, def }
   sparks: [],    // 電火花 { owner, x, y, vx, vy, until, r, def }
   walls: [],     // 石牆 { x, y, a, len, thick, until, vis }
+  wallCasts: [], // 預警即占名額，直到這次施放的牆全數消失
+  wallNav: null, // 有上限的牆角路網與各角色路徑快取；不進存檔／Protocol
   pull: null,    // 漩渦的拉扯進行中 { owner, tx, ty, speed, def }
   budget: 0,
   errors: 0
@@ -47,6 +51,8 @@ function eliteReset() {
   ELITE_RT.orbs.length = 0;
   ELITE_RT.sparks.length = 0;
   ELITE_RT.walls.length = 0;
+  ELITE_RT.wallCasts.length = 0;
+  ELITE_RT.wallNav = null;
   ELITE_RT.pull = null;
   if (typeof bfPlayerPos === 'function') bfPlayerPos().lift = 0;
 }
@@ -168,6 +174,14 @@ function eliteVisEmit(v) {
   var area = { id: v.id, x: v.x, y: v.y };
   if (v.w > 0 && v.h > 0) { area.w = v.w; area.h = v.h; area.a = v.a || 0; }
   else { area.r = v.r; if (v.a !== undefined) area.a = v.a; }      // 圓形場域也可以帶朝向（毒十字依敵人面向玩家的方向轉）
+  if (v.poisonTrail) {
+    area.r = v.r;
+    area.growAge = Math.max(0, GT - v.t0);
+    area.lifeSec = Math.max(0, v.until - GT);
+    eliteFx({ fxKind: 'aura', variant: 'elite-poison-trail', count: 1, dur: area.lifeSec,
+      travelMs: [v.growSec * 1000], area: area, vfx: { ground: v.preset } });
+    return;
+  }
   /* 會移動的場域（火鏈）：把中心的移動速度與方向一起送過去，顯示層在兩則事件之間沿著它自走，不會一格一格跳。 */
   if (v.speed > 0 && isFinite(v.moveA)) { area.speed = v.speed; area.moveA = v.moveA; }
   if (v.curtain) {
@@ -180,6 +194,7 @@ function eliteVisEmit(v) {
   }
   eliteFx({
     fxKind: 'aura', variant: 'elite-ground', count: 1, dur: 0.2,
+    targets: v.targets,
     area: area, vfx: { ground: v.preset }
   });
 }
@@ -256,10 +271,12 @@ function eliteApplyStatus(p, dCfg, res, o) {
 /* 把玩家從 (fx,fy) 往外推 dist（座標單位）。位置由模擬層 bfPlayerPos() 就地改寫。 */
 function elitePushPlayer(fx, fy, dist) {
   var pp = elitePos();
+  var ox = pp.x, oy = pp.y;
   var dx = pp.x - fx, dy = pp.y - fy;
   var d = Math.sqrt(dx * dx + dy * dy) || 1;
   pp.x += dx / d * dist;
   pp.y += dy / d * dist;
+  eliteClampMove(ox, oy, pp);
 }
 function eliteInCircle(x, y, r) {
   var pp = elitePos();
@@ -603,6 +620,7 @@ function eliteKeepAway(m, d, id) {
 
 /* 施放前提：有些技能要有同伴或有空間才有意義。 */
 function eliteCanCast(m, d) {
+  if (d.arch === 'walls' && eliteWallCastCount() >= ELITE_MAX_WALL_CASTS) return false;
   switch (d.arch) {
     case 'bloodsac': return eliteGroupMembers(m, true).some(function (e) { return e !== m && !e.elite && e.hp > 0; });
     case 'summon':
@@ -929,7 +947,7 @@ function eliteCastDash(m, d) {
     eliteLater(dur, function () {
       if (!(m.hp > 0)) { m._elDash = null; return; }
       var dash = m._elDash;
-      if (dash) { var pos = eliteMonsterPos(m); if (pos) { pos.x = dash.ex; pos.y = dash.ey; } }
+      if (dash) { var pos = eliteMonsterPos(m); if (pos) { var ox = pos.x, oy = pos.y; pos.x = dash.ex; pos.y = dash.ey; eliteClampMove(ox, oy, pos, bfEntityRadius(m) * 0.6); } }
       m._elDash = null;
       var mp2 = eliteMonsterPos(m) || mp;
       var pp2 = elitePos();
@@ -949,8 +967,13 @@ function eliteDashStep(m, dt) {
   var k = Math.min(1, dash.t / dash.dur);
   var pos = eliteMonsterPos(m);
   if (!pos) return;
+  var ox = pos.x, oy = pos.y;
   pos.x = dash.sx + (dash.ex - dash.sx) * k;
   pos.y = dash.sy + (dash.ey - dash.sy) * k;
+  if (eliteClampMove(ox, oy, pos, bfEntityRadius(m) * 0.6)) {
+    // 結束點也停在牆前，延遲結算不能再把衝鋒者送到原終點。
+    dash.ex = pos.x; dash.ey = pos.y; dash.sx = pos.x; dash.sy = pos.y;
+  }
 }
 
 /* ============ 旋風斬：原地連續橫掃 ============ */
@@ -1217,6 +1240,7 @@ function eliteChainsTick(dt, list) {
     c.vis.speed = csp > 3 ? csp : 0;
     c.vis.moveA = csp > 3 ? Math.atan2(c.vy, c.vx) : NaN;
     c.vis.x = mx; c.vis.y = my;
+    c.vis.targets = [c.a.floatSel, c.b.floatSel];
     c.vis.w = len; c.vis.h = c.d.linkH > 0 ? c.d.linkH : Math.max(24, c.d.wid * 2.2);
     c.vis.a = Math.atan2(bp.y - ap.y, bp.x - ap.x);
     c.nextTick -= dt;
@@ -1275,12 +1299,9 @@ function eliteBeamsTick(dt) {
   ELITE_RT.beams = keep;
 }
 
-/* ============ 毒素加持：中心一個毒圈，十字形的毒水球從中心向外延伸，緩慢旋轉 ============
-   設計（使用者 2026-10-16）：中心毒圈半徑 hubR（預設 2.8 米）；四個方向各 balls 顆毒水球，以 speed（12 米／秒）朝外「長出」，
-   最終長度 len（36 米），之後固定長度，到 dur 秒結束。十字固定朝上下左右、不旋轉（Preset 的小球旋轉在地面投影下會炸開）。
-   第 k 顆（k＝0..balls-1）在距離 (k+1)×len/balls，延伸前緣（speed×t）到了才存在（與 Preset 同一組公式）。
-   碰到毒球或站在中心毒圈裡都會受傷。
-   畫面角色：地板特效＝中心毒圈（en-poison-dot，開頭預警到結束一直在）；持續場域特效＝十字本體 */
+/* 毒素加持：表定 len／speed 決定連續伸展的前緣，ballR 是水帶半寬。
+   四臂為從中心到前緣的膠囊形；舊 balls 配置保留相容、不再離散放球。
+   朝向由敵人面對玩家的方向決定，生成後不旋轉。 */
 function eliteCastCross(m, d) {
   var pp = elitePos();
   var ang = Math.random() * Math.PI * 2;
@@ -1294,7 +1315,9 @@ function eliteCastCross(m, d) {
   var hub = eliteVisAdd({ id: eliteVisId('poisondot'), preset: d.v.ground, x: cx, y: cy, r: d.hubR || 28, until: GT + warn + dur });
   eliteLater(warn, function () {
     var c = { owner: m, def: d, x: cx, y: cy, a: ang0, t0: GT, until: GT + dur, nextTick: 0, hub: hub };
-    c.vis = eliteVisAdd({ id: eliteVisId('cross'), preset: d.v.field, x: cx, y: cy, r: d.len || 360, a: ang0, until: c.until });
+    c.vis = eliteVisAdd({ id: eliteVisId('cross'), preset: d.v.field, x: cx, y: cy,
+      r: d.len || 360, w: d.len || 360, h: (d.ballR || 18) * 2, a: ang0,
+      poisonTrail: true, t0: c.t0, growSec: (d.len || 360) / (d.speed || 120), until: c.until });
     ELITE_RT.crosses.push(c);
   });
 }
@@ -1311,17 +1334,15 @@ function eliteCrossesTick(dt) {
     if (c.nextTick > 0 || !player) continue;
     c.nextTick = c.def.tick || 0.25;
     var t = GT - c.t0;
-    var len = c.def.len || 360, balls = c.def.balls || 7, reach = Math.min(len, (c.def.speed || 120) * t);
+    var len = c.def.len || 360, reach = Math.min(len, (c.def.speed || 120) * t);
     var ballR = c.def.ballR || 18;
     var hit = eliteDist(pp.x, pp.y, c.x, c.y) <= (c.def.hubR || 28) + ELITE_PLAYER_BODY_R;     // 中心的毒圈
     for (var arm = 0; arm < 4 && !hit; arm++) {
       var th = (c.a || 0) + arm * Math.PI / 2;
-      for (var b = 0; b < balls; b++) {
-        var dist = (b + 1) * len / balls;
-        if (dist > reach + 1e-6) break;          // 延伸前緣還沒到這一顆
-        var bx = c.x + Math.cos(th) * dist, by = c.y + Math.sin(th) * dist;
-        if (eliteDist(pp.x, pp.y, bx, by) <= ballR + ELITE_PLAYER_BODY_R) { hit = true; break; }
-      }
+      var dx = pp.x - c.x, dy = pp.y - c.y;
+      var along = Math.max(0, Math.min(reach, dx * Math.cos(th) + dy * Math.sin(th)));
+      var bx = c.x + Math.cos(th) * along, by = c.y + Math.sin(th) * along;
+      if (eliteDist(pp.x, pp.y, bx, by) <= ballR + ELITE_PLAYER_BODY_R) hit = true;
     }
     if (hit) {
       var res = eliteHitPlayer(c.owner, { mult: c.def.dmg, elem: c.def.elem, sure: true, dot: c.def.dot, quiet: true, label: c.def.name });
@@ -1418,8 +1439,8 @@ function eliteCastMortar(m, d) {
 }
 
 /* ============ 築牆：在你周圍升起 2～3 面整塊岩壁（平行 2 面或 U 型 3 面） ============
-   每面 len × thick，由四塊不規則岩石組成（畫面見 en-stone-wall）。n＝一次升起幾面（2＝平行、3＝U 型）。
-   牆擋住「近戰」：雙方都不能隔著牆近戰攻擊（遠程不受影響），玩家也走不過牆（battlefield.js 呼叫 eliteWallBlocks／eliteClampMove）。 */
+   每面 len × thick，由五片不規則岩石組成（畫面見 en-stone-wall）。n＝一次升起幾面（2＝平行、3＝U 型）。
+   雙方不能穿牆移動或隔牆近戰攻擊（遠程攻擊不受影響），共用旋轉矩形判定。 */
 var ELITE_WALL_STEP = Math.PI / 12;           // 牆的朝向吸附到 15° 的倍數：每個角度各有一張畫好的整面岩壁（en-stone-wall-度數）
 function eliteWallPreset(d, a) {
   var deg = ((Math.round(a / ELITE_WALL_STEP) * 15) % 180 + 180) % 180;
@@ -1428,11 +1449,14 @@ function eliteWallPreset(d, a) {
   return (id === d.v.field || (d.presets && d.presets.indexOf(id) >= 0)) ? id : d.v.field;
 }
 function eliteCastWalls(m, d) {
+  if (eliteWallCastCount() >= ELITE_MAX_WALL_CASTS) return false;
   var pp = elitePos(), mp = eliteMonsterPos(m) || pp;
   var a0 = Math.round(Math.atan2(pp.y - mp.y, pp.x - mp.x) / ELITE_WALL_STEP) * ELITE_WALL_STEP;
   var ux = Math.cos(a0), uy = Math.sin(a0);   // 由怪物指向玩家（吸附到 15° 的倍數）
   var vx = -uy, vy = ux;                      // 垂直方向
   var len = d.len, thick = d.thick, off = d.dist, life = d.life, warn = d.warn || 0.8;
+  var cast = { id: eliteVisId('wallcast'), pending: true, until: GT + warn + life };
+  ELITE_RT.wallCasts.push(cast);
   var nr = eliteRange(d.n, [2, 3]);
   var shape = eliteRandInt(nr[0], nr[1]) >= 3 ? 'U' : 'parallel';
   var segs = [
@@ -1448,17 +1472,28 @@ function eliteCastWalls(m, d) {
     eliteVisAdd({ id: eliteVisId('wallwarn'), preset: d.v.ground, x: s.x, y: s.y, w: s.len, h: thick, a: s.a, until: GT + warn });
   });
   eliteLater(warn, function () {
+    cast.pending = false;
+    cast.until = GT + life;
     segs.forEach(function (s) {
-      var wall = { x: s.x, y: s.y, a: s.a, len: s.len, thick: thick, until: GT + life, owner: m, def: d };
+      var wall = { x: s.x, y: s.y, a: s.a, len: s.len, thick: thick, until: GT + life, castId: cast.id, owner: m, def: d };
       wall.vis = eliteVisAdd({ id: eliteVisId('wall'), preset: eliteWallPreset(d, s.a), x: s.x, y: s.y, w: s.len, h: thick, a: s.a, until: wall.until });
       ELITE_RT.walls.push(wall);
       eliteBurstFx(s.x, s.y, s.len * 0.32, d.v.attack, 0);
     });
-    // 升牆時被牆壓到的玩家會被推出牆外（不傷人，免得卡進牆裡）
+    // 升牆時把壓到的玩家與NPC推出牆外（不傷人，免得卡進牆裡）。
     eliteWallsPushOut();
   });
+  return true;
+}
+function eliteWallCastCount() {
+  for (var i = ELITE_RT.wallCasts.length - 1; i >= 0; i--) {
+    var cast = ELITE_RT.wallCasts[i];
+    if (!cast.pending && GT >= cast.until) ELITE_RT.wallCasts.splice(i, 1);
+  }
+  return ELITE_RT.wallCasts.length;
 }
 function eliteWallsTick(dt) {
+  eliteWallCastCount();
   if (!ELITE_RT.walls.length) return;
   ELITE_RT.walls = ELITE_RT.walls.filter(function (w) {
     if (GT >= w.until) { if (w.vis) w.vis.until = 0; return false; }
@@ -1485,28 +1520,141 @@ function eliteWallHit(w, ax, ay, bx, by, pad) {
 /* 兩點之間有沒有牆擋著（近戰判定用）。 */
 function eliteWallBlocks(ax, ay, bx, by) {
   var ws = ELITE_RT.walls;
-  for (var i = 0; i < ws.length; i++) if (eliteWallHit(ws[i], ax, ay, bx, by, 0)) return true;
+  for (var i = 0; i < ws.length; i++) if (GT < ws[i].until && eliteWallHit(ws[i], ax, ay, bx, by, 0)) return true;
   return false;
 }
-/* 玩家移動：新位置與舊位置之間穿過牆就留在原地。回傳 true＝被擋住。 */
-function eliteClampMove(ox, oy, pos) {
+/* 雙方移動共用掃掠線段，避免單Tick高速穿牆；pad由呼叫者傳入自己的體型。 */
+function eliteClampMove(ox, oy, pos, pad) {
+  if (pad === undefined) pad = ELITE_PLAYER_BODY_R * 0.6;
   var ws = ELITE_RT.walls;
   for (var i = 0; i < ws.length; i++) {
-    if (eliteWallHit(ws[i], ox, oy, pos.x, pos.y, ELITE_PLAYER_BODY_R * 0.6)) { pos.x = ox; pos.y = oy; return true; }
+    if (GT < ws[i].until && eliteWallHit(ws[i], ox, oy, pos.x, pos.y, pad)) { pos.x = ox; pos.y = oy; return true; }
   }
   return false;
 }
+/* 只在直線受阻時繞牆。不搜尋地圖／網格：最多取目的地附近六面牆的角點，
+   同體型、同目的地共用路網；角色沿快取角點走，短時間內不重算。
+   遇到超出預算或封死的牆群就停住，最後仍由eliteClampMove防止穿牆。 */
+function eliteWallWaypoint(pos, target, pad) {
+  var ws = ELITE_RT.walls;
+  if (!ws.length) return target;
+  function clear(a, b, radius) {
+    for (var i = 0; i < ws.length; i++) {
+      var w = ws[i];
+      if (GT < w.until && eliteWallHit(w, a.x, a.y, b.x, b.y, radius)) return false;
+    }
+    return true;
+  }
+  var nav = ELITE_RT.wallNav;
+  var valid = nav && nav.walls === ws && nav.count === ws.length && GT < nav.expires;
+  if (valid) {
+    if (nav.routeAt !== GT) { nav.routeAt = GT; nav.routePlans = 0; }
+    var cached = nav.routes.get(pos);
+    if (cached && cached.pad === pad && cached.until > GT && Math.hypot(target.x - cached.tx, target.y - cached.ty) < ELITE_WALL_NAV_LIMITS.goalMove) {
+      while (cached.points.length && Math.hypot(pos.x - cached.points[0].x, pos.y - cached.points[0].y) < 1) cached.points.shift();
+      if (!cached.points.length) return null;
+      if (GT < cached.checkAt) return cached.points[0];
+      cached.checkAt = GT + ELITE_WALL_NAV_LIMITS.check;
+      if (clear(pos, target, pad)) { nav.routes.delete(pos); return target; }
+      if (clear(pos, cached.points[0], pad)) return cached.points[0];
+    }
+  }
+  if (clear(pos, target, pad)) return target;
+  if (!nav || nav.walls !== ws || nav.count !== ws.length || GT >= nav.expires) {
+    var active = ws.filter(function (w) { return GT < w.until; });
+    nav = ELITE_RT.wallNav = { walls: ws, count: ws.length, activeCount: active.length, expires: active.reduce(function (t, w) { return Math.min(t, w.until); }, Infinity), meshes: [], routes: new WeakMap() };
+  }
+  // 大量同時築牆時先只做碰撞，待牆減少再恢復繞行，避免路網驗邊成本隨牆數上升。
+  if (nav.activeCount > ELITE_WALL_NAV_LIMITS.activeWalls) return null;
+  if (nav.routeAt !== GT) { nav.routeAt = GT; nav.routePlans = 0; }
+  // 每Tick只替有限角色選路，其他角色下輪重試；成功路徑沿用到牆變動或目標明顯移動。
+  if (nav.routePlans >= ELITE_WALL_NAV_LIMITS.routes) return null;
+  nav.routePlans++;
+  // 體型向上分桶，讓同群NPC共用；路徑只會更保守，不會縮小碰撞體。
+  var radius = Math.ceil(pad / ELITE_WALL_NAV_LIMITS.radiusStep) * ELITE_WALL_NAV_LIMITS.radiusStep;
+  var mesh = nav.meshes.find(function (m) { return m.radius === radius && m.until > GT && Math.hypot(m.tx - target.x, m.ty - target.y) < ELITE_WALL_NAV_LIMITS.goalMove; });
+  if (!mesh) {
+    // 每個模擬Tick最多建立兩份共用路網；其餘體型等下一輪，避免同時冷啟造成尖峰。
+    if (nav.buildAt !== GT) { nav.buildAt = GT; nav.builds = 0; }
+    if (nav.builds >= ELITE_WALL_NAV_LIMITS.builds) return null;
+    nav.builds++;
+    var goal = { x: target.x, y: target.y, wallGoal: true };
+    eliteWallPushOut(goal, radius);
+    var near = ws.filter(function (w) { return GT < w.until; }).sort(function (a, b) {
+      return Math.hypot(a.x - target.x, a.y - target.y) - Math.hypot(b.x - target.x, b.y - target.y);
+    }).slice(0, ELITE_WALL_NAV_LIMITS.walls);
+    var points = [goal];
+    near.forEach(function (w) {
+      var co = Math.cos(w.a), si = Math.sin(w.a), hx = w.len / 2 + radius + 2, hy = w.thick / 2 + radius + 2;
+      [-1, 1].forEach(function (x) { [-1, 1].forEach(function (y) {
+        var p = { x: w.x + x * hx * co - y * hy * si, y: w.y + x * hx * si + y * hy * co };
+        if (clear(p, p, radius)) points.push(p);
+      }); });
+    });
+    var distances = points.map(function () { return Infinity; }), next = [], done = [], links = points.map(function () { return []; });
+    for (var a = 0; a < points.length; a++) for (var b = a + 1; b < points.length; b++) {
+      if (!clear(points[a], points[b], radius)) continue;
+      var len = Math.hypot(points[a].x - points[b].x, points[a].y - points[b].y);
+      links[a].push({ i: b, len: len }); links[b].push({ i: a, len: len });
+    }
+    distances[0] = 0;
+    for (var step = 0; step < points.length; step++) {
+      var best = -1;
+      for (var j = 0; j < points.length; j++) if (!done[j] && isFinite(distances[j]) && (best < 0 || distances[j] < distances[best])) best = j;
+      if (best < 0) break;
+      done[best] = true;
+      links[best].forEach(function (edge) {
+        var d = distances[best] + edge.len;
+        if (d < distances[edge.i]) { distances[edge.i] = d; next[edge.i] = best; }
+      });
+    }
+    mesh = { radius: radius, tx: target.x, ty: target.y, until: GT + ELITE_WALL_NAV_LIMITS.replan, points: points, distances: distances, next: next };
+    nav.meshes.push(mesh);
+    if (nav.meshes.length > ELITE_WALL_NAV_LIMITS.meshes) nav.meshes.shift();
+  }
+  var first = -1, cost = Infinity;
+  for (var k = 0; k < mesh.points.length; k++) {
+    var p = mesh.points[k], d = Math.hypot(pos.x - p.x, pos.y - p.y) + mesh.distances[k];
+    if (d < cost && clear(pos, p, radius)) { first = k; cost = d; }
+  }
+  var path = [];
+  for (var n = 0; first >= 0 && n < mesh.points.length; n++) {
+    path.push(mesh.points[first]);
+    if (first === 0) break;
+    first = mesh.next[first];
+  }
+  nav.routes.set(pos, { tx: target.x, ty: target.y, pad: pad,
+    until: path.length ? nav.expires : GT + ELITE_WALL_NAV_LIMITS.replan,
+    checkAt: GT + ELITE_WALL_NAV_LIMITS.check, points: path });
+  return path[0] || null;
+}
 function eliteWallsPushOut() {
-  var pp = elitePos();
-  for (var i = 0; i < ELITE_RT.walls.length; i++) {
-    var w = ELITE_RT.walls[i];
-    if (!eliteWallHit(w, pp.x, pp.y, pp.x, pp.y, ELITE_PLAYER_BODY_R * 0.6)) continue;
-    // 沿牆的法線方向推到牆外（往離玩家較近的那一側）
-    var nx = -Math.sin(w.a), ny = Math.cos(w.a);
-    var side = ((pp.x - w.x) * nx + (pp.y - w.y) * ny) >= 0 ? 1 : -1;
-    var need = w.thick / 2 + ELITE_PLAYER_BODY_R * 0.6 + 2;
-    var cur = Math.abs((pp.x - w.x) * nx + (pp.y - w.y) * ny);
-    pp.x += nx * side * (need - cur); pp.y += ny * side * (need - cur);
+  eliteWallPushOut(elitePos(), ELITE_PLAYER_BODY_R * 0.6);
+  var enemies = eliteEnemies();
+  for (var i = 0; i < enemies.length; i++) {
+    var m = enemies[i], p = eliteMonsterPos(m);
+    if (!p || !(m.hp > 0)) continue;
+    eliteWallPushOut(p, bfEntityRadius(m) * 0.6);
+  }
+}
+function eliteWallPushOut(p, pad) {
+  var ws = ELITE_RT.walls;
+  // 多面交角需反覆檢查，推出一面後不能留在另一面內。
+  for (var pass = 0; pass < ws.length * 4; pass++) {
+    var moved = false;
+    for (var i = 0; i < ws.length; i++) {
+      var w = ws[i];
+      if (GT >= w.until || !eliteWallHit(w, p.x, p.y, p.x, p.y, pad)) continue;
+      var c = Math.cos(w.a), s = Math.sin(w.a);
+      var x = (p.x - w.x) * c + (p.y - w.y) * s;
+      var y = -(p.x - w.x) * s + (p.y - w.y) * c;
+      var hx = w.len / 2 + pad + 2, hy = w.thick / 2 + pad + 2;
+      if (hx - Math.abs(x) < hy - Math.abs(y)) x = (x >= 0 ? 1 : -1) * hx;
+      else y = (y >= 0 ? 1 : -1) * hy;
+      p.x = w.x + x * c - y * s; p.y = w.y + x * s + y * c;
+      moved = true;
+    }
+    if (!moved) break;
   }
 }
 
@@ -1539,23 +1687,37 @@ function elitePullTick(dt) {
   var pl = ELITE_RT.pull;
   if (!pl) return;
   if (!elitePlayerAlive()) { ELITE_RT.pull = null; elitePos().lift = 0; return; }
+  if (pl.wallWait !== undefined) {
+    pl.wallWait -= dt;
+    if (pl.wallWait <= 1e-6) { ELITE_RT.pull = null; elitePullImpact(pl); }
+    return;
+  }
   var pp = elitePos();
+  var ox = pp.x, oy = pp.y;
   var dx = pl.tx - pp.x, dy = pl.ty - pp.y, dl = Math.sqrt(dx * dx + dy * dy);
   var step = pl.speed * dt;
   if (dl <= step + 1) {
     pp.x = pl.tx; pp.y = pl.ty; pp.lift = 0;
     ELITE_RT.pull = null;
-    var mp = eliteMonsterPos(pl.owner) || pp;
-    eliteBurstFx(mp.x, mp.y, 70, pl.def.v.attack, 0, pl.def.elem);
-    eliteHitPlayer(pl.owner, { mult: pl.def.dmg, elem: pl.def.elem, sure: true, stun: pl.def.stun, label: pl.def.name });
+    eliteClampMove(ox, oy, pp);
+    elitePullImpact(pl);
     return;
   }
   pp.x += dx / dl * step; pp.y += dy / dl * step;
+  if (eliteClampMove(ox, oy, pp)) {
+    // 牆只攔位移，不取消技能傷害；沿原剩餘飛行時間結算，避免提早或漏掉命中。
+    pp.lift = 0; pl.wallWait = Math.max(0, (dl - step) / pl.speed); return;
+  }
   /* 低拋物線：離地高度隨已走比例 k 走 4·h·k·(1-k)，起點與終點貼地、中點最高 arcH（座標單位，表上填米）。 */
   if (pl.def.arcH > 0 && pl.total > 0) {
     var k = Math.max(0, Math.min(1, 1 - dl / pl.total));
     pp.lift = 4 * pl.def.arcH * k * (1 - k);
   }
+}
+function elitePullImpact(pl) {
+  var mp = eliteMonsterPos(pl.owner) || elitePos();
+  eliteBurstFx(mp.x, mp.y, 70, pl.def.v.attack, 0, pl.def.elem);
+  eliteHitPlayer(pl.owner, { mult: pl.def.dmg, elem: pl.def.elem, sure: true, stun: pl.def.stun, label: pl.def.name });
 }
 /* 被拉扯中：玩家自己的走位暫停（battlefield.js bfTickPlayer 呼叫）。 */
 function elitePlayerLocked() { return !!ELITE_RT.pull; }
@@ -1590,13 +1752,13 @@ function eliteCastMissiles(m, d) {
     if (!mp) return;
     var ax = mp.x - pp.x, ay = mp.y - pp.y, al = Math.sqrt(ax * ax + ay * ay) || 1;
     ax /= al; ay /= al;
-    var back = d.back || 32, missiles = [];
+    var back = d.back || 32, spread = d.spread !== undefined ? d.spread : back * 1.35, missiles = [];
     for (var i = 0; i < n; i++) {
       var preset = presets[Math.floor(Math.random() * presets.length)];
-      // 在原本的左右偏移範圍內均勻展開，避免停駐時擠成同一顆。
+      // 橫向展開與後退深度各讀自己的配置，齊射彎曲係數沿用原side。
       var side = n > 1 ? -0.8 + 1.6 * i / (n - 1) : 0;
-      var bx = mp.x + ax * back - ay * back * side;
-      var by = mp.y + ay * back + ax * back * side;
+      var bx = mp.x + ax * back - ay * spread * side;
+      var by = mp.y + ay * back + ax * spread * side;
       var facing = Math.atan2(pp.y - by, pp.x - bx);
       missiles.push({ preset: preset, x: bx, y: by, side: side, facing: facing });
       eliteFlightFx(preset, mp.x, mp.y, bx, by, leg1, {

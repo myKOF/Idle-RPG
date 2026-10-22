@@ -8,11 +8,8 @@
       "layerIds": [
         "glow",
         "body",
-        "core",
         "tail-cone",
-        "tail-cone-inner",
-        "trail",
-        "trailing-points"
+        "trail"
       ]
     }
   ],

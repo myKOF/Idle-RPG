@@ -9,53 +9,27 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/light_03.png",
       "zIndex": 0,
-      "position": {
-        "x": 0.308,
-        "y": 0
-      },
       "scale": {
-        "x": 0.0679,
-        "y": 0.0679
+        "x": 0.0781,
+        "y": 0.0469
       },
-      "alpha": 0.45,
-      "tint": "#ffc42a",
+      "alpha": 0.28,
+      "tint": "#ffd342",
       "blendMode": "add",
       "duration": 4
     },
     {
       "id": "body",
       "type": "sprite",
-      "assetId": "new_materials/flare/flare_16.png",
-      "zIndex": 1,
-      "position": {
-        "x": 0.308,
-        "y": 0
-      },
-      "scale": {
-        "x": 0.0925,
-        "y": 0.0272
-      },
-      "alpha": 0.85,
-      "tint": "#fff6b8",
-      "blendMode": "add",
-      "duration": 4
-    },
-    {
-      "id": "core",
-      "type": "sprite",
-      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "assetId": "codex-authored/missile-salvo/crystal-neutral.svg",
       "zIndex": 2,
-      "position": {
-        "x": 0.308,
-        "y": 0
-      },
       "scale": {
-        "x": 0.0272,
-        "y": 0.0272
+        "x": 0.07,
+        "y": 0.09
       },
       "alpha": 1,
-      "tint": "#ffffff",
-      "blendMode": "add",
+      "tint": "#ffd342",
+      "blendMode": "normal",
       "duration": 4
     },
     {
@@ -64,20 +38,20 @@
       "assetId": "light-masks-1.0/default/cone_composed_c.png",
       "zIndex": -1,
       "position": {
-        "x": -5.6142,
+        "x": -9,
         "y": 0
       },
       "rotation": -1.5707963267948966,
       "scale": {
-        "x": 0.0809,
-        "y": 0.1389
+        "x": 0.0273,
+        "y": 0.0508
       },
       "anchor": {
         "x": 0.5,
         "y": 1
       },
-      "alpha": 0.38,
-      "tint": "#ffc42a",
+      "alpha": 0.18,
+      "tint": "#ffd342",
       "blendMode": "add",
       "duration": 0.35,
       "alphaOverLife": [
@@ -86,71 +60,12 @@
           0
         ],
         [
-          0.12,
+          0.15,
           0.8
         ],
         [
-          0.45,
-          0.6
-        ],
-        [
-          0.75,
-          0.3
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.65
-        ],
-        [
-          0.25,
-          1
-        ],
-        [
-          1,
-          0.9
-        ]
-      ]
-    },
-    {
-      "id": "tail-cone-inner",
-      "type": "sprite",
-      "assetId": "light-masks-1.0/default/cone_composed_c.png",
-      "zIndex": -1,
-      "position": {
-        "x": -3.64,
-        "y": 0
-      },
-      "rotation": -1.5707963267948966,
-      "scale": {
-        "x": 0.0308,
-        "y": 0.0849
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 1
-      },
-      "alpha": 0.2,
-      "tint": "#fff6b8",
-      "blendMode": "add",
-      "duration": 0.3,
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.12,
-          0.7
-        ],
-        [
           0.5,
-          0.4
+          0.5
         ],
         [
           1,
@@ -164,52 +79,45 @@
       "assetId": "particle-pack/png-black-background/smoke_04.png",
       "zIndex": -2,
       "position": {
-        "x": -5.6142,
+        "x": -10,
         "y": 0
       },
-      "scale": {
-        "x": 1.3,
-        "y": 0.8
-      },
-      "alpha": 0.4,
-      "tint": "#ffc42a",
+      "alpha": 0.55,
+      "tint": "#ffd342",
       "blendMode": "add",
       "duration": 0.35,
       "emission": {
         "mode": "rate",
-        "rate": 90
+        "rate": 18
       },
-      "maxParticles": 36,
+      "maxParticles": 6,
       "lifetime": [
-        0.18,
-        0.32
+        0.14,
+        0.24
       ],
       "spawn": {
-        "radius": 1.3818,
+        "radius": 0.6,
         "shape": "circle"
       },
       "speed": [
         0,
-        1.974
+        0.8
       ],
       "direction": 180,
-      "spread": 120,
+      "spread": 70,
       "startScale": [
-        0.0155,
-        0.0272
+        0.003,
+        0.006
       ],
+      "worldSpace": true,
       "alphaOverLife": [
         [
           0,
-          0
+          0.6
         ],
         [
-          0.12,
-          0.65
-        ],
-        [
-          0.5,
-          0.35
+          0.35,
+          0.45
         ],
         [
           1,
@@ -219,66 +127,11 @@
       "scaleOverLife": [
         [
           0,
-          0.5
-        ],
-        [
-          0.2,
           1
         ],
         [
           1,
-          1.35
-        ]
-      ]
-    },
-    {
-      "id": "trailing-points",
-      "type": "particle",
-      "assetId": "particle-pack/png-black-background/circle_05.png",
-      "zIndex": -2,
-      "position": {
-        "x": -5.6142,
-        "y": 0
-      },
-      "alpha": 0.65,
-      "tint": "#ffc42a",
-      "blendMode": "add",
-      "duration": 0.35,
-      "emission": {
-        "mode": "rate",
-        "rate": 18
-      },
-      "maxParticles": 10,
-      "lifetime": [
-        0.16,
-        0.3
-      ],
-      "spawn": {
-        "radius": 2.3688,
-        "shape": "circle"
-      },
-      "speed": [
-        1.974,
-        7.896
-      ],
-      "direction": 180,
-      "spread": 90,
-      "startScale": [
-        0.0039,
-        0.0077
-      ],
-      "alphaOverLife": [
-        [
-          0,
-          0.8
-        ],
-        [
-          0.4,
-          0.55
-        ],
-        [
-          1,
-          0
+          0.25
         ]
       ]
     }

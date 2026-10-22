@@ -17,8 +17,8 @@ function scene(over) {
   const m = makeElite(c, ['e_missile'], { x: 100, y: 0, hp: 1e12 });
   Object.keys(m._el.cd).forEach(k => { m._el.cd[k] = 1e9; });
   m._el.repoAt = Infinity;
-  // 新配置依規範先存待套用差異；隔離驗收不回寫正式表或生成資料。
-  const d = Object.assign({}, c.ELITE_AFFIXES.e_missile, { n: [4, 4], leg1: .275, hold: 1 }, over);
+  // 舊事件的相容fixture維持原時序；正式表參數另由下方專項直接驗證。
+  const d = Object.assign({}, c.ELITE_AFFIXES.e_missile, { n: [4, 4], leg1: .275, hold: 1, back: 32, spread: 43.2 }, over);
   const log = [];
   c.playCombatVfx = spec => log.push({ t: c.GT - 100, spec });
   let t = 0;
@@ -32,6 +32,101 @@ function scene(over) {
   return { c, m, d, log, until };
 }
 const flights = log => log.filter(e => e.spec.fxKind === 'projectile');
+
+test('MISSILE-HOLD2 正式表：最終橫向間距加倍，定點等待兩秒後齊射命中', () => {
+  for (const angle of [0, Math.PI / 2, Math.PI, -.7]) {
+    const s = scene();
+    // 不使用相容fixture的新時序或距離覆寫，只固定本次抽到四枚。
+    const d = Object.assign({}, s.c.ELITE_AFFIXES.e_missile, { n: [4, 4] });
+    assert.equal(d.leg1, .275); assert.equal(d.hold, 2);
+    assert.equal(d.back, 64); assert.equal(d.spread, 129.6);
+    const ax = Math.cos(angle), ay = Math.sin(angle);
+    s.m.pos.x = 100 * ax; s.m.pos.y = 100 * ay;
+    s.c.eliteCastMissiles(s.m, d); s.until(.21);
+    const back = flights(s.log);
+    assert.equal(back.length, 4);
+    for (let i = 0; i < 4; i++) {
+      const a = back[i].spec.area, dx = a.x - a.sourceX, dy = a.y - a.sourceY;
+      assert.ok(Math.abs(dx * ax + dy * ay - 64) < 1e-7, '後退深度為原先兩倍');
+      assert.ok(Math.abs(-dx * ay + dy * ax - [-103.68, -34.56, 34.56, 103.68][i]) < 1e-7);
+      assert.equal(a.holdSec, 2); assert.equal(a.brake, true);
+      assert.equal(back[i].spec.travelMs[0], 275);
+      if (i) assert.ok(Math.abs(Math.hypot(a.x - back[i-1].spec.area.x, a.y - back[i-1].spec.area.y) - 69.12) < 1e-7, '目前相鄰間距34.56再乘2');
+    }
+    s.m.pos.x += 800; s.m.pos.y -= 400;
+    s.until(2.47);
+    assert.equal(flights(s.log).length, 4, '完成兩秒等待前不齊射');
+    assert.equal(s.c.FIELD.player.hp, 1e12);
+    s.c.bfPlayerPos().x = -50; s.c.bfPlayerPos().y = 30;
+    s.until(2.49);
+    const salvo = flights(s.log).slice(4);
+    assert.equal(salvo.length, 4);
+    assert.equal(new Set(salvo.map(e => e.t)).size, 1);
+    for (let i = 0; i < 4; i++) {
+      assert.equal(salvo[i].spec.area.sourceX, back[i].spec.area.x);
+      assert.equal(salvo[i].spec.area.sourceY, back[i].spec.area.y);
+      assert.equal(salvo[i].spec.area.x, -50); assert.equal(salvo[i].spec.area.y, 30);
+    }
+    s.until(2.85); assert.equal(s.c.FIELD.player.hp, 1e12);
+    s.until(2.88); assert.ok(s.c.FIELD.player.hp < 1e12);
+    const impacts = s.log.filter(e => e.spec.vfx.attack === d.v.attack);
+    assert.equal(impacts.length, 4); assert.equal(new Set(impacts.map(e => e.t)).size, 1);
+    assert.equal(s.c.ELITE_RT.errors, 0);
+  }
+});
+
+test('MISSILE-HOLD2 真Runtime兩秒定點等待，移動NPC不拖曳光彈', () => {
+  const s = scene(), d = Object.assign({}, s.c.ELITE_AFFIXES.e_missile, { n: [4, 4] });
+  s.c.eliteCastMissiles(s.m, d); s.until(.21);
+  const ev = flights(s.log)[0].spec, npc = { x: 100, y: 0 };
+  const { rt, nodes } = adapter(presets, { posOf: () => npc, footOf: () => npc,
+    chainPoint: () => npc, playerPos: () => ({ x: 0, y: 0 }) });
+  assert.equal(rt.tryPlay(ev), true);
+  let parked;
+  for (let i = 1; i <= 540; i++) {
+    npc.x += 11; npc.y -= 3; rt.update(1/240);
+    if (i >= 300) {
+      const node = nodes.find(n => n.spec.assetUrl.endsWith('codex-authored/missile-salvo/crystal-neutral.svg'));
+      assert.ok(node && node.visible);
+      const p = node.history.at(-1);
+      parked ||= { x: p.x, y: p.y };
+      assert.ok(Math.hypot(p.x - parked.x, p.y - parked.y) < 1e-7, '保留Preset自身偏移，停駐不隨實體移動');
+    }
+  }
+  assert.equal(rt.stats().projectiles, 1, '後退後完整等待兩秒');
+  rt.update(.04); assert.equal(rt.stats().projectiles, 0);
+  assert.equal(rt.stats().missing, 0); rt.destroy();
+});
+
+test('MISSILE-SPREAD 四枚橫向間距增加35%，各方向後退深度及齊射起點正確', () => {
+  for (const angle of [0, Math.PI / 2, Math.PI, -.7]) {
+    const s = scene({ back: 32 });
+    const ax = Math.cos(angle), ay = Math.sin(angle);
+    s.m.pos.x = 100 * ax; s.m.pos.y = 100 * ay;
+    s.c.eliteCastMissiles(s.m, s.d); s.until(.21);
+    const back = flights(s.log);
+    assert.equal(back.length, 4);
+    const offsets = [-34.56, -11.52, 11.52, 34.56];
+    for (let i = 0; i < 4; i++) {
+      const a = back[i].spec.area;
+      const dx = a.x - a.sourceX, dy = a.y - a.sourceY;
+      assert.ok(Math.abs(dx * ax + dy * ay - 32) < 1e-7, '後退深度維持32');
+      assert.ok(Math.abs(-dx * ay + dy * ax - offsets[i]) < 1e-7, '橫向均勻展開');
+      if (i > 0) {
+        const prev = back[i - 1].spec.area;
+        assert.ok(Math.abs(Math.hypot(a.x - prev.x, a.y - prev.y) - 23.04) < 1e-7, '原17.0667間距增加35%');
+      }
+    }
+    s.m.pos.x += 800; s.m.pos.y -= 400;
+    s.until(1.49);
+    const salvo = flights(s.log).slice(4);
+    assert.equal(salvo.length, 4);
+    for (let i = 0; i < 4; i++) {
+      assert.equal(salvo[i].spec.area.sourceX, back[i].spec.area.x);
+      assert.equal(salvo[i].spec.area.sourceY, back[i].spec.area.y);
+    }
+  }
+});
 
 test('MISSILE-SALVO 同批後退，剎停一秒後同拍鎖定／齊射，抵達才結算', () => {
   for (const count of [3, 4, 5]) {
@@ -119,8 +214,8 @@ test('MISSILE-SALVO 真實Preset平滑剎停／原地停留／轉向，尾跡自
     let core, maxParticles = 0;
     for (let i = 1; i <= 305; i++) {
       rt.update(1/240);
-      core ||= nodes.find(n => n.spec.assetUrl.endsWith('circle_05.png'));
-      assert.ok(core, '實際光芯可見');
+      core ||= nodes.find(n => n.spec.assetUrl.endsWith('codex-authored/missile-salvo/crystal-neutral.svg'));
+      assert.ok(core, '實際晶體彈身可見');
       const expected = curve(ev.area, 1 - Math.pow(1 - Math.min(1, i / 240 / .275), 3));
       const p = core.history.at(-1);
       assert.ok(Math.abs(p.x - expected.x) < 1e-7, preset.id + ' x');
@@ -134,7 +229,7 @@ test('MISSILE-SALVO 真實Preset平滑剎停／原地停留／轉向，尾跡自
       maxParticles = Math.max(maxParticles, rt.stats().fx.activeParticles);
       if (i === 192) {
         const cones = nodes.filter(n => n.spec.assetUrl.endsWith('cone_composed_c.png'));
-        assert.ok(cones.length >= 2 && cones.every(n => !n.visible), '停駐後光錐消退');
+        assert.ok(cones.length === 1 && cones.every(n => !n.visible), '停駐後光錐消退');
         assert.equal(rt.stats().fx.activeParticles, 0, '停駐後舊光點散完，不持續噴出硬尾');
       }
     }
@@ -160,7 +255,7 @@ test('MISSILE-SALVO 舊事件保持原曲線與壽命，角度投影不修改原
   const area = { sourceX: 100, sourceY: 0, x: 132, y: 25.6, controlX: 116, controlY: 0, knifeFlight: true };
   rt.tryPlay({ fxKind: 'projectile', variant: 'elite-flight', travelMs: [550], area, vfx: { projectile: IDS[0] } });
   rt.update(.275);
-  const p = nodes.find(n => n.spec.assetUrl.endsWith('circle_05.png')).history.at(-1);
+  const p = nodes.find(n => n.spec.assetUrl.endsWith('codex-authored/missile-salvo/crystal-neutral.svg')).history.at(-1);
   assert.equal(p.x, 116); assert.ok(Math.abs(p.y - 6.4) < 1e-8);
   rt.update(.28); assert.equal(rt.stats().projectiles, 0); rt.destroy();
   const spec = { area: { holdAngle: .8, startAngle: -1.4 } };
@@ -169,14 +264,21 @@ test('MISSILE-SALVO 舊事件保持原曲線與壽命，角度投影不修改原
   assert.equal(spec.area.holdAngle, .8);
 });
 
-test('MISSILE-SALVO 四色Preset可重製，柔光錐取代硬尾且無新增素材來源', () => {
+test('MISSILE-SALVO 四色冰晶彈身與外暈可重製，限制節點並重用原創冰箭素材', () => {
   const author = require('../tools/vfx/authoring/author/enemy-skills.cjs');
   for (const p of presets) {
     const original = author.NEW[p.id](); original.schemaVersion = 1;
     assert.equal(Core.serialisePreset(p), Core.serialisePreset(original));
     assert.equal(p.loop, true);
     const glow = p.layers.find(l => l.id === 'glow');
-    assert.ok(glow.scale.x <= .0859*.41); assert.ok(glow.alpha <= .45);
+    assert.ok(glow.scale.x > glow.scale.y && glow.scale.x <= .08); assert.ok(glow.alpha <= .28);
+    const body = p.layers.find(l => l.id === 'body');
+    assert.equal(body.assetId, 'codex-authored/missile-salvo/crystal-neutral.svg');
+    assert.equal(body.blendMode, 'normal'); assert.equal(body.alpha, 1);
+    assert.equal(body.tint, glow.tint, '彈身與外暈同色，中性切面底圖不帶藍色');
+    assert.equal(p.layers.length, 4);
+    const cost = require('../tools/vfx/preset-cost.cjs').estimate(p);
+    assert.ok(cost.nodes <= 9 && cost.ms < 15, '靜態成本估算與粒子上限，實機效能另由benchmark驗證');
     assert.equal(p.layers.some(l => l.id === 'tail-core'), false, '移除原固定光棒');
     const cone = p.layers.find(l => l.id === 'tail-cone');
     assert.ok(cone.assetId.endsWith('cone_composed_c.png'));
@@ -239,7 +341,7 @@ test('MISSILE-SALVO 停駐位置不隨NPC或玩家移動，齊射從原停駐點
     npc.x += 11; npc.y -= 3; player.x -= 4; player.y += 2;
     rt.update(1/240);
     if (i >= 67) {
-      const core = nodes.find(n => n.spec.assetUrl.endsWith('circle_05.png'));
+      const core = nodes.find(n => n.spec.assetUrl.endsWith('codex-authored/missile-salvo/crystal-neutral.svg'));
       assert.ok(core && core.visible);
       const p = core.history.at(-1);
       assert.ok(Math.abs(p.x - pads[0].x) < 1e-7, '停駐X不跟隨NPC／玩家');

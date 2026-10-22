@@ -78,6 +78,7 @@ var VFXRuntime = (function () {
      取 2.5 拍是為了容忍一次掉幀或一次事件遺失，又不會在場域真的結束後還留著。 */
   var GROUND_KEEP_TICKS = 2.5;
   var GROUND_MIN_KEEP_SEC = 0.35;
+  var FIRE_CHAIN_HEIGHT_M = 2;
   /* 狀態光環的快照頻率是 5Hz，同樣要容忍一次遺失。 */
   var AURA_KEEP_SEC = 0.6;
 
@@ -439,6 +440,8 @@ var VFXRuntime = (function () {
        新增播放路徑時要一起用這支，不要再寫死 rtFx。 */
     function fxRtFor(presetId) { return billboardPresets[presetId] ? rtBillboard : rtFx; }
     var presetSizes = Object.create(null);
+    var poisonGrowthEnds = Object.create(null);
+    var poisonTilePresets = Object.create(null);
     var rainMarkSeq = 0;
     var planePresets = Object.create(null);
     var planeAngles = Object.create(null);
@@ -606,6 +609,31 @@ var VFXRuntime = (function () {
           p.layers.forEach(function (l) { if (l.projection) l.projection.y = groundScale; });
         }
         if (p.sizing) resolveSizing(p.sizing); // 載入即驗證，錯誤不可靜默變成 NaN
+        if (p.id === 'en-poison-cross' && p.layers.some(function(l) { return l.id === 'flow-0' || l.id === 'flow-0-0'; })) {
+          // 同一份表定 Preset 的四臂，事件各自驅動長度與寬度；不產生額外素材來源。
+          for (var arm = 0; arm < 4; arm++) {
+            var part = JSON.parse(JSON.stringify(p));
+            part.id += '-arm-' + arm;
+            part.layers = part.layers.filter(function(l) { return l.id === 'flow-' + arm || l.id.indexOf('flow-' + arm + '-') === 0; });
+            var tiled = part.layers.some(function(l) { return l.revealXOverLife !== undefined; });
+            part.layers.forEach(function(l) {
+              var angle=arm*Math.PI/2;
+              l.position = tiled ? {x:l.position.x*Math.cos(angle)+l.position.y*Math.sin(angle),y:0} : {x:0,y:0}; l.rotation = 0;
+              delete l.offsetXOverLife; delete l.offsetYOverLife; delete l.scaleXOverLife;
+            });
+            // 圖集單格尺寸乘上作者縮放，保持編輯器與遊戲共用素材尺度。
+            var layer = part.layers[0];
+            if (!layer) continue;
+            var sourceHeight = 128 * layer.scale.y;
+            var sourceWidth = tiled ? p.sizing.authored.radius + sourceHeight : 512 * layer.scale.x;
+            if(tiled) {
+              poisonGrowthEnds[part.id] = Math.max.apply(null,part.layers.map(function(l) {return l.revealXOverLife[1][0];}));
+              poisonTilePresets[part.id] = {preset:part,length:p.sizing.authored.radius,radius:sourceHeight/2};
+            }
+            part.sizing = {shape:'rectangle',authored:{width:sourceWidth,height:sourceHeight}};
+            registerPresets([part]);
+          }
+        }
         rtFx.registerPreset(p);
         rtZone.registerPreset(p);
         if (rtAir !== rtFx) rtAir.registerPreset(p);
@@ -1215,6 +1243,17 @@ var VFXRuntime = (function () {
         return;
       }
       var area = g.worldMotion && spec.area._worldMotion ? spec.area._worldMotion : spec.area;
+      if (g.fireChain) {
+        g.chainTargets = Array.isArray(spec.targets) && spec.targets.length === 2 && ctx.footOf ? spec.targets.slice() : null;
+        g.chainThickness = num(area.h, 0);
+      }
+      if (g.poisonTrail) {
+        g.trailArea = Object.assign({}, area);
+        g.growthAt = clock - Math.max(0, num(area.growAge, 0));
+        g.growSec = Math.max(0, travelSecAt(spec, 0));
+        g.bx = num(area.x, 0); g.by = num(area.y, 0);
+        return;
+      }
       if (g.staticVacuum) {
         g.growthAt = clock - Math.max(0, num(area.growAge, 0));
         g.baseR = num(area.baseR, area.r);
@@ -1270,6 +1309,21 @@ var VFXRuntime = (function () {
     /* 釘在某個實體腳底的場域（高塔版面、follow 場域）每幀的權威座標。 */
     function groundAnchorPoint(g) {
       return footOf(g.anchor || 'pv-float');
+    }
+    // 與NPC共用已補間的腳點，兩端不再各走一套場域外推與平滑。
+    function aimFireChain(g) {
+      if (!chainTargetsAlive(g.chainTargets)) return false;
+      var a = ctx.footOf(g.chainTargets[0]), b = ctx.footOf(g.chainTargets[1]);
+      if (!a || !b || !isFinite(a.x) || !isFinite(a.y) || !isFinite(b.x) || !isFinite(b.y)) return false;
+      var dx = b.x - a.x, dy = (b.y - a.y) / groundScale;
+      g.x = (a.x + b.x) / 2; g.y = (a.y + b.y) / 2;
+      g.rot = Math.atan2(dy, dx);
+      var length = Math.max(0.001, Math.sqrt(dx * dx + dy * dy));
+      var size = sizeOf(g.presetId, { w: length, h: g.chainThickness });
+      g.uniform = false;
+      g.sx = size ? size.scaleX : length / NOMINAL_RECT_W;
+      g.sy = size ? size.scaleY : g.chainThickness / NOMINAL_RECT_H;
+      return true;
     }
     /* 推算基準的自走：沿模擬層當下的航向、用模擬層的速度前進；知道落點時不越過
        落點（等速直線飛向落點的場域抵達後就停駐，畫面必須跟著停）。 */
@@ -1328,7 +1382,29 @@ var VFXRuntime = (function () {
       g.oy -= g.oy / mag * fix;
     }
     function groundParams(g) {
+      if (g.poisonTrail) {
+        var a = g.trailArea, angle = num(a._planeA, num(a.a, 0));
+        var length = Math.max(0, num(a._planeW, num(a.w, num(a.r, 0))));
+        var radius = Math.max(0, num(a.h, 0)) / 2;
+        var reach = length * (g.growSec > 0 ? Math.min(1, Math.max(0, clock - g.growthAt) / g.growSec) : 1);
+        if (poisonGrowthEnds[g.presetId]) {
+          // 紋理尺寸與已鋪出的座標固定，前緣只揭開下一塊；不縮放整張毒條。
+          var fixedSize=sizeOf(g.presetId,{w:length+radius*2,h:radius*2});
+          return Object.assign({position:{x:num(a.x,0),y:num(a.y,0)},rotation:angle,loop:true,
+            revealProgress:(length>0?reach/length:1)*poisonGrowthEnds[g.presetId]},fixedSize);
+        }
+        var dimensions = sizeOf(g.presetId, {w:reach + radius * 2,h:radius * 2});
+        return Object.assign({position:{x:num(a.x,0)+Math.cos(angle)*reach/2,
+          y:num(a.y,0)+Math.sin(angle)*reach/2*groundScale}, rotation:angle, loop:true}, dimensions);
+      }
       var p = { position: { x: g.x, y: g.y }, rotation: g.rot };
+      // 火鏈沿原地面連線懸空；腳點保留作深度錨點，高度不乘地面壓縮。
+      if (g.fireChain) {
+        var unit = typeof BF_SYSTEM_UNITS_PER_METER === 'number' && BF_SYSTEM_UNITS_PER_METER > 0 ? BF_SYSTEM_UNITS_PER_METER : 10;
+        p.depthY = g.y;
+        p.elevation = FIRE_CHAIN_HEIGHT_M * unit;
+        p.position.y -= p.elevation;
+      }
       if(g.worldMotion){p.position.y*=groundScale;p.rotation=projectedAngle(g.rot,groundScale);}
       if(g.windBody){p.motionFacing=true;p.loop=true;}
       if(g.staticVacuum)p.loop=true;
@@ -1356,6 +1432,42 @@ var VFXRuntime = (function () {
 
     /* 持續場域：以 area.id 合併，重複事件只續命與更新「權威目標」 */
     function playGround(presetId, spec, role) {
+      if (spec.variant === 'elite-poison-trail' && has(presetId + '-arm-0') && spec.area) {
+        var result = true;
+        for (var arm = 0; arm < 4; arm++) {
+          var area = Object.assign({}, spec.area);
+          area.id = (area.id || presetId + '@' + area.x + ',' + area.y) + '-arm-' + arm;
+          area._planeA = num(area._planeA, num(area.a, 0)) + arm * Math.PI / 2;
+          var child = Object.assign({}, spec, {area:area});
+          if (!playGround(presetId + '-arm-' + arm, child, role)) result = false;
+        }
+        return result;
+      }
+      var tileSource=poisonTilePresets[presetId];
+      if(spec.variant==='elite-poison-trail' && tileSource && spec.area) {
+        var tileRadius=Math.max(0,num(spec.area.h,0))/2;
+        var tileLength=Math.max(0,num(spec.area._planeW,num(spec.area.w,num(spec.area.r,0))));
+        if(tileRadius>0 && Math.abs(tileLength/tileRadius-tileSource.length/tileSource.radius)>1e-8) {
+          // 表定長寬比不同時只增減整段，不能為了填滿場域拉伸段內紋理。
+          var geometryId=presetId+'-geometry-'+tileLength+'x'+tileRadius;
+          if(!has(geometryId)) {
+            var tiledPreset=JSON.parse(JSON.stringify(tileSource.preset));tiledPreset.id=geometryId;
+            var r=tileSource.radius,len=tileLength/tileRadius*r,span=4*r;
+            var template=tiledPreset.layers[0],end=poisonGrowthEnds[presetId];
+            tiledPreset.layers=[];
+            for(var tile=0;tile<Math.ceil((len+2*r)/span-1e-9);tile++) {
+              var l=JSON.parse(JSON.stringify(template)),start=-r+tile*span;
+              l.id='tile-'+tile;l.position={x:start+span/2,y:0};
+              l.revealStartRadius=tile===0?r/span:0;
+              l.revealXOverLife=[[0,(r-start)/span],[end,(len+r-start)/span],[1,(len+r-start)/span]];
+              tiledPreset.layers.push(l);
+            }
+            tiledPreset.sizing={shape:'rectangle',authored:{width:len+2*r,height:2*r}};
+            poisonGrowthEnds[geometryId]=end;registerPresets([tiledPreset]);
+          }
+          return playGround(geometryId,spec,role);
+        }
+      }
       var skyfallMark = role === 'ground' && spec.fxKind === 'rain' && spec.area && spec.area.skyfallMark === true;
       if (skyfallMark) {
         // 僅改提示圈演出尺寸，傷害AOE仍保留在原事件／模擬排程。
@@ -1407,13 +1519,14 @@ var VFXRuntime = (function () {
       }
       if (spec.variant === 'water-tide-merge' && !spec.area) keep = Math.max(0, num(spec.dur, 0));
       if (staticVacuum && isFinite(spec.area.lifeSec)) keep = Math.max(0, Number(spec.area.lifeSec));
+      if (spec.variant === 'elite-poison-trail' && isFinite(spec.area.lifeSec)) keep = Math.max(0, Number(spec.area.lifeSec));
       if (spec.variant === 'mire-inferno-pool') {
         keep = Math.max(0, num(spec.dur, 0));
       }
       var curtainColumn = role === 'attack' && spec.variant === 'thunder-curtain';
       // 舊事件缺 variant 時沿用既有月牙辨識；新素材依追蹤事件語意判斷。
       var windBody = !staticVacuum && (spec.variant === 'wind-blade-homing' || presetId === 'ground-homing-wind-crescent');
-      var mult = curtainColumn || spec.variant === 'flying-thunder' || indomitableVisual || skyfallMark ? 1 : noArea || spec.variant === 'ice-arrow-homing' || windBody || presetId === 'proj-icearrow-frost' ? profile.scale : profile.areaScale;
+      var mult = curtainColumn || spec.variant === 'elite-poison-trail' || spec.variant === 'flying-thunder' || indomitableVisual || skyfallMark ? 1 : noArea || spec.variant === 'ice-arrow-homing' || windBody || presetId === 'proj-icearrow-frost' ? profile.scale : profile.areaScale;
       var live = grounds[key];
       if (live && live.presetId === presetId && spec.variant !== 'dragon-devour') {
         live.expireAt = clock + keep;
@@ -1422,11 +1535,13 @@ var VFXRuntime = (function () {
       }
       if (live) { stopRef(live.ref); delete grounds[key]; }
       var g = {
+        fireChain: spec.variant === 'elite-ground' && !!(spec.area && /^elite-chain-/.test(spec.area.id || '')),
         curtainColumn: curtainColumn,
         bornAt: clock, rise: isRockOrbitPreset(presetId) || presetId === 'ground-mire-earth' || presetId === 'ground-mire-venom' || presetId === 'ground-mire-magma' || presetId === 'fire-tornado-inferno' || presetId === 'fire-tornado-infinite' || presetId.indexOf('ground-firewall-column-') === 0,
         ref: null, presetId: presetId, expireAt: clock + keep, mult: mult, anchor: anchor,
         iceArrowBody: spec.variant === 'ice-arrow-homing',
         staticVacuum: staticVacuum,
+        poisonTrail: spec.variant === 'elite-poison-trail',
         worldMotion: !staticVacuum && (spec.variant === 'wind-blade-homing' || spec.variant === 'ice-arrow-homing') && !!(spec.area && spec.area._worldMotion),
         smoothChase: spec.variant === 'ice-arrow-homing' || windBody,
         windBody: windBody,
@@ -1441,6 +1556,7 @@ var VFXRuntime = (function () {
       /* 出生的第一幀沒有推算歷史：畫面值＝權威值，殘差為 0。 */
       g.ox = 0; g.oy = 0;
       g.x = g.bx; g.y = g.by; g.rot = g.trot; g.sx = g.tsx; g.sy = g.tsy;
+      if (g.chainTargets && !aimFireChain(g)) return true;
       // 吞噬漩渦是貼地環帶，整體置於人物下方；其他直立場域維持原圖層。
       var flyingField = !staticVacuum && (spec.variant === 'thunder-orb' || spec.variant === 'ice-arrow-homing' || spec.variant === 'wind-blade-homing');
       // 雷球的電弧粒子也屬於球體；共用球心倍率，避免各自按高度投影而拉歪輪廓。
@@ -1452,7 +1568,7 @@ var VFXRuntime = (function () {
         var bd = trailDensity();
         if (bd !== undefined) { bodyParams.density = bd; counters.trailThinned++; }
       }
-      var ref = play(billboardPresets[presetId] || curtainColumn || spec.variant === 'thunder-orb' || spec.variant === 'water-tide-merge' || orbBody ? rtBillboard : flyingField ? rtAir : role === 'field' && !g.devour ? rtFx : rtZone, presetId, bodyParams, mult);
+      var ref = play(g.fireChain || billboardPresets[presetId] || curtainColumn || spec.variant === 'thunder-orb' || spec.variant === 'water-tide-merge' || orbBody ? rtBillboard : flyingField ? rtAir : role === 'field' && !g.devour ? rtFx : rtZone, presetId, bodyParams, mult);
       if (!ref) return false;
       g.ref = ref;
       grounds[key] = g;
@@ -1579,6 +1695,10 @@ var VFXRuntime = (function () {
       Object.keys(grounds).forEach(function (k) {
         var g = grounds[k];
         if (g.expireAt <= clock) { stopRef(g.ref); delete grounds[k]; return; }
+        if (g.chainTargets) {
+          if (!aimFireChain(g) || !moveRef(g.ref, groundParams(g), g.mult)) { stopRef(g.ref); delete grounds[k]; }
+          return;
+        }
         var previousX = g.x, previousY = g.y;
         if (g.anchored) {
           var p = groundAnchorPoint(g);
@@ -2321,7 +2441,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20261022-thunder-crater';
+  var DATA_VERSION = '20261022-poison-thunder-crater-missile-integration';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';
