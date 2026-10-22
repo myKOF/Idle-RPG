@@ -15,7 +15,7 @@ var WorkerBridge = (function () {
   /* Worker 與其模擬層不是由 bundler 產生，瀏覽器可能把舊的 Worker
      腳本留在快取裡。每次修改 Worker 啟動／核心邏輯時更新這個鍵，避免
      使用者刷新後仍執行舊版升級公式。 */
-  var WORKER_ASSET_VERSION = '20261022-stone-wall-final-missile-hold2-spread-x2';
+  var WORKER_ASSET_VERSION = '20261022-stone-wall-complete';
   var _menuPaused = false;
   function setMenuPaused(value) {
     _menuPaused = !!value;

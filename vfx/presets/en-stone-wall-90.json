@@ -5,42 +5,6 @@
   "loop": true,
   "layers": [
     {
-      "id": "shadow",
-      "type": "sprite",
-      "assetId": "light-masks-1.0/default/circle_b.png",
-      "zIndex": 0,
-      "scale": {
-        "x": 0.4199,
-        "y": 0.1066
-      },
-      "alpha": 0.6,
-      "tint": "#150f2a",
-      "blendMode": "add",
-      "duration": 1.2,
-      "projection": {
-        "x": 1,
-        "y": 0.5
-      }
-    },
-    {
-      "id": "base",
-      "type": "sprite",
-      "assetId": "light-masks-1.0/default/circle_b.png",
-      "zIndex": 1,
-      "scale": {
-        "x": 0.3906,
-        "y": 0.0762
-      },
-      "alpha": 0.35,
-      "tint": "#7a64a8",
-      "blendMode": "add",
-      "duration": 1.2,
-      "projection": {
-        "x": 1,
-        "y": 0.5
-      }
-    },
-    {
       "id": "slab",
       "type": "sprite",
       "assetId": "claude-authored/rock-wall/wall-slab-090.svg",
@@ -58,44 +22,9 @@
         "y": 0.7
       },
       "alpha": 1,
+      "tint": "#b5b5b5",
       "duration": 1.2,
       "followDirection": false
-    },
-    {
-      "id": "rim",
-      "type": "sprite",
-      "assetId": "particle-pack/png-black-background/rotated/trace_06_rotated.png",
-      "zIndex": 12,
-      "position": {
-        "x": 0,
-        "y": -6
-      },
-      "scale": {
-        "x": 0.4004,
-        "y": 0.0273
-      },
-      "alpha": 0.55,
-      "tint": "#e6d6ff",
-      "blendMode": "add",
-      "duration": 1.2,
-      "alphaOverLife": [
-        [
-          0,
-          0.4
-        ],
-        [
-          0.5,
-          0.7
-        ],
-        [
-          1,
-          0.4
-        ]
-      ],
-      "projection": {
-        "x": 1,
-        "y": 0.5
-      }
     },
     {
       "id": "dust",

@@ -581,7 +581,7 @@ test('ELITE-ENGINE-14 築牆：近戰隔著牆打不到（雙方），遠程不�
   assert.equal(c.ELITE_RT.walls.length, 0);
 });
 
-test('ELITE-ENGINE-14b 築牆：每次 2~3 面整塊岩壁，每面 18 米長、3.9 米厚（四塊岩石）', () => {
+test('ELITE-ENGINE-14b 築牆：每次 2~3 面整塊岩壁，每面 18 米長、3.9 米厚（五片岩石）', () => {
   const c = fresh();
   const m = quiet(makeElite(c, ['e_walls'], { x: 200, y: 0, hp: 1e9 }));
   const d = c.ELITE_AFFIXES.e_walls;
@@ -608,7 +608,7 @@ test('ELITE-ENGINE-14b 築牆：每次 2~3 面整塊岩壁，每面 18 米長、
     const preset = JSON.parse(fs.readFileSync(path.join(ROOT, 'vfx/presets', v.vfx.ground + '.json'), 'utf8'));
     const slab = preset.layers.find(l => l.id === 'slab');
     const svg = fs.readFileSync(path.join(ROOT, 'images/vfx/assets', slab.assetId), 'utf8');
-    assert.equal([...svg.matchAll(/data-rock="\d+"/g)].length, 4, '權威牆事件選到的素材實際含四塊岩石');
+    assert.equal([...svg.matchAll(/data-rock="\d+"/g)].length, 5, '權威牆事件選到的素材實際含五片岩石');
   }
 });
 

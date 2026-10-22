@@ -280,7 +280,9 @@ function bfTickRoam(ent, dt) {
   }
   if (!(len > 0)) return;
   var step = Math.min(len, bfEnemyRunSpeed(ent) * bfEnemySpeedFactor(ent) * Math.max(0, Number(cfg.roamSpeedRatio) || 0) * dt);
+  var ox = p.x, oy = p.y;
   p.x += dx / len * step; p.y += dy / len * step;
+  if (typeof eliteClampMove === 'function' && eliteClampMove(ox, oy, p, bfEntityRadius(ent) * 0.6)) return;
   if (step >= len) {
     var lo = Math.max(0, Number(cfg.roamWaitMin) || 0), hi = Math.max(lo, Number(cfg.roamWaitMax) || 0);
     r.wait = lo + Math.random() * (hi - lo);
@@ -308,6 +310,7 @@ function bfTickApproach(enemies, dt) {
     }
     // 菁英詞條施法／衝鋒中：原地不動（衝鋒的位移由 js/elite.js 自己推進）
     if (typeof eliteLocked === 'function' && eliteLocked(ent)) continue;
+    var ox = p.x, oy = p.y;
     /* 追的是我方**當前**座標，不是出生時的方位——我方跑走就得重新追。 */
     var dx0 = p.x - home.x, dy0 = p.y - home.y;
     var d = Math.sqrt(dx0 * dx0 + dy0 * dy0);
@@ -322,16 +325,13 @@ function bfTickApproach(enemies, dt) {
       else {
         /* 跑位時加速（ELITE_GROUP.repoSpeed）：我方一直在動，目標點跟著走，用平常的跑速追不上就會跑到一半被甩開、等於沒跑位 */
         var rsp = (typeof ELITE_GROUP !== 'undefined' && ELITE_GROUP && ELITE_GROUP.repoSpeed > 0) ? ELITE_GROUP.repoSpeed : 1;
-        var rstep = Math.min(rd, bfEnemyRunSpeed(ent) * bfEnemySpeedFactor(ent) * rsp * dt);
-        p.x += (rdx / rd) * rstep;
-        p.y += (rdy / rd) * rstep;
+        bfMoveToward(p, { x: tx, y: ty }, bfEnemyRunSpeed(ent) * bfEnemySpeedFactor(ent) * rsp * dt, bfEntityRadius(ent) * 0.6);
       }
-    } else if (d > (ent._hover > 0 ? Math.max(stop, ent._hover) : stop) && d > 0.0001) {
+    } else if ((d > (ent._hover > 0 ? Math.max(stop, ent._hover) : stop) || bfWallBlocksMelee(ent)) && d > 0.0001) {
       var hoverStop = ent._hover > 0 ? Math.max(stop, ent._hover) : stop;   // 帶火鏈的怪守在 hover 距離，不貼臉
-      var step = Math.min(d - hoverStop, bfEnemyRunSpeed(ent) * bfEnemySpeedFactor(ent) * dt);
-      p.x -= (dx0 / d) * step;
-      p.y -= (dy0 / d) * step;
+      bfMoveToward(p, home, bfEnemyRunSpeed(ent) * bfEnemySpeedFactor(ent) * dt, bfEntityRadius(ent) * 0.6, hoverStop);
     }
+    if (typeof eliteClampMove === 'function') eliteClampMove(ox, oy, p, bfEntityRadius(ent) * 0.6);
     /* 剛踏進攻擊距離的那一刻記一筆。
        「新怪至少完成一次攻擊」的保證要綁在這裡：雙方射程相同、而玩家的回合在前，
        不特別處理的話高 DPS 玩家會在敵人進入射程的同一個 tick 先把牠秒掉，
@@ -366,11 +366,29 @@ function bfTickApproach(enemies, dt) {
       var push = (minD - dd);
       var ux = dx / dd, uy = dy / dd;
       var wa = ms[j] / (ms[i] + ms[j]), wb = ms[i] / (ms[i] + ms[j]);   // 輕的那一方退得多（同重量時各退一半，與舊行為一致）
+      var ax = a.x, ay = a.y, bx = b.x, by = b.y;
       a.x -= ux * push * wa; a.y -= uy * push * wa;
       b.x += ux * push * wb; b.y += uy * push * wb;
+      if (typeof eliteClampMove === 'function') {
+        eliteClampMove(ax, ay, a, ra * 0.6);
+        eliteClampMove(bx, by, b, rs[j] * 0.6);
+      }
     }
   }
   return justInRange;
+}
+
+/* 普通走路才繞牆；擊退／衝鋒等強制位移只碰撞，不自行改技能路線。 */
+function bfMoveToward(p, target, budget, pad, stop) {
+  var next = typeof eliteWallWaypoint === 'function' ? eliteWallWaypoint(p, target, pad) : target;
+  if (!next) return false;
+  var dx = next.x - p.x, dy = next.y - p.y, len = Math.hypot(dx, dy);
+  var gap = Math.max(0, len - (next === target || next.wallGoal ? (stop || 0) : 0));
+  if (!(gap > 0.0001)) return false;
+  var step = Math.min(gap, budget), ox = p.x, oy = p.y;
+  p.x += dx / len * step; p.y += dy / len * step;
+  if (typeof eliteClampMove === 'function' && eliteClampMove(ox, oy, p, pad)) return false;
+  return step > 0.0001;
 }
 
 /* ---- 我方移動（每個 tick 呼叫一次）----
@@ -392,7 +410,7 @@ function bfTickPlayer(enemies, dt, preferred, pEnt) {
   if (!live.length) {
     /* 空場：往前方（+x）推進，地板會跟著往後捲，不會呆站著等下一波。 */
     home.x += bfPlayerSpeed() * bfPlayerSpeedFactor(pEnt) * dt;
-    if (typeof eliteClampMove === 'function') eliteClampMove(ox0, oy0, home);
+    if (typeof eliteClampMove === 'function' && eliteClampMove(ox0, oy0, home)) { BF_PLAYER_CHASING = false; return false; }
     BF_PLAYER_CHASING = true;
     return true;
   }
@@ -407,24 +425,18 @@ function bfTickPlayer(enemies, dt, preferred, pEnt) {
      速度看起來忽快忽慢。改成：站著時要真的快脫離射程才起步，一旦起步就
      一路跑進內側才停。 */
   var d = bfEntityDistance(target);
+  var wallBlocked = typeof eliteWallBlocks === 'function' && eliteWallBlocks(home.x, home.y, target.pos.x, target.pos.y);
   var startAt = bfMeleeRange() * 0.95;      // 快脫離射程才起步
   var stopAt = bfContactDist() * 0.8;       // 停在敵人站定的位置再往內一點＝真的貼上
-  if (!BF_PLAYER_CHASING && d <= startAt) return false;   // 站著打
-  if (d <= stopAt) { BF_PLAYER_CHASING = false; return false; }
+  if (!wallBlocked && !BF_PLAYER_CHASING && d <= startAt) return false;   // 站著打
+  if (!wallBlocked && d <= stopAt) { BF_PLAYER_CHASING = false; return false; }
   BF_PLAYER_CHASING = true;
-  var gap = d - stopAt;
-  var p = target.pos;
-  var dx = p.x - home.x, dy = p.y - home.y;
-  var len = Math.sqrt(dx * dx + dy * dy);
-  if (len <= 0.0001) return false;
-  var step = Math.min(gap, bfPlayerSpeed() * bfPlayerSpeedFactor(pEnt) * dt);
-  home.x += (dx / len) * step;
-  home.y += (dy / len) * step;
-  if (typeof eliteClampMove === 'function' && eliteClampMove(ox0, oy0, home)) { BF_PLAYER_CHASING = false; return false; }   // 撞牆
+  var moved = bfMoveToward(home, target.pos, bfPlayerSpeed() * bfPlayerSpeedFactor(pEnt) * dt,
+    (typeof ELITE_PLAYER_BODY_R === 'number' ? ELITE_PLAYER_BODY_R : bfBodyRadius()) * 0.6, stopAt + bfEntityRadius(target));
   /* 這一步就走到定位了：當下就解除追擊狀態，不要拖到下一個 tick——
      中間那一格空窗會讓「已經站定卻仍算在追」，遲滯就少了半拍。 */
-  if (gap - step <= 0.0001) BF_PLAYER_CHASING = false;
-  return step > 0.0001;
+  if (!moved || bfEntityDistance(target) <= stopAt) BF_PLAYER_CHASING = false;
+  return moved;
 }
 
 /* ---- 選敵 ---- */
@@ -649,8 +661,8 @@ function bfAllTargets(enemies) { return bfLiveList(enemies); }
 
 /* ---- 新版技能幾何（2026-08-13 技能改造）----
    新版技能以「米」描述距離；系統距離單位固定以 10 單位代表 1 米，
-   所以設計表中的 7 米就是 70 個系統距離單位。技能是否能起手仍由
-   bfPlayerCanReach() 以普攻的近戰距離判定，技能本身的貫穿／範圍則可依表格延伸。
+   所以設計表中的 7 米就是 70 個系統距離單位。技能依自己的施放距離／範圍判定，
+   不套普攻專用的bfPlayerCanReach／牆體視線限制。
    ⚠️ 所有查詢對「沒有座標的實體」（高塔 BOSS）一律退化為單體語意：
    由呼叫端先以 bfPos(primary) 判斷幾何是否可用，不可用時只打主目標。 */
 var BF_MELEE_METERS = 5; // 設計文檔的近戰距離假設（米）
@@ -766,9 +778,11 @@ function bfKnockbackEnemies(enemies, distancePx, durationSec) {
 function bfTickKnockback(ent) {
   var k = ent && ent._bfKnockback, p = bfPos(ent);
   if (!k || !p) return false;
+  var ox = p.x, oy = p.y;
   var q = Math.max(0, Math.min(1, (GT - k.startAt) / (k.endAt - k.startAt)));
   p.x = k.x + (k.toX - k.x) * q;
   p.y = k.y + (k.toY - k.y) * q;
+  if (typeof eliteClampMove === 'function' && eliteClampMove(ox, oy, p, bfEntityRadius(ent) * 0.6)) delete ent._bfKnockback;
   if (q >= 1) delete ent._bfKnockback;
   return true;
 }
@@ -824,8 +838,10 @@ function bfPullEnemies(enemies, fromPx, toPx, maxStepPx) {
       if (step <= 0.0001) continue;
       want = d - step;
     }
+    var ox = p.x, oy = p.y;
     p.x = c.x + dx / d * want;
     p.y = c.y + dy / d * want;
+    if (typeof eliteClampMove === 'function' && eliteClampMove(ox, oy, p, body * 0.6)) continue;
     moved.push(ent);
   }
   return moved;

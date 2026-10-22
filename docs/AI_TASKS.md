@@ -1,5 +1,24 @@
 # AI_TASKS.md
 
+## STONE-WALL-FIVE-BLOCKS-20261022 — 五片深色岩壁與雙方阻擋
+
+- Owner：Codex；Review（外觀／程式完成；CD與文字Pending BAT），單一開發者。使用者要求每面5片岩石，全部角度依已編輯en-stone-wall-0僅留slab／dust、深色，另驗證阻擋玩家與NPC。前置既有12方向岩壁與旋轉矩形完成，fetch及逐檔預檢無外部來源；保留本副本使用者基準。
+- 允許：12份岩壁Preset／layout、兩份既有作者與12份SVG／索引／出貨及素材庫同名來源；elite／elite_boss／battlefield碰撞接線、專項與既有岩壁回歸、必要Runtime／Worker與兩頁快取、Skills2文字說明與CD20秒待套用差異、LV及本紀錄。禁止其他技能數值／解鎖／存檔／Protocol／其他副本；不合併推送。
+- 驗收：5片／12角度／兩層規格／顏色及正式Renderer；玩家與NPC追擊、跑位、遊走、推擠、強制位移、高速斜牆、升牆推離及到期通行，Worker同模擬；舊Editor儲存409及原檔不變；相關回歸／Build／Console／diff、雙倉庫Commit。配置文字依規範暫存，正式外觀與碰撞不依賴該說明。使用者追加：僅近戰普攻隔牆禁止，雙方需自動繞牆，效能最優先。採最多6面／25點、每Tick2份共用路網、16角色選路，共用路網／失敗路徑0.5秒快取；無路先停止，不做全地圖尋路。追加限制：每次隨機2～3面，同時最多2次（含預警占位、最多6面）；CD20秒以原Excel格位暫存，正式CD待BAT。後續由使用者正常整合與重新載入驗收。
+
+
+- 完成：12份Preset／layout統一使用者en-stone-wall-0兩層、#b5b5b5乘色及五片原創SVG；兩份作者可重製，保留200×43.55製作足跡、18×3.9米判定及7秒。全域最多2次築牆（預警即占名額）、每次仍均勻隨機2～3面，實測合計4／5／6面，到期或換場釋放。
+- 碰撞／繞牆：玩家與NPC普通追擊、NPC跑位／遊走／互斥推擠，雙方推拉／NPC擊退與普通及BOSS衝鋒均接既有旋轉矩形。升牆推出雙方；近戰普攻獨用視線限制，遠程普攻、火球飛行與雙方範圍傷害隔牆實際命中。普通移動採牆角繞行，強制位移只停在牆前、不另改技能路徑。
+- 效能：最多6牆／25節點、每Tick最多2份共用路網及16個角色選路；同體型／目標共用，成功路徑沿用至牆變動或目標移動、每0.25秒重查捷徑，失敗0.5秒後重試。200隻NPC分批取得路徑且無後排飢餓；六牆微量測整批中位0.32ms／p95約3.21ms、最大27.65ms，無牆基線最大4.95ms；當時其他聊天同時工作，含主機排程／GC，不代表FPS或硬時間保證。沒有全地圖網格／持續全員重算。
+- 測試指令：node --test tests/stone-wall-collision.test.cjs tests/rock-wall-art.test.cjs tests/elite-engine.test.cjs tests/battlefield.test.cjs tests/battlefield-rt.test.cjs tests/npc-vision.test.cjs tests/tower-battlefield.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-asset-export.test.cjs tests/vfx-preset-usage.test.cjs tests/skills2-vfx-schema.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs。隔離HEAD＋本任務候選239項238過／1Windows符號連結略過；最終快取優化及施放限制專項15/15（含新增漩渦位移被擋仍按原時刻命中）。最新共享HEAD較廣239項237過／1既有飛彈ELITE-ENGINE-20失敗／1Windows略過；該飛彈因另任務正式hold2後，舊測試沒有等完齊射，在HEAD原始elite／battlefield／elite_boss唯讀映射同樣失敗，新增失敗0，未修改斷言。npm.cmd run build：569檔通過；隔離asset索引194項來源／出貨SHA256核對，最新共享195項export-assets --check也已最新，12份作者／Preset／layout及diff檢查通過。舊來源唯讀映射的新回歸12項抓到11項缺漏，沒有降低原有行為斷言。
+- 實機預覽：正式Core／Pixi／Runtime、素材庫同雜湊來源載入12方向與slab／dust；stone-wall-five-rocks.png及stone-wall-detour.png保存在本聊天visualizations，後者為真實模擬位置的路徑記錄，非虛構路線，Console warning／error0。初次驗收頁誤用Editor禁止的images路徑，403後改正式asset-library端點；未改遊戲伺服器或素材來掩蓋。12份舊Editor基準送正式Server PUT均409且檔案位元不變（0度舊五層基準亦拒絕）。未操作使用者原分頁；先下載未存備份再重載，遊戲重新整理。
+- 配置待辦：config/param-patches/f80e1d63-82f2-47af-93ca-6ede8b76e16a.json同時暫存Skills2.xlsx／Skills2的e_walls、階數文字1之效果說明與冷卻時間，原CD文字6~10→數值20，說明改五片／隨機2～3／同時2次及攻擊規則。唯讀核對磁碟Excel型別及原值；沒有AI直接改Excel／CSV／生成JS，正式CD20秒與新說明須使用者儲存關閉Excel後執行套用參數.bat並驗收，不宣稱已套用。
+- 素材庫先Commit 83fdf93（37檔：12 SVG、24配對來源及SOURCE）；沿用原創程序化SVG，附件僅參考、無外部圖像或像素挪用。Mote已確認可用，像素畫布不適合此既有向量多角度幾何。遊戲提交僅本任務52檔／hunk，Commit編號見回覆；不合併或推送。
+- 協作：同副本飛彈兩秒參數已由另一聊天獨立提交81221796，保留其參數／程式／紀錄；毒水的eliteCross／Runtime／來源／Preset／索引與文件、火鏈離地及飛彈再加倍，後續也已各自提交（db3b1374／3cb933e0／420b03a8），保留且不納本任務。elite不同函式與兩索引不同asset列的實際候選／HEAD／去除我方差異的對方內容，git merge-file -p皆0、無語意相依；HTML／Runtime快取沿原先我方227基準及對方後續229的順序變更保留；最後沿最新HEAD，只提交battlefield主頁16、bridge340及Worker必要匯入，Runtime／Editor共用快取已由其他提交保存，不回寫舊值。
+- 唯讀檢查未改：AI_RULES／AGENTS／Workflow／prompts/codex、Skills2來源Excel／CSV與生成JS、Core／Backend／Editor Guard與Server／Layout、實際普攻／投射物／技能傷害入口、Worker Protocol／shim及素材匯出。自我Review確認新狀態只在ELITE_RT、換場清除、不進存檔／面板／Protocol；沒有新增特效引用。
+- 交付：外觀／上限／碰撞與有上限繞牆可Review／合併；CD20秒與說明仍Pending BAT。無路或選路預算用完先停、下一Tick重試；完整玩家長戰／手機GPU／跨裝置FPS未驗收，未聲稱複雜牆群一定能找到最佳路。其他聊天修改均保留，沒有納入本次差異；下一步正常整合本Commit與素材庫，再套用參數、備份Editor後重載驗收。
+
+
 ## FIRE-CHAIN-HEIGHT-20261022 — 火鏈固定離地兩米
 
 - 追驗（2026-10-22，Done）：使用者指出前次驗收圖三隻僅兩鏈；確認臨時預覽漏送末尾閉合邊，正式eliteChainRing已有三邊。新增三NPC正式模擬→完整三條事件→Runtime同時懸空播放回歸，核對所有配對／中點／長度／3個billboard實例；修正臨時預覽為直接播放正式模擬生成的3條事件，正式Renderer圖明確閉合三角形，離地2米，Console warning／error 0。截圖fire-chain-triangle-2m.png保存於本聊天visualizations，前圖僅為高度比較，不能代表群體閉合驗收。node --test --test-reporter=spec --test-name-pattern="火鏈|ELITE-ENGINE-4" tests/fire-chain-height.test.cjs tests/elite-engine.test.cjs，11/11通過；git diff --check通過。僅修改本紀錄與高度專項測試，未改正式遊戲／配置／素材／LV／Worker／快取，無素材庫變更、無本次未完成項，可供Review／合併；未合併推送。唯讀檢查eliteChainRing／eliteChainsTick／eliteVisEmit、Runtime、既有閉合測試與臨時預覽；未做玩家存檔長戰。Commit為本段所在[Codex] test: 驗證三隻NPC火鏈完整閉合並更正預覽，回覆附編號。

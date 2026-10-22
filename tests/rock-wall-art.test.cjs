@@ -9,14 +9,14 @@ const { slab } = require('../tools/vfx/authoring/author/rock-wall-slabs.cjs');
 const ROOT = path.resolve(__dirname, '..');
 const read = p => fs.readFileSync(path.join(ROOT, p), 'utf8');
 
-test('岩壁全部12個角度均有四塊、透明背景及原畫布，製作結果與正式匯出一致', () => {
+test('岩壁全部12個角度均有五片、透明背景及原畫布，製作結果與正式匯出一致', () => {
   const index = JSON.parse(read('vfx/asset-index.json'));
   const shipped = JSON.parse(read('vfx/shipped-assets.json'));
   for (let deg = 0; deg < 180; deg += 15) {
     const id = 'claude-authored/rock-wall/wall-slab-' + String(deg).padStart(3, '0') + '.svg';
     const svg = read('images/vfx/assets/' + id);
     assert.equal(svg, slab(deg), id + ' 由正式工具重現');
-    assert.deepEqual([...svg.matchAll(/data-rock="(\d+)"/g)].map(m => +m[1]).sort(), [0, 1, 2, 3]);
+    assert.deepEqual([...svg.matchAll(/data-rock="(\d+)"/g)].map(m => +m[1]).sort(), [0, 1, 2, 3, 4]);
     assert.match(svg, /width="256" height="200" viewBox="0 0 256 200"/);
     assert.match(svg, /data-wall-length="200" data-wall-thickness="43.55"/);
     assert.doesNotMatch(svg, /NaN|Infinity|<image|<rect|href=/);
@@ -36,11 +36,19 @@ test('岩壁全部12個角度均有四塊、透明背景及原畫布，製作結
   }
 });
 
-test('四塊岩壁沿原Preset的足跡、角度與腳底錨點播放', () => {
+test('五片岩壁沿原Preset的足跡、角度與腳底錨點播放', () => {
   for (let deg = 0; deg < 180; deg += 15) {
     const preset = JSON.parse(read('vfx/presets/en-stone-wall-' + deg + '.json'));
     const layer = preset.layers.find(l => l.id === 'slab');
     assert.ok(layer);
+    assert.deepEqual(preset.layers.map(l => l.id), ['slab', 'dust'], '所有角度僅留使用者指定兩層');
+    assert.equal(layer.tint, '#b5b5b5', '岩石採使用者深灰色');
+    const baseline = JSON.parse(read('vfx/presets/en-stone-wall-0.json'));
+    const normalized = structuredClone(preset); normalized.id = baseline.id;
+    normalized.layers[0].assetId = baseline.layers[0].assetId;
+    assert.deepEqual(normalized, baseline, '除了朝向材質，全部規格與0度相同');
+    const layout = JSON.parse(read('vfx/layouts/en-stone-wall-' + deg + '.json'));
+    assert.deepEqual(layout.groups.flatMap(g => g.layerIds), ['slab', 'dust']);
     assert.equal(layer.assetId, 'claude-authored/rock-wall/wall-slab-' + String(deg).padStart(3, '0') + '.svg');
     assert.equal(layer.followDirection, false);
     assert.deepEqual(layer.anchor, { x: .5, y: .7 });

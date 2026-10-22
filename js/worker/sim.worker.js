@@ -17,11 +17,11 @@ if (typeof GameClock !== 'undefined') {
   globalThis.clearTimeout = GameClock.clearTimeout;
 }
 importScripts(
-  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261022-battle-biomes', '../runeword_data.js?v=20261022-battle-biomes', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261019-kagura-fire-attr-asura-combo-fire-amp-50-infinite-burn-earthguard-rebirth-guard-windblade-double-slow-legend-rework-1020', '../formula.js?v=20261019-war-body-shield-loss-asura-combo-earthguard-rebirth-guard', '../battlefield.js?v=20261021-chain-hover', '../stats.js?v=20261003-rename-weineng',
+  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261022-battle-biomes', '../runeword_data.js?v=20261022-battle-biomes', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261019-kagura-fire-attr-asura-combo-fire-amp-50-infinite-burn-earthguard-rebirth-guard-windblade-double-slow-legend-rework-1020', '../formula.js?v=20261019-war-body-shield-loss-asura-combo-earthguard-rebirth-guard', '../battlefield.js?v=20261022-stone-wall-navigation', '../stats.js?v=20261003-rename-weineng',
   '../item.js?v=20261018-gem-workshop', '../gem_resonance.js?v=20261018-resonance-hole-effects','../runeword.js?v=20261018-rune-tower-unlock',
   '../skills.js?v=20261018-potential-remove', '../skills2.js?v=20261022-missile-spread-x2', '../elite_data.js?v=20261021-chain-hover', '../talents.js?v=20261018-heaven-power-complete-bonus',
   '../player.js?v=20261022-battle-biomes', '../special_rules.js',
-  '../combat.js?v=20261019-disintegrate-end-once-bloodfeast-single-target', '../elite.js?v=20261022-stone-wall-navigation-missile-hold2', '../elite_boss.js?v=20261015-boss-player-skill', '../elite_boss_recipes.js?v=20261015-boss-player-skill', '../legendary.js?v=20261012-indomitable-guard-legend-rework-1020', '../tower.js?v=20261018-rune-tower-unlock',
+  '../combat.js?v=20261019-disintegrate-end-once-bloodfeast-single-target', '../elite.js?v=20261022-stone-wall-final-missile-hold2', '../elite_boss.js?v=20261022-stone-wall-navigation', '../elite_boss_recipes.js?v=20261015-boss-player-skill', '../legendary.js?v=20261012-indomitable-guard-legend-rework-1020', '../tower.js?v=20261018-rune-tower-unlock',
   '../factory.js?v=20261021-equipment-quality-name', '../newforge.js', '../forge.js?v=20261015-gem-enabled', '../save.js?v=20261022-battle-biomes',
   '../tasks.js?v=20261007-runes4'
 );
