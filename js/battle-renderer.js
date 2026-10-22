@@ -70,6 +70,8 @@ var BattleRenderer = (function () {
 
   /* ---- 常數 ---- */
   var MAX_FX = 140;              // 特效物件上限（與 DOM 版 VFX_MAX_NODES 同精神）
+  var MAX_FX_PERF = 80;          // 效能模式的特效物件上限
+  var VFX_BOOT_RETRY_MS = [2000, 6000, 15000];  // Preset Runtime 載入失敗後的重試間隔；用完就等分頁切回前景再試
   var FX_HARD_LIFETIME_MS = 3000;  // 特效節點的硬性壽命（牆鐘）；領域類另外指定
   var FX_AURA_MAX_SEC = 6;         // 領域／旋風類的顯示上限（秒）——原本吃技能的實際持續時間，
                                    // 長效領域會讓那塊半透明方框在畫面上留很久，看起來像沒清乾淨
@@ -1130,8 +1132,14 @@ var BattleRenderer = (function () {
      這裡的原則：**裝飾性的東西在高載時先讓位，主體永遠保留**。
      拖尾與粒子屬於裝飾；投射物本體、命中爆點、傷害飄字屬於主體，任何負載
      都照畫，因為那是玩家真正在讀的資訊。 */
+  var perfMode = false;   // 效能模式（ui.js 的畫面右上角按鈕）：特效上限降低、Preset 命中密度固定在下限
+  function fxCap() { return perfMode ? MAX_FX_PERF : MAX_FX; }
+  function setPerfMode(on) {
+    perfMode = !!on;
+    if (S.vfxrt && S.vfxrt.setPerfMode) S.vfxrt.setPerfMode(perfMode);
+  }
   function fxLoad() {
-    return S.fx.length / MAX_FX;
+    return S.fx.length / fxCap();
   }
   function particleBudget(n) {
     var load = fxLoad();
@@ -2158,7 +2166,7 @@ var BattleRenderer = (function () {
        節點就會永遠留在畫面上。這條時限與 update 無關，時間到一律清掉。 */
     fx.bornAt = nowMs();
     fx.maxLife = maxLifeMs || FX_HARD_LIFETIME_MS;
-    if (S.fx.length >= MAX_FX) {
+    if (S.fx.length >= fxCap()) {
       /* 滿了可讓高優先級事件淘汰較低優先級事件；否則長駐場域會在
          技能洪峰中因為所有低優先級粒子已被清掉而反遭拒收。相同優先級
          不互相淘汰，避免新事件把仍在播放的長駐場域換掉。 */
@@ -7366,6 +7374,7 @@ var BattleRenderer = (function () {
        handleVisibilityChange 呼叫 vfxSetEnabled(false) 的處置一致）。 */
     document.addEventListener('visibilitychange', function () {
       if (documentHidden()) clearAllFx();
+      else retryVfxRuntimeIfMissing();
     });
 
     WorkerBridge.on('workerRestarting', function () {
@@ -7483,16 +7492,36 @@ var BattleRenderer = (function () {
       S.vfxrt = rt || null;
       S.vfxLoading = false;
       flushPendingVfx();
-      if (!rt) return;
+      if (!rt) { scheduleVfxBootRetry('boot 回傳空值'); return; }   // VFXRuntime.boot 把所有失敗都吞成 null
+      S.vfxBootTry = 0;
+      if (rt.setPerfMode) rt.setPerfMode(perfMode);
       console.info('[battle-renderer] VFX Preset Runtime 已接上（' +
         rt.stats().presets + ' 份 preset）。網址加 ?vfx=legacy 可強制舊畫法。');
     }).catch(function (err) {
       S.vfxrt = null;
       S.vfxLoading = false;
       flushPendingVfx();
-      console.warn('[battle-renderer] VFX Preset Runtime 組裝失敗，維持舊畫法：',
-        err && err.message ? err.message : err);
+      scheduleVfxBootRetry(err && err.message ? err.message : err);
     });
+  }
+
+  /* 分頁在背景被丟棄再重載時，貼圖／preset 檔偶爾載不到；舊畫法只涵蓋早期技能，
+     新特效沒有對應畫法，停在那裡等於整場缺特效直到 F5。所以間隔幾秒自動重試，
+     用完次數就等分頁切回前景再試（見 retryVfxRuntimeIfMissing）。 */
+  function scheduleVfxBootRetry(reason) {
+    var tries = S.vfxBootTry || 0;
+    console.warn('[battle-renderer] VFX Preset Runtime 組裝失敗（第 ' + (tries + 1) + ' 次）：', reason);
+    if (tries < VFX_BOOT_RETRY_MS.length) {
+      S.vfxBootTry = tries + 1;
+      S.vfxRetryTimer = setTimeout(function () { S.vfxRetryTimer = 0; bootVfxRuntime(); }, VFX_BOOT_RETRY_MS[tries]);
+    }
+  }
+
+  /* 重試次數用完仍沒接上時，玩家切回分頁就再給一輪機會。 */
+  function retryVfxRuntimeIfMissing() {
+    if (!S.ready || S.vfxrt || S.vfxLoading || S.vfxRetryTimer) return;   // 已接上、載入中、或排了重試
+    S.vfxBootTry = 0;
+    bootVfxRuntime();
   }
 
   /* 狀態光環要靠 5Hz 面板快照 reconcile：事件驅動答不出「現在還在不在」。 */
@@ -7770,6 +7799,7 @@ var BattleRenderer = (function () {
     floatEvictedCount: function () { return S.floatEvicted; },
     clearDamageFloats: clearDamageFloats,
     clearAllFloats: clearAllFloats,
+    setPerfMode: setPerfMode,
     /* 測試／除錯用：取 Pixi Application（headless 驗證時手動推 ticker、抽畫面）
        與內部狀態快照。正式流程不得依賴。 */
     _app: function () { return S.app; },

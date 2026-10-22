@@ -281,3 +281,14 @@ test('CORE-5 playback.hitCap 是登記過的旋鈕：預設 4，範圍 1～64，
   assert.strictEqual(ok(0), false);
   assert.strictEqual(ok(65), false);
 });
+
+/* 效能模式（2026-10-22）：調節器鎖在下限，不看幀時間；解除後回到自適應。 */
+test('效能模式：lock 後密度固定在下限，解除後恢復', () => {
+  const g = VFXRuntime.createDensityGovernor();
+  assert.strictEqual(g.quality(), 1);
+  g.lock(true);
+  for (let i = 0; i < 120; i++) g.step(1 / 60);          // 流暢的幀也不會把密度放回去
+  assert.strictEqual(g.quality(), g.floor());
+  g.lock(false);
+  assert.strictEqual(g.quality(), 1);
+});

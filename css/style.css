@@ -10962,6 +10962,52 @@ body.battle-canvas-mode #combat-area .battle-scene-wrapper > #btn-toggle-damage 
   z-index: 30;
 }
 
+/* 效能模式開關鈕：固定在傷害數字開關右側；開啟時亮琥珀色，關閉時與傷害數字鈕的「關」同樣淡灰 */
+#btn-toggle-perf {
+  position: absolute;
+  top: 8px;
+  left: 64px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid #64748b;
+  color: #94a3b8;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: inherit;
+  padding: 0;
+  cursor: pointer;
+  z-index: 30;
+  opacity: 0.65;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+#btn-toggle-perf:hover {
+  background: rgba(100, 116, 139, 0.25);
+  border-color: #94a3b8;
+  color: #e2e8f0;
+  opacity: 1;
+}
+
+#btn-toggle-perf svg {
+  pointer-events: none;
+}
+
+#btn-toggle-perf.is-on {
+  border-color: #f59e0b;
+  color: #f59e0b;
+  box-shadow: 0 0 5px rgba(245, 158, 11, 0.55);
+  opacity: 1;
+}
+
+#btn-toggle-perf.is-on:hover {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+}
+
 /* 內部版本戰鬥區 FPS 顯示：固定在左上角（敵情與傷害數字開關下方） */
 #battle-fps {
   position: absolute;
