@@ -241,33 +241,8 @@ NEW['en-poison-dot'] = () => ({
   ]
 });
 
-/* 毒十字：從中心向上下左右四個方向「長出」一排毒水球（朝外延伸、速度 speed 米／秒，最終長度 len 米），長成後固定不動。
-   中心的毒圈是另一份 Preset（en-poison-dot，由模擬層放在同一點）。
-   一份 Preset 最多 32 個圖層，所以每臂 balls 顆（現為 5，球半徑＝中心毒圈半徑 4 米，相鄰兩顆略有重疊）、每顆一層；球出現的時間 ＝ 距離 ÷ 速度（delay），出現後固定在原地。
-   座標：事件半徑 r＝len 米 ↔ authored 100px，所以 1 米 ＝ 100／len px。
-   模擬層用同一組公式判定（js/elite.js eliteCrossesTick）：第 k 顆在 (k+1)×len/balls 米，距離 ≤ speed×t 才存在。
-   ⚠️ Preset 本身固定朝上下左右（不靠「錨點偏移繞圈」旋轉小球，投影到地面時 mesh 會炸開）；斜向的十字由模擬層把整份 Preset 以 area.a 轉過去（js/elite.js eliteCastCross：一條臂沿「敵人→玩家」）。 */
-function poisonCross(o) {
-  const { dur, balls, len, speed, ballR } = o;
-  const pxPerM = 100 / len, gapM = len / balls;
-  const layers = [
-    withGround(kit.sprite({ id: 'hubglow', asset: A.discB, z: 0, size: 26, alpha: 0.55, tint: '#8cff2a', blend: 'add', duration: dur, scaleOverLife: C.breathe(0.12) }))
-  ];
-  let z = 1;
-  const dirs = [[1, 0], [0, 1], [-1, 0], [0, -1]];
-  for (let arm = 0; arm < 4; arm++) {
-    for (let b = 0; b < balls; b++) {
-      const distM = gapM * (b + 1), dist = distM * pxPerM;
-      const delay = +(distM / speed).toFixed(3);          // 球在延伸前緣到達的時候才冒出來
-      const d = Math.max(6, +(ballR * 2 * pxPerM).toFixed(2));   // 球直徑（px）
-      layers.push(withGround(kit.sprite({ id: 'ball' + arm + '-' + b, asset: A.bubble, z: z++, size: d, x: +(dirs[arm][0] * dist).toFixed(2), y: +(dirs[arm][1] * dist).toFixed(2), alpha: 0.95, tint: '#9dff3a', blend: 'add',
-        delay: delay, duration: +(dur - delay).toFixed(3), alphaOverLife: [[0, 0], [0.04, 1], [0.9, 1], [1, 0]], scaleOverLife: [[0, 0.3], [0.04, 1.15], [0.1, 1]] })));
-    }
-  }
-  layers.push(kit.particle({ id: 'drips', asset: A.dot, z: z++, rate: 10, lifetime: [0.6, 1.1], spawnRadius: 14, speed: [4, 14], direction: -90, spread: 50, startPx: [3, 6], alpha: 0.9, tint: '#c8ff6a', blend: 'add', alphaOverLife: [[0, 0], [0.3, 1], [1, 0]] }));
-  return { id: 'en-poison-cross', duration: dur, loop: false, sizing: circleSizing(100), layers };
-}
-NEW['en-poison-cross'] = () => poisonCross({ dur: 16, balls: 5, len: 36, speed: 12, ballR: 4 });
+/* 毒十字：原創連續毒水圖集；作者與正式遊戲共用同一來源。 */
+NEW['en-poison-cross'] = () => require('./poison-trail.cjs').make();
 
 /* 冰晶：地面生出的冰晶持續膨脹（2~3 秒），外圈＝炸裂範圍。 */
 NEW['en-ice-crystal'] = () => {

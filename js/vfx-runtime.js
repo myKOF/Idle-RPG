@@ -606,6 +606,24 @@ var VFXRuntime = (function () {
           p.layers.forEach(function (l) { if (l.projection) l.projection.y = groundScale; });
         }
         if (p.sizing) resolveSizing(p.sizing); // 載入即驗證，錯誤不可靜默變成 NaN
+        if (p.id === 'en-poison-cross' && p.layers.some(function(l) { return l.id === 'flow-0'; })) {
+          // 同一份表定 Preset 的四臂，事件各自驅動長度與寬度；不產生額外素材來源。
+          for (var arm = 0; arm < 4; arm++) {
+            var part = JSON.parse(JSON.stringify(p));
+            part.id += '-arm-' + arm;
+            part.layers = part.layers.filter(function(l) { return l.id === 'flow-' + arm; });
+            part.layers.forEach(function(l) {
+              l.position = {x:0,y:0}; l.rotation = 0;
+              delete l.offsetXOverLife; delete l.offsetYOverLife; delete l.scaleXOverLife;
+            });
+            // 圖集單格尺寸乘上作者縮放，保持編輯器與遊戲共用素材尺度。
+            var layer = part.layers[0];
+            if (!layer) continue;
+            var sourceWidth = 512 * layer.scale.x, sourceHeight = 128 * layer.scale.y;
+            part.sizing = {shape:'rectangle',authored:{width:sourceWidth,height:sourceHeight}};
+            registerPresets([part]);
+          }
+        }
         rtFx.registerPreset(p);
         rtZone.registerPreset(p);
         if (rtAir !== rtFx) rtAir.registerPreset(p);
@@ -1215,6 +1233,13 @@ var VFXRuntime = (function () {
         return;
       }
       var area = g.worldMotion && spec.area._worldMotion ? spec.area._worldMotion : spec.area;
+      if (g.poisonTrail) {
+        g.trailArea = Object.assign({}, area);
+        g.growthAt = clock - Math.max(0, num(area.growAge, 0));
+        g.growSec = Math.max(0, travelSecAt(spec, 0));
+        g.bx = num(area.x, 0); g.by = num(area.y, 0);
+        return;
+      }
       if (g.staticVacuum) {
         g.growthAt = clock - Math.max(0, num(area.growAge, 0));
         g.baseR = num(area.baseR, area.r);
@@ -1328,6 +1353,15 @@ var VFXRuntime = (function () {
       g.oy -= g.oy / mag * fix;
     }
     function groundParams(g) {
+      if (g.poisonTrail) {
+        var a = g.trailArea, angle = num(a._planeA, num(a.a, 0));
+        var length = Math.max(0, num(a._planeW, num(a.w, num(a.r, 0))));
+        var radius = Math.max(0, num(a.h, 0)) / 2;
+        var reach = length * (g.growSec > 0 ? Math.min(1, Math.max(0, clock - g.growthAt) / g.growSec) : 1);
+        var dimensions = sizeOf(g.presetId, {w:reach + radius * 2,h:radius * 2});
+        return Object.assign({position:{x:num(a.x,0)+Math.cos(angle)*reach/2,
+          y:num(a.y,0)+Math.sin(angle)*reach/2*groundScale}, rotation:angle, loop:true}, dimensions);
+      }
       var p = { position: { x: g.x, y: g.y }, rotation: g.rot };
       // 火鏈沿原地面連線懸空；腳點保留作深度錨點，高度不乘地面壓縮。
       if (g.fireChain) {
@@ -1362,6 +1396,17 @@ var VFXRuntime = (function () {
 
     /* 持續場域：以 area.id 合併，重複事件只續命與更新「權威目標」 */
     function playGround(presetId, spec, role) {
+      if (spec.variant === 'elite-poison-trail' && has(presetId + '-arm-0') && spec.area) {
+        var result = true;
+        for (var arm = 0; arm < 4; arm++) {
+          var area = Object.assign({}, spec.area);
+          area.id = (area.id || presetId + '@' + area.x + ',' + area.y) + '-arm-' + arm;
+          area._planeA = num(area._planeA, num(area.a, 0)) + arm * Math.PI / 2;
+          var child = Object.assign({}, spec, {area:area});
+          if (!playGround(presetId + '-arm-' + arm, child, role)) result = false;
+        }
+        return result;
+      }
       var skyfallMark = role === 'ground' && spec.fxKind === 'rain' && spec.area && spec.area.skyfallMark === true;
       if (skyfallMark) {
         // 僅改提示圈演出尺寸，傷害AOE仍保留在原事件／模擬排程。
@@ -1413,13 +1458,14 @@ var VFXRuntime = (function () {
       }
       if (spec.variant === 'water-tide-merge' && !spec.area) keep = Math.max(0, num(spec.dur, 0));
       if (staticVacuum && isFinite(spec.area.lifeSec)) keep = Math.max(0, Number(spec.area.lifeSec));
+      if (spec.variant === 'elite-poison-trail' && isFinite(spec.area.lifeSec)) keep = Math.max(0, Number(spec.area.lifeSec));
       if (spec.variant === 'mire-inferno-pool') {
         keep = Math.max(0, num(spec.dur, 0));
       }
       var curtainColumn = role === 'attack' && spec.variant === 'thunder-curtain';
       // 舊事件缺 variant 時沿用既有月牙辨識；新素材依追蹤事件語意判斷。
       var windBody = !staticVacuum && (spec.variant === 'wind-blade-homing' || presetId === 'ground-homing-wind-crescent');
-      var mult = curtainColumn || spec.variant === 'flying-thunder' || indomitableVisual || skyfallMark ? 1 : noArea || spec.variant === 'ice-arrow-homing' || windBody || presetId === 'proj-icearrow-frost' ? profile.scale : profile.areaScale;
+      var mult = curtainColumn || spec.variant === 'elite-poison-trail' || spec.variant === 'flying-thunder' || indomitableVisual || skyfallMark ? 1 : noArea || spec.variant === 'ice-arrow-homing' || windBody || presetId === 'proj-icearrow-frost' ? profile.scale : profile.areaScale;
       var live = grounds[key];
       if (live && live.presetId === presetId && spec.variant !== 'dragon-devour') {
         live.expireAt = clock + keep;
@@ -1434,6 +1480,7 @@ var VFXRuntime = (function () {
         ref: null, presetId: presetId, expireAt: clock + keep, mult: mult, anchor: anchor,
         iceArrowBody: spec.variant === 'ice-arrow-homing',
         staticVacuum: staticVacuum,
+        poisonTrail: spec.variant === 'elite-poison-trail',
         worldMotion: !staticVacuum && (spec.variant === 'wind-blade-homing' || spec.variant === 'ice-arrow-homing') && !!(spec.area && spec.area._worldMotion),
         smoothChase: spec.variant === 'ice-arrow-homing' || windBody,
         windBody: windBody,
@@ -2325,7 +2372,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20261021-missile-soft-cone';
+  var DATA_VERSION = '20261022-stone-wall-poison-trail';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

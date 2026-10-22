@@ -168,6 +168,14 @@ function eliteVisEmit(v) {
   var area = { id: v.id, x: v.x, y: v.y };
   if (v.w > 0 && v.h > 0) { area.w = v.w; area.h = v.h; area.a = v.a || 0; }
   else { area.r = v.r; if (v.a !== undefined) area.a = v.a; }      // 圓形場域也可以帶朝向（毒十字依敵人面向玩家的方向轉）
+  if (v.poisonTrail) {
+    area.r = v.r;
+    area.growAge = Math.max(0, GT - v.t0);
+    area.lifeSec = Math.max(0, v.until - GT);
+    eliteFx({ fxKind: 'aura', variant: 'elite-poison-trail', count: 1, dur: area.lifeSec,
+      travelMs: [v.growSec * 1000], area: area, vfx: { ground: v.preset } });
+    return;
+  }
   /* 會移動的場域（火鏈）：把中心的移動速度與方向一起送過去，顯示層在兩則事件之間沿著它自走，不會一格一格跳。 */
   if (v.speed > 0 && isFinite(v.moveA)) { area.speed = v.speed; area.moveA = v.moveA; }
   if (v.curtain) {
@@ -1275,12 +1283,9 @@ function eliteBeamsTick(dt) {
   ELITE_RT.beams = keep;
 }
 
-/* ============ 毒素加持：中心一個毒圈，十字形的毒水球從中心向外延伸，緩慢旋轉 ============
-   設計（使用者 2026-10-16）：中心毒圈半徑 hubR（預設 2.8 米）；四個方向各 balls 顆毒水球，以 speed（12 米／秒）朝外「長出」，
-   最終長度 len（36 米），之後固定長度，到 dur 秒結束。十字固定朝上下左右、不旋轉（Preset 的小球旋轉在地面投影下會炸開）。
-   第 k 顆（k＝0..balls-1）在距離 (k+1)×len/balls，延伸前緣（speed×t）到了才存在（與 Preset 同一組公式）。
-   碰到毒球或站在中心毒圈裡都會受傷。
-   畫面角色：地板特效＝中心毒圈（en-poison-dot，開頭預警到結束一直在）；持續場域特效＝十字本體 */
+/* 毒素加持：表定 len／speed 決定連續伸展的前緣，ballR 是水帶半寬。
+   四臂為從中心到前緣的膠囊形；舊 balls 配置保留相容、不再離散放球。
+   朝向由敵人面對玩家的方向決定，生成後不旋轉。 */
 function eliteCastCross(m, d) {
   var pp = elitePos();
   var ang = Math.random() * Math.PI * 2;
@@ -1294,7 +1299,9 @@ function eliteCastCross(m, d) {
   var hub = eliteVisAdd({ id: eliteVisId('poisondot'), preset: d.v.ground, x: cx, y: cy, r: d.hubR || 28, until: GT + warn + dur });
   eliteLater(warn, function () {
     var c = { owner: m, def: d, x: cx, y: cy, a: ang0, t0: GT, until: GT + dur, nextTick: 0, hub: hub };
-    c.vis = eliteVisAdd({ id: eliteVisId('cross'), preset: d.v.field, x: cx, y: cy, r: d.len || 360, a: ang0, until: c.until });
+    c.vis = eliteVisAdd({ id: eliteVisId('cross'), preset: d.v.field, x: cx, y: cy,
+      r: d.len || 360, w: d.len || 360, h: (d.ballR || 18) * 2, a: ang0,
+      poisonTrail: true, t0: c.t0, growSec: (d.len || 360) / (d.speed || 120), until: c.until });
     ELITE_RT.crosses.push(c);
   });
 }
@@ -1311,17 +1318,15 @@ function eliteCrossesTick(dt) {
     if (c.nextTick > 0 || !player) continue;
     c.nextTick = c.def.tick || 0.25;
     var t = GT - c.t0;
-    var len = c.def.len || 360, balls = c.def.balls || 7, reach = Math.min(len, (c.def.speed || 120) * t);
+    var len = c.def.len || 360, reach = Math.min(len, (c.def.speed || 120) * t);
     var ballR = c.def.ballR || 18;
     var hit = eliteDist(pp.x, pp.y, c.x, c.y) <= (c.def.hubR || 28) + ELITE_PLAYER_BODY_R;     // 中心的毒圈
     for (var arm = 0; arm < 4 && !hit; arm++) {
       var th = (c.a || 0) + arm * Math.PI / 2;
-      for (var b = 0; b < balls; b++) {
-        var dist = (b + 1) * len / balls;
-        if (dist > reach + 1e-6) break;          // 延伸前緣還沒到這一顆
-        var bx = c.x + Math.cos(th) * dist, by = c.y + Math.sin(th) * dist;
-        if (eliteDist(pp.x, pp.y, bx, by) <= ballR + ELITE_PLAYER_BODY_R) { hit = true; break; }
-      }
+      var dx = pp.x - c.x, dy = pp.y - c.y;
+      var along = Math.max(0, Math.min(reach, dx * Math.cos(th) + dy * Math.sin(th)));
+      var bx = c.x + Math.cos(th) * along, by = c.y + Math.sin(th) * along;
+      if (eliteDist(pp.x, pp.y, bx, by) <= ballR + ELITE_PLAYER_BODY_R) hit = true;
     }
     if (hit) {
       var res = eliteHitPlayer(c.owner, { mult: c.def.dmg, elem: c.def.elem, sure: true, dot: c.def.dot, quiet: true, label: c.def.name });

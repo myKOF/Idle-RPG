@@ -6,7 +6,7 @@
     "name": "asset-scanner",
     "version": "1.0.0"
   },
-  "assetCount": 2469,
+  "assetCount": 2470,
   "assets": [
     {
       "assetId": "antigravity-authored/ice/ice-arrow-spike.png",
@@ -1708,6 +1708,25 @@
       "facts": {
         "dimensions": {
           "width": 512,
+          "height": 512
+        },
+        "dimensionsSource": "attributes",
+        "colorModel": null,
+        "bitDepth": null,
+        "hasAlphaChannel": null,
+        "pixelsAnalyzed": false
+      }
+    },
+    {
+      "assetId": "codex-authored/poison-trail/flow.svg",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/poison-trail/flow.svg",
+      "format": "svg",
+      "fileSize": 621550,
+      "contentHash": "sha256:aa8eaf733d2f447d68432e0767678ce5429032088a3918c75ce919522bf03847",
+      "facts": {
+        "dimensions": {
+          "width": 2048,
           "height": 512
         },
         "dimensionsSource": "attributes",

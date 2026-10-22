@@ -39,6 +39,20 @@
 - 唯讀未改：共通規範／Workflow／prompts/codex、PARAM_PATCHES／官方合併與配置工具、elite_data既有米轉座標、Core／Runtime／battle-renderer鏡頭及投影、四色Preset／layout／素材、上述其餘回歸。自我Review確認橫向只乘1.5、後退只乘2、事件和傷害時序共用正式配置，停駐仍為數值世界座標；沒有新VFX來源／素材庫檔案或素材庫Commit。
 - 交付：本段所在「[Codex] feat: 正式套用飛彈兩秒停駐與加寬後退」Commit，回覆附編號。無本輪未完成項，可供Review／合併；未合併推送。限制為上述4項既有測試失敗，以及未做真人存檔長戰／多技能混戰／跨裝置驗收。下一步正常整合及重新載入遊戲；其他任務未提交內容保留。
 
+## POISON-TRAIL-20261022 — 毒素加持改為連續流動毒水
+
+- Owner：Codex；Done，單一開發者。使用者參考圖要求將逐顆圓點改成連續毒水痕跡；原有毒十字、表定幾何及素材流程已完成。允許毒十字Preset／layout、新原創SVG及作者／索引／出貨與素材庫對應來源、elite毒十字及事件、Runtime相應接線、必要共用快取、專項回歸／文件／LV；禁止其他技能數值、配置工作簿、存檔、其他副本及岩壁功能。
+- 保留同副本岩壁進行中內容；使用者已明確允許合併共用快取版本。其他修改採分段、三方試跑及獨立提交。驗收連續伸展／寬度／斜向投影、傷害同步／壽命／回收、正式Renderer畫面、Editor舊分頁拒存、相關回歸／Build及雙倉庫Commit；交使用者Review／正常整合，不合併推送。
+
+- 完成：原創16格SVG改為蜿蜒中心、非對稱寬窄起伏、重疊混濁團塊、局部渦流、泡沫及柔霧邊緣；使用者指出第一版像刷漆後已移除等寬直條與平行流紋。四臂4個sprite、沒有持續粒子；替換原22層。長度／半寬／速度／持續與朝向仍讀表，命中改為中心至連續前緣的膠囊，舊balls保留相容但不再離散放球。新variant沿用既有w/h/a/growAge/lifeSec/travelMs，未新增Protocol欄位。
+- 修改檔案：js/elite.js毒十字與派送、js/vfx-runtime.js四臂派生／逐幀幾何／壽命／資料快取、enemy-skills.cjs及新poison-trail.cjs作者、Preset／layout、SVG／asset-index／shipped-assets、tests/poison-trail.test.cjs、兩頁Runtime快取、Adapter／用途登記／LV與本紀錄。Worker／bridge原先本輪快取已由另一飛彈提交81221796升為navigation-missile-hold2／337，涵蓋本次elite修改，不再覆寫共用欄位；Runtime兩頁採229。
+- 分段：本副本岩壁與火鏈仍進行中；毒十字函式／作者段落與其他功能不相依，候選相對HEAD三方merge-file試跑0並核對結果等於工作檔；僅stage本次候選與獨立檔。DATA_VERSION／兩頁快取依本輪使用者明確授權整合。保留其他全部修改與素材庫岩壁內容，不帶入提交。
+- 驗證：node --test tests/poison-trail.test.cjs 4/4；8檔核心相關251項249過2既有失敗（ELITE-DATA-3秘法棒舊6秒、ELITE-ENGINE-20飛彈兩段舊fixture），以修改前elite來源映射重跑兩名稱同樣失敗；未改既有斷言。guard／asset-export／兩份技能VFX／screen-space共78項77過1 Windows符號連結略過；Worker／Protocol／快取等追加檢查通過，期間另一火鏈任務主頁升229造成一次快取不一致，Editor同步229後3/3。npm.cmd run build 568檔通過；export-assets --check與兩庫diff --check通過。
+- 瀏覽器：隔離預覽使用正式Core／Runtime／Pixi與正式出貨SVG，完整3.4秒／伸展1.3秒及動畫到15秒已檢查；預覽PNG保存在本聊天visualizations，未讀寫真人存檔。初期預覽腳本的素材relativePath及重設共用backend造成載入／texture錯誤，已修正臨時腳本並以新分頁驗證無新增warning／error；正式遊戲程式沒有相應變更。Editor過期版本／外部Preset變更拒絕儲存409及備份保留由既有guard測試確認。
+- 素材交付：先建立素材庫Commit 5e11375，4檔自製來源／SVG／Preset／layout，三份出貨／來源SHA256一致；遊戲Commit為本段所在[Codex] feat: 毒素加持改為蜿蜒連續毒水，回覆附編號。參考圖僅觀察造型、未使用像素；Mote Studio已確認無原生SVG匯出，採向量作者。
+- 唯讀檢查未改：AI規範／Workflow／AGENTS／prompts/codex、Core／Backend／guard／server、Skills2表格及資料、Worker協議／shim、素材庫解析與匯出、elite-env及上述既有回歸；其他任務的battlefield／岩壁／火鏈／配置原樣保留。自我Review檢查判定前緣／斜向單次投影／事件續送／不同表定幾何／到期回收。
+- 交付：本次實作與預覽完成，可供Review／合併，未合併推送。已知限制：兩項既有失敗、一項略過；未驗真人長戰、手機GPU與跨瀏覽器，外觀仍可依使用者預覽回饋調整。下一步正常整合後重載遊戲；Editor未存內容先備份另存再重載，勿以舊分頁覆寫。
+
 ## MISSILE-SPREAD-20261022 — 飛彈後退散開間距增加35%
 
 - Owner：Codex；Done，單一開發者。使用者要求四枚向後飛散的間距增加30～40%，採35%；沿既有飛彈接入，不依賴岩壁任務。

@@ -1,5 +1,11 @@
 # VFX_RUNTIME_ADAPTER.md
 
+### 毒素加持連續毒水（2026-10-22）
+
+`variant=elite-poison-trail` 沿用既有 area／travelMs 欄位：x/y 是固定中心，a 是判定平面朝向，w 是每臂最長長度，h 是水帶直徑，r 保留最長半徑供舊端退化，growAge 是本次伸展經過秒數，lifeSec 是剩餘壽命，travelMs[0] 是 len/speed 的完整伸展時間。四臂共用同一組權威數值，逐幀 reach=min(w,w*age/growSec)，每臂為中心到前緣的膠囊；ballR 繼續作半寬，舊 balls 參數保留但不再離散放球。未認得 variant 的舊端沿原 ground 處理，不猜另一套速度；沒有 travelMs 時顯示完整水帶。
+
+Runtime 將 en-poison-cross 的 flow 圖層拆成同一份 Preset 的四個子部件，不是新增 Preset 來源；中心到前緣逐幀伸展，既有 screenSpaceSpec 保留 _planeA／_planeW 後只做一次貼地投影，續送只校正 growAge、不重播圖集；lifeSec=0 立即清除。沒有新增協議欄位／存檔格式；依既有協議允許的新 variant 擴充。
+
 ## 超重岩之術（2026-10-12）
 
 施放時依24米狀態範圍石化並轉地，時間採2＋0.2×等級；沿用BOSS免控、韌性及控場遞減。控場實際期限在ccLock，與完整暈眩狀態分開；石化標記／轉地只維持實際控場期限，不再提供地系易傷。石化優先於火獄／寒冰屬性覆寫，到期後恢復仍有效的其他覆寫或原屬性；攻守屬性出口共用。
