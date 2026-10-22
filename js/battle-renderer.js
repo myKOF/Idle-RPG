@@ -705,6 +705,11 @@ var BattleRenderer = (function () {
           speeds[key] = hasDur ? 1 : (a.fps || 8) / 60;
         }
         S.sheets[name] = { manifest: manifest, anims: anims, speeds: speeds, outline: null };
+        if (name === 'boss') {
+          Object.keys(anims).forEach(function (key) {
+            anims[key].forEach(function (frame) { buildNpcRankMasks(frame.texture || frame); });
+          });
+        }
         /* 輪廓貼圖是從這份序列幀推出來的，所以在同一個地方一起備好。 */
         if (opts && opts.outline) S.sheets[name].outline = buildOutlineFrames(S.sheets[name], tex);
       });
@@ -1324,6 +1329,125 @@ var BattleRenderer = (function () {
 
   /* ============ 實體 ============ */
 
+  /* 階級覆光只取本體 alpha，不包含陰影、血條或身後的圓形光暈。
+     每個本體 Texture 只製作一次無色遮罩，三階共用；逐幀僅換貼圖與姿勢，
+     不使用每隻NPC各一份的離屏Filter，也不在Ticker重畫Canvas。 */
+  var NPC_RANK_MASKS = new WeakMap();
+  var NPC_EMOJI_TEXTURES = new Map();
+  var NPC_RANK_STYLES = {
+    elite: { rim: 0x329dff, inner: 0x70cfff },
+    elite_adv: { rim: 0xffcf32, inner: 0xffe878 },
+    boss: { rim: 0xff3020, inner: 0xffb43c }
+  };
+  function npcRankStyle(data) {
+    if (data.isBoss || data._tier === 'boss' || data._tier === 'tower') return NPC_RANK_STYLES.boss;
+    if (data._tier === 'elite_adv') return NPC_RANK_STYLES.elite_adv;
+    if (data.elite || data._tier === 'elite') return NPC_RANK_STYLES.elite;
+    return null;
+  }
+  /* emoji備援也先做成精靈，讓覆光與本體使用完全相同的透明輪廓。 */
+  function makeNpcEmojiBody(data, scale) {
+    var size = Math.round(40 * scale), text = data.emoji || '👾';
+    var key = size + '|' + text, tex = NPC_EMOJI_TEXTURES.get(key);
+    if (!tex) {
+      var canvas = document.createElement('canvas'), ctx = canvas.getContext('2d');
+      if (!ctx) return null;
+      ctx.font = size + 'px sans-serif';
+      var m = ctx.measureText(text);
+      var ascent = Math.ceil(m.actualBoundingBoxAscent || size);
+      var descent = Math.ceil(m.actualBoundingBoxDescent || size * 0.2);
+      var left = Math.ceil(Math.max(0, m.actualBoundingBoxLeft || 0));
+      canvas.width = Math.ceil(Math.max(m.width, m.actualBoundingBoxRight || 0)) + left + 2;
+      canvas.height = ascent + descent + 2;
+      ctx.font = size + 'px sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(text, left + 1, ascent + 1);
+      tex = PIXI.Texture.from(canvas);
+      NPC_EMOJI_TEXTURES.set(key, tex);
+    }
+    var sp = new PIXI.Sprite(tex);
+    sp.anchor.set(0.5, 0.94);
+    return sp;
+  }
+  function buildNpcRankMasks(tex) {
+    if (!tex || !tex.source || !tex.source.resource) return null;
+    if (NPC_RANK_MASKS.has(tex)) return NPC_RANK_MASKS.get(tex);
+    var res = tex.source.resource, f = tex.frame, orig = tex.orig || f;
+    if (!f || !orig.width || !orig.height) return null;
+    /* 統一遮罩解析度，外框不隨原始圖片像素密度而忽粗忽細；留白防止貼邊裁切。 */
+    var k = 128 / Math.max(orig.width, orig.height), pad = 14;
+    var w = Math.ceil(orig.width * k), h = Math.ceil(orig.height * k);
+    function canvas() {
+      var c = document.createElement('canvas'); c.width = w + pad * 2; c.height = h + pad * 2; return c;
+    }
+    var mask = canvas(), mc = mask.getContext('2d');
+    if (!mc) return null;
+    var trim = tex.trim, r = tex.source.resolution || 1;
+    mc.drawImage(res, f.x * r, f.y * r, f.width * r, f.height * r,
+      pad + (trim ? trim.x : 0) * k, pad + (trim ? trim.y : 0) * k, f.width * k, f.height * k);
+    mc.globalCompositeOperation = 'source-in'; mc.fillStyle = '#ffffff'; mc.fillRect(0, 0, mask.width, mask.height);
+    /* 多個距離的侵蝕／膨脹差形成柔光：顏色從輪廓往內漸淡，深處僅淡染。
+       全程Canvas合成，不讀ImageData；也不會把序列圖相鄰格的像素帶進來。 */
+    function band(radius, inside) {
+      var c = canvas(), ctx = c.getContext('2d');
+      ctx.drawImage(mask, 0, 0);
+      ctx.globalCompositeOperation = inside ? 'destination-in' : 'source-over';
+      for (var i = 0; i < 8; i++) {
+        var a = i * Math.PI / 4;
+        ctx.drawImage(mask, Math.cos(a) * radius, Math.sin(a) * radius);
+      }
+      if (inside) {
+        var edge = canvas(), ec = edge.getContext('2d'); ec.drawImage(mask, 0, 0);
+        ec.globalCompositeOperation = 'destination-out'; ec.drawImage(c, 0, 0); return edge;
+      }
+      ctx.globalCompositeOperation = 'destination-out'; ctx.drawImage(mask, 0, 0); return c;
+    }
+    var inner = canvas(), ic = inner.getContext('2d');
+    ic.globalAlpha = 0.025; ic.drawImage(mask, 0, 0);
+    ic.filter = 'blur(2px)'; ic.globalAlpha = 0.13;
+    [2, 4, 6, 8, 11, 15].forEach(function (radius) { ic.drawImage(band(radius, true), 0, 0); });
+    /* 柔化後再裁回本體，保留透明孔洞與模型外的留白。 */
+    ic.filter = 'none'; ic.globalAlpha = 1;
+    ic.globalCompositeOperation = 'destination-in'; ic.drawImage(mask, 0, 0);
+    var outer = canvas(), oc = outer.getContext('2d');
+    oc.globalAlpha = 0.65; oc.filter = 'blur(2.4px)'; oc.drawImage(band(3, false), 0, 0);
+    oc.globalAlpha = 0.35; oc.filter = 'blur(1.1px)'; oc.drawImage(band(1.2, false), 0, 0);
+    var result = { inner: PIXI.Texture.from(inner), outer: PIXI.Texture.from(outer),
+      width: orig.width, height: orig.height, k: k, pad: pad };
+    NPC_RANK_MASKS.set(tex, result);
+    return result;
+  }
+  function syncNpcRankGlow(ent) {
+    var style = npcRankStyle(ent.data), body = ent.body, glow = ent.rankGlow;
+    if (!style || !body || body.destroyed) {
+      if (glow) { glow.outer.destroy(); glow.inner.destroy(); ent.rankGlow = null; }
+      return;
+    }
+    var masks = buildNpcRankMasks(body.texture);
+    if (!masks) {
+      if (glow) { glow.outer.visible = false; glow.inner.visible = false; }
+      return;
+    }
+    if (!glow) {
+      glow = ent.rankGlow = { outer: new PIXI.Sprite(masks.outer), inner: new PIXI.Sprite(masks.inner) };
+      ent.bodyWrap.addChild(glow.outer); ent.bodyWrap.addChild(glow.inner);
+    }
+    glow.outer.texture = masks.outer; glow.inner.texture = masks.inner;
+    glow.outer.tint = style.rim; glow.inner.tint = style.inner;
+    /* 與本體同父層，抖動、死亡壓扁、淡出與billboard矩陣自然共用；
+       本體自己還有成長縮放／anchor／翻面，兩層也必須逐幀同步。 */
+    var ax = body.anchor.x, ay = body.anchor.y;
+    for (var i = 0; i < 2; i++) {
+      var sp = i ? glow.inner : glow.outer;
+      sp.anchor.set((ax * masks.width * masks.k + masks.pad) / sp.texture.width,
+        (ay * masks.height * masks.k + masks.pad) / sp.texture.height);
+      sp.position.copyFrom(body.position); sp.scale.set(body.scale.x / masks.k, body.scale.y / masks.k);
+      sp.rotation = body.rotation; sp.skew.copyFrom(body.skew);
+      sp.pivot.set(body.pivot.x * masks.k, body.pivot.y * masks.k);
+      sp.alpha = body.alpha; sp.visible = body.visible;
+    }
+  }
+
   /* 敵人本體的視覺（emoji 文字或圖檔精靈）。回傳 display object，腳底置中。 */
   function makeMobBody(data, scale) {
     if (data.img && S.imgTex[data.img] && S.imgTex[data.img] !== 'loading' && S.imgTex[data.img] !== 'failed') {
@@ -1333,6 +1457,10 @@ var BattleRenderer = (function () {
       var k = target / Math.max(sp.texture.width, sp.texture.height);
       sp.scale.set(k);
       return sp;
+    }
+    if (npcRankStyle(data)) {
+      var emojiBody = makeNpcEmojiBody(data, scale);
+      if (emojiBody) return emojiBody;
     }
     var t = new PIXI.Text({
       text: data.emoji || '👾',
@@ -1350,7 +1478,7 @@ var BattleRenderer = (function () {
       for (var id in S.entities) {
         if (!Object.prototype.hasOwnProperty.call(S.entities, id)) continue;
         var e = S.entities[id];
-        if (e.data && e.data.img === src && !e.isBoss && e.state !== 'dying') refreshMobBody(e);
+        if (e.data && e.data.img === src && !e.sheetName && e.state !== 'dying') refreshMobBody(e);
       }
     }).catch(function () { S.imgTex[src] = 'failed'; });
   }
@@ -1361,6 +1489,8 @@ var BattleRenderer = (function () {
     e.body.destroy();
     e.body = next;
     e.bodyWrap.addChildAt(next, idx);
+    if (e.eliteDeco) e.eliteDeco.baseScale = next.scale.x;
+    syncNpcRankGlow(e);
   }
 
   /* 敵人狀態列（buff/debuff 圖示）：借用 ui.js 的 entStatus() 產字串再剝掉標籤 */
@@ -1391,7 +1521,8 @@ var BattleRenderer = (function () {
     /* 密度縮放：棋盤格數越多，每隻可用的空間越小，整體跟著縮 */
     var dScale = densityScale();
     /* 高級敵人（菁英／高級菁英／野外 BOSS／封魔塔 BOSS）的體型由模擬層給：data._size＝相對普通敵人的倍率
-       （參數表「敵人體型倍率」），光暈顏色 data._elColor。沒有 _size 的（舊事件、測試替身）維持原本的畫法。 */
+       （參數表「敵人體型倍率」）；data._elColor留給腳下群組環，模型覆光依階級固定配色。
+       沒有 _size 的（舊事件、測試替身）沿用原本尺寸。 */
     var tierSize = Number(data._size) > 0 ? Number(data._size) : 0;
     var tierName = data._tier || '';
     var visScale = (tierSize || (isBoss ? 1 : (isElite ? 1.28 : 1))) * dScale;
@@ -1408,31 +1539,6 @@ var BattleRenderer = (function () {
     var shw = (tierSize ? sz.w * 0.25 * Math.max(1, tierSize * 0.8) : (isBoss ? sz.w * 1.4 : sz.w * 0.5) * 0.5);
     shadow.ellipse(0, 0, shw, shw * 0.32).fill({ color: 0x000000, alpha: 0.35 });
     view.addChild(shadow);
-
-    /* 外層光暈：重疊時取各通道最大值，避免累積亮度。
-       菁英＝淡藍、高級菁英＝濃黃、BOSS＝隨屬性的顏色（較濃）；沒有 _size 的舊畫法維持原本的紫色菁英光環。 */
-    if (tierSize || isElite) {
-      var glow = new PIXI.Sprite(glowTexture());
-      glow.anchor.set(0.5);
-      var glowCss = parseInt(String(data._elColor || '').replace('#', '0x'));
-      glow.tint = (tierSize && isFinite(glowCss)) ? glowCss : 0xb17aff;
-      glow.alpha = tierSize ? ({ elite: 0.42, elite_adv: 0.7, boss: 0.7, tower: 0.78 }[tierName] || 0.45) : 0.42;
-      glow.scale.set(tierSize ? 1.4 * visScale : 1.65);
-      glow.y = tierSize ? -19 * visScale : -24;
-      glow.blendMode = tierSize ? 'normal' : 'max';     // 一般混色：淺色地面上加法／max 混色會洗掉顏色，光暈看不出來
-      view.addChild(glow);
-      if (tierSize && (tierName === 'elite_adv' || tierName === 'boss' || tierName === 'tower')) {
-        // 較濃的外層光暈：再疊一圈更大更淡的
-        var halo2 = new PIXI.Sprite(glowTexture());
-        halo2.anchor.set(0.5);
-        halo2.tint = glow.tint;
-        halo2.alpha = 0.34;
-        halo2.scale.set(1.9 * visScale);
-        halo2.y = -19 * visScale;
-        halo2.blendMode = 'normal';
-        view.addChild(halo2);
-      }
-    }
 
     /* 本體（受擊抖動/縮放/旋轉都作用在 bodyWrap 上，陰影與血條不跟著晃） */
     var bodyWrap = new PIXI.Container();
@@ -1526,6 +1632,7 @@ var BattleRenderer = (function () {
     root.zIndex = root.y;
 
     S.layers.entity.addChild(root);
+    syncNpcRankGlow(ent);
     applyEntityBillboard(ent);   // 出生的那一幀就別歪（tickWorld 之後每幀會再算）
     drawHpBar(ent);
     return ent;
@@ -6584,6 +6691,7 @@ var BattleRenderer = (function () {
       }
 
       updateFlashJolt(e, dt);
+      syncNpcRankGlow(e);
       /* 撲擊位移是世界座標（地面上的一段路），跟站位一起投影 */
       e.root.x = e.wx + (e.dashX || 0);
       if (e.state !== 'dying') {
