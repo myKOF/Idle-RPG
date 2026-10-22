@@ -1,6 +1,25 @@
 # PATCH.md
 
-## AI 自然語言 GM 呼叫極速化、神鑄混沌品質相容與全身鑲滿寶石指令（Antigravity 2026-10-20）
+## 新增直接修改裝備屬性、數值與太古之 GM 指令（modequip）（Antigravity 2026-10-22）
+
+- **裝備直接修改 GM 指令 `modequip`（別名：`editequip`、`equipmod`、`setequip`、`itemmod`、`meq`、`改裝備`）**：
+  - **套裝與部位精準指定**：支援 `modequip set<1~3> <部位>`（例：`modequip set1 weapon`）、`<套數> <部位序號>`（例：`modequip 1 1` 第1套第1部位主手、`modequip 2 3` 第2套頭盔）、`<部位名稱/序號>`（預設當前使用/檢視中套裝）。
+  - **選中目標與背包裝備規則**：
+    - 身上穿戴裝備支援點擊選中後直接使用 `sel` 或省略目標操作。
+    - 背包裝備嚴格遵循防呆規範：必須在背包清單中點擊選中該裝備（`UI.sel.source === 'inv'`）方可修改（若未選中輸入 `inv` 則提示 `❌ 背包裝備請先在背包清單中點擊選中該裝備。`）。
+  - **詞條屬性與數值自訂**：支援 `modequip [目標] <屬性> <數值> [ancient|normal]`，裝備已有該詞條則更新數值，無該詞條則自動追加；完整支援全屬性別名與中文（`atkFlat`/`物攻`、`critRate`/`暴擊率`、`aspd`/`攻速` 等），並在計算時考量雙手武器倍率（`TWO_HAND_AFFIX_VALUE_MULT`）。
+  - **太古／非太古靈活切換**：
+    - `modequip [目標] ancient all`：全詞條設為太古滿值屬性（✡）。
+    - `modequip [目標] ancient none`：全詞條設為非太古（◆）。
+    - `modequip [目標] ancient <數量>`：前 N 條設為太古，其餘非太古。
+    - `modequip [目標] ancient <條號|屬性key> [on|off]`：切換指定詞條之太古狀態。
+  - **強化等級與品質設定**：支援 `modequip [目標] +<等級>`、`modequip [目標] upgrade <等級>`、`level <等級>`、`rarity <品質>`、`clear`、`del` 與 `info` 資訊查看。
+- **主執行緒與 Worker 通訊橋接**：
+  - `js/gm.js` 自動在送往 Worker 的指令行尾附帶 `@sel:` 上下文（`@sel:inv:<id>` 或 `@sel:equip:<slot>`），不更動已凍結之 Worker 指令協定計數。
+  - 自然語言 AI GM（`js/ai-key-setting.js`）同步擴充 `modequip` 指令轉譯定義與範例。
+- **測試與驗證**：
+  - 新增 `tests/gm-modequip.test.cjs` 涵蓋 5 項單元測試（套裝部位指定、太古開關、背包選中防呆、強化等級與容錯），全數通過；`node tools/build_check.cjs` 572 檔檢查 100% OK。
+
 
 - **AI 自然語言 GM 呼叫極速化與模型自動發現**：
   - 實裝本機可用模型快取機制（`MODELS_CACHE_KEY`），首次使用或點選「測試連線」時自動向 Google API 獲取該金鑰真正支援的合法生成模型並排序快取，徹底杜絕帳號權限差異造成的 `models/... is not found for API version v1beta` 錯誤。

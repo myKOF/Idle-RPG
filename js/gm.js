@@ -60,6 +60,19 @@
     }
   }
 
+  function appendSelectionContext(cmdLine) {
+    if (!cmdLine || typeof cmdLine !== 'string') return cmdLine;
+    if (cmdLine.indexOf('@sel:') >= 0) return cmdLine;
+    if (typeof UI === 'undefined' || !UI.sel) return cmdLine;
+    if (UI.sel.source === 'inv' && UI.sel.id) {
+      return cmdLine + ' @sel:inv:' + UI.sel.id;
+    }
+    if ((UI.sel.source === 'equip' || UI.sel.source === 'equip-slot') && UI.sel.slot) {
+      return cmdLine + ' @sel:equip:' + UI.sel.slot + (UI.sel.id ? (':' + UI.sel.id) : '');
+    }
+    return cmdLine;
+  }
+
   function executeCommandSequence(commands, originPrompt) {
     setGMStatus('🤖 AI 解析為：[' + commands.join('; ') + ']，執行中…', true);
     var index = 0;
@@ -75,7 +88,7 @@
         }
         return;
       }
-      var cmd = commands[index++];
+      var cmd = appendSelectionContext(commands[index++]);
       WorkerBridge.send('gm.exec', { line: cmd }).then(function (res) {
         syncTestFlags(res);
         results.push({ ok: !!(res && res.ok), message: res && res.message ? res.message : '成功' });
@@ -90,7 +103,8 @@
 
   function executeSingleWorkerCommand(text) {
     setGMStatus('執行中…', true);
-    WorkerBridge.send('gm.exec', { line: text }).then(function (res) {
+    var payload = appendSelectionContext(text);
+    WorkerBridge.send('gm.exec', { line: payload }).then(function (res) {
       syncTestFlags(res);
       setGMStatus(res && res.message ? res.message : '已執行', !!(res && res.ok));
     }).catch(function (err) {
@@ -108,7 +122,7 @@
 
     var hasChinese = /[^\x00-\x7F]/.test(rawText);
     var firstWord = rawText.split(/\s+/)[0].toLowerCase();
-    var isKnownEnglishCmd = /^(gold|g|scrap|essence|dust|mat|material|gem|rune|runeword|book|equip|equipment|equipset|equip_set|set|suit|fullset|full_set|gearset|gear_set|part|bag|inv_cap|invcap|inv_size|invsize|inv_expand|bag_expand|expand_inv|stage_jump|stage|set_stage|setstage|stage_set|stageset|zone_jump|zone|kill|multikill|mk|k|reincarnation|reincarnate|turn|level|lv|skillxp|masterylv|skill2max|skillmax|skills2max|skill_unlock|tower_trial_clear|tower_hell_clear|tower_purgatory_clear|tower_trial_reset|tower_hell_reset|tower_purgatory_reset|tower_jump|god|spawn|spawnelite|clear|help|\?)$/i.test(firstWord);
+    var isKnownEnglishCmd = /^(gold|g|scrap|essence|dust|mat|material|gem|rune|runeword|book|equip|equipment|equipset|equip_set|set|suit|fullset|full_set|gearset|gear_set|part|bag|inv_cap|invcap|inv_size|invsize|inv_expand|bag_expand|expand_inv|stage_jump|stage|set_stage|setstage|stage_set|stageset|zone_jump|zone|kill|multikill|mk|k|reincarnation|reincarnate|turn|level|lv|skillxp|masterylv|skill2max|skillmax|skills2max|skill_unlock|tower_trial_clear|tower_hell_clear|tower_purgatory_clear|tower_trial_reset|tower_hell_reset|tower_purgatory_reset|tower_jump|god|spawn|spawnelite|clear|help|\?|modequip|editequip|equipmod|setequip|itemmod|meq|改裝備)$/i.test(firstWord);
 
     if (hasChinese && !isKnownEnglishCmd) {
       if (typeof AiKeySetting !== 'undefined' && typeof AiKeySetting.parseNaturalCommand === 'function') {
