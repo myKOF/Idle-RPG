@@ -3023,6 +3023,11 @@ function renderHeader() {
   var reinc = clamp(Math.floor(Number(p.reincarnations) || 0), 0, REINCARNATION_MAX);
   var currentLevel = Math.max(0, Math.floor(Number(p.level) || 0));
   var canReincarnate = canReincarnateAt(currentLevel, reinc);
+  var reincarnationAlert = $id('char-reincarnation-alert');
+  if (reincarnationAlert) {
+    reincarnationAlert.hidden = !canReincarnate;
+    setAttrIfChanged(reincarnationAlert, 'aria-label', reinc >= 10 ? '可進行神階晉升' : '可轉生');
+  }
   var reincarnationControls = $id('reincarnation-controls');
   if (reincarnationControls) {
     reincarnationControls.classList.toggle('is-visible', reinc > 0 || canReincarnate);
@@ -3049,18 +3054,24 @@ function renderHeader() {
   }
   var need = uiHeaderXpMax(p);
   var isMaxedOut = (p.level >= MAX_LEVEL && reinc >= REINCARNATION_MAX);
-  var xpWidth = isMaxedOut ? '100%' : (clamp(p.xp / need * 100, 0, 100) + '%');
+  var xpFull = canReincarnate || isMaxedOut;
+  var xpWidth = xpFull ? '100%' : (clamp(p.xp / need * 100, 0, 100) + '%');
+  ['xp-fill', 'rail-xp-fill', 'battle-xp-fill'].forEach(function (id) {
+    var fill = $id(id);
+    if (fill) fill.classList.toggle('reincarnate-ready', canReincarnate);
+  });
   setStyleIfChanged($id('xp-fill'), 'width', xpWidth);
   setStyleIfChanged($id('rail-xp-fill'), 'width', xpWidth);
   var xpBar = $id('xp-bar');
   setAttrIfChanged(xpBar, 'data-tt-title', '角色經驗');
-  setAttrIfChanged(xpBar, 'data-tt-desc', isMaxedOut ? '已升至最高等級。' : ('當前經驗值：' + fmt(p.xp) + ' / 升級經驗值：' + fmt(need)));
+  var xpReadyDesc = reinc >= 10 ? '等級已滿，可進行神階晉升。' : '等級已滿，可進行轉生。';
+  setAttrIfChanged(xpBar, 'data-tt-desc', isMaxedOut ? '已升至最高等級。' : (canReincarnate ? xpReadyDesc : ('當前經驗值：' + fmt(p.xp) + ' / 升級經驗值：' + fmt(need))));
   removeAttrIfPresent(xpBar, 'title');
   var battleXp = $id('battle-xp-bar');
-  var battleXpPct = isMaxedOut ? 100 : clamp((Number(p.xp) || 0) / Math.max(1, need) * 100, 0, 100);
+  var battleXpPct = xpFull ? 100 : clamp((Number(p.xp) || 0) / Math.max(1, need) * 100, 0, 100);
   setStyleIfChanged($id('battle-xp-fill'), 'width', battleXpPct + '%');
   setAttrIfChanged(battleXp, 'aria-valuenow', String(Math.round(battleXpPct)));
-  setAttrIfChanged(battleXp, 'data-tt-desc', isMaxedOut ? '已升至最高等級。' : ('Lv.' + p.level + '｜經驗：' + fmtFull(p.xp) + ' / ' + fmtFull(need)));
+  setAttrIfChanged(battleXp, 'data-tt-desc', isMaxedOut ? '已升至最高等級。' : (canReincarnate ? xpReadyDesc : ('Lv.' + p.level + '｜經驗：' + fmtFull(p.xp) + ' / ' + fmtFull(need))));
   if (UI.tooltipAnchor === battleXp) refreshOpenStatTooltip();
 
   // 屬性面板顯示「檢視中」裝備套的預覽屬性（切頁即變，不需確定切換）；header 其他區塊維持穿著中數值

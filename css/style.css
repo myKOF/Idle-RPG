@@ -384,7 +384,12 @@ body {
   opacity: .55;
 }
 
-.reincarnate-btn.reincarnate-ready {
+.reincarnate-btn.reincarnate-ready,
+#tab-char #xp-fill.reincarnate-ready,
+#rail-xp-fill.reincarnate-ready,
+#battle-canvas-host #battle-action-dock #battle-xp-fill.reincarnate-ready {
+  position: relative;
+  isolation: isolate;
   border-color: transparent;
   color: #fff7a8;
   background: linear-gradient(90deg, #7f1d1d, #b45309, #854d0e, #166534, #0e7490, #7c2d12, #7f1d1d);
@@ -399,7 +404,10 @@ body {
   animation: reincReadyBgFlow 0.75s linear infinite, reincReadyButtonPulse 0.55s ease-in-out infinite alternate;
 }
 
-.reincarnate-btn.reincarnate-ready::after {
+.reincarnate-btn.reincarnate-ready::after,
+#tab-char #xp-fill.reincarnate-ready::after,
+#rail-xp-fill.reincarnate-ready::after,
+#battle-canvas-host #battle-action-dock #battle-xp-fill.reincarnate-ready::after {
   content: "";
   position: absolute;
   inset: -3px;
@@ -418,6 +426,32 @@ body {
   opacity: 0.72;
   pointer-events: none;
   animation: reincReadySweep 0.9s linear infinite;
+}
+
+.char-tab-icon {
+  position: relative;
+  display: block;
+  flex: 0 0 auto;
+  line-height: 0;
+}
+
+#workspace-area #tabs .char-reincarnation-alert:not([hidden]) {
+  position: absolute;
+  right: -5px;
+  bottom: -3px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  box-sizing: border-box;
+  border: 2px solid #fff1d0;
+  border-radius: 50%;
+  background: #e52323;
+  color: #fff;
+  font: 900 16px/1 Arial, sans-serif;
+  letter-spacing: 0;
+  pointer-events: none;
 }
 
 @keyframes reincReadyBgFlow {

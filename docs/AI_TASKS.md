@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## REINCARNATION-READY-20261022 — 可轉生經驗條與角色頁籤提示
+
+- Owner：Codex；Done，單一開發者。使用者要求可轉生時經驗條全滿並使用轉生按鈕的高亮流光，角色頁籤icon右下角顯示明顯紅色驚嘆號。前置既有canReincarnateAt與Header快照可用。
+- 允許：js/ui.js僅Header提示、css/style.css共用流光與頁籤徽章、index.html僅角色icon及對應快取、LV_upgrade_system.md本功能說明與本段；禁止修改轉生條件、模擬／Worker／Protocol／存檔、配置、素材、其他任務與其他副本。必要時補既有轉生回歸；不合併推送。
+- 驗收：未達條件／可轉生／轉生後／神階晉升／最終上限；三處經驗條寬度／動畫一致、徽章定位與清除、隔離瀏覽器及Console、轉生與Header回歸／Build／diff與自我Review後獨立Commit。後續使用者Review及正常整合。
+- 衝突：主頁與Claude b411b8e5僅同檔不同區段，對方改formula快取，本次僅style／ui快取及角色icon；git merge-file乾跑0且保留formula69。其餘預檢無外部來源；本副本符文tips及Talents／storm修改逐段保留，只stage本次差異。
+- 完成5檔：Header三處經驗條在可轉生時滿格，共用原按鈕的背景流動／脈衝與掃光CSS；轉生後移除動畫恢復實際進度，最終滿級維持滿格但不亮提示。角色icon外包定位容器避開圓框裁切，右下角20px紅底白字驚嘆號隨相同條件顯隱，神階晉升同規則；經驗tips及戰鬥aria進度一致。style95／ui193快取與LV同步，未改解鎖／模擬／存檔。
+- 驗證：node --test tests/reincarnate-gate.test.cjs tests/ui-worker-panels.test.cjs tests/ui-worker-g-dependency.test.cjs tests/ui-tick-smoke.test.cjs，15項13過／2既有失敗（gem.socket靜態掃描及detailAction測試缺UI）；以HEAD的ui.js唯讀映射重跑ui-worker-panels得到相同兩項失敗，未改測試或降低斷言。npm.cmd run build，571檔全過；diff --check通過。
+- 畫面：隔離Edge載入正式HTML／全部CSS／ui-scale與ui.js，Header快照控制測六種狀態：門檻前、2轉可轉生、重置1級、10轉可晉階、最後一次晉階及最終上限。三處寬度、實際computed動畫／掃光／背景與提示顯隱皆過，1920及720視窗目視徽章確在icon右下且未被裁切，Console warning／error0。截圖與verification.json保存聊天visualizations/reincarnation；未啟動模擬或讀寫玩家存檔，未做真人長戰。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts/codex、formula轉生閘門、player經驗／轉生、Worker投影、三套後載CSS／battle-hud、上述回歸與ui-scale。自我Review確認單一條件、最終上限不誤亮、原按鈕效果沿用、無Timer／素材／VFX來源新增；素材庫無本任務變更、不建空Commit。
+- 交付：本段所在「[Codex] fix: 可轉生時顯示滿經驗流光與角色提醒」Commit，回覆附編號。可供Review／合併，未合併推送；無本輪未完成項，限制為上述既有測試及未做真人存檔驗收。下一步正常整合後重新整理遊戲；其他進行中修改保留。
+
 ## RUNEWORD-TIPS-20261022 — 符文庫真言提示顯示完整配方
 
 - Owner：Codex；Done，單一開發者。使用者要求已形成真言的tips直接顯示圖鑑卡片（組成符文／順序／條件／效果），未解鎖提示改為「尚未解鎖，需自行嘗試或挑戰更高階的封魔塔」。前置既有永久解鎖與圖鑑渲染完成，沿用內測預覽規則。
