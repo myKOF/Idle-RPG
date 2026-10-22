@@ -6626,18 +6626,22 @@ function nfUpdateBelts(list, snapshot) {
   for (var m = 0; m < mores.length; m++) {
     var moreNode = mores[m];
     var moreFu = newForgeViewFurnace(snapshot, parseInt(moreNode.getAttribute('data-nf-more'), 10));
-    var wait = moreFu
+    var queued = moreFu
       ? (moreFu.queueCount !== undefined ? moreFu.queueCount : (moreFu.queue ? moreFu.queue.length : 0))
       : 0;
+    // 帶上放不下而收起的件數也算排隊：大量裝備湧入時，帶上只畫得下一屏，其餘等在帶尾。
+    var overflow = moreFu ? NewForgeVisuals.hiddenCount(moreFu.id) : 0;
+    var wait = queued + overflow;
     var text = wait > 0 ? '+' + (wait > 9999 ? '9999' : wait) : '';
+    var tip = wait > 0
+      ? '此熔爐排隊中：' + fmtFull(wait) + ' 件（帶上放不下 ' + fmtFull(overflow) + '＋專屬佇列 ' + fmtFull(queued) + '，依序進入傳送帶）'
+      : '';
     if (moreNode._nfMoreText !== text) {
       moreNode._nfMoreText = text;
       moreNode.textContent = text;
-      if (wait > 0) moreNode.setAttribute('data-tip', '此熔爐專屬佇列：' + fmtFull(wait) + ' 件（自總佇列派發，等待進入傳送帶）');
-      else moreNode.removeAttribute('data-tip');
-    } else if (wait > 0) {
-      moreNode.setAttribute('data-tip', '此熔爐專屬佇列：' + fmtFull(wait) + ' 件（自總佇列派發，等待進入傳送帶）');
     }
+    if (tip) moreNode.setAttribute('data-tip', tip);
+    else moreNode.removeAttribute('data-tip');
   }
 }
 
