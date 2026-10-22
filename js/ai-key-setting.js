@@ -138,11 +138,212 @@
     }).map(function (k) { return k + '(' + GEM_TYPES[k].name + ')'; }).join('、');
   }
 
+  /* ============ 本地高速直譯通道（Fast-Path，0ms 無延遲直譯） ============ */
+  function parseChineseNum(str) {
+    if (!str) return null;
+    var s = String(str).trim();
+    var sign = 1;
+    if (s.charAt(0) === '+') s = s.slice(1).trim();
+    else if (s.charAt(0) === '-') { sign = -1; s = s.slice(1).trim(); }
+
+    var m = s.match(/^(\d+(?:\.\d+)?)\s*([億萬千kmb]?)$/i);
+    if (!m) return null;
+    var val = parseFloat(m[1]);
+    var unit = (m[2] || '').toLowerCase();
+    if (unit === '億') val *= 1e8;
+    else if (unit === '萬') val *= 1e4;
+    else if (unit === '千' || unit === 'k') val *= 1e3;
+    else if (unit === 'm') val *= 1e6;
+    else if (unit === 'b') val *= 1e9;
+    return sign * Math.round(val);
+  }
+
+  var FAST_RARITY_MAP = {
+    '神鑄混沌': 'chaosGodforged', '神鑄混沌裝備': 'chaosGodforged', 'chaosgodforged': 'chaosGodforged',
+    '混沌': 'chaos', '混沌裝備': 'chaos', 'chaos': 'chaos',
+    '神鑄創世': 'godforged', '神鑄創世裝備': 'godforged', '神鑄': 'godforged', 'godforged': 'godforged',
+    '創世': 'genesis', '創世裝備': 'genesis', 'genesis': 'genesis',
+    '神話': 'mythic', '神話裝備': 'mythic', 'mythic': 'mythic',
+    '傳說': 'legendary', '傳說裝備': 'legendary', 'legendary': 'legendary',
+    '史詩': 'epic', '史詩裝備': 'epic', 'epic': 'epic',
+    '獨特': 'unique', '獨特裝備': 'unique', 'unique': 'unique',
+    '稀有': 'rare', '稀有裝備': 'rare', 'rare': 'rare',
+    '精良': 'uncommon', '精良裝備': 'uncommon', 'uncommon': 'uncommon',
+    '普通': 'common', '普通裝備': 'common', 'common': 'common'
+  };
+
+  function parseSingleFastClause(rawClause) {
+    var s = String(rawClause || '').trim();
+    if (!s) return null;
+
+    // 1. 貨幣與材料：金幣 / 碎片 / 精華 / 魔塵
+    var mGold = s.match(/^(?:加|增加|給我|獲得)?\s*(?:金幣|錢|gold)\s*([+-]?\d+[\w億萬千kmb]*)$/i) ||
+                s.match(/^(?:加|增加|給我|獲得)?\s*([+-]?\d+[\w億萬千kmb]*)\s*(?:金幣|錢|gold)$/i);
+    if (mGold) {
+      var gVal = parseChineseNum(mGold[1]);
+      if (gVal !== null) return 'gold ' + gVal;
+    }
+
+    var mScrap = s.match(/^(?:加|增加|給我|獲得)?\s*(?:裝備碎片|碎片|scrap)\s*([+-]?\d+[\w億萬千kmb]*)$/i) ||
+                 s.match(/^(?:加|增加|給我|獲得)?\s*([+-]?\d+[\w億萬千kmb]*)\s*(?:裝備碎片|碎片|scrap)$/i);
+    if (mScrap) {
+      var scVal = parseChineseNum(mScrap[1]);
+      if (scVal !== null) return 'scrap ' + scVal;
+    }
+
+    var mEssence = s.match(/^(?:加|增加|給我|獲得)?\s*(?:附魔精華|精華|essence)\s*([+-]?\d+[\w億萬千kmb]*)$/i) ||
+                   s.match(/^(?:加|增加|給我|獲得)?\s*([+-]?\d+[\w億萬千kmb]*)\s*(?:附魔精華|精華|essence)$/i);
+    if (mEssence) {
+      var esVal = parseChineseNum(mEssence[1]);
+      if (esVal !== null) return 'essence ' + esVal;
+    }
+
+    var mDust = s.match(/^(?:加|增加|給我|獲得)?\s*(?:魔塵|dust)\s*([+-]?\d+[\w億萬千kmb]*)$/i) ||
+                s.match(/^(?:加|增加|給我|獲得)?\s*([+-]?\d+[\w億萬千kmb]*)\s*(?:魔塵|dust)$/i);
+    if (mDust) {
+      var duVal = parseChineseNum(mDust[1]);
+      if (duVal !== null) return 'dust ' + duVal;
+    }
+
+    // 2. equipset 全身整套裝備發放（例如「加全身強化+50神話4太古裝備」或「全身換500級神鑄混沌裝備」）
+    if (/裝備|套裝|全身|穿戴/i.test(s)) {
+      var qMatch = null;
+      var qKeys = Object.keys(FAST_RARITY_MAP);
+      for (var qi = 0; qi < qKeys.length; qi++) {
+        var qWord = qKeys[qi];
+        if (s.indexOf(qWord) >= 0) {
+          qMatch = FAST_RARITY_MAP[qWord];
+          break;
+        }
+      }
+
+      if (qMatch) {
+        var lvMatch = s.match(/(\d+)\s*級/);
+        var setLv = lvMatch ? parseInt(lvMatch[1], 10) : 500;
+        var upMatch = s.match(/(?:\+|強化\s*\+?)(\d+)/);
+        var setUp = upMatch ? parseInt(upMatch[1], 10) : 0;
+        var ancMatch = s.match(/(\d+)\s*太古/);
+        var setAnc = ancMatch ? parseInt(ancMatch[1], 10) : (/全太古/.test(s) ? 4 : 0);
+        var isWear = !/放背包|進背包|到背包|放入背包/.test(s);
+        return 'equipset ' + qMatch + ' ' + setLv + ' ' + setUp + ' ' + setAnc + (isWear ? ' wear' : ' inv');
+      }
+    }
+
+    // 3. 全身裝備直接修改（modequip wear）
+    // 3a) 太古
+    if (/^(?:把)?(?:身上|全身|當前)?(?:的)?(?:裝備)?(?:全部|都)?(?:改成|設為|變)?(?:全|全部)?太古$/i.test(s) ||
+        /^(?:全身|身上)太古$/i.test(s) || /^(?:全身|身上)全太古$/i.test(s)) {
+      return 'modequip wear ancient all';
+    }
+    if (/^(?:把)?(?:選中|當前|這個)?(?:的)?裝備(?:全部|都)?(?:改成|設為)?(?:全|全部)?太古$/i.test(s)) {
+      return 'modequip sel ancient all';
+    }
+
+    // 3b) 強化
+    var mWearUp = s.match(/^(?:把)?(?:身上|全身|當前)?(?:的)?裝備強化\s*(?:設為|改成)?\+?(\d+)$/i) ||
+                  s.match(/^(?:全身|身上)\s*\+(\d+)$/i) ||
+                  s.match(/^(?:全身|身上)強化\s*\+?(\d+)$/i);
+    if (mWearUp) {
+      return 'modequip wear +' + mWearUp[1];
+    }
+    var mSelUp = s.match(/^(?:把)?(?:選中|當前|這個)?(?:的)?裝備強化\s*(?:設為|改成)?\+?(\d+)$/i) ||
+                 s.match(/^(?:選中|當前)\s*\+(\d+)$/i);
+    if (mSelUp) {
+      return 'modequip sel +' + mSelUp[1];
+    }
+
+    // 4. 全身孔位鑲滿寶石與符文（socketall）
+    var mSocket = s.match(/^(?:把)?(?:全身|所有裝備|孔位)?(?:都)?(?:鑲滿|插滿)\s*(\d+)?\s*(?:級|階)?(?:寶石)?(?:與符文)?$/i) ||
+                  s.match(/^(?:把)?(?:全身|所有裝備|孔位)?(?:都)?寶石(?:都)?(?:鑲滿|插滿)$/i);
+    if (mSocket) {
+      var sLv = (mSocket[1] && parseInt(mSocket[1], 10)) || 10;
+      return 'socketall ' + sLv;
+    }
+
+    // 5. 技能滿級與解鎖
+    if (/^(?:全)?技能(?:全部)?(?:升至)?滿級$/i.test(s) || /^技能全滿$/i.test(s) || /^技能滿$/i.test(s) || /^技能全部滿級$/i.test(s)) {
+      return 'skillmax all';
+    }
+    if (/^(?:全)?技能(?:全部)?解鎖$/i.test(s) || /^解鎖(?:全|全部)?技能$/i.test(s)) {
+      return 'skill_unlock on';
+    }
+
+    // 6. 等級與轉生
+    var mLv = s.match(/^(?:角色)?等級(?:設為|升到|提升至)?\s*(\d+)$/i) || s.match(/^等級\s*(\d+)$/i) || s.match(/^升到\s*(\d+)\s*級$/i);
+    if (mLv) {
+      return 'level ' + mLv[1];
+    }
+    var mTurn = s.match(/^(?:設定)?轉生\s*(\d+)\s*次?$/i) || s.match(/^(\d+)\s*轉$/i);
+    if (mTurn) {
+      return 'turn ' + mTurn[1];
+    }
+
+    // 7. 背包容量
+    var mBag = s.match(/^背包(?:容量)?(?:擴充到|設為)?\s*(\d+)$/i);
+    if (mBag) {
+      return 'bag ' + mBag[1];
+    }
+
+    // 8. 跳關
+    var mStage = s.match(/^跳關(?:到)?\s*([^\s\d]+)\s*(\d+)(?:關|階)?$/i);
+    if (mStage) {
+      return 'stage ' + mStage[1] + ' ' + mStage[2];
+    }
+
+    // 9. 寶石與符文發放
+    var mGemAll = s.match(/^(?:加|給我|獲得)?\s*(?:所有|全部)寶石(?:各)?\s*(\d+)\s*(?:個|顆)?$/i);
+    if (mGemAll) {
+      return 'gem all ' + mGemAll[1];
+    }
+    var mRuneAll = s.match(/^(?:加|給我|獲得)?\s*(?:所有|全部)符文(?:各)?\s*(\d+)\s*(?:個|顆)?$/i);
+    if (mRuneAll) {
+      return 'rune all ' + mRuneAll[1];
+    }
+
+    // 10. 鎖血 / 無敵
+    if (/^(?:開啟)?(?:無敵|鎖血)$/i.test(s)) {
+      return 'god 1';
+    }
+    if (/^關閉(?:無敵|鎖血)$/i.test(s)) {
+      return 'god 0';
+    }
+
+    return null;
+  }
+
+  function parseFastPath(userPrompt) {
+    if (!userPrompt) return null;
+    var trimmed = String(userPrompt).trim();
+    if (!trimmed) return null;
+
+    // 將白話文句按分隔符分割成子句
+    var parts = trimmed.split(/(?:[，,、;；\n]+|然後|並且|再把|再加|接著)/);
+    var clauses = parts.map(function (p) { return p.trim(); }).filter(Boolean);
+    if (!clauses.length) return null;
+
+    var resultCmds = [];
+    for (var i = 0; i < clauses.length; i++) {
+      var cmd = parseSingleFastClause(clauses[i]);
+      if (!cmd) {
+        return null; // 若有任何一個子句無法完全由本機直譯，交回 Gemini LLM
+      }
+      resultCmds.push(cmd);
+    }
+    return resultCmds.length ? resultCmds : null;
+  }
+
   /* 使用 Gemini 將白話文自然語言轉為標準 GM 指令陣列 */
   function parseNaturalCommand(userPrompt, customKey) {
     if (!isInternal()) {
       return Promise.reject(new Error('自然語言 GM 功能僅限內測環境使用'));
     }
+
+    // 優先執行 0ms 本地高速直譯
+    var fastResult = parseFastPath(userPrompt);
+    if (fastResult && fastResult.length) {
+      return Promise.resolve(fastResult);
+    }
+
     var key = customKey || getApiKey();
     if (!key) {
       return Promise.reject(new Error('尚未設定 Gemini API 金鑰，請先在 Esc -> 設置中輸入'));
@@ -166,9 +367,10 @@
       '     * wear/inv：提到換裝、穿上、全身或套裝一律填 wear；放背包填 inv\n' +
       '   - equip <品質> <裝備等級> [部位] [數量] [強化等級] [太古數]：單件裝備\n' +
       '   - modequip [目標] <屬性> <數值> [ancient|normal]：直接修改裝備詞條、數值或太古\n' +
-      '     * 目標：省略（選中裝備）、inv（背包選中裝備）、set1 weapon（第1套主手）、1 1（第1套第1部位）、weapon、helmet 等\n' +
-      '     * 太古操作：modequip [目標] ancient all（全部變太古）、ancient none（全部變非太古）、ancient 4（前4條太古）\n' +
-      '     * 強化操作：modequip [目標] +100（強化設為+100）\n' +
+      '     * 目標：wear（全身 13 件穿戴裝備批次修改）、sel / 省略（選中裝備）、inv（背包選中裝備）、set1 weapon（第1套主手）、1 1（第1套第1部位）、weapon、helmet、amulet 等\n' +
+      '     * 太古操作：modequip wear ancient all（全身裝備全部變太古）、modequip [目標] ancient all、ancient none（全部變非太古）、ancient 4（前4條太古）\n' +
+      '     * 強化操作：modequip wear +100（全身強化設為+100）、modequip [目標] +100\n' +
+      '     * 重要屬性 key：寶石鑲嵌效率為 gemEff，吸血為 lifesteal，吸魔為 manaSteal，物攻為 atkFlat，魔攻為 matkFlat，生命為 hpFlat，暴擊率為 critRate，暴傷為 critDmg，冷卻縮減為 cdr，攻速為 aspd\n' +
       '3. 全身鑲滿寶石與符文：\n' +
       '   - socketall [等級1~10]：全身 13 件裝備所有孔位鑲滿指定等級隨機寶石與高階符文（例：socketall 10）\n' +
       '4. 場景與關卡跳關：\n' +
@@ -197,8 +399,12 @@
       '- 數量一律換算成純整數（「100個」->100，「1000億」->100000000000）。\n' +
       '- 只有完全與遊戲無關時才回傳 []；只要有任何指令可近似，就輸出最接近的指令。\n\n' +
       '【轉換範例】\n' +
+      '輸入：「把身上的裝備改成全太古」\n' +
+      '輸出：["modequip wear ancient all"]\n\n' +
       '輸入：「把選中的裝備改成全太古且強化+100」\n' +
       '輸出：["modequip sel ancient all", "modequip sel +100"]\n\n' +
+      '輸入：「把項鍊加上吸血、吸魔、寶石鑲嵌效率100且為太古」\n' +
+      '輸出：["modequip amulet lifesteal 100 ancient", "modequip amulet manaSteal 100 ancient", "modequip amulet gemEff 100 ancient"]\n\n' +
       '輸入：「把第一套主手武器物攻改成50000且為太古」\n' +
       '輸出：["modequip 1 1 atkFlat 50000 ancient"]\n\n' +
       '輸入：「把全身裝備換成+100神鑄混沌裝備，要500級裝備，而且寶石跟符文都要鑲滿10級寶石，寶石種類隨意就行，然後再把金幣、裝備碎片、附魔精華各加1000億個，最後幫我跳關到亡靈山脈240關」\n' +
@@ -228,7 +434,8 @@
           }
         ],
         generationConfig: {
-          temperature: 0.1,
+          temperature: 0,
+          maxOutputTokens: 256,
           response_mime_type: 'application/json'
         }
       };
@@ -390,16 +597,19 @@
     clearApiKey: clearApiKey,
     maskKey: maskKey,
     testApiKey: testApiKey,
+    parseFastPath: parseFastPath,
     parseNaturalCommand: parseNaturalCommand,
     initUI: initUI
   };
 
   if (typeof window !== 'undefined') {
     window.AiKeySetting = AiKeySetting;
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initUI);
-    } else {
-      initUI();
+    if (typeof document !== 'undefined') {
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initUI);
+      } else {
+        initUI();
+      }
     }
   }
 

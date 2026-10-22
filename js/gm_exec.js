@@ -340,7 +340,82 @@
     luck: 'luck', '幸運': 'luck', '幸運值': 'luck',
     movespeed: 'moveSpeed', '移速': 'moveSpeed', '移動速度': 'moveSpeed',
     loot: 'loot', '掉寶': 'loot', '掉寶率': 'loot',
-    xpbonus: 'xpBonus', '經驗加成': 'xpBonus'
+    xpbonus: 'xpBonus', '經驗加成': 'xpBonus',
+    // 寶石鑲嵌效率
+    gemeff: 'gemEff',
+    gemsocketrate: 'gemEff',
+    gemrate: 'gemEff',
+    gemsocketeff: 'gemEff',
+    gemsocketefficiency: 'gemEff',
+    gemefficiency: 'gemEff',
+    gemsocket: 'gemEff',
+    '寶石鑲嵌效率': 'gemEff',
+    '寶石鑲嵌': 'gemEff',
+    '寶石效率': 'gemEff',
+    '寶石加成': 'gemEff',
+    '鑲嵌效率': 'gemEff',
+    // 吸血 / 吸魔
+    lifesteal: 'lifesteal',
+    '吸血': 'lifesteal',
+    manasteal: 'manaSteal',
+    '吸魔': 'manaSteal',
+    '法力吸取': 'manaSteal',
+    // 回血 / 回魔
+    hpregen: 'hpRegen',
+    '生命恢復': 'hpRegen',
+    '回血': 'hpRegen',
+    mpregen: 'mpRegen',
+    '法力恢復': 'mpRegen',
+    '回魔': 'mpRegen',
+    // 詞條上限 / 強化成功率 / 分解高產率
+    affixcap: 'affixCap',
+    '詞條上限': 'affixCap',
+    '詞條上限率': 'affixCap',
+    enhancesuccess: 'enhanceSuccess',
+    '強化成功率': 'enhanceSuccess',
+    '強化成功': 'enhanceSuccess',
+    decomposeyield: 'decomposeYield',
+    '分解高產率': 'decomposeYield',
+    '分解產率': 'decomposeYield',
+    hybridmutation: 'hybridMutation',
+    '合成變異率': 'hybridMutation',
+    enragethreshold: 'enrageThreshold',
+    '狂暴閾值': 'enrageThreshold',
+    // 減傷 / 抗性
+    globaldmgred: 'globalDmgRed',
+    '全局減傷': 'globalDmgRed',
+    '減傷': 'globalDmgRed',
+    normaldmgred: 'normalDmgRed',
+    '普通減傷': 'normalDmgRed',
+    '普通敵人傷害抗性': 'normalDmgRed',
+    elitedmgred: 'eliteDmgRed',
+    '菁英減傷': 'eliteDmgRed',
+    '菁英傷害抗性': 'eliteDmgRed',
+    bossdmgred: 'bossDmgRed',
+    'boss減傷': 'bossDmgRed',
+    'boss傷害抗性': 'bossDmgRed',
+    elitedmg: 'eliteDmg',
+    '菁英傷害': 'eliteDmg',
+    bossdmg: 'bossDmg',
+    'boss傷害': 'bossDmg',
+    normaldmg: 'normalDmg',
+    '普通傷害': 'normalDmg',
+    shieldeff: 'shieldEff',
+    '護盾效率': 'shieldEff',
+    tenacity: 'tenacity',
+    '韌性': 'tenacity',
+    ccred: 'ccRed',
+    '控制縮減': 'ccRed',
+    '控制時間縮減': 'ccRed',
+    pres: 'pRes',
+    '物抗': 'pRes',
+    '物理抗性': 'pRes',
+    mres: 'mRes',
+    '魔抗': 'mRes',
+    '魔法抗性': 'mRes',
+    resall: 'resAll',
+    '全抗': 'resAll',
+    '全屬性抗性': 'resAll'
   };
 
   function gmResolveAffixKey(raw) {
@@ -359,6 +434,34 @@
     var alias = GM_AFFIX_ALIASES[str] || GM_AFFIX_ALIASES[str.toLowerCase()];
     if (alias) return alias;
     return null;
+  }
+
+  function isWearAllToken(raw) {
+    if (!raw) return false;
+    var s = String(raw).trim().toLowerCase();
+    return s === 'wear' || s === 'all' || s === 'full' || s === '全身' || s === '身上' || s === '穿戴' || s === '裝備' || s === 'body';
+  }
+
+  function resolveMultiEquip(setIdx) {
+    var targetSet = (G.equipmentSets && G.equipmentSets[setIdx]) || G.equipment || {};
+    var slots = (typeof SLOT_LIST !== 'undefined' && Array.isArray(SLOT_LIST))
+      ? SLOT_LIST
+      : ['weapon', 'weapon2', 'helmet', 'shoulder', 'chest', 'belt', 'gloves', 'wrist', 'legs', 'boots', 'ring', 'ring2', 'amulet'];
+    var list = [];
+    slots.forEach(function (sk) {
+      if (targetSet[sk]) {
+        list.push({ item: targetSet[sk], slotKey: sk, desc: '第 ' + (setIdx + 1) + ' 套【' + gmSlotLabel(sk) + '】' });
+      }
+    });
+    if (!list.length) {
+      return { error: '❌ 第 ' + (setIdx + 1) + ' 套穿戴欄位目前沒有任何裝備。' };
+    }
+    return {
+      isMulti: true,
+      items: list,
+      setIdx: setIdx,
+      desc: '第 ' + (setIdx + 1) + ' 套全身穿戴裝備（共 ' + list.length + ' 件）'
+    };
   }
 
   function gmResolveEquipItem(args, selContext) {
@@ -403,11 +506,16 @@
       return { item: selEq, desc: '選中部位【' + gmSlotLabel(selSlot) + '】', isEquip: true, slotKey: selSlot };
     }
 
-    // 3) 指定第幾套：set1~set3 / 套1~套3 / 1~3 (若後面跟著部位)
+    // 3) 指定第幾套：set1~set3 / 套1~套3 / 1~3 (若後面跟著部位或 wear/all)
     var setMatch = token.match(/^(?:set|套)?([1-3])$/i);
     if (setMatch) {
       var setIdx = Number(setMatch[1]) - 1;
       if (args.length >= 2) {
+        if (isWearAllToken(args[1])) {
+          args.shift(); // 消耗 set
+          args.shift(); // 消耗 wear/all
+          return resolveMultiEquip(setIdx);
+        }
         var possibleSlot = gmResolveSlotKey(args[1]);
         if (possibleSlot) {
           args.shift(); // 消耗 set
@@ -424,7 +532,14 @@
       }
     }
 
-    // 4) 直接指定部位名稱或部位序號 1~13（作用於當前檢視/使用中套裝）
+    // 4) 顯式指定全身 wear / all / full / 全身 / 身上（作用於當前使用中套裝）
+    if (isWearAllToken(token)) {
+      args.shift();
+      var curActiveSetIdx = (typeof G.equipView === 'number') ? G.equipView : (G.equipActive || 0);
+      return resolveMultiEquip(curActiveSetIdx);
+    }
+
+    // 5) 直接指定部位名稱或部位序號 1~13（作用於當前檢視/使用中套裝）
     var directSlot = gmResolveSlotKey(token);
     if (directSlot) {
       args.shift();
@@ -479,17 +594,8 @@
     return text.trim();
   }
 
-  function gmModEquip(args, selContext) {
-    if (!G) return { ok: false, message: '遊戲狀態尚未載入。' };
-    var resolved = gmResolveEquipItem(args, selContext);
-    if (resolved.error) return { ok: false, message: resolved.error };
-    var item = resolved.item;
-    var targetDesc = resolved.desc;
+  function gmModSingleEquip(item, targetDesc, args) {
     if (!item) return { ok: false, message: targetDesc + ' 目前沒有裝備，無法修改屬性。' };
-
-    if (!args.length || args[0] === 'info' || args[0] === 'show' || args[0] === '資訊') {
-      return { ok: true, message: gmItemInfoText(item, targetDesc) };
-    }
 
     var op = String(args[0]).toLowerCase();
 
@@ -706,6 +812,53 @@
       ok: true,
       message: targetDesc + '：' + actionDesc + ' ' + ancTag + ' ' + aNameLabel + ' = ' + finalV + ((defInfo && defInfo.pct) ? '%' : '')
     };
+  }
+
+  function gmModEquip(args, selContext) {
+    if (!G) return { ok: false, message: '遊戲狀態尚未載入。' };
+    var resolved = gmResolveEquipItem(args, selContext);
+    if (resolved.error) return { ok: false, message: resolved.error };
+
+    if (resolved.isMulti) {
+      if (!args.length || args[0] === 'info' || args[0] === 'show' || args[0] === '資訊') {
+        var summaryList = resolved.items.map(function (itEntry) {
+          var it = itEntry.item;
+          var rName = (typeof RARITIES !== 'undefined' && RARITIES[it.rarity]) ? RARITIES[it.rarity].name : ('品質' + it.rarity);
+          var ancCnt = (typeof getItemAncientCount === 'function') ? getItemAncientCount(it) : (it.ancientCount || 0);
+          return itEntry.desc + '【' + (it.name || '裝備') + '】' + rName + ' +' + (it.upgrade || 0) + ' (' + ancCnt + '太古)';
+        });
+        return { ok: true, message: resolved.desc + '：\n' + summaryList.join('\n') };
+      }
+
+      var successCount = 0;
+      var lastMsg = '';
+      for (var mi = 0; mi < resolved.items.length; mi++) {
+        var itEntry = resolved.items[mi];
+        var singleRes = gmModSingleEquip(itEntry.item, itEntry.desc, args.slice());
+        if (!singleRes.ok) {
+          return singleRes;
+        }
+        successCount++;
+        lastMsg = singleRes.message;
+      }
+      gmFinishEquipMod();
+      var colonIdx = lastMsg.indexOf('：');
+      var opDesc = colonIdx >= 0 ? lastMsg.slice(colonIdx + 1) : lastMsg;
+      return {
+        ok: true,
+        message: resolved.desc + '：批次成功（共 ' + successCount + ' 件） -> ' + opDesc
+      };
+    }
+
+    var item = resolved.item;
+    var targetDesc = resolved.desc;
+    if (!item) return { ok: false, message: targetDesc + ' 目前沒有裝備，無法修改屬性。' };
+
+    if (!args.length || args[0] === 'info' || args[0] === 'show' || args[0] === '資訊') {
+      return { ok: true, message: gmItemInfoText(item, targetDesc) };
+    }
+
+    return gmModSingleEquip(item, targetDesc, args);
   }
 
   function gmGivePart(tier, node, count) {

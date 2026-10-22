@@ -1,5 +1,22 @@
 # PATCH.md
 
+## 支援 modequip wear 全身裝備批次修改與 AI GM 本地高速直譯（Antigravity 2026-10-22）
+
+- **`modequip` 支援 `wear` / `all` 全身穿戴裝備批次修改**：
+  - 新增 `wear`、`all`、`full`、`全身`、`身上` 目標關鍵字（例：`modequip wear ancient all`、`modequip wear +50`、`modequip set1 all +100`），自動遍歷該套裝全部 13 件裝備批次修改，並傳回整合摘要，解決 AI 轉譯輸出 `wear` 被誤判為屬性名稱的錯誤。
+  - 抽取 `gmModSingleEquip` 核心邏輯，無論單件還是全身 13 件均具備完全相同的屬性、太古、強化、品質修改功能與嚴謹防呆。
+- **補齊詞條別名對應（含 `gemEff` 寶石鑲嵌效率）**：
+  - 在 `GM_AFFIX_ALIASES` 補齊 `gemeff`、`gemsocketrate`、`gemrate`、`gemsocketeff`、`寶石鑲嵌效率` 等多種別名映射至底層詞條 `gemEff`。
+  - 補齊 `lifesteal`/`吸血`、`manaSteal`/`吸魔`、`hpRegen`/`回血`、`affixCap`/`詞條上限` 等全系列詞條 pool 別名。
+- **AI GM 本地高速直譯通道（Fast-Path，0ms 無延遲解析）**：
+  - 針對高頻日常 GM 指令（貨幣材料、全身套裝發放、全身全太古、強化、技能滿級/解鎖、鑲滿寶石、等級/轉生、背包、跳關、無敵等）建構本機規則直譯器 `parseFastPath`。
+  - 支援以頓號、逗號、換行或連接詞分割的複合指令（例如「加全身強化+50神話4太古裝備、加金幣1000億」）0ms 本地直接分句解析，無需發送網路請求等待 Gemini API。
+  - 若無法完全本地直譯則自動回退至 Gemini LLM；優化 Gemini 請求參數（`temperature: 0`、`maxOutputTokens: 256`），進一步降低 LLM 生成等待延遲。
+- **測試與驗證**：
+  - 擴充 `tests/gm-modequip.test.cjs` 驗證 `modequip wear ancient all` 全身 13 件批次太古、`modequip wear +50` 全身強化與 `gemSocketRate` 別名。
+  - 新增 `tests/gm-fastpath.test.cjs` 驗證複合指令直譯、裝備太古/強化、材料貨幣與回退機制（12 項單元測試全數通過）。
+  - `node tools/build_check.cjs` 574 檔編譯與語法檢查 100% OK。
+
 ## 新增直接修改裝備屬性、數值與太古之 GM 指令（modequip）（Antigravity 2026-10-22）
 
 - **裝備直接修改 GM 指令 `modequip`（別名：`editequip`、`equipmod`、`setequip`、`itemmod`、`meq`、`改裝備`）**：

@@ -413,6 +413,10 @@ modequip [目標] <子指令/屬性名稱> [數值] [ancient|normal]
 別名：`editequip`、`equipmod`、`setequip`、`itemmod`、`meq`、`改裝備`
 
 #### 1. 目標裝備解析規則（[目標]）
+- **全身穿戴裝備批次修改（wear / all / 全身）**：
+  - `wear`、`all`、`full`、`全身`、`身上`：批次作用於當前穿戴套裝的全部 13 件裝備！
+  - `set<套數> wear` 或 `set<套數> all`（例：`set1 wear`、`set2 all`）：批次作用於指定套裝的全部 13 件裝備。
+  - 例如：`modequip wear ancient all`（將全身 13 件裝備所有詞條全部變為【太古】✡）、`modequip wear +100`（全身裝備強化等級全部設為 +100）。
 - **指定套裝與部位**：
   - `set<套數> <部位>`（例：`set1 weapon`、`set2 ring`、`set3 helmet`）
   - `<套數> <部位序號1~13>`（例：`1 1` 代表第 1 套第 1 部位主手武器、`1 3` 代表第 1 套頭盔、`2 11` 代表第 2 套戒指）

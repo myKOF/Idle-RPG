@@ -125,23 +125,32 @@
     var isKnownEnglishCmd = /^(gold|g|scrap|essence|dust|mat|material|gem|rune|runeword|book|equip|equipment|equipset|equip_set|set|suit|fullset|full_set|gearset|gear_set|part|bag|inv_cap|invcap|inv_size|invsize|inv_expand|bag_expand|expand_inv|stage_jump|stage|set_stage|setstage|stage_set|stageset|zone_jump|zone|kill|multikill|mk|k|reincarnation|reincarnate|turn|level|lv|skillxp|masterylv|skill2max|skillmax|skills2max|skill_unlock|tower_trial_clear|tower_hell_clear|tower_purgatory_clear|tower_trial_reset|tower_hell_reset|tower_purgatory_reset|tower_jump|god|spawn|spawnelite|clear|help|\?|modequip|editequip|equipmod|setequip|itemmod|meq|改裝備)$/i.test(firstWord);
 
     if (hasChinese && !isKnownEnglishCmd) {
-      if (typeof AiKeySetting !== 'undefined' && typeof AiKeySetting.parseNaturalCommand === 'function') {
-        var apiKey = AiKeySetting.getApiKey();
-        if (!apiKey) {
-          setGMStatus('⚠️ 檢測到白話指令，但尚未設定 Gemini 金鑰。請按 Esc ➔ 設置貼上金鑰。', false);
-          return;
-        }
-        setGMStatus('🤖 AI 正在理解指令中…', true);
-        AiKeySetting.parseNaturalCommand(rawText).then(function (cmdList) {
-          if (!cmdList || !cmdList.length) {
-            setGMStatus('❌ AI 無法識別該指令，請換個說法試試。', false);
+      if (typeof AiKeySetting !== 'undefined') {
+        if (typeof AiKeySetting.parseFastPath === 'function') {
+          var fastCmds = AiKeySetting.parseFastPath(rawText);
+          if (fastCmds && fastCmds.length) {
+            executeCommandSequence(fastCmds, rawText);
             return;
           }
-          executeCommandSequence(cmdList, rawText);
-        }).catch(function (err) {
-          setGMStatus('❌ AI 解析失敗：' + (err && err.message ? err.message : String(err)), false);
-        });
-        return;
+        }
+        if (typeof AiKeySetting.parseNaturalCommand === 'function') {
+          var apiKey = AiKeySetting.getApiKey();
+          if (!apiKey) {
+            setGMStatus('⚠️ 檢測到白話指令，但尚未設定 Gemini 金鑰。請按 Esc ➔ 設置貼上金鑰。', false);
+            return;
+          }
+          setGMStatus('🤖 AI 正在理解指令中…', true);
+          AiKeySetting.parseNaturalCommand(rawText).then(function (cmdList) {
+            if (!cmdList || !cmdList.length) {
+              setGMStatus('❌ AI 無法識別該指令，請換個說法試試。', false);
+              return;
+            }
+            executeCommandSequence(cmdList, rawText);
+          }).catch(function (err) {
+            setGMStatus('❌ AI 解析失敗：' + (err && err.message ? err.message : String(err)), false);
+          });
+          return;
+        }
       }
     }
 

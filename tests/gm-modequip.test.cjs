@@ -132,3 +132,42 @@ test('modequip 指令：無裝備部位與未知屬性容錯', () => {
   assert.equal(rBadAffix.ok, false);
   assert.match(rBadAffix.message, /未知屬性/);
 });
+
+test('modequip 指令：wear / all 全身裝備批次修改（全太古、強化）', () => {
+  const c = loadContext();
+  // 透過 equipset 穿戴全身 13 件裝備
+  c.executeGMCommand('equipset mythic 100 0 0 wear');
+
+  // modequip wear ancient all
+  const rWearAnc = c.executeGMCommand('modequip wear ancient all');
+  assert.equal(rWearAnc.ok, true);
+  assert.match(rWearAnc.message, /批次成功（共 13 件）/);
+  c.SLOT_LIST.forEach((s) => {
+    const item = c.G.equipmentSets[0][s];
+    assert.equal(item.ancientCount, item.affixes.length);
+    item.affixes.forEach(a => assert.equal(a.ancient, true));
+  });
+
+  // modequip wear +50
+  const rWearUp = c.executeGMCommand('modequip wear +50');
+  assert.equal(rWearUp.ok, true);
+  assert.match(rWearUp.message, /強化等級已設定為 \+50/);
+  c.SLOT_LIST.forEach((s) => {
+    assert.equal(c.G.equipmentSets[0][s].upgrade, 50);
+  });
+});
+
+test('modequip 指令：寶石鑲嵌效率別名（gemSocketRate -> gemEff）', () => {
+  const c = loadContext();
+  const amulet = c.makeEquipment(100, { rarity: 6, level: 100, slot: 'amulet' });
+  c.G.equipmentSets[0].amulet = amulet;
+
+  const rGemEff = c.executeGMCommand('modequip amulet gemSocketRate 100 ancient');
+  assert.equal(rGemEff.ok, true);
+  assert.match(rGemEff.message, /寶石鑲嵌效率%/);
+
+  const found = amulet.affixes.find(a => a.key === 'gemEff');
+  assert.ok(found);
+  assert.equal(found.ancient, true);
+});
+
