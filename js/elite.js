@@ -1590,10 +1590,10 @@ function eliteCastMissiles(m, d) {
     if (!mp) return;
     var ax = mp.x - pp.x, ay = mp.y - pp.y, al = Math.sqrt(ax * ax + ay * ay) || 1;
     ax /= al; ay /= al;
-    var back = d.back || 32, spread = back * 1.35, missiles = [];
+    var back = d.back || 32, spread = d.spread !== undefined ? d.spread : back * 1.35, missiles = [];
     for (var i = 0; i < n; i++) {
       var preset = presets[Math.floor(Math.random() * presets.length)];
-      // 橫向間距加大35%，保持原後退深度及齊射彎曲係數。
+      // 橫向展開與後退深度各讀自己的配置，齊射彎曲係數沿用原side。
       var side = n > 1 ? -0.8 + 1.6 * i / (n - 1) : 0;
       var bx = mp.x + ax * back - ay * spread * side;
       var by = mp.y + ay * back + ax * spread * side;

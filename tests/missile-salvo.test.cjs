@@ -17,8 +17,8 @@ function scene(over) {
   const m = makeElite(c, ['e_missile'], { x: 100, y: 0, hp: 1e12 });
   Object.keys(m._el.cd).forEach(k => { m._el.cd[k] = 1e9; });
   m._el.repoAt = Infinity;
-  // 新配置依規範先存待套用差異；隔離驗收不回寫正式表或生成資料。
-  const d = Object.assign({}, c.ELITE_AFFIXES.e_missile, { n: [4, 4], leg1: .275, hold: 1 }, over);
+  // 舊事件的相容fixture維持原時序；正式表參數另由下方專項直接驗證。
+  const d = Object.assign({}, c.ELITE_AFFIXES.e_missile, { n: [4, 4], leg1: .275, hold: 1, back: 32, spread: 43.2 }, over);
   const log = [];
   c.playCombatVfx = spec => log.push({ t: c.GT - 100, spec });
   let t = 0;
@@ -32,6 +32,71 @@ function scene(over) {
   return { c, m, d, log, until };
 }
 const flights = log => log.filter(e => e.spec.fxKind === 'projectile');
+
+test('MISSILE-HOLD2 正式表：後退加倍、橫向再加50%，定點等待兩秒後齊射命中', () => {
+  for (const angle of [0, Math.PI / 2, Math.PI, -.7]) {
+    const s = scene();
+    // 不使用相容fixture的新時序或距離覆寫，只固定本次抽到四枚。
+    const d = Object.assign({}, s.c.ELITE_AFFIXES.e_missile, { n: [4, 4] });
+    assert.equal(d.leg1, .275); assert.equal(d.hold, 2);
+    assert.equal(d.back, 64); assert.equal(d.spread, 64.8);
+    const ax = Math.cos(angle), ay = Math.sin(angle);
+    s.m.pos.x = 100 * ax; s.m.pos.y = 100 * ay;
+    s.c.eliteCastMissiles(s.m, d); s.until(.21);
+    const back = flights(s.log);
+    assert.equal(back.length, 4);
+    for (let i = 0; i < 4; i++) {
+      const a = back[i].spec.area, dx = a.x - a.sourceX, dy = a.y - a.sourceY;
+      assert.ok(Math.abs(dx * ax + dy * ay - 64) < 1e-7, '後退深度為原先兩倍');
+      assert.ok(Math.abs(-dx * ay + dy * ax - [-51.84, -17.28, 17.28, 51.84][i]) < 1e-7);
+      assert.equal(a.holdSec, 2); assert.equal(a.brake, true);
+      assert.equal(back[i].spec.travelMs[0], 275);
+      if (i) assert.ok(Math.abs(Math.hypot(a.x - back[i-1].spec.area.x, a.y - back[i-1].spec.area.y) - 34.56) < 1e-7, '相鄰間距23.04乘1.5');
+    }
+    s.m.pos.x += 800; s.m.pos.y -= 400;
+    s.until(2.47);
+    assert.equal(flights(s.log).length, 4, '完成兩秒等待前不齊射');
+    assert.equal(s.c.FIELD.player.hp, 1e12);
+    s.c.bfPlayerPos().x = -50; s.c.bfPlayerPos().y = 30;
+    s.until(2.49);
+    const salvo = flights(s.log).slice(4);
+    assert.equal(salvo.length, 4);
+    assert.equal(new Set(salvo.map(e => e.t)).size, 1);
+    for (let i = 0; i < 4; i++) {
+      assert.equal(salvo[i].spec.area.sourceX, back[i].spec.area.x);
+      assert.equal(salvo[i].spec.area.sourceY, back[i].spec.area.y);
+      assert.equal(salvo[i].spec.area.x, -50); assert.equal(salvo[i].spec.area.y, 30);
+    }
+    s.until(2.85); assert.equal(s.c.FIELD.player.hp, 1e12);
+    s.until(2.88); assert.ok(s.c.FIELD.player.hp < 1e12);
+    const impacts = s.log.filter(e => e.spec.vfx.attack === d.v.attack);
+    assert.equal(impacts.length, 4); assert.equal(new Set(impacts.map(e => e.t)).size, 1);
+    assert.equal(s.c.ELITE_RT.errors, 0);
+  }
+});
+
+test('MISSILE-HOLD2 真Runtime兩秒定點等待，移動NPC不拖曳光彈', () => {
+  const s = scene(), d = Object.assign({}, s.c.ELITE_AFFIXES.e_missile, { n: [4, 4] });
+  s.c.eliteCastMissiles(s.m, d); s.until(.21);
+  const ev = flights(s.log)[0].spec, npc = { x: 100, y: 0 };
+  const { rt, nodes } = adapter(presets, { posOf: () => npc, footOf: () => npc,
+    chainPoint: () => npc, playerPos: () => ({ x: 0, y: 0 }) });
+  assert.equal(rt.tryPlay(ev), true);
+  let parked;
+  for (let i = 1; i <= 540; i++) {
+    npc.x += 11; npc.y -= 3; rt.update(1/240);
+    if (i >= 300) {
+      const node = nodes.find(n => n.spec.assetUrl.endsWith('circle_05.png'));
+      assert.ok(node && node.visible);
+      const p = node.history.at(-1);
+      parked ||= { x: p.x, y: p.y };
+      assert.ok(Math.hypot(p.x - parked.x, p.y - parked.y) < 1e-7, '保留Preset自身偏移，停駐不隨實體移動');
+    }
+  }
+  assert.equal(rt.stats().projectiles, 1, '後退後完整等待兩秒');
+  rt.update(.04); assert.equal(rt.stats().projectiles, 0);
+  assert.equal(rt.stats().missing, 0); rt.destroy();
+});
 
 test('MISSILE-SPREAD 四枚橫向間距增加35%，各方向後退深度及齊射起點正確', () => {
   for (const angle of [0, Math.PI / 2, Math.PI, -.7]) {

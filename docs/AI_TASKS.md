@@ -12,6 +12,22 @@
 - 唯讀檢查未改：規範／Workflow／prompts/codex、js/ui.js的地圖與按鈕渲染、battle-renderer的viewport／resize／鏡頭、data十圖／realm資料、其他7份樣式與上述7份回歸。自我Review確認只修正Flex寬度與地圖換行，既有標題裝飾／浮字溢出策略保留。臨時驗收頁移存Git中繼資料，測試分頁及服務關閉。
 - 交付：無本次未完成實作／新增已知缺陷，可供Review／合併；Commit為本段所在「[Codex] fix: 修正地圖列撐寬戰鬥區與鏡頭偏移」，回覆附編號。限制為未做真人存檔長戰、手機／跨瀏覽器驗收。驗收期間新增的en-stone-wall-0 Preset／layout使用者修改原樣保留、不納入本次提交。未合併推送；下一步由使用者正常整合並重新整理遊戲。
 
+## MISSILE-HOLD2-DISTANCE-20261022 — 正式兩秒停駐、加寬與延長後退
+
+- Owner：Codex；Done，單一開發者。使用者明確要求正式套用停駐並改2秒、目前橫向間距再乘1.5、後退深度乘2，交付一般鏡頭／原尺寸／正常速度GIF。承接已完成飛彈接入與＋35%間距，使用者本輪正式套用要求優先於預設Pending；不需委派。
+- 允許：eliteCastMissiles僅獨立橫向spread參數、skills2-geometry的既有位置欄接線、Skills2.xlsx飛彈列四格與正式CSV／skills2.js匯出、舊飛彈Pending請求更新／封存與精準原生Excel合併、飛彈專項、必要Worker／主頁快取、params_version、LV及本段；GIF及稽核暫存於聊天目錄。禁止其他技能／素材／岩壁任務修改、傷害／解鎖／Protocol／存檔及其他副本；不合併推送。
+- 目標：hold=2、leg1沿先前核准0.275秒；back=6.4米，橫向spread=6.48米（原43.2座標單位×1.5），兩者獨立避免後退加倍又重複放大橫向。四枚相鄰間距34.56座標單位；仍固定世界停駐點。spread走已有「生成位置範圍」欄，時間走無獨立欄的JSON。
+- 驗收：Excel真實型別與原值、四格精準套用、正常Excel重開無RepairMode、Excel／CSV／JS一致與冪等、正式配置的事件／兩秒等待／同拍齊射與傷害、NPC移動不拖動停駐、Worker／schema／接線回歸及Build、實際鏡頭GIF和自我Review後獨立Commit。另一岩壁進行中區段保留，只stage本次hunk；先前使用者批准合併快取版本沿用於本輪必要新版本。
+- 正式配置完成：先用唯讀Excel COM核對Skills2的247列與F／V／AA／AV／AW格型別及格式，再由官方merge-param-patches.ps1精準套用飛彈請求四格，未套用另一岩壁請求。V247字串3.2→6.4、AA247空白→數值6.48、AV247的leg1 .55→.275／hold新增2、AW247同步說明。舊一秒請求已依使用者新要求取代並消耗，原請求、前後Excel、snapshot／decision／commit-started收據均保存於archive/20261022-missile-hold2-d615f641-adfd-4faf-9f79-0c59a76f8f10；沒有另留待套用飛彈提案。
+- Excel驗證：已取得來源獨占鎖，殘留~$鎖檔原樣保留。合併器以原生Excel API正常開啟候選、儲存後正常重開核值，再比對來源SHA寫回；另一次正常唯讀開啟正式來源，Saved=true、未進RepairMode，五個檢查格格式全部保持，資料全表比較只有上述四格改變。未操作使用者Excel實例／未存內容，沒有XML改寫或重建整本。依使用者指定正式套用走既有原生Excel合併器，以保留原表功能。
+- 完成12檔：Excel／CSV／skills2生成資料、已消耗舊請求的移除、skills2-geometry僅e_missile新增placement→spread、elite僅讀取獨立spread並保留舊事件fallback、飛彈專項、bridge／Worker／index快取、LV及本紀錄。xlsx_to_csv正常匯出283列×52欄；config_tables --apply --write Skills2僅ENEMY_SKILLS2一個字面值有變更，未變玩家技能或其他敵人；再次--apply語意變更0。params_version由官方工具自增且按原規則不入Git。
+- 測試：node --test tests/missile-salvo.test.cjs tests/skills2-enemy-columns.test.cjs tests/skills2-vfx-schema.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/vfx-editor-cache-versions.test.cjs，50項46過／4既有失敗；同前次基線的真實Preset絕對光芯座標、舊事件座標、作者重製及固定位置舊斷言，沒有新失敗／沒有改這些斷言或Preset。新兩項皆過：正式配置四個方向、後退／橫向獨立與2秒齊射／命中；真Runtime保留Preset自身偏移、NPC持續移動仍定點等待完整2秒及回收。相容fixture保留前一版幾何／1秒事件，不冒充正式配置。
+- npm.cmd run build：568檔全通過；diff --check通過。Worker資源與skills2／elite匯入採20261022-stone-wall-navigation-missile-hold2，index skills2升354、bridge升337；保留岩壁navigation及其他快取值、Protocol不變。進行中岩壁的函式／樣式／素材／作者／測試／Pending差異不納入本次Commit；同檔分段及使用者既有共用快取整合授權沿用。
+- 分段與補充驗證：elite／AI_TASKS／LV以HEAD、本次候選及保留岩壁的工作檔執行git merge-file -p，三檔退出0、結果皆等於工作檔；只stage本次12檔區段。唯讀語意比較其他ENEMY_SKILLS2項目全相等。飛彈有效選集6/6與tests/battle-camera-distance.test.cjs的7/7通過；與上述不重複測試合計57項53過／同4項既有失敗，沒有降低斷言或回退使用者外觀。
+- GIF：npc-missile-hold2-real-game.gif位於本聊天visualizations，181格817×680，正常40fps取樣（GIF20／30ms交替）、循環，完整後退→2秒定點停駐→齊射→消散。使用當前正式ELITE_AFFIXES而非候選覆寫，真elite事件與BattleRenderer／Core／Pixi／Runtime、地形／角色；一般鏡頭125%距離（cameraStage=.8）、地面投影.5、透視.82，Canvas815×570，原像素輸出沒有放大／慢放。Console error／warning0，missing／dropped0、最後projectiles0；已目視飛出、停駐、齊射及結束幀。服務與獨立瀏覽器已關閉，未讀寫真人存檔。
+- 唯讀未改：共通規範／Workflow／prompts/codex、PARAM_PATCHES／官方合併與配置工具、elite_data既有米轉座標、Core／Runtime／battle-renderer鏡頭及投影、四色Preset／layout／素材、上述其餘回歸。自我Review確認橫向只乘1.5、後退只乘2、事件和傷害時序共用正式配置，停駐仍為數值世界座標；沒有新VFX來源／素材庫檔案或素材庫Commit。
+- 交付：本段所在「[Codex] feat: 正式套用飛彈兩秒停駐與加寬後退」Commit，回覆附編號。無本輪未完成項，可供Review／合併；未合併推送。限制為上述4項既有測試失敗，以及未做真人存檔長戰／多技能混戰／跨裝置驗收。下一步正常整合及重新載入遊戲；其他任務未提交內容保留。
+
 ## MISSILE-SPREAD-20261022 — 飛彈後退散開間距增加35%
 
 - Owner：Codex；Done，單一開發者。使用者要求四枚向後飛散的間距增加30～40%，採35%；沿既有飛彈接入，不依賴岩壁任務。
