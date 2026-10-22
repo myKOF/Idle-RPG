@@ -17,7 +17,7 @@ if (typeof GameClock !== 'undefined') {
   globalThis.clearTimeout = GameClock.clearTimeout;
 }
 importScripts(
-  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261022-terrain', '../runeword_data.js?v=20261022-battle-biomes', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261019-kagura-fire-attr-asura-combo-fire-amp-50-infinite-burn-earthguard-rebirth-guard-windblade-double-slow-legend-rework-1020', '../formula.js?v=20261019-war-body-shield-loss-asura-combo-earthguard-rebirth-guard', '../battle-terrain.js?v=20261022-lava-terrain-develop-merge', '../battlefield.js?v=20261022-lava-terrain-develop-merge', '../stats.js?v=20261003-rename-weineng',
+  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261022-terrain', '../runeword_data.js?v=20261022-battle-biomes', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261019-kagura-fire-attr-asura-combo-fire-amp-50-infinite-burn-earthguard-rebirth-guard-windblade-double-slow-legend-rework-1020', '../formula.js?v=20261022-elem-proc-off', '../battle-terrain.js?v=20261022-lava-terrain-develop-merge', '../battlefield.js?v=20261022-lava-terrain-develop-merge', '../stats.js?v=20261003-rename-weineng',
   '../item.js?v=20261018-gem-workshop', '../gem_resonance.js?v=20261018-resonance-hole-effects','../runeword.js?v=20261018-rune-tower-unlock',
   '../skills.js?v=20261018-potential-remove', '../skills2.js?v=20261022-meteor-missile-integration', '../elite_data.js?v=20261021-chain-hover', '../talents.js?v=20261018-heaven-power-complete-bonus',
   '../player.js?v=20261022-battle-biomes', '../special_rules.js',

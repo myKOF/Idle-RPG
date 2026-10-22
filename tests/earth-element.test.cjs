@@ -124,6 +124,7 @@ test('元素特效【岩甲】：以攻擊者當前生命值比例產生護盾�
   const c = loadFormulaContext();
   // chance 樁只在 ≥100 時成立 → 先確認預設機率下不會誤觸發
   assert.equal(hit(c, { atk: 0, elemAtk: { earth: 200 } }, {}).shield, 0);
+  c.ELEM_PROC_ENABLED = true;
   c.ELEM_PROC.earthShieldChance = 100;
   assert.equal(c.ELEM_PROC.earthShieldMult, 0.02);
   const r = hit(c, { atk: 0, elemAtk: { earth: 200 } }, {}, { hp: 1000 });

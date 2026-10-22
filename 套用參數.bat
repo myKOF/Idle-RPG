@@ -19,6 +19,7 @@ if errorlevel 1 goto cfgsyncfail
 echo.
 echo [2/3] Sync every Excel file to a same-name CSV...
 echo       config\Excel\*.xlsx  -^>  config\CSV\*.csv
+echo       (includes String.xlsx -^> String.csv, the UI strings table)
 for %%F in ("%~dp0config\Excel\*.xlsx") do call :sync_remaining_xlsx "%%~fF" "%%~nF"
 if errorlevel 1 goto xlsxfail
 node tools/config_tables.cjs --apply --write

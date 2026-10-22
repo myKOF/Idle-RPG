@@ -648,6 +648,9 @@ function rollComboHits(st) {
   return n;
 }
 
+/* 元素特效總開關：false＝只保留屬性傷害本身，不觸發減速／連鎖電擊／中毒／淨化／暗影汲取／岩甲（2026-10-22 取消） */
+var ELEM_PROC_ENABLED = false;
+
 /* ---- 元素特效觸發參數 ----
    技能屬性化段與元素附加段合併後，每系只判定一次（避免同屬性重複觸發）。
    2026-07-26 技能屬性化改造後，這些係數的作用基數由「元素附加值」放大為
@@ -924,7 +927,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   // 元素特效：以「技能屬性化段＋元素附加段」的該系合計值判定，每系只觸發一次
   // 冰 減速｜雷 追加連鎖電擊｜毒 中毒｜光 淨化自身｜暗 汲取回復｜地 岩甲護盾（係數 → ELEM_PROC）
   // 暗的回復與地的護盾同樣只回報數值（out.heal / out.shield），實際套用在呼叫端（js/combat.js）。
-  if (elemTotals) {
+  if (elemTotals && ELEM_PROC_ENABLED) {
     var ccF = (dCfg.ccFactor === undefined) ? 1 : dCfg.ccFactor;
     for (var pi = 0; pi < ELEMENTS.length; pi++) {
       var pk = ELEMENTS[pi];

@@ -155,7 +155,7 @@ test('嵐之山：風地抗性與風系外部乘區分別套用，無額外屬�
   const earth=s.c.elementalResistanceMultiplier(s.m.resist,'earth',s.c.BASE_STATS.level);
   const r=s.c.resolveHit(s.p,s.m,cfg,s.c.monsterDefCfg(s.m));
   assert.equal(r.dmg,Math.round(100*10.35*(.6*wind*2+.4*earth)));
-  s.c.chance=pct=>pct>0;
+  s.c.chance=pct=>pct>0;s.c.ELEM_PROC_ENABLED=true;
   const procs=s.c.resolveHit(s.p,s.m,cfg,s.c.monsterDefCfg(s.m));
   assert.ok(procs.procs.includes('岩甲'),'地系分量參與既有屬性效果判定');
 });
