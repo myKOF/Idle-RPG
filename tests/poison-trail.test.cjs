@@ -25,9 +25,27 @@ function adapter() {
 test('POISON-TRAIL 四條原創流動圖層，移除圓球堆疊，作者與出貨一致', () => {
   assert.deepEqual(preset, author.make()); assert.equal(Core.validatePreset(preset).ok, true);
   assert.equal(preset.layers.length, 4);
-  assert.ok(preset.layers.every(l => l.assetId === author.assetId && l.sheet.count === 16 && l.blendMode === 'normal'));
-  const svg = author.liquidSVG(); assert.equal((svg.match(/<clipPath id="c\d+"/g)||[]).length,16);
+  assert.ok(preset.layers.every(l => l.assetId === author.assetId && l.sheet.count === 64 && l.sheet.fps === 8 && l.blendMode === 'normal'));
+  const svg = author.liquidSVG(); assert.equal((svg.match(/<clipPath id="c\d+"/g)||[]).length,64);
   assert.ok(svg.includes('#253c08') && svg.includes('#c1eb49'));
+});
+test('POISON-FLAT-FLOW 完整循環中心與寬度固定，邊緣整輪擾動不到半個材質像素', () => {
+  for (let x=7;x<=505;x+=3) {
+    const initial=author.surfaceAt(x,0), top=[],bottom=[];
+    for(let frame=0;frame<=64;frame++) {
+      const s=author.surfaceAt(x,frame);
+      near(s.center,initial.center);near(s.radius,initial.radius);top.push(s.upper);bottom.push(s.lower);
+    }
+    assert.ok(Math.max(...top)-Math.min(...top)<=.440001);
+    assert.ok(Math.max(...bottom)-Math.min(...bottom)<=.440001);
+    near(top[0],top[64]);near(bottom[0],bottom[64]);
+  }
+});
+test('POISON-FLAT-FLOW 內流單向緩移，8秒循環，四臂不再各自快速扭動', () => {
+  near(author.FRAMES/author.FPS,8);
+  for(let frame=1;frame<64;frame++)near(author.flowOffset(frame)-author.flowOffset(frame-1),1);
+  near(author.flowOffset(64),0);near(author.FLOW_TILE*author.FPS/author.FRAMES,8);
+  assert.ok(preset.layers.every(l=>l.sheet.fps===8));
 });
 test('POISON-TRAIL 實際命中沿連續水帶伸展，前緣之外及兩臂間安全，角度／寬度取表定值', () => {
   const {c,def,cross:x} = field({len:240,speed:80,ballR:24,dur:7,balls:1});

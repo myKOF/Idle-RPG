@@ -72,12 +72,12 @@
         "y": 0.5
       },
       "sheet": {
-        "columns": 4,
-        "count": 16,
-        "fps": 14,
+        "columns": 8,
+        "count": 64,
+        "fps": 8,
         "loop": true,
         "mode": "fps",
-        "rows": 4
+        "rows": 8
       }
     },
     {
@@ -148,12 +148,12 @@
         "y": 0.5
       },
       "sheet": {
-        "columns": 4,
-        "count": 16,
-        "fps": 15,
+        "columns": 8,
+        "count": 64,
+        "fps": 8,
         "loop": true,
         "mode": "fps",
-        "rows": 4
+        "rows": 8
       }
     },
     {
@@ -224,12 +224,12 @@
         "y": 0.5
       },
       "sheet": {
-        "columns": 4,
-        "count": 16,
-        "fps": 16,
+        "columns": 8,
+        "count": 64,
+        "fps": 8,
         "loop": true,
         "mode": "fps",
-        "rows": 4
+        "rows": 8
       }
     },
     {
@@ -300,12 +300,12 @@
         "y": 0.5
       },
       "sheet": {
-        "columns": 4,
-        "count": 16,
-        "fps": 17,
+        "columns": 8,
+        "count": 64,
+        "fps": 8,
         "loop": true,
         "mode": "fps",
-        "rows": 4
+        "rows": 8
       }
     }
   ],

@@ -3,9 +3,21 @@
 const fs = require('node:fs'), path = require('node:path'), crypto = require('node:crypto');
 const repo = path.resolve(__dirname, '../../../..');
 const assetId = 'codex-authored/poison-trail/flow.svg';
-const FRAMES = 16, COLUMNS = 4, WIDTH = 512, HEIGHT = 128;
+const FRAMES = 64, COLUMNS = 8, WIDTH = 512, HEIGHT = 128;
+const FPS = 8, FLOW_TILE = 64, EDGE_RIPPLE = .22;
 const GEOMETRY = { length: 100, radius: 100 / 9, duration: 16, growSec: 3 };
 const n = v => +v.toFixed(3) || 0;
+// 固定水窪形狀。動畫只擾動邊界，不能讓中心與寬度跟著相位改變。
+function surfaceAt(x, frame = 0) {
+  const center = 64 + 13 * Math.sin(x / 61) + 5 * Math.sin(x / 23);
+  const cap = Math.sqrt(Math.max(0, 1 - Math.pow(Math.max(0, 40 - Math.min(x - 7, 505 - x)) / 40, 2)));
+  const radius = Math.min(55 - Math.abs(center - 64), (39 + 14 * Math.sin(x / 42) + 8 * Math.sin(x / 17)) * cap);
+  const phase = frame / FRAMES * Math.PI * 2;
+  return {center, radius,
+    upper: center - radius * (1 + .03 * Math.sin(x * .44)) + EDGE_RIPPLE * cap * Math.sin(x * .12 + phase),
+    lower: center + radius * (1 + .04 * Math.sin(x * .31 + 2)) + EDGE_RIPPLE * cap * Math.sin(x * .09 + phase + 2)};
+}
+function flowOffset(frame) { return ((frame % FRAMES) + FRAMES) % FRAMES / FRAMES * FLOW_TILE; }
 function liquidSVG() {
   const hash = i => { const v = Math.sin(i * 127.1 + 31.7) * 43758.5453; return v - Math.floor(v); };
   const pathOf = points => points.map((p, i) => (i ? 'L' : 'M') + p.map(n).join(' ')).join(' ') + 'Z';
@@ -13,42 +25,39 @@ function liquidSVG() {
   for (let f = 0; f < FRAMES; f++) {
     const phase = f / FRAMES * Math.PI * 2;
     const upper = [], lower = [];
-    function flow(x) {
-      const center = 64 + 13 * Math.sin(x / 61 + phase) + 5 * Math.sin(x / 23 - phase);
-      const cap = Math.sqrt(Math.max(0, 1 - Math.pow(Math.max(0, 40 - Math.min(x - 7, 505 - x)) / 40, 2)));
-      const radius = Math.min(55 - Math.abs(center - 64), (39 + 14 * Math.sin(x / 42 + phase * 2) + 8 * Math.sin(x / 17 - phase)) * cap);
-      return {center, radius};
-    }
     for (let i = 0; i <= 100; i++) {
-      const x = 7 + i * 498 / 100, {center, radius} = flow(x);
-      upper.push([x, center - radius * (1 + .13 * Math.sin(x * .44 + phase))]);
-      lower.unshift([x, center + radius * (1 + .17 * Math.sin(x * .31 - phase + 2))]);
+      const x = 7 + i * 498 / 100, surface = surfaceAt(x, f);
+      upper.push([x, surface.upper]); lower.unshift([x, surface.lower]);
     }
     const outline = pathOf([...upper, ...lower]);
     const clouds = [], eddies = [], foam = [];
     // Overlapping irregular stains, rather than parallel strokes down the whole arm.
     const colors = ['#aacb1b', '#78a91a', '#c5df32', '#4b7914', '#253c08', '#c1eb49'];
-    for (let j = 0; j < 68; j++) {
-      const x = hash(j + 17) * 500 + 6, base = flow(x);
+    for (let j = 0; j < 28; j++) {
+      const x = hash(j + 17) * 500 + 6, base = surfaceAt(x);
       const y = base.center + (hash(j + 419) - .5) * base.radius * 1.7;
       const rx = 10 + hash(j + 98) * 32, ry = 5 + hash(j + 229) * 18;
       const points = [];
       for (let k = 0; k < 18; k++) {
-        const a = k / 18 * Math.PI * 2, ripple = .74 + hash(j * 37 + k) * .35 + .1 * Math.sin(phase + k + j);
+        const a = k / 18 * Math.PI * 2, ripple = .74 + hash(j * 37 + k) * .35;
         points.push([x + Math.cos(a) * rx * ripple, y + Math.sin(a) * ry * ripple]);
       }
       clouds.push(`<path d="${pathOf(points)}" fill="${colors[j % colors.length]}" opacity="${n(.2 + hash(j + 811) * .45)}"/>`);
     }
-    for (let j = 0; j < 17; j++) {
-      const x = hash(j + 51) * 450 + 20, {center,radius} = flow(x);
-      const y = center + (hash(j + 121) - .5) * radius;
-      const dx = 20 + hash(j + 32) * 46, bend = (hash(j + 441) - .5) * 34 + Math.sin(phase + j) * 6;
-      eddies.push(`<path d="M${n(x)} ${n(y)}q${n(dx * .4)} ${n(bend)} ${n(dx)} ${n(bend * .2)}t${n(-dx * .3)} ${n(-bend * .7)}" fill="none" stroke="${j % 3 ? '#cae943' : '#314e0a'}" stroke-width="${n(2 + hash(j + 33) * 5)}" stroke-linecap="round" opacity=".3"/>`);
+    // 內流材質沿固定水路向外緩移；平移一個週期後圖樣無縫銜接，不往返搖擺。
+    for (let tile = -1; tile <= WIDTH / FLOW_TILE; tile++) {
+      for (let j = 0; j < 7; j++) {
+        const x = tile * FLOW_TILE + hash(j + 51) * FLOW_TILE + flowOffset(f);
+        const {center,radius} = surfaceAt(Math.max(7, Math.min(505, x)));
+        const y = center + (hash(j + 121) - .5) * radius * 1.6;
+        const dx = 10 + hash(j + 32) * 23, bend = (hash(j + 441) - .5) * 19;
+        eddies.push(`<path d="M${n(x)} ${n(y)}q${n(dx * .4)} ${n(bend)} ${n(dx)} ${n(bend * .2)}t${n(-dx * .3)} ${n(-bend * .7)}" fill="none" stroke="${j % 3 ? '#cae943' : '#314e0a'}" stroke-width="${n(3 + hash(j + 33) * 6)}" stroke-linecap="round" opacity=".22"/>`);
+      }
     }
     for (let j = 0; j < 58; j++) {
-      const x = 14 + hash(j + 225) * 482, {center,radius} = flow(x);
+      const x = 14 + hash(j + 225) * 482, {center,radius} = surfaceAt(x);
       const y = center + (j % 2 ? -1 : 1) * radius * (.65 + hash(j + 41) * .4);
-      foam.push(`<ellipse cx="${n(x)}" cy="${n(y + Math.sin(phase + j) * 2)}" rx="${n(.8 + hash(j + 19) * 2)}" ry="${n(.6 + hash(j + 16) * 1.5)}" fill="#c1eb49" opacity="${n(.2 + hash(j + 819) * .45)}"/>`);
+      foam.push(`<ellipse cx="${n(x)}" cy="${n(y + Math.sin(phase + j) * .12)}" rx="${n(.8 + hash(j + 19) * 2)}" ry="${n(.6 + hash(j + 16) * 1.5)}" fill="#c1eb49" opacity="${n(.2 + hash(j + 819) * .45)}"/>`);
     }
     cells.push(`<g transform="translate(${f % COLUMNS * WIDTH} ${Math.floor(f / COLUMNS) * HEIGHT})" clip-path="url(#cell)"><defs><clipPath id="c${f}"><path d="${outline}"/></clipPath></defs><path d="${outline}" fill="#75af15" opacity=".28" filter="url(#mist)"/><path d="${outline}" fill="url(#liquid)" opacity=".8" filter="url(#soft)"/><g clip-path="url(#c${f})"><g filter="url(#soft)">${clouds.join('')}${eddies.join('')}</g>${foam.join('')}</g></g>`);
   }
@@ -66,7 +75,7 @@ function make() {
       scaleXOverLife: [[0, 2 * radius / (length + 2 * radius)], [t, 1], [1, 1]],
       alpha: .95, blendMode: 'normal', duration,
       projection: { x: 1, y: .5 },
-      sheet: { columns: COLUMNS, rows: FRAMES / COLUMNS, count: FRAMES, mode: 'fps', fps: 14 + arm, loop: true }
+      sheet: { columns: COLUMNS, rows: FRAMES / COLUMNS, count: FRAMES, mode: 'fps', fps: FPS, loop: true }
     });
   }
   return { schemaVersion: 1, id: 'en-poison-cross', duration, loop: false,
@@ -76,7 +85,7 @@ function writeSource() {
   const root = require('../../vfx-library-root.cjs').resolveLibraryRoot().root;
   const folder = path.join(root, 'codex-authored/poison-trail'), svg = liquidSVG();
   fs.mkdirSync(folder, { recursive: true }); fs.writeFileSync(path.join(root, assetId), svg);
-  fs.writeFileSync(path.join(folder, 'SOURCE.md'), '# 毒素加持：連續毒水\n\n2026-10-22 Codex 原創 SVG 16 格流動圖集。僅參考使用者所附網路截圖的狹長毒水、破碎邊緣、明暗流紋與細泡沫；未下載、描摹或使用參考圖像素。Mote Studio 可存取，Export 僅 PNG／Sprite sheet／GIF，不支援本次原生 SVG，改採專案向量作者。\n\n遊戲使用表定長度／球半徑作為水帶長度／半寬、speed 決定前緣速度，四臂從中心連續伸展；不再逐顆放球。編輯器預覽採既有表定預設。重製：node tools/vfx/authoring/author/poison-trail.cjs，再執行 node tools/vfx/export-assets.cjs。\n');
+  fs.writeFileSync(path.join(folder, 'SOURCE.md'), '# 毒素加持：平面毒水與緩慢內流\n\n2026-10-22 Codex 原創 SVG 64 格／8fps／8秒循環圖集。僅參考使用者所附網路截圖的狹長毒水、破碎邊緣、明暗流紋與細泡沫；未下載、描摹或使用參考圖像素。Mote Studio 可存取，Export 僅 PNG／Sprite sheet／GIF，不支援本次原生 SVG，改採專案向量作者。\n\n依使用者後續明確回饋：水窪中心、寬度與大輪廓固定；邊緣只有0.22材質像素的細微擾動，不能整條扭動。內流材質沿固定水路向外單向平移，每秒8材質像素，8秒移動64像素的無縫週期；底色團塊固定，沒有呼吸或波浪擺動。四臂同樣慢速，無14～17fps不同節奏。\n\n遊戲仍使用表定長度／半寬／伸展速度／壽命與判定，這次只改水窪內部美術動畫；原創重製可由Git歷史回溯先前被使用者否決的直條及扭動版本。重製：node tools/vfx/authoring/author/poison-trail.cjs，再執行 node tools/vfx/export-assets.cjs。\n');
   const scanner = require('../../asset-scanner.cjs'), file = path.join(repo, 'vfx/asset-index.json');
   const index = JSON.parse(fs.readFileSync(file)), bytes = Buffer.from(svg);
   const entry = { assetId, package: scanner.derivePackage(assetId), relativePath: assetId, format: 'svg',
@@ -96,4 +105,4 @@ if (require.main === module) {
   }
   console.log('en-poison-cross：原創連續毒水已保存，待正式匯出');
 }
-module.exports = { make, liquidSVG, assetId, GEOMETRY, FRAMES, COLUMNS, WIDTH, HEIGHT };
+module.exports = { make, liquidSVG, surfaceAt, flowOffset, assetId, GEOMETRY, FRAMES, COLUMNS, WIDTH, HEIGHT, FPS, FLOW_TILE, EDGE_RIPPLE };

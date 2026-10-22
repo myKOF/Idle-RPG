@@ -53,6 +53,18 @@
 - 唯讀未改：共通規範／Workflow／prompts/codex、PARAM_PATCHES／官方合併與配置工具、elite_data既有米轉座標、Core／Runtime／battle-renderer鏡頭及投影、四色Preset／layout／素材、上述其餘回歸。自我Review確認橫向只乘1.5、後退只乘2、事件和傷害時序共用正式配置，停駐仍為數值世界座標；沒有新VFX來源／素材庫檔案或素材庫Commit。
 - 交付：本段所在「[Codex] feat: 正式套用飛彈兩秒停駐與加寬後退」Commit，回覆附編號。無本輪未完成項，可供Review／合併；未合併推送。限制為上述4項既有測試失敗，以及未做真人存檔長戰／多技能混戰／跨裝置驗收。下一步正常整合及重新載入遊戲；其他任務未提交內容保留。
 
+## POISON-FLAT-FLOW-20261022 — 固定平面毒水輪廓與緩慢內流
+
+- Owner：Codex；Done，單一開發者。使用者指出整條毒水扭動怪異，明確要求固定平面的輪廓，只讓邊緣非常輕微擾動、內部毒流緩慢流動。前置POISON-TRAIL已完成；允許poison-trail作者／SVG圖集／Preset／layout／索引／出貨及素材庫對應檔、專項回歸、Runtime僅資料快取、兩頁僅Runtime快取、LV與本紀錄。禁止修改命中、速度／範圍／壽命、Worker／Protocol／存檔、其他特效及其他副本；不合併推送。
+- 預檢：其他來源僅Claude 0d3a5445的index UI／熔爐快取985／989行；本次Runtime在959行，無語意相依，實際共同base／候選／Claude工作檔三方merge-file退出0。保留本副本岩壁其他修改，獨立分段提交；驗收整輪邊緣位移上限、固定中心／寬度、內流方向及低速、圖集循環／正式渲染、既有毒水回歸／快取／guard／Build與雙倉庫Commit，交使用者Review與預覽。
+- 完成：64格／8fps／8秒循環；水窪center與radius不隨動畫相位改變，邊緣單側振幅0.22材質像素、整輪最大位移0.44；底色／團塊固定，內部流紋以每秒8材質像素沿固定水路單向緩移，64像素週期無縫銜接。移除整條蛇行、寬度呼吸、內部大幅脈動與四臂14～17fps的快速差速。
+- 修改11檔：poison-trail.cjs作者、en-poison-cross Preset、flow.svg、asset-index／shipped-assets、專項測試、Runtime僅DATA_VERSION與兩頁Runtime229→230、LV及本紀錄。layout檢查後無差異；enemy-skills入口、elite模擬／事件／傷害／範圍／速度／持續與Worker／Protocol不改。素材庫3檔SOURCE／SVG／Preset先提交05cf697；SVG／Preset／layout與遊戲SHA256逐份一致。
+- 驗證：node --test tests/poison-trail.test.cjs tests/vfx-editor-cache-versions.test.cjs，9/9；node --test tests/vfx-editor-guard.test.cjs tests/vfx-duration.test.cjs tests/vfx-asset-export.test.cjs，77項76過1既有Windows符號連結略過，新增失敗0。新增兩項回歸釘住整輪固定center／radius、邊緣位移上限／首尾銜接、單向低速／8秒循環與四臂同速；其餘既有命中／投影／續送／回收測試維持通過。npm.cmd run build569檔、export-assets --check及兩庫diff --check通過，沒有改舊測試斷言掩蓋錯誤。
+- 實際預覽：正式Core／Runtime／Pixi／出貨SVG同尺度左右對比，左為素材庫5e11375的自製扭動版，右為本次固定平面慢流；錄製8秒Canvas動畫webm（1660692bytes）與PNG至本聊天visualizations，Console error／warning0，不讀寫真人存檔。使用者參考圖仍只作造型參考，不用第三方像素；沿前輪已確認的Mote無原生SVG限制，以專案作者製作。
+- 分段提交：index與Claude0d3a5445只在不同script快取行，實際三方merge-file退出0；本副本其他岩壁／火鏈／飛彈等修改保留，候選只帶本次資料／素材／快取／紀錄，以HEAD為base再與工作檔三方試跑0，分段stage。未修改或提交其他副本／進行中素材。
+- 唯讀檢查未改：AI規範／Workflow／AGENTS／prompts/codex、Core／PixiBackend／Editor guard、elite毒水與Worker Protocol／bridge、素材庫解析與匯出、既有layout及上述回歸。自我Review確認只有美術相位改變，貼地座標、伸展／判定與回收仍沿原事件。
+- 交付：本次修改與預覽完成，可Review／合併；遊戲Commit為本段所在[Codex] fix: 毒水固定平面輪廓並降低內流速度，回覆附編號，未合併推送。已知限制：1項略過，未驗真人長戰／跨瀏覽器／手機GPU；64格共享圖集未壓縮RGBA估16MiB，仍每次4個sprite、無新增粒子。無本次未完成實作，外觀可依使用者動態回饋續調；下一步正常整合並重載遊戲，舊Editor先備份未存內容再重載。
+
 ## POISON-TRAIL-20261022 — 毒素加持改為連續流動毒水
 
 - Owner：Codex；Done，單一開發者。使用者參考圖要求將逐顆圓點改成連續毒水痕跡；原有毒十字、表定幾何及素材流程已完成。允許毒十字Preset／layout、新原創SVG及作者／索引／出貨與素材庫對應來源、elite毒十字及事件、Runtime相應接線、必要共用快取、專項回歸／文件／LV；禁止其他技能數值、配置工作簿、存檔、其他副本及岩壁功能。
