@@ -78,6 +78,7 @@ var VFXRuntime = (function () {
      取 2.5 拍是為了容忍一次掉幀或一次事件遺失，又不會在場域真的結束後還留著。 */
   var GROUND_KEEP_TICKS = 2.5;
   var GROUND_MIN_KEEP_SEC = 0.35;
+  var FIRE_CHAIN_HEIGHT_M = 2;
   /* 狀態光環的快照頻率是 5Hz，同樣要容忍一次遺失。 */
   var AURA_KEEP_SEC = 0.6;
 
@@ -1328,6 +1329,12 @@ var VFXRuntime = (function () {
     }
     function groundParams(g) {
       var p = { position: { x: g.x, y: g.y }, rotation: g.rot };
+      // 火鏈沿原地面連線懸空；腳點保留作深度錨點，高度不乘地面壓縮。
+      if (g.fireChain) {
+        var unit = typeof BF_SYSTEM_UNITS_PER_METER === 'number' && BF_SYSTEM_UNITS_PER_METER > 0 ? BF_SYSTEM_UNITS_PER_METER : 10;
+        p.depthY = g.y;
+        p.position.y -= FIRE_CHAIN_HEIGHT_M * unit;
+      }
       if(g.worldMotion){p.position.y*=groundScale;p.rotation=projectedAngle(g.rot,groundScale);}
       if(g.windBody){p.motionFacing=true;p.loop=true;}
       if(g.staticVacuum)p.loop=true;
@@ -1421,6 +1428,7 @@ var VFXRuntime = (function () {
       }
       if (live) { stopRef(live.ref); delete grounds[key]; }
       var g = {
+        fireChain: spec.variant === 'elite-ground' && !!(spec.area && /^elite-chain-/.test(spec.area.id || '')),
         curtainColumn: curtainColumn,
         bornAt: clock, rise: isRockOrbitPreset(presetId) || presetId === 'ground-mire-earth' || presetId === 'ground-mire-venom' || presetId === 'ground-mire-magma' || presetId === 'fire-tornado-inferno' || presetId === 'fire-tornado-infinite' || presetId.indexOf('ground-firewall-column-') === 0,
         ref: null, presetId: presetId, expireAt: clock + keep, mult: mult, anchor: anchor,
@@ -1451,7 +1459,7 @@ var VFXRuntime = (function () {
         var bd = trailDensity();
         if (bd !== undefined) { bodyParams.density = bd; counters.trailThinned++; }
       }
-      var ref = play(billboardPresets[presetId] || curtainColumn || spec.variant === 'thunder-orb' || spec.variant === 'water-tide-merge' || orbBody ? rtBillboard : flyingField ? rtAir : role === 'field' && !g.devour ? rtFx : rtZone, presetId, bodyParams, mult);
+      var ref = play(g.fireChain || billboardPresets[presetId] || curtainColumn || spec.variant === 'thunder-orb' || spec.variant === 'water-tide-merge' || orbBody ? rtBillboard : flyingField ? rtAir : role === 'field' && !g.devour ? rtFx : rtZone, presetId, bodyParams, mult);
       if (!ref) return false;
       g.ref = ref;
       grounds[key] = g;

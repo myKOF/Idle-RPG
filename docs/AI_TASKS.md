@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## FIRE-CHAIN-HEIGHT-20261022 — 火鏈固定離地兩米
+
+- Owner：Codex；Done，單一開發者。使用者要求火鏈不要貼地，採固定離地2米。前置既有火鏈與地面投影完成；fetch後四檔及專項測試預檢無外部來源。
+- 允許：js/vfx-runtime.js火鏈顯示高度／圖層，index僅Runtime快取，tests/fire-chain-height.test.cjs、LV及本紀錄；禁止其他技能、岩壁／毒水進行中區段、配置／素材／Worker／Protocol／傷害／存檔與其他副本。不合併推送。
+- 驗收：正式模擬火鏈事件、兩米離地且保留腳點深度、投影／移動／續播／回收，原傷害回歸、正式Renderer畫面及Console、Build與diff；只stage本任務hunk後獨立Commit，交使用者Review／正常整合。
+
+- 完成：Runtime依既有elite-chain場域ID辨識火鏈，固定抬高2米（BF_SYSTEM_UNITS_PER_METER換算），改走billboard後端並保留原地面depthY；各鏈環數／方向／長度、既有平滑追蹤與碰撞不變。未新增事件欄位、Preset引用、配置或素材，無素材庫變更／Commit。index Runtime快取更新至1.0.229，LV同步。
+- 驗證：node --test tests/fire-chain-height.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-core.test.cjs，176/176通過。專項涵蓋10版×3投影×3角度、實際模擬事件、移動／續播／隱藏回池及碰撞。另elite-engine為41項40過1既有飛彈時序失敗；擴充透視測試的變形矩陣fixture亦既有失敗。將Runtime唯讀映射HEAD後精準重跑兩項，完全相同失敗，新增失敗0，未改既有斷言。npm.cmd run build：569檔通過；diff檢查通過。
+- 畫面：隔離localhost正式BattleRenderer／Pixi與表內鏈條，水平／縱向貼地對照明確抬高至怪物身體，Console warning／error 0；未讀寫玩家存檔。fire-chain-height-2m.png保存在本聊天visualizations。唯讀檢查elite／elite_data／battlefield／protocol／Core／Pixi後端／Renderer／Skills2與10份鏈條Preset、規範／Workflow／Agent及相關測試。
+- 交付：無本次未完成實作，可供Review／合併；Commit為本段所在「[Codex] fix: 火鏈特效固定離地兩米」，回覆附編號。保留同副本岩壁／毒水未提交區段，不納入本次；快取採目前新版值。限制為上述兩項既有失敗、未做真人存檔長戰／跨裝置；下一步由使用者正常整合並重新整理遊戲。未合併推送。
+
 ## BATTLE-VIEWPORT-FIT-20261022 — 修正地圖列撐寬戰鬥區
 
 - Owner：Codex；Done；單一開發者。使用者回報新增場景後角色偏離中央、右側功能按鈕被裁切，要求修正尺寸。依賴十圖場景已完成；fetch後預檢無其他副本／分支修改來源。
