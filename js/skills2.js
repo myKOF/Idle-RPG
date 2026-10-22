@@ -4232,6 +4232,29 @@ function sgTickBurn(dt, ctx) {
   }
 }
 
+/* 隕石坑（地板持續傷害）：落地特效若是下列兩份「帶坑痕」的 Preset，坑痕存活的 4 秒內，
+   站在坑上的敵人每 0.5 秒受一次傷害。判斷依據是這顆隕石實際解析到的受擊特效，
+   所以表格換了受擊特效，坑與傷害就一起跟著走，不會出現「有坑沒傷害」或「有傷害沒坑」。
+   坑痕畫面由 Preset 的 impact-ground-* 圖層自己播（壽命 4 秒＝SG_CRATER_SEC），這裡只算傷害，不另送特效。 */
+var SG_CRATER_BY_PRESET = {
+  'burst-meteor-inferno': { elem: 'fire', name: '熔岩坑' },
+  'hit-thunderfall-impact': { elem: 'lightning', name: '雷電坑' }
+};
+var SG_CRATER_PCT = 100;   // 每拍傷害＝這顆隕石傷害值的 %
+var SG_CRATER_GAP = 0.5;   // 作用間隔（秒）
+var SG_CRATER_SEC = 4;     // 持續時間；與 Preset 坑痕圖層的 duration 一致
+
+function sgSpawnMeteorCrater(m, pos, roles) {
+  var def = roles && SG_CRATER_BY_PRESET[roles.hit];
+  if (!def || !pos || !(m.radius > 0) || !(m.dmgVal > 0) || !SKILL2_RT ||
+      SKILL2_RT.grounds.length >= SG_GROUND_MAX_FIELDS) return;
+  sgSpawnGround(m.pEnt, m.st, m.gid, {
+    kind: 'meteorcrater', from: pos, floatSel: m.floatSel, radius: m.radius,
+    dmgVal: m.dmgVal * SG_CRATER_PCT / 100, hitElem: def.elem, subType: def.name,
+    hits: Math.max(1, Math.round(SG_CRATER_SEC / SG_CRATER_GAP)), gap: SG_CRATER_GAP
+  });
+}
+
 /* 殞石落地時才結算命中，讓 Worker 的血量快照、血條與傷害飄字同時更新。
    施放時只鎖定落點目標；victims 不在此建立，等待 at 到期後才重新查詢範圍。
    extra（選填）＝天降打擊佇列的泛用欄位：gid／特效變體／落地回呼／每目標傷害加成，
@@ -4317,6 +4340,11 @@ function sgTickMeteors(ctx) {
         fxKind: 'impact', variant: m.variant, elem: m.elem, area: landingArea,
         vfxTier: m.vfxTier, vfxUlt: m.vfxUlt, vfxGid: m.vfxGid, vfxBase: m.vfxBase, vfxRoles: m.vfxRoles, preserveDeadTargets: true
       });
+    }
+    if (landingArea && !chainCancelled && !m.quiet) {
+      sgSpawnMeteorCrater(m, m.fixedPos || bfPos(m.target), sgVfxRoles(m.gid, {
+        vfxTier: m.vfxTier, vfxUlt: m.vfxUlt, vfxGid: m.vfxGid, vfxBase: m.vfxBase, vfxRoles: m.vfxRoles
+      }));
     }
     if (m.onImpact) m.onImpact(m, victims, ctx, hitVictims);
     if (ctx.onDamage && m.out.dmg > before) ctx.onDamage(m.out.dmg - before);
@@ -4944,6 +4972,7 @@ function sgSpawnGround(pEnt, st, gid, cfg) {
     /* 場域傷害的屬性覆寫（比照環繞場域的 hitElem）：留白＝沿用群組層屬性。
        物理群組要打出風系段（逐風者的龍捲風）時就靠這一欄。 */
     hitElem: cfg.hitElem || null,
+    subType: cfg.subType || null,
     hits: Math.max(1, Math.floor(Number(cfg.hits) || 1)),
     hitsLeft: Math.max(1, Math.floor(Number(cfg.hits) || 1)),
     gap: gap,
@@ -5393,7 +5422,7 @@ function sgGroundTick(f, enemies, ctx) {
     sgSpawnFirePool(f.pEnt, f.st, f.gid, f.trail, f.floatSel, null, f.pos);
   }
   // 到期拍仍結算最後一次傷害；畫面不再續命，避免零秒被事件預設時長延長。
-  if (!(f.kind === 'firepool' && f.expiresAt > 0 && GT >= f.expiresAt)) {
+  if (f.kind !== 'meteorcrater' && !(f.kind === 'firepool' && f.expiresAt > 0 && GT >= f.expiresAt)) {
     sgEmitVfx(f.gid, victims, f.floatSel, sgGroundVfxSpec(f));
   }
   if (!victims.length) return;
