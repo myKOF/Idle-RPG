@@ -11000,16 +11000,28 @@ body.battle-canvas-mode #combat-area .battle-scene-wrapper > #btn-toggle-damage 
   pointer-events: none;
 }
 
+/* 開啟時要一眼看得出來：實心琥珀底＋深色圖示＋呼吸光暈 */
 #btn-toggle-perf.is-on {
-  border-color: #f59e0b;
-  color: #f59e0b;
-  box-shadow: 0 0 5px rgba(245, 158, 11, 0.55);
+  /* 主題樣式表（ashen-forge*.css）對 .damage-toggle-btn 的底色與字色是 !important，要蓋過去 */
+  background: #f59e0b !important;
+  border-color: #fde68a !important;
+  color: #1f1300 !important;
   opacity: 1;
+  animation: perf-btn-glow 2s ease-in-out infinite;
 }
 
 #btn-toggle-perf.is-on:hover {
-  background: rgba(245, 158, 11, 0.2);
-  color: #fbbf24;
+  background: #fbbf24 !important;
+  color: #1f1300 !important;
+}
+
+@keyframes perf-btn-glow {
+  0%, 100% { box-shadow: 0 0 4px rgba(245, 158, 11, 0.6); }
+  50% { box-shadow: 0 0 11px rgba(251, 191, 36, 0.95); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #btn-toggle-perf.is-on { animation: none; box-shadow: 0 0 8px rgba(245, 158, 11, 0.85); }
 }
 
 /* 內部版本戰鬥區 FPS 顯示：固定在左上角（敵情與傷害數字開關下方） */

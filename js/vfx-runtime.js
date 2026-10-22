@@ -654,6 +654,16 @@ var VFXRuntime = (function () {
           var floor = JSON.parse(JSON.stringify(p)), burst = JSON.parse(JSON.stringify(p));
           floor.id += '-impact-ground'; floor.layers = craterLayers;
           burst.id += '-impact-burst'; burst.layers = burst.layers.filter(function(l) { return l.id.indexOf('impact-ground-') !== 0; });
+          /* 變形（deformation）點名的是原本那份的圖層；拆成兩份後各自只剩一部分，
+             點到不在自己這份的圖層會被 Core 判成不合法，整個 boot 失敗＝全場退回舊畫法
+             （2026-10-22：使用者在 hit-thunderfall-impact 加了 ground-fork 變形後發生）。
+             所以每份只留自己有的圖層，一個都沒有就整段拿掉。 */
+          [floor, burst].forEach(function (part) {
+            if (!part.deformation || !Array.isArray(part.deformation.layers)) return;
+            var ids = part.layers.map(function (l) { return l && l.id; });
+            part.deformation.layers = part.deformation.layers.filter(function (id) { return ids.indexOf(id) >= 0; });
+            if (!part.deformation.layers.length) delete part.deformation;
+          });
           floor.duration = Core.derivePresetDuration(floor);
           if (burst.layers.length) burst.duration = Core.derivePresetDuration(burst);
           impactGroundParts[p.id] = { ground: floor.id, burst: burst.layers.length ? burst.id : null };
@@ -2498,7 +2508,12 @@ var VFXRuntime = (function () {
         });
         var ids = collectPresetIds();
         return loadPresets(ids, opts.presetBase).then(function (presets) {
-          adapter.registerPresets(presets);
+          /* 一份不合法的 preset 不該讓整場特效全部退回舊畫法（舊畫法不涵蓋新特效）：
+             逐份註冊，壞的大聲報錯並略過，只有那一個特效缺席。 */
+          presets.forEach(function (p) {
+            try { adapter.registerPresets([p]); }
+            catch (e) { console.error('[vfx-runtime] preset「' + p.id + '」註冊失敗，已略過：', e && e.message ? e.message : e); }
+          });
           return adapter;
         });
       })

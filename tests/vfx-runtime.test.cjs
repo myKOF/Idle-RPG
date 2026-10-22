@@ -2328,3 +2328,21 @@ test('THUNDER-MATRIX 雷幕電柱逐拍續命不堆疊，停送及清場回收',
   assert(billboard.nodes.every(n=>!n.visible),'死亡／清場同步移除電柱');
  }
 });
+
+/* 2026-10-22：落地特效的坑痕（impact-ground-*）會被拆成地板／爆炸兩份。原本那份的
+   deformation 點名的圖層拆開後各剩一部分，點到不在自己這份的圖層會讓 Core 判不合法，
+   整個 boot 失敗＝全場退回舊畫法。 */
+test('落地特效拆成地板／爆炸兩份時，deformation 只留各自擁有的圖層', () => {
+  const flat = (id) => ({ id, type: 'sprite', assetId: id + '.png', zIndex: 0, scale: { x: 1, y: 1 }, perspective: false });
+  const preset = {
+    schemaVersion: 1, id: 'split-with-deform', duration: 1, loop: false,
+    layers: [flat('impact-ground-crater'), flat('ground-fork-0'), flat('ground-fork-1')],
+    deformation: { axis: 'x', start: -100, end: 100, amplitude: 5, widthJitter: 0.05, mirror: true,
+      layers: ['ground-fork-0', 'ground-fork-1'] }
+  };
+  assert.doesNotThrow(() => makeAdapter([preset]));
+  const { adapter } = makeAdapter([preset]);
+  // 本體＋地板＋爆炸三份都註冊成功
+  assert.ok(adapter.has('split-with-deform-impact-ground'));
+  assert.ok(adapter.has('split-with-deform-impact-burst'));
+});
