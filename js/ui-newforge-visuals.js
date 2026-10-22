@@ -41,12 +41,14 @@ var NewForgeVisuals = (function () {
     });
   }
   // 最右端出現；若前一件尚未離開入口，排在它後面一格，避免重疊。
-  function spawnX(state, width, incoming) {
+  // 起點只在一輪更新開頭算一次（base），同輪新件依序再各加一格；
+  // 若每件都重算，剛建立的新件會被當成「既有件」，整批大量入帶時間距會逐件加大。
+  function spawnBase(state, width) {
     var edge = width;
     state.entries.forEach(function (e) {
-      if (!e.exiting && !e.pendingEnter) edge = Math.max(edge, position(e, state.time) + pitch);
+      if (!e.exiting && !e.pendingEnter) edge = Math.max(edge, e.to, position(e, state.time) + pitch);
     });
-    return edge + incoming * pitch;
+    return edge;
   }
   function makeChip(item) {
     var holder = document.createElement('div');
@@ -104,9 +106,19 @@ var NewForgeVisuals = (function () {
   }
   function render(state, reduce) {
     var moving = false;
-    state.entries.forEach(function (entry, key) {
+    // 帶上裝備由帶頭往帶尾排列；後一件至少落在前一件右側一格，趕上時貼齊排隊、永不重疊。
+    var lead = -Infinity;
+    var order = [];
+    state.entries.forEach(function (entry, key) { order.push([key, entry]); });
+    order.sort(function (a, b) { return a[1].to - b[1].to; });
+    order.forEach(function (pair) {
+      var key = pair[0], entry = pair[1];
       if (reduce) { entry.from = entry.to; entry.at = state.time; entry.duration = 1; }
       var x = reduce ? entry.to : position(entry, state.time);
+      if (!entry.exiting) {
+        if (x < lead + pitch) x = lead + pitch;
+        lead = x;
+      }
       entry.node.style.transform = 'translate3d(' + x.toFixed(2) + 'px,-50%,0)';
       if (entry.exiting && (reduce || state.time >= entry.at + entry.duration)) {
         entry.node.remove(); state.entries.delete(key);
@@ -175,26 +187,37 @@ var NewForgeVisuals = (function () {
     state.enabled = !!fu.enabled;
     state.visible = node.clientWidth > 0 && state.inView !== false;
     var width = node.clientWidth;
+    // 離開分頁（或捲出畫面）期間帶上若有貨，回來時舊件早已被消耗；
+    // 不播「舊件左退＋新件從右慢慢走進來」，而是直接以目前帶上內容鋪滿，維持離開前的滿帶外觀。
+    var here = !!width && state.visible && active();
+    if (!here) { if (state.entries.size) state.away = true; }
     if (!width) return;
+    var snap = false;
+    if (here && state.away) {
+      state.away = false; snap = true;
+      state.entries.forEach(function (entry) { entry.node.remove(); });
+      state.entries.clear();
+    }
     var items = (fu.belt || []).slice(0, NEW_FORGE_BELT_SHOW);
     var keys = keysFor(items), live = new Set(keys);
     var max = Math.max(1, Math.floor((width + 4) / pitch));
     var cycle = Math.max(.01, Number(fu.cycleDurationSec) || NEW_FORGE_INTERVAL);
-    var shown = new Set(), incoming = 0;
+    var shown = new Set(), incoming = 0, base = spawnBase(state, width);
+    state.hidden = Math.max(0, items.length - max);
     items.slice(0, max).forEach(function (item, i) {
       var key = keys[i], entry = state.entries.get(key);
       shown.add(key);
       if (!entry) {
         var chip = makeChip(item);
         chip.setAttribute('data-nf-item-id', item.id === undefined ? key : String(item.id));
-        var origin = spawnX(state, width, incoming++);
+        var origin = snap ? i * pitch : base + incoming++ * pitch;
         chip.style.transform = 'translate3d(' + origin + 'px,-50%,0)';
         node.appendChild(chip);
         entry = { node: chip, from: origin, to: i * pitch, at: state.time, duration: travelMs(origin - i * pitch, cycle),
           pendingEnter: !state.visible || !active() };
         state.entries.set(key, entry);
       } else if (entry.pendingEnter && state.visible && active()) {
-        entry.from = spawnX(state, width, incoming++);
+        entry.from = base + incoming++ * pitch;
         entry.to = i * pitch;
         entry.at = state.time;
         entry.duration = travelMs(entry.from - entry.to, cycle);
@@ -224,5 +247,10 @@ var NewForgeVisuals = (function () {
       states.forEach(function (state) { if (state.node.isConnected) update(state.node, state.view); });
     });
   }
-  return { update: update };
+  // 帶上放不下、被收起未畫的件數（供 +N 佇列計數加總）
+  function hiddenCount(id) {
+    var state = states.find(function (s) { return s.id === id; });
+    return state && state.hidden ? state.hidden : 0;
+  }
+  return { update: update, hiddenCount: hiddenCount };
 })();

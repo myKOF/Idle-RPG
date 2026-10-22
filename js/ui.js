@@ -1910,6 +1910,39 @@ function setDamageNumbersEnabled(enabled, quiet) {
   }
 }
 
+/* ---- 效能模式（傷害數字開關右側的閃電鈕）----
+   給電腦較吃力的玩家：Canvas 戰場的特效物件上限降低，Preset 命中特效的密度固定在下限
+   （併發上限、限頻、全場上限、拖尾變疏全部提早介入）。只縮放同一套特效，不是另一套美術。 */
+var UI_PERF_MODE = false;
+try {
+  UI_PERF_MODE = localStorage.getItem('setting_perf_mode') === '1';
+} catch (e) {}
+
+function updatePerfToggleButton() {
+  var btn = $id('btn-toggle-perf');
+  if (!btn) return;
+  btn.classList.toggle('is-on', UI_PERF_MODE);
+  btn.setAttribute('data-tt-title', UI_PERF_MODE ? '效能模式：開' : '效能模式：關');
+  btn.setAttribute('data-tt-desc', UI_PERF_MODE
+    ? '已降低同屏特效數量與密度，適合電腦較吃力時使用（點擊恢復一般畫質）'
+    : '一般畫質（點擊切換為效能模式：減少同屏特效，畫面較簡潔但更流暢）');
+  if (typeof refreshOpenStatTooltip === 'function') refreshOpenStatTooltip();
+}
+
+function applyPerfMode() {
+  if (typeof BattleRenderer !== 'undefined' && BattleRenderer.setPerfMode) BattleRenderer.setPerfMode(UI_PERF_MODE);
+  updatePerfToggleButton();
+}
+
+function setPerfModeEnabled(enabled, quiet) {
+  UI_PERF_MODE = !!enabled;
+  try { localStorage.setItem('setting_perf_mode', UI_PERF_MODE ? '1' : '0'); } catch (e) {}
+  applyPerfMode();
+  if (!quiet && typeof blog === 'function') {
+    blog(UI_PERF_MODE ? '⚡ 已開啟效能模式（減少同屏特效）' : '⚡ 已關閉效能模式', 'info');
+  }
+}
+
 function clearActiveDamageFloats() {
   var floats = document.querySelectorAll ? document.querySelectorAll('.float-txt, .float-layer > *') : [];
   for (var i = 0; i < floats.length; i++) {
@@ -6626,18 +6659,22 @@ function nfUpdateBelts(list, snapshot) {
   for (var m = 0; m < mores.length; m++) {
     var moreNode = mores[m];
     var moreFu = newForgeViewFurnace(snapshot, parseInt(moreNode.getAttribute('data-nf-more'), 10));
-    var wait = moreFu
+    var queued = moreFu
       ? (moreFu.queueCount !== undefined ? moreFu.queueCount : (moreFu.queue ? moreFu.queue.length : 0))
       : 0;
+    // 帶上放不下而收起的件數也算排隊：大量裝備湧入時，帶上只畫得下一屏，其餘等在帶尾。
+    var overflow = moreFu ? NewForgeVisuals.hiddenCount(moreFu.id) : 0;
+    var wait = queued + overflow;
     var text = wait > 0 ? '+' + (wait > 9999 ? '9999' : wait) : '';
+    var tip = wait > 0
+      ? '此熔爐排隊中：' + fmtFull(wait) + ' 件（帶上放不下 ' + fmtFull(overflow) + '＋專屬佇列 ' + fmtFull(queued) + '，依序進入傳送帶）'
+      : '';
     if (moreNode._nfMoreText !== text) {
       moreNode._nfMoreText = text;
       moreNode.textContent = text;
-      if (wait > 0) moreNode.setAttribute('data-tip', '此熔爐專屬佇列：' + fmtFull(wait) + ' 件（自總佇列派發，等待進入傳送帶）');
-      else moreNode.removeAttribute('data-tip');
-    } else if (wait > 0) {
-      moreNode.setAttribute('data-tip', '此熔爐專屬佇列：' + fmtFull(wait) + ' 件（自總佇列派發，等待進入傳送帶）');
     }
+    if (tip) moreNode.setAttribute('data-tip', tip);
+    else moreNode.removeAttribute('data-tip');
   }
 }
 
@@ -11813,6 +11850,15 @@ function initUI() {
     toggleDamageBtn.addEventListener('click', function (e) {
       e.stopPropagation();
       setDamageNumbersEnabled(!isDamageNumbersEnabled());
+    });
+  }
+
+  var togglePerfBtn = $id('btn-toggle-perf');
+  if (togglePerfBtn) {
+    applyPerfMode();
+    togglePerfBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      setPerfModeEnabled(!UI_PERF_MODE);
     });
   }
 

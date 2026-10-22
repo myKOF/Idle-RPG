@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "hit-thunderfall-impact",
-  "duration": 0.95,
+  "duration": 4,
   "loop": false,
   "deformation": {
     "amplitude": 9.447,
@@ -21,6 +21,108 @@
     "widthJitter": 0.07
   },
   "layers": [
+    {
+      "id": "impact-ground-crater",
+      "type": "sprite",
+      "assetId": "codex-authored/thunder/crater-thunder-body.png",
+      "zIndex": -2,
+      "scale": {
+        "x": 0.56,
+        "y": 0.56
+      },
+      "alpha": 0.92,
+      "blendMode": "normal",
+      "duration": 4,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.03,
+          1
+        ],
+        [
+          0.78,
+          0.95
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "impact-ground-glow",
+      "type": "sprite",
+      "assetId": "codex-authored/thunder/crater-thunder-glow.png",
+      "zIndex": -1,
+      "scale": {
+        "x": 0.56,
+        "y": 0.56
+      },
+      "alpha": 0.9,
+      "blendMode": "add",
+      "duration": 4,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.02,
+          1
+        ],
+        [
+          0.08,
+          0.55
+        ],
+        [
+          0.14,
+          1
+        ],
+        [
+          0.22,
+          0.5
+        ],
+        [
+          0.3,
+          0.95
+        ],
+        [
+          0.4,
+          0.6
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          0.6,
+          0.55
+        ],
+        [
+          0.7,
+          0.85
+        ],
+        [
+          0.85,
+          0.5
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
     {
       "id": "ground-plasma",
       "type": "sprite",

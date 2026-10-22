@@ -17,6 +17,8 @@ var VFXPixiBackend = (function () {
      因此參照計數放在模組層級，只有最後一個使用者才真的卸載。 */
   var textureRefs = Object.create(null);
 
+  var TEXTURE_RETRY_MAX = 3;          // 同一張貼圖載入失敗後最多再試幾次
+  var TEXTURE_RETRY_GAP_MS = 5000;    // 兩次嘗試之間至少隔多久（也避免每建一個節點就重打一次網路）
   function retainTexture(url) {
     textureRefs[url] = (textureRefs[url] || 0) + 1;
   }
@@ -92,10 +94,8 @@ var VFXPixiBackend = (function () {
     function getTexture(url, onReady) {
       if (destroyed) return;                     // 已經 release 完畢，不能再 retain
       var entry = entries[url];
-      if (!entry) {
-        entry = { state: 'loading', texture: null, promise: null };
-        entries[url] = entry;
-        retainTexture(url);                      // 與 entry 一對一
+      function startLoad() {
+        entry.state = 'loading';
         entry.promise = PixiLib.Assets.load(url).then(function (tex) {
           entry.state = 'ready';
           entry.texture = tex;
@@ -103,15 +103,28 @@ var VFXPixiBackend = (function () {
         }, function (err) {
           // 載不到就記錄下來，不 silent fallback 成空白讓人以為特效壞了卻查不到原因
           entry.state = 'failed';
+          entry.fails++;
+          entry.failedAt = Date.now();
           pendingErrors.push({ url: url, message: String(err && err.message || err) });
           return null;
         });
+      }
+      if (!entry) {
+        entry = { state: 'loading', texture: null, promise: null, fails: 0, failedAt: 0 };
+        entries[url] = entry;
+        retainTexture(url);                      // 與 entry 一對一
+        startLoad();
+      } else if (entry.state === 'failed' && entry.fails < TEXTURE_RETRY_MAX &&
+                 Date.now() - entry.failedAt >= TEXTURE_RETRY_GAP_MS) {
+        /* 瀏覽器分頁剛被喚醒時網路常有一陣子不通；暫時性失敗若永遠不重試，
+           那張貼圖的特效就一直缺到重開遊戲。間隔拉開、次數有限，已 retain 過所以不再 retain。 */
+        startLoad();
       }
       if (entry.state === 'ready') {
         if (!destroyed) onReady(entry.texture);
         return;
       }
-      if (entry.state === 'failed') return;      // 已知失敗：不重試、也不再 retain
+      if (entry.state === 'failed') return;      // 已知失敗：冷卻中或次數用完，不再 retain
       entry.promise.then(function (tex) { if (tex && !destroyed) onReady(tex); });
     }
 

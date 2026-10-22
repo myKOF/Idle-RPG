@@ -247,7 +247,7 @@ var VFXRuntime = (function () {
     var cfg = {};
     for (var k in DENSITY) cfg[k] = DENSITY[k];
     if (over) for (var k2 in over) cfg[k2] = over[k2];
-    var ema = 1 / 60, q = 1;
+    var ema = 1 / 60, q = 1, locked = false;   // locked＝效能模式：密度固定在下限，不看幀時間
     return {
       step: function (dt) {
         if (!(dt > 0)) return q;                    // 暫停（dt = 0）不算
@@ -258,7 +258,8 @@ var VFXRuntime = (function () {
         q = Math.max(cfg.min, Math.min(1, q));
         return q;
       },
-      quality: function () { return q; },
+      quality: function () { return locked ? cfg.min : q; },
+      lock: function (on) { locked = !!on; },
       floor: function () { return cfg.min; },       // 密度下限；其他降級依 (q - floor)/(1 - floor) 換算「降到多深」
       frameMs: function () { return ema * 1000; }
     };
@@ -2248,6 +2249,9 @@ var VFXRuntime = (function () {
       clearFields: clearFields,
       clear: clear,
       destroy: destroy,
+      /* 效能模式：把命中類密度固定在下限（併發上限、限頻、全場上限、拖尾密度都依它換算）。
+         與自適應不同，不等畫面吃緊才介入；關掉後回到自適應。測試塞的調節器沒有 lock 就略過。 */
+      setPerfMode: function (on) { if (governor.lock) governor.lock(on); },
       stats: function () {
         return {
           presets: Object.keys(known).length,
@@ -2317,15 +2321,25 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20261021-missile-soft-cone';
+  var DATA_VERSION = '20261022-thunder-crater';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';
-    return Promise.all(ids.map(function (id) {
+    /* 網路暫時不通（分頁剛被喚醒時常見）或伺服器 5xx 才重試；404 是表格引用了不存在的檔，
+       重試沒有用。少載一份 preset 不會報錯、只會讓那個特效靜默不出現，所以值得多試幾次。 */
+    function fetchOne(id, left) {
       return fetch(prefix + id + '.json?v=' + DATA_VERSION, { cache: 'no-store' })
-        .then(function (r) { return r.ok ? r.json() : null; })
-        .catch(function () { return null; });
-    })).then(function (list) {
+        .then(function (r) {
+          if (r.ok) return r.json();
+          if (r.status >= 500 && left > 0) return retryLater(id, left);
+          return null;
+        })
+        .catch(function () { return left > 0 ? retryLater(id, left) : null; });
+    }
+    function retryLater(id, left) {
+      return new Promise(function (res) { setTimeout(res, 800); }).then(function () { return fetchOne(id, left - 1); });
+    }
+    return Promise.all(ids.map(function (id) { return fetchOne(id, 2); })).then(function (list) {
       return list.filter(function (p) { return p && p.id; });
     });
   }
@@ -2368,7 +2382,10 @@ var VFXRuntime = (function () {
           return adapter;
         });
       })
-      .catch(function () { return null; });
+      .catch(function (err) {
+        console.warn('[vfx-runtime] boot 失敗：', err && err.message ? err.message : err);
+        return null;
+      });
   }
 
   return {

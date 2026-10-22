@@ -8,7 +8,7 @@
   <link rel="icon" href="images/icon_avatar.png" type="image/png">
   <link rel="preload" as="image" href="images/ui/gem-resonance/hex-backplate.png" fetchpriority="low">
   <link rel="preload" as="image" href="images/ui/heaven-power/dark-gold-seal.png?v=1" fetchpriority="low">
-  <link rel="stylesheet" href="css/style.css?v=1.0.91">
+  <link rel="stylesheet" href="css/style.css?v=1.0.92">
   <link rel="stylesheet" href="css/inventory-offset.css">
   <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.91">
   <link rel="stylesheet" href="css/ashen-forge-flat.css?v=1.0.3">
@@ -622,6 +622,9 @@
             <svg class="icon-eye-open" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
             <svg class="icon-eye-closed" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
           </button>
+          <button id="btn-toggle-perf" class="info-btn damage-toggle-btn" type="button" aria-label="效能模式開關" data-tt-title="效能模式" data-tt-desc="目前為一般畫質（點擊切換為效能模式）">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+          </button>
           <div id="battle-fps" class="battle-fps-counter" style="display:none;" aria-hidden="true"></div>
           <div id="battle-frenzy" style="position:absolute;right:12px;top:44px;z-index:12;color:white;font-weight:bold;pointer-events:auto;cursor:help;text-shadow:0 1px 3px #000" data-tt-title="狂暴化" data-tt-desc="敵人在場上存在時間越久會逐漸提升其強度">狂暴化：0%</div>
           <!-- Canvas 戰鬥模式（js/battle-renderer.js）：PixiJS 畫布動態插入為第一個子節點。
@@ -939,12 +942,13 @@
          special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/util.js?v=1.0.3"></script>
   <script src="js/ui-scale.js?v=1.0.1"></script>
-  <script src="js/data.js?v=1.0.95"></script>
+  <script src="js/data.js?v=1.0.96"></script>
   <script src="js/status.js?v=1.0.41"></script>
   <script src="js/runeword_data.js?v=1.0.17"></script>
   <script src="js/gem_resonance_data.js?v=1.0.1"></script>
   <script src="js/formula.js?v=1.0.68"></script>
-  <script src="js/battlefield.js?v=1.4.14"></script>
+  <script src="js/battle-terrain.js?v=1.0.0"></script>
+  <script src="js/battlefield.js?v=1.4.16"></script>
   <script src="js/game-clock.js?v=1.0.1"></script>
   <script src="js/vfx.js?v=1.0.82"></script>
   <!-- PixiJS（本地 vendor，零建置專案不用 CDN）＋ Canvas 戰鬥渲染器。
@@ -955,26 +959,26 @@
        必須在 battle-renderer 之前載入：它的 init() 會直接組裝這三支。 -->
   <script src="js/vfx-water-tornado.js?v=1.0.4"></script>
   <script src="js/vfx-core.js?v=20261021-meteor-aftermath"></script>
-  <script src="js/vfx-pixi-backend.js?v=20261007-deform-prep"></script>
-  <script src="js/vfx-runtime.js?v=1.0.226"></script>
+  <script src="js/vfx-pixi-backend.js?v=20261022-tex-retry"></script>
+  <script src="js/vfx-runtime.js?v=1.0.228"></script>
   <!-- 高塔的第二個 Pixi 疊層：卡片版面沒有座標，尺寸規則也另立一組（見檔頭）。 -->
   <script src="js/vfx-tower.js?v=1.0.3"></script>
   <!-- 戰場地形裝飾（地面色塊／擺件／天氣）：battle-renderer 的 init() 會建立它。
        decor-sculpt 是它的程序化浮雕繪圖（塑形＋打光），必須先載入。 -->
   <script src="js/decor-sculpt.js?v=1.0.0"></script>
   <script src="js/decor-nature.js?v=1.0.9"></script>
-  <script src="js/battle-decor.js?v=1.0.23"></script>
+  <script src="js/battle-decor.js?v=1.0.24"></script>
   <!-- 封魔塔魔王祭壇（BOSS 戰專用場景）：沿用 battle-decor 的繪圖工具，battle-renderer 的 init() 會建立它。 -->
   <script src="js/battle-arena.js?v=1.0.6"></script>
   <script src="js/battle-elite.js?v=1.0.7"></script>
-  <script src="js/battle-renderer.js?v=1.6.194"></script>
+  <script src="js/battle-renderer.js?v=1.6.196"></script>
   <script src="js/stats.js?v=1.0.4"></script>
   <script src="js/item.js?v=1.0.25"></script>
   <script src="js/gem_resonance.js?v=1.0.3"></script>
   <script src="js/runeword.js?v=1.0.15"></script>
   <script src="js/skills.js?v=1.0.43"></script>
   <!-- 新版主動技能系統（2026-08-13 技能改造第一批）：定義表＋引擎＋純函式說明 -->
-  <script src="js/skills2.js?v=1.0.353"></script>
+  <script src="js/skills2.js?v=1.0.355"></script>
   <script src="js/elite_data.js?v=1.0.7"></script>
   <script src="js/talents.js?v=1.0.8"></script>
   <script src="js/player.js?v=1.0.17"></script>
@@ -982,11 +986,11 @@
   <script src="js/tower.js?v=1.0.33"></script>
   <script src="js/save.js?v=1.0.21"></script>
   <script src="js/ui-inventory-skin.js?v=1.0.1"></script>
-  <script src="js/ui.js?v=1.0.190"></script>
+  <script src="js/ui.js?v=1.0.192"></script>
   <script src="js/ui-runeword.js?v=1.0.12"></script>
   <script src="js/ui-gem-resonance.js?v=1.0.15"></script>
   <script src="js/ui-gem-workshop.js?v=1.0.0"></script>
-  <script src="js/ui-newforge-visuals.js?v=1.0.4"></script>
+  <script src="js/ui-newforge-visuals.js?v=1.0.6"></script>
   <script src="js/param_autoreload.js"></script>
   <!-- GM 面板。指令執行層在 js/gm_exec.js，由 Worker importScripts 載入 -->
   <script src="js/gm.js?v=1.0.1"></script>

@@ -163,3 +163,36 @@ test('高速熔爐在入場途中消耗裝備，仍完成可見的右至左路�
   assert.ok(h.x(h.entries()[0]) > 0 && h.x(h.entries()[0]) < 352);
   h.step(1000); assert.equal(h.entries().length, 0, '已消耗的演出節點最終必須清除');
 });
+
+test('大量裝備一次入帶：同批新件逐格貼齊，不重疊也不逐件拉大間距', () => {
+  const h = harness(); h.fu.belt = Array.from({ length: 30 }, (_, i) => ({ id: 'm' + i }));
+  h.update();
+  const xs = h.entries().map(e => h.x(e));
+  for (let i = 1; i < xs.length; i++) assert.equal(xs[i] - xs[i - 1], 44, '入場起點逐件相隔一格');
+  for (let k = 0; k < 30; k++) {
+    h.step(120); h.fu.belt.shift(); h.fu.belt.push({ id: 'n' + k }); h.update();
+    const now = h.entries().map(e => h.x(e)).sort((a, b) => a - b);
+    for (let i = 1; i < now.length; i++) assert.ok(now[i] - now[i - 1] >= 44 - 1e-6, '相鄰裝備不得重疊：' + now.join(','));
+  }
+});
+
+test('帶上放不下的件數由 hiddenCount 回報，供 +N 排隊數加總', () => {
+  const h = harness(); h.fu.belt = Array.from({ length: 30 }, (_, i) => ({ id: 'q' + i }));
+  h.update();
+  const shown = h.entries().length;
+  assert.ok(shown < 30);
+  assert.equal(h.context.NewForgeVisuals.hiddenCount(1), 30 - shown);
+  h.fu.belt = [{ id: 'q0' }]; h.update();
+  assert.equal(h.context.NewForgeVisuals.hiddenCount(1), 0);
+});
+
+test('離開分頁再切回：帶上原本滿的，回來直接鋪滿目前內容，不清空重走', () => {
+  const h = harness(); h.fu.belt = Array.from({ length: 30 }, (_, i) => ({ id: 'a' + i })); h.update(); h.step(3000);
+  const full = h.entries().length; assert.ok(full >= 8);
+  h.context.UI.tab = 'skills'; h.node.clientWidth = 0; h.update(); h.step(100);
+  h.fu.belt = Array.from({ length: 30 }, (_, i) => ({ id: 'b' + i }));
+  h.context.UI.tab = 'newforge'; h.node.clientWidth = 352; h.update();
+  const now = h.entries();
+  assert.equal(now.length, full);
+  now.forEach((e, i) => assert.equal(h.x(e), i * 44, '回來即在定位'));
+});

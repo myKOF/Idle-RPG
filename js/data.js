@@ -2129,6 +2129,7 @@ var BF_RANGED_RANGE = 320;     // 魔法系敵人的預設攻擊距離（NPC 表
 var BF_RANGED_STOP_RATIO = 0.92; // 遠程敵人停在射程的這個比例處站樁開火
 var BF_BODY_RADIUS = 20;       // 一般敵人的體型半徑
 var BF_BOSS_RADIUS = 52;       // BOSS 體型半徑（邊緣較早進入接觸距離）
+var BF_OBSTACLE_MIN_M = 12;    // 地形障礙門檻（米）：野外擺件底座寬 ≥ 這麼多才擋路與擋近戰，見 js/battle-terrain.js
 
 /* ---- 出怪間隔（參數表「表-固定參數／出怪間隔」一列兩個值）----
    a＝同一關內每一波的間隔、b＝切換到下一關（或換地圖）之後的間隔。

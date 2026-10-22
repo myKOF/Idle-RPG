@@ -6,6 +6,8 @@
       "id": "hit-thunderfall-impact",
       "name": "hit-thunderfall-impact",
       "layerIds": [
+        "impact-ground-crater",
+        "impact-ground-glow",
         "ground-plasma",
         "shockwave-outer",
         "impact-core",

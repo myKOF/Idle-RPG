@@ -1607,7 +1607,7 @@ var BattleDecor = (function () {
   };
   /* 背景建圖 Worker（相對於 index.html）。改了 decor-sculpt／decor-nature／battle-decor 要一起更新
      這裡的版本與 Worker 檔內 importScripts 的版本字串，否則 Worker 會吃到快取的舊畫法。 */
-  var ATLAS_WORKER_URL = 'js/worker/decor-atlas.worker.js?v=1.0.14';
+  var ATLAS_WORKER_URL = 'js/worker/decor-atlas.worker.js?v=1.0.15';
   var VARIANTS = 3;          // 每種擺件／地面裝飾畫幾個變體
   var TEX_SCALE = 1.5;       // 圖集解析度（畫面放大或高 DPI 時仍清楚；開 mipmap 避免縮小時閃爍）
 
@@ -1736,6 +1736,10 @@ var BattleDecor = (function () {
   var STAGE_BAND = 10;           // 每 10 個階段換一帶，雙數帶是地下
   var PLAYER_FADE_ALPHA = 0.38;  // 擺件擋到玩家時的透明度
 
+  /* ?obstacles=1：把會擋路的佔地橢圓畫在地上（紅色），檢查「看到的岩石」跟「擋路的範圍」對不對得上 */
+  function obstacleDebugOn() {
+    try { return /[?&]obstacles=1(&|$)/.test(location.search); } catch (e) { return false; }
+  }
   function decorQueryMode() {
     try {
       var m = /[?&]decor=([^&]+)/.exec(location.search);
@@ -1765,6 +1769,7 @@ var BattleDecor = (function () {
     var mode = decorQueryMode();
     var enabled = mode !== '0' && mode !== 'off';
     var lite = mode === 'lite';
+    var debugObstacles = obstacleDebugOn() && !!PIXI.Graphics;
     var groundScale = opts.groundScale || 0.5;
     var decalLayer = opts.decalLayer;     // 地面平面（世界座標，scale.y = groundScale）
     var lightLayer = opts.lightLayer;     // 同上，加色光暈（火盆地面光）
@@ -1985,7 +1990,7 @@ var BattleDecor = (function () {
     function buildChunk(cx, cy) {
       var atlas = D.atlas;
       var r = mulberry(hash3(cx, cy, D.seedBase));
-      var chunk = { cx: cx, cy: cy, decals: [], props: [], flames: [], lights: [], emitters: [] };
+      var chunk = { cx: cx, cy: cy, decals: [], props: [], flames: [], lights: [], emitters: [], debug: [] };
       var x0 = cx * CHUNK_W, y0 = cy * CHUNK_H;
       var nDecal = lite ? 2 : 2 + Math.floor(r() * 2);
       for (var i = 0; i < nDecal; i++) {
@@ -2006,18 +2011,14 @@ var BattleDecor = (function () {
         (isLight ? chunk.lights : chunk.decals).push(s);
         if(d[0]==='puddle'&&(D.kitKey==='swamp'||D.kitKey==='Icefield'))chunk.emitters.push({key:cx+':'+cy+':d'+i,x:s.x,y:s.y,height:0,kind:D.kitKey==='swamp'?'gas':'frost',seed:hash3(cx,cy,i)});
       }
-      // 大型擺件每區塊 1～3 個（偶爾空一塊留白），再補 1～2 個矮的小碎物。
-      var nProp = lite ? (r() < 0.5 ? 1 : 0) : (r() < 0.12 ? 0 : (1 + Math.floor(r() * 2.6)));
-      var nSmall = lite ? 0 : 1 + Math.floor(r() * 2);
-      var smallList = atlas.props.map(function (p, idx) { return [idx, p[3] <= 60 ? p[1] : 0]; }).filter(function (x) { return x[1] > 0; });
-      // placed：[x, y, 橫向避讓, 縱向避讓]（世界單位）
-      var placed = [];
-      function placeProp(p, texKey, px, py, k) {
+      /* 擺件的位置、種類、縮放、翻面全由 BattleTerrain.layoutChunk 決定（純函式，模擬層擋路用的是同一份清單），
+         這裡只把清單變成精靈。大型擺件每區塊 1～3 個（偶爾空一塊留白）加 1～2 個矮的小碎物，地標約 14% 機率。 */
+      var items = BattleTerrain.layoutChunk(D.kitKey, D.deep, D.seedBase, cx, cy);
+      function placeProp(p, texKey, px, py, k, flip) {
         var ptex = texFor(texKey);
         if (!ptex) return null;
         var ps = takeSprite('prop', ptex, propLayer);
         ps.anchor.set(0.5, (p[3] - FOOT) / p[3]);
-        var flip = r() < 0.5 ? -1 : 1;
         var sc = (1 / TEX_SCALE) * k;   // 貼圖是 TEX_SCALE 倍解析度，畫面上的尺寸＝邏輯尺寸 × k
         ps.scale.set(sc * flip, sc);
         ps._bbX = sc * flip; ps._bbY = sc;   // 貼圖自己的縮放；每幀的透視抵銷以它為底（見 billboardChunks）
@@ -2048,34 +2049,32 @@ var BattleDecor = (function () {
         chunk.props.push(ps);
         return ps;
       }
-      // 地標先放（佔地大），其他擺件避開它
-      if (!lite && atlas.landmarks.length && r() < LANDMARK_CHANCE) {
-        var li = weightedPick(r, atlas.landmarks);
-        var L = atlas.landmarks[li];
-        var lx = x0 + range(r, 0.15, 0.85) * CHUNK_W, ly = y0 + range(r, 0.15, 0.85) * CHUNK_H;
-        if (placeProp(L, 'L' + li + '_' + Math.floor(r() * LANDMARK_VARIANTS), lx, ly, range(r, 0.95, 1.1))) {
-          placed.push([lx, ly, L[2] * 0.55 + 60, 200]);
-        }
+      if (debugObstacles) {
+        items.forEach(function (it0) {
+          it0.shapes.forEach(function (e) {
+            var dg = new PIXI.Graphics();
+            dg.ellipse(e[0], e[1], e[2], e[3]).fill({ color: 0xff3030, alpha: 0.28 }).stroke({ width: 2, color: 0xff3030, alpha: 0.9 });
+            decalLayer.addChild(dg);
+            chunk.debug.push(dg);
+          });
+        });
       }
-      for (var j = 0; j < nProp + nSmall; j++) {
-        var small = j >= nProp;
-        if (small && !smallList.length) break;
-        var pi = small ? smallList[weightedPick(r, smallList)][0] : weightedPick(r, atlas.props);
-        var p = atlas.props[pi];
-        var px = x0 + range(r, 0.06, 0.94) * CHUNK_W, py = y0 + range(r, 0.06, 0.94) * CHUNK_H;
-        var gapX = small ? 70 : 150, gapY = small ? 80 : 180;
-        var clash = placed.some(function (q) { return Math.abs(q[0] - px) < Math.max(gapX, q[2] || 0) && Math.abs(q[1] - py) < Math.max(gapY, q[3] || 0); });
-        if (clash) continue;
-        placed.push([px, py]);
-        var pk = range(r, 0.85, 1.15);
-        var ps = placeProp(p, 'p' + pi + '_' + Math.floor(r() * VARIANTS), px, py, pk);
+      for (var j = 0; j < items.length; j++) {
+        var it = items[j];
+        // 減量模式：只畫會擋路的障礙（看得到才不會被無形的東西擋住）與第一件
+        if (lite && !it.solid && j > 0) continue;
+        var isLm = it.src === 'L';
+        var p = isLm ? atlas.landmarks[it.idx] : atlas.props[it.idx];
+        if (!p) continue;
+        var px = it.x, py = it.y, pk = it.k;
+        var ps = placeProp(p, (isLm ? 'L' : 'p') + it.idx + '_' + it.variant, px, py, pk, it.flip);
         if (!ps) continue;
-        if (p[0] === 'brazier') {
-          var ftex = texFor('flame' + pi + '_0');
+        if (!isLm && p[0] === 'brazier') {
+          var ftex = texFor('flame' + it.idx + '_0');
           if (ftex) {
             var fl = takeSprite('flame', ftex, propLayer);
             fl._frames = [];
-            for (var ff = 0; ff < FLAME_FRAMES; ff++) fl._frames.push(texFor('flame' + pi + '_' + ff) || ftex);
+            for (var ff = 0; ff < FLAME_FRAMES; ff++) fl._frames.push(texFor('flame' + it.idx + '_' + ff) || ftex);
             fl.anchor.set(0.5, 1);
             fl.scale.set(1 / TEX_SCALE);
             fl.x = px;
@@ -2084,7 +2083,7 @@ var BattleDecor = (function () {
             fl._bbParent = ps; fl._bbOffY = fl.y - ps.y;   // 跟著火盆的矩陣走（見 billboardSprite）
             fl._bbX = fl._bbY = 1 / TEX_SCALE;
             fl.zIndex = ps.zIndex + 0.5;
-            fl._phase = r() * 10;
+            fl._phase = it.phase;
             fl._baseY = fl.y;
             chunk.flames.push(fl);
           }
@@ -2097,7 +2096,7 @@ var BattleDecor = (function () {
             lg.tint = flameTint(p[4]);
             lg.x = px; lg.y = py;
             lg.alpha = 0.5;
-            lg._phase = r() * 10;
+            lg._phase = it.phase * 0.7;
             chunk.lights.push(lg);
             chunk.flames.push(lg);
           }
@@ -2115,6 +2114,7 @@ var BattleDecor = (function () {
     }
 
     function releaseChunk(chunk) {
+      if (chunk.debug) chunk.debug.forEach(function (g) { if (g.parent) g.parent.removeChild(g); g.destroy(); });
       chunk.decals.forEach(function (s) { giveSprite('decal', s); });
       chunk.props.forEach(function (s) { giveSprite('prop', s); });
       chunk.flames.forEach(function (s) { if (s.blendMode === 'add') return; giveSprite('flame', s); });
@@ -2477,6 +2477,6 @@ var BattleDecor = (function () {
       particleDot: particleDot, particleFog: particleFog, FOOT: FOOT, TEX_SCALE: TEX_SCALE,
       billboardSprite: billboardSprite
     },
-    _internals: { mulberry: mulberry, hash3: hash3, CHUNK_W: CHUNK_W, CHUNK_H: CHUNK_H, planAtlas: planAtlas, stepAtlas: stepAtlas }
+    _internals: { mulberry: mulberry, hash3: hash3, CHUNK_W: CHUNK_W, CHUNK_H: CHUNK_H, planAtlas: planAtlas, stepAtlas: stepAtlas, LANDMARKS: LANDMARKS }
   };
 })();
