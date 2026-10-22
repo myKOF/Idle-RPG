@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## TALENT-LEVEL-NO-FRAME-20261022 — 威能圖示等級移除外框
+
+- Owner：Codex；Done，單一開發者。使用者要求威能icon上的等級數字不加外框；前置既有右下角等級標記可用。允許css/ashen-forge.css僅tlx-node-lv、index.html僅對應CSS快取、LV_upgrade_system.md及本段；禁止JS／數值／解鎖／配置／素材／其他副本，不合併推送；原Talents.xlsx與en-burst-storm修改保留。
+- 驗收：只保留右下角數字、清除框線與底框，文字保持可讀；隔離瀏覽器載正式CSS檢查1／10級及Console，既有威能回歸／Build／diff與自我Review後獨立Commit。後續使用者Review及正常整合。
+- 衝突：index與Claude b411b8e5同檔不同區段，對方formula快取、本次ashen-forge CSS快取，無語意相依；共同基底與雙方實際檔案git merge-file -p試跑0，兩邊快取保留。其他目標預檢無外部修改。
+- 完成4檔：CSS僅等級標記移除框線／圓角／底色，保留原字級／字色／右下位置，加淡黑字影維持圖上可讀；index對應CSS91→92，LV與本段同步。無JS／數值／解鎖／素材或素材庫變更。
+- 驗證：`node --test tests/talents.test.cjs`23/23通過；`npm.cmd run build`571檔通過；`git diff --check`通過。隔離Edge載全部正式CSS及真正talentNodeHTML產生的10級／1級／0級節點，10與1的computed border為0px、背景透明、字影存在，0級仍無數字；截圖目視無底框，選中圖示原框與下方威脅值框保持。Console error／warning與pageerror皆0，未開玩家存檔；初次隔離整盤測試因缺Worker快照無法渲染，改以不需Worker的正式節點驗收。截圖talent-level-no-frame.png在本聊天visualizations，臨時HTML與瀏覽器已清理，沒有新增低影響樣式測試。
+- 唯讀未改：AI規範／Workflow、ui.js威能渲染與Tooltip、talents既有回歸、後載flat樣式及Claude index；自我Review通過。交付Commit為本段所在`[Codex] fix: 移除威能圖示等級數字外框`，回覆附編號；可供Review／合併，未合併推送。無本次未完成項或新增已知風險，限制為未做玩家存檔／跨瀏覽器驗收；下一步正常整合後重新整理遊戲，既有Talents／storm修改保留不提交。
+
 ## REINCARNATION-READY-20261022 — 可轉生經驗條與角色頁籤提示
 
 - Owner：Codex；Done，單一開發者。使用者要求可轉生時經驗條全滿並使用轉生按鈕的高亮流光，角色頁籤icon右下角顯示明顯紅色驚嘆號。前置既有canReincarnateAt與Header快照可用。
