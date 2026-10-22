@@ -14,21 +14,21 @@
         "y": 0.0469
       },
       "alpha": 0.28,
-      "tint": "#b473ff",
+      "tint": "#bd69ff",
       "blendMode": "add",
       "duration": 4
     },
     {
       "id": "body",
       "type": "sprite",
-      "assetId": "codex-authored/icearrow/icicle.png",
+      "assetId": "codex-authored/missile-salvo/crystal-neutral.svg",
       "zIndex": 2,
       "scale": {
         "x": 0.07,
         "y": 0.09
       },
       "alpha": 1,
-      "tint": "#e9c7ff",
+      "tint": "#bd69ff",
       "blendMode": "normal",
       "duration": 4
     },
@@ -51,7 +51,7 @@
         "y": 1
       },
       "alpha": 0.18,
-      "tint": "#b473ff",
+      "tint": "#bd69ff",
       "blendMode": "add",
       "duration": 0.35,
       "alphaOverLife": [
@@ -83,7 +83,7 @@
         "y": 0
       },
       "alpha": 0.55,
-      "tint": "#b473ff",
+      "tint": "#bd69ff",
       "blendMode": "add",
       "duration": 0.35,
       "emission": {

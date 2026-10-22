@@ -6,7 +6,7 @@
     "name": "asset-scanner",
     "version": "1.0.0"
   },
-  "assetCount": 2470,
+  "assetCount": 2471,
   "assets": [
     {
       "assetId": "antigravity-authored/ice/ice-arrow-spike.png",
@@ -111592,6 +111592,21 @@
           "v": 1
         },
         "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "codex-authored/missile-salvo/crystal-neutral.svg",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/missile-salvo/crystal-neutral.svg",
+      "format": "svg",
+      "fileSize": 743,
+      "contentHash": "sha256:1e56bbff93ba42005a59bc17bc7e764acdc5b529a986dbba8c0acd7d323b20f7",
+      "facts": {
+        "dimensions": {
+          "width": 512,
+          "height": 512
+        },
+        "hasAlpha": true
       }
     }
   ]

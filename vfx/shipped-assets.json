@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 195,
+  "assetCount": 196,
   "assets": [
     {
       "assetId": "claude-authored/dragon-devour/vortex-ring.png",
@@ -208,6 +208,13 @@
       "package": "codex-authored",
       "contentHash": "sha256:b1a539104626873ba34d0f88daec44e5f30057d73ebb0226afe7038562a0f3b8",
       "fileSize": 2617834
+    },
+    {
+      "assetId": "codex-authored/missile-salvo/crystal-neutral.svg",
+      "relativePath": "codex-authored/missile-salvo/crystal-neutral.svg",
+      "package": "codex-authored",
+      "contentHash": "sha256:1e56bbff93ba42005a59bc17bc7e764acdc5b529a986dbba8c0acd7d323b20f7",
+      "fileSize": 743
     },
     {
       "assetId": "codex-authored/moon-opaque/moon-opaque-02.svg",

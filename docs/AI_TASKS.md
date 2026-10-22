@@ -1,5 +1,20 @@
 # AI_TASKS.md
 
+## MISSILE-COLOR-20261022 — 飛彈彈身與光暈四色一致
+
+- Owner：Codex；Done，單一開發者。使用者指出四枚彈身均偏藍，要求白／藍／紫／黃一眼分明並與各自光暈一致。原因為原創冰箭PNG已帶藍色，乘色不能去除。沿用既有程序化晶體切面座標製作專用中性灰白SVG，彈身／光暈同色；原冰箭素材及技能不改，圖層／粒子與飛行、2秒停駐、間距／尺寸／判定不改。
+- 範圍：飛彈作者與專用SVG製作器／新SVG、四色Preset／layout、兩素材索引（新增專用一列及總數）、Runtime僅資料快取及兩頁Runtime快取、既有飛彈專項／LV與本段；素材庫專用SVG／8份配對來源及SOURCE。禁止Core／Backend／Editor程式、其他技能／配置／存檔／其他副本，不合併推送。同副本毒水進行中修改分段保留。
+- 衝突：飛彈來源與新增專用SVG預檢無外部變更；Runtime與Claude共用快取沿使用者前輪已批准合併，保留雙方鍵。使用者本輪已明確批准兩索引合併總數並保留雙方素材項目；本次只新增中性列與重算總數，既有所有entry欄位位元語意不變。對Claude工作區另製合併候選，原有assetId／內容雜湊全部保留，合計索引2472／出貨197；未將該分支的素材或其他腳本匯入本分支。主頁／Editor僅Runtime共用239版，不碰其他script。
+- 驗收：中性底圖各色乘色後沒有殘留藍調、body與halo同色；正式一般鏡頭／實際尺寸／正常速度GIF，沿既有真Pixi／WebGL工具重測15ms門檻；作者可重製、飛行／停駐／舊Editor保護／素材匯出／必要Build檢查。素材庫先Commit、遊戲後Commit，列雙編號與硬體限制；接手者為使用者Review及正常整合。
+
+- 完成15檔：專用743-byte SVG與作者、飛彈作者／四色Preset、既有專項、兩索引、Runtime資料快取與兩頁Runtime快取、LV及本段。SVG保留原創冰箭切面座標，RGB三通道等值，無冷色底／濾鏡；白#ffffff／藍#469fff／紫#bd69ff／黃#ffd342，body／halo／cone／mist同色，仍4層／粒子上限6。原冰箭PNG、傷害、bodyD22、後退64／間距129.6／停駐2秒沿正式配置。4份layout檢查與素材庫同步但內容相同，不製造空差異；無新Preset ID或第三種特效來源。
+- 驗證：node --test --test-reporter=tap tests/missile-salvo.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-asset-export.test.cjs，106項105過／1既有Windows符號連結略過／0失敗。提交候選以HEAD Core／Backend及Git index Runtime／兩頁／兩索引唯讀映射，再跑飛彈／Editor cache／guard 25/25；未納另一毒水任務尚未完成的通用程式。npm.cmd run build：569檔全過；node tools/vfx/export-assets.cjs --check：354份Preset／196項出貨、已最新；作者重製一致、兩倉庫SHA256配對、git diff --check通過。
+- 效能：沿tools/vfx/benchmark-missiles.cjs，本機Edge155／WebGL2／GTX1050／815×570／DPR1，真Core／Adapter／Pixi與正式事件，3輪各暖機120＋取樣600幀、每案例1800幀，含gl.finish等待GPU。白／藍／紫／黃p95為0.2／0.1／0.1／0.1ms，觀測最大1.6／1.1／1.3／1.0ms；四色合播p95 0.1ms、最大1.4ms。全部低於15ms、missing／pageerror0；僅本機隔離場景，不保證跨硬體或完整多技能混戰的硬即時上限，未測行動GPU／真人長戰。
+- 預覽：正式BattleRenderer一般鏡頭125%距離、原角色／特效尺寸及地面透視、113幀25fps／正常速度／未放大GIF，白／藍／紫／黃晶體與同色外暈清楚可辨。npc-missile-four-colors-real-game.gif、影格031.png、capture-audit.json／performance.json／source-audit.json保存在本聊天visualizations的missile-color，Console warning／error0；未讀寫玩家存檔或操作使用者原分頁。Mote先前已確認PNG／GIF能力，不提供此SVG流程；沿既有程式化切面製作器保留精確幾何，未引入外部圖像。
+- 舊Editor：真Server分別PUT HEAD四份舊Preset，沿舊canonical revision與layout peer，四次409、磁碟內容不變；未存備份可由Editor下載後再重載，不能用舊頁覆寫新版。共用Core／Backend修改另屬毒水任務，本次沒有調整Editor保護。
+- 唯讀未改：規範／AGENTS／Workflow／prompts、原icearrow-renew作者／原PNG／配對技能、配置與elite正式事件、Core／Pixi／Renderer、Editor Guard／Server／Layout、成本與既有真GPU工具、Asset匯出與素材來源。自我Review確認同一中性圖可共用貼圖與乘色，沒有額外Timer／過濾器／粒子／碰撞修改；兩索引既有項目完整保留。其他毒水進行中修改與其快取保留，只stage自己的區段。
+- 交付：素材庫先Commit 5660d2b（專用SVG／四色Preset與SOURCE共6檔），4份layout位元相同；其他未追蹤thunder保留。遊戲Commit為本段所在「[Codex] fix: 飛彈彈身與光暈統一四色」，回覆附編號。無本任務未完成項，可供Review／合併；未合併推送。下一步使用者正常整合雙倉庫，Editor先下載未存備份再重載，遊戲重新整理。
+
 ## MISSILE-CRYSTAL-20261022 — 四色飛彈改晶體彈身並保留外暈
 
 - Owner：Codex；Done，單一開發者。使用者要求四枚飛彈類似寒冰箭子彈、外圍保留光暈，每份特效性能不超過15ms。沿既有四個Preset／表定尺寸、原生飛行及2秒停駐／間距129.6／後退64；採單份單實例每幀15ms為量測門檻，同測四色合播。

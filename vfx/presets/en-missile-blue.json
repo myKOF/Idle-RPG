@@ -21,14 +21,14 @@
     {
       "id": "body",
       "type": "sprite",
-      "assetId": "codex-authored/icearrow/icicle.png",
+      "assetId": "codex-authored/missile-salvo/crystal-neutral.svg",
       "zIndex": 2,
       "scale": {
         "x": 0.07,
         "y": 0.09
       },
       "alpha": 1,
-      "tint": "#bde8ff",
+      "tint": "#469fff",
       "blendMode": "normal",
       "duration": 4
     },

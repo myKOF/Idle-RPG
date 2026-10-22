@@ -1,13 +1,12 @@
 'use strict';
-// 重用本專案原創寒冰箭晶體；只有Preset組合，不重製或覆寫原冰箭素材。
-const ICICLE = 'codex-authored/icearrow/icicle.png';
+// 原創冰箭切面的專用中性底圖；彈身／外暈共用同一色值，不殘留原PNG的藍調。
+const ICICLE = require('./missile-crystal-shape.cjs').ASSET;
 const COLORS = {
-  white: ['#ffffff', '#d8eaff'], blue: ['#bde8ff', '#469fff'],
-  purple: ['#e9c7ff', '#b473ff'], yellow: ['#fff1b5', '#ffcb48']
+  white: '#ffffff', blue: '#469fff', purple: '#bd69ff', yellow: '#ffd342'
 };
 function make(color) {
   if (!COLORS[color]) throw new Error('Unknown missile color: ' + color);
-  const [head, halo] = COLORS[color];
+  const head = COLORS[color], halo = head;
   return {
     id: 'en-missile-' + color, duration: 4, loop: true,
     sizing: { shape: 'projectile-circle', authored: { radius: 8 } },
@@ -32,6 +31,7 @@ function make(color) {
 }
 module.exports = { ICICLE, COLORS, make };
 if (require.main === module) {
+  require('./missile-crystal-shape.cjs').bake();
   const kit = require('../preset-kit.cjs');
   for (const color of Object.keys(COLORS)) kit.write(make(color));
 }
