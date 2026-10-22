@@ -33,13 +33,13 @@ function scene(over) {
 }
 const flights = log => log.filter(e => e.spec.fxKind === 'projectile');
 
-test('MISSILE-HOLD2 正式表：後退加倍、橫向再加50%，定點等待兩秒後齊射命中', () => {
+test('MISSILE-HOLD2 正式表：最終橫向間距加倍，定點等待兩秒後齊射命中', () => {
   for (const angle of [0, Math.PI / 2, Math.PI, -.7]) {
     const s = scene();
     // 不使用相容fixture的新時序或距離覆寫，只固定本次抽到四枚。
     const d = Object.assign({}, s.c.ELITE_AFFIXES.e_missile, { n: [4, 4] });
     assert.equal(d.leg1, .275); assert.equal(d.hold, 2);
-    assert.equal(d.back, 64); assert.equal(d.spread, 64.8);
+    assert.equal(d.back, 64); assert.equal(d.spread, 129.6);
     const ax = Math.cos(angle), ay = Math.sin(angle);
     s.m.pos.x = 100 * ax; s.m.pos.y = 100 * ay;
     s.c.eliteCastMissiles(s.m, d); s.until(.21);
@@ -48,10 +48,10 @@ test('MISSILE-HOLD2 正式表：後退加倍、橫向再加50%，定點等待兩
     for (let i = 0; i < 4; i++) {
       const a = back[i].spec.area, dx = a.x - a.sourceX, dy = a.y - a.sourceY;
       assert.ok(Math.abs(dx * ax + dy * ay - 64) < 1e-7, '後退深度為原先兩倍');
-      assert.ok(Math.abs(-dx * ay + dy * ax - [-51.84, -17.28, 17.28, 51.84][i]) < 1e-7);
+      assert.ok(Math.abs(-dx * ay + dy * ax - [-103.68, -34.56, 34.56, 103.68][i]) < 1e-7);
       assert.equal(a.holdSec, 2); assert.equal(a.brake, true);
       assert.equal(back[i].spec.travelMs[0], 275);
-      if (i) assert.ok(Math.abs(Math.hypot(a.x - back[i-1].spec.area.x, a.y - back[i-1].spec.area.y) - 34.56) < 1e-7, '相鄰間距23.04乘1.5');
+      if (i) assert.ok(Math.abs(Math.hypot(a.x - back[i-1].spec.area.x, a.y - back[i-1].spec.area.y) - 69.12) < 1e-7, '目前相鄰間距34.56再乘2');
     }
     s.m.pos.x += 800; s.m.pos.y -= 400;
     s.until(2.47);
