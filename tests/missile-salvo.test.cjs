@@ -33,6 +33,36 @@ function scene(over) {
 }
 const flights = log => log.filter(e => e.spec.fxKind === 'projectile');
 
+test('MISSILE-SPREAD 四枚橫向間距增加35%，各方向後退深度及齊射起點正確', () => {
+  for (const angle of [0, Math.PI / 2, Math.PI, -.7]) {
+    const s = scene({ back: 32 });
+    const ax = Math.cos(angle), ay = Math.sin(angle);
+    s.m.pos.x = 100 * ax; s.m.pos.y = 100 * ay;
+    s.c.eliteCastMissiles(s.m, s.d); s.until(.21);
+    const back = flights(s.log);
+    assert.equal(back.length, 4);
+    const offsets = [-34.56, -11.52, 11.52, 34.56];
+    for (let i = 0; i < 4; i++) {
+      const a = back[i].spec.area;
+      const dx = a.x - a.sourceX, dy = a.y - a.sourceY;
+      assert.ok(Math.abs(dx * ax + dy * ay - 32) < 1e-7, '後退深度維持32');
+      assert.ok(Math.abs(-dx * ay + dy * ax - offsets[i]) < 1e-7, '橫向均勻展開');
+      if (i > 0) {
+        const prev = back[i - 1].spec.area;
+        assert.ok(Math.abs(Math.hypot(a.x - prev.x, a.y - prev.y) - 23.04) < 1e-7, '原17.0667間距增加35%');
+      }
+    }
+    s.m.pos.x += 800; s.m.pos.y -= 400;
+    s.until(1.49);
+    const salvo = flights(s.log).slice(4);
+    assert.equal(salvo.length, 4);
+    for (let i = 0; i < 4; i++) {
+      assert.equal(salvo[i].spec.area.sourceX, back[i].spec.area.x);
+      assert.equal(salvo[i].spec.area.sourceY, back[i].spec.area.y);
+    }
+  }
+});
+
 test('MISSILE-SALVO 同批後退，剎停一秒後同拍鎖定／齊射，抵達才結算', () => {
   for (const count of [3, 4, 5]) {
     const { c, m, d, log, until } = scene({ n: [count, count] });

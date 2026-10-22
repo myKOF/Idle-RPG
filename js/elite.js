@@ -1590,13 +1590,13 @@ function eliteCastMissiles(m, d) {
     if (!mp) return;
     var ax = mp.x - pp.x, ay = mp.y - pp.y, al = Math.sqrt(ax * ax + ay * ay) || 1;
     ax /= al; ay /= al;
-    var back = d.back || 32, missiles = [];
+    var back = d.back || 32, spread = back * 1.35, missiles = [];
     for (var i = 0; i < n; i++) {
       var preset = presets[Math.floor(Math.random() * presets.length)];
-      // 在原本的左右偏移範圍內均勻展開，避免停駐時擠成同一顆。
+      // 橫向間距加大35%，保持原後退深度及齊射彎曲係數。
       var side = n > 1 ? -0.8 + 1.6 * i / (n - 1) : 0;
-      var bx = mp.x + ax * back - ay * back * side;
-      var by = mp.y + ay * back + ax * back * side;
+      var bx = mp.x + ax * back - ay * spread * side;
+      var by = mp.y + ay * back + ax * spread * side;
       var facing = Math.atan2(pp.y - by, pp.x - bx);
       missiles.push({ preset: preset, x: bx, y: by, side: side, facing: facing });
       eliteFlightFx(preset, mp.x, mp.y, bx, by, leg1, {

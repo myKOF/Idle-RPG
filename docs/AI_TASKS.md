@@ -12,6 +12,18 @@
 - 唯讀檢查未改：規範／Workflow／prompts/codex、js/ui.js的地圖與按鈕渲染、battle-renderer的viewport／resize／鏡頭、data十圖／realm資料、其他7份樣式與上述7份回歸。自我Review確認只修正Flex寬度與地圖換行，既有標題裝飾／浮字溢出策略保留。臨時驗收頁移存Git中繼資料，測試分頁及服務關閉。
 - 交付：無本次未完成實作／新增已知缺陷，可供Review／合併；Commit為本段所在「[Codex] fix: 修正地圖列撐寬戰鬥區與鏡頭偏移」，回覆附編號。限制為未做真人存檔長戰、手機／跨瀏覽器驗收。驗收期間新增的en-stone-wall-0 Preset／layout使用者修改原樣保留、不納入本次提交。未合併推送；下一步由使用者正常整合並重新整理遊戲。
 
+## MISSILE-SPREAD-20261022 — 飛彈後退散開間距增加35%
+
+- Owner：Codex；Done，單一開發者。使用者要求四枚向後飛散的間距增加30～40%，採35%；沿既有飛彈接入，不依賴岩壁任務。
+- 允許：js/elite.js僅eliteCastMissiles的橫向展開、tests/missile-salvo.test.cjs、elite的Worker匯入／bridge／index快取、LV及本段。禁止其他技能、配置、Preset／素材、傷害／時序、Protocol／存檔與其他副本；不合併推送。
+- 驗收：四枚與各方向實際事件間距、齊射原停駐點、相關Worker回歸／Build／diff，自我Review後獨立Commit。岩壁進行中同檔區段保留，只stage本次hunk；接手者為使用者正常整合及重載驗收。
+- 完成7檔：eliteCastMissiles橫向spread=back×1.35，四枚相鄰間距由17.0667增至23.04（back=32），後退深度32、原side彎曲係數、時序及傷害不變。新增事件幾何回歸涵蓋0／90／180／斜向及NPC移動後齊射原點。LV同步，沒有新素材／配置差異／素材庫Commit。
+- 衝突：本副本另一岩壁任務修改elite不同函式及共用快取。使用者本輪明確批准合併快取版本，Worker資源及elite匯入採20261022-stone-wall-collision-missile-spread，bridge主頁升335；其餘岩壁／Runtime／Preset／作者修改保留、不納入本Commit。
+- 分段驗證：elite／AI_TASKS／LV以HEAD為共同基準、本次候選及保留岩壁的工作內容執行git merge-file -p，三檔皆退出0且結果逐位元等於正規化工作檔；index只stage bridge、Worker只stage elite匯入。共用快取行依使用者明確授權整合。
+- 測試：node --test --test-name-pattern='MISSILE-SPREAD|同批後退|齊射後不改落點|Worker實際派送' tests/missile-salvo.test.cjs，4/4；node --test tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/vfx-editor-cache-versions.test.cjs，27/27。完整上述四檔35項31過／4既有失敗，修改前飛彈7項同4項失敗（真實Preset剎停、舊事件、作者重製、固定位置的光芯絕對座標），未改既有斷言或使用者Preset；新增失敗0。npm.cmd run build，566檔通過；diff --check通過。
+- 唯讀檢查：AI_RULES／AGENTS／Workflow／prompts/codex、flight helper／Runtime、測試helper、現行配置與四份Preset、岩壁同檔差異。自我Review確認只加寬橫向、停駐仍用數值世界座標，未新增Timer／Protocol／存檔／VFX來源。沒有新做瀏覽器／真人存檔／長戰驗收；先前速度與hold參數仍由既有Pending差異處理，本輪不重寫配置。
+- 交付：本段所在「[Codex] fix: 飛彈後退散開間距增加35%」Commit，回覆附編號；本輪無未完成實作，可供Review／合併，既有4項Preset測試失敗仍需另行處理。未合併推送；下一步正常整合、重載遊戲看散開間距。其他任務未提交內容維持原樣。
+
 ## BATTLE-BIOMES-20261022 — 十張野外地圖與三種新地貌
 
 - Owner：Codex；Done；單一開發者。使用者圖片指定迷霧森林／熔岩山／落雷峰、月影沼澤改名、十張地圖元素及100～600關上限；使用者明確授權遇到決策採推薦方案持續實作。現有七圖渲染／配置流程完成，依賴已滿足；衝突預檢全部無外部來源。
