@@ -81,7 +81,7 @@ test('威能十級使用表值，整轉啟用節點全滿額外提升25%', () =>
   assert.equal(c.talentStatBonuses().strPct,6.25);
 });
 
-test('威能升級消耗金幣＝基數×倍率^(目標級-1)，降級與清除全額退金幣', () => {
+test('威能升級消耗金幣＝基數×倍率^(目標級-1)，降級與清除不退金幣', () => {
   const c=loadContext(); c.G.player.reincarnations=10;
   for(const id of ['t1_str','t2_crit','t10_str']) {
     const def=c.talentDef(id);
@@ -98,8 +98,8 @@ test('威能升級消耗金幣＝基數×倍率^(目標級-1)，降級與清除�
     for(let lv=1;lv<=10;lv++) assert.equal(c.talentUpgrade(id),null);
     assert.equal(c.G.player.gold,0);
     assert.match(c.talentUpgrade(id),/最高/); assert.equal(c.talentDowngrade(id),null);
-    assert.equal(c.G.player.gold,c.talentUpgradeCost(id,10)); assert.equal(c.talentDelete(id),null);
-    assert.equal(c.G.player.gold,total);
+    assert.equal(c.G.player.gold,0,'降級不退金幣'); assert.equal(c.talentDelete(id),null);
+    assert.equal(c.G.player.gold,0,'清除不退金幣');
     assert.equal(c.talentSpentGold(),0);
   }
   const def1=c.talentDef('t1_str');

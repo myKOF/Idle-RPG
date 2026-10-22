@@ -8719,7 +8719,7 @@ function talentInlineActionsHTML(def, snapshot) {
   var cost = talentUpgradeCost(def.id, lv + 1);
   var upReason = bossLocked ? 'BOSS 戰中不可變更戰鬥配置' : locked ? '尚未開放' : (lv >= TALENT_MAX_LEVEL ? '已達最高等級' :
     (talentViewGold(snapshot) < cost ? '金幣不足，需要 ' + fmtFull(cost) + ' 金幣' : '消耗 ' + fmtFull(cost) + ' 金幣'));
-  var downReason = bossLocked ? 'BOSS 戰中不可變更戰鬥配置' : lv > 0 ? '退還 ' + fmtFull(talentUpgradeCost(def.id, lv)) + ' 金幣' : '目前為 0 級';
+  var downReason = bossLocked ? 'BOSS 戰中不可變更戰鬥配置' : lv > 0 ? '降級不退還金幣' : '目前為 0 級';
   // 不交由 pending 通用邏輯重新啟用：每次快照重算資源／等級限制。
   return '<div class="tlx-node-actions" role="group" aria-label="調整' + esc(def.name) + '等級">' +
     '<button type="button" class="tlx-adjust" data-talent-down="' + def.id + '" aria-label="降低' + esc(def.name) + '等級" data-tt-title="降級" data-tt-desc="' + downReason + '"' + (pending || bossLocked || lv <= 0 ? ' disabled' : '') + '>−</button>' +
@@ -8779,7 +8779,7 @@ function renderTalents() {
     '<span class="pg-pill">金幣 <b>' + fmtFull(talentViewGold(snapshot)) + '</b></span>' +
     '<span class="pg-pill">已轉生 <b>' + rc + ' 轉</b></span>' +
     '<span class="pg-pill tlx-monster-power" tabindex="0" data-tt-title="魔物威能" data-tt-desc="地獄大軍感受到你接收了天堂神力而倍感憤怒&lt;br&gt;魔物威能每增加10%則敵人強度+1級">' + talentThreatIconHTML() + '魔物威能 <b>' + (100 + talentThreatTotal(talentViewLevels(snapshot))) + '%</b></span>' +
-    '<button type="button" class="pg-help" aria-label="威能說明" data-tt-title="天堂威能" data-tt-desc="1 轉後開放。威能最高10級，升級消耗金幣（費用依威能表的升級金幣基數與倍率，越高轉數的威能越貴），降級或清除會全額退還金幣。每級效果依表定增加值累加。每個威能首次點亮增加表定威脅值，後續升級不再增加。">?</button></div>';
+    '<button type="button" class="pg-help" aria-label="威能說明" data-tt-title="天堂威能" data-tt-desc="1 轉後開放。威能最高10級，升級消耗金幣（費用依威能表的升級金幣基數與倍率，越高轉數的威能越貴），降級不退還金幣。每級效果依表定增加值累加。每個威能首次點亮增加表定威脅值，後續升級不再增加。">?</button></div>';
   if (rc < 1) h += '<div class="tlx-locked-banner">🔒 威能系統將於完成 1 轉後開放。</div>';
   h += '<div class="tlx-tiers" role="tablist" aria-label="轉數">' + talentTierTabsHTML(snapshot) + '</div>';
   h += '<div class="tlx"><div class="tlx-board">' + talentBoardHTML(turn, snapshot) + '</div></div>';

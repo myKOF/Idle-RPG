@@ -270,7 +270,6 @@ function talentDowngrade(id) {
   var lv = talentLevel(id);
   if (!lv) return '威能目前是 0 級';
   talentState().levels[id] = lv - 1;
-  G.player.gold = (G.player.gold || 0) + talentUpgradeCost(id, lv);
   talentRefresh();
   return null;
 }
@@ -278,9 +277,7 @@ function talentDowngrade(id) {
 function talentDelete(id) {
   var def = talentDef(id);
   if (!def) return '找不到威能';
-  var lv = talentLevel(id);
   talentState().levels[id] = 0;
-  G.player.gold = (G.player.gold || 0) + talentTotalCost(id, lv);
   talentRefresh();
   return null;
 }
