@@ -86,7 +86,7 @@ test('MISSILE-HOLD2 真Runtime兩秒定點等待，移動NPC不拖曳光彈', ()
   for (let i = 1; i <= 540; i++) {
     npc.x += 11; npc.y -= 3; rt.update(1/240);
     if (i >= 300) {
-      const node = nodes.find(n => n.spec.assetUrl.endsWith('circle_05.png'));
+      const node = nodes.find(n => n.spec.assetUrl.endsWith('codex-authored/icearrow/icicle.png'));
       assert.ok(node && node.visible);
       const p = node.history.at(-1);
       parked ||= { x: p.x, y: p.y };
@@ -214,8 +214,8 @@ test('MISSILE-SALVO 真實Preset平滑剎停／原地停留／轉向，尾跡自
     let core, maxParticles = 0;
     for (let i = 1; i <= 305; i++) {
       rt.update(1/240);
-      core ||= nodes.find(n => n.spec.assetUrl.endsWith('circle_05.png'));
-      assert.ok(core, '實際光芯可見');
+      core ||= nodes.find(n => n.spec.assetUrl.endsWith('codex-authored/icearrow/icicle.png'));
+      assert.ok(core, '實際晶體彈身可見');
       const expected = curve(ev.area, 1 - Math.pow(1 - Math.min(1, i / 240 / .275), 3));
       const p = core.history.at(-1);
       assert.ok(Math.abs(p.x - expected.x) < 1e-7, preset.id + ' x');
@@ -229,7 +229,7 @@ test('MISSILE-SALVO 真實Preset平滑剎停／原地停留／轉向，尾跡自
       maxParticles = Math.max(maxParticles, rt.stats().fx.activeParticles);
       if (i === 192) {
         const cones = nodes.filter(n => n.spec.assetUrl.endsWith('cone_composed_c.png'));
-        assert.ok(cones.length >= 2 && cones.every(n => !n.visible), '停駐後光錐消退');
+        assert.ok(cones.length === 1 && cones.every(n => !n.visible), '停駐後光錐消退');
         assert.equal(rt.stats().fx.activeParticles, 0, '停駐後舊光點散完，不持續噴出硬尾');
       }
     }
@@ -255,7 +255,7 @@ test('MISSILE-SALVO 舊事件保持原曲線與壽命，角度投影不修改原
   const area = { sourceX: 100, sourceY: 0, x: 132, y: 25.6, controlX: 116, controlY: 0, knifeFlight: true };
   rt.tryPlay({ fxKind: 'projectile', variant: 'elite-flight', travelMs: [550], area, vfx: { projectile: IDS[0] } });
   rt.update(.275);
-  const p = nodes.find(n => n.spec.assetUrl.endsWith('circle_05.png')).history.at(-1);
+  const p = nodes.find(n => n.spec.assetUrl.endsWith('codex-authored/icearrow/icicle.png')).history.at(-1);
   assert.equal(p.x, 116); assert.ok(Math.abs(p.y - 6.4) < 1e-8);
   rt.update(.28); assert.equal(rt.stats().projectiles, 0); rt.destroy();
   const spec = { area: { holdAngle: .8, startAngle: -1.4 } };
@@ -264,14 +264,20 @@ test('MISSILE-SALVO 舊事件保持原曲線與壽命，角度投影不修改原
   assert.equal(spec.area.holdAngle, .8);
 });
 
-test('MISSILE-SALVO 四色Preset可重製，柔光錐取代硬尾且無新增素材來源', () => {
+test('MISSILE-SALVO 四色冰晶彈身與外暈可重製，限制節點並重用原創冰箭素材', () => {
   const author = require('../tools/vfx/authoring/author/enemy-skills.cjs');
   for (const p of presets) {
     const original = author.NEW[p.id](); original.schemaVersion = 1;
     assert.equal(Core.serialisePreset(p), Core.serialisePreset(original));
     assert.equal(p.loop, true);
     const glow = p.layers.find(l => l.id === 'glow');
-    assert.ok(glow.scale.x <= .0859*.41); assert.ok(glow.alpha <= .45);
+    assert.ok(glow.scale.x > glow.scale.y && glow.scale.x <= .08); assert.ok(glow.alpha <= .28);
+    const body = p.layers.find(l => l.id === 'body');
+    assert.equal(body.assetId, 'codex-authored/icearrow/icicle.png');
+    assert.equal(body.blendMode, 'normal'); assert.equal(body.alpha, 1);
+    assert.equal(p.layers.length, 4);
+    const cost = require('../tools/vfx/preset-cost.cjs').estimate(p);
+    assert.ok(cost.nodes <= 9 && cost.ms < 15, '靜態成本估算與粒子上限，實機效能另由benchmark驗證');
     assert.equal(p.layers.some(l => l.id === 'tail-core'), false, '移除原固定光棒');
     const cone = p.layers.find(l => l.id === 'tail-cone');
     assert.ok(cone.assetId.endsWith('cone_composed_c.png'));
@@ -334,7 +340,7 @@ test('MISSILE-SALVO 停駐位置不隨NPC或玩家移動，齊射從原停駐點
     npc.x += 11; npc.y -= 3; player.x -= 4; player.y += 2;
     rt.update(1/240);
     if (i >= 67) {
-      const core = nodes.find(n => n.spec.assetUrl.endsWith('circle_05.png'));
+      const core = nodes.find(n => n.spec.assetUrl.endsWith('codex-authored/icearrow/icicle.png'));
       assert.ok(core && core.visible);
       const p = core.history.at(-1);
       assert.ok(Math.abs(p.x - pads[0].x) < 1e-7, '停駐X不跟隨NPC／玩家');

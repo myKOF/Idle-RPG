@@ -1,5 +1,22 @@
 # AI_TASKS.md
 
+## MISSILE-CRYSTAL-20261022 — 四色飛彈改晶體彈身並保留外暈
+
+- Owner：Codex；Done，單一開發者。使用者要求四枚飛彈類似寒冰箭子彈、外圍保留光暈，每份特效性能不超過15ms。沿既有四個Preset／表定尺寸、原生飛行及2秒停駐／間距129.6／後退64；採單份單實例每幀15ms為量測門檻，同測四色合播。
+- 允許：四色Preset／layout、敵人作者僅飛彈委派與新missile-crystal作者、既有missile專項、可重跑的瀏覽器效能工具、Runtime僅資料快取／兩頁Runtime快取、LV及本紀錄；素材庫只同步飛彈Preset／layout／來源。禁止傷害／時序／範圍／配置／Protocol／Core／Backend／其他技能與其他副本，不合併推送。
+- 設計：重用已出貨且本專案原創的寒冰箭icicle.png，不改原寒冰箭／不用新外來圖。四色獨立乘色、實體晶體切面彈身＋一層包覆外暈＋短光錐／少量世界光點；減少節點／批次／大面積加色。Mote Studio已實際開啟確認PNG／圖集／GIF匯出；此任務可直接以既有素材組Preset，不需重新繪製獨立圖片。
+- 衝突：Runtime DATA_VERSION與Claude雷隕石同欄位，使用者本輪明確允許合併特效快取版本；主頁其餘script行及其他副本內容分段保留。本任務僅Runtime行的快取差異映射至共同基底，對方同一快取行先採已批准235版，git merge-file乾跑0；完整舊分支另有歷史相鄰script差異，留整合時處理，不納本任務。asset-index／shipped只唯讀與check，不新增素材引用集合；素材庫原有thunder未追蹤內容保留。
+- 驗收：四色可辨識、晶體與外暈同時可見、原生停駐／轉向／飛行／回收、作者可重製、正式鏡頭與正常速度GIF及細節圖；Editor靜態估算分開列、暖機後CPU＋Pixi提交／同步GPU讀回的單份及四份量測、清楚標示主機／GC／其他硬體限制；舊Editor拒覆寫及原檔不變、相關回歸／Build／diff後雙倉庫Commit。接手者為使用者Review／正常整合與重載驗收。
+
+- 完成17檔：四色Preset與配對layout改為4層（實體晶體、柔外暈、起飛短光錐、世界微霧），粒子設定上限由合計46降至6。新增missile-crystal作者與可重跑真WebGL效能工具、原作者委派、飛彈專項、Runtime僅DATA_VERSION、主頁與Editor僅Runtime快取、LV及本段。原創冰箭圖重用，原PNG／冰箭Preset不改；既有CC0光暈／光錐／微霧來源沿PROVENANCE，無新圖與新特效ID。兩索引唯讀檢查仍195項，不改表內來源與傷害。
+- 效能實測：本機Windows／Edge155／WebGL2／GTX1050，815×570、DPR1、相機0.8，真Core／Adapter／Pixi與正式飛行事件；各案例3輪，每輪暖機120幀、取樣600幀，共1800幀。每幀量CPU／提交及gl.finish同步GPU完成；白／藍／紫／黃含GPU的p95為0.2／0.1／0.1／0.2ms，觀測最大1.6／1.6／1.5／0.8ms；四色合播p95 0.2ms、最大0.9ms。missing與pageerror均0，觀測最大皆低於15ms。Editor靜態模型各0.02745ms／7節點，與實測分列；約0.1ms計時解析度下的0並非零耗時。隔離場景無其他技能或戰鬥背景，不能當成手機／任意GPU／完整混戰硬即時保證；初版量測工具過早銷毀共用貼圖所有者，已修正為全部案例結束才回收，最終乾淨通過。
+- 畫面：正式BattleRenderer／Core／Pixi、原遊戲一般鏡頭125%距離、原角色大小與地面透視，113幀／25fps GIF正常速度，817×680含說明框，無畫面放大；停駐2秒後齊射，四種晶體與外暈可見。最終影格與npc-missile-crystal-real-game.gif、performance-final.json及capture-audit.json保存在本聊天visualizations的missile-crystal；Console warning／error0，未讀寫存檔或操作使用者原分頁。Mote唯讀確認後臨時分頁已關閉。
+- 測試指令：node --test tests/missile-salvo.test.cjs（10/10）；node --test --test-reporter=tap tests/vfx-editor-guard.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-asset-export.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs（120項119過、1既有Windows符號連結略過、0失敗）；npm.cmd run build（569檔全過）；node tools/vfx/export-assets.cjs --check（354份Preset、195素材、已最新）；node tools/vfx/benchmark-missiles.cjs（需Playwright與Edge，可由VFX_PLAYWRIGHT_MODULE指定本機套件；退出0）。git diff --check通過。
+- 提交候選追驗：另一聊天毒水開始改Core／Backend後，將HEAD兩來源、Git index的Runtime／兩頁快取唯讀映射，實體工作檔不動；飛彈／Editor快取／守衛25/25通過。同一效能工具重新量候選（各1800幀），白／藍／紫／黃p95為0.2／0.1／0.1／0.1ms、觀測最大2.2／0.7／1.0／1.2ms；四色合播p95 0.2ms、最大2.2ms，仍全低於15ms，missing與pageerror0。performance-candidate.json獨立保存，不混入另一任務尚未提交的引擎更新。
+- 舊Editor驗收：保留修改前四份Preset／layout與Guard版本，對真Editor Server分別PUT舊內容，四次均409，磁碟位元不變；專項守衛／快取回歸亦過。使用者若Editor尚未儲存，先下載備份，再重新載入；不以舊分頁覆寫新版本。
+- 唯讀未改：共通規範／Workflow／Agent／prompts、Skills2來源與生成資料／elite／Worker、Core／Pixi／Renderer投影與生命週期、Editor Server／Guard／Layout／成本模型、出貨與素材索引／PROVENANCE、原創icearrow來源及相關回歸。自我Review確認無新Timer、無額外來源、body固定局部原點且世界停駐不拖曳、齊射與傷害沿原表。另一聊天新增毒水Core／Backend／Runtime區段、作者與AI_TASKS段落保留且不提交。
+- 交付：素材庫先Commit 5956226（四色8份配對來源與SOURCE），同庫未追蹤thunder及毒水進行中修改不納入；遊戲提交為本段所在「[Codex] feat: 四色飛彈改為冰晶彈身與外層光暈」，回覆附編號。無本任務未完成項，可供Review／合併；未合併推送。下一步由使用者正常整合雙倉庫，備份Editor後重載遊戲驗收；硬體與混戰限制如上。
+
 ## FIRE-CHAIN-FOLLOW-20261022 — 火鏈兩端逐幀跟隨NPC
 
 - Owner：Codex；Done，單一開發者。使用者回報鏈端落後NPC，已定位獨立快照平滑與共用中點透視。依賴固定離地2米與環狀連線完成。允許elite火鏈事件帶既有targets、Runtime逐幀錨點、Core內部離地高度轉換與Renderer投影、必要Worker／主頁快取、火鏈專項／Runtime文件／LV及本段；禁止其他技能、配置／素材／存檔與進行中岩壁／毒水區段，不合併推送。
