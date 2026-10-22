@@ -87,6 +87,18 @@
 - 唯讀未改：共通規範／Workflow／prompts/codex、PARAM_PATCHES／官方合併與配置工具、elite_data既有米轉座標、Core／Runtime／battle-renderer鏡頭及投影、四色Preset／layout／素材、上述其餘回歸。自我Review確認橫向只乘1.5、後退只乘2、事件和傷害時序共用正式配置，停駐仍為數值世界座標；沒有新VFX來源／素材庫檔案或素材庫Commit。
 - 交付：本段所在「[Codex] feat: 正式套用飛彈兩秒停駐與加寬後退」Commit，回覆附編號。無本輪未完成項，可供Review／合併；未合併推送。限制為上述4項既有測試失敗，以及未做真人存檔長戰／多技能混戰／跨裝置驗收。下一步正常整合及重新載入遊戲；其他任務未提交內容保留。
 
+## POISON-FINE-BANK-20261022 — 順直水道加適度細碎不平整邊緣
+
+- Owner：Codex；Done，單一開發者。使用者指出前版太平滑，要求中間程度：整體順直，邊緣一點點不平整。保留慢流／固定平面／微擾與所有判定；只新增固定、短距離、不週期的兩岸凹凸，不能回到大幅蛇行或呼吸。允許毒水作者／SVG及兩索引／素材庫同名來源、專項回歸、Runtime僅資料快取與兩頁對應快取、LV與本段；禁止其他技能／Core／模擬／配置／Worker／存檔，保留所有其他進行中內容。
+- 預檢：Claude兩索引僅岩壁舊版本差異及兩份新雷坑素材，本次毒水assetId未被修改，無語意相依；修改前以本次候選／HEAD／Claude實際工作檔三方試跑確認。index既有skills2衝突沿使用者本聊天明確核准的分段快取處理，不動該欄位。驗收實際同尺度預覽先確認細碎凹凸可見、原微擾／慢流／判定回歸、Build／Console／匯出與雙倉庫獨立提交，不合併推送。
+- 完成：保留順直主軸與小幅寬度變化，兩岸各自加入不同種子的固定短距離凹凸；兩種尺度的平滑雜訊形成局部缺口／凸起，不拿來彎曲整條水道。岸邊使用較小模糊保留遊戲同尺度下的小細節；內部材質、8秒慢流、0.22像素微擾、64格／8fps、判定／伸展／壽命不變，仍每次4個sprite、沒有新增粒子。
+- 修改10檔：作者、SVG、asset-index／shipped-assets僅毒水條目、專項測試、Runtime僅DATA_VERSION、兩頁Runtime233→234、LV及本段；Preset／layout檢查後無差異。素材庫7256d17先提交SOURCE／SVG兩檔，SVG／Preset／layout來源及出貨SHA256一致。
+- 衝突處理：Claude舊副本沒有本分支毒水新條目，HEAD為base會出現既有modify/delete；真正共同base試跑只剩衍生assetCount2470／2471、195／196差異。使用者本輪明確核准只更新毒水條目、不動數量、不動Claude雷坑／其他素材；未操作Claude副本。共用快取沿本聊天已授權分段更新，保留skills2既有差異及其他進行中修改。候選相對HEAD與工作內容三方試跑0後獨立索引提交，保留其他stage／未stage內容。
+- 驗證：node --test tests/poison-trail.test.cjs tests/vfx-editor-cache-versions.test.cjs，11/11。保留主軸／寬度約束，改將大輪廓與局部岸邊分層驗證；新增實際surface殘差的最小可見RMS／最大幅度與兩岸差異回歸，防止再退成完全光滑或過度扭曲；原微擾／慢流／命中／投影／續送／回收全過。npm.cmd run build569檔、export-assets --check及遊戲／素材庫diff --check通過，沒有弱化判定或舊時間斷言。
+- 畫面：正式Core／Runtime／Pixi、同尺度完整十字＋局部1.9倍單臂上下對比，舊版取素材庫396ea6d原創SVG，新版岸邊有小凹凸且主軸不蛇行；Console error／warning0。poison-fine-bank.png與poison-fine-bank-detail.png保存在本聊天visualizations，不讀寫玩家存檔。使用者網路圖仍只作參考，未使用像素；沿前輪確認Mote不支援原生SVG的限制，用專案原創作者。
+- 唯讀檢查未改：AI規範／Workflow／Agent、Core／Backend／elite／Worker／Protocol、Preset／layout、素材庫解析與匯出、Claude兩索引的資產ID差異及既有快取差異。自我Review確認僅改短距離岸邊靜態細節，未增圖層、相位速度、戰鬥或解鎖。
+- 交付：本次程式／素材／預覽完成，可Review／合併；遊戲Commit為本段所在[Codex] fix: 毒水順直邊緣加入適度細碎凹凸，回覆附編號。未合併推送；沒有本次未完成實作。限制為未做真人長戰／跨瀏覽器／GPU量測，造型仍可依使用者預覽回饋續調。下一步正常整合與重載，舊Editor先備份未存內容再重載，勿覆寫新資料。
+
 ## POISON-STRAIGHT-20261022 — 毒水水道整體接近直線
 
 - Owner：Codex；Done，單一開發者。使用者要求整體近直線，減少靜態邊緣的大幅歪曲；保留前輪固定平面、極輕邊緣擾動與慢流。允許poison-trail作者／SVG／索引／出貨及素材庫來源、專項回歸、Runtime僅資料快取及兩頁對應快取、LV與本紀錄；禁止模擬／傷害／範圍／壽命／Worker／Core／其他功能。

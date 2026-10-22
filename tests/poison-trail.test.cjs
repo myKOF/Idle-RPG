@@ -54,10 +54,26 @@ test('POISON-STRAIGHT 水道主軸接近直線，側岸只有局部細碎起伏�
     centers.push(s.center);radii.push(s.radius);
     assert.ok(Math.abs(s.center-64)<2,'中心線偏移限制在小幅局部起伏');
     assert.ok(s.radius>40 && s.radius<46,'保持水帶，不能縮成蛇形細腰');
-    assert.ok(Math.abs(s.upper-21)<6 && Math.abs(s.lower-107)<6,'兩岸沿直線方向延伸');
+    assert.ok(Math.abs(s.smoothUpper-21)<6 && Math.abs(s.smoothLower-107)<6,'大輪廓沿直線方向延伸，細碎岸邊另行驗證');
   }
   assert.ok(Math.max(...centers)-Math.min(...centers)<4);
   assert.ok(Math.max(...radii)-Math.min(...radii)<5.1);
+});
+test('POISON-FINE-BANK 順直主輪廓上保有可見的小凹凸，兩岸不共用波形', () => {
+  const upper=[],lower=[];
+  for(let x=55;x<=457;x+=.5) {
+    const s=author.surfaceAt(x,0),u=s.upper-s.smoothUpper,l=s.lower-s.smoothLower;
+    upper.push(u);lower.push(l);
+    assert.ok(Math.abs(u)<=4.72 && Math.abs(l)<=4.72,'凹凸限於局部，不能重回大幅蛇行');
+    assert.ok(Math.abs(u-author.roughBankAt(x,0))<=.220001);
+    assert.ok(Math.abs(l-author.roughBankAt(x,1))<=.220001);
+  }
+  for(const edge of [upper,lower]) {
+    const rms=Math.sqrt(edge.reduce((sum,x)=>sum+x*x,0)/edge.length);
+    assert.ok(rms>1.3 && rms<2.5,'不能變回完全平滑，也不能放大成劇烈扭曲');
+    assert.ok(Math.max(...edge)-Math.min(...edge)>6);
+  }
+  assert.ok(upper.some((x,i)=>Math.abs(x-lower[i])>3),'兩岸使用不同的局部凹凸');
 });
 test('POISON-TRAIL 實際命中沿連續水帶伸展，前緣之外及兩臂間安全，角度／寬度取表定值', () => {
   const {c,def,cross:x} = field({len:240,speed:80,ballR:24,dur:7,balls:1});
