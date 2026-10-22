@@ -429,8 +429,9 @@ function bfTickPlayer(enemies, dt, preferred, pEnt) {
   if (!(dt > 0)) return false;
   if (typeof elitePlayerLocked === 'function' && elitePlayerLocked()) { BF_PLAYER_CHASING = false; return false; }   // 被漩渦拉扯中
   var home = bfPlayerPos();
-  var ox0 = home.x, oy0 = home.y;
   bfTerrainSync();
+  bfTerrainPushOut(home, bfPlayerBodyRadius(), home.x + 1000, home.y, null);   // 站在障礙裡（地圖起點、換階段帶新長出來的）：站著不動也要先推出來
+  var ox0 = home.x, oy0 = home.y;
   var live = bfLiveList(enemies).filter(function (e) { return !!bfPos(e); });
   if (!live.length) {
     /* 空場：往前方（+x）推進，地板會跟著往後捲，不會呆站著等下一波。 */
