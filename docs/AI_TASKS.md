@@ -72,6 +72,18 @@
 - 唯讀未改：共通規範／Workflow／prompts/codex、PARAM_PATCHES／官方合併與配置工具、elite_data既有米轉座標、Core／Runtime／battle-renderer鏡頭及投影、四色Preset／layout／素材、上述其餘回歸。自我Review確認橫向只乘1.5、後退只乘2、事件和傷害時序共用正式配置，停駐仍為數值世界座標；沒有新VFX來源／素材庫檔案或素材庫Commit。
 - 交付：本段所在「[Codex] feat: 正式套用飛彈兩秒停駐與加寬後退」Commit，回覆附編號。無本輪未完成項，可供Review／合併；未合併推送。限制為上述4項既有測試失敗，以及未做真人存檔長戰／多技能混戰／跨裝置驗收。下一步正常整合及重新載入遊戲；其他任務未提交內容保留。
 
+## POISON-STRAIGHT-20261022 — 毒水水道整體接近直線
+
+- Owner：Codex；Done，單一開發者。使用者要求整體近直線，減少靜態邊緣的大幅歪曲；保留前輪固定平面、極輕邊緣擾動與慢流。允許poison-trail作者／SVG／索引／出貨及素材庫來源、專項回歸、Runtime僅資料快取及兩頁對應快取、LV與本紀錄；禁止模擬／傷害／範圍／壽命／Worker／Core／其他功能。
+- 預檢：其餘無外部來源；index完整分支三方試跑出現既有skills2快取355／354衝突，已依AI_RULES3.2詢問使用者是否只分段更新Runtime快取，未動該行。可獨立進行造型與預覽；本副本其他修改保留，不合併推送。
+- 完成：水道中心的長波彎曲大幅收斂，半寬改為小幅起伏；兩岸僅細碎局部變化，取消明顯蛇形與收腰。保留64格／8fps／8秒慢流、固定平面、邊緣極輕微擾；不改表定尺寸、壽命、伸展速度與命中。
+- 使用者已明確核准保留既有skills2差異、只更新本次Runtime快取231→232；其他script／Core／Worker快取與進行中程式全部保留。修改10檔：作者、SVG、asset-index／shipped-assets、專項測試、Runtime僅DATA_VERSION、兩頁Runtime快取、LV及本紀錄；Preset／layout無資料差異。
+- 驗證：node --test tests/poison-trail.test.cjs tests/vfx-editor-cache-versions.test.cjs 10/10；新增近直線主軸／側岸位移／無明顯收腰回歸，在舊造型會失敗，調整後通過。原有固定輪廓／微擾／慢流／命中／斜向投影／續送與回收測試全過。npm.cmd run build569檔通過，export-assets --check與兩庫diff --check通過；未弱化既有斷言，未重跑無變更的全庫。
+- 正式Core／Runtime／Pixi／出貨素材隔離預覽：左為05cf697自製上一版，右為近直線版，同尺寸、斜向朝向及慢流；PNG poison-straight-bank.png保存在本聊天visualizations，Console error／warning0，未讀寫玩家存檔。上一輪8秒動態及微擾設定保留；本輪重點為靜態輪廓，未另錄影片。
+- 素材先Commit396ea6d（SOURCE／SVG兩檔），SVG／Preset／layout來源及遊戲出貨SHA256一致。參考圖片僅觀察輪廓、未使用像素；沿前次確認Mote無原生SVG匯出，採專案原創向量作者。
+- 分段交付：候選相對HEAD只含本次區段，和工作內容三方merge-file試跑0，使用獨立暫存索引提交並保留其他已stage／未stage內容；沒有合併推送或修改其他副本。唯讀檢查未改AI規範／Workflow／Agent、elite／Worker／Protocol、Core／Backend／Editor guard、Preset／layout與素材庫解析／匯出。
+- 無本次未完成實作，可Review／合併；遊戲Commit為本段所在[Codex] fix: 毒水輪廓改為近直線並保留慢流，回覆附編號。限制為未做真人長戰／跨瀏覽器／GPU量測；造型可依預覽續調。下一步正常整合及重載；Editor未存內容先另存備份再重載，避免舊頁覆蓋。
+
 ## POISON-FLAT-FLOW-20261022 — 固定平面毒水輪廓與緩慢內流
 
 - Owner：Codex；Done，單一開發者。使用者指出整條毒水扭動怪異，明確要求固定平面的輪廓，只讓邊緣非常輕微擾動、內部毒流緩慢流動。前置POISON-TRAIL已完成；允許poison-trail作者／SVG圖集／Preset／layout／索引／出貨及素材庫對應檔、專項回歸、Runtime僅資料快取、兩頁僅Runtime快取、LV與本紀錄。禁止修改命中、速度／範圍／壽命、Worker／Protocol／存檔、其他特效及其他副本；不合併推送。

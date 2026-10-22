@@ -9,13 +9,13 @@ const GEOMETRY = { length: 100, radius: 100 / 9, duration: 16, growSec: 3 };
 const n = v => +v.toFixed(3) || 0;
 // 固定水窪形狀。動畫只擾動邊界，不能讓中心與寬度跟著相位改變。
 function surfaceAt(x, frame = 0) {
-  const center = 64 + 13 * Math.sin(x / 61) + 5 * Math.sin(x / 23);
+  const center = 64 + 1.4 * Math.sin(x / 61) + .5 * Math.sin(x / 23);
   const cap = Math.sqrt(Math.max(0, 1 - Math.pow(Math.max(0, 40 - Math.min(x - 7, 505 - x)) / 40, 2)));
-  const radius = Math.min(55 - Math.abs(center - 64), (39 + 14 * Math.sin(x / 42) + 8 * Math.sin(x / 17)) * cap);
+  const radius = Math.min(55 - Math.abs(center - 64), (43 + 1.7 * Math.sin(x / 42) + .8 * Math.sin(x / 17)) * cap);
   const phase = frame / FRAMES * Math.PI * 2;
   return {center, radius,
-    upper: center - radius * (1 + .03 * Math.sin(x * .44)) + EDGE_RIPPLE * cap * Math.sin(x * .12 + phase),
-    lower: center + radius * (1 + .04 * Math.sin(x * .31 + 2)) + EDGE_RIPPLE * cap * Math.sin(x * .09 + phase + 2)};
+    upper: center - radius * (1 + .018 * Math.sin(x * .44)) + EDGE_RIPPLE * cap * Math.sin(x * .12 + phase),
+    lower: center + radius * (1 + .022 * Math.sin(x * .31 + 2)) + EDGE_RIPPLE * cap * Math.sin(x * .09 + phase + 2)};
 }
 function flowOffset(frame) { return ((frame % FRAMES) + FRAMES) % FRAMES / FRAMES * FLOW_TILE; }
 function liquidSVG() {
@@ -85,7 +85,7 @@ function writeSource() {
   const root = require('../../vfx-library-root.cjs').resolveLibraryRoot().root;
   const folder = path.join(root, 'codex-authored/poison-trail'), svg = liquidSVG();
   fs.mkdirSync(folder, { recursive: true }); fs.writeFileSync(path.join(root, assetId), svg);
-  fs.writeFileSync(path.join(folder, 'SOURCE.md'), '# 毒素加持：平面毒水與緩慢內流\n\n2026-10-22 Codex 原創 SVG 64 格／8fps／8秒循環圖集。僅參考使用者所附網路截圖的狹長毒水、破碎邊緣、明暗流紋與細泡沫；未下載、描摹或使用參考圖像素。Mote Studio 可存取，Export 僅 PNG／Sprite sheet／GIF，不支援本次原生 SVG，改採專案向量作者。\n\n依使用者後續明確回饋：水窪中心、寬度與大輪廓固定；邊緣只有0.22材質像素的細微擾動，不能整條扭動。內流材質沿固定水路向外單向平移，每秒8材質像素，8秒移動64像素的無縫週期；底色團塊固定，沒有呼吸或波浪擺動。四臂同樣慢速，無14～17fps不同節奏。\n\n遊戲仍使用表定長度／半寬／伸展速度／壽命與判定，這次只改水窪內部美術動畫；原創重製可由Git歷史回溯先前被使用者否決的直條及扭動版本。重製：node tools/vfx/authoring/author/poison-trail.cjs，再執行 node tools/vfx/export-assets.cjs。\n');
+  fs.writeFileSync(path.join(folder, 'SOURCE.md'), '# 毒素加持：平面毒水與緩慢內流\n\n2026-10-22 Codex 原創 SVG 64 格／8fps／8秒循環圖集。僅參考使用者所附網路截圖的狹長毒水、破碎邊緣、明暗流紋與細泡沫；未下載、描摹或使用參考圖像素。Mote Studio 可存取，Export 僅 PNG／Sprite sheet／GIF，不支援本次原生 SVG，改採專案向量作者。\n\n依使用者後續明確回饋：水窪中心、寬度與大輪廓固定；邊緣只有0.22材質像素的細微擾動，不能整條扭動。內流材質沿固定水路向外單向平移，每秒8材質像素，8秒移動64像素的無縫週期；底色團塊固定，沒有呼吸或波浪擺動。四臂同樣慢速，無14～17fps不同節奏。\n\n最新參考圖修正：水道軸改為近直線、兩側只保留細碎局部起伏，移除明顯蜿蜒與忽寬忽窄；內流／邊緣微擾的速度保持上一版。\n\n遊戲仍使用表定長度／半寬／伸展速度／壽命與判定，這次只改水窪內部美術動畫；原創重製可由Git歷史回溯先前被使用者否決的直條及扭動版本。重製：node tools/vfx/authoring/author/poison-trail.cjs，再執行 node tools/vfx/export-assets.cjs。\n');
   const scanner = require('../../asset-scanner.cjs'), file = path.join(repo, 'vfx/asset-index.json');
   const index = JSON.parse(fs.readFileSync(file)), bytes = Buffer.from(svg);
   const entry = { assetId, package: scanner.derivePackage(assetId), relativePath: assetId, format: 'svg',

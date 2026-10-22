@@ -47,6 +47,18 @@ test('POISON-FLAT-FLOW 內流單向緩移，8秒循環，四臂不再各自快�
   near(author.flowOffset(64),0);near(author.FLOW_TILE*author.FPS/author.FRAMES,8);
   assert.ok(preset.layers.every(l=>l.sheet.fps===8));
 });
+test('POISON-STRAIGHT 水道主軸接近直線，側岸只有局部細碎起伏，不再大幅收腰', () => {
+  const centers=[],radii=[];
+  for(let x=55;x<=457;x++) {
+    const s=author.surfaceAt(x);
+    centers.push(s.center);radii.push(s.radius);
+    assert.ok(Math.abs(s.center-64)<2,'中心線偏移限制在小幅局部起伏');
+    assert.ok(s.radius>40 && s.radius<46,'保持水帶，不能縮成蛇形細腰');
+    assert.ok(Math.abs(s.upper-21)<6 && Math.abs(s.lower-107)<6,'兩岸沿直線方向延伸');
+  }
+  assert.ok(Math.max(...centers)-Math.min(...centers)<4);
+  assert.ok(Math.max(...radii)-Math.min(...radii)<5.1);
+});
 test('POISON-TRAIL 實際命中沿連續水帶伸展，前緣之外及兩臂間安全，角度／寬度取表定值', () => {
   const {c,def,cross:x} = field({len:240,speed:80,ballR:24,dur:7,balls:1});
   const pp = c.bfPlayerPos(), angle = x.a;
