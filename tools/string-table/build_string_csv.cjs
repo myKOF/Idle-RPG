@@ -7,7 +7,8 @@
         非字面值部分以 {N} 代替，原運算式寫進「替代字符參數說明」。
    排除：GM／錄製／延遲探針／VFX 驗證／效能診斷等內部工具；console／Error／比對用字面值；
         資料型檔案(data.js 等)中與配置表儲存格完全相同的字串（已在表內）。
-   用法：node tools/string-table/build_string_csv.cjs [輸出路徑]
+   用法：node tools/string-table/build_string_csv.cjs [輸出路徑] [--force]
+   （預設輸出為 config/CSV/String.csv，已存在時需 --force；Excel 是來源，別隨手覆蓋）
    注意：本工具重新產生整份 CSV，會洗掉人工填的簡體／英文；日後翻譯請以 Excel 為準。
    ============================================================================= */
 const fs = require('fs'), path = require('path');
@@ -265,7 +266,11 @@ list.forEach((e, i) => {
   const use = `[${e.cat}] ${kinds}｜${locs}`;
   lines.push([i + 1, use, describeRepl(e.text, e.params), e.text.replace(/\r?\n/g, '\\n'), '', ''].map(csvCell).join(','));
 });
-const outPath = process.argv[2] || path.join(root, 'config', 'CSV', 'String.csv');
+const outPath = process.argv.slice(2).find(a => !a.startsWith('--')) || path.join(root, 'config', 'CSV', 'String.csv');
+if (!process.argv.includes('--force') && !process.argv.slice(2).some(a => !a.startsWith('--')) && fs.existsSync(outPath)) {
+  console.error('config/CSV/String.csv 已存在；Excel（config/Excel/String.xlsx）才是來源，重新產生會洗掉翻譯。\n要輸出到別處請帶路徑，確定要覆蓋請加 --force。');
+  process.exit(1);
+}
 fs.writeFileSync(outPath, '\uFEFF' + lines.join('\r\n') + '\r\n', 'utf8');
 console.log('excluded', ex, 'kept', kept.length, 'entries', list.length);
 const byCat = {}; list.forEach(e => byCat[e.cat] = (byCat[e.cat] || 0) + 1); console.log(byCat);
