@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "hit-thunderfall-impact",
-  "duration": 0.95,
+  "duration": 0.89,
   "loop": false,
   "deformation": {
     "amplitude": 9.447,
@@ -76,6 +76,10 @@
       "type": "sprite",
       "assetId": "particle-pack/png-transparent/circle_02.png",
       "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "scale": {
         "x": 0.7227,
         "y": 0.7227
@@ -624,68 +628,6 @@
       ]
     },
     {
-      "id": "upward-discharge",
-      "type": "particle",
-      "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
-      "zIndex": 12,
-      "alpha": 0.7,
-      "tint": "#c7eaff",
-      "blendMode": "add",
-      "duration": 0.6,
-      "emission": {
-        "count": 7,
-        "mode": "burst"
-      },
-      "maxParticles": 7,
-      "lifetime": [
-        0.25,
-        0.48
-      ],
-      "spawn": {
-        "height": 10,
-        "shape": "box",
-        "width": 35
-      },
-      "speed": [
-        85,
-        180
-      ],
-      "direction": -90,
-      "spread": 70,
-      "startScale": [
-        0.127,
-        0.2246
-      ],
-      "rotationStart": [
-        -2,
-        -1
-      ],
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.15,
-          1
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.7
-        ],
-        [
-          1,
-          0.15
-        ]
-      ]
-    },
-    {
       "id": "traveling-ground-arc-0",
       "type": "particle",
       "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
@@ -698,7 +640,7 @@
         "count": 2,
         "mode": "burst"
       },
-      "maxParticles": 2,
+      "maxParticles": 1,
       "lifetime": [
         0.45,
         0.7
@@ -767,7 +709,7 @@
         "count": 2,
         "mode": "burst"
       },
-      "maxParticles": 2,
+      "maxParticles": 1,
       "lifetime": [
         0.45,
         0.7
@@ -836,7 +778,7 @@
         "count": 2,
         "mode": "burst"
       },
-      "maxParticles": 2,
+      "maxParticles": 1,
       "lifetime": [
         0.45,
         0.7
@@ -905,7 +847,7 @@
         "count": 2,
         "mode": "burst"
       },
-      "maxParticles": 2,
+      "maxParticles": 1,
       "lifetime": [
         0.45,
         0.7
@@ -974,7 +916,7 @@
         "count": 2,
         "mode": "burst"
       },
-      "maxParticles": 2,
+      "maxParticles": 1,
       "lifetime": [
         0.45,
         0.7
@@ -1043,7 +985,7 @@
         "count": 2,
         "mode": "burst"
       },
-      "maxParticles": 2,
+      "maxParticles": 1,
       "lifetime": [
         0.45,
         0.7
@@ -1112,7 +1054,7 @@
         "count": 2,
         "mode": "burst"
       },
-      "maxParticles": 2,
+      "maxParticles": 1,
       "lifetime": [
         0.45,
         0.7
@@ -1181,7 +1123,7 @@
         "count": 2,
         "mode": "burst"
       },
-      "maxParticles": 2,
+      "maxParticles": 1,
       "lifetime": [
         0.45,
         0.7

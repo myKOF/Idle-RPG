@@ -463,12 +463,12 @@
       "blendMode": "add",
       "emission": {
         "mode": "rate",
-        "rate": 12
+        "rate": 10
       },
-      "maxParticles": 10,
+      "maxParticles": 4,
       "lifetime": [
         0.09,
-        0.24
+        0.2
       ],
       "spawn": {
         "radius": 34,
@@ -908,12 +908,12 @@
       "blendMode": "add",
       "emission": {
         "mode": "rate",
-        "rate": 12
+        "rate": 10
       },
-      "maxParticles": 10,
+      "maxParticles": 4,
       "lifetime": [
         0.09,
-        0.24
+        0.2
       ],
       "spawn": {
         "radius": 22,
@@ -1353,12 +1353,12 @@
       "blendMode": "add",
       "emission": {
         "mode": "rate",
-        "rate": 12
+        "rate": 10
       },
-      "maxParticles": 10,
+      "maxParticles": 4,
       "lifetime": [
         0.09,
-        0.24
+        0.2
       ],
       "spawn": {
         "radius": 27,
@@ -1798,12 +1798,12 @@
       "blendMode": "add",
       "emission": {
         "mode": "rate",
-        "rate": 12
+        "rate": 10
       },
-      "maxParticles": 10,
+      "maxParticles": 4,
       "lifetime": [
         0.09,
-        0.24
+        0.2
       ],
       "spawn": {
         "radius": 36,
@@ -2243,12 +2243,12 @@
       "blendMode": "add",
       "emission": {
         "mode": "rate",
-        "rate": 12
+        "rate": 10
       },
-      "maxParticles": 10,
+      "maxParticles": 4,
       "lifetime": [
         0.09,
-        0.24
+        0.2
       ],
       "spawn": {
         "radius": 23,
@@ -2688,12 +2688,12 @@
       "blendMode": "add",
       "emission": {
         "mode": "rate",
-        "rate": 12
+        "rate": 10
       },
-      "maxParticles": 10,
+      "maxParticles": 4,
       "lifetime": [
         0.09,
-        0.24
+        0.2
       ],
       "spawn": {
         "radius": 29,
@@ -3133,12 +3133,12 @@
       "blendMode": "add",
       "emission": {
         "mode": "rate",
-        "rate": 12
+        "rate": 10
       },
-      "maxParticles": 10,
+      "maxParticles": 4,
       "lifetime": [
         0.09,
-        0.24
+        0.2
       ],
       "spawn": {
         "radius": 25,
@@ -3187,72 +3187,6 @@
         [
           1,
           1.15
-        ]
-      ]
-    },
-    {
-      "id": "sparkles",
-      "type": "particle",
-      "assetId": "particle-pack/png-black-background/star_08.png",
-      "zIndex": 31,
-      "position": {
-        "x": 0,
-        "y": 0
-      },
-      "tint": "#ffffff",
-      "blendMode": "add",
-      "emission": {
-        "mode": "rate",
-        "rate": 9
-      },
-      "maxParticles": 30,
-      "lifetime": [
-        0.22,
-        0.5
-      ],
-      "spawn": {
-        "radius": 195,
-        "shape": "circle"
-      },
-      "speed": [
-        2,
-        14
-      ],
-      "spread": 360,
-      "startScale": [
-        0.05,
-        0.12
-      ],
-      "rotationStart": [
-        0,
-        6.283
-      ],
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.2,
-          1
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.6
-        ],
-        [
-          0.35,
-          1.15
-        ],
-        [
-          1,
-          0.7
         ]
       ]
     }

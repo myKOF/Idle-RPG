@@ -1680,7 +1680,7 @@
         "mode": "rate",
         "rate": 20
       },
-      "maxParticles": 25,
+      "maxParticles": 12,
       "lifetime": 1.2,
       "spawn": {
         "height": 0,
@@ -1747,7 +1747,7 @@
         "mode": "rate",
         "rate": 20
       },
-      "maxParticles": 25,
+      "maxParticles": 12,
       "lifetime": 1.2,
       "spawn": {
         "height": 0,
@@ -1814,7 +1814,7 @@
         "mode": "rate",
         "rate": 20
       },
-      "maxParticles": 25,
+      "maxParticles": 12,
       "lifetime": 1.2,
       "spawn": {
         "height": 0,
@@ -1881,7 +1881,7 @@
         "mode": "rate",
         "rate": 20
       },
-      "maxParticles": 25,
+      "maxParticles": 12,
       "lifetime": 1.2,
       "spawn": {
         "height": 0,
@@ -1948,7 +1948,7 @@
         "mode": "rate",
         "rate": 20
       },
-      "maxParticles": 25,
+      "maxParticles": 12,
       "lifetime": 1.2,
       "spawn": {
         "height": 0,
@@ -2015,7 +2015,7 @@
         "mode": "rate",
         "rate": 20
       },
-      "maxParticles": 25,
+      "maxParticles": 12,
       "lifetime": 1.2,
       "spawn": {
         "height": 0,

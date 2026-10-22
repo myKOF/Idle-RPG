@@ -18,12 +18,12 @@
       "duration": 1,
       "emission": {
         "mode": "rate",
-        "rate": 90
+        "rate": 60
       },
       "maxParticles": 80,
       "lifetime": [
         0.25,
-        0.55
+        0.45
       ],
       "spawn": {
         "radius": 4,
@@ -87,12 +87,12 @@
       "duration": 1,
       "emission": {
         "mode": "rate",
-        "rate": 55
+        "rate": 30
       },
-      "maxParticles": 22,
+      "maxParticles": 10,
       "lifetime": [
-        0.12,
-        0.25
+        0.1,
+        0.2
       ],
       "spawn": {
         "radius": 5,
@@ -146,7 +146,7 @@
       "maxParticles": 15,
       "lifetime": [
         0.1,
-        0.2
+        0.15
       ],
       "spawn": {
         "radius": 3,
@@ -180,6 +180,10 @@
       "id": "curved-embers",
       "type": "particle",
       "assetId": "particle-pack/png-black-background/light_03.png",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "alpha": 0.9,
       "tint": "#ffad35",
       "blendMode": "add",
@@ -190,8 +194,8 @@
       },
       "maxParticles": 30,
       "lifetime": [
-        0.3,
-        0.6
+        0.2,
+        0.4
       ],
       "spawn": {
         "radius": 5,
@@ -248,6 +252,18 @@
       },
       "alpha": 0.15,
       "tint": "#ff7300"
+    },
+    {
+      "id": "sprite-7",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/circle_a.png",
+      "scale": {
+        "x": 0.03,
+        "y": 0.03
+      },
+      "alpha": 0.3,
+      "tint": "#ff7b00",
+      "blendMode": "add"
     }
   ],
   "sizing": {

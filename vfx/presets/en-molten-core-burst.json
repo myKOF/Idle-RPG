@@ -213,75 +213,6 @@
       ]
     },
     {
-      "id": "ascending-impact-flames",
-      "type": "particle",
-      "assetId": "particle-pack/png-black-background/flame_04.png",
-      "zIndex": 5,
-      "position": {
-        "x": 0.4723,
-        "y": 0.4723
-      },
-      "alpha": 0.65,
-      "tint": "#e87b21",
-      "blendMode": "add",
-      "duration": 0.5,
-      "emission": {
-        "count": 9,
-        "mode": "burst"
-      },
-      "lifetime": [
-        0.25,
-        0.5
-      ],
-      "spawn": {
-        "height": 15,
-        "shape": "box",
-        "width": 42
-      },
-      "speed": [
-        70,
-        145
-      ],
-      "direction": -90,
-      "spread": 75,
-      "startScale": [
-        0.0781,
-        0.1465
-      ],
-      "rotationStart": [
-        -0.6,
-        0.6
-      ],
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.2,
-          1
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0.0123,
-          0.324734
-        ],
-        [
-          0.463,
-          0.254521
-        ],
-        [
-          1,
-          0.02633
-        ]
-      ]
-    },
-    {
       "id": "expanding-fire-wave-0",
       "type": "particle",
       "assetId": "particle-pack/png-black-background/flame_04.png",
@@ -292,12 +223,12 @@
       "delay": 0.04,
       "duration": 0.58,
       "emission": {
-        "count": 2,
+        "count": 1,
         "mode": "burst"
       },
       "lifetime": [
-        0.45,
-        0.58
+        0.25,
+        0.5
       ],
       "spawn": {
         "height": 3,
@@ -362,12 +293,12 @@
       "delay": 0.04,
       "duration": 0.58,
       "emission": {
-        "count": 2,
+        "count": 1,
         "mode": "burst"
       },
       "lifetime": [
-        0.45,
-        0.58
+        0.25,
+        0.5
       ],
       "spawn": {
         "height": 3,
@@ -432,12 +363,12 @@
       "delay": 0.04,
       "duration": 0.58,
       "emission": {
-        "count": 2,
+        "count": 1,
         "mode": "burst"
       },
       "lifetime": [
-        0.45,
-        0.58
+        0.25,
+        0.5
       ],
       "spawn": {
         "height": 3,
@@ -502,12 +433,12 @@
       "delay": 0.04,
       "duration": 0.58,
       "emission": {
-        "count": 2,
+        "count": 1,
         "mode": "burst"
       },
       "lifetime": [
-        0.45,
-        0.58
+        0.25,
+        0.5
       ],
       "spawn": {
         "height": 3,
@@ -572,12 +503,12 @@
       "delay": 0.04,
       "duration": 0.58,
       "emission": {
-        "count": 2,
+        "count": 1,
         "mode": "burst"
       },
       "lifetime": [
-        0.45,
-        0.58
+        0.25,
+        0.5
       ],
       "spawn": {
         "height": 3,
@@ -642,12 +573,12 @@
       "delay": 0.04,
       "duration": 0.58,
       "emission": {
-        "count": 2,
+        "count": 1,
         "mode": "burst"
       },
       "lifetime": [
-        0.45,
-        0.58
+        0.25,
+        0.5
       ],
       "spawn": {
         "height": 3,
@@ -712,12 +643,12 @@
       "delay": 0.04,
       "duration": 0.58,
       "emission": {
-        "count": 2,
+        "count": 1,
         "mode": "burst"
       },
       "lifetime": [
-        0.45,
-        0.58
+        0.25,
+        0.5
       ],
       "spawn": {
         "height": 3,
@@ -782,12 +713,12 @@
       "delay": 0.04,
       "duration": 0.58,
       "emission": {
-        "count": 2,
+        "count": 1,
         "mode": "burst"
       },
       "lifetime": [
-        0.45,
-        0.58
+        0.25,
+        0.5
       ],
       "spawn": {
         "height": 3,
@@ -852,12 +783,12 @@
       "delay": 0.04,
       "duration": 0.58,
       "emission": {
-        "count": 2,
+        "count": 1,
         "mode": "burst"
       },
       "lifetime": [
-        0.45,
-        0.58
+        0.25,
+        0.5
       ],
       "spawn": {
         "height": 3,
@@ -922,12 +853,12 @@
       "delay": 0.04,
       "duration": 0.58,
       "emission": {
-        "count": 2,
+        "count": 1,
         "mode": "burst"
       },
       "lifetime": [
-        0.45,
-        0.58
+        0.25,
+        0.5
       ],
       "spawn": {
         "height": 3,
@@ -992,12 +923,12 @@
       "delay": 0.04,
       "duration": 0.58,
       "emission": {
-        "count": 2,
+        "count": 1,
         "mode": "burst"
       },
       "lifetime": [
-        0.45,
-        0.58
+        0.25,
+        0.5
       ],
       "spawn": {
         "height": 3,
@@ -1062,12 +993,12 @@
       "delay": 0.04,
       "duration": 0.58,
       "emission": {
-        "count": 2,
+        "count": 1,
         "mode": "burst"
       },
       "lifetime": [
-        0.45,
-        0.58
+        0.25,
+        0.5
       ],
       "spawn": {
         "height": 3,
