@@ -115,8 +115,9 @@ test('LAVA-FIRE 熔岩燃燒固定來源、換幀、暫停、減量與跨區塊�
   for (const lite of [false,true]) {
     const {BattleDecor,warnings}=loadDecor({location:{search:lite?'?decor=lite':''}});
     const P=fakePixi(),layers={decal:new P.Container(),light:new P.Container(),prop:new P.Container()};
+    let basis={w:.83,shear:.17,skew:Math.atan2(.17,.83),k:Math.hypot(.17,.83)};
     const decor=BattleDecor.create({PIXI:P.PIXI,groundScale:.5,decalLayer:layers.decal,lightLayer:layers.light,propLayer:layers.prop,buildBudgetMs:Infinity,prebuildBudgetMs:0,
-      billboard:()=>({w:.83,shear:.17,skew:Math.atan2(.17,.83),k:Math.hypot(.17,.83)})});
+      billboard:()=>basis});
     let flamesSeen=0,changed=0;
     for (const stage of [1,11]) {
       decor.setScene('lava_mountain',stage);
@@ -129,7 +130,7 @@ test('LAVA-FIRE 熔岩燃燒固定來源、換幀、暫停、減量與跨區塊�
         assert.equal(halos.length,lite?0:flames.length,'一般每個火源一份貼地暖光，減量不增節點');
         for(const s of halos){assert.equal(s.blendMode,'add');assert.equal(s.skew.x,0);assert.ok(Number.isFinite(s.x+s.y+s.scale.x));}
         for (const s of flames) {
-          flamesSeen++;assert.equal(s.anchor.y,1);assert.equal(s.tint,0xffffff);
+          flamesSeen++;assert.equal(s.anchor.y,1);assert.equal(s.tint,0xffffff);assert.equal(s.alpha,.90);
           assert.ok(Number.isFinite(s.x+s.y+s.scale.x+s.scale.y));
           assert.ok(s._bbParent&&s._bbParent.parent===layers.prop,'火根共用物件腳點投影');
           assert.ok(Math.abs(s.x-(s._bbParent.x+s._bbOffX+.17*s._bbOffY))<1e-9);
@@ -147,6 +148,16 @@ test('LAVA-FIRE 熔岩燃燒固定來源、換幀、暫停、減量與跨區塊�
         decor.update(moving);
         assert.deepEqual(flames.map(s=>[s.texture,s.x,s.y,s.scale.x,s.scale.y,s.alpha]),frozen);
         assert.deepEqual(halos.map(s=>[s.x,s.y,s.alpha,s.scale.x,s.scale.y]),frozenHalo);
+        // 固定來源的屬性可快取；停止動畫時改鏡頭投影，火根仍必須貼住本體。
+        const previousBasis=basis;
+        basis={w:.69,shear:-.23,skew:Math.atan2(-.23,.69),k:Math.hypot(-.23,.69)};
+        const projection=view(x+1,0);projection.dt=0;decor.update(projection);
+        for(const s of flames){
+          assert.ok(Math.abs(s.x-(s._bbParent.x+s._bbOffX+basis.shear*s._bbOffY))<1e-9);
+          assert.ok(Math.abs(s.y-(s._bbParent.y+basis.w*s._bbOffY))<1e-9);
+          assert.ok(Math.abs(s.scale.y-s.scale.x*basis.k)<1e-9);
+        }
+        basis=previousBasis;decor.update(moving);
         decor.setVisible(false);decor.update(moving);
         assert.ok(layers.prop.children.every(s=>!s.visible));
         assert.ok(halos.every(s=>!s.visible));

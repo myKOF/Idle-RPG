@@ -1668,7 +1668,7 @@ var BattleDecor = (function () {
   };
   /* 背景建圖 Worker（相對於 index.html）。改了 decor-sculpt／decor-nature／battle-decor 要一起更新
      這裡的版本與 Worker 檔內 importScripts 的版本字串，否則 Worker 會吃到快取的舊畫法。 */
-  var ATLAS_WORKER_URL = 'js/worker/decor-atlas.worker.js?v=1.0.18';
+  var ATLAS_WORKER_URL = 'js/worker/decor-atlas.worker.js?v=1.0.19';
   var VARIANTS = 3;          // 每種擺件／地面裝飾畫幾個變體
   var TEX_SCALE = 1.5;       // 圖集解析度（畫面放大或高 DPI 時仍清楚；開 mipmap 避免縮小時閃爍）
 
@@ -2476,40 +2476,43 @@ var BattleDecor = (function () {
             s._decorLocal=true;s._natureBubble=bubble;s._natureIndex=i;s._natureTexture=texture;
             s._natureFireHalo=halo;
             s.tint=fire?0xffffff:halo?0xff661b:e.kind==='fire'?0x736460:e.kind==='gas'?0xa6b969:e.kind==='frost'?0xc5e6ee:e.kind==='void'?0xb297db:e.kind==='smoke'?0x9e9b8b:0xe5cfac;
+            // 固定來源的形狀／深度只在取出池時設定；投影仍每幀跟隨腳點與鏡頭。
+            if(fire){
+              s._bbX=s._bbY=.63*e.scale/TEX_SCALE;
+              s.zIndex=e.y*groundScale+.2;s.alpha=.90;s.rotation=0;
+            }else if(halo){
+              s.x=e.x;s.y=e.y;s.scale.set(e.width*.85/(PARTICLE_W.glow*TEX_SCALE));s.rotation=0;
+            }
             sprites.push(s);
           }
           var frames=null;
           if(e.kind==='fire'){frames=[];for(var ef=0;ef<ENV_FIRE_FRAMES;ef++)frames.push(texFor('envFlame'+ef));}
-          D.localGroups.set(key,{source:e,sprites:sprites,frames:frames});
+          D.localGroups.set(key,{source:e,sprites:sprites,frames:frames,phase:(e.seed>>>0)/4294967296});
         });
         D.localActive=Array.from(D.localGroups.values());
       }
       for(var gi=0;gi<D.localActive.length;gi++){
         var group=D.localActive[gi];
-        var e=group.source,phase=(e.seed>>>0)/4294967296;
+        var e=group.source,phase=group.phase;
         for(var si=0;si<group.sprites.length;si++){
           var s=group.sprites[si];
-          var age=(D.time*.22+phase+s._natureIndex/3)%1;
-          var fade=Math.sin(age*Math.PI),side=Math.sin(age*3+phase*6);
           if(s._natureTexture==='envFlame0'){
             var ft=D.time*24+phase*ENV_FIRE_FRAMES;
             s.texture=group.frames[Math.floor(ft)%ENV_FIRE_FRAMES];
-            var fs=.63*e.scale/TEX_SCALE;
-            s._bbX=fs;s._bbY=fs;
-            s.x=e.x;s.y=e.y*groundScale-e.height;
-            s.zIndex=e.y*groundScale+.2;s.alpha=.90;s.rotation=0;
             billboardSprite(s,opts.billboard,s._bbX,s._bbY,s._bbParent,s._bbOffX,s._bbOffY);
           }else if(s._natureFireHalo){
-            s.x=e.x;s.y=e.y;s.scale.set(e.width*.85/(PARTICLE_W.glow*TEX_SCALE));
-            s.alpha=.12+.025*Math.sin(D.time*5+phase*6);s.rotation=0;
-          }else if(s._natureBubble){
-            s.x=e.x;s.y=e.y;s.scale.set((.15+age*.65)/TEX_SCALE);s.alpha=fade*.32;s.rotation=0;
+            s.alpha=.12+.025*Math.sin(D.time*5+phase*6);
           }else{
-            var fog=s._natureTexture==='fog',base=fog?.16:s._natureTexture==='glow'?.22:.3;
-            s._bbX=s._bbY=base*(.6+age*.9);
-            s.x=e.x+side*(fog?18:30);s.y=e.y*groundScale-e.height-age*(fog?40:32);
-            s.zIndex=e.y*groundScale+.1;s.alpha=fade*(fog?.24:.65);
-            s.rotation=fog?0:age*2;billboardSprite(s,opts.billboard,s._bbX,s._bbY);
+            var age=(D.time*.22+phase+s._natureIndex/3)%1,fade=Math.sin(age*Math.PI);
+            if(s._natureBubble){
+              s.x=e.x;s.y=e.y;s.scale.set((.15+age*.65)/TEX_SCALE);s.alpha=fade*.32;s.rotation=0;
+            }else{
+              var side=Math.sin(age*3+phase*6),fog=s._natureTexture==='fog',base=fog?.16:s._natureTexture==='glow'?.22:.3;
+              s._bbX=s._bbY=base*(.6+age*.9);
+              s.x=e.x+side*(fog?18:30);s.y=e.y*groundScale-e.height-age*(fog?40:32);
+              s.zIndex=e.y*groundScale+.1;s.alpha=fade*(fog?.24:.65);
+              s.rotation=fog?0:age*2;billboardSprite(s,opts.billboard,s._bbX,s._bbY);
+            }
           }
         }
       }
