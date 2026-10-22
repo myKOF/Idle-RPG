@@ -71,3 +71,30 @@ test('正式火鏈事件抬高但保留地面連線與傷害判定，移離後�
   assert.equal(c.FIELD.player.hp,hp);
   b.hp=0; stepElite(c,0.5); assert.equal(c.ELITE_RT.chains.length,0);
 });
+
+test('三隻NPC的正式火鏈事件完整閉合三角形，三條同時懸空播放', () => {
+  const c = loadEliteEnv(); c.FIELD.player.hp = c.FIELD.player.maxHp = 1e12;
+  const points = [[-180,-80],[180,-80],[180,160]];
+  const monsters = points.map(([x,y],i) => makeElite(c,i===0?['e_firechain']:['e_vitality'],{x,y,hp:1e9}));
+  for (const m of monsters) { m._enterCd=0; m._el.repoAt=Infinity; for (const id in m._el.cd) m._el.cd[id]=1e9; }
+  stepElite(c,0.3);
+  assert.equal(c.ELITE_RT.chains.length,3);
+  const events = new Map(c.vfx.filter(v=>v.area && /^elite-chain-/.test(v.area.id)).map(v=>[v.area.id,v]));
+  assert.equal(events.size,3,'閉合斜邊也必須派送');
+  const expectedPairs = [[0,1],[1,2],[0,2]].map(([i,j])=>[monsters[i].floatSel,monsters[j].floatSel].sort().join('|')).sort();
+  assert.deepEqual(Array.from(c.ELITE_RT.chains,v=>v.key).sort(),expectedPairs);
+  const {adapter,nodes}=setup(0.5);
+  adapter.registerPresets([...new Set([...events.values()].map(v=>v.vfx.ground))].map(preset));
+  for (const chain of c.ELITE_RT.chains) {
+    const ev = events.get(chain.vis.id), a=chain.a.pos, b=chain.b.pos;
+    near(ev.area.x,(a.x+b.x)/2); near(ev.area.y,(a.y+b.y)/2);
+    near(ev.area.w,Math.hypot(b.x-a.x,b.y-a.y));
+    assert.equal(adapter.tryPlay(ev),true);
+  }
+  adapter.update(0.01);
+  assert.equal(adapter.stats().grounds,3);
+  assert.equal(adapter.stats().billboard.activeEffects,3);
+  assert.equal(adapter.stats().zone.activeEffects,0);
+  assert.equal(new Set(nodes.filter(n=>n.t && n.t.visible!==false).map(n=>n.t.sortGroup)).size,3);
+  assert.ok(nodes.every(n=>n.tag==='raised'));
+});

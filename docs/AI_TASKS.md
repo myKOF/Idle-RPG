@@ -2,6 +2,8 @@
 
 ## FIRE-CHAIN-HEIGHT-20261022 — 火鏈固定離地兩米
 
+- 追驗（2026-10-22，Done）：使用者指出前次驗收圖三隻僅兩鏈；確認臨時預覽漏送末尾閉合邊，正式eliteChainRing已有三邊。新增三NPC正式模擬→完整三條事件→Runtime同時懸空播放回歸，核對所有配對／中點／長度／3個billboard實例；修正臨時預覽為直接播放正式模擬生成的3條事件，正式Renderer圖明確閉合三角形，離地2米，Console warning／error 0。截圖fire-chain-triangle-2m.png保存於本聊天visualizations，前圖僅為高度比較，不能代表群體閉合驗收。node --test --test-reporter=spec --test-name-pattern="火鏈|ELITE-ENGINE-4" tests/fire-chain-height.test.cjs tests/elite-engine.test.cjs，11/11通過；git diff --check通過。僅修改本紀錄與高度專項測試，未改正式遊戲／配置／素材／LV／Worker／快取，無素材庫變更、無本次未完成項，可供Review／合併；未合併推送。唯讀檢查eliteChainRing／eliteChainsTick／eliteVisEmit、Runtime、既有閉合測試與臨時預覽；未做玩家存檔長戰。Commit為本段所在[Codex] test: 驗證三隻NPC火鏈完整閉合並更正預覽，回覆附編號。
+
 - Owner：Codex；Done，單一開發者。使用者要求火鏈不要貼地，採固定離地2米。前置既有火鏈與地面投影完成；fetch後四檔及專項測試預檢無外部來源。
 - 允許：js/vfx-runtime.js火鏈顯示高度／圖層，index僅Runtime快取，tests/fire-chain-height.test.cjs、LV及本紀錄；禁止其他技能、岩壁／毒水進行中區段、配置／素材／Worker／Protocol／傷害／存檔與其他副本。不合併推送。
 - 驗收：正式模擬火鏈事件、兩米離地且保留腳點深度、投影／移動／續播／回收，原傷害回歸、正式Renderer畫面及Console、Build與diff；只stage本任務hunk後獨立Commit，交使用者Review／正常整合。
