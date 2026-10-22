@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## NPC-RANK-GLOW-20261022 — NPC模型輪廓階級辨識
+
+- Owner：Codex；Done，單一開發者。使用者三張截圖僅作效果參考：一般菁英藍光、高級菁英黃光、BOSS紅色外框與金紅內光；邊緣亮、內部淡，保留模型細節。依賴既有NPC階級與Pixi本體已完成。
+- 允許：js/battle-renderer.js本體輪廓快取／覆層及生命週期、js/battle-elite.js僅過時註解、index與tools/scene-preview.html僅對應快取、tests/npc-rank-glow.test.cjs、LV／菁英表現總覽／操作驗收清單本功能及本段。禁止修改模擬／Worker／Protocol／配置／存檔／技能Preset與其他副本。不新增外部素材，不合併推送。
+- 驗收：透明輪廓／邊亮內淡、三階色彩、普通怪無覆層、序列幀／圖片晚載／emoji備援、成長／受擊／透視／暫停／死亡與回收，共享快取及不逐幀重畫；相關回歸／Build／隔離瀏覽器Console及畫面、自我Review後獨立Commit，交使用者Review與整合。
+- 衝突預檢：Renderer／預覽／測試／本紀錄無外部來源；index與LV僅Claude d720da40不同區段（對方威能／data等快取與威能說明，本次Renderer快取與新增NPC說明），develop共同基底與雙方實際檔案git merge-file乾跑均0，無語意相依。
+- 完成9檔：js/battle-renderer.js移除背後圓形階級光暈，依本體透明度快取內外漸層遮罩，三階固定配色，普通／小兵無覆光；emoji備援精靈化確保輪廓同源，圖片晚載重設成長基準並更新覆層。BOSS載圖時預備11格遮罩，逐幀沿本體Texture換圖；同父層共用受擊、透視、成長、死亡壓扁／淡出及回收，另同步anchor／pivot／翻面。js/battle-elite.js僅同步註解；index／tools/scene-preview.html快取Renderer=1.6.198、主頁Elite=1.0.8；新增tests/npc-rank-glow.test.cjs五項回歸，LV／docs/elite_monster_affixes_guide.md／docs/ANTIGRAVITY_ELITE_TEST_CASES.md與本段同步。Worker／Protocol／配置／存檔／技能數值不變。
+- 驗證指令：`node --test --test-reporter=spec tests/npc-rank-glow.test.cjs tests/battle-elite.test.cjs tests/player-outline.test.cjs tests/player-directional-sprite.test.cjs tests/battle-renderer-pause.test.cjs tests/battle-perspective.test.cjs tests/scene-startup-ready.test.cjs tests/tower-battlefield.test.cjs tests/npc-elite-skills.test.cjs tests/enemy-hit.test.cjs`，66/66通過、0略過；`npm.cmd run build`574檔通過；`node --check js/battle-renderer.js`、`git diff --check`通過，未改既有斷言。最終index與LV對Claude實際檔案再次三方乾跑均0。
+- 隔離Edge／正式Pixi與Renderer：普通怪無覆層，菁英藍／高級菁英黃／BOSS紅框金光目視通過；人工透明矩形測得中央alpha18、內緣144、外緣188，遠處／四角／鄰動畫格0，證明邊亮內淡及不跨格。BOSS idle4／attack5／hurt2共11格皆切換正確；晚載圖片替換、180次成長同步、受擊同幀alpha、死亡回收且保留共用貼圖通過，穩態Canvas建立0。Console warning／error及pageerror0。截圖npc-ranks.png與verification.json保存在本聊天visualizations/npc-rank，未讀寫玩家存檔或操作使用者分頁。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts/codex、elite.js階級來源、elite_data、NPC.csv／data.js、boss_generic.json與既有圖檔、Pixi實作、場景及角色既有測試／helpers、衝突腳本與Claude相關差異。自我Review確認沒有新增Timer／逐幀Canvas／逐NPC Filter或Preset來源；三張外部截圖僅參考發光層次，覆光為自製執行期程序效果，沒有新增或修改獨立美術素材，素材庫無本次變更、不建空Commit。
+- 交付：遊戲Commit為本段所在「[Codex] feat: NPC依階級加入模型輪廓覆光」，回覆附編號；本次無未完成實作，可供Review／合併，未合併推送。限制：效果接在正式Canvas路徑，手動canvas=0的舊DOM備援仍沿用舊外觀；增加每個高級敵人兩個精靈與每份本體幀兩張快取遮罩，未做真人存檔長戰／手機GPU或跨瀏覽器效能壓測。下一步使用者正常整合後重新整理遊戲驗收。
+
 ## TOWER-REWARDS-20261022 — 封魔塔精簡說明與真言解鎖展示
 
 - Owner：Codex；Done，單一開發者。使用者要求刪除樓層BOSS tips與BOSS專屬技能說明，顯示本層解鎖符文真言的等級及名稱，移除獎勵中符文機率／樓層說明，取消實際通關金幣獎勵。既有Runes配置towerUnlockFloor／tier／name為唯一來源。

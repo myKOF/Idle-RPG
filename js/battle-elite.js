@@ -4,7 +4,7 @@
    ------------------------------------------------------------
    模擬層（js/elite.js）把「這隻有哪些詞條、現在處於什麼狀態」放在敵人資料上：
      data.affixes   技能 id 陣列（Skills2 表敵人技能；只有高級敵人有）
-     data._tier／_size／_elColor  敵人類型、體型倍率、光暈顏色（外層光暈與本體縮放在 battle-renderer.js makeEnemy）
+     data._tier／_size／_elColor  敵人類型、體型倍率、腳下群組環顏色（本體縮放與階級輪廓覆光在 battle-renderer.js）
      data._grow     復仇疊出來的體型加成倍率（這裡動態縮放本體）
      data._gid      群組編號（同一群共用；小兵與召喚物也有）
      data._gRole    leader／elite／minion／summon／split
