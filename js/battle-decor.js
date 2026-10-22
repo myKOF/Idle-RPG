@@ -656,7 +656,7 @@ var BattleDecor = (function () {
     var cg=cv.getContext('2d'),im=cg.createImageData?cg.createImageData(W,H):null;
     if(!im||!im.data)return;
     var pixels=im.data,phase=frame/ENV_FIRE_FRAMES*Math.PI*2;
-    var plumes=[[-.29,.17,.72,1.2],[.04,.25,.96,0],[.31,.15,.64,3.4]];
+    var plumes=[[-.29,.20,.72,1.2],[.04,.30,.96,0],[.31,.18,.64,3.4]];
     function smooth(a,b,x){var t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t);}
     for(var py=0;py<H;py++){
       var v=(h-2-py/scale)/(h*.93);
@@ -677,7 +677,7 @@ var BattleDecor = (function () {
         // 往上捲的明暗紋理與密度孔洞；時間皆為整數週期，尾幀回首幀不跳。
         var eddy=Math.sin(u*17+v*22-phase*4)*.12+Math.sin(u*31-v*13+phase*3)*.065;
         density=Math.max(0,density*(.86+eddy)-Math.max(0,eddy)*v*.35);
-        var alpha=smooth(.035,.7,density)*(1-smooth(.6,1,v))*(.82-v*.32)*smooth(-.018,.035,v);
+        var alpha=smooth(.035,.7,density)*(1-smooth(.6,1,v))*(.96-v*.28)*smooth(-.018,.035,v);
         if(alpha<.003)continue;
         var heat=Math.min(1,density*.76)*(1-v*.63),o=(py*W+px)*4;
         pixels[o]=255;
@@ -687,6 +687,14 @@ var BattleDecor = (function () {
       }
     }
     cg.putImageData(im,0,0);g.drawImage(cv,0,0,W,H,0,0,w,h);
+    // 火星與火焰共用預烘圖集，不另建節點、Timer或執行期粒子。
+    for(var ember=0;ember<4;ember++){
+      var age=(frame/ENV_FIRE_FRAMES+ember*.243)%1,fade=Math.sin(age*Math.PI);
+      var ex=w*.5+Math.sin(ember*2.7+age*5)*w*.24*age,ey=h-3-age*(h-7);
+      var er=.7+ember%2*.35,glow=g.createRadialGradient(ex,ey,0,ex,ey,er*2.5);
+      glow.addColorStop(0,'rgba(255,239,153,'+(fade*.95)+')');glow.addColorStop(.32,'rgba(255,166,50,'+(fade*.8)+')');glow.addColorStop(1,'rgba(255,90,12,0)');
+      g.fillStyle=glow;g.fillRect(ex-er*2.5,ey-er*2.5,er*5,er*5);
+    }
   }
 
   /* ---- 斷牆：一排排寬窄不一的斜角磚，色調略有差異；外形是參差的殘牆（中間高、兩端矮），上排缺磚，頂面露出厚度 ---- */
@@ -1660,7 +1668,7 @@ var BattleDecor = (function () {
   };
   /* 背景建圖 Worker（相對於 index.html）。改了 decor-sculpt／decor-nature／battle-decor 要一起更新
      這裡的版本與 Worker 檔內 importScripts 的版本字串，否則 Worker 會吃到快取的舊畫法。 */
-  var ATLAS_WORKER_URL = 'js/worker/decor-atlas.worker.js?v=1.0.17';
+  var ATLAS_WORKER_URL = 'js/worker/decor-atlas.worker.js?v=1.0.18';
   var VARIANTS = 3;          // 每種擺件／地面裝飾畫幾個變體
   var TEX_SCALE = 1.5;       // 圖集解析度（畫面放大或高 DPI 時仍清楚；開 mipmap 避免縮小時閃爍）
 
@@ -1910,13 +1918,13 @@ var BattleDecor = (function () {
       particles: [], fogs: [], rays: [], lastCam: null, visible: true, time: 0,
       counts: { decals: 0, props: 0 },
       target: null, building: null, prebuild: null, cache: new Map(),
-      localGroups: new Map(), localSelection: '', motionOn: true
+      localGroups: new Map(), localActive: [], localSelection: '', motionOn: true
     };
 
     function texFor(key) { return D.textures[key] || null; }
 
     function releaseAll() {
-      D.localGroups.forEach(releaseLocalGroup);D.localGroups.clear();D.localSelection='';
+      D.localGroups.forEach(releaseLocalGroup);D.localGroups.clear();D.localActive.length=0;D.localSelection='';
       D.chunks.forEach(function (c) { releaseChunk(c); });
       D.chunks.clear();
       D.lastChunkKey = '';
@@ -2470,21 +2478,26 @@ var BattleDecor = (function () {
             s.tint=fire?0xffffff:halo?0xff661b:e.kind==='fire'?0x736460:e.kind==='gas'?0xa6b969:e.kind==='frost'?0xc5e6ee:e.kind==='void'?0xb297db:e.kind==='smoke'?0x9e9b8b:0xe5cfac;
             sprites.push(s);
           }
-          D.localGroups.set(key,{source:e,sprites:sprites});
+          var frames=null;
+          if(e.kind==='fire'){frames=[];for(var ef=0;ef<ENV_FIRE_FRAMES;ef++)frames.push(texFor('envFlame'+ef));}
+          D.localGroups.set(key,{source:e,sprites:sprites,frames:frames});
         });
+        D.localActive=Array.from(D.localGroups.values());
       }
-      D.localGroups.forEach(function(group){
+      for(var gi=0;gi<D.localActive.length;gi++){
+        var group=D.localActive[gi];
         var e=group.source,phase=(e.seed>>>0)/4294967296;
-        group.sprites.forEach(function(s){
+        for(var si=0;si<group.sprites.length;si++){
+          var s=group.sprites[si];
           var age=(D.time*.22+phase+s._natureIndex/3)%1;
           var fade=Math.sin(age*Math.PI),side=Math.sin(age*3+phase*6);
           if(s._natureTexture==='envFlame0'){
             var ft=D.time*24+phase*ENV_FIRE_FRAMES;
-            s.texture=texFor('envFlame'+(Math.floor(ft)%ENV_FIRE_FRAMES));
+            s.texture=group.frames[Math.floor(ft)%ENV_FIRE_FRAMES];
             var fs=.63*e.scale/TEX_SCALE;
             s._bbX=fs;s._bbY=fs;
             s.x=e.x;s.y=e.y*groundScale-e.height;
-            s.zIndex=e.y*groundScale+.2;s.alpha=.78;s.rotation=0;
+            s.zIndex=e.y*groundScale+.2;s.alpha=.90;s.rotation=0;
             billboardSprite(s,opts.billboard,s._bbX,s._bbY,s._bbParent,s._bbOffX,s._bbOffY);
           }else if(s._natureFireHalo){
             s.x=e.x;s.y=e.y;s.scale.set(e.width*.85/(PARTICLE_W.glow*TEX_SCALE));
@@ -2498,8 +2511,8 @@ var BattleDecor = (function () {
             s.zIndex=e.y*groundScale+.1;s.alpha=fade*(fog?.24:.65);
             s.rotation=fog?0:age*2;billboardSprite(s,opts.billboard,s._bbX,s._bbY);
           }
-        });
-      });
+        }
+      }
     }
 
     function setVisible(on) {
