@@ -1337,9 +1337,21 @@ var BattleDecor = (function () {
   function drawObsidian(g,w,h,r,pal) {
     var fy=h-FOOT,S=sculpt(w,h),glass=M('#292430',{bump:.6,amb:.2,hiLift:.16,spec:.08});
     shadowEllipse(g,w/2,fy,w*.4,w*.1,.4);
-    for(var i=0;i<4;i++)rockFacets(S,r,w*(.25+i*.17),fy,w*range(r,.2,.3),h*range(r,.4,.85),i*5,glass,{bevel:.5,tex:noiseTex('grain',1.7,.6,r)});
+    // 根部埋入斷裂母岩，柱腳不再整排切齊同一條水平線。
+    for(var i=0;i<4;i++)rockFacets(S,r,w*(.25+i*.17),fy-range(r,0,h*.045),w*range(r,.2,.3),h*range(r,.4,.85),i*5,glass,{bevel:.5,tex:noiseTex('grain',1.7,.6,r)});
+    for(var b=0;b<6;b++)rockFacets(S,r,w*range(r,.13,.87),fy+range(r,-3,1),w*range(r,.2,.35),h*range(r,.06,.19),24+b,M('#3a3033',{bump:1.4,amb:.22,hiLift:.18}),{bevel:.6,tex:noiseTex('grain',1.2,1.3,r)});
+    pebblesAt(S,r,w/2,fy,w*.45,10,M('#45393b',{bump:1.1,amb:.25}),34);
     S.render(g,{footY:fy,footAO:8});
     g.strokeStyle='rgba(196,104,70,.5)';g.lineWidth=.7;g.beginPath();g.moveTo(w*.48,fy-h*.48);g.lineTo(w*.52,fy-h*.27);g.lineTo(w*.46,fy-3);g.stroke();
+  }
+  function drawLavaContact(g,w,r) {
+    // 地面平面上的灰燼裙邊；中心實、外圈碎散，不以一圈整齊的石頭框住物件。
+    shadowEllipse(g,0,1,w*.62,w*.23,.42);
+    for(var i=0;i<150;i++){
+      var a=r()*Math.PI*2,d=Math.sqrt(r()),x=Math.cos(a)*w*.69*d,y=Math.sin(a)*w*.23*d;
+      var s=range(r,.45,2.3)*(1-d*.5);g.fillStyle=rgba(pick(r,['#594642','#84716a','#231d24','#3f3438']),.12+(1-d)*.5);
+      pathPoly(g,[[x-s,y],[x-s*.4,y-s*.7],[x+s*.8,y-s*.3],[x+s,y+s*.3]]);g.fill();
+    }
   }
   function drawFulgurite(g,w,h,r,pal) {
     var fy=h-FOOT,S=sculpt(w,h),mat=M('#536779',{bump:1.7,amb:.32,spec:.06,hiLift:.2});
@@ -1418,8 +1430,8 @@ var BattleDecor = (function () {
     },
     lava_mountain: {
       tint:0xffffff,deepTint:0xb39a98,
-      props:[['lavaOutcrop',3.5,125,158,{}],['lavaVent',2,110,78,{}],['obsidian',2.5,80,107,{}],['basalt',1.5,62,48,{base:'#49434c'}]],
-      deepProps:[['lavaOutcrop',3,145,178,{}],['lavaVent',3,112,86,{}],['obsidian',3,88,122,{}]],
+      props:[['lavaOutcrop',1.3,125,158,{}],['lavaVent',1.1,110,78,{}],['obsidian',1.5,80,107,{}],['basalt',1.2,62,48,{base:'#49434c'}],['magmaPool',2,142,94,{}],['burningLog',2,126,98,{}],['slagBoulder',1.8,102,83,{}],['burningLog',.8,88,58,{}],['slagBoulder',1,72,54,{}],['magmaPool',.7,90,60,{}]],
+      deepProps:[['lavaOutcrop',1.5,145,178,{}],['lavaVent',1.2,112,86,{}],['obsidian',1.6,88,122,{}],['basalt',1,68,50,{base:'#49434c'}],['magmaPool',2.4,150,100,{}],['burningLog',1.5,120,94,{}],['slagBoulder',2,112,91,{}],['burningLog',.8,88,58,{}],['slagBoulder',1,72,54,{}],['magmaPool',.7,90,60,{}]],
       decals:[['biomass',4,230,{kind:'lava'}],['crack',4,210,{dark:'#4d201c',rim:'#c27046',glow:'#ef6b26'}],['patch',4,320,{color:'#1d1820',alpha:.25}]],
       deepDecals:[['biomass',5,270,{kind:'lava'}],['crack',5,220,{dark:'#4d201c',rim:'#db9c65',glow:'#ff842d'}],['light',1.5,220,{color:'#d86630'}]],
       ambient:{kind:'embers',count:36,color:0xf8a15b,fog:3,fogTint:0x84706b,fogAlpha:.15,fogWind:-1},deepAmbient:{kind:'embers',count:42,color:0xffb35d,fog:2,fogTint:0x725453,fogAlpha:.17},motion:{wind:.4,local:'smoke'}
@@ -1588,7 +1600,7 @@ var BattleDecor = (function () {
   };
   var LANDMARK_CHANCE = 0.14;
   LANDMARKS.mist_forest={surface:[['mistTree',1,230,280,{}]],deep:[['rootGate',1,250,255,{}]]};
-  LANDMARKS.lava_mountain={surface:[['lavaOutcrop',1,220,260,{}],['lavaVent',1,235,165,{}]],deep:[['lavaVent',1,260,185,{}],['lavaOutcrop',1,220,265,{}]]};
+  LANDMARKS.lava_mountain={surface:[['lavaOutcrop',1,220,260,{}],['lavaVent',.6,235,165,{}],['slagBoulder',1,190,145,{}]],deep:[['lavaVent',.7,260,185,{}],['lavaOutcrop',1,220,265,{}],['slagBoulder',1.2,205,158,{}]]};
   LANDMARKS.thunder_peak={surface:[['stormSpire',1,205,265,{}],['windPine',1,230,260,{}]],deep:[['stormSpire',1,210,270,{}]]};
   var LANDMARK_VARIANTS = 2;
 
@@ -1607,7 +1619,7 @@ var BattleDecor = (function () {
   };
   /* 背景建圖 Worker（相對於 index.html）。改了 decor-sculpt／decor-nature／battle-decor 要一起更新
      這裡的版本與 Worker 檔內 importScripts 的版本字串，否則 Worker 會吃到快取的舊畫法。 */
-  var ATLAS_WORKER_URL = 'js/worker/decor-atlas.worker.js?v=1.0.14';
+  var ATLAS_WORKER_URL = 'js/worker/decor-atlas.worker.js?v=1.0.16';
   var VARIANTS = 3;          // 每種擺件／地面裝飾畫幾個變體
   var TEX_SCALE = 1.5;       // 圖集解析度（畫面放大或高 DPI 時仍清楚；開 mipmap 避免縮小時閃爍）
 
@@ -1626,21 +1638,24 @@ var BattleDecor = (function () {
     var lm = LANDMARKS[kitKey] || LANDMARKS.desert;
     var landmarks = (deep ? lm.deep : lm.surface) || [];
     landmarks.forEach(function (p, i) {
-      for (var v = 0; v < LANDMARK_VARIANTS; v++) specs.push({ kind: 'prop', key: 'L' + i + '_' + v, type: p[0], w: p[2], h: p[3], pal: p[4], opt: p[5], seed: strHash(kitKey + 'L' + p[0] + i + '_' + v + (deep ? 'd' : '')) });
+      for (var v = 0; v < LANDMARK_VARIANTS; v++) specs.push({ kind: 'prop', key: 'L' + i + '_' + v, variant:v, type: p[0], w: p[2], h: p[3], pal: p[4], opt: p[5], seed: strHash(kitKey + 'L' + p[0] + i + '_' + v + (deep ? 'd' : '')) });
     });
     var decals = deep ? kit.deepDecals : kit.decals;
     props.forEach(function (p, i) {
-      for (var v = 0; v < VARIANTS; v++) specs.push({ kind: 'prop', key: 'p' + i + '_' + v, type: p[0], w: p[2], h: p[3], pal: p[4], opt: p[5], seed: strHash(kitKey + p[0] + i + '_' + v + (deep ? 'd' : '')) });
+      for (var v = 0; v < VARIANTS; v++) specs.push({ kind: 'prop', key: 'p' + i + '_' + v, variant:v, type: p[0], w: p[2], h: p[3], pal: p[4], opt: p[5], seed: strHash(kitKey + p[0] + i + '_' + v + (deep ? 'd' : '')) });
       if (p[0] === 'brazier' && !specs.some(function (s) { return s.key === 'flame' + i + '_0'; })) {
         for (var f = 0; f < FLAME_FRAMES; f++) specs.push({ kind: 'flame', key: 'flame' + i + '_' + f, type: 'flame', w: 34, h: 48, pal: p[4], seed: 7 + i, frame: f });
       }
     });
+    if (kitKey === 'lava_mountain') {
+      for (var ef=0;ef<FLAME_FRAMES;ef++) specs.push({kind:'flame',key:'envFlame'+ef,type:'flame',w:40,h:60,pal:{fire:'#ff6a1a',fire2:'#ffd27a'},seed:173,frame:ef});
+    }
     decals.forEach(function (d, i) {
       var nv = d[0] === 'light' ? 1 : VARIANTS;
       for (var v = 0; v < nv; v++) specs.push({ kind: 'decal', key: 'd' + i + '_' + v, type: d[0], w: d[2], h: d[2], pal: d[3], seed: strHash(kitKey + d[0] + i + '_' + v + (deep ? 'd' : '')) });
     });
     var style = natureStyle(kitKey, deep);
-    var natureProps = ['mistTree','rootGate','lavaVent','windPine','lavaOutcrop','stormSpire','rock','stump','log','fern','reeds','mushrooms','grass','willow','pine','deadTree','shrub','dryGrass','cactus','pillar','grave','urn','arch','ruinWall','rubble','runeStone','crystals','spire','skullPile','giantBones','banner','sword'];
+    var natureProps = ['magmaPool','burningLog','slagBoulder','mistTree','rootGate','lavaVent','windPine','lavaOutcrop','stormSpire','rock','stump','log','fern','reeds','mushrooms','grass','willow','pine','deadTree','shrub','dryGrass','cactus','pillar','grave','urn','arch','ruinWall','rubble','runeStone','crystals','spire','skullPile','giantBones','banner','sword'];
     var contacts = [];
     specs.forEach(function (s) {
       s.natureStyle = style;
@@ -1691,8 +1706,9 @@ var BattleDecor = (function () {
       if (s.kind === 'contact') {
         g.translate(s.w / 2, s.h / 2); g.scale(1, 2);
         DecorNature.drawContact(g, 0, 0, s.propW, s.seed, s.natureStyle);
+        if (s.natureStyle.theme === 'lava_mountain') drawLavaContact(g,s.propW,r);
       } else if (s.nature && s.kind === 'prop') {
-        DecorNature.drawBody(g, s.type, s.w / 2, s.h - FOOT, s.w * 0.9, s.h - FOOT, s.seed, s.natureStyle);
+        DecorNature.drawBody(g, s.type, s.w / 2, s.h - FOOT, s.w * 0.9, s.h - FOOT, s.seed, s.natureStyle, s.variant);
       } else if (s.nature && s.kind === 'decal') {
         DecorNature.drawSurface(g, s.type, s.w, s.h, s.seed, s.natureStyle);
       } else if (s.kind === 'prop') PROP_DRAW[s.type](g, s.w, s.h, r, s.pal, s.opt);
@@ -1736,6 +1752,10 @@ var BattleDecor = (function () {
   var STAGE_BAND = 10;           // 每 10 個階段換一帶，雙數帶是地下
   var PLAYER_FADE_ALPHA = 0.38;  // 擺件擋到玩家時的透明度
 
+  /* ?obstacles=1：把會擋路的佔地橢圓畫在地上（紅色），檢查「看到的岩石」跟「擋路的範圍」對不對得上 */
+  function obstacleDebugOn() {
+    try { return /[?&]obstacles=1(&|$)/.test(location.search); } catch (e) { return false; }
+  }
   function decorQueryMode() {
     try {
       var m = /[?&]decor=([^&]+)/.exec(location.search);
@@ -1765,6 +1785,7 @@ var BattleDecor = (function () {
     var mode = decorQueryMode();
     var enabled = mode !== '0' && mode !== 'off';
     var lite = mode === 'lite';
+    var debugObstacles = obstacleDebugOn() && !!PIXI.Graphics;
     var groundScale = opts.groundScale || 0.5;
     var decalLayer = opts.decalLayer;     // 地面平面（世界座標，scale.y = groundScale）
     var lightLayer = opts.lightLayer;     // 同上，加色光暈（火盆地面光）
@@ -1985,7 +2006,7 @@ var BattleDecor = (function () {
     function buildChunk(cx, cy) {
       var atlas = D.atlas;
       var r = mulberry(hash3(cx, cy, D.seedBase));
-      var chunk = { cx: cx, cy: cy, decals: [], props: [], flames: [], lights: [], emitters: [] };
+      var chunk = { cx: cx, cy: cy, decals: [], props: [], flames: [], lights: [], emitters: [], debug: [] };
       var x0 = cx * CHUNK_W, y0 = cy * CHUNK_H;
       var nDecal = lite ? 2 : 2 + Math.floor(r() * 2);
       for (var i = 0; i < nDecal; i++) {
@@ -2006,18 +2027,14 @@ var BattleDecor = (function () {
         (isLight ? chunk.lights : chunk.decals).push(s);
         if(d[0]==='puddle'&&(D.kitKey==='swamp'||D.kitKey==='Icefield'))chunk.emitters.push({key:cx+':'+cy+':d'+i,x:s.x,y:s.y,height:0,kind:D.kitKey==='swamp'?'gas':'frost',seed:hash3(cx,cy,i)});
       }
-      // 大型擺件每區塊 1～3 個（偶爾空一塊留白），再補 1～2 個矮的小碎物。
-      var nProp = lite ? (r() < 0.5 ? 1 : 0) : (r() < 0.12 ? 0 : (1 + Math.floor(r() * 2.6)));
-      var nSmall = lite ? 0 : 1 + Math.floor(r() * 2);
-      var smallList = atlas.props.map(function (p, idx) { return [idx, p[3] <= 60 ? p[1] : 0]; }).filter(function (x) { return x[1] > 0; });
-      // placed：[x, y, 橫向避讓, 縱向避讓]（世界單位）
-      var placed = [];
-      function placeProp(p, texKey, px, py, k) {
+      /* 擺件的位置、種類、縮放、翻面全由 BattleTerrain.layoutChunk 決定（純函式，模擬層擋路用的是同一份清單），
+         這裡只把清單變成精靈。大型擺件每區塊 1～3 個（偶爾空一塊留白）加 1～2 個矮的小碎物，地標約 14% 機率。 */
+      var items = BattleTerrain.layoutChunk(D.kitKey, D.deep, D.seedBase, cx, cy);
+      function placeProp(p, texKey, px, py, k, flip) {
         var ptex = texFor(texKey);
         if (!ptex) return null;
         var ps = takeSprite('prop', ptex, propLayer);
         ps.anchor.set(0.5, (p[3] - FOOT) / p[3]);
-        var flip = r() < 0.5 ? -1 : 1;
         var sc = (1 / TEX_SCALE) * k;   // 貼圖是 TEX_SCALE 倍解析度，畫面上的尺寸＝邏輯尺寸 × k
         ps.scale.set(sc * flip, sc);
         ps._bbX = sc * flip; ps._bbY = sc;   // 貼圖自己的縮放；每幀的透視抵銷以它為底（見 billboardChunks）
@@ -2031,10 +2048,15 @@ var BattleDecor = (function () {
         var localKind = (D.atlas.kit.motion || {}).local;
         var localSource = localKind==='smoke'?p[0]==='deadTree':localKind==='gas'?p[0]==='stump':localKind==='frost'?p[0]==='crystals':localKind==='void'?p[0]==='crystals'||p[0]==='runeStone':localKind==='petal'?p[0]==='shrub':p[0]==='dryGrass';
         if(D.kitKey==='mist_forest')localSource=p[0]==='rootGate';
-        if(D.kitKey==='lava_mountain')localSource=p[0]==='lavaVent'||p[0]==='lavaOutcrop';
+        if(D.kitKey==='lava_mountain'){
+          localSource=['lavaVent','lavaOutcrop','magmaPool','burningLog','slagBoulder'].indexOf(p[0])>=0;
+          localKind='fire';
+        }
         if(D.kitKey==='thunder_peak')localSource=p[0]==='fulgurite'||p[0]==='stormSpire';
         if(D.kitKey==='desert'&&p[0]==='dryGrass'){localKind='dust';localSource=true;}
-        if(localSource)chunk.emitters.push({key:cx+':'+cy+':p'+texKey+':'+px,x:px,y:py,height:localKind==='smoke'?p[3]*k*.65:8,kind:localKind,seed:hash3(cx,cy,Math.floor(px))});
+        if(localSource)chunk.emitters.push({key:cx+':'+cy+':p'+texKey+':'+px,x:px,y:py,
+          height:localKind==='fire'?p[3]*k*({lavaVent:.36,lavaOutcrop:.42,magmaPool:.32,burningLog:.25,slagBoulder:.48}[p[0]]||0):localKind==='smoke'?p[3]*k*.65:8,
+          width:p[2]*k,scale:k,anchor:localKind==='fire'?ps:null,kind:localKind,seed:hash3(cx,cy,Math.floor(px))});
         var groundTex = texFor('foot_' + texKey);
         if (groundTex) {
           var gs = takeSprite('decal', groundTex, decalLayer);
@@ -2048,34 +2070,32 @@ var BattleDecor = (function () {
         chunk.props.push(ps);
         return ps;
       }
-      // 地標先放（佔地大），其他擺件避開它
-      if (!lite && atlas.landmarks.length && r() < LANDMARK_CHANCE) {
-        var li = weightedPick(r, atlas.landmarks);
-        var L = atlas.landmarks[li];
-        var lx = x0 + range(r, 0.15, 0.85) * CHUNK_W, ly = y0 + range(r, 0.15, 0.85) * CHUNK_H;
-        if (placeProp(L, 'L' + li + '_' + Math.floor(r() * LANDMARK_VARIANTS), lx, ly, range(r, 0.95, 1.1))) {
-          placed.push([lx, ly, L[2] * 0.55 + 60, 200]);
-        }
+      if (debugObstacles) {
+        items.forEach(function (it0) {
+          it0.shapes.forEach(function (e) {
+            var dg = new PIXI.Graphics();
+            dg.ellipse(e[0], e[1], e[2], e[3]).fill({ color: 0xff3030, alpha: 0.28 }).stroke({ width: 2, color: 0xff3030, alpha: 0.9 });
+            decalLayer.addChild(dg);
+            chunk.debug.push(dg);
+          });
+        });
       }
-      for (var j = 0; j < nProp + nSmall; j++) {
-        var small = j >= nProp;
-        if (small && !smallList.length) break;
-        var pi = small ? smallList[weightedPick(r, smallList)][0] : weightedPick(r, atlas.props);
-        var p = atlas.props[pi];
-        var px = x0 + range(r, 0.06, 0.94) * CHUNK_W, py = y0 + range(r, 0.06, 0.94) * CHUNK_H;
-        var gapX = small ? 70 : 150, gapY = small ? 80 : 180;
-        var clash = placed.some(function (q) { return Math.abs(q[0] - px) < Math.max(gapX, q[2] || 0) && Math.abs(q[1] - py) < Math.max(gapY, q[3] || 0); });
-        if (clash) continue;
-        placed.push([px, py]);
-        var pk = range(r, 0.85, 1.15);
-        var ps = placeProp(p, 'p' + pi + '_' + Math.floor(r() * VARIANTS), px, py, pk);
+      for (var j = 0; j < items.length; j++) {
+        var it = items[j];
+        // 減量模式：只畫會擋路的障礙（看得到才不會被無形的東西擋住）與第一件
+        if (lite && !it.solid && j > 0) continue;
+        var isLm = it.src === 'L';
+        var p = isLm ? atlas.landmarks[it.idx] : atlas.props[it.idx];
+        if (!p) continue;
+        var px = it.x, py = it.y, pk = it.k;
+        var ps = placeProp(p, (isLm ? 'L' : 'p') + it.idx + '_' + it.variant, px, py, pk, it.flip);
         if (!ps) continue;
-        if (p[0] === 'brazier') {
-          var ftex = texFor('flame' + pi + '_0');
+        if (!isLm && p[0] === 'brazier') {
+          var ftex = texFor('flame' + it.idx + '_0');
           if (ftex) {
             var fl = takeSprite('flame', ftex, propLayer);
             fl._frames = [];
-            for (var ff = 0; ff < FLAME_FRAMES; ff++) fl._frames.push(texFor('flame' + pi + '_' + ff) || ftex);
+            for (var ff = 0; ff < FLAME_FRAMES; ff++) fl._frames.push(texFor('flame' + it.idx + '_' + ff) || ftex);
             fl.anchor.set(0.5, 1);
             fl.scale.set(1 / TEX_SCALE);
             fl.x = px;
@@ -2084,7 +2104,7 @@ var BattleDecor = (function () {
             fl._bbParent = ps; fl._bbOffY = fl.y - ps.y;   // 跟著火盆的矩陣走（見 billboardSprite）
             fl._bbX = fl._bbY = 1 / TEX_SCALE;
             fl.zIndex = ps.zIndex + 0.5;
-            fl._phase = r() * 10;
+            fl._phase = it.phase;
             fl._baseY = fl.y;
             chunk.flames.push(fl);
           }
@@ -2097,7 +2117,7 @@ var BattleDecor = (function () {
             lg.tint = flameTint(p[4]);
             lg.x = px; lg.y = py;
             lg.alpha = 0.5;
-            lg._phase = r() * 10;
+            lg._phase = it.phase * 0.7;
             chunk.lights.push(lg);
             chunk.flames.push(lg);
           }
@@ -2115,6 +2135,7 @@ var BattleDecor = (function () {
     }
 
     function releaseChunk(chunk) {
+      if (chunk.debug) chunk.debug.forEach(function (g) { if (g.parent) g.parent.removeChild(g); g.destroy(); });
       chunk.decals.forEach(function (s) { giveSprite('decal', s); });
       chunk.props.forEach(function (s) { giveSprite('prop', s); });
       chunk.flames.forEach(function (s) { if (s.blendMode === 'add') return; giveSprite('flame', s); });
@@ -2394,10 +2415,13 @@ var BattleDecor = (function () {
           var e=wanted[key],sprites=[],n=lite?1:3;
           for(var i=0;i<n;i++){
             var bubble=e.kind==='gas'&&e.height===0&&i===0;
-            var texture=bubble?'ripple':e.kind==='void'?'glow':e.kind==='petal'?'petal':e.kind==='dust'?'dot':'fog';
+            var fire=e.kind==='fire'&&i<2;
+            var texture=fire?'envFlame0':bubble?'ripple':e.kind==='void'?'glow':e.kind==='petal'?'petal':e.kind==='dust'?'dot':'fog';
             var s=takeSprite('local',texFor(texture),bubble?decalLayer:propLayer);s.anchor.set(.5);
+            if(fire)s.anchor.set(.5,1);
+            s._bbParent=fire?e.anchor:null;s._bbOffY=-e.height;s._bbOffX=(i===0?-.13:.14)*e.width;
             s._decorLocal=true;s._natureBubble=bubble;s._natureIndex=i;s._natureTexture=texture;
-            s.tint=e.kind==='gas'?0xa6b969:e.kind==='frost'?0xc5e6ee:e.kind==='void'?0xb297db:e.kind==='smoke'?0x9e9b8b:0xe5cfac;
+            s.tint=fire?0xffffff:e.kind==='fire'?0x736460:e.kind==='gas'?0xa6b969:e.kind==='frost'?0xc5e6ee:e.kind==='void'?0xb297db:e.kind==='smoke'?0x9e9b8b:0xe5cfac;
             sprites.push(s);
           }
           D.localGroups.set(key,{source:e,sprites:sprites});
@@ -2408,7 +2432,15 @@ var BattleDecor = (function () {
         group.sprites.forEach(function(s){
           var age=(D.time*.22+phase+s._natureIndex/3)%1;
           var fade=Math.sin(age*Math.PI),side=Math.sin(age*3+phase*6);
-          if(s._natureBubble){
+          if(s._natureTexture==='envFlame0'){
+            var ft=D.time*8+phase*17+s._natureIndex*2.7;
+            s.texture=texFor('envFlame'+(Math.floor(ft)%FLAME_FRAMES));
+            var fs=(lite?.82:.7+s._natureIndex*.15)*e.scale/TEX_SCALE;
+            s._bbX=fs*(1+Math.sin(ft*1.3)*.09);s._bbY=fs*(1+Math.sin(ft*1.7)*.12);
+            s.x=e.x+(s._natureIndex===0?-.13:.14)*e.width;s.y=e.y*groundScale-e.height;
+            s.zIndex=e.y*groundScale+.2;s.alpha=.88;s.rotation=0;
+            billboardSprite(s,opts.billboard,s._bbX,s._bbY,s._bbParent,s._bbOffX,s._bbOffY);
+          }else if(s._natureBubble){
             s.x=e.x;s.y=e.y;s.scale.set((.15+age*.65)/TEX_SCALE);s.alpha=fade*.32;s.rotation=0;
           }else{
             var fog=s._natureTexture==='fog',base=fog?.16:s._natureTexture==='glow'?.22:.3;
@@ -2477,6 +2509,6 @@ var BattleDecor = (function () {
       particleDot: particleDot, particleFog: particleFog, FOOT: FOOT, TEX_SCALE: TEX_SCALE,
       billboardSprite: billboardSprite
     },
-    _internals: { mulberry: mulberry, hash3: hash3, CHUNK_W: CHUNK_W, CHUNK_H: CHUNK_H, planAtlas: planAtlas, stepAtlas: stepAtlas }
+    _internals: { mulberry: mulberry, hash3: hash3, CHUNK_W: CHUNK_W, CHUNK_H: CHUNK_H, planAtlas: planAtlas, stepAtlas: stepAtlas, LANDMARKS: LANDMARKS }
   };
 })();

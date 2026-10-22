@@ -1,5 +1,22 @@
 # AI_TASKS.md
 
+## LAVA-LANDSCAPE-20261022 — 熔岩山落地銜接、多樣地貌與持續燃燒
+
+- Owner：Codex；Done，單一開發者。使用者要求石柱自然接地、減少同物件縮放複用、增加岩漿池及燃燒枯木。已同意先整合Claude 4ef19b91障礙提交；原副本有飛彈進行中修改，改於獨立codex/lava-terrain工作副本處理，不覆蓋其他工作。
+- 允許：整合該提交並保留既有築牆繞行；battle-decor熔岩山畫法／擺件與局部動態、battle-terrain熔岩目錄／底座、decor-nature完整素材與九份images/scene PNG、scene-renewal匯出接線、對應主頁／Worker／預覽快取、場景文件／LV／本段、必要回歸與素材庫scene-nature母來源。禁止其他地貌美術行為、技能數值／素材、配置、存檔／Protocol及其他副本；不合併推送develop。
+- 依賴：使用者已同意重疊檔案整合。驗收：地表／地下正式Renderer、圖集主端／Worker一致、地形清單一致、燃燒來源／暫停／lite上限／回收、既有地貌與障礙／築牆回歸、Build／Console／diff。完成後素材庫先提交，再遊戲獨立提交，交使用者Review與正常整合。
+
+- 完成：尖石柱加入不等高柱根、隨機破裂母岩與碎石；熔岩物件腳邊另以貼地灰燼漸散過渡。新增岩漿池、焦木、破裂熔岩塊各三個獨立原創造型，圖集variant明確對應A／B／C；大／小擺件皆加入新種類，降低舊岩壁／火山口權重，避免矮物只選同一灰岩。地表及地下均使用，不改場景解鎖與存檔。
+- 燃燒：岩漿、焦木、熔岩塊及既有熔岩源沿用Canvas圖集六幀火焰；每個已選源兩簇火與一煙、lite一簇火，維持六組／十八精靈與兩組／兩精靈上限。火根共用擺件腳點與billboard矩陣，鏡頭透視不分離；停止、隱藏及dt=0凍結，換圖／跨區塊回收；沒有新增Timer、逐幀畫布重繪或VFX Preset來源。
+- 障礙整合：於乾淨新副本套入使用者已同意的4ef19b91，保留原bfMoveToward築牆繞行與雙方推擠擋牆，另加地形pushOut；主頁及Worker同載BattleTerrain，新擺件CATALOG與顯示表同步，小岩漿池永遠可通行，焦木／熔岩塊依原底座門檻。原副本突然出現未提交內容時，Git拒絕的第一次套用沒有改檔，後續未同步／切換原副本分支。
+- 修改26檔：LV／本紀錄／SCENE_NATURE；index；battle-decor／battle-terrain／battlefield／bridge／data／decor-nature；兩支圖集／模擬Worker；battle-decor／battle-terrain兩份回歸；兩個場景預覽工具與匯出器；九份新PNG。主頁decor-nature=1.0.10、battle-decor=1.0.25、battle-terrain=1.0.1、battlefield=1.4.17、bridge=1.0.342；圖集Worker=1.0.16，Worker import／資源鍵同步，Protocol不變。
+- 素材：內建image_gen原創製作三張透明素材表，完整提示詞／來源SHA／裁切／九母圖SHA已存scene-nature/lava-generation-records.json；每種三個結構各異的造型，沒有外部圖片輸入、描摹或挪用。九母圖均小於1024×1024，只裁透明間隔／留白並等比縮至512內，經原export-source --make-sprites／--apply匯出。素材庫22檔先Commit **4bc538b**，包含九母圖／九正式PNG、兩份程序母來源、匯出清單與生成紀錄；遊戲與母來源文字LF及二進位SHA一致。新PNG共約3.28MiB，沿既有完整場景素材預載流程增加九圖；未宣稱記憶體不增加。其他聊天素材庫thunder目錄未納入。
+- 測試指令：node --test tests/battle-decor.test.cjs tests/battle-terrain.test.cjs tests/scene-startup-ready.test.cjs tests/tower-scene-intro.test.cjs tests/stone-wall-collision.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/battle-arena.test.cjs tests/battle-perspective.test.cjs tests/battlefield.test.cjs tests/battlefield-rt.test.cjs tests/npc-vision.test.cjs tests/tower-battlefield.test.cjs，**160/160通過**。最後火根共用投影修正後重跑node --test tests/battle-decor.test.cjs，**19/19通過**（含移動／透視／固定火根、幀切換、暫停、隱藏、lite數量與換圖完整回收）。既有圖片載入測試數量只隨新增九圖由26／27更新為35／36，未降低任何行為斷言。npm.cmd run build：571檔通過；node tools/scene-renewal/export-source.cjs --check及兩庫diff --check通過。
+- 畫面：內建IAB無法attach，改用獨立無頭Chromium／正式BattleRenderer與Pixi軟體WebGL，未讀寫玩家存檔、未控制其他分頁。地表／地下及十二格物件檢視已目視驗收；最終圖集2048×3451／2048×3553，主端OffscreenCanvas與圖集Worker逐像素alpha差0、預乘RGB差0，Console warning／error0。初次全場景驗證在忙碌主機30秒載圖逾時，改用獨立驗收120秒上限完成本次兩份熔岩圖集；沒有修改正式逾時或用略過掩蓋。畫面lava-landscape-surface.png／deep.png／objects.png及verification.json保存在本聊天visualizations。
+- 效能限制：局部源／精靈上限未增加；空場動態開／關／開三輪150幀CPU提交中位0.20／0.10／0.20ms，p95 1.0／0.4／3.0ms。同機有其他工作且採軟體WebGL，這不是GPU／實戰FPS驗收；未做真人長戰、手機GPU或跨瀏覽器測量。
+- 唯讀檢查未改：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex、decor-sculpt／battle-renderer／battle-arena、Worker Protocol與shim、既有PNG／地板、其他地貌與VFX來源及上述其餘11份回歸。自我Review確認種子／目錄一致、圖集不越界、透視腳點共用、隱藏與回收、無新增傷害／Timer／存檔欄位。
+- 交付：沒有本次未完成實作，可供Review／合併；遊戲Commit為本段所在「[Codex] feat: 熔岩山加入多樣地貌與持續燃燒」，回覆附編號。**成果分支codex/lava-terrain，位於D:/MyGame/Idle-RPG/codex-lava-terrain；尚未套回有其他進行中修改的ai/codex，也未合併／推送develop。** 下一步由使用者／整合者整合此分支及素材庫4bc538b，保留其他聊天的較新快取並產生整合後新鍵，再重載遊戲驗收。已知限制為上述預載增加與未做真人GPU長戰；既有其他聊天修改原樣保留。
+
 ## FIRE-CHAIN-FOLLOW-20261022 — 火鏈兩端逐幀跟隨NPC
 
 - Owner：Codex；Done，單一開發者。使用者回報鏈端落後NPC，已定位獨立快照平滑與共用中點透視。依賴固定離地2米與環狀連線完成。允許elite火鏈事件帶既有targets、Runtime逐幀錨點、Core內部離地高度轉換與Renderer投影、必要Worker／主頁快取、火鏈專項／Runtime文件／LV及本段；禁止其他技能、配置／素材／存檔與進行中岩壁／毒水區段，不合併推送。

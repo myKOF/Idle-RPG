@@ -28,11 +28,11 @@ test('DECOR-IMAGE-LOAD 完整素材載入去重、失敗重試只補缺圖，等
   const nature=ctx.DecorNature,calls=[],pending=[];
   const loader=url=>{calls.push(url);return new Promise((resolve,reject)=>pending.push({url,resolve,reject}));};
   const first=nature.loadImages('https://game.test/',loader),second=nature.loadImages('https://game.test/',loader);
-  assert.equal(first,second);assert.equal(calls.length,26);
+  assert.equal(first,second);assert.equal(calls.length,35);
   for(const p of pending)if(p.url.includes('/willow.png'))p.reject(new Error('network'));else p.resolve({width:200,height:100});
   await assert.rejects(first,/network/);await Promise.resolve();
   await nature.loadImages('https://game.test/',url=>{calls.push(url);return Promise.resolve({width:100,height:200});});
-  assert.equal(calls.length,27);assert.ok(calls.every(url=>url.startsWith('https://game.test/images/scene/')));
+  assert.equal(calls.length,36);assert.ok(calls.every(url=>url.startsWith('https://game.test/images/scene/')));
   await nature.loadImages('https://game.test/',()=>{throw new Error('已載入不應重新請求');});
   const draws=[],g=fakeContext();g.drawImage=(...args)=>draws.push(args);
   nature.drawBody(g,'willow',0,0,100,120,1,{});
@@ -67,6 +67,7 @@ function loadDecor(extra) {
   vm.runInContext(fs.readFileSync(path.join(root, 'js/decor-sculpt.js'), 'utf8'), ctx);
   vm.runInContext(fs.readFileSync(path.join(root, 'js/decor-nature.js'), 'utf8'), ctx);
   ctx.DecorNature.registerImages(Object.fromEntries(Object.keys(ctx.DecorNature.spriteFiles).map(key=>[key,{width:128,height:192}])));
+  vm.runInContext(fs.readFileSync(path.join(root, 'js/battle-terrain.js'), 'utf8'), ctx);   // 擺件位置清單（battle-decor 的 buildChunk 依它擺）
   vm.runInContext(fs.readFileSync(path.join(root, 'js/battle-decor.js'), 'utf8'), ctx);
   return { BattleDecor: ctx.BattleDecor, DecorSculpt: ctx.DecorSculpt, warnings, ctx };
 }
@@ -109,6 +110,49 @@ function makeDecor(BattleDecor, P, budget) {
 function view(camX, camY) {
   return { camX, camY, drawRect: { x: -120, y: -150, width: 1050, height: 1100 }, W: 813, H: 813, dt: 1 / 60, playerX: camX, playerScreenY: camY * 0.5 };
 }
+
+test('LAVA-FIRE 熔岩燃燒固定來源、換幀、暫停、減量與跨區塊回收', () => {
+  for (const lite of [false,true]) {
+    const {BattleDecor,warnings}=loadDecor({location:{search:lite?'?decor=lite':''}});
+    const P=fakePixi(),layers={decal:new P.Container(),light:new P.Container(),prop:new P.Container()};
+    const decor=BattleDecor.create({PIXI:P.PIXI,groundScale:.5,decalLayer:layers.decal,lightLayer:layers.light,propLayer:layers.prop,buildBudgetMs:Infinity,prebuildBudgetMs:0,
+      billboard:()=>({w:.83,shear:.17,skew:Math.atan2(.17,.83),k:Math.hypot(.17,.83)})});
+    let flamesSeen=0,changed=0;
+    for (const stage of [1,11]) {
+      decor.setScene('lava_mountain',stage);
+      for (const x of [0,560,2400,12000,0]) {
+        decor.update(view(x,0));
+        assert.ok(decor.stats().localSources<=(lite?2:6));
+        assert.ok(decor.stats().localParticles<=(lite?2:18));
+        const flames=layers.prop.children.filter(s=>s._natureTexture==='envFlame0');
+        for (const s of flames) {
+          flamesSeen++;assert.equal(s.anchor.y,1);assert.equal(s.tint,0xffffff);
+          assert.ok(Number.isFinite(s.x+s.y+s.scale.x+s.scale.y));
+          assert.ok(s._bbParent&&s._bbParent.parent===layers.prop,'火根共用物件腳點投影');
+          assert.ok(Math.abs(s.x-(s._bbParent.x+s._bbOffX+.17*s._bbOffY))<1e-9);
+          assert.ok(Math.abs(s.y-(s._bbParent.y+.83*s._bbOffY))<1e-9);
+        }
+        const before=flames.map(s=>({s,x:s.x,y:s.y,tex:s.texture,sy:s.scale.y}));
+        const moving=view(x,0);moving.dt=.1;decor.update(moving);
+        for (const b of before) {
+          assert.equal(b.s.x,b.x,'火根不能隨生命週期飄移');assert.equal(b.s.y,b.y);
+          if(b.tex!==b.s.texture)changed++;
+        }
+        decor.setMotionEnabled(false);
+        const frozen=flames.map(s=>[s.texture,s.x,s.y,s.scale.x,s.scale.y,s.alpha]);
+        decor.update(moving);
+        assert.deepEqual(flames.map(s=>[s.texture,s.x,s.y,s.scale.x,s.scale.y,s.alpha]),frozen);
+        decor.setVisible(false);decor.update(moving);
+        assert.ok(layers.prop.children.every(s=>!s.visible));
+        decor.setVisible(true);decor.setMotionEnabled(true);
+      }
+    }
+    assert.ok(flamesSeen>0,'必須真的出現持續燃燒');assert.ok(changed>0,'火焰必須換幀');
+    decor.setScene('Icefield',1);decor.update(view(0,0));
+    assert.equal(layers.prop.children.filter(s=>s._natureTexture==='envFlame0').length,0,'換圖不得殘留火焰');
+    decor.destroy();assert.equal(P.alive(),0);assert.equal(layers.prop.children.length,0);assert.deepEqual(warnings,[]);
+  }
+});
 
 test('DECOR-1 每張地圖（ZONES）都有自己的地形組合，新增地圖時會被提醒', () => {
   const dataCtx = { console, Math };
@@ -410,13 +454,16 @@ test('DECOR-NATURE-2 地面接觸區與本體同腳點、倍率與翻面，透�
 test('DECOR-NATURE-3 主頁、圖集 Worker 與開發工具載入同版原創畫法與 Decor', () => {
   const read = f => fs.readFileSync(path.join(root,f),'utf8');
   const html=read('index.html'), worker=read('js/worker/decor-atlas.worker.js'), tool=read('tools/decor-preview.html');
-  for (const file of ['decor-nature','battle-decor']) {
+  for (const file of ['decor-nature','battle-terrain','battle-decor']) {
     const token=html.match(new RegExp('js/'+file+'\\.js\\?v=([^"\\s]+)'))[1];
     assert.ok(worker.includes('../'+file+'.js?v='+token), file+' Worker 快取不同步');
     assert.ok(tool.includes('../js/'+file+'.js?v='+token),file+' 預覽工具快取不同步');
   }
   assert.ok(html.indexOf('js/decor-nature.js?v=')<html.indexOf('js/battle-decor.js?v='));
   assert.ok(worker.indexOf('../decor-nature.js?v=')<worker.indexOf('../battle-decor.js?v='));
+  // 擺件位置清單要在 battle-decor 之前載入（buildChunk 依它擺）
+  assert.ok(html.indexOf('js/battle-terrain.js?v=')<html.indexOf('js/battle-decor.js?v='));
+  assert.ok(worker.indexOf('../battle-terrain.js?v=')<worker.indexOf('../battle-decor.js?v='));
 });
 
 test('DECOR-BB 透視抵銷（opts.billboard）：擺件與火焰被抵銷後 Pixi 的 anchor 仍完好，切地圖重用物件池也不拋例外', () => {
@@ -447,7 +494,8 @@ test('DECOR-BB 透視抵銷（opts.billboard）：擺件與火焰被抵銷後 Pi
   assert.ok(props > 50, '要真的跑到擺件');
   assert.ok(flames > 0, '要真的跑到火焰（火盆在某些地圖才有），不然測不到零件');
   /* 抵銷真的有套上：本體 skew／縮放乘上 k，火焰位置經過同一個矩陣 */
-  const prop = layers.prop.children.find((s) => s._bbParent === undefined && s._bbX !== undefined);
+  // 會隨風擺動的種類（草、灌木…）每幀另外加一個擺動 skew，不在這條斷言要驗的範圍
+  const prop = layers.prop.children.find((s) => s._bbParent === undefined && s._bbX !== undefined && !s._natureSway);
   assert.ok(Math.abs(prop.skew.x - Math.atan2(shear, w)) < 1e-12);
   assert.ok(Math.abs(prop.scale.y - prop._bbY * Math.hypot(shear, w)) < 1e-12);
   const flame = layers.prop.children.find((s) => s._bbParent);
