@@ -193,7 +193,7 @@
   align-items: start;
 }
 
-#tab-runes .rx-word {
+:is(#tab-runes, .rx-word-tip) .rx-word {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -204,13 +204,13 @@
   background: #121418;
 }
 
-#tab-runes .rx-word.is-ready { border-color: #4b6a45; border-left-color: var(--c); }
-#tab-runes .rx-word.is-worn { border-color: #7a6440; border-left-color: var(--c); background: #1a1712; }
+:is(#tab-runes, .rx-word-tip) .rx-word.is-ready { border-color: #4b6a45; border-left-color: var(--c); }
+:is(#tab-runes, .rx-word-tip) .rx-word.is-worn { border-color: #7a6440; border-left-color: var(--c); background: #1a1712; }
 
-#tab-runes .rx-word-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-#tab-runes .rx-word-head b { font-size: 16px; color: #f2ead8; font-family: var(--af-serif); }
+:is(#tab-runes, .rx-word-tip) .rx-word-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+:is(#tab-runes, .rx-word-tip) .rx-word-head b { font-size: 16px; color: #f2ead8; font-family: var(--af-serif); }
 
-#tab-runes .rx-badge {
+:is(#tab-runes, .rx-word-tip) .rx-badge {
   padding: 1px 8px;
   border: 1px solid var(--c);
   border-radius: 999px;
@@ -218,22 +218,22 @@
   font-size: 11px;
 }
 
-#tab-runes .rx-need { font-size: 11px; color: #8d887c; }
+:is(#tab-runes, .rx-word-tip) .rx-need { font-size: 11px; color: #8d887c; }
 
-#tab-runes .rx-flag {
+:is(#tab-runes, .rx-word-tip) .rx-flag {
   margin-left: auto;
   padding: 1px 8px;
   border-radius: 4px;
   font-size: 11px;
 }
 
-#tab-runes .rx-flag.ready { background: #1f2d1d; color: #8fd68a; }
-#tab-runes .rx-flag.worn { background: #3a2c16; color: #f0cf86; }
+:is(#tab-runes, .rx-word-tip) .rx-flag.ready { background: #1f2d1d; color: #8fd68a; }
+:is(#tab-runes, .rx-word-tip) .rx-flag.worn { background: #3a2c16; color: #f0cf86; }
 
-#tab-runes .rx-recipe { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-#tab-runes .rx-arrow { color: #5c5f66; font-size: 12px; }
+:is(#tab-runes, .rx-word-tip) .rx-recipe { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+:is(#tab-runes, .rx-word-tip) .rx-arrow { color: #5c5f66; font-size: 12px; }
 
-#tab-runes .rx-chip {
+:is(#tab-runes, .rx-word-tip) .rx-chip {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -247,13 +247,13 @@
   cursor: pointer;
 }
 
-#tab-runes .rx-chip.has { border-color: var(--c); color: #ece6d8; }
-#tab-runes .rx-chip-g { display: inline-flex; align-items: center; color: var(--c); }
-#tab-runes .rx-chip-g .rs-chip { width: 24px; height: 24px; margin: -3px 0; }
-#tab-runes .rx-chip i { font-style: normal; font-size: 10px; color: #c7ae79; }
+:is(#tab-runes, .rx-word-tip) .rx-chip.has { border-color: var(--c); color: #ece6d8; }
+:is(#tab-runes, .rx-word-tip) .rx-chip-g { display: inline-flex; align-items: center; color: var(--c); }
+:is(#tab-runes, .rx-word-tip) .rx-chip-g .rs-chip { width: 24px; height: 24px; margin: -3px 0; }
+:is(#tab-runes, .rx-word-tip) .rx-chip i { font-style: normal; font-size: 10px; color: #c7ae79; }
 
 /* 未激活的配方符文：保留品質色外框，內容只有問號（不可點） */
-#tab-runes .rx-chip.is-unknown {
+:is(#tab-runes, .rx-word-tip) .rx-chip.is-unknown {
   justify-content: center;
   min-width: 54px;
   border-color: var(--c);
@@ -261,12 +261,21 @@
   cursor: help;
 }
 
-#tab-runes .rx-chip.is-unknown .rx-chip-g { font-size: 14px; font-family: inherit; }
+:is(#tab-runes, .rx-word-tip) .rx-chip.is-unknown .rx-chip-g { font-size: 14px; font-family: inherit; }
 
-#tab-runes .rx-bases { font-size: 12px; color: #a39d90; }
-#tab-runes .rx-lines { margin: 0; padding-left: 18px; font-size: 12px; line-height: 1.7; color: #d5d1c4; }
-#tab-runes .rx-lines .rx-unknown { color: var(--c); opacity: .7; letter-spacing: .08em; }
-#tab-runes .rx-flavor { font-size: 11px; color: #7f7a70; font-style: italic; }
+:is(#tab-runes, .rx-word-tip) .rx-bases { font-size: 12px; color: #a39d90; }
+:is(#tab-runes, .rx-word-tip) .rx-lines { margin: 0; padding-left: 18px; font-size: 12px; line-height: 1.7; color: #d5d1c4; }
+:is(#tab-runes, .rx-word-tip) .rx-lines .rx-unknown { color: var(--c); opacity: .7; letter-spacing: .08em; }
+:is(#tab-runes, .rx-word-tip) .rx-flavor { font-size: 11px; color: #7f7a70; font-style: italic; }
+
+/* 真言提示重用圖鑑卡片，外層不再加第二重提示框。 */
+#sk-tooltip:has(.rx-word-tip) {
+  width: min(500px, calc(100vw - 16px));
+  max-width: calc(100vw - 16px);
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
 
 /* ---- 裝備詳情：符文孔與符文真言橫幅（js/item.js itemRuneHTML；取代原本附魔欄位的位置）----
    符文鑲嵌頁的孔列、選取框、「卸下」鈕與下方的格子，沿用寶石鑲嵌頁的樣式（css/ashen-forge.css 的 .socket-row／.equip-socket-gem-grid）。 */

@@ -3023,6 +3023,11 @@ function renderHeader() {
   var reinc = clamp(Math.floor(Number(p.reincarnations) || 0), 0, REINCARNATION_MAX);
   var currentLevel = Math.max(0, Math.floor(Number(p.level) || 0));
   var canReincarnate = canReincarnateAt(currentLevel, reinc);
+  var reincarnationAlert = $id('char-reincarnation-alert');
+  if (reincarnationAlert) {
+    reincarnationAlert.hidden = !canReincarnate;
+    setAttrIfChanged(reincarnationAlert, 'aria-label', reinc >= 10 ? '可進行神階晉升' : '可轉生');
+  }
   var reincarnationControls = $id('reincarnation-controls');
   if (reincarnationControls) {
     reincarnationControls.classList.toggle('is-visible', reinc > 0 || canReincarnate);
@@ -3049,18 +3054,24 @@ function renderHeader() {
   }
   var need = uiHeaderXpMax(p);
   var isMaxedOut = (p.level >= MAX_LEVEL && reinc >= REINCARNATION_MAX);
-  var xpWidth = isMaxedOut ? '100%' : (clamp(p.xp / need * 100, 0, 100) + '%');
+  var xpFull = canReincarnate || isMaxedOut;
+  var xpWidth = xpFull ? '100%' : (clamp(p.xp / need * 100, 0, 100) + '%');
+  ['xp-fill', 'rail-xp-fill', 'battle-xp-fill'].forEach(function (id) {
+    var fill = $id(id);
+    if (fill) fill.classList.toggle('reincarnate-ready', canReincarnate);
+  });
   setStyleIfChanged($id('xp-fill'), 'width', xpWidth);
   setStyleIfChanged($id('rail-xp-fill'), 'width', xpWidth);
   var xpBar = $id('xp-bar');
   setAttrIfChanged(xpBar, 'data-tt-title', '角色經驗');
-  setAttrIfChanged(xpBar, 'data-tt-desc', isMaxedOut ? '已升至最高等級。' : ('當前經驗值：' + fmt(p.xp) + ' / 升級經驗值：' + fmt(need)));
+  var xpReadyDesc = reinc >= 10 ? '等級已滿，可進行神階晉升。' : '等級已滿，可進行轉生。';
+  setAttrIfChanged(xpBar, 'data-tt-desc', isMaxedOut ? '已升至最高等級。' : (canReincarnate ? xpReadyDesc : ('當前經驗值：' + fmt(p.xp) + ' / 升級經驗值：' + fmt(need))));
   removeAttrIfPresent(xpBar, 'title');
   var battleXp = $id('battle-xp-bar');
-  var battleXpPct = isMaxedOut ? 100 : clamp((Number(p.xp) || 0) / Math.max(1, need) * 100, 0, 100);
+  var battleXpPct = xpFull ? 100 : clamp((Number(p.xp) || 0) / Math.max(1, need) * 100, 0, 100);
   setStyleIfChanged($id('battle-xp-fill'), 'width', battleXpPct + '%');
   setAttrIfChanged(battleXp, 'aria-valuenow', String(Math.round(battleXpPct)));
-  setAttrIfChanged(battleXp, 'data-tt-desc', isMaxedOut ? '已升至最高等級。' : ('Lv.' + p.level + '｜經驗：' + fmtFull(p.xp) + ' / ' + fmtFull(need)));
+  setAttrIfChanged(battleXp, 'data-tt-desc', isMaxedOut ? '已升至最高等級。' : (canReincarnate ? xpReadyDesc : ('Lv.' + p.level + '｜經驗：' + fmtFull(p.xp) + ' / ' + fmtFull(need))));
   if (UI.tooltipAnchor === battleXp) refreshOpenStatTooltip();
 
   // 屬性面板顯示「檢視中」裝備套的預覽屬性（切頁即變，不需確定切換）；header 其他區塊維持穿著中數值
@@ -7292,8 +7303,7 @@ function renderForge() {
 }
 
 /* ---- 高塔分頁 ---- */
-/* ---- 高塔頁（2026-10）：塔別分頁＋樓層階梯（左）＋選中樓層的 BOSS 與獎勵（右） ----
-   樓層列保留 .tower-floor[data-tower-tip]：滑鼠停留仍可快速預覽其他樓層的掉落；點選則在右側顯示完整詳情。 */
+/* ---- 高塔頁：塔別分頁＋樓層階梯（左）＋選中樓層的 BOSS、獎勵與解鎖資訊（右） ---- */
 UI.towerBrowse = { tier: null, sel: null, lastHighest: null };
 
 function towerTiers() {
@@ -7340,18 +7350,16 @@ function bindTowerBossImageFallback(root) {
   }
 }
 
-// 通關獎勵與掉落（提示與詳情面板共用；數值一律走 formula.js 的公式，不在這裡寫死）
+// 通關獎勵與掉落（數值一律走 formula.js 的公式，不在這裡寫死）
 function towerRewardRows(fl) {
   var rw = towerRewardFor(fl, false);
   var rows = [
-    { icon: '💰', label: '金幣', value: fmt(rw.gold), note: '首通 ×2' },
     { icon: '✨', label: '經驗', value: fmt(bossStatsFor(fl).xp), note: '另加經驗加成' },
     { icon: '🔮', label: '附魔精華', value: '×' + fmt(rw.essence) },
     { icon: '💎', label: '隨機寶石', value: GEM_NAMES[rw.gemLevel] + ' ×2' },
-    ENCHANT_ENABLED ? { icon: '📖', label: '附魔書', value: '隨機一種 ×2' }
-      : { icon: '🔷', label: '符文', value: (typeof RUNE_DROP !== 'undefined' ? fmt1(RUNE_DROP.towerBossPct) + '%' : ''), note: '樓層越高階數越高' },
+    ENCHANT_ENABLED ? { icon: '📖', label: '附魔書', value: '隨機一種 ×2' } : null,
     { icon: '💫', label: '魔塵', value: fmt1(bossDustRate(fl)) + '%', note: '神鑄材料' }
-  ];
+  ].filter(Boolean);
   var ancientRate = ancientEssenceDropChanceForBoss(fl);
   if (ancientRate > 0) rows.push({ icon: '<img src="images/icon_ancient_essence.png" class="res-icon" alt="">', label: '太古精華', value: fmt1(ancientRate) + '%' });
   if (isHellTowerFloor(fl) || isPurgatoryTowerFloor(fl)) rows.push({ icon: '🧿', label: '魔魂本源', value: fmt1(hellSoulOriginDropChance(fl)) + '%', note: '地獄／煉獄之塔' });
@@ -7395,7 +7403,7 @@ function towerFloorRowHTML(fl, highest) {
   var cls = 'tower-floor ' + towerTierOf(fl).id + (cleared ? ' cleared' : '') + (unlocked ? '' : ' locked') +
     (next ? ' is-next' : '') + (UI.towerBrowse.sel === fl ? ' is-sel' : '');
   var state = cleared ? '已通關' : (next ? '可挑戰' : '未解鎖');
-  return '<div class="' + cls + '" role="button" tabindex="0" data-tower-tip="' + fl + '" data-tower-pick="' + fl + '" aria-pressed="' + (UI.towerBrowse.sel === fl) + '">' +
+  return '<div class="' + cls + '" role="button" tabindex="0" data-tower-pick="' + fl + '" aria-pressed="' + (UI.towerBrowse.sel === fl) + '">' +
     '<span class="twx-fl-no">' + fl + '</span>' +
     '<span class="tf-emoji">' + towerBossIconHTML(bd, 'twx-fl-ico') + '</span>' +
     '<span class="tf-name' + (isPurgatoryTowerFloor(fl) ? ' purgatory-boss' : '') + '">' + esc(bd.name) + '</span>' +
@@ -7409,7 +7417,7 @@ function towerDetailHTML(fl, highest) {
   var ei = ELEM_INFO[bd.attr] || null;
   var color = ei ? ei.color : '#c9c3b5';
   var cleared = fl <= highest, next = fl === highest + 1;
-  var status = cleared ? '已通關（重複挑戰不享首通加倍）' : (next ? '下一個挑戰目標' : '需先通關第 ' + (highest + 1) + ' 層');
+  var status = cleared ? '已通關' : (next ? '下一個挑戰目標' : '需先通關第 ' + (highest + 1) + ' 層');
   var tags = (ei ? '<span class="twx-tag" style="--c:' + ei.color + '">' + ei.emoji + ' ' + ei.short + '屬性</span>' : '') +
     '<span class="twx-tag">限時 ' + towerTimeLimitWithTalents(fl) + ' 秒</span>' +
     '<span class="twx-tag">血量高於 ' + TOWER_ENRAGE_HP + '% 會狂暴</span>';
@@ -7426,17 +7434,11 @@ function towerDetailHTML(fl, highest) {
   var unlocks = (typeof skills2TowerUnlocks === 'function' ? skills2TowerUnlocks(fl) : []).map(function (name) {
     return '<div>解鎖【' + esc(name) + '】技能</div>';
   }).join('');
-  /* BOSS 會施放什麼玩家技能（規則與抽法在 js/elite_data.js bskPickForFloor）：解鎖技能的 BOSS 固定施放同一個，
-     沒解鎖的 BOSS 額外多抽 NPC 隨機技能，隨機層數起每場隨機抽玩家技能。 */
-  var bossSkillNote = '';
-  if (typeof bskFixedOptions === 'function') {
-    var fixedSkills = bskFixedOptions(fl).map(function (o) { return '【' + esc(o.ult.name) + '】'; });
-    bossSkillNote = fixedSkills.length
-      ? 'BOSS 專屬技能：' + fixedSkills.join('')
-      : (fl >= BSK_RANDOM_FROM_FLOOR
-        ? 'BOSS 每場隨機施放 ' + BSK_RANDOM_PLAYER_COUNT + ' 個玩家終極進化技能'
-        : 'BOSS 額外隨機施放 ' + BSK_EXTRA_NPC_COUNT + ' 個隨機技能');
-  }
+  var wordUnlocks = (typeof RUNEWORDS !== 'undefined' ? RUNEWORDS : []).filter(function (word) {
+    return Number.isInteger(word.towerUnlockFloor) && word.towerUnlockFloor > 0 && word.towerUnlockFloor === fl;
+  }).map(function (word) {
+    return '<div>解鎖符文真言資訊：第 ' + word.tier + ' 級（' + esc(RUNEWORD_TIER_NAMES[word.tier]) + '）【' + esc(word.name) + '】</div>';
+  }).join('');
   return '<div class="twx-boss" style="--c:' + color + '">' +
       '<div class="twx-boss-art">' + towerBossIconHTML(bd, 'twx-boss-img') + '</div>' +
       '<div class="twx-boss-main">' +
@@ -7452,7 +7454,8 @@ function towerDetailHTML(fl, highest) {
       '<div class="twx-loot-title"><b>通關獎勵</b><span>機率類獨立判定、不受掉寶率影響（裝備除外）</span></div>' +
       '<div class="twx-rws">' + rewards + '</div>' +
       (equips ? '<div class="twx-loot-title"><b>BOSS 裝備</b><span>受掉寶率加成，送入熔爐佇列</span></div><div class="twx-eqs">' + equips + '</div>' : '') +
-    '</div>' + (bossSkillNote ? '<div class="twx-boss-skillnote">' + bossSkillNote + '</div>' : '') +
+    '</div>' +
+    (wordUnlocks ? '<div class="twx-skill-unlocks twx-word-unlocks">' + wordUnlocks + '</div>' : '') +
     (unlocks ? '<div class="twx-skill-unlocks">' + unlocks + '</div>' : '');
 }
 
@@ -7557,7 +7560,7 @@ function renderTower() {
     if (UI._scrollTower) {
       UI._scrollTower = false;
       setTimeout(function () {
-        var el = floorsBox.querySelector('.tower-floor[data-tower-tip="' + st.sel + '"]');
+        var el = floorsBox.querySelector('.tower-floor[data-tower-pick="' + st.sel + '"]');
         if (el) floorsBox.scrollTop = Math.max(0, el.offsetTop - floorsBox.clientHeight / 2 + el.offsetHeight / 2);
       }, 10);
     }
@@ -9975,7 +9978,7 @@ function refreshOpenStatTooltip() {
   if (anchorEl && !document.documentElement.contains(anchorEl)) {
     try {
       var elUnder = document.elementFromPoint(_lastMouseX, _lastMouseY);
-      var newAnchor = elUnder && elUnder.closest && elUnder.closest('.item-cell[data-id], .eq-slot.filled[data-id], .forge-slot.filled[data-forge-slot], [data-sk], [data-tip], [data-buff-tip], [data-enemy-buff-tip], #btn-enemy-tip, #btn-boss-tip, #btn-tower-result-boss-tip, [data-tower-tip]');
+      var newAnchor = elUnder && elUnder.closest && elUnder.closest('.item-cell[data-id], .eq-slot.filled[data-id], .forge-slot.filled[data-forge-slot], [data-sk], [data-tip], [data-buff-tip], [data-enemy-buff-tip], #btn-enemy-tip, #btn-boss-tip, #btn-tower-result-boss-tip');
       if (newAnchor) {
         UI.tooltipAnchor = newAnchor;
         anchorEl = newAnchor;
@@ -10065,37 +10068,6 @@ function showItemTooltip(it, anchorEl, opts) {
   if (x + tw > window.innerWidth - 8) x = r.left - tw - 10;
   if (x < 8) x = 8;
   if (y + th > window.innerHeight - 8) y = window.innerHeight - th - 8;
-  if (y < 8) y = 8;
-  tip.style.left = x + 'px';
-  tip.style.top = y + 'px';
-}
-function showTowerTooltip(flStr, anchorEl) {
-  var tip = $id('sk-tooltip');
-  if (!tip || !anchorEl) return;
-  var fl = parseInt(flStr, 10);
-  if (!fl) return;
-  UI.tooltipAnchor = anchorEl;
-  var dropTip = '<div class="skt-name" style="margin-bottom:6px;">第 ' + fl + ' 層・' + esc(towerBossOf(fl).name) + '</div>' +
-    '<div class="skt-name" style="margin-bottom:6px;">【挑戰費用】</div>' +
-    '<div class="skt-desc" style="text-align:left;">💰 ' + fmt(towerChallengeCost(fl)) + ' 金幣</div>' +
-    '<div class="skt-name" style="margin:6px 0;">【可能掉落物】</div>' +
-    '<div class="skt-desc" style="text-align:left;">' +
-    towerRewardRows(fl).map(function (r) {
-      return r.icon + ' ' + r.label + ' ' + r.value + (r.note ? ' <span style="color:var(--dim)">(' + r.note + ')</span>' : '');
-    }).join('<br>');
-  var equipStrs = towerEquipDropRows(fl).map(function (r) {
-    return '⚔️ <span style="color:' + r.color + '; font-weight:bold;">' + r.name + '</span> <span style="color:var(--dim)">(' + r.rate + ')</span>';
-  });
-  if (equipStrs.length) dropTip += '<br>' + equipStrs.join('<br>');
-  dropTip += '</div>';
-  tip.innerHTML = dropTip;
-  tip.style.display = 'block';
-  var r = anchorEl.getBoundingClientRect();
-  var tw = tip.offsetWidth, th = tip.offsetHeight;
-  var x = r.left + 20, y = r.bottom + 8;
-  if (x + tw > window.innerWidth - 8) x = window.innerWidth - tw - 8;
-  if (x < 8) x = 8;
-  if (y + th > window.innerHeight - 8) y = r.top - th - 8;
   if (y < 8) y = 8;
   tip.style.left = x + 'px';
   tip.style.top = y + 'px';
@@ -10220,7 +10192,6 @@ function showEnemyTooltip(anchorEl) {
     var ancientEssenceRate = ancientEssenceDropChanceForBoss(floor);
 
     var rewardLines = [];
-    rewardLines.push('💰 金幣 x' + fmt(rw.gold));
     rewardLines.push('✨ 經驗 x' + fmt(m.xp));
     rewardLines.push('💎 寶石 等級 ' + rw.gemLevel + ' x2 顆');
     rewardLines.push('🔮 附魔精華 x' + rw.essence + (ENCHANT_ENABLED ? '（另附魔書 x2）' : ''));
@@ -12526,8 +12497,6 @@ function initUI() {
     }
     var statRow = e.target.closest('.stat-row[data-tt-title]');
     if (statRow) { showStatTooltip(statRow.getAttribute('data-tt-title'), statRow.getAttribute('data-tt-desc'), statRow); return; }
-    var tf = e.target.closest('[data-tower-tip]');
-    if (tf) { showTowerTooltip(tf.getAttribute('data-tower-tip'), tf); return; }
     var etip = e.target.closest('#btn-enemy-tip') || e.target.closest('#btn-boss-tip') || e.target.closest('#btn-tower-result-boss-tip');
     if (etip) { showEnemyTooltip(etip); return; }
   });
@@ -12562,7 +12531,7 @@ function initUI() {
     if (e.target.closest('[data-sk]') || e.target.closest('.stat-row[data-tt-title]') ||
       e.target.closest('[data-tt-title]') ||
       e.target.closest('[data-talent-tip]') ||
-      e.target.closest('[data-tower-tip]') || e.target.closest('#btn-enemy-tip') ||
+      e.target.closest('#btn-enemy-tip') ||
       e.target.closest('#btn-boss-tip') || e.target.closest('#btn-tower-result-boss-tip') ||
       e.target.closest('[data-tip]') || e.target.closest('[data-buff-tip]') ||
       e.target.closest('[data-enemy-buff-tip]') ||

@@ -416,9 +416,6 @@ function endTowerFight(win, reason) {
         result.rewards.push(lootCounts[i]);
       }
     }
-    G.player.gold += rw.gold;
-    if (window.recordLootGold) window.recordLootGold(rw.gold, 'tower');
-    result.rewards.push('💰 金幣 x' + fmt(rw.gold));
     var gt1 = randomGemType(), gt2 = randomGemType();
     addGem(gt1, rw.gemLevel, 1); addGem(gt2, rw.gemLevel, 1);
     if (gt1 && window.recordLootGem) {

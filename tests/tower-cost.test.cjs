@@ -20,6 +20,6 @@ test('高塔 BOSS 挑戰費用使用 CSV 的三段樓層公式', () => {
   assert.equal(context.towerChallengeCost(101), Math.round(100000 * Math.pow(101, 2.2)));
   assert.equal(context.towerChallengeCost(150), Math.round(100000 * Math.pow(150, 2.2)));
   const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
-  assert.match(ui, /【挑戰費用】/);
+  assert.match(ui, /var cost = towerChallengeCost\(fl\)/, '挑戰按鈕仍使用正式樓層費用公式');
   assert.doesNotMatch(ui, /100000 × 樓層\^2\.6/);
 });

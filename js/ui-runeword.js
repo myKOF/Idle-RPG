@@ -20,6 +20,7 @@ var RUNE_TOOLS = ['library', 'codex'];
 
 var RUNE_DETAIL_KEY = 'idle-rpg.runeDetail.v1';
 var RUNE_UNKNOWN_LINE = '？？？？？？？？';   // 未激活的一條效果：8 個問號
+var RUNE_LOCKED_TIP = '尚未解鎖，需自行嘗試或挑戰更高階的封魔塔';
 
 function runeUiState() {
   if (!UI.runeBrowse) UI.runeBrowse = { tool: 'library', sel: 'r01', tier: 0, ready: false, detail: null };
@@ -96,7 +97,7 @@ function runeUiRecipeReady(word, snapshot) {
 /* 未激活的配方符文：只留品質色外框，內容是問號（不給名稱、階數與持有量，連提示都不能洩漏）。 */
 function runeUiUnknownChipHTML(id) {
   var r = RUNE_BY_ID[id];
-  return '<span class="rx-chip is-unknown" style="--c:' + r.color + '" data-tip="尚未成形過，配方未知">' +
+  return '<span class="rx-chip is-unknown" style="--c:' + r.color + '" data-tip="' + RUNE_LOCKED_TIP + '">' +
     '<span class="rx-chip-g">？</span></span>';
 }
 
@@ -163,23 +164,25 @@ function runeUiFocusHTML(snapshot, id) {
     if (RUNEWORDS[i].runes.indexOf(id) >= 0) uses.push(RUNEWORDS[i]);
   }
   h += '<div class="rx-uses"><div class="rx-sec">用在這些符文真言（' + uses.length + '）</div><div class="rx-use-list">';
+  var worn = runeUiWornWords();
   uses.forEach(function (w) {
     if (!runeUiRevealed(snapshot, w.id)) {
       // 未激活：名稱換成問號、顏色是該真言的品質色；不能點進圖鑑（點進去會把「這顆符文屬於哪一組」洩漏出去）
-      h += '<span class="rx-use is-unknown" style="--c:' + RUNEWORD_TIER_COLORS[w.tier] + '" data-tip="尚未成形過，用途未知">？？？</span>';
+      h += '<span class="rx-use is-unknown" style="--c:' + RUNEWORD_TIER_COLORS[w.tier] + '" data-tip="' + RUNE_LOCKED_TIP + '">？？？</span>';
       return;
     }
-    h += '<button type="button" class="rx-use" data-word-goto="' + w.id + '" style="--c:' + RUNEWORD_TIER_COLORS[w.tier] + '">' +
+    var tip = '<div class="rx-word-tip">' + runeUiWordHTML(w, snapshot, worn, true) + '</div>';
+    h += '<button type="button" class="rx-use" data-word-goto="' + w.id + '" data-tip="' + esc(tip) + '" style="--c:' + RUNEWORD_TIER_COLORS[w.tier] + '">' +
       esc(w.name) + '<i>' + esc(RUNEWORD_TIER_NAMES[w.tier]) + '</i></button>';
   });
   return h + '</div></div>';
 }
 
-function runeUiWordHTML(w, snapshot, worn) {
+function runeUiWordHTML(w, snapshot, worn, tooltip) {
   var revealed = runeUiRevealed(snapshot, w.id);
   var ready = revealed && runeUiRecipeReady(w, snapshot);   // 未激活時連「材料齊全」都不給，否則等於洩漏配方
   var need = runeUiRecipeNeeds(w);
-  var h = '<div class="rx-word' + (worn[w.id] ? ' is-worn' : '') + (ready ? ' is-ready' : '') + '" id="rxw-' + w.id + '" style="--c:' + RUNEWORD_TIER_COLORS[w.tier] + '">';
+  var h = '<div class="rx-word' + (worn[w.id] ? ' is-worn' : '') + (ready ? ' is-ready' : '') + '"' + (tooltip ? '' : ' id="rxw-' + w.id + '"') + ' style="--c:' + RUNEWORD_TIER_COLORS[w.tier] + '">';
   h += '<div class="rx-word-head"><b>' + esc(w.name) + '</b><span class="rx-badge">' + esc(RUNEWORD_TIER_NAMES[w.tier]) + '</span>' +
     '<span class="rx-need">' + esc(rwSocketNeedText(w)) + '</span>' +
     (worn[w.id] ? '<span class="rx-flag worn">穿戴中・已成形</span>' : (ready ? '<span class="rx-flag ready">材料齊全</span>' : '')) + '</div>';

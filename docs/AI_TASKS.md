@@ -1,5 +1,52 @@
 # AI_TASKS.md
 
+## TOWER-REWARDS-20261022 — 封魔塔精簡說明與真言解鎖展示
+
+- Owner：Codex；Done，單一開發者。使用者要求刪除樓層BOSS tips與BOSS專屬技能說明，顯示本層解鎖符文真言的等級及名稱，移除獎勵中符文機率／樓層說明，取消實際通關金幣獎勵。既有Runes配置towerUnlockFloor／tier／name為唯一來源。
+- 允許：ui.js塔樓層／獎勵／解鎖說明及提示接線、tower.js通關金幣結算、bridge與sim.worker僅快取、index塔說明與對應快取、tower相關必要回歸、game_formula與LV本功能說明、本段。禁止改技能施放／技能解鎖、符文掉落／真言門檻、配置／公式、Protocol／存檔、素材與其他副本；保留Talents.xlsx與storm現有修改，不合併推送。
+- 驗收：三塔首通／重複通關均不加金幣／不記金幣戰利品，費用照扣；其餘獎勵不變。單層多真言、空層、配置留白／0與未來門檻，顯示等級／名稱與正式配置一致，保留原技能解鎖。無BOSS樓層hover，點選／鍵盤操作保留。回歸／Build、隔離瀏覽器／Console、diff及自我Review後獨立Commit；後續使用者Review及正常整合。
+- 衝突：Claude b411b8e5與本次同檔不同區段：index對方formula快取、本次ui／tower／bridge；sim.worker對方formula import、本次tower import；game_formula對方元素特效、本次塔金幣列。三檔以develop與雙方實際內容git merge-file乾跑均0，無語意相依；其餘目標預檢乾淨。formula本次唯讀，保留既有參數接線，實際結算不再取用其舊gold欄位。
+- 完成10檔：移除樓層tooltip函式、hover資料／委派與殘留錨點，捲動定位改走既有data-tower-pick；移除BOSS技能施放說明，原技能解鎖保留。本層真言依正式配置顯示「第N級（品質）【名稱】」，支援同層多真言；未配置則不顯示，不洩漏配方。獎勵清單移除金幣與符文說明，實際結算刪除金幣入帳／戰利品記錄／結果文字；戰鬥BOSS提示獎勵、塔說明與已通關狀態同步清除金幣／首通加倍說法，其他資源與挑戰費用不變。
+- 快取：ui194／tower34／bridge347，Worker塔匯入與資源鍵20261022-tower-rewards-no-gold；Protocol不變。LV與game_formula同步，新8項回歸；tower-cost原本檢查被要求移除的tips字樣，改釘住挑戰按鈕仍取正式費用公式，未降低實際扣費驗證。
+- 測試：node --test --test-reporter=spec tests/tower-rewards-ui.test.cjs tests/tower-cost.test.cjs tests/tower-info-during-fight.test.cjs tests/tower-auto-result.test.cjs tests/tower-xp.test.cjs tests/tower-head-layout.test.cjs tests/tower-battlefield.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs，50/50通過；node --test --test-reporter=spec tests/purgatory-tower.test.cjs tests/skill2-tower-unlock.test.cjs tests/loot-event-accounting.test.cjs tests/ui-worker-g-dependency.test.cjs tests/runeword-engine.test.cjs，64/64通過。合計114/114、0略過；Build572檔全過、diff --check通過。
+- 新回歸覆蓋1／35／51／101／150層首通與重複通關真實start/end/confirm流程，金幣只減費用、金幣記錄0、精華／經驗仍發；全150層正式配置展示、空層／多真言／停用門檻、附魔開關／技能解鎖保留。未改RUNEWORDS配置或用測試接受缺失；formula舊gold欄位仍作相容資料保留但不再有通關消費端。
+- 瀏覽器：隔離Edge載正式HTML／全部CSS／ui-scale／ui與純資料模組，控制塔／角色快照，綁定原始塔click／keydown與mouseover委派，未啟動Worker或讀寫玩家存檔。35層顯示第2級（精良）【雷神之怒】與原【烈陽星環】技能解鎖；hover不出tips，無專屬技能／金幣／符文獎勵列；切36層無真言、Enter／Space回35層與焦點保持，720窄視窗文字不裁切。Console warning／error及pageerror0。已目視tower-35.png，tower-narrow.png與browser-verification.json保存本聊天visualizations/tower-adjust。
+- 唯讀未改：共通規範／AGENTS／Workflow／prompts、formula與參數錨點、Runes資料／runeword解鎖與掉落、skills2／elite_data技能設定、塔CSS與Worker Protocol、上述其餘回歸及Claude工作檔。自我Review確認只移除顯示與金幣結算、沒有改BOSS施放／資料契約／存檔或新增Timer／素材／VFX來源；素材庫無本次修改，不建空Commit。
+- 交付：本段所在「[Codex] fix: 精簡封魔塔資訊並取消通關金幣」Commit，回覆附編號。可供Review／合併，未合併推送；無本輪未完成項。限制：未做真人存檔長戰／跨瀏覽器驗收；本次不追補或扣回歷史金幣。下一步正常整合後重載遊戲驗收，Talents.xlsx／storm其他修改保留。
+
+## TALENT-LEVEL-NO-FRAME-20261022 — 威能圖示等級移除外框
+
+- Owner：Codex；Done，單一開發者。使用者要求威能icon上的等級數字不加外框；前置既有右下角等級標記可用。允許css/ashen-forge.css僅tlx-node-lv、index.html僅對應CSS快取、LV_upgrade_system.md及本段；禁止JS／數值／解鎖／配置／素材／其他副本，不合併推送；原Talents.xlsx與en-burst-storm修改保留。
+- 驗收：只保留右下角數字、清除框線與底框，文字保持可讀；隔離瀏覽器載正式CSS檢查1／10級及Console，既有威能回歸／Build／diff與自我Review後獨立Commit。後續使用者Review及正常整合。
+- 衝突：index與Claude b411b8e5同檔不同區段，對方formula快取、本次ashen-forge CSS快取，無語意相依；共同基底與雙方實際檔案git merge-file -p試跑0，兩邊快取保留。其他目標預檢無外部修改。
+- 完成4檔：CSS僅等級標記移除框線／圓角／底色，保留原字級／字色／右下位置，加淡黑字影維持圖上可讀；index對應CSS91→92，LV與本段同步。無JS／數值／解鎖／素材或素材庫變更。
+- 驗證：`node --test tests/talents.test.cjs`23/23通過；`npm.cmd run build`571檔通過；`git diff --check`通過。隔離Edge載全部正式CSS及真正talentNodeHTML產生的10級／1級／0級節點，10與1的computed border為0px、背景透明、字影存在，0級仍無數字；截圖目視無底框，選中圖示原框與下方威脅值框保持。Console error／warning與pageerror皆0，未開玩家存檔；初次隔離整盤測試因缺Worker快照無法渲染，改以不需Worker的正式節點驗收。截圖talent-level-no-frame.png在本聊天visualizations，臨時HTML與瀏覽器已清理，沒有新增低影響樣式測試。
+- 唯讀未改：AI規範／Workflow、ui.js威能渲染與Tooltip、talents既有回歸、後載flat樣式及Claude index；自我Review通過。交付Commit為本段所在`[Codex] fix: 移除威能圖示等級數字外框`，回覆附編號；可供Review／合併，未合併推送。無本次未完成項或新增已知風險，限制為未做玩家存檔／跨瀏覽器驗收；下一步正常整合後重新整理遊戲，既有Talents／storm修改保留不提交。
+
+## REINCARNATION-READY-20261022 — 可轉生經驗條與角色頁籤提示
+
+- Owner：Codex；Done，單一開發者。使用者要求可轉生時經驗條全滿並使用轉生按鈕的高亮流光，角色頁籤icon右下角顯示明顯紅色驚嘆號。前置既有canReincarnateAt與Header快照可用。
+- 允許：js/ui.js僅Header提示、css/style.css共用流光與頁籤徽章、index.html僅角色icon及對應快取、LV_upgrade_system.md本功能說明與本段；禁止修改轉生條件、模擬／Worker／Protocol／存檔、配置、素材、其他任務與其他副本。必要時補既有轉生回歸；不合併推送。
+- 驗收：未達條件／可轉生／轉生後／神階晉升／最終上限；三處經驗條寬度／動畫一致、徽章定位與清除、隔離瀏覽器及Console、轉生與Header回歸／Build／diff與自我Review後獨立Commit。後續使用者Review及正常整合。
+- 衝突：主頁與Claude b411b8e5僅同檔不同區段，對方改formula快取，本次僅style／ui快取及角色icon；git merge-file乾跑0且保留formula69。其餘預檢無外部來源；本副本符文tips及Talents／storm修改逐段保留，只stage本次差異。
+- 完成5檔：Header三處經驗條在可轉生時滿格，共用原按鈕的背景流動／脈衝與掃光CSS；轉生後移除動畫恢復實際進度，最終滿級維持滿格但不亮提示。角色icon外包定位容器避開圓框裁切，右下角20px紅底白字驚嘆號隨相同條件顯隱，神階晉升同規則；經驗tips及戰鬥aria進度一致。style95／ui193快取與LV同步，未改解鎖／模擬／存檔。
+- 驗證：node --test tests/reincarnate-gate.test.cjs tests/ui-worker-panels.test.cjs tests/ui-worker-g-dependency.test.cjs tests/ui-tick-smoke.test.cjs，15項13過／2既有失敗（gem.socket靜態掃描及detailAction測試缺UI）；以HEAD的ui.js唯讀映射重跑ui-worker-panels得到相同兩項失敗，未改測試或降低斷言。npm.cmd run build，571檔全過；diff --check通過。
+- 畫面：隔離Edge載入正式HTML／全部CSS／ui-scale與ui.js，Header快照控制測六種狀態：門檻前、2轉可轉生、重置1級、10轉可晉階、最後一次晉階及最終上限。三處寬度、實際computed動畫／掃光／背景與提示顯隱皆過，1920及720視窗目視徽章確在icon右下且未被裁切，Console warning／error0。截圖與verification.json保存聊天visualizations/reincarnation；未啟動模擬或讀寫玩家存檔，未做真人長戰。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts/codex、formula轉生閘門、player經驗／轉生、Worker投影、三套後載CSS／battle-hud、上述回歸與ui-scale。自我Review確認單一條件、最終上限不誤亮、原按鈕效果沿用、無Timer／素材／VFX來源新增；素材庫無本任務變更、不建空Commit。
+- 交付：本段所在「[Codex] fix: 可轉生時顯示滿經驗流光與角色提醒」Commit，回覆附編號。可供Review／合併，未合併推送；無本輪未完成項，限制為上述既有測試及未做真人存檔驗收。下一步正常整合後重新整理遊戲；其他進行中修改保留。
+
+## RUNEWORD-TIPS-20261022 — 符文庫真言提示顯示完整配方
+
+- Owner：Codex；Done，單一開發者。使用者要求已形成真言的tips直接顯示圖鑑卡片（組成符文／順序／條件／效果），未解鎖提示改為「尚未解鎖，需自行嘗試或挑戰更高階的封魔塔」。前置既有永久解鎖與圖鑑渲染完成，沿用內測預覽規則。
+- 允許：js/ui-runeword.js、css/runeword.css、index.html僅對應快取、tests/runeword-ui.test.cjs、LV_upgrade_system.md及本段。禁止改配置、傷害、解鎖條件、Worker／Protocol、存檔、素材與其他工作區；現有Talents.xlsx／en-burst-storm修改保留，不合併推送。
+- 驗收：重用圖鑑卡片，避免重複DOM id；未解鎖不得洩漏配方；材料／穿戴旗標、正式與內測回歸、Build、隔離瀏覽器hover與窄視窗／Console檢查，diff及自我Review後獨立Commit。後續使用者Review／正常整合。
+- 衝突：index與Claude b411b8e5同檔不同區段，對方僅formula快取，本次僅runeword CSS／UI快取，無語意相依；共同基底a9834e86、本次候選與Claude實際工作檔git merge-file -p退出0，兩邊快取均保留。其餘目標預檢乾淨，fetch後無遠端新增差異。
+- 完成5檔：ui-runeword重用原圖鑑卡片作為data-tip，提示副本省略id；runeword.css共用卡片樣式、提示寬度隨視窗調整；index只升CSS7→8／UI12→13，LV與本段同步。符文庫未知用途與圖鑑未知配方提示均更新；既有點擊跳圖鑑、材料齊全、穿戴中與內測預覽保持。沒有素材／素材庫變更，沒有改玩法或永久解鎖記錄。
+- 測試：`node --test tests/runeword-ui.test.cjs` 23/23通過。`node --test tests/runeword-ui.test.cjs tests/runeword-seen.test.cjs tests/runeword-engine.test.cjs tests/runeword-data.test.cjs tests/runeword-all-words.test.cjs tests/config-runes-table.test.cjs tests/rune-slots-config.test.cjs` 173項169過4失敗；4項為配置每3層／塔通關／舊存檔補記／塔結算解鎖，均對應既有配置門檻，未改配置或斷言。以Node唯讀readFileSync映射把本次5個修改檔還原HEAD內容，在隔離子程序重跑seen／config兩檔為22項18過4失敗，失敗名稱完全相同，新增失敗0。`npm.cmd run build` 571檔通過；`git diff --check`通過，沒有新增低影響外觀測試。
+- 瀏覽器：隔離無頭Edge，載正式CSS／UI腳本與本機測試快照，抽取正式mouseover／mouseout委派，未啟動Worker或讀寫玩家存檔。霜語提示與圖鑑卡片outerHTML（扣id）一致、霜痕→風語順序、孔數／適用／屬性／緩速／風味完整；材料齊全／缺料／穿戴旗標、未解鎖不洩漏配方、點擊跳圖鑑、內測開關通過。360×780提示x8／寬344／高201.67，完全位於視窗；Console error／warning與pageerror皆0。已目視formed截圖，3份預覽留聊天visualizations（runeword-tip-formed／locked／narrow.png），臨時HTTP與瀏覽器已關閉。
+- 唯讀未改：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex、ui.js提示委派與定位、item／runeword／runeword_data、7份既有回歸與helper、配置工具、Claude index。自我Review通過，無新增Timer／Event／資料權威或存檔變更；原Talents.xlsx與en-burst-storm修改未納本次提交。
+- 交付：本段所在`[Codex] fix: 符文真言提示直接顯示完整配方卡片`，回覆附Commit編號。無本次未完成實作，可供Review／合併，未合併推送；已知限制為4項既有測試失敗、未載玩家存檔長戰及未跨瀏覽器。下一步由使用者正常整合後重新整理遊戲驗收。
+
 ## LAVA-DEVELOP-MERGE-20261022 — 熔岩地貌與火焰分支整合
 
 - Owner：Codex；Done（合併與必要驗證完成，體感由使用者測試），使用者明確指定整合者並授權將codex/lava-terrain合併develop、處理衝突保留雙方，之後自行測試體感。基準develop=4536ed04、來源=d42d48b6；兩工作區乾淨，fetch後origin/develop仍4536ed04。
