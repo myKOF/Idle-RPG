@@ -1,15 +1,16 @@
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
-const tabLockSrc = fs.readFileSync(path.join(root, 'js/tablock.js'), 'utf8');
-const bridgeSrc = fs.readFileSync(path.join(root, 'js/bridge.js'), 'utf8');
-const protocolSrc = fs.readFileSync(path.join(root, 'js/worker/protocol.js'), 'utf8');
-const mainSrc = fs.readFileSync(path.join(root, 'js/main.js'), 'utf8');
-const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const tabLockSrc = readExpanded(path.join(root, 'js/tablock.js'));
+const bridgeSrc = readExpanded(path.join(root, 'js/bridge.js'));
+const protocolSrc = readExpanded(path.join(root, 'js/worker/protocol.js'));
+const mainSrc = readExpanded(path.join(root, 'js/main.js'));
+const html = readExpanded(path.join(root, 'index.html'));
 
 const tick = () => new Promise((resolve) => setImmediate(resolve));
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));

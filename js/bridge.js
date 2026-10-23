@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* ============ 主執行緒 ⇄ 模擬 Worker 橋接 ============
    負責建立 Worker、配對指令與回應、轉發分頁狀態，並把 Worker 送來的訊息
    分派給註冊的處理函式。
@@ -15,7 +16,7 @@ var WorkerBridge = (function () {
   /* Worker 與其模擬層不是由 bundler 產生，瀏覽器可能把舊的 Worker
      腳本留在快取裡。每次修改 Worker 啟動／核心邏輯時更新這個鍵，避免
      使用者刷新後仍執行舊版升級公式。 */
-  var WORKER_ASSET_VERSION = '20261023-str-battle';
+  var WORKER_ASSET_VERSION = '20261023-str-system';
   var _menuPaused = false;
   function setMenuPaused(value) {
     _menuPaused = !!value;
@@ -332,7 +333,7 @@ var WorkerBridge = (function () {
       if (!start({ save: save || fallback.save || null,
                    maxRunId: maxRunId || fallback.maxRunId || 1,
                    _isRestart: true })) {
-        giveUp(reason + '（重啟時無法建立 Worker）');
+        giveUp(STR(1934, reason));
       }
     };
     if (typeof SaveStorage !== 'undefined' && typeof SaveStorage.readBootSave === 'function') {
@@ -360,7 +361,7 @@ var WorkerBridge = (function () {
 
     _restartCount++;
     console.warn('[bridge] Worker 失去回應（' + reason + '），自動重啟第 ' + _restartCount +
-      '／' + MAX_RESTARTS + ' 次' + (dropped ? '，已取消 ' + dropped + ' 筆進行中的指令' : '') + '。');
+      '／' + MAX_RESTARTS + ' 次' + (dropped ? STR(1935, dropped) : '') + '。');
     emit('workerRestarting', { reason: reason, at: Date.now(), attempt: _restartCount, max: MAX_RESTARTS });
     if (_restartTimer) clearTimeout(_restartTimer);
     _restartTimer = setTimeout(function () { _restartTimer = 0; restartWorker(reason); }, RESTART_DELAY_MS);
@@ -383,7 +384,7 @@ var WorkerBridge = (function () {
     var pongTimeout = catchingUp ? CATCHUP_PONG_TIMEOUT_MS : PONG_TIMEOUT_MS;
     if (_probeAt) {
       if (now - _probeAt > pongTimeout) {
-        markWorkerDead('PING 逾時未回應' + (catchingUp ? '（補進度中，已放寬門檻）' : ''));
+        markWorkerDead(STR(1937, (catchingUp ? STR(1936) : '')));
       }
       return;
     }
@@ -441,7 +442,7 @@ var WorkerBridge = (function () {
       stats.lastError = { where: 'worker-onerror', message: err.message, stack: err.filename + ':' + err.lineno };
       console.error('[bridge] worker error:', err.message, err.filename + ':' + err.lineno);
       // 開機前就出錯代表 Worker 根本沒起來（載入失敗、語法錯誤），直接判定失效
-      if (!stats.booted) markWorkerDead('Worker 載入失敗：' + err.message);
+      if (!stats.booted) markWorkerDead(STR(1938, err.message));
     };
 
     _lastMessageAt = Date.now();
@@ -476,8 +477,8 @@ var WorkerBridge = (function () {
       console.info('[bridge] Worker 已重啟（第 ' + _restartCount + '／' + MAX_RESTARTS + ' 次）。');
       emit('workerRestarted', { at: Date.now(), attempt: _restartCount, max: MAX_RESTARTS });
     } else {
-      console.info('[bridge] Worker 已啟動' + (opts.save ? '' : '（拋棄式狀態，不讀寫玩家存檔）') +
-        (safeMode() ? '｜安全模式：略過離線結算' : '') +
+      console.info('[bridge] Worker 已啟動' + (opts.save ? '' : STR(1939)) +
+        (safeMode() ? STR(1940) : '') +
         '。輸入 WorkerBridge.status() 查看狀態。');
     }
     return true;

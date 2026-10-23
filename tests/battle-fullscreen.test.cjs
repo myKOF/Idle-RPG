@@ -1,10 +1,11 @@
 'use strict';
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
-const ui = fs.readFileSync(path.join(__dirname, '../js/ui.js'), 'utf8');
+const ui = readExpanded(path.join(__dirname, '../js/ui.js'));
 
 function setup() {
   const classes = new Set();

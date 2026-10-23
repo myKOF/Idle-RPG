@@ -25,7 +25,7 @@ importScripts(
   '../skills.js?v=20261023-str-skill', '../skills2.js?v=20261023-str-skill', '../elite_data.js?v=20261021-chain-hover', '../talents.js?v=20261023-str-talent',
   '../player.js?v=20261023-str-char', '../special_rules.js?v=20261023-str-battle',
   '../combat.js?v=20261023-str-battle', '../elite.js?v=20261023-str-battle', '../elite_boss.js?v=20261023-str-battle', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261023-str-equip', '../tower.js?v=20261023-str-guard',
-  '../factory.js?v=20261023-str-equip', '../newforge.js?v=20261023-str-guard', '../forge.js?v=20261023-str-guard', '../save.js?v=20261022-talent-gold',
+  '../factory.js?v=20261023-str-equip', '../newforge.js?v=20261023-str-guard', '../forge.js?v=20261023-str-guard', '../save.js?v=20261023-str-system',
   '../tasks.js?v=20261023-str-guard'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
@@ -1220,7 +1220,7 @@ function onSaveResult(msg) {
   if (!msg.ok && G && rec.rollback) {
     // 落地失敗：把 savedAt 退回上一次成功的值，讓下次離線結算仍以真正落地的時間點為準
     G.savedAt = rec.prevSavedAt;
-    shimPushEvent('log', { msg: '⚠️ 存檔寫入失敗：' + (msg.error || '未知原因'), cls: 'warn' });
+    shimPushEvent('log', { msg: STR(2012, (msg.error || '未知原因')), cls: 'warn' });
   }
 }
 
@@ -1398,7 +1398,7 @@ var COMMAND_IMPL = {
 
     if (targets.length) {
       var rec = manualSave('before_bulk_salvage'); // 已被 installStorageGuards 導向 persist
-      if (rec) flog('💾 已建立拆解前存檔：' + rec.fname, 'info');
+      if (rec) flog(STR(2013, rec.fname), 'info');
     }
     targets.forEach(function (it) {
       var res = doSalvage(it, true);
@@ -1859,7 +1859,7 @@ function boot(msg) {
      重跑一段模擬、再結算獎勵，任何一環碰到異常資料都會拋錯，而拋錯就等於開不了機。
      跳過它的代價只是「這次不補離線收益」，換來的是玩家進得去、匯得出存檔。 */
   if (loaded && msg.safeMode) {
-    notices.push({ key: '_safeModeNotice', text: '已以安全模式開機：本次略過離線結算，離線期間的收益不會補發。建議先匯出存檔備份。' });
+    notices.push({ key: '_safeModeNotice', text: STR(2014) });
   } else if (loaded && typeof applyOfflineProgress === 'function') {
     /* 離線收益可能要逐筆處理數千次掉落。不要在 BOOTED 前同步執行，
        否則主執行緒只能顯示 HTML 的預設 0/60，直到整段計算結束才拿到面板。 */
@@ -1905,7 +1905,7 @@ function boot(msg) {
      （player.js 的 `qualities.push(r === 0)`），玩家照著訊息做就會滿包。
      文案與預設值分屬兩個檔案，寫死等於保證日後再次不同步。 */
   if (loaded) {
-    notices.push({ key: 'welcomeBack', text: '📖 歡迎回來，冒險者！讀取存檔成功。', cls: 'good' });
+    notices.push({ key: 'welcomeBack', text: STR(2015), cls: 'good' });
     var invCapNow = (typeof inventoryCapacityWithTalents === 'function')
       ? inventoryCapacityWithTalents()
       : INVENTORY_CAP + (G.player.invUpgrades || 0);

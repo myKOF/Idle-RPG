@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* ============ 多分頁互斥（主執行緒）============
    ---- 為什麼需要 ----
    Worker 是模擬與存檔的唯一權威，但那個「唯一」只在單一分頁內成立：一個分頁一顆
@@ -113,10 +114,9 @@ var TabLock = (function () {
   }
 
   function showBusy() {
-    setOverlay('🔒 遊戲已在另一個分頁進行中',
-      '同時用兩個分頁遊玩會讓兩邊的進度互相覆蓋，所以這個分頁先停在這裡。' +
-      '按下按鈕即可把控制權接過來——另一個分頁會先保存進度再停止，不會掉東西。',
-      '在此分頁接管');
+    setOverlay(STR(2016),
+      STR(2017),
+      STR(2018));
   }
 
   /* ---- 初始化 ----
@@ -183,7 +183,7 @@ var TabLock = (function () {
      想要回來按接管即可——只有一條路徑，不必為「讓位中」另外維護一種狀態。 */
   function yieldControl() {
     _yielding = true;
-    setOverlay('🔄 正在把控制權交給另一個分頁…', '正在保存目前進度，請稍候。', null);
+    setOverlay(STR(2019), STR(2020), null);
     var finish = function () {
       try { sessionStorage.setItem(YIELD_FLAG_KEY, String(Date.now())); } catch (e) {}
       if (_releaseLock) { _releaseLock(); _releaseLock = null; }
@@ -215,7 +215,7 @@ var TabLock = (function () {
      狀態永遠停在玩家看得到的地方。 */
   function requestTakeover() {
     if (_holder || _inited) return;
-    setOverlay('⏳ 正在要求另一個分頁交出控制權…', '另一個分頁會先保存進度再停止，通常一兩秒內完成。', null);
+    setOverlay(STR(2021), STR(2022), null);
     broadcast({ type: MSG_YIELD, at: Date.now() });
     var deadline = Date.now() + TAKEOVER_TIMEOUT_MS;
     var poll = function () {
@@ -223,9 +223,9 @@ var TabLock = (function () {
       tryAcquire(function (ok) {
         if (ok) { runInit(); return; }
         if (Date.now() >= deadline) {
-          setOverlay('⚠️ 另一個分頁沒有回應',
-            '它可能已被瀏覽器凍結，或正在忙。請直接關閉另一個分頁後再試一次。',
-            '再試一次');
+          setOverlay(STR(2023),
+            STR(2024),
+            STR(2025));
           return;
         }
         _pollTimer = setTimeout(poll, POLL_MS);

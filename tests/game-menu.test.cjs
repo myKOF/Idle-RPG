@@ -1,5 +1,6 @@
 'use strict';
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
@@ -21,7 +22,7 @@ function setup() {
     location: { reload() { events.push('reload'); }, replace(url) { events.push(url); } },
     closeTopmostModalOrOverlay() { return false; }, refreshSettingsPanel() { events.push('refresh-settings'); }, renderSaveList() {},
     WorkerBridge: { saveAutoNow: () => Promise.resolve(true), stop() { events.push('stop'); } } };
-  vm.createContext(ctx); vm.runInContext(fs.readFileSync(path.join(root, 'js/game-menu.js'), 'utf8'), ctx);
+  vm.createContext(ctx); vm.runInContext(readExpanded(path.join(root, 'js/game-menu.js')), ctx);
   ctx.GameMenu.init(); return { ctx, nodes, handlers, events, timers, doc };
 }
 
@@ -81,7 +82,7 @@ test('菜單與設置共用暫停，返回菜單不恢復，完全關閉才恢�
 });
 
 test('主側欄移除設定，設定區位於獨立dialog內，菜單四項順序固定', () => {
-  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const html = readExpanded(path.join(root, 'index.html'));
   assert.doesNotMatch(html.match(/<nav id="tabs"[\s\S]*?<\/nav>/)[0], /data-tab="settings"/);
   assert.match(html, /id="settings-modal"[\s\S]*?role="dialog"[\s\S]*?id="tab-settings" class="system-settings-content"/);
   const menu = html.match(/id="game-menu"[\s\S]*?id="game-menu-status"/)[0];

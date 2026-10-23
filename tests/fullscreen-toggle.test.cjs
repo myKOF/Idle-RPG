@@ -1,11 +1,12 @@
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.resolve(__dirname, '..');
-const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
-const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const ui = readExpanded(path.join(root, 'js/ui.js'));
+const index = readExpanded(path.join(root, 'index.html'));
 
 test('全螢幕按鈕區分網頁全螢幕與瀏覽器 F11 全螢幕', () => {
   assert.match(ui, /function isBrowserFullscreen\(\)/);

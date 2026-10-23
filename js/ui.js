@@ -222,7 +222,7 @@ function showWorkerDeadNotice(event) {
   card.style.cssText = 'width:min(520px,100%);padding:24px;border:1px solid #ef4444;border-radius:14px;' +
     'background:#111827;color:#f9fafb;box-shadow:0 20px 60px rgba(0,0,0,.55);text-align:center;';
   var title = document.createElement('h2');
-  title.textContent = '⚠️ 遊戲模擬已停止';
+  title.textContent = STR(2026);
   title.style.cssText = 'margin:0 0 12px;color:#fca5a5;';
   var desc = document.createElement('p');
   desc.style.cssText = 'margin:0 0 12px;line-height:1.65;';
@@ -232,21 +232,21 @@ function showWorkerDeadNotice(event) {
       ? Number(WorkerBridge.status().restarts) || 0
       : 0;
   }
-  desc.textContent = '已自動嘗試恢復 ' + restartCount + ' 次仍失敗，可能是存檔資料有問題。';
+  desc.textContent = STR(2027, restartCount);
   var detail = document.createElement('pre');
-  detail.textContent = event && event.reason ? String(event.reason) : 'Worker 已失去回應';
+  detail.textContent = event && event.reason ? String(event.reason) : STR(2028);
   detail.style.cssText = 'margin:0 0 18px;padding:10px;max-height:120px;overflow:auto;border-radius:8px;' +
     'background:#030712;color:#d1d5db;text-align:left;white-space:pre-wrap;';
   var reload = document.createElement('button');
   reload.type = 'button';
   reload.className = 'btn';
-  reload.textContent = '重新載入';
+  reload.textContent = STR(2029);
   reload.addEventListener('click', function () { location.reload(); });
 
   var safeReload = document.createElement('button');
   safeReload.type = 'button';
   safeReload.className = 'btn';
-  safeReload.textContent = '安全模式重新載入';
+  safeReload.textContent = STR(2030);
   safeReload.style.marginLeft = '8px';
   safeReload.addEventListener('click', function () {
     var next = new URL(location.href);
@@ -312,7 +312,7 @@ function handleWorkerRestarting(event) {
   var attempt = Number(event && event.attempt) || 1;
   var max = Number(event && event.max) || 3;
   hideWorkerDeadNotice();
-  showWorkerRestartNotice('模擬中斷，正在自動恢復…（第 ' + attempt + '/' + max + ' 次）', false);
+  showWorkerRestartNotice(STR(2031, attempt, max), false);
 }
 
 function resetUiWorkerPanelState() {
@@ -336,7 +336,7 @@ function resetUiWorkerPanelState() {
 
 function handleWorkerRestarted(event) {
   resetUiWorkerPanelState();
-  showWorkerRestartNotice('已自動恢復，進度回到最近一次自動存檔', true);
+  showWorkerRestartNotice(STR(2032), true);
   refreshUiPanelSubscriptions();
 }
 
@@ -352,7 +352,7 @@ function updateWorkerSafeModeMarker() {
     marker = document.createElement('div');
     marker.id = 'worker-safe-mode-marker';
     marker.setAttribute('role', 'status');
-    marker.textContent = '安全模式';
+    marker.textContent = STR(2033);
     marker.style.cssText = 'position:fixed;top:8px;right:8px;z-index:99999;padding:4px 9px;' +
       'border-radius:5px;background:#92400e;color:#fffbeb;font-size:12px;pointer-events:none;';
     document.body.appendChild(marker);
@@ -1000,10 +1000,10 @@ function handleWorkerUiEvents(events) {
     } else if (event.key === 'forgeUnlocked') {
       requestPanelData('forge', true);
       requestPanelData('header', true);
-      showConfirmDialog('神鑄系統已開啟！\n\n將 6 件相同品質的裝備（傳說/神話/創世）放入六芒星法陣，即可鑄造下一品質的裝備。是否前往查看？', function () {
+      showConfirmDialog(STR(2034), function () {
         switchTab('forge');
         UI.dirty.forge = true;
-      }, { title: '🔯 神鑄系統', okText: '前往神鑄', cancelText: '稍後再說' });
+      }, { title: STR(2035), okText: STR(2036), cancelText: STR(2037) });
     }
   });
 }
@@ -1893,7 +1893,7 @@ function updateDamageToggleButton() {
   if (iconOpen) iconOpen.style.display = on ? 'block' : 'none';
   if (iconClosed) iconClosed.style.display = on ? 'none' : 'block';
   btn.setAttribute('data-tt-title', '傷害數字');
-  btn.setAttribute('data-tt-desc', on ? '目前顯示傷害數字（點擊關閉）' : '目前已關閉傷害數字（點擊開啟）');
+  btn.setAttribute('data-tt-desc', on ? '目前顯示傷害數字（點擊關閉）' : STR(2038));
   if (typeof refreshOpenStatTooltip === 'function') refreshOpenStatTooltip();
 }
 
@@ -1907,7 +1907,7 @@ function setDamageNumbersEnabled(enabled, quiet) {
     clearActiveDamageFloats();
   }
   if (!quiet && typeof blog === 'function') {
-    blog(UI_DAMAGE_NUMBERS_ENABLED ? '👁️ 已開啟傷害數字顯示' : '👁️ 已關閉傷害數字顯示', 'info');
+    blog(UI_DAMAGE_NUMBERS_ENABLED ? STR(2039) : STR(2040), 'info');
   }
 }
 
@@ -2826,7 +2826,7 @@ function renderSaveFolderFilesV2(files) {
   if (!box || !listBox) return;
   box.hidden = false;
   if (!files || !files.length) {
-    listBox.innerHTML = '<div class="hint">目前資料夾沒有檔案。</div>';
+    listBox.innerHTML = '<div class="hint">' + STR(2041) + '</div>';
     return;
   }
   listBox.innerHTML = files.map(function (f) {
@@ -2859,13 +2859,13 @@ function rescanSaveFolderView(showMessage) {
   var messageBox = $id('save-msg');
   if (typeof _saveDir === 'undefined' || !_saveDir) {
     if (showMessage) {
-      var hint = '⚠️ 尚未連接存檔資料夾，請先按「選擇／更新存檔資料夾」授權。';
+      var hint = STR(2042);
       if (messageBox) messageBox.textContent = hint;
       blog(hint, 'warn');
     }
     return Promise.resolve([]);
   }
-  if (showMessage && messageBox) messageBox.textContent = '⏳ 重新掃描存檔資料夾…';
+  if (showMessage && messageBox) messageBox.textContent = STR(2043);
   var scan = typeof scanManualMetadataV2 === 'function'
     ? scanManualMetadataV2()
     : Promise.resolve();
@@ -2874,7 +2874,7 @@ function rescanSaveFolderView(showMessage) {
     return refreshSaveFolderFilesV2();
   }).then(function (files) {
     if (showMessage) {
-      var text = '✅ 已重新掃描「' + _saveDir.name + '」，目前共有 ' + files.length + ' 個檔案。';
+      var text = STR(2044, _saveDir.name, files.length);
       if (messageBox) messageBox.textContent = text;
       blog(text, 'good');
     }
@@ -2882,7 +2882,7 @@ function rescanSaveFolderView(showMessage) {
   }).catch(function (error) {
     if (showMessage) {
       var reason = error && error.message ? error.message : String(error || '無法讀取資料夾');
-      var text = '⚠️ 重新掃描失敗：' + reason;
+      var text = STR(2045, reason);
       if (messageBox) messageBox.textContent = text;
       blog(text, 'warn');
     }
@@ -2898,19 +2898,8 @@ function renderSaveList() {
   var list = [auto].concat(saveIndex().slice().sort(function (a, b) { return b.savedAt - a.savedAt; }).slice(0, 10));
   box.innerHTML = list.map(function (r) {
     var cur = r.kind === 'auto' && r.runId === curRun;
-    var newNotice = UI.saveNoticeId === r.id ? '<div class="save-new-notice">✅ 已新增存檔！</div>' : '';
-    return '<div class="save-row' + (r.kind === 'auto' ? ' auto' : '') + '">' +
-      '<div class="save-info">' +
-      '<div class="save-name">' + saveRecName(r) + (cur ? ' <span class="save-cur">目前遊戲</span>' : '') + '</div>' +
-      '<div class="save-file">' + esc(r.fname) + '　<span class="save-time">' + saveTimeStr(r.savedAt) + '</span></div>' +
-      '<div class="save-meta">Lv.' + r.level + '｜' + (ZONES[r.zone] ? ZONES[r.zone].emoji + ZONES[r.zone].name : '') + ' 第 ' + r.stage + ' 階｜第 ' + (r.runId || 1) + ' 局</div>' +
-      newNotice +
-      '</div>' +
-      '<div style="display:flex; gap:8px;">' +
-      '<button class="btn sm" data-load-save="' + r.id + '">📥 讀取</button>' +
-      '<button class="btn sm" style="color:var(--danger, #f87171); border-color:var(--danger, #f87171);" data-del-save="' + r.id + '">🗑️ 刪除</button>' +
-      '</div>' +
-      '</div>';
+    var newNotice = UI.saveNoticeId === r.id ? '<div class="save-new-notice">' + STR(2046) + '</div>' : '';
+    return '<div class="save-row' + (r.kind === 'auto' ? ' auto' : '') + '"><div class="save-info"><div class="save-name">' + saveRecName(r) + (cur ? ' ' + STR(2050) : '') + '</div><div class="save-file">' + esc(r.fname) + '　<span class="save-time">' + saveTimeStr(r.savedAt) + '</span></div><div class="save-meta">' + STR(2047, r.level, (ZONES[r.zone] ? ZONES[r.zone].emoji + ZONES[r.zone].name : ''), r.stage, (r.runId || 1)) + '</div>' + newNotice + '</div><div style="display:flex; gap:8px;"><button class="btn sm" data-load-save="' + r.id + '">' + STR(2048) + '</button><button class="btn sm" style="color:var(--danger, #f87171); border-color:var(--danger, #f87171);" data-del-save="' + r.id + '">' + STR(2049) + '</button></div></div>';
   }).join('');
 }
 
@@ -8514,31 +8503,30 @@ function showOfflineSummary(sum) {
   var overlay = $id('offline-modal'), body = $id('offline-modal-body');
   if (!overlay || !body || !sum) return;
   var hrs = Math.floor(sum.seconds / 3600), mins = Math.floor((sum.seconds % 3600) / 60);
-  var h = '<div class="talent-modal-head"><span class="talent-modal-icon">🌙</span><b>離線收益</b> ' +
-    '<span class="dim-text">離線 ' + (hrs ? hrs + ' 小時 ' : '') + mins + ' 分鐘</span></div>';
+  var h = '<div class="talent-modal-head"><span class="talent-modal-icon">🌙</span>' + STR(2099, (hrs ? hrs + ' 小時 ' : ''), mins) + '</div>';
   /* 怪物種類由參數表決定（formula.js §10 OFFLINE_ELITE），不能寫死「菁英怪」。
      舊的離線摘要沒有 elite 欄位，視為菁英以維持原本的顯示。 */
-  var offKind = (sum.elite === false) ? '普通怪' : '菁英怪';
-  h += '<div class="offline-sum-row">⚔️ 擊殺：Lv.' + fmt(sum.stage) + ' ' + esc(sum.zoneName || '') + offKind + ' ×' + fmt(sum.kills) + '</div>';
-  h += '<div class="offline-sum-row">💡 經驗 +' + fmt(sum.xp) + '　💰 金幣 +' + fmt(sum.gold) + '</div>';
+  var offKind = (sum.elite === false) ? STR(2052) : STR(2053);
+  h += '<div class="offline-sum-row">' + STR(2054, fmt(sum.stage), esc(sum.zoneName || ''), offKind, fmt(sum.kills)) + '</div>';
+  h += '<div class="offline-sum-row">' + STR(2055, fmt(sum.xp), fmt(sum.gold)) + '</div>';
   var loot = [];
   for (var r = 0; r < RARITIES.length; r++) {
     if (sum.equips && sum.equips[r]) {
-      loot.push('<span style="color:' + RARITIES[r].color + '">' + esc(RARITIES[r].name) + '裝備</span>×' + fmt(sum.equips[r]));
+      loot.push(STR(2056, RARITIES[r].color, esc(RARITIES[r].name), fmt(sum.equips[r])));
     }
   }
   if (sum.gems) {
     for (var glv = 1; glv <= 5; glv++) {
-      if (sum.gems[glv]) loot.push('💎Lv.' + glv + ' 寶石×' + fmt(sum.gems[glv]));
+      if (sum.gems[glv]) loot.push(STR(2057, glv, fmt(sum.gems[glv])));
     }
   }
-  if (sum.books && ENCHANT_ENABLED) loot.push('📖附魔書×' + fmt(sum.books));
-  if (sum.essence) loot.push('<img src="images/icon_ancient_essence.png" class="res-icon" alt="太古精華">太古精華×' + fmt(sum.essence));
-  if (sum.dust) loot.push('💫魔塵×' + fmt(sum.dust));
-  if (sum.parts) loot.push('🔧自動機組零件×' + fmt(sum.parts));
-  if (sum.scrap) loot.push('🔩碎片×' + fmt(sum.scrap) + '（輸送帶滿載折算）');
-  h += '<div class="offline-sum-title">📦 掉落明細（裝備已送入輸送帶）</div>';
-  h += '<div class="offline-sum-loot">' + (loot.length ? loot.join('　') : '（無掉落）') + '</div>';
+  if (sum.books && ENCHANT_ENABLED) loot.push(STR(2058, fmt(sum.books)));
+  if (sum.essence) loot.push('<img src="images/icon_ancient_essence.png" class="res-icon" alt="' + STR(13) + '">' + STR(2059, fmt(sum.essence)));
+  if (sum.dust) loot.push(STR(2060, fmt(sum.dust)));
+  if (sum.parts) loot.push(STR(2061, fmt(sum.parts)));
+  if (sum.scrap) loot.push(STR(2062, fmt(sum.scrap)));
+  h += '<div class="offline-sum-title">' + STR(2063) + '</div>';
+  h += '<div class="offline-sum-loot">' + (loot.length ? loot.join('　') : STR(2064)) + '</div>';
   body.innerHTML = h;
   overlay.style.display = 'flex';
 }
@@ -10927,7 +10915,7 @@ function renderMiniWindow() {
 }
 
 function openMiniWindow() {
-  if (MINI.win) { blog('📺 迷你視窗已經開啟中', 'info'); return; }
+  if (MINI.win) { blog(STR(2065), 'info'); return; }
   // 主方案：Document Picture-in-Picture（Chrome 116+）
   if (window.documentPictureInPicture && documentPictureInPicture.requestWindow) {
     // 防呆：若 3 秒內沒有任何結果（極少數環境會懸置），改走影片 PiP
@@ -10940,13 +10928,13 @@ function openMiniWindow() {
       var style = d.createElement('style');
       style.textContent = MINI_CSS;
       d.head.appendChild(style);
-      d.title = '無限征途：戰況監控';
+      d.title = STR(2066);
       d.body.innerHTML = MINI_HTML;
       pip.addEventListener('pagehide', function () { MINI.win = null; });
       // 在 PiP 視窗內建立計時器：不受主視窗背景節流影響，更新流暢
       pip.setInterval(renderMiniWindow, 300);
       renderMiniWindow();
-      blog('📺 迷你監控視窗已開啟（永遠置頂，可拖曳/縮放）', 'good');
+      blog(STR(2067), 'good');
     }).catch(function () { settled = true; openVideoPip(); });
   } else {
     openVideoPip();
@@ -11023,12 +11011,12 @@ function openVideoPip() {
     }).then(function () {
       if (MINI.timer) clearInterval(MINI.timer);
       MINI.timer = setInterval(drawMiniCanvas, 500);
-      blog('📺 迷你監控視窗已開啟（影片模式）', 'good');
+      blog(STR(2068), 'good');
     }).catch(function (e) {
-      blog('⚠️ 無法開啟迷你視窗：' + (e && e.message ? e.message : '瀏覽器不支援'), 'warn');
+      blog(STR(2070, (e && e.message ? e.message : STR(2069))), 'warn');
     });
   } catch (e2) {
-    blog('⚠️ 此瀏覽器不支援子母畫面功能', 'warn');
+    blog(STR(2071), 'warn');
   }
 }
 
@@ -11540,9 +11528,9 @@ function setBattleFullscreen(enabled) {
   var button = $id('btn-battle-fullscreen');
   if (!shell || !button) return;
   shell.classList.toggle('battle-fullscreen', !!enabled);
-  button.textContent = enabled ? '還原' : '全螢幕';
+  button.textContent = enabled ? STR(2072) : '全螢幕';
   button.setAttribute('aria-pressed', String(!!enabled));
-  button.setAttribute('data-tip', enabled ? '還原主畫面（Esc）' : '戰鬥區全螢幕（Esc 還原）');
+  button.setAttribute('data-tip', enabled ? STR(2073) : '戰鬥區全螢幕（Esc 還原）');
   // 沿用既有版面失效與 Canvas resize 路徑，不重建戰場或改變模擬狀態。
   window.dispatchEvent(new Event('resize'));
   button.focus();
@@ -13506,17 +13494,17 @@ function initUI() {
       fsBtn.classList.toggle('active', pageFullscreen || browserFullscreen);
       fsBtn.setAttribute('data-tip', pageFullscreen
         ? '離開網頁全螢幕（Esc）'
-        : (browserFullscreen ? '目前為瀏覽器 F11 全螢幕，請按 F11 返回' : '進入網頁全螢幕'));
+        : (browserFullscreen ? STR(2074) : '進入網頁全螢幕'));
     }
     fsBtn.addEventListener('click', function () {
       if (document.fullscreenElement) {
         // 第二次按下：離開全螢幕恢復正常
         document.exitFullscreen().catch(function () { });
       } else if (isBrowserFullscreen()) {
-        blog('⚠️ 目前是瀏覽器 F11 全螢幕，網頁無法代替瀏覽器退出，請再按 F11 返回', 'warn', 'system');
+        blog(STR(2075), 'warn', 'system');
       } else {
         document.documentElement.requestFullscreen().catch(function () {
-          blog('⚠️ 瀏覽器拒絕進入網頁全螢幕，請使用 F11', 'warn', 'system');
+          blog(STR(2076), 'warn', 'system');
         });
       }
     });
@@ -13532,10 +13520,10 @@ function initUI() {
   // 設定分頁：存檔管理
   $id('btn-save').addEventListener('click', function () {
     var m = $id('save-msg');
-    if (m) m.textContent = '⏳ 正在確認本地存檔資料夾…';
+    if (m) m.textContent = STR(2077);
     ensureSaveFolderV2(function (err, folderRes) {
       if (err || !folderRes) {
-        var reason = '⚠️ 未建立手動存檔：' + (err || '尚未選擇本地資料夾');
+        var reason = STR(2079, (err || STR(2078)));
         if (m) m.textContent = reason;
         blog(reason, 'warn');
         return;
@@ -13549,20 +13537,19 @@ function initUI() {
         if (error) throw new Error(error);
         var rec = result && result.result ? result.result : result;
         UI.saveNoticeId = rec && rec.id;
-        var text = '✅ 手動存檔已寫入本地資料夾「' + folderRes.dirName + '」' +
-          (rec && rec.fname ? '：' + rec.fname : '');
+        var text = STR(2080, folderRes.dirName, (rec && rec.fname ? '：' + rec.fname : ''));
         if (m) m.textContent = text;
         blog(text, 'good');
         /* 指令 resolve 只代表 Worker 收下並發出了 persist，檔案還沒寫進磁碟。
            直接刷新會掃到還沒有新檔案的資料夾，玩家得自己再按一次「重新掃描」。 */
         WorkerBridge.whenWritesDrained(function (drainErr) {
-          if (drainErr) blog('⚠️ 存檔落地確認逾時，下方清單可能不是最新的，可按「重新掃描」。', 'warn');
+          if (drainErr) blog(STR(2081), 'warn');
           renderSaveList();
           refreshSaveFolderFilesV2();
         });
       }).catch(function (e) {
         var detail = e && e.message ? e.message : String(e);
-        var text = '⚠️ 手動存檔寫入失敗：' + detail;
+        var text = STR(2082, detail);
         if (m) m.textContent = text;
         blog(text, 'bad');
       });
@@ -13570,13 +13557,13 @@ function initUI() {
   });
   $id('btn-folder').addEventListener('click', function () {
     var m = $id('save-msg');
-    if (m) m.textContent = '⏳ 請選擇或更新存檔資料夾…';
+    if (m) m.textContent = STR(2083);
     openSaveFolder(function (err, res) {
       var text = '';
       if (err) {
         text = '⚠️ ' + err;
       } else if (res && res.selected) {
-        text = '✅ 已選定存檔資料夾「' + res.dirName + '」；目前共有 ' + ((res.files || []).length) + ' 個檔案。';
+        text = STR(2084, res.dirName, ((res.files || []).length));
         refreshSaveFolderFilesV2(res.files || []);
       }
       if (text) {
@@ -13597,7 +13584,7 @@ function initUI() {
   });
   $id('btn-restart').addEventListener('click', function () {
     var restartAuto = autoSaveMetaV2();
-    showConfirmDialog('確定要重新開局嗎？將開一個全新角色從頭重玩。\n目前進度已保留在「⚡ 即時自動存檔（第 ' + (restartAuto.runId || 1) + ' 局）」，所有存檔記錄都不會刪除，隨時可以讀回來。', function () {
+    showConfirmDialog(STR(2085, (restartAuto.runId || 1)), function () {
       sendUiCommand('save.restart', {}, {
         keys: [nodePendingKey('save-restart')]
       }).catch(function (error) {
@@ -13617,21 +13604,20 @@ function initUI() {
     if (!rec) return;
 
     if (loadBtn) {
-      showConfirmDialog('確定要讀取「' + saveRecName(rec) + '」嗎？\n檔名：' + rec.fname + '\n時間：' + saveTimeStr(rec.savedAt) +
-        '\n\n目前進度會先寫入本局的自動存檔，再切換為此存檔。', function () {
+      showConfirmDialog(STR(2086, saveRecName(rec), rec.fname, saveTimeStr(rec.savedAt)), function () {
           Promise.resolve(loadSaveRecord(id)).then(function (err) {
-            if (err) blog('⚠️ 讀取存檔失敗：' + err, 'bad');
+            if (err) blog(STR(2087, err), 'bad');
           }).catch(function (e) {
-            blog('⚠️ 讀取存檔失敗：' + (e && e.message ? e.message : e), 'bad');
+            blog(STR(2087, (e && e.message ? e.message : e)), 'bad');
           });
-        }, { title: '讀取存檔確認', okText: '讀取存檔', danger: true });
+        }, { title: STR(2088), okText: STR(2089), danger: true });
     } else if (delBtn) {
       showConfirmDialog('確定要刪除「' + saveRecName(rec) + '」嗎？\n檔名：' + rec.fname + '\n時間：' + saveTimeStr(rec.savedAt) +
         '\n\n刪除後無法恢復，是否繼續？', function () {
           deleteSaveRecord(id);
-          blog('🗑️ 存檔已刪除：' + rec.fname);
+          blog(STR(2090, rec.fname));
           renderSaveList();
-        }, { title: '刪除存檔確認', okText: '刪除存檔', danger: true });
+        }, { title: STR(2091), okText: STR(2092), danger: true });
     }
   });
   renderSaveList();
@@ -13833,14 +13819,14 @@ function resetStatsFromUi() {
   }).then(function (result) {
     var error = uiCommandResultError(result);
     if (error) {
-      reportUiCommandFailure('統計清除失敗', error, ['battle']);
+      reportUiCommandFailure(STR(2093), error, ['battle']);
       return false;
     }
     clearStatsSummaryDom();
     // battle panel 回來時由 PANEL handler 以 Worker Snapshot 重繪。
     return true;
   }).catch(function (error) {
-    reportUiCommandFailure('統計清除失敗', error, ['battle']);
+    reportUiCommandFailure(STR(2093), error, ['battle']);
     return false;
   });
 }
