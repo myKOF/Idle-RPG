@@ -22,7 +22,7 @@ var _stringDataVersion = ((typeof self !== 'undefined' && self.location && /[?&]
 importScripts(
   '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.0', '../data.js?v=20261023-str-guard', '../runeword_data.js?v=20261023-str-guard', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261023-str-skill', '../formula.js?v=20261022-elem-proc-off', '../battle-terrain.js?v=20261022-lava-terrain-develop-merge', '../battlefield.js?v=20261022-lava-terrain-develop-merge', '../stats.js?v=20261003-rename-weineng',
   '../item.js?v=20261023-str-guard', '../gem_resonance.js?v=20261023-str-guard','../runeword.js?v=20261023-str-guard',
-  '../skills.js?v=20261023-str-skill', '../skills2.js?v=20261023-str-skill', '../elite_data.js?v=20261021-chain-hover', '../talents.js?v=20261022-talent-gold-norefund',
+  '../skills.js?v=20261023-str-skill', '../skills2.js?v=20261023-str-skill', '../elite_data.js?v=20261021-chain-hover', '../talents.js?v=20261023-str-talent',
   '../player.js?v=20261022-talent-gold', '../special_rules.js',
   '../combat.js?v=20261019-disintegrate-end-once-bloodfeast-single-target', '../elite.js?v=20261022-stone-wall-fire-chain-follow', '../elite_boss.js?v=20261022-stone-wall-navigation', '../elite_boss_recipes.js?v=20261023-str-guard', '../legendary.js?v=20261012-indomitable-guard-legend-rework-1020', '../tower.js?v=20261023-str-guard',
   '../factory.js?v=20261021-equipment-quality-name', '../newforge.js?v=20261023-str-guard', '../forge.js?v=20261023-str-guard', '../save.js?v=20261022-talent-gold',
@@ -1887,8 +1887,7 @@ function boot(msg) {
     delete G._loadoutCapClampNotice;
   }
   if (G._talentRespecNotice) {
-    notices.push({ key: '_talentRespecNotice', text: '🌟 ' + G._talentRespecNotice +
-      '，威能改為十級制；威能升級已改為消耗金幣。', cls: 'warn' });
+    notices.push({ key: '_talentRespecNotice', text: STR(841, G._talentRespecNotice), cls: 'warn' });
     delete G._talentRespecNotice;
   }
   /* 帶 modal 的公告要彈窗，不是寫進日誌，UI 端據此分辨。
@@ -1896,7 +1895,7 @@ function boot(msg) {
      其餘三個旗標暫時沒有人設定。這段傳輸機制刻意保留——日後若再需要開機公告，
      直接在 migrateSave 設旗標即可，不必重接一次管線。 */
   if (G._talentRespecConfirm) {
-    notices.push({ key: '_talentRespecConfirm', text: '威能系統已重新改造，請重新配置！', modal: true });
+    notices.push({ key: '_talentRespecConfirm', text: STR(842), modal: true });
     delete G._talentRespecConfirm;
   }
 

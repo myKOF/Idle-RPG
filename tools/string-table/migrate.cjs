@@ -22,7 +22,7 @@ const path = require('path');
 const vm = require('vm');
 const { extract } = require('./chain.cjs');
 const { scopeReason, GENERATED_TOP } = require('./scope.cjs');
-const { splitMarkup, decodeEnt, IDEO } = require('./markup.cjs');
+const { splitMarkup, decodeEnt, IDEO, ATTR_TEXT, attrValue } = require('./markup.cjs');
 const { csvParse } = require('./apply_strings.cjs');
 
 const ROOT = path.resolve(__dirname, '..', '..');
@@ -185,6 +185,21 @@ function cutLiteral(raw, absStart, isTpl) {
   const { value, at } = unescapeMap(raw);
   if (!IDEO.test(value)) return [];
   const out = [];
+  const taken = [];
+  // 屬性值（data-tip／data-tt-desc…）整段是一條；字面值裡常是實體編碼（&lt;br&gt;），所以用 attrValue 解碼後比對，切的是原始位置
+  const are = new RegExp(ATTR_TEXT.source, 'g');
+  let am;
+  while ((am = are.exec(value))) {
+    const val = am[1];
+    if (!IDEO.test(val)) continue;
+    const piece = attrValue(val);
+    const e = lookup(piece);
+    if (!e) continue;
+    const idx = am.index + am[0].length - 1 - val.length;
+    out.push({ rs: at[idx], re: at[idx + val.length], id: e.id, module: e.module, len: piece.length, piece, esc: piece.includes('"') });
+    taken.push([idx, idx + val.length]);
+  }
+  const overlaps = (a, b) => taken.some(t => a < t[1] && b > t[0]);
   let from = 0;
   for (const piece of splitMarkup(value)) {
     const e = lookup(piece);
@@ -197,9 +212,11 @@ function cutLiteral(raw, absStart, isTpl) {
       if (!m) continue;
       idx = from + m.index; plen = m[0].length;
     }
+    if (overlaps(idx, idx + plen)) continue;
     out.push({ rs: at[idx], re: at[idx + plen], id: e.id, module: e.module, len: piece.length, piece });
     from = idx + plen;
   }
+  out.sort((x, y) => x.rs - y.rs);
   return out;
 }
 
@@ -249,7 +266,7 @@ function applyEdits(src, edits) {
     if (n.kind === 'T') {
       out = '';
       cur = 0;
-      for (const c of n.cuts) { out += n.raw.slice(cur, c.rs) + '${STR(' + c.id + ')}'; cur = c.re; }
+      for (const c of n.cuts) { out += n.raw.slice(cur, c.rs) + '${' + (c.esc ? 'esc(STR(' + c.id + '))' : 'STR(' + c.id + ')') + '}'; cur = c.re; }
       return out + n.raw.slice(cur);
     }
     const q = n.quote;
@@ -258,7 +275,7 @@ function applyEdits(src, edits) {
     for (const c of n.cuts) {
       const pre = n.raw.slice(cur, c.rs);
       if (pre) seq.push(q + pre + q);
-      seq.push('STR(' + c.id + ')');
+      seq.push(c.esc ? 'esc(STR(' + c.id + '))' : 'STR(' + c.id + ')');
       cur = c.re;
     }
     if (tail) seq.push(q + tail + q);
@@ -406,13 +423,20 @@ for (const rel of listFiles()) {
   if (ONLY && !ONLY.includes(rel)) continue;
   if (/^js\/(strings|strings_data)\.js$/.test(rel)) continue;
   const abs = path.join(ROOT, rel);
-  const src = fs.readFileSync(abs, 'utf8');
-  const { edits } = planFile(rel, src);
-  if (!edits.length) continue;
-  const next = require('./guard.cjs').withGuard(applyEdits(src, edits));
-  try { new vm.Script(next, { filename: rel }); } catch (e) { console.error('✖ ' + rel + ' 改完語法錯誤：' + e.message); process.exit(2); }
-  console.log(`  ${rel}: ${edits.length} 處`);
-  total += edits.length;
+  let src = fs.readFileSync(abs, 'utf8');
+  let fileTotal = 0, next = src;
+  // 一輪改完後，被改過的串接會露出新的句子邊界（例如巢狀的內層），所以重複到沒有新編輯為止
+  for (let pass = 0; pass < 6; pass++) {
+    const { edits } = planFile(rel, next);
+    if (!edits.length) break;
+    next = require('./guard.cjs').withGuard(applyEdits(next, edits));
+    try { new vm.Script(next, { filename: rel }); } catch (e) { console.error('✖ ' + rel + ' 改完語法錯誤：' + e.message); process.exit(2); }
+    fileTotal += edits.length;
+    if (DRY) break;
+  }
+  if (!fileTotal) continue;
+  console.log(`  ${rel}: ${fileTotal} 處`);
+  total += fileTotal;
   if (!DRY) { fsx.write(abs, next); changedFiles.push(rel); }
 }
 const h = migrateHtml();

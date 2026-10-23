@@ -8547,10 +8547,10 @@ function runTalentUiAction(commandName, id, legacyAction) {
     panels: panels
   }).then(function (result) {
     var error = uiCommandResultError(result);
-    if (error) reportUiCommandFailure('威能操作失敗', error, panels);
+    if (error) reportUiCommandFailure(STR(851), error, panels);
     renderTalents();
   }, function (error) {
-    reportUiCommandFailure('威能操作失敗', error, panels);
+    reportUiCommandFailure(STR(851), error, panels);
     renderTalents();
   });
   renderTalents();
@@ -8562,16 +8562,16 @@ function runTalentUiAction(commandName, id, legacyAction) {
 
 function talentEffectLabel(def, value) {
   var elementTalentNames = {
-    elemFire: '火焰', elemIce: '寒冰', elemLightning: '雷電',
+    elemFire: '火焰', elemIce: STR(852), elemLightning: '雷電',
     elemPoison: '劇毒', elemLight: '聖光', elemDark: '暗影', elemEarth: '大地'
   };
   // 小數表值與滿轉加成可能產生三位小數，不以fmt截去精度。
-  if (elementTalentNames[def.stat]) return String(Math.round(value * 1000) / 1000) + '%' + elementTalentNames[def.stat] + '傷害';
+  if (elementTalentNames[def.stat]) return STR(853, String(Math.round(value * 1000) / 1000), elementTalentNames[def.stat]);
   return String(Math.round(value * 1000) / 1000) + '%';
 }
 
 function talentEffectDescription(def, value) {
-  if (def.disabled) return esc(def.disabledReason || '此威能已停用');
+  if (def.disabled) return esc(def.disabledReason || STR(854));
   return esc(def.desc) + talentEffectLabel(def, value);
 }
 
@@ -8655,10 +8655,8 @@ function talentTierTabsHTML(snapshot) {
     var open = rc >= turn;
     var complete = talentViewTreeComplete(snapshot, turn);
     var on = UI.talentBrowse.turn === turn;
-    var state = !open ? '需 ' + turn + ' 轉' : (complete ? '已滿級' : pct + '%');
-    h += '<button type="button" role="tab" class="tlx-tier' + (on ? ' is-on' : '') + (open ? '' : ' is-locked') + (complete ? ' is-complete' : '') +
-      '" data-talent-turn="' + turn + '" aria-selected="' + on + '" style="--p:' + pct + '%">' +
-      '<b>' + turn + ' 轉</b><span class="tlx-tier-bar"></span><span class="tlx-tier-state">' + state + '</span></button>';
+    var state = !open ? STR(855, turn) : (complete ? '已滿級' : pct + '%');
+    h += '<button type="button" role="tab" class="tlx-tier' + (on ? ' is-on' : '') + (open ? '' : ' is-locked') + (complete ? ' is-complete' : '') + '" data-talent-turn="' + turn + '" aria-selected="' + on + '" style="--p:' + pct + '%">' + STR(869, turn) + '<span class="tlx-tier-bar"></span><span class="tlx-tier-state">' + state + '</span></button>';
   }
   return h;
 }
@@ -8679,13 +8677,11 @@ function talentInlineActionsHTML(def, snapshot) {
   var pending = isUiCommandPending(key);
   var bossLocked = bossFightConfigLocked();
   var cost = talentUpgradeCost(def.id, lv + 1);
-  var upReason = bossLocked ? 'BOSS 戰中不可變更戰鬥配置' : locked ? '尚未開放' : (lv >= TALENT_MAX_LEVEL ? '已達最高等級' :
-    (talentViewGold(snapshot) < cost ? '金幣不足，需要 ' + fmtFull(cost) + ' 金幣' : '消耗 ' + fmtFull(cost) + ' 金幣'));
-  var downReason = bossLocked ? 'BOSS 戰中不可變更戰鬥配置' : lv > 0 ? '降級不退還金幣' : '目前為 0 級';
+  var upReason = bossLocked ? 'BOSS 戰中不可變更戰鬥配置' : locked ? STR(857) : (lv >= TALENT_MAX_LEVEL ? STR(848) :
+    (talentViewGold(snapshot) < cost ? STR(849, fmtFull(cost)) : STR(858, fmtFull(cost))));
+  var downReason = bossLocked ? 'BOSS 戰中不可變更戰鬥配置' : lv > 0 ? STR(859) : STR(860);
   // 不交由 pending 通用邏輯重新啟用：每次快照重算資源／等級限制。
-  return '<div class="tlx-node-actions" role="group" aria-label="調整' + esc(def.name) + '等級">' +
-    '<button type="button" class="tlx-adjust" data-talent-down="' + def.id + '" aria-label="降低' + esc(def.name) + '等級" data-tt-title="降級" data-tt-desc="' + downReason + '"' + (pending || bossLocked || lv <= 0 ? ' disabled' : '') + '>−</button>' +
-    '<button type="button" class="tlx-adjust" data-talent-up="' + def.id + '" aria-label="升高' + esc(def.name) + '等級" data-tt-title="升級" data-tt-desc="' + upReason + '"' + (pending || bossLocked || locked || lv >= TALENT_MAX_LEVEL || talentViewGold(snapshot) < cost ? ' disabled' : '') + '>+</button></div>';
+  return '<div class="tlx-node-actions" role="group" aria-label="' + STR(861, esc(def.name)) + '"><button type="button" class="tlx-adjust" data-talent-down="' + def.id + '" aria-label="' + STR(862, esc(def.name)) + '" data-tt-title="' + STR(165) + '" data-tt-desc="' + downReason + '"' + (pending || bossLocked || lv <= 0 ? ' disabled' : '') + '>−</button><button type="button" class="tlx-adjust" data-talent-up="' + def.id + '" aria-label="' + STR(863, esc(def.name)) + '" data-tt-title="' + STR(166) + '" data-tt-desc="' + upReason + '"' + (pending || bossLocked || locked || lv >= TALENT_MAX_LEVEL || talentViewGold(snapshot) < cost ? ' disabled' : '') + '>+</button></div>';
 }
 
 // 按鈕與升降級控制為同層，避免巢狀 button；以圖示中心定位星盤。
@@ -8693,17 +8689,10 @@ function talentNodeHTML(def, turn, snapshot, index, count) {
   var lv = snapshot ? talentViewLevel(snapshot, def.id) : 0;
   var locked = !snapshot || !talentViewUnlocked(snapshot, def.id) || !!def.disabled;
   var selected = !!(UI.selTalent && UI.selTalent.id === def.id);
-  var lockText = def.disabled ? (def.disabledReason || '目前暫不開放升級') : '需 ' + turn + ' 轉';
+  var lockText = def.disabled ? (def.disabledReason || STR(864)) : STR(855, turn);
   var aria = def.name + ' Lv.' + lv + '/' + TALENT_MAX_LEVEL + (locked ? '（' + lockText + '）' : '');
   var angle = count ? -90 + (index || 0) * 360 / count : -90;
-  return '<div class="tlx-node' + (selected ? ' is-selected' : '') + (lv > 0 ? ' learned' : '') + (lv >= TALENT_MAX_LEVEL ? ' maxed' : '') + (locked ? ' locked' : '') +
-    '" style="--a:' + angle + 'deg">' +
-    '<button type="button" class="tlx-node-select" data-talent-select="talent:' + def.id + '" data-talent-tip="' + def.id + '" aria-pressed="' + selected + '" aria-label="' + esc(aria) + '">' +
-    '<span class="tlx-node-ring"><span class="tlx-node-glyph">' + talentIconHTML(def) +
-    (lv > 0 ? '<span class="tlx-node-lv" aria-hidden="true">' + lv + '</span>' : '') + '</span></span>' +
-    '<span class="tlx-node-meta"><span class="tlx-node-threat" aria-label="威脅值 +' + (def.disabled ? 0 : Math.max(0, Number(def.threat) || 0)) + '">' + talentThreatIconHTML() + '<span>+' + (def.disabled ? 0 : Math.max(0, Number(def.threat) || 0)) + '</span></span>' +
-    '</span></button>' +
-    (selected ? talentInlineActionsHTML(def, snapshot) : '') + '</div>';
+  return '<div class="tlx-node' + (selected ? ' is-selected' : '') + (lv > 0 ? ' learned' : '') + (lv >= TALENT_MAX_LEVEL ? ' maxed' : '') + (locked ? ' locked' : '') + '" style="--a:' + angle + 'deg"><button type="button" class="tlx-node-select" data-talent-select="talent:' + def.id + '" data-talent-tip="' + def.id + '" aria-pressed="' + selected + '" aria-label="' + esc(aria) + '"><span class="tlx-node-ring"><span class="tlx-node-glyph">' + talentIconHTML(def) + (lv > 0 ? '<span class="tlx-node-lv" aria-hidden="true">' + lv + '</span>' : '') + '</span></span><span class="tlx-node-meta"><span class="tlx-node-threat" aria-label="' + STR(865, (def.disabled ? 0 : Math.max(0, Number(def.threat) || 0))) + '">' + talentThreatIconHTML() + '<span>+' + (def.disabled ? 0 : Math.max(0, Number(def.threat) || 0)) + '</span></span></span></button>' + (selected ? talentInlineActionsHTML(def, snapshot) : '') + '</div>';
 }
 
 function talentBoardHTML(turn, snapshot) {
@@ -8718,11 +8707,7 @@ function talentBoardHTML(turn, snapshot) {
     spokes += '<span class="tlx-spoke' + (lv > 0 ? ' is-lit' : '') + (lv >= TALENT_MAX_LEVEL ? ' is-max' : '') + '" style="--a:' + angle + 'deg"></span>';
     nodes += talentNodeHTML(def, turn, snapshot, i, tree.length);
   });
-  return '<span class="tlx-board-caption" aria-hidden="true">✦ 天堂聖域 ✦</span><span class="tlx-orbit" aria-hidden="true"></span><span class="tlx-orbit is-inner" aria-hidden="true"></span>' + spokes +
-    '<div class="tlx-core' + (complete ? ' is-complete' : '') + '" tabindex="0" data-tt-title="本轉威能加成" data-tt-desc="所有威能升至滿級時效果提升' + Math.round((TALENT_COMPLETE_EFFECT_MULTIPLIER - 1) * 100) + '%">' +
-      '<b>' + turn + ' 轉</b>' +
-      '<span>' + fmtFull(total) + '/' + fmtFull(max) + '</span>' +
-    '</div>' + nodes;
+  return '<span class="tlx-board-caption" aria-hidden="true">' + STR(868) + '</span><span class="tlx-orbit" aria-hidden="true"></span><span class="tlx-orbit is-inner" aria-hidden="true"></span>' + spokes + '<div class="tlx-core' + (complete ? ' is-complete' : '') + '" tabindex="0" data-tt-title="' + STR(866) + '" data-tt-desc="' + STR(867, Math.round((TALENT_COMPLETE_EFFECT_MULTIPLIER - 1) * 100)) + '">' + STR(869, turn) + '<span>' + fmtFull(total) + '/' + fmtFull(max) + '</span></div>' + nodes;
 }
 
 function renderTalents() {
@@ -8731,19 +8716,15 @@ function renderTalents() {
   var snapshot = uiTalentPanelSnapshot();
   uiHeaderPanelSnapshot();
   if (!snapshot) {
-    root.innerHTML = '<div class="panel hint">正在載入威能 Snapshot…</div>';
+    root.innerHTML = '<div class="panel hint">' + STR(870) + '</div>';
     return;
   }
   var rc = talentViewReincarnations(snapshot);
   if (!UI.talentBrowse.turn || !TALENT_TREES[UI.talentBrowse.turn]) UI.talentBrowse.turn = talentDefaultTurn(snapshot);
   var turn = UI.talentBrowse.turn;
-  var h = '<div class="pg-top"><h2 class="pg-title">天堂威能</h2>' +
-    '<span class="pg-pill">金幣 <b>' + fmtFull(talentViewGold(snapshot)) + '</b></span>' +
-    '<span class="pg-pill">已轉生 <b>' + rc + ' 轉</b></span>' +
-    '<span class="pg-pill tlx-monster-power" tabindex="0" data-tt-title="魔物威能" data-tt-desc="地獄大軍感受到你接收了天堂神力而倍感憤怒&lt;br&gt;魔物威能每增加10%則敵人強度+1級">' + talentThreatIconHTML() + '魔物威能 <b>' + (100 + talentThreatTotal(talentViewLevels(snapshot))) + '%</b></span>' +
-    '<button type="button" class="pg-help" aria-label="威能說明" data-tt-title="天堂威能" data-tt-desc="1 轉後開放。威能最高10級，升級消耗金幣（費用依威能表的升級金幣基數與倍率，越高轉數的威能越貴），降級不退還金幣。每級效果依表定增加值累加。每個威能首次點亮增加表定威脅值，後續升級不再增加。">?</button></div>';
-  if (rc < 1) h += '<div class="tlx-locked-banner">🔒 威能系統將於完成 1 轉後開放。</div>';
-  h += '<div class="tlx-tiers" role="tablist" aria-label="轉數">' + talentTierTabsHTML(snapshot) + '</div>';
+  var h = '<div class="pg-top"><h2 class="pg-title">' + STR(874) + '</h2>' + STR(876, fmtFull(talentViewGold(snapshot)), rc) + '<span class="pg-pill tlx-monster-power" tabindex="0" data-tt-title="' + STR(871) + '" data-tt-desc="' + STR(872) + '">' + STR(2095, talentThreatIconHTML()) + ' <b>' + (100 + talentThreatTotal(talentViewLevels(snapshot))) + '%</b></span><button type="button" class="pg-help" aria-label="' + STR(873) + '" data-tt-title="' + STR(874) + '" data-tt-desc="' + STR(875) + '">?</button></div>';
+  if (rc < 1) h += '<div class="tlx-locked-banner">' + STR(878) + '</div>';
+  h += '<div class="tlx-tiers" role="tablist" aria-label="' + STR(879) + '">' + talentTierTabsHTML(snapshot) + '</div>';
   h += '<div class="tlx"><div class="tlx-board">' + talentBoardHTML(turn, snapshot) + '</div></div>';
   if (root._lastH !== h) {
     if (UI.tooltipAnchor && root.contains && root.contains(UI.tooltipAnchor)) hideTooltip();
@@ -9784,7 +9765,7 @@ function showTalentTooltip(ref, anchorEl) {
   var maxLv = TALENT_MAX_LEVEL;
   var turn = talentTurn(id);
   var displayLv = Math.max(1, lv);
-  var title = turn + ' 轉威能';
+  var title = STR(880, turn);
   var h = '<div class="skt-name"><span class="tlx-tip-icon">' + talentIconHTML(def) + '</span>' + esc(def.name) +
     ' <span class="dim-text">Lv.' + lv + '/' + maxLv + '｜' + title + '</span></div>';
   var base = talentLevelValue(def, displayLv);
@@ -9798,8 +9779,8 @@ function showTalentTooltip(ref, anchorEl) {
     var nextSnapshot = { talents: { levels: nextLevels } };
     h += '<div class="skt-desc">下一級：' + talentEffectDescription(def, talentDescriptionValue(def, lv + 1, turn, nextSnapshot)) + '</div>';
   }
-  if (!talentViewUnlocked(snapshot, id)) h += '<div class="skt-lock">🔒 需要達到 ' + turn + ' 轉</div>';
-  h += '<div class="skt-hint">' + (lv >= maxLv ? '已達最高等級' : '升至下一級消耗 ' + fmtFull(talentUpgradeCost(id, lv + 1)) + ' 金幣') + '</div>';
+  if (!talentViewUnlocked(snapshot, id)) h += '<div class="skt-lock">' + STR(881, turn) + '</div>';
+  h += '<div class="skt-hint">' + (lv >= maxLv ? STR(848) : STR(882, fmtFull(talentUpgradeCost(id, lv + 1)))) + '</div>';
   tip.innerHTML = h;
   tip.style.display = 'block';
   UI.tooltipAnchor = anchorEl;
