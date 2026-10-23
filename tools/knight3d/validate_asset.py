@@ -44,7 +44,7 @@ attrs=primitive['attributes']
 positions=read(attrs['POSITION'])
 indices=[v[0] for v in read(primitive['indices'])]
 assert len(indices)%3==0 and max(indices)<len(positions)
-assert len(indices)//3<=3000
+assert len(indices)//3<=12000, 'Candidate exceeds the revised authoring budget'
 assert set(['NORMAL','TEXCOORD_0','JOINTS_0','WEIGHTS_0'])<=attrs.keys()
 weights=read(attrs['WEIGHTS_0'])
 joints=read(attrs['JOINTS_0'])

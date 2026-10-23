@@ -14,6 +14,8 @@ const files = [
   'assets/characters/knight3d/manifest.json',
   'assets/characters/knight3d/README.md',
   'tools/knight3d/build_knight.py',
+  'tools/knight3d/silver_knight_geometry.py',
+  'tools/knight3d/silver_knight_motion.py',
   'tools/knight3d/render_batch.py',
   'tools/knight3d/package_previews.py',
   'tools/knight3d/validate_asset.py',

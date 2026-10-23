@@ -1,49 +1,51 @@
-# 銀甲劍盾騎士：第一批 3D 動作候選
+# 白銀騎士：原圖參考修正版（Revision 2）
 
-任務：KNIGHT-3D-BATCH1-20261023。此目錄供美術預覽與後續編輯，尚未接入遊戲，也沒有替換 `images/sprites/knight`。
+任務 KNIGHT-3D-REV2-20261023。此目錄是待使用者審查的角色製作包，尚未接入遊戲、沒有替換 `images/sprites/knight`。第一版可由遊戲 Commit 436a6357／素材庫 2c432f8 回溯。
 
-使用者指定 Blender 製作；依遊戲中約 60～80 像素的站姿身高，以效能、輪廓及動作可讀性優先。模型保留銀甲、封閉頭盔、單手劍及鳶形盾；刪除小鉚釘、指節、細縫與刀光。不是寫實高模。
+使用者指定：盡量復刻既有圖集的人物造型及全身動作，偏寫實、成人修長、美型；移除盾牌及刀光。原圖為主要參考，不以自創裝飾取代原造型。修正版重新查看原圖八方向及完整攻擊幀，改回露出頭部的輪廓、約7.5頭身、長腿收腰銀甲、深色腰帶及關節；保留甲片厚度、曲面、倒角與手部，不再硬壓在3,000三角面。低重心較開站姿、前傾跑步及兩種揮砍的沉身／步伐／髖胸轉動一併重作。盾牌幾何完全刪除。
 
-## 內容
+## 模型與檔案
 
-- `knight_batch1.blend`：可編輯 Blender 5.2 模型、骨架、六段 Action 及預覽攝影棚；開啟後選取 KNIGHT_RIG，在 Action Editor 選擇動作，時間軸設為對應幀範圍。NLA 軌預設靜音，避免不同動作互相疊加。
-- `knight_batch1.glb`：只含角色，排除地板、燈光與攝影機；六段具名骨架動畫，材質貼圖內嵌。
-- `manifest.json`：模型統計、座標、幀率、動作長度及預覽取樣。
+- `knight_batch1.blend`：檔名沿用穩定來源路徑，內容已為修正版；可編輯模型、16骨骼、六個 Action、預覽攝影棚。開啟後選 KNIGHT_RIG，在 Action Editor 選動作；NLA軌預設靜音，避免動作疊加。
+- `knight_batch1.glb`：只含角色，排除攝影棚、燈光、攝影機；六個具名骨架動畫、兩張36×4材質色盤內嵌。
+- `manifest.json`：revision=2、shield=false、統計與六組動作的幀率／幀數。
 
-模型：**2,681 三角面、1,476 製作網格頂點、1 個蒙皮網格、1 個材質、16 根骨骼**。GLB 因 UV／法線分裂，匯出頂點數與製作頂點數可能不同；以 GLB accessor 為準。只有 1 個 mesh primitive；最終引擎的陰影及其他 pass 會影響實際 draw call。兩張 32×4 程序色盤（底色及金屬度／粗糙度），無外部貼圖依賴。這些是資產結構量測，並非已完成遊戲 GPU/FPS 驗收。
+實際統計：**9,398 三角面、4,851 Blender 多邊形、4,901 製作頂點**；匯出後因法線／UV分裂為9,398頂點。**1網格、1 primitive、1材質、16骨骼、每頂點1個骨骼權重**；GLB **644,184 bytes（約629 KiB）**。12,000三角面的製作檢查只避免非預期膨脹，並非已通過遊戲效能驗收；單primitive也不代表最終引擎包含陰影等pass時只有1 draw call。
 
-| 動作 | 幀數／fps | 長度 | 內容 |
+| 動作 | 幀數／fps | 預覽週期內的動作長度 | 內容 |
 | --- | --- | --- | --- |
-| idle | 30 / 30 | 1 秒循環 | 呼吸、持盾待機 |
-| walk | 15 / 30 | 0.5 秒循環 | 原地跑動，移動距離交由遊戲控制 |
-| attack1 | 15 / 30 | 0.5 秒 | 舉劍、橫向斬擊、收招 |
-| attack2 | 15 / 30 | 0.5 秒 | 下壓蓄勢、斜向上挑、收招 |
-| cast | 15 / 30 | 0.5 秒 | 舉劍施法姿勢，無法術及刀光 |
-| die | 30 / 30 | 1 秒 | 後仰倒地，保留末姿 |
+| idle | 30 / 30 | 1秒循環 | 低重心持劍、呼吸，左手空手、拳面朝前護胸 |
+| walk | 15 / 30 | 0.5秒循環 | 前傾原地跑動、髖胸反向及擺臂 |
+| attack1 | 15 / 30 | 0.5秒 | 舉劍、踏步、沉身轉體橫斬、收招 |
+| attack2 | 15 / 30 | 0.5秒 | 過頂起手、跨步斜劈、前傾收招 |
+| cast | 15 / 30 | 0.5秒 | 蹬伸／舉劍／空手配合，無法術VFX |
+| die | 30 / 30 | 1秒 | 失重倒地、手臂落地、劍身轉平 |
 
-`attack3` 可沿用 cast，`rise` 可倒播 die，本批未額外增加重複動畫資料。非循環 GIF 在末幀停留後重播，這個預覽停留時間不寫入模型動作。第一批為大致符合既有圖集的動作；未宣稱逐幀重現。正式上線前仍需確認命中／釋放時點、八方向、移動腳步及遊戲投影。
+GLB第一至末取樣鍵的跨度為 `(frames-1)/fps`；表中的長度包含最後一個取樣的顯示時長。非循環GIF另在末幀停留300ms（攻擊／施法）或750ms（死亡）以便檢視，不寫入模型。attack3可沿用cast、rise可倒播die。本批尚未接正式遊戲的命中／釋放時序與移動速度。
 
-## 重建與預覽
+## 製作與驗證
 
-在專案根目錄執行，將 `<Blender>` 換成安裝的 `blender.exe`，`<預覽目錄>` 使用專案外的絕對路徑：
+在專案根目錄執行，把 `<Blender>` 替換成安裝的blender.exe，`<預覽目錄>` 用專案外絕對路徑：
 
 ```powershell
 & '<Blender>' --background --factory-startup --python tools/knight3d/build_knight.py -- --output assets/characters/knight3d --preview '<預覽目錄>' --render none
 & '<Blender>' --background --factory-startup --python tools/knight3d/render_batch.py -- --model assets/characters/knight3d/knight_batch1.blend --preview '<預覽目錄>'
-python tools/knight3d/package_previews.py --preview '<預覽目錄>'
+python tools/knight3d/package_previews.py --preview '<預覽目錄>' --reference images/sprites/knight
 python tools/knight3d/validate_asset.py assets/characters/knight3d/knight_batch1.glb
 node tools/knight3d/sync-library.cjs --apply
 node tools/knight3d/sync-library.cjs --check
 ```
 
-`render_batch.py --validate-only` 只檢查重開、六個 Action、骨架、貼圖內嵌、逐幀有限矩陣與最低頂點，不渲染。影片輸出使用 Blender Cycles；可用時啟用 CUDA，否則使用 CPU。Blender 產生的 `.blend1` 為備份，不屬交付包。
+幾何在 `silver_knight_geometry.py`，全身姿勢在 `silver_knight_motion.py`；由build_knight統一建立、合併、綁定及輸出。姿勢以持續速度的Hermite插值、髖胸獨立完整旋轉矩陣、手腳雙骨目標、空手配重、接地停留及四元數同半球處理；依2026-10-24回饋，左手改為胸口局部座標下的護胸目標、左肘向下收放、拳面朝前並與前臂銜接，避免胸口只有位置變動卻未轉腰、每關鍵幀停住或跨符號翻轉。
 
-預覽包含六組獨立 GIF、六格大圖、約 80 像素站姿身高的小圖，以及 24 視角環繞。小圖是攝影棚渲染的縮圖，不是正式戰鬥整合驗收。GIF 不以放慢播放冒充更流暢的動作。
+`render_batch.py --validate-only` 重開模型，檢查六Action、骨架、內嵌材質、120個完整姿勢的有限矩陣及實際變形頂點最低高度；並驗攻擊有髖部／胸口旋轉、骨盆位移及步伐；待機及兩攻擊另驗左拳不朝下、與胸口前向dot>0.8、與前臂dot>0.7。結構量測不能代替人物造型與動作的原圖相似度審查。`validate_asset.py` 直接讀GLB二進位核對網格、材質、三角、時間、權重、索引與所有動畫通道。
 
-## 來源及保存
+Blender 5.2.3 LTS建立並重開；Cycles可用時使用CUDA，否則CPU。預覽含六組GIF、六格大圖、約70～80像素人物高度的小圖、24視角環繞與兩種攻擊的原圖並排。原圖欄保留原有盾牌與刀光以供參考，右欄3D沒有這些；並排顯示相近時間，不能當作每個關節都已精確一致。
 
-`images/sprites/knight` 六份既有圖集及 `knight.json` 僅供輪廓、裝備類型、姿勢及時間參考；未擷取、貼用、描摹圖集像素。幾何、材質色盤、骨架、動畫與攝影棚均由本任務程序原創；無第三方模型、材質或動畫匯入。字型只用於預覽文字，不嵌入模型。
+## 來源、保存與限制
 
-本地素材庫位置由既有 `vfx-library-root.cjs` 解析；必要模型與腳本以穩定相對路徑保存至 `codex-authored/knight3d`，`sync-library.cjs --check` 逐檔核對 SHA256。這是候選製作包的保存流程，未改動正式角色圖集匯出器或出貨索引。動態預覽及逐幀 PNG 保存在聊天的 visualizations，未提交進遊戲或素材庫。
+`images/sprites/knight`六份既有圖集與knight.json只作造型、姿勢與節奏參考；未擷取圖集像素用作新模型的貼圖或模型資產。所有幾何、色盤、骨架、動作、攝影棚均程序原創，沒有匯入第三方模型、貼圖、動畫。參考圖只出現在專案外的對照預覽。
 
-效能優先的後續方案可將此模型預先渲染為八方向圖集，沿用目前精靈播放方式；若改用即時 3D，需另行整合並實測蒙皮、繪製與陰影成本。本批沒有修改遊戲渲染路徑。
+本地素材庫位置由既有vfx-library-root解析；候選的四份資產及七個工具保存於codex-authored/knight3d同相對路徑，sync-library逐檔核對SHA256。未改正式角色匯出器、出貨索引、玩法、解鎖或玩家存檔。blend1／pycache不是交付物；預覽與驗證報告保存在本聊天visualizations/knight3d-handfix。
+
+**仍待驗收**：人物造型與原圖的接近程度、動作表演細節、八方向及實際戰鬥投影／命中時序／GPU-FPS。此版本僅為修正候選，不宣稱已完成逐幀復刻或獲使用者核准。若最終使用預渲染圖集，製作模型的面數不會成為瀏覽器的即時蒙皮負擔；圖集容量、載入與實際播放成本仍須另驗。
