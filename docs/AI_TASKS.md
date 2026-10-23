@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## WORLD-MAP-POINTER-EDGE-20261024 — 定位指針外緣微亮
+
+- Owner：Codex；Done，單一開發者。使用者要求地圖定位指針外框微微高亮；前置綠色指針及浮動／光圈已完成。
+- 允許：css/world-map.css僅指針圖像filter、index.html僅CSS快取、LV_upgrade_system.md及本段；禁止素材／動態／其他UI／JS／玩法／解鎖／存檔修改，不合併推送。四檔衝突預檢乾淨，單一小型樣式修改不拆分。
+- 驗收：淡淺綠光只沿圖像alpha輪廓，保留尺寸、方向及既有浮動／底部光圈；既有地圖回歸／Build／diff與自我Review後獨立Commit。
+- 完成四檔：只在指針img加入1px淡淺綠輪廓光及3px低透明外暈，不套在父容器或底部光圈，其他外觀／動態參數保持；CSS快取1.0.4，LV及本段同步。無素材修改，素材庫不建空Commit。
+- 驗證：`node --test --test-reporter=spec tests/world-map-ui.test.cjs`6/6通過；`npm.cmd run build`578檔通過，diff --check通過。唯讀檢查現有指針DOM、CSS動畫與地圖回歸，自我Review確認filter沿PNG alpha輪廓，無新Timer／JS／配置或VFX來源。此次未另開瀏覽器或新增低影響樣式測試，亮度體感由使用者重載後驗收。
+- 交付：遊戲Commit為本段所在`[Codex] fix: 世界地圖定位指針外緣微亮`，回覆附編號。無未完成實作或新增已知風險，可供Review／合併，未合併推送；下一步正常整合後重新整理驗收。
+
 ## WORLD-MAP-POLISH-20261024 — 關閉符號置中、名稱去重與定位動效可見性
 
 - Owner：Codex；Done，單一開發者。使用者指出叉號未置中、名稱放大與圖內原字疊在一起、指針浮動／光圈看不見。改用對稱SVG叉號；僅在文字熱區hover／選取時以小塊無字地貌遮住原圖字，再顯示名稱；加強微幅浮動／小光圈，避免定位動畫因系統減少動態設定完全停用。

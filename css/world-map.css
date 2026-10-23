@@ -47,7 +47,7 @@ body.world-map-open { overflow: hidden; }
 .world-map-hotspot.is-locked { cursor: default; }
 .world-map-marker { position: absolute; pointer-events: none; transform: translate(-50%, -100%); width: clamp(16px, 2.56vw, 33.6px); height: clamp(16px, 2.56vw, 33.6px); filter: drop-shadow(0 2px 3px #000); }
 .world-map-marker-motion { display: block; width: 100%; height: 100%; animation: world-map-bob 2.4s ease-in-out infinite; }
-.world-map-marker img { display: block; width: 100%; height: 100%; object-fit: contain; transform: rotate(180deg); }
+.world-map-marker img { display: block; width: 100%; height: 100%; object-fit: contain; transform: rotate(180deg); filter: drop-shadow(0 0 1px rgba(210,255,180,.8)) drop-shadow(0 0 3px rgba(140,220,120,.4)); }
 .world-map-marker::after { content: ''; position: absolute; left: 4%; bottom: -12%; width: 92%; height: 25%; box-sizing: border-box; border: 1px solid rgba(185,239,145,.8); border-radius: 50%; background: radial-gradient(ellipse, rgba(175,222,135,.36), rgba(114,172,99,.16) 50%, transparent 75%); box-shadow: 0 0 7px rgba(159,215,127,.48); opacity: .7; animation: world-map-halo 2.4s ease-in-out infinite; }
 @keyframes world-map-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 @keyframes world-map-halo { 0%, 100% { opacity: .4; } 50% { opacity: .95; } }
