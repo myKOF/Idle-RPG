@@ -1,13 +1,14 @@
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
 function createTestEnv() {
-  const codeData = fs.readFileSync(path.join(__dirname, '../js/data.js'), 'utf8');
-  const codeFormula = fs.readFileSync(path.join(__dirname, '../js/formula.js'), 'utf8');
-  const codeCombat = fs.readFileSync(path.join(__dirname, '../js/combat.js'), 'utf8');
+  const codeData = readExpanded(path.join(__dirname, '../js/data.js'));
+  const codeFormula = readExpanded(path.join(__dirname, '../js/formula.js'));
+  const codeCombat = readExpanded(path.join(__dirname, '../js/combat.js'));
 
   const sandbox = {
     console,

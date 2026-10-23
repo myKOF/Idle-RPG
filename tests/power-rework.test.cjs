@@ -137,6 +137,6 @@ test('主端G為null或不存在時威脅／塔預覽均安全且使用傳入的
   assert.equal(c.bossStatsFor(1).level,expected-2);
   assert.match(c.towerDetailHTML(1,0),new RegExp('Lv\\.'+expected));
   const isolated=vm.createContext({console});
-  for(const file of ['util','data','formula','talents']) vm.runInContext(fs.readFileSync('js/'+file+'.js','utf8'),isolated);
+  for(const file of ['util','strings_data', 'strings','data','formula','talents']) vm.runInContext(fs.readFileSync('js/'+file+'.js','utf8'),isolated);
   assert.equal(isolated.talentThreatTotal(),0); assert.equal(isolated.bossStatsFor(1).level,expected-2);
 });

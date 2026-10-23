@@ -1,6 +1,7 @@
 'use strict';
 
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -8,7 +9,7 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 
 test('傷害數字開關按鈕 DOM 與 CSS 定義完整', function () {
-  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const html = readExpanded(path.join(root, 'index.html'));
   const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
 
   // index.html 包含 #btn-toggle-damage 且有開眼與閉眼圖示及提示屬性
@@ -24,8 +25,8 @@ test('傷害數字開關按鈕 DOM 與 CSS 定義完整', function () {
 });
 
 test('UI 與戰鬥渲染器包含傷害數字開關邏輯與清除函式', function () {
-  const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
-  const renderer = fs.readFileSync(path.join(root, 'js/battle-renderer.js'), 'utf8');
+  const ui = readExpanded(path.join(root, 'js/ui.js'));
+  const renderer = readExpanded(path.join(root, 'js/battle-renderer.js'));
 
   // ui.js 中定義開關變數與切換/清除函式
   assert.match(ui, /var UI_DAMAGE_NUMBERS_ENABLED/);

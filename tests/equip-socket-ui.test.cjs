@@ -30,7 +30,7 @@ function mount(){
   const elements=Object.fromEntries(['detail-pane','equip-action-bar','equip-material-panel'].map(id=>[id,{innerHTML:'',style:{},classList:{add(){},remove(){}}}]));
   elements['detail-pane']=pane();
   const c={console,setTimeout(){return 0;},document:{addEventListener(){},querySelectorAll(){return[];},getElementById(id){return elements[id]||null;}}};c.window=c;vm.createContext(c);
-  for(const name of ['util','data','runeword_data','status','formula','item','runeword','ui','ui-runeword'])vm.runInContext(fs.readFileSync(path.join(root,'js',name+'.js'),'utf8'),c);
+  for(const name of ['util','strings_data','strings','data','runeword_data','status','formula','item','runeword','ui','ui-runeword'])vm.runInContext(fs.readFileSync(path.join(root,'js',name+'.js'),'utf8'),c);
   c.it={id:'gear',slot:'weapon',name:'劍',level:50,rarity:5,affixes:[{key:'str',roll:1}],sockets:[null,null,null,null],enchants:[{key:'fire',gemLv:1}],runes:['r01',null,null,null],upgrade:0};
   c.findSelItem=()=>c.it;c.uiHeaderPanelSnapshot=()=>({player:{gold:1e12,scrap:1e12,essence:1e12}});c.uiInventoryPanelSnapshot=()=>null;
   c.uiGemsPanelSnapshot=()=>({gems:{ruby:{1:3,5:2},sapphire:{2:1}},fusedGems:[{id:'f',level:5,stats:[{type:'ruby',mult:1}],fusions:1}]});

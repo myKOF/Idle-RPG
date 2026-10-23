@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
@@ -14,8 +15,8 @@ test('高塔BOSS免疫會改變攻擊頻率的控制效果，但保留傷害類�
     isBossControlImmune: (ent) => !!(ent && ent.isBoss),
     isAttackFrequencyControlKey: (key) => ['stun', 'slow', 'aspdDown', 'attackSpeedDown'].includes(key)
   });
-  vm.runInContext(fs.readFileSync(path.join(root, 'js', 'status.js'), 'utf8'), context);
-  vm.runInContext(fs.readFileSync(path.join(root, 'js', 'combat.js'), 'utf8'), context);
+  vm.runInContext(readExpanded(path.join(root, 'js', 'status.js')), context);
+  vm.runInContext(readExpanded(path.join(root, 'js', 'combat.js')), context);
 
   const boss = { isBoss: true, effects: {}, buffs: {} };
   assert.equal(context.applyEffect(boss, 'stun', 1), false);
@@ -29,9 +30,9 @@ test('高塔BOSS免疫會改變攻擊頻率的控制效果，但保留傷害類�
 });
 
 test('技能施放與被動控制都會排除高塔BOSS', () => {
-  const combat = fs.readFileSync(path.join(root, 'js', 'combat.js'), 'utf8');
-  const skills2 = fs.readFileSync(path.join(root, 'js', 'skills2.js'), 'utf8');
-  const tower = fs.readFileSync(path.join(root, 'js', 'tower.js'), 'utf8');
+  const combat = readExpanded(path.join(root, 'js', 'combat.js'));
+  const skills2 = readExpanded(path.join(root, 'js', 'skills2.js'));
+  const tower = readExpanded(path.join(root, 'js', 'tower.js'));
   assert.match(combat, /!isBossControlImmune\(mEnt\)[\s\S]*?applyEffect\(mEnt, 'stun'/);
   assert.match(combat, /!isBossControlImmune\(mEnt\)[\s\S]*?applyEffect\(mEnt, 'slow'/);
   // 新版技能：敵方控場狀態一律經 sgApplyStatusEntry，BOSS 免疫與控場抵抗在同一個 sgCtrlBlocked 閘門

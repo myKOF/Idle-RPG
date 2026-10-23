@@ -1,11 +1,12 @@
 'use strict';
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
-const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
+const ui = readExpanded(path.join(root, 'js/ui.js'));
 
 function extract(name) {
   const start = ui.indexOf('function ' + name + '(');
@@ -62,7 +63,7 @@ test('熔爐雙入口：未滿／處理中／目前上限／移除／轉生及�
 test('傳送帶沿正式武器分類與各部位圖示，舊快照可退回部位', () => {
   const context = { rarityTag: it => it.name };
   vm.createContext(context);
-  for (const file of ['js/util.js', 'js/data.js']) vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context);
+  for (const file of ['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js']) vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context);
   vm.runInContext(extract('itemIconFile') + extract('nfBeltChipsHTML'), context);
   for (const weaponType of Object.keys(context.WEAPON_TYPES)) {
     const html = context.nfBeltChipsHTML({ belt: [{ rarity: 2, slot: 'weapon', name: '測試', weaponType }] });

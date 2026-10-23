@@ -19,7 +19,7 @@ function setup() {
   };
   c.window = c;
   vm.createContext(c);
-  for (const f of ['util', 'data', 'status', 'formula', 'battlefield', 'combat', 'skills', 'skills2', 'tower']) {
+  for (const f of ['util', 'strings_data', 'strings', 'data', 'status', 'formula', 'battlefield', 'combat', 'skills', 'skills2', 'tower']) {
     vm.runInContext(fs.readFileSync(path.join(root, 'js', f + '.js'), 'utf8'), c, { filename: f + '.js' });
   }
   const st = { hp: 1e9, mp: 0, atk: 100, matk: 0, aspd: 2, level: 1000, hpRegen: 0, mpRegen: 0,

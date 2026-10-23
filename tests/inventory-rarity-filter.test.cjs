@@ -1,4 +1,5 @@
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -6,8 +7,8 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 
 test('背包品質篩選功能介面與邏輯驗證', () => {
-  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
+  const html = readExpanded(path.join(root, 'index.html'));
+  const ui = readExpanded(path.join(root, 'js/ui.js'));
 
   // 1. 驗證 index.html 中有品質篩選 dropdown 且包含指定的品質選項
   assert.match(html, /id="inv-rarity-filter"/);

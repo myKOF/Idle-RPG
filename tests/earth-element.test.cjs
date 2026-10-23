@@ -25,11 +25,11 @@ function loadContext(files) {
 }
 
 function loadFormulaContext() {
-  return loadContext(['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js']);
+  return loadContext(['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js']);
 }
 
 function loadStatsContext() {
-  const context = loadContext(['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js', 'js/talents.js']);
+  const context = loadContext(['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js', 'js/talents.js']);
   context.G = {
     player: { level: 1, reincarnations: 10, skills: {}, talents: { levels: {} } },
     equipment: context.SLOT_LIST.reduce((eq, slot) => { eq[slot] = null; return eq; }, {})
@@ -149,7 +149,7 @@ test('grantShield 吃護盾效率%，且不超過技能護盾上限', () => {
 });
 
 test('NPC 表有實際帶地屬性標籤的敵人，且 attr 一律是合法元素', () => {
-  const c = loadContext(['js/util.js', 'js/data.js']);
+  const c = loadContext(['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js']);
   const attrs = Object.values(c.NPC_CONFIG_TABLE).map((n) => n.attr).filter(Boolean);
   assert.ok(attrs.filter((a) => a === 'earth').length >= 4, '地屬性 NPC 太少，該屬性等同沒有作用對象');
   for (const a of new Set(attrs)) {
@@ -174,7 +174,7 @@ test('NPC 表已接入套用參數流程，且同步後 dry-run 不再有 JS 差
   });
   assert.equal(result.status, 0, result.stderr || result.stdout);
   assert.match(result.stdout, /重建字面值 11 個（語意變更 0）/);
-  const c = loadContext(['js/util.js', 'js/data.js']);
+  const c = loadContext(['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js']);
   assert.equal(c.NPC_CONFIG_TABLE.undead_1.hpMult, 1.05);
   // aspdMult 已被 NPC 表的「攻擊速度(次/秒)」取代；留著會變成兩套攻速並存
   assert.equal(c.NPC_CONFIG_TABLE.undead_3.aspdMult, undefined);
@@ -185,7 +185,7 @@ test('NPC 表已接入套用參數流程，且同步後 dry-run 不再有 JS 差
 });
 
 test('特效層每一系元素都有主題色與受擊類別', () => {
-  const c = loadContext(['js/util.js', 'js/data.js']);
+  const c = loadContext(['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js']);
   const vfx = fs.readFileSync(path.join(root, 'js/vfx.js'), 'utf8');
   const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
   const themeBlock = /var VFX_ELEM_THEME = \{([\s\S]*?)\n\};/.exec(vfx)[1];

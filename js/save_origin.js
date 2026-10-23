@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* ============ 跨 origin 存檔接手確認（主執行緒）============
    ---- 為什麼需要 ----
    存檔資料夾是實體目錄，不分 origin；瀏覽器的 IndexedDB、localStorage、navigator.locks
@@ -24,17 +25,15 @@ var SaveOrigin = (function () {
     var lv = (save && save.player && save.player.level) || 1;
     var stage = (save && save.stage && save.stage.current) || 1;
     var at = Number(save && save.savedAt) || 0;
-    var when = at ? new Date(at).toLocaleString() : '存檔時間不明';
-    return 'Lv.' + lv + '　第 ' + stage + ' 關　　' + when;
+    var when = at ? new Date(at).toLocaleString() : STR(2000);
+    return STR(2001, lv, stage, when);
   }
 
   function reason(info) {
     if (info.source === 'foreign') {
-      return '資料夾裡這份自動存檔（' + (info.fname || '檔名不明') + '）標記的來源是「' +
-        info.savedBy + '」，與目前的網址「' + info.originTag + '」不同。';
+      return STR(2003, (info.fname || STR(2002)), info.savedBy, info.originTag);
     }
-    return '找不到這個網址自己的自動存檔，資料夾裡只有舊檔名的那一份（' +
-      (info.fname || '檔名不明') + '）。存檔資料夾不分網址，它有可能是另一個網址的遊戲留下的。';
+    return STR(2004, (info.fname || STR(2002)));
   }
 
   function removeOverlay() {
@@ -56,7 +55,7 @@ var SaveOrigin = (function () {
 
     var title = document.createElement('h2');
     title.style.cssText = 'margin:0 0 12px;color:#fcd34d;';
-    title.textContent = '⚠️ 要接手這份存檔嗎？';
+    title.textContent = STR(2005);
 
     var desc = document.createElement('p');
     desc.style.cssText = 'margin:0 0 14px;line-height:1.65;text-align:left;';
@@ -69,11 +68,9 @@ var SaveOrigin = (function () {
 
     var hint = document.createElement('p');
     hint.style.cssText = 'margin:0 0 18px;line-height:1.65;text-align:left;color:#cbd5e1;font-size:.94em;';
-    hint.textContent = '接手後，這個網址會改用自己的檔名（' + AUTO_FOLDER_FILE_V2 +
-      '）繼續存檔，不會再和其他網址互相覆蓋。' +
-      (info.fallback
-        ? '選擇不接手的話，會改用這個網址自己的瀏覽器存檔繼續。'
-        : '選擇不接手的話，會開始新的一局——原本那份檔案不會被刪除或覆寫。');
+    hint.textContent = STR(2006, AUTO_FOLDER_FILE_V2, (info.fallback
+        ? STR(2007)
+        : STR(2008)));
 
     var row = document.createElement('div');
     row.style.cssText = 'display:flex;gap:10px;justify-content:center;flex-wrap:wrap;';
@@ -86,13 +83,13 @@ var SaveOrigin = (function () {
     var yes = document.createElement('button');
     yes.type = 'button';
     yes.className = 'btn';
-    yes.textContent = '接手這份存檔';
+    yes.textContent = STR(2009);
     yes.addEventListener('click', function () { finish(true); });
 
     var no = document.createElement('button');
     no.type = 'button';
     no.className = 'btn';
-    no.textContent = info.fallback ? '不接手，用本機的存檔' : '不接手，開新的一局';
+    no.textContent = info.fallback ? STR(2010) : STR(2011);
     no.addEventListener('click', function () { finish(false); });
 
     row.appendChild(yes);

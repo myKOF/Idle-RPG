@@ -74,7 +74,7 @@ function combatDefaultPresetIds() {
   const context = { console: console, Math: Object.create(Math), UI: { dirty: {} } };
   context.window = context;
   vm.createContext(context);
-  ['js/util.js', 'js/data.js'].forEach(function (file) {
+  ['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js'].forEach(function (file) {
     vm.runInContext(fs.readFileSync(path.join(REPO, file), 'utf8'), context, { filename: file });
   });
   const defaults = context.VFX_COMBAT_DEFAULTS;

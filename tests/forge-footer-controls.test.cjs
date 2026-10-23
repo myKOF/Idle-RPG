@@ -1,4 +1,5 @@
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -6,13 +7,13 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 
 test('神鑄底部使用兩個可見 checkbox 控制項', () => {
-  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const html = readExpanded(path.join(root, 'index.html'));
   const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
-  const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
+  const ui = readExpanded(path.join(root, 'js/ui.js'));
 
   assert.match(html, /<div class="forge-foot">[\s\S]*id="forge-autodust"[\s\S]*id="forge-autoforge"[\s\S]*<\/div>/);
-  assert.match(html, /<input type="checkbox" id="forge-autodust">\s*自動使用魔塵/);
-  assert.match(html, /<input type="checkbox" id="forge-autoforge" checked>\s*自動鑄造/);
+  assert.match(html, /<input type="checkbox" id="forge-autodust">\s*(?:<span>)?自動使用魔塵/);
+  assert.match(html, /<input type="checkbox" id="forge-autoforge" checked>\s*(?:<span>)?自動鑄造/);
   assert.doesNotMatch(html, /<button[^>]*id="forge-autodust"/);
   assert.doesNotMatch(html, /<button[^>]*id="forge-autoforge"/);
   assert.doesNotMatch(html, /id="forge-autodust">\s*✅/);
@@ -36,7 +37,7 @@ test('取消自動使用魔塵時卸下所有法陣上的魔塵', () => {
   const context = { console, UI: { dirty: {} } };
   context.window = context;
   vm.createContext(context);
-  ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/forge.js'].forEach(file => {
+  ['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/forge.js'].forEach(file => {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });
 

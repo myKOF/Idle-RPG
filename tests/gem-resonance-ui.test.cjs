@@ -6,7 +6,7 @@ const root=path.resolve(__dirname,'..'),read=p=>fs.readFileSync(path.join(root,p
 function ui(gems={diamond:{3:8,4:2,7:1},ruby:{10:3}}){
  const c=vm.createContext({console,Math,Date,JSON,Number,Map,Set});c.window=c;
  c.UI={gemBrowse:{tool:'resonance',filter:'atk',ownedOnly:true,resHole:[1,1],sel:'diamond',fuseLv:4},dirty:{}};
- for(const p of ['js/util.js','js/data.js','js/status.js','js/gem_resonance_data.js','js/formula.js','js/item.js','js/gem_resonance.js'])vm.runInContext(read(p),c,{filename:p});
+ for(const p of ['js/util.js', 'js/strings_data.js', 'js/strings.js','js/data.js','js/status.js','js/gem_resonance_data.js','js/formula.js','js/item.js','js/gem_resonance.js'])vm.runInContext(read(p),c,{filename:p});
  c.G={player:{gold:1e12,gems,resonance:{holes:{}}}};c.markStatsDirty=()=>{};
  c.esc=String;c.fmt=String;c.fmtFull=String;c.pctStr=String;
  const source=read('js/ui.js');

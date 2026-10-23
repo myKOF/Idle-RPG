@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* ============ 天堂威能：升級消耗金幣（2026-10-22 取消轉生威能點） ============ */
 var TALENT_COMPLETE_EFFECT_MULTIPLIER = 1.25;
 
@@ -130,7 +131,7 @@ function migratePowerSave(data) {
   p.loadout = (p.loadout || []).filter(function (ref) { return typeof ref !== 'string' || ref.indexOf('potential:') !== 0; });
   data.powerThreatV1 = true;
   if (refund || goldRefund) {
-    data._talentRespecNotice = '威能改造：已退還 ' + refund + ' 點威能點與 ' + goldRefund + ' 金幣，舊威能與潛力已重置';
+    data._talentRespecNotice = STR(843, refund, goldRefund);
     data._talentRespecConfirm = true;
   }
 }
@@ -244,13 +245,13 @@ function refreshMonsterPower() {
 
 function talentUpgrade(id) {
   var def = talentDef(id);
-  if (!def) return '找不到威能';
-  if (def.disabled) return def.disabledReason || '此威能目前暫不開放升級';
-  if (!talentUnlocked(id)) return reincarnationCountSafe() < talentTurn(id) ? '尚未達到 ' + talentTurn(id) + ' 轉' : '此威能尚未開放';
+  if (!def) return STR(844);
+  if (def.disabled) return def.disabledReason || STR(845);
+  if (!talentUnlocked(id)) return reincarnationCountSafe() < talentTurn(id) ? STR(846, talentTurn(id)) : STR(847);
   var lv = talentLevel(id);
-  if (lv >= TALENT_MAX_LEVEL) return '已達最高等級';
+  if (lv >= TALENT_MAX_LEVEL) return STR(848);
   var cost = talentUpgradeCost(id, lv + 1);
-  if ((G.player.gold || 0) < cost) return '金幣不足，需要 ' + fmtFull(cost) + ' 金幣';
+  if ((G.player.gold || 0) < cost) return STR(849, fmtFull(cost));
   G.player.gold -= cost;
   talentState().levels[id] = lv + 1;
   talentRefresh();
@@ -261,14 +262,14 @@ function talentMax(id) {
   var start = talentLevel(id), changed = false;
   while (talentLevel(id) < TALENT_MAX_LEVEL && talentUpgrade(id) === null) changed = true;
   if (changed) return null;
-  return start >= TALENT_MAX_LEVEL ? '已達最高等級' : '金幣不足';
+  return start >= TALENT_MAX_LEVEL ? STR(848) : STR(91);
 }
 
 function talentDowngrade(id) {
   var def = talentDef(id);
-  if (!def) return '找不到威能';
+  if (!def) return STR(844);
   var lv = talentLevel(id);
-  if (!lv) return '威能目前是 0 級';
+  if (!lv) return STR(850);
   talentState().levels[id] = lv - 1;
   talentRefresh();
   return null;
@@ -276,7 +277,7 @@ function talentDowngrade(id) {
 
 function talentDelete(id) {
   var def = talentDef(id);
-  if (!def) return '找不到威能';
+  if (!def) return STR(844);
   talentState().levels[id] = 0;
   talentRefresh();
   return null;

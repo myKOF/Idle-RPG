@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* ============ 狀態系統（Status） ============
    技能／狀態分工（2026-08-11 技能及狀態改造）：
      - 技能（js/skills2.js）＝「一次性效果」：本體傷害、治療、護盾、法力…施放當下結算完畢。
@@ -321,7 +322,7 @@ function statusEntries(ent) {
       if (!d || !(d.until > GT)) continue;
       sid = d.sid || statusIdByName(d.name);
       def = statusDef(sid);
-      out.push({ sid: sid, name: def ? def.name : (d.name || '持續傷害'), icon: def ? def.icon : '🩸',
+      out.push({ sid: sid, name: def ? def.name : (d.name || STR(733)), icon: def ? def.icon : '🩸',
         kind: def ? def.kind : 'debuff', effect: 'dot',
         until: d.until, remain: d.until - GT, dur: d.dur || (def && def.dur) || (d.until - GT), val: 0, dps: d.dps || 0, stacks: d.stacks || 1,
         vfxR: d.vfxR || 0 });

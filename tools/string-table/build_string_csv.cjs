@@ -8,6 +8,7 @@
    排除：GM／錄製／延遲探針／VFX 驗證／效能診斷等內部工具；console／Error／比對用字面值；
         資料型檔案(data.js 等)中與配置表儲存格完全相同的字串（已在表內）。
    用法：node tools/string-table/build_string_csv.cjs [輸出路徑] [--force]
+         node tools/string-table/build_string_csv.cjs --check     # 漏登記檢查：寫死又沒進 String 表的字串（有就非 0 結束）
    （預設輸出為 config/CSV/String.csv，已存在時需 --force；Excel 是來源，別隨手覆蓋）
    注意：本工具重新產生整份 CSV，會洗掉人工填的簡體／英文；日後翻譯請以 Excel 為準。
    ============================================================================= */
@@ -47,89 +48,83 @@ for (const fn of fs.readdirSync(path.join(root, 'config/CSV'))) {
 const DATA_FILES = /^js\/(data|skills2|status|runeword_data|elite_data|gem_resonance_data|elite_boss_recipes)\.js$/;
 
 /* ---------- 排除範圍 ---------- */
-const EXCLUDE_FILE = /^js\/(gm_exec|gm|lagprobe|recorder|vfx-core|vfx-runtime|vfx-pixi-backend|vfx-tower|battle-perf|ai-key-setting|worker\/shim)\.js$/;
-const EXCLUDE_FN = /Diag|diag|Perf|perf|Lag|lag|^skills2CleaveRangeScale$|^gm[A-Z]|GM|^validate/;
-const dropCallee = /^(console\.\w+|Error|errors\.push|String|\w*\.?(includes|indexOf|startsWith|endsWith|test|match|replace|split))$/;
+const { scopeReason } = require('./scope.cjs');
 const ex = { file: 0, fn: 0, callee: 0, cmp: 0, csv: 0, noText: 0, regex: 0 };
 const kept = [];
 for (const r of rows) {
-  if (EXCLUDE_FILE.test(r.file)) { ex.file++; continue; }
-  if (EXCLUDE_FN.test(r.fn)) { ex.fn++; continue; }
-  if (dropCallee.test(r.callee) || /(^|\.)(includes|indexOf|startsWith|endsWith|test|match)$/.test(r.callee)) { ex.callee++; continue; }
-  if (['===', '==', '!==', '!='].includes(r.prev)) { ex.cmp++; continue; }
-  if (/^\^|\(\?:/.test(r.text)) { ex.regex++; continue; }
+  const why = scopeReason(r);
+  if (why) { ex[why]++; continue; }
   if (DATA_FILES.test(r.file) && cells.has(r.text)) { ex.csv++; continue; }
   kept.push(r);
 }
 
-/* ---------- 內嵌標記處理 ---------- */
-const INLINE_OK = /^(b|i|u|em|strong|small|code|br|sub|sup)$/i;
-function parseMarkup(s) {
-  const parts = []; const re = /<(\/?)([a-zA-Z][\w-]*)([^>]*?)(\/?)>|([^<]+|<)/g; let m;
-  while ((m = re.exec(s))) {
-    if (m[5] !== undefined) parts.push({ text: m[5] });
-    else parts.push({ tag: m[2].toLowerCase(), close: !!m[1], attrs: m[3] || '', raw: m[0] });
-  }
-  return parts;
-}
-function simpleInline(parts) {
-  for (const p of parts) {
-    if (!p.tag) continue;
-    if (INLINE_OK.test(p.tag)) { if (p.attrs.trim() && !/^\s*$/.test(p.attrs)) return false; continue; }
-    if (p.tag === 'span') {
-      if (p.close) continue;
-      const a = p.attrs.trim();
-      if (/^style="color:\s*[^";]+;?"$/.test(a) || /^class="[\w\- ]+"$/.test(a)) continue;
-      return false;
-    }
-    return false;
-  }
-  return true;
-}
-const ATTR_TEXT = /\s?(?:data-tip|data-tt-title|data-tt-desc|data-tt-[\w-]+|title|aria-label|alt|placeholder|label)="([^"]*)"/g;
-const decodeEnt = t => t.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&');
-function keepTag(p) {
-  if (INLINE_OK.test(p.tag)) return !p.attrs.trim();
-  if (p.tag === 'span') {
-    if (p.close) return true;
-    const a = p.attrs.trim();
-    return /^style="color:\s*[^";]+;?"$/.test(a) || /^class="[\w\- ]+"$/.test(a);
-  }
-  return false;
-}
-// 去掉沒有配對的標籤（片段式拼接常讓開頭／結尾標籤落單）
-function balance(s) {
-  const parts = parseMarkup(s); const stack = []; const drop = new Set();
-  parts.forEach((p, i) => {
-    if (!p.tag || p.tag === 'br') return;
-    if (!p.close) stack.push(i);
-    else {
-      let k = stack.length - 1;
-      while (k >= 0 && parts[stack[k]].tag !== p.tag) k--;
-      if (k < 0) drop.add(i); else { for (let q = stack.length - 1; q > k; q--) drop.add(stack[q]); stack.length = k; }
-    }
-  });
-  for (const i of stack) drop.add(i);
-  return parts.map((p, i) => drop.has(i) ? '' : (p.tag ? p.raw : p.text)).join('');
-}
-function splitMarkup(text, fromHtmlAttr) {
-  const out = [];
-  if (fromHtmlAttr) text = decodeEnt(text);
-  // A. 屬性值（tooltip／title…）獨立成條
-  let rest = text.replace(ATTR_TEXT, (m, v) => { if (IDEO.test(v)) out.push(...splitMarkup(v, true)); return ' '; });
-  if (rest !== text) rest = rest.replace(/^[^<>\u3400-\u9fff]*>/, '');
-  // B. 其餘文字節點；結構性標籤當斷點，格式標籤（br／b／變色 span）保留
-  let buf = '';
-  const flush = () => { const t = balance(buf).replace(/\s+/g, ' ').replace(/\s+>/g, '>').trim(); if (t && IDEO.test(t.replace(/<[^>]*>/g, ''))) out.push(t); buf = ''; };
-  for (const p of parseMarkup(rest)) {
-    if (!p.tag) { buf += p.text; continue; }
-    if (keepTag(p)) buf += p.raw; else flush();
-  }
-  flush();
-  return out;
-}
+const { INLINE_OK, parseMarkup, keepTag, balance, splitMarkup, decodeEnt, attrValue } = require('./markup.cjs');
 
 /* ---------- 類別／用途 ---------- */
+/* ---------- 功能模塊 ---------- */
+const MODULES = ['通用', '角色', '戰鬥', '技能', '威能', '裝備', '神鑄', '熔爐', '寶石', '符文', '封魔塔', '任務', '存檔與系統'];
+const KEYWORDS = [
+  [/符文/, '符文'], [/寶石|融合石|共鳴/, '寶石'], [/封魔塔|試煉之塔|地獄之塔|煉獄之塔|塔層|連挑/, '封魔塔'],
+  [/熔爐|傳送帶|零件|輸送帶/, '熔爐'], [/神鑄|鑄造|魔塵/, '神鑄'], [/威能|天賦/, '威能'], [/任務/, '任務'],
+  [/技能|施放|冷卻|熟練度|終極進化/, '技能'], [/存檔|資料夾|分頁|Worker|離線|瀏覽器|匯出|安全模式/, '存檔與系統'],
+  [/裝備|背包|品質|詞條|套裝|穿戴|附魔|拆解|分解/, '裝備'], [/戰鬥|擊敗|傷害|敵人|BOSS|關卡|地圖|撤退|暴擊|爆擊/, '戰鬥'],
+  [/屬性|轉生|等級|經驗|生命|法力/, '角色'],
+];
+const FN_RULES = [
+  [/^nf[A-Z]|NewForge|newForge|Furnace|furnace|Belt|closeNfDetailLog/, '熔爐'],
+  [/Forge|forge/, '神鑄'],
+  [/Gem|gem|gres|Gres/, '寶石'], [/rune|Rune/, '符文'], [/[tT]ower/, '封魔塔'],
+  [/sg[A-Z]|sgb|Skill|skill|MpSkill|SGB_/, '技能'], [/[tT]alent/, '威能'], [/[qQ]uest/, '任務'],
+  [/[sS]ave|Folder|Worker|worker|Pip|MiniWindow|MINI_HTML|Fullscreen|[oO]ffline|[pP]erf|Damage(Toggle|Numbers)|Stall|Diag|resetStats/, '存檔與系統'],
+  [/CharCore|CHAR_CORE|AttrPanel|DmgAbsorb|CombatRating|REINCARNATION|REALMS|STAT_GROUPS|primaryStat|statDesc|statFmt|capText|ReductionDesc|penetrationDesc|elementResistDesc|drainDesc|joinEffectParts|enemyTypeDmgRedDesc/, '角色'],
+  [/updateResourceTip|ELEM_INFO|formatDuration|showConfirmDialog/, '通用'],
+  [/[eE]quip|Inventory|inventory|sortInventory|renderDetail|salvage|AFFIX_POOL|PASSIVE_POOL|RARIT|SLOT_|WEAPON_|ENCHANT|enchant|twoHand|ancientStar|itemDetail|itemHeader|itemSocket|itemRune|rerollSingle|rerollResource|GODFORGE|EQUIP_SET|passiveLine/, '裝備'],
+  [/[zZ]one|ZONES|[sS]tage|[bB]attle|[eE]nemy|[sS]ummary|classifyUiLogCategory|detailLog|DetailLog|Frenzy|floatText|HitRate|npc|CombatPause|BOSS_LIST|_POOL$/, '戰鬥'],
+  [/TASKS/, '任務'], [/TALENT/, '威能'], [/GEM_|PART_TYPES|NEW_FORGE/, '熔爐'],
+];
+function moduleOf(file, ctx, key, text, line) {
+  const base = file.replace(/^js\//, '');
+  if (file === 'index.html') {
+    const L = line;
+    if (L < 102) return '通用'; if (L < 123) return '角色'; if (L < 248) return '裝備'; if (L < 285) return '熔爐';
+    if (L < 340) return '神鑄'; if (L < 462) return '寶石'; if (L < 492) return '符文'; if (L < 508) return '技能';
+    if (L < 512) return '威能'; if (L < 579) return '封魔塔'; if (L < 719) return '戰鬥'; if (L < 735) return '熔爐'; if (L < 750) return '存檔與系統';
+    if (L < 842) return '存檔與系統'; if (L < 865) return '戰鬥'; if (L < 879) return '任務'; if (L < 891) return '通用';
+    if (L < 915) return '封魔塔'; if (L < 932) return '熔爐'; return '裝備';
+  }
+  if (/^(ui-gem-resonance|ui-gem-workshop|gem_resonance|gem_resonance_data)\.js$/.test(base)) return '寶石';
+  if (/^(ui-runeword|runeword|runeword_data)\.js$/.test(base)) return '符文';
+  if (/^(tablock|save_origin|save|bridge|storage|param_autoreload|game-menu|main)\.js$/.test(base)) return '存檔與系統';
+  if (base === 'tasks.js') return '任務';
+  if (base === 'talents.js') return '威能';
+  if (/^(skills|skills2|status)\.js$/.test(base)) return '技能';
+  if (base === 'tower.js') return '封魔塔';
+  if (/^(newforge|ui-newforge-visuals)\.js$/.test(base)) return '熔爐';
+  if (base === 'forge.js') return '神鑄';
+  if (/^(factory|legendary)\.js$/.test(base)) return '裝備';
+  if (/^(combat|elite|elite_boss|elite_boss_recipes|battle-arena|battle-renderer|battlefield|special_rules|formula)\.js$/.test(base)) return '戰鬥';
+  if (base === 'stats.js') return '角色';
+  if (base === 'player.js') return /EQUIP/.test(ctx) ? '裝備' : '角色';
+  if (base === 'item.js') {
+    if (/Gem|gem|socketGem|convertGems|composeGems/.test(ctx)) return '寶石';
+    if (/Rune/.test(ctx)) return '符文';
+    return '裝備';
+  }
+  // ui.js、data.js、sim.worker.js 等混雜檔：UI_COMMAND_LABELS 看 key，其餘看函式／常數名，最後看字面關鍵字
+  if (/UI_COMMAND_LABELS/.test(ctx) && key) {
+    const k = key.toLowerCase();
+    if (/^forge/.test(k)) return '神鑄'; if (/^gem/.test(k)) return '寶石'; if (/^rune/.test(k)) return '符文';
+    if (/^tower/.test(k)) return '封魔塔'; if (/^skill/.test(k)) return '技能'; if (/^talent/.test(k)) return '威能';
+    if (/^(nf|newforge|furnace)/.test(k)) return '熔爐'; if (/^(equip|item|inventory|enchant|affix)/.test(k)) return '裝備';
+    if (/^(quest|task)/.test(k)) return '任務';
+  }
+  if (!/^(handlePauseClick|initUI|syncFullscreenButton|unlocked|fill|finish|stat|bar|COMMAND_IMPL|boot|onSaveResult|doSend|count|sendUiCommand|runCommand|loadIntoRunningSim|resolveItem|NODE_NAMES|capText)$/.test(ctx)) {
+    for (const [re, m] of FN_RULES) if (re.test(ctx)) return m;
+  }
+  for (const [re, m] of KEYWORDS) if (re.test(text)) return m;
+  return '通用';
+}
+
 const CAT = [
   [/^index\.html$/, '主界面'],
   [/^js\/(ui|ui-gem-resonance|ui-gem-workshop|ui-runeword|ui-newforge-visuals|game-menu|tablock|save_origin|main)\.js$/, '界面'],
@@ -192,14 +187,15 @@ function renumber(text, params) {
 
 /* ---------- 組成條目 ---------- */
 const entries = new Map(); // text -> entry
-function add(text, params, cat, where, kind) {
+function add(text, params, cat, where, kind, mod) {
   const vis = text.replace(/\{\w+\}/g, '').replace(/<[^>]*>/g, '');
   if (!IDEO.test(vis)) return;
   const ren = renumber(text, params);
   const key = ren.text;
   let e = entries.get(key);
-  if (!e) { e = { text: ren.text, params: ren.params, cat, kinds: new Set(), where: [] }; entries.set(key, e); }
+  if (!e) { e = { text: ren.text, params: ren.params, cat, kinds: new Set(), where: [], mods: new Map() }; entries.set(key, e); }
   e.kinds.add(kind);
+  e.mods.set(mod, (e.mods.get(mod) || 0) + 1);
   if (!e.where.includes(where)) e.where.push(where);
 }
 for (const r of kept) {
@@ -210,7 +206,7 @@ for (const r of kept) {
   const where = `${path.basename(r.file)}:${r.line}${ctxName ? ' ' + ctxName : ''}`;
   for (const p of pieces) {
     // 拆開後的片段若引用了 {n}，參數表沿用原本
-    add(p, r.params, cat, where, kindOf(r, p));
+    add(p, r.params, cat, where, kindOf(r, p), moduleOf(r.file, ctxName, r.key, p, r.line));
   }
 }
 
@@ -225,7 +221,7 @@ for (const r of kept) {
   let m; let line = 1; let buf = ''; let bufLine = 1; let bufTag = '';
   const flush = () => {
     const t = buf.replace(/\s+/g, ' ').trim();
-    if (t && IDEO.test(t)) for (const x of splitMarkup(t, true)) add(x, [], '主界面', `index.html:${bufLine}`, '界面文字');
+    if (t && IDEO.test(t)) for (const x of splitMarkup(t, true)) add(x, [], '主界面', `index.html:${bufLine}`, '界面文字', moduleOf('index.html', '', '', x, bufLine));
     buf = '';
   };
   const idStack = [];
@@ -238,9 +234,13 @@ for (const r of kept) {
     const tag = m[2].toLowerCase(), attrs = m[3] || '', close = !!m[1];
     if (!close) {
       let a; const re = /\s(data-tip|data-tt-title|data-tt-desc|title|aria-label|alt|placeholder|label)="([^"]*)"/g;
-      while ((a = re.exec(' ' + attrs))) if (IDEO.test(a[2])) for (const x of splitMarkup(a[2], true)) add(x, [], '主界面', `index.html:${line}`, '提示');
+      while ((a = re.exec(' ' + attrs))) if (IDEO.test(a[2])) { const x = attrValue(a[2]); add(x, [], '主界面', `index.html:${line}`, '提示', moduleOf('index.html', '', '', x, line)); }
     }
-    const inline = /^(b|i|u|em|strong|small|code|br)$/i.test(tag) && !/\sid=/.test(attrs);
+    const fmtTag = /^(b|i|u|em|strong|small|code|br)$/i.test(tag);
+    let inline = fmtTag && !/\sid=/.test(attrs);
+    // 帶 id 的格式標籤（動態數字）不算內嵌，它的結尾標籤也要當斷點，否則 "0</b> 件" 會黏成一條
+    if (fmtTag && !close && /\sid=/.test(attrs)) idStack.push(tag.toLowerCase());
+    else if (fmtTag && close && idStack.length && idStack[idStack.length - 1] === tag.toLowerCase()) { idStack.pop(); inline = false; }
     if (inline) { buf += `<${close ? '/' : ''}${tag}>`; }
     else flush();
     line += nl;
@@ -250,22 +250,48 @@ for (const r of kept) {
 
 /* ---------- 排序＆輸出 ---------- */
 const list = [...entries.values()];
+for (const e of list) e.module = e.mods.size === 1 ? [...e.mods.keys()][0] : '通用'; // 跨模塊共用的詞歸通用
 list.sort((a, b) => {
-  const c = CAT_ORDER.indexOf(a.cat) - CAT_ORDER.indexOf(b.cat);
+  const c = MODULES.indexOf(a.module) - MODULES.indexOf(b.module);
   if (c) return c;
   const fa = a.where[0].split(':')[0], fb = b.where[0].split(':')[0];
   if (fa !== fb) return fa < fb ? -1 : 1;
   return parseInt(a.where[0].split(':')[1]) - parseInt(b.where[0].split(':')[1]);
 });
 function csvCell(v) { v = String(v ?? ''); return /[",\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
-const header = ['編號', '用途說明', '替代字符參數說明', '繁體中文', '簡體中文', '英文'];
+const header = ['編號', '功能模塊', '用途說明', '替代字符參數說明', '繁體中文', '簡體中文', '英文'];
 const lines = [header.map(csvCell).join(',')];
 list.forEach((e, i) => {
   const kinds = [...e.kinds].join('/');
   const locs = e.where.slice(0, 3).join('、') + (e.where.length > 3 ? `…等${e.where.length}處` : '');
-  const use = `[${e.cat}] ${kinds}｜${locs}`;
-  lines.push([i + 1, use, describeRepl(e.text, e.params), e.text.replace(/\r?\n/g, '\\n'), '', ''].map(csvCell).join(','));
+  const use = `${kinds}｜${locs}`;
+  lines.push([i + 1, e.module, use, describeRepl(e.text, e.params), e.text.replace(/\r?\n/g, '\\n'), '', ''].map(csvCell).join(','));
 });
+/* --check：漏登記檢查（AI_RULES 8.10）。只看程式裡「仍寫死」的字串：
+   已登記＝表裡有這句，只是程式還沒改成 STR()（待遷移）；未登記＝新寫死又沒進表，視為違規，以非 0 結束。 */
+if (process.argv.includes('--check')) {
+  const { csvParse } = require('./apply_strings.cjs');
+  const trows = csvParse(fs.readFileSync(path.join(root, 'config', 'CSV', 'String.csv'), 'utf8'));
+  const twCol = trows[0].indexOf('繁體中文');
+  const registered = new Set(trows.slice(1).map(r => (r[twCol] || '').replace(/\n/g, '\n')));
+  const unreg = list.filter(e => !registered.has(e.text.replace(/\r?\n/g, '\n')));
+  const migrate = list.length - unreg.length;
+  console.log(`程式中仍寫死的顯示文字：${list.length} 條（已登記待遷移 ${migrate}、未登記 ${unreg.length}）`);
+  const byMod2 = {};
+  for (const e of list) { const m = byMod2[e.module] ||= { pending: 0, unreg: 0 }; if (registered.has(e.text)) m.pending++; else m.unreg++; }
+  for (const m of MODULES) if (byMod2[m]) console.log(`  ${m}：待遷移 ${byMod2[m].pending}、未登記 ${byMod2[m].unreg}`);
+  const listMod = process.argv.includes('--module') ? process.argv[process.argv.indexOf('--module') + 1] : null;
+  if (listMod) {
+    console.log('\n[' + listMod + '] 仍寫死的字串：');
+    list.filter(e => e.module === listMod).forEach(e => console.log('  ' + e.text.slice(0, 90).split('\n').join('\\n') + '  ←  ' + e.where.slice(0, 3).join('、')));
+  }
+  if (unreg.length) {
+    console.error('\n以下字串寫死在程式裡且沒有登記在 String 表（AI_RULES 8.10）：');
+    unreg.slice(0, 40).forEach(e => console.error(`  [${e.module}] ${e.text.slice(0, 60)}  ←  ${e.where[0]}`));
+    process.exit(3);
+  }
+  process.exit(0);
+}
 const outPath = process.argv.slice(2).find(a => !a.startsWith('--')) || path.join(root, 'config', 'CSV', 'String.csv');
 if (!process.argv.includes('--force') && !process.argv.slice(2).some(a => !a.startsWith('--')) && fs.existsSync(outPath)) {
   console.error('config/CSV/String.csv 已存在；Excel（config/Excel/String.xlsx）才是來源，重新產生會洗掉翻譯。\n要輸出到別處請帶路徑，確定要覆蓋請加 --force。');
@@ -273,4 +299,4 @@ if (!process.argv.includes('--force') && !process.argv.slice(2).some(a => !a.sta
 }
 fs.writeFileSync(outPath, '\uFEFF' + lines.join('\r\n') + '\r\n', 'utf8');
 console.log('excluded', ex, 'kept', kept.length, 'entries', list.length);
-const byCat = {}; list.forEach(e => byCat[e.cat] = (byCat[e.cat] || 0) + 1); console.log(byCat);
+const byMod = {}; list.forEach(e => byMod[e.module] = (byMod[e.module] || 0) + 1); console.log(byMod);

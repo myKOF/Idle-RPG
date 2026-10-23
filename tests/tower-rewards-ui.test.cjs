@@ -1,12 +1,13 @@
 'use strict';
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const { loadEliteEnv } = require('./helpers/elite-env.cjs');
 const root = path.resolve(__dirname, '..');
-const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
+const ui = readExpanded(path.join(root, 'js/ui.js'));
 
 function uiContext() {
   const c = loadEliteEnv();

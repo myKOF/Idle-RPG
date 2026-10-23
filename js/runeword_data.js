@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* ============ 符文真言：資料表（符文 33 種、符文真言 65 組）============
    本檔只放資料與純查表函式，不碰 G、不寫狀態（共載檔規則）。
    執行邏輯（鑲嵌判定、屬性聚合、觸發引擎）→ js/runeword.js；兩支同時載入於主執行緒與 Worker。
@@ -163,7 +164,7 @@ var RW_FX_KEYS = [
    name＝畫面顯示的名稱。例：elemDmgAll（全屬性傷害提升）＝火冰雷毒聖暗地風八種元素傷害提升各加同樣的值。 */
 var RW_STAT_ALIASES = {
   elemDmgAll: {
-    name: '全屬性傷害提升%', like: 'elemDmgFire',
+    name: STR(1762), like: 'elemDmgFire',
     keys: ['elemDmgFire', 'elemDmgIce', 'elemDmgLightning', 'elemDmgPoison', 'elemDmgLight', 'elemDmgDark', 'elemDmgEarth', 'elemDmgWind']
   }
 };
@@ -583,4 +584,4 @@ function runeName(id) {
   var r = RUNE_BY_ID[id];
   return r ? r.name : String(id);
 }
-function runeLabel(id) { return runeName(id) + '符文'; }
+function runeLabel(id) { return STR(1763, runeName(id)); }

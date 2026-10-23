@@ -3,6 +3,7 @@
    畫面好不好看要人眼看；這裡守的是「壞了不會報錯、只會安靜地不見或越長越多」的部分：
    畫法有沒有拋例外、區塊回收有沒有洩漏、同一塊地回來時長得一不一樣、地表／地下有沒有照階段帶切換。 */
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -11,7 +12,7 @@ const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 
 test('GROUND-LOAD-RACE 通用底圖晚到不覆蓋選定地貌，專用圖失敗仍能後備', async () => {
-  const source=fs.readFileSync(path.join(root,'js/battle-renderer.js'),'utf8'),requests=[],applied=[];
+  const source=readExpanded(path.join(root,'js/battle-renderer.js')),requests=[],applied=[];
   const ctx={S:{zoneKey:null},_groundTexCache:{},GROUND_ASSET_VERSION:'test',applyGroundTexture:tex=>applied.push(tex.id),PIXI:{Assets:{load:url=>new Promise((resolve,reject)=>requests.push({url,resolve,reject}))}}};
   vm.createContext(ctx);vm.runInContext(source.slice(source.indexOf('  function loadGroundTexture('),source.indexOf('  function applyGroundTexture(')),ctx);
   ctx.loadGroundTexture(null);ctx.S.zoneKey='desert';ctx.loadGroundTexture('desert');
@@ -24,7 +25,7 @@ test('GROUND-LOAD-RACE 通用底圖晚到不覆蓋選定地貌，專用圖失敗
 
 test('DECOR-IMAGE-LOAD 完整素材載入去重、失敗重試只補缺圖，等比縮放保持底部腳點', async () => {
   const ctx={URL,console,location:{href:'https://game.test/tools/preview.html'}};vm.createContext(ctx);
-  vm.runInContext(fs.readFileSync(path.join(root,'js/decor-nature.js'),'utf8'),ctx);
+  vm.runInContext(readExpanded(path.join(root,'js/decor-nature.js')),ctx);
   const nature=ctx.DecorNature,calls=[],pending=[];
   const loader=url=>{calls.push(url);return new Promise((resolve,reject)=>pending.push({url,resolve,reject}));};
   const first=nature.loadImages('https://game.test/',loader),second=nature.loadImages('https://game.test/',loader);
@@ -64,11 +65,11 @@ function loadDecor(extra) {
   }, extra || {});
   vm.createContext(ctx);
   // 載入順序同 index.html：浮雕繪圖（decor-sculpt）在前
-  vm.runInContext(fs.readFileSync(path.join(root, 'js/decor-sculpt.js'), 'utf8'), ctx);
-  vm.runInContext(fs.readFileSync(path.join(root, 'js/decor-nature.js'), 'utf8'), ctx);
+  vm.runInContext(readExpanded(path.join(root, 'js/decor-sculpt.js')), ctx);
+  vm.runInContext(readExpanded(path.join(root, 'js/decor-nature.js')), ctx);
   ctx.DecorNature.registerImages(Object.fromEntries(Object.keys(ctx.DecorNature.spriteFiles).map(key=>[key,{width:128,height:192}])));
-  vm.runInContext(fs.readFileSync(path.join(root, 'js/battle-terrain.js'), 'utf8'), ctx);   // 擺件位置清單（battle-decor 的 buildChunk 依它擺）
-  vm.runInContext(fs.readFileSync(path.join(root, 'js/battle-decor.js'), 'utf8'), ctx);
+  vm.runInContext(readExpanded(path.join(root, 'js/battle-terrain.js')), ctx);   // 擺件位置清單（battle-decor 的 buildChunk 依它擺）
+  vm.runInContext(readExpanded(path.join(root, 'js/battle-decor.js')), ctx);
   return { BattleDecor: ctx.BattleDecor, DecorSculpt: ctx.DecorSculpt, warnings, ctx };
 }
 
@@ -174,7 +175,7 @@ test('LAVA-FIRE 熔岩燃燒固定來源、換幀、暫停、減量與跨區塊�
 test('DECOR-1 每張地圖（ZONES）都有自己的地形組合，新增地圖時會被提醒', () => {
   const dataCtx = { console, Math };
   vm.createContext(dataCtx);
-  for (const f of ['js/util.js', 'js/data.js']) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), dataCtx);
+  for (const f of ['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js']) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), dataCtx);
   const zones = Object.keys(vm.runInContext('ZONES', dataCtx));
   const { BattleDecor } = loadDecor();
   assert.ok(zones.length >= 7);
@@ -314,7 +315,7 @@ test('DECOR-7 ?decor=0 整個關掉（A/B 對照用），不建立任何節點',
 });
 
 test('DECOR-8 渲染器接線：地面平面在地板與暗角之間、天氣層在場景之上，擺件放進實體層', () => {
-  const renderer = fs.readFileSync(path.join(root, 'js/battle-renderer.js'), 'utf8');
+  const renderer = readExpanded(path.join(root, 'js/battle-renderer.js'));
   const { buildSceneTree } = require('./helpers/battle-scene.cjs');
   const S = buildSceneTree(renderer);
   const L = S.layers;
@@ -330,7 +331,7 @@ test('DECOR-8 渲染器接線：地面平面在地板與暗角之間、天氣層
   assert.match(renderer, /propLayer: S\.layers\.entity/);
   /* 魔王戰期間藏起來；改由轉場全黑那一刻切（js/battle-renderer.js applySceneSwitch），不跟著 towerActive 立刻切 */
   assert.match(renderer, /if \(S\.decor\) S\.decor\.setVisible\(!tv\);/);
-  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const html = readExpanded(path.join(root, 'index.html'));
   assert.ok(html.indexOf('js/battle-decor.js?v=') > 0 && html.indexOf('js/battle-decor.js?v=') < html.indexOf('js/battle-renderer.js?v='),
     'battle-decor.js 要在 battle-renderer.js 之前載入');
 });
@@ -393,7 +394,7 @@ test('DECOR-10 浮雕打光：光從左上，球體左上半比右下半亮；�
 });
 
 test('DECOR-11 場景只引用自製素材，小物件程序繪製、大型物件使用完整AI圖', () => {
-  for (const f of ['js/decor-sculpt.js', 'js/decor-nature.js', 'js/battle-decor.js']) {
+  for (const f of ['js/strings_data.js', 'js/strings.js', 'js/decor-sculpt.js', 'js/decor-nature.js', 'js/battle-decor.js']) {
     const src = fs.readFileSync(path.join(root, f), 'utf8');
     assert.doesNotMatch(src, /RPG ?Maker_MV|MyGame[\/]+Asset/i, f + ' 不該指向第三方素材庫');
   }

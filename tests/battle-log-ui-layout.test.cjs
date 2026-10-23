@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
@@ -6,8 +7,8 @@ const test = require('node:test');
 const root = path.resolve(__dirname, '..');
 
 test('戰況資訊按鈕點擊直接開啟統計面板，統計面板寬度加倍', () => {
-  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  const ui = fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8');
+  const html = readExpanded(path.join(root, 'index.html'));
+  const ui = readExpanded(path.join(root, 'js', 'ui.js'));
   const css = fs.readFileSync(path.join(root, 'css', 'style.css'), 'utf8');
 
   // 1. 戰鬥區域右上角戰況資訊按鈕
@@ -23,8 +24,8 @@ test('戰況資訊按鈕點擊直接開啟統計面板，統計面板寬度加�
 });
 
 test('統計面板左上角包含「詳細日誌」按鈕，點擊後打開詳細戰鬥日誌', () => {
-  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  const ui = fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8');
+  const html = readExpanded(path.join(root, 'index.html'));
+  const ui = readExpanded(path.join(root, 'js', 'ui.js'));
   const css = fs.readFileSync(path.join(root, 'css', 'style.css'), 'utf8');
 
   // 1. 統計面板內存在詳細日誌按鈕
@@ -37,7 +38,7 @@ test('統計面板左上角包含「詳細日誌」按鈕，點擊後打開詳�
 });
 
 test('戰鬥區右側抽屜面版已移除且不顯示舊紀錄面版', () => {
-  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const html = readExpanded(path.join(root, 'index.html'));
   const css = fs.readFileSync(path.join(root, 'css', 'style.css'), 'utf8');
 
   // 1. 原戰況抽屜 DOM 已自 HTML 中移除

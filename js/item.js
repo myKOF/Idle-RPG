@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* ============ 裝備 / 物品生成 / 寶石 ============ */
 
 /* ---- 寶石庫存（G.player.gems = { type: {1..5: count} }） ---- */
@@ -57,17 +58,17 @@ function fuseableGemTypesAtLevel(lv) {
 // 選擇全部類型時，每次挑選一種目前足夠的寶石，絕不混合種類。
 function composeGems(type, lv) {
   var needed = gemComposeInputCount(lv);
-  if (!needed) return lv === GEM_FORGE_MAX_LEVEL ? '十級寶石已是最高階' : '無效寶石階級';
+  if (!needed) return lv === GEM_FORGE_MAX_LEVEL ? STR(1517) : STR(1469);
   if (type === GEM_TYPE_ALL) {
     var availableTypes = fuseableGemTypesAtLevel(lv);
-    if (!availableTypes.length) return '沒有任何種類的寶石足夠合成';
+    if (!availableTypes.length) return STR(1518);
     return composeGems(availableTypes[0], lv);
   }
-  if (!GEM_TYPES[type]) return '未知寶石種類';
-  if (!isGemEnabled(type)) return '此寶石已關閉，無法合成';
-  if (gemCount(type, lv) < needed) return '「' + GEM_NAMES[lv] + GEM_TYPES[type].name + '」不足 ' + needed + ' 顆';
+  if (!GEM_TYPES[type]) return STR(43);
+  if (!isGemEnabled(type)) return STR(1519);
+  if (gemCount(type, lv) < needed) return STR(1476, GEM_NAMES[lv], GEM_TYPES[type].name, needed);
   var cost = FUSE_GOLD_COST[lv];
-  if (G.player.gold < cost) return '金幣不足（需要 ' + fmt(cost) + '）';
+  if (G.player.gold < cost) return STR(42, fmt(cost));
   G.player.gold -= cost;
   addGem(type, lv, -needed);
   addGem(type, lv + 1, 1);
@@ -81,23 +82,23 @@ function composeGems(type, lv) {
    規則：同階任意兩顆換一顆指定種類，未成組不扣；每格同種同級，融合寶石不可轉換。
    回傳 null=成功，否則錯誤訊息 */
 function convertGems(slots, targetType) {
-  if (!Object.prototype.hasOwnProperty.call(GEM_TYPES, targetType)) return '未知目標種類';
-  if (!isGemEnabled(targetType)) return '目標寶石已關閉，無法轉換';
-  if (!Array.isArray(slots) || !slots.length) return '請先將寶石放入九宮格';
-  if (slots.length > GEM_CONVERT_SLOTS) return '最多 ' + GEM_CONVERT_SLOTS + ' 格';
+  if (!Object.prototype.hasOwnProperty.call(GEM_TYPES, targetType)) return STR(1520);
+  if (!isGemEnabled(targetType)) return STR(1521);
+  if (!Array.isArray(slots) || !slots.length) return STR(1522);
+  if (slots.length > GEM_CONVERT_SLOTS) return STR(1523, GEM_CONVERT_SLOTS);
   var requested = {};
   for (var i = 0; i < slots.length; i++) {
     var s = slots[i];
-    if (!s || !Object.prototype.hasOwnProperty.call(GEM_TYPES, s.type)) return '未知寶石種類';
-    if (!isGemEnabled(s.type)) return '此寶石已關閉，無法轉換';
-    if (!Number.isInteger(s.lv) || s.lv < 1 || s.lv > GEM_FORGE_MAX_LEVEL) return '寶石階級須為 1~' + GEM_FORGE_MAX_LEVEL;
-    if (!Number.isInteger(s.n) || s.n < 1 || s.n > GEM_CONVERT_STACK) return '每格 1~' + GEM_CONVERT_STACK + ' 顆';
+    if (!s || !Object.prototype.hasOwnProperty.call(GEM_TYPES, s.type)) return STR(43);
+    if (!isGemEnabled(s.type)) return STR(1524);
+    if (!Number.isInteger(s.lv) || s.lv < 1 || s.lv > GEM_FORGE_MAX_LEVEL) return STR(1525, GEM_FORGE_MAX_LEVEL);
+    if (!Number.isInteger(s.n) || s.n < 1 || s.n > GEM_CONVERT_STACK) return STR(1526, GEM_CONVERT_STACK);
     var key = s.type + ':' + s.lv;
     requested[key] = (requested[key] || 0) + s.n;
-    if (gemCount(s.type, s.lv) < requested[key]) return '「' + GEM_NAMES[s.lv] + GEM_TYPES[s.type].name + '」庫存不足';
+    if (gemCount(s.type, s.lv) < requested[key]) return STR(1527, GEM_NAMES[s.lv], GEM_TYPES[s.type].name);
   }
   var plan = gemConvertPlan(slots);
-  if (!plan.consumed.length) return '同階寶石至少需要 ' + GEM_CONVERT_INPUT_COUNT + ' 顆';
+  if (!plan.consumed.length) return STR(1528, GEM_CONVERT_INPUT_COUNT);
   plan.consumed.forEach(function (s) {
     addGem(s.type, s.lv, -s.n);
   });
@@ -108,18 +109,18 @@ function convertGems(slots, targetType) {
 
 // 九宮格普通寶石拆解：原子驗證所有初始庫存，免費無損拆回前一階。
 function dismantleGems(slots) {
-  if (!Array.isArray(slots) || !slots.length) return { err: '請先將寶石放入九宮格' };
-  if (slots.length > GEM_CONVERT_SLOTS) return { err: '最多 ' + GEM_CONVERT_SLOTS + ' 格' };
+  if (!Array.isArray(slots) || !slots.length) return { err: STR(1522) };
+  if (slots.length > GEM_CONVERT_SLOTS) return { err: STR(1523, GEM_CONVERT_SLOTS) };
   var requested = {};
   for (var i = 0; i < slots.length; i++) {
     var s = slots[i];
-    if (!s || !Object.prototype.hasOwnProperty.call(GEM_TYPES, s.type)) return { err: '未知寶石種類' };
-    if (!isGemEnabled(s.type)) return { err: '此寶石已關閉，無法拆解' };
-    if (!Number.isInteger(s.lv) || s.lv < 2 || s.lv > GEM_FORGE_MAX_LEVEL) return { err: '只能拆解 2 階以上的寶石' };
-    if (!Number.isInteger(s.n) || s.n < 1 || s.n > GEM_CONVERT_STACK) return { err: '每格 1~' + GEM_CONVERT_STACK + ' 顆' };
+    if (!s || !Object.prototype.hasOwnProperty.call(GEM_TYPES, s.type)) return { err: STR(43) };
+    if (!isGemEnabled(s.type)) return { err: STR(1529) };
+    if (!Number.isInteger(s.lv) || s.lv < 2 || s.lv > GEM_FORGE_MAX_LEVEL) return { err: STR(1530) };
+    if (!Number.isInteger(s.n) || s.n < 1 || s.n > GEM_CONVERT_STACK) return { err: STR(1526, GEM_CONVERT_STACK) };
     var key = s.type + ':' + s.lv;
     requested[key] = (requested[key] || 0) + s.n;
-    if (gemCount(s.type, s.lv) < requested[key]) return { err: '「' + GEM_NAMES[s.lv] + GEM_TYPES[s.type].name + '」庫存不足' };
+    if (gemCount(s.type, s.lv) < requested[key]) return { err: STR(1527, GEM_NAMES[s.lv], GEM_TYPES[s.type].name) };
   }
   var plan = gemDismantlePlan(slots);
   slots.forEach(function (s) { addGem(s.type, s.lv, -s.n); });
@@ -137,8 +138,8 @@ function dismantleGem(type, lv) {
 // 融合寶石拆解：依融合次數推算 1 階總成本 × 0.7，依其屬性種類均分（餘數給第一種）
 function dismantleFusedGem(id) {
   var fg = findFusedGem(id);
-  if (!fg) return { err: '找不到該融合寶石' };
-  if (!isFusedGemEnabled(fg)) return { err: '融合寶石含已關閉種類，無法拆解' };
+  if (!fg) return { err: STR(1531) };
+  if (!isFusedGemEnabled(fg)) return { err: STR(1532) };
   var total = fusedGemDismantleYield(fg);
   removeFusedGem(id);
   var types = fg.stats.map(function (s) { return s.type; });
@@ -180,7 +181,7 @@ function fusedGemIconHTML(fg, cls) {
 }
 function fusedGemLabel(fg) {
   var emojis = fg.stats.map(function (s) { return GEM_TYPES[s.type].emoji; }).join('');
-  return emojis + '融合寶石（' + fusedGemStatText(fg) + '）';
+  return STR(1533, emojis, fusedGemStatText(fg));
 }
 function findFusedGem(id) {
   var list = G.player.fusedGems || [];
@@ -250,18 +251,18 @@ function gemFusionUnlocked() {
 }
 
 function fuseGemsV2(ref1, ref2) {
-  if (!gemFusionUnlocked()) return { err: '寶石融合需達到 3 轉且角色 Lv.1 才開放' };
+  if (!gemFusionUnlocked()) return { err: STR(1534) };
   var m1 = normalizeFuseMaterial(ref1);
   var m2 = normalizeFuseMaterial(ref2);
-  if (!m1 || !m2) return { err: '素材不足（僅限 5 階以上寶石）' };
+  if (!m1 || !m2) return { err: STR(1535) };
   if (ref1.kind === 'plain' && ref2.kind === 'plain' && ref1.type === ref2.type &&
     (ref1.lv || GEM_MAX_LEVEL) === (ref2.lv || GEM_MAX_LEVEL) &&
     gemCount(ref1.type, ref1.lv || GEM_MAX_LEVEL) < 2) {
-    return { err: '同種同階寶石需要 2 顆' };
+    return { err: STR(1536) };
   }
-  if (ref1.kind === 'fused' && ref2.kind === 'fused' && ref1.id === ref2.id) return { err: '不能與自己融合' };
+  if (ref1.kind === 'fused' && ref2.kind === 'fused' && ref1.id === ref2.id) return { err: STR(1537) };
   var unionTypes = gemFuseTypesOk(m1, m2);
-  if (!unionTypes) return { err: '屬性不相容：融合後最多只能有 2 種屬性（雙屬性寶石只能與相同雙屬性、或含其屬性的單一寶石融合）' };
+  if (!unionTypes) return { err: STR(1538) };
 
   var rate = gemFuseRate(m1, m2);
   if (chance(rate)) {
@@ -354,7 +355,7 @@ function rollGemShop() {
 function refreshGemShop() {
   shopHourlyReset();
   var cost = shopRefreshCost();
-  if (G.player.gold < cost) return '金幣不足（需 ' + fmt(cost) + '）';
+  if (G.player.gold < cost) return STR(1539, fmt(cost));
   G.player.gold -= cost;
   gemShop().refreshCount++;
   rollGemShop();
@@ -365,9 +366,9 @@ function refreshGemShop() {
 function upgradeGemShop() {
   var s = gemShop();
   shopHourlyReset();
-  if (s.level >= GEM_SHOP_MAX_LEVEL) return '寶石商店已達最高等級';
+  if (s.level >= GEM_SHOP_MAX_LEVEL) return STR(1540);
   var cost = gemShopUpgradeCost(s.level);
-  if (G.player.gold < cost) return '金幣不足（需 ' + fmt(cost) + '）';
+  if (G.player.gold < cost) return STR(1539, fmt(cost));
   G.player.gold -= cost;
   s.level++;
   rollGemShop();
@@ -377,10 +378,10 @@ function upgradeGemShop() {
 function buyShopGem(idx) {
   var s = gemShop();
   var item = s.items[idx];
-  if (!item || item.sold) return '此寶石已售出';
-  if (!isGemEnabled(item.type)) return '此寶石已關閉，無法購買';
+  if (!item || item.sold) return STR(1541);
+  if (!isGemEnabled(item.type)) return STR(1542);
   var price = gemShopPrice(item.lv);
-  if (G.player.gold < price) return '金幣不足（需 ' + fmt(price) + '）';
+  if (G.player.gold < price) return STR(1539, fmt(price));
   G.player.gold -= price;
   item.sold = true;
   addGem(item.type, item.lv, 1);
@@ -449,20 +450,20 @@ function normalizeTwoHandItemCounts(it) {
 }
 // 鑲嵌：從庫存取一顆該種類最高等級的寶石放入第一個空槽（含 6~10 階神鑄寶石）
 function socketGem(it, type, index, level) {
-  if (!isGemEnabled(type)) return '此寶石已關閉或不存在，無法鑲嵌';
+  if (!isGemEnabled(type)) return STR(1467);
   ensureSockets(it);
   var idx = index == null ? it.sockets.indexOf(null) : index;
-  if (!Number.isInteger(idx) || idx < 0 || idx >= it.sockets.length) return '沒有可用鑲孔';
-  if (it.sockets[idx] !== null) return '此鑲孔已有寶石';
-  if (!GEM_TYPES[type]) return '沒有這種寶石';
+  if (!Number.isInteger(idx) || idx < 0 || idx >= it.sockets.length) return STR(1543);
+  if (it.sockets[idx] !== null) return STR(1544);
+  if (!GEM_TYPES[type]) return STR(1545);
   var lv = 0;
   if (level != null) {
-    if (!Number.isInteger(level) || level < 1 || level > GEM_FORGE_MAX_LEVEL) return '無效寶石階級';
+    if (!Number.isInteger(level) || level < 1 || level > GEM_FORGE_MAX_LEVEL) return STR(1469);
     if (gemCount(type, level) > 0) lv = level;
   } else {
     for (var l = GEM_FORGE_MAX_LEVEL; l >= 1; l--) { if (gemCount(type, l) > 0) { lv = l; break; } }
   }
-  if (!lv) return '沒有這種寶石';
+  if (!lv) return STR(1545);
   addGem(type, lv, -1);
   it.sockets[idx] = { type: type, level: lv };
   markStatsDirty();
@@ -470,13 +471,13 @@ function socketGem(it, type, index, level) {
 }
 // 鑲嵌融合寶石（從 fusedGems 庫存移入插槽）
 function socketFusedGem(it, fusedId, index) {
-  if (!isFusedGemEnabled(findFusedGem(fusedId))) return '融合寶石含已關閉種類或不存在，無法鑲嵌';
+  if (!isFusedGemEnabled(findFusedGem(fusedId))) return STR(1546);
   ensureSockets(it);
   var idx = index == null ? it.sockets.indexOf(null) : index;
-  if (!Number.isInteger(idx) || idx < 0 || idx >= it.sockets.length) return '沒有可用鑲孔';
-  if (it.sockets[idx] !== null) return '此鑲孔已有寶石';
+  if (!Number.isInteger(idx) || idx < 0 || idx >= it.sockets.length) return STR(1543);
+  if (it.sockets[idx] !== null) return STR(1544);
   var fg = removeFusedGem(fusedId);
-  if (!fg) return '找不到該融合寶石';
+  if (!fg) return STR(1531);
   it.sockets[idx] = { fused: fg };
   markStatsDirty();
   UI.dirty.gems = true;
@@ -654,23 +655,23 @@ function enchantCatForType(type) {
 }
 // 附魔：消耗 1 本書 + 精華；同類附魔僅可升級為更高數值。回傳 null=成功
 function manualEnchant(it, bookKey) {
-  if (!ENCHANT_ENABLED) return '附魔功能已關閉（由符文取代）';
+  if (!ENCHANT_ENABLED) return STR(1121);
   var e = ENCHANTS[bookKey];
-  if (!e) return '未知附魔書';
-  if ((G.player.books[bookKey] || 0) < 1) return '沒有「' + e.name + '」書';
+  if (!e) return STR(1122);
+  if ((G.player.books[bookKey] || 0) < 1) return STR(1123, e.name);
   var cat = enchantCatForType(it.slot);
   if (e.cat !== cat) {
-    var catNames = { atk: '攻擊', def: '防禦', util: '功能' };
-    return SLOT_INFO[it.slot].name + '只能使用' + catNames[cat] + '類附魔';
+    var catNames = { atk: STR(71), def: STR(72), util: STR(1124) };
+    return STR(1125, SLOT_INFO[it.slot].name, catNames[cat]);
   }
-  if (G.player.essence < ENCHANT_ESSENCE_COST) return '附魔精華不足（需 ' + ENCHANT_ESSENCE_COST + '）';
+  if (G.player.essence < ENCHANT_ESSENCE_COST) return STR(1126, ENCHANT_ESSENCE_COST);
   var ens = itemEnchants(it);
   var same = null;
   for (var i = 0; i < ens.length; i++) if (ens[i].key === bookKey) { same = ens[i]; break; }
   if (same) {
-    if (enchantValueFor(it, bookKey, 0) <= enchantValue(it, same)) return '已有同類附魔且數值不會提升';
+    if (enchantValueFor(it, bookKey, 0) <= enchantValue(it, same)) return STR(1127);
   } else if (ens.length >= enchantCapFor(it)) {
-    return '附魔欄已滿（點擊既有附魔可取下）';
+    return STR(1128);
   }
   G.player.books[bookKey]--;
   G.player.essence -= ENCHANT_ESSENCE_COST;
@@ -698,9 +699,9 @@ function removeEnchantAt(it, idx) {
 
 function rerollResourceError(cost) {
   var missing = [];
-  if (G.player.gold < cost.gold) missing.push('金幣 ' + fmt(cost.gold));
-  if (G.player.essence < cost.essence) missing.push('精華 ' + cost.essence);
-  return missing.length ? '資源不足（需要 ' + missing.join('、') + '）' : null;
+  if (G.player.gold < cost.gold) missing.push(STR(73, fmt(cost.gold)));
+  if (G.player.essence < cost.essence) missing.push(STR(1129, cost.essence));
+  return missing.length ? STR(1130, missing.join('、')) : null;
 }
 function consumeRerollResources(cost) {
   G.player.gold -= cost.gold;
@@ -722,7 +723,7 @@ function enchantLine(it, en) {
   var val = en.key === 'loot' ? effectiveDropRateEffect(raw) : raw;
   // 六系抗性附魔＝獨立乘區，顯示為「XX屬性抗性額外+N%」
   if (ENCHANT_RES_MAP[en.key]) {
-    return e.emoji + ' ' + e.name.replace('抗性', '屬性抗性') + '額外+' + pctStr(val);
+    return STR(1131, e.emoji, e.name.replace('抗性', '屬性抗性'), pctStr(val));
   }
   var vs = (e.cat === 'atk') ? '+' + fmt(val) : '+' + pctStr(val);
   return e.emoji + ' ' + e.name + ' ' + vs;
@@ -737,29 +738,28 @@ function enchantLine(it, en) {
    洗煉模式只渲染屬性選取，費用與執行按鈕由 UI 裝備操作列處理。 */
 function itemSocketHTML(it, mode) {
   var sockets = Array.isArray(it.sockets) ? it.sockets : [];
-  var h = '<div class="it-sockets">' + (mode ? '' : '<div class="it-sockets-title">寶石鑲孔</div>');
+  var h = '<div class="it-sockets">' + (mode ? '' : '<div class="it-sockets-title">' + STR(1132) + '</div>');
   for (var si = 0; si < sockets.length; si++) {
     var g = sockets[si], text;
-    if (g && g.fused) text = (si + 1) + '. ' + fusedGemIconHTML(g.fused, 'gi-inline') + ' ' + esc('融合寶石（' + fusedGemStatText(g.fused) + '）');
+    if (g && g.fused) text = (si + 1) + '. ' + fusedGemIconHTML(g.fused, 'gi-inline') + ' ' + esc(STR(1133, fusedGemStatText(g.fused)));
     else if (g && GEM_TYPES[g.type]) {
       var gt = GEM_TYPES[g.type];
       text = '<span class="sk-name">' + (si + 1) + '. ' + gemIconHTML(g.type, g.level, 'gi-inline') + ' ' + esc(GEM_NAMES[g.level] + gt.name) + '</span>' +
         '<span class="sk-val">' + esc(gt.statName.replace('%', '')) + ' +' +
         (gt.pct ? pctStr(gemStatValue(g.type, g.level)) : fmt(gemStatValue(g.type, g.level))) + '</span>';
-    } else text = '◇ 寶石鑲孔 ' + (si + 1) + '（空）';
+    } else text = STR(1134, (si + 1));
     var cls = 'socket ' + (g ? 'filled' + (g.fused ? ' fused-socket' : '') : 'empty');
     if (mode) {
       h += '<div class="' + cls + ' socket-row' + (mode.selIdx === si ? ' is-socket-selected' : '') + '">' +
         '<button type="button" class="socket-pick" data-socket-pick="' + si + '" aria-pressed="' + (mode.selIdx === si) + '"' +
         (mode.pending ? ' disabled' : '') + '>' + text + '</button>';
-      if (g) h += '<button type="button" class="socket-remove" data-socket-remove="' + si + '" aria-label="卸下寶石鑲孔 ' + (si + 1) + ' 的寶石"' +
-        (mode.pending ? ' disabled' : '') + '>卸下</button>';
+      if (g) h += '<button type="button" class="socket-remove" data-socket-remove="' + si + '" aria-label="' + STR(1135, (si + 1)) + '"' + (mode.pending ? ' disabled' : '') + '>' + STR(74) + '</button>';
       h += '</div>';
     } else {
       h += '<span class="' + cls + '">' + text + '</span>';
     }
   }
-  if (!sockets.length) h += '<div class="equip-material-empty">此裝備沒有寶石鑲孔</div>';
+  if (!sockets.length) h += '<div class="equip-material-empty">' + STR(1136) + '</div>';
   return h + '</div>';
 }
 
@@ -781,12 +781,11 @@ function itemRuneHTML(it, mode) {
   if (typeof rwSlots !== 'function') return '';
   var slots = rwSlots(it);
   if (!slots.length) {
-    return mode ? '<div class="it-sockets it-runes"><div class="equip-material-empty">這件裝備沒有符文孔（孔數依稀有度而定，一般裝備最多 ' +
-      rwRegularMaxSlots() + ' 孔，雙手武器可能更多）。</div></div>' : '';
+    return mode ? '<div class="it-sockets it-runes"><div class="equip-material-empty">' + STR(1642, rwRegularMaxSlots()) + '</div></div>' : '';
   }
   var rwAct = rwActiveWord(it);
   var filled = slots.filter(Boolean).length;
-  var h = '<div class="it-sockets it-runes">' + (mode ? '' : '<div class="it-sockets-title">符文孔 ' + filled + '／' + slots.length + '</div>');
+  var h = '<div class="it-sockets it-runes">' + (mode ? '' : '<div class="it-sockets-title">' + STR(1643, filled, slots.length) + '</div>');
   for (var i = 0; i < slots.length; i++) {
     var id = slots[i];
     var draftId = (!id && mode && mode.draft && mode.draft[i] && RUNE_BY_ID[mode.draft[i]]) ? mode.draft[i] : null;
@@ -797,7 +796,7 @@ function itemRuneHTML(it, mode) {
     var text = shown
       ? '<span class="sk-name">' + (i + 1) + '. ' + icon + ' ' + esc(runeLabel(shown)) + '</span>' +
         '<span class="sk-val">' + esc(rwRuneStatLine(it, shown)) + '</span>'
-      : '◇ 符文孔 ' + (i + 1) + '（空）';
+      : STR(1644, (i + 1));
     var cls = 'socket ' + (shown ? 'filled rune-socket' + (inWord ? ' runeword-socket' : '') + (draftId ? ' is-draft' : '') : 'empty');
     if (!mode) {
       h += '<span class="' + cls + '">' + text + '</span>';
@@ -808,19 +807,14 @@ function itemRuneHTML(it, mode) {
       (mode.pending ? ' disabled' : '') + '>' + text + '</button>';
     if (id) {
       var cost = runeEraseCost(it, id);
-      h += '<button type="button" class="socket-remove" data-rune-erase="' + i + '" aria-label="抹除符文孔 ' + (i + 1) + ' 的符文" data-tip="' +
-        esc('抹除：消耗 ' + runeEraseCostText(cost) + '；符文不會退還，孔恢復為空') + '"' +
-        (mode.pending ? ' disabled' : '') + '>抹除</button>';
+      h += '<button type="button" class="socket-remove" data-rune-erase="' + i + '" aria-label="' + STR(1645, (i + 1)) + '" data-tip="' + esc(STR(1646, runeEraseCostText(cost))) + '"' + (mode.pending ? ' disabled' : '') + '>' + STR(75) + '</button>';
     } else if (draftId) {
-      h += '<button type="button" class="socket-remove" data-rune-undraft="' + i + '" aria-label="取消符文孔 ' + (i + 1) + ' 的暫放符文"' +
-        (mode.pending ? ' disabled' : '') + '>取消</button>';
+      h += '<button type="button" class="socket-remove" data-rune-undraft="' + i + '" aria-label="' + STR(1647, (i + 1)) + '"' + (mode.pending ? ' disabled' : '') + '>' + STR(76) + '</button>';
     }
     h += '</div>';
   }
   if (rwAct) {
-    h += '<div class="it-runeword" style="--rw-c:' + RUNEWORD_TIER_COLORS[rwAct.word.tier] + '">' +
-      '<div class="it-runeword-name">✨ 符文真言【' + esc(rwAct.word.name) + '】<span class="it-runeword-tier">' +
-      esc(RUNEWORD_TIER_NAMES[rwAct.word.tier]) + '</span></div>';
+    h += '<div class="it-runeword" style="--rw-c:' + RUNEWORD_TIER_COLORS[rwAct.word.tier] + '"><div class="it-runeword-name">' + STR(1648, esc(rwAct.word.name)) + '<span class="it-runeword-tier">' + esc(RUNEWORD_TIER_NAMES[rwAct.word.tier]) + '</span></div>';
     rwDescribeEntries(rwAct.word, it).forEach(function (e) {
       h += '<div class="it-runeword-line"' + (e.color ? ' style="color:' + e.color + '"' : '') + '>' + esc(e.text) + '</div>';
     });
@@ -839,7 +833,7 @@ function itemHeaderHTML(it, opts) {
 
   // 詞條池內容保留為隱藏模板，點擊按鈕時會搬到 body 層的獨立浮層，避免被詳情捲軸裁切。
   var poolHtml = '<div class="it-pool-box" aria-hidden="true">';
-  poolHtml += '<div class="it-pool-title">可能出現的詞條：</div>';
+  poolHtml += '<div class="it-pool-title">' + STR(1137) + '</div>';
   for (var k in AFFIX_POOL) {
     var d = AFFIX_POOL[k];
     if (typeof affixIsAllLocked === 'function' && affixIsAllLocked(k)) continue;
@@ -863,29 +857,27 @@ function itemHeaderHTML(it, opts) {
   poolHtml += '</div>';
 
   var wdet = (typeof weaponDef === 'function') ? weaponDef(it) : null; // 武器類型（非武器＝null）
-  var lockBtnHtml = '<button type="button" class="btn btn-it-lock' + (it.locked ? ' locked' : '') + '" data-act="lock" title="' + (it.locked ? '已鎖定（點擊解鎖）' : '未鎖定（點擊鎖定）') + '" aria-label="' + (it.locked ? '解鎖' : '鎖定') + '">' +
+  var lockBtnHtml = '<button type="button" class="btn btn-it-lock' + (it.locked ? ' locked' : '') + '" data-act="lock" title="' + (it.locked ? STR(1138) : STR(1139)) + '" aria-label="' + (it.locked ? STR(1140) : STR(1141)) + '">' +
     '<svg viewBox="0 0 24 24" class="it-lock-svg" aria-hidden="true">' +
     '<rect x="4" y="10" width="16" height="12" rx="2" ry="2"></rect>' +
     '<path d="' + (it.locked ? 'M7 10V7a5 5 0 0 1 10 0v3' : 'M7 10V7a5 5 0 0 1 9.5-2.2') + '"></path>' +
     '</svg>' +
     '</button>';
   var headActionsHtml = '<span class="it-head-actions">' +
-    (opts.isEquipped ? '<span class="equipped-tag">現有</span>' : '') +
+    (opts.isEquipped ? STR(1142) : '') +
     lockBtnHtml +
-    (showAffixReroll ? '<button type="button" class="btn-it-pool" data-affix-pool-toggle aria-label="查看可能詞條">!</button>' + poolHtml : '') +
+    (showAffixReroll ? '<button type="button" class="btn-it-pool" data-affix-pool-toggle aria-label="' + STR(1143) + '">!</button>' + poolHtml : '') +
     '</span>';
 
   var h = '<div class="it-name" style="position:relative; color:' + r.color + '">' +
     (wdet ? wdet.emoji : SLOT_INFO[it.slot].emoji) + ' ' + esc(it.name) +
     (it.upgrade ? ' <span class="it-up' + ((opts && opts.justUpgraded) ? ' upgrade-pop' : '') + '">+' + it.upgrade + '</span>' : '') +
-    (it.synthesized ? ' <span class="it-syn">✦合成</span>' : '') +
+    (it.synthesized ? ' ' + STR(1144) : '') +
     headActionsHtml +
     '</div>';
 
-  h += '<div class="it-sub"><span>' + r.name + '・' +
-    ((typeof itemTypeLabel === 'function') ? itemTypeLabel(it) : SLOT_INFO[it.slot].name) + '・' +
-    '<span class="it-level" style="color:' + levelRarity.color + '">等級 ' + it.level + '</span>';
-  return h + '</span><span class="it-score it-score-sub">評分 ' + fmt(curScore) + '</span></div>';
+  h += '<div class="it-sub"><span>' + STR(1145, r.name, ((typeof itemTypeLabel === 'function') ? itemTypeLabel(it) : SLOT_INFO[it.slot].name)) + '<span class="it-level" style="color:' + levelRarity.color + '">' + STR(1146, it.level) + '</span>';
+  return '' + h + '</span>' + STR(1147, fmt(curScore)) + '</div>';
 }
 
 function itemDetailHTML(it, cmp, opts) {
@@ -934,8 +926,8 @@ function itemDetailHTML(it, cmp, opts) {
     var maxDisplay = def.pct ? pctStr(limits.max * um * limitMult) : fmt(limits.max * um * limitMult);
     var isAncient = !!it.affixes[i].ancient;
     var limitTip = isAncient
-      ? '太古詞條：位置產出時決定、永久固定；數值必為詞條最大值 × 太古倍率，洗煉只變換詞條種類'
-      : '洗煉區間：' + minDisplay + ' ~ ' + maxDisplay;
+      ? STR(1148)
+      : STR(1149, minDisplay, maxDisplay);
 
     var valColor = isMax ? '#fbbf24' : '';
     var valHtml = '<span' + (valColor ? ' style="color:' + valColor + ';font-weight:bold"' : '') + '>' + (def.pct ? pctStr(vCur) : fmt(vCur)) + '</span>';
@@ -954,7 +946,7 @@ function itemDetailHTML(it, cmp, opts) {
     var lineStyle = (vCmp === 0 && cmp && !isAncient) ? 'color: #4ade80;' : '';
     var catClass = ' afx-' + affixCat(k);   // 詞條分類分色（基礎紫/進攻粉/防禦青/功能綠）
     if (isAncient) catClass += ' ancient-affix';
-    var marker = isAncient ? '<span class="ancient-star" aria-label="太古詞條">✡</span>' : '◆';
+    var marker = isAncient ? '<span class="ancient-star" aria-label="' + STR(1150) + '">✡</span>' : '◆';
     if (showAffixReroll) {
       var rowClass = rerollActive ? ' is-reroll-pickable' + (rrSelected ? ' is-reroll-selected' : '') : '';
       h += '<div class="it-affix-row it-affix' + catClass + rowClass + '" style="' + lineStyle + '">' +
@@ -1007,7 +999,7 @@ function itemDetailHTML(it, cmp, opts) {
       if (!gd) return;
       var gv = godPassiveValue(gp, it);
       var gpDesc = gp.key === 'greed'
-        ? '金幣加成與掉寶率提高 ' + fmt1(gv) + '%／' + fmt1(effectiveDropRateEffect(gv)) + '%'
+        ? STR(1151, fmt1(gv), fmt1(effectiveDropRateEffect(gv)))
         : esc(gd.desc).replace('{v}', fmt1(gv));
       h += '<div class="it-godpassive">【' + esc(gd.name) + '】' + gpDesc + '</div>';
     });
@@ -1033,7 +1025,7 @@ function itemDetailHTML(it, cmp, opts) {
       if (!e) return;
       if (!cmp) {
         var canRemove = !!(opts.enchant && opts.enchant.active);
-        var removeAttrs = canRemove ? ' data-enchant-remove="' + enIdx + '" data-tip="點擊取下（返還附魔書，精華不退）"' : '';
+        var removeAttrs = canRemove ? ' data-enchant-remove="' + enIdx + '" data-tip="' + STR(1152) + '"' : '';
         h += '<div class="it-enchant' + (canRemove ? ' removable' : '') + '"' + removeAttrs + '>' + esc(enchantLine(it, en)) + '</div>';
       } else if (!(en.key in cmpEnMap)) {
         h += '<div class="it-enchant" style="color: #4ade80">' + esc(enchantLine(it, en)) + '</div>';
@@ -1098,7 +1090,7 @@ function rerollSingleAffix(it, affixKey) {
       used[it.affixes[i].key] = true;
     }
   }
-  if (targetIdx < 0) return '找不到指定的屬性';
+  if (targetIdx < 0) return STR(1153);
 
   var pool = [];
   for (var k in AFFIX_POOL) {
@@ -1111,7 +1103,7 @@ function rerollSingleAffix(it, affixKey) {
     pool.push([k, d.weight]);
   }
 
-  if (pool.length === 0) return '沒有其他可用的屬性';
+  if (pool.length === 0) return STR(1154);
 
   consumeRerollResources(cost);
 

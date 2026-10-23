@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* ============ 熔爐（正式版：品質勾選路由） ============
    原「新熔爐（測試版）」合併取代舊生產線的輸送帶/篩選節點/分解槽：
    掉落裝備一律經 pushConveyor（factory.js）進入 G.newForge.queue，
@@ -150,8 +151,8 @@ function addNewForgeFurnace() {
   var allowed = newForgeMaxFurnaces(reincarnationCount());
   if (nf.furnaces.length >= allowed) {
     return nf.furnaces.length >= NEW_FORGE_MAX
-      ? '熔爐數量已達上限（' + NEW_FORGE_MAX + ' 座）'
-      : '目前轉生可設 ' + allowed + ' 座熔爐（每 1 轉 +1 座，上限 ' + NEW_FORGE_MAX + '）';
+      ? STR(1391, NEW_FORGE_MAX)
+      : STR(1392, allowed, NEW_FORGE_MAX);
   }
   var previousFurnace = nf.furnaces[nf.furnaces.length - 1];
   nf.furnaces.push(newForgeDefaultFurnace(nf.nextId++, previousFurnace));
@@ -188,16 +189,16 @@ function findNewForgeFurnace(id) {
    其餘產量/事件類經 newForgeSalvage → doSalvage 套用。 ---- */
 function newForgeInstallPart(furnaceId, partKey) {
   var fu = findNewForgeFurnace(furnaceId);
-  if (!fu) return '找不到熔爐';
-  if (fu.parts.length >= fu.partSlots) return '零件格已滿（' + fu.parts.length + '/' + fu.partSlots + '，可用金幣解鎖）';
+  if (!fu) return STR(1393);
+  if (fu.parts.length >= fu.partSlots) return STR(1394, fu.parts.length, fu.partSlots);
   var pt = PART_TYPES[partKey];
-  if (!pt || pt.node !== 'salvage') return '此零件無法安裝到熔爐（僅限分解槽零件）';
+  if (!pt || pt.node !== 'salvage') return STR(1395);
   var levels = ensurePartLevels(G.factory);
   var level = partLevelFor(partKey, levels);
-  if (!level) return '此零件尚未解鎖';
+  if (!level) return STR(1396);
   fu.parts.push({ key: partKey });
   UI.dirty.newforge = true;
-  nflog('🔧 已裝配 ' + partName({ key: partKey, level: level }) + ' 至熔爐 #' + fu.id, 'good');
+  nflog(STR(1397, partName({ key: partKey, level: level }), fu.id), 'good');
   return null;
 }
 function newForgeUninstallPart(furnaceId, slotIdx) {
@@ -205,7 +206,7 @@ function newForgeUninstallPart(furnaceId, slotIdx) {
   if (!fu || !fu.parts[slotIdx]) return false;
   var removed = fu.parts.splice(slotIdx, 1)[0];
   UI.dirty.newforge = true;
-  nflog('🔧 已卸下 ' + partName(removed) + '（熔爐 #' + fu.id + '）', 'info');
+  nflog(STR(1398, partName(removed), fu.id), 'info');
   return true;
 }
 // 該熔爐零件加成：同類型格位堆疊，數值取 factory.partLevels 的目前等級。
@@ -231,19 +232,19 @@ function newForgePartBonus(fu, key) {
 
 function newForgeUpgradePart(partKey) {
   var pt = PART_TYPES[partKey];
-  if (!pt) return '未知零件';
+  if (!pt) return STR(1399);
   var levels = ensurePartLevels(G.factory);
   var current = partLevelFor(partKey, levels);
-  if (current >= PART_MAX_TIER) return '零件已達上限 T' + PART_MAX_TIER;
+  if (current >= PART_MAX_TIER) return STR(1400, PART_MAX_TIER);
   var cost = partUpgradeCost(current + 1);
-  if (G.player.gold < cost) return '金幣不足（需要 ' + fmt(cost) + '）';
+  if (G.player.gold < cost) return STR(42, fmt(cost));
   G.player.gold -= cost;
   var nextLevel = current + 1;
   levels[partKey] = nextLevel;
   // 熔爐只保存零件 key；升級後效果由 factory.partLevels 即時計算，無需改寫熔爐存檔。
   UI.dirty.header = true;
   UI.dirty.newforge = true;
-  nflog('⬆️ ' + pt.name + ' 升級至 T' + (current + 1) + '，消耗金幣 ' + fmt(cost), 'good');
+  nflog(STR(1401, pt.name, (current + 1), fmt(cost)), 'good');
   return null;
 }
 // 熔爐入爐速度倍率：加速齒輪堆疊
@@ -255,15 +256,15 @@ function newForgeFurnaceSpeed(fu) {
 function unlockNewForgePartSlot(furnaceId) {
   var nf = newForgeState();
   var fu = findNewForgeFurnace(furnaceId);
-  if (!fu) return '找不到熔爐';
-  if (fu.partSlots >= NEW_FORGE_PART_SLOTS_MAX) return '零件格已達上限（' + NEW_FORGE_PART_SLOTS_MAX + ' 格）';
+  if (!fu) return STR(1393);
+  if (fu.partSlots >= NEW_FORGE_PART_SLOTS_MAX) return STR(1402, NEW_FORGE_PART_SLOTS_MAX);
   var cost = newForgePartSlotCost(reincarnationCount(), fu.partSlots, nf.furnaces.length);
-  if (G.player.gold < cost) return '金幣不足（需要 ' + fmt(cost) + '）';
+  if (G.player.gold < cost) return STR(42, fmt(cost));
   G.player.gold -= cost;
   fu.partSlots++;
   UI.dirty.header = true;
   UI.dirty.newforge = true;
-  nflog('🔓 熔爐 #' + fu.id + ' 零件格已擴充至 ' + fu.partSlots + '/' + NEW_FORGE_PART_SLOTS_MAX + '，消耗金幣 ' + fmt(cost), 'good');
+  nflog(STR(1403, fu.id, fu.partSlots, NEW_FORGE_PART_SLOTS_MAX, fmt(cost)), 'good');
   return null;
 }
 

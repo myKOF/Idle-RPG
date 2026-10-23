@@ -1,4 +1,5 @@
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -12,7 +13,7 @@ function loadFormula(randFn) {
   if (randFn) fakeMath.random = randFn;
   const context = { console, Math: fakeMath, window: {} };
   vm.createContext(context);
-  ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js'].forEach((f) => {
+  ['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js'].forEach((f) => {
     vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), context, { filename: f });
   });
   return context;
@@ -98,14 +99,14 @@ test('rollComboHits：0 或無效輸入回傳 0', () => {
 });
 
 test('computeStats 派生 st.comboHits（原始碼接線）', () => {
-  const formula = fs.readFileSync(path.join(root, 'js/formula.js'), 'utf8');
+  const formula = readExpanded(path.join(root, 'js/formula.js'));
   assert.match(formula, /st\.comboHits = comboHitsTotal\(st\.critRate, /);
   assert.match(formula, /function comboHitsFor\(critRate\)/);
   assert.match(formula, /function rollComboHits\(st\)/);
 });
 
 test('combat.js 普攻追加連擊段（僅主攻擊、遞迴 depth）', () => {
-  const combat = fs.readFileSync(path.join(root, 'js/combat.js'), 'utf8');
+  const combat = readExpanded(path.join(root, 'js/combat.js'));
   // 新版技能【狂化連殺】（2026-08-14）：擲骰帶入 skill2ComboBonus 加成，未啟用時原樣走 st
   assert.match(combat, /skill2ComboBonus/);
   assert.match(combat, /rollComboHits\(comboBonus > 0 \? \{ comboHits: \(st\.comboHits \|\| 0\) \+ comboBonus \} : st\)/);
@@ -114,7 +115,7 @@ test('combat.js 普攻追加連擊段（僅主攻擊、遞迴 depth）', () => {
 });
 
 test('data.js 連擊數常數與面板列', () => {
-  const data = fs.readFileSync(path.join(root, 'js/data.js'), 'utf8');
+  const data = readExpanded(path.join(root, 'js/data.js'));
   assert.match(data, /COMBO_HITS_COEF = \{/);
   assert.match(data, /每次攻擊命中時有25%機率造成額外攻擊次數/);
   assert.match(data, /暴擊率、攻擊速度、冷卻縮減溢出上限時將會轉為增加連擊數/);

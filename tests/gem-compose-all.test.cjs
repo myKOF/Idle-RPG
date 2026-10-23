@@ -1,4 +1,5 @@
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -9,7 +10,7 @@ function loadGameContext() {
   const context = { console, UI: { dirty: {} } };
   context.window = context;
   vm.createContext(context);
-  ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/item.js'].forEach((file) => {
+  ['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/item.js'].forEach((file) => {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });
   return context;
@@ -25,8 +26,8 @@ function makeGemInventory(gemTypes) {
 
 test('移除全部類型合成介面，舊指令仍逐種類處理、不混合種類', () => {
   const root = path.resolve(__dirname, '..');
-  const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
-  const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const ui = readExpanded(path.join(root, 'js/ui.js'));
+  const index = readExpanded(path.join(root, 'index.html'));
   assert.doesNotMatch(index, /id="fuse-alltypes-btn"/);
   assert.doesNotMatch(ui, /fuse-alltypes-btn|全部類型合計可合成/);
 
@@ -58,8 +59,8 @@ test('寶石合成改為 3 合 1，兩顆不足且不扣除資源', () => {
 
 test('合成頁沒有種類與等級下拉：種類取自寶石庫的選擇，階級取自十階列的點擊', () => {
   const root = path.resolve(__dirname, '..');
-  const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
-  const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const ui = readExpanded(path.join(root, 'js/ui.js'));
+  const index = readExpanded(path.join(root, 'index.html'));
   assert.doesNotMatch(index, /id="fuse-type"|id="fuse-level"/, '合成頁不該再有種類／等級下拉');
   assert.doesNotMatch(ui, /\$id\('fuse-type'\)|\$id\('fuse-level'\)/);
   // 下拉選單的「全部類型寶石」選項已移除（轉換目標與拆解的種類下拉不需要它）
@@ -76,7 +77,7 @@ test('合成頁沒有種類與等級下拉：種類取自寶石庫的選擇，�
 
 test('合成配方逐顆顯示原料與金幣箭頭，所有階級均可直接合成，十階是最高階', () => {
   const root = path.resolve(__dirname, '..');
-  const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
+  const ui = readExpanded(path.join(root, 'js/ui.js'));
   const context = loadGameContext();
   context.esc = (v) => String(v);
   context.fmt = (v) => String(v);
@@ -137,11 +138,11 @@ test('合成鏈等值保留，一般拆解無損回前階，舊融合拆解維�
 
 test('寶石合成介面與紀錄使用共用逐階配方，寶石頁只保留四種工具', () => {
   const root = path.resolve(__dirname, '..');
-  const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
-  const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const ui = readExpanded(path.join(root, 'js/ui.js'));
+  const index = readExpanded(path.join(root, 'index.html'));
 
   assert.match(ui, /Math\.floor\(n \/ needed\)/);
-  const workshop = fs.readFileSync(path.join(root, 'js/ui-gem-workshop.js'), 'utf8');
+  const workshop = readExpanded(path.join(root, 'js/ui-gem-workshop.js'));
   assert.match(workshop, /gemComposeInputCount\(lv\)/);
   assert.match(workshop, /all \? 'gem\.composeAll' : 'gem\.compose'/);
   assert.deepEqual([...index.matchAll(/data-gem-tool-btn="([^"]+)"/g)].map(m=>m[1]),['compose','convert','dismantle','resonance']);
@@ -150,7 +151,7 @@ test('寶石合成介面與紀錄使用共用逐階配方，寶石頁只保留�
 
 test('Worker 全部合成選「全部類型寶石」時，紀錄文字不查 GEM_TYPES（合成完成卻拋例外）', () => {
   const root = path.resolve(__dirname, '..');
-  const worker = fs.readFileSync(path.join(root, 'js/worker/sim.worker.js'), 'utf8');
+  const worker = readExpanded(path.join(root, 'js/worker/sim.worker.js'));
   const key = "'gem.composeAll': ";
   const fnStart = worker.indexOf(key) + key.length;
   const fnEnd = worker.indexOf('\n  },', fnStart) + 4;

@@ -34,7 +34,7 @@ function loadContext(files) {
 
 function loadLegendaryContext() {
   const context = loadContext([
-    'js/util.js',
+    'js/util.js', 'js/strings_data.js', 'js/strings.js',
     'js/data.js',
     'js/status.js', 'js/formula.js', 'js/battlefield.js',
     'js/combat.js',
@@ -82,7 +82,7 @@ const REMOVED_LEGACY_SKILL_LEGENDARIES = [
 ];
 
 test('附檔保留的 13 個效果皆進入傳奇特效池，並保留正確武器類型限制；18 個舊技能專屬詞條已移除', () => {
-  const context = loadContext(['js/util.js', 'js/data.js']);
+  const context = loadContext(['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js']);
   assert.equal(Object.keys(IMPORTED_LEGENDARIES).length, 13);
   assert.equal(REMOVED_LEGACY_SKILL_LEGENDARIES.length, 18);
   Object.entries(IMPORTED_LEGENDARIES).forEach(([id, [name, weaponType]]) => {
@@ -129,7 +129,7 @@ test('附檔保留的 13 個傳奇特效皆有執行期路由，戰鬥主流程�
 });
 
 test('傳奇特效只會進入指定武器類型的隨機池', () => {
-  const context = loadContext(['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js', 'js/item.js']);
+  const context = loadContext(['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js', 'js/item.js']);
   const dagger = { kind: 'equip', slot: 'weapon', weaponType: 'dagger1h' };
   const axe = { kind: 'equip', slot: 'weapon', weaponType: 'axe2h' };
   const chest = { kind: 'equip', slot: 'chest' };
@@ -204,7 +204,7 @@ test('關聯技能都對應新版技能群組（SKILLS2），且不再有觸發�
   const context = loadLegendaryContext();
   /* 2026-09-29：舊技能表（SKILLS）已整個刪除，relatedSkill 只可能指向新版技能群組（SKILLS2）。
      「必須指到某一個真的存在的技能」這條不變式保留，否則傳奇進化那 115 個特效等於沒被檢查。 */
-  const sg2 = loadContext(['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js',
+  const sg2 = loadContext(['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/status.js', 'js/formula.js',
     'js/battlefield.js', 'js/combat.js', 'js/skills.js', 'js/skills2.js']);
   const sg2Ids = new Set(Object.keys(sg2.SKILLS2));
   assert.ok(sg2Ids.has('thrust') && sg2Ids.has('cleave'), '應能載入 SKILLS2 的群組 id');

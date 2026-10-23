@@ -1,13 +1,14 @@
 'use strict';
 
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
-const ui = fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8');
+const ui = readExpanded(path.join(root, 'js', 'ui.js'));
 const css = fs.readFileSync(path.join(root, 'css', 'style.css'), 'utf8');
 
 function functionBody(name) {

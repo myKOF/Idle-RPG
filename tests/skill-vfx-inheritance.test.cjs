@@ -1,5 +1,6 @@
 'use strict';
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -8,7 +9,7 @@ const root = path.resolve(__dirname, '..');
 const keys = ['cast', 'attack', 'projectile', 'hit', 'ground', 'field'];
 function load() {
   const c = vm.createContext({ console, Math });
-  for (const f of ['battlefield', 'skills2']) vm.runInContext(fs.readFileSync(path.join(root, 'js', f + '.js'), 'utf8'), c);
+  for (const f of ['battlefield', 'skills2']) vm.runInContext(readExpanded(path.join(root, 'js', f + '.js')), c);
   c.skills2Levels = () => [1, 1, 1, 1, 1, 1, 1];
   c.skills2Ult = () => null;
   return c;

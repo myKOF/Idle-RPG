@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* 熔爐純顯示層：按裝備ID保留DOM、插補輸送帶位置；Canvas程序火焰不使用素材或Preset。 */
 var NewForgeVisuals = (function () {
   var states = [], frame = null;
@@ -164,7 +165,7 @@ var NewForgeVisuals = (function () {
       node.innerHTML = '';
       state.empty = document.createElement('span');
       state.empty.className = 'nf-belt-empty dim-text';
-      state.empty.textContent = '（傳送帶空）'; node.appendChild(state.empty);
+      state.empty.textContent = STR(1408); node.appendChild(state.empty);
       state.entries.forEach(function (entry) { node.appendChild(entry.node); });
       var canvas = node.parentNode.querySelector('.nf-mouth-canvas');
       state.context = canvas ? canvas.getContext('2d') : null;

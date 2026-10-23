@@ -1,4 +1,5 @@
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -24,8 +25,9 @@ function loadHintFn(furnace) {
 
   const context = { console };
   vm.createContext(context);
+  for (const f of ['js/strings_data.js', 'js/strings.js']) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), context, { filename: f });
   // 稀有度表是真的，名稱若改動測試會跟著改動
-  vm.runInContext(fs.readFileSync(path.join(root, 'js/data.js'), 'utf8'), context,
+  vm.runInContext(readExpanded(path.join(root, 'js/data.js')), context,
     { filename: 'js/data.js' });
   context.G = { player: { newForge: { furnaces: furnace ? [furnace] : [] } } };
   vm.runInContext(fnSrc, context, { filename: 'defaultSalvageHintText' });
@@ -43,7 +45,7 @@ test('新手提示的品質範圍等於 1 號熔爐的實際預設，不是寫�
   // 用真正的 newForgeDefaultFurnace 產生預設爐，避免文案與預設值各自漂移
   const simCtx = { console, window: {} };
   vm.createContext(simCtx);
-  ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/item.js', 'js/player.js'].forEach((f) => {
+  ['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/item.js', 'js/player.js'].forEach((f) => {
     vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), simCtx, { filename: f });
   });
   const defaultFurnace = simCtx.newForgeDefaultFurnace(1);

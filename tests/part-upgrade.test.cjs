@@ -30,7 +30,7 @@ function loadContext(files) {
 }
 
 const LOGIC_FILES = [
-  'js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/item.js',
+  'js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/item.js',
   'js/player.js', 'js/factory.js', 'js/newforge.js'
 ];
 

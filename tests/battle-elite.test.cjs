@@ -2,6 +2,7 @@
 /* battle-elite.test.cjs — 菁英的畫面標記（js/battle-elite.js）。用一份假的 PIXI 驗：
    群組環、詞條圖示列、狀態光環、生命鏈結連線。畫得對不對靠實機，這裡驗「該畫的有畫、不該畫的沒畫、資料缺了不炸」。 */
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -32,8 +33,8 @@ class Text extends Container {
 function env() {
   const ctx = { console, PIXI: { Container, Graphics, Text }, module: { exports: {} } };
   vm.createContext(ctx);
-  ['js/data.js', 'js/skills2.js', 'js/elite_data.js'].forEach((f) => vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f }));
-  vm.runInContext(fs.readFileSync(path.join(root, 'js/battle-elite.js'), 'utf8'), ctx, { filename: 'js/battle-elite.js' });
+  ['js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/skills2.js', 'js/elite_data.js'].forEach((f) => vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f }));
+  vm.runInContext(readExpanded(path.join(root, 'js/battle-elite.js')), ctx, { filename: 'js/battle-elite.js' });
   return ctx;
 }
 function ent(id, data) {

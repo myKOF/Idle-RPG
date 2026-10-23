@@ -109,6 +109,24 @@ function extractLiteral(src, varName) {
   return { declStart, valueStart: m.index + m[0].length, close: i, end,
     header: src.slice(declStart, m.index + m[0].length), literal: src.slice(m.index + m[0].length, i + 1) };
 }
+// 資料字面值裡的 STR(編號)（顯示文字走 String 表）eval 時要解得出來：讀 js/strings_data.js 的繁體中文，與遊戲預設語言相同。
+// 找不到資料檔（例如測試用的暫存目錄）就回傳 [#編號]，不拋例外。
+let _strData = null;
+function STR(id, first) {
+  if (!_strData) {
+    try {
+      const ctx = {};
+      vm.createContext(ctx);
+      vm.runInContext(fs.readFileSync(path.join(ROOT, 'js', 'strings_data.js'), 'utf8'), ctx);
+      _strData = vm.runInContext('STRING_DATA', ctx);
+    } catch (e) { _strData = {}; }
+  }
+  const row = _strData[id];
+  if (!row) return '[#' + id + ']';
+  if (arguments.length < 2) return row[0];
+  const args = (arguments.length === 2 && first !== null && typeof first === 'object') ? first : Array.prototype.slice.call(arguments, 1);
+  return row[0].replace(/\{([A-Za-z0-9_]+)\}/g, (whole, key) => (args[key] === undefined ? whole : (args[key] === null ? '' : String(args[key]))));
+}
 // eval 純資料字面值（沙盒；僅提供資料檔會引用到的常數 ACCESSORY_SLOTS）
 function evalLiteral(literal) {
   const ACCESSORY_SLOTS = ['ring', 'amulet'];
@@ -1693,7 +1711,7 @@ function runeNoteEnv() {
   try {
     const ctx = { console, Math: Object.create(Math) };
     vm.createContext(ctx);
-    ['util.js', 'data.js', 'runeword_data.js', 'runeword.js'].forEach(f => {
+    ['util.js', 'strings_data.js', 'strings.js', 'data.js', 'runeword_data.js', 'runeword.js'].forEach(f => {
       vm.runInContext(readUtf8(path.join(ROOT, 'js', f)), ctx, { filename: f });
     });
     return ctx;
@@ -2068,7 +2086,7 @@ SCHEMAS.Zones = {
   name:'Zones',jsFile:'data',sheet:'地圖',noXlsxGen:true,vars:['ZONES','ZONE_LIST','REALMS'],
   header:['順序','地圖識別碼','地圖名稱','位面','關卡上限','前置地圖識別碼','前置通關關卡','最低轉生次數','生命倍率','攻擊倍率','防禦倍率','攻速倍率','經驗金幣獎勵倍率'],
   evaluate(literal) {
-    const scope={ZONE_ENEMY_TABLES:Object.fromEntries(NPC_POOL_DEFS.map(d=>[d.zone,d.zone]))};
+    const scope={STR,ZONE_ENEMY_TABLES:Object.fromEntries(NPC_POOL_DEFS.map(d=>[d.zone,d.zone]))};
     NPC_POOL_DEFS.forEach(d=>scope[d.varName]=d.varName);
     return vm.runInNewContext('('+literal+')',scope);
   },

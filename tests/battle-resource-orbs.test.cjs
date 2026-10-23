@@ -1,8 +1,9 @@
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
-const ui = fs.readFileSync('js/ui.js', 'utf8');
+const ui = readExpanded('js/ui.js');
 /* 圓瓶畫「正在打的那一場」的玩家（塔戰期間是 TOWER.player），取玩家的兩支小工具一起載入 */
 const source = ui.slice(ui.indexOf('function towerCombatActive('), ui.indexOf('function currentCombatPlayerEntity(')) +
   ui.slice(ui.indexOf('function renderBattleResourceOrbs()'), ui.indexOf('function renderBattle()'));
@@ -66,6 +67,6 @@ test('缺少 TICK 時使用 panel；新護盾超出舊容量不溢出瓶子', ()
 test('即時圓瓶更新在開啟 tooltip 刷新之前，技能列沿配置上限繪製', () => {
   assert.match(ui,/renderBattleResourceOrbs\(\);\s*refreshOpenResourceTooltip\(\);/);
   assert.match(ui.slice(ui.indexOf('function renderBattleSkillBar'),ui.indexOf('var CD_UPDATE_HZ')),/var TOTAL_SLOTS = LOADOUT_SIZE.max/);
-  const html=fs.readFileSync('index.html','utf8');
+  const html=readExpanded('index.html');
   assert.match(html,/id="battle-action-dock"[\s\S]*id="battle-xp-bar"[\s\S]*id="battle-buff-bar"[\s\S]*id="battle-skill-bar"/);
 });

@@ -1,4 +1,5 @@
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -20,7 +21,7 @@ test('已裝配的技能：清單顯示1px白色外框與已裝配標籤，右�
   );
 
   // 2. 驗證 ui.js 中清單標籤與卡片 class
-  const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
+  const ui = readExpanded(path.join(root, 'js/ui.js'));
 
   // 標籤文字為「已裝配」
   assert.match(ui, /equipped \? '已裝配' : ''/);
@@ -30,6 +31,6 @@ test('已裝配的技能：清單顯示1px白色外框與已裝配標籤，右�
   assert.match(ui, /equipped && !groupLocked \? ' is-eq' : ''/);
 
   // 詳情右上角卸下按鈕文字為「卸下」
-  assert.match(ui, /data-skill-unequip="' \+ ref \+ '"' \+ equipPendingAttrs \+ '>卸下<\/button>/);
+  assert.match(ui, /data-skill-unequip="' \+ ref \+ '"' \+ equipPendingAttrs \+ '>(?:卸下|' \+ '卸下' \+ ')<\/button>/);
   assert.ok(!ui.includes('>已裝上 · 卸下</button>'), '右上角卸下按鈕不得殘留 已裝上 · 卸下');
 });

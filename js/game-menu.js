@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* Esc暫停整體Worker與演出，設定返回仍保持暫停；存檔成功才允許離開。 */
 var GameMenu = (function () {
   var bound = false, busy = false, previousFocus = null;
@@ -69,9 +70,9 @@ var GameMenu = (function () {
     if (busy) return Promise.resolve(false);
     if (action === 'settings') { openSettings(); return Promise.resolve(true); }
     if (action !== 'reload' && action !== 'save' && action !== 'exit') return Promise.resolve(false);
-    setBusy(true); status('正在儲存…');
+    setBusy(true); status(STR(1941));
     return Promise.resolve().then(function () { return WorkerBridge.saveAutoNow(); }).then(function () {
-      status('已儲存至自動存檔');
+      status(STR(1942));
       if (action === 'reload') { location.reload(); return true; }
       if (typeof renderSaveList === 'function') renderSaveList();
       if (action === 'exit') { finishExit(); return true; }
@@ -79,7 +80,7 @@ var GameMenu = (function () {
       var button = el('game-menu-save'); if (button) button.focus();
       return true;
     }).catch(function (error) {
-      setBusy(false); status('存檔失敗：' + (error && error.message ? error.message : String(error)));
+      setBusy(false); status(STR(1943, (error && error.message ? error.message : String(error))));
       var button = el('game-menu-save'); if (button) button.focus();
       return false;
     });

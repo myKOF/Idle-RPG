@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* ============ 自動生產線（Automation Line） ============ */
 
 /* ---- 零件加成查詢 ---- */
@@ -42,14 +43,14 @@ function installPart(id, node) {
   if (!isFactoryNodeEnabled(node)) return false;
   var p = findPart(id);
   if (!p) return false;
-  if (!PART_TYPES[p.key] || PART_TYPES[p.key].node !== node) { flog('⚠️ ' + partName(p) + ' 無法安裝到' + NODE_NAMES[node], 'warn'); return false; }
+  if (!PART_TYPES[p.key] || PART_TYPES[p.key].node !== node) { flog(STR(1035, partName(p), NODE_NAMES[node]), 'warn'); return false; }
   if (isInstalled(id)) return false;
   var arr = G.factory.installed[node];
   if (arr.length >= slotsForNode(node)) {
     arr.shift(); // 擠掉最舊的（回到零件庫，本來就都在 parts 陣列中）
   }
   arr.push(id);
-  flog('🔧 已安裝 ' + partName(p) + ' 至 ' + NODE_NAMES[node], 'good');
+  flog(STR(1036, partName(p), NODE_NAMES[node]), 'good');
   UI.dirty.factory = true;
   return true;
 }
@@ -62,14 +63,14 @@ function uninstallPart(node, id) {
 // 分解槽擴充：依目前已解鎖格數支付金幣，上限見 data.js。
 function expandSalvageSlot() {
   var current = salvageSlotCount();
-  if (current >= SALVAGE_SLOT_MAX) return '分解槽已達上限（' + SALVAGE_SLOT_MAX + ' 格）';
+  if (current >= SALVAGE_SLOT_MAX) return STR(1037, SALVAGE_SLOT_MAX);
   var cost = salvageSlotUnlockCost(current);
-  if (G.player.gold < cost) return '金幣不足（需要 ' + fmt(cost) + '）';
+  if (G.player.gold < cost) return STR(42, fmt(cost));
   G.player.gold -= cost;
   G.factory.salvageSlots = current + 1;
   UI.dirty.header = true;
   UI.dirty.factory = true;
-  flog('🔓 分解槽已擴充至 ' + G.factory.salvageSlots + '/' + SALVAGE_SLOT_MAX + ' 格，消耗金幣 ' + fmt(cost), 'good');
+  flog(STR(1038, G.factory.salvageSlots, SALVAGE_SLOT_MAX, fmt(cost)), 'good');
   return null;
 }
 
@@ -88,14 +89,14 @@ function pushConveyor(item) {
   // 熔爐合併版：掉落裝備一律進入熔爐佇列（newforge.js），佇列滿載即丟棄（同舊輸送帶滿載規則）。
   if (typeof newForgeTryIntake === 'function' && G.newForge) {
     if (newForgeTryIntake(item)) return true;
-    flog('⚠️ 熔爐佇列已達 ' + fmt(NEW_FORGE_QUEUE_CAP) + ' 件上限，新裝備已丟棄', 'warn');
+    flog(STR(1039, fmt(NEW_FORGE_QUEUE_CAP)), 'warn');
     UI.dirty.newforge = true;
     return false;
   }
   // 後備：熔爐模組未載入（部分測試環境）時維持舊輸送帶流程。
   var f = G.factory;
   if (f.conveyor.length >= conveyorCap()) {
-    flog('⚠️ 輸送帶已達 ' + conveyorCap() + ' 件上限，新裝備已丟棄', 'warn');
+    flog(STR(1040, conveyorCap()), 'warn');
     UI.dirty.factory = true;
     return false;
   }
@@ -138,11 +139,11 @@ function doSalvage(it, silent, bonus) {
       if (sg && sg.fused) {
         if (!G.player.fusedGems) G.player.fusedGems = [];
         G.player.fusedGems.push(sg.fused);
-        if (!silent) flog('💎 取回融合寶石：' + fusedGemLabel(sg.fused), 'info');
+        if (!silent) flog(STR(1041, fusedGemLabel(sg.fused)), 'info');
         it.sockets[si] = null;
       } else if (sg && GEM_TYPES[sg.type]) {
         addGem(sg.type, sg.level, 1);
-        if (!silent) flog('💎 取回鑲嵌寶石：' + gemLabel(sg.type, sg.level), 'info');
+        if (!silent) flog(STR(1042, gemLabel(sg.type, sg.level)), 'info');
         it.sockets[si] = null;
       }
     }
@@ -150,7 +151,7 @@ function doSalvage(it, silent, bonus) {
   // 符文孔裡的符文（js/runeword.js）一併退回符文庫存
   if (typeof rwReclaimAllRunes === 'function') {
     var runeBack = rwReclaimAllRunes(it);
-    if (runeBack && !silent) flog('🔷 取回鑲嵌符文 ×' + runeBack, 'info');
+    if (runeBack && !silent) flog(STR(1043, runeBack), 'info');
   }
   // 基礎分解產出（精粹透鏡：提高附魔精華產出率）
   var res = salvageResult(it,
@@ -169,7 +170,7 @@ function doSalvage(it, silent, bonus) {
   // 產量倍率：碎片熔煉爐
   res.scrap = Math.max(1, Math.round(res.scrap * (1 + raw('scrapForge') / 100)));
   var extras = []; // 額外掉落 / 事件（記入日誌）
-  if (goldSluiceGold > 0) extras.push('淘金濾網額外金幣x' + fmt(goldSluiceGold));
+  if (goldSluiceGold > 0) extras.push(STR(1044, fmt(goldSluiceGold)));
 
   // 寶石採集器：成功時先保留掉落，等幸運之心判定後再一次入帳。
   var gemDrops = [];
@@ -200,7 +201,7 @@ function doSalvage(it, silent, bonus) {
     res.ancientEssence *= 3;
     xpGain *= 3;
     gemDrops.forEach(function (drop) { drop.count *= 3; });
-    extras.push('💖幸運之心：所有產物×3');
+    extras.push(STR(1045));
   }
 
   // 入帳（順序固定，日誌可完整列出本次所有實得產物）
@@ -215,7 +216,7 @@ function doSalvage(it, silent, bonus) {
   if (res.ancientEssence) {
     G.player.ancientEssence = (G.player.ancientEssence || 0) + res.ancientEssence;
     if (window.recordLootMat) window.recordLootMat('ancientEssence', res.ancientEssence, 'factory');
-    extras.push('<img src="images/icon_ancient_essence.png" class="res-icon" alt="太古精華">太古精華x' + res.ancientEssence);
+    extras.push('<img src="images/icon_ancient_essence.png" class="res-icon" alt="' + STR(13) + '">' + STR(1046, res.ancientEssence));
   }
 
   for (var gi = 0; gi < gemDrops.length; gi++) {
@@ -226,17 +227,17 @@ function doSalvage(it, silent, bonus) {
   }
   if (xpGain > 0) {
     gainXp(xpGain);
-    extras.push('📚經驗+' + fmt(xpGain));
+    extras.push(STR(1047, fmt(xpGain)));
   }
 
   G.factory.stats.salvaged++;
   UI.dirty.header = true;
   if (!silent) {
-    var outputs = ['碎片x' + fmt(res.scrap), '金幣x' + fmt(res.gold)];
-    if (res.essence) outputs.push('附魔精華x' + fmt(res.essence));
-    if (res.ancientEssence) outputs.push('太古精華x' + fmt(res.ancientEssence));
+    var outputs = [STR(1048, fmt(res.scrap)), STR(1049, fmt(res.gold))];
+    if (res.essence) outputs.push(STR(1050, fmt(res.essence)));
+    if (res.ancientEssence) outputs.push(STR(1046, fmt(res.ancientEssence)));
     if (extras.length) outputs.push.apply(outputs, extras);
-    flog('⚒️ 分解 ' + rarityTag(it) + ' → ' + outputs.join('、'), 'good');
+    flog(STR(1051, rarityTag(it), outputs.join('、')), 'good');
   }
   return res;
 }
@@ -272,7 +273,7 @@ function processOneConveyorItem() {
   if (act === 'synth' && !SYNTHESIS_ENABLED) act = 'keep';
   if (act === 'salvage') {
     if (isAutoSalvageProtected(it)) {
-      flog('🛡️ 自動分解保護：已保留 ' + rarityTag(it), 'warn');
+      flog(STR(1052, rarityTag(it)), 'warn');
       addToInventory(it);
     } else {
       doSalvage(it);
@@ -282,17 +283,17 @@ function processOneConveyorItem() {
       var old = takeAutoSalvageCandidate(f.synthBuffer);
       if (old) {
         var res = doSalvage(old, true);
-        flog('⚠️ 合成暫存區滿載，自動分解較低品質素材 ' + rarityTag(old) + ' → 碎片x' + res.scrap, 'warn');
+        flog(STR(1053, rarityTag(old), res.scrap), 'warn');
       } else if (!isAutoSalvageProtected(it)) {
         var ires = doSalvage(it, true);
-        flog('⚠️ 合成暫存區滿載，為保留高品質素材，自動分解新進 ' + rarityTag(it) + ' → 碎片x' + ires.scrap, 'warn');
+        flog(STR(1054, rarityTag(it), ires.scrap), 'warn');
         return;
       } else {
-        flog('🛡️ 合成暫存區滿載，已保留高品質素材 ' + rarityTag(it) + '（目前超出容量）', 'warn');
+        flog(STR(1055, rarityTag(it)), 'warn');
       }
     }
     f.synthBuffer.push(it);
-    flog('🧪 ' + rarityTag(it) + ' 送入合成暫存區', '');
+    flog(STR(1056, rarityTag(it)), '');
   } else {
     addToInventory(it);
   }
@@ -372,7 +373,7 @@ function tryHybridSynthesis() {
   var rerollChance = partBonus('synth', 'rerollModule');
   if (rerollChance > 0 && chance(rerollChance)) {
     it.affixes = rerollAffixesKeepBetter(it);
-    flog('🎲 重骰模組發動！詞條取較佳值', 'good');
+    flog(STR(1057), 'good');
   }
   // 寶石鑲嵌效率：提高寶石對附魔威力的貢獻
   var effGemLv = gemLv * (1 + st.gemEff / 100);
@@ -393,7 +394,7 @@ function tryHybridSynthesis() {
   }
   it.synthesized = true;
   G.factory.stats.synthesized++;
-  flog((great ? '🌟 大成功！' : '🔮 ') + (mutated ? '🧬 變異！' : '') + '混合合成：' + rarityTag(it) + ' 獲得 ' + ENCHANTS[bookKey].name, (great || mutated) ? 'good' : 'info');
+  flog(STR(1060, (great ? STR(1058) : '🔮 ') + (mutated ? STR(1059) : ''), rarityTag(it), ENCHANTS[bookKey].name), (great || mutated) ? 'good' : 'info');
 
   // 合成優先度：自動將舊裝備替換為新合成的裝備
   if (G.factory.autoEquip && tryAutoEquip(it)) return true;
@@ -428,7 +429,7 @@ function tryRarityMerge() {
         it.affixes = rerollAffixesKeepBetter(it);
       }
       G.factory.stats.synthesized++;
-      flog((great ? '🌟 大成功！' : '⚗️ ') + '品質合成：' + RARITIES[rr].name + 'x3 → ' + rarityTag(it), great ? 'good' : 'info');
+      flog(STR(1061, (great ? STR(1058) : '⚗️ '), RARITIES[rr].name, rarityTag(it)), great ? 'good' : 'info');
       if (G.factory.autoEquip && tryAutoEquip(it)) return true;
       addToInventory(it);
       return true;
@@ -472,11 +473,11 @@ function manualUpgrade(it) {
   var r = tryUpgrade(it);
   if (r === 'poor') {
     var cost = upgradeCost(it);
-    blog('⚠️ 資源不足（需要金幣 ' + fmt(cost.gold) + '、碎片 ' + cost.scrap + '）', 'warn');
+    blog(STR(1062, fmt(cost.gold), cost.scrap), 'warn');
   } else if (r === 'ok') {
-    blog('⬆️ 強化成功：' + rarityTag(it) + ' +' + it.upgrade, 'good');
+    blog(STR(1063, rarityTag(it), it.upgrade), 'good');
   } else {
-    blog('💥 強化失敗！損失半數材料（成功率 ' + fmt1(upgradeSuccessChance(it)) + '%，可堆「強化成功率」屬性）', 'warn');
+    blog(STR(1064, fmt1(upgradeSuccessChance(it))), 'warn');
   }
   return r;
 }

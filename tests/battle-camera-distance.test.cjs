@@ -1,5 +1,6 @@
 'use strict';
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -8,7 +9,7 @@ const vm = require('node:vm');
 const {spawnSync} = require('node:child_process');
 const {extractFunction, buildSceneTree, fakePixi} = require('./helpers/battle-scene.cjs');
 const root = path.resolve(__dirname, '..');
-const source = fs.readFileSync(path.join(root, 'js/battle-renderer.js'), 'utf8');
+const source = readExpanded(path.join(root, 'js/battle-renderer.js'));
 const DEFAULT = Number(/var BATTLE_CAMERA_DISTANCE_PERCENT = ([\d.]+);/.exec(source)[1]);
 function load() {
   const S = buildSceneTree(source);

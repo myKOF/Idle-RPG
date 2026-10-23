@@ -16,7 +16,7 @@ test('runtime uses T7 field, shares motion speed/turn, renews the same instance'
 
 function setup(level=1){
  const c={console,Math:Object.create(Math),setTimeout(){},clearTimeout(){},document:{addEventListener(){},getElementById(){return null;},querySelectorAll(){return[];}},UI:{dirty:{}},blog(){},floatText(){},trackDps(){},recordRunDamage(){}};
- c.window=c;vm.createContext(c);for(const f of ['util','data','status','formula','battlefield','combat','skills','skills2'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/'+f+'.js'),'utf8'),c);
+ c.window=c;vm.createContext(c);for(const f of ['util','strings_data', 'strings','data','status','formula','battlefield','combat','skills','skills2'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/'+f+'.js'),'utf8'),c);
  c.G={player:{skills2:{levels:{firepillar:[1,1,1,1,1,1,level]}},loadout:[]},stage:{current:1}};c.GT=0;c.chance=()=>false;c.sgLegend=()=>({});c.sgUlt=()=>null;c.Math.random=()=>0.3;
  const p={hp:1000,mp:10000,skillCds:{},buffs:{},effects:{},dots:[]};
  const m={hp:1e9,maxHp:1e9,pos:{x:200,y:0},effects:{},buffs:{},dots:[]};

@@ -1,7 +1,7 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('fs'),vm=require('vm');
 function load(){
  const c=vm.createContext({console,Math,UI:{dirty:{}}});c.window=c;
- for(const name of ['util','data','status','formula','skills2'])vm.runInContext(fs.readFileSync('js/'+name+'.js','utf8'),c);
+ for(const name of ['util','strings_data', 'strings','data','status','formula','skills2'])vm.runInContext(fs.readFileSync('js/'+name+'.js','utf8'),c);
  c.G={player:{loadout:['sg:earthguard'],skills2:{levels:{earthguard:Array(7).fill(10)},ult:{}}}};
  return c;
 }

@@ -26,6 +26,7 @@ test('uiTick 可在 Worker Snapshot 存在時完成一次渲染派發', () => {
   };
   context.window.window = context.window;
   vm.createContext(context);
+  for (const sf of ['strings_data.js', 'strings.js']) vm.runInContext(fs.readFileSync(path.join(root, 'js', sf), 'utf8'), context, { filename: 'js/' + sf });
   vm.runInContext(fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8'), context, { filename: 'js/ui.js' });
 
   const battle = { field: { player: null, monsters: [] }, tower: null };

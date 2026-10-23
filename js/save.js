@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* ============ 存檔 / 讀檔 / 離線收益 ============ */
 
 var SAVE_KEY = 'infinite_conquest_save_v1';
@@ -30,7 +31,7 @@ function saveStamp(ts) {
     pad2(d.getHours()) + pad2(d.getMinutes()) + pad2(d.getSeconds());
 }
 function saveRecName(rec) {
-  return rec.kind === 'auto' ? '⚡ 自動存檔' : '💾 手動存檔';
+  return rec.kind === 'auto' ? STR(1987) : STR(1988);
 }
 // 清理索引外的孤兒資料，避免舊版匯入／刪除異常長期佔用 localStorage。
 function removeUnindexedSaveRecords(list) {
@@ -244,11 +245,11 @@ function readFolderSaveRecord(rec) {
 function applyLoadedSaveRaw(raw) {
   try {
     var d = JSON.parse(raw);
-    if (!d || d.version !== 1) return '存檔格式錯誤';
-  } catch (e) { return '存檔格式錯誤'; }
+    if (!d || d.version !== 1) return STR(1989);
+  } catch (e) { return STR(1989); }
   saveGame(); // 目前進度先寫入本局的自動存檔
   _saveSuppressed = true; // 防止 beforeunload 把舊狀態蓋回去
-  if (!setSaveStorage(SAVE_KEY, raw)) return '目前瀏覽器空間不足，無法切換主存檔';
+  if (!setSaveStorage(SAVE_KEY, raw)) return STR(1990);
   location.reload();
   return null;
 }
@@ -260,9 +261,9 @@ function loadSaveRecord(id) {
   if (raw) return applyLoadedSaveRaw(raw);
   if (rec && rec.folderOnly && _saveDir) {
     return readFolderSaveRecord(rec).then(function (text) { return applyLoadedSaveRaw(text); })
-      .catch(function (e) { return '讀取本地存檔失敗：' + (e && e.message ? e.message : e); });
+      .catch(function (e) { return STR(1991, (e && e.message ? e.message : e)); });
   }
-  return '找不到存檔資料';
+  return STR(1992);
 }
 
 function loadGame() {
@@ -739,8 +740,7 @@ function migrateSave(data) {
     if (data.player.loadout.length > loCap) {
       var loDropped = data.player.loadout.length - loCap;
       data.player.loadout = data.player.loadout.slice(0, loCap);
-      data._loadoutCapClampNotice = '技能裝載欄上限調整為 ' + loCap + ' 格：已卸下超出的 ' +
-        loDropped + ' 個技能（技能等級與已學狀態不變，可重新調整裝載）';
+      data._loadoutCapClampNotice = STR(1993, loCap, loDropped);
     }
   }
   data.loadoutCapClampV1 = true;
@@ -983,20 +983,20 @@ function openSaveFolder(cb, forceOpen) {
         if (perm !== 'granted') throw new Error('repick');
         return stored;
       }).catch(function () { return chooseFolder(); })
-      .then(doSync).then(function(res){ cb(null, res); }).catch(function(e){ cb('未選擇資料夾或無存取權限' + (e && e.name ? '（' + e.name + '）' : '')); });
+      .then(doSync).then(function(res){ cb(null, res); }).catch(function(e){ cb(STR(1994, (e && e.name ? '（' + e.name + '）' : ''))); });
     } else if (forceOpen) {
       // 使用者主動按下「打開」時，每次都叫出資料夾選擇器，避免只在背景同步而沒有開啟動作。
       chooseFolder().then(function(res){ cb(null, res); }).catch(function(e){
         if (e && e.name === 'AbortError') {
           cb(null, { wrote: 0, imported: 0, dirName: stored ? stored.name : '', viewOnly: true });
         } else {
-          cb('未選擇資料夾或無存取權限' + (e && e.name ? '（' + e.name + '）' : ''));
+          cb(STR(1994, (e && e.name ? '（' + e.name + '）' : '')));
         }
       });
     } else {
       chooseFolder()
         .then(function(res){ cb(null, res); })
-        .catch(function(e){ cb('未選擇資料夾或無存取權限' + (e && e.name ? '（' + e.name + '）' : '')); });
+        .catch(function(e){ cb(STR(1994, (e && e.name ? '（' + e.name + '）' : ''))); });
     }
   });
 }
@@ -1284,9 +1284,7 @@ function applyOfflineProgress(options) {
   var hrs = Math.floor(elapsed / 3600), mins = Math.floor((elapsed % 3600) / 60);
   var equipTotal = 0;
   for (var er in sum.equips) equipTotal += sum.equips[er];
-  blog('🌙 離線收益（' + (hrs ? hrs + ' 小時 ' : '') + mins + ' 分鐘）：擊殺 Lv.' + stage + ' ' + zn.name + '菁英 ×' + fmt(kills) +
-    '、金幣 +' + fmt(gold) + '、經驗 +' + fmt(xp) + '、裝備 ×' + fmt(equipTotal) + ' 已送入輸送帶' +
-    (sum.scrap ? '、碎片 +' + fmt(sum.scrap) : ''), 'good');
+  blog(STR(1995, (hrs ? STR(78, hrs) + ' ' : ''), mins, stage, zn.name, fmt(kills), fmt(gold), fmt(xp), fmt(equipTotal), (sum.scrap ? STR(1996, fmt(sum.scrap)) : '')), 'good');
     if (typeof showOfflineSummary === 'function') showOfflineSummary(sum);
     if (typeof options.done === 'function') options.done(sum);
     return sum;
@@ -1753,7 +1751,7 @@ function listSaveFolderFilesV2() {
 
 function openSaveFolderV2(cb, forceOpen) {
   cb = cb || function () {};
-  if (!window.showDirectoryPicker) { cb('此瀏覽器不支援本地資料夾存取'); return; }
+  if (!window.showDirectoryPicker) { cb(STR(1997)); return; }
   idbGetDir(function (stored) {
     var source;
     if (stored && isValidSaveDirectoryV2(stored) && !forceOpen) {
@@ -1775,7 +1773,7 @@ function openSaveFolderV2(cb, forceOpen) {
         cb(null, { selected: true, dirName: dir.name, files: files });
       });
     }).catch(function (e) {
-      cb(e && e.name === 'AbortError' ? '已取消資料夾選擇' : (e.message || '無法連接存檔資料夾'));
+      cb(e && e.name === 'AbortError' ? STR(1998) : (e.message || STR(1999)));
     });
   });
 }

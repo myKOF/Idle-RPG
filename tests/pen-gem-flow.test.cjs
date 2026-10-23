@@ -25,7 +25,7 @@ function loadFullGameContext() {
   vm.createContext(context);
 
   const files = [
-    'js/util.js',
+    'js/util.js', 'js/strings_data.js', 'js/strings.js',
     'js/data.js',
     'js/player.js',
     'js/status.js', 'js/formula.js',

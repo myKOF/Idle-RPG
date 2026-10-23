@@ -17,7 +17,7 @@ test('CLEAVE 三色系使用核准的硬邊氣旋素材，保留原本旋轉構�
 function setup(levels=[1,0,0,0,0,0,0],legend={}) {
  const c={console,Math:Object.create(Math),setTimeout(){},clearTimeout(){},document:{addEventListener(){},getElementById(){return null;},querySelectorAll(){return[];}},UI:{dirty:{}},floatText(){},blog(){}};
  c.window=c;vm.createContext(c);
- for(const file of ['util','data','status','formula','battlefield','combat','skills','skills2'])vm.runInContext(fs.readFileSync(path.join(root,'js',file+'.js'),'utf8'),c);
+ for(const file of ['util','strings_data', 'strings','data','status','formula','battlefield','combat','skills','skills2'])vm.runInContext(fs.readFileSync(path.join(root,'js',file+'.js'),'utf8'),c);
  c.G={player:{skills2:{levels:{cleave:levels}},loadout:[]},stage:{current:1}};
  c.GT=0;c.resetSkill2RT();c.sgLegend=()=>legend;c.sgUlt=()=>null;c.chance=()=>false;
  const hits=[],events=[];c.playCombatVfx=e=>events.push(JSON.parse(JSON.stringify(e)));

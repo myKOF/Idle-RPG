@@ -1,4 +1,5 @@
 const table = require('./helpers/skill-table.cjs');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -51,7 +52,7 @@ function loadSkills2() {
   context.globalThis = context;
   context.self = context;
   vm.createContext(context);
-  ['js/battlefield.js', 'js/skills2.js'].forEach((f) => {
+  ['js/strings_data.js', 'js/strings.js', 'js/battlefield.js', 'js/skills2.js'].forEach((f) => {
     vm.runInContext(read(f), context, { filename: f });
   });
   return context;
@@ -645,10 +646,10 @@ test('殞石術與雷殞天落在落地前顯示對應顏色的目標提示圈',
 /* 冰系三群組（2026-08-17 第七批）：三種新場域與拋物線水彈的兩條渲染路徑都要接上，
    且尺寸／弧高一律沿用模擬層送來的語意參數（AI_RULES 8.3）。 */
 test('冰系特效：暴風雪／水龍捲／追蹤冰箭在 Canvas 與 DOM 兩條路徑都有畫法', () => {
-  const vfx = fs.readFileSync(path.join(root, 'js/vfx.js'), 'utf8');
-  const renderer = fs.readFileSync(path.join(root, 'js/battle-renderer.js'), 'utf8');
+  const vfx = readExpanded(path.join(root, 'js/vfx.js'));
+  const renderer = readExpanded(path.join(root, 'js/battle-renderer.js'));
   const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
-  const skills2 = fs.readFileSync(path.join(root, 'js/skills2.js'), 'utf8');
+  const skills2 = readExpanded(path.join(root, 'js/skills2.js'));
 
   // 模擬層：三種場域各自的變體名稱
   assert.match(skills2, /variant: 'blizzard'/);
@@ -692,10 +693,10 @@ test('冰系特效：暴風雪／水龍捲／追蹤冰箭在 Canvas 與 DOM 兩�
 });
 
 test('冰霜新星範圍使用模擬半徑繪製圓形，暴風雪維持矩形', () => {
-  const vfx = fs.readFileSync(path.join(root, 'js/vfx.js'), 'utf8');
-  const renderer = fs.readFileSync(path.join(root, 'js/battle-renderer.js'), 'utf8');
+  const vfx = readExpanded(path.join(root, 'js/vfx.js'));
+  const renderer = readExpanded(path.join(root, 'js/battle-renderer.js'));
   const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
-  const skills2 = fs.readFileSync(path.join(root, 'js/skills2.js'), 'utf8');
+  const skills2 = readExpanded(path.join(root, 'js/skills2.js'));
 
   assert.match(skills2, /variant: 'frost-nova'[\s\S]{0,120}area: p \? \{ x: p\.x, y: p\.y, r: radiusPx \}/);
   assert.match(renderer, /function spawnFrostNovaArea\(spec\)[\s\S]*?g\.circle\(0, 0, r\)/);
@@ -708,10 +709,10 @@ test('冰霜新星範圍使用模擬半徑繪製圓形，暴風雪維持矩形',
 });
 
 test('冰系特效：水流彈的拋物線弧高由模擬層的飛行距離決定', () => {
-  const vfx = fs.readFileSync(path.join(root, 'js/vfx.js'), 'utf8');
-  const renderer = fs.readFileSync(path.join(root, 'js/battle-renderer.js'), 'utf8');
+  const vfx = readExpanded(path.join(root, 'js/vfx.js'));
+  const renderer = readExpanded(path.join(root, 'js/battle-renderer.js'));
   const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
-  const skills2 = fs.readFileSync(path.join(root, 'js/skills2.js'), 'utf8');
+  const skills2 = readExpanded(path.join(root, 'js/skills2.js'));
 
   // 事件帶出各段最高點，不讓顯示層自行選固定弧高。
   assert.match(skills2, /if \(extra && extra\.arcM > 0\) spec\.arcM = Number\(extra\.arcM\);/);
@@ -733,9 +734,9 @@ test('冰系特效：水流彈的拋物線弧高由模擬層的飛行距離決�
 });
 
 test('寒冰箭貫穿：兩條渲染路徑都以單一連續直線投射物呈現', () => {
-  const vfx = fs.readFileSync(path.join(root, 'js/vfx.js'), 'utf8');
-  const renderer = fs.readFileSync(path.join(root, 'js/battle-renderer.js'), 'utf8');
-  const skills2 = fs.readFileSync(path.join(root, 'js/skills2.js'), 'utf8');
+  const vfx = readExpanded(path.join(root, 'js/vfx.js'));
+  const renderer = readExpanded(path.join(root, 'js/battle-renderer.js'));
+  const skills2 = readExpanded(path.join(root, 'js/skills2.js'));
 
   // 模擬層提供貫穿線段的飛行時間，畫面不再使用每個目標的預設延遲。
   assert.match(skills2, /var flightSec = lineLen \/ sgIcearrowSpeed\(\);/);
@@ -761,9 +762,9 @@ test('寒冰箭貫穿：兩條渲染路徑都以單一連續直線投射物呈�
 });
 
 test('新版技能彈射與特效細化：連鎖閃電無天雷、水流彈藍色拋物彈射、血刃斬綠色子彈、大地守護白光光束、反傷無特效、逐風者淡綠白光龍捲風', () => {
-  const vfx = fs.readFileSync(path.join(root, 'js/vfx.js'), 'utf8');
-  const renderer = fs.readFileSync(path.join(root, 'js/battle-renderer.js'), 'utf8');
-  const skills2 = fs.readFileSync(path.join(root, 'js/skills2.js'), 'utf8');
+  const vfx = readExpanded(path.join(root, 'js/vfx.js'));
+  const renderer = readExpanded(path.join(root, 'js/battle-renderer.js'));
+  const skills2 = readExpanded(path.join(root, 'js/skills2.js'));
   const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
 
   // 1. 連鎖閃電：移除天雷落頂特效，只留閃電鏈彈射
@@ -821,10 +822,10 @@ test('新版技能彈射與特效細化：連鎖閃電無天雷、水流彈藍�
    而且尺寸一律沿用模擬層送來的判定數字（AI_RULES 8.3）。
    兩條渲染路徑（Canvas 野外／DOM 高塔）都要接上，缺一邊在高塔就會看不到技能。 */
 test('風系特效：風刃／真空斬／迴旋斬／虛空斬／暴風屏障在兩條路徑都有畫法', () => {
-  const vfx = fs.readFileSync(path.join(root, 'js/vfx.js'), 'utf8');
-  const renderer = fs.readFileSync(path.join(root, 'js/battle-renderer.js'), 'utf8');
+  const vfx = readExpanded(path.join(root, 'js/vfx.js'));
+  const renderer = readExpanded(path.join(root, 'js/battle-renderer.js'));
   const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
-  const skills2 = fs.readFileSync(path.join(root, 'js/skills2.js'), 'utf8');
+  const skills2 = readExpanded(path.join(root, 'js/skills2.js'));
 
   // 模擬層：各變體名稱，以及「方位與刀身尺寸必須送到顯示層」的兩個欄位
   ['wind-blade', 'wind-blade-small', 'wind-blade-homing', 'wind-burst',

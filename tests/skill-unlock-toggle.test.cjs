@@ -1,5 +1,6 @@
 'use strict';
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -123,7 +124,7 @@ function loadUIContext(hostname = 'localhost') {
 
   vm.createContext(context);
 
-  ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/skills.js', 'js/skills2.js', 'js/ui.js', 'js/gm_exec.js']
+  ['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/skills.js', 'js/skills2.js', 'js/ui.js', 'js/gm_exec.js']
     .forEach((file) => {
       const code = fs.readFileSync(path.join(root, file), 'utf8');
       vm.runInContext(code, context, { filename: file });
@@ -140,7 +141,7 @@ function loadUIContext(hostname = 'localhost') {
 }
 
 test('DOM 結構：index.html 技能頂欄包含技能全解鎖開關，預設隱藏', () => {
-  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const html = readExpanded(path.join(root, 'index.html'));
   assert.match(html, /<div class="sgb-top">[\s\S]*?<button[^>]*id="skill-unlock-toggle"/);
   assert.match(html, /id="skill-unlock-toggle"[^>]*class="[^"]*sgb-unlock-toggle[^"]*"/);
   assert.match(html, /id="skill-unlock-toggle"[^>]*hidden/);

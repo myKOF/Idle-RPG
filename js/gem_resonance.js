@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* ============ 寶石共鳴（兩端共載：主執行緒與模擬 Worker） ============
    資料表在 js/gem_resonance_data.js（配置表 Gem_resonance）。本檔負責：
      1. 版面與相鄰關係（純函式，不碰 G）
@@ -74,7 +75,7 @@ function resonanceRegionUnlocked(state, region) {
 }
 
 function resonanceRegionLockReason(state, region) {
-  return resonanceRegionUnlocked(state, region) ? '' : '中央區尚未解鎖：外圍六區的全部鑲孔需強化至 ' + resonanceMaxHoleLevel() + ' 級';
+  return resonanceRegionUnlocked(state, region) ? '' : STR(1465, resonanceMaxHoleLevel());
 }
 
 /* 所選孔獲得的相鄰額外能力；接收孔須已鑲寶石，空孔不產生共鳴。 */
@@ -129,26 +130,26 @@ function resonanceTouched() {
 
 /* 鑲嵌：level 省略時取庫存裡「達到該孔最低階」的最低一階（不浪費高階寶石）。 */
 function socketResonanceGem(region, hole, type, level) {
-  if (!resonanceValidHole(region, hole)) return '無效的共鳴孔位';
+  if (!resonanceValidHole(region, hole)) return STR(1466);
   var locked = resonanceRegionLockReason(G.player.resonance, region);
   if (locked) return locked;
-  if (!GEM_TYPES[type] || !isGemEnabled(type)) return '此寶石已關閉或不存在，無法鑲嵌';
-  if (!resonanceTypeAllowed(region, type)) return GEM_RESONANCE_REGIONS[region].name + '區不能鑲這種寶石';
+  if (!GEM_TYPES[type] || !isGemEnabled(type)) return STR(1467);
+  if (!resonanceTypeAllowed(region, type)) return STR(1468, GEM_RESONANCE_REGIONS[region].name);
   var min = resonanceHoleMinLevel(region, hole);
   var lv = 0;
   if (level != null) {
-    if (!Number.isInteger(level) || level < 1 || level > GEM_FORGE_MAX_LEVEL) return '無效寶石階級';
-    if (level < min) return '此孔需要 ' + GEM_NAMES[min] + '以上的寶石';
+    if (!Number.isInteger(level) || level < 1 || level > GEM_FORGE_MAX_LEVEL) return STR(1469);
+    if (level < min) return STR(1470, GEM_NAMES[min]);
     if (gemCount(type, level) > 0) lv = level;
   } else {
     for (var l = min; l <= GEM_FORGE_MAX_LEVEL; l++) { if (gemCount(type, l) > 0) { lv = l; break; } }
   }
-  if (!lv) return '沒有符合階級的寶石';
+  if (!lv) return STR(1471);
   var st = resonanceEnsure();
   var key = resonanceHoleKey(region, hole);
   var slot = st.holes[key] || (st.holes[key] = { gems: [], lv: 0 });
   if (!Array.isArray(slot.gems)) slot.gems = [];
-  if (slot.gems.length >= resonanceHoleCap(region, hole)) return '此孔已滿，請先取下寶石';
+  if (slot.gems.length >= resonanceHoleCap(region, hole)) return STR(1472);
   addGem(type, lv, -1);
   slot.gems.push({ type: type, level: lv });
   resonanceTouched();
@@ -157,9 +158,9 @@ function socketResonanceGem(region, hole, type, level) {
 
 /* 取下：index 為孔內第幾顆。孔等級保留（升級是孔的資產，不跟著寶石走）。 */
 function unsocketResonanceGem(region, hole, index) {
-  if (!resonanceValidHole(region, hole)) return '無效的共鳴孔位';
+  if (!resonanceValidHole(region, hole)) return STR(1466);
   var slot = resonanceEnsure().holes[resonanceHoleKey(region, hole)];
-  if (!slot || !Array.isArray(slot.gems) || !slot.gems[index]) return '此處沒有寶石';
+  if (!slot || !Array.isArray(slot.gems) || !slot.gems[index]) return STR(1473);
   var g = slot.gems.splice(index, 1)[0];
   addGem(g.type, g.level, 1);
   if (!slot.gems.length && !slot.lv) delete resonanceEnsure().holes[resonanceHoleKey(region, hole)];
@@ -182,19 +183,19 @@ function resonanceUpgradePayType(region, slot, cost, countOf) {
 
 /* 升級：金幣＋指定階級的寶石（種類見 resonanceUpgradePayType）。孔不必鑲寶石也能升級。 */
 function upgradeResonanceHole(region, hole) {
-  if (!resonanceValidHole(region, hole)) return '無效的共鳴孔位';
+  if (!resonanceValidHole(region, hole)) return STR(1466);
   var locked = resonanceRegionLockReason(G.player.resonance, region);
   if (locked) return locked;
   var st = resonanceEnsure();
   var key = resonanceHoleKey(region, hole);
   var slot = st.holes[key];
   var cost = resonanceUpgradeCost((slot && slot.lv) || 0);
-  if (!cost) return '此孔已達等級上限';
-  if (G.player.gold < cost.gold) return '金幣不足（需要 ' + fmt(cost.gold) + '）';
+  if (!cost) return STR(1474);
+  if (G.player.gold < cost.gold) return STR(42, fmt(cost.gold));
   var type = resonanceUpgradePayType(region, slot, cost, gemCount);
-  if (!type) return '需要 ' + cost.gemCount + ' 顆' + GEM_NAMES[cost.gemLv] + '寶石（本區可用種類），庫存不足';
+  if (!type) return STR(1475, cost.gemCount, GEM_NAMES[cost.gemLv]);
   if (gemCount(type, cost.gemLv) < cost.gemCount) {
-    return '「' + GEM_NAMES[cost.gemLv] + GEM_TYPES[type].name + '」不足 ' + cost.gemCount + ' 顆';
+    return STR(1476, GEM_NAMES[cost.gemLv], GEM_TYPES[type].name, cost.gemCount);
   }
   G.player.gold -= cost.gold;
   addGem(type, cost.gemLv, -cost.gemCount);

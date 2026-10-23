@@ -124,6 +124,8 @@ Antigravity 首先回答：
 
 □ 若涉及特效：遊戲中出現的特效是否只來自配置表，或已登記在 `docs/vfx/VFX_PRESET_USAGE_OUTSIDE_TABLES.md` 的程式寫死清單（特效只允許這兩種來源，不應存在第三種情況，見 `AI_RULES.md` 第 8.4 節）
 
+□ 若新增或修改了顯示文字：是否已登記在 `config/Excel/String.xlsx`（含功能模塊與替代字符說明），而不是寫死在程式或 HTML（見 `AI_RULES.md` 第 8.10 節；驗證重點：已登記、程式用 `STR()` 讀取、`--check` 回報「仍寫死 0 條」）
+
 若不了解修改目的：
 
 先閱讀任務內容。

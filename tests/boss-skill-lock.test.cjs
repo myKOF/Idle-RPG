@@ -1,12 +1,13 @@
 'use strict';
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
-const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
-const worker = fs.readFileSync(path.join(root, 'js/worker/sim.worker.js'), 'utf8');
+const ui = readExpanded(path.join(root, 'js/ui.js'));
+const worker = readExpanded(path.join(root, 'js/worker/sim.worker.js'));
 function fn(source, name) {
   const start = source.indexOf('function ' + name + '(');
   assert.ok(start >= 0, name);
@@ -28,7 +29,7 @@ test('Worker 登場、戰鬥暫停與結算未退出時拒絕裝上／卸下／�
     COMBAT_PAUSED: false };
   c.self = c;
   vm.createContext(c);
-  vm.runInContext(fs.readFileSync(path.join(root, 'js/worker/protocol.js'), 'utf8'), c);
+  vm.runInContext(readExpanded(path.join(root, 'js/worker/protocol.js')), c);
   vm.runInContext(fn(worker, 'runCommand'), c);
   const before = JSON.stringify([c.G.player, c.TOWER.player]);
   for (const phase of ['intro', 'paused', 'result']) {
@@ -56,7 +57,7 @@ test('UI 開戰阻擋裝上／卸下／排序指令與按鈕，退出時採最�
     acquireUiPending: () => ({ entry: { token: 1 } }),
     UI_COMMAND_PENDING: { byToken: {} } };
   vm.createContext(c);
-  vm.runInContext(fs.readFileSync(path.join(root, 'js/worker/protocol.js'), 'utf8'), c);
+  vm.runInContext(readExpanded(path.join(root, 'js/worker/protocol.js')), c);
   vm.runInContext(['towerViewActive', 'bossFightConfigLocked', 'skillLoadoutButtonAttributes', 'sendUiCommand'].map(name => fn(ui, name)).join('\n'), c);
   assert.match(c.skillLoadoutButtonAttributes('skill'), / disabled/);
   assert.doesNotMatch(c.skillLoadoutButtonAttributes('skill'), /data-ui-pending-key/);
@@ -93,7 +94,7 @@ test('開戰與退出的 view 更新會重繪技能按鈕，同一戰鬥狀態�
     handleWorkerDead() {}, handleWorkerRestarting() {}, handleWorkerRestarted() {}, hideWorkerDeadNotice() {},
     updateWorkerSafeModeMarker() {}, refreshUiPanelSubscriptions() {}, requestPanelData() {} };
   vm.createContext(c);
-  vm.runInContext(fs.readFileSync(path.join(root, 'js/worker/protocol.js'), 'utf8'), c);
+  vm.runInContext(readExpanded(path.join(root, 'js/worker/protocol.js')), c);
   vm.runInContext(fn(ui, 'applyUiBossFightView') + '\n' + fn(ui, 'bindWorkerUiState'), c);
   assert.equal(c.bindWorkerUiState(), true);
   callbacks[c.MSG_OUT.TICK]({ view: { towerActive: true }, dirty: [] });
@@ -124,7 +125,7 @@ function configEnvironment() {
   c.WorkerBridge = { send() { c.sends++; return Promise.resolve(null); } };
   c.acquireUiPending = () => ({ entry: { token: 1 } });
   vm.createContext(c);
-  vm.runInContext(fs.readFileSync(path.join(root, 'js/worker/protocol.js'), 'utf8'), c);
+  vm.runInContext(readExpanded(path.join(root, 'js/worker/protocol.js')), c);
   for (const name of Object.keys(c.COMMANDS)) c.COMMAND_IMPL[name] = () => { c.mutations++; return null; };
   vm.runInContext(fn(worker, 'runCommand'), c);
   vm.runInContext(['towerViewActive', 'bossFightConfigLocked', 'sendUiCommand', 'bossConfigControlsSelector',
@@ -202,7 +203,7 @@ test('戰中自動穿裝不找欄位、不改裝備；退出後恢復原自動�
     isTwoHandItem: () => false, equipItem: () => { c.equipped++; }, blog() {}, rarityTag: () => '劍',
     SLOT_INFO: { weapon: { name: '主手' } } };
   vm.createContext(c);
-  vm.runInContext(fn(fs.readFileSync(path.join(root, 'js/player.js'), 'utf8'), 'tryAutoEquip'), c);
+  vm.runInContext(fn(readExpanded(path.join(root, 'js/player.js')), 'tryAutoEquip'), c);
   assert.equal(c.tryAutoEquip({}), false);
   assert.equal(c.reads, 0);
   assert.equal(c.equipped, 0);

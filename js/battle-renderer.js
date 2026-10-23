@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* ============ PixiJS 即時戰鬥渲染器（僅主執行緒） ============
    「DOM/CSS 做 UI、Canvas/WebGL 做戰鬥表現」混合方案的 Canvas 側。
    把野外戰鬥的敵人卡片 DOM + js/vfx.js 的 DOM 特效換成類倖存者風格的即時畫面：
@@ -1964,7 +1965,7 @@ var BattleRenderer = (function () {
       cx: (pp.x + bp.x) / 2, cy: (pp.y + bp.y) / 2, tier: tier, element:BossArena.elementOf(b),
       W: S.canvasW || S.W, H: S.canvasH || S.H,
       title: String(b.name || '').replace(/^第\d+層・/, ''),
-      subtitle: '封魔塔　第 ' + floor + ' 層　·　' + BossArena.paletteFor(tier,BossArena.elementOf(b)).name
+      subtitle: STR(445, floor, BossArena.paletteFor(tier,BossArena.elementOf(b)).name)
     });
     var ft = S.arena.floorTexture();
     if (ft && S.groundTile && !S.groundTile.destroyed) { S.groundTile.texture = ft; S.groundTile.tint = 0xffffff; }
@@ -2109,11 +2110,11 @@ var BattleRenderer = (function () {
         if (earthguardRevival) {
           var earthguardLeft = (typeof uiCountdownRemain === 'function')
             ? uiCountdownRemain(p.revival.endAt - panel.gt, panel.gt) : p.revival.endAt - panel.gt;
-          p.reviveText.text = '✨ 復活倒數 ' + Math.max(1, Math.ceil(Math.max(0, earthguardLeft)));
+          p.reviveText.text = STR(446, Math.max(1, Math.ceil(Math.max(0, earthguardLeft))));
         } else if (dead) {
           var left = (typeof uiCountdownRemain === 'function')
             ? uiCountdownRemain(reviveLeft, panel.gt) : reviveLeft;
-          p.reviveText.text = '💀 復活倒數 ' + Math.max(1, Math.ceil(Math.max(0, left)));
+          p.reviveText.text = STR(447, Math.max(1, Math.ceil(Math.max(0, left))));
         }
       }
       /* 我方座標由模擬層給（FIELD.playerPos ←→ js/battlefield.js bfPlayerPos）。
@@ -2130,7 +2131,7 @@ var BattleRenderer = (function () {
        角色本來就在往前走，空場是過場而不是狀態，不需要文字說明。 */
     if (S.emptyText) {
       S.emptyText.visible = !!S.towerActive && !anyLive && !field.towerView;
-      if (S.emptyText.visible && S.emptyText.text !== '（封魔塔戰鬥中…）') S.emptyText.text = '（封魔塔戰鬥中…）';
+      if (S.emptyText.visible && S.emptyText.text !== '（封魔塔戰鬥中…）') S.emptyText.text = STR(448);
     }
 
     /* 狀態光環：只有面板快照答得出「現在還掛著哪些狀態」，因此在這裡 reconcile。 */
@@ -6931,7 +6932,7 @@ var BattleRenderer = (function () {
 
     /* 空場提示（只在高塔戰期間顯示；野外的「搜索敵人中…」已移除） */
     var emptyText = new PIXI.Text({
-      text: '（封魔塔戰鬥中…）',
+      text: STR(448),
       style: { fontFamily: 'sans-serif', fontSize: 15, fill: '#8b93a3', stroke: { color: '#000', width: 3 } }
     });
     emptyText.anchor.set(0.5);
@@ -6944,7 +6945,7 @@ var BattleRenderer = (function () {
     var veilBg = new PIXI.Graphics();
     veil.addChild(veilBg);
     var veilText = new PIXI.Text({
-      text: '⏸ 戰鬥已暫停',
+      text: STR(449),
       style: { fontFamily: 'sans-serif', fontSize: 22, fontWeight: 'bold', fill: '#e8ecf4', stroke: { color: '#000', width: 4 } }
     });
     veilText.anchor.set(0.5);
@@ -7609,7 +7610,7 @@ var BattleRenderer = (function () {
       S.vfxrt = rt || null;
       S.vfxLoading = false;
       flushPendingVfx();
-      if (!rt) { scheduleVfxBootRetry('boot 回傳空值'); return; }   // VFXRuntime.boot 把所有失敗都吞成 null
+      if (!rt) { scheduleVfxBootRetry(STR(450)); return; }   // VFXRuntime.boot 把所有失敗都吞成 null
       S.vfxBootTry = 0;
       if (rt.setPerfMode) rt.setPerfMode(perfMode);
       console.info('[battle-renderer] VFX Preset Runtime 已接上（' +
@@ -7816,7 +7817,7 @@ var BattleRenderer = (function () {
       }
       console.info('[battle-renderer] PixiJS 戰鬥渲染器已啟動（' +
         app.renderer.name + '，' + S.W + '×' + S.H + '，上限 ' +
-        (app.ticker.maxFPS || '不設限') + ' 幀）。網址加 ?canvas=0 可退回 DOM 戰鬥畫面，' +
+        (app.ticker.maxFPS || STR(451)) + ' 幀）。網址加 ?canvas=0 可退回 DOM 戰鬥畫面，' +
         '?fps=N 可改更新上限。');
       return true;
     }).catch(function (err) {

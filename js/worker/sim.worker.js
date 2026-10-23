@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* ============ 模擬 Worker ============
    遊戲狀態 G 與主迴圈的唯一所在地。主執行緒只保留 DOM、事件、渲染與儲存 I/O。
 
@@ -16,14 +17,16 @@ if (typeof GameClock !== 'undefined') {
   globalThis.setTimeout = GameClock.setTimeout;
   globalThis.clearTimeout = GameClock.clearTimeout;
 }
+/* String 表：資料檔版本由主執行緒（bridge.js）以網址 sv= 傳入，改文字不必動本檔。 */
+var _stringDataVersion = ((typeof self !== 'undefined' && self.location && /[?&]sv=(\w+)/.exec(self.location.search || '')) || [])[1] || '0';
 importScripts(
-  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261022-talent-gold', '../runeword_data.js?v=20261022-battle-biomes', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261019-kagura-fire-attr-asura-combo-fire-amp-50-infinite-burn-earthguard-rebirth-guard-windblade-double-slow-legend-rework-1020', '../formula.js?v=20261022-elem-proc-off', '../battle-terrain.js?v=20261022-lava-terrain-develop-merge', '../battlefield.js?v=20261022-lava-terrain-develop-merge', '../stats.js?v=20261003-rename-weineng',
-  '../item.js?v=20261018-gem-workshop', '../gem_resonance.js?v=20261018-resonance-hole-effects','../runeword.js?v=20261018-rune-tower-unlock',
-  '../skills.js?v=20261018-potential-remove', '../skills2.js?v=20261022-meteor-missile-integration', '../elite_data.js?v=20261021-chain-hover', '../talents.js?v=20261022-talent-gold-norefund',
-  '../player.js?v=20261022-talent-gold', '../special_rules.js',
-  '../combat.js?v=20261019-disintegrate-end-once-bloodfeast-single-target', '../elite.js?v=20261022-stone-wall-fire-chain-follow', '../elite_boss.js?v=20261022-stone-wall-navigation', '../elite_boss_recipes.js?v=20261015-boss-player-skill', '../legendary.js?v=20261012-indomitable-guard-legend-rework-1020', '../tower.js?v=20261022-tower-rewards-no-gold',
-  '../factory.js?v=20261021-equipment-quality-name', '../newforge.js', '../forge.js?v=20261015-gem-enabled', '../save.js?v=20261022-talent-gold',
-  '../tasks.js?v=20261007-runes4'
+  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../data.js?v=20261023-str-common', '../runeword_data.js?v=20261023-str-char', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261023-str-skill', '../formula.js?v=20261023-str-common', '../battle-terrain.js?v=20261022-lava-terrain-develop-merge', '../battlefield.js?v=20261022-lava-terrain-develop-merge', '../stats.js?v=20261023-str-common',
+  '../item.js?v=20261023-str-common', '../gem_resonance.js?v=20261023-str-common','../runeword.js?v=20261023-str-common',
+  '../skills.js?v=20261023-str-skill', '../skills2.js?v=20261023-str-common', '../elite_data.js?v=20261021-chain-hover', '../talents.js?v=20261023-str-common',
+  '../player.js?v=20261023-str-common', '../special_rules.js?v=20261023-str-common',
+  '../combat.js?v=20261023-str-common', '../elite.js?v=20261023-str-common', '../elite_boss.js?v=20261023-str-battle', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261023-str-equip', '../tower.js?v=20261023-str-common',
+  '../factory.js?v=20261023-str-common', '../newforge.js?v=20261023-str-common', '../forge.js?v=20261023-str-common', '../save.js?v=20261023-str-common',
+  '../tasks.js?v=20261023-str-guard'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
    它自己會擋非本機 hostname；Worker 的 location 是本檔的 URL，判定結果與主執行緒一致。 */
@@ -1212,12 +1215,12 @@ function onSaveResult(msg) {
      若不解除 _restarting，之後的自動存檔會全部被靜靜丟掉。 */
   if (rec.kind === PERSIST_KINDS.RESTART && !msg.ok) {
     _restarting = false;
-    shimPushEvent('log', { msg: '⚠️ 重新開局失敗：' + (msg.error || '未知原因'), cls: 'warn' });
+    shimPushEvent('log', { msg: STR(80, (msg.error || STR(79))), cls: 'warn' });
   }
   if (!msg.ok && G && rec.rollback) {
     // 落地失敗：把 savedAt 退回上一次成功的值，讓下次離線結算仍以真正落地的時間點為準
     G.savedAt = rec.prevSavedAt;
-    shimPushEvent('log', { msg: '⚠️ 存檔寫入失敗：' + (msg.error || '未知原因'), cls: 'warn' });
+    shimPushEvent('log', { msg: STR(2012, (msg.error || STR(79))), cls: 'warn' });
   }
 }
 
@@ -1250,7 +1253,7 @@ function resolveItem(id) {
   if (!hits.length) return { err: 'item not found: ' + id };
   for (i = 1; i < hits.length; i++) {
     // 同一個物件被兩處參考（背包與裝備欄指向同一份）不算歧義
-    if (hits[i] !== hits[0]) return { err: 'ambiguous item id: ' + id + '（命中 ' + hits.length + ' 個）' };
+    if (hits[i] !== hits[0]) return { err: STR(81, id, hits.length) };
   }
   return { item: hits[0] };
 }
@@ -1321,8 +1324,8 @@ var COMMAND_IMPL = {
   'item.unequip': function (a) {
     var it = mustResolve(a.itemId);
     if (G.inventory.length >= inventoryCapacityNow()) {
-      blog('⚠️ 背包已滿，無法卸下', 'warn');
-      return { err: '背包已滿' };
+      blog(STR(1171), 'warn');
+      return { err: STR(1172) };
     }
     var eq = targetEquipment();
     // 依 id 找出實際佔用的欄位：武器與戒指有主副兩欄，不能只看 slotKey
@@ -1369,7 +1372,7 @@ var COMMAND_IMPL = {
   'item.salvage': function (a) {
     var it = mustResolve(a.itemId);
     var idx = G.inventory.indexOf(it);
-    if (idx < 0) return { err: '該裝備不在背包中' };
+    if (idx < 0) return { err: STR(1173) };
     G.inventory.splice(idx, 1);
     var res = doSalvage(it);
     UI.dirty.inv = true;
@@ -1395,7 +1398,7 @@ var COMMAND_IMPL = {
 
     if (targets.length) {
       var rec = manualSave('before_bulk_salvage'); // 已被 installStorageGuards 導向 persist
-      if (rec) flog('💾 已建立拆解前存檔：' + rec.fname, 'info');
+      if (rec) flog(STR(2013, rec.fname), 'info');
     }
     targets.forEach(function (it) {
       var res = doSalvage(it, true);
@@ -1403,16 +1406,16 @@ var COMMAND_IMPL = {
       count++;
     });
     G.inventory = kept;
-    if (count) flog('⚒️ 一鍵分解 ' + count + ' 件 → 碎片x' + fmt(scrap), 'info');
+    if (count) flog(STR(1174, count, fmt(scrap)), 'info');
     UI.dirty.inv = true;
     return { count: count, scrap: scrap };
   },
 
   /* ---- 角色 ---- */
   'player.renameEquipSet': function (a) {
-    if (!Array.isArray(G.equipmentSets)) return { err: '沒有裝備套資料' };
+    if (!Array.isArray(G.equipmentSets)) return { err: STR(1175) };
     var idx = clamp(Math.floor(Number(a.index) || 0), 0, G.equipmentSets.length - 1);
-    if (!equipmentSetUnlocked(idx)) return { err: '該裝備套尚未解鎖' };
+    if (!equipmentSetUnlocked(idx)) return { err: STR(1176) };
     if (!Array.isArray(G.equipSetNames)) G.equipSetNames = [];
     G.equipSetNames[idx] = String(a.name == null ? '' : a.name).trim().slice(0, 12); // 上限 12 字
     UI.dirty.equip = true;
@@ -1422,17 +1425,17 @@ var COMMAND_IMPL = {
   'player.buyInvUpgrade': function () {
     var upg = G.player.invUpgrades || 0;
     if (INVENTORY_CAP + upg >= INVENTORY_MAX) {
-      blog('❌ 背包已達最大容量 ' + INVENTORY_MAX + ' 格，無法再擴充', 'warn', 'system');
-      return { err: '已達最大容量' };
+      blog(STR(1177, INVENTORY_MAX), 'warn', 'system');
+      return { err: STR(82) };
     }
     var cost = inventoryExpandCost(upg);
     if (G.player.gold < cost) {
-      blog('❌ 金幣不足，擴充需要 ' + fmt(cost) + ' 金幣', 'warn', 'system');
-      return { err: '金幣不足' };
+      blog(STR(83, fmt(cost)), 'warn', 'system');
+      return { err: STR(91) };
     }
     G.player.gold -= cost;
     G.player.invUpgrades = upg + 1;
-    blog('✅ 背包容量已擴充至 ' + (INVENTORY_CAP + G.player.invUpgrades), 'good', 'system');
+    blog(STR(1178, (INVENTORY_CAP + G.player.invUpgrades)), 'good', 'system');
     UI.dirty.inv = true; UI.dirty.header = true;
     return { cap: INVENTORY_CAP + G.player.invUpgrades, cost: cost };
   },
@@ -1473,7 +1476,7 @@ var COMMAND_IMPL = {
     var lo = G.player.loadout || [];
     var from = a.from, to = a.to;
     var cap = (typeof loadoutSize === 'function') ? loadoutSize() : 10;
-    if (from < 0 || from >= cap || to < 0 || to >= cap || from === to) return { err: '位置無效' };
+    if (from < 0 || from >= cap || to < 0 || to >= cap || from === to) return { err: STR(84) };
 
     var maxIdx = Math.max(from, to);
     while (lo.length <= maxIdx) {
@@ -1508,7 +1511,7 @@ var COMMAND_IMPL = {
     var fst = forgeState();
     if (a.kind === 'clear') {
       fst.autoFill = null;
-      blog('🔁 神鑄自動放入已取消', 'info');
+      blog(STR(1303), 'info');
       UI.dirty.forge = true;
       return { autoFill: null };
     }
@@ -1520,12 +1523,11 @@ var COMMAND_IMPL = {
     var err = forgeAutoFillApply();
     if (err) {
       fst.autoFill = null;
-      blog('⚠️ 神鑄自動放入：' + err, 'warn');
+      blog(STR(1304, err), 'warn');
       UI.dirty.forge = true;
       return { err: err };
     }
-    blog('🔁 神鑄自動放入已啟用：' + forgeAutoFillLabel() +
-      '（每次鑄造後自動補放 6 件，數量不足自動停止）', 'good');
+    blog(STR(1305, forgeAutoFillLabel()), 'good');
     UI.dirty.forge = true;
     return { autoFill: pick };
   },
@@ -1533,8 +1535,8 @@ var COMMAND_IMPL = {
   /* ---- 熔爐 ---- */
   'newforge.setQuality': function (a) {
     var fu = findNewForgeFurnace(a.furnaceId);
-    if (!fu) return { err: '找不到熔爐 ' + a.furnaceId };
-    if (a.rarity < 0 || a.rarity >= RARITIES.length || isGodforgedRarity(a.rarity)) return { err: '品質索引超出範圍' };
+    if (!fu) return { err: STR(1404, a.furnaceId) };
+    if (a.rarity < 0 || a.rarity >= RARITIES.length || isGodforgedRarity(a.rarity)) return { err: STR(1179) };
     fu.qualities[a.rarity] = !!a.on;
     newForgeReturnUnroutable(fu); // 取消勾選的品質自專屬佇列退回總佇列重新派發
     UI.dirty.newforge = true;
@@ -1543,7 +1545,7 @@ var COMMAND_IMPL = {
 
   'newforge.setEnabled': function (a) {
     var fu = findNewForgeFurnace(a.furnaceId);
-    if (!fu) return { err: '找不到熔爐 ' + a.furnaceId };
+    if (!fu) return { err: STR(1404, a.furnaceId) };
     fu.enabled = !!a.on;
     newForgeReturnUnroutable(fu); // 停用：專屬佇列退回總佇列
     UI.dirty.newforge = true;
@@ -1581,7 +1583,7 @@ var COMMAND_IMPL = {
   /* ---- 新版技能群組指令 ---- */
   'skill2.max': function (a) {
     var g = (typeof SKILLS2 !== 'undefined') ? SKILLS2[a.group] : null;
-    if (!g) return { err: '未知技能群組' };
+    if (!g) return { err: STR(675) };
     var tier = Math.floor(Number(a.tier));
     /* 超神進化那一格：一鍵滿級＝反覆呼叫 skills2UltLearn（金幣不足就停），
        解鎖條件與「必須先選一個」的判定都在那一支裡，這裡不再複製一份規則。 */
@@ -1595,7 +1597,7 @@ var COMMAND_IMPL = {
       if (!ultUp && ultErr) return { err: ultErr };
       return true;
     }
-    if (!(tier >= 0 && tier < g.tiers.length)) return { err: '未知階數' };
+    if (!(tier >= 0 && tier < g.tiers.length)) return { err: STR(92) };
     var lvs = (typeof skills2Levels === 'function') ? skills2Levels(a.group) : (G.player.skills2 && G.player.skills2.levels && G.player.skills2.levels[a.group]);
     if (!lvs) lvs = [];
     /* 一鍵滿級不經過 skills2Learn，解鎖門檻要在這裡自己擋一次——
@@ -1603,10 +1605,10 @@ var COMMAND_IMPL = {
     if (typeof sgTierUnlockedBy === 'function' && typeof sgUnlockProgress === 'function') {
       var maxPrg = sgUnlockProgress(null);
       if (maxPrg && !sgTierUnlockedBy(g.tiers[tier].unlock, maxPrg.level, maxPrg.reinc, maxPrg.towerHighest)) {
-        return { err: '需達到 ' + sgUnlockText(g.tiers[tier].unlock) + '才能解鎖此階' };
+        return { err: STR(94, sgUnlockText(g.tiers[tier].unlock)) };
       }
     }
-    if (tier > 0 && (lvs[tier - 1] || 0) < 1) return { err: '前一階需至少 Lv.1 才能解鎖此階' };
+    if (tier > 0 && (lvs[tier - 1] || 0) < 1) return { err: STR(93) };
     var tierMax = (typeof SG_TIER_MAX_LV === 'number') ? SG_TIER_MAX_LV : 10;
     var upgraded = 0;
     while ((lvs[tier] || 0) < tierMax) {
@@ -1631,7 +1633,7 @@ var COMMAND_IMPL = {
 
   'skill2.delete': function (a) {
     var g = (typeof SKILLS2 !== 'undefined') ? SKILLS2[a.group] : null;
-    if (!g) return { err: '未知技能群組' };
+    if (!g) return { err: STR(675) };
     var tier = Math.floor(Number(a.tier));
     /* 超神進化那一格：刪除＝整個清掉選擇（等級歸零、可重新三選一，不退金幣）。 */
     if (typeof sgIsUltSlot === 'function' && sgIsUltSlot(a.group, tier)) {
@@ -1642,7 +1644,7 @@ var COMMAND_IMPL = {
       else { UI.dirty.skills = true; UI.dirty.header = true; }
       return true;
     }
-    if (!(tier >= 0 && tier < g.tiers.length)) return { err: '未知階數' };
+    if (!(tier >= 0 && tier < g.tiers.length)) return { err: STR(92) };
     var lvs = (typeof skills2Levels === 'function') ? skills2Levels(a.group) : (G.player.skills2 && G.player.skills2.levels && G.player.skills2.levels[a.group]);
     if (!lvs) return true;
     var minLv = (tier === 0 ? 1 : 0);
@@ -1670,8 +1672,7 @@ var COMMAND_IMPL = {
     if (made > 0) {
       // 「全部類型寶石」不是 GEM_TYPES 的鍵，gemLabel 查不到會拋例外（合成已完成卻回報失敗）。
       var all = a.type === GEM_TYPE_ALL;
-      blog('♻️ 全部合成：' + (all ? GEM_NAMES[a.level] + '全部類型寶石' : gemLabel(a.type, a.level)) + ' ×' + (made * gemComposeInputCount(a.level)) +
-        ' → ' + (all ? GEM_NAMES[a.level + 1] + '同類型寶石' : gemLabel(a.type, a.level + 1)) + ' ×' + made, 'good', 'factory');
+      blog(STR(85, (all ? STR(1547, GEM_NAMES[a.level]) : gemLabel(a.type, a.level)), (made * gemComposeInputCount(a.level)), (all ? STR(1548, GEM_NAMES[a.level + 1]) : gemLabel(a.type, a.level + 1)), made), 'good', 'factory');
     }
     UI.dirty.gems = true;
     return { made: made, err: made > 0 ? null : err };
@@ -1683,8 +1684,7 @@ var COMMAND_IMPL = {
     while (made < 2500 && !(err = composeRune(a.runeId))) made++;
     if (made > 0) {
       var r = RUNE_BY_ID[a.runeId];
-      blog('♻️ 符文全部合成：' + runeLabel(a.runeId) + ' ×' + (made * RUNE_COMPOSE_COUNT) + ' → ' +
-        runeLabel(RUNES[r.tier].id) + ' ×' + made, 'good', 'factory');
+      blog(STR(1764, runeLabel(a.runeId), (made * RUNE_COMPOSE_COUNT), runeLabel(RUNES[r.tier].id), made), 'good', 'factory');
     }
     UI.dirty.gems = true;
     return { made: made, err: made > 0 ? null : err };
@@ -1698,8 +1698,7 @@ var COMMAND_IMPL = {
       count++; gain += r.n;
     }
     if (count > 0) {
-      blog('⛏️ 全部拆解：' + gemLabel(a.type, a.level) + ' ×' + count + ' → ' +
-        gemLabel(a.type, a.level - 1) + ' ×' + gain, 'good', 'factory');
+      blog(STR(1180, gemLabel(a.type, a.level), count, gemLabel(a.type, a.level - 1), gain), 'good', 'factory');
     }
     UI.dirty.gems = true;
     return { count: count, gain: gain, err: count > 0 ? null : (r && r.err) };
@@ -1761,7 +1760,7 @@ var COMMAND_IMPL = {
      回傳 { ok, message }，面板依此顯示結果。 */
   'gm.exec': function (a) {
     if (typeof executeGMCommand !== 'function') {
-      return { ok: false, message: 'GM 執行層未載入' };
+      return { ok: false, message: STR(86) };
     }
     return executeGMCommand(a.line);
   }
@@ -1773,7 +1772,7 @@ function runCommand(name, args) {
   var invalid = validateCommand(name, args);
   if (invalid) return { ok: false, error: invalid };
   if (G && G.tower && G.tower.active && bossFightBlocksCommand(name)) {
-    return { ok: false, error: 'BOSS 戰中不可變更戰鬥配置' };
+    return { ok: false, error: STR(164) };
   }
   if (COMMAND_IMPL[name]) {
     try {
@@ -1819,8 +1818,7 @@ function defaultSalvageHintText() {
     if (flags[r] && RARITIES[r]) picked.push(r);
   }
   if (!picked.length) {
-    return '💡 提示：預設不自動拆解任何品質，掉落裝備會全部保留入包。' +
-      '到【熔爐】勾選品質後，該品質才會自動拆解成碎片與精華。';
+    return STR(1405);
   }
   var contiguous = picked[picked.length - 1] - picked[0] === picked.length - 1;
   var label;
@@ -1831,7 +1829,7 @@ function defaultSalvageHintText() {
   } else {
     label = picked.map(function (r) { return RARITIES[r].name; }).join('、');
   }
-  return '💡 提示：預設「' + label + '」品質會自動拆解成碎片與精華，未勾選品質會保留入包。';
+  return STR(1181, label);
 }
 
 /* ---- 開機 ---- */
@@ -1860,7 +1858,7 @@ function boot(msg) {
      重跑一段模擬、再結算獎勵，任何一環碰到異常資料都會拋錯，而拋錯就等於開不了機。
      跳過它的代價只是「這次不補離線收益」，換來的是玩家進得去、匯得出存檔。 */
   if (loaded && msg.safeMode) {
-    notices.push({ key: '_safeModeNotice', text: '已以安全模式開機：本次略過離線結算，離線期間的收益不會補發。建議先匯出存檔備份。' });
+    notices.push({ key: '_safeModeNotice', text: STR(2014) });
   } else if (loaded && typeof applyOfflineProgress === 'function') {
     /* 離線收益可能要逐筆處理數千次掉落。不要在 BOOTED 前同步執行，
        否則主執行緒只能顯示 HTML 的預設 0/60，直到整段計算結束才拿到面板。 */
@@ -1874,12 +1872,11 @@ function boot(msg) {
   if (G._legacySkillRemoval) {
     var lgs = G._legacySkillRemoval;
     var lgsParts = [];
-    if (lgs.skills) lgsParts.push('已清除 ' + lgs.skills + ' 個舊版技能' + (lgs.fusions ? '（含 ' + lgs.fusions + ' 個融合技）' : ''));
-    else if (lgs.fusions) lgsParts.push('已清除 ' + lgs.fusions + ' 個融合技');
-    if (lgs.equipped) lgsParts.push('裝載欄中的 ' + lgs.equipped + ' 個舊技能已卸下');
-    if (lgs.scrolls) lgsParts.push('魔法卷軸 ' + lgs.scrolls + ' 張已移除');
-    notices.push({ key: '_legacySkillRemoval', text: '🧹 舊版技能系統已移除：' + lgsParts.join('，') +
-      '。請到「技能」頁使用新版技能。', cls: 'warn' });
+    if (lgs.skills) lgsParts.push(STR(670, lgs.skills, (lgs.fusions ? STR(87, lgs.fusions) : '')));
+    else if (lgs.fusions) lgsParts.push(STR(88, lgs.fusions));
+    if (lgs.equipped) lgsParts.push(STR(671, lgs.equipped));
+    if (lgs.scrolls) lgsParts.push(STR(89, lgs.scrolls));
+    notices.push({ key: '_legacySkillRemoval', text: STR(672, lgsParts.join('，')), cls: 'warn' });
     delete G._legacySkillRemoval;
   }
   // ONE-TIME MIGRATION: loadoutCapClampV1 的公告（裝載欄上限下修，超額格數已卸下）
@@ -1888,8 +1885,7 @@ function boot(msg) {
     delete G._loadoutCapClampNotice;
   }
   if (G._talentRespecNotice) {
-    notices.push({ key: '_talentRespecNotice', text: '🌟 ' + G._talentRespecNotice +
-      '，威能改為十級制；威能升級已改為消耗金幣。', cls: 'warn' });
+    notices.push({ key: '_talentRespecNotice', text: STR(841, G._talentRespecNotice), cls: 'warn' });
     delete G._talentRespecNotice;
   }
   /* 帶 modal 的公告要彈窗，不是寫進日誌，UI 端據此分辨。
@@ -1897,7 +1893,7 @@ function boot(msg) {
      其餘三個旗標暫時沒有人設定。這段傳輸機制刻意保留——日後若再需要開機公告，
      直接在 migrateSave 設旗標即可，不必重接一次管線。 */
   if (G._talentRespecConfirm) {
-    notices.push({ key: '_talentRespecConfirm', text: '威能系統已重新改造，請重新配置！', modal: true });
+    notices.push({ key: '_talentRespecConfirm', text: STR(842), modal: true });
     delete G._talentRespecConfirm;
   }
 
@@ -1908,21 +1904,19 @@ function boot(msg) {
      （player.js 的 `qualities.push(r === 0)`），玩家照著訊息做就會滿包。
      文案與預設值分屬兩個檔案，寫死等於保證日後再次不同步。 */
   if (loaded) {
-    notices.push({ key: 'welcomeBack', text: '📖 歡迎回來，冒險者！讀取存檔成功。', cls: 'good' });
+    notices.push({ key: 'welcomeBack', text: STR(2015), cls: 'good' });
     var invCapNow = (typeof inventoryCapacityWithTalents === 'function')
       ? inventoryCapacityWithTalents()
       : INVENTORY_CAP + (G.player.invUpgrades || 0);
     if (G.inventory.length > invCapNow) {
       notices.push({ key: 'inventoryOverCap', cls: 'warn',
-        text: '⚠️ 背包超出容量（' + G.inventory.length + '/' + invCapNow +
-          '）。今後滿載時將維持上限：新裝備與包內未鎖定最弱者「捨弱留強」擇一保留（上鎖裝備不受影響）。' +
-          '超出的部分可用「分解設定」批次清理。' });
+        text: STR(1182, G.inventory.length, invCapNow) });
     }
   } else {
-    notices.push({ key: 'welcomeNew', cls: 'good', text: '⚔️ 歡迎來到《無限征途：合成之巔》！' });
-    notices.push({ key: 'welcomeNew2', cls: 'info', text: '你的角色會自動戰鬥。掉落的裝備會流進【熔爐】，記得去勾選各熔爐要拆解的品質！' });
+    notices.push({ key: 'welcomeNew', cls: 'good', text: STR(90) });
+    notices.push({ key: 'welcomeNew2', cls: 'info', text: STR(1406) });
     notices.push({ key: 'welcomeNew3', cls: 'info', text: defaultSalvageHintText() });
-    flog('🏭 熔爐已啟動。掉落裝備會依各熔爐勾選的品質自動拆解或保留。', 'info');
+    flog(STR(1407), 'info');
   }
 
   /* 開機時把所有面板標記為髒。正常開機這是多餘的（UI 本來就會索取），

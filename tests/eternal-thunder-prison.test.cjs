@@ -14,7 +14,7 @@ function load(lv = 1, roll = 0.999) {
     floatEnemyEvent() {}, floatPlayerEvent() {} };
   c.window = c;
   vm.createContext(c);
-  for (const file of ['util', 'data', 'status', 'formula', 'battlefield', 'combat', 'skills', 'skills2']) {
+  for (const file of ['util', 'strings_data', 'strings', 'data', 'status', 'formula', 'battlefield', 'combat', 'skills', 'skills2']) {
     vm.runInContext(fs.readFileSync(path.join(root, 'js', file + '.js'), 'utf8'), c, { filename: file });
   }
   const g = c.SKILLS2.thunderstrike;

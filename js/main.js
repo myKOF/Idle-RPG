@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* ============ 遊戲入口 ============
    P5 起模擬與存檔的權威**只在 Worker**，主執行緒不再持有 G。
 
@@ -115,7 +116,7 @@ TabLock.onGranted(function () {
   /* 清理存檔資料夾「自匯入」bug 產生的同檔名重複記錄。
      這件事操作的是主執行緒的存檔索引（localStorage），不需要 G，留在這裡。 */
   var dupRemoved = (typeof dedupeSaveIndex === 'function') ? dedupeSaveIndex() : 0;
-  if (dupRemoved > 0) blog('🧹 已清理 ' + dupRemoved + ' 筆重複的存檔記錄（存檔資料夾自匯入問題已修正）', 'info');
+  if (dupRemoved > 0) blog(STR(1984, dupRemoved), 'info');
 
   setInterval(uiTickGuarded, 200);   // 包一層只為了記錄例外與耗時（見 ui.js UI_TICK_DIAG）
 
@@ -160,7 +161,7 @@ TabLock.onGranted(function () {
   if (btnFolderBanner) {
     btnFolderBanner.addEventListener('click', function () {
       var m = document.getElementById('save-msg');
-      if (m) m.textContent = '⏳ 請在跳出的視窗中選擇存檔資料夾…';
+      if (m) m.textContent = STR(1985);
       openSaveFolder(function (err, res) {
         var text;
         if (err) {
@@ -168,7 +169,7 @@ TabLock.onGranted(function () {
         } else {
           var bn = document.getElementById('save-folder-banner');
           if (bn) bn.style.display = 'none';
-          text = '✅ 已選定存檔資料夾「' + res.dirName + '」；自動存檔將每 10 分鐘同步一次。';
+          text = STR(1986, res.dirName);
         }
         if (m) m.textContent = text;
         blog(text, err ? 'warn' : 'good');

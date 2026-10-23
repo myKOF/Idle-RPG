@@ -1,14 +1,15 @@
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
-const util = fs.readFileSync(path.join(root, 'js', 'util.js'), 'utf8');
-const ui = fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8');
-const combat = fs.readFileSync(path.join(root, 'js', 'combat.js'), 'utf8');
-const skills2 = fs.readFileSync(path.join(root, 'js', 'skills2.js'), 'utf8');
+const util = readExpanded(path.join(root, 'js', 'util.js'));
+const ui = readExpanded(path.join(root, 'js', 'ui.js'));
+const combat = readExpanded(path.join(root, 'js', 'combat.js'));
+const skills2 = readExpanded(path.join(root, 'js', 'skills2.js'));
 const css = fs.readFileSync(path.join(root, 'css', 'style.css'), 'utf8');
 
 test('玩家事件浮字使用頭像區專用位置，不和傷害數字共用位置', () => {
@@ -70,7 +71,7 @@ test('護盾吸收不飄字，只寫進戰鬥紀錄', () => {
 });
 
 test('我方受到的傷害帶負號，回復類飄字不得用紅色', () => {
-  const renderer = fs.readFileSync(path.join(root, 'js', 'battle-renderer.js'), 'utf8');
+  const renderer = readExpanded(path.join(root, 'js', 'battle-renderer.js'));
 
   /* 數字前面要有負號：畫面上同時會有吸血、吸魔、護盾吸收好幾個數字，
      沒有正負號分不出哪一個在扣血。 */
@@ -107,9 +108,9 @@ test('復活倒數讀 FIELD.reviveCd，不是玩家實體上的欄位', () => {
   /* 這是 2026-08-13 的實際 bug：模擬層寫 FIELD.reviveCd，顯示層卻讀
      field.player.reviveCd——玩家實體（newPlayerEntity）根本沒有這個欄位，
      於是 dead 永遠是 false，倒地動作與 5 秒倒數都不會出現，而且不報錯。 */
-  const renderer = fs.readFileSync(path.join(root, 'js', 'battle-renderer.js'), 'utf8');
-  const uiSrc = fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8');
-  const combatSrc = fs.readFileSync(path.join(root, 'js', 'combat.js'), 'utf8');
+  const renderer = readExpanded(path.join(root, 'js', 'battle-renderer.js'));
+  const uiSrc = readExpanded(path.join(root, 'js', 'ui.js'));
+  const combatSrc = readExpanded(path.join(root, 'js', 'combat.js'));
 
   assert.match(combatSrc, /FIELD\.reviveCd = REVIVE_DELAY;/, '前提：倒數寫在 FIELD 上');
   assert.doesNotMatch(combatSrc, /player\.reviveCd\s*=/, '玩家實體上不該有 reviveCd');
@@ -121,7 +122,7 @@ test('復活倒數讀 FIELD.reviveCd，不是玩家實體上的欄位', () => {
 });
 
 test('玩家倒地只旋轉本體，血條與死亡倒數維持水平並顯示整數秒', () => {
-  const renderer = fs.readFileSync(path.join(root, 'js', 'battle-renderer.js'), 'utf8');
+  const renderer = readExpanded(path.join(root, 'js', 'battle-renderer.js'));
   const playerTickStart = renderer.indexOf('var p = S.player;');
   const playerTickEnd = renderer.indexOf('/* ---- 鏡頭：即時對準玩家 ----', playerTickStart);
   assert.ok(playerTickStart >= 0 && playerTickEnd > playerTickStart, '找不到玩家逐幀更新區塊');
@@ -134,7 +135,7 @@ test('玩家倒地只旋轉本體，血條與死亡倒數維持水平並顯示�
 });
 
 test('血條與死亡倒數的畫面間距及字級符合死亡 UI 規格', () => {
-  const renderer = fs.readFileSync(path.join(root, 'js', 'battle-renderer.js'), 'utf8');
+  const renderer = readExpanded(path.join(root, 'js', 'battle-renderer.js'));
   const reviveStart = renderer.indexOf('var reviveText = new PIXI.Text({');
   const reviveEnd = renderer.indexOf('S.layers.overlay.addChild(reviveText);', reviveStart);
   assert.ok(reviveStart >= 0 && reviveEnd > reviveStart, '找不到死亡倒數 HUD 建立區塊');
@@ -149,7 +150,7 @@ test('血條與死亡倒數的畫面間距及字級符合死亡 UI 規格', () =
 });
 
 test('玩家死亡時紅色視野迷霧由外向中心收縮，復活後恢復黑色暗角', () => {
-  const renderer = fs.readFileSync(path.join(root, 'js', 'battle-renderer.js'), 'utf8');
+  const renderer = readExpanded(path.join(root, 'js', 'battle-renderer.js'));
   assert.match(renderer, /function drawDeathFog\(k\)/);
   assert.match(renderer, /createRadialGradient\(center,\s*center,\s*inner/);
   assert.match(renderer, /rgba\(180, 0, 20, 0\)/);
@@ -164,7 +165,7 @@ test('玩家死亡時紅色視野迷霧由外向中心收縮，復活後恢復�
 });
 
 test('飄字不重疊：新的字會避開畫面上還在的字', () => {
-  const renderer = fs.readFileSync(path.join(root, 'js', 'battle-renderer.js'), 'utf8');
+  const renderer = readExpanded(path.join(root, 'js', 'battle-renderer.js'));
   assert.match(renderer, /function placeFloatNode\(node, baseX, baseY\)/);
   assert.match(renderer, /placeFloatNode\(node, pt\.x, pt\.y - 8\);/);
   /* 不能只靠隨機抖動：同一點同時落下三四個字時，隨機位移必然還是會疊在一起 */
@@ -172,7 +173,7 @@ test('飄字不重疊：新的字會避開畫面上還在的字', () => {
 });
 
 test('擊殺目標之後要隔一段時間才對下一隻出手（TARGET_SWITCH_DELAY）', () => {
-  const data = fs.readFileSync(path.join(root, 'js', 'data.js'), 'utf8');
+  const data = readExpanded(path.join(root, 'js', 'data.js'));
   const csv = fs.readFileSync(path.join(root, 'config', 'CSV', 'game_parameters.csv'), 'utf8');
   assert.match(data, /var TARGET_SWITCH_DELAY = [\d.]+;/);
   assert.match(csv, /表-固定參數,換目標間隔,/, '參數表要有這一列，數值才調得動');
@@ -294,7 +295,7 @@ test('敵人傷害浮字維持可讀字號且出現範圍更分散', () => {
 test('傷害數字消失速度提高一倍：Canvas 壽命減半，MISS／回復／技能名稱不變', () => {
   /* 2026-09-21：所有戰鬥區域的傷害數字消失速度 ×2。直接跑 floatStyle 算出壽命，
      不比對字面——倍率之後再調，這裡只要改期望值。 */
-  const renderer = fs.readFileSync(path.join(root, 'js', 'battle-renderer.js'), 'utf8');
+  const renderer = readExpanded(path.join(root, 'js', 'battle-renderer.js'));
   const src = renderer.slice(renderer.indexOf('function floatStyle('), renderer.indexOf('function floatDamageGroupId('));
   const consts = ['PLAYER_SKILL_FLOAT_LIFE_SEC', 'PLAYER_SKILL_TOTAL_FLOAT_LIFE_SEC', 'DAMAGE_FLOAT_SPEEDUP', 'CRIT_FLOAT_SHRINK_PX']
     .map((name) => renderer.match(new RegExp('var ' + name + ' = [^;]+;'))[0]).join('\n');
@@ -389,8 +390,8 @@ test('每次主普攻的連擊傷害獨立累加，追加劍氣不重播普攻�
   assert.match(combat, /damageGroupId: damageGroupId/);
   assert.match(combat, /variant: depth \? 'melee-extra' : 'melee'/);
 
-  const renderer = fs.readFileSync(path.join(root, 'js', 'battle-renderer.js'), 'utf8');
-  const vfx = fs.readFileSync(path.join(root, 'js', 'vfx.js'), 'utf8');
+  const renderer = readExpanded(path.join(root, 'js', 'battle-renderer.js'));
+  const vfx = readExpanded(path.join(root, 'js', 'vfx.js'));
   assert.match(renderer, /function floatDamageGroupId\(cls\)/);
   assert.match(renderer, /if \(groupId\) return elId \+ '\|damage-group:' \+ groupId;/);
   assert.match(renderer, /spec\.variant !== 'swordwave-extra'/);
@@ -462,7 +463,7 @@ test('玩家事件浮字依效果類型使用不同顏色', () => {
 });
 
 test('我方飄字依承傷／增益分成紅區與藍區，技能名稱從中心向左右隨機滑出', () => {
-  const renderer = fs.readFileSync(path.join(root, 'js', 'battle-renderer.js'), 'utf8');
+  const renderer = readExpanded(path.join(root, 'js', 'battle-renderer.js'));
   assert.match(util, /function floatPlayerSkillCast\(floatSel, skill, totalDamage\)/);
   assert.match(util, /skill-cast-' \+ direction/);
   assert.match(ui, /function playerFloatStyleClass\(elId, text, cls\)/);
@@ -484,7 +485,7 @@ test('我方飄字依承傷／增益分成紅區與藍區，技能名稱從中�
 });
 
 test('skill cast summary formats total damage and keeps the doubled lifetime contract', () => {
-  const renderer = fs.readFileSync(path.join(root, 'js', 'battle-renderer.js'), 'utf8');
+  const renderer = readExpanded(path.join(root, 'js', 'battle-renderer.js'));
   const calls = [];
   const context = {
     floatText: (...args) => calls.push(args)

@@ -1,9 +1,10 @@
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
-const combat = fs.readFileSync('js/combat.js', 'utf8');
-const renderer = fs.readFileSync('js/battle-renderer.js', 'utf8');
+const combat = readExpanded('js/combat.js');
+const renderer = readExpanded('js/battle-renderer.js');
 function fn(src, name) {
   const start = src.indexOf('function ' + name + '(');
   const open = src.indexOf('{', start);

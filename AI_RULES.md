@@ -572,6 +572,22 @@ VFX Editor 的 Preset 下拉依這兩個來源，在每份特效後面標出被�
 
 ---
 
+## 8.10 所有顯示文字必須登記在 String 表，並由表讀取（必要）
+
+使用者指定（2026-10-23）：
+
+- 遊戲中**所有顯示給玩家的文字**（界面標題與說明、tips、按鈕、對話框、日誌、飄字、系統訊息、HTML 內的文字與 tooltip 等），凡不屬於其他配置表（`config/Excel` 內其他表）已定義的，**一律寫入 `config/Excel/String.xlsx`，並由程式讀取該表的值來顯示**，不得再把中文直接寫死在 `js/*.js` 或 `index.html`。這是為了方便使用者查找、修改，以及日後多國語言翻譯。
+- 新增或修改顯示文字時，**同一個 Commit 內**更新 String 表：新增列（編號接續最大值）或修改該列的繁體中文，不得只改程式碼。
+- 表格欄位：`編號`、`功能模塊`（戰鬥、裝備、神鑄、熔爐、寶石、符文、技能、威能、封魔塔、任務、角色、存檔與系統、通用；同模塊的文字集中排在一起，跨模塊共用的詞歸「通用」）、`用途說明`、`替代字符參數說明`、`繁體中文`、`簡體中文`、`英文`。
+- 字串內必須保留原本程式碼中的替代字符，並在 `替代字符參數說明` 標明用法：`{0}`、`{1}` 等代入參數（說明對應的值）、具名參數（如 `{pct}`）、`
+`／`<br>` 換行、`<span style="color:…">…</span>` 換色、`<b>` 等標記。不得為了好看而拿掉替代字符，也不得把參數值寫死在字串裡。
+- 簡體中文與英文欄由使用者決定何時填寫；AI 不主動翻譯，空白時程式以繁體中文顯示。
+- 修改 String 表必須依第 8.5 節，透過 Excel 原生 API（`tools/excel-update-sheets.ps1`）寫入 xlsx，再由 `套用參數.bat`（或 `tools/xlsx_to_csv.cjs`）轉出 `config/CSV/String.csv`；**Excel 是來源**，不得只改 CSV，也不得用 `tools/string-table/build_string_csv.cjs` 重新產生去覆蓋已有的表（該工具只用於首次盤點或比對漏登記的字串）。
+- **目前現況（2026-10-23）**：讀取機制與遷移都已完成——`js/strings.js` 的 `STR(編號, 參數…)`、HTML `data-str`、`tools/string-table/apply_strings.cjs`（CSV → `js/strings_data.js`，`套用參數.bat` 自動執行），用法與開發須知見 `docs/STRING_TABLE.md`。程式與 HTML 裡**不得再出現寫死的顯示文字**；`node tools/string-table/build_string_csv.cjs --check` 必須回報「仍寫死 0 條」，`tests/string-table.test.cjs` 會擋下。新增文字的流程：先在 Excel 新增一列（`tools/excel-update-sheets.ps1`）、跑 `套用參數.bat`、再用 `STR(編號)` 取字。用 `vm` 載入會呼叫 `STR()` 的檔案時，測試要在 `util.js` 之後載入 `js/strings_data.js`、`js/strings.js`。
+- 不屬於本規範的文字：GM／錄製／診斷等內部工具、`console` 與 `Error` 訊息、程式內部比對用的字面值、已在其他配置表定義的名稱與說明。
+
+---
+
 # 9. Coding Style
 
 遵循專案既有 Coding Style。

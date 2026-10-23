@@ -6,6 +6,7 @@
    所以各記一筆、異常時顯示在 FPS 那一行。這裡守住：記錄正確、平常不出字、不改變 uiTick 的行為。 */
 
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -13,8 +14,8 @@ const vm = require('node:vm');
 const { functionSource, varBlock } = require('./helpers/ui-float-merge.cjs');
 
 const root = path.resolve(__dirname, '..');
-const ui = fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8');
-const mainSrc = fs.readFileSync(path.join(root, 'js', 'main.js'), 'utf8');
+const ui = readExpanded(path.join(root, 'js', 'ui.js'));
+const mainSrc = readExpanded(path.join(root, 'js', 'main.js'));
 
 const numVar = (name) => {
   const m = new RegExp('var ' + name + ' = [^;]+;').exec(ui);

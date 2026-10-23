@@ -1,4 +1,5 @@
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -45,19 +46,19 @@ test('裝備tips與裝備詳情之寶石鑲孔高度與外框縮短約3px，鑲�
 });
 
 test('空孔文字改為「寶石鑲孔」，操作列鑲嵌頁籤改為「寶石」', () => {
-  const itemJs = fs.readFileSync(path.join(root, 'js/item.js'), 'utf8');
-  const uiJs = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
+  const itemJs = readExpanded(path.join(root, 'js/item.js'));
+  const uiJs = readExpanded(path.join(root, 'js/ui.js'));
 
   // 空孔文字格式
   assert.match(itemJs, /text = '◇ 寶石鑲孔 ' \+ \(si \+ 1\) \+ '（空）';/);
   assert.doesNotMatch(itemJs, /text = '◇ 鑲孔 ' \+ \(si \+ 1\) \+ '（空）';/);
 
   // 卸下按鈕 aria-label
-  assert.match(itemJs, /aria-label="卸下寶石鑲孔 ' \+ \(si \+ 1\) \+ ' 的寶石"/);
+  assert.match(itemJs, /aria-label="' \+ '卸下寶石鑲孔 ' \+ \(si \+ 1\) \+ ' 的寶石/);
 
   // 操作列按鈕文字改為「寶石」
-  assert.match(uiJs, /<button class="btn" disabled>寶石<\/button>/);
-  assert.match(uiJs, /data-act="toggle-socket" aria-pressed="[^"]*">寶石<\/button>/);
+  assert.match(uiJs, /<button class="btn" disabled>(?:' \+ '寶石' \+ ')?寶石?<\/button>|<button class="btn" disabled>' \+ '寶石' \+ '<\/button>/);
+  assert.match(uiJs, /data-act="toggle-socket" aria-pressed="[^"]*">(?:寶石|' \+ '寶石' \+ ')<\/button>/);
   assert.doesNotMatch(uiJs, /data-act="toggle-socket" aria-pressed="[^"]*">鑲嵌<\/button>/);
 });
 

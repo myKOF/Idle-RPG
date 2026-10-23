@@ -14,8 +14,9 @@ function unescapeStr(raw) {
 const PUNCT3 = ['===', '!==', '...', '>>>', '**=', '<<=', '>>='];
 const PUNCT2 = ['==', '!=', '<=', '>=', '=>', '&&', '||', '??', '++', '--', '+=', '-=', '*=', '/=', '%=', '|=', '&=', '^=', '**', '<<', '>>', '?.'];
 
-function tokenize(src, baseLine) {
+function tokenize(src, baseLine, baseOffset) {
   const toks = [];
+  const off = baseOffset || 0;
   let i = 0, line = baseLine || 1;
   const n = src.length;
   const last = () => toks[toks.length - 1];
@@ -27,14 +28,14 @@ function tokenize(src, baseLine) {
     return !/^[)\]}]$/.test(p.v);
   }
   function readTpl(s) {
-    let j = s + 1, buf = ''; const parts = []; const startLine = line;
+    let j = s + 1, buf = '', bufStart = s + 1; const parts = []; const startLine = line;
     while (j < n) {
       const c = src[j];
       if (c === '\\') { buf += c + src[j + 1]; if (src[j + 1] === '\n') line++; j += 2; continue; }
-      if (c === '`') { parts.push({ text: buf }); return { end: j + 1, parts, line: startLine }; }
+      if (c === '`') { parts.push({ text: buf, textStart: off + bufStart }); return { end: j + 1, parts, line: startLine }; }
       if (c === '\n') line++;
       if (c === '$' && src[j + 1] === '{') {
-        parts.push({ text: buf }); buf = '';
+        parts.push({ text: buf, textStart: off + bufStart }); buf = '';
         let depth = 1, k = j + 2; const es = k;
         while (k < n && depth > 0) {
           const d = src[k];
@@ -45,9 +46,9 @@ function tokenize(src, baseLine) {
           k++;
         }
         const expr = src.slice(es, k);
-        parts.push({ expr, toks: tokenize(expr, line) });
+        parts.push({ expr, toks: tokenize(expr, line, off + es), exprStart: off + es, exprEnd: off + k });
         for (const ch of expr) if (ch === '\n') line++;
-        j = k + 1; continue;
+        j = k + 1; bufStart = j; continue;
       }
       buf += c; j++;
     }
@@ -66,12 +67,12 @@ function tokenize(src, baseLine) {
     if (c === '"' || c === "'") {
       let j = i + 1, raw = '';
       while (j < n && src[j] !== c) { if (src[j] === '\\') { raw += src[j] + src[j + 1]; if (src[j + 1] === '\n') line++; j += 2; continue; } if (src[j] === '\n') break; raw += src[j]; j++; }
-      toks.push({ t: 'str', v: unescapeStr(raw), src: src.slice(i, j + 1), line, pos: i });
+      toks.push({ t: 'str', v: unescapeStr(raw), src: src.slice(i, j + 1), line, pos: i + off, end: j + 1 + off });
       i = j + 1; continue;
     }
     if (c === '`') {
       const r = readTpl(i);
-      toks.push({ t: 'tpl', parts: r.parts, src: src.slice(i, r.end), line: r.line, pos: i });
+      toks.push({ t: 'tpl', parts: r.parts, src: src.slice(i, r.end), line: r.line, pos: i + off, end: r.end + off });
       i = r.end; continue;
     }
     if (c === '/' && regexAllowed()) {
@@ -83,16 +84,16 @@ function tokenize(src, baseLine) {
         j++;
       }
       j++; while (j < n && /[a-z]/.test(src[j])) j++;
-      toks.push({ t: 're', v: src.slice(i, j), src: src.slice(i, j), line, pos: i });
+      toks.push({ t: 're', v: src.slice(i, j), src: src.slice(i, j), line, pos: i + off, end: j + off });
       i = j; continue;
     }
-    if (/[A-Za-z_$]/.test(c)) { let j = i; while (j < n && /[\w$]/.test(src[j])) j++; toks.push({ t: 'id', v: src.slice(i, j), src: src.slice(i, j), line, pos: i }); i = j; continue; }
-    if (/[0-9]/.test(c) || (c === '.' && /[0-9]/.test(src[i + 1] || ''))) { let j = i; while (j < n && /[\w.]/.test(src[j])) j++; toks.push({ t: 'num', v: src.slice(i, j), src: src.slice(i, j), line, pos: i }); i = j; continue; }
+    if (/[A-Za-z_$]/.test(c)) { let j = i; while (j < n && /[\w$]/.test(src[j])) j++; toks.push({ t: 'id', v: src.slice(i, j), src: src.slice(i, j), line, pos: i + off, end: j + off }); i = j; continue; }
+    if (/[0-9]/.test(c) || (c === '.' && /[0-9]/.test(src[i + 1] || ''))) { let j = i; while (j < n && /[\w.]/.test(src[j])) j++; toks.push({ t: 'num', v: src.slice(i, j), src: src.slice(i, j), line, pos: i + off, end: j + off }); i = j; continue; }
     let p = null;
     for (const q of PUNCT3) if (src.startsWith(q, i)) { p = q; break; }
     if (!p) for (const q of PUNCT2) if (src.startsWith(q, i)) { p = q; break; }
     if (!p) p = c;
-    toks.push({ t: 'p', v: p, src: p, line, pos: i });
+    toks.push({ t: 'p', v: p, src: p, line, pos: i + off, end: i + p.length + off });
     i += p.length;
   }
   return toks;
@@ -236,30 +237,54 @@ function extract(src) {
       for (const o of ops) for (const t of o) if (t.t === 'tpl') handleTpl(t, ctx, prevTerm, true);
       // 單獨出現在 operand 內的 str（例如 x.replace('a','b') 已由括號遞迴處理）
       for (const o of ops) if (o.length > 1 && o.some(t => t.t === 'str' && CJK.test(t.v)) && !o.some(t => t.v === '(')) {
-        for (const t of o) if (t.t === 'str' && CJK.test(t.v)) emit(t.v, [], t, ctx, prevTerm, o);
+        for (const t of o) if (t.t === 'str' && CJK.test(t.v)) emit(t.v, [], t, ctx, prevTerm, o, { ops: [{ type: 'str', s: t.pos, e: t.end, tok: t }], span: [t.pos, t.end] });
       }
       return;
     }
+    // 字串之前連續的非字面 operand 要先合併成一個（a + b + '個' 的 a + b 是先做數字相加，不能拆成兩個參數）
+    const firstLit = ops.findIndex(o => o.length === 1 && (o[0].t === 'str' || o[0].t === 'tpl'));
+    const merged = [];
+    let lead = [];
+    const flushLead = () => {
+      if (!lead.length) return;
+      if (lead.length === 1) merged.push(lead[0]);
+      else merged.push({ merge: lead });
+      lead = [];
+    };
+    ops.forEach((o, ix) => {
+      if (ix < firstLit && o.length) lead.push(o);
+      else { flushLead(); merged.push(o); }
+    });
+    flushLead();
     let text = '';
     const params = [];
+    const opd = [];
     let firstTok = null;
-    for (const o of ops) {
-      if (o.length === 1 && o[0].t === 'str') { text += o[0].v; firstTok = firstTok || o[0]; }
+    for (const o of merged) {
+      if (o.merge) {
+        const toks = [].concat(...o.merge);
+        params.push('(' + o.merge.map(exprSrc).join(' + ') + ')');
+        text += '{' + (params.length - 1) + '}';
+        opd.push({ type: 'expr', s: toks[0].pos, e: toks[toks.length - 1].end });
+        for (const t of toks) if (t.t === 'tpl') for (const p of t.parts) if (p.toks) processSeq(p.toks, { callee: '', inTpl: true });
+      } else if (o.length === 1 && o[0].t === 'str') { text += o[0].v; firstTok = firstTok || o[0]; opd.push({ type: 'str', s: o[0].pos, e: o[0].end, tok: o[0] }); }
       else if (o.length === 1 && o[0].t === 'tpl') {
         const r = tplToText(o[0], params);
         text += r; firstTok = firstTok || o[0];
+        opd.push({ type: 'tpl', s: o[0].pos, e: o[0].end, tok: o[0] });
         // 樣板內 ${} 的子運算式也要遞迴
         for (const p of o[0].parts) if (p.toks) processSeq(p.toks, { callee: '', inTpl: true });
       } else if (o.length === 0) { /* 空 */ }
       else {
         params.push(exprSrc(o));
         text += '{' + (params.length - 1) + '}';
+        opd.push({ type: 'expr', s: o[0].pos, e: o[o.length - 1].end });
         // 非字面 operand 內如果有 tpl 也要處理
         for (const t of o) if (t.t === 'tpl') for (const p of t.parts) if (p.toks) processSeq(p.toks, { callee: '', inTpl: true });
       }
     }
     if (!CJK.test(text.replace(/\{\d+\}/g, ''))) return;
-    emit(text, params, firstTok, ctx, prevTerm, gtoks);
+    emit(text, params, firstTok, ctx, prevTerm, gtoks, { ops: opd, span: [gtoks[0].pos, gtoks[gtoks.length - 1].end] });
   }
 
   function tplToText(tok, params) {
@@ -274,10 +299,10 @@ function extract(src) {
     const params = [];
     const text = tplToText(tok, params);
     for (const p of tok.parts) if (p.toks) processSeq(p.toks, { callee: '', inTpl: true });
-    if (CJK.test(text.replace(/\{\d+\}/g, ''))) emit(text, params, tok, ctx, prevTerm, [tok]);
+    if (CJK.test(text.replace(/\{\d+\}/g, ''))) emit(text, params, tok, ctx, prevTerm, [tok], { ops: [{ type: 'tpl', s: tok.pos, e: tok.end, tok }], span: [tok.pos, tok.end] });
   }
 
-  function emit(text, params, tok, ctx, prevTerm, gtoks) {
+  function emit(text, params, tok, ctx, prevTerm, gtoks, extra) {
     // 找 key：groupPrev 是 ':' 時，其前一個 id/str 就是 key
     let key = '';
     if (prevTerm && prevTerm.v === ':') {
@@ -290,6 +315,7 @@ function extract(src) {
     out.push({
       text, params, line: tok.line, fn: fnAt[gi >= 0 ? gi : 0] || '', top: topAt[gi >= 0 ? gi : 0] || '', callee: ctx.callee || '', objOf: ctx.objOf || '', key,
       prev: prevTerm ? prevTerm.v : '', isArr: !!ctx.arrayOf,
+      ops: extra && extra.ops, span: extra && extra.span,
     });
   }
 

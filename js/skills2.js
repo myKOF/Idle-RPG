@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* ============ 新版主動技能系統（2026-08-13 技能改造第一批） ============
    設計來源：神力之巔_記事錄.xlsx「技能」頁籤。
    8 個技能群組 × 7 階：同群組在前端顯示為「同一個技能」，玩家裝配群組後，
@@ -395,8 +396,7 @@ function sgTierUnlockedBy(unlock, level, reinc, towerHighest) {
 function sgUnlockText(unlock) {
   if (!unlock) return '';
   var r = Math.max(0, Number(unlock.reinc) || 0);
-  return (r > 0 ? r + ' 轉 ' : '') + Math.max(0, Number(unlock.lv) || 0) + ' 級' +
-    (unlock.tower > 0 ? '，並通關封魔塔第' + unlock.tower + '層' : '');
+  return STR(680, (r > 0 ? STR(679, r) + ' ' : '') + Math.max(0, Number(unlock.lv) || 0), (unlock.tower > 0 ? STR(681, unlock.tower) : ''));
 }
 
 /* 解鎖進度來源：Worker 端讀 G；主執行緒沒有 G，由呼叫端傳面板快照的等級／轉生數／最高通關塔層。
@@ -1105,7 +1105,7 @@ function sgApplyStatusEntry(ent, entry, gid, tierKey, side, spec) {
     ctx.source = sgStatusSource(gid);
   }
   if (ctx.source && !ctx.source.subType) {
-    ctx.source.subType = (entry && entry.id === 'sgFrostBite') ? '寒霜狀態' : (def.name || entry.id);
+    ctx.source.subType = (entry && entry.id === 'sgFrostBite') ? STR(8) : (def.name || entry.id);
   }
   if ((v = sgStatusParam(entry, 'val', gid, tierKey)) !== undefined) ctx.val = v;
   if ((v = sgStatusParam(entry, 'dmg', gid, tierKey)) !== undefined) { ctx.dmg = v; delete ctx.dps; }
@@ -1362,17 +1362,17 @@ function sgUltStore() {
    已經選過就不給改——要換選項必須先把它降回 Lv.0（skills2UltDowngrade 會清掉選擇）。 */
 function skills2UltPick(group, optIdx) {
   var g = SKILLS2[group];
-  if (!g) return '未知技能群組';
-  if (!sgUltDefs(group)) return '此技能尚未開放終極進化';
+  if (!g) return STR(675);
+  if (!sgUltDefs(group)) return STR(682);
   var lvs = skills2Levels(group);
-  if (!sgUltUnlockedBy(group, lvs)) return '需先將前 ' + g.tiers.length + ' 階全部練滿才能選擇終極進化';
-  if (sgUltPickOf(sgUltStore(), group)) return '已選擇終極進化；需先將其降至 Lv.0 才能重新選擇';
+  if (!sgUltUnlockedBy(group, lvs)) return STR(683, g.tiers.length);
+  if (sgUltPickOf(sgUltStore(), group)) return STR(684);
   optIdx = Math.floor(Number(optIdx));
   var opt = sgUltOption(group, optIdx);
-  if (!opt) return '未知的終極進化選項';
-  if (!sgUltOptionUnlockedBy(group, optIdx, lvs)) return '需達到 ' + sgUnlockText(opt.unlock) + '才能解鎖此終極進化';
+  if (!opt) return STR(685);
+  if (!sgUltOptionUnlockedBy(group, optIdx, lvs)) return STR(686, sgUnlockText(opt.unlock));
   var cost = skills2UltCost(group, optIdx, 0);
-  if ((G.player.gold || 0) < cost) return '金幣不足';
+  if ((G.player.gold || 0) < cost) return STR(91);
   G.player.gold -= cost;
   sgUltStore()[group] = { pick: optIdx, lv: 1 };
   /* 修羅亂舞會改變屬性聚合（副手雙手武器是否生效、雙手詞條加成幾%），
@@ -1386,18 +1386,18 @@ function skills2UltPick(group, optIdx) {
 /* 確認後原子重選：先驗證選擇、等級與報價，失敗不刪除舊投資。 */
 function skills2UltSwitch(group, optIdx, fromOpt, fromLv, quotedCost) {
   var g = SKILLS2[group];
-  if (!g) return '未知技能群組';
-  if (!sgUltDefs(group)) return '此技能尚未開放終極進化';
-  if (!sgUltUnlockedBy(group, skills2Levels(group))) return '需先將前 ' + g.tiers.length + ' 階全部練滿才能切換終極進化';
+  if (!g) return STR(675);
+  if (!sgUltDefs(group)) return STR(682);
+  if (!sgUltUnlockedBy(group, skills2Levels(group))) return STR(687, g.tiers.length);
   var cur = sgUltPickOf(G.player.skills2 && G.player.skills2.ult, group);
-  if (!cur || cur.idx !== fromOpt || cur.lv !== fromLv) return '終極進化選擇或等級已變更，請重新確認切換';
+  if (!cur || cur.idx !== fromOpt || cur.lv !== fromLv) return STR(688);
   var opt = sgUltOption(group, optIdx);
-  if (!Number.isInteger(optIdx) || !opt) return '未知的終極進化選項';
-  if (!sgUltOptionUnlockedBy(group, optIdx, skills2Levels(group))) return '需達到 ' + sgUnlockText(opt.unlock) + '才能解鎖此終極進化';
-  if (cur.idx === optIdx) return '已選擇此終極進化';
+  if (!Number.isInteger(optIdx) || !opt) return STR(685);
+  if (!sgUltOptionUnlockedBy(group, optIdx, skills2Levels(group))) return STR(686, sgUnlockText(opt.unlock));
+  if (cur.idx === optIdx) return STR(689);
   var cost = skills2UltCost(group, optIdx, 0);
-  if (cost !== quotedCost) return '切換費用已變更，請重新確認';
-  if ((G.player.gold || 0) < cost) return '金幣不足';
+  if (cost !== quotedCost) return STR(690);
+  if ((G.player.gold || 0) < cost) return STR(91);
   G.player.gold -= cost;
   sgUltStore()[group] = { pick: optIdx, lv: 1 };
   sgAfterSkillChange();
@@ -1407,16 +1407,16 @@ function skills2UltSwitch(group, optIdx, fromOpt, fromLv, quotedCost) {
 /* 終極進化升級（第 8 格的「升級」；尚未選擇時要先走 skills2UltPick）。 */
 function skills2UltLearn(group) {
   var g = SKILLS2[group];
-  if (!g) return '未知技能群組';
-  if (!sgUltDefs(group)) return '此技能尚未開放終極進化';
+  if (!g) return STR(675);
+  if (!sgUltDefs(group)) return STR(682);
   var lvs = skills2Levels(group);
-  if (!sgUltUnlockedBy(group, lvs)) return '需先將前 ' + g.tiers.length + ' 階全部練滿才能投資終極進化';
+  if (!sgUltUnlockedBy(group, lvs)) return STR(691, g.tiers.length);
   var cur = sgUltPickOf(sgUltStore(), group);
-  if (!cur) return '請先選擇一個終極進化效果';
-  if (!sgUltOptionUnlockedBy(group, cur.idx, lvs)) return '需達到 ' + sgUnlockText(cur.def.unlock) + '才能解鎖此終極進化';
-  if (cur.lv >= SG_TIER_MAX_LV) return '此階已達等級上限';
+  if (!cur) return STR(692);
+  if (!sgUltOptionUnlockedBy(group, cur.idx, lvs)) return STR(686, sgUnlockText(cur.def.unlock));
+  if (cur.lv >= SG_TIER_MAX_LV) return STR(693);
   var cost = skills2UltCost(group, cur.idx, cur.lv);
-  if ((G.player.gold || 0) < cost) return '金幣不足';
+  if ((G.player.gold || 0) < cost) return STR(91);
   G.player.gold -= cost;
   sgUltStore()[group] = { pick: cur.idx, lv: cur.lv + 1 };
   /* 修羅亂舞會改變屬性聚合（副手雙手武器是否生效、雙手詞條加成幾%），
@@ -1429,9 +1429,9 @@ function skills2UltLearn(group) {
 
 /* 終極進化降級；降到 Lv.0 就整個清掉選擇（＝可以重新三選一，比照各階「降級不退金幣」）。 */
 function skills2UltDowngrade(group) {
-  if (!SKILLS2[group]) return '未知技能群組';
+  if (!SKILLS2[group]) return STR(675);
   var cur = sgUltPickOf(sgUltStore(), group);
-  if (!cur) return '尚未選擇終極進化';
+  if (!cur) return STR(694);
   if (cur.lv <= 1) { delete sgUltStore()[group]; }
   else sgUltStore()[group] = { pick: cur.idx, lv: cur.lv - 1 };
   /* 修羅亂舞會改變屬性聚合（副手雙手武器是否生效、雙手詞條加成幾%），
@@ -1444,21 +1444,21 @@ function skills2UltDowngrade(group) {
 
 function skills2Learn(group, tier) {
   var g = SKILLS2[group];
-  if (!g) return '未知技能群組';
+  if (!g) return STR(675);
   tier = Math.floor(Number(tier));
   if (sgIsUltSlot(group, tier)) return skills2UltLearn(group);
-  if (!(tier >= 0 && tier < g.tiers.length)) return '未知階數';
+  if (!(tier >= 0 && tier < g.tiers.length)) return STR(92);
   var lvs = skills2Levels(group);
-  if (tier > 0 && lvs[tier - 1] < 1) return '前一階需至少 Lv.1 才能解鎖此階';
+  if (tier > 0 && lvs[tier - 1] < 1) return STR(93);
   /* 解鎖門檻排在循序解鎖之後：兩者都沒滿足時，「先去投前一階」比「先去練等」更可行。 */
   var unlock = g.tiers[tier].unlock;
   var prg = sgUnlockProgress(null);
   if (prg && !sgTierUnlockedBy(unlock, prg.level, prg.reinc, prg.towerHighest)) {
-    return '需達到 ' + sgUnlockText(unlock) + '才能解鎖此階';
+    return STR(94, sgUnlockText(unlock));
   }
-  if (lvs[tier] >= SG_TIER_MAX_LV) return '此階已達等級上限';
+  if (lvs[tier] >= SG_TIER_MAX_LV) return STR(693);
   var cost = skills2UpgradeCost(group, tier, lvs[tier]);
-  if ((G.player.gold || 0) < cost) return '金幣不足';
+  if ((G.player.gold || 0) < cost) return STR(91);
   G.player.gold -= cost;
   lvs[tier]++;
   if (!G.player.skills2) G.player.skills2 = { levels: {} };
@@ -1469,14 +1469,14 @@ function skills2Learn(group, tier) {
 }
 function skills2Downgrade(group, tier) {
   var g = SKILLS2[group];
-  if (!g) return '未知技能群組';
+  if (!g) return STR(675);
   tier = Math.floor(Number(tier));
   if (sgIsUltSlot(group, tier)) return skills2UltDowngrade(group);
-  if (!(tier >= 0 && tier < g.tiers.length)) return '未知階數';
+  if (!(tier >= 0 && tier < g.tiers.length)) return STR(92);
   var lvs = skills2Levels(group);
-  if (tier === 0 && lvs[0] <= 1) return '第 1 階至少保持 Lv.1';
-  if (lvs[tier] <= 0) return '此階尚未投資';
-  if (lvs[tier] === 1 && tier + 1 < lvs.length && lvs[tier + 1] > 0) return '後續階數已投資，需先將其降至 Lv.0';
+  if (tier === 0 && lvs[0] <= 1) return STR(695);
+  if (lvs[tier] <= 0) return STR(696);
+  if (lvs[tier] === 1 && tier + 1 < lvs.length && lvs[tier + 1] > 0) return STR(697);
   /* 前 7 階任何一階離開滿級，終極進化就失去解鎖條件（sgEffectiveUlt 會自動失效）；
      等級與選擇一律保留在存檔裡，練回滿級就原樣回來——與各階「未達門檻視為 Lv.0」同一條規則。 */
   lvs[tier]--;
@@ -2126,8 +2126,8 @@ function sgHitOne(pEnt, st, target, dmgVal, gid, floatSel, out, delayMs, bonusTo
     out.dmg += res.dmg;
     if (res.crit) out.crit = true;
     var s = fmt(res.dmg);
-    if (res.crit) s = '爆擊 ' + s;
-    if (res.blocked) s = '格擋 ' + s;
+    if (res.crit) s = STR(9, s);
+    if (res.blocked) s = STR(10, s);
     if (typeof floatEnemyEvent === 'function') {
       floatEnemyEvent(target, floatSel, s,
         (typeof combatDamageFloatClass === 'function') ? combatDamageFloatClass('enemy-skill', res) : 'enemy-skill',
@@ -2673,8 +2673,7 @@ function castSkill2(pEnt, target, gid, floatSel, opts) {
     }
   }
   if (typeof blog === 'function' && !freeCast) {
-    blog(g.emoji + ' 你施放【' + g.name + ' Lv.' + sgTotalLevel(lvs) + '】' +
-      (out.dmg > 0 ? '，造成 ' + fmt(out.dmg) + ' 傷害' : ''));
+    blog(STR(698, g.emoji, g.name, sgTotalLevel(lvs), (out.dmg > 0 ? STR(699, fmt(out.dmg)) : '')));
   }
   return out;
 }
@@ -2959,7 +2958,7 @@ function sgCleaveOnHit(cfg, target, res, ctx) {
 function sgCleaveSpinHit(cfg, target, ctx, duration) {
   var out = cfg.out, before = out.dmg;
   var hit = sgHitOne(cfg.pEnt, cfg.st, target, cfg.st.atk * cfg.vacuum.pct / 100,
-    'cleave', cfg.floatSel, out, 0, 0, 'wind', false, '逐風者真空迴旋');
+    'cleave', cfg.floatSel, out, 0, 0, 'wind', false, STR(700));
   var roles = sgVfxRoles('cleave', { vfxUlt: 'windChaser' });
   sgEmitVfx('cleave', [target], cfg.floatSel, {
     fxKind: 'slash', variant: 'wind-chaser-spin', elem: 'wind', dur: duration || cfg.vacuum.gap,
@@ -3976,9 +3975,9 @@ function skills2TryDeathDefer(pEnt) {
   if (!(typeof gmHpLockActive === 'function' && gmHpLockActive(pEnt))) pEnt.hp = Math.max(1, pEnt.hp);
   // 延後死亡期間的旋風是【不屈之誓】狀態的「持續特效」（狀態表）
   applyStatus(pEnt, 'sgDeathDefer', { val: Math.max(0, Number(spec.pct) || 0), dur: sec });
-  if (typeof floatPlayerEvent === 'function') floatPlayerEvent('pv-float', '不屈之誓!', 'buff');
+  if (typeof floatPlayerEvent === 'function') floatPlayerEvent('pv-float', STR(701), 'buff');
   if (typeof blog === 'function') {
-    blog('🕯️ 【不屈之誓】你的死亡被推遲 ' + sec + ' 秒——這段時間你造成的傷害大幅提高！', 'info');
+    blog(STR(702, sec), 'info');
   }
   if (typeof UI !== 'undefined' && UI.dirty) UI.dirty.battle = true;
   return true;
@@ -4237,8 +4236,8 @@ function sgTickBurn(dt, ctx) {
    所以表格換了受擊特效，坑與傷害就一起跟著走，不會出現「有坑沒傷害」或「有傷害沒坑」。
    坑痕畫面由 Preset 的 impact-ground-* 圖層自己播（壽命 4 秒＝SG_CRATER_SEC），這裡只算傷害，不另送特效。 */
 var SG_CRATER_BY_PRESET = {
-  'burst-meteor-inferno': { elem: 'fire', name: '熔岩坑' },
-  'hit-thunderfall-impact': { elem: 'lightning', name: '雷電坑' }
+  'burst-meteor-inferno': { elem: 'fire', name: STR(703) },
+  'hit-thunderfall-impact': { elem: 'lightning', name: STR(704) }
 };
 var SG_CRATER_PCT = 100;   // 每拍傷害＝這顆隕石傷害值的 %
 var SG_CRATER_GAP = 0.5;   // 作用間隔（秒）
@@ -5436,38 +5435,38 @@ function sgGroundHitSubType(f) {
   if (f.subType) return f.subType;
   if (f.gid === 'waterball') {
     if (f.kind === 'tornado') return '水龍捲';
-    if (f.kind === 'tidetornado') return '巨型水龍捲';
+    if (f.kind === 'tidetornado') return STR(705);
   }
   if (f.gid === 'firepillar') {
-    if (f.kind === 'pillar') return '火柱';
-    if (f.kind === 'wall') return '火牆';
+    if (f.kind === 'pillar') return STR(706);
+    if (f.kind === 'wall') return STR(707);
     if (f.kind === 'firepool') return '火池';
-    if (f.kind === 'devour' || f.kind === 'devourblast') return '吞噬';
+    if (f.kind === 'devour' || f.kind === 'devourblast') return STR(708);
   }
   if (f.gid === 'frostnova') {
     if (f.kind === 'blizzard') return '暴風雪';
-    if (f.kind === 'icespike') return '冰錐';
+    if (f.kind === 'icespike') return STR(709);
   }
   if (f.gid === 'windblade') {
-    if (f.kind === 'windblade') return '追擊風刃';
+    if (f.kind === 'windblade') return STR(710);
   }
   if (f.gid === 'vacuumslash') {
-    if (f.kind === 'vacuumfield') return '真空風暴';
+    if (f.kind === 'vacuumfield') return STR(711);
   }
   if (f.gid === 'icearrow') {
-    if (f.kind === 'icearrow') return '追擊冰箭';
+    if (f.kind === 'icearrow') return STR(712);
     if (f.kind === 'icerain') return '冰之淚';
   }
   if (f.gid === 'thunderstrike') {
     if (f.kind === 'thunderwall') return '雷電矩陣';
   }
   if (f.gid === 'thunderorb') {
-    if (f.kind === 'orb') return '衍生雷球';
+    if (f.kind === 'orb') return STR(713);
   }
-  if (f.gid === 'thunderstrike' && f.kind === 'thunderpool') return '雷池';
+  if (f.gid === 'thunderstrike' && f.kind === 'thunderpool') return STR(714);
   if (f.gid === 'mire') {
     if (f.kind === 'mire') return '泥沼術';
-    if (f.kind === 'poisonmist') return '毒霧';
+    if (f.kind === 'poisonmist') return STR(2);
   }
   var g = (typeof SKILLS2 !== 'undefined') ? SKILLS2[f.gid] : null;
   return g ? g.name : f.gid;
@@ -6974,7 +6973,7 @@ function sgRockOnPlayerDamaged(mEnt, pEnt, hpDamage, res, floatSel) {
     applyStatus(pEnt, 'invuln', { dur: Number(heart.sec) });
     if (typeof floatPlayerEvent === 'function') {
       var hSel = (typeof playerEventFloatTarget === 'function') ? playerEventFloatTarget(floatSel) : floatSel;
-      floatPlayerEvent(hSel, '🪨無敵!', 'buff');
+      floatPlayerEvent(hSel, STR(715), 'buff');
     }
   }
 }
@@ -7649,11 +7648,11 @@ function skills2TryRebirth(pEnt) {
   if (SKILL2_RT.rebirth) SKILL2_RT.rebirth.started = true;
   sgEmitPlayerVfx('earthguard', 'pv-float', { fxKind: 'rain', variant: 'pillar', elem: 'light', dur: riseSec, vfxTier: 7,
     vfxRoles: { attack: sgVfxRoles('earthguard', { vfxTier: 7, vfxBase: true }).attack } });
-  if (typeof floatPlayerEvent === 'function') floatPlayerEvent('pv-float', '天地共生!', 'buff');
+  if (typeof floatPlayerEvent === 'function') floatPlayerEvent('pv-float', STR(716), 'buff');
   if (typeof blog === 'function') {
     var left = (SKILL2_RT.rebirth && skills2RebirthMaxCharges() > 1)
-      ? '（剩餘累積復活 ' + Math.max(0, Math.floor(Number(SKILL2_RT.rebirth.charges) || 0)) + ' 次）' : '';
-    blog('🌍 【天地共生】大地將你托起——' + riseSec + ' 秒後於原地復活！' + left, 'info');
+      ? STR(717, Math.max(0, Math.floor(Number(SKILL2_RT.rebirth.charges) || 0))) : '';
+    blog(STR(718, riseSec, left), 'info');
   }
   if (typeof UI !== 'undefined' && UI.dirty) { UI.dirty.battle = true; UI.dirty.skills = true; }
   return true;
@@ -7673,7 +7672,7 @@ function sgTickEarthguardRevival(pEnt) {
   var fx = SKILLS2.earthguard.tiers[6].fx;
   sgApplySlot(pEnt, 'earthguard', '7', 'self', 0, { dur: fx.sec, val: fx.red });
   SKILL2_RT.rebirthGuardOwner = pEnt;
-  if (typeof floatPlayerEvent === 'function') floatPlayerEvent('pv-float', '復活完成!', 'buff');
+  if (typeof floatPlayerEvent === 'function') floatPlayerEvent('pv-float', STR(719), 'buff');
   if (typeof UI !== 'undefined' && UI.dirty) UI.dirty.battle = true;
   return true;
 }
@@ -9225,7 +9224,7 @@ function sgSpreadFrost(from, enemies, fx, dot) {
     dps: dot.dps, dur: Math.max(0.1, dot.until - GT), interval: dot.interval, stacksRaw: 1,
     bodyDmg: dot.bodyDmg, frostMult: dot.frostMult, frostFormula: dot.frostFormula,
     slot: (dot && dot.slot) || { gid: srcGid, tier: '3' },
-    source: (dot && dot.sourceKey) ? { sourceKey: dot.sourceKey, sourceName: dot.sourceName, sourceLevel: dot.sourceLevel, subType: dot.subType || '寒霜狀態' } : null
+    source: (dot && dot.sourceKey) ? { sourceKey: dot.sourceKey, sourceName: dot.sourceName, sourceLevel: dot.sourceLevel, subType: dot.subType || STR(8) } : null
   };
   var spread = [];
   for (var i = 0; i < victims.length; i++) {
@@ -10060,7 +10059,7 @@ function sgTickRagingTide(ctx, dt) {
     from: spots.length ? { x: cx / spots.length, y: cy / spots.length } : null,
     radius: bfMeterPx(sgUltVal(u, 'm')), dmgVal: dmgVal,
     hits: Math.max(1, Math.floor(sec / gap + 1e-9)), gap: gap, lifeSec: sec,
-    subType: '巨型水龍捲',
+    subType: STR(705),
     vfxUlt: 'ragingTide'
   });
   sgEmitVfx('waterball', [], ctx.floatSel, sgGroundVfxSpec(SKILL2_RT.grounds[SKILL2_RT.grounds.length - 1]));
@@ -11780,10 +11779,10 @@ function sgCounterStrike(pEnt, st, target, pct, floatSel, out, delayMs, cfg) {
     out.dmg += res.dmg;
     if (res.crit) out.crit = true;
     var s = fmt(res.dmg);
-    if (res.crit) s = '爆擊 ' + s;
-    if (res.blocked) s = '格擋 ' + s;
+    if (res.crit) s = STR(9, s);
+    if (res.blocked) s = STR(10, s);
     if (typeof floatEnemyEvent === 'function') {
-      floatEnemyEvent(target, floatSel, '反擊 ' + s,
+      floatEnemyEvent(target, floatSel, STR(720, s),
         (typeof combatDamageFloatClass === 'function') ? combatDamageFloatClass('enemy-skill', res) : 'enemy-skill',
         res.dmg, delayMs);
     }
@@ -11913,7 +11912,7 @@ function sgCounterAfterStrike(pEnt, st, target, cfg, floatSel, out, delayMs) {
     if (rt.oath >= Math.max(1, Math.floor(Number(cfg.oath.count) || 1))) {
       rt.oath = 0;
       applyStatus(pEnt, 'invuln', { dur: Math.max(0.2, Number(cfg.oath.sec) || 0) });
-      if (typeof floatPlayerEvent === 'function') floatPlayerEvent('pv-float', '堅韌誓言!', 'buff');
+      if (typeof floatPlayerEvent === 'function') floatPlayerEvent('pv-float', STR(721), 'buff');
     }
   }
   if (cfg.wrath) {
@@ -11923,7 +11922,7 @@ function sgCounterAfterStrike(pEnt, st, target, cfg, floatSel, out, delayMs) {
       applyStatus(pEnt, 'sgCounterWrath', {
         val: Number(cfg.wrath.pct) || 0, dur: Math.max(0.2, Number(cfg.wrath.sec) || 0)
       });
-      if (typeof floatPlayerEvent === 'function') floatPlayerEvent('pv-float', '怒火!', 'buff');
+      if (typeof floatPlayerEvent === 'function') floatPlayerEvent('pv-float', STR(722), 'buff');
     }
   }
   if (cfg.holy) {
@@ -12039,7 +12038,7 @@ function skills2TryLastStand(pEnt, enemies, floatSel) {
     fxKind: 'aura', variant: 'indomitable-light', dur: sgUltVal(u, 'lightSec'),
     vfxRoles: roles.hit ? { ground: roles.hit } : {}
   });
-  if (typeof floatPlayerEvent === 'function') floatPlayerEvent('pv-float', '不屈鬥魂!', 'buff');
+  if (typeof floatPlayerEvent === 'function') floatPlayerEvent('pv-float', STR(723), 'buff');
   if (typeof UI !== 'undefined' && UI.dirty) { UI.dirty.battle = true; UI.dirty.skills = true; }
   return true;
 }
@@ -12105,7 +12104,7 @@ function sgTickAsuraFist(ctx, dt) {
     val: sgUltVal(u, 'pct'), dur: Math.max(0.1, sgUltVal(u, 'sec'), remaining)
   });
   SKILL2_RT.asuraOwner = ctx.pEnt;
-  if (typeof floatPlayerEvent === 'function') floatPlayerEvent('pv-float', '阿修羅霸王拳!', 'buff');
+  if (typeof floatPlayerEvent === 'function') floatPlayerEvent('pv-float', STR(724), 'buff');
 }
 
 /* 狂化反殺目標挑選：範圍內（米換算；無座標＝視為在範圍內）、排除攻擊者本身，
@@ -12281,7 +12280,7 @@ function sgTickStarfall(ctx, dt) {
       vfxUlt: 'starfallCataclysm',
       vfxRoles: { ground: sgVfxRoles('fireball', { vfxUlt: 'starfallCataclysm', vfxBase: true }).ground }
     });
-    if (typeof floatPlayerEvent === 'function') floatPlayerEvent('pv-float', '地爆天星!', 'buff');
+    if (typeof floatPlayerEvent === 'function') floatPlayerEvent('pv-float', STR(725), 'buff');
   }
   /* 殞石開始下墜：下墜時間已經是一般殞石的 SG_STARFALL_FALL_MULT 倍（＝速度一半）。
      顯示層要靠 travelMs 對齊落地時刻，因此這裡送的是「從現在到落地還有多久」。 */
@@ -12766,8 +12765,7 @@ function describeSkill2Group(gid, levels, ultRaw, prog) {
     var locked = i > 0 && (lvs[i - 1] || 0) < 1;
     var cls = lv > 0 ? 'sg-tier-on' : (locked ? 'sg-tier-locked' : 'sg-tier-off');
     var tierMp = skills2TierTriggerMp(gid, i); // 被動群組：每階自己的觸發消耗
-    var head = '第' + (i + 1) + '階【' + g.tiers[i].name + '】' + (lv > 0 ? ' Lv.' + lv : (locked ? '（未解鎖）' : '（未投資）')) +
-      (tierMp > 0 ? '　🔵' + tierMp + ' MP' : '');
+    var head = STR(727, (i + 1), g.tiers[i].name, (lv > 0 ? ' Lv.' + lv : (locked ? STR(95) : STR(726))), (tierMp > 0 ? '　🔵' + tierMp + ' MP' : ''));
     parts.push('<div class="' + cls + '"><b>' + head + '</b>　' + describeSkill2Tier(gid, i, lv) + '</div>');
   }
   /* 終極進化（第 8 格）：只在該群組有開放時才列。ultRaw＝存檔／快照上的選擇字典。 */
@@ -12776,11 +12774,10 @@ function describeSkill2Group(gid, levels, ultRaw, prog) {
     var ultOk = pick ? sgUltOptionUnlockedBy(gid, pick.idx, lvs, prog) :
       (sgUltDefs(gid) || []).some(function (opt, idx) { return sgUltOptionUnlockedBy(gid, idx, lvs, prog); });
     var ultCls = pick ? (ultOk ? 'sg-tier-on' : 'sg-tier-locked') : (ultOk ? 'sg-tier-off' : 'sg-tier-locked');
-    var ultHead = '第' + (g.tiers.length + 1) + '階【終極進化】' +
-      (pick ? '（' + pick.def.name + '）Lv.' + pick.lv + (ultOk ? '' : '（解鎖條件未達，暫時失效）')
-        : (ultOk ? '（可選擇已解鎖選項）' : '（需前 ' + g.tiers.length + ' 階全滿及達到選項門檻）'));
+    var ultHead = STR(728, (g.tiers.length + 1), (pick ? '（' + pick.def.name + '）Lv.' + pick.lv + (ultOk ? '' : STR(729))
+        : (ultOk ? STR(730) : STR(731, g.tiers.length))));
     parts.push('<div class="' + ultCls + '"><b>' + ultHead + '</b>　' +
-      (pick ? describeSkill2Ult(gid, pick.idx, pick.lv) : '從三個效果中選擇一個，可再升至 Lv.' + SG_TIER_MAX_LV) + '</div>');
+      (pick ? describeSkill2Ult(gid, pick.idx, pick.lv) : STR(732, SG_TIER_MAX_LV)) + '</div>');
   }
   return parts.join('');
 }

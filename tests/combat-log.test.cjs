@@ -1,4 +1,5 @@
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -6,11 +7,11 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 
 test('戰鬥日誌分類與色彩樣式規則驗證', () => {
-  const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
-  const combat = fs.readFileSync(path.join(root, 'js/combat.js'), 'utf8');
-  const tower = fs.readFileSync(path.join(root, 'js/tower.js'), 'utf8');
-  const forge = fs.readFileSync(path.join(root, 'js/forge.js'), 'utf8');
-  const worker = fs.readFileSync(path.join(root, 'js/worker/sim.worker.js'), 'utf8');
+  const ui = readExpanded(path.join(root, 'js/ui.js'));
+  const combat = readExpanded(path.join(root, 'js/combat.js'));
+  const tower = readExpanded(path.join(root, 'js/tower.js'));
+  const forge = readExpanded(path.join(root, 'js/forge.js'));
+  const worker = readExpanded(path.join(root, 'js/worker/sim.worker.js'));
   const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
 
   // 1. 驗證掉落物僅分類「打敗敵人的掉落物」與「敵人掉落」，其餘獲得途徑不屬於 loot 分類
@@ -46,7 +47,7 @@ test('戰鬥日誌分類與色彩樣式規則驗證', () => {
   assert.match(combat, /if\s*\(mult\s*&&\s*mult\s*>\s*1\)\s*\{\s*cls\s*=\s*'log-enemy-skill';\s*\}/);
   assert.match(css, /\.log-line\.log-enemy-skill\s*\{[\s\S]*?color:\s*#fff59d;[\s\S]*?\}/);
   assert.match(combat, /function\s+doMonsterAttack\(mEnt,\s*pEnt,\s*floatSel,\s*mult,\s*skillName\)/);
-  assert.match(combat, /skillName\s*\?\s*' 使用【'\s*\+\s*skillName\s*\+\s*'】'/);
+  assert.match(combat, /skillName\s*\?\s*' '\s*\+\s*'使用【'\s*\+\s*skillName\s*\+\s*'】'/);
   assert.match(combat, /if\s*\(skillName\)\s*\{\s*cls\s*=\s*'log-enemy-skill';\s*\}/);
   assert.match(tower, /var\s+bossSpecialTarget\s*=[\s\S]*?doMonsterAttack\(b,\s*bossSpecialTarget,\s*'tp-float',\s*2\.2\s*\*\s*mult,\s*'蓄力重擊'\)/);
 
@@ -62,7 +63,7 @@ test('戰鬥日誌分類與色彩樣式規則驗證', () => {
   assert.match(worker, /'gem\.composeAll'[\s\S]*blog\('♻️ 全部合成：'[\s\S]*'good',\s*'factory'\);/);
   assert.match(worker, /'gem\.dismantleAll'[\s\S]*blog\('⛏️ 全部拆解：'[\s\S]*'good',\s*'factory'\);/);
 
-  const workshop = fs.readFileSync(path.join(root, 'js/ui-gem-workshop.js'), 'utf8');
+  const workshop = readExpanded(path.join(root, 'js/ui-gem-workshop.js'));
   assert.match(workshop, /all \? 'gem\.composeAll' : 'gem\.compose'/);
   assert.match(workshop, /startGemWorkshop\('dismantle', 'gem\.dismantleSlots'/);
   assert.match(workshop, /sendGemUiCommand\(command, args/);

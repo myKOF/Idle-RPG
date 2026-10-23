@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 var CHAOS_IDX = 9;
 var CHAOS_GODFORGED_IDX = 10;
 var MAX_RARITY_IDX = CHAOS_GODFORGED_IDX;
@@ -367,9 +368,9 @@ function equipSlotsForType(type) {
    單手劍/單手魔杖/單手魔劍皆僅限主手。
    詞條暫沿用現行 weapon 部位詞條池（AFFIX_POOL slots:['weapon']），待後續分類型改造。 */
 var WEAPON_CATEGORIES = {
-  oneHand: { name: '單手武器' },
-  twoHand: { name: '雙手武器' },
-  offHand: { name: '副手武器' }
+  oneHand: { name: STR(14) },
+  twoHand: { name: STR(15) },
+  offHand: { name: STR(883) }
 };
 var DEFAULT_WEAPON_TYPE = 'sword1h'; // 舊存檔武器補默認類型（僅主手；裝在副手欄的舊武器由存檔整理改補匕首，保持位置合法）
 /* 雙手武器補償（佔主手＋副手兩格；2026-08-05 調整）：
@@ -383,18 +384,18 @@ var TWO_HAND_BONUS_AFFIXES = 1;
 var TWO_HAND_BONUS_ENCHANTS = 1;
 var TWO_HAND_SOCKET_MULT = 1.75;
 var WEAPON_TYPES = {
-  sword1h:      { name: '單手劍',   cat: 'oneHand', hands: 1, slots: ['weapon'], emoji: '🗡️', basenames: ['短劍', '長劍', '騎士劍'] },
-  dagger1h:     { name: '單手匕首', cat: 'oneHand', hands: 1, slots: ['weapon', 'weapon2'], emoji: '🔪', basenames: ['小刀', '彎刃匕首', '刺客匕首'] },
-  wand1h:       { name: '單手魔杖', cat: 'oneHand', hands: 1, slots: ['weapon'], emoji: '🪄', basenames: ['木魔杖', '秘紋魔杖', '星輝魔杖'] },
-  magicSword1h: { name: '單手魔劍', cat: 'oneHand', hands: 1, slots: ['weapon'], emoji: '⚔️', basenames: ['符文魔劍', '咒能魔劍', '滅魔劍'] },
-  greatsword2h: { name: '雙手大劍', cat: 'twoHand', hands: 2, slots: ['weapon'], emoji: '🗡️', basenames: ['闊劍', '巨劍', '斬龍大劍'] },
-  axe2h:        { name: '雙手斧',   cat: 'twoHand', hands: 2, slots: ['weapon'], emoji: '🪓', basenames: ['戰斧', '重斧', '滅世巨斧'] },
-  staff2h:      { name: '雙手法杖', cat: 'twoHand', hands: 2, slots: ['weapon'], emoji: '🦯', basenames: ['修行法杖', '賢者法杖', '大法師法杖'] },
-  magicSword2h: { name: '雙手魔劍', cat: 'twoHand', hands: 2, slots: ['weapon'], emoji: '⚔️', basenames: ['雙刃魔劍', '深淵魔劍', '混沌魔劍'] },
-  shield:       { name: '盾牌',     cat: 'offHand', hands: 1, slots: ['weapon2'], emoji: '🛡️', basenames: ['木盾', '鐵壁盾', '聖殿巨盾'] },
-  focus:        { name: '法器',     cat: 'offHand', hands: 1, slots: ['weapon2'], emoji: '⚜️', basenames: ['祈願法器', '祕儀法器', '神諭法器'] },
-  spellbook:    { name: '魔法書',   cat: 'offHand', hands: 1, slots: ['weapon2'], emoji: '📖', basenames: ['咒文書', '禁咒魔法書', '賢者魔導書'] },
-  orb:          { name: '水晶球',   cat: 'offHand', hands: 1, slots: ['weapon2'], emoji: '🔮', basenames: ['水晶球', '祕法水晶球', '預言水晶球'] }
+  sword1h:      { name: STR(884),   cat: 'oneHand', hands: 1, slots: ['weapon'], emoji: '🗡️', basenames: [STR(885), STR(886), STR(887)] },
+  dagger1h:     { name: STR(888), cat: 'oneHand', hands: 1, slots: ['weapon', 'weapon2'], emoji: '🔪', basenames: [STR(889), STR(890), STR(891)] },
+  wand1h:       { name: STR(892), cat: 'oneHand', hands: 1, slots: ['weapon'], emoji: '🪄', basenames: [STR(893), STR(894), STR(895)] },
+  magicSword1h: { name: STR(896), cat: 'oneHand', hands: 1, slots: ['weapon'], emoji: '⚔️', basenames: [STR(897), STR(898), STR(899)] },
+  greatsword2h: { name: STR(900), cat: 'twoHand', hands: 2, slots: ['weapon'], emoji: '🗡️', basenames: [STR(901), STR(902), STR(903)] },
+  axe2h:        { name: STR(904),   cat: 'twoHand', hands: 2, slots: ['weapon'], emoji: '🪓', basenames: [STR(905), STR(906), STR(907)] },
+  staff2h:      { name: STR(908), cat: 'twoHand', hands: 2, slots: ['weapon'], emoji: '🦯', basenames: [STR(909), STR(910), STR(911)] },
+  magicSword2h: { name: STR(912), cat: 'twoHand', hands: 2, slots: ['weapon'], emoji: '⚔️', basenames: [STR(913), STR(914), STR(915)] },
+  shield:       { name: STR(916),     cat: 'offHand', hands: 1, slots: ['weapon2'], emoji: '🛡️', basenames: [STR(917), STR(918), STR(919)] },
+  focus:        { name: STR(920),     cat: 'offHand', hands: 1, slots: ['weapon2'], emoji: '⚜️', basenames: [STR(921), STR(922), STR(923)] },
+  spellbook:    { name: STR(924),   cat: 'offHand', hands: 1, slots: ['weapon2'], emoji: '📖', basenames: [STR(925), STR(926), STR(927)] },
+  orb:          { name: STR(928),   cat: 'offHand', hands: 1, slots: ['weapon2'], emoji: '🔮', basenames: [STR(928), STR(929), STR(930)] }
 };
 // 武器類型專屬圖示；沒有 weaponType 的舊物品由 UI 退回 SLOT_INFO 的通用圖示。
 var WEAPON_TYPE_ICONS = {
@@ -496,34 +497,34 @@ function itemTypeLabel(it) {
 }
 
 var SLOT_INFO = {
-  weapon: { name: '主手', emoji: '⚔️', icon: 'icon_weapon.png' },
-  weapon2: { name: '副手', emoji: '🗡️', icon: 'icon_weapon.png' },
-  helmet: { name: '頭盔', emoji: '🪖', icon: 'icon_helmet.png' },
-  shoulder: { name: '肩甲', emoji: '🦾', icon: 'icon_shoulder.png' },
-  chest: { name: '胸甲', emoji: '🛡️', icon: 'icon_chest.png' },
-  belt: { name: '腰帶', emoji: '🪢', icon: 'icon_belt.png' },
-  gloves: { name: '護手', emoji: '🧤', icon: 'icon_gloves.png' },
-  wrist: { name: '手腕', emoji: '🦾', icon: 'icon_wrist.png' },
-  legs: { name: '護腿', emoji: '👖', icon: 'icon_legs_armor.png' },
-  boots: { name: '靴子', emoji: '🥾', icon: 'icon_legs.png' },
-  ring: { name: '戒指', emoji: '💍', icon: 'icon_ring.png' },
-  ring2: { name: '戒指Ⅱ', emoji: '💍', icon: 'icon_ring.png' },
-  amulet: { name: '項鍊', emoji: '📿', icon: 'icon_amulet.png' }
+  weapon: { name: STR(931), emoji: '⚔️', icon: 'icon_weapon.png' },
+  weapon2: { name: STR(16), emoji: '🗡️', icon: 'icon_weapon.png' },
+  helmet: { name: STR(17), emoji: '🪖', icon: 'icon_helmet.png' },
+  shoulder: { name: STR(932), emoji: '🦾', icon: 'icon_shoulder.png' },
+  chest: { name: STR(18), emoji: '🛡️', icon: 'icon_chest.png' },
+  belt: { name: STR(19), emoji: '🪢', icon: 'icon_belt.png' },
+  gloves: { name: STR(933), emoji: '🧤', icon: 'icon_gloves.png' },
+  wrist: { name: STR(934), emoji: '🦾', icon: 'icon_wrist.png' },
+  legs: { name: STR(20), emoji: '👖', icon: 'icon_legs_armor.png' },
+  boots: { name: STR(21), emoji: '🥾', icon: 'icon_legs.png' },
+  ring: { name: STR(22), emoji: '💍', icon: 'icon_ring.png' },
+  ring2: { name: STR(935), emoji: '💍', icon: 'icon_ring.png' },
+  amulet: { name: STR(23), emoji: '📿', icon: 'icon_amulet.png' }
 };
 var SLOT_BASENAMES = {
-  weapon: ['短劍', '長劍', '戰斧', '法杖', '巨鎚'],
-  helmet: ['皮帽', '鐵盔', '戰盔', '龍首盔'],
-  shoulder: ['布肩墊', '鐵肩甲', '戰場護肩', '龍骨肩鎧'],
-  chest: ['布衣', '鎖甲', '板甲', '龍鱗甲'],
-  belt: ['麻繩腰帶', '皮革腰帶', '鎖鏈腰帶', '巨龍束帶'],
-  gloves: ['布手套', '皮護手', '鐵護手', '龍鱗護手'],
-  wrist: ['布腕帶', '皮護腕', '鐵護腕', '龍鱗護腕'],
-  legs: ['布褲', '鐵護腿', '重甲腿鎧'],
-  boots: ['草鞋', '皮靴', '疾風之靴'],
-  ring: ['銅戒', '銀戒', '秘紋戒指'],
-  amulet: ['木墜', '銀鍊', '星辰項鍊']
+  weapon: [STR(885), STR(886), STR(905), STR(936), STR(937)],
+  helmet: [STR(938), STR(939), STR(940), STR(941)],
+  shoulder: [STR(942), STR(943), STR(944), STR(945)],
+  chest: [STR(946), STR(947), STR(948), STR(949)],
+  belt: [STR(950), STR(951), STR(952), STR(953)],
+  gloves: [STR(954), STR(955), STR(956), STR(957)],
+  wrist: [STR(958), STR(959), STR(960), STR(961)],
+  legs: [STR(962), STR(963), STR(964)],
+  boots: [STR(965), STR(966), STR(967)],
+  ring: [STR(968), STR(969), STR(970)],
+  amulet: [STR(971), STR(972), STR(973)]
 };
-var RARITY_PREFIX = ['普通級', '精良級', '稀有級', '獨特級', '史詩級', '傳說級', '神話級', '創世級', '神鑄創世級', '混沌級', '神鑄混沌級'];
+var RARITY_PREFIX = [STR(974), STR(975), STR(976), STR(977), STR(978), STR(979), STR(980), STR(981), STR(982), STR(983), STR(984)];
 // 新舊名稱共用同一辨識規則，讀檔與品質提升時先移除既有前綴。
 var RARITY_PREFIX_PATTERN = new RegExp('^(?:' + RARITY_PREFIX.join('|') + '|神鑄混沌的|混沌的|神鑄創世的|粗糙的|堅實的|精工的|奇異的|大師級|傳世的|神鑄的|創世的|普通的|精良的|稀有的|獨特的|史詩的|傳說的|神話的)');
 var ACCESSORY_SLOTS = ['ring', 'amulet'];
@@ -1653,14 +1654,14 @@ var SCORE_WEIGHTS = {
 var ELEMENTS = ['fire', 'ice', 'lightning', 'poison', 'light', 'dark', 'earth', 'wind'];
 /* color：戰鬥特效用的主色（js/vfx.js）。與 tips 的文字色分開，特效要的是在暗底上夠亮的顏色。 */
 var ELEM_INFO = {
-  fire: { name: '火焰', short: '火', emoji: '🔥', color: '#e63924' },
-  ice: { name: '冰霜', short: '冰', emoji: '❄️', color: '#4da6ff' },
-  lightning: { name: '雷電', short: '雷', emoji: '⚡', color: '#f2b705' },
-  poison: { name: '劇毒', short: '毒', emoji: '☠️', color: '#4caf2b' },
-  light: { name: '聖光', short: '聖', emoji: '✨', color: '#ffe47a' },
-  dark: { name: '暗影', short: '暗', emoji: '🌑', color: '#6f2da8' },
-  earth: { name: '大地', short: '地', emoji: '🪨', color: '#ad7444' },
-  wind: { name: '疾風', short: '風', emoji: '💨', color: '#86efac' }
+  fire: { name: STR(24), short: STR(25), emoji: '🔥', color: '#e63924' },
+  ice: { name: STR(1), short: STR(26), emoji: '❄️', color: '#4da6ff' },
+  lightning: { name: STR(27), short: STR(28), emoji: '⚡', color: '#f2b705' },
+  poison: { name: STR(29), short: STR(30), emoji: '☠️', color: '#4caf2b' },
+  light: { name: STR(3), short: STR(31), emoji: '✨', color: '#ffe47a' },
+  dark: { name: '暗影', short: STR(32), emoji: '🌑', color: '#6f2da8' },
+  earth: { name: STR(5), short: STR(33), emoji: '🪨', color: '#ad7444' },
+  wind: { name: STR(6), short: STR(34), emoji: '💨', color: '#86efac' }
 };
 
 /* 特效時間軸（模擬層與 js/vfx.js 共用）——傷害數字必須跟畫面對得上：
@@ -1750,30 +1751,30 @@ function vfxEnemyRoles(magic, elem) {
    ENCHANTS 本身仍是元素定義表（BOSS 屬性、抗性名稱等也讀它），不可刪。 */
 var ENCHANT_ENABLED = false;
 var ENCHANTS = {
-  fire: { name: '火焰附魔', cat: 'atk', elem: 'fire', desc: '附加高額火焰傷害', emoji: '🔥' },
-  ice: { name: '冰凍附魔', cat: 'atk', elem: 'ice', desc: '附加冰霜傷害，15% 機率使敵人減速 2 秒', emoji: '❄️' },
-  lightning: { name: '閃電附魔', cat: 'atk', elem: 'lightning', desc: '附加雷電傷害，10% 機率追加一道電擊', emoji: '⚡' },
-  poison: { name: '毒液附魔', cat: 'atk', elem: 'poison', desc: '附加劇毒傷害，25% 機率使敵人中毒 4 秒', emoji: '🧪' },
-  light: { name: '聖光附魔', cat: 'atk', elem: 'light', desc: '附加聖光傷害，20% 機率淨化自身負面狀態', emoji: '🌟' },
-  dark: { name: '暗影附魔', cat: 'atk', elem: 'dark', desc: '附加暗影傷害，並回復攻擊者當前生命的 25%', emoji: '🌑' },
-  earth: { name: '磐岩附魔', cat: 'atk', elem: 'earth', desc: '附加大地傷害，25% 機率獲得攻擊者當前生命 2% 的岩甲護盾', emoji: '🪨' },
-  wind: { name: '疾風附魔', cat: 'atk', elem: 'wind', desc: '附加風系傷害', emoji: '💨' },
-  fireRes: { name: '火焰抗性', cat: 'def', desc: '火焰屬性抗性額外提高：其他來源合計 ×(1+此值%)', emoji: '🧯' },
-  iceRes: { name: '冰霜抗性', cat: 'def', desc: '冰霜屬性抗性額外提高：其他來源合計 ×(1+此值%)', emoji: '🧊' },
-  lightningRes: { name: '雷電抗性', cat: 'def', desc: '雷電屬性抗性額外提高：其他來源合計 ×(1+此值%)', emoji: '🔌' },
-  poisonRes: { name: '劇毒抗性', cat: 'def', desc: '劇毒屬性抗性額外提高：其他來源合計 ×(1+此值%)', emoji: '💊' },
-  lightRes: { name: '聖光抗性', cat: 'def', desc: '聖屬性抗性額外提高：其他來源合計 ×(1+此值%)', emoji: '🕶️' },
-  darkRes: { name: '暗影抗性', cat: 'def', desc: '暗影屬性抗性額外提高：其他來源合計 ×(1+此值%)', emoji: '🕯️' },
-  earthRes: { name: '大地抗性', cat: 'def', desc: '大地屬性抗性額外提高：其他來源合計 ×(1+此值%)', emoji: '🧱' },
-  windRes: { name: '疾風抗性', cat: 'def', desc: '風屬性抗性額外提高：其他來源合計 ×(1+此值%)', emoji: '🍃' },
-  ctrlRes: { name: '控制抵抗', cat: 'def', desc: '機率完全抵抗暈眩與減速', emoji: '🛡️' },
-  loot: { name: '尋寶附魔', cat: 'util', desc: '增加裝備掉落率', emoji: '💰' },
-  haste: { name: '疾行附魔', cat: 'util', desc: '增加移動速度（縮短推圖間隔）', emoji: '🌀' },
-  vigor: { name: '活力附魔', cat: 'util', desc: '提升生命上限', emoji: '❤️' },
-  clarity: { name: '澄明附魔', cat: 'util', desc: '提升法力恢復速度', emoji: '💧' },
-  focus: { name: '專注附魔', cat: 'util', desc: '縮短技能冷卻時間', emoji: '🎯' },
-  fortune: { name: '財運附魔', cat: 'util', desc: '提高金幣獲取量', emoji: '🪙' },
-  wisdom: { name: '智慧附魔', cat: 'util', desc: '提高經驗獲取量', emoji: '📚' }
+  fire: { name: STR(985), cat: 'atk', elem: 'fire', desc: STR(986), emoji: '🔥' },
+  ice: { name: STR(987), cat: 'atk', elem: 'ice', desc: STR(988), emoji: '❄️' },
+  lightning: { name: STR(989), cat: 'atk', elem: 'lightning', desc: STR(990), emoji: '⚡' },
+  poison: { name: STR(991), cat: 'atk', elem: 'poison', desc: STR(992), emoji: '🧪' },
+  light: { name: STR(993), cat: 'atk', elem: 'light', desc: STR(994), emoji: '🌟' },
+  dark: { name: STR(995), cat: 'atk', elem: 'dark', desc: STR(996), emoji: '🌑' },
+  earth: { name: STR(997), cat: 'atk', elem: 'earth', desc: STR(998), emoji: '🪨' },
+  wind: { name: STR(999), cat: 'atk', elem: 'wind', desc: STR(1000), emoji: '💨' },
+  fireRes: { name: STR(1001), cat: 'def', desc: STR(1002), emoji: '🧯' },
+  iceRes: { name: STR(1003), cat: 'def', desc: STR(1004), emoji: '🧊' },
+  lightningRes: { name: STR(1005), cat: 'def', desc: STR(1006), emoji: '🔌' },
+  poisonRes: { name: STR(1007), cat: 'def', desc: STR(1008), emoji: '💊' },
+  lightRes: { name: STR(1009), cat: 'def', desc: STR(1010), emoji: '🕶️' },
+  darkRes: { name: STR(1011), cat: 'def', desc: STR(1012), emoji: '🕯️' },
+  earthRes: { name: STR(1013), cat: 'def', desc: STR(1014), emoji: '🧱' },
+  windRes: { name: STR(1015), cat: 'def', desc: STR(1016), emoji: '🍃' },
+  ctrlRes: { name: STR(1017), cat: 'def', desc: STR(1018), emoji: '🛡️' },
+  loot: { name: STR(1019), cat: 'util', desc: STR(1020), emoji: '💰' },
+  haste: { name: STR(1021), cat: 'util', desc: STR(1022), emoji: '🌀' },
+  vigor: { name: STR(1023), cat: 'util', desc: STR(1024), emoji: '❤️' },
+  clarity: { name: STR(1025), cat: 'util', desc: STR(1026), emoji: '💧' },
+  focus: { name: STR(1027), cat: 'util', desc: STR(1028), emoji: '🎯' },
+  fortune: { name: STR(1029), cat: 'util', desc: STR(1030), emoji: '🪙' },
+  wisdom: { name: STR(1031), cat: 'util', desc: STR(1032), emoji: '📚' }
 };
 // 附魔可作用部位（裝備欄位）
 var ENCHANT_SLOTS = {
@@ -1998,7 +1999,7 @@ var ZONE_ENEMY_TABLES = {
 // 關卡設計的唯一入口：每張地圖都是有限關卡，後圖要求前圖通關。
 // 倍率、關卡上限與前置條件由 config/CSV/Zones.csv 經 tools/apply_params.cjs 投影進來。
 var ZONE_LIST = ["desert","Icefield","mist_forest","lava_mountain","swamp","thunder_peak","undead_mountains","god_battlefield","god_chaos","god_sanctuary"];
-var REALMS = { human: { name: '凡人界', emoji: '🌍', zones: ['desert', 'Icefield', 'mist_forest', 'lava_mountain', 'swamp', 'thunder_peak', 'undead_mountains'] }, god: { name: '神界', emoji: '✨', zones: ['god_battlefield', 'god_chaos', 'god_sanctuary'] } };
+var REALMS = { human: { name: STR(211), emoji: '🌍', zones: ['desert', 'Icefield', 'mist_forest', 'lava_mountain', 'swamp', 'thunder_peak', 'undead_mountains'] }, god: { name: STR(212), emoji: '✨', zones: ['god_battlefield', 'god_chaos', 'god_sanctuary'] } };
 var ZONES = {
   desert: { pool: DESERT_POOL, enemyTable: ZONE_ENEMY_TABLES.desert, name: "荒漠", emoji: "🏜️", realm: "human", maxStage: 100, hpMult: 0.8, atkMult: 0.8, defMult: 1, aspdMult: 1, rewardMult: 1 },
   Icefield: { pool: ICEFIELD_POOL, enemyTable: ZONE_ENEMY_TABLES.Icefield, name: "冰原", emoji: "🧊", realm: "human", maxStage: 150, reqZone: "desert", reqStage: 100, hpMult: 2.5, atkMult: 3, defMult: 1.6, aspdMult: 1.4, rewardMult: 1.2 },
@@ -2237,22 +2238,22 @@ var TOWER_ENRAGE_HP = 50;      // 血量高於 50% 觸發（玩家「狂暴閾�
    效果掛勾在 factory.js 的 doSalvage（以 partBonus('salvage', key) 讀取）。 */
 var PART_TYPES = {
   // === 分解槽（Salvage）：10 種，涵蓋速度 / 產量 / 精華 / 分解事件 ===
-  speedGear: { name: '加速齒輪', emoji: '⚙️', node: 'salvage', desc: '分解速度 +{v}%', base: 25, perLevel: 25 },
-  scrapForge: { name: '碎片熔煉爐', emoji: '🔥', node: 'salvage', desc: '分解碎片產量 +{v}%', base: 20, perLevel: 20 },
-  goldSluice: { name: '淘金濾網', emoji: '💰', node: 'salvage', desc: '分解時獲得當前關卡敵人金幣的 {v}%', base: 3, perLevel: 1.5 },
-  extractLens: { name: '精粹透鏡', emoji: '🔬', node: 'salvage', desc: '分解時附魔精華產出率 +{v}%', base: 20, perLevel: 20 },
-  knowledgeCore: { name: '知識核心', emoji: '📚', node: 'salvage', desc: '分解時獲得當前關卡敵人經驗的 {v}%', base: 3, perLevel: 1.5 },
-  gemCollector: { name: '寶石採集器', emoji: '💎', node: 'salvage', desc: '分解時 {v}% 機率獲得 1 級寶石', base: 3, perLevel: 1.5 },
-  luckHeart: { name: '幸運之心', emoji: '💖', node: 'salvage', desc: '分解時 {v}% 機率使所有產物 ×3', base: 3, perLevel: 1.5 },
-  ancientEssenceRate: { name: '太古精華萃取器', emoji: '🧬', node: 'salvage', desc: '分解太古精華掉落率 +{v}%', base: 25, perLevel: 25 },
-  furnaceCore: { name: '熔爐核心', emoji: '♨️', node: 'salvage', desc: '熔爐上的零件效果額外提升 {v}%', base: 5, perLevel: 2.5 }
+  speedGear: { name: '加速齒輪', emoji: '⚙️', node: 'salvage', desc: STR(1349), base: 25, perLevel: 25 },
+  scrapForge: { name: '碎片熔煉爐', emoji: '🔥', node: 'salvage', desc: STR(1350), base: 20, perLevel: 20 },
+  goldSluice: { name: '淘金濾網', emoji: '💰', node: 'salvage', desc: STR(1351), base: 3, perLevel: 1.5 },
+  extractLens: { name: '精粹透鏡', emoji: '🔬', node: 'salvage', desc: STR(1352), base: 20, perLevel: 20 },
+  knowledgeCore: { name: '知識核心', emoji: '📚', node: 'salvage', desc: STR(1353), base: 3, perLevel: 1.5 },
+  gemCollector: { name: '寶石採集器', emoji: '💎', node: 'salvage', desc: STR(1354), base: 3, perLevel: 1.5 },
+  luckHeart: { name: '幸運之心', emoji: '💖', node: 'salvage', desc: STR(1355), base: 3, perLevel: 1.5 },
+  ancientEssenceRate: { name: '太古精華萃取器', emoji: '🧬', node: 'salvage', desc: STR(1356), base: 25, perLevel: 25 },
+  furnaceCore: { name: '熔爐核心', emoji: '♨️', node: 'salvage', desc: STR(1357), base: 5, perLevel: 2.5 }
 };
 var PART_MAX_TIER = 10;
 // 零件升級費用 = a + b × c^升級後目標等級；T5 -> T6 代入 6。
 var PART_UPGRADE_COST_A = 20000;
 var PART_UPGRADE_COST_B = 10000;
 var PART_UPGRADE_COST_C = 6;
-var NODE_NAMES = { filter: '篩選節點', salvage: '分解槽', synth: '合成節點', enchant: '附魔節點', upgrade: '強化節點' };
+var NODE_NAMES = { filter: STR(35), salvage: STR(1033), synth: STR(36), enchant: STR(1034), upgrade: STR(37) };
 var PART_SLOTS_PER_NODE = 2;   // 每個可安裝節點的零件槽數（預設；可由 PART_SLOTS 覆寫）
 var PART_SLOTS = { synth: 2 }; // 各節點零件槽數（分解槽使用金幣解鎖，見 formula.js salvageSlotCount）
 function slotsForNode(node) {
@@ -2291,9 +2292,9 @@ var NEW_FORGE_FURNACE_QUEUE_CAP = 9999; // 每座熔爐專屬佇列上限（帶�
 var NEW_FORGE_BELT_CAP = 30;       // 傳送帶在途件數上限（原 10 ×3）
 var NEW_FORGE_BELT_SHOW = 30;      // 傳送帶顯示件數上限（＝容量全顯；帶滿時以常見遊戲視窗寬約 8 成滿）
 var NEW_FORGE_ROUTE_PER_TICK = NEW_FORGE_BELT_CAP; // 每輪路由每座熔爐可分派件數＝帶容量：單輪足以補滿空帶，配合平均分流不餓死後面的熔爐（原 5 過低，加速齒輪快爐會吃光額度）
-var NEW_FORGE_NAME = '鍛造熔爐';
+var NEW_FORGE_NAME = STR(1358);
 var NEW_FORGE_EMOJI = '🔥';
-var NEW_FORGE_DESC = '專門處理裝備及礦石';
+var NEW_FORGE_DESC = STR(1359);
 var NEW_FORGE_IMAGE = 'images/furnace_LV1.png'; // 熔爐大圖（統一）
 // 零件置入格：每爐由初始格數起、金幣逐格解鎖至上限（格數見下方常數；成本公式 → formula.js newForgePartSlotCost）
 var NEW_FORGE_PART_SLOTS_INITIAL = 3;
@@ -2309,7 +2310,7 @@ var NEW_FORGE_SLOT_COST_D = 3;
    高階能力曲線見 gemStatValue → js/formula.js §8。 */
 var GEM_MAX_LEVEL = 5;
 var GEM_FORGE_MAX_LEVEL = 10;
-var GEM_NAMES = ['', '一級', '二級', '三級', '四級', '五級', '六級', '七級', '八級', '九級', '十級'];
+var GEM_NAMES = ['', STR(1360), STR(1361), STR(1362), STR(1363), STR(1364), STR(1365), STR(1366), STR(1367), STR(1368), STR(1369)];
 
 /* 寶石種類：鑲嵌到裝備插槽後生效。
    stat 對應 computeStats 的聚合桶（aspd 會轉為 aspdPct）；
@@ -2497,8 +2498,8 @@ function statFmt(val, cap, type, prefix) {
   var s = '';
   if (type === '%') s = pctStr(val);
   else if (type === '%.1f') s = Number(val).toFixed(1) + '%';
-  else if (type === '/s') s = colorizeUnit(fmt(val)) + '/秒';
-  else if (type === '/s.1f') s = colorizeUnit(Number(val).toFixed(1)) + '/秒';
+  else if (type === '/s') s = STR(213, colorizeUnit(fmt(val)));
+  else if (type === '/s.1f') s = STR(213, colorizeUnit(Number(val).toFixed(1)));
   else if (type === 'raw1') s = fmt1(val);
   else s = colorizeUnit(fmt(val));
   if (prefix) s = '+' + s;
@@ -2511,7 +2512,7 @@ function statFmt(val, cap, type, prefix) {
 // 註：於 STAT_GROUPS 建構（載入時）即呼叫，故不得依賴後載入檔的函式（如 fmt）；上限值為小整數，直接串接即可。
 function capText(cap, unit, plus) {
   if (!(cap > 0)) return '';
-  return '（上限：' + (plus ? '+' : '') + cap + (unit || '') + '）';
+  return STR(38, (plus ? '+' : ''), cap, (unit || ''));
 }
 
 function effectNum(n) {
@@ -2522,14 +2523,14 @@ function effectNum(n) {
 
 function joinEffectParts(parts) {
   if (parts.length <= 1) return parts[0] || '';
-  return parts.slice(0, -1).join('、') + '與 ' + parts[parts.length - 1];
+  return STR(214, parts.slice(0, -1).join('、'), parts[parts.length - 1]);
 }
 
 function primaryStatDesc(key) {
   var defs = {
     str: [
-      { k: 'strAtk', unit: '點', label: '物理攻擊力' },
-      { k: 'strDef', unit: '點', label: '物理防禦' },
+      { k: 'strAtk', unit: STR(215), label: STR(216) },
+      { k: 'strDef', unit: STR(215), label: '物理防禦' },
       { k: 'strHpRegen', unit: '', label: '生命恢復/秒' }
     ],
     agi: [
@@ -2540,15 +2541,15 @@ function primaryStatDesc(key) {
       { k: 'agiCritDmg', unit: '%', label: '暴擊傷害' }
     ],
     int: [
-      { k: 'intMp', unit: '點', label: '法力上限' },
-      { k: 'intMpRegen', unit: '', label: '法力恢復' },
-      { k: 'intMatk', unit: '點', label: '魔法攻擊力' },
-      { k: 'intMdef', unit: '點', label: '魔法防禦' }
+      { k: 'intMp', unit: STR(215), label: '法力上限' },
+      { k: 'intMpRegen', unit: '', label: STR(217) },
+      { k: 'intMatk', unit: STR(215), label: STR(218) },
+      { k: 'intMdef', unit: STR(215), label: '魔法防禦' }
     ],
     vit: [
-      { k: 'vitHp', unit: '點', label: '生命上限' },
-      { k: 'vitDef', unit: '點', label: '物理防禦' },
-      { k: 'vitMdef', unit: '點', label: '魔法防禦' },
+      { k: 'vitHp', unit: STR(215), label: '生命上限' },
+      { k: 'vitDef', unit: STR(215), label: '物理防禦' },
+      { k: 'vitMdef', unit: STR(215), label: '魔法防禦' },
       { k: 'vitHpRegen', unit: '', label: '生命恢復/秒' },
       { k: 'vitMpRegen', unit: '', label: '法力恢復/秒' }
     ]
@@ -2559,7 +2560,7 @@ function primaryStatDesc(key) {
     if (!isFinite(v) || v === 0) return;
     parts.push(effectNum(v) + d.unit + ' ' + d.label);
   });
-  return parts.length ? '每增加 1 點提高 ' + joinEffectParts(parts) + '。' : '目前沒有額外派生效果。';
+  return parts.length ? STR(219, joinEffectParts(parts)) : STR(220);
 }
 
 function blockDmgRedTotalCap() {
@@ -2577,13 +2578,13 @@ function statDesc(st, baseDesc, label, keyBase, pctKey, pctNote) {
   var base = (st.base && st.base[keyBase]) ? st.base[keyBase] : 0;
   var reincBonus = (st.reincFlatBonus && st.reincFlatBonus[keyBase]) || 0;
   var s = baseDesc + '<br><br><span style="color:#aaa">';
-  s += label + '總值：<span style="color:#fff">' + fmt(st[keyBase]) + '</span>';
-  if (base !== 0) s += '<br>' + label + '基礎：<span style="color:#fff">' + fmt(base) + '</span>';
-  if (flat !== 0) s += '<br>' + label + '定值加成：<span style="color:#fff">' + (flat > 0 ? '+' : '') + fmt(flat) + '</span>';
+  s += STR(221, label) + '<span style="color:#fff">' + fmt(st[keyBase]) + '</span>';
+  if (base !== 0) s += STR(222, label) + '<span style="color:#fff">' + fmt(base) + '</span>';
+  if (flat !== 0) s += STR(223, label) + '<span style="color:#fff">' + (flat > 0 ? '+' : '') + fmt(flat) + '</span>';
   if (st.reincFlatBonus && st.reincFlatBonus[keyBase] !== undefined) {
-    s += '<br>' + label + '轉生強化：<span style="color:#fff">' + (reincBonus > 0 ? '+' : '') + fmt(reincBonus) + '</span>';
+    s += STR(224, label) + '<span style="color:#fff">' + (reincBonus > 0 ? '+' : '') + fmt(reincBonus) + '</span>';
   }
-  if (pct !== 0) s += '<br>' + label + '百分比加成' + (pctNote || '') + '：<span style="color:#fff">' + (pct > 0 ? '+' : '') + pctStr(pct) + '</span>';
+  if (pct !== 0) s += STR(225, label, (pctNote || '')) + '<span style="color:#fff">' + (pct > 0 ? '+' : '') + pctStr(pct) + '</span>';
   s += '</span>';
   return s;
 }
@@ -2605,7 +2606,7 @@ function pctStrFloor4GlobalDmgRed(n) {
 
 function defenseReductionDesc(st, keyBase) {
   var reduction = defReduction(st[keyBase] || 0, st.level || 1) * 100;
-  return '<br><br><span style="color:#ffd700">目前同級減傷率：' + pctStrFloor4(reduction) + '</span>';
+  return STR(226, pctStrFloor4(reduction));
 }
 
 function defenseStatDesc(st, baseDesc, label, keyBase, pctKey, pctNote) {
@@ -2614,18 +2615,17 @@ function defenseStatDesc(st, baseDesc, label, keyBase, pctKey, pctNote) {
 
 function resistanceReductionDesc(st, value, reductionFn) {
   var reduction = reductionFn(value || 0, st.level || 1) * 100;
-  return '<br><br><span style="color:#ffd700">目前總減傷：' + pctStrFloor4(reduction) + '</span>';
+  return STR(227, pctStrFloor4(reduction));
 }
 
 // 七系元素抗性 tips
 function elementResistDesc(st, elem, label) {
-  var s = '降低受到的' + label + '屬性傷害，抗性值越高減傷效果越強。';
+  var s = STR(228, label);
   var total = (st.resist && st.resist[elem]) || 0;
   var en = (st.enchantRes && st.enchantRes[elem]) || 0;
   if (en !== 0) {
     var base = total / (1 + en / 100);
-    s += '<br><br><span style="color:#aaa">其他來源合計：<span style="color:#fff">' + fmt1(base) + '%</span>' +
-      '<br>附魔獨立乘區：<span style="color:#fff">×(1 + ' + fmt1(en) + '%)</span></span>';
+    s += STR(229, fmt1(base), fmt1(en));
   }
   return s + resistanceReductionDesc(st, total, elementalResistanceReduction);
 }
@@ -2633,22 +2633,20 @@ function elementResistDesc(st, elem, label) {
 // 敵種傷害抗性（普通敵人/普通菁英/普通BOSS）tips：黃字顯示以自身等級為攻擊者等級的目前減傷率（截斷至小數四位）
 function enemyTypeDmgRedDesc(st, key, label) {
   var reduction = enemyTypeDamageReduction(st[key] || 0) * 100;
-  return '受到' + label + '攻擊時降低受到的傷害。' +
-    '<br><br><span style="color:#ffd700">目前同級減傷率：' + pctStrFloor4(reduction) + '</span>';
+  return STR(230, label, pctStrFloor4(reduction));
 }
 
 /* 穿透 tips：黃字顯示目前穿透值換算後的實際忽略防禦% */
 function penetrationDesc(st, key, label) {
   var pen = (st && st[key]) || 0;
   var ignore = penIgnorePct(pen);
-  return '造成' + label + '傷害時，無視敵方一定比例的' + label + '防禦。' +
-    '<br><br><span style="color:#ffd700">目前忽略防禦：' + pctStrFloor4(ignore) + '</span>';
+  return STR(231, label, label, pctStrFloor4(ignore));
 }
 
 /* 吸血／吸魔 tips：定值，每對敵人造成傷害時固定回復 */
 function drainDesc(key) {
   var isHp = key === 'lifesteal';
-  return '每對一名敵人造成一次傷害時，固定回復此數值的' + (isHp ? '生命' : '法力') + '；範圍、多段與持續傷害逐次觸發，未造成傷害不觸發。';
+  return STR(232, (isHp ? '生命' : STR(39)));
 }
 
 /* 舊快照退回既有基準值；新版只讀 Worker 已結算的面板數值。 */
@@ -2660,101 +2658,101 @@ function passivePanelElement(st, elem) {
 }
 var STAT_GROUPS = [
   {
-    title: '基礎屬性', rows: [
-      ['❤️ 生命值', function (st) { return statFmt(st.hp, null); }, function (st) { return statDesc(st, '承受傷害的能力，歸零時角色將會死亡。', '生命', 'hp', 'hpPct'); }],
+    title: STR(233), rows: [
+      [STR(234), function (st) { return statFmt(st.hp, null); }, function (st) { return statDesc(st, STR(235), '生命', 'hp', 'hpPct'); }],
       /* 說明寫成函式而不是固定字串：基礎回復是可調參數（BASE_HP_REGEN），
          寫死數字會讓調參後的說明與實際計算不同步。 */
-      ['💗 生命恢復', function (st) { return statFmt(passivePanelValue(st, 'hpRegen', playerHpRegenBasePerSec(st)), null, '/s'); },
-        function () { return '每秒自動回復的生命值（包含基礎 ' + BASE_HP_REGEN + ' 點與額外加成），基礎回復不隨最大生命值變動。'; }],
-      ['🔵 法力值', function (st) { return statFmt(st.mp, null); }, function (st) { return statDesc(st, '施放多數技能所需的能量。', '法力', 'mp', null); }],
-      ['💧 法力恢復', function (st) { return statFmt(passivePanelValue(st, 'mpRegen', st.mpRegen), null, '/s'); }, '每秒自動回復的法力值。'],
-      ['💪 力量', function (st) { return statFmt(st.str, null); }, function () { return primaryStatDesc('str'); }],
-      ['🏃 敏捷', function (st) { return statFmt(st.agi, null); }, function () { return primaryStatDesc('agi'); }],
-      ['🧠 智力', function (st) { return statFmt(st.int, null); }, function () { return primaryStatDesc('int'); }],
-      ['🪨 體質', function (st) { return statFmt(st.vit, null); }, function () { return primaryStatDesc('vit'); }]
+      [STR(236), function (st) { return statFmt(passivePanelValue(st, 'hpRegen', playerHpRegenBasePerSec(st)), null, '/s'); },
+        function () { return STR(237, BASE_HP_REGEN); }],
+      [STR(238), function (st) { return statFmt(st.mp, null); }, function (st) { return statDesc(st, STR(239), STR(39), 'mp', null); }],
+      [STR(240), function (st) { return statFmt(passivePanelValue(st, 'mpRegen', st.mpRegen), null, '/s'); }, STR(241)],
+      [STR(242), function (st) { return statFmt(st.str, null); }, function () { return primaryStatDesc('str'); }],
+      [STR(243), function (st) { return statFmt(st.agi, null); }, function () { return primaryStatDesc('agi'); }],
+      [STR(244), function (st) { return statFmt(st.int, null); }, function () { return primaryStatDesc('int'); }],
+      [STR(245), function (st) { return statFmt(st.vit, null); }, function () { return primaryStatDesc('vit'); }]
     ]
   },
   {
-    title: '進攻屬性', rows: [
-      ['⚔️ 物理攻擊', function (st) { return statFmt(st.atk, null); }, function (st) { return statDesc(st, '影響普攻與多數物理技能的傷害基礎。由力量派生。', '物理攻擊', 'atk', 'atkPct'); }],
-      ['🔮 魔法攻擊', function (st) { return statFmt(st.matk, null); }, function (st) { return statDesc(st, '影響多數魔法技能的傷害基礎。由智力派生。', '魔法攻擊', 'matk', 'matkPct'); }],
-      ['💥 暴擊率', function (st) { return statFmt(st.critRate, STAT_CAPS.critRate, '%'); }, '攻擊時造成額外暴擊傷害的機率。暴擊率 100% 為完全爆擊，超過 100% 的部分會衍生「連擊數」。' + capText(STAT_CAPS.critRate, '%')],
-      ['🔗 連擊數', function (st) { return (st.comboHits || 0) > 0 ? fmt1(st.comboHits) + ' 次' : '—'; }, '<span style="color:#ffd700">每次攻擊命中時有25%機率造成額外攻擊次數</span><br>暴擊率、攻擊速度、冷卻縮減溢出上限時將會轉為增加連擊數'],
-      ['🩸 暴擊傷害', function (st) { return Math.round(st.critDmg) + '%'; }, '觸發暴擊時的傷害倍率。'],
-      ['🗡️ 物理穿透', function (st) { return statFmt(st.pPen, STAT_CAPS.pPen, '%'); }, function (st) { return penetrationDesc(st, 'pPen', '物理'); }],
-      ['🪄 魔法穿透', function (st) { return statFmt(st.mPen, STAT_CAPS.mPen, '%'); }, function (st) { return penetrationDesc(st, 'mPen', '魔法'); }],
-      ['🎯 命中率', function (st) { return statFmt(st.hit, null, '%'); }, '直接抵消敵方的閃避機率。'],
-      ['⚡ 攻擊速度', function (st) { return statFmt(st.aspd, ASPD_CAP, '/s.1f'); }, function () { return '每秒進行普通攻擊的次數。' + capText(ASPD_CAP, '/秒'); }],
-      ['⏱️ 冷卻縮減', function (st) { return statFmt(st.cdr, STAT_CAPS.cdr, '%.1f'); }, '減少技能所需的冷卻時間。' + capText(STAT_CAPS.cdr, '%')],
-      ['🌀 施法速度', function (st) { return statFmt(st.castSpeed, STAT_CAPS.castSpeed, '%.1f'); }, '縮短技能的施放延遲或詠唱時間。' + capText(STAT_CAPS.castSpeed, '%')],
-      ['🧛 吸血', function (st) { return statFmt(passivePanelValue(st, 'lifesteal', st.lifesteal), STAT_CAPS.lifesteal, 'raw1'); }, function () { return drainDesc('lifesteal'); }],
-      ['🌊 吸魔', function (st) { return statFmt(passivePanelValue(st, 'manaSteal', st.manaSteal), STAT_CAPS.manaSteal, 'raw1'); }, function () { return drainDesc('manaSteal'); }],
-      ['👑 對菁英傷害', function (st) { return statFmt(st.eliteDmg, null, '%', true); }, '對菁英怪或首領怪物造成的額外傷害加成。'],
-      ['😈 對BOSS傷害', function (st) { return statFmt(st.bossDmg, null, '%', true); }, '專門對首領怪物造成的額外傷害加成。'],
-      ['👤 對普通敵人傷害', function (st) { return statFmt(st.normalDmg, null, '%', true); }, '對普通敵人（非菁英、非BOSS）造成的額外傷害加成。'],
-      ['🔥 對火屬性敵人傷害', function (st) { return statFmt(st.dmgVsElem.fire, null, '%', true); }, '對「帶火屬性標籤」的敵人造成的傷害提高。'],
-      ['❄️ 對冰屬性敵人傷害', function (st) { return statFmt(st.dmgVsElem.ice, null, '%', true); }, '對「帶冰屬性標籤」的敵人造成的傷害提高。'],
-      ['⚡ 對雷屬性敵人傷害', function (st) { return statFmt(st.dmgVsElem.lightning, null, '%', true); }, '對「帶雷屬性標籤」的敵人造成的傷害提高。'],
-      ['☠️ 對毒屬性敵人傷害', function (st) { return statFmt(st.dmgVsElem.poison, null, '%', true); }, '對「帶毒屬性標籤」的敵人造成的傷害提高。'],
-      ['✨ 對聖屬性敵人傷害', function (st) { return statFmt(st.dmgVsElem.light, null, '%', true); }, '對「帶聖屬性標籤」的敵人造成的傷害提高。'],
-      ['🌑 對暗屬性敵人傷害', function (st) { return statFmt(st.dmgVsElem.dark, null, '%', true); }, '對「帶暗屬性標籤」的敵人造成的傷害提高。'],
-      ['🪨 對地屬性敵人傷害', function (st) { return statFmt(st.dmgVsElem.earth, null, '%', true); }, '對「帶地屬性標籤」的敵人造成的傷害提高。'],
-      ['🔥 火屬性傷害提升', function (st) { return statFmt(passivePanelElement(st, 'fire'), null, '%', true); }, '自身造成的火屬性元素傷害提高。'],
-      ['❄️ 冰屬性傷害提升', function (st) { return statFmt(passivePanelElement(st, 'ice'), null, '%', true); }, '自身造成的冰屬性元素傷害提高。'],
-      ['⚡ 雷屬性傷害提升', function (st) { return statFmt(passivePanelElement(st, 'lightning'), null, '%', true); }, '自身造成的雷屬性元素傷害提高。'],
-      ['☠️ 毒屬性傷害提升', function (st) { return statFmt(passivePanelElement(st, 'poison'), null, '%', true); }, '自身造成的毒屬性元素傷害提高。'],
-      ['✨ 聖屬性傷害提升', function (st) { return statFmt(passivePanelElement(st, 'light'), null, '%', true); }, '自身造成的聖屬性元素傷害提高。'],
-      ['🌑 暗屬性傷害提升', function (st) { return statFmt(passivePanelElement(st, 'dark'), null, '%', true); }, '自身造成的暗屬性元素傷害提高。'],
-      ['🪨 地屬性傷害提升', function (st) { return statFmt(passivePanelElement(st, 'earth'), null, '%', true); }, '自身造成的地屬性元素傷害提高。'],
-      ['💫 範圍傷害', function (st) { return statFmt(st.aoeDmg, null, '%', true); }, '多目標或範圍技能的總體傷害加成。']
+    title: STR(246), rows: [
+      [STR(247), function (st) { return statFmt(st.atk, null); }, function (st) { return statDesc(st, STR(248), '物理攻擊', 'atk', 'atkPct'); }],
+      [STR(249), function (st) { return statFmt(st.matk, null); }, function (st) { return statDesc(st, STR(250), '魔法攻擊', 'matk', 'matkPct'); }],
+      [STR(251), function (st) { return statFmt(st.critRate, STAT_CAPS.critRate, '%'); }, STR(252, capText(STAT_CAPS.critRate, '%'))],
+      [STR(253), function (st) { return (st.comboHits || 0) > 0 ? STR(254, fmt1(st.comboHits)) : '—'; }, STR(255)],
+      [STR(256), function (st) { return Math.round(st.critDmg) + '%'; }, STR(257)],
+      [STR(258), function (st) { return statFmt(st.pPen, STAT_CAPS.pPen, '%'); }, function (st) { return penetrationDesc(st, 'pPen', STR(40)); }],
+      [STR(259), function (st) { return statFmt(st.mPen, STAT_CAPS.mPen, '%'); }, function (st) { return penetrationDesc(st, 'mPen', STR(12)); }],
+      [STR(260), function (st) { return statFmt(st.hit, null, '%'); }, STR(261)],
+      [STR(262), function (st) { return statFmt(st.aspd, ASPD_CAP, '/s.1f'); }, function () { return STR(264, capText(ASPD_CAP, STR(263))); }],
+      [STR(265), function (st) { return statFmt(st.cdr, STAT_CAPS.cdr, '%.1f'); }, STR(266, capText(STAT_CAPS.cdr, '%'))],
+      [STR(267), function (st) { return statFmt(st.castSpeed, STAT_CAPS.castSpeed, '%.1f'); }, STR(268, capText(STAT_CAPS.castSpeed, '%'))],
+      [STR(269), function (st) { return statFmt(passivePanelValue(st, 'lifesteal', st.lifesteal), STAT_CAPS.lifesteal, 'raw1'); }, function () { return drainDesc('lifesteal'); }],
+      [STR(270), function (st) { return statFmt(passivePanelValue(st, 'manaSteal', st.manaSteal), STAT_CAPS.manaSteal, 'raw1'); }, function () { return drainDesc('manaSteal'); }],
+      [STR(271), function (st) { return statFmt(st.eliteDmg, null, '%', true); }, STR(272)],
+      [STR(273), function (st) { return statFmt(st.bossDmg, null, '%', true); }, STR(274)],
+      [STR(275), function (st) { return statFmt(st.normalDmg, null, '%', true); }, STR(276)],
+      [STR(277), function (st) { return statFmt(st.dmgVsElem.fire, null, '%', true); }, STR(278)],
+      [STR(279), function (st) { return statFmt(st.dmgVsElem.ice, null, '%', true); }, STR(280)],
+      [STR(281), function (st) { return statFmt(st.dmgVsElem.lightning, null, '%', true); }, STR(282)],
+      [STR(283), function (st) { return statFmt(st.dmgVsElem.poison, null, '%', true); }, STR(284)],
+      [STR(285), function (st) { return statFmt(st.dmgVsElem.light, null, '%', true); }, STR(286)],
+      [STR(287), function (st) { return statFmt(st.dmgVsElem.dark, null, '%', true); }, STR(288)],
+      [STR(289), function (st) { return statFmt(st.dmgVsElem.earth, null, '%', true); }, STR(290)],
+      [STR(291), function (st) { return statFmt(passivePanelElement(st, 'fire'), null, '%', true); }, STR(292)],
+      [STR(293), function (st) { return statFmt(passivePanelElement(st, 'ice'), null, '%', true); }, STR(294)],
+      [STR(295), function (st) { return statFmt(passivePanelElement(st, 'lightning'), null, '%', true); }, STR(296)],
+      [STR(297), function (st) { return statFmt(passivePanelElement(st, 'poison'), null, '%', true); }, STR(298)],
+      [STR(299), function (st) { return statFmt(passivePanelElement(st, 'light'), null, '%', true); }, STR(300)],
+      [STR(301), function (st) { return statFmt(passivePanelElement(st, 'dark'), null, '%', true); }, STR(302)],
+      [STR(303), function (st) { return statFmt(passivePanelElement(st, 'earth'), null, '%', true); }, STR(304)],
+      [STR(305), function (st) { return statFmt(st.aoeDmg, null, '%', true); }, STR(306)]
     ]
   },
   {
-    title: '防禦屬性', rows: [
-      ['🛡️ 物理防禦', function (st) { return statFmt(st.def, null); }, function (st) { return defenseStatDesc(st, '降低受到的物理傷害。由力量與體質派生。', '物理防禦', 'def', 'defPct'); }],
-      ['🔰 魔法防禦', function (st) { return statFmt(st.mdef, null); }, function (st) { return defenseStatDesc(st, '降低受到的魔法傷害。由智力與體質派生。', '魔法防禦', 'mdef', 'mdefPct'); }],
-      ['🌍 常駐技能減傷', function (st) { return statFmt(passivePanelValue(st, 'damageRed', 0), null, '%.1f'); }, '裝配後持續生效的技能傷害減免，與其他減傷乘算；不是全局減傷屬性點數。'],
-      ['🛡️ 全局減傷', function (st) { return statFmt(st.globalDmgRed, null); }, function (st) {
+    title: STR(307), rows: [
+      [STR(308), function (st) { return statFmt(st.def, null); }, function (st) { return defenseStatDesc(st, STR(309), '物理防禦', 'def', 'defPct'); }],
+      [STR(310), function (st) { return statFmt(st.mdef, null); }, function (st) { return defenseStatDesc(st, STR(311), '魔法防禦', 'mdef', 'mdefPct'); }],
+      [STR(312), function (st) { return statFmt(passivePanelValue(st, 'damageRed', 0), null, '%.1f'); }, STR(313)],
+      [STR(314), function (st) { return statFmt(st.globalDmgRed, null); }, function (st) {
         var reduction = globalDamageReduction(st.globalDmgRed) * 100;
-        var capNote = GLOBAL_DMG_RED_CAP > 0 ? '（減傷上限 ' + GLOBAL_DMG_RED_CAP + '%）' : '';
-        return '降低受到的所有傷害' + capNote + '。<br><br><span style="color:#ffd700">目前實際減傷：' + pctStrFloor4GlobalDmgRed(reduction) + '</span>';
+        var capNote = GLOBAL_DMG_RED_CAP > 0 ? STR(315, GLOBAL_DMG_RED_CAP) : '';
+        return STR(316, capNote, pctStrFloor4GlobalDmgRed(reduction));
       }],
-      ['👤 普通敵人傷害抗性', function (st) { return statFmt(st.normalDmgRed, null); }, function (st) { return enemyTypeDmgRedDesc(st, 'normalDmgRed', '普通敵人（非菁英、非BOSS）'); }],
-      ['👑 菁英傷害抗性', function (st) { return statFmt(st.eliteDmgRed, null); }, function (st) { return enemyTypeDmgRedDesc(st, 'eliteDmgRed', '菁英敵人'); }],
-      ['😈 BOSS傷害抗性', function (st) { return statFmt(st.bossDmgRed, null); }, function (st) { return enemyTypeDmgRedDesc(st, 'bossDmgRed', 'BOSS'); }],
-      ['🧱 格擋率', function (st) { return statFmt(st.blockRate, STAT_CAPS.blockRate, '%'); }, '受到攻擊時，有機率觸發格擋來減輕部分傷害。' + capText(STAT_CAPS.blockRate, '%')],
-      ['🧲 格擋減傷', function (st) { return statFmt(blockDmgReduction(st.blockDmgRed), blockDmgRedTotalCap(), '%'); }, function () { return '成功格擋時減免的傷害比例。' + capText(blockDmgRedTotalCap(), '%'); }],
-      ['💨 閃避率', function (st) { return statFmt(st.evasion, STAT_CAPS.evasion, '%'); }, '完全避開敵人攻擊的機率（受敵方命中率影響）。' + capText(STAT_CAPS.evasion, '%')],
-      ['🦾 韌性', function (st) { return statFmt(st.tenacity, STAT_CAPS.tenacity, '%'); }, function () {
-        return '降低被控制狀態命中的機率、縮短受控持續時間，並降低被敵人暴擊的機率。' + capText(STAT_CAPS.tenacity, '%');
+      [STR(317), function (st) { return statFmt(st.normalDmgRed, null); }, function (st) { return enemyTypeDmgRedDesc(st, 'normalDmgRed', STR(318)); }],
+      [STR(319), function (st) { return statFmt(st.eliteDmgRed, null); }, function (st) { return enemyTypeDmgRedDesc(st, 'eliteDmgRed', STR(320)); }],
+      [STR(321), function (st) { return statFmt(st.bossDmgRed, null); }, function (st) { return enemyTypeDmgRedDesc(st, 'bossDmgRed', 'BOSS'); }],
+      [STR(322), function (st) { return statFmt(st.blockRate, STAT_CAPS.blockRate, '%'); }, STR(323, capText(STAT_CAPS.blockRate, '%'))],
+      [STR(324), function (st) { return statFmt(blockDmgReduction(st.blockDmgRed), blockDmgRedTotalCap(), '%'); }, function () { return STR(325, capText(blockDmgRedTotalCap(), '%')); }],
+      [STR(326), function (st) { return statFmt(st.evasion, STAT_CAPS.evasion, '%'); }, STR(327, capText(STAT_CAPS.evasion, '%'))],
+      [STR(328), function (st) { return statFmt(st.tenacity, STAT_CAPS.tenacity, '%'); }, function () {
+        return STR(329, capText(STAT_CAPS.tenacity, '%'));
       }],
-      ['🫧 護盾效率', function (st) { return statFmt(st.shieldEff, null, '%', true); }, '提升護盾的最大吸收上限與獲取量。'],
-      ['🗿 物理抗性', function (st) { return statFmt(st.pRes, null, '%'); }, function (st) { return '降低受到的物理傷害，抗性值越高減傷效果越強。' + resistanceReductionDesc(st, st.pRes, physicalResistanceReduction); }],
-      ['🌌 魔法抗性', function (st) { return statFmt(st.mRes, null, '%'); }, function (st) { return '降低受到的魔法傷害，抗性值越高減傷效果越強。' + resistanceReductionDesc(st, st.mRes, magicResistanceReduction); }],
-      ['🔥 火焰抗性', function (st) { return statFmt(st.resist.fire, null, '%'); }, function (st) { return elementResistDesc(st, 'fire', '火焰'); }],
-      ['❄️ 冰霜抗性', function (st) { return statFmt(st.resist.ice, null, '%'); }, function (st) { return elementResistDesc(st, 'ice', '冰霜'); }],
-      ['⚡ 雷電抗性', function (st) { return statFmt(st.resist.lightning, null, '%'); }, function (st) { return elementResistDesc(st, 'lightning', '雷電'); }],
-      ['☠️ 劇毒抗性', function (st) { return statFmt(st.resist.poison, null, '%'); }, function (st) { return elementResistDesc(st, 'poison', '劇毒'); }],
-      ['✨ 聖光抗性', function (st) { return statFmt(st.resist.light, null, '%'); }, function (st) { return elementResistDesc(st, 'light', '聖光'); }],
-      ['🌑 暗影抗性', function (st) { return statFmt(st.resist.dark, null, '%'); }, function (st) { return elementResistDesc(st, 'dark', '暗影'); }],
-      ['🪨 大地抗性', function (st) { return statFmt(st.resist.earth, null, '%'); }, function (st) { return elementResistDesc(st, 'earth', '大地'); }],
-      ['🛡️ 控制抵抗', function (st) { return statFmt(st.resist.ctrl, STAT_CAPS.ctrlRes, '%'); }, '全面降低所有負面異常狀態的命中率。' + capText(STAT_CAPS.ctrlRes, '%')]
+      [STR(330), function (st) { return statFmt(st.shieldEff, null, '%', true); }, STR(331)],
+      [STR(332), function (st) { return statFmt(st.pRes, null, '%'); }, function (st) { return STR(333, resistanceReductionDesc(st, st.pRes, physicalResistanceReduction)); }],
+      [STR(334), function (st) { return statFmt(st.mRes, null, '%'); }, function (st) { return STR(335, resistanceReductionDesc(st, st.mRes, magicResistanceReduction)); }],
+      [STR(336), function (st) { return statFmt(st.resist.fire, null, '%'); }, function (st) { return elementResistDesc(st, 'fire', STR(24)); }],
+      [STR(337), function (st) { return statFmt(st.resist.ice, null, '%'); }, function (st) { return elementResistDesc(st, 'ice', STR(1)); }],
+      [STR(338), function (st) { return statFmt(st.resist.lightning, null, '%'); }, function (st) { return elementResistDesc(st, 'lightning', STR(27)); }],
+      [STR(339), function (st) { return statFmt(st.resist.poison, null, '%'); }, function (st) { return elementResistDesc(st, 'poison', STR(29)); }],
+      [STR(340), function (st) { return statFmt(st.resist.light, null, '%'); }, function (st) { return elementResistDesc(st, 'light', STR(3)); }],
+      [STR(341), function (st) { return statFmt(st.resist.dark, null, '%'); }, function (st) { return elementResistDesc(st, 'dark', '暗影'); }],
+      [STR(342), function (st) { return statFmt(st.resist.earth, null, '%'); }, function (st) { return elementResistDesc(st, 'earth', STR(5)); }],
+      [STR(343), function (st) { return statFmt(st.resist.ctrl, STAT_CAPS.ctrlRes, '%'); }, STR(344, capText(STAT_CAPS.ctrlRes, '%'))]
     ]
   },
   {
-    title: '特殊與機制', rows: [
-      ['⛓️ 控制時間縮減', function (st) { return statFmt(st.ccRed, STAT_CAPS.ccRed, '%'); }, '減少被施加暈眩、減速等控制狀態的持續時間。' + capText(STAT_CAPS.ccRed, '%')],
-      ['👟 移動速度', function (st) { return statFmt(st.moveSpeed, STAT_CAPS.moveSpeed, '%', true); }, '提高探索地圖、遇敵或到達終點的速度。' + capText(STAT_CAPS.moveSpeed, '%', true)],
-      ['💰 掉寶率', function (st) { return statFmt(st.loot, null, '%', true); }, '提高擊殺怪物後掉落裝備與道具的機率。'],
-      ['📚 經驗加成', function (st) { return statFmt(st.xpBonus, null, '%', true); }, '額外增加戰鬥勝利後獲得的經驗值。'],
-      ['🪙 金幣加成', function (st) { return statFmt(st.goldBonus, null, '%', true); }, '額外增加戰鬥勝利後獲得的金幣。'],
-      ['🍀 幸運值', function (st) { return statFmt(st.luck, STAT_CAPS.luck, 'raw1'); }, '提升太古詞條的出現機率。' + capText(STAT_CAPS.luck, '')],
-      ['🔨 強化成功率', function (st) { return statFmt(st.enhanceSuccess, null, '%', true); }, '提升裝備強化的成功機率。'],
-      ['⚗️ 分解高產率', function (st) { return statFmt(st.decomposeYield, null, '%', true); }, '增加分解裝備時獲得洗煉精粹的數量或機率。'],
-      ['🧬 合成變異率', function (st) { return statFmt(st.hybridMutation, STAT_CAPS.hybridMutation, '%'); }, '提升裝備合成時發生特殊異變（如詞條升級）的機率。' + capText(STAT_CAPS.hybridMutation, '%')],
-      ['🚨 狂暴閾值', function (st) { return statFmt(st.enrageThreshold, STAT_CAPS.enrageThreshold, '%', true); }, '影響怪物進入狂暴狀態的時間點或血量條件。' + capText(STAT_CAPS.enrageThreshold, '%', true)],
-      ['📜 詞條上限率', function (st) { return statFmt(st.affixCap, STAT_CAPS.affixCap, '%'); }, '影響裝備洗煉時更高數值的出現機率。'],
-      ['💎 寶石鑲嵌效率', function (st) { return statFmt(st.gemEff, null, '%', true); }, '全面放大所有已鑲嵌寶石的能力值。']
+    title: STR(345), rows: [
+      [STR(346), function (st) { return statFmt(st.ccRed, STAT_CAPS.ccRed, '%'); }, STR(347, capText(STAT_CAPS.ccRed, '%'))],
+      [STR(348), function (st) { return statFmt(st.moveSpeed, STAT_CAPS.moveSpeed, '%', true); }, STR(349, capText(STAT_CAPS.moveSpeed, '%', true))],
+      [STR(350), function (st) { return statFmt(st.loot, null, '%', true); }, STR(351)],
+      [STR(352), function (st) { return statFmt(st.xpBonus, null, '%', true); }, STR(353)],
+      [STR(354), function (st) { return statFmt(st.goldBonus, null, '%', true); }, STR(355)],
+      [STR(356), function (st) { return statFmt(st.luck, STAT_CAPS.luck, 'raw1'); }, STR(357, capText(STAT_CAPS.luck, ''))],
+      [STR(358), function (st) { return statFmt(st.enhanceSuccess, null, '%', true); }, STR(359)],
+      [STR(360), function (st) { return statFmt(st.decomposeYield, null, '%', true); }, STR(361)],
+      [STR(362), function (st) { return statFmt(st.hybridMutation, STAT_CAPS.hybridMutation, '%'); }, STR(363, capText(STAT_CAPS.hybridMutation, '%'))],
+      [STR(364), function (st) { return statFmt(st.enrageThreshold, STAT_CAPS.enrageThreshold, '%', true); }, STR(365, capText(STAT_CAPS.enrageThreshold, '%', true))],
+      [STR(366), function (st) { return statFmt(st.affixCap, STAT_CAPS.affixCap, '%'); }, STR(367)],
+      [STR(368), function (st) { return statFmt(st.gemEff, null, '%', true); }, STR(369)]
     ]
   }
 ];

@@ -1,10 +1,11 @@
 'use strict';
 const test=require('node:test'), assert=require('node:assert/strict');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const fs=require('node:fs'), vm=require('node:vm'), path=require('node:path');
 const {extractFunction,buildSceneTree,fakePixi}=require('./helpers/battle-scene.cjs');
 const Core=require('../js/vfx-core.js'), Runtime=require('../js/vfx-runtime.js');
 const Backend=require('../js/vfx-pixi-backend.js');
-const source=fs.readFileSync(path.join(__dirname,'../js/battle-renderer.js'),'utf8');
+const source=readExpanded(path.join(__dirname,'../js/battle-renderer.js'));
 function projection(){
   const c={Math,S:{layers:{world:{x:17,y:-29}},persp:null}};vm.createContext(c);
   for(const name of ['perspectiveLayout','airScreenPose','projectedWarp','depthScaleOf','projectAirTransform','projectBillboardTransform'])vm.runInContext(extractFunction(source,name),c);
@@ -66,11 +67,11 @@ test('變形矩陣一起投影：飛行物各自取遠近，billboard 整張同�
   assert.ok(Math.abs(node.scale.x-2*pose.scale)<1e-9);
 });
 test('天地再造紫光柱沿空中保形路徑播放，尺寸為玩家復活白光的一半',()=>{
-  const read=id=>JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets',id+'.json'),'utf8'));
+  const read=id=>JSON.parse(readExpanded(path.join(__dirname,'../vfx/presets',id+'.json')));
   const white=read('pillar-light'),purple=read('pillar-earth');
   assert.deepEqual(purple.layers.map(l=>l.id),white.layers.map(l=>l.id),
     '紫光柱須包含玩家光柱的完整法陣與光暈圖層');
-  const layout=JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/layouts/pillar-earth.json'),'utf8'));
+  const layout=JSON.parse(readExpanded(path.join(__dirname,'../vfx/layouts/pillar-earth.json')));
   assert.deepEqual(layout.groups[0].layerIds,purple.layers.map(l=>l.id));
   const source=new Map(white.layers.map(l=>[l.id,l]));
   for(const layer of purple.layers){
@@ -125,7 +126,7 @@ test('空中效果跨過玩家腳點會切換前後；地面受擊效果與角�
   assert.equal(impact.parent.zIndex,85);
 });
 test('場域特效依畫面水平 Y 與角色交錯，包含狀態與地板後端',()=>{
-  assert.match(fs.readFileSync(path.join(__dirname,'../js/vfx-runtime.js'),'utf8'),
+  assert.match(readExpanded(path.join(__dirname,'../js/vfx-runtime.js')),
     /zoneBackend:\s*VFXPixiBackend\.createBackend\(\{[^}]*depthParent:\s*opts\.fxDepthContainer/);
   const zone=new fakePixi.Container(), entity=new fakePixi.Container();
   entity.sortableChildren=true;
@@ -236,14 +237,14 @@ test('整份標了 perspective: false 的 preset 走 billboard 層；只標幾�
   assert.deepEqual(play(make('bolt-thunderstrike-bluewhite',[true,false])),{fx:2,billboard:0},
     '沒整份標記就留在場景層，不能因為是落雷就特別待遇');
   for(const id of ['bolt-sky-lightning','bolt-sky-purple','bolt-thunderstrike-bluewhite']){
-    const bolt=JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets',id+'.json'),'utf8'));
+    const bolt=JSON.parse(readExpanded(path.join(__dirname,'../vfx/presets',id+'.json')));
     assert.ok(bolt.layers.every(l=>l.type==='empty'||l.perspective===false),
       id+' 每一層都要標，否則落雷會掉回場景層而傾斜');
   }
   /* 天地再造的紫光柱靠這份資料維持原本的行為（以前是寫死名字） */
-  const pillar=JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets/pillar-earth.json'),'utf8'));
+  const pillar=JSON.parse(readExpanded(path.join(__dirname,'../vfx/presets/pillar-earth.json')));
   assert.ok(pillar.layers.every(l=>l.perspective===false),'pillar-earth 每一層都要標，否則會掉回場景層');
-  const runtime=fs.readFileSync(path.join(__dirname,'../js/vfx-runtime.js'),'utf8');
+  const runtime=readExpanded(path.join(__dirname,'../js/vfx-runtime.js'));
   assert.equal(/billboardPresets\[presetId\]/.test(runtime),true,'路由要看資料');
   assert.equal(/'pillar-earth' && spec\.variant/.test(runtime),false,'不得再用寫死的 preset 名字決定圖層');
 });

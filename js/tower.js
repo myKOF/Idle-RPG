@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* ============ BOSS 高塔（試煉之塔／地獄之塔／煉獄之塔） ============ */
 
 var TOWER = {
@@ -37,7 +38,7 @@ function makeBoss(floor) {
   var bd = BOSS_LIST[(floor - 1) % BOSS_LIST.length];
   var bs = bossStatsFor(floor);              // BOSS 數值公式 → formula.js §4
   var b = {
-    name: '第' + floor + '層・' + bd.name, emoji: bd.emoji, img: bd.img,
+    name: STR(1821, floor, bd.name), emoji: bd.emoji, img: bd.img,
     hell: !!bs.hell,
     purgatory: !!bs.purgatory,
     level: bs.level,
@@ -75,19 +76,19 @@ function makeBoss(floor) {
 function startTowerFight(floor) {
   if (G.tower.active) return;
   if (floor < 1 || floor > TOWER_MAX_FLOOR) {
-    blog('⚠️ 目前僅開放第 1～' + TOWER_MAX_FLOOR + ' 層封魔塔。', 'warn');
+    blog(STR(1822, TOWER_MAX_FLOOR), 'warn');
     return;
   }
-  if (floor > G.tower.highest + 1) { blog('⚠️ 需先通過前面的樓層！', 'warn'); return; }
+  if (floor > G.tower.highest + 1) { blog(STR(1823), 'warn'); return; }
   // 挑戰金幣消耗 = round(a × 高塔樓層^b)，a/b 依樓層分層（towerChallengeCost → formula.js §5）
   var cost = towerChallengeCost(floor);
   if (G.player.gold < cost) {
-    blog('⚠️ 金幣不足！挑戰第 ' + floor + ' 層需要 ' + fmt(cost) + ' 金幣（持有 ' + fmt(G.player.gold) + '）。', 'warn');
+    blog(STR(1824, floor, fmt(cost), fmt(G.player.gold)), 'warn');
     return;
   }
   G.player.gold -= cost;
   UI.dirty.header = true;
-  blog('💰 支付封魔塔挑戰費用 ' + fmt(cost) + ' 金幣。', 'info');
+  blog(STR(1825, fmt(cost)), 'info');
   var st = getStats();
   G.tower.active = true;
   TOWER.floor = floor;
@@ -110,13 +111,9 @@ function startTowerFight(floor) {
   TOWER.showingResult = false;
   if (typeof clearTowerFloatLayers === 'function') clearTowerFloatLayers();
   var bossElemName = TOWER.boss.elem && ENCHANTS[TOWER.boss.elem] ? ENCHANTS[TOWER.boss.elem].name : TOWER.boss.elem;
-  blog('👹 BOSS資訊：' + TOWER.boss.name + '｜Lv.' + TOWER.boss.level +
-    '｜生命 ' + fmt(TOWER.boss.maxHp) + '｜攻擊 ' + fmt(TOWER.boss.atk) +
-    '｜物防 ' + fmt(TOWER.boss.def) + '｜魔防 ' + fmt(TOWER.boss.mdef) +
-    '｜命中 ' + fmt1(TOWER.boss.hit) + '%｜閃避 ' + fmt1(TOWER.boss.dodge) + '%' +
-    (bossElemName ? '｜屬性 ' + bossElemName : '') + '｜控制免疫：暈眩、緩速', 'info', 'boss');
-  var towerName = TOWER.boss.purgatory ? '煉獄之塔' : (TOWER.boss.hell ? '地獄之塔' : '試煉之塔');
-  blog('🗼 挑戰' + towerName + '第 ' + floor + ' 層：' + TOWER.boss.name + '（限時 ' + towerTimeLimitWithTalents(floor) + ' 秒）', 'info');
+  blog(STR(1826, TOWER.boss.name, TOWER.boss.level, fmt(TOWER.boss.maxHp), fmt(TOWER.boss.atk), fmt(TOWER.boss.def), fmt(TOWER.boss.mdef), fmt1(TOWER.boss.hit), fmt1(TOWER.boss.dodge), (bossElemName ? STR(1827, bossElemName) : '')), 'info', 'boss');
+  var towerName = TOWER.boss.purgatory ? STR(1828) : (TOWER.boss.hell ? STR(1829) : STR(1830));
+  blog(STR(1831, towerName, floor, TOWER.boss.name, towerTimeLimitWithTalents(floor)), 'info');
   UI.dirty.tower = true; UI.dirty.battle = true;
 }
 
@@ -140,11 +137,11 @@ function placeTowerCombatants(boss) {
 function startTowerAuto(floor, count) {
   if (G.tower.active) return;
   count = Math.floor(count);
-  if (!(count >= 1)) { blog('⚠️ 請先在封魔塔分頁的「連挑次數」輸入有效的次數（1 以上）', 'warn'); return; }
+  if (!(count >= 1)) { blog(STR(1832), 'warn'); return; }
   if (count > TOWER_AUTO_MAX) count = TOWER_AUTO_MAX;
   TOWER.auto = { floor: floor, total: count, done: 0, wins: 0 };
   TOWER.autoNextCd = 0;
-  blog('🔁 開始連續挑戰第 ' + floor + ' 層，共 ' + count + ' 場（戰鬥中按「撤退」可中止）', 'info', 'boss');
+  blog(STR(1833, floor, count), 'info', 'boss');
   startTowerFight(floor);
   if (!G.tower.active) TOWER.auto = null; // 開場失敗（金幣不足 / 樓層未解鎖）
 }
@@ -160,7 +157,7 @@ function towerTick(dt) {
       var auto = TOWER.auto;
       startTowerFight(auto.floor);
       if (!G.tower.active) { // 意外無法開場（金幣被其他系統消耗等）
-        blog('🔁 無法開始下一場，連續挑戰停止（已挑戰 ' + auto.done + '/' + auto.total + ' 場，勝 ' + auto.wins + '）', 'warn', 'boss');
+        blog(STR(1834, auto.done, auto.total, auto.wins), 'warn', 'boss');
         TOWER.auto = null;
       }
     }
@@ -189,7 +186,7 @@ function towerTick(dt) {
     TOWER.enrageChecked = true;
     if (b.hp / b.maxHp * 100 > TOWER_ENRAGE_HP + st.enrageThreshold) {
       TOWER.enraged = true;
-      blog('🔥 ' + b.name + ' 進入狂暴狀態！傷害增加 ' + Math.round((bcfg.enrageMult - 1) * 100) + '%！', 'log-enemy-buff');
+      blog(STR(1835, b.name, Math.round((bcfg.enrageMult - 1) * 100)), 'log-enemy-buff');
     }
   }
 
@@ -322,7 +319,7 @@ function towerTick(dt) {
       TOWER.specialCd = bcfg.chargePeriod;
       var bossSpecialTarget = (typeof legendaryChooseEnemyAttackTarget === 'function')
         ? legendaryChooseEnemyAttackTarget(p) : p;
-      var bossSpecialHit = doMonsterAttack(b, bossSpecialTarget, 'tp-float', 2.2 * mult, '蓄力重擊');
+      var bossSpecialHit = doMonsterAttack(b, bossSpecialTarget, 'tp-float', 2.2 * mult, STR(1836));
       TOWER.bossDmgDealt += Math.max(0, (bossSpecialHit.dmg || 0));
       if (p.hp <= 0) { endTowerFight(false, 'death'); return; }
       if (b.hp <= 0) { endTowerFight(true); return; }
@@ -372,10 +369,10 @@ function endTowerFight(win, reason) {
       G.tower.highest = floor;
       if (typeof sgAfterSkillChange === 'function') sgAfterSkillChange();
     }
-    blog('🏆 通關封魔塔第 ' + floor + ' 層！', 'good');
+    blog(STR(1837, floor), 'good');
     if (typeof rwUnlockTowerWords === 'function') {
       var unlockedWords = rwUnlockTowerWords(G.tower.highest);
-      if (unlockedWords) result.rewards.push('📜 解鎖符文真言資訊 ×' + unlockedWords);
+      if (unlockedWords) result.rewards.push(STR(1838, unlockedWords));
     }
     // 獎勵：資源（零件改由熔爐升級取得）
     var rw = towerRewardFor(floor, firstClear);
@@ -385,12 +382,12 @@ function endTowerFight(win, reason) {
     // 技能熟練度經驗（2026-07-30）：高塔通關比照野外擊殺
     if (typeof gainSkillMasteryXp === 'function') gainSkillMasteryXp(Math.round(xpGain * SKILL_MASTERY_XP_RATE / 100));
     UI.dirty.header = true;
-    result.rewards.push('✨ 經驗 x' + fmt(xpGain));
+    result.rewards.push(STR(106, fmt(xpGain)));
     var soulOriginRate = hellSoulOriginDropChance(floor);
     if (soulOriginRate > 0 && chance(soulOriginRate)) {
       G.player.soulOrigin = (G.player.soulOrigin || 0) + 1;
       if (window.recordLootMat) window.recordLootMat('soulOrigin', 1, 'tower');
-      result.rewards.push('🧿 魔魂本源 x1');
+      result.rewards.push(STR(1839));
       UI.dirty.header = true;
     }
     // 裝備戰利品：依「BOSS 掉落表」各品質獨立擲骰（>100% 必掉 + 餘數機率）
@@ -408,10 +405,10 @@ function endTowerFight(win, reason) {
         }));
       }
       if (window.recordLootEquip) window.recordLootEquip(br, bn, 'tower');
-      lootCounts.push('&nbsp;&nbsp;<span style="color:' + RARITIES[br].color + '">' + RARITIES[br].name + '裝備*' + bn + '</span>');
+      lootCounts.push(STR(1840, RARITIES[br].color, RARITIES[br].name, bn));
     }
     if (lootCounts.length) {
-      result.rewards.push('⚔️ 裝備戰利品（已送入生產線）：');
+      result.rewards.push(STR(1841));
       for (var i = 0; i < lootCounts.length; i++) {
         result.rewards.push(lootCounts[i]);
       }
@@ -427,11 +424,11 @@ function endTowerFight(win, reason) {
       var bk = pick(Object.keys(ENCHANTS));
       G.player.books[bk] += 2;
       if (window.recordLootMat) window.recordLootMat('book', 2, 'tower');
-      result.rewards.push('📖 ' + ENCHANTS[bk].name + '書 x2');
+      result.rewards.push(STR(1842, ENCHANTS[bk].name));
     }
     G.player.essence += rw.essence;
     if (window.recordLootMat) window.recordLootMat('essence', rw.essence, 'tower');
-    result.rewards.push('🔮 附魔精華 x' + rw.essence);
+    result.rewards.push(STR(1843, rw.essence));
     // 符文（符文真言的素材）：樓層越高階數越高（js/runeword.js）
     if (typeof rwRollTowerRuneDrop === 'function') {
       var towerRunes = rwRollTowerRuneDrop(floor, st2.loot);
@@ -444,7 +441,7 @@ function endTowerFight(win, reason) {
     if (ancientEssenceRate > 0 && chance(ancientEssenceRate)) {
       G.player.ancientEssence = (G.player.ancientEssence || 0) + 1;
       if (window.recordLootMat) window.recordLootMat('ancientEssence', 1, 'tower');
-      result.rewards.push('<img src="images/icon_ancient_essence.png" class="res-icon" alt="太古精華"> 太古精華 x1');
+      result.rewards.push('<img src="images/icon_ancient_essence.png" class="res-icon" alt="' + STR(13) + '"> ' + STR(1844));
       UI.dirty.header = true;
     }
     // 魔種：僅煉獄之塔 BOSS，獨立判定 1 個
@@ -452,36 +449,36 @@ function endTowerFight(win, reason) {
     if (demonSeedRate > 0 && chance(demonSeedRate)) {
       G.player.demonSeed = (G.player.demonSeed || 0) + 1;
       if (window.recordLootMat) window.recordLootMat('demonSeed', 1, 'tower');
-      result.rewards.push('🌱 魔種 x1');
+      result.rewards.push(STR(1845));
       UI.dirty.header = true;
     }
     // 魔塵（神鑄材料）：掉落率 = min(30%, 2% + 樓層 × 0.2%)（bossDustRate → formula.js §5）
     if (chance(bossDustRate(floor))) {
       G.player.dust = (G.player.dust || 0) + 1;
       if (window.recordLootMat) window.recordLootMat('dust', 1, 'tower');
-      result.rewards.push('💫 魔塵 x1（神鑄材料）');
+      result.rewards.push(STR(1846));
       UI.dirty.forge = true;
     }
 
-    blog('🎁 封魔塔通關獎勵：' + result.rewards.join('、'), 'good', 'boss');
+    blog(STR(1847, result.rewards.join('、')), 'good', 'boss');
   } else if (reason === 'flee') {
-    blog('🏃 你撤出了封魔塔挑戰。', 'warn');
-    result.analysis.push('已撤退。可隨時再次挑戰。');
+    blog(STR(1848), 'warn');
+    result.analysis.push(STR(1849));
   } else {
-    blog('💀 封魔塔挑戰失敗（第 ' + floor + ' 層）', 'bad');
+    blog(STR(1850, floor), 'bad');
     // 失敗分析系統
     if (reason === 'death') {
-      result.analysis.push('【生存過低】你在 ' + Math.round(TOWER.elapsed) + ' 秒時被擊倒。建議提升生命值 / 防禦力詞條、吸血，或在防具上補對應的抗性詞條。');
-      if (b && b.elem) result.analysis.push('此 BOSS 帶有' + ENCHANTS[b.elem === 'fire' ? 'fireRes' : (b.elem === 'ice' ? 'iceRes' : 'ctrlRes')].name.slice(0, 2) + '屬性攻擊，可在防具上補對應的抗性詞條。');
-      if (TOWER.enraged) result.analysis.push('BOSS 已狂暴（傷害 +200%）。若能在 40 秒前將其血量壓到 50% 以下，即可避免狂暴。');
+      result.analysis.push(STR(1851, Math.round(TOWER.elapsed)));
+      if (b && b.elem) result.analysis.push(STR(1852, ENCHANTS[b.elem === 'fire' ? 'fireRes' : (b.elem === 'ice' ? 'iceRes' : 'ctrlRes')].name.slice(0, 2)));
+      if (TOWER.enraged) result.analysis.push(STR(1853));
     } else {
       if (hpPct > 50) {
-        result.analysis.push('【傷害不足】60 秒僅造成 ' + Math.round(100 - hpPct) + '% 傷害。你的 DPS 為 ' + fmt(myDps) + '，需要約 ' + fmt(needDps) + '。建議提升攻擊力 / 爆擊詞條，或鑲上符文組成符文真言。');
+        result.analysis.push(STR(1854, Math.round(100 - hpPct), fmt(myDps), fmt(needDps)));
       } else {
-        result.analysis.push('【輸出略缺】只差 ' + Math.round(hpPct) + '% 就能擊倒 BOSS！建議微調攻速 / 爆擊傷害詞條，或強化現有裝備。');
+        result.analysis.push(STR(1855, Math.round(hpPct)));
       }
-      if (TOWER.enraged) result.analysis.push('BOSS 於 40 秒時血量仍高於 50%，觸發狂暴。優先堆疊前期爆發輸出可避免。');
-      result.analysis.push('提示：調整生產線篩選與合成配比，讓更強的裝備自動換上。');
+      if (TOWER.enraged) result.analysis.push(STR(1856));
+      result.analysis.push(STR(1857));
     }
     result.analysis.forEach(function (a) { blog('📋 ' + a, 'warn'); });
   }
@@ -499,15 +496,15 @@ function endTowerFight(win, reason) {
     result.autoLosses = auto.done - auto.wins;
     result.autoCountdown = reason !== 'flee';
     result.autoContinue = false;
-    var tail = '共挑戰 ' + auto.done + '/' + auto.total + ' 場，勝 ' + auto.wins + ' 敗 ' + (auto.done - auto.wins);
+    var tail = STR(1858, auto.done, auto.total, auto.wins, (auto.done - auto.wins));
     if (reason === 'flee') {
-      blog('🔁 已中止連續挑戰第 ' + auto.floor + ' 層：' + tail + '，回到野外繼續戰鬥。', 'warn', 'boss');
+      blog(STR(1859, auto.floor, tail), 'warn', 'boss');
       TOWER.auto = null;
     } else if (auto.done >= auto.total) {
-      blog('🔁 連續挑戰第 ' + auto.floor + ' 層結束：' + tail + '，回到野外繼續戰鬥。', 'good', 'boss');
+      blog(STR(1860, auto.floor, tail), 'good', 'boss');
       TOWER.auto = null;
     } else if (G.player.gold < towerChallengeCost(auto.floor)) {
-      blog('🔁 金幣不足（下一場需 ' + fmt(towerChallengeCost(auto.floor)) + '），連續挑戰自動停止：' + tail + '，回到野外繼續戰鬥。', 'warn', 'boss');
+      blog(STR(1861, fmt(towerChallengeCost(auto.floor)), tail), 'warn', 'boss');
       TOWER.auto = null;
     } else {
       result.autoContinue = true;
@@ -536,7 +533,7 @@ function confirmTowerResult() {
   if (!shouldStartNext) return;
   startTowerFight(auto.floor);
   if (!G.tower.active) {
-    blog('⚠️ 連續挑戰下一場啟動失敗，已停止。', 'warn', 'boss');
+    blog(STR(1862), 'warn', 'boss');
     TOWER.auto = null;
   }
 }
@@ -546,7 +543,7 @@ function stopTowerAutoFromResult() {
     TOWER.result.autoContinue = false;
     TOWER.result.autoCountdown = false;
   }
-  if (TOWER.auto) blog('⏹ 已終止連續挑戰，本場結果保留，確認後返回野外。', 'warn', 'boss');
+  if (TOWER.auto) blog(STR(1863), 'warn', 'boss');
   TOWER.auto = null;
   TOWER.autoNextCd = 0;
 }

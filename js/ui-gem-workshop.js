@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* 合成及無損前一階拆解：共用既有聖光、權威確認與兩秒展示。 */
 function gemWorkshopBusy(tool) {
   return !!((tool === 'compose' && UI.gemComposeFx) || (tool === 'dismantle' && UI.gemDismantleFx));
@@ -24,7 +25,7 @@ function startGemWorkshop(kind, command, args, details) {
     if (UI[fxKey] !== fx || !fx.elapsed || !fx.acknowledged) return;
     UI[fxKey] = null;
     UI[successKey] = true;
-    blog(kind === 'compose' ? '💎 合成成功！' : '⛏️ 拆解成功！', 'good', 'factory');
+    blog(kind === 'compose' ? STR(1576) : STR(1577), 'good', 'factory');
     renderGems();
   }
   fx.timer = UI_GAME_TIMING.setTimeout(function () {
@@ -61,7 +62,7 @@ function renderGemComposeWorkshop() {
   var fx = UI.gemComposeFx, recipe = $id('fuse-recipe'), status = $id('fuse-status');
   if (fx && recipe && recipe._lastH !== fx.recipe) { recipe._lastH = fx.recipe; recipe.innerHTML = fx.recipe; }
   gemWorkshopLight(recipe, fx);
-  if (status) setTextIfChanged(status, UI.gemComposeSuccess ? '合成成功！' : '');
+  if (status) setTextIfChanged(status, UI.gemComposeSuccess ? STR(1578) : '');
   if (fx) ['fuse-btn', 'fuse-all-btn'].forEach(function (id) { var el = $id(id); if (el) el.disabled = true; });
   return !!fx;
 }
@@ -71,13 +72,13 @@ function gemDismantlePlaced(type, lv) {
 }
 
 function gemDismantleBlockReason(snapshot, type, lv) {
-  if (UI.gemDismantleFx) return '寶石拆解中';
-  if (!GEM_TYPES[type] || !isGemEnabled(type)) return '此寶石已關閉';
-  if (!gemDismantleYield(lv)) return '一級寶石無法再向下拆解';
+  if (UI.gemDismantleFx) return STR(1579);
+  if (!GEM_TYPES[type] || !isGemEnabled(type)) return STR(1580);
+  if (!gemDismantleYield(lv)) return STR(1581);
   var placed = gemDismantlePlaced(type, lv);
-  if (gemsViewCount(snapshot, type, lv) <= placed) return '庫存已放完';
-  if (placed >= GEM_CONVERT_STACK) return '該格已達上限';
-  if (!placed && (UI.gemDismantleSlots || []).length >= GEM_CONVERT_SLOTS) return '九宮格已滿';
+  if (gemsViewCount(snapshot, type, lv) <= placed) return STR(1582);
+  if (placed >= GEM_CONVERT_STACK) return STR(1583);
+  if (!placed && (UI.gemDismantleSlots || []).length >= GEM_CONVERT_SLOTS) return STR(1584);
   return '';
 }
 
@@ -97,7 +98,7 @@ function stageGemDismantle(type, lv, single) {
 function gemDismantleCell(s, index) {
   var tip = GEM_NAMES[s.lv] + GEM_TYPES[s.type].name + '｜' + gemAbilityText(s.type, s.lv) + '｜×' + s.n;
   return '<button type="button" class="gconv-slot filled"' + (index === undefined ? ' tabindex="-1"' : ' data-gdis-slot="' + index + '"') +
-    ' style="--c:' + GEM_TIER_COLORS[s.lv] + '" data-tip="' + esc(tip + (index === undefined ? '' : '｜點擊取出，Shift+左鍵單顆取出')) + '">' +
+    ' style="--c:' + GEM_TIER_COLORS[s.lv] + '" data-tip="' + esc(tip + (index === undefined ? '' : STR(1585))) + '">' +
     gemIconHTML(s.type, s.lv, 'gi-conv') + '<span class="gconv-n">×' + s.n + '</span><span class="gconv-level">' + s.lv + '</span></button>';
 }
 
@@ -123,7 +124,7 @@ function renderGemDismantleWorkshop(snapshot) {
   var btn = $id('gdis-btn'), clear = $id('gdis-clear'), status = $id('gdis-status');
   if (btn) btn.disabled = !!fx || !outputs.length;
   if (clear) clear.disabled = !!fx;
-  if (status) setTextIfChanged(status, UI.gemDismantleSuccess ? '拆解成功！' : '');
+  if (status) setTextIfChanged(status, UI.gemDismantleSuccess ? STR(1586) : '');
   gemWorkshopLight(grid, fx);
   gemWorkshopLight(output, fx);
 }

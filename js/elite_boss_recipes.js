@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* ============================================================
    elite_boss_recipes.js — 封魔塔 BOSS 的玩家技能招式表（只在 Worker 載入，接在 js/elite_boss.js 之後）
    ------------------------------------------------------------
@@ -473,7 +474,7 @@ BSK_RECIPES.superRockArt = function (c) {
     if (!bskAlive(c.m)) return;
     var mp2 = eliteMonsterPos(c.m) || mp;
     eliteBurstFx(mp2.x, mp2.y, r, c.v.attack, 0, c.elem);
-    bskCircleHit(c, mp2.x, mp2.y, r, 60, { stun: bskU(c, 'sec', 2), label: c.d.name + '·石化' });
+    bskCircleHit(c, mp2.x, mp2.y, r, 60, { stun: bskU(c, 'sec', 2), label: STR(557, c.d.name) });
     for (var w = 0; w < 3; w++) {
       (function (k) {
         eliteLater(0.6 + k * 0.9, function () {
@@ -568,8 +569,8 @@ BSK_RECIPES.netherMire = function (c) {
       if (hp > hpLine) return;
       roll += add;
       if (Math.random() * 100 < roll) {
-        floatPlayerEvent(elitePF(), '黃泉!', 'debuff');
-        bskHit(c, 900, { dim: false, sure: true, label: c.d.name + '·斬殺' });
+        floatPlayerEvent(elitePF(), STR(558), 'debuff');
+        bskHit(c, 900, { dim: false, sure: true, label: STR(559, c.d.name) });
         roll = chance;
       }
     }

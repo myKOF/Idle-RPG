@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>無限征途：合成之巔</title>
+  <title data-str="48"></title>
   <link rel="icon" href="images/icon_avatar.png" type="image/png">
   <link rel="preload" as="image" href="images/ui/gem-resonance/hex-backplate.png" fetchpriority="low">
   <link rel="preload" as="image" href="images/ui/heaven-power/dark-gold-seal.png?v=1" fetchpriority="low">
@@ -51,25 +51,25 @@
       window.showLoadingScreen();
     })();
   </script>
-  <div id="update-banner" onclick="showLoadingScreen(); location.reload()">🔄 發現遊戲新版本！點擊此處或按 F5 重新整理以載入最新內容。</div>
+  <div id="update-banner" onclick="showLoadingScreen(); location.reload()" data-str="49"></div>
 
   <header id="topbar">
-    <div class="brand">⚔️ 無限征途<span class="brand-sub">合成之巔</span><button id="btn-fullscreen" class="fs-btn" data-tip="進入網頁全螢幕">⛶</button></div>
+    <div class="brand"><span data-str="50"></span><span class="brand-sub" data-str="51"></span><button id="btn-fullscreen" class="fs-btn" data-str-attr="data-tip:207">⛶</button></div>
     <div id="res-bar">
 
-      <span class="res" data-tt-title="金幣" data-tt-desc="目前持有的金幣"><img src="images/icon_gold.png" class="res-icon" alt="Gold"> <b
+      <span class="res" data-str-attr="data-tt-title:105;data-tt-desc:52"><img src="images/icon_gold.png" class="res-icon" alt="Gold"> <b
           id="r-gold">0</b></span>
-      <span class="res" data-tt-title="裝備碎片" data-tt-desc="目前持有的裝備碎片"><img src="images/icon_scrap.png" class="res-icon" alt="Scrap"> <b
+      <span class="res" data-str-attr="data-tt-title:98;data-tt-desc:53"><img src="images/icon_scrap.png" class="res-icon" alt="Scrap"> <b
           id="r-scrap">0</b></span>
-      <span class="res" data-tt-title="附魔精華" data-tt-desc="目前持有的附魔精華"><img src="images/icon_essence.png" class="res-icon" alt="Essence"> <b
+      <span class="res" data-str-attr="data-tt-title:99;data-tt-desc:54"><img src="images/icon_essence.png" class="res-icon" alt="Essence"> <b
           id="r-essence">0</b></span>
-      <span class="res" data-tt-title="魔塵" data-tt-desc="神鑄材料，可提升鑄造成功率">💫 <b id="r-dust">0</b></span>
-      <span class="res" data-tt-title="太古精華" data-tt-desc="太古機制改版：太古詞條於裝備產出時決定，此資源暫保留、用途待定"><img src="images/icon_ancient_essence.png" class="res-icon" alt="Ancient Essence"> <b id="r-ancient-essence">0</b></span>
-      <span class="res" data-tt-title="魔魂本源" data-tt-desc="用於本源覺醒的道具"><span class="res-emoji" aria-hidden="true">🧿</span> <b id="r-soul-origin">0</b></span>
-      <span class="res" data-tt-title="魔種" data-tt-desc="煉獄之塔 BOSS 額外掉落材料。"><span class="res-emoji" aria-hidden="true">🌱</span> <b id="r-demon-seed">0</b></span>
-      <span class="res" data-tt-title="寶石" data-tt-desc="目前持有的寶石"><img src="images/icon_gems.png" class="res-icon" alt="Gems"> <b
+      <span class="res" data-str-attr="data-tt-title:100;data-tt-desc:55">💫 <b id="r-dust">0</b></span>
+      <span class="res" data-str-attr="data-tt-title:13;data-tt-desc:56"><img src="images/icon_ancient_essence.png" class="res-icon" alt="Ancient Essence"> <b id="r-ancient-essence">0</b></span>
+      <span class="res" data-str-attr="data-tt-title:101;data-tt-desc:57"><span class="res-emoji" aria-hidden="true">🧿</span> <b id="r-soul-origin">0</b></span>
+      <span class="res" data-str-attr="data-tt-title:120;data-tt-desc:58"><span class="res-emoji" aria-hidden="true">🌱</span> <b id="r-demon-seed">0</b></span>
+      <span class="res" data-str-attr="data-tt-title:122;data-tt-desc:59"><img src="images/icon_gems.png" class="res-icon" alt="Gems"> <b
           id="r-gems">0</b></span>
-      <span class="res" data-tt-title="附魔書" data-tt-desc="目前持有的附魔書"><img src="images/icon_books.png" class="res-icon" alt="Books"> <b
+      <span class="res" data-str-attr="data-tt-title:102;data-tt-desc:60"><img src="images/icon_books.png" class="res-icon" alt="Books"> <b
           id="r-books">0</b></span>
     </div>
   </header>
@@ -79,43 +79,43 @@
       <i class="af-frame-corner tl" aria-hidden="true"></i><i class="af-frame-corner tr" aria-hidden="true"></i>
       <i class="af-frame-corner bl" aria-hidden="true"></i><i class="af-frame-corner br" aria-hidden="true"></i>
       <span class="af-frame-lines" aria-hidden="true"><i class="af-frame-line center top-c"></i><i class="af-frame-line center bottom-c"></i><i class="af-frame-line center left-c"></i><i class="af-frame-line center right-c"></i></span>
-      <h1 class="af-heading">角色與裝備</h1>
-      <nav id="tabs" aria-label="主選單">
+      <h1 class="af-heading" data-str="61"></h1>
+      <nav id="tabs" data-str-attr="aria-label:62">
         <div class="rail-hero" aria-hidden="true">
           <img src="images/icon_avatar.png" alt="">
           <span id="rail-level" class="rail-level">Lv.1</span>
           <span class="rail-xp"><span id="rail-xp-fill"></span></span>
         </div>
-        <button class="tab-btn" data-tab="char"><span class="char-tab-icon"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/char.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span><span id="char-reincarnation-alert" class="char-reincarnation-alert" aria-label="可轉生" hidden>!</span></span>角色</button>
-        <button class="tab-btn active" data-tab="equip"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/equip.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span>裝備</button>
-        <button class="tab-btn" data-tab="skills"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/skills.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span>技能</button>
-        <button class="tab-btn" data-tab="newforge"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/newforge.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span>熔爐</button>
-        <button class="tab-btn" data-tab="gems"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/gems.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span>寶石</button>
-        <button class="tab-btn" data-tab="runes"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/runes.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span>符文</button>
-        <button class="tab-btn" data-tab="tower"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/tower.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span>封魔塔</button>
-        <button class="tab-btn" data-tab="talents"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/talents.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span>威能</button>
-        <button class="tab-btn" data-tab="forge" style="display:none"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/forge.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span>神鑄<span id="forge-run-ind" class="forge-run-ind" style="display:none"></span></button>
+        <button class="tab-btn" data-tab="char"><span class="char-tab-icon"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/char.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span><span id="char-reincarnation-alert" class="char-reincarnation-alert" hidden data-str-attr="aria-label:126">!</span></span><span data-str="63"></span></button>
+        <button class="tab-btn active" data-tab="equip"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/equip.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span><span data-str="46"></span></button>
+        <button class="tab-btn" data-tab="skills"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/skills.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span><span data-str="41"></span></button>
+        <button class="tab-btn" data-tab="newforge"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/newforge.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span><span data-str="64"></span></button>
+        <button class="tab-btn" data-tab="gems"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/gems.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span><span data-str="122"></span></button>
+        <button class="tab-btn" data-tab="runes"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/runes.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span><span data-str="150"></span></button>
+        <button class="tab-btn" data-tab="tower"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/tower.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span><span data-str="103"></span></button>
+        <button class="tab-btn" data-tab="talents"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/talents.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span><span data-str="65"></span></button>
+        <button class="tab-btn" data-tab="forge" style="display:none"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/forge.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span><span data-str="66"></span><span id="forge-run-ind" class="forge-run-ind" style="display:none"></span></button>
       </nav>
 
       <main>
 
         <section id="tab-char" class="tab">
           <div class="char-hero">
-            <div class="sidebar-avatar char-avatar"><img src="images/icon_avatar.png" alt="角色頭像"></div>
+            <div class="sidebar-avatar char-avatar"><img src="images/icon_avatar.png" data-str-attr="alt:370"></div>
             <div class="char-hero-main">
-              <div class="char-hero-line"><span class="sidebar-title" id="p-class">冒險者</span><span id="p-level" class="plevel">Lv.1</span></div>
+              <div class="char-hero-line"><span class="sidebar-title" id="p-class" data-str="371"></span><span id="p-level" class="plevel">Lv.1</span></div>
               <div id="xp-bar">
                 <div id="xp-fill"></div>
               </div>
             </div>
             <div id="reincarnation-controls" class="reincarnation-controls">
-              <div id="p-reincarnation" class="reincarnation-info">轉生：0/10</div>
-              <button id="btn-reincarnate" class="btn sm reincarnate-btn">🔄 轉生</button>
+              <div id="p-reincarnation" class="reincarnation-info" data-str="372"></div>
+              <button id="btn-reincarnate" class="btn sm reincarnate-btn" data-str="131"></button>
             </div>
           </div>
           <div id="char-core" class="char-core"></div>
           <div class="char-attr-toolbar" id="attr-hide-zero-bar" hidden>
-            <label><input type="checkbox" id="attr-hide-zero">隱藏數值為 0 的屬性（內測）</label>
+            <label><input type="checkbox" id="attr-hide-zero"><span data-str="373"></span></label>
           </div>
           <div class="sidebar-stats char-attr" id="attr-panel"></div>
         </section>
@@ -129,20 +129,20 @@
               </div>
               <div class="equip-right-col">
                 <div class="sec-title equip-detail-head">
-                  <span>裝備詳情</span>
+                  <span data-str="1065"></span>
                   <span class="equip-detail-controls">
                     <label style="font-size: 13px; font-weight: normal; cursor: pointer; color: var(--text);">
-                      <input type="checkbox" id="toggle-compare" style="margin-right: 4px; cursor: pointer;">比較裝備
+                      <input type="checkbox" id="toggle-compare" style="margin-right: 4px; cursor: pointer;"><span data-str="1066"></span>
                     </label>
                     <label id="lbl-autoequip" style="font-size: 13px; font-weight: normal; cursor: pointer; color: var(--text);">
-                      <input type="checkbox" id="toggle-autoequip" style="margin-right: 4px; cursor: pointer;">自動穿裝
+                      <input type="checkbox" id="toggle-autoequip" style="margin-right: 4px; cursor: pointer;"><span data-str="1067"></span>
                     </label>
                   </span>
                 </div>
                 <div class="equip-middle-row">
                   <div class="equip-detail-frame">
                     <div id="detail-pane" class="panel">
-                      <div class="hint">點選裝備查看詳情</div>
+                      <div class="hint" data-str="1198"></div>
                     </div>
                   </div>
                   <div id="equip-material-panel" class="equip-material-panel" aria-live="polite"></div>
@@ -154,88 +154,88 @@
           <div id="inv-section-box" class="equip-section-box">
             <div class="inv-head">
               <span class="sec-title" style="display: flex; align-items: center; gap: 8px;">
-                背包 <span id="inv-count">0/60</span>
-                <button id="inv-expand" class="btn sm" data-tt-title="擴充背包空間" data-tt-desc="增加背包容量">➕ 擴充 (10000<img src="images/icon_gold.png" class="res-icon">)</button>
+                <span data-str="1068"></span> <span id="inv-count">0/60</span>
+                <button id="inv-expand" class="btn sm" data-str-attr="data-tt-title:1069;data-tt-desc:1070"><span data-str="1071"></span><img src="images/icon_gold.png" class="res-icon">)</button>
               </span>
               <div style="display: flex; gap: 6px; align-items: center;">
-                <input type="text" id="inv-keyword-filter" class="input sm" placeholder="關鍵字篩選" style="display: none; background: #0b0f16; color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 2px 5px; font-size: 12px; height: 25px; width: 85px; outline: none; white-space: nowrap;" data-tt-title="關鍵字篩選" data-tt-desc="輸入裝備詞條或傳奇特效關鍵字，符合者亮起、其餘置灰（僅限內測服）">
+                <input type="text" id="inv-keyword-filter" class="input sm" style="display: none; background: #0b0f16; color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 2px 5px; font-size: 12px; height: 25px; width: 85px; outline: none; white-space: nowrap;" data-str-attr="placeholder:1072;data-tt-title:1072;data-tt-desc:1073">
                 <div class="inv-filter-wrap" id="inv-filter-container">
-                  <button type="button" id="inv-filter-btn" class="btn sm" aria-haspopup="true" aria-expanded="false">篩選<span id="inv-filter-count" class="inv-filter-count"></span> ▾</button>
+                  <button type="button" id="inv-filter-btn" class="btn sm" aria-haspopup="true" aria-expanded="false"><span data-str="1074"></span><span id="inv-filter-count" class="inv-filter-count"></span> ▾</button>
                   <div id="inv-filter-panel" class="inv-filter-panel" style="display: none;">
-                    <label class="inv-filter-row"><span>太古</span>
+                    <label class="inv-filter-row"><span data-str="1075"></span>
                       <select id="inv-ancient-filter" class="dropdown sm" style="background: #0b0f16; color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 2px 14px 2px 5px; font-size: 12px; cursor: pointer; height: 25px; outline: none; white-space: nowrap;">
-                        <option value="" style="color: var(--text);">不限太古</option>
-                        <option value="0" style="color: var(--text); background: #000;">0 太古</option>
-                        <option value="1" style="color: #fb923c; background: #000;">1 太古</option>
-                        <option value="2" style="color: #fb923c; background: #000;">2 太古</option>
-                        <option value="3" style="color: #fb923c; background: #000;">3 太古</option>
-                        <option value="4" style="color: #fb923c; background: #000;">4 太古</option>
-                        <option value="5" style="color: #fb923c; background: #000;">5 太古</option>
-                        <option value="6" style="color: #fb923c; background: #000;">6 太古</option>
-                        <option value="7" style="color: #fb923c; background: #000;">7+ 太古</option>
+                        <option value="" style="color: var(--text);" data-str="1076"></option>
+                        <option value="0" style="color: var(--text); background: #000;" data-str="1077"></option>
+                        <option value="1" style="color: #fb923c; background: #000;" data-str="1078"></option>
+                        <option value="2" style="color: #fb923c; background: #000;" data-str="1079"></option>
+                        <option value="3" style="color: #fb923c; background: #000;" data-str="1080"></option>
+                        <option value="4" style="color: #fb923c; background: #000;" data-str="1081"></option>
+                        <option value="5" style="color: #fb923c; background: #000;" data-str="1082"></option>
+                        <option value="6" style="color: #fb923c; background: #000;" data-str="1083"></option>
+                        <option value="7" style="color: #fb923c; background: #000;" data-str="1084"></option>
                       </select>
                     </label>
-                    <label class="inv-filter-row"><span>品質</span>
+                    <label class="inv-filter-row"><span data-str="1230"></span>
                       <select id="inv-rarity-filter" class="dropdown sm" style="background: #0b0f16; color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 2px 14px 2px 5px; font-size: 12px; cursor: pointer; height: 25px; outline: none; white-space: nowrap;">
-                        <option value="" style="color: var(--text);">取消篩選</option>
-                        <option value="0" style="color: #9aa5b1; background: #000;">普通</option>
-                        <option value="1" style="color: #4ade80; background: #000;">精良</option>
-                        <option value="2" style="color: #38bdf8; background: #000;">稀有</option>
-                        <option value="3" style="color: #ffd700; background: #000;">獨特</option>
-                        <option value="4" style="color: #c084fc; background: #000;">史詩</option>
-                        <option value="5" style="color: #fb923c; background: #000;">傳說</option>
-                        <option value="6" style="color: #f87171; background: #000;">神話</option>
-                        <option value="7" style="color: #b8860b; background: #000;">創世</option>
-                        <option value="8" style="color: #f5c542; background: #000;">神鑄創世</option>
-                        <option value="9" style="color: #c084fc; background: #000;">混沌</option>
-                        <option value="10" style="color: #ff6bcb; background: #000;">神鑄混沌</option>
+                        <option value="" style="color: var(--text);" data-str="1085"></option>
+                        <option value="0" style="color: #9aa5b1; background: #000;" data-str="1086"></option>
+                        <option value="1" style="color: #4ade80; background: #000;" data-str="1087"></option>
+                        <option value="2" style="color: #38bdf8; background: #000;" data-str="1088"></option>
+                        <option value="3" style="color: #ffd700; background: #000;" data-str="96"></option>
+                        <option value="4" style="color: #c084fc; background: #000;" data-str="97"></option>
+                        <option value="5" style="color: #fb923c; background: #000;" data-str="1089"></option>
+                        <option value="6" style="color: #f87171; background: #000;" data-str="1090"></option>
+                        <option value="7" style="color: #b8860b; background: #000;" data-str="1091"></option>
+                        <option value="8" style="color: #f5c542; background: #000;" data-str="1092"></option>
+                        <option value="9" style="color: #c084fc; background: #000;" data-str="1093"></option>
+                        <option value="10" style="color: #ff6bcb; background: #000;" data-str="1094"></option>
                       </select>
                     </label>
-                    <button type="button" id="inv-filter-clear" class="btn sm">清除篩選</button>
+                    <button type="button" id="inv-filter-clear" class="btn sm" data-str="1095"></button>
                   </div>
                 </div>
-                <button id="inv-sort" class="btn sm">🔄 排序 (等級)</button>
+                <button id="inv-sort" class="btn sm" data-str="204"></button>
                 <div style="position: relative; display: inline-block;" id="salvage-settings-container">
-                  <button id="btn-salvage-settings" class="btn sm warn">⚒️ 分解設定</button>
+                  <button id="btn-salvage-settings" class="btn sm warn" data-str="1096"></button>
                   <div id="salvage-settings-panel"
                     style="display: none; position: absolute; top: 100%; right: 0; background: #0b0f16; border: 1px solid #1b2230; padding: 12px; border-radius: 8px; z-index: 100; box-shadow: 0 4px 10px rgba(0,0,0,0.8); width: max-content; min-width: 250px; margin-top: 5px; flex-direction: column; gap: 10px;">
                     <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; color: #94a3b8; width: 100%;">
-                      <span>品質門檻：</span>
+                      <span data-str="1097"></span>
                       <select id="salvage-rarity-select" class="dropdown" style="flex: 1; font-size: 12px; padding: 4px 6px;">
-                        <option value="-1">不限品質</option>
-                        <option value="0">普通及以下品質</option>
-                        <option value="1">精良及以下品質</option>
-                        <option value="2">稀有及以下品質</option>
-                        <option value="3">獨特及以下品質</option>
-                        <option value="4">史詩及以下品質</option>
-                        <option value="5">傳說及以下品質</option>
-                        <option value="6">神話及以下品質</option>
-                        <option value="7">創世及以下品質</option>
-                        <option value="9">混沌品質</option>
+                        <option value="-1" data-str="1098"></option>
+                        <option value="0" data-str="1099"></option>
+                        <option value="1" data-str="1100"></option>
+                        <option value="2" data-str="1101"></option>
+                        <option value="3" data-str="1102"></option>
+                        <option value="4" data-str="1103"></option>
+                        <option value="5" data-str="1104"></option>
+                        <option value="6" data-str="1105"></option>
+                        <option value="7" data-str="1106"></option>
+                        <option value="9" data-str="1107"></option>
                       </select>
                     </div>
                     <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; color: #94a3b8; width: 100%;">
-                      <span>太古門檻：</span>
+                      <span data-str="1108"></span>
                       <select id="salvage-ancient-select" class="dropdown" style="flex: 1; font-size: 12px; padding: 4px 6px;">
-                        <option value="-1">不限太古</option>
-                        <option value="0">0 太古及以下</option>
-                        <option value="1">1 太古及以下</option>
-                        <option value="2">2 太古及以下</option>
-                        <option value="3">3 太古及以下</option>
-                        <option value="4">4 太古及以下</option>
-                        <option value="5">5 太古及以下</option>
-                        <option value="6">6 太古及以下</option>
-                        <option value="7">7 太古及以下</option>
+                        <option value="-1" data-str="1076"></option>
+                        <option value="0" data-str="1109"></option>
+                        <option value="1" data-str="1110"></option>
+                        <option value="2" data-str="1111"></option>
+                        <option value="3" data-str="1112"></option>
+                        <option value="4" data-str="1113"></option>
+                        <option value="5" data-str="1114"></option>
+                        <option value="6" data-str="1115"></option>
+                        <option value="7" data-str="1116"></option>
                       </select>
                     </div>
                     <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; color: #94a3b8; width: 100%;">
-                      <span>等級上限：</span>
+                      <span data-str="1117"></span>
                       <div style="display: flex; align-items: center; gap: 4px;">
-                        <input type="number" id="salvage-level-input" min="1" max="9999" placeholder="不限等級" class="input sm" style="width: 85px; text-align: center; background: #111827; border: 1px solid #1b2230; color: #fff; border-radius: 4px; padding: 3px 6px; font-size: 12px;">
-                        <span style="font-size: 12px; color: #94a3b8;">級及以下</span>
+                        <input type="number" id="salvage-level-input" min="1" max="9999" class="input sm" style="width: 85px; text-align: center; background: #111827; border: 1px solid #1b2230; color: #fff; border-radius: 4px; padding: 3px 6px; font-size: 12px;" data-str-attr="placeholder:1118">
+                        <span style="font-size: 12px; color: #94a3b8;" data-str="1119"></span>
                       </div>
                     </div>
-                    <button id="btn-salvage-confirm" class="btn sm warn" style="width: 100%; margin-top: 2px;">確定分解</button>
+                    <button id="btn-salvage-confirm" class="btn sm warn" style="width: 100%; margin-top: 2px;" data-str="1120"></button>
                   </div>
                 </div>
               </div>
@@ -247,32 +247,32 @@
         <!-- ============ 熔爐（正式版：品質勾選路由；2026-10 改版為熔爐卡片＋右側零件工坊） ============ -->
         <section id="tab-newforge" class="tab">
           <div class="pg-top">
-            <h2 class="pg-title">熔爐</h2>
-            <span class="pg-pill">佇列 <b id="nf-queue-count">0</b> 件</span>
-            <span class="pg-pill" data-tt-title="熔爐數量" data-tt-desc="0 轉 2 座、每轉生 1 次 +1 座，最多 12 座。">熔爐 <b id="nf-count">0 / 0 座</b></span>
-            <span class="pg-pill">已拆解 <b id="nf-salvaged">0</b></span>
-            <span class="pg-pill">保留 <b id="nf-kept">0</b></span>
-            <button type="button" id="nf-add-btn" class="btn sm nf-add-btn" data-nf-add="1">＋ 添加熔爐</button>
-            <button type="button" class="pg-help nf-help" aria-label="熔爐說明" data-tt-title="熔爐" data-tt-desc="戰鬥掉落的裝備自動進入熔爐佇列，依各熔爐勾選的品質送上傳送帶，從爐口（左端）入爐拆解；未勾選的品質、上鎖與神鑄創世裝備保留入包。拆解產出裝備碎片、金幣與附魔精華等資源，不會產出寶石（鑲嵌的寶石會自動取回）。零件改用金幣在「零件工坊」升級；熔爐裝配只選擇零件種類，升級後所有同名裝配效果同步更新。">?</button>
+            <h2 class="pg-title" data-str="64"></h2>
+            <span class="pg-pill"><span data-str="1370"></span> <b id="nf-queue-count">0</b> <span data-str="1371"></span></span>
+            <span class="pg-pill" data-str-attr="data-tt-title:1372;data-tt-desc:1373"><span data-str="64"></span> <b id="nf-count" data-str="1374"></b></span>
+            <span class="pg-pill"><span data-str="1375"></span> <b id="nf-salvaged">0</b></span>
+            <span class="pg-pill"><span data-str="1376"></span> <b id="nf-kept">0</b></span>
+            <button type="button" id="nf-add-btn" class="btn sm nf-add-btn" data-nf-add="1" data-str="1442"></button>
+            <button type="button" class="pg-help nf-help" data-str-attr="aria-label:1377;data-tt-desc:1378;data-tt-title:64">?</button>
           </div>
 
           <div class="nfx">
             <div class="nfx-main">
               <div id="nf-furnaces"></div>
-              <button type="button" id="nf-add-bottom-btn" class="btn sm nf-add-btn nf-add-bottom-btn" data-nf-add="1" hidden>＋ 添加熔爐</button>
+              <button type="button" id="nf-add-bottom-btn" class="btn sm nf-add-btn nf-add-bottom-btn" data-nf-add="1" hidden data-str="1442"></button>
             </div>
             <aside class="nfx-side">
               <div id="nf-part-upgrades" class="nfx-card"></div>
               <div class="nfx-card nfx-books">
-                <div class="nfx-card-title"><b>附魔書</b><span data-tip="附魔改為手動操作：到「裝備」分頁點選裝備，即可用附魔書附魔（消耗書＋精華），點擊既有附魔可取下（返還書）。攻擊類（六元素）→ 武器／戒指／護手／手腕；防禦類（抗性）→ 頭盔／肩甲／胸甲／腰帶／護腿；功能類 → 項鍊／靴子。附魔欄位數依品質：普通～稀有 1、獨特～傳說 2、神話／創世 3。">到裝備頁使用</span></div>
+                <div class="nfx-card-title"><span data-str-html="1379"></span><span data-str-attr="data-tip:1380" data-str="1381"></span></div>
                 <div id="enc-books" class="chip-row"></div>
                 <div class="node-info" id="enc-info"></div>
               </div>
               <div class="nfx-card nfx-log">
                 <div class="log-header">
-                  <div class="log-title">熔爐紀錄</div>
+                  <div class="log-title" data-str="1382"></div>
                   <div class="log-header-actions">
-                    <button id="btn-newforge-log-detail" class="btn sm" type="button" data-tt-title="熔爐詳情" data-tt-desc="開啟完整熔爐日誌">詳情</button>
+                    <button id="btn-newforge-log-detail" class="btn sm" type="button" data-str-attr="data-tt-title:1383;data-tt-desc:1384" data-str="1385"></button>
                   </div>
                 </div>
                 <div id="newforge-log" class="log"></div>
@@ -284,43 +284,43 @@
         <!-- ============ 神鑄 ============ -->
         <section id="tab-forge" class="tab">
           <div class="pg-top">
-            <h2 class="pg-title">神鑄</h2>
-            <button type="button" class="pg-help" aria-label="神鑄說明" data-tt-title="神鑄法陣" data-tt-desc="放入 6 件相同品質的裝備（傳說／神話／創世）或 6 顆同種同階的寶石（五階起）鑄造。混沌裝備（R9）掉落率由地圖／關卡掉落表 Zone_Stage_Drops 的 R9 欄控制；6 件混沌可神鑄為神鑄混沌，基礎成功率 20%，每個魔塵 +3%，失敗退回 3 件。詳細規則見法陣右上角的「!」。">?</button>
+            <h2 class="pg-title" data-str="66"></h2>
+            <button type="button" class="pg-help" data-str-attr="aria-label:1288;data-tt-title:1289;data-tt-desc:1290">?</button>
           </div>
           <div class="panel forge-panel">
             <div class="forge-head">
-              <div class="forge-inv-tabs" role="group" aria-label="鑄造素材">
-                <button type="button" id="forge-invtab-items" class="btn sm active">裝備神鑄</button>
-                <button type="button" id="forge-invtab-gems" class="btn sm">寶石神鑄</button>
+              <div class="forge-inv-tabs" role="group" data-str-attr="aria-label:1291">
+                <button type="button" id="forge-invtab-items" class="btn sm active" data-str="1292"></button>
+                <button type="button" id="forge-invtab-gems" class="btn sm" data-str="1293"></button>
               </div>
               <span id="forge-rate" class="forge-rate"></span>
             </div>
             <div id="forge-stage">
-              <div class="forge-info-btn"
-                data-tip="將 6 件&lt;b&gt;相同品質&lt;/b&gt;的裝備（僅限 &lt;span style=&quot;color:#fb923c&quot;&gt;傳說&lt;/span&gt; / &lt;span style=&quot;color:#f87171&quot;&gt;神話&lt;/span&gt; / &lt;span style=&quot;color:#b8860b&quot;&gt;創世&lt;/span&gt;）放入六芒星，點「鑄造」有機會獲得&lt;b&gt;下一品質&lt;/b&gt;隨機部位裝備 1 件；失敗將隨機消耗 3 件、其餘退回背包。&lt;br&gt;點擊六個角尖的圓形符位可放置 💫 魔塵，每個 +5% 成功率（最多 6 個）。&lt;br&gt;6 件創世鑄造成功將獲得&lt;b style=&quot;color:#f5c542&quot;&gt;神鑄創世&lt;/b&gt;暗金裝備：屬性與上限為創世的 1.5 倍、必帶 2 條專屬特效，且無法再放入法陣。&lt;br&gt;基礎成功率：傳說 55%｜神話 40%｜創世 25%。金幣消耗：傳說 500 萬｜神話 2000 萬｜創世 1 億。&lt;br&gt;&lt;br&gt;💎 &lt;b&gt;寶石神鑄&lt;/b&gt;：切換下方「寶石」頁籤，放入 6 顆&lt;b&gt;相同種類與階級&lt;/b&gt;（五階以上）的寶石，成功合成&lt;b&gt;高一階&lt;/b&gt;寶石（最高十階，每高一階能力 ×2）；失敗損失 3 顆、其餘退回。魔塵對寶石鑄造每個 +3% 成功率。&lt;br&gt;基礎成功率：五階 45%｜六階 35%｜七階 25%｜八階 15%｜九階 5%。金幣消耗：100 萬 +（階級 − 5）× 100 萬。&lt;br&gt;&lt;b&gt;融合寶石無法用於神鑄&lt;/b&gt;（可至寶石分頁進行融合）。">
+              <div class="forge-info-btn" data-str-attr="data-tip:1294"
+               >
                 !</div>
               <div id="forge-log" class="forge-log"></div>
               <div id="forge-hex"></div>
               <div class="forge-actions">
-                <button id="forge-unload" class="btn forge-btn">全卸下</button>
+                <button id="forge-unload" class="btn forge-btn" data-str="1296"></button>
                 <div class="forge-auto-wrap">
-                  <button id="forge-autofill" class="btn forge-btn forge-auto-btn">自動放入</button>
+                  <button id="forge-autofill" class="btn forge-btn forge-auto-btn" data-str="1297"></button>
                   <div id="forge-auto-menu" class="forge-auto-menu" style="display:none"></div>
                 </div>
-                <button id="forge-go" class="btn forge-btn">鑄造</button>
+                <button id="forge-go" class="btn forge-btn" data-str="1329"></button>
               </div>
             </div>
             <div class="forge-foot">
-              <label class="chk"><input type="checkbox" id="forge-autodust"> 自動使用魔塵</label>
-              <label class="chk"><input type="checkbox" id="forge-autoforge" checked> 自動鑄造</label>
+              <label class="chk"><input type="checkbox" id="forge-autodust"> <span data-str="1298"></span></label>
+              <label class="chk"><input type="checkbox" id="forge-autoforge" checked> <span data-str="1299"></span></label>
               <span id="forge-dust-own" class="dim-text"></span>
             </div>
             <div id="forge-progress" class="forge-progress" style="display:none">
               <div class="forge-progress-head">
-                <span id="forge-progress-status">鑄造中....</span>
+                <span id="forge-progress-status" data-str="1314"></span>
                 <span id="forge-progress-remain" class="forge-progress-remain"></span>
-                <button id="forge-cancel" class="btn sm warn" style="margin-right: 12px; padding: 2px 8px; font-size: 11px; height: auto; line-height: 1.2;">取消</button>
-                <span id="forge-progress-countdown">0.0 秒</span>
+                <button id="forge-cancel" class="btn sm warn" style="margin-right: 12px; padding: 2px 8px; font-size: 11px; height: auto; line-height: 1.2;" data-str="76"></button>
+                <span id="forge-progress-countdown" data-str="1300"></span>
               </div>
               <div class="forge-progress-track"><div id="forge-progress-fill"></div></div>
             </div>
@@ -329,8 +329,8 @@
           <div id="forge-inv-slot"></div>
           <div id="forge-gem-box" class="equip-section-box" style="display:none">
             <div class="inv-head">
-              <span class="sec-title">寶石 <span id="forge-gem-count">0</span> 顆</span>
-              <span class="dim-text">點擊放入法陣；點擊法陣上的寶石取回</span>
+              <span class="sec-title"><span data-str="122"></span> <span id="forge-gem-count">0</span> <span data-str="1301"></span></span>
+              <span class="dim-text" data-str="1302"></span>
             </div>
             <div id="forge-gem-grid"></div>
           </div>
@@ -339,90 +339,90 @@
         <!-- ============ 寶石 ============ -->
         <section id="tab-gems" class="tab" data-gem-tool="compose">
           <div class="pg-top">
-            <h2 class="pg-title">寶石</h2>
-            <span class="pg-pill">持有 <b id="gem-total">0</b> 顆</span>
-            <span class="pg-pill">已收集 <b id="gem-kinds">0</b> 種</span>
-            <button type="button" class="pg-help" aria-label="寶石說明" data-tt-title="寶石" data-tt-desc="寶石可鑲嵌到裝備的插槽：到「裝備」分頁點選裝備即可鑲嵌，點擊已鑲寶石可取下；「寶石鑲嵌效率」屬性會放大鑲嵌加成。分解裝備時，鑲在上面的寶石會自動取回。合成可直接升至十級，所需素材與金幣見當前配方。">?</button>
+            <h2 class="pg-title" data-str="122"></h2>
+            <span class="pg-pill"><span data-str="67"></span> <b id="gem-total">0</b> <span data-str="1301"></span></span>
+            <span class="pg-pill"><span data-str="1478"></span> <b id="gem-kinds">0</b> <span data-str="1479"></span></span>
+            <button type="button" class="pg-help" data-str-attr="aria-label:1480;data-tt-desc:1481;data-tt-title:122">?</button>
           </div>
           <div class="gx">
             <div class="gx-lib">
               <div id="gem-filter" class="gx-chips"></div>
-              <label class="gx-owned"><input type="checkbox" id="gem-owned-only" checked> 只看持有</label>
+              <label class="gx-owned"><input type="checkbox" id="gem-owned-only" checked> <span data-str="1482"></span></label>
               <div id="gres-library-note" class="gres-library-note" aria-live="polite" hidden></div>
               <div id="gem-table" class="gx-items"></div>
             </div>
             <div class="gx-main">
               <div id="gem-focus" class="gx-focus"></div>
-              <div class="gx-tabs" role="tablist" aria-label="寶石工坊">
-                <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="compose">合成</button>
-                <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="convert">轉換</button>
-                <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="dismantle">拆解</button>
-                <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="resonance">共鳴</button>
+              <div class="gx-tabs" role="tablist" data-str-attr="aria-label:1483">
+                <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="compose" data-str="107"></button>
+                <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="convert" data-str="1484"></button>
+                <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="dismantle" data-str="109"></button>
+                <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="resonance" data-str="1485"></button>
               </div>
 
               <div class="gx-panel" data-gem-panel="compose">
-                <button type="button" class="pg-help gconv-help" aria-label="寶石合成說明" data-tt-title="寶石合成" data-tt-desc="選取上方寶石以合成更高階的寶石">!</button>
+                <button type="button" class="pg-help gconv-help" data-str-attr="aria-label:1486;data-tt-title:1487;data-tt-desc:1488">!</button>
                 <div id="fuse-recipe" class="gx-recipe"></div>
                 <div id="fuse-status" class="gem-grid-status" role="status" aria-live="polite"></div>
                 <div class="node-info" id="fuse-info"></div>
                 <div class="gx-actions">
-                  <button id="fuse-btn" class="btn">合成一次</button>
-                  <button id="fuse-all-btn" class="btn">全部合成</button>
+                  <button id="fuse-btn" class="btn" data-str="1489"></button>
+                  <button id="fuse-all-btn" class="btn" data-str="108"></button>
                 </div>
               </div>
 
               <div class="gx-panel" data-gem-panel="convert">
-                <button type="button" class="pg-help gconv-help" aria-label="寶石轉換說明" data-tt-title="寶石轉換" data-tt-desc="選擇上方的寶石放入九宮格中進行轉換，2個任意寶石可轉換1個指定寶石。">!</button>
+                <button type="button" class="pg-help gconv-help" data-str-attr="aria-label:1490;data-tt-title:1491;data-tt-desc:1492">!</button>
                 <div class="gconv-layout">
                   <div class="gconv-input">
-                    <div id="gconv-grid" class="gconv-grid" aria-label="轉換原料九宮格"></div>
-                    <button id="gconv-clear" class="btn sm">清空</button>
+                    <div id="gconv-grid" class="gconv-grid" data-str-attr="aria-label:1493"></div>
+                    <button id="gconv-clear" class="btn sm" data-str="1494"></button>
                   </div>
                   <div class="gconv-side">
-                    <label class="sec-sub" for="gconv-target">轉換為</label>
+                    <label class="sec-sub" for="gconv-target" data-str="1495"></label>
                     <select id="gconv-target"></select>
                     <div class="gconv-result-area">
-                      <div id="gconv-output" aria-label="轉換後可獲得的寶石"></div>
+                      <div id="gconv-output" data-str-attr="aria-label:1496"></div>
                       <div id="gconv-status" role="status" aria-live="polite"></div>
                     </div>
-                    <button id="gconv-btn" class="btn">一鍵轉換</button>
+                    <button id="gconv-btn" class="btn" data-str="1497"></button>
                   </div>
                 </div>
-                <div class="gconv-shortcut" id="gconv-info">Shift+左鍵：單顆放入／取下</div>
+                <div class="gconv-shortcut" id="gconv-info" data-str="1607"></div>
               </div>
 
               <div class="gx-panel" data-gem-panel="dismantle">
-                <button type="button" class="pg-help gconv-help" aria-label="寶石拆解說明" data-tt-title="寶石拆解" data-tt-desc="選擇上方寶石進行拆解，可將高級寶石拆解為前一階寶石&#10;拆解過程不會產生任何損耗。">!</button>
+                <button type="button" class="pg-help gconv-help" data-str-attr="aria-label:1498;data-tt-title:1499;data-tt-desc:1500">!</button>
                 <div class="gconv-layout">
                   <div class="gconv-input">
-                    <div id="gdis-grid" class="gconv-grid" aria-label="拆解原料九宮格"></div>
-                    <button id="gdis-clear" class="btn sm gem-grid-action">清空</button>
+                    <div id="gdis-grid" class="gconv-grid" data-str-attr="aria-label:1501"></div>
+                    <button id="gdis-clear" class="btn sm gem-grid-action" data-str="1494"></button>
                   </div>
                   <div class="gconv-side">
-                    <div class="sec-sub">拆解後可獲得</div>
+                    <div class="sec-sub" data-str="1502"></div>
                     <div class="gconv-result-area">
-                      <div id="gdis-output" class="gem-grid-output" aria-label="拆解後可獲得的寶石"></div>
+                      <div id="gdis-output" class="gem-grid-output" data-str-attr="aria-label:1503"></div>
                       <div id="gdis-status" class="gem-grid-status" role="status" aria-live="polite"></div>
                     </div>
-                    <button id="gdis-btn" class="btn gem-grid-action">一鍵拆解</button>
+                    <button id="gdis-btn" class="btn gem-grid-action" data-str="1504"></button>
                   </div>
                 </div>
-                <div class="gconv-shortcut">Shift+左鍵：單顆放入／取下</div>
+                <div class="gconv-shortcut" data-str="1607"></div>
               </div>
 
               <div class="gx-panel" data-gem-panel="fusion" hidden>
-                <div id="gx-fusion-locked" class="gx-locked">寶石融合在 3 轉後開放。</div>
+                <div id="gx-fusion-locked" class="gx-locked" data-str="1505"></div>
                 <div id="gem-fusion-panel" style="display:none">
-                  <div class="hint">兩顆不同屬性 → 雙屬性融合寶石（數值隨機，不一定更高）；兩顆同屬性 → 數值介於兩者之間、上限 2 倍。雙屬性寶石只能與相同雙屬性、或含其屬性的單一寶石融合。基礎成功率 60%，成品每成功融合一次 -10%（最低 10%）。<b>失敗時較弱的寶石會降解</b>為 4~8 顆 1 級或 2~4 顆 2 級同屬性寶石。5 階以上寶石均可，含神鑄寶石。</div>
+                  <div class="hint" data-str-html="1506"></div>
                   <div id="gfuse-slots" class="chip-row"></div>
                   <div class="gx-actions">
-                    <button id="gfuse-btn" class="btn">執行融合</button>
-                    <button id="gfuse-clear" class="btn sm">清空</button>
+                    <button id="gfuse-btn" class="btn" data-str="1507"></button>
+                    <button id="gfuse-clear" class="btn sm" data-str="1494"></button>
                   </div>
                   <div class="node-info" id="gfuse-info"></div>
-                  <div class="sec-sub">可用素材（點擊放入融合槽）</div>
+                  <div class="sec-sub" data-str="1508"></div>
                   <div id="gfuse-pool" class="chip-row"></div>
-                  <div id="gfuse-result" class="gem-result gem-result-3">尚未進行融合</div>
+                  <div id="gfuse-result" class="gem-result gem-result-3" data-str="1509"></div>
                 </div>
               </div>
 
@@ -430,7 +430,7 @@
                 <div class="gres-layout">
                   <div id="gres-board" class="gres-board"></div>
                   <div class="gres-side-wrap">
-                    <button type="button" class="pg-help gres-help" id="gres-help" aria-label="寶石共鳴說明" data-tt-title="寶石共鳴" data-tt-desc="">i</button>
+                    <button type="button" class="pg-help gres-help" id="gres-help" data-tt-desc="" data-str-attr="aria-label:1510;data-tt-title:1511">i</button>
                     <div class="gres-side">
                       <div id="gres-detail" class="gres-detail"></div>
                       <div id="gres-total" class="gres-total"></div>
@@ -441,18 +441,18 @@
 
               <div class="gx-panel" data-gem-panel="shop" hidden>
                 <div class="shop-title-row">
-                  <div class="sec-sub">商店刷新 <span class="dim-text" id="shop-reset-cd"></span></div>
+                  <div class="sec-sub"><span data-str="1512"></span> <span class="dim-text" id="shop-reset-cd"></span></div>
                   <div class="shop-upgrade-box">
-                    <span id="gem-shop-level" class="shop-level-label">商店 Lv.1</span>
-                    <button id="shop-upgrade" class="btn sm">升級</button>
+                    <span id="gem-shop-level" class="shop-level-label" data-str="1513"></span>
+                    <button id="shop-upgrade" class="btn sm" data-str="166"></button>
                   </div>
                 </div>
                 <div id="gem-shop-grid"></div>
                 <div class="gx-actions">
-                  <button id="shop-buy-all" class="btn">一鍵全購買</button>
-                  <button id="shop-refresh" class="btn warn">手動刷新</button>
+                  <button id="shop-buy-all" class="btn" data-str="1514"></button>
+                  <button id="shop-refresh" class="btn warn" data-str="1515"></button>
                 </div>
-                <div class="hint">商店等級越高，刷出數量與高階寶石機率越高。手動刷新費用 = 50,000 + 刷新次數 × 10,000，刷新次數每小時重置。</div>
+                <div class="hint" data-str="1516"></div>
               </div>
             </div>
           </div>
@@ -461,16 +461,16 @@
         <!-- ============ 符文（符文真言；js/ui-runeword.js）============ -->
         <section id="tab-runes" class="tab" data-rune-tool="library">
           <div class="pg-top">
-            <h2 class="pg-title">符文</h2>
-            <span class="pg-pill">持有 <b id="rune-total">0</b> 顆符文</span>
-            <span class="pg-pill">穿戴中成形 <b id="rune-worn">0</b> 組</span>
-            <span class="pg-pill" data-tt-title="已解鎖符文真言" data-tt-desc="成功組成符文真言，或通關指定的封魔塔層數，即可永久解鎖該項資訊。內測全部預覽不計入解鎖數。">已解鎖符文真言 <b id="rune-unlocked">0/0</b></span>
-            <button type="button" id="rune-detail-toggle" class="rx-detail-toggle" aria-pressed="true" hidden data-tt-title="符文真言詳細說明（內測預覽）" data-tt-desc="開：預覽全部配方與效果，不增加解鎖數；關：依永久解鎖記錄顯示。自行成形或通關指定封魔塔層數均可解鎖，正式版與內測版適用相同規則。">詳細說明：開</button>
-            <button type="button" class="pg-help" aria-label="符文真言說明" data-tt-title="符文真言" data-tt-desc="符文鑲在裝備專屬的符文孔裡，與寶石鑲孔分開。自行依正確條件成功組成符文真言，或通關指定封魔塔層數，即永久解鎖配方與效果資訊。正式版與內測版皆適用。">?</button>
+            <h2 class="pg-title" data-str="150"></h2>
+            <span class="pg-pill"><span data-str="67"></span> <b id="rune-total">0</b> <span data-str="1628"></span></span>
+            <span class="pg-pill"><span data-str="1629"></span> <b id="rune-worn">0</b> <span data-str="1630"></span></span>
+            <span class="pg-pill" data-str-attr="data-tt-title:1631;data-tt-desc:1632"><span data-str="1631"></span> <b id="rune-unlocked">0/0</b></span>
+            <button type="button" id="rune-detail-toggle" class="rx-detail-toggle" aria-pressed="true" hidden data-str-attr="data-tt-title:1633;data-tt-desc:1634" data-str="1786"></button>
+            <button type="button" class="pg-help" data-str-attr="aria-label:1635;data-tt-title:1636;data-tt-desc:1637">?</button>
           </div>
-          <div class="rx-tabs" role="tablist" aria-label="符文工坊">
-            <button type="button" role="tab" class="rx-tab" data-rune-tool-btn="library">符文庫</button>
-            <button type="button" role="tab" class="rx-tab" data-rune-tool-btn="codex">符文真言圖鑑</button>
+          <div class="rx-tabs" role="tablist" data-str-attr="aria-label:1638">
+            <button type="button" role="tab" class="rx-tab" data-rune-tool-btn="library" data-str="1639"></button>
+            <button type="button" role="tab" class="rx-tab" data-rune-tool-btn="codex" data-str="1640"></button>
           </div>
           <div class="rx-panel" data-rune-panel="library">
             <div class="rx-lib">
@@ -481,7 +481,7 @@
           <div class="rx-panel" data-rune-panel="codex">
             <div class="rx-filter">
               <div id="rune-tier-filter" class="gx-chips"></div>
-              <label class="gx-owned"><input type="checkbox" id="rune-ready-only"> 只看材料齊全／已成形</label>
+              <label class="gx-owned"><input type="checkbox" id="rune-ready-only"> <span data-str="1641"></span></label>
               <span id="rune-codex-count" class="dim-text"></span>
             </div>
             <div id="runeword-list" class="rx-list"></div>
@@ -491,15 +491,15 @@
         <!-- ============ 技能 ============ -->
         <section id="tab-skills" class="tab">
           <div class="sgb-top">
-            <h2 class="sgb-title">技能</h2>
-            <span class="sgb-pill sgb-mastery" data-tt-title="技能熟練度" data-tt-desc="打怪獲得技能經驗並提升熟練度">技能熟練度 <span id="mastery-level"></span>
+            <h2 class="sgb-title" data-str="41"></h2>
+            <span class="sgb-pill sgb-mastery" data-str-attr="data-tt-title:664;data-tt-desc:665"><span data-str="664"></span> <span id="mastery-level"></span>
               <span id="mastery-bar" class="mastery-bar"><span id="mastery-bar-fill" class="mastery-bar-fill"></span><span id="mastery-bar-text" class="mastery-bar-text"></span></span>
             </span>
-            <button type="button" id="skill-unlock-toggle" class="sgb-unlock-toggle" aria-pressed="false" hidden data-tt-title="技能全解鎖（內測專用）" data-tt-desc="功能相當於 GM 指令 skill_unlock：無需達到指定等級或封魔塔層數即可升級與使用所有技能。">技能全解鎖：關</button>
+            <button type="button" id="skill-unlock-toggle" class="sgb-unlock-toggle" aria-pressed="false" hidden data-str-attr="data-tt-title:666;data-tt-desc:667" data-str="753"></button>
           </div>
           <div id="skill-trees"></div>
           <div class="sgb-loadout">
-            <div class="sgb-loadout-title"><b>技能列</b><span id="loadout-cap" class="dim-text"></span><span class="dim-text">依順序自動施放；點選技能格可卸下</span></div>
+            <div class="sgb-loadout-title"><span data-str-html="668"></span><span id="loadout-cap" class="dim-text"></span><span class="dim-text" data-str="669"></span></div>
             <div id="skill-loadout" class="chip-row"></div>
           </div>
         </section>
@@ -512,19 +512,19 @@
         <section id="tab-tower" class="tab">
           <div id="tower-fight" style="display:none">
             <div class="tower-head">
-              <span class="tw-title">🗼 封魔塔挑戰</span>
+              <span class="tw-title" data-str="1807"></span>
               <span id="tw-timer" class="tw-timer">60s</span>
               <span id="tw-auto-status" style="display:none"></span>
-              <span id="tw-enrage" class="tw-enrage" style="display:none">🔥 狂暴中 +200%</span>
+              <span id="tw-enrage" class="tw-enrage" style="display:none" data-str="1808"></span>
               <span id="tw-dps" class="dim-text"></span>
-              <button id="tw-flee" class="btn sm warn">撤退</button>
+              <button id="tw-flee" class="btn sm warn" data-str="68"></button>
             </div>
             <div class="battle-scene">
               <div class="combatant">
                 <div class="float-layer" id="tp-float"></div>
                 <div class="cb-level" id="tp-level"></div>
                 <img src="images/icon_avatar.png" class="cb-icon">
-                <div class="cb-name" id="tp-name">冒險者（你）</div>
+                <div class="cb-name" id="tp-name" data-str="69"></div>
                 <div class="hp-bar">
                   <div class="shield-bar" id="tp-shield"></div>
                   <div class="hp-fill player" id="tp-hp"></div><span class="hp-text" id="tp-hptext"></span>
@@ -548,16 +548,16 @@
                 <div class="cb-status" id="tb-status" data-enemy-buff-tip></div>
               </div>
             </div>
-            <div class="tower-canvas-note">⚔️ 戰鬥畫面顯示在戰場上</div>
-            <div class="hint">限時 60 秒；40 秒時若 BOSS 血量仍高於 50%，將進入狂暴（傷害 +200%）！</div>
+            <div class="tower-canvas-note" data-str="1809"></div>
+            <div class="hint" data-str="1810"></div>
           </div>
 
           <div id="tower-list-wrap">
             <div class="pg-top">
-              <h2 class="pg-title">封魔塔</h2>
-              <div id="tower-tiers" class="twx-tiers" role="tablist" aria-label="塔別"></div>
-              <span class="pg-pill twx-highest">最高通關 <b id="tower-highest">尚未通關</b></span>
-              <button type="button" class="pg-help twx-help" aria-label="封魔塔說明" data-tt-title="封魔塔" data-tt-desc="限時擊敗 BOSS 即通關；通關不發放金幣，挑戰費用照常扣除。試煉之塔 1～50 層、地獄之塔 51～100 層、煉獄之塔 101～150 層；地獄之塔起可額外獲得「魔魂本源」，煉獄之塔 BOSS 可額外獲得「魔種」。戰鬥中 BOSS 血量偏高時會進入狂暴。連挑：自動重複挑戰同一層，金幣不足或次數用完自動停止並回到野外（戰鬥中按「撤退」可中止）。">?</button>
+              <h2 class="pg-title" data-str="103"></h2>
+              <div id="tower-tiers" class="twx-tiers" role="tablist" data-str-attr="aria-label:1811"></div>
+              <span class="pg-pill twx-highest"><span data-str="1812"></span> <b id="tower-highest" data-str="1882"></b></span>
+              <button type="button" class="pg-help twx-help" data-str-attr="aria-label:1813;data-tt-desc:1814;data-tt-title:103">?</button>
             </div>
             <div class="twx">
               <div id="tower-floors" class="twx-ladder"></div>
@@ -565,7 +565,7 @@
                 <div id="tower-detail" class="twx-detail"></div>
                 <div class="twx-actions">
                   <div id="tower-actions" class="twx-btns"></div>
-                  <label class="twx-count">連挑次數 <input type="number" id="tw-auto-count" value="5" min="1" max="999"></label>
+                  <label class="twx-count"><span data-str="1815"></span> <input type="number" id="tw-auto-count" value="5" min="1" max="999"></label>
                 </div>
                 <div id="tower-result" class="twx-result" style="display:none"></div>
               </div>
@@ -581,27 +581,27 @@
       <i class="af-frame-corner bl" aria-hidden="true"></i><i class="af-frame-corner br" aria-hidden="true"></i>
       <span class="af-frame-lines" aria-hidden="true"><i class="af-frame-line center top-c"></i><i class="af-frame-line center bottom-c"></i><i class="af-frame-line center left-c"></i><i class="af-frame-line center right-c"></i></span>
       <div id="battle-area">
-        <h2 class="af-heading">無限征途</h2>
+        <h2 class="af-heading" data-str="565"></h2>
         <div id="zone-bar">
-          <button class="zone-btn" data-zone="desert"><svg class="ui-ico ui-ico-desert" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle class="fa" cx="16.5" cy="7.5" r="3.4"/><path class="fs" d="M2 20.5c2.6-5.6 6.4-7.4 10-4.4 2.4 2 5.8 2.1 10-1.1v5.5z"/></svg> 荒漠<span class="zone-best" id="zb-desert"></span></button>
-          <button class="zone-btn" data-zone="Icefield" data-tt-title="冰原" data-tt-desc="敵人更強；經驗、金幣與材料掉落 ×2（裝備掉落不變）"><svg class="ui-ico ui-ico-icefield" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g class="ln"><path d="M12 2.8v18.4M9.6 5l2.4 2 2.4-2M9.6 19l2.4-2 2.4 2"/></g><g class="ln" transform="rotate(60 12 12)"><path d="M12 2.8v18.4M9.6 5l2.4 2 2.4-2M9.6 19l2.4-2 2.4 2"/></g><g class="ln" transform="rotate(120 12 12)"><path d="M12 2.8v18.4M9.6 5l2.4 2 2.4-2M9.6 19l2.4-2 2.4 2"/></g><path class="fs" d="M12 8.2l3.2 1.9v3.8L12 15.8l-3.2-1.9v-3.8z"/></svg> 冰原<span class="zone-best"
+          <button class="zone-btn" data-zone="desert"><svg class="ui-ico ui-ico-desert" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle class="fa" cx="16.5" cy="7.5" r="3.4"/><path class="fs" d="M2 20.5c2.6-5.6 6.4-7.4 10-4.4 2.4 2 5.8 2.1 10-1.1v5.5z"/></svg> <span data-str="566"></span><span class="zone-best" id="zb-desert"></span></button>
+          <button class="zone-btn" data-zone="Icefield" data-str-attr="data-tt-title:567;data-tt-desc:568"><svg class="ui-ico ui-ico-icefield" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g class="ln"><path d="M12 2.8v18.4M9.6 5l2.4 2 2.4-2M9.6 19l2.4-2 2.4 2"/></g><g class="ln" transform="rotate(60 12 12)"><path d="M12 2.8v18.4M9.6 5l2.4 2 2.4-2M9.6 19l2.4-2 2.4 2"/></g><g class="ln" transform="rotate(120 12 12)"><path d="M12 2.8v18.4M9.6 5l2.4 2 2.4-2M9.6 19l2.4-2 2.4 2"/></g><path class="fs" d="M12 8.2l3.2 1.9v3.8L12 15.8l-3.2-1.9v-3.8z"/></svg> <span data-str="567"></span><span class="zone-best"
               id="zb-Icefield"></span></button>
-          <button class="zone-btn" data-zone="swamp" data-tt-title="沼澤" data-tt-desc="敵人極強；經驗、金幣與材料掉落 ×3（裝備掉落不變）"><svg class="ui-ico ui-ico-swamp" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="ln" d="M9 19.5V9.5M15.5 19.5v-6M9 16.5c-2.2-.8-3.4-2.4-3.8-4.2M15.5 17c1.8-.6 2.9-1.8 3.3-3.4"/><rect class="fb" x="7.5" y="3.8" width="3" height="6.4" rx="1.5"/><rect class="fb" x="14" y="8" width="3" height="5.2" rx="1.5"/><path class="st" d="M2.5 21.5c1.4-1 2.8-1 4.2 0s2.8 1 4.2 0 2.8-1 4.2 0 2.8 1 4.2 0"/></svg> 沼澤<span class="zone-best"
+          <button class="zone-btn" data-zone="swamp" data-str-attr="data-tt-title:569;data-tt-desc:570"><svg class="ui-ico ui-ico-swamp" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="ln" d="M9 19.5V9.5M15.5 19.5v-6M9 16.5c-2.2-.8-3.4-2.4-3.8-4.2M15.5 17c1.8-.6 2.9-1.8 3.3-3.4"/><rect class="fb" x="7.5" y="3.8" width="3" height="6.4" rx="1.5"/><rect class="fb" x="14" y="8" width="3" height="5.2" rx="1.5"/><path class="st" d="M2.5 21.5c1.4-1 2.8-1 4.2 0s2.8 1 4.2 0 2.8-1 4.2 0 2.8 1 4.2 0"/></svg> <span data-str="569"></span><span class="zone-best"
               id="zb-swamp"></span></button>
         </div>
         <div id="stage-bar">
           <div class="stage-main-controls">
-            <label class="chk"><input type="checkbox" id="st-auto" checked> 自動推進</label>
-            <button id="st-prev" class="btn sm" type="button" aria-label="後退關卡" data-tt-title="後退關卡" data-tt-desc="滑鼠按住可以快速後退" data-tip-placement="stage-left"><svg class="ui-ico ui-ico-prev" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="ln" d="M15 5.5L8.5 12l6.5 6.5"/></svg></button>
-            <span id="stage-label">第 1 關</span>
-            <button id="st-next" class="btn sm" type="button" aria-label="前進關卡" data-tt-title="前進關卡" data-tt-desc="滑鼠按住可以快速前進" data-tip-placement="stage-right"><svg class="ui-ico ui-ico-next" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="ln" d="M9 5.5l6.5 6.5L9 18.5"/></svg></button>
-            <button id="st-max" class="btn sm" data-tt-title="最高關卡" data-tt-desc="直達目前最高關卡" aria-label="直達目前最高關卡"><svg class="ui-ico ui-ico-last" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="ln" d="M6.5 5.5L13 12l-6.5 6.5M18 5.5v13"/></svg></button>
-            <span id="stage-best" class="dim-text">最高1關</span>
+            <label class="chk"><input type="checkbox" id="st-auto" checked> <span data-str="571"></span></label>
+            <button id="st-prev" class="btn sm" type="button" data-tip-placement="stage-left" data-str-attr="aria-label:572;data-tt-title:572;data-tt-desc:573"><svg class="ui-ico ui-ico-prev" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="ln" d="M15 5.5L8.5 12l6.5 6.5"/></svg></button>
+            <span id="stage-label" data-str="574"></span>
+            <button id="st-next" class="btn sm" type="button" data-tip-placement="stage-right" data-str-attr="aria-label:575;data-tt-title:575;data-tt-desc:576"><svg class="ui-ico ui-ico-next" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="ln" d="M9 5.5l6.5 6.5L9 18.5"/></svg></button>
+            <button id="st-max" class="btn sm" data-str-attr="data-tt-title:577;data-tt-desc:578;aria-label:578"><svg class="ui-ico ui-ico-last" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="ln" d="M6.5 5.5L13 12l-6.5 6.5M18 5.5v13"/></svg></button>
+            <span id="stage-best" class="dim-text" data-str="579"></span>
           </div>
           <div class="stage-tools">
-            <button id="btn-battle-fullscreen" class="btn sm" type="button" aria-pressed="false" aria-controls="combat-area" data-tip="戰鬥區全螢幕（Esc 還原）">全螢幕</button>
-            <button id="btn-realm-toggle" class="btn sm" style="display:none;" data-tt-title="切換地圖" data-tt-desc="切換凡人界與神界練功地圖"><svg class="ui-ico ui-ico-sanctuary" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="fs" d="M12 3l2.2 6.8L21 12l-6.8 2.2L12 21l-2.2-6.8L3 12l6.8-2.2z"/><path class="st" d="M19 2.8v3.4M17.3 4.5h3.4"/></svg> 神界地圖</button>
-            <button id="btn-pip" class="btn sm" data-tt-title="迷你視窗" data-tt-desc="開啟永遠置頂的迷你監控視窗，背景掛機也能看到戰況" aria-label="迷你視窗"><svg class="ui-ico ui-ico-pip" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect class="ln" x="3" y="5" width="18" height="14" rx="2"/><rect class="fa" x="12" y="11" width="6.5" height="5" rx="1"/></svg></button>
+            <button id="btn-battle-fullscreen" class="btn sm" type="button" aria-pressed="false" aria-controls="combat-area" data-str-attr="data-tip:187" data-str="186"></button>
+            <button id="btn-realm-toggle" class="btn sm" style="display:none;" data-str-attr="data-tt-title:640;data-tt-desc:580"><svg class="ui-ico ui-ico-sanctuary" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="fs" d="M12 3l2.2 6.8L21 12l-6.8 2.2L12 21l-2.2-6.8L3 12l6.8-2.2z"/><path class="st" d="M19 2.8v3.4M17.3 4.5h3.4"/></svg> <span data-str="581"></span></button>
+            <button id="btn-pip" class="btn sm" data-str-attr="data-tt-title:582;data-tt-desc:583;aria-label:582"><svg class="ui-ico ui-ico-pip" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect class="ln" x="3" y="5" width="18" height="14" rx="2"/><rect class="fa" x="12" y="11" width="6.5" height="5" rx="1"/></svg></button>
           </div>
         </div>
         <div class="battle-scene-wrapper" style="position: relative; width: 100%;">
@@ -615,34 +615,34 @@
             <span id="tch-auto" class="tch-auto" style="display:none"></span>
             <span id="tch-enrage" class="tch-enrage" style="display:none"></span>
             <span id="tch-dps" class="tch-dps"></span>
-            <button id="tch-flee" class="btn sm warn" type="button">撤退</button>
+            <button id="tch-flee" class="btn sm warn" type="button" data-str="68"></button>
           </div>
           <div id="btn-enemy-tip" class="info-btn">!</div>
-          <button id="btn-toggle-damage" class="info-btn damage-toggle-btn" type="button" aria-label="傷害數字開關" data-tt-title="傷害數字" data-tt-desc="目前顯示傷害數字（點擊關閉）">
+          <button id="btn-toggle-damage" class="info-btn damage-toggle-btn" type="button" data-str-attr="aria-label:584;data-tt-title:114;data-tt-desc:115">
             <svg class="icon-eye-open" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
             <svg class="icon-eye-closed" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
           </button>
-          <button id="btn-toggle-perf" class="info-btn damage-toggle-btn" type="button" aria-label="效能模式開關" data-tt-title="效能模式" data-tt-desc="目前為一般畫質（點擊切換為效能模式）">
+          <button id="btn-toggle-perf" class="info-btn damage-toggle-btn" type="button" data-str-attr="aria-label:585;data-tt-title:586;data-tt-desc:587">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
           </button>
           <div id="battle-fps" class="battle-fps-counter" style="display:none;" aria-hidden="true"></div>
-          <div id="battle-frenzy" style="position:absolute;right:12px;top:44px;z-index:12;color:white;font-weight:bold;pointer-events:auto;cursor:help;text-shadow:0 1px 3px #000" data-tt-title="狂暴化" data-tt-desc="敵人在場上存在時間越久會逐漸提升其強度">狂暴化：0%</div>
+          <div id="battle-frenzy" style="position:absolute;right:12px;top:44px;z-index:12;color:white;font-weight:bold;pointer-events:auto;cursor:help;text-shadow:0 1px 3px #000" data-str-attr="data-tt-title:588;data-tt-desc:589" data-str="590"></div>
           <!-- Canvas 戰鬥模式（js/battle-renderer.js）：PixiJS 畫布動態插入為第一個子節點。
                初始化成功時 body 會掛上 battle-canvas-mode，下方 .battle-scene 隱藏；
                失敗（?canvas=0 / WebGL 不可用）時本容器維持 display:none，原畫面照舊。 -->
           <div id="battle-canvas-host">
             <div id="battle-canvas-buttons">
-              <button id="btn-battle-info" class="btn sm" type="button" data-tt-title="戰況資訊" data-tt-desc="開啟統計面板">📊</button>
+              <button id="btn-battle-info" class="btn sm" type="button" data-str-attr="data-tt-title:591;data-tt-desc:592">📊</button>
             </div>
             <div id="battle-hud">
-              <div id="battle-health-orb" class="battle-resource-orb health-orb" tabindex="0" role="img" aria-label="生命與護盾" data-tt-title="生命與護盾">
+              <div id="battle-health-orb" class="battle-resource-orb health-orb" tabindex="0" role="img" data-str-attr="aria-label:593;data-tt-title:593">
                 <div class="orb-glass" aria-hidden="true"><div id="battle-health-fill" class="orb-liquid" data-level="empty"><div class="orb-energy"></div><div class="orb-surface-sparks"></div></div><div id="battle-shield-fill" class="orb-shield"></div></div>
               </div>
-              <div id="battle-mana-orb" class="battle-resource-orb mana-orb" tabindex="0" role="img" aria-label="法力" data-tt-title="法力">
+              <div id="battle-mana-orb" class="battle-resource-orb mana-orb" tabindex="0" role="img" data-str-attr="aria-label:39;data-tt-title:39">
                 <div class="orb-glass" aria-hidden="true"><div id="battle-mana-fill" class="orb-liquid" data-level="empty"><div class="orb-energy"></div><div class="orb-surface-sparks"></div></div></div>
               </div>
               <div id="battle-action-dock">
-                <div id="battle-xp-bar" tabindex="0" role="progressbar" aria-label="角色經驗" aria-valuemin="0" aria-valuemax="100" data-tt-title="角色經驗"><div id="battle-xp-fill"></div></div>
+                <div id="battle-xp-bar" tabindex="0" role="progressbar" aria-valuemin="0" aria-valuemax="100" data-str-attr="aria-label:136;data-tt-title:136"><div id="battle-xp-fill"></div></div>
                 <!-- 戰鬥區 BUFF 狀態列：顯示於技能快捷列上方 -->
                 <div id="battle-buff-bar"></div>
                 <!-- 戰鬥區技能欄：戰鬥區下方中央依配置上限顯示技能圖示與冷卻碼錶 -->
@@ -655,7 +655,7 @@
               <div class="float-layer" id="pv-float"></div>
               <div class="cb-level" id="pv-level"></div>
             <img src="images/icon_avatar.png" class="cb-icon">
-            <div class="cb-name" id="pv-name">冒險者（你）</div>
+            <div class="cb-name" id="pv-name" data-str="69"></div>
             <div class="hp-bar">
               <div class="shield-bar" id="pv-shield"></div>
               <div class="hp-fill player" id="pv-hp"></div><span class="hp-text" id="pv-hptext"></span>
@@ -674,18 +674,18 @@
         </div>
       </div>
         <div class="log-header">
-          <div class="log-title">綜合紀錄</div>
+          <div class="log-title" data-str="594"></div>
           <div class="log-header-actions">
-            <button id="btn-summary" class="btn sm" data-tt-title="統計面板" data-tt-desc="開啟統計面板">📊 統計</button>
-            <button id="btn-combat-pause" class="btn sm warn" type="button" data-tt-title="戰鬥控制" data-tt-desc="暫停野外與封魔塔戰鬥" aria-pressed="false">⏸ 暫停</button>
-            <button id="btn-detail-log" class="btn sm" type="button" data-tt-title="詳細日誌" data-tt-desc="開啟完整戰鬥日誌">📜 日誌</button>
+            <button id="btn-summary" class="btn sm" data-str-attr="data-tt-title:595;data-tt-desc:592" data-str="596"></button>
+            <button id="btn-combat-pause" class="btn sm warn" type="button" aria-pressed="false" data-str-attr="data-tt-title:633;data-tt-desc:635" data-str="632"></button>
+            <button id="btn-detail-log" class="btn sm" type="button" data-str-attr="data-tt-title:597;data-tt-desc:598" data-str="599"></button>
             <select id="log-filter" class="log-filter">
-            <option value="all">全部</option>
-            <option value="combat">戰鬥與進度</option>
-            <option value="boss">封魔塔BOSS戰</option>
-            <option value="factory">裝備與強化</option>
-            <option value="loot">掉落物</option>
-            <option value="system">系統訊息</option>
+            <option value="all" data-str="110"></option>
+            <option value="combat" data-str="600"></option>
+            <option value="boss" data-str="601"></option>
+            <option value="factory" data-str="602"></option>
+            <option value="loot" data-str="603"></option>
+            <option value="system" data-str="604"></option>
             </select>
           </div>
         </div>
@@ -697,20 +697,20 @@
   <div id="detail-log-modal" class="detail-log-modal" style="display:none" aria-hidden="true">
     <div class="detail-log-box" role="dialog" aria-modal="true" aria-labelledby="detail-log-title">
       <div class="detail-log-head">
-        <div id="detail-log-title" class="sec-title">詳細戰鬥日誌</div>
-        <button id="detail-log-close" class="modal-x" type="button" aria-label="關閉">✕</button>
+        <div id="detail-log-title" class="sec-title" data-str="605"></div>
+        <button id="detail-log-close" class="modal-x" type="button" data-str-attr="aria-label:155">✕</button>
       </div>
       <div class="detail-log-toolbar">
-        <select id="detail-log-filter" class="log-filter" aria-label="詳細日誌分類">
-          <option value="all">全部</option>
-          <option value="combat">戰鬥與進度</option>
-          <option value="boss">封魔塔BOSS戰</option>
-          <option value="factory">裝備與強化</option>
-          <option value="loot">掉落物</option>
-          <option value="system">系統訊息</option>
+        <select id="detail-log-filter" class="log-filter" data-str-attr="aria-label:606">
+          <option value="all" data-str="110"></option>
+          <option value="combat" data-str="600"></option>
+          <option value="boss" data-str="601"></option>
+          <option value="factory" data-str="602"></option>
+          <option value="loot" data-str="603"></option>
+          <option value="system" data-str="604"></option>
         </select>
-        <button id="btn-detail-combat-pause" class="btn sm warn" type="button" data-tt-title="戰鬥控制" data-tt-desc="暫停野外與封魔塔戰鬥" aria-pressed="false">⏸ 暫停</button>
-        <button id="detail-log-clear" class="btn sm" type="button">清除詳細日誌</button>
+        <button id="btn-detail-combat-pause" class="btn sm warn" type="button" aria-pressed="false" data-str-attr="data-tt-title:633;data-tt-desc:635" data-str="632"></button>
+        <button id="detail-log-clear" class="btn sm" type="button" data-str="70"></button>
       </div>
       <div id="detail-log-content" class="detail-log-content"></div>
     </div>
@@ -719,12 +719,12 @@
   <div id="newforge-detail-log-modal" class="detail-log-modal" style="display:none" aria-hidden="true">
     <div class="detail-log-box" role="dialog" aria-modal="true" aria-labelledby="newforge-detail-log-title">
       <div class="detail-log-head">
-        <div id="newforge-detail-log-title" class="sec-title">詳細熔爐日誌</div>
-        <button id="newforge-detail-log-close" class="modal-x" type="button" aria-label="關閉">✕</button>
+        <div id="newforge-detail-log-title" class="sec-title" data-str="1386"></div>
+        <button id="newforge-detail-log-close" class="modal-x" type="button" data-str-attr="aria-label:155">✕</button>
       </div>
       <div class="detail-log-toolbar">
-        <button id="btn-newforge-log-pause" class="btn sm warn" type="button" aria-pressed="false">⏸ 暫停日誌更新</button>
-        <button id="newforge-detail-log-clear" class="btn sm" type="button">清除詳細日誌</button>
+        <button id="btn-newforge-log-pause" class="btn sm warn" type="button" aria-pressed="false" data-str="1463"></button>
+        <button id="newforge-detail-log-clear" class="btn sm" type="button" data-str="70"></button>
       </div>
       <div class="newforge-detail-log-body">
         <div id="newforge-detail-log-content" class="detail-log-content"></div>
@@ -735,93 +735,76 @@
   <!-- Esc遊戲菜單與獨立設置視窗 -->
   <div id="game-menu" class="system-overlay" style="display:none" aria-hidden="true">
     <div class="system-card" role="dialog" aria-modal="true" aria-labelledby="game-menu-title">
-      <button id="game-menu-close" class="system-close" type="button" aria-label="關閉菜單">×</button>
-      <h2 id="game-menu-title">遊戲菜單</h2>
+      <button id="game-menu-close" class="system-close" type="button" data-str-attr="aria-label:1944">×</button>
+      <h2 id="game-menu-title" data-str="1945"></h2>
       <div class="system-menu-actions">
-        <button id="game-menu-reload" type="button">重啟遊戲</button>
-        <button id="game-menu-exit" type="button">離開遊戲</button>
-        <button id="game-menu-save" type="button">立即存檔</button>
-        <button id="game-menu-settings" type="button">設置</button>
-        <button id="game-menu-ai-key" type="button" style="display:none; border:1px dashed #0284c7; color:#38bdf8;">🤖 AI 金鑰設定（內測）</button>
+        <button id="game-menu-reload" type="button" data-str="1946"></button>
+        <button id="game-menu-exit" type="button" data-str="1947"></button>
+        <button id="game-menu-save" type="button" data-str="1948"></button>
+        <button id="game-menu-settings" type="button" data-str="1949"></button>
+        <button id="game-menu-ai-key" type="button" style="display:none; border:1px dashed #0284c7; color:#38bdf8;" data-str="1950"></button>
       </div>
       <div id="game-menu-status" class="system-menu-status" role="status" aria-live="polite"></div>
     </div>
   </div>
   <div id="settings-modal" class="system-overlay" style="display:none" aria-hidden="true">
     <div class="system-card system-settings-card" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
-      <div class="system-settings-heading"><h2 id="settings-modal-title">設置</h2><button id="settings-modal-close" class="system-close" type="button" aria-label="返回菜單">×</button></div>
+      <div class="system-settings-heading"><h2 id="settings-modal-title" data-str="1949"></h2><button id="settings-modal-close" class="system-close" type="button" data-str-attr="aria-label:1951">×</button></div>
       <div class="system-settings-body">
         <section id="tab-settings" class="system-settings-content">
           <div id="ai-gm-key-panel" class="panel" style="display:none; background:rgba(56,189,248,0.06); border:1px solid rgba(56,189,248,0.3); border-radius:8px; padding:12px 16px; margin-bottom:12px;">
             <div class="sec-title" style="color:#38bdf8; display:flex; align-items:center; gap:8px;">
-              <span>🤖 AI 自然語言 GM 金鑰</span>
-              <span class="badge" style="font-size:11px; font-weight:normal; background:rgba(56,189,248,0.2); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); border-radius:4px; padding:1px 6px;">內測專用</span>
+              <span data-str="1952"></span>
+              <span class="badge" style="font-size:11px; font-weight:normal; background:rgba(56,189,248,0.2); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); border-radius:4px; padding:1px 6px;" data-str="1953"></span>
             </div>
-            <div class="hint" style="margin-bottom:10px; color:var(--dim); font-size:12px;">
-              設定 Google Gemini API 金鑰後即可啟用自然語言 GM 指令。金鑰僅儲存於本機瀏覽器（<code>localStorage</code>），不會寫入雲端或遊戲存檔。
-            </div>
+            <div class="hint" style="margin-bottom:10px; color:var(--dim); font-size:12px;" data-str-html="1954"></div>
             <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:8px;">
-              <input type="password" id="input-ai-gemini-key" class="input" placeholder="貼上 API Key (AIzaSy...)" style="flex:1; min-width:200px; height:32px; padding:4px 8px; font-family:monospace; background:#0b0f16; border:1px solid var(--border); border-radius:4px; color:var(--text);" autocomplete="off" spellcheck="false">
-              <button id="btn-ai-toggle-key-vis" class="btn sm" type="button" title="顯示/隱藏金鑰">👁️</button>
-              <button id="btn-ai-save-key" class="btn sm" type="button" style="background:linear-gradient(135deg,#0284c7,#0369a1); color:#fff; border:none;">💾 保存</button>
-              <button id="btn-ai-test-key" class="btn sm" type="button">🔌 測試連線</button>
-              <button id="btn-ai-clear-key" class="btn sm danger" type="button">🗑️ 清除</button>
+              <input type="password" id="input-ai-gemini-key" class="input" style="flex:1; min-width:200px; height:32px; padding:4px 8px; font-family:monospace; background:#0b0f16; border:1px solid var(--border); border-radius:4px; color:var(--text);" autocomplete="off" spellcheck="false" data-str-attr="placeholder:1955">
+              <button id="btn-ai-toggle-key-vis" class="btn sm" type="button" data-str-attr="title:1956">👁️</button>
+              <button id="btn-ai-save-key" class="btn sm" type="button" style="background:linear-gradient(135deg,#0284c7,#0369a1); color:#fff; border:none;" data-str="1957"></button>
+              <button id="btn-ai-test-key" class="btn sm" type="button" data-str="1958"></button>
+              <button id="btn-ai-clear-key" class="btn sm danger" type="button" data-str="1959"></button>
             </div>
             <div id="ai-key-status" class="hint" style="font-size:12px; min-height:18px;"></div>
           </div>
           <div class="panel">
-            <div class="sec-title">💾 存檔管理</div>
+            <div class="sec-title" data-str="1960"></div>
             <div id="save-folder-banner"
               style="display:none; background:rgba(251,191,36,0.12); border:1px solid #f59e0b; border-radius:8px; padding:12px 16px; margin-bottom:12px;">
-              <div style="font-weight:bold; color:#f59e0b; margin-bottom:6px;">📂 設定本機存檔資料夾（僅需一次）</div>
-              <div style="font-size:13px; color:var(--dim); margin-bottom:10px;">選擇後，遊戲每 10
-                分鐘會把最新自動存檔同步到你選擇的資料夾，再也不用手動操作。瀏覽器安全限制需要你授權一次。</div>
+              <div style="font-weight:bold; color:#f59e0b; margin-bottom:6px;" data-str="1961"></div>
+              <div style="font-size:13px; color:var(--dim); margin-bottom:10px;" data-str="1962"></div>
               <button id="btn-folder-banner" class="btn"
-                style="background:linear-gradient(135deg,#f59e0b,#d97706); color:#000; border:none;">📂 選擇存檔資料夾</button>
+                style="background:linear-gradient(135deg,#f59e0b,#d97706); color:#000; border:none;" data-str="1963"></button>
             </div>
             <div class="btn-row">
-              <button id="btn-save" class="btn">💾 另存到資料夾</button>
-              <button id="btn-folder" class="btn">📂 選擇／更新存檔資料夾</button>
-              <button id="btn-folder-refresh" class="btn">🔄 重新掃描</button>
-              <button id="btn-restart" class="btn danger">🔄 重新開局</button>
+              <button id="btn-save" class="btn" data-str="1964"></button>
+              <button id="btn-folder" class="btn" data-str="1965"></button>
+              <button id="btn-folder-refresh" class="btn" data-str="1966"></button>
+              <button id="btn-restart" class="btn danger" data-str="1967"></button>
             </div>
-            <div class="hint">手動存檔必須寫入本地資料夾；首次請先選擇並授權資料夾。授權後，自動存檔每 10 分鐘同步為
-              <code>IC_autosave.json</code>。選定資料夾後，下方會唯讀列出資料夾內所有檔案；瀏覽器安全限制不允許網頁直接啟動 Windows 檔案總管。
-            </div>
+            <div class="hint" data-str-html="1968"></div>
             <div id="save-folder-files" class="save-folder-files" hidden>
-              <div class="save-folder-files-title">📁 存檔資料夾內容（唯讀）</div>
+              <div class="save-folder-files-title" data-str="1969"></div>
               <div id="save-folder-files-list"></div>
             </div>
-            <div class="sec-sub">存檔記錄</div>
+            <div class="sec-sub" data-str="1970"></div>
             <div id="save-list"></div>
             <div class="node-info" id="save-msg"></div>
           </div>
           <div class="panel">
-            <div class="sec-title">📖 玩法指南</div>
+            <div class="sec-title" data-str="1971"></div>
             <div class="help">
-              <p><b>核心循環：</b>戰鬥收集材料 → 生產線自動處理 → 資源配比養成 → 挑戰更高層 BOSS。</p>
-              <p><b>📊 屬性系統（50+）：</b>四維主屬性（💪力量→物攻/物防、🏃敏捷→閃避/暴擊/攻速、🧠智力→魔攻/法力、🪨體質→生命/防禦/回復）每級 +2，並可由裝備詞條累加。完整屬性見左側面板。</p>
-              <p><b>⚔️ 戰鬥：</b>角色全自動攻防（基礎 1
-                次/秒，受攻速影響）。法力充足時自動施放【🌠奧術衝擊】造成魔法傷害（對魔防，受冷卻縮減/施法速度/範圍傷害/吸魔影響）。魔法系怪物（幽靈、樹妖等）的攻擊對你的魔防。格擋、閃避、韌性、護盾（治療溢出轉化）皆會生效。每階段擊殺
-                10 隻怪（第 10 隻為菁英）後推進，死亡會退回上一階段。</p>
-              <p><b>🎒 裝備：</b>13 欄位（武器 x2、戒指 x2、頭盔、肩甲、胸甲、腰帶、護手、手腕、護腿、靴子、項鍊）。品質 9
-                階：普通（灰）→精良（綠）→稀有（藍）→獨特（紫）→史詩（金）→傳說（橘）→神話（紅）→創世（暗金）→神鑄創世（耀金，僅能鑄造取得）；品質決定詞條數（1~7，「詞條上限率」影響洗煉數值偏向
-                +1）、寶石鑲孔（1~6）與符文孔（1~4）。神話 25
-                階起、創世 40 階起掉落。傳說級以上附帶傳奇特效；附有武器類型限制的特效只會出現在對應武器上。武器/戒指優先裝入空欄、再替換較弱者。</p>
-              <p><b>🔯 神鑄：</b>角色達 2000 級且 1 轉後開放。將 6 件相同品質（傳說/神話/創世）的裝備放入六芒星法陣，消耗金幣鑄造下一品質裝備；失敗隨機消耗 3 件、其餘退回。角尖符位可放💫魔塵（每個
-                +5% 成功率，等級 150+ 敵人與封魔塔 BOSS 掉落；神鑄失敗額外獲得 1 個魔塵）。6 件創世鑄造成功可得「神鑄創世」：屬性上限 1.5 倍、必帶 2 條專屬特效（龍血/神力/天罰/不朽…共 12
-                種），無法再入爐。</p>
-              <p><b>🏭 熔爐：</b>掉落裝備自動進入熔爐佇列，依各熔爐勾選的品質送入傳送帶拆解（未勾選＝保留入包）。拆解依裝備品質與零件加成產出碎片、金幣與附魔精華，不會產出寶石。熔爐數量與轉生連動（0 轉 2 座、每轉 +1、上限 12），每爐零件格可用金幣解鎖至 8 格。</p>
-              <p><b>🔷 符文：</b>符文取代了原本的附魔（附魔功能已關閉）。符文從野外擊殺與封魔塔通關掉落，同種數顆可合成為下一階。在「裝備」分頁點選裝備 → 按「符文」→ 點符文即可鑲入符文孔（孔數依品質，一般裝備最多 4 孔），點擊已鑲的符文可取下。
-                把指定的符文依指定順序鑲滿，且裝備類型符合，就會成形為「符文真言」，獲得額外屬性與特殊威能。配方與效果記在「符文」分頁的圖鑑裡，成形過一次才會顯示。</p>
-              <p><b>🧠 技能：</b>技能以群組與進化階段呈現，使用金幣升級；裝入技能列後自動施放，終極進化依各技能條件解鎖。</p>
-              <p><b>⚗️ 技能融合：</b>放入 2~4
-                個已學主動技能融合成專屬奧義：繼承素材部分效果（以素材當前等級計，等級越高繼承越強），並有機率覺醒變異效果（冰與火之歌、雷鳴回響、劇毒綻放…每次僅一種）。融合技初始等級＝素材加總、可再升 20
-                級；素材歸零可重學；刪除融合技會歸還所有投入點數。</p>
-              <p><b>🔨 強化與機制：</b>+5 內必定成功，之後成功率遞減（失敗損失半數材料），可堆「強化成功率」。「幸運值」影響詞條品質/大成功；「狂暴閾值」提高
-                BOSS 狂暴門檻；「合成變異率」讓混合合成有機率產出強化附魔＋額外詞條。</p>
-              <p><b>🗼 封魔塔：</b>60 秒限時戰。40 秒時 BOSS 血量 &gt; 50% 會狂暴（傷害
-                +200%）。通關獲得自動機組零件：加速齒輪、幸運核心、重骰模組。失敗會有分析報告，照著調整生產線配比吧！</p>
+              <p data-str-html="1972"></p>
+              <p data-str-html="1973"></p>
+              <p data-str-html="1974"></p>
+              <p data-str-html="1975"></p>
+              <p data-str-html="1976"></p>
+              <p data-str-html="1977"></p>
+              <p data-str-html="1978"></p>
+              <p data-str-html="1979"></p>
+              <p data-str-html="1980"></p>
+              <p data-str-html="1981"></p>
+              <p data-str-html="1982"></p>
             </div>
           </div>
         </section>
@@ -832,24 +815,24 @@
   <!-- 離線收益確認彈窗 -->
   <div id="offline-modal" class="modal-overlay" style="display:none">
     <div class="modal-box offline-modal-box">
-      <button id="offline-modal-close" class="modal-x" aria-label="關閉">✕</button>
+      <button id="offline-modal-close" class="modal-x" data-str-attr="aria-label:155">✕</button>
       <div id="offline-modal-body"></div>
-      <div class="offline-modal-actions"><button id="offline-modal-confirm" class="btn">✅ 確認</button></div>
+      <div class="offline-modal-actions"><button id="offline-modal-confirm" class="btn" data-str="1983"></button></div>
     </div>
   </div>
 
   <!-- 戰鬥結算日誌彈窗（支援拖曳移動與獨立懸浮） -->
   <div id="summary-modal" class="modal-overlay" style="display:none; background: transparent; backdrop-filter: none;">
     <div class="modal-box" id="summary-modal-box" style="display:flex; flex-direction:column; max-height:85vh; width:min(880px, 94vw);">
-      <button id="summary-modal-close" class="modal-x" aria-label="關閉">✕</button>
-      <button id="btn-summary-detail-log" class="btn sm" type="button" data-tt-title="詳細日誌" data-tt-desc="開啟完整詳細戰鬥日誌">詳細日誌</button>
+      <button id="summary-modal-close" class="modal-x" data-str-attr="aria-label:155">✕</button>
+      <button id="btn-summary-detail-log" class="btn sm" type="button" data-str-attr="data-tt-title:597;data-tt-desc:607" data-str="597"></button>
       <div class="summary-modal-header" id="summary-modal-header">
-        <div class="sec-title" style="text-align:center; margin-bottom:12px;">📊 統計面板</div>
+        <div class="sec-title" style="text-align:center; margin-bottom:12px;" data-str="608"></div>
       </div>
       <div style="display:flex; justify-content:center; align-items:center; margin-bottom:8px; position:relative;">
-        <div class="hint" style="text-shadow: 1px 1px 2px #000; margin:0;">(統計即時更新，按清理歸零重計)</div>
+        <div class="hint" style="text-shadow: 1px 1px 2px #000; margin:0;" data-str="609"></div>
         <button id="btn-summary-clear" class="btn sm"
-          style="position:absolute; right:10px; padding:2px 8px;">清理</button>
+          style="position:absolute; right:10px; padding:2px 8px;" data-str="610"></button>
       </div>
       <div id="stats-scroll"
         style="overflow-y:auto; display:flex; flex-direction:column; gap:8px; flex:1; max-height:60vh;">
@@ -864,12 +847,12 @@
   <!-- 任務總覽彈窗：清單由 ui.js renderQuestModal() 依 task 面板投影與 TASKS 表填入 -->
   <div id="quest-modal" class="modal-overlay" style="display:none">
     <div class="modal-box" style="display:flex; flex-direction:column; max-height:85vh; width:min(720px, 92vw);">
-      <button id="quest-modal-close" class="modal-x" aria-label="關閉">✕</button>
-      <div class="sec-title" style="text-align:center; margin-bottom:8px;">任務總覽</div>
+      <button id="quest-modal-close" class="modal-x" data-str-attr="aria-label:155">✕</button>
+      <div class="sec-title" style="text-align:center; margin-bottom:8px;" data-str="1912"></div>
       <div class="quest-list-head">
-        <span class="quest-col-name">任務條件</span>
-        <span class="quest-col-prog">進度</span>
-        <span class="quest-col-reward">獎勵</span>
+        <span class="quest-col-name" data-str="1913"></span>
+        <span class="quest-col-prog" data-str="1914"></span>
+        <span class="quest-col-reward" data-str="1915"></span>
       </div>
       <div id="quest-modal-list" style="overflow-y:auto; flex:1; max-height:62vh;"></div>
     </div>
@@ -878,12 +861,12 @@
   <!-- 挑戰BOSS結算彈窗 -->
   <div id="confirm-modal" class="modal-overlay confirm-modal" style="display:none">
     <div class="modal-box confirm-box">
-      <div id="confirm-title" class="confirm-title">操作確認</div>
+      <div id="confirm-title" class="confirm-title" data-str="183"></div>
       <div id="confirm-message" class="confirm-message"></div>
       <input id="confirm-input" class="confirm-input" type="text" autocomplete="off" style="display:none">
       <div class="confirm-actions">
-        <button id="confirm-cancel" class="btn" type="button">取消</button>
-        <button id="confirm-ok" class="btn danger" type="button">確定</button>
+        <button id="confirm-cancel" class="btn" type="button" data-str="76"></button>
+        <button id="confirm-ok" class="btn danger" type="button" data-str="149"></button>
       </div>
     </div>
   </div>
@@ -895,18 +878,18 @@
       <div id="btn-tower-result-boss-tip" class="info-btn">!</div>
       <div id="trm-title" class="tr-title" style="text-align:center; font-size: 20px; margin-bottom: 16px;"></div>
 
-      <div class="tr-sub" style="color:var(--text); margin-bottom:4px; font-weight:bold;">【雙方剩餘血量】</div>
+      <div class="tr-sub" style="color:var(--text); margin-bottom:4px; font-weight:bold;" data-str="1816"></div>
       <div id="trm-hp-stats" class="tr-line" style="margin-bottom: 12px;"></div>
 
-      <div class="tr-sub" style="color:var(--text); margin-bottom:4px; font-weight:bold;">【雙方造成總傷害】</div>
+      <div class="tr-sub" style="color:var(--text); margin-bottom:4px; font-weight:bold;" data-str="1817"></div>
       <div id="trm-dmg-stats" class="tr-line" style="margin-bottom: 12px;"></div>
 
-      <div class="tr-sub" style="color:var(--text); margin-bottom:4px; font-weight:bold;">【掉落物品獎勵】</div>
+      <div class="tr-sub" style="color:var(--text); margin-bottom:4px; font-weight:bold;" data-str="1818"></div>
       <div id="trm-rewards" class="tr-line" style="min-height: 40px; margin-bottom: 20px;"></div>
 
       <div style="text-align: center; display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
-        <button id="trm-stop-auto" class="btn warn" style="display:none; padding: 8px 22px; font-size: 16px;">終止連續</button>
-        <button id="trm-confirm" class="btn" style="padding: 8px 30px; font-size: 16px;">確定退出</button>
+        <button id="trm-stop-auto" class="btn warn" style="display:none; padding: 8px 22px; font-size: 16px;" data-str="1819"></button>
+        <button id="trm-confirm" class="btn" style="padding: 8px 30px; font-size: 16px;" data-str="1820"></button>
       </div>
     </div>
   </div>
@@ -914,13 +897,13 @@
   <!-- 熔爐系統改版公告（舊存檔載入時顯示一次） -->
   <div id="forge-rebuild-modal" class="modal-overlay" style="display:none">
     <div class="modal-box">
-      <div class="sec-title" style="margin-bottom:10px">🏭 熔爐系統全面改造</div>
+      <div class="sec-title" style="margin-bottom:10px" data-str="1387"></div>
       <div style="line-height:1.7; font-size:14px">
-        <p style="color:#ffd700; font-size:18px; font-weight:bold; text-align:center; margin:8px 0 12px">熔爐系統已重新改造，請玩家重新佈置新熔爐！</p>
-        <p style="color:var(--accent)"><b>請前往「🏭 熔爐」分頁重新佈置品質勾選與零件。</b>你先前的輸送帶滯留裝備已併入熔爐佇列，不會遺失。</p>
+        <p style="color:#ffd700; font-size:18px; font-weight:bold; text-align:center; margin:8px 0 12px" data-str="1388"></p>
+        <p style="color:var(--accent)" data-str-html="1389"></p>
       </div>
       <div class="btn-row" style="justify-content:center; margin-top:12px">
-        <button id="forge-rebuild-ok" class="btn">知道了</button>
+        <button id="forge-rebuild-ok" class="btn" data-str="1390"></button>
       </div>
     </div>
   </div>
@@ -940,13 +923,15 @@
          save                   SaveStorage 重用其 I/O 與存檔索引
        已移除（主執行緒零呼叫，只在 Worker 內跑）：
          special_rules / legendary / factory / newforge / forge / gm_exec -->
-  <script src="js/util.js?v=1.0.3"></script>
+  <script src="js/util.js?v=1.0.4"></script>
+  <script src="js/strings_data.js?v=fd850ee0"></script>
+  <script src="js/strings.js?v=1.0.1"></script>
   <script src="js/ui-scale.js?v=1.0.1"></script>
-  <script src="js/data.js?v=1.0.97"></script>
-  <script src="js/status.js?v=1.0.41"></script>
-  <script src="js/runeword_data.js?v=1.0.17"></script>
+  <script src="js/data.js?v=1.0.103"></script>
+  <script src="js/status.js?v=1.0.42"></script>
+  <script src="js/runeword_data.js?v=1.0.21"></script>
   <script src="js/gem_resonance_data.js?v=1.0.1"></script>
-  <script src="js/formula.js?v=1.0.69"></script>
+  <script src="js/formula.js?v=1.0.71"></script>
   <script src="js/battle-terrain.js?v=1.0.2"></script>
   <script src="js/battlefield.js?v=1.4.18"></script>
   <script src="js/game-clock.js?v=1.0.1"></script>
@@ -969,28 +954,28 @@
   <script src="js/decor-nature.js?v=1.0.11"></script>
   <script src="js/battle-decor.js?v=1.0.29"></script>
   <!-- 封魔塔魔王祭壇（BOSS 戰專用場景）：沿用 battle-decor 的繪圖工具，battle-renderer 的 init() 會建立它。 -->
-  <script src="js/battle-arena.js?v=1.0.6"></script>
+  <script src="js/battle-arena.js?v=1.0.8"></script>
   <script src="js/battle-elite.js?v=1.0.8"></script>
-  <script src="js/battle-renderer.js?v=1.6.199"></script>
-  <script src="js/stats.js?v=1.0.4"></script>
-  <script src="js/item.js?v=1.0.25"></script>
-  <script src="js/gem_resonance.js?v=1.0.3"></script>
-  <script src="js/runeword.js?v=1.0.15"></script>
-  <script src="js/skills.js?v=1.0.43"></script>
+  <script src="js/battle-renderer.js?v=1.6.200"></script>
+  <script src="js/stats.js?v=1.0.6"></script>
+  <script src="js/item.js?v=1.0.30"></script>
+  <script src="js/gem_resonance.js?v=1.0.6"></script>
+  <script src="js/runeword.js?v=1.0.18"></script>
+  <script src="js/skills.js?v=1.0.44"></script>
   <!-- 新版主動技能系統（2026-08-13 技能改造第一批）：定義表＋引擎＋純函式說明 -->
-  <script src="js/skills2.js?v=1.0.356"></script>
+  <script src="js/skills2.js?v=1.0.358"></script>
   <script src="js/elite_data.js?v=1.0.7"></script>
-  <script src="js/talents.js?v=1.0.10"></script>
-  <script src="js/player.js?v=1.0.18"></script>
-  <script src="js/combat.js?v=1.0.90"></script>
-  <script src="js/tower.js?v=1.0.34"></script>
-  <script src="js/save.js?v=1.0.22"></script>
+  <script src="js/talents.js?v=1.0.12"></script>
+  <script src="js/player.js?v=1.0.21"></script>
+  <script src="js/combat.js?v=1.0.92"></script>
+  <script src="js/tower.js?v=1.0.37"></script>
+  <script src="js/save.js?v=1.0.24"></script>
   <script src="js/ui-inventory-skin.js?v=1.0.1"></script>
-  <script src="js/ui.js?v=1.0.196"></script>
-  <script src="js/ui-runeword.js?v=1.0.13"></script>
-  <script src="js/ui-gem-resonance.js?v=1.0.15"></script>
-  <script src="js/ui-gem-workshop.js?v=1.0.0"></script>
-  <script src="js/ui-newforge-visuals.js?v=1.0.6"></script>
+  <script src="js/ui.js?v=1.0.211"></script>
+  <script src="js/ui-runeword.js?v=1.0.16"></script>
+  <script src="js/ui-gem-resonance.js?v=1.0.18"></script>
+  <script src="js/ui-gem-workshop.js?v=1.0.2"></script>
+  <script src="js/ui-newforge-visuals.js?v=1.0.8"></script>
   <script src="js/param_autoreload.js"></script>
   <!-- GM 面板。指令執行層在 js/gm_exec.js，由 Worker importScripts 載入 -->
   <script src="js/gm.js?v=1.0.1"></script>
@@ -1003,7 +988,7 @@
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
-  <script src="js/bridge.js?v=1.0.347"></script>
+  <script src="js/bridge.js?v=1.0.360"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->
@@ -1012,9 +997,9 @@
        正式遊玩不包裝任何函式、不攔任何屬性。排在 main 之前，才來得及在
        DOMContentLoaded 就把 ui.js 的渲染函式包起來。用法：網址加 ?lag=1 -->
   <script src="js/lagprobe.js?v=1.0.18"></script>
-  <script src="js/game-menu.js?v=1.0.2"></script>
+  <script src="js/game-menu.js?v=1.0.3"></script>
   <script src="js/ai-key-setting.js?v=1.0.1"></script>
-  <script src="js/main.js?v=1.0.3"></script>
+  <script src="js/main.js?v=1.0.4"></script>
 </body>
 
 </html>

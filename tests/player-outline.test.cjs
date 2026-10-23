@@ -1,4 +1,5 @@
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -7,7 +8,7 @@ const vm = require('node:vm');
 const { buildSceneTree, drawOrder } = require('./helpers/battle-scene.cjs');
 
 const root = path.resolve(__dirname, '..');
-const renderer = fs.readFileSync(path.join(root, 'js/battle-renderer.js'), 'utf8');
+const renderer = readExpanded(path.join(root, 'js/battle-renderer.js'));
 
 /* ============================================================
    穿透式角色輪廓（js/battle-renderer.js 的 PLAYER_OUTLINE）

@@ -26,7 +26,7 @@ function loadContext(hostname = 'localhost') {
   const ctx = vm.createContext(sandbox);
 
   const files = [
-    'js/data.js',
+    'js/strings_data.js', 'js/strings.js', 'js/data.js',
     'js/skills.js',
     'js/skills2.js',
     'js/gm_exec.js'

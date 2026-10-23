@@ -1,4 +1,5 @@
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -55,13 +56,13 @@ function setupTestEnv() {
   ctx.window = ctx;
   vm.createContext(ctx);
 
-  const statusCode = fs.readFileSync(path.join(__dirname, '../js/status.js'), 'utf8');
+  const statusCode = readExpanded(path.join(__dirname, '../js/status.js'));
   vm.runInContext(statusCode, ctx);
 
-  const combatCode = fs.readFileSync(path.join(__dirname, '../js/combat.js'), 'utf8');
+  const combatCode = readExpanded(path.join(__dirname, '../js/combat.js'));
   vm.runInContext(combatCode, ctx);
 
-  const skills2Code = fs.readFileSync(path.join(__dirname, '../js/skills2.js'), 'utf8');
+  const skills2Code = readExpanded(path.join(__dirname, '../js/skills2.js'));
   vm.runInContext(skills2Code, ctx);
 
   return ctx;

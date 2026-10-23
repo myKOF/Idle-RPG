@@ -13,7 +13,7 @@ function setup(lv = 1) {
     UI: { dirty: {} }, blog() {}, floatText() {}, trackDps() {}, recordRunDamage() {} };
   c.window = c;
   vm.createContext(c);
-  for (const file of ['util', 'data', 'status', 'formula', 'battlefield', 'combat', 'skills', 'skills2', 'legendary']) {
+  for (const file of ['util', 'strings_data', 'strings', 'data', 'status', 'formula', 'battlefield', 'combat', 'skills', 'skills2', 'legendary']) {
     vm.runInContext(fs.readFileSync(path.join(__dirname, '../js/' + file + '.js'), 'utf8'), c);
   }
   c.G = { player: { skills2: { levels: { waterball: [10,10,10,10,10,10,10] },

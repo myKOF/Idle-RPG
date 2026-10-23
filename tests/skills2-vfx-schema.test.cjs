@@ -1,9 +1,10 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('fs'),vm=require('vm');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const table=require('../tools/config_tables.cjs'),vfx=require('../tools/skills2-vfx.cjs');
 const {migrate}=require('../tools/migrate-skills2-vfx.cjs');
 const plain=x=>JSON.parse(JSON.stringify(x));
-function context(){const c=vm.createContext({console,Math});vm.runInContext(fs.readFileSync('js/skills2.js','utf8'),c);c.skills2Levels=()=>[1,1,1,1,1,1,1];c.skills2Ult=()=>null;return c;}
+function context(){const c=vm.createContext({console,Math});vm.runInContext(readExpanded('js/skills2.js'),c);c.skills2Levels=()=>[1,1,1,1,1,1,1];c.skills2Ult=()=>null;return c;}
 test('舊用途遷移保留非特效欄位，並將感染角色移入同列觸發欄',()=>{
  const old=[['群組ID','階數','超神ID','特殊效果','攻擊特效','飛行子彈','受擊特效','效果參數(JSON)','我方狀態'],
  ['bloodblade','5','','','','proj-poison-drop','hit-poison','{"chance":30}',''],
@@ -59,7 +60,7 @@ test('同列本體與觸發獨立；觸發不吃本體、其他階或已選超�
 });
 test('全部已登記事件即使留白仍獨立，編譯回寫不改數值與狀態',()=>{
  const c=context();
- const src=fs.readFileSync('js/skills2.js','utf8'),schema=table.SCHEMAS.Skills2;
+ const src=readExpanded('js/skills2.js'),schema=table.SCHEMAS.Skills2;
  const rebuilt=schema.rebuild(schema.extract(src),schema.header).SKILLS2;
  const rebuiltObj=typeof rebuilt==='string'?table.evalLiteral(table.extractLiteral(rebuilt,"SKILLS2").literal):rebuilt;
  for(const key of Object.keys(vfx.events)){

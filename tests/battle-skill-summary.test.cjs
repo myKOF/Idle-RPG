@@ -3,7 +3,7 @@ const root=path.resolve(__dirname,'..');
 function mount() {
   const tip={innerHTML:'',style:{},classList:{add(){}}};
   const c={console,document:{addEventListener(){},querySelectorAll(){return[];},getElementById:id=>id==='sk-tooltip'?tip:null}};c.window=c;vm.createContext(c);
-  for(const file of ['util','data','status','formula','battlefield','skills','skills2','ui'])vm.runInContext(fs.readFileSync(path.join(root,'js',file+'.js'),'utf8'),c,{filename:file});
+  for(const file of ['util','strings_data','strings','data','status','formula','battlefield','skills','skills2','ui'])vm.runInContext(fs.readFileSync(path.join(root,'js',file+'.js'),'utf8'),c,{filename:file});
   c.tip=tip;c.snap={skills2:{levels:{earthguard:Array(7).fill(10)},progress:{level:2000,reinc:20},ult:{earthguard:{pick:0,lv:10}}}};
   c.uiSkillsPanelSnapshot=()=>c.snap;c.uiTalentPanelSnapshot=()=>({});c.uiHeaderPanelSnapshot=()=>({player:{}});c.positionSkTooltip=()=>{};
   return c;

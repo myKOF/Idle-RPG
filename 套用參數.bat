@@ -25,6 +25,10 @@ if errorlevel 1 goto xlsxfail
 node tools/config_tables.cjs --apply --write
 if errorlevel 1 goto cfgapplyfail
 echo.
+echo [2b/3] String table: String.csv -^> js\strings_data.js ...
+node tools/string-table/apply_strings.cjs
+if errorlevel 1 goto stringsfail
+echo.
 echo [3/3] 套用主參數表 CSV 數值到遊戲 ...
 node tools/apply_params.cjs --write
 if errorlevel 1 goto failed
@@ -50,6 +54,12 @@ echo [配置套用未完成] 請查看上方的 Excel 檔名、格位、欄位�
 echo 可能原因：未接線的特效欄、Preset 檔名不存在，或表格／JSON 格式錯誤。
 echo Excel 轉 CSV 已完成；任何遊戲 JS 都未覆寫，原本的遊戲設定仍保留。
 echo 請修正 Excel 並儲存，再重新執行本工具。
+pause
+goto end
+:stringsfail
+echo.
+echo [String table failed] See messages above (duplicate id, empty Traditional Chinese, or placeholder mismatch).
+echo Fix config\Excel\String.xlsx and run again. The game was not modified by this step.
 pause
 goto end
 :xlsxfail

@@ -3,7 +3,7 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const root=path.resolve(__dirname,'..'),Core=require('../js/vfx-core'),Runtime=require('../js/vfx-runtime');
 function setup(lv=1){
  const c={console,Math:Object.create(Math),setTimeout(){},clearTimeout(){},document:{addEventListener(){},getElementById(){return null},querySelectorAll(){return[]}},UI:{dirty:{}},blog(){},floatText(){},trackDps(){},recordRunDamage(){}};c.window=c;vm.createContext(c);
- for(const f of ['util','data','status','formula','battlefield','combat','skills','skills2','legendary'])vm.runInContext(fs.readFileSync(path.join(root,'js',f+'.js'),'utf8'),c,{filename:f});
+ for(const f of ['util','strings_data', 'strings','data','status','formula','battlefield','combat','skills','skills2','legendary'])vm.runInContext(fs.readFileSync(path.join(root,'js',f+'.js'),'utf8'),c,{filename:f});
  c.G={player:{gold:0,skills2:{levels:{rockarmor:[10,10,10,10,10,10,10]},ult:{rockarmor:{pick:c.sgUltIndexOfId('rockarmor','superRockArt'),lv}}},loadout:[c.SG_PREFIX+'rockarmor']},stage:{current:1}};
  const st={atk:1000,matk:500,hp:1000,mp:500,level:10,aspd:2,cdr:0,critRate:0,critDmg:150,hit:100,tenacity:0,shieldEff:0,passives:{},elemAtk:null,elemDmgPct:0,elemDmgUp:{},totalDmgPct:0,legendaryEffects:{},legendaryEffectMults:{}};c.getStats=()=>st;c.GT=0;
  const p={hp:1000,mp:1e9,shield:0,shieldMax:0,skillCds:{},buffs:{},dots:[],effects:{}};

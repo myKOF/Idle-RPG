@@ -13,7 +13,7 @@ const root = path.resolve(__dirname, '..');
 const docPath = path.join(root, 'docs', 'ELITE_AFFIXES.md');
 const ctx = { console, module: { exports: {} } };
 vm.createContext(ctx);
-['js/data.js', 'js/skills2.js', 'js/status.js', 'js/elite_data.js'].forEach((f) => vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f }));
+['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/skills2.js', 'js/status.js', 'js/elite_data.js'].forEach((f) => vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f }));
 
 const ARCH_NAME = {
   spots: '多點落下', spot: '單點爆發', zone: '地面場域', volley: '彈體齊射', bolt: '電弧', dash: '衝鋒', spin: '原地連斬',
