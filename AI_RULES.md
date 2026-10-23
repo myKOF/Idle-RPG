@@ -583,7 +583,7 @@ VFX Editor 的 Preset 下拉依這兩個來源，在每份特效後面標出被�
 `／`<br>` 換行、`<span style="color:…">…</span>` 換色、`<b>` 等標記。不得為了好看而拿掉替代字符，也不得把參數值寫死在字串裡。
 - 簡體中文與英文欄由使用者決定何時填寫；AI 不主動翻譯，空白時程式以繁體中文顯示。
 - 修改 String 表必須依第 8.5 節，透過 Excel 原生 API（`tools/excel-update-sheets.ps1`）寫入 xlsx，再由 `套用參數.bat`（或 `tools/xlsx_to_csv.cjs`）轉出 `config/CSV/String.csv`；**Excel 是來源**，不得只改 CSV，也不得用 `tools/string-table/build_string_csv.cjs` 重新產生去覆蓋已有的表（該工具只用於首次盤點或比對漏登記的字串）。
-- **目前現況（2026-10-23）**：讀取機制已建立（`js/strings.js` 的 `STR(編號, 參數…)`、HTML `data-str`、`tools/string-table/apply_strings.cjs` 由 CSV 產生 `js/strings_data.js`，`套用參數.bat` 會自動執行），用法見 `docs/STRING_TABLE.md`。「任務」模塊已完成遷移；其餘模塊的字串都已登記在表內，但程式仍寫死。**新增與修改顯示文字一律用 `STR()` 讀表**；修改到既有寫死文字的地方時順手改為讀表。`node tools/string-table/build_string_csv.cjs --check` 會列出仍寫死的字串，「未登記」數量必須為 0。用 `vm` 載入會呼叫 `STR()` 的檔案時，測試要在 `util.js` 之後載入 `js/strings_data.js`、`js/strings.js`。
+- **目前現況（2026-10-23）**：讀取機制與遷移都已完成——`js/strings.js` 的 `STR(編號, 參數…)`、HTML `data-str`、`tools/string-table/apply_strings.cjs`（CSV → `js/strings_data.js`，`套用參數.bat` 自動執行），用法與開發須知見 `docs/STRING_TABLE.md`。程式與 HTML 裡**不得再出現寫死的顯示文字**；`node tools/string-table/build_string_csv.cjs --check` 必須回報「仍寫死 0 條」，`tests/string-table.test.cjs` 會擋下。新增文字的流程：先在 Excel 新增一列（`tools/excel-update-sheets.ps1`）、跑 `套用參數.bat`、再用 `STR(編號)` 取字。用 `vm` 載入會呼叫 `STR()` 的檔案時，測試要在 `util.js` 之後載入 `js/strings_data.js`、`js/strings.js`。
 - 不屬於本規範的文字：GM／錄製／診斷等內部工具、`console` 與 `Error` 訊息、程式內部比對用的字面值、已在其他配置表定義的名稱與說明。
 
 ---

@@ -407,6 +407,6 @@ Claude 應始終遵守：
 遊戲中所有顯示給玩家的文字（不屬於其他配置表的），一律登記在 `config/Excel/String.xlsx`，並由程式讀取該表來顯示，
 不得寫死在程式碼或 `index.html`。新增或修改文字時，同一個 Commit 內更新 String 表（含 `功能模塊` 欄與替代字符說明）。
 
-讀取機制已建立（`STR(編號, 參數…)`，用法見 `docs/STRING_TABLE.md`）：新文字一律登記進表並用 `STR()` 讀取；`node tools/string-table/build_string_csv.cjs --check` 的「未登記」必須為 0。
+所有模塊都已改為讀表（`STR(編號, 參數…)`，用法見 `docs/STRING_TABLE.md`）：新文字一律先登記進表再用 `STR()` 讀取；`node tools/string-table/build_string_csv.cjs --check` 必須回報「仍寫死 0 條」，測試會擋。
 
 完整規則見 `AI_RULES.md` 第 8.10 節。

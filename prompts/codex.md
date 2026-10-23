@@ -380,4 +380,4 @@ Codex 遇到下列情況時，應停止直接實作：
 ## 顯示文字規則（使用者 2026-10-23 指定，必要）
 
 - 遊戲中所有顯示給玩家的文字（不屬於其他配置表的）一律登記在 `config/Excel/String.xlsx`，並由程式讀取該表顯示，不得寫死在 `js/*.js` 或 `index.html`；新增／修改文字時同一個 Commit 內更新 String 表（含 `功能模塊` 欄與替代字符說明）。
-- 程式用 `STR(編號, 參數…)` 讀表（用法見 `docs/STRING_TABLE.md`）；`node tools/string-table/build_string_csv.cjs --check` 的「未登記」必須為 0。詳見 `AI_RULES.md` 第 8.10 節。
+- 程式用 `STR(編號, 參數…)` 讀表（用法見 `docs/STRING_TABLE.md`）；`node tools/string-table/build_string_csv.cjs --check` 必須回報「仍寫死 0 條」（測試會擋）。詳見 `AI_RULES.md` 第 8.10 節。

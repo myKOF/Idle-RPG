@@ -55,6 +55,15 @@ STR(1920, { name: n, reward: r })   // 具名參數：表格內的 {name}、{rew
 
 ## 遷移現況（2026-10-23）
 
-- 「任務」模塊已全部改為讀表（`tasks.js`、`ui.js` 的任務條與總覽、`index.html` 任務總覽標題）。
-- 其餘模塊的字串都已登記，程式仍寫死，待依序遷移；進度看 `--check` 輸出的「待遷移」數。
-- 注意：表格裡的 `{0}` 對應原程式 `+` 串接中第 N 個非字面值，遷移時照 `替代字符參數說明` 欄的運算式順序傳入。
+- 所有功能模塊都已改為讀表（封魔塔、熔爐、神鑄、寶石、符文、技能、威能、裝備、角色、戰鬥、存檔與系統、通用，任務是試點），`node tools/string-table/build_string_csv.cjs --check` 回報「仍寫死 0 條」，並有 `tests/string-table.test.cjs` 守住：以後程式或 HTML 又出現寫死的顯示文字，這條測試會紅。
+- 排除範圍不算寫死：GM／診斷／VFX 驗證等內部工具、`console`／`Error` 訊息、比對用字面值，以及與配置表儲存格完全相同的字串（來源是配置表，例如轉生階級名稱，由 `套用參數.bat` 回寫，不走 String 表）。
+- 表格裡的 `{0}` 對應原程式 `+` 串接中第 N 個非字面值；字串前面連續的非字面值（`a + b + '個'`）已合併成一個參數。
+
+## 開發須知
+
+- 每支用到 `STR()` 的 js 檔開頭都有一行安全網（`tools/string-table/guard.cjs` 自動補，測試檢查），單檔載入時回傳 `[#編號]` 而不是丟例外。
+- 屬性值（tooltip、title）整段算一條字串；要放進雙引號屬性的文字若含 `"`，呼叫端用 `esc(STR(...))`（`migrate.cjs` 會自動這樣寫）。
+- 比對原始碼的測試（檢查程式裡有某段中文或某個串接結構）改讀 `tests/helpers/str-expand.cjs` 的 `readExpanded()`，它把 `STR(編號, …)` 展開回字串串接，`data-str` 展開回元素文字。
+- 用 `vm` 載入 `data.js`、`ui.js` 這類檔案的測試，請在 `util.js` 之後載入 `js/strings_data.js`、`js/strings.js`，才能拿到真正的文字。
+- 工具腳本在沙盒裡 eval 資料字面值（`config_tables.cjs`）時內建了 `STR`，會讀 `js/strings_data.js` 的繁體中文。
+- `tools/string-table/migrate.cjs --module <模塊>` 是把寫死文字批次改成 `STR()` 的工具；平常新增文字直接寫 `STR(編號)` 即可。
