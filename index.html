@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="css/runeword.css?v=1.0.8">
   <link rel="stylesheet" href="css/gems.css?v=1.0.23">
   <link rel="stylesheet" href="css/dialogs.css?v=1.0.3">
-  <link rel="stylesheet" href="css/world-map.css?v=1.0.0">
+  <link rel="stylesheet" href="css/world-map.css?v=1.0.1">
 </head>
 
 <body>
@@ -590,11 +590,13 @@
         <div id="stage-bar">
           <div class="stage-main-controls">
             <label class="chk"><input type="checkbox" id="st-auto" checked> 自動推進</label>
-            <button id="st-prev" class="btn sm" type="button" aria-label="後退關卡" data-tt-title="後退關卡" data-tt-desc="滑鼠按住可以快速後退" data-tip-placement="stage-left"><svg class="ui-ico ui-ico-prev" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="ln" d="M15 5.5L8.5 12l6.5 6.5"/></svg></button>
-            <span id="stage-label">第 1 關</span>
-            <button id="st-next" class="btn sm" type="button" aria-label="前進關卡" data-tt-title="前進關卡" data-tt-desc="滑鼠按住可以快速前進" data-tip-placement="stage-right"><svg class="ui-ico ui-ico-next" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="ln" d="M9 5.5l6.5 6.5L9 18.5"/></svg></button>
-            <button id="st-max" class="btn sm" data-tt-title="最高關卡" data-tt-desc="直達目前最高關卡" aria-label="直達目前最高關卡"><svg class="ui-ico ui-ico-last" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="ln" d="M6.5 5.5L13 12l-6.5 6.5M18 5.5v13"/></svg></button>
-            <span id="stage-best" class="dim-text">最高1關</span>
+            <div class="stage-navigation">
+              <button id="st-prev" class="btn sm" type="button" aria-label="後退關卡" data-tt-title="後退關卡" data-tt-desc="滑鼠按住可以快速後退" data-tip-placement="stage-left"><svg class="ui-ico ui-ico-prev" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="ln" d="M15 5.5L8.5 12l6.5 6.5"/></svg></button>
+              <span id="stage-label">第 1 關</span>
+              <button id="st-next" class="btn sm" type="button" aria-label="前進關卡" data-tt-title="前進關卡" data-tt-desc="滑鼠按住可以快速前進" data-tip-placement="stage-right"><svg class="ui-ico ui-ico-next" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="ln" d="M9 5.5l6.5 6.5L9 18.5"/></svg></button>
+              <button id="st-max" class="btn sm" data-tt-title="最高關卡" data-tt-desc="直達目前最高關卡" aria-label="直達目前最高關卡"><svg class="ui-ico ui-ico-last" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="ln" d="M6.5 5.5L13 12l-6.5 6.5M18 5.5v13"/></svg></button>
+              <span id="stage-best" class="dim-text">最高1關</span>
+            </div>
           </div>
           <div class="stage-tools">
             <button id="btn-battle-fullscreen" class="btn sm" type="button" aria-pressed="false" aria-controls="combat-area" data-tip="戰鬥區全螢幕（Esc 還原）">全螢幕</button>

@@ -1,8 +1,19 @@
 /* 薩爾維恩地圖：圖像保持核准原稿，互動只覆於場景文字附近。 */
 #zone-bar.world-map-current-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.world-map-current-zone { color: var(--gold, #d5b575); display: inline-flex; align-items: center; gap: 7px; min-width: 0; }
+.world-map-current-zone { color: var(--gold, #d5b575); display: inline-flex; align-items: center; gap: 7px; min-width: 0; font-size: calc(1em + 2px); }
 .world-map-current-zone .ui-ico { width: 20px; height: 20px; }
-#btn-world-map { flex: 0 0 auto; }
+/* 共用按鈕主題使用!important，入口顏色需同層級覆寫。 */
+#btn-world-map { flex: 0 0 auto; background: #ead99a !important; border-color: #b8a365 !important; color: #332a19 !important; text-shadow: none; }
+#btn-world-map:hover, #btn-world-map:focus-visible { background: #f3e4b4 !important; border-color: #d6bf77 !important; color: #332a19 !important; }
+.stage-navigation { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; }
+#ui-shell:not(.battle-fullscreen) #stage-bar { display: grid; grid-template-columns: minmax(0, 1fr) max-content minmax(0, 1fr); align-items: center; min-height: 32px; container-type: inline-size; }
+#ui-shell:not(.battle-fullscreen) .stage-main-controls { display: contents; }
+#ui-shell:not(.battle-fullscreen) .stage-main-controls > .chk { grid-column: 1; grid-row: 1; justify-self: start; white-space: nowrap; }
+#ui-shell:not(.battle-fullscreen) .stage-navigation { grid-column: 2; grid-row: 1; align-self: center; justify-self: center; }
+#ui-shell:not(.battle-fullscreen) .stage-tools { grid-column: 3; grid-row: 1; margin-left: 0; justify-self: end; }
+@container (max-width: 580px) {
+  #ui-shell:not(.battle-fullscreen) .stage-navigation { grid-column: 1 / -1; grid-row: 2; }
+}
 body.world-map-open { overflow: hidden; }
 .world-map-overlay[hidden], .world-map-overlay [hidden] { display: none !important; }
 .world-map-overlay { position: fixed; inset: 0; z-index: 15000; display: flex; align-items: center; justify-content: center; padding: 8px; background: rgba(0,0,0,.88); }
@@ -14,7 +25,8 @@ body.world-map-open { overflow: hidden; }
 #world-map-close { width: 34px; height: 34px; font-size: 23px; padding: 0; }
 .world-map-realm[aria-pressed="true"] { border-color: #b3945d; color: #f2d79b; }
 .world-map-canvas { position: relative; width: 100%; }
-#world-map-human { position: relative; container-type: inline-size; }
+/* 外緣白底屬於原圖：只收掉薄邊，內部圖稿及熱區比例保持原樣。 */
+#world-map-human { position: relative; container-type: inline-size; clip-path: inset(1.4% .6% 1.6% 1.6%); }
 #world-map-image { display: block; width: 100%; height: auto; }
 #world-map-hotspots { position: absolute; inset: 0; pointer-events: none; }
 .world-map-hotspot { pointer-events: auto; position: absolute; transform: translate(-50%, -50%); height: 5.7%; min-height: 16px; padding: 0; border: 0; background: none; box-shadow: none; cursor: pointer; overflow: visible; }

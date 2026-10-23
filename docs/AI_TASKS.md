@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## WORLD-MAP-HEADER-20261023 — 關卡列置中與地圖白邊修正
+
+- Owner：Codex；Done，單一開發者。使用者要求紅框中的前後／最高關卡按鈕、目前／最高關卡資訊整組上下左右置中，場景名稱字號加2，世界地圖按鈕淺黃色底；續要求去除地圖外緣白邊。
+- 允許：css/world-map.css、index.html僅關卡控制分組及CSS快取、LV_upgrade_system.md與本段。禁止修改玩法／JS／Worker／配置／存檔／地圖畫風／其他進行中工作，不合併推送；前置WORLD-MAP已完成。
+- 預檢：fetch後四檔均無其他副本／分支修改。保留同副本角色模型／tools/knight3d進行中修改。白邊確認為核准母圖外緣白底，以CSS僅裁去薄外緣顯示，不重繪／改色／修改素材；圖上文字熱區仍沿母圖原座標。
+- 驗收：一般與全螢幕控制／窄寬不重疊、控制組水平垂直中心、名稱computed字號加2及地圖按鈕配色、開啟地圖白邊消失且框線／熱區保留；相關既有回歸、隔離瀏覽器／Console、Build、diff與自我Review後獨立Commit。後續由使用者正常整合驗收。
+- 完成四檔：以stage-navigation包住指定控制組，一般版採左右等寬網格使整組雙軸置中，580px以下換至第二列；全螢幕沿既有控制面板。場景字號加2px，地圖按鈕淺黃色底／深色文字並針對主題important覆寫，CSS快取1.0.0→1.0.1。原圖白底為外緣13029像素，CSS inset僅收去上1.4%／右0.6%／下1.6%／左1.6%，裝飾內框、名稱及原熱區座標保持。
+- 驗證：`node --test --test-reporter=spec tests/world-map-ui.test.cjs tests/battle-fullscreen.test.cjs tests/fullscreen-toggle.test.cjs`11/11通過；另執行stage-jump-ui回歸5/5通過，合計16/16。`npm.cmd run build`578檔通過；`node tools/world-map/export-source.cjs --check`與diff檢查通過。沒有為低影響CSS新增正式測試，沒有改既有斷言。
+- 畫面：IAB啟動仍因kernel資源路徑不可用，改用隔離Edge、隨機本機來源載正式遊戲與真Worker；控制組水平／垂直中心差皆小於0.01px，名稱17px（父層15px），淺黃rgb234/217/154，左右控制不重疊；360px容器換列後仍置中。地圖目視白邊消失、框線及標題保留，冰原hover可用；全螢幕與Esc還原通過。Console warning／error及pageerror0，未讀寫玩家存檔，未操作使用者分頁；四份截圖與header-verification.json留本聊天visualizations/world-map，臨時腳本清理。
+- 唯讀未改：AI規範／AGENTS／Workflow／prompts、style.css及ashen-forge兩套主題、ui.js控制接線、四份既有回歸、母圖及匯出來源。自我Review確認只調整DOM分組／樣式，沒有玩法／解鎖／存檔／Protocol或素材變更；素材庫無本輪修改，不建空Commit。其他聊天角色模型與製作工具保留不提交。
+- 交付：遊戲Commit為本段所在`[Codex] fix: 置中關卡控制並去除世界地圖白邊`，回覆附編號。無本輪未完成項或新增已知風險，可供Review／合併，未合併推送；限制為未驗收玩家存檔長戰／跨瀏覽器。下一步正常整合後重載遊戲驗收。
+
 ## FORGE-LOG-HEADER-20261023 — 熔爐紀錄只保留標題與詳情
 
 - Owner：Codex；Done，單一開發者。使用者要求隱藏熔爐下方日誌列表，只留熔爐紀錄標籤與詳情按鈕；前置既有日誌／詳情視窗已具備。
