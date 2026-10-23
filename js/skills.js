@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* ============ 技能共用執行期 ============
    新版技能群組由 js/skills2.js 提供；本檔管理熟練度、裝載、冷卻與施法排程。 */
 
@@ -61,7 +62,7 @@ function gainSkillMasteryXp(n) {
   // 經驗未達升級門檻時也要刷新技能面板；否則降低獲得倍率後，進度條會長時間停在舊快照。
   UI.dirty.skills = true;
   if (leveled > 0) {
-    blog('📚 技能熟練度提升至 Lv.' + m.level, 'good');
+    blog(STR(673, m.level), 'good');
     UI.dirty.header = true;
   }
 }
@@ -70,22 +71,22 @@ function gainSkillMasteryXp(n) {
 function equipSkillToLoadout(id) {
   var cap = loadoutSize();
   var lo = G.player.loadout || [];
-  if (lo.indexOf(id) >= 0) return '已在裝載欄';
+  if (lo.indexOf(id) >= 0) return STR(674);
 
   // 新版技能群組（'sg:<群組id>'，js/skills2.js）：第 1 階預設開啟即可裝載。
   if (typeof id === 'string' && id.indexOf('sg:') === 0) {
     var sgId = id.slice(3);
-    if (typeof SKILLS2 === 'undefined' || !SKILLS2[sgId]) return '未知技能群組';
-    if (typeof skills2Castable === 'function' && !skills2Castable(sgId)) return '尚未學習';
+    if (typeof SKILLS2 === 'undefined' || !SKILLS2[sgId]) return STR(675);
+    if (typeof skills2Castable === 'function' && !skills2Castable(sgId)) return STR(676);
   } else {
-    return '未知技能';
+    return STR(677);
   }
 
   var firstEmpty = -1;
   for (var i = 0; i < cap; i++) {
     if (!lo[i]) { firstEmpty = i; break; }
   }
-  if (firstEmpty < 0) return '裝載欄已滿（' + cap + ' 格，依參數表計算）';
+  if (firstEmpty < 0) return STR(678, cap);
 
   lo[firstEmpty] = id;
   /* 修羅亂舞的生效條件包含「雙刀亂舞裝配在技能列上」，因此裝載欄異動會改變屬性

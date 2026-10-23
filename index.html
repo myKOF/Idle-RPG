@@ -492,14 +492,14 @@
         <section id="tab-skills" class="tab">
           <div class="sgb-top">
             <h2 class="sgb-title">技能</h2>
-            <span class="sgb-pill sgb-mastery" data-tt-title="技能熟練度" data-tt-desc="打怪獲得技能經驗並提升熟練度">技能熟練度 <span id="mastery-level"></span>
+            <span class="sgb-pill sgb-mastery" data-str-attr="data-tt-title:664;data-tt-desc:665"><span data-str="664"></span> <span id="mastery-level"></span>
               <span id="mastery-bar" class="mastery-bar"><span id="mastery-bar-fill" class="mastery-bar-fill"></span><span id="mastery-bar-text" class="mastery-bar-text"></span></span>
             </span>
-            <button type="button" id="skill-unlock-toggle" class="sgb-unlock-toggle" aria-pressed="false" hidden data-tt-title="技能全解鎖（內測專用）" data-tt-desc="功能相當於 GM 指令 skill_unlock：無需達到指定等級或封魔塔層數即可升級與使用所有技能。">技能全解鎖：關</button>
+            <button type="button" id="skill-unlock-toggle" class="sgb-unlock-toggle" aria-pressed="false" hidden data-str-attr="data-tt-title:666;data-tt-desc:667" data-str="753"></button>
           </div>
           <div id="skill-trees"></div>
           <div class="sgb-loadout">
-            <div class="sgb-loadout-title"><b>技能列</b><span id="loadout-cap" class="dim-text"></span><span class="dim-text">依順序自動施放；點選技能格可卸下</span></div>
+            <div class="sgb-loadout-title"><span data-str-html="668"></span><span id="loadout-cap" class="dim-text"></span><span class="dim-text" data-str="669"></span></div>
             <div id="skill-loadout" class="chip-row"></div>
           </div>
         </section>
@@ -944,9 +944,9 @@
   <script src="js/strings_data.js?v=fd850ee0"></script>
   <script src="js/strings.js?v=1.0.0"></script>
   <script src="js/ui-scale.js?v=1.0.1"></script>
-  <script src="js/data.js?v=1.0.99"></script>
-  <script src="js/status.js?v=1.0.41"></script>
-  <script src="js/runeword_data.js?v=1.0.18"></script>
+  <script src="js/data.js?v=1.0.100"></script>
+  <script src="js/status.js?v=1.0.42"></script>
+  <script src="js/runeword_data.js?v=1.0.19"></script>
   <script src="js/gem_resonance_data.js?v=1.0.1"></script>
   <script src="js/formula.js?v=1.0.69"></script>
   <script src="js/battle-terrain.js?v=1.0.2"></script>
@@ -975,24 +975,24 @@
   <script src="js/battle-elite.js?v=1.0.8"></script>
   <script src="js/battle-renderer.js?v=1.6.199"></script>
   <script src="js/stats.js?v=1.0.4"></script>
-  <script src="js/item.js?v=1.0.27"></script>
-  <script src="js/gem_resonance.js?v=1.0.4"></script>
-  <script src="js/runeword.js?v=1.0.16"></script>
-  <script src="js/skills.js?v=1.0.43"></script>
+  <script src="js/item.js?v=1.0.28"></script>
+  <script src="js/gem_resonance.js?v=1.0.5"></script>
+  <script src="js/runeword.js?v=1.0.17"></script>
+  <script src="js/skills.js?v=1.0.44"></script>
   <!-- 新版主動技能系統（2026-08-13 技能改造第一批）：定義表＋引擎＋純函式說明 -->
-  <script src="js/skills2.js?v=1.0.356"></script>
+  <script src="js/skills2.js?v=1.0.357"></script>
   <script src="js/elite_data.js?v=1.0.7"></script>
   <script src="js/talents.js?v=1.0.10"></script>
   <script src="js/player.js?v=1.0.18"></script>
   <script src="js/combat.js?v=1.0.90"></script>
-  <script src="js/tower.js?v=1.0.35"></script>
+  <script src="js/tower.js?v=1.0.36"></script>
   <script src="js/save.js?v=1.0.22"></script>
   <script src="js/ui-inventory-skin.js?v=1.0.1"></script>
-  <script src="js/ui.js?v=1.0.204"></script>
-  <script src="js/ui-runeword.js?v=1.0.14"></script>
-  <script src="js/ui-gem-resonance.js?v=1.0.16"></script>
-  <script src="js/ui-gem-workshop.js?v=1.0.1"></script>
-  <script src="js/ui-newforge-visuals.js?v=1.0.7"></script>
+  <script src="js/ui.js?v=1.0.205"></script>
+  <script src="js/ui-runeword.js?v=1.0.15"></script>
+  <script src="js/ui-gem-resonance.js?v=1.0.17"></script>
+  <script src="js/ui-gem-workshop.js?v=1.0.2"></script>
+  <script src="js/ui-newforge-visuals.js?v=1.0.8"></script>
   <script src="js/param_autoreload.js"></script>
   <!-- GM 面板。指令執行層在 js/gm_exec.js，由 Worker importScripts 載入 -->
   <script src="js/gm.js?v=1.0.1"></script>
@@ -1005,7 +1005,7 @@
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
-  <script src="js/bridge.js?v=1.0.353"></script>
+  <script src="js/bridge.js?v=1.0.354"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->

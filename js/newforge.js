@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* ============ 熔爐（正式版：品質勾選路由） ============
    原「新熔爐（測試版）」合併取代舊生產線的輸送帶/篩選節點/分解槽：
    掉落裝備一律經 pushConveyor（factory.js）進入 G.newForge.queue，

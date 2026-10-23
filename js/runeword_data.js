@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* ============ 符文真言：資料表（符文 33 種、符文真言 65 組）============
    本檔只放資料與純查表函式，不碰 G、不寫狀態（共載檔規則）。
    執行邏輯（鑲嵌判定、屬性聚合、觸發引擎）→ js/runeword.js；兩支同時載入於主執行緒與 Worker。

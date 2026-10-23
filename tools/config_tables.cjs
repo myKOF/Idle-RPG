@@ -32,7 +32,6 @@ const path = require('path');
 const zlib = require('zlib');
 const vm = require('vm');
 const { execFileSync } = require('child_process');
-const { STR } = require('./string-table/str-node.cjs'); // 資料字面值裡的 STR(編號) 在 eval 時要解得出來
 
 const ROOT = path.resolve(__dirname, '..');
 const CSV_DIR = path.join(ROOT, 'config', 'CSV');
@@ -109,6 +108,24 @@ function extractLiteral(src, varName) {
   const declStart = m.index;
   return { declStart, valueStart: m.index + m[0].length, close: i, end,
     header: src.slice(declStart, m.index + m[0].length), literal: src.slice(m.index + m[0].length, i + 1) };
+}
+// 資料字面值裡的 STR(編號)（顯示文字走 String 表）eval 時要解得出來：讀 js/strings_data.js 的繁體中文，與遊戲預設語言相同。
+// 找不到資料檔（例如測試用的暫存目錄）就回傳 [#編號]，不拋例外。
+let _strData = null;
+function STR(id, first) {
+  if (!_strData) {
+    try {
+      const ctx = {};
+      vm.createContext(ctx);
+      vm.runInContext(fs.readFileSync(path.join(ROOT, 'js', 'strings_data.js'), 'utf8'), ctx);
+      _strData = vm.runInContext('STRING_DATA', ctx);
+    } catch (e) { _strData = {}; }
+  }
+  const row = _strData[id];
+  if (!row) return '[#' + id + ']';
+  if (arguments.length < 2) return row[0];
+  const args = (arguments.length === 2 && first !== null && typeof first === 'object') ? first : Array.prototype.slice.call(arguments, 1);
+  return row[0].replace(/\{([A-Za-z0-9_]+)\}/g, (whole, key) => (args[key] === undefined ? whole : (args[key] === null ? '' : String(args[key]))));
 }
 // eval 純資料字面值（沙盒；僅提供資料檔會引用到的常數 ACCESSORY_SLOTS）
 function evalLiteral(literal) {

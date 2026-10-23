@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* 合成及無損前一階拆解：共用既有聖光、權威確認與兩秒展示。 */
 function gemWorkshopBusy(tool) {
   return !!((tool === 'compose' && UI.gemComposeFx) || (tool === 'dismantle' && UI.gemDismantleFx));

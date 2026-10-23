@@ -324,7 +324,7 @@ test('暴擊傷害石榴石只歸物理區與不限種類中央區；舊魔法�
  for(let r=0;r<7;r++)assert.equal(c.resonanceTypeAllowed(r,'garnet'),r===5||r===6);
  const before=JSON.stringify(c.G);assert.match(c.socketResonanceGem(0,1,'garnet',4),/不能鑲/);assert.equal(JSON.stringify(c.G),before);
  assert.equal(c.socketResonanceGem(5,6,'garnet',4),null);assert.equal(c.gemCount('garnet',4),1);
- for(const p of ['js/skills.js','js/talents.js','js/player.js','js/save.js'])vm.runInContext(read(p),c,{filename:p});
+ for(const p of ['js/strings_data.js', 'js/strings.js', 'js/skills.js','js/talents.js','js/player.js','js/save.js'])vm.runInContext(read(p),c,{filename:p});
  const data=c.newGameState();data.player.gems.garnet[6]=3;
  data.player.resonance={holes:{
   '0:0':{lv:5,gems:[{type:'garnet',level:6},{type:'sapphire',level:6}]},

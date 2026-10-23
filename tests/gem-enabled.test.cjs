@@ -1,4 +1,5 @@
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -11,7 +12,7 @@ function game() {
   c.window = c;
   vm.createContext(c);
   for (const file of ['util', 'strings_data', 'strings', 'data', 'status', 'formula', 'item', 'forge']) {
-    vm.runInContext(fs.readFileSync(path.join(ROOT, 'js', file + '.js'), 'utf8'), c);
+    vm.runInContext(readExpanded(path.join(ROOT, 'js', file + '.js')), c);
   }
   c.G = { player: { gold: 1e15, dust: 20, level: 100, reincarnations: 3,
     gems: { ruby: { 1: 9, 2: 2, 5: 8 }, sapphire: { 1: 3, 5: 2 } },
@@ -39,7 +40,7 @@ test('Excel匯出的開放欄與數值逐種同步，停用品仍保留定義', 
 });
 
 test('CSV schema往返保留開放，舊表缺欄相容且非法旗標拒絕', () => {
-  const src = fs.readFileSync(path.join(ROOT, 'tools/config_tables.cjs'), 'utf8');
+  const src = readExpanded(path.join(ROOT, 'tools/config_tables.cjs'));
   const schema = src.slice(src.indexOf('SCHEMAS.Gems ='), src.indexOf('/* ---- Talents'));
   const prefix = src.slice(0, src.indexOf('/* ---- Skills'));
   // 載入正式工具的helper與schema，不執行CLI或寫回來源。
@@ -175,7 +176,7 @@ test('Worker正式指令及批次無法繞過限制', () => {
 });
 
 test('鑲嵌介面排除關閉素材但仍能產生舊寶石庫存顯示', () => {
-  const c = game(), ui = fs.readFileSync(path.join(ROOT, 'js/ui.js'), 'utf8');
+  const c = game(), ui = readExpanded(path.join(ROOT, 'js/ui.js'));
   const names = ['gemsViewCount', 'gemsViewFused', 'equipGemGridHTML', 'gemTopLevel', 'gemLibItemHTML'];
   c.esc = String; c.fmtFull = String; c.GEM_TIER_COLORS = {};
   c.UI.gemBrowse = { sel: 'ruby' };

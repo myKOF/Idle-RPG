@@ -1,4 +1,5 @@
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -20,7 +21,7 @@ test('已裝配的技能：清單顯示1px白色外框與已裝配標籤，右�
   );
 
   // 2. 驗證 ui.js 中清單標籤與卡片 class
-  const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
+  const ui = readExpanded(path.join(root, 'js/ui.js'));
 
   // 標籤文字為「已裝配」
   assert.match(ui, /equipped \? '已裝配' : ''/);

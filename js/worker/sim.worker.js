@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* ============ 模擬 Worker ============
    遊戲狀態 G 與主迴圈的唯一所在地。主執行緒只保留 DOM、事件、渲染與儲存 I/O。
 
@@ -19,13 +20,13 @@ if (typeof GameClock !== 'undefined') {
 /* String 表：資料檔版本由主執行緒（bridge.js）以網址 sv= 傳入，改文字不必動本檔。 */
 var _stringDataVersion = ((typeof self !== 'undefined' && self.location && /[?&]sv=(\w+)/.exec(self.location.search || '')) || [])[1] || '0';
 importScripts(
-  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.0', '../data.js?v=20261023-str-rune', '../runeword_data.js?v=20261023-str-rune', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261019-kagura-fire-attr-asura-combo-fire-amp-50-infinite-burn-earthguard-rebirth-guard-windblade-double-slow-legend-rework-1020', '../formula.js?v=20261022-elem-proc-off', '../battle-terrain.js?v=20261022-lava-terrain-develop-merge', '../battlefield.js?v=20261022-lava-terrain-develop-merge', '../stats.js?v=20261003-rename-weineng',
-  '../item.js?v=20261023-str-rune', '../gem_resonance.js?v=20261023-str-gem','../runeword.js?v=20261023-str-rune',
-  '../skills.js?v=20261018-potential-remove', '../skills2.js?v=20261022-meteor-missile-integration', '../elite_data.js?v=20261021-chain-hover', '../talents.js?v=20261022-talent-gold-norefund',
+  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.0', '../data.js?v=20261023-str-guard', '../runeword_data.js?v=20261023-str-guard', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261023-str-skill', '../formula.js?v=20261022-elem-proc-off', '../battle-terrain.js?v=20261022-lava-terrain-develop-merge', '../battlefield.js?v=20261022-lava-terrain-develop-merge', '../stats.js?v=20261003-rename-weineng',
+  '../item.js?v=20261023-str-guard', '../gem_resonance.js?v=20261023-str-guard','../runeword.js?v=20261023-str-guard',
+  '../skills.js?v=20261023-str-skill', '../skills2.js?v=20261023-str-skill', '../elite_data.js?v=20261021-chain-hover', '../talents.js?v=20261022-talent-gold-norefund',
   '../player.js?v=20261022-talent-gold', '../special_rules.js',
-  '../combat.js?v=20261019-disintegrate-end-once-bloodfeast-single-target', '../elite.js?v=20261022-stone-wall-fire-chain-follow', '../elite_boss.js?v=20261022-stone-wall-navigation', '../elite_boss_recipes.js?v=20261023-str-rune', '../legendary.js?v=20261012-indomitable-guard-legend-rework-1020', '../tower.js?v=20261023-str-tower',
-  '../factory.js?v=20261021-equipment-quality-name', '../newforge.js?v=20261023-str-furnace', '../forge.js?v=20261023-str-forge', '../save.js?v=20261022-talent-gold',
-  '../tasks.js?v=20261023-string-table'
+  '../combat.js?v=20261019-disintegrate-end-once-bloodfeast-single-target', '../elite.js?v=20261022-stone-wall-fire-chain-follow', '../elite_boss.js?v=20261022-stone-wall-navigation', '../elite_boss_recipes.js?v=20261023-str-guard', '../legendary.js?v=20261012-indomitable-guard-legend-rework-1020', '../tower.js?v=20261023-str-guard',
+  '../factory.js?v=20261021-equipment-quality-name', '../newforge.js?v=20261023-str-guard', '../forge.js?v=20261023-str-guard', '../save.js?v=20261022-talent-gold',
+  '../tasks.js?v=20261023-str-guard'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
    它自己會擋非本機 hostname；Worker 的 location 是本檔的 URL，判定結果與主執行緒一致。 */
@@ -1582,7 +1583,7 @@ var COMMAND_IMPL = {
   /* ---- 新版技能群組指令 ---- */
   'skill2.max': function (a) {
     var g = (typeof SKILLS2 !== 'undefined') ? SKILLS2[a.group] : null;
-    if (!g) return { err: '未知技能群組' };
+    if (!g) return { err: STR(675) };
     var tier = Math.floor(Number(a.tier));
     /* 超神進化那一格：一鍵滿級＝反覆呼叫 skills2UltLearn（金幣不足就停），
        解鎖條件與「必須先選一個」的判定都在那一支裡，這裡不再複製一份規則。 */
@@ -1632,7 +1633,7 @@ var COMMAND_IMPL = {
 
   'skill2.delete': function (a) {
     var g = (typeof SKILLS2 !== 'undefined') ? SKILLS2[a.group] : null;
-    if (!g) return { err: '未知技能群組' };
+    if (!g) return { err: STR(675) };
     var tier = Math.floor(Number(a.tier));
     /* 超神進化那一格：刪除＝整個清掉選擇（等級歸零、可重新三選一，不退金幣）。 */
     if (typeof sgIsUltSlot === 'function' && sgIsUltSlot(a.group, tier)) {
@@ -1873,12 +1874,11 @@ function boot(msg) {
   if (G._legacySkillRemoval) {
     var lgs = G._legacySkillRemoval;
     var lgsParts = [];
-    if (lgs.skills) lgsParts.push('已清除 ' + lgs.skills + ' 個舊版技能' + (lgs.fusions ? '（含 ' + lgs.fusions + ' 個融合技）' : ''));
+    if (lgs.skills) lgsParts.push(STR(670, lgs.skills, (lgs.fusions ? '（含 ' + lgs.fusions + ' 個融合技）' : '')));
     else if (lgs.fusions) lgsParts.push('已清除 ' + lgs.fusions + ' 個融合技');
-    if (lgs.equipped) lgsParts.push('裝載欄中的 ' + lgs.equipped + ' 個舊技能已卸下');
+    if (lgs.equipped) lgsParts.push(STR(671, lgs.equipped));
     if (lgs.scrolls) lgsParts.push('魔法卷軸 ' + lgs.scrolls + ' 張已移除');
-    notices.push({ key: '_legacySkillRemoval', text: '🧹 舊版技能系統已移除：' + lgsParts.join('，') +
-      '。請到「技能」頁使用新版技能。', cls: 'warn' });
+    notices.push({ key: '_legacySkillRemoval', text: STR(672, lgsParts.join('，')), cls: 'warn' });
     delete G._legacySkillRemoval;
   }
   // ONE-TIME MIGRATION: loadoutCapClampV1 的公告（裝載欄上限下修，超額格數已卸下）

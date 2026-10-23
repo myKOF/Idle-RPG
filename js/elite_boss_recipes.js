@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* ============================================================
    elite_boss_recipes.js — 封魔塔 BOSS 的玩家技能招式表（只在 Worker 載入，接在 js/elite_boss.js 之後）
    ------------------------------------------------------------

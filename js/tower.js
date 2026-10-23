@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* ============ BOSS 高塔（試煉之塔／地獄之塔／煉獄之塔） ============ */
 
 var TOWER = {

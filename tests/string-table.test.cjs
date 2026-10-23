@@ -164,3 +164,12 @@ test('漏登記檢查：程式裡寫死的顯示文字都已登記在 String 表
   }
   assert.match(out, /未登記 0/);
 });
+
+test('每支用到 STR() 的 js 檔開頭都有安全網（單檔載入時不會丟 ReferenceError）', () => {
+  const { jsFiles, MARK } = require(path.join(root, 'tools/string-table/guard.cjs'));
+  const missing = jsFiles().filter((f) => {
+    const src = fs.readFileSync(f, 'utf8');
+    return /\bSTR\(/.test(src) && !src.includes(MARK);
+  }).map((f) => path.relative(root, f));
+  assert.deepEqual(missing, [], '缺安全網（node tools/string-table/guard.cjs 可自動補）');
+});

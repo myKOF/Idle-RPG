@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* ============ 符文真言：執行層 ============
    資料表在 js/runeword_data.js（符文、符文真言、效果詞彙）。本檔負責：
      §1 符文庫存與合成／拆解     （G.player.runes = { 符文id: 數量 }，隨存檔）

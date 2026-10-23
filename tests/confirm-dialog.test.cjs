@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 
 function makeElement() {
   return {
@@ -57,11 +58,11 @@ function loadGameContext() {
 }
 
 test('ui confirmations use shared custom modal instead of native confirm', () => {
-  const ui = fs.readFileSync(path.resolve(__dirname, '..', 'js/ui.js'), 'utf8');
+  const ui = readExpanded(path.resolve(__dirname, '..', 'js/ui.js'));
 
   assert.doesNotMatch(ui, /\bconfirm\s*\(/);
   assert.match(ui, /function showConfirmDialog/);
-  assert.match(ui, /showConfirmDialog\(\s*actTitle \+ '效果：/);
+  assert.match(ui, /showConfirmDialog\(\s*(?:'' \+ )?actTitle \+ '效果：/);
   assert.doesNotMatch(ui, /gdis-fused-list/); // 拆解改為免費無損九宮格，不再有融合寶石拆解確認入口。
   assert.match(ui, /showConfirmDialog\('確定要重新開局嗎/);
   assert.match(ui, /dialogClass: 'reincarnation-confirm'/);
@@ -80,7 +81,7 @@ test('confirm modal actions are centered and evenly spaced', () => {
 
 test('轉生確認視窗使用專屬淡彩流光外框', () => {
   const css = fs.readFileSync(path.resolve(__dirname, '..', 'css/style.css'), 'utf8');
-  const ui = fs.readFileSync(path.resolve(__dirname, '..', 'js/ui.js'), 'utf8');
+  const ui = readExpanded(path.resolve(__dirname, '..', 'js/ui.js'));
 
   assert.match(ui, /modal\.className = 'modal-overlay confirm-modal' \+ \(options\.dialogClass \? ' ' \+ options\.dialogClass : ''\)/);
   assert.match(ui, /dialogClass: 'reincarnation-confirm'/);

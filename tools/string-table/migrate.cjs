@@ -409,7 +409,7 @@ for (const rel of listFiles()) {
   const src = fs.readFileSync(abs, 'utf8');
   const { edits } = planFile(rel, src);
   if (!edits.length) continue;
-  const next = applyEdits(src, edits);
+  const next = require('./guard.cjs').withGuard(applyEdits(src, edits));
   try { new vm.Script(next, { filename: rel }); } catch (e) { console.error('✖ ' + rel + ' 改完語法錯誤：' + e.message); process.exit(2); }
   console.log(`  ${rel}: ${edits.length} 處`);
   total += edits.length;

@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 var CHAOS_IDX = 9;
 var CHAOS_GODFORGED_IDX = 10;
 var MAX_RARITY_IDX = CHAOS_GODFORGED_IDX;

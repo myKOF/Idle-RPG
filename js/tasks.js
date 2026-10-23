@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* ============ 主線任務系統（2026-08-05） ============
    任務定義表 TASKS 在 js/data.js（唯一來源：config/CSV/Task.csv，經套用參數.bat 回寫）。
    本檔只在 Worker 端載入（sim.worker.js importScripts），與 factory / newforge 同類：

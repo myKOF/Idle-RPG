@@ -69,7 +69,7 @@ test('正式CLI：錯誤整批拒絕且所有JS／CSV不變；修正、有效換
   t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
   for(const folder of ['tools','js','config/CSV','vfx/presets'])fs.mkdirSync(path.join(dir,folder),{recursive:true});
   for(const rel of ['tools/config_tables.cjs','tools/skills2-geometry.cjs','tools/skills2-vfx.cjs',
-    'js/data.js','js/skills.js','js/skills2.js','js/status.js','config/CSV/Skills2.csv','config/CSV/Status.csv','config/CSV/Task.csv'])
+    'js/strings_data.js', 'js/strings.js', 'js/data.js','js/skills.js','js/skills2.js','js/status.js','config/CSV/Skills2.csv','config/CSV/Status.csv','config/CSV/Task.csv'])
     fs.copyFileSync(path.join(root,rel),path.join(dir,rel));
   for(const name of fs.readdirSync(path.join(root,'vfx/presets')).filter(n=>n.endsWith('.json')))
     fs.copyFileSync(path.join(root,'vfx/presets',name),path.join(dir,'vfx/presets',name));

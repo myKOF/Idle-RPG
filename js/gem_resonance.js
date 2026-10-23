@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* ============ 寶石共鳴（兩端共載：主執行緒與模擬 Worker） ============
    資料表在 js/gem_resonance_data.js（配置表 Gem_resonance）。本檔負責：
      1. 版面與相鄰關係（純函式，不碰 G）

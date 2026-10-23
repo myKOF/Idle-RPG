@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* ============ 符文頁（符文真言）— 主執行緒 UI ============
    資料表在 js/runeword_data.js、判定與說明文字在 js/runeword.js（兩端共載，純函式）。
    本檔只讀面板快照（gems 面板的 runes／runewordSeen 欄位、equip 面板的裝備）並送指令，不碰 G。

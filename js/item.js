@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* ============ 裝備 / 物品生成 / 寶石 ============ */
 
 /* ---- 寶石庫存（G.player.gems = { type: {1..5: count} }） ---- */

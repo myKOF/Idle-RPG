@@ -1,5 +1,6 @@
 'use strict';
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -140,7 +141,7 @@ function loadUIContext(hostname = 'localhost') {
 }
 
 test('DOM 結構：index.html 技能頂欄包含技能全解鎖開關，預設隱藏', () => {
-  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const html = readExpanded(path.join(root, 'index.html'));
   assert.match(html, /<div class="sgb-top">[\s\S]*?<button[^>]*id="skill-unlock-toggle"/);
   assert.match(html, /id="skill-unlock-toggle"[^>]*class="[^"]*sgb-unlock-toggle[^"]*"/);
   assert.match(html, /id="skill-unlock-toggle"[^>]*hidden/);
