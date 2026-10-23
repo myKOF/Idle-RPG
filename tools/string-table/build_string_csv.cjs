@@ -8,6 +8,7 @@
    排除：GM／錄製／延遲探針／VFX 驗證／效能診斷等內部工具；console／Error／比對用字面值；
         資料型檔案(data.js 等)中與配置表儲存格完全相同的字串（已在表內）。
    用法：node tools/string-table/build_string_csv.cjs [輸出路徑] [--force]
+         node tools/string-table/build_string_csv.cjs --check     # 漏登記檢查：寫死又沒進 String 表的字串（有就非 0 結束）
    （預設輸出為 config/CSV/String.csv，已存在時需 --force；Excel 是來源，別隨手覆蓋）
    注意：本工具重新產生整份 CSV，會洗掉人工填的簡體／英文；日後翻譯請以 Excel 為準。
    ============================================================================= */
@@ -47,7 +48,7 @@ for (const fn of fs.readdirSync(path.join(root, 'config/CSV'))) {
 const DATA_FILES = /^js\/(data|skills2|status|runeword_data|elite_data|gem_resonance_data|elite_boss_recipes)\.js$/;
 
 /* ---------- 排除範圍 ---------- */
-const EXCLUDE_FILE = /^js\/(gm_exec|gm|lagprobe|recorder|vfx-core|vfx-runtime|vfx-pixi-backend|vfx-tower|battle-perf|ai-key-setting|worker\/shim)\.js$/;
+const EXCLUDE_FILE = /^js\/(strings|strings_data|gm_exec|gm|lagprobe|recorder|vfx-core|vfx-runtime|vfx-pixi-backend|vfx-tower|battle-perf|ai-key-setting|worker\/shim)\.js$/;
 const EXCLUDE_FN = /Diag|diag|Perf|perf|Lag|lag|^skills2CleaveRangeScale$|^gm[A-Z]|GM|^validate/;
 const dropCallee = /^(console\.\w+|Error|errors\.push|String|\w*\.?(includes|indexOf|startsWith|endsWith|test|match|replace|split))$/;
 const ex = { file: 0, fn: 0, callee: 0, cmp: 0, csv: 0, noText: 0, regex: 0 };
@@ -332,6 +333,26 @@ list.forEach((e, i) => {
   const use = `${kinds}｜${locs}`;
   lines.push([i + 1, e.module, use, describeRepl(e.text, e.params), e.text.replace(/\r?\n/g, '\\n'), '', ''].map(csvCell).join(','));
 });
+/* --check：漏登記檢查（AI_RULES 8.10）。只看程式裡「仍寫死」的字串：
+   已登記＝表裡有這句，只是程式還沒改成 STR()（待遷移）；未登記＝新寫死又沒進表，視為違規，以非 0 結束。 */
+if (process.argv.includes('--check')) {
+  const { csvParse } = require('./apply_strings.cjs');
+  const trows = csvParse(fs.readFileSync(path.join(root, 'config', 'CSV', 'String.csv'), 'utf8'));
+  const twCol = trows[0].indexOf('繁體中文');
+  const registered = new Set(trows.slice(1).map(r => (r[twCol] || '').replace(/\n/g, '\n')));
+  const unreg = list.filter(e => !registered.has(e.text.replace(/\r?\n/g, '\n')));
+  const migrate = list.length - unreg.length;
+  console.log(`程式中仍寫死的顯示文字：${list.length} 條（已登記待遷移 ${migrate}、未登記 ${unreg.length}）`);
+  const byMod2 = {};
+  for (const e of list) { const m = byMod2[e.module] ||= { pending: 0, unreg: 0 }; if (registered.has(e.text)) m.pending++; else m.unreg++; }
+  for (const m of MODULES) if (byMod2[m]) console.log(`  ${m}：待遷移 ${byMod2[m].pending}、未登記 ${byMod2[m].unreg}`);
+  if (unreg.length) {
+    console.error('\n以下字串寫死在程式裡且沒有登記在 String 表（AI_RULES 8.10）：');
+    unreg.slice(0, 40).forEach(e => console.error(`  [${e.module}] ${e.text.slice(0, 60)}  ←  ${e.where[0]}`));
+    process.exit(3);
+  }
+  process.exit(0);
+}
 const outPath = process.argv.slice(2).find(a => !a.startsWith('--')) || path.join(root, 'config', 'CSV', 'String.csv');
 if (!process.argv.includes('--force') && !process.argv.slice(2).some(a => !a.startsWith('--')) && fs.existsSync(outPath)) {
   console.error('config/CSV/String.csv 已存在；Excel（config/Excel/String.xlsx）才是來源，重新產生會洗掉翻譯。\n要輸出到別處請帶路徑，確定要覆蓋請加 --force。');

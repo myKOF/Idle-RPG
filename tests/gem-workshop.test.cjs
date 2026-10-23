@@ -21,7 +21,7 @@ function load(ui = false) {
   };
   c.window = c;
   vm.createContext(c);
-  const files = ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/item.js'];
+  const files = ['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/item.js'];
   if (ui) files.push('js/ui.js', 'js/ui-gem-workshop.js');
   for (const f of files) vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), c, { filename: f });
   c.G = { player: { gold: 0, gems: {} } };

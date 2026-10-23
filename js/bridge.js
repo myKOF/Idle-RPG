@@ -15,7 +15,7 @@ var WorkerBridge = (function () {
   /* Worker 與其模擬層不是由 bundler 產生，瀏覽器可能把舊的 Worker
      腳本留在快取裡。每次修改 Worker 啟動／核心邏輯時更新這個鍵，避免
      使用者刷新後仍執行舊版升級公式。 */
-  var WORKER_ASSET_VERSION = '20261022-tower-rewards-no-gold';
+  var WORKER_ASSET_VERSION = '20261023-string-table';
   var _menuPaused = false;
   function setMenuPaused(value) {
     _menuPaused = !!value;
@@ -423,6 +423,10 @@ var WorkerBridge = (function () {
       if (MEASURE) qs.push('measure=1');
       var seedMatch = /[?&]seed=(\d+)(&|$)/.exec((typeof location !== 'undefined' && location.search) || '');
       if (seedMatch) qs.push('seed=' + seedMatch[1]);
+      /* String 表：Worker 要載入同一份 strings_data.js（版本字串由主執行緒已載入的檔案決定，
+         改文字後不必動 sim.worker.js），也要用同一種語言（Worker 的日誌文字在 Worker 內組好）。 */
+      if (typeof STRING_DATA_VERSION !== 'undefined') qs.push('sv=' + STRING_DATA_VERSION);
+      if (typeof Strings !== 'undefined' && Strings.getLang() !== 'zh-TW') qs.push('lang=' + Strings.getLang());
       // 獨立雷鏈版本避免與同期NPC的Worker快取更新互相覆蓋。
       var workerQuery = ['v=' + WORKER_ASSET_VERSION, 'chain=20260929-thunder-single'].concat(qs);
       _worker = new Worker(WORKER_URL + '?' + workerQuery.join('&'));

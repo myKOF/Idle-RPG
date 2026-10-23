@@ -16,14 +16,16 @@ if (typeof GameClock !== 'undefined') {
   globalThis.setTimeout = GameClock.setTimeout;
   globalThis.clearTimeout = GameClock.clearTimeout;
 }
+/* String 表：資料檔版本由主執行緒（bridge.js）以網址 sv= 傳入，改文字不必動本檔。 */
+var _stringDataVersion = ((typeof self !== 'undefined' && self.location && /[?&]sv=(\w+)/.exec(self.location.search || '')) || [])[1] || '0';
 importScripts(
-  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261022-talent-gold', '../runeword_data.js?v=20261022-battle-biomes', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261019-kagura-fire-attr-asura-combo-fire-amp-50-infinite-burn-earthguard-rebirth-guard-windblade-double-slow-legend-rework-1020', '../formula.js?v=20261022-elem-proc-off', '../battle-terrain.js?v=20261022-lava-terrain-develop-merge', '../battlefield.js?v=20261022-lava-terrain-develop-merge', '../stats.js?v=20261003-rename-weineng',
+  '../util.js?v=20260922-firegod-formation', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.0', '../data.js?v=20261022-talent-gold', '../runeword_data.js?v=20261022-battle-biomes', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261019-kagura-fire-attr-asura-combo-fire-amp-50-infinite-burn-earthguard-rebirth-guard-windblade-double-slow-legend-rework-1020', '../formula.js?v=20261022-elem-proc-off', '../battle-terrain.js?v=20261022-lava-terrain-develop-merge', '../battlefield.js?v=20261022-lava-terrain-develop-merge', '../stats.js?v=20261003-rename-weineng',
   '../item.js?v=20261018-gem-workshop', '../gem_resonance.js?v=20261018-resonance-hole-effects','../runeword.js?v=20261018-rune-tower-unlock',
   '../skills.js?v=20261018-potential-remove', '../skills2.js?v=20261022-meteor-missile-integration', '../elite_data.js?v=20261021-chain-hover', '../talents.js?v=20261022-talent-gold-norefund',
   '../player.js?v=20261022-talent-gold', '../special_rules.js',
   '../combat.js?v=20261019-disintegrate-end-once-bloodfeast-single-target', '../elite.js?v=20261022-stone-wall-fire-chain-follow', '../elite_boss.js?v=20261022-stone-wall-navigation', '../elite_boss_recipes.js?v=20261015-boss-player-skill', '../legendary.js?v=20261012-indomitable-guard-legend-rework-1020', '../tower.js?v=20261022-tower-rewards-no-gold',
   '../factory.js?v=20261021-equipment-quality-name', '../newforge.js', '../forge.js?v=20261015-gem-enabled', '../save.js?v=20261022-talent-gold',
-  '../tasks.js?v=20261007-runes4'
+  '../tasks.js?v=20261023-string-table'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
    它自己會擋非本機 hostname；Worker 的 location 是本檔的 URL，判定結果與主執行緒一致。 */

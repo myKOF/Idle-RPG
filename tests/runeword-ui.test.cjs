@@ -39,7 +39,7 @@ function mount(opts) {
   c.localStorage = { getItem: (k) => (k in store ? store[k] : null), setItem: (k, v) => { store[k] = String(v); } };
   c.store = store;
   vm.createContext(c);
-  ['worker/protocol.js', 'util.js', 'data.js', 'runeword_data.js', 'status.js', 'formula.js', 'item.js', 'runeword.js', 'ui.js', 'ui-runeword.js'].forEach((f) => {
+  ['worker/protocol.js', 'util.js', 'strings_data.js', 'strings.js', 'data.js', 'runeword_data.js', 'status.js', 'formula.js', 'item.js', 'runeword.js', 'ui.js', 'ui-runeword.js'].forEach((f) => {
     vm.runInContext(fs.readFileSync(path.join(root, 'js', f), 'utf8'), c, { filename: 'js/' + f });
   });
   c.isInternalServer = () => internal;   // ui.js 的版本在 vm 裡讀不到 location，直接蓋掉

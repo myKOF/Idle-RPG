@@ -203,7 +203,7 @@ function taskGrantReward(def) {
         /* 直接入包，不走輸送帶：任務獎勵不可被熔爐自動拆解吃掉
            （保底發放比照 js/special_rules.js 的專屬裝備）。 */
         G.inventory.push(it);
-        blog('🎁 任務獎勵入包：' + rarityTag(it), 'good');
+        blog(STR(1916, rarityTag(it)), 'good');
       }
       UI.dirty.inv = true;
       break;
@@ -213,18 +213,18 @@ function taskGrantReward(def) {
 }
 
 function taskClaim() {
-  if (typeof TASKS === 'undefined' || !G) return { err: '任務表未載入' };
+  if (typeof TASKS === 'undefined' || !G) return { err: STR(1917) };
   var st = taskState();
   var def = TASKS[st.idx];
-  if (!def) return { err: '所有任務已完成' };
+  if (!def) return { err: STR(1918) };
   var prog = taskProgressFor(def);
-  if (prog < def.count) return { err: '任務尚未完成（' + prog + '/' + def.count + '）' };
+  if (prog < def.count) return { err: STR(1919, prog, def.count) };
   taskGrantReward(def);
   st.idx++;
   UI.dirty.task = true;
-  blog('📜 任務完成：「' + def.name + '」，獲得 ' + def.rewardLabel, 'good');
+  blog(STR(1920, def.name, def.rewardLabel), 'good');
   var next = TASKS[st.idx];
-  if (next) blog('📌 新任務：「' + next.name + '」', 'info');
-  else blog('🎉 恭喜！所有任務皆已完成。', 'good');
+  if (next) blog(STR(1921, next.name), 'info');
+  else blog(STR(1922), 'good');
   return { claimed: def.order, next: next ? next.order : null };
 }

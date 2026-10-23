@@ -8535,7 +8535,7 @@ var UI_COMMAND_LABELS = {
   'newforge.upgradePart': '零件升級', 'newforge.unlockPartSlot': '解鎖零件格',
   'tower.start': '挑戰封魔塔', 'tower.startAuto': '封魔塔連續挑戰', 'tower.flee': '撤出封魔塔',
   'player.buyInvUpgrade': '擴充背包', 'player.switchEquipSet': '切換套裝',
-  'task.claim': '領取任務獎勵', 'stage.goMax': '前往最高關卡', 'stage.switchZone': '切換地圖'
+  'task.claim': STR(1923), 'stage.goMax': '前往最高關卡', 'stage.switchZone': '切換地圖'
 };
 
 function uiCommandLabel(commandName) {
@@ -14264,17 +14264,17 @@ function renderQuestBar() {
   bar.classList.toggle('quest-ready', !!(def && view.taskReady));
   bar.classList.toggle('quest-alldone', !def);
   if (!def) {
-    bar.innerHTML = '<span class="quest-dot"></span><span class="quest-name">任務已全部完成</span>';
-    bar.setAttribute('data-tt-title', '任務');
-    bar.setAttribute('data-tt-desc', '所有任務皆已完成，點擊開啟任務總覽');
+    bar.innerHTML = STR(1924);
+    bar.setAttribute('data-tt-title', STR(1925));
+    bar.setAttribute('data-tt-desc', STR(1926));
     return;
   }
   bar.innerHTML = '<span class="quest-dot"></span>' +
     '<span class="quest-name">' + esc(def.name) + '</span>' +
     '<span class="quest-progress">（' + view.taskProg + ' / ' + def.count + '）</span>' +
     '<span class="quest-reward">' + esc(def.rewardLabel) + '</span>';
-  bar.setAttribute('data-tt-title', '任務 ' + def.order + ' / ' + TASKS.length);
-  bar.setAttribute('data-tt-desc', view.taskReady ? '任務已完成，點擊領取獎勵' : '點擊開啟任務總覽');
+  bar.setAttribute('data-tt-title', STR(1927, def.order, TASKS.length));
+  bar.setAttribute('data-tt-desc', view.taskReady ? STR(1928) : STR(1929));
 }
 
 function spawnQuestRewardFlyFx(rewardType, sourceEl) {
@@ -14429,7 +14429,7 @@ function questClaim(sourceEl) {
         renderQuestModal();
       }
     }, function (err) {
-      reportUiCommandFailure('任務領取', err, ['task']);
+      reportUiCommandFailure(STR(1930), err, ['task']);
     });
 }
 
@@ -14480,14 +14480,14 @@ function renderQuestModal() {
     var cls = claimed ? 'claimed' : (current ? 'current' : 'future');
     var rewardHtml;
     if (claimed) {
-      rewardHtml = '已完成';
+      rewardHtml = STR(1931);
     } else {
       rewardHtml = esc(def.rewardLabel);
       if (current) {
         rewardHtml += ready
           ? '<button type="button" class="btn sm quest-claim-btn" data-quest-claim ' +
-            pendingUiButtonAttributes('quest-claim') + '>領取</button>'
-          : '<span class="quest-state-doing">（進行中）</span>';
+            pendingUiButtonAttributes('quest-claim') + '>' + STR(1932) + '</button>'
+          : STR(1933);
       }
     }
     html += '<div class="quest-row ' + cls + '">' +

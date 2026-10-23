@@ -17,7 +17,7 @@ function load(files) {
   files.forEach((f) => vm.runInContext(read(f), c, { filename: f }));
   return c;
 }
-const LOGIC = ['js/util.js', 'js/data.js', 'js/status.js', 'js/gem_resonance_data.js', 'js/formula.js', 'js/item.js', 'js/gem_resonance.js'];
+const LOGIC = ['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/status.js', 'js/gem_resonance_data.js', 'js/formula.js', 'js/item.js', 'js/gem_resonance.js'];
 
 function game(gems) {
   const c = load(LOGIC);

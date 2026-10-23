@@ -19,7 +19,7 @@ function mount() {
   c.advance = (ms) => { c.clock += ms; };
   c.window = c;
   vm.createContext(c);
-  ['util', 'data', 'runeword_data', 'status', 'formula', 'item', 'runeword', 'ui'].forEach((name) => {
+  ['util', 'strings_data', 'strings', 'data', 'runeword_data', 'status', 'formula', 'item', 'runeword', 'ui'].forEach((name) => {
     vm.runInContext(fs.readFileSync(path.join(root, 'js', name + '.js'), 'utf8'), c, { filename: name + '.js' });
   });
   c.it = { id: 'gear', name: '測試劍', slot: 'weapon', rarity: 5, level: 50, affixes: [

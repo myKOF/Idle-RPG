@@ -123,7 +123,7 @@ function loadUIContext(hostname = 'localhost') {
 
   vm.createContext(context);
 
-  ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/skills.js', 'js/skills2.js', 'js/ui.js', 'js/gm_exec.js']
+  ['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/skills.js', 'js/skills2.js', 'js/ui.js', 'js/gm_exec.js']
     .forEach((file) => {
       const code = fs.readFileSync(path.join(root, file), 'utf8');
       vm.runInContext(code, context, { filename: file });
