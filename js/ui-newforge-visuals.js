@@ -164,7 +164,7 @@ var NewForgeVisuals = (function () {
       node.innerHTML = '';
       state.empty = document.createElement('span');
       state.empty.className = 'nf-belt-empty dim-text';
-      state.empty.textContent = '（傳送帶空）'; node.appendChild(state.empty);
+      state.empty.textContent = STR(1408); node.appendChild(state.empty);
       state.entries.forEach(function (entry) { node.appendChild(entry.node); });
       var canvas = node.parentNode.querySelector('.nf-mouth-canvas');
       state.context = canvas ? canvas.getContext('2d') : null;

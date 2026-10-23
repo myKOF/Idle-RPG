@@ -1,4 +1,5 @@
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -24,8 +25,9 @@ function loadHintFn(furnace) {
 
   const context = { console };
   vm.createContext(context);
+  for (const f of ['js/strings_data.js', 'js/strings.js']) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), context, { filename: f });
   // 稀有度表是真的，名稱若改動測試會跟著改動
-  vm.runInContext(fs.readFileSync(path.join(root, 'js/data.js'), 'utf8'), context,
+  vm.runInContext(readExpanded(path.join(root, 'js/data.js')), context,
     { filename: 'js/data.js' });
   context.G = { player: { newForge: { furnaces: furnace ? [furnace] : [] } } };
   vm.runInContext(fnSrc, context, { filename: 'defaultSalvageHintText' });

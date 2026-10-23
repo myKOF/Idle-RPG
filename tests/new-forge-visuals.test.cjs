@@ -1,10 +1,11 @@
 'use strict';
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
-const source = fs.readFileSync(path.join(__dirname, '../js/ui-newforge-visuals.js'), 'utf8');
+const source = readExpanded(path.join(__dirname, '../js/ui-newforge-visuals.js'));
 
 function harness(overrides = {}) {
   let time = 0, reduced = false, paints = 0, serial = 0;

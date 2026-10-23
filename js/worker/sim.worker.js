@@ -19,12 +19,12 @@ if (typeof GameClock !== 'undefined') {
 /* String 表：資料檔版本由主執行緒（bridge.js）以網址 sv= 傳入，改文字不必動本檔。 */
 var _stringDataVersion = ((typeof self !== 'undefined' && self.location && /[?&]sv=(\w+)/.exec(self.location.search || '')) || [])[1] || '0';
 importScripts(
-  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.0', '../data.js?v=20261022-talent-gold', '../runeword_data.js?v=20261022-battle-biomes', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261019-kagura-fire-attr-asura-combo-fire-amp-50-infinite-burn-earthguard-rebirth-guard-windblade-double-slow-legend-rework-1020', '../formula.js?v=20261022-elem-proc-off', '../battle-terrain.js?v=20261022-lava-terrain-develop-merge', '../battlefield.js?v=20261022-lava-terrain-develop-merge', '../stats.js?v=20261003-rename-weineng',
+  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.0', '../data.js?v=20261023-str-furnace', '../runeword_data.js?v=20261022-battle-biomes', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261019-kagura-fire-attr-asura-combo-fire-amp-50-infinite-burn-earthguard-rebirth-guard-windblade-double-slow-legend-rework-1020', '../formula.js?v=20261022-elem-proc-off', '../battle-terrain.js?v=20261022-lava-terrain-develop-merge', '../battlefield.js?v=20261022-lava-terrain-develop-merge', '../stats.js?v=20261003-rename-weineng',
   '../item.js?v=20261018-gem-workshop', '../gem_resonance.js?v=20261018-resonance-hole-effects','../runeword.js?v=20261018-rune-tower-unlock',
   '../skills.js?v=20261018-potential-remove', '../skills2.js?v=20261022-meteor-missile-integration', '../elite_data.js?v=20261021-chain-hover', '../talents.js?v=20261022-talent-gold-norefund',
   '../player.js?v=20261022-talent-gold', '../special_rules.js',
   '../combat.js?v=20261019-disintegrate-end-once-bloodfeast-single-target', '../elite.js?v=20261022-stone-wall-fire-chain-follow', '../elite_boss.js?v=20261022-stone-wall-navigation', '../elite_boss_recipes.js?v=20261015-boss-player-skill', '../legendary.js?v=20261012-indomitable-guard-legend-rework-1020', '../tower.js?v=20261023-str-tower',
-  '../factory.js?v=20261021-equipment-quality-name', '../newforge.js', '../forge.js?v=20261015-gem-enabled', '../save.js?v=20261022-talent-gold',
+  '../factory.js?v=20261021-equipment-quality-name', '../newforge.js?v=20261023-str-furnace', '../forge.js?v=20261015-gem-enabled', '../save.js?v=20261022-talent-gold',
   '../tasks.js?v=20261023-string-table'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
@@ -1535,7 +1535,7 @@ var COMMAND_IMPL = {
   /* ---- 熔爐 ---- */
   'newforge.setQuality': function (a) {
     var fu = findNewForgeFurnace(a.furnaceId);
-    if (!fu) return { err: '找不到熔爐 ' + a.furnaceId };
+    if (!fu) return { err: STR(1404, a.furnaceId) };
     if (a.rarity < 0 || a.rarity >= RARITIES.length || isGodforgedRarity(a.rarity)) return { err: '品質索引超出範圍' };
     fu.qualities[a.rarity] = !!a.on;
     newForgeReturnUnroutable(fu); // 取消勾選的品質自專屬佇列退回總佇列重新派發
@@ -1545,7 +1545,7 @@ var COMMAND_IMPL = {
 
   'newforge.setEnabled': function (a) {
     var fu = findNewForgeFurnace(a.furnaceId);
-    if (!fu) return { err: '找不到熔爐 ' + a.furnaceId };
+    if (!fu) return { err: STR(1404, a.furnaceId) };
     fu.enabled = !!a.on;
     newForgeReturnUnroutable(fu); // 停用：專屬佇列退回總佇列
     UI.dirty.newforge = true;
@@ -1821,8 +1821,7 @@ function defaultSalvageHintText() {
     if (flags[r] && RARITIES[r]) picked.push(r);
   }
   if (!picked.length) {
-    return '💡 提示：預設不自動拆解任何品質，掉落裝備會全部保留入包。' +
-      '到【熔爐】勾選品質後，該品質才會自動拆解成碎片與精華。';
+    return STR(1405);
   }
   var contiguous = picked[picked.length - 1] - picked[0] === picked.length - 1;
   var label;
@@ -1922,9 +1921,9 @@ function boot(msg) {
     }
   } else {
     notices.push({ key: 'welcomeNew', cls: 'good', text: '⚔️ 歡迎來到《無限征途：合成之巔》！' });
-    notices.push({ key: 'welcomeNew2', cls: 'info', text: '你的角色會自動戰鬥。掉落的裝備會流進【熔爐】，記得去勾選各熔爐要拆解的品質！' });
+    notices.push({ key: 'welcomeNew2', cls: 'info', text: STR(1406) });
     notices.push({ key: 'welcomeNew3', cls: 'info', text: defaultSalvageHintText() });
-    flog('🏭 熔爐已啟動。掉落裝備會依各熔爐勾選的品質自動拆解或保留。', 'info');
+    flog(STR(1407), 'info');
   }
 
   /* 開機時把所有面板標記為髒。正常開機這是多餘的（UI 本來就會索取），

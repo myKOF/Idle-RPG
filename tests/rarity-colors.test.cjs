@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
@@ -6,8 +7,8 @@ const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 const context = { console, Math };
 vm.createContext(context);
-vm.runInContext(fs.readFileSync(path.join(root, 'js/data.js'), 'utf8'), context);
-const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+vm.runInContext(readExpanded(path.join(root, 'js/data.js')), context);
+const html = readExpanded(path.join(root, 'index.html'));
 
 assert.equal(context.RARITIES[3].key, 'unique');
 assert.equal(context.RARITIES[3].color, '#ffd700');

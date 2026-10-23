@@ -1,4 +1,5 @@
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -9,8 +10,8 @@ const root = path.resolve(__dirname, '..');
 function loadFormulaContext() {
   const context = { console, Math, Date };
   vm.createContext(context);
-  vm.runInContext(fs.readFileSync(path.join(root, 'js/data.js'), 'utf8'), context, { filename: 'js/data.js' });
-  vm.runInContext(fs.readFileSync(path.join(root, 'js/formula.js'), 'utf8'), context, { filename: 'js/formula.js' });
+  vm.runInContext(readExpanded(path.join(root, 'js/data.js')), context, { filename: 'js/data.js' });
+  vm.runInContext(readExpanded(path.join(root, 'js/formula.js')), context, { filename: 'js/formula.js' });
   return context;
 }
 
@@ -26,9 +27,9 @@ test('掉寶率來源統一減半，既有數值也透過計算套用', () => {
 });
 
 test('掉寶率實際消費點使用減半後的裝備與技能加成', () => {
-  const combat = fs.readFileSync(path.join(root, 'js/combat.js'), 'utf8');
-  const formula = fs.readFileSync(path.join(root, 'js/formula.js'), 'utf8');
-  const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
+  const combat = readExpanded(path.join(root, 'js/combat.js'));
+  const formula = readExpanded(path.join(root, 'js/formula.js'));
+  const ui = readExpanded(path.join(root, 'js/ui.js'));
   assert.match(formula, /st\.loot\s*=\s*effectiveDropRateEffect\(A\.loot\)/);
   assert.match(combat, /effectiveDropRateEffect\(buffVal\(FIELD\.player, 'lootUp'\)\)/);
   assert.match(ui, /s-loot'\)\.textContent\s*=\s*\(st\.loot\s*\*\s*100\)/);

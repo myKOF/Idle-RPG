@@ -2237,15 +2237,15 @@ var TOWER_ENRAGE_HP = 50;      // 血量高於 50% 觸發（玩家「狂暴閾�
    效果掛勾在 factory.js 的 doSalvage（以 partBonus('salvage', key) 讀取）。 */
 var PART_TYPES = {
   // === 分解槽（Salvage）：10 種，涵蓋速度 / 產量 / 精華 / 分解事件 ===
-  speedGear: { name: '加速齒輪', emoji: '⚙️', node: 'salvage', desc: '分解速度 +{v}%', base: 25, perLevel: 25 },
-  scrapForge: { name: '碎片熔煉爐', emoji: '🔥', node: 'salvage', desc: '分解碎片產量 +{v}%', base: 20, perLevel: 20 },
-  goldSluice: { name: '淘金濾網', emoji: '💰', node: 'salvage', desc: '分解時獲得當前關卡敵人金幣的 {v}%', base: 3, perLevel: 1.5 },
-  extractLens: { name: '精粹透鏡', emoji: '🔬', node: 'salvage', desc: '分解時附魔精華產出率 +{v}%', base: 20, perLevel: 20 },
-  knowledgeCore: { name: '知識核心', emoji: '📚', node: 'salvage', desc: '分解時獲得當前關卡敵人經驗的 {v}%', base: 3, perLevel: 1.5 },
-  gemCollector: { name: '寶石採集器', emoji: '💎', node: 'salvage', desc: '分解時 {v}% 機率獲得 1 級寶石', base: 3, perLevel: 1.5 },
-  luckHeart: { name: '幸運之心', emoji: '💖', node: 'salvage', desc: '分解時 {v}% 機率使所有產物 ×3', base: 3, perLevel: 1.5 },
-  ancientEssenceRate: { name: '太古精華萃取器', emoji: '🧬', node: 'salvage', desc: '分解太古精華掉落率 +{v}%', base: 25, perLevel: 25 },
-  furnaceCore: { name: '熔爐核心', emoji: '♨️', node: 'salvage', desc: '熔爐上的零件效果額外提升 {v}%', base: 5, perLevel: 2.5 }
+  speedGear: { name: '加速齒輪', emoji: '⚙️', node: 'salvage', desc: STR(1349), base: 25, perLevel: 25 },
+  scrapForge: { name: '碎片熔煉爐', emoji: '🔥', node: 'salvage', desc: STR(1350), base: 20, perLevel: 20 },
+  goldSluice: { name: '淘金濾網', emoji: '💰', node: 'salvage', desc: STR(1351), base: 3, perLevel: 1.5 },
+  extractLens: { name: '精粹透鏡', emoji: '🔬', node: 'salvage', desc: STR(1352), base: 20, perLevel: 20 },
+  knowledgeCore: { name: '知識核心', emoji: '📚', node: 'salvage', desc: STR(1353), base: 3, perLevel: 1.5 },
+  gemCollector: { name: '寶石採集器', emoji: '💎', node: 'salvage', desc: STR(1354), base: 3, perLevel: 1.5 },
+  luckHeart: { name: '幸運之心', emoji: '💖', node: 'salvage', desc: STR(1355), base: 3, perLevel: 1.5 },
+  ancientEssenceRate: { name: '太古精華萃取器', emoji: '🧬', node: 'salvage', desc: STR(1356), base: 25, perLevel: 25 },
+  furnaceCore: { name: '熔爐核心', emoji: '♨️', node: 'salvage', desc: STR(1357), base: 5, perLevel: 2.5 }
 };
 var PART_MAX_TIER = 10;
 // 零件升級費用 = a + b × c^升級後目標等級；T5 -> T6 代入 6。
@@ -2291,9 +2291,9 @@ var NEW_FORGE_FURNACE_QUEUE_CAP = 9999; // 每座熔爐專屬佇列上限（帶�
 var NEW_FORGE_BELT_CAP = 30;       // 傳送帶在途件數上限（原 10 ×3）
 var NEW_FORGE_BELT_SHOW = 30;      // 傳送帶顯示件數上限（＝容量全顯；帶滿時以常見遊戲視窗寬約 8 成滿）
 var NEW_FORGE_ROUTE_PER_TICK = NEW_FORGE_BELT_CAP; // 每輪路由每座熔爐可分派件數＝帶容量：單輪足以補滿空帶，配合平均分流不餓死後面的熔爐（原 5 過低，加速齒輪快爐會吃光額度）
-var NEW_FORGE_NAME = '鍛造熔爐';
+var NEW_FORGE_NAME = STR(1358);
 var NEW_FORGE_EMOJI = '🔥';
-var NEW_FORGE_DESC = '專門處理裝備及礦石';
+var NEW_FORGE_DESC = STR(1359);
 var NEW_FORGE_IMAGE = 'images/furnace_LV1.png'; // 熔爐大圖（統一）
 // 零件置入格：每爐由初始格數起、金幣逐格解鎖至上限（格數見下方常數；成本公式 → formula.js newForgePartSlotCost）
 var NEW_FORGE_PART_SLOTS_INITIAL = 3;
@@ -2309,7 +2309,7 @@ var NEW_FORGE_SLOT_COST_D = 3;
    高階能力曲線見 gemStatValue → js/formula.js §8。 */
 var GEM_MAX_LEVEL = 5;
 var GEM_FORGE_MAX_LEVEL = 10;
-var GEM_NAMES = ['', '一級', '二級', '三級', '四級', '五級', '六級', '七級', '八級', '九級', '十級'];
+var GEM_NAMES = ['', STR(1360), STR(1361), STR(1362), STR(1363), STR(1364), STR(1365), STR(1366), STR(1367), STR(1368), STR(1369)];
 
 /* 寶石種類：鑲嵌到裝備插槽後生效。
    stat 對應 computeStats 的聚合桶（aspd 會轉為 aspdPct）；

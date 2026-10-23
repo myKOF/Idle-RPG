@@ -236,7 +236,11 @@ for (const r of kept) {
       let a; const re = /\s(data-tip|data-tt-title|data-tt-desc|title|aria-label|alt|placeholder|label)="([^"]*)"/g;
       while ((a = re.exec(' ' + attrs))) if (IDEO.test(a[2])) for (const x of splitMarkup(a[2], true)) add(x, [], '主界面', `index.html:${line}`, '提示', moduleOf('index.html', '', '', x, line));
     }
-    const inline = /^(b|i|u|em|strong|small|code|br)$/i.test(tag) && !/\sid=/.test(attrs);
+    const fmtTag = /^(b|i|u|em|strong|small|code|br)$/i.test(tag);
+    let inline = fmtTag && !/\sid=/.test(attrs);
+    // 帶 id 的格式標籤（動態數字）不算內嵌，它的結尾標籤也要當斷點，否則 "0</b> 件" 會黏成一條
+    if (fmtTag && !close && /\sid=/.test(attrs)) idStack.push(tag.toLowerCase());
+    else if (fmtTag && close && idStack.length && idStack[idStack.length - 1] === tag.toLowerCase()) { idStack.pop(); inline = false; }
     if (inline) { buf += `<${close ? '/' : ''}${tag}>`; }
     else flush();
     line += nl;

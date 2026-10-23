@@ -1,4 +1,5 @@
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -609,7 +610,7 @@ test('V3 淨化：qualities 補長度且神鑄創世恆 false、partSlots 夾 3~
 /* ============ 10. 接線靜態檢查 ============ */
 
 test('index.html/ui.js/main.js/factory.js/gm.js 接線（合併版）', () => {
-  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const html = readExpanded(path.join(root, 'index.html'));
   const forgeTab=html.match(/<button\b[^>]*data-tab="newforge"[^>]*>[\s\S]*?<\/button>/)?.[0];
   assert.ok(forgeTab,'應有新熔爐頁籤');
   assert.match(forgeTab.replace(/<[^>]+>/g,''),/熔爐/,'圖示包在span中仍有正確標籤');
@@ -622,8 +623,8 @@ test('index.html/ui.js/main.js/factory.js/gm.js 接線（合併版）', () => {
      主執行緒不載、Worker 有載。 */
   assert.ok(!/<script src="js\/newforge\.js"><\/script>/.test(html),
     'newforge.js 屬模擬層，主執行緒不應載入');
-  const worker = fs.readFileSync(path.join(root, 'js/worker/sim.worker.js'), 'utf8');
-  assert.match(worker, /importScripts\([\s\S]*'\.\.\/newforge\.js'/);
+  const worker = readExpanded(path.join(root, 'js/worker/sim.worker.js'));
+  assert.match(worker, /importScripts\([\s\S]*'\.\.\/newforge\.js(\?v=[^']*)?'/);
   assert.ok(!/nf-intake/.test(html), '導入開關應移除');
   assert.ok(!/nf-return-queue/.test(html), '佇列退回按鈕應移除');
   assert.ok(!/nf-mats/.test(html), '材料庫存區應移除');
@@ -641,7 +642,7 @@ test('index.html/ui.js/main.js/factory.js/gm.js 接線（合併版）', () => {
   assert.match(layoutCss, /#ui-shell #enc-books \{[\s\S]*?width: 100%;/,
     '附魔書庫存內容應填滿節點寬度');
 
-  const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
+  const ui = readExpanded(path.join(root, 'js/ui.js'));
   assert.match(ui, /UI\.tab === 'newforge'/);
   assert.match(ui, /function renderNewForge/);
   assert.match(ui, /function nfPartSlotsHTML\(fu, nf, factory, player\)/,
@@ -677,7 +678,7 @@ test('index.html/ui.js/main.js/factory.js/gm.js 接線（合併版）', () => {
      （newForgeReturnUnroutable 屬 INTERNAL_ONLY，ui.js 不得直接呼叫）。 */
   assert.match(ui, /sendUiCommand\('newforge\.setQuality'/, '品質變更應送指令');
   assert.match(ui, /sendUiCommand\('newforge\.setEnabled'/, '啟用切換應送指令');
-  const workerSrc = fs.readFileSync(path.join(root, 'js/worker/sim.worker.js'), 'utf8');
+  const workerSrc = readExpanded(path.join(root, 'js/worker/sim.worker.js'));
   assert.match(workerSrc, /newForgeReturnUnroutable/, '退回總佇列的健檢應在 Worker 端');
   assert.match(ui, /data-nf-more/, '帶尾應有固定 +N 區');
 
@@ -686,15 +687,15 @@ test('index.html/ui.js/main.js/factory.js/gm.js 接線（合併版）', () => {
 
   /* P5b（c568008）起主執行緒沒有模擬迴圈，newForgeTick 由 Worker 的 simStep 驅動；
      改版公告也改由 Worker 隨 BOOTED 的 notices 送出，不再由 main.js 觸發。 */
-  const main = fs.readFileSync(path.join(root, 'js/main.js'), 'utf8');
+  const main = readExpanded(path.join(root, 'js/main.js'));
   assert.ok(!/newForgeTick/.test(main), '主執行緒不應再跑模擬 tick');
   assert.match(workerSrc, /newForgeTick/, '熔爐 tick 應由 Worker 驅動');
   assert.match(ui, /showForgeRebuildNotice/, '改版公告由 UI 依 Worker 通知顯示');
 
-  const factory = fs.readFileSync(path.join(root, 'js/factory.js'), 'utf8');
+  const factory = readExpanded(path.join(root, 'js/factory.js'));
   assert.match(factory, /newForgeTryIntake/);
   assert.match(factory, /function doSalvage\(it, silent, bonus\)/, '分解應支援零件加成來源參數');
 
-  const gm = fs.readFileSync(path.join(root, 'js/gm.js'), 'utf8');
+  const gm = readExpanded(path.join(root, 'js/gm.js'));
   assert.ok(!/nfmat/.test(gm), 'nfmat 指令應移除');
 });

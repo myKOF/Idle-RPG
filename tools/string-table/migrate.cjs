@@ -39,7 +39,10 @@ const C = { id: H.indexOf('編號'), mod: H.indexOf('功能模塊'), tw: H.index
 const table = new Map();
 for (const r of trows.slice(1)) table.set(r[C.tw], { id: r[C.id], module: r[C.mod] });
 const keyOf = (t) => t.replace(/\r?\n/g, '\\n');
-const find = (t) => { const e = table.get(keyOf(t)); return e && e.module === MODULE ? e : null; };
+const lookup = (t) => table.get(keyOf(t)) || null;
+const find = (t) => { const e = lookup(t); return e && e.module === MODULE ? e : null; };
+/* 一條串接（chain）由哪個模塊負責：句子最長的那個條目所屬的模塊。整條一次改完，不拆給不同模塊的提交 */
+const ownerOf = (entries) => entries.reduce((best, x) => (!best || x.len > best.len ? x : best), null);
 
 const lit = (s) => "'" + s.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '\\r') + "'";
 
@@ -77,33 +80,33 @@ function planFile(rel, src) {
   for (const r of recs) {
     const text = r.text.replace(/\u00a0/g, ' ');
     // A：整條替換（允許頭尾的空白留在程式碼，表裡的文字不含頭尾空白）
-    let e = find(text), lead = '', trail = '';
+    let e = lookup(text), lead = '', trail = '';
     if (!e) {
       const m = /^(\s*)([\s\S]*?)(\s*)$/.exec(text);
-      if (m && m[2] && (m[1] || m[3]) && !/[<>]/.test(m[2])) { e = find(m[2]); lead = m[1]; trail = m[3]; }
+      if (m && m[2] && (m[1] || m[3]) && !/[<>]/.test(m[2])) { e = lookup(m[2]); lead = m[1]; trail = m[3]; }
     }
-    if (e && !/\u00a0/.test(r.text)) { edits.push({ kind: 'A', s: r.span[0], e: r.span[1], id: e.id, ops: r.ops, lead, trail }); continue; }
+    if (e && !/\u00a0/.test(r.text)) { if (e.module === MODULE) edits.push({ kind: 'A', s: r.span[0], e: r.span[1], id: e.id, ops: r.ops, lead, trail }); continue; }
     // D：含替代字符的句子被 HTML 標記包住（'<div>戰鬥數據：DPS ' + x + '</div>'）→ 重組整條，只換掉句子本身
     const d = planD(r, src, text);
-    if (d) { edits.push(d); continue; }
+    if (d) { if (d.owner === MODULE) edits.push(d.edit); continue; }
     // B：字面值內切（HTML 標記裡的文字節點、屬性值）
-    let did = false;
+    const pend = [];
+    const owners = [];
     for (const op of r.ops) {
       if (op.type === 'str') {
         const raw = src.slice(op.s + 1, op.e - 1);
         const q = src[op.s];
         const cuts = cutLiteral(raw, op.s + 1, null);
-        if (cuts.length) { edits.push({ kind: 'B', s: op.s, e: op.e, quote: q, cuts, base: op.s + 1, raw }); did = true; }
+        if (cuts.length) { pend.push({ kind: 'B', s: op.s, e: op.e, quote: q, cuts, base: op.s + 1, raw }); owners.push(...cuts); }
       } else if (op.type === 'tpl') {
         for (const p of op.tok.parts) {
           if (p.text === undefined || !p.text) continue;
           const cuts = cutLiteral(p.text, p.textStart, true);
-          if (cuts.length) { edits.push({ kind: 'T', s: p.textStart, e: p.textStart + p.text.length, cuts, base: p.textStart, raw: p.text }); did = true; }
+          if (cuts.length) { pend.push({ kind: 'T', s: p.textStart, e: p.textStart + p.text.length, cuts, base: p.textStart, raw: p.text }); owners.push(...cuts); }
         }
       }
     }
-    if (!did && r.params.length === 0) { /* 這條有可能屬於別的模塊或不在表內，不報 */ }
-    else if (!did) miss++;
+    if (pend.length && ownerOf(owners).module === MODULE) edits.push(...pend);
   }
   return { edits, miss };
 }
@@ -118,7 +121,7 @@ function renumberText(t) {
 /* D：把整條串接拆成「文字／參數」項目，對照 splitMarkup 切出的句子，句子的範圍換成 STR(編號, 範圍內的參數…) */
 function planD(r, src, text) {
   const pieces = splitMarkup(text);
-  const hits = pieces.map(p => ({ p, e: find(renumberText(p)) })).filter(x => x.e);
+  const hits = pieces.map(p => ({ p, e: lookup(renumberText(p)) })).filter(x => x.e);
   if (!hits.some(h => /\{\d+\}/.test(h.p))) return null;
   const items = [];
   for (const op of r.ops) {
@@ -168,7 +171,7 @@ function planD(r, src, text) {
   // 相鄰文字合併
   const merged = [];
   for (const x of seq) { const l = merged[merged.length - 1]; if (x.lit !== undefined && l && l.lit !== undefined) l.lit += x.lit; else merged.push(x); }
-  return { kind: 'D', s: r.span[0], e: r.span[1], seq: merged };
+  return { owner: ownerOf(hits.map(h => ({ module: h.e.module, len: h.p.length }))).module, edit: { kind: 'D', s: r.span[0], e: r.span[1], seq: merged } };
 }
 
 /* 在一段原始字面值文字裡找出屬於本模塊的條目，回傳 [{rs,re,id}]（相對 raw 的位置） */
@@ -178,7 +181,7 @@ function cutLiteral(raw, absStart, isTpl) {
   const out = [];
   let from = 0;
   for (const piece of splitMarkup(value)) {
-    const e = find(piece);
+    const e = lookup(piece);
     if (!e) continue;
     let idx = value.indexOf(piece, from);
     let plen = piece.length;
@@ -188,7 +191,7 @@ function cutLiteral(raw, absStart, isTpl) {
       if (!m) continue;
       idx = from + m.index; plen = m[0].length;
     }
-    out.push({ rs: at[idx], re: at[idx + plen], id: e.id });
+    out.push({ rs: at[idx], re: at[idx + plen], id: e.id, module: e.module, len: piece.length });
     from = idx + plen;
   }
   return out;
@@ -352,6 +355,19 @@ function migrateHtml() {
     }
     html = out + html.slice(cur);
   }
+  // 3b) <b>文字</b> 這種整段含格式標籤的條目 → <span data-str-html>
+  {
+    const masked = maskBlocks(html);
+    const fmtRe = /<(b|i|u|em|strong|small|code)>([^<>]*[㐀-鿿][^<>]*)<\/\1>/g;
+    let m, out = '', cur = 0;
+    while ((m = fmtRe.exec(masked))) {
+      const e = find(m[0].replace(/\s+/g, ' ').trim());
+      if (!e) continue;
+      out += html.slice(cur, m.index) + '<span data-str-html="' + e.id + '"></span>';
+      cur = m.index + m[0].length; n++;
+    }
+    html = out + html.slice(cur);
+  }
   // 3) 混合內容（文字旁邊還有別的元素）的文字節點 → 包一個 <span data-str>
   {
     const masked = maskBlocks(html);
@@ -400,5 +416,5 @@ if (h.changed) {
   if (!DRY) fs.writeFileSync(path.join(ROOT, 'index.html'), h.html);
 }
 if (h.manual.length) console.log('  index.html 需手動：' + h.manual.slice(0, 20).join('、'));
-if (!DRY && changedFiles.length) bumpVersions(changedFiles, '20261023-str-' + ({ '封魔塔': 'tower', '熔爐': 'furnace', '神鑄': 'forge', '寶石': 'gem', '符文': 'rune', '技能': 'skill', '威能': 'talent', '裝備': 'equip', '角色': 'char', '戰鬥': 'battle', '存檔與系統': 'system', '通用': 'common', '任務': 'quest' }[MODULE] || 'x'));
+if (!DRY) require('./bump.cjs').bumpFromGit('20261023-str-' + ({ '封魔塔': 'tower', '熔爐': 'furnace', '神鑄': 'forge', '寶石': 'gem', '符文': 'rune', '技能': 'skill', '威能': 'talent', '裝備': 'equip', '角色': 'char', '戰鬥': 'battle', '存檔與系統': 'system', '通用': 'common', '任務': 'quest' }[MODULE] || 'x'));
 console.log(`[migrate] ${MODULE}：${DRY ? '（試跑）' : ''}共 ${total} 處；剩餘請看：node tools/string-table/build_string_csv.cjs --check`);

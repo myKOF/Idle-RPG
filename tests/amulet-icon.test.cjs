@@ -1,4 +1,5 @@
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -9,7 +10,7 @@ const root = path.resolve(__dirname, '..');
 function loadSlotInfo() {
   const context = { console, Math: Object.create(Math) };
   vm.createContext(context);
-  vm.runInContext(fs.readFileSync(path.join(root, 'js', 'data.js'), 'utf8'), context, { filename: 'js/data.js' });
+  vm.runInContext(readExpanded(path.join(root, 'js', 'data.js')), context, { filename: 'js/data.js' });
   return context.SLOT_INFO;
 }
 

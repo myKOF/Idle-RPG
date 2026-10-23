@@ -1583,20 +1583,20 @@ function renderNewForgeLogStats() {
 
   // 1. 統計時長
   html += '<div class="stats-sec">';
-  html += '  <div class="stats-sec-title">⏳ 統計資訊</div>';
+  html += '  <div class="stats-sec-title">' + STR(1409) + '</div>';
   html += '  <div class="stats-row">';
-  html += '    <span>統計時長</span>';
+  html += '    <span>' + STR(1410) + '</span>';
   html += '    <span class="stats-value">' + formatDuration(stats.duration) + '</span>';
   html += '  </div>';
   html += '  <div class="stats-row">';
-  html += '    <span>累計日誌筆數</span>';
-  html += '    <span class="stats-value">' + newForgeCumulativeStats.logCount + ' 筆</span>';
+  html += '    <span>' + STR(1411) + '</span>';
+  html += '    ' + STR(1412, newForgeCumulativeStats.logCount);
   html += '  </div>';
   html += '</div>';
 
   // 2. 當前所有熔爐零件類型裝置數量
   html += '<div class="stats-sec">';
-  html += '  <div class="stats-sec-title">🔧 熔爐零件配置 (所有總值)</div>';
+  html += '  <div class="stats-sec-title">' + STR(1413) + '</div>';
   var partKeys = Object.keys(PART_TYPES).filter(function (k) { return PART_TYPES[k].node === 'salvage'; });
   var hasParts = false;
   for (var i = 0; i < partKeys.length; i++) {
@@ -1612,13 +1612,13 @@ function renderNewForgeLogStats() {
     }
   }
   if (!hasParts) {
-    html += '  <div class="hint" style="text-align:center; padding: 8px 0; color: var(--dim)">當前所有熔爐均未安裝零件</div>';
+    html += '  <div class="hint" style="text-align:center; padding: 8px 0; color: var(--dim)">' + STR(1414) + '</div>';
   }
   html += '</div>';
 
   // 3. 各材料獲得數量
   html += '<div class="stats-sec">';
-  html += '  <div class="stats-sec-title">📦 材料獲得統計</div>';
+  html += '  <div class="stats-sec-title">' + STR(1415) + '</div>';
   html += '  <div class="stats-mats-grid">';
 
   html += '    <div class="stats-mat-card">';
@@ -1642,12 +1642,12 @@ function renderNewForgeLogStats() {
   var partNames = Object.keys(stats.mats.parts);
 
   if (bookNames.length > 0 || partNames.length > 0) {
-    html += '  <div class="stats-sec-title" style="margin-top: 12px; font-size: 12px;">✨ 額外回收項目</div>';
+    html += '  <div class="stats-sec-title" style="margin-top: 12px; font-size: 12px;">' + STR(1416) + '</div>';
 
     for (var b = 0; b < bookNames.length; b++) {
       var bn = bookNames[b];
       html += '  <div class="stats-row">';
-      html += '    <span style="display:flex; align-items:center; gap:4px;"><img src="images/icon_books.png" class="res-icon" alt="" style="margin-right:2px; width:18px; height:18px;">附魔書：' + esc(bn) + '</span>';
+      html += '    <span style="display:flex; align-items:center; gap:4px;"><img src="images/icon_books.png" class="res-icon" alt="" style="margin-right:2px; width:18px; height:18px;">' + STR(1417, esc(bn)) + '</span>';
       html += '    <span class="stats-value">x ' + stats.mats.books[bn] + '</span>';
       html += '  </div>';
     }
@@ -1657,7 +1657,7 @@ function renderNewForgeLogStats() {
       var partData = stats.mats.parts[pn];
       var iconHtml = partData.key ? partIconHTML(partData.key) : '';
       html += '  <div class="stats-row">';
-      html += '    <span style="display:flex; align-items:center; gap:4px;">' + iconHtml + '零件：' + esc(pn) + '</span>';
+      html += '    <span style="display:flex; align-items:center; gap:4px;">' + STR(1418, iconHtml, esc(pn)) + '</span>';
       html += '    <span class="stats-value">x ' + partData.count + '</span>';
       html += '  </div>';
     }
@@ -1673,7 +1673,7 @@ function renderNewForgeDetailLog() {
   if (!box) return;
   var rows = NEWFORGE_LOG_HISTORY;
   if (!rows.length) {
-    box.innerHTML = '<div class="detail-log-empty">目前沒有熔爐日誌</div>';
+    box.innerHTML = '<div class="detail-log-empty">' + STR(1419) + '</div>';
   } else {
     box.innerHTML = rows.map(function (entry) {
       return '<div class="detail-log-line ' + (entry.cls || '') + '">' +
@@ -2791,7 +2791,7 @@ function markNewForgeTabSeenIfNeeded() {
     keys: [nodePendingKey('newforge-tab')],
     panels: ['newforge']
   }).catch(function (error) {
-    reportUiCommandFailure('熔爐頁籤已讀', error, ['newforge']);
+    reportUiCommandFailure(STR(1420), error, ['newforge']);
   });
 }
 
@@ -6484,7 +6484,7 @@ function nfQualityChipsHTML(fu) {
       pendingUiButtonAttributes(furnacePendingKey(fu.id)) +
       (fu.qualities[r] ? ' checked' : '') + '><span>' + RARITIES[r].name + '</span></label>';
   }
-  return '<div class="nf-quals"><span class="nf-label" data-tip="勾選品質的裝備會自動進入傳送帶拆解；未勾選＝保留入包。上鎖與神鑄創世永遠保留。">拆解</span>' + chips + '</div>';
+  return '<div class="nf-quals"><span class="nf-label" data-tip="' + STR(1421) + '">' + STR(109) + '</span>' + chips + '</div>';
 }
 
 // 傳送帶批次圖示（帶頭在左＝即將入爐；沿用背包的正式裝備與武器類型圖示）。
@@ -6499,7 +6499,7 @@ function nfBeltChipsHTML(fu) {
     return '<span class="conv-chip" style="border-color:' + r.color + ';color:' + r.color + '" data-tip="' +
       esc(rarityTag(it)) + '">' + icon + '</span>';
   }).join('');
-  return chips || '<span class="nf-belt-empty dim-text">（傳送帶空）</span>';
+  return chips || STR(1423);
 }
 
 // 零件置入格列：已裝＝零件晶片（點擊卸下）、空格＝零件N（點擊開啟零件列表）、
@@ -6513,20 +6513,15 @@ function nfPartSlotsHTML(fu, nf, factory, player) {
         var partLevels = (nf && nf.partLevels) || (factory && factory.partLevels) || {};
         var currentLevel = Number(partLevels[p.key]) || 1;
         // 已裝＝正方形小圖示（全稱在 tooltip；點擊依格位索引卸下）
-        cells += '<button class="nf-part-slot nf-part-filled nf-part-ico" data-nf-fid="' + fu.id + '" data-nf-partun="' + s + '"' +
-          pendingUiButtonAttributes(furnacePendingKey(fu.id)) +
-          ' data-tip="【點擊卸下】T' + currentLevel + ' ' + esc(partDesc({ key: p.key, level: currentLevel })) + '">' + partIconHTML(p.key) + '</button>';
+        cells += '<button class="nf-part-slot nf-part-filled nf-part-ico" data-nf-fid="' + fu.id + '" data-nf-partun="' + s + '"' + pendingUiButtonAttributes(furnacePendingKey(fu.id)) + ' data-tip="' + STR(1424, currentLevel, esc(partDesc({ key: p.key, level: currentLevel }))) + '">' + partIconHTML(p.key) + '</button>';
       } else {
-        cells += '<button class="nf-part-slot" data-nf-fid="' + fu.id + '" data-nf-partsopen="1"' +
-          ' data-tip="【點擊選擇零件】開啟零件列表，可連續安裝">零件' + (s + 1) + '</button>';
+        cells += '<button class="nf-part-slot" data-nf-fid="' + fu.id + '" data-nf-partsopen="1" data-tip="' + STR(1425) + '">' + STR(1426, (s + 1)) + '</button>';
       }
     } else if (s === fu.partSlots) {
       var reincarnations = Math.max(0, Math.floor(Number(player.reincarnations) || 0));
       var cost = newForgePartSlotCost(reincarnations, fu.partSlots, nf.furnaces.length);
       var ok = (player.gold || 0) >= cost;
-      cells += '<button class="nf-part-slot nf-part-lock' + (ok ? '' : ' nf-part-poor') + '" data-nf-fid="' + fu.id + '" data-nf-unlockslot="1"' +
-        pendingUiButtonAttributes(furnacePendingKey(fu.id)) +
-        ' data-tip="解鎖第 ' + (s + 1) + ' 格零件格：金幣 ' + fmtFull(cost) + '">🔒 ' + fmt(cost) + '</button>';
+      cells += '<button class="nf-part-slot nf-part-lock' + (ok ? '' : ' nf-part-poor') + '" data-nf-fid="' + fu.id + '" data-nf-unlockslot="1"' + pendingUiButtonAttributes(furnacePendingKey(fu.id)) + ' data-tip="' + STR(1427, (s + 1), fmtFull(cost)) + '">🔒 ' + fmt(cost) + '</button>';
     } else {
       cells += '<span class="nf-part-slot nf-part-lock">🔒</span>';
     }
@@ -6541,14 +6536,9 @@ function nfPartsListHTML(fu, factory, nf) {
   var keys = Object.keys(PART_TYPES).filter(function (key) { return PART_TYPES[key].node === 'salvage'; });
   var chips = keys.map(function (key) {
     var level = levels[key] || 1;
-    return '<span class="part-chip" style="cursor:pointer; border-color:var(--accent);" data-nf-fid="' + fu.id +
-      '" data-nf-partinstall-key="' + key + '"' + pendingUiButtonAttributes(furnacePendingKey(fu.id)) +
-      ' data-tip="【點擊裝配】T' + level + ' ' + esc(partDesc({ key: key, level: level })) + '；升級後已裝配效果同步刷新">' + partIconHTML(key) + esc(partName({ key: key, level: level })) + '</span>';
+    return '<span class="part-chip" style="cursor:pointer; border-color:var(--accent);" data-nf-fid="' + fu.id + '" data-nf-partinstall-key="' + key + '"' + pendingUiButtonAttributes(furnacePendingKey(fu.id)) + ' data-tip="' + STR(1428, level, esc(partDesc({ key: key, level: level }))) + '">' + partIconHTML(key) + esc(partName({ key: key, level: level })) + '</span>';
   }).join('');
-  return '<div class="nf-parts-list"><div class="nf-parts-list-head">🔧 選擇零件（熔爐 #' + fu.id + '，' +
-    fu.parts.length + '/' + fu.partSlots + '）<button class="btn sm" data-nf-fid="' + fu.id + '" data-nf-partsopen="1">收起</button></div>' +
-    '<div class="chip-row">' + chips + '</div>' +
-    '<div class="hint">選擇零件種類即可裝配；同類型可重複、連續點擊可一次裝滿。升級零件後，所有熔爐中同名零件效果會同步刷新。</div></div>';
+  return '<div class="nf-parts-list"><div class="nf-parts-list-head">' + STR(1429, fu.id, fu.parts.length, fu.partSlots) + '<button class="btn sm" data-nf-fid="' + fu.id + '" data-nf-partsopen="1">' + STR(1430) + '</button></div><div class="chip-row">' + chips + '</div><div class="hint">' + STR(1431) + '</div></div>';
 }
 
 function nfPartUpgradesHTML(factory, player, nf) {
@@ -6561,17 +6551,13 @@ function nfPartUpgradesHTML(factory, player, nf) {
     var can = cost !== null && (player.gold || 0) >= cost;
     var button = level >= PART_MAX_TIER
       ? '<span class="nf-part-upgrade-max">Max</span>'
-      : '<button class="btn sm nf-part-upgrade-button' + (can ? '' : ' nf-part-poor') + '" data-nf-partupgrade="' + key + '"' +
-        pendingUiButtonAttributes(nodePendingKey('newforge-part-upgrade-' + key)) +
-        ' data-tip="升級到 T' + (level + 1) + '：金幣 ' + fmtFull(cost) + '"><img src="images/icon_gold.png" class="res-icon" alt="">' + fmt(cost) + '</button>';
+      : '<button class="btn sm nf-part-upgrade-button' + (can ? '' : ' nf-part-poor') + '" data-nf-partupgrade="' + key + '"' + pendingUiButtonAttributes(nodePendingKey('newforge-part-upgrade-' + key)) + ' data-tip="' + STR(1432, (level + 1), fmtFull(cost)) + '"><img src="images/icon_gold.png" class="res-icon" alt="">' + fmt(cost) + '</button>';
     return '<div class="nf-pu-row" data-tip="' + esc(partDesc({ key: key, level: level })) + '">' +
       '<span class="nf-pu-ico">' + partIconHTML(key) + '</span>' +
       '<span class="nf-pu-name">' + esc(pt.name) + '</span>' +
       '<span class="nf-pu-tier">T' + level + '</span>' + button + '</div>';
   }).join('');
-  return '<div class="nf-part-upgrades"><div class="nfx-card-title"><b>零件工坊</b>' +
-    '<span data-tip="零件等級上限 T' + PART_MAX_TIER + '；升級費用公式為 a + b × c^升級後等級（例如 T5→T6 代入 6）。已裝配的零件會立即同步新等級。">上限 T' + PART_MAX_TIER + '・全熔爐同步</span></div>' +
-    '<div class="nf-pu-list">' + rows + '</div></div>';
+  return '<div class="nf-part-upgrades"><div class="nfx-card-title">' + STR(1434) + '<span data-tip="' + STR(1433, PART_MAX_TIER) + '">' + STR(1435, PART_MAX_TIER) + '</span></div><div class="nf-pu-list">' + rows + '</div></div>';
 }
 
 // 熔爐卡片：左側熔爐圖、右側拆解品質色塊／傳送帶（帶頭在左＝爐口）／零件格
@@ -6580,11 +6566,11 @@ function nfFurnaceHTML(fu, nf, factory, player) {
     '<span class="nf-fname">' + esc(NEW_FORGE_NAME) + '</span><span class="nf-fid">#' + fu.id + '</span>' +
     '<label class="nf-switch"><input type="checkbox" data-nf-fid="' + fu.id + '" data-nf-on="1"' +
     pendingUiButtonAttributes(furnacePendingKey(fu.id)) + (fu.enabled ? ' checked' : '') + '>' +
-    '<span class="nf-switch-track" aria-hidden="true"></span><span class="nf-switch-text">' + (fu.enabled ? '運轉中' : '已停用') + '</span></label>' +
+    '<span class="nf-switch-track" aria-hidden="true"></span><span class="nf-switch-text">' + (fu.enabled ? STR(1437) : STR(1438)) + '</span></label>' +
     '<button class="btn sm warn nf-remove" data-nf-remove="' + fu.id + '"' +
-    pendingUiButtonAttributes(furnacePendingKey(fu.id)) + '>移除</button></div>';
+    pendingUiButtonAttributes(furnacePendingKey(fu.id)) + '>' + STR(1436) + '</button></div>';
   var main = nfQualityChipsHTML(fu) +
-    '<div class="nf-belt"><span class="nf-belt-mouth" data-tip="熔爐入口：帶頭裝備由此入爐拆解"><canvas class="nf-mouth-canvas" width="96" height="104" aria-hidden="true"></canvas></span>' +
+    '<div class="nf-belt"><span class="nf-belt-mouth" data-tip="' + STR(1439) + '"><canvas class="nf-mouth-canvas" width="96" height="104" aria-hidden="true"></canvas></span>' +
     '<span class="nf-belt-items" data-nf-belt="' + fu.id + '"></span>' +
     '<span class="nf-belt-more" data-nf-more="' + fu.id + '"></span></div>' +
     nfPartSlotsHTML(fu, nf, factory, player) +
@@ -6610,7 +6596,7 @@ function renderNewForge() {
   var upgradeBox = $id('nf-part-upgrades');
   if (upgradeBox) setHtmlIfChanged(upgradeBox, nfPartUpgradesHTML(factory, player, nf));
   var allowed = newForgeMaxFurnaces(Math.max(0, Math.floor(Number(player.reincarnations) || 0)));
-  setTextIfChanged($id('nf-count'), nf.furnaces.length + ' / ' + allowed + ' 座');
+  setTextIfChanged($id('nf-count'), STR(1440, nf.furnaces.length, allowed));
   setTextIfChanged($id('nf-salvaged'), fmt(nf.stats.salvaged));
   setTextIfChanged($id('nf-kept'), fmt(nf.stats.kept));
   var addBtn = $id('nf-add-btn');
@@ -6626,10 +6612,10 @@ function renderNewForge() {
   });
   if (addBottom) addBottom.hidden = full;
   if (addBtn) {
-    setTextIfChanged(addBtn, full ? '已達最大數' : '＋ 添加熔爐');
+    setTextIfChanged(addBtn, full ? STR(1441) : STR(1442));
     var addTip = full
-      ? '已達目前上限 ' + allowed + ' 座（0 轉 2 座、每轉生 1 次 +1 座，最多 ' + NEW_FORGE_MAX + ' 座）'
-      : '新增一座熔爐（目前上限 ' + allowed + ' 座，最多 ' + NEW_FORGE_MAX + ' 座）';
+      ? STR(1443, allowed, NEW_FORGE_MAX)
+      : STR(1444, allowed, NEW_FORGE_MAX);
     if (addBtn.getAttribute('data-tip') !== addTip) addBtn.setAttribute('data-tip', addTip);
   }
   var list = $id('nf-furnaces');
@@ -6637,7 +6623,7 @@ function renderNewForge() {
     var html = nf.furnaces.map(function (fu) {
       return nfFurnaceHTML(fu, nf, factory, player);
     }).join('') ||
-      '<div class="nf-empty">尚無熔爐——按右上角「添加熔爐」建立第一座。</div>';
+      '<div class="nf-empty">' + STR(1445) + '</div>';
     if (UI._nfFurnacesHTML !== html) {
       // 焦點防衛：使用者正聚焦清單內的下拉/輸入框時延後整段重建（帶視覺另行定點更新）
       var ae = document.activeElement;
@@ -6678,7 +6664,7 @@ function nfUpdateBelts(list, snapshot) {
     var wait = queued + overflow;
     var text = wait > 0 ? '+' + (wait > 9999 ? '9999' : wait) : '';
     var tip = wait > 0
-      ? '此熔爐排隊中：' + fmtFull(wait) + ' 件（帶上放不下 ' + fmtFull(overflow) + '＋專屬佇列 ' + fmtFull(queued) + '，依序進入傳送帶）'
+      ? STR(1446, fmtFull(wait), fmtFull(overflow), fmtFull(queued))
       : '';
     if (moreNode._nfMoreText !== text) {
       moreNode._nfMoreText = text;
@@ -6716,7 +6702,7 @@ function bindNewForgeEvents() {
           keys: [furnacePendingKey(furnaceId)],
           panels: ['newforge']
         }).catch(function (error) {
-          reportUiCommandFailure('熔爐拆解設定', error, ['newforge']);
+          reportUiCommandFailure(STR(1447), error, ['newforge']);
         });
 
       }
@@ -6733,7 +6719,7 @@ function bindNewForgeEvents() {
           keys: [furnacePendingKey(furnaceId)],
           panels: ['newforge']
         }).catch(function (error) {
-          reportUiCommandFailure('熔爐啟用設定', error, ['newforge']);
+          reportUiCommandFailure(STR(1448), error, ['newforge']);
         });
 
       }
@@ -6748,7 +6734,7 @@ function bindNewForgeEvents() {
         keys: [nodePendingKey('newforge-part-upgrade-' + upgradeKey)],
         panels: ['newforge', 'factory', 'header']
       }).catch(function (error) {
-        reportUiCommandFailure('零件升級', error, ['newforge', 'factory', 'header']);
+        reportUiCommandFailure(STR(1449), error, ['newforge', 'factory', 'header']);
       });
       return;
     }
@@ -6767,7 +6753,7 @@ function bindNewForgeEvents() {
             keys: [furnacePendingKey(chipFurnaceId)],
             panels: ['newforge', 'factory']
           }).catch(function (error) {
-            reportUiCommandFailure('熔爐安裝零件', error, ['newforge', 'factory']);
+            reportUiCommandFailure(STR(1450), error, ['newforge', 'factory']);
           });
 
         }
@@ -6783,7 +6769,7 @@ function bindNewForgeEvents() {
           keys: [nodePendingKey('newforge-add')],
           panels: ['newforge']
         }).catch(function (error) {
-          reportUiCommandFailure('新增熔爐', error, ['newforge']);
+          reportUiCommandFailure(STR(1451), error, ['newforge']);
         });
 
       }
@@ -6796,7 +6782,7 @@ function bindNewForgeEvents() {
           keys: [furnacePendingKey(rid)],
           panels: ['newforge', 'inv']
         }).catch(function (error) {
-          reportUiCommandFailure('移除熔爐', error, ['newforge', 'inv']);
+          reportUiCommandFailure(STR(1452), error, ['newforge', 'inv']);
         });
 
       }
@@ -6818,13 +6804,13 @@ function bindNewForgeEvents() {
           if (String(resultError).indexOf('金幣不足') >= 0) {
             showFloatingText(el, '金幣不足', '#fca5a5');
           } else {
-            reportUiCommandFailure('熔爐解鎖零件格', resultError, ['newforge', 'header']);
+            reportUiCommandFailure(STR(1453), resultError, ['newforge', 'header']);
           }
         }).catch(function (error) {
           if (String(error).indexOf('金幣不足') >= 0) {
             showFloatingText(el, '金幣不足', '#fca5a5');
           } else {
-            reportUiCommandFailure('熔爐解鎖零件格', error, ['newforge', 'header']);
+            reportUiCommandFailure(STR(1453), error, ['newforge', 'header']);
           }
         });
 
@@ -6847,7 +6833,7 @@ function bindNewForgeEvents() {
           keys: [furnacePendingKey(fu.id)],
           panels: ['newforge', 'factory']
         }).catch(function (error) {
-          reportUiCommandFailure('熔爐卸下零件', error, ['newforge', 'factory']);
+          reportUiCommandFailure(STR(1454), error, ['newforge', 'factory']);
         });
 
       }
@@ -7451,7 +7437,7 @@ function towerDetailHTML(fl, highest) {
     '<div class="twx-loot">' +
       '<div class="twx-loot-title"><b>通關獎勵</b><span>機率類獨立判定、不受掉寶率影響（裝備除外）</span></div>' +
       '<div class="twx-rws">' + rewards + '</div>' +
-      (equips ? '<div class="twx-loot-title"><b>BOSS 裝備</b><span>受掉寶率加成，送入熔爐佇列</span></div><div class="twx-eqs">' + equips + '</div>' : '') +
+      (equips ? '<div class="twx-loot-title"><b>BOSS 裝備</b><span>' + STR(1455) + '</span></div><div class="twx-eqs">' + equips + '</div>' : '') +
     '</div>' +
     (wordUnlocks ? '<div class="twx-skill-unlocks twx-word-unlocks">' + wordUnlocks + '</div>' : '') +
     (unlocks ? '<div class="twx-skill-unlocks">' + unlocks + '</div>' : '');
@@ -8523,9 +8509,9 @@ var UI_COMMAND_LABELS = {
   'item.upgrade': '強化', 'item.enchant': '附魔', 'item.removeEnchant': '移除附魔',
   'item.rerollAffix': '洗煉', 'gem.socket': '鑲嵌', 'gem.unsocket': '取下寶石', 'rune.socket': '鑲嵌符文',
   'rune.compose': '符文合成', 'rune.composeAll': '符文全部合成', 'rune.dismantle': '符文拆解',
-  'newforge.addFurnace': '新增熔爐', 'newforge.removeFurnace': '移除熔爐',
-  'newforge.installPart': '裝配零件', 'newforge.uninstallPart': '卸下零件',
-  'newforge.upgradePart': '零件升級', 'newforge.unlockPartSlot': '解鎖零件格',
+  'newforge.addFurnace': STR(1451), 'newforge.removeFurnace': STR(1452),
+  'newforge.installPart': STR(1456), 'newforge.uninstallPart': STR(1457),
+  'newforge.upgradePart': STR(1449), 'newforge.unlockPartSlot': STR(1458),
   'tower.start': STR(1895), 'tower.startAuto': STR(1896), 'tower.flee': STR(1897),
   'player.buyInvUpgrade': '擴充背包', 'player.switchEquipSet': '切換套裝',
   'task.claim': STR(1923), 'stage.goMax': '前往最高關卡', 'stage.switchZone': '切換地圖'
@@ -10328,8 +10314,8 @@ var GEM_LIB_FILTERS = [
   { id: 'all', label: '全部' },
   { id: 'atk', label: '攻擊' },
   { id: 'def', label: '防禦' },
-  { id: 'elem', label: '元素' },
-  { id: 'res', label: '抗性' }
+  { id: 'elem', label: STR(1459) },
+  { id: 'res', label: STR(1460) }
 ];
 var GEM_DEF_STATS = { hpFlat: 1, hpRegen: 1, defFlat: 1, mdefFlat: 1, evasion: 1, tenacity: 1, blockRate: 1, blockDmgRed: 1, shieldEff: 1, pRes: 1, mRes: 1 };
 var GEM_TOOLS = ['compose', 'convert', 'dismantle', 'resonance'];
@@ -11888,7 +11874,7 @@ function initUI() {
         keys: [nodePendingKey('newforge-notice')],
         panels: ['newforge']
       }).catch(function (error) {
-        reportUiCommandFailure('熔爐公告已讀', error, ['newforge']);
+        reportUiCommandFailure(STR(1461), error, ['newforge']);
       });
     });
   }
@@ -12869,11 +12855,11 @@ function initUI() {
       nfDetailLogPause.addEventListener('click', function () {
         window.newForgeLogPaused = !window.newForgeLogPaused;
         if (window.newForgeLogPaused) {
-          nfDetailLogPause.textContent = '▶ 恢復日誌更新';
+          nfDetailLogPause.textContent = STR(1462);
           nfDetailLogPause.classList.remove('warn');
           nfDetailLogPause.classList.add('good');
         } else {
-          nfDetailLogPause.textContent = '⏸ 暫停日誌更新';
+          nfDetailLogPause.textContent = STR(1463);
           nfDetailLogPause.classList.remove('good');
           nfDetailLogPause.classList.add('warn');
           refreshNewForgeMainLog();
@@ -12898,7 +12884,7 @@ function initUI() {
             keys: [nodePendingKey('zone')],
             panels: ['battle', 'header']
           }).catch(function (error) {
-            reportUiCommandFailure('位面切換失敗', error, ['battle', 'header']);
+            reportUiCommandFailure(STR(1464), error, ['battle', 'header']);
           });
           UI.zoneBarSignature = '';
           renderZoneBar();
