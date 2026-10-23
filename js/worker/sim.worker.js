@@ -23,7 +23,7 @@ importScripts(
   '../item.js?v=20261018-gem-workshop', '../gem_resonance.js?v=20261018-resonance-hole-effects','../runeword.js?v=20261018-rune-tower-unlock',
   '../skills.js?v=20261018-potential-remove', '../skills2.js?v=20261022-meteor-missile-integration', '../elite_data.js?v=20261021-chain-hover', '../talents.js?v=20261022-talent-gold-norefund',
   '../player.js?v=20261022-talent-gold', '../special_rules.js',
-  '../combat.js?v=20261019-disintegrate-end-once-bloodfeast-single-target', '../elite.js?v=20261022-stone-wall-fire-chain-follow', '../elite_boss.js?v=20261022-stone-wall-navigation', '../elite_boss_recipes.js?v=20261015-boss-player-skill', '../legendary.js?v=20261012-indomitable-guard-legend-rework-1020', '../tower.js?v=20261022-tower-rewards-no-gold',
+  '../combat.js?v=20261019-disintegrate-end-once-bloodfeast-single-target', '../elite.js?v=20261022-stone-wall-fire-chain-follow', '../elite_boss.js?v=20261022-stone-wall-navigation', '../elite_boss_recipes.js?v=20261015-boss-player-skill', '../legendary.js?v=20261012-indomitable-guard-legend-rework-1020', '../tower.js?v=20261023-str-tower',
   '../factory.js?v=20261021-equipment-quality-name', '../newforge.js', '../forge.js?v=20261015-gem-enabled', '../save.js?v=20261022-talent-gold',
   '../tasks.js?v=20261023-string-table'
 );

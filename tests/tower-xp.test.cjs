@@ -1,4 +1,5 @@
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -26,8 +27,8 @@ test('高塔 BOSS 經驗為對應普通怪物經驗的 2 倍', () => {
 
 test('高塔 BOSS 單次生命傷害最高為最大生命 20%，至少五次才會死亡', () => {
   const context = loadFormulaContext();
-  const towerSource = fs.readFileSync(path.join(root, 'js/tower.js'), 'utf8');
-  const combatSource = fs.readFileSync(path.join(root, 'js/combat.js'), 'utf8');
+  const towerSource = readExpanded(path.join(root, 'js/tower.js'));
+  const combatSource = readExpanded(path.join(root, 'js/combat.js'));
   assert.match(towerSource, /elite: false, isBoss: true, towerBoss: true/);
   assert.match(combatSource, /isBoss: !!m\.isBoss, towerBoss: !!m\.towerBoss/);
   const attacker = {};
@@ -71,9 +72,9 @@ test('地獄之塔 51~100 層套用攻擊與生命倍率，並限制魔魂本源
 });
 
 test('高塔通關流程會發放 BOSS 經驗並套用經驗加成', () => {
-  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
-  const tower = fs.readFileSync(path.join(root, 'js/tower.js'), 'utf8');
+  const html = readExpanded(path.join(root, 'index.html'));
+  const ui = readExpanded(path.join(root, 'js/ui.js'));
+  const tower = readExpanded(path.join(root, 'js/tower.js'));
   assert.match(tower, /var xpGain = Math\.round\(\(b\.xp \|\| 0\) \* \(1 \+ st2\.xpBonus \/ 100\)\)/);
   assert.match(tower, /gainXp\(xpGain\)/);
   assert.match(tower, /hellSoulOriginDropChance\(floor\)/);
@@ -88,7 +89,7 @@ test('高塔通關流程會發放 BOSS 經驗並套用經驗加成', () => {
 });
 
 test('高塔戰鬥總結統計攻擊輸出，包含護盾與溢出傷害', () => {
-  const tower = fs.readFileSync(path.join(root, 'js/tower.js'), 'utf8');
+  const tower = readExpanded(path.join(root, 'js/tower.js'));
   assert.match(tower, /TOWER\.dmgDealt \+= Math\.max\(0, \(sres\.dmg \|\| 0\)\)/);
   assert.match(tower, /TOWER\.dmgDealt \+= Math\.max\(0, \(res\.dmg \|\| 0\)\)/);
   /* 攻擊目標的區域變數已由 p 改名為 bossTarget／bossSpecialTarget（多敵人目標選擇）。

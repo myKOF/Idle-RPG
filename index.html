@@ -512,10 +512,10 @@
         <section id="tab-tower" class="tab">
           <div id="tower-fight" style="display:none">
             <div class="tower-head">
-              <span class="tw-title">🗼 封魔塔挑戰</span>
+              <span class="tw-title" data-str="1807"></span>
               <span id="tw-timer" class="tw-timer">60s</span>
               <span id="tw-auto-status" style="display:none"></span>
-              <span id="tw-enrage" class="tw-enrage" style="display:none">🔥 狂暴中 +200%</span>
+              <span id="tw-enrage" class="tw-enrage" style="display:none" data-str="1808"></span>
               <span id="tw-dps" class="dim-text"></span>
               <button id="tw-flee" class="btn sm warn">撤退</button>
             </div>
@@ -548,16 +548,16 @@
                 <div class="cb-status" id="tb-status" data-enemy-buff-tip></div>
               </div>
             </div>
-            <div class="tower-canvas-note">⚔️ 戰鬥畫面顯示在戰場上</div>
-            <div class="hint">限時 60 秒；40 秒時若 BOSS 血量仍高於 50%，將進入狂暴（傷害 +200%）！</div>
+            <div class="tower-canvas-note" data-str="1809"></div>
+            <div class="hint" data-str="1810"></div>
           </div>
 
           <div id="tower-list-wrap">
             <div class="pg-top">
               <h2 class="pg-title">封魔塔</h2>
-              <div id="tower-tiers" class="twx-tiers" role="tablist" aria-label="塔別"></div>
-              <span class="pg-pill twx-highest">最高通關 <b id="tower-highest">尚未通關</b></span>
-              <button type="button" class="pg-help twx-help" aria-label="封魔塔說明" data-tt-title="封魔塔" data-tt-desc="限時擊敗 BOSS 即通關；通關不發放金幣，挑戰費用照常扣除。試煉之塔 1～50 層、地獄之塔 51～100 層、煉獄之塔 101～150 層；地獄之塔起可額外獲得「魔魂本源」，煉獄之塔 BOSS 可額外獲得「魔種」。戰鬥中 BOSS 血量偏高時會進入狂暴。連挑：自動重複挑戰同一層，金幣不足或次數用完自動停止並回到野外（戰鬥中按「撤退」可中止）。">?</button>
+              <div id="tower-tiers" class="twx-tiers" role="tablist" data-str-attr="aria-label:1811"></div>
+              <span class="pg-pill twx-highest"><span data-str="1812"></span> <b id="tower-highest" data-str="1882"></b></span>
+              <button type="button" class="pg-help twx-help" data-tt-title="封魔塔" data-str-attr="aria-label:1813;data-tt-desc:1814">?</button>
             </div>
             <div class="twx">
               <div id="tower-floors" class="twx-ladder"></div>
@@ -565,7 +565,7 @@
                 <div id="tower-detail" class="twx-detail"></div>
                 <div class="twx-actions">
                   <div id="tower-actions" class="twx-btns"></div>
-                  <label class="twx-count">連挑次數 <input type="number" id="tw-auto-count" value="5" min="1" max="999"></label>
+                  <label class="twx-count"><span data-str="1815"></span> <input type="number" id="tw-auto-count" value="5" min="1" max="999"></label>
                 </div>
                 <div id="tower-result" class="twx-result" style="display:none"></div>
               </div>
@@ -895,18 +895,18 @@
       <div id="btn-tower-result-boss-tip" class="info-btn">!</div>
       <div id="trm-title" class="tr-title" style="text-align:center; font-size: 20px; margin-bottom: 16px;"></div>
 
-      <div class="tr-sub" style="color:var(--text); margin-bottom:4px; font-weight:bold;">【雙方剩餘血量】</div>
+      <div class="tr-sub" style="color:var(--text); margin-bottom:4px; font-weight:bold;" data-str="1816"></div>
       <div id="trm-hp-stats" class="tr-line" style="margin-bottom: 12px;"></div>
 
-      <div class="tr-sub" style="color:var(--text); margin-bottom:4px; font-weight:bold;">【雙方造成總傷害】</div>
+      <div class="tr-sub" style="color:var(--text); margin-bottom:4px; font-weight:bold;" data-str="1817"></div>
       <div id="trm-dmg-stats" class="tr-line" style="margin-bottom: 12px;"></div>
 
-      <div class="tr-sub" style="color:var(--text); margin-bottom:4px; font-weight:bold;">【掉落物品獎勵】</div>
+      <div class="tr-sub" style="color:var(--text); margin-bottom:4px; font-weight:bold;" data-str="1818"></div>
       <div id="trm-rewards" class="tr-line" style="min-height: 40px; margin-bottom: 20px;"></div>
 
       <div style="text-align: center; display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
-        <button id="trm-stop-auto" class="btn warn" style="display:none; padding: 8px 22px; font-size: 16px;">終止連續</button>
-        <button id="trm-confirm" class="btn" style="padding: 8px 30px; font-size: 16px;">確定退出</button>
+        <button id="trm-stop-auto" class="btn warn" style="display:none; padding: 8px 22px; font-size: 16px;" data-str="1819"></button>
+        <button id="trm-confirm" class="btn" style="padding: 8px 30px; font-size: 16px;" data-str="1820"></button>
       </div>
     </div>
   </div>
@@ -941,7 +941,7 @@
        已移除（主執行緒零呼叫，只在 Worker 內跑）：
          special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/util.js?v=1.0.4"></script>
-  <script src="js/strings_data.js?v=ce33f9f2"></script>
+  <script src="js/strings_data.js?v=1cbb63de"></script>
   <script src="js/strings.js?v=1.0.0"></script>
   <script src="js/ui-scale.js?v=1.0.1"></script>
   <script src="js/data.js?v=1.0.97"></script>
@@ -985,10 +985,10 @@
   <script src="js/talents.js?v=1.0.10"></script>
   <script src="js/player.js?v=1.0.18"></script>
   <script src="js/combat.js?v=1.0.90"></script>
-  <script src="js/tower.js?v=1.0.34"></script>
+  <script src="js/tower.js?v=1.0.35"></script>
   <script src="js/save.js?v=1.0.22"></script>
   <script src="js/ui-inventory-skin.js?v=1.0.1"></script>
-  <script src="js/ui.js?v=1.0.197"></script>
+  <script src="js/ui.js?v=1.0.200"></script>
   <script src="js/ui-runeword.js?v=1.0.13"></script>
   <script src="js/ui-gem-resonance.js?v=1.0.15"></script>
   <script src="js/ui-gem-workshop.js?v=1.0.0"></script>
@@ -1005,7 +1005,7 @@
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
-  <script src="js/bridge.js?v=1.0.348"></script>
+  <script src="js/bridge.js?v=1.0.349"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->

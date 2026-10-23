@@ -7308,9 +7308,9 @@ UI.towerBrowse = { tier: null, sel: null, lastHighest: null };
 
 function towerTiers() {
   return [
-    { id: 'trial', name: '試煉之塔', start: 1, end: TOWER_TRIAL_MAX_FLOOR },
-    { id: 'hell', name: '地獄之塔', start: TOWER_TRIAL_MAX_FLOOR + 1, end: TOWER_HELL_MAX_FLOOR },
-    { id: 'purgatory', name: '煉獄之塔', start: TOWER_HELL_MAX_FLOOR + 1, end: TOWER_PURGATORY_MAX_FLOOR }
+    { id: 'trial', name: STR(1830), start: 1, end: TOWER_TRIAL_MAX_FLOOR },
+    { id: 'hell', name: STR(1829), start: TOWER_TRIAL_MAX_FLOOR + 1, end: TOWER_HELL_MAX_FLOOR },
+    { id: 'purgatory', name: STR(1828), start: TOWER_HELL_MAX_FLOOR + 1, end: TOWER_PURGATORY_MAX_FLOOR }
   ];
 }
 
@@ -7354,16 +7354,16 @@ function bindTowerBossImageFallback(root) {
 function towerRewardRows(fl) {
   var rw = towerRewardFor(fl, false);
   var rows = [
-    { icon: '✨', label: '經驗', value: fmt(bossStatsFor(fl).xp), note: '另加經驗加成' },
+    { icon: '✨', label: STR(1864), value: fmt(bossStatsFor(fl).xp), note: STR(1865) },
     { icon: '🔮', label: '附魔精華', value: '×' + fmt(rw.essence) },
-    { icon: '💎', label: '隨機寶石', value: GEM_NAMES[rw.gemLevel] + ' ×2' },
-    ENCHANT_ENABLED ? { icon: '📖', label: '附魔書', value: '隨機一種 ×2' } : null,
-    { icon: '💫', label: '魔塵', value: fmt1(bossDustRate(fl)) + '%', note: '神鑄材料' }
+    { icon: '💎', label: STR(1866), value: GEM_NAMES[rw.gemLevel] + ' ×2' },
+    ENCHANT_ENABLED ? { icon: '📖', label: '附魔書', value: STR(1867) } : null,
+    { icon: '💫', label: '魔塵', value: fmt1(bossDustRate(fl)) + '%', note: STR(1868) }
   ].filter(Boolean);
   var ancientRate = ancientEssenceDropChanceForBoss(fl);
   if (ancientRate > 0) rows.push({ icon: '<img src="images/icon_ancient_essence.png" class="res-icon" alt="">', label: '太古精華', value: fmt1(ancientRate) + '%' });
-  if (isHellTowerFloor(fl) || isPurgatoryTowerFloor(fl)) rows.push({ icon: '🧿', label: '魔魂本源', value: fmt1(hellSoulOriginDropChance(fl)) + '%', note: '地獄／煉獄之塔' });
-  if (isPurgatoryTowerFloor(fl)) rows.push({ icon: '🌱', label: '魔種', value: fmt1(demonSeedDropChanceForBoss(fl)) + '%', note: '煉獄之塔' });
+  if (isHellTowerFloor(fl) || isPurgatoryTowerFloor(fl)) rows.push({ icon: '🧿', label: '魔魂本源', value: fmt1(hellSoulOriginDropChance(fl)) + '%', note: STR(1869) });
+  if (isPurgatoryTowerFloor(fl)) rows.push({ icon: '🌱', label: '魔種', value: fmt1(demonSeedDropChanceForBoss(fl)) + '%', note: STR(1828) });
   return rows;
 }
 
@@ -7375,9 +7375,9 @@ function towerEquipDropRows(fl) {
     var rate = bossRates[br];
     var rateStr;
     if (rate >= 100) {
-      rateStr = '必定 ' + Math.floor(rate / 100) + ' 件';
+      rateStr = STR(1870, Math.floor(rate / 100));
       var rem = rate % 100;
-      if (rem > 0) rateStr += ' + ' + rem + '% 再 1 件';
+      if (rem > 0) rateStr += ' ' + STR(1871, rem);
     } else {
       rateStr = rate + '%';
     }
@@ -7402,7 +7402,7 @@ function towerFloorRowHTML(fl, highest) {
   var cleared = fl <= highest, next = fl === highest + 1, unlocked = fl <= highest + 1;
   var cls = 'tower-floor ' + towerTierOf(fl).id + (cleared ? ' cleared' : '') + (unlocked ? '' : ' locked') +
     (next ? ' is-next' : '') + (UI.towerBrowse.sel === fl ? ' is-sel' : '');
-  var state = cleared ? '已通關' : (next ? '可挑戰' : '未解鎖');
+  var state = cleared ? STR(1872) : (next ? STR(1873) : '未解鎖');
   return '<div class="' + cls + '" role="button" tabindex="0" data-tower-pick="' + fl + '" aria-pressed="' + (UI.towerBrowse.sel === fl) + '">' +
     '<span class="twx-fl-no">' + fl + '</span>' +
     '<span class="tf-emoji">' + towerBossIconHTML(bd, 'twx-fl-ico') + '</span>' +
@@ -7417,10 +7417,8 @@ function towerDetailHTML(fl, highest) {
   var ei = ELEM_INFO[bd.attr] || null;
   var color = ei ? ei.color : '#c9c3b5';
   var cleared = fl <= highest, next = fl === highest + 1;
-  var status = cleared ? '已通關' : (next ? '下一個挑戰目標' : '需先通關第 ' + (highest + 1) + ' 層');
-  var tags = (ei ? '<span class="twx-tag" style="--c:' + ei.color + '">' + ei.emoji + ' ' + ei.short + '屬性</span>' : '') +
-    '<span class="twx-tag">限時 ' + towerTimeLimitWithTalents(fl) + ' 秒</span>' +
-    '<span class="twx-tag">血量高於 ' + TOWER_ENRAGE_HP + '% 會狂暴</span>';
+  var status = cleared ? STR(1872) : (next ? STR(1874) : STR(1875, (highest + 1)));
+  var tags = STR(1876, (ei ? '<span class="twx-tag" style="--c:' + ei.color + '">' + ei.emoji + ' ' + ei.short + '屬性</span>' : ''), towerTimeLimitWithTalents(fl), TOWER_ENRAGE_HP);
   var stat = function (k, v, c) {
     return '<span class="twx-stat"><span>' + k + '</span><b' + (c ? ' style="color:' + c + '"' : '') + '>' + v + '</b></span>';
   };
@@ -7460,14 +7458,11 @@ function towerDetailHTML(fl, highest) {
 }
 
 function towerActionsHTML(fl, highest, gold, active) {
-  if (fl > highest + 1) return '<span class="twx-locked-note">🔒 需先通關第 ' + (highest + 1) + ' 層</span>';
+  if (fl > highest + 1) return STR(1877, (highest + 1));
   var cost = towerChallengeCost(fl);
   // 戰鬥停用不綁 pending key，避免指令鎖解除時重新啟用。
   var buttonAttrs = active ? ' disabled' : pendingUiButtonAttributes(nodePendingKey('tower'));
-  return '<button class="btn twx-go" data-tower-floor="' + fl + '"' + buttonAttrs + '>挑戰第 ' + fl + ' 層' +
-      '<span class="twx-cost' + (gold >= cost ? '' : ' is-poor') + '"><img src="images/icon_gold.png" class="res-icon" alt="">' + fmt(cost) + '</span></button>' +
-    '<button class="btn twx-auto" data-tower-auto="' + fl + '"' + buttonAttrs +
-      ' data-tip="連續挑戰此層：金幣不足或次數用完自動停止並回到野外（戰鬥中按「撤退」可中止）">🔁 連挑</button>';
+  return '<button class="btn twx-go" data-tower-floor="' + fl + '"' + buttonAttrs + '>' + STR(1879, fl) + '<span class="twx-cost' + (gold >= cost ? '' : ' is-poor') + '"><img src="images/icon_gold.png" class="res-icon" alt="">' + fmt(cost) + '</span></button><button class="btn twx-auto" data-tower-auto="' + fl + '"' + buttonAttrs + ' data-tip="' + STR(1878) + '">' + STR(1880) + '</button>';
 }
 
 function towerSelectFloor(fl) {
@@ -7517,7 +7512,7 @@ function renderTower() {
     var tierBox = $id('tower-tiers');
     var tierH = towerTierTabsHTML(highest);
     if (tierBox && tierBox._lastH !== tierH) { tierBox._lastH = tierH; tierBox.innerHTML = tierH; }
-    setTextIfChanged($id('tower-highest'), highest ? '第 ' + highest + ' 層' : '尚未通關');
+    setTextIfChanged($id('tower-highest'), highest ? STR(1881, highest) : STR(1882));
 
     var floorsBox = $id('tower-floors');
     var h = '';
@@ -7544,12 +7539,12 @@ function renderTower() {
     var r = runtime.result;
     if (r) {
       var rh = '<div class="tr-title ' + (r.win ? 'good' : 'bad') + '">' +
-        (r.win ? '🏆 通關第 ' + r.floor + ' 層！' : '💀 第 ' + r.floor + ' 層挑戰失敗') + '</div>';
+        (r.win ? STR(1883, r.floor) : STR(1884, r.floor)) + '</div>';
       if (r.win) {
-        rh += '<div class="tr-sub">獲得獎勵：</div>' + r.rewards.map(function (x) { return '<div class="tr-line">' + x + '</div>'; }).join('');
+        rh += '<div class="tr-sub">' + STR(1885) + '</div>' + r.rewards.map(function (x) { return '<div class="tr-line">' + x + '</div>'; }).join('');
       } else {
-        rh += '<div class="tr-sub">戰鬥數據：DPS ' + fmt(r.myDps) + '（通關需求約 ' + fmt(r.needDps) + '）｜BOSS 剩餘血量 ' + r.bossHpPct + '%</div>';
-        rh += '<div class="tr-sub">失敗分析：</div>' + r.analysis.map(function (x) { return '<div class="tr-line">📋 ' + esc(x) + '</div>'; }).join('');
+        rh += '<div class="tr-sub">' + STR(1886, fmt(r.myDps), fmt(r.needDps), r.bossHpPct) + '</div>';
+        rh += '<div class="tr-sub">' + STR(1887) + '</div>' + r.analysis.map(function (x) { return '<div class="tr-line">📋 ' + esc(x) + '</div>'; }).join('');
       }
       if (rbox._lastH !== rh) { rbox._lastH = rh; rbox.innerHTML = rh; }
       rbox.style.display = '';
@@ -7657,12 +7652,12 @@ function renderTowerCanvasHud(battleSnapshot, view) {
   setStyleIfChanged(hud, 'display', show ? '' : 'none');
   if (!show) return;
   var b = tower.boss;
-  setTextIfChanged($id('tch-floor'), '🗼 第 ' + (tower.floor || 0) + ' 層');
+  setTextIfChanged($id('tch-floor'), STR(1888, (tower.floor || 0)));
   var enrageEl = $id('tch-enrage');
   if (enrageEl) {
     setStyleIfChanged(enrageEl, 'display', tower.enraged ? '' : 'none');
     var cfg = (typeof towerBossCfg === 'function') ? towerBossCfg(tower.floor) : null;
-    setTextIfChanged(enrageEl, '🔥 狂暴' + (cfg && cfg.enrageMult > 1 ? ' +' + Math.round((cfg.enrageMult - 1) * 100) + '%' : ''));
+    setTextIfChanged(enrageEl, STR(1889, (cfg && cfg.enrageMult > 1 ? ' +' + Math.round((cfg.enrageMult - 1) * 100) + '%' : '')));
   }
   var autoEl = $id('tch-auto');
   if (autoEl) {
@@ -7670,8 +7665,7 @@ function renderTowerCanvasHud(battleSnapshot, view) {
     if (tower.auto) setTextIfChanged(autoEl, '🔁 ' + (tower.auto.done + 1) + '/' + tower.auto.total);
   }
   var limit = towerTimeLimitWithTalents(tower.floor);
-  setTextIfChanged($id('tch-dps'), 'DPS ' + fmt(tower.elapsed > 1 ? tower.dmgDealt / tower.elapsed : 0) +
-    '／需求 ' + fmt(b.maxHp / limit));
+  setTextIfChanged($id('tch-dps'), STR(1890, fmt(tower.elapsed > 1 ? tower.dmgDealt / tower.elapsed : 0), fmt(b.maxHp / limit)));
   /* 倒數：在封魔塔分頁時由 renderTowerFight 管錨點（見 towerTimerRuntime 的說明）。 */
   if (UI.tab !== 'tower') {
     var paused = !!(view && view.paused);
@@ -7719,7 +7713,7 @@ function renderTowerFight() {
   if (autoEl) {
     if (runtime.auto) {
       autoEl.style.display = '';
-      autoEl.textContent = '🔁 連挑 第 ' + (runtime.auto.done + 1) + '/' + runtime.auto.total + ' 場（勝 ' + runtime.auto.wins + '）';
+      autoEl.textContent = STR(1891, (runtime.auto.done + 1), runtime.auto.total, runtime.auto.wins);
     } else {
       autoEl.style.display = 'none';
     }
@@ -7758,7 +7752,7 @@ function renderTowerFight() {
   var bSh = (b.shield > 0.5) ? '<span style="color:var(--info)">+' + fmt(Math.max(0, b.shield)) + '</span>' : '';
   setHtmlIfChanged($id('tb-hptext'), fmt(Math.max(0, b.hp)) + bSh + ' / ' + fmt(b.maxHp) + '（' + Math.round(b.hp / b.maxHp * 100) + '%）');
   var bossAttr = typeof skill2CurrentEnemyAttr === 'function' ? skill2CurrentEnemyAttr(b) : b.attr;
-  setHtmlIfChanged($id('tb-status'), entStatus(b) + (bossAttr && ELEM_INFO[bossAttr] ? ' 屬性:' + ELEM_INFO[bossAttr].emoji + (ELEM_INFO[bossAttr].short || ELEM_INFO[bossAttr].name) : (b.elem ? ' 屬性:' + ENCHANTS[b.elem].emoji : ''))); // 屬性語境用 short（聖非光）
+  setHtmlIfChanged($id('tb-status'), entStatus(b) + (bossAttr && ELEM_INFO[bossAttr] ? ' ' + STR(1892, ELEM_INFO[bossAttr].emoji, (ELEM_INFO[bossAttr].short || ELEM_INFO[bossAttr].name)) : (b.elem ? ' ' + STR(1893, ENCHANTS[b.elem].emoji) : ''))); // 屬性語境用 short（聖非光）
   setStyleIfChanged($id('tp-hp'), 'width', clamp(p.hp / st.hp * 100, 0, 100) + '%');
   renderPlayerShieldBar('tp', p, st);
   setHtmlIfChanged($id('tp-hptext'), fmt(Math.max(0, p.hp)) + playerShieldText(p) + ' / ' + fmt(st.hp));
@@ -7766,8 +7760,7 @@ function renderTowerFight() {
   /* 狀態光環要靠面板快照 reconcile（事件答不出「現在還在不在」）——與野外同一條規則。 */
   if (typeof VFXTower !== 'undefined') VFXTower.sync(p, b);
   renderMpSkill(p, 'tp', st, snapshot.gt);
-  setTextIfChanged($id('tw-dps'), 'DPS ' + fmt(runtime.elapsed > 1 ? runtime.dmgDealt / runtime.elapsed : 0) +
-    '（需求 ' + fmt(b.maxHp / towerTimeLimitWithTalents(runtime.floor)) + '）');
+  setTextIfChanged($id('tw-dps'), STR(1894, fmt(runtime.elapsed > 1 ? runtime.dmgDealt / runtime.elapsed : 0), fmt(b.maxHp / towerTimeLimitWithTalents(runtime.floor))));
 }
 
 function uiRenderingSuspended() {
@@ -8533,7 +8526,7 @@ var UI_COMMAND_LABELS = {
   'newforge.addFurnace': '新增熔爐', 'newforge.removeFurnace': '移除熔爐',
   'newforge.installPart': '裝配零件', 'newforge.uninstallPart': '卸下零件',
   'newforge.upgradePart': '零件升級', 'newforge.unlockPartSlot': '解鎖零件格',
-  'tower.start': '挑戰封魔塔', 'tower.startAuto': '封魔塔連續挑戰', 'tower.flee': '撤出封魔塔',
+  'tower.start': STR(1895), 'tower.startAuto': STR(1896), 'tower.flee': STR(1897),
   'player.buyInvUpgrade': '擴充背包', 'player.switchEquipSet': '切換套裝',
   'task.claim': STR(1923), 'stage.goMax': '前往最高關卡', 'stage.switchZone': '切換地圖'
 };
@@ -9174,11 +9167,11 @@ function skillTowerUnlockHintHTML(row, skillsSnapshot) {
   var prg = sgUiUnlockProgress(skillsSnapshot);
   var isSkillUnlock = !!((prg && prg.skillUnlock) || (typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.skillUnlock));
   if (isSkillUnlock) {
-    return '<div class="skill-tower-hint is-cleared">封魔塔第' + floor + '層門檻已解除（GM解鎖）</div>';
+    return '<div class="skill-tower-hint is-cleared">' + STR(1898, floor) + '</div>';
   }
   var cleared = !!prg && Number(prg.towerHighest) >= floor;
   return '<div class="skill-tower-hint' + (cleared ? ' is-cleared' : '') + '">' +
-    (cleared ? '已通行封魔塔第' + floor + '層' : '需通關封魔塔第' + floor + '層解鎖') + '</div>';
+    (cleared ? STR(1899, floor) : STR(1900, floor)) + '</div>';
 }
 /* 終極進化【修羅亂舞】（雙刀亂舞，js/skills2.js）目前是否生效。
    主執行緒沒有 G，不能直接呼叫 skills2AsuraDualWield（那支讀 G，在這裡永遠回 false），
@@ -11094,7 +11087,7 @@ function miniSnapshot() {
   var s = { stage: '', lv: 'Lv.' + (header.player && header.player.level || 1), pHp: 0, pHpText: '', pMp: 0, pMpText: '', eName: '', eHp: 0, eHpText: '', info: '', logs: [] };
   if (view.towerActive && tower.boss) {
     p = tower.player; enemy = tower.boss;
-    s.stage = '🗼 封魔塔第 ' + (tower.floor || 0) + ' 層';
+    s.stage = STR(1901, (tower.floor || 0));
     s.info = '⏱️ 剩餘 ' + fmt1(Math.max(0, towerTimeLimitWithTalents(tower.floor) - (tower.elapsed || 0))) + 's' + (tower.enraged ? '　🔥狂暴中' : '');
   } else {
     p = field.player; enemy = field.monster || (Array.isArray(field.monsters) ? field.monsters[0] : null);
@@ -13339,7 +13332,7 @@ function initUI() {
         keys: [nodePendingKey('tower')],
         panels: ['tower', 'battle', 'header']
       }).catch(function (error) {
-        reportUiCommandFailure('封魔塔挑戰', error, ['tower', 'header']);
+        reportUiCommandFailure(STR(1902), error, ['tower', 'header']);
       });
       switchTab('tower');
       return;
@@ -13355,7 +13348,7 @@ function initUI() {
         keys: [nodePendingKey('tower')],
         panels: ['tower', 'battle', 'header']
       }).catch(function (error) {
-        reportUiCommandFailure('封魔塔連挑', error, ['tower', 'header']);
+        reportUiCommandFailure(STR(1903), error, ['tower', 'header']);
       });
       switchTab('tower');
       return;
@@ -13921,7 +13914,7 @@ function confirmTowerResultModal() {
     keys: [nodePendingKey('tower')],
     panels: ['tower', 'battle', 'header']
   }).catch(function (error) {
-    reportUiCommandFailure('封魔塔結算', error, ['tower', 'header']);
+    reportUiCommandFailure(STR(1904), error, ['tower', 'header']);
   });
 }
 function stopTowerAutoFromResultModal() {
@@ -13930,7 +13923,7 @@ function stopTowerAutoFromResultModal() {
     keys: [nodePendingKey('tower')],
     panels: ['tower']
   }).catch(function (error) {
-    reportUiCommandFailure('停止封魔塔連挑', error, ['tower']);
+    reportUiCommandFailure(STR(1905), error, ['tower']);
   });
   var confirmBtn = $id('trm-confirm');
   var stopAutoBtn = $id('trm-stop-auto');
@@ -13972,10 +13965,10 @@ function showTowerResultModal(r, p, b, myDmg, bDmg, options) {
   clearTowerResultCountdown();
 
   if (r.win) {
-    title.innerHTML = '🏆 挑戰成功！通關第 ' + r.floor + ' 層';
+    title.innerHTML = STR(1906, r.floor);
     title.className = 'tr-title good';
   } else {
-    title.innerHTML = '💀 挑戰失敗（第 ' + r.floor + ' 層）';
+    title.innerHTML = STR(1907, r.floor);
     title.className = 'tr-title bad';
   }
 
@@ -13991,13 +13984,13 @@ function showTowerResultModal(r, p, b, myDmg, bDmg, options) {
   var bPct = Math.max(0, Math.round(bHp / bMax * 100));
 
   var hpStatsHtml =
-    '<div style="display:flex; justify-content:space-between; margin-bottom: 4px;"><span>冒險者：</span><span>' + fmt(Math.max(0, pHp)) + ' / ' + fmt(pMax) + ' (' + pPct + '%)</span></div>' +
+    '<div style="display:flex; justify-content:space-between; margin-bottom: 4px;"><span>' + STR(1908) + '</span><span>' + fmt(Math.max(0, pHp)) + ' / ' + fmt(pMax) + ' (' + pPct + '%)</span></div>' +
     '<div style="display:flex; justify-content:space-between;"><span>' + (b ? b.name : 'BOSS') + '：</span><span>' + fmt(Math.max(0, bHp)) + ' / ' + fmt(bMax) + ' (' + bPct + '%)</span></div>';
   $id('trm-hp-stats').innerHTML = hpStatsHtml;
 
   var dmgStatsHtml =
-    '<div style="display:flex; justify-content:space-between; margin-bottom: 4px;"><span>我方造成：</span><span>' + fmt(myDmg) + '</span></div>' +
-    '<div style="display:flex; justify-content:space-between;"><span>敵方造成：</span><span>' + fmt(bDmg) + '</span></div>';
+    '<div style="display:flex; justify-content:space-between; margin-bottom: 4px;"><span>' + STR(1909) + '</span><span>' + fmt(myDmg) + '</span></div>' +
+    '<div style="display:flex; justify-content:space-between;"><span>' + STR(1910) + '</span><span>' + fmt(bDmg) + '</span></div>';
   $id('trm-dmg-stats').innerHTML = dmgStatsHtml;
 
   if (r.win) {
@@ -14009,7 +14002,7 @@ function showTowerResultModal(r, p, b, myDmg, bDmg, options) {
   if (confirmBtn) {
     var countdown = options && options.autoCountdown ? Math.ceil(options.countdown || 3) : 0;
     confirmBtn.disabled = countdown > 0;
-    confirmBtn.textContent = countdown > 0 ? '確定（' + countdown + '）' : '確定';
+    confirmBtn.textContent = countdown > 0 ? STR(1911, countdown) : '確定';
     if (stopAutoBtn) {
       var canStopAuto = countdown > 0 && r && r.autoContinue;
       stopAutoBtn.style.display = canStopAuto ? 'inline-block' : 'none';
@@ -14018,7 +14011,7 @@ function showTowerResultModal(r, p, b, myDmg, bDmg, options) {
     if (countdown > 0) {
       UI.towerResultCountdownTimer = (typeof GameClock !== 'undefined' ? GameClock.setInterval : setInterval)(function () {
         countdown--;
-        if (confirmBtn) confirmBtn.textContent = countdown > 0 ? '確定（' + countdown + '）' : '確定';
+        if (confirmBtn) confirmBtn.textContent = countdown > 0 ? STR(1911, countdown) : '確定';
         if (countdown <= 0) {
           if (confirmBtn) confirmBtn.disabled = false;
           confirmTowerResultModal();

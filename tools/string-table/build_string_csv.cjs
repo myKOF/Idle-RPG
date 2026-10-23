@@ -276,6 +276,11 @@ if (process.argv.includes('--check')) {
   const byMod2 = {};
   for (const e of list) { const m = byMod2[e.module] ||= { pending: 0, unreg: 0 }; if (registered.has(e.text)) m.pending++; else m.unreg++; }
   for (const m of MODULES) if (byMod2[m]) console.log(`  ${m}：待遷移 ${byMod2[m].pending}、未登記 ${byMod2[m].unreg}`);
+  const listMod = process.argv.includes('--module') ? process.argv[process.argv.indexOf('--module') + 1] : null;
+  if (listMod) {
+    console.log('\n[' + listMod + '] 仍寫死的字串：');
+    list.filter(e => e.module === listMod).forEach(e => console.log('  ' + e.text.slice(0, 90).split('\n').join('\\n') + '  ←  ' + e.where.slice(0, 3).join('、')));
+  }
   if (unreg.length) {
     console.error('\n以下字串寫死在程式裡且沒有登記在 String 表（AI_RULES 8.10）：');
     unreg.slice(0, 40).forEach(e => console.error(`  [${e.module}] ${e.text.slice(0, 60)}  ←  ${e.where[0]}`));

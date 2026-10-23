@@ -83,6 +83,9 @@ function planFile(rel, src) {
       if (m && m[2] && (m[1] || m[3]) && !/[<>]/.test(m[2])) { e = find(m[2]); lead = m[1]; trail = m[3]; }
     }
     if (e && !/\u00a0/.test(r.text)) { edits.push({ kind: 'A', s: r.span[0], e: r.span[1], id: e.id, ops: r.ops, lead, trail }); continue; }
+    // D：含替代字符的句子被 HTML 標記包住（'<div>戰鬥數據：DPS ' + x + '</div>'）→ 重組整條，只換掉句子本身
+    const d = planD(r, src, text);
+    if (d) { edits.push(d); continue; }
     // B：字面值內切（HTML 標記裡的文字節點、屬性值）
     let did = false;
     for (const op of r.ops) {
@@ -103,6 +106,69 @@ function planFile(rel, src) {
     else if (!did) miss++;
   }
   return { edits, miss };
+}
+
+/* 與 build_string_csv.cjs 的 renumber 相同：句子內用到的 {N} 依出現順序重新編成 {0}、{1}… */
+function renumberText(t) {
+  const used = [...new Set([...t.matchAll(/\{(\d+)\}/g)].map(m => +m[1]))].sort((a, b) => a - b);
+  const map = new Map(used.map((o, i) => [o, i]));
+  return t.replace(/\{(\d+)\}/g, (m, d) => '{' + map.get(+d) + '}');
+}
+
+/* D：把整條串接拆成「文字／參數」項目，對照 splitMarkup 切出的句子，句子的範圍換成 STR(編號, 範圍內的參數…) */
+function planD(r, src, text) {
+  const pieces = splitMarkup(text);
+  const hits = pieces.map(p => ({ p, e: find(renumberText(p)) })).filter(x => x.e);
+  if (!hits.some(h => /\{\d+\}/.test(h.p))) return null;
+  const items = [];
+  for (const op of r.ops) {
+    if (op.type === 'str') items.push({ text: unescapeMap(src.slice(op.s + 1, op.e - 1)).value });
+    else if (op.type === 'tpl') {
+      for (const p of op.tok.parts) {
+        if (p.text !== undefined) { if (p.text) items.push({ text: unescapeMap(p.text).value }); }
+        else items.push({ ph: [p.exprStart, p.exprEnd] });
+      }
+    } else items.push({ ph: [op.s, op.e] });
+  }
+  let k = 0, J = '';
+  for (const it of items) {
+    it.start = J.length;
+    if (it.ph) { it.k = k++; J += '{' + it.k + '}'; } else J += it.text;
+    it.end = J.length;
+  }
+  if (J.replace(/\u00a0/g, ' ') !== text) return null; // 重組結果與抽取不一致就不動
+  // 找每個句子在 J 的範圍
+  const spans = [];
+  let from = 0;
+  for (const h of hits) {
+    // 句子裡的 {N} 是重新編號過的（從 0 起），在整條裡的編號不同，所以用「任意 {數字}」比對
+    const pat = h.p.split(/\{\d+\}/).map(x => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/ +/g, '\\s+')).join('\\{\\d+\\}');
+    const m = new RegExp(pat).exec(J.slice(from));
+    if (!m) continue;
+    const idx = from + m.index, len = m[0].length;
+    spans.push({ a: idx, b: idx + len, id: h.e.id });
+    from = idx + len;
+  }
+  if (!spans.length) return null;
+  const seq = [];
+  const emitRange = (a, b) => {
+    for (const it of items) {
+      if (it.end <= a || it.start >= b) continue;
+      if (it.ph) seq.push({ expr: it.ph });
+      else { const t = it.text.slice(Math.max(a, it.start) - it.start, Math.min(b, it.end) - it.start); if (t) seq.push({ lit: t }); }
+    }
+  };
+  let cur = 0;
+  for (const sp of spans) {
+    emitRange(cur, sp.a);
+    seq.push({ str: sp.id, phs: items.filter(it => it.ph && it.start >= sp.a && it.end <= sp.b).map(it => it.ph) });
+    cur = sp.b;
+  }
+  emitRange(cur, J.length);
+  // 相鄰文字合併
+  const merged = [];
+  for (const x of seq) { const l = merged[merged.length - 1]; if (x.lit !== undefined && l && l.lit !== undefined) l.lit += x.lit; else merged.push(x); }
+  return { kind: 'D', s: r.span[0], e: r.span[1], seq: merged };
 }
 
 /* 在一段原始字面值文字裡找出屬於本模塊的條目，回傳 [{rs,re,id}]（相對 raw 的位置） */
@@ -158,6 +224,13 @@ function applyEdits(src, edits) {
       }
       const call = 'STR(' + n.id + (params.length ? ', ' + params.join(', ') : '') + ')';
       return (n.lead ? lit(n.lead) + ' + ' : '') + call + (n.trail ? ' + ' + lit(n.trail) : '');
+    }
+    if (n.kind === 'D') {
+      const parts = n.seq.map(x => x.lit !== undefined ? lit(x.lit)
+        : x.expr ? range(x.expr[0], x.expr[1], n.children).trim()
+          : 'STR(' + x.str + (x.phs.length ? ', ' + x.phs.map(p => range(p[0], p[1], n.children).trim()).join(', ') : '') + ')');
+      if (n.seq[0] && n.seq[0].expr) parts.unshift("''");
+      return parts.join(' + ');
     }
     // B：'前' + STR(id) + '後'；T：`前${STR(id)}後`
     let out = '', cur = 0;
@@ -276,6 +349,22 @@ function migrateHtml() {
       const attr = hasTag ? 'data-str-html' : 'data-str';
       out += html.slice(cur, m.index) + '<' + m[1] + m[2].replace(/(\s*\/?)$/, ' ' + attr + '="' + e.id + '"$1') + '></' + m[1] + '>';
       cur = m.index + m[0].length; n++;
+    }
+    html = out + html.slice(cur);
+  }
+  // 3) 混合內容（文字旁邊還有別的元素）的文字節點 → 包一個 <span data-str>
+  {
+    const masked = maskBlocks(html);
+    const textRe = />([^<>]*[㐀-鿿][^<>]*)</g;
+    let m, out = '', cur = 0;
+    while ((m = textRe.exec(masked))) {
+      const rawText = m[1];
+      const e = find(decodeEnt(rawText).replace(/\s+/g, ' ').trim());
+      textRe.lastIndex = m.index + 1 + rawText.length;
+      if (!e) continue;
+      const lead = /^\s*/.exec(rawText)[0], trail = /\s*$/.exec(rawText)[0];
+      out += html.slice(cur, m.index + 1) + lead + '<span data-str="' + e.id + '"></span>' + trail;
+      cur = m.index + 1 + rawText.length; n++;
     }
     html = out + html.slice(cur);
   }

@@ -154,3 +154,13 @@ test('applyDom：data-str／data-str-html／data-str-attr 會被替換，載入�
   assert.equal(c.attrs.title, '標題');
   assert.equal(c.attrs['data-tt-desc'], '說明：值');
 });
+
+test('漏登記檢查：程式裡寫死的顯示文字都已登記在 String 表（AI_RULES 8.10）', () => {
+  let out = '';
+  try {
+    out = execFileSync(process.execPath, [path.join(root, 'tools/string-table/build_string_csv.cjs'), '--check'], { stdio: 'pipe' }).toString();
+  } catch (e) {
+    assert.fail('有寫死又沒登記的字串：\n' + String(e.stderr || e.stdout));
+  }
+  assert.match(out, /未登記 0/);
+});
