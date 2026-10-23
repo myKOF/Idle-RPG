@@ -80,21 +80,19 @@ test('敵人情報 Tips 置頂區顯示屬性標籤，下方不再重複顯示 �
   assert.doesNotMatch(showContent, /🌌 屬性：/);
 });
 
-test('renderZoneBar 包含新地圖／元素／上限，前圖BOSS通關才解鎖後圖', () => {
-  const ctx=loadGameContext();ctx.$id=id=>id==='zone-bar'?ctx.mockBox:null;
+test('renderZoneBar 只顯示目前場景，進度更新仍通知世界地圖且不重寫相同場景名稱', () => {
+  const ctx=loadGameContext();ctx.$id=id=>id==='current-zone-name'?ctx.mockBox:null;
   ctx.UI_WORKER_STATE.panels.header={stage:{zone:'swamp',current:300,best:300}};
   ctx.UI_WORKER_STATE.panels.battle={zoneProgress:{swamp:{current:300,best:300,cleared:299}}};
-  ctx.renderZoneBar();let html=ctx.mockBox.innerHTML;
-  assert.match(html,/主要敵人屬性：🟢 毒屬性/);assert.match(html,/❄️ 冰屬性/);
-  assert.match(html,/關卡上限：350；經驗與金幣獎勵 ×1.85/);
-  assert.match(html,/class="zone-btn locked"[^>]*data-zone="thunder_peak"/);
-  assert.match(html,/需通關【月影沼澤】第 300 階段/);
-  ctx.UI.zoneBarSignature=null;ctx.UI_WORKER_STATE.panels.battle.zoneProgress.swamp.cleared=300;
-  ctx.renderZoneBar();assert.match(ctx.mockBox.innerHTML,/class="zone-btn"[^>]*data-zone="thunder_peak"/);
-  ctx.UI.zoneBarSignature=null;ctx.UI_WORKER_STATE.panels.battle.zoneProgress.thunder_peak={best:350,cleared:349};
-  ctx.renderZoneBar();assert.match(ctx.mockBox.innerHTML,/class="zone-btn locked"[^>]*data-zone="undead_mountains"/);
-  ctx.UI.zoneBarSignature=null;ctx.UI_WORKER_STATE.panels.battle.zoneProgress.thunder_peak.cleared=350;
-  ctx.renderZoneBar();assert.match(ctx.mockBox.innerHTML,/class="zone-btn"[^>]*data-zone="undead_mountains"/);
+  let refreshes=0,writes=0,html='';
+  ctx.WorldMapUI={refresh(){refreshes++;}};
+  Object.defineProperty(ctx.mockBox,'innerHTML',{get(){return html;},set(value){html=value;writes++;}});
+  ctx.renderZoneBar();
+  assert.match(html,/月影沼澤/);assert.doesNotMatch(html,/落雷峰|亡靈山脈|zone-btn|data-zone/);
+  ctx.UI_WORKER_STATE.panels.battle.zoneProgress.swamp.cleared=300;
+  ctx.renderZoneBar();assert.equal(refreshes,2);assert.equal(writes,1);
+  ctx.UI_WORKER_STATE.panels.header.stage.zone='thunder_peak';
+  ctx.renderZoneBar();assert.match(html,/落雷峰/);assert.doesNotMatch(html,/月影沼澤/);assert.equal(writes,2);
 });
 
 test('showEnemyTooltip 與 showTowerTooltip 設定 tooltipAnchor 且在 refreshOpenStatTooltip 下不被立刻關閉', () => {

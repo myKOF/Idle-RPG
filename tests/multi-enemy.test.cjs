@@ -495,7 +495,7 @@ test('關閉自動推進時完成關卡仍解鎖下一關，但留在目前關�
   assert.equal(context.G.stage.best, 41);
 });
 
-test('自動推進打通地圖上限後切到下一張地圖第 1 關', () => {
+test('自動推進打通地圖上限後留在原場景，下一張須主動前進', () => {
   const context = loadCombatContext();
   context.G = {
     player: { gold: 0, reincarnations: 0 },
@@ -509,15 +509,20 @@ test('自動推進打通地圖上限後切到下一張地圖第 1 關', () => {
   context.FIELD._waveClearPending = true;
 
   assert.equal(context.isZoneUnlocked('Icefield'), false);
-  assert.equal(context.nextAutoAdvanceZone('desert'), null);
   context.completeFieldWave(context.getStats());
 
+  assert.equal(context.G.stage.zone, 'desert');
+  assert.equal(context.G.stage.current, 100);
+  assert.equal(context.G.stage.best, 100);
+  assert.equal(context.G.zoneProgress.desert.cleared, 100);
+  assert.equal(context.isZoneUnlocked('Icefield'), true);
+  assert.equal(context.FIELD.mapComplete, false);
+  assert.equal(context.FIELD.monsters.length, 0);
+  assert.equal(context.FIELD.spawnCd, context.FIELD_STAGE_SWITCH_DELAY);
+  context.switchZone('Icefield');
   assert.equal(context.G.stage.zone, 'Icefield');
   assert.equal(context.G.stage.current, 1);
   assert.equal(context.G.stage.best, 1);
-  assert.equal(context.G.zoneProgress.desert.cleared, 100);
-  assert.equal(context.FIELD.mapComplete, false);
-  assert.equal(context.FIELD.monsters.length, 0);
 });
 
 test('後續地圖尚未解鎖時，亡靈山脈 400 關通關後留在 400 關重複挑戰', () => {
@@ -534,7 +539,6 @@ test('後續地圖尚未解鎖時，亡靈山脈 400 關通關後留在 400 關�
   context.FIELD._waveClearPending = true;
 
   assert.equal(context.isZoneUnlocked('god_battlefield'), false);
-  assert.equal(context.nextAutoAdvanceZone('undead_mountains'), null);
   assert.equal(context.hasConfiguredHigherZone('undead_mountains'), true);
   context.completeFieldWave(context.getStats());
 

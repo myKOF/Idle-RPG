@@ -115,7 +115,7 @@ test('通關關卡另記 cleared：最後一關打贏後 best 卡在上限，cle
   assert.equal(c.zoneClearedStage('desert'), 99);
 
   // 關閉自動推進，讓本測試專注驗證最後一關的 best 夾限與 cleared 記錄；
-  // 自動推進跨場景的行為由 multi-enemy.test.cjs 覆蓋。
+  // 自動推進達上限不跨場景的行為由 multi-enemy.test.cjs 覆蓋。
   c.G.stage.autoAdvance = false;
   clearOneWave();                        // 打贏第 100 關（＝荒漠上限）
   assert.equal(c.G.stage.best, 100, 'best 被 maxStage 夾住，不會變成 101');

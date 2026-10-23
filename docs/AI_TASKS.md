@@ -11,6 +11,21 @@
 - 內建IAB不可用，改用隔離無頭Edge，載入正式CSS／紀錄卡及詳情DOM、原日誌與綁定函式，提供空熔爐快照。1200／420寬列表皆隱藏、標題與詳情可見；卡片51px（標題25px加padding及border），不再吃剩餘高度。詳情開關、日誌收集、碎片630統計、暫停後恢復及清除通過；補足隔離頁依賴後pageerror0。未讀寫玩家存檔，未驗收完整長戰；臨時瀏覽器已關閉。
 - 唯讀檢查：AI規範／AGENTS／Workflow／prompts/codex、js/ui.js與newforge.js日誌路徑、Worker事件、CSS覆蓋及上述五份回歸。無本次未完成項或新增已知風險；可供Review／合併，Commit為本段所在`[Codex] fix: 熔爐紀錄只保留標題與詳情入口`，回覆附編號。未合併推送，其他地圖／角色模型工作保留；下一步整合本Commit後重新整理遊戲。
 
+## WORLD-MAP-20261023 — 薩爾維恩世界地圖與手動跨場景
+
+- Owner：Codex；Done，單一開發者。使用者要求戰鬥區移除其他場景頁籤，只留目前場景／關卡、前後／最高、自動推關、全螢幕及迷你視窗；新增已核准地圖、文字熱區提示／選取後前進、動態所在地圖示；自動推關不再跨章。後續指定取消熱區橢圓框、名稱放大提亮、地圖取消上下標題列盡量全屏、右上關閉鈕，以及縮窄約20%的深淺綠卡通指針；最終圖已由使用者回覆「好，這張可以」核准。
+- 前置：本聊天核准的最終地圖（移除左下海獸／修正火山煙）與既有各場景進度／解鎖／Worker指令已具備。直接沿用stage.switchZone及battle.zones投影，不新增存檔欄位或Protocol。
+- 允許：js/ui.js僅場景列／地圖接線、js/ui-world-map.js、css/world-map.css、index.html、本功能js/combat.js結算、bridge／sim.worker僅快取、相關world-map與multi-enemy／stage回歸、images/world-map、tools/world-map匯出、docs/WORLD_MAP.md、LV_upgrade_system.md及本段；素材庫codex-authored/world-map必要圖檔／來源紀錄。禁止其他玩法／配置／存檔／技能VFX／其他worktree／合併推送。
+- 衝突預檢及fetch：目標無其他副本／分支來源，工作區乾淨。基線47項45過2既有失敗：ui-worker-panels的gem.socket靜態掃描與detailAction缺UI；不改這兩項斷言。
+- 驗收：七場景位置、hover／鍵盤／觸控選取與前進、進度／鎖定／所在標記、視窗縮放／Esc／焦點、保留神界入口及所有戰鬥控制；各場景上限不跨章、既有解鎖與最終場景完成語意、必要回歸／Build／Console／素材SHA。完成後先素材庫、後遊戲獨立Commit，交使用者Review及正常整合。
+- 完成：新增WorldMapUI只持有選取／彈窗狀態，沿既有header.stage與battle.zones權威資料；hover／鍵盤聚焦看進度，選取才顯示前進，鎖定／目前場景禁止前進，等指令與權威快照確認後關閉、失敗可重試。保留神界三場景入口，瀏覽人／神界頁不傳送；Escape先關地圖、Tab限制及焦點歸還。場景列簽章仍避免高頻DOM重寫，但持續通知開啟的地圖刷新進度。
+- 上限結算：移除自動跨場景，十圖末關均保留本圖並記錄cleared，只有真正最後圖沿原停止出怪規則；通關提示僅首通一次。現有multi-enemy／BIOMES-ROUTE對應舊自動跨章需求的斷言改為留原圖及手動前進，前置通關／11轉／關卡恢復驗證保留，未改權威配置或降低正確性。
+- 美術：salvien.png與本聊天核准1672×941母圖逐位元一致，不重新繪圖或調色。游標用內建imagegen依使用者箭頭參考自製透明卡通素材，深綠／淺綠、墨線及簡單分面，保存母圖／完整提示詞／SHA並匯出128px。以CSS旋轉、微幅浮動、淡光圈，減少動態效果偏好下停止動畫，沒有Timer或新增技能VFX來源。地圖依比例完整放大至視窗8px邊界；無可見上下列，關閉鈕疊在地圖右上，窄螢幕資訊卡在視窗底部。
+- 驗證：`node --test --test-reporter=spec tests/world-map.test.cjs tests/world-map-ui.test.cjs tests/multi-enemy.test.cjs tests/stage-rework.test.cjs tests/new-battle-zones.test.cjs tests/stage-jump.test.cjs tests/battle-fullscreen.test.cjs tests/fullscreen-toggle.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/ui-worker-g-dependency.test.cjs tests/zone-attr-tooltip.test.cjs tests/ui-performance.test.cjs`，91項89過2既有失敗；兩項為背景分頁靜態regex與已移除showTowerTooltip，將ui.js以HEAD唯讀映射重跑相同兩項仍失敗。新地圖10項全過；早期ui-worker-panels兩項及init-ui-smoke初始化面板一項亦已比對為既有，不改它們。`npm.cmd run build`578檔通過，兩庫diff --check與`node tools/world-map/export-source.cjs --check`通過。
+- 畫面：內建IAB啟動因kernel資源路徑不可用，改用隔離無頭Edge、隨機本機來源載正式HTML與真Worker。驗證全部控制、hover／選取／鎖定、實際前進往返荒漠100／冰原35進度、神界瀏覽與返回、Esc焦點、近全屏／右上關閉、熱區無框、指針旋轉浮動／光圈及減量偏好、390窄螢幕卡片不出界。5組驗收全過，Console error／warning與pageerror0；未讀寫玩家存檔或操作使用者分頁。world-map.png、world-map-narrow.png、verification.json保存本聊天visualizations/world-map，臨時驗收腳本清理。
+- 唯讀檢查：AI規範／AGENTS／Workflow／prompts、Worker指令及投影、data／formula場景權威、其他既有測試、素材庫root解析與核准母圖；自我Review確認不新增Protocol／存檔／配置、逐幀Canvas或Timer。其他聊天同副本熔爐Commit與角色模型／tools/knight3d進行中修改保留，不納本任務。
+- 交付：素材庫先Commit **36f34c9**；遊戲Commit為本段所在`[Codex] feat: 新增薩爾維恩世界地圖與手動跨場景`，回覆附編號。本輪需求已完成，可供Review／合併，未合併推送；限制為上述既有回歸失敗，未做真人存檔長戰／跨瀏覽器及手機GPU壓測。下一步由使用者正常整合後重載驗收。
+
 ## MERGE-NPC-SOFT-GLOW-20261022 — 採用核准的NPC柔和光暈
 
 - Owner：Codex integrator；Done。使用者核准柔和光暈並明確要求合併develop；在Git實際主整合工作區D:/MyGame/Idle-RPG/develop執行（舊Workflow的main路徑已不存在）。develop原HEAD=0277ef45、incoming ai/codex=1b0a52c9；兩側乾淨，fetch後develop與origin/develop一致，僅兩筆NPC功能提交待整合。
@@ -12316,3 +12331,10 @@ Worker 存活且頁面正常完成載入。
 - 衝突：新增目標預檢無其他來源；同副本WORLD-MAP只改AI_TASKS檔首，本任務檔尾，無語意相依，原共同基底／候選／當時工作區merge-file乾跑0後只追加。現有地圖／熔爐等工作保留，不納本次提交。唯讀未改：AI_RULES／AGENTS／Workflow／prompts/codex、knight六圖集／knight.json、build_character_sprites、vfx-library-root、package／build_check。
 - 保存：node tools/knight3d/sync-library.cjs --apply及--check九檔SHA全數一致，二進位blend／glb逐份吻合。素材庫先Commit **2c432f8**；遊戲Commit為本段所在「[Codex] feat: 製作低面數騎士與首批動作預覽」，回覆附編號。其他WORLD-MAP未追蹤來源未納入素材庫提交。
 - 已知風險／未完成：本批是美術候選，尚未實際套入戰鬥、做八方向圖集／命中時序整合或GPU／FPS實測；1primitive是模型結構，不宣稱實際引擎各pass只有1 draw call。動作大致參照原圖，未逐幀對應或完成最終美術驗收。若效能優先，下一步建議核准外觀後預渲染圖集沿用精靈播放；即時3D需獨立評估。此候選及工具可供Review／合併保存，但不能當作主角替換已上線；未合併／推送。
+
+
+## KNIGHT-3D-REV2-20261023 — 修長寫實白銀騎士與全身揮砍
+
+- Owner：Codex；In Progress，使用者否決首版的可愛比例，要求重新檢視原圖、偏寫實修長美型白銀騎士、全身帶動揮砍及完全刪盾。前置首批可編輯來源已保存436a6357／素材庫2c432f8，僅作可回溯基線，不代表核准風格。
+- 允許同knight3d既有工具／模型／文件／本段及素材庫同相對路徑；禁止遊戲整合與其他進行中任務。重新製作成人頭身、修長四肢、收腰貼甲及原圖頭部輪廓，移除盾牌幾何；重做骨架姿勢的髖胸獨立轉動、踏步／移重／沉身、頭肩手臂延遲及空手配重，仍不加刀光。
+- 驗收原圖八方向／完整揮砍幀對照、放大及約遊戲尺寸動態、無盾、全身非手部獨動、低面數單網格單材質；Blender重開、骨架／GLB／落地／GIF節奏及兩庫SHA驗證，必要Build；完成先供使用者看，不替換既有圖集。進行中地圖檔首與本次檔尾無語意相依，merge-file乾跑0後只追加。

@@ -4371,85 +4371,19 @@ function zoneClearedOf(z) {
 
 function currentZoneBarSignature() {
   var header = peekUiPanelData('header') || {};
-  var parts = [(header.stage && header.stage.zone) || 'desert'];
-  Object.keys(ZONES).forEach(function (z) { parts.push(z + ':' + zoneBestOf(z) + ':' + zoneClearedOf(z)); });
-  return parts.join('|');
+  var cur = (header.stage && header.stage.zone) || 'desert';
+  return cur + '|' + (ZONES[cur] && ZONES[cur].name);
 }
 
 function renderZoneBar() {
-  var header = peekUiPanelData('header') || {};
-  var cur = (header.stage && header.stage.zone) || 'desert';
-  var curZd = ZONES[cur];
-  if (curZd && curZd.realm && !UI.userSelectedRealm) {
-    UI.activeRealm = curZd.realm;
-  }
-  var activeRlm = UI.activeRealm || (curZd && curZd.realm) || 'human';
-  var isGodUnlocked = !!(header.player && Number(header.player.reincarnations) >= 11);
-
-  var toggleBtn = $id('btn-realm-toggle');
-  if (toggleBtn) {
-    toggleBtn.style.display = isGodUnlocked ? 'inline-block' : 'none';
-    if (isGodUnlocked) {
-      if (activeRlm === 'god') {
-        toggleBtn.innerHTML = uiIcon('world') + ' 凡人界地圖';
-        toggleBtn.setAttribute('data-tt-title', '切換至凡人界');
-        toggleBtn.setAttribute('data-tt-desc', '切換為荒漠、冰原、沼澤地圖');
-      } else {
-        toggleBtn.innerHTML = uiIcon('sanctuary') + ' 神界地圖';
-        toggleBtn.setAttribute('data-tt-title', '切換至神界');
-        toggleBtn.setAttribute('data-tt-desc', '切換為太古戰場、混沌界、永恒神域地圖');
-      }
-    }
-  }
-
-  var signature = currentZoneBarSignature() + '|' + activeRlm + '|' + isGodUnlocked;
+  if (typeof WorldMapUI !== 'undefined') WorldMapUI.refresh();
+  var signature = currentZoneBarSignature();
   if (UI.zoneBarSignature === signature) return;
   UI.zoneBarSignature = signature;
-
-  var zoneBox = $id('zone-bar');
-  if (!zoneBox) return;
-
-  var list = isGodUnlocked
-    ? (activeRlm === 'god' ? REALMS.god.zones : REALMS.human.zones)
-    : REALMS.human.zones;
-
-  var html = list.map(function (z) {
-    var zd = ZONES[z];
-    if (!zd) return '';
-    var locked = false;
-    if (zd.reqReincarnation && Number(header.player && header.player.reincarnations) < zd.reqReincarnation) {
-      locked = true;
-    }
-    if (zd.reqZone && !locked) {
-      if (zoneBestOf(z) <= 1 && zoneClearedOf(zd.reqZone) < zd.reqStage) locked = true;
-    }
-    var elemTags = zoneElementTagsList(z);
-    var elemText = elemTags.length > 0 ? ('主要敵人屬性：' + elemTags.map(function (t) { return t.label; }).join(' ')) : '';
-    var ttDesc = '關卡上限：' + zd.maxStage + '；經驗與金幣獎勵 ×' + zd.rewardMult;
-
-    if (elemText) {
-      ttDesc = elemText + (ttDesc ? ('\n' + ttDesc) : '');
-    }
-
-    if (locked && zd.reqReincarnation) {
-      ttDesc = '🔒 解鎖條件：需要 ' + zd.reqReincarnation + ' 轉' + (elemText ? ('\n' + elemText) : '');
-    } else if (locked && zd.reqZone && ZONES[zd.reqZone]) {
-      var lockTip = '🔒 解鎖條件：需通關【' + ZONES[zd.reqZone].name + '】第 ' + zd.reqStage + ' 階段';
-      ttDesc = lockTip + (ttDesc ? ('\n' + ttDesc) : '');
-    }
-
-    var badgeText = locked
-      ? uiIcon('lock')
-      : '(' + fmt(zoneBestOf(z)) + ')';
-    var cls = 'zone-btn' + (locked ? ' locked' : '') + (z === cur ? ' active' : '');
-    var dis = locked ? ' style="opacity:0.5; cursor:default;"' : ' style="opacity:1; cursor:pointer;"';
-    var ttAttr = ' data-tt-title="' + esc(zd.name) + '" data-tt-desc="' + esc(ttDesc) + '"';
-
-    return '<button class="' + cls + '" data-zone="' + z + '"' + ttAttr + dis + '>' +
-      zoneIconHtml(z, zd) + ' ' + esc(zd.name) + ' <span class="zone-best">' + badgeText + '</span></button>';
-  }).join('');
-
-  zoneBox.innerHTML = html;
+  var header = peekUiPanelData('header') || {};
+  var cur = (header.stage && header.stage.zone) || 'desert';
+  var def = ZONES[cur] || ZONES.desert;
+  setHtmlIfChanged($id('current-zone-name'), zoneIconHtml(cur, def) + ' ' + esc(def.name));
 }
 
 /* ---- 指令在途期間的樂觀顯示 ----
@@ -12893,47 +12827,8 @@ function initUI() {
   var pipBtn = $id('btn-pip');
   if (pipBtn) pipBtn.addEventListener('click', openMiniWindow);
 
-  // 戰鬥場景與位面切換
-  var zoneBarEl = $id('zone-bar');
-  if (zoneBarEl) {
-    zoneBarEl.addEventListener('click', function (e) {
-      var btn = e.target.closest('.zone-btn');
-      if (btn && !btn.classList.contains('locked')) {
-        var zKey = btn.getAttribute('data-zone');
-        if (zKey) {
-          sendUiCommand('stage.switchZone', { zoneKey: zKey }, {
-            keys: [nodePendingKey('zone')],
-            panels: ['battle', 'header']
-          }).catch(function (error) {
-            reportUiCommandFailure('位面切換失敗', error, ['battle', 'header']);
-          });
-          UI.zoneBarSignature = '';
-          renderZoneBar();
-        }
-      }
-    });
-  }
-  var realmToggleBtn = $id('btn-realm-toggle');
-  if (realmToggleBtn) {
-    realmToggleBtn.addEventListener('click', function () {
-      UI.userSelectedRealm = true;
-      var curZone = ((uiHeaderPanelSnapshot() || {}).stage || {}).zone || 'desert';
-      var isGod = curZone === 'god_battlefield' || curZone === 'god_chaos' || curZone === 'god_sanctuary' || UI.activeRealm === 'god';
-      if (isGod) {
-        UI.activeRealm = 'human';
-        sendUiCommand('stage.switchZone', { zoneKey: 'desert' }, {
-          keys: [nodePendingKey('zone')], panels: ['battle', 'header']
-        });
-      } else {
-        UI.activeRealm = 'god';
-        sendUiCommand('stage.switchZone', { zoneKey: 'god_battlefield' }, {
-          keys: [nodePendingKey('zone')], panels: ['battle', 'header']
-        });
-      }
-      UI.zoneBarSignature = '';
-      renderZoneBar();
-    });
-  }
+  // 世界地圖沿用既有場景切換指令，不在主執行緒寫進度。
+  if (typeof WorldMapUI !== 'undefined') WorldMapUI.init();
 
   // 階段控制
   var handlePauseClick = function () {
