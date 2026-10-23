@@ -130,6 +130,70 @@ function splitMarkup(text, fromHtmlAttr) {
 }
 
 /* ---------- 類別／用途 ---------- */
+/* ---------- 功能模塊 ---------- */
+const MODULES = ['通用', '角色', '戰鬥', '技能', '威能', '裝備', '神鑄', '熔爐', '寶石', '符文', '封魔塔', '任務', '存檔與系統'];
+const KEYWORDS = [
+  [/符文/, '符文'], [/寶石|融合石|共鳴/, '寶石'], [/封魔塔|試煉之塔|地獄之塔|煉獄之塔|塔層|連挑/, '封魔塔'],
+  [/熔爐|傳送帶|零件|輸送帶/, '熔爐'], [/神鑄|鑄造|魔塵/, '神鑄'], [/威能|天賦/, '威能'], [/任務/, '任務'],
+  [/技能|施放|冷卻|熟練度|終極進化/, '技能'], [/存檔|資料夾|分頁|Worker|離線|瀏覽器|匯出|安全模式/, '存檔與系統'],
+  [/裝備|背包|品質|詞條|套裝|穿戴|附魔|拆解|分解/, '裝備'], [/戰鬥|擊敗|傷害|敵人|BOSS|關卡|地圖|撤退|暴擊|爆擊/, '戰鬥'],
+  [/屬性|轉生|等級|經驗|生命|法力/, '角色'],
+];
+const FN_RULES = [
+  [/^nf[A-Z]|NewForge|newForge|Furnace|furnace|Belt|closeNfDetailLog/, '熔爐'],
+  [/Forge|forge/, '神鑄'],
+  [/Gem|gem|gres|Gres/, '寶石'], [/rune|Rune/, '符文'], [/[tT]ower/, '封魔塔'],
+  [/sg[A-Z]|sgb|Skill|skill|MpSkill|SGB_/, '技能'], [/[tT]alent/, '威能'], [/[qQ]uest/, '任務'],
+  [/[sS]ave|Folder|Worker|worker|Pip|MiniWindow|MINI_HTML|Fullscreen|[oO]ffline|[pP]erf|Damage(Toggle|Numbers)|Stall|Diag|resetStats/, '存檔與系統'],
+  [/CharCore|CHAR_CORE|AttrPanel|DmgAbsorb|CombatRating|REINCARNATION|REALMS|STAT_GROUPS|primaryStat|statDesc|statFmt|capText|ReductionDesc|penetrationDesc|elementResistDesc|drainDesc|joinEffectParts|enemyTypeDmgRedDesc/, '角色'],
+  [/updateResourceTip|ELEM_INFO|formatDuration|showConfirmDialog/, '通用'],
+  [/[eE]quip|Inventory|inventory|sortInventory|renderDetail|salvage|AFFIX_POOL|PASSIVE_POOL|RARIT|SLOT_|WEAPON_|ENCHANT|enchant|twoHand|ancientStar|itemDetail|itemHeader|itemSocket|itemRune|rerollSingle|rerollResource|GODFORGE|EQUIP_SET|passiveLine/, '裝備'],
+  [/[zZ]one|ZONES|[sS]tage|[bB]attle|[eE]nemy|[sS]ummary|classifyUiLogCategory|detailLog|DetailLog|Frenzy|floatText|HitRate|npc|CombatPause|BOSS_LIST|_POOL$/, '戰鬥'],
+  [/TASKS/, '任務'], [/TALENT/, '威能'], [/GEM_|PART_TYPES|NEW_FORGE/, '熔爐'],
+];
+function moduleOf(file, ctx, key, text, line) {
+  const base = file.replace(/^js\//, '');
+  if (file === 'index.html') {
+    const L = line;
+    if (L < 102) return '通用'; if (L < 123) return '角色'; if (L < 248) return '裝備'; if (L < 285) return '熔爐';
+    if (L < 340) return '神鑄'; if (L < 462) return '寶石'; if (L < 492) return '符文'; if (L < 508) return '技能';
+    if (L < 512) return '威能'; if (L < 579) return '封魔塔'; if (L < 719) return '戰鬥'; if (L < 735) return '熔爐'; if (L < 750) return '存檔與系統';
+    if (L < 842) return '存檔與系統'; if (L < 865) return '戰鬥'; if (L < 879) return '任務'; if (L < 891) return '通用';
+    if (L < 915) return '封魔塔'; if (L < 932) return '熔爐'; return '裝備';
+  }
+  if (/^(ui-gem-resonance|ui-gem-workshop|gem_resonance|gem_resonance_data)\.js$/.test(base)) return '寶石';
+  if (/^(ui-runeword|runeword|runeword_data)\.js$/.test(base)) return '符文';
+  if (/^(tablock|save_origin|save|bridge|storage|param_autoreload|game-menu|main)\.js$/.test(base)) return '存檔與系統';
+  if (base === 'tasks.js') return '任務';
+  if (base === 'talents.js') return '威能';
+  if (/^(skills|skills2|status)\.js$/.test(base)) return '技能';
+  if (base === 'tower.js') return '封魔塔';
+  if (/^(newforge|ui-newforge-visuals)\.js$/.test(base)) return '熔爐';
+  if (base === 'forge.js') return '神鑄';
+  if (/^(factory|legendary)\.js$/.test(base)) return '裝備';
+  if (/^(combat|elite|elite_boss|elite_boss_recipes|battle-arena|battle-renderer|battlefield|special_rules|formula)\.js$/.test(base)) return '戰鬥';
+  if (base === 'stats.js') return '角色';
+  if (base === 'player.js') return /EQUIP/.test(ctx) ? '裝備' : '角色';
+  if (base === 'item.js') {
+    if (/Gem|gem|socketGem|convertGems|composeGems/.test(ctx)) return '寶石';
+    if (/Rune/.test(ctx)) return '符文';
+    return '裝備';
+  }
+  // ui.js、data.js、sim.worker.js 等混雜檔：UI_COMMAND_LABELS 看 key，其餘看函式／常數名，最後看字面關鍵字
+  if (/UI_COMMAND_LABELS/.test(ctx) && key) {
+    const k = key.toLowerCase();
+    if (/^forge/.test(k)) return '神鑄'; if (/^gem/.test(k)) return '寶石'; if (/^rune/.test(k)) return '符文';
+    if (/^tower/.test(k)) return '封魔塔'; if (/^skill/.test(k)) return '技能'; if (/^talent/.test(k)) return '威能';
+    if (/^(nf|newforge|furnace)/.test(k)) return '熔爐'; if (/^(equip|item|inventory|enchant|affix)/.test(k)) return '裝備';
+    if (/^(quest|task)/.test(k)) return '任務';
+  }
+  if (!/^(handlePauseClick|initUI|syncFullscreenButton|unlocked|fill|finish|stat|bar|COMMAND_IMPL|boot|onSaveResult|doSend|count|sendUiCommand|runCommand|loadIntoRunningSim|resolveItem|NODE_NAMES|capText)$/.test(ctx)) {
+    for (const [re, m] of FN_RULES) if (re.test(ctx)) return m;
+  }
+  for (const [re, m] of KEYWORDS) if (re.test(text)) return m;
+  return '通用';
+}
+
 const CAT = [
   [/^index\.html$/, '主界面'],
   [/^js\/(ui|ui-gem-resonance|ui-gem-workshop|ui-runeword|ui-newforge-visuals|game-menu|tablock|save_origin|main)\.js$/, '界面'],
@@ -192,14 +256,15 @@ function renumber(text, params) {
 
 /* ---------- 組成條目 ---------- */
 const entries = new Map(); // text -> entry
-function add(text, params, cat, where, kind) {
+function add(text, params, cat, where, kind, mod) {
   const vis = text.replace(/\{\w+\}/g, '').replace(/<[^>]*>/g, '');
   if (!IDEO.test(vis)) return;
   const ren = renumber(text, params);
   const key = ren.text;
   let e = entries.get(key);
-  if (!e) { e = { text: ren.text, params: ren.params, cat, kinds: new Set(), where: [] }; entries.set(key, e); }
+  if (!e) { e = { text: ren.text, params: ren.params, cat, kinds: new Set(), where: [], mods: new Map() }; entries.set(key, e); }
   e.kinds.add(kind);
+  e.mods.set(mod, (e.mods.get(mod) || 0) + 1);
   if (!e.where.includes(where)) e.where.push(where);
 }
 for (const r of kept) {
@@ -210,7 +275,7 @@ for (const r of kept) {
   const where = `${path.basename(r.file)}:${r.line}${ctxName ? ' ' + ctxName : ''}`;
   for (const p of pieces) {
     // 拆開後的片段若引用了 {n}，參數表沿用原本
-    add(p, r.params, cat, where, kindOf(r, p));
+    add(p, r.params, cat, where, kindOf(r, p), moduleOf(r.file, ctxName, r.key, p, r.line));
   }
 }
 
@@ -225,7 +290,7 @@ for (const r of kept) {
   let m; let line = 1; let buf = ''; let bufLine = 1; let bufTag = '';
   const flush = () => {
     const t = buf.replace(/\s+/g, ' ').trim();
-    if (t && IDEO.test(t)) for (const x of splitMarkup(t, true)) add(x, [], '主界面', `index.html:${bufLine}`, '界面文字');
+    if (t && IDEO.test(t)) for (const x of splitMarkup(t, true)) add(x, [], '主界面', `index.html:${bufLine}`, '界面文字', moduleOf('index.html', '', '', x, bufLine));
     buf = '';
   };
   const idStack = [];
@@ -238,7 +303,7 @@ for (const r of kept) {
     const tag = m[2].toLowerCase(), attrs = m[3] || '', close = !!m[1];
     if (!close) {
       let a; const re = /\s(data-tip|data-tt-title|data-tt-desc|title|aria-label|alt|placeholder|label)="([^"]*)"/g;
-      while ((a = re.exec(' ' + attrs))) if (IDEO.test(a[2])) for (const x of splitMarkup(a[2], true)) add(x, [], '主界面', `index.html:${line}`, '提示');
+      while ((a = re.exec(' ' + attrs))) if (IDEO.test(a[2])) for (const x of splitMarkup(a[2], true)) add(x, [], '主界面', `index.html:${line}`, '提示', moduleOf('index.html', '', '', x, line));
     }
     const inline = /^(b|i|u|em|strong|small|code|br)$/i.test(tag) && !/\sid=/.test(attrs);
     if (inline) { buf += `<${close ? '/' : ''}${tag}>`; }
@@ -250,21 +315,22 @@ for (const r of kept) {
 
 /* ---------- 排序＆輸出 ---------- */
 const list = [...entries.values()];
+for (const e of list) e.module = e.mods.size === 1 ? [...e.mods.keys()][0] : '通用'; // 跨模塊共用的詞歸通用
 list.sort((a, b) => {
-  const c = CAT_ORDER.indexOf(a.cat) - CAT_ORDER.indexOf(b.cat);
+  const c = MODULES.indexOf(a.module) - MODULES.indexOf(b.module);
   if (c) return c;
   const fa = a.where[0].split(':')[0], fb = b.where[0].split(':')[0];
   if (fa !== fb) return fa < fb ? -1 : 1;
   return parseInt(a.where[0].split(':')[1]) - parseInt(b.where[0].split(':')[1]);
 });
 function csvCell(v) { v = String(v ?? ''); return /[",\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
-const header = ['編號', '用途說明', '替代字符參數說明', '繁體中文', '簡體中文', '英文'];
+const header = ['編號', '功能模塊', '用途說明', '替代字符參數說明', '繁體中文', '簡體中文', '英文'];
 const lines = [header.map(csvCell).join(',')];
 list.forEach((e, i) => {
   const kinds = [...e.kinds].join('/');
   const locs = e.where.slice(0, 3).join('、') + (e.where.length > 3 ? `…等${e.where.length}處` : '');
-  const use = `[${e.cat}] ${kinds}｜${locs}`;
-  lines.push([i + 1, use, describeRepl(e.text, e.params), e.text.replace(/\r?\n/g, '\\n'), '', ''].map(csvCell).join(','));
+  const use = `${kinds}｜${locs}`;
+  lines.push([i + 1, e.module, use, describeRepl(e.text, e.params), e.text.replace(/\r?\n/g, '\\n'), '', ''].map(csvCell).join(','));
 });
 const outPath = process.argv.slice(2).find(a => !a.startsWith('--')) || path.join(root, 'config', 'CSV', 'String.csv');
 if (!process.argv.includes('--force') && !process.argv.slice(2).some(a => !a.startsWith('--')) && fs.existsSync(outPath)) {
@@ -273,4 +339,4 @@ if (!process.argv.includes('--force') && !process.argv.slice(2).some(a => !a.sta
 }
 fs.writeFileSync(outPath, '\uFEFF' + lines.join('\r\n') + '\r\n', 'utf8');
 console.log('excluded', ex, 'kept', kept.length, 'entries', list.length);
-const byCat = {}; list.forEach(e => byCat[e.cat] = (byCat[e.cat] || 0) + 1); console.log(byCat);
+const byMod = {}; list.forEach(e => byMod[e.module] = (byMod[e.module] || 0) + 1); console.log(byMod);
