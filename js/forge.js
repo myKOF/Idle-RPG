@@ -183,7 +183,7 @@ function forgePlaceItem(id) {
 function forgePlaceGem(type, level) {
   var f = forgeState();
   if (f.crafting) return STR(1241);
-  if (!GEM_TYPES[type]) return '未知寶石種類';
+  if (!GEM_TYPES[type]) return STR(43);
   if (!isGemEnabled(type)) return STR(1248);
   if (forgeMode() === 'equip') return STR(1249);
   if (level < GEM_MAX_LEVEL) return STR(1250);
@@ -192,7 +192,7 @@ function forgePlaceGem(type, level) {
   if (first && (first.type !== type || first.level !== level)) {
     return STR(1252, gemLabel(first.type, first.level));
   }
-  if (gemCount(type, level) < 1) return '沒有「' + gemLabel(type, level) + '」';
+  if (gemCount(type, level) < 1) return STR(44, gemLabel(type, level));
   var slot = f.slots.indexOf(null);
   if (slot < 0) return STR(1253);
   addGem(type, level, -1);
@@ -287,7 +287,7 @@ function forgeAutoFillLabel() {
   var af = forgeState().autoFill;
   if (!af) return null;
   if (af.kind === 'gem') return gemLabel(af.type, af.level);
-  return (RARITIES[af.rarity] ? RARITIES[af.rarity].name : '') + '裝備';
+  return STR(45, (RARITIES[af.rarity] ? RARITIES[af.rarity].name : ''));
 }
 
 /* 依設定放入 6 件指定物；回傳 null=成功，否則錯誤訊息（不足時不動法陣）。
@@ -348,7 +348,7 @@ function forgeRemainInfo() {
     var it = G.inventory[i];
     if (it && it.rarity === spec.rarity && !it.locked && it.kind !== 'gem') n++;
   }
-  return { label: (RARITIES[spec.rarity] ? RARITIES[spec.rarity].name : '') + '裝備', count: n };
+  return { label: STR(45, (RARITIES[spec.rarity] ? RARITIES[spec.rarity].name : '')), count: n };
 }
 
 // 鑄造收尾：有自動放入設定時補放下一輪；不足 → 停止並清除設定
@@ -472,7 +472,7 @@ function resolveForge(crafting) {
     for (var s = 0; s < f.slots.length; s++) {
       if (f.slots[s]) { forgeReturnItem(f.slots[s]); f.slots[s] = null; }
     }
-    var rName = RARITIES[r] ? RARITIES[r].name : '裝備';
+    var rName = RARITIES[r] ? RARITIES[r].name : STR(46);
     forgeFailureReward();
     forgeLog(STR(1278, rName, (FORGE_SLOTS - FORGE_FAIL_CONSUME)), 'bad');
     forgeLog(STR(1275), 'good');

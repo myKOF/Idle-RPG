@@ -262,7 +262,7 @@ function talentMax(id) {
   var start = talentLevel(id), changed = false;
   while (talentLevel(id) < TALENT_MAX_LEVEL && talentUpgrade(id) === null) changed = true;
   if (changed) return null;
-  return start >= TALENT_MAX_LEVEL ? STR(848) : '金幣不足';
+  return start >= TALENT_MAX_LEVEL ? STR(848) : STR(91);
 }
 
 function talentDowngrade(id) {

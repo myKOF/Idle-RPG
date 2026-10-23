@@ -141,7 +141,7 @@ function gresSocketsHTML(state, sel) {
       var c = gresHoleCenter(r, hole);
       var slot = resonanceHoleState(state, r, hole);
       var on = sel[0] === r && sel[1] === hole;
-      h += '<g class="gres-hole' + (slot.gems.length ? ' is-filled' : '') + (!unlocked ? ' is-locked' : '') + (unlocked && r === sel[0] ? ' is-region-active' : '') + (on ? ' is-sel' : '') + '" data-gres-hole="' + r + ':' + hole + '" role="button" tabindex="0" aria-pressed="' + on + '" aria-label="' + esc(STR(1552, reg.name, (hole === 0 ? STR(1550) : STR(1551, hole)), (unlocked ? '' : '（未解鎖）'))) + '" style="--h:' + hue + '">' +
+      h += '<g class="gres-hole' + (slot.gems.length ? ' is-filled' : '') + (!unlocked ? ' is-locked' : '') + (unlocked && r === sel[0] ? ' is-region-active' : '') + (on ? ' is-sel' : '') + '" data-gres-hole="' + r + ':' + hole + '" role="button" tabindex="0" aria-pressed="' + on + '" aria-label="' + esc(STR(1552, reg.name, (hole === 0 ? STR(1550) : STR(1551, hole)), (unlocked ? '' : STR(95)))) + '" style="--h:' + hue + '">' +
         gresSocketArt(c, r);
       if (slot.gems.length) {
         h += gresHoleGemsHTML(c, slot.gems, r, hole);

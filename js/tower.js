@@ -382,7 +382,7 @@ function endTowerFight(win, reason) {
     // 技能熟練度經驗（2026-07-30）：高塔通關比照野外擊殺
     if (typeof gainSkillMasteryXp === 'function') gainSkillMasteryXp(Math.round(xpGain * SKILL_MASTERY_XP_RATE / 100));
     UI.dirty.header = true;
-    result.rewards.push('✨ 經驗 x' + fmt(xpGain));
+    result.rewards.push(STR(106, fmt(xpGain)));
     var soulOriginRate = hellSoulOriginDropChance(floor);
     if (soulOriginRate > 0 && chance(soulOriginRate)) {
       G.player.soulOrigin = (G.player.soulOrigin || 0) + 1;
@@ -441,7 +441,7 @@ function endTowerFight(win, reason) {
     if (ancientEssenceRate > 0 && chance(ancientEssenceRate)) {
       G.player.ancientEssence = (G.player.ancientEssence || 0) + 1;
       if (window.recordLootMat) window.recordLootMat('ancientEssence', 1, 'tower');
-      result.rewards.push('<img src="images/icon_ancient_essence.png" class="res-icon" alt="太古精華"> ' + STR(1844));
+      result.rewards.push('<img src="images/icon_ancient_essence.png" class="res-icon" alt="' + STR(13) + '"> ' + STR(1844));
       UI.dirty.header = true;
     }
     // 魔種：僅煉獄之塔 BOSS，獨立判定 1 個

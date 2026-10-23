@@ -1105,7 +1105,7 @@ function sgApplyStatusEntry(ent, entry, gid, tierKey, side, spec) {
     ctx.source = sgStatusSource(gid);
   }
   if (ctx.source && !ctx.source.subType) {
-    ctx.source.subType = (entry && entry.id === 'sgFrostBite') ? '寒霜狀態' : (def.name || entry.id);
+    ctx.source.subType = (entry && entry.id === 'sgFrostBite') ? STR(8) : (def.name || entry.id);
   }
   if ((v = sgStatusParam(entry, 'val', gid, tierKey)) !== undefined) ctx.val = v;
   if ((v = sgStatusParam(entry, 'dmg', gid, tierKey)) !== undefined) { ctx.dmg = v; delete ctx.dps; }
@@ -1372,7 +1372,7 @@ function skills2UltPick(group, optIdx) {
   if (!opt) return STR(685);
   if (!sgUltOptionUnlockedBy(group, optIdx, lvs)) return STR(686, sgUnlockText(opt.unlock));
   var cost = skills2UltCost(group, optIdx, 0);
-  if ((G.player.gold || 0) < cost) return '金幣不足';
+  if ((G.player.gold || 0) < cost) return STR(91);
   G.player.gold -= cost;
   sgUltStore()[group] = { pick: optIdx, lv: 1 };
   /* 修羅亂舞會改變屬性聚合（副手雙手武器是否生效、雙手詞條加成幾%），
@@ -1397,7 +1397,7 @@ function skills2UltSwitch(group, optIdx, fromOpt, fromLv, quotedCost) {
   if (cur.idx === optIdx) return STR(689);
   var cost = skills2UltCost(group, optIdx, 0);
   if (cost !== quotedCost) return STR(690);
-  if ((G.player.gold || 0) < cost) return '金幣不足';
+  if ((G.player.gold || 0) < cost) return STR(91);
   G.player.gold -= cost;
   sgUltStore()[group] = { pick: optIdx, lv: 1 };
   sgAfterSkillChange();
@@ -1416,7 +1416,7 @@ function skills2UltLearn(group) {
   if (!sgUltOptionUnlockedBy(group, cur.idx, lvs)) return STR(686, sgUnlockText(cur.def.unlock));
   if (cur.lv >= SG_TIER_MAX_LV) return STR(693);
   var cost = skills2UltCost(group, cur.idx, cur.lv);
-  if ((G.player.gold || 0) < cost) return '金幣不足';
+  if ((G.player.gold || 0) < cost) return STR(91);
   G.player.gold -= cost;
   sgUltStore()[group] = { pick: cur.idx, lv: cur.lv + 1 };
   /* 修羅亂舞會改變屬性聚合（副手雙手武器是否生效、雙手詞條加成幾%），
@@ -1447,18 +1447,18 @@ function skills2Learn(group, tier) {
   if (!g) return STR(675);
   tier = Math.floor(Number(tier));
   if (sgIsUltSlot(group, tier)) return skills2UltLearn(group);
-  if (!(tier >= 0 && tier < g.tiers.length)) return '未知階數';
+  if (!(tier >= 0 && tier < g.tiers.length)) return STR(92);
   var lvs = skills2Levels(group);
-  if (tier > 0 && lvs[tier - 1] < 1) return '前一階需至少 Lv.1 才能解鎖此階';
+  if (tier > 0 && lvs[tier - 1] < 1) return STR(93);
   /* 解鎖門檻排在循序解鎖之後：兩者都沒滿足時，「先去投前一階」比「先去練等」更可行。 */
   var unlock = g.tiers[tier].unlock;
   var prg = sgUnlockProgress(null);
   if (prg && !sgTierUnlockedBy(unlock, prg.level, prg.reinc, prg.towerHighest)) {
-    return '需達到 ' + sgUnlockText(unlock) + '才能解鎖此階';
+    return STR(94, sgUnlockText(unlock));
   }
   if (lvs[tier] >= SG_TIER_MAX_LV) return STR(693);
   var cost = skills2UpgradeCost(group, tier, lvs[tier]);
-  if ((G.player.gold || 0) < cost) return '金幣不足';
+  if ((G.player.gold || 0) < cost) return STR(91);
   G.player.gold -= cost;
   lvs[tier]++;
   if (!G.player.skills2) G.player.skills2 = { levels: {} };
@@ -1472,7 +1472,7 @@ function skills2Downgrade(group, tier) {
   if (!g) return STR(675);
   tier = Math.floor(Number(tier));
   if (sgIsUltSlot(group, tier)) return skills2UltDowngrade(group);
-  if (!(tier >= 0 && tier < g.tiers.length)) return '未知階數';
+  if (!(tier >= 0 && tier < g.tiers.length)) return STR(92);
   var lvs = skills2Levels(group);
   if (tier === 0 && lvs[0] <= 1) return STR(695);
   if (lvs[tier] <= 0) return STR(696);
@@ -2126,8 +2126,8 @@ function sgHitOne(pEnt, st, target, dmgVal, gid, floatSel, out, delayMs, bonusTo
     out.dmg += res.dmg;
     if (res.crit) out.crit = true;
     var s = fmt(res.dmg);
-    if (res.crit) s = '爆擊 ' + s;
-    if (res.blocked) s = '格擋 ' + s;
+    if (res.crit) s = STR(9, s);
+    if (res.blocked) s = STR(10, s);
     if (typeof floatEnemyEvent === 'function') {
       floatEnemyEvent(target, floatSel, s,
         (typeof combatDamageFloatClass === 'function') ? combatDamageFloatClass('enemy-skill', res) : 'enemy-skill',
@@ -5466,7 +5466,7 @@ function sgGroundHitSubType(f) {
   if (f.gid === 'thunderstrike' && f.kind === 'thunderpool') return STR(714);
   if (f.gid === 'mire') {
     if (f.kind === 'mire') return '泥沼術';
-    if (f.kind === 'poisonmist') return '毒霧';
+    if (f.kind === 'poisonmist') return STR(2);
   }
   var g = (typeof SKILLS2 !== 'undefined') ? SKILLS2[f.gid] : null;
   return g ? g.name : f.gid;
@@ -9224,7 +9224,7 @@ function sgSpreadFrost(from, enemies, fx, dot) {
     dps: dot.dps, dur: Math.max(0.1, dot.until - GT), interval: dot.interval, stacksRaw: 1,
     bodyDmg: dot.bodyDmg, frostMult: dot.frostMult, frostFormula: dot.frostFormula,
     slot: (dot && dot.slot) || { gid: srcGid, tier: '3' },
-    source: (dot && dot.sourceKey) ? { sourceKey: dot.sourceKey, sourceName: dot.sourceName, sourceLevel: dot.sourceLevel, subType: dot.subType || '寒霜狀態' } : null
+    source: (dot && dot.sourceKey) ? { sourceKey: dot.sourceKey, sourceName: dot.sourceName, sourceLevel: dot.sourceLevel, subType: dot.subType || STR(8) } : null
   };
   var spread = [];
   for (var i = 0; i < victims.length; i++) {
@@ -11779,8 +11779,8 @@ function sgCounterStrike(pEnt, st, target, pct, floatSel, out, delayMs, cfg) {
     out.dmg += res.dmg;
     if (res.crit) out.crit = true;
     var s = fmt(res.dmg);
-    if (res.crit) s = '爆擊 ' + s;
-    if (res.blocked) s = '格擋 ' + s;
+    if (res.crit) s = STR(9, s);
+    if (res.blocked) s = STR(10, s);
     if (typeof floatEnemyEvent === 'function') {
       floatEnemyEvent(target, floatSel, STR(720, s),
         (typeof combatDamageFloatClass === 'function') ? combatDamageFloatClass('enemy-skill', res) : 'enemy-skill',
@@ -12765,7 +12765,7 @@ function describeSkill2Group(gid, levels, ultRaw, prog) {
     var locked = i > 0 && (lvs[i - 1] || 0) < 1;
     var cls = lv > 0 ? 'sg-tier-on' : (locked ? 'sg-tier-locked' : 'sg-tier-off');
     var tierMp = skills2TierTriggerMp(gid, i); // 被動群組：每階自己的觸發消耗
-    var head = STR(727, (i + 1), g.tiers[i].name, (lv > 0 ? ' Lv.' + lv : (locked ? '（未解鎖）' : STR(726))), (tierMp > 0 ? '　🔵' + tierMp + ' MP' : ''));
+    var head = STR(727, (i + 1), g.tiers[i].name, (lv > 0 ? ' Lv.' + lv : (locked ? STR(95) : STR(726))), (tierMp > 0 ? '　🔵' + tierMp + ' MP' : ''));
     parts.push('<div class="' + cls + '"><b>' + head + '</b>　' + describeSkill2Tier(gid, i, lv) + '</div>');
   }
   /* 終極進化（第 8 格）：只在該群組有開放時才列。ultRaw＝存檔／快照上的選擇字典。 */

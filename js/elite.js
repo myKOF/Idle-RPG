@@ -234,7 +234,7 @@ function eliteHitPlayer(m, o) {
   if (res.invuln) { floatPlayerEvent(pf, STR(498), 'defend'); return res; }
   if (res.miss) { floatPlayerEvent(pf, STR(500), 'dodge defend'); return res; }
   var text = '-' + fmt(res.dmg);
-  if (res.crit) text = '爆擊 ' + text;
+  if (res.crit) text = STR(9, text);
   floatText(pf, text, res.crit ? 'crit' : 'mdmg');
   if (res.blocked) floatPlayerEvent(pf, STR(502), 'defend');
   var hpDamage = Math.max(0, res.dmg - (res.absorbed || 0));
@@ -244,7 +244,7 @@ function eliteHitPlayer(m, o) {
   });
   eliteApplyStatus(p, dCfg, res, o);
   if (!o.quiet && typeof blog === 'function') {
-    blog(STR(531, (m.name || STR(459)), (o.label || '技能'), fmt(res.dmg)),
+    blog(STR(531, (m.name || STR(459)), (o.label || STR(41)), fmt(res.dmg)),
       'log-enemy-skill', 'combat');
   }
   return res;

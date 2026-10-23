@@ -848,7 +848,7 @@ function effectActive(ent, key) { return ((ent && ent.effects && ent.effects[key
 /* 中毒不再自成一套（原 poisonDps／poisonUntil 已移除）：它就是狀態表的 poison，
    與其他持續傷害走同一條 dots 索引、同一支 tickStatuses。 */
 function applyPoison(ent, dps, dur) {
-    return applyDot(ent, dps, dur, '中毒', 'poison');
+    return applyDot(ent, dps, dur, STR(7), 'poison');
 }
 // 直接扣血的持續傷害原本只更新 HP，沒有留下戰鬥日誌，導致敵人可能在沒有任何
 // 傷害行的情況下死亡。只對敵方實體記錄，避免把玩家承受的 DoT 誤報成玩家輸出。
@@ -974,16 +974,16 @@ function resolveDotSource(sid) {
     if (sGroup === ':frostbite') {
         if (typeof skills2Equipped === 'function' && typeof skills2Levels === 'function' && typeof sgTotalLevel === 'function') {
             if (skills2Equipped('waterball')) {
-                return { name: (typeof SKILLS2 !== 'undefined' && SKILLS2.waterball) ? SKILLS2.waterball.name : STR(466), key: 'skill2:waterball', level: sgTotalLevel(skills2Levels('waterball')), subType: '寒霜狀態' };
+                return { name: (typeof SKILLS2 !== 'undefined' && SKILLS2.waterball) ? SKILLS2.waterball.name : STR(466), key: 'skill2:waterball', level: sgTotalLevel(skills2Levels('waterball')), subType: STR(8) };
             }
             if (skills2Equipped('icearrow')) {
-                return { name: (typeof SKILLS2 !== 'undefined' && SKILLS2.icearrow) ? SKILLS2.icearrow.name : STR(467), key: 'skill2:icearrow', level: sgTotalLevel(skills2Levels('icearrow')), subType: '寒霜狀態' };
+                return { name: (typeof SKILLS2 !== 'undefined' && SKILLS2.icearrow) ? SKILLS2.icearrow.name : STR(467), key: 'skill2:icearrow', level: sgTotalLevel(skills2Levels('icearrow')), subType: STR(8) };
             }
             if (skills2Equipped('frostnova')) {
-                return { name: (typeof SKILLS2 !== 'undefined' && SKILLS2.frostnova) ? SKILLS2.frostnova.name : STR(468), key: 'skill2:frostnova', level: sgTotalLevel(skills2Levels('frostnova')), subType: '寒霜狀態' };
+                return { name: (typeof SKILLS2 !== 'undefined' && SKILLS2.frostnova) ? SKILLS2.frostnova.name : STR(468), key: 'skill2:frostnova', level: sgTotalLevel(skills2Levels('frostnova')), subType: STR(8) };
             }
         }
-        return { name: STR(469), key: 'skill2:frostbite', subType: '寒霜狀態' };
+        return { name: STR(469), key: 'skill2:frostbite', subType: STR(8) };
     }
     if (sGroup === ':windcut') {
         if (typeof skills2Equipped === 'function' && typeof skills2Levels === 'function' && typeof sgTotalLevel === 'function') {
@@ -1029,7 +1029,7 @@ function applyDot(ent, dps, dur, name, sid, interval, stackCfg, sourceCtx) {
     var sKey = (sourceCtx && (sourceCtx.sourceKey || sourceCtx.statKey)) || '';
     var sName = (sourceCtx && (sourceCtx.sourceName || sourceCtx.skillName)) || '';
     var sLv = (sourceCtx && sourceCtx.sourceLevel !== undefined) ? sourceCtx.sourceLevel : undefined;
-    var subType = (sourceCtx && (sourceCtx.subType || sourceCtx.detailName)) || (sid === 'sgFrostBite' ? '寒霜狀態' : '');
+    var subType = (sourceCtx && (sourceCtx.subType || sourceCtx.detailName)) || (sid === 'sgFrostBite' ? STR(8) : '');
     var frostFormula = sourceCtx && sourceCtx.frostFormula;
     var frostBodyDmg = sourceCtx && sourceCtx.bodyDmg;
     var frostMult = sourceCtx && sourceCtx.frostMult;
@@ -1214,7 +1214,7 @@ function tickStatuses(ent, dt, dotContext) {
                 var subType = dItem.subType;
                 if (!subType) {
                     if (dItem.sid === 'sgFrostBite' || dItem.sid === 'sgFrost') {
-                        subType = '寒霜狀態';
+                        subType = STR(8);
                     } else if (dItem.name) {
                         subType = dItem.name;
                     }
@@ -1485,8 +1485,8 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
         logMsg += (depth ? STR(477) : STR(478));
     } else {
         var dmgStr = fmt(res.dmg);
-        if (res.crit) dmgStr = '爆擊 ' + dmgStr;
-        if (res.blocked) dmgStr = '格擋 ' + dmgStr;
+        if (res.crit) dmgStr = STR(9, dmgStr);
+        if (res.blocked) dmgStr = STR(10, dmgStr);
         floatEnemyEvent(mEnt, floatSel, dmgStr,
             basicDamageFloatGroupClass(combatDamageFloatClass('enemy-attack', res), damageGroupId),
             res.dmg, atkHitDelayMs);
@@ -1522,7 +1522,7 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
                 var smiteDmg = Math.max(1, Math.round(st.atk * 2.5));
                 smiteDmg = applyEnemyHpDamage(mEnt, smiteDmg);
                 trackDps(smiteDmg);
-                recordRunDamage('天罰', smiteDmg);
+                recordRunDamage(STR(11), smiteDmg);
                 // 天罰特效：劍氣命中那一刻，一道神雷從天頂劈在目標身上
                 if (typeof playCombatVfx === 'function') {
                     playCombatVfx({
@@ -1761,11 +1761,11 @@ function doMonsterAttack(mEnt, pEnt, floatSel, mult, skillName) {
         /* 我方被扣血一律帶負號：畫面上同一時間還有吸血、吸魔、護盾吸收等
            好幾個數字，沒有正負號分不出哪個是在扣血。 */
         var dmgStr = '-' + fmt(res.dmg);
-        if (res.crit) dmgStr = '爆擊 ' + dmgStr;
+        if (res.crit) dmgStr = STR(9, dmgStr);
         floatText(playerFloatSel, dmgStr, isCrit ? 'crit' : 'mdmg');
         if (res.blocked) floatPlayerEvent(playerFloatSel, STR(502), 'defend');
         hpDamage = Math.max(0, res.dmg - (res.absorbed || 0));
-        logMsg += STR(482, (res.crit ? STR(503) + ' ' : STR(481) + ' ') + fmt(res.dmg) + (mEnt.magic ? ' 魔法' : ''));
+        logMsg += STR(482, (res.crit ? STR(503) + ' ' : STR(481) + ' ') + fmt(res.dmg) + (mEnt.magic ? ' ' + STR(12) : ''));
         if (res.blocked) logMsg += STR(505);
         /* 護盾吸收量只寫進戰鬥紀錄，不再飄字（2026-09-21 使用者要求）。 */
         if (res.absorbed) {
@@ -2400,7 +2400,7 @@ function rollFieldDrops(m) {
     if (ancientEssenceRate > 0 && chance(ancientEssenceRate)) {
         G.player.ancientEssence = (G.player.ancientEssence || 0) + 1;
         if (window.recordLootMat) window.recordLootMat('ancientEssence', 1, 'field');
-        drops.push('<img src="images/icon_ancient_essence.png" class="res-icon" alt="太古精華">太古精華');
+        drops.push('<img src="images/icon_ancient_essence.png" class="res-icon" alt="' + STR(13) + '">' + STR(13));
         UI.dirty.header = true;
     }
     // 魔塵（神鑄材料）：基礎機率由地圖／關卡掉落表提供。

@@ -1,13 +1,14 @@
 'use strict';
 
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
-const ui = fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8');
+const ui = readExpanded(path.join(root, 'js', 'ui.js'));
 
 function functionBody(name) {
   const start = ui.indexOf('function ' + name + '(');
@@ -25,7 +26,7 @@ test('寶石頁由 Worker panel 投影渲染並以 Command 修改狀態', () => 
   const renderGems = functionBody('renderGems');
   const renderShop = functionBody('renderGemShop');
   const countdown = functionBody('updateShopCountdown');
-  const workshop = fs.readFileSync(path.join(root, 'js/ui-gem-workshop.js'), 'utf8');
+  const workshop = readExpanded(path.join(root, 'js/ui-gem-workshop.js'));
   assert.match(workshop, /all \? 'gem\.composeAll' : 'gem\.compose'/);
   assert.match(workshop, /startGemWorkshop\('dismantle', 'gem\.dismantleSlots'/);
   assert.match(workshop, /sendGemUiCommand\(command, args/);

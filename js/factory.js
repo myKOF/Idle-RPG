@@ -65,7 +65,7 @@ function expandSalvageSlot() {
   var current = salvageSlotCount();
   if (current >= SALVAGE_SLOT_MAX) return STR(1037, SALVAGE_SLOT_MAX);
   var cost = salvageSlotUnlockCost(current);
-  if (G.player.gold < cost) return '金幣不足（需要 ' + fmt(cost) + '）';
+  if (G.player.gold < cost) return STR(42, fmt(cost));
   G.player.gold -= cost;
   G.factory.salvageSlots = current + 1;
   UI.dirty.header = true;

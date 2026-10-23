@@ -58,7 +58,7 @@ test('空孔文字改為「寶石鑲孔」，操作列鑲嵌頁籤改為「寶�
 
   // 操作列按鈕文字改為「寶石」
   assert.match(uiJs, /<button class="btn" disabled>(?:' \+ '寶石' \+ ')?寶石?<\/button>|<button class="btn" disabled>' \+ '寶石' \+ '<\/button>/);
-  assert.match(uiJs, /data-act="toggle-socket" aria-pressed="[^"]*">寶石<\/button>/);
+  assert.match(uiJs, /data-act="toggle-socket" aria-pressed="[^"]*">(?:寶石|' \+ '寶石' \+ ')<\/button>/);
   assert.doesNotMatch(uiJs, /data-act="toggle-socket" aria-pressed="[^"]*">鑲嵌<\/button>/);
 });
 

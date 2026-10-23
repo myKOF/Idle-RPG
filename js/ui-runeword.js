@@ -142,11 +142,8 @@ function runeUiFocusHTML(snapshot, id) {
   h += '<div class="rx-stats">' +
     runeUiStatLine(STR(1773), r.w) + runeUiStatLine(STR(1774), r.a) + runeUiStatLine(STR(1775), r.j) +
     (r.flavor ? '<div class="rx-flavor">「' + esc(r.flavor) + '」</div>' : '') + '</div>';
-  var composeLabel = (next && r.tier < RUNE_COMPOSE_MAX_TIER) ? (STR(1776, esc(next.name))) : '合成';
-  h += '<div class="rx-actions">' +
-    '<button type="button" class="btn" data-rune-act="compose"' + (canCompose ? '' : ' disabled') + '>' + composeLabel + '</button>' +
-    '<button type="button" class="btn" data-rune-act="composeAll"' + (canCompose ? '' : ' disabled') + '>全部合成</button>' +
-    '<button type="button" class="btn warn" data-rune-act="dismantle"' + (canDismantle ? '' : ' disabled') + '>拆解</button></div>';
+  var composeLabel = (next && r.tier < RUNE_COMPOSE_MAX_TIER) ? (STR(1776, esc(next.name))) : STR(107);
+  h += '<div class="rx-actions"><button type="button" class="btn" data-rune-act="compose"' + (canCompose ? '' : ' disabled') + '>' + composeLabel + '</button><button type="button" class="btn" data-rune-act="composeAll"' + (canCompose ? '' : ' disabled') + '>' + STR(108) + '</button><button type="button" class="btn warn" data-rune-act="dismantle"' + (canDismantle ? '' : ' disabled') + '>' + STR(109) + '</button></div>';
   var note = [];
   if (next && r.tier < RUNE_COMPOSE_MAX_TIER) note.push(STR(1777, RUNE_COMPOSE_COUNT, r.name, next.name));
   else if (r.tier >= RUNE_COMPOSE_MAX_TIER) note.push(STR(1778, RUNE_COMPOSE_MAX_TIER));
@@ -199,7 +196,7 @@ function runeUiTierChipsHTML(active) {
   var h = '';
   for (var t = 0; t <= 4; t++) {
     h += '<button type="button" class="gx-chip rx-tierchip' + (active === t ? ' is-on' : '') + '" data-rune-tier="' + t + '"' +
-      (t ? ' style="--c:' + RUNEWORD_TIER_COLORS[t] + '"' : '') + '>' + (t ? esc(RUNEWORD_TIER_NAMES[t]) : '全部') + '</button>';
+      (t ? ' style="--c:' + RUNEWORD_TIER_COLORS[t] + '"' : '') + '>' + (t ? esc(RUNEWORD_TIER_NAMES[t]) : STR(110)) + '</button>';
   }
   return h;
 }

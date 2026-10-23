@@ -1284,7 +1284,7 @@ function applyOfflineProgress(options) {
   var hrs = Math.floor(elapsed / 3600), mins = Math.floor((elapsed % 3600) / 60);
   var equipTotal = 0;
   for (var er in sum.equips) equipTotal += sum.equips[er];
-  blog(STR(1995, (hrs ? hrs + ' 小時 ' : ''), mins, stage, zn.name, fmt(kills), fmt(gold), fmt(xp), fmt(equipTotal), (sum.scrap ? STR(1996, fmt(sum.scrap)) : '')), 'good');
+  blog(STR(1995, (hrs ? STR(78, hrs) + ' ' : ''), mins, stage, zn.name, fmt(kills), fmt(gold), fmt(xp), fmt(equipTotal), (sum.scrap ? STR(1996, fmt(sum.scrap)) : '')), 'good');
     if (typeof showOfflineSummary === 'function') showOfflineSummary(sum);
     if (typeof options.done === 'function') options.done(sum);
     return sum;

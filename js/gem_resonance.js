@@ -191,7 +191,7 @@ function upgradeResonanceHole(region, hole) {
   var slot = st.holes[key];
   var cost = resonanceUpgradeCost((slot && slot.lv) || 0);
   if (!cost) return STR(1474);
-  if (G.player.gold < cost.gold) return '金幣不足（需要 ' + fmt(cost.gold) + '）';
+  if (G.player.gold < cost.gold) return STR(42, fmt(cost.gold));
   var type = resonanceUpgradePayType(region, slot, cost, gemCount);
   if (!type) return STR(1475, cost.gemCount, GEM_NAMES[cost.gemLv]);
   if (gemCount(type, cost.gemLv) < cost.gemCount) {

@@ -936,7 +936,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
       if (pv <= 0) continue;
       if (pk === 'ice' && chance(ELEM_PROC.iceSlowChance) && !resistCtrl(dCfg)) { if (applyEffect(defender, 'slow', ELEM_PROC.iceSlowDur * ccF) && ccLockOn(defender, 'aspd')) out.procs.push(STR(561)); } // 狀態照上，但攻速控場已遞減歸零時不誤報
       else if (pk === 'lightning' && chance(ELEM_PROC.lightningChance)) { dmg += pv * ELEM_PROC.lightningChainMult; out.procs.push(STR(562)); }
-      else if (pk === 'poison' && chance(ELEM_PROC.poisonChance)) { applyPoison(defender, pv * ELEM_PROC.poisonTickMult, ELEM_PROC.poisonDur); out.procs.push('中毒'); }
+      else if (pk === 'poison' && chance(ELEM_PROC.poisonChance)) { applyPoison(defender, pv * ELEM_PROC.poisonTickMult, ELEM_PROC.poisonDur); out.procs.push(STR(7)); }
       else if (pk === 'light' && chance(ELEM_PROC.lightCleanseChance)) { cleanse(attacker); out.procs.push(STR(563)); }
       else if (pk === 'dark') { out.heal += attackerCurrentHp * ELEM_PROC.darkDrainMult; } // 暗影汲取
       else if (pk === 'earth' && chance(ELEM_PROC.earthShieldChance)) { out.shield += attackerCurrentHp * ELEM_PROC.earthShieldMult; out.procs.push(STR(564)); }
@@ -1050,7 +1050,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
     if (dCfg.undying && (!defender._undyingAt || GT - defender._undyingAt >= GODFORGED_UNDYING_COOLDOWN_SEC) && chance(dCfg.undying)) {
       defender._undyingAt = GT;
       defender.hp = Math.max(1, Math.round((dCfg.maxHp || 1) * 0.3));
-      out.procs.push('不朽');
+      out.procs.push(STR(47));
     } else {
       defender.hp = 0; out.killed = true;
     }

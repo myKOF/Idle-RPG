@@ -68,7 +68,7 @@ function dismantleRune(id) {
   var r = RUNE_BY_ID[id];
   if (!r) return { err: STR(1649) };
   if (r.tier <= 1) return { err: STR(1652) };
-  if (runeCount(id) < 1) return { err: '沒有「' + runeLabel(id) + '」' };
+  if (runeCount(id) < 1) return { err: STR(44, runeLabel(id)) };
   var lower = RUNES[r.tier - 2];
   addRune(id, -1);
   addRune(lower.id, RUNE_DISMANTLE_YIELD);
@@ -205,7 +205,7 @@ function runeEraseCost(it, runeId) {
 /* 費用文字（只列要收的幣種）：「金幣 1,200、裝備碎片 360、附魔精華 24」；全免回「免費」。 */
 function runeEraseCostText(cost) {
   var parts = [];
-  if (cost.gold > 0) parts.push('金幣 ' + fmt(cost.gold));
+  if (cost.gold > 0) parts.push(STR(73, fmt(cost.gold)));
   if (cost.scrap > 0) parts.push(STR(1661, fmt(cost.scrap)));
   if (cost.essence > 0) parts.push(STR(1662, fmt(cost.essence)));
   return parts.length ? parts.join('、') : STR(1663);
@@ -1035,9 +1035,9 @@ var RW_TRIGGER_TEXT = {
   block: STR(1696), cast: STR(1697), tick: '', lowhp: ''
 };
 var RW_TARGET_TEXT = { target: STR(1698), all: STR(1699), rand: STR(1700), attacker: STR(1701) };
-var RW_ELEM_TEXT = { fire: '火焰', ice: '冰霜', lightning: '雷電', poison: '毒', light: '聖光', dark: '暗影', earth: '大地', wind: '疾風', random: STR(1702) };
-var RW_BUFF_TEXT = { atkUp: '攻擊', aspdUp: STR(1703), defUp: '防禦', evasionUp: STR(1704), critDmgUp: STR(1705), allDmgUp: STR(1706), regen: STR(1707) };
-var RW_DOT_TEXT = { poison: '中毒', burn: STR(1708), bleed: STR(1709), corrode: STR(1710) };
+var RW_ELEM_TEXT = { fire: STR(24), ice: STR(1), lightning: STR(27), poison: STR(30), light: STR(3), dark: STR(4), earth: STR(5), wind: STR(6), random: STR(1702) };
+var RW_BUFF_TEXT = { atkUp: STR(71), aspdUp: STR(1703), defUp: STR(72), evasionUp: STR(1704), critDmgUp: STR(1705), allDmgUp: STR(1706), regen: STR(1707) };
+var RW_DOT_TEXT = { poison: STR(7), burn: STR(1708), bleed: STR(1709), corrode: STR(1710) };
 
 function rwActText(a) {
   switch (a.act) {
@@ -1101,7 +1101,7 @@ function rwDescribeEntries(word, it) {
   }
   var mech = function (t) { out.push({ text: t, color: mechColor, kind: 'mech' }); };
   var ps = word.passives || {};
-  var psNames = { thorns: STR(1740), smite: '天罰', undying: '不朽', sunder: STR(1741), trueDmg: STR(1742), omniDrain: STR(1743) };
+  var psNames = { thorns: STR(1740), smite: STR(11), undying: STR(47), sunder: STR(1741), trueDmg: STR(1742), omniDrain: STR(1743) };
   for (var pk in ps) mech((psNames[pk] || pk) + ' ' + ps[pk] + '%');
   var fx = word.fx || {};
   if (fx.reviveHpPct > 0) {
@@ -1154,10 +1154,10 @@ function rwRecipeText(word) {
 }
 /* 適用裝備文字。 */
 var RW_BASE_TEXT = {
-  any: STR(1752), armor: STR(1753), jewelry: STR(1754), mainHand: STR(1755), twoHand: '雙手武器',
-  oneHand: '單手武器', offHand: '副手', melee: STR(1756), caster: STR(1757),
-  weapon: STR(1758), helmet: '頭盔', shoulder: STR(1759), chest: '胸甲', belt: '腰帶', gloves: STR(1760),
-  wrist: STR(1761), legs: '護腿', boots: '靴子', ring: '戒指', amulet: '項鍊'
+  any: STR(1752), armor: STR(1753), jewelry: STR(1754), mainHand: STR(1755), twoHand: STR(15),
+  oneHand: STR(14), offHand: STR(16), melee: STR(1756), caster: STR(1757),
+  weapon: STR(1758), helmet: STR(17), shoulder: STR(1759), chest: STR(18), belt: STR(19), gloves: STR(1760),
+  wrist: STR(1761), legs: STR(20), boots: STR(21), ring: STR(22), amulet: STR(23)
 };
 function rwBasesText(word) {
   var out = [];

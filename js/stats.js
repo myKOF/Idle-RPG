@@ -7,12 +7,12 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
 
 /* 材料顯示定義（依此順序輸出）：有專用圖示者用 icon，否則用 emoji */
 var LOOT_MAT_DEFS = [
-  { key: 'scrap',          name: '裝備碎片',     icon: 'images/icon_scrap.png' },
-  { key: 'essence',        name: '附魔精華',     icon: 'images/icon_essence.png' },
-  { key: 'ancientEssence', name: '太古精華',     icon: 'images/icon_ancient_essence.png' },
-  { key: 'dust',           name: '魔塵',         emoji: '💫' },
-  { key: 'soulOrigin',     name: '魔魂本源',     emoji: '🧿' },
-  { key: 'book',           name: '附魔書',       icon: 'images/icon_books.png' },
+  { key: 'scrap',          name: STR(98),     icon: 'images/icon_scrap.png' },
+  { key: 'essence',        name: STR(99),     icon: 'images/icon_essence.png' },
+  { key: 'ancientEssence', name: STR(13),     icon: 'images/icon_ancient_essence.png' },
+  { key: 'dust',           name: STR(100),         emoji: '💫' },
+  { key: 'soulOrigin',     name: STR(101),     emoji: '🧿' },
+  { key: 'book',           name: STR(102),       icon: 'images/icon_books.png' },
   { key: 'part',           name: STR(385), emoji: '🔧' }
 ];
 
@@ -89,7 +89,7 @@ function recordLootGem(type, lv, n, source) {
 }
 
 function statsSourceName(key) {
-  return ({ field: STR(386), tower: '封魔塔', factory: STR(387), skill: '技能', other: '其他' })[key] || key;
+  return ({ field: STR(386), tower: STR(103), factory: STR(387), skill: STR(41), other: STR(104) })[key] || key;
 }
 
 function statsSourceHtml() {
@@ -107,7 +107,7 @@ function statsSourceHtml() {
     if (sourceSt.kills) details.push(STR(391, fmtFull(sourceSt.kills)));
     if (sourceSt.deaths) details.push(STR(392, fmtFull(sourceSt.deaths)));
     if (sourceSt.dropRolls) details.push(STR(393, fmtFull(sourceSt.dropRolls)));
-    if (sourceSt.gold) details.push('金幣 ' + fmtFull(sourceSt.gold));
+    if (sourceSt.gold) details.push(STR(73, fmtFull(sourceSt.gold)));
     var equipTotal = Object.keys(sourceSt.equip).reduce(function (sum, key) { return sum + sourceSt.equip[key]; }, 0);
     var matTotal = Object.keys(sourceSt.mats).reduce(function (sum, key) { return sum + sourceSt.mats[key]; }, 0);
     var gemTotal = Object.keys(sourceSt.gems).reduce(function (sum, key) { return sum + sourceSt.gems[key]; }, 0);

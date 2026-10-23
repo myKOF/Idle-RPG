@@ -14,7 +14,7 @@ function emptyEquipmentSet() {
 }
 var EQUIP_SET_COUNT = 3;
 var EQUIP_SET_NAMES = [STR(1168), STR(1169), STR(1170)];
-function equipSetName(i) { return EQUIP_SET_NAMES[i] || ('第' + (i + 1) + '套'); }
+function equipSetName(i) { return EQUIP_SET_NAMES[i] || (STR(77, (i + 1))); }
 // 顯示用名稱：有自訂名稱則用之，否則用預設「第X套」
 function equipSetLabel(i) {
   var n = (typeof G !== 'undefined' && Array.isArray(G.equipSetNames) && G.equipSetNames[i]) ? String(G.equipSetNames[i]).trim() : '';

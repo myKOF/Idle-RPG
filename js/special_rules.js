@@ -19,8 +19,8 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
 
 /* 里程碑定義（rarity 為 RARITIES 索引：普通0 精良1 稀有2 獨特3 史詩4 傳說5 神話6 創世7 神鑄8） */
 var SPECIAL_GRANT_MILESTONES = [
-  { id: 'guaranteedUniqueLv30', minLevel: 30, maxLevel: 33, rarity: 3, perKillChance: 0.5, tierName: '獨特' },
-  { id: 'guaranteedEpicLv50',   minLevel: 50, maxLevel: 60, rarity: 4, perKillChance: 0.5, tierName: '史詩' }
+  { id: 'guaranteedUniqueLv30', minLevel: 30, maxLevel: 33, rarity: 3, perKillChance: 0.5, tierName: STR(96) },
+  { id: 'guaranteedEpicLv50',   minLevel: 50, maxLevel: 60, rarity: 4, perKillChance: 0.5, tierName: STR(97) }
 ];
 
 /* 惰性建立狀態容器（舊存檔相容；不覆蓋既有值） */

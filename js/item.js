@@ -64,11 +64,11 @@ function composeGems(type, lv) {
     if (!availableTypes.length) return STR(1518);
     return composeGems(availableTypes[0], lv);
   }
-  if (!GEM_TYPES[type]) return '未知寶石種類';
+  if (!GEM_TYPES[type]) return STR(43);
   if (!isGemEnabled(type)) return STR(1519);
   if (gemCount(type, lv) < needed) return STR(1476, GEM_NAMES[lv], GEM_TYPES[type].name, needed);
   var cost = FUSE_GOLD_COST[lv];
-  if (G.player.gold < cost) return '金幣不足（需要 ' + fmt(cost) + '）';
+  if (G.player.gold < cost) return STR(42, fmt(cost));
   G.player.gold -= cost;
   addGem(type, lv, -needed);
   addGem(type, lv + 1, 1);
@@ -89,7 +89,7 @@ function convertGems(slots, targetType) {
   var requested = {};
   for (var i = 0; i < slots.length; i++) {
     var s = slots[i];
-    if (!s || !Object.prototype.hasOwnProperty.call(GEM_TYPES, s.type)) return '未知寶石種類';
+    if (!s || !Object.prototype.hasOwnProperty.call(GEM_TYPES, s.type)) return STR(43);
     if (!isGemEnabled(s.type)) return STR(1524);
     if (!Number.isInteger(s.lv) || s.lv < 1 || s.lv > GEM_FORGE_MAX_LEVEL) return STR(1525, GEM_FORGE_MAX_LEVEL);
     if (!Number.isInteger(s.n) || s.n < 1 || s.n > GEM_CONVERT_STACK) return STR(1526, GEM_CONVERT_STACK);
@@ -114,7 +114,7 @@ function dismantleGems(slots) {
   var requested = {};
   for (var i = 0; i < slots.length; i++) {
     var s = slots[i];
-    if (!s || !Object.prototype.hasOwnProperty.call(GEM_TYPES, s.type)) return { err: '未知寶石種類' };
+    if (!s || !Object.prototype.hasOwnProperty.call(GEM_TYPES, s.type)) return { err: STR(43) };
     if (!isGemEnabled(s.type)) return { err: STR(1529) };
     if (!Number.isInteger(s.lv) || s.lv < 2 || s.lv > GEM_FORGE_MAX_LEVEL) return { err: STR(1530) };
     if (!Number.isInteger(s.n) || s.n < 1 || s.n > GEM_CONVERT_STACK) return { err: STR(1526, GEM_CONVERT_STACK) };
@@ -661,7 +661,7 @@ function manualEnchant(it, bookKey) {
   if ((G.player.books[bookKey] || 0) < 1) return STR(1123, e.name);
   var cat = enchantCatForType(it.slot);
   if (e.cat !== cat) {
-    var catNames = { atk: '攻擊', def: '防禦', util: STR(1124) };
+    var catNames = { atk: STR(71), def: STR(72), util: STR(1124) };
     return STR(1125, SLOT_INFO[it.slot].name, catNames[cat]);
   }
   if (G.player.essence < ENCHANT_ESSENCE_COST) return STR(1126, ENCHANT_ESSENCE_COST);
@@ -699,7 +699,7 @@ function removeEnchantAt(it, idx) {
 
 function rerollResourceError(cost) {
   var missing = [];
-  if (G.player.gold < cost.gold) missing.push('金幣 ' + fmt(cost.gold));
+  if (G.player.gold < cost.gold) missing.push(STR(73, fmt(cost.gold)));
   if (G.player.essence < cost.essence) missing.push(STR(1129, cost.essence));
   return missing.length ? STR(1130, missing.join('、')) : null;
 }

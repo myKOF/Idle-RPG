@@ -237,7 +237,7 @@ function newForgeUpgradePart(partKey) {
   var current = partLevelFor(partKey, levels);
   if (current >= PART_MAX_TIER) return STR(1400, PART_MAX_TIER);
   var cost = partUpgradeCost(current + 1);
-  if (G.player.gold < cost) return '金幣不足（需要 ' + fmt(cost) + '）';
+  if (G.player.gold < cost) return STR(42, fmt(cost));
   G.player.gold -= cost;
   var nextLevel = current + 1;
   levels[partKey] = nextLevel;
@@ -259,7 +259,7 @@ function unlockNewForgePartSlot(furnaceId) {
   if (!fu) return STR(1393);
   if (fu.partSlots >= NEW_FORGE_PART_SLOTS_MAX) return STR(1402, NEW_FORGE_PART_SLOTS_MAX);
   var cost = newForgePartSlotCost(reincarnationCount(), fu.partSlots, nf.furnaces.length);
-  if (G.player.gold < cost) return '金幣不足（需要 ' + fmt(cost) + '）';
+  if (G.player.gold < cost) return STR(42, fmt(cost));
   G.player.gold -= cost;
   fu.partSlots++;
   UI.dirty.header = true;

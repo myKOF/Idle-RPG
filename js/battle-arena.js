@@ -64,13 +64,13 @@ var BossArena = (function () {
   // 使用 BOSS 的正式屬性，不依名稱、樓層或塔別猜測。無元素時保留各塔原色。
   var ELEMENT_LIGHTS = {
     fire: [STR(442), '#ff7138', '#ffe2b0', '#ff4d22', '#fff2ce', '#a72e16'],
-    ice: ['冰霜', '#76ccff', '#edfaff', '#7cd5ff', '#ffffff', '#255783'],
+    ice: [STR(1), '#76ccff', '#edfaff', '#7cd5ff', '#ffffff', '#255783'],
     lightning: [STR(443), '#b7a0ff', '#f7edff', '#ac8eff', '#fff2b9', '#614095'],
-    poison: ['毒霧', '#79df48', '#e1ffc1', '#65dc38', '#edffd4', '#356f22'],
-    light: ['聖光', '#ffe8a0', '#fffdf0', '#ffe7a4', '#ffffff', '#96805a'],
-    dark: ['暗影', '#b684ef', '#e5c7ff', '#a46adb', '#edd7ff', '#593574'],
-    earth: ['大地', '#d1a46a', '#ffebc0', '#ca965b', '#fff2d1', '#765638'],
-    wind: ['疾風', '#78dfc4', '#e0fff3', '#77d7bb', '#f1fff7', '#347566']
+    poison: [STR(2), '#79df48', '#e1ffc1', '#65dc38', '#edffd4', '#356f22'],
+    light: [STR(3), '#ffe8a0', '#fffdf0', '#ffe7a4', '#ffffff', '#96805a'],
+    dark: [STR(4), '#b684ef', '#e5c7ff', '#a46adb', '#edd7ff', '#593574'],
+    earth: [STR(5), '#d1a46a', '#ffebc0', '#ca965b', '#fff2d1', '#765638'],
+    wind: [STR(6), '#78dfc4', '#e0fff3', '#77d7bb', '#f1fff7', '#347566']
   };
   // 乘色讓石材受到場景環境光影響；共用原貼圖，不逐元素複製大型圖片。
   var MATERIAL_TINT = {fire:0xac8d7c,ice:0x8cacc0,lightning:0xa092ba,

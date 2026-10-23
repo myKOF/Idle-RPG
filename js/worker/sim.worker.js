@@ -20,12 +20,12 @@ if (typeof GameClock !== 'undefined') {
 /* String 表：資料檔版本由主執行緒（bridge.js）以網址 sv= 傳入，改文字不必動本檔。 */
 var _stringDataVersion = ((typeof self !== 'undefined' && self.location && /[?&]sv=(\w+)/.exec(self.location.search || '')) || [])[1] || '0';
 importScripts(
-  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../data.js?v=20261023-str-char', '../runeword_data.js?v=20261023-str-char', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261023-str-skill', '../formula.js?v=20261023-str-battle', '../battle-terrain.js?v=20261022-lava-terrain-develop-merge', '../battlefield.js?v=20261022-lava-terrain-develop-merge', '../stats.js?v=20261023-str-char',
-  '../item.js?v=20261023-str-equip', '../gem_resonance.js?v=20261023-str-guard','../runeword.js?v=20261023-str-guard',
-  '../skills.js?v=20261023-str-skill', '../skills2.js?v=20261023-str-skill', '../elite_data.js?v=20261021-chain-hover', '../talents.js?v=20261023-str-talent',
-  '../player.js?v=20261023-str-char', '../special_rules.js?v=20261023-str-battle',
-  '../combat.js?v=20261023-str-battle', '../elite.js?v=20261023-str-battle', '../elite_boss.js?v=20261023-str-battle', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261023-str-equip', '../tower.js?v=20261023-str-guard',
-  '../factory.js?v=20261023-str-equip', '../newforge.js?v=20261023-str-guard', '../forge.js?v=20261023-str-guard', '../save.js?v=20261023-str-system',
+  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../data.js?v=20261023-str-common', '../runeword_data.js?v=20261023-str-char', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261023-str-skill', '../formula.js?v=20261023-str-common', '../battle-terrain.js?v=20261022-lava-terrain-develop-merge', '../battlefield.js?v=20261022-lava-terrain-develop-merge', '../stats.js?v=20261023-str-common',
+  '../item.js?v=20261023-str-common', '../gem_resonance.js?v=20261023-str-common','../runeword.js?v=20261023-str-common',
+  '../skills.js?v=20261023-str-skill', '../skills2.js?v=20261023-str-common', '../elite_data.js?v=20261021-chain-hover', '../talents.js?v=20261023-str-common',
+  '../player.js?v=20261023-str-common', '../special_rules.js?v=20261023-str-common',
+  '../combat.js?v=20261023-str-common', '../elite.js?v=20261023-str-common', '../elite_boss.js?v=20261023-str-battle', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261023-str-equip', '../tower.js?v=20261023-str-common',
+  '../factory.js?v=20261023-str-common', '../newforge.js?v=20261023-str-common', '../forge.js?v=20261023-str-common', '../save.js?v=20261023-str-common',
   '../tasks.js?v=20261023-str-guard'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
@@ -1215,12 +1215,12 @@ function onSaveResult(msg) {
      若不解除 _restarting，之後的自動存檔會全部被靜靜丟掉。 */
   if (rec.kind === PERSIST_KINDS.RESTART && !msg.ok) {
     _restarting = false;
-    shimPushEvent('log', { msg: '⚠️ 重新開局失敗：' + (msg.error || '未知原因'), cls: 'warn' });
+    shimPushEvent('log', { msg: STR(80, (msg.error || STR(79))), cls: 'warn' });
   }
   if (!msg.ok && G && rec.rollback) {
     // 落地失敗：把 savedAt 退回上一次成功的值，讓下次離線結算仍以真正落地的時間點為準
     G.savedAt = rec.prevSavedAt;
-    shimPushEvent('log', { msg: STR(2012, (msg.error || '未知原因')), cls: 'warn' });
+    shimPushEvent('log', { msg: STR(2012, (msg.error || STR(79))), cls: 'warn' });
   }
 }
 
@@ -1253,7 +1253,7 @@ function resolveItem(id) {
   if (!hits.length) return { err: 'item not found: ' + id };
   for (i = 1; i < hits.length; i++) {
     // 同一個物件被兩處參考（背包與裝備欄指向同一份）不算歧義
-    if (hits[i] !== hits[0]) return { err: 'ambiguous item id: ' + id + '（命中 ' + hits.length + ' 個）' };
+    if (hits[i] !== hits[0]) return { err: STR(81, id, hits.length) };
   }
   return { item: hits[0] };
 }
@@ -1426,12 +1426,12 @@ var COMMAND_IMPL = {
     var upg = G.player.invUpgrades || 0;
     if (INVENTORY_CAP + upg >= INVENTORY_MAX) {
       blog(STR(1177, INVENTORY_MAX), 'warn', 'system');
-      return { err: '已達最大容量' };
+      return { err: STR(82) };
     }
     var cost = inventoryExpandCost(upg);
     if (G.player.gold < cost) {
-      blog('❌ 金幣不足，擴充需要 ' + fmt(cost) + ' 金幣', 'warn', 'system');
-      return { err: '金幣不足' };
+      blog(STR(83, fmt(cost)), 'warn', 'system');
+      return { err: STR(91) };
     }
     G.player.gold -= cost;
     G.player.invUpgrades = upg + 1;
@@ -1476,7 +1476,7 @@ var COMMAND_IMPL = {
     var lo = G.player.loadout || [];
     var from = a.from, to = a.to;
     var cap = (typeof loadoutSize === 'function') ? loadoutSize() : 10;
-    if (from < 0 || from >= cap || to < 0 || to >= cap || from === to) return { err: '位置無效' };
+    if (from < 0 || from >= cap || to < 0 || to >= cap || from === to) return { err: STR(84) };
 
     var maxIdx = Math.max(from, to);
     while (lo.length <= maxIdx) {
@@ -1597,7 +1597,7 @@ var COMMAND_IMPL = {
       if (!ultUp && ultErr) return { err: ultErr };
       return true;
     }
-    if (!(tier >= 0 && tier < g.tiers.length)) return { err: '未知階數' };
+    if (!(tier >= 0 && tier < g.tiers.length)) return { err: STR(92) };
     var lvs = (typeof skills2Levels === 'function') ? skills2Levels(a.group) : (G.player.skills2 && G.player.skills2.levels && G.player.skills2.levels[a.group]);
     if (!lvs) lvs = [];
     /* 一鍵滿級不經過 skills2Learn，解鎖門檻要在這裡自己擋一次——
@@ -1605,10 +1605,10 @@ var COMMAND_IMPL = {
     if (typeof sgTierUnlockedBy === 'function' && typeof sgUnlockProgress === 'function') {
       var maxPrg = sgUnlockProgress(null);
       if (maxPrg && !sgTierUnlockedBy(g.tiers[tier].unlock, maxPrg.level, maxPrg.reinc, maxPrg.towerHighest)) {
-        return { err: '需達到 ' + sgUnlockText(g.tiers[tier].unlock) + '才能解鎖此階' };
+        return { err: STR(94, sgUnlockText(g.tiers[tier].unlock)) };
       }
     }
-    if (tier > 0 && (lvs[tier - 1] || 0) < 1) return { err: '前一階需至少 Lv.1 才能解鎖此階' };
+    if (tier > 0 && (lvs[tier - 1] || 0) < 1) return { err: STR(93) };
     var tierMax = (typeof SG_TIER_MAX_LV === 'number') ? SG_TIER_MAX_LV : 10;
     var upgraded = 0;
     while ((lvs[tier] || 0) < tierMax) {
@@ -1644,7 +1644,7 @@ var COMMAND_IMPL = {
       else { UI.dirty.skills = true; UI.dirty.header = true; }
       return true;
     }
-    if (!(tier >= 0 && tier < g.tiers.length)) return { err: '未知階數' };
+    if (!(tier >= 0 && tier < g.tiers.length)) return { err: STR(92) };
     var lvs = (typeof skills2Levels === 'function') ? skills2Levels(a.group) : (G.player.skills2 && G.player.skills2.levels && G.player.skills2.levels[a.group]);
     if (!lvs) return true;
     var minLv = (tier === 0 ? 1 : 0);
@@ -1672,8 +1672,7 @@ var COMMAND_IMPL = {
     if (made > 0) {
       // 「全部類型寶石」不是 GEM_TYPES 的鍵，gemLabel 查不到會拋例外（合成已完成卻回報失敗）。
       var all = a.type === GEM_TYPE_ALL;
-      blog('♻️ 全部合成：' + (all ? STR(1547, GEM_NAMES[a.level]) : gemLabel(a.type, a.level)) + ' ×' + (made * gemComposeInputCount(a.level)) +
-        ' → ' + (all ? STR(1548, GEM_NAMES[a.level + 1]) : gemLabel(a.type, a.level + 1)) + ' ×' + made, 'good', 'factory');
+      blog(STR(85, (all ? STR(1547, GEM_NAMES[a.level]) : gemLabel(a.type, a.level)), (made * gemComposeInputCount(a.level)), (all ? STR(1548, GEM_NAMES[a.level + 1]) : gemLabel(a.type, a.level + 1)), made), 'good', 'factory');
     }
     UI.dirty.gems = true;
     return { made: made, err: made > 0 ? null : err };
@@ -1761,7 +1760,7 @@ var COMMAND_IMPL = {
      回傳 { ok, message }，面板依此顯示結果。 */
   'gm.exec': function (a) {
     if (typeof executeGMCommand !== 'function') {
-      return { ok: false, message: 'GM 執行層未載入' };
+      return { ok: false, message: STR(86) };
     }
     return executeGMCommand(a.line);
   }
@@ -1773,7 +1772,7 @@ function runCommand(name, args) {
   var invalid = validateCommand(name, args);
   if (invalid) return { ok: false, error: invalid };
   if (G && G.tower && G.tower.active && bossFightBlocksCommand(name)) {
-    return { ok: false, error: 'BOSS 戰中不可變更戰鬥配置' };
+    return { ok: false, error: STR(164) };
   }
   if (COMMAND_IMPL[name]) {
     try {
@@ -1873,10 +1872,10 @@ function boot(msg) {
   if (G._legacySkillRemoval) {
     var lgs = G._legacySkillRemoval;
     var lgsParts = [];
-    if (lgs.skills) lgsParts.push(STR(670, lgs.skills, (lgs.fusions ? '（含 ' + lgs.fusions + ' 個融合技）' : '')));
-    else if (lgs.fusions) lgsParts.push('已清除 ' + lgs.fusions + ' 個融合技');
+    if (lgs.skills) lgsParts.push(STR(670, lgs.skills, (lgs.fusions ? STR(87, lgs.fusions) : '')));
+    else if (lgs.fusions) lgsParts.push(STR(88, lgs.fusions));
     if (lgs.equipped) lgsParts.push(STR(671, lgs.equipped));
-    if (lgs.scrolls) lgsParts.push('魔法卷軸 ' + lgs.scrolls + ' 張已移除');
+    if (lgs.scrolls) lgsParts.push(STR(89, lgs.scrolls));
     notices.push({ key: '_legacySkillRemoval', text: STR(672, lgsParts.join('，')), cls: 'warn' });
     delete G._legacySkillRemoval;
   }
@@ -1914,7 +1913,7 @@ function boot(msg) {
         text: STR(1182, G.inventory.length, invCapNow) });
     }
   } else {
-    notices.push({ key: 'welcomeNew', cls: 'good', text: '⚔️ 歡迎來到《無限征途：合成之巔》！' });
+    notices.push({ key: 'welcomeNew', cls: 'good', text: STR(90) });
     notices.push({ key: 'welcomeNew2', cls: 'info', text: STR(1406) });
     notices.push({ key: 'welcomeNew3', cls: 'info', text: defaultSalvageHintText() });
     flog(STR(1407), 'info');

@@ -368,8 +368,8 @@ function equipSlotsForType(type) {
    單手劍/單手魔杖/單手魔劍皆僅限主手。
    詞條暫沿用現行 weapon 部位詞條池（AFFIX_POOL slots:['weapon']），待後續分類型改造。 */
 var WEAPON_CATEGORIES = {
-  oneHand: { name: '單手武器' },
-  twoHand: { name: '雙手武器' },
+  oneHand: { name: STR(14) },
+  twoHand: { name: STR(15) },
   offHand: { name: STR(883) }
 };
 var DEFAULT_WEAPON_TYPE = 'sword1h'; // 舊存檔武器補默認類型（僅主手；裝在副手欄的舊武器由存檔整理改補匕首，保持位置合法）
@@ -498,18 +498,18 @@ function itemTypeLabel(it) {
 
 var SLOT_INFO = {
   weapon: { name: STR(931), emoji: '⚔️', icon: 'icon_weapon.png' },
-  weapon2: { name: '副手', emoji: '🗡️', icon: 'icon_weapon.png' },
-  helmet: { name: '頭盔', emoji: '🪖', icon: 'icon_helmet.png' },
+  weapon2: { name: STR(16), emoji: '🗡️', icon: 'icon_weapon.png' },
+  helmet: { name: STR(17), emoji: '🪖', icon: 'icon_helmet.png' },
   shoulder: { name: STR(932), emoji: '🦾', icon: 'icon_shoulder.png' },
-  chest: { name: '胸甲', emoji: '🛡️', icon: 'icon_chest.png' },
-  belt: { name: '腰帶', emoji: '🪢', icon: 'icon_belt.png' },
+  chest: { name: STR(18), emoji: '🛡️', icon: 'icon_chest.png' },
+  belt: { name: STR(19), emoji: '🪢', icon: 'icon_belt.png' },
   gloves: { name: STR(933), emoji: '🧤', icon: 'icon_gloves.png' },
   wrist: { name: STR(934), emoji: '🦾', icon: 'icon_wrist.png' },
-  legs: { name: '護腿', emoji: '👖', icon: 'icon_legs_armor.png' },
-  boots: { name: '靴子', emoji: '🥾', icon: 'icon_legs.png' },
-  ring: { name: '戒指', emoji: '💍', icon: 'icon_ring.png' },
+  legs: { name: STR(20), emoji: '👖', icon: 'icon_legs_armor.png' },
+  boots: { name: STR(21), emoji: '🥾', icon: 'icon_legs.png' },
+  ring: { name: STR(22), emoji: '💍', icon: 'icon_ring.png' },
   ring2: { name: STR(935), emoji: '💍', icon: 'icon_ring.png' },
-  amulet: { name: '項鍊', emoji: '📿', icon: 'icon_amulet.png' }
+  amulet: { name: STR(23), emoji: '📿', icon: 'icon_amulet.png' }
 };
 var SLOT_BASENAMES = {
   weapon: [STR(885), STR(886), STR(905), STR(936), STR(937)],
@@ -1654,14 +1654,14 @@ var SCORE_WEIGHTS = {
 var ELEMENTS = ['fire', 'ice', 'lightning', 'poison', 'light', 'dark', 'earth', 'wind'];
 /* color：戰鬥特效用的主色（js/vfx.js）。與 tips 的文字色分開，特效要的是在暗底上夠亮的顏色。 */
 var ELEM_INFO = {
-  fire: { name: '火焰', short: '火', emoji: '🔥', color: '#e63924' },
-  ice: { name: '冰霜', short: '冰', emoji: '❄️', color: '#4da6ff' },
-  lightning: { name: '雷電', short: '雷', emoji: '⚡', color: '#f2b705' },
-  poison: { name: '劇毒', short: '毒', emoji: '☠️', color: '#4caf2b' },
-  light: { name: '聖光', short: '聖', emoji: '✨', color: '#ffe47a' },
-  dark: { name: '暗影', short: '暗', emoji: '🌑', color: '#6f2da8' },
-  earth: { name: '大地', short: '地', emoji: '🪨', color: '#ad7444' },
-  wind: { name: '疾風', short: '風', emoji: '💨', color: '#86efac' }
+  fire: { name: STR(24), short: STR(25), emoji: '🔥', color: '#e63924' },
+  ice: { name: STR(1), short: STR(26), emoji: '❄️', color: '#4da6ff' },
+  lightning: { name: STR(27), short: STR(28), emoji: '⚡', color: '#f2b705' },
+  poison: { name: STR(29), short: STR(30), emoji: '☠️', color: '#4caf2b' },
+  light: { name: STR(3), short: STR(31), emoji: '✨', color: '#ffe47a' },
+  dark: { name: '暗影', short: STR(32), emoji: '🌑', color: '#6f2da8' },
+  earth: { name: STR(5), short: STR(33), emoji: '🪨', color: '#ad7444' },
+  wind: { name: STR(6), short: STR(34), emoji: '💨', color: '#86efac' }
 };
 
 /* 特效時間軸（模擬層與 js/vfx.js 共用）——傷害數字必須跟畫面對得上：
@@ -2253,7 +2253,7 @@ var PART_MAX_TIER = 10;
 var PART_UPGRADE_COST_A = 20000;
 var PART_UPGRADE_COST_B = 10000;
 var PART_UPGRADE_COST_C = 6;
-var NODE_NAMES = { filter: '篩選節點', salvage: STR(1033), synth: '合成節點', enchant: STR(1034), upgrade: '強化節點' };
+var NODE_NAMES = { filter: STR(35), salvage: STR(1033), synth: STR(36), enchant: STR(1034), upgrade: STR(37) };
 var PART_SLOTS_PER_NODE = 2;   // 每個可安裝節點的零件槽數（預設；可由 PART_SLOTS 覆寫）
 var PART_SLOTS = { synth: 2 }; // 各節點零件槽數（分解槽使用金幣解鎖，見 formula.js salvageSlotCount）
 function slotsForNode(node) {
@@ -2512,7 +2512,7 @@ function statFmt(val, cap, type, prefix) {
 // 註：於 STAT_GROUPS 建構（載入時）即呼叫，故不得依賴後載入檔的函式（如 fmt）；上限值為小整數，直接串接即可。
 function capText(cap, unit, plus) {
   if (!(cap > 0)) return '';
-  return '（上限：' + (plus ? '+' : '') + cap + (unit || '') + '）';
+  return STR(38, (plus ? '+' : ''), cap, (unit || ''));
 }
 
 function effectNum(n) {
@@ -2646,7 +2646,7 @@ function penetrationDesc(st, key, label) {
 /* 吸血／吸魔 tips：定值，每對敵人造成傷害時固定回復 */
 function drainDesc(key) {
   var isHp = key === 'lifesteal';
-  return STR(232, (isHp ? '生命' : '法力'));
+  return STR(232, (isHp ? '生命' : STR(39)));
 }
 
 /* 舊快照退回既有基準值；新版只讀 Worker 已結算的面板數值。 */
@@ -2664,7 +2664,7 @@ var STAT_GROUPS = [
          寫死數字會讓調參後的說明與實際計算不同步。 */
       [STR(236), function (st) { return statFmt(passivePanelValue(st, 'hpRegen', playerHpRegenBasePerSec(st)), null, '/s'); },
         function () { return STR(237, BASE_HP_REGEN); }],
-      [STR(238), function (st) { return statFmt(st.mp, null); }, function (st) { return statDesc(st, STR(239), '法力', 'mp', null); }],
+      [STR(238), function (st) { return statFmt(st.mp, null); }, function (st) { return statDesc(st, STR(239), STR(39), 'mp', null); }],
       [STR(240), function (st) { return statFmt(passivePanelValue(st, 'mpRegen', st.mpRegen), null, '/s'); }, STR(241)],
       [STR(242), function (st) { return statFmt(st.str, null); }, function () { return primaryStatDesc('str'); }],
       [STR(243), function (st) { return statFmt(st.agi, null); }, function () { return primaryStatDesc('agi'); }],
@@ -2679,8 +2679,8 @@ var STAT_GROUPS = [
       [STR(251), function (st) { return statFmt(st.critRate, STAT_CAPS.critRate, '%'); }, STR(252, capText(STAT_CAPS.critRate, '%'))],
       [STR(253), function (st) { return (st.comboHits || 0) > 0 ? STR(254, fmt1(st.comboHits)) : '—'; }, STR(255)],
       [STR(256), function (st) { return Math.round(st.critDmg) + '%'; }, STR(257)],
-      [STR(258), function (st) { return statFmt(st.pPen, STAT_CAPS.pPen, '%'); }, function (st) { return penetrationDesc(st, 'pPen', '物理'); }],
-      [STR(259), function (st) { return statFmt(st.mPen, STAT_CAPS.mPen, '%'); }, function (st) { return penetrationDesc(st, 'mPen', '魔法'); }],
+      [STR(258), function (st) { return statFmt(st.pPen, STAT_CAPS.pPen, '%'); }, function (st) { return penetrationDesc(st, 'pPen', STR(40)); }],
+      [STR(259), function (st) { return statFmt(st.mPen, STAT_CAPS.mPen, '%'); }, function (st) { return penetrationDesc(st, 'mPen', STR(12)); }],
       [STR(260), function (st) { return statFmt(st.hit, null, '%'); }, STR(261)],
       [STR(262), function (st) { return statFmt(st.aspd, ASPD_CAP, '/s.1f'); }, function () { return STR(264, capText(ASPD_CAP, STR(263))); }],
       [STR(265), function (st) { return statFmt(st.cdr, STAT_CAPS.cdr, '%.1f'); }, STR(266, capText(STAT_CAPS.cdr, '%'))],
@@ -2729,13 +2729,13 @@ var STAT_GROUPS = [
       [STR(330), function (st) { return statFmt(st.shieldEff, null, '%', true); }, STR(331)],
       [STR(332), function (st) { return statFmt(st.pRes, null, '%'); }, function (st) { return STR(333, resistanceReductionDesc(st, st.pRes, physicalResistanceReduction)); }],
       [STR(334), function (st) { return statFmt(st.mRes, null, '%'); }, function (st) { return STR(335, resistanceReductionDesc(st, st.mRes, magicResistanceReduction)); }],
-      [STR(336), function (st) { return statFmt(st.resist.fire, null, '%'); }, function (st) { return elementResistDesc(st, 'fire', '火焰'); }],
-      [STR(337), function (st) { return statFmt(st.resist.ice, null, '%'); }, function (st) { return elementResistDesc(st, 'ice', '冰霜'); }],
-      [STR(338), function (st) { return statFmt(st.resist.lightning, null, '%'); }, function (st) { return elementResistDesc(st, 'lightning', '雷電'); }],
-      [STR(339), function (st) { return statFmt(st.resist.poison, null, '%'); }, function (st) { return elementResistDesc(st, 'poison', '劇毒'); }],
-      [STR(340), function (st) { return statFmt(st.resist.light, null, '%'); }, function (st) { return elementResistDesc(st, 'light', '聖光'); }],
+      [STR(336), function (st) { return statFmt(st.resist.fire, null, '%'); }, function (st) { return elementResistDesc(st, 'fire', STR(24)); }],
+      [STR(337), function (st) { return statFmt(st.resist.ice, null, '%'); }, function (st) { return elementResistDesc(st, 'ice', STR(1)); }],
+      [STR(338), function (st) { return statFmt(st.resist.lightning, null, '%'); }, function (st) { return elementResistDesc(st, 'lightning', STR(27)); }],
+      [STR(339), function (st) { return statFmt(st.resist.poison, null, '%'); }, function (st) { return elementResistDesc(st, 'poison', STR(29)); }],
+      [STR(340), function (st) { return statFmt(st.resist.light, null, '%'); }, function (st) { return elementResistDesc(st, 'light', STR(3)); }],
       [STR(341), function (st) { return statFmt(st.resist.dark, null, '%'); }, function (st) { return elementResistDesc(st, 'dark', '暗影'); }],
-      [STR(342), function (st) { return statFmt(st.resist.earth, null, '%'); }, function (st) { return elementResistDesc(st, 'earth', '大地'); }],
+      [STR(342), function (st) { return statFmt(st.resist.earth, null, '%'); }, function (st) { return elementResistDesc(st, 'earth', STR(5)); }],
       [STR(343), function (st) { return statFmt(st.resist.ctrl, STAT_CAPS.ctrlRes, '%'); }, STR(344, capText(STAT_CAPS.ctrlRes, '%'))]
     ]
   },
