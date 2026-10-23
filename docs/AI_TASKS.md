@@ -12302,3 +12302,17 @@ Worker 存活且頁面正常完成載入。
 - npm.cmd run build：571檔通過。export-assets --check：198個assetId已最新，逐份SHA256及fileSize全數吻合；衝突標記及git diff HEAD --check通過。沒有新增素材：本輪未寫共享素材庫，保持2f77fc5及原有未追蹤codex-authored/thunder兩PNG；兩PNG已在遊戲HEAD受追蹤，本次不代替其他任務提交其共享來源。素材庫仍ahead13且有未提交檔案，完整雙倉庫遠端同步尚未完成。
 - 唯讀檢查規範／流程／Agent、兩側差異、衝突預檢、controller／匯出工具、相關測試與素材索引；預檢來源即本次授權整合的ai/codex，未混入獨立codex/lava-terrain工作區。原index、工作檔、parents、測試及基線保存在Git metadata的merge-terrain-vfx-20261022-prQXoj。
 - 交付：原pending merge已解，可供Review；Commit為本段所在[Codex] merge: 整合地形障礙與築牆特效。develop工作區應乾淨，未推送／同步其他AI，未改自動同步工具。已知限制為11項既有失敗、1略過、素材庫未提交來源與未做新增瀏覽器／玩家長戰驗收；沒有本次未完成衝突。下一步可在各任務完成、素材庫來源提交後再跑同步BAT；VFX Editor重載前先備份未存內容。
+
+
+## KNIGHT-3D-BATCH1-20261023 — Blender 主角模型與首批動作預覽
+
+- Owner：Codex；Review（首批模型與預覽完成，待使用者確認風格，未接入遊戲），單一開發者。使用者要求以knight圖集參考重製3D主角、動作大致對應、不製作刀光；後續依截圖指定遊戲尺寸很小、效能優先。前置六圖集／knight.json具備；確認使用者新安裝Blender 5.2.3，正式候選在該版本建立、重開及渲染。先前定位期間使用官方免安裝4.5.9試作、校驗官方SHA，最終未依賴該工具。
+- 允許並完成：tools/knight3d五個製作／渲染／GIF／GLB驗證／素材庫保存工具；assets/characters/knight3d的blend／glb／manifest／README及本段。素材庫codex-authored/knight3d保存相同九檔。禁止既有sprites、遊戲JS／CSS／配置／存檔／解鎖及其他任務，不合併推送。未改系統功能，無本任務LV變更。
+- 模型：原創銀甲、封閉頭盔、單手劍與鳶形盾；刪除鉚釘／指節／細縫、簡化幾何、合併網格及32×4底色／金屬粗糙色盤。2,681三角面、1,476製作頂點（GLB法線／UV分裂後3,367）、單網格／單primitive／單材質、16骨骼、單骨剛性權重，GLB 286,600 bytes。模型內嵌兩張小色盤，未匯入外部模型／貼圖／動畫，原圖只參考輪廓與動作，未擷取像素。
+- 六組Action：idle 1秒循環、walk 0.5秒循環、attack1橫斬／attack2上挑／cast舉劍各0.5秒、die 1秒倒地；無刀光。rise可倒播die，attack3可沿用cast，未新增重複資料。循環GIF及非循環末幀停留只作用於預覽，非放慢動作。
+- 驗收：Blender build_knight.py／render_batch.py及--validate-only成功；重開六Action、單骨架、內嵌貼圖及120個完整姿勢的有限矩陣／實際變形頂點最低高度檢查通過，六動作最低z皆≥0.0095米，無穿過攝影棚地面。Cycles／CUDA輸出91張動作圖＋24視角；已目視關鍵姿勢filmstrip、轉向視圖及縮圖。package_previews.py輸出九份GIF，逐份讀回幀數與總時長通過：idle1000／walk500／兩攻擊與cast800含300末幀停留／die1750含750末幀停留／兩六格預覽3000／環繞2160ms。
+- 指令：python tools/knight3d/validate_asset.py assets/characters/knight3d/knight_batch1.glb通過，直接讀二進位確認2681三角、1mesh／primitive／material、16 joints、2內嵌texture、6組各48條channels、時間／數值有限、索引與權重合法；node --check tools/knight3d/sync-library.cjs、四Python ast.parse、npm.cmd run build（578檔）及diff --check通過。實際範例命令見候選README。Blender有6.0節點API預告及本機缺AMD HIP庫的偵測訊息；CUDA成功完成渲染，未以省略驗證處理。
+- 預覽／驗證保存在本聊天visualizations/knight3d-final：knight_batch1_game_size.gif（站姿約80px）、knight_batch1_actions.gif（放大六格）、knight_batch1_turntable.gif、六單項GIF、validation.json／glb-validation.json。暫存預覽不入兩庫；blend1備份已清除。
+- 衝突：新增目標預檢無其他來源；同副本WORLD-MAP只改AI_TASKS檔首，本任務檔尾，無語意相依，原共同基底／候選／當時工作區merge-file乾跑0後只追加。現有地圖／熔爐等工作保留，不納本次提交。唯讀未改：AI_RULES／AGENTS／Workflow／prompts/codex、knight六圖集／knight.json、build_character_sprites、vfx-library-root、package／build_check。
+- 保存：node tools/knight3d/sync-library.cjs --apply及--check九檔SHA全數一致，二進位blend／glb逐份吻合。素材庫先Commit **2c432f8**；遊戲Commit為本段所在「[Codex] feat: 製作低面數騎士與首批動作預覽」，回覆附編號。其他WORLD-MAP未追蹤來源未納入素材庫提交。
+- 已知風險／未完成：本批是美術候選，尚未實際套入戰鬥、做八方向圖集／命中時序整合或GPU／FPS實測；1primitive是模型結構，不宣稱實際引擎各pass只有1 draw call。動作大致參照原圖，未逐幀對應或完成最終美術驗收。若效能優先，下一步建議核准外觀後預渲染圖集沿用精靈播放；即時3D需獨立評估。此候選及工具可供Review／合併保存，但不能當作主角替換已上線；未合併／推送。
