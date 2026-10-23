@@ -51,11 +51,11 @@ function addRune(id, n) {
 /* 合成：同種 RUNE_COMPOSE_COUNT 顆 → 下一階 1 顆。成功回 null，失敗回錯誤字串。 */
 function composeRune(id) {
   var r = RUNE_BY_ID[id];
-  if (!r) return '未知符文';
+  if (!r) return STR(1649);
   if (r.tier >= RUNE_COMPOSE_MAX_TIER) {
-    return '「' + runeLabel(id) + '」已不能再合成（第 ' + RUNE_COMPOSE_MAX_TIER + ' 階以上的符文只能靠掉落取得）';
+    return STR(1650, runeLabel(id), RUNE_COMPOSE_MAX_TIER);
   }
-  if (runeCount(id) < RUNE_COMPOSE_COUNT) return '「' + runeLabel(id) + '」不足 ' + RUNE_COMPOSE_COUNT + ' 顆';
+  if (runeCount(id) < RUNE_COMPOSE_COUNT) return STR(1651, runeLabel(id), RUNE_COMPOSE_COUNT);
   var next = RUNES[r.tier];            // tier 是 1 起算，RUNES[tier] 即下一階
   addRune(id, -RUNE_COMPOSE_COUNT);
   addRune(next.id, 1);
@@ -65,8 +65,8 @@ function composeRune(id) {
 /* 拆解：1 顆 → 低一階符文 RUNE_DISMANTLE_YIELD 顆（第 1 階不可拆）。 */
 function dismantleRune(id) {
   var r = RUNE_BY_ID[id];
-  if (!r) return { err: '未知符文' };
-  if (r.tier <= 1) return { err: '第 1 階符文無法再拆解' };
+  if (!r) return { err: STR(1649) };
+  if (r.tier <= 1) return { err: STR(1652) };
   if (runeCount(id) < 1) return { err: '沒有「' + runeLabel(id) + '」' };
   var lower = RUNES[r.tier - 2];
   addRune(id, -1);
@@ -123,15 +123,15 @@ function rwHasRune(it) {
 
 /* 鑲入符文：index 省略＝第一個空孔。成功回 null，失敗回錯誤字串。 */
 function socketRune(it, runeId, index) {
-  if (!it) return '找不到裝備';
-  if (!RUNE_BY_ID[runeId]) return '沒有這種符文';
-  if (!runeSlotCountFor(it)) return '這件裝備沒有符文孔';
+  if (!it) return STR(1653);
+  if (!RUNE_BY_ID[runeId]) return STR(1654);
+  if (!runeSlotCountFor(it)) return STR(1655);
   var slots = ensureRuneSlots(it);
   var idx = index == null ? slots.indexOf(null) : index;
-  if (index == null && idx < 0) return '符文孔已滿（點擊已鑲的符文可取下）';
-  if (!Number.isInteger(idx) || idx < 0 || idx >= slots.length) return '沒有可用的符文孔';
-  if (slots[idx] !== null) return '此符文孔已有符文';
-  if (runeCount(runeId) < 1) return '符文不足';
+  if (index == null && idx < 0) return STR(1656);
+  if (!Number.isInteger(idx) || idx < 0 || idx >= slots.length) return STR(1657);
+  if (slots[idx] !== null) return STR(1658);
+  if (runeCount(runeId) < 1) return STR(1659);
   var before = rwActiveWord(it);
   addRune(runeId, -1);
   slots[idx] = runeId;
@@ -141,7 +141,7 @@ function socketRune(it, runeId, index) {
   var after = rwActiveWord(it);
   if (after) rwMarkSeen(after.word.id);
   if (after && (!before || before.word.id !== after.word.id) && typeof blog === 'function') {
-    blog('✨ 符文真言【' + after.word.name + '】成形！', 'good');
+    blog(STR(1660, after.word.name), 'good');
   }
   return null;
 }
@@ -205,9 +205,9 @@ function runeEraseCost(it, runeId) {
 function runeEraseCostText(cost) {
   var parts = [];
   if (cost.gold > 0) parts.push('金幣 ' + fmt(cost.gold));
-  if (cost.scrap > 0) parts.push('裝備碎片 ' + fmt(cost.scrap));
-  if (cost.essence > 0) parts.push('附魔精華 ' + fmt(cost.essence));
-  return parts.length ? parts.join('、') : '免費';
+  if (cost.scrap > 0) parts.push(STR(1661, fmt(cost.scrap)));
+  if (cost.essence > 0) parts.push(STR(1662, fmt(cost.essence)));
+  return parts.length ? parts.join('、') : STR(1663);
 }
 
 /* 玩家付不付得起這筆抹除費用（player 要有 gold／scrap／essence）。 */
@@ -217,10 +217,10 @@ function runeEraseAffordable(player, cost) {
 
 /* 抹除指定符文孔的符文：扣設定的幣種（預設裝備碎片與附魔精華），符文直接消失（不退還），孔恢復為空。成功回 null，失敗回錯誤字串。 */
 function eraseRune(it, idx) {
-  if (!it || !Array.isArray(it.runes) || !Number.isInteger(idx) || !it.runes[idx]) return '這個符文孔沒有符文';
+  if (!it || !Array.isArray(it.runes) || !Number.isInteger(idx) || !it.runes[idx]) return STR(1664);
   var cost = runeEraseCost(it, it.runes[idx]);
   var P = G.player;
-  if (!runeEraseAffordable(P, cost)) return '資源不足（抹除需要 ' + runeEraseCostText(cost) + '）';
+  if (!runeEraseAffordable(P, cost)) return STR(1665, runeEraseCostText(cost));
   P.gold -= cost.gold;
   P.scrap -= cost.scrap;
   P.essence -= cost.essence;
@@ -641,7 +641,7 @@ function rwStackedBuffValue(ent, key) {
 function rwRunActs(proc, ctx, out) {
   var pEnt = ctx.pEnt;
   var st = getStats();
-  var label = '符文真言·' + (ctx.wordName || '');
+  var label = STR(1666, (ctx.wordName || ''));
   var acts = proc.acts || [];
   for (var i = 0; i < acts.length; i++) {
     var a = acts[i], t, k, targets, res, amt;
@@ -668,7 +668,7 @@ function rwRunActs(proc, ctx, out) {
           var before = e.hp;
           applyEnemyHpDamage(e, e.hp);
           out.dmg += before - Math.max(0, e.hp);
-          if (typeof floatEnemyEvent === 'function') floatEnemyEvent(e, ctx.floatSel || rwEnemyFloat(), '斬殺', 'crit enemy-skill', before);
+          if (typeof floatEnemyEvent === 'function') floatEnemyEvent(e, ctx.floatSel || rwEnemyFloat(), STR(1667), 'crit enemy-skill', before);
           if (e.hp <= 0) out.killed = true;
         }
         break;
@@ -804,7 +804,7 @@ function rwOnBasicAttack(pEnt, target, res, floatSel, st) {
     var others = rwAliveOnly(rwEnemies());
     for (var i = 0; i < others.length; i++) {
       if (others[i] === target) continue;
-      var sp = rwDirectDamage(others[i], res.dmg * fx.splashPct / 100, '符文真言·擴散', floatSel);
+      var sp = rwDirectDamage(others[i], res.dmg * fx.splashPct / 100, STR(1668), floatSel);
       if (sp) { out.dmg += sp.dmg; if (sp.killed) out.killed = true; }
     }
   }
@@ -943,8 +943,8 @@ function rwTryRevive(pEnt) {
       }
     }
   }
-  if (typeof blog === 'function') blog('♻️ 符文真言【輪迴】——你在死亡邊緣重生了！', 'good');
-  if (typeof floatPlayerEvent === 'function') floatPlayerEvent(rwPlayerFloat(), '♻️重生', 'buff');
+  if (typeof blog === 'function') blog(STR(1669), 'good');
+  if (typeof floatPlayerEvent === 'function') floatPlayerEvent(rwPlayerFloat(), STR(1670), 'buff');
   return true;
 }
 
@@ -1006,75 +1006,75 @@ function rwRollTowerRuneDrop(floor, lootBonus) {
    §6 說明文字（由資料產生；主執行緒與 Worker 共用）
    ============================================================ */
 var RW_FX_TEXT = {
-  dmgPct: function (v) { return '造成的所有傷害 ' + rwSigned(v) + '%'; },
-  skillDmgPct: function (v) { return '技能傷害 ' + rwSigned(v) + '%'; },
-  basicDmgPct: function (v) { return '普通攻擊傷害 ' + rwSigned(v) + '%'; },
-  aspdMult: function (v) { return '攻擊速度額外乘算 ' + rwSigned(v) + '%（突破攻速上限）'; },
-  cdPct: function (v) { return '所有技能冷卻時間 -' + v + '%（乘算，突破冷卻縮減上限）'; },
-  manaCostRedPct: function (v) { return '技能法力消耗 -' + v + '%'; },
-  maxHitPct: function (v) { return '單次受到的傷害最多只會是最大生命的 ' + v + '%'; },
-  maxHpPct: function (v) { return '最大生命 ' + rwSigned(v) + '%（乘算' + (v < 0 ? '，代價' : '') + '）'; },
-  dmgHiHpPct: function (v) { return '對生命高於 70% 的敵人傷害 +' + v + '%'; },
-  dmgLoHpPct: function (v) { return '對生命低於 30% 的敵人傷害 +' + v + '%'; },
-  dmgSoloPct: function (v) { return '場上只有一名敵人時，傷害 +' + v + '%'; },
-  dmgPerFoePct: function (v) { return '場上每多一名敵人，傷害 +' + v + '%（最多計 10 名）'; },
-  dmgSelfFullPct: function (v) { return '生命高於 90% 時，傷害 +' + v + '%'; },
-  dmgSelfLowPct: function (v) { return '生命低於 35% 時，傷害 +' + v + '%'; },
-  dmgCtrlPct: function (v) { return '對暈眩或緩速中的敵人傷害 +' + v + '%'; },
-  killHealPct: function (v) { return '擊殺敵人時回復 ' + v + '% 最大生命'; },
-  killManaPct: function (v) { return '擊殺敵人時回復 ' + v + '% 最大法力'; },
-  runeFindPct: function (v) { return '符文掉落率 +' + v + '%'; },
-  selfDrainPct: function (v) { return '代價：每秒損失 ' + v + '% 最大生命（不會致死）'; },
-  splashPct: function (v) { return '普通攻擊同時對其他所有敵人造成 ' + v + '% 的傷害'; }
+  dmgPct: function (v) { return STR(1671, rwSigned(v)); },
+  skillDmgPct: function (v) { return STR(1672, rwSigned(v)); },
+  basicDmgPct: function (v) { return STR(1673, rwSigned(v)); },
+  aspdMult: function (v) { return STR(1674, rwSigned(v)); },
+  cdPct: function (v) { return STR(1675, v); },
+  manaCostRedPct: function (v) { return STR(1676, v); },
+  maxHitPct: function (v) { return STR(1677, v); },
+  maxHpPct: function (v) { return STR(1679, rwSigned(v), (v < 0 ? STR(1678) : '')); },
+  dmgHiHpPct: function (v) { return STR(1680, v); },
+  dmgLoHpPct: function (v) { return STR(1681, v); },
+  dmgSoloPct: function (v) { return STR(1682, v); },
+  dmgPerFoePct: function (v) { return STR(1683, v); },
+  dmgSelfFullPct: function (v) { return STR(1684, v); },
+  dmgSelfLowPct: function (v) { return STR(1685, v); },
+  dmgCtrlPct: function (v) { return STR(1686, v); },
+  killHealPct: function (v) { return STR(1687, v); },
+  killManaPct: function (v) { return STR(1688, v); },
+  runeFindPct: function (v) { return STR(1689, v); },
+  selfDrainPct: function (v) { return STR(1690, v); },
+  splashPct: function (v) { return STR(1691, v); }
 };
 function rwSigned(v) { return (v >= 0 ? '+' : '') + v; }
 
 var RW_TRIGGER_TEXT = {
-  hit: '普通攻擊命中時', crit: '普通攻擊暴擊時', kill: '擊殺敵人時', hurt: '受到傷害時',
-  block: '格擋成功時', cast: '施放技能時', tick: '', lowhp: ''
+  hit: STR(1692), crit: STR(1693), kill: STR(1694), hurt: STR(1695),
+  block: STR(1696), cast: STR(1697), tick: '', lowhp: ''
 };
-var RW_TARGET_TEXT = { target: '目標', all: '所有敵人', rand: '隨機敵人', attacker: '攻擊者' };
-var RW_ELEM_TEXT = { fire: '火焰', ice: '冰霜', lightning: '雷電', poison: '毒', light: '聖光', dark: '暗影', earth: '大地', wind: '疾風', random: '隨機元素' };
-var RW_BUFF_TEXT = { atkUp: '攻擊', aspdUp: '攻速', defUp: '防禦', evasionUp: '閃避', critDmgUp: '爆擊傷害', allDmgUp: '所有傷害', regen: '再生' };
-var RW_DOT_TEXT = { poison: '中毒', burn: '燃燒', bleed: '流血', corrode: '侵蝕' };
+var RW_TARGET_TEXT = { target: STR(1698), all: STR(1699), rand: STR(1700), attacker: STR(1701) };
+var RW_ELEM_TEXT = { fire: '火焰', ice: '冰霜', lightning: '雷電', poison: '毒', light: '聖光', dark: '暗影', earth: '大地', wind: '疾風', random: STR(1702) };
+var RW_BUFF_TEXT = { atkUp: '攻擊', aspdUp: STR(1703), defUp: '防禦', evasionUp: STR(1704), critDmgUp: STR(1705), allDmgUp: STR(1706), regen: STR(1707) };
+var RW_DOT_TEXT = { poison: '中毒', burn: STR(1708), bleed: STR(1709), corrode: STR(1710) };
 
 function rwActText(a) {
   switch (a.act) {
     case 'dmg': {
-      var tgt = a.to === 'rand' && a.n > 1 ? '隨機 ' + a.n + ' 名敵人' : (RW_TARGET_TEXT[a.to || 'target']);
-      var kind = a.elem ? (RW_ELEM_TEXT[a.elem] || a.elem) + '傷害' : (a.type === 'magic' ? '魔法傷害' : '物理傷害');
-      return '對' + tgt + '造成 ' + a.pct + '% ' + kind;
+      var tgt = a.to === 'rand' && a.n > 1 ? STR(1711, a.n) : (RW_TARGET_TEXT[a.to || 'target']);
+      var kind = a.elem ? STR(1712, (RW_ELEM_TEXT[a.elem] || a.elem)) : (a.type === 'magic' ? STR(1713) : STR(1714));
+      return STR(1715, tgt, a.pct, kind);
     }
-    case 'execute': return '直接斬殺生命低於 ' + a.hpBelow + '% 的非 BOSS 敵人';
-    case 'heal': return '回復 ' + a.pctMax + '% 最大生命';
-    case 'shield': return '獲得相當於 ' + a.pctMax + '% 最大生命的護盾（' + a.sec + ' 秒）';
-    case 'mana': return '回復 ' + a.pctMax + '% 最大法力';
-    case 'buff': return '獲得「' + (RW_BUFF_TEXT[a.sid] || a.sid) + '」+' + a.val + '%（' + a.sec + ' 秒' + (a.max > 1 ? '，最多 ' + a.max + ' 層' : '') + '）';
-    case 'buffRandom': return '隨機獲得一種增益（攻擊／攻速／爆傷／防禦／閃避／所有傷害，' + a.sec + ' 秒）';
-    case 'stun': return (a.to === 'all' ? '所有敵人' : '目標') + '暈眩 ' + a.sec + ' 秒';
-    case 'slow': return (a.to === 'all' ? '所有敵人' : '目標') + '緩速 ' + a.sec + ' 秒';
-    case 'dot': return '對' + (RW_TARGET_TEXT[a.to || 'target']) + '施加' + (RW_DOT_TEXT[a.name] || a.name) + '（每秒 ' + a.pct + '% 攻擊力，' + a.sec + ' 秒）';
-    case 'cdr': return '所有技能冷卻縮短 ' + a.sec + ' 秒';
-    case 'refresh': return '重置 ' + (a.n || 1) + ' 個冷卻中的技能';
-    case 'recast': return '免費再施放一次剛施放的技能';
-    case 'castRandom': return '免費施放一個隨機的已裝配技能';
-    case 'invuln': return '無敵 ' + a.sec + ' 秒';
-    case 'cleanse': return '淨化負面狀態';
+    case 'execute': return STR(1716, a.hpBelow);
+    case 'heal': return STR(1717, a.pctMax);
+    case 'shield': return STR(1718, a.pctMax, a.sec);
+    case 'mana': return STR(1719, a.pctMax);
+    case 'buff': return STR(1721, (RW_BUFF_TEXT[a.sid] || a.sid), a.val, a.sec, (a.max > 1 ? STR(1720, a.max) : ''));
+    case 'buffRandom': return STR(1722, a.sec);
+    case 'stun': return STR(1723, (a.to === 'all' ? STR(1699) : STR(1698)), a.sec);
+    case 'slow': return STR(1724, (a.to === 'all' ? STR(1699) : STR(1698)), a.sec);
+    case 'dot': return STR(1725, (RW_TARGET_TEXT[a.to || 'target']), (RW_DOT_TEXT[a.name] || a.name), a.pct, a.sec);
+    case 'cdr': return STR(1726, a.sec);
+    case 'refresh': return STR(1727, (a.n || 1));
+    case 'recast': return STR(1728);
+    case 'castRandom': return STR(1729);
+    case 'invuln': return STR(1730, a.sec);
+    case 'cleanse': return STR(1731);
   }
   return a.act;
 }
 function rwProcText(p) {
   var head;
-  if (p.on === 'tick') head = '每 ' + p.every + ' 秒';
-  else if (p.on === 'lowhp') head = '生命低於 ' + p.below + '% 時';
+  if (p.on === 'tick') head = STR(1732, p.every);
+  else if (p.on === 'lowhp') head = STR(1733, p.below);
   else head = RW_TRIGGER_TEXT[p.on] || '';
-  if (p.every && p.on !== 'tick') head = '每 ' + p.every + ' 次' + head.replace('時', '');
+  if (p.every && p.on !== 'tick') head = STR(1734, p.every, head.replace('時', ''));
   var cond = '';
-  if (p.chance) cond += p.chance + '% 機率';
+  if (p.chance) cond += STR(1735, p.chance);
   var body = [];
   for (var i = 0; i < p.acts.length; i++) body.push(rwActText(p.acts[i]));
-  var text = head + (cond ? '有 ' + cond : '') + '：' + body.join('，');
-  if (p.cd) text += '（內建冷卻 ' + p.cd + ' 秒）';
+  var text = head + (cond ? STR(1736, cond) : '') + '：' + body.join('，');
+  if (p.cd) text += STR(1737, p.cd);
   return text;
 }
 
@@ -1095,18 +1095,16 @@ function rwDescribeEntries(word, it) {
     var def = rwStatDef(st[i][0]);
     var name = def ? def.name.replace(/%$/, '') : st[i][0];
     var text = it ? rwFormatStat(st[i][0], rwStatValue(it, st[i][0], st[i][1]))
-      : name + (st[i][1] < 0 ? '（代價：基礎值 ×-' : '（基礎值 ×') + Math.abs(st[i][1]) + '）';
+      : name + (st[i][1] < 0 ? STR(1738) : STR(1739)) + Math.abs(st[i][1]) + '）';
     out.push({ text: text, color: rwStatColor(st[i][0]), kind: 'stat' });
   }
   var mech = function (t) { out.push({ text: t, color: mechColor, kind: 'mech' }); };
   var ps = word.passives || {};
-  var psNames = { thorns: '反震', smite: '天罰', undying: '不朽', sunder: '破甲', trueDmg: '真傷', omniDrain: '萬象汲取' };
+  var psNames = { thorns: STR(1740), smite: '天罰', undying: '不朽', sunder: STR(1741), trueDmg: STR(1742), omniDrain: STR(1743) };
   for (var pk in ps) mech((psNames[pk] || pk) + ' ' + ps[pk] + '%');
   var fx = word.fx || {};
   if (fx.reviveHpPct > 0) {
-    mech('死亡時以 ' + fx.reviveHpPct + '% 生命復活並淨化，無敵 ' + (fx.reviveInvulnSec || 0) + ' 秒，' +
-      (fx.reviveRefresh ? '所有技能冷卻重置，' : '') + (fx.reviveDmgPct ? '之後 ' + fx.reviveDmgSec + ' 秒內傷害 +' + fx.reviveDmgPct + '%，' : '') +
-      '冷卻 ' + (fx.reviveCdSec || 0) + ' 秒');
+    mech(STR(1744, fx.reviveHpPct, (fx.reviveInvulnSec || 0), (fx.reviveRefresh ? STR(1745) : ''), (fx.reviveDmgPct ? STR(1746, fx.reviveDmgSec, fx.reviveDmgPct) : ''), (fx.reviveCdSec || 0)));
   }
   for (var fk in fx) if (RW_FX_TEXT[fk]) mech(RW_FX_TEXT[fk](fx[fk]));
   var pr = word.procs || [];
@@ -1115,7 +1113,7 @@ function rwDescribeEntries(word, it) {
   var legendColor = (typeof PASSIVE_MIN_RARITY !== 'undefined' && RARITIES[PASSIVE_MIN_RARITY]) ? RARITIES[PASSIVE_MIN_RARITY].color : '';
   for (var l = 0; l < lg.length; l++) {
     var pd = (typeof PASSIVE_POOL !== 'undefined') ? PASSIVE_POOL[lg[l]] : null;
-    if (pd) out.push({ text: '傳奇特效【' + pd.name + '】：' + pd.desc, color: legendColor, kind: 'legend' });
+    if (pd) out.push({ text: STR(1747, pd.name, pd.desc), color: legendColor, kind: 'legend' });
   }
   return out;
 }
@@ -1144,8 +1142,8 @@ function rwMinRarity(word) {
 }
 function rwSocketNeedText(word) {
   var i = rwMinRarity(word);
-  var tail = i >= 0 ? RARITIES[i].name + '以上' : '目前沒有裝備有這麼多孔，符文孔設定調高後才做得出來';
-  return '需要 ' + word.runes.length + ' 個符文孔（' + (rwWordTwoHandOnly(word) ? '雙手武器・' : '') + tail + '）';
+  var tail = i >= 0 ? STR(1748, RARITIES[i].name) : STR(1749);
+  return STR(1751, word.runes.length, (rwWordTwoHandOnly(word) ? STR(1750) : ''), tail);
 }
 /* 配方文字：「微光 → 餘燼」。 */
 function rwRecipeText(word) {
@@ -1155,10 +1153,10 @@ function rwRecipeText(word) {
 }
 /* 適用裝備文字。 */
 var RW_BASE_TEXT = {
-  any: '任何裝備', armor: '防具', jewelry: '戒指／項鍊', mainHand: '主手／雙手武器', twoHand: '雙手武器',
-  oneHand: '單手武器', offHand: '副手', melee: '近戰武器', caster: '施法類武器／副手',
-  weapon: '武器', helmet: '頭盔', shoulder: '護肩', chest: '胸甲', belt: '腰帶', gloves: '手套',
-  wrist: '護腕', legs: '護腿', boots: '靴子', ring: '戒指', amulet: '項鍊'
+  any: STR(1752), armor: STR(1753), jewelry: STR(1754), mainHand: STR(1755), twoHand: '雙手武器',
+  oneHand: '單手武器', offHand: '副手', melee: STR(1756), caster: STR(1757),
+  weapon: STR(1758), helmet: '頭盔', shoulder: STR(1759), chest: '胸甲', belt: '腰帶', gloves: STR(1760),
+  wrist: STR(1761), legs: '護腿', boots: '靴子', ring: '戒指', amulet: '項鍊'
 };
 function rwBasesText(word) {
   var out = [];

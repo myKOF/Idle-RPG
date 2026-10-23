@@ -20,7 +20,7 @@ var RUNE_TOOLS = ['library', 'codex'];
 
 var RUNE_DETAIL_KEY = 'idle-rpg.runeDetail.v1';
 var RUNE_UNKNOWN_LINE = '？？？？？？？？';   // 未激活的一條效果：8 個問號
-var RUNE_LOCKED_TIP = '尚未解鎖，需自行嘗試或挑戰更高階的封魔塔';
+var RUNE_LOCKED_TIP = STR(1765);
 
 function runeUiState() {
   if (!UI.runeBrowse) UI.runeBrowse = { tool: 'library', sel: 'r01', tier: 0, ready: false, detail: null };
@@ -106,7 +106,7 @@ function runeUiChipHTML(id, snapshot, need) {
   var have = runesViewCount(snapshot, id);
   var enough = have >= (need || 1);
   return '<button type="button" class="rx-chip' + (enough ? ' has' : '') + '" data-rune-goto="' + id + '" style="--c:' + r.color +
-    '" data-tip="' + esc(r.name + '符文（第 ' + r.tier + ' 階）｜持有 ' + have + (need > 1 ? '，此配方需要 ' + need : '') + '｜點擊查看') + '">' +
+    '" data-tip="' + esc(STR(1767, r.name, r.tier, have, (need > 1 ? STR(1766, need) : ''))) + '">' +
     '<span class="rx-chip-g">' + runeStoneHTML(id, 'rs-chip') + '</span>' + esc(r.name) + (need > 1 ? '<i>×' + need + '</i>' : '') + '</button>';
 }
 
@@ -115,23 +115,18 @@ function runeUiLibraryHTML(snapshot, sel) {
   for (var i = 0; i < RUNES.length; i++) {
     var r = RUNES[i];
     var n = runesViewCount(snapshot, r.id);
-    h += '<button type="button" class="rx-card' + (r.id === sel ? ' is-sel' : '') + (n ? '' : ' is-empty') +
-      '" data-rune-pick="' + r.id + '" style="--c:' + r.color + '">' +
-      '<span class="rx-glyph">' + runeStoneHTML(r.id, 'rs-card') + '</span>' +
-      '<span class="rx-card-name">' + esc(r.name) + '</span>' +
-      '<span class="rx-card-tier">第 ' + r.tier + ' 階</span>' +
-      '<span class="rx-card-count">×' + fmt(n) + '</span></button>';
+    h += '<button type="button" class="rx-card' + (r.id === sel ? ' is-sel' : '') + (n ? '' : ' is-empty') + '" data-rune-pick="' + r.id + '" style="--c:' + r.color + '"><span class="rx-glyph">' + runeStoneHTML(r.id, 'rs-card') + '</span><span class="rx-card-name">' + esc(r.name) + '</span>' + STR(1768, r.tier) + '<span class="rx-card-count">×' + fmt(n) + '</span></button>';
   }
   return h;
 }
 
 /* 「基礎值」的定義：只放在提示裡，畫面上不再每顆符文重複一大段說明。 */
-var RUNE_BASE_TIP = '基礎值＝裝備詳情提示裡「可能出現的詞條」範圍的下限（例如 [2828 ~ 4241] 的 2828）；數值隨裝備等級、稀有度與強化成長。雙手武器的詞條本身 ×2，單顆符文也跟著 ×2；組成符文真言時另有符文真言加成。';
+var RUNE_BASE_TIP = STR(1769);
 
 function runeUiStatLine(side, spec) {
   var def = rwStatDef(spec[0]);
   var name = def ? def.name.replace(/%$/, '') : spec[0];
-  return '<div class="rx-stat"><b>' + side + '</b>' + esc(name) + '<span data-tip="' + esc(RUNE_BASE_TIP) + '">（基礎值 ×' + spec[1] + '）</span></div>';
+  return '<div class="rx-stat"><b>' + side + '</b>' + esc(name) + '<span data-tip="' + esc(RUNE_BASE_TIP) + '">' + STR(1770, spec[1]) + '</span></div>';
 }
 
 function runeUiFocusHTML(snapshot, id) {
@@ -142,28 +137,25 @@ function runeUiFocusHTML(snapshot, id) {
   var canDismantle = n >= 1 && r.tier > 1;
   var next = r.tier < RUNES.length ? RUNES[r.tier] : null;
   var lower = r.tier > 1 ? RUNES[r.tier - 2] : null;
-  var h = '<div class="rx-focus-head" style="--c:' + r.color + '">' +
-    '<span class="rx-focus-glyph">' + runeStoneHTML(r.id, 'rs-focus') + '</span>' +
-    '<div><div class="rx-focus-name">' + esc(r.name) + '符文<small>第 ' + r.tier + ' 階</small></div>' +
-    '<div class="rx-focus-sub">持有 <b>' + fmt(n) + '</b> 顆</div></div></div>';
+  var h = '<div class="rx-focus-head" style="--c:' + r.color + '"><span class="rx-focus-glyph">' + runeStoneHTML(r.id, 'rs-focus') + '</span><div><div class="rx-focus-name">' + STR(1771, esc(r.name), r.tier) + '</div><div class="rx-focus-sub">' + STR(1772, fmt(n)) + '</div></div></div>';
   h += '<div class="rx-stats">' +
-    runeUiStatLine('⚔ 鑲在武器', r.w) + runeUiStatLine('🛡 鑲在防具', r.a) + runeUiStatLine('💍 鑲在飾品', r.j) +
+    runeUiStatLine(STR(1773), r.w) + runeUiStatLine(STR(1774), r.a) + runeUiStatLine(STR(1775), r.j) +
     (r.flavor ? '<div class="rx-flavor">「' + esc(r.flavor) + '」</div>' : '') + '</div>';
-  var composeLabel = (next && r.tier < RUNE_COMPOSE_MAX_TIER) ? ('合成「' + esc(next.name) + '」') : '合成';
+  var composeLabel = (next && r.tier < RUNE_COMPOSE_MAX_TIER) ? (STR(1776, esc(next.name))) : '合成';
   h += '<div class="rx-actions">' +
     '<button type="button" class="btn" data-rune-act="compose"' + (canCompose ? '' : ' disabled') + '>' + composeLabel + '</button>' +
     '<button type="button" class="btn" data-rune-act="composeAll"' + (canCompose ? '' : ' disabled') + '>全部合成</button>' +
     '<button type="button" class="btn warn" data-rune-act="dismantle"' + (canDismantle ? '' : ' disabled') + '>拆解</button></div>';
   var note = [];
-  if (next && r.tier < RUNE_COMPOSE_MAX_TIER) note.push('合成：' + RUNE_COMPOSE_COUNT + ' 顆「' + r.name + '」→ 1 顆「' + next.name + '」');
-  else if (r.tier >= RUNE_COMPOSE_MAX_TIER) note.push('第 ' + RUNE_COMPOSE_MAX_TIER + ' 階以上的符文無法合成，只能靠擊殺與封魔塔掉落');
-  if (lower) note.push('拆解：可獲得 ' + RUNE_DISMANTLE_YIELD + ' 顆「' + lower.name + '」');
+  if (next && r.tier < RUNE_COMPOSE_MAX_TIER) note.push(STR(1777, RUNE_COMPOSE_COUNT, r.name, next.name));
+  else if (r.tier >= RUNE_COMPOSE_MAX_TIER) note.push(STR(1778, RUNE_COMPOSE_MAX_TIER));
+  if (lower) note.push(STR(1779, RUNE_DISMANTLE_YIELD, lower.name));
   h += '<div class="rx-note">' + esc(note.join('；')) + '</div>';
   var uses = [];
   for (var i = 0; i < RUNEWORDS.length; i++) {
     if (RUNEWORDS[i].runes.indexOf(id) >= 0) uses.push(RUNEWORDS[i]);
   }
-  h += '<div class="rx-uses"><div class="rx-sec">用在這些符文真言（' + uses.length + '）</div><div class="rx-use-list">';
+  h += '<div class="rx-uses"><div class="rx-sec">' + STR(1780, uses.length) + '</div><div class="rx-use-list">';
   var worn = runeUiWornWords();
   uses.forEach(function (w) {
     if (!runeUiRevealed(snapshot, w.id)) {
@@ -185,14 +177,14 @@ function runeUiWordHTML(w, snapshot, worn, tooltip) {
   var h = '<div class="rx-word' + (worn[w.id] ? ' is-worn' : '') + (ready ? ' is-ready' : '') + '"' + (tooltip ? '' : ' id="rxw-' + w.id + '"') + ' style="--c:' + RUNEWORD_TIER_COLORS[w.tier] + '">';
   h += '<div class="rx-word-head"><b>' + esc(w.name) + '</b><span class="rx-badge">' + esc(RUNEWORD_TIER_NAMES[w.tier]) + '</span>' +
     '<span class="rx-need">' + esc(rwSocketNeedText(w)) + '</span>' +
-    (worn[w.id] ? '<span class="rx-flag worn">穿戴中・已成形</span>' : (ready ? '<span class="rx-flag ready">材料齊全</span>' : '')) + '</div>';
+    (worn[w.id] ? STR(1781) : (ready ? STR(1782) : '')) + '</div>';
   h += '<div class="rx-recipe">';
   for (var i = 0; i < w.runes.length; i++) {
     if (i) h += '<span class="rx-arrow">→</span>';
     h += revealed ? runeUiChipHTML(w.runes[i], snapshot, need[w.runes[i]]) : runeUiUnknownChipHTML(w.runes[i]);
   }
   h += '</div>';
-  h += '<div class="rx-bases">適用：' + esc(rwBasesText(w)) + '</div>';
+  h += '<div class="rx-bases">' + STR(1783, esc(rwBasesText(w))) + '</div>';
   h += '<ul class="rx-lines">';
   rwDescribeEntries(w).forEach(function (e) {
     h += revealed ? '<li' + (e.color ? ' style="color:' + e.color + '"' : '') + '>' + esc(e.text) + '</li>' : '<li class="rx-unknown">' + RUNE_UNKNOWN_LINE + '</li>';
@@ -246,9 +238,9 @@ function renderRunes() {
       h += runeUiWordHTML(w, snapshot, worn);
       shown++;
     }
-    if (!h) h = '<div class="gx-empty">沒有符合條件的符文真言</div>';
+    if (!h) h = '<div class="gx-empty">' + STR(1784) + '</div>';
     if (list._lastH !== h) { list._lastH = h; list.innerHTML = h; }
-    setTextIfChanged($id('rune-codex-count'), '顯示 ' + shown + ' / ' + RUNEWORDS.length + ' 組');
+    setTextIfChanged($id('rune-codex-count'), STR(1785, shown, RUNEWORDS.length));
   }
   setRuneTool(st.tool);
 }
@@ -261,7 +253,7 @@ function runeUiSyncToggle() {
   if (btn.hidden !== !can) btn.hidden = !can;
   if (!can) return;
   var on = runeUiDetailOn();
-  setTextIfChanged(btn, on ? '詳細說明：開' : '詳細說明：關');
+  setTextIfChanged(btn, on ? STR(1786) : STR(1787));
   if (btn.getAttribute('aria-pressed') !== String(on)) btn.setAttribute('aria-pressed', String(on));
 }
 
@@ -292,9 +284,9 @@ function runeUiAction(act) {
     var cmd = act === 'compose' ? 'rune.compose' : (act === 'composeAll' ? 'rune.composeAll' : 'rune.dismantle');
     sendGemUiCommand(cmd, { runeId: id }, 'rune:' + id, ['gems', 'header'], function (result) {
       if (act === 'compose') {
-        blog('🔷 符文合成：' + runeLabel(id) + ' ×' + RUNE_COMPOSE_COUNT + ' → ' + runeLabel(RUNES[r.tier].id), 'info', 'factory');
+        blog(STR(1788, runeLabel(id), RUNE_COMPOSE_COUNT, runeLabel(RUNES[r.tier].id)), 'info', 'factory');
       } else if (act === 'dismantle' && result && result.id) {
-        blog('🔷 符文拆解：' + runeLabel(id) + ' → ' + runeLabel(result.id) + ' ×' + result.n, 'info', 'factory');
+        blog(STR(1789, runeLabel(id), runeLabel(result.id), result.n), 'info', 'factory');
       }
     });
   };
@@ -306,9 +298,9 @@ function runeUiAction(act) {
     var next = r.tier < RUNES.length ? RUNES[r.tier] : null;
     var makeCount = Math.floor(n / RUNE_COMPOSE_COUNT);
     if (makeCount > 0 && next && r.tier < RUNE_COMPOSE_MAX_TIER) {
-      var msg = '確定要全部合成嗎？\n將合成 ' + fmt(makeCount) + ' 個「' + next.name + '」符文，並且會消耗所有當前「' + r.name + '」符文。';
+      var msg = STR(1790, fmt(makeCount), next.name, r.name);
       if (typeof showConfirmDialog === 'function') {
-        showConfirmDialog(msg, doSend, { title: '全部合成確認' });
+        showConfirmDialog(msg, doSend, { title: STR(1791) });
       } else {
         doSend();
       }
@@ -321,10 +313,10 @@ function runeUiAction(act) {
     var isEpicOrAbove = (r.tier >= 19);
     if (isEpicOrAbove) {
       var lower = r.tier > 1 ? RUNES[r.tier - 2] : null;
-      var lowerText = lower ? ('\n拆解後可獲得 ' + RUNE_DISMANTLE_YIELD + ' 顆「' + lower.name + '」符文。') : '';
-      var msg = '確定要拆解「' + r.name + '」符文嗎？' + lowerText + '\n此符文為史詩或以上品質，請再次確認。';
+      var lowerText = lower ? ('\n' + STR(1792, RUNE_DISMANTLE_YIELD, lower.name)) : '';
+      var msg = STR(1793, r.name, lowerText);
       if (typeof showConfirmDialog === 'function') {
-        showConfirmDialog(msg, doSend, { title: '符文拆解確認', danger: true });
+        showConfirmDialog(msg, doSend, { title: STR(1794), danger: true });
       } else {
         doSend();
       }
@@ -346,13 +338,9 @@ function runeUiHelpText() {
   }
   var slotText = order.map(function (n) {
     var names = by[n];
-    return (names.length > 1 ? names[0] + '～' + names[names.length - 1] : names[0]) + ' ' + n + ' 孔';
+    return STR(1795, (names.length > 1 ? names[0] + '～' + names[names.length - 1] : names[0]), n);
   }).join('、');
-  return '符文鑲在裝備專屬的符文孔裡（取代原本的附魔位置，與寶石鑲孔分開，一般裝備最多 ' + rwRegularMaxSlots() + ' 孔' + (RUNE_SETTINGS.twoHandBonusSlots > 0 ? '、雙手武器多 ' + RUNE_SETTINGS.twoHandBonusSlots + ' 孔' : '') + '；在裝備頁按「符文」鑲入）。' +
-    '把「指定的符文、依指定順序」鑲進連續的符文孔，且裝備類型符合，就會成形為符文真言，獲得額外屬性與特殊威能；拆下任何一顆就失效，換回來又恢復。' +
-    '符文真言資訊有兩種永久解鎖方式：自行依正確條件成功成形，或通關指定的封魔塔層數。解鎖後可隨時查看配方與效果，拆下符文也不會再變回問號；尚未解鎖的只看得到名稱、品質、需要的孔數與適用裝備。正式版與內測版適用相同解鎖規則。' +
-    '符文從野外擊殺與封魔塔通關掉落，' + RUNE_COMPOSE_COUNT + ' 顆同種可合成為下一階（第 ' + RUNE_COMPOSE_MAX_TIER + ' 階以上只能掉落）。' +
-    '符文孔數由稀有度決定：' + slotText + '。';
+  return STR(1797, rwRegularMaxSlots(), (RUNE_SETTINGS.twoHandBonusSlots > 0 ? STR(1796, RUNE_SETTINGS.twoHandBonusSlots) : ''), RUNE_COMPOSE_COUNT, RUNE_COMPOSE_MAX_TIER, slotText);
 }
 
 /* 一次性綁定（由 ui.js 的初始化流程呼叫）。 */

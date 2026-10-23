@@ -781,12 +781,11 @@ function itemRuneHTML(it, mode) {
   if (typeof rwSlots !== 'function') return '';
   var slots = rwSlots(it);
   if (!slots.length) {
-    return mode ? '<div class="it-sockets it-runes"><div class="equip-material-empty">這件裝備沒有符文孔（孔數依稀有度而定，一般裝備最多 ' +
-      rwRegularMaxSlots() + ' 孔，雙手武器可能更多）。</div></div>' : '';
+    return mode ? '<div class="it-sockets it-runes"><div class="equip-material-empty">' + STR(1642, rwRegularMaxSlots()) + '</div></div>' : '';
   }
   var rwAct = rwActiveWord(it);
   var filled = slots.filter(Boolean).length;
-  var h = '<div class="it-sockets it-runes">' + (mode ? '' : '<div class="it-sockets-title">符文孔 ' + filled + '／' + slots.length + '</div>');
+  var h = '<div class="it-sockets it-runes">' + (mode ? '' : '<div class="it-sockets-title">' + STR(1643, filled, slots.length) + '</div>');
   for (var i = 0; i < slots.length; i++) {
     var id = slots[i];
     var draftId = (!id && mode && mode.draft && mode.draft[i] && RUNE_BY_ID[mode.draft[i]]) ? mode.draft[i] : null;
@@ -797,7 +796,7 @@ function itemRuneHTML(it, mode) {
     var text = shown
       ? '<span class="sk-name">' + (i + 1) + '. ' + icon + ' ' + esc(runeLabel(shown)) + '</span>' +
         '<span class="sk-val">' + esc(rwRuneStatLine(it, shown)) + '</span>'
-      : '◇ 符文孔 ' + (i + 1) + '（空）';
+      : STR(1644, (i + 1));
     var cls = 'socket ' + (shown ? 'filled rune-socket' + (inWord ? ' runeword-socket' : '') + (draftId ? ' is-draft' : '') : 'empty');
     if (!mode) {
       h += '<span class="' + cls + '">' + text + '</span>';
@@ -808,19 +807,14 @@ function itemRuneHTML(it, mode) {
       (mode.pending ? ' disabled' : '') + '>' + text + '</button>';
     if (id) {
       var cost = runeEraseCost(it, id);
-      h += '<button type="button" class="socket-remove" data-rune-erase="' + i + '" aria-label="抹除符文孔 ' + (i + 1) + ' 的符文" data-tip="' +
-        esc('抹除：消耗 ' + runeEraseCostText(cost) + '；符文不會退還，孔恢復為空') + '"' +
-        (mode.pending ? ' disabled' : '') + '>抹除</button>';
+      h += '<button type="button" class="socket-remove" data-rune-erase="' + i + '" aria-label="' + STR(1645, (i + 1)) + '" data-tip="' + esc(STR(1646, runeEraseCostText(cost))) + '"' + (mode.pending ? ' disabled' : '') + '>' + STR(75) + '</button>';
     } else if (draftId) {
-      h += '<button type="button" class="socket-remove" data-rune-undraft="' + i + '" aria-label="取消符文孔 ' + (i + 1) + ' 的暫放符文"' +
-        (mode.pending ? ' disabled' : '') + '>取消</button>';
+      h += '<button type="button" class="socket-remove" data-rune-undraft="' + i + '" aria-label="' + STR(1647, (i + 1)) + '"' + (mode.pending ? ' disabled' : '') + '>' + STR(76) + '</button>';
     }
     h += '</div>';
   }
   if (rwAct) {
-    h += '<div class="it-runeword" style="--rw-c:' + RUNEWORD_TIER_COLORS[rwAct.word.tier] + '">' +
-      '<div class="it-runeword-name">✨ 符文真言【' + esc(rwAct.word.name) + '】<span class="it-runeword-tier">' +
-      esc(RUNEWORD_TIER_NAMES[rwAct.word.tier]) + '</span></div>';
+    h += '<div class="it-runeword" style="--rw-c:' + RUNEWORD_TIER_COLORS[rwAct.word.tier] + '"><div class="it-runeword-name">' + STR(1648, esc(rwAct.word.name)) + '<span class="it-runeword-tier">' + esc(RUNEWORD_TIER_NAMES[rwAct.word.tier]) + '</span></div>';
     rwDescribeEntries(rwAct.word, it).forEach(function (e) {
       h += '<div class="it-runeword-line"' + (e.color ? ' style="color:' + e.color + '"' : '') + '>' + esc(e.text) + '</div>';
     });

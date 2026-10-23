@@ -178,6 +178,7 @@ test('設計表改了就會跟著遊戲走：改 CSV 的合成顆數／倍率／
   const text = schema.rebuild(rows.slice(1), header);
   const ctx = { Math: Object.create(Math) };
   vm.createContext(ctx);
+  for (const f of ['strings_data.js', 'strings.js']) vm.runInContext(fs.readFileSync(path.join(root, 'js', f), 'utf8'), ctx);
   vm.runInContext(dataSrc, ctx);
   vm.runInContext(text.RUNE_SETTINGS + '\n' + text.RUNES + '\n' + text.RUNEWORDS + '\nthis.__s = RUNE_SETTINGS; this.__w = RUNEWORDS.length;', ctx);
   assert.equal(ctx.__s.composeCount, 4);

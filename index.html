@@ -462,15 +462,15 @@
         <section id="tab-runes" class="tab" data-rune-tool="library">
           <div class="pg-top">
             <h2 class="pg-title">符文</h2>
-            <span class="pg-pill">持有 <b id="rune-total">0</b> 顆符文</span>
-            <span class="pg-pill">穿戴中成形 <b id="rune-worn">0</b> 組</span>
-            <span class="pg-pill" data-tt-title="已解鎖符文真言" data-tt-desc="成功組成符文真言，或通關指定的封魔塔層數，即可永久解鎖該項資訊。內測全部預覽不計入解鎖數。">已解鎖符文真言 <b id="rune-unlocked">0/0</b></span>
-            <button type="button" id="rune-detail-toggle" class="rx-detail-toggle" aria-pressed="true" hidden data-tt-title="符文真言詳細說明（內測預覽）" data-tt-desc="開：預覽全部配方與效果，不增加解鎖數；關：依永久解鎖記錄顯示。自行成形或通關指定封魔塔層數均可解鎖，正式版與內測版適用相同規則。">詳細說明：開</button>
-            <button type="button" class="pg-help" aria-label="符文真言說明" data-tt-title="符文真言" data-tt-desc="符文鑲在裝備專屬的符文孔裡，與寶石鑲孔分開。自行依正確條件成功組成符文真言，或通關指定封魔塔層數，即永久解鎖配方與效果資訊。正式版與內測版皆適用。">?</button>
+            <span class="pg-pill">持有 <b id="rune-total">0</b> <span data-str="1628"></span></span>
+            <span class="pg-pill"><span data-str="1629"></span> <b id="rune-worn">0</b> <span data-str="1630"></span></span>
+            <span class="pg-pill" data-str-attr="data-tt-title:1631;data-tt-desc:1632"><span data-str="1631"></span> <b id="rune-unlocked">0/0</b></span>
+            <button type="button" id="rune-detail-toggle" class="rx-detail-toggle" aria-pressed="true" hidden data-str-attr="data-tt-title:1633;data-tt-desc:1634" data-str="1786"></button>
+            <button type="button" class="pg-help" data-str-attr="aria-label:1635;data-tt-title:1636;data-tt-desc:1637">?</button>
           </div>
-          <div class="rx-tabs" role="tablist" aria-label="符文工坊">
-            <button type="button" role="tab" class="rx-tab" data-rune-tool-btn="library">符文庫</button>
-            <button type="button" role="tab" class="rx-tab" data-rune-tool-btn="codex">符文真言圖鑑</button>
+          <div class="rx-tabs" role="tablist" data-str-attr="aria-label:1638">
+            <button type="button" role="tab" class="rx-tab" data-rune-tool-btn="library" data-str="1639"></button>
+            <button type="button" role="tab" class="rx-tab" data-rune-tool-btn="codex" data-str="1640"></button>
           </div>
           <div class="rx-panel" data-rune-panel="library">
             <div class="rx-lib">
@@ -481,7 +481,7 @@
           <div class="rx-panel" data-rune-panel="codex">
             <div class="rx-filter">
               <div id="rune-tier-filter" class="gx-chips"></div>
-              <label class="gx-owned"><input type="checkbox" id="rune-ready-only"> 只看材料齊全／已成形</label>
+              <label class="gx-owned"><input type="checkbox" id="rune-ready-only"> <span data-str="1641"></span></label>
               <span id="rune-codex-count" class="dim-text"></span>
             </div>
             <div id="runeword-list" class="rx-list"></div>
@@ -944,9 +944,9 @@
   <script src="js/strings_data.js?v=fd850ee0"></script>
   <script src="js/strings.js?v=1.0.0"></script>
   <script src="js/ui-scale.js?v=1.0.1"></script>
-  <script src="js/data.js?v=1.0.98"></script>
+  <script src="js/data.js?v=1.0.99"></script>
   <script src="js/status.js?v=1.0.41"></script>
-  <script src="js/runeword_data.js?v=1.0.17"></script>
+  <script src="js/runeword_data.js?v=1.0.18"></script>
   <script src="js/gem_resonance_data.js?v=1.0.1"></script>
   <script src="js/formula.js?v=1.0.69"></script>
   <script src="js/battle-terrain.js?v=1.0.2"></script>
@@ -975,9 +975,9 @@
   <script src="js/battle-elite.js?v=1.0.8"></script>
   <script src="js/battle-renderer.js?v=1.6.199"></script>
   <script src="js/stats.js?v=1.0.4"></script>
-  <script src="js/item.js?v=1.0.26"></script>
+  <script src="js/item.js?v=1.0.27"></script>
   <script src="js/gem_resonance.js?v=1.0.4"></script>
-  <script src="js/runeword.js?v=1.0.15"></script>
+  <script src="js/runeword.js?v=1.0.16"></script>
   <script src="js/skills.js?v=1.0.43"></script>
   <!-- 新版主動技能系統（2026-08-13 技能改造第一批）：定義表＋引擎＋純函式說明 -->
   <script src="js/skills2.js?v=1.0.356"></script>
@@ -988,8 +988,8 @@
   <script src="js/tower.js?v=1.0.35"></script>
   <script src="js/save.js?v=1.0.22"></script>
   <script src="js/ui-inventory-skin.js?v=1.0.1"></script>
-  <script src="js/ui.js?v=1.0.203"></script>
-  <script src="js/ui-runeword.js?v=1.0.13"></script>
+  <script src="js/ui.js?v=1.0.204"></script>
+  <script src="js/ui-runeword.js?v=1.0.14"></script>
   <script src="js/ui-gem-resonance.js?v=1.0.16"></script>
   <script src="js/ui-gem-workshop.js?v=1.0.1"></script>
   <script src="js/ui-newforge-visuals.js?v=1.0.7"></script>
@@ -1005,7 +1005,7 @@
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
-  <script src="js/bridge.js?v=1.0.352"></script>
+  <script src="js/bridge.js?v=1.0.353"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->

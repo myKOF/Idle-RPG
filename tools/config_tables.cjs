@@ -32,6 +32,7 @@ const path = require('path');
 const zlib = require('zlib');
 const vm = require('vm');
 const { execFileSync } = require('child_process');
+const { STR } = require('./string-table/str-node.cjs'); // 資料字面值裡的 STR(編號) 在 eval 時要解得出來
 
 const ROOT = path.resolve(__dirname, '..');
 const CSV_DIR = path.join(ROOT, 'config', 'CSV');
@@ -1693,7 +1694,7 @@ function runeNoteEnv() {
   try {
     const ctx = { console, Math: Object.create(Math) };
     vm.createContext(ctx);
-    ['util.js', 'data.js', 'runeword_data.js', 'runeword.js'].forEach(f => {
+    ['util.js', 'strings_data.js', 'strings.js', 'data.js', 'runeword_data.js', 'runeword.js'].forEach(f => {
       vm.runInContext(readUtf8(path.join(ROOT, 'js', f)), ctx, { filename: f });
     });
     return ctx;
@@ -2068,7 +2069,7 @@ SCHEMAS.Zones = {
   name:'Zones',jsFile:'data',sheet:'地圖',noXlsxGen:true,vars:['ZONES','ZONE_LIST','REALMS'],
   header:['順序','地圖識別碼','地圖名稱','位面','關卡上限','前置地圖識別碼','前置通關關卡','最低轉生次數','生命倍率','攻擊倍率','防禦倍率','攻速倍率','經驗金幣獎勵倍率'],
   evaluate(literal) {
-    const scope={ZONE_ENEMY_TABLES:Object.fromEntries(NPC_POOL_DEFS.map(d=>[d.zone,d.zone]))};
+    const scope={STR,ZONE_ENEMY_TABLES:Object.fromEntries(NPC_POOL_DEFS.map(d=>[d.zone,d.zone]))};
     NPC_POOL_DEFS.forEach(d=>scope[d.varName]=d.varName);
     return vm.runInNewContext('('+literal+')',scope);
   },

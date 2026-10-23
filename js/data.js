@@ -2534,7 +2534,7 @@ function primaryStatDesc(key) {
     ],
     agi: [
       { k: 'agiCritRate', unit: '%', label: '暴擊率' },
-      { k: 'agiAspdPct', unit: '%', label: '攻速' },
+      { k: 'agiAspdPct', unit: '%', label: STR(1703) },
       { k: 'agiHit', unit: '%', label: '命中率' },
       { k: 'agiEvasion', unit: '%', label: '閃避率' },
       { k: 'agiCritDmg', unit: '%', label: '暴擊傷害' }

@@ -163,7 +163,7 @@ var RW_FX_KEYS = [
    name＝畫面顯示的名稱。例：elemDmgAll（全屬性傷害提升）＝火冰雷毒聖暗地風八種元素傷害提升各加同樣的值。 */
 var RW_STAT_ALIASES = {
   elemDmgAll: {
-    name: '全屬性傷害提升%', like: 'elemDmgFire',
+    name: STR(1762), like: 'elemDmgFire',
     keys: ['elemDmgFire', 'elemDmgIce', 'elemDmgLightning', 'elemDmgPoison', 'elemDmgLight', 'elemDmgDark', 'elemDmgEarth', 'elemDmgWind']
   }
 };
@@ -583,4 +583,4 @@ function runeName(id) {
   var r = RUNE_BY_ID[id];
   return r ? r.name : String(id);
 }
-function runeLabel(id) { return runeName(id) + '符文'; }
+function runeLabel(id) { return STR(1763, runeName(id)); }

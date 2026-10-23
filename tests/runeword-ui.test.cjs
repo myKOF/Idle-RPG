@@ -1,4 +1,5 @@
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -40,7 +41,7 @@ function mount(opts) {
   c.store = store;
   vm.createContext(c);
   ['worker/protocol.js', 'util.js', 'strings_data.js', 'strings.js', 'data.js', 'runeword_data.js', 'status.js', 'formula.js', 'item.js', 'runeword.js', 'ui.js', 'ui-runeword.js'].forEach((f) => {
-    vm.runInContext(fs.readFileSync(path.join(root, 'js', f), 'utf8'), c, { filename: 'js/' + f });
+    vm.runInContext(readExpanded(path.join(root, 'js', f)), c, { filename: 'js/' + f });
   });
   c.isInternalServer = () => internal;   // ui.js 的版本在 vm 裡讀不到 location，直接蓋掉
   c.confirmHistory = [];
@@ -186,7 +187,7 @@ test('全部合成與史詩拆解：取消時不送出指令', () => {
 });
 
 test('index.html 與 ui.js 的接線：分頁、script／css、面板訂閱、socket 模式符文圖示', () => {
-  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const html = readExpanded(path.join(root, 'index.html'));
   assert.match(html, /data-tab="runes"/);
   assert.match(html, /<section id="tab-runes" class="tab"/);
   assert.match(html, /js\/runeword_data\.js\?v=/);
@@ -197,7 +198,7 @@ test('index.html 與 ui.js 的接線：分頁、script／css、面板訂閱、so
   assert.ok(html.indexOf('src="js/runeword_data.js?v=') < html.indexOf('src="js/formula.js?v='));
   assert.ok(html.indexOf('src="js/item.js?v=') < html.indexOf('src="js/runeword.js?v='));
   assert.ok(html.indexOf('src="js/ui.js?v=') < html.indexOf('src="js/ui-runeword.js?v='));
-  const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
+  const ui = readExpanded(path.join(root, 'js/ui.js'));
   assert.match(ui, /runes: \['gems', 'equip', 'header'\]/);
   assert.match(ui, /data-rune-socket/);
   assert.match(ui, /sendUiCommand\('rune\.socket'/);
@@ -208,7 +209,7 @@ test('index.html 與 ui.js 的接線：分頁、script／css、面板訂閱、so
   assert.match(ui, /data-act="engrave-rune"/);
   assert.match(ui, /equipRuneGridHTML/);
   assert.match(ui, /socketRuneToSelected/, '符文鑲嵌頁：選孔後點符文鑲進該孔（與寶石同一套選孔流程）');
-  const worker = fs.readFileSync(path.join(root, 'js/worker/sim.worker.js'), 'utf8');
+  const worker = readExpanded(path.join(root, 'js/worker/sim.worker.js'));
   assert.match(worker, /runeword_data\.js\?v=/);
   assert.match(worker, /'\.\.\/runeword\.js\?v=/);
   assert.match(worker, /runes: p\.runes \|\| \{\}/);
@@ -373,7 +374,7 @@ test('品質沿用裝備品質：名稱與顏色讀 RARITIES（白普通／綠�
 });
 
 test('用語：畫面與說明一律是「符文真言」，沒有殘留「符文之語」；頁面大標題只寫「符文」', () => {
-  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const html = readExpanded(path.join(root, 'index.html'));
   assert.match(html, /<h2 class="pg-title">符文<\/h2>/);
   assert.match(html, /data-rune-tool-btn="codex">符文真言圖鑑</);
   assert.match(html, /id="rune-detail-toggle"[^>]*hidden/);
@@ -387,15 +388,15 @@ test('用語：畫面與說明一律是「符文真言」，沒有殘留「符�
 });
 
 test('接線：gems 面板帶 runewordSeen、協議版號與快取版號有帶', () => {
-  const worker = fs.readFileSync(path.join(root, 'js/worker/sim.worker.js'), 'utf8');
+  const worker = readExpanded(path.join(root, 'js/worker/sim.worker.js'));
   assert.match(worker, /runewordSeen: p\.runewordSeen \|\| \{\}/);
-  const proto = fs.readFileSync(path.join(root, 'js/worker/protocol.js'), 'utf8');
+  const proto = readExpanded(path.join(root, 'js/worker/protocol.js'));
   assert.match(proto, /WORKER_PROTOCOL_VERSION = \d+;/);
-  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const html = readExpanded(path.join(root, 'index.html'));
   assert.match(html, /js\/worker\/protocol\.js\?v=\d+/);
   assert.match(worker, /protocol\.js\?v=\d+/);
   assert.match(worker, /'\.\.\/runeword\.js\?v=[^']+'/);   // 只驗證有帶版號：確切字串每次改檔都會換，不釘
-  assert.match(fs.readFileSync(path.join(root, 'js/bridge.js'), 'utf8'), /WORKER_ASSET_VERSION = '[^']+'/);
+  assert.match(readExpanded(path.join(root, 'js/bridge.js')), /WORKER_ASSET_VERSION = '[^']+'/);
 });
 
 /* ============ 符文石圖（2026-10-07，images/runes）：每顆符文都有一張刻了字的石頭圖 ============ */
@@ -462,13 +463,13 @@ test('裝備詳情的符文孔、符文鑲嵌頁的符文格、背包角標都�
 });
 
 test('符文石圖的接線：index.html 引用的 css／js 版號與快取、素材來源記錄', () => {
-  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const html = readExpanded(path.join(root, 'index.html'));
   assert.match(html, /css\/runeword\.css\?v=[\d.]+/);   // 版號只驗證存在（每次改檔都會 +1，不釘確切值）
   assert.match(html, /js\/ui-runeword\.js\?v=[\d.]+/);
   const css = fs.readFileSync(path.join(root, 'css/runeword.css'), 'utf8');
   ['rs-card', 'rs-focus', 'rs-chip', 'rs-row', 'rs-icon', 'rs-badge'].forEach((k) => assert.match(css, new RegExp('\\.' + k + '\\b'), '缺 ' + k + ' 的尺寸樣式'));
   assert.match(css, /\.rune-stone \{[^}]*pointer-events: none/);
-  const data = fs.readFileSync(path.join(root, 'js/runeword_data.js'), 'utf8');
+  const data = readExpanded(path.join(root, 'js/runeword_data.js'));
   assert.match(data, /var RUNE_STONE_VER = \d+;/);
   assert.ok(fs.existsSync(path.join(root, 'tools/rune-stones/rune-stone-painter.js')), '產生器要隨專案保存');
 });

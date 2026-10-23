@@ -5819,7 +5819,7 @@ function engraveRuneDrafts() {
   });
   return chain.then(finish).catch(function (error) {
     finish();
-    reportUiCommandFailure('刻印符文', error, panels);
+    reportUiCommandFailure(STR(1798), error, panels);
   });
 }
 
@@ -5897,10 +5897,10 @@ function equipRuneGridHTML(it, gemsSnapshot, draft) {
     if (rn < 1) continue;   // 暫放的也先扣掉：數量是「還能再放幾顆」
     icons.push('<button type="button" class="equip-material-icon rune-icon" data-rune-socket="' + rune.id + '"' +
       ' style="--c:' + rune.color + '" data-tip="' +
-      esc(rune.name + '符文（第 ' + rune.tier + ' 階）×' + rn + '｜鑲在這件裝備：' + rwRuneStatLine(it, rune.id) + '｜鑲入選中孔位') + '">' +
+      esc(STR(1799, rune.name, rune.tier, rn, rwRuneStatLine(it, rune.id))) + '">' +
       runeStoneHTML(rune.id, 'rs-icon') + '<span class="socket-gem-level">' + rune.tier + '</span><span class="socket-gem-count">×' + fmt(rn) + '</span></button>');
   }
-  return icons.length ? '<div class="equip-socket-gem-grid">' + icons.join('') + '</div>' : '<div class="equip-material-empty">尚無符文（擊殺與封魔塔會掉落，符文頁可合成）</div>';
+  return icons.length ? '<div class="equip-socket-gem-grid">' + icons.join('') + '</div>' : '<div class="equip-material-empty">' + STR(1800) + '</div>';
 }
 
 function renderDetail() {
@@ -7409,7 +7409,7 @@ function towerDetailHTML(fl, highest) {
   var wordUnlocks = (typeof RUNEWORDS !== 'undefined' ? RUNEWORDS : []).filter(function (word) {
     return Number.isInteger(word.towerUnlockFloor) && word.towerUnlockFloor > 0 && word.towerUnlockFloor === fl;
   }).map(function (word) {
-    return '<div>解鎖符文真言資訊：第 ' + word.tier + ' 級（' + esc(RUNEWORD_TIER_NAMES[word.tier]) + '）【' + esc(word.name) + '】</div>';
+    return '<div>' + STR(1801, word.tier, esc(RUNEWORD_TIER_NAMES[word.tier]), esc(word.name)) + '</div>';
   }).join('');
   return '<div class="twx-boss" style="--c:' + color + '">' +
       '<div class="twx-boss-art">' + towerBossIconHTML(bd, 'twx-boss-img') + '</div>' +
@@ -8495,8 +8495,8 @@ var UI_COMMAND_LABELS = {
   'forge.setAuto': STR(1343), 'forge.setAutoFill': STR(1344),
   'item.equip': '裝備', 'item.unequip': '卸下', 'item.salvage': '分解', 'item.setLock': '鎖定',
   'item.upgrade': '強化', 'item.enchant': '附魔', 'item.removeEnchant': '移除附魔',
-  'item.rerollAffix': '洗煉', 'gem.socket': STR(1591), 'gem.unsocket': STR(1592), 'rune.socket': '鑲嵌符文',
-  'rune.compose': '符文合成', 'rune.composeAll': '符文全部合成', 'rune.dismantle': '符文拆解',
+  'item.rerollAffix': '洗煉', 'gem.socket': STR(1591), 'gem.unsocket': STR(1592), 'rune.socket': STR(1802),
+  'rune.compose': STR(1803), 'rune.composeAll': STR(1804), 'rune.dismantle': STR(1805),
   'newforge.addFurnace': STR(1451), 'newforge.removeFurnace': STR(1452),
   'newforge.installPart': STR(1456), 'newforge.uninstallPart': STR(1457),
   'newforge.upgradePart': STR(1449), 'newforge.unlockPartSlot': STR(1458),
@@ -13235,7 +13235,7 @@ function initUI() {
           keys: [itemPendingKey(rmIt.id)],
           panels: ['inv', 'equip', 'gems', 'header']
         }).catch(function (error) {
-          reportUiCommandFailure('抹除符文', error, ['inv', 'equip', 'gems', 'header']);
+          reportUiCommandFailure(STR(1806), error, ['inv', 'equip', 'gems', 'header']);
         });
       }
       return;
