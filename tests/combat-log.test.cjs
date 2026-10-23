@@ -47,7 +47,7 @@ test('戰鬥日誌分類與色彩樣式規則驗證', () => {
   assert.match(combat, /if\s*\(mult\s*&&\s*mult\s*>\s*1\)\s*\{\s*cls\s*=\s*'log-enemy-skill';\s*\}/);
   assert.match(css, /\.log-line\.log-enemy-skill\s*\{[\s\S]*?color:\s*#fff59d;[\s\S]*?\}/);
   assert.match(combat, /function\s+doMonsterAttack\(mEnt,\s*pEnt,\s*floatSel,\s*mult,\s*skillName\)/);
-  assert.match(combat, /skillName\s*\?\s*' 使用【'\s*\+\s*skillName\s*\+\s*'】'/);
+  assert.match(combat, /skillName\s*\?\s*' '\s*\+\s*'使用【'\s*\+\s*skillName\s*\+\s*'】'/);
   assert.match(combat, /if\s*\(skillName\)\s*\{\s*cls\s*=\s*'log-enemy-skill';\s*\}/);
   assert.match(tower, /var\s+bossSpecialTarget\s*=[\s\S]*?doMonsterAttack\(b,\s*bossSpecialTarget,\s*'tp-float',\s*2\.2\s*\*\s*mult,\s*'蓄力重擊'\)/);
 

@@ -64,13 +64,17 @@ var Strings = (function () {
     return v ? v : row[0];
   }
 
-  function fill(template, args) {
-    if (!args || template.indexOf('{') < 0) return template;
-    return template.replace(/\{([A-Za-z0-9_]+)\}/g, function (whole, key) {
-      var v = args[key];
-      if (v === undefined) return whole;
-      return v === null ? '' : String(v);
-    });
+  /* 樣板編譯成「文字／替代字符」片段並快取（戰鬥日誌、飄字每秒會呼叫很多次） */
+  var compiled = {};
+  function compile(template) {
+    var parts = [], re = /\{([A-Za-z0-9_]+)\}/g, last = 0, m;
+    while ((m = re.exec(template))) {
+      if (m.index > last) parts.push(template.slice(last, m.index));
+      parts.push({ k: m[1], n: /^\d+$/.test(m[1]) ? +m[1] : -1, raw: m[0] });
+      last = m.index + m[0].length;
+    }
+    if (last < template.length) parts.push(template.slice(last));
+    return parts;
   }
 
   /* STR(id, p0, p1, …) 或 STR(id, { name: value })。陣列視為位置參數。 */
@@ -80,11 +84,17 @@ var Strings = (function () {
       warnOnce('missing:' + id, '找不到編號 ' + id + (table() ? '' : '（strings_data.js 尚未載入）'));
       return '[#' + id + ']';
     }
-    if (arguments.length < 2) return template;
-    var args;
-    if (arguments.length === 2 && first !== null && typeof first === 'object') args = first;
-    else args = Array.prototype.slice.call(arguments, 1);
-    return fill(template, args);
+    if (arguments.length < 2 || template.indexOf('{') < 0) return template;
+    var parts = compiled[lang + ':' + id] || (compiled[lang + ':' + id] = compile(template));
+    var named = (arguments.length === 2 && first !== null && typeof first === 'object') ? first : null;
+    var out = '';
+    for (var i = 0; i < parts.length; i++) {
+      var p = parts[i];
+      if (typeof p === 'string') { out += p; continue; }
+      var v = named ? named[p.k] : (p.n >= 0 ? arguments[p.n + 1] : undefined);
+      out += v === undefined ? p.raw : (v === null ? '' : String(v));
+    }
+    return out;
   }
 
   function has(id) { return raw(id) !== null; }
@@ -93,6 +103,7 @@ var Strings = (function () {
     var n = normalizeLang(code);
     if (!n) return false;
     lang = n;
+    compiled = {};
     try { if (typeof localStorage !== 'undefined') localStorage.setItem('ir_lang', n); } catch (e) { /* 存不了就只在這次有效 */ }
     return true;
   }

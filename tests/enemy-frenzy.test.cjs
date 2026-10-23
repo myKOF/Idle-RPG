@@ -1,4 +1,5 @@
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
@@ -9,7 +10,7 @@ function context() {
   c.window = c;
   vm.createContext(c);
   for (const f of ['util', 'strings_data', 'strings', 'data', 'status', 'formula', 'battlefield', 'combat']) {
-    vm.runInContext(fs.readFileSync(path.join(root, 'js', f + '.js'), 'utf8'), c);
+    vm.runInContext(readExpanded(path.join(root, 'js', f + '.js')), c);
   }
   return c;
 }
@@ -20,7 +21,7 @@ test('出生寬限、完整秒邊界與無上限累加', () => {
     assert.ok(Math.abs(c.enemyFrenzyPct(m, now) - pct) < 1e-8);
   }
   assert.equal(c.enemyFrenzyPct({}, 1000), 0);
-  const worker = fs.readFileSync(path.join(root, 'js/worker/sim.worker.js'), 'utf8');
+  const worker = readExpanded(path.join(root, 'js/worker/sim.worker.js'));
   assert.match(worker, /if \(!combatPaused\) GT \+= dt/, '暫停不推進狂暴化使用的GT');
 });
 test('物理、魔法與元素攻擊共用狂暴化，與既有重擊乘算且不污染敵人', () => {
@@ -43,7 +44,7 @@ test('平均只算存活敵人，UI白到紅並保持無上限文字，高塔選
   c.$id = () => el;
   c.setTextIfChanged = (e, text) => e.textContent = text;
   c.setStyleIfChanged = (e, k, value) => e.style[k] = value;
-  const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
+  const ui = readExpanded(path.join(root, 'js/ui.js'));
   vm.runInContext(ui.slice(ui.indexOf('function renderEnemyFrenzy('), ui.indexOf('function renderBattle()')), c);
   const alive = { hp: 1, _spawnAt: 0 };
   const group = [alive, { hp: 1, _spawnAt: 100 }, { hp: 0, _spawnAt: -100 }];
@@ -59,12 +60,12 @@ test('平均只算存活敵人，UI白到紅並保持無上限文字，高塔選
   assert.equal(el.textContent, '狂暴化：0%');
   c.renderEnemyFrenzy({ gt: 110, field: { monsters: [{ hp: 0, _spawnAt: 0 }] } }, {});
   assert.equal(el.textContent, '狂暴化：0%');
-  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const html = readExpanded(path.join(root, 'index.html'));
   assert.match(html, /id="battle-frenzy"[^>]*right:12px;top:44px/);
   assert.match(html, /id="battle-frenzy"[^>]*pointer-events:auto/);
   assert.match(html, /id="battle-frenzy"[^>]*data-tt-title="狂暴化"[^>]*data-tt-desc="敵人在場上存在時間越久會逐漸提升其強度"/);
   assert.match(ui, /renderEnemyFrenzy\(battleSnapshot, view\)/);
-  assert.match(fs.readFileSync(path.join(root, 'js/tower.js'), 'utf8'), /TOWER\.boss = makeBoss\(floor\);\s*TOWER\.boss\._spawnAt = GT/);
+  assert.match(readExpanded(path.join(root, 'js/tower.js')), /TOWER\.boss = makeBoss\(floor\);\s*TOWER\.boss\._spawnAt = GT/);
 });
 
 test('數量按當秒累加，死亡不計、寬限與進場仍計，減少敵人不回扣', () => {
@@ -97,13 +98,13 @@ test('各敵人從自己的出生時間滿秒，野外與高塔Tick均接入累�
   c.tickEnemyFrenzy([a, b], 11.5);
   assert.equal(c.enemyFrenzyPct(a, 11.5), 1.02);
   assert.equal(c.enemyFrenzyPct(b, 11.5), 1.02);
-  assert.match(fs.readFileSync(path.join(root, 'js/combat.js'), 'utf8'), /function fieldTick\(dt\)[\s\S]*?tickEnemyFrenzy\(fieldEnemyList\(\), GT\)/);
-  assert.match(fs.readFileSync(path.join(root, 'js/tower.js'), 'utf8'), /tickEnemyFrenzy\(TOWER\.boss \? \[TOWER\.boss\] : \[\], GT\)/);
+  assert.match(readExpanded(path.join(root, 'js/combat.js')), /function fieldTick\(dt\)[\s\S]*?tickEnemyFrenzy\(fieldEnemyList\(\), GT\)/);
+  assert.match(readExpanded(path.join(root, 'js/tower.js')), /tickEnemyFrenzy\(TOWER\.boss \? \[TOWER\.boss\] : \[\], GT\)/);
 });
 
 test('真實野外與高塔Tick在暫停演出行動時仍同步出生計時增傷', () => {
   const c = context();
-  vm.runInContext(fs.readFileSync(path.join(root, 'js/tower.js'), 'utf8'), c);
+  vm.runInContext(readExpanded(path.join(root, 'js/tower.js')), c);
   c.G = { tower: { active: false } };
   c.GT = 11;
   c.getStats = () => ({});

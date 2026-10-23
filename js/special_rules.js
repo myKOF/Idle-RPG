@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* ============================================================================
    special_rules.js — 玩家歷史進程「一次性特規」處理
    ----------------------------------------------------------------------------
@@ -81,9 +82,8 @@ function grantSpecialEquipment(ms, monsterLevel) {
   var cap = (typeof inventoryCapacityWithTalents === 'function')
     ? inventoryCapacityWithTalents()
     : INVENTORY_CAP + (G.player.invUpgrades || 0);
-  var over = G.inventory.length > cap ? '（背包已滿，暫時超出容量，請整理背包）' : '';
+  var over = G.inventory.length > cap ? STR(611) : '';
   if (typeof blog === 'function') {
-    blog('🎁 進程獎勵：達成 ' + ms.minLevel + '~' + ms.maxLevel + ' 級里程碑，必得 ' +
-      (typeof rarityTag === 'function' ? rarityTag(it) : ms.tierName) + it.name + over, 'good');
+    blog(STR(612, ms.minLevel, ms.maxLevel, (typeof rarityTag === 'function' ? rarityTag(it) : ms.tierName), it.name, over), 'good');
   }
 }

@@ -10,7 +10,8 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
-const read = (f) => fs.readFileSync(path.join(root, f), 'utf8');
+const { readExpanded } = require('./helpers/str-expand.cjs');
+const read = (f) => readExpanded(path.join(root, f));
 
 function fakeContext() {
   const gradient = { addColorStop() {} };

@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* ============ 戰鬥引擎（野外 + 共用攻擊邏輯 + 技能） ============ */
 
 // 野外戰鬥狀態
@@ -525,8 +526,8 @@ function spawnEliteWave(append, eliteStage, encounter) {
     var placed = placeFieldWave(enemies, standing, append, encounter);
     if (placed.length && typeof blog === 'function' && typeof eliteAffixLabel === 'function') {
         summary.forEach(function (sm) {
-            var names = (sm.affixes || []).map(eliteAffixLabel).join('、') || '（無技能）';
-            blog('👿 菁英群出現：' + sm.size + ' 隻' + (sm.pure ? '（全員菁英）' : '（菁英帶小兵）') + (sm.adv ? '，含 ' + sm.adv + ' 隻高級菁英' : '') + '｜' + names, 'warn', 'combat');
+            var names = (sm.affixes || []).map(eliteAffixLabel).join('、') || STR(452);
+            blog(STR(456, sm.size, (sm.pure ? STR(453) : STR(454)), (sm.adv ? STR(455, sm.adv) : ''), names), 'warn', 'combat');
         });
     }
     return placed;
@@ -754,8 +755,7 @@ function switchZone(zoneKey) {
     FIELD.mapComplete = false;
     holdFieldSpawn(FIELD_STAGE_SWITCH_DELAY);
     var zn = ZONES[zoneKey];
-    blog(zn.emoji + ' 前往【' + zn.name + '】！第 ' + G.stage.current + ' 階段（歷史最高 ' + G.stage.best +
-        (zn.rewardMult > 1 ? '，非裝備掉落 x' + zn.rewardMult : '') + '）', 'info');
+    blog(STR(457, zn.emoji, zn.name, G.stage.current, G.stage.best, (zn.rewardMult > 1 ? STR(458, zn.rewardMult) : '')), 'info');
     UI.dirty.battle = true;
 }
 
@@ -854,10 +854,9 @@ function applyPoison(ent, dps, dur) {
 // 傷害行的情況下死亡。只對敵方實體記錄，避免把玩家承受的 DoT 誤報成玩家輸出。
 function logEnemyDirectDamage(ent, source, damage, killed) {
     if (!ent || !ent.maxHp || !(damage > 0) || typeof blog !== 'function') return;
-    var target = ent.name || '敵人';
+    var target = ent.name || STR(459);
     var shown = typeof fmt === 'function' ? fmt(damage) : String(Math.round(damage));
-    blog('☠️ ' + target + ' 受到' + (source || '直接傷害') + '，' + shown +
-        ' 傷害' + (killed ? '（擊殺）' : '') + '。', 'log-player-skill', 'combat');
+    blog(STR(461, target, (source || STR(460)), shown, (killed ? STR(462) : '')), 'log-player-skill', 'combat');
 }
 /* 淨化：只清除負面狀態（狀態表 kind＝debuff／ctrl），不誤傷自身增益。 */
 function cleanse(ent) {
@@ -960,45 +959,45 @@ function resolveDotSource(sid) {
     if (sGroup === 'mire') {
         var mlv = (typeof skills2Levels === 'function' && typeof sgTotalLevel === 'function')
             ? sgTotalLevel(skills2Levels('mire')) : undefined;
-        return { name: (typeof SKILLS2 !== 'undefined' && SKILLS2.mire) ? SKILLS2.mire.name : '泥沼術', key: 'skill2:mire', level: mlv };
+        return { name: (typeof SKILLS2 !== 'undefined' && SKILLS2.mire) ? SKILLS2.mire.name : STR(463), key: 'skill2:mire', level: mlv };
     }
     if (sGroup === 'fireball') {
         var flv = (typeof skills2Levels === 'function' && typeof sgTotalLevel === 'function')
             ? sgTotalLevel(skills2Levels('fireball')) : undefined;
-        return { name: (typeof SKILLS2 !== 'undefined' && SKILLS2.fireball) ? SKILLS2.fireball.name : '火球術', key: 'skill2:fireball', level: flv };
+        return { name: (typeof SKILLS2 !== 'undefined' && SKILLS2.fireball) ? SKILLS2.fireball.name : STR(464), key: 'skill2:fireball', level: flv };
     }
     if (sGroup === 'bloodblade') {
         var blv = (typeof skills2Levels === 'function' && typeof sgTotalLevel === 'function')
             ? sgTotalLevel(skills2Levels('bloodblade')) : undefined;
-        return { name: (typeof SKILLS2 !== 'undefined' && SKILLS2.bloodblade) ? SKILLS2.bloodblade.name : '血刃斬', key: 'skill2:bloodblade', level: blv };
+        return { name: (typeof SKILLS2 !== 'undefined' && SKILLS2.bloodblade) ? SKILLS2.bloodblade.name : STR(465), key: 'skill2:bloodblade', level: blv };
     }
     if (sGroup === ':frostbite') {
         if (typeof skills2Equipped === 'function' && typeof skills2Levels === 'function' && typeof sgTotalLevel === 'function') {
             if (skills2Equipped('waterball')) {
-                return { name: (typeof SKILLS2 !== 'undefined' && SKILLS2.waterball) ? SKILLS2.waterball.name : '水流彈', key: 'skill2:waterball', level: sgTotalLevel(skills2Levels('waterball')), subType: '寒霜狀態' };
+                return { name: (typeof SKILLS2 !== 'undefined' && SKILLS2.waterball) ? SKILLS2.waterball.name : STR(466), key: 'skill2:waterball', level: sgTotalLevel(skills2Levels('waterball')), subType: '寒霜狀態' };
             }
             if (skills2Equipped('icearrow')) {
-                return { name: (typeof SKILLS2 !== 'undefined' && SKILLS2.icearrow) ? SKILLS2.icearrow.name : '寒冰箭', key: 'skill2:icearrow', level: sgTotalLevel(skills2Levels('icearrow')), subType: '寒霜狀態' };
+                return { name: (typeof SKILLS2 !== 'undefined' && SKILLS2.icearrow) ? SKILLS2.icearrow.name : STR(467), key: 'skill2:icearrow', level: sgTotalLevel(skills2Levels('icearrow')), subType: '寒霜狀態' };
             }
             if (skills2Equipped('frostnova')) {
-                return { name: (typeof SKILLS2 !== 'undefined' && SKILLS2.frostnova) ? SKILLS2.frostnova.name : '冰霜新星', key: 'skill2:frostnova', level: sgTotalLevel(skills2Levels('frostnova')), subType: '寒霜狀態' };
+                return { name: (typeof SKILLS2 !== 'undefined' && SKILLS2.frostnova) ? SKILLS2.frostnova.name : STR(468), key: 'skill2:frostnova', level: sgTotalLevel(skills2Levels('frostnova')), subType: '寒霜狀態' };
             }
         }
-        return { name: '寒霜凍傷', key: 'skill2:frostbite', subType: '寒霜狀態' };
+        return { name: STR(469), key: 'skill2:frostbite', subType: '寒霜狀態' };
     }
     if (sGroup === ':windcut') {
         if (typeof skills2Equipped === 'function' && typeof skills2Levels === 'function' && typeof sgTotalLevel === 'function') {
             if (skills2Equipped('windblade')) {
-                return { name: (typeof SKILLS2 !== 'undefined' && SKILLS2.windblade) ? SKILLS2.windblade.name : '風刃', key: 'skill2:windblade', level: sgTotalLevel(skills2Levels('windblade')), subType: '風切割裂' };
+                return { name: (typeof SKILLS2 !== 'undefined' && SKILLS2.windblade) ? SKILLS2.windblade.name : STR(470), key: 'skill2:windblade', level: sgTotalLevel(skills2Levels('windblade')), subType: STR(471) };
             }
             if (skills2Equipped('vacuumslash')) {
-                return { name: (typeof SKILLS2 !== 'undefined' && SKILLS2.vacuumslash) ? SKILLS2.vacuumslash.name : '真空斬', key: 'skill2:vacuumslash', level: sgTotalLevel(skills2Levels('vacuumslash')), subType: '風切割裂' };
+                return { name: (typeof SKILLS2 !== 'undefined' && SKILLS2.vacuumslash) ? SKILLS2.vacuumslash.name : STR(472), key: 'skill2:vacuumslash', level: sgTotalLevel(skills2Levels('vacuumslash')), subType: STR(471) };
             }
             if (skills2Equipped('stormbarrier')) {
-                return { name: (typeof SKILLS2 !== 'undefined' && SKILLS2.stormbarrier) ? SKILLS2.stormbarrier.name : '暴風屏障', key: 'skill2:stormbarrier', level: sgTotalLevel(skills2Levels('stormbarrier')), subType: '風切割裂' };
+                return { name: (typeof SKILLS2 !== 'undefined' && SKILLS2.stormbarrier) ? SKILLS2.stormbarrier.name : STR(473), key: 'skill2:stormbarrier', level: sgTotalLevel(skills2Levels('stormbarrier')), subType: STR(471) };
             }
         }
-        return { name: '風切割裂', key: 'skill2:windcut', subType: '風切割裂' };
+        return { name: STR(471), key: 'skill2:windcut', subType: STR(471) };
     }
     var sdef = (typeof statusDef === 'function') ? statusDef(sid) : (typeof STATUS !== 'undefined' ? STATUS[sid] : null);
     if (sdef && sdef.name) {
@@ -1238,7 +1237,7 @@ function tickStatuses(ent, dt, dotContext) {
         }
         // 單一狀態直接報狀態名（例：「受到中毒」），多個才合併報「持續傷害（流血、燃燒）」
         logEnemyDirectDamage(ent, dotNames.length === 1 ? dotNames[0]
-            : '持續傷害' + (dotNames.length ? '（' + dotNames.join('、') + '）' : ''), dotDealt, ent.hp <= 0);
+            : STR(474, (dotNames.length ? '（' + dotNames.join('、') + '）' : '')), dotDealt, ent.hp <= 0);
     }
     // 崩解只在狀態結束並補完殘額後爆炸；沒有殘額的到期仍須觸發一次。
     var disintegrate = endedDots.length && ent.maxHp && typeof sgUlt === 'function' && sgUlt('bloodblade', 'disintegrate');
@@ -1478,12 +1477,12 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
         sgEmitVfx('bloodrage', [mEnt], floatSel, { fxKind: 'impact', variant: 'bloodfeast-hit',
             vfxRoles: { hit: feastVfx.roles.hit }, preserveDeadTargets: true, travelMs: [0], delayMs: atkHitDelayMs });
     }
-    var mName = mEnt.name || '怪物';
-    var logMsg = (depth ? '' : '你攻擊 ' + mName + '，');
+    var mName = mEnt.name || STR(475);
+    var logMsg = (depth ? '' : STR(476, mName));
     var playerFloatSel = playerEventFloatTarget(floatSel);
     if (res.miss) {
         floatEnemyEvent(mEnt, floatSel, 'MISS', 'miss enemy-dodge', undefined, atkHitDelayMs);
-        logMsg += (depth ? '<span class="log-hl-bad">攻擊被閃避了！</span>' : '<span class="log-hl-bad">被閃避了！</span>');
+        logMsg += (depth ? STR(477) : STR(478));
     } else {
         var dmgStr = fmt(res.dmg);
         if (res.crit) dmgStr = '爆擊 ' + dmgStr;
@@ -1492,17 +1491,17 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
             basicDamageFloatGroupClass(combatDamageFloatClass('enemy-attack', res), damageGroupId),
             res.dmg, atkHitDelayMs);
         trackDps(res.dmg);
-        recordRunDamage('普攻', res.dmg);
-        logMsg += (res.crit ? '<span class="log-hl-good">爆擊</span> ' : '造成 ') + fmt(res.dmg) + ' 傷害。';
-        if (res.blocked) logMsg += '<span class="log-hl-bad">（被格擋）</span>';
+        recordRunDamage(STR(479), res.dmg);
+        logMsg += STR(482, (res.crit ? STR(480) + ' ' : STR(481) + ' ') + fmt(res.dmg));
+        if (res.blocked) logMsg += STR(483);
         if (res.procs.length) logMsg += '<span class="log-hl-good">［' + res.procs.join('・') + '］</span>';
-        if (res.thorns) logMsg += '<span class="log-hl-bad">遭到反震 ' + fmt(res.thorns) + ' 傷害。</span>';
+        if (res.thorns) logMsg += STR(484, fmt(res.thorns));
         // 屬性汲取已在 resolveHit 統一結算，這裡只處理暗影等自帶治療。
         var healAmt = res.heal || 0;
         if (healAmt > 0) {
             healPlayer(pEnt, healAmt, st, { noShield: true });
             floatText(playerFloatSel, '+' + fmt(Math.round(healAmt)), 'heal', Math.round(healAmt));
-            logMsg += '<span class="log-hl-good">汲取回復 ' + fmt(healAmt) + '。</span>';
+            logMsg += STR(485, fmt(healAmt));
         }
         // 大地元素特效【岩甲】：附加的地屬性傷害有機率轉為護盾（resolveHit 只回報數值，實際給盾在這裡）
         if (res.shield > 0) {
@@ -1512,11 +1511,11 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
         // 被動：暈眩 / 減速
         if (!res.killed) {
             if ((st.passives.stun || 0) > 0 && !isBossControlImmune(mEnt) && chance(st.passives.stun) && !resistCtrl(monsterDefCfg(mEnt))) {
-                if (applyEffect(mEnt, 'stun', 1) && ccLockOn(mEnt, 'act')) logMsg += '<span class="log-hl-good">將其擊暈！</span>'; // 控場遞減歸零（只剩狀態、沒有控場效果）時不誤報
+                if (applyEffect(mEnt, 'stun', 1) && ccLockOn(mEnt, 'act')) logMsg += STR(486); // 控場遞減歸零（只剩狀態、沒有控場效果）時不誤報
             }
             if ((st.passives.slowHit || 0) > 0 && !isBossControlImmune(mEnt) && chance(st.passives.slowHit) && !resistCtrl(monsterDefCfg(mEnt))) {
                 applyEffect(mEnt, 'slow', 3);
-                logMsg += '<span class="log-hl-good">附加減速！</span>';
+                logMsg += STR(487);
             }
             // 神鑄特效【天罰】：機率降下神雷，造成物理攻擊倍數的真實傷害（無視防禦）
             if ((st.passives.smite || 0) > 0 && chance(st.passives.smite)) {
@@ -1535,7 +1534,7 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
                     });
                 }
                 floatEnemyEvent(mEnt, floatSel, fmt(smiteDmg), 'crit enemy-attack', smiteDmg, atkHitDelayMs + 90);
-                logMsg += '<span class="log-hl-good">天罰降臨，追加 ' + fmt(smiteDmg) + ' 真實傷害！</span>';
+                logMsg += STR(488, fmt(smiteDmg));
                 if (mEnt.hp <= 0) { mEnt.hp = 0; res.killed = true; res.dmg += smiteDmg; }
             }
         }
@@ -1548,7 +1547,7 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
         var res2 = doPlayerAttack(pEnt, mEnt, floatSel, 1, {
             vfxDelayMs: atkWaveDelayMs + atkWaveStepMs, damageGroupId: damageGroupId, feastVfx: feastVfx
         });
-        logMsg += ' <span class="log-hl-good">觸發連擊！</span>追加' + res2.logText;
+        logMsg += ' ' + STR(489, res2.logText);
         if (res2 && res2.killed) { res.killed = true; res.dmg += res2.dmg; }
     }
     // 連擊數（暴擊率破 100% 衍生）：主攻擊命中後追加整段普攻；僅主攻擊（depth 0）觸發，遞迴帶深度避免再觸連擊/連擊被動
@@ -1562,7 +1561,7 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
             });
             if (resc) { res.dmg += resc.dmg; if (resc.killed) res.killed = true; }
         }
-        if (comboN > 0) logMsg += ' <span class="log-hl-good">連擊數 ×' + comboN + '</span>';
+        if (comboN > 0) logMsg += ' ' + STR(490, comboN);
     }
     // 普攻命中觸發（僅主攻擊 depth 0 分發；追加攻擊遞迴不重複觸發）
     if (!depth) {
@@ -1571,7 +1570,7 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
             if (legendaryBasic) {
                 res.dmg += legendaryBasic.dmg || 0;
                 if (legendaryBasic.killed) res.killed = true;
-                logMsg += ' <span class="log-hl-good">傳奇特效追加 ' + fmt(legendaryBasic.dmg || 0) + ' 傷害</span>';
+                logMsg += ' ' + STR(491, fmt(legendaryBasic.dmg || 0));
             }
         }
         // 符文真言：普攻擴散、命中／暴擊觸發（js/runeword.js）；與傳奇特效同一條邊界，追加攻擊不重複觸發
@@ -1580,7 +1579,7 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
             if (rwBasic) {
                 res.dmg += rwBasic.dmg || 0;
                 if (rwBasic.killed) res.killed = true;
-                if (rwBasic.dmg > 0) logMsg += ' <span class="log-hl-good">符文真言追加 ' + fmt(rwBasic.dmg) + ' 傷害</span>';
+                if (rwBasic.dmg > 0) logMsg += ' ' + STR(492, fmt(rwBasic.dmg));
             }
         }
         /* 新版技能超神【火神降臨】（火狩，js/skills2.js）：普攻同時射出數顆火狩星環。
@@ -1591,7 +1590,7 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
         if (typeof skills2OnBasicAttack === 'function') {
             var sgOrbs = skills2OnBasicAttack(pEnt, mEnt, floatSel, st);
             if (sgOrbs > 0) {
-                logMsg += ' <span class="log-hl-good">火狩星環 ×' + sgOrbs + '</span>';
+                logMsg += ' ' + STR(493, sgOrbs);
             }
         }
     }
@@ -1666,7 +1665,7 @@ function settleEnemyAttackRetaliation(event) {
     }
     if (result.thorns) {
         floatEnemyEvent(attacker, THORN_FLOAT_MAP[event.floatSel] || event.floatSel,
-            '反傷 ' + fmt(result.thorns), 'defend');
+            STR(494, fmt(result.thorns)), 'defend');
     }
 
     /* 延後反傷把敵人殺掉時，補走原本 fieldMonsterAttack／towerTick 的死亡出口。
@@ -1721,8 +1720,8 @@ function doMonsterAttack(mEnt, pEnt, floatSel, mult, skillName) {
     var retaliationDelaySec = enemyAttackRetaliationDelaySec(mEnt);
     if (retaliationDelaySec > 0) dCfg.deferThorns = true;
     var res = resolveHit(mEnt, pEnt, monsterAtkCfg(mEnt, mult), dCfg);
-    var skillLabel = skillName ? ' 使用【' + skillName + '】' : '';
-    var logMsg = (mEnt.name || '怪物') + skillLabel + (mult && mult > 1 ? ' <span class="log-hl-bad">重擊</span>你，' : ' 攻擊你，');
+    var skillLabel = skillName ? ' ' + STR(495, skillName) : '';
+    var logMsg = (mEnt.name || STR(475)) + skillLabel + (mult && mult > 1 ? ' ' + STR(496) : ' ' + STR(497));
     var playerFloatSel = playerEventFloatTarget(floatSel);
     var enemyVfxElem = (mEnt && mEnt.attr && typeof ELEM_INFO !== 'undefined' && ELEM_INFO[mEnt.attr])
         ? mEnt.attr : null;
@@ -1750,11 +1749,11 @@ function doMonsterAttack(mEnt, pEnt, floatSel, mult, skillName) {
     }
     var hpDamage = 0;
     if (res.invuln) {
-        floatPlayerEvent(playerFloatSel, '無敵!', 'defend');
-        logMsg += '<span class="log-hl-good">你處於無敵狀態，免疫了傷害！</span>';
+        floatPlayerEvent(playerFloatSel, STR(498), 'defend');
+        logMsg += STR(499);
     } else if (res.miss) {
-        floatPlayerEvent(playerFloatSel, '閃避!', 'dodge defend');
-        logMsg += '<span class="log-hl-good">被你閃避了！</span>';
+        floatPlayerEvent(playerFloatSel, STR(500), 'dodge defend');
+        logMsg += STR(501);
     } else {
         // 敵人爆擊（res.crit，敵種爆擊率 × (1-玩家韌性)）與重擊/狂暴倍率（mult>1）共用爆擊樣式；
         // 但只有 res.crit 是真正的爆擊，才標「爆擊」字樣。
@@ -1764,18 +1763,18 @@ function doMonsterAttack(mEnt, pEnt, floatSel, mult, skillName) {
         var dmgStr = '-' + fmt(res.dmg);
         if (res.crit) dmgStr = '爆擊 ' + dmgStr;
         floatText(playerFloatSel, dmgStr, isCrit ? 'crit' : 'mdmg');
-        if (res.blocked) floatPlayerEvent(playerFloatSel, '格擋!', 'defend');
+        if (res.blocked) floatPlayerEvent(playerFloatSel, STR(502), 'defend');
         hpDamage = Math.max(0, res.dmg - (res.absorbed || 0));
-        logMsg += (res.crit ? '<span class="log-hl-bad">爆擊</span> ' : '造成 ') + fmt(res.dmg) + (mEnt.magic ? ' 魔法' : '') + ' 傷害。';
-        if (res.blocked) logMsg += '<span class="log-hl-good">你格擋了部分傷害！</span>';
+        logMsg += STR(482, (res.crit ? STR(503) + ' ' : STR(481) + ' ') + fmt(res.dmg) + (mEnt.magic ? ' 魔法' : ''));
+        if (res.blocked) logMsg += STR(505);
         /* 護盾吸收量只寫進戰鬥紀錄，不再飄字（2026-09-21 使用者要求）。 */
         if (res.absorbed) {
-            logMsg += '<span class="log-hl-good">生命減少 ' + fmt(hpDamage) + '，護盾吸收 ' + fmt(res.absorbed) + '。</span>';
+            logMsg += STR(506, fmt(hpDamage), fmt(res.absorbed));
         }
         // 新版技能【魔法盾】（大地守護 T5）：改由法力承擔的那一段（→ formula.js resolveHit）
         if (res.manaShield > 0) {
-            floatPlayerEvent(playerFloatSel, '🔵抵擋 ' + fmt(res.manaShield), 'shield');
-            logMsg += '<span class="log-hl-good">魔法盾以 ' + fmt(res.manaShield) + ' 法力承擔了部分傷害。</span>';
+            floatPlayerEvent(playerFloatSel, STR(507, fmt(res.manaShield)), 'shield');
+            logMsg += STR(508, fmt(res.manaShield));
         }
         if (res.procs.length) {
             res.procs.forEach(function (proc) {
@@ -1796,7 +1795,7 @@ function doMonsterAttack(mEnt, pEnt, floatSel, mult, skillName) {
             thornsApplied: true
         });
     }
-    if (res.thorns) logMsg += '<span class="log-hl-good">並遭到荊棘反震 ' + fmt(res.thorns) + ' 傷害！</span>';
+    if (res.thorns) logMsg += STR(509, fmt(res.thorns));
     var cls = 'log-enemy-damage';
     if (mult && mult > 1) { cls = 'log-enemy-skill'; }
     if (skillName) { cls = 'log-enemy-skill'; }
@@ -1891,7 +1890,7 @@ function fieldTick(dt) {
         if (FIELD.reviveCd <= 0) {
             p.hp = st.hp; p.mp = st.mp; p.shield = 0; p.shieldMax = 0; p.shieldMaxVersion = SHIELD_MAX_VERSION;
             cleanse(p);
-            blog('💫 你已復活，繼續征途！', 'info');
+            blog(STR(510), 'info');
             UI.dirty.battle = true;
         }
         return;
@@ -2151,30 +2150,30 @@ function completeFieldWave(st) {
         if (G.stage.current >= maxStage) {
             var nextZone = nextAutoAdvanceZone(G.stage.zone);
             if (nextZone) {
-                blog('🏆 已通關【' + currentZoneDef().name + '】全部 ' + maxStage + ' 關！', 'good');
+                blog(STR(511, currentZoneDef().name, maxStage), 'good');
                 switchZone(nextZone);
                 switchedZone = true;
-                blog('🚩 自動推進至【' + currentZoneDef().name + '】第 ' + G.stage.current + ' 關！', 'good');
+                blog(STR(512, currentZoneDef().name, G.stage.current), 'good');
             } else if (hasConfiguredHigherZone(G.stage.zone)) {
                 /* 後續地圖存在但尚未解鎖（例如未達 11 轉）：留在地圖上限，
                    讓玩家繼續重打最後一關，而不是將整張地圖標成完成後停怪。 */
                 G.stage.current = maxStage;
                 G.stage.best = Math.max(G.stage.best || 1, maxStage);
                 FIELD.mapComplete = false;
-                blog('🔒 後續地圖尚未解鎖，暫留第 ' + maxStage + ' 關重複挑戰。', 'info');
+                blog(STR(513, maxStage), 'info');
             } else {
                 G.stage.current = maxStage;
                 G.stage.best = Math.max(G.stage.best || 1, maxStage);
                 FIELD.mapComplete = true;
                 FIELD.spawnCd = Infinity;
-                blog('🏆 已通關【' + currentZoneDef().name + '】全部 ' + maxStage + ' 關！', 'good');
+                blog(STR(511, currentZoneDef().name, maxStage), 'good');
             }
         } else {
             G.stage.current++;
             if (G.stage.current > G.stage.best) G.stage.best = G.stage.current;
         }
         if (!switchedZone && !FIELD.mapComplete && G.stage.current < maxStage) {
-            blog('🚩 推進至第 ' + G.stage.current + ' 階段！', 'good');
+            blog(STR(514, G.stage.current), 'good');
         }
     }
     /* 推進到下一關之後，下一波隔幾秒才出現（場上還沒打完的敵人照樣留著）。 */
@@ -2226,8 +2225,8 @@ function onFieldKill(m) {
     if (window.recordLootKill) window.recordLootKill(undefined, 'field');
 
     var drops = rollFieldDrops(m);
-    blog('💀 擊敗 ' + m.name, 'log-kill', 'combat');
-    var lootMsg = '📦 戰利品：💰' + fmt(goldGain) + ' 💡' + fmt(xpGain);
+    blog(STR(515, m.name), 'log-kill', 'combat');
+    var lootMsg = STR(516, fmt(goldGain), fmt(xpGain));
     if (drops.length) lootMsg += ' ' + drops.join('、');
     blog(lootMsg, 'good', 'loot');
     // 進程一次性特規保底獎勵（30~33 級獨特、50~60 級史詩）；在 gainXp 之後呼叫，等級為最新。
@@ -2279,7 +2278,7 @@ function reviveFieldEnemy(m) {
     syncFieldPrimary();
     /* 走 'combat' 頻道：滿級機率是 100%，每殺一隻就一行的話會把戰鬥日誌洗掉，
        與擊敗訊息（'log-kill', 'combat'）放在同一個可過濾的頻道才合理。 */
-    blog('🌍 【天地再造】' + m.name + ' 被大地重新塑形，再度站了起來！', 'info', 'combat');
+    blog(STR(517, m.name), 'info', 'combat');
     UI.dirty.battle = true;
 }
 
@@ -2326,7 +2325,7 @@ function onPlayerFieldDeath() {
     // 避免死前排程的場域／延遲結算在復活後對退階新波次集中結算
     if (typeof resetSkillRT === 'function') resetSkillRT();
     var retreatStage = fieldDeathRetreatStage(G.stage.current);
-    blog('☠️ 你被擊倒了…退回第 ' + retreatStage + ' 階段繼續挑戰（' + REVIVE_DELAY + ' 秒後復活）', 'bad');
+    blog(STR(518, retreatStage, REVIVE_DELAY), 'bad');
     if (window.recordLootDeath) window.recordLootDeath('field');
     flushRunSummary(retreatStage);
     /* 場上的敵人不立刻消失：定格幾秒後才整批淡出（見 tickFieldDeathDespawn）。
@@ -2361,7 +2360,7 @@ function rollFieldDrops(m) {
             var it = makeEquipment(s, { rarity: r });
             pushConveyor(it);
             if (window.recordLootEquip) window.recordLootEquip(r, 1, 'field');
-            drops.push('裝備[' + rarityTag(it) + ']');
+            drops.push(STR(519, rarityTag(it)));
         }
     }
     // ===== 材料掉落：場景倍率由地圖表提供；>100% 依必掉+餘數規則
@@ -2393,7 +2392,7 @@ function rollFieldDrops(m) {
             var bk = pick(Object.keys(ENCHANTS));
             G.player.books[bk]++;
             if (window.recordLootMat) window.recordLootMat('book', 1, 'field');
-            drops.push('📖' + ENCHANTS[bk].name + '書');
+            drops.push(STR(520, ENCHANTS[bk].name));
         }
     }
     // 太古精華：基礎機率由地圖／關卡掉落表提供，不受掉寶率與場景倍率影響。
@@ -2409,8 +2408,8 @@ function rollFieldDrops(m) {
     if (dustRate > 0 && chance(dustRate)) {
         G.player.dust = (G.player.dust || 0) + 1;
         if (window.recordLootMat) window.recordLootMat('dust', 1, 'field');
-        drops.push('💫魔塵');
-        blog('💫 敵人掉落神鑄材料：魔塵 x1（持有 ' + fmt(G.player.dust) + '）', 'loot', 'loot');
+        drops.push(STR(521));
+        blog(STR(522, fmt(G.player.dust)), 'loot', 'loot');
         UI.dirty.forge = true;
     }
     return drops;
@@ -2494,7 +2493,7 @@ function generateSummaryHtml(current) {
         var rawName = (stat && stat.name) || key;
         var displayName = rawName;
         if (typeof stat.level === 'number') {
-            displayName = rawName + '(' + stat.level + '級)';
+            displayName = STR(523, rawName, stat.level);
             if (nameCounts[rawName] > 1) {
                 nameSeen[rawName] = (nameSeen[rawName] || 0) + 1;
                 displayName += nameSeen[rawName];
@@ -2504,8 +2503,8 @@ function generateSummaryHtml(current) {
     }
     if (totalDmg === 0 && totalEvents === 0 && totalCasts === 0) return '';
     var html = '<div class="summary-card"' + (current ? ' data-summary-current="true"' : '') + '>';
-    html += '<div class="summary-card-title">------------' + (current ? '目前戰鬥（即時統計）' : '第 ' + RUN_STATS.runCount + ' 場戰鬥') + '--------------</div>';
-    html += '<div class="summary-card-row"><span style="color:var(--accent)">最高關數</span>：' + RUN_STATS.maxStage + '</div>';
+    html += '<div class="summary-card-title">------------' + (current ? STR(524) : STR(525, RUN_STATS.runCount)) + '--------------</div>';
+    html += '<div class="summary-card-row">' + STR(526, RUN_STATS.maxStage) + '</div>';
     var skillList = [];
     for (var k in RUN_STATS.skills) {
         var sk = RUN_STATS.skills[k];
@@ -2528,8 +2527,8 @@ function generateSummaryHtml(current) {
         var item = skillList[i];
         var pct = totalDmg > 0 ? (item.damage / totalDmg * 100).toFixed(1) : '0.0';
         var eventText = item.casts === null
-            ? fmt(item.hits) + '次'
-            : fmt(item.casts) + '次施放，' + fmt(item.hits) + '次命中/傷害事件';
+            ? STR(527, fmt(item.hits))
+            : STR(528, fmt(item.casts), fmt(item.hits));
 
         var subItems = [];
         if (item.subTypes) {
@@ -2550,7 +2549,7 @@ function generateSummaryHtml(current) {
         }
 
         html += '<div class="summary-skill-block">';
-        html += '<div class="summary-card-row"><span style="color:var(--accent); font-weight:bold;">' + item.name + '</span>：' + eventText + '，傷害 ' + fmt(item.damage) + ' (' + pct + '%)</div>';
+        html += '<div class="summary-card-row"><span style="color:var(--accent); font-weight:bold;">' + item.name + '</span>' + STR(529, eventText, fmt(item.damage), pct) + '</div>';
 
         var hasDistinctSub = subItems.length > 1 || (subItems.length === 1 && subItems[0].name !== item.rawName && subItems[0].name !== item.name);
         if (hasDistinctSub) {
@@ -2558,7 +2557,7 @@ function generateSummaryHtml(current) {
             for (var s = 0; s < subItems.length; s++) {
                 var sub = subItems[s];
                 var subPct = totalDmg > 0 ? (sub.damage / totalDmg * 100).toFixed(1) : '0.0';
-                html += '<div class="summary-sub-row"><span class="summary-sub-bullet">└ </span><span class="summary-sub-name">' + sub.name + '</span>：' + fmt(sub.hits) + '次命中，傷害 ' + fmt(sub.damage) + ' (' + subPct + '%)</div>';
+                html += '<div class="summary-sub-row"><span class="summary-sub-bullet">└ </span><span class="summary-sub-name">' + sub.name + '</span>' + STR(530, fmt(sub.hits), fmt(sub.damage), subPct) + '</div>';
             }
             html += '</div>';
         }

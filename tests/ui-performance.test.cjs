@@ -1,4 +1,5 @@
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -7,7 +8,7 @@ const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 
 function uiSource() {
-  return fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
+  return readExpanded(path.join(root, 'js/ui.js'));
 }
 
 test('敵人名稱版面量測只在敵人結構或視窗尺寸改變時執行', () => {
@@ -97,7 +98,7 @@ test('高頻戰鬥欄位使用值變更才寫入的 DOM 輔助函式', () => {
   assert.match(ui, /function setCheckedIfChanged\(el, value\)/);
   assert.match(ui, /setStyleIfChanged\(mpFill, 'width'/);
   assert.match(ui, /setHtmlIfChanged\(skillEl, h\)/);
-  assert.match(ui, /setHtmlIfChanged\(label, zoneIconHtml\(/);
+  assert.match(ui, /setHtmlIfChanged\(label, (?:'' \+ )?zoneIconHtml\(/);
   assert.match(ui, /setCheckedIfChanged\(auto, stg\.autoAdvance\)/);
   assert.match(ui, /setStyleIfChanged\(fill, 'width'/);
   assert.match(ui, /setHtmlIfChanged\(hpText,/);

@@ -1,4 +1,5 @@
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -7,8 +8,8 @@ const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 
 test('階段列提供直達最高按鈕並將最高資訊放在其右側', () => {
-  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
+  const html = readExpanded(path.join(root, 'index.html'));
+  const ui = readExpanded(path.join(root, 'js/ui.js'));
   assert.match(html, /id="st-max"[^>]*>\s*<svg class="ui-ico ui-ico-last"/);
   assert.match(html, /id="stage-label"[^>]*>第 1 關<\/span>/);
   assert.match(html, /id="stage-best"[^>]*>最高1關<\/span>/);
@@ -18,8 +19,8 @@ test('階段列提供直達最高按鈕並將最高資訊放在其右側', () =>
 });
 
 test('階段前進與後退按鈕提供提示並支援長按快速切換', () => {
-  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
+  const html = readExpanded(path.join(root, 'index.html'));
+  const ui = readExpanded(path.join(root, 'js/ui.js'));
 
   assert.match(html, /id="st-prev"[^>]*data-tt-title="後退關卡"[^>]*data-tt-desc="滑鼠按住可以快速後退"/);
   assert.match(html, /id="st-next"[^>]*data-tt-title="前進關卡"[^>]*data-tt-desc="滑鼠按住可以快速前進"/);
@@ -35,7 +36,7 @@ test('階段前進與後退按鈕提供提示並支援長按快速切換', () =>
 });
 
 test('長按依實際經過時間計算目標，計時器延遲時仍會追上應有進度', () => {
-  const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
+  const ui = readExpanded(path.join(root, 'js/ui.js'));
 
   assert.match(ui, /function stageHoldStepCount\(now, startedAt\)/);
   assert.match(ui, /Math\.floor\(elapsed \/ STAGE_HOLD_REPEAT_MS\)/);
@@ -55,7 +56,7 @@ test('長按依實際經過時間計算目標，計時器延遲時仍會追上�
 });
 
 test('長按期間只預覽關卡，停止後才提交一次戰鬥狀態', () => {
-  const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
+  const ui = readExpanded(path.join(root, 'js/ui.js'));
   const previewStart = ui.indexOf('function updateStageHoldPreview(now)');
   const previewEnd = ui.indexOf('function tickStageHold()', previewStart);
   const previewBody = ui.slice(previewStart, previewEnd);
@@ -95,7 +96,7 @@ test('長按期間只預覽關卡，停止後才提交一次戰鬥狀態', () =>
 });
 
 test('階段按鈕提示支援外側定位，避免蓋住階段文字', () => {
-  const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
+  const ui = readExpanded(path.join(root, 'js/ui.js'));
   assert.match(ui, /var placement = anchorEl\.getAttribute\('data-tip-placement'\);/);
   assert.match(ui, /if \(placement === 'stage-left'\)[\s\S]*x = r\.left - tw - 10/);
   assert.match(ui, /else if \(placement === 'stage-right'\)[\s\S]*x = r\.right \+ 10/);

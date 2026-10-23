@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* ============================================================
    elite_boss.js — 封魔塔 BOSS 施放「玩家超神進化技能」的引擎（只在 Worker 載入，接在 js/elite.js 之後）
    ------------------------------------------------------------
@@ -605,7 +606,7 @@ function bskIndomitable(b, d, c) {
   var mp = eliteMonsterPos(b);
   var r = bskRad(bskU(c, 'm', 30));
   floatEnemyEvent(b, 'mv-float', d.emoji + d.name + '!', 'elite-cast');
-  if (typeof blog === 'function') blog('🛡️ ' + (b.name || 'BOSS') + ' 發動【' + d.emoji + d.name + '】，免於一死！', 'log-enemy-skill', 'combat');
+  if (typeof blog === 'function') blog(STR(555, (b.name || 'BOSS'), d.emoji, d.name), 'log-enemy-skill', 'combat');
   if (mp) {
     if (c.v.attack2) eliteBurstFx(mp.x, mp.y, r, c.v.attack2, 0);
     if (c.v.hit2) eliteHitFx(b.floatSel, c.v.hit2);
@@ -632,7 +633,7 @@ function bskRebirth(b, d, c) {
   if (typeof cleanse === 'function') cleanse(b);
   var mp = eliteMonsterPos(b);
   floatEnemyEvent(b, 'mv-float', d.emoji + d.name + '!', 'elite-cast');
-  if (typeof blog === 'function') blog('🌍 ' + (b.name || 'BOSS') + ' 發動【' + d.emoji + d.name + '】，以 ' + Math.round(pct) + '% 生命重生！', 'log-enemy-skill', 'combat');
+  if (typeof blog === 'function') blog(STR(556, (b.name || 'BOSS'), d.emoji, d.name, Math.round(pct)), 'log-enemy-skill', 'combat');
   if (mp) eliteBurstFx(mp.x, mp.y, 110, c.v.attack, 0);
   if (c.v.hit) eliteHitFx(b.floatSel, c.v.hit);
 }

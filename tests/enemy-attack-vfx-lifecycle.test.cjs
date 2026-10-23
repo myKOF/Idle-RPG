@@ -1,5 +1,6 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const {createRequire}=require('node:module'),{createEngine}=require('../scripts/sim/engine');
 const Core=require('../js/vfx-core.js'),Runtime=require('../js/vfx-runtime.js');
@@ -59,7 +60,7 @@ test('敵方子彈走專用後端，玩家子彈仍走原層，飛行260ms與位
 });
 function extract(src,name){const start=src.indexOf('function '+name+'(');assert.ok(start>=0);let depth=0;for(let i=src.indexOf('{',start);i<src.length;i++){if(src[i]==='{')depth++;if(src[i]==='}'&&--depth===0)return src.slice(start,i+1);}throw Error(name);}
 test('Canvas專用層在技能之上／浮字HUD之下；legacy子彈投影仍留在威脅層',()=>{
-  const src=fs.readFileSync(path.join(root,'js/battle-renderer.js'),'utf8');
+  const src=readExpanded(path.join(root,'js/battle-renderer.js'));
   const {buildSceneTree,drawOrder}=require('./helpers/battle-scene.cjs');
   const scene=buildSceneTree(src),nodes=drawOrder(scene.app.stage);
   assert.equal(scene.layers.enemyAir.parent,scene.cameraStage);

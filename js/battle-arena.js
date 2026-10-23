@@ -1,3 +1,4 @@
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* 封魔塔魔王祭壇（2026-10）
    ============================================================
    封魔塔的 BOSS 戰專用場景，刻意和野外任何一張地圖都不一樣：
@@ -33,21 +34,21 @@ var BossArena = (function () {
   /* ============ 三座塔的配色 ============ */
   var TIERS = {
     trial: {
-      name: '血月祭壇',
+      name: STR(439),
       glow: '#ff2a3c', glowHi: '#ffb0b8', fire: '#ff3424', fire2: '#ffd2a8',
       stone: { light: '#4a3e46', base: '#221a20', dark: '#070507' },
       seam: '#ff2a3c', floor: '#18121a', portal: '#5a0610',
       ember: 0xff4a3a, ash: 0x9a8e90, edge: 0xc0101e, light: 0xff3a30
     },
     hell: {
-      name: '熔獄王座',
+      name: STR(440),
       glow: '#ff8a14', glowHi: '#ffe6a0', fire: '#ff7010', fire2: '#fff0b0',
       stone: { light: '#4e3c30', base: '#261a14', dark: '#080504' },
       seam: '#ff7a10', floor: '#1a120e', portal: '#6a2604',
       ember: 0xffa030, ash: 0xa09080, edge: 0xd05008, light: 0xff8a20
     },
     purgatory: {
-      name: '冥火祭壇',
+      name: STR(441),
       glow: '#7cff3a', glowHi: '#e4ffc0', fire: '#6aff2a', fire2: '#f0ffd0',
       stone: { light: '#3a4640', base: '#18201c', dark: '#040705' },
       seam: '#6aff2a', floor: '#101612', portal: '#0e3a08',
@@ -62,9 +63,9 @@ var BossArena = (function () {
 
   // 使用 BOSS 的正式屬性，不依名稱、樓層或塔別猜測。無元素時保留各塔原色。
   var ELEMENT_LIGHTS = {
-    fire: ['焰火', '#ff7138', '#ffe2b0', '#ff4d22', '#fff2ce', '#a72e16'],
+    fire: [STR(442), '#ff7138', '#ffe2b0', '#ff4d22', '#fff2ce', '#a72e16'],
     ice: ['冰霜', '#76ccff', '#edfaff', '#7cd5ff', '#ffffff', '#255783'],
-    lightning: ['雷霆', '#b7a0ff', '#f7edff', '#ac8eff', '#fff2b9', '#614095'],
+    lightning: [STR(443), '#b7a0ff', '#f7edff', '#ac8eff', '#fff2b9', '#614095'],
     poison: ['毒霧', '#79df48', '#e1ffc1', '#65dc38', '#edffd4', '#356f22'],
     light: ['聖光', '#ffe8a0', '#fffdf0', '#ffe7a4', '#ffffff', '#96805a'],
     dark: ['暗影', '#b684ef', '#e5c7ff', '#a46adb', '#edd7ff', '#593574'],
@@ -83,7 +84,7 @@ var BossArena = (function () {
     var base = TIERS[tier] || TIERS.trial, colors = Object.prototype.hasOwnProperty.call(ELEMENT_LIGHTS,element) ? ELEMENT_LIGHTS[element] : null;
     if (!colors) return base;
     var pal = Object.assign({}, base);
-    pal.name = colors[0] + '祭壇'; pal.glow = colors[1]; pal.glowHi = colors[2];
+    pal.name = STR(444, colors[0]); pal.glow = colors[1]; pal.glowHi = colors[2];
     pal.fire = colors[3]; pal.fire2 = colors[4]; pal.portal = colors[5];
     pal.light = parseInt(colors[1].slice(1), 16); pal.ember = pal.light;
     pal.edge = parseInt(colors[5].slice(1), 16);

@@ -1437,7 +1437,7 @@ var NEWFORGE_DETAIL_LOG_RENDER_DIRTY = false;
 window.newForgeLogPaused = false;
 
 function detailLogCategoryLabel(cat) {
-  return ({ combat: '戰鬥', boss: '封魔塔', factory: '裝備', loot: '掉落', system: '系統' })[cat] || '其他';
+  return ({ combat: STR(613), boss: '封魔塔', factory: '裝備', loot: STR(614), system: STR(615) })[cat] || '其他';
 }
 
 function renderDetailLog() {
@@ -2547,7 +2547,7 @@ function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
      放在 Canvas 分流之前——封魔塔改畫在 Canvas 戰場後，這則字也走渲染器。 */
   if (elId === 'tb-float' && text === 'MISS' && cls === 'miss') {
     elId = 'tp-float';
-    text = '閃避!';
+    text = STR(500);
     cls = 'player-event dodge defend';
   }
   if (typeof BattleRenderer !== 'undefined' && BattleRenderer.wantsFloat(elId)) {
@@ -3457,7 +3457,7 @@ function combatStatusRow(icon, label, valueHtml, remain) {
 /* 敵人狀態提示：整份清單由狀態層列舉（statusEntries），圖標與名稱全部來自狀態表。 */
 function enemyBuffTooltipDesc(anchorEl) {
   var ent = currentCombatEnemyEntity(anchorEl);
-  if (!ent) return '<span class="dim-text">目前沒有狀態</span>';
+  if (!ent) return STR(616);
   var list = statusEntries(ent);
   var rows = [];
   for (var i = 0; i < list.length; i++) {
@@ -3470,7 +3470,7 @@ function enemyBuffTooltipDesc(anchorEl) {
     var arrow = (e.effect === 'stat' && e.val) ? (down ? '↓' : '↑') : '';
     rows.push(combatStatusRow(e.icon, e.name + arrow + statusStackSuffix(e), valHtml, Math.ceil(e.remain)));
   }
-  return rows.length ? rows.join('') : '<span class="dim-text">目前沒有狀態</span>';
+  return rows.length ? rows.join('') : STR(616);
 }
 
 function zoneElementTagsList(z, maxCount) {
@@ -3513,7 +3513,7 @@ function zoneElementTagsList(z, maxCount) {
       shortName: shortName,
       pct: pct,
       pctStr: pctStrVal,
-      label: emoji + ' ' + shortName + '屬性 (' + pctStrVal + ')'
+      label: STR(617, emoji, shortName, pctStrVal)
     };
   }).filter(Boolean);
 }
@@ -3601,8 +3601,8 @@ function renderSceneTabs() {
       if (zoneBestOf(z) <= 1 && zoneClearedOf(zd.reqZone) < zd.reqStage) locked = true;
     }
     var elemTags = zoneElementTagsList(z);
-    var elemText = elemTags.length > 0 ? ('主要敵人屬性：' + elemTags.map(function (t) { return t.label; }).join(' ')) : '';
-    var ttDesc = '關卡上限：' + zd.maxStage + '；經驗與金幣獎勵 ×' + zd.rewardMult;
+    var elemText = elemTags.length > 0 ? (STR(618, elemTags.map(function (t) { return t.label; }).join(' '))) : '';
+    var ttDesc = STR(619, zd.maxStage, zd.rewardMult);
 
     if (elemText) {
       ttDesc = elemText + (ttDesc ? ('\n' + ttDesc) : '');
@@ -3815,7 +3815,7 @@ function renderBattleBuffBar(pEnt, snapshotGt) {
       valText = fmt(Math.round(e.dps)) + '/s';
     }
     var stackCount = (typeof e.stacks === 'number' && e.stacks > 1) ? e.stacks : 1;
-    var stackText = stackCount > 1 ? ' (' + stackCount + '層)' : '';
+    var stackText = stackCount > 1 ? ' ' + STR(620, stackCount) : '';
     var dur = (typeof e.dur === 'number' && e.dur > 0) ? e.dur : (def && def.dur ? def.dur : remain);
     if (!dur || dur <= 0) dur = Math.max(remain, 1);
 
@@ -3825,7 +3825,7 @@ function renderBattleBuffBar(pEnt, snapshotGt) {
     var ttTitle = (e.icon || '✨') + ' ' + (e.name || e.sid) + (e.effect === 'stat' && e.val ? (e.kind === 'debuff' ? '↓' : '↑') : '') + stackText;
     // 舊配置保留原文，狀態提示統一使用目前的進化分類名稱。
     var ttDesc = (def && def.desc ? def.desc.replace(/超神進化/g, '終極進化') + ' ' : '') +
-      (valText ? (e.effect === 'shield' ? '護盾吸收量：' : '數值：') + valText : '');
+      (valText ? (e.effect === 'shield' ? STR(621) : STR(622)) + valText : '');
 
     states.push({
       key: key,
@@ -4360,13 +4360,13 @@ function renderZoneBar() {
     toggleBtn.style.display = isGodUnlocked ? 'inline-block' : 'none';
     if (isGodUnlocked) {
       if (activeRlm === 'god') {
-        toggleBtn.innerHTML = uiIcon('world') + ' 凡人界地圖';
-        toggleBtn.setAttribute('data-tt-title', '切換至凡人界');
-        toggleBtn.setAttribute('data-tt-desc', '切換為荒漠、冰原、沼澤地圖');
+        toggleBtn.innerHTML = STR(623, uiIcon('world'));
+        toggleBtn.setAttribute('data-tt-title', STR(624));
+        toggleBtn.setAttribute('data-tt-desc', STR(625));
       } else {
-        toggleBtn.innerHTML = uiIcon('sanctuary') + ' 神界地圖';
-        toggleBtn.setAttribute('data-tt-title', '切換至神界');
-        toggleBtn.setAttribute('data-tt-desc', '切換為太古戰場、混沌界、永恒神域地圖');
+        toggleBtn.innerHTML = STR(626, uiIcon('sanctuary'));
+        toggleBtn.setAttribute('data-tt-title', STR(627));
+        toggleBtn.setAttribute('data-tt-desc', STR(628));
       }
     }
   }
@@ -4393,8 +4393,8 @@ function renderZoneBar() {
       if (zoneBestOf(z) <= 1 && zoneClearedOf(zd.reqZone) < zd.reqStage) locked = true;
     }
     var elemTags = zoneElementTagsList(z);
-    var elemText = elemTags.length > 0 ? ('主要敵人屬性：' + elemTags.map(function (t) { return t.label; }).join(' ')) : '';
-    var ttDesc = '關卡上限：' + zd.maxStage + '；經驗與金幣獎勵 ×' + zd.rewardMult;
+    var elemText = elemTags.length > 0 ? (STR(618, elemTags.map(function (t) { return t.label; }).join(' '))) : '';
+    var ttDesc = STR(619, zd.maxStage, zd.rewardMult);
 
     if (elemText) {
       ttDesc = elemText + (ttDesc ? ('\n' + ttDesc) : '');
@@ -4451,8 +4451,8 @@ function refreshStageDisplay(stageOverride) {
     : (UI.stageHold.active && typeof UI.stageHold.targetStage === 'number'
       ? UI.stageHold.targetStage
       : (_stagePendingStage !== null ? _stagePendingStage : stg.current));
-  setHtmlIfChanged(label, zoneIconHtml(stg.zone || 'desert', znd) + ' 第 ' + displayStage + ' 關');
-  setTextIfChanged(best, '最高' + stg.best + '關');
+  setHtmlIfChanged(label, STR(629, zoneIconHtml(stg.zone || 'desert', znd), displayStage));
+  setTextIfChanged(best, STR(630, stg.best));
   // 切換在途時不要用舊快照蓋掉勾選狀態
   if (!isUiCommandPending(nodePendingKey('stage-auto'))) setCheckedIfChanged(auto, stg.autoAdvance);
 }
@@ -4466,9 +4466,9 @@ function refreshCombatPauseButton() {
     var pressed = paused ? 'true' : 'false';
     if (el.getAttribute('aria-pressed') === pressed) return;
     el.setAttribute('aria-pressed', pressed);
-    setTextIfChanged(el, paused ? '▶ 繼續' : '⏸ 暫停');
-    el.setAttribute('data-tt-title', '戰鬥控制');
-    el.setAttribute('data-tt-desc', paused ? '繼續野外與封魔塔戰鬥' : '暫停野外與封魔塔戰鬥');
+    setTextIfChanged(el, paused ? STR(631) : STR(632));
+    el.setAttribute('data-tt-title', STR(633));
+    el.setAttribute('data-tt-desc', paused ? STR(634) : STR(635));
     el.classList.toggle('active', paused);
   });
 }
@@ -4684,7 +4684,7 @@ function renderEnemyFrenzy(battleSnapshot, view) {
     : (Array.isArray(field.monsters) ? field.monsters : (field.monster ? [field.monster] : []));
   var pct = enemyFrenzyAverage(enemies, Number(battleSnapshot.gt) || 0);
   var channel = Math.round(255 * (1 - Math.min(100, pct) / 100));
-  setTextIfChanged(el, '狂暴化：' + Math.round(pct) + '%');
+  setTextIfChanged(el, STR(636, Math.round(pct)));
   setStyleIfChanged(el, 'color', 'rgb(255, ' + channel + ', ' + channel + ')');
 }
 
@@ -4725,7 +4725,7 @@ function renderBattle() {
     // 倒數一律扣掉「快照拍照到現在」經過的時間，才會是逐幀前進的碼錶
     /* 復活倒數在 FIELD 上，不在玩家實體上（見 js/combat.js onPlayerFieldDeath）。 */
     var reviveLeft = inTowerCombat ? 0 : uiCountdownRemain(field.reviveCd, battleSnapshot.gt);
-    setTextIfChanged($id('pv-status'), reviveLeft > 0 ? ('💀 復活中 ' + fmt1(reviveLeft) + 's') : entStatus(p));
+    setTextIfChanged($id('pv-status'), reviveLeft > 0 ? (STR(637, fmt1(reviveLeft))) : entStatus(p));
     renderMpSkill(p, 'pv', st, battleSnapshot.gt);
     renderBattleSkillBar(p, battleSnapshot.gt);
   }
@@ -4752,7 +4752,7 @@ function renderBattle() {
   if (!enemies.length) {
     if (party.getAttribute('data-enemy-signature') !== 'empty') {
       /* 野外空場不再顯示「搜索敵人中」：空場只是波次之間的過場，不是狀態。 */
-      rebuildEnemyParty(party, guideHtml + (view.towerActive ? '<div class="enemy-empty">（封魔塔戰鬥中…）</div>' : ''));
+      rebuildEnemyParty(party, guideHtml + (view.towerActive ? '<div class="enemy-empty">' + STR(448) + '</div>' : ''));
       party.setAttribute('data-enemy-signature', 'empty');
       uiInvalidateFloatLayout();
       if (typeof vfxInvalidateLayout === 'function') vfxInvalidateLayout();
@@ -7379,7 +7379,7 @@ function towerDetailHTML(fl, highest) {
   }).map(function (word) {
     return '<div>' + STR(1801, word.tier, esc(RUNEWORD_TIER_NAMES[word.tier]), esc(word.name)) + '</div>';
   }).join('');
-  return '<div class="twx-boss" style="--c:' + color + '"><div class="twx-boss-art">' + towerBossIconHTML(bd, 'twx-boss-img') + '</div><div class="twx-boss-main"><span class="twx-boss-tier ' + tier.id + '">' + STR(158, tier.name, fl) + '</span><span class="twx-boss-name' + (isPurgatoryTowerFloor(fl) ? ' purgatory-boss' : '') + '">' + esc(bd.name) + '</span><span class="twx-tags">' + tags + '</span><span class="twx-stats">' + stat('BOSS 等級', 'Lv.' + fmtFull(Math.round(stats.level))) + stat(STR(427), fmt(stats.hp), '#ff8a80') + stat('建議野外階段', (4 + fl * 5) + '+', '#f0cf86') + '</span><span class="twx-status' + (cleared ? ' is-cleared' : (next ? ' is-next' : ' is-locked')) + '">' + status + '</span></div></div><div class="twx-loot"><div class="twx-loot-title">' + STR(159) + '<span>' + STR(1211) + '</span></div><div class="twx-rws">' + rewards + '</div>' + (equips ? '<div class="twx-loot-title">' + STR(1212) + '<span>' + STR(1455) + '</span></div><div class="twx-eqs">' + equips + '</div>' : '') + '</div>' + (wordUnlocks ? '<div class="twx-skill-unlocks twx-word-unlocks">' + wordUnlocks + '</div>' : '') + (unlocks ? '<div class="twx-skill-unlocks">' + unlocks + '</div>' : '');
+  return '<div class="twx-boss" style="--c:' + color + '"><div class="twx-boss-art">' + towerBossIconHTML(bd, 'twx-boss-img') + '</div><div class="twx-boss-main"><span class="twx-boss-tier ' + tier.id + '">' + STR(158, tier.name, fl) + '</span><span class="twx-boss-name' + (isPurgatoryTowerFloor(fl) ? ' purgatory-boss' : '') + '">' + esc(bd.name) + '</span><span class="twx-tags">' + tags + '</span><span class="twx-stats">' + stat(STR(638), 'Lv.' + fmtFull(Math.round(stats.level))) + stat(STR(427), fmt(stats.hp), '#ff8a80') + stat('建議野外階段', (4 + fl * 5) + '+', '#f0cf86') + '</span><span class="twx-status' + (cleared ? ' is-cleared' : (next ? ' is-next' : ' is-locked')) + '">' + status + '</span></div></div><div class="twx-loot"><div class="twx-loot-title">' + STR(159) + '<span>' + STR(1211) + '</span></div><div class="twx-rws">' + rewards + '</div>' + (equips ? '<div class="twx-loot-title">' + STR(1212) + '<span>' + STR(1455) + '</span></div><div class="twx-eqs">' + equips + '</div>' : '') + '</div>' + (wordUnlocks ? '<div class="twx-skill-unlocks twx-word-unlocks">' + wordUnlocks + '</div>' : '') + (unlocks ? '<div class="twx-skill-unlocks">' + unlocks + '</div>' : '');
 }
 
 function towerActionsHTML(fl, highest, gold, active) {
@@ -8417,7 +8417,7 @@ var UI_COMMAND_LABELS = {
   'newforge.upgradePart': STR(1449), 'newforge.unlockPartSlot': STR(1458),
   'tower.start': STR(1895), 'tower.startAuto': STR(1896), 'tower.flee': STR(1897),
   'player.buyInvUpgrade': STR(1216), 'player.switchEquipSet': STR(1217),
-  'task.claim': STR(1923), 'stage.goMax': '前往最高關卡', 'stage.switchZone': '切換地圖'
+  'task.claim': STR(1923), 'stage.goMax': STR(639), 'stage.switchZone': STR(640)
 };
 
 function uiCommandLabel(commandName) {
@@ -9791,7 +9791,7 @@ function showEnemyBuffTooltip(anchorEl) {
   var tip = $id('sk-tooltip');
   if (!tip || !anchorEl) return;
   UI.tooltipAnchor = anchorEl;
-  tip.innerHTML = '<div class="skt-name">💪 目前狀態詳情</div>' +
+  tip.innerHTML = '<div class="skt-name">' + STR(641) + '</div>' +
     '<div class="skt-desc" style="text-align:left;">' + enemyBuffTooltipDesc(anchorEl) + '</div>';
   tip.style.display = 'block';
   var r = anchorEl.getBoundingClientRect();
@@ -9916,8 +9916,8 @@ function showItemTooltip(it, anchorEl, opts) {
 function npcRangeMoveTipLines(m) {
   var perM = (typeof BF_SYSTEM_UNITS_PER_METER === 'number' && BF_SYSTEM_UNITS_PER_METER > 0) ? BF_SYSTEM_UNITS_PER_METER : 10;
   var out = '';
-  if (m && m.atkRange > 0) out += '🎯 攻擊距離：' + fmt1(m.atkRange / perM) + ' 米<br>';
-  if (m && m.runSpeed > 0) out += '👟 移動速度：' + fmt1(m.runSpeed / perM) + ' 米/秒<br>';
+  if (m && m.atkRange > 0) out += STR(642, fmt1(m.atkRange / perM));
+  if (m && m.runSpeed > 0) out += STR(643, fmt1(m.runSpeed / perM));
   return out;
 }
 
@@ -9967,7 +9967,7 @@ function showEnemyTooltip(anchorEl) {
 
   if (!m) return;
 
-  var title = isBossTip ? (m.name || '封魔塔 BOSS') : '敵人情報';
+  var title = isBossTip ? (m.name || STR(644)) : STR(645);
 
   // 頂置區標籤：顯示敵人/地圖屬性標籤 (圖2)
   var zoneKey = (headerSnapshot.stage && headerSnapshot.stage.zone) || 'desert';
@@ -9999,27 +9999,14 @@ function showEnemyTooltip(anchorEl) {
     }
   }
 
-  var dropTip = '<div class="skt-name" style="margin-bottom:6px; display:flex; align-items:center; justify-content:space-between;">' +
-    '<span>【' + title + '】</span>' + (elemBadgeHtml ? '<div style="display:flex; align-items:center;">' + elemBadgeHtml + '</div>' : '') + '</div>' +
-    '<div class="skt-desc" style="text-align:left;">' +
-    (m.magic ? '🔮 魔法攻擊力：' : '⚔️ 物理攻擊力：') + fmt(m.atk) + '<br>' +
-    '⚡ 攻擊速度：' + fmt1(m.aspd) + ' 次/秒<br>' +
-    npcRangeMoveTipLines(m) +
-    '🛡️ 物理防禦：' + fmt(m.def) + '<br>' +
-    '🔮 魔法防禦：' + fmt(m.mdef || m.def * 0.75) + '<br>' +
-    '❤️ 最大生命：' + fmt(m.maxHp) + '<br>' +
-    '🎯 命中率：' + (m.hit || 100) + '%<br>' +
-    '🌀 閃避率：' + (m.dodge || 0) + '%<br>' +
-    '🧠 控制抵抗：' + (m.ctrlRes || 0) + '%';
+  var dropTip = '<div class="skt-name" style="margin-bottom:6px; display:flex; align-items:center; justify-content:space-between;"><span>【' + title + '】</span>' + (elemBadgeHtml ? '<div style="display:flex; align-items:center;">' + elemBadgeHtml + '</div>' : '') + '</div><div class="skt-desc" style="text-align:left;">' + STR(646, (m.magic ? STR(647) : STR(648)), fmt(m.atk), fmt1(m.aspd), npcRangeMoveTipLines(m), fmt(m.def), fmt(m.mdef || m.def * 0.75), fmt(m.maxHp), (m.hit || 100), (m.dodge || 0), (m.ctrlRes || 0));
 
   // BOSS 特殊技·元素審判：元素 BOSS 每次攻擊都額外附帶一段元素傷害。
   // 該段傷害先比照魔法傷害吃魔防／魔抗，最後再受玩家對應「屬性抗性」影響。
   var mElem = m.elem || null;
   var mElemAtk = (mElem && m.elemAtk && m.elemAtk[mElem]) ? m.elemAtk[mElem] : 0;
   if (mElemAtk > 0 && ELEM_INFO[mElem]) {
-    dropTip += '<br>✨ 特殊技·元素審判：每次攻擊額外造成 ' + ELEM_INFO[mElem].emoji + ' ' +
-      fmt(mElemAtk) + ' ' + ELEM_INFO[mElem].name + '元素傷害' +
-      '<span style="color:var(--dim)">（先比照魔法傷害吃魔防／魔抗，再受你的「' + ELEM_INFO[mElem].name + '抗性」減免；蓄力重擊／狂暴倍率同樣生效）</span>';
+    dropTip += STR(649, ELEM_INFO[mElem].emoji, fmt(mElemAtk), ELEM_INFO[mElem].name, ELEM_INFO[mElem].name);
   }
   dropTip += '</div>';
 
@@ -10032,13 +10019,13 @@ function showEnemyTooltip(anchorEl) {
 
     var rewardLines = [];
     rewardLines.push('✨ 經驗 x' + fmt(m.xp));
-    rewardLines.push('💎 寶石 等級 ' + rw.gemLevel + ' x2 顆');
-    rewardLines.push('🔮 附魔精華 x' + rw.essence + (ENCHANT_ENABLED ? '（另附魔書 x2）' : ''));
-    if (dustRate > 0) rewardLines.push('💫 魔塵 (' + fmt1(dustRate) + '%)');
-    if (soulOriginRate > 0) rewardLines.push('🧿 魔魂本源 (' + fmt1(soulOriginRate) + '%)');
-    if (ancientEssenceRate > 0) rewardLines.push('🧿 太古精華 (' + fmt1(ancientEssenceRate) + '%)');
+    rewardLines.push(STR(650, rw.gemLevel));
+    rewardLines.push(STR(652, rw.essence, (ENCHANT_ENABLED ? STR(651) : '')));
+    if (dustRate > 0) rewardLines.push(STR(653, fmt1(dustRate)));
+    if (soulOriginRate > 0) rewardLines.push(STR(654, fmt1(soulOriginRate)));
+    if (ancientEssenceRate > 0) rewardLines.push(STR(655, fmt1(ancientEssenceRate)));
 
-    dropTip += '<div class="skt-name" style="margin:8px 0 6px;">【可能掉落】</div>' +
+    dropTip += '<div class="skt-name" style="margin:8px 0 6px;">' + STR(656) + '</div>' +
       '<div class="skt-desc" style="text-align:left;">' +
       rewardLines.join('<br>') + '</div>';
   } else {
@@ -10057,16 +10044,11 @@ function showEnemyTooltip(anchorEl) {
     var dustLine = '';
     if (!towerActive) {
       var dustRate = Number(zoneDrop.dustRate || 0);
-      if (dustRate > 0) dustLine = '💫 魔塵 <span style="color:var(--dim)">(' + fmt1(dustRate) + '%，神鑄材料)</span>';
+      if (dustRate > 0) dustLine = STR(658, fmt1(dustRate));
     }
 
     if (equipStrs.length || dustLine) {
-      dropTip += '<div class="skt-name" style="margin:8px 0 6px;">【可能掉落】</div>' +
-        '<div class="skt-desc" style="text-align:left;">' +
-        '💰 金幣 x' + fmt(m.gold) + ' <span style="color:var(--dim)">(基礎)</span><br>' +
-        '✨ 經驗 x' + fmt(m.xp) + ' <span style="color:var(--dim)">(基礎)</span><br>' +
-        (dustLine ? dustLine + (equipStrs.length ? '<br>' : '') : '') +
-        equipStrs.join('<br>') + '</div>';
+      dropTip += '<div class="skt-name" style="margin:8px 0 6px;">' + STR(656) + '</div><div class="skt-desc" style="text-align:left;">' + STR(659, fmt(m.gold), fmt(m.xp), (dustLine ? dustLine + (equipStrs.length ? '<br>' : '') : ''), equipStrs.join('<br>')) + '</div>';
     }
   }
 
@@ -10903,7 +10885,7 @@ function miniSnapshot() {
   } else {
     p = field.player; enemy = field.monster || (Array.isArray(field.monsters) ? field.monsters[0] : null);
     var zone = ZONES[stage.zone] || {};
-    s.stage = (zone.emoji || '') + (zone.name || '') + ' 第 ' + (stage.current || 0) + ' 關';
+    s.stage = STR(629, (zone.emoji || '') + (zone.name || ''), (stage.current || 0));
     s.info = '📈 DPS ' + fmt(header.dps || 0) + '　<img src="images/icon_gold.png" class="res-icon">' + fmt(view.gold || 0);
   }
   if (p) {
@@ -11223,7 +11205,7 @@ function stepStageButton(delta) {
     keys: [nodePendingKey('stage')], panels: ['battle', 'header']
   }).catch(function (error) {
     setStagePendingStage(null);
-    reportUiCommandFailure('切換關卡', error, ['battle', 'header']);
+    reportUiCommandFailure(STR(660), error, ['battle', 'header']);
   });
   // 樂觀顯示（夾在 1~最高關，與模擬層 stageGo 的判定一致）
   setStagePendingStage(Math.max(1, Math.min(stg.best || from, from + delta)));
@@ -11392,7 +11374,7 @@ function uiHitRateText() {
   var st = (typeof WorkerBridge !== 'undefined' && WorkerBridge.status) ? WorkerBridge.status() : null;
   var rate = st ? Number(st.hitRate) : NaN;
   if (!isFinite(rate)) return '';
-  return ' 命中 ' + rate.toFixed(1) + '/s';
+  return ' ' + STR(661, rate.toFixed(1));
 }
 
 function initBattleFPS() {
@@ -12740,7 +12722,7 @@ function initUI() {
     sendUiCommand('combat.togglePaused', {}, {
       keys: [nodePendingKey('combat-pause')], panels: ['battle']
     }).catch(function (error) {
-      reportUiCommandFailure('戰鬥暫停切換失敗', error, ['battle']);
+      reportUiCommandFailure(STR(662), error, ['battle']);
     });
   };
   var combatPauseBtn = $id('btn-combat-pause');
@@ -14310,7 +14292,7 @@ function renderCurrentSummary() {
     var empty = document.createElement('div');
     empty.className = 'summary-card';
     empty.setAttribute('data-summary-current', 'true');
-    empty.innerHTML = '<div class="summary-card-title">目前戰鬥（即時統計）</div><div class="summary-card-row">尚未產生傷害統計</div>';
+    empty.innerHTML = '<div class="summary-card-title">' + STR(524) + '</div><div class="summary-card-row">' + STR(663) + '</div>';
     list.insertBefore(empty, list.firstChild);
     return;
   }

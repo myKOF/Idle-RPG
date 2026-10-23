@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* ============================================================
    elite.js — 高級敵人（菁英、高級菁英、野外 BOSS、封魔塔 BOSS）的技能引擎（只在 Worker 載入）
    ------------------------------------------------------------
@@ -230,12 +231,12 @@ function eliteHitPlayer(m, o) {
   var dCfg = playerDefCfg(p);
   var res = resolveHit(m, p, cfg, dCfg);
   var pf = elitePF();
-  if (res.invuln) { floatPlayerEvent(pf, '無敵!', 'defend'); return res; }
-  if (res.miss) { floatPlayerEvent(pf, '閃避!', 'dodge defend'); return res; }
+  if (res.invuln) { floatPlayerEvent(pf, STR(498), 'defend'); return res; }
+  if (res.miss) { floatPlayerEvent(pf, STR(500), 'dodge defend'); return res; }
   var text = '-' + fmt(res.dmg);
   if (res.crit) text = '爆擊 ' + text;
   floatText(pf, text, res.crit ? 'crit' : 'mdmg');
-  if (res.blocked) floatPlayerEvent(pf, '格擋!', 'defend');
+  if (res.blocked) floatPlayerEvent(pf, STR(502), 'defend');
   var hpDamage = Math.max(0, res.dmg - (res.absorbed || 0));
   settleEnemyAttackRetaliation({
     attacker: m, target: p, floatSel: pf, result: res, hpDamage: hpDamage,
@@ -243,7 +244,7 @@ function eliteHitPlayer(m, o) {
   });
   eliteApplyStatus(p, dCfg, res, o);
   if (!o.quiet && typeof blog === 'function') {
-    blog('🛡️ ' + (m.name || '敵人') + ' 的【' + (o.label || '技能') + '】造成 ' + fmt(res.dmg) + ' 傷害。',
+    blog(STR(531, (m.name || STR(459)), (o.label || '技能'), fmt(res.dmg)),
       'log-enemy-skill', 'combat');
   }
   return res;
@@ -253,11 +254,11 @@ function eliteApplyStatus(p, dCfg, res, o) {
   var ccf = (dCfg.ccFactor === undefined) ? 1 : dCfg.ccFactor;
   if (o.stun > 0 && !resistCtrl(dCfg)) {
     var sd = applyEffect(p, 'stun', o.stun * ccf);
-    if (sd) floatPlayerEvent(pf, o.freeze ? '冰凍!' : '眩暈!', 'debuff');
+    if (sd) floatPlayerEvent(pf, o.freeze ? STR(532) : STR(533), 'debuff');
   }
   if (o.slow > 0 && !resistCtrl(dCfg)) {
     var sl = applyEffect(p, 'slow', o.slow * ccf);
-    if (sl) floatPlayerEvent(pf, '減速!', 'debuff');
+    if (sl) floatPlayerEvent(pf, STR(534), 'debuff');
   }
   if (o.dot && o.dot.dur > 0 && res.dmg > 0) {
     var dps = Math.max(1, res.dmg * o.dot.pct / 100 / o.dot.dur);
@@ -297,7 +298,7 @@ function eliteSegmentDist(ax, ay, bx, by, px, py) {
 }
 
 /* ---------------- 配技能 ---------------- */
-var ELITE_TIER_NAME = { elite: '菁英', elite_adv: '高級菁英', boss: '野外BOSS', tower: '封魔塔BOSS' };
+var ELITE_TIER_NAME = { elite: STR(535), elite_adv: STR(536), boss: STR(537), tower: STR(538) };
 var ELITE_TIER_NPC_KEY = { elite: 'elite', elite_adv: 'elite_adv', boss: 'boss', tower: 'tower_boss' };
 var ELITE_ELEM_COLOR = {
   fire: '#ff5a2a', ice: '#7fe0ff', lightning: '#c58cff', earth: '#c9a36a', poison: '#9be83a', dark: '#b05cff', light: '#ffe9a0', wind: '#8fe8c0'
@@ -647,7 +648,7 @@ function eliteCanCast(m, d) {
 
 function eliteAnnounce(m, d) {
   floatEnemyEvent(m, 'mv-float', d.emoji + d.name, 'elite-cast');
-  if (typeof blog === 'function') blog('⚠️ ' + (m.name || '敵人') + ' 施放【' + d.emoji + d.name + '】', 'log-enemy-skill', 'combat');
+  if (typeof blog === 'function') blog(STR(539, (m.name || STR(459)), d.emoji, d.name), 'log-enemy-skill', 'combat');
   eliteCastFx(m, d);
 }
 /* 施法期間牠站著不動也不普攻（讓預警與動作對得起來）。 */
@@ -846,11 +847,11 @@ function eliteMoltenCore(m, d) {
   if (!mp) return;
   var x = mp.x, y = mp.y, delay = d.coreDelay || 3, r = d.coreR || 90;
   eliteWarn(x, y, r, d.v.ground, delay, 'core');
-  floatEnemyEvent(m, 'mv-float', d.emoji + '熔岩核心!', 'elite-cast');
+  floatEnemyEvent(m, 'mv-float', STR(540, d.emoji), 'elite-cast');
   eliteLater(delay, function () {
     eliteBurstFx(x, y, r * 1.1, d.v.attack, 0, d.elem);
     if (eliteInCircle(x, y, r)) {
-      var res = eliteHitPlayer(m, { mult: d.coreDmg || 3, elem: d.elem, sure: true, dot: d.dot, label: d.name + '核心' });
+      var res = eliteHitPlayer(m, { mult: d.coreDmg || 3, elem: d.elem, sure: true, dot: d.dot, label: STR(541, d.name) });
       if (res && !res.miss && !res.invuln && d.v.hit) eliteHitFx(elitePF(), d.v.hit);
     }
   });
@@ -1035,7 +1036,7 @@ function eliteCastBloodsac(m, d) {
   var vp = eliteMonsterPos(v);
   if (vp) eliteBurstFx(vp.x, vp.y, 60, d.v.attack, 0);
   v.hp = 0;
-  floatEnemyEvent(v, 'mv-float', '獻祭', 'elite-cast');
+  floatEnemyEvent(v, 'mv-float', STR(542), 'elite-cast');
   if (typeof onFieldKill === 'function') onFieldKill(v);
   var heal = m.maxHp * d.heal / 100;
   m.hp = Math.min(m.maxHp, m.hp + heal);
@@ -1054,7 +1055,7 @@ function eliteCastCurse(m, d) {
     eliteHitPlayer(m, {
       mult: d.dmg, elem: d.elem, sure: true, atkDown: d.atkDown, defDown: d.defDown, dur: d.dur, label: d.name
     });
-    floatPlayerEvent(elitePF(), '詛咒!', 'debuff');
+    floatPlayerEvent(elitePF(), STR(543), 'debuff');
   });
 }
 function eliteCastDrain(m, d) {
@@ -1070,7 +1071,7 @@ function eliteCastDrain(m, d) {
       fxKind: 'projectile', variant: 'elite-drain', count: 1, dur: 0.55, hit: false,
       sourceId: elitePF(), targets: [m.floatSel], travelMs: [550], lineWidth: d.bodyD, vfx: { projectile: d.v.proj }
     });
-    if (take > 0) floatPlayerEvent(elitePF(), '-' + fmt(take) + ' 法力', 'debuff');
+    if (take > 0) floatPlayerEvent(elitePF(), STR(544, fmt(take)), 'debuff');
     var heal = m.maxHp * d.heal / 100;
     m.hp = Math.min(m.maxHp, m.hp + heal);
     eliteHitPlayer(m, { mult: d.dmg, elem: d.elem, sure: true, label: d.name, quiet: true });
@@ -1680,7 +1681,7 @@ function eliteCastPull(m, d) {
     var ux = (pp.x - mp2.x) / dist, uy = (pp.y - mp2.y) / dist;
     var tx = mp2.x + ux * stop, ty = mp2.y + uy * stop;
     ELITE_RT.pull = { owner: m, def: d, tx: tx, ty: ty, speed: d.speed || 600, sx: pp.x, sy: pp.y, total: eliteDist(pp.x, pp.y, tx, ty) };
-    floatPlayerEvent(elitePF(), '被拉扯!', 'debuff');
+    floatPlayerEvent(elitePF(), STR(545), 'debuff');
   });
 }
 function elitePullTick(dt) {
@@ -1832,7 +1833,7 @@ function eliteIncomingDamage(m, dmg, attacker) {
   var rt = m && m._el;
   if (!rt || !(dmg > 0)) return dmg;
   if (rt.invulnUntil > GT) {
-    if (GT - rt.lastImmuneAt > 0.5) { rt.lastImmuneAt = GT; floatEnemyEvent(m, 'mv-float', '免疫', 'elite-cast'); }
+    if (GT - rt.lastImmuneAt > 0.5) { rt.lastImmuneAt = GT; floatEnemyEvent(m, 'mv-float', STR(546), 'elite-cast'); }
     return 0;
   }
   var mult = 1;
@@ -1873,8 +1874,8 @@ function eliteOnDamaged(m, dealt, attacker) {
       if (eliteStatusEntry(d, 'self')) rt.enrageSid = eliteStatusEntry(d, 'self').id;   // 上身爆發與光環由 Status 表決定
       rt.rageMult = d.atk;
       m.aspd = (Number(m.aspd) || 1) * d.aspd;
-      floatEnemyEvent(m, 'mv-float', d.emoji + '狂暴!', 'elite-cast');
-      if (typeof blog === 'function') blog('😡 ' + (m.name || '敵人') + ' 進入狂暴！', 'log-enemy-skill', 'combat');
+      floatEnemyEvent(m, 'mv-float', STR(547, d.emoji), 'elite-cast');
+      if (typeof blog === 'function') blog(STR(548, (m.name || STR(459))), 'log-enemy-skill', 'combat');
     } else if (d.arch === 'sparks') {
       eliteSparksOnHit(m, d);
     }
@@ -1905,7 +1906,7 @@ function eliteOnAttackHit(m, p, res, hpDamage) {
       if (mp) {
         elitePushPlayer(mp.x, mp.y, d.dist);
         eliteBurstFx(elitePos().x, elitePos().y, 55, d.v.attack, 0);
-        floatPlayerEvent(elitePF(), '被擊飛!', 'debuff');
+        floatPlayerEvent(elitePF(), STR(549), 'debuff');
         var dCfg = playerDefCfg(p);
         if (d.stun > 0 && !resistCtrl(dCfg)) applyEffect(p, 'stun', d.stun * (dCfg.ccFactor === undefined ? 1 : dCfg.ccFactor));
       }
@@ -1955,8 +1956,8 @@ function eliteOnDeath(m) {
           targets: [m.floatSel], vfx: { attack: d.v.attack2 }
         });
       }
-      floatEnemyEvent(m, 'mv-float', d.emoji + '浴火重生!', 'elite-cast');
-      if (typeof blog === 'function') blog('🕊️ ' + (m.name || '敵人') + ' 浴火重生，帶著 ' + Math.round(d.hp) + '% 生命站了起來！', 'log-enemy-skill', 'combat');
+      floatEnemyEvent(m, 'mv-float', STR(550, d.emoji), 'elite-cast');
+      if (typeof blog === 'function') blog(STR(551, (m.name || STR(459)), Math.round(d.hp)), 'log-enemy-skill', 'combat');
       return true;
     }
   }
@@ -1972,7 +1973,7 @@ function eliteOnDeath(m) {
         var ep = eliteMonsterPos(e);
         if (ep) eliteBurstFx(ep.x, ep.y, 50, dd.v.attack, 0);
       });
-      floatEnemyEvent(m, 'mv-float', dd.emoji + '分裂!', 'elite-cast');
+      floatEnemyEvent(m, 'mv-float', STR(552, dd.emoji), 'elite-cast');
     }
   }
   return false;
@@ -1998,7 +1999,7 @@ function eliteOnAllyDeath(dead) {
         e.aspd = (Number(e.aspd) || 1) * (1 + da.aspd);
         e.runSpeed = ((Number(e.runSpeed) > 0) ? Number(e.runSpeed) : (typeof bfEnemySpeed === 'function' ? bfEnemySpeed() : 210)) * (1 + da.run);
         eliteCastFx(e, da);
-        floatEnemyEvent(e, 'mv-float', da.emoji + '復仇!', 'elite-cast');
+        floatEnemyEvent(e, 'mv-float', STR(553, da.emoji), 'elite-cast');
       }
     }
     /* 召喚師死了：牠召喚的敵人最大生命縮水（預設 −90%） */
@@ -2015,7 +2016,7 @@ function eliteBomberArm(m, d) {
   if (!mp) return;
   var x = mp.x, y = mp.y;
   eliteWarn(x, y, d.r, d.v.ground, d.delay, 'bomb');
-  floatEnemyEvent(m, 'mv-float', d.emoji + '即將爆炸!', 'elite-cast');
+  floatEnemyEvent(m, 'mv-float', STR(554, d.emoji), 'elite-cast');
   eliteLater(d.delay, function () {
     eliteBurstFx(x, y, d.r * 1.2, d.v.attack, 0, d.elem);
     if (eliteInCircle(x, y, d.r)) eliteHitPlayer(m, { mult: d.dmg, elem: d.elem, sure: true, label: d.name });

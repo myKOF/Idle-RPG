@@ -1,10 +1,11 @@
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.resolve(__dirname, '..');
-const src = fs.readFileSync(path.join(root, 'js/battle-renderer.js'), 'utf8');
+const src = readExpanded(path.join(root, 'js/battle-renderer.js'));
 
 /* 2026-09-13 回報：「任何 UI 操作或觸發事件，都會讓戰鬥區的演出卡頓」——
    滑過技能列讓底框亮起、裝備提示彈出、捲動，每一件都只是幾毫秒的工作。
