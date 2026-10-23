@@ -58,7 +58,7 @@ for (const r of rows) {
   kept.push(r);
 }
 
-const { INLINE_OK, parseMarkup, keepTag, balance, splitMarkup, decodeEnt } = require('./markup.cjs');
+const { INLINE_OK, parseMarkup, keepTag, balance, splitMarkup, decodeEnt, attrValue } = require('./markup.cjs');
 
 /* ---------- 類別／用途 ---------- */
 /* ---------- 功能模塊 ---------- */
@@ -234,7 +234,7 @@ for (const r of kept) {
     const tag = m[2].toLowerCase(), attrs = m[3] || '', close = !!m[1];
     if (!close) {
       let a; const re = /\s(data-tip|data-tt-title|data-tt-desc|title|aria-label|alt|placeholder|label)="([^"]*)"/g;
-      while ((a = re.exec(' ' + attrs))) if (IDEO.test(a[2])) for (const x of splitMarkup(a[2], true)) add(x, [], '主界面', `index.html:${line}`, '提示', moduleOf('index.html', '', '', x, line));
+      while ((a = re.exec(' ' + attrs))) if (IDEO.test(a[2])) { const x = attrValue(a[2]); add(x, [], '主界面', `index.html:${line}`, '提示', moduleOf('index.html', '', '', x, line)); }
     }
     const fmtTag = /^(b|i|u|em|strong|small|code|br)$/i.test(tag);
     let inline = fmtTag && !/\sid=/.test(attrs);

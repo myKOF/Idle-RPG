@@ -6436,10 +6436,10 @@ function renderForgeExtras(factorySnapshot, headerSnapshot) {
     for (var bk in player.books) {
       if (player.books[bk] > 0) bookChips.push('<span class="book-chip">' + ENCHANTS[bk].emoji + esc(ENCHANTS[bk].name) + ' x' + player.books[bk] + '</span>');
     }
-    encBooks.innerHTML = bookChips.length ? bookChips.join('') : '<span class="hint">尚無附魔書（階段 8+ 掉落 / 封魔塔獎勵）</span>';
+    encBooks.innerHTML = bookChips.length ? bookChips.join('') : STR(1306);
   }
   var encInfo = $id('enc-info');
-  if (encInfo) encInfo.textContent = '精華庫存 ' + fmt(player.essence) + '（每次消耗 ' + ENCHANT_ESSENCE_COST + '）｜已附魔 ' + fmt(f.stats.enchanted) + ' 次';
+  if (encInfo) encInfo.textContent = STR(1307, fmt(player.essence), ENCHANT_ESSENCE_COST, fmt(f.stats.enchanted));
 
 }
 
@@ -6953,7 +6953,7 @@ function renderForgeAutoMenu(forge, inventorySnapshot, gemsSnapshot) {
   var rowKeys = [];
   var rowHtmls = [];
   if (invTab === 'gems') {
-    title = '💎 自動放入寶石（五～九階）';
+    title = STR(1308);
     var gemOptions = [];
     for (var lv = GEM_FORGE_MAX_LEVEL - 1; lv >= GEM_MAX_LEVEL; lv--) {
       for (var t in GEM_TYPES) {
@@ -6977,10 +6977,10 @@ function renderForgeAutoMenu(forge, inventorySnapshot, gemsSnapshot) {
         ' style="color:' + col + '">' +
         '<span>' + gemIconHTML(gem.type, gem.level, 'gi-row') + '</span>' +
         '<span>' + esc(GEM_NAMES[gem.level] + gd.name) + '（' + esc(gd.statName.replace('%', '')) + ' +' + val + '）</span>' +
-        '<span class="fam-cnt">×' + fmt(gem.count) + (gem.canForge ? '' : '｜不足6') + '</span></div>');
+        '<span class="fam-cnt">×' + fmt(gem.count) + (gem.canForge ? '' : STR(1309)) + '</span></div>');
     }
   } else {
-    title = '🎒 自動放入裝備（取未上鎖、評分最低 6 件）';
+    title = STR(1310);
     for (var r = FORGE_MIN_RARITY; r < RARITIES.length; r++) {
       if (!isForgeableEquipmentRarity(r)) continue;
       var cnt = 0;
@@ -6991,18 +6991,14 @@ function renderForgeAutoMenu(forge, inventorySnapshot, gemsSnapshot) {
       }
       var rok = cnt >= FORGE_SLOTS;
       rowKeys.push('equip:' + r);
-      rowHtmls.push('<div class="fam-opt' + (rok ? '' : ' fam-dim') + '"' +
-        ' data-fam-equip="' + r + '"' +
-        ' style="color:' + RARITIES[r].color + '">' +
-        '<span>' + esc(RARITIES[r].name) + '裝備</span>' +
-        '<span class="fam-cnt">持有 ' + cnt + (rok ? '' : '｜不足6') + '</span></div>');
+      rowHtmls.push('<div class="fam-opt' + (rok ? '' : ' fam-dim') + '" data-fam-equip="' + r + '" style="color:' + RARITIES[r].color + '"><span>' + STR(45, esc(RARITIES[r].name)) + '</span>' + STR(2096, cnt, (rok ? '' : STR(1309))) + '</div>');
     }
   }
   if (!rowKeys.length) {
     rowKeys.push('__fam-empty');
     rowHtmls.push('<div class="fam-empty">' + (invTab === 'gems'
-      ? '沒有五階以上的寶石（十階已是最高，不可鑄造）'
-      : '目前沒有可自動放入的裝備') + '</div>');
+      ? STR(1312)
+      : STR(1313)) + '</div>');
   }
   setTextIfChanged(menu.querySelector('.fam-title'), title);
   // 清單節點本身留著，卷軸位置自然保住，不必再存一份 scrollTop 回寫
@@ -7056,12 +7052,12 @@ function renderForgeProgress(forge, inventorySnapshot, gemsSnapshot) {
   var elapsed = clamp((typeof GameClock !== 'undefined' ? GameClock.wallNow() : Date.now()) - Number(c.startedAt), 0, duration);
   var remain = Math.max(0, duration - elapsed);
   box.style.display = '';
-  $id('forge-progress-status').textContent = '鑄造中....';
+  $id('forge-progress-status').textContent = STR(1314);
   // 目前素材可再鑄造次數 = 剩餘庫存 ÷ 6 取整（內容無變化時不觸碰 DOM）
   var remainEl = $id('forge-progress-remain');
   if (remainEl) {
     var ri = forgeViewRemainInfo(forge, inventorySnapshot, gemsSnapshot);
-    var remainText = ri ? ri.label + ' 可再鑄造 ' + fmt(Math.floor(ri.count / FORGE_SLOTS)) + ' 次' : '';
+    var remainText = ri ? STR(1315, ri.label, fmt(Math.floor(ri.count / FORGE_SLOTS))) : '';
     if (remainEl.textContent !== remainText) remainEl.textContent = remainText;
   }
   $id('forge-progress-countdown').textContent = (remain / 1000).toFixed(1) + ' 秒';
@@ -7113,7 +7109,7 @@ function renderForge() {
       var gdefS = GEM_TYPES[it.type];
       var gvalS = gdefS.pct ? pctStr(gemStatValue(it.type, it.level)) : fmt(gemStatValue(it.type, it.level));
       h += '<div class="forge-slot filled" data-forge-slot="' + i + '" data-tip="' +
-        esc(gemLabel(it.type, it.level) + '｜' + gdefS.statName.replace('%', '') + ' +' + gvalS + '｜點擊取回') + '" ' +
+        esc(STR(1316, gemLabel(it.type, it.level), gdefS.statName.replace('%', ''), gvalS)) + '" ' +
         pendingUiButtonAttributes(nodePendingKey('forge')) +
         ' style="' + style + 'border-color:' + gcol + ';box-shadow:0 0 14px ' + gcol + 'aa, inset 0 0 10px ' + gcol + '55">' +
         gemIconHTML(it.type, it.level, 'gi-cell') + '<span class="ic-lv">' + it.level + '</span></div>';
@@ -7128,7 +7124,7 @@ function renderForge() {
         ' style="' + style + 'border-color:' + r.color + ';box-shadow:0 0 14px ' + r.color + 'aa, inset 0 0 10px ' + r.color + '55">' +
         iconHtml + ancientStarBadgeHTML(it) + '<span class="ic-lv">' + it.level + '</span></div>';
     } else {
-      h += '<div class="forge-slot empty" data-forge-slot="' + i + '" data-tip="點擊下方背包中的裝備（傳說/神話/創世）或寶石（五階以上）放入" style="' + style + '"></div>';
+      h += '<div class="forge-slot empty" data-forge-slot="' + i + '" data-tip="' + STR(1317) + '" style="' + style + '"></div>';
     }
     hexHtmls.push(h);
   }
@@ -7146,7 +7142,7 @@ function renderForge() {
     var lit = !!f.dustSlots[di];
     hexKeys.push('dust:' + di);
     hexHtmls.push('<div class="forge-dust' + (lit ? ' lit' : '') + '" data-forge-dust="' + di + '" data-tip="' +
-      (lit ? '點擊取下魔塵' : '點擊放入魔塵（+' + equipDustRate + '% 成功率）') + '"' +
+      (lit ? STR(1318) : STR(1319, equipDustRate)) + '"' +
       pendingUiButtonAttributes(nodePendingKey('forge')) + ' style="left:' + dp.x + '%;top:' + dp.y + '%;">💫</div>');
   }
   // 中央產物（上次鑄造成功的裝備或寶石）
@@ -7155,19 +7151,14 @@ function renderForge() {
   if (f.result && f.result.kind === 'gem' && GEM_TYPES[f.result.type]) {
     var gc = GEM_TIER_COLORS[f.result.level] || '#f5c542';
     var gname = gemLabel(f.result.type, f.result.level);
-    h += '<div class="forge-center" data-tip="上次鑄造產物：' + esc(gname) + '（已放入寶石庫存）" ' +
-      'style="border-color:' + gc + ';box-shadow:0 0 25px ' + gc + 'cc, inset 0 0 14px ' + gc + '66">' +
-      gemIconHTML(f.result.type, f.result.level, 'gi-cell') +
-      '<div class="forge-center-name" style="color:' + gc + '">' + esc(gname) + '</div></div>';
+    h += '<div class="forge-center" data-tip="' + STR(1320, esc(gname)) + '" style="border-color:' + gc + ';box-shadow:0 0 25px ' + gc + 'cc, inset 0 0 14px ' + gc + '66">' + gemIconHTML(f.result.type, f.result.level, 'gi-cell') + '<div class="forge-center-name" style="color:' + gc + '">' + esc(gname) + '</div></div>';
   } else if (f.result && RARITIES[f.result.rarity] && SLOT_INFO[f.result.slot]) {
     var rr = RARITIES[f.result.rarity];
     var rInfo = SLOT_INFO[f.result.slot];
     var rIcon = rInfo.icon ? '<img src="images/' + rInfo.icon + '" class="item-icon">' : '<span class="ic-emoji">' + rInfo.emoji + '</span>';
-    h += '<div class="forge-center" data-tip="上次鑄造產物：' + esc(f.result.name) + '（Lv.' + f.result.level + '，已放入背包）" ' +
-      'style="border-color:' + rr.color + ';box-shadow:0 0 25px ' + rr.color + 'cc, inset 0 0 14px ' + rr.color + '66">' + rIcon +
-      '<div class="forge-center-name" style="color:' + rr.color + '">' + esc(f.result.name) + '</div></div>';
+    h += '<div class="forge-center" data-tip="' + STR(1321, esc(f.result.name), f.result.level) + '" style="border-color:' + rr.color + ';box-shadow:0 0 25px ' + rr.color + 'cc, inset 0 0 14px ' + rr.color + '66">' + rIcon + '<div class="forge-center-name" style="color:' + rr.color + '">' + esc(f.result.name) + '</div></div>';
   } else {
-    h += '<div class="forge-center empty" data-tip="鑄造成功的裝備/寶石會顯示在此"></div>';
+    h += '<div class="forge-center empty" data-tip="' + STR(1322) + '"></div>';
   }
   hexHtmls.push(h);
   syncItemGridCells(hex, hexKeys, hexHtmls);
@@ -7175,11 +7166,9 @@ function renderForge() {
   var rate = forgeViewRateInfo(f, player);
   var rateEl = $id('forge-rate');
   if (rate) {
-    setHtmlIfChanged(rateEl, (rate.mode === 'gem' ? '💎 寶石' : '') + '鑄造成功率：<b style="color:#ffd700">' + fmt1(rate.base) + '%</b>' +
-      (rate.dust > 0 ? ' <b style="color:#4ade80">+ ' + fmt1(rate.dust) + '%</b>' : '') +
-      '　<span class="dim-text">金幣消耗：<img src="images/icon_gold.png" class="res-icon">' + fmt(rate.cost) + '｜失敗獲得魔塵 x1</span>');
+    setHtmlIfChanged(rateEl, STR(1324, (rate.mode === 'gem' ? STR(1323) : '')) + '<b style="color:#ffd700">' + fmt1(rate.base) + '%</b>' + (rate.dust > 0 ? ' <b style="color:#4ade80">+ ' + fmt1(rate.dust) + '%</b>' : '') + '　<span class="dim-text">' + STR(2097) + '<img src="images/icon_gold.png" class="res-icon">' + STR(1326, fmt(rate.cost)) + '</span>');
   } else {
-    setHtmlIfChanged(rateEl, '<span class="dim-text">放入 6 件相同品質的裝備（傳說 55%｜神話 40%｜創世 25%）或 6 顆同種同階寶石（五階 45% ~ 九階 5%）</span>');
+    setHtmlIfChanged(rateEl, STR(1327));
   }
   // 法陣紀錄
   setHtmlIfChanged($id('forge-log'), f.log.map(function (l) {
@@ -7192,7 +7181,7 @@ function renderForge() {
   autoForgeInput.checked = !!f.autoForge;
   autoDustInput.parentElement.classList.toggle('is-active', autoDustInput.checked);
   autoForgeInput.parentElement.classList.toggle('is-active', autoForgeInput.checked);
-  $id('forge-dust-own').textContent = '持有魔塵 ' + fmt(player.dust || 0) + ' 個｜已放置 ' + dustN + '/' + FORGE_SLOTS;
+  $id('forge-dust-own').textContent = STR(1328, fmt(player.dust || 0), dustN, FORGE_SLOTS);
   renderForgeProgress(f, inventorySnapshot, gemsSnapshot);
   $id('forge-unload').disabled = forgeBusy;
   $id('forge-autodust').disabled = forgeBusy;
@@ -7202,8 +7191,8 @@ function renderForge() {
        玩家的視線在按鈕上，按下去才發現不夠——而那個失敗以前還是靜默的。
        素材沒放滿時沒有費用可算（rate 為 null），維持純文字。 */
     var goLabel = rate
-      ? '鑄造 <img src="images/icon_gold.png" class="res-icon">' + fmt(rate.cost)
-      : '鑄造';
+      ? STR(1329) + ' <img src="images/icon_gold.png" class="res-icon">' + fmt(rate.cost)
+      : STR(1329);
     setHtmlIfChanged(goBtn, goLabel);
     if (forgeBusy || forgeViewItemCount(f) < FORGE_SLOTS || forgeViewSlots(f).some(function (it) { return it && it.kind === 'gem' && !isGemEnabled(it.type); })) {
       goBtn.disabled = true;
@@ -7228,8 +7217,8 @@ function renderForge() {
     var afLabel = forgeViewAutoFillLabel(f);
     afBtn.classList.toggle('afk-on', !!afLabel);
     afBtn.setAttribute('data-tip', afLabel
-      ? '自動放入中：' + afLabel + '（每次鑄造後自動補放 6 件，數量不足自動停止；點擊變更）'
-      : '選擇素材後立即放入 6 件，之後每次鑄造自動補放同一素材');
+      ? STR(1330, afLabel)
+      : STR(1331));
   }
   var famMenuSync = $id('forge-auto-menu');
   if (forgeBusy && famMenuSync) {
@@ -7272,8 +7261,7 @@ function renderForge() {
         gemKeys.push(gt2 + ':' + glv);
         gemHtmls.push('<div class="item-cell forge-gem-cell' + (gok ? '' : ' forge-na') + '" data-forge-gem="' + gt2 + ':' + glv + '" ' +
           pendingUiButtonAttributes(nodePendingKey('forge')) +
-          ' data-tip="' + esc(gemLabel(gt2, glv) + '｜' + gdef.statName.replace('%', '') + ' +' + gval + '｜持有 ' + gn + ' 顆' +
-            (gok ? '（點擊放入法陣）' : (glv < GEM_MAX_LEVEL ? '（五階以上才可鑄造）' : '（十階已是最高階級）'))) + '" ' +
+          ' data-tip="' + esc(STR(1332, gemLabel(gt2, glv), gdef.statName.replace('%', ''), gval, gn, (gok ? STR(1333) : (glv < GEM_MAX_LEVEL ? STR(1334) : STR(1335))))) + '" ' +
           'style="border-color:' + gcol2 + ';box-shadow:inset 0 0 12px ' + gcol2 + '33">' +
           gemIconHTML(gt2, glv, 'gi-cell') +
           '<span class="ic-lv">' + glv + '</span>' +
@@ -7282,7 +7270,7 @@ function renderForge() {
     }
     if (!gemKeys.length) {
       gemKeys.push('__forge-gem-empty');
-      gemHtmls.push('<div class="hint" style="grid-column: 1 / -1; padding: 10px;">尚無寶石。戰鬥掉落與寶石商店可取得寶石。</div>');
+      gemHtmls.push('<div class="hint" style="grid-column: 1 / -1; padding: 10px;">' + STR(1336) + '</div>');
     }
     syncItemGridCells(grid, gemKeys, gemHtmls);
   }
@@ -8501,10 +8489,10 @@ function requestUiPanels(keys) {
 /* 指令名 → 給玩家看的動作名稱。查不到就退回指令名本身：訊息會醜一點，
    但仍然說得出「哪個動作失敗、為什麼」，比什麼都不說好。 */
 var UI_COMMAND_LABELS = {
-  'forge.start': '開始神鑄', 'forge.cancel': '取消神鑄', 'forge.unloadAll': '神鑄全部取回',
-  'forge.placeItem': '放入神鑄素材', 'forge.placeGem': '放入神鑄寶石',
-  'forge.removeItem': '取回神鑄素材', 'forge.toggleDust': '神鑄魔塵', 'forge.autoFillDust': '自動放入魔塵',
-  'forge.setAuto': '神鑄自動設定', 'forge.setAutoFill': '神鑄自動放入設定',
+  'forge.start': STR(1337), 'forge.cancel': '取消神鑄', 'forge.unloadAll': '神鑄全部取回',
+  'forge.placeItem': STR(1338), 'forge.placeGem': STR(1339),
+  'forge.removeItem': STR(1340), 'forge.toggleDust': STR(1341), 'forge.autoFillDust': STR(1342),
+  'forge.setAuto': STR(1343), 'forge.setAutoFill': STR(1344),
   'item.equip': '裝備', 'item.unequip': '卸下', 'item.salvage': '分解', 'item.setLock': '鎖定',
   'item.upgrade': '強化', 'item.enchant': '附魔', 'item.removeEnchant': '移除附魔',
   'item.rerollAffix': '洗煉', 'gem.socket': '鑲嵌', 'gem.unsocket': '取下寶石', 'rune.socket': '鑲嵌符文',
@@ -12965,7 +12953,7 @@ function initUI() {
           keys: [nodePendingKey('forge')],
           panels: ['forge', 'inv', 'gems']
         }).catch(function (error) {
-          reportUiCommandFailure('神鑄取回素材', error, ['forge', 'inv', 'gems']);
+          reportUiCommandFailure(STR(1345), error, ['forge', 'inv', 'gems']);
         });
       }
       return;
@@ -12979,7 +12967,7 @@ function initUI() {
         keys: [nodePendingKey('forge')],
         panels: ['forge']
       }).catch(function (error) {
-        reportUiCommandFailure('神鑄魔塵', error, ['forge']);
+        reportUiCommandFailure(STR(1341), error, ['forge']);
       });
       return;
     }
@@ -13013,7 +13001,7 @@ function initUI() {
             keys: [nodePendingKey('forge')],
             panels: ['forge', 'inv', 'gems']
           }).catch(function (error) {
-            reportUiCommandFailure('神鑄自動放入', error, ['forge', 'inv', 'gems']);
+            reportUiCommandFailure(STR(1346), error, ['forge', 'inv', 'gems']);
           });
           famMenu.style.display = 'none';
           UI.forgeAutoPick = null;
@@ -13027,7 +13015,7 @@ function initUI() {
           keys: [nodePendingKey('forge')],
           panels: ['forge']
         }).catch(function (error) {
-          reportUiCommandFailure('取消神鑄自動放入', error, ['forge']);
+          reportUiCommandFailure(STR(1347), error, ['forge']);
         });
         famMenu.style.display = 'none';
         UI.forgeAutoPick = null;
@@ -13073,7 +13061,7 @@ function initUI() {
           keys: [nodePendingKey('forge'), itemPendingKey(fid)],
           panels: ['forge', 'inv']
         }).catch(function (error) {
-          reportUiCommandFailure('神鑄放入裝備', error, ['forge', 'inv']);
+          reportUiCommandFailure(STR(1348), error, ['forge', 'inv']);
         });
         return;
       }

@@ -117,6 +117,9 @@ function finalize(buf) {
   return out;
 }
 
+/* 屬性值（tooltip、title…）整段就是一條字串：解開實體、空白收成一個、去頭尾 */
+const attrValue = (v) => decodeEnt(v).replace(/\s+/g, ' ').trim();
+
 function splitMarkup(text, fromHtmlAttr) {
   const out = [];
   if (fromHtmlAttr) text = decodeEnt(text);
@@ -124,11 +127,11 @@ function splitMarkup(text, fromHtmlAttr) {
   // A. 帶 tooltip／title 屬性的標籤：屬性值獨立成條，整個標籤當斷點
   let rest = text.replace(/<([a-zA-Z][\w-]*)([^<>]*)>/g, (all, tag, attrs) => {
     let had = false;
-    attrs.replace(ATTR_TEXT, (m, v) => { had = true; if (IDEO.test(v)) out.push(...splitMarkup(v, true)); return ''; });
+    attrs.replace(ATTR_TEXT, (m, v) => { had = true; if (IDEO.test(v)) out.push(attrValue(v)); return ''; });
     return had ? BRK : all;
   });
   // 沒有標籤包住的殘缺屬性片段（' disabled data-tip="…">文字'）
-  rest = rest.replace(ATTR_TEXT, (m, v) => { if (IDEO.test(v)) out.push(...splitMarkup(v, true)); return BRK; });
+  rest = rest.replace(ATTR_TEXT, (m, v) => { if (IDEO.test(v)) out.push(attrValue(v)); return BRK; });
   rest = rest.replace(/\u0000[^<>\u0000\u3400-\u9fff{}]*>/g, BRK);
   // B. 其餘文字節點；結構性標籤當斷點，格式標籤（br／b／變色或樣式 span）保留
   let buf = '';
@@ -145,4 +148,4 @@ function splitMarkup(text, fromHtmlAttr) {
   return out;
 }
 
-module.exports = { IDEO, INLINE_OK, parseMarkup, keepTag, balance, splitMarkup, decodeEnt, ATTR_TEXT, orphanSet };
+module.exports = { IDEO, INLINE_OK, parseMarkup, keepTag, balance, splitMarkup, decodeEnt, ATTR_TEXT, orphanSet, attrValue };

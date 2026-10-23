@@ -2,6 +2,7 @@
 /* 改過的 js 檔把 index.html（以及 Worker importScripts、bridge 的 WORKER_ASSET_VERSION、VFX 編輯器頁）的 ?v= 快取版本加一（AI_RULES 8.1）。
    以 git HEAD 為基準判斷「還沒加過」，所以重複執行不會重複加；migrate.cjs 每次結束都會呼叫。 */
 const fs = require('fs');
+const fsx = require('./fsx.cjs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 
@@ -43,16 +44,16 @@ function bumpFromGit(tag) {
     } else if (wCur) workerTouched = workerTouched || (wCur[2] || '') !== (wOld ? (wOld[2] || '') : '');
   }
   if (workerTouched) {
-    fs.writeFileSync(path.join(ROOT, 'js/worker/sim.worker.js'), worker);
+    fsx.write(path.join(ROOT, 'js/worker/sim.worker.js'), worker);
     const reV = /(var WORKER_ASSET_VERSION = ')([^']*)(')/;
     if (reV.exec(bridge)[2] === reV.exec(headBridge)[2]) {
       bridge = bridge.replace(reV, '$1' + tag + '$3');
       const reB = /(src="js\/bridge\.js\?v=)(\d+(?:\.\d+)*)(")/;
       if (reB.exec(html)[2] === reB.exec(headIndex)[2]) html = html.replace(reB, (m, a, v, c) => a + incr(v) + c);
     }
-    fs.writeFileSync(path.join(ROOT, 'js/bridge.js'), bridge);
+    fsx.write(path.join(ROOT, 'js/bridge.js'), bridge);
   }
-  fs.writeFileSync(path.join(ROOT, 'index.html'), html);
+  fsx.write(path.join(ROOT, 'index.html'), html);
   // VFX 編輯器頁與主頁共用腳本的版號必須一致（tests/vfx-editor-cache-versions.test.cjs CV-1）
   const edPath = path.join(ROOT, 'tools', 'vfx', 'editor', 'index.html');
   if (fs.existsSync(edPath)) {
@@ -62,7 +63,7 @@ function bumpFromGit(tag) {
       const m = new RegExp('src="js/' + e + '\\?v=([^"]+)"').exec(html);
       if (m) ed = ed.replace(new RegExp('(src="/js/' + e + '\\?v=)[^"]+(")'), '$1' + m[1] + '$2');
     }
-    if (ed !== before) fs.writeFileSync(edPath, ed);
+    if (ed !== before) fsx.write(edPath, ed);
   }
   return done;
 }

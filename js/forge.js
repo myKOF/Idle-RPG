@@ -155,20 +155,20 @@ function forgeRateInfo() {
 // 放入裝備（自背包移入第一個空槽）；回傳 null=成功，否則錯誤訊息
 function forgePlaceItem(id) {
   var f = forgeState();
-  if (f.crafting) return '鑄造進行中，請等待完成';
-  if (forgeMode() === 'gem') return '法陣中已放入寶石，裝備與寶石不可混放';
+  if (f.crafting) return STR(1241);
+  if (forgeMode() === 'gem') return STR(1242);
   var idx = -1;
   for (var i = 0; i < G.inventory.length; i++) if (G.inventory[i].id === id) { idx = i; break; }
-  if (idx < 0) return '找不到該裝備';
+  if (idx < 0) return STR(1243);
   var it = G.inventory[idx];
-  if (isGodforgedRarity(it.rarity)) return '神鑄系列裝備無法再放入法陣鑄造';
-  if (!isForgeableEquipmentRarity(it.rarity)) return '只有傳說、神話、創世、混沌品質的裝備可放入法陣';
+  if (isGodforgedRarity(it.rarity)) return STR(1244);
+  if (!isForgeableEquipmentRarity(it.rarity)) return STR(1245);
   var need = forgeRarity();
   if (need !== null && it.rarity !== need) {
-    return '六件裝備品質必須相同（法陣目前為「' + RARITIES[need].name + '」）';
+    return STR(1246, RARITIES[need].name);
   }
   var slot = f.slots.indexOf(null);
-  if (slot < 0) return '法陣已放滿 6 件裝備';
+  if (slot < 0) return STR(1247);
   G.inventory.splice(idx, 1);
   f.slots[slot] = it;
   f.result = null;
@@ -181,19 +181,19 @@ function forgePlaceItem(id) {
    限 5~9 階、六顆必須同種類同階級；放入當下即自庫存扣除，取回時歸還。 */
 function forgePlaceGem(type, level) {
   var f = forgeState();
-  if (f.crafting) return '鑄造進行中，請等待完成';
+  if (f.crafting) return STR(1241);
   if (!GEM_TYPES[type]) return '未知寶石種類';
-  if (!isGemEnabled(type)) return '此寶石已關閉，無法神鑄';
-  if (forgeMode() === 'equip') return '法陣中已放入裝備，裝備與寶石不可混放';
-  if (level < GEM_MAX_LEVEL) return '只有五階以上的寶石可放入法陣';
-  if (level >= GEM_FORGE_MAX_LEVEL) return GEM_NAMES[GEM_FORGE_MAX_LEVEL] + '寶石已是最高階級，無法再鑄造';
+  if (!isGemEnabled(type)) return STR(1248);
+  if (forgeMode() === 'equip') return STR(1249);
+  if (level < GEM_MAX_LEVEL) return STR(1250);
+  if (level >= GEM_FORGE_MAX_LEVEL) return STR(1251, GEM_NAMES[GEM_FORGE_MAX_LEVEL]);
   var first = forgeGemFirst();
   if (first && (first.type !== type || first.level !== level)) {
-    return '六顆寶石必須為相同種類與階級（法陣目前為「' + gemLabel(first.type, first.level) + '」）';
+    return STR(1252, gemLabel(first.type, first.level));
   }
   if (gemCount(type, level) < 1) return '沒有「' + gemLabel(type, level) + '」';
   var slot = f.slots.indexOf(null);
-  if (slot < 0) return '法陣已放滿 6 顆寶石';
+  if (slot < 0) return STR(1253);
   addGem(type, level, -1);
   f.slots[slot] = { kind: 'gem', type: type, level: level };
   f.result = null;
@@ -205,7 +205,7 @@ function forgePlaceGem(type, level) {
 // 取回單一槽位物件（裝備回背包、寶石回庫存）
 function forgeRemoveItem(slotIdx) {
   var f = forgeState();
-  if (f.crafting) return '鑄造進行中，請等待完成';
+  if (f.crafting) return STR(1241);
   var it = f.slots[slotIdx];
   if (!it) return;
   f.slots[slotIdx] = null;
@@ -236,12 +236,12 @@ function forgeUnloadAll() {
 // 點擊角尖符位：在「該位置」放入或取下魔塵；回傳 null=成功，否則錯誤訊息
 function forgeToggleDust(idx) {
   var f = forgeState();
-  if (f.crafting) return '鑄造進行中，請等待完成';
+  if (f.crafting) return STR(1241);
   if (!(idx >= 0 && idx < FORGE_SLOTS)) return null;
   if (f.dustSlots[idx]) {
     f.dustSlots[idx] = false;
   } else {
-    if ((G.player.dust || 0) <= forgeDustCount()) return '魔塵不足（持有 ' + fmt(G.player.dust || 0) + ' 個）';
+    if ((G.player.dust || 0) <= forgeDustCount()) return STR(1254, fmt(G.player.dust || 0));
     f.dustSlots[idx] = true;
   }
   UI.dirty.forge = true;
@@ -255,7 +255,7 @@ function forgeReturnItem(it) {
   var cap = typeof inventoryCapacityWithTalents === 'function' ? inventoryCapacityWithTalents() : INVENTORY_CAP + (G.player.invUpgrades || 0);
   G.inventory.push(it);
   if (G.inventory.length > cap) {
-    flog('🛡️ 背包已滿，法陣退回的 ' + rarityTag(it) + ' 已保留（目前超出容量，請整理背包）', 'warn');
+    flog(STR(1255, rarityTag(it)), 'warn');
   }
   UI.dirty.inv = true;
 }
@@ -294,12 +294,12 @@ function forgeAutoFillLabel() {
 function forgeAutoFillApply() {
   var f = forgeState();
   var af = f.autoFill;
-  if (!af) return '尚未設定自動放入';
-  if (forgeItemCount() > 0) return '法陣尚有物件，請先取回';
+  if (!af) return STR(1256);
+  if (forgeItemCount() > 0) return STR(1257);
   if (af.kind === 'gem') {
     var own = gemCount(af.type, af.level);
     if (own < FORGE_SLOTS) {
-      return '「' + gemLabel(af.type, af.level) + '」數量不足（持有 ' + fmt(own) + '/' + FORGE_SLOTS + '）';
+      return STR(1258, gemLabel(af.type, af.level), fmt(own), FORGE_SLOTS);
     }
     for (var gi = 0; gi < FORGE_SLOTS; gi++) {
       var gerr = forgePlaceGem(af.type, af.level);
@@ -314,7 +314,7 @@ function forgeAutoFillApply() {
     if (it && it.rarity === af.rarity && !it.locked && it.kind !== 'gem') cands.push(it);
   }
   if (cands.length < FORGE_SLOTS) {
-    return '未上鎖的「' + rName + '」裝備不足（持有 ' + cands.length + '/' + FORGE_SLOTS + '）';
+    return STR(1259, rName, cands.length, FORGE_SLOTS);
   }
   cands.sort(function (a, b) { return autoSalvageScore(a) - autoSalvageScore(b); });
   for (var k = 0; k < FORGE_SLOTS; k++) {
@@ -359,8 +359,8 @@ function forgeAutoRefill() {
   var err = forgeAutoFillApply();
   if (err) {
     f.autoFill = null;
-    forgeLog('自動放入停止：' + err, 'bad');
-    blog('🔁 神鑄自動放入（' + label + '）已停止：' + err, 'warn');
+    forgeLog(STR(1260, err), 'bad');
+    blog(STR(1261, label, err), 'warn');
   } else {
     f.result = keepResult;
   }
@@ -371,18 +371,18 @@ function forgeAutoRefill() {
 // 開始鑄造；回傳 null=已進入等待，否則錯誤訊息。
 function doForge(startedAt) {
   var f = forgeState();
-  if (f.slots.some(function (it) { return it && it.kind === 'gem' && !isGemEnabled(it.type); })) return '此寶石已關閉，請取回法陣中的寶石';
-  if (f.crafting) return '目前已有鑄造進行中';
+  if (f.slots.some(function (it) { return it && it.kind === 'gem' && !isGemEnabled(it.type); })) return STR(1262);
+  if (f.crafting) return STR(1263);
   var mode = forgeMode();
   if (forgeItemCount() < FORGE_SLOTS) {
-    return mode === 'gem' ? '需放滿 6 顆相同種類與階級的寶石' : '需放滿 6 件相同品質的裝備';
+    return mode === 'gem' ? STR(1264) : STR(1265);
   }
   var info = forgeRateInfo();
-  if (!info) return '法陣尚未放入可鑄造素材';
-  if (G.player.gold < info.cost) return '金幣不足（需要 ' + fmt(info.cost) + '，持有 ' + fmt(G.player.gold) + '）';
+  if (!info) return STR(1266);
+  if (G.player.gold < info.cost) return STR(1267, fmt(info.cost), fmt(G.player.gold));
   var key = mode === 'gem' ? forgeGemFirst().level : forgeRarity();
   var seconds = forgeDurationSeconds(mode, key);
-  if (!seconds) return '找不到目前素材的鑄造時間';
+  if (!seconds) return STR(1268);
   if (f.autoForge && !f.autoFill) f.autoFill = forgeAutoSpecFromSlots();
   f.crafting = {
     mode: mode,
@@ -393,7 +393,7 @@ function doForge(startedAt) {
     cost: info.cost,
     dustCount: forgeDustCount()
   };
-  forgeLog('鑄造開始（' + seconds + ' 秒）', 'info');
+  forgeLog(STR(1269, seconds), 'info');
   UI.dirty.forge = true;
   return null;
 }
@@ -401,14 +401,14 @@ function doForge(startedAt) {
 // 完成等待中的鑄造；只由 forgeTick 呼叫，沿用原本的成功／失敗結算規則。
 function resolveForge(crafting) {
   var f = forgeState();
-  if (f.slots.some(function (it) { return it && it.kind === 'gem' && !isGemEnabled(it.type); })) return '此寶石已關閉，請取回法陣中的寶石';
+  if (f.slots.some(function (it) { return it && it.kind === 'gem' && !isGemEnabled(it.type); })) return STR(1262);
   var mode = forgeMode();
   if (forgeItemCount() < FORGE_SLOTS) {
-    return mode === 'gem' ? '需放滿 6 顆相同種類與階級的寶石' : '需放滿 6 件相同品質的裝備';
+    return mode === 'gem' ? STR(1264) : STR(1265);
   }
   var info = forgeRateInfo();
   var cost = crafting && crafting.cost !== undefined ? crafting.cost : info.cost;
-  if (G.player.gold < cost) return '金幣不足（需要 ' + fmt(cost) + '，持有 ' + fmt(G.player.gold) + '）';
+  if (G.player.gold < cost) return STR(1267, fmt(cost), fmt(G.player.gold));
   var dustUsed = crafting && crafting.dustCount !== undefined ? crafting.dustCount : forgeDustCount();
   var rate = crafting && crafting.rate !== undefined ? crafting.rate : info.total;
   G.player.gold -= cost;
@@ -419,21 +419,20 @@ function resolveForge(crafting) {
   // === 寶石鑄造：6 顆同種同階 → 1 顆高一階；失敗損失 3 顆、其餘退回庫存 ===
   if (mode === 'gem') {
     var g = forgeGemFirst();
-    var costTail = '（成功率 ' + fmt1(rate) + '%，金幣 -' + fmt(cost) + (dustUsed ? '、魔塵 -' + dustUsed : '') + '）';
+    var costTail = STR(1271, fmt1(rate), fmt(cost), (dustUsed ? STR(1270, dustUsed) : ''));
     f.slots = [null, null, null, null, null, null];
     if (chance(rate)) {
       addGem(g.type, g.level + 1, 1);
       f.result = { kind: 'gem', type: g.type, level: g.level + 1 };
-      forgeLog('獲得 ' + gemLabel(g.type, g.level + 1) + '*1', 'good');
-      blog('🔯 神鑄成功！6 顆' + gemLabel(g.type, g.level) + ' 合成 ' + gemLabel(g.type, g.level + 1) + ' x1' + costTail, 'good', 'factory');
+      forgeLog(STR(1272, gemLabel(g.type, g.level + 1)), 'good');
+      blog(STR(1273, gemLabel(g.type, g.level), gemLabel(g.type, g.level + 1), costTail), 'good', 'factory');
     } else {
       // 放入時已自庫存扣除：退回 3 顆（六顆同種同階，等同隨機消耗 3 顆）
       addGem(g.type, g.level, FORGE_SLOTS - FORGE_FAIL_CONSUME);
       forgeFailureReward();
-      forgeLog('鑄造失敗！退回寶石*' + (FORGE_SLOTS - FORGE_FAIL_CONSUME), 'bad');
-      forgeLog('獲得 魔塵*1', 'good');
-      blog('🔯 鑄造失敗！損失 ' + gemLabel(g.type, g.level) + ' x' + FORGE_FAIL_CONSUME +
-        '，其餘 ' + (FORGE_SLOTS - FORGE_FAIL_CONSUME) + ' 顆已退回庫存，獲得魔塵 x1' + costTail, 'warn', 'factory');
+      forgeLog(STR(1274, (FORGE_SLOTS - FORGE_FAIL_CONSUME)), 'bad');
+      forgeLog(STR(1275), 'good');
+      blog(STR(1276, gemLabel(g.type, g.level), FORGE_FAIL_CONSUME, (FORGE_SLOTS - FORGE_FAIL_CONSUME), costTail), 'warn', 'factory');
     }
     forgeAutoRefill();
     UI.dirty.forge = true;
@@ -452,9 +451,8 @@ function resolveForge(crafting) {
     });
     f.result = { name: newIt.name, rarity: newIt.rarity, slot: newIt.slot, level: newIt.level };
     addToInventory(newIt);
-    forgeLog('獲得 ' + newIt.name + '*1', 'good');
-    blog('🔯 神鑄成功！獲得 ' + rarityTag(newIt) + '（成功率 ' + fmt1(rate) + '%，金幣 -' + fmt(cost) +
-      (dustUsed ? '、魔塵 -' + dustUsed : '') + '）', 'good', 'factory');
+    forgeLog(STR(1272, newIt.name), 'good');
+    blog(STR(1277, rarityTag(newIt), fmt1(rate), fmt(cost), (dustUsed ? STR(1270, dustUsed) : '')), 'good', 'factory');
   } else {
     // 失敗：隨機消耗 3 件（取回鑲嵌寶石），其餘退回背包
     var order = [];
@@ -475,10 +473,9 @@ function resolveForge(crafting) {
     }
     var rName = RARITIES[r] ? RARITIES[r].name : '裝備';
     forgeFailureReward();
-    forgeLog('鑄造失敗！退回' + rName + '裝備*' + (FORGE_SLOTS - FORGE_FAIL_CONSUME), 'bad');
-    forgeLog('獲得 魔塵*1', 'good');
-    blog('🔯 鑄造失敗！損失 ' + lostNames.join('、') + '，其餘裝備已退回背包（成功率 ' + fmt1(rate) +
-      '%，金幣 -' + fmt(cost) + (dustUsed ? '、魔塵 -' + dustUsed : '') + '，獲得魔塵 x1）', 'warn', 'factory');
+    forgeLog(STR(1278, rName, (FORGE_SLOTS - FORGE_FAIL_CONSUME)), 'bad');
+    forgeLog(STR(1275), 'good');
+    blog(STR(1279, lostNames.join('、'), fmt1(rate), fmt(cost), (dustUsed ? STR(1270, dustUsed) : '')), 'warn', 'factory');
   }
   forgeAutoRefill();
   UI.dirty.forge = true; UI.dirty.inv = true;
@@ -498,23 +495,23 @@ function forgeTick(now) {
     var err = resolveForge(c);
     if (err) {
       f.autoForge = false;
-      forgeLog('鑄造停止：' + err, 'bad');
-      blog('⚠️ 神鑄：' + err, 'warn');
+      forgeLog(STR(1280, err), 'bad');
+      blog(STR(1281, err), 'warn');
       break;
     }
     catchUpRounds++;
     if (!f.autoForge) break;
     if (forgeItemCount() < FORGE_SLOTS) {
       f.autoForge = false;
-      forgeLog('自動鑄造停止：材料不足', 'bad');
-      blog('🔁 自動鑄造已停止：材料不足', 'warn');
+      forgeLog(STR(1282), 'bad');
+      blog(STR(1283), 'warn');
       break;
     }
     var nextErr = doForge(endAt);
     if (nextErr) {
       f.autoForge = false;
-      forgeLog('自動鑄造停止：' + nextErr, 'bad');
-      blog('🔁 自動鑄造已停止：' + nextErr, 'warn');
+      forgeLog(STR(1284, nextErr), 'bad');
+      blog(STR(1285, nextErr), 'warn');
       break;
     }
   }
@@ -527,8 +524,8 @@ function cancelForge() {
   if (f.crafting) {
     f.crafting = null;
     f.autoForge = false;
-    forgeLog('鑄造已取消', 'info');
-    blog('⏹️ 鑄造進度已由玩家手動取消', 'warn', 'factory');
+    forgeLog(STR(1286), 'info');
+    blog(STR(1287), 'warn', 'factory');
     UI.dirty.forge = true;
     UI.dirty.inv = true;
   }

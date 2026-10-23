@@ -24,7 +24,7 @@ importScripts(
   '../skills.js?v=20261018-potential-remove', '../skills2.js?v=20261022-meteor-missile-integration', '../elite_data.js?v=20261021-chain-hover', '../talents.js?v=20261022-talent-gold-norefund',
   '../player.js?v=20261022-talent-gold', '../special_rules.js',
   '../combat.js?v=20261019-disintegrate-end-once-bloodfeast-single-target', '../elite.js?v=20261022-stone-wall-fire-chain-follow', '../elite_boss.js?v=20261022-stone-wall-navigation', '../elite_boss_recipes.js?v=20261015-boss-player-skill', '../legendary.js?v=20261012-indomitable-guard-legend-rework-1020', '../tower.js?v=20261023-str-tower',
-  '../factory.js?v=20261021-equipment-quality-name', '../newforge.js?v=20261023-str-furnace', '../forge.js?v=20261015-gem-enabled', '../save.js?v=20261022-talent-gold',
+  '../factory.js?v=20261021-equipment-quality-name', '../newforge.js?v=20261023-str-furnace', '../forge.js?v=20261023-str-forge', '../save.js?v=20261022-talent-gold',
   '../tasks.js?v=20261023-string-table'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
@@ -1510,7 +1510,7 @@ var COMMAND_IMPL = {
     var fst = forgeState();
     if (a.kind === 'clear') {
       fst.autoFill = null;
-      blog('🔁 神鑄自動放入已取消', 'info');
+      blog(STR(1303), 'info');
       UI.dirty.forge = true;
       return { autoFill: null };
     }
@@ -1522,12 +1522,11 @@ var COMMAND_IMPL = {
     var err = forgeAutoFillApply();
     if (err) {
       fst.autoFill = null;
-      blog('⚠️ 神鑄自動放入：' + err, 'warn');
+      blog(STR(1304, err), 'warn');
       UI.dirty.forge = true;
       return { err: err };
     }
-    blog('🔁 神鑄自動放入已啟用：' + forgeAutoFillLabel() +
-      '（每次鑄造後自動補放 6 件，數量不足自動停止）', 'good');
+    blog(STR(1305, forgeAutoFillLabel()), 'good');
     UI.dirty.forge = true;
     return { autoFill: pick };
   },

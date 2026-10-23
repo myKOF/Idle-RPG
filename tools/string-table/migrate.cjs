@@ -17,6 +17,7 @@
    寫檔後自動：語法檢查、index.html 與 Worker 的 ?v= 快取版本加一。
    ============================================================================= */
 const fs = require('fs');
+const fsx = require('./fsx.cjs');
 const path = require('path');
 const vm = require('vm');
 const { extract } = require('./chain.cjs');
@@ -286,12 +287,12 @@ function bumpVersions(rels, tag) {
     else if (new RegExp("(['\"]\\.\\./" + esc + "['\"])").test(worker)) { worker = worker.replace(new RegExp("(['\"]\\.\\./" + esc + ")(['\"])"), "$1?v=" + tag + "$2"); workerTouched = true; }
   }
   if (workerTouched) {
-    fs.writeFileSync(wPath, worker);
+    fsx.write(wPath, worker);
     bridge = bridge.replace(/(var WORKER_ASSET_VERSION = ')[^']*(')/, '$1' + tag + '$2');
-    fs.writeFileSync(bPath, bridge);
+    fsx.write(bPath, bridge);
     html = html.replace(/(src="js\/bridge\.js\?v=)(\d+(?:\.\d+)*)(")/, (m, a, v, c) => { const p = v.split('.'); p[p.length - 1] = String(Number(p[p.length - 1]) + 1); return a + p.join('.') + c; });
   }
-  fs.writeFileSync(idxPath, html);
+  fsx.write(idxPath, html);
   // VFX 編輯器頁與主頁共用的腳本版號必須一致（tests/vfx-editor-cache-versions.test.cjs CV-1）
   const edPath = path.join(ROOT, 'tools', 'vfx', 'editor', 'index.html');
   if (fs.existsSync(edPath)) {
@@ -301,7 +302,7 @@ function bumpVersions(rels, tag) {
       const m = new RegExp('src="js/' + base + '\\?v=([^"]+)"').exec(html);
       if (m) ed = ed.replace(new RegExp('(src="/js/' + base + '\\?v=)[^"]+(")'), '$1' + m[1] + '$2');
     }
-    if (ed !== before) fs.writeFileSync(edPath, ed);
+    if (ed !== before) fsx.write(edPath, ed);
   }
 }
 
@@ -408,13 +409,13 @@ for (const rel of listFiles()) {
   try { new vm.Script(next, { filename: rel }); } catch (e) { console.error('✖ ' + rel + ' 改完語法錯誤：' + e.message); process.exit(2); }
   console.log(`  ${rel}: ${edits.length} 處`);
   total += edits.length;
-  if (!DRY) { fs.writeFileSync(abs, next); changedFiles.push(rel); }
+  if (!DRY) { fsx.write(abs, next); changedFiles.push(rel); }
 }
 const h = migrateHtml();
 if (h.changed) {
   console.log(`  index.html: ${h.n} 處`);
   total += h.n;
-  if (!DRY) fs.writeFileSync(path.join(ROOT, 'index.html'), h.html);
+  if (!DRY) fsx.write(path.join(ROOT, 'index.html'), h.html);
 }
 if (h.manual.length) console.log('  index.html 需手動：' + h.manual.slice(0, 20).join('、'));
 if (!DRY) require('./bump.cjs').bumpFromGit('20261023-str-' + ({ '封魔塔': 'tower', '熔爐': 'furnace', '神鑄': 'forge', '寶石': 'gem', '符文': 'rune', '技能': 'skill', '威能': 'talent', '裝備': 'equip', '角色': 'char', '戰鬥': 'battle', '存檔與系統': 'system', '通用': 'common', '任務': 'quest' }[MODULE] || 'x'));

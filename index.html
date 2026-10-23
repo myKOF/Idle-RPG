@@ -285,42 +285,42 @@
         <section id="tab-forge" class="tab">
           <div class="pg-top">
             <h2 class="pg-title">神鑄</h2>
-            <button type="button" class="pg-help" aria-label="神鑄說明" data-tt-title="神鑄法陣" data-tt-desc="放入 6 件相同品質的裝備（傳說／神話／創世）或 6 顆同種同階的寶石（五階起）鑄造。混沌裝備（R9）掉落率由地圖／關卡掉落表 Zone_Stage_Drops 的 R9 欄控制；6 件混沌可神鑄為神鑄混沌，基礎成功率 20%，每個魔塵 +3%，失敗退回 3 件。詳細規則見法陣右上角的「!」。">?</button>
+            <button type="button" class="pg-help" data-str-attr="aria-label:1288;data-tt-title:1289;data-tt-desc:1290">?</button>
           </div>
           <div class="panel forge-panel">
             <div class="forge-head">
-              <div class="forge-inv-tabs" role="group" aria-label="鑄造素材">
-                <button type="button" id="forge-invtab-items" class="btn sm active">裝備神鑄</button>
-                <button type="button" id="forge-invtab-gems" class="btn sm">寶石神鑄</button>
+              <div class="forge-inv-tabs" role="group" data-str-attr="aria-label:1291">
+                <button type="button" id="forge-invtab-items" class="btn sm active" data-str="1292"></button>
+                <button type="button" id="forge-invtab-gems" class="btn sm" data-str="1293"></button>
               </div>
               <span id="forge-rate" class="forge-rate"></span>
             </div>
             <div id="forge-stage">
-              <div class="forge-info-btn"
-                data-tip="將 6 件&lt;b&gt;相同品質&lt;/b&gt;的裝備（僅限 &lt;span style=&quot;color:#fb923c&quot;&gt;傳說&lt;/span&gt; / &lt;span style=&quot;color:#f87171&quot;&gt;神話&lt;/span&gt; / &lt;span style=&quot;color:#b8860b&quot;&gt;創世&lt;/span&gt;）放入六芒星，點「鑄造」有機會獲得&lt;b&gt;下一品質&lt;/b&gt;隨機部位裝備 1 件；失敗將隨機消耗 3 件、其餘退回背包。&lt;br&gt;點擊六個角尖的圓形符位可放置 💫 魔塵，每個 +5% 成功率（最多 6 個）。&lt;br&gt;6 件創世鑄造成功將獲得&lt;b style=&quot;color:#f5c542&quot;&gt;神鑄創世&lt;/b&gt;暗金裝備：屬性與上限為創世的 1.5 倍、必帶 2 條專屬特效，且無法再放入法陣。&lt;br&gt;基礎成功率：傳說 55%｜神話 40%｜創世 25%。金幣消耗：傳說 500 萬｜神話 2000 萬｜創世 1 億。&lt;br&gt;&lt;br&gt;💎 &lt;b&gt;寶石神鑄&lt;/b&gt;：切換下方「寶石」頁籤，放入 6 顆&lt;b&gt;相同種類與階級&lt;/b&gt;（五階以上）的寶石，成功合成&lt;b&gt;高一階&lt;/b&gt;寶石（最高十階，每高一階能力 ×2）；失敗損失 3 顆、其餘退回。魔塵對寶石鑄造每個 +3% 成功率。&lt;br&gt;基礎成功率：五階 45%｜六階 35%｜七階 25%｜八階 15%｜九階 5%。金幣消耗：100 萬 +（階級 − 5）× 100 萬。&lt;br&gt;&lt;b&gt;融合寶石無法用於神鑄&lt;/b&gt;（可至寶石分頁進行融合）。">
+              <div class="forge-info-btn" data-str-attr="data-tip:1294"
+               >
                 !</div>
               <div id="forge-log" class="forge-log"></div>
               <div id="forge-hex"></div>
               <div class="forge-actions">
-                <button id="forge-unload" class="btn forge-btn">全卸下</button>
+                <button id="forge-unload" class="btn forge-btn" data-str="1296"></button>
                 <div class="forge-auto-wrap">
-                  <button id="forge-autofill" class="btn forge-btn forge-auto-btn">自動放入</button>
+                  <button id="forge-autofill" class="btn forge-btn forge-auto-btn" data-str="1297"></button>
                   <div id="forge-auto-menu" class="forge-auto-menu" style="display:none"></div>
                 </div>
-                <button id="forge-go" class="btn forge-btn">鑄造</button>
+                <button id="forge-go" class="btn forge-btn" data-str="1329"></button>
               </div>
             </div>
             <div class="forge-foot">
-              <label class="chk"><input type="checkbox" id="forge-autodust"> 自動使用魔塵</label>
-              <label class="chk"><input type="checkbox" id="forge-autoforge" checked> 自動鑄造</label>
+              <label class="chk"><input type="checkbox" id="forge-autodust"> <span data-str="1298"></span></label>
+              <label class="chk"><input type="checkbox" id="forge-autoforge" checked> <span data-str="1299"></span></label>
               <span id="forge-dust-own" class="dim-text"></span>
             </div>
             <div id="forge-progress" class="forge-progress" style="display:none">
               <div class="forge-progress-head">
-                <span id="forge-progress-status">鑄造中....</span>
+                <span id="forge-progress-status" data-str="1314"></span>
                 <span id="forge-progress-remain" class="forge-progress-remain"></span>
                 <button id="forge-cancel" class="btn sm warn" style="margin-right: 12px; padding: 2px 8px; font-size: 11px; height: auto; line-height: 1.2;">取消</button>
-                <span id="forge-progress-countdown">0.0 秒</span>
+                <span id="forge-progress-countdown" data-str="1300"></span>
               </div>
               <div class="forge-progress-track"><div id="forge-progress-fill"></div></div>
             </div>
@@ -329,8 +329,8 @@
           <div id="forge-inv-slot"></div>
           <div id="forge-gem-box" class="equip-section-box" style="display:none">
             <div class="inv-head">
-              <span class="sec-title">寶石 <span id="forge-gem-count">0</span> 顆</span>
-              <span class="dim-text">點擊放入法陣；點擊法陣上的寶石取回</span>
+              <span class="sec-title">寶石 <span id="forge-gem-count">0</span> <span data-str="1301"></span></span>
+              <span class="dim-text" data-str="1302"></span>
             </div>
             <div id="forge-gem-grid"></div>
           </div>
@@ -340,7 +340,7 @@
         <section id="tab-gems" class="tab" data-gem-tool="compose">
           <div class="pg-top">
             <h2 class="pg-title">寶石</h2>
-            <span class="pg-pill">持有 <b id="gem-total">0</b> 顆</span>
+            <span class="pg-pill">持有 <b id="gem-total">0</b> <span data-str="1301"></span></span>
             <span class="pg-pill">已收集 <b id="gem-kinds">0</b> 種</span>
             <button type="button" class="pg-help" aria-label="寶石說明" data-tt-title="寶石" data-tt-desc="寶石可鑲嵌到裝備的插槽：到「裝備」分頁點選裝備即可鑲嵌，點擊已鑲寶石可取下；「寶石鑲嵌效率」屬性會放大鑲嵌加成。分解裝備時，鑲在上面的寶石會自動取回。合成可直接升至十級，所需素材與金幣見當前配方。">?</button>
           </div>
@@ -941,7 +941,7 @@
        已移除（主執行緒零呼叫，只在 Worker 內跑）：
          special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/util.js?v=1.0.4"></script>
-  <script src="js/strings_data.js?v=b8075392"></script>
+  <script src="js/strings_data.js?v=99343f22"></script>
   <script src="js/strings.js?v=1.0.0"></script>
   <script src="js/ui-scale.js?v=1.0.1"></script>
   <script src="js/data.js?v=1.0.98"></script>
@@ -988,7 +988,7 @@
   <script src="js/tower.js?v=1.0.35"></script>
   <script src="js/save.js?v=1.0.22"></script>
   <script src="js/ui-inventory-skin.js?v=1.0.1"></script>
-  <script src="js/ui.js?v=1.0.201"></script>
+  <script src="js/ui.js?v=1.0.202"></script>
   <script src="js/ui-runeword.js?v=1.0.13"></script>
   <script src="js/ui-gem-resonance.js?v=1.0.15"></script>
   <script src="js/ui-gem-workshop.js?v=1.0.0"></script>
@@ -1005,7 +1005,7 @@
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
-  <script src="js/bridge.js?v=1.0.350"></script>
+  <script src="js/bridge.js?v=1.0.351"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->
