@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 
 var INITIAL_GOLD = 50000;
 var INITIAL_SCRAP = 500;
@@ -12,7 +13,7 @@ function emptyEquipmentSet() {
   return e;
 }
 var EQUIP_SET_COUNT = 3;
-var EQUIP_SET_NAMES = ['第一套', '第二套', '第三套'];
+var EQUIP_SET_NAMES = [STR(1168), STR(1169), STR(1170)];
 function equipSetName(i) { return EQUIP_SET_NAMES[i] || ('第' + (i + 1) + '套'); }
 // 顯示用名稱：有自訂名稱則用之，否則用預設「第X套」
 function equipSetLabel(i) {

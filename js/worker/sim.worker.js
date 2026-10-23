@@ -20,12 +20,12 @@ if (typeof GameClock !== 'undefined') {
 /* String 表：資料檔版本由主執行緒（bridge.js）以網址 sv= 傳入，改文字不必動本檔。 */
 var _stringDataVersion = ((typeof self !== 'undefined' && self.location && /[?&]sv=(\w+)/.exec(self.location.search || '')) || [])[1] || '0';
 importScripts(
-  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.0', '../data.js?v=20261023-str-guard', '../runeword_data.js?v=20261023-str-guard', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261023-str-skill', '../formula.js?v=20261022-elem-proc-off', '../battle-terrain.js?v=20261022-lava-terrain-develop-merge', '../battlefield.js?v=20261022-lava-terrain-develop-merge', '../stats.js?v=20261003-rename-weineng',
-  '../item.js?v=20261023-str-guard', '../gem_resonance.js?v=20261023-str-guard','../runeword.js?v=20261023-str-guard',
+  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.0', '../data.js?v=20261023-str-equip', '../runeword_data.js?v=20261023-str-equip', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261023-str-skill', '../formula.js?v=20261022-elem-proc-off', '../battle-terrain.js?v=20261022-lava-terrain-develop-merge', '../battlefield.js?v=20261022-lava-terrain-develop-merge', '../stats.js?v=20261003-rename-weineng',
+  '../item.js?v=20261023-str-equip', '../gem_resonance.js?v=20261023-str-guard','../runeword.js?v=20261023-str-guard',
   '../skills.js?v=20261023-str-skill', '../skills2.js?v=20261023-str-skill', '../elite_data.js?v=20261021-chain-hover', '../talents.js?v=20261023-str-talent',
-  '../player.js?v=20261022-talent-gold', '../special_rules.js',
-  '../combat.js?v=20261019-disintegrate-end-once-bloodfeast-single-target', '../elite.js?v=20261022-stone-wall-fire-chain-follow', '../elite_boss.js?v=20261022-stone-wall-navigation', '../elite_boss_recipes.js?v=20261023-str-guard', '../legendary.js?v=20261012-indomitable-guard-legend-rework-1020', '../tower.js?v=20261023-str-guard',
-  '../factory.js?v=20261021-equipment-quality-name', '../newforge.js?v=20261023-str-guard', '../forge.js?v=20261023-str-guard', '../save.js?v=20261022-talent-gold',
+  '../player.js?v=20261023-str-equip', '../special_rules.js',
+  '../combat.js?v=20261019-disintegrate-end-once-bloodfeast-single-target', '../elite.js?v=20261022-stone-wall-fire-chain-follow', '../elite_boss.js?v=20261022-stone-wall-navigation', '../elite_boss_recipes.js?v=20261023-str-guard', '../legendary.js?v=20261023-str-equip', '../tower.js?v=20261023-str-guard',
+  '../factory.js?v=20261023-str-equip', '../newforge.js?v=20261023-str-guard', '../forge.js?v=20261023-str-guard', '../save.js?v=20261022-talent-gold',
   '../tasks.js?v=20261023-str-guard'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
@@ -1324,8 +1324,8 @@ var COMMAND_IMPL = {
   'item.unequip': function (a) {
     var it = mustResolve(a.itemId);
     if (G.inventory.length >= inventoryCapacityNow()) {
-      blog('⚠️ 背包已滿，無法卸下', 'warn');
-      return { err: '背包已滿' };
+      blog(STR(1171), 'warn');
+      return { err: STR(1172) };
     }
     var eq = targetEquipment();
     // 依 id 找出實際佔用的欄位：武器與戒指有主副兩欄，不能只看 slotKey
@@ -1372,7 +1372,7 @@ var COMMAND_IMPL = {
   'item.salvage': function (a) {
     var it = mustResolve(a.itemId);
     var idx = G.inventory.indexOf(it);
-    if (idx < 0) return { err: '該裝備不在背包中' };
+    if (idx < 0) return { err: STR(1173) };
     G.inventory.splice(idx, 1);
     var res = doSalvage(it);
     UI.dirty.inv = true;
@@ -1406,16 +1406,16 @@ var COMMAND_IMPL = {
       count++;
     });
     G.inventory = kept;
-    if (count) flog('⚒️ 一鍵分解 ' + count + ' 件 → 碎片x' + fmt(scrap), 'info');
+    if (count) flog(STR(1174, count, fmt(scrap)), 'info');
     UI.dirty.inv = true;
     return { count: count, scrap: scrap };
   },
 
   /* ---- 角色 ---- */
   'player.renameEquipSet': function (a) {
-    if (!Array.isArray(G.equipmentSets)) return { err: '沒有裝備套資料' };
+    if (!Array.isArray(G.equipmentSets)) return { err: STR(1175) };
     var idx = clamp(Math.floor(Number(a.index) || 0), 0, G.equipmentSets.length - 1);
-    if (!equipmentSetUnlocked(idx)) return { err: '該裝備套尚未解鎖' };
+    if (!equipmentSetUnlocked(idx)) return { err: STR(1176) };
     if (!Array.isArray(G.equipSetNames)) G.equipSetNames = [];
     G.equipSetNames[idx] = String(a.name == null ? '' : a.name).trim().slice(0, 12); // 上限 12 字
     UI.dirty.equip = true;
@@ -1425,7 +1425,7 @@ var COMMAND_IMPL = {
   'player.buyInvUpgrade': function () {
     var upg = G.player.invUpgrades || 0;
     if (INVENTORY_CAP + upg >= INVENTORY_MAX) {
-      blog('❌ 背包已達最大容量 ' + INVENTORY_MAX + ' 格，無法再擴充', 'warn', 'system');
+      blog(STR(1177, INVENTORY_MAX), 'warn', 'system');
       return { err: '已達最大容量' };
     }
     var cost = inventoryExpandCost(upg);
@@ -1435,7 +1435,7 @@ var COMMAND_IMPL = {
     }
     G.player.gold -= cost;
     G.player.invUpgrades = upg + 1;
-    blog('✅ 背包容量已擴充至 ' + (INVENTORY_CAP + G.player.invUpgrades), 'good', 'system');
+    blog(STR(1178, (INVENTORY_CAP + G.player.invUpgrades)), 'good', 'system');
     UI.dirty.inv = true; UI.dirty.header = true;
     return { cap: INVENTORY_CAP + G.player.invUpgrades, cost: cost };
   },
@@ -1536,7 +1536,7 @@ var COMMAND_IMPL = {
   'newforge.setQuality': function (a) {
     var fu = findNewForgeFurnace(a.furnaceId);
     if (!fu) return { err: STR(1404, a.furnaceId) };
-    if (a.rarity < 0 || a.rarity >= RARITIES.length || isGodforgedRarity(a.rarity)) return { err: '品質索引超出範圍' };
+    if (a.rarity < 0 || a.rarity >= RARITIES.length || isGodforgedRarity(a.rarity)) return { err: STR(1179) };
     fu.qualities[a.rarity] = !!a.on;
     newForgeReturnUnroutable(fu); // 取消勾選的品質自專屬佇列退回總佇列重新派發
     UI.dirty.newforge = true;
@@ -1699,8 +1699,7 @@ var COMMAND_IMPL = {
       count++; gain += r.n;
     }
     if (count > 0) {
-      blog('⛏️ 全部拆解：' + gemLabel(a.type, a.level) + ' ×' + count + ' → ' +
-        gemLabel(a.type, a.level - 1) + ' ×' + gain, 'good', 'factory');
+      blog(STR(1180, gemLabel(a.type, a.level), count, gemLabel(a.type, a.level - 1), gain), 'good', 'factory');
     }
     UI.dirty.gems = true;
     return { count: count, gain: gain, err: count > 0 ? null : (r && r.err) };
@@ -1831,7 +1830,7 @@ function defaultSalvageHintText() {
   } else {
     label = picked.map(function (r) { return RARITIES[r].name; }).join('、');
   }
-  return '💡 提示：預設「' + label + '」品質會自動拆解成碎片與精華，未勾選品質會保留入包。';
+  return STR(1181, label);
 }
 
 /* ---- 開機 ---- */
@@ -1912,9 +1911,7 @@ function boot(msg) {
       : INVENTORY_CAP + (G.player.invUpgrades || 0);
     if (G.inventory.length > invCapNow) {
       notices.push({ key: 'inventoryOverCap', cls: 'warn',
-        text: '⚠️ 背包超出容量（' + G.inventory.length + '/' + invCapNow +
-          '）。今後滿載時將維持上限：新裝備與包內未鎖定最弱者「捨弱留強」擇一保留（上鎖裝備不受影響）。' +
-          '超出的部分可用「分解設定」批次清理。' });
+        text: STR(1182, G.inventory.length, invCapNow) });
     }
   } else {
     notices.push({ key: 'welcomeNew', cls: 'good', text: '⚔️ 歡迎來到《無限征途：合成之巔》！' });

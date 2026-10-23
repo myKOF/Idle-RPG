@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* ============ 傳奇特效執行引擎 ============
    數值與效果規格只讀 PASSIVE_POOL；本檔負責戰鬥期路由與短暫狀態，不寫入存檔。
    新版技能（js/skills2.js）的關聯技能改寫由 legendarySkill2Mods 集中提供。 */
@@ -235,7 +236,7 @@ function legendaryInstantBurn(ent, dps, dur, name) {
     legendaryOutgoingDamageMultiplier(pEnt, ent, { isPlayer: true })));
   damage = applyEnemyHpDamage(ent, damage);
   if (typeof trackDps === 'function') trackDps(damage);
-  if (typeof recordRunDamage === 'function') recordRunDamage('燃燒法則', damage);
+  if (typeof recordRunDamage === 'function') recordRunDamage(STR(1155), damage);
   return damage;
 }
 
@@ -277,7 +278,7 @@ function legendaryDealDamage(pEnt, target, powerPct, dmgType, elem, floatSel, la
       floatEnemyEvent(target, floatSel, fmt(result.dmg), combatDamageFloatClass('enemy-skill', result), result.dmg);
     }
     if (typeof trackDps === 'function') trackDps(result.dmg);
-    if (typeof recordRunDamage === 'function') recordRunDamage(label || '傳奇特效', result.dmg);
+    if (typeof recordRunDamage === 'function') recordRunDamage(label || STR(1156), result.dmg);
     if (ctx && typeof ctx.onDamage === 'function') ctx.onDamage(result.dmg);
   }
   return result;
@@ -327,7 +328,7 @@ function legendaryDealReflectedBasicAttack(pEnt, target, multiplier, floatSel, l
     floatEnemyEvent(target, floatSel, fmt(result.dmg), combatDamageFloatClass('enemy-skill', result), result.dmg);
   }
   if (typeof trackDps === 'function') trackDps(result.dmg);
-  if (typeof recordRunDamage === 'function') recordRunDamage(label || '傳奇特效', result.dmg);
+  if (typeof recordRunDamage === 'function') recordRunDamage(label || STR(1156), result.dmg);
   return result;
 }
 
@@ -354,7 +355,7 @@ function legendaryOnBasicAttack(pEnt, target, res, floatSel, st) {
   var total = 0;
   var killed = false;
   for (var i = 0; i < spec.flurryHits && target && target.hp > 0; i++) {
-    var hit = legendaryDealDamage(pEnt, target, spec.flurryPowerPct, 'phys', null, floatSel, '旋風之刺');
+    var hit = legendaryDealDamage(pEnt, target, spec.flurryPowerPct, 'phys', null, floatSel, STR(1157));
     if (hit) {
       total += hit.dmg || 0;
       if (hit.killed) killed = true;
@@ -388,7 +389,7 @@ function legendaryApplyLowLifeShield(pEnt, st, floatSel) {
   rt.lightShieldArmed = false;
   applyBuff(pEnt, 'legendaryLightShieldRed', spec.dmgRedPct, spec.dur);
   if (typeof refreshShieldMaxAfterGain === 'function') refreshShieldMaxAfterGain(pEnt, before);
-  if (typeof floatPlayerEvent === 'function') floatPlayerEvent(floatSel, '✨魔法光盾', 'shield');
+  if (typeof floatPlayerEvent === 'function') floatPlayerEvent(floatSel, STR(1158), 'shield');
 }
 
 function legendaryOnPlayerDamaged(attacker, pEnt, hpDamage, blocked, hitResult, floatSel) {
@@ -403,7 +404,7 @@ function legendaryOnPlayerDamaged(attacker, pEnt, hpDamage, blocked, hitResult, 
     var shock = legendaryFx('thunderShock').onHealthLostAoe;
     if (chance(shock.chance)) {
       var shockOut = legendaryDealAoe(pEnt, enemies, shock.powerPct * (enemies.length === 1 ? shock.singleMult : 1),
-        'magic', shock.elem, enemyFloatSel, '雷霆之震');
+        'magic', shock.elem, enemyFloatSel, STR(1159));
       legendarySettleTriggeredDeaths(shockOut);
     }
   }
@@ -411,7 +412,7 @@ function legendaryOnPlayerDamaged(attacker, pEnt, hpDamage, blocked, hitResult, 
     var fire = legendaryFx('fireSpiritShield');
     attacker._fireSpiritStacks = Math.min(fire.maxStacks, (attacker._fireSpiritStacks || 0) + 1);
     applyDot(attacker, (st.matk || st.atk || 0) * fire.retaliateBurnPct / 100 * attacker._fireSpiritStacks,
-      999999, '火靈灼燒');
+      999999, STR(1160));
   }
   if (blocked && legendaryHas(st, 'unyieldingGuard') && attacker && attacker.hp > 0) {
     var guard = legendaryFx('unyieldingGuard').onBlock;
@@ -420,7 +421,7 @@ function legendaryOnPlayerDamaged(attacker, pEnt, hpDamage, blocked, hitResult, 
         ? blockDmgReduction(st.blockDmgRed || 0) : (st.blockDmgRed || 0);
       var reflectMultiplier = blockReduction / 100 * guard.reflectBlockPct / 100;
       var reflect = legendaryDealReflectedBasicAttack(
-        pEnt, attacker, reflectMultiplier, enemyFloatSel, '不屈護衛');
+        pEnt, attacker, reflectMultiplier, enemyFloatSel, STR(1161));
       legendarySettleTriggeredDeaths(reflect);
       applyBuff(pEnt, 'legendaryGuardRed', guard.dmgRedPct, guard.dur);
     }
@@ -455,7 +456,7 @@ function legendaryExplodeDoll(doll, floatSel) {
   var pEnt = legendaryCurrentPlayer();
   var enemies = legendaryActiveEnemies();
   var explosion = legendaryDealAoe(pEnt, enemies, legendaryFx('ghostLamp').summons.explosionPct,
-    'magic', 'dark', floatSel, '幽冥神燈');
+    'magic', 'dark', floatSel, STR(1162));
   legendarySettleTriggeredDeaths(explosion);
 }
 
@@ -479,7 +480,7 @@ function legendaryMonsterAttackDoll(mEnt, doll, floatSel, mult, skillName) {
   };
   var res = resolveHit(mEnt, doll, monsterAtkCfg(mEnt, mult), dCfg);
   if (typeof floatPlayerEvent === 'function') {
-    floatPlayerEvent(playerEventFloatTarget(floatSel), '鬼娃 -' + fmt(res.dmg || 0), 'defend');
+    floatPlayerEvent(playerEventFloatTarget(floatSel), STR(1163, fmt(res.dmg || 0)), 'defend');
   }
   if (doll.hp <= 0) legendaryExplodeDoll(doll, floatSel);
   return res;
@@ -503,7 +504,7 @@ function legendaryEnsureDolls(pEnt, st) {
   for (var i = 0; i < spec.count; i++) {
     rt.dolls.push({
       _legendaryDoll: true,
-      name: '幽冥鬼娃',
+      name: STR(1164),
       hp: st.hp * spec.hpPct / 100,
       maxHp: st.hp * spec.hpPct / 100,
       atk: Math.max(st.atk || 0, st.matk || 0) * spec.atkPct / 100,
@@ -536,7 +537,7 @@ function legendaryThunderStrike(pEnt, target, spec, floatSel) {
   legendaryQueue(GT + fallSec, function (ctx) {
     if (!target || target.hp <= 0) return;
     var res = legendaryDealDamage(pEnt, target, spec.powerPct, 'magic', 'lightning', floatSel,
-      spec.label || '迅雷穿刺', ctx);
+      spec.label || STR(1165), ctx);
     if (res && !res.miss) {
       sgEmitVfx('thunderstrike', [target], floatSel, {
         fxKind: 'impact', variant: 'thunder-impact', elem: 'lightning', vfxBase: true,
@@ -568,7 +569,7 @@ function legendaryTickKnives(ctx, pEnt, st) {
       var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
       if (!enemies.length) break;
       var target = legendaryNearestEnemy(enemies, pEnt); // 自動攻擊打最近的敵人（原本取陣列第一個）
-      var res = legendaryDealDamage(pEnt, target, spec.powerPct, 'phys', null, ctx.floatSel, '影襲追蹤者', ctx);
+      var res = legendaryDealDamage(pEnt, target, spec.powerPct, 'phys', null, ctx.floatSel, STR(1166), ctx);
       knife.nextAt += spec.tickSec;
       if (res && res.killed) {
         for (var j = 0; j < rt.knives.length; j++) rt.knives[j].until += spec.killExtend;
@@ -588,7 +589,7 @@ function legendaryTickDolls(ctx, pEnt, st) {
     var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
     if (!enemies.length) continue;
     var powerPct = (doll.atk / Math.max(1, st.atk || st.matk || 1)) * 100;
-    var res = legendaryDealDamage(pEnt, legendaryNearestEnemy(enemies, pEnt), powerPct, 'phys', null, ctx.floatSel, '幽冥鬼娃', ctx);
+    var res = legendaryDealDamage(pEnt, legendaryNearestEnemy(enemies, pEnt), powerPct, 'phys', null, ctx.floatSel, STR(1164), ctx);
     doll.nextAt += 1;
     if (res && res.killed && ctx.onDeaths) ctx.onDeaths();
   }
@@ -611,7 +612,7 @@ function legendaryTickAutomaticSkills(ctx, pEnt, st, dt) {
       var enemies = ctx.getEnemies();
       if (enemies.length) {
         var lightRes = legendaryDealDamage(pEnt, legendaryNearestEnemy(enemies, pEnt), light.powerPct, 'magic', light.elem,
-          ctx.floatSel, '光之碰撞', ctx);
+          ctx.floatSel, STR(1167), ctx);
         if (lightRes && lightRes.killed && ctx.onDeaths) ctx.onDeaths();
       }
     }

@@ -34,17 +34,17 @@ function isForgeableEquipmentRarity(rarity) {
    godforged（神鑄創世）：僅能由神鑄系統以 6 件創世鑄造獲得，不自然掉落、
    不可由熔爐合成升階；mult = 創世 × 1.5（詞條數值與洗煉上限同步 1.5 倍）。 */
 var RARITIES = [
-  { key: 'common', name: '普通', color: '#9aa5b1', mult: 1.0, affix: [1, 1], sockets: 0, enchants: 0, runeSlots: 0, salv: 1.0 },
-  { key: 'uncommon', name: '精良', color: '#4ade80', mult: 1.35, affix: [2, 2], sockets: 1, enchants: 1, runeSlots: 1, salv: 1.7 },
-  { key: 'rare', name: '稀有', color: '#38bdf8', mult: 1.75, affix: [2, 2], sockets: 1, enchants: 1, runeSlots: 1, salv: 2.8 },
+  { key: 'common', name: STR(1086), color: '#9aa5b1', mult: 1.0, affix: [1, 1], sockets: 0, enchants: 0, runeSlots: 0, salv: 1.0 },
+  { key: 'uncommon', name: STR(1087), color: '#4ade80', mult: 1.35, affix: [2, 2], sockets: 1, enchants: 1, runeSlots: 1, salv: 1.7 },
+  { key: 'rare', name: STR(1088), color: '#38bdf8', mult: 1.75, affix: [2, 2], sockets: 1, enchants: 1, runeSlots: 1, salv: 2.8 },
   { key: 'unique', name: '獨特', color: '#ffd700', mult: 2.3, affix: [3, 3], sockets: 1, enchants: 1, runeSlots: 1, salv: 4.5 },
   { key: 'epic', name: '史詩', color: '#c084fc', mult: 3.0, affix: [4, 4], sockets: 2, enchants: 2, runeSlots: 2, salv: 7.5 },
-  { key: 'legendary', name: '傳說', color: '#fb923c', mult: 4.0, affix: [5, 5], sockets: 2, enchants: 2, runeSlots: 2, salv: 12 },
-  { key: 'mythic', name: '神話', color: '#f87171', mult: 5.2, affix: [6, 6], sockets: 2, enchants: 2, runeSlots: 2, salv: 19 },
-  { key: 'genesis', name: '創世', color: '#b8860b', mult: 6.8, affix: [7, 7], sockets: 3, enchants: 3, runeSlots: 3, salv: 30 },
-  { key: 'godforged', name: '神鑄創世', color: '#f5c542', mult: 10.2, affix: [8, 8], sockets: 3, enchants: 3, runeSlots: 3, salv: 45 },
-  { key: 'chaos', name: '混沌', color: '#c084fc', mult: 15.3, affix: [9, 9], sockets: 4, enchants: 3, runeSlots: 4, salv: 67.5 },
-  { key: 'chaosGodforged', name: '神鑄混沌', color: '#ff6bcb', mult: 22.95, affix: [10, 10], sockets: 4, enchants: 3, runeSlots: 4, salv: 101.25 }
+  { key: 'legendary', name: STR(1089), color: '#fb923c', mult: 4.0, affix: [5, 5], sockets: 2, enchants: 2, runeSlots: 2, salv: 12 },
+  { key: 'mythic', name: STR(1090), color: '#f87171', mult: 5.2, affix: [6, 6], sockets: 2, enchants: 2, runeSlots: 2, salv: 19 },
+  { key: 'genesis', name: STR(1091), color: '#b8860b', mult: 6.8, affix: [7, 7], sockets: 3, enchants: 3, runeSlots: 3, salv: 30 },
+  { key: 'godforged', name: STR(1092), color: '#f5c542', mult: 10.2, affix: [8, 8], sockets: 3, enchants: 3, runeSlots: 3, salv: 45 },
+  { key: 'chaos', name: STR(1093), color: '#c084fc', mult: 15.3, affix: [9, 9], sockets: 4, enchants: 3, runeSlots: 4, salv: 67.5 },
+  { key: 'chaosGodforged', name: STR(1094), color: '#ff6bcb', mult: 22.95, affix: [10, 10], sockets: 4, enchants: 3, runeSlots: 4, salv: 101.25 }
 ];
 var PASSIVE_MIN_RARITY = 5; // 傳說級（含）以上附帶傳奇特效
 var MAX_AFFIXES = 10; // 單件裝備詞條數安全硬上限（目前稀有度表最高 10 條）
@@ -370,7 +370,7 @@ function equipSlotsForType(type) {
 var WEAPON_CATEGORIES = {
   oneHand: { name: '單手武器' },
   twoHand: { name: '雙手武器' },
-  offHand: { name: '副手武器' }
+  offHand: { name: STR(883) }
 };
 var DEFAULT_WEAPON_TYPE = 'sword1h'; // 舊存檔武器補默認類型（僅主手；裝在副手欄的舊武器由存檔整理改補匕首，保持位置合法）
 /* 雙手武器補償（佔主手＋副手兩格；2026-08-05 調整）：
@@ -384,18 +384,18 @@ var TWO_HAND_BONUS_AFFIXES = 1;
 var TWO_HAND_BONUS_ENCHANTS = 1;
 var TWO_HAND_SOCKET_MULT = 1.75;
 var WEAPON_TYPES = {
-  sword1h:      { name: '單手劍',   cat: 'oneHand', hands: 1, slots: ['weapon'], emoji: '🗡️', basenames: ['短劍', '長劍', '騎士劍'] },
-  dagger1h:     { name: '單手匕首', cat: 'oneHand', hands: 1, slots: ['weapon', 'weapon2'], emoji: '🔪', basenames: ['小刀', '彎刃匕首', '刺客匕首'] },
-  wand1h:       { name: '單手魔杖', cat: 'oneHand', hands: 1, slots: ['weapon'], emoji: '🪄', basenames: ['木魔杖', '秘紋魔杖', '星輝魔杖'] },
-  magicSword1h: { name: '單手魔劍', cat: 'oneHand', hands: 1, slots: ['weapon'], emoji: '⚔️', basenames: ['符文魔劍', '咒能魔劍', '滅魔劍'] },
-  greatsword2h: { name: '雙手大劍', cat: 'twoHand', hands: 2, slots: ['weapon'], emoji: '🗡️', basenames: ['闊劍', '巨劍', '斬龍大劍'] },
-  axe2h:        { name: '雙手斧',   cat: 'twoHand', hands: 2, slots: ['weapon'], emoji: '🪓', basenames: ['戰斧', '重斧', '滅世巨斧'] },
-  staff2h:      { name: '雙手法杖', cat: 'twoHand', hands: 2, slots: ['weapon'], emoji: '🦯', basenames: ['修行法杖', '賢者法杖', '大法師法杖'] },
-  magicSword2h: { name: '雙手魔劍', cat: 'twoHand', hands: 2, slots: ['weapon'], emoji: '⚔️', basenames: ['雙刃魔劍', '深淵魔劍', '混沌魔劍'] },
-  shield:       { name: '盾牌',     cat: 'offHand', hands: 1, slots: ['weapon2'], emoji: '🛡️', basenames: ['木盾', '鐵壁盾', '聖殿巨盾'] },
-  focus:        { name: '法器',     cat: 'offHand', hands: 1, slots: ['weapon2'], emoji: '⚜️', basenames: ['祈願法器', '祕儀法器', '神諭法器'] },
-  spellbook:    { name: '魔法書',   cat: 'offHand', hands: 1, slots: ['weapon2'], emoji: '📖', basenames: ['咒文書', '禁咒魔法書', '賢者魔導書'] },
-  orb:          { name: '水晶球',   cat: 'offHand', hands: 1, slots: ['weapon2'], emoji: '🔮', basenames: ['水晶球', '祕法水晶球', '預言水晶球'] }
+  sword1h:      { name: STR(884),   cat: 'oneHand', hands: 1, slots: ['weapon'], emoji: '🗡️', basenames: [STR(885), STR(886), STR(887)] },
+  dagger1h:     { name: STR(888), cat: 'oneHand', hands: 1, slots: ['weapon', 'weapon2'], emoji: '🔪', basenames: [STR(889), STR(890), STR(891)] },
+  wand1h:       { name: STR(892), cat: 'oneHand', hands: 1, slots: ['weapon'], emoji: '🪄', basenames: [STR(893), STR(894), STR(895)] },
+  magicSword1h: { name: STR(896), cat: 'oneHand', hands: 1, slots: ['weapon'], emoji: '⚔️', basenames: [STR(897), STR(898), STR(899)] },
+  greatsword2h: { name: STR(900), cat: 'twoHand', hands: 2, slots: ['weapon'], emoji: '🗡️', basenames: [STR(901), STR(902), STR(903)] },
+  axe2h:        { name: STR(904),   cat: 'twoHand', hands: 2, slots: ['weapon'], emoji: '🪓', basenames: [STR(905), STR(906), STR(907)] },
+  staff2h:      { name: STR(908), cat: 'twoHand', hands: 2, slots: ['weapon'], emoji: '🦯', basenames: [STR(909), STR(910), STR(911)] },
+  magicSword2h: { name: STR(912), cat: 'twoHand', hands: 2, slots: ['weapon'], emoji: '⚔️', basenames: [STR(913), STR(914), STR(915)] },
+  shield:       { name: STR(916),     cat: 'offHand', hands: 1, slots: ['weapon2'], emoji: '🛡️', basenames: [STR(917), STR(918), STR(919)] },
+  focus:        { name: STR(920),     cat: 'offHand', hands: 1, slots: ['weapon2'], emoji: '⚜️', basenames: [STR(921), STR(922), STR(923)] },
+  spellbook:    { name: STR(924),   cat: 'offHand', hands: 1, slots: ['weapon2'], emoji: '📖', basenames: [STR(925), STR(926), STR(927)] },
+  orb:          { name: STR(928),   cat: 'offHand', hands: 1, slots: ['weapon2'], emoji: '🔮', basenames: [STR(928), STR(929), STR(930)] }
 };
 // 武器類型專屬圖示；沒有 weaponType 的舊物品由 UI 退回 SLOT_INFO 的通用圖示。
 var WEAPON_TYPE_ICONS = {
@@ -497,34 +497,34 @@ function itemTypeLabel(it) {
 }
 
 var SLOT_INFO = {
-  weapon: { name: '主手', emoji: '⚔️', icon: 'icon_weapon.png' },
+  weapon: { name: STR(931), emoji: '⚔️', icon: 'icon_weapon.png' },
   weapon2: { name: '副手', emoji: '🗡️', icon: 'icon_weapon.png' },
   helmet: { name: '頭盔', emoji: '🪖', icon: 'icon_helmet.png' },
-  shoulder: { name: '肩甲', emoji: '🦾', icon: 'icon_shoulder.png' },
+  shoulder: { name: STR(932), emoji: '🦾', icon: 'icon_shoulder.png' },
   chest: { name: '胸甲', emoji: '🛡️', icon: 'icon_chest.png' },
   belt: { name: '腰帶', emoji: '🪢', icon: 'icon_belt.png' },
-  gloves: { name: '護手', emoji: '🧤', icon: 'icon_gloves.png' },
-  wrist: { name: '手腕', emoji: '🦾', icon: 'icon_wrist.png' },
+  gloves: { name: STR(933), emoji: '🧤', icon: 'icon_gloves.png' },
+  wrist: { name: STR(934), emoji: '🦾', icon: 'icon_wrist.png' },
   legs: { name: '護腿', emoji: '👖', icon: 'icon_legs_armor.png' },
   boots: { name: '靴子', emoji: '🥾', icon: 'icon_legs.png' },
   ring: { name: '戒指', emoji: '💍', icon: 'icon_ring.png' },
-  ring2: { name: '戒指Ⅱ', emoji: '💍', icon: 'icon_ring.png' },
+  ring2: { name: STR(935), emoji: '💍', icon: 'icon_ring.png' },
   amulet: { name: '項鍊', emoji: '📿', icon: 'icon_amulet.png' }
 };
 var SLOT_BASENAMES = {
-  weapon: ['短劍', '長劍', '戰斧', '法杖', '巨鎚'],
-  helmet: ['皮帽', '鐵盔', '戰盔', '龍首盔'],
-  shoulder: ['布肩墊', '鐵肩甲', '戰場護肩', '龍骨肩鎧'],
-  chest: ['布衣', '鎖甲', '板甲', '龍鱗甲'],
-  belt: ['麻繩腰帶', '皮革腰帶', '鎖鏈腰帶', '巨龍束帶'],
-  gloves: ['布手套', '皮護手', '鐵護手', '龍鱗護手'],
-  wrist: ['布腕帶', '皮護腕', '鐵護腕', '龍鱗護腕'],
-  legs: ['布褲', '鐵護腿', '重甲腿鎧'],
-  boots: ['草鞋', '皮靴', '疾風之靴'],
-  ring: ['銅戒', '銀戒', '秘紋戒指'],
-  amulet: ['木墜', '銀鍊', '星辰項鍊']
+  weapon: [STR(885), STR(886), STR(905), STR(936), STR(937)],
+  helmet: [STR(938), STR(939), STR(940), STR(941)],
+  shoulder: [STR(942), STR(943), STR(944), STR(945)],
+  chest: [STR(946), STR(947), STR(948), STR(949)],
+  belt: [STR(950), STR(951), STR(952), STR(953)],
+  gloves: [STR(954), STR(955), STR(956), STR(957)],
+  wrist: [STR(958), STR(959), STR(960), STR(961)],
+  legs: [STR(962), STR(963), STR(964)],
+  boots: [STR(965), STR(966), STR(967)],
+  ring: [STR(968), STR(969), STR(970)],
+  amulet: [STR(971), STR(972), STR(973)]
 };
-var RARITY_PREFIX = ['普通級', '精良級', '稀有級', '獨特級', '史詩級', '傳說級', '神話級', '創世級', '神鑄創世級', '混沌級', '神鑄混沌級'];
+var RARITY_PREFIX = [STR(974), STR(975), STR(976), STR(977), STR(978), STR(979), STR(980), STR(981), STR(982), STR(983), STR(984)];
 // 新舊名稱共用同一辨識規則，讀檔與品質提升時先移除既有前綴。
 var RARITY_PREFIX_PATTERN = new RegExp('^(?:' + RARITY_PREFIX.join('|') + '|神鑄混沌的|混沌的|神鑄創世的|粗糙的|堅實的|精工的|奇異的|大師級|傳世的|神鑄的|創世的|普通的|精良的|稀有的|獨特的|史詩的|傳說的|神話的)');
 var ACCESSORY_SLOTS = ['ring', 'amulet'];
@@ -1751,30 +1751,30 @@ function vfxEnemyRoles(magic, elem) {
    ENCHANTS 本身仍是元素定義表（BOSS 屬性、抗性名稱等也讀它），不可刪。 */
 var ENCHANT_ENABLED = false;
 var ENCHANTS = {
-  fire: { name: '火焰附魔', cat: 'atk', elem: 'fire', desc: '附加高額火焰傷害', emoji: '🔥' },
-  ice: { name: '冰凍附魔', cat: 'atk', elem: 'ice', desc: '附加冰霜傷害，15% 機率使敵人減速 2 秒', emoji: '❄️' },
-  lightning: { name: '閃電附魔', cat: 'atk', elem: 'lightning', desc: '附加雷電傷害，10% 機率追加一道電擊', emoji: '⚡' },
-  poison: { name: '毒液附魔', cat: 'atk', elem: 'poison', desc: '附加劇毒傷害，25% 機率使敵人中毒 4 秒', emoji: '🧪' },
-  light: { name: '聖光附魔', cat: 'atk', elem: 'light', desc: '附加聖光傷害，20% 機率淨化自身負面狀態', emoji: '🌟' },
-  dark: { name: '暗影附魔', cat: 'atk', elem: 'dark', desc: '附加暗影傷害，並回復攻擊者當前生命的 25%', emoji: '🌑' },
-  earth: { name: '磐岩附魔', cat: 'atk', elem: 'earth', desc: '附加大地傷害，25% 機率獲得攻擊者當前生命 2% 的岩甲護盾', emoji: '🪨' },
-  wind: { name: '疾風附魔', cat: 'atk', elem: 'wind', desc: '附加風系傷害', emoji: '💨' },
-  fireRes: { name: '火焰抗性', cat: 'def', desc: '火焰屬性抗性額外提高：其他來源合計 ×(1+此值%)', emoji: '🧯' },
-  iceRes: { name: '冰霜抗性', cat: 'def', desc: '冰霜屬性抗性額外提高：其他來源合計 ×(1+此值%)', emoji: '🧊' },
-  lightningRes: { name: '雷電抗性', cat: 'def', desc: '雷電屬性抗性額外提高：其他來源合計 ×(1+此值%)', emoji: '🔌' },
-  poisonRes: { name: '劇毒抗性', cat: 'def', desc: '劇毒屬性抗性額外提高：其他來源合計 ×(1+此值%)', emoji: '💊' },
-  lightRes: { name: '聖光抗性', cat: 'def', desc: '聖屬性抗性額外提高：其他來源合計 ×(1+此值%)', emoji: '🕶️' },
-  darkRes: { name: '暗影抗性', cat: 'def', desc: '暗影屬性抗性額外提高：其他來源合計 ×(1+此值%)', emoji: '🕯️' },
-  earthRes: { name: '大地抗性', cat: 'def', desc: '大地屬性抗性額外提高：其他來源合計 ×(1+此值%)', emoji: '🧱' },
-  windRes: { name: '疾風抗性', cat: 'def', desc: '風屬性抗性額外提高：其他來源合計 ×(1+此值%)', emoji: '🍃' },
-  ctrlRes: { name: '控制抵抗', cat: 'def', desc: '機率完全抵抗暈眩與減速', emoji: '🛡️' },
-  loot: { name: '尋寶附魔', cat: 'util', desc: '增加裝備掉落率', emoji: '💰' },
-  haste: { name: '疾行附魔', cat: 'util', desc: '增加移動速度（縮短推圖間隔）', emoji: '🌀' },
-  vigor: { name: '活力附魔', cat: 'util', desc: '提升生命上限', emoji: '❤️' },
-  clarity: { name: '澄明附魔', cat: 'util', desc: '提升法力恢復速度', emoji: '💧' },
-  focus: { name: '專注附魔', cat: 'util', desc: '縮短技能冷卻時間', emoji: '🎯' },
-  fortune: { name: '財運附魔', cat: 'util', desc: '提高金幣獲取量', emoji: '🪙' },
-  wisdom: { name: '智慧附魔', cat: 'util', desc: '提高經驗獲取量', emoji: '📚' }
+  fire: { name: STR(985), cat: 'atk', elem: 'fire', desc: STR(986), emoji: '🔥' },
+  ice: { name: STR(987), cat: 'atk', elem: 'ice', desc: STR(988), emoji: '❄️' },
+  lightning: { name: STR(989), cat: 'atk', elem: 'lightning', desc: STR(990), emoji: '⚡' },
+  poison: { name: STR(991), cat: 'atk', elem: 'poison', desc: STR(992), emoji: '🧪' },
+  light: { name: STR(993), cat: 'atk', elem: 'light', desc: STR(994), emoji: '🌟' },
+  dark: { name: STR(995), cat: 'atk', elem: 'dark', desc: STR(996), emoji: '🌑' },
+  earth: { name: STR(997), cat: 'atk', elem: 'earth', desc: STR(998), emoji: '🪨' },
+  wind: { name: STR(999), cat: 'atk', elem: 'wind', desc: STR(1000), emoji: '💨' },
+  fireRes: { name: STR(1001), cat: 'def', desc: STR(1002), emoji: '🧯' },
+  iceRes: { name: STR(1003), cat: 'def', desc: STR(1004), emoji: '🧊' },
+  lightningRes: { name: STR(1005), cat: 'def', desc: STR(1006), emoji: '🔌' },
+  poisonRes: { name: STR(1007), cat: 'def', desc: STR(1008), emoji: '💊' },
+  lightRes: { name: STR(1009), cat: 'def', desc: STR(1010), emoji: '🕶️' },
+  darkRes: { name: STR(1011), cat: 'def', desc: STR(1012), emoji: '🕯️' },
+  earthRes: { name: STR(1013), cat: 'def', desc: STR(1014), emoji: '🧱' },
+  windRes: { name: STR(1015), cat: 'def', desc: STR(1016), emoji: '🍃' },
+  ctrlRes: { name: STR(1017), cat: 'def', desc: STR(1018), emoji: '🛡️' },
+  loot: { name: STR(1019), cat: 'util', desc: STR(1020), emoji: '💰' },
+  haste: { name: STR(1021), cat: 'util', desc: STR(1022), emoji: '🌀' },
+  vigor: { name: STR(1023), cat: 'util', desc: STR(1024), emoji: '❤️' },
+  clarity: { name: STR(1025), cat: 'util', desc: STR(1026), emoji: '💧' },
+  focus: { name: STR(1027), cat: 'util', desc: STR(1028), emoji: '🎯' },
+  fortune: { name: STR(1029), cat: 'util', desc: STR(1030), emoji: '🪙' },
+  wisdom: { name: STR(1031), cat: 'util', desc: STR(1032), emoji: '📚' }
 };
 // 附魔可作用部位（裝備欄位）
 var ENCHANT_SLOTS = {
@@ -2253,7 +2253,7 @@ var PART_MAX_TIER = 10;
 var PART_UPGRADE_COST_A = 20000;
 var PART_UPGRADE_COST_B = 10000;
 var PART_UPGRADE_COST_C = 6;
-var NODE_NAMES = { filter: '篩選節點', salvage: '分解槽', synth: '合成節點', enchant: '附魔節點', upgrade: '強化節點' };
+var NODE_NAMES = { filter: '篩選節點', salvage: STR(1033), synth: '合成節點', enchant: STR(1034), upgrade: '強化節點' };
 var PART_SLOTS_PER_NODE = 2;   // 每個可安裝節點的零件槽數（預設；可由 PART_SLOTS 覆寫）
 var PART_SLOTS = { synth: 2 }; // 各節點零件槽數（分解槽使用金幣解鎖，見 formula.js salvageSlotCount）
 function slotsForNode(node) {

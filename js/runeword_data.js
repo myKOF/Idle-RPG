@@ -565,7 +565,7 @@ var RUNEWORD_BY_ID = (function () {
 /* 符文真言的品質：級距（tier 1~4）→ 裝備稀有度索引（RARITIES），名稱與顏色直接讀 RARITIES，不另寫一份。
    RARITIES 在 data.js；沒載入時（單獨載入本檔的工具）退回同一組寫死值。 */
 var RUNEWORD_TIER_RARITY = [-1, 0, 1, 4, 5];   // 普通、精良、史詩、傳說
-var RUNEWORD_TIER_FALLBACK = [['', ''], ['普通', '#9aa5b1'], ['精良', '#4ade80'], ['史詩', '#c084fc'], ['傳說', '#fb923c']];
+var RUNEWORD_TIER_FALLBACK = [['', ''], [STR(1086), '#9aa5b1'], [STR(1087), '#4ade80'], ['史詩', '#c084fc'], [STR(1089), '#fb923c']];
 var RUNEWORD_TIER_NAMES = RUNEWORD_TIER_RARITY.map(function (ri, t) {
   return (ri >= 0 && typeof RARITIES !== 'undefined' && RARITIES[ri]) ? RARITIES[ri].name : RUNEWORD_TIER_FALLBACK[t][0];
 });

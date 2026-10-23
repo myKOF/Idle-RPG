@@ -1450,7 +1450,7 @@ function renderDetailLog() {
     return entry.cat === filter;
   });
   if (!rows.length) {
-    box.innerHTML = '<div class="detail-log-empty">目前沒有符合條件的日誌</div>';
+    box.innerHTML = '<div class="detail-log-empty">' + STR(1183) + '</div>';
     return;
   }
   box.innerHTML = rows.map(function (entry) {
@@ -4985,7 +4985,7 @@ function ancientStarBadgeHTML(it) {
   var stars = '';
   for (var i = 0; i < shown; i++) stars += '<span class="ancient-star">✡</span>';
   var overlapClass = shown > 4 ? ' overlap' : '';
-  return '<span class="ancient-star-badge' + overlapClass + '" aria-label="太古詞條 ' + count + ' 條">' + stars + '</span>';
+  return '<span class="ancient-star-badge' + overlapClass + '" aria-label="' + STR(1184, count) + '">' + stars + '</span>';
 }
 function itemIconFile(it, info) {
   var weaponIcon = (typeof weaponIconForItem === 'function') ? weaponIconForItem(it) : null;
@@ -5098,7 +5098,7 @@ function syncItemGridCells(box, keys, htmls) {
 
 function twoHandSharedBadgeHTML(detail) {
   return '<span class="twohand-shared-tag' + (detail ? ' twohand-shared-note' : '') + '">' +
-    '<svg viewBox="0 0 20 12" aria-hidden="true"><path d="M8 3H5a3 3 0 000 6h3m4-6h3a3 3 0 010 6h-3M6 6h8"></path></svg>雙手共用</span>';
+    '<svg viewBox="0 0 20 12" aria-hidden="true"><path d="M8 3H5a3 3 0 000 6h3m4-6h3a3 3 0 010 6h-3M6 6h8"></path></svg>' + STR(1185) + '</span>';
 }
 
 function uiIsTwoHandSharedSlot(it, source, slot) {
@@ -5141,7 +5141,7 @@ function renderEquip() {
       h += '<div class="eq-slot filled' + effClass + (twoHandDuplicate ? ' twohand-duplicate' : '') + (inert ? ' eq-inert' : '') + ' slot-' + slot + '" data-id="' + it.id + '" data-src="equip" data-slot="' + slot + '" style="border-color:' + r.color + '; box-shadow: inset 0 0 15px ' + r.color + '40">' +
         iconHtml + ancientStarBadgeHTML(it) + flashHtml +
         (twoHandDuplicate ? twoHandSharedBadgeHTML(false) : '') +
-        (inert ? '<span class="th-occupied-mark" title="未裝備【修羅亂舞】，副手的雙手武器不生效">🚫</span>' : '') +
+        (inert ? '<span class="th-occupied-mark" title="' + STR(1186) + '">🚫</span>' : '') +
         '</div>';
     } else {
       // 副手欄被主手雙手武器連帶佔用：加佔用標記（仍可點選，改裝副手會自動卸下雙手武器）
@@ -5151,7 +5151,7 @@ function renderEquip() {
         (blocked2h ? '<span class="th-occupied-mark">⛓️</span>' : '') + '</div>';
     }
   });
-  h += '<button type="button" id="btn-equip-sets" class="btn-equip-sets" aria-label="切換裝備套裝" title="切換裝備方案">' +
+  h += '<button type="button" id="btn-equip-sets" class="btn-equip-sets" aria-label="' + STR(1187) + '" title="' + STR(1188) + '">' +
     '<svg viewBox="0 0 24 24" class="eq-search-icon" aria-hidden="true">' +
     '<circle cx="10" cy="10" r="6.5" fill="none" stroke="#facc15" stroke-width="2.5"></circle>' +
     '<line x1="15" y1="15" x2="21" y2="21" stroke="#facc15" stroke-width="2.8" stroke-linecap="round"></line>' +
@@ -5208,8 +5208,8 @@ function renderEquipSetTabs(equipSnapshot, headerSnapshot) {
       : index < equipSnapshot.sets.length;
   }
   var h = '<div class="eqset-popup-header">' +
-    '<span class="eqset-popup-title">✦ 裝備方案切換</span>' +
-    '<button type="button" class="eqset-popup-close" title="關閉方案面板">✕</button>' +
+    STR(1189) +
+    '<button type="button" class="eqset-popup-close" title="' + STR(144) + '">✕</button>' +
     '</div>' +
     '<div class="eqset-tabrow">';
   for (var i = 0; i < equipSnapshot.sets.length; i++) {
@@ -5249,17 +5249,17 @@ function renameEquipSet(idx) {
     )) return;
   var defName = (typeof equipSetName === 'function') ? equipSetName(idx) : ('第' + (idx + 1) + '套');
   var cur = (equipSnapshot.equipSetNames && equipSnapshot.equipSetNames[idx]) || '';
-  showConfirmDialog('為「' + defName + '」設定自訂名稱（留空恢復預設）：', function (val) {
+  showConfirmDialog(STR(1190, defName), function (val) {
     var name = String(val == null ? '' : val).trim().slice(0, 12); // 上限 12 字
     sendUiCommand('player.renameEquipSet', { index: idx, name: name }, {
       keys: [nodePendingKey('equip-set:' + idx)],
       panels: ['equip']
     }).catch(function (error) {
-      reportUiCommandFailure('裝備套改名', error, ['equip']);
+      reportUiCommandFailure(STR(1191), error, ['equip']);
     });
   }, {
-    title: '裝備套改名', okText: '確定', cancelText: '取消',
-    input: { value: cur, placeholder: '例：輸出套（留空恢復預設）', maxLength: 12 }
+    title: STR(1191), okText: '確定', cancelText: '取消',
+    input: { value: cur, placeholder: STR(1192), maxLength: 12 }
   });
 }
 
@@ -5436,10 +5436,10 @@ function renderInventory() {
     isUiCommandPending(nodePendingKey('inv-expand'));
   if (btn) {
     if (cap >= INVENTORY_MAX) {
-      btn.textContent = '➕ 已達上限 (' + INVENTORY_MAX + ')';
+      btn.textContent = STR(1193, INVENTORY_MAX);
       btn.disabled = true;
     } else {
-      btn.innerHTML = '➕ 擴充 (' + fmt(inventoryExpandCost(player.invUpgrades || 0)) + '<img src="images/icon_gold.png" class="res-icon">)';
+      btn.innerHTML = STR(1194, fmt(inventoryExpandCost(player.invUpgrades || 0))) + '<img src="images/icon_gold.png" class="res-icon">)';
       btn.disabled = expandPending;
     }
   }
@@ -5468,7 +5468,7 @@ function renderInventory() {
   var virtualize = inventoryItems.length > INVENTORY_VIRTUAL_MIN_ITEMS;
   if (!inventoryItems.length) {
     box.removeAttribute('data-inventory-total-rows');
-    box.innerHTML = '<div class="hint" style="grid-column: 1 / -1; padding: 10px;">背包是空的。戰鬥掉落的裝備會先進入生產線輸送帶，「保留」的會送到這裡。</div>';
+    box.innerHTML = '<div class="hint" style="grid-column: 1 / -1; padding: 10px;">' + STR(1195) + '</div>';
   } else {
     var ancientFilterSelect = $id('inv-ancient-filter');
     var filterAncient = ancientFilterSelect ? ancientFilterSelect.value : '';
@@ -5507,7 +5507,7 @@ function renderInventory() {
     }
     if (!displayedItems.length) {
       box.removeAttribute('data-inventory-total-rows');
-      box.innerHTML = '<div class="hint" style="grid-column: 1 / -1; padding: 10px;">沒有符合篩選條件的裝備。</div>';
+      box.innerHTML = '<div class="hint" style="grid-column: 1 / -1; padding: 10px;">' + STR(1196) + '</div>';
     } else {
       // 用進入時讀好的那批值，不要在這裡重讀——這裡已經在本函式的 DOM 寫入之後了
       if (virtualize && (!entryClientWidth || !entryLaidOut)) {
@@ -5936,19 +5936,19 @@ function renderDetail() {
     if (!UI.sel) UI.equipActionCooldown = null;
     if (UI.sel && UI.sel.source === 'inv' && UI.sel.id) {
       requestPanelData('inv', true, { detailIds: [UI.sel.id] });
-      pane.innerHTML = '<div class="hint">正在載入裝備詳情…</div>';
+      pane.innerHTML = '<div class="hint">' + STR(1197) + '</div>';
     } else {
-      pane.innerHTML = '<div class="hint">點選裝備查看詳情</div>';
+      pane.innerHTML = '<div class="hint">' + STR(1198) + '</div>';
     }
     pane.classList.remove('has-detail');
     var actionBar = $id('equip-action-bar');
     if (actionBar) {
       actionBar.innerHTML =
-        '<button class="btn btn-primary" disabled>強化</button>' +
-        '<button class="btn" disabled>洗煉</button>' +
-        '<button class="btn" disabled>寶石</button>' +
-        '<button class="btn" disabled>符文</button>' +
-        '<button class="btn btn-icon" disabled aria-label="卸下">' + EQUIP_UNEQUIP_ICON + '</button>';
+        '<button class="btn btn-primary" disabled>' + STR(1199) + '</button>' +
+        '<button class="btn" disabled>' + STR(1200) + '</button>' +
+        '<button class="btn" disabled>' + STR(122) + '</button>' +
+        '<button class="btn" disabled>' + STR(150) + '</button>' +
+        '<button class="btn btn-icon" disabled aria-label="' + STR(74) + '">' + EQUIP_UNEQUIP_ICON + '</button>';
       actionBar.style.display = 'flex';
     }
     var matPanelEmpty = $id('equip-material-panel');
@@ -6003,9 +6003,8 @@ function renderDetail() {
   var enoughUpScrap = player && player.scrap >= cost.scrap;
   var upGoldHtml = '<span' + (enoughUpGold ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_gold.png" class="res-icon"> ' + fmt(cost.gold) + '</span>';
   var upScrapHtml = '<span' + (enoughUpScrap ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_scrap.png" class="res-icon"> ' + fmt(cost.scrap) + '</span>';
-  var upTip = '需要：' + upGoldHtml + ' &nbsp;' + upScrapHtml;
-  actionsHtml += '<button class="btn' + (fromInv || rerollMode || slotMode ? '' : ' btn-primary') + ' act-btn-tooltip" data-act="upgrade" data-tip="' +
-    esc(rerollMode || slotMode ? '回到強化（再按一次才強化）' : upTip) + '"' + pendingUiButtonAttributes(pendingKey) + '>強化</button>';
+  var upTip = STR(1201, upGoldHtml, upScrapHtml);
+  actionsHtml += '<button class="btn' + (fromInv || rerollMode || slotMode ? '' : ' btn-primary') + ' act-btn-tooltip" data-act="upgrade" data-tip="' + esc(rerollMode || slotMode ? STR(1202) : upTip) + '"' + pendingUiButtonAttributes(pendingKey) + '>' + STR(1199) + '</button>';
 
   var rrAttrs = '';
   if (rerollMode) {
@@ -6014,18 +6013,18 @@ function renderDetail() {
       var rrCost = rerollCost(it);
       var rrGoldHtml = '<span' + (player && player.gold < rrCost.gold ? ' style="color:#fca5a5"' : '') + '><img src="images/icon_gold.png" class="res-icon"> ' + fmt(rrCost.gold) + '</span>';
       var rrEssenceHtml = '<span' + (player && player.essence < rrCost.essence ? ' style="color:#fca5a5"' : '') + '><img src="images/icon_essence.png" class="res-icon"> ' + fmt(rrCost.essence) + '</span>';
-      var rrDesc = rrAffix.ancient ? '只變換種類，太古位置與滿值保留' : '改變種類與數值';
-      rrAttrs = ' data-tip="' + esc('洗煉已選屬性：' + AFFIX_POOL[rrAffix.key].name + '（' + rrDesc + '）<br>需要：' + rrGoldHtml + ' &nbsp;' + rrEssenceHtml) + '"';
+      var rrDesc = rrAffix.ancient ? STR(1203) : STR(1204);
+      rrAttrs = ' data-tip="' + esc(STR(1205, AFFIX_POOL[rrAffix.key].name, rrDesc, rrGoldHtml, rrEssenceHtml)) + '"';
     } else {
-      rrAttrs = ' disabled data-tip="沒有可洗煉的屬性"';
+      rrAttrs = ' disabled data-tip="' + STR(1206) + '"';
     }
     rrAttrs += pendingUiButtonAttributes(pendingKey);
   }
-  actionsHtml += '<button class="btn' + (rerollMode ? ' btn-primary act-btn-tooltip' : '') + '" data-act="' + (rerollMode ? 'reroll-affix' : 'toggle-reroll') + '"' + rrAttrs + '>洗煉</button>';
+  actionsHtml += '<button class="btn' + (rerollMode ? ' btn-primary act-btn-tooltip' : '') + '" data-act="' + (rerollMode ? 'reroll-affix' : 'toggle-reroll') + '"' + rrAttrs + '>' + STR(1200) + '</button>';
   actionsHtml += '<button class="btn' + (socketMode ? ' btn-primary' : '') + '" data-act="toggle-socket" aria-pressed="' + (matMode === 'socket') + '">寶石</button>';
   if (runeMode && Object.keys(runeMode.draft).length) {
     /* 有暫放的符文：「符文」鈕變「刻印」，按下才真的鑲上 */
-    actionsHtml += '<button class="btn btn-primary act-btn-tooltip" data-act="engrave-rune" data-tip="' + esc('刻印：把暫放的 ' + Object.keys(runeMode.draft).length + ' 顆符文鑲上（鑲上後要抹除才能取下，抹除需要費用）') + '"' + pendingUiButtonAttributes(pendingKey) + '>刻印</button>';
+    actionsHtml += '<button class="btn btn-primary act-btn-tooltip" data-act="engrave-rune" data-tip="' + esc(STR(1207, Object.keys(runeMode.draft).length)) + '"' + pendingUiButtonAttributes(pendingKey) + '>' + STR(1208) + '</button>';
   } else {
     actionsHtml += '<button class="btn' + (runeMode ? ' btn-primary' : '') + '" data-act="toggle-rune" aria-pressed="' + (matMode === 'rune') + '">符文</button>';
   }
@@ -6360,7 +6359,7 @@ function detailAction(act, actBtn) {
       if (actBtn && (String(resultError).indexOf('資源不足') >= 0 || String(resultError).indexOf('不足') >= 0 || resultError === 'poor')) {
         showFloatingText(actBtn, '材料不足', '#fca5a5');
       } else {
-        reportUiCommandFailure('裝備操作', resultError, panels);
+        reportUiCommandFailure(STR(1209), resultError, panels);
       }
       return;
     }
@@ -6390,7 +6389,7 @@ function detailAction(act, actBtn) {
     if (actBtn && error && (String(error).indexOf('資源不足') >= 0 || String(error).indexOf('不足') >= 0)) {
       showFloatingText(actBtn, '材料不足', '#fca5a5');
     } else {
-      reportUiCommandFailure('裝備操作', error, panels);
+      reportUiCommandFailure(STR(1209), error, panels);
     }
   });
 }
@@ -6406,12 +6405,12 @@ function salvageAllUnlocked(maxRarity, maxLevel, maxAncient) {
   }).then(function (result) {
     var resultError = typeof uiCommandResultError === 'function' ? uiCommandResultError(result) : null;
     if (resultError) {
-      reportUiCommandFailure('批次分解', resultError, ['inv', 'equip', 'header', 'gems']);
+      reportUiCommandFailure(STR(1210), resultError, ['inv', 'equip', 'header', 'gems']);
       return;
     }
     if (UI.sel && UI.sel.source === 'inv' && !findSelItem()) { UI.sel = null; rememberEquipmentSelection(); }
   }).catch(function (error) {
-    reportUiCommandFailure('批次分解', error, ['inv', 'equip', 'header', 'gems']);
+    reportUiCommandFailure(STR(1210), error, ['inv', 'equip', 'header', 'gems']);
   });
 }
 
@@ -7406,24 +7405,7 @@ function towerDetailHTML(fl, highest) {
   }).map(function (word) {
     return '<div>' + STR(1801, word.tier, esc(RUNEWORD_TIER_NAMES[word.tier]), esc(word.name)) + '</div>';
   }).join('');
-  return '<div class="twx-boss" style="--c:' + color + '">' +
-      '<div class="twx-boss-art">' + towerBossIconHTML(bd, 'twx-boss-img') + '</div>' +
-      '<div class="twx-boss-main">' +
-        '<span class="twx-boss-tier ' + tier.id + '">' + tier.name + '・第 ' + fl + ' 層</span>' +
-        '<span class="twx-boss-name' + (isPurgatoryTowerFloor(fl) ? ' purgatory-boss' : '') + '">' + esc(bd.name) + '</span>' +
-        '<span class="twx-tags">' + tags + '</span>' +
-        '<span class="twx-stats">' + stat('BOSS 等級', 'Lv.' + fmtFull(Math.round(stats.level))) +
-          stat('生命', fmt(stats.hp), '#ff8a80') + stat('建議野外階段', (4 + fl * 5) + '+', '#f0cf86') + '</span>' +
-        '<span class="twx-status' + (cleared ? ' is-cleared' : (next ? ' is-next' : ' is-locked')) + '">' + status + '</span>' +
-      '</div>' +
-    '</div>' +
-    '<div class="twx-loot">' +
-      '<div class="twx-loot-title"><b>通關獎勵</b><span>機率類獨立判定、不受掉寶率影響（裝備除外）</span></div>' +
-      '<div class="twx-rws">' + rewards + '</div>' +
-      (equips ? '<div class="twx-loot-title"><b>BOSS 裝備</b><span>' + STR(1455) + '</span></div><div class="twx-eqs">' + equips + '</div>' : '') +
-    '</div>' +
-    (wordUnlocks ? '<div class="twx-skill-unlocks twx-word-unlocks">' + wordUnlocks + '</div>' : '') +
-    (unlocks ? '<div class="twx-skill-unlocks">' + unlocks + '</div>' : '');
+  return '<div class="twx-boss" style="--c:' + color + '"><div class="twx-boss-art">' + towerBossIconHTML(bd, 'twx-boss-img') + '</div><div class="twx-boss-main"><span class="twx-boss-tier ' + tier.id + '">' + STR(158, tier.name, fl) + '</span><span class="twx-boss-name' + (isPurgatoryTowerFloor(fl) ? ' purgatory-boss' : '') + '">' + esc(bd.name) + '</span><span class="twx-tags">' + tags + '</span><span class="twx-stats">' + stat('BOSS 等級', 'Lv.' + fmtFull(Math.round(stats.level))) + stat('生命', fmt(stats.hp), '#ff8a80') + stat('建議野外階段', (4 + fl * 5) + '+', '#f0cf86') + '</span><span class="twx-status' + (cleared ? ' is-cleared' : (next ? ' is-next' : ' is-locked')) + '">' + status + '</span></div></div><div class="twx-loot"><div class="twx-loot-title">' + STR(159) + '<span>' + STR(1211) + '</span></div><div class="twx-rws">' + rewards + '</div>' + (equips ? '<div class="twx-loot-title">' + STR(1212) + '<span>' + STR(1455) + '</span></div><div class="twx-eqs">' + equips + '</div>' : '') + '</div>' + (wordUnlocks ? '<div class="twx-skill-unlocks twx-word-unlocks">' + wordUnlocks + '</div>' : '') + (unlocks ? '<div class="twx-skill-unlocks">' + unlocks + '</div>' : '');
 }
 
 function towerActionsHTML(fl, highest, gold, active) {
@@ -8488,15 +8470,15 @@ var UI_COMMAND_LABELS = {
   'forge.placeItem': STR(1338), 'forge.placeGem': STR(1339),
   'forge.removeItem': STR(1340), 'forge.toggleDust': STR(1341), 'forge.autoFillDust': STR(1342),
   'forge.setAuto': STR(1343), 'forge.setAutoFill': STR(1344),
-  'item.equip': '裝備', 'item.unequip': '卸下', 'item.salvage': '分解', 'item.setLock': '鎖定',
-  'item.upgrade': '強化', 'item.enchant': '附魔', 'item.removeEnchant': '移除附魔',
-  'item.rerollAffix': '洗煉', 'gem.socket': STR(1591), 'gem.unsocket': STR(1592), 'rune.socket': STR(1802),
+  'item.equip': '裝備', 'item.unequip': '卸下', 'item.salvage': STR(1213), 'item.setLock': STR(1141),
+  'item.upgrade': STR(1199), 'item.enchant': STR(1214), 'item.removeEnchant': STR(1215),
+  'item.rerollAffix': STR(1200), 'gem.socket': STR(1591), 'gem.unsocket': STR(1592), 'rune.socket': STR(1802),
   'rune.compose': STR(1803), 'rune.composeAll': STR(1804), 'rune.dismantle': STR(1805),
   'newforge.addFurnace': STR(1451), 'newforge.removeFurnace': STR(1452),
   'newforge.installPart': STR(1456), 'newforge.uninstallPart': STR(1457),
   'newforge.upgradePart': STR(1449), 'newforge.unlockPartSlot': STR(1458),
   'tower.start': STR(1895), 'tower.startAuto': STR(1896), 'tower.flee': STR(1897),
-  'player.buyInvUpgrade': '擴充背包', 'player.switchEquipSet': '切換套裝',
+  'player.buyInvUpgrade': STR(1216), 'player.switchEquipSet': STR(1217),
   'task.claim': STR(1923), 'stage.goMax': '前往最高關卡', 'stage.switchZone': '切換地圖'
 };
 
@@ -11874,7 +11856,7 @@ function initUI() {
         keys: [nodePendingKey('equip-view')],
         panels: ['equip', 'inv']
       }).catch(function (error) {
-        reportUiCommandFailure('切換裝備預覽', error, ['equip', 'inv']);
+        reportUiCommandFailure(STR(1218), error, ['equip', 'inv']);
       });
       return;
     }
@@ -11891,7 +11873,7 @@ function initUI() {
           keys: [nodePendingKey('equip-set')],
           panels: ['equip', 'inv', 'header']
         }).catch(function (error) {
-          reportUiCommandFailure('換穿裝備套', error, ['equip', 'inv', 'header']);
+          reportUiCommandFailure(STR(1219), error, ['equip', 'inv', 'header']);
         });
       }
       return;
@@ -13188,7 +13170,7 @@ function initUI() {
           keys: [itemPendingKey(eit.id)],
           panels: ['inv', 'equip', 'header']
         }).catch(function (error) {
-          reportUiCommandFailure('裝備附魔', error, ['inv', 'equip', 'header']);
+          reportUiCommandFailure(STR(1220), error, ['inv', 'equip', 'header']);
         });
         return;
       }
@@ -13205,7 +13187,7 @@ function initUI() {
           keys: [itemPendingKey(rit.id)],
           panels: ['inv', 'equip']
         }).catch(function (error) {
-          reportUiCommandFailure('取下附魔', error, ['inv', 'equip']);
+          reportUiCommandFailure(STR(1221), error, ['inv', 'equip']);
         });
         return;
       }
@@ -13293,7 +13275,7 @@ function initUI() {
         keys: [nodePendingKey('salvage-settings')],
         panels: ['factory']
       }).catch(function (error) {
-        reportUiCommandFailure('拆解設定', error, ['factory']);
+        reportUiCommandFailure(STR(1222), error, ['factory']);
       });
 
       var conds = [];
@@ -13301,9 +13283,9 @@ function initUI() {
         conds.push('「' + maxLevel + ' 級及以下」');
       }
       if (maxRarity >= 0 && RARITIES[maxRarity]) {
-        conds.push('「' + RARITIES[maxRarity].name + '及以下品質」');
+        conds.push(STR(1223, RARITIES[maxRarity].name));
       } else if (maxRarity < 0) {
-        conds.push('「不限品質」');
+        conds.push(STR(1224));
       }
       if (maxAncient >= 0) {
         conds.push('「' + maxAncient + ' 太古及以下」');
@@ -13312,17 +13294,17 @@ function initUI() {
       }
 
       if (maxLevel === null && maxRarity < 0 && maxAncient < 0) {
-        conds.push('「所有等級、品質與太古」');
+        conds.push(STR(1225));
       }
 
       var condText = conds.join(' 且 ');
       var isHighRisk = (maxRarity >= 5 || maxRarity < 0 || maxLevel === null || maxAncient < 0);
 
       if (isHighRisk) {
-        showConfirmDialog('確定要分解符合 ' + condText + ' 的未鎖定裝備嗎？\n此操作無法復原。', function () {
+        showConfirmDialog(STR(1226, condText), function () {
           salvageAllUnlocked(maxRarity, maxLevel, maxAncient);
           salvagePanel.style.display = 'none';
-        }, { title: '裝備拆解確認', danger: true });
+        }, { title: STR(1227), danger: true });
       } else {
         salvageAllUnlocked(maxRarity, maxLevel, maxAncient);
         salvagePanel.style.display = 'none';
@@ -13336,13 +13318,13 @@ function initUI() {
       keys: [nodePendingKey('inv-expand')],
       panels: ['inv', 'header']
     }).catch(function (error) {
-      reportUiCommandFailure('擴充背包', error, ['inv', 'header']);
+      reportUiCommandFailure(STR(1216), error, ['inv', 'header']);
     });
   });
   var INV_SORT_MODES = [
     { key: 'level', label: '🔄 排序 (等級)', desc: '等級' },
-    { key: 'ancient', label: '✡️ 排序 (太古)', desc: '太古詞條數量' },
-    { key: 'rarity', label: '💎 排序 (品質)', desc: '品質' }
+    { key: 'ancient', label: '✡️ 排序 (太古)', desc: STR(1228) },
+    { key: 'rarity', label: STR(1229), desc: STR(1230) }
   ];
 
   function sortInventory() {
@@ -13354,15 +13336,15 @@ function initUI() {
     }).then(function (result) {
       var resultError = typeof uiCommandResultError === 'function' ? uiCommandResultError(result) : null;
       if (resultError) {
-        reportUiCommandFailure('背包排序', resultError, ['inv']);
+        reportUiCommandFailure(STR(1231), resultError, ['inv']);
         return;
       }
       UI.inventorySortIndex = workerSortIndex;
       var workerSortButton = $id('inv-sort');
       if (workerSortButton) workerSortButton.textContent = INV_SORT_MODES[workerSortIndex].label;
-      blog('🎒 背包已依' + INV_SORT_MODES[workerSortIndex].desc + '排序完成。', 'info', 'system');
+      blog(STR(1232, INV_SORT_MODES[workerSortIndex].desc), 'info', 'system');
     }).catch(function (error) {
-      reportUiCommandFailure('背包排序', error, ['inv']);
+      reportUiCommandFailure(STR(1231), error, ['inv']);
     });
   }
 
@@ -13447,7 +13429,7 @@ function initUI() {
         keys: [nodePendingKey('tower')],
         panels: ['tower']
       }).catch(function (error) {
-        reportUiCommandFailure('封魔塔撤退', error, ['tower']);
+        reportUiCommandFailure(STR(1233), error, ['tower']);
       });
     });
   });
@@ -13522,14 +13504,14 @@ function initUI() {
             keys: [nodePendingKey('forge-dust-fill')],
             panels: ['forge']
           }).catch(function (error) {
-            reportUiCommandFailure('神鑄自動補魔塵', error, ['forge']);
+            reportUiCommandFailure(STR(1234), error, ['forge']);
           });
         }
         sendUiCommand('forge.setAuto', { key: 'autoDust', on: autoDustOn }, {
           keys: [nodePendingKey('forge-autoDust')],
           panels: ['forge']
         }).catch(function (error) {
-          reportUiCommandFailure('神鑄自動魔塵設定', error, ['forge']);
+          reportUiCommandFailure(STR(1235), error, ['forge']);
         });
       }
     });
@@ -13539,7 +13521,7 @@ function initUI() {
           keys: [nodePendingKey('forge-autoForge')],
           panels: ['forge']
         }).catch(function (error) {
-          reportUiCommandFailure('神鑄自動鑄造設定', error, ['forge']);
+          reportUiCommandFailure(STR(1236), error, ['forge']);
         });
       }
     });
@@ -13568,7 +13550,7 @@ function initUI() {
       keys: [nodePendingKey('compare-equip')],
       panels: ['header', 'inv', 'equip']
     }).catch(function (error) {
-      reportUiCommandFailure('裝備比較設定', error, ['header', 'inv', 'equip']);
+      reportUiCommandFailure(STR(1237), error, ['header', 'inv', 'equip']);
     });
     return;
 
@@ -13581,11 +13563,11 @@ function initUI() {
       keys: [nodePendingKey('auto-equip')],
       panels: ['factory']
     }).catch(function (error) {
-      reportUiCommandFailure('自動穿裝設定', error, ['factory']);
+      reportUiCommandFailure(STR(1238), error, ['factory']);
     });
     blog(autoEquipOn
-      ? '🎽 已開啟自動穿裝：空的裝備部位會自動穿上裝備，已穿戴部位不再替換'
-      : '🎽 已關閉自動穿裝', 'info');
+      ? STR(1239)
+      : STR(1240), 'info');
     return;
   });
   // 頂欄網頁全螢幕切換；瀏覽器 F11 屬於瀏覽器層級，網頁無法代替 F11 退出

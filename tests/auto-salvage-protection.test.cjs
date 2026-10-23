@@ -1,11 +1,12 @@
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
-const indexHtml = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const indexHtml = readExpanded(path.join(root, 'index.html'));
 const styleCss = fs.readFileSync(path.join(root, 'css', 'style.css'), 'utf8');
 
 function loadGameContext() {
@@ -121,7 +122,7 @@ test('自動穿裝只填補空部位，不替換既有裝備', () => {
 });
 
 test('自動穿裝勾選項位於裝備頁，熔爐頁不再顯示舊名稱', () => {
-  assert.match(indexHtml, /id="toggle-autoequip"[^>]*>自動穿裝/);
+  assert.match(indexHtml, /id="toggle-autoequip"[^>]*>\s*(?:<span>)?自動穿裝/);
   assert.doesNotMatch(indexHtml, /id="nf-autoequip"/);
   assert.doesNotMatch(indexHtml, /更強自動換裝/);
   assert.match(indexHtml, /class="sec-title equip-detail-head"[\s\S]*class="equip-detail-controls"/);

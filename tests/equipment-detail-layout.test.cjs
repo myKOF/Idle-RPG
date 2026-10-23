@@ -1,4 +1,5 @@
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -23,7 +24,7 @@ test('裝備功能區加寬、詳情縮窄且素材寶石固定四欄', () => {
 });
 
 test('裝備評分移到裝備等級列右側，避免遮住裝備名稱', () => {
-  const item = fs.readFileSync(path.join(root, 'js/item.js'), 'utf8');
+  const item = readExpanded(path.join(root, 'js/item.js'));
   const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
   assert.doesNotMatch(item, /it-score it-score-top/);
   assert.match(item, /it-score it-score-sub/);
@@ -32,7 +33,7 @@ test('裝備評分移到裝備等級列右側，避免遮住裝備名稱', () =>
 });
 
 test('裝備詳情不渲染空附魔欄文字', () => {
-  const item = fs.readFileSync(path.join(root, 'js/item.js'), 'utf8');
+  const item = readExpanded(path.join(root, 'js/item.js'));
   assert.doesNotMatch(item, /空附魔欄/);
 });
 

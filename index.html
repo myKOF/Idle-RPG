@@ -129,20 +129,20 @@
               </div>
               <div class="equip-right-col">
                 <div class="sec-title equip-detail-head">
-                  <span>裝備詳情</span>
+                  <span data-str="1065"></span>
                   <span class="equip-detail-controls">
                     <label style="font-size: 13px; font-weight: normal; cursor: pointer; color: var(--text);">
-                      <input type="checkbox" id="toggle-compare" style="margin-right: 4px; cursor: pointer;">比較裝備
+                      <input type="checkbox" id="toggle-compare" style="margin-right: 4px; cursor: pointer;"><span data-str="1066"></span>
                     </label>
                     <label id="lbl-autoequip" style="font-size: 13px; font-weight: normal; cursor: pointer; color: var(--text);">
-                      <input type="checkbox" id="toggle-autoequip" style="margin-right: 4px; cursor: pointer;">自動穿裝
+                      <input type="checkbox" id="toggle-autoequip" style="margin-right: 4px; cursor: pointer;"><span data-str="1067"></span>
                     </label>
                   </span>
                 </div>
                 <div class="equip-middle-row">
                   <div class="equip-detail-frame">
                     <div id="detail-pane" class="panel">
-                      <div class="hint">點選裝備查看詳情</div>
+                      <div class="hint" data-str="1198"></div>
                     </div>
                   </div>
                   <div id="equip-material-panel" class="equip-material-panel" aria-live="polite"></div>
@@ -154,88 +154,88 @@
           <div id="inv-section-box" class="equip-section-box">
             <div class="inv-head">
               <span class="sec-title" style="display: flex; align-items: center; gap: 8px;">
-                背包 <span id="inv-count">0/60</span>
-                <button id="inv-expand" class="btn sm" data-tt-title="擴充背包空間" data-tt-desc="增加背包容量">➕ 擴充 (10000<img src="images/icon_gold.png" class="res-icon">)</button>
+                <span data-str="1068"></span> <span id="inv-count">0/60</span>
+                <button id="inv-expand" class="btn sm" data-str-attr="data-tt-title:1069;data-tt-desc:1070"><span data-str="1071"></span><img src="images/icon_gold.png" class="res-icon">)</button>
               </span>
               <div style="display: flex; gap: 6px; align-items: center;">
-                <input type="text" id="inv-keyword-filter" class="input sm" placeholder="關鍵字篩選" style="display: none; background: #0b0f16; color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 2px 5px; font-size: 12px; height: 25px; width: 85px; outline: none; white-space: nowrap;" data-tt-title="關鍵字篩選" data-tt-desc="輸入裝備詞條或傳奇特效關鍵字，符合者亮起、其餘置灰（僅限內測服）">
+                <input type="text" id="inv-keyword-filter" class="input sm" style="display: none; background: #0b0f16; color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 2px 5px; font-size: 12px; height: 25px; width: 85px; outline: none; white-space: nowrap;" data-str-attr="placeholder:1072;data-tt-title:1072;data-tt-desc:1073">
                 <div class="inv-filter-wrap" id="inv-filter-container">
-                  <button type="button" id="inv-filter-btn" class="btn sm" aria-haspopup="true" aria-expanded="false">篩選<span id="inv-filter-count" class="inv-filter-count"></span> ▾</button>
+                  <button type="button" id="inv-filter-btn" class="btn sm" aria-haspopup="true" aria-expanded="false"><span data-str="1074"></span><span id="inv-filter-count" class="inv-filter-count"></span> ▾</button>
                   <div id="inv-filter-panel" class="inv-filter-panel" style="display: none;">
-                    <label class="inv-filter-row"><span>太古</span>
+                    <label class="inv-filter-row"><span data-str="1075"></span>
                       <select id="inv-ancient-filter" class="dropdown sm" style="background: #0b0f16; color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 2px 14px 2px 5px; font-size: 12px; cursor: pointer; height: 25px; outline: none; white-space: nowrap;">
-                        <option value="" style="color: var(--text);">不限太古</option>
-                        <option value="0" style="color: var(--text); background: #000;">0 太古</option>
-                        <option value="1" style="color: #fb923c; background: #000;">1 太古</option>
-                        <option value="2" style="color: #fb923c; background: #000;">2 太古</option>
-                        <option value="3" style="color: #fb923c; background: #000;">3 太古</option>
-                        <option value="4" style="color: #fb923c; background: #000;">4 太古</option>
-                        <option value="5" style="color: #fb923c; background: #000;">5 太古</option>
-                        <option value="6" style="color: #fb923c; background: #000;">6 太古</option>
-                        <option value="7" style="color: #fb923c; background: #000;">7+ 太古</option>
+                        <option value="" style="color: var(--text);" data-str="1076"></option>
+                        <option value="0" style="color: var(--text); background: #000;" data-str="1077"></option>
+                        <option value="1" style="color: #fb923c; background: #000;" data-str="1078"></option>
+                        <option value="2" style="color: #fb923c; background: #000;" data-str="1079"></option>
+                        <option value="3" style="color: #fb923c; background: #000;" data-str="1080"></option>
+                        <option value="4" style="color: #fb923c; background: #000;" data-str="1081"></option>
+                        <option value="5" style="color: #fb923c; background: #000;" data-str="1082"></option>
+                        <option value="6" style="color: #fb923c; background: #000;" data-str="1083"></option>
+                        <option value="7" style="color: #fb923c; background: #000;" data-str="1084"></option>
                       </select>
                     </label>
-                    <label class="inv-filter-row"><span>品質</span>
+                    <label class="inv-filter-row"><span data-str="1230"></span>
                       <select id="inv-rarity-filter" class="dropdown sm" style="background: #0b0f16; color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 2px 14px 2px 5px; font-size: 12px; cursor: pointer; height: 25px; outline: none; white-space: nowrap;">
-                        <option value="" style="color: var(--text);">取消篩選</option>
-                        <option value="0" style="color: #9aa5b1; background: #000;">普通</option>
-                        <option value="1" style="color: #4ade80; background: #000;">精良</option>
-                        <option value="2" style="color: #38bdf8; background: #000;">稀有</option>
+                        <option value="" style="color: var(--text);" data-str="1085"></option>
+                        <option value="0" style="color: #9aa5b1; background: #000;" data-str="1086"></option>
+                        <option value="1" style="color: #4ade80; background: #000;" data-str="1087"></option>
+                        <option value="2" style="color: #38bdf8; background: #000;" data-str="1088"></option>
                         <option value="3" style="color: #ffd700; background: #000;">獨特</option>
                         <option value="4" style="color: #c084fc; background: #000;">史詩</option>
-                        <option value="5" style="color: #fb923c; background: #000;">傳說</option>
-                        <option value="6" style="color: #f87171; background: #000;">神話</option>
-                        <option value="7" style="color: #b8860b; background: #000;">創世</option>
-                        <option value="8" style="color: #f5c542; background: #000;">神鑄創世</option>
-                        <option value="9" style="color: #c084fc; background: #000;">混沌</option>
-                        <option value="10" style="color: #ff6bcb; background: #000;">神鑄混沌</option>
+                        <option value="5" style="color: #fb923c; background: #000;" data-str="1089"></option>
+                        <option value="6" style="color: #f87171; background: #000;" data-str="1090"></option>
+                        <option value="7" style="color: #b8860b; background: #000;" data-str="1091"></option>
+                        <option value="8" style="color: #f5c542; background: #000;" data-str="1092"></option>
+                        <option value="9" style="color: #c084fc; background: #000;" data-str="1093"></option>
+                        <option value="10" style="color: #ff6bcb; background: #000;" data-str="1094"></option>
                       </select>
                     </label>
-                    <button type="button" id="inv-filter-clear" class="btn sm">清除篩選</button>
+                    <button type="button" id="inv-filter-clear" class="btn sm" data-str="1095"></button>
                   </div>
                 </div>
                 <button id="inv-sort" class="btn sm">🔄 排序 (等級)</button>
                 <div style="position: relative; display: inline-block;" id="salvage-settings-container">
-                  <button id="btn-salvage-settings" class="btn sm warn">⚒️ 分解設定</button>
+                  <button id="btn-salvage-settings" class="btn sm warn" data-str="1096"></button>
                   <div id="salvage-settings-panel"
                     style="display: none; position: absolute; top: 100%; right: 0; background: #0b0f16; border: 1px solid #1b2230; padding: 12px; border-radius: 8px; z-index: 100; box-shadow: 0 4px 10px rgba(0,0,0,0.8); width: max-content; min-width: 250px; margin-top: 5px; flex-direction: column; gap: 10px;">
                     <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; color: #94a3b8; width: 100%;">
-                      <span>品質門檻：</span>
+                      <span data-str="1097"></span>
                       <select id="salvage-rarity-select" class="dropdown" style="flex: 1; font-size: 12px; padding: 4px 6px;">
-                        <option value="-1">不限品質</option>
-                        <option value="0">普通及以下品質</option>
-                        <option value="1">精良及以下品質</option>
-                        <option value="2">稀有及以下品質</option>
-                        <option value="3">獨特及以下品質</option>
-                        <option value="4">史詩及以下品質</option>
-                        <option value="5">傳說及以下品質</option>
-                        <option value="6">神話及以下品質</option>
-                        <option value="7">創世及以下品質</option>
-                        <option value="9">混沌品質</option>
+                        <option value="-1" data-str="1098"></option>
+                        <option value="0" data-str="1099"></option>
+                        <option value="1" data-str="1100"></option>
+                        <option value="2" data-str="1101"></option>
+                        <option value="3" data-str="1102"></option>
+                        <option value="4" data-str="1103"></option>
+                        <option value="5" data-str="1104"></option>
+                        <option value="6" data-str="1105"></option>
+                        <option value="7" data-str="1106"></option>
+                        <option value="9" data-str="1107"></option>
                       </select>
                     </div>
                     <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; color: #94a3b8; width: 100%;">
-                      <span>太古門檻：</span>
+                      <span data-str="1108"></span>
                       <select id="salvage-ancient-select" class="dropdown" style="flex: 1; font-size: 12px; padding: 4px 6px;">
-                        <option value="-1">不限太古</option>
-                        <option value="0">0 太古及以下</option>
-                        <option value="1">1 太古及以下</option>
-                        <option value="2">2 太古及以下</option>
-                        <option value="3">3 太古及以下</option>
-                        <option value="4">4 太古及以下</option>
-                        <option value="5">5 太古及以下</option>
-                        <option value="6">6 太古及以下</option>
-                        <option value="7">7 太古及以下</option>
+                        <option value="-1" data-str="1076"></option>
+                        <option value="0" data-str="1109"></option>
+                        <option value="1" data-str="1110"></option>
+                        <option value="2" data-str="1111"></option>
+                        <option value="3" data-str="1112"></option>
+                        <option value="4" data-str="1113"></option>
+                        <option value="5" data-str="1114"></option>
+                        <option value="6" data-str="1115"></option>
+                        <option value="7" data-str="1116"></option>
                       </select>
                     </div>
                     <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; color: #94a3b8; width: 100%;">
-                      <span>等級上限：</span>
+                      <span data-str="1117"></span>
                       <div style="display: flex; align-items: center; gap: 4px;">
-                        <input type="number" id="salvage-level-input" min="1" max="9999" placeholder="不限等級" class="input sm" style="width: 85px; text-align: center; background: #111827; border: 1px solid #1b2230; color: #fff; border-radius: 4px; padding: 3px 6px; font-size: 12px;">
-                        <span style="font-size: 12px; color: #94a3b8;">級及以下</span>
+                        <input type="number" id="salvage-level-input" min="1" max="9999" class="input sm" style="width: 85px; text-align: center; background: #111827; border: 1px solid #1b2230; color: #fff; border-radius: 4px; padding: 3px 6px; font-size: 12px;" data-str-attr="placeholder:1118">
+                        <span style="font-size: 12px; color: #94a3b8;" data-str="1119"></span>
                       </div>
                     </div>
-                    <button id="btn-salvage-confirm" class="btn sm warn" style="width: 100%; margin-top: 2px;">確定分解</button>
+                    <button id="btn-salvage-confirm" class="btn sm warn" style="width: 100%; margin-top: 2px;" data-str="1120"></button>
                   </div>
                 </div>
               </div>
@@ -944,9 +944,9 @@
   <script src="js/strings_data.js?v=fd850ee0"></script>
   <script src="js/strings.js?v=1.0.0"></script>
   <script src="js/ui-scale.js?v=1.0.1"></script>
-  <script src="js/data.js?v=1.0.100"></script>
+  <script src="js/data.js?v=1.0.101"></script>
   <script src="js/status.js?v=1.0.42"></script>
-  <script src="js/runeword_data.js?v=1.0.19"></script>
+  <script src="js/runeword_data.js?v=1.0.20"></script>
   <script src="js/gem_resonance_data.js?v=1.0.1"></script>
   <script src="js/formula.js?v=1.0.69"></script>
   <script src="js/battle-terrain.js?v=1.0.2"></script>
@@ -975,7 +975,7 @@
   <script src="js/battle-elite.js?v=1.0.8"></script>
   <script src="js/battle-renderer.js?v=1.6.199"></script>
   <script src="js/stats.js?v=1.0.4"></script>
-  <script src="js/item.js?v=1.0.28"></script>
+  <script src="js/item.js?v=1.0.29"></script>
   <script src="js/gem_resonance.js?v=1.0.5"></script>
   <script src="js/runeword.js?v=1.0.17"></script>
   <script src="js/skills.js?v=1.0.44"></script>
@@ -983,12 +983,12 @@
   <script src="js/skills2.js?v=1.0.357"></script>
   <script src="js/elite_data.js?v=1.0.7"></script>
   <script src="js/talents.js?v=1.0.11"></script>
-  <script src="js/player.js?v=1.0.18"></script>
+  <script src="js/player.js?v=1.0.19"></script>
   <script src="js/combat.js?v=1.0.90"></script>
   <script src="js/tower.js?v=1.0.36"></script>
   <script src="js/save.js?v=1.0.22"></script>
   <script src="js/ui-inventory-skin.js?v=1.0.1"></script>
-  <script src="js/ui.js?v=1.0.206"></script>
+  <script src="js/ui.js?v=1.0.207"></script>
   <script src="js/ui-runeword.js?v=1.0.15"></script>
   <script src="js/ui-gem-resonance.js?v=1.0.17"></script>
   <script src="js/ui-gem-workshop.js?v=1.0.2"></script>
@@ -1005,7 +1005,7 @@
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
-  <script src="js/bridge.js?v=1.0.355"></script>
+  <script src="js/bridge.js?v=1.0.356"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->

@@ -655,23 +655,23 @@ function enchantCatForType(type) {
 }
 // 附魔：消耗 1 本書 + 精華；同類附魔僅可升級為更高數值。回傳 null=成功
 function manualEnchant(it, bookKey) {
-  if (!ENCHANT_ENABLED) return '附魔功能已關閉（由符文取代）';
+  if (!ENCHANT_ENABLED) return STR(1121);
   var e = ENCHANTS[bookKey];
-  if (!e) return '未知附魔書';
-  if ((G.player.books[bookKey] || 0) < 1) return '沒有「' + e.name + '」書';
+  if (!e) return STR(1122);
+  if ((G.player.books[bookKey] || 0) < 1) return STR(1123, e.name);
   var cat = enchantCatForType(it.slot);
   if (e.cat !== cat) {
-    var catNames = { atk: '攻擊', def: '防禦', util: '功能' };
-    return SLOT_INFO[it.slot].name + '只能使用' + catNames[cat] + '類附魔';
+    var catNames = { atk: '攻擊', def: '防禦', util: STR(1124) };
+    return STR(1125, SLOT_INFO[it.slot].name, catNames[cat]);
   }
-  if (G.player.essence < ENCHANT_ESSENCE_COST) return '附魔精華不足（需 ' + ENCHANT_ESSENCE_COST + '）';
+  if (G.player.essence < ENCHANT_ESSENCE_COST) return STR(1126, ENCHANT_ESSENCE_COST);
   var ens = itemEnchants(it);
   var same = null;
   for (var i = 0; i < ens.length; i++) if (ens[i].key === bookKey) { same = ens[i]; break; }
   if (same) {
-    if (enchantValueFor(it, bookKey, 0) <= enchantValue(it, same)) return '已有同類附魔且數值不會提升';
+    if (enchantValueFor(it, bookKey, 0) <= enchantValue(it, same)) return STR(1127);
   } else if (ens.length >= enchantCapFor(it)) {
-    return '附魔欄已滿（點擊既有附魔可取下）';
+    return STR(1128);
   }
   G.player.books[bookKey]--;
   G.player.essence -= ENCHANT_ESSENCE_COST;
@@ -700,8 +700,8 @@ function removeEnchantAt(it, idx) {
 function rerollResourceError(cost) {
   var missing = [];
   if (G.player.gold < cost.gold) missing.push('金幣 ' + fmt(cost.gold));
-  if (G.player.essence < cost.essence) missing.push('精華 ' + cost.essence);
-  return missing.length ? '資源不足（需要 ' + missing.join('、') + '）' : null;
+  if (G.player.essence < cost.essence) missing.push(STR(1129, cost.essence));
+  return missing.length ? STR(1130, missing.join('、')) : null;
 }
 function consumeRerollResources(cost) {
   G.player.gold -= cost.gold;
@@ -723,7 +723,7 @@ function enchantLine(it, en) {
   var val = en.key === 'loot' ? effectiveDropRateEffect(raw) : raw;
   // 六系抗性附魔＝獨立乘區，顯示為「XX屬性抗性額外+N%」
   if (ENCHANT_RES_MAP[en.key]) {
-    return e.emoji + ' ' + e.name.replace('抗性', '屬性抗性') + '額外+' + pctStr(val);
+    return STR(1131, e.emoji, e.name.replace('抗性', '屬性抗性'), pctStr(val));
   }
   var vs = (e.cat === 'atk') ? '+' + fmt(val) : '+' + pctStr(val);
   return e.emoji + ' ' + e.name + ' ' + vs;
@@ -738,29 +738,28 @@ function enchantLine(it, en) {
    洗煉模式只渲染屬性選取，費用與執行按鈕由 UI 裝備操作列處理。 */
 function itemSocketHTML(it, mode) {
   var sockets = Array.isArray(it.sockets) ? it.sockets : [];
-  var h = '<div class="it-sockets">' + (mode ? '' : '<div class="it-sockets-title">寶石鑲孔</div>');
+  var h = '<div class="it-sockets">' + (mode ? '' : '<div class="it-sockets-title">' + STR(1132) + '</div>');
   for (var si = 0; si < sockets.length; si++) {
     var g = sockets[si], text;
-    if (g && g.fused) text = (si + 1) + '. ' + fusedGemIconHTML(g.fused, 'gi-inline') + ' ' + esc('融合寶石（' + fusedGemStatText(g.fused) + '）');
+    if (g && g.fused) text = (si + 1) + '. ' + fusedGemIconHTML(g.fused, 'gi-inline') + ' ' + esc(STR(1133, fusedGemStatText(g.fused)));
     else if (g && GEM_TYPES[g.type]) {
       var gt = GEM_TYPES[g.type];
       text = '<span class="sk-name">' + (si + 1) + '. ' + gemIconHTML(g.type, g.level, 'gi-inline') + ' ' + esc(GEM_NAMES[g.level] + gt.name) + '</span>' +
         '<span class="sk-val">' + esc(gt.statName.replace('%', '')) + ' +' +
         (gt.pct ? pctStr(gemStatValue(g.type, g.level)) : fmt(gemStatValue(g.type, g.level))) + '</span>';
-    } else text = '◇ 寶石鑲孔 ' + (si + 1) + '（空）';
+    } else text = STR(1134, (si + 1));
     var cls = 'socket ' + (g ? 'filled' + (g.fused ? ' fused-socket' : '') : 'empty');
     if (mode) {
       h += '<div class="' + cls + ' socket-row' + (mode.selIdx === si ? ' is-socket-selected' : '') + '">' +
         '<button type="button" class="socket-pick" data-socket-pick="' + si + '" aria-pressed="' + (mode.selIdx === si) + '"' +
         (mode.pending ? ' disabled' : '') + '>' + text + '</button>';
-      if (g) h += '<button type="button" class="socket-remove" data-socket-remove="' + si + '" aria-label="卸下寶石鑲孔 ' + (si + 1) + ' 的寶石"' +
-        (mode.pending ? ' disabled' : '') + '>卸下</button>';
+      if (g) h += '<button type="button" class="socket-remove" data-socket-remove="' + si + '" aria-label="' + STR(1135, (si + 1)) + '"' + (mode.pending ? ' disabled' : '') + '>' + STR(74) + '</button>';
       h += '</div>';
     } else {
       h += '<span class="' + cls + '">' + text + '</span>';
     }
   }
-  if (!sockets.length) h += '<div class="equip-material-empty">此裝備沒有寶石鑲孔</div>';
+  if (!sockets.length) h += '<div class="equip-material-empty">' + STR(1136) + '</div>';
   return h + '</div>';
 }
 
@@ -834,7 +833,7 @@ function itemHeaderHTML(it, opts) {
 
   // 詞條池內容保留為隱藏模板，點擊按鈕時會搬到 body 層的獨立浮層，避免被詳情捲軸裁切。
   var poolHtml = '<div class="it-pool-box" aria-hidden="true">';
-  poolHtml += '<div class="it-pool-title">可能出現的詞條：</div>';
+  poolHtml += '<div class="it-pool-title">' + STR(1137) + '</div>';
   for (var k in AFFIX_POOL) {
     var d = AFFIX_POOL[k];
     if (typeof affixIsAllLocked === 'function' && affixIsAllLocked(k)) continue;
@@ -858,29 +857,27 @@ function itemHeaderHTML(it, opts) {
   poolHtml += '</div>';
 
   var wdet = (typeof weaponDef === 'function') ? weaponDef(it) : null; // 武器類型（非武器＝null）
-  var lockBtnHtml = '<button type="button" class="btn btn-it-lock' + (it.locked ? ' locked' : '') + '" data-act="lock" title="' + (it.locked ? '已鎖定（點擊解鎖）' : '未鎖定（點擊鎖定）') + '" aria-label="' + (it.locked ? '解鎖' : '鎖定') + '">' +
+  var lockBtnHtml = '<button type="button" class="btn btn-it-lock' + (it.locked ? ' locked' : '') + '" data-act="lock" title="' + (it.locked ? STR(1138) : STR(1139)) + '" aria-label="' + (it.locked ? STR(1140) : STR(1141)) + '">' +
     '<svg viewBox="0 0 24 24" class="it-lock-svg" aria-hidden="true">' +
     '<rect x="4" y="10" width="16" height="12" rx="2" ry="2"></rect>' +
     '<path d="' + (it.locked ? 'M7 10V7a5 5 0 0 1 10 0v3' : 'M7 10V7a5 5 0 0 1 9.5-2.2') + '"></path>' +
     '</svg>' +
     '</button>';
   var headActionsHtml = '<span class="it-head-actions">' +
-    (opts.isEquipped ? '<span class="equipped-tag">現有</span>' : '') +
+    (opts.isEquipped ? STR(1142) : '') +
     lockBtnHtml +
-    (showAffixReroll ? '<button type="button" class="btn-it-pool" data-affix-pool-toggle aria-label="查看可能詞條">!</button>' + poolHtml : '') +
+    (showAffixReroll ? '<button type="button" class="btn-it-pool" data-affix-pool-toggle aria-label="' + STR(1143) + '">!</button>' + poolHtml : '') +
     '</span>';
 
   var h = '<div class="it-name" style="position:relative; color:' + r.color + '">' +
     (wdet ? wdet.emoji : SLOT_INFO[it.slot].emoji) + ' ' + esc(it.name) +
     (it.upgrade ? ' <span class="it-up' + ((opts && opts.justUpgraded) ? ' upgrade-pop' : '') + '">+' + it.upgrade + '</span>' : '') +
-    (it.synthesized ? ' <span class="it-syn">✦合成</span>' : '') +
+    (it.synthesized ? ' ' + STR(1144) : '') +
     headActionsHtml +
     '</div>';
 
-  h += '<div class="it-sub"><span>' + r.name + '・' +
-    ((typeof itemTypeLabel === 'function') ? itemTypeLabel(it) : SLOT_INFO[it.slot].name) + '・' +
-    '<span class="it-level" style="color:' + levelRarity.color + '">等級 ' + it.level + '</span>';
-  return h + '</span><span class="it-score it-score-sub">評分 ' + fmt(curScore) + '</span></div>';
+  h += '<div class="it-sub"><span>' + STR(1145, r.name, ((typeof itemTypeLabel === 'function') ? itemTypeLabel(it) : SLOT_INFO[it.slot].name)) + '<span class="it-level" style="color:' + levelRarity.color + '">' + STR(1146, it.level) + '</span>';
+  return '' + h + '</span>' + STR(1147, fmt(curScore)) + '</div>';
 }
 
 function itemDetailHTML(it, cmp, opts) {
@@ -929,8 +926,8 @@ function itemDetailHTML(it, cmp, opts) {
     var maxDisplay = def.pct ? pctStr(limits.max * um * limitMult) : fmt(limits.max * um * limitMult);
     var isAncient = !!it.affixes[i].ancient;
     var limitTip = isAncient
-      ? '太古詞條：位置產出時決定、永久固定；數值必為詞條最大值 × 太古倍率，洗煉只變換詞條種類'
-      : '洗煉區間：' + minDisplay + ' ~ ' + maxDisplay;
+      ? STR(1148)
+      : STR(1149, minDisplay, maxDisplay);
 
     var valColor = isMax ? '#fbbf24' : '';
     var valHtml = '<span' + (valColor ? ' style="color:' + valColor + ';font-weight:bold"' : '') + '>' + (def.pct ? pctStr(vCur) : fmt(vCur)) + '</span>';
@@ -949,7 +946,7 @@ function itemDetailHTML(it, cmp, opts) {
     var lineStyle = (vCmp === 0 && cmp && !isAncient) ? 'color: #4ade80;' : '';
     var catClass = ' afx-' + affixCat(k);   // 詞條分類分色（基礎紫/進攻粉/防禦青/功能綠）
     if (isAncient) catClass += ' ancient-affix';
-    var marker = isAncient ? '<span class="ancient-star" aria-label="太古詞條">✡</span>' : '◆';
+    var marker = isAncient ? '<span class="ancient-star" aria-label="' + STR(1150) + '">✡</span>' : '◆';
     if (showAffixReroll) {
       var rowClass = rerollActive ? ' is-reroll-pickable' + (rrSelected ? ' is-reroll-selected' : '') : '';
       h += '<div class="it-affix-row it-affix' + catClass + rowClass + '" style="' + lineStyle + '">' +
@@ -1002,7 +999,7 @@ function itemDetailHTML(it, cmp, opts) {
       if (!gd) return;
       var gv = godPassiveValue(gp, it);
       var gpDesc = gp.key === 'greed'
-        ? '金幣加成與掉寶率提高 ' + fmt1(gv) + '%／' + fmt1(effectiveDropRateEffect(gv)) + '%'
+        ? STR(1151, fmt1(gv), fmt1(effectiveDropRateEffect(gv)))
         : esc(gd.desc).replace('{v}', fmt1(gv));
       h += '<div class="it-godpassive">【' + esc(gd.name) + '】' + gpDesc + '</div>';
     });
@@ -1028,7 +1025,7 @@ function itemDetailHTML(it, cmp, opts) {
       if (!e) return;
       if (!cmp) {
         var canRemove = !!(opts.enchant && opts.enchant.active);
-        var removeAttrs = canRemove ? ' data-enchant-remove="' + enIdx + '" data-tip="點擊取下（返還附魔書，精華不退）"' : '';
+        var removeAttrs = canRemove ? ' data-enchant-remove="' + enIdx + '" data-tip="' + STR(1152) + '"' : '';
         h += '<div class="it-enchant' + (canRemove ? ' removable' : '') + '"' + removeAttrs + '>' + esc(enchantLine(it, en)) + '</div>';
       } else if (!(en.key in cmpEnMap)) {
         h += '<div class="it-enchant" style="color: #4ade80">' + esc(enchantLine(it, en)) + '</div>';
@@ -1093,7 +1090,7 @@ function rerollSingleAffix(it, affixKey) {
       used[it.affixes[i].key] = true;
     }
   }
-  if (targetIdx < 0) return '找不到指定的屬性';
+  if (targetIdx < 0) return STR(1153);
 
   var pool = [];
   for (var k in AFFIX_POOL) {
@@ -1106,7 +1103,7 @@ function rerollSingleAffix(it, affixKey) {
     pool.push([k, d.weight]);
   }
 
-  if (pool.length === 0) return '沒有其他可用的屬性';
+  if (pool.length === 0) return STR(1154);
 
   consumeRerollResources(cost);
 

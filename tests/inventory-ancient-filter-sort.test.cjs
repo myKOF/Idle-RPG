@@ -1,4 +1,5 @@
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -6,9 +7,9 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 
 test('背包太古數量篩選與排序功能驗證', () => {
-  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
-  const item = fs.readFileSync(path.join(root, 'js/item.js'), 'utf8');
+  const html = readExpanded(path.join(root, 'index.html'));
+  const ui = readExpanded(path.join(root, 'js/ui.js'));
+  const item = readExpanded(path.join(root, 'js/item.js'));
 
   // 1. 驗證 index.html 包含 #inv-ancient-filter 且位於 #inv-rarity-filter 左側
   assert.match(html, /id="inv-ancient-filter"/);
@@ -45,7 +46,7 @@ test('背包太古數量篩選與排序功能驗證', () => {
 });
 
 test('sim.worker.js 的 player.setInvSort 能正確對 G.inventory 執行排序', () => {
-  const workerSrc = fs.readFileSync(path.join(root, 'js/worker/sim.worker.js'), 'utf8');
+  const workerSrc = readExpanded(path.join(root, 'js/worker/sim.worker.js'));
   assert.match(workerSrc, /'player\.setInvSort':\s*function/);
   assert.match(workerSrc, /G\.inventory\.sort\(/);
 
