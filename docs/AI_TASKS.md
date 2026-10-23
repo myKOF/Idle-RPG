@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## WORLD-MAP-POINTER-20261023 — 指針朝下、淡光圈呼吸與關卡列微調
+
+- Owner：Codex；Done，單一開發者。使用者要求目前所在地指針反向朝下、整體縮小20%、動態只保留微幅上下移動，下方小光圈輕微明暗發光。前置核准綠色卡通指針與現有CSS動畫已具備。
+- 2026-10-24追加：使用者要求關卡資訊再往上，在整個兩列控制區上下置中；目前關卡字號加2，場景名稱粗體。範圍追加同CSS控制區、index兩列共用容器、LV及本段；仍不修改JS／玩法或其他UI。
+- 同日追加：關閉鈕改為融合地圖右上裝飾的圓形金屬框，沿原點擊／鍵盤關閉接線；同CSS關閉鈕樣式與LV說明列入範圍，無新素材。
+- 允許：css/world-map.css僅指針與光圈／本次關卡列、index.html僅兩列共用容器與CSS快取、docs/WORLD_MAP.md、LV_upgrade_system.md與本段；禁止素材重繪／其他UI／JS／玩法／配置／Worker／存檔／其他聊天工作，不合併推送。
+- 預檢目標均無其他副本／分支來源，保留同副本knight3d進行中修改。以CSS固定翻轉、等比尺寸與既有浮動容器實作，光圈只動畫opacity，無Timer／VFX Preset或新素材。驗收方向／比例／位移／光圈明暗、減少動態偏好、既有地圖回歸／Build與diff後獨立Commit。
+- 完成五檔：指針固定翻轉180度且移除旋轉動畫，clamp三段尺寸均乘0.8，浮動幅度3px／2.6秒；小光圈固定在下方，2.8秒於opacity0.5～0.85輕微明暗，減少動態偏好停止兩者。兩列共用battle-navigation網格，關卡資訊跨兩列置中，相較工具列上移約18px，字號16→18、場景名稱700粗體，580px以下換第三列避免重疊。關閉鈕36px圓形古銅漸層金屬框、內環及微凹面，覆於原右上角裝飾，沿原ARIA／點擊／焦點接線；CSS快取1.0.2，LV與地圖說明同步。
+- 驗證：`node --test --test-reporter=spec tests/world-map-ui.test.cjs tests/stage-jump-ui.test.cjs tests/battle-fullscreen.test.cjs tests/fullscreen-toggle.test.cjs`16/16通過；`npm.cmd run build`578檔通過，`node tools/world-map/export-source.cjs --check`與diff檢查通過。不新增低影響樣式測試或更動既有斷言。
+- 畫面：沿用先前IAB資源路徑不可用後的隔離Edge驗收，隨機本機來源載正式遊戲／真Worker，未讀寫玩家存檔或操作使用者分頁。用動畫時間點確認固定朝下、只位移0～-3px，光圈0.5～0.85；1920／780／390三寬尺寸比例皆約0.8，減量偏好停止動畫但保留朝向。關卡組對整個兩列區塊雙軸中心差皆小於0.01px，文字18px／700粗體；360px容器換列不重疊，全螢幕與Esc還原通過。圓形金屬關閉鈕目視及真正點擊關閉通過，Console warning／error與pageerror0。pointer-down-small.png、stage-header-refined.png、map-close-metal.png及pointer-verification.json留本聊天visualizations/world-map，臨時腳本清理。
+- 唯讀未改：共通規範／AGENTS／Workflow／prompts、WorldMapUI與ui.js接線、既有回歸、地圖及游標PNG／素材庫來源／匯出工具。自我Review確認沒有新素材、Timer、技能VFX、存檔／Protocol或玩法變更；素材庫無本輪變更，不建空Commit。角色模型與工具的其他聊天工作保留不提交。
+- 交付：遊戲Commit為本段所在`[Codex] fix: 調整世界地圖指針與關閉鈕並上移關卡資訊`，回覆附編號。無未完成需求或新增已知風險，可供Review／合併，未合併推送；限制為未測跨瀏覽器與玩家存檔長戰。下一步由使用者正常整合後重新整理驗收。
+
+
 ## WORLD-MAP-HEADER-20261023 — 關卡列置中與地圖白邊修正
 
 - Owner：Codex；Done，單一開發者。使用者要求紅框中的前後／最高關卡按鈕、目前／最高關卡資訊整組上下左右置中，場景名稱字號加2，世界地圖按鈕淺黃色底；續要求去除地圖外緣白邊。

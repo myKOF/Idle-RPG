@@ -1,18 +1,22 @@
 /* 薩爾維恩地圖：圖像保持核准原稿，互動只覆於場景文字附近。 */
 #zone-bar.world-map-current-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.world-map-current-zone { color: var(--gold, #d5b575); display: inline-flex; align-items: center; gap: 7px; min-width: 0; font-size: calc(1em + 2px); }
+.world-map-current-zone { color: var(--gold, #d5b575); display: inline-flex; align-items: center; gap: 7px; min-width: 0; font-size: calc(1em + 2px); font-weight: 700; }
 .world-map-current-zone .ui-ico { width: 20px; height: 20px; }
 /* 共用按鈕主題使用!important，入口顏色需同層級覆寫。 */
 #btn-world-map { flex: 0 0 auto; background: #ead99a !important; border-color: #b8a365 !important; color: #332a19 !important; text-shadow: none; }
 #btn-world-map:hover, #btn-world-map:focus-visible { background: #f3e4b4 !important; border-color: #d6bf77 !important; color: #332a19 !important; }
 .stage-navigation { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; }
-#ui-shell:not(.battle-fullscreen) #stage-bar { display: grid; grid-template-columns: minmax(0, 1fr) max-content minmax(0, 1fr); align-items: center; min-height: 32px; container-type: inline-size; }
+#stage-label { font-size: 18px; }
+#ui-shell:not(.battle-fullscreen) .battle-navigation { display: grid; grid-template-columns: minmax(0, 1fr) max-content minmax(0, 1fr); grid-template-rows: 32px 32px; align-items: center; row-gap: 4px; margin-bottom: 12px; container-type: inline-size; }
+#ui-shell:not(.battle-fullscreen) #zone-bar, #ui-shell:not(.battle-fullscreen) #stage-bar { display: contents; }
+#ui-shell:not(.battle-fullscreen) #current-zone-name { grid-column: 1; grid-row: 1; justify-self: start; }
+#ui-shell:not(.battle-fullscreen) #btn-world-map { grid-column: 3; grid-row: 1; justify-self: end; }
 #ui-shell:not(.battle-fullscreen) .stage-main-controls { display: contents; }
-#ui-shell:not(.battle-fullscreen) .stage-main-controls > .chk { grid-column: 1; grid-row: 1; justify-self: start; white-space: nowrap; }
-#ui-shell:not(.battle-fullscreen) .stage-navigation { grid-column: 2; grid-row: 1; align-self: center; justify-self: center; }
-#ui-shell:not(.battle-fullscreen) .stage-tools { grid-column: 3; grid-row: 1; margin-left: 0; justify-self: end; }
+#ui-shell:not(.battle-fullscreen) .stage-main-controls > .chk { grid-column: 1; grid-row: 2; justify-self: start; white-space: nowrap; }
+#ui-shell:not(.battle-fullscreen) .stage-navigation { grid-column: 2; grid-row: 1 / 3; align-self: center; justify-self: center; }
+#ui-shell:not(.battle-fullscreen) .stage-tools { grid-column: 3; grid-row: 2; margin-left: 0; justify-self: end; }
 @container (max-width: 580px) {
-  #ui-shell:not(.battle-fullscreen) .stage-navigation { grid-column: 1 / -1; grid-row: 2; }
+  #ui-shell:not(.battle-fullscreen) .stage-navigation { grid-column: 1 / -1; grid-row: 3; }
 }
 body.world-map-open { overflow: hidden; }
 .world-map-overlay[hidden], .world-map-overlay [hidden] { display: none !important; }
@@ -22,7 +26,10 @@ body.world-map-open { overflow: hidden; }
 .world-map-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 .world-map-tools { position: absolute; top: 3%; right: 2%; z-index: 5; display: flex; gap: 8px; align-items: center; }
 .world-map-tools button { white-space: nowrap; background: rgba(18,23,23,.9); }
-#world-map-close { width: 34px; height: 34px; font-size: 23px; padding: 0; }
+#world-map-close { position: relative; display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 2px solid #8c7756 !important; border-radius: 50% !important; background: radial-gradient(circle at 35% 25%, #615844, #34352d 58%, #242720) !important; box-shadow: inset 0 1px 2px rgba(236,218,173,.4), inset 0 -2px 3px #161810, 0 0 0 1px #22231b !important; color: #d4c29c !important; font-family: Georgia, serif; font-size: 22px; font-weight: 700; line-height: 1; text-shadow: 0 1px 2px #10130d; transform: none; }
+#world-map-close::before { content: ''; position: absolute; inset: 3px; border: 1px solid rgba(196,177,133,.27); border-radius: 50%; pointer-events: none; }
+#world-map-close:hover { border-color: #bda47b !important; color: #f0ddaf !important; filter: brightness(1.1); transform: none; }
+#world-map-close:focus-visible { outline: 2px solid #dec58f; outline-offset: 3px; }
 .world-map-realm[aria-pressed="true"] { border-color: #b3945d; color: #f2d79b; }
 .world-map-canvas { position: relative; width: 100%; }
 /* 外緣白底屬於原圖：只收掉薄邊，內部圖稿及熱區比例保持原樣。 */
@@ -34,12 +41,12 @@ body.world-map-open { overflow: hidden; }
 .world-map-hover-name { display: block; opacity: 0; white-space: nowrap; font-family: 'DFKai-SB', 'KaiTi', 'Noto Serif TC', serif; font-weight: 700; font-size: clamp(7px, 1.25cqw, 21px); line-height: 1; color: #fff0bc; text-shadow: -1px -1px 2px #201b13, 1px 1px 2px #201b13, 0 0 4px #201b13, 0 0 8px rgba(244,214,135,.65); transform: scale(1); transition: opacity .12s ease, transform .16s ease; pointer-events: none; }
 .world-map-hotspot:hover .world-map-hover-name, .world-map-hotspot:focus-visible .world-map-hover-name, .world-map-hotspot.is-selected .world-map-hover-name { opacity: 1; transform: scale(1.17); }
 .world-map-hotspot.is-locked { cursor: default; }
-.world-map-marker { position: absolute; pointer-events: none; transform: translate(-50%, -100%); width: clamp(20px, 3.2vw, 42px); height: clamp(20px, 3.2vw, 42px); filter: drop-shadow(0 2px 3px #000); }
+.world-map-marker { position: absolute; pointer-events: none; transform: translate(-50%, -100%); width: clamp(16px, 2.56vw, 33.6px); height: clamp(16px, 2.56vw, 33.6px); filter: drop-shadow(0 2px 3px #000); }
 .world-map-marker-motion { display: block; width: 100%; height: 100%; animation: world-map-bob 2.6s ease-in-out infinite; }
-.world-map-marker img { display: block; width: 100%; height: 100%; object-fit: contain; animation: world-map-location 7s linear infinite; transform-origin: 50% 50%; }
-.world-map-marker::after { content: ''; position: absolute; left: 14%; bottom: -8%; width: 72%; height: 20%; border-radius: 50%; background: radial-gradient(ellipse, rgba(175,222,135,.28), rgba(114,172,99,.14) 45%, transparent 72%); filter: blur(1px); }
-@keyframes world-map-location { from { transform: rotateY(0deg); } to { transform: rotateY(360deg); } }
-@keyframes world-map-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+.world-map-marker img { display: block; width: 100%; height: 100%; object-fit: contain; transform: rotate(180deg); }
+.world-map-marker::after { content: ''; position: absolute; left: 14%; bottom: -8%; width: 72%; height: 20%; box-sizing: border-box; border: 1px solid rgba(159,215,127,.35); border-radius: 50%; background: radial-gradient(ellipse, rgba(175,222,135,.28), rgba(114,172,99,.14) 45%, transparent 72%); box-shadow: 0 0 5px rgba(159,215,127,.18); opacity: .65; animation: world-map-halo 2.8s ease-in-out infinite; }
+@keyframes world-map-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+@keyframes world-map-halo { 0%, 100% { opacity: .5; } 50% { opacity: .85; } }
 .world-map-info { position: absolute; z-index: 3; width: min(238px, 27%); padding: 13px 15px; background: rgba(13,16,16,.97); border: 1px solid #9b8051; border-radius: 4px; box-shadow: 0 6px 22px rgba(0,0,0,.7); pointer-events: auto; }
 .world-map-info h3 { margin: 0 0 9px; font-size: 17px; color: #ebd6a2; }
 .world-map-info p { margin: 5px 0; line-height: 1.5; font-size: 13px; }
@@ -53,7 +60,7 @@ body.world-map-open { overflow: hidden; }
 .world-map-god-scene.is-selected, .world-map-god-scene.is-current { border-color: #dbc28b; color: #f4ddb3; }
 .world-map-god-scene.is-locked { opacity: .5; cursor: default; }
 .world-map-image-error { position: absolute; inset: 35% 20%; padding: 20px; text-align: center; background: #151716; border: 1px solid #8e7651; }
-@media (prefers-reduced-motion: reduce) { .world-map-marker img, .world-map-marker-motion { animation: none; } .world-map-hover-name { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .world-map-marker-motion, .world-map-marker::after { animation: none; } .world-map-hover-name { transition: none; } }
 @media (max-width: 720px) {
   .world-map-overlay { padding: 8px; }
   .world-map-tools { gap: 4px; }
