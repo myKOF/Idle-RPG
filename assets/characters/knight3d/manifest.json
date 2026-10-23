@@ -1,6 +1,7 @@
 {
-  "revision": 2,
-  "previewPrefix": "knight_revision2_handfix",
+  "revision": 3,
+  "previewPrefix": "knight_revision3_helmet",
+  "helmet": "fitted silver sallet",
   "offHand": "forward-facing chest guard",
   "shield": false,
   "proportions": "adult slender, approximately 7.5 heads",
@@ -11,9 +12,9 @@
   "blender": "5.2.3 LTS",
   "bones": 16,
   "meshParts": 1,
-  "vertices": 4901,
-  "faces": 4853,
-  "triangles": 9398,
+  "vertices": 5055,
+  "faces": 4998,
+  "triangles": 9664,
   "materials": [
     "Knight | single palette material"
   ],

@@ -1,7 +1,7 @@
 """Adult-proportioned silver knight, based on the supplied silhouette reference.
 
-No shield, closed bucket helmet, oversized head, spherical shoulder armor or cube
-boots. All geometry is original. Small face features are geometry, not a texture.
+No shield, oversized head, spherical shoulder armor or cube boots. The fitted
+silver sallet is original geometry, without an external model or texture.
 """
 import math
 import bpy
@@ -36,7 +36,7 @@ def build(ctx):
         if parent: bone.parent=data.edit_bones[parent]
     bpy.ops.object.mode_set(mode='OBJECT')
     rig.show_in_front=True
-    rig['design']='Revision 2: adult slender silver knight, original geometry, no shield'
+    rig['design']='Revision 3: adult slender silver knight, fitted silver sallet, no shield'
     rig['front']='-Y'
     rig['preview_status']='Revision candidate; not installed into game'
     rig['head_to_body_ratio']=7.5
@@ -57,8 +57,7 @@ def build(ctx):
     shell('slender exposed neck',[(2.22,.073,.071,0),(2.42,.067,.068,0)],skin,'head',12)
     shell('low silver neck guard',[(2.215,.128,.10,0),(2.29,.104,.082,0)],edge,'chest',12)
 
-    # Natural adult jaw, narrow facial planes and a short pale-ash hair silhouette.
-    # Head height ~.36m at ~2.72m authoring scale; no childlike eyes or big visor.
+    # Adult face remains visible below the fitted sallet; no oversized bucket.
     head=shell('adult face and jaw',[(2.365,.047,.058,-.015),(2.385,.067,.078,-.015),
         (2.415,.088,.093,-.016),(2.455,.104,.101,-.012),(2.495,.113,.105,-.006),
         (2.535,.115,.102,0),(2.565,.115,.101,.003),(2.595,.115,.102,.006),
@@ -83,20 +82,37 @@ def build(ctx):
         [(0,1,2),(0,2,3),(1,4,2),(3,2,4)],skin,'head')
     mesh('subtle mouth',[(-.029,-.103,2.463),(.029,-.103,2.463),
         (.018,-.108,2.459),(-.018,-.108,2.459)],[(0,1,2,3)],leather,'head')
-    vs=[]; count=16
+    vs=[]; count=20
     for ring in range(4):
         for i in range(count):
             angle=i*math.tau/count
             front=max(0,-math.sin(angle))
-            if ring==0: z=2.525+.083*front; rx,ry=.119,.106
-            elif ring==1: z=2.645; rx,ry=.110,.099
-            elif ring==2: z=2.691; rx,ry=.072,.064
-            else: z=2.711; rx,ry=.016,.016
-            vs.append((rx*math.cos(angle),.009+ry*math.sin(angle),z))
+            if ring==0: z=2.475+.115*front; rx,ry=.132,.124
+            elif ring==1: z=2.642; rx,ry=.129,.122
+            elif ring==2: z=2.705; rx,ry=.086,.082
+            else: z=2.735; rx,ry=.012,.018
+            # Restrained rear neck flare, no plume or exaggerated ornament.
+            yy=.012+ry*math.sin(angle)
+            if ring==0 and yy>0: yy+=.025
+            vs.append((rx*math.cos(angle),yy,z))
     fs=[(r*count+i,r*count+(i+1)%count,(r+1)*count+(i+1)%count,(r+1)*count+i)
         for r in range(3) for i in range(count)]
-    fs.append(tuple(range(48,64)))
-    mesh('short swept ash hair',vs,fs,hair,'head',0,True)
+    fs.append(tuple(range(3*count,4*count)))
+    mesh('fitted silver sallet crown',vs,fs,steel,'head',0,True)
+    # Dark ocular band under a bright angular brow reads at battle size.
+    mesh('sallet narrow eye opening',[(-.112,-.102,2.555),(0,-.143,2.558),
+        (.112,-.102,2.555),(.112,-.104,2.578),(0,-.145,2.580),
+        (-.112,-.104,2.578)],[(0,1,4,5),(1,2,3,4)],black,'head',0)
+    mesh('sallet raised brow',[(-.119,-.098,2.584),(0,-.152,2.590),
+        (.119,-.098,2.584),(.113,-.095,2.614),(0,-.140,2.626),
+        (-.113,-.095,2.614)],[(0,1,4,5),(1,2,3,4)],edge,'head',0)
+    for sign in [-1,1]:
+        mesh('sallet tapered cheek '+str(sign),[(sign*.121,-.078,2.572),
+            (sign*.132,.040,2.555),(sign*.098,.026,2.408),
+            (sign*.058,-.111,2.410),(sign*.077,-.127,2.490)],
+            [(0,1,2,3,4)],steel,'head',.004)
+        sphere('sallet visor pivot '+str(sign),(sign*.132,-.002,2.567),
+            (.008,.014,.014),darkmetal,'head',8)
 
     for side,sign in [('R',-1),('L',1)]:
         ua,fa,hand='upper_arm.'+side,'forearm.'+side,'hand.'+side

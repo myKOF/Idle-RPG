@@ -18,6 +18,7 @@ const files = [
   'tools/knight3d/silver_knight_motion.py',
   'tools/knight3d/render_batch.py',
   'tools/knight3d/package_previews.py',
+  'tools/knight3d/package_game_compare.py',
   'tools/knight3d/validate_asset.py',
   'tools/knight3d/sync-library.cjs',
 ];

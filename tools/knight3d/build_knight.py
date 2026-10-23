@@ -321,7 +321,7 @@ for area_ui in bpy.context.screen.areas if bpy.context.screen else []:
         area_ui.spaces.active.region_3d.view_location=vec((0,0,1.3))
 bpy.ops.wm.save_as_mainfile(filepath=str(OUT/'knight_batch1.blend'))
 
-manifest={'revision':2,'previewPrefix':'knight_revision2_handfix','offHand':'forward-facing chest guard','shield':False,'proportions':'adult slender, approximately 7.5 heads','status':'preview candidate; no game integration','front':'-Y','up':'Z',
+manifest={'revision':3,'previewPrefix':'knight_revision3_helmet','helmet':'fitted silver sallet','offHand':'forward-facing chest guard','shield':False,'proportions':'adult slender, approximately 7.5 heads','status':'preview candidate; no game integration','front':'-Y','up':'Z',
           'units':'meters, stylized proportion','blender':bpy.app.version_string,
           'bones':len(rig.data.bones),'meshParts':len(parts),
           'vertices':sum(len(o.data.vertices) for o,b in parts),

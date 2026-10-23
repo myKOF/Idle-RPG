@@ -1,16 +1,16 @@
-# 白銀騎士：原圖參考修正版（Revision 2）
+# 白銀騎士：銀盔與六動作對照（Revision 3）
 
-任務 KNIGHT-3D-REV2-20261023。此目錄是待使用者審查的角色製作包，尚未接入遊戲、沒有替換 `images/sprites/knight`。第一版可由遊戲 Commit 436a6357／素材庫 2c432f8 回溯。
+任務 KNIGHT-HELMET-SIX-COMPARE-20261024（承接 KNIGHT-3D-REV2-20261023）。此目錄是待使用者審查的角色製作包，尚未接入遊戲、沒有替換 `images/sprites/knight`。第一版可由遊戲 Commit 436a6357／素材庫 2c432f8 回溯。
 
-使用者指定：盡量復刻既有圖集的人物造型及全身動作，偏寫實、成人修長、美型；移除盾牌及刀光。原圖為主要參考，不以自創裝飾取代原造型。修正版重新查看原圖八方向及完整攻擊幀，改回露出頭部的輪廓、約7.5頭身、長腿收腰銀甲、深色腰帶及關節；保留甲片厚度、曲面、倒角與手部，不再硬壓在3,000三角面。低重心較開站姿、前傾跑步及兩種揮砍的沉身／步伐／髖胸轉動一併重作。盾牌幾何完全刪除。
+使用者指定：盡量復刻既有圖集的人物造型及全身動作，偏寫實、成人修長、美型；移除盾牌及刀光。原圖為主要參考，不以自創裝飾取代原造型。修正版重新查看原圖八方向及完整攻擊幀，先改回成人頭部輪廓，依最新要求再加貼合頭形的銀色sallet頭盔、窄眼縫與收尖頰甲；約7.5頭身、長腿收腰銀甲、深色腰帶及關節；保留甲片厚度、曲面、倒角與手部，不再硬壓在3,000三角面。低重心較開站姿、前傾跑步及兩種揮砍的沉身／步伐／髖胸轉動一併重作。盾牌幾何完全刪除。
 
 ## 模型與檔案
 
 - `knight_batch1.blend`：檔名沿用穩定來源路徑，內容已為修正版；可編輯模型、16骨骼、六個 Action、預覽攝影棚。開啟後選 KNIGHT_RIG，在 Action Editor 選動作；NLA軌預設靜音，避免動作疊加。
 - `knight_batch1.glb`：只含角色，排除攝影棚、燈光、攝影機；六個具名骨架動畫、兩張36×4材質色盤內嵌。
-- `manifest.json`：revision=2、shield=false、統計與六組動作的幀率／幀數。
+- `manifest.json`：revision=3、helmet=fitted silver sallet、shield=false、統計與六組動作的幀率／幀數。
 
-實際統計：**9,398 三角面、4,851 Blender 多邊形、4,901 製作頂點**；匯出後因法線／UV分裂為9,398頂點。**1網格、1 primitive、1材質、16骨骼、每頂點1個骨骼權重**；GLB **644,184 bytes（約629 KiB）**。12,000三角面的製作檢查只避免非預期膨脹，並非已通過遊戲效能驗收；單primitive也不代表最終引擎包含陰影等pass時只有1 draw call。
+實際統計：**9,664 三角面、4,998 Blender 多邊形、5,055 製作頂點**；匯出後因法線／UV分裂為9,556頂點。**1網格、1 primitive、1材質、16骨骼、每頂點1個骨骼權重**；GLB **653,996 bytes（約639 KiB）**。12,000三角面的製作檢查只避免非預期膨脹，並非已通過遊戲效能驗收；單primitive也不代表最終引擎包含陰影等pass時只有1 draw call。
 
 | 動作 | 幀數／fps | 預覽週期內的動作長度 | 內容 |
 | --- | --- | --- | --- |
@@ -46,6 +46,24 @@ Blender 5.2.3 LTS建立並重開；Cycles可用時使用CUDA，否則CPU。預�
 
 `images/sprites/knight`六份既有圖集與knight.json只作造型、姿勢與節奏參考；未擷取圖集像素用作新模型的貼圖或模型資產。所有幾何、色盤、骨架、動作、攝影棚均程序原創，沒有匯入第三方模型、貼圖、動畫。參考圖只出現在專案外的對照預覽。
 
-本地素材庫位置由既有vfx-library-root解析；候選的四份資產及七個工具保存於codex-authored/knight3d同相對路徑，sync-library逐檔核對SHA256。未改正式角色匯出器、出貨索引、玩法、解鎖或玩家存檔。blend1／pycache不是交付物；預覽與驗證報告保存在本聊天visualizations/knight3d-handfix。
+本地素材庫位置由既有vfx-library-root解析；候選的四份資產及八個工具保存於codex-authored/knight3d同相對路徑，sync-library逐檔核對SHA256。未改正式角色匯出器、出貨索引、玩法、解鎖或玩家存檔。blend1／pycache不是交付物；預覽與驗證報告保存在本聊天visualizations/knight3d-helmet。
 
 **仍待驗收**：人物造型與原圖的接近程度、動作表演細節、八方向及實際戰鬥投影／命中時序／GPU-FPS。此版本僅為修正候選，不宣稱已完成逐幀復刻或獲使用者核准。若最終使用預渲染圖集，製作模型的面數不會成為瀏覽器的即時蒙皮負擔；圖集容量、載入與實際播放成本仍須另驗。
+
+
+## 六組原圖／銀盔版遊戲大小對照
+
+本輪只加頭盔，`silver_knight_motion.py`保持前輪修正內容。頭盔替代短髮，新增266三角面；不加盾牌／刀光。
+
+在上述build之後，改用透明渲染與新對照工具（不需先跑舊package_previews）：
+
+```powershell
+& '<Blender>' --background --factory-startup --python tools/knight3d/render_batch.py -- --model assets/characters/knight3d/knight_batch1.blend --preview '<預覽目錄>' --sprite-preview
+python tools/knight3d/package_game_compare.py --preview '<預覽目錄>' --reference images/sprites/knight --battle-height 600
+```
+
+輸出`knight_revision3_helmet_six_game_compare.gif`：640×688、150幀／6秒，六組每組左原圖、右銀盔3D；原圖保留盾牌／刀光及既有陰影，3D未製作這些特效。方向SE，所有動作使用同一固定比例與腳底校正；不為每幀或每動作調整身高／位置。來源原始128格、trim及anchor由knight.json重建。以原圖SE idle第一幀alpha>245的頭到腳範圍50px，對齊Blender頭／腳骨實際投影高度286.1236px；只校正一次，不取圖集像素當模型貼圖。
+
+大小取自遊戲manifest 1.4 × 配置鏡頭100/125=0.8，故原圖素材倍率1.12，站姿頭腳約56 CSS px（透視前）；對兩欄施加遊戲中心、上緣0.82的透視公式。採600 CSS px高一般戰鬥面板、瀏覽器／圖片100%檢視。全螢幕會額外×1.3；面板高度與實際縮放不同時，透視後像素會略不同。這是按現有遊戲公式重建的尺寸對照，尚未把3D接入實際遊戲。
+
+完整原始15幀依各動作fps播放，方便看起手及收招；未套遊戲attack1／attack2／cast跳過前幀的事件時序。非循環動作末幀另停300ms、死亡750ms。附PNG靜態版及明標2x放大版，不能把放大版當遊戲大小。`game-comparison-validation.json`保存校正、配置、GIF讀回及限制；`sprite-projection.json`保存相機／錨點。舊package_previews的game_size為近似舊攝影棚縮圖，最新精確倍率對照以新工具為準。

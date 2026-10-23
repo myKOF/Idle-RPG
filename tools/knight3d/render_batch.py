@@ -6,11 +6,13 @@ import sys
 from pathlib import Path
 import bpy
 from mathutils import Vector
+from bpy_extras.object_utils import world_to_camera_view
 
 p=argparse.ArgumentParser()
 p.add_argument('--model',required=True)
 p.add_argument('--preview',required=True)
 p.add_argument('--validate-only',action='store_true')
+p.add_argument('--sprite-preview',action='store_true',help='Transparent sprites with fixed camera/anchor, no turntable')
 a=p.parse_args(sys.argv[sys.argv.index('--')+1:])
 model=Path(a.model).resolve()
 out=Path(a.preview).resolve()
@@ -41,6 +43,35 @@ scene.render.resolution_x=480
 scene.render.resolution_y=480
 scene.cycles.samples=32
 scene.cycles.use_denoising=True
+if a.sprite_preview:
+    scene.render.film_transparent=True
+    scene.render.image_settings.color_mode='RGBA'
+    for obj in scene.objects:
+        if obj.type=='MESH' and obj.parent!=rig:
+            obj.hide_render=True
+    rig.animation_data.action=actions['idle']
+    scene.frame_set(1)
+    bpy.context.view_layer.update()
+    deps=bpy.context.evaluated_depsgraph_get()
+    head_points=[]
+    foot_points=[]
+    for obj in rig.children:
+        if obj.type!='MESH': continue
+        ev=obj.evaluated_get(deps)
+        head_id=obj.vertex_groups['head'].index
+        feet={obj.vertex_groups[n].index for n in ['foot.R','foot.L']}
+        for v in ev.data.vertices:
+            groups={g.group for g in v.groups if g.weight>.5}
+            q=world_to_camera_view(scene,scene.camera,ev.matrix_world@v.co)
+            if head_id in groups: head_points.append((q.x*480,(1-q.y)*480))
+            if feet.intersection(groups): foot_points.append((q.x*480,(1-q.y)*480))
+    anchor=world_to_camera_view(scene,scene.camera,Vector((0,0,0)))
+    (out/'sprite-projection.json').write_text(json.dumps({
+        'anchorPixels':[anchor.x*480,(1-anchor.y)*480],
+        'standingBodyHeightPixels':max(y for x,y in foot_points)-min(y for x,y in head_points),
+        'headTopPixels':min(y for x,y in head_points),
+        'camera':list(scene.camera.location),'resolution':480,
+        'method':'One fixed scale and projected world-origin anchor for every pose'},indent=2))
 metrics={'openedWith':bpy.app.version_string,'clips':{},'externalTextures':0}
 for name,clip in manifest['clips'].items():
     rig.animation_data.action=actions[name]
@@ -105,7 +136,7 @@ for name,clip in manifest['clips'].items():
         assert whole_body['footTravelMeters']>.25, (name,'No full-body step',whole_body)
     metrics['clips'][name]={'frames':clip['frames'],'minimumZ':min(x['z'] for x in minima.values()),
                             'perFrameFloor':minima,'wholeBody':whole_body,'offHand':off_hand}
-if not a.validate_only:
+if not a.validate_only and not a.sprite_preview:
     rig.animation_data.action=actions['idle']
     scene.frame_set(1)
     folder=out/'turntable'
