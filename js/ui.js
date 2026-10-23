@@ -5758,8 +5758,8 @@ function sendSlotSocketCommand(it, mode, command, args, failLabel) {
 function socketSelectedGem(type, level, fusedId) {
   var it = findSelItem(), mode = equipSocketModeFor(it);
   if (!mode || isUiCommandPending(itemPendingKey(it.id)) || mode.selIdx < 0 || it.sockets[mode.selIdx]) return;
-  if (fusedId) sendSlotSocketCommand(it, mode, 'gem.socketFused', { itemId: it.id, fusedId: fusedId }, '鑲嵌寶石');
-  else sendSlotSocketCommand(it, mode, 'gem.socket', { itemId: it.id, type: type, level: level }, '鑲嵌寶石');
+  if (fusedId) sendSlotSocketCommand(it, mode, 'gem.socketFused', { itemId: it.id, fusedId: fusedId }, STR(1587));
+  else sendSlotSocketCommand(it, mode, 'gem.socket', { itemId: it.id, type: type, level: level }, STR(1587));
 }
 
 /* 暫放符文（js/runeword.js）：符文鑲嵌頁（UI.equipMatMode.mode === 'rune'）點符文圖示 → 先放進選中的符文孔當暫放，
@@ -5876,7 +5876,7 @@ function equipGemGridHTML(gemsSnapshot) {
       if (!n) continue;
       var gv = gdef.pct ? pctStr(gemStatValue(gt, lv)) : fmt(gemStatValue(gt, lv));
       gemIcons.push('<button type="button" class="equip-material-icon" data-gem-socket="' + gt + '" data-gem-level="' + lv + '" data-tip="' +
-        esc(GEM_NAMES[lv] + gdef.name + ' ×' + n + '｜' + gdef.statName.replace('%', '') + ' +' + gv + '｜鑲入選中孔位') + '">' +
+        esc(STR(1588, GEM_NAMES[lv] + gdef.name, n, gdef.statName.replace('%', ''), gv)) + '">' +
         gemIconHTML(gt, lv, 'gi-socket') + '<span class="socket-gem-level">' + lv + '</span><span class="socket-gem-count">×' + fmt(n) + '</span></button>');
       break;
     }
@@ -5884,9 +5884,9 @@ function equipGemGridHTML(gemsSnapshot) {
   gemsViewFused(gemsSnapshot).forEach(function (fg) {
     if (!isFusedGemEnabled(fg)) return;
     gemIcons.push('<button type="button" class="equip-material-icon" data-gem-socket-fused="' + esc(fg.id) + '" data-tip="' +
-      esc(fusedGemLabel(fg) + '｜鑲入選中孔位') + '">' + fusedGemIconHTML(fg, 'gi-socket') + '<span class="socket-gem-count">×1</span></button>');
+      esc(STR(1589, fusedGemLabel(fg))) + '">' + fusedGemIconHTML(fg, 'gi-socket') + '<span class="socket-gem-count">×1</span></button>');
   });
-  return gemIcons.length ? '<div class="equip-socket-gem-grid">' + gemIcons.join('') + '</div>' : '<div class="equip-material-empty">尚無寶石庫存</div>';
+  return gemIcons.length ? '<div class="equip-socket-gem-grid">' + gemIcons.join('') + '</div>' : '<div class="equip-material-empty">' + STR(1590) + '</div>';
 }
 
 /* 鑲嵌頁下方的符文格：列出符文庫存（高階在前），點圖示鑲進選中的符文孔（js/runeword.js）。 */
@@ -8495,7 +8495,7 @@ var UI_COMMAND_LABELS = {
   'forge.setAuto': STR(1343), 'forge.setAutoFill': STR(1344),
   'item.equip': '裝備', 'item.unequip': '卸下', 'item.salvage': '分解', 'item.setLock': '鎖定',
   'item.upgrade': '強化', 'item.enchant': '附魔', 'item.removeEnchant': '移除附魔',
-  'item.rerollAffix': '洗煉', 'gem.socket': '鑲嵌', 'gem.unsocket': '取下寶石', 'rune.socket': '鑲嵌符文',
+  'item.rerollAffix': '洗煉', 'gem.socket': STR(1591), 'gem.unsocket': STR(1592), 'rune.socket': '鑲嵌符文',
   'rune.compose': '符文合成', 'rune.composeAll': '符文全部合成', 'rune.dismantle': '符文拆解',
   'newforge.addFurnace': STR(1451), 'newforge.removeFurnace': STR(1452),
   'newforge.installPart': STR(1456), 'newforge.uninstallPart': STR(1457),
@@ -8526,13 +8526,13 @@ function sendGemUiCommand(commandName, args, pendingRef, panels, onSuccess) {
   }).then(function (result) {
     var error = uiCommandResultError(result);
     if (error) {
-      reportUiCommandFailure('寶石操作失敗', error, panels);
+      reportUiCommandFailure(STR(1593), error, panels);
       return null;
     }
     if (onSuccess) onSuccess(result);
     return result;
   }, function (error) {
-    reportUiCommandFailure('寶石操作失敗', error, panels);
+    reportUiCommandFailure(STR(1593), error, panels);
     return null;
   });
 }
@@ -10354,7 +10354,7 @@ function gemLibItemHTML(gemsSnapshot, type, total) {
   return '<button type="button" class="gx-item' + (UI.gemBrowse.sel === type ? ' is-sel' : '') + (total ? '' : ' is-empty') + '" data-gem-pick="' + type + '">' +
     '<span class="gx-ico" style="--c:' + (top ? GEM_TIER_COLORS[top] : '#3a3d44') + '">' + gemIconHTML(type, top || GEM_MAX_LEVEL, 'gi-lib') + '</span>' +
     '<span class="gx-item-main">' +
-      '<span class="gx-item-top"><b>' + esc(gt.name) + (isGemEnabled(type) ? '' : '（已關閉）') + '</b><span class="gx-item-total">×' + fmt(total) + '</span></span>' +
+      '<span class="gx-item-top"><b>' + esc(gt.name) + (isGemEnabled(type) ? '' : STR(1594)) + '</b><span class="gx-item-total">×' + fmt(total) + '</span></span>' +
       '<span class="gx-item-stat">' + esc(gt.statName.replace(/%/g, '')) + '</span>' +
       '<span class="gx-lvs">' + cells + '</span>' +
     '</span></button>';
@@ -10386,10 +10386,10 @@ function gemFocusHTML(gemsSnapshot, type, total) {
     if (converting) reason = gemConvertBlockReason(gemsSnapshot, type, lv);
     if (dismantling && typeof gemDismantleBlockReason === 'function') reason = gemDismantleBlockReason(gemsSnapshot, type, lv);
     var unavailable = (resonance || converting || dismantling) && (!gt || !!reason);
-    var tip = gt ? GEM_NAMES[lv] + gt.name + '｜' + gemAbilityText(type, lv) + (have ? '｜持有 ' + fmtFull(have) + ' 顆' : '｜尚未持有') : '請先選擇寶石類型';
-    if (resonance) tip += '｜' + (reason || '點擊鑲入，或拖曳至共鳴孔');
-    if (dismantling) tip += '｜' + (reason || '點擊或拖曳放入拆解九宮格，Shift+左鍵單顆放入');
-    if (converting) tip += '｜可放入 ' + fmtFull(n) + ' 顆｜' + (reason || '點擊或拖曳放入九宮格，Shift+左鍵單顆放入');
+    var tip = gt ? GEM_NAMES[lv] + gt.name + '｜' + gemAbilityText(type, lv) + (have ? STR(1595, fmtFull(have)) : STR(1596)) : STR(1554);
+    if (resonance) tip += '｜' + (reason || STR(1597));
+    if (dismantling) tip += '｜' + (reason || STR(1598));
+    if (converting) tip += STR(1600, fmtFull(n), (reason || STR(1599)));
     cells += '<button type="button" class="gx-curve-cell' + (n ? ' has' : '') + (lv > GEM_MAX_LEVEL ? ' is-forge' : '') +
       (UI.gemBrowse.fuseLv === lv ? ' is-sel' : '') + (unavailable ? ' is-unavailable' : '') + '" data-gem-lv="' + lv + '" style="--c:' + GEM_TIER_COLORS[lv] + '"' +
       (resonance && gt ? ' data-gres-gem="' + type + ':' + lv + '" draggable="' + !unavailable + '"' : '') +
@@ -10403,13 +10403,7 @@ function gemFocusHTML(gemsSnapshot, type, total) {
   }
   var catLabel = '';
   GEM_LIB_FILTERS.forEach(function (f) { if (f.id === gemCategoryOf(type)) catLabel = f.label; });
-  return '<div class="gx-focus-head">' +
-      '<span class="gx-focus-ico" style="--c:' + (top ? GEM_TIER_COLORS[top] : '#3a3d44') + '">' + (gt ? gemIconHTML(type, top || GEM_MAX_LEVEL, 'gi-focus') : '◇') + '</span>' +
-      '<span class="gx-focus-name">' + esc(gt ? gt.name : '沒有符合的寶石') + '</span>' +
-      '<span class="gx-focus-stat">' + (gt ? esc(gt.statName.replace(/%/g, '')) + '・' + catLabel : '') + '</span>' +
-      '<span class="gx-focus-total">共 <b>' + fmtFull(total) + '</b> 顆</span>' +
-    '</div>' +
-    '<div class="gx-curve">' + cells + '</div>';
+  return '<div class="gx-focus-head"><span class="gx-focus-ico" style="--c:' + (top ? GEM_TIER_COLORS[top] : '#3a3d44') + '">' + (gt ? gemIconHTML(type, top || GEM_MAX_LEVEL, 'gi-focus') : '◇') + '</span><span class="gx-focus-name">' + esc(gt ? gt.name : STR(1602)) + '</span><span class="gx-focus-stat">' + (gt ? esc(gt.statName.replace(/%/g, '')) + '・' + catLabel : '') + '</span>' + STR(2098, fmtFull(total)) + '</div><div class="gx-curve">' + cells + '</div>';
 }
 
 function selectGemType(type) {
@@ -10493,7 +10487,7 @@ function renderGems() {
       if (st.ownedOnly && !totals[t2] && t2 !== st.sel) continue;
       h += gemLibItemHTML(gemsSnapshot, t2, totals[t2]);
     }
-    if (!h) h = '<div class="gx-empty">這個分類目前沒有持有的寶石</div>';
+    if (!h) h = '<div class="gx-empty">' + STR(1603) + '</div>';
     if (!holdConvertSources && box._lastH !== h) { box._lastH = h; box.innerHTML = h; }
   }
 
@@ -10578,7 +10572,7 @@ function renderFuseInfo(gemsSnapshot) {
     if (b && b.disabled !== !canCompose) b.disabled = !canCompose;
   });
   if (!isGemEnabled(t)) {
-    info.textContent = '此寶石已關閉，僅保留既有物品顯示與從裝備取下功能';
+    info.textContent = STR(1604);
     return;
   }
   var n = gemsViewCount(gemsSnapshot, t, lv);
@@ -10641,12 +10635,12 @@ function gemConvertPlaced(type, lv) {
 }
 
 function gemConvertBlockReason(snapshot, type, lv) {
-  if (UI.gemConvertFx) return '寶石轉換中';
-  if (!GEM_TYPES[type] || !isGemEnabled(type)) return '此寶石已關閉';
+  if (UI.gemConvertFx) return STR(1605);
+  if (!GEM_TYPES[type] || !isGemEnabled(type)) return STR(1580);
   var placed = gemConvertPlaced(type, lv);
-  if (gemsViewCount(snapshot, type, lv) <= placed) return '庫存已放完';
-  if (placed >= GEM_CONVERT_STACK) return '該格已達上限';
-  if (!placed && (UI.convertSlots || []).length >= GEM_CONVERT_SLOTS) return '九宮格已滿';
+  if (gemsViewCount(snapshot, type, lv) <= placed) return STR(1582);
+  if (placed >= GEM_CONVERT_STACK) return STR(1583);
+  if (!placed && (UI.convertSlots || []).length >= GEM_CONVERT_SLOTS) return STR(1584);
   return '';
 }
 
@@ -10666,7 +10660,7 @@ function stageGemConvert(type, lv, single) {
 function gemConvertCellHTML(s, index) {
   var tip = GEM_NAMES[s.lv] + GEM_TYPES[s.type].name + '｜' + gemAbilityText(s.type, s.lv) + '｜×' + s.n;
   return '<button type="button" class="gconv-slot filled"' + (index === undefined ? ' tabindex="-1"' : ' data-gconv-slot="' + index + '"') +
-    ' style="--c:' + GEM_TIER_COLORS[s.lv] + '" data-tip="' + esc(tip + (index === undefined ? '' : '｜點擊取出，Shift+左鍵單顆取出')) + '">' +
+    ' style="--c:' + GEM_TIER_COLORS[s.lv] + '" data-tip="' + esc(tip + (index === undefined ? '' : STR(1585))) + '">' +
     gemIconHTML(s.type, s.lv, 'gi-conv') + '<span class="gconv-n">×' + s.n + '</span><span class="gconv-level">' + s.lv + '</span></button>';
 }
 
@@ -10714,9 +10708,9 @@ function renderGemConvert(gemsSnapshot) {
     el.classList.toggle('is-converting', !!fx && fx.phase === 'playing');
   });
   var status = $id('gconv-status');
-  if (status) setTextIfChanged(status, UI.gemConvertSuccess ? '轉換成功！' : '');
+  if (status) setTextIfChanged(status, UI.gemConvertSuccess ? STR(1606) : '');
   var info = $id('gconv-info');
-  if (info) info.textContent = 'Shift+左鍵：單顆放入／取下';
+  if (info) info.textContent = STR(1607);
 }
 
 var GEM_CONVERT_FX_MS = 2000;
@@ -10725,7 +10719,7 @@ function finishGemConvert(fx) {
   if (UI.gemConvertFx !== fx || !fx.acknowledged || !fx.elapsed) return;
   UI.gemConvertFx = null;
   UI.gemConvertSuccess = true;
-  blog('🔄 寶石轉換成功', 'good', 'factory');
+  blog(STR(1608), 'good', 'factory');
   renderGems();
 }
 
@@ -10876,23 +10870,17 @@ function renderGemFusion(gemsSnapshot, headerSnapshot) {
       if (ref.kind === 'plain') {
         var t = ref.type, flv = ref.lv || GEM_MAX_LEVEL;
         var fcol = GEM_TIER_COLORS[flv] || '#ffd700';
-        h += '<span class="gem-chip gem-inventory-cell" data-gfuse-remove="' + i + '" style="border-color:' + fcol + '" data-tip="' + esc(gemLabel(t, flv)) + '｜點擊移出">' +
-          '<span class="gem-chip-count">×1</span>' +
-          '<span class="gem-chip-emoji">' + gemIconHTML(t, flv, 'gi-chip') + '</span>' +
-          '<span class="gem-chip-level">' + flv + '</span></span>';
+        h += '<span class="gem-chip gem-inventory-cell" data-gfuse-remove="' + i + '" style="border-color:' + fcol + '" data-tip="' + STR(1609, esc(gemLabel(t, flv))) + '"><span class="gem-chip-count">×1</span><span class="gem-chip-emoji">' + gemIconHTML(t, flv, 'gi-chip') + '</span><span class="gem-chip-level">' + flv + '</span></span>';
       } else {
         var fg = gemsViewFindFused(gemsSnapshot, ref.id);
         if (fg) {
-          h += '<span class="gem-chip fused-chip gem-inventory-cell" data-gfuse-remove="' + i + '" data-tip="' + esc(fusedGemLabel(fg)) + '｜點擊移出">' +
-            '<span class="gem-chip-count">×1</span>' +
-            '<span class="gem-chip-emoji">' + fusedGemIconHTML(fg, 'gi-chip') + '</span>' +
-            '<span class="gem-chip-level" style="color:#f0abfc">融' + (fg.fusions || 0) + '</span></span>';
+          h += '<span class="gem-chip fused-chip gem-inventory-cell" data-gfuse-remove="' + i + '" data-tip="' + STR(1609, esc(fusedGemLabel(fg))) + '"><span class="gem-chip-count">×1</span><span class="gem-chip-emoji">' + fusedGemIconHTML(fg, 'gi-chip') + '</span><span class="gem-chip-level" style="color:#f0abfc">' + STR(1610, (fg.fusions || 0)) + '</span></span>';
         } else {
-          h += '<span class="loadout-slot filled" data-gfuse-remove="' + i + '">（已消失）</span>';
+          h += '<span class="loadout-slot filled" data-gfuse-remove="' + i + '">' + STR(1611) + '</span>';
         }
       }
     } else {
-      h += '<span class="loadout-slot" style="display:inline-flex;align-items:center;height:48px;box-sizing:border-box;vertical-align:top;">素材 ' + (i + 1) + '（5階以上）</span>';
+      h += '<span class="loadout-slot" style="display:inline-flex;align-items:center;height:48px;box-sizing:border-box;vertical-align:top;">' + STR(1612, (i + 1)) + '</span>';
     }
   }
   slotBox.innerHTML = h;
@@ -10907,14 +10895,12 @@ function renderGemFusion(gemsSnapshot, headerSnapshot) {
   if (m1 && m2) {
     var types = gemFuseTypesOk(m1, m2);
     if (types) {
-      info.textContent = '成功率 ' + gemFuseRate(m1, m2) + '%｜融合後屬性：' +
-        types.map(function (t) { return GEM_TYPES[t].statName.replace('%', ''); }).join('＋') +
-        '｜失敗時較弱方降解為低階寶石';
+      info.textContent = STR(1613, gemFuseRate(m1, m2), types.map(function (t) { return GEM_TYPES[t].statName.replace('%', ''); }).join('＋'));
     } else {
-      info.textContent = '⚠️ 屬性不相容：融合後最多只能有 2 種屬性';
+      info.textContent = STR(1614);
     }
   } else {
-    info.textContent = '請放入 2 顆素材（5 階以上一般寶石或融合寶石；融合寶石無法用於神鑄）';
+    info.textContent = STR(1615);
   }
   // 素材池（5 階以上一般寶石，高階神鑄寶石一併列出）
   var pool = $id('gfuse-pool');
@@ -10928,8 +10914,7 @@ function renderGemFusion(gemsSnapshot, headerSnapshot) {
         var fcol = GEM_TIER_COLORS[flv] || '#ffd700';
         chipKeys.push('plain:' + t + ':' + flv);
         chips.push('<span class="gem-chip gem-inventory-cell" data-gfuse-pick="plain:' + t + ':' + flv + '" style="border-color:' + fcol + '" ' +
-          'data-tip="' + esc(gemLabel(t, flv) + '｜' + GEM_TYPES[t].statName.replace('%', '') + ' +' +
-            (GEM_TYPES[t].pct ? pctStr(gemStatValue(t, flv)) : fmt(gemStatValue(t, flv))) + '｜點擊放入融合槽') + '">' +
+          'data-tip="' + esc(STR(1616, gemLabel(t, flv), GEM_TYPES[t].statName.replace('%', ''), (GEM_TYPES[t].pct ? pctStr(gemStatValue(t, flv)) : fmt(gemStatValue(t, flv))))) + '">' +
           '<span class="gem-chip-count">×' + fmt(n) + '</span>' +
           '<span class="gem-chip-emoji">' + gemIconHTML(t, flv, 'gi-chip') + '</span>' +
           '<span class="gem-chip-level">' + flv + '</span></span>');
@@ -10939,13 +10924,10 @@ function renderGemFusion(gemsSnapshot, headerSnapshot) {
   gemsViewFused(gemsSnapshot).forEach(function (fg) {
     if (!isFusedGemEnabled(fg)) return;
     chipKeys.push('fused:' + fg.id);
-    chips.push('<span class="gem-chip fused-chip gem-inventory-cell" data-gfuse-pick="fused:' + fg.id + '" data-tip="' + esc(fusedGemLabel(fg)) + '｜已成功融合 ' + (fg.fusions || 0) + ' 次（下次成功率遞減）">' +
-      '<span class="gem-chip-count">×1</span>' +
-      '<span class="gem-chip-emoji">' + fusedGemIconHTML(fg, 'gi-chip') + '</span>' +
-      '<span class="gem-chip-level" style="color:#f0abfc">融' + (fg.fusions || 0) + '</span></span>');
+    chips.push('<span class="gem-chip fused-chip gem-inventory-cell" data-gfuse-pick="fused:' + fg.id + '" data-tip="' + STR(1617, esc(fusedGemLabel(fg)), (fg.fusions || 0)) + '"><span class="gem-chip-count">×1</span><span class="gem-chip-emoji">' + fusedGemIconHTML(fg, 'gi-chip') + '</span><span class="gem-chip-level" style="color:#f0abfc">' + STR(1610, (fg.fusions || 0)) + '</span></span>');
   });
   // 逐格比對，理由同轉換頁：整份重建會把使用者正壓著的 chip 換掉，那一下點擊就消失
-  if (!chips.length) pool.innerHTML = '<span class="hint">沒有 5 階以上寶石 — 可透過寶石升階、寶石合成、商店或神鑄取得</span>';
+  if (!chips.length) pool.innerHTML = STR(1618);
   else syncItemGridCells(pool, chipKeys, chips);
 }
 
@@ -10964,17 +10946,17 @@ function renderGemShop(gemsSnapshot, headerSnapshot) {
   var player = headerSnapshot && headerSnapshot.player;
   if (!s || !player) return;
   var levelEl = $id('gem-shop-level');
-  if (levelEl) levelEl.textContent = '商店 Lv.' + s.level;
+  if (levelEl) levelEl.textContent = STR(1619, s.level);
   var shopPendingKey = nodePendingKey('gem-shop');
   var upgradeBtn = $id('shop-upgrade');
   if (upgradeBtn) {
     upgradeBtn.setAttribute('data-ui-pending-key', shopPendingKey);
     if (s.level >= GEM_SHOP_MAX_LEVEL) {
-      upgradeBtn.textContent = '✅ 已滿級';
+      upgradeBtn.textContent = STR(1620);
       upgradeBtn.disabled = true;
       upgradeBtn.removeAttribute('data-tip');
     } else {
-      upgradeBtn.innerHTML = '⬆️ 升級（<img src="images/icon_gold.png" class="res-icon">' + fmt(gemShopUpgradeCost(s.level)) + '）';
+      upgradeBtn.innerHTML = STR(1621) + '<img src="images/icon_gold.png" class="res-icon">' + fmt(gemShopUpgradeCost(s.level)) + '）';
       upgradeBtn.disabled = player.gold < gemShopUpgradeCost(s.level);
     }
   }
@@ -10988,7 +10970,7 @@ function renderGemShop(gemsSnapshot, headerSnapshot) {
       '<div class="shop-stat">' + esc(gt.statName.replace('%', '')) + ' +' +
       (gt.pct ? pctStr(gemStatValue(item.type, item.lv)) : fmt(gemStatValue(item.type, item.lv))) + '</div>' +
       (item.sold
-        ? '<div class="shop-sold">已購買</div>'
+        ? '<div class="shop-sold">' + STR(1622) + '</div>'
         : '<button class="btn sm" data-shop-buy="' + i + '"' + pendingUiButtonAttributes(shopPendingKey) + '><img src="images/icon_gold.png" class="res-icon"> ' + fmt(gemShopPrice(item.lv)) + '</button>') +
       '</div>';
   });
@@ -11000,10 +10982,10 @@ function renderGemShop(gemsSnapshot, headerSnapshot) {
   s.items.forEach(function (it2) { if (!it2.sold && isGemEnabled(it2.type)) total += gemShopPrice(it2.lv); });
   var buyAllBtn = $id('shop-buy-all');
   if (buyAllBtn) buyAllBtn.setAttribute('data-ui-pending-key', shopPendingKey);
-  if (buyAllBtn) buyAllBtn.innerHTML = '🛒 一鍵全購買（<img src="images/icon_gold.png" class="res-icon">' + fmt(total) + '）';
+  if (buyAllBtn) buyAllBtn.innerHTML = STR(1623) + '<img src="images/icon_gold.png" class="res-icon">' + fmt(total) + '）';
   var refBtn = $id('shop-refresh');
   if (refBtn) refBtn.setAttribute('data-ui-pending-key', shopPendingKey);
-  if (refBtn) refBtn.innerHTML = '🔄 手動刷新（<img src="images/icon_gold.png" class="res-icon">' + fmt(gemsViewShopRefreshCost(s)) + '）';
+  if (refBtn) refBtn.innerHTML = STR(1624) + '<img src="images/icon_gold.png" class="res-icon">' + fmt(gemsViewShopRefreshCost(s)) + '）';
   syncUiPendingControls(shopPendingKey);
   updateShopCountdown(gemsSnapshot);
 }
@@ -13042,7 +13024,7 @@ function initUI() {
         keys: [nodePendingKey('forge')],
         panels: ['forge', 'gems']
       }).catch(function (error) {
-        reportUiCommandFailure('神鑄放入寶石', error, ['forge', 'gems']);
+        reportUiCommandFailure(STR(1625), error, ['forge', 'gems']);
       });
       return;
     }
@@ -13157,7 +13139,7 @@ function initUI() {
           keys: [itemPendingKey(uit.id)],
           panels: ['inv', 'equip', 'gems', 'header']
         }).catch(function (error) {
-          reportUiCommandFailure('取下寶石', error, ['inv', 'equip', 'gems', 'header']);
+          reportUiCommandFailure(STR(1592), error, ['inv', 'equip', 'gems', 'header']);
         });
         return;
       }
@@ -13180,13 +13162,13 @@ function initUI() {
         : { kind: 'fused', id: pv[1] };
       // 融合寶石不可重複放入；一般寶石同種同階需有足夠數量
       var dupFused = pref.kind === 'fused' && UI.gemFuseSlots.some(function (r) { return r && r.kind === 'fused' && r.id === pref.id; });
-      if (dupFused) { blog('⚠️ 這顆融合寶石已在融合槽中', 'warn'); return; }
+      if (dupFused) { blog(STR(1626), 'warn'); return; }
       var slotIdx = UI.gemFuseSlots[0] ? (UI.gemFuseSlots[1] ? -1 : 1) : 0;
       if (slotIdx < 0) { blog('⚠️ 融合槽已滿（點擊素材可移出）', 'warn'); return; }
       if (pref.kind === 'plain') {
         var sameCnt = UI.gemFuseSlots.filter(function (r) { return r && r.kind === 'plain' && r.type === pref.type && (r.lv || GEM_MAX_LEVEL) === pref.lv; }).length;
         if (gemsViewCount(uiGemsPanelSnapshot(), pref.type, pref.lv) < sameCnt + 1) {
-          blog('⚠️ 此種同階寶石數量不足', 'warn');
+          blog(STR(1627), 'warn');
           return;
         }
       }

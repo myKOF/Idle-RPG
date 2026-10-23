@@ -73,7 +73,7 @@ function expandStrSource(src) {
   return out + src.slice(cur);
 }
 
-const attrEsc = (s) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+const attrEsc = (s) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/\n/g, '&#10;');
 /* index.html：data-str／data-str-html 填回元素內容，data-str-attr 展開成屬性 */
 function expandStrHtml(html) {
   const table = data();

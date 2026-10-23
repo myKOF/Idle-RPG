@@ -25,7 +25,7 @@ function simpleInline(parts) {
   return true;
 }
 const ATTR_TEXT = /\s?(?:data-tip|data-tt-title|data-tt-desc|data-tt-[\w-]+|title|aria-label|alt|placeholder|label)="([^"]*)"/g;
-const decodeEnt = t => t.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&');
+const decodeEnt = t => t.replace(/&#(\d+);/g, (m, d) => String.fromCharCode(+d)).replace(/&#x([0-9a-fA-F]+);/g, (m, h) => String.fromCharCode(parseInt(h, 16))).replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&');
 function keepTag(p) {
   if (INLINE_OK.test(p.tag)) return !p.attrs.trim();
   if (p.tag === 'span') {

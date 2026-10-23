@@ -341,88 +341,88 @@
           <div class="pg-top">
             <h2 class="pg-title">寶石</h2>
             <span class="pg-pill">持有 <b id="gem-total">0</b> <span data-str="1301"></span></span>
-            <span class="pg-pill">已收集 <b id="gem-kinds">0</b> 種</span>
-            <button type="button" class="pg-help" aria-label="寶石說明" data-tt-title="寶石" data-tt-desc="寶石可鑲嵌到裝備的插槽：到「裝備」分頁點選裝備即可鑲嵌，點擊已鑲寶石可取下；「寶石鑲嵌效率」屬性會放大鑲嵌加成。分解裝備時，鑲在上面的寶石會自動取回。合成可直接升至十級，所需素材與金幣見當前配方。">?</button>
+            <span class="pg-pill"><span data-str="1478"></span> <b id="gem-kinds">0</b> <span data-str="1479"></span></span>
+            <button type="button" class="pg-help" data-tt-title="寶石" data-str-attr="aria-label:1480;data-tt-desc:1481">?</button>
           </div>
           <div class="gx">
             <div class="gx-lib">
               <div id="gem-filter" class="gx-chips"></div>
-              <label class="gx-owned"><input type="checkbox" id="gem-owned-only" checked> 只看持有</label>
+              <label class="gx-owned"><input type="checkbox" id="gem-owned-only" checked> <span data-str="1482"></span></label>
               <div id="gres-library-note" class="gres-library-note" aria-live="polite" hidden></div>
               <div id="gem-table" class="gx-items"></div>
             </div>
             <div class="gx-main">
               <div id="gem-focus" class="gx-focus"></div>
-              <div class="gx-tabs" role="tablist" aria-label="寶石工坊">
+              <div class="gx-tabs" role="tablist" data-str-attr="aria-label:1483">
                 <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="compose">合成</button>
-                <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="convert">轉換</button>
+                <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="convert" data-str="1484"></button>
                 <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="dismantle">拆解</button>
-                <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="resonance">共鳴</button>
+                <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="resonance" data-str="1485"></button>
               </div>
 
               <div class="gx-panel" data-gem-panel="compose">
-                <button type="button" class="pg-help gconv-help" aria-label="寶石合成說明" data-tt-title="寶石合成" data-tt-desc="選取上方寶石以合成更高階的寶石">!</button>
+                <button type="button" class="pg-help gconv-help" data-str-attr="aria-label:1486;data-tt-title:1487;data-tt-desc:1488">!</button>
                 <div id="fuse-recipe" class="gx-recipe"></div>
                 <div id="fuse-status" class="gem-grid-status" role="status" aria-live="polite"></div>
                 <div class="node-info" id="fuse-info"></div>
                 <div class="gx-actions">
-                  <button id="fuse-btn" class="btn">合成一次</button>
+                  <button id="fuse-btn" class="btn" data-str="1489"></button>
                   <button id="fuse-all-btn" class="btn">全部合成</button>
                 </div>
               </div>
 
               <div class="gx-panel" data-gem-panel="convert">
-                <button type="button" class="pg-help gconv-help" aria-label="寶石轉換說明" data-tt-title="寶石轉換" data-tt-desc="選擇上方的寶石放入九宮格中進行轉換，2個任意寶石可轉換1個指定寶石。">!</button>
+                <button type="button" class="pg-help gconv-help" data-str-attr="aria-label:1490;data-tt-title:1491;data-tt-desc:1492">!</button>
                 <div class="gconv-layout">
                   <div class="gconv-input">
-                    <div id="gconv-grid" class="gconv-grid" aria-label="轉換原料九宮格"></div>
-                    <button id="gconv-clear" class="btn sm">清空</button>
+                    <div id="gconv-grid" class="gconv-grid" data-str-attr="aria-label:1493"></div>
+                    <button id="gconv-clear" class="btn sm" data-str="1494"></button>
                   </div>
                   <div class="gconv-side">
-                    <label class="sec-sub" for="gconv-target">轉換為</label>
+                    <label class="sec-sub" for="gconv-target" data-str="1495"></label>
                     <select id="gconv-target"></select>
                     <div class="gconv-result-area">
-                      <div id="gconv-output" aria-label="轉換後可獲得的寶石"></div>
+                      <div id="gconv-output" data-str-attr="aria-label:1496"></div>
                       <div id="gconv-status" role="status" aria-live="polite"></div>
                     </div>
-                    <button id="gconv-btn" class="btn">一鍵轉換</button>
+                    <button id="gconv-btn" class="btn" data-str="1497"></button>
                   </div>
                 </div>
-                <div class="gconv-shortcut" id="gconv-info">Shift+左鍵：單顆放入／取下</div>
+                <div class="gconv-shortcut" id="gconv-info" data-str="1607"></div>
               </div>
 
               <div class="gx-panel" data-gem-panel="dismantle">
-                <button type="button" class="pg-help gconv-help" aria-label="寶石拆解說明" data-tt-title="寶石拆解" data-tt-desc="選擇上方寶石進行拆解，可將高級寶石拆解為前一階寶石&#10;拆解過程不會產生任何損耗。">!</button>
+                <button type="button" class="pg-help gconv-help" data-str-attr="aria-label:1498;data-tt-title:1499;data-tt-desc:1500">!</button>
                 <div class="gconv-layout">
                   <div class="gconv-input">
-                    <div id="gdis-grid" class="gconv-grid" aria-label="拆解原料九宮格"></div>
-                    <button id="gdis-clear" class="btn sm gem-grid-action">清空</button>
+                    <div id="gdis-grid" class="gconv-grid" data-str-attr="aria-label:1501"></div>
+                    <button id="gdis-clear" class="btn sm gem-grid-action" data-str="1494"></button>
                   </div>
                   <div class="gconv-side">
-                    <div class="sec-sub">拆解後可獲得</div>
+                    <div class="sec-sub" data-str="1502"></div>
                     <div class="gconv-result-area">
-                      <div id="gdis-output" class="gem-grid-output" aria-label="拆解後可獲得的寶石"></div>
+                      <div id="gdis-output" class="gem-grid-output" data-str-attr="aria-label:1503"></div>
                       <div id="gdis-status" class="gem-grid-status" role="status" aria-live="polite"></div>
                     </div>
-                    <button id="gdis-btn" class="btn gem-grid-action">一鍵拆解</button>
+                    <button id="gdis-btn" class="btn gem-grid-action" data-str="1504"></button>
                   </div>
                 </div>
-                <div class="gconv-shortcut">Shift+左鍵：單顆放入／取下</div>
+                <div class="gconv-shortcut" data-str="1607"></div>
               </div>
 
               <div class="gx-panel" data-gem-panel="fusion" hidden>
-                <div id="gx-fusion-locked" class="gx-locked">寶石融合在 3 轉後開放。</div>
+                <div id="gx-fusion-locked" class="gx-locked" data-str="1505"></div>
                 <div id="gem-fusion-panel" style="display:none">
-                  <div class="hint">兩顆不同屬性 → 雙屬性融合寶石（數值隨機，不一定更高）；兩顆同屬性 → 數值介於兩者之間、上限 2 倍。雙屬性寶石只能與相同雙屬性、或含其屬性的單一寶石融合。基礎成功率 60%，成品每成功融合一次 -10%（最低 10%）。<b>失敗時較弱的寶石會降解</b>為 4~8 顆 1 級或 2~4 顆 2 級同屬性寶石。5 階以上寶石均可，含神鑄寶石。</div>
+                  <div class="hint" data-str-html="1506"></div>
                   <div id="gfuse-slots" class="chip-row"></div>
                   <div class="gx-actions">
-                    <button id="gfuse-btn" class="btn">執行融合</button>
-                    <button id="gfuse-clear" class="btn sm">清空</button>
+                    <button id="gfuse-btn" class="btn" data-str="1507"></button>
+                    <button id="gfuse-clear" class="btn sm" data-str="1494"></button>
                   </div>
                   <div class="node-info" id="gfuse-info"></div>
-                  <div class="sec-sub">可用素材（點擊放入融合槽）</div>
+                  <div class="sec-sub" data-str="1508"></div>
                   <div id="gfuse-pool" class="chip-row"></div>
-                  <div id="gfuse-result" class="gem-result gem-result-3">尚未進行融合</div>
+                  <div id="gfuse-result" class="gem-result gem-result-3" data-str="1509"></div>
                 </div>
               </div>
 
@@ -430,7 +430,7 @@
                 <div class="gres-layout">
                   <div id="gres-board" class="gres-board"></div>
                   <div class="gres-side-wrap">
-                    <button type="button" class="pg-help gres-help" id="gres-help" aria-label="寶石共鳴說明" data-tt-title="寶石共鳴" data-tt-desc="">i</button>
+                    <button type="button" class="pg-help gres-help" id="gres-help" data-tt-desc="" data-str-attr="aria-label:1510;data-tt-title:1511">i</button>
                     <div class="gres-side">
                       <div id="gres-detail" class="gres-detail"></div>
                       <div id="gres-total" class="gres-total"></div>
@@ -441,18 +441,18 @@
 
               <div class="gx-panel" data-gem-panel="shop" hidden>
                 <div class="shop-title-row">
-                  <div class="sec-sub">商店刷新 <span class="dim-text" id="shop-reset-cd"></span></div>
+                  <div class="sec-sub"><span data-str="1512"></span> <span class="dim-text" id="shop-reset-cd"></span></div>
                   <div class="shop-upgrade-box">
-                    <span id="gem-shop-level" class="shop-level-label">商店 Lv.1</span>
+                    <span id="gem-shop-level" class="shop-level-label" data-str="1513"></span>
                     <button id="shop-upgrade" class="btn sm">升級</button>
                   </div>
                 </div>
                 <div id="gem-shop-grid"></div>
                 <div class="gx-actions">
-                  <button id="shop-buy-all" class="btn">一鍵全購買</button>
-                  <button id="shop-refresh" class="btn warn">手動刷新</button>
+                  <button id="shop-buy-all" class="btn" data-str="1514"></button>
+                  <button id="shop-refresh" class="btn warn" data-str="1515"></button>
                 </div>
-                <div class="hint">商店等級越高，刷出數量與高階寶石機率越高。手動刷新費用 = 50,000 + 刷新次數 × 10,000，刷新次數每小時重置。</div>
+                <div class="hint" data-str="1516"></div>
               </div>
             </div>
           </div>
@@ -941,7 +941,7 @@
        已移除（主執行緒零呼叫，只在 Worker 內跑）：
          special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/util.js?v=1.0.4"></script>
-  <script src="js/strings_data.js?v=99343f22"></script>
+  <script src="js/strings_data.js?v=fd850ee0"></script>
   <script src="js/strings.js?v=1.0.0"></script>
   <script src="js/ui-scale.js?v=1.0.1"></script>
   <script src="js/data.js?v=1.0.98"></script>
@@ -975,8 +975,8 @@
   <script src="js/battle-elite.js?v=1.0.8"></script>
   <script src="js/battle-renderer.js?v=1.6.199"></script>
   <script src="js/stats.js?v=1.0.4"></script>
-  <script src="js/item.js?v=1.0.25"></script>
-  <script src="js/gem_resonance.js?v=1.0.3"></script>
+  <script src="js/item.js?v=1.0.26"></script>
+  <script src="js/gem_resonance.js?v=1.0.4"></script>
   <script src="js/runeword.js?v=1.0.15"></script>
   <script src="js/skills.js?v=1.0.43"></script>
   <!-- 新版主動技能系統（2026-08-13 技能改造第一批）：定義表＋引擎＋純函式說明 -->
@@ -988,10 +988,10 @@
   <script src="js/tower.js?v=1.0.35"></script>
   <script src="js/save.js?v=1.0.22"></script>
   <script src="js/ui-inventory-skin.js?v=1.0.1"></script>
-  <script src="js/ui.js?v=1.0.202"></script>
+  <script src="js/ui.js?v=1.0.203"></script>
   <script src="js/ui-runeword.js?v=1.0.13"></script>
-  <script src="js/ui-gem-resonance.js?v=1.0.15"></script>
-  <script src="js/ui-gem-workshop.js?v=1.0.0"></script>
+  <script src="js/ui-gem-resonance.js?v=1.0.16"></script>
+  <script src="js/ui-gem-workshop.js?v=1.0.1"></script>
   <script src="js/ui-newforge-visuals.js?v=1.0.7"></script>
   <script src="js/param_autoreload.js"></script>
   <!-- GM 面板。指令執行層在 js/gm_exec.js，由 Worker importScripts 載入 -->
@@ -1005,7 +1005,7 @@
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
-  <script src="js/bridge.js?v=1.0.351"></script>
+  <script src="js/bridge.js?v=1.0.352"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->

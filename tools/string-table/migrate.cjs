@@ -89,7 +89,6 @@ function planFile(rel, src) {
     if (e && !/\u00a0/.test(r.text)) { if (e.module === MODULE) edits.push({ kind: 'A', s: r.span[0], e: r.span[1], id: e.id, ops: r.ops, lead, trail }); continue; }
     // D：含替代字符的句子被 HTML 標記包住（'<div>戰鬥數據：DPS ' + x + '</div>'）→ 重組整條，只換掉句子本身
     const d = planD(r, src, text);
-    if (d) { if (d.owner === MODULE) edits.push(d.edit); continue; }
     // B：字面值內切（HTML 標記裡的文字節點、屬性值）
     const pend = [];
     const owners = [];
@@ -106,6 +105,11 @@ function planFile(rel, src) {
           if (cuts.length) { pend.push({ kind: 'T', s: p.textStart, e: p.textStart + p.text.length, cuts, base: p.textStart, raw: p.text }); owners.push(...cuts); }
         }
       }
+    }
+    // 字面值內切涵蓋不到的句子（例如前一個字面值留下的 '">' 在前面）就改用 D 重組整條
+    if (d) {
+      const covered = new Set(owners.map(c => c.piece));
+      if (d.hits.some(h => !covered.has(h))) { if (d.owner === MODULE) edits.push(d.edit); continue; }
     }
     if (pend.length && ownerOf(owners).module === MODULE) edits.push(...pend);
   }
@@ -124,7 +128,7 @@ function renumberText(t) {
 function planD(r, src, text) {
   const pieces = splitMarkup(text);
   const hits = pieces.map(p => ({ p, e: lookup(renumberText(p)) })).filter(x => x.e);
-  if (!hits.some(h => /\{\d+\}/.test(h.p))) return null;
+  if (!hits.length) return null;
   const items = [];
   for (const op of r.ops) {
     if (op.type === 'str') items.push({ text: unescapeMap(src.slice(op.s + 1, op.e - 1)).value });
@@ -173,7 +177,7 @@ function planD(r, src, text) {
   // 相鄰文字合併
   const merged = [];
   for (const x of seq) { const l = merged[merged.length - 1]; if (x.lit !== undefined && l && l.lit !== undefined) l.lit += x.lit; else merged.push(x); }
-  return { owner: ownerOf(hits.map(h => ({ module: h.e.module, len: h.p.length }))).module, edit: { kind: 'D', s: r.span[0], e: r.span[1], seq: merged } };
+  return { hits: hits.map(h => h.p), owner: ownerOf(hits.map(h => ({ module: h.e.module, len: h.p.length }))).module, edit: { kind: 'D', s: r.span[0], e: r.span[1], seq: merged } };
 }
 
 /* 在一段原始字面值文字裡找出屬於本模塊的條目，回傳 [{rs,re,id}]（相對 raw 的位置） */
@@ -193,7 +197,7 @@ function cutLiteral(raw, absStart, isTpl) {
       if (!m) continue;
       idx = from + m.index; plen = m[0].length;
     }
-    out.push({ rs: at[idx], re: at[idx + plen], id: e.id, module: e.module, len: piece.length });
+    out.push({ rs: at[idx], re: at[idx + plen], id: e.id, module: e.module, len: piece.length, piece });
     from = idx + plen;
   }
   return out;

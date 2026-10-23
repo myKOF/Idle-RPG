@@ -1,4 +1,5 @@
 const test = require('node:test');
+const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -178,7 +179,7 @@ test('拆解光效保存原料／產出，兩秒後等晚回覆才完成，失�
 });
 
 test('兩個新提示文字精確，拆解只保留清空與一鍵拆解，移除舊下拉及融合清單', () => {
-  const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  const html = readExpanded(path.join(ROOT, 'index.html'));
   assert.match(html, /data-tt-desc="選取上方寶石以合成更高階的寶石"/);
   assert.match(html, /data-tt-desc="選擇上方寶石進行拆解，可將高級寶石拆解為前一階寶石&#10;拆解過程不會產生任何損耗。"/);
   const panel = html.slice(html.indexOf('data-gem-panel="dismantle"'), html.indexOf('data-gem-panel="fusion"'));

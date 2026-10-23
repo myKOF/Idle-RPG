@@ -57,15 +57,15 @@ function fuseableGemTypesAtLevel(lv) {
 // 選擇全部類型時，每次挑選一種目前足夠的寶石，絕不混合種類。
 function composeGems(type, lv) {
   var needed = gemComposeInputCount(lv);
-  if (!needed) return lv === GEM_FORGE_MAX_LEVEL ? '十級寶石已是最高階' : '無效寶石階級';
+  if (!needed) return lv === GEM_FORGE_MAX_LEVEL ? STR(1517) : STR(1469);
   if (type === GEM_TYPE_ALL) {
     var availableTypes = fuseableGemTypesAtLevel(lv);
-    if (!availableTypes.length) return '沒有任何種類的寶石足夠合成';
+    if (!availableTypes.length) return STR(1518);
     return composeGems(availableTypes[0], lv);
   }
   if (!GEM_TYPES[type]) return '未知寶石種類';
-  if (!isGemEnabled(type)) return '此寶石已關閉，無法合成';
-  if (gemCount(type, lv) < needed) return '「' + GEM_NAMES[lv] + GEM_TYPES[type].name + '」不足 ' + needed + ' 顆';
+  if (!isGemEnabled(type)) return STR(1519);
+  if (gemCount(type, lv) < needed) return STR(1476, GEM_NAMES[lv], GEM_TYPES[type].name, needed);
   var cost = FUSE_GOLD_COST[lv];
   if (G.player.gold < cost) return '金幣不足（需要 ' + fmt(cost) + '）';
   G.player.gold -= cost;
@@ -81,23 +81,23 @@ function composeGems(type, lv) {
    規則：同階任意兩顆換一顆指定種類，未成組不扣；每格同種同級，融合寶石不可轉換。
    回傳 null=成功，否則錯誤訊息 */
 function convertGems(slots, targetType) {
-  if (!Object.prototype.hasOwnProperty.call(GEM_TYPES, targetType)) return '未知目標種類';
-  if (!isGemEnabled(targetType)) return '目標寶石已關閉，無法轉換';
-  if (!Array.isArray(slots) || !slots.length) return '請先將寶石放入九宮格';
-  if (slots.length > GEM_CONVERT_SLOTS) return '最多 ' + GEM_CONVERT_SLOTS + ' 格';
+  if (!Object.prototype.hasOwnProperty.call(GEM_TYPES, targetType)) return STR(1520);
+  if (!isGemEnabled(targetType)) return STR(1521);
+  if (!Array.isArray(slots) || !slots.length) return STR(1522);
+  if (slots.length > GEM_CONVERT_SLOTS) return STR(1523, GEM_CONVERT_SLOTS);
   var requested = {};
   for (var i = 0; i < slots.length; i++) {
     var s = slots[i];
     if (!s || !Object.prototype.hasOwnProperty.call(GEM_TYPES, s.type)) return '未知寶石種類';
-    if (!isGemEnabled(s.type)) return '此寶石已關閉，無法轉換';
-    if (!Number.isInteger(s.lv) || s.lv < 1 || s.lv > GEM_FORGE_MAX_LEVEL) return '寶石階級須為 1~' + GEM_FORGE_MAX_LEVEL;
-    if (!Number.isInteger(s.n) || s.n < 1 || s.n > GEM_CONVERT_STACK) return '每格 1~' + GEM_CONVERT_STACK + ' 顆';
+    if (!isGemEnabled(s.type)) return STR(1524);
+    if (!Number.isInteger(s.lv) || s.lv < 1 || s.lv > GEM_FORGE_MAX_LEVEL) return STR(1525, GEM_FORGE_MAX_LEVEL);
+    if (!Number.isInteger(s.n) || s.n < 1 || s.n > GEM_CONVERT_STACK) return STR(1526, GEM_CONVERT_STACK);
     var key = s.type + ':' + s.lv;
     requested[key] = (requested[key] || 0) + s.n;
-    if (gemCount(s.type, s.lv) < requested[key]) return '「' + GEM_NAMES[s.lv] + GEM_TYPES[s.type].name + '」庫存不足';
+    if (gemCount(s.type, s.lv) < requested[key]) return STR(1527, GEM_NAMES[s.lv], GEM_TYPES[s.type].name);
   }
   var plan = gemConvertPlan(slots);
-  if (!plan.consumed.length) return '同階寶石至少需要 ' + GEM_CONVERT_INPUT_COUNT + ' 顆';
+  if (!plan.consumed.length) return STR(1528, GEM_CONVERT_INPUT_COUNT);
   plan.consumed.forEach(function (s) {
     addGem(s.type, s.lv, -s.n);
   });
@@ -108,18 +108,18 @@ function convertGems(slots, targetType) {
 
 // 九宮格普通寶石拆解：原子驗證所有初始庫存，免費無損拆回前一階。
 function dismantleGems(slots) {
-  if (!Array.isArray(slots) || !slots.length) return { err: '請先將寶石放入九宮格' };
-  if (slots.length > GEM_CONVERT_SLOTS) return { err: '最多 ' + GEM_CONVERT_SLOTS + ' 格' };
+  if (!Array.isArray(slots) || !slots.length) return { err: STR(1522) };
+  if (slots.length > GEM_CONVERT_SLOTS) return { err: STR(1523, GEM_CONVERT_SLOTS) };
   var requested = {};
   for (var i = 0; i < slots.length; i++) {
     var s = slots[i];
     if (!s || !Object.prototype.hasOwnProperty.call(GEM_TYPES, s.type)) return { err: '未知寶石種類' };
-    if (!isGemEnabled(s.type)) return { err: '此寶石已關閉，無法拆解' };
-    if (!Number.isInteger(s.lv) || s.lv < 2 || s.lv > GEM_FORGE_MAX_LEVEL) return { err: '只能拆解 2 階以上的寶石' };
-    if (!Number.isInteger(s.n) || s.n < 1 || s.n > GEM_CONVERT_STACK) return { err: '每格 1~' + GEM_CONVERT_STACK + ' 顆' };
+    if (!isGemEnabled(s.type)) return { err: STR(1529) };
+    if (!Number.isInteger(s.lv) || s.lv < 2 || s.lv > GEM_FORGE_MAX_LEVEL) return { err: STR(1530) };
+    if (!Number.isInteger(s.n) || s.n < 1 || s.n > GEM_CONVERT_STACK) return { err: STR(1526, GEM_CONVERT_STACK) };
     var key = s.type + ':' + s.lv;
     requested[key] = (requested[key] || 0) + s.n;
-    if (gemCount(s.type, s.lv) < requested[key]) return { err: '「' + GEM_NAMES[s.lv] + GEM_TYPES[s.type].name + '」庫存不足' };
+    if (gemCount(s.type, s.lv) < requested[key]) return { err: STR(1527, GEM_NAMES[s.lv], GEM_TYPES[s.type].name) };
   }
   var plan = gemDismantlePlan(slots);
   slots.forEach(function (s) { addGem(s.type, s.lv, -s.n); });
@@ -137,8 +137,8 @@ function dismantleGem(type, lv) {
 // 融合寶石拆解：依融合次數推算 1 階總成本 × 0.7，依其屬性種類均分（餘數給第一種）
 function dismantleFusedGem(id) {
   var fg = findFusedGem(id);
-  if (!fg) return { err: '找不到該融合寶石' };
-  if (!isFusedGemEnabled(fg)) return { err: '融合寶石含已關閉種類，無法拆解' };
+  if (!fg) return { err: STR(1531) };
+  if (!isFusedGemEnabled(fg)) return { err: STR(1532) };
   var total = fusedGemDismantleYield(fg);
   removeFusedGem(id);
   var types = fg.stats.map(function (s) { return s.type; });
@@ -180,7 +180,7 @@ function fusedGemIconHTML(fg, cls) {
 }
 function fusedGemLabel(fg) {
   var emojis = fg.stats.map(function (s) { return GEM_TYPES[s.type].emoji; }).join('');
-  return emojis + '融合寶石（' + fusedGemStatText(fg) + '）';
+  return STR(1533, emojis, fusedGemStatText(fg));
 }
 function findFusedGem(id) {
   var list = G.player.fusedGems || [];
@@ -250,18 +250,18 @@ function gemFusionUnlocked() {
 }
 
 function fuseGemsV2(ref1, ref2) {
-  if (!gemFusionUnlocked()) return { err: '寶石融合需達到 3 轉且角色 Lv.1 才開放' };
+  if (!gemFusionUnlocked()) return { err: STR(1534) };
   var m1 = normalizeFuseMaterial(ref1);
   var m2 = normalizeFuseMaterial(ref2);
-  if (!m1 || !m2) return { err: '素材不足（僅限 5 階以上寶石）' };
+  if (!m1 || !m2) return { err: STR(1535) };
   if (ref1.kind === 'plain' && ref2.kind === 'plain' && ref1.type === ref2.type &&
     (ref1.lv || GEM_MAX_LEVEL) === (ref2.lv || GEM_MAX_LEVEL) &&
     gemCount(ref1.type, ref1.lv || GEM_MAX_LEVEL) < 2) {
-    return { err: '同種同階寶石需要 2 顆' };
+    return { err: STR(1536) };
   }
-  if (ref1.kind === 'fused' && ref2.kind === 'fused' && ref1.id === ref2.id) return { err: '不能與自己融合' };
+  if (ref1.kind === 'fused' && ref2.kind === 'fused' && ref1.id === ref2.id) return { err: STR(1537) };
   var unionTypes = gemFuseTypesOk(m1, m2);
-  if (!unionTypes) return { err: '屬性不相容：融合後最多只能有 2 種屬性（雙屬性寶石只能與相同雙屬性、或含其屬性的單一寶石融合）' };
+  if (!unionTypes) return { err: STR(1538) };
 
   var rate = gemFuseRate(m1, m2);
   if (chance(rate)) {
@@ -354,7 +354,7 @@ function rollGemShop() {
 function refreshGemShop() {
   shopHourlyReset();
   var cost = shopRefreshCost();
-  if (G.player.gold < cost) return '金幣不足（需 ' + fmt(cost) + '）';
+  if (G.player.gold < cost) return STR(1539, fmt(cost));
   G.player.gold -= cost;
   gemShop().refreshCount++;
   rollGemShop();
@@ -365,9 +365,9 @@ function refreshGemShop() {
 function upgradeGemShop() {
   var s = gemShop();
   shopHourlyReset();
-  if (s.level >= GEM_SHOP_MAX_LEVEL) return '寶石商店已達最高等級';
+  if (s.level >= GEM_SHOP_MAX_LEVEL) return STR(1540);
   var cost = gemShopUpgradeCost(s.level);
-  if (G.player.gold < cost) return '金幣不足（需 ' + fmt(cost) + '）';
+  if (G.player.gold < cost) return STR(1539, fmt(cost));
   G.player.gold -= cost;
   s.level++;
   rollGemShop();
@@ -377,10 +377,10 @@ function upgradeGemShop() {
 function buyShopGem(idx) {
   var s = gemShop();
   var item = s.items[idx];
-  if (!item || item.sold) return '此寶石已售出';
-  if (!isGemEnabled(item.type)) return '此寶石已關閉，無法購買';
+  if (!item || item.sold) return STR(1541);
+  if (!isGemEnabled(item.type)) return STR(1542);
   var price = gemShopPrice(item.lv);
-  if (G.player.gold < price) return '金幣不足（需 ' + fmt(price) + '）';
+  if (G.player.gold < price) return STR(1539, fmt(price));
   G.player.gold -= price;
   item.sold = true;
   addGem(item.type, item.lv, 1);
@@ -449,20 +449,20 @@ function normalizeTwoHandItemCounts(it) {
 }
 // 鑲嵌：從庫存取一顆該種類最高等級的寶石放入第一個空槽（含 6~10 階神鑄寶石）
 function socketGem(it, type, index, level) {
-  if (!isGemEnabled(type)) return '此寶石已關閉或不存在，無法鑲嵌';
+  if (!isGemEnabled(type)) return STR(1467);
   ensureSockets(it);
   var idx = index == null ? it.sockets.indexOf(null) : index;
-  if (!Number.isInteger(idx) || idx < 0 || idx >= it.sockets.length) return '沒有可用鑲孔';
-  if (it.sockets[idx] !== null) return '此鑲孔已有寶石';
-  if (!GEM_TYPES[type]) return '沒有這種寶石';
+  if (!Number.isInteger(idx) || idx < 0 || idx >= it.sockets.length) return STR(1543);
+  if (it.sockets[idx] !== null) return STR(1544);
+  if (!GEM_TYPES[type]) return STR(1545);
   var lv = 0;
   if (level != null) {
-    if (!Number.isInteger(level) || level < 1 || level > GEM_FORGE_MAX_LEVEL) return '無效寶石階級';
+    if (!Number.isInteger(level) || level < 1 || level > GEM_FORGE_MAX_LEVEL) return STR(1469);
     if (gemCount(type, level) > 0) lv = level;
   } else {
     for (var l = GEM_FORGE_MAX_LEVEL; l >= 1; l--) { if (gemCount(type, l) > 0) { lv = l; break; } }
   }
-  if (!lv) return '沒有這種寶石';
+  if (!lv) return STR(1545);
   addGem(type, lv, -1);
   it.sockets[idx] = { type: type, level: lv };
   markStatsDirty();
@@ -470,13 +470,13 @@ function socketGem(it, type, index, level) {
 }
 // 鑲嵌融合寶石（從 fusedGems 庫存移入插槽）
 function socketFusedGem(it, fusedId, index) {
-  if (!isFusedGemEnabled(findFusedGem(fusedId))) return '融合寶石含已關閉種類或不存在，無法鑲嵌';
+  if (!isFusedGemEnabled(findFusedGem(fusedId))) return STR(1546);
   ensureSockets(it);
   var idx = index == null ? it.sockets.indexOf(null) : index;
-  if (!Number.isInteger(idx) || idx < 0 || idx >= it.sockets.length) return '沒有可用鑲孔';
-  if (it.sockets[idx] !== null) return '此鑲孔已有寶石';
+  if (!Number.isInteger(idx) || idx < 0 || idx >= it.sockets.length) return STR(1543);
+  if (it.sockets[idx] !== null) return STR(1544);
   var fg = removeFusedGem(fusedId);
-  if (!fg) return '找不到該融合寶石';
+  if (!fg) return STR(1531);
   it.sockets[idx] = { fused: fg };
   markStatsDirty();
   UI.dirty.gems = true;
