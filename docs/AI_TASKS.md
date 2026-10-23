@@ -12,6 +12,19 @@
 - 唯讀未改：AI規範／AGENTS／Workflow／prompts、style.css及ashen-forge兩套主題、ui.js控制接線、四份既有回歸、母圖及匯出來源。自我Review確認只調整DOM分組／樣式，沒有玩法／解鎖／存檔／Protocol或素材變更；素材庫無本輪修改，不建空Commit。其他聊天角色模型與製作工具保留不提交。
 - 交付：遊戲Commit為本段所在`[Codex] fix: 置中關卡控制並去除世界地圖白邊`，回覆附編號。無本輪未完成項或新增已知風險，可供Review／合併，未合併推送；限制為未驗收玩家存檔長戰／跨瀏覽器。下一步正常整合後重載遊戲驗收。
 
+## RESOURCE-ICONS-ALPHA-20261023 — 貨幣與材料圖示透明背景
+
+- Owner：Codex；Done，單一開發者。使用者要求移除貨幣／材料圖示黑色方塊背景。前置：六張正式使用PNG與既有引用已具備。
+- 允許：images/icon_{gold,scrap,essence,ancient_essence,gems,books}.png、素材來源／匯出工具與本段；素材庫codex-authored/resource-icons同相對來源。禁止玩法、JS／Worker、配置、存檔、解鎖、其他進行中模型／地圖工作；不合併推送。純美術修正，無系統功能或解鎖變動，LV無需修改。
+- 預檢fetch後六PNG與任務紀錄無外部來源；同副本騎士在檔尾，本段檔首，獨立區段無語意相依，寫前merge-file乾跑0。RPG Mote Studio可用，但像素選取／一般濾鏡不適合高解析發光邊緣去背，改用內建imagegen background-extraction，保留既有造型與暗部。
+- 驗收：六圖真alpha、外緣／四角無底框、主體與彩色光暈保持；暗／亮／棋盤底與小尺寸目視、PNG與兩庫SHA、Build／diff／自我Review後素材庫先提交，再遊戲Commit；後續使用者Review及正常整合。
+
+- 完成：替換六張正式使用PNG，新增tools/resource-icons/sync-library.cjs沿共用Root核對原圖／透明圖並匯出；沿原檔名供資源列、費用／統計與獎勵飛行圖示共用。未使用的icon_gold_new.png不變。素材庫before／transparent各六圖與SOURCE.md／source.json保留提示詞、SHA及alpha統計。無外部參考素材，既有圖經AI去背編修，可能有微小細節變化，原圖保留。
+- 驗證：六圖1254×1254、各有58萬至98萬背景像素alpha0、主體alpha≥250、柔邊與光暈保留，整圈最外緣alpha≤1／255（工具抗鋸齒殘值，未再閾值重畫）。node --check tools/resource-icons/sync-library.cjs、node tools/resource-icons/sync-library.cjs --apply與--check、npm.cmd run build（578檔）、git diff --check皆通過。純素材修正未新增低影響程式測試。
+- 隔離IAB載正式HTML資源列與style.css，24個圖片元素全數載入、正式資源圖22×18px；六圖在暗／亮／棋盤底及小尺寸目視通過，Console warning／error0。完整畫面保存在本聊天visualizations的resource-icons-transparent.png；未啟動Worker或讀寫玩家存檔，未做整場戰鬥驗收。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts/codex、index.html資源列、style.css資源樣式、ui.js獎勵與資源引用、stats.js／combat.js／factory.js／tower.js引用、vfx-library-root與既有world-map／heaven-power／enamel-nav匯出流程。未改JS／CSS／玩法／存檔／解鎖，無LV或JS快取變更。
+- 提交：素材庫先Commit 156d5dc；遊戲Commit為本段所在「[Codex] fix: 貨幣與材料圖示改用透明背景」。只stage本段及六PNG／匯出工具，保留同副本地圖與knight3d其他區段及檔案；任務區段與當下內容merge-file乾跑0。無本次未完成項，可供Review／合併，未合併／推送；後續使用者正常整合並Ctrl+F5強制重新載入同名圖片，避免舊圖快取。
+
 ## FORGE-LOG-HEADER-20261023 — 熔爐紀錄只保留標題與詳情
 
 - Owner：Codex；Done，單一開發者。使用者要求隱藏熔爐下方日誌列表，只留熔爐紀錄標籤與詳情按鈕；前置既有日誌／詳情視窗已具備。
