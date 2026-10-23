@@ -50,22 +50,99 @@ function balance(s) {
   for (const i of stack) drop.add(i);
   return parts.map((p, i) => drop.has(i) ? '' : (p.tag ? p.raw : p.text)).join('');
 }
+/* 找出沒有配對的標籤（片段式拼接常讓開頭／結尾標籤落單）的索引 */
+function orphanSet(parts) {
+  const stack = []; const drop = new Set();
+  parts.forEach((p, i) => {
+    if (!p.tag || p.tag === 'br') return;
+    if (!p.close) stack.push(i);
+    else {
+      let k = stack.length - 1;
+      while (k >= 0 && parts[stack[k]].tag !== p.tag) k--;
+      if (k < 0) drop.add(i); else { for (let q = stack.length - 1; q > k; q--) drop.add(stack[q]); stack.length = k; }
+    }
+  });
+  for (const i of stack) drop.add(i);
+  return drop;
+}
+const hasIdeo = (t) => IDEO.test(t.replace(/<[^>]*>/g, ''));
+const onlyPlaceholders = (t) => /^(\s|\{\d+\})*$/.test(t);
+
+/* 頂層節點：{text} 或 {el, text(純文字)}，片段已配對所以只靠深度就能分 */
+function topNodes(parts) {
+  const nodes = []; let depth = 0, cur = null;
+  for (const p of parts) {
+    const isBr = p.tag === 'br';
+    if (!p.tag || isBr) {
+      const raw = p.tag ? p.raw : p.text;
+      if (depth === 0) nodes.push({ el: false, raw });
+      else cur.raw += raw;
+      continue;
+    }
+    if (!p.close) { if (depth === 0) cur = { el: true, raw: '' }; cur.raw += p.raw; depth++; }
+    else { cur.raw += p.raw; depth--; if (depth === 0) { nodes.push(cur); cur = null; } }
+  }
+  return nodes;
+}
+/* 去掉頭尾「沒有漢字的元素」與緊貼它們的 {N}：這些是版面結構，不是要翻譯的句子 */
+function stripEdges(seg) {
+  const nodes = topNodes(seg);
+  let l = 0, r = nodes.length;
+  while (l < r) {
+    const n = nodes[l];
+    if (n.el && !hasIdeo(n.raw)) l++;
+    else if (!n.el && onlyPlaceholders(n.raw) && l + 1 < r && nodes[l + 1].el && !hasIdeo(nodes[l + 1].raw)) l++;
+    else break;
+  }
+  while (r > l) {
+    const n = nodes[r - 1];
+    if (n.el && !hasIdeo(n.raw)) r--;
+    else if (!n.el && onlyPlaceholders(n.raw) && r - 2 >= l && nodes[r - 2].el && !hasIdeo(nodes[r - 2].raw)) r--;
+    else break;
+  }
+  return nodes.slice(l, r).map(n => n.raw).join('');
+}
+/* 一段累積的內嵌標記字串 → 句子們：落單標籤當斷點（不刪除，所以句子一定是原字串的連續片段） */
+function finalize(buf) {
+  const out = [];
+  const parts = parseMarkup(buf);
+  const drop = orphanSet(parts);
+  const segs = []; let seg = [];
+  parts.forEach((p, i) => { if (drop.has(i)) { segs.push(seg); seg = []; } else seg.push(p); });
+  segs.push(seg);
+  for (const sg of segs) {
+    const t = stripEdges(sg).replace(/\s+/g, ' ').trim();
+    if (t && hasIdeo(t)) out.push(t);
+  }
+  return out;
+}
+
 function splitMarkup(text, fromHtmlAttr) {
   const out = [];
   if (fromHtmlAttr) text = decodeEnt(text);
-  // A. 屬性值（tooltip／title…）獨立成條
-  let rest = text.replace(ATTR_TEXT, (m, v) => { if (IDEO.test(v)) out.push(...splitMarkup(v, true)); return ' '; });
-  if (rest !== text) rest = rest.replace(/^[^<>\u3400-\u9fff]*>/, '');
-  // B. 其餘文字節點；結構性標籤當斷點，格式標籤（br／b／變色 span）保留
+  const BRK = '\u0000';
+  // A. 帶 tooltip／title 屬性的標籤：屬性值獨立成條，整個標籤當斷點
+  let rest = text.replace(/<([a-zA-Z][\w-]*)([^<>]*)>/g, (all, tag, attrs) => {
+    let had = false;
+    attrs.replace(ATTR_TEXT, (m, v) => { had = true; if (IDEO.test(v)) out.push(...splitMarkup(v, true)); return ''; });
+    return had ? BRK : all;
+  });
+  // 沒有標籤包住的殘缺屬性片段（' disabled data-tip="…">文字'）
+  rest = rest.replace(ATTR_TEXT, (m, v) => { if (IDEO.test(v)) out.push(...splitMarkup(v, true)); return BRK; });
+  rest = rest.replace(/\u0000[^<>\u0000\u3400-\u9fff{}]*>/g, BRK);
+  // B. 其餘文字節點；結構性標籤當斷點，格式標籤（br／b／變色或樣式 span）保留
   let buf = '';
-  const flush = () => { const t = balance(buf).replace(/\s+/g, ' ').replace(/\s+>/g, '>').trim(); if (t && IDEO.test(t.replace(/<[^>]*>/g, ''))) out.push(t); buf = ''; };
+  const flush = () => { out.push(...finalize(buf)); buf = ''; };
   for (const p of parseMarkup(rest)) {
-    if (!p.tag) { buf += p.text; continue; }
+    if (!p.tag) {
+      const chunks = p.text.split(BRK);
+      chunks.forEach((c, i) => { if (i) flush(); buf += c; });
+      continue;
+    }
     if (keepTag(p)) buf += p.raw; else flush();
   }
   flush();
   return out;
 }
 
-
-module.exports = { IDEO, INLINE_OK, parseMarkup, keepTag, balance, splitMarkup, decodeEnt, ATTR_TEXT };
+module.exports = { IDEO, INLINE_OK, parseMarkup, keepTag, balance, splitMarkup, decodeEnt, ATTR_TEXT, orphanSet };

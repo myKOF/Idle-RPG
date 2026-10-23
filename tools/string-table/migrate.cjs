@@ -108,6 +108,7 @@ function planFile(rel, src) {
     }
     if (pend.length && ownerOf(owners).module === MODULE) edits.push(...pend);
   }
+  if (process.env.MIG_TRACE) for (const ed of edits) console.error('[edit]', rel, ed.kind, ed.id || (ed.cuts && ed.cuts.map(c => c.id).join(',')) || (ed.seq && ed.seq.filter(x => x.str).map(x => x.str).join(',')), 'line', src.slice(0, ed.s).split('\n').length);
   return { edits, miss };
 }
 
@@ -139,7 +140,7 @@ function planD(r, src, text) {
     if (it.ph) { it.k = k++; J += '{' + it.k + '}'; } else J += it.text;
     it.end = J.length;
   }
-  if (J.replace(/\u00a0/g, ' ') !== text) return null; // 重組結果與抽取不一致就不動
+  if (J.replace(/\u00a0/g, ' ') !== text) { if (process.env.MIG_DEBUG) console.error('[D] J!=text line', r.line, JSON.stringify(J.slice(0, 90)), JSON.stringify(text.slice(0, 90))); return null; } // 重組結果與抽取不一致就不動
   // 找每個句子在 J 的範圍
   const spans = [];
   let from = 0;
