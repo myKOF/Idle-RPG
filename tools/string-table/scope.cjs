@@ -15,4 +15,20 @@ function scopeReason(r) {
   if (/^\^|\(\?:/.test(r.text)) return 'regex';
   return '';
 }
-module.exports = { EXCLUDE_FILE, EXCLUDE_FN, dropCallee, GENERATED_TOP, scopeReason };
+/* 資料型檔案：裡面和配置表儲存格完全相同的字串，來源是配置表，不進 String 表（也不能改成 STR，否則下次套用參數會被蓋回去） */
+const DATA_FILES = /^js\/(data|skills2|status|runeword_data|elite_data|gem_resonance_data|elite_boss_recipes)\.js$/;
+let _cells = null;
+function csvCells() {
+  if (_cells) return _cells;
+  const fs = require('fs');
+  const path = require('path');
+  const { csvParse } = require('./apply_strings.cjs');
+  const dir = path.resolve(__dirname, '..', '..', 'config', 'CSV');
+  _cells = new Set();
+  for (const fn of fs.readdirSync(dir)) {
+    if (!fn.endsWith('.csv') || fn === 'String.csv') continue;
+    for (const r of csvParse(fs.readFileSync(path.join(dir, fn), 'utf8'))) for (const c of r) if (c) _cells.add(c);
+  }
+  return _cells;
+}
+module.exports = { EXCLUDE_FILE, EXCLUDE_FN, dropCallee, GENERATED_TOP, scopeReason, DATA_FILES, csvCells };

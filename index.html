@@ -101,21 +101,21 @@
 
         <section id="tab-char" class="tab">
           <div class="char-hero">
-            <div class="sidebar-avatar char-avatar"><img src="images/icon_avatar.png" alt="角色頭像"></div>
+            <div class="sidebar-avatar char-avatar"><img src="images/icon_avatar.png" data-str-attr="alt:370"></div>
             <div class="char-hero-main">
-              <div class="char-hero-line"><span class="sidebar-title" id="p-class">冒險者</span><span id="p-level" class="plevel">Lv.1</span></div>
+              <div class="char-hero-line"><span class="sidebar-title" id="p-class" data-str="371"></span><span id="p-level" class="plevel">Lv.1</span></div>
               <div id="xp-bar">
                 <div id="xp-fill"></div>
               </div>
             </div>
             <div id="reincarnation-controls" class="reincarnation-controls">
-              <div id="p-reincarnation" class="reincarnation-info">轉生：0/10</div>
+              <div id="p-reincarnation" class="reincarnation-info" data-str="372"></div>
               <button id="btn-reincarnate" class="btn sm reincarnate-btn">🔄 轉生</button>
             </div>
           </div>
           <div id="char-core" class="char-core"></div>
           <div class="char-attr-toolbar" id="attr-hide-zero-bar" hidden>
-            <label><input type="checkbox" id="attr-hide-zero">隱藏數值為 0 的屬性（內測）</label>
+            <label><input type="checkbox" id="attr-hide-zero"><span data-str="373"></span></label>
           </div>
           <div class="sidebar-stats char-attr" id="attr-panel"></div>
         </section>
@@ -944,9 +944,9 @@
   <script src="js/strings_data.js?v=fd850ee0"></script>
   <script src="js/strings.js?v=1.0.0"></script>
   <script src="js/ui-scale.js?v=1.0.1"></script>
-  <script src="js/data.js?v=1.0.101"></script>
+  <script src="js/data.js?v=1.0.102"></script>
   <script src="js/status.js?v=1.0.42"></script>
-  <script src="js/runeword_data.js?v=1.0.20"></script>
+  <script src="js/runeword_data.js?v=1.0.21"></script>
   <script src="js/gem_resonance_data.js?v=1.0.1"></script>
   <script src="js/formula.js?v=1.0.69"></script>
   <script src="js/battle-terrain.js?v=1.0.2"></script>
@@ -974,7 +974,7 @@
   <script src="js/battle-arena.js?v=1.0.6"></script>
   <script src="js/battle-elite.js?v=1.0.8"></script>
   <script src="js/battle-renderer.js?v=1.6.199"></script>
-  <script src="js/stats.js?v=1.0.4"></script>
+  <script src="js/stats.js?v=1.0.5"></script>
   <script src="js/item.js?v=1.0.29"></script>
   <script src="js/gem_resonance.js?v=1.0.5"></script>
   <script src="js/runeword.js?v=1.0.17"></script>
@@ -983,12 +983,12 @@
   <script src="js/skills2.js?v=1.0.357"></script>
   <script src="js/elite_data.js?v=1.0.7"></script>
   <script src="js/talents.js?v=1.0.11"></script>
-  <script src="js/player.js?v=1.0.19"></script>
+  <script src="js/player.js?v=1.0.20"></script>
   <script src="js/combat.js?v=1.0.90"></script>
   <script src="js/tower.js?v=1.0.36"></script>
   <script src="js/save.js?v=1.0.22"></script>
   <script src="js/ui-inventory-skin.js?v=1.0.1"></script>
-  <script src="js/ui.js?v=1.0.207"></script>
+  <script src="js/ui.js?v=1.0.208"></script>
   <script src="js/ui-runeword.js?v=1.0.15"></script>
   <script src="js/ui-gem-resonance.js?v=1.0.17"></script>
   <script src="js/ui-gem-workshop.js?v=1.0.2"></script>
@@ -1005,7 +1005,7 @@
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
-  <script src="js/bridge.js?v=1.0.356"></script>
+  <script src="js/bridge.js?v=1.0.357"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->

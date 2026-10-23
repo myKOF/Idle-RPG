@@ -21,7 +21,7 @@ const fsx = require('./fsx.cjs');
 const path = require('path');
 const vm = require('vm');
 const { extract } = require('./chain.cjs');
-const { scopeReason, GENERATED_TOP } = require('./scope.cjs');
+const { scopeReason, GENERATED_TOP, DATA_FILES, csvCells } = require('./scope.cjs');
 const { splitMarkup, decodeEnt, IDEO, ATTR_TEXT, attrValue } = require('./markup.cjs');
 const { csvParse } = require('./apply_strings.cjs');
 
@@ -69,11 +69,14 @@ function unescapeMap(raw) {
 }
 
 /* ---------- 單一檔案 ---------- */
+let CUR_DATA_FILE = false;
 function planFile(rel, src) {
+  CUR_DATA_FILE = DATA_FILES.test(rel);
   const recs = extract(src).filter(r => {
     const rr = { ...r, file: rel };
     if (scopeReason(rr)) return false;
     if (r.top && GENERATED_TOP.test(r.top) && /^js\/(data|skills2|status|runeword_data|gem_resonance_data|elite_data)\.js$/.test(rel)) return false;
+    if (DATA_FILES.test(rel) && csvCells().has(r.text)) return false;
     return !!r.span && !!r.ops;
   });
   const edits = [];
@@ -203,7 +206,7 @@ function cutLiteral(raw, absStart, isTpl) {
   let from = 0;
   for (const piece of splitMarkup(value)) {
     const e = lookup(piece);
-    if (!e) continue;
+    if (!e || (CUR_DATA_FILE && csvCells().has(piece))) continue;
     let idx = value.indexOf(piece, from);
     let plen = piece.length;
     if (idx < 0) { // splitMarkup 會把連續空白收成一個

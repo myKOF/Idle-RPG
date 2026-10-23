@@ -3095,7 +3095,7 @@ function renderHeader() {
 /* ---- 「角色」分頁的 50+ 屬性面板（分組摺疊；2026-10 由左側欄搬進分頁） ---- */
 var _attrPanelBuilt = false;
 var _charCoreBuilt = false;
-var CHAR_CORE_STAT_NAMES = ['攻擊', '堅韌'];
+var CHAR_CORE_STAT_NAMES = ['攻擊', STR(410)];
 var _charCoreRows = null;
 
 function formatReductionPercentage(v, startDec) {
@@ -3172,9 +3172,9 @@ function calculateCombatRatingSummary(st, headerSnapshot, battleSnapshot) {
 
   var typeMaxLabel = '';
   if (rTypeMax > 0) {
-    if (rTypeMax === rBoss) typeMaxLabel = ' (BOSS傷害抗性)';
-    else if (rTypeMax === rElite) typeMaxLabel = ' (菁英傷害抗性)';
-    else typeMaxLabel = ' (普通敵人傷害抗性)';
+    if (rTypeMax === rBoss) typeMaxLabel = ' ' + STR(411);
+    else if (rTypeMax === rElite) typeMaxLabel = ' ' + STR(412);
+    else typeMaxLabel = ' ' + STR(413);
   }
 
   // 元素抗性減傷（全部元素取平均；除數跟著元素數走，加屬性不必回頭改分母）
@@ -3226,11 +3226,11 @@ function buildCharCoreTiles() {
   if (!box) return;
   box.innerHTML =
     '<div class="char-core-tile" id="char-core-atk" style="cursor: pointer;">' +
-      '<span>⚔️ 攻擊</span>' +
+      '<span>' + STR(414) + '</span>' +
       '<b id="char-core-atk-val" data-core="0" style="color: #4ade80;">0</b>' +
     '</div>' +
     '<div class="char-core-tile" id="char-core-toughness" style="cursor: pointer;">' +
-      '<span>🛡️ 堅韌</span>' +
+      '<span>' + STR(415) + '</span>' +
       '<b id="char-core-toughness-val" data-core="1" style="color: #4ade80;">0</b>' +
     '</div>';
   _charCoreBuilt = true;
@@ -3247,18 +3247,8 @@ function updateCharCoreSummary(st, headerSnapshot, battleSnapshot) {
   setTextIfChanged(atkEl, fmt(summary.avgAtk));
   var atkParent = $id('char-core-atk') || atkEl.parentNode;
   if (atkParent) {
-    setAttrIfChanged(atkParent, 'data-tt-title', '綜合攻擊力 (攻擊)');
-    var atkDesc = '角色的綜合攻擊能力，包含了物理、魔法、攻速、暴擊及元素等綜合的攻擊強度評價。<br><br>' +
-      '<span style="color:#4ade80">基礎物理攻擊：</span>' + fmtFull(currentSt.atk || 0) + '<br>' +
-      '<span style="color:#4ade80">基礎魔法攻擊：</span>' + fmtFull(currentSt.matk || 0) + '<br>' +
-      '<span style="color:#ffd700">暴擊傷害倍率：</span>' + Math.round(summary.critMult * 100) + '%<br>' +
-      '<span style="color:#ffd700">總傷害加成：</span>' + (currentSt.totalDmgPct || 0) + '%<br>' +
-      '<span style="color:#ffd700">敵種最大加成：</span>' + summary.maxEnemyDmg + '%<br>' +
-      '<span style="color:#ffd700">對屬性敵最大加成：</span>' + summary.maxVsElem.toFixed(1) + '%<br>' +
-      '<span style="color:#ffd700">屬性傷害最大提升：</span>' + summary.maxElemUp.toFixed(1) + '%<br><br>' +
-      '<span style="color:#4ade80">物理單次預期傷害 (物傷)：</span>' + fmtFull(summary.physDmgVal) + '<br>' +
-      '<span style="color:#4ade80">魔法單次預期傷害 (魔傷)：</span>' + fmtFull(summary.magicDmgVal) + '<br><br>' +
-      '<span style="color:#ffd700">綜合預期平均攻擊力：</span>' + fmtFull(summary.avgAtk);
+    setAttrIfChanged(atkParent, 'data-tt-title', STR(416));
+    var atkDesc = STR(417, fmtFull(currentSt.atk || 0), fmtFull(currentSt.matk || 0), Math.round(summary.critMult * 100), (currentSt.totalDmgPct || 0), summary.maxEnemyDmg, summary.maxVsElem.toFixed(1), summary.maxElemUp.toFixed(1), fmtFull(summary.physDmgVal), fmtFull(summary.magicDmgVal), fmtFull(summary.avgAtk));
     setAttrIfChanged(atkParent, 'data-tt-desc', atkDesc);
     removeAttrIfPresent(atkParent, 'title');
   }
@@ -3266,21 +3256,8 @@ function updateCharCoreSummary(st, headerSnapshot, battleSnapshot) {
   setTextIfChanged(toughnessEl, summary.avgToughness === Infinity ? '∞' : fmt(summary.avgToughness));
   var toughnessParent = $id('char-core-toughness') || toughnessEl.parentNode;
   if (toughnessParent) {
-    setAttrIfChanged(toughnessParent, 'data-tt-title', '綜合生存能力 (堅韌)');
-    var toughnessDesc = '角色的綜合生存能力，包含了物防、法防、生命及各類抗性、減傷的綜合評價。<br><br>' +
-      '<span style="color:#4ade80">當前血量：</span>' + fmtFull(summary.hp) + '<br>' +
-      '<span style="color:#4ade80">當前護盾：</span>' + fmtFull(summary.shield) + '<br>' +
-      '<span style="color:#ffd700">物理防禦減傷：</span>' + formatReductionPercentage(summary.rPhysDef) + '<br>' +
-      '<span style="color:#ffd700">魔法防禦減傷：</span>' + formatReductionPercentage(summary.rMagicDef) + '<br>' +
-      '<span style="color:#ffd700">物理抗性減傷：</span>' + formatReductionPercentage(summary.rPhysRes) + '<br>' +
-      '<span style="color:#ffd700">魔法抗性減傷：</span>' + formatReductionPercentage(summary.rMagicRes) + '<br>' +
-      '<span style="color:#ffd700">聖佑被動減傷：</span>' + formatReductionPercentage(summary.rSanctuary, 2) + '<br>' +
-      '<span style="color:#ffd700">全局減傷：</span>' + formatReductionPercentage(summary.rGlobal) + '<br>' +
-      '<span style="color:#ffd700">元素抗性減傷：</span>' + formatReductionPercentage(summary.rElemAvg) + '<br>' +
-      '<span style="color:#ffd700">敵種最大減傷：</span>' + formatReductionPercentage(summary.rTypeMax) + summary.typeMaxLabel + '<br><br>' +
-      '<span style="color:#4ade80">物理總承傷 (物承)：</span>' + (summary.physAbsorb === Infinity ? '無窮大' : fmtFull(summary.physAbsorb)) + '<br>' +
-      '<span style="color:#4ade80">魔法總承傷 (魔承)：</span>' + (summary.magicAbsorb === Infinity ? '無窮大' : fmtFull(summary.magicAbsorb)) + '<br><br>' +
-      '<span style="color:#ffd700">綜合預期平均堅韌：</span>' + (summary.avgToughness === Infinity ? '無窮大' : fmtFull(summary.avgToughness));
+    setAttrIfChanged(toughnessParent, 'data-tt-title', STR(418));
+    var toughnessDesc = STR(419, fmtFull(summary.hp), fmtFull(summary.shield), formatReductionPercentage(summary.rPhysDef), formatReductionPercentage(summary.rMagicDef), formatReductionPercentage(summary.rPhysRes), formatReductionPercentage(summary.rMagicRes), formatReductionPercentage(summary.rSanctuary, 2), formatReductionPercentage(summary.rGlobal), formatReductionPercentage(summary.rElemAvg), formatReductionPercentage(summary.rTypeMax), summary.typeMaxLabel, (summary.physAbsorb === Infinity ? STR(420) : fmtFull(summary.physAbsorb)), (summary.magicAbsorb === Infinity ? STR(420) : fmtFull(summary.magicAbsorb)), (summary.avgToughness === Infinity ? STR(420) : fmtFull(summary.avgToughness)));
     setAttrIfChanged(toughnessParent, 'data-tt-desc', toughnessDesc);
     removeAttrIfPresent(toughnessParent, 'title');
   }
@@ -3346,10 +3323,7 @@ function renderAttrPanel(st, headerSnapshot) {
     previewNote.hidden = !previewing;
     if (previewing) {
       var previewEquipSnapshot = peekUiPanelData('equip');
-      previewNote.textContent = '👁 屬性預覽：' +
-        (previewEquipSnapshot ? equipSetViewLabel(previewEquipSnapshot, equipView) : '檢視中裝備套') +
-        '（尚未穿上，戰鬥仍用' +
-        (previewEquipSnapshot ? equipSetViewLabel(previewEquipSnapshot, equipActive) : '穿著中那套') + '）';
+      previewNote.textContent = STR(421, (previewEquipSnapshot ? equipSetViewLabel(previewEquipSnapshot, equipView) : STR(422)), (previewEquipSnapshot ? equipSetViewLabel(previewEquipSnapshot, equipActive) : STR(423)));
     }
   }
   // 更新數值
@@ -3386,7 +3360,7 @@ function renderAttrPanel(st, headerSnapshot) {
       }
     });
     // 組標題旁的「N 項為 0」：只在勾選隱藏時顯示（CSS 控制），讓玩家知道是收起來而不是不見
-    setTextIfChanged(panel.querySelector('[data-zero-count="' + gi + '"]'), zeroCount ? zeroCount + ' 項為 0，已隱藏' : '');
+    setTextIfChanged(panel.querySelector('[data-zero-count="' + gi + '"]'), zeroCount ? STR(424, zeroCount) : '');
   });
 }
 
@@ -4693,8 +4667,8 @@ function renderBattleResourceOrbs() {
   fill('battle-health-fill', hp, hpMax);
   fill('battle-mana-fill', mp, mpMax);
   fill('battle-shield-fill', shield, shieldMax);
-  var hpDesc = '生命：' + fmtFull(hp) + ' / ' + fmtFull(hpMax) + '<br>護盾：' + fmtFull(shield) + ' / ' + fmtFull(shieldMax);
-  var mpDesc = '法力：' + fmtFull(mp) + ' / ' + fmtFull(mpMax);
+  var hpDesc = STR(425, fmtFull(hp), fmtFull(hpMax), fmtFull(shield), fmtFull(shieldMax));
+  var mpDesc = STR(426, fmtFull(mp), fmtFull(mpMax));
   setAttrIfChanged($id('battle-health-orb'), 'data-tt-desc', hpDesc);
   setAttrIfChanged($id('battle-health-orb'), 'aria-label', hpDesc.replace('<br>', '，'));
   setAttrIfChanged($id('battle-mana-orb'), 'data-tt-desc', mpDesc);
@@ -7405,7 +7379,7 @@ function towerDetailHTML(fl, highest) {
   }).map(function (word) {
     return '<div>' + STR(1801, word.tier, esc(RUNEWORD_TIER_NAMES[word.tier]), esc(word.name)) + '</div>';
   }).join('');
-  return '<div class="twx-boss" style="--c:' + color + '"><div class="twx-boss-art">' + towerBossIconHTML(bd, 'twx-boss-img') + '</div><div class="twx-boss-main"><span class="twx-boss-tier ' + tier.id + '">' + STR(158, tier.name, fl) + '</span><span class="twx-boss-name' + (isPurgatoryTowerFloor(fl) ? ' purgatory-boss' : '') + '">' + esc(bd.name) + '</span><span class="twx-tags">' + tags + '</span><span class="twx-stats">' + stat('BOSS 等級', 'Lv.' + fmtFull(Math.round(stats.level))) + stat('生命', fmt(stats.hp), '#ff8a80') + stat('建議野外階段', (4 + fl * 5) + '+', '#f0cf86') + '</span><span class="twx-status' + (cleared ? ' is-cleared' : (next ? ' is-next' : ' is-locked')) + '">' + status + '</span></div></div><div class="twx-loot"><div class="twx-loot-title">' + STR(159) + '<span>' + STR(1211) + '</span></div><div class="twx-rws">' + rewards + '</div>' + (equips ? '<div class="twx-loot-title">' + STR(1212) + '<span>' + STR(1455) + '</span></div><div class="twx-eqs">' + equips + '</div>' : '') + '</div>' + (wordUnlocks ? '<div class="twx-skill-unlocks twx-word-unlocks">' + wordUnlocks + '</div>' : '') + (unlocks ? '<div class="twx-skill-unlocks">' + unlocks + '</div>' : '');
+  return '<div class="twx-boss" style="--c:' + color + '"><div class="twx-boss-art">' + towerBossIconHTML(bd, 'twx-boss-img') + '</div><div class="twx-boss-main"><span class="twx-boss-tier ' + tier.id + '">' + STR(158, tier.name, fl) + '</span><span class="twx-boss-name' + (isPurgatoryTowerFloor(fl) ? ' purgatory-boss' : '') + '">' + esc(bd.name) + '</span><span class="twx-tags">' + tags + '</span><span class="twx-stats">' + stat('BOSS 等級', 'Lv.' + fmtFull(Math.round(stats.level))) + stat(STR(427), fmt(stats.hp), '#ff8a80') + stat('建議野外階段', (4 + fl * 5) + '+', '#f0cf86') + '</span><span class="twx-status' + (cleared ? ' is-cleared' : (next ? ' is-next' : ' is-locked')) + '">' + status + '</span></div></div><div class="twx-loot"><div class="twx-loot-title">' + STR(159) + '<span>' + STR(1211) + '</span></div><div class="twx-rws">' + rewards + '</div>' + (equips ? '<div class="twx-loot-title">' + STR(1212) + '<span>' + STR(1455) + '</span></div><div class="twx-eqs">' + equips + '</div>' : '') + '</div>' + (wordUnlocks ? '<div class="twx-skill-unlocks twx-word-unlocks">' + wordUnlocks + '</div>' : '') + (unlocks ? '<div class="twx-skill-unlocks">' + unlocks + '</div>' : '');
 }
 
 function towerActionsHTML(fl, highest, gold, active) {
@@ -7922,16 +7896,8 @@ function updateDmgAbsorb() {
     setTextIfChanged(physDmgEl, fmt(summary.physDmgVal));
     var physDmgParent = physDmgEl.parentNode;
     if (physDmgParent) {
-      setAttrIfChanged(physDmgParent, 'data-tt-title', '物理單次預期傷害 (物傷)');
-      var physDmgDesc = '角色單次物理傷害輸出（綜合極限水準）。<br>' +
-        '公式：基礎物攻 × 暴傷倍率 × 總傷% × 敵種加成% × 對屬性敵最大% × 屬性提升最大%<br><br>' +
-        '<span style="color:#4ade80">基礎物理攻擊：</span>' + fmtFull(st.atk || 0) + '<br>' +
-        '<span style="color:#ffd700">暴擊傷害倍率：</span>' + Math.round(summary.critMult * 100) + '%<br>' +
-        '<span style="color:#ffd700">總傷害加成：</span>' + (st.totalDmgPct || 0) + '%<br>' +
-        '<span style="color:#ffd700">敵種最大加成：</span>' + summary.maxEnemyDmg + '%<br>' +
-        '<span style="color:#ffd700">對屬性敵最大加成：</span>' + summary.maxVsElem.toFixed(1) + '%<br>' +
-        '<span style="color:#ffd700">屬性傷害最大提升：</span>' + summary.maxElemUp.toFixed(1) + '%<br><br>' +
-        '<span style="color:#ffd700">物理單次預期傷害：</span>' + fmtFull(summary.physDmgVal);
+      setAttrIfChanged(physDmgParent, 'data-tt-title', STR(428));
+      var physDmgDesc = STR(429, fmtFull(st.atk || 0), Math.round(summary.critMult * 100), (st.totalDmgPct || 0), summary.maxEnemyDmg, summary.maxVsElem.toFixed(1), summary.maxElemUp.toFixed(1), fmtFull(summary.physDmgVal));
       setAttrIfChanged(physDmgParent, 'data-tt-desc', physDmgDesc);
       physDmgParent.removeAttribute('title');
     }
@@ -7940,16 +7906,8 @@ function updateDmgAbsorb() {
     setTextIfChanged(magicDmgEl, fmt(summary.magicDmgVal));
     var magicDmgParent = magicDmgEl.parentNode;
     if (magicDmgParent) {
-      setAttrIfChanged(magicDmgParent, 'data-tt-title', '魔法單次預期傷害 (魔傷)');
-      var magicDmgDesc = '角色單次魔法傷害輸出（綜合極限水準）。<br>' +
-        '公式：基礎魔攻 × 暴傷倍率 × 總傷% × 敵種加成% × 對屬性敵最大% × 屬性提升最大%<br><br>' +
-        '<span style="color:#4ade80">基礎魔法攻擊：</span>' + fmtFull(st.matk || 0) + '<br>' +
-        '<span style="color:#ffd700">暴擊傷害倍率：</span>' + Math.round(summary.critMult * 100) + '%<br>' +
-        '<span style="color:#ffd700">總傷害加成：</span>' + (st.totalDmgPct || 0) + '%<br>' +
-        '<span style="color:#ffd700">敵種最大加成：</span>' + summary.maxEnemyDmg + '%<br>' +
-        '<span style="color:#ffd700">對屬性敵最大加成：</span>' + summary.maxVsElem.toFixed(1) + '%<br>' +
-        '<span style="color:#ffd700">屬性傷害最大提升：</span>' + summary.maxElemUp.toFixed(1) + '%<br><br>' +
-        '<span style="color:#ffd700">魔法單次預期傷害：</span>' + fmtFull(summary.magicDmgVal);
+      setAttrIfChanged(magicDmgParent, 'data-tt-title', STR(430));
+      var magicDmgDesc = STR(431, fmtFull(st.matk || 0), Math.round(summary.critMult * 100), (st.totalDmgPct || 0), summary.maxEnemyDmg, summary.maxVsElem.toFixed(1), summary.maxElemUp.toFixed(1), fmtFull(summary.magicDmgVal));
       setAttrIfChanged(magicDmgParent, 'data-tt-desc', magicDmgDesc);
       magicDmgParent.removeAttribute('title');
     }
@@ -7963,34 +7921,14 @@ function updateDmgAbsorb() {
   var physParent = physEl.parentNode;
   var magicParent = magicEl.parentNode;
   if (physParent) {
-    setAttrIfChanged(physParent, 'data-tt-title', '物理總承傷');
-    var physDesc = '角色能承受的一次性最大物理傷害值。<br>' +
-      '公式：(血量+護盾)/(1-各類減傷)<br><br>' +
-      '<span style="color:#4ade80">當前血量：</span>' + fmtFull(summary.hp) + '<br>' +
-      '<span style="color:#4ade80">當前護盾：</span>' + fmtFull(summary.shield) + '<br>' +
-      '<span style="color:#ffd700">物理防禦減傷：</span>' + formatReductionPercentage(summary.rPhysDef) + '<br>' +
-      '<span style="color:#ffd700">物理抗性減傷：</span>' + formatReductionPercentage(summary.rPhysRes) + '<br>' +
-      '<span style="color:#ffd700">聖佑被動減傷：</span>' + formatReductionPercentage(summary.rSanctuary, 2) + '<br>' +
-      '<span style="color:#ffd700">全局減傷：</span>' + formatReductionPercentage(summary.rGlobal) + '<br>' +
-      '<span style="color:#ffd700">元素抗性減傷：</span>' + formatReductionPercentage(summary.rElemAvg) + '<br>' +
-      '<span style="color:#ffd700">敵種最大減傷：</span>' + formatReductionPercentage(summary.rTypeMax) + summary.typeMaxLabel + '<br><br>' +
-      '<span style="color:#ffd700">物理承傷總值：</span>' + (summary.physAbsorb === Infinity ? '無窮大' : fmtFull(summary.physAbsorb));
+    setAttrIfChanged(physParent, 'data-tt-title', STR(432));
+    var physDesc = STR(433, fmtFull(summary.hp), fmtFull(summary.shield), formatReductionPercentage(summary.rPhysDef), formatReductionPercentage(summary.rPhysRes), formatReductionPercentage(summary.rSanctuary, 2), formatReductionPercentage(summary.rGlobal), formatReductionPercentage(summary.rElemAvg), formatReductionPercentage(summary.rTypeMax), summary.typeMaxLabel, (summary.physAbsorb === Infinity ? STR(420) : fmtFull(summary.physAbsorb)));
     setAttrIfChanged(physParent, 'data-tt-desc', physDesc);
     physParent.removeAttribute('title');
   }
   if (magicParent) {
-    setAttrIfChanged(magicParent, 'data-tt-title', '魔法總承傷');
-    var magicDesc = '角色能承受的一次性最大魔法傷害值。<br>' +
-      '公式：(血量+護盾)/(1-各類減傷)<br><br>' +
-      '<span style="color:#4ade80">當前血量：</span>' + fmtFull(summary.hp) + '<br>' +
-      '<span style="color:#4ade80">當前護盾：</span>' + fmtFull(summary.shield) + '<br>' +
-      '<span style="color:#ffd700">魔法防禦減傷：</span>' + formatReductionPercentage(summary.rMagicDef) + '<br>' +
-      '<span style="color:#ffd700">魔法抗性減傷：</span>' + formatReductionPercentage(summary.rMagicRes) + '<br>' +
-      '<span style="color:#ffd700">聖佑被動減傷：</span>' + formatReductionPercentage(summary.rSanctuary, 2) + '<br>' +
-      '<span style="color:#ffd700">全局減傷：</span>' + formatReductionPercentage(summary.rGlobal) + '<br>' +
-      '<span style="color:#ffd700">元素抗性減傷：</span>' + formatReductionPercentage(summary.rElemAvg) + '<br>' +
-      '<span style="color:#ffd700">敵種最大減傷：</span>' + formatReductionPercentage(summary.rTypeMax) + summary.typeMaxLabel + '<br><br>' +
-      '<span style="color:#ffd700">魔法承傷總值：</span>' + (summary.magicAbsorb === Infinity ? '無窮大' : fmtFull(summary.magicAbsorb));
+    setAttrIfChanged(magicParent, 'data-tt-title', STR(434));
+    var magicDesc = STR(435, fmtFull(summary.hp), fmtFull(summary.shield), formatReductionPercentage(summary.rMagicDef), formatReductionPercentage(summary.rMagicRes), formatReductionPercentage(summary.rSanctuary, 2), formatReductionPercentage(summary.rGlobal), formatReductionPercentage(summary.rElemAvg), formatReductionPercentage(summary.rTypeMax), summary.typeMaxLabel, (summary.magicAbsorb === Infinity ? STR(420) : fmtFull(summary.magicAbsorb)));
     setAttrIfChanged(magicParent, 'data-tt-desc', magicDesc);
     magicParent.removeAttribute('title');
   }
@@ -11776,12 +11714,12 @@ function initUI() {
       if (level < REINCARNATION_LEVEL || count >= REINCARNATION_MAX) {
         blog('⚠️ ' + (count >= REINCARNATION_MAX
           ? (count >= 10 ? '已達最高 神階 10/10' : '已達最高 ' + REINCARNATION_MAX + ' 轉')
-          : '等級達到 ' + REINCARNATION_LEVEL + ' 級後才能' + (count >= 10 ? '晉階' : '轉生')), 'warn');
+          : STR(437, REINCARNATION_LEVEL, (count >= 10 ? '晉階' : STR(436)))), 'warn');
         return;
       }
       var nextCount = count + 1;
       var isGodAction = count >= 10;
-      var actTitle = isGodAction ? '晉階' : '轉生';
+      var actTitle = isGodAction ? '晉階' : STR(436);
 
       showConfirmDialog(
         STR(827, actTitle, reincarnationTotalMultiplier(nextCount), actTitle),
@@ -11792,9 +11730,9 @@ function initUI() {
             panels: ['header', 'equip', 'inv', 'skills', 'talents']
           }).then(function (result) {
             var error = uiCommandResultError(result);
-            if (error) reportUiCommandFailure('轉生', error, ['header', 'equip', 'inv', 'skills', 'talents']);
+            if (error) reportUiCommandFailure(STR(436), error, ['header', 'equip', 'inv', 'skills', 'talents']);
           }).catch(function (error) {
-            reportUiCommandFailure('轉生', error, ['header', 'equip', 'inv', 'skills', 'talents']);
+            reportUiCommandFailure(STR(436), error, ['header', 'equip', 'inv', 'skills', 'talents']);
           });
           return;
         },
@@ -13322,7 +13260,7 @@ function initUI() {
     });
   });
   var INV_SORT_MODES = [
-    { key: 'level', label: '🔄 排序 (等級)', desc: '等級' },
+    { key: 'level', label: '🔄 排序 (等級)', desc: STR(438) },
     { key: 'ancient', label: '✡️ 排序 (太古)', desc: STR(1228) },
     { key: 'rarity', label: STR(1229), desc: STR(1230) }
   ];

@@ -229,7 +229,7 @@ function settlePlayerXp(options) {
     markStatsDirty();
     var reward = '';
     if (options.silent !== true && typeof blog === 'function') {
-      blog('🎉 等級提升！目前等級 ' + p.level + '（四維主屬性 +2' + reward + '）', 'good');
+      blog(STR(374, p.level, reward), 'good');
     }
     // 升級回滿血藍
     if (typeof getStats === 'function') {
@@ -262,8 +262,8 @@ function gainXp(n) {
 function reincarnate() {
   var p = G.player;
   var count = reincarnationCount();
-  if (count >= REINCARNATION_MAX) return '已達最高轉生次數（' + REINCARNATION_MAX + ' 轉）';
-  if (p.level < REINCARNATION_LEVEL) return '角色尚未達到 ' + REINCARNATION_LEVEL + ' 級';
+  if (count >= REINCARNATION_MAX) return STR(375, REINCARNATION_MAX);
+  if (p.level < REINCARNATION_LEVEL) return STR(376, REINCARNATION_LEVEL);
   p.reincarnations = count + 1;
   p.level = 1;
   p.xp = 0;
@@ -287,7 +287,7 @@ function reincarnate() {
   UI.dirty.skills = true;
   UI.dirty.talents = true;
   UI.dirty.battle = true;
-  blog('🌟 轉生成功！成為【' + reincarnationRankName(p.reincarnations) + '】。等級重置為 1，生命、法力與四大屬性變為 ×' + reincarnationTotalMultiplier() + '，經驗需求 ×' + reincarnationExpMultiplier() + '。', 'good');
+  blog(STR(377, reincarnationRankName(p.reincarnations), reincarnationTotalMultiplier(), reincarnationExpMultiplier()), 'good');
   return null;
 }
 
@@ -360,7 +360,7 @@ function equipItem(it, slotKey, eq) {
     eq.weapon2 = null;
     off.locked = false;
     addToInventory(off);
-    blog('🗡️ 雙手武器佔據主副手：已卸下副手 ' + rarityTag(off), 'info');
+    blog(STR(378, rarityTag(off)), 'info');
   }
   /* 主手為雙手武器時要裝副手 → 先卸下該雙手武器。
      修羅亂舞的例外只開給「副手也是雙手武器」：它讓你同時拿兩把雙手武器，
@@ -370,7 +370,7 @@ function equipItem(it, slotKey, eq) {
     eq.weapon = null;
     mh.locked = false;
     addToInventory(mh);
-    blog('🗡️ 裝備副手：已卸下佔用雙欄的 ' + rarityTag(mh), 'info');
+    blog(STR(379, rarityTag(mh)), 'info');
   }
   /* ⚠️ 同一件裝備不得同時佔兩個欄位。
 
@@ -415,7 +415,7 @@ function tryAutoEquip(it) {
     if (key === 'weapon2' && !isTwoHandItem(it) && isTwoHandItem(G.equipment.weapon)) continue;
     if (isTwoHandItem(it) && G.equipment.weapon2) continue;      // 雙手武器不自動擠下副手
     equipItem(it, key);
-    blog('🎽 自動穿裝：' + rarityTag(it) + '（' + SLOT_INFO[key].name + '）', 'info');
+    blog(STR(380, rarityTag(it), SLOT_INFO[key].name), 'info');
     return true;
   }
   return false;
@@ -471,7 +471,7 @@ function addToInventory(it) {
       var cres = doSalvage(cand, true);
       G.inventory.push(it);
       UI.dirty.inv = true;
-      flog('🛡️ 背包已滿，保留高品質 ' + rarityTag(it) + '，改為自動分解 ' + rarityTag(cand) + ' → 碎片x' + cres.scrap, 'warn');
+      flog(STR(381, rarityTag(it), rarityTag(cand), cres.scrap), 'warn');
       return true;
     }
     // 包內全為受保護品質：捨弱留強（新品強於未鎖定最弱者才收納）
@@ -487,14 +487,14 @@ function addToInventory(it) {
       var ores = doSalvage(old, true);
       G.inventory.push(it);
       UI.dirty.inv = true;
-      flog('🛡️ 背包已滿，捨弱留強：自動分解較弱的 ' + rarityTag(old) + ' → 碎片x' + ores.scrap + '，收納 ' + rarityTag(it), 'warn');
+      flog(STR(382, rarityTag(old), ores.scrap, rarityTag(it)), 'warn');
       return true;
     }
     var nres = doSalvage(it, true);
-    flog('📦 背包已滿且新獲得的 ' + rarityTag(it) + ' 未強於包內未鎖定裝備，自動分解 → 碎片x' + nres.scrap, 'warn');
+    flog(STR(383, rarityTag(it), nres.scrap), 'warn');
     return false;
   }
   var res = doSalvage(it, true);
-  flog('📦 背包已滿，自動分解 ' + rarityTag(it) + ' → 碎片x' + res.scrap, 'warn');
+  flog(STR(384, rarityTag(it), res.scrap), 'warn');
   return false;
 }

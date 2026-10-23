@@ -20,11 +20,11 @@ if (typeof GameClock !== 'undefined') {
 /* String 表：資料檔版本由主執行緒（bridge.js）以網址 sv= 傳入，改文字不必動本檔。 */
 var _stringDataVersion = ((typeof self !== 'undefined' && self.location && /[?&]sv=(\w+)/.exec(self.location.search || '')) || [])[1] || '0';
 importScripts(
-  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.0', '../data.js?v=20261023-str-equip', '../runeword_data.js?v=20261023-str-equip', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261023-str-skill', '../formula.js?v=20261022-elem-proc-off', '../battle-terrain.js?v=20261022-lava-terrain-develop-merge', '../battlefield.js?v=20261022-lava-terrain-develop-merge', '../stats.js?v=20261003-rename-weineng',
+  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.0', '../data.js?v=20261023-str-char', '../runeword_data.js?v=20261023-str-char', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261023-str-skill', '../formula.js?v=20261022-elem-proc-off', '../battle-terrain.js?v=20261022-lava-terrain-develop-merge', '../battlefield.js?v=20261022-lava-terrain-develop-merge', '../stats.js?v=20261023-str-char',
   '../item.js?v=20261023-str-equip', '../gem_resonance.js?v=20261023-str-guard','../runeword.js?v=20261023-str-guard',
   '../skills.js?v=20261023-str-skill', '../skills2.js?v=20261023-str-skill', '../elite_data.js?v=20261021-chain-hover', '../talents.js?v=20261023-str-talent',
-  '../player.js?v=20261023-str-equip', '../special_rules.js',
-  '../combat.js?v=20261019-disintegrate-end-once-bloodfeast-single-target', '../elite.js?v=20261022-stone-wall-fire-chain-follow', '../elite_boss.js?v=20261022-stone-wall-navigation', '../elite_boss_recipes.js?v=20261023-str-guard', '../legendary.js?v=20261023-str-equip', '../tower.js?v=20261023-str-guard',
+  '../player.js?v=20261023-str-char', '../special_rules.js',
+  '../combat.js?v=20261019-disintegrate-end-once-bloodfeast-single-target', '../elite.js?v=20261022-stone-wall-fire-chain-follow', '../elite_boss.js?v=20261022-stone-wall-navigation', '../elite_boss_recipes.js?v=20261023-str-char', '../legendary.js?v=20261023-str-equip', '../tower.js?v=20261023-str-guard',
   '../factory.js?v=20261023-str-equip', '../newforge.js?v=20261023-str-guard', '../forge.js?v=20261023-str-guard', '../save.js?v=20261022-talent-gold',
   '../tasks.js?v=20261023-str-guard'
 );

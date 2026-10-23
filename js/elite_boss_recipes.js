@@ -218,7 +218,7 @@ BSK_RECIPES.slayerDomain = function (c) {
   bskSelfStatus(c, bskSelfSid(c, 1), dur, { vfxR: r });
   bskDomain(c, {
     r: r, dur: dur, tick: 1.0, pct: bskT(c, 0, 'pct') * 0.6,
-    dot: { id: 'sgBleed', name: STR(1709), pct: bskT(c, 0, 'dotPct', 30), dur: 3 },
+    dot: { id: 'sgBleed', name: '流血', pct: bskT(c, 0, 'dotPct', 30), dur: 3 },
     onTick: function () { bskHeal(c, bskU(c, 'healPct', 2) / 8); }
   });
 };
@@ -238,7 +238,7 @@ BSK_RECIPES.disintegrate = function (c) {
   var boomR = bskRad(bskU(c, 'm', 6));
   bskSpots(c, {
     n: 1, r: Math.max(bskRad(5), 30), warn: 0.7, pct: bskT(c, 0, 'pct'), burstPreset: c.v.attack, burstScale: 1.0,
-    dot: { id: 'sgBleed', name: STR(1709), pct: bskT(c, 0, 'dotPct', 30) * (1 + bskU(c, 'gapPct', 40) / 100), dur: dotDur },
+    dot: { id: 'sgBleed', name: '流血', pct: bskT(c, 0, 'dotPct', 30) * (1 + bskU(c, 'gapPct', 40) / 100), dur: dotDur },
     onImpact: function () {
       eliteLater(dotDur, function () {
         if (!bskAlive(c.m)) return;
