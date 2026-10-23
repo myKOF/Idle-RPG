@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## FORGE-LOG-HEADER-20261023 — 熔爐紀錄只保留標題與詳情
+
+- Owner：Codex；Done，單一開發者。使用者要求隱藏熔爐下方日誌列表，只留熔爐紀錄標籤與詳情按鈕；前置既有日誌／詳情視窗已具備。
+- 允許：css/ashen-forge.css 的 nfx-log 區段、index.html 僅該 CSS 快取、LV_upgrade_system.md 熔爐說明及本段；禁止修改 JS、玩法、配置、存檔、素材及其他進行中工作，不合併推送。
+- 驗收：紀錄卡縮成標題列、列表隱藏、詳情開關／收集／暫停／清除仍正常；既有熔爐與日誌回歸、Build、diff 後獨立 Commit。後續接手為使用者 Review／整合。
+- 衝突預檢（fetch 後）無其他副本／分支來源；同副本 WORLD-MAP 的 index／LV／任務紀錄修改為不同區段，分段保留並只提交本次內容。無素材或素材庫變更。
+- 完成四檔：紀錄卡取消伸展及最低160px高度、列表 display:none、CSS快取92→93、熔爐功能總表及本紀錄同步；保留原日誌DOM，沿用既有收集、詳情即時更新、統計與操作流程，不改JS。
+- 驗證：`node --test tests/new-forge-ui.test.cjs tests/new-forge.test.cjs tests/newforge-panel-performance.test.cjs tests/ui-performance.test.cjs tests/ui-worker-events.test.cjs`，53項51通過2失敗。背景分頁靜態斷言在HEAD來源同樣失敗；場景列簽章斷言因同副本WORLD-MAP進行中移除舊場景列而失敗，本次未改JS或測試。`npm.cmd run build`578檔通過；diff檢查通過，不新增低影響樣式測試或弱化既有斷言。
+- 內建IAB不可用，改用隔離無頭Edge，載入正式CSS／紀錄卡及詳情DOM、原日誌與綁定函式，提供空熔爐快照。1200／420寬列表皆隱藏、標題與詳情可見；卡片51px（標題25px加padding及border），不再吃剩餘高度。詳情開關、日誌收集、碎片630統計、暫停後恢復及清除通過；補足隔離頁依賴後pageerror0。未讀寫玩家存檔，未驗收完整長戰；臨時瀏覽器已關閉。
+- 唯讀檢查：AI規範／AGENTS／Workflow／prompts/codex、js/ui.js與newforge.js日誌路徑、Worker事件、CSS覆蓋及上述五份回歸。無本次未完成項或新增已知風險；可供Review／合併，Commit為本段所在`[Codex] fix: 熔爐紀錄只保留標題與詳情入口`，回覆附編號。未合併推送，其他地圖／角色模型工作保留；下一步整合本Commit後重新整理遊戲。
+
 ## MERGE-NPC-SOFT-GLOW-20261022 — 採用核准的NPC柔和光暈
 
 - Owner：Codex integrator；Done。使用者核准柔和光暈並明確要求合併develop；在Git實際主整合工作區D:/MyGame/Idle-RPG/develop執行（舊Workflow的main路徑已不存在）。develop原HEAD=0277ef45、incoming ai/codex=1b0a52c9；兩側乾淨，fetch後develop與origin/develop一致，僅兩筆NPC功能提交待整合。

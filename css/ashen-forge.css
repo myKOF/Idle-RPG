@@ -4511,7 +4511,7 @@ html *::-webkit-scrollbar-corner {
   background: #15120e;
 }
 
-/* 右側欄：零件工坊／附魔書／紀錄（紀錄吃剩下的高度） */
+/* 右側欄：零件工坊／附魔書／紀錄入口 */
 #tab-newforge .nfx-side {
   display: flex;
   flex-direction: column;
@@ -4666,8 +4666,8 @@ html *::-webkit-scrollbar-corner {
 }
 
 #tab-newforge .nfx-log {
-  flex: 1 1 auto;
-  min-height: 160px;
+  flex: 0 0 auto;
+  min-height: 0;
 }
 
 #tab-newforge .nfx-log .log-header {
@@ -4675,11 +4675,7 @@ html *::-webkit-scrollbar-corner {
 }
 
 #tab-newforge .nfx-log #newforge-log {
-  flex: 1 1 auto;
-  min-height: 0;
-  max-height: none;
-  margin: 0;
-  overflow-y: auto;
+  display: none;
 }
 
 /* ==== 高塔頁（2026-10）：塔別分頁＋樓層階梯（左）＋選中樓層的 BOSS 與獎勵（右）；戰鬥畫面 #tower-fight 維持原版面 ==== */
