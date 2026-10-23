@@ -34,7 +34,7 @@ function loadContext(files) {
 
 test('magicLightShield has a fixed 20-second internal cooldown', () => {
   const context = loadContext([
-    'js/util.js',
+    'js/util.js', 'js/strings_data.js', 'js/strings.js',
     'js/data.js',
     'js/status.js',
     'js/formula.js',

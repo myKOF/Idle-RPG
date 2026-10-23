@@ -20,7 +20,7 @@ function load(lv = 1) {
     UI: { dirty: {} }, blog() {}, floatText() {}, trackDps() {}, recordRunDamage() {},
     floatEnemyEvent() {}, floatPlayerEvent() {}, _diag() {}, SHIM_DIAG: { ui: 0 } };
   c.window = c; vm.createContext(c);
-  for (const name of ['util', 'data', 'status', 'formula', 'battlefield', 'combat', 'skills', 'skills2']) {
+  for (const name of ['util', 'strings_data', 'strings', 'data', 'status', 'formula', 'battlefield', 'combat', 'skills', 'skills2']) {
     vm.runInContext(read('js/' + name + '.js'), c, { filename: name });
   }
   const g = c.SKILLS2.windblade;

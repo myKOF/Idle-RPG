@@ -7,7 +7,7 @@ const root = path.resolve(__dirname, '..');
 function mount() {
   const c = { console, UI: { dirty: {} }, G: { player: { gems: { ruby: { 1: 2, 5: 3 } }, fusedGems: [] } } };
   c.window = c; vm.createContext(c);
-  for (const name of ['util','data','status','formula','item']) vm.runInContext(fs.readFileSync(path.join(root,'js',name+'.js'),'utf8'),c);
+  for (const name of ['util','strings_data', 'strings','data','status','formula','item']) vm.runInContext(fs.readFileSync(path.join(root,'js',name+'.js'),'utf8'),c);
   c.G = { player: { gems: { ruby: { 1: 2, 5: 3 } }, fusedGems: [] } };
   c.markStatsDirty = () => {};
   c.it = { id:'gear', slot:'weapon', rarity:5, level:50, sockets:[null,null,null,null] };

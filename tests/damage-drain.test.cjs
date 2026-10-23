@@ -8,7 +8,7 @@ function setup() {
     document: { addEventListener() {}, getElementById() { return null; }, querySelectorAll() { return []; } },
     setTimeout() {}, clearTimeout() {}, blog() {}, floatText() {}, trackDps() {}, recordRunDamage() {} });
   c.window = c;
-  for (const f of ['util', 'data', 'status', 'formula', 'battlefield', 'combat', 'skills', 'skills2']) {
+  for (const f of ['util', 'strings_data', 'strings', 'data', 'status', 'formula', 'battlefield', 'combat', 'skills', 'skills2']) {
     vm.runInContext(fs.readFileSync('js/' + f + '.js', 'utf8'), c, { filename: f });
   }
   c.G = { player: { skills2: { levels: {} }, loadout: [] }, stage: { current: 1 } };

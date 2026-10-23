@@ -25,7 +25,7 @@ function loadContext() {
   context.window = context;
   context.Math.random = () => 0.5;
   vm.createContext(context);
-  ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js',
+  ['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js',
     'js/item.js', 'js/player.js', 'js/skills2.js'].forEach((file) => {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });

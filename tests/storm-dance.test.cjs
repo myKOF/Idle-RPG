@@ -8,7 +8,7 @@ function setup(tower) {
     setTimeout() {}, clearTimeout() {}, document: { addEventListener() {}, getElementById() { return null; }, querySelectorAll() { return []; } } };
   c.window = c;
   vm.createContext(c);
-  for (const f of ['util','data','status','formula','battlefield','combat','skills','skills2','tower'])
+  for (const f of ['util','strings_data', 'strings','data','status','formula','battlefield','combat','skills','skills2','tower'])
     vm.runInContext(fs.readFileSync('js/' + f + '.js', 'utf8'), c);
   const st = { hp: 10000, mp: 10000, atk: 100, matk: 0, aspd: 2, level: 1000,
     hpRegen: 0, mpRegen: 0, moveSpeed: 0, passives: {}, skillTriggers: {}, cdr: 0, critRate: 0, critDmg: 150, hit: 100 };

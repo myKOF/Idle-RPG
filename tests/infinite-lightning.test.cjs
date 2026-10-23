@@ -30,7 +30,7 @@ function load(lv = 1) {
     floatEnemyEvent() {}, floatPlayerEvent() {}, _diag() {}, SHIM_DIAG: { ui: 0 } };
   c.window = c;
   vm.createContext(c);
-  for (const name of ['util', 'data', 'status', 'formula', 'battlefield', 'combat', 'skills', 'skills2']) {
+  for (const name of ['util', 'strings_data', 'strings', 'data', 'status', 'formula', 'battlefield', 'combat', 'skills', 'skills2']) {
     vm.runInContext(read('js/' + name + '.js'), c, { filename: name });
   }
   // 使用者稍後才按BAT：僅在測試記憶體套用本任務佇列，正式配置不先改寫。

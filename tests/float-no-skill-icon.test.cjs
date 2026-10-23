@@ -26,7 +26,7 @@ function setup() {
     floatText(elId, text, cls, damageValue) { floats.push({ elId, text, cls, damageValue }); }
   });
   c.window = c;
-  for (const f of ['util', 'data', 'status', 'formula', 'battlefield', 'combat', 'skills', 'skills2', 'legendary']) {
+  for (const f of ['util', 'strings_data', 'strings', 'data', 'status', 'formula', 'battlefield', 'combat', 'skills', 'skills2', 'legendary']) {
     vm.runInContext(fs.readFileSync(path.join(root, 'js', f + '.js'), 'utf8'), c, { filename: f });
   }
   c.G = { player: { skills2: { levels: {} }, loadout: [] }, stage: { current: 1 } };

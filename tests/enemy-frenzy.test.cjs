@@ -8,7 +8,7 @@ function context() {
   const c = { console, UI: { dirty: {} }, blog() {}, document: { getElementById() { return null; } } };
   c.window = c;
   vm.createContext(c);
-  for (const f of ['util', 'data', 'status', 'formula', 'battlefield', 'combat']) {
+  for (const f of ['util', 'strings_data', 'strings', 'data', 'status', 'formula', 'battlefield', 'combat']) {
     vm.runInContext(fs.readFileSync(path.join(root, 'js', f + '.js'), 'utf8'), c);
   }
   return c;

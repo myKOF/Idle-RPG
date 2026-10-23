@@ -16,7 +16,7 @@ function loadBattlefield(randomSeq) {
   const root = path.resolve(__dirname, '..');
   const context = { console, Math: Object.create(Math) };
   vm.createContext(context);
-  ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js'].forEach((file) => {
+  ['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js'].forEach((file) => {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });
   if (randomSeq) {

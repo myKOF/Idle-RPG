@@ -87,7 +87,7 @@ function loadSaveContext(origin) {
   };
   context.window = context;
   vm.createContext(context);
-  ['js/util.js', 'js/save.js', 'js/storage.js'].forEach((f) => {
+  ['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/save.js', 'js/storage.js'].forEach((f) => {
     vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), context, { filename: f });
   });
   return context;

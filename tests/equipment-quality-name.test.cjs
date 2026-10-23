@@ -8,7 +8,7 @@ function loadContext() {
   const c = { console, UI: { dirty: {} } };
   c.window = c;
   vm.createContext(c);
-  for (const file of ['util', 'data', 'status', 'formula', 'item', 'newforge', 'player', 'factory', 'save']) {
+  for (const file of ['util', 'strings_data', 'strings', 'data', 'status', 'formula', 'item', 'newforge', 'player', 'factory', 'save']) {
     vm.runInContext(fs.readFileSync(path.join(__dirname, '../js', file + '.js'), 'utf8'), c);
   }
   return c;

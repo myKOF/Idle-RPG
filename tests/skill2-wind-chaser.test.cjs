@@ -12,7 +12,7 @@ function fixture(level = 1, selected = true) {
     UI: { dirty: {} }, blog() {}, floatText() {} };
   c.window = c;
   vm.createContext(c);
-  for (const name of ['util', 'data', 'status', 'formula', 'battlefield', 'combat', 'skills', 'skills2']) {
+  for (const name of ['util', 'strings_data', 'strings', 'data', 'status', 'formula', 'battlefield', 'combat', 'skills', 'skills2']) {
     vm.runInContext(fs.readFileSync(path.join(root, 'js', name + '.js'), 'utf8'), c);
   }
   c.G = { player: { level: 800, gold: 1e15, skills2: { levels: { cleave: Array(7).fill(10) }, ult: {} },

@@ -164,7 +164,7 @@ test('TERRAIN-6 隔著障礙的連線算被擋；繞開的不算', () => {
 function loadField(stage, tower) {
   const ctx = { console, Math: Object.create(Math) };
   vm.createContext(ctx);
-  ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battle-terrain.js', 'js/battlefield.js'].forEach((f) => vm.runInContext(read(f), ctx, { filename: f }));
+  ['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battle-terrain.js', 'js/battlefield.js'].forEach((f) => vm.runInContext(read(f), ctx, { filename: f }));
   // G 在 data.js 宣告但還是 null（正式流程由存檔建立）；這裡只給 battlefield.js 讀的場景與塔旗標
   ctx.__stage = stage; ctx.__tower = !!tower;
   vm.runInContext('G = { stage: __stage, tower: { active: __tower } };', ctx);
@@ -192,7 +192,7 @@ test('TERRAIN-7 近戰普攻不能隔著障礙；移開後打得到；封魔塔�
   // 沒有 G 的測試環境：恆為沒有障礙
   const bare = { console, Math };
   vm.createContext(bare);
-  ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battle-terrain.js', 'js/battlefield.js'].forEach((x) => vm.runInContext(read(x), bare));
+  ['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battle-terrain.js', 'js/battlefield.js'].forEach((x) => vm.runInContext(read(x), bare));
   assert.equal(bare.bfTerrainSync(), false);
 });
 

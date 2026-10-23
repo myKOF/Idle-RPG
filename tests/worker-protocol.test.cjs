@@ -36,7 +36,7 @@ const EXPECTED_COMMAND_COUNTS = {
   task: 1
 };
 const SIMULATION_FILES = [
-  'util.js', 'data.js', 'runeword_data.js', 'gem_resonance_data.js', 'formula.js', 'stats.js', 'item.js', 'gem_resonance.js', 'runeword.js', 'skills.js',
+  'util.js', 'strings_data.js', 'strings.js', 'data.js', 'runeword_data.js', 'gem_resonance_data.js', 'formula.js', 'stats.js', 'item.js', 'gem_resonance.js', 'runeword.js', 'skills.js',
   'skills2.js', 'talents.js', 'player.js', 'special_rules.js', 'combat.js', 'legendary.js',
   'tower.js', 'factory.js', 'newforge.js', 'forge.js', 'save.js',
   'tasks.js'

@@ -174,7 +174,7 @@ test('LAVA-FIRE 熔岩燃燒固定來源、換幀、暫停、減量與跨區塊�
 test('DECOR-1 每張地圖（ZONES）都有自己的地形組合，新增地圖時會被提醒', () => {
   const dataCtx = { console, Math };
   vm.createContext(dataCtx);
-  for (const f of ['js/util.js', 'js/data.js']) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), dataCtx);
+  for (const f of ['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js']) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), dataCtx);
   const zones = Object.keys(vm.runInContext('ZONES', dataCtx));
   const { BattleDecor } = loadDecor();
   assert.ok(zones.length >= 7);

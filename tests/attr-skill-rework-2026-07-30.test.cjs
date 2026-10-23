@@ -19,7 +19,7 @@ const read = (f) => fs.readFileSync(path.join(root, f), 'utf8');
 function loadContext() {
   const context = { console, Math };
   vm.createContext(context);
-  ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js'].forEach((file) => {
+  ['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/status.js', 'js/formula.js'].forEach((file) => {
     vm.runInContext(read(file), context, { filename: file });
   });
   return context;

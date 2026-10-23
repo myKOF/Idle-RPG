@@ -9,7 +9,7 @@ function loadContext() {
   const context = { console, Math };
   context.window = context;
   vm.createContext(context);
-  ['js/util.js', 'js/data.js', 'js/player.js', 'js/forge.js', 'js/item.js'].forEach((file) => {
+  ['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/player.js', 'js/forge.js', 'js/item.js'].forEach((file) => {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });
   context.reincarnationCount = () => Number(context.G.player.reincarnations || 0);

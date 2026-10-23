@@ -48,87 +48,17 @@ for (const fn of fs.readdirSync(path.join(root, 'config/CSV'))) {
 const DATA_FILES = /^js\/(data|skills2|status|runeword_data|elite_data|gem_resonance_data|elite_boss_recipes)\.js$/;
 
 /* ---------- 排除範圍 ---------- */
-const EXCLUDE_FILE = /^js\/(strings|strings_data|gm_exec|gm|lagprobe|recorder|vfx-core|vfx-runtime|vfx-pixi-backend|vfx-tower|battle-perf|ai-key-setting|worker\/shim)\.js$/;
-const EXCLUDE_FN = /Diag|diag|Perf|perf|Lag|lag|^skills2CleaveRangeScale$|^gm[A-Z]|GM|^validate/;
-const dropCallee = /^(console\.\w+|Error|errors\.push|String|\w*\.?(includes|indexOf|startsWith|endsWith|test|match|replace|split))$/;
+const { scopeReason } = require('./scope.cjs');
 const ex = { file: 0, fn: 0, callee: 0, cmp: 0, csv: 0, noText: 0, regex: 0 };
 const kept = [];
 for (const r of rows) {
-  if (EXCLUDE_FILE.test(r.file)) { ex.file++; continue; }
-  if (EXCLUDE_FN.test(r.fn)) { ex.fn++; continue; }
-  if (dropCallee.test(r.callee) || /(^|\.)(includes|indexOf|startsWith|endsWith|test|match)$/.test(r.callee)) { ex.callee++; continue; }
-  if (['===', '==', '!==', '!='].includes(r.prev)) { ex.cmp++; continue; }
-  if (/^\^|\(\?:/.test(r.text)) { ex.regex++; continue; }
+  const why = scopeReason(r);
+  if (why) { ex[why]++; continue; }
   if (DATA_FILES.test(r.file) && cells.has(r.text)) { ex.csv++; continue; }
   kept.push(r);
 }
 
-/* ---------- 內嵌標記處理 ---------- */
-const INLINE_OK = /^(b|i|u|em|strong|small|code|br|sub|sup)$/i;
-function parseMarkup(s) {
-  const parts = []; const re = /<(\/?)([a-zA-Z][\w-]*)([^>]*?)(\/?)>|([^<]+|<)/g; let m;
-  while ((m = re.exec(s))) {
-    if (m[5] !== undefined) parts.push({ text: m[5] });
-    else parts.push({ tag: m[2].toLowerCase(), close: !!m[1], attrs: m[3] || '', raw: m[0] });
-  }
-  return parts;
-}
-function simpleInline(parts) {
-  for (const p of parts) {
-    if (!p.tag) continue;
-    if (INLINE_OK.test(p.tag)) { if (p.attrs.trim() && !/^\s*$/.test(p.attrs)) return false; continue; }
-    if (p.tag === 'span') {
-      if (p.close) continue;
-      const a = p.attrs.trim();
-      if (/^style="color:\s*[^";]+;?"$/.test(a) || /^class="[\w\- ]+"$/.test(a)) continue;
-      return false;
-    }
-    return false;
-  }
-  return true;
-}
-const ATTR_TEXT = /\s?(?:data-tip|data-tt-title|data-tt-desc|data-tt-[\w-]+|title|aria-label|alt|placeholder|label)="([^"]*)"/g;
-const decodeEnt = t => t.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&');
-function keepTag(p) {
-  if (INLINE_OK.test(p.tag)) return !p.attrs.trim();
-  if (p.tag === 'span') {
-    if (p.close) return true;
-    const a = p.attrs.trim();
-    return /^style="color:\s*[^";]+;?"$/.test(a) || /^class="[\w\- ]+"$/.test(a);
-  }
-  return false;
-}
-// 去掉沒有配對的標籤（片段式拼接常讓開頭／結尾標籤落單）
-function balance(s) {
-  const parts = parseMarkup(s); const stack = []; const drop = new Set();
-  parts.forEach((p, i) => {
-    if (!p.tag || p.tag === 'br') return;
-    if (!p.close) stack.push(i);
-    else {
-      let k = stack.length - 1;
-      while (k >= 0 && parts[stack[k]].tag !== p.tag) k--;
-      if (k < 0) drop.add(i); else { for (let q = stack.length - 1; q > k; q--) drop.add(stack[q]); stack.length = k; }
-    }
-  });
-  for (const i of stack) drop.add(i);
-  return parts.map((p, i) => drop.has(i) ? '' : (p.tag ? p.raw : p.text)).join('');
-}
-function splitMarkup(text, fromHtmlAttr) {
-  const out = [];
-  if (fromHtmlAttr) text = decodeEnt(text);
-  // A. 屬性值（tooltip／title…）獨立成條
-  let rest = text.replace(ATTR_TEXT, (m, v) => { if (IDEO.test(v)) out.push(...splitMarkup(v, true)); return ' '; });
-  if (rest !== text) rest = rest.replace(/^[^<>\u3400-\u9fff]*>/, '');
-  // B. 其餘文字節點；結構性標籤當斷點，格式標籤（br／b／變色 span）保留
-  let buf = '';
-  const flush = () => { const t = balance(buf).replace(/\s+/g, ' ').replace(/\s+>/g, '>').trim(); if (t && IDEO.test(t.replace(/<[^>]*>/g, ''))) out.push(t); buf = ''; };
-  for (const p of parseMarkup(rest)) {
-    if (!p.tag) { buf += p.text; continue; }
-    if (keepTag(p)) buf += p.raw; else flush();
-  }
-  flush();
-  return out;
-}
+const { INLINE_OK, parseMarkup, keepTag, balance, splitMarkup, decodeEnt } = require('./markup.cjs');
 
 /* ---------- 類別／用途 ---------- */
 /* ---------- 功能模塊 ---------- */

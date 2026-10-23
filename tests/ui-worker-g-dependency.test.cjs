@@ -6,7 +6,7 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const uiSource = fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8');
 const simulationFiles = [
-  'util.js', 'data.js', 'formula.js', 'stats.js', 'item.js', 'skills.js',
+  'util.js', 'strings_data.js', 'strings.js', 'data.js', 'formula.js', 'stats.js', 'item.js', 'skills.js',
   'talents.js', 'player.js', 'special_rules.js', 'combat.js', 'legendary.js',
   'tower.js', 'factory.js', 'newforge.js', 'forge.js', 'save.js'
 ];

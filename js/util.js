@@ -1,5 +1,8 @@
 'use strict';
 /* ============ 共用工具 ============ */
+/* 顯示文字讀取（js/strings.js）的安全網：只載入 util.js 的環境（無頭模擬、工具腳本、部分測試）不會因 STR 未定義而炸掉；
+   strings.js 載入後會以真正的實作覆蓋。 */
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; }
 var G = null;          // 全域遊戲狀態（main.js 初始化）
 var GT = 0;            // 遊戲時鐘（秒，隨 tick 累加）
 

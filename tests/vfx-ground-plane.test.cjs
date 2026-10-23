@@ -70,7 +70,7 @@ test('PLANE-3 真正 Runtime 使用原世界邊長／方向，play、續命與�
 test('PLANE-4 泥沼／暴風雪判定與顯示共用菱形四邊，牆型判定不變',()=>{
   const c={console,window:null,document:{addEventListener(){},getElementById(){return null;},querySelectorAll(){return[];}},UI:{dirty:{}}};
   c.window=c;vm.createContext(c);
-  for(const file of ['util','data','status','formula','battlefield','combat','skills','skills2','legendary'])
+  for(const file of ['util','strings_data', 'strings','data','status','formula','battlefield','combat','skills','skills2','legendary'])
     vm.runInContext(fs.readFileSync(path.join(root,'js',file+'.js'),'utf8'),c);
   c.bfEntityRadius=()=>0;
   const enemy=(id,x,y)=>({id,hp:100,pos:{x,y}});

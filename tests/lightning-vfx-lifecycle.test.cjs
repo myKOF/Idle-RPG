@@ -245,7 +245,7 @@ test('永恒雷獄舊重施與新接續的真實Worker事件皆有可見落雷�
     UI: { dirty: {} }, blog() {}, floatText() {} };
   c.window = c;
   vm.createContext(c);
-  for (const file of ['util', 'data', 'status', 'formula', 'battlefield', 'combat', 'skills', 'skills2']) {
+  for (const file of ['util', 'strings_data', 'strings', 'data', 'status', 'formula', 'battlefield', 'combat', 'skills', 'skills2']) {
     vm.runInContext(read('js/' + file + '.js'), c, { filename: file });
   }
   c.G = { player: { gold: 0, skills2: { levels: { thunderstrike: [10, 10, 10, 10, 10, 10, 10] },

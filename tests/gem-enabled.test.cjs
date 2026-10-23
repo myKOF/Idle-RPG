@@ -10,7 +10,7 @@ function game() {
   const c = { console, UI: { dirty: {} }, markStatsDirty() {}, blog() {} };
   c.window = c;
   vm.createContext(c);
-  for (const file of ['util', 'data', 'status', 'formula', 'item', 'forge']) {
+  for (const file of ['util', 'strings_data', 'strings', 'data', 'status', 'formula', 'item', 'forge']) {
     vm.runInContext(fs.readFileSync(path.join(ROOT, 'js', file + '.js'), 'utf8'), c);
   }
   c.G = { player: { gold: 1e15, dust: 20, level: 100, reincarnations: 3,

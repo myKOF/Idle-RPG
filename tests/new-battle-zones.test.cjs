@@ -4,7 +4,7 @@ const root=path.resolve(__dirname,'..');
 const tables=require('../tools/config_tables.cjs');
 const ids=['desert','Icefield','mist_forest','lava_mountain','swamp','thunder_peak','undead_mountains','god_battlefield','god_chaos','god_sanctuary'];
 const attrs=[['fire','ice'],['ice','lightning'],['earth','wind'],['earth','fire'],['ice','poison'],['lightning','wind'],['dark','poison'],['fire','light'],['ice','light','poison'],['dark','light','lightning']];
-function load(extra=[]){const c={console,Math:Object.create(Math),window:{},document:{getElementById(){return null;}},localStorage:{getItem(){return null;},setItem(){},removeItem(){}},UI:{dirty:{}},blog(){},location:{}};c.window=c;vm.createContext(c);for(const f of ['util','data','status','formula','battlefield','item','skills','talents','player','save',...extra])vm.runInContext(fs.readFileSync(path.join(root,'js',f+'.js'),'utf8'),c,{filename:f});return c;}
+function load(extra=[]){const c={console,Math:Object.create(Math),window:{},document:{getElementById(){return null;}},localStorage:{getItem(){return null;},setItem(){},removeItem(){}},UI:{dirty:{}},blog(){},location:{}};c.window=c;vm.createContext(c);for(const f of ['util','strings_data', 'strings','data','status','formula','battlefield','item','skills','talents','player','save',...extra])vm.runInContext(fs.readFileSync(path.join(root,'js',f+'.js'),'utf8'),c,{filename:f});return c;}
 const json=x=>JSON.parse(JSON.stringify(x));
 test('BIOMES-CONTRACT 十圖屬性／順序／上限及120隻NPC都來自正式資料',()=>{
  const c=load();assert.deepEqual(json(c.ZONE_LIST),ids);assert.deepEqual(json(ids.map(z=>c.ZONES[z].maxStage)),[100,150,200,250,300,350,400,450,500,600]);

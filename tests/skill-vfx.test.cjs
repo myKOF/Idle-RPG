@@ -22,7 +22,7 @@ function loadContext() {
   };
   context.window = context;
   vm.createContext(context);
-  ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js', 'js/combat.js', 'js/skills.js']
+  ['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js', 'js/combat.js', 'js/skills.js']
     .forEach((f) => vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), context, { filename: f }));
   context.G = { player: { level: 1, loadout: [], talents: { levels: {} } }, stage: { current: 1 }, tower: { active: false } };
   return context;
@@ -45,7 +45,7 @@ test('高塔場域特效保留 BOSS 錨點，不退回玩家或野外場景', ()
   };
   context.window = context;
   vm.createContext(context);
-  ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js', 'js/combat.js', 'js/skills.js', 'js/skills2.js']
+  ['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js', 'js/combat.js', 'js/skills.js', 'js/skills2.js']
     .forEach((f) => vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), context, { filename: f }));
   context.G = { player: { gold: 0, skills2: { levels: { firepillar: [1, 0, 0, 0, 0, 0, 0] } }, loadout: [] }, stage: { current: 1 } };
   context.getStats = () => ({
