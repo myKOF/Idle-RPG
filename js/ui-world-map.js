@@ -189,7 +189,11 @@ var WorldMapUI = (function () {
       if (locations[key]) {
         node.className = 'world-map-hotspot';
         place(node, locations[key]);
-        node.innerHTML = '<span class="world-map-hover-name" aria-hidden="true">' + esc(ZONES[key].name) + '</span>';
+        // 原名稱烘焙於母圖；僅在放大時以同位置的無字地貌覆片遮去，避免疊字。
+        // 覆片母圖1672px寬，裁切寬度=字數*22+24、高42px；cqw沿母圖容器等比縮放。
+        var coverWidth = (ZONES[key].name.length * 22 + 24) / 1672 * 100;
+        node.innerHTML = '<img class="world-map-label-cover" src="images/world-map/label-cover-' + key.toLowerCase() + '.png?v=1" alt="" aria-hidden="true" style="width:' + coverWidth + 'cqw;height:2.51196cqw">' +
+          '<span class="world-map-hover-name" aria-hidden="true">' + esc(ZONES[key].name) + '</span>';
         el('world-map-hotspots').appendChild(node);
       } else {
         node.className = 'world-map-god-scene';

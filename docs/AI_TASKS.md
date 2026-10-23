@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## WORLD-MAP-POLISH-20261024 — 關閉符號置中、名稱去重與定位動效可見性
+
+- Owner：Codex；Done，單一開發者。使用者指出叉號未置中、名稱放大與圖內原字疊在一起、指針浮動／光圈看不見。改用對稱SVG叉號；僅在文字熱區hover／選取時以小塊無字地貌遮住原圖字，再顯示名稱；加強微幅浮動／小光圈，避免定位動畫因系統減少動態設定完全停用。
+- 允許：css/world-map.css、index.html本關閉符號及必要快取、js/ui-world-map.js文字覆片、tools/world-map/export-source.cjs、images/world-map必要局部覆片、素材庫world-map母來源／來源紀錄／匯出、docs/WORLD_MAP.md、LV_upgrade_system.md及本段；必要地圖回歸。禁止重畫或替換核准地圖、其他UI／玩法／存檔／Protocol／其他聊天工作，不合併推送。
+- 預檢：目標無其他副本／分支修改；同副本knight3d工作保留。核准地圖PNG逐位元保留，imagegen只產生清除七處文字的地貌參考，正式僅採七個微小覆片，原世界標題及其餘畫面保持。驗收SVG中心、七名稱原字遮除／非hover恢復、動態兩種系統偏好皆可見、地圖回歸／Build／Console／兩庫SHA後素材庫先、遊戲後Commit。
+- 完成：叉號為16×16 viewBox內中心8/8的對稱線段，排除字型基線偏移，圓框及原ARIA／事件保持。七名稱覆片來自內建imagegen清字母圖，正式僅裁出68～112×42px小區域，按原熱區中心比例定位並羽化邊緣，hover／focus／選取顯示覆片及放大名稱，離開恢復原圖；完整核准PNG SHA仍31adf204…ae466。浮動由3→6px、2.4秒，小光圈透明度0.4～0.95並提高對比；依使用者明確要求，即使系統減少動態也保留定位提示。CSS1.0.3、WorldMapUI1.0.1快取與LV／說明同步。
+- 驗證：`node --test --test-reporter=spec tests/world-map-ui.test.cjs tests/world-map.test.cjs`10/10通過；`npm.cmd run build`578檔通過；`node tools/world-map/export-source.cjs --check`及兩庫diff --check通過。匯出核對新增清字母來源與七覆片SHA，原完整地圖／游標均未改。沒有新增純樣式斷言或降低既有回歸。
+- 畫面：沿用IAB啟動資源不可用後的隔離Edge，隨機本機來源載正式遊戲與真Worker，未讀寫玩家存檔或操作使用者分頁。叉號／圓框中心差0/0，線段中心8/8；七覆片全部載入，hover／離開／選取顯隱正常。逐一截取放大名稱及暫隱DOM新字的對照，確認圖內舊字完全被地貌取代、沒有兩組疊字。一般／減少動態兩偏好皆測動畫0與1200ms：Y為0／-6px，光圈0.4／0.95；真正點擊關閉正常，Console warning／error與pageerror0。
+- 預覽：24張實際CSS時間點截圖合成2.4秒循環location-motion.gif，另有close-centered.png、七組label／label-cleared對照及polish-verification.json，保留本聊天visualizations/world-map；臨時腳本及中間影格清理。全圖清字母來源僅在素材庫供裁切，不替換遊戲地圖；製作提示詞、尺寸／裁切位置及使用依據記錄在素材庫SOURCE.md／source.json。
+- 唯讀未改：共通規範／AGENTS／Workflow／prompts、ui.js與Worker指令、既有回歸、核准地圖及游標PNG、素材庫root解析器；自我Review確認無新Timer、逐幀Canvas、技能VFX來源、Protocol／存檔或玩法修改。其他聊天角色模型工作沒有納本次提交。
+- 交付：素材庫先Commit **dfc14a8**；遊戲Commit為本段所在`[Codex] fix: 修正地圖疊字與關閉符號並強化定位提示`，回覆附編號。無未完成項，可供Review／合併，未合併推送；限制為新覆片只適用本張核准地圖，換母圖需重新校準，未做跨瀏覽器／玩家存檔長戰。下一步正常整合後重載驗收。
+
 ## WORLD-MAP-POINTER-20261023 — 指針朝下、淡光圈呼吸與關卡列微調
 
 - Owner：Codex；Done，單一開發者。使用者要求目前所在地指針反向朝下、整體縮小20%、動態只保留微幅上下移動，下方小光圈輕微明暗發光。前置核准綠色卡通指針與現有CSS動畫已具備。
