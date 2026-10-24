@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## ENEMY-FRENZY-THRESHOLD-20261025 — 交戰敵人超過30個時狂暴化加速
+
+- Owner：Codex；Done，單一開發者。使用者指定交戰敵人超過30個時每秒+2%，30個以內每秒+1%；取代舊依數量線性加成，視野外尚未交戰及進場倒數不計數，已警戒後離開視野仍計數，歷史累積不回扣。
+- 前置：既有狂暴化、警戒與Worker權威快照。允許js/combat.js、tests/enemy-frenzy.test.cjs、tests/npc-roaming.test.cjs既有狂暴化期望值、index.html／js/bridge.js／js/worker/sim.worker.js必要快取、LV_upgrade_system.md及本段；禁止改技能／配置／文字表／素材／協議／存檔與其他任務，不合併／推送。
+- 驗收：30／31邊界、死亡／未警戒／進場排除、寬限／人數下降／逐秒／暫停、傷害與快照UI一致、野外／塔戰及NPC警戒回歸、Build／diff後Commit；後續使用者Review／整合。
+- 預檢：目標均乾淨，index與ai/claude f90bccdf僅同檔異區（對方效能CSS／VFX／renderer／ui快取，本次combat／bridge快取），無語意相依，候選與對方index三方merge-file乾跑exit 0；分段修改不帶入對方提交。無素材變更，不需素材庫Commit。
+- 完成八檔：js/combat.js門檻及交戰人數判定；tests/enemy-frenzy.test.cjs新增／更新精準數值、門檻及UI快照回歸；tests/npc-roaming.test.cjs同步舊線性公式期望值；index.html的combat1.0.94／bridge1.0.363、js/bridge.js的Worker入口及js/worker/sim.worker.js的combat import同為20261025-frenzy-threshold；LV_upgrade_system.md及本紀錄同步。只調整每次新增量，既有累積與協議／存檔不變，不新增Timer／陣列。
+- 測試指令：node --test --test-reporter=tap tests/enemy-frenzy.test.cjs tests/npc-roaming.test.cjs tests/npc-damage-aggro.test.cjs tests/combat-pause.test.cjs tests/enemy-projectile-retaliation.test.cjs tests/enemy-hit.test.cjs tests/tower-auto-result.test.cjs tests/battlefield.test.cjs tests/multi-enemy.test.cjs tests/purgatory-tower.test.cjs tests/tower-xp.test.cjs tests/tower-cost.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs；129/129通過、零略過／取消。npm.cmd run build：582檔通過；git diff --check通過。未降低原警戒／傷害／暫停斷言，更新的舊數值依本次明確規則。
+- 唯讀未改：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex、js/battlefield.js的視野及警戒、js/ui.js的狂暴化顯示、js/tower.js的單BOSS累積、Worker Protocol、配置／String表、package.json／build_check及上述其餘回歸。無素材或素材庫變動。
+- 限制／下一步：未跑全庫或瀏覽器實戰／Console驗收；本次相關自動回歸與Build均通過，無已知新增阻塞，可供Review／合併；建議整合後重載遊戲實看31個交戰敵人增幅。Commit為本段所在「[Codex] feat: 交戰敵人超過三十個時加倍狂暴化速度」，回覆附編號；未合併／推送。
+
 ## SYNC-FEATURE-WORKTREES-20261024 — 三AI固定同步分支與專用分支整合
 
 - Owner：Codex；In Progress，單一開發者。使用者授權徹底修復三AI同步，保留所有修改與騎士專用分支，完成正常同步。

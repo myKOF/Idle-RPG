@@ -24,7 +24,7 @@ importScripts(
   '../item.js?v=20261023-str-common', '../gem_resonance.js?v=20261023-str-common','../runeword.js?v=20261023-str-common',
   '../skills.js?v=20261023-str-skill', '../skills2.js?v=20261024-npc-skill-limit-sync', '../elite_data.js?v=20261021-chain-hover', '../talents.js?v=20261023-str-common',
   '../player.js?v=20261023-str-common', '../special_rules.js?v=20261023-str-common',
-  '../combat.js?v=20261024-all-ai-merge', '../elite.js?v=20261024-npc-skill-limit-sync', '../elite_boss.js?v=20261023-str-battle', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261023-str-equip', '../tower.js?v=20261023-str-common',
+  '../combat.js?v=20261025-frenzy-threshold', '../elite.js?v=20261024-npc-skill-limit-sync', '../elite_boss.js?v=20261023-str-battle', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261023-str-equip', '../tower.js?v=20261023-str-common',
   '../factory.js?v=20261023-str-common', '../newforge.js?v=20261023-str-common', '../forge.js?v=20261023-str-common', '../save.js?v=20261023-str-common',
   '../tasks.js?v=20261023-str-guard'
 );
