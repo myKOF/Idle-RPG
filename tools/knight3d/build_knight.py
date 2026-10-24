@@ -18,9 +18,12 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--output', required=True)
 parser.add_argument('--preview', required=True)
 parser.add_argument('--render', choices=['none', 'stills', 'all'], default='stills')
+parser.add_argument('--lookdev',action='store_true',help='Separate static shape candidate; do not rebuild the six animation assets')
 args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else [])
 OUT = Path(args.output).resolve()
 PREVIEW = Path(args.preview).resolve()
+if args.lookdev and (OUT/'knight_batch1.blend').exists():
+    raise ValueError('Use a separate --output folder for static lookdev; the animation package is frozen.')
 OUT.mkdir(parents=True, exist_ok=True)
 PREVIEW.mkdir(parents=True, exist_ok=True)
 bpy.ops.object.select_all(action='SELECT')
@@ -38,9 +41,9 @@ def material(name, rgb, metal=0, rough=.45):
     bs.inputs['Roughness'].default_value = rough
     return mat
 
-steel = material('01 | neutral white silver plate', (.62, .64, .66), .55, .34)
-edge = material('02 | quiet silver edge', (.80, .82, .84), .73, .29)
-darkmetal = material('03 | recessed gunmetal', (.085, .085, .095), .50, .54)
+steel = material('01 | neutral white silver plate', (.44, .46, .49), .55, .37)
+edge = material('02 | quiet silver edge', (.70, .71, .73), .58, .32)
+darkmetal = material('03 | recessed gunmetal', (.060, .070, .085), .65, .42)
 cloth = material('04 | charcoal padded cloth', (.033, .033, .037), 0, .88)
 leather = material('05 | walnut leather', (.105, .065, .042), 0, .73)
 skin = material('06 | natural warm skin', (.46, .355, .28), 0, .80)
@@ -117,6 +120,8 @@ def companion(name):
     spec.loader.exec_module(module)
     return module
 REST,rig=companion('silver_knight_geometry').build(globals())
+if args.lookdev:
+    REST,rig=companion('silver_knight_lookdev').reshape(globals(),REST,rig)
 
 # Keep actual bevels and curved armor surfaces. The previous blanket removal of
 # edge geometry over-simplified the silhouette; invisible cloth alone is reduced.
@@ -139,7 +144,7 @@ for obj,bone in parts:
             modifier.limit_method='ANGLE'
             modifier.angle_limit=math.radians(42)
             modifier.width=min(modifier.width,.012)
-            modifier.segments=2
+            modifier.segments=1 if args.lookdev else 2
             if any(n in obj.name for n in ['finger','knuckle','ankle','cuff','seam','collar edge','overlapping lame']):
                 modifier.segments=1
     bpy.context.view_layer.objects.active=obj
@@ -147,8 +152,6 @@ for obj,bone in parts:
     for modifier in list(obj.modifiers):
         # Preserve any authoring modifiers before skinning.
         bpy.ops.object.modifier_apply(modifier=modifier.name)
-    if any(n in obj.name for n in ['breastplate','upper arm','vambrace','thigh plates','greave','neck guard','abdominal','pauldron']):
-        for poly in obj.data.polygons[:-2]: poly.use_smooth=True
     if len(obj.data.polygons)>40 and any(n in obj.name for n in ['textile','cloth','breeches','articulation']):
         mod=obj.modifiers.new('small-screen polygon reduction','DECIMATE')
         mod.ratio=.55
@@ -215,14 +218,19 @@ for obj,bone in parts:
     mod.object=rig
     obj.parent=rig
 
-motion=companion('silver_knight_motion')
+motion=companion('silver_knight_lookdev' if args.lookdev else 'silver_knight_motion')
 vec=Vector
 def pose(clip,t):
-    motion.pose(rig,REST,clip,t)
+    return motion.pose(rig,REST,clip,t)
 
 CLIPS = {'idle':(30,2),'walk':(15,1),'attack1':(15,1),'attack2':(15,1),'cast':(15,1),'die':(30,2)}
+if args.lookdev:CLIPS={}
 actions={}
+motion_metrics={}
+rig.animation_data_create()
+if args.lookdev:pose('lookdev',0)
 for clip,(frames,step) in CLIPS.items():
+    motion_metrics[clip]={'wrist':0.0,'ankle':0.0}
     rig.animation_data_create()
     action=bpy.data.actions.new(clip)
     rig.animation_data.action=action
@@ -231,7 +239,8 @@ for clip,(frames,step) in CLIPS.items():
     for pb in rig.pose.bones: pb.rotation_mode='QUATERNION'
     for frame in range(1,frames+1):
         t=(frame-1)/(frames if clip in ['idle','walk'] else frames-1)
-        pose(clip,t)
+        reach=pose(clip,t)
+        for key,value in reach.items():motion_metrics[clip][key]=max(value,motion_metrics[clip][key])
         for pb in rig.pose.bones:
             if pb.name in previous_quats and previous_quats[pb.name].dot(pb.rotation_quaternion)<0:
                 pb.rotation_quaternion.negate()
@@ -262,8 +271,8 @@ scene.render.image_settings.file_format='PNG'
 scene.render.film_transparent=False
 scene.world.color=(.15,.15,.15)
 scene.world.use_nodes=True
-scene.world.node_tree.nodes['Background'].inputs[0].default_value=(.28,.28,.28,1)
-scene.world.node_tree.nodes['Background'].inputs[1].default_value=.55
+scene.world.node_tree.nodes['Background'].inputs[0].default_value=(.20,.22,.25,1)
+scene.world.node_tree.nodes['Background'].inputs[1].default_value=.40
 scene.view_settings.view_transform='AgX'
 floor=material('studio | neutral charcoal',(.035,.038,.042),.08,.76)
 box('studio ground',(0,0,-.085),(200,200,.12),floor,bevel=0)
@@ -280,10 +289,10 @@ def area(name,position,power,color,size):
     bpy.context.collection.objects.link(o)
     o.location=position
     o.rotation_euler=(vec((0,0,1.3))-o.location).to_track_quat('-Z','Y').to_euler()
-area('key softbox',(-3,-4,6),650,(1,.95,.88),4)
-area('neutral fill',(4,-2,3.5),430,(.90,.94,1),3)
-area('front silver reflection',(1,-6,3.9),460,(1,.98,.95),5)
-area('rim strip',(1,3,4.6),850,(1,.98,.94),2.8)
+area('key softbox',(-3,-4,6),700,(1,.95,.88),3)
+area('neutral fill',(4,-2,3.5),180,(.90,.94,1),3)
+area('front silver reflection',(1,-6,3.9),200,(1,.98,.95),4)
+area('rim strip',(1,3,4.6),650,(1,.98,.94),2.2)
 camdata=bpy.data.cameras.new('presentation camera')
 camera=bpy.data.objects.new('presentation camera',camdata)
 bpy.context.collection.objects.link(camera)
@@ -308,9 +317,9 @@ try:
 except Exception as error:
     print('CUDA unavailable:',error)
 
-rig.animation_data.action=actions['idle']
+rig.animation_data.action=actions.get('idle')
 scene.frame_start=1
-scene.frame_end=30
+scene.frame_end=1 if args.lookdev else 30
 scene.frame_set(1)
 bpy.ops.object.select_all(action='DESELECT')
 rig.select_set(True)
@@ -319,16 +328,17 @@ for area_ui in bpy.context.screen.areas if bpy.context.screen else []:
     if area_ui.type=='VIEW_3D':
         area_ui.spaces.active.region_3d.view_distance=5
         area_ui.spaces.active.region_3d.view_location=vec((0,0,1.3))
-bpy.ops.wm.save_as_mainfile(filepath=str(OUT/'knight_batch1.blend'))
+asset_name='knight_lookdev' if args.lookdev else 'knight_batch1'
+bpy.ops.wm.save_as_mainfile(filepath=str(OUT/(asset_name+'.blend')))
 
-manifest={'revision':2,'previewPrefix':'knight_revision2_handfix','offHand':'forward-facing chest guard','shield':False,'proportions':'adult slender, approximately 7.5 heads','status':'preview candidate; no game integration','front':'-Y','up':'Z',
+manifest={'revision':4,'previewPrefix':'knight_revision4_armor_power','helmet':'fitted silver sallet','offHand':'forward-facing chest guard','shield':False,'proportions':'adult slender, approximately 7.5 heads','status':'preview candidate; no game integration','front':'-Y','up':'Z',
           'units':'meters, stylized proportion','blender':bpy.app.version_string,
           'bones':len(rig.data.bones),'meshParts':len(parts),
           'vertices':sum(len(o.data.vertices) for o,b in parts),
           'faces':sum(len(o.data.polygons) for o,b in parts),
           'triangles':sum(len(poly.vertices)-2 for poly in body.data.polygons),
           'materials':[unified.name], 'paletteTextures':{'count':2,'size':[len(palette)*4,4]},
-          'clips':{},'external_assets':[], 'blade_trails':False}
+          'motionTargetMissMeters':motion_metrics,'clips':{},'external_assets':[], 'blade_trails':False}
 for clip,(frames,step) in CLIPS.items():
     rendered=list(range(1,frames+1,step))
     # Include exact terminal death pose even when rendering every other frame.
@@ -336,6 +346,10 @@ for clip,(frames,step) in CLIPS.items():
         rendered.append(frames)
     manifest['clips'][clip]={'frames':frames,'fps':30,'duration':frames/30,
         'loop':clip in ['idle','walk'],'renderedFrames':rendered}
+if args.lookdev:
+    manifest.update(revision=5,previewPrefix='knight_lookdev_r5',status='static shape candidate; animations frozen',
+                    weaponBone='weapon.R',offHand='relaxed at side; wrist follows forearm',
+                    motionTargetMissMeters={},clips={},staticGlb=True)
 (OUT/'manifest.json').write_text(json.dumps(manifest,indent=2),encoding='utf-8')
 (PREVIEW/'manifest.json').write_text(json.dumps(manifest,indent=2),encoding='utf-8')
 
@@ -355,14 +369,26 @@ bpy.ops.object.select_all(action='DESELECT')
 rig.select_set(True)
 for obj,bone in parts:
     obj.select_set(True)
-export_options=dict(filepath=str(OUT/'knight_batch1.glb'),export_format='GLB',
-    use_selection=True,export_animations=True,export_animation_mode='ACTIONS',
+static_export=None
+if args.lookdev:
+    # The editable Blender rig is kept. The review GLB is a baked static mesh,
+    # so a viewer cannot silently reset its unanimated skin to the old rest pose.
+    deps=bpy.context.evaluated_depsgraph_get()
+    baked=bpy.data.meshes.new_from_object(body.evaluated_get(deps),preserve_all_data_layers=True,depsgraph=deps)
+    static_export=bpy.data.objects.new('Knight static armor study',baked)
+    bpy.context.collection.objects.link(static_export)
+    static_export.matrix_world=body.matrix_world
+    bpy.ops.object.select_all(action='DESELECT')
+    static_export.select_set(True)
+export_options=dict(filepath=str(OUT/(asset_name+'.glb')),export_format='GLB',
+    use_selection=True,export_animations=not args.lookdev,export_animation_mode='ACTIONS',
     export_force_sampling=True,export_frame_range=False,export_nla_strips=True,
     export_skins=True,export_yup=True,export_apply=False)
 supported=bpy.ops.export_scene.gltf.get_rna_type().properties.keys()
 bpy.ops.export_scene.gltf(**{k:v for k,v in export_options.items() if k in supported})
-rig.animation_data.action=actions['idle']
-bpy.ops.wm.save_as_mainfile(filepath=str(OUT/'knight_batch1.blend'))
+if static_export:bpy.data.objects.remove(static_export,do_unlink=True)
+rig.animation_data.action=actions.get('idle')
+bpy.ops.wm.save_as_mainfile(filepath=str(OUT/(asset_name+'.blend')))
 
 if args.render!='none':
     for clip,(frames,step) in CLIPS.items():
@@ -376,6 +402,6 @@ if args.render!='none':
             scene.render.filepath=str(folder/('%03d.png'%f))
             bpy.ops.render.render(write_still=True)
             print('KNIGHT_RENDER',clip,f,flush=True)
-    rig.animation_data.action=actions['idle']
+    rig.animation_data.action=actions.get('idle')
     scene.frame_set(1)
 print('KNIGHT_BATCH_COMPLETE',str(OUT),flush=True)

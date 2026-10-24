@@ -1,51 +1,53 @@
-# 白銀騎士：原圖參考修正版（Revision 2）
+# 白銀騎士：靜態造型候選 R5
 
-任務 KNIGHT-3D-REV2-20261023。此目錄是待使用者審查的角色製作包，尚未接入遊戲、沒有替換 `images/sprites/knight`。第一版可由遊戲 Commit 436a6357／素材庫 2c432f8 回溯。
+任務 `KNIGHT-LOOKDEV-STATIC-R5-20261024`。使用者要求先修造型與手肩、確認後才繼續動作。本輪以原圖idle八方向重新檢視胸肩、腰胯、四肢及甲片層次，保留銀盔，只交付真實Blender模型的放大靜態對照。
 
-使用者指定：盡量復刻既有圖集的人物造型及全身動作，偏寫實、成人修長、美型；移除盾牌及刀光。原圖為主要參考，不以自創裝飾取代原造型。修正版重新查看原圖八方向及完整攻擊幀，改回露出頭部的輪廓、約7.5頭身、長腿收腰銀甲、深色腰帶及關節；保留甲片厚度、曲面、倒角與手部，不再硬壓在3,000三角面。低重心較開站姿、前傾跑步及兩種揮砍的沉身／步伐／髖胸轉動一併重作。盾牌幾何完全刪除。
+**本輪沒有修改六組動作。** 上層`knight_batch1.blend`／`.glb`／`manifest.json`仍是R4候選；`silver_knight_geometry.py`及`silver_knight_motion.py`也保持原樣。R5在獨立`lookdev-r5/`，不得把上層舊檔誤認為這輪造型。
 
-## 模型與檔案
+## R5檔案與範圍
 
-- `knight_batch1.blend`：檔名沿用穩定來源路徑，內容已為修正版；可編輯模型、16骨骼、六個 Action、預覽攝影棚。開啟後選 KNIGHT_RIG，在 Action Editor 選動作；NLA軌預設靜音，避免動作疊加。
-- `knight_batch1.glb`：只含角色，排除攝影棚、燈光、攝影機；六個具名骨架動畫、兩張36×4材質色盤內嵌。
-- `manifest.json`：revision=2、shield=false、統計與六組動作的幀率／幀數。
+- `lookdev-r5/knight_lookdev.blend`：可編輯靜態模型，17骨骼（16根基礎骨＋獨立weapon.R握劍骨），沒有Action；保留建模用綁定與攝影棚。
+- `lookdev-r5/knight_lookdev.glb`：供檢視的已變形靜態網格；沒有skin或animation，避免一般glTF檢視器把沒有動畫的骨架重設為原始姿勢。不是可直接替換遊戲六動作的成品。
+- `lookdev-r5/manifest.json`：revision=5、staticGlb=true、clips為空、數量及造型狀態。
 
-實際統計：**9,398 三角面、4,851 Blender 多邊形、4,901 製作頂點**；匯出後因法線／UV分裂為9,398頂點。**1網格、1 primitive、1材質、16骨骼、每頂點1個骨骼權重**；GLB **644,184 bytes（約629 KiB）**。12,000三角面的製作檢查只避免非預期膨脹，並非已通過遊戲效能驗收；單primitive也不代表最終引擎包含陰影等pass時只有1 draw call。
+R5共**8,830三角面、4,238製作多邊形、4,645製作頂點**，單網格／primitive／材質，兩張36×4自製內嵌色盤；靜態GLB **284,832 bytes**。目前尚未做實機戰鬥FPS驗收，不能把此靜態匯出成本當作未來有動畫角色的成本。
 
-| 動作 | 幀數／fps | 預覽週期內的動作長度 | 內容 |
-| --- | --- | --- | --- |
-| idle | 30 / 30 | 1秒循環 | 低重心持劍、呼吸，左手空手、拳面朝前護胸 |
-| walk | 15 / 30 | 0.5秒循環 | 前傾原地跑動、髖胸反向及擺臂 |
-| attack1 | 15 / 30 | 0.5秒 | 舉劍、踏步、沉身轉體橫斬、收招 |
-| attack2 | 15 / 30 | 0.5秒 | 過頂起手、跨步斜劈、前傾收招 |
-| cast | 15 / 30 | 0.5秒 | 蹬伸／舉劍／空手配合，無法術VFX |
-| die | 30 / 30 | 1秒 | 失重倒地、手臂落地、劍身轉平 |
+## 造型與靜態展示姿勢
 
-GLB第一至末取樣鍵的跨度為 `(frames-1)/fps`；表中的長度包含最後一個取樣的顯示時長。非循環GIF另在末幀停留300ms（攻擊／施法）或750ms（死亡）以便檢視，不寫入模型。attack3可沿用cast、rise可倒播die。本批尚未接正式遊戲的命中／釋放時序與移動速度。
+肩甲降低、縮窄為貼合鎖骨斜度的上片及外臂小覆片，沒有把整個肩甲撐到頭盔旁。胸甲重塑為有胸腹起伏的弧面、收腰下腹甲，布料／腰帶與銀甲分層；腰胯改較平、收尖的雙片覆甲，避免圓形插槽與一串等寬白色橫條。四肢甲片跟隨粗細變化，肘後用小範圍布料連接，保留原有腿部站姿與足甲基礎。頭盔保留，靜態展示時縮短外露頸部距離。
 
-## 製作與驗證
+舊版手部問題不只是位置：它把持劍的刀身朝向當成手骨方向，令手腕為了舉劍而折轉。R5讓兩手腕順著前臂，獨立weapon.R再把劍放進拳心；刀身軸與手腕軸近乎垂直。上臂自然向下，空手放在腰側，不再把兩臂擠成胸前X形。這只是本次造型審查的靜態展示姿勢，未製作新的待機或攻擊動畫。
 
-在專案根目錄執行，把 `<Blender>` 替換成安裝的blender.exe，`<預覽目錄>` 用專案外絕對路徑：
+銀甲採較克制的反光，胸甲使用較深的磨亮銀色；深色布衣與棕色腰帶提供材質層次。所有幾何、材質色盤及姿勢均自製；原圖只作參考及對照，不取圖集像素當模型貼圖。
+
+## 重製／渲染／靜態對照
+
+在遊戲專案根目錄執行，`<Blender>`換成blender.exe，`<預覽目錄>`採專案外絕對路徑：
 
 ```powershell
-& '<Blender>' --background --factory-startup --python tools/knight3d/build_knight.py -- --output assets/characters/knight3d --preview '<預覽目錄>' --render none
-& '<Blender>' --background --factory-startup --python tools/knight3d/render_batch.py -- --model assets/characters/knight3d/knight_batch1.blend --preview '<預覽目錄>'
-python tools/knight3d/package_previews.py --preview '<預覽目錄>' --reference images/sprites/knight
-python tools/knight3d/validate_asset.py assets/characters/knight3d/knight_batch1.glb
+& '<Blender>' --background --factory-startup --python tools/knight3d/build_knight.py -- --lookdev --output assets/characters/knight3d/lookdev-r5 --preview '<預覽目錄>' --render none
+& '<Blender>' --background --factory-startup --python tools/knight3d/render_lookdev.py -- --model assets/characters/knight3d/lookdev-r5/knight_lookdev.blend --preview '<預覽目錄>'
+python tools/knight3d/package_lookdev.py --preview '<預覽目錄>'
 node tools/knight3d/sync-library.cjs --apply
 node tools/knight3d/sync-library.cjs --check
 ```
 
-幾何在 `silver_knight_geometry.py`，全身姿勢在 `silver_knight_motion.py`；由build_knight統一建立、合併、綁定及輸出。姿勢以持續速度的Hermite插值、髖胸獨立完整旋轉矩陣、手腳雙骨目標、空手配重、接地停留及四元數同半球處理；依2026-10-24回饋，左手改為胸口局部座標下的護胸目標、左肘向下收放、拳面朝前並與前臂銜接，避免胸口只有位置變動卻未轉腰、每關鍵幀停住或跨符號翻轉。
+`--lookdev`必須用獨立輸出資料夾；工具會拒絕含舊knight_batch1.blend的目錄，以免覆蓋動畫包。造型在silver_knight_lookdev.py，既有幾何先提供保留的頭盔／手足／劍基礎，再替換胸肩腰胯及四肢甲片。render_lookdev重開實際成品，只渲染四張靜態視角，沒有動畫播放。
 
-`render_batch.py --validate-only` 重開模型，檢查六Action、骨架、內嵌材質、120個完整姿勢的有限矩陣及實際變形頂點最低高度；並驗攻擊有髖部／胸口旋轉、骨盆位移及步伐；待機及兩攻擊另驗左拳不朝下、與胸口前向dot>0.8、與前臂dot>0.7。結構量測不能代替人物造型與動作的原圖相似度審查。`validate_asset.py` 直接讀GLB二進位核對網格、材質、三角、時間、權重、索引與所有動畫通道。
+預覽保存在本聊天visualizations/knight3d-lookdev-r5：
 
-Blender 5.2.3 LTS建立並重開；Cycles可用時使用CUDA，否則CPU。預覽含六組GIF、六格大圖、約70～80像素人物高度的小圖、24視角環繞與兩種攻擊的原圖並排。原圖欄保留原有盾牌與刀光以供參考，右欄3D沒有這些；並排顯示相近時間，不能當作每個關節都已精確一致。
+- `knight_r5_original_static_compare.png`：1100×760，每欄左原圖SE idle第1幀、右真實Blender渲染；兩邊頭到腳統一放大至500px，沒有分別拉伸胸肩或四肢。
+- `knight_r5_upperbody_compare.png`：胸肩／手臂／腰胯近看。
+- `knight_r5_static_views.png`：正／側／背面，固定模型比例，完整顯示頭盔與腳。
 
-## 來源、保存與限制
+原圖是原始像素放大，未補畫不存在的細節，保留舊盾牌；新版沒有盾牌／刀光。靜態對照用低透明接地陰影協助閱讀，僅在預覽合成，不寫入模型或遊戲特效。此輪是**放大造型審查**，不是遊戲1:1大小預覽；不以視覺放大宣稱已整合遊戲。
 
-`images/sprites/knight`六份既有圖集與knight.json只作造型、姿勢與節奏參考；未擷取圖集像素用作新模型的貼圖或模型資產。所有幾何、色盤、骨架、動作、攝影棚均程序原創，沒有匯入第三方模型、貼圖、動畫。參考圖只出現在專案外的對照預覽。
+## 驗證、保存與限制
 
-本地素材庫位置由既有vfx-library-root解析；候選的四份資產及七個工具保存於codex-authored/knight3d同相對路徑，sync-library逐檔核對SHA256。未改正式角色匯出器、出貨索引、玩法、解鎖或玩家存檔。blend1／pycache不是交付物；預覽與驗證報告保存在本聊天visualizations/knight3d-handfix。
+Blender重開檢查17骨骼、零Action、有限矩陣與最低變形頂點；兩手腕軸與前臂dot>0.999，上臂往下dot>0.6，劍軸與手腕軸近乎垂直，握點可達。package_lookdev直接讀GLB，核對單mesh／primitive／material、<12k三角、零skin／animation及圖片無邊界裁切；檢查舊動畫兩個二進位檔與Git逐位元一致、原metadata語意及動作／幾何來源不變。
 
-**仍待驗收**：人物造型與原圖的接近程度、動作表演細節、八方向及實際戰鬥投影／命中時序／GPU-FPS。此版本僅為修正候選，不宣稱已完成逐幀復刻或獲使用者核准。若最終使用預渲染圖集，製作模型的面數不會成為瀏覽器的即時蒙皮負擔；圖集容量、載入與實際播放成本仍須另驗。
+另在臨時目錄重跑預設R4匯出：六動畫、位置／UV／權重／骨索引資料完全相同，有向三角集合相同；Blender非決定性三角排列與兩個法線浮點有微小差異（最大8.72e-5），未用整個GLB位元一致誤報回歸。原交付檔未改。驗證報告static-validation／static-package-validation／default-export-regression保存在預覽目錄。
+
+舊R4包與新R5包及工具共18檔同步保存於素材庫codex-authored/knight3d同相對路徑，逐檔SHA核對；新候選與原包可各自回溯。預覽／日誌不入兩庫，blend1／pycache不交付。使用者指定Blender三維造型，非RPG Mote點陣繪製；未引入第三方模型／貼圖／動畫。
+
+**待驗收**：胸肩、腰胯、四肢的造型接近度與層次仍由使用者檢視；結構量測不代表美術已核准，也未宣稱消除所有甲片互穿。造型確認前不繼續調動作。尚未替換正式角色、重綁六動作、調整八向／命中或實測戰鬥效能。舊R4製作與六動作說明可由遊戲Commit 7b6c431／素材庫bd1394e的README回溯。
