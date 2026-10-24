@@ -36,47 +36,57 @@ def build(ctx):
         if parent: bone.parent=data.edit_bones[parent]
     bpy.ops.object.mode_set(mode='OBJECT')
     rig.show_in_front=True
-    rig['design']='Revision 3: adult slender silver knight, fitted silver sallet, no shield'
+    rig['design']='Revision 4: sculpted silver plate harness, fitted sallet, grounded wide guard'
     rig['front']='-Y'
     rig['preview_status']='Revision candidate; not installed into game'
     rig['head_to_body_ratio']=7.5
 
-    # Tailored cuirass, pronounced waist, long limbs, quiet dark articulation.
-    shell('padded fitted torso',[(1.48,.21,.12,0),(1.74,.24,.135,0),
-        (2.04,.29,.15,0),(2.20,.29,.13,0),(2.25,.22,.11,0)],cloth,'chest',12)
-    shell('fitted silver breastplate',[(1.72,.205,.134,-.01),(1.84,.25,.157,-.01),
-        (2.04,.302,.177,-.01),(2.16,.286,.15,0),(2.24,.17,.11,0)],steel,'chest',12)
-    for i,z in enumerate([1.55,1.63,1.71]):
-        shell('overlapping abdominal plate '+str(i),[(z-.025,.214+i*.003,.133,0),
-              (z+.052,.218+i*.006,.14,0)],steel,'chest',12)
-    shell('dark narrow waist belt',[(1.48,.226,.141,0),(1.54,.226,.141,0)],leather,'pelvis',12)
-    box('small steel buckle',(0,-.153,1.51),(.085,.022,.052),darkmetal,'pelvis',.005)
-    # The source has a dark diagonal back strap; retain the large readable line.
-    mesh('diagonal back harness',[(-.24,.15,2.17),(-.185,.165,2.18),
-        (.15,.151,1.76),(.10,.161,1.74)],[(0,1,2,3)],leather,'chest')
-    shell('slender exposed neck',[(2.22,.073,.071,0),(2.42,.067,.068,0)],skin,'head',12)
-    shell('low silver neck guard',[(2.215,.128,.10,0),(2.29,.104,.082,0)],edge,'chest',12)
-
-    # Adult face remains visible below the fitted sallet; no oversized bucket.
-    head=shell('adult face and jaw',[(2.365,.047,.058,-.015),(2.385,.067,.078,-.015),
-        (2.415,.088,.093,-.016),(2.455,.104,.101,-.012),(2.495,.113,.105,-.006),
-        (2.535,.115,.102,0),(2.565,.115,.101,.003),(2.595,.115,.102,.006),
-        (2.625,.110,.097,.008),(2.665,.086,.078,.012),(2.69,.042,.040,.012)],skin,'head',24,0)
-    for v in head.data.vertices:
-        if v.co.y<-.025:
-            # Restrained brow, eye sockets and cheek planes on a human face.
-            eye=math.exp(-((abs(v.co.x)-.048)/.028)**2-((v.co.z-2.55)/.019)**2)
-            brow=math.exp(-((abs(v.co.x)-.048)/.045)**2-((v.co.z-2.585)/.014)**2)
-            cheek=math.exp(-((abs(v.co.x)-.071)/.028)**2-((v.co.z-2.50)/.025)**2)
-            v.co.y+=.008*eye-.008*brow-.006*cheek
-    for poly in head.data.polygons: poly.use_smooth=True
+    # A coherent harness: shaped breastplate, plackart and fitted mail underneath.
+    # Dark narrow seams sit behind the plate overlaps, not between separate tubes.
+    def armor(name, rings, mat, bone, cx=0, ridge=0, count=16):
+        o=shell(name,rings,mat,bone,count,.006)
+        for v in o.data.vertices:
+            if v.co.y<0:
+                width=max(.04,max(abs(q.co.x) for q in o.data.vertices))
+                v.co.y-=ridge*max(0,1-abs(v.co.x)/width)**2
+            v.co.x+=cx
+        for poly in o.data.polygons[:-2]:
+            poly.use_smooth=not (('greave' in name or 'cuisse' in name or 'vambrace' in name or 'poleyn' in name) and poly.normal.y<-.45)
+        return o
+    shell('fitted dark arming doublet',[(1.45,.21,.12,0),(1.80,.27,.14,0),
+        (2.12,.315,.155,0),(2.26,.225,.11,0)],cloth,'chest',12,0)
+    armor('sculpted silver breastplate',[(1.70,.225,.145,-.008),
+        (1.82,.292,.177,-.006),(2.01,.340,.182,0),(2.135,.331,.154,0),
+        (2.23,.243,.112,0),(2.28,.100,.084,0)],steel,'chest',ridge=.045)
+    # Curved side panels and a restrained central ridge catch light like formed plate.
+    mesh('breastplate raised sternum',[(0,-.239,1.84),(-.016,-.220,1.98),
+        (0,-.225,2.18),(.016,-.220,1.98)],[(0,1,2,3)],edge,'chest')
     for sign in [-1,1]:
-        sphere('small natural ear '+str(sign),(sign*.115,.006,2.525),(.018,.023,.041),skin,'head',12)
-        # Small human eye shapes, with narrow lids rather than large cartoon eyes.
-        sphere('eye '+str(sign),(sign*.046,-.100,2.546),(.017,.010,.0065),sclera,'head',12)
-        sphere('iris '+str(sign),(sign*.044,-.110,2.546),(.0045,.002,.005),black,'head',8)
-        mesh('eyebrow '+str(sign),[(sign*.023,-.109,2.570),(sign*.069,-.098,2.566),
-            (sign*.067,-.101,2.573),(sign*.025,-.111,2.577)],[(0,1,2,3)],hair,'head')
+        mesh('breastplate clavicle edge '+str(sign),[(sign*.065,-.104,2.252),
+            (sign*.242,-.106,2.215),(sign*.318,-.093,2.14),
+            (sign*.299,-.116,2.135),(sign*.225,-.129,2.192),
+            (sign*.065,-.126,2.232)],[(0,1,2,3,4,5)],edge,'chest')
+        mesh('breastplate side flute '+str(sign),[(sign*.203,-.153,1.75),
+            (sign*.291,-.129,2.03),(sign*.303,-.116,2.045),
+            (sign*.217,-.156,1.747)],[(0,1,2,3)],darkmetal,'chest')
+    armor('curved articulated plackart',[(1.555,.219,.147,0),
+        (1.66,.244,.158,0),(1.76,.257,.174,-.005),(1.835,.264,.168,-.008)],steel,'chest',ridge=.024)
+    for i,z in enumerate([1.515,1.572]):
+        armor('waist fauld overlapping lame '+str(i),[(z-.018,.232,.147,0),
+            (z+.046,.242,.154,0)],edge if i==0 else steel,'pelvis',count=12)
+    shell('dark narrow waist belt',[(1.49,.242,.158,0),(1.535,.242,.158,0)],leather,'pelvis',12,0)
+    box('small steel buckle',(0,-.168,1.51),(.075,.018,.046),darkmetal,'pelvis',.003)
+    mesh('diagonal back harness',[(-.25,.159,2.17),(-.202,.174,2.18),
+        (.15,.169,1.76),(.10,.177,1.74)],[(0,1,2,3)],leather,'chest')
+    shell('slender exposed neck',[(2.22,.073,.071,0),(2.42,.067,.068,0)],skin,'head',12,0)
+    armor('silver gorget',[(2.215,.161,.122,0),(2.275,.130,.100,0),
+        (2.315,.090,.079,0)],steel,'chest')
+
+    # Only the exposed lower face remains under the helmet; hidden eyes/ears and
+    # scalp geometry do not earn their cost at the gameplay display size.
+    shell('adult exposed jaw',[(2.365,.047,.058,-.015),(2.39,.073,.083,-.016),
+        (2.435,.100,.098,-.012),(2.49,.111,.105,-.006),
+        (2.56,.113,.101,0)],skin,'head',16,0)
     mesh('straight nose planes',[(-.014,-.108,2.556),(.014,-.108,2.556),
         (0,-.151,2.507),(-.019,-.118,2.498),(.019,-.118,2.498)],
         [(0,1,2),(0,2,3),(1,4,2),(3,2,4)],skin,'head')
@@ -116,69 +126,91 @@ def build(ctx):
 
     for side,sign in [('R',-1),('L',1)]:
         ua,fa,hand='upper_arm.'+side,'forearm.'+side,'hand.'+side
-        # Sculpted sloping shoulder plates; intentionally no ball-shaped pauldrons.
-        sphere('shoulder textile '+side,(sign*.38,0,2.23),(.115,.125,.115),cloth,ua,12)
-        local_shell('sculpted fitted pauldron '+side,(sign*.39,0,0),
-            [(2.13,.155,.143,0),(2.23,.173,.153,0),
-             (2.305,.116,.114,0),(2.33,.044,.047,0)],steel,'chest',12)
-        local_shell('thin pauldron lower overlap '+side,(sign*.395,0,0),
-            [(2.105,.148,.137,0),(2.15,.161,.148,0)],edge,'chest',12)
-        x=sign*.415
-        local_shell('slim upper arm '+side,(x,0,0),[(1.86,.073,.076,0),
-            (2.04,.09,.091,0),(2.15,.10,.102,0)],steel,ua,10)
-        sphere('elbow cloth '+side,(sign*.42,0,1.79),(.074,.073,.079),cloth,fa,12)
-        # A compact elbow wing replaces oversized spherical elbow armor.
-        mesh('elbow guard '+side,[(sign*.42,-.08,1.87),(sign*.52,-.025,1.80),
-             (sign*.42,.07,1.72),(sign*.37,-.065,1.77)],[(0,1,2,3)],steel,fa)
-        local_shell('tapered vambrace '+side,(sign*.445,0,0),[(1.395,.059,.065,-.004),
-            (1.49,.072,.075,-.004),(1.72,.082,.085,0)],steel,fa,10)
-        local_shell('gauntlet cuff '+side,(sign*.45,0,0),[(1.345,.067,.070,0),
-            (1.415,.071,.073,0)],edge,hand,10)
-        box('fitted gauntlet '+side,(sign*.45,-.008,1.282),(.102,.107,.135),darkmetal,hand,.012)
-        box('gauntlet back '+side,(sign*.45,-.055,1.30),(.101,.019,.10),steel,hand,.007)
+        # Angular swept roof and flared lower lame, with a strong raised ridge.
+        # This is a folded plate surface, rather than a shaded shoulder sphere.
+        cx=sign*.385
+        profiles=[(-.115,2.235,.093),(-.035,2.315,.145),(.105,2.300,.171),
+                  (.205,2.205,.158),(.221,2.095,.114)]
+        ny=7
+        for layer in range(2):
+            vv=[]
+            for xx,z,dep in profiles:
+                if layer:xx=xx*.86;z-=.065;dep*=.94
+                for k in range(ny):
+                    q=-math.pi*.47+k*math.pi*.94/(ny-1)
+                    sx=xx-.040*abs(math.sin(q))**2
+                    vv.append((cx+sign*sx,dep*math.sin(q),z-.12*(1-math.cos(q))))
+            ff=[(r*ny+j,(r+1)*ny+j,(r+1)*ny+j+1,r*ny+j+1)
+                for r in range(4) for j in range(ny-1)]
+            mesh('sculpted center shoulder plate '+side+str(layer),vv,ff,steel,ua,.004,True)
+            front=[vv[i*ny] for i in range(5)]
+            mesh('pauldron rolled rim '+side+str(layer),front+
+                [(x,y-.003,z+.013) for x,y,z in front],
+                [(i,i+1,i+6,i+5) for i in range(4)],edge,ua)
+        mesh('pauldron raised ridge '+side,[(cx+sign*xx,-.009,z+.006) for xx,z,dep in profiles]+
+            [(cx+sign*xx,.009,z+.006) for xx,z,dep in profiles],
+            [(i,i+1,i+6,i+5) for i in range(4)],edge,ua)
+        armor('rerebrace upper arm '+side,[(1.82,.074,.079,0),
+            (1.94,.102,.099,0),(2.10,.120,.111,0),(2.17,.104,.103,0)],steel,ua,sign*.415,ridge=.018,count=12)
+        sphere('recessed elbow mail '+side,(sign*.42,0,1.79),(.074,.071,.078),cloth,fa,12)
+        armor('shaped elbow cop '+side,[(1.715,.077,.082,-.008),
+            (1.79,.101,.110,-.008),(1.86,.085,.087,-.008)],steel,fa,sign*.42,ridge=.018,count=12)
+        mesh('elbow side wing '+side,[(sign*.43,.018,1.87),(sign*.565,.028,1.80),
+            (sign*.48,.032,1.70),(sign*.41,.02,1.77)],[(0,1,2,3)],steel,fa,.004)
+        armor('shaped tapered vambrace '+side,[(1.365,.062,.068,-.005),
+            (1.44,.078,.079,0),(1.58,.092,.096,0),(1.735,.086,.090,0)],steel,fa,sign*.445,ridge=.014,count=12)
+        armor('gauntlet flared cuff '+side,[(1.325,.062,.065,0),
+            (1.405,.081,.082,0)],edge,hand,sign*.45,count=10)
+        box('fitted gauntlet '+side,(sign*.45,-.008,1.282),(.102,.107,.135),darkmetal,hand,.010)
+        box('gauntlet back '+side,(sign*.45,-.055,1.30),(.101,.019,.10),steel,hand,.006)
         for i in range(4):
             fx=sign*.45+(i-1.5)*.024
-            box('curled armored finger '+side+str(i),(fx,-.025,1.222),(.021,.077,.041),
-                steel,hand,.006)
+            box('curled armored finger '+side+str(i),(fx,-.025,1.222),(.021,.077,.041),steel,hand,.004)
             sphere('gauntlet knuckle '+side+str(i),(fx,-.062,1.249),(.012,.012,.016),edge,hand,8)
-        sphere('gauntlet thumb '+side,(sign*.45-sign*.058,-.020,1.282),(.024,.029,.048),
-               steel,hand,12)
+        sphere('gauntlet thumb '+side,(sign*.45-sign*.058,-.020,1.282),(.024,.029,.048),steel,hand,12)
 
         thigh,shin,foot='thigh.'+side,'shin.'+side,'foot.'+side
         lx=sign*.17
-        local_shell('dark fitted breeches '+side,(lx,0,0),[(.82,.080,.080,0),
-            (1.14,.112,.112,0),(1.44,.132,.112,0)],cloth,thigh,10)
-        local_shell('long thigh plates '+side,(lx,-.005,0),[(.86,.082,.086,0),
-            (1.15,.117,.110,0),(1.37,.117,.105,0)],steel,thigh,10)
-        # Thin split hip plates preserve a tapered waist without boxy shorts.
-        mesh('tapered hip plate '+side,[(sign*.06,-.135,1.49),(sign*.285,-.085,1.48),
-            (sign*.27,-.108,1.22),(sign*.105,-.16,1.25)],[(0,1,2,3)],steel,thigh)
-        for i,z in enumerate([1.29,1.36,1.43]):
-            mesh('hip plate overlapping lame '+side+str(i),
-                [(sign*.082,-.155,z+.025),(sign*.270,-.113,z+.025),
-                 (sign*.265,-.117,z-.011),(sign*.095,-.165,z-.018)],
-                [(0,1,2,3)],edge,thigh,.004)
-        sphere('knee articulation '+side,(sign*.18,0,.79),(.081,.080,.080),cloth,shin,12)
-        mesh('angular knee plate '+side,[(sign*.18,-.092,.88),(sign*.27,-.048,.79),
-            (sign*.18,-.108,.69),(sign*.095,-.065,.79)],[(0,1,2),(0,2,3)],edge,shin)
-        local_shell('long tapered greave '+side,(sign*.18,0,0),[(.21,.055,.062,.005),
-            (.38,.073,.077,.008),(.65,.089,.087,0),(.72,.080,.080,0)],steel,shin,10)
-        # Long low sabaton, with a tapered toe instead of a rectangular block.
+        armor('dark fitted breeches '+side,[(.78,.081,.083,0),(1.12,.12,.116,0),
+            (1.44,.137,.124,0)],cloth,thigh,lx,count=10)
+        armor('anatomical fluted cuisse '+side,[(.80,.082,.090,0),(.91,.097,.106,0),
+            (1.14,.132,.128,0),(1.36,.142,.128,0)],steel,thigh,lx,ridge=.018,count=12)
+        # Three wide curved tasset lames replace the square ladder-like hip tabs.
+        for j,z in enumerate([1.395,1.325,1.255]):
+            vs=[];nc=7
+            for zz,width,depth in [(z+.055,.145,.153),(z-.040,.134,.160)]:
+                for k in range(nc):
+                    q=math.pi*1.04+k*math.pi*.92/(nc-1)
+                    vs.append((lx+width*math.cos(q),depth*math.sin(q)-.025,zz+.018*math.cos(q*2)))
+            fs=[(k,k+1,k+1+nc,k+nc) for k in range(nc-1)]
+            mesh('curved hip plate tasset '+side+str(j),vs,fs,steel,thigh,.003)
+            mesh('tasset edge '+side+str(j),[(x,y-.003,zz) for x,y,zz in vs[nc:]]+
+                [(x,y-.004,zz+.012) for x,y,zz in vs[nc:]],
+                [(k,k+1,k+1+nc,k+nc) for k in range(nc-1)],edge,thigh)
+        sphere('recessed knee mail '+side,(sign*.18,0,.79),(.079,.078,.078),cloth,shin,12)
+        armor('formed angular poleyn '+side,[(.695,.068,.080,-.012),
+            (.79,.105,.110,-.018),(.875,.083,.088,-.010)],steel,shin,sign*.18,ridge=.021,count=12)
+        mesh('poleyn side wing '+side,[(sign*.19,-.040,.865),(sign*.335,.009,.795),
+            (sign*.27,-.017,.72),(sign*.18,-.05,.735)],[(0,1,2,3)],steel,shin,.004)
+        armor('anatomical ridged greave '+side,[(.15,.061,.070,.002),
+            (.26,.068,.078,.003),(.43,.096,.107,.008),(.59,.106,.111,.008),
+            (.72,.087,.092,0)],steel,shin,sign*.18,ridge=.023,count=12)
+        mesh('greave central ridge '+side,[(sign*.18,-.106,.20),
+            (sign*.18-.012,-.124,.45),(sign*.18,-.125,.675),
+            (sign*.18+.012,-.124,.45)],[(0,1,2,3)],edge,shin)
         cx=sign*.18
-        vv=[(cx-.074,.09,.025),(cx+.074,.09,.025),(cx+.09,-.18,.025),
-            (cx+.048,-.355,.025),(cx-.048,-.355,.025),(cx-.09,-.18,.025),
-            (cx-.069,.075,.21),(cx+.069,.075,.21),(cx+.082,-.16,.115),
-            (cx+.043,-.35,.065),(cx-.043,-.35,.065),(cx-.082,-.16,.115)]
+        vv=[(cx-.075,.09,.025),(cx+.075,.09,.025),(cx+.095,-.17,.025),
+            (cx+.042,-.355,.025),(cx-.042,-.355,.025),(cx-.095,-.17,.025),
+            (cx-.068,.075,.205),(cx+.068,.075,.205),(cx+.088,-.15,.118),
+            (cx+.039,-.35,.067),(cx-.039,-.35,.067),(cx-.088,-.15,.118)]
         ff=[tuple(reversed(range(6))),tuple(range(6,12))]
         ff.extend((i,(i+1)%6,(i+1)%6+6,i+6) for i in range(6))
-        mesh('slender pointed sabaton '+side,vv,ff,steel,foot)
-        for i,y in enumerate([-.095,-.175,-.255]):
-            z=.147-i*.029
-            half=.081-i*.011
-            mesh('overlapping sabaton plate '+side+str(i),
-                [(cx-half,y+.026,z),(cx+half,y+.026,z),(cx+half*.95,y-.027,z-.012),
-                 (cx-half*.95,y-.027,z-.012)],[(0,1,2,3)],edge,foot,.004)
-        link('ankle black seam '+side,(cx-.064,-.025,.20),(cx+.064,-.025,.20),.010,leather,foot,8)
+        mesh('slender pointed sabaton '+side,vv,ff,steel,foot,.004)
+        for i,y in enumerate([-.09,-.16,-.23,-.29]):
+            z=.148-i*.023;half=.083-i*.012
+            mesh('overlapping sabaton plate '+side+str(i),[(cx-half,y+.022,z),
+                (cx+half,y+.022,z),(cx+half*.92,y-.024,z-.010),
+                (cx-half*.92,y-.024,z-.010)],[(0,1,2,3)],edge,foot)
 
     # Long slender longsword, muted steel fittings, no gold ornaments or VFX.
     sx=-.45

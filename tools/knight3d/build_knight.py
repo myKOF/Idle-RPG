@@ -38,9 +38,9 @@ def material(name, rgb, metal=0, rough=.45):
     bs.inputs['Roughness'].default_value = rough
     return mat
 
-steel = material('01 | neutral white silver plate', (.62, .64, .66), .55, .34)
-edge = material('02 | quiet silver edge', (.80, .82, .84), .73, .29)
-darkmetal = material('03 | recessed gunmetal', (.085, .085, .095), .50, .54)
+steel = material('01 | neutral white silver plate', (.44, .46, .49), .55, .37)
+edge = material('02 | quiet silver edge', (.70, .71, .73), .58, .32)
+darkmetal = material('03 | recessed gunmetal', (.060, .070, .085), .65, .42)
 cloth = material('04 | charcoal padded cloth', (.033, .033, .037), 0, .88)
 leather = material('05 | walnut leather', (.105, .065, .042), 0, .73)
 skin = material('06 | natural warm skin', (.46, .355, .28), 0, .80)
@@ -147,8 +147,6 @@ for obj,bone in parts:
     for modifier in list(obj.modifiers):
         # Preserve any authoring modifiers before skinning.
         bpy.ops.object.modifier_apply(modifier=modifier.name)
-    if any(n in obj.name for n in ['breastplate','upper arm','vambrace','thigh plates','greave','neck guard','abdominal','pauldron']):
-        for poly in obj.data.polygons[:-2]: poly.use_smooth=True
     if len(obj.data.polygons)>40 and any(n in obj.name for n in ['textile','cloth','breeches','articulation']):
         mod=obj.modifiers.new('small-screen polygon reduction','DECIMATE')
         mod.ratio=.55
@@ -218,11 +216,13 @@ for obj,bone in parts:
 motion=companion('silver_knight_motion')
 vec=Vector
 def pose(clip,t):
-    motion.pose(rig,REST,clip,t)
+    return motion.pose(rig,REST,clip,t)
 
 CLIPS = {'idle':(30,2),'walk':(15,1),'attack1':(15,1),'attack2':(15,1),'cast':(15,1),'die':(30,2)}
 actions={}
+motion_metrics={}
 for clip,(frames,step) in CLIPS.items():
+    motion_metrics[clip]={'wrist':0.0,'ankle':0.0}
     rig.animation_data_create()
     action=bpy.data.actions.new(clip)
     rig.animation_data.action=action
@@ -231,7 +231,8 @@ for clip,(frames,step) in CLIPS.items():
     for pb in rig.pose.bones: pb.rotation_mode='QUATERNION'
     for frame in range(1,frames+1):
         t=(frame-1)/(frames if clip in ['idle','walk'] else frames-1)
-        pose(clip,t)
+        reach=pose(clip,t)
+        for key,value in reach.items():motion_metrics[clip][key]=max(value,motion_metrics[clip][key])
         for pb in rig.pose.bones:
             if pb.name in previous_quats and previous_quats[pb.name].dot(pb.rotation_quaternion)<0:
                 pb.rotation_quaternion.negate()
@@ -262,8 +263,8 @@ scene.render.image_settings.file_format='PNG'
 scene.render.film_transparent=False
 scene.world.color=(.15,.15,.15)
 scene.world.use_nodes=True
-scene.world.node_tree.nodes['Background'].inputs[0].default_value=(.28,.28,.28,1)
-scene.world.node_tree.nodes['Background'].inputs[1].default_value=.55
+scene.world.node_tree.nodes['Background'].inputs[0].default_value=(.20,.22,.25,1)
+scene.world.node_tree.nodes['Background'].inputs[1].default_value=.40
 scene.view_settings.view_transform='AgX'
 floor=material('studio | neutral charcoal',(.035,.038,.042),.08,.76)
 box('studio ground',(0,0,-.085),(200,200,.12),floor,bevel=0)
@@ -280,10 +281,10 @@ def area(name,position,power,color,size):
     bpy.context.collection.objects.link(o)
     o.location=position
     o.rotation_euler=(vec((0,0,1.3))-o.location).to_track_quat('-Z','Y').to_euler()
-area('key softbox',(-3,-4,6),650,(1,.95,.88),4)
-area('neutral fill',(4,-2,3.5),430,(.90,.94,1),3)
-area('front silver reflection',(1,-6,3.9),460,(1,.98,.95),5)
-area('rim strip',(1,3,4.6),850,(1,.98,.94),2.8)
+area('key softbox',(-3,-4,6),700,(1,.95,.88),3)
+area('neutral fill',(4,-2,3.5),180,(.90,.94,1),3)
+area('front silver reflection',(1,-6,3.9),200,(1,.98,.95),4)
+area('rim strip',(1,3,4.6),650,(1,.98,.94),2.2)
 camdata=bpy.data.cameras.new('presentation camera')
 camera=bpy.data.objects.new('presentation camera',camdata)
 bpy.context.collection.objects.link(camera)
@@ -321,14 +322,14 @@ for area_ui in bpy.context.screen.areas if bpy.context.screen else []:
         area_ui.spaces.active.region_3d.view_location=vec((0,0,1.3))
 bpy.ops.wm.save_as_mainfile(filepath=str(OUT/'knight_batch1.blend'))
 
-manifest={'revision':3,'previewPrefix':'knight_revision3_helmet','helmet':'fitted silver sallet','offHand':'forward-facing chest guard','shield':False,'proportions':'adult slender, approximately 7.5 heads','status':'preview candidate; no game integration','front':'-Y','up':'Z',
+manifest={'revision':4,'previewPrefix':'knight_revision4_armor_power','helmet':'fitted silver sallet','offHand':'forward-facing chest guard','shield':False,'proportions':'adult slender, approximately 7.5 heads','status':'preview candidate; no game integration','front':'-Y','up':'Z',
           'units':'meters, stylized proportion','blender':bpy.app.version_string,
           'bones':len(rig.data.bones),'meshParts':len(parts),
           'vertices':sum(len(o.data.vertices) for o,b in parts),
           'faces':sum(len(o.data.polygons) for o,b in parts),
           'triangles':sum(len(poly.vertices)-2 for poly in body.data.polygons),
           'materials':[unified.name], 'paletteTextures':{'count':2,'size':[len(palette)*4,4]},
-          'clips':{},'external_assets':[], 'blade_trails':False}
+          'motionTargetMissMeters':motion_metrics,'clips':{},'external_assets':[], 'blade_trails':False}
 for clip,(frames,step) in CLIPS.items():
     rendered=list(range(1,frames+1,step))
     # Include exact terminal death pose even when rendering every other frame.

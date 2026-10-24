@@ -20,6 +20,7 @@ ref=Path(a.reference).resolve()
 m=json.loads((root/'manifest.json').read_text())
 definition=json.loads((ref/'knight.json').read_text(encoding='utf-8'))
 projection=json.loads((root/'sprite-projection.json').read_text())
+validation=json.loads((root/'validation.json').read_text())
 renderer=Path('js/battle-renderer.js').read_text(encoding='utf-8')
 distance=float(re.search(r'var BATTLE_CAMERA_DISTANCE_PERCENT = ([\d.]+)',renderer)[1])
 for row in csv.reader(Path('config/CSV/game_parameters.csv').read_text(encoding='utf-8-sig').splitlines()):
@@ -46,6 +47,25 @@ for name in names:
         source[name].append(cell)
     render[name]=[Image.open(root/name/('%03d.png'%f)).convert('RGBA') for f in m['clips'][name]['renderedFrames']]
     assert all(im.getextrema()[3][0]==0 for im in render[name]), 'Transparent renders required'
+    for index,im in enumerate(render[name]):
+        bounds=im.getchannel('A').point(lambda v:255 if v>8 else 0).getbbox()
+        assert bounds and bounds[0]>0 and bounds[1]>0 and bounds[2]<im.width and bounds[3]<im.height, \
+            (name,index,'Model is cropped by the render frame',bounds)
+        # Presentation-only grounding, derived from the rendered pose's foot
+        # projections. No shadow mesh/texture/VFX is added to the character asset.
+        frame=m['clips'][name]['renderedFrames'][index]
+        contacts=validation['clips'][name].get('previewContacts',{}).get(str(frame),[])
+        if contacts:
+            shadow=Image.new('RGBA',im.size)
+            sd=ImageDraw.Draw(shadow)
+            cx=sum(pt['pixel'][0] for pt in contacts)/2
+            cy=sum(pt['pixel'][1] for pt in contacts)/2+3
+            radius=max(45,abs(contacts[0]['pixel'][0]-contacts[1]['pixel'][0])/2+15)
+            sd.ellipse((cx-radius,cy-14,cx+radius,cy+14),fill=(0,0,0,80))
+            for pt in contacts:
+                if pt['contact']:
+                    x,y=pt['pixel'];sd.ellipse((x-13,y-5,x+13,y+5),fill=(0,0,0,135))
+            render[name][index]=Image.alpha_composite(shadow,im)
 
 # Opaque idle bounds exclude the original's baked translucent shadow. Calibrate
 # head-to-foot height once, then retain translation, crouch and sword excursions.
@@ -79,15 +99,15 @@ for f in range(150):
     t=f*.04
     board=Image.new('RGB',(640,688),(20,29,30))
     d=ImageDraw.Draw(board)
-    d.text((14,9),'六組動作 · 原圖／銀盔 3D · 遊戲一般視窗大小',font=font,fill=(231,236,236))
-    d.text((14,36),'請以 100% 檢視｜一般鏡頭 0.8×｜SE 方向｜固定身高及腳點',font=small,fill=(175,193,193))
+    d.text((14,9),'六組動作 · 原圖／銀甲重製 · 遊戲一般視窗大小',font=font,fill=(231,236,236))
+    d.text((14,36),'請以 100% 檢視｜一般鏡頭 0.8×｜原圖 SE｜固定身高及腳點',font=small,fill=(175,193,193))
     d.text((14,56),'完整起手與收招，依原速重播；非循環動作末幀停留方便比較',font=small,fill=(151,172,173))
     for i,name in enumerate(names):
         x=(i%2)*320; y=86+(i//2)*200
         d.rounded_rectangle((x+3,y+2,x+317,y+196),radius=6,fill=(27,38,38),outline=(55,72,72))
         d.text((x+12,y+8),labels[name],font=font,fill=(222,231,229))
         d.text((x+73,y+13),'原圖',font=small,fill=(164,183,182))
-        d.text((x+226,y+13),'銀盔 3D',font=small,fill=(178,201,215))
+        d.text((x+226,y+13),'新版銀甲',font=small,fill=(178,201,215))
         clip=m['clips'][name]
         duration=clip['duration']
         hold=0 if clip['loop'] else (.75 if name=='die' else .3)
@@ -121,6 +141,7 @@ report={'result':'PASS','direction':'SE','originalScale':definition['scale'],
     'modelStandingProjectionPixels':projection['standingBodyHeightPixels'],
     'modelScalePixelsPerRenderedPixel':model_scale,'modelAnchorPixels':model_anchor,
     'fixedScaleAndAnchorAcrossSixActions':True,'sourcePixelAssetsInModel':False,
+    'modelPreviewShadow':'Presentation-only ellipses derived from per-pose foot projections; absent from GLB',
     'timing':'Full 15 reference frames at source fps; first-frame game skip intentionally not applied',
     'limitations':'Reconstructed ordinary panel at player centre, CSS/browser zoom 100%; fullscreen adds 1.3x, panel height changes mild perspective. No live-game integration.',
     'gif':gif.name,'size':[640,688],'frames':150,'durationMs':6000}

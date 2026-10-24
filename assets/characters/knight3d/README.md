@@ -1,69 +1,62 @@
-# 白銀騎士：銀盔與六動作對照（Revision 3）
+# 白銀騎士：盔甲與全身動作重塑（Revision 4）
 
-任務 KNIGHT-HELMET-SIX-COMPARE-20261024（承接 KNIGHT-3D-REV2-20261023）。此目錄是待使用者審查的角色製作包，尚未接入遊戲、沒有替換 `images/sprites/knight`。第一版可由遊戲 Commit 436a6357／素材庫 2c432f8 回溯。
+任務 `KNIGHT-ARMOR-POWER-REV4-20261024`。使用者要求改善前版木偶感，盡量貼近既有騎士的帥氣銀甲與動作，保留頭盔，加大跨步、沉身及全身轉動，交付六組遊戲大小的原圖對照。本目錄是製作候選，未替換遊戲主角。前版銀盔候選可由遊戲 `0dbabd48`／素材庫 `605a76d` 回溯。
 
-使用者指定：盡量復刻既有圖集的人物造型及全身動作，偏寫實、成人修長、美型；移除盾牌及刀光。原圖為主要參考，不以自創裝飾取代原造型。修正版重新查看原圖八方向及完整攻擊幀，先改回成人頭部輪廓，依最新要求再加貼合頭形的銀色sallet頭盔、窄眼縫與收尖頰甲；約7.5頭身、長腿收腰銀甲、深色腰帶及關節；保留甲片厚度、曲面、倒角與手部，不再硬壓在3,000三角面。低重心較開站姿、前傾跑步及兩種揮砍的沉身／步伐／髖胸轉動一併重作。盾牌幾何完全刪除。
+## 本輪造型
 
-## 模型與檔案
+- 收腰胸甲重塑為胸腹相接的板甲，增加中央脊線、鎖骨邊與側折線；下接弧形腹甲、腰圈及三層曲面胯甲。
+- 肩甲改為兩層向外掃出的曲面覆板、前緣與脊線；跟隨上臂，避免胸口轉動時肩球浮在手臂上方。護臂、肘甲側翼、膝甲與脛甲依人體收放，前面保留金屬折面，接縫以深色內襯收窄。
+- 保留貼合頭形的銀色sallet頭盔與頰甲，移除其遮住的眼睛／耳朵／頭皮幾何；不是用隱藏細節增加面數。劍、盾牌及刀光的決策維持：單手長劍，無盾、無刀光。
+- 原圖的淺灰銀甲與深色內襯為配色依據；採中等粗糙度銀色金屬、克制邊緣反光及方向光。所有幾何、色盤、骨架與動畫均自製，沒有引入第三方模型、貼圖或動畫。
 
-- `knight_batch1.blend`：檔名沿用穩定來源路徑，內容已為修正版；可編輯模型、16骨骼、六個 Action、預覽攝影棚。開啟後選 KNIGHT_RIG，在 Action Editor 選動作；NLA軌預設靜音，避免動作疊加。
-- `knight_batch1.glb`：只含角色，排除攝影棚、燈光、攝影機；六個具名骨架動畫、兩張36×4材質色盤內嵌。
-- `manifest.json`：revision=3、helmet=fitted silver sallet、shield=false、統計與六組動作的幀率／幀數。
+## 結構與效能
 
-實際統計：**9,664 三角面、4,998 Blender 多邊形、5,055 製作頂點**；匯出後因法線／UV分裂為9,556頂點。**1網格、1 primitive、1材質、16骨骼、每頂點1個骨骼權重**；GLB **653,996 bytes（約639 KiB）**。12,000三角面的製作檢查只避免非預期膨脹，並非已通過遊戲效能驗收；單primitive也不代表最終引擎包含陰影等pass時只有1 draw call。
+`knight_batch1.blend`沿用穩定檔名，內容已為Revision 4；包含16骨骼、六Action、原始骨骼綁定與預覽攝影棚。`knight_batch1.glb`僅含角色及六動畫，排除攝影棚／燈／相機。`manifest.json`記錄版本、面數、動作與手腳目標誤差。
 
-| 動作 | 幀數／fps | 預覽週期內的動作長度 | 內容 |
-| --- | --- | --- | --- |
-| idle | 30 / 30 | 1秒循環 | 低重心持劍、呼吸，左手空手、拳面朝前護胸 |
-| walk | 15 / 30 | 0.5秒循環 | 前傾原地跑動、髖胸反向及擺臂 |
-| attack1 | 15 / 30 | 0.5秒 | 舉劍、踏步、沉身轉體橫斬、收招 |
-| attack2 | 15 / 30 | 0.5秒 | 過頂起手、跨步斜劈、前傾收招 |
-| cast | 15 / 30 | 0.5秒 | 蹬伸／舉劍／空手配合，無法術VFX |
-| die | 30 / 30 | 1秒 | 失重倒地、手臂落地、劍身轉平 |
+**11,238三角面、5,597製作多邊形、5,937製作頂點、12,954匯出頂點**；法線／UV邊界會分裂匯出頂點。1網格／primitive／材質，16骨骼、每頂點1權重，兩張36×4內嵌色盤；GLB **840,392 bytes（約821 KiB）**。相較銀盔版增加1,574三角面，維持12k製作檢查上限；不是已通過戰鬥GPU-FPS驗收，也不把單primitive當成包含所有引擎pass的draw-call數。
 
-GLB第一至末取樣鍵的跨度為 `(frames-1)/fps`；表中的長度包含最後一個取樣的顯示時長。非循環GIF另在末幀停留300ms（攻擊／施法）或750ms（死亡）以便檢視，不寫入模型。attack3可沿用cast、rise可倒播die。本批尚未接正式遊戲的命中／釋放時序與移動速度。
+## 六組動作
 
-## 製作與驗證
+| 動作 | 幀數／fps | 內容 |
+| --- | --- | --- |
+| idle | 30／30 | 寬腳、屈膝、胸口前壓、低重心持劍，空手護胸 |
+| walk | 15／30 | 前傾跑動，較長步幅、髖胸反向及手臂配重 |
+| attack1 | 15／30 | 蓄力、踏步、快速轉髖帶胸揮斬、沉身隨勢、回守 |
+| attack2 | 15／30 | 舉劍並整體轉過背面、交替步伐、轉身斜斬後回守 |
+| cast | 15／30 | 配合原圖轉身、高舉停留、低位收招，空手順前臂銜接 |
+| die | 30／30 | 先失衡屈膝，後段才倒地；手臂隨肩下落、劍轉平 |
 
-在專案根目錄執行，把 `<Blender>` 替換成安裝的blender.exe，`<預覽目錄>` 用專案外絕對路徑：
+待機製作骨盆高度從1.25降至1.02，腳踝間距由約1.05加大至1.46；第一擊最低骨盆約0.85。這些是製作座標，只描述相對表演，不是遊戲移速或戰鬥位移。兩骨IK目標全數可達，最大手腕／腳踝誤差<0.000001。整圈轉身使用完整腳掌朝向，避免方向向量的最短旋轉使鞋底翻斜；胸口前向檢查先去除編輯骨的初始朝向，避免直接取骨骼Euler-Z在轉身中誤判。
+
+動畫保留原始0.5／1秒週期，非循環GIF末幀另停300ms、死亡750ms供檢視。GLB第一至末取樣鍵跨度為`(frames-1)/fps`，包含最後取樣顯示時長才是表中週期。尚未套用遊戲攻擊／施法的first跳幀與事件時序；沒有改模擬、命中或傷害。
+
+## 重製與驗證
+
+在專案根目錄執行，`<Blender>`是blender.exe，`<預覽目錄>`採專案外的絕對路徑：
 
 ```powershell
 & '<Blender>' --background --factory-startup --python tools/knight3d/build_knight.py -- --output assets/characters/knight3d --preview '<預覽目錄>' --render none
-& '<Blender>' --background --factory-startup --python tools/knight3d/render_batch.py -- --model assets/characters/knight3d/knight_batch1.blend --preview '<預覽目錄>'
-python tools/knight3d/package_previews.py --preview '<預覽目錄>' --reference images/sprites/knight
+& '<Blender>' --background --factory-startup --python tools/knight3d/render_batch.py -- --model assets/characters/knight3d/knight_batch1.blend --preview '<預覽目錄>' --sprite-preview
+python tools/knight3d/package_game_compare.py --preview '<預覽目錄>' --reference images/sprites/knight --battle-height 600
 python tools/knight3d/validate_asset.py assets/characters/knight3d/knight_batch1.glb
 node tools/knight3d/sync-library.cjs --apply
 node tools/knight3d/sync-library.cjs --check
 ```
 
-幾何在 `silver_knight_geometry.py`，全身姿勢在 `silver_knight_motion.py`；由build_knight統一建立、合併、綁定及輸出。姿勢以持續速度的Hermite插值、髖胸獨立完整旋轉矩陣、手腳雙骨目標、空手配重、接地停留及四元數同半球處理；依2026-10-24回饋，左手改為胸口局部座標下的護胸目標、左肘向下收放、拳面朝前並與前臂銜接，避免胸口只有位置變動卻未轉腰、每關鍵幀停住或跨符號翻轉。
+`render_batch.py --validate-only`不渲染，重開成品驗120個完整姿勢、內嵌材質、地面與有限矩陣、兩攻擊全身位移、左拳前向與腕部銜接；失敗時會指出最低頂點及所屬骨骼。`--render-clips cast`可僅重出指定動作，但仍驗全部姿勢。`--design-views`另存四面攝影棚靜態視圖，應用不同預覽目錄，避免覆蓋透明動作圖。`validate_asset.py`直接讀GLB檢查索引、權重、三角、16joints、材質／內嵌貼圖、時間與六段各48通道。
 
-`render_batch.py --validate-only` 重開模型，檢查六Action、骨架、內嵌材質、120個完整姿勢的有限矩陣及實際變形頂點最低高度；並驗攻擊有髖部／胸口旋轉、骨盆位移及步伐；待機及兩攻擊另驗左拳不朝下、與胸口前向dot>0.8、與前臂dot>0.7。結構量測不能代替人物造型與動作的原圖相似度審查。`validate_asset.py` 直接讀GLB二進位核對網格、材質、三角、時間、權重、索引與所有動畫通道。
+## 同遊戲尺寸對照
 
-Blender 5.2.3 LTS建立並重開；Cycles可用時使用CUDA，否則CPU。預覽含六組GIF、六格大圖、約70～80像素人物高度的小圖、24視角環繞與兩種攻擊的原圖並排。原圖欄保留原有盾牌與刀光以供參考，右欄3D沒有這些；並排顯示相近時間，不能當作每個關節都已精確一致。
+`knight_revision4_armor_power_six_game_compare.gif`為640×688、150幀／6秒，每格左原圖、右新銀甲；另有原尺寸PNG與明標2x PNG。原圖SE是胸肩較正面的視角，3D透明預覽相機相應調整為接近正面；不是把方向名稱當成固定的世界相機方位。四面放大造型檢視另外交付，不能當作遊戲大小。
 
-## 來源、保存與限制
+原圖128格、trim及錨點由knight.json還原，素材scale1.4 × 一般鏡頭100/125=0.8，總倍率1.12；SE idle第一幀不透明頭腳50素材px，透視前為56 CSS px。新模型只用idle頭／腳實際投影高度校正一次，六動作全程固定比例與腳點，不對每幀／動作重新縮放。兩欄套用遊戲上緣0.82透視公式，假設600 CSS px高普通戰鬥面板與100%瀏覽器／圖片縮放；全螢幕會額外×1.3，面板高度不同有輕微透視差。這是依遊戲公式重建的尺寸預覽，並非實機3D整合畫面。
 
-`images/sprites/knight`六份既有圖集與knight.json只作造型、姿勢與節奏參考；未擷取圖集像素用作新模型的貼圖或模型資產。所有幾何、色盤、骨架、動作、攝影棚均程序原創，沒有匯入第三方模型、貼圖、動畫。參考圖只出現在專案外的對照預覽。
+原圖欄保留舊盾／刀光及烘焙陰影；新模型沒有盾／刀光。新版對照另依每姿勢腳點投影加淡接地橢圓陰影，僅為預覽輔助，不寫入GLB、貼圖或遊戲特效。原圖完整15幀按來源fps播放，未省略起手；`game-comparison-validation.json`保存倍率／校正／GIF讀回，`sprite-projection.json`保存相機及投影，`validation.json`保存逐姿勢量測／接地點，`glb-validation.json`保存二進位檢查。
 
-本地素材庫位置由既有vfx-library-root解析；候選的四份資產及八個工具保存於codex-authored/knight3d同相對路徑，sync-library逐檔核對SHA256。未改正式角色匯出器、出貨索引、玩法、解鎖或玩家存檔。blend1／pycache不是交付物；預覽與驗證報告保存在本聊天visualizations/knight3d-helmet。
+## 保存與待驗收
 
-**仍待驗收**：人物造型與原圖的接近程度、動作表演細節、八方向及實際戰鬥投影／命中時序／GPU-FPS。此版本僅為修正候選，不宣稱已完成逐幀復刻或獲使用者核准。若最終使用預渲染圖集，製作模型的面數不會成為瀏覽器的即時蒙皮負擔；圖集容量、載入與實際播放成本仍須另驗。
+素材庫由既有vfx-library-root解析，候選四資產及八工具共12檔保存於`codex-authored/knight3d`相同相對路徑，SHA逐檔核對。預覽、參考放大、日誌與驗證報告留本聊天visualizations/knight3d-rev4；blend1及pycache不交付。
 
+六份既有knight圖集只供造型／動作參考與專案外對照，未取像素當新角色貼圖。採用使用者指定的Blender製作可綁骨骼3D，非點陣作圖，沒有改用RPG Mote。正式sprites、遊戲JS／CSS／配置、解鎖與存檔均未改。
 
-## 六組原圖／銀盔版遊戲大小對照
-
-本輪只加頭盔，`silver_knight_motion.py`保持前輪修正內容。頭盔替代短髮，新增266三角面；不加盾牌／刀光。
-
-在上述build之後，改用透明渲染與新對照工具（不需先跑舊package_previews）：
-
-```powershell
-& '<Blender>' --background --factory-startup --python tools/knight3d/render_batch.py -- --model assets/characters/knight3d/knight_batch1.blend --preview '<預覽目錄>' --sprite-preview
-python tools/knight3d/package_game_compare.py --preview '<預覽目錄>' --reference images/sprites/knight --battle-height 600
-```
-
-輸出`knight_revision3_helmet_six_game_compare.gif`：640×688、150幀／6秒，六組每組左原圖、右銀盔3D；原圖保留盾牌／刀光及既有陰影，3D未製作這些特效。方向SE，所有動作使用同一固定比例與腳底校正；不為每幀或每動作調整身高／位置。來源原始128格、trim及anchor由knight.json重建。以原圖SE idle第一幀alpha>245的頭到腳範圍50px，對齊Blender頭／腳骨實際投影高度286.1236px；只校正一次，不取圖集像素當模型貼圖。
-
-大小取自遊戲manifest 1.4 × 配置鏡頭100/125=0.8，故原圖素材倍率1.12，站姿頭腳約56 CSS px（透視前）；對兩欄施加遊戲中心、上緣0.82的透視公式。採600 CSS px高一般戰鬥面板、瀏覽器／圖片100%檢視。全螢幕會額外×1.3；面板高度與實際縮放不同時，透視後像素會略不同。這是按現有遊戲公式重建的尺寸對照，尚未把3D接入實際遊戲。
-
-完整原始15幀依各動作fps播放，方便看起手及收招；未套遊戲attack1／attack2／cast跳過前幀的事件時序。非循環動作末幀另停300ms、死亡750ms。附PNG靜態版及明標2x放大版，不能把放大版當遊戲大小。`game-comparison-validation.json`保存校正、配置、GIF讀回及限制；`sprite-projection.json`保存相機／錨點。舊package_previews的game_size為近似舊攝影棚縮圖，最新精確倍率對照以新工具為準。
+**待驗收**：盔甲造型、原圖相似度、動作自然度及角色氣勢仍由使用者檢視；數值檢查不代表美術核准。尚未整合八方向正式輸出、戰鬥事件／GPU-FPS，也未宣稱消除所有甲片互穿。若選用預渲染精靈，模型面數不成為瀏覽器即時蒙皮成本，但圖集容量與載入／播放效能另驗。

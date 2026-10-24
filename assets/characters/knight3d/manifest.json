@@ -1,6 +1,6 @@
 {
-  "revision": 3,
-  "previewPrefix": "knight_revision3_helmet",
+  "revision": 4,
+  "previewPrefix": "knight_revision4_armor_power",
   "helmet": "fitted silver sallet",
   "offHand": "forward-facing chest guard",
   "shield": false,
@@ -12,9 +12,9 @@
   "blender": "5.2.3 LTS",
   "bones": 16,
   "meshParts": 1,
-  "vertices": 5055,
-  "faces": 4998,
-  "triangles": 9664,
+  "vertices": 5937,
+  "faces": 5597,
+  "triangles": 11238,
   "materials": [
     "Knight | single palette material"
   ],
@@ -24,6 +24,32 @@
       36,
       4
     ]
+  },
+  "motionTargetMissMeters": {
+    "idle": {
+      "wrist": 2.9802322387695312e-08,
+      "ankle": 8.940696716308594e-08
+    },
+    "walk": {
+      "wrist": 3.725290298461914e-08,
+      "ankle": 1.341104507446289e-07
+    },
+    "attack1": {
+      "wrist": 2.9802322387695312e-08,
+      "ankle": 2.1542358837725164e-07
+    },
+    "attack2": {
+      "wrist": 1.4901161193847656e-08,
+      "ankle": 1.2644054553268208e-07
+    },
+    "cast": {
+      "wrist": 4.470348358154297e-08,
+      "ankle": 8.560065398421926e-08
+    },
+    "die": {
+      "wrist": 2.9802322387695312e-08,
+      "ankle": 1.4057727354849284e-07
+    }
   },
   "clips": {
     "idle": {
