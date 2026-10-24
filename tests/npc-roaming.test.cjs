@@ -105,10 +105,10 @@ test('預置群長時間遊走仍保持小範圍、未接戰，不會整群朝�
 test('遠方未接戰不增加狂暴計數與平均，發現玩家後才開始累計',()=>{
  const c=env(),far=plain(c),near={hp:100,_spawnAt:100};far._encounterKey='test';far._spawnAt=100;
  c.GT=160;c.tickEnemyFrenzy([near,far],160);
- assert.equal(c.enemyFrenzyPct(far),0);assert.equal(c.enemyFrenzyPct(near),50.5);
- assert.equal(c.enemyFrenzyAverage([near,far]),50.5);
+ assert.equal(c.enemyFrenzyPct(far),0);assert.equal(c.enemyFrenzyPct(near),50);
+ assert.equal(c.enemyFrenzyAverage([near,far]),50);
  c.BF_PLAYER.x=900;c.bfEnemyAlerted(far);c.tickEnemyFrenzy([near,far],160);assert.equal(c.enemyFrenzyPct(far),0);
- c.tickEnemyFrenzy([near,far],171);assert.equal(c.enemyFrenzyPct(far),1.02);
+ c.tickEnemyFrenzy([near,far],171);assert.equal(c.enemyFrenzyPct(far),1);
 });
 test('參數表生成與遊走十個值同步至具名設定',()=>{
  const c=loadEliteEnv({stage:1}),rows=cfg.csvParse(fs.readFileSync('config/CSV/game_parameters.csv','utf8'));

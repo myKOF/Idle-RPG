@@ -1326,7 +1326,8 @@ function playerDefCfg(pEnt) {
 var ENEMY_FRENZY_DELAY_SEC = 10;
 var ENEMY_FRENZY_INTERVAL_SEC = 1;
 var ENEMY_FRENZY_STEP_PCT = 1;
-var ENEMY_FRENZY_COUNT_DIVISOR = 100;
+var ENEMY_FRENZY_FAST_COUNT_THRESHOLD = 30;
+var ENEMY_FRENZY_FAST_MULTIPLIER = 2;
 
 function enemyFrenzyPct(m, now) {
     return m && Number.isFinite(m._frenzyPct) ? m._frenzyPct : 0;
@@ -1335,9 +1336,12 @@ function enemyFrenzyPct(m, now) {
 function tickEnemyFrenzy(enemies, now) {
     var count = 0;
     for (var i = 0; i < enemies.length; i++) {
-        if (enemies[i] && enemies[i].hp > 0 && (!enemies[i]._encounterKey || enemies[i]._alerted)) count++;
+        var enemy = enemies[i];
+        if (fieldCombatReady(enemy) &&
+            ((!enemy._encounterKey && !(enemy.sightRange > 0)) || enemy._alerted)) count++;
     }
-    var increment = ENEMY_FRENZY_STEP_PCT * (1 + count / ENEMY_FRENZY_COUNT_DIVISOR);
+    var increment = ENEMY_FRENZY_STEP_PCT *
+        (count > ENEMY_FRENZY_FAST_COUNT_THRESHOLD ? ENEMY_FRENZY_FAST_MULTIPLIER : 1);
     for (var j = 0; j < enemies.length; j++) {
         var m = enemies[j];
         if (!m || m.hp <= 0 || !Number.isFinite(m._spawnAt)) continue;
