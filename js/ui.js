@@ -1933,6 +1933,56 @@ function updatePerfToggleButton() {
 function applyPerfMode() {
   if (typeof BattleRenderer !== 'undefined' && BattleRenderer.setPerfMode) BattleRenderer.setPerfMode(UI_PERF_MODE);
   updatePerfToggleButton();
+  resetPerfHint();
+}
+
+/* ---- 效能模式提示：近 1 分鐘平均 FPS 低於 30、而效能模式還沒開，就讓按鈕閃爍 ----
+   與內部版的 FPS 顯示（initBattleFPS）無關，所有玩家都會跑。每秒取一個樣本，滿 60 個才判斷；
+   分頁在背景（rAF 被瀏覽器壓住）的那幾秒不取樣，免得誤判。開關切換後重新計一分鐘。 */
+var PERF_HINT_WINDOW = 60;     // 樣本數（每秒 1 個）
+var PERF_HINT_FPS = 30;        // 平均低於這個值才提示
+var perfHintSamples = [];
+var perfHintFrames = 0;
+var perfHintLast = 0;
+function resetPerfHint() {
+  perfHintSamples.length = 0;
+  perfHintFrames = 0;
+  perfHintLast = 0;
+  var btn = $id('btn-toggle-perf');
+  if (btn) btn.classList.remove('is-hint');
+}
+function perfHintTick() {
+  var now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+  if (document.hidden) {
+    perfHintSamples.length = 0;
+    perfHintFrames = 0;
+    perfHintLast = 0;
+  } else if (!perfHintLast) {
+    perfHintLast = now;
+  } else {
+    perfHintFrames++;
+    var delta = now - perfHintLast;
+    if (delta >= 1000) {
+      perfHintSamples.push(perfHintFrames * 1000 / delta);
+      if (perfHintSamples.length > PERF_HINT_WINDOW) perfHintSamples.shift();
+      perfHintFrames = 0;
+      perfHintLast = now;
+      var btn = $id('btn-toggle-perf');
+      if (btn) {
+        var low = false;
+        if (!UI_PERF_MODE && perfHintSamples.length >= PERF_HINT_WINDOW) {
+          var sum = 0;
+          for (var i = 0; i < perfHintSamples.length; i++) sum += perfHintSamples[i];
+          low = sum / perfHintSamples.length < PERF_HINT_FPS;
+        }
+        btn.classList.toggle('is-hint', low);
+      }
+    }
+  }
+  if (typeof requestAnimationFrame === 'function') requestAnimationFrame(perfHintTick);
+}
+function initPerfHint() {
+  if (typeof requestAnimationFrame === 'function') requestAnimationFrame(perfHintTick);
 }
 
 function setPerfModeEnabled(enabled, quiet) {
@@ -11549,6 +11599,7 @@ function initUI() {
   var togglePerfBtn = $id('btn-toggle-perf');
   if (togglePerfBtn) {
     applyPerfMode();
+    initPerfHint();
     togglePerfBtn.addEventListener('click', function (e) {
       e.stopPropagation();
       setPerfModeEnabled(!UI_PERF_MODE);
