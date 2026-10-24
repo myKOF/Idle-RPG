@@ -4,6 +4,14 @@
 
 ## 本機條件
 
+固定同步分支 `ai/antigravity`、`ai/claude`、`ai/codex` 與專用分支分開管理。若固定分支仍存在、但沒有簽出的工作區，工具會在 develop 所在目錄的上一層建立 `.ai-sync-worktrees/<AI名稱>` 固定副本，沿用該分支完整歷史；不切換原工作區、不重設分支，路徑已存在則停止而不覆蓋。
+
+已簽出的 `codex/*`、`claude/*`、`antigravity/*` 專用分支會一併參與同步：先確認乾淨、推送並整合至 develop，再快轉回各固定及專用分支。尚未推送的專用分支會建立同名遠端及 upstream。騎士專用分支仍保留原名稱，可繼續工作；未簽出的其他歷史分支不自動納入。任何參與副本有未提交修改仍會停止，需先完成／提交工作。
+
+`-ValidateOnly` 僅顯示將建立的固定副本，不建立目錄、切分支、合併或推送。同步報告也列出本次已簽出的 AI 專用分支，方便確認騎士等成果是否參與。
+
+待使用者核准的試作可設定 `git config branch.<分支名>.codexSyncHold true`，工具會保留該工作區與分支，跳過其同步、推送和合併；其中未提交的試作也不阻擋其他AI同步。既有 `codex/knight3d-prototype`、`codex/knight-makehuman-motion`、`codex/knight-makehuman` 預設受保護。只有使用者明確說最終OK後，才可將對應設定改為 `false` 納入整合。這不會刪除或改名原 `ai/codex` 分支。
+
 - Git、Node.js、Windows PowerShell 與 Codex CLI 可執行。
 - Codex 已登入：可用 `codex login status` 檢查，必要時先執行 `codex login`。
 - 可以連線使用 Codex，且帳號有可用額度；自動解衝突會使用帳號的 Codex 額度。
