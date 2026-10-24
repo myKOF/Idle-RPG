@@ -267,6 +267,16 @@ function Get-WorktreeMap {
             $branch = $Matches[1]
         } elseif ([string]::IsNullOrWhiteSpace($line)) {
             if ($path -and $branch) {
+                # User holds the knight 3D prototype until explicit final OK.
+                # Exclude it before feature discovery: no sync, push or merge.
+                $held3D = $branch -in @('codex/knight3d-prototype', 'codex/knight-makehuman-motion', 'codex/knight-makehuman')
+                $hold = Get-GitTextSoft -Worktree $AnyWorktree -GitArguments @('config', '--bool', '--get', "branch.$branch.codexSyncHold")
+                if ($hold -eq 'true' -or ($held3D -and $hold -ne 'false')) {
+                    Write-Host "[試作保護] $branch 等待使用者最終 OK，跳過自動同步／推送／合併。"
+                    $path = $null
+                    $branch = $null
+                    continue
+                }
                 if ($map.ContainsKey($branch)) {
                     throw "分支 $branch 同時簽出於多個 Worktree。"
                 }
@@ -295,6 +305,46 @@ function Assert-CleanWorktree {
     if ($status) {
         throw "Worktree 尚有未提交變更。請先提交或處理下列內容：`n$Worktree`n$status"
     }
+}
+
+# Fixed ai/* branches and active task branches serve different purposes. Keep
+# task worktrees on their branch; provide a separate checkout for a missing
+# fixed branch rather than switching, resetting, or repointing anyone's HEAD.
+function Initialize-SyncWorktrees {
+    param([string]$Repository, [hashtable]$Worktrees)
+
+    $features = @($Worktrees.Keys | Where-Object { $_ -match '^(codex|claude|antigravity)/.+' } | Sort-Object)
+    foreach ($branch in $features) {
+        Assert-CleanWorktree -Worktree $Worktrees[$branch] -ExpectedBranch $branch
+    }
+    $planned = @()
+    foreach ($branch in @('ai/antigravity', 'ai/claude', 'ai/codex')) {
+        if ($Worktrees.ContainsKey($branch)) { continue }
+        if (-not $Worktrees.ContainsKey($developBranch)) { throw '找不到 develop 工作區，不能建立固定同步副本。' }
+        $ref = Get-GitTextSoft -Worktree $Repository -GitArguments @('rev-parse', '--verify', "refs/heads/$branch")
+        if (-not $ref) { throw "找不到本地 $branch 分支；保留現場，請先確認分支來源。" }
+        $parent = Split-Path -Parent $Worktrees[$developBranch]
+        $destination = Join-Path (Join-Path $parent '.ai-sync-worktrees') $branch.Substring(3)
+        if (Test-Path -LiteralPath $destination) { throw "固定同步副本路徑已存在，禁止覆蓋：$destination" }
+        if ($ValidateOnly) {
+            Write-Host "[預檢] 將建立 $branch 固定同步副本：$destination；不切換專用分支。"
+            $planned += $branch
+        } else {
+            Write-Step "建立 $branch 固定同步副本（保留原專用分支）"
+            Invoke-Git -Worktree $Repository -GitArguments @('worktree', 'add', $destination, $branch) | Out-Host
+        }
+        $Worktrees[$branch] = $destination
+    }
+    return [pscustomobject]@{ Worktrees = $Worktrees; Features = $features; Planned = $planned }
+}
+
+function Test-SyncRemoteBranch {
+    param([string]$Repository, [string]$Branch)
+    $ref = Get-GitTextSoft -Worktree $Repository -GitArguments @('rev-parse', '--verify', "refs/remotes/$Remote/$Branch")
+    if ($ref) { return $true }
+    if ($Branch -notmatch '^(codex|claude|antigravity)/.+') { throw "找不到必要遠端分支 $Remote/$Branch。" }
+    Write-Host "[新專用分支] $Branch 尚未推送；本輪將保留歷史並建立遠端分支。"
+    return $false
 }
 
 function Complete-DevelopConflict {
@@ -363,6 +413,9 @@ try {
     }
 
     $worktrees = Get-WorktreeMap -AnyWorktree $repository
+    $topology = Initialize-SyncWorktrees -Repository $repository -Worktrees $worktrees
+    $worktrees = $topology.Worktrees
+    $agentBranches = @($agentBranches) + @($topology.Features)
     $requiredBranches = @($developBranch) + $agentBranches
 
     Write-Step '探索必要的 Worktree'
@@ -375,6 +428,10 @@ try {
 
     Write-Step '檢查分支與工作區狀態'
     foreach ($branch in $agentBranches) {
+        if ($topology.Planned -contains $branch) {
+            Write-Host "[預檢] $branch 將使用新固定同步副本；本次未建立。"
+            continue
+        }
         Resume-SyncIndexRecovery -Worktree $worktrees[$branch] -ReadOnly:$ValidateOnly
         Assert-CleanWorktree -Worktree $worktrees[$branch] -ExpectedBranch $branch
         Write-Host ('[正常] {0}' -f $branch) -ForegroundColor Green
@@ -416,7 +473,9 @@ try {
            第三種正是該讓人知道的事；靜靜地改寫共用歷史比停下來糟得多。 #>
         Write-Step '先把所有必要分支對齊遠端（fast-forward）'
         foreach ($branch in $requiredBranches) {
-            Invoke-Git -Worktree $worktrees[$branch] -GitArguments @('merge', '--ff-only', "$Remote/$branch")
+            if (Test-SyncRemoteBranch -Repository $repository -Branch $branch) {
+                Invoke-Git -Worktree $worktrees[$branch] -GitArguments @('merge', '--ff-only', "$Remote/$branch")
+            }
         }
     }
 
@@ -429,8 +488,10 @@ try {
         $worktree = $worktrees[$branch]
         # 同上：緊接在 fetch --prune 之後，用 merge 對遠端追蹤參照動作即可，
         # 不必再 pull 一次（同樣的 FETCH_HEAD 重複項會讓 --ff-only 直接 fatal）。
-        Invoke-Git -Worktree $worktree -GitArguments @('merge', '--ff-only', "$Remote/$branch")
-        Invoke-Git -Worktree $worktree -GitArguments @('push', $Remote, "${branch}:${branch}")
+        if (Test-SyncRemoteBranch -Repository $repository -Branch $branch) {
+            Invoke-Git -Worktree $worktree -GitArguments @('merge', '--ff-only', "$Remote/$branch")
+        }
+        Invoke-Git -Worktree $worktree -GitArguments @('push', '--set-upstream', $Remote, "${branch}:${branch}")
         $pushedHeads[$branch] = Get-GitText -Worktree $worktree -GitArguments @('rev-parse', 'HEAD')
     }
 

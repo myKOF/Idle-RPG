@@ -42,7 +42,7 @@ function Find-DiagnosticWorktrees {
     $listing = Read-DiagnosticGit -Root $repository -Arguments @('worktree', 'list', '--porcelain')
     foreach ($line in ($listing -split "\r?\n")) {
         if ($line -match '^worktree (.+)$') { $root = $Matches[1] }
-        elseif ($root -and $line -match '^branch refs/heads/(develop|ai/(antigravity|claude|codex))$') {
+        elseif ($root -and $line -match '^branch refs/heads/(develop|ai/(?:antigravity|claude|codex)|(?:codex|claude|antigravity)/.+)$') {
             $map[$Matches[1]] = $root
         }
     }
@@ -136,7 +136,8 @@ try {
         if ($assetRoot -and -not $assetRoot.StartsWith('[exit ') -and
             (Test-Path -LiteralPath $assetRoot -PathType Container -ErrorAction SilentlyContinue)) { $worktrees['素材庫'] = $assetRoot }
     }
-    foreach ($branch in @('develop', 'ai/antigravity', 'ai/claude', 'ai/codex', '素材庫')) {
+    $featureBranches = @($worktrees.Keys | Where-Object { $_ -match '^(codex|claude|antigravity)/.+' } | Sort-Object)
+    foreach ($branch in (@('develop', 'ai/antigravity', 'ai/claude', 'ai/codex') + $featureBranches + @('素材庫'))) {
         if (-not $worktrees.ContainsKey($branch)) { continue }
         $root = $worktrees[$branch]
         $state = "工作區：$root`n" + (Read-DiagnosticGit -Root $root -Arguments @('status', '--short', '--branch'))
