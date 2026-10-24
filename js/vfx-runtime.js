@@ -1396,7 +1396,16 @@ var VFXRuntime = (function () {
       g.ox -= g.ox / mag * fix;
       g.oy -= g.oy / mag * fix;
     }
+    /* 毒水帶／毒圈是貼地的整片水面。場域預設以「原點 Y」與角色交錯排序，但長條毒帶的原點在中段，
+       站在毒帶上方半段（Y 較小）的敵人會被整條蓋住（2026-10-24 使用者回報 NPC 跑到毒素加持下方）。
+       貼地水面一律沉到所有角色與影子之下。 */
+    var FLOOR_DECAL_DEPTH_Y = -1e6;
     function groundParams(g) {
+      var params = groundParamsBase(g);
+      if (g.poisonTrail || g.presetId === 'en-poison-dot') params.depthY = FLOOR_DECAL_DEPTH_Y;
+      return params;
+    }
+    function groundParamsBase(g) {
       if (g.poisonTrail) {
         var a = g.trailArea, angle = num(a._planeA, num(a.a, 0));
         var length = Math.max(0, num(a._planeW, num(a.w, num(a.r, 0))));
