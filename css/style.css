@@ -11060,8 +11060,9 @@ body.battle-canvas-mode #combat-area .battle-scene-wrapper > #btn-toggle-damage 
 }
 
 @keyframes perf-btn-hint {
-  0%, 100% { box-shadow: 0 0 0 rgba(245, 158, 11, 0); }
-  50% { box-shadow: 0 0 12px 3px rgba(251, 191, 36, 0.95); background: #f59e0b !important; color: #1f1300 !important; }
+  /* 主題樣式表對 background／border 是 !important，動畫改不動；用 outline 與 filter（主題沒鎖）閃 */
+  0%, 100% { box-shadow: 0 0 0 rgba(245, 158, 11, 0); outline: 2px solid rgba(251, 191, 36, 0); filter: none; }
+  50% { box-shadow: 0 0 14px 4px rgba(251, 191, 36, 0.95); outline: 2px solid #fbbf24; filter: brightness(1.6) saturate(1.4); }
 }
 
 @media (prefers-reduced-motion: reduce) {

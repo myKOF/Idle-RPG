@@ -4643,6 +4643,12 @@ function sgCastFireball(pEnt, st, g, lvs, pool, primary, floatSel, out) {
       : ((targetGeomOk && radius > 0) ? bfTargetsAround(meteorTarget, pool, radius) : [meteorTarget]);
     if (!meteor && !victims.length) victims = [meteorTarget];
     var area = targetGeomOk ? sgAreaAround(meteorTarget, radius) : null;
+    var meteorFixedPos = null;
+    if (meteor && area) {
+      /* 落點鎖定施放當下的地板座標：特效與落地結算都不追目標。 */
+      area.fixedLanding = true;
+      meteorFixedPos = { x: area.x, y: area.y };
+    }
 
     if (meteor) {
       // 攻擊欄也可能填落地爆炸；起飛只派送施法、彈體與落點標記。
@@ -4663,7 +4669,7 @@ function sgCastFireball(pEnt, st, g, lvs, pool, primary, floatSel, out) {
 
     if (meteor) {
       sgQueueMeteor(pEnt, st, dmgVal, meteorTarget, pool, radius, burnSpec, floatSel, out,
-        GT + hitDelay / 1000, meteorExtra);
+        GT + hitDelay / 1000, Object.assign({}, meteorExtra, { fixedPos: meteorFixedPos }));
     } else {
       var splitSpec = null;
       var splitDmgVal = 0;
@@ -8651,14 +8657,19 @@ function sgDropThunderfall(pEnt, st, spec, n, pool, primary, floatSel, out) {
   for (var f = 0; f < n; f++) {
     var target = nextTarget();
     var castDelay = f * SG_METEOR_INTERVAL_MS;
+    /* 落點鎖定施放當下的地板座標：特效與落地結算都不追目標，目標走開就砸空處。 */
+    var landing = bfPos(target), fixedPos = landing ? { x: landing.x, y: landing.y } : null;
+    var landingArea = sgAreaAround(target, spec.radius);
+    if (landingArea) landingArea.fixedLanding = true;
     sgEmitVfx('thunderorb', [target], floatSel, {
       fxKind: 'rain', variant: 'thunder-fall', elem: 'lightning', count: 1,
-      area: sgAreaAround(target, spec.radius), delayMs: castDelay, travelMs: [timing.travelMs],
+      area: landingArea, delayMs: castDelay, travelMs: [timing.travelMs],
       vfxTier: 7
     });
     sgQueueMeteor(pEnt, st, spec.dmgVal, target, pool, spec.radius, null, floatSel, out,
       GT + (castDelay + timing.fallMs) / 1000, {
         gid: 'thunderorb', variant: 'thunder-fall-impact', elem: 'lightning', vfxTier: 7,
+        fixedPos: fixedPos,
         onImpact: function (m, victims) {
           for (var vi = 0; vi < victims.length; vi++) {
             sgTryStun(victims[vi], spec.stunSec, { gid: 'thunderorb', tier: '7' });
