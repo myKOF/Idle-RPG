@@ -78,10 +78,17 @@
 
 ## KNIGHT-MAKEHUMAN-STATIC-R6-20261024 — MakeHuman 人體基礎與銀甲造型
 
-- Owner：Codex；In Progress，單一開發者。使用者要求從Git下載MakeHuman，搭配Blender實作；承接靜態造型優先，修正手肩／胸腰胯比例與甲片層次，保留頭盔、無盾／刀光，確認造型後才續動作。
-- 前置：官方MakeHuman已clone並依使用者移至D:/MyGame/MakeHuman（專屬codex/knight-makehuman分支）；MPFB位於D:/MyGame/Codex-Tools/mpfb2；遊戲同名專用分支；核心資產CC0、工具AGPL／GPL，完整工具留專案外。允許tools/knight3d/build_makehuman.py、package_makehuman.py、makehuman-r6候選blend／glb／mhm／manifest／SOURCE與CC0授權、README及sync-library新增R6與本段；素材庫同製作包。禁止六動作成品／來源、遊戲原圖／JS／CSS／配置／存檔／LV解鎖、其他任務與develop整合，不合併推送。
-- 驗收：真實MakeHuman人體／參數／來源SHA，Blender實體造型、同頭腳高度放大原圖對照及四面／手肩目視；GLB／三角／材質／無動畫、凍結舊SHA、工具語法／Build／diff／兩庫SHA後素材庫先Commit再遊戲Commit。交使用者確認造型，暫不接正式戰鬥。使用者指定人體生成與3D，不適用RPG Mote點陣作圖。
-- 預檢：develop同檔僅舊整合候選，README／sync來源仍完全等同d0fbf26c。任務段選在WORLD-MAP前，和對方變更分段且無語意相依，merge-file乾跑0；模型與新工具無其他來源。
+- Owner：Codex；Review。使用者要求從官方Git下載MakeHuman，搭配Blender重新開始原版圖集復刻，並指定D:/MyGame下及專用分支。依先前指示本輪只交靜態造型，確認後才重做六動作；保留頭盔、無盾／刀光。新工作分支codex/knight-makehuman，原ai/codex歷史保留。
+- 完成範圍：新增tools/knight3d/build_makehuman.py、package_makehuman.py；makehuman-r6/七檔blend／glb／mhm／人體json／manifest／SOURCE／CC0授權；上層README與sync清單、本段。素材庫相同製作包，先保存再遊戲Commit。禁止且未改六動作成品／來源、R5成品、遊戲原圖／JS／CSS／配置／存檔／LV解鎖、其他任務或develop整合；沒有合併／推送。
+- 工具就緒：官方MakeHuman Git upstream a8bc2d54已下載並移至D:/MyGame/MakeHuman，另建同名codex/knight-makehuman分支；Start-MakeHuman.cmd與KNIGHT-WORKFLOW.md提交8b9dc64。其venv-knight內Python3.12／NumPy1.26.4／PyQt5 5.15.11／PyOpenGL3.1.10匯入通過；相同版本的首次獨立GUI啟動已達Loading done與建模介面，NumPy2初始化紋理會退出，故固定相容版本。官方舊assets Git回404；可用的核心網格／targets及官方MPFB內建資產足夠本次人體生成，不安裝不完整選配素材包，半成品下載已刪除。
+- 人體來源：官方MPFB Git b1a2dc98位於D:/MyGame/Codex-Tools/mpfb2，背景Blender5.2.3載入來源extension，不儲存全域偏好。MakeHuman／MPFB核心人體、targets與標準骨架／權重CC0，授權全文與Git／base.obj SHA記錄在SOURCE／manifest；應用程式原碼AGPL／GPL完整倉庫留專案外。原圖只作參考及聊天並排，無源圖像素進新模型或貼圖；盔甲／頭盔／劍／色盤／姿勢與工具自製。使用者指定3D流程，依本輪新增AI_RULES 8.7.1執行。
+- 造型：從真實MakeHuman成年男性人體重新生成，保留完整shape keys與53骨原始權重，不沿用舊木偶幾何；鎧甲以胸腹、收腰、雙層腿掛甲、肩甲覆片、護臂／膝脛／尖足甲分件製作，胸腹與四肢表面向人體採樣貼合，遮住的內襯副本去面，原人體完整隱藏保留。頭盔含罩面／窄視縫／下頷與脊線，無光頭／盾／刀光。靜態展示沉身、寬跨步與前傾，手腕順前臂、持劍軸獨立於手腕；沒有新增動作。
+- 成品：11,049三角面，GLB334,264 bytes，1mesh／primitive／材質、2張28×4內嵌色盤，0skin／animation；Blend53骨、0Action，各甲片可編輯。原生MHM經官方MPFB完整重匯入與原生成網格逐頂點比較，13,380體頂點最大差2.682209e-7，小於1e-5；人體預設json同步保存，MHM僅人體，鎧甲與姿勢在Blend。
+- 預覽：從保存成品重新開檔渲染reference／front／side／back；visualizations/knight3d-makehuman-r6的knight_makehuman_original_compare.png為1200×800、左原圖SE首幀／右新模型，原圖50px頭腳統一放大至500px，新模型一個全局比例，無個別部位拉伸；upperbody局部、views三面及game_size約56px檢查一併保存。原圖盾／陰影保留參考，新版無盾；接地淡陰影只在預覽合成，尺寸小圖是既有一般面板比例估計，非即時3D戰鬥截圖。
+- 驗證：Blender build_makehuman.py生成／存Blend／GLB／重開四面渲染與MHM往返成功；手腕前臂dot左右均約1，左手朝前分量0.9323、垂直-0.0044，無為持劍折腕；實際網格最低高度、畫面邊界及GLB有限頂點／索引範圍／材質／內嵌圖／NEAREST／無動畫與12k三角預算全過。R4與R5二進位全數與Git相同，metadata語意及舊geometry／motion正規化相同。原檔輸出目錄防護實跑拒絕、未寫入凍結資料。12份Python ast.parse、node --check sync-library、npm.cmd run build578檔與diff通過，27份兩庫SHA一致；未改既有遊戲測試或放寬斷言。Blender的預設筆刷相對路徑、AMD HIP探測與glTF共用sampler提示未阻止實際CUDA渲染及有效匯出，原始日誌保留，不宣稱零提示。
+- 預檢／唯讀：新檔無其他來源；develop的README／sync仍完全等同歷史d0fbf26c，按實際舊共同來源merge-file乾跑0，非並行改同一設計；任務段在WORLD-MAP前，與其他紀錄分段無語意相依、三方乾跑0。唯讀檢查AI_RULES／AGENTS／Workflow／Agent規範、官方docs／README／授權／API、原圖／knight.json、原R4／R5成品及動作來源、素材庫Root／Build與develop實際來源。未操作develop或其他使用者工作。
+- 保存／交付：素材庫先提交9724763與be920b0（輸出防護），遊戲Commit為本段所在「[Codex] feat: 以MakeHuman重啟銀甲騎士靜態製作」；規範已獨立提交c4267cf1。必要素材／製作來源保存兩庫；預覽與驗證留聊天，已逐檔刪不需的blend1、人體探測Blend及未完成zip，無pycache。本候選可供Review／合併保存，未合併／推送。
+- 限制／未完成／下一步：環境與新靜態候選已完成，原圖相似度、盔甲形像與手肩自然度仍待使用者造型確認，不以有效網格宣稱美術復刻完成。尚未重綁／重做六動作、接八向／命中時序、替換正式主角或測即時GPU-FPS；先依放大原圖對照取得造型回饋，再繼續動畫。未保證所有甲片在後續動作中不互穿。
 
 ## WORLD-MAP-20261023 — 薩爾維恩世界地圖與手動跨場景
 

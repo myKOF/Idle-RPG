@@ -1,0 +1,12 @@
+# MakeHuman silver knight anatomy; armor and pose are in the .blend
+version v1.3.0
+name Silver Knight
+modifier macrodetails/Gender 1.0
+modifier macrodetails/Age 0.5
+modifier macrodetails-universal/Muscle 0.62
+modifier macrodetails-universal/Weight 0.43
+modifier macrodetails-height/Height 0.6
+modifier macrodetails-proportions/BodyProportions 0.68
+modifier macrodetails/Asian 0.15
+modifier macrodetails/Caucasian 0.8
+modifier macrodetails/African 0.05

@@ -1,0 +1,47 @@
+{
+  "stage": "static shape review, restarted from MakeHuman",
+  "blender": "5.2.3 LTS",
+  "sources": {
+    "makehuman": {
+      "repository": "https://github.com/makehumancommunity/makehuman.git",
+      "upstreamCommit": "a8bc2d54ff0ac92e78ff71431b1023eda42bf482",
+      "baseMeshSha256": "bea00279464133e86b634220cd2774ebf3b470de280d11222a6b2269e4a8d950"
+    },
+    "mpfb2": {
+      "repository": "https://github.com/makehumancommunity/mpfb2.git",
+      "upstreamCommit": "b1a2dc98776da9d1eea751b159d42cf61778fe2e",
+      "baseMeshSha256": "bea00279464133e86b634220cd2774ebf3b470de280d11222a6b2269e4a8d950"
+    }
+  },
+  "anatomyAssetLicense": "CC0-1.0",
+  "macro": {
+    "gender": 1.0,
+    "age": 0.5,
+    "muscle": 0.62,
+    "weight": 0.43,
+    "proportions": 0.68,
+    "height": 0.6,
+    "cupsize": 0.5,
+    "firmness": 0.5,
+    "race": {
+      "asian": 0.15,
+      "caucasian": 0.8,
+      "african": 0.05
+    }
+  },
+  "triangles": 11049,
+  "editableBones": 53,
+  "actions": 0,
+  "runtime": {
+    "meshes": 1,
+    "materials": 1,
+    "textures": [
+      28,
+      4
+    ],
+    "skins": 0,
+    "animations": 0
+  },
+  "reference": "Existing knight sprites; no sprite pixels imported into model or textures",
+  "limits": "Static candidate only. Shape approval, animation reconstruction and gameplay GPU validation remain."
+}

@@ -1,4 +1,26 @@
-# 白銀騎士：靜態造型候選 R5
+# 白銀騎士：MakeHuman＋Blender 靜態候選 R6
+
+任務 `KNIGHT-MAKEHUMAN-STATIC-R6-20261024`。依使用者指示，從官方 Git 下載 MakeHuman 並重新開始製作，先交原版圖集與新版的放大靜態造型對照，造型確認後才繼續六組動作。先前 R4／R5 成品及六動作來源均保留不變。
+
+目前新候選在 **`makehuman-r6/`**。其人體由官方 MakeHuman／MPFB 生成，並使用標準人體骨架、權重與指骨；盔甲、頭盔、劍、材質、靜態姿勢、渲染與匯出在 Blender 製作，未延用舊木偶幾何。來源／版本／CC0授權與自製範圍見 `makehuman-r6/SOURCE.md`。
+
+- `knight_makehuman.blend`：可編輯，完整人體與 shape keys 隱藏保留，獨立甲片、53骨骼、零Action。
+- `knight_makehuman.glb`：已變形的靜態檢視模型，**11,049三角面**、334,264 bytes；單網格／primitive／材質、兩張28×4內嵌色盤，沒有skin或動畫。
+- `knight.mhm`／`knight-human.json`：原生MakeHuman人體參數及MPFB預設；MHM重新匯入後頂點最大差2.683e-7模型單位。
+- `manifest.json`／`SOURCE.md`／`LICENSE.ASSETS.md`：數量、來源與授權。
+
+MakeHuman位置 `D:/MyGame/MakeHuman`，專用分支 `codex/knight-makehuman`；遊戲角色工作也在同名分支。雙擊MakeHuman根目錄 `Start-MakeHuman.cmd` 啟動，使用其 `venv-knight`（Python3.12、NumPy1.26.4、PyQt5／PyOpenGL），避免舊MakeHuman與NumPy2紋理初始化不相容。官方MPFB Git在 `D:/MyGame/Codex-Tools/mpfb2`；製作工具僅在背景Blender建立來源擴充庫，不儲存全域Blender偏好。
+
+```powershell
+& '<Blender>' --background --factory-startup --python-exit-code 1 --python tools/knight3d/build_makehuman.py -- --mpfb '<MPFB Git目錄>' --makehuman 'D:/MyGame/MakeHuman' --output assets/characters/knight3d/makehuman-r6 --preview '<聊天預覽絕對路徑>'
+python tools/knight3d/package_makehuman.py --preview '<聊天預覽絕對路徑>'
+node tools/knight3d/sync-library.cjs --apply
+node tools/knight3d/sync-library.cjs --check
+```
+
+預覽在聊天 `knight3d-makehuman-r6`：`knight_makehuman_original_compare.png`（頭腳統一500px放大）、`knight_makehuman_upperbody.png`、`knight_makehuman_views.png`與`knight_makehuman_game_size.png`（約56px尺寸檢查）。均取自重開成品的真實渲染，原圖只是原像素放大，保留原盾供比較；新版無盾／刀光。此輪沒有替換正式角色或宣稱造型已獲核准，六動作／整合／GPU效能留後續。
+
+## 先前R5靜態候選（保留供回溯）
 
 任務 `KNIGHT-LOOKDEV-STATIC-R5-20261024`。使用者要求先修造型與手肩、確認後才繼續動作。本輪以原圖idle八方向重新檢視胸肩、腰胯、四肢及甲片層次，保留銀盔，只交付真實Blender模型的放大靜態對照。
 
