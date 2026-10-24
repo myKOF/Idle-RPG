@@ -1,4 +1,21 @@
-# 白銀騎士：MakeHuman＋Blender 靜態候選 R6
+# 白銀騎士：MakeHuman＋Blender 靜態候選 R7
+
+最新任務 `KNIGHT-MAKEHUMAN-STATIC-R7-20261024`。本輪依使用者回饋重做肩臂／腰甲與比例，修正雙腳內扣，原圖與新版統一SE方向，仍只做靜態。R4／R5／R6成品與六動作來源保持不變。
+
+新候選在 **`makehuman-r7/`**，包含可編輯Blend、靜態GLB、原生MHM／MPFB人體JSON、manifest與SOURCE／CC0授權。人體更瘦長，肩甲改薄斜覆片，護臂收長／減少環圈，腰甲改平直雙掛片與腰帶；銀盔保留並露出真人臉部。站姿改前後交錯，後腳外轉60°、前腳8°，髖膝／鞋尖朝向一致。模型使用53骨、零Action，靜態GLB單網格／primitive／材質、兩張40×4色盤；數量與大小以R7 manifest／檔案為準。
+
+```powershell
+& '<Blender>' --background --factory-startup --python-exit-code 1 --python tools/knight3d/build_makehuman.py -- --revision 7 --mpfb '<MPFB Git目錄>' --makehuman 'D:/MyGame/MakeHuman' --output assets/characters/knight3d/makehuman-r7 --preview '<聊天預覽絕對路徑>'
+python tools/knight3d/package_makehuman.py --asset assets/characters/knight3d/makehuman-r7 --preview '<聊天預覽絕對路徑>'
+node tools/knight3d/sync-library.cjs --apply
+node tools/knight3d/sync-library.cjs --check
+```
+
+新盔甲在 `silver_knight_armor.py`，舊R6分支使用原製作幾何。MHM／JSON只存人體參數；臉部、官方CC0眼睛、盔甲與姿勢保存在Blend並可由工具重建。不得向makehuman-r6輸出R7而覆寫舊候選。
+
+聊天 `knight3d-makehuman-r7/` 中 `knight_makehuman_original_compare.png` 是原圖SE首幀與新模型同頭腳500px對照；上半身、腳部、正／側／背及56px尺寸檢查分別保存。相機真正轉到同向，沒有鏡射；腳尖依實際鞋尖／鞋跟幾何量測，不以轉動相機掩蓋內八。造型仍待審查，尚未替換正式主角或製作新動畫。本輪完成後按使用者指示停下並清理工作區，交由使用者合併。
+
+## 先前MakeHuman靜態候選 R6（保留供回溯）
 
 任務 `KNIGHT-MAKEHUMAN-STATIC-R6-20261024`。依使用者指示，從官方 Git 下載 MakeHuman 並重新開始製作，先交原版圖集與新版的放大靜態造型對照，造型確認後才繼續六組動作。先前 R4／R5 成品及六動作來源均保留不變。
 

@@ -13,6 +13,10 @@ p.add_argument('--preview',required=True)
 p.add_argument('--asset',default='assets/characters/knight3d/makehuman-r6')
 a=p.parse_args();root=Path(a.preview).resolve();asset=Path(a.asset)
 metrics=json.loads((root/'static-validation.json').read_text())
+revision=metrics.get('revision',6)
+if revision==7:
+    assert metrics['views']['reference']['projectedForwardXY'][0]>0
+    assert all(f['outwardDot']>.15 and f['kneeToeDot']>.6 for f in metrics['feet'].values())
 definition=json.loads(Path('images/sprites/knight/knight.json').read_text())
 tr=definition['anims']['idle']['trim']
 sheet=Image.open('images/sprites/knight/idle.png').convert('RGBA')
@@ -34,17 +38,23 @@ def model(view,size,baseline,scale=ms):
     pts=metrics['views'][view]['contacts']
     cx=sum(q[0] for q in pts)/2;cy=sum(q[1] for q in pts)/2
     radius=max(30,abs(pts[0][0]-pts[1][0])/2+20)
-    d.ellipse((cx-radius,cy-14,cx+radius,cy+14),fill=(0,0,0,70))
-    for x,y in pts:d.ellipse((x-16,y-5,x+16,y+5),fill=(0,0,0,90))
+    if revision==7:
+        for heel,toe in metrics['views'][view]['footprints']:
+            d.line([tuple(heel),tuple(toe)],fill=(0,0,0,90),width=17)
+            for x,y in [heel,toe]:d.ellipse((x-9,y-5,x+9,y+5),fill=(0,0,0,90))
+    else:
+        d.ellipse((cx-radius,cy-14,cx+radius,cy+14),fill=(0,0,0,70))
+        for x,y in pts:d.ellipse((x-16,y-5,x+16,y+5),fill=(0,0,0,90))
     im=Image.alpha_composite(shadow.filter(ImageFilter.GaussianBlur(3)),im)
     bottom=metrics['views'][view]['bounds'][3]
+    center=450 if view=='reference' else sum(metrics['views'][view]['bounds'][i] for i in [0,2])/2
     return im.transform(size,Image.Transform.AFFINE,
-        (1/scale,0,450-size[0]/2/scale,0,1/scale,bottom-baseline/scale),
+        (1/scale,0,center-size[0]/2/scale,0,1/scale,bottom-baseline/scale),
         resample=Image.Resampling.BICUBIC)
 
 board=Image.new('RGB',(1200,800),bg);d=ImageDraw.Draw(board)
-d.text((24,15),'MakeHuman＋Blender · 重新製作的第一版靜態造型',font=font,fill=(233,238,239))
-d.text((24,51),'原版圖集對照｜同頭腳高度500px｜保留頭盔｜先確認造型，再製作動作',font=small,fill=(181,198,202))
+d.text((24,15),'MakeHuman＋Blender · 銀甲騎士靜態造型 R'+str(revision),font=font,fill=(233,238,239))
+d.text((24,51),'同一SE朝向、未鏡射｜同頭腳高度500px｜肩臂／腰甲重塑、腳尖向外' if revision==7 else '原版圖集對照｜同頭腳高度500px｜保留頭盔｜先確認造型，再製作動作',font=small,fill=(181,198,202))
 d.line((600,95,600,750),fill=(61,76,80))
 d.text((30,97),'原版 SE 待機 · 原始像素放大',font=small,fill=(193,203,204))
 d.text((625,97),'新版 · 實際 Blender 成品渲染',font=small,fill=(193,211,216))
@@ -57,11 +67,18 @@ board.save(root/'knight_makehuman_original_compare.png')
 detail=Image.new('RGB',(1200,490),bg);detail.paste(board.crop((0,145,1200,565)),(0,55))
 ImageDraw.Draw(detail).text((24,15),'胸肩／手臂／腰胯 · 同一比例的局部對照',font=font,fill=(233,238,239))
 detail.save(root/'knight_makehuman_upperbody.png')
+if revision==7:
+    feet=Image.new('RGB',(1200,435),bg)
+    feet.paste(board.crop((0,400,1200,760)),(0,60))
+    ImageDraw.Draw(feet).text((24,15),'腳部近看 · 前後腳依原圖排列，雙腳自然外展，膝蓋順著腳尖',font=font,fill=(233,238,239))
+    feet.save(root/'knight_makehuman_feet.png')
 views=Image.new('RGB',(1500,850),bg);d=ImageDraw.Draw(views)
 d.text((24,15),'同一模型與姿勢 · 正面／側面／背面',font=font,fill=(233,238,239))
+viewscale=min([ms*1.08]+[630/(b[3]-b[1]) for v in ['front','side','back'] for b in [metrics['views'][v]['bounds']]]+
+              [450/(b[2]-b[0]) for v in ['front','side','back'] for b in [metrics['views'][v]['bounds']]])
 for i,(view,label) in enumerate([('front','正面'),('side','側面'),('back','背面')]):
     d.text((500*i+25,56),label,font=small,fill=(188,205,211))
-    im=model(view,(500,740),650,ms*1.08);views.paste(im,(500*i,90),im)
+    im=model(view,(500,740),650,viewscale);views.paste(im,(500*i,90),im)
 views.save(root/'knight_makehuman_views.png')
 mini=Image.new('RGB',(470,215),bg);d=ImageDraw.Draw(mini)
 d.text((16,12),'遊戲尺寸檢查 · 頭腳高度約56px',font=small,fill=(220,229,232))
@@ -101,7 +118,8 @@ offset=iv.get('byteOffset',0)+ia.get('byteOffset',0)
 for i in range(ia['count']):assert struct.unpack_from('<'+fmt,binary,offset+i*width)[0]<pa['count']
 frozen={}
 for folder,names in [('', ['knight_batch1.blend','knight_batch1.glb','manifest.json']),
-                     ('lookdev-r5/', ['knight_lookdev.blend','knight_lookdev.glb','manifest.json'])]:
+                     ('lookdev-r5/', ['knight_lookdev.blend','knight_lookdev.glb','manifest.json']),
+                     *([('makehuman-r6/', ['knight_makehuman.blend','knight_makehuman.glb','manifest.json'])] if revision==7 else [])]:
     for name in names:
         rel='assets/characters/knight3d/'+folder+name
         expected=subprocess.check_output(['git','show','HEAD:'+rel]);actual=Path(rel).read_bytes()
@@ -115,6 +133,9 @@ report={'result':'PASS','triangles':triangles,'glbBytes':len(data),'mesh':1,'pri
     'textures':2,'skins':0,'animations':0,'staticReviewOnly':True,
     'referenceOpaqueBounds':ob,'matchedHeadToFootPx':height,'gameSizeHeadToFootPx':56,
     'originalPixelsNotRedrawn':True,'frozenCandidates':frozen,
+    'revision':revision,'sourceAndModelMirrored':False,'referenceDirection':'SE',
+    'projectedModelForward':metrics['views']['reference'].get('projectedForwardXY'),
+    'feet':metrics.get('feet',{}),
     'limits':'Shape similarity is a visual/user judgment. No game replacement, animation or GPU-FPS validation.'}
 (root/'package-validation.json').write_text(json.dumps(report,indent=2))
 print(json.dumps(report,indent=2))

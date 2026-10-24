@@ -90,6 +90,19 @@
 - 保存／交付：素材庫先提交9724763與be920b0（輸出防護），遊戲Commit為本段所在「[Codex] feat: 以MakeHuman重啟銀甲騎士靜態製作」；規範已獨立提交c4267cf1。必要素材／製作來源保存兩庫；預覽與驗證留聊天，已逐檔刪不需的blend1、人體探測Blend及未完成zip，無pycache。本候選可供Review／合併保存，未合併／推送。
 - 限制／未完成／下一步：環境與新靜態候選已完成，原圖相似度、盔甲形像與手肩自然度仍待使用者造型確認，不以有效網格宣稱美術復刻完成。尚未重綁／重做六動作、接八向／命中時序、替換正式主角或測即時GPU-FPS；先依放大原圖對照取得造型回饋，再繼續動畫。未保證所有甲片在後續動作中不互穿。
 
+## KNIGHT-MAKEHUMAN-STATIC-R7-20261024 — 銀甲造型、同向對照與外展站姿
+
+- Owner：Codex；Review，單一開發者。使用者要求停止動作、依原圖修正修長銀甲騎士比例與肩臂／腰甲造型、保留頭盔、原圖與新版同方向；追加指出雙腳內八。本輪交放大靜態對照，原圖不鏡射，新模型旋轉到同一SE朝向，修正髖膝足外展。依最新指示完成本輪即停下，提交並清理工作區，交由使用者合併。
+- 前置：官方MakeHuman／MPFB與Blender已可用，R6候選未獲美術核准。允許build_makehuman／package_makehuman的R7選項、新silver_knight_armor.py、makehuman-r7獨立七檔、README／sync追加R7及本段，素材庫同包。禁止R4／R5／R6成品、六動作來源、原圖／遊戲JS／CSS／配置／存檔／LV解鎖及其他任務；不合併／推送。
+- 方向與造型：重新檢視原圖八方向與使用者圈選的腳部，以真正MakeHuman人體調整瘦長比例，重做較平、斜切邊肩片、長護臂與低厚度腰掛甲，去除厚圓肩／機械環圈；頭盔保留。腳掌yaw正負號確定反置，改外展，髖膝與足尖協調並量測真實鞋尖／腳跟方向。
+- 驗收：保存可編輯來源、MakeHuman預設與CC0來源，重開成品渲染同向SE及正／側／背，等頭腳放大原圖對照、腳部／胸肩腰近看；腳尖相對身體向外、接地／有限矩陣／無動作／GLB／面數與材質、舊成品SHA凍結、工具語法／Build／diff／兩庫SHA後先素材庫再遊戲Commit。完成後交使用者造型審查，尚不續做動作或接正式角色。
+- 完成13檔：makehuman-r7七檔、README、build_makehuman.py／package_makehuman.py／silver_knight_armor.py／sync-library.cjs及本段。真正MakeHuman人體調低肌肉／體重，薄斜肩片、開放式長護臂、連續胸甲及低厚度雙腰掛片；保留銀盔，露出人體臉部並使用官方CC0 low-poly眼睛。MakeHuman／MPFB版本、眼睛來源與授權保存在SOURCE及manifest，完整人體／shape keys／53骨與甲片留Blend，可由MHM／JSON及工具重建。
+- 成品：11,516三角面，GLB331,376 bytes，單mesh／primitive／材質、兩張40×4內嵌色盤、零skin／動畫；Blend零Action。前後跨步且後腳外轉60°、前腳8°，以實際鞋尖／鞋跟幾何核對雙腳向外與向前、膝尖一致、鞋底高度差小於4e-7；新相機投影前方朝右、前腳低於後腳，與原SE首幀一致，兩圖都沒有鏡射。改用足底投影接地影，僅預覽呈現。
+- 驗證：Blender5.2.3背景製作後重開Blend渲染、MHM往返、有限矩陣／左右手／腳尖方向與接地、GLB結構／索引／色盤／面數檢查均通過；`python tools/knight3d/package_makehuman.py --asset assets/characters/knight3d/makehuman-r7 --preview <聊天預覽目錄>`通過，R4／R5／R6成品SHA與舊動作來源凍結。13份Python AST語法、`node --check tools/knight3d/sync-library.cjs`、`npm.cmd run build`578檔、兩庫diff檢查通過；`node tools/knight3d/sync-library.cjs --apply`後`--check`35檔SHA完全相同。未新增低影響或鏡映實作測試。
+- 畫面：本聊天visualizations/knight3d-makehuman-r7保留同頭腳500px原版／新版、胸肩腰與腳部近看、正側背全身及56px遊戲尺寸估計圖，已目視檢查方向／腳尖／甲片接縫與無裁切；不是正式遊戲截圖。原圖盾牌僅保留對照，新版依要求無盾／刀光。
+- 唯讀未改：共通規範／AGENTS／Workflow／prompts、原版八方向圖集、R4／R5／R6成品與六動作來源、MakeHuman／MPFB核心資產及授權、素材庫root解析器、develop／ai/codex差異。develop與ai/codex的README／sync為先前歷史版本，任務紀錄插入獨立段落，三方乾跑無衝突；未操作其他工作區或遊戲JS／CSS／配置／存檔／LV。
+- 交付：素材庫先Commit **2f159ff**；遊戲Commit為本段所在`[Codex] fix: 重塑銀甲騎士並修正外展站姿`，回覆附編號。臨時Blend備份已移除，所有必要來源／成品入版控；本輪靜態修正完成，可供Review／合併，未合併／推送。造型相似度仍待使用者審查，六動作、正式角色替換與GPU效能未進行。按使用者要求先告一段落，不續做動作；下一步由使用者合併與檢視候選。
+
 ## WORLD-MAP-20261023 — 薩爾維恩世界地圖與手動跨場景
 
 - Owner：Codex；Done，單一開發者。使用者要求戰鬥區移除其他場景頁籤，只留目前場景／關卡、前後／最高、自動推關、全螢幕及迷你視窗；新增已核准地圖、文字熱區提示／選取後前進、動態所在地圖示；自動推關不再跨章。後續指定取消熱區橢圓框、名稱放大提亮、地圖取消上下標題列盡量全屏、右上關閉鈕，以及縮窄約20%的深淺綠卡通指針；最終圖已由使用者回覆「好，這張可以」核准。

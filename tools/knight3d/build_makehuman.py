@@ -26,11 +26,14 @@ p.add_argument('--makehuman', required=True, help='Official MakeHuman Git checko
 p.add_argument('--output', required=True)
 p.add_argument('--preview', required=True)
 p.add_argument('--inspect', action='store_true')
+p.add_argument('--revision', type=int, choices=[6,7], default=6)
 a = p.parse_args(sys.argv[sys.argv.index('--') + 1:])
 OUT = Path(a.output).resolve()
 PREVIEW = Path(a.preview).resolve()
 if any((OUT/name).exists() for name in ['knight_batch1.blend','knight_lookdev.blend']):
     raise ValueError('Use a separate MakeHuman candidate folder; earlier animation/static packages are frozen.')
+if a.revision==7 and OUT.name=='makehuman-r6':
+    raise ValueError('R6 is frozen; use a separate makehuman-r7 output folder.')
 OUT.mkdir(parents=True, exist_ok=True)
 PREVIEW.mkdir(parents=True, exist_ok=True)
 extension_repo = bpy.context.preferences.extensions.repos.new(
@@ -46,6 +49,7 @@ bpy.ops.object.delete(use_global=False)
 MACRO = TargetService.get_default_macro_info_dict()
 MACRO.update(gender=1.0, age=.50, muscle=.62, weight=.43,
              proportions=.68, height=.60)
+if a.revision==7:MACRO.update(muscle=.46,weight=.35,proportions=.62,height=.67)
 MACRO['race'] = {'asian': .15, 'caucasian': .80, 'african': .05}
 body = HumanService.create_human(macro_detail_dict=MACRO)
 body.name = 'MakeHuman | original anatomical foundation'
@@ -212,6 +216,7 @@ def rings(data):return [(z*K,x*K,y*K,cy*K,cx*K) for z,x,y,cy,cx in data]
 # Only a reduced covered-body copy participates in the small-screen candidate.
 deps=bpy.context.evaluated_depsgraph_get()
 base_mesh=bpy.data.meshes.new_from_object(body.evaluated_get(deps),preserve_all_data_layers=True,depsgraph=deps)
+if a.revision==7:full_anatomy_surface=base_mesh.copy()
 anatomy_bvh=BVHTree.FromPolygons([v.co for v in base_mesh.vertices],
                                [list(f.vertices) for f in base_mesh.polygons])
 suit=body.copy();suit.data=base_mesh;bpy.context.collection.objects.link(suit)
@@ -233,11 +238,13 @@ for f in bm.faces:
             if name in rig.data.bones:weights[name]=weights.get(name,0)+w
     dominant=max(weights,key=weights.get) if weights else ''
     covered=dominant.startswith(('spine_','pelvis')) and .98*K<c.z<1.36*K
+    if a.revision==7:covered=abs(c.x)<.22*K and .970*K<c.z<1.36*K
     if dominant.startswith(('upperarm_','lowerarm_','thigh_','calf_')):
         bn=rig.data.bones[dominant];axis=bn.tail_local-bn.head_local
         t=(c-bn.head_local).dot(axis)/axis.length_squared
         lo,hi=(.48,.95) if dominant.startswith('upperarm') else ((.12,.98) if dominant.startswith(('lowerarm','calf')) else (.09,.89))
         covered=lo<t<hi
+        if a.revision==7:covered=False
     if covered:remove.append(f)
 bmesh.ops.delete(bm,geom=remove,context='FACES')
 loose=[v for v in bm.verts if not v.link_faces]
@@ -256,121 +263,130 @@ parts.append(suit)
 body.hide_render=True;body.hide_set(True)
 body['source']='MakeHuman CC0 hm08 anatomy with macro targets via official MPFB'
 
-# Cuirass: one continuous hammered breastplate, a distinct plackart and a low
-# articulated waist. Its silhouette follows chest/rib cage, not a narrow tube.
-form('Cuirass | swept anatomical breastplate',rings([
-    (1.07,.138,.100,.010,0),(1.115,.155,.116,.006,0),
-    (1.205,.181,.125,.004,0),(1.285,.188,.119,.002,0),
-    (1.333,.157,.100,-.002,0),(1.355,.094,.077,-.010,0)]),steel,'spine_03',32,.008*K)
-plackart=form('Plackart | pointed overlapping lower cuirass',rings([
-    (.982,.130,.102,.010,0),(1.03,.137,.109,.009,0),(1.09,.151,.117,.006,0),
-    (1.134,.149,.118,.003,0)]),shadowsteel,'spine_02',28,.014*K)
-rim=[plackart.data.vertices[3*28+i].co.copy() for i in range(28)]
-rim.append(rim[0].copy())
-tube('Plackart | rolled upper overlap',rim,.0023*K,edge,'spine_02')
-for j,z in enumerate([.925,.963,.998]):
-    form('Fauld | curved articulated waist '+str(j),rings([
-        (z,.151,.109,.006,0),(z+.029,.144,.108,.006,0)]),steel,'pelvis',24,.002*K)
-form('Belt | brown leather at natural waist',rings([
-    (.948,.156,.116,.008,0),(.975,.153,.115,.008,0)]),leather,'pelvis',24)
-tube('Belt | restrained iron buckle',[(x*K,-.113*K,z*K) for x,z in [(-.025,.95),(-.025,.978),(.025,.978),(.025,.95),(-.025,.95)]],.003*K,shadowsteel,'pelvis')
-form('Mail | short split skirt foundation',rings([
-    (.775,.163,.108,.008,0),(.87,.175,.112,.008,0),(.94,.144,.097,.007,0)]),mail,'pelvis',24)
-form('Gorget | fitted throat and collar',rings([
-    (1.325,.105,.088,-.012,0),(1.375,.078,.067,-.014,0),
-    (1.407,.061,.060,-.020,0)]),shadowsteel,'neck_01',24)
+if a.revision==7:
+    spec=importlib.util.spec_from_file_location('silver_knight_armor',Path(__file__).with_name('silver_knight_armor.py'))
+    armor=importlib.util.module_from_spec(spec);spec.loader.exec_module(armor)
+    armor.build(globals())
+else:
+    # Cuirass: one continuous hammered breastplate, a distinct plackart and a low
+    # articulated waist. Its silhouette follows chest/rib cage, not a narrow tube.
+    form('Cuirass | swept anatomical breastplate',rings([
+        (1.07,.138,.100,.010,0),(1.115,.155,.116,.006,0),
+        (1.205,.181,.125,.004,0),(1.285,.188,.119,.002,0),
+        (1.333,.157,.100,-.002,0),(1.355,.094,.077,-.010,0)]),steel,'spine_03',32,.008*K)
+    plackart=form('Plackart | pointed overlapping lower cuirass',rings([
+        (.982,.130,.102,.010,0),(1.03,.137,.109,.009,0),(1.09,.151,.117,.006,0),
+        (1.134,.149,.118,.003,0)]),shadowsteel,'spine_02',28,.014*K)
+    rim=[plackart.data.vertices[3*28+i].co.copy() for i in range(28)]
+    rim.append(rim[0].copy())
+    tube('Plackart | rolled upper overlap',rim,.0023*K,edge,'spine_02')
+    for j,z in enumerate([.925,.963,.998]):
+        form('Fauld | curved articulated waist '+str(j),rings([
+            (z,.151,.109,.006,0),(z+.029,.144,.108,.006,0)]),steel,'pelvis',24,.002*K)
+    form('Belt | brown leather at natural waist',rings([
+        (.948,.156,.116,.008,0),(.975,.153,.115,.008,0)]),leather,'pelvis',24)
+    tube('Belt | restrained iron buckle',[(x*K,-.113*K,z*K) for x,z in [(-.025,.95),(-.025,.978),(.025,.978),(.025,.95),(-.025,.95)]],.003*K,shadowsteel,'pelvis')
+    form('Mail | short split skirt foundation',rings([
+        (.775,.163,.108,.008,0),(.87,.175,.112,.008,0),(.94,.144,.097,.007,0)]),mail,'pelvis',24)
+    form('Gorget | fitted throat and collar',rings([
+        (1.325,.105,.088,-.012,0),(1.375,.078,.067,-.014,0),
+        (1.407,.061,.060,-.020,0)]),shadowsteel,'neck_01',24)
 
-# Rolled breastplate rim; restrained highlights give legible plate boundaries.
-for z,rx,ry,cy in [(1.355,.094,.077,-.010),(1.07,.138,.100,.010)]:
-    pts=[(K*rx*math.sin(q),K*(cy-ry*math.cos(q)),K*z) for q in [math.tau*i/32 for i in range(33)]]
-    tube('Cuirass | folded perimeter '+str(z),pts,.0025*K,edge,'spine_03')
+    # Rolled breastplate rim; restrained highlights give legible plate boundaries.
+    for z,rx,ry,cy in [(1.355,.094,.077,-.010),(1.07,.138,.100,.010)]:
+        pts=[(K*rx*math.sin(q),K*(cy-ry*math.cos(q)),K*z) for q in [math.tau*i/32 for i in range(33)]]
+        tube('Cuirass | folded perimeter '+str(z),pts,.0025*K,edge,'spine_03')
 
-for side,sgn in [('l',1),('r',-1)]:
-    ua,fa,hand='upperarm_'+side,'lowerarm_'+side,'hand_'+side
-    # A shallow, fitted, sloping shoulder with three actual overlapping lames.
-    # The shoulder ends well above the elbow, leaving an anatomical upper arm.
-    limb('Pauldron | fitted crown '+side,ua,[(-.18,.025,.035),(-.06,.087,.086),
-         (.15,.102,.098),(.34,.098,.091),(.48,.083,.079)],steel,20)
-    for j,t in enumerate([.34,.48]):
-        limb('Pauldron | overlapping lame '+side+str(j),ua,
-             [(t-.06,.100-j*.009,.097-j*.009),(t+.07,.095-j*.009,.093-j*.009)],
-             shadowsteel if j else steel,16,math.pi+.15,-.15)
-    limb('Rerebrace | tapered upper arm '+side,ua,[(.48,.064,.062),(.70,.060,.060),(.93,.047,.049)],steel)
-    limb('Couter | fitted elbow leaf '+side,fa,[(-.08,.047,.050),(.02,.059,.063),(.15,.046,.047)],shadowsteel,18,2.0,-2.0)
-    limb('Vambrace | long anatomical forearm '+side,fa,[(.12,.046,.049),(.31,.053,.054),
-         (.64,.041,.042),(.91,.030,.032)],steel,22)
-    limb('Gauntlet | flared wrist cuff '+side,fa,[(.85,.038,.040),(1.00,.037,.037)],shadowsteel,18)
-    # Human fingers keep their original topology and phalanges; small dorsal
-    # plates sit on them rather than making a rectangular robot fist.
-    # The MakeHuman hand is a leather glove; its human metacarpals and fingers
-    # remain visible instead of being replaced by ellipsoid knuckles.
-    thigh,calf='thigh_'+side,'calf_'+side
-    limb('Cuisse | shaped thigh '+side,thigh,[(.09,.080,.077),(.27,.083,.078),(.56,.068,.068),(.88,.046,.050)],steel,22)
-    limb('Poleyn | curved knee cup '+side,calf,[(-.09,.045,.043),(.02,.056,.052),(.15,.045,.045)],steel,18,1.95,-1.95)
-    limb('Greave | calf and narrow ankle '+side,calf,[(.12,.046,.049),(.33,.053,.058),(.57,.048,.049),(.90,.028,.032),(.98,.026,.030)],steel,22)
-    for j in range(2):
-        # Wide thigh-hung tassets, with curved fronts and tapered corners.
-        ztop=.934-.080*j;zbot=.842-.080*j;vv=[];nx=10
-        for row,z in enumerate([ztop,(ztop+zbot)/2,zbot]):
-            width=.075-.006*row;cx=sgn*.089
-            for i in range(nx+1):
-                u=-1+2*i/nx
-                vv.append((K*(cx+width*u),K*(-.115-.026*(1-u*u)),
-                           K*(z+.018*abs(u)**3 if row==2 else z)))
-        ff=[(r*(nx+1)+i,(r+1)*(nx+1)+i,(r+1)*(nx+1)+i+1,r*(nx+1)+i+1) for r in range(2) for i in range(nx)]
-        mesh('Tasset | broad curved overlap '+side+str(j),vv,ff,steel,thigh,thickness=.004*K)
-        tube('Tasset | lower folded lip '+side+str(j),vv[-nx-1:],.002*K,edge,thigh)
-    # Foot armor has a real heel/instep/toe shape, built around the MH ankle.
-    ankle=rig.data.bones['foot_'+side].head_local
-    cx=ankle.x;cy=ankle.y
-    vv=[];profiles=[(.065,.033,.034),(.015,.044,.070),(-.055,.049,.050),(-.14,.041,.028),(-.21,.015,.017)]
-    for yy,w,h in profiles:
-        for i in range(9):
-            q=math.pi*i/8
-            vv.append((cx+K*w*math.cos(q),cy+K*yy,K*(.012+h*math.sin(q))))
-    ff=[(r*9+i,r*9+i+1,(r+1)*9+i+1,(r+1)*9+i) for r in range(4) for i in range(8)]
-    ff.extend([tuple(reversed(range(9))),tuple(36+i for i in range(9))])
-    mesh('Sabaton | continuous pointed foot '+side,vv,ff,shadowsteel,'foot_'+side,thickness=.003*K)
-    for yy,w,h in profiles[1:4]:
-        pts=[(cx+K*w*math.cos(q),cy+K*yy,K*(.015+h*math.sin(q))) for q in [math.pi*i/8 for i in range(9)]]
-        tube('Sabaton | overlapping toe joint '+side+str(yy),pts,.0028*K,steel,'foot_'+side)
+    for side,sgn in [('l',1),('r',-1)]:
+        ua,fa,hand='upperarm_'+side,'lowerarm_'+side,'hand_'+side
+        # A shallow, fitted, sloping shoulder with three actual overlapping lames.
+        # The shoulder ends well above the elbow, leaving an anatomical upper arm.
+        limb('Pauldron | fitted crown '+side,ua,[(-.18,.025,.035),(-.06,.087,.086),
+             (.15,.102,.098),(.34,.098,.091),(.48,.083,.079)],steel,20)
+        for j,t in enumerate([.34,.48]):
+            limb('Pauldron | overlapping lame '+side+str(j),ua,
+                 [(t-.06,.100-j*.009,.097-j*.009),(t+.07,.095-j*.009,.093-j*.009)],
+                 shadowsteel if j else steel,16,math.pi+.15,-.15)
+        limb('Rerebrace | tapered upper arm '+side,ua,[(.48,.064,.062),(.70,.060,.060),(.93,.047,.049)],steel)
+        limb('Couter | fitted elbow leaf '+side,fa,[(-.08,.047,.050),(.02,.059,.063),(.15,.046,.047)],shadowsteel,18,2.0,-2.0)
+        limb('Vambrace | long anatomical forearm '+side,fa,[(.12,.046,.049),(.31,.053,.054),
+             (.64,.041,.042),(.91,.030,.032)],steel,22)
+        limb('Gauntlet | flared wrist cuff '+side,fa,[(.85,.038,.040),(1.00,.037,.037)],shadowsteel,18)
+        # Human fingers keep their original topology and phalanges; small dorsal
+        # plates sit on them rather than making a rectangular robot fist.
+        # The MakeHuman hand is a leather glove; its human metacarpals and fingers
+        # remain visible instead of being replaced by ellipsoid knuckles.
+        thigh,calf='thigh_'+side,'calf_'+side
+        limb('Cuisse | shaped thigh '+side,thigh,[(.09,.080,.077),(.27,.083,.078),(.56,.068,.068),(.88,.046,.050)],steel,22)
+        limb('Poleyn | curved knee cup '+side,calf,[(-.09,.045,.043),(.02,.056,.052),(.15,.045,.045)],steel,18,1.95,-1.95)
+        limb('Greave | calf and narrow ankle '+side,calf,[(.12,.046,.049),(.33,.053,.058),(.57,.048,.049),(.90,.028,.032),(.98,.026,.030)],steel,22)
+        for j in range(2):
+            # Wide thigh-hung tassets, with curved fronts and tapered corners.
+            ztop=.934-.080*j;zbot=.842-.080*j;vv=[];nx=10
+            for row,z in enumerate([ztop,(ztop+zbot)/2,zbot]):
+                width=.075-.006*row;cx=sgn*.089
+                for i in range(nx+1):
+                    u=-1+2*i/nx
+                    vv.append((K*(cx+width*u),K*(-.115-.026*(1-u*u)),
+                               K*(z+.018*abs(u)**3 if row==2 else z)))
+            ff=[(r*(nx+1)+i,(r+1)*(nx+1)+i,(r+1)*(nx+1)+i+1,r*(nx+1)+i+1) for r in range(2) for i in range(nx)]
+            mesh('Tasset | broad curved overlap '+side+str(j),vv,ff,steel,thigh,thickness=.004*K)
+            tube('Tasset | lower folded lip '+side+str(j),vv[-nx-1:],.002*K,edge,thigh)
+        # Foot armor has a real heel/instep/toe shape, built around the MH ankle.
+        ankle=rig.data.bones['foot_'+side].head_local
+        cx=ankle.x;cy=ankle.y
+        vv=[];profiles=[(.065,.033,.034),(.015,.044,.070),(-.055,.049,.050),(-.14,.041,.028),(-.21,.015,.017)]
+        for yy,w,h in profiles:
+            for i in range(9):
+                q=math.pi*i/8
+                vv.append((cx+K*w*math.cos(q),cy+K*yy,K*(.012+h*math.sin(q))))
+        ff=[(r*9+i,r*9+i+1,(r+1)*9+i+1,(r+1)*9+i) for r in range(4) for i in range(8)]
+        ff.extend([tuple(reversed(range(9))),tuple(36+i for i in range(9))])
+        mesh('Sabaton | continuous pointed foot '+side,vv,ff,shadowsteel,'foot_'+side,thickness=.003*K)
+        for yy,w,h in profiles[1:4]:
+            pts=[(cx+K*w*math.cos(q),cy+K*yy,K*(.015+h*math.sin(q))) for q in [math.pi*i/8 for i in range(9)]]
+            tube('Sabaton | overlapping toe joint '+side+str(yy),pts,.0028*K,steel,'foot_'+side)
 
-# A compact late-medieval sallet with a close visor and bevor, not a sphere
-# perched on a separate cylindrical neck. No bare scalp is visible.
-head=rig.data.bones['head'];hz=head.head_local.z;hy=head.head_local.y
-helmet_rings=[]
-for dz,rx,ry,shift in [(-.030,.070,.080,.003),(.025,.084,.093,.005),
-                      (.090,.081,.092,.010),(.140,.060,.073,.014),(.168,.012,.017,.013)]:
-    helmet_rings.append((hz+K*dz,K*rx,K*ry,hy+K*shift,0))
-form('Sallet | swept fitted skull and rear tail',helmet_rings,steel,'head',28,cap=True)
-# Visor front panels and a narrow continuous sight slit.
-for zlo,zhi,ry,mat,name in [(.035,.051,.099,black,'sight slit'),(-.036,.032,.101,shadowsteel,'angular visor')]:
-    vv=[];n=16
-    for dz in [zlo,zhi]:
-        for i in range(n+1):
-            q=-1.45+2.90*i/n
-            vv.append((K*.087*math.sin(q),hy-K*ry*math.cos(q)-K*.014*math.cos(q)**5,
-                       hz+K*(dz-.014*math.cos(q))))
-    mesh('Sallet | '+name,vv,[(i,i+1,n+2+i,n+1+i) for i in range(n)],mat,'head',thickness=.003*K)
-form('Bevor | overlapping pointed chin guard',[(hz+K*dz,K*rx,K*ry,hy+K*cy,0)
-     for dz,rx,ry,cy in [(-.075,.052,.074,-.001),(-.046,.067,.091,-.002),(-.018,.074,.097,0)]],steel,'head',24,.010*K)
-for sgn in [-1,1]:
-    ellipsoid('Sallet | visor pivot '+str(sgn),(sgn*.084*K,hy,hz+.038*K),(.005*K,.011*K,.011*K),edge,'head',8,4)
-points=[]
-for i in range(17):
-    q=-1.4+2.8*i/16
-    points.append((K*.087*math.sin(q),hy-K*.101*math.cos(q)-K*.014*math.cos(q)**5,
-                   hz+K*(.052-.014*math.cos(q))))
-tube('Sallet | defined visor brow',points,.0024*K,edge,'head')
-tube('Sallet | restrained median crest',[(0,hy-.091*K,hz+.089*K),
-     (0,hy-.063*K,hz+.146*K),(0,hy+.012*K,hz+.170*K),
-     (0,hy+.085*K,hz+.098*K)],.0022*K,edge,'head')
+    # A compact late-medieval sallet with a close visor and bevor, not a sphere
+    # perched on a separate cylindrical neck. No bare scalp is visible.
+    head=rig.data.bones['head'];hz=head.head_local.z;hy=head.head_local.y
+    helmet_rings=[]
+    for dz,rx,ry,shift in [(-.030,.070,.080,.003),(.025,.084,.093,.005),
+                          (.090,.081,.092,.010),(.140,.060,.073,.014),(.168,.012,.017,.013)]:
+        helmet_rings.append((hz+K*dz,K*rx,K*ry,hy+K*shift,0))
+    form('Sallet | swept fitted skull and rear tail',helmet_rings,steel,'head',28,cap=True)
+    # Visor front panels and a narrow continuous sight slit.
+    for zlo,zhi,ry,mat,name in [(.035,.051,.099,black,'sight slit'),(-.036,.032,.101,shadowsteel,'angular visor')]:
+        vv=[];n=16
+        for dz in [zlo,zhi]:
+            for i in range(n+1):
+                q=-1.45+2.90*i/n
+                vv.append((K*.087*math.sin(q),hy-K*ry*math.cos(q)-K*.014*math.cos(q)**5,
+                           hz+K*(dz-.014*math.cos(q))))
+        mesh('Sallet | '+name,vv,[(i,i+1,n+2+i,n+1+i) for i in range(n)],mat,'head',thickness=.003*K)
+    form('Bevor | overlapping pointed chin guard',[(hz+K*dz,K*rx,K*ry,hy+K*cy,0)
+         for dz,rx,ry,cy in [(-.075,.052,.074,-.001),(-.046,.067,.091,-.002),(-.018,.074,.097,0)]],steel,'head',24,.010*K)
+    for sgn in [-1,1]:
+        ellipsoid('Sallet | visor pivot '+str(sgn),(sgn*.084*K,hy,hz+.038*K),(.005*K,.011*K,.011*K),edge,'head',8,4)
+    points=[]
+    for i in range(17):
+        q=-1.4+2.8*i/16
+        points.append((K*.087*math.sin(q),hy-K*.101*math.cos(q)-K*.014*math.cos(q)**5,
+                       hz+K*(.052-.014*math.cos(q))))
+    tube('Sallet | defined visor brow',points,.0024*K,edge,'head')
+    tube('Sallet | restrained median crest',[(0,hy-.091*K,hz+.089*K),
+         (0,hy-.063*K,hz+.146*K),(0,hy+.012*K,hz+.170*K),
+         (0,hy+.085*K,hz+.098*K)],.0022*K,edge,'head')
 
 # Static combat stance: wide grounded legs, lowered pelvis, forward chest.
-def aim(name, origin, direction, twist=0):
+def aim(name, origin, direction, twist=0, front_hint=None):
     b=rig.data.bones[name];d=Vector(direction).normalized()
     rest=(b.tail_local-b.head_local).normalized()
     q=rest.rotation_difference(d)
+    if front_hint is not None:
+        f0=Vector((0,-1,0));f0=(f0-rest*f0.dot(rest)).normalized();f0=q@f0
+        f1=Vector(front_hint);f1=(f1-d*f1.dot(d)).normalized()
+        angle=math.atan2(d.dot(f0.cross(f1)),f0.dot(f1));q=Quaternion(d,angle)@q
     if twist:q=Quaternion(d,twist) @ q
     rig.pose.bones[name].matrix=Matrix.Translation(origin) @ q.to_matrix().to_4x4() @ b.matrix_local.to_3x3().to_4x4()
     bpy.context.view_layer.update()
@@ -394,18 +410,32 @@ for side,sgn in [('l',1),('r',-1)]:
     thigh,calf='thigh_'+side,'calf_'+side
     hip=rig.pose.bones[thigh].head.copy()
     ankle=Vector((sgn*.430*K,(-.13 if side=='r' else .09)*K,.067*K))
+    yaw_angle=math.radians(sgn*-19)
+    pole=Vector((sgn*.30*K,-.50*K,.43*K))
+    front_hint=None
+    if a.revision==7:
+        # In the original SE view the sword-side foot is behind the other foot.
+        ankle.x=sgn*.290*K
+        ankle.y=(.40 if side=='r' else -.36)*K
+        yaw_angle=math.radians(sgn*(60 if side=='r' else 8))
+        front_hint=Vector((math.sin(yaw_angle),-math.cos(yaw_angle),0))
+        pole=hip+front_hint*.55*K+Vector((sgn*.12,0,-.35))*K
     knee=ik2(hip,ankle,rig.data.bones[thigh].length,rig.data.bones[calf].length,
-             (sgn*.30*K,-.50*K,.43*K))
-    aim(thigh,hip,knee-hip);aim(calf,knee,ankle-knee)
+             pole)
+    aim(thigh,hip,knee-hip,front_hint=front_hint);aim(calf,knee,ankle-knee,front_hint=front_hint)
     foot='foot_'+side;b=rig.data.bones[foot]
-    yaw=Matrix.Rotation(math.radians(sgn*-19),4,'Z')
+    yaw=Matrix.Rotation(yaw_angle,4,'Z')
     rig.pose.bones[foot].matrix=Matrix.Translation(ankle) @ yaw @ b.matrix_local.to_3x3().to_4x4()
     bpy.context.view_layer.update()
     ua,fa,hand='upperarm_'+side,'lowerarm_'+side,'hand_'+side
     shoulder=rig.pose.bones[ua].head.copy()
     wrist=Vector((sgn*.285*K,(-.265 if side=='r' else -.29)*K,(.82 if side=='r' else 1.02)*K))
+    elbow_pole=Vector((sgn*.50*K,.075*K,1.00*K))
+    if a.revision==7:
+        wrist=Vector((sgn*.30*K,(-.265 if side=='r' else -.27)*K,(.82 if side=='r' else .92)*K))
+        elbow_pole=Vector((sgn*.48*K,.08*K,.74*K))
     elbow=ik2(shoulder,wrist,rig.data.bones[ua].length,rig.data.bones[fa].length,
-              (sgn*.50*K,.075*K,1.00*K))
+              elbow_pole)
     aim(ua,shoulder,elbow-shoulder);aim(fa,elbow,wrist-elbow)
     # Palm continues the forearm, with the fist directed into the guard.
     aim(hand,wrist,wrist-elbow,math.radians(sgn*32))
@@ -483,9 +513,11 @@ def light(name,loc,power,size):
 light('Key | large softbox',(-3,-4,5),420,4)
 light('Fill | neutral',(3,-1,3),260,3)
 light('Rim | plate outline',(0,3,4),500,3)
+if a.revision==7:light('Face | soft low frontal fill',(0,-4,2),70,3)
 camdata=bpy.data.cameras.new('Review camera');camera=bpy.data.objects.new('Review camera',camdata)
 scene.collection.objects.link(camera);scene.camera=camera;camdata.type='ORTHO';camdata.ortho_scale=2.16*K
-camera.location=(0,-6*K,5.1*K)
+reference_location=(-3.0,-7.5,6.7) if a.revision==7 else (0,-6,5.1)
+camera.location=Vector(reference_location)*K
 camera.rotation_euler=(Vector((0,-.02,.77))*K-camera.location).to_track_quat('-Z','Y').to_euler()
 
 for screen in bpy.data.screens:
@@ -516,10 +548,10 @@ for name,path in [('makehuman',a.makehuman),('mpfb2',a.mpfb)]:
     source_info[name]={'repository':f'https://github.com/makehumancommunity/{name}.git',
        'upstreamCommit':subprocess.check_output(['git','-C',path,'rev-parse','origin/master']).decode().strip(),
        'baseMeshSha256':hashlib.sha256((Path(path)/('makehuman/data/3dobjs/base.obj' if name=='makehuman' else 'src/mpfb/data/3dobjs/base.obj')).read_bytes()).hexdigest()}
-manifest={'stage':'static shape review, restarted from MakeHuman', 'blender':bpy.app.version_string,
+manifest={'stage':'static shape review, restarted from MakeHuman','revision':a.revision, 'blender':bpy.app.version_string,
     'sources':source_info,'anatomyAssetLicense':'CC0-1.0','macro':MACRO,
     'triangles':triangles,'editableBones':len(rig.data.bones),'actions':len(bpy.data.actions),
-    'runtime':{'meshes':1,'materials':1,'textures':[28,4],'skins':0,'animations':0},
+    'runtime':{'meshes':1,'materials':1,'paletteMapSize':[len(palette)*4,4],'skins':0,'animations':0},
     'reference':'Existing knight sprites; no sprite pixels imported into model or textures',
     'limits':'Static candidate only. Shape approval, animation reconstruction and gameplay GPU validation remain.'}
 (OUT/'manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
@@ -534,14 +566,31 @@ try:
     scene.cycles.device='GPU' if any(d.use for d in prefs.devices) else 'CPU'
 except Exception:scene.cycles.device='CPU'
 metrics={'views':{},'triangles':triangles,'static':True,'anatomySource':source_info,'scale':K,
-         'nativeMhmRoundtripMaxVertexError':error,'hands':{}}
+         'nativeMhmRoundtripMaxVertexError':error,'hands':{},'feet':{},'revision':a.revision}
+if a.revision==7:
+    pelvis_deform=rig.pose.bones['pelvis'].matrix@rig.data.bones['pelvis'].matrix_local.inverted()
+    for side,sgn in [('l',1),('r',-1)]:
+        bn=rig.data.bones['foot_'+side];deform=rig.pose.bones[bn.name].matrix@bn.matrix_local.inverted()
+        heel=deform@Vector((bn.head_local.x,bn.head_local.y+.065*K,.012*K))
+        toe=deform@Vector((bn.head_local.x,bn.head_local.y-.207*K,.012*K))
+        forward=(toe-heel).normalized();outward=pelvis_deform.to_3x3()@Vector((sgn,0,0))
+        bodyfront=pelvis_deform.to_3x3()@Vector((0,-1,0))
+        assert forward.dot(outward)>.15,('Actual shoe points inward',side,list(forward))
+        assert forward.dot(bodyfront)>.35,('Shoe points backwards',side)
+        assert abs(toe.z-heel.z)<.005*K,'Do not fix toe-in by rolling the sole'
+        calf=rig.data.bones['calf_'+side];cd=rig.pose.bones[calf.name].matrix@calf.matrix_local.inverted()
+        knee_front=(cd.to_3x3()@Vector((0,-1,0))).normalized()
+        assert knee_front.dot(forward)>.6,'Knee plate and toe must face the same outward quadrant'
+        metrics['feet'][side]={'toe':list(toe),'heel':list(heel),'forward':list(forward),
+            'outwardDot':forward.dot(outward),'bodyForwardDot':forward.dot(bodyfront),
+            'kneeToeDot':knee_front.dot(forward),'soleHeightDifference':abs(toe.z-heel.z)}
 for side in ['l','r']:
     fa=rig.pose.bones['lowerarm_'+side];hand=rig.pose.bones['hand_'+side]
     wrist=(hand.tail-hand.head).normalized();forearm=(fa.tail-fa.head).normalized()
     assert wrist.dot(forearm)>.999,'Wrist must continue the human forearm'
     metrics['hands'][side]={'wristForearmDot':wrist.dot(forearm),
                              'forwardComponent':-wrist.y,'verticalComponent':wrist.z}
-for name,loc in [('reference',(0,-6,5.1)),('front',(0,-7,2.6)),('side',(7,0,2.6)),('back',(0,7,2.6))]:
+for name,loc in [('reference',reference_location),('front',(0,-7,2.6)),('side',(7,0,2.6)),('back',(0,7,2.6))]:
     camera.location=Vector(loc)*K
     camera.rotation_euler=(Vector((0,-.02,.77))*K-camera.location).to_track_quat('-Z','Y').to_euler()
     bpy.context.view_layer.update();deps=bpy.context.evaluated_depsgraph_get();coords=[]
@@ -555,8 +604,22 @@ for name,loc in [('reference',(0,-6,5.1)),('front',(0,-7,2.6)),('side',(7,0,2.6)
     contacts=[]
     for side in ['l','r']:
         foot=rig.pose.bones['foot_'+side].head.copy();foot.y-=.08*K;foot.z=0
+        if a.revision==7:
+            foot=(Vector(metrics['feet'][side]['heel'])+Vector(metrics['feet'][side]['toe']))/2;foot.z=0
         q=world_to_camera_view(scene,camera,foot);contacts.append([q.x*900,(1-q.y)*900])
-    metrics['views'][name]={'bounds':bbox,'contacts':contacts}
+    footprints=[]
+    if a.revision==7:
+        for side in ['l','r']:
+            ends=[]
+            for key in ['heel','toe']:
+                p=Vector(metrics['feet'][side][key]);p.z=0
+                q=world_to_camera_view(scene,camera,p);ends.append([q.x*900,(1-q.y)*900])
+            footprints.append(ends)
+    orientation=world_to_camera_view(scene,camera,Vector((0,-.30,.80))*K)-world_to_camera_view(scene,camera,Vector((0,0,.80))*K)
+    metrics['views'][name]={'bounds':bbox,'contacts':contacts,'footprints':footprints,'projectedForwardXY':[orientation.x,orientation.y]}
+    if name=='reference' and a.revision==7:
+        assert orientation.x>0,'SE source faces screen-right; rotate the model rather than mirroring either image'
+        assert contacts[0][1]>contacts[1][1],'The source SE shield-side foot is in front of the sword-side foot'
     scene.render.filepath=str(PREVIEW/(name+'.png'));bpy.ops.render.render(write_still=True)
     print('MAKEHUMAN_VIEW',name,flush=True)
 (PREVIEW/'static-validation.json').write_text(json.dumps(metrics,indent=2))
