@@ -194,6 +194,10 @@ var VFXRuntime = (function () {
      ⚠️ perEffectParticleLimit 不能再往上調，Core 的發射迴圈靠它保證終止。 */
   var FX_BUDGET = { maxActiveEffects: 65536, maxParticles: 64000, perEffectParticleLimit: 2000 };
   var ZONE_BUDGET = { maxActiveEffects: 65536, maxParticles: 64000, perEffectParticleLimit: 2000 };
+  /* 效能模式：每個 Runtime 最多同時 14 個特效、全場粒子 120、單一特效 8 顆。
+     （實測重負載畫面有 2000～3000 個混合 sprite，FPS 15 上下） */
+  var PERF_FX_BUDGET = { maxActiveEffects: 14, maxParticles: 120, perEffectParticleLimit: 8 };
+  var PERF_ZONE_BUDGET = { maxActiveEffects: 10, maxParticles: 60, perEffectParticleLimit: 8 };
 
   /* ---------------------------------------------------------------
      命中類特效的密度控制（2026-09-30 實機數據到手後補上）
@@ -2389,7 +2393,14 @@ var VFXRuntime = (function () {
       destroy: destroy,
       /* 效能模式：把命中類密度固定在下限（併發上限、限頻、全場上限、拖尾密度都依它換算）。
          與自適應不同，不等畫面吃緊才介入；關掉後回到自適應。測試塞的調節器沒有 lock 就略過。 */
-      setPerfMode: function (on) { perfOn = !!on; if (governor.lock) governor.lock(on); },
+      setPerfMode: function (on) {
+        perfOn = !!on;
+        if (governor.lock) governor.lock(on);
+        /* 同屏混合 sprite（加亮／濾色）疊起來是填色量的主要來源：效能模式把四個 Runtime 的預算壓低。 */
+        var fxB = on ? PERF_FX_BUDGET : FX_BUDGET, zoneB = on ? PERF_ZONE_BUDGET : ZONE_BUDGET;
+        [rtFx, rtAir, rtEnemyAir, rtBillboard, rtActorFront].forEach(function (rt) { if (rt.setBudget) rt.setBudget(o.fxBudget || fxB); });
+        if (rtZone.setBudget) rtZone.setBudget(o.zoneBudget || zoneB);
+      },
       stats: function () {
         return {
           presets: Object.keys(known).length,

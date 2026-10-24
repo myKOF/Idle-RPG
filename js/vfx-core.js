@@ -2509,6 +2509,14 @@ var VFXCore = (function () {
         return effect ? effect.time : null;
       },
       destroy: destroy,
+      /* 執行期調降預算（效能模式用）：只收緊、不放寬過 HARD_LIMITS；null 或不給的欄位維持原值。
+         已在場上的特效照播完，只影響之後的 play／粒子發射。 */
+      setBudget: function (over) {
+        ['maxActiveEffects', 'maxParticles', 'perEffectParticleLimit'].forEach(function (k) {
+          var v = over ? over[k] : undefined;
+          if (isFiniteNumber(v) && v >= 0 && v <= HARD_LIMITS.budget[k]) budget[k] = Math.floor(v);
+        });
+      },
       getPreset: function (id) { return presets[id]; },
       stats: function () {
         var pooled = 0;
