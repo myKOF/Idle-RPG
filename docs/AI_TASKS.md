@@ -12526,3 +12526,14 @@ Worker 存活且頁面正常完成載入。
 - 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、knight六圖集及json、build_character_sprites、battle-renderer與game_parameters.csv（僅讀倍率／透視）、motion／GLB驗證／舊預覽及素材庫解析／build工具。未改LV系統功能、遊戲整合或其他聊天內容。develop預檢來源是正在整合本聊天前版，除CRLF外內容相同，無重疊實作；AI_TASKS追加與對方紀錄三方merge-file乾跑0。本工作區交接時僅本次範圍提交。
 - 已知風險／未完成／下一步：新版站姿仍較原圖窄、軀幹較直，六組並排揭示差異供使用者評估，未宣稱相似度已核准；使用者要求的頭盔與對照已完成。尚未替換正式主角、接八方向／命中事件或實測戰鬥GPU-FPS。可供Review及合併保存製作候選，未合併／推送；下一步依使用者本次對照回饋修造型與表演。正式動作檔完全保持前版左拳及全身修正。
 - 保存／Commit：素材庫先提交605a76d（12份製作包SHA一致）；遊戲Commit為本段所在「[Codex] feat: 加上銀盔並提供六動作遊戲尺寸原圖對照」，回覆附編號。預覽／日誌留聊天visualizations，不入庫；已刪除確定不需的blend1備份，無pycache。
+
+## SYNC-FEATURE-WORKTREES-20261024 — 最終交付（取代上方進行中狀態）
+
+- Owner：Codex；Done。實作Commit 3f278794已整合並推送；原codex路徑恢復ai/codex且未更名，develop／三個ai/*與遠端於首輪同步後同為f8286076。正式同步報告：logs/sync-ai-worktrees/sync-20261024-233902-b947dcb0.md，exit 0。
+- 保留來源：Claude c189c73d／1fdca735／ede8821e及既有各AI提交；補齊elite／Worker／bridge快取與LV說明，不改玩法程式。3D分支與未提交R9仍在隔離副本，hold保護，不推送／不合併；素材庫無本輪內容變更。
+- 交付檔案：前述9檔實作，加本輪AGENTS簡寫約定、sim.worker／bridge／主頁快取、LV與此交付段。使用者約定在本專案單獨輸入1即請Codex處理develop衝突並保留各AI修改，既有試作隔離仍有效，不擴及main發布。
+- 唯讀檢查：AI規範、各工作區／分支／遠端、elite來源差異、素材庫；未改模型／配置／存檔／Protocol。與3D聊天同檔的AI_TASKS僅於末尾追加此段，對方僅於開頭新增R9；以目前三方merge-file試跑退出0，無語意相依，不動其工作區。
+- 驗證：同步專項11/11、既有index recovery 15項、Editor快取／守衛15/15均通過；Build582檔、PowerShell語法與diff檢查通過。舊sync-auto-conflicts套件長時間不結束，已停測並保留報告；不宣稱全套通過。後續快取與最後同步驗收於交付回覆列出。
+- 狀態／下一步：一般三AI同步與來源保存已完成且可使用；必要Worker快取更新完成後重跑正常同步。試作需使用者明確最終OK才釋放hold；不同AI同時修改同一公式時仍須人工逐段處理。
+
+- 最後快取驗證：node --test --test-reporter=spec tests/hall-of-radiance.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-editor-guard.test.cjs，共48項41過7既有失敗；7項光耀之堂玩法斷言在未改的develop f8286076以同指令單檔重跑全部重現，快取同步斷言通過。node --test --test-reporter=spec --test-name-pattern=ELITE-ENGINE-12b tests/elite-engine.test.cjs，1/1通過。npm.cmd run build與diff檢查通過；既有玩法失敗未修改或放寬。最後正常同步成功與分支編號見交付回覆及latest.md。
