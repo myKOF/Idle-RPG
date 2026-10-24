@@ -71,6 +71,18 @@
 - 內建IAB不可用，改用隔離無頭Edge，載入正式CSS／紀錄卡及詳情DOM、原日誌與綁定函式，提供空熔爐快照。1200／420寬列表皆隱藏、標題與詳情可見；卡片51px（標題25px加padding及border），不再吃剩餘高度。詳情開關、日誌收集、碎片630統計、暫停後恢復及清除通過；補足隔離頁依賴後pageerror0。未讀寫玩家存檔，未驗收完整長戰；臨時瀏覽器已關閉。
 - 唯讀檢查：AI規範／AGENTS／Workflow／prompts/codex、js/ui.js與newforge.js日誌路徑、Worker事件、CSS覆蓋及上述五份回歸。無本次未完成項或新增已知風險；可供Review／合併，Commit為本段所在`[Codex] fix: 熔爐紀錄只保留標題與詳情入口`，回覆附編號。未合併推送，其他地圖／角色模型工作保留；下一步整合本Commit後重新整理遊戲。
 
+## AI-3D-MAKEHUMAN-RULE-20261024 — 統一3D製作工具
+
+- Owner：Codex；Done。使用者要求將今後所有3D模型／動作統一MakeHuman＋Blender寫入底層規範。允許AI_RULES.md新增8.7.1與本段；禁止玩法／其他任務，不合併推送。前置官方MakeHuman及MPFB已確認。
+- 完成：人形採MakeHuman人體（可經官方MPFB）、Blender製作盔甲／非人形／綁定／動作／減面／材質／預覽與匯出，保存可編輯來源／參數／版本與授權；指定MakeHuman位置及專用分支、實際遊戲尺寸效能，其他工具需使用者同意。與develop的8.10 String條款分段、無語意相依，三方merge-file乾跑0；只改規範與本紀錄，diff檢查，無執行程式變動不需程式測試。未修改但唯讀檢查AGENTS／Workflow／Agent規範及develop實際差異。無本項未完成，可供Review合併；角色造型另見下項，未合併／推送。
+
+## KNIGHT-MAKEHUMAN-STATIC-R6-20261024 — MakeHuman 人體基礎與銀甲造型
+
+- Owner：Codex；In Progress，單一開發者。使用者要求從Git下載MakeHuman，搭配Blender實作；承接靜態造型優先，修正手肩／胸腰胯比例與甲片層次，保留頭盔、無盾／刀光，確認造型後才續動作。
+- 前置：官方MakeHuman已clone並依使用者移至D:/MyGame/MakeHuman（專屬codex/knight-makehuman分支）；MPFB位於D:/MyGame/Codex-Tools/mpfb2；遊戲同名專用分支；核心資產CC0、工具AGPL／GPL，完整工具留專案外。允許tools/knight3d/build_makehuman.py、package_makehuman.py、makehuman-r6候選blend／glb／mhm／manifest／SOURCE與CC0授權、README及sync-library新增R6與本段；素材庫同製作包。禁止六動作成品／來源、遊戲原圖／JS／CSS／配置／存檔／LV解鎖、其他任務與develop整合，不合併推送。
+- 驗收：真實MakeHuman人體／參數／來源SHA，Blender實體造型、同頭腳高度放大原圖對照及四面／手肩目視；GLB／三角／材質／無動畫、凍結舊SHA、工具語法／Build／diff／兩庫SHA後素材庫先Commit再遊戲Commit。交使用者確認造型，暫不接正式戰鬥。使用者指定人體生成與3D，不適用RPG Mote點陣作圖。
+- 預檢：develop同檔僅舊整合候選，README／sync來源仍完全等同d0fbf26c。任務段選在WORLD-MAP前，和對方變更分段且無語意相依，merge-file乾跑0；模型與新工具無其他來源。
+
 ## WORLD-MAP-20261023 — 薩爾維恩世界地圖與手動跨場景
 
 - Owner：Codex；Done，單一開發者。使用者要求戰鬥區移除其他場景頁籤，只留目前場景／關卡、前後／最高、自動推關、全螢幕及迷你視窗；新增已核准地圖、文字熱區提示／選取後前進、動態所在地圖示；自動推關不再跨章。後續指定取消熱區橢圓框、名稱放大提亮、地圖取消上下標題列盡量全屏、右上關閉鈕，以及縮窄約20%的深淺綠卡通指針；最終圖已由使用者回覆「好，這張可以」核准。
