@@ -1,0 +1,34 @@
+{
+  "revision": 5,
+  "previewPrefix": "knight_lookdev_r5",
+  "helmet": "fitted silver sallet",
+  "offHand": "relaxed at side; wrist follows forearm",
+  "shield": false,
+  "proportions": "adult slender, approximately 7.5 heads",
+  "status": "static shape candidate; animations frozen",
+  "front": "-Y",
+  "up": "Z",
+  "units": "meters, stylized proportion",
+  "blender": "5.2.3 LTS",
+  "bones": 17,
+  "meshParts": 1,
+  "vertices": 4645,
+  "faces": 4238,
+  "triangles": 8830,
+  "materials": [
+    "Knight | single palette material"
+  ],
+  "paletteTextures": {
+    "count": 2,
+    "size": [
+      36,
+      4
+    ]
+  },
+  "motionTargetMissMeters": {},
+  "clips": {},
+  "external_assets": [],
+  "blade_trails": false,
+  "weaponBone": "weapon.R",
+  "staticGlb": true
+}

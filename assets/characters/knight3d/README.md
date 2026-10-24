@@ -1,62 +1,53 @@
-# 白銀騎士：盔甲與全身動作重塑（Revision 4）
+# 白銀騎士：靜態造型候選 R5
 
-任務 `KNIGHT-ARMOR-POWER-REV4-20261024`。使用者要求改善前版木偶感，盡量貼近既有騎士的帥氣銀甲與動作，保留頭盔，加大跨步、沉身及全身轉動，交付六組遊戲大小的原圖對照。本目錄是製作候選，未替換遊戲主角。前版銀盔候選可由遊戲 `0dbabd48`／素材庫 `605a76d` 回溯。
+任務 `KNIGHT-LOOKDEV-STATIC-R5-20261024`。使用者要求先修造型與手肩、確認後才繼續動作。本輪以原圖idle八方向重新檢視胸肩、腰胯、四肢及甲片層次，保留銀盔，只交付真實Blender模型的放大靜態對照。
 
-## 本輪造型
+**本輪沒有修改六組動作。** 上層`knight_batch1.blend`／`.glb`／`manifest.json`仍是R4候選；`silver_knight_geometry.py`及`silver_knight_motion.py`也保持原樣。R5在獨立`lookdev-r5/`，不得把上層舊檔誤認為這輪造型。
 
-- 收腰胸甲重塑為胸腹相接的板甲，增加中央脊線、鎖骨邊與側折線；下接弧形腹甲、腰圈及三層曲面胯甲。
-- 肩甲改為兩層向外掃出的曲面覆板、前緣與脊線；跟隨上臂，避免胸口轉動時肩球浮在手臂上方。護臂、肘甲側翼、膝甲與脛甲依人體收放，前面保留金屬折面，接縫以深色內襯收窄。
-- 保留貼合頭形的銀色sallet頭盔與頰甲，移除其遮住的眼睛／耳朵／頭皮幾何；不是用隱藏細節增加面數。劍、盾牌及刀光的決策維持：單手長劍，無盾、無刀光。
-- 原圖的淺灰銀甲與深色內襯為配色依據；採中等粗糙度銀色金屬、克制邊緣反光及方向光。所有幾何、色盤、骨架與動畫均自製，沒有引入第三方模型、貼圖或動畫。
+## R5檔案與範圍
 
-## 結構與效能
+- `lookdev-r5/knight_lookdev.blend`：可編輯靜態模型，17骨骼（16根基礎骨＋獨立weapon.R握劍骨），沒有Action；保留建模用綁定與攝影棚。
+- `lookdev-r5/knight_lookdev.glb`：供檢視的已變形靜態網格；沒有skin或animation，避免一般glTF檢視器把沒有動畫的骨架重設為原始姿勢。不是可直接替換遊戲六動作的成品。
+- `lookdev-r5/manifest.json`：revision=5、staticGlb=true、clips為空、數量及造型狀態。
 
-`knight_batch1.blend`沿用穩定檔名，內容已為Revision 4；包含16骨骼、六Action、原始骨骼綁定與預覽攝影棚。`knight_batch1.glb`僅含角色及六動畫，排除攝影棚／燈／相機。`manifest.json`記錄版本、面數、動作與手腳目標誤差。
+R5共**8,830三角面、4,238製作多邊形、4,645製作頂點**，單網格／primitive／材質，兩張36×4自製內嵌色盤；靜態GLB **284,832 bytes**。目前尚未做實機戰鬥FPS驗收，不能把此靜態匯出成本當作未來有動畫角色的成本。
 
-**11,238三角面、5,597製作多邊形、5,937製作頂點、12,954匯出頂點**；法線／UV邊界會分裂匯出頂點。1網格／primitive／材質，16骨骼、每頂點1權重，兩張36×4內嵌色盤；GLB **840,392 bytes（約821 KiB）**。相較銀盔版增加1,574三角面，維持12k製作檢查上限；不是已通過戰鬥GPU-FPS驗收，也不把單primitive當成包含所有引擎pass的draw-call數。
+## 造型與靜態展示姿勢
 
-## 六組動作
+肩甲降低、縮窄為貼合鎖骨斜度的上片及外臂小覆片，沒有把整個肩甲撐到頭盔旁。胸甲重塑為有胸腹起伏的弧面、收腰下腹甲，布料／腰帶與銀甲分層；腰胯改較平、收尖的雙片覆甲，避免圓形插槽與一串等寬白色橫條。四肢甲片跟隨粗細變化，肘後用小範圍布料連接，保留原有腿部站姿與足甲基礎。頭盔保留，靜態展示時縮短外露頸部距離。
 
-| 動作 | 幀數／fps | 內容 |
-| --- | --- | --- |
-| idle | 30／30 | 寬腳、屈膝、胸口前壓、低重心持劍，空手護胸 |
-| walk | 15／30 | 前傾跑動，較長步幅、髖胸反向及手臂配重 |
-| attack1 | 15／30 | 蓄力、踏步、快速轉髖帶胸揮斬、沉身隨勢、回守 |
-| attack2 | 15／30 | 舉劍並整體轉過背面、交替步伐、轉身斜斬後回守 |
-| cast | 15／30 | 配合原圖轉身、高舉停留、低位收招，空手順前臂銜接 |
-| die | 30／30 | 先失衡屈膝，後段才倒地；手臂隨肩下落、劍轉平 |
+舊版手部問題不只是位置：它把持劍的刀身朝向當成手骨方向，令手腕為了舉劍而折轉。R5讓兩手腕順著前臂，獨立weapon.R再把劍放進拳心；刀身軸與手腕軸近乎垂直。上臂自然向下，空手放在腰側，不再把兩臂擠成胸前X形。這只是本次造型審查的靜態展示姿勢，未製作新的待機或攻擊動畫。
 
-待機製作骨盆高度從1.25降至1.02，腳踝間距由約1.05加大至1.46；第一擊最低骨盆約0.85。這些是製作座標，只描述相對表演，不是遊戲移速或戰鬥位移。兩骨IK目標全數可達，最大手腕／腳踝誤差<0.000001。整圈轉身使用完整腳掌朝向，避免方向向量的最短旋轉使鞋底翻斜；胸口前向檢查先去除編輯骨的初始朝向，避免直接取骨骼Euler-Z在轉身中誤判。
+銀甲採較克制的反光，胸甲使用較深的磨亮銀色；深色布衣與棕色腰帶提供材質層次。所有幾何、材質色盤及姿勢均自製；原圖只作參考及對照，不取圖集像素當模型貼圖。
 
-動畫保留原始0.5／1秒週期，非循環GIF末幀另停300ms、死亡750ms供檢視。GLB第一至末取樣鍵跨度為`(frames-1)/fps`，包含最後取樣顯示時長才是表中週期。尚未套用遊戲攻擊／施法的first跳幀與事件時序；沒有改模擬、命中或傷害。
+## 重製／渲染／靜態對照
 
-## 重製與驗證
-
-在專案根目錄執行，`<Blender>`是blender.exe，`<預覽目錄>`採專案外的絕對路徑：
+在遊戲專案根目錄執行，`<Blender>`換成blender.exe，`<預覽目錄>`採專案外絕對路徑：
 
 ```powershell
-& '<Blender>' --background --factory-startup --python tools/knight3d/build_knight.py -- --output assets/characters/knight3d --preview '<預覽目錄>' --render none
-& '<Blender>' --background --factory-startup --python tools/knight3d/render_batch.py -- --model assets/characters/knight3d/knight_batch1.blend --preview '<預覽目錄>' --sprite-preview
-python tools/knight3d/package_game_compare.py --preview '<預覽目錄>' --reference images/sprites/knight --battle-height 600
-python tools/knight3d/validate_asset.py assets/characters/knight3d/knight_batch1.glb
+& '<Blender>' --background --factory-startup --python tools/knight3d/build_knight.py -- --lookdev --output assets/characters/knight3d/lookdev-r5 --preview '<預覽目錄>' --render none
+& '<Blender>' --background --factory-startup --python tools/knight3d/render_lookdev.py -- --model assets/characters/knight3d/lookdev-r5/knight_lookdev.blend --preview '<預覽目錄>'
+python tools/knight3d/package_lookdev.py --preview '<預覽目錄>'
 node tools/knight3d/sync-library.cjs --apply
 node tools/knight3d/sync-library.cjs --check
 ```
 
-`render_batch.py --validate-only`不渲染，重開成品驗120個完整姿勢、內嵌材質、地面與有限矩陣、兩攻擊全身位移、左拳前向與腕部銜接；失敗時會指出最低頂點及所屬骨骼。`--render-clips cast`可僅重出指定動作，但仍驗全部姿勢。`--design-views`另存四面攝影棚靜態視圖，應用不同預覽目錄，避免覆蓋透明動作圖。`validate_asset.py`直接讀GLB檢查索引、權重、三角、16joints、材質／內嵌貼圖、時間與六段各48通道。
+`--lookdev`必須用獨立輸出資料夾；工具會拒絕含舊knight_batch1.blend的目錄，以免覆蓋動畫包。造型在silver_knight_lookdev.py，既有幾何先提供保留的頭盔／手足／劍基礎，再替換胸肩腰胯及四肢甲片。render_lookdev重開實際成品，只渲染四張靜態視角，沒有動畫播放。
 
-## 同遊戲尺寸對照
+預覽保存在本聊天visualizations/knight3d-lookdev-r5：
 
-`knight_revision4_armor_power_six_game_compare.gif`為640×688、150幀／6秒，每格左原圖、右新銀甲；另有原尺寸PNG與明標2x PNG。原圖SE是胸肩較正面的視角，3D透明預覽相機相應調整為接近正面；不是把方向名稱當成固定的世界相機方位。四面放大造型檢視另外交付，不能當作遊戲大小。
+- `knight_r5_original_static_compare.png`：1100×760，每欄左原圖SE idle第1幀、右真實Blender渲染；兩邊頭到腳統一放大至500px，沒有分別拉伸胸肩或四肢。
+- `knight_r5_upperbody_compare.png`：胸肩／手臂／腰胯近看。
+- `knight_r5_static_views.png`：正／側／背面，固定模型比例，完整顯示頭盔與腳。
 
-原圖128格、trim及錨點由knight.json還原，素材scale1.4 × 一般鏡頭100/125=0.8，總倍率1.12；SE idle第一幀不透明頭腳50素材px，透視前為56 CSS px。新模型只用idle頭／腳實際投影高度校正一次，六動作全程固定比例與腳點，不對每幀／動作重新縮放。兩欄套用遊戲上緣0.82透視公式，假設600 CSS px高普通戰鬥面板與100%瀏覽器／圖片縮放；全螢幕會額外×1.3，面板高度不同有輕微透視差。這是依遊戲公式重建的尺寸預覽，並非實機3D整合畫面。
+原圖是原始像素放大，未補畫不存在的細節，保留舊盾牌；新版沒有盾牌／刀光。靜態對照用低透明接地陰影協助閱讀，僅在預覽合成，不寫入模型或遊戲特效。此輪是**放大造型審查**，不是遊戲1:1大小預覽；不以視覺放大宣稱已整合遊戲。
 
-原圖欄保留舊盾／刀光及烘焙陰影；新模型沒有盾／刀光。新版對照另依每姿勢腳點投影加淡接地橢圓陰影，僅為預覽輔助，不寫入GLB、貼圖或遊戲特效。原圖完整15幀按來源fps播放，未省略起手；`game-comparison-validation.json`保存倍率／校正／GIF讀回，`sprite-projection.json`保存相機及投影，`validation.json`保存逐姿勢量測／接地點，`glb-validation.json`保存二進位檢查。
+## 驗證、保存與限制
 
-## 保存與待驗收
+Blender重開檢查17骨骼、零Action、有限矩陣與最低變形頂點；兩手腕軸與前臂dot>0.999，上臂往下dot>0.6，劍軸與手腕軸近乎垂直，握點可達。package_lookdev直接讀GLB，核對單mesh／primitive／material、<12k三角、零skin／animation及圖片無邊界裁切；檢查舊動畫兩個二進位檔與Git逐位元一致、原metadata語意及動作／幾何來源不變。
 
-素材庫由既有vfx-library-root解析，候選四資產及八工具共12檔保存於`codex-authored/knight3d`相同相對路徑，SHA逐檔核對。預覽、參考放大、日誌與驗證報告留本聊天visualizations/knight3d-rev4；blend1及pycache不交付。
+另在臨時目錄重跑預設R4匯出：六動畫、位置／UV／權重／骨索引資料完全相同，有向三角集合相同；Blender非決定性三角排列與兩個法線浮點有微小差異（最大8.72e-5），未用整個GLB位元一致誤報回歸。原交付檔未改。驗證報告static-validation／static-package-validation／default-export-regression保存在預覽目錄。
 
-六份既有knight圖集只供造型／動作參考與專案外對照，未取像素當新角色貼圖。採用使用者指定的Blender製作可綁骨骼3D，非點陣作圖，沒有改用RPG Mote。正式sprites、遊戲JS／CSS／配置、解鎖與存檔均未改。
+舊R4包與新R5包及工具共18檔同步保存於素材庫codex-authored/knight3d同相對路徑，逐檔SHA核對；新候選與原包可各自回溯。預覽／日誌不入兩庫，blend1／pycache不交付。使用者指定Blender三維造型，非RPG Mote點陣繪製；未引入第三方模型／貼圖／動畫。
 
-**待驗收**：盔甲造型、原圖相似度、動作自然度及角色氣勢仍由使用者檢視；數值檢查不代表美術核准。尚未整合八方向正式輸出、戰鬥事件／GPU-FPS，也未宣稱消除所有甲片互穿。若選用預渲染精靈，模型面數不成為瀏覽器即時蒙皮成本，但圖集容量與載入／播放效能另驗。
+**待驗收**：胸肩、腰胯、四肢的造型接近度與層次仍由使用者檢視；結構量測不代表美術已核准，也未宣稱消除所有甲片互穿。造型確認前不繼續調動作。尚未替換正式角色、重綁六動作、調整八向／命中或實測戰鬥效能。舊R4製作與六動作說明可由遊戲Commit 7b6c431／素材庫bd1394e的README回溯。
