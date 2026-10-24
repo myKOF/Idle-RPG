@@ -22,6 +22,7 @@ var ELITE_PLAYER_BODY_R = 18;     // 判定時把玩家當成半徑這麼大的�
 var ELITE_VIS_REFRESH_SEC = 0.3;  // 場域特效的續命間隔（顯示層以 area.id 合併，超過約半秒沒續命就收掉）
 var ELITE_CASTS_PER_TICK = 3;     // 同一個 tick 最多開幾個新技能，避免整群同時開火
 var ELITE_MAX_WALL_CASTS = 2;
+var ELITE_MAX_SAME_SKILL = 5;     // 同一種主動技能全場同時最多幾個還沒消失（誰施放都算，滿了就沒人能再放，直到有一個消失）
 var ELITE_WALL_NAV_LIMITS = { walls: 6, activeWalls: 6, meshes: 8, builds: 2, routes: 16, replan: 0.5, check: 0.25, goalMove: 24, radiusStep: 4 };
 
 var ELITE_RT = {
@@ -35,6 +36,7 @@ var ELITE_RT = {
   sparks: [],    // 電火花 { owner, x, y, vx, vy, until, r, def }
   walls: [],     // 石牆 { x, y, a, len, thick, until, vis }
   wallCasts: [], // 預警即占名額，直到這次施放的牆全數消失
+  holds: [],     // 每次施放占一個「同技能名額」直到效果消失 { id, until }（上限見 ELITE_MAX_SAME_SKILL）
   wallNav: null, // 有上限的牆角路網與各角色路徑快取；不進存檔／Protocol
   pull: null,    // 漩渦的拉扯進行中 { owner, tx, ty, speed, def }
   budget: 0,
@@ -53,6 +55,7 @@ function eliteReset() {
   ELITE_RT.sparks.length = 0;
   ELITE_RT.walls.length = 0;
   ELITE_RT.wallCasts.length = 0;
+  ELITE_RT.holds.length = 0;
   ELITE_RT.wallNav = null;
   ELITE_RT.pull = null;
   if (typeof bfPlayerPos === 'function') bfPlayerPos().lift = 0;
@@ -621,6 +624,7 @@ function eliteKeepAway(m, d, id) {
 
 /* 施放前提：有些技能要有同伴或有空間才有意義。 */
 function eliteCanCast(m, d) {
+  if (eliteHoldCount(d.id) >= ELITE_MAX_SAME_SKILL) return false;
   if (d.arch === 'walls' && eliteWallCastCount() >= ELITE_MAX_WALL_CASTS) return false;
   switch (d.arch) {
     case 'bloodsac': return eliteGroupMembers(m, true).some(function (e) { return e !== m && !e.elite && e.hp > 0; });
@@ -671,9 +675,23 @@ var ELITE_CASTERS = {
 var ELITE_PASSIVE_ARCHS = ['regen', 'haste', 'enrage', 'vampiric', 'knockback', 'lifelink', 'phoenix', 'bomber', 'splitter',
   'molten', 'sparks', 'vital', 'avenger'];
 
+/* 同技能名額：施放當下占一個，預警＋效果持續（life／dur，沒有的瞬發技能占 1 秒）結束才釋出。 */
+function eliteHoldCount(id) {
+  var holds = ELITE_RT.holds;
+  for (var i = holds.length - 1; i >= 0; i--) if (GT >= holds[i].until) holds.splice(i, 1);
+  var n = 0;
+  for (var j = 0; j < holds.length; j++) if (holds[j].id === id) n++;
+  return n;
+}
+function eliteHoldAdd(d) {
+  var sec = (Number(d.warn) || 0) + Math.max(Number(d.life) || 0, Number(d.dur) || 0, 1);
+  ELITE_RT.holds.push({ id: d.id, until: GT + sec });
+}
+
 function eliteCast(m, d, id) {
   var fn = ELITE_CASTERS[d.arch];
   if (!fn) return;
+  eliteHoldAdd(d);
   eliteAnnounce(m, d);
   fn(m, d);
 }

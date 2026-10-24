@@ -472,6 +472,21 @@ test('ELITE-ENGINE-12 冰凍脈衝：冰球追著玩家飄，周圍定時脈衝�
   assert.equal(m._el.orbs, 0);
 });
 
+test('ELITE-ENGINE-12b 同技能全場同時最多 5 個，有一個消失才能再放', () => {
+  const c = fresh();
+  const d = c.ELITE_AFFIXES.e_poisoncross;
+  const ms = [];
+  for (let i = 0; i < 6; i++) ms.push(quiet(makeElite(c, ['e_poisoncross'], { x: 400 + i, y: 0, hp: 1e9 })));
+  for (let i = 0; i < 5; i++) {
+    assert.ok(c.eliteCanCast(ms[i], d), `第 ${i + 1} 個放得出來`);
+    c.eliteCast(ms[i], d, 'e_poisoncross');
+  }
+  assert.equal(c.eliteCanCast(ms[5], d), false, '第 6 個被擋');
+  assert.ok(c.eliteCanCast(ms[5], c.ELITE_AFFIXES.e_plague), '別種技能不受影響');
+  c.ELITE_RT.holds[0].until = c.GT;                                  // 其中一個消失
+  assert.ok(c.eliteCanCast(ms[5], d), '空出名額後可再放');
+});
+
 test('ELITE-ENGINE-13 迫擊：拋射數顆火球，落點先預警，第一發落在玩家腳下', () => {
   const c = fresh();
   const m = makeElite(c, ['e_mortar'], { x: 300, y: 0, hp: 1e9 });

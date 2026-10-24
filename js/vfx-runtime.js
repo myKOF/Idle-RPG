@@ -194,10 +194,10 @@ var VFXRuntime = (function () {
      ⚠️ perEffectParticleLimit 不能再往上調，Core 的發射迴圈靠它保證終止。 */
   var FX_BUDGET = { maxActiveEffects: 65536, maxParticles: 64000, perEffectParticleLimit: 2000 };
   var ZONE_BUDGET = { maxActiveEffects: 65536, maxParticles: 64000, perEffectParticleLimit: 2000 };
-  /* 效能模式：每個 Runtime 最多同時 14 個特效、全場粒子 120、單一特效 8 顆。
+  /* 效能模式：特效本體照播（每個 Runtime 最多同時 30 個），簡化的是粒子：全場 120、單一特效 4 顆。
      （實測重負載畫面有 2000～3000 個混合 sprite，FPS 15 上下） */
-  var PERF_FX_BUDGET = { maxActiveEffects: 14, maxParticles: 120, perEffectParticleLimit: 8 };
-  var PERF_ZONE_BUDGET = { maxActiveEffects: 10, maxParticles: 60, perEffectParticleLimit: 8 };
+  var PERF_FX_BUDGET = { maxActiveEffects: 30, maxParticles: 120, perEffectParticleLimit: 4 };
+  var PERF_ZONE_BUDGET = { maxActiveEffects: 18, maxParticles: 60, perEffectParticleLimit: 4 };
 
   /* ---------------------------------------------------------------
      命中類特效的密度控制（2026-09-30 實機數據到手後補上）
@@ -239,7 +239,7 @@ var VFXRuntime = (function () {
     hitLiveBase: 160,    // 全場同時存活的命中特效上限＝此數 × 密度；密度 1＝不限
     beamLiveBase: 120    // 全場同時存活的連鎖電弧上限＝此數 × 密度；密度 1＝不限（每道電弧是 3 張逐幀變形的網格）
   };
-  var PERF_HIT_PER_WINDOW = 6;   // 效能模式：每 0.25 秒最多播幾則純命中特效
+  var PERF_HIT_PER_WINDOW = 16;  // 效能模式：每 0.25 秒最多播幾則純命中特效
   var DENSITY = {
     slowDt: 1 / 45,      // 平滑後的幀時間超過這個＝畫面吃緊（<45 FPS）
     fastDt: 1 / 54,      // 低於這個才放回（>54 FPS）；兩者之間是死區，不動
@@ -1396,7 +1396,16 @@ var VFXRuntime = (function () {
       g.ox -= g.ox / mag * fix;
       g.oy -= g.oy / mag * fix;
     }
+    /* 毒水帶／毒圈是貼地的整片水面。場域預設以「原點 Y」與角色交錯排序，但長條毒帶的原點在中段，
+       站在毒帶上方半段（Y 較小）的敵人會被整條蓋住（2026-10-24 使用者回報 NPC 跑到毒素加持下方）。
+       貼地水面一律沉到所有角色與影子之下。 */
+    var FLOOR_DECAL_DEPTH_Y = -1e6;
     function groundParams(g) {
+      var params = groundParamsBase(g);
+      if (g.poisonTrail || g.presetId === 'en-poison-dot') params.depthY = FLOOR_DECAL_DEPTH_Y;
+      return params;
+    }
+    function groundParamsBase(g) {
       if (g.poisonTrail) {
         var a = g.trailArea, angle = num(a._planeA, num(a.a, 0));
         var length = Math.max(0, num(a._planeW, num(a.w, num(a.r, 0))));
