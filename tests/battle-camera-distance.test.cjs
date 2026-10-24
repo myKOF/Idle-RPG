@@ -13,7 +13,7 @@ const source = readExpanded(path.join(root, 'js/battle-renderer.js'));
 const DEFAULT = Number(/var BATTLE_CAMERA_DISTANCE_PERCENT = ([\d.]+);/.exec(source)[1]);
 function load() {
   const S = buildSceneTree(source);
-  const c = {S, Math, Number, isFinite, PIXI: fakePixi, BATTLE_CAMERA_DISTANCE_PERCENT: DEFAULT,
+  const c = {S, Math, Number, isFinite, PIXI: fakePixi, BATTLE_CAMERA_DISTANCE_PERCENT: DEFAULT, perfMode: false,
     playerPos: () => ({x: 30, y: 80}), currentResolution: () => 2, layoutScene() {},
     perspectiveTopScale: () => .82, PERSPECTIVE_MESH_VERTS: 8};
   c.fullscreen = false;
@@ -126,9 +126,37 @@ test('CAMERA 透視貼圖置於鏡頭內且像素密度不膨脹，平行投影�
     const x=L.cx+(xs/S.cameraScale-L.cx)*w, y=L.cy+t;
     assert.ok(x>=L.x0 && x<=L.x0+L.width && y>=L.y0 && y<=L.y0+L.height);
   }
+  assert.equal(P.rt.antialias,true);
+  const normalTexture=P.rt, normalScale=S.cameraScale;
+  c.perfMode=true; c.syncPerspective();
+  assert.ok(normalTexture.destroyed,'切換效能模式必須回收舊貼圖');
+  assert.equal(P.rt.antialias,false);
+  near(S.cameraScale,normalScale);
+  const perfTexture=P.rt;
+  c.syncPerspective();
+  assert.equal(P.rt,perfTexture,'模式與尺寸不變時不得重建貼圖');
+  c.perfMode=false; c.syncPerspective();
+  assert.ok(perfTexture.destroyed);
+  assert.equal(P.rt.antialias,true,'關閉效能模式恢復抗鋸齒');
+  near(P.rt.resolution,1.6);
   c.perspectiveTopScale=()=>1; c.syncPerspective();
   assert.equal(S.sceneRoot.parent,S.cameraStage);
   assert.ok(P.rt.destroyed); assert.ok(P.mesh.destroyed);
+});
+
+test('CAMERA 效能模式固定解析度，關閉後恢復一般畫質並保留明確指定倍率', () => {
+  const c=load();
+  c.devicePixelRatio=2;
+  c.uiShellScale=()=>1.5;
+  c.resolutionByQuery=()=>null;
+  vm.runInContext(extractFunction(source,'currentResolution'),c);
+  assert.equal(c.currentResolution(),2.5);
+  c.perfMode=true;
+  assert.equal(c.currentResolution(),1);
+  c.perfMode=false;
+  assert.equal(c.currentResolution(),2.5);
+  c.perfMode=true; c.resolutionByQuery=()=>.5;
+  assert.equal(c.currentResolution(),.5);
 });
 
 test('CAMERA 參數表鏡頭列與程式一致，調參只命中具名鏡頭錨點', () => {

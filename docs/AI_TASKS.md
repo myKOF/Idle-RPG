@@ -2,7 +2,7 @@
 
 ## MERGE-ALL-AI-20261024 — 保留各 AI 修改並完成 develop 整合
 
-- Owner：Codex；In Progress，單一整合者。使用者明確授權解決現有衝突並將所有 AI 成果合併至 develop；本次授權取代下段前次工具執行的禁止提交限制。
+- Owner：Codex；Done（合併及相關驗證完成；完整套件的既有失敗另列），單一整合者。使用者明確授權解決現有衝突並將所有 AI 成果合併至 develop；本次授權取代下段前次工具執行的禁止提交限制。
 - 輸入：develop 6714a483 的 pending merge 8685cfb1；後續納入 ai/codex 64513e0c、codex/knight-makehuman 70eb13aa、ai/claude e94c6a11；ai/antigravity 186befd5 已在 develop 歷史。其他 codex/* 分支逐一檢查祖先關係。
 - 範圍：合併衝突、String.xlsx→CSV→JS 文字同步、必要快取／既有回歸接線、LV 與本紀錄；保留各 AI 提交及素材，不推送 develop、不發布 main、不切換其他 AI 副本分支。
 - 驗收：無衝突標記／未合併索引、所有來源提交可由 develop 到達、Build／完整回歸與 String 同步檢查、素材庫已提交來源核對、工作區乾淨。合併前原始衝突檔／索引／任務紀錄與工作簿已保存在聊天預覽目錄。
@@ -10,6 +10,12 @@
 - 第一輪整合：五檔共九段衝突逐段處理，採世界地圖操作與手動跨場景，保留 STR、首通提示與主端／Worker 文字資料載入。Excel 原生重開兩次驗證，既有2086條內容／翻譯逐格不變，新增30條（2100～2129）；CSV／JS版本81469ade同步，仍寫死0條。地圖測試僅補足正式文字資料載入，控制列測試改驗新地圖入口與前後關卡正式tooltip，未降低玩法驗收。
 - 第一輪驗證：Build 581檔通過；地圖／String／推關／全螢幕／熔爐／Worker相關95/95通過。完整npm test為4780項、4278過／499失敗／3略過，其中6支長時間停滯由整合者停止；以6714a483原始來源唯讀覆映重跑122份失敗檔，495失敗／1取消均重現，差集只有控制列舊冰原按鈕斷言、skills2快取需同步以及未完成的VFX coverage程序。前兩項已修正且各自測試通過，VFX coverage非本輪改動；完整套件非全綠，不宣稱已全部驗收。
 - 素材唯讀核對：地圖母圖／指針／覆片及六透明圖示與既有素材庫SHA一致；素材庫乾淨、最新2f159ff，來源已在先前各AI提交中保存，本輪無新素材、無素材庫空Commit。Edge隔離新來源成功啟動遊戲／真Worker、查看冰原解鎖／進度並關閉地圖；本機缺少忽略的params_version.txt會產生既有404，最終煙測將由測試伺服器提供固定標記，不修改玩家副本。
+- 後續合併：197e0af2解原pending merge；da6a23f8納入ai/codex 64513e0c；9e9a0dec納入codex/knight-makehuman 70eb13aa；本段所在合併提交納入ai/claude e94c6a11。ai/antigravity及其他codex/*特效分支原先已在develop歷史；未切換／重寫其他AI副本，未推送develop／main。
+- 任務文件自訂merge driver因既有重複標題退回衝突，兩次均以Git標準三方merge-file重驗為0且保留各方紀錄，未刪重複歷史或任選整份。MakeHuman＋Blender規範與String規範均保留。騎士製作包35份核對21份逐位元相同、14份僅CRLF／LF不同、0內容差異；全部Blend／GLB相同。GLB驗證PASS（11238三角／16骨／六動作），13份Python ast.parse通過。未重新製作美術或宣稱使用者已核准候選。
+- 最終修改範圍：五衝突檔與世界地圖JS、String.xlsx／CSV／strings_data、LV／AI_TASKS、地圖兩份測試的正式文字依賴、combat-pause新入口驗收；合併保留來源的地圖／資源圖示／騎士來源與工具、其他既有測試修改。Claude效能兩JS完整保留，補index與Editor快取（Runtime1.0.241、Renderer1.6.201）、LV記錄；camera測試補perfMode依賴，實測貼圖抗鋸齒開／關重建與不重複重建、解析度切換／恢復及明確倍率優先，未放寬原有鏡頭檢查。
+- 最終驗證：每次合併Build均581檔通過。node --test --test-reporter=spec執行battle-perf、battle-camera-distance、vfx-editor-cache-versions、vfx-editor-guard、world-map、world-map-ui、string-table、multi-enemy、new-battle-zones、stage-rework、stage-jump-ui、fullscreen-toggle、battle-fullscreen、new-forge-ui、worker-protocol、worker-shim、combat-pause，共135/135通過。String仍寫死0條、apply_strings --check同步2116條；兩個新整合失敗已修，完整npm test仍有前述既有失敗及停滯，不宣稱全套全綠。
+- Edge最終煙測：隔離新來源及新context，DPR2、1360×900，真遊戲與Worker；效能鈕令解析度1.4166667→1→1.4166667，地圖顯示冰原權威進度及前置解鎖，關閉成功，pageerror／Console error／warning／資源失敗皆0。測試伺服器提供本機BAT通常產生的params_version標記，未改受管或使用者檔案。截圖／JSON／原始備份與完整測試報告留本聊天merge-all-ai預覽目錄。
+- 唯讀檢查未修改：AGENTS／Workflow／prompts、其他配置表／存檔／Protocol、merge driver／同步腳本及各來源分支，素材庫工作樹。檢查所有本地AI／codex分支及遠端AI來源祖先關係與Git狀態；本輪無尚待解決的合併衝突，可保留在develop供後續驗收。已知風險：全套既有測試債、候選美術仍待使用者確認、未做玩家存檔長戰／跨GPU驗收。下一步重新載入遊戲；開著VFX Editor時先下載未存檔備份再重載，共用Runtime守衛與快取驗證通過。遠端推送需另依使用者授權。
 
 
 ## MERGE-8685CFB-20261024 — 世界地圖與 String 表遷移整合（歷史 Blocked，本輪已解除）
