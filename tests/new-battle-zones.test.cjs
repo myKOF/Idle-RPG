@@ -28,9 +28,20 @@ test('BIOMES-SAVE 舊後圖進度補通新增前圖、先保留超上限通關�
  const noZone=c.newGameState();delete noZone.stage.zone;noZone.stage.best=180;noZone.stage.current=150;delete noZone.fieldBiomesV2;
  assert.equal(c.migrateSave(noZone).zoneProgress.desert.cleared,100,'無地圖欄位的最早期存檔也保留已通關上限');
 });
-test('BIOMES-ROUTE 新檔每圖最後一關自動前往下一圖、神界保留11轉門檻',()=>{
+test('BIOMES-ROUTE 新檔每圖末關留在原圖，主動前進並保留神界11轉門檻',()=>{
  const c=load(['combat']);c.G=c.newGameState();
- for(let i=0;i<ids.length-1;i++){const z=ids[i];c.G.stage={zone:z,current:c.ZONES[z].maxStage,best:c.ZONES[z].maxStage};c.G.zoneProgress[z]={current:1,best:c.ZONES[z].maxStage,cleared:c.ZONES[z].maxStage-1};assert.equal(c.nextAutoAdvanceZone(z),null);c.G.zoneProgress[z].cleared++;if(i>=6){c.G.player.reincarnations=0;assert.equal(c.nextAutoAdvanceZone(z),null);c.G.player.reincarnations=11;}assert.equal(c.nextAutoAdvanceZone(z),ids[i+1]);}
+ c.FIELD.player=null;
+ for(let i=0;i<ids.length-1;i++){
+  const z=ids[i],next=ids[i+1],cap=c.ZONES[z].maxStage;
+  c.G.stage={zone:z,current:cap,best:cap,kills:0,autoAdvance:true};
+  c.G.zoneProgress[z]={current:cap,best:cap,cleared:cap-1};
+  assert.equal(c.isZoneUnlocked(next),false,'前圖末關未通關不得進入');
+  c.FIELD._waveClearPending=true;c.completeFieldWave({hp:100});
+  assert.equal(c.G.stage.zone,z,'自動推關不得跨場景');
+  assert.equal(c.G.zoneProgress[z].cleared,cap);
+  if(i>=6){c.G.player.reincarnations=0;assert.equal(c.isZoneUnlocked(next),false);c.switchZone(next);assert.equal(c.G.stage.zone,z);c.G.player.reincarnations=11;}
+  assert.equal(c.isZoneUnlocked(next),true);c.switchZone(next);assert.equal(c.G.stage.zone,next);assert.equal(c.G.stage.current,1);
+ }
 });
 test('BIOMES-CONFIG 六份Excel／CSV逐格一致、任務可達、掉落及波次覆蓋全部關卡',()=>{
  const c=load();for(const n of ['Zones','NPC','Task','Zone_Stage_Drops','Zone_Stage_Waves','Runes']){const x=tables.readXlsxRows(path.join(root,'config/Excel',n+'.xlsx')),csv=tables.csvParse(fs.readFileSync(path.join(root,'config/CSV',n+'.csv'),'utf8')).filter(r=>r.length>1);assert.deepEqual(csv,x.map(r=>r.map(String)),n);}

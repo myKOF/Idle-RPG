@@ -759,23 +759,6 @@ function switchZone(zoneKey) {
     UI.dirty.battle = true;
 }
 
-/* 自動推進到下一張已解鎖且上限更高的地圖；順序以 ZONE_LIST 為準，
-   讓場景配置與自動切圖共用同一份設計順序。 */
-function nextAutoAdvanceZone(zoneKey) {
-    if (typeof ZONE_LIST === 'undefined' || !Array.isArray(ZONE_LIST)) return null;
-    var currentMax = zoneMaxStage(zoneKey);
-    if (typeof zoneClearedStage === 'function' && zoneClearedStage(zoneKey) < currentMax) return null;
-    var index = ZONE_LIST.indexOf(zoneKey);
-    if (index < 0) return null;
-    for (var i = index + 1; i < ZONE_LIST.length; i++) {
-        var candidate = ZONE_LIST[i];
-        if (zoneMaxStage(candidate) <= currentMax) continue;
-        if (typeof isZoneUnlocked === 'function' && !isZoneUnlocked(candidate)) continue;
-        return candidate;
-    }
-    return null;
-}
-
 /* 是否還有更後面的地圖配置。下一張可能因前置關卡或轉生條件尚未解鎖，
    但這不代表目前地圖已經是整個推圖流程的終點。 */
 function hasConfiguredHigherZone(zoneKey) {
@@ -2144,35 +2127,21 @@ function completeFieldWave(st) {
     G.stage.best = Math.max(Number(G.stage.best) || 1, nextStage);
     /* 已通關關卡另外記一筆：best 在最後一關會被 maxStage 夾住，光看 best 無法分辨
        「打贏最後一關」與「只打到倒數第二關」。任務的 stageClear 讀這一欄。 */
+    var firstMapClear = G.stage.current >= maxStage && zoneClearedStage(G.stage.zone) < maxStage;
     markZoneCleared(G.stage.zone, G.stage.current);
-    var switchedZone = false;
     if (G.stage.autoAdvance) {
         if (G.stage.current >= maxStage) {
-            var nextZone = nextAutoAdvanceZone(G.stage.zone);
-            if (nextZone) {
-                blog(STR(511, currentZoneDef().name, maxStage), 'good');
-                switchZone(nextZone);
-                switchedZone = true;
-                blog(STR(512, currentZoneDef().name, G.stage.current), 'good');
-            } else if (hasConfiguredHigherZone(G.stage.zone)) {
-                /* 後續地圖存在但尚未解鎖（例如未達 11 轉）：留在地圖上限，
-                   讓玩家繼續重打最後一關，而不是將整張地圖標成完成後停怪。 */
-                G.stage.current = maxStage;
-                G.stage.best = Math.max(G.stage.best || 1, maxStage);
-                FIELD.mapComplete = false;
-                blog(STR(513, maxStage), 'info');
-            } else {
-                G.stage.current = maxStage;
-                G.stage.best = Math.max(G.stage.best || 1, maxStage);
-                FIELD.mapComplete = true;
-                FIELD.spawnCd = Infinity;
-                blog(STR(511, currentZoneDef().name, maxStage), 'good');
+            // 自動推關只限目前場景；後續場景須由世界地圖主動前進。
+            G.stage.current = maxStage;
+            G.stage.best = Math.max(G.stage.best || 1, maxStage);
+            FIELD.mapComplete = !hasConfiguredHigherZone(G.stage.zone);
+            if (FIELD.mapComplete) FIELD.spawnCd = Infinity;
+            if (firstMapClear) {
+                blog(STR(2119, currentZoneDef().name, maxStage, (FIELD.mapComplete ? '' : STR(2120))), 'good');
             }
         } else {
             G.stage.current++;
             if (G.stage.current > G.stage.best) G.stage.best = G.stage.current;
-        }
-        if (!switchedZone && !FIELD.mapComplete && G.stage.current < maxStage) {
             blog(STR(514, G.stage.current), 'good');
         }
     }

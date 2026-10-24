@@ -1,5 +1,112 @@
 # AI_TASKS.md
 
+## MERGE-ALL-AI-20261024 — 保留各 AI 修改並完成 develop 整合
+
+- Owner：Codex；In Progress，單一整合者。使用者明確授權解決現有衝突並將所有 AI 成果合併至 develop；本次授權取代下段前次工具執行的禁止提交限制。
+- 輸入：develop 6714a483 的 pending merge 8685cfb1；後續納入 ai/codex 64513e0c、codex/knight-makehuman 70eb13aa、ai/claude e94c6a11；ai/antigravity 186befd5 已在 develop 歷史。其他 codex/* 分支逐一檢查祖先關係。
+- 範圍：合併衝突、String.xlsx→CSV→JS 文字同步、必要快取／既有回歸接線、LV 與本紀錄；保留各 AI 提交及素材，不推送 develop、不發布 main、不切換其他 AI 副本分支。
+- 驗收：無衝突標記／未合併索引、所有來源提交可由 develop 到達、Build／完整回歸與 String 同步檢查、素材庫已提交來源核對、工作區乾淨。合併前原始衝突檔／索引／任務紀錄與工作簿已保存在聊天預覽目錄。
+- 上次 Excel HRESULT 0x80070520 阻塞在本登入工作階段未重現，Excel.Application 16.0 成功；依專案指定 tools/excel-update-sheets.ps1 原生 API 寫入並正常重開驗證，不手改 XLSX XML。
+- 第一輪整合：五檔共九段衝突逐段處理，採世界地圖操作與手動跨場景，保留 STR、首通提示與主端／Worker 文字資料載入。Excel 原生重開兩次驗證，既有2086條內容／翻譯逐格不變，新增30條（2100～2129）；CSV／JS版本81469ade同步，仍寫死0條。地圖測試僅補足正式文字資料載入，控制列測試改驗新地圖入口與前後關卡正式tooltip，未降低玩法驗收。
+- 第一輪驗證：Build 581檔通過；地圖／String／推關／全螢幕／熔爐／Worker相關95/95通過。完整npm test為4780項、4278過／499失敗／3略過，其中6支長時間停滯由整合者停止；以6714a483原始來源唯讀覆映重跑122份失敗檔，495失敗／1取消均重現，差集只有控制列舊冰原按鈕斷言、skills2快取需同步以及未完成的VFX coverage程序。前兩項已修正且各自測試通過，VFX coverage非本輪改動；完整套件非全綠，不宣稱已全部驗收。
+- 素材唯讀核對：地圖母圖／指針／覆片及六透明圖示與既有素材庫SHA一致；素材庫乾淨、最新2f159ff，來源已在先前各AI提交中保存，本輪無新素材、無素材庫空Commit。Edge隔離新來源成功啟動遊戲／真Worker、查看冰原解鎖／進度並關閉地圖；本機缺少忽略的params_version.txt會產生既有404，最終煙測將由測試伺服器提供固定標記，不修改玩家副本。
+
+
+## MERGE-8685CFB-20261024 — 世界地圖與 String 表遷移整合（歷史 Blocked，本輪已解除）
+
+- Owner：Codex integrator；僅本次使用者授權的 develop pending merge，不分派。原 HEAD `6714a4834abbf9fb8ab5b245962dbdb6ac9872a2`，MERGE_HEAD `8685cfb166f7b886e88b27dff8f04248ba50e590`，共同基底 `186befd5fb52d2c155019cee5b855f6d86161e09`。
+- 允許：五支衝突檔、必要衍生資料／快取／回歸與本紀錄；禁止 stage、commit、Git metadata 寫入、其他 worktree 與同步操作。已唯讀檢查規範／Workflow／prompts、status、三方差異、String 與 Excel 工具及地圖測試；保留 incoming staged 檔及既有機械修正。
+- 判讀：develop 將 UI／戰鬥文字遷至 String 表，incoming 改為世界地圖選取與手動跨場景。必須保留後者操作與首通提示，同時將地圖新增文字登記 Excel，再產生 CSV／JS、同步快取與測試載入；不可整檔擇一覆蓋。
+- 阻塞：`New-Object -ComObject Excel.Application` 啟動失敗，HRESULT `0x80070520`（A specified logon session does not exist）。無法透過專案指定 Excel API 寫入並正常重開驗證 `config/Excel/String.xlsx`；未修改工作簿／CSV／JS，也未用內部 XML 或僅寫衍生檔繞過。
+- 五支衝突工作檔保持原樣，合併未完成、不可提交。無素材庫變更、無 Commit。後續需在可啟動 Excel 原生 API 的登入工作階段繼續本次合併，完成文字登記、衝突解決與相關測試／Build／完整 `git diff HEAD --check` 後再交控制器暫存提交。
+- 實際驗證：`npm.cmd run build` 檢查581檔，因 bridge／combat／ui 原有衝突標記產生3個語法錯誤而失敗；`git -c safe.directory="D:\MyGame\Idle-RPG\develop" diff HEAD --check` 失敗，列出五支原有衝突檔的標記，沒有其他 whitespace 錯誤。功能回歸因未解衝突及 Excel 阻塞未執行，沒有弱化斷言或宣稱驗證通過。
+
+## WORLD-MAP-POINTER-EDGE-20261024 — 定位指針外緣微亮
+
+- Owner：Codex；Done，單一開發者。使用者要求地圖定位指針外框微微高亮；前置綠色指針及浮動／光圈已完成。
+- 允許：css/world-map.css僅指針圖像filter、index.html僅CSS快取、LV_upgrade_system.md及本段；禁止素材／動態／其他UI／JS／玩法／解鎖／存檔修改，不合併推送。四檔衝突預檢乾淨，單一小型樣式修改不拆分。
+- 驗收：淡淺綠光只沿圖像alpha輪廓，保留尺寸、方向及既有浮動／底部光圈；既有地圖回歸／Build／diff與自我Review後獨立Commit。
+- 完成四檔：只在指針img加入1px淡淺綠輪廓光及3px低透明外暈，不套在父容器或底部光圈，其他外觀／動態參數保持；CSS快取1.0.4，LV及本段同步。無素材修改，素材庫不建空Commit。
+- 驗證：`node --test --test-reporter=spec tests/world-map-ui.test.cjs`6/6通過；`npm.cmd run build`578檔通過，diff --check通過。唯讀檢查現有指針DOM、CSS動畫與地圖回歸，自我Review確認filter沿PNG alpha輪廓，無新Timer／JS／配置或VFX來源。此次未另開瀏覽器或新增低影響樣式測試，亮度體感由使用者重載後驗收。
+- 交付：遊戲Commit為本段所在`[Codex] fix: 世界地圖定位指針外緣微亮`，回覆附編號。無未完成實作或新增已知風險，可供Review／合併，未合併推送；下一步正常整合後重新整理驗收。
+
+## WORLD-MAP-POLISH-20261024 — 關閉符號置中、名稱去重與定位動效可見性
+
+- Owner：Codex；Done，單一開發者。使用者指出叉號未置中、名稱放大與圖內原字疊在一起、指針浮動／光圈看不見。改用對稱SVG叉號；僅在文字熱區hover／選取時以小塊無字地貌遮住原圖字，再顯示名稱；加強微幅浮動／小光圈，避免定位動畫因系統減少動態設定完全停用。
+- 允許：css/world-map.css、index.html本關閉符號及必要快取、js/ui-world-map.js文字覆片、tools/world-map/export-source.cjs、images/world-map必要局部覆片、素材庫world-map母來源／來源紀錄／匯出、docs/WORLD_MAP.md、LV_upgrade_system.md及本段；必要地圖回歸。禁止重畫或替換核准地圖、其他UI／玩法／存檔／Protocol／其他聊天工作，不合併推送。
+- 預檢：目標無其他副本／分支修改；同副本knight3d工作保留。核准地圖PNG逐位元保留，imagegen只產生清除七處文字的地貌參考，正式僅採七個微小覆片，原世界標題及其餘畫面保持。驗收SVG中心、七名稱原字遮除／非hover恢復、動態兩種系統偏好皆可見、地圖回歸／Build／Console／兩庫SHA後素材庫先、遊戲後Commit。
+- 完成：叉號為16×16 viewBox內中心8/8的對稱線段，排除字型基線偏移，圓框及原ARIA／事件保持。七名稱覆片來自內建imagegen清字母圖，正式僅裁出68～112×42px小區域，按原熱區中心比例定位並羽化邊緣，hover／focus／選取顯示覆片及放大名稱，離開恢復原圖；完整核准PNG SHA仍31adf204…ae466。浮動由3→6px、2.4秒，小光圈透明度0.4～0.95並提高對比；依使用者明確要求，即使系統減少動態也保留定位提示。CSS1.0.3、WorldMapUI1.0.1快取與LV／說明同步。
+- 驗證：`node --test --test-reporter=spec tests/world-map-ui.test.cjs tests/world-map.test.cjs`10/10通過；`npm.cmd run build`578檔通過；`node tools/world-map/export-source.cjs --check`及兩庫diff --check通過。匯出核對新增清字母來源與七覆片SHA，原完整地圖／游標均未改。沒有新增純樣式斷言或降低既有回歸。
+- 畫面：沿用IAB啟動資源不可用後的隔離Edge，隨機本機來源載正式遊戲與真Worker，未讀寫玩家存檔或操作使用者分頁。叉號／圓框中心差0/0，線段中心8/8；七覆片全部載入，hover／離開／選取顯隱正常。逐一截取放大名稱及暫隱DOM新字的對照，確認圖內舊字完全被地貌取代、沒有兩組疊字。一般／減少動態兩偏好皆測動畫0與1200ms：Y為0／-6px，光圈0.4／0.95；真正點擊關閉正常，Console warning／error與pageerror0。
+- 預覽：24張實際CSS時間點截圖合成2.4秒循環location-motion.gif，另有close-centered.png、七組label／label-cleared對照及polish-verification.json，保留本聊天visualizations/world-map；臨時腳本及中間影格清理。全圖清字母來源僅在素材庫供裁切，不替換遊戲地圖；製作提示詞、尺寸／裁切位置及使用依據記錄在素材庫SOURCE.md／source.json。
+- 唯讀未改：共通規範／AGENTS／Workflow／prompts、ui.js與Worker指令、既有回歸、核准地圖及游標PNG、素材庫root解析器；自我Review確認無新Timer、逐幀Canvas、技能VFX來源、Protocol／存檔或玩法修改。其他聊天角色模型工作沒有納本次提交。
+- 交付：素材庫先Commit **dfc14a8**；遊戲Commit為本段所在`[Codex] fix: 修正地圖疊字與關閉符號並強化定位提示`，回覆附編號。無未完成項，可供Review／合併，未合併推送；限制為新覆片只適用本張核准地圖，換母圖需重新校準，未做跨瀏覽器／玩家存檔長戰。下一步正常整合後重載驗收。
+
+## WORLD-MAP-POINTER-20261023 — 指針朝下、淡光圈呼吸與關卡列微調
+
+- Owner：Codex；Done，單一開發者。使用者要求目前所在地指針反向朝下、整體縮小20%、動態只保留微幅上下移動，下方小光圈輕微明暗發光。前置核准綠色卡通指針與現有CSS動畫已具備。
+- 2026-10-24追加：使用者要求關卡資訊再往上，在整個兩列控制區上下置中；目前關卡字號加2，場景名稱粗體。範圍追加同CSS控制區、index兩列共用容器、LV及本段；仍不修改JS／玩法或其他UI。
+- 同日追加：關閉鈕改為融合地圖右上裝飾的圓形金屬框，沿原點擊／鍵盤關閉接線；同CSS關閉鈕樣式與LV說明列入範圍，無新素材。
+- 允許：css/world-map.css僅指針與光圈／本次關卡列、index.html僅兩列共用容器與CSS快取、docs/WORLD_MAP.md、LV_upgrade_system.md與本段；禁止素材重繪／其他UI／JS／玩法／配置／Worker／存檔／其他聊天工作，不合併推送。
+- 預檢目標均無其他副本／分支來源，保留同副本knight3d進行中修改。以CSS固定翻轉、等比尺寸與既有浮動容器實作，光圈只動畫opacity，無Timer／VFX Preset或新素材。驗收方向／比例／位移／光圈明暗、減少動態偏好、既有地圖回歸／Build與diff後獨立Commit。
+- 完成五檔：指針固定翻轉180度且移除旋轉動畫，clamp三段尺寸均乘0.8，浮動幅度3px／2.6秒；小光圈固定在下方，2.8秒於opacity0.5～0.85輕微明暗，減少動態偏好停止兩者。兩列共用battle-navigation網格，關卡資訊跨兩列置中，相較工具列上移約18px，字號16→18、場景名稱700粗體，580px以下換第三列避免重疊。關閉鈕36px圓形古銅漸層金屬框、內環及微凹面，覆於原右上角裝飾，沿原ARIA／點擊／焦點接線；CSS快取1.0.2，LV與地圖說明同步。
+- 驗證：`node --test --test-reporter=spec tests/world-map-ui.test.cjs tests/stage-jump-ui.test.cjs tests/battle-fullscreen.test.cjs tests/fullscreen-toggle.test.cjs`16/16通過；`npm.cmd run build`578檔通過，`node tools/world-map/export-source.cjs --check`與diff檢查通過。不新增低影響樣式測試或更動既有斷言。
+- 畫面：沿用先前IAB資源路徑不可用後的隔離Edge驗收，隨機本機來源載正式遊戲／真Worker，未讀寫玩家存檔或操作使用者分頁。用動畫時間點確認固定朝下、只位移0～-3px，光圈0.5～0.85；1920／780／390三寬尺寸比例皆約0.8，減量偏好停止動畫但保留朝向。關卡組對整個兩列區塊雙軸中心差皆小於0.01px，文字18px／700粗體；360px容器換列不重疊，全螢幕與Esc還原通過。圓形金屬關閉鈕目視及真正點擊關閉通過，Console warning／error與pageerror0。pointer-down-small.png、stage-header-refined.png、map-close-metal.png及pointer-verification.json留本聊天visualizations/world-map，臨時腳本清理。
+- 唯讀未改：共通規範／AGENTS／Workflow／prompts、WorldMapUI與ui.js接線、既有回歸、地圖及游標PNG／素材庫來源／匯出工具。自我Review確認沒有新素材、Timer、技能VFX、存檔／Protocol或玩法變更；素材庫無本輪變更，不建空Commit。角色模型與工具的其他聊天工作保留不提交。
+- 交付：遊戲Commit為本段所在`[Codex] fix: 調整世界地圖指針與關閉鈕並上移關卡資訊`，回覆附編號。無未完成需求或新增已知風險，可供Review／合併，未合併推送；限制為未測跨瀏覽器與玩家存檔長戰。下一步由使用者正常整合後重新整理驗收。
+
+
+## WORLD-MAP-HEADER-20261023 — 關卡列置中與地圖白邊修正
+
+- Owner：Codex；Done，單一開發者。使用者要求紅框中的前後／最高關卡按鈕、目前／最高關卡資訊整組上下左右置中，場景名稱字號加2，世界地圖按鈕淺黃色底；續要求去除地圖外緣白邊。
+- 允許：css/world-map.css、index.html僅關卡控制分組及CSS快取、LV_upgrade_system.md與本段。禁止修改玩法／JS／Worker／配置／存檔／地圖畫風／其他進行中工作，不合併推送；前置WORLD-MAP已完成。
+- 預檢：fetch後四檔均無其他副本／分支修改。保留同副本角色模型／tools/knight3d進行中修改。白邊確認為核准母圖外緣白底，以CSS僅裁去薄外緣顯示，不重繪／改色／修改素材；圖上文字熱區仍沿母圖原座標。
+- 驗收：一般與全螢幕控制／窄寬不重疊、控制組水平垂直中心、名稱computed字號加2及地圖按鈕配色、開啟地圖白邊消失且框線／熱區保留；相關既有回歸、隔離瀏覽器／Console、Build、diff與自我Review後獨立Commit。後續由使用者正常整合驗收。
+- 完成四檔：以stage-navigation包住指定控制組，一般版採左右等寬網格使整組雙軸置中，580px以下換至第二列；全螢幕沿既有控制面板。場景字號加2px，地圖按鈕淺黃色底／深色文字並針對主題important覆寫，CSS快取1.0.0→1.0.1。原圖白底為外緣13029像素，CSS inset僅收去上1.4%／右0.6%／下1.6%／左1.6%，裝飾內框、名稱及原熱區座標保持。
+- 驗證：`node --test --test-reporter=spec tests/world-map-ui.test.cjs tests/battle-fullscreen.test.cjs tests/fullscreen-toggle.test.cjs`11/11通過；另執行stage-jump-ui回歸5/5通過，合計16/16。`npm.cmd run build`578檔通過；`node tools/world-map/export-source.cjs --check`與diff檢查通過。沒有為低影響CSS新增正式測試，沒有改既有斷言。
+- 畫面：IAB啟動仍因kernel資源路徑不可用，改用隔離Edge、隨機本機來源載正式遊戲與真Worker；控制組水平／垂直中心差皆小於0.01px，名稱17px（父層15px），淺黃rgb234/217/154，左右控制不重疊；360px容器換列後仍置中。地圖目視白邊消失、框線及標題保留，冰原hover可用；全螢幕與Esc還原通過。Console warning／error及pageerror0，未讀寫玩家存檔，未操作使用者分頁；四份截圖與header-verification.json留本聊天visualizations/world-map，臨時腳本清理。
+- 唯讀未改：AI規範／AGENTS／Workflow／prompts、style.css及ashen-forge兩套主題、ui.js控制接線、四份既有回歸、母圖及匯出來源。自我Review確認只調整DOM分組／樣式，沒有玩法／解鎖／存檔／Protocol或素材變更；素材庫無本輪修改，不建空Commit。其他聊天角色模型與製作工具保留不提交。
+- 交付：遊戲Commit為本段所在`[Codex] fix: 置中關卡控制並去除世界地圖白邊`，回覆附編號。無本輪未完成項或新增已知風險，可供Review／合併，未合併推送；限制為未驗收玩家存檔長戰／跨瀏覽器。下一步正常整合後重載遊戲驗收。
+
+## RESOURCE-ICONS-ALPHA-20261023 — 貨幣與材料圖示透明背景
+
+- Owner：Codex；Done，單一開發者。使用者要求移除貨幣／材料圖示黑色方塊背景。前置：六張正式使用PNG與既有引用已具備。
+- 允許：images/icon_{gold,scrap,essence,ancient_essence,gems,books}.png、素材來源／匯出工具與本段；素材庫codex-authored/resource-icons同相對來源。禁止玩法、JS／Worker、配置、存檔、解鎖、其他進行中模型／地圖工作；不合併推送。純美術修正，無系統功能或解鎖變動，LV無需修改。
+- 預檢fetch後六PNG與任務紀錄無外部來源；同副本騎士在檔尾，本段檔首，獨立區段無語意相依，寫前merge-file乾跑0。RPG Mote Studio可用，但像素選取／一般濾鏡不適合高解析發光邊緣去背，改用內建imagegen background-extraction，保留既有造型與暗部。
+- 驗收：六圖真alpha、外緣／四角無底框、主體與彩色光暈保持；暗／亮／棋盤底與小尺寸目視、PNG與兩庫SHA、Build／diff／自我Review後素材庫先提交，再遊戲Commit；後續使用者Review及正常整合。
+
+- 完成：替換六張正式使用PNG，新增tools/resource-icons/sync-library.cjs沿共用Root核對原圖／透明圖並匯出；沿原檔名供資源列、費用／統計與獎勵飛行圖示共用。未使用的icon_gold_new.png不變。素材庫before／transparent各六圖與SOURCE.md／source.json保留提示詞、SHA及alpha統計。無外部參考素材，既有圖經AI去背編修，可能有微小細節變化，原圖保留。
+- 驗證：六圖1254×1254、各有58萬至98萬背景像素alpha0、主體alpha≥250、柔邊與光暈保留，整圈最外緣alpha≤1／255（工具抗鋸齒殘值，未再閾值重畫）。node --check tools/resource-icons/sync-library.cjs、node tools/resource-icons/sync-library.cjs --apply與--check、npm.cmd run build（578檔）、git diff --check皆通過。純素材修正未新增低影響程式測試。
+- 隔離IAB載正式HTML資源列與style.css，24個圖片元素全數載入、正式資源圖22×18px；六圖在暗／亮／棋盤底及小尺寸目視通過，Console warning／error0。完整畫面保存在本聊天visualizations的resource-icons-transparent.png；未啟動Worker或讀寫玩家存檔，未做整場戰鬥驗收。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts/codex、index.html資源列、style.css資源樣式、ui.js獎勵與資源引用、stats.js／combat.js／factory.js／tower.js引用、vfx-library-root與既有world-map／heaven-power／enamel-nav匯出流程。未改JS／CSS／玩法／存檔／解鎖，無LV或JS快取變更。
+- 提交：素材庫先Commit 156d5dc；遊戲Commit為本段所在「[Codex] fix: 貨幣與材料圖示改用透明背景」。只stage本段及六PNG／匯出工具，保留同副本地圖與knight3d其他區段及檔案；任務區段與當下內容merge-file乾跑0。無本次未完成項，可供Review／合併，未合併／推送；後續使用者正常整合並Ctrl+F5強制重新載入同名圖片，避免舊圖快取。
+
+## FORGE-LOG-HEADER-20261023 — 熔爐紀錄只保留標題與詳情
+
+- Owner：Codex；Done，單一開發者。使用者要求隱藏熔爐下方日誌列表，只留熔爐紀錄標籤與詳情按鈕；前置既有日誌／詳情視窗已具備。
+- 允許：css/ashen-forge.css 的 nfx-log 區段、index.html 僅該 CSS 快取、LV_upgrade_system.md 熔爐說明及本段；禁止修改 JS、玩法、配置、存檔、素材及其他進行中工作，不合併推送。
+- 驗收：紀錄卡縮成標題列、列表隱藏、詳情開關／收集／暫停／清除仍正常；既有熔爐與日誌回歸、Build、diff 後獨立 Commit。後續接手為使用者 Review／整合。
+- 衝突預檢（fetch 後）無其他副本／分支來源；同副本 WORLD-MAP 的 index／LV／任務紀錄修改為不同區段，分段保留並只提交本次內容。無素材或素材庫變更。
+- 完成四檔：紀錄卡取消伸展及最低160px高度、列表 display:none、CSS快取92→93、熔爐功能總表及本紀錄同步；保留原日誌DOM，沿用既有收集、詳情即時更新、統計與操作流程，不改JS。
+- 驗證：`node --test tests/new-forge-ui.test.cjs tests/new-forge.test.cjs tests/newforge-panel-performance.test.cjs tests/ui-performance.test.cjs tests/ui-worker-events.test.cjs`，53項51通過2失敗。背景分頁靜態斷言在HEAD來源同樣失敗；場景列簽章斷言因同副本WORLD-MAP進行中移除舊場景列而失敗，本次未改JS或測試。`npm.cmd run build`578檔通過；diff檢查通過，不新增低影響樣式測試或弱化既有斷言。
+- 內建IAB不可用，改用隔離無頭Edge，載入正式CSS／紀錄卡及詳情DOM、原日誌與綁定函式，提供空熔爐快照。1200／420寬列表皆隱藏、標題與詳情可見；卡片51px（標題25px加padding及border），不再吃剩餘高度。詳情開關、日誌收集、碎片630統計、暫停後恢復及清除通過；補足隔離頁依賴後pageerror0。未讀寫玩家存檔，未驗收完整長戰；臨時瀏覽器已關閉。
+- 唯讀檢查：AI規範／AGENTS／Workflow／prompts/codex、js/ui.js與newforge.js日誌路徑、Worker事件、CSS覆蓋及上述五份回歸。無本次未完成項或新增已知風險；可供Review／合併，Commit為本段所在`[Codex] fix: 熔爐紀錄只保留標題與詳情入口`，回覆附編號。未合併推送，其他地圖／角色模型工作保留；下一步整合本Commit後重新整理遊戲。
+
+## WORLD-MAP-20261023 — 薩爾維恩世界地圖與手動跨場景
+
+- Owner：Codex；Done，單一開發者。使用者要求戰鬥區移除其他場景頁籤，只留目前場景／關卡、前後／最高、自動推關、全螢幕及迷你視窗；新增已核准地圖、文字熱區提示／選取後前進、動態所在地圖示；自動推關不再跨章。後續指定取消熱區橢圓框、名稱放大提亮、地圖取消上下標題列盡量全屏、右上關閉鈕，以及縮窄約20%的深淺綠卡通指針；最終圖已由使用者回覆「好，這張可以」核准。
+- 前置：本聊天核准的最終地圖（移除左下海獸／修正火山煙）與既有各場景進度／解鎖／Worker指令已具備。直接沿用stage.switchZone及battle.zones投影，不新增存檔欄位或Protocol。
+- 允許：js/ui.js僅場景列／地圖接線、js/ui-world-map.js、css/world-map.css、index.html、本功能js/combat.js結算、bridge／sim.worker僅快取、相關world-map與multi-enemy／stage回歸、images/world-map、tools/world-map匯出、docs/WORLD_MAP.md、LV_upgrade_system.md及本段；素材庫codex-authored/world-map必要圖檔／來源紀錄。禁止其他玩法／配置／存檔／技能VFX／其他worktree／合併推送。
+- 衝突預檢及fetch：目標無其他副本／分支來源，工作區乾淨。基線47項45過2既有失敗：ui-worker-panels的gem.socket靜態掃描與detailAction缺UI；不改這兩項斷言。
+- 驗收：七場景位置、hover／鍵盤／觸控選取與前進、進度／鎖定／所在標記、視窗縮放／Esc／焦點、保留神界入口及所有戰鬥控制；各場景上限不跨章、既有解鎖與最終場景完成語意、必要回歸／Build／Console／素材SHA。完成後先素材庫、後遊戲獨立Commit，交使用者Review及正常整合。
+- 完成：新增WorldMapUI只持有選取／彈窗狀態，沿既有header.stage與battle.zones權威資料；hover／鍵盤聚焦看進度，選取才顯示前進，鎖定／目前場景禁止前進，等指令與權威快照確認後關閉、失敗可重試。保留神界三場景入口，瀏覽人／神界頁不傳送；Escape先關地圖、Tab限制及焦點歸還。場景列簽章仍避免高頻DOM重寫，但持續通知開啟的地圖刷新進度。
+- 上限結算：移除自動跨場景，十圖末關均保留本圖並記錄cleared，只有真正最後圖沿原停止出怪規則；通關提示僅首通一次。現有multi-enemy／BIOMES-ROUTE對應舊自動跨章需求的斷言改為留原圖及手動前進，前置通關／11轉／關卡恢復驗證保留，未改權威配置或降低正確性。
+- 美術：salvien.png與本聊天核准1672×941母圖逐位元一致，不重新繪圖或調色。游標用內建imagegen依使用者箭頭參考自製透明卡通素材，深綠／淺綠、墨線及簡單分面，保存母圖／完整提示詞／SHA並匯出128px。以CSS旋轉、微幅浮動、淡光圈，減少動態效果偏好下停止動畫，沒有Timer或新增技能VFX來源。地圖依比例完整放大至視窗8px邊界；無可見上下列，關閉鈕疊在地圖右上，窄螢幕資訊卡在視窗底部。
+- 驗證：`node --test --test-reporter=spec tests/world-map.test.cjs tests/world-map-ui.test.cjs tests/multi-enemy.test.cjs tests/stage-rework.test.cjs tests/new-battle-zones.test.cjs tests/stage-jump.test.cjs tests/battle-fullscreen.test.cjs tests/fullscreen-toggle.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/ui-worker-g-dependency.test.cjs tests/zone-attr-tooltip.test.cjs tests/ui-performance.test.cjs`，91項89過2既有失敗；兩項為背景分頁靜態regex與已移除showTowerTooltip，將ui.js以HEAD唯讀映射重跑相同兩項仍失敗。新地圖10項全過；早期ui-worker-panels兩項及init-ui-smoke初始化面板一項亦已比對為既有，不改它們。`npm.cmd run build`578檔通過，兩庫diff --check與`node tools/world-map/export-source.cjs --check`通過。
+- 畫面：內建IAB啟動因kernel資源路徑不可用，改用隔離無頭Edge、隨機本機來源載正式HTML與真Worker。驗證全部控制、hover／選取／鎖定、實際前進往返荒漠100／冰原35進度、神界瀏覽與返回、Esc焦點、近全屏／右上關閉、熱區無框、指針旋轉浮動／光圈及減量偏好、390窄螢幕卡片不出界。5組驗收全過，Console error／warning與pageerror0；未讀寫玩家存檔或操作使用者分頁。world-map.png、world-map-narrow.png、verification.json保存本聊天visualizations/world-map，臨時驗收腳本清理。
+- 唯讀檢查：AI規範／AGENTS／Workflow／prompts、Worker指令及投影、data／formula場景權威、其他既有測試、素材庫root解析與核准母圖；自我Review確認不新增Protocol／存檔／配置、逐幀Canvas或Timer。其他聊天同副本熔爐Commit與角色模型／tools/knight3d進行中修改保留，不納本任務。
+- 交付：素材庫先Commit **36f34c9**；遊戲Commit為本段所在`[Codex] feat: 新增薩爾維恩世界地圖與手動跨場景`，回覆附編號。本輪需求已完成，可供Review／合併，未合併推送；限制為上述既有回歸失敗，未做真人存檔長戰／跨瀏覽器及手機GPU壓測。下一步由使用者正常整合後重載驗收。
+
 ## MERGE-NPC-SOFT-GLOW-20261022 — 採用核准的NPC柔和光暈
 
 - Owner：Codex integrator；Done。使用者核准柔和光暈並明確要求合併develop；在Git實際主整合工作區D:/MyGame/Idle-RPG/develop執行（舊Workflow的main路徑已不存在）。develop原HEAD=0277ef45、incoming ai/codex=1b0a52c9；兩側乾淨，fetch後develop與origin/develop一致，僅兩筆NPC功能提交待整合。
@@ -12291,3 +12398,32 @@ Worker 存活且頁面正常完成載入。
 - npm.cmd run build：571檔通過。export-assets --check：198個assetId已最新，逐份SHA256及fileSize全數吻合；衝突標記及git diff HEAD --check通過。沒有新增素材：本輪未寫共享素材庫，保持2f77fc5及原有未追蹤codex-authored/thunder兩PNG；兩PNG已在遊戲HEAD受追蹤，本次不代替其他任務提交其共享來源。素材庫仍ahead13且有未提交檔案，完整雙倉庫遠端同步尚未完成。
 - 唯讀檢查規範／流程／Agent、兩側差異、衝突預檢、controller／匯出工具、相關測試與素材索引；預檢來源即本次授權整合的ai/codex，未混入獨立codex/lava-terrain工作區。原index、工作檔、parents、測試及基線保存在Git metadata的merge-terrain-vfx-20261022-prQXoj。
 - 交付：原pending merge已解，可供Review；Commit為本段所在[Codex] merge: 整合地形障礙與築牆特效。develop工作區應乾淨，未推送／同步其他AI，未改自動同步工具。已知限制為11項既有失敗、1略過、素材庫未提交來源與未做新增瀏覽器／玩家長戰驗收；沒有本次未完成衝突。下一步可在各任務完成、素材庫來源提交後再跑同步BAT；VFX Editor重載前先備份未存內容。
+
+
+## KNIGHT-3D-BATCH1-20261023 — Blender 主角模型與首批動作預覽
+
+- Owner：Codex；Review（首批模型與預覽完成，待使用者確認風格，未接入遊戲），單一開發者。使用者要求以knight圖集參考重製3D主角、動作大致對應、不製作刀光；後續依截圖指定遊戲尺寸很小、效能優先。前置六圖集／knight.json具備；確認使用者新安裝Blender 5.2.3，正式候選在該版本建立、重開及渲染。先前定位期間使用官方免安裝4.5.9試作、校驗官方SHA，最終未依賴該工具。
+- 允許並完成：tools/knight3d五個製作／渲染／GIF／GLB驗證／素材庫保存工具；assets/characters/knight3d的blend／glb／manifest／README及本段。素材庫codex-authored/knight3d保存相同九檔。禁止既有sprites、遊戲JS／CSS／配置／存檔／解鎖及其他任務，不合併推送。未改系統功能，無本任務LV變更。
+- 模型：原創銀甲、封閉頭盔、單手劍與鳶形盾；刪除鉚釘／指節／細縫、簡化幾何、合併網格及32×4底色／金屬粗糙色盤。2,681三角面、1,476製作頂點（GLB法線／UV分裂後3,367）、單網格／單primitive／單材質、16骨骼、單骨剛性權重，GLB 286,600 bytes。模型內嵌兩張小色盤，未匯入外部模型／貼圖／動畫，原圖只參考輪廓與動作，未擷取像素。
+- 六組Action：idle 1秒循環、walk 0.5秒循環、attack1橫斬／attack2上挑／cast舉劍各0.5秒、die 1秒倒地；無刀光。rise可倒播die，attack3可沿用cast，未新增重複資料。循環GIF及非循環末幀停留只作用於預覽，非放慢動作。
+- 驗收：Blender build_knight.py／render_batch.py及--validate-only成功；重開六Action、單骨架、內嵌貼圖及120個完整姿勢的有限矩陣／實際變形頂點最低高度檢查通過，六動作最低z皆≥0.0095米，無穿過攝影棚地面。Cycles／CUDA輸出91張動作圖＋24視角；已目視關鍵姿勢filmstrip、轉向視圖及縮圖。package_previews.py輸出九份GIF，逐份讀回幀數與總時長通過：idle1000／walk500／兩攻擊與cast800含300末幀停留／die1750含750末幀停留／兩六格預覽3000／環繞2160ms。
+- 指令：python tools/knight3d/validate_asset.py assets/characters/knight3d/knight_batch1.glb通過，直接讀二進位確認2681三角、1mesh／primitive／material、16 joints、2內嵌texture、6組各48條channels、時間／數值有限、索引與權重合法；node --check tools/knight3d/sync-library.cjs、四Python ast.parse、npm.cmd run build（578檔）及diff --check通過。實際範例命令見候選README。Blender有6.0節點API預告及本機缺AMD HIP庫的偵測訊息；CUDA成功完成渲染，未以省略驗證處理。
+- 預覽／驗證保存在本聊天visualizations/knight3d-final：knight_batch1_game_size.gif（站姿約80px）、knight_batch1_actions.gif（放大六格）、knight_batch1_turntable.gif、六單項GIF、validation.json／glb-validation.json。暫存預覽不入兩庫；blend1備份已清除。
+- 衝突：新增目標預檢無其他來源；同副本WORLD-MAP只改AI_TASKS檔首，本任務檔尾，無語意相依，原共同基底／候選／當時工作區merge-file乾跑0後只追加。現有地圖／熔爐等工作保留，不納本次提交。唯讀未改：AI_RULES／AGENTS／Workflow／prompts/codex、knight六圖集／knight.json、build_character_sprites、vfx-library-root、package／build_check。
+- 保存：node tools/knight3d/sync-library.cjs --apply及--check九檔SHA全數一致，二進位blend／glb逐份吻合。素材庫先Commit **2c432f8**；遊戲Commit為本段所在「[Codex] feat: 製作低面數騎士與首批動作預覽」，回覆附編號。其他WORLD-MAP未追蹤來源未納入素材庫提交。
+- 已知風險／未完成：本批是美術候選，尚未實際套入戰鬥、做八方向圖集／命中時序整合或GPU／FPS實測；1primitive是模型結構，不宣稱實際引擎各pass只有1 draw call。動作大致參照原圖，未逐幀對應或完成最終美術驗收。若效能優先，下一步建議核准外觀後預渲染圖集沿用精靈播放；即時3D需獨立評估。此候選及工具可供Review／合併保存，但不能當作主角替換已上線；未合併／推送。
+
+
+## KNIGHT-3D-REV2-20261023 — 原圖參考白銀騎士與全身揮砍修正版
+
+- Owner：Codex；Review（2026-10-24續修，已交可檢視候選，人物造型／動作相似度仍待使用者驗收）。使用者否決首版可愛比例及僵硬動作，要求修長偏寫實美型、盡量復刻原圖、移除盾牌／刀光，並指出左拳朝下不自然。首版436a6357／素材庫2c432f8只作可回溯基線，不代表風格核准。
+- 允許並完成：knight3d候選四檔blend／glb／manifest／README、七個工具（build／geometry／motion／render／package／GLB驗證／素材庫保存）及本段；素材庫同11檔穩定相對路徑。禁止既有sprites與遊戲JS／CSS／配置／存檔／解鎖及其他任務，不合併推送。未改系統功能，無本次LV變更。原圖六圖集／knight.json、Idle八方向及兩攻擊全部15幀唯讀重看；原圖只作參考與專案外並排，未取像素當新模型貼圖。
+- 造型：重作成人約7.5頭身、小頭長腿、收腰銀甲、深色腰帶／關節、貼身肩甲／護臂／脛甲與尖長足甲；去桶盔及首版新增紋章，完全刪除盾牌幾何。依使用者指出過度簡化，不再硬壓3k；保留真實甲片厚度、曲面／倒角、指節及較完整臉部。最終9,398三角面、4,851 Blender多邊形、4,901製作頂點／9,398匯出頂點；1mesh／primitive／material、16骨骼、每頂點1權重、2張36×4內嵌色盤，GLB 644,184 bytes。面數／資產結構不代表已完成GPU效能或原圖相似度驗收。
+- 全身動作：原圖低重心開腳站姿、前傾跑步、舉劍起手／沉身轉腰／步伐／收招重作；attack2按原圖改過頂斜劈。髖部、胸口、頭部使用獨立完整旋轉矩陣，修正前版只移肩位、胸甲未繞脊柱轉動；時間感知Hermite避免每關鍵幀停住、接地停留消除過衝、四元數同半球避免翻轉。六段與原圖大致節奏維持，未加入刀光。
+- 左手：刪盾後改護胸目標隨胸口局部座標移動、左肘向下收放；拳面朝前，與前臂銜接，跑動則沿前臂方向。新增逐幀檢查不朝下、前向dot>0.8及前臂dot>0.7；實測待機／橫斬／斜劈前向最小0.9902／0.9857／0.9736，前臂最小0.9083／0.8482／0.7290，拳軸z最低0.0880／0.0400／0.0400。數值只驗方向／銜接，不代替表演自然度的目視審查。
+- Blender 5.2.3 build及重開成功；render_batch.py --validate-only檢查120姿勢的有限矩陣、內嵌資產與實際變形頂點，六動作最低z皆≥0.01895、無穿過攝影棚平台；倒地手臂及劍轉平接地已修。兩攻擊另驗骨盆位移>0.15m、髖轉>0.4rad、胸轉>0.75rad、步伐>0.25m，實測骨盆位移0.3105／0.3064m、相對初始姿勢胸口完整旋轉1.3746／0.9931rad、步伐0.3081／0.7517m。這是製作座標，不是遊戲位移數值。
+- 驗證指令：Blender --background --factory-startup --python tools/knight3d/build_knight.py及render_batch.py（實際參數見README）；python tools/knight3d/validate_asset.py assets/characters/knight3d/knight_batch1.glb通過，直接驗二進位索引／權重／6段各48通道／時間／16 joints／材質／貼圖；node --check tools/knight3d/sync-library.cjs、6份Python ast.parse、npm.cmd run build（578檔）、兩庫diff --check與11檔SHA全過。未修改既有測試斷言或遊戲程式配合驗收。Blender仍有本機HIP偵測／節點API預告訊息，CUDA實際渲染成功。
+- 預覽：Cycles輸出91張動作圖及24視角；目視關鍵姿勢filmstrip、左拳近看與縮圖，交使用者動態驗收。最終visualizations/knight3d-handfix的knight_revision2_handfix_offhand_focus.gif、reference_compare.gif、game_size.gif、actions.gif、turntable.gif與6單項GIF，另validation／glb-validation／gif-validation JSON。11 GIF逐份讀回幀數／時長通過：idle1000ms、walk500ms、兩攻擊／cast800ms含300停留、die1750ms含750停留、兩六格3000ms、環繞2160ms、原圖對照及左手近看2400ms。原圖欄保留原盾／刀光，3D欄沒有；非循環末幀停留只供檢視，不放慢動作。預覽／PNG／日誌不入兩庫，blend1與pycache清除。
+- 衝突／範圍：新增及既有目標預檢無其他副本來源。其他聊天地圖／圖示僅AI_TASKS檔首，本段檔尾，無語意相依，初始追加merge-file乾跑0；本次只stage自己的紀錄區段。地圖聊天在過程中先提交了本段In Progress骨架，本輪只補本段交接，不覆寫其紀錄。唯讀未改AI_RULES／AGENTS／Workflow／prompts、原圖與knight.json、build_character_sprites／vfx-library-root、package／build_check、原有遊戲程式；其他進行中工作及素材來源保留。
+- 保存：sync-library --apply／--check完整11檔逐份SHA一致，二進位模型與GLB匹配。素材庫先有98c3a89（修長造型／全身動作），最新b2d6650（左拳朝前與護胸），遊戲本輪Commit為本段所在「[Codex] feat: 重做原圖白銀騎士並修正全身動作」，回覆附編號；未推送或合併。
+- 已知風險／未完成／下一步：這是可審閱及合併保存的製作候選，尚未獲使用者核准人物造型與動作相似度，不宣稱已逐幀精確復刻。未替換正式圖集，未接八方向戰鬥投影／命中／施法時序、未做GPU-FPS／玩家戰鬥驗收。下一步依原圖並排與左手近看回饋繼續修正；外觀確認後才能安排正式輸出與整合。若使用預渲染圖集，模型面數不成為瀏覽器即時蒙皮負擔，但圖集容量／載入／播放成本另驗。沒有用提高面數或結構測試當作美術已完成的證明。

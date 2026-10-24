@@ -88,7 +88,9 @@ test('戰鬥關卡控制列使用正式 tooltip，不使用原生 title', () => 
   const ui = readExpanded(path.join(root, 'js/ui.js'));
 
   assert.doesNotMatch(combatBlock, /\stitle=/);
-  assert.match(combatBlock, /data-tt-title="冰原"/);
+  assert.match(combatBlock, /id="btn-world-map"[^>]*aria-haspopup="dialog"[^>]*aria-controls="world-map-modal"/);
+  assert.match(combatBlock, /data-tt-title="後退關卡"/);
+  assert.match(combatBlock, /data-tt-title="前進關卡"/);
   assert.match(combatBlock, /data-tt-title="戰鬥控制"/);
   assert.match(combatBlock, /data-tt-title="迷你視窗"/);
   assert.match(combatBlock, /data-tt-title="統計面板"/);
