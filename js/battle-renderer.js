@@ -71,7 +71,7 @@ var BattleRenderer = (function () {
 
   /* ---- 常數 ---- */
   var MAX_FX = 140;              // 特效物件上限（與 DOM 版 VFX_MAX_NODES 同精神）
-  var MAX_FX_PERF = 80;          // 效能模式的特效物件上限
+  var MAX_FX_PERF = 40;         // 效能模式的特效物件上限
   var VFX_BOOT_RETRY_MS = [2000, 6000, 15000];  // Preset Runtime 載入失敗後的重試間隔；用完就等分頁切回前景再試
   var FX_HARD_LIFETIME_MS = 3000;  // 特效節點的硬性壽命（牆鐘）；領域類另外指定
   var FX_AURA_MAX_SEC = 6;         // 領域／旋風類的顯示上限（秒）——原本吃技能的實際持續時間，
@@ -1144,6 +1144,10 @@ var BattleRenderer = (function () {
     perfMode = !!on;
     if (S.vfxrt && S.vfxrt.setPerfMode) S.vfxrt.setPerfMode(perfMode);
     applyDecorMotion();
+    if (S.app && typeof resize === 'function') {
+      resize();
+      if (typeof layoutScene === 'function' && S.persp) layoutScene();   // 解析度變了：離屏貼圖重建
+    }
   }
   /* 地形裝飾的火焰／煙霧動畫在效能模式下停住（擺件本身照畫：它們是會擋路的障礙，不能隱藏）。 */
   function applyDecorMotion() {
@@ -1154,6 +1158,7 @@ var BattleRenderer = (function () {
   }
   function particleBudget(n) {
     var load = fxLoad();
+    if (perfMode) return load >= 0.5 ? 0 : Math.max(1, Math.round(n * 0.3));
     if (load >= 0.85) return 0;
     if (load >= 0.6) return Math.max(1, Math.round(n * 0.35));
     return n;
@@ -7367,11 +7372,12 @@ var BattleRenderer = (function () {
     /* 虛擬視野變大時，貼圖解析度反向調整，保持與實際畫布相同的像素密度。 */
     var res = app.renderer.resolution * (S.cameraScale || 1);
     if (!P) P = S.persp = { rt: null, mesh: null, res: 0, layout: null, vigTex: null, vigKey: '' };
-    if (!P.rt || P.rt.width !== lay.width || P.rt.height !== lay.height || P.res !== res) {
+    if (!P.rt || P.rt.width !== lay.width || P.rt.height !== lay.height || P.res !== res || P.aa !== !perfMode) {
+      P.aa = !perfMode;
       if (P.mesh) { P.mesh.destroy(); P.mesh = null; }
       if (P.rt) P.rt.destroy(true);
       /* antialias：場景原本直接畫在開了 MSAA 的畫布上；改畫進貼圖若不開，Graphics 的邊緣會變成鋸齒 */
-      P.rt = PIXI.RenderTexture.create({ width: lay.width, height: lay.height, resolution: res, antialias: true });
+      P.rt = PIXI.RenderTexture.create({ width: lay.width, height: lay.height, resolution: res, antialias: !perfMode });
       P.res = res;
     }
     if (!P.mesh) {
@@ -7457,8 +7463,9 @@ var BattleRenderer = (function () {
   function currentResolution() {
     var forced = resolutionByQuery();
     if (forced) return forced;
+    if (perfMode) return 1;   // 效能模式：不隨 DPR／UI 縮放放大，填色像素數降到最低
     var dpr = (typeof devicePixelRatio === 'number' && devicePixelRatio > 0) ? devicePixelRatio : 1;
-    return Math.max(1, Math.min(2.5, dpr * uiShellScale()));
+    return Math.max(1,Math.min(2.5, dpr * uiShellScale()));
   }
   /* ?res=0.5：強制 Canvas 的渲染解析度（A／B 用，下限 0.25）。
      正常的下限是 1——縮小只會變糊，沒有理由在正式流程裡用；

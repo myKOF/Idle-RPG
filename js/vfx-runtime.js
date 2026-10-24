@@ -235,6 +235,7 @@ var VFXRuntime = (function () {
     hitLiveBase: 160,    // 全場同時存活的命中特效上限＝此數 × 密度；密度 1＝不限
     beamLiveBase: 120    // 全場同時存活的連鎖電弧上限＝此數 × 密度；密度 1＝不限（每道電弧是 3 張逐幀變形的網格）
   };
+  var PERF_HIT_PER_WINDOW = 6;   // 效能模式：每 0.25 秒最多播幾則純命中特效
   var DENSITY = {
     slowDt: 1 / 45,      // 平滑後的幀時間超過這個＝畫面吃緊（<45 FPS）
     fastDt: 1 / 54,      // 低於這個才放回（>54 FPS）；兩者之間是死區，不動
@@ -1809,6 +1810,12 @@ var VFXRuntime = (function () {
         return playSpec(spec);
       } finally { chainTargets = previous; }
     }
+    /* 效能模式的命中特效配額：每 0.25 秒最多播 PERF_HIT_PER_WINDOW 則，超過的略過。 */
+    var perfOn = false, perfWinAt = 0, perfWinCount = 0;
+    function perfHitAllowed() {
+      if (clock - perfWinAt >= 0.25 || clock < perfWinAt) { perfWinAt = clock; perfWinCount = 0; }
+      return ++perfWinCount <= PERF_HIT_PER_WINDOW;
+    }
     function playSpec(spec) {
       if (!spec) return false;
       if (spec.variant === 'water-tornado-end') {
@@ -1858,6 +1865,7 @@ var VFXRuntime = (function () {
       var primary = primaryRoleOf(spec, roles);
       // 純命中事件不可再次施法或發射；這些角色已由起飛事件播放。
       if (primary === 'hit') {
+        if (perfOn && !perfHitAllowed()) return true;   // 效能模式：命中閃光限量，傷害數字不受影響
         if (spec.hit !== false) playRole(spec, 'hit');
         return true;
       }
@@ -2381,7 +2389,7 @@ var VFXRuntime = (function () {
       destroy: destroy,
       /* 效能模式：把命中類密度固定在下限（併發上限、限頻、全場上限、拖尾密度都依它換算）。
          與自適應不同，不等畫面吃緊才介入；關掉後回到自適應。測試塞的調節器沒有 lock 就略過。 */
-      setPerfMode: function (on) { if (governor.lock) governor.lock(on); },
+      setPerfMode: function (on) { perfOn = !!on; if (governor.lock) governor.lock(on); },
       stats: function () {
         return {
           presets: Object.keys(known).length,
