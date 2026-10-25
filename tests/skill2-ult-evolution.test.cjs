@@ -1506,6 +1506,39 @@ test('【崩解】：間隔保底且無敵不觸發爆炸，非血毒狀態不�
  c.tickStatuses(e,.1,{enemies:[e]});assert.equal(events.filter(x=>x.variant==='blood-explosion').length,0);
 });
 
+test('【崩解】：狀態未結束就死亡也爆炸（每個血毒狀態一次，非血毒狀態與已到期者不重複）',()=>{
+ const c=loadContext();const events=stubVfx(c);const hits=stubDerived(c);
+ maxLevels(c,'bloodblade');equip(c,'bloodblade');c.FIELD={player:playerEnt()};setUlt(c,'bloodblade','disintegrate',1);
+ const boomEvents=()=>events.filter(e=>e.variant==='blood-explosion'&&e.area);   // 崩解的爆炸帶範圍；屍爆（同名特效）沒有
+ const pct=c.sgUltVal(c.sgUlt('bloodblade','disintegrate'),'pct');
+ const dead=enemy(1,0,0),near=enemy(1e12,20,0);
+ for(const role of ['bleed','poison'])c.sgApplyBloodbladeDot(dead,role,{dps:100,dur:2,interval:.5});
+ c.applyDot(dead,50,5,'燃燒','sgBurn');
+ c.GT+=.5;c.tickStatuses(dead,.5,{enemies:[dead,near]});   // 跳傷致死，但兩個血毒狀態都還沒到期
+ assert.equal(dead.hp,0);
+ assert.equal(boomEvents().length,0,'tick 本身不爆炸');
+ c.skills2OnEnemyDeath(dead,[dead,near]);
+ assert.equal(boomEvents().length,2,'兩個血毒狀態各一次，燃燒不算');
+ assert.deepEqual(hits.filter(h=>h.ent===near).map(h=>h.amount),[Math.round(100*2*pct/100),Math.round(100*2*pct/100)],'完整期間總傷，不因提前死亡打折');
+ c.skills2OnEnemyDeath(dead,[dead,near]);
+ assert.equal(boomEvents().length,2,'同一隻重複呼叫也不重炸');
+ // 已到期並爆炸過的狀態已從 dots 移除，之後死亡不會再炸一次
+ events.length=0;hits.length=0;
+ const expired=enemy(1e12,0,0);c.sgApplyBloodbladeDot(expired,'bleed',{dps:100,dur:2,interval:.5});
+ c.GT=expired.dots[0].until;c.tickStatuses(expired,.1,{enemies:[expired,near]});
+ assert.equal(boomEvents().length,1);
+ expired.hp=0;c.skills2OnEnemyDeath(expired,[expired,near]);
+ assert.equal(boomEvents().length,1,'到期已爆炸者死亡時不重複');
+});
+
+test('【崩解】：未選崩解超神時，提前死亡不爆炸',()=>{
+ const c=loadContext();const events=stubVfx(c);stubDerived(c);
+ maxLevels(c,'bloodblade');equip(c,'bloodblade');c.FIELD={player:playerEnt()};
+ const dead=enemy(0,0,0);c.sgApplyBloodbladeDot(dead,'bleed',{dps:100,dur:2,interval:.5});
+ c.skills2OnEnemyDeath(dead,[dead]);
+ assert.equal(events.filter(e=>e.variant==='blood-explosion').length,0);
+});
+
 test('【崩解】：到期沒有跳傷殘額也各爆炸一次，提前死亡不冒充狀態到期',()=>{
  const c=loadContext();const events=stubVfx(c);const hits=stubDerived(c);
  maxLevels(c,'bloodblade');equip(c,'bloodblade');c.FIELD={player:playerEnt()};setUlt(c,'bloodblade','disintegrate',1);

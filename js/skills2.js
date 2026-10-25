@@ -2043,6 +2043,25 @@ function sgDisintegrate(ent, sid, spec, dur, ult, ctx) {
   }
 }
 
+/* 崩解的另一個觸發時機：敵人在血毒狀態尚未作用結束時就死亡（任何來源致死）。
+   爆炸量與到期相同＝完整期間總傷（dps × dur）的 pct%，不因提早死亡打折。
+   到期與零日感染結清的狀態在那一刻就已從 dots 移除，因此這裡不會對同一個狀態重複爆炸；
+   旗標只防同一隻死亡掛勾被重複呼叫。野外擊殺才有死亡掛勾（高塔沒有鏡射，同殺神領域的邊界）。 */
+function sgDisintegrateOnDeath(deadEnt, enemies) {
+  if (!deadEnt || !deadEnt.dots || !deadEnt.dots.length) return;
+  var ult = sgUlt('bloodblade', 'disintegrate');
+  if (!ult) return;
+  var dots = deadEnt.dots.slice();
+  var out = { killed: false, dmg: 0, crit: false };
+  for (var i = 0; i < dots.length; i++) {
+    var d = dots[i];
+    if (!d || d._disintegrated || !(d.dps > 0)) continue;
+    if (!sgRoleHasSid('bleed', d.sid) && !sgRoleHasSid('poison', d.sid)) continue;
+    d._disintegrated = true;
+    sgDisintegrate(deadEnt, d.sid, d, d.dur, ult, { enemies: enemies, floatSel: 'mv-float', out: out });
+  }
+}
+
 /* 零日感染的接收者是範圍內隨機 1 個，不沿用「最近 N 個」的幾何選擇規則。 */
 function sgRandomBloodbladeTarget(from, enemies, fx, lv) {
   var radius = bfMeterPx(sgVal(fx, 'm', lv) || 80);
@@ -12638,6 +12657,7 @@ function skills2OnEnemyDeath(deadEnt, enemies) {
   sgDeathBoom(deadEnt, enemies);  // 血刃斬：死亡屍爆（T6）
   sgBurnBlast(deadEnt, enemies);  // 火球術：爆燃（T5）——死亡是燃燒的另一個結束時機
   sgDeathNova(deadEnt, enemies);  // 冰霜新星：死亡新星（T6）——帶寒霜的敵人死亡時機率再釋放
+  sgDisintegrateOnDeath(deadEnt, enemies); // 血刃斬超神：崩解——血毒狀態未結束就死亡也爆炸
   sgBloodFieldsOnDeath(deadEnt);  // 血刃斬傳奇：毒爆／血霧（屍體留下場域）
   sgSlayerDomainOnDeath(deadEnt); // 血刃斬超神：殺神領域（領域內死亡才算）
 }
