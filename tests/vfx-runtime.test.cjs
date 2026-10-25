@@ -1870,6 +1870,7 @@ test('MIRE 泥流依權威長寬縮放、保持地板層、續命不重播並回
  assert.equal(adapter.tryPlay(s),true);adapter.update(.3);
  const n=log.nodes.find(n=>n.spec.assetUrl?.includes('mud-flow.png')),t=n.transforms.at(-1);
  assert.equal(n.tag,'zone');assert.equal(t.x,100);assert.equal(t.y,200);
+ assert.ok(t.sortY<-1e5,'整片沼澤沉到所有角色之下，否則站在沼澤上半部的敵人會被蓋住（2026-10-25）');
  assertGroundRectTransform(t,120,180);
  adapter.tryPlay(s);adapter.update(.3);assert.equal(adapter.stats().played,1);
  adapter.update(5);assert.equal(adapter.stats().grounds,0);
@@ -1882,7 +1883,7 @@ test('MIRE 進化保留Preset透明度、權威矩形與續命',()=>{
   const {adapter,log}=makeAdapter([p]),s={fxKind:'aura',variant:'mire',dur:2,area:{id:'mire-evo',x:120,y:160,w:180,h:240,a:Math.PI/4},vfx:{ground:id}};
   assert.equal(adapter.tryPlay(s),true);adapter.update(.3);
   const body=log.nodes.find(n=>n.spec.assetUrl?.includes('mud-flow-')),t=body.transforms.at(-1);
-  assert.equal(body.tag,'zone');assert.equal(t.alpha,p.layers[0].alpha);assert.equal(t.x,120);assert.equal(t.y,160);assertGroundRectTransform(t,180,240);
+  assert.equal(body.tag,'zone');assert.equal(t.alpha,p.layers[0].alpha);assert.equal(t.x,120);assert.equal(t.y,160);assert.ok(t.sortY<-1e5,id+' 沉到角色之下');assertGroundRectTransform(t,180,240);
   adapter.tryPlay(s);adapter.update(.3);assert.equal(adapter.stats().played,1);adapter.update(5);assert.equal(adapter.stats().grounds,0);
  }
 });
