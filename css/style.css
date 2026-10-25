@@ -11055,18 +11055,23 @@ body.battle-canvas-mode #combat-area .battle-scene-wrapper > #btn-toggle-damage 
 }
 
 /* 提示：近 1 分鐘平均 FPS 低於 30 而效能模式還沒開時閃爍（js/ui.js perfHintTick） */
+/* 亮暗由 JS 每 0.4 秒切一次 .is-hint-lit：主題樣式表對背景／邊框是 !important，
+   CSS 動畫改不動，只有同樣用 !important 的類別切換才蓋得過去。 */
 #btn-toggle-perf.is-hint:not(.is-on) {
-  animation: perf-btn-hint 0.9s ease-in-out infinite;
+  transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
 }
-
-@keyframes perf-btn-hint {
-  /* 主題樣式表對 background／border 是 !important，動畫改不動；用 outline 與 filter（主題沒鎖）閃 */
-  0%, 100% { box-shadow: 0 0 0 rgba(245, 158, 11, 0); outline: 2px solid rgba(251, 191, 36, 0); filter: none; }
-  50% { box-shadow: 0 0 14px 4px rgba(251, 191, 36, 0.95); outline: 2px solid #fbbf24; filter: brightness(1.6) saturate(1.4); }
+#btn-toggle-perf.is-hint.is-hint-lit:not(.is-on) {
+  background: #f59e0b !important;
+  border-color: #fff3c4 !important;
+  color: #1f1300 !important;
+  transform: scale(1.35);
+  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.55), 0 0 18px 6px rgba(251, 191, 36, 1);
+  position: relative;
+  z-index: 5;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  #btn-toggle-perf.is-hint:not(.is-on) { animation: none; box-shadow: 0 0 8px rgba(245, 158, 11, 0.85); }
+  #btn-toggle-perf.is-hint.is-hint-lit:not(.is-on) { transform: none; }
   #btn-toggle-perf.is-on { animation: none; box-shadow: 0 0 8px rgba(245, 158, 11, 0.85); }
 }
 

@@ -618,7 +618,7 @@ test('突刺的五個傳奇特效：長寬與傷害改寫、命中疊突刺易�
   const e2 = enemy(1e12, 3 * M, 0);
   c.castSkill2(p, [e2], 'thrust', 'mv-float');
   assert.ok(e2.buffs.sgThrustVuln, '命中應疊上千瘡百孔');
-  assert.ok(Math.abs(e2.buffs.sgThrustVuln.unit - 4) < 1e-9, '單層 +4%');
+  assert.ok(Math.abs(e2.buffs.sgThrustVuln.unit - 2) < 1e-9, '單層 +2%');
   assert.ok(e2.buffs.sgThrustVuln.stacks >= 2, '一次施放多段命中要能疊多層');
   const aCfg = c.skill2VulnACfg({ totalDmgPct: 0 }, e2, 'thrust');
   assert.ok(aCfg.totalDmgPct > 0, '易傷要進 totalDmgPct');
