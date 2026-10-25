@@ -1944,12 +1944,24 @@ var PERF_HINT_FPS = 30;        // 平均低於這個值才提示
 var perfHintSamples = [];
 var perfHintFrames = 0;
 var perfHintLast = 0;
+var PERF_HINT_BLINK_MS = 400;  // 閃爍的亮／暗間隔
+var perfHintTimer = 0;
+/* 提示開關：開＝掛 is-hint 並每 PERF_HINT_BLINK_MS 切一次 is-hint-lit；關＝全部拿掉。 */
+function setPerfHintActive(btn, on) {
+  if (!btn || btn.classList.contains('is-hint') === on) return;
+  btn.classList.toggle('is-hint', on);
+  if (perfHintTimer) { clearInterval(perfHintTimer); perfHintTimer = 0; }
+  btn.classList.remove('is-hint-lit');
+  if (on) {
+    btn.classList.add('is-hint-lit');
+    perfHintTimer = setInterval(function () { btn.classList.toggle('is-hint-lit'); }, PERF_HINT_BLINK_MS);
+  }
+}
 function resetPerfHint() {
   perfHintSamples.length = 0;
   perfHintFrames = 0;
   perfHintLast = 0;
-  var btn = $id('btn-toggle-perf');
-  if (btn) btn.classList.remove('is-hint');
+  setPerfHintActive($id('btn-toggle-perf'), false);
 }
 function perfHintTick() {
   var now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
@@ -1975,7 +1987,7 @@ function perfHintTick() {
           for (var i = 0; i < perfHintSamples.length; i++) sum += perfHintSamples[i];
           low = sum / perfHintSamples.length < PERF_HINT_FPS;
         }
-        btn.classList.toggle('is-hint', low);
+        setPerfHintActive(btn, low);
       }
     }
   }
