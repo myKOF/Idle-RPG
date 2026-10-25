@@ -1,0 +1,4556 @@
+[
+  {
+    "target": {
+      "gid": "knife",
+      "groupName": "飛刀",
+      "elem": "phys",
+      "dmgType": "phys",
+      "ultIndex": 0,
+      "ultId": "petalStorm",
+      "ultName": "暴雨梨花",
+      "ultDesc": "飛刀會對飛行路徑上的所有敵人造成 {pct}% 技能傷害。",
+      "affixes": [
+        {
+          "id": "knifeChain",
+          "name": "連鎖"
+        },
+        {
+          "id": "knifeSplitter",
+          "name": "分裂者"
+        },
+        {
+          "id": "knifeExecutioner",
+          "name": "處刑者"
+        },
+        {
+          "id": "knifeShadowblade",
+          "name": "影刃"
+        },
+        {
+          "id": "knifeWaltzblade",
+          "name": "輪舞刃"
+        }
+      ],
+      "primaryWp": "dagger1h",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 1674125176,
+      "avgDps": 41800878,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 84985.6
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 1370839972,
+      "avgDps": 34228214,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 103787.85
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 1401141040,
+      "avgDps": 34984795,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 76157.5
+    }
+  },
+  {
+    "target": {
+      "gid": "knife",
+      "groupName": "飛刀",
+      "elem": "phys",
+      "dmgType": "phys",
+      "ultIndex": 1,
+      "ultId": "deathReaper",
+      "ultName": "死亡收割者",
+      "ultDesc": "飛刀殺死敵人時堆疊【死亡收割】：每層使你造成的傷害提高 {pct}%，最多 {maxStacks} 層，效果持續 {dur} 秒。",
+      "affixes": [
+        {
+          "id": "knifeChain",
+          "name": "連鎖"
+        },
+        {
+          "id": "knifeSplitter",
+          "name": "分裂者"
+        },
+        {
+          "id": "knifeExecutioner",
+          "name": "處刑者"
+        },
+        {
+          "id": "knifeShadowblade",
+          "name": "影刃"
+        },
+        {
+          "id": "knifeWaltzblade",
+          "name": "輪舞刃"
+        }
+      ],
+      "primaryWp": "dagger1h",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 1320462875,
+      "avgDps": 32970359,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 107747.47
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 1592562633,
+      "avgDps": 39764360,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 89338.11
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 2034298855,
+      "avgDps": 50793979,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 52454.14
+    }
+  },
+  {
+    "target": {
+      "gid": "knife",
+      "groupName": "飛刀",
+      "elem": "phys",
+      "dmgType": "phys",
+      "ultIndex": 2,
+      "ultId": "soulhunterBlade",
+      "ultName": "無限追魂刃",
+      "ultDesc": "每次施放飛刀時額外射出1支金色無限飛刀。無限飛刀每次彈射使該支飛刀傷害額外提高 {pct}%，持續存在 {sec} 秒。",
+      "affixes": [
+        {
+          "id": "knifeChain",
+          "name": "連鎖"
+        },
+        {
+          "id": "knifeSplitter",
+          "name": "分裂者"
+        },
+        {
+          "id": "knifeExecutioner",
+          "name": "處刑者"
+        },
+        {
+          "id": "knifeShadowblade",
+          "name": "影刃"
+        },
+        {
+          "id": "knifeWaltzblade",
+          "name": "輪舞刃"
+        }
+      ],
+      "primaryWp": "dagger1h",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 1601164877,
+      "avgDps": 39979148,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 88858.14
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 0,
+      "avgDps": 0,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 999999
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 964967545,
+      "avgDps": 24094071,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 110581.33
+    }
+  },
+  {
+    "target": {
+      "gid": "thrust",
+      "groupName": "突刺",
+      "elem": "phys",
+      "dmgType": "phys",
+      "ultIndex": 0,
+      "ultId": "phantomOcta",
+      "ultName": "幻影八方陣",
+      "ultDesc": "同時向八個方向進行突刺，命中後傷害會同時擴散至該敵人周圍 {m} 米內的所有敵人；施放突刺後 {sec} 秒內，你有 {dodge}% 機率絕對閃避敵方攻擊。",
+      "affixes": [
+        {
+          "id": "piercingFocus",
+          "name": "凝鋒穿刺"
+        },
+        {
+          "id": "thousandWounds",
+          "name": "千瘡百孔"
+        },
+        {
+          "id": "sunpiercerLance",
+          "name": "貫日之刺"
+        },
+        {
+          "id": "thunderStab",
+          "name": "迅雷穿刺"
+        },
+        {
+          "id": "heartrendBleed",
+          "name": "穿心裂血"
+        }
+      ],
+      "primaryWp": "dagger1h",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 134323894950,
+      "avgDps": 3353904993,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 1059.2
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 22950256064,
+      "avgDps": 573040101,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 6199.34
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 3752369075,
+      "avgDps": 93692112,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 28437.34
+    }
+  },
+  {
+    "target": {
+      "gid": "thrust",
+      "groupName": "突刺",
+      "elem": "phys",
+      "dmgType": "phys",
+      "ultIndex": 1,
+      "ultId": "shadowExecutioner",
+      "ultName": "暗影絕殺者",
+      "ultDesc": "突刺命中時堆疊【靈魂撕裂】：每層使該敵人受到的傷害提高 {perStack}%，最多 {maxStacks} 層。",
+      "affixes": [
+        {
+          "id": "piercingFocus",
+          "name": "凝鋒穿刺"
+        },
+        {
+          "id": "thousandWounds",
+          "name": "千瘡百孔"
+        },
+        {
+          "id": "sunpiercerLance",
+          "name": "貫日之刺"
+        },
+        {
+          "id": "thunderStab",
+          "name": "迅雷穿刺"
+        },
+        {
+          "id": "heartrendBleed",
+          "name": "穿心裂血"
+        }
+      ],
+      "primaryWp": "dagger1h",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 136488071924,
+      "avgDps": 3407941871,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 1042.41
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 25064886524,
+      "avgDps": 625839863,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 5676.33
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 1106566520,
+      "avgDps": 27629626,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 96431.07
+    }
+  },
+  {
+    "target": {
+      "gid": "thrust",
+      "groupName": "突刺",
+      "elem": "phys",
+      "dmgType": "phys",
+      "ultIndex": 2,
+      "ultId": "oneStrikeKill",
+      "ultName": "一擊必殺",
+      "ultDesc": "改為朝前方的進行 1 道巨型突刺，但傷害改提高 {mult} 倍，且可以立即殺死普通敵人。",
+      "affixes": [
+        {
+          "id": "piercingFocus",
+          "name": "凝鋒穿刺"
+        },
+        {
+          "id": "thousandWounds",
+          "name": "千瘡百孔"
+        },
+        {
+          "id": "sunpiercerLance",
+          "name": "貫日之刺"
+        },
+        {
+          "id": "thunderStab",
+          "name": "迅雷穿刺"
+        },
+        {
+          "id": "heartrendBleed",
+          "name": "穿心裂血"
+        }
+      ],
+      "primaryWp": "dagger1h",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 172398670322,
+      "avgDps": 4304586026,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 825.28
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 27570232160,
+      "avgDps": 688395310,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 5160.51
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 2937994397,
+      "avgDps": 73358162,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 36319.81
+    }
+  },
+  {
+    "target": {
+      "gid": "cleave",
+      "groupName": "迴旋斬",
+      "elem": "phys",
+      "dmgType": "phys",
+      "ultIndex": 0,
+      "ultId": "voidShatter",
+      "ultName": "虛空碎裂斬",
+      "ultDesc": "【迴身四方斬】的攻擊次數 +{times} 次，且物理傷害再額外 +{pct}%",
+      "affixes": [
+        {
+          "id": "chainSpin",
+          "name": "連環迴旋"
+        },
+        {
+          "id": "galeBladeDance",
+          "name": "旋風劍舞"
+        },
+        {
+          "id": "skyrendSlash",
+          "name": "裂空飛斬"
+        },
+        {
+          "id": "exploitWeakness",
+          "name": "乘虛之斬"
+        },
+        {
+          "id": "gatheringVortex",
+          "name": "聚敵旋渦"
+        }
+      ],
+      "primaryWp": "sword1h",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 16868550637,
+      "avgDps": 421187282,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 8434.43
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 7440961321,
+      "avgDps": 185791793,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 19120.72
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 1392116729,
+      "avgDps": 34759469,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 76651.19
+    }
+  },
+  {
+    "target": {
+      "gid": "cleave",
+      "groupName": "迴旋斬",
+      "elem": "phys",
+      "dmgType": "phys",
+      "ultIndex": 1,
+      "ultId": "windChaser",
+      "ultName": "逐風者",
+      "ultDesc": "命中時有 {chance}% 機率觸發真空迴旋，對該敵人造成 {hits} 段傷害，每段造成 {pct}% 風系傷害，且迴旋斬傷害 +{cleavePct}%",
+      "affixes": [
+        {
+          "id": "chainSpin",
+          "name": "連環迴旋"
+        },
+        {
+          "id": "galeBladeDance",
+          "name": "旋風劍舞"
+        },
+        {
+          "id": "skyrendSlash",
+          "name": "裂空飛斬"
+        },
+        {
+          "id": "exploitWeakness",
+          "name": "乘虛之斬"
+        },
+        {
+          "id": "gatheringVortex",
+          "name": "聚敵旋渦"
+        }
+      ],
+      "primaryWp": "sword1h",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 19173542178,
+      "avgDps": 478740129,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 7420.46
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 9393599718,
+      "avgDps": 234546809,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 15146.11
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 1609455445,
+      "avgDps": 40186153,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 66300.31
+    }
+  },
+  {
+    "target": {
+      "gid": "cleave",
+      "groupName": "迴旋斬",
+      "elem": "phys",
+      "dmgType": "phys",
+      "ultIndex": 2,
+      "ultId": "stormGodSlash",
+      "ultName": "天霸風神斬",
+      "ultDesc": "迴旋斬範圍擴大 {range}%，並改為被動技能：不再主動施放，改為每 {sec} 秒自動施放 1 次",
+      "affixes": [
+        {
+          "id": "chainSpin",
+          "name": "連環迴旋"
+        },
+        {
+          "id": "galeBladeDance",
+          "name": "旋風劍舞"
+        },
+        {
+          "id": "skyrendSlash",
+          "name": "裂空飛斬"
+        },
+        {
+          "id": "exploitWeakness",
+          "name": "乘虛之斬"
+        },
+        {
+          "id": "gatheringVortex",
+          "name": "聚敵旋渦"
+        }
+      ],
+      "primaryWp": "sword1h",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 26318886690,
+      "avgDps": 657150729,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 5405.87
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 5842218065,
+      "avgDps": 145873110,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 24353.17
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 2464582133,
+      "avgDps": 61537631,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 43296.35
+    }
+  },
+  {
+    "target": {
+      "gid": "gale",
+      "groupName": "疾風迅雷",
+      "elem": "phys",
+      "dmgType": "phys",
+      "ultIndex": 0,
+      "ultId": "thunderFlash",
+      "ultName": "霹靂一閃",
+      "ultDesc": "疾風迅雷最後一擊觸發 {count}＋角色連擊數道貫穿雷電，每道造成 {pct}% 雷電傷害；每隔 {gap} 秒重新選擇自身周圍 {m} 米內敵人，無敵人即停止；沿自身與目標連線，以自身為中心貫穿長 {len} 米、寬 {wid} 米的範圍",
+      "affixes": [
+        {
+          "id": "galeWhirlwind",
+          "name": "風捲殘雲"
+        },
+        {
+          "id": "galeExecute",
+          "name": "斬殺"
+        },
+        {
+          "id": "galeTwinShadow",
+          "name": "雙影"
+        },
+        {
+          "id": "galeWindwalker",
+          "name": "風行者"
+        },
+        {
+          "id": "galeGodspeed",
+          "name": "神速斬"
+        }
+      ],
+      "primaryWp": "magicSword1h",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 45359443157,
+      "avgDps": 1132570366,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 3136.65
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 51977875775,
+      "avgDps": 1297824614,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 2737.25
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 34742061182,
+      "avgDps": 867467196,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 3071.42
+    }
+  },
+  {
+    "target": {
+      "gid": "gale",
+      "groupName": "疾風迅雷",
+      "elem": "phys",
+      "dmgType": "phys",
+      "ultIndex": 1,
+      "ultId": "thunderGodSlash",
+      "ultName": "雷神之怒",
+      "ultDesc": "疾風迅雷附加雷電：每次命中有 {chance}% 機率降下 1 道落雷，對命中處周圍 {m} 米內的敵人造成 {pct}% 閃電傷害",
+      "affixes": [
+        {
+          "id": "galeWhirlwind",
+          "name": "風捲殘雲"
+        },
+        {
+          "id": "galeExecute",
+          "name": "斬殺"
+        },
+        {
+          "id": "galeTwinShadow",
+          "name": "雙影"
+        },
+        {
+          "id": "galeWindwalker",
+          "name": "風行者"
+        },
+        {
+          "id": "galeGodspeed",
+          "name": "神速斬"
+        }
+      ],
+      "primaryWp": "magicSword1h",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 41794510560,
+      "avgDps": 1043558316,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 3404.19
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 36099257863,
+      "avgDps": 901354753,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 3941.26
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 51785446698,
+      "avgDps": 1293019893,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 2060.57
+    }
+  },
+  {
+    "target": {
+      "gid": "gale",
+      "groupName": "疾風迅雷",
+      "elem": "phys",
+      "dmgType": "phys",
+      "ultIndex": 2,
+      "ultId": "chidori",
+      "ultName": "千鳥",
+      "ultDesc": "每次隨機對自身周圍 {m} 米內的 {count} 個敵人進行打擊，各自承受完整傷害；爆散效果提高 {scatterPct}%（技能傷害係數與隨機目標數同時提高），且本體與爆散傷害再額外 +{pct}%",
+      "affixes": [
+        {
+          "id": "galeWhirlwind",
+          "name": "風捲殘雲"
+        },
+        {
+          "id": "galeExecute",
+          "name": "斬殺"
+        },
+        {
+          "id": "galeTwinShadow",
+          "name": "雙影"
+        },
+        {
+          "id": "galeWindwalker",
+          "name": "風行者"
+        },
+        {
+          "id": "galeGodspeed",
+          "name": "神速斬"
+        }
+      ],
+      "primaryWp": "magicSword1h",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 34146311373,
+      "avgDps": 852592044,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 4166.67
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 44964274653,
+      "avgDps": 1122703487,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 3164.21
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 44928810088,
+      "avgDps": 1121817980,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 2375.03
+    }
+  },
+  {
+    "target": {
+      "gid": "bloodblade",
+      "groupName": "血刃斬",
+      "elem": "phys",
+      "dmgType": "phys",
+      "ultIndex": 0,
+      "ultId": "slayerDomain",
+      "ultName": "殺神領域",
+      "ultDesc": "永久展開 {m} 米的殺神領域：領域內的敵人死亡時堆疊【殺神】，每層使你造成的傷害 +{pct}%最多 {maxStacks} 層，持續 {dur} 秒，且領域內敵人死亡時可回復 {healPct}% 最大生命",
+      "affixes": [
+        {
+          "id": "bloodPoisonBurst",
+          "name": "毒爆"
+        },
+        {
+          "id": "bloodVenomRite",
+          "name": "毒血祭"
+        },
+        {
+          "id": "bloodMist",
+          "name": "血霧"
+        },
+        {
+          "id": "bloodShadow",
+          "name": "血影"
+        },
+        {
+          "id": "bloodCleaver",
+          "name": "切割"
+        }
+      ],
+      "primaryWp": "magicSword2h",
+      "isTwoHand": true
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 702688103,
+      "avgDps": 17545271,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 202474.66
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 302040013,
+      "avgDps": 7541573,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 471051.93
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 548892634,
+      "avgDps": 13705184,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 194404.87
+    }
+  },
+  {
+    "target": {
+      "gid": "bloodblade",
+      "groupName": "血刃斬",
+      "elem": "phys",
+      "dmgType": "phys",
+      "ultIndex": 1,
+      "ultId": "venomDomain",
+      "ultName": "萬毒血霧",
+      "ultDesc": "永久展開 {m} 米的萬毒領域：領域內的敵人每 {gap} 秒受到 {pct}% 中毒傷害，該中毒持續 {dur} 秒且可堆疊至 {maxStacks} 層",
+      "affixes": [
+        {
+          "id": "bloodPoisonBurst",
+          "name": "毒爆"
+        },
+        {
+          "id": "bloodVenomRite",
+          "name": "毒血祭"
+        },
+        {
+          "id": "bloodMist",
+          "name": "血霧"
+        },
+        {
+          "id": "bloodShadow",
+          "name": "血影"
+        },
+        {
+          "id": "bloodCleaver",
+          "name": "切割"
+        }
+      ],
+      "primaryWp": "magicSword2h",
+      "isTwoHand": true
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 682670705,
+      "avgDps": 17045461,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 208411.65
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 0,
+      "avgDps": 0,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 999999
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 1026887021,
+      "avgDps": 25640125,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 103913.47
+    }
+  },
+  {
+    "target": {
+      "gid": "bloodblade",
+      "groupName": "血刃斬",
+      "elem": "phys",
+      "dmgType": "phys",
+      "ultIndex": 2,
+      "ultId": "disintegrate",
+      "ultName": "崩解",
+      "ultDesc": "中毒與流血作用間隔時間縮短 {gapPct}%，持續時間延長 {sec} 秒；作用結束後會爆炸對周圍 {m} 米內的敵人造成其持續時間內的 {pct}%總傷害",
+      "affixes": [
+        {
+          "id": "bloodPoisonBurst",
+          "name": "毒爆"
+        },
+        {
+          "id": "bloodVenomRite",
+          "name": "毒血祭"
+        },
+        {
+          "id": "bloodMist",
+          "name": "血霧"
+        },
+        {
+          "id": "bloodShadow",
+          "name": "血影"
+        },
+        {
+          "id": "bloodCleaver",
+          "name": "切割"
+        }
+      ],
+      "primaryWp": "magicSword2h",
+      "isTwoHand": true
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 10549175178,
+      "avgDps": 263400129,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 13486.98
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 5592564343,
+      "avgDps": 139639559,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 25440.3
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 896394374,
+      "avgDps": 22381882,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 119040.68
+    }
+  },
+  {
+    "target": {
+      "gid": "dualdance",
+      "groupName": "雙刀亂舞",
+      "elem": "phys",
+      "dmgType": "phys",
+      "ultIndex": 0,
+      "ultId": "doomDance",
+      "ultName": "毀滅之舞",
+      "ultDesc": "每施放 1 次雙刀亂舞就失去當下 {hpPct}% 生命值（不會致死），雙刀亂舞的傷害提高 {pct}%，且額外 +{add} 個攻擊目標。",
+      "affixes": [
+        {
+          "id": "danceFrenzy",
+          "name": "狂舞"
+        },
+        {
+          "id": "danceBerserker",
+          "name": "狂戰士"
+        },
+        {
+          "id": "danceUnyielding",
+          "name": "不屈之誓"
+        },
+        {
+          "id": "danceThousandCuts",
+          "name": "殺千刀"
+        },
+        {
+          "id": "danceTwinBlades",
+          "name": "雙生刃"
+        }
+      ],
+      "primaryWp": "greatsword2h",
+      "isTwoHand": true
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 24867308841,
+      "avgDps": 620906588,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 5721.43
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 99469235356,
+      "avgDps": 2483626351,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 1430.36
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 186504816293,
+      "avgDps": 4656799408,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 572.14
+    }
+  },
+  {
+    "target": {
+      "gid": "dualdance",
+      "groupName": "雙刀亂舞",
+      "elem": "phys",
+      "dmgType": "phys",
+      "ultIndex": 1,
+      "ultId": "flameKagura",
+      "ultName": "火之神樂",
+      "ultDesc": "雙刀亂舞附加火焰：每次命中堆疊 1 層【神樂灼焰】，每層每 {gap} 秒造成 {pct}% 火屬性傷害且將敵人改變為火屬性，最多 {maxStacks} 層，持續 {dur} 秒；狀態生效期間將敵人屬性改為火屬性，結束後恢復",
+      "affixes": [
+        {
+          "id": "danceFrenzy",
+          "name": "狂舞"
+        },
+        {
+          "id": "danceBerserker",
+          "name": "狂戰士"
+        },
+        {
+          "id": "danceUnyielding",
+          "name": "不屈之誓"
+        },
+        {
+          "id": "danceThousandCuts",
+          "name": "殺千刀"
+        },
+        {
+          "id": "danceTwinBlades",
+          "name": "雙生刃"
+        }
+      ],
+      "primaryWp": "greatsword2h",
+      "isTwoHand": true
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 24867308841,
+      "avgDps": 620906588,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 5721.43
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 101473534285,
+      "avgDps": 2533671268,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 1402.1
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 187349085094,
+      "avgDps": 4677879778,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 569.56
+    }
+  },
+  {
+    "target": {
+      "gid": "dualdance",
+      "groupName": "雙刀亂舞",
+      "elem": "phys",
+      "dmgType": "phys",
+      "ultIndex": 2,
+      "ultId": "asuraDance",
+      "ultName": "修羅亂舞",
+      "ultDesc": "讓你可以同時裝備兩把雙手武器（主手與副手各一把），且雙手武器的詞條效果提升 {pct}%。",
+      "affixes": [
+        {
+          "id": "danceFrenzy",
+          "name": "狂舞"
+        },
+        {
+          "id": "danceBerserker",
+          "name": "狂戰士"
+        },
+        {
+          "id": "danceUnyielding",
+          "name": "不屈之誓"
+        },
+        {
+          "id": "danceThousandCuts",
+          "name": "殺千刀"
+        },
+        {
+          "id": "danceTwinBlades",
+          "name": "雙生刃"
+        }
+      ],
+      "primaryWp": "greatsword2h",
+      "isTwoHand": true
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 24867308841,
+      "avgDps": 620906588,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 5721.43
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 99469235355,
+      "avgDps": 2483626351,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 1430.36
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 187356619600,
+      "avgDps": 4678067905,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 569.54
+    }
+  },
+  {
+    "target": {
+      "gid": "counter",
+      "groupName": "反擊",
+      "elem": "phys",
+      "dmgType": "phys",
+      "ultIndex": 0,
+      "ultId": "holyBody",
+      "ultName": "神聖之體",
+      "ultDesc": "每 {count} 次反擊後朝目標射出一顆光彈，對其周圍 {m} 米內的敵人造成 {pct}% 神聖傷害",
+      "affixes": [
+        {
+          "id": "counterOath",
+          "name": "堅韌誓言"
+        },
+        {
+          "id": "counterWrath",
+          "name": "怒火"
+        },
+        {
+          "id": "counterPerfect",
+          "name": "完美姿態"
+        },
+        {
+          "id": "counterBloodPay",
+          "name": "以血還血"
+        },
+        {
+          "id": "counterWindBody",
+          "name": "風之體"
+        }
+      ],
+      "primaryWp": "shield",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 0,
+      "avgDps": 0,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 999999
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 443988188,
+      "avgDps": 11085847,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 320451.16
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 785360125,
+      "avgDps": 19609491,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 135870.66
+    }
+  },
+  {
+    "target": {
+      "gid": "counter",
+      "groupName": "反擊",
+      "elem": "phys",
+      "dmgType": "phys",
+      "ultIndex": 1,
+      "ultId": "indomitable",
+      "ultName": "不屈鬥魂",
+      "ultDesc": "面臨死亡時將範圍{m}米以內的敵人擊退{pushM}米並擊暈{stunSec}秒，同時獲得{sec}秒的無敵護盾，此招有{cd}秒冷卻時間；本招發動時不算死亡，戰鬥繼續",
+      "affixes": [
+        {
+          "id": "counterOath",
+          "name": "堅韌誓言"
+        },
+        {
+          "id": "counterWrath",
+          "name": "怒火"
+        },
+        {
+          "id": "counterPerfect",
+          "name": "完美姿態"
+        },
+        {
+          "id": "counterBloodPay",
+          "name": "以血還血"
+        },
+        {
+          "id": "counterWindBody",
+          "name": "風之體"
+        }
+      ],
+      "primaryWp": "shield",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 249467445,
+      "avgDps": 6228900,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 570321.03
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 525577667,
+      "avgDps": 13123038,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 270705.06
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 0,
+      "avgDps": 0,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 999999
+    }
+  },
+  {
+    "target": {
+      "gid": "counter",
+      "groupName": "反擊",
+      "elem": "phys",
+      "dmgType": "phys",
+      "ultIndex": 2,
+      "ultId": "warGodBody",
+      "ultName": "戰神體",
+      "ultDesc": "你每 {gap} 秒流失 {hpPct}%生命值；每 {sec} 秒累計損失的生命與護盾百分比，接下來 {sec} 秒內的反擊將獲得此百分比加成的 {pct}% 傷害。",
+      "affixes": [
+        {
+          "id": "counterOath",
+          "name": "堅韌誓言"
+        },
+        {
+          "id": "counterWrath",
+          "name": "怒火"
+        },
+        {
+          "id": "counterPerfect",
+          "name": "完美姿態"
+        },
+        {
+          "id": "counterBloodPay",
+          "name": "以血還血"
+        },
+        {
+          "id": "counterWindBody",
+          "name": "風之體"
+        }
+      ],
+      "primaryWp": "shield",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 200652876,
+      "avgDps": 5010059,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 709067.99
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 471202588,
+      "avgDps": 11765358,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 301943.44
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 785334259,
+      "avgDps": 19608845,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 135875.13
+    }
+  },
+  {
+    "target": {
+      "gid": "bloodrage",
+      "groupName": "嗜血狂怒",
+      "elem": "phys",
+      "dmgType": "phys",
+      "ultIndex": 0,
+      "ultId": "slayerAdvent",
+      "ultName": "殺神降臨",
+      "ultDesc": "狂怒期間普攻傷害 +{pct}%，且普攻轉為範圍傷害，可攻擊目標周圍 {m} 米內的所有敵人",
+      "affixes": [
+        {
+          "id": "rageValor",
+          "name": "英勇氣概"
+        },
+        {
+          "id": "rageBurnBlood",
+          "name": "燃血"
+        },
+        {
+          "id": "rageBloodDebt",
+          "name": "血債償還"
+        },
+        {
+          "id": "rageZealot",
+          "name": "狂熱者"
+        },
+        {
+          "id": "rageSlaughterer",
+          "name": "屠戮者"
+        }
+      ],
+      "primaryWp": "greatsword2h",
+      "isTwoHand": true
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 4295142479,
+      "avgDps": 107244506,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 33124.99
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 318856413,
+      "avgDps": 7961459,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 446208.78
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 4530997260,
+      "avgDps": 113133515,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 23550.53
+    }
+  },
+  {
+    "target": {
+      "gid": "bloodrage",
+      "groupName": "嗜血狂怒",
+      "elem": "phys",
+      "dmgType": "phys",
+      "ultIndex": 1,
+      "ultId": "warGodRoll",
+      "ultName": "戰神屠錄",
+      "ultDesc": "狂怒期間你無法獲得護盾，但每殺死 1 個敵人使你造成的所有傷害 +{pct}%，最多 {maxStacks} 層；施放狂怒後吸血效果提升 {drain}%，效果持續至你死亡為止。",
+      "affixes": [
+        {
+          "id": "rageValor",
+          "name": "英勇氣概"
+        },
+        {
+          "id": "rageBurnBlood",
+          "name": "燃血"
+        },
+        {
+          "id": "rageBloodDebt",
+          "name": "血債償還"
+        },
+        {
+          "id": "rageZealot",
+          "name": "狂熱者"
+        },
+        {
+          "id": "rageSlaughterer",
+          "name": "屠戮者"
+        }
+      ],
+      "primaryWp": "greatsword2h",
+      "isTwoHand": true
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 330159940,
+      "avgDps": 8243694,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 430932.15
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 327194119,
+      "avgDps": 8169641,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 434838.29
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 4564126869,
+      "avgDps": 113960721,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 23379.59
+    }
+  },
+  {
+    "target": {
+      "gid": "bloodrage",
+      "groupName": "嗜血狂怒",
+      "elem": "phys",
+      "dmgType": "phys",
+      "ultIndex": 2,
+      "ultId": "asuraFist",
+      "ultName": "阿修羅霸王拳",
+      "ultDesc": "每 {gap} 秒，你造成的所有傷害 +{pct}%，且連擊機率提升至 {comboChance}%，持續 {sec} 秒；效果期間每擊殺 1 個敵人，持續時間延長 {killSec} 秒。",
+      "affixes": [
+        {
+          "id": "rageValor",
+          "name": "英勇氣概"
+        },
+        {
+          "id": "rageBurnBlood",
+          "name": "燃血"
+        },
+        {
+          "id": "rageBloodDebt",
+          "name": "血債償還"
+        },
+        {
+          "id": "rageZealot",
+          "name": "狂熱者"
+        },
+        {
+          "id": "rageSlaughterer",
+          "name": "屠戮者"
+        }
+      ],
+      "primaryWp": "greatsword2h",
+      "isTwoHand": true
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 0,
+      "avgDps": 0,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 999999
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 3910582461,
+      "avgDps": 97642508,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 36382.44
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 5183553973,
+      "avgDps": 129427065,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 20585.76
+    }
+  },
+  {
+    "target": {
+      "gid": "fireball",
+      "groupName": "火球術",
+      "elem": "fire",
+      "dmgType": "magic",
+      "ultIndex": 0,
+      "ultId": "meteorFall",
+      "ultName": "火隕天落",
+      "ultDesc": "隕石的體積 +{size}%、造成的傷害 +{pct}%，且每次施放額外連續落下 {count} 顆巨大隕石。",
+      "affixes": [
+        {
+          "id": "fireballBeadShot",
+          "name": "連珠火"
+        },
+        {
+          "id": "fireballEmber",
+          "name": "燃燼"
+        },
+        {
+          "id": "fireballPool",
+          "name": "火池"
+        },
+        {
+          "id": "fireballHeart",
+          "name": "烈焰之心"
+        },
+        {
+          "id": "fireballBurst",
+          "name": "爆裂"
+        }
+      ],
+      "primaryWp": "wand1h",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 151945225590,
+      "avgDps": 3793888279,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 936.37
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 36492788656,
+      "avgDps": 911180740,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 3898.76
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 2827987776,
+      "avgDps": 70611430,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 37732.62
+    }
+  },
+  {
+    "target": {
+      "gid": "fireball",
+      "groupName": "火球術",
+      "elem": "fire",
+      "dmgType": "magic",
+      "ultIndex": 1,
+      "ultId": "starfallCataclysm",
+      "ultName": "地爆天星",
+      "ultDesc": "每 {gap} 秒，天空落下一顆超巨型隕石造成海量傷害：普通敵人 -{normal}% 生命、菁英 -{elite}% 生命、BOSS -{boss}% 生命。",
+      "affixes": [
+        {
+          "id": "fireballBeadShot",
+          "name": "連珠火"
+        },
+        {
+          "id": "fireballEmber",
+          "name": "燃燼"
+        },
+        {
+          "id": "fireballPool",
+          "name": "火池"
+        },
+        {
+          "id": "fireballHeart",
+          "name": "烈焰之心"
+        },
+        {
+          "id": "fireballBurst",
+          "name": "爆裂"
+        }
+      ],
+      "primaryWp": "wand1h",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 131647957637,
+      "avgDps": 3287090078,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 1080.73
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 30059853304,
+      "avgDps": 750558135,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 4733.11
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 6353762952,
+      "avgDps": 158645767,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 16794.36
+    }
+  },
+  {
+    "target": {
+      "gid": "fireball",
+      "groupName": "火球術",
+      "elem": "fire",
+      "dmgType": "magic",
+      "ultIndex": 2,
+      "ultId": "phoenixPrairie",
+      "ultName": "天火流星",
+      "ultDesc": "隕石數量 +{count} 顆，且每顆隕石落下時伴隨 {balls} 顆火球一同落下；火球與隕石造成的傷害 +{pct}%。",
+      "affixes": [
+        {
+          "id": "fireballBeadShot",
+          "name": "連珠火"
+        },
+        {
+          "id": "fireballEmber",
+          "name": "燃燼"
+        },
+        {
+          "id": "fireballPool",
+          "name": "火池"
+        },
+        {
+          "id": "fireballHeart",
+          "name": "烈焰之心"
+        },
+        {
+          "id": "fireballBurst",
+          "name": "爆裂"
+        }
+      ],
+      "primaryWp": "wand1h",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 87403440345,
+      "avgDps": 2182358061,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 1627.81
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 31158954083,
+      "avgDps": 778001350,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 4566.15
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 5353716075,
+      "avgDps": 133675807,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 19931.46
+    }
+  },
+  {
+    "target": {
+      "gid": "firepillar",
+      "groupName": "火龍捲",
+      "elem": "fire",
+      "dmgType": "magic",
+      "ultIndex": 0,
+      "ultId": "infernoTempest",
+      "ultName": "烈焰暴風",
+      "ultDesc": "火龍捲每 {gap} 秒向 {searchM} 米內隨機 {count} 名敵人發射火球，命中後爆炸對周圍 {m} 米內的敵人造成 {pct}% 火焰傷害。",
+      "affixes": [
+        {
+          "id": "firepillarTracking",
+          "name": "追蹤烈焰"
+        },
+        {
+          "id": "firepillarSpread",
+          "name": "火龍擴散"
+        },
+        {
+          "id": "firepillarOutburst",
+          "name": "火焰爆衝"
+        },
+        {
+          "id": "firepillarDeflagration",
+          "name": "爆燃"
+        },
+        {
+          "id": "firepillarResonance",
+          "name": "火龍共鳴"
+        }
+      ],
+      "primaryWp": "staff2h",
+      "isTwoHand": true
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 44783412700,
+      "avgDps": 1118187583,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 3176.99
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 9954458651,
+      "avgDps": 248550778,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 14292.74
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 3423917102,
+      "avgDps": 85491064,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 31165.3
+    }
+  },
+  {
+    "target": {
+      "gid": "firepillar",
+      "groupName": "火龍捲",
+      "elem": "fire",
+      "dmgType": "magic",
+      "ultIndex": 1,
+      "ultId": "eternalInferno",
+      "ultName": "永劫火獄",
+      "ultDesc": "火龍捲會在附近 {m} 米內隨機游走，並在移動軌跡上留下火池：每 {gap} 秒造成 {pct}% 火焰傷害，持續 {sec} 秒。",
+      "affixes": [
+        {
+          "id": "firepillarTracking",
+          "name": "追蹤烈焰"
+        },
+        {
+          "id": "firepillarSpread",
+          "name": "火龍擴散"
+        },
+        {
+          "id": "firepillarOutburst",
+          "name": "火焰爆衝"
+        },
+        {
+          "id": "firepillarDeflagration",
+          "name": "爆燃"
+        },
+        {
+          "id": "firepillarResonance",
+          "name": "火龍共鳴"
+        }
+      ],
+      "primaryWp": "staff2h",
+      "isTwoHand": true
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 29806468633,
+      "avgDps": 744231427,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 4773.34
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 14720012375,
+      "avgDps": 367540883,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 9665.52
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 5358000923,
+      "avgDps": 133782795,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 19915.52
+    }
+  },
+  {
+    "target": {
+      "gid": "firepillar",
+      "groupName": "火龍捲",
+      "elem": "fire",
+      "dmgType": "magic",
+      "ultIndex": 2,
+      "ultId": "dragonDevour",
+      "ultName": "融火之心",
+      "ultDesc": "改為召喚一個半徑 {m} 米的巨型火漩渦（新施放取代舊漩渦），每 {gap} 秒造成 {pct}% 火焰傷害，且會持續聚攏 {pullM} 米內的敵人，持續 {sec} 秒。每秒隨機噴出 {ballMin}～{ballMax} 顆小火球對敵人造成 {ballPct}% 火焰傷害。",
+      "affixes": [
+        {
+          "id": "firepillarTracking",
+          "name": "追蹤烈焰"
+        },
+        {
+          "id": "firepillarSpread",
+          "name": "火龍擴散"
+        },
+        {
+          "id": "firepillarOutburst",
+          "name": "火焰爆衝"
+        },
+        {
+          "id": "firepillarDeflagration",
+          "name": "爆燃"
+        },
+        {
+          "id": "firepillarResonance",
+          "name": "火龍共鳴"
+        }
+      ],
+      "primaryWp": "staff2h",
+      "isTwoHand": true
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 23636512691,
+      "avgDps": 590175098,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 6019.35
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 12133489479,
+      "avgDps": 302958539,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 11725.94
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 7669032849,
+      "avgDps": 191486463,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 13914.06
+    }
+  },
+  {
+    "target": {
+      "gid": "firehunt",
+      "groupName": "火狩",
+      "elem": "fire",
+      "dmgType": "magic",
+      "ultIndex": 0,
+      "ultId": "solarRing",
+      "ultName": "烈陽星環",
+      "ultDesc": "火狩數量 +{count} 團，體積在 {growSec} 秒內逐漸增大最多 {grow}%，環繞速度 +{spin}%，且造成傷害 +{pct}%",
+      "affixes": [
+        {
+          "id": "firehuntAmplify",
+          "name": "增焰"
+        },
+        {
+          "id": "firehuntConcurrent",
+          "name": "伴生併發"
+        },
+        {
+          "id": "firehuntBlaze",
+          "name": "烈火狩"
+        },
+        {
+          "id": "firehuntDetonate",
+          "name": "炎爆"
+        },
+        {
+          "id": "firehuntHunter",
+          "name": "狩獵者"
+        }
+      ],
+      "primaryWp": "orb",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 13930118168,
+      "avgDps": 347818181,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 10213.59
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 6392797090,
+      "avgDps": 159620402,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 22255.76
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 1180485286,
+      "avgDps": 29475288,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 90392.82
+    }
+  },
+  {
+    "target": {
+      "gid": "firehunt",
+      "groupName": "火狩",
+      "elem": "fire",
+      "dmgType": "magic",
+      "ultIndex": 1,
+      "ultId": "infiniteRing",
+      "ultName": "無限星環",
+      "ultDesc": "火狩改為從自身中心呈螺旋狀向外擴散，並於持續時間內不斷放出火狩，最多額外 +{count} 團；命中時附加 {dotSec} 秒燃燒，每 {dotGap} 秒造成 {dotPct}% 火焰傷害。",
+      "affixes": [
+        {
+          "id": "firehuntAmplify",
+          "name": "增焰"
+        },
+        {
+          "id": "firehuntConcurrent",
+          "name": "伴生併發"
+        },
+        {
+          "id": "firehuntBlaze",
+          "name": "烈火狩"
+        },
+        {
+          "id": "firehuntDetonate",
+          "name": "炎爆"
+        },
+        {
+          "id": "firehuntHunter",
+          "name": "狩獵者"
+        }
+      ],
+      "primaryWp": "orb",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 19592277738,
+      "avgDps": 489195449,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 7261.87
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 8469384685,
+      "avgDps": 211470279,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 16798.92
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 1361904635,
+      "avgDps": 34005109,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 78351.59
+    }
+  },
+  {
+    "target": {
+      "gid": "firehunt",
+      "groupName": "火狩",
+      "elem": "fire",
+      "dmgType": "magic",
+      "ultIndex": 2,
+      "ultId": "fireGodDescend",
+      "ultName": "火神降臨",
+      "ultDesc": "你的身體被火焰包裹：每 {gap} 秒對周圍 {m} 米內的敵人造成 {pct}% 火焰傷害；普攻同時朝目標射出 {orbs} 顆火狩星環。",
+      "affixes": [
+        {
+          "id": "firehuntAmplify",
+          "name": "增焰"
+        },
+        {
+          "id": "firehuntConcurrent",
+          "name": "伴生併發"
+        },
+        {
+          "id": "firehuntBlaze",
+          "name": "烈火狩"
+        },
+        {
+          "id": "firehuntDetonate",
+          "name": "炎爆"
+        },
+        {
+          "id": "firehuntHunter",
+          "name": "狩獵者"
+        }
+      ],
+      "primaryWp": "orb",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 17506569425,
+      "avgDps": 437117838,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 8127.04
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 3969074958,
+      "avgDps": 99102995,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 35846.27
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 2660740922,
+      "avgDps": 66435479,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 40104.39
+    }
+  },
+  {
+    "target": {
+      "gid": "rockarmor",
+      "groupName": "岩甲術",
+      "elem": "earth",
+      "dmgType": "magic",
+      "ultIndex": 0,
+      "ultId": "superRockArt",
+      "ultName": "超重岩之術",
+      "ultDesc": "使 {m} 米內的敵人石化 {sec} 秒，石化時無法行動且轉變為地屬性；隨機升起 {count} 道岩柱刺穿範圍內敵人，每道造成 {pct}% 地屬性傷害。",
+      "affixes": [
+        {
+          "id": "rockHeavyArmor",
+          "name": "重岩甲"
+        },
+        {
+          "id": "rockLightArmor",
+          "name": "輕飛甲"
+        },
+        {
+          "id": "rockAmpBoost",
+          "name": "巨岩增幅"
+        },
+        {
+          "id": "rockSpikeArmor",
+          "name": "尖刺甲"
+        },
+        {
+          "id": "rockEarthHeart",
+          "name": "大地之心"
+        }
+      ],
+      "primaryWp": "focus",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 249730673,
+      "avgDps": 6235472,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 569719.89
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 287519003,
+      "avgDps": 7179001,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 494842.18
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 506750410,
+      "avgDps": 12652944,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 210571.9
+    }
+  },
+  {
+    "target": {
+      "gid": "rockarmor",
+      "groupName": "岩甲術",
+      "elem": "earth",
+      "dmgType": "magic",
+      "ultIndex": 1,
+      "ultId": "adamantBody",
+      "ultName": "金剛不壞",
+      "ultDesc": "岩甲護盾存在期間額外獲得 +{red}% 傷害減免，生命上限與岩甲護盾 +{hp}%，且【岩甲尖刺】的效果額外提高 {spike}%。",
+      "affixes": [
+        {
+          "id": "rockHeavyArmor",
+          "name": "重岩甲"
+        },
+        {
+          "id": "rockLightArmor",
+          "name": "輕飛甲"
+        },
+        {
+          "id": "rockAmpBoost",
+          "name": "巨岩增幅"
+        },
+        {
+          "id": "rockSpikeArmor",
+          "name": "尖刺甲"
+        },
+        {
+          "id": "rockEarthHeart",
+          "name": "大地之心"
+        }
+      ],
+      "primaryWp": "focus",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 201644343,
+      "avgDps": 5034815,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 705581.57
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 538019638,
+      "avgDps": 13433699,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 264444.87
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 0,
+      "avgDps": 0,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 999999
+    }
+  },
+  {
+    "target": {
+      "gid": "rockarmor",
+      "groupName": "岩甲術",
+      "elem": "earth",
+      "dmgType": "magic",
+      "ultIndex": 2,
+      "ultId": "gravityField",
+      "ultName": "超重力場",
+      "ultDesc": "施放岩甲術時同時扭曲 {m} 米內的重力場，使敵人僵化（移動、攻速與傷害 -{stiff}%，持續 {stiffSec} 秒）；岩甲護盾存在期間你的地系傷害額外 +{pct}%",
+      "affixes": [
+        {
+          "id": "rockHeavyArmor",
+          "name": "重岩甲"
+        },
+        {
+          "id": "rockLightArmor",
+          "name": "輕飛甲"
+        },
+        {
+          "id": "rockAmpBoost",
+          "name": "巨岩增幅"
+        },
+        {
+          "id": "rockSpikeArmor",
+          "name": "尖刺甲"
+        },
+        {
+          "id": "rockEarthHeart",
+          "name": "大地之心"
+        }
+      ],
+      "primaryWp": "focus",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 753680861,
+      "avgDps": 18818498,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 188775.57
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 0,
+      "avgDps": 0,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 999999
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 712551431,
+      "avgDps": 17791546,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 149753.96
+    }
+  },
+  {
+    "target": {
+      "gid": "mire",
+      "groupName": "泥沼術",
+      "elem": "earth",
+      "dmgType": "magic",
+      "ultIndex": 0,
+      "ultId": "plagueMire",
+      "ultName": "惡疫魔沼",
+      "ultDesc": "沼澤範圍內的敵人染上【瘟疫】：每 {gap} 秒受到魔法攻擊 {pct}% 的毒性傷害，且受到的毒性傷害額外 +{amp}%；離開沼澤後仍持續 {sec} 秒。",
+      "affixes": [
+        {
+          "id": "mireSpread",
+          "name": "蔓延"
+        },
+        {
+          "id": "mireWeaken",
+          "name": "削弱"
+        },
+        {
+          "id": "mireCorrupt",
+          "name": "腐化"
+        },
+        {
+          "id": "mireLavaBurn",
+          "name": "熔火"
+        },
+        {
+          "id": "mireErode",
+          "name": "侵蝕"
+        }
+      ],
+      "primaryWp": "magicSword1h",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 7280188391,
+      "avgDps": 181777488,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 19542.97
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 2904070890,
+      "avgDps": 72511133,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 48992.1
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 804968781,
+      "avgDps": 20099096,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 132560.92
+    }
+  },
+  {
+    "target": {
+      "gid": "mire",
+      "groupName": "泥沼術",
+      "elem": "earth",
+      "dmgType": "magic",
+      "ultIndex": 1,
+      "ultId": "abyssInferno",
+      "ultName": "深淵火獄",
+      "ultDesc": "熔岩沼每 {gap} 秒向範圍內{count} 名敵人噴出火球，對附近敵人造成 {pct}% 火焰傷害。火球爆炸後形成火池，每 {poolGap} 秒造成 {poolPct}% 火焰傷害，持續 {poolSec} 秒。",
+      "affixes": [
+        {
+          "id": "mireSpread",
+          "name": "蔓延"
+        },
+        {
+          "id": "mireWeaken",
+          "name": "削弱"
+        },
+        {
+          "id": "mireCorrupt",
+          "name": "腐化"
+        },
+        {
+          "id": "mireLavaBurn",
+          "name": "熔火"
+        },
+        {
+          "id": "mireErode",
+          "name": "侵蝕"
+        }
+      ],
+      "primaryWp": "magicSword1h",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 6572861489,
+      "avgDps": 164116392,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 21646.06
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 2500538549,
+      "avgDps": 62435419,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 56898.36
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 1847041206,
+      "avgDps": 46118382,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 57772.07
+    }
+  },
+  {
+    "target": {
+      "gid": "mire",
+      "groupName": "泥沼術",
+      "elem": "earth",
+      "dmgType": "magic",
+      "ultIndex": 2,
+      "ultId": "netherMire",
+      "ultName": "黃泉沼",
+      "ultDesc": "沼澤範圍內生命值 {hpPct}% 以下的敵人，每次受到傷害有 {chance}% 機率直接被斬殺，且該機率每次受傷再累加 {add}%",
+      "affixes": [
+        {
+          "id": "mireSpread",
+          "name": "蔓延"
+        },
+        {
+          "id": "mireWeaken",
+          "name": "削弱"
+        },
+        {
+          "id": "mireCorrupt",
+          "name": "腐化"
+        },
+        {
+          "id": "mireLavaBurn",
+          "name": "熔火"
+        },
+        {
+          "id": "mireErode",
+          "name": "侵蝕"
+        }
+      ],
+      "primaryWp": "magicSword1h",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 7809083104,
+      "avgDps": 194983348,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 18219.36
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 1955664011,
+      "avgDps": 48830562,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 72751.01
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 2780186886,
+      "avgDps": 69417900,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 38381.38
+    }
+  },
+  {
+    "target": {
+      "gid": "earthguard",
+      "groupName": "大地守護",
+      "elem": "earth",
+      "dmgType": "magic",
+      "ultIndex": 0,
+      "ultId": "hallOfRadiance",
+      "ultName": "光耀之堂",
+      "ultDesc": "每{sec}秒回復{pct}%生命與法力，且溢出的生命與法力以 {conv}% 轉為你的生命護盾。",
+      "affixes": [
+        {
+          "id": "earthguardManaFeed",
+          "name": "魔力滋養"
+        },
+        {
+          "id": "earthguardLifeFeed",
+          "name": "生命滋養"
+        },
+        {
+          "id": "earthguardSoulLink",
+          "name": "靈魂連結"
+        },
+        {
+          "id": "earthguardHeartOfEarth",
+          "name": "地之心"
+        },
+        {
+          "id": "earthguardUndyingWill",
+          "name": "不滅意志"
+        }
+      ],
+      "primaryWp": "shield",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 499989648,
+      "avgDps": 12484136,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 284558.95
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 433163496,
+      "avgDps": 10815568,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 328459.19
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 970200538,
+      "avgDps": 24224733,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 109984.89
+    }
+  },
+  {
+    "target": {
+      "gid": "earthguard",
+      "groupName": "大地守護",
+      "elem": "earth",
+      "dmgType": "magic",
+      "ultIndex": 1,
+      "ultId": "worldRebirth",
+      "ultName": "天地再造",
+      "ultDesc": "被你殺死的普通與菁英敵人有 {chance}% 機率以 {hp}% 生命重生。",
+      "affixes": [
+        {
+          "id": "earthguardManaFeed",
+          "name": "魔力滋養"
+        },
+        {
+          "id": "earthguardLifeFeed",
+          "name": "生命滋養"
+        },
+        {
+          "id": "earthguardSoulLink",
+          "name": "靈魂連結"
+        },
+        {
+          "id": "earthguardHeartOfEarth",
+          "name": "地之心"
+        },
+        {
+          "id": "earthguardUndyingWill",
+          "name": "不滅意志"
+        }
+      ],
+      "primaryWp": "shield",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 207894104,
+      "avgDps": 5190864,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 684370.21
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 220002861,
+      "avgDps": 5493205,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 646703.1
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 745312595,
+      "avgDps": 18609553,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 143171.33
+    }
+  },
+  {
+    "target": {
+      "gid": "earthguard",
+      "groupName": "大地守護",
+      "elem": "earth",
+      "dmgType": "magic",
+      "ultIndex": 2,
+      "ultId": "fateReversal",
+      "ultName": "逆轉乾坤",
+      "ultDesc": "【天地共生】的可累積復活次數，最多累積 {max} 次。",
+      "affixes": [
+        {
+          "id": "earthguardManaFeed",
+          "name": "魔力滋養"
+        },
+        {
+          "id": "earthguardLifeFeed",
+          "name": "生命滋養"
+        },
+        {
+          "id": "earthguardSoulLink",
+          "name": "靈魂連結"
+        },
+        {
+          "id": "earthguardHeartOfEarth",
+          "name": "地之心"
+        },
+        {
+          "id": "earthguardUndyingWill",
+          "name": "不滅意志"
+        }
+      ],
+      "primaryWp": "shield",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 0,
+      "avgDps": 0,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 999999
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 0,
+      "avgDps": 0,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 999999
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 509278177,
+      "avgDps": 12716059,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 209526.74
+    }
+  },
+  {
+    "target": {
+      "gid": "chainlightning",
+      "groupName": "連鎖閃電",
+      "elem": "lightning",
+      "dmgType": "magic",
+      "ultIndex": 0,
+      "ultId": "skyThunderArray",
+      "ultName": "無限閃電",
+      "ultDesc": "每 {gap} 秒自動發射 1 道連鎖閃電，兼具第1～7階的進化效果，但每次僅限1道閃電（不會多道發射或分裂增生）。",
+      "affixes": [
+        {
+          "id": "chainlightningSurge",
+          "name": "電荷連鎖"
+        },
+        {
+          "id": "chainlightningVolley",
+          "name": "電擊"
+        },
+        {
+          "id": "chainlightningScatter",
+          "name": "雷散落"
+        },
+        {
+          "id": "chainlightningSuper",
+          "name": "超導"
+        },
+        {
+          "id": "chainlightningOverload",
+          "name": "過載"
+        }
+      ],
+      "primaryWp": "sword1h",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 21529376374,
+      "avgDps": 537562456,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 6608.48
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 18162212244,
+      "avgDps": 453488446,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 7833.66
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 2071087222,
+      "avgDps": 51712540,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 51522.41
+    }
+  },
+  {
+    "target": {
+      "gid": "chainlightning",
+      "groupName": "連鎖閃電",
+      "elem": "lightning",
+      "dmgType": "magic",
+      "ultIndex": 1,
+      "ultId": "eternalSuperconductor",
+      "ultName": "永恒超導體",
+      "ultDesc": "額外射出 1 道無限彈射的閃電鏈：在自身與 {m} 米內的任意敵人之間往返彈射，每經過自身 1 次使你的雷電傷害 +{pct}%，最多 {maxStacks} 層。",
+      "affixes": [
+        {
+          "id": "chainlightningSurge",
+          "name": "電荷連鎖"
+        },
+        {
+          "id": "chainlightningVolley",
+          "name": "電擊"
+        },
+        {
+          "id": "chainlightningScatter",
+          "name": "雷散落"
+        },
+        {
+          "id": "chainlightningSuper",
+          "name": "超導"
+        },
+        {
+          "id": "chainlightningOverload",
+          "name": "過載"
+        }
+      ],
+      "primaryWp": "sword1h",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 38429796426,
+      "avgDps": 959545479,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 3702.25
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 26834101179,
+      "avgDps": 670015011,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 5302.08
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 2646811676,
+      "avgDps": 66087682,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 40315.45
+    }
+  },
+  {
+    "target": {
+      "gid": "chainlightning",
+      "groupName": "連鎖閃電",
+      "elem": "lightning",
+      "dmgType": "magic",
+      "ultIndex": 2,
+      "ultId": "flyingThunderGod",
+      "ultName": "飛雷神",
+      "ultDesc": "每 {interval} 秒產生 {count}～{countMax} 道巨大金色閃電貫穿全場，路徑上的敵人造成 {pct}% 雷電傷害。",
+      "affixes": [
+        {
+          "id": "chainlightningSurge",
+          "name": "電荷連鎖"
+        },
+        {
+          "id": "chainlightningVolley",
+          "name": "電擊"
+        },
+        {
+          "id": "chainlightningScatter",
+          "name": "雷散落"
+        },
+        {
+          "id": "chainlightningSuper",
+          "name": "超導"
+        },
+        {
+          "id": "chainlightningOverload",
+          "name": "過載"
+        }
+      ],
+      "primaryWp": "sword1h",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 27711581384,
+      "avgDps": 691924629,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 5134.19
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 18955753627,
+      "avgDps": 473302213,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 7505.72
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 3342075981,
+      "avgDps": 83447590,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 31928.48
+    }
+  },
+  {
+    "target": {
+      "gid": "thunderstrike",
+      "groupName": "落雷術",
+      "elem": "lightning",
+      "dmgType": "magic",
+      "ultIndex": 0,
+      "ultId": "thunderMatrix",
+      "ultName": "雷電矩陣",
+      "ultDesc": "召喚橫向與直向各 {count} 道雷電矩陣橫掃全場，對所有敵人各造成  {pct}% 雷電傷害。",
+      "affixes": [
+        {
+          "id": "thunderstrikeTriple",
+          "name": "三重雷"
+        },
+        {
+          "id": "thunderstrikeLock",
+          "name": "雷鎖"
+        },
+        {
+          "id": "thunderstrikeQuake",
+          "name": "震雷"
+        },
+        {
+          "id": "thunderstrikeRebirth",
+          "name": "雷之再生"
+        },
+        {
+          "id": "thunderstrikeRod",
+          "name": "引雷針"
+        }
+      ],
+      "primaryWp": "wand1h",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 407667711031,
+      "avgDps": 10178969064,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 349
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 87014371767,
+      "avgDps": 2172643490,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 1635.09
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 15189368341,
+      "avgDps": 379260133,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 7025.14
+    }
+  },
+  {
+    "target": {
+      "gid": "thunderstrike",
+      "groupName": "落雷術",
+      "elem": "lightning",
+      "dmgType": "magic",
+      "ultIndex": 1,
+      "ultId": "heavenTribulation",
+      "ultName": "雷霆天劫",
+      "ultDesc": "額外召喚 {count} 道永久持續的天劫雷電：每 {gap} 秒同時追擊 {m} 米內生命值最低的敵人；對目標{radiusM} 米內所有敵人造成 {pct}% 雷電傷害。",
+      "affixes": [
+        {
+          "id": "thunderstrikeTriple",
+          "name": "三重雷"
+        },
+        {
+          "id": "thunderstrikeLock",
+          "name": "雷鎖"
+        },
+        {
+          "id": "thunderstrikeQuake",
+          "name": "震雷"
+        },
+        {
+          "id": "thunderstrikeRebirth",
+          "name": "雷之再生"
+        },
+        {
+          "id": "thunderstrikeRod",
+          "name": "引雷針"
+        }
+      ],
+      "primaryWp": "wand1h",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 354030310536,
+      "avgDps": 8839708128,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 401.88
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 94429965739,
+      "avgDps": 2357801891,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 1506.69
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 11476179877,
+      "avgDps": 286546314,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 9298.16
+    }
+  },
+  {
+    "target": {
+      "gid": "thunderstrike",
+      "groupName": "落雷術",
+      "elem": "lightning",
+      "dmgType": "magic",
+      "ultIndex": 2,
+      "ultId": "eternalThunderPrison",
+      "ultName": "永恒雷獄",
+      "ultDesc": "被落雷擊中的敵人會再引發另一道落雷，隨機攻擊其 {m} 米內的其他敵人，最多連續引發 {count} 道落雷。",
+      "affixes": [
+        {
+          "id": "thunderstrikeTriple",
+          "name": "三重雷"
+        },
+        {
+          "id": "thunderstrikeLock",
+          "name": "雷鎖"
+        },
+        {
+          "id": "thunderstrikeQuake",
+          "name": "震雷"
+        },
+        {
+          "id": "thunderstrikeRebirth",
+          "name": "雷之再生"
+        },
+        {
+          "id": "thunderstrikeRod",
+          "name": "引雷針"
+        }
+      ],
+      "primaryWp": "wand1h",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 353024464330,
+      "avgDps": 8814593367,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 403.02
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 99474485646,
+      "avgDps": 2483757444,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 1430.28
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 12298712780,
+      "avgDps": 307083965,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 8676.31
+    }
+  },
+  {
+    "target": {
+      "gid": "thunderorb",
+      "groupName": "雷球",
+      "elem": "lightning",
+      "dmgType": "magic",
+      "ultIndex": 0,
+      "ultId": "criticalThunderbolt",
+      "ultName": "臨界雷劫",
+      "ultDesc": "環體電球觸發的雷球持續 {sec} 秒會向外緩慢移動；每次命中有 {chance}% 機率在目標位置形成 1 個靜止電球，持續 {childSec} 秒；此外所有雷球與電球傷害額外 +{pct}%。",
+      "affixes": [
+        {
+          "id": "thunderorbCore",
+          "name": "雷核"
+        },
+        {
+          "id": "thunderorbOverload",
+          "name": "超載"
+        },
+        {
+          "id": "thunderorbShockCore",
+          "name": "感電核心"
+        },
+        {
+          "id": "thunderorbFallCount",
+          "name": "雷殞落"
+        },
+        {
+          "id": "thunderorbFallStun",
+          "name": "雷殞震"
+        }
+      ],
+      "primaryWp": "orb",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 68331340948,
+      "avgDps": 1706150835,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 2082.16
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 17980113657,
+      "avgDps": 448941664,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 7912.99
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 6427852242,
+      "avgDps": 160495686,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 16600.79
+    }
+  },
+  {
+    "target": {
+      "gid": "thunderorb",
+      "groupName": "雷球",
+      "elem": "lightning",
+      "dmgType": "magic",
+      "ultIndex": 1,
+      "ultId": "thunderBurst",
+      "ultName": "連鎖雷爆",
+      "ultDesc": "每次被雷球命中的敵人有 {chance}% 機率觸發 1 道連鎖閃電，造成 {pct}% 雷電傷害，最多命中 {bounces} 次。",
+      "affixes": [
+        {
+          "id": "thunderorbCore",
+          "name": "雷核"
+        },
+        {
+          "id": "thunderorbOverload",
+          "name": "超載"
+        },
+        {
+          "id": "thunderorbShockCore",
+          "name": "感電核心"
+        },
+        {
+          "id": "thunderorbFallCount",
+          "name": "雷殞落"
+        },
+        {
+          "id": "thunderorbFallStun",
+          "name": "雷殞震"
+        }
+      ],
+      "primaryWp": "orb",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 69497835375,
+      "avgDps": 1735276788,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 2047.21
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 17528059281,
+      "avgDps": 437654414,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 8117.07
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 6595358950,
+      "avgDps": 164678126,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 16179.16
+    }
+  },
+  {
+    "target": {
+      "gid": "thunderorb",
+      "groupName": "雷球",
+      "elem": "lightning",
+      "dmgType": "magic",
+      "ultIndex": 2,
+      "ultId": "thunderfallShatter",
+      "ultName": "雷隕天地碎",
+      "ultDesc": "雷隕石體積增大 {scale}%、傷害額外 +{pct}%，並自動每隔 {gap} 秒不斷降下雷隕石。",
+      "affixes": [
+        {
+          "id": "thunderorbCore",
+          "name": "雷核"
+        },
+        {
+          "id": "thunderorbOverload",
+          "name": "超載"
+        },
+        {
+          "id": "thunderorbShockCore",
+          "name": "感電核心"
+        },
+        {
+          "id": "thunderorbFallCount",
+          "name": "雷殞落"
+        },
+        {
+          "id": "thunderorbFallStun",
+          "name": "雷殞震"
+        }
+      ],
+      "primaryWp": "orb",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 66911962481,
+      "avgDps": 1670710674,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 2126.32
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 27616979761,
+      "avgDps": 689562541,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 5151.78
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 9529183418,
+      "avgDps": 237932170,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 11197.96
+    }
+  },
+  {
+    "target": {
+      "gid": "icearrow",
+      "groupName": "寒冰箭",
+      "elem": "ice",
+      "dmgType": "magic",
+      "ultIndex": 0,
+      "ultId": "absoluteZeroBurst",
+      "ultName": "極寒冰爆",
+      "ultDesc": "冰箭的持續時間 +{durPct}%，每次命中敵人必定造成冰爆；冰爆範圍 +{rangePct}%，傷害額外 +{pct}%。",
+      "affixes": [
+        {
+          "id": "icearrowVolley",
+          "name": "連射"
+        },
+        {
+          "id": "icearrowSeal",
+          "name": "冰封"
+        },
+        {
+          "id": "icearrowWinter",
+          "name": "凜冬侵蝕"
+        },
+        {
+          "id": "icearrowSplit",
+          "name": "冰裂箭"
+        },
+        {
+          "id": "icearrowDeepFreeze",
+          "name": "深度凍結"
+        }
+      ],
+      "primaryWp": "spellbook",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 116895572153,
+      "avgDps": 2918740878,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 1217.13
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 38966844881,
+      "avgDps": 972954928,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 3651.22
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 15870856766,
+      "avgDps": 396276074,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 6723.48
+    }
+  },
+  {
+    "target": {
+      "gid": "icearrow",
+      "groupName": "寒冰箭",
+      "elem": "ice",
+      "dmgType": "magic",
+      "ultIndex": 1,
+      "ultId": "infiniteIceRift",
+      "ultName": "無限冰裂",
+      "ultDesc": "寒冰箭每造成 1次傷害就使寒冰箭的冷卻時間 -{sec} 秒。",
+      "affixes": [
+        {
+          "id": "icearrowVolley",
+          "name": "連射"
+        },
+        {
+          "id": "icearrowSeal",
+          "name": "冰封"
+        },
+        {
+          "id": "icearrowWinter",
+          "name": "凜冬侵蝕"
+        },
+        {
+          "id": "icearrowSplit",
+          "name": "冰裂箭"
+        },
+        {
+          "id": "icearrowDeepFreeze",
+          "name": "深度凍結"
+        }
+      ],
+      "primaryWp": "spellbook",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 143670496187,
+      "avgDps": 3587278307,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 990.3
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 31687112069,
+      "avgDps": 791188816,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 4490.04
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 11948094714,
+      "avgDps": 298329456,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 8930.91
+    }
+  },
+  {
+    "target": {
+      "gid": "icearrow",
+      "groupName": "寒冰箭",
+      "elem": "ice",
+      "dmgType": "magic",
+      "ultIndex": 2,
+      "ultId": "tearsOfIce",
+      "ultName": "冰之淚",
+      "ultDesc": "召喚 {waves} 波寒冰箭雨從天射下，每支寒冰箭額外造成 {pct}% 寒冰傷害。",
+      "affixes": [
+        {
+          "id": "icearrowVolley",
+          "name": "連射"
+        },
+        {
+          "id": "icearrowSeal",
+          "name": "冰封"
+        },
+        {
+          "id": "icearrowWinter",
+          "name": "凜冬侵蝕"
+        },
+        {
+          "id": "icearrowSplit",
+          "name": "冰裂箭"
+        },
+        {
+          "id": "icearrowDeepFreeze",
+          "name": "深度凍結"
+        }
+      ],
+      "primaryWp": "spellbook",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 130304322152,
+      "avgDps": 3253541127,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 1091.88
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 30034056924,
+      "avgDps": 749914031,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 4737.17
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 11246515395,
+      "avgDps": 280811870,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 9488.04
+    }
+  },
+  {
+    "target": {
+      "gid": "waterball",
+      "groupName": "水流彈",
+      "elem": "ice",
+      "dmgType": "magic",
+      "ultIndex": 0,
+      "ultId": "waterPrisonFall",
+      "ultName": "水牢天瀑",
+      "ultDesc": "在周圍 {m} 米展開水牢天瀑：受到的遠程傷害 -{rangedRed}%，範圍內敵人攻擊力 -{atkRed}%且受到的傷害 +{vuln}%，持續 {sec} 秒。",
+      "affixes": [
+        {
+          "id": "waterballVolley",
+          "name": "水流連彈"
+        },
+        {
+          "id": "waterballNovaBurst",
+          "name": "冰霜擴散"
+        },
+        {
+          "id": "waterballFrostSurge",
+          "name": "寒霜湧動"
+        },
+        {
+          "id": "waterballTorrent",
+          "name": "激流"
+        },
+        {
+          "id": "waterballTornado",
+          "name": "水龍勢"
+        }
+      ],
+      "primaryWp": "focus",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 56533176690,
+      "avgDps": 1411564961,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 2516.69
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 10358115423,
+      "avgDps": 258629599,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 13735.75
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 4051884350,
+      "avgDps": 101170645,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 26335.25
+    }
+  },
+  {
+    "target": {
+      "gid": "waterball",
+      "groupName": "水流彈",
+      "elem": "ice",
+      "dmgType": "magic",
+      "ultIndex": 1,
+      "ultId": "ragingTide",
+      "ultName": "怒海狂濤",
+      "ultDesc": "水龍捲的持續時間 +{durAdd} 秒；場上同時有 {need} 道水龍捲時會合併為一道巨型水龍捲，每 {gap} 秒對周圍 {m} 米內的敵人造成 {pct}% 寒冰傷害，持續 {sec} 秒。",
+      "affixes": [
+        {
+          "id": "waterballVolley",
+          "name": "水流連彈"
+        },
+        {
+          "id": "waterballNovaBurst",
+          "name": "冰霜擴散"
+        },
+        {
+          "id": "waterballFrostSurge",
+          "name": "寒霜湧動"
+        },
+        {
+          "id": "waterballTorrent",
+          "name": "激流"
+        },
+        {
+          "id": "waterballTornado",
+          "name": "水龍勢"
+        }
+      ],
+      "primaryWp": "focus",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 41637257192,
+      "avgDps": 1039631890,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 3417.05
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 14583989833,
+      "avgDps": 364144565,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 9755.67
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 860582583,
+      "avgDps": 21487705,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 123994.37
+    }
+  },
+  {
+    "target": {
+      "gid": "waterball",
+      "groupName": "水流彈",
+      "elem": "ice",
+      "dmgType": "magic",
+      "ultIndex": 2,
+      "ultId": "abyssBurial",
+      "ultName": "海淵葬界",
+      "ultDesc": "展開一道 {m} 米的永久寒冰領域，每 {gap} 秒對領域內的敵人施加寒霜狀態；領域內敵人可額外再疊 {stacks} 層寒霜，且受到所有傷害 +{vuln}%。寒冰領域會緩慢將敵人往中心吸入。",
+      "affixes": [
+        {
+          "id": "waterballVolley",
+          "name": "水流連彈"
+        },
+        {
+          "id": "waterballNovaBurst",
+          "name": "冰霜擴散"
+        },
+        {
+          "id": "waterballFrostSurge",
+          "name": "寒霜湧動"
+        },
+        {
+          "id": "waterballTorrent",
+          "name": "激流"
+        },
+        {
+          "id": "waterballTornado",
+          "name": "水龍勢"
+        }
+      ],
+      "primaryWp": "focus",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 54012410972,
+      "avgDps": 1348624494,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 2634.15
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 13736053061,
+      "avgDps": 342972611,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 10357.89
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 3142842559,
+      "avgDps": 78472973,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 33952.51
+    }
+  },
+  {
+    "target": {
+      "gid": "frostnova",
+      "groupName": "冰霜新星",
+      "elem": "ice",
+      "dmgType": "magic",
+      "ultIndex": 0,
+      "ultId": "infiniteNova",
+      "ultName": "無限新星",
+      "ultDesc": "每隔 {gap} 秒自動施放冰霜新星，且冰霜新星傷害額外 +{pct}%。",
+      "affixes": [
+        {
+          "id": "frostnovaShatter",
+          "name": "碎冰"
+        },
+        {
+          "id": "frostnovaTwinBurst",
+          "name": "雙冰爆"
+        },
+        {
+          "id": "frostnovaIceSpike",
+          "name": "寒冰衝擊"
+        },
+        {
+          "id": "frostnovaColdTide",
+          "name": "寒潮"
+        },
+        {
+          "id": "frostnovaWinterFrost",
+          "name": "凜冬寒霜"
+        }
+      ],
+      "primaryWp": "staff2h",
+      "isTwoHand": true
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 43136931917,
+      "avgDps": 1077076952,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 3298.25
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 8716963262,
+      "avgDps": 217652017,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 16321.8
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 4616516228,
+      "avgDps": 115268820,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 23114.27
+    }
+  },
+  {
+    "target": {
+      "gid": "frostnova",
+      "groupName": "冰霜新星",
+      "elem": "ice",
+      "dmgType": "magic",
+      "ultIndex": 1,
+      "ultId": "crystalResonance",
+      "ultName": "極致之冰",
+      "ultDesc": "凍結持續時間 +{durPct}%，凍結中的敵人每隔 {gap} 秒會產生冰爆，對其周圍 {m} 米內的所有敵人造成 {pct}% 寒冰傷害。",
+      "affixes": [
+        {
+          "id": "frostnovaShatter",
+          "name": "碎冰"
+        },
+        {
+          "id": "frostnovaTwinBurst",
+          "name": "雙冰爆"
+        },
+        {
+          "id": "frostnovaIceSpike",
+          "name": "寒冰衝擊"
+        },
+        {
+          "id": "frostnovaColdTide",
+          "name": "寒潮"
+        },
+        {
+          "id": "frostnovaWinterFrost",
+          "name": "凜冬寒霜"
+        }
+      ],
+      "primaryWp": "staff2h",
+      "isTwoHand": true
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 38268322706,
+      "avgDps": 955513676,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 3717.87
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 12509866241,
+      "avgDps": 312356211,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 11373.15
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 1760572832,
+      "avgDps": 43959372,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 60609.48
+    }
+  },
+  {
+    "target": {
+      "gid": "frostnova",
+      "groupName": "冰霜新星",
+      "elem": "ice",
+      "dmgType": "magic",
+      "ultIndex": 2,
+      "ultId": "iceKingDomain",
+      "ultName": "冰皇領域",
+      "ultDesc": "暴風雪的範圍擴大 {scale}%，且每 {gap} 秒在範圍內隨機 {min}～{max} 個目標的地面昇起冰錐，每根冰錐對周圍 {m} 米內的敵人造成連續 {hits} 段 {pct}% 寒冰傷害。",
+      "affixes": [
+        {
+          "id": "frostnovaShatter",
+          "name": "碎冰"
+        },
+        {
+          "id": "frostnovaTwinBurst",
+          "name": "雙冰爆"
+        },
+        {
+          "id": "frostnovaIceSpike",
+          "name": "寒冰衝擊"
+        },
+        {
+          "id": "frostnovaColdTide",
+          "name": "寒潮"
+        },
+        {
+          "id": "frostnovaWinterFrost",
+          "name": "凜冬寒霜"
+        }
+      ],
+      "primaryWp": "staff2h",
+      "isTwoHand": true
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 30775796907,
+      "avgDps": 768434380,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 4623
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 11703572759,
+      "avgDps": 292224039,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 12156.68
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 3122876306,
+      "avgDps": 77974440,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 34169.59
+    }
+  },
+  {
+    "target": {
+      "gid": "windblade",
+      "groupName": "風刃",
+      "elem": "wind",
+      "dmgType": "magic",
+      "ultIndex": 0,
+      "ultId": "stormMyriad",
+      "ultName": "暴風萬刃",
+      "ultDesc": "小型與大型風刃皆可追擊敵人 {sec} 秒，且每次射出的風刃數量 +{add}，風刃傷害額外提高{pct}%。",
+      "affixes": [
+        {
+          "id": "windbladeRend",
+          "name": "裂風"
+        },
+        {
+          "id": "windbladePressure",
+          "name": "增壓"
+        },
+        {
+          "id": "windbladeTrace",
+          "name": "風之痕"
+        },
+        {
+          "id": "windbladeErode",
+          "name": "風蝕"
+        },
+        {
+          "id": "windbladeVoidCut",
+          "name": "斷空刃"
+        }
+      ],
+      "primaryWp": "wand1h",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 161105006075,
+      "avgDps": 4022596906,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 883.13
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 36447736965,
+      "avgDps": 910055854,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 3903.58
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 9879955463,
+      "avgDps": 246690523,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 10800.39
+    }
+  },
+  {
+    "target": {
+      "gid": "windblade",
+      "groupName": "風刃",
+      "elem": "wind",
+      "dmgType": "magic",
+      "ultIndex": 1,
+      "ultId": "stormMountain",
+      "ultName": "嵐之山",
+      "ultDesc": "風刃具備風系與土系雙屬性；可受到風系傷害提升{windPct}%與土系傷害提升 {earthPct}%加成；風刃擊殺敵人時回復最大生命 {healPct}% 的生命值。",
+      "affixes": [
+        {
+          "id": "windbladeRend",
+          "name": "裂風"
+        },
+        {
+          "id": "windbladePressure",
+          "name": "增壓"
+        },
+        {
+          "id": "windbladeTrace",
+          "name": "風之痕"
+        },
+        {
+          "id": "windbladeErode",
+          "name": "風蝕"
+        },
+        {
+          "id": "windbladeVoidCut",
+          "name": "斷空刃"
+        }
+      ],
+      "primaryWp": "wand1h",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 201535440527,
+      "avgDps": 5032095893,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 705.96
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 50350182805,
+      "avgDps": 1257183091,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 2825.74
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 11254100574,
+      "avgDps": 281001263,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 9481.65
+    }
+  },
+  {
+    "target": {
+      "gid": "windblade",
+      "groupName": "風刃",
+      "elem": "wind",
+      "dmgType": "magic",
+      "ultIndex": 2,
+      "ultId": "skyCollapse",
+      "ultName": "天穹崩裂",
+      "ultDesc": "風刃改為被動技能：受到攻擊時有 {chance}% 機率朝攻擊者射出 1 道小型追蹤風刃，且其傷害額外 +{pct}%。",
+      "affixes": [
+        {
+          "id": "windbladeRend",
+          "name": "裂風"
+        },
+        {
+          "id": "windbladePressure",
+          "name": "增壓"
+        },
+        {
+          "id": "windbladeTrace",
+          "name": "風之痕"
+        },
+        {
+          "id": "windbladeErode",
+          "name": "風蝕"
+        },
+        {
+          "id": "windbladeVoidCut",
+          "name": "斷空刃"
+        }
+      ],
+      "primaryWp": "wand1h",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 164890047424,
+      "avgDps": 4117104805,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 862.86
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 30981086415,
+      "avgDps": 773560210,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 4592.37
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 8595600904,
+      "avgDps": 214621745,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 12414.19
+    }
+  },
+  {
+    "target": {
+      "gid": "vacuumslash",
+      "groupName": "真空斬",
+      "elem": "wind",
+      "dmgType": "magic",
+      "ultIndex": 0,
+      "ultId": "vacuumOmen",
+      "ultName": "萬象風劫",
+      "ultDesc": "真空斬命中時有 {chance}% 機率在該處留下一道靜止的真空斬，持續 {sec} 秒，對敵人造成 {pct}% 風系傷害，最多同時存在 15 個靜止真空斬。",
+      "affixes": [
+        {
+          "id": "vacuumResonance",
+          "name": "共振"
+        },
+        {
+          "id": "vacuumRift",
+          "name": "裂痕"
+        },
+        {
+          "id": "vacuumWindBlade",
+          "name": "真空風刃"
+        },
+        {
+          "id": "vacuumExpand",
+          "name": "空間澎脹"
+        },
+        {
+          "id": "vacuumFlux",
+          "name": "虛空漲落"
+        }
+      ],
+      "primaryWp": "axe2h",
+      "isTwoHand": true
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 120744908593,
+      "avgDps": 3014854147,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 1178.32
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 39591678483,
+      "avgDps": 988556267,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 3593.6
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 8603990483,
+      "avgDps": 214831223,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 12402.08
+    }
+  },
+  {
+    "target": {
+      "gid": "vacuumslash",
+      "groupName": "真空斬",
+      "elem": "wind",
+      "dmgType": "magic",
+      "ultIndex": 1,
+      "ultId": "voidAnnihilation",
+      "ultName": "虛空滅界",
+      "ultDesc": "每 {gap} 秒自動發射 {count} 個虛空斬（不足1個的部分以機率觸發），各自朝360度隨機方向，以每秒 {speed} 米直線飛行，走滿 {flyM} 米後消失；不以敵人決定方向、不追蹤目標。",
+      "affixes": [
+        {
+          "id": "vacuumResonance",
+          "name": "共振"
+        },
+        {
+          "id": "vacuumRift",
+          "name": "裂痕"
+        },
+        {
+          "id": "vacuumWindBlade",
+          "name": "真空風刃"
+        },
+        {
+          "id": "vacuumExpand",
+          "name": "空間澎脹"
+        },
+        {
+          "id": "vacuumFlux",
+          "name": "虛空漲落"
+        }
+      ],
+      "primaryWp": "axe2h",
+      "isTwoHand": true
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 108742884905,
+      "avgDps": 2715178150,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 1308.38
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 31982244115,
+      "avgDps": 798557905,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 4448.61
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 10578557783,
+      "avgDps": 264133777,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 10087.14
+    }
+  },
+  {
+    "target": {
+      "gid": "vacuumslash",
+      "groupName": "真空斬",
+      "elem": "wind",
+      "dmgType": "magic",
+      "ultIndex": 2,
+      "ultId": "spacetimeCollapse",
+      "ultName": "時空崩解",
+      "ultDesc": "虛空斬不再向外擴展，改為全部固定在你周圍 {m} 米環繞，且持續時間額外 +{pct}%。",
+      "affixes": [
+        {
+          "id": "vacuumResonance",
+          "name": "共振"
+        },
+        {
+          "id": "vacuumRift",
+          "name": "裂痕"
+        },
+        {
+          "id": "vacuumWindBlade",
+          "name": "真空風刃"
+        },
+        {
+          "id": "vacuumExpand",
+          "name": "空間澎脹"
+        },
+        {
+          "id": "vacuumFlux",
+          "name": "虛空漲落"
+        }
+      ],
+      "primaryWp": "axe2h",
+      "isTwoHand": true
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 117878552845,
+      "avgDps": 2943284715,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 1206.98
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 33028974133,
+      "avgDps": 824693486,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 4307.63
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 7695593846,
+      "avgDps": 192149659,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 13866.04
+    }
+  },
+  {
+    "target": {
+      "gid": "stormbarrier",
+      "groupName": "暴風屏障",
+      "elem": "wind",
+      "dmgType": "magic",
+      "ultIndex": 0,
+      "ultId": "valgrForce",
+      "ultName": "瓦爾格之力",
+      "ultDesc": "召喚風之神祇降臨：【暴風神體】的持續時間 +{sec}%、傷害減免再 +{red}%，且自身風系傷害額外 +{pct}%；當你失去的護盾值累積滿最大生命的 {lostPct}% 時，對周圍 {m} 米內的敵人扣減其 {cut}% 最大生命",
+      "affixes": [
+        {
+          "id": "stormbarrierAbsorb",
+          "name": "吸收"
+        },
+        {
+          "id": "stormbarrierReflect",
+          "name": "暴風反射"
+        },
+        {
+          "id": "stormbarrierCounterCut",
+          "name": "逆風切"
+        },
+        {
+          "id": "stormbarrierWall",
+          "name": "風之壁"
+        },
+        {
+          "id": "stormbarrierCore",
+          "name": "風暴核心"
+        }
+      ],
+      "primaryWp": "shield",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 14245687252,
+      "avgDps": 355697559,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 9987.34
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 4445762423,
+      "avgDps": 111005304,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 32002.73
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 1585715229,
+      "avgDps": 39593389,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 67292.91
+    }
+  },
+  {
+    "target": {
+      "gid": "stormbarrier",
+      "groupName": "暴風屏障",
+      "elem": "wind",
+      "dmgType": "magic",
+      "ultIndex": 1,
+      "ultId": "skyfallStars",
+      "ultName": "天穹崩裂",
+      "ultDesc": "每 {gap} 秒從天上落下 {min}～{max} 個召喚星體（巨大風刃／雷隕石／火隕石隨機，不足 1 個的部分以機率觸發），每個對落點 {m} 米內的敵人造成 {pct}% 傷害",
+      "affixes": [
+        {
+          "id": "stormbarrierAbsorb",
+          "name": "吸收"
+        },
+        {
+          "id": "stormbarrierReflect",
+          "name": "暴風反射"
+        },
+        {
+          "id": "stormbarrierCounterCut",
+          "name": "逆風切"
+        },
+        {
+          "id": "stormbarrierWall",
+          "name": "風之壁"
+        },
+        {
+          "id": "stormbarrierCore",
+          "name": "風暴核心"
+        }
+      ],
+      "primaryWp": "shield",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 12566465698,
+      "avgDps": 313769431,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 11321.92
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 3446182570,
+      "avgDps": 86047005,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 41285.26
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 773409790,
+      "avgDps": 19311106,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 137970.06
+    }
+  },
+  {
+    "target": {
+      "gid": "stormbarrier",
+      "groupName": "暴風屏障",
+      "elem": "wind",
+      "dmgType": "magic",
+      "ultIndex": 2,
+      "ultId": "myriadPhenomena",
+      "ultName": "森羅萬象",
+      "ultDesc": "施放暴風屏障時同時打出【暴風真空刃】與【虛空斬】，且這兩者的傷害額外 +{pct}%。",
+      "affixes": [
+        {
+          "id": "stormbarrierAbsorb",
+          "name": "吸收"
+        },
+        {
+          "id": "stormbarrierReflect",
+          "name": "暴風反射"
+        },
+        {
+          "id": "stormbarrierCounterCut",
+          "name": "逆風切"
+        },
+        {
+          "id": "stormbarrierWall",
+          "name": "風之壁"
+        },
+        {
+          "id": "stormbarrierCore",
+          "name": "風暴核心"
+        }
+      ],
+      "primaryWp": "shield",
+      "isTwoHand": false
+    },
+    "normalMob": {
+      "scenarioType": 1,
+      "scenarioName": "普通小怪 (20隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 13279015993,
+      "avgDps": 331560949,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 10714.39
+    },
+    "elite": {
+      "scenarioType": 2,
+      "scenarioName": "菁英怪 (5隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 5198085932,
+      "avgDps": 129789911,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 27370.95
+    },
+    "boss": {
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "sampleDuration": 40.05,
+      "totalDamage": 637792957,
+      "avgDps": 15924918,
+      "cleared": false,
+      "clearedTime": 0,
+      "estimatedFullClearTime": 167307.27
+    }
+  }
+]
