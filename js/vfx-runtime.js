@@ -1400,9 +1400,12 @@ var VFXRuntime = (function () {
        站在毒帶上方半段（Y 較小）的敵人會被整條蓋住（2026-10-24 使用者回報 NPC 跑到毒素加持下方）。
        貼地水面一律沉到所有角色與影子之下。 */
     var FLOOR_DECAL_DEPTH_Y = -1e6;
+    /* 泥沼術（ground-mire-*）同理：整片沼澤是一個大面積貼地圖，以原點 Y 排序時，
+       站在沼澤上半部（Y 較小）的敵人會被整片蓋住（2026-10-25 使用者回報）。 */
+    function isFloorMire(presetId) { return /^(en-)?ground-mire/.test(presetId || ''); }
     function groundParams(g) {
       var params = groundParamsBase(g);
-      if (g.poisonTrail || g.presetId === 'en-poison-dot') params.depthY = FLOOR_DECAL_DEPTH_Y;
+      if (g.poisonTrail || g.presetId === 'en-poison-dot' || isFloorMire(g.presetId)) params.depthY = FLOOR_DECAL_DEPTH_Y;
       return params;
     }
     function groundParamsBase(g) {

@@ -42,7 +42,7 @@ function load(lv = 1, roll = .999) {
   c.G = { player: { level: 1000, skills2: { levels: { vacuumslash: Array(7).fill(10) },
     ult: { vacuumslash: { pick: c.sgUltIndexOfId('vacuumslash', 'voidAnnihilation'), lv } } },
     loadout: ['sg:vacuumslash'] }, tower: { highest: 100 }, stage: { current: 1 } };
-  const p = { hp: 1000, mp: 0, pos: { x: 30, y: 20 }, effects: {}, buffs: {}, dots: [],
+  const p = { hp: 1000, mp: 1e9, pos: { x: 30, y: 20 }, effects: {}, buffs: {}, dots: [],
     skillCds: { 'sg:vacuumslash': 9 } };
   const st = { atk: 1000, matk: 500, hp: 1000, mp: 1000, level: 1000, cdr: 0,
     passives: {}, legendaryEffects: {}, legendaryEffectMults: {}, elemDmgUp: {} };
@@ -69,7 +69,7 @@ function load(lv = 1, roll = .999) {
   return { c, p, st, g, option, ctx, events, hits, auto, tick, spawnOne, setPool(v) { pool = v; } };
 }
 
-test('虛空滅界：半秒首拍與每批數量成長，空場零法力仍持續發射', () => {
+test('虛空滅界：半秒首拍與每批數量成長，空場仍持續發射，每批扣法力', () => {
   for (const [lv, roll, count] of [[1, .999, 2], [1, 0, 3], [5, .999, 3], [10, .999, 4]]) {
     const h = load(lv, roll);
     assert.deepEqual(JSON.parse(JSON.stringify(h.option.fx)), { count: 2, countPer: .2, gap: .5, flyM: 60, speed: 12 });
@@ -79,7 +79,7 @@ test('虛空滅界：半秒首拍與每批數量成長，空場零法力仍持�
     assert.equal(h.c.SKILL2_RT.projectiles.length, count);
     h.auto(1); assert.equal(h.c.SKILL2_RT.projectiles.length, count * 2);
     assert.equal(h.c.SKILL2_RT.orbits.length, 0);
-    assert.equal(h.p.mp, 0); assert.equal(h.p.skillCds['sg:vacuumslash'], 9);
+    assert.equal(h.p.mp, 1e9 - h.c.skills2ManaCost('vacuumslash') * 2, '兩批各扣一次施法法力（2026-10-25 起）'); assert.equal(h.p.skillCds['sg:vacuumslash'], 9);
     assert.match(h.c.describeSkill2Ult('vacuumslash', 1, lv), /每 0.5 秒.*12 米.*60 米/);
   }
 });

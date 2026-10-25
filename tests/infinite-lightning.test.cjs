@@ -52,7 +52,7 @@ function load(lv = 1) {
   c.G = { player: { skills2: { levels: { chainlightning: [10, 10, 10, 10, 10, 10, 10] },
     ult: { chainlightning: { pick: c.sgUltIndexOfId('chainlightning', 'skyThunderArray'), lv } } },
     loadout: ['sg:chainlightning'] }, stage: { current: 1 } };
-  const p = { hp: 1000, mp: 0, effects: {}, buffs: {}, dots: [], skillCds: { 'sg:chainlightning': 9 } };
+  const p = { hp: 1000, mp: 1e9, effects: {}, buffs: {}, dots: [], skillCds: { 'sg:chainlightning': 9 } };
   const st = { hp: 1000, mp: 1000, atk: 1000, matk: 500, level: 10, cdr: 0,
     passives: {}, legendaryEffects: {}, legendaryEffectMults: {}, elemDmgUp: {} };
   c.getStats = () => st;
@@ -100,16 +100,29 @@ test('無限閃電：間隔及升級說明共用表格，裝配後首拍才發�
   assert.ok(Math.abs(h.c.sgInfiniteLightningGap() - .78) < 1e-9, '調表後不寫死節拍');
 });
 
-test('無限閃電：不需先施放、持續自動發射，零法力與既有冷卻均不阻擋', () => {
+test('無限閃電：不需先施放、持續自動發射，每發扣法力，既有冷卻不阻擋', () => {
   const h = load();
   let hooks = 0; h.c.rwOnSkillCast = h.c.recordRunSkillCast = () => hooks++;
   h.auto(0);
   for (let i = 0; i < 8; i++) h.auto(h.c.SKILL2_RT.infiniteLightningAt);
   assert.equal(h.bolts.length, 8, '跨過舊持續時間仍發射');
-  assert.equal(h.p.mp, 0); assert.equal(h.p.skillCds['sg:chainlightning'], 9);
+  const cost = h.c.skills2ManaCost('chainlightning');
+  assert.ok(cost > 0);
+  assert.equal(h.p.mp, 1e9 - cost * 8, '每發自動鏈扣一次施法法力（2026-10-25 起）'); assert.equal(h.p.skillCds['sg:chainlightning'], 9);
   assert.equal(hooks, 0, '免費自動鏈不觸發付費施法連鎖');
   assert.ok(h.casts.every(x => x.opts.repeat && x.opts.singleChain));
   assert.equal(h.c.SKILL2_RT.ultRepeat.chainlightning, undefined);
+});
+
+test('無限閃電：法力不足就不發射，也不補發', () => {
+  const h = load();
+  const cost = h.c.skills2ManaCost('chainlightning');
+  h.p.mp = cost - 1;
+  h.auto(0); h.auto(h.c.SKILL2_RT.infiniteLightningAt); h.auto(h.c.SKILL2_RT.infiniteLightningAt);
+  assert.equal(h.bolts.length, 0); assert.equal(h.p.mp, cost - 1);
+  h.p.mp = cost;
+  h.auto(h.c.SKILL2_RT.infiniteLightningAt);
+  assert.equal(h.bolts.length, 1, '補足後只打一發'); assert.equal(h.p.mp, 0);
 });
 
 test('無限閃電：同一條鏈保留1～7階傷害、彈射、雷鳴與靜電，不會分裂', () => {
