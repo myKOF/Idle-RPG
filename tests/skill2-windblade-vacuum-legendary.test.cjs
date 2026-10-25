@@ -519,6 +519,7 @@ test('【虛空滅界】舊配置過渡：每2秒自動環繞單道並保留舊�
   equip(c, 'vacuumslash');
   setUlt(c, 'vacuumslash', 'voidAnnihilation', 1);
   const p = playerEnt();
+  p.mp = 1e9;   // 自動施放每次扣法力（2026-10-25 起）
   const list = [enemy(1e9, 20, 0, 'a')];
   advance(c, p, list, 5);
   assert.equal(c.SKILL2_RT.orbits.length, 2, '第 2 秒與第 4 秒各一道');

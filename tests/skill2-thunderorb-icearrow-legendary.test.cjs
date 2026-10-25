@@ -859,3 +859,29 @@ test('六個新超神進化：id 與參數表一致，說明模板的參數鍵�
     });
   });
 });
+
+test('【雷殞天地碎】：自動降下每顆扣一次施法法力，法力不足就跳過、不補發', () => {
+  function run(mp) {
+    const c = loadContext();
+    const specs = stubVfx(c);
+    stubHits(c);
+    c.chance = () => false;
+    maxLevels(c, 'thunderorb');
+    equip(c, 'thunderorb');
+    setUlt(c, 'thunderorb', 'thunderfallShatter', 1);
+    const p = playerEnt();
+    p.mp = mp(c);
+    const mp0 = p.mp;
+    const gap = c.sgUltVal(c.sgUlt('thunderorb', 'thunderfallShatter'), 'gap');
+    advance(c, p, [enemy(1e9, 40, 0, 'a')], gap * 3.5);
+    return { c, p, mp0, falls: specs.filter((s) => s.variant === 'thunder-fall').length };
+  }
+  const poor = run(() => 0);
+  assert.equal(poor.falls, 0, '沒有法力就不降');
+  assert.equal(poor.p.mp, 0);
+  const rich = run((c) => c.skills2ManaCost('thunderorb') * 100);
+  const cost = rich.c.skills2ManaCost('thunderorb');
+  assert.ok(cost > 0);
+  const paid = (rich.mp0 - rich.p.mp) / cost;
+  assert.equal(paid, 3, '3.5 個節拍落 3 顆，每顆各扣一次');
+});

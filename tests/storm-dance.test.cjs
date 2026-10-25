@@ -35,6 +35,7 @@ function setup(tower) {
   c.GT = 0;
   c.castSkill2(p, [m], 'dualdance', 'mv-float');
   assert.ok(c.skill2StormActive());
+  p.mp = 1e9;   // 自動揮舞每次扣法力（2026-10-25 起），測試不卡在法力
   let auto = 0;
   const cast = c.castSkill2;
   c.castSkill2 = (...args) => { if (args[4]?.storm) auto++; return cast(...args); };

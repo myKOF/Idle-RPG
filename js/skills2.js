@@ -2604,8 +2604,8 @@ function sgTickFlyingProjectiles(dt, ctx) {
 
 /* ---- 施放總入口 ----
    pEnt 玩家戰鬥實體、target 為敵人陣列（野外）或單一實體（高塔）、gid 群組 id。
-   opts.storm＝暴風之舞自動施放（不扣魔、不進自身冷卻、不重複觸發暴風）。
-   opts.repeat＝終極進化的重複施放（【天地雷鎖陣】【永恒雷獄】）：同樣不扣魔、不進冷卻，
+   opts.storm＝暴風之舞自動施放（本函式不扣魔、不進自身冷卻、不重複觸發暴風；自動施放的法力由呼叫端 sgTickStorm 以 sgAutoCastPay 另扣）。
+   opts.repeat＝終極進化的重複施放（【天地雷鎖陣】【永恒雷獄】的持續重複不扣魔；【無限閃電】【無限新星】每拍由呼叫端另扣）：不進冷卻，
    且不再重新起算重複節拍——否則第一次施放就會把自己續成無限迴圈。
    回傳 { killed, dmg, crit } 或 null（無法施放）。 */
 function skills2DefensivePrecast(gid) {
@@ -8472,8 +8472,10 @@ function sgTickInfiniteLightning(ctx, dt) {
   SKILL2_RT.infiniteLightningAt = GT + gap;
   if (typeof effectActive === 'function' && effectActive(ctx.pEnt, 'stun')) return;
   var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
+  if (!sgAutoCastCanPay(ctx.pEnt, 'chainlightning')) return;
   var res = castSkill2(ctx.pEnt, enemies, 'chainlightning', ctx.floatSel, { repeat: true, singleChain: true });
   if (!res) return;
+  sgAutoCastPay(ctx.pEnt, 'chainlightning');
   if (ctx.onDamage && res.dmg > 0) ctx.onDamage(res.dmg);
   if (res.killed && ctx.onDeaths) ctx.onDeaths();
 }
@@ -8690,6 +8692,8 @@ function sgTickThunderfallShatter(ctx, dt) {
   var g = SKILLS2.thunderorb;
   /* 落點隨機（設計沒有指定目標規則，比照飛行雷球的「隨機選」）。
      ultMult 固定為 1：一個群組同時只有一個超神生效，【臨界雷劫】不可能同時在。 */
+  if (!sgAutoCastCanPay(ctx.pEnt, 'thunderorb')) return;
+  sgAutoCastPay(ctx.pEnt, 'thunderorb');
   var primary = live[Math.floor(Math.random() * live.length)];
   var spec = sgThunderfallSpec(g, st, skills2Levels('thunderorb'), sgLegend('thunderorb'),
     u, 1, sgThunderorbBurstSpec(g, st));
@@ -10405,8 +10409,9 @@ function sgTickCrystalResonance(ctx, dt) {
 }
 
 /* ---- 超神【無限新星】：每 gap 秒自動施放 1 次冰霜新星 ----
-   走 castSkill2 的 opts.repeat（不扣法力、不進冷卻）而不是【天霸風神斬】那條付費路徑：
-   節拍比冷卻短一個數量級，付費路徑等於每一拍扣一次施法法力，而且冷卻會被永遠重設。
+   走 castSkill2 的 opts.repeat（不進冷卻）而不是【天霸風神斬】那條付費路徑：
+   節拍比冷卻短一個數量級，付費路徑會讓冷卻被永遠重設。法力改由 sgAutoCastPay 每一拍另外扣
+  （2026-10-25 起自動施放不再免費）。
    其餘規則比照既有的自動施放：沒裝配在技能列不生效、暈眩中跳過該次且不補發、
    死亡／倒地時節拍往後推。 */
 function sgTickInfiniteNova(ctx, dt) {
@@ -10422,8 +10427,10 @@ function sgTickInfiniteNova(ctx, dt) {
   SKILL2_RT.infiniteNovaAt = GT + gap;
   if (typeof effectActive === 'function' && effectActive(ctx.pEnt, 'stun')) return;
   var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
+  if (!sgAutoCastCanPay(ctx.pEnt, 'frostnova')) return;
   var res = castSkill2(ctx.pEnt, enemies, 'frostnova', ctx.floatSel, { repeat: true });
   if (!res) return;
+  sgAutoCastPay(ctx.pEnt, 'frostnova');
   if (ctx.onDamage) ctx.onDamage(res.dmg);
   if (res.killed && ctx.onDeaths) ctx.onDeaths();
 }
@@ -11334,7 +11341,7 @@ function sgSpawnVoidFlights(pEnt, st, g, lvs, floatSel, spec) {
   }
 }
 
-/* 自動批次不扣魔／不改冷卻；沒裝配就停止，倒地保留下一批的剩餘等待時間。 */
+/* 自動批次扣一次法力（sgAutoCastPay）、不改冷卻；沒裝配就停止，倒地保留下一批的剩餘等待時間。 */
 function sgTickVoidAnnihilation(ctx, dt) {
   var u = sgUlt('vacuumslash', 'voidAnnihilation');
   if (!u || !skills2Equipped('vacuumslash')) { SKILL2_RT.voidAnnihilateAt = 0; return; }
@@ -11350,6 +11357,8 @@ function sgTickVoidAnnihilation(ctx, dt) {
   var lvs = skills2Levels('vacuumslash');
   var st = (typeof getStats === 'function') ? getStats() : null;
   if (!lvs || lvs[6] < 1 || !st) return;
+  if (!sgAutoCastCanPay(ctx.pEnt, 'vacuumslash')) return;
+  sgAutoCastPay(ctx.pEnt, 'vacuumslash');
   var flight = sgVoidAnnihilationFlightSpec(u);
   if (flight) {
     sgSpawnVoidFlights(ctx.pEnt, st, SKILLS2.vacuumslash, lvs, ctx.floatSel, flight);
@@ -12348,6 +12357,26 @@ function sgStarfallImpact(ctx, u) {
      ・暈眩中跳過該次，錯過的不補發
      ・法力不足就不觸發（比照反擊逐階扣魔的使用者決策）
    自動施放走 castSkill2 的正規路徑，因此扣魔、冷卻、傷害結算與手動施放完全一致。 */
+/* ---- 自動施放的法力（2026-10-25 使用者決策：自動施放也要消耗法力，不再免費）----
+   適用：每 gap 秒自動施放的終極進化——無限閃電、無限新星、虛空滅界、雷殞天地碎與暴風之舞的每一次揮舞
+   （天霸風神斬走 castSkill2 的正規付費路徑，本來就會扣）。
+   每一拍的消耗＝該群組目前的施法消耗（skills2ManaCost，與手動施放同值）× 符文真言法力乘區。
+   法力不足就跳過這一拍、不補發、不欠帳（比照天霸風神斬與反擊逐階扣魔）；
+   實際沒施放出去（沒有可打的目標）不扣。GM 鎖魔時視為付得起且不扣。
+   不進冷卻、不重啟重複節拍：那是 castSkill2 的 opts.repeat／storm 的既有語意，這裡只補上代價。 */
+function sgAutoCastManaCost(gid) {
+  return skills2ManaCost(gid) * ((typeof rwManaCostFactor === 'function') ? rwManaCostFactor() : 1);
+}
+function sgAutoCastCanPay(pEnt, gid) {
+  if (!pEnt) return false;
+  if (typeof gmMpLockActive === 'function' && gmMpLockActive(pEnt)) return true;
+  return pEnt.mp >= sgAutoCastManaCost(gid);
+}
+function sgAutoCastPay(pEnt, gid) {
+  if (!pEnt || (typeof gmMpLockActive === 'function' && gmMpLockActive(pEnt))) return;
+  pEnt.mp = Math.max(0, pEnt.mp - sgAutoCastManaCost(gid));
+}
+
 function sgUltAutoCastGap(u) { return Math.max(0.5, sgUltVal(u, 'sec')); }
 function sgTickUltAutoCast(ctx, dt) {
   if (!SKILL2_RT.ultAuto) SKILL2_RT.ultAuto = {};
@@ -12400,8 +12429,10 @@ function sgTickStorm(ctx, dt) {
     guard++;
     stm.nextAt += Math.max(0.1, stm.gap);
     if (stunned) continue;
+    if (!sgAutoCastCanPay(ctx.pEnt, 'dualdance')) continue;   // 法力不足＝這一揮不發，節拍照走
     var res = castSkill2(ctx.pEnt, enemies, 'dualdance', ctx.floatSel, { storm: true });
     if (res) {
+      sgAutoCastPay(ctx.pEnt, 'dualdance');
       if (ctx.onDamage) ctx.onDamage(res.dmg);
       if (res.killed && ctx.onDeaths) ctx.onDeaths();
       enemies = ctx.getEnemies ? ctx.getEnemies() : enemies;

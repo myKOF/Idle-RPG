@@ -516,7 +516,7 @@ test('【凜冬寒霜】（2026-10-20 改版）：暴風雪對帶寒霜的敵人
    4) 冰霜新星的三個超神進化
    =========================================================================== */
 
-test('【無限新星】：每 1 秒自動施放 1 次，不扣法力、不進冷卻，且新星傷害 +50%', () => {
+test('【無限新星】：每 1 秒自動施放 1 次，每次扣法力、不進冷卻，且新星傷害 +50%', () => {
   const c = loadContext();
   stubVfx(c);
   const calls = stubHits(c);
@@ -526,10 +526,15 @@ test('【無限新星】：每 1 秒自動施放 1 次，不扣法力、不進�
   setUlt(c, 'frostnova', 'infiniteNova', 1);
   const p = playerEnt();
   const es = [enemy(1e9, 40, 0, 'a')];
+  const cost = c.skills2ManaCost('frostnova');
+  assert.ok(cost > 0, '終極進化列有施法消耗');
+  p.mp = cost * 100;
   const mp0 = p.mp;
-  advance(c, p, es, 2.6);
-  assert.ok(calls.length >= 2, '2.6 秒內自動施放 2 次');
-  assert.equal(p.mp, mp0, '自動施放不扣法力');
+  const gap = c.sgUltVal(c.sgUlt('frostnova', 'infiniteNova'), 'gap');
+  advance(c, p, es, gap * 2.6);
+  const casts = (mp0 - p.mp) / cost;
+  assert.equal(casts, 2, '2.6 個節拍內自動施放 2 次，每次扣一次施法法力（2026-10-25 起）');
+  assert.ok(calls.length >= 2);
   assert.equal(p.skillCds[c.SG_PREFIX + 'frostnova'], undefined, '自動施放不進冷卻');
 
   const plain = loadContext();
@@ -538,9 +543,32 @@ test('【無限新星】：每 1 秒自動施放 1 次，不扣法力、不進�
   plain.chance = () => false;
   maxLevels(plain, 'frostnova');
   equip(plain, 'frostnova');
-  plain.castSkill2(playerEnt(), [enemy(1e9, 40, 0, 'a')], 'frostnova', 'mv-float');
+  const plainPlayer = playerEnt(); plainPlayer.mp = 1e9;
+  plain.castSkill2(plainPlayer, [enemy(1e9, 40, 0, 'a')], 'frostnova', 'mv-float');
   // Lv.1 ＝ 50 + 5×1 ＝ 55%
   assert.equal(Math.round(calls[0].atk / plainCalls[0].atk * 100), 155, '新星傷害 ×1.55');
+});
+
+test('【無限新星】：法力不足就跳過該次，不補發、不欠帳', () => {
+  const c = loadContext();
+  stubVfx(c);
+  const calls = stubHits(c);
+  c.chance = () => false;
+  maxLevels(c, 'frostnova');
+  equip(c, 'frostnova');
+  setUlt(c, 'frostnova', 'infiniteNova', 1);
+  const p = playerEnt();
+  const es = [enemy(1e9, 40, 0, 'a')];
+  const cost = c.skills2ManaCost('frostnova');
+  const gap = c.sgUltVal(c.sgUlt('frostnova', 'infiniteNova'), 'gap');
+  p.mp = cost - 1;
+  advance(c, p, es, gap * 3.2);
+  assert.equal(calls.length, 0, '法力不足不施放');
+  assert.equal(p.mp, cost - 1, '沒施放就不扣');
+  p.mp = cost;
+  advance(c, p, es, gap * 1.1);
+  assert.ok(calls.length > 0, '補足法力後會施放');
+  assert.equal(p.mp, 0, '只付一次，不補發錯過的拍數');
 });
 
 test('【極致之冰】：單一凍結敵人也會冰爆並傷害未凍結敵人', () => {
