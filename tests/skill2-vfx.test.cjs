@@ -89,7 +89,8 @@ test('火龍捲與第七階無限火龍均維持表定圓形傷害範圍', () =>
    assert.equal(size.scaleX,size.scaleY);
   }
   assert.equal(f.radius,c.bfMeterPx(table.number('firepillar',1,'傷害範圍（米）',1)));
-  assert.equal(f.fireHunt||false,!!tier7,'第七階轉為追擊場域');
+  assert.equal(f.infinite||false,!!tier7,'第七階標記為無限火龍');
+  assert.equal(f.speed,0,'未選永劫火獄時任何階段都不移動');
  }
 });
 

@@ -9,7 +9,7 @@ test('runtime uses T7 field, shares motion speed/turn, renews the same instance'
  const area=c.sgGroundArea(f);const spec={fxKind:'impact',variant:'pillar',dur:1,area,vfx:c.SKILLS2.firepillar.tiers[6].vfx};
  assert.equal(adapter.tryPlay(spec),true);adapter.update(.3);let a=nodes[0].t.at(-1);
  adapter.update(.01);let b=nodes[0].t.at(-1);
- assert.ok(Math.abs(Math.hypot(b.x-a.x,b.y-a.y)-.6)<.01);
+ assert.ok(Math.hypot(b.x-a.x,b.y-a.y)<1e-6,'第七階不會移動（只有永劫火獄會游走）');
  assert.equal(adapter.tryPlay(spec),true);assert.equal(adapter.stats().played,1);
  adapter.update(4);assert.equal(adapter.stats().fx.activeEffects,0);
 });
@@ -25,26 +25,31 @@ function setup(level=1){
  return {c,p,m,f:c.SKILL2_RT.grounds[0]};
 }
 test('T7 keeps two circular columns, adds six hits, scales damage and uses dark red field',()=>{
- const {c,f}=setup();assert.equal(c.SKILL2_RT.grounds.length,2);assert.equal(f.kind,'pillar');assert.equal(f.hits,12);assert.equal(f.gap,.5);assert.equal(f.dmgVal,660);assert.equal(f.length,0);assert.equal(f.width,0);assert.equal(f.radius,c.bfMeterPx(3)*1.12);assert.equal(f.speed,c.bfMeterPx(6));assert.equal(f.vfxTier,7);
+ const {c,f}=setup();assert.equal(c.SKILL2_RT.grounds.length,2);assert.equal(f.kind,'pillar');assert.equal(f.hits,12);assert.equal(f.gap,.5);assert.equal(f.dmgVal,660);assert.equal(f.length,0);assert.equal(f.width,0);assert.equal(f.radius,c.bfMeterPx(3)*1.12);assert.equal(f.speed,0);assert.equal(f.wanderM,0);assert.equal(f.infinite,true);assert.equal(f.vfxTier,7);
  assert.equal(c.SKILLS2.firepillar.tiers[6].vfx.field,'fire-tornado-infinite');assert.equal(setup(10).f.dmgVal,1110);
 });
-test('single target never stops; motion event carries authoritative arc and no stopping destination',()=>{
- const {c,m,f}=setup();let length=0;
- for(let i=0;i<200;i++){const old={...f.pos};c.GT+=.01;c.sgGroundMove(f,.01,[m]);let d=Math.hypot(f.pos.x-old.x,f.pos.y-old.y);assert.ok(d>.59 && d<=.601);length+=d;const area=c.sgGroundArea(f);assert.equal(area.speed,60);assert.equal(area.turnRate,f.turnRate);assert.equal(area.destX,undefined);}
- assert.ok(length>119);assert.ok(Math.hypot(f.pos.x-m.pos.x,f.pos.y-m.pos.y)<100);
- m.hp=0;c.sgGroundMove(f,.01,[m]);assert.equal(f.huntTarget,null);
+test('T7 stays in place: no hunting, no destination, no motion fields; only the eternalInferno ult wanders',()=>{
+ const {c,m,f}=setup();const start={...f.pos};
+ for(let i=0;i<200;i++){c.GT+=.01;c.sgGroundMove(f,.01,[m]);}
+ assert.equal(JSON.stringify(f.pos),JSON.stringify(start));const area=c.sgGroundArea(f);
+ assert.equal(area.speed,undefined);assert.equal(area.turnRate,undefined);assert.equal(area.destX,undefined);
+ // 永劫火獄：同樣的第 7 階，選了超神才會在附近游走
+ const w=setup();w.c.sgUlt=(gid,id)=>id==='eternalInferno'?{id,def:{fx:{m:20,gap:.5,pct:200,sec:8}},lv:1}:null;
+ w.c.sgUltVal=(u,k)=>u.def.fx[k];w.c.SKILL2_RT.grounds=[];
+ w.c.sgCastFirepillar(w.p,{matk:500,atk:1000},w.c.SKILLS2.firepillar,[1,1,1,1,1,1,1],[w.m],w.m,'mv-float',{});
+ const g=w.c.SKILL2_RT.grounds[0];assert.ok(g.wanderM>0);assert.ok(g.speed>0);
 });
-test('T7 respawns once, even if rebirth always succeeds; descendants retain movement',()=>{
+test('T7 respawns once, even if rebirth always succeeds; descendants keep the no-chain flag',()=>{
  const {c,m,f}=setup();c.G.player.skills2.levels.firepillar[4]=0;c.chance=()=>true;c.SKILL2_RT.grounds=[];
  c.sgGroundExpire(f,[m],{});assert.equal(c.SKILL2_RT.grounds.length,1);
- const child=c.SKILL2_RT.grounds[0];assert.equal(child.respawnLeft,0);assert.equal(child.fireHunt,true);assert.equal(child.speed,60);assert.equal(child.hits,12);
+ const child=c.SKILL2_RT.grounds[0];assert.equal(child.respawnLeft,0);assert.equal(child.infinite,true);assert.equal(child.speed,0);assert.equal(child.hits,12);
  c.SKILL2_RT.grounds=[];c.sgGroundExpire(child,[m],{});assert.equal(c.SKILL2_RT.grounds.length,0);
 });
 test('lower tiers stay stationary and keep six hits; legend speed (+50%) and hits remain additive',()=>{
- const {c,f}=setup(0);assert.equal(f.hits,6);assert.equal(f.fireHunt,false);assert.equal(f.speed,0);
+ const {c,f}=setup(0);assert.equal(f.hits,6);assert.equal(f.infinite,false);assert.equal(f.speed,0);
  const x=setup();x.c.sgLegend=()=>({firepillarHitsAdd:{hits:3},firepillarSpeedPct:50});x.c.SKILL2_RT.grounds=[];
  x.c.sgCastFirepillar(x.p,{matk:500},x.c.SKILLS2.firepillar,[1,1,1,1,1,1,1],[x.m],x.m,'mv-float',{});
- assert.equal(x.c.SKILL2_RT.grounds[0].hits,15);assert.equal(x.c.SKILL2_RT.grounds[0].speed,90);
+ assert.equal(x.c.SKILL2_RT.grounds[0].hits,15);assert.equal(x.c.SKILL2_RT.grounds[0].speed,0,'第七階不動，追蹤烈焰沒有速度可加');
 });
 test('infinite preset uses shared atlas without procedural generation',()=>{
  const p=JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets/fire-tornado-infinite.json')));

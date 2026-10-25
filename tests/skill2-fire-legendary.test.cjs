@@ -490,19 +490,27 @@ test('【追蹤烈焰】（2026-10-20 改版）：火龍捲移動速度 +50%，�
   assert.equal(f.chaseM, 0, '不再追擊');
   assert.equal(f.speed, 0, '不動的火龍捲沒有速度可加');
 
-  // 會動的形態（第 7 階無限火龍，表定 6 米／秒）：速度 ×1.5
-  function infiniteSpeed(keys) {
+  // 會動的形態只有超神【永劫火獄】（第 7 階【無限火龍】不動）：游走速度 ×1.5
+  function wanderSpeed(keys, levels) {
     const cc = loadContext();
     stubHits(cc);
     cc.chance = () => false;
     if (keys) setLegendary(cc, keys);
-    setLevels(cc, 'firepillar', [1, 1, 1, 1, 1, 1, 1]);
+    setLevels(cc, 'firepillar', levels);
+    setUlt(cc, 'firepillar', 'eternalInferno', 1);
     cc.castSkill2(playerEnt(), [enemy(1e9, 100, 0)], 'firepillar', 'mv-float');
     return cc.SKILL2_RT.grounds[0].speed;
   }
-  const baseSpeed = infiniteSpeed(null);
-  assert.ok(baseSpeed > 0, '無限火龍本來就會動');
-  assert.ok(Math.abs(infiniteSpeed(['firepillarTracking']) / baseSpeed - 1.5) < 1e-9, '移動速度 +50%');
+  const top = [10, 10, 10, 10, 10, 10, 10];
+  const baseSpeed = wanderSpeed(null, top);
+  assert.ok(baseSpeed > 0, '永劫火獄會游走');
+  assert.ok(Math.abs(wanderSpeed(['firepillarTracking'], top) / baseSpeed - 1.5) < 1e-9, '移動速度 +50%');
+  const c3 = loadContext();
+  stubHits(c3);
+  c3.chance = () => false;
+  setLevels(c3, 'firepillar', [1, 1, 1, 1, 1, 1, 1]);
+  c3.castSkill2(playerEnt(), [enemy(1e9, 100, 0)], 'firepillar', 'mv-float');
+  assert.equal(c3.SKILL2_RT.grounds[0].speed, 0, '無限火龍本身不會移動');
 });
 
 test('【火龍擴散】：火龍捲的判定體積 +30%', () => {

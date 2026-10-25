@@ -4766,14 +4766,14 @@ function sgCastFirepillar(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   // 「可同時對 m 米內的 count 個目標施放火柱」沒有指定最近＝範圍內隨機
   if (count > 1) spots = spots.concat(bfRandomOthers(primary, pool, count - 1, spreadPx, null));
 
-  /* 移動：超神【永劫火獄】在附近隨機游走並沿路留下火池；無限火龍自己會獵殺敵人。
-     傳奇【追蹤烈焰】（2026-10-20 改版）不再改變移動方式，只讓上述移動速度 +N%——
-     火龍捲本來就不會動的形態（普通火龍捲）沒有東西可加。 */
+  /* 移動：只有超神【永劫火獄】會在附近隨機游走並沿路留下火池；第 7 階【無限火龍】不會移動
+     （2026-10-25 修正：原本誤讓它持續追敵，說明文字沒有這個效果）。
+     傳奇【追蹤烈焰】（2026-10-20 改版）不再改變移動方式，只讓游走速度 +N%——
+     火龍捲本來就不會動的形態（普通火龍捲、無限火龍）沒有東西可加。 */
   var wanderPx = ultInferno ? bfMeterPx(sgUltVal(ultInferno, 'm')) : 0;
   /* 游走速度設計文檔沒有指定，取「一個壽命剛好走完一次游走半徑」＝ 游走半徑 ÷ 壽命，
      不另外發明一個數字。 */
-  var speedPx = (infinite ? bfMeterPx(sgGeometryNumber(t[6].fx, 'speed') || 6)
-    : (wanderPx > 0 ? wanderPx / lifeSec : 0)) * (1 + Math.max(0, Number(lg.firepillarSpeedPct) || 0) / 100);
+  var speedPx = (wanderPx > 0 ? wanderPx / lifeSec : 0) * (1 + Math.max(0, Number(lg.firepillarSpeedPct) || 0) / 100);
   var trailSpec = ultInferno ? {
     radiusPx: bfMeterPx(sgVal(t[0].fx, 'm', lvs[0])) * scale,  // 火池大小＝火龍捲自己的判定範圍
     gap: sgGeometryNumber(ultInferno.def.fx, 'gap') || 0.5,
@@ -4800,7 +4800,7 @@ function sgCastFirepillar(pEnt, st, g, lvs, pool, primary, floatSel, out) {
       burnSpec: burnSpec, burnChance: lvs[3] > 0 ? sgSlotChance('firepillar', '4', 'enemy', 0, sgVal(t[3].fx, 'chance', lvs[3])) : 0,
       respawnLeft: infinite ? Math.max(0, Math.floor(Number(t[6].fx.respawn) || 0)) : 0,
       delaySec: i * gap * 0.2,
-      fireHunt: infinite, chaseM: 0, wanderM: wanderPx, speed: speedPx,
+      infinite: infinite, chaseM: 0, wanderM: wanderPx, speed: speedPx,
       trail: trailSpec, burnAmp: burnAmp, tempest: tempest
     });
   }
@@ -5026,7 +5026,8 @@ function sgSpawnGround(pEnt, st, gid, cfg) {
       ? { x: Number(cfg.dest.x), y: Number(cfg.dest.y) } : null,
     speed: Math.max(0, sgGeometryNumber(cfg, 'speed') || 0),
     spiralCentre: cfg.spiralCentre || null,
-    fireHunt: !!cfg.fireHunt,
+    /* 第 7 階【無限火龍】施放出來的火龍捲：再召喚用完之後不再走第 6 階的機率重生（只管連鎖，與移動無關）。 */
+    infinite: !!cfg.infinite,
     /* 目前的飛行方向（弧度）：追擊場域沒有落點可追時沿著它直線飛出去。
        留白＝出生時未定，第一次朝落點移動才寫入；由前一段飛行接手的場域
        （追蹤冰箭承接貫穿段）則直接帶入當時的航向，才不會一出生就瞬間轉向。
@@ -5140,7 +5141,6 @@ function sgGroundMove(f, dt, enemies) {
     f.turnRate = -f.speed * Math.sqrt(8) / (3 * nextR);
     return;
   }
-  if (f.fireHunt) { sgFireDragonMove(f, step, enemies); return; }
   if (f.chaseM > 0) sgGroundChaseStep(f, step, enemies);   // 追擊：有轉彎半徑的追蹤飛行
   else if (f.wanderM > 0) sgGroundWanderStep(f, step);     // 游走：抵達就在圓內重抽落點
   else sgGroundFlyStep(f, step);                            // 直線飛向落點後停駐（雷球）
@@ -5151,41 +5151,6 @@ function sgGroundMove(f, dt, enemies) {
 var SG_CHASE_TURN_MIN_M = 4;
 var SG_CHASE_TURN_MAX_M = 8;
 var SG_CHASE_TURN_BODY_REF_M = 5;   // 判定半徑到這個值就吃滿最大轉彎半徑
-/* 無限火龍持續追敵，單敵時在附近選落點；弧線與顯示層使用相同轉速。 */
-function sgFireDragonMove(f, step, enemies) {
-  var live = bfLiveList(enemies || []).filter(function (e) { return !!bfPos(e); });
-  var target = f.huntTarget;
-  if (!target || live.indexOf(target) < 0 || !f.dest || f.huntUntil <= GT) {
-    target = live.length ? live[Math.floor(Math.random() * live.length)] : null;
-    f.huntTarget = target;
-    var p = target ? bfPos(target) : (f.home || f.pos);
-    var a = Math.random() * Math.PI * 2;
-    var r = Math.max(bfMeterPx(1), f.radius * 0.5);
-    f.huntOffset = { x: Math.cos(a) * r, y: Math.sin(a) * r };
-    f.huntUntil = GT + r * 2 / f.speed;
-    f.dest = { x: p.x + f.huntOffset.x, y: p.y + f.huntOffset.y };
-  }
-  if (target) {
-    var pos = bfPos(target);
-    f.dest.x = pos.x + f.huntOffset.x; f.dest.y = pos.y + f.huntOffset.y;
-  }
-  var dx = f.dest.x - f.pos.x, dy = f.dest.y - f.pos.y;
-  var want = Math.atan2(dy, dx);
-  var before = typeof f.moveAngle === 'number' ? f.moveAngle : want;
-  var diff = Math.atan2(Math.sin(want - before), Math.cos(want - before));
-  var turnR = Math.max(bfMeterPx(1), f.radius * 0.5);
-  var turn = Math.max(-step / turnR, Math.min(step / turnR, diff));
-  f.moveAngle = before + turn;
-  f.turnRate = turn * f.speed / step;
-  if (Math.abs(turn) > 1e-8) {
-    var radius = step / turn;
-    f.pos.x += radius * (Math.sin(f.moveAngle) - Math.sin(before));
-    f.pos.y += radius * (Math.cos(before) - Math.cos(f.moveAngle));
-  } else {
-    f.pos.x += Math.cos(before) * step; f.pos.y += Math.sin(before) * step;
-  }
-  if (Math.hypot(dx, dy) <= step) f.dest = null;
-}
 
 function sgGroundTurnRadiusPx(f) {
   var perM = (typeof bfMeterPx === 'function') ? bfMeterPx(1) : 10;
@@ -5611,7 +5576,7 @@ function sgGroundVfxShape(f) {
    飛向落點與游走則是沒有落點＝已經停駐。 */
 function sgGroundMoving(f) {
   if (!f.pos || !(f.speed > 0)) return false;
-  if (f.fireHunt || f.chaseM > 0 || f.spiralCentre) return true;
+  if (f.chaseM > 0 || f.spiralCentre) return true;
   return !!f.dest;
 }
 
@@ -5626,8 +5591,8 @@ function sgGroundMotionFields(f, out) {
   if (!sgGroundMoving(f)) return out;
   out.speed = f.speed;
   if (isFinite(f.moveAngle)) out.moveA = f.moveAngle;
-  if (f.fireHunt || f.kind === 'icearrow' || f.kind === 'windblade' || f.spiralCentre) out.turnRate = Number(f.turnRate) || 0;
-  if (f.dest && !f.fireHunt && f.kind !== 'windblade') {
+  if (f.kind === 'icearrow' || f.kind === 'windblade' || f.spiralCentre) out.turnRate = Number(f.turnRate) || 0;
+  if (f.dest && f.kind !== 'windblade') {
     out.destX = f.dest.x;
     out.destY = f.dest.y;
   }
@@ -5712,7 +5677,7 @@ function sgGroundExpire(f, enemies, ctx) {
     if (impactOut.killed && ctx && ctx.onDeaths) ctx.onDeaths();
   }
   var respawn = f.respawnLeft > 0;
-  var rebirth = !(f.fireHunt && f.respawnLeft <= 0) && lvs[5] > 0 && chance(sgVal(t[5].fx, 'chance', lvs[5]));
+  var rebirth = !(f.infinite && f.respawnLeft <= 0) && lvs[5] > 0 && chance(sgVal(t[5].fx, 'chance', lvs[5]));
   if (!respawn && !rebirth) return;
   // 重生有表定的落點範圍；火牆的再召喚沒有，改用技能自身的射程當落點上限。
   var radius = rebirth ? bfMeterPx(sgGeometryNumber(t[5].fx, 'm') || 20) : skills2CastRangePx(f.gid, lvs);
@@ -5727,7 +5692,7 @@ function sgGroundExpire(f, enemies, ctx) {
     respawnLeft: respawn ? f.respawnLeft - 1 : 0,
     /* 重生／再召喚出來的那一道與原本那道是同一個技能的同一次施放，
        因此移動、軌跡火池、燃燒放大與拉近全部原樣帶過去。 */
-    fireHunt: f.fireHunt, chaseM: f.chaseM, wanderM: f.wanderM, speed: f.speed,
+    infinite: f.infinite, chaseM: f.chaseM, wanderM: f.wanderM, speed: f.speed,
     trail: f.trail, burnAmp: f.burnAmp, pullM: f.pullM, tempest: f.tempest,
     vfxTier: f.vfxTier, vfxUlt: f.vfxUlt, vfxGid: f.vfxGid
   });
