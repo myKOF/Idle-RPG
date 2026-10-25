@@ -12,6 +12,11 @@ function createSimContext() {
     setTimeout() {}, clearTimeout() {}, setInterval() {}, clearInterval() {},
     location: { hostname: 'localhost' },
     document: { addEventListener() {}, getElementById() { return null; }, querySelectorAll() { return []; } },
+    pushConveyor() {},
+    rollFieldDrops() { return []; },
+    gainXp() {},
+    gainSkillMasteryXp() {},
+    blog() {},
     BF_COLS: 10,
     BF_ROWS: 10
   };
@@ -136,7 +141,7 @@ function buildEquipment(ctx, target) {
   return eq;
 }
 
-function runSimulation(target, scenarioType, sampleDuration = 45.0) {
+function runSimulation(target, scenarioType, totalDuration = 150.0, warmupDuration = 30.0) {
   const ctx = createSimContext();
   const gid = target.gid;
   const optIdx = target.ultIndex;
@@ -230,7 +235,9 @@ function runSimulation(target, scenarioType, sampleDuration = 45.0) {
   let totalDamageDealt = 0;
   ctx.trackDps = function(dmg) {
     if (dmg > 0) {
-      totalDamageDealt += dmg;
+      if (ctx.GT >= warmupDuration) {
+        totalDamageDealt += dmg;
+      }
       ctx.FIELD.dpsWindow.push([ctx.GT, dmg]);
     }
   };
@@ -263,7 +270,7 @@ function runSimulation(target, scenarioType, sampleDuration = 45.0) {
       const mAspd = base.aspd * zn.aspdMult * (Number(mtype.aspdMult) > 0 ? Number(mtype.aspdMult) : 1);
 
       newEnemies.push({
-        id: 'm_0_' + i,
+        id: 'm_' + Math.floor(ctx.GT || 0) + '_' + i,
         name: mtype.name,
         emoji: mtype.emoji,
         npcId: mtype.id || null,
@@ -286,7 +293,7 @@ function runSimulation(target, scenarioType, sampleDuration = 45.0) {
         atkCd: (i % 5) * 0.2,
         effects: {},
         ctrlRes: 0,
-        _spawnAt: 0,
+        _spawnAt: ctx.GT || 0,
         _stage: -1,
         _enterCd: 0,
         shield: 0,
@@ -304,12 +311,11 @@ function runSimulation(target, scenarioType, sampleDuration = 45.0) {
 
   const base = spawnWave();
   const dt = 0.05;
-  let clearedAtTime = 0;
   const totalWaveHp = base.hp * mobsPerWave;
 
   ctx.GT = 0;
 
-  while (ctx.GT < sampleDuration) {
+  while (ctx.GT < totalDuration) {
     ctx.fieldTick(dt);
     ctx.GT += dt;
 
@@ -336,51 +342,39 @@ function runSimulation(target, scenarioType, sampleDuration = 45.0) {
       }
     }
 
-    // 剔除已死亡怪物
-    let hasDead = false;
-    for (let i = 0; i < ms.length; i++) {
-      if (ms[i] && ms[i].hp <= 0) { hasDead = true; break; }
-    }
-    if (hasDead) {
-      ctx.FIELD.monsters = ms.filter(e => e && e.hp > 0);
-      ctx.markFieldEnemyFloatTargets(ctx.FIELD.monsters);
-      ctx.syncFieldPrimary();
-      if (ctx.FIELD.monsters.length === 0) {
-        clearedAtTime = ctx.GT;
-        break;
-      }
+    // 檢查戰場：只要場上無存活怪物，立即無縫補充新波次
+    if (ctx.liveFieldEnemies().length === 0) {
+      spawnWave();
     }
   }
 
-  const dur = clearedAtTime > 0 ? clearedAtTime : ctx.GT;
-  const avgDps = dur > 0 ? totalDamageDealt / dur : 0;
-  const estimatedFullClearTime = clearedAtTime > 0
-    ? clearedAtTime
-    : (avgDps > 0 ? totalWaveHp / avgDps : 999999);
+  const effectiveDuration = Math.max(0.1, ctx.GT - warmupDuration);
+  const avgDps = effectiveDuration > 0 ? totalDamageDealt / effectiveDuration : 0;
+  const estimatedFullClearTime = avgDps > 0 ? totalWaveHp / avgDps : 999999;
 
   return {
     scenarioType,
     scenarioName: scenarioType === 1 ? '普通小怪 (20隻)' : scenarioType === 2 ? '菁英怪 (5隻)' : '單體BOSS (1隻)',
-    sampleDuration: Number(dur.toFixed(2)),
+    sampleDuration: Number(effectiveDuration.toFixed(2)),
     totalDamage: Math.round(totalDamageDealt),
     avgDps: Math.round(avgDps),
-    cleared: clearedAtTime > 0,
-    clearedTime: Number(clearedAtTime.toFixed(2)),
+    cleared: false,
+    clearedTime: 0,
     estimatedFullClearTime: Number(estimatedFullClearTime.toFixed(2))
   };
 }
 
 if (require.main === module) {
-  console.log(`⚔️ 開始執行全部 ${TARGETS.length} 招超神進化技能 DPS 驗證測試...`);
+  console.log(`⚔️ 開始執行全部 ${TARGETS.length} 招超神進化技能 DPS 驗證測試（總時長 2分30秒，排除前 30秒預熱，採集後 2分鐘穩定數據）...`);
   const allResults = [];
 
   TARGETS.forEach((target, idx) => {
     const affNames = target.affixes.map(a => a.name).join('、');
     process.stdout.write(`[${idx + 1}/${TARGETS.length}] ${target.groupName} - ${target.ultName} (${target.ultId}) [傳奇: ${affNames}] ... `);
     
-    const mob = runSimulation(target, 1, 40.0);
-    const elite = runSimulation(target, 2, 40.0);
-    const boss = runSimulation(target, 3, 40.0);
+    const mob = runSimulation(target, 1, 150.0, 30.0);
+    const elite = runSimulation(target, 2, 150.0, 30.0);
+    const boss = runSimulation(target, 3, 150.0, 30.0);
 
     allResults.push({
       target: {

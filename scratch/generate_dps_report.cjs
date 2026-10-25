@@ -3,8 +3,15 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
-const results = JSON.parse(fs.readFileSync(path.join(ROOT, 'scratch/all_69_ults_dps_results.json'), 'utf8'));
+const jsonPath = path.join(ROOT, 'scratch/all_69_ults_dps_results.json');
+const results = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
 const REPORT_PATH = path.join(ROOT, 'docs/ULT_EVOLUTION_ALL_69_SKILLS_DPS_REPORT.md');
+
+// 取得測試產出時間
+const stat = fs.statSync(jsonPath);
+const testDate = stat.mtime;
+const pad = n => String(n).padStart(2, '0');
+const timeStr = `${testDate.getFullYear()}-${pad(testDate.getMonth() + 1)}-${pad(testDate.getDate())} ${pad(testDate.getHours())}:${pad(testDate.getMinutes())}:${pad(testDate.getSeconds())}`;
 
 function fmtDps(dps) {
   if (dps >= 1e9) return (dps / 1e9).toFixed(2) + ' B';
@@ -30,10 +37,10 @@ results.forEach(r => {
 
 const lines = [];
 
-lines.push('# ⚔️ 全 23 大技能群組（69 招超神進化技能）DPS 實測總結報表');
+lines.push(`# ⚔️ 全 23 大技能群組（69 招超神進化技能）DPS 實測總結報表【${timeStr}】`);
 lines.push('');
-lines.push('> **測試基準版本**：v5.0（300 級高血量 0 防禦標準化單波實測版）  ');
-lines.push('> **測試日期**：2026-10-25  ');
+lines.push(`> **實測完成時間**：\`${timeStr}\`  `);
+lines.push('> **測試基準版本**：v6.0（技能平衡調整版：總時長 2分30秒 / 前 30秒預熱排除 / 採集後 2分鐘穩定態數據）  ');
 lines.push('> **負責測試**：Antigravity (QA & Combat Simulation Engine)  ');
 lines.push('> **核心規則**：全 23 系技能群組、共 69 招超神進化技能全部實測，且**每系技能必帶該系專屬 5 個傳奇效果**（例如風刃必帶：裂風、增壓、風之痕、風蝕、斷空刃）。');
 lines.push('');
@@ -50,8 +57,11 @@ lines.push('3. **測試地圖與三種情境（300 級沼澤 Swamp，DEF=0 / MDE
 lines.push('   * **小怪**：普通小怪群戰（20 隻/波，總血量 ~3.55 兆）');
 lines.push('   * **菁英**：菁英怪攻堅（5 隻/波，總血量 ~3.55 兆）');
 lines.push('   * **BOSS**：單體 BOSS 戰（1 隻/波，總血量 ~2.66 兆）');
-lines.push('4. **數據統計口徑**：');
-lines.push('   * $\\text{平均 DPS} = \\frac{\\text{採樣時長內累計輸出總傷害}}{\\text{實測時長（秒）}}$。格式統一為：`總傷 | DPS`。');
+lines.push('4. **測試時長與數據統計口徑（2分30秒穩定態採樣）**：');
+lines.push('   * **總測試時長**：每招技能每種情境持續戰鬥 **2 分 30 秒（150 秒）**。');
+lines.push('   * **前 30 秒預熱排除**：排除前期 DOT 疊層、Buff 啟動、怪物進場走位等啟動偏差，前 30 秒數據**不計入**。');
+lines.push('   * **後 2 分鐘精確統計**：嚴格採樣 **30 秒～150 秒（共 120 秒）** 的純淨穩定態輸出。');
+lines.push('   * $\\text{平均 DPS} = \\frac{\\text{後 2 分鐘（120 秒）內累計輸出總傷害}}{120\\text{ 秒}}$。格式統一為：`總傷 | DPS`。');
 lines.push('');
 lines.push('---');
 lines.push('');
