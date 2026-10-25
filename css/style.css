@@ -11066,8 +11066,8 @@ body.battle-canvas-mode #combat-area .battle-scene-wrapper > #btn-toggle-damage 
   color: #1f1300 !important;
   transform: scale(1.35);
   box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.55), 0 0 18px 6px rgba(251, 191, 36, 1);
-  position: relative;
-  z-index: 5;
+  /* 不可設 position：#btn-toggle-perf 本身是 absolute 定位，改成 relative 會讓它回到排版流、擠動整個戰鬥畫面 */
+  z-index: 40;
 }
 
 @media (prefers-reduced-motion: reduce) {
