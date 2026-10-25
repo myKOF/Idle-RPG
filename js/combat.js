@@ -1135,6 +1135,28 @@ function playerDrainOnDamage(target, damage, player, hits) {
     if (mpVal > 0) gainPlayerMana(player, manaStealAmount(mpVal) * count, st);
 }
 
+/* 玩家持續傷害的輸出加成（2026-10-25）：玩家施放的 DoT 在每一跳結算時吃爆擊率／爆擊傷害、
+   總傷害額外增幅與該狀態元素的屬性傷害提升%。dps 仍是施放當下定版的平坦值（不經 resolveHit，
+   因此不吃防禦、浮動與敵種加成），這三個乘區改在這裡逐跳套上。連擊數不計（見 game_formula.md §3）。
+   只對「玩家打到敵人」的 DoT 生效：玩家自己身上的 DoT（敵方施放）回傳 null。 */
+function dotOffenseCfg(ent) {
+    var pEnt = (typeof legendaryCurrentPlayer === 'function') ? legendaryCurrentPlayer() : null;
+    if (!pEnt || ent === pEnt) return null;
+    return playerAtkCfg(pEnt);
+}
+
+/* 一批跳傷（tickCount 跳、合計 baseDamage）套上輸出加成：每一跳各自擲一次爆擊。 */
+function dotOffenseDamage(cfg, d, baseDamage, tickCount) {
+    var def = d.sid ? statusDef(d.sid) : null;
+    var elemUp = (def && def.elem && cfg.elemDmgUp) ? (Number(cfg.elemDmgUp[def.elem]) || 0) : 0;
+    var perTick = baseDamage / Math.max(1, tickCount) * (1 + elemUp / 100) * (1 + (cfg.totalDmgPct || 0) / 100);
+    var critRate = Math.max(0, Number(cfg.critRate) || 0);
+    var critMult = (cfg.critDmg || 150) / 100;
+    var total = 0;
+    for (var t = 0; t < Math.max(1, tickCount); t++) total += chance(critRate) ? perTick * critMult : perTick;
+    return total;
+}
+
 function tickStatuses(ent, dt, dotContext) {
     tickShieldExpiry(ent);
     if (effectActive(ent, 'invuln')) return false; // 無敵：持續傷害不生效
@@ -1145,6 +1167,7 @@ function tickStatuses(ent, dt, dotContext) {
     var dotDamageItems = [];
     var endedDots = [];
     var live = [];
+    var dotOffense;   // 玩家輸出組態（惰性取得；undefined＝尚未取、null＝這個目標不吃玩家輸出加成）
     for (var i = 0; i < ent.dots.length; i++) {
         var d = ent.dots[i];
         var expired = !(d.until > GT);
@@ -1171,6 +1194,10 @@ function tickStatuses(ent, dt, dotContext) {
             var dElemMult = (ent.maxHp && typeof skill2DotElemFactor === 'function')
                 ? skill2DotElemFactor(ent, d.sid) : 1;
             var dDmg = d.dps * seconds * dElemMult;
+            if (dDmg > 0) {
+                if (dotOffense === undefined) dotOffense = dotOffenseCfg(ent);
+                if (dotOffense) dDmg = dotOffenseDamage(dotOffense, d, dDmg, tickCount);
+            }
             if (dDmg > 0) drainHits += tickCount;
             statusTickVfxCollect(ent, d.sid);
             total += dDmg;
