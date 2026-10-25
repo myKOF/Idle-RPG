@@ -370,38 +370,42 @@ function runSimulation(target, scenarioType, sampleDuration = 45.0) {
   };
 }
 
-console.log(`⚔️ 開始執行全部 ${TARGETS.length} 招超神進化技能 DPS 驗證測試...`);
-const allResults = [];
+if (require.main === module) {
+  console.log(`⚔️ 開始執行全部 ${TARGETS.length} 招超神進化技能 DPS 驗證測試...`);
+  const allResults = [];
 
-TARGETS.forEach((target, idx) => {
-  const affNames = target.affixes.map(a => a.name).join('、');
-  process.stdout.write(`[${idx + 1}/${TARGETS.length}] ${target.groupName} - ${target.ultName} (${target.ultId}) [傳奇: ${affNames}] ... `);
-  
-  const mob = runSimulation(target, 1, 40.0);
-  const elite = runSimulation(target, 2, 40.0);
-  const boss = runSimulation(target, 3, 40.0);
+  TARGETS.forEach((target, idx) => {
+    const affNames = target.affixes.map(a => a.name).join('、');
+    process.stdout.write(`[${idx + 1}/${TARGETS.length}] ${target.groupName} - ${target.ultName} (${target.ultId}) [傳奇: ${affNames}] ... `);
+    
+    const mob = runSimulation(target, 1, 40.0);
+    const elite = runSimulation(target, 2, 40.0);
+    const boss = runSimulation(target, 3, 40.0);
 
-  allResults.push({
-    target: {
-      gid: target.gid,
-      groupName: target.groupName,
-      elem: target.elem,
-      dmgType: target.dmgType,
-      ultIndex: target.ultIndex,
-      ultId: target.ultId,
-      ultName: target.ultName,
-      ultDesc: target.ultDesc,
-      affixes: target.affixes.map(a => ({ id: a.id, name: a.name })),
-      primaryWp: target.primaryWp,
-      isTwoHand: target.isTwoHand
-    },
-    normalMob: mob,
-    elite: elite,
-    boss: boss
+    allResults.push({
+      target: {
+        gid: target.gid,
+        groupName: target.groupName,
+        elem: target.elem,
+        dmgType: target.dmgType,
+        ultIndex: target.ultIndex,
+        ultId: target.ultId,
+        ultName: target.ultName,
+        ultDesc: target.ultDesc,
+        affixes: target.affixes.map(a => ({ id: a.id, name: a.name })),
+        primaryWp: target.primaryWp,
+        isTwoHand: target.isTwoHand
+      },
+      normalMob: mob,
+      elite: elite,
+      boss: boss
+    });
+
+    console.log(`小怪: ${(mob.avgDps / 1e9).toFixed(2)}B | 菁英: ${(elite.avgDps / 1e9).toFixed(2)}B | BOSS: ${(boss.avgDps / 1e6).toFixed(2)}M`);
   });
 
-  console.log(`小怪: ${(mob.avgDps / 1e9).toFixed(2)}B | 菁英: ${(elite.avgDps / 1e9).toFixed(2)}B | BOSS: ${(boss.avgDps / 1e6).toFixed(2)}M`);
-});
+  fs.writeFileSync(OUTPUT_JSON, JSON.stringify(allResults, null, 2), 'utf8');
+  console.log(`\n✅ 69 招超神進化技能全部測試完畢！結果已寫入: ${OUTPUT_JSON}`);
+}
 
-fs.writeFileSync(OUTPUT_JSON, JSON.stringify(allResults, null, 2), 'utf8');
-console.log(`\n✅ 69 招超神進化技能全部測試完畢！結果已寫入: ${OUTPUT_JSON}`);
+module.exports = { runSimulation, TARGETS };

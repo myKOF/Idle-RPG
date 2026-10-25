@@ -72,16 +72,36 @@ for (const [gid, list] of Object.entries(groups)) {
   lines.push(`| **${first.groupName}** | ${first.elem} / ${wpType} | ${affStr} |`);
   lines.push('');
 
+  const ZERO_NOTES = {
+    soulhunterBlade: { elite: '*(遠程菁英站位未達5m射程)*' },
+    holyBody: { mob: '*(需累積10次反擊，小怪未達次數門檻)*' },
+    indomitable: { boss: '*(需面臨致命死亡方觸發4000%自爆)*' },
+    asuraFist: { mob: '*(純Buff無本體傷害，需依附普攻)*' },
+    adamantBody: { boss: '*(純護盾防禦被動，無主動攻擊)*' },
+    gravityField: { elite: '*(純控場減速Debuff，無直接傷害)*' },
+    fateReversal: {
+      mob: '*(遠程怪在20米反射範圍外+高頻壓制無血可扣)*',
+      elite: '*(遠程怪在20米反射範圍外+高頻壓制無血可扣)*',
+      boss: '*(傷害來自T6生命反射之盾：BOSS近戰貼身且攻擊間隔能回血再失血反彈)*'
+    },
+    venomDomain: { elite: '*(遠程菁英未踏入領域範圍)*' }
+  };
+
   list.forEach((r, uIdx) => {
     const t = r.target;
     const mob = r.normalMob;
     const elite = r.elite;
     const boss = r.boss;
+    const note = ZERO_NOTES[t.ultId] || {};
+
+    const mobNote = (mob.avgDps === 0 && note.mob) ? ' ' + note.mob : '';
+    const eliteNote = (elite.avgDps === 0 && note.elite) ? ' ' + note.elite : '';
+    const bossNote = ((boss.avgDps === 0 || t.ultId === 'fateReversal') && note.boss) ? ' ' + note.boss : '';
 
     lines.push(`**${t.ultName}** (\`${t.ultId}\`)`);
-    lines.push(`小怪：${fmtDmg(mob.totalDamage)} | ${fmtDps(mob.avgDps)}`);
-    lines.push(`菁英：${fmtDmg(elite.totalDamage)} | ${fmtDps(elite.avgDps)}`);
-    lines.push(`BOSS：${fmtDmg(boss.totalDamage)} | ${fmtDps(boss.avgDps)}`);
+    lines.push(`小怪：${fmtDmg(mob.totalDamage)} | ${fmtDps(mob.avgDps)}${mobNote}`);
+    lines.push(`菁英：${fmtDmg(elite.totalDamage)} | ${fmtDps(elite.avgDps)}${eliteNote}`);
+    lines.push(`BOSS：${fmtDmg(boss.totalDamage)} | ${fmtDps(boss.avgDps)}${bossNote}`);
     if (uIdx < list.length - 1) {
       lines.push('');
     }
