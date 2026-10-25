@@ -239,7 +239,7 @@ test('關聯技能改寫集中由 legendarySkill2Mods 提供：同鍵數字相�
   assert.equal(mods.thrustRangePct, undefined);
   assert.equal(mods.octaToSingle, undefined);
   assert.deepEqual(JSON.parse(JSON.stringify(mods.thrustWound)), { chance: 25, pct: 20, dur: 5 });
-  assert.deepEqual(JSON.parse(JSON.stringify(mods.thrustVuln)), { pct: 4, dur: 5, maxStacks: 10 });
+  assert.deepEqual(JSON.parse(JSON.stringify(mods.thrustVuln)), { pct: 2, dur: 5, maxStacks: 10 });
   assert.equal(mods.cleaveSlashAdd, undefined, '迴旋斬群組的特效不會混進突刺');
 
   assert.equal(context.legendarySkill2Mods('gale'), null, '沒有任何生效特效的群組回傳 null');
@@ -267,7 +267,7 @@ test('迅雷穿刺的落雷：機率附加 1 道落雷，落雷落地後才結�
   context.getStats = () => st;
   context.GT = 0;
   const spec = context.legendarySkill2Mods('thrust').thrustThunder;
-  assert.equal(spec.chance, 15);
+  assert.equal(spec.chance, 10);
   assert.equal(spec.powerPct, 200);
   assert.equal(typeof context.legendaryThunderStrike, 'function', 'sgThrustOnHit 依賴它');
   assert.equal(context.legendarySkill2Mods('thrust').thrustChain, undefined, '舊的連鎖閃電參數已移除');

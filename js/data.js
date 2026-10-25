@@ -900,9 +900,9 @@ var PASSIVE_POOL = {
      生效路徑：js/legendary.js legendarySkill2Mods 把同群組的 fx 平坦合併後交給 castSkill2，
      施放端只讀通用參數鍵（見各 fx 的鍵名）。 */
   knifeChain: {
-    name: '連鎖', desc: '每把飛刀有 25% 機率再彈射 2 次。',
+    name: '連鎖', desc: '每把飛刀有 35% 機率再彈射 2 次。',
     base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'knife', weaponTypes: ['dagger1h'],
-    fx: { knifeBounceProc: { chance: 25, count: 2 } }
+    fx: { knifeBounceProc: { chance: 35, count: 2 } }
   },
   knifeSplitter: {
     name: '分裂者', desc: '飛刀殺死敵人時會分裂出 2 把小型飛刀，每把造成 50% 傷害，且可彈射 2 次。',
@@ -930,9 +930,9 @@ var PASSIVE_POOL = {
     fx: { thrustLenPct: 30, thrustWidthPct: -15, skillDamagePct: 30 }
   },
   thousandWounds: {
-    name: '千瘡百孔', desc: '每次突刺命中使敵人受到的突刺傷害 +4%，持續 5 秒，最多疊加 10 層。',
+    name: '千瘡百孔', desc: '每次突刺命中使敵人受到的突刺傷害 +2%，持續 5 秒，最多疊加 10 層。',
     base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'thrust', weaponTypes: ['dagger1h'],
-    fx: { thrustVuln: { pct: 4, dur: 5, maxStacks: 10 } }
+    fx: { thrustVuln: { pct: 2, dur: 5, maxStacks: 10 } }
   },
   sunpiercerLance: {
     name: '貫日之刺', desc: '突刺有 25% 機率使敵人重傷，使其受到的傷害 +20%，持續 5 秒。',
@@ -940,14 +940,14 @@ var PASSIVE_POOL = {
     fx: { thrustWound: { chance: 25, pct: 20, dur: 5 } }
   },
   thunderStab: {
-    name: '迅雷穿刺', desc: '每次突刺擊中敵人時有 15% 機率附加 1 道落雷。',
+    name: '迅雷穿刺', desc: '每次突刺擊中敵人時有 10% 機率附加 1 道落雷。',
     base: 0, perR: 0, legendary: true, type: 'lightning', relatedSkill: 'thrust', weaponTypes: ['dagger1h'],
-    fx: { thrustThunder: { chance: 15, powerPct: 200, label: '迅雷穿刺' } }
+    fx: { thrustThunder: { chance: 10, powerPct: 200, label: '迅雷穿刺' } }
   },
   heartrendBleed: {
-    name: '穿心裂血', desc: '突刺會附加流血，每 0.5 秒造成 50% 物理傷害，持續 5 秒。',
+    name: '穿心裂血', desc: '突刺會附加流血，每 0.5 秒造成 50% 物理傷害，持續 4 秒。',
     base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'thrust', weaponTypes: ['dagger1h'],
-    fx: { thrustDot: { tickPowerPct: 50, tickSec: 0.5, dur: 5 } }
+    fx: { thrustDot: { tickPowerPct: 50, tickSec: 0.5, dur: 4 } }
   },
   chainSpin: {
     name: '連環迴旋', desc: '迴旋斬的斬擊次數 +2 次。',
