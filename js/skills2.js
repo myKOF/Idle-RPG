@@ -2192,11 +2192,11 @@ function sgUltHitCdr(pEnt, gid) {
 /* 衍生傷害（占「已造成傷害」比例的擴散等）：不再過防禦與爆擊，直接扣血。
    label 原本是飄字前面的圖示；傷害數字前不放圖示之後（2026-10-05），飄字只剩數字，
    label 只在沒給 subType 時拿來推導統計用的子類型。 */
-function sgDerivedHit(target, amount, gid, floatSel, out, label, delayMs, subType) {
+function sgDerivedHit(target, amount, gid, floatSel, out, label, delayMs, subType, hpOpts) {
   if (!target || target.hp <= 0 || !(amount > 0)) return 0;
   var skillMult = (typeof skill2FrenzySkillDamageMultiplier === 'function')
     ? skill2FrenzySkillDamageMultiplier() : 1;
-  var dealt = applyEnemyHpDamage(target, Math.max(1, Math.round(amount * skillMult)));
+  var dealt = applyEnemyHpDamage(target, Math.max(1, Math.round(amount * skillMult)), undefined, hpOpts);
   if (dealt <= 0) return 0;
   out.dmg += dealt;
   if (typeof floatEnemyEvent === 'function') {
@@ -12352,7 +12352,8 @@ function sgStarfallImpact(ctx, u) {
     // 敵種旗標沿用 monsterDefCfg 的同一組欄位（比照 sgIsNormalEnemy），不另建分類
     var pct = (e.isBoss || e.towerBoss) ? bossPct : (e.elite ? elitePct : normalPct);
     var amount = Math.max(0, Number(e.maxHp) || 0) * pct / 100;
-    if (amount > 0) sgDerivedHit(e, amount, 'fireball', ctx.floatSel, out, '☄️', sgStaggerMs(v));
+    /* 地爆天星是「扣最大生命 N%」的設計值，不受高塔 BOSS 單次 20% 上限壓縮（其他技能照舊受限）。 */
+    if (amount > 0) sgDerivedHit(e, amount, 'fireball', ctx.floatSel, out, '☄️', sgStaggerMs(v), undefined, { ignoreTowerBossCap: true });
   }
   if (ctx.onDamage && out.dmg > 0) ctx.onDamage(out.dmg);
   if (out.killed && ctx.onDeaths) ctx.onDeaths();

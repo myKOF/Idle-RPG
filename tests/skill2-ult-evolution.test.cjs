@@ -2209,6 +2209,22 @@ test('【地爆天星】倒地期間不落下，倒數與狀態一起往後推',
   assert.equal(derived.length, 1, '復活後到期才落下，而且只落一發');
 });
 
+test('【地爆天星】對高塔 BOSS 不受單次 20% 扣血上限壓縮，其他直接傷害照舊受限', () => {
+  const c = loadContext();
+  stubVfx(c);
+  maxLevels(c, 'fireball'); equip(c, 'fireball');
+  setUlt(c, 'fireball', 'starfallCataclysm', 1);
+  c.skill2FrenzySkillDamageMultiplier = () => 2;      // 嗜血狂化期間的技能傷害乘區：把扣血量推過 20%
+  const u = c.sgUlt('fireball', 'starfallCataclysm');
+  const boss = enemy(1000, 3 * M, 0, 'boss', 'boss'); boss.towerBoss = true;
+  const out = { killed: false, dmg: 0, crit: false };
+  c.sgStarfallImpact({ getEnemies: () => [boss], floatSel: 'mv-float' }, u);
+  assert.equal(boss.hp, 1000 - 400, 'BOSS 欄 20% × 乘區 2 ＝ 40%，不被壓回 20%');
+  const other = enemy(1000, 3 * M, 0, 'boss', 'boss'); other.towerBoss = true;
+  c.sgDerivedHit(other, 300, 'fireball', 'mv-float', out, '', 0);
+  assert.equal(other.hp, 1000 - 200, '其他技能的直接傷害仍受高塔 BOSS 單次 20% 上限');
+});
+
 test('【天霸風神斬】與【阿修羅霸王拳】倒地期間不自動發動', () => {
   // 天霸風神斬：迴旋斬改為每 N 秒自動施放
   const c = loadContext();
