@@ -2,10 +2,15 @@
 
 ## GEM-RESONANCE-DRAG-CURSOR-20261026 — 共鳴拖曳方形寶石圖與一般游標
 
-- Owner：Codex；In Progress，單一開發者。使用者要求上方寶石拖曳時以左側樣式的正方形寶石圖跟隨滑鼠，不顯示禁止符號。
+- Owner：Codex；Done，單一開發者。使用者要求上方寶石拖曳時以左側樣式的正方形寶石圖跟隨滑鼠，不顯示禁止符號。
 - 前置：共鳴既有原生拖曳及gresCanSocket。允許js/ui-gem-resonance.js、css/gems.css、index.html必要快取、tests/gem-resonance-ui.test.cjs、LV_upgrade_system.md與本段；禁止玩法／解鎖／Worker／Protocol／存檔／配置／素材及其他聊天修改，不合併推送。
 - 驗收：方形圖僅含來源寶石且維持中心熱點；頁面空白／有效及拒絕孔位不出禁止游標，放開仍重驗條件；成功／拒絕／外部放開／取消清理，外部拖曳不攔截。相關回歸／Build／瀏覽器及diff後獨立Commit，交使用者Review／整合。
-
+- 完成六檔：js/ui-gem-resonance.js新增僅限resDrag的頁面dragenter／dragover接受移動及孔位外drop清理；拖曳影像以來源寶石圖、同階邊色及深底方框顯示，依畫面圖像尺寸取正方形並將熱點置中（瀏覽器實測40×40）。css/gems.css新增只作用於預覽的樣式；index同步gems CSS1.0.25／共鳴JS1.0.21；既有UI回歸、LV及本段同步。原孔位drop仍由gresSocketGem／gresCanSocket重新檢查，未修改資料、玩法、解鎖或其他拖曳工具。
+- 預檢：共鳴JS／CSS／回歸／LV／任務表無其他來源；Claude未提交index改的是系統解鎖相關strings_data／data／gem_resonance／talents／ui快取，本次僅gems CSS與ui-gem-resonance快取，無同一引用或語意相依。以Claude HEAD為base、只帶本次兩處快取更新的candidate、其未提交工作檔為theirs，merge-file試跑0並核對其UI215與本次共鳴21均保留。只分段修改，不帶入其未完成解鎖功能；js/ui.js及String等檔僅唯讀。
+- 驗證：node --test --test-reporter=spec tests/gem-resonance-ui.test.cjs tests/gem-resonance.test.cjs tests/string-table.test.cjs最終49/49通過；新增來源非方形仍轉正方形、中心熱點／正確圖像、dragenter／dragover跨空白或拒絕孔維持move、外部拖曳不攔截、無效孔拒絕及外部放開不扣資源／清理。原成功、最低階／種類／庫存／容量／BOSS鎖、取消及共鳴屬性回歸保留；npm.cmd run build586檔通過，完整diff檢查通過。未降低功能或刪除斷言。
+- 瀏覽器：專用IAB backend無法連線，改用CUA／IAB隔離fixture載正式CSS、共鳴UI／邏輯、String、配置及正式renderGems相關函式；真實isTrusted原生拖曳確認方框40×40與十級紫水晶來源、空白move／不扣資源、有效孔只送一次且庫存10→9、不相容防禦孔及空白放開後仍9、狀態與預覽均清理。加入dragenter後也修正SVG孔位剛進入、尚未收到dragover時的接受狀態；最後Console error／warning0。結果JSON及gres-drag-verified.png保留本聊天visualizations，臨時服務／腳本／頁籤清理，未讀寫玩家存檔或操作完整Worker遊戲。
+- 唯讀檢查：AI_RULES／AGENTS／Workflow／prompts、js/ui.js的來源列與全頁技能拖曳、item.js圖像、gem_resonance.js／data.js／配置、三份既有回歸及Build工具、Claude工作區差異。沒有新增文字／Excel／素材或素材庫變更，無素材庫Commit。使用者原game_parameters.xlsx與後續自行套用的CSV／data／formula完整保留，本任務未編修。
+- 交付：使用者工作期間建立0f23e5f1「調整技能平衡」，已收錄本次六檔與其自己的四檔參數更新；保留原提交、不重寫或重複實作，並在該提交後重跑49項驗證。本段完成紀錄另以[Codex] docs提交，編號見回覆。無本次未完成實作或已知新增阻塞，可供Review／合併，未合併／推送；限制為未做多瀏覽器／真存檔長戰，瀏覽器外的原生拖曳游標由系統控制。下一步整合後重載遊戲，再由上方寶石列拖至孔位驗收。
 
 ## WORLD-MAP-LABEL-STATE-20261026 — 世界地圖名稱、等級與鎖定顯示
 
