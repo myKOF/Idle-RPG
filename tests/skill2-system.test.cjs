@@ -767,6 +767,45 @@ test('死亡屍爆：流血敵人死亡時對附近敵人造成傷害並傳染�
   assert.ok(near2.dots.some((d) => d.sid === 'sgPoison'), '屍爆應傳染中毒給第 2 個敵人');
 });
 
+test('死亡屍爆：「附近」範圍由第 6 階「搜敵範圍」欄控制，留白＝不限範圍', () => {
+  function run(rangeM) {
+    const c = loadContext();
+    const calls = stubHits(c);
+    c.chance = () => false;
+    c.G.player.skills2.levels.bloodblade = [1, 1, 1, 1, 1, 1, 0];
+    c.FIELD.player = playerEnt();
+    const fx = c.SKILLS2.bloodblade.tiers[5].fx;
+    fx.count = 3;
+    if (rangeM === null) delete fx.m; else fx.m = rangeM;
+    const dead = enemy(0, 40, 0);
+    dead.dots = [{ sid: 'sgBleed', dps: 10, until: 999, name: '血刃流血', interval: 1 }];
+    c.GT = 0;
+    const inside = enemy(1e9, 40 + c.bfMeterPx(30), 0);
+    const outside = enemy(1e9, 40 + c.bfMeterPx(60), 0);
+    c.skills2OnEnemyDeath(dead, [inside, outside]);
+    return { calls, inside, outside, c };
+  }
+  assert.equal(run(40).c.SKILLS2.bloodblade.tiers[5].fx.m, 40);
+  const ranged = run(40);
+  assert.equal(ranged.calls.length, 1, '40 米：30 米內的打到，60 米外的不打');
+  assert.ok(ranged.inside.dots.some((d) => d.sid === 'sgPoison'));
+  assert.ok(!ranged.outside.dots.some((d) => d.sid === 'sgPoison'));
+  assert.equal(run(null).calls.length, 2, '留白＝整個戰場');
+});
+
+test('血刃斬傳染範圍：毒霧感染與死亡屍爆表定 40 米，零日感染不再有 80 米的寫死備用值', () => {
+  const c = loadContext();
+  const t = c.SKILLS2.bloodblade.tiers;
+  assert.equal(c.sgBloodSpreadRangePx(t[4].fx), c.bfMeterPx(40), '毒霧感染');
+  assert.equal(c.sgBloodSpreadRangePx(t[5].fx), c.bfMeterPx(40), '死亡屍爆');
+  assert.equal(c.sgBloodSpreadRangePx({}), 0, '留白＝不限範圍');
+  const far = enemy(1e9, 40 + c.bfMeterPx(100), 0);
+  const source = enemy(1e9, 40, 0);
+  const noM = Object.assign({}, t[6].fx); delete noM.m;
+  assert.equal(c.sgRandomBloodbladeTarget(source, [source, far], noM, 1), far, '留白不再退成 80 米');
+  assert.equal(c.sgRandomBloodbladeTarget(source, [source, far], t[6].fx, 1), null, '20 米外不傳染');
+});
+
 /* ---- 6) 雙刀亂舞三項效果 ---- */
 
 test('雙刀亂舞設定：狂暴之舞、鐵血之舞、嗜血狂化數值與說明同步', () => {
