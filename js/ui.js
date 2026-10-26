@@ -5156,9 +5156,12 @@ function renderEquipSetTabs(equipSnapshot, headerSnapshot) {
   if (!box) return;
   equipSnapshot = equipSnapshot || uiEquipPanelSnapshot();
   headerSnapshot = headerSnapshot || uiHeaderPanelSnapshot();
-  if (!equipSnapshot || !Array.isArray(equipSnapshot.sets)) { box.innerHTML = ''; return; }
-  var active = equipSnapshot.equipActive || 0;
-  var view = (typeof equipSnapshot.equipView === 'number') ? equipSnapshot.equipView : active;
+  var ready = !!equipSnapshot && Array.isArray(equipSnapshot.sets);
+  var active = ready ? equipSnapshot.equipActive || 0 : 0;
+  var view = ready && typeof equipSnapshot.equipView === 'number' ? equipSnapshot.equipView : active;
+  var pendingNote = $id('equip-set-pending-note');
+  if (pendingNote) pendingNote.hidden = !ready || view === active;
+  if (!ready) { box.innerHTML = ''; return; }
   var playerLevel = headerSnapshot && headerSnapshot.player ? headerSnapshot.player.level : 0;
   var playerReincarnations = headerSnapshot && headerSnapshot.player ? headerSnapshot.player.reincarnations : 0;
   function unlocked(index) {

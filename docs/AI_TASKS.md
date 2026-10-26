@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## EQUIP-SET-PENDING-NOTE-20261027 — 裝備詳情標題提示尚未套用
+
+- Owner：Codex；Done，單一開發者。使用者要求查看其它裝備套、尚未套用時，在裝備詳情標題右側顯示紅色(尚未套用)。
+- 前置：既有equip快照的equipView／equipActive與renderEquipSetTabs。允許js/ui.js僅該渲染函式、index.html標題與必要UI／String快取、String.xlsx／CSV／strings_data.js、LV_upgrade_system.md及本段；禁止玩法／存檔／Worker／技能點／配置及其他聊天修改，不合併推送。
+- 使用者已明確允許分段整合，保留兩邊修改並統一快取版本。保留同副本SKILL-POINTS未提交內容；Excel先讀現有來源最大編號2142，本次新增2143，原生工具採來源hash保護，不覆寫其它新字串；Claude64383f13既有2130／2131重號仍待正常整合，不在本次重編。
+- 驗收：查看非使用中裝備套顯示紅色括號、套用權威快照成功／切回使用中／無快照時隱藏，無須選中物品也有提醒；String／裝備相關回歸、Excel原生重開／格式、Build／畫面及diff後提交，後續使用者Review／整合。
+- 完成七檔：js/ui.js僅renderEquipSetTabs，依同一equip快照的view／active切換提醒；index新增標題右側紅色#f87171／14px／status文字及UI1.0.216、String33e362c4快取；String.xlsx／CSV／strings_data.js登記2143「(尚未套用)」；LV及本段同步。提醒不依賴物品選取或詳情內容，套用請求未得到成功快照前仍保留；不動Worker、套用流程、裝備公式、解鎖與存檔。
+- Excel：先備份並以原生API唯讀取得現況，來源SHA核對未變後在裝備模塊1240後插入2143一列，僅四個非空格；既有工具兩次正常重開核對完整2130列7欄與0個物件，再由xlsx_to_csv／apply_strings匯出，沒有手工改XML。另唯讀逐格對比插列前後的原有儲存格樣式、原列高及欄寬完全相同，前後局部渲染已檢視；原11條技能點新字串完整保留。
+- 驗證：node --test --test-reporter=spec tests/equip-set-preview-stats.test.cjs tests/equipment-selection-memory.test.cjs tests/equipment-slot-selection.test.cjs tests/equipment-two-hand-display.test.cjs tests/equipment-tooltip-compare.test.cjs tests/string-table.test.cjs共42/42通過；臨時正式函式fixture驗9次狀態（使用中／第二套／待回應／套用成功／原先套／切回／缺view／無快照／無sets）、精確文字／紅色／標題位置通過，不新增低影響正式測試。npm.cmd run build587檔通過，字串產生同步／仍寫死0條及diff檢查通過。
+- 擴大ui-worker-panels為6/8，gem.socket舊靜態接線斷言及item.upgrade fixture缺UI兩失敗，以修改前js/ui.js覆映重跑均相同，屬既有基線；未修改斷言或擴修其它功能。瀏覽器專用IAB無連線後用CUA／IAB隔離排版頁載正式標題HTML／CSS／String與渲染函式，確認紅色rgb(248,113,113)、文字、非使用中顯示、套用成功／切回隱藏及再切套重新顯示，Console error／warning0。reminder-preview.png保留本聊天visualizations/equip-set-pending；未操作真人存檔或真Worker，未做所有尺寸／瀏覽器驗收。
+- 協作／唯讀：使用者本聊天明確同意整合共享String與快取；技能點聊天先以4660f14c分段提交自身內容、保留本任務工作檔，最終相對HEAD僅本次七檔差異。沒有覆蓋其技能邏輯／協議／String，Claude既有重號仍待整合。唯讀AI規範／Workflow／Agent文件、player.js／裝備投影與選取／渲染鏈、既有裝備CSS、String及Excel匯出工具、上述七份回歸與Build；沒有素材新增或修改，素材庫不建空Commit。
+- 交付：本任務實作無未完成項或已知新增阻塞，可供Review／合併，未合併／推送。Commit為本段所在「[Codex] fix: 裝備詳情提示目前查看套尚未套用」，編號見回覆。已知限制為上述兩項既有測試與隔離UI驗收範圍；下一步整合後重載遊戲，切另一套與套用／切回實看提醒。
+
 ## SKILL-POINTS-20261027 — 技能升級花點與熟練度右側餘額
 
 - Owner：Codex；Done，單一開發者。使用者要求確認技能升級消耗，缺少時每級消耗1點，熟練度條右側顯示餘額，升級tips同步；熟練度tips指定兩行「打怪獲得技能經驗並提升熟練度／熟練度升級可獲得1點技能點」。
