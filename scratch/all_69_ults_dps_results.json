@@ -962,11 +962,11 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120.05,
-      "totalDamage": 1415236787,
-      "avgDps": 11788728,
+      "totalDamage": 24836167000000,
+      "avgDps": 206881860000,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 301344.87
+      "estimatedFullClearTime": 17.16
     },
     "elite": {
       "scenarioType": 2,
