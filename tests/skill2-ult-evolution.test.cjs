@@ -2209,20 +2209,33 @@ test('【地爆天星】倒地期間不落下，倒數與狀態一起往後推',
   assert.equal(derived.length, 1, '復活後到期才落下，而且只落一發');
 });
 
-test('【地爆天星】對高塔 BOSS 不受單次 20% 扣血上限壓縮，其他直接傷害照舊受限', () => {
+test('【地爆天星】固定扣最大生命 N%：不吃增傷乘區，高塔 BOSS 單次 20% 上限仍保留', () => {
   const c = loadContext();
   stubVfx(c);
   maxLevels(c, 'fireball'); equip(c, 'fireball');
   setUlt(c, 'fireball', 'starfallCataclysm', 1);
-  c.skill2FrenzySkillDamageMultiplier = () => 2;      // 嗜血狂化期間的技能傷害乘區：把扣血量推過 20%
+  c.skill2FrenzySkillDamageMultiplier = () => 2;       // 嗜血狂化的技能乘區
+  c.skill2AbyssDamageTakenMultiplier = () => 1.5;      // 海淵葬界的易傷
   const u = c.sgUlt('fireball', 'starfallCataclysm');
-  const boss = enemy(1000, 3 * M, 0, 'boss', 'boss'); boss.towerBoss = true;
-  const out = { killed: false, dmg: 0, crit: false };
-  c.sgStarfallImpact({ getEnemies: () => [boss], floatSel: 'mv-float' }, u);
-  assert.equal(boss.hp, 1000 - 400, 'BOSS 欄 20% × 乘區 2 ＝ 40%，不被壓回 20%');
-  const other = enemy(1000, 3 * M, 0, 'boss', 'boss'); other.towerBoss = true;
-  c.sgDerivedHit(other, 300, 'fireball', 'mv-float', out, '', 0);
-  assert.equal(other.hp, 1000 - 200, '其他技能的直接傷害仍受高塔 BOSS 單次 20% 上限');
+  const ctx = { getEnemies: null, floatSel: 'mv-float' };
+  const normal = enemy(1000, 3 * M, 0, 'n');
+  const elite = enemy(1000, 3 * M, 0, 'e', 'elite');
+  const boss = enemy(1000, 3 * M, 0, 'b', 'boss');
+  const tower = enemy(1000, 3 * M, 0, 't', 'boss'); tower.towerBoss = true;
+  ctx.getEnemies = () => [normal, elite, boss, tower];
+  c.sgStarfallImpact(ctx, u);
+  assert.equal(normal.hp, 1000 - 800, '普通 80%，不被乘區放大');
+  assert.equal(elite.hp, 1000 - 400, '菁英 40%');
+  assert.equal(boss.hp, 1000 - 200, '野外 BOSS 20%，不減半也不放大');
+  assert.equal(tower.hp, 1000 - 200, '高塔 BOSS 20%（剛好等於上限）');
+  // 高塔上限仍保留：BOSS 欄調到 50% 時被壓回 20%
+  c.SKILLS2.fireball.ult.find((x) => x.id === 'starfallCataclysm').fx.boss = 50;
+  const tower2 = enemy(1000, 3 * M, 0, 't2', 'boss'); tower2.towerBoss = true;
+  const field2 = enemy(1000, 3 * M, 0, 'b2', 'boss');
+  ctx.getEnemies = () => [tower2, field2];
+  c.sgStarfallImpact(ctx, c.sgUlt('fireball', 'starfallCataclysm'));
+  assert.equal(tower2.hp, 1000 - 200, '高塔 BOSS 單次不得超過 20%');
+  assert.equal(field2.hp, 1000 - 500, '野外 BOSS 沒有該上限');
 });
 
 test('【天霸風神斬】與【阿修羅霸王拳】倒地期間不自動發動', () => {
