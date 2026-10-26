@@ -117,6 +117,18 @@ for (const [gid, list] of Object.entries(groups)) {
     }
   });
 
+  if (gid === 'bloodblade') {
+    lines.push('');
+    lines.push('> 💡 **血刃斬超神進化傷害特性與機制分析**：');
+    lines.push('> 1. **萬毒血霧**：具備 30 米全場光環，20 隻小怪進場無條件每 0.5 秒疊毒至滿層 20 層（每秒全場 800 次毒傷跳字），群體傷害表現極為強大。');
+    lines.push('> 2. **殺神領域**：24 米領域內每死 1 怪疊層，小怪群中秒速滿層 100 層，帶來 +100%~+200% 全域傷害翻倍。');
+    lines.push('> 3. **崩解（小怪戰傷害特性）**：');
+    lines.push('>    - **到期爆炸機制**：崩解爆炸限定「流血/中毒持續時間自然結束」時觸發。若小怪在 1~3 秒內提前被擊殺，實體銷毀導致 DOT 隨之消失，無法觸發自然到期爆炸。');
+    lines.push('>    - **缺乏全場自動 AOE**：本體為 8 秒 CD 單體斬擊，缺乏萬毒血霧的全場每 0.5 秒自動疊毒。');
+    lines.push('>    - **爆炸半徑僅 6 米**：貼身 60 像素範圍極狹窄，群怪分散難以互炸。');
+    lines.push('>    - **菁英與 BOSS 戰正常發揮**：菁英怪血厚能撐過 7~10 秒並完整引發 200% 到期大爆炸；單體 BOSS 戰中能穩定跳滿與結算。');
+  }
+
   lines.push('');
   lines.push('---');
   lines.push('');
@@ -129,13 +141,14 @@ lines.push('');
 const topMob = [...results].sort((a, b) => b.normalMob.avgDps - a.normalMob.avgDps).slice(0, 10);
 lines.push('### 3.1 🌾 普通小怪群戰 DPS 天梯榜 (AOE / 清怪割草王者)');
 lines.push('');
-lines.push('| 排名 | 技能群組 | 超神技能 | 專屬傳奇效果 | 小怪 DPS | 小怪採樣總傷害 | 機制分析 |');
+lines.push('| 排名 | 技能群組 | 超神技能 | 專屬傳奇效果 | 小怪 DPS | 小怪採樣總傷害 | 超神技能效果摘要 |');
 lines.push('| :---: | :--- | :--- | :--- | :---: | :---: | :--- |');
 topMob.forEach((r, idx) => {
   const t = r.target;
   const m = r.normalMob;
   const affs = t.affixes.map(a => a.name).join('、');
-  lines.push(`| **#${idx + 1}** | **${t.groupName}** | **${t.ultName}** | ${affs} | **${fmtDps(m.avgDps)}** | ${fmtDmg(m.totalDamage)} | 橫掃全場雷電矩陣，覆蓋率極高 |`);
+  const desc = t.ultDesc.replace(/[\r\n]+/g, ' ').slice(0, 35) + '...';
+  lines.push(`| **#${idx + 1}** | **${t.groupName}** | **${t.ultName}** | ${affs} | **${fmtDps(m.avgDps)}** | ${fmtDmg(m.totalDamage)} | ${desc} |`);
 });
 lines.push('');
 
@@ -143,13 +156,14 @@ lines.push('');
 const topElite = [...results].sort((a, b) => b.elite.avgDps - a.elite.avgDps).slice(0, 10);
 lines.push('### 3.2 🛡️ 菁英怪攻堅 DPS 天梯榜 (多目標攻堅王者)');
 lines.push('');
-lines.push('| 排名 | 技能群組 | 超神技能 | 專屬傳奇效果 | 菁英怪 DPS | 菁英採樣總傷害 | 機制分析 |');
+lines.push('| 排名 | 技能群組 | 超神技能 | 專屬傳奇效果 | 菁英怪 DPS | 菁英採樣總傷害 | 超神技能效果摘要 |');
 lines.push('| :---: | :--- | :--- | :--- | :---: | :---: | :--- |');
 topElite.forEach((r, idx) => {
   const t = r.target;
   const e = r.elite;
   const affs = t.affixes.map(a => a.name).join('、');
-  lines.push(`| **#${idx + 1}** | **${t.groupName}** | **${t.ultName}** | ${affs} | **${fmtDps(e.avgDps)}** | ${fmtDmg(e.totalDamage)} | 密集高頻斬擊 + 雙手補償與灼焰疊層 |`);
+  const desc = t.ultDesc.replace(/[\r\n]+/g, ' ').slice(0, 35) + '...';
+  lines.push(`| **#${idx + 1}** | **${t.groupName}** | **${t.ultName}** | ${affs} | **${fmtDps(e.avgDps)}** | ${fmtDmg(e.totalDamage)} | ${desc} |`);
 });
 lines.push('');
 
@@ -157,13 +171,14 @@ lines.push('');
 const topBoss = [...results].sort((a, b) => b.boss.avgDps - a.boss.avgDps).slice(0, 10);
 lines.push('### 3.3 👑 單體 BOSS 戰 DPS 天梯榜 (單體極限爆發王者)');
 lines.push('');
-lines.push('| 排名 | 技能群組 | 超神技能 | 專屬傳奇效果 | BOSS DPS | BOSS 採樣總傷害 | 機制分析 |');
+lines.push('| 排名 | 技能群組 | 超神技能 | 專屬傳奇效果 | BOSS DPS | BOSS 採樣總傷害 | 超神技能效果摘要 |');
 lines.push('| :---: | :--- | :--- | :--- | :---: | :---: | :--- |');
 topBoss.forEach((r, idx) => {
   const t = r.target;
   const b = r.boss;
   const affs = t.affixes.map(a => a.name).join('、');
-  lines.push(`| **#${idx + 1}** | **${t.groupName}** | **${t.ultName}** | ${affs} | **${fmtDps(b.avgDps)}** | ${fmtDmg(b.totalDamage)} | 極致攻速與頻率，單體持續集中爆發 |`);
+  const desc = t.ultDesc.replace(/[\r\n]+/g, ' ').slice(0, 35) + '...';
+  lines.push(`| **#${idx + 1}** | **${t.groupName}** | **${t.ultName}** | ${affs} | **${fmtDps(b.avgDps)}** | ${fmtDmg(b.totalDamage)} | ${desc} |`);
 });
 lines.push('');
 
