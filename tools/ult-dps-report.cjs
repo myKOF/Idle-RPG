@@ -18,6 +18,7 @@ function validate(data) {
   assert.equal(data.metadata.mpLock, true);
   assert.equal(data.metadata.playerLevel, 100);
   assert.equal(data.metadata.enemyLevel, 100);
+  assert.equal(data.metadata.effectiveHitChance, 100);
   assert.equal(data.results.length, 69);
   assert.equal(new Set(data.results.map(r => r.target.ultId)).size, 69);
   assert.equal(new Set(data.results.map(r => r.target.gid)).size, 23);
@@ -43,6 +44,9 @@ function validate(data) {
       assert.ok(Number.isInteger(s.kills.total) && Number.isInteger(s.kills.sample));
       assert.ok(s.kills.total >= s.kills.sample && s.kills.sample >= 0);
       assert.ok(s.waves.every(w => w.level === 100 && w.count === [0, 20, 5, 1][s.scenarioType]));
+      assert.equal(s.damageAudit.playerHitMisses, 0);
+      assert.equal(s.damageAudit.minHitChance, 100);
+      assert.ok(s.baseline.hit - s.baseline.maxEnemyDodge >= 100);
       assert.ok(Number.isFinite(s.totalDamage) && s.totalDamage >= 0);
       assert.equal(s.avgDps, s.totalDamage / 120);
       assert.ok(Math.abs(Object.values(s.sources).reduce((n, v) => n + v.damage, 0) - s.totalDamage) <= Math.max(1, s.totalDamage) * 1e-12);
@@ -55,6 +59,9 @@ function validate(data) {
 function render(data) {
   validate(data);
   const { metadata: m, results } = data;
+  const scenarios = results.flatMap(r => ['normalMob', 'elite', 'boss'].map(k => r[k]));
+  const hitAttempts = scenarios.reduce((n, s) => n + s.damageAudit.playerHitAttempts, 0);
+  const deadRejected = scenarios.reduce((n, s) => n + s.damageAudit.rejectedDeadHits + s.damageAudit.rejectedDeadDirect, 0);
   const basicOnly = results.flatMap(r => ['normalMob', 'elite', 'boss'].filter(key => {
     const sources = Object.values(r[key].sources);
     return sources.length && sources.every(s => s.name === '普攻');
@@ -65,17 +72,20 @@ function render(data) {
   const lines = [
     `# ⚔️ 全 23 大技能群組（69 招超神進化技能）DPS 實測總結報表【${time}】`, '',
     `> **實測完成時間**：\`${time}\`（Asia/Taipei）  `,
-    '> **測試基準版本**：v9.0（角色與敵人同為100級，鎖血＋鎖法力，補殺敵數；150秒／預熱30秒／採樣120秒）  ',
+    '> **測試基準版本**：v10.0（同級100、鎖血鎖法力、實際必中；致死最後一下保留溢出，死後計傷歸零）  ',
     '> **負責測試**：Codex（Node VM Combat Simulation）  ',
     `> **遊戲基準提交**：\`${m.commit}\`  `,
     '> **資源驗證**：207場均開啟原生HP_lock與MP_lock，零死亡、零復活，法力不足不會阻擋施放。  ',
     '> **敵人與補怪**：角色固定100級、怪物實際level固定100；全滅當步立即補上同數量、同類型新一批，持續到150秒。  ',
+    '> **命中與計傷**：扣除閃避後實際命中100%，逐次驗證零MISS；僅保留活目標所承受的致死那筆完整傷害，之後對同一死亡目標的DOT／延遲／追加傷害全部排除。  ',
+    `> **本次稽核**：全場${hitAttempts.toLocaleString('en-US')}次玩家命中判定、0次MISS；已死目標結算入口拒絕${deadRejected}次（0代表原生上層已擋住，沒有此類後續結算嘗試）。  `,
     `> **判讀提醒**：207場中${basicOnly}場後120秒僅普攻入帳；鎖血會阻止失血／瀕死／死亡效果，純Buff也可能只以普攻傷害呈現，不能由此判斷這些超神無效。  `,
     '> **核心規則**：全23系、69招、207場，每系必帶該系專屬5個傳奇效果。', '', '---', '',
     '## 1. 測試環境與標準化規範', '',
     '1. **核心傷害詞條絕對一致**：',
     '   * 全身13格100級傳奇裝備、強化+40（3.0x）、相同9種滿roll詞條：atkPct、critDmg、atkFlat、critRate、pPen、matkPct、matkFlat、mPen、aoeDmg；不依技能替換詞條。',
     '   * 戰鬥實際getStats固定：物攻=魔攻50,000、物穿=魔穿100%、暴擊100%、暴傷5996%、總增傷+1000%、各元素增傷+1000%、連擊3、格擋50%、格擋減傷80%。元素附傷elemDmgPct維持0，不捏造附傷。',
+    `   * 命中屬性固定${results[0].normalMob.baseline.hit}，三類敵人最高閃避${results[0].normalMob.baseline.maxEnemyDodge}，扣除閃避後實際命中率100%；每次活目標resolveHit皆驗證命中率與零MISS。暴擊率與命中率分開控制。普攻攻速仍為每秒${results[0].normalMob.baseline.aspd}次，沒有提高攻速。`,
     '   * 各階及超神進化均Lv.10；僅測試VM開啟GM skillUnlock、hpLock及mpLock，保持角色100級／1轉；每場確認所選超神已生效。普攻、全系七階與傳奇衍生傷害均納入，因此數值是「裝載該超神的整套輸出」。',
     '2. **傳奇特效配置（Mandatory Legendary Affixes）**：',
     '   * 每系嚴格裝載來源表定義的5個傳奇效果；雙手巨劍、雙手魔劍、雙手法杖、雙手斧使用TWO_HAND_EFFECT_VALUE_MULT=2.0；修羅亂舞裝雙持雙手巨劍。',
@@ -86,16 +96,17 @@ function render(data) {
     ...[['小怪', 'normalMob'], ['菁英', 'elite'], ['BOSS', 'boss']].map(([label, key]) => `   * 本次${label}首波實際總血量範圍：${fmtDmg(Math.min(...results.map(r => r[key].waves[0].totalHp)))}～${fmtDmg(Math.max(...results.map(r => r[key].waves[0].totalHp)))}。`),
     '4. **測試時長與數據統計口徑（2分30秒穩定態採樣）**：',
     '   * 每場3000步，每步0.05秒，共150秒；整數步換算GT，嚴格採樣30≤GT<150，分母固定120秒。',
-    '   * 平均DPS = 後120秒累計輸出總傷害 ÷ 120秒，格式為`總傷 | DPS | 殺敵：採樣數（全場數）`；總傷包含溢出傷害。',
+    '   * 平均DPS = 後120秒累計輸出總傷害 ÷ 120秒，格式為`總傷 | DPS | 殺敵：採樣數（全場數）`；致死那筆結算保留超出剩餘HP的傷害。',
     '   * 殺敵數由原生onFieldKill成功結算後的recordLootKill入口統計；同一次死亡重複掃描不重複計數，天地再造重生後再次擊殺依遊戲規則可再計1次。採樣數只計30≤GT<150，全場數計完整150秒，預熱擊殺不放進採樣數。',
-    '   * 僅以正式recordRunDamage出口統計：普攻、直接、衍生、傳奇、DOT各記一次；不以血量差額補計，避免DOT到期爆炸重複入帳或漏掉溢出。',
+    '   * 僅以正式recordRunDamage出口統計：普攻、直接、衍生、傳奇、DOT各記一次；不以血量差額補計。在測試VM的resolveHit／applyEnemyHpDamage入口先看目標是否活著：活著時保留完整結算，已死亡時直接返回0，後續DOT、延遲或追加命中不再入帳；原生同批DOT仍視為一次結算。',
+    '   * 例：敵人剩100HP，本次造成1000傷害並死亡，計1000；之後再對屍體結算500DOT，計0。死亡爆炸若打到其他活敵仍可計傷；原生復活後再受傷也可正常計算。',
     '5. **受擊模型與重現限制**：',
     '   * 沿用參考腳本的受控受擊：停用原生fieldMonsterAttack，每步最多前6隻存活怪依攻速resolveHit，不另檢查敵方射程；傷害由原生hpLock阻止，再以實際hpDamage呼叫skills2OnPlayerDamaged。沒有手動最低1HP補救，也不把0傷害改成50,000。此模型不代表完整正式野外實戰，不能用來驗收敵方攻擊距離或投射物。',
     '   * 初始HP／MP採角色計算上限；GM_TEST.hpLock=true、mpLock=true，原生邏輯阻擋敵傷／自傷扣血及主動／自動／被動觸發耗魔，不以灌入1e15資源代替鎖定。每步驗證兩個鎖定仍有效、HP>0，若進入死亡／復活流程即失敗；原始JSON留最低HP／MP、零死亡／復活與採樣期間施放次數。',
     '   * HP_lock使實際生命傷害為0，因此依失血、低血量、致死或死亡觸發的能力無法在此條件下完整發揮，例如不屈鬥魂的致死效果、戰神體的失血機制及生命反射。保留這個使用者指定條件，不造假補出失血或死亡傷害。',
     `   * 固定種子${m.seed}＋情境編號，同情境各技能同一起始亂數；技能消耗亂數不同，後續波次不保證相同。每技能每情境單次採樣，無多種子信賴區間。`,
     '   * 本次載入工作區JS與CSV。原有未提交Skills2.xlsx保留未套用；其SHA只用於來源追溯，不表示已測試該工作簿尚未匯出的修改。',
-    '   * 本版取代CODEX v8.0的300級敵人結果；保留原生鎖血與鎖法力，改同級100級並新增原生殺敵統計，重新實測全部207場。高等級敵人的最大HP百分比效果與Overkill會大幅放大總傷，不能把前版傷害榜直接當平衡強弱結論。', '', '---', '',
+    '   * 本版取代CODEX v9.0的低命中結果：前版命中106.1、普通怪閃避62.8，實際僅43.3%；這次統一實際必中，並明確排除死亡後計傷，重新實測全部207場。高等級最大HP比例及致死溢出仍會放大DPS，需與殺敵數並讀。', '', '---', '',
     '## 2. 全 23 大技能群組總結清單（依指定換行規則整理）', ''
   ];
   let i = 0;
@@ -137,6 +148,10 @@ function render(data) {
     '* 當時實際每跳比例：鐵血之舞2% × 狂戰士1.5倍（雙手補償後+50%）× 暴擊59.96倍 × 總增傷11倍 = 敵人最大HP的1978.68%。每隻300級小怪單跳約24.60兆傷害；此狀態無元素標籤，這個案例沒有再乘各元素增傷11倍。',
     '* 原生DOT管線會對最大HP百分比流血套暴擊與總增傷，而本報告依規範計入Overkill；即使單怪只剩約1.243兆HP，該跳仍可記約24.60兆。這個計算可重現，不能據此認定超神本體強幾十萬倍，也不能把同一系三個近似數值當作三個獨立機制都很強。',
     '* 本次改為同級100級、增加實際殺敵數與傷害子類JSON，直接觀察清怪效果。沒有為了讓測試結果接近其他技能而調低傷害、刪除溢出、停用T5或修改正式公式。', '');
+  lines.push('### 反擊三招的殺敵數與DPS為何可能不同', '',
+    '* DPS保留致死最後一下的完整傷害。對同一隻怪造成10倍或100倍生命的傷害，都只增加1殺，但後者的DPS仍會更高。因此相同殺敵數不代表相同總傷，殺敵更多也不保證DPS更高。',
+    '* 戰神體累計生命及護盾的損失百分比來放大下一段反擊。HP_lock只擋扣血，盾仍會被打破；反擊盾每次補出的小盾，被完整打破時也可累計其當時盾上限的100%。反覆補盾／破盾會累積大幅反擊加成，再以致死溢出呈現在DPS，可能沒有增加殺敵數。',
+    '* 神聖之體另有光彈範圍攻擊，能多殺其他活敵；這是覆蓋與出手機會增加，單次傷害未必高於戰神體。前版鎖血條件下，不屈鬥魂的瀕死效果也無法觸發，不能由這組條件評估其救命價值。', '');
   for (const gid of ['windblade', 'thunderstrike', 'dualdance', 'bloodblade', 'counter', 'earthguard']) {
     const list = groups.get(gid);
     lines.push(`* **${list[0].target.groupName} 5大傳奇（${list[0].target.affixes.map(a => a.name).join('、')}）**：`);
@@ -144,7 +159,7 @@ function render(data) {
   }
   const zero = results.flatMap(r => ['normalMob', 'elite', 'boss'].filter(k => r[k].totalDamage === 0).map(k => r.target.ultId + '/' + k));
   lines.push('', `零傷害採樣：${zero.length ? zero.join('、') : '無'}。`, '', '## 5. 原始資料與重跑方式', '',
-    '* 原始數據：[20261026-ult-dps-results.json](skill-tests/20261026-ult-dps-results.json)，含207場總傷、未四捨五入DPS、來源／傷害子類拆分、採樣與全場殺敵數、實際等級、全場與採樣期間施放次數、HP／MP鎖定、最低資源、死亡／復活次數、基準屬性、傳奇倍率、seed、每波HP及來源SHA256。',
+    '* 原始數據：[20261026-ult-dps-results.json](skill-tests/20261026-ult-dps-results.json)，含207場總傷、未四捨五入DPS、來源／傷害子類拆分、命中次數／MISS／最低實際命中率、致死結算與死亡後拒絕計傷次數、採樣與全場殺敵數、實際等級、全場與採樣期間施放次數、HP／MP鎖定、最低資源、死亡／復活次數、基準屬性、傳奇倍率、seed、每波HP及來源SHA256。',
     '* 重跑：`node tools/ult-dps-benchmark.cjs`，再執行`node tools/ult-dps-report.cjs`。工具不讀寫玩家存檔，不修改遊戲配置。',
     '* 結構及算術驗證：`node --test tests/ult-dps-benchmark.test.cjs`；`node tools/ult-dps-report.cjs --check`比對報告與JSON是否一致。', '');
   // CommonMark hard breaks without trailing whitespace, so git diff --check stays clean.

@@ -200,6 +200,8 @@ function prepareSimulation(target, scenarioType, totalDuration = 150, warmupDura
   ctx.ELEMENTS.forEach(e => { pStats.elemDmgPct[e] = 0; pStats.elemDmgUp[e] = 1000; });
   pStats.atk = pStats.matk = 50000;
   pStats.pPen = pStats.mPen = 100;
+  const maxEnemyDodge = Math.max(...[1, 2, 3].map(s => ctx.monsterStatsFor(TEST_LEVEL, s === 2, s === 3, 0).dodge));
+  pStats.hit = 100 + maxEnemyDodge;
   // computeStats() returns a new object. Cache the normalized object actually used by combat.
   ctx.getStats = () => pStats;
 
@@ -229,6 +231,38 @@ function prepareSimulation(target, scenarioType, totalDuration = 150, warmupDura
   // Huge initial resources alone do not prevent death or mana exhaustion after revival.
   ctx.FIELD.player.hp = pStats.hp;
   ctx.FIELD.player.mp = pStats.mp;
+  const damageAudit = { playerHitAttempts: 0, playerHitMisses: 0, minHitChance: 100,
+    fatalHits: 0, fatalDirect: 0, rejectedDeadHits: 0, rejectedDeadDirect: 0 };
+  const nativeResolveHit = ctx.resolveHit;
+  ctx.resolveHit = function(attacker, defender, attack, defense) {
+    if (attack && attack.isPlayer && defender && !(defender.hp > 0)) {
+      damageAudit.rejectedDeadHits++;
+      return { dmg: 0, hpDamage: 0, crit: false, miss: false, blocked: false, killed: false,
+        thorns: 0, heal: 0, shield: 0, absorbed: 0, manaShield: 0, procs: [] };
+    }
+    const outgoing = !!(attack && attack.isPlayer && defender && defender.maxHp > 0);
+    if (outgoing) {
+      const chance = Math.max(5, Math.min(100, Number(attack.hit) - (Number(defense.dodge) || 0)));
+      damageAudit.minHitChance = Math.min(damageAudit.minHitChance, chance);
+      assert.equal(chance, 100, 'Effective player hit chance below 100%');
+      damageAudit.playerHitAttempts++;
+    }
+    const result = nativeResolveHit.apply(this, arguments);
+    if (outgoing) {
+      if (result.miss) damageAudit.playerHitMisses++;
+      assert.equal(!!result.miss, false, 'Player attack missed under the 100% hit benchmark');
+      if (result.killed) damageAudit.fatalHits++;
+    }
+    return result;
+  };
+  const nativeDirectDamage = ctx.applyEnemyHpDamage;
+  ctx.applyEnemyHpDamage = function(target, amount) {
+    const enemy = target && target.maxHp > 0;
+    if (enemy && !(target.hp > 0)) { damageAudit.rejectedDeadDirect++; return 0; }
+    const dealt = nativeDirectDamage.apply(this, arguments);
+    if (enemy && dealt > 0 && target.hp <= 0) damageAudit.fatalDirect++;
+    return dealt;
+  };
   const resources = { hpLock: true, mpLock: true, deaths: 0, revivalTicks: 0,
     minHp: pStats.hp, minMp: pStats.mp };
   ctx.onPlayerFieldDeath = () => { resources.deaths++; throw new Error(target.ultId + ': player died with HP lock'); };
@@ -386,11 +420,12 @@ function prepareSimulation(target, scenarioType, totalDuration = 150, warmupDura
     checkResources();
   }
 
-  return { ctx, pStats, rawStats, tick, damage, kills, casts, sampleCasts, resources, waves, dt, seed, totalDuration, warmupDuration,
+  return { ctx, pStats, rawStats, tick, damage, damageAudit, kills, casts, sampleCasts, resources, waves, dt, seed, totalDuration, warmupDuration,
     baseline: { atk: pStats.atk, matk: pStats.matk, pPen: pStats.pPen, mPen: pStats.mPen,
       critRate: pStats.critRate, critDmg: pStats.critDmg, totalDmgPct: pStats.totalDmgPct,
       elemDmgUp: { ...pStats.elemDmgUp }, blockRate: pStats.blockRate, blockDmgRed: pStats.blockDmgRed,
-      comboHits: pStats.comboHits, hp: pStats.hp, mp: pStats.mp, aspd: pStats.aspd, aoeDmg: pStats.aoeDmg },
+      comboHits: pStats.comboHits, hp: pStats.hp, mp: pStats.mp, aspd: pStats.aspd, hit: pStats.hit,
+      maxEnemyDodge, aoeDmg: pStats.aoeDmg },
     legendaryMultiplier: mult };
 }
 
@@ -428,6 +463,7 @@ function runSimulation(target, scenarioType, totalDuration = 150, warmupDuration
     damageEvents: sim.damage.events, sources: sim.damage.sources, subTypes: sim.damage.subTypes,
     casts: sim.casts, sampleCasts: sim.sampleCasts,
     resources: sim.resources,
+    damageAudit: sim.damageAudit,
     baseline: sim.baseline, equipmentStatsBeforeNormalization: sim.rawStats,
     legendaryEffects: target.affixes.map(a => a.id), legendaryMultiplier: sim.legendaryMultiplier,
     ultimateActive: !!sim.ctx.sgUlt(target.gid, target.ultId),
@@ -479,14 +515,16 @@ if (!isMainThread && workerData === 'ult-dps-worker') {
   assert.equal(TARGETS.length, 69);
   const results = await runBatch();
   assert.deepEqual(sourceManifest(), sources, 'Input files changed during benchmark');
-  const output = { metadata: { version: 'v9.0', playerLevel: TEST_LEVEL, enemyLevel: TEST_LEVEL,
+  const output = { metadata: { version: 'v10.0', effectiveHitChance: 100,
+    damagePolicy: 'Full damage including overkill on the final killing hit only; reject all later hits, DOT and direct damage against an already-dead target. Revived targets may take damage again.',
+    playerLevel: TEST_LEVEL, enemyLevel: TEST_LEVEL,
     hpLock: true, mpLock: true, startedAt, completedAt: new Date().toISOString(),
     timezone: 'Asia/Taipei', commit: execFileSync('git', ['rev-parse','HEAD'], { cwd: ROOT, encoding: 'utf8' }).trim(),
     seed: BASE_SEED, workers: 4, dt: 0.05, totalDuration: 150, warmupDuration: 30, sampleDuration: 120,
     groups: 23, skills: 69, scenarios: 207, sources,
     inputNote: 'Runtime JS and CSV are the tested configuration. Uncommitted Skills2.xlsx is preserved and not applied.',
     incomingAttacks: 'Reference controlled model: native fieldMonsterAttack disabled; up to six live monsters attack per tick, no distance check; resolveHit uses native HP lock; no manual HP floor or fabricated damage; skills2OnPlayerDamaged receives actual hpDamage.',
-    accounting: 'recordRunDamage only; direct + derived + legendary + DOT + basic; overkill included; sample 30 <= GT < 150; DPS = total / 120.',
+    accounting: 'recordRunDamage only; direct + derived + legendary + DOT + basic; full overkill on a living target killing hit, zero subsequent dead-target damage; sample 30 <= GT < 150; DPS = total / 120.',
     playerResources: 'Initial HP/MP = normalized stats.hp/mp. Native GM_TEST.hpLock=true and mpLock=true prevent damage/self-cost deaths and mana-cost gating. Death or revival fails the run; every tick records minima. No artificial maxHp on player.',
     normalization: '13 level100 rarity5 +40 items, identical nine affixes roll100; atk=matk=50000, pPen=mPen=100, critRate=100, critDmg=5996, totalDmgPct=1000, each elemDmgUp=1000; stat cache fixed; GM skillUnlock.' }, results };
   fs.writeFileSync(OUTPUT_JSON, JSON.stringify(output, null, 2) + '\n');

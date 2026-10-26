@@ -117,6 +117,43 @@ test('all three scenarios use level 100 enemies and immediately refill each clea
   }
 });
 
+test('effective hit chance reaches 100% after normal, elite and boss evasion', () => {
+  for (const scenario of [1, 2, 3]) {
+    const s = b.prepareSimulation(b.TARGETS[0], scenario);
+    const c = s.ctx;
+    assert.ok(s.pStats.hit - c.FIELD.monsters[0].dodge >= 100);
+    for (let step = 0; step < 100; step++) s.tick(step);
+    assert.ok(s.damageAudit.playerHitAttempts > 0);
+    assert.equal(s.damageAudit.playerHitMisses, 0);
+    assert.equal(s.damageAudit.minHitChance, 100);
+  }
+});
+
+test('full final killing hit counts once; later dead-target hits, direct damage and DOT count zero', () => {
+  const s = b.prepareSimulation(b.TARGETS[0], 1);
+  const c = s.ctx;
+  const p = c.FIELD.player;
+  const e = c.FIELD.monsters[0];
+  c.GT = 30;
+  e.hp = 3;
+  const first = c.sgHitOne(p, s.pStats, e, 50000, 'knife', 'mv-float', { dmg: 0, killed: false, crit: false });
+  assert.ok(first.dmg > 3);
+  assert.equal(e.hp, 0);
+  assert.equal(s.damage.total, first.dmg);
+  const late = c.resolveHit(p, e, c.playerAtkCfg(p), c.monsterDefCfg(e));
+  assert.equal(late.dmg, 0);
+  assert.equal(c.applyEnemyHpDamage(e, 1e15), 0);
+  e.dots = [{ name: 'late DOT', sourceName: 'late DOT', until: 31, interval: 0.5, acc: 0, dps: 1e15 }];
+  c.tickStatuses(e, 0.5);
+  assert.equal(s.damage.total, first.dmg);
+  assert.ok(s.damageAudit.rejectedDeadHits > 0);
+  assert.ok(s.damageAudit.rejectedDeadDirect > 0);
+  e.hp = 3;
+  c.reviveFieldEnemy(e);
+  const nextLife = c.sgHitOne(p, s.pStats, e, 50000, 'knife', 'mv-float', { dmg: 0, killed: false, crit: false });
+  assert.equal(s.damage.total, first.dmg + nextLife.dmg);
+});
+
 test('sampling excludes warmup and end boundary, retaining overkill and source totals', () => {
   const c = b.createDamageCollector(30, 150);
   for (const [time, dmg] of [[29.95, 900], [30, 200], [149.95, 300], [150, 800]]) c.record(time, 'damage', dmg);
