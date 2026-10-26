@@ -11,6 +11,16 @@
 - 瀏覽器：專用 browser-client IAB 無法連線，改用 CUA／IAB 開啟隔離排版頁，使用正式 gresDetailHTML 輸出及 gems.css，200px 詳情寬度確認四／五／六／十級與兩／六空格同行排版，Console error／warning 0；非完整遊戲／真人存檔實測。截圖留於本聊天 visualizations 的 gem-resonance-empty-level.png；臨時服務及頁籤已清理。
 - 唯讀未改：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex、gem_resonance.js／gem_resonance_data.js、ui.js、String.csv、上述三份回歸、package／build工具。自我 Review 無已知新增風險或未完成項，可供合併；未合併／推送。下一步正常整合後重載遊戲驗收。Commit 為本段所在「[Codex] fix: 寶石共鳴空鑲孔右側顯示寶石等級」，實際編號見交付。
 
+## GEM-RESONANCE-NUMERIC-LEVEL-20261026 — 空鑲孔使用阿拉伯數字與寶石名稱
+
+- Owner：Codex；Done，單一開發者。使用者要求空格標示改成10級以上寶石；前置為 f48335d8 的右側等級顯示。
+- 範圍：js/ui-gem-resonance.js、index.html 該JS快取、LV_upgrade_system.md 及本段；禁止改世界地圖進行中內容、配置／Excel／素材／玩法／存檔，不合併推送。
+- 預檢：四檔無其他副本／分支修改；同副本世界地圖任務在 index 與任務表有未提交內容，本輪不同區段且無語意相依，兩檔以目前未提交內容作 theirs 的 merge-file 試跑均 exit 0；分段修改及暫存，保留地圖內容。
+- 實作沿用 String 1562「{0}{1}級以上寶石」，類型傳空字串、等級直接傳孔位最低階數字；驗收相關回歸、全49孔顯示、Build／diff 後獨立 Commit，交使用者 Review／整合。
+- 完成四檔：共鳴空格改取 STR(1562, '', min)、該JS快取1.0.20、LV及本段。無CSS／Excel／CSV／文字資料或素材變更，無素材庫Commit。唯讀檢查既有共鳴邏輯／配置、String.csv／STRING_TABLE文件、三份回歸、build及共通規範。
+- 驗證：node --test --test-reporter=dot tests/gem-resonance-ui.test.cjs tests/gem-resonance.test.cjs tests/string-table.test.cjs 最終48/48通過。首輪47/48的唯一失敗為同期地圖任務尚未登記STR(2130)，唯讀覆映地圖為HEAD即13/13通過，待地圖任務自行補登記後重跑全48項皆過，本次未修改或暫存其內容。臨時正式fixture核對49孔全部為4／5／6／8／10級以上寶石，npm.cmd run build586檔及diff檢查通過，未新增低影響測試／未重跑瀏覽器。
+- 交付：無本次未完成項或已知新增風險，可供Review／合併，未合併推送；同副本世界地圖未提交內容完整保留、不納本次Commit。下一步整合後重載確認。Commit為本段所在「[Codex] fix: 共鳴空鑲孔改用數字顯示寶石等級」，編號見回覆。
+
 ## ENEMY-FRENZY-THRESHOLD-20261025 — 交戰敵人超過30個時狂暴化加速
 
 - Owner：Codex；Done，單一開發者。使用者指定交戰敵人超過30個時每秒+2%，30個以內每秒+1%；取代舊依數量線性加成，視野外尚未交戰及進場倒數不計數，已警戒後離開視野仍計數，歷史累積不回扣。
