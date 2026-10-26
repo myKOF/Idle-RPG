@@ -1,4 +1,6 @@
-# Worker 協議 v59
+# Worker 協議 v60
+
+v60（2026-10-27 技能點）：`skills.skills2.points={total,spent,available}`，total為熟練度等級，spent以存檔原始普通階與終極等級計算、排除每群組免費第一階Lv.1，available=max(0,total-spent)。未解鎖／暫時失效投資仍占點。升一級需1點及原金幣費用，一鍵滿級逐級驗證；降級／重置自動返點、不退金幣。終極重選先返還舊等級點數、再投入Lv.1；超支舊檔保留技能且不得追加投資，沒有新增存檔欄位或指令。主端缺points時以0點停用升級，協議不符仍由bridge拒絕連線。
 
 v59（2026-10-21 飛彈剎停齊射）：VFX `area.brake` 可選布林，飛行進度使用三次ease-out；`holdSec` 是抵達後停留秒數；`holdAngle`／`startAngle` 是判定平面弧度，由顯示層投影並平滑轉向。`elite-missile-flight` 使用真實時間播放粒子、抵達後尾跡自然淡出。新事件仍攜帶完整起終點／控制點／travelMs，齊射與命中時間均由模擬決定。缺欄維持原曲線與抵達即收束；指令、快照、存檔結構不變。
 

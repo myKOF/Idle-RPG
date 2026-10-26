@@ -493,9 +493,10 @@
         <section id="tab-skills" class="tab">
           <div class="sgb-top">
             <h2 class="sgb-title" data-str="41"></h2>
-            <span class="sgb-pill sgb-mastery" data-str-attr="data-tt-title:664;data-tt-desc:665"><span data-str="664"></span> <span id="mastery-level"></span>
+            <span class="sgb-pill sgb-mastery" data-str-attr="data-tt-title:664;data-tt-desc:2133"><span data-str="664"></span> <span id="mastery-level"></span>
               <span id="mastery-bar" class="mastery-bar"><span id="mastery-bar-fill" class="mastery-bar-fill"></span><span id="mastery-bar-text" class="mastery-bar-text"></span></span>
             </span>
+            <span id="skill-points-remaining" class="sgb-pill" data-str-attr="data-tt-title:664"></span>
             <button type="button" id="skill-unlock-toggle" class="sgb-unlock-toggle" aria-pressed="false" hidden data-str-attr="data-tt-title:666;data-tt-desc:667" data-str="753"></button>
           </div>
           <div id="skill-trees"></div>
@@ -955,7 +956,7 @@
        已移除（主執行緒零呼叫，只在 Worker 內跑）：
          special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/util.js?v=1.0.4"></script>
-  <script src="js/strings_data.js?v=cfb59ad0"></script>
+  <script src="js/strings_data.js?v=87bd4b38"></script>
   <script src="js/strings.js?v=1.0.1"></script>
   <script src="js/ui-scale.js?v=1.0.1"></script>
   <script src="js/data.js?v=1.0.103"></script>
@@ -994,7 +995,7 @@
   <script src="js/runeword.js?v=1.0.18"></script>
   <script src="js/skills.js?v=1.0.44"></script>
   <!-- 新版主動技能系統（2026-08-13 技能改造第一批）：定義表＋引擎＋純函式說明 -->
-  <script src="js/skills2.js?v=1.0.359"></script>
+  <script src="js/skills2.js?v=1.0.360"></script>
   <script src="js/elite_data.js?v=1.0.7"></script>
   <script src="js/talents.js?v=1.0.12"></script>
   <script src="js/player.js?v=1.0.21"></script>
@@ -1002,7 +1003,7 @@
   <script src="js/tower.js?v=1.0.37"></script>
   <script src="js/save.js?v=1.0.24"></script>
   <script src="js/ui-inventory-skin.js?v=1.0.1"></script>
-  <script src="js/ui.js?v=1.0.214"></script>
+  <script src="js/ui.js?v=1.0.215"></script>
   <script src="js/ui-world-map.js?v=1.0.3"></script>
   <script src="js/ui-runeword.js?v=1.0.16"></script>
   <script src="js/ui-gem-resonance.js?v=1.0.21"></script>
@@ -1015,12 +1016,12 @@
        正式遊玩是空殼。必須排在 ui.js（用它的 isInternalVersion）之後、VFX Runtime 建立（main 開機）之前。 -->
   <script src="js/battle-perf.js?v=1.0.3"></script>
   <!-- 模擬 Worker 的協議與橋接。bridge.js 於 DOMContentLoaded 開機 -->
-  <script src="js/worker/protocol.js?v=59"></script>
+  <script src="js/worker/protocol.js?v=60"></script>
   <script src="js/storage.js?v=1.0.1"></script>
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
-  <script src="js/bridge.js?v=1.0.364"></script>
+  <script src="js/bridge.js?v=1.0.365"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->

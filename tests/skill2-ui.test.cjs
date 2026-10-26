@@ -238,6 +238,41 @@ test('未解鎖的階只能查看，不產生升級鈕', () => {
   assert.match(h, /sgb-tier sgb-tier-locked/);
 });
 
+test('技能點不足時單級與批次停用，tips顯示消耗；點數變動後恢復，終極同樣受限', () => {
+  const c = loadContext();
+  const snap = snapshot({ thrust: [2, 0, 0, 0, 0, 0, 0] });
+  snap.skills2.points = { total: 1, spent: 1, available: 0 };
+  let h = detail(c, 'thrust', snap, 0);
+  assert.match(h, /data-skill2-learn="thrust:0"[^>]*disabled/);
+  assert.match(h, /data-skill2-max="thrust:0"[^>]*disabled/);
+  assert.match(h, /1 點技能點（剩餘 0 點）/);
+  assert.match(h, /技能點不足/);
+  snap.skills2.points = { total: 2, spent: 1, available: 1 };
+  h = detail(c, 'thrust', snap, 0);
+  assert.doesNotMatch(h, /data-skill2-learn="thrust:0"[^>]*disabled/);
+  assert.match(h, /剩餘 1 點/);
+  snap.skills2.levels.thrust = Array(7).fill(10);
+  snap.skills2.progress = { level: 1000, reinc: 10, towerHighest: 150 };
+  snap.skills2.points = { total: 69, spent: 69, available: 0 };
+  c.UI.sgBrowse.focus = 'ult'; c.UI.sgBrowse.ultFocus = 0;
+  h = c.sgbUltHTML('thrust', snap.skills2.levels.thrust, snap, 1e20, '');
+  assert.match(h, /data-skill2-ultpick="thrust:0"[^>]*disabled/);
+  snap.skills2.ult = { thrust: { pick: 0, lv: 2 } };
+  h = c.sgbUltHTML('thrust', snap.skills2.levels.thrust, snap, 1e20, '');
+  assert.match(h, /data-skill2-learn="thrust:7"[^>]*disabled/);
+  assert.match(h, /data-skill2-max="thrust:7"[^>]*disabled/);
+  c.UI.sgBrowse.ultFocus = 1;
+  snap.skills2.points = { total: 71, spent: 71, available: 0 };
+  h = c.sgbUltHTML('thrust', snap.skills2.levels.thrust, snap, 1e20, '');
+  assert.doesNotMatch(h, /data-skill2-ultswitch="thrust:1"[^>]*disabled/);
+  snap.skills2.points.total = 1;
+  h = c.sgbUltHTML('thrust', snap.skills2.levels.thrust, snap, 1e20, '');
+  assert.match(h, /data-skill2-ultswitch="thrust:1"[^>]*disabled/);
+  assert.equal(c.STR(2133), '打怪獲得技能經驗並提升熟練度<br>熟練度升級可獲得1點技能點');
+  assert.match(html, /id="skill-points-remaining"/);
+  assert.match(html, /data-tt-desc:2133/);
+});
+
 test('點擊群組預設最高已學階，不跳下一個未學階；七階全滿選第七階', () => {
   const c = loadContext();
   for (const [levels, expected] of [

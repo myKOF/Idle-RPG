@@ -1351,6 +1351,28 @@ function sgTotalLevel(lvs, gid) {
 
 /* ---- 指令實作（Worker 端；回傳 null＝成功、字串＝拒絕原因） ---- */
 
+/* 投資以存檔等級為準：轉生或門檻暫時失效不能釋出仍保留的點數。 */
+function skills2StoredLevels(gid) {
+  var src = G.player.skills2 && G.player.skills2.levels && G.player.skills2.levels[gid];
+  return SKILLS2[gid].tiers.map(function (_, i) {
+    var n = Math.floor(Number(src && src[i]) || 0);
+    return Math.max(i === 0 ? 1 : 0, Math.min(SG_TIER_MAX_LV, isFinite(n) ? n : 0));
+  });
+}
+function skills2PointView() {
+  var p = G.player;
+  var level = Math.floor(Number(p.skillMastery && p.skillMastery.level) || 0);
+  var total = Math.max(0, Math.min(SKILL_MASTERY_MAX_LEVEL, isFinite(level) ? level : 0));
+  var spent = 0;
+  for (var gid in SKILLS2) {
+    var lvs = skills2StoredLevels(gid);
+    for (var i = 0; i < lvs.length; i++) spent += Math.max(0, lvs[i] - (i === 0 ? 1 : 0));
+    var ult = sgUltPickOf(p.skills2 && p.skills2.ult, gid);
+    if (ult) spent += ult.lv;
+  }
+  return { total: total, spent: spent, available: Math.max(0, total - spent) };
+}
+
 /* 終極進化的存檔節點（惰性建立；沒有投資過的群組不佔存檔欄位）。 */
 function sgUltStore() {
   if (!G.player.skills2) G.player.skills2 = { levels: {} };
@@ -1372,6 +1394,7 @@ function skills2UltPick(group, optIdx) {
   if (!opt) return STR(685);
   if (!sgUltOptionUnlockedBy(group, optIdx, lvs)) return STR(686, sgUnlockText(opt.unlock));
   var cost = skills2UltCost(group, optIdx, 0);
+  if (skills2PointView().available < 1) return STR(2134);
   if ((G.player.gold || 0) < cost) return STR(91);
   G.player.gold -= cost;
   sgUltStore()[group] = { pick: optIdx, lv: 1 };
@@ -1397,6 +1420,8 @@ function skills2UltSwitch(group, optIdx, fromOpt, fromLv, quotedCost) {
   if (cur.idx === optIdx) return STR(689);
   var cost = skills2UltCost(group, optIdx, 0);
   if (cost !== quotedCost) return STR(690);
+  var points = skills2PointView();
+  if (points.total - points.spent + cur.lv < 1) return STR(2134);
   if ((G.player.gold || 0) < cost) return STR(91);
   G.player.gold -= cost;
   sgUltStore()[group] = { pick: optIdx, lv: 1 };
@@ -1416,6 +1441,7 @@ function skills2UltLearn(group) {
   if (!sgUltOptionUnlockedBy(group, cur.idx, lvs)) return STR(686, sgUnlockText(cur.def.unlock));
   if (cur.lv >= SG_TIER_MAX_LV) return STR(693);
   var cost = skills2UltCost(group, cur.idx, cur.lv);
+  if (skills2PointView().available < 1) return STR(2134);
   if ((G.player.gold || 0) < cost) return STR(91);
   G.player.gold -= cost;
   sgUltStore()[group] = { pick: cur.idx, lv: cur.lv + 1 };
@@ -1458,8 +1484,10 @@ function skills2Learn(group, tier) {
   }
   if (lvs[tier] >= SG_TIER_MAX_LV) return STR(693);
   var cost = skills2UpgradeCost(group, tier, lvs[tier]);
+  if (skills2PointView().available < 1) return STR(2134);
   if ((G.player.gold || 0) < cost) return STR(91);
   G.player.gold -= cost;
+  lvs = skills2StoredLevels(group);
   lvs[tier]++;
   if (!G.player.skills2) G.player.skills2 = { levels: {} };
   if (!G.player.skills2.levels) G.player.skills2.levels = {};
@@ -1479,6 +1507,7 @@ function skills2Downgrade(group, tier) {
   if (lvs[tier] === 1 && tier + 1 < lvs.length && lvs[tier + 1] > 0) return STR(697);
   /* 前 7 階任何一階離開滿級，終極進化就失去解鎖條件（sgEffectiveUlt 會自動失效）；
      等級與選擇一律保留在存檔裡，練回滿級就原樣回來——與各階「未達門檻視為 Lv.0」同一條規則。 */
+  lvs = skills2StoredLevels(group);
   lvs[tier]--;
   if (!G.player.skills2) G.player.skills2 = { levels: {} };
   if (!G.player.skills2.levels) G.player.skills2.levels = {};
@@ -1494,7 +1523,7 @@ function skills2PanelView() {
   var isSkillUnlock = !!(typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.skillUnlock);
   var prg = sgUnlockProgress(null);
   var out = {
-    tierMax: SG_TIER_MAX_LV, levels: {}, ult: {},
+    tierMax: SG_TIER_MAX_LV, levels: {}, ult: {}, points: skills2PointView(),
     progress: prg ? { level: prg.level, reinc: prg.reinc, towerHighest: prg.towerHighest, skillUnlock: isSkillUnlock } : (isSkillUnlock ? { level: 999999, reinc: 999999, towerHighest: 999999, skillUnlock: true } : null),
     skillUnlock: isSkillUnlock
   };

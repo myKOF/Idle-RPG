@@ -1,5 +1,21 @@
 # AI_TASKS.md
 
+## SKILL-POINTS-20261027 — 技能升級花點與熟練度右側餘額
+
+- Owner：Codex；Done，單一開發者。使用者要求確認技能升級消耗，缺少時每級消耗1點，熟練度條右側顯示餘額，升級tips同步；熟練度tips指定兩行「打怪獲得技能經驗並提升熟練度／熟練度升級可獲得1點技能點」。
+- 前置：現有技能熟練度／Skills2／Worker指令與String來源。允許js/skills2.js、js/ui.js、Worker投影及protocol／bridge、index快取、String.xlsx／CSV／strings_data、技能點專項及受影響既有測試、WORKER_PROTOCOL／LV總表與本段；禁止其他玩法／平衡／素材／其他副本修改，不合併推送。
+- 設計：熟練度每級提供1點；餘額為熟練度減存檔原始投資（排除每組免費第一階Lv.1），保留未達門檻與暫失效終極投資；降級／重置返點、不退金幣。舊檔超支保留技能、餘額顯示0，不能追加投資。涵蓋單級／一鍵滿級／終極選擇升級切換；不另存可用點數。
+- 衝突：使用者已明確同意分段處理String及UI快取，新增字串2132起，保留Claude副本與其既有2130／2131重號待整合處理。技能實作避開Claude地爆天星區段；其UI／LV／Worker為解鎖功能區段，三方乾跑驗證後分段處理。
+- 驗收：Worker扣點與不足拒絕、金幣原子性、批次邊界、降級重置／切換返點、存檔重讀及暫鎖定、UI右側餘額／tips／停用、熟練度入帳更新、Excel原生正常重開與格式保留、相關回歸／Build／diff後Commit；後續使用者Review／整合。無素材庫變更。
+- 完成22檔：skills2增加由熟練度與原始投資推導的points投影與命令閘門；Worker普通批次改共用單級入口，單級升降只更新目標階、重置保留未重置階原始投資，不再覆蓋暫鎖等級。ui／index增加條右側餘額、費用／點數／返還tips及不足停用；String原生API新增2132～2142共11列，熟練度2133用br確保真兩行。同步CSV／JS、Protocol60／主端與Worker快取、LV與本紀錄；新增點數回歸、UI測試，既有測試只補足預算／塔層前置或同步協議斷言，未放寬玩法斷言。
+- 正式驗證：node --test --test-reporter=spec tests/skill2-points.test.cjs tests/skill2-reset.test.cjs tests/skill2-ult-switch.test.cjs tests/skill2-tower-unlock.test.cjs tests/worker-protocol.test.cjs tests/skill-mastery.test.cjs tests/string-table.test.cjs tests/worker-shim.test.cjs共76/76；node --test --test-reporter=spec --test-name-pattern="技能點不足|skills2Learn|等級門檻|三選一|第 8 格|升級費用|降級" tests/skill2-ui.test.cjs tests/skill2-system.test.cjs tests/skill2-ult-evolution.test.cjs另8/8。npm.cmd run build 587檔、apply_strings --check、build_string_csv --check（寫死0條）及diff檢查通過。
+- 擴大檢查：完整skill2-ui／reset／gm-skill-unlock／potential-removal／system／ult-evolution六檔159項110過49既有失敗；以git HEAD 38954d37的所有變更檔原始內容注入唯讀基線，原158項100過58失敗，新失敗0，修正reset缺塔層前置8項與既有Protocol過期斷言1項。餘49項含描線屬性、舊MP／CD、技能舊平衡、威能56對現值200、CSV浮點往返等，均於未改基線重現；未擴修無關問題，未宣稱全庫全過。
+- Excel：既有更新工具三次正常開啟驗證全部2129列7欄、0繪圖物件；另外Excel原生唯讀重開Saved=True且非RepairMode，比對原2118列逐值全部不變、7欄欄寬／標題字型字號顏色底色及物件保留。最後將自有新列2133換行改br再正常重開兩次，無手工改XML。
+- 畫面：browser-use後端無連線，改CUA/IAB隔離fixture載正式DOM／CSS／UI及String，後端命令走正式模擬引擎；467→466點與Lv.4→5實點擊通過，餘額與熟練度同行且位於右側，費用含1點與剩餘467點，指定兩行tip目視通過，Console error／warn0。截圖skill-points-preview.png留本聊天visualizations；未讀寫玩家存檔、未做真Worker長戰／多瀏覽器驗收。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、skills.js／player.js／save.js熟練度及遷移、formula、CSV／Skills2來源、配置與String匯出器、Excel更新工具、Build／相關既有測試及Claude差異。無素材／素材庫變更或新素材Commit。Claude其後提交64383f13，保留其副本與地爆天星100f2ec2／5858a05d；技能／UI／LV及終極測試fixture不同區段merge-file乾跑0。Worker功能區段無重疊，但importScripts的相鄰快取行乾跑1，與String既有2130衝突及共享快取留正常整合逐值保留，不覆蓋任何對方內容。
+- 同副本另一聊天新增EQUIP-SET-PENDING-NOTE與2143字串，保留其UI／HTML／LV／任務段落及表格。只暫存本任務區段；二進位String在隔離候選用Excel原生刪除2143後正常重開，再匯出僅本次CSV／JS及字串快取到index；不改工作檔、不提交對方進行中工作。交付時工作區會保留該任務的未提交差異，此為其他聊天正在使用的正式檔案，不能清除。
+- 交付：本段所在「[Codex] feat: 技能升級消耗技能點並顯示剩餘點數與提示」，實際編號見回覆。功能已完成可供Review／合併；無本次實作未完成項，已知限制為上述既有測試與未做真存檔長戰。舊超支存檔保留技能且顯示0；使用者正常整合時須保留雙方String字串並解決既有2130重號，再重載新版快取。未合併／推送。
+
 ## GEM-RESONANCE-DRAG-CURSOR-20261026 — 共鳴拖曳方形寶石圖與一般游標
 
 - Owner：Codex；Done，單一開發者。使用者要求上方寶石拖曳時以左側樣式的正方形寶石圖跟隨滑鼠，不顯示禁止符號。

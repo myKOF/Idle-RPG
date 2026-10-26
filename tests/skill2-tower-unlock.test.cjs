@@ -12,6 +12,7 @@ function setup() {
   const e = createEngine({ seed: 42 }).boot(null), c = e.ctx;
   c.G.player.level = 1000;
   c.G.player.reincarnations = 0;
+  c.G.player.skillMastery = { level: 480, xp: 0 };
   c.G.player.gold = 1e12;
   c.G.player.skills2 = { levels: { thrust: Array(7).fill(10) }, ult: {} };
   c.G.tower.highest = 29;
