@@ -35,15 +35,19 @@ body.world-map-open { overflow: hidden; }
 .world-map-canvas { position: relative; width: 100%; }
 /* 外緣白底屬於原圖：只收掉薄邊，內部圖稿及熱區比例保持原樣。 */
 #world-map-human { position: relative; container-type: inline-size; clip-path: inset(1.4% .6% 1.6% 1.6%); }
-#world-map-image { display: block; width: 100%; height: auto; }
+/* 底圖不接收滑鼠事件，避免瀏覽器浮出圖片AI工具；場景按鈕仍可操作。 */
+#world-map-image { display: block; width: 100%; height: auto; pointer-events: none; user-select: none; }
 #world-map-hotspots { position: absolute; inset: 0; pointer-events: none; }
 .world-map-hotspot { pointer-events: auto; position: absolute; transform: translate(-50%, -50%); height: 5.7%; min-height: 16px; padding: 0; border: 0; background: none; box-shadow: none; cursor: pointer; overflow: visible; }
 .world-map-hotspot:hover, .world-map-hotspot:focus-visible, .world-map-hotspot.is-selected { background: none; border: 0; box-shadow: none; outline: none; }
-.world-map-label-cover { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: block; max-width: none; visibility: hidden; pointer-events: none; mask-image: linear-gradient(to right, transparent, #000 7%, #000 93%, transparent), linear-gradient(to bottom, transparent, #000 14%, #000 86%, transparent); mask-composite: intersect; }
-.world-map-hotspot:hover .world-map-label-cover, .world-map-hotspot:focus-visible .world-map-label-cover, .world-map-hotspot.is-selected .world-map-label-cover { visibility: visible; }
+.world-map-label-cover { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: block; max-width: none; pointer-events: none; mask-image: linear-gradient(to right, transparent, #000 7%, #000 93%, transparent), linear-gradient(to bottom, transparent, #000 14%, #000 86%, transparent); mask-composite: intersect; }
 .world-map-hotspot .world-map-hover-name { position: relative; }
-.world-map-hover-name { display: block; opacity: 0; white-space: nowrap; font-family: 'DFKai-SB', 'KaiTi', 'Noto Serif TC', serif; font-weight: 700; font-size: clamp(7px, 1.25cqw, 21px); line-height: 1; color: #fff0bc; text-shadow: -1px -1px 2px #201b13, 1px 1px 2px #201b13, 0 0 4px #201b13, 0 0 8px rgba(244,214,135,.65); transform: scale(1); transition: opacity .12s ease, transform .16s ease; pointer-events: none; }
-.world-map-hotspot:hover .world-map-hover-name, .world-map-hotspot:focus-visible .world-map-hover-name, .world-map-hotspot.is-selected .world-map-hover-name { opacity: 1; transform: scale(1.17); }
+.world-map-hover-name, .world-map-level { display: block; white-space: nowrap; font-family: 'DFKai-SB', 'KaiTi', 'Noto Serif TC', serif; font-weight: 700; color: #fff0bc; -webkit-text-stroke: 1px #000; paint-order: stroke fill; text-shadow: none; pointer-events: none; }
+.world-map-hover-name { font-size: clamp(7px, 1.25cqw, 21px); line-height: 1; transform: scale(1); transition: transform .16s ease; }
+.world-map-hotspot:hover .world-map-hover-name, .world-map-hotspot:focus-visible .world-map-hover-name, .world-map-hotspot.is-selected .world-map-hover-name { transform: scale(1.17); }
+.world-map-level { font-size: clamp(7px, 1cqw, 17px); line-height: 1.2; }
+.world-map-hotspot .world-map-level { position: absolute; top: calc(50% + .85cqw); left: 50%; transform: translateX(-50%); }
+.is-locked .world-map-hover-name { color: #9a9a9a; }
 .world-map-hotspot.is-locked { cursor: default; }
 .world-map-marker { position: absolute; pointer-events: none; transform: translate(-50%, -100%); width: clamp(16px, 2.56vw, 33.6px); height: clamp(16px, 2.56vw, 33.6px); filter: drop-shadow(0 2px 3px #000); }
 .world-map-marker-motion { display: block; width: 100%; height: 100%; animation: world-map-bob 2.4s ease-in-out infinite; }
@@ -60,9 +64,11 @@ body.world-map-open { overflow: hidden; }
 .world-map-god { position: relative; aspect-ratio: 1672 / 941; box-sizing: border-box; min-height: 330px; padding: 60px 30px 30px; background: radial-gradient(ellipse at top, #29272e, #111315 70%); }
 .world-map-god > p { margin: 0 0 22px; color: #b7abc7; }
 .world-map-god-zones { display: flex; gap: 20px; }
-.world-map-god-scene { flex: 1; min-height: 110px; background: #17171c; color: #cbbfe1; border: 1px solid #655575; border-radius: 4px; cursor: pointer; }
+.world-map-god-scene { flex: 1; min-height: 110px; background: #17171c; color: #fff0bc; border: 1px solid #655575; border-radius: 4px; cursor: pointer; }
+.world-map-god-scene .world-map-hover-name { display: inline-block; font-size: 18px; }
+.world-map-god-scene .world-map-level { margin-top: 5px; font-size: 15px; }
 .world-map-god-scene.is-selected, .world-map-god-scene.is-current { border-color: #dbc28b; color: #f4ddb3; }
-.world-map-god-scene.is-locked { opacity: .5; cursor: default; }
+.world-map-god-scene.is-locked { color: #9a9a9a; cursor: default; }
 .world-map-image-error { position: absolute; inset: 35% 20%; padding: 20px; text-align: center; background: #151716; border: 1px solid #8e7651; }
 /* 使用者明確要求所在地提示持續浮動／呼吸；系統減少動態時仍保留此小幅提示。 */
 @media (prefers-reduced-motion: reduce) { .world-map-hover-name { transition: none; } }

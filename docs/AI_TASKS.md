@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## WORLD-MAP-LABEL-STATE-20261026 — 世界地圖名稱、等級與鎖定顯示
+
+- Owner：Codex；Done，單一開發者。使用者指定屏蔽右下圖片AI浮鈕、統一淡金名稱及1px黑邊、已解鎖下方括號目前／上限、未解鎖灰字與tips零進度。
+- 前置：現有WorldMapUI／覆片／Worker快照及String表。允許js/ui-world-map.js、css/world-map.css、index.html、tests/world-map-ui.test.cjs、String.xlsx／CSV／strings_data.js、docs/WORLD_MAP.md、LV_upgrade_system.md及本段；禁止玩法／Worker／Protocol／存檔／素材及其他任務，不合併推送。
+- 所有目標fetch後預檢無其他來源；沿現有覆片常駐替換烘焙字，進度唯讀權威快照；新增顯示格式用Excel原生API登記。驗收鎖定歸零、目前／非目前／解鎖更新、互動與背景取消選取、字串／地圖回歸、Build／Console／畫面與diff後Commit，交使用者Review／整合。
+- 完成十檔：上述兩份程式／樣式、index快取與底圖禁止拖曳、既有UI回歸、String三檔及兩份地圖／解鎖文件與本紀錄。常駐既有覆片、名稱淡金#fff0bc／灰#9a9a9a及1px黑邊；已解鎖括號顯示current/max，tips仍顯示best/max，鎖定兩者歸零且隱藏括號。神界三場景同步。底圖pointer-events:none／user-select:none，背景改由容器接收取消選取事件；前進權限／指令／存檔／Worker不變。
+- String.xlsx以Excel原生API僅追加2130「({0}/{1})」五個非空格，工具兩次正常重開核對完整2118列7欄與0物件，另唯讀對比所有原有儲存格樣式／列高／欄寬完全相同，修改前後局部渲染已檢視；由xlsx_to_csv及apply_strings產生CSV／JS與cfb59ad0快取。沒有手工寫入XML、翻譯或外部素材；world-map匯出SHA與素材庫一致，無素材庫新Commit。
+- 驗證：node --test --test-reporter=spec tests/world-map-ui.test.cjs tests/world-map.test.cjs tests/string-table.test.cjs tests/combat-pause.test.cjs，29/29通過；新增與延伸回歸涵蓋current與best不同、鎖定0、未載入不自行解鎖、解鎖後更新、上限夾限、神界與背景取消選取。npm.cmd run build，586檔通過；apply_strings --check、build_string_csv --check（寫死0條）、export-source --check及diff檢查通過。
+- 擴大zone-attr-tooltip為3/4，唯一showTowerTooltip缺少函式失敗，以HEAD版本strings_data映射並確認其他所有載入JS及測試未改後重現，屬既有基線；未改斷言或擴修塔戰。IAB專用backend無連線，改用CUA／IAB的隔離來源fixture載入正式CSS／WorldMapUI與String／ZONES，確認七人界＋三神界狀態、淡金／灰色、計算樣式黑邊1px黑色、進度、鎖定tips0／前進停用、背景取消選取及切頁；修正驗證服務本身的Windows路徑後，最終來源Console新增error／warning0。預覽world-map-overview.png與world-map-locked.png留在本聊天visualizations/world-map，非玩家存檔／真Worker實戰。
+- 同副本另一聊天的共鳴修改與本次index／LV／任務表不同區段，對方完成三方乾跑0後已獨立提交9204aea0；本次保留其內容，最終diff只含地圖範圍。另有使用者／其他聊天的game_parameters.xlsx未提交變更，保留不套用、不提交。唯讀檢查共通／Agent規範、js/ui.js／data.js、字串／Excel／匯出工具、package／Build工具及上述其餘回歸；不修改素材或其他副本。
+- 交付：可供Review／合併，未合併或推送；Commit為本段所在「[Codex] fix: 統一世界地圖名稱與解鎖進度顯示」，實際編號見回覆。功能實作已完成，既有塔戰測試及特定瀏覽器原生AI浮鈕無法在IAB直接重現為已知限制；圖片命中／拖曳保護已驗證。下一步整合後重載，於使用者原瀏覽器確認浮鈕不再觸發。
+
 ## GEM-RESONANCE-EMPTY-LEVEL-20261026 — 空鑲孔右側顯示寶石等級
 
 - Owner：Codex；Done，單一開發者。使用者要求寶石共鳴未鑲嵌格右側顯示可鑲嵌寶石等級；依既有孔位最低階級顯示，例如六級以上，每個空格各自顯示。
