@@ -47,6 +47,9 @@ test('native HP/MP locks prevent lethal direct damage, DOT and skill self-cost i
   const ctx = s.ctx;
   const p = ctx.FIELD.player;
   const initialHp = p.hp;
+  // At level 100 kill-extension can keep the first storm alive indefinitely.
+  // Disable only that extension here to exercise repeated paid cast requests at zero MP.
+  s.pStats.legendaryEffects.danceThousandCuts = false;
   const result = ctx.resolveHit(ctx.FIELD.monsters[0], p,
     { atk: 1e15, dmgType: 'phys', level: 300, hit: 100 }, { ...ctx.playerDefCfg(p), dodge: 0, absDodge: 0 });
   assert.equal(result.hpDamage, 0);
@@ -77,6 +80,41 @@ test('resource audit rejects a disabled lock and any death or revival immediatel
   reviving.ctx.fieldTick = () => {};
   reviving.ctx.FIELD.reviveCd = 1;
   assert.throws(() => reviving.tick(0), /revival interrupted benchmark/);
+});
+
+test('native kill accounting ignores duplicate settlement and counts a revived enemy again', () => {
+  const s = b.prepareSimulation(b.TARGETS[0], 1);
+  const c = s.ctx;
+  const m = c.FIELD.monsters[0];
+  c.GT = 29.95;
+  m.hp = 0;
+  c.onFieldKill(m);
+  c.onFieldKill(m);
+  assert.deepEqual(s.kills, { total: 1, sample: 0 });
+  m.hp = 1;
+  c.reviveFieldEnemy(m);
+  c.GT = 30;
+  m.hp = 0;
+  c.onFieldKill(m);
+  c.onFieldKill(m);
+  assert.deepEqual(s.kills, { total: 2, sample: 1 });
+  assert.equal(c.G.player.level, 100);
+});
+
+test('all three scenarios use level 100 enemies and immediately refill each cleared batch', () => {
+  for (const [scenario, count] of [[1, 20], [2, 5], [3, 1]]) {
+    const s = b.prepareSimulation(b.TARGETS[0], scenario);
+    s.ctx.fieldTick = () => {};
+    for (let step = 0; step < 3; step++) {
+      assert.ok(s.ctx.liveFieldEnemies().every(m => m.level === 100));
+      assert.equal(s.ctx.liveFieldEnemies().length, count);
+      for (const m of s.ctx.FIELD.monsters) m.hp = 0;
+      s.tick(step);
+      assert.equal(s.ctx.liveFieldEnemies().length, count);
+      assert.equal(s.waves.length, step + 2);
+      assert.equal(s.waves.at(-1).at, step * 0.05);
+    }
+  }
 });
 
 test('sampling excludes warmup and end boundary, retaining overkill and source totals', () => {

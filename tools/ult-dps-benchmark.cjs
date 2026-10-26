@@ -12,6 +12,7 @@ const SOURCE_FILES = [];
 const ROOT = path.resolve(__dirname, '..');
 const OUTPUT_JSON = path.join(ROOT, 'docs/skill-tests/20261026-ult-dps-results.json');
 const BASE_SEED = 20261026;
+const TEST_LEVEL = 100;
 function seededMath(seed) {
   const math = Object.create(Math);
   let state = seed >>> 0;
@@ -160,11 +161,14 @@ function prepareSimulation(target, scenarioType, totalDuration = 150, warmupDura
   const seed = BASE_SEED + scenarioType;
   const ctx = createSimContext(seed);
   ctx.GM_TEST = { skillUnlock: true, hpLock: true, mpLock: true };
+  // Kills must not level the benchmark player above the fixed same-level enemies.
+  ctx.gainXp = () => {};
+  ctx.gainSkillMasteryXp = () => {};
   const gid = target.gid;
   const optIdx = target.ultIndex;
 
   ctx.G = ctx.newGameState();
-  ctx.G.player.level = 100;
+  ctx.G.player.level = TEST_LEVEL;
   ctx.G.player.reincarnations = 1;
   ctx.G.player.gold = 1000000000;
   ctx.G.player.skills2 = {
@@ -176,7 +180,7 @@ function prepareSimulation(target, scenarioType, totalDuration = 150, warmupDura
     }
   };
   ctx.G.player.loadout = ['sg:' + gid];
-  ctx.G.stage.current = 300;
+  ctx.G.stage.current = TEST_LEVEL;
   ctx.G.stage.zone = 'swamp';
 
   ctx.G.equipment = buildEquipment(ctx, target);
@@ -232,6 +236,7 @@ function prepareSimulation(target, scenarioType, totalDuration = 150, warmupDura
     const p = ctx.FIELD.player;
     assert.ok(ctx.gmHpLockActive(p) && ctx.gmMpLockActive(p), 'Native resource locks disabled');
     assert.ok(p.hp > 0, target.ultId + ': nonpositive player HP');
+    assert.equal(ctx.G.player.level, TEST_LEVEL, 'Player level changed during benchmark');
     if (p._sgRevival || ctx.FIELD.reviveCd > 0) resources.revivalTicks++;
     assert.equal(resources.revivalTicks, 0, target.ultId + ': revival interrupted benchmark');
     resources.minHp = Math.min(resources.minHp, p.hp);
@@ -261,11 +266,18 @@ function prepareSimulation(target, scenarioType, totalDuration = 150, warmupDura
   assert.equal(ctx.skills2Levels(gid).join(','), '10,10,10,10,10,10,10');
   assert.ok(ctx.sgUlt(gid, target.ultId), 'Ultimate not active: ' + target.ultId);
   const damage = createDamageCollector(warmupDuration, totalDuration);
+  const kills = { total: 0, sample: 0 };
+  // Native onFieldKill calls this after its _rewarded / revive checks. Count actual
+  // settled kills, not damage events, and count a legitimately revived enemy again.
+  ctx.recordLootKill = () => {
+    kills.total++;
+    if (ctx.GT >= warmupDuration && ctx.GT < totalDuration) kills.sample++;
+  };
   const casts = {};
   const sampleCasts = {};
   // One canonical accounting path includes direct, derived, legendary and DOT damage,
   // including overkill, without HP-delta rounding/clipping or double-counting explosions.
-  ctx.recordRunDamage = (name, amount, key) => damage.record(ctx.GT, name, amount, key);
+  ctx.recordRunDamage = (name, amount, key, level, subType) => damage.record(ctx.GT, name, amount, key, subType);
   ctx.recordRunSkillCast = (name, key) => {
     const id = key || name;
     casts[id] = (casts[id] || 0) + 1;
@@ -277,8 +289,8 @@ function prepareSimulation(target, scenarioType, totalDuration = 150, warmupDura
   function spawnWave() {
     const isBoss = enemyKind === 'boss';
     const isElite = enemyKind === 'elite';
-    const s = 300;
-    const base = ctx.monsterStatsFor(s, isElite, isBoss);
+    const base = ctx.monsterStatsFor(TEST_LEVEL, isElite, isBoss, 0);
+    assert.equal(base.level, TEST_LEVEL);
     const zn = ctx.ZONE_CONFIG_TABLE ? ctx.ZONE_CONFIG_TABLE['swamp'] : ctx.ZONES['swamp'];
 
     const newEnemies = [];
@@ -324,7 +336,8 @@ function prepareSimulation(target, scenarioType, totalDuration = 150, warmupDura
     }
 
     waveCount++;
-    waves.push({ wave: waveCount, at: ctx.GT || 0, totalHp: newEnemies.reduce((sum, m) => sum + m.maxHp, 0), npcIds: newEnemies.map(m => m.npcId) });
+    waves.push({ wave: waveCount, at: ctx.GT || 0, level: base.level, count: mobsPerWave,
+      totalHp: newEnemies.reduce((sum, m) => sum + m.maxHp, 0), npcIds: newEnemies.map(m => m.npcId) });
     const placed = ctx.bfPlaceEnemies(newEnemies, ctx.FIELD.monsters);
     ctx.FIELD.monsters = ctx.FIELD.monsters.concat(placed);
     ctx.markFieldEnemyFloatTargets(ctx.FIELD.monsters);
@@ -373,7 +386,7 @@ function prepareSimulation(target, scenarioType, totalDuration = 150, warmupDura
     checkResources();
   }
 
-  return { ctx, pStats, rawStats, tick, damage, casts, sampleCasts, resources, waves, dt, seed, totalDuration, warmupDuration,
+  return { ctx, pStats, rawStats, tick, damage, kills, casts, sampleCasts, resources, waves, dt, seed, totalDuration, warmupDuration,
     baseline: { atk: pStats.atk, matk: pStats.matk, pPen: pStats.pPen, mPen: pStats.mPen,
       critRate: pStats.critRate, critDmg: pStats.critDmg, totalDmgPct: pStats.totalDmgPct,
       elemDmgUp: { ...pStats.elemDmgUp }, blockRate: pStats.blockRate, blockDmgRed: pStats.blockDmgRed,
@@ -382,8 +395,8 @@ function prepareSimulation(target, scenarioType, totalDuration = 150, warmupDura
 }
 
 function createDamageCollector(warmup, end) {
-  const collector = { total: 0, events: 0, allTimeTotal: 0, sources: {} };
-  collector.record = (time, name, amount, key) => {
+  const collector = { total: 0, events: 0, allTimeTotal: 0, sources: {}, subTypes: {} };
+  collector.record = (time, name, amount, key, subType) => {
     assert.ok(Number.isFinite(amount) && amount >= 0, 'Invalid damage: ' + amount);
     if (!(amount > 0)) return;
     collector.allTimeTotal += amount;
@@ -394,6 +407,10 @@ function createDamageCollector(warmup, end) {
     const source = collector.sources[id] || (collector.sources[id] = { name, damage: 0, events: 0 });
     source.damage += amount;
     source.events++;
+    const sub = subType || name;
+    const detail = collector.subTypes[sub] || (collector.subTypes[sub] = { damage: 0, events: 0 });
+    detail.damage += amount;
+    detail.events++;
   };
   return collector;
 }
@@ -407,7 +424,9 @@ function runSimulation(target, scenarioType, totalDuration = 150, warmupDuration
   return { scenarioType, scenarioName: ['','普通小怪 (20隻)','菁英怪 (5隻)','單體BOSS (1隻)'][scenarioType],
     sampleDuration, totalDuration, warmupDuration, steps: totalDuration / sim.dt, seed: sim.seed,
     totalDamage: sim.damage.total, avgDps: sim.damage.total / sampleDuration,
-    damageEvents: sim.damage.events, sources: sim.damage.sources, casts: sim.casts, sampleCasts: sim.sampleCasts,
+    playerLevel: sim.ctx.G.player.level, enemyLevel: TEST_LEVEL, kills: sim.kills,
+    damageEvents: sim.damage.events, sources: sim.damage.sources, subTypes: sim.damage.subTypes,
+    casts: sim.casts, sampleCasts: sim.sampleCasts,
     resources: sim.resources,
     baseline: sim.baseline, equipmentStatsBeforeNormalization: sim.rawStats,
     legendaryEffects: target.affixes.map(a => a.id), legendaryMultiplier: sim.legendaryMultiplier,
@@ -460,7 +479,8 @@ if (!isMainThread && workerData === 'ult-dps-worker') {
   assert.equal(TARGETS.length, 69);
   const results = await runBatch();
   assert.deepEqual(sourceManifest(), sources, 'Input files changed during benchmark');
-  const output = { metadata: { version: 'v8.0', hpLock: true, mpLock: true, startedAt, completedAt: new Date().toISOString(),
+  const output = { metadata: { version: 'v9.0', playerLevel: TEST_LEVEL, enemyLevel: TEST_LEVEL,
+    hpLock: true, mpLock: true, startedAt, completedAt: new Date().toISOString(),
     timezone: 'Asia/Taipei', commit: execFileSync('git', ['rev-parse','HEAD'], { cwd: ROOT, encoding: 'utf8' }).trim(),
     seed: BASE_SEED, workers: 4, dt: 0.05, totalDuration: 150, warmupDuration: 30, sampleDuration: 120,
     groups: 23, skills: 69, scenarios: 207, sources,

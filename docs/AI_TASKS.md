@@ -12591,3 +12591,15 @@ Worker 存活且頁面正常完成載入。
 - 驗證：node tools/ult-dps-benchmark.cjs完整通過；node tools/ult-dps-report.cjs及--check一致；node --test tests/ult-dps-benchmark.test.cjs九項全過，新增致命直接傷／DOT／自傷、零MP持續施放、停用鎖定或死亡／復活必失敗；207場資料驗證同時釘住零死亡／復活及原生鎖定。npm.cmd run build586檔通過，git diff --check／staged檢查及最終來源SHA結果見交付。
 - 唯讀未改：前項列出的共通規範、Agent規範、21份正式JS、CSV／Excel、原Antigravity工具／報告；另查formula的原生鎖定、gm_exec的HP_lock／MP_lock語意、skills2的自傷與耗魔／復活路徑。原有未提交Skills2.xlsx保持F7ABD33FCEF57BE572EAA555426BB6B9F51F1C51502D4C618136ACDCCC82B2BC，不提交／不套用；無素材庫變更。
 - 限制／下一步：使用者指定鎖血會使實際失血／瀕死／死亡條件不成立，報告已標示對相關能力的影響；仍沿用受控敵傷與固定seed，不代表真Worker／瀏覽器實戰或多種子統計。此次鎖血鎖法力重測已完成，可供Review／合併保存，未合併推送；Commit為「[Codex] fix: 開啟鎖血鎖法力並重測超神技能DPS」，編號見回覆。
+
+## ULT-DPS-KILLS-20261026 — 補殺敵數重測與雙刀異常來源查核
+
+- Owner：Codex；Done，單一開發者。使用者詢問雙刀數據合理性及敵人等級，要求再次重測並列出每招殺敵數。前版確認三情境怪物實際level皆300、swamp；使用者後續指定角色與敵人同級，故本輪角色與敵人皆固定100級、停止經驗／熟練度升級；敵人全滅當步立即補同類同數一批直到150秒。保留HP_lock／MP_lock、150秒排30秒與其餘公平基準。
+- 範圍僅原六檔：tools/ult-dps-benchmark.cjs、tools/ult-dps-report.cjs、tests/ult-dps-benchmark.test.cjs、CODEX報告、20261026原始JSON與本段。禁止改正式技能／DOT公式／配置／Excel／Antigravity檔案／素材與其他任務，不合併推送。前置0a032acf工具已可用，六檔預檢無其他來源。
+- 驗收：完整207場重跑、零玩家死亡／復活；按原生onFieldKill獎勵結算閘門計敵人死亡，同次結算不重複、天地再造重生後再死可計新擊殺；採樣30≤GT<150與全場殺敵數分開。JSON留實際敵人等級、傷害子類拆分及殺敵統計；報告各列與Top10加殺敵數，解釋鐵血裂傷最大HP百分比＋暴擊／總增傷與Overkill影響，專項測試／Build／diff後Commit。原有未提交Skills2.xlsx保留。
+- 完成六檔：工具統一TEST_LEVEL=100、monsterStatsFor明示powerBonus=0、停用測試XP與熟練度入帳、每步驗角色100級；每波記level／count，原生recordLootKill記全場／採樣擊殺，保留原生死亡去重與重生再殺語意。傷害保留來源並新增subTypes細分；CODEX報告v9.0每一列加採樣殺敵數／全場殺敵數，三榜同加兩欄，完整說明同級／立即補怪／鎖定資源與前版異常。
+- 2026-10-26台北20:50:13～20:53:29完整207場；角色與敵人實際等級全部100，零死亡／復活，來源開始／結束SHA一致。毀滅之舞小怪採樣總傷3003.80億／DPS2.503B，採樣980殺／全場1220殺；火之神樂與修羅小怪DPS皆1.724B，946／1186殺。暴風化身可被殺千刀延長，採樣沒有新增手動施放仍可能持續自動攻擊，不把手動施放次數誤當停放證據。
+- 異常查核唯讀重現：舊300級小怪HP1.243365兆，鐵血之舞實際2%×狂戰士1.5×暴擊59.96×總增傷11＝每跳1978.68%最大HP（約24.6022兆），無元素再乘。45秒診斷中鐵血裂傷約2.2634045e15、斬擊約4.3007e9、普攻約5.9913e7；共用T5極端主導三超神。正式DOT本來會套暴擊／總增傷，統計又含Overkill，因此可重現卻不能推論超神本體強幾十萬倍；本次不擅改平衡或改成截斷傷害。100級下鐵血比例基準大幅下降，前版／本版不可直接當技能版本變更。
+- 驗證：node tools/ult-dps-benchmark.cjs完整207場；node tools/ult-dps-report.cjs及--check一致；node --test tests/ult-dps-benchmark.test.cjs共11/11通過，新增原生擊殺重複掃描／復活再殺及預熱邊界、三情境100級與反覆全滅即補怪，並保留鎖血／零MP／死亡稽核／DOT／同seed／完整資料檢查。資源專項原先的手動施放斷言因100級殺千刀長延化身而失敗，專項隔離該延長效果後驗零MP重複請求；正式207場仍帶完整五傳奇，未停用或放寬傷害邏輯。Build586檔通過，diff／staged檢查及25份SHA結果見交付。
+- 唯讀未改：共通／Agent規範、原始報告／工具、21份正式JS，特別查skills2的雙刀T5／傳奇／狀態、combat的DOT增傷／死亡結算、formula的怪物等級、Status及Equipment_Affix CSV／Skills2來源。正式JS／配置／Excel／LV／素材／存檔與Antigravity檔案未改；Excel原未提交修改保留、不套用／不提交，無素材庫變動。
+- 已完成本輪同級重測與殺敵數交付，可供Review／合併保存，未合併推送。限制：仍是單seed／受控受擊，鎖血抑制失血／死亡機制、DPS含溢出，殺敵可含原生天地再造二次擊殺；這些條件已列報告，不宣稱真瀏覽器或全面平衡驗收。Commit為「[Codex] test: 同級重測超神技能並補上殺敵數與傷害查核」，編號見回覆。
