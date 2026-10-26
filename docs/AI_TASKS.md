@@ -12566,3 +12566,17 @@ Worker 存活且頁面正常完成載入。
 - 測試指令：node --test --test-reporter=spec 執行skills2-vfx-usage、skills2-vfx-schema、skills2-enemy-columns、worker-protocol、worker-shim、vfx-editor-cache-versions、vfx-editor-guard共54/54通過；skill2-system以name-pattern「附近」／血刃斬傳染範圍選兩項2/2通過。npm.cmd run build：583檔通過，git diff HEAD --check通過。skills2-geometry另7項通過、1項連鎖速度斷言失敗；skill2-system毒霧count與死亡屍爆舊期望共2項失敗。三項均在乾淨ai/claude ec420d05相同指令重現，屬既有問題，未修改其斷言；未跑全庫／瀏覽器長戰。
 - 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、三方提交與工作簿／CSV／JS、Excel原生工具及配置匯出器、相關回歸、素材庫及3D試作。共享素材庫有其他進行中SVG／新素材，完整保留，不順帶提交；本輪未製作或修改素材來源，Preset僅保留已提交incoming內容。無素材庫新Commit。
 - 交付：本段所在「[Codex] merge: 保留技能平衡與搜敵範圍並解除Excel合併阻塞」納入原兩個父提交，編號見回覆。一般分支以既有安全流程續同步，3D hold維持、不動main；最後結果見codex/logs/sync-ai-worktrees/latest.md及回覆。已知限制為上述既有測試債，以及先前Excel自動化登入錯誤本環境未重現，未宣稱從根本修復所有登入工作階段的Excel啟動問題。下一步整合後重載遊戲；若Editor仍持有舊未存內容，先下載備份再重載，不用舊分頁覆寫新版。
+
+## ULT-DPS-69-20261026 — 全超神進化技能總傷與DPS重測
+
+- Owner：Codex；Done（207場受控模擬與報告完成，資源／觸發限制已揭露），單一開發者。依使用者指定 ULT_EVOLUTION_ALL_69_SKILLS_DPS_REPORT 規範及格式，測23群組69招、每招小怪／菁英／BOSS三場，150秒戰鬥排除30秒預熱，總傷除120秒。
+- 前置：現有技能／傳奇／沼澤配置與舊報告。允許新增tools/ult-dps-benchmark.cjs、tools/ult-dps-report.cjs、tests/ult-dps-benchmark.test.cjs、docs/skill-tests/20261026-ult-dps-results.json、docs/ULT_EVOLUTION_ALL_69_SKILLS_DPS_REPORT_CODEX.md及本段。禁止改遊戲JS／配置／存檔／玩法／解鎖／素材與舊報告／scratch工具，不合併推送。
+- 預檢：新檔及本紀錄均無其他來源。舊報告／scratch三檔存在ai/antigravity 74879a21／aa64220e未整合修改，因此保留原樣另交日期版。使用者已有未提交Skills2.xlsx，不修改、不提交，測試以實際載入JS與CSV為準，記錄SHA。
+- 驗收：固定共同核心屬性／相同詞條／各系五傳奇與雙手倍率、確保GM測試解鎖與實際stats接線、精確時間、敵方DOT及溢出傷害不重複、207場完整且有限值／技能生效證據、可重現seed、報告由JSON生成且榜單正確、專項回歸／Build／diff後Commit；使用者Review／整合。
+- 完成六檔：上述兩工具、一測試、CODEX報告、原始JSON及本段。使用者明確指定新報告檔名ULT_EVOLUTION_ALL_69_SKILLS_DPS_REPORT_CODEX.md，不覆寫Antigravity檔案。2026-10-26台北19:47:37～19:56:49完整批次、四個獨立VM工作執行緒，23組69招207場、每場3000步；開始／結束來源SHA相同，原Excel SHA F7ABD33FCEF57BE572EAA555426BB6B9F51F1C51502D4C618136ACDCCC82B2BC未變。
+- 校正僅限新測試工具：原生getStats實際使用共同攻魔50,000／穿透100／暴擊100／暴傷5996／全增傷與各元素增傷1000／連擊3／格擋50與減傷80；13格同九詞條、GM skillUnlock與五傳奇倍率、保留七階／超神Lv.10。採整數步30≤GT<150、recordRunDamage單一計傷出口含DOT與溢出；移除玩家假maxHp、重複扣受擊HP及零傷硬塞50,000。未改正式戰鬥或技能。
+- 結果：207場皆有限值且總傷／120一致、來源加總一致、無零傷採樣；46場後120秒僅普攻入帳，已在頁首與各列標示、提供全場施放次數及條件說明。部分技能死亡後法力回到759而超神需10,000，只施放1次；被動／致死觸發與Buff亦不能只看主動施放數。這些結果不能當作各超神連續施放的上限，更不將低DPS直接判定為技能弱。
+- 測試指令：node tools/ult-dps-benchmark.cjs完整207場；node tools/ult-dps-report.cjs及--check驗證生成一致；node --test tests/ult-dps-benchmark.test.cjs七項全過，涵蓋所有裝備／解鎖、實際屬性、精確時間、原生DOT溢出僅記一次與排除玩家受傷、固定種子、受擊僅扣一次及零傷不造假、完整報表。npm.cmd run build通過586檔；git diff --check及staged檢查結果見交付。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts/codex、舊報告／四個scratch來源及資料、工具載入的21份正式JS（含skills2／combat／formula／legendary／player／battlefield／Worker）、Equipment_Affix與Skills2 CSV／xlsx、package與build_check。正式JS／CSV／Excel／LV／素材／存檔均未改；無素材庫變更或新素材Commit。原有未提交Skills2.xlsx保留，不納本次提交。
+- 限制與下一步：使用已匯出JS／CSV，不代表測過未匯出Excel變更；沿用參考受控受擊（最多前6怪、無敵方距離驗證）及初始資源／最低1HP保護，沒有做真Worker／瀏覽器戰鬥或多種子信賴區間，前30秒排除不保證所有技能真正達穩態。無本次報告未完成項，可供Review／合併保存；若需傷害上限比較，應另指定不枯竭資源與防禦／致死觸發情境，不能直接沿本表下平衡結論。未合併／推送。
+- Commit：本段所在「[Codex] test: 重測六十九招超神進化總傷與DPS並產出獨立報告」，實際編號於交付回覆。
