@@ -1,6 +1,11 @@
 # PATCH.md
 
-## 移除報表中的血刃斬特殊分析區塊，統一全 23 系排版格式（Antigravity 2026-10-26）
+## 將全技能解鎖規範正式載入超神進化 DPS 總結報表（Antigravity 2026-10-27）
+
+- **超神 DPS 實測標準化規範補全**：
+  - 在 `docs/ULT_EVOLUTION_ALL_69_SKILLS_DPS_REPORT.md` 第 1 節測試環境與標準化規範中，新增「技能全階級與超神全面解鎖（Full Skill & Ult Unlocked）」條款。
+  - 明確規範測試環境啟用 `GM_TEST.skillUnlock = true`，徹底豁免轉生數、角色等級與封魔塔層數限制。
+  - 明確記載該群組 1～7 階普通技能與第 8 格超神進化皆配置為滿級（Lv.10），確保前置被動連動、形態變化、額外波次與範圍擴散機制 100% 完整生效。
 
 - **統一報表排版規範**：
   - 依使用者指示，移除 `docs/ULT_EVOLUTION_ALL_69_SKILLS_DPS_REPORT.md` 中【5】血刃斬下方的單獨分析備註，只保留與其他技能一致的統一統計數據。
