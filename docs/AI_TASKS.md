@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## GEM-RESONANCE-DRAG-CURSOR-20261026 — 共鳴拖曳方形寶石圖與一般游標
+
+- Owner：Codex；In Progress，單一開發者。使用者要求上方寶石拖曳時以左側樣式的正方形寶石圖跟隨滑鼠，不顯示禁止符號。
+- 前置：共鳴既有原生拖曳及gresCanSocket。允許js/ui-gem-resonance.js、css/gems.css、index.html必要快取、tests/gem-resonance-ui.test.cjs、LV_upgrade_system.md與本段；禁止玩法／解鎖／Worker／Protocol／存檔／配置／素材及其他聊天修改，不合併推送。
+- 驗收：方形圖僅含來源寶石且維持中心熱點；頁面空白／有效及拒絕孔位不出禁止游標，放開仍重驗條件；成功／拒絕／外部放開／取消清理，外部拖曳不攔截。相關回歸／Build／瀏覽器及diff後獨立Commit，交使用者Review／整合。
+
+
 ## WORLD-MAP-LABEL-STATE-20261026 — 世界地圖名稱、等級與鎖定顯示
 
 - Owner：Codex；Done，單一開發者。使用者指定屏蔽右下圖片AI浮鈕、統一淡金名稱及1px黑邊、已解鎖下方括號目前／上限、未解鎖灰字與tips零進度。

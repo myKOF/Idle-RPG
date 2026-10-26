@@ -211,6 +211,7 @@ button.gres-gem:hover { border-color: #7a6440; }
 #tab-gems[data-gem-tool="resonance"] .gres-library-note { display: block; }
 #tab-gems[data-gem-tool="resonance"] .gx-curve-cell[draggable="true"] { cursor: grab; }
 #tab-gems[data-gem-tool="resonance"] .gx-curve-cell[draggable="true"]:active { cursor: grabbing; }
+.gres-drag-icon { position: fixed; display: grid; place-items: center; box-sizing: border-box; padding: 2px; margin: 0; border: 1px solid var(--c); border-radius: 4px; background: #090c10; box-shadow: none; pointer-events: none; z-index: 2147483647; }
 #tab-gems[data-gem-tool="resonance"] .gx-curve-cell.is-unavailable { filter: grayscale(1); opacity: .32; cursor: default; }
 .gres-empty-tier { display: flex; align-items: center; justify-content: center; }
 .gres-hole.is-drop .gres-hit { fill: #76e6a126; stroke: #a9edbd; stroke-width: 4; }
