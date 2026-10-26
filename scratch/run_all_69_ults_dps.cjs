@@ -148,9 +148,8 @@ function runSimulation(target, scenarioType, totalDuration = 150.0, warmupDurati
 
   ctx.GM_TEST = { skillUnlock: true };
   ctx.G = ctx.newGameState();
-  ctx.G.player.level = 1000;
-  ctx.G.player.reincarnations = 10;
-  ctx.G.tower = { highest: 100 };
+  ctx.G.player.level = 100;
+  ctx.G.player.reincarnations = 1;
   ctx.G.player.gold = 1000000000;
   ctx.G.player.skills2 = {
     levels: {
