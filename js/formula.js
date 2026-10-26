@@ -768,11 +768,13 @@ function bossPctHpFactor(ent) {
   return (ent && (ent.isBoss || ent.towerBoss)) ? BOSS_PCT_HP_DAMAGE_MULT : 1;
 }
 // 非 resolveHit 的直接傷害也必須經過同一個高塔 BOSS 上限。
-function applyEnemyHpDamage(ent, damage, drainHits) {
+// opts.fixedPct＝這一筆是「固定扣最大生命 N%」：不吃任何增傷乘區（海淵葬界的易傷等），
+// 但高塔 BOSS 單次 20% 上限仍保留（目前只有超神【地爆天星】，2026-10-26 使用者決策）。
+function applyEnemyHpDamage(ent, damage, drainHits, opts) {
   HIT_DIRECT++;
   var wasAlive = ent && ent.hp > 0;
   var amount = Math.max(0, Number(damage) || 0);
-  if (ent && ent.maxHp > 0 && typeof skill2AbyssDamageTakenMultiplier === 'function') {
+  if (!(opts && opts.fixedPct) && ent && ent.maxHp > 0 && typeof skill2AbyssDamageTakenMultiplier === 'function') {
     amount *= skill2AbyssDamageTakenMultiplier(ent);
   }
   if (ent && !(ent.maxHp > 0) && typeof skill2RebirthDamageTakenMultiplier === 'function') {

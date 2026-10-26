@@ -2782,7 +2782,7 @@ function switchTab(name) {
   if (name === 'settings' && typeof GameMenu !== 'undefined') { GameMenu.openSettings(); return; }
   if (name === 'talents') {
     var talentSnapshot = uiTalentPanelSnapshot();
-    if (!talentSnapshot || talentViewReincarnations(talentSnapshot) < 1) name = 'equip';
+    if (!talentSnapshot || talentViewReincarnations(talentSnapshot) < TALENT_UNLOCK_REINCARNATION) name = 'equip';
   }
   if (name === 'gems' && UI.tab !== 'gems' && UI.gemBrowse && UI.gemBrowse.tool === 'resonance' && typeof gresResetSelection === 'function') gresResetSelection();
   UI.tab = name;
@@ -2863,7 +2863,9 @@ function updateTalentTabVisibility() {
   if (!btn) return;
   var snapshot = uiTalentPanelSnapshot();
   if (!snapshot) return;
-  var unlocked = talentViewReincarnations(snapshot) >= 1;
+  var talentHeader = uiHeaderPanelSnapshot();
+  var unlocked = (Number(talentHeader && talentHeader.player && talentHeader.player.level) || 0) >= TALENT_UNLOCK_LEVEL &&
+    talentViewReincarnations(snapshot) >= TALENT_UNLOCK_REINCARNATION;
   btn.style.display = unlocked ? '' : 'none';
   setAttrIfChanged(btn, 'aria-hidden', unlocked ? 'false' : 'true');
   if (!unlocked && UI.tab === 'talents') switchTab('equip');
@@ -10245,8 +10247,16 @@ function setGemFuseLevel(lv) {
   renderGems();
 }
 
+function gemResonanceUiUnlocked(headerSnapshot) {
+  var header = headerSnapshot || uiHeaderPanelSnapshot();
+  var player = header && header.player;
+  return Number(player && player.level) >= GEM_RESONANCE_UNLOCK_LEVEL &&
+    Math.floor(Number(player && player.reincarnations) || 0) >= GEM_RESONANCE_UNLOCK_REINCARNATION;
+}
+
 function setGemTool(tool) {
   if (GEM_TOOLS.indexOf(tool) < 0) return;
+  if (tool === 'resonance' && !gemResonanceUiUnlocked()) return;   // 未解鎖不可查看；條件由頁籤 tips 顯示
   UI.gemBrowse.dismantleDrag = null;
   UI.gemBrowse.convertDrag = null;
   if (tool === 'resonance' && UI.gemBrowse.tool !== tool && typeof gresResetSelection === 'function') gresResetSelection();
@@ -10322,6 +10332,20 @@ function renderGems() {
   renderGemConvert(gemsSnapshot);
   renderGemDismantle(gemsSnapshot);
   renderGemFusion(gemsSnapshot, headerSnapshot);
+  var resonanceOpen = gemResonanceUiUnlocked(headerSnapshot);
+  var resonanceTab = $id('gem-tool-resonance');
+  if (resonanceTab) {
+    var resonanceTabClass = 'gx-tab' + (resonanceOpen ? '' : ' is-locked');
+    if (resonanceTab.className !== resonanceTabClass) resonanceTab.className = resonanceTabClass;
+    if (resonanceOpen) {
+      resonanceTab.removeAttribute('data-tt-title');
+      resonanceTab.removeAttribute('data-tt-desc');
+    } else {
+      setAttrIfChanged(resonanceTab, 'data-tt-title', STR(2130));
+      setAttrIfChanged(resonanceTab, 'data-tt-desc', STR(2131, GEM_RESONANCE_UNLOCK_LEVEL, GEM_RESONANCE_UNLOCK_REINCARNATION));
+    }
+  }
+  if (!resonanceOpen && UI.gemBrowse.tool === 'resonance') { UI.gemBrowse.tool = 'compose'; setGemTool('compose'); return; }
   // 融合未解鎖時 renderGemFusion 會把面板藏起來；分頁仍可點，改顯示解鎖條件。
   var fusionPanel = $id('gem-fusion-panel');
   var fusionLocked = !fusionPanel || fusionPanel.style.display === 'none';

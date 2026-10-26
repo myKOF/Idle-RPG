@@ -117,6 +117,16 @@ function resonanceUpgradeCost(holeLevel) {
 }
 
 /* ---- Worker 端指令實作（回傳 null＝成功，字串＝錯誤訊息）---- */
+/* 寶石共鳴系統解鎖：等級與轉生次數須同時滿足（GEM_RESONANCE_UNLOCK_*，system_unlock 表）。 */
+function gemResonanceUnlockedAt(level, reincarnations) {
+  return Number(level) >= GEM_RESONANCE_UNLOCK_LEVEL && Number(reincarnations) >= GEM_RESONANCE_UNLOCK_REINCARNATION;
+}
+function gemResonanceLockedMessage() {
+  return STR(2131, GEM_RESONANCE_UNLOCK_LEVEL, GEM_RESONANCE_UNLOCK_REINCARNATION);
+}
+function gemResonanceUnlocked() {
+  return !!G.player && gemResonanceUnlockedAt(G.player.level, G.player.reincarnations);
+}
 function resonanceEnsure() {
   var p = G.player;
   if (!p.resonance || typeof p.resonance !== 'object') p.resonance = { holes: {} };
@@ -130,6 +140,7 @@ function resonanceTouched() {
 
 /* 鑲嵌：level 省略時取庫存裡「達到該孔最低階」的最低一階（不浪費高階寶石）。 */
 function socketResonanceGem(region, hole, type, level) {
+  if (!gemResonanceUnlocked()) return gemResonanceLockedMessage();
   if (!resonanceValidHole(region, hole)) return STR(1466);
   var locked = resonanceRegionLockReason(G.player.resonance, region);
   if (locked) return locked;
@@ -158,6 +169,7 @@ function socketResonanceGem(region, hole, type, level) {
 
 /* 取下：index 為孔內第幾顆。孔等級保留（升級是孔的資產，不跟著寶石走）。 */
 function unsocketResonanceGem(region, hole, index) {
+  if (!gemResonanceUnlocked()) return gemResonanceLockedMessage();
   if (!resonanceValidHole(region, hole)) return STR(1466);
   var slot = resonanceEnsure().holes[resonanceHoleKey(region, hole)];
   if (!slot || !Array.isArray(slot.gems) || !slot.gems[index]) return STR(1473);
@@ -183,6 +195,7 @@ function resonanceUpgradePayType(region, slot, cost, countOf) {
 
 /* 升級：金幣＋指定階級的寶石（種類見 resonanceUpgradePayType）。孔不必鑲寶石也能升級。 */
 function upgradeResonanceHole(region, hole) {
+  if (!gemResonanceUnlocked()) return gemResonanceLockedMessage();
   if (!resonanceValidHole(region, hole)) return STR(1466);
   var locked = resonanceRegionLockReason(G.player.resonance, region);
   if (locked) return locked;

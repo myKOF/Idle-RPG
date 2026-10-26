@@ -1,0 +1,9 @@
+﻿系統類型,系統名稱,解鎖等級(等級/轉生等級),系統說明文字
+角色成長,轉生,1000/0,角色達到此等級即可轉生（轉生次數欄固定填 0，不使用）。最高轉生次數仍在 game_parameters「可轉生等級 / 最高轉生」的參數 b。對應程式 REINCARNATION_LEVEL。
+裝備養成,神鑄系統,1/2,等級與轉生次數須同時滿足才開放，開放後永久保留，轉生不關閉。對應程式 FORGE_UNLOCK_LEVEL / FORGE_UNLOCK_REINCARNATION。
+角色成長,天堂威能,1/1,等級與轉生次數須同時滿足，威能頁籤與威能系統才開放。各威能節點另依 Talents 表的轉數逐轉解鎖（不在本表）。對應程式 TALENT_UNLOCK_LEVEL / TALENT_UNLOCK_REINCARNATION。
+裝備養成,裝備方案 第1套,1/0,第 1 套裝備方案的解鎖條件（預設開局即開放）。對應程式 EQUIP_SET_UNLOCK_LEVELS[0] / EQUIP_SET_UNLOCK_REINCARNATIONS[0]。
+裝備養成,裝備方案 第2套,1/0,第 2 套裝備方案的解鎖條件（預設開局即開放）。對應程式 EQUIP_SET_UNLOCK_LEVELS[1] / EQUIP_SET_UNLOCK_REINCARNATIONS[1]。
+裝備養成,裝備方案 第3套,1/0,第 3 套裝備方案的解鎖條件（預設開局即開放）。對應程式 EQUIP_SET_UNLOCK_LEVELS[2] / EQUIP_SET_UNLOCK_REINCARNATIONS[2]。
+寶石,寶石融合,9999/11,等級與轉生次數須同時滿足才開放寶石融合。對應程式 GEM_FUSION_UNLOCK_LEVEL / GEM_FUSION_UNLOCK_REINCARNATIONS。
+寶石,寶石共鳴,1/4,等級與轉生次數須同時滿足才開放寶石共鳴；未解鎖前無法查看共鳴頁，滑鼠移到「共鳴」頁籤會以提示顯示解鎖條件。對應程式 GEM_RESONANCE_UNLOCK_LEVEL / GEM_RESONANCE_UNLOCK_REINCARNATION。

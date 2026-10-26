@@ -81,8 +81,12 @@ function talentUnlocked(id) {
   return turn > 0 && turn <= TALENT_IMPLEMENTED_REINCARNATIONS && reincarnationCountSafe() >= turn;
 }
 
+function talentSystemUnlockedAt(level, reincarnations) {
+  return Number(level) >= TALENT_UNLOCK_LEVEL && Number(reincarnations) >= TALENT_UNLOCK_REINCARNATION;
+}
+
 function talentSystemUnlocked() {
-  return reincarnationCountSafe() >= 1;
+  return talentSystemUnlockedAt(G.player.level, reincarnationCountSafe());
 }
 
 function talentLevelValue(def, lv) {
