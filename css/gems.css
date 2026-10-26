@@ -197,6 +197,8 @@ button.gres-gem:hover { border-color: #7a6440; }
 .gres-gem-name { font-size: 11px; }
 .gres-gem-stat { font-size: 10px; color: #bcb6a8; }
 .gres-gem.is-empty { color: #c9c3b5; }
+.gres-empty-slot { display: flex; align-items: center; gap: 8px; }
+.gres-empty-level { color: #c9c3b5; font-size: 12px; }
 .gres-upgrade .btn { width: 100%; }
 .gres-upgrade .btn:disabled { pointer-events: none; }
 .gres-upgrade:focus-visible { outline: 1px solid #d7bf82; outline-offset: 3px; }

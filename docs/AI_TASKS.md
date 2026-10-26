@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## GEM-RESONANCE-EMPTY-LEVEL-20261026 — 空鑲孔右側顯示寶石等級
+
+- Owner：Codex；Done，單一開發者。使用者要求寶石共鳴未鑲嵌格右側顯示可鑲嵌寶石等級；依既有孔位最低階級顯示，例如六級以上，每個空格各自顯示。
+- 前置：既有共鳴孔位配置／右側詳情。允許 js/ui-gem-resonance.js、css/gems.css、index.html 必要快取、LV_upgrade_system.md 及本段；禁止改玩法／配置／存檔／Worker／素材及其他任務，不合併推送。
+- 目標五檔衝突預檢乾淨，fetch 後重查無其他來源。沿用 String 表 1748「{0}以上」與配置 GEM_NAMES，不新增硬編碼文字或重寫 Excel。
+- 驗收：每孔最低階正確、多空格／部分已鑲／取下／鎖定中央區顯示，既有寶石共鳴與字串回歸、Build、diff 後 Commit；後續使用者 Review／整合。
+- 完成五檔：共鳴詳情新增空格同行等級、CSS 8px 間距及字色、index 的 gems CSS 1.0.24／共鳴 JS 1.0.19 快取、LV 與本紀錄。沿用配置及既有 STR 1748，不修改 Excel／CSV／字串資料、鑲嵌操作、解鎖、Worker 或存檔。無美術及素材庫變更，無素材庫新 Commit。
+- 驗證：node --test --test-reporter=spec tests/gem-resonance-ui.test.cjs tests/gem-resonance.test.cjs tests/string-table.test.cjs，48/48 通過；npm.cmd run build，586 檔通過；git diff --check 通過。臨時 Node 驗證使用正式 UI fixture 核對全49孔最低階與容量、部分已鑲只標空格、取下後恢復標示，全過；未新增低影響顯示測試檔。
+- 瀏覽器：專用 browser-client IAB 無法連線，改用 CUA／IAB 開啟隔離排版頁，使用正式 gresDetailHTML 輸出及 gems.css，200px 詳情寬度確認四／五／六／十級與兩／六空格同行排版，Console error／warning 0；非完整遊戲／真人存檔實測。截圖留於本聊天 visualizations 的 gem-resonance-empty-level.png；臨時服務及頁籤已清理。
+- 唯讀未改：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex、gem_resonance.js／gem_resonance_data.js、ui.js、String.csv、上述三份回歸、package／build工具。自我 Review 無已知新增風險或未完成項，可供合併；未合併／推送。下一步正常整合後重載遊戲驗收。Commit 為本段所在「[Codex] fix: 寶石共鳴空鑲孔右側顯示寶石等級」，實際編號見交付。
+
 ## ENEMY-FRENZY-THRESHOLD-20261025 — 交戰敵人超過30個時狂暴化加速
 
 - Owner：Codex；Done，單一開發者。使用者指定交戰敵人超過30個時每秒+2%，30個以內每秒+1%；取代舊依數量線性加成，視野外尚未交戰及進場倒數不計數，已警戒後離開視野仍計數，歷史累積不回扣。

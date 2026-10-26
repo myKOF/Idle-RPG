@@ -234,7 +234,7 @@ function gresDetailHTML(snapshot, headerSnapshot, state, sel) {
         '" data-tt-title="' + esc(GEM_NAMES[g.level] + GEM_TYPES[g.type].name) + '" data-tt-desc="' + esc(STR(1566, gresStatText(g.type, gemStatValue(g.type, g.level)))) + '">' + gemIconHTML(g.type, g.level, 'gi-slot') +
         '<span class="gres-gem-info"><span class="gres-gem-name">' + esc(GEM_NAMES[g.level] + GEM_TYPES[g.type].name) + '</span>' +
         '<span class="gres-gem-stat">' + gresStatText(g.type, gemStatValue(g.type, g.level)) + '</span></span></button>'
-      : '<div class="gres-gem is-empty">' + STR(1567) + '</div>';
+      : '<div class="gres-empty-slot"><div class="gres-gem is-empty">' + STR(1567) + '</div><span class="gres-empty-level">' + esc(STR(1748, GEM_NAMES[min])) + '</span></div>';
   }
   h += '</div>';
 
