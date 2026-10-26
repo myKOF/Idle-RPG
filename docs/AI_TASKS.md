@@ -12580,3 +12580,14 @@ Worker 存活且頁面正常完成載入。
 - 唯讀未改：AI_RULES／AGENTS／Workflow／prompts/codex、舊報告／四個scratch來源及資料、工具載入的21份正式JS（含skills2／combat／formula／legendary／player／battlefield／Worker）、Equipment_Affix與Skills2 CSV／xlsx、package與build_check。正式JS／CSV／Excel／LV／素材／存檔均未改；無素材庫變更或新素材Commit。原有未提交Skills2.xlsx保留，不納本次提交。
 - 限制與下一步：使用已匯出JS／CSV，不代表測過未匯出Excel變更；沿用參考受控受擊（最多前6怪、無敵方距離驗證）及初始資源／最低1HP保護，沒有做真Worker／瀏覽器戰鬥或多種子信賴區間，前30秒排除不保證所有技能真正達穩態。無本次報告未完成項，可供Review／合併保存；若需傷害上限比較，應另指定不枯竭資源與防禦／致死觸發情境，不能直接沿本表下平衡結論。未合併／推送。
 - Commit：本段所在「[Codex] test: 重測六十九招超神進化總傷與DPS並產出獨立報告」，實際編號於交付回覆。
+
+## ULT-DPS-LOCKED-20261026 — 鎖血鎖法力完整重測
+
+- Owner：Codex；Done，單一開發者。使用者要求角色不應死亡，必須開啟鎖血與鎖法力重測；本項取代前版未鎖資源的測試條件與數據，不將前版當有效持續DPS結果。
+- 前置：6d3cbf50之CODEX獨立工具／報告，正式gmHpLockActive與gmMpLockActive。範圍僅tools/ult-dps-benchmark.cjs、tools/ult-dps-report.cjs、tests/ult-dps-benchmark.test.cjs、CODEX報告、20261026原始JSON與本段；禁止改正式遊戲／配置／Excel／素材／Antigravity檔案及其他任務，不合併推送。
+- 預檢六檔無其他來源。驗收：GM hpLock／mpLock實際啟用、敵方直接／DOT／技能自傷不致死、零死亡／復活／缺魔及採樣期施放證據，每場150秒排30秒、207場重跑、JSON／報告／來源SHA一致，專項測試／Build／diff後Commit；使用者Review／整合。原有Skills2.xlsx未提交修改保留不套用。
+- 完成六檔：原生GM_TEST.hpLock／mpLock均true，初始資源採角色計算HP／MP，移除假高資源與手動最低1血補救；每步查原生鎖定、HP>0、無復活，死亡出口直接失敗。JSON新增資源鎖定、最低HP／MP、死亡／復活稽核與sampleCasts；報告v8.0重建69招總傷／DPS及三榜，明確取代v7.0；正式遊戲功能與LV／配置不變。
+- 完整批次時間：2026-10-26台北20:23:43～20:34:14，69招×3情境＝207場、各3000步，開始／結束25份來源SHA一致。全部HP／MP鎖定有效、零死亡、零復活、最低HP皆>0；雙刀三招各情境全場19次、採樣120秒15次，消除前版死亡缺魔後僅施放1次的錯誤條件。採樣僅普攻入帳由46場降至9場，仍可為Buff／鎖血抑制失血或死亡觸發，已如實標註，不虛構傷害。
+- 驗證：node tools/ult-dps-benchmark.cjs完整通過；node tools/ult-dps-report.cjs及--check一致；node --test tests/ult-dps-benchmark.test.cjs九項全過，新增致命直接傷／DOT／自傷、零MP持續施放、停用鎖定或死亡／復活必失敗；207場資料驗證同時釘住零死亡／復活及原生鎖定。npm.cmd run build586檔通過，git diff --check／staged檢查及最終來源SHA結果見交付。
+- 唯讀未改：前項列出的共通規範、Agent規範、21份正式JS、CSV／Excel、原Antigravity工具／報告；另查formula的原生鎖定、gm_exec的HP_lock／MP_lock語意、skills2的自傷與耗魔／復活路徑。原有未提交Skills2.xlsx保持F7ABD33FCEF57BE572EAA555426BB6B9F51F1C51502D4C618136ACDCCC82B2BC，不提交／不套用；無素材庫變更。
+- 限制／下一步：使用者指定鎖血會使實際失血／瀕死／死亡條件不成立，報告已標示對相關能力的影響；仍沿用受控敵傷與固定seed，不代表真Worker／瀏覽器實戰或多種子統計。此次鎖血鎖法力重測已完成，可供Review／合併保存，未合併推送；Commit為「[Codex] fix: 開啟鎖血鎖法力並重測超神技能DPS」，編號見回覆。

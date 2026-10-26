@@ -159,7 +159,7 @@ function buildEquipment(ctx, target) {
 function prepareSimulation(target, scenarioType, totalDuration = 150, warmupDuration = 30) {
   const seed = BASE_SEED + scenarioType;
   const ctx = createSimContext(seed);
-  ctx.GM_TEST = { skillUnlock: true };
+  ctx.GM_TEST = { skillUnlock: true, hpLock: true, mpLock: true };
   const gid = target.gid;
   const optIdx = target.ultIndex;
 
@@ -221,8 +221,22 @@ function prepareSimulation(target, scenarioType, totalDuration = 150, warmupDura
     dpsWindow: []
   };
 
-  ctx.FIELD.player.hp = 1e15;
-  ctx.FIELD.player.mp = 1e15;
+  // Use the game's native locks, including incoming damage, self costs and trigger costs.
+  // Huge initial resources alone do not prevent death or mana exhaustion after revival.
+  ctx.FIELD.player.hp = pStats.hp;
+  ctx.FIELD.player.mp = pStats.mp;
+  const resources = { hpLock: true, mpLock: true, deaths: 0, revivalTicks: 0,
+    minHp: pStats.hp, minMp: pStats.mp };
+  ctx.onPlayerFieldDeath = () => { resources.deaths++; throw new Error(target.ultId + ': player died with HP lock'); };
+  function checkResources() {
+    const p = ctx.FIELD.player;
+    assert.ok(ctx.gmHpLockActive(p) && ctx.gmMpLockActive(p), 'Native resource locks disabled');
+    assert.ok(p.hp > 0, target.ultId + ': nonpositive player HP');
+    if (p._sgRevival || ctx.FIELD.reviveCd > 0) resources.revivalTicks++;
+    assert.equal(resources.revivalTicks, 0, target.ultId + ': revival interrupted benchmark');
+    resources.minHp = Math.min(resources.minHp, p.hp);
+    resources.minMp = Math.min(resources.minMp, p.mp);
+  }
 
   // Preserve the reference harness controlled incoming attacks (up to six per tick,
   // no distance check); do not mix them with native enemy attack scheduling.
@@ -248,10 +262,15 @@ function prepareSimulation(target, scenarioType, totalDuration = 150, warmupDura
   assert.ok(ctx.sgUlt(gid, target.ultId), 'Ultimate not active: ' + target.ultId);
   const damage = createDamageCollector(warmupDuration, totalDuration);
   const casts = {};
+  const sampleCasts = {};
   // One canonical accounting path includes direct, derived, legendary and DOT damage,
   // including overkill, without HP-delta rounding/clipping or double-counting explosions.
   ctx.recordRunDamage = (name, amount, key) => damage.record(ctx.GT, name, amount, key);
-  ctx.recordRunSkillCast = (name, key) => { casts[key || name] = (casts[key || name] || 0) + 1; };
+  ctx.recordRunSkillCast = (name, key) => {
+    const id = key || name;
+    casts[id] = (casts[id] || 0) + 1;
+    if (ctx.GT >= warmupDuration && ctx.GT < totalDuration) sampleCasts[id] = (sampleCasts[id] || 0) + 1;
+  };
   let waveCount = 0, enemySerial = 0;
   const waves = [];
 
@@ -320,6 +339,7 @@ function prepareSimulation(target, scenarioType, totalDuration = 150, warmupDura
   function tick(step) {
     ctx.GT = Number((step * dt).toFixed(8));
     ctx.fieldTick(dt);
+    checkResources();
 
     // 定期攻擊玩家以觸發受擊/反擊/格擋機制
     const p = ctx.FIELD.player;
@@ -334,11 +354,11 @@ function prepareSimulation(target, scenarioType, totalDuration = 150, warmupDura
         const mCfg = ctx.monsterAtkCfg(m);
         const pDefCfg = ctx.playerDefCfg(p);
         const hitRes = ctx.resolveHit(m, p, mCfg, pDefCfg);
+        checkResources();
         if (hitRes && !hitRes.miss) {
           // resolveHit already deducted HP and absorbed shields. Never subtract twice,
           // and never invent damage when the hit was fully absorbed or invulnerable.
           const dmg = hitRes.hpDamage || 0;
-          p.hp = Math.max(1, p.hp);
           if (typeof ctx.skills2OnPlayerDamaged === 'function') {
             ctx.skills2OnPlayerDamaged(m, p, dmg, hitRes.blocked, hitRes, 'pv-float');
           }
@@ -350,9 +370,10 @@ function prepareSimulation(target, scenarioType, totalDuration = 150, warmupDura
     if (ctx.liveFieldEnemies().length === 0) {
       spawnWave();
     }
+    checkResources();
   }
 
-  return { ctx, pStats, rawStats, tick, damage, casts, waves, dt, seed, totalDuration, warmupDuration,
+  return { ctx, pStats, rawStats, tick, damage, casts, sampleCasts, resources, waves, dt, seed, totalDuration, warmupDuration,
     baseline: { atk: pStats.atk, matk: pStats.matk, pPen: pStats.pPen, mPen: pStats.mPen,
       critRate: pStats.critRate, critDmg: pStats.critDmg, totalDmgPct: pStats.totalDmgPct,
       elemDmgUp: { ...pStats.elemDmgUp }, blockRate: pStats.blockRate, blockDmgRed: pStats.blockDmgRed,
@@ -386,11 +407,12 @@ function runSimulation(target, scenarioType, totalDuration = 150, warmupDuration
   return { scenarioType, scenarioName: ['','普通小怪 (20隻)','菁英怪 (5隻)','單體BOSS (1隻)'][scenarioType],
     sampleDuration, totalDuration, warmupDuration, steps: totalDuration / sim.dt, seed: sim.seed,
     totalDamage: sim.damage.total, avgDps: sim.damage.total / sampleDuration,
-    damageEvents: sim.damage.events, sources: sim.damage.sources, casts: sim.casts,
+    damageEvents: sim.damage.events, sources: sim.damage.sources, casts: sim.casts, sampleCasts: sim.sampleCasts,
+    resources: sim.resources,
     baseline: sim.baseline, equipmentStatsBeforeNormalization: sim.rawStats,
     legendaryEffects: target.affixes.map(a => a.id), legendaryMultiplier: sim.legendaryMultiplier,
     ultimateActive: !!sim.ctx.sgUlt(target.gid, target.ultId),
-    finalPlayerHp: sim.ctx.FIELD.player.hp, waves: sim.waves };
+    finalPlayerHp: sim.ctx.FIELD.player.hp, finalPlayerMp: sim.ctx.FIELD.player.mp, waves: sim.waves };
 }
 
 function sourceManifest() {
@@ -438,14 +460,14 @@ if (!isMainThread && workerData === 'ult-dps-worker') {
   assert.equal(TARGETS.length, 69);
   const results = await runBatch();
   assert.deepEqual(sourceManifest(), sources, 'Input files changed during benchmark');
-  const output = { metadata: { version: 'v7.0', startedAt, completedAt: new Date().toISOString(),
+  const output = { metadata: { version: 'v8.0', hpLock: true, mpLock: true, startedAt, completedAt: new Date().toISOString(),
     timezone: 'Asia/Taipei', commit: execFileSync('git', ['rev-parse','HEAD'], { cwd: ROOT, encoding: 'utf8' }).trim(),
     seed: BASE_SEED, workers: 4, dt: 0.05, totalDuration: 150, warmupDuration: 30, sampleDuration: 120,
     groups: 23, skills: 69, scenarios: 207, sources,
     inputNote: 'Runtime JS and CSV are the tested configuration. Uncommitted Skills2.xlsx is preserved and not applied.',
-    incomingAttacks: 'Reference controlled model: native fieldMonsterAttack disabled; up to six live monsters attack per tick, no distance check; resolveHit deducts HP once; player HP floor 1 after resolution; skills2OnPlayerDamaged receives hpDamage, never fabricated fallback damage.',
+    incomingAttacks: 'Reference controlled model: native fieldMonsterAttack disabled; up to six live monsters attack per tick, no distance check; resolveHit uses native HP lock; no manual HP floor or fabricated damage; skills2OnPlayerDamaged receives actual hpDamage.',
     accounting: 'recordRunDamage only; direct + derived + legendary + DOT + basic; overkill included; sample 30 <= GT < 150; DPS = total / 120.',
-    playerResources: 'Initial HP/MP 1e15 as reference; native regen/caps and controlled incoming damage thereafter. No artificial maxHp field on player.',
+    playerResources: 'Initial HP/MP = normalized stats.hp/mp. Native GM_TEST.hpLock=true and mpLock=true prevent damage/self-cost deaths and mana-cost gating. Death or revival fails the run; every tick records minima. No artificial maxHp on player.',
     normalization: '13 level100 rarity5 +40 items, identical nine affixes roll100; atk=matk=50000, pPen=mPen=100, critRate=100, critDmg=5996, totalDmgPct=1000, each elemDmgUp=1000; stat cache fixed; GM skillUnlock.' }, results };
   fs.writeFileSync(OUTPUT_JSON, JSON.stringify(output, null, 2) + '\n');
   console.log('Saved ' + OUTPUT_JSON);

@@ -34,9 +34,49 @@ test('normalized stats reach real combat; all seven tiers and ultimates bypass l
     assert.equal(s.pStats.critDmg, 5996);
     assert.equal(typeof s.pStats.elemDmgPct, 'object');
     assert.equal(s.ctx.FIELD.player.maxHp, undefined, 'player must not be misclassified as an enemy');
+    assert.ok(s.ctx.gmHpLockActive(s.ctx.FIELD.player));
+    assert.ok(s.ctx.gmMpLockActive(s.ctx.FIELD.player));
     assert.equal(s.legendaryMultiplier, t.isTwoHand ? s.ctx.TWO_HAND_EFFECT_VALUE_MULT : 1);
     for (const a of t.affixes) assert.equal(s.pStats.legendaryEffectMults[a.id], s.legendaryMultiplier);
   }
+});
+
+test('native HP/MP locks prevent lethal direct damage, DOT and skill self-cost interruptions', () => {
+  const t = b.TARGETS.find(t => t.ultId === 'doomDance');
+  const s = b.prepareSimulation(t, 1);
+  const ctx = s.ctx;
+  const p = ctx.FIELD.player;
+  const initialHp = p.hp;
+  const result = ctx.resolveHit(ctx.FIELD.monsters[0], p,
+    { atk: 1e15, dmgType: 'phys', level: 300, hit: 100 }, { ...ctx.playerDefCfg(p), dodge: 0, absDodge: 0 });
+  assert.equal(result.hpDamage, 0);
+  assert.equal(p.hp, initialHp);
+  assert.equal(ctx.applyEnemyHpDamage(p, 1e15), 0);
+  assert.equal(p.hp, initialHp);
+  p.dots = [{ name: 'lethal incoming DOT', until: 1, interval: 0.05, acc: 0, dps: 1e15 }];
+  ctx.tickStatuses(p, 0.05);
+  assert.equal(p.hp, initialHp);
+  p.dots = [];
+  // A locked MP pool must allow the 10,000 MP ultimate even with zero current MP.
+  p.mp = 0;
+  for (let step = 0; step < 800; step++) s.tick(step);
+  assert.ok(s.casts['skill2:dualdance'] > 1);
+  assert.ok(s.sampleCasts['skill2:dualdance'] > 0);
+  assert.equal(s.resources.deaths, 0);
+  assert.equal(s.resources.revivalTicks, 0);
+  assert.equal(s.resources.minHp, initialHp);
+});
+
+test('resource audit rejects a disabled lock and any death or revival immediately', () => {
+  const s = b.prepareSimulation(b.TARGETS[0], 1);
+  s.ctx.GM_TEST.hpLock = false;
+  assert.throws(() => s.tick(0), /Native resource locks disabled/);
+  const alive = b.prepareSimulation(b.TARGETS[0], 1);
+  assert.throws(() => alive.ctx.onPlayerFieldDeath(), /player died with HP lock/);
+  const reviving = b.prepareSimulation(b.TARGETS[0], 1);
+  reviving.ctx.fieldTick = () => {};
+  reviving.ctx.FIELD.reviveCd = 1;
+  assert.throws(() => reviving.tick(0), /revival interrupted benchmark/);
 });
 
 test('sampling excludes warmup and end boundary, retaining overkill and source totals', () => {
