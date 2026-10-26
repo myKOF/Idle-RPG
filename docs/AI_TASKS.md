@@ -12548,3 +12548,21 @@ Worker 存活且頁面正常完成載入。
 - 狀態／下一步：一般三AI同步與來源保存已完成且可使用；必要Worker快取更新完成後重跑正常同步。試作需使用者明確最終OK才釋放hold；不同AI同時修改同一公式時仍須人工逐段處理。
 
 - 最後快取驗證：node --test --test-reporter=spec tests/hall-of-radiance.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-editor-guard.test.cjs，共48項41過7既有失敗；7項光耀之堂玩法斷言在未改的develop f8286076以同指令單檔重跑全部重現，快取同步斷言通過。node --test --test-reporter=spec --test-name-pattern=ELITE-ENGINE-12b tests/elite-engine.test.cjs，1/1通過。npm.cmd run build與diff檢查通過；既有玩法失敗未修改或放寬。最後正常同步成功與分支編號見交付回覆及latest.md。
+
+## MERGE-SKILLS2-20261026 — 本次待合併整合阻塞
+
+- Owner：Codex；Blocked。使用者明確授權僅處理本次 develop 合併，不委派、不操作 index／Commit／其他副本。原 HEAD 572846ecf2dc45f326a671590ec9bdea38e2ff03、MERGE_HEAD 5a7915453b95ab05c6b2e0c3d8d91aada5f9fe43，base e00315961ba668bb398af846e64c490504567e19。
+- 已檢查規範、prompts/codex.md、任務紀錄、status、三方 CSV／程式差異與 Excel 寫入／匯出工具。HEAD 在 Skills2 第46／47列「毒霧感染／死亡屍爆」搜敵範圍由空白改40；incoming 有32個獨立技能平衡／說明儲存格變更及 burst-zero-infection Preset 修改，應全部保留，不整份取單邊。
+- 阻塞：New-Object -ComObject Excel.Application 失敗，HRESULT 80070520（指定登入工作階段不存在）。無法使用既有 Excel API 工具安全編輯並正常重開驗證；未改 Excel、CSV、JS、Preset 或快取，未偽稱已完成衍生資料同步。Python 亦未在 PATH；未改內部 XML。
+- 驗證：node --test --test-reporter=dot tests/skills2-vfx-usage.test.cjs，1過1失敗，原因為尚未解決的 Excel 與已合併 CSV／JS 技能平衡不一致；非已確認既有失敗，未放寬斷言。Build 與完整 git diff HEAD --check 結果見本次交付。
+- 唯一編輯為本任務紀錄；保留既有四個待合併檔案及控制器修正，沒有暫存檔或素材庫修改。未提交，不能交由控制器完成合併；下一步需可啟動 Excel 原生 API 的執行環境，再合併儲存格、重建 CSV／JS、同步新快取及完成測試／Build。HEAD／MERGE_HEAD 保持不變。
+
+## MERGE-SKILLS2-20261026 — 使用者快捷指令接手解除阻塞
+
+- Owner：Codex；Done（衝突及相關驗證完成，既有失敗另列）。使用者本聊天輸入1，授權處理本次develop衝突、保留各AI修改並完成必要驗證及合併提交；取代上段自動控制器執行環境的限制。原HEAD／MERGE_HEAD／base同上，所有來源與原工作檔已備份至本聊天merge-skills2-20261026預覽目錄。
+- 範圍：Skills2工作簿三方儲存格合併、既有CSV／JS／Preset合併保存、必要快取、LV及本段。禁止丟棄修改、動3D隔離試作、發布main或順帶提交共享素材庫進行中內容。
+- 查證：Excel16.0已可由目前登入工作階段啟動，三份來源均正常開啟、Saved且非RepairMode。ours僅P46／P47搜敵範圍空白→40；theirs另32格平衡／說明修改，無同格重疊；預期合併列資料與Git已合併CSV一致。先在候選副本用既有Excel原生更新工具寫兩格，正常重開並核對三工作表資料、欄寬／列高／標題格式、篩選、凍結與物件後才替換衝突工作檔。
+- 完成10檔：Skills2.xlsx以incoming為候選、Excel原生API僅寫兩個獨立格，兩次正常重開比對283列52欄、再以獨立Excel讀回三張表逐值及格式核對，均Saved／非RepairMode；其餘兩張表逐值不變，全部欄寬／列高／標題字型顏色／篩選／凍結與物件不變。既有CSV／js/skills2.js／burst-zero-infection.json合併完整保留，CSV重匯出後逐格相同；config_tables --apply Skills2回報兩個字面值語意變更0。index／bridge／sim.worker補Skills2快取與Worker入口，Editor共用Runtime快取1.0.242→1.0.244對齊主頁；LV及本紀錄同步，不改玩法公式或放寬測試。
+- 測試指令：node --test --test-reporter=spec 執行skills2-vfx-usage、skills2-vfx-schema、skills2-enemy-columns、worker-protocol、worker-shim、vfx-editor-cache-versions、vfx-editor-guard共54/54通過；skill2-system以name-pattern「附近」／血刃斬傳染範圍選兩項2/2通過。npm.cmd run build：583檔通過，git diff HEAD --check通過。skills2-geometry另7項通過、1項連鎖速度斷言失敗；skill2-system毒霧count與死亡屍爆舊期望共2項失敗。三項均在乾淨ai/claude ec420d05相同指令重現，屬既有問題，未修改其斷言；未跑全庫／瀏覽器長戰。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、三方提交與工作簿／CSV／JS、Excel原生工具及配置匯出器、相關回歸、素材庫及3D試作。共享素材庫有其他進行中SVG／新素材，完整保留，不順帶提交；本輪未製作或修改素材來源，Preset僅保留已提交incoming內容。無素材庫新Commit。
+- 交付：本段所在「[Codex] merge: 保留技能平衡與搜敵範圍並解除Excel合併阻塞」納入原兩個父提交，編號見回覆。一般分支以既有安全流程續同步，3D hold維持、不動main；最後結果見codex/logs/sync-ai-worktrees/latest.md及回覆。已知限制為上述既有測試債，以及先前Excel自動化登入錯誤本環境未重現，未宣稱從根本修復所有登入工作階段的Excel啟動問題。下一步整合後重載遊戲；若Editor仍持有舊未存內容，先下載備份再重載，不用舊分頁覆寫新版。

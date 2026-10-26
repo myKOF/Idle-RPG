@@ -204,7 +204,7 @@
       "tint": "#4caf2b",
       "blendMode": "add",
       "emission": {
-        "count": 5,
+        "count": 3,
         "mode": "burst"
       },
       "lifetime": [
