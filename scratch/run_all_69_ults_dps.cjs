@@ -146,6 +146,7 @@ function runSimulation(target, scenarioType, totalDuration = 150.0, warmupDurati
   const gid = target.gid;
   const optIdx = target.ultIndex;
 
+  ctx.GM_TEST = { skillUnlock: true };
   ctx.G = ctx.newGameState();
   ctx.G.player.level = 100;
   ctx.G.player.reincarnations = 1;

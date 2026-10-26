@@ -117,6 +117,7 @@ for (const [gid, list] of Object.entries(groups)) {
     }
   });
 
+
   lines.push('');
   lines.push('---');
   lines.push('');
@@ -129,13 +130,14 @@ lines.push('');
 const topMob = [...results].sort((a, b) => b.normalMob.avgDps - a.normalMob.avgDps).slice(0, 10);
 lines.push('### 3.1 🌾 普通小怪群戰 DPS 天梯榜 (AOE / 清怪割草王者)');
 lines.push('');
-lines.push('| 排名 | 技能群組 | 超神技能 | 專屬傳奇效果 | 小怪 DPS | 小怪採樣總傷害 | 機制分析 |');
+lines.push('| 排名 | 技能群組 | 超神技能 | 專屬傳奇效果 | 小怪 DPS | 小怪採樣總傷害 | 超神技能效果摘要 |');
 lines.push('| :---: | :--- | :--- | :--- | :---: | :---: | :--- |');
 topMob.forEach((r, idx) => {
   const t = r.target;
   const m = r.normalMob;
   const affs = t.affixes.map(a => a.name).join('、');
-  lines.push(`| **#${idx + 1}** | **${t.groupName}** | **${t.ultName}** | ${affs} | **${fmtDps(m.avgDps)}** | ${fmtDmg(m.totalDamage)} | 橫掃全場雷電矩陣，覆蓋率極高 |`);
+  const desc = t.ultDesc.replace(/[\r\n]+/g, ' ').slice(0, 35) + '...';
+  lines.push(`| **#${idx + 1}** | **${t.groupName}** | **${t.ultName}** | ${affs} | **${fmtDps(m.avgDps)}** | ${fmtDmg(m.totalDamage)} | ${desc} |`);
 });
 lines.push('');
 
@@ -143,13 +145,14 @@ lines.push('');
 const topElite = [...results].sort((a, b) => b.elite.avgDps - a.elite.avgDps).slice(0, 10);
 lines.push('### 3.2 🛡️ 菁英怪攻堅 DPS 天梯榜 (多目標攻堅王者)');
 lines.push('');
-lines.push('| 排名 | 技能群組 | 超神技能 | 專屬傳奇效果 | 菁英怪 DPS | 菁英採樣總傷害 | 機制分析 |');
+lines.push('| 排名 | 技能群組 | 超神技能 | 專屬傳奇效果 | 菁英怪 DPS | 菁英採樣總傷害 | 超神技能效果摘要 |');
 lines.push('| :---: | :--- | :--- | :--- | :---: | :---: | :--- |');
 topElite.forEach((r, idx) => {
   const t = r.target;
   const e = r.elite;
   const affs = t.affixes.map(a => a.name).join('、');
-  lines.push(`| **#${idx + 1}** | **${t.groupName}** | **${t.ultName}** | ${affs} | **${fmtDps(e.avgDps)}** | ${fmtDmg(e.totalDamage)} | 密集高頻斬擊 + 雙手補償與灼焰疊層 |`);
+  const desc = t.ultDesc.replace(/[\r\n]+/g, ' ').slice(0, 35) + '...';
+  lines.push(`| **#${idx + 1}** | **${t.groupName}** | **${t.ultName}** | ${affs} | **${fmtDps(e.avgDps)}** | ${fmtDmg(e.totalDamage)} | ${desc} |`);
 });
 lines.push('');
 
@@ -157,13 +160,14 @@ lines.push('');
 const topBoss = [...results].sort((a, b) => b.boss.avgDps - a.boss.avgDps).slice(0, 10);
 lines.push('### 3.3 👑 單體 BOSS 戰 DPS 天梯榜 (單體極限爆發王者)');
 lines.push('');
-lines.push('| 排名 | 技能群組 | 超神技能 | 專屬傳奇效果 | BOSS DPS | BOSS 採樣總傷害 | 機制分析 |');
+lines.push('| 排名 | 技能群組 | 超神技能 | 專屬傳奇效果 | BOSS DPS | BOSS 採樣總傷害 | 超神技能效果摘要 |');
 lines.push('| :---: | :--- | :--- | :--- | :---: | :---: | :--- |');
 topBoss.forEach((r, idx) => {
   const t = r.target;
   const b = r.boss;
   const affs = t.affixes.map(a => a.name).join('、');
-  lines.push(`| **#${idx + 1}** | **${t.groupName}** | **${t.ultName}** | ${affs} | **${fmtDps(b.avgDps)}** | ${fmtDmg(b.totalDamage)} | 極致攻速與頻率，單體持續集中爆發 |`);
+  const desc = t.ultDesc.replace(/[\r\n]+/g, ' ').slice(0, 35) + '...';
+  lines.push(`| **#${idx + 1}** | **${t.groupName}** | **${t.ultName}** | ${affs} | **${fmtDps(b.avgDps)}** | ${fmtDmg(b.totalDamage)} | ${desc} |`);
 });
 lines.push('');
 
