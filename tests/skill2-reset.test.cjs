@@ -9,6 +9,8 @@ function prepared() {
   const c = engine.ctx;
   c.G.player.level = 1000;
   c.G.player.reincarnations = 10;
+  c.G.tower.highest = 150;
+  c.G.player.skillMastery = { level: 480, xp: 0 };
   c.G.player.gold = 1e20;
   c.G.player.skills2 = {
     levels: { frostnova: Array(7).fill(10), thrust: Array(7).fill(10) },

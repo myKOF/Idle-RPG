@@ -234,7 +234,7 @@ function gresDetailHTML(snapshot, headerSnapshot, state, sel) {
         '" data-tt-title="' + esc(GEM_NAMES[g.level] + GEM_TYPES[g.type].name) + '" data-tt-desc="' + esc(STR(1566, gresStatText(g.type, gemStatValue(g.type, g.level)))) + '">' + gemIconHTML(g.type, g.level, 'gi-slot') +
         '<span class="gres-gem-info"><span class="gres-gem-name">' + esc(GEM_NAMES[g.level] + GEM_TYPES[g.type].name) + '</span>' +
         '<span class="gres-gem-stat">' + gresStatText(g.type, gemStatValue(g.type, g.level)) + '</span></span></button>'
-      : '<div class="gres-gem is-empty">' + STR(1567) + '</div>';
+      : '<div class="gres-empty-slot"><div class="gres-gem is-empty">' + STR(1567) + '</div><span class="gres-empty-level">' + esc(STR(1562, '', min)) + '</span></div>';
   }
   h += '</div>';
 
@@ -311,20 +311,22 @@ function initGemResonanceUi() {
   function clearDragImage() {
     if (dragImage) { dragImage.remove(); dragImage = null; }
   }
-  function setDragIcon(source, transfer) {
+  function setDragIcon(source, transfer, level) {
     clearDragImage();
     var icon = source.querySelector('img.gem-ico');
     if (!icon) return;
     var rect = icon.getBoundingClientRect();
-    // 用同尺寸的透明容器拍攝圖片，避免 IMG 原始尺寸或卡片文字進入原生拖曳影像。
+    // 以方形寶石框拍攝拖曳影像，不帶入階級列的文字與庫存。
     dragImage = document.createElement('div');
+    dragImage.className = 'gres-drag-icon';
     dragImage.setAttribute('aria-hidden', 'true');
-    dragImage.style.cssText = 'position:fixed;left:' + rect.left + 'px;top:' + rect.top + 'px;width:' + rect.width + 'px;height:' + rect.height + 'px;padding:0;margin:0;border:0;background:transparent;box-shadow:none;pointer-events:none;z-index:2147483647';
+    var size = Math.max(rect.width, rect.height);
+    dragImage.style.cssText = 'left:' + rect.left + 'px;top:' + rect.top + 'px;width:' + size + 'px;height:' + size + 'px;--c:' + GEM_TIER_COLORS[level];
     var image = icon.cloneNode(false);
     image.style.cssText = 'display:block;width:100%;height:100%;margin:0;border:0;background:transparent;box-shadow:none;object-fit:contain';
     dragImage.appendChild(image);
     document.body.appendChild(dragImage);
-    transfer.setDragImage(dragImage, rect.width / 2, rect.height / 2);
+    transfer.setDragImage(dragImage, size / 2, size / 2);
   }
   function holeAt(e) { return e.target && e.target.closest ? e.target.closest('[data-gres-hole]') : null; }
   function clearDrop() {
@@ -353,7 +355,7 @@ function initGemResonanceUi() {
       UI.gemBrowse.resDrag = gem;
       e.dataTransfer.setData('application/x-idle-rpg-gem', JSON.stringify(gem));
       e.dataTransfer.effectAllowed = 'move';
-      setDragIcon(source, e.dataTransfer);
+      setDragIcon(source, e.dataTransfer, gem.level);
       if (typeof hideTooltip === 'function') hideTooltip();
     });
     focus.addEventListener('dragend', stopDrag);
@@ -393,6 +395,20 @@ function initGemResonanceUi() {
       stopDrag();
     });
   }
+  // 原生拖曳未 preventDefault 的區域會顯示禁止符號。
+  // 頁面內只接受本次共鳴拖曳的指標移動；真正鑲入仍由孔位 drop 重新驗證。
+  function acceptDragMove(e) {
+    if (!UI.gemBrowse.resDrag || UI.gemBrowse.tool !== 'resonance') return;
+    e.preventDefault();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+  }
+  document.addEventListener('dragenter', acceptDragMove);
+  document.addEventListener('dragover', acceptDragMove);
+  document.addEventListener('drop', function (e) {
+    if (!UI.gemBrowse.resDrag) return;
+    e.preventDefault();
+    stopDrag();
+  });
   if (detail) {
     detail.addEventListener('focusin', function (e) {
       var tip = e.target && e.target.closest ? e.target.closest('[data-gres-upgrade-tip]') : null;

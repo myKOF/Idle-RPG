@@ -31,7 +31,7 @@ function loadContext() {
   vm.createContext(context);
   ['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js', 'js/combat.js', 'js/skills.js', 'js/skills2.js']
     .forEach((file) => vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file }));
-  context.G = { player: { gold: 0, skills2: { levels: {} }, loadout: [] }, stage: { current: 1 } };
+  context.G = { player: { skillMastery: { level: 480, xp: 0 }, gold: 0, skills2: { levels: {} }, loadout: [] }, stage: { current: 1 } };
   // 測試用固定屬性（getStats 為全域函式，直接覆蓋）
   context.getStats = () => ({
     atk: 1000, matk: 0, hp: 1000, mp: 100, level: 10, aspd: 2, cdr: 0,

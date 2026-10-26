@@ -73,6 +73,9 @@ test('地圖僅綁定一次；hover顯示權威進度，點選才顯示前進且
   const t = setup(); t.c.WorldMapUI.init();
   assert.equal(t.document.querySelectorAll('[data-world-zone]').length, 10);
   t.c.WorldMapUI.open();
+  assert.equal(t.ids['world-map-level-desert'].textContent, '(15/100)');
+  assert.equal(t.ids['world-map-level-Icefield'].textContent, '(12/150)');
+  assert.equal(t.ids['world-map-level-Icefield'].hidden, false);
   t.button('Icefield').dispatch('pointerenter');
   assert.equal(t.ids['world-map-scene-name'].textContent, '冰原');
   assert.equal(t.ids['world-map-progress'].textContent, '推進關卡　20 / 150');
@@ -89,6 +92,11 @@ test('鎖定場景與目前場景可檢視，但不得前進；沒收到Worker�
   const t = setup(); t.c.WorldMapUI.open();
   t.button('swamp').dispatch('click');
   assert.equal(t.ids['world-map-go'].disabled, true);
+  assert.equal(t.ids['world-map-progress'].textContent, '推進關卡　0 / 300');
+  assert.match(t.button('swamp').getAttribute('aria-label'), /推進 0 \/ 300/);
+  assert.equal(t.c.WorldMapUI.zoneState('swamp').current, 0);
+  assert.equal(t.ids['world-map-level-swamp'].hidden, true);
+  assert.equal(t.ids['world-map-level-swamp'].textContent, '');
   assert.match(t.ids['world-map-scene-status'].textContent, /熔岩山第 250 關/);
   t.ids['world-map-go'].dispatch('click'); assert.equal(t.commands.length, 0);
   t.button('desert').dispatch('click');
@@ -98,6 +106,27 @@ test('鎖定場景與目前場景可檢視，但不得前進；沒收到Worker�
   t.button('Icefield').dispatch('click');
   assert.equal(t.ids['world-map-go'].disabled, true);
   assert.match(t.ids['world-map-progress'].textContent, /讀取/);
+  assert.equal(t.ids['world-map-level-Icefield'].hidden, true);
+});
+test('解鎖及關卡快照更新同步名稱狀態與等級；底圖不接收事件後仍可取消選取', () => {
+  const t = setup(); t.c.WorldMapUI.open();
+  const row = t.panels.battle.zones.find(row => row.key === 'swamp');
+  row.unlocked = true; row.current = 24; row.best = 40;
+  t.c.WorldMapUI.refresh();
+  assert.equal(t.button('swamp').classList.contains('is-locked'), false);
+  assert.equal(t.ids['world-map-level-swamp'].hidden, false);
+  assert.equal(t.ids['world-map-level-swamp'].textContent, '(24/300)');
+  t.button('swamp').dispatch('click');
+  assert.equal(t.ids['world-map-progress'].textContent, '推進關卡　40 / 300');
+  row.current = 900; t.c.WorldMapUI.refresh();
+  assert.equal(t.ids['world-map-level-swamp'].textContent, '(300/300)');
+  t.ids['world-map-modal'].dispatch('click', {target:t.ids['world-map-human']});
+  assert.equal(t.ids['world-map-info'].hidden, true);
+  assert.equal(t.ids['world-map-modal'].hidden, false);
+  const god = t.panels.battle.zones.find(row => row.key === 'god_battlefield');
+  god.unlocked = true; god.current = 3;
+  t.c.WorldMapUI.refresh();
+  assert.equal(t.ids['world-map-level-god_battlefield'].textContent, '(3/450)');
 });
 test('點選場景不切換；前進只送一次既有指令，等快照確認成功再關閉並歸還焦點', async () => {
   const t = setup(); t.c.WorldMapUI.open(); t.button('Icefield').dispatch('click');

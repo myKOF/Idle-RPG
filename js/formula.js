@@ -2456,7 +2456,7 @@ function skillCooldownWithMinimum(cooldown) {
 }
 
 // 裝載欄：參數表「技能裝載欄」＝clamp(b + ⌊等級/a⌋, b, c)；1 轉後解鎖全部上限。
-var LOADOUT_SIZE = { perLevels: 50, min: 4, base: 4, max: 6 };
+var LOADOUT_SIZE = { perLevels: 100, min: 2, base: 2, max: 6 };
 /* 純函式版本：不讀 G，讓讀檔遷移（save.js）能對「存檔裡的」等級與轉數算格數。
    loadoutSize() 是它讀取現況 G 的包裝，兩者必須是同一套規則——分成兩份算法遲早會飄。 */
 function loadoutSizeFor(level, reincarnations) {
@@ -2476,11 +2476,11 @@ function loadoutSize() {
 /* ---- 技能熟練度 ----
    打怪／道具獲得技能經驗；初始 0 級、上限 SKILL_MASTERY_MAX_LEVEL。
    經驗需求曲線先沿用玩家升級公式的未轉生版：a × L^b + c。 */
-var SKILL_MASTERY_MAX_LEVEL = 1000;   // 熟練度等級上限
+var SKILL_MASTERY_MAX_LEVEL = 480;   // 熟練度等級上限
 var SKILL_MASTERY_XP_A = 30;          // 熟練度經驗需求 係數 a
 var SKILL_MASTERY_XP_B = 3;           // 熟練度經驗需求 次方 b
 var SKILL_MASTERY_XP_C = 20;          // 熟練度經驗需求 常數 c
-var SKILL_MASTERY_XP_RATE = 90;      // 擊殺獲得技能經驗 =怪物經驗 × 此% （道具/GM 直接給值）
+var SKILL_MASTERY_XP_RATE = 50;      // 擊殺獲得技能經驗 =怪物經驗 × 此% （道具/GM 直接給值）
 function skillMasteryXpForLevel(l) {
   return Math.floor(SKILL_MASTERY_XP_A * Math.pow(l, SKILL_MASTERY_XP_B) + SKILL_MASTERY_XP_C);
 }

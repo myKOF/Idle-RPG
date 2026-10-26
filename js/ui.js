@@ -5158,9 +5158,12 @@ function renderEquipSetTabs(equipSnapshot, headerSnapshot) {
   if (!box) return;
   equipSnapshot = equipSnapshot || uiEquipPanelSnapshot();
   headerSnapshot = headerSnapshot || uiHeaderPanelSnapshot();
-  if (!equipSnapshot || !Array.isArray(equipSnapshot.sets)) { box.innerHTML = ''; return; }
-  var active = equipSnapshot.equipActive || 0;
-  var view = (typeof equipSnapshot.equipView === 'number') ? equipSnapshot.equipView : active;
+  var ready = !!equipSnapshot && Array.isArray(equipSnapshot.sets);
+  var active = ready ? equipSnapshot.equipActive || 0 : 0;
+  var view = ready && typeof equipSnapshot.equipView === 'number' ? equipSnapshot.equipView : active;
+  var pendingNote = $id('equip-set-pending-note');
+  if (pendingNote) pendingNote.hidden = !ready || view === active;
+  if (!ready) { box.innerHTML = ''; return; }
   var playerLevel = headerSnapshot && headerSnapshot.player ? headerSnapshot.player.level : 0;
   var playerReincarnations = headerSnapshot && headerSnapshot.player ? headerSnapshot.player.reincarnations : 0;
   function unlocked(index) {
@@ -8872,6 +8875,12 @@ function renderSkills() {
   // 技能熟練度（2026-07-30）：等級＋經驗條（快照 mastery 由 Worker 投影）
   var mastery = skillsSnapshot.mastery || { level: 0, xp: 0, xpMax: 0, maxLevel: 1000 };
   var masteryLvEl = $id('mastery-level');
+  var pointsEl = $id('skill-points-remaining');
+  if (pointsEl) {
+    var pointView = skillsSnapshot.skills2 && skillsSnapshot.skills2.points || { total: 0, spent: 0, available: 0 };
+    pointsEl.textContent = STR(2132, pointView.available);
+    setAttrIfChanged(pointsEl, 'data-tt-desc', STR(2139, pointView.total, pointView.spent));
+  }
   if (masteryLvEl) {
     // 說明文字移到資訊列的滑鼠提示（index.html .sgb-mastery），這裡只放等級
     masteryLvEl.textContent = 'Lv.' + (mastery.level || 0) + '/' + (mastery.maxLevel || 1000);
@@ -9229,8 +9238,15 @@ function sgStageLockShort(gid, tierIndex, skillsSnapshot) {
   return STR(770, tierIndex);
 }
 
+function sgbAvailablePoints(skillsSnapshot) {
+  return Number(skillsSnapshot && skillsSnapshot.skills2 && skillsSnapshot.skills2.points && skillsSnapshot.skills2.points.available) || 0;
+}
+function sgbUpgradeTip(cost, points) {
+  return esc(STR(2135, fmt(cost), points) + (points < 1 ? '\n' + STR(2134) : ''));
+}
 function sgbTierRowHTML(gid, i, lvs, skillsSnapshot, gold, pendingAttrs, hasUltPick) {
   var g = SKILLS2[gid];
+  var points = sgbAvailablePoints(skillsSnapshot);
   var tier = g.tiers[i];
   var tierMax = sgbTierMax();
   var lv = lvs[i] || 0;
@@ -9250,19 +9266,19 @@ function sgbTierRowHTML(gid, i, lvs, skillsSnapshot, gold, pendingAttrs, hasUltP
       (locked ? '<div class="sgb-lock">' + STR(772, esc(sgStageLockReason(gid, i, skillsSnapshot))) + '</div>' : '') +
       '<div class="sgb-actions">';
     if (!locked && !atCap) {
-      h += '<button class="btn sgb-btn-primary" data-skill2-learn="' + gid + ':' + i + '" data-tip="' + STR(773, fmt(cost)) + '"' + pendingAttrs + (gold < cost ? ' disabled' : '') + '>' + STR(774, (lv === 0 ? STR(775) : STR(166)), fmt(cost)) + '</button>';
-      h += '<button class="btn" data-skill2-max="' + gid + ':' + i + '" data-tip="' + STR(776) + '"' + pendingAttrs + (gold < cost ? ' disabled' : '') + '>' + STR(777) + '</button>';
+      h += '<button class="btn sgb-btn-primary" data-skill2-learn="' + gid + ':' + i + '" data-tip="' + sgbUpgradeTip(cost, points) + '"' + pendingAttrs + (gold < cost || points < 1 ? ' disabled' : '') + '>' + STR(774, (lv === 0 ? STR(775) : STR(166)), fmt(cost)) + '</button>';
+      h += '<button class="btn" data-skill2-max="' + gid + ':' + i + '" data-tip="' + esc(STR(2136, points)) + '"' + pendingAttrs + (gold < cost || points < 1 ? ' disabled' : '') + '>' + STR(777) + '</button>';
     } else if (atCap) {
       h += STR(778);
     }
     // 第 1 階預設開啟（恆為至少 Lv.1），所以降到 1 為止
     var canDowngrade = (i === 0) ? (lv > 1) : (lv > 0);
     if (canDowngrade) {
-      h += '<button class="btn sgb-btn-quiet" data-skill2-downgrade="' + gid + ':' + i + '" data-tip="' + STR(779) + '"' + pendingAttrs + '>' + STR(165) + '</button>';
+      h += '<button class="btn sgb-btn-quiet" data-skill2-downgrade="' + gid + ':' + i + '" data-tip="' + STR(2140) + '"' + pendingAttrs + '>' + STR(165) + '</button>';
     }
     // 已在第 1 階保底時，仍可重置以清除舊存檔殘留的超神投資。
     if (canDowngrade || (i === 0 && hasUltPick)) {
-      h += '<button class="btn sgb-btn-quiet sgb-btn-danger" data-skill2-delete="' + gid + ':' + i + '" data-tip="' + STR(780) + '"' + pendingAttrs + '>' + STR(781) + '</button>';
+      h += '<button class="btn sgb-btn-quiet sgb-btn-danger" data-skill2-delete="' + gid + ':' + i + '" data-tip="' + STR(2141) + '"' + pendingAttrs + '>' + STR(781) + '</button>';
     }
     h += '</div></div>';
   }
@@ -9271,6 +9287,7 @@ function sgbTierRowHTML(gid, i, lvs, skillsSnapshot, gold, pendingAttrs, hasUltP
 
 function sgbUltHTML(gid, lvs, skillsSnapshot, gold, pendingAttrs) {
   var g = SKILLS2[gid];
+  var points = sgbAvailablePoints(skillsSnapshot);
   var list = sgUltDefs(gid) || [];
   var pick = sgUiUltPick(skillsSnapshot, gid);
   var baseUnlocked = sgUltUnlockedBy(gid, lvs);
@@ -9316,20 +9333,22 @@ function sgbUltHTML(gid, lvs, skillsSnapshot, gold, pendingAttrs) {
     h += STR(791, esc(sgUnlockText(list[f].unlock)));
   } else if (!pick) {
     var pickCost = (typeof skills2UltCost === 'function') ? skills2UltCost(gid, f, 0) : 0;
-    h += '<button class="btn sgb-btn-primary" data-skill2-ultpick="' + gid + ':' + f + '"' + pendingAttrs + (gold < pickCost ? ' disabled' : '') + ' data-tip="' + STR(792) + '">' + STR(793, esc(list[f].name), fmt(pickCost)) + '</button>';
+    h += '<button class="btn sgb-btn-primary" data-skill2-ultpick="' + gid + ':' + f + '"' + pendingAttrs + (gold < pickCost || points < 1 ? ' disabled' : '') + ' data-tip="' + esc(STR(2137, fmt(pickCost), points)) + '">' + STR(793, esc(list[f].name), fmt(pickCost)) + '</button>';
   } else if (fChosen) {
     if (pick.lv < tierMax) {
       var upCost = (typeof skills2UltCost === 'function') ? skills2UltCost(gid, pick.idx, pick.lv) : 0;
-      h += '<button class="btn sgb-btn-primary" data-skill2-learn="' + gid + ':' + SG_ULT_SLOT + '" data-tip="' + STR(773, fmt(upCost)) + '"' + pendingAttrs + (gold < upCost ? ' disabled' : '') + '>' + STR(794, fmt(upCost)) + '</button>';
-      h += '<button class="btn" data-skill2-max="' + gid + ':' + SG_ULT_SLOT + '" data-tip="' + STR(795) + '"' + pendingAttrs + (gold < upCost ? ' disabled' : '') + '>' + STR(777) + '</button>';
+      h += '<button class="btn sgb-btn-primary" data-skill2-learn="' + gid + ':' + SG_ULT_SLOT + '" data-tip="' + sgbUpgradeTip(upCost, points) + '"' + pendingAttrs + (gold < upCost || points < 1 ? ' disabled' : '') + '>' + STR(794, fmt(upCost)) + '</button>';
+      h += '<button class="btn" data-skill2-max="' + gid + ':' + SG_ULT_SLOT + '" data-tip="' + esc(STR(2136, points)) + '"' + pendingAttrs + (gold < upCost || points < 1 ? ' disabled' : '') + '>' + STR(777) + '</button>';
     } else {
       h += STR(778);
     }
-    h += '<button class="btn sgb-btn-quiet" data-skill2-downgrade="' + gid + ':' + SG_ULT_SLOT + '" data-tip="' + STR(796) + '"' + pendingAttrs + '>' + STR(165) + '</button>';
-    h += '<button class="btn sgb-btn-quiet sgb-btn-danger" data-skill2-delete="' + gid + ':' + SG_ULT_SLOT + '" data-tip="' + STR(797) + '"' + pendingAttrs + '>' + STR(798) + '</button>';
+    h += '<button class="btn sgb-btn-quiet" data-skill2-downgrade="' + gid + ':' + SG_ULT_SLOT + '" data-tip="' + STR(2140) + '"' + pendingAttrs + '>' + STR(165) + '</button>';
+    h += '<button class="btn sgb-btn-quiet sgb-btn-danger" data-skill2-delete="' + gid + ':' + SG_ULT_SLOT + '" data-tip="' + STR(2142) + '"' + pendingAttrs + '>' + STR(798) + '</button>';
   } else {
     var switchCost = skills2UltCost(gid, f, 0);
-    h += '<button class="btn sgb-btn-primary" data-skill2-ultswitch="' + gid + ':' + f + '"' + pendingAttrs + (gold < switchCost ? ' disabled' : '') + ' data-tip="' + STR(799, switchCost.toLocaleString('en-US')) + '">' + STR(800, fmt(switchCost)) + '</button>';
+    var pointView = skillsSnapshot.skills2 && skillsSnapshot.skills2.points;
+    var canSwitchPoints = pointView && pointView.total - pointView.spent + pick.lv >= 1;
+    h += '<button class="btn sgb-btn-primary" data-skill2-ultswitch="' + gid + ':' + f + '"' + pendingAttrs + (gold < switchCost || !canSwitchPoints ? ' disabled' : '') + ' data-tip="' + esc(STR(2138, switchCost.toLocaleString('en-US'), pick.lv)) + '">' + STR(800, fmt(switchCost)) + '</button>';
   }
   return h + '</div>' + skillTowerUnlockHintHTML(list[f], skillsSnapshot) + '</div></div>';
 }

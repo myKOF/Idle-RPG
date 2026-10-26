@@ -37,7 +37,7 @@ function loadContext(extraFiles) {
   ['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js', 'js/combat.js',
     'js/skills.js', 'js/skills2.js'].concat(extraFiles || [])
     .forEach((file) => vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file }));
-  context.G = { player: { gold: 0, skills2: { levels: {}, ult: {} }, loadout: [] }, stage: { current: 1 } };
+  context.G = { player: { skillMastery: { level: 480, xp: 0 }, gold: 0, skills2: { levels: {}, ult: {} }, loadout: [] }, stage: { current: 1 } };
   context.getStats = () => ({
     atk: 1000, matk: 500, hp: 1000, mp: 200, level: 10, aspd: 2, cdr: 0,
     critRate: 0, critDmg: 150, hit: 100, tenacity: 0, shieldEff: 0,

@@ -11,7 +11,7 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-importScripts('protocol.js?v=20261021-missile-salvo', '../game-clock.js?v=1.0.1', 'shim.js?v=20261018-potential-remove');
+importScripts('protocol.js?v=20261027-skill-points', '../game-clock.js?v=1.0.1', 'shim.js?v=20261018-potential-remove');
 // 離線結算等分批工作亦共用暫停時鐘；訊息與loop仍能回應存檔及PING。
 if (typeof GameClock !== 'undefined') {
   globalThis.setTimeout = GameClock.setTimeout;
@@ -20,9 +20,9 @@ if (typeof GameClock !== 'undefined') {
 /* String 表：資料檔版本由主執行緒（bridge.js）以網址 sv= 傳入，改文字不必動本檔。 */
 var _stringDataVersion = ((typeof self !== 'undefined' && self.location && /[?&]sv=(\w+)/.exec(self.location.search || '')) || [])[1] || '0';
 importScripts(
-  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../data.js?v=20261026-system-unlock', '../runeword_data.js?v=20261023-str-char', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261023-str-skill', '../formula.js?v=20261023-str-common', '../battle-terrain.js?v=20261022-lava-terrain-develop-merge', '../battlefield.js?v=20261022-lava-terrain-develop-merge', '../stats.js?v=20261023-str-common',
+  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../data.js?v=20261027-develop-merge', '../runeword_data.js?v=20261023-str-char', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261023-str-skill', '../formula.js?v=20261027-develop-merge', '../battle-terrain.js?v=20261022-lava-terrain-develop-merge', '../battlefield.js?v=20261022-lava-terrain-develop-merge', '../stats.js?v=20261023-str-common',
   '../item.js?v=20261023-str-common', '../gem_resonance.js?v=20261026-system-unlock','../runeword.js?v=20261023-str-common',
-  '../skills.js?v=20261023-str-skill', '../skills2.js?v=20261026-skills2-merge', '../elite_data.js?v=20261021-chain-hover', '../talents.js?v=20261026-system-unlock',
+  '../skills.js?v=20261023-str-skill', '../skills2.js?v=20261027-develop-merge', '../elite_data.js?v=20261021-chain-hover', '../talents.js?v=20261026-system-unlock',
   '../player.js?v=20261023-str-common', '../special_rules.js?v=20261023-str-common',
   '../combat.js?v=20261025-frenzy-threshold', '../elite.js?v=20261024-npc-skill-limit-sync', '../elite_boss.js?v=20261023-str-battle', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261023-str-equip', '../tower.js?v=20261023-str-common',
   '../factory.js?v=20261023-str-common', '../newforge.js?v=20261023-str-common', '../forge.js?v=20261023-str-common', '../save.js?v=20261023-str-common',
@@ -1029,7 +1029,7 @@ function buildPanel(name, params) {
         shop: (typeof gemShop === 'function') ? gemShop() : p.gemShop
       };
     case 'skills':
-      // mastery 供熟練度條；技能升級使用金幣。
+      // mastery 供熟練度條；skills2.points 為權威投資餘額。
       return {
         loadout: p.loadout,
         loadoutSize: (typeof loadoutSize === 'function') ? loadoutSize() : 0,
@@ -1585,7 +1585,7 @@ var COMMAND_IMPL = {
     var g = (typeof SKILLS2 !== 'undefined') ? SKILLS2[a.group] : null;
     if (!g) return { err: STR(675) };
     var tier = Math.floor(Number(a.tier));
-    /* 超神進化那一格：一鍵滿級＝反覆呼叫 skills2UltLearn（金幣不足就停），
+    /* 超神進化那一格：一鍵滿級＝反覆呼叫 skills2UltLearn（技能點或金幣不足就停），
        解鎖條件與「必須先選一個」的判定都在那一支裡，這裡不再複製一份規則。 */
     if (typeof sgIsUltSlot === 'function' && sgIsUltSlot(a.group, tier)) {
       var ultErr = null, ultUp = 0;
@@ -1600,8 +1600,7 @@ var COMMAND_IMPL = {
     if (!(tier >= 0 && tier < g.tiers.length)) return { err: STR(92) };
     var lvs = (typeof skills2Levels === 'function') ? skills2Levels(a.group) : (G.player.skills2 && G.player.skills2.levels && G.player.skills2.levels[a.group]);
     if (!lvs) lvs = [];
-    /* 一鍵滿級不經過 skills2Learn，解鎖門檻要在這裡自己擋一次——
-       少了它，未達「解鎖轉生/等級」的階可以用這條指令直接升到滿級。 */
+    /* 批次與單級共用 skills2Learn，點數、金幣與門檻不另建第二套規則。 */
     if (typeof sgTierUnlockedBy === 'function' && typeof sgUnlockProgress === 'function') {
       var maxPrg = sgUnlockProgress(null);
       if (maxPrg && !sgTierUnlockedBy(g.tiers[tier].unlock, maxPrg.level, maxPrg.reinc, maxPrg.towerHighest)) {
@@ -1611,23 +1610,14 @@ var COMMAND_IMPL = {
     if (tier > 0 && (lvs[tier - 1] || 0) < 1) return { err: STR(93) };
     var tierMax = (typeof SG_TIER_MAX_LV === 'number') ? SG_TIER_MAX_LV : 10;
     var upgraded = 0;
+    var upgradeErr = null;
     while ((lvs[tier] || 0) < tierMax) {
-      var curLv = lvs[tier] || 0;
-      var cost = (typeof skills2UpgradeCost === 'function') ? skills2UpgradeCost(a.group, tier, curLv) : 0;
-      if ((G.player.gold || 0) < cost) break;
-      G.player.gold -= cost;
-      lvs[tier] = curLv + 1;
+      upgradeErr = skills2Learn(a.group, tier);
+      if (upgradeErr) break;
+      lvs = skills2Levels(a.group);
       upgraded++;
     }
-    if (upgraded > 0) {
-      if (!G.player.skills2) G.player.skills2 = { levels: {} };
-      if (!G.player.skills2.levels) G.player.skills2.levels = {};
-      G.player.skills2.levels[a.group] = lvs;
-      /* 超神進化的異動會開關【修羅亂舞】，進而改變屬性聚合；
-         收尾一律走 js/skills2.js 的 sgAfterSkillChange，與面板端的三支指令保持一致。 */
-      if (typeof sgAfterSkillChange === 'function') sgAfterSkillChange();
-      else { UI.dirty.skills = true; UI.dirty.header = true; }
-    }
+    if (!upgraded && upgradeErr) return { err: upgradeErr };
     return true;
   },
 
@@ -1647,6 +1637,7 @@ var COMMAND_IMPL = {
     if (!(tier >= 0 && tier < g.tiers.length)) return { err: STR(92) };
     var lvs = (typeof skills2Levels === 'function') ? skills2Levels(a.group) : (G.player.skills2 && G.player.skills2.levels && G.player.skills2.levels[a.group]);
     if (!lvs) return true;
+    lvs = skills2StoredLevels(a.group);
     var minLv = (tier === 0 ? 1 : 0);
     for (var i = tier + 1; i < lvs.length; i++) {
       lvs[i] = 0;

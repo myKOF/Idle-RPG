@@ -30,10 +30,11 @@ var WorldMapUI = (function () {
     var active = currentZone() === key;
     var stage = active && header.stage ? header.stage : row;
     var max = Math.max(1, Number(row && row.maxStage) || Number(def.maxStage) || 1);
+    var unlocked = !!(row && row.unlocked);
     return { key: key, name: def.name, active: active, ready: !!row,
-      unlocked: !!(row && row.unlocked), max: max,
-      best: Math.min(max, Math.max(0, Number(stage && stage.best) || 0)),
-      current: Math.min(max, Math.max(0, Number(stage && stage.current) || 0)) };
+      unlocked: unlocked, max: max,
+      best: unlocked ? Math.min(max, Math.max(0, Number(stage && stage.best) || 0)) : 0,
+      current: unlocked ? Math.min(max, Math.max(0, Number(stage && stage.current) || 0)) : 0 };
   }
   function lockReason(key) {
     var def = ZONES[key];
@@ -119,8 +120,13 @@ var WorldMapUI = (function () {
       node.classList.toggle('is-current', info.active);
       node.classList.toggle('is-locked', !info.unlocked);
       node.classList.toggle('is-selected', state.selected === key);
+      var progress = el('world-map-level-' + key);
+      if (progress) {
+        progress.hidden = !info.unlocked;
+        progress.textContent = info.unlocked ? STR(2144, info.current, info.max) : '';
+      }
       node.setAttribute('aria-pressed', state.selected === key ? 'true' : 'false');
-      node.setAttribute('aria-label', info.name + (info.active ? STR(2113) : '') +
+      node.setAttribute('aria-label', info.name + (info.unlocked ? STR(2144, info.current, info.max) : '') + (info.active ? STR(2113) : '') +
         (info.ready ? STR(2114, info.best, info.max) : STR(2115)) +
         (info.ready && !info.unlocked ? STR(2116) : ''));
     });
@@ -190,7 +196,7 @@ var WorldMapUI = (function () {
       if (locations[key]) {
         node.className = 'world-map-hotspot';
         place(node, locations[key]);
-        // 原名稱烘焙於母圖；僅在放大時以同位置的無字地貌覆片遮去，避免疊字。
+        // 原名稱烘焙於母圖；常駐無字地貌覆片，讓名稱能反映解鎖狀態。
         // 覆片母圖1672px寬，裁切寬度=字數*22+24、高42px；cqw沿母圖容器等比縮放。
         var coverWidth = (ZONES[key].name.length * 22 + 24) / 1672 * 100;
         node.innerHTML = '<img class="world-map-label-cover" src="images/world-map/label-cover-' + key.toLowerCase() + '.png?v=1" alt="" aria-hidden="true" style="width:' + coverWidth + 'cqw;height:2.51196cqw">' +
@@ -198,9 +204,15 @@ var WorldMapUI = (function () {
         el('world-map-hotspots').appendChild(node);
       } else {
         node.className = 'world-map-god-scene';
-        node.innerHTML = zoneIconHtml(key, ZONES[key]) + ' ' + esc(ZONES[key].name);
+        node.innerHTML = zoneIconHtml(key, ZONES[key]) + ' <span class="world-map-hover-name" aria-hidden="true">' + esc(ZONES[key].name) + '</span>';
         el('world-map-god-zones').appendChild(node);
       }
+      var progress = document.createElement('span');
+      progress.setAttribute('id', 'world-map-level-' + key);
+      progress.className = 'world-map-level';
+      progress.hidden = true;
+      progress.setAttribute('aria-hidden', 'true');
+      node.appendChild(progress);
       node.addEventListener('pointerenter', function () {
         if (state.selected) return;
         state.hovered = key; state.signature = ''; refresh();
@@ -226,7 +238,7 @@ var WorldMapUI = (function () {
     el('world-map-realm-god').addEventListener('click', function () { setRealm('god'); });
     el('world-map-modal').addEventListener('click', function (event) {
       if (event.target === this) close();
-      else if (event.target === el('world-map-image')) {
+      else if (event.target === el('world-map-image') || event.target === el('world-map-human')) {
         state.selected = null; state.hovered = null; state.signature = ''; refresh();
       }
     });

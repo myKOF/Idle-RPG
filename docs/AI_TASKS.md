@@ -1,5 +1,100 @@
 # AI_TASKS.md
 
+## MERGE-DEVELOP-20261027 — 使用者快捷指令接手整合
+
+- Owner：Codex；Done（本次衝突及相關驗證完成，既有失敗另列）。使用者本聊天輸入1，授權完成本次develop衝突、必要驗證、合併提交與既有一般AI同步；取代下段先前自動控制器環境禁止stage／commit的執行限制。原HEAD 4ab31d72、incoming fd877be3、base 06aebdea；原始工作檔、三階段內容及refs已保存在本聊天merge-develop-20261027目錄。
+- 範圍：既有八個衝突、兩本Excel的原生合併／重開與衍生資料、必要字串引用／快取／回歸及LV／本段；保留所有incoming暫存與任務紀錄。禁止丟棄來源、改寫歷史、合併隔離3D、提交素材庫其他進行中內容或發布main。
+- 設計：保留system_unlock遷移與game_parameters移除舊神鑄門檻，逐格納入另一側五個技能欄／最高轉生／熟練度參數。String原2130衝突為兩個獨立新增用途，保留共鳴2130／2131及技能點2132～2142、裝備提醒2143，將地圖格式改編2144並同步兩處引用；不刪字串或翻譯。Excel16.0目前可正常啟動，以候選副本先更新及驗證，確認來源未變才替換工作檔。
+- Excel結果：String以incoming候選透過原生API在寶石模塊1627後插兩列、保留兩個共鳴提示，原地圖列改2144，僅寫10格；兩次正常重開逐值驗證2132列7欄。game_parameters以ours候選原生寫入五格、保留刪除舊13列與system_unlock遷移，正常重開340列18欄；未編輯其他既有數值。另以獨立Excel程序正常讀回Saved=True／非RepairMode；所有原列高度、欄寬／標題字型顏色、篩選範圍擴展、凍結／條件格式／物件保持，參數第二張說明頁的數值／公式／格式完全相同。原檔SHA確認未變後才替換衝突檔，沒有手改XML。
+- 完成：八衝突逐段保留雙方，CSV由實際Excel重新匯出、strings_data重產491f2136，地圖兩處引用改2144；data保留system_unlock轉生註釋及最高10轉，Worker保留system_unlock的data／gem_resonance／talents引用與技能點版本。主頁data105／skills2 361／ui217／world-map4／bridge366，Worker入口及data／formula／skills2引用統一20261027-develop-merge，Protocol60與雙方新增投影保留；LV同步。其他incoming自動合併檔、DPS工具／報告／原始JSON、技能點／裝備提醒／地圖／共鳴拖曳及各方任務紀錄保留，不順帶改其玩法。
+- 驗證指令：node tools/apply_params.cjs：581個參數全部一致、將變更0／錨點問題0；node tools/string-table/apply_strings.cjs --check：2131條同步；node tools/string-table/build_string_csv.cjs --check：仍寫死0條。node --test --test-reporter=spec執行skill2-points、reset、ult-switch、tower-unlock、skill-mastery、string-table、worker-protocol、worker-shim、world-map、world-map-ui、equip-set-preview-stats、gem-resonance-ui、gem-resonance、unlock-thresholds、skill-unlock-toggle、vfx-editor-cache-versions、vfx-editor-guard、ult-dps-benchmark共164項，162過／2既有失敗，0略過／取消。
+- 既有失敗：unlock-thresholds仍預期神鑄Lv.1／1轉及寶石融合Lv.1／3轉，但現行system_unlock表已有其他門檻。乾淨ai/claude 98b05338以同一檔重跑3項1過2失敗、完全重現；保留表內與JS相符的使用者現值，不調整權威配置或放寬斷言。npm.cmd run build：587檔通過；git diff HEAD --check通過。未跑全庫／真瀏覽器或玩家存檔長戰，不宣稱完整測試全綠。
+- 唯讀未改：規範／AGENTS／Workflow／prompts、原父提交及全部來源、Excel更新／匯出器、apply_params及字串產生器、Skills2／system_unlock來源、相關測試、素材庫與隔離3D。沒有新增或修改素材，本輪無素材庫Commit；共享素材庫的岩牆SVG與未提交素材繼續保留，不納入同步。3D hold不釋放、main不動。
+- 交付：本段所在「[Codex] merge: 保留解鎖與技能點修改並整合參數及字串衝突」，保留4ab31d72及fd877be3兩個父提交；實際編號與一般AI同步結果見回覆／codex/logs/sync-ai-worktrees/latest.md。下一步正常重載遊戲驗收技能點、共鳴與地圖；本次Excel在目前登入環境正常，未宣稱修復自動控制器不同登入工作階段的COM啟動問題。所有本輪合併項目已完成，可整合；既有測試債與尚未核准3D試作仍獨立保留。
+
+## MERGE-DEVELOP-FD877BE3-20261027 — 本次整合受 Excel 執行環境阻塞
+
+- Owner：Codex；Blocked。使用者明確授權僅整合 HEAD 4ab31d7254e159d3634bb34d82a59b1750a34cb1 與 MERGE_HEAD fd877be3c0cb631b483732b81660414a0dfa8837；base 06aebdea62c0abf22869010dc1ca4cbca17efcd5。範圍為既有八個衝突、必要生成資料／快取／回歸與本紀錄；禁止 stage／commit／Git metadata／同步／其他副本修改／委派。後續由控制器接手。
+- 已唯讀檢查規範、Workflow、Agent提示、任務目前紀錄、status與base／ours／theirs參數差異、combined diff、Excel更新／匯出工具及地圖String引用。衝突預檢執行，列出已授權incoming來源；其他worktree遭dubious ownership，未新增信任或變更全域設定。
+- 合併分析：game_parameters列11由incoming調整技能欄50/4→100/2；列12 ours移轉生門檻至system_unlock、incoming最高轉生20→10，應逐欄保留；列13 ours刪除舊神鑄門檻、列15 incoming熟練度1000/90→480/50。String 2130共鳴提示與地圖格式撞號，需要Excel分配新編號並同步地圖引用，保留2131與2132～2143。上述僅分析，尚未修改任何衝突檔／資料／快取，未聲稱已完成整合。
+- 阻塞驗證：PowerShell `New-Object -ComObject Excel.Application` 失敗，HRESULT 0x80070520（A specified logon session does not exist. It may already have been terminated.）。無法使用原生Excel合併並驗證正常開啟、格式保留及無修復模式；依使用者要求留merge intact並回報blocked，未退回手工XML或覆蓋任一側。
+- 檢查：`git status --short`、`git rev-parse HEAD MERGE_HEAD`、`git merge-base HEAD MERGE_HEAD`及base雙側參數diff已執行；Node v24.18.1可用。未執行Build／回歸／生成資料，因工作檔仍有原始衝突，不能作為完成結果驗收。完整`git diff HEAD --check`另執行，預期仍回報原始conflict markers；未改斷言。
+- 修改僅本任務紀錄；所有原始incoming暫存、控制器EOF機械修正及八個衝突原樣保留；無臨時檔、素材庫變動、stage或commit。不可以合併；下一步在可啟動Excel的執行環境繼續本次merge，完成Excel合併／正常重開、來源重產、主端／Worker／必要editor快取同步、回歸與Build及完整HEAD whitespace檢查，再由控制器stage／commit。
+
+## EQUIP-SET-PENDING-NOTE-20261027 — 裝備詳情標題提示尚未套用
+
+- Owner：Codex；Done，單一開發者。使用者要求查看其它裝備套、尚未套用時，在裝備詳情標題右側顯示紅色(尚未套用)。
+- 前置：既有equip快照的equipView／equipActive與renderEquipSetTabs。允許js/ui.js僅該渲染函式、index.html標題與必要UI／String快取、String.xlsx／CSV／strings_data.js、LV_upgrade_system.md及本段；禁止玩法／存檔／Worker／技能點／配置及其他聊天修改，不合併推送。
+- 使用者已明確允許分段整合，保留兩邊修改並統一快取版本。保留同副本SKILL-POINTS未提交內容；Excel先讀現有來源最大編號2142，本次新增2143，原生工具採來源hash保護，不覆寫其它新字串；Claude64383f13既有2130／2131重號仍待正常整合，不在本次重編。
+- 驗收：查看非使用中裝備套顯示紅色括號、套用權威快照成功／切回使用中／無快照時隱藏，無須選中物品也有提醒；String／裝備相關回歸、Excel原生重開／格式、Build／畫面及diff後提交，後續使用者Review／整合。
+- 完成七檔：js/ui.js僅renderEquipSetTabs，依同一equip快照的view／active切換提醒；index新增標題右側紅色#f87171／14px／status文字及UI1.0.216、String33e362c4快取；String.xlsx／CSV／strings_data.js登記2143「(尚未套用)」；LV及本段同步。提醒不依賴物品選取或詳情內容，套用請求未得到成功快照前仍保留；不動Worker、套用流程、裝備公式、解鎖與存檔。
+- Excel：先備份並以原生API唯讀取得現況，來源SHA核對未變後在裝備模塊1240後插入2143一列，僅四個非空格；既有工具兩次正常重開核對完整2130列7欄與0個物件，再由xlsx_to_csv／apply_strings匯出，沒有手工改XML。另唯讀逐格對比插列前後的原有儲存格樣式、原列高及欄寬完全相同，前後局部渲染已檢視；原11條技能點新字串完整保留。
+- 驗證：node --test --test-reporter=spec tests/equip-set-preview-stats.test.cjs tests/equipment-selection-memory.test.cjs tests/equipment-slot-selection.test.cjs tests/equipment-two-hand-display.test.cjs tests/equipment-tooltip-compare.test.cjs tests/string-table.test.cjs共42/42通過；臨時正式函式fixture驗9次狀態（使用中／第二套／待回應／套用成功／原先套／切回／缺view／無快照／無sets）、精確文字／紅色／標題位置通過，不新增低影響正式測試。npm.cmd run build587檔通過，字串產生同步／仍寫死0條及diff檢查通過。
+- 擴大ui-worker-panels為6/8，gem.socket舊靜態接線斷言及item.upgrade fixture缺UI兩失敗，以修改前js/ui.js覆映重跑均相同，屬既有基線；未修改斷言或擴修其它功能。瀏覽器專用IAB無連線後用CUA／IAB隔離排版頁載正式標題HTML／CSS／String與渲染函式，確認紅色rgb(248,113,113)、文字、非使用中顯示、套用成功／切回隱藏及再切套重新顯示，Console error／warning0。reminder-preview.png保留本聊天visualizations/equip-set-pending；未操作真人存檔或真Worker，未做所有尺寸／瀏覽器驗收。
+- 協作／唯讀：使用者本聊天明確同意整合共享String與快取；技能點聊天先以4660f14c分段提交自身內容、保留本任務工作檔，最終相對HEAD僅本次七檔差異。沒有覆蓋其技能邏輯／協議／String，Claude既有重號仍待整合。唯讀AI規範／Workflow／Agent文件、player.js／裝備投影與選取／渲染鏈、既有裝備CSS、String及Excel匯出工具、上述七份回歸與Build；沒有素材新增或修改，素材庫不建空Commit。
+- 交付：本任務實作無未完成項或已知新增阻塞，可供Review／合併，未合併／推送。Commit為本段所在「[Codex] fix: 裝備詳情提示目前查看套尚未套用」，編號見回覆。已知限制為上述兩項既有測試與隔離UI驗收範圍；下一步整合後重載遊戲，切另一套與套用／切回實看提醒。
+
+## SKILL-POINTS-20261027 — 技能升級花點與熟練度右側餘額
+
+- Owner：Codex；Done，單一開發者。使用者要求確認技能升級消耗，缺少時每級消耗1點，熟練度條右側顯示餘額，升級tips同步；熟練度tips指定兩行「打怪獲得技能經驗並提升熟練度／熟練度升級可獲得1點技能點」。
+- 前置：現有技能熟練度／Skills2／Worker指令與String來源。允許js/skills2.js、js/ui.js、Worker投影及protocol／bridge、index快取、String.xlsx／CSV／strings_data、技能點專項及受影響既有測試、WORKER_PROTOCOL／LV總表與本段；禁止其他玩法／平衡／素材／其他副本修改，不合併推送。
+- 設計：熟練度每級提供1點；餘額為熟練度減存檔原始投資（排除每組免費第一階Lv.1），保留未達門檻與暫失效終極投資；降級／重置返點、不退金幣。舊檔超支保留技能、餘額顯示0，不能追加投資。涵蓋單級／一鍵滿級／終極選擇升級切換；不另存可用點數。
+- 衝突：使用者已明確同意分段處理String及UI快取，新增字串2132起，保留Claude副本與其既有2130／2131重號待整合處理。技能實作避開Claude地爆天星區段；其UI／LV／Worker為解鎖功能區段，三方乾跑驗證後分段處理。
+- 驗收：Worker扣點與不足拒絕、金幣原子性、批次邊界、降級重置／切換返點、存檔重讀及暫鎖定、UI右側餘額／tips／停用、熟練度入帳更新、Excel原生正常重開與格式保留、相關回歸／Build／diff後Commit；後續使用者Review／整合。無素材庫變更。
+- 完成22檔：skills2增加由熟練度與原始投資推導的points投影與命令閘門；Worker普通批次改共用單級入口，單級升降只更新目標階、重置保留未重置階原始投資，不再覆蓋暫鎖等級。ui／index增加條右側餘額、費用／點數／返還tips及不足停用；String原生API新增2132～2142共11列，熟練度2133用br確保真兩行。同步CSV／JS、Protocol60／主端與Worker快取、LV與本紀錄；新增點數回歸、UI測試，既有測試只補足預算／塔層前置或同步協議斷言，未放寬玩法斷言。
+- 正式驗證：node --test --test-reporter=spec tests/skill2-points.test.cjs tests/skill2-reset.test.cjs tests/skill2-ult-switch.test.cjs tests/skill2-tower-unlock.test.cjs tests/worker-protocol.test.cjs tests/skill-mastery.test.cjs tests/string-table.test.cjs tests/worker-shim.test.cjs共76/76；node --test --test-reporter=spec --test-name-pattern="技能點不足|skills2Learn|等級門檻|三選一|第 8 格|升級費用|降級" tests/skill2-ui.test.cjs tests/skill2-system.test.cjs tests/skill2-ult-evolution.test.cjs另8/8。npm.cmd run build 587檔、apply_strings --check、build_string_csv --check（寫死0條）及diff檢查通過。
+- 擴大檢查：完整skill2-ui／reset／gm-skill-unlock／potential-removal／system／ult-evolution六檔159項110過49既有失敗；以git HEAD 38954d37的所有變更檔原始內容注入唯讀基線，原158項100過58失敗，新失敗0，修正reset缺塔層前置8項與既有Protocol過期斷言1項。餘49項含描線屬性、舊MP／CD、技能舊平衡、威能56對現值200、CSV浮點往返等，均於未改基線重現；未擴修無關問題，未宣稱全庫全過。
+- Excel：既有更新工具三次正常開啟驗證全部2129列7欄、0繪圖物件；另外Excel原生唯讀重開Saved=True且非RepairMode，比對原2118列逐值全部不變、7欄欄寬／標題字型字號顏色底色及物件保留。最後將自有新列2133換行改br再正常重開兩次，無手工改XML。
+- 畫面：browser-use後端無連線，改CUA/IAB隔離fixture載正式DOM／CSS／UI及String，後端命令走正式模擬引擎；467→466點與Lv.4→5實點擊通過，餘額與熟練度同行且位於右側，費用含1點與剩餘467點，指定兩行tip目視通過，Console error／warn0。截圖skill-points-preview.png留本聊天visualizations；未讀寫玩家存檔、未做真Worker長戰／多瀏覽器驗收。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、skills.js／player.js／save.js熟練度及遷移、formula、CSV／Skills2來源、配置與String匯出器、Excel更新工具、Build／相關既有測試及Claude差異。無素材／素材庫變更或新素材Commit。Claude其後提交64383f13，保留其副本與地爆天星100f2ec2／5858a05d；技能／UI／LV及終極測試fixture不同區段merge-file乾跑0。Worker功能區段無重疊，但importScripts的相鄰快取行乾跑1，與String既有2130衝突及共享快取留正常整合逐值保留，不覆蓋任何對方內容。
+- 同副本另一聊天新增EQUIP-SET-PENDING-NOTE與2143字串，保留其UI／HTML／LV／任務段落及表格。只暫存本任務區段；二進位String在隔離候選用Excel原生刪除2143後正常重開，再匯出僅本次CSV／JS及字串快取到index；不改工作檔、不提交對方進行中工作。交付時工作區會保留該任務的未提交差異，此為其他聊天正在使用的正式檔案，不能清除。
+- 交付：本段所在「[Codex] feat: 技能升級消耗技能點並顯示剩餘點數與提示」，實際編號見回覆。功能已完成可供Review／合併；無本次實作未完成項，已知限制為上述既有測試與未做真存檔長戰。舊超支存檔保留技能且顯示0；使用者正常整合時須保留雙方String字串並解決既有2130重號，再重載新版快取。未合併／推送。
+
+## GEM-RESONANCE-DRAG-CURSOR-20261026 — 共鳴拖曳方形寶石圖與一般游標
+
+- Owner：Codex；Done，單一開發者。使用者要求上方寶石拖曳時以左側樣式的正方形寶石圖跟隨滑鼠，不顯示禁止符號。
+- 前置：共鳴既有原生拖曳及gresCanSocket。允許js/ui-gem-resonance.js、css/gems.css、index.html必要快取、tests/gem-resonance-ui.test.cjs、LV_upgrade_system.md與本段；禁止玩法／解鎖／Worker／Protocol／存檔／配置／素材及其他聊天修改，不合併推送。
+- 驗收：方形圖僅含來源寶石且維持中心熱點；頁面空白／有效及拒絕孔位不出禁止游標，放開仍重驗條件；成功／拒絕／外部放開／取消清理，外部拖曳不攔截。相關回歸／Build／瀏覽器及diff後獨立Commit，交使用者Review／整合。
+- 完成六檔：js/ui-gem-resonance.js新增僅限resDrag的頁面dragenter／dragover接受移動及孔位外drop清理；拖曳影像以來源寶石圖、同階邊色及深底方框顯示，依畫面圖像尺寸取正方形並將熱點置中（瀏覽器實測40×40）。css/gems.css新增只作用於預覽的樣式；index同步gems CSS1.0.25／共鳴JS1.0.21；既有UI回歸、LV及本段同步。原孔位drop仍由gresSocketGem／gresCanSocket重新檢查，未修改資料、玩法、解鎖或其他拖曳工具。
+- 預檢：共鳴JS／CSS／回歸／LV／任務表無其他來源；Claude未提交index改的是系統解鎖相關strings_data／data／gem_resonance／talents／ui快取，本次僅gems CSS與ui-gem-resonance快取，無同一引用或語意相依。以Claude HEAD為base、只帶本次兩處快取更新的candidate、其未提交工作檔為theirs，merge-file試跑0並核對其UI215與本次共鳴21均保留。只分段修改，不帶入其未完成解鎖功能；js/ui.js及String等檔僅唯讀。
+- 驗證：node --test --test-reporter=spec tests/gem-resonance-ui.test.cjs tests/gem-resonance.test.cjs tests/string-table.test.cjs最終49/49通過；新增來源非方形仍轉正方形、中心熱點／正確圖像、dragenter／dragover跨空白或拒絕孔維持move、外部拖曳不攔截、無效孔拒絕及外部放開不扣資源／清理。原成功、最低階／種類／庫存／容量／BOSS鎖、取消及共鳴屬性回歸保留；npm.cmd run build586檔通過，完整diff檢查通過。未降低功能或刪除斷言。
+- 瀏覽器：專用IAB backend無法連線，改用CUA／IAB隔離fixture載正式CSS、共鳴UI／邏輯、String、配置及正式renderGems相關函式；真實isTrusted原生拖曳確認方框40×40與十級紫水晶來源、空白move／不扣資源、有效孔只送一次且庫存10→9、不相容防禦孔及空白放開後仍9、狀態與預覽均清理。加入dragenter後也修正SVG孔位剛進入、尚未收到dragover時的接受狀態；最後Console error／warning0。結果JSON及gres-drag-verified.png保留本聊天visualizations，臨時服務／腳本／頁籤清理，未讀寫玩家存檔或操作完整Worker遊戲。
+- 唯讀檢查：AI_RULES／AGENTS／Workflow／prompts、js/ui.js的來源列與全頁技能拖曳、item.js圖像、gem_resonance.js／data.js／配置、三份既有回歸及Build工具、Claude工作區差異。沒有新增文字／Excel／素材或素材庫變更，無素材庫Commit。使用者原game_parameters.xlsx與後續自行套用的CSV／data／formula完整保留，本任務未編修。
+- 交付：使用者工作期間建立0f23e5f1「調整技能平衡」，已收錄本次六檔與其自己的四檔參數更新；保留原提交、不重寫或重複實作，並在該提交後重跑49項驗證。本段完成紀錄另以[Codex] docs提交，編號見回覆。無本次未完成實作或已知新增阻塞，可供Review／合併，未合併／推送；限制為未做多瀏覽器／真存檔長戰，瀏覽器外的原生拖曳游標由系統控制。下一步整合後重載遊戲，再由上方寶石列拖至孔位驗收。
+
+## WORLD-MAP-LABEL-STATE-20261026 — 世界地圖名稱、等級與鎖定顯示
+
+- Owner：Codex；Done，單一開發者。使用者指定屏蔽右下圖片AI浮鈕、統一淡金名稱及1px黑邊、已解鎖下方括號目前／上限、未解鎖灰字與tips零進度。
+- 前置：現有WorldMapUI／覆片／Worker快照及String表。允許js/ui-world-map.js、css/world-map.css、index.html、tests/world-map-ui.test.cjs、String.xlsx／CSV／strings_data.js、docs/WORLD_MAP.md、LV_upgrade_system.md及本段；禁止玩法／Worker／Protocol／存檔／素材及其他任務，不合併推送。
+- 所有目標fetch後預檢無其他來源；沿現有覆片常駐替換烘焙字，進度唯讀權威快照；新增顯示格式用Excel原生API登記。驗收鎖定歸零、目前／非目前／解鎖更新、互動與背景取消選取、字串／地圖回歸、Build／Console／畫面與diff後Commit，交使用者Review／整合。
+- 完成十檔：上述兩份程式／樣式、index快取與底圖禁止拖曳、既有UI回歸、String三檔及兩份地圖／解鎖文件與本紀錄。常駐既有覆片、名稱淡金#fff0bc／灰#9a9a9a及1px黑邊；已解鎖括號顯示current/max，tips仍顯示best/max，鎖定兩者歸零且隱藏括號。神界三場景同步。底圖pointer-events:none／user-select:none，背景改由容器接收取消選取事件；前進權限／指令／存檔／Worker不變。
+- String.xlsx以Excel原生API僅追加2130「({0}/{1})」五個非空格，工具兩次正常重開核對完整2118列7欄與0物件，另唯讀對比所有原有儲存格樣式／列高／欄寬完全相同，修改前後局部渲染已檢視；由xlsx_to_csv及apply_strings產生CSV／JS與cfb59ad0快取。沒有手工寫入XML、翻譯或外部素材；world-map匯出SHA與素材庫一致，無素材庫新Commit。
+- 驗證：node --test --test-reporter=spec tests/world-map-ui.test.cjs tests/world-map.test.cjs tests/string-table.test.cjs tests/combat-pause.test.cjs，29/29通過；新增與延伸回歸涵蓋current與best不同、鎖定0、未載入不自行解鎖、解鎖後更新、上限夾限、神界與背景取消選取。npm.cmd run build，586檔通過；apply_strings --check、build_string_csv --check（寫死0條）、export-source --check及diff檢查通過。
+- 擴大zone-attr-tooltip為3/4，唯一showTowerTooltip缺少函式失敗，以HEAD版本strings_data映射並確認其他所有載入JS及測試未改後重現，屬既有基線；未改斷言或擴修塔戰。IAB專用backend無連線，改用CUA／IAB的隔離來源fixture載入正式CSS／WorldMapUI與String／ZONES，確認七人界＋三神界狀態、淡金／灰色、計算樣式黑邊1px黑色、進度、鎖定tips0／前進停用、背景取消選取及切頁；修正驗證服務本身的Windows路徑後，最終來源Console新增error／warning0。預覽world-map-overview.png與world-map-locked.png留在本聊天visualizations/world-map，非玩家存檔／真Worker實戰。
+- 同副本另一聊天的共鳴修改與本次index／LV／任務表不同區段，對方完成三方乾跑0後已獨立提交9204aea0；本次保留其內容，最終diff只含地圖範圍。另有使用者／其他聊天的game_parameters.xlsx未提交變更，保留不套用、不提交。唯讀檢查共通／Agent規範、js/ui.js／data.js、字串／Excel／匯出工具、package／Build工具及上述其餘回歸；不修改素材或其他副本。
+- 交付：可供Review／合併，未合併或推送；Commit為本段所在「[Codex] fix: 統一世界地圖名稱與解鎖進度顯示」，實際編號見回覆。功能實作已完成，既有塔戰測試及特定瀏覽器原生AI浮鈕無法在IAB直接重現為已知限制；圖片命中／拖曳保護已驗證。下一步整合後重載，於使用者原瀏覽器確認浮鈕不再觸發。
+
+## GEM-RESONANCE-EMPTY-LEVEL-20261026 — 空鑲孔右側顯示寶石等級
+
+- Owner：Codex；Done，單一開發者。使用者要求寶石共鳴未鑲嵌格右側顯示可鑲嵌寶石等級；依既有孔位最低階級顯示，例如六級以上，每個空格各自顯示。
+- 前置：既有共鳴孔位配置／右側詳情。允許 js/ui-gem-resonance.js、css/gems.css、index.html 必要快取、LV_upgrade_system.md 及本段；禁止改玩法／配置／存檔／Worker／素材及其他任務，不合併推送。
+- 目標五檔衝突預檢乾淨，fetch 後重查無其他來源。沿用 String 表 1748「{0}以上」與配置 GEM_NAMES，不新增硬編碼文字或重寫 Excel。
+- 驗收：每孔最低階正確、多空格／部分已鑲／取下／鎖定中央區顯示，既有寶石共鳴與字串回歸、Build、diff 後 Commit；後續使用者 Review／整合。
+- 完成五檔：共鳴詳情新增空格同行等級、CSS 8px 間距及字色、index 的 gems CSS 1.0.24／共鳴 JS 1.0.19 快取、LV 與本紀錄。沿用配置及既有 STR 1748，不修改 Excel／CSV／字串資料、鑲嵌操作、解鎖、Worker 或存檔。無美術及素材庫變更，無素材庫新 Commit。
+- 驗證：node --test --test-reporter=spec tests/gem-resonance-ui.test.cjs tests/gem-resonance.test.cjs tests/string-table.test.cjs，48/48 通過；npm.cmd run build，586 檔通過；git diff --check 通過。臨時 Node 驗證使用正式 UI fixture 核對全49孔最低階與容量、部分已鑲只標空格、取下後恢復標示，全過；未新增低影響顯示測試檔。
+- 瀏覽器：專用 browser-client IAB 無法連線，改用 CUA／IAB 開啟隔離排版頁，使用正式 gresDetailHTML 輸出及 gems.css，200px 詳情寬度確認四／五／六／十級與兩／六空格同行排版，Console error／warning 0；非完整遊戲／真人存檔實測。截圖留於本聊天 visualizations 的 gem-resonance-empty-level.png；臨時服務及頁籤已清理。
+- 唯讀未改：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex、gem_resonance.js／gem_resonance_data.js、ui.js、String.csv、上述三份回歸、package／build工具。自我 Review 無已知新增風險或未完成項，可供合併；未合併／推送。下一步正常整合後重載遊戲驗收。Commit 為本段所在「[Codex] fix: 寶石共鳴空鑲孔右側顯示寶石等級」，實際編號見交付。
+
+## GEM-RESONANCE-NUMERIC-LEVEL-20261026 — 空鑲孔使用阿拉伯數字與寶石名稱
+
+- Owner：Codex；Done，單一開發者。使用者要求空格標示改成10級以上寶石；前置為 f48335d8 的右側等級顯示。
+- 範圍：js/ui-gem-resonance.js、index.html 該JS快取、LV_upgrade_system.md 及本段；禁止改世界地圖進行中內容、配置／Excel／素材／玩法／存檔，不合併推送。
+- 預檢：四檔無其他副本／分支修改；同副本世界地圖任務在 index 與任務表有未提交內容，本輪不同區段且無語意相依，兩檔以目前未提交內容作 theirs 的 merge-file 試跑均 exit 0；分段修改及暫存，保留地圖內容。
+- 實作沿用 String 1562「{0}{1}級以上寶石」，類型傳空字串、等級直接傳孔位最低階數字；驗收相關回歸、全49孔顯示、Build／diff 後獨立 Commit，交使用者 Review／整合。
+- 完成四檔：共鳴空格改取 STR(1562, '', min)、該JS快取1.0.20、LV及本段。無CSS／Excel／CSV／文字資料或素材變更，無素材庫Commit。唯讀檢查既有共鳴邏輯／配置、String.csv／STRING_TABLE文件、三份回歸、build及共通規範。
+- 驗證：node --test --test-reporter=dot tests/gem-resonance-ui.test.cjs tests/gem-resonance.test.cjs tests/string-table.test.cjs 最終48/48通過。首輪47/48的唯一失敗為同期地圖任務尚未登記STR(2130)，唯讀覆映地圖為HEAD即13/13通過，待地圖任務自行補登記後重跑全48項皆過，本次未修改或暫存其內容。臨時正式fixture核對49孔全部為4／5／6／8／10級以上寶石，npm.cmd run build586檔及diff檢查通過，未新增低影響測試／未重跑瀏覽器。
+- 交付：無本次未完成項或已知新增風險，可供Review／合併，未合併推送；同副本世界地圖未提交內容完整保留、不納本次Commit。下一步整合後重載確認。Commit為本段所在「[Codex] fix: 共鳴空鑲孔改用數字顯示寶石等級」，編號見回覆。
+
 ## ENEMY-FRENZY-THRESHOLD-20261025 — 交戰敵人超過30個時狂暴化加速
 
 - Owner：Codex；Done，單一開發者。使用者指定交戰敵人超過30個時每秒+2%，30個以內每秒+1%；取代舊依數量線性加成，視野外尚未交戰及進場倒數不計數，已警戒後離開視野仍計數，歷史累積不回扣。
@@ -12566,3 +12661,52 @@ Worker 存活且頁面正常完成載入。
 - 測試指令：node --test --test-reporter=spec 執行skills2-vfx-usage、skills2-vfx-schema、skills2-enemy-columns、worker-protocol、worker-shim、vfx-editor-cache-versions、vfx-editor-guard共54/54通過；skill2-system以name-pattern「附近」／血刃斬傳染範圍選兩項2/2通過。npm.cmd run build：583檔通過，git diff HEAD --check通過。skills2-geometry另7項通過、1項連鎖速度斷言失敗；skill2-system毒霧count與死亡屍爆舊期望共2項失敗。三項均在乾淨ai/claude ec420d05相同指令重現，屬既有問題，未修改其斷言；未跑全庫／瀏覽器長戰。
 - 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、三方提交與工作簿／CSV／JS、Excel原生工具及配置匯出器、相關回歸、素材庫及3D試作。共享素材庫有其他進行中SVG／新素材，完整保留，不順帶提交；本輪未製作或修改素材來源，Preset僅保留已提交incoming內容。無素材庫新Commit。
 - 交付：本段所在「[Codex] merge: 保留技能平衡與搜敵範圍並解除Excel合併阻塞」納入原兩個父提交，編號見回覆。一般分支以既有安全流程續同步，3D hold維持、不動main；最後結果見codex/logs/sync-ai-worktrees/latest.md及回覆。已知限制為上述既有測試債，以及先前Excel自動化登入錯誤本環境未重現，未宣稱從根本修復所有登入工作階段的Excel啟動問題。下一步整合後重載遊戲；若Editor仍持有舊未存內容，先下載備份再重載，不用舊分頁覆寫新版。
+
+## ULT-DPS-69-20261026 — 全超神進化技能總傷與DPS重測
+
+- Owner：Codex；Done（207場受控模擬與報告完成，資源／觸發限制已揭露），單一開發者。依使用者指定 ULT_EVOLUTION_ALL_69_SKILLS_DPS_REPORT 規範及格式，測23群組69招、每招小怪／菁英／BOSS三場，150秒戰鬥排除30秒預熱，總傷除120秒。
+- 前置：現有技能／傳奇／沼澤配置與舊報告。允許新增tools/ult-dps-benchmark.cjs、tools/ult-dps-report.cjs、tests/ult-dps-benchmark.test.cjs、docs/skill-tests/20261026-ult-dps-results.json、docs/ULT_EVOLUTION_ALL_69_SKILLS_DPS_REPORT_CODEX.md及本段。禁止改遊戲JS／配置／存檔／玩法／解鎖／素材與舊報告／scratch工具，不合併推送。
+- 預檢：新檔及本紀錄均無其他來源。舊報告／scratch三檔存在ai/antigravity 74879a21／aa64220e未整合修改，因此保留原樣另交日期版。使用者已有未提交Skills2.xlsx，不修改、不提交，測試以實際載入JS與CSV為準，記錄SHA。
+- 驗收：固定共同核心屬性／相同詞條／各系五傳奇與雙手倍率、確保GM測試解鎖與實際stats接線、精確時間、敵方DOT及溢出傷害不重複、207場完整且有限值／技能生效證據、可重現seed、報告由JSON生成且榜單正確、專項回歸／Build／diff後Commit；使用者Review／整合。
+- 完成六檔：上述兩工具、一測試、CODEX報告、原始JSON及本段。使用者明確指定新報告檔名ULT_EVOLUTION_ALL_69_SKILLS_DPS_REPORT_CODEX.md，不覆寫Antigravity檔案。2026-10-26台北19:47:37～19:56:49完整批次、四個獨立VM工作執行緒，23組69招207場、每場3000步；開始／結束來源SHA相同，原Excel SHA F7ABD33FCEF57BE572EAA555426BB6B9F51F1C51502D4C618136ACDCCC82B2BC未變。
+- 校正僅限新測試工具：原生getStats實際使用共同攻魔50,000／穿透100／暴擊100／暴傷5996／全增傷與各元素增傷1000／連擊3／格擋50與減傷80；13格同九詞條、GM skillUnlock與五傳奇倍率、保留七階／超神Lv.10。採整數步30≤GT<150、recordRunDamage單一計傷出口含DOT與溢出；移除玩家假maxHp、重複扣受擊HP及零傷硬塞50,000。未改正式戰鬥或技能。
+- 結果：207場皆有限值且總傷／120一致、來源加總一致、無零傷採樣；46場後120秒僅普攻入帳，已在頁首與各列標示、提供全場施放次數及條件說明。部分技能死亡後法力回到759而超神需10,000，只施放1次；被動／致死觸發與Buff亦不能只看主動施放數。這些結果不能當作各超神連續施放的上限，更不將低DPS直接判定為技能弱。
+- 測試指令：node tools/ult-dps-benchmark.cjs完整207場；node tools/ult-dps-report.cjs及--check驗證生成一致；node --test tests/ult-dps-benchmark.test.cjs七項全過，涵蓋所有裝備／解鎖、實際屬性、精確時間、原生DOT溢出僅記一次與排除玩家受傷、固定種子、受擊僅扣一次及零傷不造假、完整報表。npm.cmd run build通過586檔；git diff --check及staged檢查結果見交付。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts/codex、舊報告／四個scratch來源及資料、工具載入的21份正式JS（含skills2／combat／formula／legendary／player／battlefield／Worker）、Equipment_Affix與Skills2 CSV／xlsx、package與build_check。正式JS／CSV／Excel／LV／素材／存檔均未改；無素材庫變更或新素材Commit。原有未提交Skills2.xlsx保留，不納本次提交。
+- 限制與下一步：使用已匯出JS／CSV，不代表測過未匯出Excel變更；沿用參考受控受擊（最多前6怪、無敵方距離驗證）及初始資源／最低1HP保護，沒有做真Worker／瀏覽器戰鬥或多種子信賴區間，前30秒排除不保證所有技能真正達穩態。無本次報告未完成項，可供Review／合併保存；若需傷害上限比較，應另指定不枯竭資源與防禦／致死觸發情境，不能直接沿本表下平衡結論。未合併／推送。
+- Commit：本段所在「[Codex] test: 重測六十九招超神進化總傷與DPS並產出獨立報告」，實際編號於交付回覆。
+
+## ULT-DPS-LOCKED-20261026 — 鎖血鎖法力完整重測
+
+- Owner：Codex；Done，單一開發者。使用者要求角色不應死亡，必須開啟鎖血與鎖法力重測；本項取代前版未鎖資源的測試條件與數據，不將前版當有效持續DPS結果。
+- 前置：6d3cbf50之CODEX獨立工具／報告，正式gmHpLockActive與gmMpLockActive。範圍僅tools/ult-dps-benchmark.cjs、tools/ult-dps-report.cjs、tests/ult-dps-benchmark.test.cjs、CODEX報告、20261026原始JSON與本段；禁止改正式遊戲／配置／Excel／素材／Antigravity檔案及其他任務，不合併推送。
+- 預檢六檔無其他來源。驗收：GM hpLock／mpLock實際啟用、敵方直接／DOT／技能自傷不致死、零死亡／復活／缺魔及採樣期施放證據，每場150秒排30秒、207場重跑、JSON／報告／來源SHA一致，專項測試／Build／diff後Commit；使用者Review／整合。原有Skills2.xlsx未提交修改保留不套用。
+- 完成六檔：原生GM_TEST.hpLock／mpLock均true，初始資源採角色計算HP／MP，移除假高資源與手動最低1血補救；每步查原生鎖定、HP>0、無復活，死亡出口直接失敗。JSON新增資源鎖定、最低HP／MP、死亡／復活稽核與sampleCasts；報告v8.0重建69招總傷／DPS及三榜，明確取代v7.0；正式遊戲功能與LV／配置不變。
+- 完整批次時間：2026-10-26台北20:23:43～20:34:14，69招×3情境＝207場、各3000步，開始／結束25份來源SHA一致。全部HP／MP鎖定有效、零死亡、零復活、最低HP皆>0；雙刀三招各情境全場19次、採樣120秒15次，消除前版死亡缺魔後僅施放1次的錯誤條件。採樣僅普攻入帳由46場降至9場，仍可為Buff／鎖血抑制失血或死亡觸發，已如實標註，不虛構傷害。
+- 驗證：node tools/ult-dps-benchmark.cjs完整通過；node tools/ult-dps-report.cjs及--check一致；node --test tests/ult-dps-benchmark.test.cjs九項全過，新增致命直接傷／DOT／自傷、零MP持續施放、停用鎖定或死亡／復活必失敗；207場資料驗證同時釘住零死亡／復活及原生鎖定。npm.cmd run build586檔通過，git diff --check／staged檢查及最終來源SHA結果見交付。
+- 唯讀未改：前項列出的共通規範、Agent規範、21份正式JS、CSV／Excel、原Antigravity工具／報告；另查formula的原生鎖定、gm_exec的HP_lock／MP_lock語意、skills2的自傷與耗魔／復活路徑。原有未提交Skills2.xlsx保持F7ABD33FCEF57BE572EAA555426BB6B9F51F1C51502D4C618136ACDCCC82B2BC，不提交／不套用；無素材庫變更。
+- 限制／下一步：使用者指定鎖血會使實際失血／瀕死／死亡條件不成立，報告已標示對相關能力的影響；仍沿用受控敵傷與固定seed，不代表真Worker／瀏覽器實戰或多種子統計。此次鎖血鎖法力重測已完成，可供Review／合併保存，未合併推送；Commit為「[Codex] fix: 開啟鎖血鎖法力並重測超神技能DPS」，編號見回覆。
+
+## ULT-DPS-KILLS-20261026 — 補殺敵數重測與雙刀異常來源查核
+
+- Owner：Codex；Done，單一開發者。使用者詢問雙刀數據合理性及敵人等級，要求再次重測並列出每招殺敵數。前版確認三情境怪物實際level皆300、swamp；使用者後續指定角色與敵人同級，故本輪角色與敵人皆固定100級、停止經驗／熟練度升級；敵人全滅當步立即補同類同數一批直到150秒。保留HP_lock／MP_lock、150秒排30秒與其餘公平基準。
+- 範圍僅原六檔：tools/ult-dps-benchmark.cjs、tools/ult-dps-report.cjs、tests/ult-dps-benchmark.test.cjs、CODEX報告、20261026原始JSON與本段。禁止改正式技能／DOT公式／配置／Excel／Antigravity檔案／素材與其他任務，不合併推送。前置0a032acf工具已可用，六檔預檢無其他來源。
+- 驗收：完整207場重跑、零玩家死亡／復活；按原生onFieldKill獎勵結算閘門計敵人死亡，同次結算不重複、天地再造重生後再死可計新擊殺；採樣30≤GT<150與全場殺敵數分開。JSON留實際敵人等級、傷害子類拆分及殺敵統計；報告各列與Top10加殺敵數，解釋鐵血裂傷最大HP百分比＋暴擊／總增傷與Overkill影響，專項測試／Build／diff後Commit。原有未提交Skills2.xlsx保留。
+- 完成六檔：工具統一TEST_LEVEL=100、monsterStatsFor明示powerBonus=0、停用測試XP與熟練度入帳、每步驗角色100級；每波記level／count，原生recordLootKill記全場／採樣擊殺，保留原生死亡去重與重生再殺語意。傷害保留來源並新增subTypes細分；CODEX報告v9.0每一列加採樣殺敵數／全場殺敵數，三榜同加兩欄，完整說明同級／立即補怪／鎖定資源與前版異常。
+- 2026-10-26台北20:50:13～20:53:29完整207場；角色與敵人實際等級全部100，零死亡／復活，來源開始／結束SHA一致。毀滅之舞小怪採樣總傷3003.80億／DPS2.503B，採樣980殺／全場1220殺；火之神樂與修羅小怪DPS皆1.724B，946／1186殺。暴風化身可被殺千刀延長，採樣沒有新增手動施放仍可能持續自動攻擊，不把手動施放次數誤當停放證據。
+- 異常查核唯讀重現：舊300級小怪HP1.243365兆，鐵血之舞實際2%×狂戰士1.5×暴擊59.96×總增傷11＝每跳1978.68%最大HP（約24.6022兆），無元素再乘。45秒診斷中鐵血裂傷約2.2634045e15、斬擊約4.3007e9、普攻約5.9913e7；共用T5極端主導三超神。正式DOT本來會套暴擊／總增傷，統計又含Overkill，因此可重現卻不能推論超神本體強幾十萬倍；本次不擅改平衡或改成截斷傷害。100級下鐵血比例基準大幅下降，前版／本版不可直接當技能版本變更。
+- 驗證：node tools/ult-dps-benchmark.cjs完整207場；node tools/ult-dps-report.cjs及--check一致；node --test tests/ult-dps-benchmark.test.cjs共11/11通過，新增原生擊殺重複掃描／復活再殺及預熱邊界、三情境100級與反覆全滅即補怪，並保留鎖血／零MP／死亡稽核／DOT／同seed／完整資料檢查。資源專項原先的手動施放斷言因100級殺千刀長延化身而失敗，專項隔離該延長效果後驗零MP重複請求；正式207場仍帶完整五傳奇，未停用或放寬傷害邏輯。Build586檔通過，diff／staged檢查及25份SHA結果見交付。
+- 唯讀未改：共通／Agent規範、原始報告／工具、21份正式JS，特別查skills2的雙刀T5／傳奇／狀態、combat的DOT增傷／死亡結算、formula的怪物等級、Status及Equipment_Affix CSV／Skills2來源。正式JS／配置／Excel／LV／素材／存檔與Antigravity檔案未改；Excel原未提交修改保留、不套用／不提交，無素材庫變動。
+- 已完成本輪同級重測與殺敵數交付，可供Review／合併保存，未合併推送。限制：仍是單seed／受控受擊，鎖血抑制失血／死亡機制、DPS含溢出，殺敵可含原生天地再造二次擊殺；這些條件已列報告，不宣稱真瀏覽器或全面平衡驗收。Commit為「[Codex] test: 同級重測超神技能並補上殺敵數與傷害查核」，編號見回覆。
+
+## ULT-DPS-HIT100-20261026 — 實際必中與死亡後停止計傷重測
+
+- Owner：Codex；Done，單一開發者。使用者要求實際命中率100%，致死當下最後一下保留完整Overkill，死亡後DOT／延遲／追加傷害不得入帳。保留同級100、HP_lock／MP_lock、150秒排30秒、全滅立即補同批與採樣／全場殺敵數。
+- 範圍僅原六檔（CODEX兩工具、一測試、報告、原始JSON及本段）；禁止修改正式技能／傷害公式／配置／Excel／Antigravity檔案／素材，不合併推送。前置5719841b及六檔預檢無其他來源。
+- 驗收：命中屬性補到扣三類敵人最高閃避後仍達100%，逐次稽核實際出手零MISS；測試VM的正式resolveHit／applyEnemyHpDamage入口拒絕已死亡目標，保留活目標的致死完整傷害，不阻止敵人死亡造成對其他活敵的爆炸。完整207場、零玩家死亡／復活、全場與採樣殺敵及來源子類一致；專項與Build／diff後Commit。保留原有Skills2.xlsx未提交修改。
+- 完成六檔：命中屬性164.8＝100＋三類敵人最高閃避64.8；基準攻速仍0.86次／秒，其他公平條件保留。VM只在原生傷害入口加已死目標0傷害閘門、活目標照原生完整結算，沒有修改正式傷害／技能／命中公式。JSON新增實際命中稽核、致死結算與拒絕死目標次數；CODEX v10.0更新207場、明確記例子「剩100HP被打1000計1000，後續屍體DOT500計0」，並解釋反擊三招的盾損加成／AOE覆蓋與致死溢出。
+- 2026-10-26台北21:24:26～21:26:56完整69招207場，135,722次玩家命中判定、0 MISS；角色／敵人皆100，零玩家死亡／復活。死目標入口拒絕0次，代表本輪原生上層已擋住後續死目標結算；不能把先前反擊差距歸因為死後DOT。崩解小怪採樣117殺／全場146殺（舊版低命中為53／64）；反擊採樣神聖678、不屈502、戰神502，DPS約6.436B／2.178B／23.091B。
+- 反擊唯讀追蹤補充：前版不屈與戰神皆328次反擊斬殺＋39次傳奇火球斬殺＋46次普攻＝413殺，戰神同批次多出傷害主要是單次反擊致死溢出。鎖血不鎖盾，297次完整破盾各計100%盾損，戰神加成抽樣平均1472.73%、最高2600%；兩者實際扣敵HP合計相同。神聖另有169次光彈命中斬殺，增加範圍清怪；故殺敵更高卻未必總傷更高。此為正式盾損百分比機制，沒有擅改成按生命上限或停用盾損。
+- 驗證：完整benchmark、report生成及--check皆通過；node --test tests/ult-dps-benchmark.test.cjs共13/13通過，新增三敵種實際必中與活目標最後一擊完整Overkill、死後直接命中／直接扣血／DOT歸零、原生復活後可再計傷；原有等級／補怪／殺敵去重／資源鎖定／死亡稽核保留。Build586檔通過，diff／staged／25份來源SHA核對見交付。沒有為通過測試降低正式技能或放寬傷害驗收。
+- 唯讀未改：規範／Agent文件、21份正式JS、技能／狀態／傳奇配置、原Antigravity工具／報告與Excel，另查counter盾損、resolveHit結算順序與普攻／技能統計出口。Skills2.xlsx屬使用者進行中未提交修改，本次不寫入／套用／提交；無LV／素材／存檔或素材庫變動。完整批次開始／結束25份SHA一致；收尾再核對時，24份來源仍一致，只有未供Runtime載入的xlsx在批次完成後另有外部儲存（測試時2ecb8480…、收尾e818a072…）。保留測試當時SHA作追溯，不改成新SHA冒稱測過未匯出表；不影響本次JS／CSV與工具的結果。
+- 本項已完成，可供Review／合併保存，未合併推送。限制：單seed／受控受擊、鎖血抑制瀕死能力、原生同批DOT為一筆結算；致死最後一下仍完整計入，故DPS與殺敵數不等價，不能僅依傷害榜判斷平衡。Commit為「[Codex] test: 實際必中重測並限制死亡後計傷」，編號見回覆。

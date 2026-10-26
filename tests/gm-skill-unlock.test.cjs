@@ -24,6 +24,7 @@ function loadContext(initialFloor) {
     .forEach((file) => vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file }));
   context.G = {
     player: {
+      skillMastery: { level: 480, xp: 0 },
       gold: 1e9,
       level: 1,
       reincarnations: 0,
