@@ -23,7 +23,7 @@ function game(gems) {
   const c = load(LOGIC);
   let dirty = 0;
   c.markStatsDirty = () => { dirty++; };
-  c.G = { player: { gold: 1e12, level: 1, reincarnations: 0, skills: {}, gems: gems || {}, resonance: { holes: {} } } };
+  c.G = { player: { gold: 1e12, level: 1, reincarnations: 4, skills: {}, gems: gems || {}, resonance: { holes: {} } } };
   c.dirtyCount = () => dirty;
   return c;
 }
@@ -337,4 +337,19 @@ test('暴擊傷害石榴石只歸物理區與不限種類中央區；舊魔法�
   '5:0':{lv:2,gems:[{type:'garnet',level:6}]},
   '6:0':{lv:1,gems:[{type:'garnet',level:10}]}
  });
+});
+
+test('寶石共鳴依 system_unlock 解鎖：未達轉生數時三個指令都拒絕且不動資源', () => {
+  const c = game({ sapphire: { 6: 1 } });
+  assert.equal(c.GEM_RESONANCE_UNLOCK_REINCARNATION, 4);
+  assert.equal(c.gemResonanceUnlockedAt(c.GEM_RESONANCE_UNLOCK_LEVEL, 3), false);
+  assert.equal(c.gemResonanceUnlockedAt(c.GEM_RESONANCE_UNLOCK_LEVEL, 4), true);
+  c.G.player.reincarnations = 3;
+  const msg = c.gemResonanceLockedMessage();
+  assert.match(msg, /4 轉/);
+  assert.equal(c.socketResonanceGem(0, 0, 'sapphire', 6), msg);
+  assert.equal(c.unsocketResonanceGem(0, 0, 0), msg);
+  assert.equal(c.upgradeResonanceHole(0, 0), msg);
+  assert.equal(c.G.player.gems.sapphire[6], 1);
+  assert.deepEqual(c.G.player.resonance.holes, {});
 });

@@ -202,6 +202,23 @@ if (zoneStageWaveValue !== null) {
     grp: 1, value: zoneStageWaveValue, label: 'ZONE_STAGE_WAVE_PROFILES（Zone_Stage_Waves.csv）', multiGroup: true
   });
 }
+/* 功能解鎖條件：獨立表 config/CSV/system_unlock.csv（由 system_unlock.xlsx 轉出）。
+   欄位：系統類型、系統名稱、解鎖等級(等級/轉生等級)、系統說明文字；第三欄格式「等級/轉生次數」，兩條件需同時滿足。
+   表裡缺列或格式錯誤就中止，不靜默沿用舊值。 */
+const SYSTEM_UNLOCK_CSV_PATH = process.env.SYSTEM_UNLOCK_CSV || path.join(ROOT, 'config', 'CSV', 'system_unlock.csv');
+const systemUnlockRows = parseCsv(fs.readFileSync(SYSTEM_UNLOCK_CSV_PATH, 'utf8')).filter(r => r.length > 1);
+const systemUnlockHeader = systemUnlockRows[0] || [];
+const SU_NAME_COL = systemUnlockHeader.indexOf('系統名稱');
+const SU_VALUE_COL = systemUnlockHeader.findIndex(h => String(h).indexOf('解鎖等級') === 0);
+if (SU_NAME_COL < 0 || SU_VALUE_COL < 0) throw new Error('system_unlock.csv 表頭缺少「系統名稱」或「解鎖等級(等級/轉生等級)」：' + JSON.stringify(systemUnlockHeader));
+function systemUnlock(name) {
+  const hits = systemUnlockRows.slice(1).filter(r => String(r[SU_NAME_COL]).trim() === name);
+  if (hits.length !== 1) throw new Error('system_unlock.csv 「' + name + '」必須剛好 1 列，目前 ' + hits.length + ' 列');
+  const raw = String(hits[0][SU_VALUE_COL] || '').trim();
+  const m = /^(\d+)\s*\/\s*(\d+)$/.exec(raw);
+  if (!m) throw new Error('system_unlock.csv 「' + name + '」解鎖條件須為「等級/轉生次數」的整數（例 1/1），目前為「' + raw + '」（Excel 若把它轉成日期，請把格子設為文字格式再填）');
+  return { level: m[1], reinc: m[2] };
+}
 function esc(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 // 完整十進位字面值，包含 Excel 轉出的科學記號；不可留下舊指數尾碼。
 const NUMBER_SOURCE = /[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?/.source;
@@ -392,11 +409,27 @@ for (let n = 2; n <= 10; n++) {
 // 等級上限（升級所需經驗 參數 d）
 scalar('data', 'MAX_LEVEL', '1-成長經驗', '升級所需經驗', 3);
 // 轉生
-scalar('data', 'REINCARNATION_LEVEL', '1-成長經驗', '可轉生等級 / 最高轉生', 0);
+scalarValue('data', 'REINCARNATION_LEVEL', systemUnlock('轉生').level, 'REINCARNATION_LEVEL（system_unlock）');
 scalar('data', 'REINCARNATION_MAX', '1-成長經驗', '可轉生等級 / 最高轉生', 1);
-// 神鑄
-scalar('data', 'FORGE_UNLOCK_LEVEL', '1-成長經驗', '神鑄系統解鎖等級', 0);
-scalar('data', 'FORGE_UNLOCK_REINCARNATION', '1-成長經驗', '神鑄系統解鎖等級', 1);
+// 功能解鎖條件（system_unlock 表；等級/轉生次數）
+{
+  const bind = (sysName, levelVar, reincVar) => {
+    const u = systemUnlock(sysName);
+    scalarValue('data', levelVar, u.level, levelVar + '（system_unlock）');
+    scalarValue('data', reincVar, u.reinc, reincVar + '（system_unlock）');
+  };
+  bind('神鑄系統', 'FORGE_UNLOCK_LEVEL', 'FORGE_UNLOCK_REINCARNATION');
+  bind('天堂威能', 'TALENT_UNLOCK_LEVEL', 'TALENT_UNLOCK_REINCARNATION');
+  bind('寶石融合', 'GEM_FUSION_UNLOCK_LEVEL', 'GEM_FUSION_UNLOCK_REINCARNATIONS');
+  bind('寶石共鳴', 'GEM_RESONANCE_UNLOCK_LEVEL', 'GEM_RESONANCE_UNLOCK_REINCARNATION');
+  const sets = ['裝備方案 第1套', '裝備方案 第2套', '裝備方案 第3套'].map(systemUnlock);
+  [['EQUIP_SET_UNLOCK_LEVELS', 'level'], ['EQUIP_SET_UNLOCK_REINCARNATIONS', 'reinc']].forEach(([varName, key]) => {
+    edits.push({
+      file: 'data', re: new RegExp('(\\b' + varName + '\\s*=\\s*)(\\[[^\\]]*\\])'), grp: 2,
+      value: '[' + sets.map(x => x[key]).join(', ') + ']', label: varName + '（system_unlock）'
+    });
+  });
+}
 scalar('data', 'FORGE_DUST_RATE', '6-神鑄', '裝備神鑄成功率', 0);
 scalar('data', 'FORGE_CHAOS_DUST_RATE', '6-神鑄', '裝備神鑄混沌魔塵加成', 0);
 scalar('data', 'FORGE_GEM_DUST_RATE', '6-神鑄', '寶石神鑄成功率', 0);

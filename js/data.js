@@ -83,7 +83,7 @@ var DEMON_SEED_BOSS_RATE_CAP = 100;
    生命與四維在原始總值完成後套用最終倍率：
    1～10 轉分別為 ×10、×20、×40、×80、×160、×320、×640、×1280、×2560、×5120。 */
 var MAX_LEVEL = 1000;             // 角色等級上限（升級所需經驗 參數 d）
-var REINCARNATION_LEVEL = 1000;   // 可轉生等級：達此級可轉生（可轉生等級 參數 a）
+var REINCARNATION_LEVEL = 1000;   // 可轉生等級：達此級可轉生（system_unlock 表「轉生」）
 var REINCARNATION_MAX = 20;
 var REINCARNATION_RANKS = ['冒險者', '勇者', '大劍師', '破世者', '不朽者', '王者', '大主宰', '神聖尊者', '大聖王', '至高主宰', '位面創世神', '神位1階', '神位2階', '神位3階', '神位4階', '神位5階', '神位6階', '神位7階', '神位8階', '神位9階', '神位終階'];
 var REINCARNATION_EXTRA_MULTIPLIERS = [0, 1.5, 2.5, 3.5, 5, 7, 10, 14, 18, 24, 30, 60, 100, 150, 200, 300, 450, 650, 800, 1200, 2500];
@@ -595,9 +595,11 @@ var ASPD_MIN = 0.2;
 var ASPD_CAP = 5;
 var BLOCK_DMG_RED_BASE = 30;
 var GODFORGED_IDX = 8;                       // 神鑄創世稀有度索引
-var EQUIP_SET_UNLOCK_LEVELS = [1, 1, 1]; // 第 1/2/3 套裝備的解鎖等級（預設全解鎖）
+var EQUIP_SET_UNLOCK_LEVELS = [1, 1, 1]; // 第 1/2/3 套裝備的解鎖等級（system_unlock 表；預設全解鎖）
 var EQUIP_SET_UNLOCK_REINCARNATIONS = [0, 0, 0]; // 第 1/2/3 套裝備的最低轉生數（預設全解鎖）
 var FORGE_UNLOCK_LEVEL = 1;               // 神鑄系統解鎖等級（條件一：等級 ≥ 此值）；解鎖後永久保留
+var TALENT_UNLOCK_LEVEL = 1;                  // 天堂威能解鎖等級（system_unlock 表；與轉生次數須同時滿足）
+var TALENT_UNLOCK_REINCARNATION = 1;          // 天堂威能解鎖所需轉生次數（system_unlock 表）
 var FORGE_UNLOCK_REINCARNATION = 1;          // 神鑄系統解鎖所需轉生次數（條件二：轉生 ≥ 此值）；需與條件一同時滿足
 var FORGE_MIN_RARITY = 5;                    // 可入爐最低品質（傳說）
 var FORGE_SLOTS = 6;                         // 六芒星槽位數
@@ -1817,6 +1819,8 @@ var GEM_FUSE_RATE_DECAY = 10;
 var GEM_FUSE_MIN_RATE = 10;
 var GEM_FUSION_UNLOCK_LEVEL = 1;
 var GEM_FUSION_UNLOCK_REINCARNATIONS = 3;
+var GEM_RESONANCE_UNLOCK_LEVEL = 1;           // 寶石共鳴解鎖等級（system_unlock 表；與轉生次數須同時滿足）
+var GEM_RESONANCE_UNLOCK_REINCARNATION = 4;   // 寶石共鳴解鎖所需轉生次數（system_unlock 表）
 
 /* ---- 寶石商店 ----
    商店等級 1~20：刷出數量與寶石階級機率依下方表格；價格依寶石階級。

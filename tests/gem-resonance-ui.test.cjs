@@ -7,7 +7,7 @@ function ui(gems={diamond:{3:8,4:2,7:1},ruby:{10:3}}){
  const c=vm.createContext({console,Math,Date,JSON,Number,Map,Set});c.window=c;
  c.UI={gemBrowse:{tool:'resonance',filter:'atk',ownedOnly:true,resHole:[1,1],sel:'diamond',fuseLv:4},dirty:{}};
  for(const p of ['js/util.js', 'js/strings_data.js', 'js/strings.js','js/data.js','js/status.js','js/gem_resonance_data.js','js/formula.js','js/item.js','js/gem_resonance.js'])vm.runInContext(read(p),c,{filename:p});
- c.G={player:{gold:1e12,gems,resonance:{holes:{}}}};c.markStatsDirty=()=>{};
+ c.G={player:{gold:1e12,level:1,reincarnations:4,gems,resonance:{holes:{}}}};c.markStatsDirty=()=>{};
  c.esc=String;c.fmt=String;c.fmtFull=String;c.pctStr=String;
  const source=read('js/ui.js');
  vm.runInContext(source.match(/var GEM_TIER_COLORS = \{[\s\S]*?\n\};/)[0],c);
@@ -272,4 +272,25 @@ test('石榴石在物理區篩選可見並可鑲入，魔法區不顯示且拒�
  assert.equal(c.G.player.resonance.holes['5:6'].gems[0].type,'garnet');assert.match(nodes['gres-detail'].innerHTML,/四級石榴石/);
  assert.ok(nodes['gres-detail'].innerHTML.includes('<span class="gres-gem-stat">'+c.gresStatText('garnet',c.gemStatValue('garnet',4))+'</span>'));
  nodes['gres-detail'].handlers.click({target:element({'data-gres-take':'0'})});assert.equal(c.gemCount('garnet',4),2);
+});
+
+test('共鳴頁籤未達解鎖條件：無法切入，頁籤以 tips 顯示條件；解鎖後恢復並移除提示', () => {
+  const f = ui();
+  const tab = f.element({}); tab.className = 'gx-tab'; tab.removeAttribute = (k) => { delete tab.attrs[k]; };
+  f.nodes['gem-tool-resonance'] = tab;
+  f.c.setAttrIfChanged = (el, k, v) => { if (el) el.setAttribute(k, String(v)); };
+  f.c.G.player.reincarnations = 3;
+  f.c.UI.gemBrowse.tool = 'compose';
+  f.c.setGemTool('resonance');
+  assert.equal(f.c.UI.gemBrowse.tool, 'compose');
+  f.c.renderGems();
+  assert.match(tab.className, /is-locked/);
+  assert.equal(tab.attrs['data-tt-title'], f.c.STR(2130));
+  assert.match(tab.attrs['data-tt-desc'], /4 轉/);
+  f.c.G.player.reincarnations = 4;
+  f.c.renderGems();
+  assert.doesNotMatch(tab.className, /is-locked/);
+  assert.equal(tab.attrs['data-tt-desc'], undefined);
+  f.c.setGemTool('resonance');
+  assert.equal(f.c.UI.gemBrowse.tool, 'resonance');
 });
