@@ -10,6 +10,7 @@ const args = process.argv.slice(2);
 const [file, key] = args;
 const approved = args.includes('--approved');
 const maxCredits = Number(args[args.indexOf('--max-credits') + 1]);
+const tag = args.includes('--tag') ? '.' + args[args.indexOf('--tag') + 1] : ''; // separate task per clip set
 
 if (!file || !key || !approved || !Number.isFinite(maxCredits)) {
   console.error('usage: animate.mjs <concepts.json> <key> --approved --max-credits <n>  (paid; needs explicit user approval)');
@@ -19,11 +20,11 @@ if (!file || !key || !approved || !Number.isFinite(maxCredits)) {
 const cfg = loadConfig();
 ensureFolders(cfg);
 const spec = JSON.parse(fs.readFileSync(file, 'utf8'));
-const { clips, estimatedCredits } = spec.animate;
+const { clips, estimatedCredits } = tag ? spec.animate.sets[tag.slice(1)] : spec.animate.sets.v1;
 const ledger = new Ledger(cfg);
 const client = new MeshyClient(cfg);
 const cacheDir = path.join(cfg.paths.assetsRoot, 'Cache');
-const cacheFile = path.join(cacheDir, `${spec.id}.animate.${key}.json`);
+const cacheFile = path.join(cacheDir, `${spec.id}.animate.${key}${tag}.json`);
 const rigTaskId = JSON.parse(fs.readFileSync(path.join(cacheDir, `${spec.id}.rig.${key}.json`), 'utf8')).taskId;
 const outDir = path.join(cfg.paths.assetsRoot, 'Animations', spec.id);
 fs.mkdirSync(outDir, { recursive: true });
@@ -53,24 +54,24 @@ for (let i = 0; i < 120; i++) {
   await sleep(10000);
 }
 if (task.status !== 'SUCCEEDED') {
-  ledger.record({ jobId: spec.id, stage: `animate-${key}`, taskId, status: task.status, actualCredits: 0, error: task.task_error?.message });
+  ledger.record({ jobId: spec.id, stage: `animate-${key}${tag}`, taskId, status: task.status, actualCredits: 0, error: task.task_error?.message });
   console.error('task did not succeed:', task.status, task.task_error?.message || '');
   process.exit(4);
 }
 
-fs.writeFileSync(path.join(cacheDir, `${spec.id}.animate.${key}.result.json`), JSON.stringify(task.result, null, 2));
+fs.writeFileSync(path.join(cacheDir, `${spec.id}.animate.${key}${tag}.result.json`), JSON.stringify(task.result, null, 2));
 async function download(url, dest) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`download ${res.status}`);
   fs.writeFileSync(dest, Buffer.from(await res.arrayBuffer()));
 }
-if (task.result.animation_glb_url) await download(task.result.animation_glb_url, path.join(outDir, `clips_${key}.glb`));
-if (task.result.animation_fbx_url) await download(task.result.animation_fbx_url, path.join(outDir, `clips_${key}.fbx`));
+if (task.result.animation_glb_url) await download(task.result.animation_glb_url, path.join(outDir, `clips_${key}${tag}.glb`));
+if (task.result.animation_fbx_url) await download(task.result.animation_fbx_url, path.join(outDir, `clips_${key}${tag}.fbx`));
 
 const after = (await client.balance()).balance;
 const spent = before - after;
 ledger.record({
-  jobId: spec.id, stage: `animate-${key}`, taskId, status: task.status, estimatedCredits,
+  jobId: spec.id, stage: `animate-${key}${tag}`, taskId, status: task.status, estimatedCredits,
   reportedCredits: task.consumed_credits, actualCredits: spent, balanceBefore: before, balanceAfter: after,
 });
 console.log(`done. consumed_credits=${task.consumed_credits} balance ${before} -> ${after} (spent ${spent})${spent > maxCredits ? ' EXCEEDS MAX' : ''}`);

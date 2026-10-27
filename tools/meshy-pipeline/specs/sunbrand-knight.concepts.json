@@ -13,7 +13,9 @@
     "topology": "triangle",
     "target_polycount": 4800,
     "pose_mode": "a-pose",
-    "target_formats": ["glb"],
+    "target_formats": [
+      "glb"
+    ],
     "estimatedCredits": 20
   },
   "retexture": {
@@ -22,7 +24,9 @@
     "remove_lighting": true,
     "enable_pbr": false,
     "enable_original_uv": false,
-    "target_formats": ["glb"],
+    "target_formats": [
+      "glb"
+    ],
     "estimatedCredits": 10
   },
   "rig": {
@@ -30,13 +34,43 @@
     "estimatedCredits": 5
   },
   "animate": {
-    "clips": [
-      { "name": "Idle", "action_id": 11 },
-      { "name": "Attack", "action_id": 4 },
-      { "name": "Hit", "action_id": 178 },
-      { "name": "Death", "action_id": 189 }
-    ],
-    "estimatedCredits": 12
+    "sets": {
+      "v1": {
+        "clips": [
+          {
+            "name": "Idle",
+            "action_id": 11
+          },
+          {
+            "name": "Attack",
+            "action_id": 4
+          },
+          {
+            "name": "Hit",
+            "action_id": 178
+          },
+          {
+            "name": "Death",
+            "action_id": 189
+          }
+        ],
+        "estimatedCredits": 12,
+        "note": "first set; Hit and relaxed Idle dropped by the five-action spec"
+      },
+      "v2": {
+        "clips": [
+          {
+            "name": "CombatIdle",
+            "action_id": 89
+          },
+          {
+            "name": "Attack2",
+            "action_id": 97
+          }
+        ],
+        "estimatedCredits": 6
+      }
+    }
   },
   "concepts": {
     "A": {

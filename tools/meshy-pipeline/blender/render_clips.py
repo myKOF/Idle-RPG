@@ -75,6 +75,8 @@ cam.rotation_euler = (target - cam.location).to_track_quat("-Z", "Y").to_euler()
 ad = arm.animation_data or arm.animation_data_create()
 info = {}
 for action in list(bpy.data.actions):
+    if action.name in rename and rename[action.name] is None:
+        continue  # a null in the rename map skips the action
     name = rename.get(action.name, action.name).replace("|", "_")
     if name == "Armature_clip0_baselayer":
         continue  # rest pose only
