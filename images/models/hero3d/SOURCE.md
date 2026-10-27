@@ -27,3 +27,14 @@
 | CombatIdle | 1.667 s | | | | 循環 |
 
 重新匯出或換動作後，這些數字要重量。
+
+## 動作修正（握劍）
+
+Meshy 原動作有兩處手沒握在劍上（Attack1 劈下去時副手鬆開；Attack2 前伸時劍與前臂不成直線）。
+`tools/meshy-pipeline/src/fix-grips.mjs` 直接改本檔內烘焙好的關鍵幀（不需要 Blender）。**重新從 Blender 匯出會蓋掉修正，匯出後要重新套用**：
+
+```
+node tools/meshy-pipeline/src/fix-grips.mjs <新匯出的.glb> images/models/hero3d/sunbrand-knight.glb
+```
+
+注意：輸入必須是「原始」動作；對已修過的檔再跑一次，結果不同。`tests/hero3d-battle-rules.test.cjs` 會量測目前的檔案，沒握好就失敗。
