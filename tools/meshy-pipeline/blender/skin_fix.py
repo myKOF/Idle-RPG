@@ -13,6 +13,7 @@ positions (measured on the left-handed original; they are mirrored here). All th
           so the cloth follows the pelvis instead of being pulled apart by the legs
 """
 import bmesh
+import bpy
 from mathutils import Vector
 
 # Measured on the left-handed rest pose; x is flipped when the hand is "Right".
@@ -48,6 +49,10 @@ def mirror_model(ob):
     bmesh.ops.reverse_faces(bm, faces=bm.faces)  # a mirror turns the triangle winding inside out
     bm.to_mesh(ob.data)
     bm.free()
+    # Meshy's custom normals no longer match the mirrored faces; drop them so normals follow the faces
+    if ob.data.has_custom_normals:
+        bpy.context.view_layer.objects.active = ob
+        bpy.ops.mesh.customdata_custom_splitnormals_clear()
     groups = list(ob.vertex_groups)
     for g in groups:
         g.name = "__swap_" + _swap_side(g.name)

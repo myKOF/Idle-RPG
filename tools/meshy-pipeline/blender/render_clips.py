@@ -1,24 +1,50 @@
 """Render every action of a rigged file to a PNG sequence (Workbench, headless).
 
 Usage:
-  blender --background --python render_clips.py -- <file> <outDir> [size] [rename.json]
+  blender --background --python render_clips.py -- <file.glb|file.blend> <outDir> [size] [rename.json]
+         [--fix [--mirror]] [--yaw <deg>] [--only A,B]
 Writes <outDir>/<ClipName>/f0001.png ... and <outDir>/<ClipName>/info.json (frames, fps).
 Camera is fixed for all clips so motion (lunges, falls) stays readable.
+  --fix/--mirror  apply skin_fix to a raw Meshy file (a processed .blend already has it)
+  --yaw           camera angle around the character, default 35 (215 looks from the opposite side)
+  --only          render only these clip names
 """
 import json
 import math
+import os
 import sys
 
 import bpy
 from mathutils import Vector
 
 argv = sys.argv[sys.argv.index("--") + 1:]
-model, out_dir = argv[0], argv[1]
-size = int(argv[2]) if len(argv) > 2 else 480
-rename = json.loads(open(argv[3], encoding="utf-8").read()) if len(argv) > 3 else {}
 
-bpy.ops.wm.read_factory_settings(use_empty=True)
-bpy.ops.import_scene.gltf(filepath=model)
+
+def flag(name, default=None):
+    return argv[argv.index(name) + 1] if name in argv else default
+
+
+positional = []
+skip_next = False
+for a in argv:
+    if skip_next:
+        skip_next = False
+    elif a in ("--yaw", "--only"):
+        skip_next = True
+    elif not a.startswith("--"):
+        positional.append(a)
+model, out_dir = positional[0], positional[1]
+size = int(positional[2]) if len(positional) > 2 else 480
+rename = json.loads(open(positional[3], encoding="utf-8").read()) if len(positional) > 3 else {}
+cam_yaw = float(flag("--yaw", 35))
+only = flag("--only")
+only = set(only.split(",")) if only else None
+
+if model.lower().endswith(".blend"):
+    bpy.ops.wm.open_mainfile(filepath=model)
+else:
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    bpy.ops.import_scene.gltf(filepath=model)
 arm = next(o for o in bpy.data.objects if o.type == "ARMATURE")
 # helper meshes without skin weights (bone display shapes) must not be rendered
 for o in list(bpy.data.objects):
@@ -26,7 +52,7 @@ for o in list(bpy.data.objects):
         bpy.data.objects.remove(o, do_unlink=True)
 
 if "--fix" in argv:
-    sys.path.insert(0, __import__("os").path.dirname(__file__))
+    sys.path.insert(0, os.path.dirname(__file__))
     import skin_fix
     skinned = next(o for o in bpy.data.objects if o.type == "MESH" and len(o.vertex_groups) > 0)
     hand = "Left"
@@ -71,7 +97,7 @@ cam_data.ortho_scale = 2.5
 cam = bpy.data.objects.new("cam", cam_data)
 scene.collection.objects.link(cam)
 scene.camera = cam
-yaw, elev, dist = math.radians(35), math.radians(22), 8
+yaw, elev, dist = math.radians(cam_yaw), math.radians(22), 8
 target = Vector((0, 0, 0.9))
 cam.location = target + Vector((math.sin(yaw) * math.cos(elev), -math.cos(yaw) * math.cos(elev), math.sin(elev))) * dist
 cam.rotation_euler = (target - cam.location).to_track_quat("-Z", "Y").to_euler()
@@ -82,8 +108,8 @@ for action in list(bpy.data.actions):
     if action.name in rename and rename[action.name] is None:
         continue  # a null in the rename map skips the action
     name = rename.get(action.name, action.name).replace("|", "_")
-    if name == "Armature_clip0_baselayer":
-        continue  # rest pose only
+    if name == "Armature_clip0_baselayer" or (only and name not in only):
+        continue  # rest pose only / not requested
     ad.action = action
     if hasattr(action, "slots") and len(action.slots):
         ad.action_slot = action.slots[0]

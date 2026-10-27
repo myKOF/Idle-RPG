@@ -1,0 +1,48 @@
+{
+  "id": "sunbrand-knight",
+  "base": "Animations/sunbrand-knight/clips_A.glb",
+  "mirrorModel": true,
+  "fps": 24,
+  "clips": [
+    {
+      "name": "CombatIdle",
+      "file": "Animations/sunbrand-knight/clips_A.v2.glb",
+      "action": "Combat_Stance",
+      "mirrorClip": true,
+      "loop": true,
+      "note": "library clip 89 holds the sword in the LEFT hand; mirrored so the right hand holds it"
+    },
+    {
+      "name": "Run",
+      "file": "Rigs/sunbrand-knight/basic_running_glb_url.glb",
+      "action": "Armature|running|baselayer",
+      "loop": true
+    },
+    {
+      "name": "Attack1",
+      "file": "Animations/sunbrand-knight/clips_A.glb",
+      "action": "Attack",
+      "loop": false,
+      "hit": true
+    },
+    {
+      "name": "Attack2",
+      "file": "Animations/sunbrand-knight/clips_A.v2.glb",
+      "action": "Left_Slash",
+      "loop": false,
+      "hit": true
+    },
+    {
+      "name": "Death",
+      "file": "Animations/sunbrand-knight/clips_A.glb",
+      "action": "dying_backwards",
+      "loop": false,
+      "holdLast": true,
+      "alignGround": false,
+      "easeTail": {
+        "frames": 16,
+        "hold": 12
+      }
+    }
+  ]
+}
