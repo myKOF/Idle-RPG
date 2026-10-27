@@ -16,21 +16,33 @@
       "name": "Run",
       "file": "Rigs/sunbrand-knight/basic_running_glb_url.glb",
       "action": "Armature|running|baselayer",
-      "loop": true
+      "loop": true,
+      "avoidLegs": {
+        "marginCm": 3
+      }
     },
     {
       "name": "Attack1",
       "file": "Animations/sunbrand-knight/clips_A.glb",
       "action": "Attack",
       "loop": false,
-      "hit": true
+      "hit": true,
+      "cuts": [
+        {
+          "from": 27,
+          "to": 40,
+          "frames": 3,
+          "note": "the pause after the downward chop (two-handed greatsword feel)"
+        }
+      ]
     },
     {
       "name": "Attack2",
       "file": "Animations/sunbrand-knight/clips_A.v2.glb",
       "action": "Left_Slash",
       "loop": false,
-      "hit": true
+      "hit": true,
+      "weaponEdgeAlign": true
     },
     {
       "name": "Death",
@@ -46,5 +58,9 @@
       "weaponLay": true
     }
   ],
-  "weaponBone": "Sword"
+  "weaponBone": "Sword",
+  "fist": {
+    "side": "Left",
+    "palmSign": -1.0
+  }
 }

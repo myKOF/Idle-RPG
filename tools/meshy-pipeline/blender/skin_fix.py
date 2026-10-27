@@ -12,9 +12,12 @@ positions (measured on the left-handed original; they are mirrored here). All th
   cape  : y > CAPE_MIN_Y behind the body, z in CAPE_Z -> Hips (lower) blending to Spine02 (upper)
           so the cloth follows the pelvis instead of being pulled apart by the legs
 """
+import math
+
 import bmesh
 import bpy
-from mathutils import Vector
+import numpy as np
+from mathutils import Matrix, Vector
 
 # Measured on the left-handed rest pose; x is flipped when the hand is "Right".
 SWORD_TIP = Vector((0.40, -0.07, 0.00))
@@ -135,3 +138,48 @@ def apply(ob, arm, hand="Right", weapon_group=None):
         t = min(1.0, max(0.0, (z - z0) / (z1 - z0)))
         _set_weights(ob, i, {"Hips": 1.0 - 0.5 * t, "Spine02": 0.5 * t} if t > 0 else {"Hips": 1.0})
     return {"hand": hand, "swordVerts": len(sword), "capeVerts": len(cape)}
+
+
+# ---- fist -------------------------------------------------------------------------------------
+# Meshy's hands are open and the rig has no finger bones, so a fist is a rest-pose mesh edit: every
+# vertex past the knuckle line is bent round a small circle (a pipe bend about the knuckle axis), so
+# the fingers coil into the palm like a real fist instead of just hinging open.
+FIST_KNUCKLE_AT = 0.09  # metres from the wrist along the hand
+FIST_RADIUS = 0.028  # radius of the finger coil
+FIST_CURL_DEG = 270.0  # about three finger joints' worth of bend
+
+
+def make_fist(ob, arm, side="Left", palm_sign=1.0):
+    """Curl the fingers of `side`'s hand into a fist (rest pose, weights untouched).
+    palm_sign flips which face of the hand the fingers curl towards."""
+    names = {g.index: g.name for g in ob.vertex_groups}
+    idx = [v.index for v in ob.data.vertices
+           if max(((names[g.group], g.weight) for g in v.groups), key=lambda kv: kv[1], default=("", 0))[0] == side + "Hand"]
+    m, minv = ob.matrix_world, ob.matrix_world.inverted()
+    pts = np.array([(m @ ob.data.vertices[i].co)[:] for i in idx])
+    wrist = np.array(arm.matrix_world @ arm.data.bones[side + "Hand"].head_local)
+    w, vecs = np.linalg.eigh(np.cov((pts - pts.mean(0)).T))
+    along, normal = vecs[:, 2], vecs[:, 0]
+    if ((pts - wrist) @ along).mean() < 0:
+        along = -along
+    normal = normal - along * (normal @ along)
+    normal = palm_sign * normal / np.linalg.norm(normal)
+    lateral = np.cross(along, normal)
+    knuckle = wrist + along * FIST_KNUCKLE_AT
+    phi_max = math.radians(FIST_CURL_DEG)
+    moved = 0
+    for k, i in enumerate(idx):
+        d = pts[k] - knuckle
+        u, h, lat = d @ along, d @ normal, d @ lateral
+        if u <= 0:
+            continue
+        phi = min(u / FIST_RADIUS, phi_max)
+        extra = max(0.0, u - FIST_RADIUS * phi_max)
+        r = max(FIST_RADIUS - h, 0.004)
+        tangent = along * math.cos(phi) + normal * math.sin(phi)
+        p = (knuckle + lateral * lat + normal * FIST_RADIUS
+             + r * (along * math.sin(phi) - normal * math.cos(phi)) + tangent * extra)
+        ob.data.vertices[i].co = minv @ Vector(p)
+        moved += 1
+    ob.data.update()
+    return {"handVerts": len(idx), "curledVerts": moved}

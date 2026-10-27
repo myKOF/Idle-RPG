@@ -93,6 +93,12 @@ for (const c of clips.filter((x) => x.hitEvents)) {
   const e = c.hitEvents;
   md.push(`| ${c.name} | ${e.windupStart}（${e.seconds.windupStart}s） | ${e.swingStart}（${e.seconds.swingStart}s） | **${e.impact}（${e.seconds.impact}s）** | ${e.recoverStart}（${e.seconds.recoverStart}s） | ${e.end}（${e.seconds.end}s） |`);
 }
+const run = baked.Run?.avoidLegs, a2 = baked.Attack2?.edgeAlign, a1 = baked.Attack1?.cuts?.[0];
+md.push('', '## 動作修正（依使用者回饋，量測值）', '',
+  run && `- **跑步，劍避開腿**：劍繞握把向外擺，最大 ${run.maxSwingOutDeg}°；劍身（握把 15 公分以外）與腿部／臀部前側的最近距離由 ${run.minClearanceCmBefore} 公分增為 ${run.minClearanceCmAfter} 公分（目標 ${run.marginCm} 公分）。這是頂點間距離，不是穿插判定。`,
+  a1 && `- **攻擊1，刪除砍下後的停頓**：原第 ${a1.from} 到 ${a1.to} 幀（約 0.54 秒的停頓與緩慢下沉）壓縮成 ${a1.frames} 幀，總長 ${baked.Attack1.frames} 幀。`,
+  a2 && `- **攻擊2，刀刃朝向軌跡**：繞劍軸滾轉最多 ${a2.maxRollDeg}°，讓刀刃的鋒口領先揮擊。量測「刀面正對行進方向」的程度（1 = 刀面領先，0 = 鋒口領先）：由 ${a2.flatFacingTravelBefore} 降為 ${a2.flatFacingTravelAfter}。這個量測用的是模型自己的刀面方向，要看 GIF 確認。`,
+  '- **左手握拳**：左手手指以管狀彎曲捲成拳頭（沒有手指骨，是休息姿勢的網格修改），所有動作的左手都是拳頭。', '');
 md.push('', '## 已知問題（已由使用者接受）', '',
   '- **死亡**：倒下過程中（約第 12 至 24 幀）劍尖暫時低於地面最多約 22 公分，披風下緣低於地面約 18 公分，腿部最多陷 4 公分。倒地後劍已放平，不再陷地。',
   '- **攻擊1**：蹲低時披風下緣（綁在臀部）低於地面約 11 公分。',
