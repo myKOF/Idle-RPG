@@ -151,9 +151,6 @@ FIST_KEEP_S = (-0.012, 0.125)  # hilt and guard verts of the sword inside the sp
 FIST_CORE_R = 0.03  # ...and inside this radius only the part of the grip that sits in the fist is kept
 FIST_CORE_S = (-0.02, 0.07)
 FIST_WELD_CM = 0.02
-FIST_TWIST_DEG = 180.0  # the mirrored fist is turned this much about the forearm so its palm faces the front
-FIST_TWIST_START = -0.06  # the twist begins this far before the wrist (on the forearm tube), so the wrist plate turns with the fist
-FIST_TWIST_OVER = 0.07  # metres past the wrist over which the twist is eased in
 
 
 def transplant_fist(ob, arm, from_hand="Right", to_hand="Left"):
@@ -204,16 +201,9 @@ def transplant_fist(ob, arm, from_hand="Right", to_hand="Left"):
     new_faces = [g for g in ret["geom"] if isinstance(g, bmesh.types.BMFace)]
     new_verts = [g for g in ret["geom"] if isinstance(g, bmesh.types.BMVert)]
     new_edges = [g for g in ret["geom"] if isinstance(g, bmesh.types.BMEdge)]
-    # the fist hangs forward of the forearm axis, so it is rolled about its own centre line (wrist -> fist
-    # centre); rolling about the forearm axis would swing it round to the other side of the wrist
-    roll_axis = (centre_to - wrist_to).normalized()
     for v in new_verts:
         w = m @ v.co
-        point = Vector((-w.x, w.y, w.z)) + shift
-        t = min(1.0, max(0.0, ((point - wrist_to).dot(roll_axis) - FIST_TWIST_START) / FIST_TWIST_OVER))
-        twist = math.radians(FIST_TWIST_DEG) * t * t * (3 - 2 * t)
-        point = centre_to + Matrix.Rotation(twist, 3, roll_axis) @ (point - centre_to)
-        v.co = minv @ point
+        v.co = minv @ (Vector((-w.x, w.y, w.z)) + shift)
         weights = {group[i]: wt for i, wt in v[deform].items()}
         v[deform].clear()
         if "Sword" in weights or max(weights, key=weights.get, default="") == from_hand + "Hand":

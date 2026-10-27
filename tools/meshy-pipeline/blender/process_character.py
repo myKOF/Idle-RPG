@@ -223,6 +223,25 @@ def final_strike(frames, spec):
         frames[i] = D
 
 
+def hand_pose_from(frames, spec):
+    """Give a hand the pose it has, relative to its forearm, in another clip (averaged over that clip).
+    Used where an animation's own wrist is wrong for this character: the library's combat stance
+    was made for a shield hand, so its off-hand wrist is twisted; the run's off-hand is a natural fist."""
+    bone = spec["bone"]
+    ref = next(c for c in cfg["clips"] if c["name"] == spec["fromClip"])
+    ref_frames = sample(harvest[(os.path.join(assets_root, ref["file"]), ref["action"])])
+    quats = [basis_of(p)[bone].to_quaternion() for p in ref_frames]
+    mean = quats[0].copy()
+    for q in quats[1:]:
+        mean = Quaternion((mean.w + (q.w if q.dot(quats[0]) >= 0 else -q.w), mean.x + (q.x if q.dot(quats[0]) >= 0 else -q.x),
+                           mean.y + (q.y if q.dot(quats[0]) >= 0 else -q.y), mean.z + (q.z if q.dot(quats[0]) >= 0 else -q.z)))
+    mean.normalize()
+    for i, pose in enumerate(frames):
+        B = basis_of(pose)
+        B[bone] = Matrix.Translation(B[bone].translation) @ mean.to_matrix().to_4x4()
+        frames[i] = fk(B)
+
+
 def hand_roll(frames, spec):
     """As the character drops, roll the sword hand about the forearm so the back of the hand faces
     down (palm up), the natural way a hand lies; blended in by how far the hips have fallen."""
@@ -301,6 +320,8 @@ def prepare(clip):
         final_strike(frames, clip["finalStrike"])
     if clip.get("handRoll"):
         hand_roll(frames, clip["handRoll"])
+    if clip.get("handPose"):
+        hand_pose_from(frames, clip["handPose"])
     return frames, c0, yaw0
 
 

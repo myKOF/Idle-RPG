@@ -10,7 +10,12 @@
       "action": "Combat_Stance",
       "mirrorClip": true,
       "loop": true,
-      "note": "library clip 89 holds the sword in the LEFT hand; mirrored so the right hand holds it"
+      "note": "library clip 89 holds the sword in the LEFT hand; mirrored so the right hand holds it",
+      "handPose": {
+        "bone": "LeftHand",
+        "fromClip": "Run",
+        "note": "left wrist copied from the run, where the fist sits naturally along the arm"
+      }
     },
     {
       "name": "Run",
