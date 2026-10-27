@@ -20,7 +20,7 @@ if (typeof GameClock !== 'undefined') {
 /* String 表：資料檔版本由主執行緒（bridge.js）以網址 sv= 傳入，改文字不必動本檔。 */
 var _stringDataVersion = ((typeof self !== 'undefined' && self.location && /[?&]sv=(\w+)/.exec(self.location.search || '')) || [])[1] || '0';
 importScripts(
-  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../data.js?v=20261027-legendary-global', '../runeword_data.js?v=20261023-str-char', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261027-legendary-global', '../formula.js?v=20261027-legendary-global', '../battle-terrain.js?v=20261022-lava-terrain-develop-merge', '../battlefield.js?v=20261022-lava-terrain-develop-merge', '../stats.js?v=20261023-str-common',
+  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../data.js?v=20261027-reincarnation-user-affix', '../runeword_data.js?v=20261023-str-char', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261027-legendary-global', '../formula.js?v=20261027-legendary-global', '../battle-terrain.js?v=20261022-lava-terrain-develop-merge', '../battlefield.js?v=20261022-lava-terrain-develop-merge', '../stats.js?v=20261023-str-common',
   '../item.js?v=20261027-legendary-dim', '../gem_resonance.js?v=20261026-system-unlock','../runeword.js?v=20261023-str-common',
   '../skills.js?v=20261023-str-skill', '../skills2.js?v=20261027-legendary-global', '../elite_data.js?v=20261021-chain-hover', '../talents.js?v=20261026-system-unlock',
   '../player.js?v=20261027-legendary-global', '../special_rules.js?v=20261023-str-common',

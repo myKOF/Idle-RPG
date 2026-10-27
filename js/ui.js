@@ -11067,6 +11067,27 @@ function openVideoPip() {
 }
 
 /* ---- 事件綁定 ---- */
+// 只預告本次轉生後（等級重置為 1）立即新開放的系統，不寫入遊戲狀態。
+function reincarnationUnlockNotices(header) {
+  var player = header && header.player || {};
+  var level = Number(player.level) || 0;
+  var count = Math.max(0, Math.floor(Number(player.reincarnations) || 0));
+  var forge = peekUiPanelData('forge');
+  var systems = [
+    [STR(874), TALENT_UNLOCK_LEVEL, TALENT_UNLOCK_REINCARNATION],
+    [STR(66), FORGE_UNLOCK_LEVEL, FORGE_UNLOCK_REINCARNATION, !!(forge && forge.forge && forge.forge.unlocked)],
+    [STR(1511), GEM_RESONANCE_UNLOCK_LEVEL, GEM_RESONANCE_UNLOCK_REINCARNATION],
+    [STR(2148), GEM_FUSION_UNLOCK_LEVEL, GEM_FUSION_UNLOCK_REINCARNATIONS]
+  ];
+  EQUIP_SET_UNLOCK_LEVELS.forEach(function (requiredLevel, i) {
+    systems.push([STR(2149, STR(1168 + i)), requiredLevel, EQUIP_SET_UNLOCK_REINCARNATIONS[i]]);
+  });
+  return systems.filter(function (system) {
+    var alreadyUnlocked = system[3] || (level >= system[1] && count >= system[2]);
+    return !alreadyUnlocked && 1 >= system[1] && count + 1 >= system[2];
+  }).map(function (system) { return STR(2147, system[0]); });
+}
+
 function showConfirmDialog(message, onConfirm, options) {
   var modal = $id('confirm-modal');
   var msg = $id('confirm-message');
@@ -11095,6 +11116,12 @@ function showConfirmDialog(message, onConfirm, options) {
       msg.appendChild(document.createTextNode(plainMessage.slice(highlightAt + options.highlightText.length)));
     }
   }
+  (options.unlockNotices || []).forEach(function (notice) {
+    var line = document.createElement('div');
+    line.className = 'reincarnation-unlock';
+    line.textContent = notice;
+    msg.appendChild(line);
+  });
   if (options.title === '轉生成功' && uiReincarnationCount() === 1) {
     var talentUnlockNotice = document.createElement('div');
     talentUnlockNotice.className = 'confirm-highlight';
@@ -11739,7 +11766,7 @@ function initUI() {
       var actTitle = isGodAction ? STR(193) : STR(436);
 
       showConfirmDialog(
-        STR(827, actTitle, reincarnationTotalMultiplier(nextCount), actTitle),
+        STR(2146, actTitle, Math.round((reincarnationTotalMultiplier(nextCount) - 1) * 100), actTitle),
         function () {
           sendUiCommand('player.reincarnate', {}, {
             silentResultError: true,  // 下方 .then 自行回報
@@ -11753,7 +11780,8 @@ function initUI() {
           });
           return;
         },
-        { title: STR(194, actTitle), okText: STR(195, actTitle), dialogClass: 'reincarnation-confirm' }
+        { title: STR(194, actTitle), okText: STR(195, actTitle), dialogClass: 'reincarnation-confirm',
+          unlockNotices: reincarnationUnlockNotices(header) }
       );
     });
   }

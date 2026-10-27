@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## REINCARNATION-CONFIRM-20261027 — 金框、深底與新解鎖預告
+
+- Owner：Codex；Done，單一開發者。使用者要求轉生確認外框華麗金色、灰白底加深20%、本次新解鎖逐行黃色「解鎖【XXXXX】系統」；追加倍率文案由×3.5改提高250%，依正式倍率換算。
+- 前置：既有確認視窗／Header及forge快照、system_unlock衍生常數及String機制。允許js/ui.js、css/dialogs.css、index必要快取、String.xlsx／CSV／strings_data、tests/confirm-dialog.test.cjs、LV及本段；使用者追加要求連其修改一起Commit，納入Equipment_Affix.xlsx／CSV、js/data.js及bridge／Worker必要快取。禁止擅改玩法、解鎖門檻、Protocol／存檔、其他配置／素材與其他副本，不合併推送。
+- 預檢目標無其他來源；String新增百分比版確認與解鎖格式，不改既有儲存格；Excel原生API寫入及正常重開驗證後匯出。驗收立即新解鎖／已開放不重報／轉生回1級仍須滿足門檻／多系統、百分比、確認取消、窄螢幕與Console、相關回歸／Build及diff後獨立Commit，交使用者Review與整合。
+- 完成14檔：UI增加唯讀新解鎖預告、文字安全DOM獨立黃字行及百分比換算；dialogs增加8px金色斜面、雙層內線與四角，灰白斜面通道乘0.8、清除舊流光混色；String以Excel原生API在角色模塊插入2146～2149，匯出CSV／strings_data e996e91c；index同步dialogs4／ui219／data107／bridge369，bridge入口與Worker的data匯入統一20261027-reincarnation-user-affix。既有轉生／解鎖與指令保護維持；LV及本紀錄同步。使用者Equipment_Affix原始修改與data保留，共59列CSV差異含29格浮點序列化，7項perR清0及傳奇說明清理；讀表試跑4個字面值但語意變更0，Excel另匯出236列比對僅29格數字表示差異、其餘完全一致。
+- Excel：工具兩次正常重開核對寫入19格、全部資料與0物件一致；獨立原生Excel唯讀重開Saved=True、未進修復模式，2133列原資料逐格不變，新增4列、7欄寬／標題字型字號顏色底色／抽樣列高保留。沒有手改內部XML或覆寫既有文字列，舊827保留供舊版相容，新版取百分比模板2146。
+- 驗證：node --test --test-reporter=dot tests/confirm-dialog.test.cjs tests/reincarnate-gate.test.cjs tests/string-table.test.cjs tests/modal-close-hitbox.test.cjs tests/legendary-global.test.cjs tests/equipment-tooltip-compare.test.cjs tests/xlsx-string-escapes.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs，70/70通過；共享文字高亮處理與預告追加順序收尾後重跑confirm-dialog 8/8。npm.cmd run build 589檔通過；apply_strings --check同步、build_string_csv --check寫死0及diff檢查通過。額外tooltip-modal-close 1項因舊closeSkillModal名稱靜態擷取為空而失敗，以git show HEAD:js/ui.js唯讀映射重跑同樣失敗，未改斷言或擴修。
+- 畫面：隔離隨機localhost來源與全新Edge context載正式DOM／全部CSS及UI、String與配置，只綁正式轉生按鈕區段，無模擬／玩家存檔。實點確認／取消、1轉50%／2轉150%／3轉250%／4轉400%、1轉威能／2轉神鑄／4轉共鳴預告、一般確認不殘留；900×600及360×480目視無溢出，金框8px／角飾不攔操作／黃字rgb(255,223,88)，Console error／warning及pageerror皆0。自我Review修正CSS高權重覆蓋及舊screen混色，確認底色與文字亮度獨立。
+- 唯讀檢查未改：AI規範／AGENTS／Workflow／prompts、formula／player轉生閘門、forge永久解鎖、talents／gem_resonance及system_unlock來源、String／Excel匯出工具、上述其餘回歸與Build工具。無獨立美術素材或VFX修改；素材庫僅既有其他任務codex-authored/thunder未追蹤目錄，保留、不納本次提交，無素材庫新Commit。使用者其餘CSV僅換行差異隨Git正常化，未丟棄任何資料。
+- 交付：本段所在「[Codex] fix: 美化轉生確認並一併保存使用者詞條配置」，實際編號見回覆；無本次未完成項，可供Review／合併，未合併推送。已知限制為上述既有Tooltip測試及尚未以真Worker／玩家存檔長戰驗收，下一步由使用者正常整合後重載遊戲查看。
+
 ## LEGENDARY-DUPLICATE-GRAY-20261027 — 重覆傳奇文字加深灰色
 
 - Owner：Codex；Done。使用者要求重覆傳奇的字再灰一些；僅將重覆行由#9ca3af調暗為#6b7280，含名稱、說明及(重覆)，不改生效判斷。允許item、必要主頁／Worker快取、既有回歸的顏色預期、LV及本紀錄；禁止玩法／配置／素材及其他副本。目標衝突預檢乾淨。

@@ -6,13 +6,13 @@ gloves＝護手；wrist＝手腕；legs＝護腿
 boots＝靴子；ring＝戒指 I／II；amulet＝項鍊
 all_lock＝全鎖定（不會出現在任何裝備部位上，也不會出現在屬性面板）
 多部位用 ; 分隔，例如 ring;amulet＝戒指與項鍊",每階perR,屬性桶stats,說明,效果類型,關聯技能,限定武器類型,效果參數JSON
-詞條池,atkFlat,物理攻擊,4,2.2,FALSE,8,1,,weapon;helmet;shoulder;chest;belt;gloves;wrist;legs;boots;ring;amulet,,,,,,,
+詞條池,atkFlat,物理攻擊,4,2.2000000000000002,FALSE,8,1,,weapon;helmet;shoulder;chest;belt;gloves;wrist;legs;boots;ring;amulet,,,,,,,
 詞條池,atkPct,物理攻擊%,4,0.08,TRUE,6,2.6,,weapon;belt;gloves;ring;amulet,,,,,,,
-詞條池,matkFlat,魔法攻擊,4,2.2,FALSE,8,1,,weapon;helmet;shoulder;chest;belt;gloves;wrist;legs;boots;ring;amulet,,,,,,,
+詞條池,matkFlat,魔法攻擊,4,2.2000000000000002,FALSE,8,1,,weapon;helmet;shoulder;chest;belt;gloves;wrist;legs;boots;ring;amulet,,,,,,,
 詞條池,matkPct,魔法攻擊%,4,0.08,TRUE,6,2.6,,weapon;belt;gloves;ring;amulet,,,,,,,
 詞條池,hpFlat,生命值,50,66,FALSE,8,0.05,,helmet;shoulder;chest;gloves;wrist;legs;boots;amulet,,,,,,,
 詞條池,hpPct,生命值%,4,0.1,TRUE,6,2,,helmet;shoulder;chest;gloves;wrist;legs;boots;amulet,,,,,,,
-詞條池,hpRegen,生命恢復/秒,3,0.225,FALSE,5,0.75,,helmet;shoulder;chest;gloves;wrist;legs;boots;amulet,,,,,,,
+詞條池,hpRegen,生命恢復/秒,3,0.22500000000000001,FALSE,5,0.75,,helmet;shoulder;chest;gloves;wrist;legs;boots;amulet,,,,,,,
 詞條池,mpFlat,法力值,10,12,FALSE,5,0.5,,helmet;shoulder;chest;gloves;wrist;legs;boots;amulet,,,,,,,
 詞條池,mpRegen,法力恢復/秒,1,0.02,FALSE,4,2,,helmet;shoulder;chest;gloves;wrist;legs;boots;amulet,,,,,,,
 詞條池,str,力量,3,1.2,FALSE,8,1.8,,weapon;helmet;shoulder;chest;belt;gloves;wrist;legs;boots;ring;amulet,,,,,,,
@@ -27,27 +27,27 @@ all_lock＝全鎖定（不會出現在任何裝備部位上，也不會出現在
 詞條池,normalDmgRed,普通敵人傷害抗性,30,2.1,FALSE,9,1,4,shoulder;chest;wrist;legs;boots;ring;amulet,,,,,,,
 詞條池,eliteDmgRed,菁英傷害抗性,30,2.1,FALSE,9,1,4,shoulder;chest;wrist;legs;boots;ring;amulet,,,,,,,
 詞條池,bossDmgRed,BOSS傷害抗性,30,2.1,FALSE,9,1,4,shoulder;chest;wrist;legs;boots;ring;amulet,,,,,,,
-詞條池,aspd,攻擊速度%,3,0.036,TRUE,6,2.8,,weapon;gloves;ring;amulet,,,,,,,
-詞條池,critRate,暴擊率%,1,0.024,TRUE,6,2.4,,weapon;belt;ring;amulet,,,,,,,
+詞條池,aspd,攻擊速度%,3,3.5999999999999997E-2,TRUE,6,2.8,,weapon;gloves;ring;amulet,,,,,,,
+詞條池,critRate,暴擊率%,1,2.4E-2,TRUE,6,2.4,,weapon;belt;ring;amulet,,,,,,,
 詞條池,critDmg,暴擊傷害%,5,0.4,TRUE,5,0.9,,weapon;belt;ring;amulet,,,,,,,
-詞條池,pPen,物理穿透%,20,0.045,TRUE,4,2.2,4,weapon;gloves;wrist;ring;amulet,,,,,,,
-詞條池,mPen,魔法穿透%,20,0.045,TRUE,4,2.2,4,weapon;gloves;wrist;ring;amulet,,,,,,,
-詞條池,hit,命中率%,3,0.045,TRUE,5,1.2,4,helmet;gloves;wrist;legs;boots;ring;amulet,,,,,,,
-詞條池,cdr,冷卻縮減%,0.5,0.0025,TRUE,3,2,4,helmet;belt;ring;amulet,,,,,,,
-詞條池,castSpeed,施法速度%,3,0.036,TRUE,4,1.4,,all_lock,,,,,,,
-詞條池,lifesteal,吸血,3,0.045,FALSE,4,1.4,4,chest;wrist;legs;ring;amulet,,,,,,,
-詞條池,manaSteal,吸魔,1,0.005,FALSE,3,1.4,4,chest;wrist;legs;ring;amulet,,,,,,,
+詞條池,pPen,物理穿透%,20,4.4999999999999998E-2,TRUE,4,2.2000000000000002,4,weapon;gloves;wrist;ring;amulet,,,,,,,
+詞條池,mPen,魔法穿透%,20,4.4999999999999998E-2,TRUE,4,2.2000000000000002,4,weapon;gloves;wrist;ring;amulet,,,,,,,
+詞條池,hit,命中率%,3,4.4999999999999998E-2,TRUE,5,1.2,4,helmet;gloves;wrist;legs;boots;ring;amulet,,,,,,,
+詞條池,cdr,冷卻縮減%,0.5,2.5000000000000001E-3,TRUE,3,2,4,helmet;belt;ring;amulet,,,,,,,
+詞條池,castSpeed,施法速度%,3,3.5999999999999997E-2,TRUE,4,1.4,,all_lock,,,,,,,
+詞條池,lifesteal,吸血,3,4.4999999999999998E-2,FALSE,4,1.4,4,chest;wrist;legs;ring;amulet,,,,,,,
+詞條池,manaSteal,吸魔,1,5.0000000000000001E-3,FALSE,3,1.4,4,chest;wrist;legs;ring;amulet,,,,,,,
 詞條池,eliteDmg,對菁英傷害%,2,0.08,TRUE,4,1.2,3,weapon;helmet;shoulder;ring;amulet,,,,,,,
 詞條池,bossDmg,對BOSS傷害%,2,0.08,TRUE,4,1.2,3,weapon;helmet;shoulder;ring;amulet,,,,,,,
 詞條池,normalDmg,對普通敵人傷害%,2,0.105,TRUE,7,1.2,3,weapon;helmet;shoulder;ring;amulet,,,,,,,
-詞條池,dmgVsFire,對火屬性敵人傷害%,5,0.075,TRUE,3,0.4,3,weapon;ring;amulet,,,,,,,
-詞條池,dmgVsIce,對冰屬性敵人傷害%,5,0.075,TRUE,3,0.4,3,weapon;ring;amulet,,,,,,,
-詞條池,dmgVsLightning,對雷屬性敵人傷害%,5,0.075,TRUE,3,0.4,3,weapon;ring;amulet,,,,,,,
-詞條池,dmgVsPoison,對毒屬性敵人傷害%,5,0.075,TRUE,3,0.4,3,weapon;ring;amulet,,,,,,,
-詞條池,dmgVsLight,對聖屬性敵人傷害%,5,0.075,TRUE,3,0.4,3,weapon;ring;amulet,,,,,,,
-詞條池,dmgVsDark,對暗屬性敵人傷害%,5,0.075,TRUE,3,0.4,3,weapon;ring;amulet,,,,,,,
-詞條池,dmgVsEarth,對地屬性敵人傷害%,5,0.075,TRUE,3,0.4,3,weapon;ring;amulet,,,,,,,
-詞條池,dmgVsWind,對風屬性敵人傷害%,5,0.075,TRUE,3,0.4,3,weapon;ring;amulet,,,,,,,
+詞條池,dmgVsFire,對火屬性敵人傷害%,5,7.4999999999999997E-2,TRUE,3,0.4,3,weapon;ring;amulet,,,,,,,
+詞條池,dmgVsIce,對冰屬性敵人傷害%,5,7.4999999999999997E-2,TRUE,3,0.4,3,weapon;ring;amulet,,,,,,,
+詞條池,dmgVsLightning,對雷屬性敵人傷害%,5,7.4999999999999997E-2,TRUE,3,0.4,3,weapon;ring;amulet,,,,,,,
+詞條池,dmgVsPoison,對毒屬性敵人傷害%,5,7.4999999999999997E-2,TRUE,3,0.4,3,weapon;ring;amulet,,,,,,,
+詞條池,dmgVsLight,對聖屬性敵人傷害%,5,7.4999999999999997E-2,TRUE,3,0.4,3,weapon;ring;amulet,,,,,,,
+詞條池,dmgVsDark,對暗屬性敵人傷害%,5,7.4999999999999997E-2,TRUE,3,0.4,3,weapon;ring;amulet,,,,,,,
+詞條池,dmgVsEarth,對地屬性敵人傷害%,5,7.4999999999999997E-2,TRUE,3,0.4,3,weapon;ring;amulet,,,,,,,
+詞條池,dmgVsWind,對風屬性敵人傷害%,5,7.4999999999999997E-2,TRUE,3,0.4,3,weapon;ring;amulet,,,,,,,
 詞條池,elemDmgFire,火屬性傷害提升%,5,0.04,TRUE,3,0.4,3,weapon;belt;gloves;wrist;ring;amulet,,,,,,,
 詞條池,elemDmgIce,冰屬性傷害提升%,5,0.04,TRUE,3,0.4,3,weapon;belt;gloves;wrist;ring;amulet,,,,,,,
 詞條池,elemDmgLightning,雷屬性傷害提升%,5,0.04,TRUE,3,0.4,3,weapon;belt;gloves;wrist;ring;amulet,,,,,,,
@@ -56,10 +56,10 @@ all_lock＝全鎖定（不會出現在任何裝備部位上，也不會出現在
 詞條池,elemDmgDark,暗屬性傷害提升%,5,0.04,TRUE,3,0.4,3,weapon;belt;gloves;wrist;ring;amulet,,,,,,,
 詞條池,elemDmgEarth,地屬性傷害提升%,5,0.04,TRUE,3,0.4,3,weapon;belt;gloves;wrist;ring;amulet,,,,,,,
 詞條池,elemDmgWind,風屬性傷害提升%,5,0.04,TRUE,3,0.4,3,weapon;belt;gloves;wrist;ring;amulet,,,,,,,
-詞條池,aoeDmg,範圍傷害%,2,0.005,TRUE,4,1.4,4,weapon;belt;ring;amulet,,,,,,,
+詞條池,aoeDmg,範圍傷害%,2,5.0000000000000001E-3,TRUE,4,1.4,4,weapon;belt;ring;amulet,,,,,,,
 詞條池,blockRate,格擋率%,1,0.03,TRUE,4,2,4,weapon;shoulder;chest;gloves;wrist;legs;amulet,,,,,,,
 詞條池,blockDmgRed,格擋減傷%,4,0.08,TRUE,3,1.2,4,shoulder;chest;gloves;wrist;legs;amulet,,,,,,,
-詞條池,evasion,閃避率%,2,0.02,TRUE,4,2.2,4,helmet;wrist;legs;boots;ring;amulet,,,,,,,
+詞條池,evasion,閃避率%,2,0.02,TRUE,4,2.2000000000000002,4,helmet;wrist;legs;boots;ring;amulet,,,,,,,
 詞條池,tenacity,韌性%,4,0.08,TRUE,3,1.2,4,helmet;shoulder;chest;belt;gloves;wrist;legs;boots;ring;amulet,,,,,,,
 詞條池,shieldEff,護盾效率%,5,0.03,TRUE,3,1,,helmet;shoulder;chest;belt;gloves;wrist;legs;boots;ring;amulet,,,,,,,
 詞條池,pRes,物理抗性%,30,0.4,TRUE,3,2,,helmet;shoulder;chest;belt;gloves;wrist;legs;boots;ring;amulet,,,,,,,
@@ -74,24 +74,24 @@ all_lock＝全鎖定（不會出現在任何裝備部位上，也不會出現在
 詞條池,resWind,疾風抗性%,30,0.72,TRUE,3,0.8,,helmet;shoulder;chest;belt;gloves;wrist;legs;boots;ring;amulet,,,,,,,
 詞條池,resAll,全屬性抗性%,15,0.18,TRUE,3,0.8,4,helmet;shoulder;chest;belt;gloves;wrist;legs;boots;ring;amulet,,,,,,,
 詞條池,ccRed,控制時間縮減%,10,0.08,TRUE,3,1.2,4,helmet;shoulder;chest;belt;gloves;wrist;legs;boots;ring;amulet,,,,,,,
-詞條池,moveSpeed,移動速度%,3,0.036,TRUE,4,1.5,,all_lock,,,,,,,
+詞條池,moveSpeed,移動速度%,3,3.5999999999999997E-2,TRUE,4,1.5,,all_lock,,,,,,,
 詞條池,loot,掉寶率%,2,0.02,TRUE,4,0.8,5,ring;amulet,,,,,,,
-詞條池,xpBonus,經驗加成%,2,0.005,TRUE,4,0.8,5,ring;amulet,,,,,,,
-詞條池,goldBonus,金幣加成%,2,0.045,TRUE,4,0.8,4,ring;amulet,,,,,,,
+詞條池,xpBonus,經驗加成%,2,5.0000000000000001E-3,TRUE,4,0.8,5,ring;amulet,,,,,,,
+詞條池,goldBonus,金幣加成%,2,4.4999999999999998E-2,TRUE,4,0.8,4,ring;amulet,,,,,,,
 詞條池,luck,幸運值,3,0.6,FALSE,3,1.5,5,helmet;ring;amulet,,,,,,,
 詞條池,enhanceSuccess,強化成功率%,3,0.02,TRUE,3,0.8,5,ring;amulet,,,,,,,
-詞條池,decomposeYield,分解高產率%,3,0.045,TRUE,3,0.8,,all_lock,,,,,,,
+詞條池,decomposeYield,分解高產率%,3,4.4999999999999998E-2,TRUE,3,0.8,,all_lock,,,,,,,
 詞條池,hybridMutation,合成變異率%,2.5,0.03,TRUE,2,1.2,,all_lock,,,,,,,
 詞條池,enrageThreshold,狂暴閾值+,2,0.16,FALSE,2,1,,all_lock,,,,,,,
-詞條池,affixCap,詞條上限率%,3,0.075,TRUE,2,1.2,5,ring;amulet,,,,,,,
+詞條池,affixCap,詞條上限率%,3,7.4999999999999997E-2,TRUE,2,1.2,5,ring;amulet,,,,,,,
 詞條池,gemEff,寶石鑲嵌效率%,4,0.08,TRUE,2,1,5,ring;amulet,,,,,,,
-傳奇特效,sunder,破甲,10,,,,,,,2,,攻擊時忽略目標 {v}% 防禦,,,,
-傳奇特效,thorns,反震,5,,,,,,,1,,受擊時對敵人造成自身 {v}% 最大生命的傷害,,,,
-傳奇特效,doubleHit,連擊,10,,,,,,,2,,攻擊時有 {v}% 機率再次攻擊,,,,
-傳奇特效,stun,暈眩,6,,,,,,,1.5,,攻擊時有 {v}% 機率暈眩敵人 1 秒,,,,
-傳奇特效,slowHit,減速,12,,,,,,,3,,攻擊時有 {v}% 機率使敵人攻速降低 30%，持續 3 秒,,,,
-傳奇特效,trueDmg,真傷,6,,,,,,,1.5,,每次攻擊附加 {v}% 攻擊力的真實傷害,,,,
-傳奇特效,soulEater,吸魂,5,,,,,,,1.5,,擊殺敵人時回復 {v}% 最大生命,,,,
+傳奇特效,sunder,破甲,10,,,,,,,0,,攻擊時忽略目標 {v}% 防禦,,,,
+傳奇特效,thorns,反震,5,,,,,,,0,,受擊時對敵人造成自身 {v}% 最大生命的傷害,,,,
+傳奇特效,doubleHit,連擊,10,,,,,,,0,,攻擊時有 {v}% 機率再次攻擊,,,,
+傳奇特效,stun,暈眩,6,,,,,,,0,,攻擊時有 {v}% 機率暈眩敵人 1 秒,,,,
+傳奇特效,slowHit,減速,12,,,,,,,0,,攻擊時有 {v}% 機率使敵人攻速降低 30%，持續 3 秒,,,,
+傳奇特效,trueDmg,真傷,6,,,,,,,0,,每次攻擊附加 {v}% 攻擊力的真實傷害,,,,
+傳奇特效,soulEater,吸魂,5,,,,,,,0,,擊殺敵人時回復 {v}% 最大生命,,,,
 傳奇特效,mountainSunderer,崩山裂地者,0,,,,,,,0,,當你對敵人造成暈眩或緩速效果時，該效果持續時間 +100%，且對處於該狀態的敵人造成的傷害提高 300%。,,,,"{""controlDurationMult"":2,""controlledTargetDamagePct"":300}"
 傳奇特效,shadowTracker,影襲追蹤者,0,,,,,,,0,,射出三把飛刀追蹤攻擊敵人，每 1 秒各攻擊 1 次並造成 60% 物理傷害；飛刀存在 4 秒，期間擊殺敵人會使所有飛刀持續時間 +0.5 秒。,phys,,,"{""shadowKnives"":{""count"":3,""tickSec"":1,""powerPct"":60,""dur"":4,""killExtend"":0.5}}"
 傳奇特效,whirlwindStab,旋風之刺,0,,,,,,,0,,裝備兩把單手匕首時攻速額外提高 50%；每使用 20 次普攻後打出 3 連擊，每擊造成 120% 物理傷害。,phys,,,"{""dualDaggerAspdPct"":50,""basicAttackThreshold"":20,""flurryHits"":3,""flurryPowerPct"":120}"
@@ -141,15 +141,15 @@ all_lock＝全鎖定（不會出現在任何裝備部位上，也不會出現在
 傳奇特效,counterBloodPay,以血還血,0,,,,,,,0,,每次反擊損失自身 0.25% 生命值，但反擊傷害提高 100%。,phys,counter,,"{""counterBloodPay"":{""hpPct"":0.25,""pct"":100}}"
 傳奇特效,counterWindBody,風之體,0,,,,,,,0,,反擊有 20% 機率附加 1 顆火球射向目標，造成 100% 普攻傷害的火焰傷害。,fire,counter,,"{""counterFireball"":{""chance"":20,""powerPct"":100}}"
 傳奇特效,rageValor,英勇氣概,0,,,,,,,0,,嗜血狂怒的攻速額外 +30%（與本體同為突破上限的乘算）。,phys,bloodrage,,"{""rageAspdPct"":30}"
-傳奇特效,rageBurnBlood,燃血,0,,,,,,,0,,【血飲術】每造成 1 次自身生命損失就使你造成的傷害 +1%，最多疊 50 層，持續 4 秒。,phys,bloodrage,,"{""rageBurnBlood"":{""pct"":1,""maxStacks"":50,""sec"":4}}"
-傳奇特效,rageBloodDebt,血債償還,0,,,,,,,0,,【血飲術】造成的自身生命損失降低 25%。,phys,bloodrage,,"{""rageSelfCut"":{""reducePct"":25}}"
-傳奇特效,rageZealot,狂熱者,0,,,,,,,0,,每 0.5 連擊數使【狂血盛宴】的傷害加成再提高 10%（＝每 1 連擊數 +20%）。,phys,bloodrage,,"{""rageZealotPct"":20}"
-傳奇特效,rageSlaughterer,屠戮者,0,,,,,,,0,,狂怒期間每殺死 1 個敵人使【嗜血反震】的效果提高 5%，最多疊 10 層，持續 4 秒。,phys,bloodrage,,"{""rageThornsStack"":{""pct"":5,""maxStacks"":10,""sec"":4}}"
+傳奇特效,rageBurnBlood,燃血,0,,,,,,,0,,血飲術每造成 1 次自身生命損失就使你造成的傷害 +1%，最多疊 50 層，持續 4 秒。,phys,bloodrage,,"{""rageBurnBlood"":{""pct"":1,""maxStacks"":50,""sec"":4}}"
+傳奇特效,rageBloodDebt,血債償還,0,,,,,,,0,,血飲術造成的自身生命損失降低 25%。,phys,bloodrage,,"{""rageSelfCut"":{""reducePct"":25}}"
+傳奇特效,rageZealot,狂熱者,0,,,,,,,0,,每 0.5 連擊數使狂血盛宴的傷害加成再提高 10%。,phys,bloodrage,,"{""rageZealotPct"":20}"
+傳奇特效,rageSlaughterer,屠戮者,0,,,,,,,0,,狂怒期間每殺死 1 個敵人使嗜血反震的效果提高 5%，最多疊 10 層，持續 4 秒。,phys,bloodrage,,"{""rageThornsStack"":{""pct"":5,""maxStacks"":10,""sec"":4}}"
 傳奇特效,fireballBeadShot,連珠火,0,,,,,,,0,,每次發射火球數量 +1 個，且累計每發射 5 個火球會再額外發射 1 個火球。,fire,fireball,,"{""fireballCountAdd"":{""count"":1,""every"":5,""extra"":1}}"
 傳奇特效,fireballEmber,燃燼,0,,,,,,,0,,火球術造成的燃燒效果傷害 +50%。,fire,fireball,,"{""fireballBurnDmgPct"":50}"
 傳奇特效,fireballPool,火池,0,,,,,,,0,,火球及殞石爆炸後會在地上留下一團半徑 6 米的火池，每 0.5 秒對範圍內的敵人造成 50% 火焰傷害，持續 4 秒。,fire,fireball,,"{""firePool"":{""m"":6,""pct"":50,""gap"":0.5,""sec"":4}}"
 傳奇特效,fireballHeart,烈焰之心,0,,,,,,,0,,火球及殞石對燃燒狀態的敵人造成的傷害 +30%。,fire,fireball,,"{""fireballBurningDmgPct"":30}"
-傳奇特效,fireballBurst,爆裂,0,,,,,,,0,,【火球爆裂】會額外產生 3 個小火球。,fire,fireball,,"{""fireballSplitAdd"":{""count"":3}}"
+傳奇特效,fireballBurst,爆裂,0,,,,,,,0,,火球爆裂會額外產生 3 個小火球。,fire,fireball,,"{""fireballSplitAdd"":{""count"":3}}"
 傳奇特效,firepillarTracking,追蹤烈焰,0,,,,,,,0,,火龍捲移動速度 +50%。,fire,firepillar,,"{""firepillarSpeedPct"":50}"
 傳奇特效,firepillarSpread,火龍擴散,0,,,,,,,0,,火龍捲的體積增加 30%。,fire,firepillar,,"{""firepillarScalePct"":30}"
 傳奇特效,firepillarOutburst,火焰爆衝,0,,,,,,,0,,火龍捲的傷害段數 +3 段。,fire,firepillar,,"{""firepillarHitsAdd"":{""hits"":3}}"
@@ -162,8 +162,8 @@ all_lock＝全鎖定（不會出現在任何裝備部位上，也不會出現在
 傳奇特效,firehuntHunter,狩獵者,0,,,,,,,0,,你的火狩數量減半（無條件進位，至少 1 團），但造成的傷害額外 +150%。,fire,firehunt,,"{""firehuntHunter"":{""pct"":150}}"
 傳奇特效,rockHeavyArmor,重岩甲,0,,,,,,,0,,岩甲護盾效果 +30%。,earth,rockarmor,,"{""rockShieldPct"":30}"
 傳奇特效,rockLightArmor,輕飛甲,0,,,,,,,0,,岩甲護盾存在期間，你的移動速度 +30%。,earth,rockarmor,,"{""rockMoveSpeedPct"":30}"
-傳奇特效,rockAmpBoost,巨岩增幅,0,,,,,,,0,,【岩甲增幅】可疊加的層數 +10 層。,earth,rockarmor,,"{""rockAmpStacksAdd"":{""maxStacks"":10}}"
-傳奇特效,rockSpikeArmor,尖刺甲,0,,,,,,,0,,【岩甲尖刺】的效果提高 50%。,earth,rockarmor,,"{""rockSpikePct"":50}"
+傳奇特效,rockAmpBoost,巨岩增幅,0,,,,,,,0,,岩甲增幅可疊加的層數 +10 層。,earth,rockarmor,,"{""rockAmpStacksAdd"":{""maxStacks"":10}}"
+傳奇特效,rockSpikeArmor,尖刺甲,0,,,,,,,0,,岩甲尖刺的效果提高 50%。,earth,rockarmor,,"{""rockSpikePct"":50}"
 傳奇特效,rockEarthHeart,大地之心,0,,,,,,,0,,當你的生命護盾降至 0 時獲得無敵 3 秒；此效果每 60 秒只能觸發 1 次。,earth,rockarmor,,"{""rockHeartInvuln"":{""sec"":3,""cd"":60}}"
 傳奇特效,mireSpread,蔓延,0,,,,,,,0,,泥沼術的範圍 +25%。,earth,mire,,"{""mireScalePct"":25}"
 傳奇特效,mireWeaken,削弱,0,,,,,,,0,,在泥沼術範圍中的敵人造成的傷害 -20%。,earth,mire,,"{""mireWeaken"":{""reducePct"":20}}"
@@ -171,32 +171,32 @@ all_lock＝全鎖定（不會出現在任何裝備部位上，也不會出現在
 傳奇特效,mireLavaBurn,熔火,0,,,,,,,0,,熔岩沼的火焰傷害 +50%。,earth,mire,,"{""mireLavaPct"":50}"
 傳奇特效,mireErode,侵蝕,0,,,,,,,0,,泥沼術會附加流血，每 0.5 秒造成 150% 物理傷害，持續 5 秒。,earth,mire,,"{""mireBleed"":{""tickPowerPct"":150,""tickSec"":0.5,""dur"":5}}"
 傳奇特效,earthguardManaFeed,魔力滋養,0,,,,,,,0,,大地守護會使溢出法力的 50% 轉為你的生命護盾。,earth,earthguard,,"{""egManaOverflowShield"":{""pct"":50}}"
-傳奇特效,earthguardLifeFeed,生命滋養,0,,,,,,,0,,大地守護會使你額外獲得【魔力再生】法力回復加成的 20% 作為吸魔效果加成。,earth,earthguard,,"{""egManaDrainFromRegen"":{""pct"":20}}"
-傳奇特效,earthguardSoulLink,靈魂連結,0,,,,,,,0,,【生命反射之盾】可以額外對 1 個敵人產生作用。,earth,earthguard,,"{""egReflectAdd"":{""count"":1}}"
-傳奇特效,earthguardHeartOfEarth,地之心,0,,,,,,,0,,每殺死 1 個敵人，【天地共生】的復活冷卻時間 -0.2 秒。,earth,earthguard,,"{""egKillCdr"":{""sec"":0.2}}"
-傳奇特效,earthguardUndyingWill,不滅意志,0,,,,,,,0,,【天地共生】復活後的減傷時間內，每殺死 1 個敵人則減傷時間 +0.5 秒。,earth,earthguard,,"{""egKillInvuln"":{""sec"":0.5}}"
+傳奇特效,earthguardLifeFeed,生命滋養,0,,,,,,,0,,大地守護會使你額外獲得魔力再生法力回復加成的 20% 作為吸魔效果加成。,earth,earthguard,,"{""egManaDrainFromRegen"":{""pct"":20}}"
+傳奇特效,earthguardSoulLink,靈魂連結,0,,,,,,,0,,生命反射之盾可以額外對 1 個敵人產生作用。,earth,earthguard,,"{""egReflectAdd"":{""count"":1}}"
+傳奇特效,earthguardHeartOfEarth,地之心,0,,,,,,,0,,每殺死 1 個敵人，天地共生的復活冷卻時間 -0.2 秒。,earth,earthguard,,"{""egKillCdr"":{""sec"":0.2}}"
+傳奇特效,earthguardUndyingWill,不滅意志,0,,,,,,,0,,天地共生復活後的減傷時間內，每殺死 1 個敵人則減傷時間 +0.5 秒。,earth,earthguard,,"{""egKillInvuln"":{""sec"":0.5}}"
 傳奇特效,chainlightningSurge,電荷連鎖,0,,,,,,,0,,連鎖閃電有 35% 機率再連鎖 2 次。,lightning,chainlightning,,"{""chainLinkProc"":{""chance"":35,""count"":2}}"
 傳奇特效,chainlightningVolley,電擊,0,,,,,,,0,,連鎖閃電有 50% 機率額外發射 2 道連鎖閃電。,lightning,chainlightning,,"{""chainBoltProc"":{""chance"":50,""count"":2}}"
-傳奇特效,chainlightningScatter,雷散落,0,,,,,,,0,,【電殛擴散】額外對 1 個敵人造成傷害，且其傷害提高 50%。,lightning,chainlightning,,"{""chainSplashAdd"":{""count"":1},""chainSplashPct"":50}"
+傳奇特效,chainlightningScatter,雷散落,0,,,,,,,0,,電殛擴散額外對 1 個敵人造成傷害，且其傷害提高 50%。,lightning,chainlightning,,"{""chainSplashAdd"":{""count"":1},""chainSplashPct"":50}"
 傳奇特效,chainlightningSuper,超導,0,,,,,,,0,,連鎖閃電每彈射 1 次，該道閃電鏈的傷害 +10%。,lightning,chainlightning,,"{""chainBouncePct"":10}"
 傳奇特效,chainlightningOverload,過載,0,,,,,,,0,,同一個敵人受到 10 次連鎖閃電的彈射後產生爆炸，對周圍 10 米內的敵人造成 400% 雷電傷害。,lightning,chainlightning,,"{""chainOverload"":{""hits"":10,""m"":10,""pct"":400}}"
-傳奇特效,thunderstrikeTriple,三重雷,0,,,,,,,0,,【雙重落雷】的攻擊次數 +1 次。,lightning,thunderstrike,,"{""thunderHitAdd"":{""count"":1}}"
+傳奇特效,thunderstrikeTriple,三重雷,0,,,,,,,0,,雙重落雷的攻擊次數 +1 次。,lightning,thunderstrike,,"{""thunderHitAdd"":{""count"":1}}"
 傳奇特效,thunderstrikeLock,雷鎖,0,,,,,,,0,,落雷術擊中時有 25% 機率在地上留下一個雷池，每 0.5 秒造成該道落雷 20% 的雷電傷害，持續 4 秒。,lightning,thunderstrike,,"{""thunderPool"":{""chance"":25,""pct"":20,""m"":6,""gap"":0.5,""sec"":4}}"
 傳奇特效,thunderstrikeQuake,震雷,0,,,,,,,0,,被落雷術擊中的敵人暈眩時間 +1 秒，且其在暈眩狀態下受到的傷害 +25%。,lightning,thunderstrike,,"{""thunderStunAdd"":{""sec"":1},""thunderStunnedVulnPct"":25}"
-傳奇特效,thunderstrikeRebirth,雷之再生,0,,,,,,,0,,【迅雷重生】的機率提高至 100%。,lightning,thunderstrike,,"{""thunderRegenTo"":{""chance"":100}}"
+傳奇特效,thunderstrikeRebirth,雷之再生,0,,,,,,,0,,迅雷重生的機率提高至 100%。,lightning,thunderstrike,,"{""thunderRegenTo"":{""chance"":100}}"
 傳奇特效,thunderstrikeRod,引雷針,0,,,,,,,0,,落雷術會優先攻擊 24 米內生命值最低的敵人，且對其造成的傷害提高 20%。,lightning,thunderstrike,,"{""thunderRod"":{""m"":24,""pct"":20}}"
 傳奇特效,thunderorbCore,雷核,0,,,,,,,0,,雷球的體積增大 20%。,lightning,thunderorb,,"{""thunderorbScalePct"":20}"
 傳奇特效,thunderorbOverload,超載,0,,,,,,,0,,場上每擁有 1 個雷球，你的雷電傷害 +2%。,lightning,thunderorb,,"{""thunderorbFieldAmpPct"":2}"
-傳奇特效,thunderorbShockCore,感電核心,0,,,,,,,0,,【伴生雷球】的持續時間增加 50%。,lightning,thunderorb,,"{""thunderorbCompanionSecPct"":50}"
-傳奇特效,thunderorbFallCount,雷殞落,0,,,,,,,0,,【雷殞天落】降下的雷球數量 +1 顆。,lightning,thunderorb,,"{""thunderorbFallAdd"":{""count"":1}}"
-傳奇特效,thunderorbFallStun,雷殞震,0,,,,,,,0,,被【雷殞天落】降下的雷球擊中的敵人會暈眩 4 秒。,lightning,thunderorb,,"{""thunderorbFallStunTo"":{""sec"":4}}"
+傳奇特效,thunderorbShockCore,感電核心,0,,,,,,,0,,伴生雷球的持續時間增加 50%。,lightning,thunderorb,,"{""thunderorbCompanionSecPct"":50}"
+傳奇特效,thunderorbFallCount,雷殞落,0,,,,,,,0,,雷殞天落降下的雷球數量 +1 顆。,lightning,thunderorb,,"{""thunderorbFallAdd"":{""count"":1}}"
+傳奇特效,thunderorbFallStun,雷殞震,0,,,,,,,0,,被雷殞天落降下的雷球擊中的敵人會暈眩 4 秒。,lightning,thunderorb,,"{""thunderorbFallStunTo"":{""sec"":4}}"
 傳奇特效,icearrowVolley,連射,0,,,,,,,0,,寒冰箭射出數量 +2 支。,ice,icearrow,,"{""icearrowCountAdd"":{""count"":2}}"
 傳奇特效,icearrowSeal,冰封,0,,,,,,,0,,寒冰箭傷害 +30%。,ice,icearrow,,"{""icearrowDamagePct"":30}"
 傳奇特效,icearrowWinter,凜冬侵蝕,0,,,,,,,0,,寒冰箭造成的寒霜狀態傷害與持續時間 +30%。,ice,icearrow,,"{""icearrowFrostPct"":30}"
 傳奇特效,icearrowSplit,冰裂箭,0,,,,,,,0,,寒冰箭擊中敵人後會再分裂出 2 支小型寒冰箭，向前方的敵人造成 150% 寒冰傷害。,ice,icearrow,,"{""icearrowSplit"":{""count"":2,""pct"":150}}"
 傳奇特效,icearrowDeepFreeze,深度凍結,0,,,,,,,0,,寒冰箭擊中暈眩或凍結的敵人造成的傷害 +30%。,ice,icearrow,,"{""icearrowControlPct"":30}"
 傳奇特效,waterballVolley,水流連彈,0,,,,,,,0,,水流彈的發射數量 +2 顆。,ice,waterball,,"{""waterballShotAdd"":{""count"":2}}"
-傳奇特效,waterballNovaBurst,冰霜擴散,0,,,,,,,0,,【寒流爆散】的擴散爆炸變成冰霜新星，且範圍增大 30%。,ice,waterball,,"{""waterballBurstNova"":{""scalePct"":30}}"
+傳奇特效,waterballNovaBurst,冰霜擴散,0,,,,,,,0,,寒流爆散的擴散爆炸變成冰霜新星，且範圍增大 30%。,ice,waterball,,"{""waterballBurstNova"":{""scalePct"":30}}"
 傳奇特效,waterballFrostSurge,寒霜湧動,0,,,,,,,0,,水流彈造成的寒霜狀態可在凍結後再疊加 5 層；寒霜凍傷依目前寒霜總層數計算。,ice,waterball,,"{""waterballFrostOver"":{""count"":5,""pct"":50}}"
 傳奇特效,waterballTorrent,激流,0,,,,,,,0,,水流彈的彈射次數 +2 次，且彈射速度 +30%。,ice,waterball,,"{""waterballBounceAdd"":{""count"":2},""waterballBounceSpeedPct"":30}"
 傳奇特效,waterballTornado,水龍勢,0,,,,,,,0,,水流彈擊中時有 10% 機率在目標處形成 1 道水龍捲，造成 4 段 100% 寒冰傷害。,ice,waterball,,"{""waterballTornadoProc"":{""chance"":10,""hits"":4,""pct"":100}}"
@@ -207,19 +207,19 @@ all_lock＝全鎖定（不會出現在任何裝備部位上，也不會出現在
 傳奇特效,frostnovaWinterFrost,凜冬寒霜,0,,,,,,,0,,暴風雪對帶有寒霜狀態的敵人，每層寒霜傷害 +5%。,ice,frostnova,,"{""frostnovaBlizzardLayer"":{""pct"":5}}"
 傳奇特效,windbladeRend,裂風,0,,,,,,,0,,風刃每擊中敵人 1 次則傷害額外 +2%，最多疊加 20 層（最高 +40%）。,wind,windblade,,"{""windbladeRamp"":{""pct"":2,""max"":40}}"
 傳奇特效,windbladePressure,增壓,0,,,,,,,0,,風刃的體積增大 25%，且飛行速度 +30%。,wind,windblade,,"{""windbladeSizePct"":25,""windbladeSpeedPct"":30}"
-傳奇特效,windbladeTrace,風之痕,0,,,,,,,0,,【亂披風】會在風刃另一側額外射出 1 道小型風刃，且小型風刃傷害 +30%。,wind,windblade,,"{""windbladeSmallMirror"":{""count"":1},""windbladeSmallDmgPct"":30}"
+傳奇特效,windbladeTrace,風之痕,0,,,,,,,0,,亂披風會在風刃另一側額外射出 1 道小型風刃，且小型風刃傷害 +30%。,wind,windblade,,"{""windbladeSmallMirror"":{""count"":1},""windbladeSmallDmgPct"":30}"
 傳奇特效,windbladeErode,風蝕,0,,,,,,,0,,風刃擊中敵人時會附加風蝕狀態，讓敵人受到的傷害 +25%，持續 4 秒。,wind,windblade,,"{""windbladeErode"":{""pct"":25,""sec"":4}}"
-傳奇特效,windbladeVoidCut,斷空刃,0,,,,,,,0,,【暴風真空刃】每個方向改為連續射出 3 道風刃，且風刃傷害額外 +30%。,wind,windblade,,"{""windbladeVolleyTo"":{""count"":3},""windbladeDmgPct"":30}"
-傳奇特效,vacuumResonance,共振,0,,,,,,,0,,【真空爆震】會額外多造成 1 次傷害。,wind,vacuumslash,,"{""vacuumBurstAdd"":{""hits"":1}}"
+傳奇特效,windbladeVoidCut,斷空刃,0,,,,,,,0,,暴風真空刃每個方向改為連續射出 3 道風刃，且風刃傷害額外 +30%。,wind,windblade,,"{""windbladeVolleyTo"":{""count"":3},""windbladeDmgPct"":30}"
+傳奇特效,vacuumResonance,共振,0,,,,,,,0,,真空爆震會額外多造成 1 次傷害。,wind,vacuumslash,,"{""vacuumBurstAdd"":{""hits"":1}}"
 傳奇特效,vacuumRift,裂痕,0,,,,,,,0,,真空斬造成的風切狀態疊加層數 +3 層。,wind,vacuumslash,,"{""vacuumRendStacks"":{""maxStacks"":3}}"
 傳奇特效,vacuumWindBlade,真空風刃,0,,,,,,,0,,每次施放真空斬會額外射出 2 道小型風刃。,wind,vacuumslash,,"{""vacuumSmallBlades"":{""count"":2}}"
 傳奇特效,vacuumExpand,空間澎脹,0,,,,,,,0,,真空斬的體積 +25%。,wind,vacuumslash,,"{""vacuumScalePct"":25}"
-傳奇特效,vacuumFlux,虛空漲落,0,,,,,,,0,,【虛空斬】的持續時間 +3 秒。,wind,vacuumslash,,"{""vacuumVoidSec"":{""sec"":3}}"
+傳奇特效,vacuumFlux,虛空漲落,0,,,,,,,0,,虛空斬的持續時間 +3 秒。,wind,vacuumslash,,"{""vacuumVoidSec"":{""sec"":3}}"
 傳奇特效,stormbarrierAbsorb,吸收,0,,,,,,,0,,暴風屏障的傷害減免 +10%。,wind,stormbarrier,,"{""stormbarrierRedPct"":10}"
-傳奇特效,stormbarrierReflect,暴風反射,0,,,,,,,0,,【暴風之刃】射出風刃的機率 +10%。,wind,stormbarrier,,"{""stormbladeChanceAdd"":{""chance"":10}}"
-傳奇特效,stormbarrierCounterCut,逆風切,0,,,,,,,0,,【亂風切】所附加的風切狀態，每層傷害 +35%。,wind,stormbarrier,,"{""stormRendDmgPct"":35}"
+傳奇特效,stormbarrierReflect,暴風反射,0,,,,,,,0,,暴風之刃射出風刃的機率 +10%。,wind,stormbarrier,,"{""stormbladeChanceAdd"":{""chance"":10}}"
+傳奇特效,stormbarrierCounterCut,逆風切,0,,,,,,,0,,亂風切所附加的風切狀態，每層傷害 +35%。,wind,stormbarrier,,"{""stormRendDmgPct"":35}"
 傳奇特效,stormbarrierWall,風之壁,0,,,,,,,0,,暴風屏障作用中，你的物理與魔法防禦額外 +20%。,wind,stormbarrier,,"{""stormbarrierDefPct"":20}"
-傳奇特效,stormbarrierCore,風暴核心,0,,,,,,,0,,【暴風神體】的持續時間 +30%。,wind,stormbarrier,,"{""stormGodSecPct"":30}"
+傳奇特效,stormbarrierCore,風暴核心,0,,,,,,,0,,暴風神體的持續時間 +30%。,wind,stormbarrier,,"{""stormGodSecPct"":30}"
 傳奇特效,bloodthirst,嗜血,20,,,,,,,0,,對流血的敵人造成傷害額外+{v}%,,,,"{""bleedingDamage"":true}"
 傳奇特效,chainReaction,連鎖反應,10,,,,,,,0,,敵人每擁有1種異常狀態則受到傷害+{v}%，最多5種,,,,"{""debuffDamage"":{""maxStacks"":5}}"
 傳奇特效,elation,激昂,1,,,,,,,0,,在敵人疊加異常狀態效果時，最高疊加層數+{v}層,,,,"{""debuffStacks"":true}"
