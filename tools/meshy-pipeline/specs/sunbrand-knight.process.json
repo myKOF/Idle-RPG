@@ -34,7 +34,28 @@
           "frames": 3,
           "note": "the pause after the downward chop (two-handed greatsword feel)"
         }
-      ]
+      ],
+      "finalStrike": {
+        "in": [
+          20,
+          25
+        ],
+        "hold": [
+          25,
+          29
+        ],
+        "out": [
+          29,
+          45
+        ],
+        "armDirection": [
+          0,
+          -1,
+          -0.12
+        ],
+        "relaxLeft": 0.7,
+        "note": "the chop ends with chest and head to the front and the sword arm straight, blade forward"
+      }
     },
     {
       "name": "Attack2",
@@ -55,12 +76,15 @@
         "frames": 16,
         "hold": 12
       },
-      "weaponLay": true
+      "weaponLay": true,
+      "handRoll": {
+        "note": "back of the sword hand faces down as it lies"
+      }
     }
   ],
   "weaponBone": "Sword",
   "fist": {
-    "side": "Left",
-    "palmSign": -1.0
+    "from": "Right",
+    "to": "Left"
   }
 }

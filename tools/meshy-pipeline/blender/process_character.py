@@ -58,7 +58,7 @@ if WEAPON:
     skin_fix.add_weapon_bone(arm, hand, WEAPON)
 print("SKIN_FIX", skin_fix.apply(body, arm, hand, WEAPON))
 if cfg.get("fist"):
-    print("FIST", skin_fix.make_fist(body, arm, cfg["fist"]["side"], cfg["fist"].get("palmSign", -1.0)))
+    print("FIST", skin_fix.transplant_fist(body, arm, cfg["fist"]["from"], cfg["fist"]["to"]))
 
 # 2. harvest actions
 harvest = {(base_path, a.name): a for a in base_actions}
@@ -140,6 +140,116 @@ def basis_of(pose):
     return out
 
 
+def fk(basis):
+    """Armature-space pose matrices from local bases: pose = parent_pose @ (rest_parent^-1 @ rest) @ basis."""
+    pose = {}
+    for b in bones:
+        p = parent[b.name]
+        local_rest = rest[b.name] if p is None else rest[p].inverted() @ rest[b.name]
+        pose[b.name] = (Matrix.Identity(4) if p is None else pose[p]) @ local_rest @ basis[b.name]
+    return pose
+
+
+def put(basis, pose, name, world):
+    """Give bone `name` the armature-space pose `world`; its children keep their local bases and follow."""
+    p = parent[name]
+    local_rest = rest[name] if p is None else rest[p].inverted() @ rest[name]
+    basis[name] = local_rest.inverted() @ (Matrix.Identity(4) if p is None else pose[p]).inverted() @ world
+    return fk(basis)
+
+
+def about(pose_m, pivot, rot3):
+    return Matrix.Translation(pivot) @ rot3.to_4x4() @ Matrix.Translation(-pivot) @ pose_m
+
+
+def aim(pose_m, current, target, weight):
+    """Turn a bone so that direction `current` becomes `target`, by `weight` of the way (slerp)."""
+    full = (current.rotation_difference(target).to_matrix() @ pose_m.to_3x3()).to_quaternion()
+    mixed = pose_m.to_quaternion().slerp(full, weight)
+    return Matrix.Translation(pose_m.translation) @ mixed.to_matrix().to_4x4()
+
+
+def window(i, spec):
+    """0 -> 1 over spec["in"], 1 over spec["hold"], 1 -> 0 over spec["out"] (smoothstep), else 0."""
+    def smooth(t):
+        t = min(1.0, max(0.0, t))
+        return t * t * (3 - 2 * t)
+    a, b = spec["in"]
+    c, d = spec["hold"][1], spec["out"][1]
+    if i < a:
+        return 0.0
+    if i < b:
+        return smooth((i - a) / max(b - a, 1))
+    if i <= c:
+        return 1.0
+    return 1.0 - smooth((i - c) / max(d - c, 1)) if i < d else 0.0
+
+
+def final_strike(frames, spec):
+    """Finish the chop in a clean forward strike: chest and head square to the front, the sword arm
+    straight with the blade pointing forward, the free arm relaxed. Blended in and out by `spec`."""
+    forward = Vector((0, -1, 0))
+    aim_dir = Vector(spec["armDirection"]).normalized()
+    rest_lat = rest["LeftShoulder"].translation - rest["RightShoulder"].translation
+    rest_yaw_s = math.atan2(rest_lat.y, rest_lat.x)
+
+    def heading(v):
+        h = Vector((v.x, v.y, 0))
+        return math.atan2(forward.cross(h).z, forward.dot(h))
+
+    rest_face = heading(rest["headfront"].translation - rest["Head"].translation)
+    link = rest["RightHand"].inverted() @ rest[WEAPON] if WEAPON else Matrix.Identity(4)
+    for i, pose in enumerate(frames):
+        w = window(i, spec)
+        if w <= 0:
+            continue
+        B = basis_of(pose)
+        D = fk(B)
+        lat = D["LeftShoulder"].translation - D["RightShoulder"].translation
+        yaw = math.atan2(lat.y, lat.x) - rest_yaw_s
+        pivot = D["Spine02"].translation
+        D = put(B, D, "Spine02", about(D["Spine02"], pivot, Matrix.Rotation(-yaw * w, 3, "Z")))
+        err = heading(D["headfront"].translation - D["Head"].translation) - rest_face
+        D = put(B, D, "Head", about(D["Head"], D["Head"].translation, Matrix.Rotation(-err * w, 3, "Z")))
+        for bone, child in (("RightArm", "RightForeArm"), ("RightForeArm", "RightHand")):
+            limb = D[child].translation - D[bone].translation
+            D = put(B, D, bone, aim(D[bone], limb.normalized(), aim_dir, w))
+        sword_axis = ((D["RightHand"] @ link).to_3x3() @ Vector((0, 1, 0))).normalized()
+        D = put(B, D, "RightHand", aim(D["RightHand"], sword_axis, aim_dir, w))
+        for bone in ("LeftArm", "LeftForeArm", "LeftHand"):  # the free arm drops back towards its rest pose
+            relaxed = B[bone].to_quaternion().slerp(Quaternion(), spec.get("relaxLeft", 0.7) * w)
+            B[bone] = Matrix.Translation(B[bone].translation) @ relaxed.to_matrix().to_4x4()
+            D = fk(B)
+        frames[i] = D
+
+
+def hand_roll(frames, spec):
+    """As the character drops, roll the sword hand about the forearm so the back of the hand faces
+    down (palm up), the natural way a hand lies; blended in by how far the hips have fallen."""
+    back_local = rest["RightHand"].to_3x3().inverted() @ Vector((-1, 0, 0))  # at rest the back of the hand faces outwards
+    z0 = frames[0]["Hips"].translation.z
+    drop = max(z0 - frames[-1]["Hips"].translation.z, 1e-6)
+    seen = {}
+    for pose in frames:
+        if id(pose) in seen:
+            continue
+        seen[id(pose)] = True
+        s = min(1.0, max(0.0, (z0 - pose["Hips"].translation.z) / drop))
+        s = s * s * (3 - 2 * s)
+        B = basis_of(pose)
+        D = fk(B)
+        axis = (D["RightHand"].translation - D["RightForeArm"].translation).normalized()
+        back = D["RightHand"].to_3x3() @ back_local
+        b_p, t_p = back - axis * back.dot(axis), Vector((0, 0, -1)) - axis * Vector((0, 0, -1)).dot(axis)
+        if b_p.length < 1e-4 or t_p.length < 1e-4:
+            continue
+        phi = math.atan2(axis.dot(b_p.cross(t_p)), b_p.dot(t_p))
+        wrist = D["RightHand"].translation
+        D = put(B, D, "RightHand", about(D["RightHand"], wrist, Matrix.Rotation(phi * s, 3, axis)))
+        pose.clear()
+        pose.update(D)
+
+
 dominant = []
 group_names = {g.index: g.name for g in body.vertex_groups}
 for v in body.data.vertices:
@@ -187,6 +297,10 @@ def prepare(clip):
     frames = [{b: fix @ m for b, m in p.items()} for p in frames]
     if tail:
         frames += [frames[-1]] * tail.get("hold", 0)
+    if clip.get("finalStrike"):
+        final_strike(frames, clip["finalStrike"])
+    if clip.get("handRoll"):
+        hand_roll(frames, clip["handRoll"])
     return frames, c0, yaw0
 
 
