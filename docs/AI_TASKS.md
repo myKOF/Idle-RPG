@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## HERO3D-TOGGLE-20261027 — 內測用 2D／3D 主角動畫切換
+
+- Owner：Claude；Done（內測功能完成，build／test 結果見本輪回報）。使用者要求在戰鬥區上方、「世界地圖」按鈕左邊加按鈕，切換主角的 2D 序列幀與新版 3D 動畫；切換可刷新網頁；只有內測可見可用，外部正式服不行。使用者核准下載 three.js（MIT）、範圍只換主角（敵人／BOSS 維持 2D）、先不推送。
+- 設計：`js/hero3d.js` 以 three.js r160 在離屏 WebGL canvas 畫 GLB，轉成 `PIXI.Texture` 貼在模仿 AnimatedSprite 成員的 Sprite 上，站位、鏡頭、血條、特效沿用 2D 那一套；動作名沿用 2D（`Hero3D.CLIP_FOR`），朝向用連續轉角。`Hero3D.enabled()` 在正式版恆為 false，不下載 three.js 與模型；載入失敗自動關開關退回 2D。three.js 以 importmap 動態載入，不開 3D 就不下載。
+- 修改：新增 js/hero3d.js、js/vendor/three/（three@0.160.0 原封不動＋LICENSE＋README）、images/models/hero3d/sunbrand-knight.glb（約 700 KB）與 SOURCE.md；index.html（importmap、#btn-hero3d）、css/world-map.css（按鈕位置）、js/ui.js（initHero3dToggle，內測判斷用既有 isInternalServer()）、js/battle-renderer.js（3D 身體分支）；String 表新增 2145～2147（按鈕兩種狀態與提示）並同步 CSV／strings_data.js；tools/meshy-pipeline/blender/export_assets.py 新增 --max-texture。
+- 已知限制：Meshy 模型授權須由使用者確認後才能用於正式版（見 SOURCE.md）；3D 主角無逐幀輪廓圖，穿透輪廓不畫；AI_RULES 8.7.1 規定 3D 以 MakeHuman＋Blender 製作，本模型是使用者明確指示的例外。素材庫雙庫提交規則尚未處理 GLB。未做真實正式服驗證（只靠 isInternalServer 判斷）。
+
 ## SYNC-SHORTCUT-HOLD-20261027 — 修復捷徑中斷並保留Claude管線
 
 - Owner：Codex；Done（工具修復與必要驗證完成，實際同步結果見本輪報告）。使用者以1要求接續同步，並明確選擇將Claude本地Meshy提交8d1577c5保留、暫不併入develop。原develop bd0b982e已乾淨；這次卡在Antigravity的本機套用參數捷徑被skip-worktree隱藏，但遠端又更新該路徑，fast-forward拒絕覆寫。

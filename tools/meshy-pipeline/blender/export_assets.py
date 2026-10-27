@@ -11,7 +11,13 @@ import bpy
 
 argv = sys.argv[sys.argv.index("--") + 1:]
 blend, out_dir, base = argv[0], argv[1], argv[2]
+# optional: --max-texture N shrinks textures larger than N px (for in-game copies; the master keeps full size)
+max_texture = int(argv[argv.index("--max-texture") + 1]) if "--max-texture" in argv else 0
 bpy.ops.wm.open_mainfile(filepath=blend)
+if max_texture:
+    for img in bpy.data.images:
+        if img.size[0] > max_texture or img.size[1] > max_texture:
+            img.scale(min(img.size[0], max_texture), min(img.size[1], max_texture))
 os.makedirs(os.path.join(out_dir, "clips"), exist_ok=True)
 
 arm = next(o for o in bpy.data.objects if o.type == "ARMATURE")
