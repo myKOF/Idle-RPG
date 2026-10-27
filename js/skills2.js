@@ -3518,7 +3518,8 @@ function sgCastKnife(pEnt, st, g, lvs, pool, primary, floatSel, out) {
 
   for(var ki=waltz?1:0;ki<knives.length;ki++)(function(target){
     sgQueueKnifeFlight(cfg,null,target,dmgVal,0,false,'knife',function(res,angle){
-      if((res&&res.miss)||bouncePct<=0)return;
+      // 閃避只取消本段傷害；抵達後仍照剩餘次數彈射。
+      if(bouncePct<=0)return;
       var bounces=Math.max(1,Math.floor(Number(t[2].fx.count)||1))+
         (lvs[3]>0?sgRollCount(sgVal(t[3].fx,'add',lvs[3])):0)+((lg.knifeBounceProc&&chance(Number(lg.knifeBounceProc.chance)||0))?sgLegendCount(lg.knifeBounceProc):0);  // 傳奇【連鎖】：每把飛刀各擲一次機率
       var chainMax=lvs[5]>0?Math.max(0,Math.floor(Number(t[5].fx.max)||4)):0;

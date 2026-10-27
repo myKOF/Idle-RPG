@@ -48,6 +48,18 @@
 - 驗證：新增hold回歸先在未修版重現「預檢錯誤規劃建立ai/claude」，修復後涵蓋保留未提交草稿、本地／遠端HEAD與檔案保持、其他AI同步、重跑、解除hold但仍有草稿時停止及乾淨後才整合。node --test --test-reporter=tap tests/sync-feature-worktrees.test.cjs tests/sync-ai-worktrees.test.cjs tests/sync-auto-conflicts.test.cjs tests/sync-index-recovery.test.cjs，59/59通過、無略過；另Worker protocol／shim／Editor cache三檔27/27通過。npm.cmd run build：587檔通過；git diff --check通過，未降低斷言。
 - 唯讀檢查未改：規範／Workflow／Agent、原同步報告、捷徑目標、index修復／報告包裝、Claude管線及各分支關係；四檔以外不納入本次修復Commit。Commit為本段所在[Codex] fix: 同步工具尊重固定AI分支保留設定；正常同步／遠端最終HEAD見codex或develop的logs/sync-ai-worktrees/latest.md。已知限制為Claude有意保留、素材庫尚未同步及未跑全庫／玩家長戰；本輪不宣稱所有分支或素材均完全一致。
 
+## BOUNCE-DODGE-20261027 — 彈射遭閃避後繼續
+
+- Owner：Codex；Done，單一開發者。使用者要求盤點所有彈射技能，飛刀、連鎖閃電等遭閃避仍繼續彈射，閃避消耗本段次數，保留原範圍／無候選停止及命中觸發條件。
+- 允許：js/skills2.js相關續彈、tests/skill2-bounce-dodge.test.cjs、必要index／bridge／Worker快取、LV與本段；禁止配置／平衡／素材／存檔／Protocol及其他任務邏輯，不合併推送。前置為既有飛行佇列與命中判定；接手為使用者Review／整合。
+- 修正：sgCastKnife首段抵達回呼不再因res.miss跳過後續彈射；其餘命中後觸發與次數消耗保持。普通連鎖／自動無限閃電、永恒超導體、分裂／追魂飛刀、雷球連鎖雷爆與水流彈本來已獨立續段，盤點確認並新增回歸。NPC同名連鎖閃電只有單一玩家目標，沒有彈射佇列；舊skills／legendary未另藏彈射管線。
+- 本次功能提交6檔：skills2、專項回歸、index技能364／bridge373、Worker的skills2匯入20261027-bounce-dodge、LV及本段；第7檔bridge入口20261027-shared-field-waves-bounce-dodge已由同副本波次任務4ab079f6先行保存，兩任務共用快取更新授權。配置／傷害倍率／距離／解鎖／Protocol／存檔與素材均未修改，無素材庫Commit。
+- 驗證：node --test --test-reporter=spec tests/skill2-bounce-dodge.test.cjs為20/20，首擊／中途／連續閃避的次數、傷害／MISS、VFX續段、真實resolveHit絕對閃避、普通／分裂／追魂、普通／永久自動雷鏈／永恒超導體、雷爆、水流彈、範圍／無候選／死亡取消；全程閃避的正式Worker shim轉送與實際Runtime逐段曲線中點／時長／清除皆通過。
+- 擴大回歸：node --test --test-reporter=tap執行新專項（當時19項）、knife-flight、soulhunter、skill2-knife-range、infinite-lightning、lightning-vfx-lifecycle、skill2-chainlightning-active-cap、waterball-vfx-integration、water-prison-dome、worker-protocol、worker-shim、skill2-vfx，共139項121過18失敗；以啟動時來源唯讀映射取代本次修改的四份JS／HTML，舊120項102過18失敗且失敗名稱完全一致，無新增。既有失敗涉及配置期望／舊靜態渲染斷言，不降低斷言、不擅改配置。之後新增Worker→Runtime專項並重跑20/20。
+- npm.cmd run build：590檔通過；diff檢查通過。唯讀檢查未改：AI規範／AGENTS／Workflow／prompts、formula／combat命中判定、skills／elite／legendary、battlefield選敵、Renderer／Runtime／Core／Worker shim及上述既有回歸；未讀寫玩家存檔，未執行全庫或瀏覽器長戰。
+- 重疊：使用者明確同意保留全部邏輯並更新共用快取（background-catchup的刷新續戰與本副本波次快取）；不整合對方玩法。AI_TASKS插入既有MERGE-DEVELOP段前，與Claude檔首及background-catchup檔尾追加分離，初次以啟動時本檔作base試跑兩者exit0；交付前再以各對方HEAD作base、只套本次完整任務區段作ours、對方現檔作theirs，兩者merge-file仍exit0。Worker僅技能匯入快取，與對方battle-replay／loop區段分離，同法技能快取候選試跑exit0；同副本波次任務與使用者Excel改動保留，不納入本次功能提交。
+- 交付：本段所在「[Codex] fix: 彈射技能遭閃避後繼續剩餘彈射」，實際編號見回覆。無本次未完成實作，可供Review／合併；未合併推送。已知限制為上述既有18項測試與未做真瀏覽器／玩家長戰，下一步使用者正常整合後重載新版遊戲驗收。
+
 ## MERGE-DEVELOP-20261027 — 使用者快捷指令接手整合
 
 - Owner：Codex；Done（本次衝突及相關驗證完成，既有失敗另列）。使用者本聊天輸入1，授權完成本次develop衝突、必要驗證、合併提交與既有一般AI同步；取代下段先前自動控制器環境禁止stage／commit的執行限制。原HEAD 4ab31d72、incoming fd877be3、base 06aebdea；原始工作檔、三階段內容及refs已保存在本聊天merge-develop-20261027目錄。
