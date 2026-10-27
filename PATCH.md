@@ -1,12 +1,18 @@
 # PATCH.md
 
-## 依使用者指示調整超神 DPS 測試規範文本（Antigravity 2026-10-27）
+## 依新規範（命中100%、穿透90%、增傷300%）重新實測全69招超神進化DPS報表（Antigravity 2026-10-27）
 
-- **超神實測標準化規範調整**：
-  - 於 `docs/ULT_EVOLUTION_ALL_69_SKILLS_DPS_REPORT.md` 與 `scratch/generate_dps_report.cjs` 中同步更新第 1 節測試規範：
-    1. 命中率規範明確改為：**命中率 100% 滿命中（完全壓制 300 級敵人閃避，達成零 MISS 必中基準）**。
-    2. 穿透規範改為：**物理與魔法穿透保持 90%（即敵人還有 10% 的物理/魔法防禦）**。
-    3. 增傷規範改為：**全屬性增傷 +300%**。
+- **規範參數精確調整與模擬器實裝**：
+  - **命中率 100%**：玩家命中設為 `100 + maxEnemyDodge`，徹底消除閃避導致的 MISS 截斷，達成零 MISS 必中基準。
+  - **物魔穿透保持 90%（敵人保留 10% 有效防禦）**：根據專案防禦與穿透公式（`defReduction = pDef / (pDef + 20000)`，`PEN_IGNORE_A = 0.75`），在穿透設為 90 時，怪物防禦精確配置為 `def: 4888.89, mdef: 4888.89`，經穿透折算後有效防禦為 `2222.22`，使防禦減傷率恰好維持在 10.00%（實質受到傷害為 90%）。
+  - **全屬性增傷改為 300%**：玩家總增傷 `totalDmgPct` 與全元素增傷 `elemDmgUp` 精確調整為 +300%。
+- **全量 69 招超神進化重新實測**：
+  - 平行 Worker 重新模擬 207 場情境（小怪、菁英、BOSS 各 120 秒採樣窗），產出最新全量數據至 `scratch/all_69_ults_dps_results.json`。
+  - 更新 `scratch/generate_dps_report.cjs` 並重新生成 `docs/ULT_EVOLUTION_ALL_69_SKILLS_DPS_REPORT.md`，同步更新第 1 節規範描述、各群組數據、Top 10 天梯榜與第 4 節機制點評（包括雙刀亂舞登頂、飛刀無限追魂刃在 100% 命中下金刃不斷裂直衝單體第 4 名等）。
+- **驗證通過**：
+  - `node --test tests/ult-dps-benchmark.test.cjs` 13 項測試全數通過。
+  - `node tools/build_check.cjs` 587 個檔案語法與編譯檢查通過。
+
 
 ## 修復 300 級怪物高閃避導致命中截斷，全面重新實測 69 招超神進化總傷/DPS/傷害次數（Antigravity 2026-10-27）
 

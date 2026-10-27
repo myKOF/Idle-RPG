@@ -174,21 +174,20 @@ function runSimulation(target, scenarioType, totalDuration = 150.0, warmupDurati
   pStats.blockRate = 50;
   pStats.blockDmgRed = 80;
   pStats.comboHits = 3;
-  pStats.totalDmgPct = (pStats.totalDmgPct || 0) + 1000;
-  pStats.elemDmgPct = (pStats.elemDmgPct || 0) + 1000;
+  pStats.totalDmgPct = 300;
+  pStats.elemDmgPct = 300;
   if (ctx.ELEMENTS && pStats.elemDmgUp) {
     ctx.ELEMENTS.forEach(e => {
-      pStats.elemDmgUp[e] = (pStats.elemDmgUp[e] || 0) + 1000;
+      pStats.elemDmgUp[e] = 300;
     });
   }
 
-  // 確保物攻與魔攻、物理穿透與魔法穿透絕對對齊
+  // 確保物攻與魔攻、物理穿透與魔法穿透絕對對齊（保持 90% 穿透）
   const maxAtk = Math.max(pStats.atk || 0, pStats.matk || 0, 50000);
   pStats.atk = maxAtk;
   pStats.matk = maxAtk;
-  const maxPen = Math.max(pStats.pPen || 0, pStats.mPen || 0, 100);
-  pStats.pPen = maxPen;
-  pStats.mPen = maxPen;
+  pStats.pPen = 90;
+  pStats.mPen = 90;
   pStats.critRate = 100;
   pStats.critDmg = 5996;
 
@@ -291,8 +290,8 @@ function runSimulation(target, scenarioType, totalDuration = 150.0, warmupDurati
         maxHp: base.hp * zn.hpMult * npcHpMult,
         hp: base.hp * zn.hpMult * npcHpMult,
         atk: base.atk * zn.atkMult * npcAtkMult,
-        def: 0,
-        mdef: 0,
+        def: 4888.89,
+        mdef: 4888.89,
         magic: !!mtype.magic,
         attr: mtype.attr || null,
         aspd: mAspd,
