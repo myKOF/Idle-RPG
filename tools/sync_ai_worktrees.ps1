@@ -318,7 +318,11 @@ function Initialize-SyncWorktrees {
         Assert-CleanWorktree -Worktree $Worktrees[$branch] -ExpectedBranch $branch
     }
     $planned = @()
+    $fixed = @()
     foreach ($branch in @('ai/antigravity', 'ai/claude', 'ai/codex')) {
+        $hold = Get-GitTextSoft -Worktree $Repository -GitArguments @('config', '--bool', '--get', "branch.$branch.codexSyncHold")
+        if ($hold -eq 'true') { continue }
+        $fixed += $branch
         if ($Worktrees.ContainsKey($branch)) { continue }
         if (-not $Worktrees.ContainsKey($developBranch)) { throw '找不到 develop 工作區，不能建立固定同步副本。' }
         $ref = Get-GitTextSoft -Worktree $Repository -GitArguments @('rev-parse', '--verify', "refs/heads/$branch")
@@ -335,7 +339,7 @@ function Initialize-SyncWorktrees {
         }
         $Worktrees[$branch] = $destination
     }
-    return [pscustomobject]@{ Worktrees = $Worktrees; Features = $features; Planned = $planned }
+    return [pscustomobject]@{ Worktrees = $Worktrees; Fixed = $fixed; Features = $features; Planned = $planned }
 }
 
 function Test-SyncRemoteBranch {
@@ -415,7 +419,7 @@ try {
     $worktrees = Get-WorktreeMap -AnyWorktree $repository
     $topology = Initialize-SyncWorktrees -Repository $repository -Worktrees $worktrees
     $worktrees = $topology.Worktrees
-    $agentBranches = @($agentBranches) + @($topology.Features)
+    $agentBranches = @($topology.Fixed) + @($topology.Features)
     $requiredBranches = @($developBranch) + $agentBranches
 
     Write-Step '探索必要的 Worktree'

@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## SYNC-SHORTCUT-HOLD-20261027 — 修復捷徑中斷並保留Claude管線
+
+- Owner：Codex；Done（工具修復與必要驗證完成，實際同步結果見本輪報告）。使用者以1要求接續同步，並明確選擇將Claude本地Meshy提交8d1577c5保留、暫不併入develop。原develop bd0b982e已乾淨；這次卡在Antigravity的本機套用參數捷徑被skip-worktree隱藏，但遠端又更新該路徑，fast-forward拒絕覆寫。
+- 捷徑修復：先備份Codex／Antigravity原index及捷徑，核對無其他未提交內容；暫以HEAD已追蹤捷徑進行一般fast-forward至bd0b982e，再完整恢復原捷徑位元組與原skip-worktree旗標，兩工作區乾淨。沒有reset／clean／改寫歷史；收據在兩工作區Git metadata的sync-shortcut-repair-20261027-*，總紀錄為develop Git metadata的sync-shortcut-hold-20261027-receipt.json。這是本次現場修復，未新增自動覆寫本機捷徑的行為。
+- 工具修復4檔：tools/sync_ai_worktrees.ps1的固定分支初始化先排除codexSyncHold=true，主流程僅納入實際允許的固定與專用分支；tests/sync-feature-worktrees.test.cjs補真Git回歸，docs/SYNC_AI_WORKTREES.md與本段同步。保留分支不被重建、不檢查／改寫其工作區、不推送或合併；一般固定分支缺失仍沿原流程建立副本。沒有遊戲玩法／UI／快取／Excel／素材修改，無需素材庫Commit；預檢四檔無其他來源。
+- 使用者選擇落實為本機git config branch.ai/claude.codexSyncHold=true；Claude工作區與8d1577c5保持。只有未來使用者另行核准，才可解除保留。素材庫仍有既有未提交及分歧，本輪正常程式碼同步使用-SkipAssetLibrary，不碰素材庫／main或未核准3D試作。
+- 驗證：新增hold回歸先在未修版重現「預檢錯誤規劃建立ai/claude」，修復後涵蓋保留未提交草稿、本地／遠端HEAD與檔案保持、其他AI同步、重跑、解除hold但仍有草稿時停止及乾淨後才整合。node --test --test-reporter=tap tests/sync-feature-worktrees.test.cjs tests/sync-ai-worktrees.test.cjs tests/sync-auto-conflicts.test.cjs tests/sync-index-recovery.test.cjs，59/59通過、無略過；另Worker protocol／shim／Editor cache三檔27/27通過。npm.cmd run build：587檔通過；git diff --check通過，未降低斷言。
+- 唯讀檢查未改：規範／Workflow／Agent、原同步報告、捷徑目標、index修復／報告包裝、Claude管線及各分支關係；四檔以外不納入本次修復Commit。Commit為本段所在[Codex] fix: 同步工具尊重固定AI分支保留設定；正常同步／遠端最終HEAD見codex或develop的logs/sync-ai-worktrees/latest.md。已知限制為Claude有意保留、素材庫尚未同步及未跑全庫／玩家長戰；本輪不宣稱所有分支或素材均完全一致。
+
 ## MERGE-DEVELOP-20261027 — 使用者快捷指令接手整合
 
 - Owner：Codex；Done（本次衝突及相關驗證完成，既有失敗另列）。使用者本聊天輸入1，授權完成本次develop衝突、必要驗證、合併提交與既有一般AI同步；取代下段先前自動控制器環境禁止stage／commit的執行限制。原HEAD 4ab31d72、incoming fd877be3、base 06aebdea；原始工作檔、三階段內容及refs已保存在本聊天merge-develop-20261027目錄。

@@ -12,6 +12,8 @@
 
 待使用者核准的試作可設定 `git config branch.<分支名>.codexSyncHold true`，工具會保留該工作區與分支，跳過其同步、推送和合併；其中未提交的試作也不阻擋其他AI同步。既有 `codex/knight3d-prototype`、`codex/knight-makehuman-motion`、`codex/knight-makehuman` 預設受保護。只有使用者明確說最終OK後，才可將對應設定改為 `false` 納入整合。這不會刪除或改名原 `ai/codex` 分支。
 
+保留設定也適用於固定 `ai/*` 分支。例如使用者要求 Claude 本地提交暫不整合，可設定 `git config branch.ai/claude.codexSyncHold true`；該分支不會被當成缺少工作區而重建，也不參與預檢計畫、同步、推送或 develop 合併。其餘固定與專用分支照常處理。保留結束須先取得使用者授權，再將設定改為 `false`；原工作區、未提交內容與完整歷史持續保留。
+
 - Git、Node.js、Windows PowerShell 與 Codex CLI 可執行。
 - Codex 已登入：可用 `codex login status` 檢查，必要時先執行 `codex login`。
 - 可以連線使用 Codex，且帳號有可用額度；自動解衝突會使用帳號的 Codex 額度。
