@@ -14,7 +14,11 @@
       "handPose": {
         "bone": "LeftHand",
         "fromClip": "Run",
-        "note": "left wrist copied from the run, where the fist sits naturally along the arm"
+        "note": "left wrist copied from the run, where the fist sits naturally along the arm",
+        "matchPalm": {
+          "forearm": "LeftForeArm",
+          "chest": "Spine"
+        }
       }
     },
     {

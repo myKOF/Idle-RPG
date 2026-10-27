@@ -151,7 +151,7 @@ FIST_JOINTS = ((0.075, 0.105), (0.115, 0.145), (0.158, 0.175))
 FIST_FOLDS_DEG = (95.0, 100.0, 75.0)  # bend at each of the three joints
 # The whole hand (palm and fist) is then flexed inward at the wrist as one rigid piece. The vertices
 # thin out between the wrist plate and the knuckles, so that gap carries the turn.
-FIST_WRIST_BEND_DEG = 25.0
+FIST_WRIST_BEND_DEG = 45.0
 FIST_WRIST_PIVOT = 0.045  # reach of the pivot
 FIST_WRIST_BLEND = (0.035, 0.07)  # reach span over which the bend is eased in
 
@@ -205,4 +205,4 @@ def curl_fist(ob, arm, side="Left", palm_sign=-1.0):
             pos = np.array(pivot + turned @ Vector(pos - pivot))
         ob.data.vertices[i].co = minv @ Vector(pos)
     ob.data.update()
-    return {"handVerts": len(idx), "curledVerts": moved}
+    return {"handVerts": len(idx), "curledVerts": moved, "palm": [float(c) for c in normal]}
