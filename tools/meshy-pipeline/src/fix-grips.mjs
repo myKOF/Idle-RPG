@@ -22,7 +22,7 @@
    盔甲必須是剛性的：整套盔甲是硬質的，不該有任何形變；能變形的只有披風和腰前的布襠，而且只能小幅伸縮。
    Meshy 的權重是柔性的（一個頂點同時受好幾根骨骼影響），骨骼一轉，盔甲就被拉扯、壓扁（前臂護甲被壓成一片楔形）。
    做法：不屬於布料的頂點，如果它自己和所有相鄰頂點都以同一根骨骼為主，就改成 100% 綁那根骨骼（完全剛性）；
-   只有不同骨骼的交界那一圈保留原權重（盔甲連成一整片，整塊綁死會在關節處撕成長條）。布料頂點清單在 data/sunbrand-cloth.json。
+   只有不同骨骼的交界那一圈保留原權重（盔甲連成一整片，整塊綁死會在關節處撕成長條）。布料頂點清單在 images/models/hero3d/sunbrand-cloth.json（遊戲播放時的披風碰撞也用同一份）。
    披風下擺的細絲：下擺最末端的頂點整個綁在腿骨骼上，跨步時三角面被拉成一根根細絲。不重新綁權重（那樣披風會黏在腿上），
    而是逐幀量測所有動作裡披風三角面被拉長的倍數，只刪除被拉成細絲（超過 STRETCH_MAX 倍）的那幾個。
 
@@ -55,13 +55,15 @@ const CFG = {
     rampOut: null,
     refTime: 1.30,            // 手臂／手／劍「扭轉」的參考幀：原動作這一幀手臂前伸、握劍姿勢自然
     /* 右臂方向（肩→手）曲線：[時間, 仰角°, 側偏°]。仰角相對水平（+上／−下），側偏相對身體面向（+向角色右）。
-       以「劍尖高度」設計（劍沿手臂成一直線，劍尖高 ≈ 肩高 1.35 + 1.7 × sin(仰角)）：
-         起手 +24° → 劍尖約 1.95 m（高舉到頭上不遠）
-         +5° → 約 1.5 m（敵人肩高）、−9° → 約 1.1 m（敵人腰高）：劈中的這一道「肩部斜向腰部」
-         收招 −28° → 約 0.5 m（膝腰之間，與待機姿勢接近），不劈到地面。
-       由左往右帶一點側偏（−32° → +10°）。
-       使用者回報：+55° 起手的版本劍尖超過 2.5 m、像在砍空中單位；−46° 收招劍尖貼地。 */
-    chop: [[1.20, 24, -32], [1.24, 17, -24], [1.28, 5, -14], [1.32, -9, -4], [1.36, -20, 4], [1.40, -26, 9], [1.46, -28, 10]]
+       劍沿手臂成一直線。使用者回報（v6）：起手舉太高、看起來像水平地砍向敵人頭部（斬首），不是斜劈；
+       要求揮劍的手臂整體「下壓約 30°」，並且是由左上往右下的斜向劈砍 → 仰角整條曲線壓低約 30°，
+       側偏拉大（左 −42° → 右 +16°，約 58° 的橫向掃過），讓劍是斜著劈下去，不是橫掃。 */
+    chop: [[1.20, -4, -42], [1.24, -10, -30], [1.28, -18, -16], [1.32, -27, -4], [1.36, -36, 8], [1.40, -42, 14], [1.46, -46, 16]],
+    /* 收招：使用者要求最後一幀回到第一幀的動作（動作首尾相接，不要停在斜劈結束的姿勢多放幾幀）。
+       從 recover[0] 到 recover[1]，全身所有骨骼（旋轉、位移）平順過渡回 startTime 那一幀的姿勢（smoothstep），之後保持。
+       startTime 要和 hero3d.js 的 CLIP_FOR.attack2.start 一致；recover[1] 要和 CLIP_FOR.attack2.end 一致。 */
+    recover: [1.46, 1.70],
+    startTime: 0.37
   }
 };
 
@@ -293,6 +295,43 @@ function fixAttack2Chop(rig, clip, cfg) {
   return result;
 }
 
+/* ---- 收招：全身平順回到起始姿勢（讓動作首尾相接） ---- */
+function recoverToStart(g, rig, clip, cfg) {
+  if (!cfg.recover) return;
+  const [t0, t1] = cfg.recover;
+  // 起始姿勢：所有骨骼在 startTime 的局部旋轉與位移
+  const startPose = poseAt(rig, clip, cfg.startTime);
+  const edits = {};
+  for (const [key, tr] of Object.entries(clip.tracks)) {
+    const [nm, p] = key.split('.');
+    if (p === 'scale' || tr.times.length !== clip.keyTimes.length) continue;      // 常數軌（2 個關鍵幀）不用動
+    const idx = rig.byName[nm];
+    for (let i = 0; i < clip.keyTimes.length; i++) {
+      const t = clip.keyTimes[i];
+      if (t < t0) continue;
+      const sm = smooth((t - t0) / (t1 - t0));
+      if (p === 'rotation') {
+        const cur = new Quaternion(tr.values[i * 4], tr.values[i * 4 + 1], tr.values[i * 4 + 2], tr.values[i * 4 + 3]);
+        (edits[key] ||= {})[i] = cur.slerp(startPose[idx].q, sm);
+      } else {
+        const cur = new Vector3(tr.values[i * 3], tr.values[i * 3 + 1], tr.values[i * 3 + 2]);
+        (edits[key] ||= {})[i] = cur.lerp(startPose[idx].t, sm);
+      }
+    }
+  }
+  for (const [key, ed] of Object.entries(edits)) {
+    const [nm, p] = key.split('.');
+    if (p === 'rotation') writeQuats(g, clip, nm, ed); else writeVecs(g, clip, nm, ed);
+  }
+}
+function writeVecs(g, clip, nodeName, edits) {
+  const tr = clip.tracks[nodeName + '.translation'];
+  for (const [i, v] of Object.entries(edits)) {
+    [v.x, v.y, v.z].forEach((x, k) => g.buf.writeFloatLE(x, tr.out.offset + (Number(i) * 3 + k) * 4));
+    tr.values.set([v.x, v.y, v.z], Number(i) * 3);
+  }
+}
+
 /* ---- 量測 ---- */
 function measure(rig, clip, which) {
   const id = (n) => rig.byName[n];
@@ -379,7 +418,7 @@ function readSkinData(g) {
   return { prim, skin, joints, pa, ja, wa, ia, invBind, n, pos, jnt, wgt, idx };
 }
 function loadCloth(g, n) {
-  const data = JSON.parse(fs.readFileSync(path.join(here, 'data/sunbrand-cloth.json'), 'utf8'));
+  const data = JSON.parse(fs.readFileSync(path.join(here, '../../../images/models/hero3d/sunbrand-cloth.json'), 'utf8'));
   if (data.vertexCount !== n) throw new Error('頂點數 ' + n + ' 與布料清單 ' + data.vertexCount + ' 不符：不是這個模型，中止');
   const cloth = new Uint8Array(n);
   for (const grp of data.groups) for (const v of grp) cloth[v] = 1;
@@ -623,6 +662,11 @@ export function verifyGrips(file) {
   const m1 = measure(rig, readClip(g, rig, 'Attack1'), 'Attack1').filter((r) => r[0] >= 1.0 && r[0] <= 1.5);
   const m2 = measure(rig, readClip(g, rig, 'Attack2'), 'Attack2').filter((r) => r[0] >= 1.25 && r[0] <= 1.40);
   return {
+    attack2LoopMaxDeg: (() => {                                          // Attack2 收招姿勢與起始姿勢全身骨骼旋轉最大差（度）：首尾相接
+      const clip = readClip(g, rig, 'Attack2');
+      const a = poseAt(rig, clip, CFG.Attack2.startTime), b = poseAt(rig, clip, CFG.Attack2.recover[1]);
+      return Math.max(...rig.nodes.map((_, i) => 2 * Math.acos(Math.min(1, Math.abs(a[i].q.dot(b[i].q)))) * 180 / Math.PI));
+    })(),
     maxWristTwistDeg: wristLimits(g, rig).wrist,                         // 所有動作裡手腕扭轉最大值（度）
     maxForearmTwistDeg: wristLimits(g, rig).forearm,                     // 前臂（相對上臂）扭轉最大值（度）
     armorRigidRatio: armorSoftness(g, rig),                              // 盔甲頂點中完全剛性（100% 單一骨骼）的比例
@@ -655,6 +699,7 @@ const regroup = (edits) => {
 if (!checkOnly) {
   for (const [nm, ed] of Object.entries(regroup(e1))) writeQuats(g, a1, nm, ed);
   for (const [nm, ed] of Object.entries(regroup(e2))) writeQuats(g, a2, nm, ed);
+  recoverToStart(g, rig, a2, CFG.Attack2);
   limitWrists(g, rig);
   removeStrayTriangles(g, rig);
   hardenArmor(g, rig);

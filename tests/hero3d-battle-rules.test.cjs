@@ -75,5 +75,28 @@ test('3D 模型修正仍在：盔甲剛性、披風只小幅伸縮、手腕不�
   assert.ok(r.maxForearmTwistDeg <= 90.5, '前臂扭轉超過 90°：' + r.maxForearmTwistDeg.toFixed(0) + '°');
   assert.equal(r.strayTriangles, 0, '劍上還有錯綁到手／腿的三角面（揮動時會被拉成尖刺）：' + r.strayTriangles + ' 個（未修的原模型 8 個）');
   assert.ok(r.attack1OffHandMaxDist <= 0.3, '副手離劍太遠：' + r.attack1OffHandMaxDist + '（未修的原動作約 0.78）');
+  /* 動作首尾相接：Attack2 收招結束的姿勢要回到起始姿勢（使用者要求；不要停在斜劈結束的姿勢多放幾幀） */
+  assert.ok(r.attack2LoopMaxDeg <= 3, 'Attack2 最後一幀沒有回到第一幀：全身骨骼最大差 ' + r.attack2LoopMaxDeg.toFixed(1) + '°');
   assert.ok(r.attack2BladeMaxAngleDeg <= 5, '劍與前臂不成一直線：' + r.attack2BladeMaxAngleDeg + '°（未修的原動作約 83°）');
+});
+
+test('Attack2 的播放區間與腳本的收招設定一致（end＝收招結束、start＝起始姿勢）', () => {
+  const hero3d = fs.readFileSync(require.resolve('../js/hero3d.js'), 'utf8');
+  const script = fs.readFileSync(require.resolve('../tools/meshy-pipeline/src/fix-grips.mjs'), 'utf8');
+  const cfg = hero3d.match(/attack2: \{ clip: 'Attack2', loop: false, start: ([\d.]+), hit: [\d.]+, end: ([\d.]+) \}/);
+  assert.ok(cfg, '找不到 CLIP_FOR.attack2');
+  assert.match(script, new RegExp('startTime: ' + cfg[1].replace('.', '\\.') + '[,\\s]'), 'CLIP_FOR.attack2.start 與腳本 startTime 不同');
+  assert.match(script, new RegExp('recover: \\[[\\d.]+, ' + cfg[2].replace('.', '\\.') + '\\]'), 'CLIP_FOR.attack2.end 與腳本 recover 結束時間不同');
+});
+
+test('3D 披風碰撞：披風拆成獨立網格、用骨骼膠囊碰撞體推開穿進身體的布料、再鬆弛', () => {
+  const hero3d = fs.readFileSync(require.resolve('../js/hero3d.js'), 'utf8');
+  assert.match(hero3d, /async function buildCape\(THREE, skinned, material\)/);
+  assert.match(hero3d, /skinned\.geometry = armorGeo;/);                       // 身體只畫盔甲
+  assert.match(hero3d, /var CLOTH_URL = 'images\/models\/hero3d\/sunbrand-cloth\.json'/);
+  assert.match(hero3d, /if \(cape\) cape\.update\(pivot\);/);
+  assert.match(hero3d, /torsoCapsule\('Pelvis'/);
+  const cloth = JSON.parse(fs.readFileSync(require.resolve('../images/models/hero3d/sunbrand-cloth.json'), 'utf8'));
+  assert.equal(cloth.vertexCount, 4999);
+  assert.ok(cloth.groups.length > 100);
 });

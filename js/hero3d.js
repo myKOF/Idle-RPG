@@ -19,8 +19,9 @@
   'use strict';
 
   var STORE_KEY = 'idle-rpg.hero3d.v1';
-  var MODEL_URL = 'images/models/hero3d/sunbrand-knight.glb?v=20261027-grips5';   // 改了動畫就換版號，避免瀏覽器用到舊快取
+  var MODEL_URL = 'images/models/hero3d/sunbrand-knight.glb?v=20261027-grips6';   // 改了動畫就換版號，避免瀏覽器用到舊快取
   var GLTF_URL = 'js/vendor/three/loaders/GLTFLoader.js';
+  var CLOTH_URL = 'images/models/hero3d/sunbrand-cloth.json';   // 布料頂點清單（披風、腰前布襠、關節處的藍布）：和 tools/meshy-pipeline/src/fix-grips.mjs 共用
 
   /* 2D 動作名 → GLB 動畫。2D 沒有的情況（受擊）不需要；施法與第三招借用攻擊動作。
      rise（起身）把 Death 倒著播。 */
@@ -34,7 +35,7 @@
     idle:    { clip: 'CombatIdle', loop: true },
     walk:    { clip: 'Run', loop: true },
     attack1: { clip: 'Attack1', loop: false, start: 0.62, hit: 0.92, end: 1.75 },
-    attack2: { clip: 'Attack2', loop: false, start: 0.37, hit: 0.67, end: 1.75 },
+    attack2: { clip: 'Attack2', loop: false, start: 0.37, hit: 0.67, end: 1.70 },   // end：收招已平順回到 start 的姿勢（見 tools/meshy-pipeline/src/fix-grips.mjs 的 CFG.Attack2.recover）
     attack3: { clip: 'Attack1', loop: false, start: 0.62, hit: 0.92, end: 1.75 },
     cast:    { clip: 'Attack2', loop: false, start: 0.37, hit: 0.67, end: 1.2 },
     die:     { clip: 'Death', loop: false, hold: true },
@@ -103,16 +104,243 @@
 
   function absUrl(path) { return new URL(path, global.document.baseURI).href; }
 
+  /* ---- 披風碰撞 ----
+     披風是一片薄布，用骨骼蒙皮只會跟著髖部／脊椎轉，腿一跨步或身體一轉，它就穿進腿和身體（穿模）。
+     穿模取決於當下的姿勢，沒辦法預先算進動畫資料，所以播放時處理：
+       1. 把布料（披風、腰前布襠、關節處的藍布）的三角面拆成獨立網格，身體網格只畫盔甲；
+       2. 每根骨骼用「剛性盔甲頂點」（盔甲內部是 100% 單一骨骼，見 fix-grips.mjs）量出一個膠囊碰撞體；
+       3. 每幀把布料頂點用 CPU 蒙皮算出位置，穿進膠囊的推出來，再把推開的量在相鄰頂點間平滑，避免鋸齒。
+     只推「綁定姿勢下本來就在碰撞體外面」的頂點：披風上緣貼著肩膀本來就在碰撞體附近，不能一開始就被推開。 */
+  var CAPE_MARGIN = 0.008;        // 布料離盔甲表面的距離（公尺）
+  var CAPE_SMOOTH = 2;            // 推開量的平滑次數
+  var CAPE_RELAX = 3, CAPE_RELAX_K = 0.35;   // 布料鬆弛：往相鄰頂點平均位置拉的次數與力道（深蹲時披風被壓成尖角碎片，鬆弛讓它平順）
+  var CAPE_PIN_Y = 1.18;          // 綁定姿勢下高於這個高度（公尺）的披風頂點貼著肩背，不鬆弛
+  async function buildCape(THREE, skinned, material) {
+    var res = await global.fetch(absUrl(CLOTH_URL));
+    var data = await res.json();
+    var geo0 = skinned.geometry, pos0 = geo0.attributes.position, n = pos0.count;
+    if (data.vertexCount !== n) throw new Error('布料清單頂點數 ' + data.vertexCount + ' 與模型 ' + n + ' 不符');
+    var cloth = new Uint8Array(n);
+    data.groups.forEach(function (g) { g.forEach(function (v) { cloth[v] = 1; }); });
+    var idx = geo0.index.array, clothTris = [], armorTris = [];
+    for (var t = 0; t < idx.length; t += 3) {
+      var a = idx[t], b = idx[t + 1], c = idx[t + 2];
+      var arr = (cloth[a] || cloth[b] || cloth[c]) ? clothTris : armorTris;
+      arr.push(a, b, c);
+    }
+    var armorGeo = geo0.clone();
+    armorGeo.setIndex(armorTris);
+    skinned.geometry = armorGeo;                       // 身體只畫盔甲
+
+    var need = new Uint8Array(n);
+    clothTris.forEach(function (v) { need[v] = 1; });
+    var needList = []; for (var i = 0; i < n; i++) if (need[i]) needList.push(i);
+    var clothList = []; for (var j = 0; j < n; j++) if (cloth[j]) clothList.push(j);
+
+    var capeGeo = new THREE.BufferGeometry();
+    var capePos = new THREE.BufferAttribute(new Float32Array(n * 3), 3);
+    capePos.setUsage(THREE.DynamicDrawUsage);
+    capeGeo.setAttribute('position', capePos);
+    capeGeo.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+    capeGeo.setAttribute('uv', geo0.attributes.uv);
+    capeGeo.setIndex(clothTris);
+    var capeMesh = new THREE.Mesh(capeGeo, material);
+    capeMesh.frustumCulled = false;
+    capeMesh.matrixAutoUpdate = false;
+    capeMesh.matrix.copy(skinned.matrix);
+    skinned.parent.add(capeMesh);
+
+    /* 位置完全重疊的頂點（貼圖接縫的重複頂點）視為同一組，共用推開量，否則接縫會裂開 */
+    var rep = new Int32Array(n), seen = new Map();
+    for (var k = 0; k < n; k++) {
+      var key = Math.round(pos0.getX(k) * 1e4) + ',' + Math.round(pos0.getY(k) * 1e4) + ',' + Math.round(pos0.getZ(k) * 1e4);
+      if (seen.has(key)) rep[k] = seen.get(key); else { seen.set(key, k); rep[k] = k; }
+    }
+    var neigh = new Map();
+    for (var q = 0; q < clothTris.length; q += 3) {
+      for (var e1 = 0; e1 < 3; e1++) {
+        var ra = rep[clothTris[q + e1]], rb = rep[clothTris[q + (e1 + 1) % 3]];
+        if (ra === rb) continue;
+        if (!neigh.has(ra)) neigh.set(ra, new Set()); if (!neigh.has(rb)) neigh.set(rb, new Set());
+        neigh.get(ra).add(rb); neigh.get(rb).add(ra);
+      }
+    }
+    var clothReps = []; var repSeen = {}; clothList.forEach(function (v) { var r = rep[v]; if (!repSeen[r]) { repSeen[r] = 1; clothReps.push(r); } });
+
+    /* 碰撞體：每根骨骼用以它為主（權重 ≥ 0.6）的盔甲頂點量出膠囊（骨頭起點到子骨頭起點，半徑取頂點離軸距離的 90 百分位） */
+    var skel = skinned.skeleton, bones = skel.bones, nb = bones.length;
+    var si = geo0.attributes.skinIndex, sw = geo0.attributes.skinWeight;
+    var heads = bones.map(function (_, bi) { return new THREE.Vector3().applyMatrix4(skel.boneInverses[bi].clone().invert()); });
+    var capsules = [], skipped = [];
+    var segDist = function (p, A, B) {
+      var ab = B.clone().sub(A), t2 = Math.max(0, Math.min(1, p.clone().sub(A).dot(ab) / ab.lengthSq()));
+      return p.distanceTo(A.clone().addScaledVector(ab, t2));
+    };
+    for (var bi = 0; bi < nb; bi++) {
+      var name = bones[bi].name;
+      if (name === 'Sword') continue;
+      var kids = bones[bi].children.filter(function (c) { return c.isBone; }).map(function (c) { return bones.indexOf(c); }).filter(function (x) { return x >= 0; });
+      if (!kids.length) continue;
+      var tail = new THREE.Vector3(); kids.forEach(function (ci) { tail.add(heads[ci]); }); tail.multiplyScalar(1 / kids.length);
+      var A = heads[bi], B = tail;
+      if (A.distanceTo(B) < 0.02) { skipped.push(name + ':長度' + A.distanceTo(B).toFixed(3)); continue; }
+      var ds = [];
+      for (var v = 0; v < n; v++) {
+        if (cloth[v] || si.getX(v) !== bi || sw.getX(v) < 0.6) continue;
+        ds.push(segDist(new THREE.Vector3().fromBufferAttribute(pos0, v).applyMatrix4(skinned.bindMatrix), A, B));
+      }
+      if (ds.length < 8) { skipped.push(name + ':樣本' + ds.length); continue; }
+      ds.sort(function (x, y) { return x - y; });
+      capsules.push({ bone: bi, name: name, A: A, B: B, r: ds[Math.floor(ds.length * 0.9)] });
+    }
+    /* 軀幹：盔甲頂點多半以 Spine02 或大腿為主，Hips／Spine01／Spine 上量不出膠囊，所以另外量骨盆與胸腔：
+       取該高度範圍內、身體中線附近（|x| < 0.25，不含肩甲與手臂）的盔甲頂點，半徑取離軸距離的 90 百分位 */
+    function torsoCapsule(name, boneName, fromName, toName, dropA) {
+      var bi2 = bones.findIndex(function (b) { return b.name === boneName; });
+      var fi = bones.findIndex(function (b) { return b.name === fromName; });
+      var ti = bones.findIndex(function (b) { return b.name === toName; });
+      if (bi2 < 0 || fi < 0 || ti < 0) return;
+      var A2 = heads[fi].clone(); A2.y -= dropA || 0;
+      var B2 = heads[ti].clone();
+      var ds2 = [];
+      for (var v2 = 0; v2 < n; v2++) {
+        if (cloth[v2]) continue;
+        var pb = new THREE.Vector3().fromBufferAttribute(pos0, v2).applyMatrix4(skinned.bindMatrix);
+        if (Math.abs(pb.x) > 0.25 || pb.y < A2.y || pb.y > B2.y) continue;
+        ds2.push(segDist(pb, A2, B2));
+      }
+      if (ds2.length < 8) { skipped.push(name + ':樣本' + ds2.length); return; }
+      ds2.sort(function (x, y) { return x - y; });
+      capsules.push({ bone: bi2, name: name, A: A2, B: B2, r: ds2[Math.floor(ds2.length * 0.9)] });
+    }
+    capsules = capsules.filter(function (c) { return c.name !== 'Spine02'; });
+    torsoCapsule('Pelvis', 'Hips', 'Hips', 'Spine02', 0.08);
+    torsoCapsule('Chest', 'Spine02', 'Spine02', 'Spine', 0);
+    /* 綁定姿勢下已經在碰撞體裡面的布料頂點不跟那個碰撞體碰（披風上緣貼著肩膀本來就在附近） */
+    var bindP = new Map();
+    clothList.forEach(function (v) { bindP.set(v, new THREE.Vector3().fromBufferAttribute(pos0, v).applyMatrix4(skinned.bindMatrix)); });
+    capsules.forEach(function (cp) {
+      cp.skip = new Uint8Array(n);
+      clothList.forEach(function (v) { if (segDist(bindP.get(v), cp.A, cp.B) < cp.r + CAPE_MARGIN) cp.skip[v] = 1; });
+    });
+
+    var stats = { pushed: 0, maxDepth: 0, skipped: skipped, capsules: capsules.map(function (c) { return c.name + ':' + c.r.toFixed(3); }) };
+    var bm = new THREE.Matrix4(), mm = [], tmp = new THREE.Vector3(), cur = new THREE.Vector3();
+    var skinPos = new Float32Array(n * 3), disp = new Float32Array(n * 3), work = new Float32Array(n * 3), relaxed = new Float32Array(n * 3);
+    var pinned = new Uint8Array(n);       // 綁定姿勢下貼著肩背的上緣：不鬆弛
+    clothList.forEach(function (v) { if (pos0.getY(v) > CAPE_PIN_Y) pinned[rep[v]] = 1; });
+    function collide(v, px, py, pz, record) {
+      var moved = false, p = tmp.set(px, py, pz);
+      for (var ci = 0; ci < capsules.length; ci++) {
+        var cp = capsules[ci];
+        if (cp.skip[v]) continue;
+        var A = cp.wA, B = cp.wB, ab = cp.ab, len2 = cp.len2;
+        var tt = len2 > 0 ? Math.max(0, Math.min(1, ((p.x - A.x) * ab.x + (p.y - A.y) * ab.y + (p.z - A.z) * ab.z) / len2)) : 0;
+        var cx = A.x + ab.x * tt, cy = A.y + ab.y * tt, cz = A.z + ab.z * tt;
+        var dx = p.x - cx, dy = p.y - cy, dz = p.z - cz, d = Math.sqrt(dx * dx + dy * dy + dz * dz), rr = cp.wr + CAPE_MARGIN * cp.unit;
+        if (d < rr && d > 1e-9) {
+          if (record) { stats.pushed++; stats.maxDepth = Math.max(stats.maxDepth, rr - d); }
+          p.set(cx + dx / d * rr, cy + dy / d * rr, cz + dz / d * rr);
+          moved = true;
+        }
+      }
+      return moved ? p : null;
+    }
+    function update(root) {
+      (root || skinned.parent).updateMatrixWorld(true);       // 骨骼與網格的世界矩陣要一致（bindMatrixInverse 是 attached 模式，跟著網格的世界矩陣走）
+      skel.update();
+      stats.pushed = 0; stats.maxDepth = 0;
+      // 各骨骼這一幀的碰撞體位置：綁定空間 → 目前的網格局部空間（和 getVertexPosition 同一個空間）
+      capsules.forEach(function (cp) {
+        bm.fromArray(skel.boneMatrices, cp.bone * 16);
+        bm.premultiply(skinned.bindMatrixInverse);
+        cp.wA = cp.A.clone().applyMatrix4(bm); cp.wB = cp.B.clone().applyMatrix4(bm);
+        cp.ab = cp.wB.clone().sub(cp.wA); cp.len2 = cp.ab.lengthSq(); cp.unit = bm.getMaxScaleOnAxis(); cp.wr = cp.r * cp.unit;     // 網格局部座標單位 = 公尺 × unit（這個模型是公分，unit≈100）
+      });
+      for (var i2 = 0; i2 < needList.length; i2++) {
+        var vi = needList[i2];
+        skinned.getVertexPosition(vi, cur);
+        skinPos[vi * 3] = cur.x; skinPos[vi * 3 + 1] = cur.y; skinPos[vi * 3 + 2] = cur.z;
+      }
+      // 布料頂點：碰撞推出（同組取第一個成員的結果，共用）
+      for (var g2 = 0; g2 < clothReps.length; g2++) {
+        var r = clothReps[g2], o = r * 3;
+        var out = collide(r, skinPos[o], skinPos[o + 1], skinPos[o + 2], true);
+        if (out) { disp[o] = out.x - skinPos[o]; disp[o + 1] = out.y - skinPos[o + 1]; disp[o + 2] = out.z - skinPos[o + 2]; }
+        else { disp[o] = 0; disp[o + 1] = 0; disp[o + 2] = 0; }
+      }
+      // 推開量在相鄰頂點間平滑（只讓推開量擴散出去，不把已推出來的拉回去）
+      for (var it = 0; it < CAPE_SMOOTH; it++) {
+        var nxt = new Float32Array(clothReps.length * 3);
+        for (var g3 = 0; g3 < clothReps.length; g3++) {
+          var rr3 = clothReps[g3], o3 = rr3 * 3, nb3 = neigh.get(rr3);
+          var ax = disp[o3], ay = disp[o3 + 1], az = disp[o3 + 2];
+          if (nb3 && nb3.size) {
+            var sx = 0, sy = 0, sz = 0;
+            nb3.forEach(function (x) { if (cloth[x]) { sx += disp[x * 3]; sy += disp[x * 3 + 1]; sz += disp[x * 3 + 2]; } });
+            var cnt = nb3.size;
+            ax = ax === 0 ? sx / cnt * 0.6 : ax * 0.6 + sx / cnt * 0.4;
+            ay = ay === 0 ? sy / cnt * 0.6 : ay * 0.6 + sy / cnt * 0.4;
+            az = az === 0 ? sz / cnt * 0.6 : az * 0.6 + sz / cnt * 0.4;
+          }
+          nxt[g3 * 3] = ax; nxt[g3 * 3 + 1] = ay; nxt[g3 * 3 + 2] = az;
+        }
+        for (var g4 = 0; g4 < clothReps.length; g4++) { var o4 = clothReps[g4] * 3; disp[o4] = nxt[g4 * 3]; disp[o4 + 1] = nxt[g4 * 3 + 1]; disp[o4 + 2] = nxt[g4 * 3 + 2]; }
+      }
+      // 布料頂點位置 = 蒙皮位置 + 推開量
+      for (var g5 = 0; g5 < clothReps.length; g5++) {
+        var o6 = clothReps[g5] * 3;
+        work[o6] = skinPos[o6] + disp[o6]; work[o6 + 1] = skinPos[o6 + 1] + disp[o6 + 1]; work[o6 + 2] = skinPos[o6 + 2] + disp[o6 + 2];
+      }
+      // 鬆弛：往相鄰頂點的平均位置拉一點（貼著肩背的上緣不動），讓被壓成尖角的披風平順；每次鬆弛後再碰撞一次
+      for (var rl = 0; rl < CAPE_RELAX; rl++) {
+        for (var g6 = 0; g6 < clothReps.length; g6++) {
+          var r6 = clothReps[g6], o7 = r6 * 3, nb6 = neigh.get(r6);
+          if (pinned[r6] || !nb6 || !nb6.size) { relaxed[o7] = work[o7]; relaxed[o7 + 1] = work[o7 + 1]; relaxed[o7 + 2] = work[o7 + 2]; continue; }
+          var mx = 0, my = 0, mz = 0, cn = 0;
+          nb6.forEach(function (x) { if (cloth[x]) { mx += work[x * 3]; my += work[x * 3 + 1]; mz += work[x * 3 + 2]; cn++; } });
+          if (!cn) { relaxed[o7] = work[o7]; relaxed[o7 + 1] = work[o7 + 1]; relaxed[o7 + 2] = work[o7 + 2]; continue; }
+          relaxed[o7] = work[o7] + (mx / cn - work[o7]) * CAPE_RELAX_K;
+          relaxed[o7 + 1] = work[o7 + 1] + (my / cn - work[o7 + 1]) * CAPE_RELAX_K;
+          relaxed[o7 + 2] = work[o7 + 2] + (mz / cn - work[o7 + 2]) * CAPE_RELAX_K;
+        }
+        for (var g7 = 0; g7 < clothReps.length; g7++) {
+          var r7 = clothReps[g7], o8 = r7 * 3;
+          var cc = collide(r7, relaxed[o8], relaxed[o8 + 1], relaxed[o8 + 2], false);
+          work[o8] = cc ? cc.x : relaxed[o8]; work[o8 + 1] = cc ? cc.y : relaxed[o8 + 1]; work[o8 + 2] = cc ? cc.z : relaxed[o8 + 2];
+        }
+      }
+      // 寫進披風網格：布料頂點取鬆弛後的位置；其他（邊界上的盔甲頂點）= 蒙皮位置
+      var arrP = capePos.array;
+      for (var i3 = 0; i3 < needList.length; i3++) {
+        var v3 = needList[i3], o5 = v3 * 3;
+        var x = skinPos[o5], y = skinPos[o5 + 1], z = skinPos[o5 + 2];
+        if (cloth[v3]) {
+          var rp = rep[v3] * 3;
+          x = work[rp]; y = work[rp + 1]; z = work[rp + 2];
+        }
+        arrP[o5] = x; arrP[o5 + 1] = y; arrP[o5 + 2] = z;
+      }
+      capePos.needsUpdate = true;
+      capeGeo.computeVertexNormals();
+    }
+    return {
+      update: update, stats: stats, mesh: capeMesh, capsules: capsules, skinPos: skinPos, needList: needList, clothList: clothList,
+      dispose: function () { capeGeo.dispose(); armorGeo.dispose(); }
+    };
+  }
+
   async function create(opts) {
     opts = opts || {};
     var THREE = await import('three');
     var gltfMod = await import(absUrl(GLTF_URL));
     var gltf = await new gltfMod.GLTFLoader().loadAsync(absUrl(opts.model || MODEL_URL));
 
+    var size = opts.size || SIZE, span = opts.span || SPAN;      // 預設與遊戲相同；opts 只給驗證時放大看細節用
     var canvas = global.document.createElement('canvas');
     var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
     renderer.setPixelRatio(1);
-    renderer.setSize(SIZE, SIZE, false);
+    renderer.setSize(size, size, false);
     renderer.setClearColor(0x000000, 0);
 
     var scene = new THREE.Scene();
@@ -129,7 +357,7 @@
     var pivot = new THREE.Group();     // 面向轉在這一層
     pivot.add(gltf.scene);
     scene.add(pivot);
-    var gradedMap = null;
+    var gradedMap = null, skinnedMesh = null, bodyMaterial = null;
     gltf.scene.traverse(function (o) {
       if (o.isSkinnedMesh || o.isMesh) o.frustumCulled = false;  // 蒙皮網格的包圍盒不隨動畫更新，會被誤剔除
       if (o.isMesh && o.material && o.material.isMeshStandardMaterial) {
@@ -139,10 +367,16 @@
         o.material = new THREE.MeshLambertMaterial({
           map: gradedMap, emissiveMap: gradedMap, emissive: new THREE.Color(EMISSIVE), transparent: false
         });
+        if (o.isSkinnedMesh) { skinnedMesh = o; bodyMaterial = o.material; }
       }
     });
+    var cape = null;
+    if (skinnedMesh && opts.cape !== false) {
+      try { cape = await buildCape(THREE, skinnedMesh, bodyMaterial); }
+      catch (err) { global.console.warn('[hero3d] 披風碰撞載入失敗，披風照原本蒙皮畫：', err && err.message ? err.message : err); }
+    }
 
-    var cam = new THREE.OrthographicCamera(-SPAN / 2, SPAN / 2, SPAN / 2, -SPAN / 2, 0.1, 60);
+    var cam = new THREE.OrthographicCamera(-span / 2, span / 2, span / 2, -span / 2, 0.1, 60);
     var e = ELEV_DEG * Math.PI / 180;
     cam.position.set(0, TARGET_Y + Math.sin(e) * 12, Math.cos(e) * 12);
     cam.lookAt(0, TARGET_Y, 0);
@@ -153,10 +387,10 @@
 
     var ctrl = {
       canvas: canvas,
-      size: SIZE,
+      size: size,
       /* 腳底在畫布裡的縱向位置（0＝上緣、1＝下緣）：正交鏡頭下，高度 h 的點離中心 (h − TARGET_Y)·cos(仰角) 公尺 */
-      anchorY: 0.5 + TARGET_Y * Math.cos(e) / SPAN,
-      pxPerMeter: SIZE / SPAN,
+      anchorY: 0.5 + TARGET_Y * Math.cos(e) / span,
+      pxPerMeter: size / span,
       clip: '',
       onFinished: null,
       yaw: Math.PI / 2,              // 預設面向右（與 2D 的 defaultDirection 0 一致）
@@ -230,9 +464,24 @@
       var d = ((ctrl.yawTarget - ctrl.yaw + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI;
       ctrl.yaw += d * (1 - Math.exp(-dt / YAW_TAU_SEC));
       pivot.rotation.y = ctrl.yaw;
+      if (cape) cape.update(pivot);
       renderer.render(scene, cam);
     };
+    /* 驗證用：直接停在某個動作的某個時間（秒）並畫出來；不經過遊戲的播放流程 */
+    ctrl.pose = function (clip, t) {
+      var a = actions[clip];
+      if (!a) return false;
+      mixer.stopAllAction();
+      a.reset(); a.enabled = true; a.play(); a.time = t; a.paused = true;
+      current = a; currentCfg = { clip: clip }; ctrl.clip = clip;
+      mixer.update(0);
+      ctrl.update(0);
+      return true;
+    };
+    ctrl.capeStats = cape ? cape.stats : null;
+    ctrl.cape = cape;
     ctrl.dispose = function () {
+      if (cape) cape.dispose();
       mixer.stopAllAction();
       renderer.dispose();
       gltf.scene.traverse(function (o) {
