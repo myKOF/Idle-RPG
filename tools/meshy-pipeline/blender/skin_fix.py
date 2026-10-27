@@ -22,6 +22,13 @@ SWORD_GRIP = Vector((0.58, -0.07, 0.98))
 # Blade verts reach ~0.09 from the axis, the nearest leg verts start at ~0.14, and forearm
 # verts show up at 0.10+, so those are skipped by their current weights.
 SWORD_RADIUS = 0.10
+# The pommel (a stem and a sun disc) continues the blade axis past the grip, where the forearm runs
+# almost parallel: only verts hugging the axis count, whatever bone they were weighted to
+# (Meshy put them on the forearm, so the hilt bent when the blade was turned).
+POMMEL_LENGTH = 0.27
+POMMEL_RADIUS = 0.095
+POMMEL_RING_FROM = 0.08  # the neighbour ring starts above the wrist so the forearm itself stays free
+POMMEL_RING_RADIUS = 0.13
 
 CAPE_MIN_Y = 0.11
 CAPE_Z = (0.25, 1.15)
@@ -104,10 +111,23 @@ def apply(ob, arm, hand="Right", weapon_group=None):
         p = ob.matrix_world @ v.co
         top = max(((names[g.group], g.weight) for g in v.groups), key=lambda kv: kv[1], default=("", 0))[0]
         t = max(0.0, min(1.0, (p - tip).dot(axis) / axis.length_squared))
-        if (p - (tip + axis * t)).length < SWORD_RADIUS and top not in keep:
+        beyond = (p - grip).dot(axis.normalized())  # > 0 past the grip, towards the pommel
+        on_pommel = 0 < beyond < POMMEL_LENGTH and (p - (grip + axis.normalized() * beyond)).length < POMMEL_RADIUS
+        if on_pommel or ((p - (tip + axis * t)).length < SWORD_RADIUS and top not in keep):
             sword.append(v.index)
         elif p.y > CAPE_MIN_Y and CAPE_Z[0] < p.z < CAPE_Z[1] and abs(p.x) < CAPE_MAX_ABS_X:
             cape.append((v.index, p.z))
+    # one ring of neighbours around the pommel, so no stretched sliver is left joining it to the forearm
+    chosen = set(sword)
+    unit = axis.normalized()
+    for e in ob.data.edges:
+        a, b = e.vertices
+        if (a in chosen) != (b in chosen):
+            other = b if a in chosen else a
+            p = ob.matrix_world @ ob.data.vertices[other].co
+            beyond = (p - grip).dot(unit)
+            if POMMEL_RING_FROM < beyond < POMMEL_LENGTH + 0.03 and (p - (grip + unit * beyond)).length < POMMEL_RING_RADIUS:
+                sword.append(other)
     for i in sword:
         _set_weights(ob, i, {weapon_group or hand + "Hand": 1.0})
     z0, z1 = CAPE_UPPER_BLEND_FROM_Z, CAPE_Z[1]
