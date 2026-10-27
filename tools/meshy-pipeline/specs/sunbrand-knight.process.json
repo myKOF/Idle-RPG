@@ -1,0 +1,101 @@
+{
+  "id": "sunbrand-knight",
+  "base": "Animations/sunbrand-knight/clips_A.glb",
+  "mirrorModel": true,
+  "fps": 24,
+  "clips": [
+    {
+      "name": "CombatIdle",
+      "file": "Animations/sunbrand-knight/clips_A.v2.glb",
+      "action": "Combat_Stance",
+      "mirrorClip": true,
+      "loop": true,
+      "note": "library clip 89 holds the sword in the LEFT hand; mirrored so the right hand holds it",
+      "handPose": {
+        "bone": "LeftHand",
+        "fromClip": "Run",
+        "note": "left wrist copied from the run, where the fist sits naturally along the arm"
+      },
+      "handInward": {
+        "bone": "LeftHand",
+        "forearm": "LeftForeArm",
+        "degrees": 35,
+        "note": "the stance's left hand bent outwards; tilt it 35 degrees towards the body"
+      }
+    },
+    {
+      "name": "Run",
+      "file": "Rigs/sunbrand-knight/basic_running_glb_url.glb",
+      "action": "Armature|running|baselayer",
+      "loop": true,
+      "avoidLegs": {
+        "marginCm": 3
+      }
+    },
+    {
+      "name": "Attack1",
+      "file": "Animations/sunbrand-knight/clips_A.glb",
+      "action": "Attack",
+      "loop": false,
+      "hit": true,
+      "cuts": [
+        {
+          "from": 27,
+          "to": 40,
+          "frames": 3,
+          "note": "the pause after the downward chop (two-handed greatsword feel)"
+        }
+      ],
+      "finalStrike": {
+        "in": [
+          20,
+          25
+        ],
+        "hold": [
+          25,
+          29
+        ],
+        "out": [
+          29,
+          45
+        ],
+        "armDirection": [
+          0,
+          -1,
+          -0.12
+        ],
+        "relaxLeft": 0.7,
+        "note": "the chop ends with chest and head to the front and the sword arm straight, blade forward"
+      }
+    },
+    {
+      "name": "Attack2",
+      "file": "Animations/sunbrand-knight/clips_A.v2.glb",
+      "action": "Left_Slash",
+      "loop": false,
+      "hit": true,
+      "weaponEdgeAlign": true
+    },
+    {
+      "name": "Death",
+      "file": "Animations/sunbrand-knight/clips_A.glb",
+      "action": "dying_backwards",
+      "loop": false,
+      "holdLast": true,
+      "alignGround": false,
+      "easeTail": {
+        "frames": 16,
+        "hold": 12
+      },
+      "weaponLay": true,
+      "handRoll": {
+        "note": "back of the sword hand faces down as it lies"
+      }
+    }
+  ],
+  "weaponBone": "Sword",
+  "fist": {
+    "side": "Left",
+    "palmSign": -1.0
+  }
+}

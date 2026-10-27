@@ -1,0 +1,16 @@
+{
+  "paths": {
+    "assetsRoot": "../assets",
+    "blender": "auto",
+    "ffmpeg": "auto"
+  },
+  "folders": ["Models", "Textures", "Rigs", "Animations", "Previews", "Exports", "Reports", "Cache"],
+  "polyBudget": { "target": 5000, "softMax": 5000, "hardMax": 6000 },
+  "budget": { "perTaskCredits": 130, "perBatchCredits": 200 },
+  "retry": { "maxAttempts": 1, "retryableStatus": [429, 500, 502, 503, 504] },
+  "provider": "meshy",
+  "meshy": {
+    "apiHost": "https://api.meshy.ai",
+    "keyEnvVar": "MESHY_API_KEY"
+  }
+}
