@@ -2,10 +2,14 @@
 
 ## SYNC-ALL-AI-SOURCES-20261028 — 主線完整整合與雲端來源補掃
 
-- Owner：Codex；In Progress。使用者指出bf37b93未被最新同步包含，並明確定義「所有AI同步到最新」是完整整合所有可同步AI成果至主線，不受來源分支名稱或是否有worktree限制；本聊天授權保留各方修改、修復同步工具並完成正常整合／推送，既有hold與main發布限制維持。
+- Owner：Codex；Done（程式、來源保留與驗證完成；本聊天接續正常同步，推送結果以最新同步報告與回覆為準）。使用者指出bf37b93未被最新同步包含，並明確定義「所有AI同步到最新」是完整整合所有可同步AI成果至主線，不受來源分支名稱或是否有worktree限制；本聊天授權保留各方修改、修復同步工具並完成正常整合／推送，既有hold與main發布限制維持。
 - 查證：三固定分支／develop均c092d66f，但origin/ai/claude-kpj271為其後代bf37b93b；舊工具僅掃固定三分支及已簽出role/*專用分支，完全漏掉未簽出雲端來源。已fetch核對並於乾淨ai/codex安全ff至bf37b93b，先保留其原提交與六檔更新；其餘AI副本不切換。範圍：同步來源探索／快照／pending merge接續、報告、真Git回歸、使用者規範／流程／本段與必要Renderer快取／LV，素材庫只同步必要SOURCE來源紀錄。
 - 設計：掃描所有本地／指定遠端branch refs，辨識ai/*、role/*及任意名稱下有AI提交者／前綴的未整合成果，main／develop／明確hold排除；已簽出AI來源仍要求乾淨並走原固定同步，未簽出來源只讀／以固定SHA整合，不建立副本或回寫任務分支。fetch後再掃且推送前驗來源快照／待整合餘額，不能只比較三固定HEAD。補bf37b93漏升的hero3d／battle-renderer主頁快取，完整保留3D五項修正與原主線功能。
 - 更新：檢查期間雲端來源再前進至25e7063（3D輪廓／調色／補光），一併保留其三檔程式／測試及任務紀錄。AI_TASKS自訂driver因歷史重複標題拒絕合併；以Git原base／ours／theirs執行文字三方合併，兩方新增紀錄均保留，未選單邊。素材SOURCE動作時間及manifest已於素材庫707ba1f保存，GLB／spec未變；共享素材庫另有未提交工作，本輪保留且不推送該庫。
+- 完成檔案：AGENTS保存使用者同步定義；sync_ai_worktrees補所有refs來源探索、固定SHA整合、hold與乾淨檢查、任務來源pending merge接續、推送前來源變動／新來源檢查；invoke-sync-with-report補所有分支SHA／主線包含關係；sync-feature-worktrees新增五種真Git來源回歸；SYNC_AI_WORKTREES／LV／本段及index快取同步。保留來源程式與測試原樣，未將歷史雲端分支強制改指新HEAD。
+- 驗證：node --test --test-reporter=spec tests/sync-feature-worktrees.test.cjs tests/sync-ai-worktrees.test.cjs tests/sync-auto-conflicts.test.cjs tests/sync-index-recovery.test.cjs tests/sync-excel-handoff.test.cjs，72/72通過、無略過；包括fetch後新雲端／任意名稱來源、main排除、來源refs不回寫、預檢不動refs、兩種hold／解除、dirty保留、pending合併識別、同步中途新提交停止推送與重跑、原生Excel交接及index保護。node --test --test-reporter=spec tests/hero3d-battle-rules.test.cjs tests/hero3d-internal-toggle.test.cjs tests/player-directional-sprite.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs，35/35通過；npm.cmd run build 595檔、git diff --check通過。正式工作區ValidateOnly已辨識25e7063雲端來源且所有四個工作區乾淨。
+- 提交：0d207856工具／規範修正、8183b5b3保留25e7063雙親整合；本段驗證紀錄另獨立docs提交。唯讀未改：AI_RULES／Workflow／prompts、同步衝突控制器／原生Excel工具／index recovery、3D原始模型及規格、String表／CSV／生成資料、其他AI工作區。沒有付費API或模型重製。
+- 風險與下一步：最後fetch檢查之後才到達的遠端提交仍要下一輪同步；未帶角色名稱或規定AI作者／提交前綴的未知分支無法可靠自動認定為AI成果，報告仍列出全部refs供檢查。歷史AI_TASKS重複標題可能讓自訂driver保守停下，未在此任務重寫整份歷史紀錄。尚未於本次瀏覽器長戰驗收新增3D亮度與輪廓；保留Claude來源的原驗收敘述。可正常合併／同步，main與明確未核准內容維持隔離；必要素材來源已本地保存，素材遠端待其他工作提交乾淨後再同步。
 
 ## SKILL-RESET-GM-POINTS-20261027 — GM超額技能降級與重置完整返點
 
