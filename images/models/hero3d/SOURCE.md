@@ -13,3 +13,17 @@
   ```
   blender --background --python tools/meshy-pipeline/blender/export_assets.py -- <processed.blend> <輸出資料夾> sunbrand-knight --max-texture 1024
   ```
+
+## 動作時間（`js/hero3d.js` 的 `CLIP_FOR` 依此取用有用的那一段）
+
+量法：以 GLB 載入後逐幀（24 fps）取劍骨骼 `Sword` 的世界位移速度。
+
+| 動作 | 全長 | 蓄力 | 揮劍 | 收招 | 取用區間（start→end） |
+|---|---|---|---|---|---|
+| Attack1 | 2.375 s | 0～0.8 s | 0.87～1.08 s（峰值 0.92 s） | 1.1～2.4 s | 0.62 → 1.75 s |
+| Attack2 | 3.167 s | 0～0.5 s | 0.58～1.5 s（兩下，0.67 s 與 1.33 s） | 1.5～3.2 s | 0.37 → 1.75 s（施法 0.37 → 1.2 s） |
+| Death | 2.75 s | | | | 整段（起身為倒著播） |
+| Run | 0.625 s | | | | 循環 |
+| CombatIdle | 1.667 s | | | | 循環 |
+
+重新匯出或換動作後，這些數字要重量。

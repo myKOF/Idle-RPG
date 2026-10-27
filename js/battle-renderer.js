@@ -1857,6 +1857,26 @@ var BattleRenderer = (function () {
   }
   /* 施法動作把「釋放」那一幀對到硬直結束時，播放速度的上下限（fps）：硬直很短或很長時不要快成一閃、慢成停格 */
   var CAST_FPS_MIN = 12, CAST_FPS_MAX = 60;
+  /* 3D 主角的普攻動作（GLB 只有 Attack1／Attack2 兩個）、施法把劍揮到的時刻對到技能釋放時刻時最多加速幾倍 */
+  var HERO3D_ATTACKS = ['attack1', 'attack2'];
+  var HERO3D_CAST_SPEED_MAX = 4;
+  var HERO3D_ACTION_GRACE_MS = 80;   // 出手動作剛開始的這段時間不做「移動就打斷」：事件與位置各自緩衝，可能差一幀
+  var HERO3D_CAST_MAX_MS = 500;   // 3D 施法動作最長播多久：施法是插進移動裡的，播完立刻繼續跑
+  var HERO3D_ACTIONS = { attack1: 1, attack2: 1, attack3: 1, cast: 1 };   // 出手動作（劍揮到之後可被走路打斷）
+  /* 3D 倒地：die 要在這段進度內播完，之後到倒數結束把死亡動作倒著播（起身）。進度＝復活倒數走了多少（0..1） */
+  var HERO3D_RISE_START = 0.3;
+  /* 倒下的那一刻：把 die 加速到能在 windowSec（整段復活倒數）的前 HERO3D_RISE_START 內播完 */
+  function hero3dFitDie(p, windowSec) {
+    if (!p.body || !p.body.hero3d || !(windowSec > 0)) return;
+    p.body.animationSpeed *= Math.max(1, p.body.naturalMs / (HERO3D_RISE_START * windowSec * 1000));
+  }
+  /* 起身：progress（0..1，復活倒數走了多少）過了 HERO3D_RISE_START 之後，把死亡動作倒著播，倒數結束剛好站起來 */
+  function hero3dDriveRise(p, progress) {
+    if (progress < HERO3D_RISE_START) return;
+    if (p.curAnim !== 'rise') playAnim(p, 'rise');
+    var total = p.body.totalFrames;
+    p.body.gotoAndStop(Math.min(total - 1, Math.floor((progress - HERO3D_RISE_START) / (1 - HERO3D_RISE_START) * total)));
+  }
   function playerAttackAnim(kind, targetId, duration, leadMs) {
     var p = S.player;
     if (!p || p.dead || p.revival) return;
@@ -1864,11 +1884,14 @@ var BattleRenderer = (function () {
     var sheet = S.sheets[p.sheetName];
     /* 施法動作播完之前普攻不插隊：高攻速時每秒好幾下普攻，照舊「後到的蓋掉先到的」，施法動作永遠看不到 */
     if (melee && p.curAnim === 'cast') return;
+    /* 3D：已經在播出手動作（普攻或上一個施法）就不再插施法動作，只讓技能特效照常播；沒有專屬施法動作，
+       其餘時候（移動中、站著）借一個攻擊動作快速播完。 */
+    if (!melee && p.body && p.body.hero3d && HERO3D_ACTIONS[p.curAnim]) return;
     var name;
     if (melee) {
       /* 隨機混著出，但不連續兩下同一招：純隨機會連抽同一段，看起來像卡住重播；
          只輪流又太規律（使用者 2026-09-22 要兩段普攻與特殊攻擊隨機混合）。 */
-      var attacks = playerAttackAnimNames(sheet);
+      var attacks = (p.body && p.body.hero3d) ? HERO3D_ATTACKS : playerAttackAnimNames(sheet);   // 3D 只有兩個普攻動作，輪流出
       var pool = attacks.length > 1
         ? attacks.filter(function (n) { return n !== p.lastAttack; }) : attacks;
       name = pool[Math.floor(Math.random() * pool.length)] || attacks[0];
@@ -1879,6 +1902,17 @@ var BattleRenderer = (function () {
     p.baseAnim = p.walking ? 'walk' : 'idle';
     playAnim(p, name, p.baseAnim);
     var meta = sheet && sheet.manifest.anims[name];
+    if (p.body && p.body.hero3d) {
+      /* 3D：有用的那一段（蓄力到收招）要塞進攻擊間隔；施法則讓劍揮到的時刻對上技能釋放（硬直結束）的時刻。
+         不加速到比原速慢——低攻速不把揮刀拖成慢動作。 */
+      var k3d = 0;
+      if (melee) { if (duration > 0) k3d = p.body.naturalMs / (duration * 1000); }
+      else k3d = Math.max(leadMs > 0 ? p.body.hitMs / leadMs : 0, p.body.naturalMs / HERO3D_CAST_MAX_MS);
+      if (k3d > 0) p.body.animationSpeed *= Math.max(1, Math.min(melee ? 8 : HERO3D_CAST_SPEED_MAX, k3d));
+      p.actionAt = nowMs();
+      p.lunge = melee ? 0.18 : 0.12;
+      return;
+    }
     if (meta && p.body && duration > 0) {
       /* 以實際會播的幀數算（多方向素材從 first 開始播，不是整條 frames） */
       var played = (sheet.anims && sheet.anims[name] && sheet.anims[name].length) || meta.frames;
@@ -2136,7 +2170,10 @@ var BattleRenderer = (function () {
       p.revival = field.player && field.player._sgRevival || null;
       p.revivalGt = panel.gt;
       var earthguardRevival = p.revival && p.revival.mode === 'earthguard';
-      if (earthguardRevival && !wasEarthguardRevival) playAnim(p, p.dieAnim ? 'die' : 'idle');
+      if (earthguardRevival && !wasEarthguardRevival) {
+        playAnim(p, p.dieAnim ? 'die' : 'idle');
+        hero3dFitDie(p, p.revival.endAt - p.revival.startAt);
+      }
       else if (wasEarthguardRevival && !earthguardRevival) playAnim(p, 'idle');
       else if (p.revival && !earthguardRevival && p.curAnim !== 'idle') playAnim(p, 'idle');
       var dead = reviveLeft > 0;
@@ -2154,9 +2191,12 @@ var BattleRenderer = (function () {
         if (dead) {
           p.lunge = 0;
           playAnim(p, p.dieAnim ? 'die' : 'idle');
+          hero3dFitDie(p, p.deathFogDuration);
         } else {
           p.baseAnim = 'idle';
-          playAnim(p, (p.dieAnim && S.sheets[p.sheetName].anims.rise) ? 'rise' : 'idle', 'idle');
+          /* 3D 的起身在倒數期間就倒著播完了（見 hero3dDriveRise），倒數結束直接回站立 */
+          if (p.body && p.body.hero3d) playAnim(p, 'idle');
+          else playAnim(p, (p.dieAnim && S.sheets[p.sheetName].anims.rise) ? 'rise' : 'idle', 'idle');
         }
       }
       /* 倒地期間：模擬層已經把技能執行期狀態整批清掉，畫面上還在的持續場域
@@ -6555,6 +6595,7 @@ var BattleRenderer = (function () {
       if (p.dead) {
         p.deathFogK = Math.min(1, (p.deathFogK || 0) + dt / Math.max(1, p.deathFogDuration || 1));
         updateDeathFog(p.deathFogK);
+        if (p.body && p.body.hero3d) hero3dDriveRise(p, p.deathFogK);
       }
 
       var moving = false;
@@ -6590,6 +6631,13 @@ var BattleRenderer = (function () {
         if (!moving) p.runSpeed = 0;
         if (!p.curAnim || p.curAnim === 'idle' || p.curAnim === 'walk') playAnim(p, p.baseAnim);
       }
+      /* 3D：出手動作一定是停下來播的，不准滑步。目標跑開、主角要追上去時，立刻把出手動作切成跑步
+         （2D 的揮擊很短不會有這個問題）。看「這一幀真的有位移」（stillFor 為 0）而不是 p.walking：
+         p.walking 停下後還會拖 0.22 秒才放掉，施法硬直一開始會被它誤判成在移動。 */
+      if (!p.dead && p.body.hero3d && p.stillFor === 0 && HERO3D_ACTIONS[p.curAnim] && nowMs() - (p.actionAt || 0) > HERO3D_ACTION_GRACE_MS) {
+        p.baseAnim = 'walk';
+        playAnim(p, 'walk');
+      }
       /* 出手時往前送一小段。多方向素材沿面向的那一格送（這是地面上的位移，縱向照投影壓縮） */
       var lungeX = 0, lungeY = 0;
       if (p.lunge > 0) {
@@ -6613,7 +6661,10 @@ var BattleRenderer = (function () {
         if (p.revival.mode === 'earthguard') {
           // 倒地 → 逐漸站起；浮空到中段最高，五秒結束時落回原位。
           p.bodyWrap.y = -60 * Math.sin(Math.PI * revivalProgress);
-          if (p.dieAnim && S.sheets[p.sheetName].anims.rise && revivalProgress >= 0.2) {
+          if (p.body && p.body.hero3d) {
+            hero3dDriveRise(p, revivalProgress);
+            p.bodyWrap.rotation = 0;
+          } else if (p.dieAnim && S.sheets[p.sheetName].anims.rise && revivalProgress >= 0.2) {
             if (p.curAnim !== 'rise') playAnim(p, 'rise');
             p.body.gotoAndStop(Math.min(p.body.totalFrames - 1,
               Math.floor((revivalProgress - 0.2) / 0.8 * p.body.totalFrames)));
