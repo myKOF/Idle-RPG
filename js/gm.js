@@ -122,7 +122,7 @@
 
     var hasChinese = /[^\x00-\x7F]/.test(rawText);
     var firstWord = rawText.split(/\s+/)[0].toLowerCase();
-    var isKnownEnglishCmd = /^(gold|g|scrap|essence|dust|mat|material|gem|rune|runeword|book|equip|equipment|equipset|equip_set|set|suit|fullset|full_set|gearset|gear_set|part|bag|inv_cap|invcap|inv_size|invsize|inv_expand|bag_expand|expand_inv|stage_jump|stage|set_stage|setstage|stage_set|stageset|zone_jump|zone|kill|multikill|mk|k|reincarnation|reincarnate|turn|level|lv|skillxp|masterylv|skill2max|skillmax|skills2max|skill_unlock|tower_trial_clear|tower_hell_clear|tower_purgatory_clear|tower_trial_reset|tower_hell_reset|tower_purgatory_reset|tower_jump|god|spawn|spawnelite|clear|help|\?|modequip|editequip|equipmod|setequip|itemmod|meq|改裝備)$/i.test(firstWord);
+    var isKnownEnglishCmd = /^(gold|g|scrap|essence|dust|mat|material|gem|rune|runeword|book|equip|equipment|equipset|equip_set|set|suit|fullset|full_set|gearset|gear_set|part|bag|inv_cap|invcap|inv_size|invsize|inv_expand|bag_expand|expand_inv|stage_jump|stage|set_stage|setstage|stage_set|stageset|zone_jump|zone|kill|multikill|mk|k|reincarnation|reincarnate|turn|level|lv|skillxp|masterylv|skill_point|skillpoint|skillpoints|skill_points|sp|skill2max|skillmax|skills2max|skill_unlock|tower_trial_clear|tower_hell_clear|tower_purgatory_clear|tower_trial_reset|tower_hell_reset|tower_purgatory_reset|tower_jump|god|spawn|spawnelite|clear|help|\?|modequip|editequip|equipmod|setequip|itemmod|meq|改裝備)$/i.test(firstWord);
 
     if (hasChinese && !isKnownEnglishCmd) {
       if (typeof AiKeySetting !== 'undefined') {
