@@ -8,8 +8,14 @@
    做法：
      Attack1：以「副手握得最好的那一幀」為準，記下副手手腕相對劍的位置與朝向；之後每一幀把副手的目標放在劍上同一個位置，
               用兩段式 IK（上臂＋前臂，保留原本手肘彎曲的方向）重新解出 LeftArm／LeftForeArm，再把 LeftHand 轉回握劍的朝向。
-     Attack2：在指定區間把劍旋轉到沿前臂方向（手肘→手腕）成一直線，前後各有一段漸變，避免突然跳動。
+     Attack2：重新設計下劈那一段（t≈1.14～）右臂的軌跡：高舉 → 由左上往右下一路斜砍而下，劍沿手臂成一直線，
+              停在斜下方。原動作在 t=1.24～1.30 手臂近乎水平（劍停在頭部高度＝平砍），之後往下再往後拉。
+              用兩段式 IK 解右臂，手臂方向用「相對身體面向」的仰角／側偏曲線（CHOP）給定。
    兩者都用權重 0～1 漸入漸出，沒被修到的幀與原動作逐位元相同。
+
+   披風下擺：下擺最末端的頂點整個綁在腿骨骼上（權重只有腿、沒有髖部），腿一跨步它們就被拖開，三角面被拉成一根根細絲
+   （使用者回報披風末端的「細絲」）。把下擺（y<0.6）的頂點改成以髖部為主，越往下越多，y<0.3 全部跟髖部；
+   頂點清單在 data/sunbrand-cape-hem.json。
 
    另外：劍的網格上有 8 個三角面，其中一個頂點被 Meshy 錯綁到右手 65%＋右腿 35%（本來該跟著劍走）。腿一動，那個頂點被拖走，
    三角面被拉成一根長長的尖刺（使用者回報：揮劍時劍旁邊有尖刺、會跟著軌跡變形）。這 8 個三角面在靜止姿勢是劍身上的一小塊，
@@ -36,8 +42,12 @@ const CFG = {
     gripLocalOffset: null
   },
   Attack2: {
-    rampIn: [1.20, 1.25],     // 劍沿前臂成一直線：使用者逐幀用箭頭標出 t=1.25／1.30／1.35／1.40 的正確劍向；1.20 以前保持原動作
-    rampOut: [1.40, 1.55]     // 1.40 之後使用者沒標，漸漸交還原動作；拉長漸出，原動作這裡劍相對前臂差 50～80 度，太短會像突然抽動
+    rampIn: [1.14, 1.20],     // 原動作 → 下劈軌跡的漸入；漸入後一路保持到動作結束（落在斜下方，與待機姿勢接近）
+    rampOut: null,
+    /* 右臂方向（肩→手）曲線：[時間, 仰角°, 側偏°]。仰角相對水平（+上／−下），側偏相對身體面向（+向角色右）。
+       1.20 高舉在左上前方 → 一路下降經過水平不停留 → 1.46 落在斜下方，保持。
+       使用者回報（t=1.21／1.27 紅箭頭）：高舉後由左上至右下斜砍而下，不是平砍再後拉。 */
+    chop: [[1.20, 55, -35], [1.24, 40, -25], [1.28, 18, -12], [1.32, -8, 0], [1.36, -32, 6], [1.40, -48, 10], [1.46, -58, 10]]
   }
 };
 
@@ -192,22 +202,70 @@ function fixAttack1(rig, clip, cfg) {
   return result;
 }
 
-/* ---- Attack2：劍沿前臂成一直線 ---- */
-function fixAttack2(rig, clip, cfg) {
+/* ---- Attack2：高舉後由左上往右下斜砍而下 ---- */
+function chopAt(keys, t) {
+  // Catmull-Rom：曲線平順、經過每個關鍵點；範圍外取端點
+  if (t <= keys[0][0]) return [keys[0][1], keys[0][2]];
+  if (t >= keys[keys.length - 1][0]) { const k = keys[keys.length - 1]; return [k[1], k[2]]; }
+  let i = 0; while (keys[i + 1][0] < t) i++;
+  const p0 = keys[Math.max(0, i - 1)], p1 = keys[i], p2 = keys[i + 1], p3 = keys[Math.min(keys.length - 1, i + 2)];
+  const u = (t - p1[0]) / (p2[0] - p1[0]);
+  const cr = (a, b, c, d) => 0.5 * ((2 * b) + (-a + c) * u + (2 * a - 5 * b + 4 * c - d) * u * u + (-a + 3 * b - 3 * c + d) * u * u * u);
+  return [cr(p0[1], p1[1], p2[1], p3[1]), cr(p0[2], p1[2], p2[2], p3[2])];
+}
+function bodyFrame(rig, W) {
   const id = (n) => rig.byName[n];
-  const SW = id('Sword'), RH = id('RightHand'), RF = id('RightForeArm');
+  const right = wPos(W(id('RightShoulder'))).sub(wPos(W(id('LeftShoulder')))); right.y = 0; right.normalize();
+  const fwd = new Vector3().crossVectors(new Vector3(0, 1, 0), right).normalize();
+  const hz = new Vector3(0, 0, 1).applyQuaternion(wRot(W(id('Hips')))); hz.y = 0; hz.normalize();   // Hips 局部 +Z＝模型正面，用來定前後方向的正負
+  if (fwd.dot(hz) < 0) fwd.negate();
+  return { fwd, right, up: new Vector3(0, 1, 0) };
+}
+function fixAttack2Chop(rig, clip, cfg) {
+  const id = (n) => rig.byName[n];
+  const SW = id('Sword'), RS = id('RightShoulder'), RA = id('RightArm'), RF = id('RightForeArm'), RH = id('RightHand');
   const result = {};
   for (let i = 0; i < clip.keyTimes.length; i++) {
     const t = clip.keyTimes[i], w = weightAt(t, cfg);
     if (w <= 0) continue;
     const pose = poseAt(rig, clip, t), W = worldMatrices(rig, pose);
-    const dir = wPos(W(RH)).sub(wPos(W(RF))).normalize();                       // 前臂方向：手肘 → 手腕
-    const swQ = wRot(W(SW));
-    const blade = new Vector3(0, 1, 0).applyQuaternion(swQ).normalize();        // 劍身方向：Sword 骨骼局部 +Y（柄端 → 劍尖）
-    const arc = new Quaternion().setFromUnitVectors(blade, dir);
-    const target = arc.multiply(swQ.clone());
-    const swW = swQ.clone().slerp(target, w);
-    result[i] = { Sword: wRot(W(RH)).invert().multiply(swW).normalize() };
+    const fr = bodyFrame(rig, W);
+    const S = wPos(W(RA)), E = wPos(W(RF)), Wr = wPos(W(RH));
+    const L1 = S.distanceTo(E), L2 = E.distanceTo(Wr), reach = Math.min(S.distanceTo(Wr), (L1 + L2) * 0.995);
+    const dirOrig = Wr.clone().sub(S).normalize();
+    const [pitch, yaw] = chopAt(cfg.chop, t), pr = pitch * Math.PI / 180, yr = yaw * Math.PI / 180;
+    const dirTarget = new Vector3().addScaledVector(fr.fwd, Math.cos(pr) * Math.cos(yr)).addScaledVector(fr.right, Math.cos(pr) * Math.sin(yr)).addScaledVector(fr.up, Math.sin(pr)).normalize();
+    // 原方向 → 目標方向，依權重走一段弧
+    const arc = new Quaternion().setFromUnitVectors(dirOrig, dirTarget);
+    const dirNew = dirOrig.clone().applyQuaternion(new Quaternion().slerp(arc, w)).normalize();
+    const T = S.clone().addScaledVector(dirNew, reach);
+    // 兩段式 IK（上臂 RightArm＋前臂 RightForeArm），手肘彎向沿用原本偏離肩→手軸的那一側
+    const a = (L1 * L1 - L2 * L2 + reach * reach) / (2 * reach), h = Math.sqrt(Math.max(0, L1 * L1 - a * a));
+    const eo = E.clone().sub(S);
+    let pole = eo.sub(dirNew.clone().multiplyScalar(eo.dot(dirNew)));
+    if (pole.lengthSq() < 1e-8) pole = new Vector3(0, -1, 0).sub(dirNew.clone().multiplyScalar(-dirNew.y));
+    pole.normalize();
+    const E2 = S.clone().addScaledVector(dirNew, a).addScaledVector(pole, h);
+    const raW = wRot(W(RA)), shW = wRot(W(RS));
+    const arc1 = new Quaternion().setFromUnitVectors(E.clone().sub(S).normalize(), E2.clone().sub(S).normalize());
+    const raW2 = arc1.clone().multiply(raW);
+    pose[RA].q.copy(shW.clone().invert().multiply(raW2).normalize());
+    const W1 = worldMatrices(rig, pose);
+    const E1 = wPos(W1(RF)), Wr1 = wPos(W1(RH));
+    const arc2 = new Quaternion().setFromUnitVectors(Wr1.clone().sub(E1).normalize(), T.clone().sub(E1).normalize());
+    const rfW2 = arc2.clone().multiply(wRot(W1(RF)));
+    pose[RF].q.copy(raW2.clone().invert().multiply(rfW2).normalize());
+    // 手相對前臂的角度不變 → 手跟著前臂轉；劍相對手不動，再讓劍身沿「手肘→手腕」成一直線（與手臂同向）
+    const W2 = worldMatrices(rig, pose);
+    const forearmDir = wPos(W2(RH)).sub(wPos(W2(RF))).normalize();
+    const swQ = wRot(W2(SW));
+    const blade = new Vector3(0, 1, 0).applyQuaternion(swQ).normalize();          // 劍身方向：Sword 局部 +Y（柄端 → 劍尖）
+    const aim = new Quaternion().setFromUnitVectors(blade, forearmDir).multiply(swQ.clone());
+    const swW = swQ.clone().slerp(aim, w);
+    result[i] = {
+      RightArm: pose[RA].q.clone(), RightForeArm: pose[RF].q.clone(),
+      Sword: wRot(W2(RH)).invert().multiply(swW).normalize()
+    };
   }
   return result;
 }
@@ -280,6 +338,53 @@ function removeStrayTriangles(g, rig) {
   return stray.length;
 }
 
+/* ---- 披風下擺：細絲（下擺頂點整個綁在腿上，跨步時被拉成細絲）---- */
+const HEM_FULL = 0.30, HEM_TOP = 0.60;      // y<0.30 全跟髖部；0.30~0.60 平順過渡到原權重
+function fixCapeHem(g, rig) {
+  const data = JSON.parse(fs.readFileSync(path.join(here, 'data/sunbrand-cape-hem.json'), 'utf8'));
+  const prim = g.json.meshes[0].primitives[0];
+  const joints = g.json.skins[0].joints.map((n) => g.json.nodes[n].name);
+  const pa = accessorInfo(g, prim.attributes.POSITION), ja = accessorInfo(g, prim.attributes.JOINTS_0), wa = accessorInfo(g, prim.attributes.WEIGHTS_0);
+  if (pa.count !== data.vertexCount) throw new Error('頂點數 ' + pa.count + ' 與清單 ' + data.vertexCount + ' 不符：不是這個模型，中止');
+  const hips = joints.indexOf('Hips');
+  const slot = (v, k) => ({ j: g.buf[ja.offset + v * 4 + k], w: g.buf.readFloatLE(wa.offset + (v * 4 + k) * 4) });
+  const legW = (v) => { let t = 0; for (let k = 0; k < 4; k++) { const { j, w } = slot(v, k); if (w > 0 && /Leg|Foot/.test(joints[j])) t += w; } return t; };
+  // 已經處理過：y<0.3 的下擺頂點不該還有腿的權重
+  const low = data.groups.map((m) => m[0]).filter((v) => g.buf.readFloatLE(pa.offset + (v * 3 + 1) * 4) < HEM_FULL);
+  if (low.every((v) => legW(v) === 0)) { console.log('披風下擺：已經處理過'); return 0; }
+  let changed = 0;
+  for (const mem of data.groups) {
+    const f = mem[0], y = g.buf.readFloatLE(pa.offset + (f * 3 + 1) * 4);
+    if (y >= HEM_TOP) continue;
+    const t = Math.max(0, Math.min(1, (y - HEM_FULL) / (HEM_TOP - HEM_FULL))), s = t * t * (3 - 2 * t);   // 0 全髖部、1 原權重
+    const m = new Map([[hips, 1 - s]]);
+    for (let k = 0; k < 4; k++) { const { j, w } = slot(f, k); if (w > 0) m.set(j, (m.get(j) || 0) + w * s); }
+    const use = [...m.entries()].filter((x) => x[1] > 1e-4).sort((a, b) => b[1] - a[1]).slice(0, 4);
+    const tot = use.reduce((a, x) => a + x[1], 0);
+    for (const v of mem) for (let k = 0; k < 4; k++) {
+      g.buf[ja.offset + v * 4 + k] = k < use.length ? use[k][0] : 0;
+      g.buf.writeFloatLE(k < use.length ? use[k][1] / tot : 0, wa.offset + (v * 4 + k) * 4);
+    }
+    changed += mem.length;
+  }
+  console.log('披風下擺：重新配權重 ' + changed + ' 個頂點（' + data.groups.length + ' 組）');
+  return changed;
+}
+function capeHemLegWeight(g) {
+  const data = JSON.parse(fs.readFileSync(path.join(here, 'data/sunbrand-cape-hem.json'), 'utf8'));
+  const prim = g.json.meshes[0].primitives[0];
+  const joints = g.json.skins[0].joints.map((n) => g.json.nodes[n].name);
+  const pa = accessorInfo(g, prim.attributes.POSITION), ja = accessorInfo(g, prim.attributes.JOINTS_0), wa = accessorInfo(g, prim.attributes.WEIGHTS_0);
+  let worst = 0;
+  for (const mem of data.groups) for (const v of mem) {
+    if (g.buf.readFloatLE(pa.offset + (v * 3 + 1) * 4) >= HEM_FULL) continue;
+    let t = 0;
+    for (let k = 0; k < 4; k++) { const w = g.buf.readFloatLE(wa.offset + (v * 4 + k) * 4); if (w > 0 && /Leg|Foot/.test(joints[g.buf[ja.offset + v * 4 + k]])) t += w; }
+    worst = Math.max(worst, t);
+  }
+  return worst;
+}
+
 /* ---- 寫回 ---- */
 function writeQuats(g, clip, nodeName, edits) {
   const tr = clip.tracks[nodeName + '.rotation'];
@@ -311,6 +416,7 @@ export function verifyGrips(file) {
   const m1 = measure(rig, readClip(g, rig, 'Attack1'), 'Attack1').filter((r) => r[0] >= 1.0 && r[0] <= 1.5);
   const m2 = measure(rig, readClip(g, rig, 'Attack2'), 'Attack2').filter((r) => r[0] >= 1.25 && r[0] <= 1.40);
   return {
+    capeHemMaxLegWeight: capeHemLegWeight(g),                           // 披風下擺最末端頂點的腿權重（應為 0）
     strayTriangles: strayTriangles(g, rig).stray.length,                // 錯綁的尖刺三角面數（應為 0）
     attack1OffHandMaxDist: Math.max(...m1.map((r) => r[1])),          // 劈下去那段副手離劍軸最遠多少
     attack2BladeMaxAngleDeg: Math.max(...m2.map((r) => r[1]))         // 劍與前臂方向的夾角最大多少
@@ -329,7 +435,7 @@ if (!inFile || (!outFile && !checkOnly)) {
 const g = readGlb(inFile), rig = buildRig(g);
 const a1 = readClip(g, rig, 'Attack1'), a2 = readClip(g, rig, 'Attack2');
 const before1 = measure(rig, a1, 'Attack1'), before2 = measure(rig, a2, 'Attack2');
-const e1 = fixAttack1(rig, a1, CFG.Attack1), e2 = fixAttack2(rig, a2, CFG.Attack2);
+const e1 = fixAttack1(rig, a1, CFG.Attack1), e2 = fixAttack2Chop(rig, a2, CFG.Attack2);
 const regroup = (edits) => {
   const by = {};
   for (const [i, o] of Object.entries(edits)) for (const [nm, q] of Object.entries(o)) (by[nm] ||= {})[i] = q;
@@ -339,6 +445,7 @@ if (!checkOnly) {
   for (const [nm, ed] of Object.entries(regroup(e1))) writeQuats(g, a1, nm, ed);
   for (const [nm, ed] of Object.entries(regroup(e2))) writeQuats(g, a2, nm, ed);
   removeStrayTriangles(g, rig);
+  fixCapeHem(g, rig);
   fs.writeFileSync(outFile, g.buf);
 }
 // 重新讀檔量測修正後（--check 時以記憶體中的結果量測不到，直接說明）
