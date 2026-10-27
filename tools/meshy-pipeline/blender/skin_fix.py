@@ -72,11 +72,30 @@ def _set_weights(ob, index, weights):
         group.add([index], w, "REPLACE")
 
 
-def apply(ob, arm, hand="Right"):
-    """Fix weights for a sword held in `hand` ("Left" = original model, "Right" = after mirror_model)."""
+def _sword_axis(hand):
     sign = 1.0 if hand == "Left" else -1.0
-    tip = Vector((sign * SWORD_TIP.x, SWORD_TIP.y, SWORD_TIP.z))
-    grip = Vector((sign * SWORD_GRIP.x, SWORD_GRIP.y, SWORD_GRIP.z))
+    return (Vector((sign * SWORD_TIP.x, SWORD_TIP.y, SWORD_TIP.z)),
+            Vector((sign * SWORD_GRIP.x, SWORD_GRIP.y, SWORD_GRIP.z)))
+
+
+def add_weapon_bone(arm, hand, name="Sword"):
+    """Add a bone along the blade (head at the grip, tail at the tip) as a child of the hand bone,
+    so the weapon can later be posed on its own (laid flat when the character falls)."""
+    tip, grip = _sword_axis(hand)
+    to_local = arm.matrix_world.inverted()
+    bpy.context.view_layer.objects.active = arm
+    bpy.ops.object.mode_set(mode="EDIT")
+    eb = arm.data.edit_bones.new(name)
+    eb.head, eb.tail = to_local @ grip, to_local @ tip
+    eb.parent = arm.data.edit_bones[hand + "Hand"]
+    eb.use_connect = False
+    bpy.ops.object.mode_set(mode="OBJECT")
+
+
+def apply(ob, arm, hand="Right", weapon_group=None):
+    """Fix weights for a sword held in `hand` ("Left" = original model, "Right" = after mirror_model).
+    With weapon_group the blade is bound 100% to that bone (add_weapon_bone) instead of the hand."""
+    tip, grip = _sword_axis(hand)
     axis = grip - tip
     keep = (hand + "ForeArm", hand + "Arm", hand + "Shoulder")
     names = {g.index: g.name for g in ob.vertex_groups}
@@ -90,7 +109,7 @@ def apply(ob, arm, hand="Right"):
         elif p.y > CAPE_MIN_Y and CAPE_Z[0] < p.z < CAPE_Z[1] and abs(p.x) < CAPE_MAX_ABS_X:
             cape.append((v.index, p.z))
     for i in sword:
-        _set_weights(ob, i, {hand + "Hand": 1.0})
+        _set_weights(ob, i, {weapon_group or hand + "Hand": 1.0})
     z0, z1 = CAPE_UPPER_BLEND_FROM_Z, CAPE_Z[1]
     for i, z in cape:
         t = min(1.0, max(0.0, (z - z0) / (z1 - z0)))

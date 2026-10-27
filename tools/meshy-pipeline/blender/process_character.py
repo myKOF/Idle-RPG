@@ -18,7 +18,7 @@ import os
 import sys
 
 import bpy
-from mathutils import Matrix, Vector
+from mathutils import Matrix, Quaternion, Vector
 
 sys.path.insert(0, os.path.dirname(__file__))
 import skin_fix
@@ -52,7 +52,10 @@ hand = "Left"
 if cfg.get("mirrorModel"):
     skin_fix.mirror_model(body)
     hand = "Right"
-print("SKIN_FIX", skin_fix.apply(body, arm, hand))
+WEAPON = cfg.get("weaponBone")
+if WEAPON:
+    skin_fix.add_weapon_bone(arm, hand, WEAPON)
+print("SKIN_FIX", skin_fix.apply(body, arm, hand, WEAPON))
 
 # 2. harvest actions
 harvest = {(base_path, a.name): a for a in base_actions}
@@ -161,6 +164,39 @@ def prepare(clip):
     return frames, c0, yaw0
 
 
+def weapon_poses(frames, clip, lift=0.0):
+    """The weapon bone follows the hand rigidly; with weaponLay it is laid down as the character drops:
+    the blade ends horizontal, tilted just enough that its tip touches the floor (lift = the settle lift, cm)."""
+    if not WEAPON:
+        return
+    hand_bone = parent[WEAPON]
+    link = rest[hand_bone].inverted() @ rest[WEAPON]
+    unique = list({id(p): p for p in frames}.values())  # held frames share one dict: touch each once
+    for p in unique:
+        p[WEAPON] = p[hand_bone] @ link
+    if not clip.get("weaponLay"):
+        return
+    hz = {id(p): p["Hips"].translation.z for p in unique}
+    z0, drop = frames[0]["Hips"].translation.z, max(frames[0]["Hips"].translation.z - frames[-1]["Hips"].translation.z, 1e-6)
+    end = frames[-1][WEAPON]
+    d = end.to_3x3() @ Vector((0, 1, 0))  # bone axis = grip -> tip
+    flat = Vector((d.x, d.y, 0))
+    if flat.length < 0.3:  # blade nearly vertical: lay it out along the arm instead
+        out = frames[-1][hand_bone].translation - frames[-1]["Hips"].translation
+        flat = Vector((out.x, out.y, 0))
+    flat.normalize()
+    hand_z = frames[-1][hand_bone].translation.z + lift
+    sin_a = min(0.6, max(0.0, (hand_z - 6.0) / arm.data.bones[WEAPON].length))
+    target = flat * math.sqrt(1 - sin_a * sin_a) + Vector((0, 0, -sin_a))
+    q = d.rotation_difference(target)
+    for p in unique:
+        s = min(1.0, max(0.0, (z0 - hz[id(p)]) / drop))
+        s = s * s * (3 - 2 * s)
+        g = p[WEAPON].translation
+        R = Quaternion().slerp(q, s).to_matrix().to_4x4()
+        p[WEAPON] = Matrix.Translation(g) @ R @ Matrix.Translation(-g) @ p[WEAPON]
+
+
 def write(clip, frames, dz):
     """Bake the frames into a new action; dz[i] lifts frame i (armature units, 1 unit = 1 cm)."""
     action = bpy.data.actions.new(clip["name"])
@@ -188,6 +224,7 @@ for clip in cfg["clips"]:
     frames, c0, yaw0 = prepare(clip)
     n = len(frames)
     # pass 1 without a ground correction, measure where the legs end up, then bake again with it
+    weapon_poses(frames, clip, 0.0)
     action = write(clip, frames, [0.0] * n)
     leg_z = legs_min_z(n)
     if clip.get("alignGround", True):
@@ -202,6 +239,7 @@ for clip in cfg["clips"]:
         drop = max(hz[0] - hz[-1], 1e-6)
         dz = [settled * min(1.0, max(0.0, (hz[0] - h) / drop)) for h in hz]
         info = {"settleLiftCm": round(settled, 2)}
+        weapon_poses(frames, clip, settled)
     bpy.data.actions.remove(action)
     action = write(clip, frames, dz)
     report[clip["name"]] = {"frames": n, "sourceYawDeg": round(math.degrees(yaw0), 1),

@@ -19,7 +19,9 @@ if model.lower().endswith((".glb", ".gltf")):
 else:
     bpy.ops.import_scene.fbx(filepath=model)
 
-meshes = [o for o in bpy.data.objects if o.type == "MESH"]
+# the glTF importer adds bone-shape helper meshes (no skin weights) when a rig has joints; ignore them
+has_rig = any(o.type == "ARMATURE" for o in bpy.data.objects)
+meshes = [o for o in bpy.data.objects if o.type == "MESH" and not (has_rig and len(o.vertex_groups) == 0)]
 armatures = [o for o in bpy.data.objects if o.type == "ARMATURE"]
 
 tris = 0

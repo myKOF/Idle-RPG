@@ -20,6 +20,10 @@ if model.lower().endswith((".glb", ".gltf")):
 else:
     bpy.ops.import_scene.fbx(filepath=model)
 
+# the glTF importer adds bone-shape helper meshes (no skin weights) when a rig has joints; ignore them
+for o in list(bpy.data.objects):
+    if o.type == "MESH" and len(o.vertex_groups) == 0 and any(x.type == "ARMATURE" for x in bpy.data.objects):
+        bpy.data.objects.remove(o, do_unlink=True)
 meshes = [o for o in bpy.data.objects if o.type == "MESH"]
 pts = [o.matrix_world @ Vector(c) for o in meshes for c in o.bound_box]
 lo = Vector((min(p[i] for p in pts) for i in range(3)))
@@ -32,9 +36,9 @@ scene.render.engine = "BLENDER_WORKBENCH"
 scene.render.resolution_x = scene.render.resolution_y = size
 scene.render.film_transparent = False
 shading = scene.display.shading
-shading.light = "STUDIO"
+shading.light = "FLAT"
 shading.color_type = "TEXTURE"
-shading.show_cavity = True
+shading.show_cavity = False
 scene.world = bpy.data.worlds.new("w")
 scene.world.color = (0.18, 0.19, 0.22)
 

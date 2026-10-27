@@ -42,7 +42,9 @@
       "easeTail": {
         "frames": 16,
         "hold": 12
-      }
+      },
+      "weaponLay": true
     }
-  ]
+  ],
+  "weaponBone": "Sword"
 }

@@ -43,7 +43,8 @@ grip = np.array([sign * skin_fix.SWORD_GRIP.x, skin_fix.SWORD_GRIP.y, skin_fix.S
 axis = grip - tip
 t = np.clip(((rest_world - tip) @ axis) / (axis @ axis), 0, 1)
 dist = np.linalg.norm(rest_world - (tip + np.outer(t, axis)), axis=1)
-on_hand = np.array([any(names[g.group] == hand + "Hand" and g.weight >= 0.99 for g in v.groups) for v in body.data.vertices])
+weapon_group = "Sword" if "Sword" in body.vertex_groups else hand + "Hand"
+on_hand = np.array([any(names[g.group] == weapon_group and g.weight >= 0.99 for g in v.groups) for v in body.data.vertices])
 sword = np.where((dist < skin_fix.SWORD_RADIUS) & on_hand)[0]
 sword_set = set(sword.tolist())
 grip_dist = np.linalg.norm(rest_world - grip, axis=1)
