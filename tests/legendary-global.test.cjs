@@ -58,7 +58,7 @@ test('legacy items win before new items; stats and tooltip never mutate equipmen
  const c=load(),eq=c.G.equipment,a=item('old','sunder'),b=item('new','sunder');eq.ring2=a;
  const before=JSON.stringify(eq); c.computeStats(); c.equippedPassiveOwners(eq); assert.equal(JSON.stringify(eq),before);
  c.equipItem(b,'ring'); assert.equal(c.equippedPassiveOwners(eq).sunder,'ring2');
- const html=c.itemDetailHTML(b,null,{equipment:eq}); assert.match(html,/it-passive-repeated/); assert.match(html,/#9ca3af/);assert.match(html,/\(重覆\)/);
+ const html=c.itemDetailHTML(b,null,{equipment:eq}); assert.match(html,/it-passive-repeated/); assert.match(html,/#6b7280/);assert.match(html,/\(重覆\)/);
  assert.doesNotMatch(c.itemDetailHTML(a,null,{equipment:eq}),/it-passive-repeated/);
 });
 test('experience and gold passives add once through the stats aggregate',()=>{

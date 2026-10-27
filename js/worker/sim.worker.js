@@ -21,7 +21,7 @@ if (typeof GameClock !== 'undefined') {
 var _stringDataVersion = ((typeof self !== 'undefined' && self.location && /[?&]sv=(\w+)/.exec(self.location.search || '')) || [])[1] || '0';
 importScripts(
   '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../data.js?v=20261027-legendary-global', '../runeword_data.js?v=20261023-str-char', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261027-legendary-global', '../formula.js?v=20261027-legendary-global', '../battle-terrain.js?v=20261022-lava-terrain-develop-merge', '../battlefield.js?v=20261022-lava-terrain-develop-merge', '../stats.js?v=20261023-str-common',
-  '../item.js?v=20261027-legendary-global', '../gem_resonance.js?v=20261026-system-unlock','../runeword.js?v=20261023-str-common',
+  '../item.js?v=20261027-legendary-dim', '../gem_resonance.js?v=20261026-system-unlock','../runeword.js?v=20261023-str-common',
   '../skills.js?v=20261023-str-skill', '../skills2.js?v=20261027-legendary-global', '../elite_data.js?v=20261021-chain-hover', '../talents.js?v=20261026-system-unlock',
   '../player.js?v=20261027-legendary-global', '../special_rules.js?v=20261023-str-common',
   '../combat.js?v=20261027-legendary-global', '../elite.js?v=20261024-npc-skill-limit-sync', '../elite_boss.js?v=20261023-str-battle', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261027-legendary-global', '../tower.js?v=20261023-str-common',

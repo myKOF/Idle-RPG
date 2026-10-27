@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## LEGENDARY-DUPLICATE-GRAY-20261027 — 重覆傳奇文字加深灰色
+
+- Owner：Codex；Done。使用者要求重覆傳奇的字再灰一些；僅將重覆行由#9ca3af調暗為#6b7280，含名稱、說明及(重覆)，不改生效判斷。允許item、必要主頁／Worker快取、既有回歸的顏色預期、LV及本紀錄；禁止玩法／配置／素材及其他副本。目標衝突預檢乾淨。
+- 驗收：沿用legendary-global回歸與Build、diff檢查；無需為單純顏色新增測試，完成後獨立Commit，不合併推送。
+- 完成7檔：js/item.js重覆行灰色、既有tests/legendary-global.test.cjs顏色預期、index item32／bridge368快取、js/bridge.js及js/worker/sim.worker.js的item快取20261027-legendary-dim、LV及本段。唯讀檢查規範／Workflow／原任務、現有tooltip渲染與比較回歸，未改配置／String／效果計算或素材；無素材庫變更。
+- 驗證：node --test --test-reporter=spec tests/legendary-global.test.cjs tests/equipment-tooltip-compare.test.cjs，18/18通過；npm.cmd run build，589檔通過；git diff --check通過。自我Review確認灰字只作用於重覆行，原文字與先裝優先規則保持；本次未另開瀏覽器，暗度由使用者重載驗收。
+- 交付：Commit為本段所在[Codex] fix: 加深重覆傳奇特效的灰字，回覆附編號。無未完成項或新增已知風險，可合併；未合併推送，下一步正常整合後重載遊戲查看。
+
 ## LEGENDARY-GLOBAL-20261027 — 全部位傳奇、固定值與先裝優先
 
 - Owner：Codex；Done，單一開發者。使用者四項要求：依線上文件新增九個全局傳奇、所有傳奇不限部位、同名只取先裝上的一件且重覆tips灰字、固定基礎值不吃等級／品質／雙手倍率。

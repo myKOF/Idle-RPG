@@ -979,7 +979,7 @@ function itemDetailHTML(it, cmp, opts) {
   }
   if (it.passive) {
     if (equippedPassiveRepeated(it, opts.equipment, opts.asuraOn)) {
-      h += '<div class="it-passive it-passive-repeated" style="color: #9ca3af">' + esc(passiveLine(it, it.passive) + STR(2145)) + '</div>';
+      h += '<div class="it-passive it-passive-repeated" style="color: #6b7280">' + esc(passiveLine(it, it.passive) + STR(2145)) + '</div>';
     } else if (!cmp) {
       h += '<div class="it-passive">' + esc(passiveLine(it, it.passive)) + '</div>';
     } else if (!cmp.passive || cmp.passive.key !== it.passive.key) {
