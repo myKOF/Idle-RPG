@@ -8,9 +8,9 @@
    做法：
      Attack1：以「副手握得最好的那一幀」為準，記下副手手腕相對劍的位置與朝向；之後每一幀把副手的目標放在劍上同一個位置，
               用兩段式 IK（上臂＋前臂，保留原本手肘彎曲的方向）重新解出 LeftArm／LeftForeArm，再把 LeftHand 轉回握劍的朝向。
-     Attack2：重新設計下劈那一段（t≈1.14～）右臂的軌跡：高舉 → 由左上往右下一路斜砍而下，劍沿手臂成一直線，
-              停在斜下方。原動作在 t=1.24～1.30 手臂近乎水平（劍停在頭部高度＝平砍），之後往下再往後拉。
-              用兩段式 IK 解右臂，手臂方向用「相對身體面向」的仰角／側偏曲線（chop）給定。
+     Attack2：重新設計斜劈那一段（t≈1.14～）右臂的軌跡：高舉在左上 → 橫跨身體前方由左上掃到右下（從背後看的斜線），
+              劍沿手臂成一直線，停在右下。原動作在 t=1.24～1.30 手臂近乎水平（劍停在頭部高度＝平砍），之後往下再往後拉。
+              用兩段式 IK 解右臂，手臂方向用身體座標系的（前、右、上）路徑（path／sKeys）給定。
               手臂各段的「扭轉」用瞄準＋參考幀的固定偏移決定（不累積），手與劍相對前臂只保留繞軸的自然握法、沒有手腕彎折，
               所以手掌順著手臂延伸的朝向，不會像只做最小旋轉那樣把手掌轉好幾圈。
    兩者都用權重 0～1 漸入漸出，沒被修到的幀與原動作逐位元相同。
@@ -54,11 +54,16 @@ const CFG = {
     rampIn: [1.14, 1.20],     // 原動作 → 下劈軌跡的漸入；之後一路保持到動作結束（落在斜下方，與待機姿勢接近）
     rampOut: null,
     refTime: 1.30,            // 手臂／手／劍「扭轉」的參考幀：原動作這一幀手臂前伸、握劍姿勢自然
-    /* 右臂方向（肩→手）曲線：[時間, 仰角°, 側偏°]。仰角相對水平（+上／−下），側偏相對身體面向（+向角色右）。
-       劍沿手臂成一直線。使用者回報（v6）：起手舉太高、看起來像水平地砍向敵人頭部（斬首），不是斜劈；
-       要求揮劍的手臂整體「下壓約 30°」，並且是由左上往右下的斜向劈砍 → 仰角整條曲線壓低約 30°，
-       側偏拉大（左 −42° → 右 +16°，約 58° 的橫向掃過），讓劍是斜著劈下去，不是橫掃。 */
-    chop: [[1.20, -4, -42], [1.24, -10, -30], [1.28, -18, -16], [1.32, -27, -4], [1.36, -36, 8], [1.40, -42, 14], [1.46, -46, 16]],
+    /* 右臂方向（肩→手；劍沿手臂成一直線）：使用者畫的示意圖（從人物背後看，2026-10-27）——
+         高舉：手臂舉在身體左上方，劍沿手臂往左上斜 45°（不是垂直向上、也不是往前）
+         斜砍：由左上到右下的一道斜線（橫跨身體前方），劍最後指向右下 45°；劍尖軌跡從左上拱過去再落到右下
+       所以是「左右＋上下」平面上的斜線，不是往前往下的垂直劈（前幾版的錯誤理解）。
+       用身體座標系的三個分量（前、右、上）描述方向，路徑參數 s：0＝高舉（左上）、1＝收在右下；
+         右分量 −0.58 → +0.58、上分量 +0.58 → −0.58（直線），中間再加一點往上的拱（bulge，對應示意圖的弧），
+         前分量 0.45 並在中段多一點（劍要伸到身體前方才砍得到敵人）。
+       s(t) 前慢後快（揮劍加速）。 */
+    path: { r0: -0.58, r1: 0.58, u0: 0.58, u1: -0.58, bulge: 0.30, f0: 0.45, fbulge: 0.20 },
+    sKeys: [[1.20, 0], [1.24, 0], [1.27, 0.10], [1.30, 0.28], [1.33, 0.52], [1.36, 0.76], [1.39, 0.92], [1.42, 1], [1.46, 1]],
     /* 收招：使用者要求最後一幀回到第一幀的動作（動作首尾相接，不要停在斜劈結束的姿勢多放幾幀）。
        從 recover[0] 到 recover[1]，全身所有骨骼（旋轉、位移）平順過渡回 startTime 那一幀的姿勢（smoothstep），之後保持。
        startTime 要和 hero3d.js 的 CLIP_FOR.attack2.start 一致；recover[1] 要和 CLIP_FOR.attack2.end 一致。 */
@@ -219,15 +224,27 @@ function fixAttack1(rig, clip, cfg) {
 }
 
 /* ---- Attack2：高舉後由左上往右下斜砍而下 ---- */
-function chopAt(keys, t) {
-  // Catmull-Rom：曲線平順、經過每個關鍵點；範圍外取端點
-  if (t <= keys[0][0]) return [keys[0][1], keys[0][2]];
-  if (t >= keys[keys.length - 1][0]) { const k = keys[keys.length - 1]; return [k[1], k[2]]; }
-  let i = 0; while (keys[i + 1][0] < t) i++;
-  const p0 = keys[Math.max(0, i - 1)], p1 = keys[i], p2 = keys[i + 1], p3 = keys[Math.min(keys.length - 1, i + 2)];
-  const u = (t - p1[0]) / (p2[0] - p1[0]);
-  const cr = (a, b, c, d) => 0.5 * ((2 * b) + (-a + c) * u + (2 * a - 5 * b + 4 * c - d) * u * u + (-a + 3 * b - 3 * c + d) * u * u * u);
-  return [cr(p0[1], p1[1], p2[1], p3[1]), cr(p0[2], p1[2], p2[2], p3[2])];
+function sAt(keys, t) {
+  // Catmull-Rom（經過每個關鍵點、平順），範圍外取端點，夾在 [0,1]
+  let v;
+  if (t <= keys[0][0]) v = keys[0][1];
+  else if (t >= keys[keys.length - 1][0]) v = keys[keys.length - 1][1];
+  else {
+    let i = 0; while (keys[i + 1][0] < t) i++;
+    const p0 = keys[Math.max(0, i - 1)][1], p1 = keys[i][1], p2 = keys[i + 1][1], p3 = keys[Math.min(keys.length - 1, i + 2)][1];
+    const u = (t - keys[i][0]) / (keys[i + 1][0] - keys[i][0]);
+    v = 0.5 * ((2 * p1) + (-p0 + p2) * u + (2 * p0 - 5 * p1 + 4 * p2 - p3) * u * u + (-p0 + 3 * p1 - 3 * p2 + p3) * u * u * u);
+  }
+  return Math.max(0, Math.min(1, v));
+}
+/* 路徑參數 s → 身體座標系的方向分量（前、右、上），未正規化 */
+function pathDir(path, s) {
+  const bulge = Math.sin(Math.PI * s);
+  return {
+    f: path.f0 + path.fbulge * bulge,
+    r: path.r0 + (path.r1 - path.r0) * s,
+    u: path.u0 + (path.u1 - path.u0) * s + path.bulge * bulge
+  };
 }
 function bodyFrame(rig, W) {
   const id = (n) => rig.byName[n];
@@ -260,7 +277,10 @@ function fixAttack2Chop(rig, clip, cfg) {
   const rS = wPos(refW(RA)), rE = wPos(refW(RF)), rWr = wPos(refW(RH));
   const offUA = aimQuat(rE.clone().sub(rS), UP).invert().multiply(wRot(refW(RA)));
   const offFA = aimQuat(rWr.clone().sub(rE), UP).invert().multiply(wRot(refW(RF)));
-  const handLocal = twistAboutY(refPose[RH].q), swordLocal = twistAboutY(refPose[SW].q);
+  // 劍：局部 Y＝劍身方向、局部 X＝刃口方向（兩側開刃）、局部 Z＝劍面法線（量自劍網格）。手與劍在參考幀的相對關係照舊
+  const swordRefW = wRot(refW(SW)), handOff = swordRefW.clone().invert().multiply(wRot(refW(RH)));
+  const swordLocal = refPose[SW].q.clone();
+  const edgeSign = cfg.edgeSign || 1;
   const result = {};
   for (let i = 0; i < clip.keyTimes.length; i++) {
     const t = clip.keyTimes[i], w = weightAt(t, cfg);
@@ -269,8 +289,8 @@ function fixAttack2Chop(rig, clip, cfg) {
     const fr = bodyFrame(rig, W);
     const S = wPos(W(RA)), E = wPos(W(RF)), Wr = wPos(W(RH));
     const L1 = S.distanceTo(E), L2 = E.distanceTo(Wr), reach = Math.min(S.distanceTo(Wr), (L1 + L2) * 0.995);
-    const [pitch, yaw] = chopAt(cfg.chop, t), pr = pitch * Math.PI / 180, yr = yaw * Math.PI / 180;
-    const dir = new Vector3().addScaledVector(fr.fwd, Math.cos(pr) * Math.cos(yr)).addScaledVector(fr.right, Math.cos(pr) * Math.sin(yr)).addScaledVector(fr.up, Math.sin(pr)).normalize();
+    const pd = pathDir(cfg.path, sAt(cfg.sKeys, t));
+    const dir = new Vector3().addScaledVector(fr.fwd, pd.f).addScaledVector(fr.right, pd.r).addScaledVector(fr.up, pd.u).normalize();
     const T = S.clone().addScaledVector(dir, reach);
     // 兩段式 IK：手肘位置（彎向沿用原本偏離肩→手軸的那一側）
     const a = (L1 * L1 - L2 * L2 + reach * reach) / (2 * reach), h = Math.sqrt(Math.max(0, L1 * L1 - a * a));
@@ -282,6 +302,15 @@ function fixAttack2Chop(rig, clip, cfg) {
     // 各段朝向＝瞄準 × 參考幀偏移（扭轉固定，不累積）
     const raW = aimQuat(E2.clone().sub(S), UP).multiply(offUA);
     const rfW = aimQuat(T.clone().sub(E2), UP).multiply(offFA);
+    // 刀刃永遠朝揮砍前進的方向：局部 X（刃口）＝路徑切線垂直於劍身的分量，劍面法線因此垂直於砍向、不會用刀背去拍
+    const sv = sAt(cfg.sKeys, t), bulgeD = Math.PI * Math.cos(Math.PI * sv), P = cfg.path;
+    const tan = new Vector3().addScaledVector(fr.fwd, P.fbulge * bulgeD).addScaledVector(fr.right, P.r1 - P.r0).addScaledVector(fr.up, P.u1 - P.u0 + P.bulge * bulgeD);
+    const bl = T.clone().sub(E2).normalize();
+    const ex = tan.sub(bl.clone().multiplyScalar(tan.dot(bl))).normalize().multiplyScalar(edgeSign);
+    const ez = new Vector3().crossVectors(ex, bl).normalize();
+    const swordW = new Quaternion().setFromRotationMatrix(new Matrix4().makeBasis(ex, bl, ez));
+    const handW = swordW.clone().multiply(handOff);
+    const handLocal = rfW.clone().invert().multiply(handW).normalize();
     const shW = wRot(W(RS));
     const raL = shW.clone().invert().multiply(raW).normalize();
     const rfL = raW.clone().invert().multiply(rfW).normalize();
