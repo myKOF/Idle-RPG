@@ -11,6 +11,10 @@
      Attack2：在指定區間把劍旋轉到沿前臂方向（手肘→手腕）成一直線，前後各有一段漸變，避免突然跳動。
    兩者都用權重 0～1 漸入漸出，沒被修到的幀與原動作逐位元相同。
 
+   另外：劍的網格上有 8 個三角面，其中一個頂點被 Meshy 錯綁到右手 65%＋右腿 35%（本來該跟著劍走）。腿一動，那個頂點被拖走，
+   三角面被拉成一根長長的尖刺（使用者回報：揮劍時劍旁邊有尖刺、會跟著軌跡變形）。這 8 個三角面在靜止姿勢是劍身上的一小塊，
+   拿掉後靜止姿勢與揮動中的劍、護手都完整。做法：從索引緩衝區拿掉（只改索引，頂點資料不動）。
+
    用法：node tools/meshy-pipeline/src/fix-grips.mjs <輸入.glb> <輸出.glb> [--check]
      --check：只量測、不寫檔，輸出修正前後的數據。
    輸入必須是「原始」動作的 GLB；對已修過的檔再跑一次，會以已修過的動作當基準，結果不同。 */
@@ -229,6 +233,53 @@ function measure(rig, clip, which) {
   return rows;
 }
 
+/* ---- 拿掉錯綁的尖刺三角面 ---- */
+const STRAY_EXPECT = 8;                                                 // 這個模型確定是 8 個；不是就中止，避免誤刪
+const SWORD_SIDE = new Set(['Sword', 'RightHand', 'RightForeArm']);
+const LOWER_BODY = /Leg|Hips|Foot/;
+function strayTriangles(g, rig) {
+  const prim = g.json.meshes[0].primitives[0];
+  const joints = g.json.skins[0].joints.map((n) => g.json.nodes[n].name);
+  const ia = accessorInfo(g, prim.indices), ja = accessorInfo(g, prim.attributes.JOINTS_0), wa = accessorInfo(g, prim.attributes.WEIGHTS_0);
+  const idx = new Uint16Array(ia.count);
+  for (let i = 0; i < ia.count; i++) idx[i] = g.buf.readUInt16LE(ia.offset + i * 2);
+  const vertWeights = (v) => {
+    let sword = 0, lower = 0;
+    for (let k = 0; k < 4; k++) {
+      const w = g.buf.readFloatLE(wa.offset + (v * 4 + k) * 4);
+      if (w <= 0) continue;
+      const name = joints[g.buf[ja.offset + v * 4 + k]];
+      if (SWORD_SIDE.has(name)) sword += w; else if (LOWER_BODY.test(name)) lower += w;
+    }
+    return [sword, lower];
+  };
+  const stray = [];
+  for (let t = 0; t < idx.length / 3; t++) {
+    let s = 0, l = 0;
+    for (let k = 0; k < 3; k++) { const [a, b] = vertWeights(idx[t * 3 + k]); s += a; l += b; }
+    // 三個頂點平均：劍／手的權重 ≥ 0.25，且同時帶有 ≥ 0.05 的腿／髖權重（劍上不該有腿的權重）
+    if (s / 3 >= 0.25 && l / 3 >= 0.05) stray.push(t);
+  }
+  return { prim, idx, ia, stray };
+}
+function removeStrayTriangles(g, rig) {
+  const { prim, idx, ia, stray } = strayTriangles(g, rig);
+  if (stray.length === 0) { console.log('網格：沒有錯綁的尖刺三角面（已清理過）'); return 0; }
+  if (stray.length !== STRAY_EXPECT) throw new Error('找到 ' + stray.length + ' 個錯綁三角面，預期 ' + STRAY_EXPECT + '：不是這個模型，中止');
+  const drop = new Set(stray), kept = [];
+  for (let t = 0; t < idx.length / 3; t++) if (!drop.has(t)) kept.push(idx[t * 3], idx[t * 3 + 1], idx[t * 3 + 2]);
+  for (let i = 0; i < idx.length; i++) g.buf.writeUInt16LE(i < kept.length ? kept[i] : 0, ia.offset + i * 2);
+  // 索引數量就地改（位數相同，JSON 長度不變，不用搬動後面的二進位資料）
+  const jl = g.buf.readUInt32LE(12), text = g.buf.slice(20, 20 + jl).toString('utf8');
+  const needle = '"count":' + ia.count, repl = '"count":' + kept.length;
+  const re = new RegExp('"componentType":5123,' + needle + ',', 'g');
+  if ((text.match(re) || []).length !== 1 || String(kept.length).length !== String(ia.count).length)
+    throw new Error('索引數量在 JSON 裡找不到唯一位置，或位數改變，中止');
+  g.buf.write(text.replace(re, '"componentType":5123,' + repl + ','), 20, 'utf8');
+  console.log('網格：拿掉 ' + stray.length + ' 個錯綁的尖刺三角面（索引 ' + ia.count + ' → ' + kept.length + '）');
+  return stray.length;
+}
+
 /* ---- 寫回 ---- */
 function writeQuats(g, clip, nodeName, edits) {
   const tr = clip.tracks[nodeName + '.rotation'];
@@ -260,6 +311,7 @@ export function verifyGrips(file) {
   const m1 = measure(rig, readClip(g, rig, 'Attack1'), 'Attack1').filter((r) => r[0] >= 1.0 && r[0] <= 1.5);
   const m2 = measure(rig, readClip(g, rig, 'Attack2'), 'Attack2').filter((r) => r[0] >= 1.25 && r[0] <= 1.40);
   return {
+    strayTriangles: strayTriangles(g, rig).stray.length,                // 錯綁的尖刺三角面數（應為 0）
     attack1OffHandMaxDist: Math.max(...m1.map((r) => r[1])),          // 劈下去那段副手離劍軸最遠多少
     attack2BladeMaxAngleDeg: Math.max(...m2.map((r) => r[1]))         // 劍與前臂方向的夾角最大多少
   };
@@ -286,6 +338,7 @@ const regroup = (edits) => {
 if (!checkOnly) {
   for (const [nm, ed] of Object.entries(regroup(e1))) writeQuats(g, a1, nm, ed);
   for (const [nm, ed] of Object.entries(regroup(e2))) writeQuats(g, a2, nm, ed);
+  removeStrayTriangles(g, rig);
   fs.writeFileSync(outFile, g.buf);
 }
 // 重新讀檔量測修正後（--check 時以記憶體中的結果量測不到，直接說明）

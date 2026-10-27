@@ -61,11 +61,12 @@ test('3D 主角調色與補光：金／銀／披風調色、自發光、背後�
   assert.match(hero3d, /var rim = new THREE\.DirectionalLight\(0xbfe4ff/);
 });
 
-test('3D 攻擊動作的手要握在劍上：Attack1 副手不脫離劍、Attack2 劍沿前臂成一直線', async () => {
+test('3D 模型修正仍在：劍沒有錯綁的尖刺、Attack1 副手不脫離劍、Attack2 劍沿前臂成一直線', async () => {
   /* 動畫是 tools/meshy-pipeline/src/fix-grips.mjs 修過的（Meshy 原動作這兩處手沒握在劍上）。
      重新從 Blender 匯出會蓋掉修正，這支測試就是提醒要重新套用。 */
   const { verifyGrips } = await import(require('node:url').pathToFileURL(require.resolve('../tools/meshy-pipeline/src/fix-grips.mjs')).href);
   const r = verifyGrips(require.resolve('../images/models/hero3d/sunbrand-knight.glb'));
+  assert.equal(r.strayTriangles, 0, '劍上還有錯綁到手／腿的三角面（揮動時會被拉成尖刺）：' + r.strayTriangles + ' 個（未修的原模型 8 個）');
   assert.ok(r.attack1OffHandMaxDist <= 0.3, '副手離劍太遠：' + r.attack1OffHandMaxDist + '（未修的原動作約 0.78）');
   assert.ok(r.attack2BladeMaxAngleDeg <= 5, '劍與前臂不成一直線：' + r.attack2BladeMaxAngleDeg + '°（未修的原動作約 83°）');
 });
