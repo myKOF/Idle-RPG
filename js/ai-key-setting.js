@@ -267,6 +267,15 @@
     if (/^(?:全)?技能(?:全部)?解鎖$/i.test(s) || /^解鎖(?:全|全部)?技能$/i.test(s)) {
       return 'skill_unlock on';
     }
+    var mSkillPointSub = s.match(/^(?:扣除|減少|扣)\s*技能點(?:數)?\s*(\d+)\s*(?:點)?$/i);
+    if (mSkillPointSub) {
+      return 'skill_point -' + mSkillPointSub[1];
+    }
+    var mSkillPoint = s.match(/^(?:加|增加|獲得|給我)?\s*技能點(?:數)?\s*([+-]?\d+)\s*(?:點)?$/i) ||
+                      s.match(/^技能點(?:數)?\s*([+-]?\d+)\s*(?:點)?$/i);
+    if (mSkillPoint) {
+      return 'skill_point ' + mSkillPoint[1];
+    }
 
     // 6. 等級與轉生
     var mLv = s.match(/^(?:角色)?等級(?:設為|升到|提升至)?\s*(\d+)$/i) || s.match(/^等級\s*(\d+)$/i) || s.match(/^升到\s*(\d+)\s*級$/i);
@@ -383,6 +392,7 @@
       '7. 技能與天賦：\n' +
       '   - skillmax all：所有新版技能群組滿級\n' +
       '   - skill_unlock：切換技能全解鎖\n' +
+      '   - skill_point <數量>：增加或扣除技能點數（可為正負整數）\n' +
       '   - skillxp <數量>：加技能熟練度經驗；masterylv <等級>：設定熟練度等級\n' +
       '8. 寶石（等級 1~10，數量為整數）：\n' +
       '   - gem all <數量>：所有寶石種類、1~10 階全部各加 N 顆（玩家說「所有寶石」「全部寶石」且沒指定等級時用這個）\n' +

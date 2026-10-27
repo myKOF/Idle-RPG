@@ -1,5 +1,15 @@
 # PATCH.md
 
+## 新增 GM 指令 skill_point 增加或扣除技能點數（Antigravity 2026-10-27）
+
+- **新增 GM 指令 `skill_point`（`js/gm_exec.js`、`js/gm.js`、`js/ai-key-setting.js`、`GM_command.md`、`tests/gm-skill-point.test.cjs`）**：
+  - 格式：`skill_point 數量`（支援正負整數與科學記號，支援負數扣除，扣除後最低為 0）。
+  - 別名支援：`skillpoint`、`skillpoints`、`skill_points`、`sp`。
+  - 功能機制：將點數安全存入 `G.player.skills2.legacyPointCredit` 保留額度，不影響熟練度等級上限，亦不受熟練度 1000 級上限箝制；與新版技能升級、降級、重置與終極三選一的點數返還/消耗無縫協同運作。
+  - 自然語言（AI FastPath）支援：在內測 GM 輸入框支援「加技能點 100」、「技能點 50」、「扣除技能點 30」等中文直接秒轉譯執行。
+  - 補充說明文件：於 `GM_command.md` 補充指令格式、別名、說明與使用範例。
+  - 單元測試：新增 `tests/gm-skill-point.test.cjs`，覆蓋指令格式校驗、別名、正負扣除、點數升降級連動、非本機安全防護與 AI 自然語言解析等 5 項驗證。
+
 ## 依新規範（命中100%、穿透90%、增傷300%）重新實測全69招超神進化DPS報表（Antigravity 2026-10-27）
 
 - **規範參數精確調整與模擬器實裝**：

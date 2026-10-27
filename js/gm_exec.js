@@ -1423,6 +1423,24 @@
       gmDirty();
       return { ok: true, message: '技能熟練度設定為 Lv.' + level };
     }
+    if (command === 'skill_point' || command === 'skillpoint' || command === 'skillpoints' || command === 'skill_points' || command === 'sp') {
+      amount = gmSignedAmount(args[0], 1e9);
+      if (amount === null) return { ok: false, message: '格式：' + command + ' 數量（可為正負整數）' };
+      if (!G.player.skills2) G.player.skills2 = { levels: {} };
+      var currentCredit = (typeof skills2LegacyPointCredit === 'function')
+        ? skills2LegacyPointCredit()
+        : Math.max(0, Math.floor(Number(G.player.skills2.legacyPointCredit) || 0));
+      var nextCredit = Math.max(0, currentCredit + amount);
+      G.player.skills2.legacyPointCredit = nextCredit;
+      gmDirty();
+      var pts = (typeof skills2PointView === 'function') ? skills2PointView() : null;
+      var info = pts ? ('（目前可用：' + pts.available + '，總計：' + pts.total + '）') : ('（保留額度已設為 ' + nextCredit + '）');
+      if (amount >= 0) {
+        return { ok: true, message: '增加技能點 x' + (typeof fmt === 'function' ? fmt(amount) : amount) + info };
+      } else {
+        return { ok: true, message: '扣除技能點 x' + (typeof fmt === 'function' ? fmt(Math.abs(amount)) : Math.abs(amount)) + info };
+      }
+    }
     if (command === 'gem') {
       // gem all [等級|all] 數量：所有開放種類 × 指定等級（省略或 all＝1~10 階）各給 N 顆
       if (String(args[0] || '').toLowerCase() === 'all') {
