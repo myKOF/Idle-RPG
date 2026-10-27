@@ -45,3 +45,18 @@ test('3D 起身：死亡動作倒著播，由復活倒數進度驅動（一般�
   assert.match(renderer, /hero3dFitDie\(p, p\.deathFogDuration\)/);
   assert.match(renderer, /hero3dFitDie\(p, p\.revival\.endAt - p\.revival\.startAt\)/);
 });
+
+test('3D 主角也有穿透式輪廓：輪廓貼圖由 3D 畫布剪影每幀算出，走 2D 同一套輪廓圖層', () => {
+  assert.match(hero3d, /sp\.hero3dOutlineTex = otex;/);
+  assert.match(hero3d, /ctrl\.update\(dt\);\s*tex\.source\.update\(\);\s*drawOutline\(\);/);
+  assert.match(renderer, /if \(!body\.hero3d && \(!sheet \|\| !sheet\.outline\)\) return null;/);
+  assert.match(renderer, /var tex = body\.hero3d \? body\.hero3dOutlineTex/);
+  /* 3D 的輪廓不能再被 makeOutlineSprite 直接略過 */
+  assert.doesNotMatch(renderer, /if \(body\.hero3d\) return null;/);
+});
+
+test('3D 主角調色與補光：金／銀／披風調色、自發光、背後冷色邊緣光', () => {
+  assert.match(hero3d, /function gradeTexture\(THREE, src\)/);
+  assert.match(hero3d, /emissiveMap: gradedMap, emissive: new THREE\.Color\(EMISSIVE\)/);
+  assert.match(hero3d, /var rim = new THREE\.DirectionalLight\(0xbfe4ff/);
+});
