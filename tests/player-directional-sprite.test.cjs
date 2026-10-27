@@ -193,7 +193,7 @@ test('DIR-8 死亡：有 die 的素材播 die 停在最後一幀、不轉 90 度
   assert.match(renderer, /if \(!p\.dieAnim\) \{[\s\S]*?p\.bodyWrap\.rotation = -\(Math\.PI \/ 2\)/);
   /* 多方向素材不翻面、影子在圖裡不另畫橢圓 */
   assert.match(renderer, /p\.bodyWrap\.scale\.x = \(!p\.directional && p\.facing < 0\) \? -1 : 1/);
-  assert.match(renderer, /if \(!manifest\.bakedShadow\) \{[\s\S]*?shadow\.ellipse/);
+  assert.match(renderer, /if \(!manifest\.bakedShadow \|\| S\.hero3d\) \{[\s\S]*?shadow\.ellipse/);
 });
 
 test('DIR-9 借用幀的動作：同一批 Texture 從 first 切起（輪廓照樣查得到）；倒轉的起身不受影響', async () => {
