@@ -19,7 +19,7 @@
   'use strict';
 
   var STORE_KEY = 'idle-rpg.hero3d.v1';
-  var MODEL_URL = 'images/models/hero3d/sunbrand-knight.glb?v=20261027-grips4';   // 改了動畫就換版號，避免瀏覽器用到舊快取
+  var MODEL_URL = 'images/models/hero3d/sunbrand-knight.glb?v=20261027-grips5';   // 改了動畫就換版號，避免瀏覽器用到舊快取
   var GLTF_URL = 'js/vendor/three/loaders/GLTFLoader.js';
 
   /* 2D 動作名 → GLB 動畫。2D 沒有的情況（受擊）不需要；施法與第三招借用攻擊動作。

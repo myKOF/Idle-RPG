@@ -61,13 +61,19 @@ test('3D 主角調色與補光：金／銀／披風調色、自發光、背後�
   assert.match(hero3d, /var rim = new THREE\.DirectionalLight\(0xbfe4ff/);
 });
 
-test('3D 模型修正仍在：劍沒有尖刺、披風下擺沒有細絲、Attack1 副手不脫離劍、Attack2 劍沿前臂成一直線', async () => {
-  /* 動畫是 tools/meshy-pipeline/src/fix-grips.mjs 修過的（Meshy 原動作這兩處手沒握在劍上）。
+test('3D 模型修正仍在：盔甲剛性、披風只小幅伸縮、手腕不超限、劍沒有尖刺、握劍與劈砍軌跡', async () => {
+  /* 動畫與蒙皮是 tools/meshy-pipeline/src/fix-grips.mjs 修過的（Meshy 原模型／動作有多處問題，見腳本開頭說明）。
      重新從 Blender 匯出會蓋掉修正，這支測試就是提醒要重新套用。 */
   const { verifyGrips } = await import(require('node:url').pathToFileURL(require.resolve('../tools/meshy-pipeline/src/fix-grips.mjs')).href);
   const r = verifyGrips(require.resolve('../images/models/hero3d/sunbrand-knight.glb'));
+  /* 盔甲是硬的、不能形變：內部頂點要 100% 綁單一骨骼（未修的原模型只有 13%） */
+  assert.ok(r.armorRigidRatio >= 0.5, '盔甲還是柔性蒙皮（揮動時會被拉扯壓扁）：剛性頂點只有 ' + (r.armorRigidRatio * 100).toFixed(0) + '%');
+  /* 披風只准小幅伸縮（未修的原模型最大 66 倍，會被拉成細絲） */
+  assert.ok(r.maxClothStretch <= 4.1, '披風有三角面被拉長 ' + r.maxClothStretch.toFixed(1) + ' 倍（細絲）');
+  /* 手腕只能左右約 90 度；Attack2 轉身舉劍那 4 個關鍵幀原動作需要約 186 度，前臂＋手腕最多給到約 96 度 */
+  assert.ok(r.maxWristTwistDeg <= 100, '手腕扭轉超過人體極限：' + r.maxWristTwistDeg.toFixed(0) + '°（未修的原模型 208°）');
+  assert.ok(r.maxForearmTwistDeg <= 90.5, '前臂扭轉超過 90°：' + r.maxForearmTwistDeg.toFixed(0) + '°');
   assert.equal(r.strayTriangles, 0, '劍上還有錯綁到手／腿的三角面（揮動時會被拉成尖刺）：' + r.strayTriangles + ' 個（未修的原模型 8 個）');
-  assert.equal(r.capeHemMaxLegWeight, 0, '披風下擺末端頂點還綁在腿上（跨步時被拉成細絲）：' + r.capeHemMaxLegWeight + '（未修的原模型 1.0）');
   assert.ok(r.attack1OffHandMaxDist <= 0.3, '副手離劍太遠：' + r.attack1OffHandMaxDist + '（未修的原動作約 0.78）');
   assert.ok(r.attack2BladeMaxAngleDeg <= 5, '劍與前臂不成一直線：' + r.attack2BladeMaxAngleDeg + '°（未修的原動作約 83°）');
 });

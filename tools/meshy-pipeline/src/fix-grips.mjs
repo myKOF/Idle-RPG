@@ -15,9 +15,16 @@
               所以手掌順著手臂延伸的朝向，不會像只做最小旋轉那樣把手掌轉好幾圈。
    兩者都用權重 0～1 漸入漸出，沒被修到的幀與原動作逐位元相同。
 
-   披風下擺：下擺最末端的頂點整個綁在腿骨骼上（權重只有腿、沒有髖部），腿一跨步它們就被拖開，三角面被拉成一根根細絲
-   （使用者回報披風末端的「細絲」）。把下擺（y<0.6）的頂點改成以髖部為主，越往下越多，y<0.3 全部跟髖部；
-   頂點清單在 data/sunbrand-cape-hem.json。
+   關節限制：Meshy 的原動作右手腕扭轉最大 158°（Attack1）、176°（Attack2）、180°（Death），遠超人體手腕（左右約 90°，
+   多數時候不需要轉）。人的前臂和手腕合起來才轉得出這麼大的角度，但這副骨架把扭轉全塞在手腕上、前臂只用了 20～40°。
+   所以把超過手腕上限（WRIST_MAX）的扭轉搬到前臂（上限 FOREARM_MAX）：手的最終朝向、劍的方向都不變，只是改由前臂來轉。
+
+   盔甲必須是剛性的：整套盔甲是硬質的，不該有任何形變；能變形的只有披風和腰前的布襠，而且只能小幅伸縮。
+   Meshy 的權重是柔性的（一個頂點同時受好幾根骨骼影響），骨骼一轉，盔甲就被拉扯、壓扁（前臂護甲被壓成一片楔形）。
+   做法：不屬於布料的頂點，如果它自己和所有相鄰頂點都以同一根骨骼為主，就改成 100% 綁那根骨骼（完全剛性）；
+   只有不同骨骼的交界那一圈保留原權重（盔甲連成一整片，整塊綁死會在關節處撕成長條）。布料頂點清單在 data/sunbrand-cloth.json。
+   披風下擺的細絲：下擺最末端的頂點整個綁在腿骨骼上，跨步時三角面被拉成一根根細絲。不重新綁權重（那樣披風會黏在腿上），
+   而是逐幀量測所有動作裡披風三角面被拉長的倍數，只刪除被拉成細絲（超過 STRETCH_MAX 倍）的那幾個。
 
    另外：劍的網格上有 8 個三角面，其中一個頂點被 Meshy 錯綁到右手 65%＋右腿 35%（本來該跟著劍走）。腿一動，那個頂點被拖走，
    三角面被拉成一根長長的尖刺（使用者回報：揮劍時劍旁邊有尖刺、會跟著軌跡變形）。這 8 個三角面在靜止姿勢是劍身上的一小塊，
@@ -69,7 +76,7 @@ function readGlb(file) {
 }
 function accessorInfo(g, idx) {
   const a = g.json.accessors[idx], bv = g.json.bufferViews[a.bufferView];
-  const comp = { SCALAR: 1, VEC3: 3, VEC4: 4 }[a.type];
+  const comp = { SCALAR: 1, VEC3: 3, VEC4: 4, MAT4: 16 }[a.type];
   return { count: a.count, comp, offset: g.binStart + (bv.byteOffset || 0) + (a.byteOffset || 0) };
 }
 function readFloats(g, idx) {
@@ -350,55 +357,239 @@ function removeStrayTriangles(g, rig) {
   if ((text.match(re) || []).length !== 1 || String(kept.length).length !== String(ia.count).length)
     throw new Error('索引數量在 JSON 裡找不到唯一位置，或位數改變，中止');
   g.buf.write(text.replace(re, '"componentType":5123,' + repl + ','), 20, 'utf8');
+  g.json.accessors[prim.indices].count = kept.length;
   console.log('網格：拿掉 ' + stray.length + ' 個錯綁的尖刺三角面（索引 ' + ia.count + ' → ' + kept.length + '）');
   return stray.length;
 }
 
-/* ---- 披風下擺：細絲（下擺頂點整個綁在腿上，跨步時被拉成細絲）---- */
-const HEM_FULL = 0.30, HEM_TOP = 0.60;      // y<0.30 全跟髖部；0.30~0.60 平順過渡到原權重
-function fixCapeHem(g, rig) {
-  const data = JSON.parse(fs.readFileSync(path.join(here, 'data/sunbrand-cape-hem.json'), 'utf8'));
+/* ---- 蒙皮與拉伸量測 ---- */
+function readSkinData(g) {
   const prim = g.json.meshes[0].primitives[0];
-  const joints = g.json.skins[0].joints.map((n) => g.json.nodes[n].name);
-  const pa = accessorInfo(g, prim.attributes.POSITION), ja = accessorInfo(g, prim.attributes.JOINTS_0), wa = accessorInfo(g, prim.attributes.WEIGHTS_0);
-  if (pa.count !== data.vertexCount) throw new Error('頂點數 ' + pa.count + ' 與清單 ' + data.vertexCount + ' 不符：不是這個模型，中止');
-  const hips = joints.indexOf('Hips');
-  const slot = (v, k) => ({ j: g.buf[ja.offset + v * 4 + k], w: g.buf.readFloatLE(wa.offset + (v * 4 + k) * 4) });
-  const legW = (v) => { let t = 0; for (let k = 0; k < 4; k++) { const { j, w } = slot(v, k); if (w > 0 && /Leg|Foot/.test(joints[j])) t += w; } return t; };
-  // 已經處理過：y<0.3 的下擺頂點不該還有腿的權重
-  const low = data.groups.map((m) => m[0]).filter((v) => g.buf.readFloatLE(pa.offset + (v * 3 + 1) * 4) < HEM_FULL);
-  if (low.every((v) => legW(v) === 0)) { console.log('披風下擺：已經處理過'); return 0; }
-  let changed = 0;
-  for (const mem of data.groups) {
-    const f = mem[0], y = g.buf.readFloatLE(pa.offset + (f * 3 + 1) * 4);
-    if (y >= HEM_TOP) continue;
-    const t = Math.max(0, Math.min(1, (y - HEM_FULL) / (HEM_TOP - HEM_FULL))), s = t * t * (3 - 2 * t);   // 0 全髖部、1 原權重
-    const m = new Map([[hips, 1 - s]]);
-    for (let k = 0; k < 4; k++) { const { j, w } = slot(f, k); if (w > 0) m.set(j, (m.get(j) || 0) + w * s); }
-    const use = [...m.entries()].filter((x) => x[1] > 1e-4).sort((a, b) => b[1] - a[1]).slice(0, 4);
-    const tot = use.reduce((a, x) => a + x[1], 0);
-    for (const v of mem) for (let k = 0; k < 4; k++) {
-      g.buf[ja.offset + v * 4 + k] = k < use.length ? use[k][0] : 0;
-      g.buf.writeFloatLE(k < use.length ? use[k][1] / tot : 0, wa.offset + (v * 4 + k) * 4);
-    }
-    changed += mem.length;
+  const skin = g.json.skins[0];
+  const joints = skin.joints.map((n) => g.json.nodes[n].name);
+  const pa = accessorInfo(g, prim.attributes.POSITION), ja = accessorInfo(g, prim.attributes.JOINTS_0), wa = accessorInfo(g, prim.attributes.WEIGHTS_0), ia = accessorInfo(g, prim.indices);
+  const invBind = readFloats(g, skin.inverseBindMatrices);
+  const n = pa.count;
+  const pos = new Float32Array(n * 3);
+  for (let i = 0; i < n * 3; i++) pos[i] = g.buf.readFloatLE(pa.offset + i * 4);
+  const jnt = new Uint8Array(n * 4), wgt = new Float32Array(n * 4);
+  for (let i = 0; i < n * 4; i++) { jnt[i] = g.buf[ja.offset + i]; wgt[i] = g.buf.readFloatLE(wa.offset + i * 4); }
+  const idx = new Uint16Array(ia.count);
+  for (let i = 0; i < ia.count; i++) idx[i] = g.buf.readUInt16LE(ia.offset + i * 2);
+  return { prim, skin, joints, pa, ja, wa, ia, invBind, n, pos, jnt, wgt, idx };
+}
+function loadCloth(g, n) {
+  const data = JSON.parse(fs.readFileSync(path.join(here, 'data/sunbrand-cloth.json'), 'utf8'));
+  if (data.vertexCount !== n) throw new Error('頂點數 ' + n + ' 與布料清單 ' + data.vertexCount + ' 不符：不是這個模型，中止');
+  const cloth = new Uint8Array(n);
+  for (const grp of data.groups) for (const v of grp) cloth[v] = 1;
+  return cloth;
+}
+/* 位置完全重疊的頂點（貼圖接縫的重複頂點）視為同一個：回傳每個頂點所屬組的代表編號 */
+function weldRep(pos, n) {
+  const rep = new Int32Array(n), seen = new Map();
+  for (let i = 0; i < n; i++) {
+    const k = Math.round(pos[i * 3] * 1e4) + ',' + Math.round(pos[i * 3 + 1] * 1e4) + ',' + Math.round(pos[i * 3 + 2] * 1e4);
+    if (seen.has(k)) rep[i] = seen.get(k); else { seen.set(k, i); rep[i] = i; }
   }
-  console.log('披風下擺：重新配權重 ' + changed + ' 個頂點（' + data.groups.length + ' 組）');
+  return rep;
+}
+/* 某個姿勢下每個頂點（只算 need 標記的）的蒙皮後位置 */
+function skinnedPositions(rig, sd, pose, need) {
+  const W = worldMatrices(rig, pose);
+  const jm = sd.skin.joints.map((nodeIdx, j) => W(nodeIdx).clone().multiply(new Matrix4().fromArray(sd.invBind, j * 16)));
+  const out = new Float32Array(sd.n * 3), v = new Vector3(), a = new Vector3();
+  for (let i = 0; i < sd.n; i++) {
+    if (!need[i]) continue;
+    v.set(sd.pos[i * 3], sd.pos[i * 3 + 1], sd.pos[i * 3 + 2]);
+    let x = 0, y = 0, z = 0;
+    for (let k = 0; k < 4; k++) {
+      const w = sd.wgt[i * 4 + k];
+      if (w <= 0) continue;
+      a.copy(v).applyMatrix4(jm[sd.jnt[i * 4 + k]]);
+      x += a.x * w; y += a.y * w; z += a.z * w;
+    }
+    out[i * 3] = x; out[i * 3 + 1] = y; out[i * 3 + 2] = z;
+  }
+  return out;
+}
+const STRETCH_MAX = 4;     // 披風三角面最長邊被拉長超過幾倍就算細絲（布料只准小幅伸縮）
+function clothStretch(g, rig, sd, cloth) {
+  const need = new Uint8Array(sd.n), tris = [];
+  for (let t = 0; t < sd.idx.length / 3; t++) {
+    const a = sd.idx[t * 3], b = sd.idx[t * 3 + 1], c = sd.idx[t * 3 + 2];
+    if (cloth[a] || cloth[b] || cloth[c]) { tris.push(t); need[a] = need[b] = need[c] = 1; }
+  }
+  const edgeLen = (P, i, j) => Math.hypot(P[i * 3] - P[j * 3], P[i * 3 + 1] - P[j * 3 + 1], P[i * 3 + 2] - P[j * 3 + 2]);
+  const restPose = rig.rest.map((r) => ({ t: r.t.clone(), q: r.q.clone(), s: r.s.clone() }));
+  const rest = skinnedPositions(rig, sd, restPose, need);
+  const worst = new Float32Array(sd.idx.length / 3);
+  for (const name of g.json.animations.map((a) => a.name)) {
+    const clip = readClip(g, rig, name);
+    for (let t = 0; t <= clip.duration + 1e-6; t += 1 / 12) {
+      const P = skinnedPositions(rig, sd, poseAt(rig, clip, t), need);
+      for (const tri of tris) {
+        const a = sd.idx[tri * 3], b = sd.idx[tri * 3 + 1], c = sd.idx[tri * 3 + 2];
+        for (const [i, j] of [[a, b], [b, c], [c, a]]) {
+          const r = edgeLen(P, i, j) / (edgeLen(rest, i, j) + 1e-4);
+          if (r > worst[tri]) worst[tri] = r;
+        }
+      }
+    }
+  }
+  return { worst, tris };
+}
+
+/* ---- 重寫索引緩衝區（拿掉指定三角形）；索引數量就地改，JSON 長度不變 ---- */
+function dropTriangles(g, sd, dropSet) {
+  const kept = [];
+  for (let t = 0; t < sd.idx.length / 3; t++) if (!dropSet.has(t)) kept.push(sd.idx[t * 3], sd.idx[t * 3 + 1], sd.idx[t * 3 + 2]);
+  for (let i = 0; i < sd.idx.length; i++) g.buf.writeUInt16LE(i < kept.length ? kept[i] : 0, sd.ia.offset + i * 2);
+  const jl = g.buf.readUInt32LE(12), text = g.buf.slice(20, 20 + jl).toString('utf8');
+  const re = new RegExp('"componentType":5123,"count":' + sd.idx.length + ',', 'g');
+  if ((text.match(re) || []).length !== 1 || String(kept.length).length !== String(sd.idx.length).length)
+    throw new Error('索引數量在 JSON 裡找不到唯一位置，或位數改變，中止');
+  g.buf.write(text.replace(re, '"componentType":5123,"count":' + kept.length + ','), 20, 'utf8');
+  g.json.accessors[sd.prim.indices].count = kept.length;     // 記憶體裡的 JSON 也要同步，後面的步驟會再讀
+  return kept.length;
+}
+
+/* ---- 盔甲剛性化：內部頂點 100% 綁單一骨骼，只有骨骼交界那一圈保留原權重 ---- */
+function hardenArmor(g, rig) {
+  const sd = readSkinData(g), cloth = loadCloth(g, sd.n), rep = weldRep(sd.pos, sd.n);
+  // 以「組」為單位：組內各頂點的權重平均，找主要骨骼與其權重
+  const members = new Map();
+  for (let i = 0; i < sd.n; i++) { const r = rep[i]; (members.get(r) || members.set(r, []).get(r)).push(i); }
+  const dom = new Map();     // 組代表 → { bone, w }
+  for (const [r, mem] of members) {
+    const sum = new Map();
+    for (const v of mem) for (let k = 0; k < 4; k++) { const w = sd.wgt[v * 4 + k]; if (w > 0) sum.set(sd.jnt[v * 4 + k], (sum.get(sd.jnt[v * 4 + k]) || 0) + w / mem.length); }
+    let best = -1, bw = 0;
+    for (const [j, w] of sum) if (w > bw) { best = j; bw = w; }
+    dom.set(r, { bone: best, w: bw });
+  }
+  const neigh = new Map();
+  for (let t = 0; t < sd.idx.length / 3; t++) {
+    const r = [0, 1, 2].map((k) => rep[sd.idx[t * 3 + k]]);
+    for (let k = 0; k < 3; k++) for (const o of [r[(k + 1) % 3], r[(k + 2) % 3]]) if (o !== r[k]) (neigh.get(r[k]) || neigh.set(r[k], new Set()).get(r[k])).add(o);
+  }
+  const isClothGroup = (r) => members.get(r).some((v) => cloth[v]);
+  let changed = 0, boundary = 0, armor = 0;
+  for (const [r, mem] of members) {
+    if (isClothGroup(r)) continue;
+    armor += mem.length;
+    const d = dom.get(r);
+    let interior = d.w >= 0.5;
+    for (const o of neigh.get(r) || []) { if (isClothGroup(o) || dom.get(o).bone !== d.bone) { interior = false; break; } }
+    if (!interior) { boundary += mem.length; continue; }
+    for (const v of mem) {
+      const already = sd.jnt[v * 4] === d.bone && sd.wgt[v * 4] > 0.9999 && sd.wgt[v * 4 + 1] === 0;
+      if (already) continue;
+      for (let k = 0; k < 4; k++) {
+        g.buf[sd.ja.offset + v * 4 + k] = k === 0 ? d.bone : 0;
+        g.buf.writeFloatLE(k === 0 ? 1 : 0, sd.wa.offset + (v * 4 + k) * 4);
+      }
+      changed++;
+    }
+  }
+  console.log('盔甲：' + armor + ' 個頂點中，改成剛性（100% 單一骨骼）' + changed + ' 個，保留原權重的交界 ' + boundary + ' 個');
   return changed;
 }
-function capeHemLegWeight(g) {
-  const data = JSON.parse(fs.readFileSync(path.join(here, 'data/sunbrand-cape-hem.json'), 'utf8'));
-  const prim = g.json.meshes[0].primitives[0];
-  const joints = g.json.skins[0].joints.map((n) => g.json.nodes[n].name);
-  const pa = accessorInfo(g, prim.attributes.POSITION), ja = accessorInfo(g, prim.attributes.JOINTS_0), wa = accessorInfo(g, prim.attributes.WEIGHTS_0);
-  let worst = 0;
-  for (const mem of data.groups) for (const v of mem) {
-    if (g.buf.readFloatLE(pa.offset + (v * 3 + 1) * 4) >= HEM_FULL) continue;
-    let t = 0;
-    for (let k = 0; k < 4; k++) { const w = g.buf.readFloatLE(wa.offset + (v * 4 + k) * 4); if (w > 0 && /Leg|Foot/.test(joints[g.buf[ja.offset + v * 4 + k]])) t += w; }
-    worst = Math.max(worst, t);
+function armorSoftness(g, rig) {
+  const sd = readSkinData(g), cloth = loadCloth(g, sd.n);
+  let armor = 0, rigid = 0;
+  for (let i = 0; i < sd.n; i++) { if (cloth[i]) continue; armor++; if (sd.wgt[i * 4] > 0.9999) rigid++; }
+  return rigid / armor;      // 剛性頂點占盔甲頂點的比例
+}
+
+/* ---- 披風細絲：刪掉被拉成細絲的布料三角面 ---- */
+function removeClothSlivers(g, rig, analyze) {
+  const sd = readSkinData(g), cloth = loadCloth(g, sd.n);
+  const { worst, tris } = clothStretch(g, rig, sd, cloth);
+  if (analyze) {
+    const th = [1.5, 2, 3, 4, 6, 10, 30];
+    console.log('披風三角面（共 ' + tris.length + ' 個）最長邊被拉長倍數分佈：' + th.map((x) => '>' + x + '倍 ' + tris.filter((t) => worst[t] > x).length + ' 個').join('，'));
   }
-  return worst;
+  const drop = new Set(tris.filter((t) => worst[t] > STRETCH_MAX));
+  if (drop.size === 0) { console.log('披風：沒有被拉成細絲的三角面'); return 0; }
+  const left = dropTriangles(g, sd, drop);
+  console.log('披風：刪除 ' + drop.size + ' 個被拉長超過 ' + STRETCH_MAX + ' 倍的細絲三角面（索引 ' + sd.idx.length + ' → ' + left + '）');
+  return drop.size;
+}
+function maxClothStretch(g, rig) {
+  const sd = readSkinData(g), cloth = loadCloth(g, sd.n);
+  const { worst, tris } = clothStretch(g, rig, sd, cloth);
+  const kept = new Set(); for (let t = 0; t < sd.idx.length / 3; t++) kept.add(t);
+  return Math.max(...tris.map((t) => worst[t]));
+}
+
+/* ---- 關節限制：手腕扭轉過量 → 搬到前臂 ---- */
+const WRIST_MAX = 60, FOREARM_MAX = 90;      // 度。手腕（骨架上的 Hand）與前臂（相對上臂）繞自己軸的扭轉上限
+const twistQuat = (deg) => new Quaternion(0, Math.sin(deg * Math.PI / 360), 0, Math.cos(deg * Math.PI / 360));
+function twistDegOf(q) {
+  const len = Math.hypot(q.y, q.w);
+  return len < 1e-9 ? 0 : 2 * Math.atan2(q.y / len, q.w / len) * 180 / Math.PI;      // (−180, 180]
+}
+function unwrapSeries(vals) {
+  const out = [];
+  for (let i = 0; i < vals.length; i++) {
+    let v = vals[i];
+    if (i > 0) { while (v - out[i - 1] > 180) v -= 360; while (v - out[i - 1] < -180) v += 360; }
+    out.push(v);
+  }
+  return out;
+}
+const clampTo = (x, m) => Math.max(-m, Math.min(m, x));
+function limitWristTwist(g, rig, clip, side) {
+  const th = clip.tracks[side + 'Hand.rotation'], tf = clip.tracks[side + 'ForeArm.rotation'];
+  if (!th || !tf || th.times.length !== tf.times.length) return 0;
+  const n = th.times.length;
+  const qh = [], qf = [];
+  for (let i = 0; i < n; i++) {
+    qh.push(new Quaternion(th.values[i * 4], th.values[i * 4 + 1], th.values[i * 4 + 2], th.values[i * 4 + 3]));
+    qf.push(new Quaternion(tf.values[i * 4], tf.values[i * 4 + 1], tf.values[i * 4 + 2], tf.values[i * 4 + 3]));
+  }
+  const h = unwrapSeries(qh.map(twistDegOf)), f = unwrapSeries(qf.map(twistDegOf));
+  const editH = {}, editF = {};
+  let moved = 0;
+  for (let i = 0; i < n; i++) {
+    const excess = h[i] - clampTo(h[i], WRIST_MAX);
+    if (Math.abs(excess) < 0.5) continue;
+    const absorbed = clampTo(f[i] + excess, FOREARM_MAX) - f[i];       // 前臂還能多轉多少（不超過上限）
+    if (Math.abs(absorbed) < 0.5) continue;
+    // 前臂多轉 absorbed，手相對前臂就少轉 absorbed：手的世界朝向不變
+    editF[i] = qf[i].clone().multiply(twistQuat(absorbed));
+    editH[i] = twistQuat(-absorbed).multiply(qh[i]);
+    moved++;
+  }
+  if (moved) { writeQuats(g, clip, side + 'Hand', editH); writeQuats(g, clip, side + 'ForeArm', editF); }
+  return moved;
+}
+function limitWrists(g, rig) {
+  let total = 0;
+  for (const name of g.json.animations.map((a) => a.name)) {
+    const clip = readClip(g, rig, name);
+    let m = 0;
+    for (const side of ['Right', 'Left']) m += limitWristTwist(g, rig, clip, side);
+    if (m) console.log('關節限制：' + name + ' 把 ' + m + ' 個關鍵幀的手腕過量扭轉搬到前臂');
+    total += m;
+  }
+  return total;
+}
+function wristLimits(g, rig) {
+  // 量測：所有動作裡手腕扭轉與前臂扭轉的最大絕對值（連續展開後）
+  let w = 0, f = 0;
+  for (const name of g.json.animations.map((a) => a.name)) {
+    const clip = readClip(g, rig, name);
+    for (const side of ['Right', 'Left']) {
+      const th = clip.tracks[side + 'Hand.rotation'], tf = clip.tracks[side + 'ForeArm.rotation'];
+      const q = (tr, i) => new Quaternion(tr.values[i * 4], tr.values[i * 4 + 1], tr.values[i * 4 + 2], tr.values[i * 4 + 3]);
+      const hs = unwrapSeries(Array.from({ length: th.times.length }, (_, i) => twistDegOf(q(th, i))));
+      const fs_ = unwrapSeries(Array.from({ length: tf.times.length }, (_, i) => twistDegOf(q(tf, i))));
+      w = Math.max(w, ...hs.map(Math.abs)); f = Math.max(f, ...fs_.map(Math.abs));
+    }
+  }
+  return { wrist: w, forearm: f };
 }
 
 /* ---- 寫回 ---- */
@@ -432,7 +623,10 @@ export function verifyGrips(file) {
   const m1 = measure(rig, readClip(g, rig, 'Attack1'), 'Attack1').filter((r) => r[0] >= 1.0 && r[0] <= 1.5);
   const m2 = measure(rig, readClip(g, rig, 'Attack2'), 'Attack2').filter((r) => r[0] >= 1.25 && r[0] <= 1.40);
   return {
-    capeHemMaxLegWeight: capeHemLegWeight(g),                           // 披風下擺最末端頂點的腿權重（應為 0）
+    maxWristTwistDeg: wristLimits(g, rig).wrist,                         // 所有動作裡手腕扭轉最大值（度）
+    maxForearmTwistDeg: wristLimits(g, rig).forearm,                     // 前臂（相對上臂）扭轉最大值（度）
+    armorRigidRatio: armorSoftness(g, rig),                              // 盔甲頂點中完全剛性（100% 單一骨骼）的比例
+    maxClothStretch: maxClothStretch(g, rig),                            // 披風三角面最長邊被拉長的最大倍數
     strayTriangles: strayTriangles(g, rig).stray.length,                // 錯綁的尖刺三角面數（應為 0）
     attack1OffHandMaxDist: Math.max(...m1.map((r) => r[1])),          // 劈下去那段副手離劍軸最遠多少
     attack2BladeMaxAngleDeg: Math.max(...m2.map((r) => r[1]))         // 劍與前臂方向的夾角最大多少
@@ -443,6 +637,7 @@ export function verifyGrips(file) {
 function main() {
 const args = process.argv.slice(2);
 const checkOnly = args.includes('--check');
+const analyze = args.includes('--analyze');
 const [inFile, outFile] = args.filter((a) => !a.startsWith('--'));
 if (!inFile || (!outFile && !checkOnly)) {
   console.error('用法：node fix-grips.mjs <輸入.glb> <輸出.glb> [--check]');
@@ -460,8 +655,10 @@ const regroup = (edits) => {
 if (!checkOnly) {
   for (const [nm, ed] of Object.entries(regroup(e1))) writeQuats(g, a1, nm, ed);
   for (const [nm, ed] of Object.entries(regroup(e2))) writeQuats(g, a2, nm, ed);
+  limitWrists(g, rig);
   removeStrayTriangles(g, rig);
-  fixCapeHem(g, rig);
+  hardenArmor(g, rig);
+  removeClothSlivers(g, rig, analyze);
   fs.writeFileSync(outFile, g.buf);
 }
 // 重新讀檔量測修正後（--check 時以記憶體中的結果量測不到，直接說明）
