@@ -5,6 +5,17 @@
     "pose_mode": "a-pose",
     "remove_background": true
   },
+  "image3d": {
+    "ai_model": "meshy-6",
+    "model_type": "standard",
+    "should_texture": false,
+    "should_remesh": true,
+    "topology": "triangle",
+    "target_polycount": 4800,
+    "pose_mode": "a-pose",
+    "target_formats": ["glb"],
+    "estimatedCredits": 20
+  },
   "concepts": {
     "A": {
       "label": "cape to the calves",
