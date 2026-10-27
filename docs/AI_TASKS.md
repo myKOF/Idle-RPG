@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## SYNC-NATIVE-EXCEL-20261027 — 自動合併的原生Excel交接
+
+- Owner：Codex；Done。使用者反覆回報自動同步Excel 0x80070520，本聊天接續徹底修復同步之授權。當次遊戲衝突已用9081c60c保留雙方完成，現在於乾淨ai/codex修復工具；僅resolve-sync-conflicts、窄範圍原生Excel交接helper、相關真Git／Excel回歸與流程／本段，禁止放寬CLI沙箱、任意主機命令、丟棄修改或動3D hold／main。
+- 設計：Windows workspace-write子程序沒有可用Excel登入工作階段，桌面父程序正常。第一輪CLI僅產生資料JSON與needs_excel，父程序只接受原始Excel衝突清單內的工作簿、固定計畫資料夾及啟動時來源Hash；用原生工具可信副本更新及正常重開，再讓同一受限CLI第二輪匯出CSV／JS並驗證。父程序檢查Excel未再被改動後才暫存；最多兩輪，不繞過沙箱或執行AI產生的主機腳本。
+- 完成六檔：tools/resolve-sync-conflicts.ps1新增needs_excel資料交接與第二輪驗證，沙箱／approval／父提交與最後Build保護維持；新增tools/sync-excel-handoff.ps1，Excel更新工具在CLI啟動前擷取為記憶體ScriptBlock，磁碟僅保存稽核副本。資料只准原衝突config/Excel/*.xlsx、原來源SHA及本次logs/sync-excel-plans資料夾，拒絕越界／junction／重複／非純資料。所有候選先在原生Excel更新及正常重開，再同時鎖住所有原檔、重新核對SHA後寫入；失敗時從記憶體原始快照回復，不信任可被變動的磁碟備份。新增護欄專項、擴充原真Git回歸、SYNC_AI_WORKTREES與本段同步。
+- 原生驗證以Workbooks.Open的物件模型預設xlNormalLoad=0正常開啟並核對Saved，使用短唯一暫存檔避開舊路徑限制；不讀取未支援的Workbook.RepairMode屬性。依據Microsoft官方Workbooks.Open文件：https://learn.microsoft.com/en-us/office/vba/api/excel.workbooks.open 。既有Excel更新工具仍兩次儲存／重開逐格與物件比對；此工具的非strict optional JSON語意僅在可信ScriptBlock呼叫範圍保留，父控制器維持strict。修正PowerShell7繼承ModulePath時Windows PowerShell缺Get-FileHash的相容性。
+- 驗證指令：node --test --test-reporter=spec tests/sync-feature-worktrees.test.cjs tests/sync-ai-worktrees.test.cjs tests/sync-auto-conflicts.test.cjs tests/sync-index-recovery.test.cjs tests/sync-excel-handoff.test.cjs，66/66通過，零略過／取消。收尾來源鎖／原子替換保護後，以name-pattern選Real native Excel／Excel second pass及六項Excel護欄重跑8/8；記憶體可信程式加固後再跑真Excel兩項2/2，模型即使改寫原工具及Git目錄稽核副本也不能讓主機執行其程式。原生Excel fixture用真正xlsx＋bare遠端及三worktree，完成兩輪、CSV重產、原父提交合併／推送與乾淨狀態；第二輪再要求Excel則停在兩輪並保留merge、遠端不推送。
+- 護欄涵蓋未授權工作簿、../路徑、junction、重複請求、規劃期間來源變更及來源被占用，皆保留來源；既有CLI尋找／失敗／重跑／index恢復與三AI hold保護回歸不變。npm.cmd run build：593檔通過；git diff --check通過；String仍2140條acc75b7b同步、寫死0條。真實遊戲String亦以新的控制器原生正常開啟，2141列7欄、0物件，收據normal_open=true／corrupt_load=0。
+- 唯讀未改：規範／AGENTS／Workflow／prompts、原生更新器本身、原CLI沙箱設定／權限、遊戲JS／配置／模型及素材庫。無本項素材變更或新素材Commit；當次3D必要素材已先在素材庫7c811b5保存。測試工作簿僅在隔離暫存Git fixture，完成後清理；真實玩家存檔與已開啟頁面未操作。
+- 交付：本段所在[Codex] fix: 將自動合併Excel交回桌面父程序驗證，實際Commit及最後一般AI同步見回覆與logs/sync-ai-worktrees/latest.md。後續執行原BAT即可走新流程；已完成本次合併與可用Excel的父程序交接，未以真實付費CLI另製作人工衝突耗用額度。限制：父程序仍需要安裝且可啟動Microsoft Excel，檔案鎖住／來源改動／資料語意衝突仍安全停止；沒有宣稱所有Office環境或任何設計衝突均可自動成功。共享素材庫既有修改未同步，不動main及MakeHuman hold。
+
 ## MERGE-HERO3D-20261027 — 保留轉生文字與內測3D切換
 
 - Owner：Codex；Done。使用者提供本次同步失敗畫面，延續本聊天保留各AI修改並完成develop合併的授權；HEAD c39e075e、incoming 530cf77c、base b78097b6。保留原四個衝突及其餘incoming來源，先備份；下段Blocked為先前沙箱執行環境的歷史結果。

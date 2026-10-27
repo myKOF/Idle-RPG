@@ -11,7 +11,7 @@ function fixture({conflict=true,buildFails=false,incomingWhitespace=false}={}){
  const repo=path.join(root,'develop'),remote=path.join(root,'remote.git');
  fs.mkdirSync(repo);git(repo,'init','-b','develop');git(repo,'config','user.name','Sync Test');git(repo,'config','user.email','sync@example.invalid');
  fs.mkdirSync(path.join(repo,'tools'));
- for(const name of ['sync_ai_worktrees.ps1','resolve-sync-conflicts.ps1','sync-codex-cli.ps1','invoke-sync-with-report.ps1','sync-index-recovery.ps1'])fs.copyFileSync(path.join(source,'tools',name),path.join(repo,'tools',name));
+ for(const name of ['sync_ai_worktrees.ps1','resolve-sync-conflicts.ps1','sync-excel-handoff.ps1','sync-codex-cli.ps1','invoke-sync-with-report.ps1','sync-index-recovery.ps1'])fs.copyFileSync(path.join(source,'tools',name),path.join(repo,'tools',name));
  fs.copyFileSync(path.join(source,'sync_ai_worktrees.bat'),path.join(repo,'sync_ai_worktrees.bat'));
  fs.writeFileSync(path.join(repo,'.gitignore'),'logs/\n');
  fs.writeFileSync(path.join(repo,'tools','build_check.cjs'),`process.exit(${buildFails?1:0});\n`);
@@ -90,6 +90,48 @@ function readReport(f){
  assert.equal(files.length,1);assert.equal(fs.readFileSync(path.join(dir,files[0]),'utf8'),latest);
  return latest;
 }
+
+function excelFixture(){
+ const f=fixture({conflict:false}),q=s=>"'"+s.replace(/'/g,"''")+"'";
+ fs.copyFileSync(path.join(source,'tools','excel-update-sheets.ps1'),path.join(f.repo,'tools','excel-update-sheets.ps1'));
+ fs.mkdirSync(path.join(f.repo,'config','Excel'),{recursive:true});fs.mkdirSync(path.join(f.repo,'config','CSV'),{recursive:true});
+ const script=`$ErrorActionPreference='Stop';$e=New-Object -ComObject Excel.Application;$e.Visible=$false;$e.DisplayAlerts=$false;try{foreach($n in @('base','ours','theirs')){$b=$e.Workbooks.Add();$w=$b.Worksheets.Item(1);$w.Name='String';$w.Cells.Item(1,1).Value2='id';$w.Cells.Item(1,2).Value2='value';$w.Cells.Item(2,1).Value2='1';$w.Cells.Item(2,2).Value2=$n;$b.SaveAs((Join-Path ${q(f.root)} ($n+'.xlsx')),51);$b.Close($false)}}finally{$e.Quit();[void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($e)}`;
+ const r=spawnSync('powershell.exe',['-NoProfile','-Command',script],{encoding:'utf8',timeout:30000});assert.equal(r.status,0,r.stdout+r.stderr);
+ const book=path.join(f.repo,'config','Excel','String.xlsx');fs.copyFileSync(path.join(f.root,'base.xlsx'),book);git(f.repo,'add','.');git(f.repo,'commit','-m','native excel fixture');
+ const agent=path.join(f.root,'codex');git(agent,'merge','--ff-only','develop');
+ fs.copyFileSync(path.join(f.root,'ours.xlsx'),book);git(f.repo,'add','.');git(f.repo,'commit','-m','ours excel');
+ fs.copyFileSync(path.join(f.root,'theirs.xlsx'),path.join(agent,'config','Excel','String.xlsx'));git(agent,'add','.');git(agent,'commit','-m','theirs excel');
+ const fake=String.raw`
+const fs=require('fs'),path=require('path'),cp=require('child_process');const args=process.argv.slice(2),arg=k=>args[args.indexOf(k)+1];
+if(args.includes('--version')){console.log('codex-cli 0.0.0-test');process.exit(0);}
+if(args.includes('--help')){console.log('--ignore-user-config --ephemeral --sandbox --add-dir --output-schema --output-last-message');process.exit(0);}
+if(arg('--sandbox')!=='workspace-write'||!args.includes('never'))throw Error('Sandbox weakened');
+const repo=arg('--cd'),prompt=fs.readFileSync(0,'utf8'),counter=path.join(__dirname,'excel-calls.txt');let phase=fs.existsSync(counter)?Number(fs.readFileSync(counter,'utf8'))+1:1;fs.writeFileSync(counter,String(phase));
+const output={status:'resolved',summary:'native handoff fixture',tests:['native workbook and regenerated CSV verified'],files:['config/Excel/String.xlsx','config/CSV/String.csv','tools/excel-update-sheets.ps1'],asset_files:[],excel_updates:[]};
+if(phase===1){
+ const dir=prompt.match(/ONLY under (logs\/sync-excel-plans\/[^/]+)\//)[1];
+ fs.mkdirSync(path.join(repo,dir),{recursive:true});fs.writeFileSync(path.join(repo,dir,'plan.json'),JSON.stringify({sheets:[{name:'String',rows:[['id','value'],['1','native merged']]}]}));
+ // A sandbox-writable replacement must never be executed by the native controller.
+ fs.writeFileSync(path.join(repo,'tools','excel-update-sheets.ps1'),"throw 'UNTRUSTED updater executed'\n");
+ fs.writeFileSync(path.join(path.dirname(arg('--output-last-message')),'native-excel','excel-update-sheets.ps1'),"throw 'UNTRUSTED audit copy executed'\n");
+ output.status='needs_excel';output.tests=[];output.excel_updates=[{workbook:'config/Excel/String.xlsx',data_file:dir+'/plan.json'}];
+}else{
+ if(!prompt.includes('SECOND AND FINAL PASS')||!prompt.includes('normal_open'))throw Error('Missing native receipt');
+ cp.execFileSync(process.execPath,[SOURCE_EXPORTER],{env:{...process.env,PARAMS_XLSX:path.join(repo,'config/Excel/String.xlsx'),PARAMS_CSV_OUT:path.join(repo,'config/CSV/String.csv'),PARAMS_SHEET:'String'},stdio:'pipe'});
+ if(!fs.readFileSync(path.join(repo,'config/CSV/String.csv'),'utf8').includes('native merged'))throw Error('Workbook was not natively updated');
+ if(process.env.SYNC_FAKE_MODE==='repeat_excel')output.status='needs_excel';
+}
+fs.writeFileSync(arg('--output-last-message'),JSON.stringify(output));
+`.replace('SOURCE_EXPORTER',JSON.stringify(path.join(source,'tools','xlsx_to_csv.cjs')));
+ fs.writeFileSync(path.join(f.root,'fake-codex.cjs'),fake);return f;
+}
+const hasExcel=windows&&fs.existsSync(path.join(process.env.ProgramFiles||'C:/Program Files','Microsoft Office','Root','Office16','EXCEL.EXE'));
+test('Real native Excel handoff uses two sandboxed phases and a trusted updater snapshot',{skip:!hasExcel},()=>{
+ const f=excelFixture();try{const r=f.run('excel');assert.equal(r.status,0,f.log(r));assert.equal(fs.readFileSync(path.join(f.root,'excel-calls.txt'),'utf8'),'2');assert.equal(f.pending(),false);assert.equal(git(f.repo,'status','--porcelain'),'');assert.match(fs.readFileSync(path.join(f.repo,'config','CSV','String.csv'),'utf8'),/native merged/);assert.match(f.log(r),/Excel/);}finally{f.clean();}
+});
+test('Excel second pass cannot request an unbounded retry or commit an incomplete result',{skip:!hasExcel},()=>{
+ const f=excelFixture();try{const r=f.run('repeat_excel');assert.notEqual(r.status,0);assert.equal(fs.readFileSync(path.join(f.root,'excel-calls.txt'),'utf8'),'2');assert.equal(f.pending(),true);assert.equal(f.remoteHead(),f.initialRemote);assert.match(f.log(r),/Automatic resolution stopped/);}finally{f.clean();}
+});
 
 function withoutCodexOnPath(f){
  const inherited=process.env.PATH||'';

@@ -9,6 +9,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'sync-codex-cli.ps1')
+. (Join-Path $PSScriptRoot 'sync-excel-handoff.ps1')
 
 function Read-Git {
     param([string[]]$Arguments)
@@ -117,13 +118,17 @@ $logPath = Join-Path $runDirectory 'codex.log'
 [IO.File]::WriteAllText((Join-Path $runDirectory 'conflicts.txt'), (Read-Git -Arguments @('ls-files', '--unmerged')), $utf8)
 $schema = @{
     type = 'object'; additionalProperties = $false
-    required = @('status', 'summary', 'tests', 'files', 'asset_files')
+    required = @('status', 'summary', 'tests', 'files', 'asset_files', 'excel_updates')
     properties = @{
-        status = @{ type = 'string'; enum = @('resolved', 'blocked') }
+        status = @{ type = 'string'; enum = @('resolved', 'blocked', 'needs_excel') }
         summary = @{ type = 'string' }
         tests = @{ type = 'array'; items = @{ type = 'string' } }
         files = @{ type = 'array'; items = @{ type = 'string' } }
         asset_files = @{ type = 'array'; items = @{ type = 'string' } }
+        excel_updates = @{ type = 'array'; items = @{
+            type = 'object'; additionalProperties = $false; required = @('workbook', 'data_file')
+            properties = @{ workbook = @{ type = 'string' }; data_file = @{ type = 'string' } }
+        } }
     }
 } | ConvertTo-Json -Depth 8
 [IO.File]::WriteAllText($schemaPath, $schema, $utf8)
@@ -131,6 +136,7 @@ $schema = @{
 $normalizedIncomingFiles = @(Repair-IncomingBlankEof)
 [IO.File]::WriteAllText((Join-Path $runDirectory 'controller-whitespace.txt'), ($normalizedIncomingFiles -join "`n"), $utf8)
 $conflicts = Read-Git -Arguments @('diff', '--name-only', '--diff-filter=U')
+$excelContext = New-SyncExcelContext -Root $Worktree -RunDirectory $runDirectory -Conflicts @($conflicts -split "`n") -Updater (Join-Path $PSScriptRoot 'excel-update-sheets.ps1')
 $prompt = @"
 The human user explicitly authorized sync_ai_worktrees.bat to resolve develop merge conflicts automatically.
 You are the designated integrator for THIS pending merge only, in $Worktree.
@@ -150,7 +156,14 @@ Inspect git status and the base/ours/theirs revisions before editing. Preserve b
 If Git reports dubious ownership under the Windows sandbox user, use git -c safe.directory="$Worktree" for this exact authorized repository only; do not alter global Git trust or use a wildcard.
 Do not blindly take an entire side or choose the newer commit's content as a substitute for understanding it.
 Make only necessary conflict, generated-data, cache, regression-test and task-record changes. Preserve any existing edits.
-For Excel conflicts use supported spreadsheet/Excel APIs and validate preservation and normal reopening; never edit internal XML.
+For original Excel conflicts DO NOT start Excel COM in the sandbox or edit the XLSX yourself: its Windows logon session cannot support Excel.
+Instead inspect base/ours/theirs read-only, preserve both intents and create JSON DATA plans using the existing tools/excel-update-sheets.ps1 format.
+Write those JSON plans ONLY under $($excelContext.PlansRelative)/ in the worktree. They are ignored recovery files, not files to stage.
+Return status=needs_excel and excel_updates=[{workbook:"config/Excel/Name.xlsx",data_file:"$($excelContext.PlansRelative)/plan.json"}].
+Cover every originally conflicted XLSX once; do not request other workbooks. Do not modify the workbook bytes during planning.
+The controller applies the data with a trusted native Excel updater outside the sandbox, verifies normal reopening and checks the original hash.
+It then invokes you for a SECOND validation pass with native receipts. Only that pass returns resolved after regenerating CSV/JS and running tests/build.
+Use excel_updates=[] for blocked, resolved or non-Excel tasks. Never edit XLSX XML or generate host-executable scripts.
 Excel is authoritative: regenerate the matching CSV and JS via existing tools. JSON/CSV fields changed independently should both survive.
 Use NEW cache versions for combined JS/Worker/Preset changes and synchronize main/editor/Worker imports.
 If necessary assets need preserving, follow the existing asset-library workflow, but do not stage or commit there.
@@ -201,29 +214,64 @@ if ($AssetLibraryRoot) {
     $temporaryGitConfig += "`tdirectory = `"$escapedAssetRoot`"`n"
 }
 [IO.File]::WriteAllText($gitConfigPath, $temporaryGitConfig, $utf8)
-Push-Location -LiteralPath $Worktree
-try {
-    $OutputEncoding = $utf8
-    $env:GIT_CONFIG_GLOBAL = $gitConfigPath
-    # Native stderr is diagnostic output, not a PowerShell exception.
-    $ErrorActionPreference = 'Continue'
-    $prompt | & $commandPath @cliArguments 2>&1 | Tee-Object -FilePath $logPath | Out-Host
-    $code = $LASTEXITCODE
-} finally {
-    $OutputEncoding = $previousEncoding
-    $ErrorActionPreference = $previousPreference
-    $env:GIT_CONFIG_GLOBAL = $previousGitConfig
-    Pop-Location
+function Invoke-SyncModelPhase {
+    param([string]$ModelPrompt)
+    Push-Location -LiteralPath $Worktree
+    try {
+        $OutputEncoding = $utf8
+        $env:GIT_CONFIG_GLOBAL = $gitConfigPath
+        $ErrorActionPreference = 'Continue'
+        $ModelPrompt | & $commandPath @cliArguments 2>&1 | Tee-Object -FilePath $logPath -Append | Out-Host
+        $phaseCode = $LASTEXITCODE
+    } finally {
+        $OutputEncoding = $previousEncoding
+        $ErrorActionPreference = $previousPreference
+        $env:GIT_CONFIG_GLOBAL = $previousGitConfig
+        Pop-Location
+    }
+    if ($phaseCode -ne 0) { throw "Codex failed ($phaseCode). Merge preserved; see $logPath" }
+    if (-not (Test-Path -LiteralPath $summaryPath -PathType Leaf)) { throw "Codex did not return a result; see $logPath" }
+    return ([IO.File]::ReadAllText($summaryPath, $utf8) | ConvertFrom-Json)
 }
-if ($code -ne 0) { throw "Codex failed ($code). Merge preserved; see $logPath" }
-if (-not (Test-Path -LiteralPath $summaryPath -PathType Leaf)) { throw "Codex did not return a result; see $logPath" }
-$result = [IO.File]::ReadAllText($summaryPath, $utf8) | ConvertFrom-Json
+$result = Invoke-SyncModelPhase -ModelPrompt $prompt
+$reportedFiles = @($result.files)
+$reportedAssets = @($result.asset_files)
+$receipts = @()
+if ($result.status -eq 'needs_excel') {
+    Assert-MergeIdentity
+    $requests = if ($result.PSObject.Properties['excel_updates']) { @($result.excel_updates) } else { @() }
+    [IO.File]::WriteAllText((Join-Path $runDirectory 'excel-planning-result.json'), ($result | ConvertTo-Json -Depth 16), $utf8)
+    $receipts = @(Invoke-SyncExcelHandoff -Context $excelContext -Requests $requests)
+    $receiptText = ConvertTo-Json -InputObject $receipts -Depth 10
+    [IO.File]::WriteAllText((Join-Path $runDirectory 'native-excel-receipts.json'), $receiptText, $utf8)
+    Assert-MergeIdentity
+    $validationPrompt = $prompt + @"
+
+SECOND AND FINAL PASS: native Excel handoff is COMPLETE. Do not return needs_excel again or touch the XLSX bytes.
+The approved updater saved and reopened the candidates normally outside the sandbox. Native receipts:
+$receiptText
+Regenerate matching CSV and JS from the actual updated XLSX with existing tools, resolve remaining references/cache conflicts,
+then run relevant regression tests, build and complete-result whitespace checks. Native Excel opening validation is already satisfied;
+do not attempt COM from the sandbox. Record actual commands/results and return resolved only on successful integration.
+Return all files from this pass PLUS those already changed during planning; exclude ignored JSON plans. Return excel_updates=[].
+"@
+    [IO.File]::WriteAllText((Join-Path $runDirectory 'validation-prompt.txt'), $validationPrompt, $utf8)
+    $result = Invoke-SyncModelPhase -ModelPrompt $validationPrompt
+    $reportedFiles += @($result.files) + @($receipts | ForEach-Object { $_.workbook })
+    $reportedAssets += @($result.asset_files)
+} elseif ($excelContext.Books.Count -and $result.status -eq 'resolved') {
+    throw 'Excel conflicts require the native controller handoff before resolved can be accepted.'
+}
 if ($result.status -ne 'resolved' -or @($result.tests).Count -eq 0) {
     throw "Automatic resolution stopped: $($result.summary). Merge preserved; see $logPath"
 }
 Assert-MergeIdentity
+foreach ($receipt in $receipts) {
+    $verifiedPath = Assert-SyncExcelPath -Root $Worktree -Path (Join-Path $Worktree $receipt.workbook)
+    if ((Get-FileHash -LiteralPath $verifiedPath -Algorithm SHA256).Hash -ne $receipt.sha256) { throw 'Excel changed after native validation; merge preserved.' }
+}
 # Git metadata remains protected inside the model sandbox. Only this controller stages files.
-Stage-ReportedFiles -Root $Worktree -Files @(@($result.files) + $normalizedIncomingFiles | Select-Object -Unique)
+Stage-ReportedFiles -Root $Worktree -Files @($reportedFiles + $normalizedIncomingFiles | Select-Object -Unique)
 if (Read-Git -Arguments @('diff', '--name-only', '--diff-filter=U')) { throw "Unresolved files remain; see $logPath" }
 & git -C $Worktree diff --cached --check
 if ($LASTEXITCODE -ne 0) { throw 'Staged diff contains whitespace errors or conflict markers.' }
@@ -247,18 +295,19 @@ if ($LASTEXITCODE -ne 0 -or (Read-Git -Arguments @('ls-files', '--others', '--ex
 }
 & git -C $Worktree diff --cached --check
 if ($LASTEXITCODE -ne 0) { throw 'Final staged verification failed.' }
-if (@($result.asset_files).Count -gt 0) {
+$assetFiles = @($reportedAssets | Select-Object -Unique)
+if ($assetFiles.Count -gt 0) {
     if (-not $assetHead -or -not $assetIndexWasClean) { throw 'Necessary assets cannot be committed: missing repository or pre-existing staged work.' }
     $currentAssetHead = (& git -C $AssetLibraryRoot rev-parse HEAD).Trim()
     if ($LASTEXITCODE -ne 0 -or $currentAssetHead -ne $assetHead) { throw 'Asset HEAD changed during resolution; merge preserved.' }
     & git -C $AssetLibraryRoot diff --cached --quiet
     if ($LASTEXITCODE -ne 0) { throw 'Other work was staged in the asset repository; merge preserved.' }
-    Stage-ReportedFiles -Root $AssetLibraryRoot -Files @($result.asset_files)
+    Stage-ReportedFiles -Root $AssetLibraryRoot -Files $assetFiles
     & git -C $AssetLibraryRoot diff --cached --check
     if ($LASTEXITCODE -ne 0) { throw 'Asset verification failed.' }
     & git -C $AssetLibraryRoot diff --cached --quiet
     if ($LASTEXITCODE -eq 1) {
-        $assetCommitArguments = @('commit', '--only', '-m', '[Codex] fix: 保存自動合併必要素材', '--') + @($result.asset_files)
+        $assetCommitArguments = @('commit', '--only', '-m', '[Codex] fix: 保存自動合併必要素材', '--') + $assetFiles
         & git --literal-pathspecs -C $AssetLibraryRoot @assetCommitArguments | Out-Host
         if ($LASTEXITCODE -ne 0) { throw 'Necessary asset commit failed; game merge preserved.' }
     } elseif ($LASTEXITCODE -ne 0) { throw 'Cannot inspect staged assets.' }
