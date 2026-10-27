@@ -18,6 +18,27 @@ export class MeshyClient {
     return body;
   }
 
+  // Paid call. Never retried here; callers must pass the approval gate first.
+  async post(pathname, body) {
+    if (!this.key) throw new Error('MESHY_API_KEY is not set');
+    const res = await fetch(new URL(pathname, this.host), {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${this.key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(`POST ${pathname} -> ${res.status} ${data.message || ''}`.trim());
+    return data;
+  }
+
+  createTextTo3d(params) {
+    return this.post('/openapi/v2/text-to-3d', params);
+  }
+
+  getTextTo3d(id) {
+    return this.get(`/openapi/v2/text-to-3d/${id}`);
+  }
+
   balance() {
     return this.get('/openapi/v1/balance');
   }
