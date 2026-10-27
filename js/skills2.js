@@ -1359,7 +1359,7 @@ function skills2StoredLevels(gid) {
     return Math.max(i === 0 ? 1 : 0, Math.min(SG_TIER_MAX_LV, isFinite(n) ? n : 0));
   });
 }
-/* 舊存檔超支投資在成功重選時保留為額度，避免退款先被負餘額吞掉。
+/* GM／舊存檔超額投資在成功退點前保留為額度，避免退款先被負餘額吞掉。
    只讀取已保存的額度；面板投影不可因為被查詢而發點。 */
 function skills2LegacyPointCredit() {
   var credit = Math.floor(Number(G.player.skills2 && G.player.skills2.legacyPointCredit) || 0);
@@ -1377,6 +1377,15 @@ function skills2PointView() {
     if (ult) spent += ult.lv;
   }
   return { total: total, spent: spent, available: Math.max(0, total - spent) };
+}
+
+/* 必須在驗證完成、實際減少投資之前呼叫；不另發退款，等級減少即釋出點數。 */
+function skills2PreservePointCredit() {
+  var points = skills2PointView();
+  if (points.spent > points.total) {
+    if (!G.player.skills2) G.player.skills2 = { levels: {} };
+    G.player.skills2.legacyPointCredit = skills2LegacyPointCredit() + points.spent - points.total;
+  }
 }
 
 /* 終極進化的存檔節點（惰性建立；沒有投資過的群組不佔存檔欄位）。 */
@@ -1426,12 +1435,9 @@ function skills2UltSwitch(group, optIdx, fromOpt, fromLv, quotedCost) {
   if (cur.idx === optIdx) return STR(689);
   var cost = skills2UltCost(group, optIdx, 0);
   if (cost !== quotedCost) return STR(690);
-  var points = skills2PointView();
   if ((G.player.gold || 0) < cost) return STR(91);
   /* 先保留原有投資額度，再以舊等級退款、新等級扣點。確認失敗不可改額度。 */
-  if (points.spent > points.total) {
-    G.player.skills2.legacyPointCredit = skills2LegacyPointCredit() + points.spent - points.total;
-  }
+  skills2PreservePointCredit();
   G.player.gold -= cost;
   sgUltStore()[group] = { pick: optIdx, lv: 1 };
   sgAfterSkillChange();
@@ -1467,6 +1473,7 @@ function skills2UltDowngrade(group) {
   if (!SKILLS2[group]) return STR(675);
   var cur = sgUltPickOf(sgUltStore(), group);
   if (!cur) return STR(694);
+  skills2PreservePointCredit();
   if (cur.lv <= 1) { delete sgUltStore()[group]; }
   else sgUltStore()[group] = { pick: cur.idx, lv: cur.lv - 1 };
   /* 修羅亂舞會改變屬性聚合（副手雙手武器是否生效、雙手詞條加成幾%），
@@ -1517,6 +1524,7 @@ function skills2Downgrade(group, tier) {
   /* 前 7 階任何一階離開滿級，終極進化就失去解鎖條件（sgEffectiveUlt 會自動失效）；
      等級與選擇一律保留在存檔裡，練回滿級就原樣回來——與各階「未達門檻視為 Lv.0」同一條規則。 */
   lvs = skills2StoredLevels(group);
+  skills2PreservePointCredit();
   lvs[tier]--;
   if (!G.player.skills2) G.player.skills2 = { levels: {} };
   if (!G.player.skills2.levels) G.player.skills2.levels = {};
