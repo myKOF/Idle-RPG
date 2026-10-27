@@ -112,3 +112,31 @@ test('未核准試作保留分支與未提交內容、不推送不合併，三�
     assert.equal(git(f.repo,'merge-base','--is-ancestor',f.commits[2],head),'');
   }finally{f.clean();}
 });
+
+test('固定AI分支hold不重建或納入同步，解除後才整合保留的提交',{skip:!windows},()=>{
+  const f=fixture([]);try{
+    const branch='ai/claude',worktree=path.join(f.root,'claude');
+    const before=git(worktree,'rev-parse','HEAD'),draft=path.join(worktree,'draft.txt');
+    fs.writeFileSync(draft,'private pipeline draft');
+    git(f.repo,'config','branch.'+branch+'.codexSyncHold','true');
+    const preview=f.run(['-ValidateOnly']);assert.equal(preview.status,0,f.log(preview));
+    assert.doesNotMatch(f.log(preview),/將建立 ai\/claude/);
+    const r=f.run();assert.equal(r.status,0,f.log(r));
+    const head=git(f.repo,'rev-parse','HEAD');
+    assert.equal(git(worktree,'rev-parse','HEAD'),before);
+    assert.equal(git(f.remote,'rev-parse',branch),f.initial);
+    assert.equal(fs.readFileSync(draft,'utf8'),'private pipeline draft');
+    assert.ok(!fs.existsSync(path.join(f.root,'.ai-sync-worktrees','claude')));
+    assert.ok(!fs.existsSync(path.join(f.repo,'claude.txt')));
+    for(const other of ['ai/antigravity','ai/codex'])assert.equal(git(f.remote,'rev-parse',other),head);
+    const again=f.run();assert.equal(again.status,0,f.log(again));
+    assert.equal(git(f.repo,'rev-parse','HEAD'),head);
+    git(f.repo,'config','branch.'+branch+'.codexSyncHold','false');
+    const dirty=f.run();assert.notEqual(dirty.status,0);assert.match(f.log(dirty),/未提交變更/);
+    fs.unlinkSync(draft);
+    const released=f.run();assert.equal(released.status,0,f.log(released));
+    assert.equal(fs.readFileSync(path.join(f.repo,'claude.txt'),'utf8'),'claude');
+    assert.equal(git(f.repo,'merge-base','--is-ancestor',before,'HEAD'),'');
+    assert.equal(git(f.remote,'rev-parse',branch),git(f.repo,'rev-parse','HEAD'));
+  }finally{f.clean();}
+});
