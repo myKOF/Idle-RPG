@@ -149,6 +149,11 @@ def apply(ob, arm, hand="Right", weapon_group=None):
 # Reach = metres from the wrist along the hand; the spans are the knuckle, middle and fingertip joints.
 FIST_JOINTS = ((0.075, 0.105), (0.115, 0.145), (0.158, 0.175))
 FIST_FOLDS_DEG = (95.0, 100.0, 75.0)  # bend at each of the three joints
+# The whole hand (palm and fist) is then flexed inward at the wrist as one rigid piece. The vertices
+# thin out between the wrist plate and the knuckles, so that gap carries the turn.
+FIST_WRIST_BEND_DEG = 25.0
+FIST_WRIST_PIVOT = 0.045  # reach of the pivot
+FIST_WRIST_BLEND = (0.035, 0.07)  # reach span over which the bend is eased in
 
 
 def curl_fist(ob, arm, side="Left", palm_sign=-1.0):
@@ -180,16 +185,24 @@ def curl_fist(ob, arm, side="Left", palm_sign=-1.0):
     heading = np.outer(np.cos(phi), along) + np.outer(np.sin(phi), normal)
     path = np.cumsum(heading * du, axis=0) - heading * du  # position of the centre line at each u
     side_dir = np.outer(-np.sin(phi), along) + np.outer(np.cos(phi), normal)  # the "up" of the finger at each u
+    pivot = wrist + along * FIST_WRIST_PIVOT
+    bend = Matrix.Rotation(math.radians(FIST_WRIST_BEND_DEG), 3, Vector(lateral))  # + turns the fingers towards the palm
     moved = 0
     for k, i in enumerate(idx):
         d = pts[k] - knuckle
         u, h, lat = d @ along, d @ normal, d @ lateral
-        if u <= 0:
-            continue
-        u = min(u, us[-1])
-        centre = np.array([np.interp(u, us, path[:, c]) for c in range(3)])
-        up = np.array([np.interp(u, us, side_dir[:, c]) for c in range(3)])
-        ob.data.vertices[i].co = minv @ Vector(knuckle + centre + up * h + lateral * lat)
-        moved += 1
+        pos = pts[k]
+        if u > 0:
+            u = min(u, us[-1])
+            centre = np.array([np.interp(u, us, path[:, c]) for c in range(3)])
+            up = np.array([np.interp(u, us, side_dir[:, c]) for c in range(3)])
+            pos = knuckle + centre + up * h + lateral * lat
+            moved += 1
+        reach = (pts[k] - wrist) @ along
+        t = float(smooth((reach - FIST_WRIST_BLEND[0]) / (FIST_WRIST_BLEND[1] - FIST_WRIST_BLEND[0])))
+        if t > 0:
+            turned = Matrix.Rotation(math.radians(FIST_WRIST_BEND_DEG) * t, 3, Vector(lateral))
+            pos = np.array(pivot + turned @ Vector(pos - pivot))
+        ob.data.vertices[i].co = minv @ Vector(pos)
     ob.data.update()
     return {"handVerts": len(idx), "curledVerts": moved}
