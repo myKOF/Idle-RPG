@@ -16,6 +16,15 @@
     "target_formats": ["glb"],
     "estimatedCredits": 20
   },
+  "retexture": {
+    "ai_model": "meshy-6",
+    "texture_resolution": "2k",
+    "remove_lighting": true,
+    "enable_pbr": false,
+    "enable_original_uv": false,
+    "target_formats": ["glb"],
+    "estimatedCredits": 10
+  },
   "concepts": {
     "A": {
       "label": "cape to the calves",
