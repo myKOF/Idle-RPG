@@ -205,4 +205,4 @@ def curl_fist(ob, arm, side="Left", palm_sign=-1.0):
             pos = np.array(pivot + turned @ Vector(pos - pivot))
         ob.data.vertices[i].co = minv @ Vector(pos)
     ob.data.update()
-    return {"handVerts": len(idx), "curledVerts": moved, "palm": [float(c) for c in normal]}
+    return {"handVerts": len(idx), "curledVerts": moved}

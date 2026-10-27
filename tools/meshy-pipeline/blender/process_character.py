@@ -57,11 +57,8 @@ WEAPON = cfg.get("weaponBone")
 if WEAPON:
     skin_fix.add_weapon_bone(arm, hand, WEAPON)
 print("SKIN_FIX", skin_fix.apply(body, arm, hand, WEAPON))
-PALM_WORLD = None  # which way the fist's palm faces, in the rest pose (world axes = armature axes)
 if cfg.get("fist"):
-    fist_info = skin_fix.curl_fist(body, arm, cfg["fist"]["side"], cfg["fist"].get("palmSign", -1.0))
-    PALM_WORLD = Vector(fist_info.pop("palm"))
-    print("FIST", fist_info)
+    print("FIST", skin_fix.curl_fist(body, arm, cfg["fist"]["side"], cfg["fist"].get("palmSign", -1.0)))
 
 # 2. harvest actions
 harvest = {(base_path, a.name): a for a in base_actions}
@@ -243,31 +240,26 @@ def hand_pose_from(frames, spec):
         B = basis_of(pose)
         B[bone] = Matrix.Translation(B[bone].translation) @ mean.to_matrix().to_4x4()
         frames[i] = fk(B)
-    if spec.get("matchPalm") and PALM_WORLD is not None:
-        match_palm(frames, ref_frames, bone, spec["matchPalm"])
 
 
-def match_palm(frames, ref_frames, bone, spec):
-    """Roll the hand about its forearm until its palm faces the same way, measured in the chest's frame,
-    as it does in the reference clip. Copying the wrist rotation is not enough: the forearm itself is
-    rolled differently in the two clips, so the hand would still bend towards the wrong side."""
-    fore, chest = spec["forearm"], spec["chest"]
-    palm_local = rest[bone].to_3x3().inverted() @ PALM_WORLD
-    seen = Vector()
-    for pose in ref_frames:
-        seen += pose[chest].to_3x3().inverted() @ (pose[bone].to_3x3() @ palm_local)
-    target_chest = seen.normalized()
+def hand_inward(frames, spec):
+    """Tilt a hand at the wrist, towards the middle of the body, by `degrees` on every frame.
+    The forearm direction and the inward direction (horizontal, towards the hips, made square to the
+    forearm) are recomputed each frame, so the tilt stays 'inward' however the arm is turned."""
+    bone, fore, hips = spec["bone"], spec["forearm"], spec.get("hips", "Hips")
+    angle = math.radians(spec["degrees"])
     for i, pose in enumerate(frames):
-        axis = (pose[bone].translation - pose[fore].translation).normalized()
-        palm = pose[bone].to_3x3() @ palm_local
-        want = pose[chest].to_3x3() @ target_chest
-        p, t = palm - axis * palm.dot(axis), want - axis * want.dot(axis)
-        if p.length < 1e-4 or t.length < 1e-4:
+        wrist = pose[bone].translation
+        a = (wrist - pose[fore].translation).normalized()
+        inward = pose[hips].translation - wrist
+        inward.z = 0
+        inward -= a * inward.dot(a)
+        if inward.length < 1e-4:
             continue
-        phi = math.atan2(axis.dot(p.cross(t)), p.dot(t))
+        axis = a.cross(inward.normalized()).normalized()  # turning a about this axis swings it towards `inward`
         B = basis_of(pose)
         D = fk(B)
-        D = put(B, D, bone, about(D[bone], D[bone].translation, Matrix.Rotation(phi, 3, axis)))
+        D = put(B, D, bone, about(D[bone], wrist, Matrix.Rotation(angle, 3, axis)))
         frames[i] = D
 
 
@@ -351,6 +343,8 @@ def prepare(clip):
         hand_roll(frames, clip["handRoll"])
     if clip.get("handPose"):
         hand_pose_from(frames, clip["handPose"])
+    if clip.get("handInward"):
+        hand_inward(frames, clip["handInward"])
     return frames, c0, yaw0
 
 

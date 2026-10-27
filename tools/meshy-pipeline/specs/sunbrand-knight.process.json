@@ -14,11 +14,13 @@
       "handPose": {
         "bone": "LeftHand",
         "fromClip": "Run",
-        "note": "left wrist copied from the run, where the fist sits naturally along the arm",
-        "matchPalm": {
-          "forearm": "LeftForeArm",
-          "chest": "Spine"
-        }
+        "note": "left wrist copied from the run, where the fist sits naturally along the arm"
+      },
+      "handInward": {
+        "bone": "LeftHand",
+        "forearm": "LeftForeArm",
+        "degrees": 35,
+        "note": "the stance's left hand bent outwards; tilt it 35 degrees towards the body"
       }
     },
     {
