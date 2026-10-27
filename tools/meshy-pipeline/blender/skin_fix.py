@@ -141,89 +141,54 @@ def apply(ob, arm, hand="Right", weapon_group=None):
 
 
 # ---- fist -------------------------------------------------------------------------------------
-# Meshy's open left hand has no finger bones, so it cannot be curled into a believable fist. The
-# sword hand is a proper gauntlet fist, so a whole piece of it (fist, wrist plate and the end of the
-# forearm) is copied, mirrored, over the same piece of the left arm. Cutting through the forearm tube
-# rather than through the hand keeps the seam clean: both sides are a plain ring of the same size.
-FIST_CENTER_S = 0.045  # metres past the grip point, along the blade axis: the middle of the fist
-FIST_SPHERE = 0.16  # radius of the piece that is swapped
-FIST_KEEP_S = (-0.012, 0.125)  # hilt and guard verts of the sword inside the sphere only count in this span...
-FIST_CORE_R = 0.03  # ...and inside this radius only the part of the grip that sits in the fist is kept
-FIST_CORE_S = (-0.02, 0.07)
-FIST_WELD_CM = 0.02
+# Meshy's left hand is open and the rig has no finger bones, so the fist is a rest-pose mesh edit:
+# every vertex past the knuckle line follows a folded path, the way real fingers close. The path goes
+# out from the knuckle, folds back over itself, then tucks onto the palm (three joints), and each
+# vertex keeps its own offset from the finger's centre line. The hand is not turned at all.
+FIST_KNUCKLE_AT = 0.09  # metres from the wrist along the hand: where the fingers start
+FIST_SEGMENT = 0.037  # length of one finger section
+FIST_JOINT_WIDTH = 0.022  # how gradually a joint bends
+FIST_FOLDS_DEG = (95.0, 95.0, 70.0)  # bend at each of the three joints
 
 
-def transplant_fist(ob, arm, from_hand="Right", to_hand="Left"):
-    """Replace a sphere of the `to_hand` arm end (hand + wrist + forearm end) by the mirrored sphere of the
-    `from_hand` arm end. Weights follow: forearm/arm groups swap sides, sword/hand verts go to the hand."""
+def curl_fist(ob, arm, side="Left", palm_sign=-1.0):
+    """Close the open hand of `side` into a fist (rest pose, weights untouched).
+    palm_sign picks the face of the hand the fingers fold towards (-1 = the palm)."""
+    names = {g.index: g.name for g in ob.vertex_groups}
+    idx = [v.index for v in ob.data.vertices
+           if max(((names[g.group], g.weight) for g in v.groups), key=lambda kv: kv[1], default=("", 0))[0] == side + "Hand"]
     m, minv = ob.matrix_world, ob.matrix_world.inverted()
-    tip, grip = _sword_axis(from_hand)
-    unit = (grip - tip).normalized()
-    centre_from = grip + unit * FIST_CENTER_S
-    wrist_from = arm.matrix_world @ arm.data.bones[from_hand + "Hand"].head_local
-    wrist_to = arm.matrix_world @ arm.data.bones[to_hand + "Hand"].head_local
-    shift = wrist_to - Vector((-wrist_from.x, wrist_from.y, wrist_from.z))
-    centre_to = Vector((-centre_from.x, centre_from.y, centre_from.z)) + shift
-    group = {g.index: g.name for g in ob.vertex_groups}
-    index_of = {n: i for i, n in group.items()}
-    bm = bmesh.new()
-    bm.from_mesh(ob.data)
-    deform = bm.verts.layers.deform.verify()
+    pts = np.array([(m @ ob.data.vertices[i].co)[:] for i in idx])
+    wrist = np.array(arm.matrix_world @ arm.data.bones[side + "Hand"].head_local)
+    w, vecs = np.linalg.eigh(np.cov((pts - pts.mean(0)).T))
+    along, normal = vecs[:, 2], vecs[:, 0]
+    if ((pts - wrist) @ along).mean() < 0:
+        along = -along
+    normal = normal - along * (normal @ along)
+    normal = palm_sign * normal / np.linalg.norm(normal)
+    lateral = np.cross(along, normal)
+    knuckle = wrist + along * FIST_KNUCKLE_AT
 
-    def dominant(v):
-        return max(((group[i], w) for i, w in v[deform].items()), key=lambda kv: kv[1], default=("", 0))[0]
+    def smooth(t):
+        t = np.clip(t, 0.0, 1.0)
+        return t * t * (3 - 2 * t)
 
-    left_names = (to_hand + "Hand", to_hand + "ForeArm")
-    inside_left = {v for v in bm.verts if (m @ v.co - centre_to).length < FIST_SPHERE and dominant(v) in left_names}
-    old_faces = [f for f in bm.faces if all(v in inside_left for v in f.verts)]
-
-    donor = set()
-    for v in bm.verts:
-        p = m @ v.co
-        if (p - centre_from).length > FIST_SPHERE:
+    du = 0.001
+    us = np.arange(0.0, 0.25, du)
+    phi = sum(math.radians(a) * smooth((us - j * FIST_SEGMENT) / FIST_JOINT_WIDTH + 0.5) for j, a in enumerate(FIST_FOLDS_DEG))
+    heading = np.outer(np.cos(phi), along) + np.outer(np.sin(phi), normal)
+    path = np.cumsum(heading * du, axis=0) - heading * du  # position of the centre line at each u
+    side_dir = np.outer(-np.sin(phi), along) + np.outer(np.cos(phi), normal)  # the "up" of the finger at each u
+    moved = 0
+    for k, i in enumerate(idx):
+        d = pts[k] - knuckle
+        u, h, lat = d @ along, d @ normal, d @ lateral
+        if u <= 0:
             continue
-        top = dominant(v)
-        if top == from_hand + "ForeArm" or top == from_hand + "Hand":
-            donor.add(v)
-        elif top == "Sword":
-            s = (p - grip).dot(unit)
-            r = (p - (grip + unit * s)).length
-            if FIST_KEEP_S[0] <= s <= FIST_KEEP_S[1] and not (r < FIST_CORE_R and not (FIST_CORE_S[0] <= s <= FIST_CORE_S[1])):
-                donor.add(v)
-    donor_faces = [f for f in bm.faces if all(v in donor for v in f.verts)]
-
-    bmesh.ops.delete(bm, geom=old_faces, context="FACES")
-    boundary_old = [v for v in inside_left if v.is_valid and any(e.is_boundary for e in v.link_edges)]
-    # the rim of the left arm just outside the sphere is what the copy has to meet
-    rim_left = [v for v in bm.verts if any(e.is_boundary for e in v.link_edges) and (m @ v.co - centre_to).length < FIST_SPHERE * 1.15]
-
-    ret = bmesh.ops.duplicate(bm, geom=donor_faces)
-    new_faces = [g for g in ret["geom"] if isinstance(g, bmesh.types.BMFace)]
-    new_verts = [g for g in ret["geom"] if isinstance(g, bmesh.types.BMVert)]
-    new_edges = [g for g in ret["geom"] if isinstance(g, bmesh.types.BMEdge)]
-    for v in new_verts:
-        w = m @ v.co
-        v.co = minv @ (Vector((-w.x, w.y, w.z)) + shift)
-        weights = {group[i]: wt for i, wt in v[deform].items()}
-        v[deform].clear()
-        if "Sword" in weights or max(weights, key=weights.get, default="") == from_hand + "Hand":
-            v[deform][index_of[to_hand + "Hand"]] = 1.0
-        else:
-            for name, wt in weights.items():
-                target = _swap_side(name) if name.startswith(from_hand) else name
-                if target in index_of:
-                    v[deform][index_of[target]] = wt
-    bmesh.ops.reverse_faces(bm, faces=new_faces)  # a mirror turns the winding inside out
-    open_edges = [e for e in new_edges if e.is_boundary]
-    # open edges deep inside the fist are the ends of the grip tunnel: close them; the rest is the rim to weld
-    inner = [e for e in open_edges if all((m @ v.co - centre_to).length < FIST_SPHERE * 0.75 for v in e.verts)]
-    outer = [e for e in open_edges if e not in inner]
-    if inner:
-        bmesh.ops.holes_fill(bm, edges=inner, sides=32)
-    rim_new = list({v for e in outer for v in e.verts})
-    bmesh.ops.remove_doubles(bm, verts=rim_new + rim_left, dist=FIST_WELD_CM)
-    bm.to_mesh(ob.data)
-    bm.free()
+        u = min(u, us[-1])
+        centre = np.array([np.interp(u, us, path[:, c]) for c in range(3)])
+        up = np.array([np.interp(u, us, side_dir[:, c]) for c in range(3)])
+        ob.data.vertices[i].co = minv @ Vector(knuckle + centre + up * h + lateral * lat)
+        moved += 1
     ob.data.update()
-    return {"removedFaces": len(old_faces), "copiedFaces": len(donor_faces), "copiedVerts": len(new_verts),
-            "rimNew": len(rim_new), "rimLeft": len(rim_left)}
+    return {"handVerts": len(idx), "curledVerts": moved}

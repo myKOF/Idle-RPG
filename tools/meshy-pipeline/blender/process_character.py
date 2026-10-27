@@ -58,7 +58,7 @@ if WEAPON:
     skin_fix.add_weapon_bone(arm, hand, WEAPON)
 print("SKIN_FIX", skin_fix.apply(body, arm, hand, WEAPON))
 if cfg.get("fist"):
-    print("FIST", skin_fix.transplant_fist(body, arm, cfg["fist"]["from"], cfg["fist"]["to"]))
+    print("FIST", skin_fix.curl_fist(body, arm, cfg["fist"]["side"], cfg["fist"].get("palmSign", -1.0)))
 
 # 2. harvest actions
 harvest = {(base_path, a.name): a for a in base_actions}

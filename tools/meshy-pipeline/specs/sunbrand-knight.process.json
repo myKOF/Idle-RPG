@@ -87,5 +87,9 @@
       }
     }
   ],
-  "weaponBone": "Sword"
+  "weaponBone": "Sword",
+  "fist": {
+    "side": "Left",
+    "palmSign": -1.0
+  }
 }
