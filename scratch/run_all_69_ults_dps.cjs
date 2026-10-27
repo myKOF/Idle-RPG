@@ -189,6 +189,12 @@ function runSimulation(target, scenarioType, totalDuration = 150.0, warmupDurati
   const maxPen = Math.max(pStats.pPen || 0, pStats.mPen || 0, 100);
   pStats.pPen = maxPen;
   pStats.mPen = maxPen;
+  pStats.critRate = 100;
+  pStats.critDmg = 5996;
+
+  // 壓制 300 級怪物閃避，確保 100% 有效命中基準（零 MISS）
+  const maxEnemyDodge = Math.max(...[1, 2, 3].map(s => ctx.monsterStatsFor(300, s === 2, s === 3).dodge));
+  pStats.hit = 100 + maxEnemyDodge;
 
   // 必帶該技能的 5 個傳奇效果
   pStats.legendaryEffects = {};
@@ -198,6 +204,9 @@ function runSimulation(target, scenarioType, totalDuration = 150.0, warmupDurati
     pStats.legendaryEffects[aff.id] = true;
     pStats.legendaryEffectMults[aff.id] = mult;
   });
+
+  // 快取標準化屬性，確保戰鬥與技能呼叫 getStats() 均取得公平基準數值
+  ctx.getStats = () => pStats;
 
   ctx.bfResetPlayer();
   ctx.FIELD = {
@@ -212,10 +221,8 @@ function runSimulation(target, scenarioType, totalDuration = 150.0, warmupDurati
     dpsWindow: []
   };
 
-  ctx.FIELD.player.hp = 1e15;
-  ctx.FIELD.player.maxHp = 1e15;
-  ctx.FIELD.player.mp = 1e15;
-  ctx.FIELD.player.maxMp = 1e15;
+  ctx.FIELD.player.hp = pStats.hp;
+  ctx.FIELD.player.mp = pStats.mp;
 
   ctx.fieldMonsterAttack = function() { return false; };
 

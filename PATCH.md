@@ -1,5 +1,14 @@
 # PATCH.md
 
+## 修復 300 級怪物高閃避導致命中截斷，全面重新實測 69 招超神進化總傷/DPS/傷害次數（Antigravity 2026-10-27）
+
+- **修復 300 級怪物高閃避（273.5）導致命中率截斷為 5% 致命缺陷**：
+  - 發現 `scratch/run_all_69_ults_dps.cjs` 先前未對抗 300 級沼澤怪物閃避（273.5），且未快取 `ctx.getStats = () => pStats`，導致戰鬥實時以角色基礎命中（100.1）計算，淨命中率直接被公式下限截斷為 5%（面臨高達 95% MISS 閃避率）。
+  - 當 95% 攻擊 MISS 時，飛刀（knife）等依賴命中彈射（`bouncePct`）與暴擊減 CD 的技能，首發飛刀 MISS 即中斷整個彈射鏈，且無法觸發第 7 階神速飛刀減 CD，導致技能卡死在 8 秒 CD，120 秒內僅命中 18 次。
+  - 於 `runSimulation` 中補齊 `pStats.critRate = 100`、`pStats.hit = 100 + maxEnemyDodge`（100% 絕對必中基準）並綁定 `ctx.getStats = () => pStats` 快取。
+  - 重新執行全量 69 招超神進化實測，飛刀【暴雨梨花】命中次數由 18 次正常回升至 5,385 次（DPS 由 328M 飆升至 1,249B），全面消除異常極端落差。
+  - 同步重新生成 `docs/ULT_EVOLUTION_ALL_69_SKILLS_DPS_REPORT.md` 與 `scratch/all_69_ults_dps_results.json`。
+
 ## 全 23 大技能群組（69 招超神進化）實測總傷、DPS 與傷害次數（Antigravity 2026-10-27）
 
 - **超神實測指標補齊傷害次數（Hit Count）**：

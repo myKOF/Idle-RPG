@@ -38,34 +38,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 39370988744,
-      "avgDps": 328091573,
-      "hitCount": 18,
+      "totalDamage": 149982429071675,
+      "avgDps": 1249853575597,
+      "hitCount": 5385,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 10827.69
+      "estimatedFullClearTime": 2.84
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 1687247041,
-      "avgDps": 14060392,
-      "hitCount": 4,
+      "totalDamage": 16445037724192,
+      "avgDps": 137041981035,
+      "hitCount": 1548,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 252658.15
+      "estimatedFullClearTime": 25.92
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 4963519513,
-      "avgDps": 41362663,
-      "hitCount": 11,
+      "totalDamage": 1959713974143,
+      "avgDps": 16330949785,
+      "hitCount": 339,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 64414.48
+      "estimatedFullClearTime": 163.15
     }
   },
   {
@@ -107,34 +107,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 5337159206,
-      "avgDps": 44476327,
-      "hitCount": 11,
+      "totalDamage": 17513293184927,
+      "avgDps": 145944109874,
+      "hitCount": 2065,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 79873.34
+      "estimatedFullClearTime": 24.34
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 4529069949,
-      "avgDps": 37742250,
-      "hitCount": 8,
+      "totalDamage": 9942610493959,
+      "avgDps": 82855087450,
+      "hitCount": 1223,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 94124.56
+      "estimatedFullClearTime": 42.88
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 5936333421,
-      "avgDps": 49469445,
-      "hitCount": 14,
+      "totalDamage": 1872524614488,
+      "avgDps": 15604371787,
+      "hitCount": 341,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 53858.59
+      "estimatedFullClearTime": 170.74
     }
   },
   {
@@ -176,34 +176,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 87279473133,
-      "avgDps": 727328943,
-      "hitCount": 41,
+      "totalDamage": 157290258564348,
+      "avgDps": 1310752154703,
+      "hitCount": 10247,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 4884.27
+      "estimatedFullClearTime": 2.71
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 59670135561,
-      "avgDps": 497251130,
-      "hitCount": 32,
+      "totalDamage": 93572159960224,
+      "avgDps": 779767999669,
+      "hitCount": 5625,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 7144.22
+      "estimatedFullClearTime": 4.56
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 376592448580,
-      "avgDps": 3138270405,
-      "hitCount": 80,
+      "totalDamage": 338331249641938,
+      "avgDps": 2819427080349,
+      "hitCount": 8291,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 848.99
+      "estimatedFullClearTime": 0.94
     }
   },
   {
@@ -245,34 +245,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 11502305161996,
-      "avgDps": 95852543017,
-      "hitCount": 20975,
+      "totalDamage": 369519313422521,
+      "avgDps": 3079327611854,
+      "hitCount": 62961,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 37.06
+      "estimatedFullClearTime": 1.15
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 518410838071,
-      "avgDps": 4320090317,
-      "hitCount": 1166,
+      "totalDamage": 110453769548096,
+      "avgDps": 920448079567,
+      "hitCount": 20557,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 822.31
+      "estimatedFullClearTime": 3.86
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 25703782891,
-      "avgDps": 214198191,
-      "hitCount": 46,
+      "totalDamage": 8310630175213,
+      "avgDps": 69255251460,
+      "hitCount": 1147,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 12438.73
+      "estimatedFullClearTime": 38.47
     }
   },
   {
@@ -314,34 +314,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 1083963422770,
-      "avgDps": 9033028523,
-      "hitCount": 2116,
+      "totalDamage": 74187028568544,
+      "avgDps": 618225238071,
+      "hitCount": 17326,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 393.28
+      "estimatedFullClearTime": 5.75
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 96307720145,
-      "avgDps": 802564335,
-      "hitCount": 251,
+      "totalDamage": 22192908613158,
+      "avgDps": 184940905110,
+      "hitCount": 4869,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 4426.4
+      "estimatedFullClearTime": 19.21
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 18585373974,
-      "avgDps": 154878116,
-      "hitCount": 26,
+      "totalDamage": 4365861580428,
+      "avgDps": 36382179837,
+      "hitCount": 709,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 17202.91
+      "estimatedFullClearTime": 73.23
     }
   },
   {
@@ -383,34 +383,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 26102181262829,
-      "avgDps": 217518177190,
-      "hitCount": 121,
+      "totalDamage": 77968709226578,
+      "avgDps": 649739243555,
+      "hitCount": 537,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 16.33
+      "estimatedFullClearTime": 5.47
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 268496123655,
-      "avgDps": 2237467697,
-      "hitCount": 110,
+      "totalDamage": 42097131011698,
+      "avgDps": 350809425097,
+      "hitCount": 1650,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 1587.72
+      "estimatedFullClearTime": 10.13
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 107201278573,
-      "avgDps": 893343988,
-      "hitCount": 26,
+      "totalDamage": 25147776081654,
+      "avgDps": 209564800680,
+      "hitCount": 824,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 2982.45
+      "estimatedFullClearTime": 12.71
     }
   },
   {
@@ -452,34 +452,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 181621625979,
-      "avgDps": 1513513550,
-      "hitCount": 105,
+      "totalDamage": 45425193245173,
+      "avgDps": 378543277043,
+      "hitCount": 2602,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 2347.17
+      "estimatedFullClearTime": 9.38
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 42685738033,
-      "avgDps": 355714484,
-      "hitCount": 31,
+      "totalDamage": 12214796327804,
+      "avgDps": 101789969398,
+      "hitCount": 818,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 9986.87
+      "estimatedFullClearTime": 34.9
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 6409381183,
-      "avgDps": 53411510,
-      "hitCount": 6,
+      "totalDamage": 2666542408767,
+      "avgDps": 22221186740,
+      "hitCount": 305,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 49883.53
+      "estimatedFullClearTime": 119.9
     }
   },
   {
@@ -521,34 +521,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 240535849789,
-      "avgDps": 2004465415,
-      "hitCount": 51,
+      "totalDamage": 125063534295304,
+      "avgDps": 1042196119128,
+      "hitCount": 3354,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 1772.28
+      "estimatedFullClearTime": 3.41
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 69569432150,
-      "avgDps": 579745268,
-      "hitCount": 14,
+      "totalDamage": 35154852201228,
+      "avgDps": 292957101677,
+      "hitCount": 1062,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 6127.64
+      "estimatedFullClearTime": 12.13
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 6097125903,
-      "avgDps": 50809383,
-      "hitCount": 5,
+      "totalDamage": 7332381686634,
+      "avgDps": 61103180722,
+      "hitCount": 344,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 52438.24
+      "estimatedFullClearTime": 43.6
     }
   },
   {
@@ -590,34 +590,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 544522913347,
-      "avgDps": 4537690945,
-      "hitCount": 605,
+      "totalDamage": 215574237168813,
+      "avgDps": 1796451976407,
+      "hitCount": 20066,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 782.88
+      "estimatedFullClearTime": 1.98
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 133416422313,
-      "avgDps": 1111803519,
-      "hitCount": 152,
+      "totalDamage": 53849051634957,
+      "avgDps": 448742096958,
+      "hitCount": 5092,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 3195.23
+      "estimatedFullClearTime": 7.92
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 28159778925,
-      "avgDps": 234664824,
-      "hitCount": 35,
+      "totalDamage": 10717451369887,
+      "avgDps": 89312094749,
+      "hitCount": 1153,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 11353.87
+      "estimatedFullClearTime": 29.83
     }
   },
   {
@@ -659,34 +659,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 260289864924,
-      "avgDps": 2169082208,
-      "hitCount": 445,
+      "totalDamage": 512018427648127,
+      "avgDps": 4266820230401,
+      "hitCount": 10928,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 1637.78
+      "estimatedFullClearTime": 0.83
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 147302401716,
-      "avgDps": 1227520014,
-      "hitCount": 137,
+      "totalDamage": 373193544089835,
+      "avgDps": 3109946200749,
+      "hitCount": 8603,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 2894.02
+      "estimatedFullClearTime": 1.14
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 84362940955,
-      "avgDps": 703024508,
-      "hitCount": 48,
+      "totalDamage": 123826566506836,
+      "avgDps": 1031888054224,
+      "hitCount": 2697,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 3789.85
+      "estimatedFullClearTime": 2.58
     }
   },
   {
@@ -728,34 +728,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 153197927525,
-      "avgDps": 1276649396,
-      "hitCount": 231,
+      "totalDamage": 875343524790277,
+      "avgDps": 7294529373252,
+      "hitCount": 12748,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 2782.65
+      "estimatedFullClearTime": 0.49
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 117137112928,
-      "avgDps": 976142608,
-      "hitCount": 97,
+      "totalDamage": 337208732797706,
+      "avgDps": 2810072773314,
+      "hitCount": 6394,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 3639.3
+      "estimatedFullClearTime": 1.26
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 91565182463,
-      "avgDps": 763043187,
-      "hitCount": 38,
+      "totalDamage": 99855022604429,
+      "avgDps": 832125188370,
+      "hitCount": 2074,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 3491.75
+      "estimatedFullClearTime": 3.2
     }
   },
   {
@@ -797,34 +797,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 1441110463120,
-      "avgDps": 12009253859,
-      "hitCount": 131,
+      "totalDamage": 832646828684897,
+      "avgDps": 6938723572374,
+      "hitCount": 10493,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 295.81
+      "estimatedFullClearTime": 0.51
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 1683883976685,
-      "avgDps": 14032366472,
-      "hitCount": 136,
+      "totalDamage": 525148095289444,
+      "avgDps": 4376234127412,
+      "hitCount": 5563,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 253.16
+      "estimatedFullClearTime": 0.81
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 480681023233,
-      "avgDps": 4005675194,
-      "hitCount": 77,
+      "totalDamage": 179152200642735,
+      "avgDps": 1492935005356,
+      "hitCount": 2883,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 665.14
+      "estimatedFullClearTime": 1.78
     }
   },
   {
@@ -866,34 +866,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 490116948299,
-      "avgDps": 4084307902,
-      "hitCount": 1383,
+      "totalDamage": 290580354343994,
+      "avgDps": 2421502952867,
+      "hitCount": 6377,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 869.79
+      "estimatedFullClearTime": 1.47
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 419600586373,
-      "avgDps": 3496671553,
-      "hitCount": 1195,
+      "totalDamage": 72554798302973,
+      "avgDps": 604623319191,
+      "hitCount": 2028,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 1015.96
+      "estimatedFullClearTime": 5.88
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 1237080877,
-      "avgDps": 10309007,
-      "hitCount": 4,
+      "totalDamage": 6591752844124,
+      "avgDps": 54931273701,
+      "hitCount": 323,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 258449.18
+      "estimatedFullClearTime": 48.5
     }
   },
   {
@@ -935,34 +935,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 9815433502078,
-      "avgDps": 81795279184,
-      "hitCount": 7644,
+      "totalDamage": 479059721977895,
+      "avgDps": 3992164349816,
+      "hitCount": 6111,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 43.43
+      "estimatedFullClearTime": 0.89
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 2181691395166,
-      "avgDps": 18180761626,
-      "hitCount": 1204,
+      "totalDamage": 223257995340768,
+      "avgDps": 1860483294506,
+      "hitCount": 2395,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 195.4
+      "estimatedFullClearTime": 1.91
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 437027240045,
-      "avgDps": 3641893667,
-      "hitCount": 246,
+      "totalDamage": 49689287178653,
+      "avgDps": 414077393155,
+      "hitCount": 513,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 731.58
+      "estimatedFullClearTime": 6.43
     }
   },
   {
@@ -1004,34 +1004,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 24891150117709,
-      "avgDps": 207426250981,
-      "hitCount": 15264,
+      "totalDamage": 300538696672297,
+      "avgDps": 2504489138936,
+      "hitCount": 12981,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 17.13
+      "estimatedFullClearTime": 1.42
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 3979356707141,
-      "avgDps": 33161305893,
-      "hitCount": 3614,
+      "totalDamage": 147004336149737,
+      "avgDps": 1225036134581,
+      "hitCount": 5870,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 107.13
+      "estimatedFullClearTime": 2.9
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 280358103,
-      "avgDps": 2336318,
-      "hitCount": 1,
+      "totalDamage": 6005811363993,
+      "avgDps": 50048428033,
+      "hitCount": 299,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 1140407.71
+      "estimatedFullClearTime": 53.24
     }
   },
   {
@@ -1073,34 +1073,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 233789214692671,
-      "avgDps": 1948243455772,
-      "hitCount": 229,
+      "totalDamage": 917603696123649,
+      "avgDps": 7646697467697,
+      "hitCount": 4274,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 1.82
+      "estimatedFullClearTime": 0.46
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 268601438964306,
-      "avgDps": 2238345324703,
-      "hitCount": 90,
+      "totalDamage": 1089034326287736,
+      "avgDps": 9075286052398,
+      "hitCount": 2384,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 1.59
+      "estimatedFullClearTime": 0.39
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 188872981494342,
-      "avgDps": 1573941512453,
-      "hitCount": 36,
+      "totalDamage": 1342834677254106,
+      "avgDps": 11190288977118,
+      "hitCount": 1419,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 1.69
+      "estimatedFullClearTime": 0.24
     }
   },
   {
@@ -1142,34 +1142,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 202671641416292,
-      "avgDps": 1688930345136,
-      "hitCount": 197,
+      "totalDamage": 915116965239845,
+      "avgDps": 7625974710332,
+      "hitCount": 3436,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 2.1
+      "estimatedFullClearTime": 0.47
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 288462114373865,
-      "avgDps": 2403850953116,
-      "hitCount": 89,
+      "totalDamage": 1094161588873711,
+      "avgDps": 9118013240614,
+      "hitCount": 1881,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 1.48
+      "estimatedFullClearTime": 0.39
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 188859728227668,
-      "avgDps": 1573831068564,
-      "hitCount": 40,
+      "totalDamage": 1342834677254106,
+      "avgDps": 11190288977118,
+      "hitCount": 1039,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 1.69
+      "estimatedFullClearTime": 0.24
     }
   },
   {
@@ -1211,34 +1211,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 197698413921028,
-      "avgDps": 1647486782675,
-      "hitCount": 185,
+      "totalDamage": 920090427007453,
+      "avgDps": 7667420225062,
+      "hitCount": 3436,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 2.16
+      "estimatedFullClearTime": 0.46
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 283487320767365,
-      "avgDps": 2362394339728,
-      "hitCount": 93,
+      "totalDamage": 1094161588873711,
+      "avgDps": 9118013240614,
+      "hitCount": 1628,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 1.5
+      "estimatedFullClearTime": 0.39
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 216525708315693,
-      "avgDps": 1804380902631,
-      "hitCount": 39,
+      "totalDamage": 1342834677254106,
+      "avgDps": 11190288977118,
+      "hitCount": 1069,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 1.48
+      "estimatedFullClearTime": 0.24
     }
   },
   {
@@ -1280,34 +1280,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 1221662861,
-      "avgDps": 10180524,
-      "hitCount": 5,
+      "totalDamage": 409558762794676,
+      "avgDps": 3412989689956,
+      "hitCount": 6606,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 348947.93
+      "estimatedFullClearTime": 1.04
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 1193105959,
-      "avgDps": 9942550,
-      "hitCount": 5,
+      "totalDamage": 255245654542282,
+      "avgDps": 2127047121186,
+      "hitCount": 5332,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 357299.97
+      "estimatedFullClearTime": 1.67
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 961846999,
-      "avgDps": 8015392,
-      "hitCount": 4,
+      "totalDamage": 28358630766046,
+      "avgDps": 236321923050,
+      "hitCount": 914,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 332404.78
+      "estimatedFullClearTime": 11.27
     }
   },
   {
@@ -1349,34 +1349,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 770397957,
-      "avgDps": 6419983,
-      "hitCount": 3,
+      "totalDamage": 75681989185394,
+      "avgDps": 630683243212,
+      "hitCount": 3368,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 553346.12
+      "estimatedFullClearTime": 5.63
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 668339547,
-      "avgDps": 5569496,
-      "hitCount": 3,
+      "totalDamage": 72858797249781,
+      "avgDps": 607156643748,
+      "hitCount": 3323,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 637844.53
+      "estimatedFullClearTime": 5.85
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 2400090503,
-      "avgDps": 20000754,
-      "hitCount": 9,
+      "totalDamage": 18434068438885,
+      "avgDps": 153617236991,
+      "hitCount": 827,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 133212.7
+      "estimatedFullClearTime": 17.34
     }
   },
   {
@@ -1418,34 +1418,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 491539712,
-      "avgDps": 4096164,
-      "hitCount": 2,
+      "totalDamage": 481453493334271,
+      "avgDps": 4012112444452,
+      "hitCount": 1521,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 867268.12
+      "estimatedFullClearTime": 0.89
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 1465005251,
-      "avgDps": 12208377,
-      "hitCount": 6,
+      "totalDamage": 921224448448094,
+      "avgDps": 7676870403734,
+      "hitCount": 1984,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 290986.48
+      "estimatedFullClearTime": 0.46
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 1456094129,
-      "avgDps": 12134118,
-      "hitCount": 6,
+      "totalDamage": 259024644956134,
+      "avgDps": 2158538707968,
+      "hitCount": 871,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 219575.46
+      "estimatedFullClearTime": 1.23
     }
   },
   {
@@ -1487,34 +1487,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 95315914101,
-      "avgDps": 794299284,
-      "hitCount": 9,
+      "totalDamage": 793353952975097,
+      "avgDps": 6611282941459,
+      "hitCount": 2045,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 4472.46
+      "estimatedFullClearTime": 0.54
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 84590915249,
-      "avgDps": 704924294,
-      "hitCount": 7,
+      "totalDamage": 112849819671168,
+      "avgDps": 940415163926,
+      "hitCount": 380,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 5039.51
+      "estimatedFullClearTime": 3.78
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 37887019491,
-      "avgDps": 315725162,
-      "hitCount": 6,
+      "totalDamage": 61266239113271,
+      "avgDps": 510551992611,
+      "hitCount": 261,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 8438.84
+      "estimatedFullClearTime": 5.22
     }
   },
   {
@@ -1556,34 +1556,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 9078343837,
-      "avgDps": 75652865,
-      "hitCount": 7,
+      "totalDamage": 10264337623652,
+      "avgDps": 85536146864,
+      "hitCount": 236,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 46957.54
+      "estimatedFullClearTime": 41.53
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 9133285629,
-      "avgDps": 76110714,
-      "hitCount": 5,
+      "totalDamage": 11540615468045,
+      "avgDps": 96171795567,
+      "hitCount": 224,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 46675.07
+      "estimatedFullClearTime": 36.94
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 10173145192,
-      "avgDps": 84776210,
-      "hitCount": 7,
+      "totalDamage": 13936090431552,
+      "avgDps": 116134086930,
+      "hitCount": 268,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 31428.09
+      "estimatedFullClearTime": 22.94
     }
   },
   {
@@ -1625,34 +1625,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 38300353641,
-      "avgDps": 319169614,
-      "hitCount": 7,
+      "totalDamage": 23029366259396,
+      "avgDps": 191911385495,
+      "hitCount": 350,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 11130.36
+      "estimatedFullClearTime": 18.51
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 18218973783,
-      "avgDps": 151824782,
-      "hitCount": 9,
+      "totalDamage": 21487822467066,
+      "avgDps": 179065187226,
+      "hitCount": 353,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 23398.5
+      "estimatedFullClearTime": 19.84
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 2215354439,
-      "avgDps": 18461287,
-      "hitCount": 2,
+      "totalDamage": 22600313961464,
+      "avgDps": 188335949679,
+      "hitCount": 368,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 144321.17
+      "estimatedFullClearTime": 14.15
     }
   },
   {
@@ -1694,34 +1694,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 2608327393824,
-      "avgDps": 21736061615,
-      "hitCount": 3023,
+      "totalDamage": 670993919573492,
+      "avgDps": 5591615996446,
+      "hitCount": 5914,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 163.44
+      "estimatedFullClearTime": 0.64
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 804272445684,
-      "avgDps": 6702270381,
-      "hitCount": 996,
+      "totalDamage": 443495187470731,
+      "avgDps": 3695793228923,
+      "hitCount": 3772,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 530.04
+      "estimatedFullClearTime": 0.96
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 181048031426,
-      "avgDps": 1508733595,
-      "hitCount": 228,
+      "totalDamage": 224654192972013,
+      "avgDps": 1872118274767,
+      "hitCount": 2260,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 1765.95
+      "estimatedFullClearTime": 1.42
     }
   },
   {
@@ -1763,34 +1763,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 119920338987980,
-      "avgDps": 999336158233,
-      "hitCount": 1021,
+      "totalDamage": 321841304342084,
+      "avgDps": 2682010869517,
+      "hitCount": 3900,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 3.55
+      "estimatedFullClearTime": 1.32
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 59859990233249,
-      "avgDps": 498833251944,
-      "hitCount": 352,
+      "totalDamage": 303300683195987,
+      "avgDps": 2527505693300,
+      "hitCount": 4138,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 7.12
+      "estimatedFullClearTime": 1.41
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 22456410382571,
-      "avgDps": 187136753188,
-      "hitCount": 143,
+      "totalDamage": 86759725292241,
+      "avgDps": 722997710769,
+      "hitCount": 1271,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 14.24
+      "estimatedFullClearTime": 3.69
     }
   },
   {
@@ -1832,34 +1832,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 2934203459241,
-      "avgDps": 24451695494,
-      "hitCount": 4605,
+      "totalDamage": 348445990293641,
+      "avgDps": 2903716585780,
+      "hitCount": 2197,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 145.29
+      "estimatedFullClearTime": 1.22
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 771067167169,
-      "avgDps": 6425559726,
-      "hitCount": 1073,
+      "totalDamage": 306073351127884,
+      "avgDps": 2550611259399,
+      "hitCount": 2334,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 552.87
+      "estimatedFullClearTime": 1.39
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 189743440932,
-      "avgDps": 1581195341,
-      "hitCount": 272,
+      "totalDamage": 224569255186310,
+      "avgDps": 1871410459886,
+      "hitCount": 2227,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 1685.03
+      "estimatedFullClearTime": 1.42
     }
   },
   {
@@ -1901,34 +1901,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 1996155969474,
-      "avgDps": 16634633079,
-      "hitCount": 2543,
+      "totalDamage": 656853213220838,
+      "avgDps": 5473776776840,
+      "hitCount": 7504,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 213.56
+      "estimatedFullClearTime": 0.65
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 1391488752877,
-      "avgDps": 11595739607,
-      "hitCount": 1649,
+      "totalDamage": 248078406448003,
+      "avgDps": 2067320053733,
+      "hitCount": 3240,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 306.36
+      "estimatedFullClearTime": 1.72
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 665861048166,
-      "avgDps": 5548842068,
-      "hitCount": 797,
+      "totalDamage": 104060869732204,
+      "avgDps": 867173914435,
+      "hitCount": 1469,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 480.16
+      "estimatedFullClearTime": 3.07
     }
   },
   {
@@ -1970,34 +1970,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 1936858161608,
-      "avgDps": 16140484680,
-      "hitCount": 1246,
+      "totalDamage": 387149884468449,
+      "avgDps": 3226249037237,
+      "hitCount": 2693,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 220.1
+      "estimatedFullClearTime": 1.1
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 645541458262,
-      "avgDps": 5379512152,
-      "hitCount": 417,
+      "totalDamage": 410187958921366,
+      "avgDps": 3418232991011,
+      "hitCount": 2588,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 660.37
+      "estimatedFullClearTime": 1.04
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 306642122961,
-      "avgDps": 2555351025,
-      "hitCount": 212,
+      "totalDamage": 204826117612714,
+      "avgDps": 1706884313439,
+      "hitCount": 1448,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 1042.66
+      "estimatedFullClearTime": 1.56
     }
   },
   {
@@ -2039,34 +2039,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 137433219474,
-      "avgDps": 1145276829,
-      "hitCount": 231,
+      "totalDamage": 281756502920284,
+      "avgDps": 2347970857669,
+      "hitCount": 4494,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 3101.85
+      "estimatedFullClearTime": 1.51
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 49523861792,
-      "avgDps": 412698848,
-      "hitCount": 83,
+      "totalDamage": 77876619760794,
+      "avgDps": 648971831340,
+      "hitCount": 1367,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 8607.91
+      "estimatedFullClearTime": 5.47
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 7637078445,
-      "avgDps": 63642320,
-      "hitCount": 14,
+      "totalDamage": 19359658557334,
+      "avgDps": 161330487978,
+      "hitCount": 473,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 41864.51
+      "estimatedFullClearTime": 16.51
     }
   },
   {
@@ -2108,34 +2108,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 154612510302,
-      "avgDps": 1288437586,
-      "hitCount": 215,
+      "totalDamage": 41560521867202,
+      "avgDps": 346337682227,
+      "hitCount": 804,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 2757.19
+      "estimatedFullClearTime": 10.26
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 56231705697,
-      "avgDps": 468597547,
-      "hitCount": 80,
+      "totalDamage": 10510990408053,
+      "avgDps": 87591586734,
+      "hitCount": 412,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 7581.07
+      "estimatedFullClearTime": 40.56
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 15775616403,
-      "avgDps": 131463470,
-      "hitCount": 24,
+      "totalDamage": 16386629544544,
+      "avgDps": 136555246205,
+      "hitCount": 320,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 20266.88
+      "estimatedFullClearTime": 19.51
     }
   },
   {
@@ -2177,34 +2177,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 402704131409,
-      "avgDps": 3355867762,
-      "hitCount": 2956,
+      "totalDamage": 2146350155249723,
+      "avgDps": 17886251293748,
+      "hitCount": 22717,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 1058.59
+      "estimatedFullClearTime": 0.2
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 103785259192,
-      "avgDps": 864877160,
-      "hitCount": 764,
+      "totalDamage": 161112667655836,
+      "avgDps": 1342605563799,
+      "hitCount": 3454,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 4107.49
+      "estimatedFullClearTime": 2.65
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 36504701475,
-      "avgDps": 304205846,
-      "hitCount": 258,
+      "totalDamage": 44332781990770,
+      "avgDps": 369439849923,
+      "hitCount": 951,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 8758.39
+      "estimatedFullClearTime": 7.21
     }
   },
   {
@@ -2246,34 +2246,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 242955090342,
-      "avgDps": 2024625753,
-      "hitCount": 473,
+      "totalDamage": 346135620922914,
+      "avgDps": 2884463507691,
+      "hitCount": 5546,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 1754.63
+      "estimatedFullClearTime": 1.23
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 72849332441,
-      "avgDps": 607077770,
-      "hitCount": 153,
+      "totalDamage": 110517764935952,
+      "avgDps": 920981374466,
+      "hitCount": 1911,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 5851.76
+      "estimatedFullClearTime": 3.86
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 16743367933,
-      "avgDps": 139528066,
-      "hitCount": 45,
+      "totalDamage": 40749270809314,
+      "avgDps": 339577256744,
+      "hitCount": 918,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 19095.47
+      "estimatedFullClearTime": 7.85
     }
   },
   {
@@ -2315,34 +2315,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 13632653684,
-      "avgDps": 113605447,
-      "hitCount": 31,
+      "totalDamage": 34573115959449,
+      "avgDps": 288109299662,
+      "hitCount": 2249,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 31270.27
+      "estimatedFullClearTime": 12.33
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 8423320753,
-      "avgDps": 70194340,
-      "hitCount": 20,
+      "totalDamage": 34292058309611,
+      "avgDps": 285767152580,
+      "hitCount": 1952,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 50609.1
+      "estimatedFullClearTime": 12.43
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 2266437198,
-      "avgDps": 18886977,
-      "hitCount": 6,
+      "totalDamage": 9435802318985,
+      "avgDps": 78631685992,
+      "hitCount": 762,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 141068.34
+      "estimatedFullClearTime": 33.88
     }
   },
   {
@@ -2384,34 +2384,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 2344239197,
-      "avgDps": 19535327,
-      "hitCount": 9,
+      "totalDamage": 861239156105,
+      "avgDps": 7176992968,
+      "hitCount": 2205,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 181848.65
+      "estimatedFullClearTime": 494.98
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 1102073808,
-      "avgDps": 9183948,
-      "hitCount": 5,
+      "totalDamage": 680559553900,
+      "avgDps": 5671329616,
+      "hitCount": 1831,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 386813.22
+      "estimatedFullClearTime": 626.39
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 965428985,
-      "avgDps": 8045242,
-      "hitCount": 4,
+      "totalDamage": 765513357292,
+      "avgDps": 6379277977,
+      "hitCount": 654,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 331171.48
+      "estimatedFullClearTime": 417.66
     }
   },
   {
@@ -2453,34 +2453,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 1378740636,
-      "avgDps": 11489505,
-      "hitCount": 6,
+      "totalDamage": 860321122796,
+      "avgDps": 7169342690,
+      "hitCount": 2138,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 309192.83
+      "estimatedFullClearTime": 495.51
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 1664373995,
-      "avgDps": 13869783,
-      "hitCount": 7,
+      "totalDamage": 807526985804,
+      "avgDps": 6729391548,
+      "hitCount": 1798,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 256130.37
+      "estimatedFullClearTime": 527.9
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 1463221650,
-      "avgDps": 12193514,
-      "hitCount": 6,
+      "totalDamage": 691674890475,
+      "avgDps": 5763957421,
+      "hitCount": 622,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 218505.89
+      "estimatedFullClearTime": 462.24
     }
   },
   {
@@ -2522,34 +2522,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 3626418684686,
-      "avgDps": 30220155706,
-      "hitCount": 10990,
+      "totalDamage": 313808865605164,
+      "avgDps": 2615073880043,
+      "hitCount": 8647,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 117.55
+      "estimatedFullClearTime": 1.36
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 907842065382,
-      "avgDps": 7565350545,
-      "hitCount": 2750,
+      "totalDamage": 102437048342051,
+      "avgDps": 853642069517,
+      "hitCount": 2722,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 469.57
+      "estimatedFullClearTime": 4.16
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 185152557199,
-      "avgDps": 1542937977,
-      "hitCount": 560,
+      "totalDamage": 22409835871581,
+      "avgDps": 186748632263,
+      "hitCount": 707,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 1726.81
+      "estimatedFullClearTime": 14.27
     }
   },
   {
@@ -2591,34 +2591,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 1021680620653,
-      "avgDps": 8514005172,
-      "hitCount": 6043,
+      "totalDamage": 300444396653248,
+      "avgDps": 2503703305444,
+      "hitCount": 14885,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 417.25
+      "estimatedFullClearTime": 1.42
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 354489801878,
-      "avgDps": 2954081682,
-      "hitCount": 2045,
+      "totalDamage": 163784854698188,
+      "avgDps": 1364873789152,
+      "hitCount": 8852,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 1202.56
+      "estimatedFullClearTime": 2.6
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 66111940783,
-      "avgDps": 550932840,
-      "hitCount": 378,
+      "totalDamage": 47465978561152,
+      "avgDps": 395549821343,
+      "hitCount": 2716,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 4836.08
+      "estimatedFullClearTime": 6.74
     }
   },
   {
@@ -2660,34 +2660,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 614953066997,
-      "avgDps": 5124608892,
-      "hitCount": 4608,
+      "totalDamage": 97397761541220,
+      "avgDps": 811648012844,
+      "hitCount": 4915,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 693.22
+      "estimatedFullClearTime": 4.38
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 163852562651,
-      "avgDps": 1365438022,
-      "hitCount": 1208,
+      "totalDamage": 27679708851064,
+      "avgDps": 230664240426,
+      "hitCount": 1533,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 2601.71
+      "estimatedFullClearTime": 15.4
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 34437530166,
-      "avgDps": 286979418,
-      "hitCount": 245,
+      "totalDamage": 5649493412947,
+      "avgDps": 47079111775,
+      "hitCount": 412,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 9284.13
+      "estimatedFullClearTime": 56.59
     }
   },
   {
@@ -2729,34 +2729,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 1517913718,
-      "avgDps": 12649281,
-      "hitCount": 6,
+      "totalDamage": 26934384132206,
+      "avgDps": 224453201102,
+      "hitCount": 1365,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 280843.84
+      "estimatedFullClearTime": 15.83
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 1449618613,
-      "avgDps": 12080155,
-      "hitCount": 6,
+      "totalDamage": 645722711965,
+      "avgDps": 5381022600,
+      "hitCount": 3606,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 294075.09
+      "estimatedFullClearTime": 660.19
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 1533503486,
-      "avgDps": 12779196,
-      "hitCount": 6,
+      "totalDamage": 635625550926,
+      "avgDps": 5296879591,
+      "hitCount": 656,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 208491.57
+      "estimatedFullClearTime": 503
     }
   },
   {
@@ -2798,34 +2798,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 1048070188,
-      "avgDps": 8733918,
-      "hitCount": 4,
+      "totalDamage": 2721187795249,
+      "avgDps": 22676564960,
+      "hitCount": 917,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 406744.44
+      "estimatedFullClearTime": 156.66
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 2419164083,
-      "avgDps": 20159701,
-      "hitCount": 10,
+      "totalDamage": 410420942273,
+      "avgDps": 3420174519,
+      "hitCount": 840,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 176216.54
+      "estimatedFullClearTime": 1038.68
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 2016533828,
-      "avgDps": 16804449,
-      "hitCount": 8,
+      "totalDamage": 591051000222,
+      "avgDps": 4925425002,
+      "hitCount": 698,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 158550.55
+      "estimatedFullClearTime": 540.94
     }
   },
   {
@@ -2867,34 +2867,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 1603286376,
-      "avgDps": 13360720,
-      "hitCount": 6,
+      "totalDamage": 24843433868209,
+      "avgDps": 207028615568,
+      "hitCount": 1589,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 265889.32
+      "estimatedFullClearTime": 17.16
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 472150561,
-      "avgDps": 3934588,
-      "hitCount": 2,
+      "totalDamage": 564786760920,
+      "avgDps": 4706556341,
+      "hitCount": 2950,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 902883.02
+      "estimatedFullClearTime": 754.79
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 960252998,
-      "avgDps": 8002108,
-      "hitCount": 4,
+      "totalDamage": 433106449399,
+      "avgDps": 3609220412,
+      "hitCount": 638,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 332956.57
+      "estimatedFullClearTime": 738.21
     }
   },
   {
@@ -2936,34 +2936,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 481857559501,
-      "avgDps": 4015479663,
-      "hitCount": 477,
+      "totalDamage": 1076369084858469,
+      "avgDps": 8969742373821,
+      "hitCount": 6879,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 884.69
+      "estimatedFullClearTime": 0.4
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 317779537072,
-      "avgDps": 2648162809,
-      "hitCount": 310,
+      "totalDamage": 736007724708256,
+      "avgDps": 6133397705902,
+      "hitCount": 5109,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 1341.49
+      "estimatedFullClearTime": 0.58
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 47774393795,
-      "avgDps": 398119948,
-      "hitCount": 42,
+      "totalDamage": 127013982855622,
+      "avgDps": 1058449857130,
+      "hitCount": 1109,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 6692.34
+      "estimatedFullClearTime": 2.52
     }
   },
   {
@@ -3005,34 +3005,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 354269716901,
-      "avgDps": 2952247641,
-      "hitCount": 116,
+      "totalDamage": 401633944406188,
+      "avgDps": 3346949536718,
+      "hitCount": 2402,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 1203.31
+      "estimatedFullClearTime": 1.06
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 362783707999,
-      "avgDps": 3023197567,
-      "hitCount": 116,
+      "totalDamage": 212399213991648,
+      "avgDps": 1769993449930,
+      "hitCount": 1423,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 1175.07
+      "estimatedFullClearTime": 2.01
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 90971565915,
-      "avgDps": 758096383,
-      "hitCount": 29,
+      "totalDamage": 93681435790655,
+      "avgDps": 780678631589,
+      "hitCount": 773,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 3514.53
+      "estimatedFullClearTime": 3.41
     }
   },
   {
@@ -3074,34 +3074,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 978593448336,
-      "avgDps": 8154945403,
-      "hitCount": 1300,
+      "totalDamage": 972481102186826,
+      "avgDps": 8104009184890,
+      "hitCount": 11102,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 435.62
+      "estimatedFullClearTime": 0.44
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 292897589431,
-      "avgDps": 2440813245,
-      "hitCount": 378,
+      "totalDamage": 474038031317686,
+      "avgDps": 3950316927647,
+      "hitCount": 5154,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 1455.45
+      "estimatedFullClearTime": 0.9
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 38873597413,
-      "avgDps": 323946645,
-      "hitCount": 54,
+      "totalDamage": 108930334743105,
+      "avgDps": 907752789526,
+      "hitCount": 1401,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 8224.67
+      "estimatedFullClearTime": 2.94
     }
   },
   {
@@ -3143,34 +3143,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 709150569814,
-      "avgDps": 5909588082,
-      "hitCount": 947,
+      "totalDamage": 957177610797541,
+      "avgDps": 7976480089980,
+      "hitCount": 23174,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 601.14
+      "estimatedFullClearTime": 0.45
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 133326675216,
-      "avgDps": 1111055627,
-      "hitCount": 176,
+      "totalDamage": 514370902247642,
+      "avgDps": 4286424185397,
+      "hitCount": 12931,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 3197.39
+      "estimatedFullClearTime": 0.83
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 23343018135,
-      "avgDps": 194525151,
-      "hitCount": 56,
+      "totalDamage": 272944274762405,
+      "avgDps": 2274535623020,
+      "hitCount": 11845,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 13696.71
+      "estimatedFullClearTime": 1.17
     }
   },
   {
@@ -3212,34 +3212,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 1285923995925,
-      "avgDps": 10716033299,
-      "hitCount": 1539,
+      "totalDamage": 983692775714583,
+      "avgDps": 8197439797622,
+      "hitCount": 22178,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 331.51
+      "estimatedFullClearTime": 0.43
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 257761211860,
-      "avgDps": 2148010099,
-      "hitCount": 308,
+      "totalDamage": 598050702726601,
+      "avgDps": 4983755856055,
+      "hitCount": 12992,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 1653.84
+      "estimatedFullClearTime": 0.71
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 57508972548,
-      "avgDps": 479241438,
-      "hitCount": 99,
+      "totalDamage": 338213738280208,
+      "avgDps": 2818447819002,
+      "hitCount": 11145,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 5559.52
+      "estimatedFullClearTime": 0.95
     }
   },
   {
@@ -3281,34 +3281,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 1515722268495,
-      "avgDps": 12631018904,
-      "hitCount": 2070,
+      "totalDamage": 936463742293528,
+      "avgDps": 7803864519113,
+      "hitCount": 25940,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 281.25
+      "estimatedFullClearTime": 0.46
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 162664959992,
-      "avgDps": 1355541333,
-      "hitCount": 225,
+      "totalDamage": 763204753196514,
+      "avgDps": 6360039609971,
+      "hitCount": 19277,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 2620.7
+      "estimatedFullClearTime": 0.56
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 20989164481,
-      "avgDps": 174909704,
-      "hitCount": 59,
+      "totalDamage": 263516562912748,
+      "avgDps": 2195971357606,
+      "hitCount": 11097,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 15232.74
+      "estimatedFullClearTime": 1.21
     }
   },
   {
@@ -3350,34 +3350,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 295800226987,
-      "avgDps": 2465001892,
-      "hitCount": 439,
+      "totalDamage": 500226187731173,
+      "avgDps": 4168551564426,
+      "hitCount": 8099,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 1441.16
+      "estimatedFullClearTime": 0.85
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 92776761065,
-      "avgDps": 773139676,
-      "hitCount": 129,
+      "totalDamage": 232592776239993,
+      "avgDps": 1938273135333,
+      "hitCount": 3078,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 4594.87
+      "estimatedFullClearTime": 1.83
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 22184131389,
-      "avgDps": 184867762,
-      "hitCount": 36,
+      "totalDamage": 57174597083219,
+      "avgDps": 476454975693,
+      "hitCount": 906,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 14412.22
+      "estimatedFullClearTime": 5.59
     }
   },
   {
@@ -3419,34 +3419,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 105542396802,
-      "avgDps": 879519973,
-      "hitCount": 308,
+      "totalDamage": 579887105564388,
+      "avgDps": 4832392546370,
+      "hitCount": 13560,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 4039.1
+      "estimatedFullClearTime": 0.74
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 48083123767,
-      "avgDps": 400692698,
-      "hitCount": 122,
+      "totalDamage": 239553163904273,
+      "avgDps": 1996276365869,
+      "hitCount": 5410,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 8865.83
+      "estimatedFullClearTime": 1.78
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 15337318753,
-      "avgDps": 127810990,
-      "hitCount": 43,
+      "totalDamage": 36971234874792,
+      "avgDps": 308093623957,
+      "hitCount": 1097,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 20846.05
+      "estimatedFullClearTime": 8.65
     }
   },
   {
@@ -3488,34 +3488,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 1495741550127,
-      "avgDps": 12464512918,
-      "hitCount": 1252,
+      "totalDamage": 957377800989660,
+      "avgDps": 7978148341581,
+      "hitCount": 7754,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 285.01
+      "estimatedFullClearTime": 0.45
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 400154782514,
-      "avgDps": 3334623188,
-      "hitCount": 333,
+      "totalDamage": 518334872729100,
+      "avgDps": 4319457272743,
+      "hitCount": 4185,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 1065.33
+      "estimatedFullClearTime": 0.82
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 85709281554,
-      "avgDps": 714244013,
-      "hitCount": 84,
+      "totalDamage": 180323170173983,
+      "avgDps": 1502693084783,
+      "hitCount": 1730,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 3730.31
+      "estimatedFullClearTime": 1.77
     }
   },
   {
@@ -3557,34 +3557,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 2165751689504,
-      "avgDps": 18047930746,
-      "hitCount": 4284,
+      "totalDamage": 689369364762080,
+      "avgDps": 5744744706351,
+      "hitCount": 11278,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 196.84
+      "estimatedFullClearTime": 0.62
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 527441597699,
-      "avgDps": 4395346647,
-      "hitCount": 1019,
+      "totalDamage": 576472989738047,
+      "avgDps": 4803941581150,
+      "hitCount": 10397,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 808.23
+      "estimatedFullClearTime": 0.74
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 230116369692,
-      "avgDps": 1917636414,
-      "hitCount": 425,
+      "totalDamage": 448080547217578,
+      "avgDps": 3734004560146,
+      "hitCount": 8878,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 1389.4
+      "estimatedFullClearTime": 0.71
     }
   },
   {
@@ -3626,34 +3626,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 1229160997609,
-      "avgDps": 10243008313,
-      "hitCount": 2673,
+      "totalDamage": 505215599272156,
+      "avgDps": 4210129993935,
+      "hitCount": 11413,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 346.82
+      "estimatedFullClearTime": 0.84
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 360086251698,
-      "avgDps": 3000718764,
-      "hitCount": 762,
+      "totalDamage": 569606994975838,
+      "avgDps": 4746724958132,
+      "hitCount": 15402,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 1183.87
+      "estimatedFullClearTime": 0.75
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 118390691094,
-      "avgDps": 986589092,
-      "hitCount": 232,
+      "totalDamage": 258904397132291,
+      "avgDps": 2157536642769,
+      "hitCount": 7260,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 2700.57
+      "estimatedFullClearTime": 1.23
     }
   },
   {
@@ -3695,34 +3695,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 1303961029832,
-      "avgDps": 10866341915,
-      "hitCount": 2868,
+      "totalDamage": 378955631859826,
+      "avgDps": 3157963598832,
+      "hitCount": 8536,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 326.92
+      "estimatedFullClearTime": 1.12
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 388394755631,
-      "avgDps": 3236622964,
-      "hitCount": 827,
+      "totalDamage": 298758963600100,
+      "avgDps": 2489658030001,
+      "hitCount": 7126,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 1097.59
+      "estimatedFullClearTime": 1.43
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 185660592279,
-      "avgDps": 1547171602,
-      "hitCount": 357,
+      "totalDamage": 233817033388662,
+      "avgDps": 1948475278239,
+      "hitCount": 5479,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 1722.08
+      "estimatedFullClearTime": 1.37
     }
   },
   {
@@ -3764,34 +3764,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 2019742344950,
-      "avgDps": 16831186208,
-      "hitCount": 2157,
+      "totalDamage": 401389840516294,
+      "avgDps": 3344915337636,
+      "hitCount": 5738,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 211.06
+      "estimatedFullClearTime": 1.06
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 515233824465,
-      "avgDps": 4293615204,
-      "hitCount": 573,
+      "totalDamage": 284814249822060,
+      "avgDps": 2373452081850,
+      "hitCount": 3961,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 827.38
+      "estimatedFullClearTime": 1.5
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 33046888919,
-      "avgDps": 275390741,
-      "hitCount": 46,
+      "totalDamage": 43570758740142,
+      "avgDps": 363089656168,
+      "hitCount": 539,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 9674.82
+      "estimatedFullClearTime": 7.34
     }
   },
   {
@@ -3833,34 +3833,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 2086463531605,
-      "avgDps": 17387196097,
-      "hitCount": 2253,
+      "totalDamage": 601987333004430,
+      "avgDps": 5016561108370,
+      "hitCount": 8694,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 204.32
+      "estimatedFullClearTime": 0.71
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 471541667526,
-      "avgDps": 3929513896,
-      "hitCount": 557,
+      "totalDamage": 298027456721679,
+      "avgDps": 2483562139347,
+      "hitCount": 4526,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 904.05
+      "estimatedFullClearTime": 1.43
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 55908993864,
-      "avgDps": 465908282,
-      "hitCount": 96,
+      "totalDamage": 59322717555913,
+      "avgDps": 494355979633,
+      "hitCount": 1063,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 5718.62
+      "estimatedFullClearTime": 5.39
     }
   },
   {
@@ -3902,34 +3902,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 24978208596790,
-      "avgDps": 208151738307,
-      "hitCount": 4925,
+      "totalDamage": 799890895520688,
+      "avgDps": 6665757462672,
+      "hitCount": 4475,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 17.07
+      "estimatedFullClearTime": 0.53
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 6295318780548,
-      "avgDps": 52460989838,
-      "hitCount": 1262,
+      "totalDamage": 500009691301253,
+      "avgDps": 4166747427510,
+      "hitCount": 2237,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 67.72
+      "estimatedFullClearTime": 0.85
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 1255612428005,
-      "avgDps": 10463436900,
-      "hitCount": 245,
+      "totalDamage": 161204542830501,
+      "avgDps": 1343371190254,
+      "hitCount": 590,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 254.63
+      "estimatedFullClearTime": 1.98
     }
   },
   {
@@ -3971,34 +3971,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 2942427024828,
-      "avgDps": 24520225207,
-      "hitCount": 3599,
+      "totalDamage": 1247788870540341,
+      "avgDps": 10398240587836,
+      "hitCount": 27402,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 144.88
+      "estimatedFullClearTime": 0.34
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 657708657858,
-      "avgDps": 5480905482,
-      "hitCount": 891,
+      "totalDamage": 348020303043330,
+      "avgDps": 2900169192028,
+      "hitCount": 6144,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 648.15
+      "estimatedFullClearTime": 1.22
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 112008671656,
-      "avgDps": 933405597,
-      "hitCount": 169,
+      "totalDamage": 74836122246881,
+      "avgDps": 623634352057,
+      "hitCount": 1582,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 2854.44
+      "estimatedFullClearTime": 4.27
     }
   },
   {
@@ -4040,34 +4040,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 270312090154,
-      "avgDps": 2252600751,
-      "hitCount": 746,
+      "totalDamage": 503079011834444,
+      "avgDps": 4192325098620,
+      "hitCount": 15495,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 1577.05
+      "estimatedFullClearTime": 0.85
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 60102344470,
-      "avgDps": 500852871,
-      "hitCount": 178,
+      "totalDamage": 162516728895979,
+      "avgDps": 1354306074133,
+      "hitCount": 3045,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 7092.85
+      "estimatedFullClearTime": 2.62
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 3795040561,
-      "avgDps": 31625338,
-      "hitCount": 17,
+      "totalDamage": 31120001715642,
+      "avgDps": 259333347630,
+      "hitCount": 630,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 84247.46
+      "estimatedFullClearTime": 10.27
     }
   },
   {
@@ -4109,34 +4109,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 1535261440908,
-      "avgDps": 12793845341,
-      "hitCount": 2853,
+      "totalDamage": 917084487073761,
+      "avgDps": 7642370725615,
+      "hitCount": 22644,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 277.67
+      "estimatedFullClearTime": 0.46
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 351523667215,
-      "avgDps": 2929363893,
-      "hitCount": 654,
+      "totalDamage": 357825335156441,
+      "avgDps": 2981877792970,
+      "hitCount": 6259,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 1212.71
+      "estimatedFullClearTime": 1.19
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 105040980807,
-      "avgDps": 875341507,
-      "hitCount": 184,
+      "totalDamage": 183851565263998,
+      "avgDps": 1532096377200,
+      "hitCount": 3085,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 3043.79
+      "estimatedFullClearTime": 1.74
     }
   },
   {
@@ -4178,34 +4178,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 749784978764,
-      "avgDps": 6248208156,
-      "hitCount": 610,
+      "totalDamage": 542704085076216,
+      "avgDps": 4522534042302,
+      "hitCount": 3411,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 568.56
+      "estimatedFullClearTime": 0.79
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 176327598053,
-      "avgDps": 1469396650,
-      "hitCount": 136,
+      "totalDamage": 493028143314681,
+      "avgDps": 4108567860956,
+      "hitCount": 3184,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 2417.64
+      "estimatedFullClearTime": 0.86
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 33526128872,
-      "avgDps": 279384407,
-      "hitCount": 33,
+      "totalDamage": 185364717575907,
+      "avgDps": 1544705979799,
+      "hitCount": 1329,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 9536.52
+      "estimatedFullClearTime": 1.72
     }
   },
   {
@@ -4247,34 +4247,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 207737692337,
-      "avgDps": 1731147436,
-      "hitCount": 343,
+      "totalDamage": 525651683196358,
+      "avgDps": 4380430693303,
+      "hitCount": 2892,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 2052.09
+      "estimatedFullClearTime": 0.81
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 53000491916,
-      "avgDps": 441670766,
-      "hitCount": 94,
+      "totalDamage": 455404337388072,
+      "avgDps": 3795036144901,
+      "hitCount": 2550,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 8043.26
+      "estimatedFullClearTime": 0.94
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 13368762403,
-      "avgDps": 111406353,
-      "hitCount": 23,
+      "totalDamage": 182136125846826,
+      "avgDps": 1517801048724,
+      "hitCount": 1141,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 23915.64
+      "estimatedFullClearTime": 1.76
     }
   },
   {
@@ -4316,34 +4316,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 1476887573,
-      "avgDps": 12307396,
-      "hitCount": 6,
+      "totalDamage": 698568568549229,
+      "avgDps": 5821404737910,
+      "hitCount": 3287,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 288645.34
+      "estimatedFullClearTime": 0.61
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 1003422995,
-      "avgDps": 8361858,
-      "hitCount": 4,
+      "totalDamage": 429831476988141,
+      "avgDps": 3581928974901,
+      "hitCount": 2071,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 424842.49
+      "estimatedFullClearTime": 0.99
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 1708362600,
-      "avgDps": 14236355,
-      "hitCount": 7,
+      "totalDamage": 74110748340817,
+      "avgDps": 617589569507,
+      "hitCount": 526,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 187151.45
+      "estimatedFullClearTime": 4.31
     }
   },
   {
@@ -4385,34 +4385,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 626467942363,
-      "avgDps": 5220566186,
-      "hitCount": 1284,
+      "totalDamage": 366876104451826,
+      "avgDps": 3057300870432,
+      "hitCount": 6333,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 680.48
+      "estimatedFullClearTime": 1.16
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 171607403739,
-      "avgDps": 1430061698,
-      "hitCount": 332,
+      "totalDamage": 150202144173247,
+      "avgDps": 1251684534777,
+      "hitCount": 2144,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 2484.14
+      "estimatedFullClearTime": 2.84
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 39736398260,
-      "avgDps": 331136652,
-      "hitCount": 59,
+      "totalDamage": 43380541000853,
+      "avgDps": 361504508340,
+      "hitCount": 671,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 8046.09
+      "estimatedFullClearTime": 7.37
     }
   },
   {
@@ -4454,34 +4454,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 1246497211379,
-      "avgDps": 10387476761,
-      "hitCount": 1862,
+      "totalDamage": 863573659837050,
+      "avgDps": 7196447165309,
+      "hitCount": 10428,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 342
+      "estimatedFullClearTime": 0.49
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 321056728596,
-      "avgDps": 2675472738,
-      "hitCount": 479,
+      "totalDamage": 397596690008212,
+      "avgDps": 3313305750068,
+      "hitCount": 4700,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 1327.79
+      "estimatedFullClearTime": 1.07
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 64836293060,
-      "avgDps": 540302442,
-      "hitCount": 108,
+      "totalDamage": 126451199616093,
+      "avgDps": 1053759996801,
+      "hitCount": 1528,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 4931.23
+      "estimatedFullClearTime": 2.53
     }
   },
   {
@@ -4523,34 +4523,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 1171338788749,
-      "avgDps": 9761156573,
-      "hitCount": 1899,
+      "totalDamage": 509757895002915,
+      "avgDps": 4247982458358,
+      "hitCount": 6654,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 363.94
+      "estimatedFullClearTime": 0.84
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 349702239293,
-      "avgDps": 2914185327,
-      "hitCount": 527,
+      "totalDamage": 483602278538346,
+      "avgDps": 4030018987820,
+      "hitCount": 5649,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 1219.03
+      "estimatedFullClearTime": 0.88
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 67465388908,
-      "avgDps": 562211574,
-      "hitCount": 111,
+      "totalDamage": 160904511971036,
+      "avgDps": 1340870933092,
+      "hitCount": 1896,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 4739.06
+      "estimatedFullClearTime": 1.99
     }
   },
   {
@@ -4592,34 +4592,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 172421537479,
-      "avgDps": 1436846146,
-      "hitCount": 2927,
+      "totalDamage": 222979472689596,
+      "avgDps": 1858162272413,
+      "hitCount": 3931,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 2472.41
+      "estimatedFullClearTime": 1.91
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 55657607489,
-      "avgDps": 463813396,
-      "hitCount": 896,
+      "totalDamage": 93381244556272,
+      "avgDps": 778177037969,
+      "hitCount": 2031,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 7659.27
+      "estimatedFullClearTime": 4.57
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 5833825844,
-      "avgDps": 48615215,
-      "hitCount": 89,
+      "totalDamage": 15970064326357,
+      "avgDps": 133083869386,
+      "hitCount": 501,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 54804.95
+      "estimatedFullClearTime": 20.02
     }
   },
   {
@@ -4661,34 +4661,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 1122478986379,
-      "avgDps": 9353991553,
-      "hitCount": 3722,
+      "totalDamage": 388903461194484,
+      "avgDps": 3240862176621,
+      "hitCount": 6886,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 379.78
+      "estimatedFullClearTime": 1.1
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 255972640129,
-      "avgDps": 2133105334,
-      "hitCount": 1100,
+      "totalDamage": 242637783097787,
+      "avgDps": 2021981525815,
+      "hitCount": 3495,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 1665.4
+      "estimatedFullClearTime": 1.76
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 64083910388,
-      "avgDps": 534032587,
-      "hitCount": 150,
+      "totalDamage": 120736164258723,
+      "avgDps": 1006134702156,
+      "hitCount": 1458,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 4989.12
+      "estimatedFullClearTime": 2.65
     }
   },
   {
@@ -4730,34 +4730,34 @@
       "scenarioType": 1,
       "scenarioName": "普通小怪 (20隻)",
       "sampleDuration": 120,
-      "totalDamage": 374642257672,
-      "avgDps": 3122018814,
-      "hitCount": 3012,
+      "totalDamage": 253680176608748,
+      "avgDps": 2114001471740,
+      "hitCount": 4368,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 1137.88
+      "estimatedFullClearTime": 1.68
     },
     "elite": {
       "scenarioType": 2,
       "scenarioName": "菁英怪 (5隻)",
       "sampleDuration": 120,
-      "totalDamage": 105565708985,
-      "avgDps": 879714242,
-      "hitCount": 970,
+      "totalDamage": 125602269585362,
+      "avgDps": 1046685579878,
+      "hitCount": 2887,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 4038.21
+      "estimatedFullClearTime": 3.39
     },
     "boss": {
       "scenarioType": 3,
       "scenarioName": "單體BOSS (1隻)",
       "sampleDuration": 120,
-      "totalDamage": 21942721767,
-      "avgDps": 182856015,
-      "hitCount": 102,
+      "totalDamage": 45863051261922,
+      "avgDps": 382192093849,
+      "hitCount": 760,
       "cleared": false,
       "clearedTime": 0,
-      "estimatedFullClearTime": 14570.78
+      "estimatedFullClearTime": 6.97
     }
   }
 ]
