@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## SYNC-ALL-AI-SOURCES-20261028 — 主線完整整合與雲端來源補掃
+
+- Owner：Codex；Done（程式、來源保留與驗證完成；本聊天接續正常同步，推送結果以最新同步報告與回覆為準）。使用者指出bf37b93未被最新同步包含，並明確定義「所有AI同步到最新」是完整整合所有可同步AI成果至主線，不受來源分支名稱或是否有worktree限制；本聊天授權保留各方修改、修復同步工具並完成正常整合／推送，既有hold與main發布限制維持。
+- 查證：三固定分支／develop均c092d66f，但origin/ai/claude-kpj271為其後代bf37b93b；舊工具僅掃固定三分支及已簽出role/*專用分支，完全漏掉未簽出雲端來源。已fetch核對並於乾淨ai/codex安全ff至bf37b93b，先保留其原提交與六檔更新；其餘AI副本不切換。範圍：同步來源探索／快照／pending merge接續、報告、真Git回歸、使用者規範／流程／本段與必要Renderer快取／LV，素材庫只同步必要SOURCE來源紀錄。
+- 設計：掃描所有本地／指定遠端branch refs，辨識ai/*、role/*及任意名稱下有AI提交者／前綴的未整合成果，main／develop／明確hold排除；已簽出AI來源仍要求乾淨並走原固定同步，未簽出來源只讀／以固定SHA整合，不建立副本或回寫任務分支。fetch後再掃且推送前驗來源快照／待整合餘額，不能只比較三固定HEAD。補bf37b93漏升的hero3d／battle-renderer主頁快取，完整保留3D五項修正與原主線功能。
+- 更新：檢查期間雲端來源再前進至25e7063（3D輪廓／調色／補光），一併保留其三檔程式／測試及任務紀錄。AI_TASKS自訂driver因歷史重複標題拒絕合併；以Git原base／ours／theirs執行文字三方合併，兩方新增紀錄均保留，未選單邊。素材SOURCE動作時間及manifest已於素材庫707ba1f保存，GLB／spec未變；共享素材庫另有未提交工作，本輪保留且不推送該庫。
+- 完成檔案：AGENTS保存使用者同步定義；sync_ai_worktrees補所有refs來源探索、固定SHA整合、hold與乾淨檢查、任務來源pending merge接續、推送前來源變動／新來源檢查；invoke-sync-with-report補所有分支SHA／主線包含關係；sync-feature-worktrees新增五種真Git來源回歸；SYNC_AI_WORKTREES／LV／本段及index快取同步。保留來源程式與測試原樣，未將歷史雲端分支強制改指新HEAD。
+- 驗證：node --test --test-reporter=spec tests/sync-feature-worktrees.test.cjs tests/sync-ai-worktrees.test.cjs tests/sync-auto-conflicts.test.cjs tests/sync-index-recovery.test.cjs tests/sync-excel-handoff.test.cjs，72/72通過、無略過；包括fetch後新雲端／任意名稱來源、main排除、來源refs不回寫、預檢不動refs、兩種hold／解除、dirty保留、pending合併識別、同步中途新提交停止推送與重跑、原生Excel交接及index保護。node --test --test-reporter=spec tests/hero3d-battle-rules.test.cjs tests/hero3d-internal-toggle.test.cjs tests/player-directional-sprite.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs，35/35通過；npm.cmd run build 595檔、git diff --check通過。正式工作區ValidateOnly已辨識25e7063雲端來源且所有四個工作區乾淨。
+- 提交：0d207856工具／規範修正、8183b5b3保留25e7063雙親整合；本段驗證紀錄另獨立docs提交。唯讀未改：AI_RULES／Workflow／prompts、同步衝突控制器／原生Excel工具／index recovery、3D原始模型及規格、String表／CSV／生成資料、其他AI工作區。沒有付費API或模型重製。
+- 風險與下一步：最後fetch檢查之後才到達的遠端提交仍要下一輪同步；未帶角色名稱或規定AI作者／提交前綴的未知分支無法可靠自動認定為AI成果，報告仍列出全部refs供檢查。歷史AI_TASKS重複標題可能讓自訂driver保守停下，未在此任務重寫整份歷史紀錄。尚未於本次瀏覽器長戰驗收新增3D亮度與輪廓；保留Claude來源的原驗收敘述。可正常合併／同步，main與明確未核准內容維持隔離；必要素材來源已本地保存，素材遠端待其他工作提交乾淨後再同步。
+
 ## SKILL-RESET-GM-POINTS-20261027 — GM超額技能降級與重置完整返點
 
 - Owner：Codex；Done，單一開發者。使用者回報火龍捲重置為Lv.1但剩餘仍0，明確補充GM技能允許超過正常480點，降級或重置一律退回實際移除的點數。
@@ -81,9 +92,11 @@
 
 ## HERO3D-TOGGLE-20261027 — 內測用 2D／3D 主角動畫切換
 
-- Owner：Claude；Done（內測功能完成，build／test 結果見本輪回報）。使用者要求在戰鬥區上方、「世界地圖」按鈕左邊加按鈕，切換主角的 2D 序列幀與新版 3D 動畫；切換可刷新網頁；只有內測可見可用，外部正式服不行。使用者核准下載 three.js（MIT）、範圍只換主角（敵人／BOSS 維持 2D）、先不推送。
+- Owner：Claude；Done（內測功能完成；build 通過、字串表仍寫死 0 條；全量 npm test 與修改前基準比對：3D 改動新增的 2 條失敗已修，其餘 589 條失敗在修改前就存在，與本任務無關）。使用者要求在戰鬥區上方、「世界地圖」按鈕左邊加按鈕，切換主角的 2D 序列幀與新版 3D 動畫；切換可刷新網頁；只有內測可見可用，外部正式服不行。使用者核准下載 three.js（MIT）、範圍只換主角（敵人／BOSS 維持 2D）、先不推送。
 - 設計：`js/hero3d.js` 以 three.js r160 在離屏 WebGL canvas 畫 GLB，轉成 `PIXI.Texture` 貼在模仿 AnimatedSprite 成員的 Sprite 上，站位、鏡頭、血條、特效沿用 2D 那一套；動作名沿用 2D（`Hero3D.CLIP_FOR`），朝向用連續轉角。`Hero3D.enabled()` 在正式版恆為 false，不下載 three.js 與模型；載入失敗自動關開關退回 2D。three.js 以 importmap 動態載入，不開 3D 就不下載。
-- 修改：新增 js/hero3d.js、js/vendor/three/（three@0.160.0 原封不動＋LICENSE＋README）、images/models/hero3d/sunbrand-knight.glb（約 700 KB）與 SOURCE.md；index.html（importmap、#btn-hero3d）、css/world-map.css（按鈕位置）、js/ui.js（initHero3dToggle，內測判斷用既有 isInternalServer()）、js/battle-renderer.js（3D 身體分支）；String 表新增 2145～2147（按鈕兩種狀態與提示）並同步 CSV／strings_data.js；tools/meshy-pipeline/blender/export_assets.py 新增 --max-texture。
+- 修改：新增 js/hero3d.js、js/vendor/three/（three@0.160.0 原封不動＋LICENSE＋README）、images/models/hero3d/sunbrand-knight.glb（約 700 KB）與 SOURCE.md；index.html（importmap、#btn-hero3d）、css/world-map.css（按鈕位置）、js/ui.js（initHero3dToggle，內測判斷用既有 isInternalServer()）、js/battle-renderer.js（3D 身體分支）；String 表新增 2151～2153（原 2145～2147，合併時被他處新增的 2145～2150 擠後）（按鈕兩種狀態與提示）並同步 CSV／strings_data.js；tools/meshy-pipeline/blender/export_assets.py 新增 --max-texture。
+- 內測回報修正（同日）：①普攻動作播一半重播、③攻速對不上——根因是技能施法借用 Attack2 整段 3.17 秒原速播、期間擋掉所有普攻動作，加上普攻動作整段 2.4～3.2 秒遠長於攻擊間隔。現在每個攻擊動作只播有用的一段（`CLIP_FOR` 的 start／hit／end，由劍骨骼逐幀位移量出），再加速塞進攻擊間隔。④普攻改為 Attack1／Attack2 嚴格輪播（原本 attack3 也對到 Attack1，三選一讓它佔 2/3）。②追擊滑步——出手動作期間只要畫面上真的有位移就立刻切跑步（看 `stillFor === 0`，不看拖尾 0.22 秒的 `walking`）。施法規則（使用者指定）：出手動作播放中不插施法動作、只播技能特效；其餘時候借一個攻擊動作、加速到 0.5 秒內播完，模擬端施法硬直本來就會停下移動。⑤復活——3D 的 seek 對倒著播的動作沒有反向，起身變成正播死亡動作；改為死亡動作在復活倒數前 30% 播完，其後到倒數結束倒著播，一般死亡倒數與大地守護共用同一個驅動（`hero3dDriveRise`）。驗證：以 Playwright 加假時鐘在真實渲染器逐幀量測；測試 `tests/hero3d-battle-rules.test.cjs`。
+- 辨識度修正（同日，使用者回報遊戲裡人物縮小後「除披風外一片暗黃、看不到白與黃的細節」）：縮到遊戲大小（約 100 像素高）後金、銀、披風糊成一片，又被滿屏特效蓋住。處理：①補上穿透式輪廓——2D 主角本來就有（`PLAYER_OUTLINE` 綠色、畫在特效層之上），3D 沒做；現在輪廓貼圖由 3D 畫布剪影每幀即時算（`hero3d.js` makeBody 的 `drawOutline`），走同一套 `makeOutlineSprite`／`syncOutline`。②貼圖調色（金調亮調飽和、銀拉白、披風略提亮，`gradeTexture`）＋同一張當自發光貼圖＋背後冷色邊緣光、環境光壓低主光加強。曾比較過紅羽飾與太陽光環：縮到遊戲大小看不見羽飾、光環過大突兀，未採用。模擬圖以 Playwright 在使用者截圖背景上合成；實際遊戲畫面以真實渲染器截圖確認輪廓位置對得上。
 - 已知限制：Meshy 模型授權須由使用者確認後才能用於正式版（見 SOURCE.md）；3D 主角無逐幀輪廓圖，穿透輪廓不畫；AI_RULES 8.7.1 規定 3D 以 MakeHuman＋Blender 製作，本模型是使用者明確指示的例外。素材庫雙庫提交規則尚未處理 GLB。未做真實正式服驗證（只靠 isInternalServer 判斷）。
 
 ## SYNC-SHORTCUT-HOLD-20261027 — 修復捷徑中斷並保留Claude管線

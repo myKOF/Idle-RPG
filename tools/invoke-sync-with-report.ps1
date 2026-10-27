@@ -42,7 +42,7 @@ function Find-DiagnosticWorktrees {
     $listing = Read-DiagnosticGit -Root $repository -Arguments @('worktree', 'list', '--porcelain')
     foreach ($line in ($listing -split "\r?\n")) {
         if ($line -match '^worktree (.+)$') { $root = $Matches[1] }
-        elseif ($root -and $line -match '^branch refs/heads/(develop|ai/(?:antigravity|claude|codex)|(?:codex|claude|antigravity)/.+)$') {
+        elseif ($root -and $line -match '^branch refs/heads/(develop|ai/.+|(?:codex|claude|antigravity)/.+)$') {
             $map[$Matches[1]] = $root
         }
     }
@@ -129,6 +129,15 @@ try {
     Add-ReportBlock -Report $report -Title '完整主控台輸出（stdout 與 stderr）' -Value ([IO.File]::ReadAllText($logPath, $utf8))
     Add-ReportBlock -Report $report -Title '工具版本' -Value ((Read-DiagnosticCommand -Command git -Arguments @('--version')) + "`n" + (Read-DiagnosticCommand -Command node -Arguments @('--version')))
     Add-ReportBlock -Report $report -Title 'Git Worktree 清單' -Value (Read-DiagnosticGit -Root $repository -Arguments @('worktree', 'list', '--porcelain'))
+    $refs = Read-DiagnosticGit -Root $repository -Arguments @('for-each-ref', '--format=%(refname)%09%(objectname)', 'refs/heads/', 'refs/remotes/')
+    $refStatus = foreach ($line in ($refs -split "`n")) {
+        if (-not $line) { continue }
+        $parts = $line -split "`t", 2
+        $check = Read-DiagnosticGit -Root $repository -Arguments @('merge-base', '--is-ancestor', $parts[1], 'develop')
+        $state = if (-not $check) { '已包含於 develop' } elseif ($check.StartsWith('[exit 1]')) { '尚未包含於 develop（可能為保留或非 AI 分支）' } else { "驗證失敗：$check" }
+        "$line`t$state"
+    }
+    Add-ReportBlock -Report $report -Title '所有分支來源與主線包含關係（含未簽出來源）' -Value ($refStatus -join "`n")
     $worktrees = Find-DiagnosticWorktrees
     $module = Join-Path $repository 'tools\vfx\vfx-library-root.cjs'
     if (Test-Path -LiteralPath $module -PathType Leaf) {
@@ -136,7 +145,7 @@ try {
         if ($assetRoot -and -not $assetRoot.StartsWith('[exit ') -and
             (Test-Path -LiteralPath $assetRoot -PathType Container -ErrorAction SilentlyContinue)) { $worktrees['素材庫'] = $assetRoot }
     }
-    $featureBranches = @($worktrees.Keys | Where-Object { $_ -match '^(codex|claude|antigravity)/.+' } | Sort-Object)
+    $featureBranches = @($worktrees.Keys | Where-Object { $_ -match '^(?:(codex|claude|antigravity)/.+|ai/.+)' -and $_ -notin @('ai/codex', 'ai/claude', 'ai/antigravity') } | Sort-Object)
     foreach ($branch in (@('develop', 'ai/antigravity', 'ai/claude', 'ai/codex') + $featureBranches + @('素材庫'))) {
         if (-not $worktrees.ContainsKey($branch)) { continue }
         $root = $worktrees[$branch]
