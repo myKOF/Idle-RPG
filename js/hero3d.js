@@ -24,13 +24,19 @@
 
   /* 2D 動作名 → GLB 動畫。2D 沒有的情況（受擊）不需要；施法與第三招借用攻擊動作。
      rise（起身）把 Death 倒著播。 */
+  /* 攻擊動作只播「有用的那一段」：Meshy 的揮劍動作前有約 0.9 秒蓄力、後有 1.3 秒以上的收招空檔，
+     整段照播會比攻擊間隔長很多（Attack1 2.4 秒、Attack2 3.2 秒）。單位是動作內的秒數（原速）：
+       start：從這裡開始播（跳過大半蓄力，只留看得出「舉劍」的 0.3 秒）
+       hit：劍真正揮到的時刻（Attack2 有兩下，取第一下）
+       end：動作到這裡就算播完（之後是回到待機的空檔）
+     數值是從 GLB 的劍骨骼逐幀位移量出來的（見 images/models/hero3d/SOURCE.md）。 */
   var CLIP_FOR = {
     idle:    { clip: 'CombatIdle', loop: true },
     walk:    { clip: 'Run', loop: true },
-    attack1: { clip: 'Attack1', loop: false },
-    attack2: { clip: 'Attack2', loop: false },
-    attack3: { clip: 'Attack1', loop: false },
-    cast:    { clip: 'Attack2', loop: false },
+    attack1: { clip: 'Attack1', loop: false, start: 0.62, hit: 0.92, end: 1.75 },
+    attack2: { clip: 'Attack2', loop: false, start: 0.37, hit: 0.67, end: 1.75 },
+    attack3: { clip: 'Attack1', loop: false, start: 0.62, hit: 0.92, end: 1.75 },
+    cast:    { clip: 'Attack2', loop: false, start: 0.37, hit: 0.67, end: 1.2 },
     die:     { clip: 'Death', loop: false, hold: true },
     rise:    { clip: 'Death', loop: false, reverse: true }
   };
@@ -112,10 +118,16 @@
       yawTarget: Math.PI / 2,
       speed: 1
     };
-    var current = null, currentCfg = null;
+    var current = null, currentCfg = null, finishedFired = false;
 
+    /* 一次播放只通知一次「播完」：有 end 的動作在 end 就算完，不必等整段 clip 的 finished 事件 */
+    function fireFinished() {
+      if (finishedFired) return;
+      finishedFired = true;
+      if (typeof ctrl.onFinished === 'function') ctrl.onFinished(ctrl.clip);
+    }
     mixer.addEventListener('finished', function (ev) {
-      if (ev.action === current && typeof ctrl.onFinished === 'function') ctrl.onFinished(ctrl.clip);
+      if (ev.action === current) fireFinished();
     });
 
     /* 播放一個動作；cfg 同 CLIP_FOR 的項目。同一個循環動作重複要求時不重來。 */
@@ -129,13 +141,14 @@
       next.setLoop(cfg.loop ? THREE.LoopRepeat : THREE.LoopOnce, Infinity);
       next.clampWhenFinished = !cfg.loop;       // 放完停在最後一格，直到被換掉（死亡要停在躺下）
       next.timeScale = cfg.reverse ? -1 : 1;
-      next.time = cfg.reverse ? next.getClip().duration : 0;
+      next.time = cfg.reverse ? next.getClip().duration : (cfg.start || 0);
       next.setEffectiveWeight(1);
       next.play();
       if (prev && prev !== next && fade !== 0) next.crossFadeFrom(prev, fade == null ? FADE_SEC : fade, false);
       else if (prev && prev !== next) prev.stop();
       current = next;
       currentCfg = cfg;
+      finishedFired = false;
       ctrl.clip = cfg.clip;
       return true;
     };
@@ -143,9 +156,18 @@
       var a = actions[clip || ctrl.clip];
       return a ? a.getClip().duration : 0;
     };
-    /* 停在這個動作的某個位置（0..1，起身用） */
+    /* 目前這個動作原速要播多久（有 start／end 的只算那一段）與劍揮到的時刻（距離開始播的秒數） */
+    ctrl.spanSec = function () {
+      if (!currentCfg) return 0;
+      return currentCfg.end ? currentCfg.end - (currentCfg.start || 0) : ctrl.duration();
+    };
+    ctrl.hitSec = function () {
+      return currentCfg && currentCfg.hit ? currentCfg.hit - (currentCfg.start || 0) : 0;
+    };
+    /* 停在這個動作的某個位置（0..1）。倒著播的動作（起身）0 是「最後一格」：fraction 從 0 走到 1 就是倒著播。 */
     ctrl.seek = function (fraction) {
       if (!current) return;
+      if (currentCfg && currentCfg.reverse) fraction = 1 - fraction;
       var d = current.getClip().duration;
       current.paused = false;
       current.time = Math.max(0, Math.min(1, fraction)) * d;
@@ -159,6 +181,7 @@
     ctrl.update = function (dt) {
       mixer.timeScale = ctrl.speed;
       mixer.update(dt);
+      if (current && currentCfg && currentCfg.end && !currentCfg.reverse && current.time >= currentCfg.end) fireFinished();
       var d = ((ctrl.yawTarget - ctrl.yaw + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI;
       ctrl.yaw += d * (1 - Math.exp(-dt / YAW_TAU_SEC));
       pivot.rotation.y = ctrl.yaw;
@@ -200,8 +223,10 @@
     Object.defineProperty(sp, 'textures', { get: function () { return [tex]; }, set: function () { /* 2D 專用，3D 不用 */ } });
     Object.defineProperty(sp, 'totalFrames', { get: function () { return Math.max(1, Math.round(ctrl.duration() * 24)); } });
     Object.defineProperty(sp, 'currentFrame', { get: function () { return 0; } });
-    /* 這個動作原速播完要多少毫秒（攻擊動作以此算要加速多少才塞得進攻擊間隔） */
-    Object.defineProperty(sp, 'naturalMs', { get: function () { return ctrl.duration() * 1000; } });
+    /* 這個動作原速播完要多少毫秒（攻擊動作以此算要加速多少才塞得進攻擊間隔）；有 start／end 的只算有用的那一段 */
+    Object.defineProperty(sp, 'naturalMs', { get: function () { return ctrl.spanSec() * 1000; } });
+    /* 劍揮到的時刻：原速下距離開始播多少毫秒（施法要讓它對上技能釋放的時刻） */
+    Object.defineProperty(sp, 'hitMs', { get: function () { return ctrl.hitSec() * 1000; } });
 
     ctrl.onFinished = function () {
       if (typeof sp.onComplete === 'function') sp.onComplete();
