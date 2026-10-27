@@ -338,9 +338,8 @@ function spawnFieldMonster(append) {
               Math.max(1, Number(typeof BF_BOSS_H !== 'undefined' ? BF_BOSS_H : 2) || 1)
             : 1;
         var free = (typeof bfFreeCellCount === 'function') ? bfFreeCellCount(standing) : count;
-        /* 同時上限（參數表可逐地圖／關卡調）：清不完的怪會一直堆，沒有煞車的話
-           新角色前幾關就會被打死到推不動。棋盤格數是另一道硬上限。 */
-        var room = fieldMaxLiveEnemiesFor(s, G.stage.zone) - fieldWavePopulation(standing);
+        // 波次與遠方群共用參數表的戰場容量，配格時再扣除全部存活敵人。
+        var room = fieldMaxLiveEnemiesFor() - fieldWavePopulation(standing);
         count = Math.min(count, room, Math.floor(free / cellsEach));
         if (count < 1) return [];   // 場上滿了：這一波跳過，下一個間隔再試
     }
@@ -484,7 +483,7 @@ function spawnEliteWave(append, eliteStage, encounter) {
     var room = Infinity;
     if (append) {
         var free = (typeof bfFreeCellCount === 'function') ? bfFreeCellCount(standing) : Infinity;
-        room = encounter ? free : Math.min(fieldMaxLiveEnemiesFor(s, G.stage.zone) - fieldWavePopulation(standing), free);
+        room = encounter ? free : Math.min(fieldMaxLiveEnemiesFor() - fieldWavePopulation(standing), free);
         if (room < 1) return [];
     }
     var leadersCfg = Math.max(1, Math.floor(Number(ELITE_GROUP.leaders) || 1));
@@ -2004,7 +2003,7 @@ function fieldTick(dt) {
        GM 演武場（技能測試模式）暫停過關結算：測試擊殺不推進關卡。 */
     if (FIELD._waveClearPending && !FIELD._gmArena) completeFieldWave(st);
 
-    /* 出怪：波次串流。每隔 fieldWaveIntervalFor（地圖 × 關卡，可調參數表）補一波，
+    /* 出怪：波次串流。每隔 fieldWaveIntervalFor（共用主參數表）補一波，
        不管上一波清了沒——敵人會愈積愈多，撐不住被打死就退關（設計如此）。
        BOSS 還活著時不補波：BOSS 一關只有一隻，補下去會變成每幾秒多一隻 BOSS。
        新波在本輪繼續往下走，讓敵人能在生成當下完成首次攻擊。
@@ -2014,7 +2013,7 @@ function fieldTick(dt) {
         FIELD.spawnCd = (typeof FIELD.spawnCd === 'number') ? FIELD.spawnCd - dt : 0;
         if (FIELD.spawnCd <= 0) {
             var added = spawnFieldMonster(true);
-            FIELD.spawnCd = fieldWaveIntervalFor(G.stage.current, G.stage.zone);
+            FIELD.spawnCd = fieldWaveIntervalFor();
             if (added && added.length) spawnedEnemies = added;
         }
     }

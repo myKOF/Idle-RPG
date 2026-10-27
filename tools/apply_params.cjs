@@ -144,49 +144,6 @@ function P(cat, name, i) {
   return v.trim();
 }
 
-/* 野外出怪波次間隔：同樣是「地圖 × 關卡區間」的獨立表，處理方式比照掉落表。
-   缺表時不中止（這張表是 2026-08 波次串流改造才加的，舊工作副本可能還沒有），
-   直接跳過該筆編輯，data.js 保留原本的預設值。 */
-const ZONE_STAGE_WAVES_CSV_PATH = process.env.ZONE_STAGE_WAVES_CSV || path.join(ROOT, 'config', 'CSV', 'Zone_Stage_Waves.csv');
-function zoneStageWaveContent() {
-  if (!fs.existsSync(ZONE_STAGE_WAVES_CSV_PATH)) return null;
-  const rows = parseCsv(fs.readFileSync(ZONE_STAGE_WAVES_CSV_PATH, 'utf8')).filter(r => r.length > 1);
-  const header = rows[0] || [];
-  const col = (name) => {
-    const i = header.indexOf(name);
-    if (i < 0) throw new Error('Zone_Stage_Waves.csv 表頭缺少「' + name + '」：' + JSON.stringify(header));
-    return i;
-  };
-  const CZONE = col('地圖識別碼'), CMIN = col('最低關卡'), CMAX = col('最高關卡'), CSEC = col('出怪間隔秒數');
-  const CCAP = col('同時上限隻數');
-  const num = (raw, label) => {
-    const n = Number(String(raw).trim());
-    if (!Number.isFinite(n)) throw new Error('Zone_Stage_Waves.csv 數值無法解析：' + label + ' / ' + raw);
-    return n;
-  };
-  const grouped = {};
-  rows.slice(1).forEach((r, i) => {
-    const zone = String(r[CZONE] || '').trim();
-    if (!zone) throw new Error('Zone_Stage_Waves.csv 第 ' + (i + 2) + ' 列缺少地圖識別碼');
-    const min = num(r[CMIN], zone + '.最低關卡');
-    const max = num(r[CMAX], zone + '.最高關卡');
-    const sec = num(r[CSEC], zone + '.出怪間隔秒數');
-    const cap = num(r[CCAP], zone + '.同時上限隻數');
-    if (min > max) throw new Error('Zone_Stage_Waves.csv 關卡區間反向：' + zone + ' ' + min + '~' + max);
-    /* 0＝沿用參數表「出怪間隔」的 a（見 fieldWaveIntervalFor 的退回邏輯），
-       與同一張表的「同時上限隻數」0＝不額外限制同一個慣例。負數才是填錯。 */
-    if (!(sec >= 0)) throw new Error('Zone_Stage_Waves.csv 出怪間隔不得為負（0＝沿用參數表的預設值）：' + zone + ' = ' + sec);
-    if (!(cap >= 0)) throw new Error('Zone_Stage_Waves.csv 同時上限隻數不得為負（0＝不額外限制）：' + zone + ' = ' + cap);
-    (grouped[zone] || (grouped[zone] = [])).push([min, max, sec, cap]);
-  });
-  const expectedZones = Object.keys(zoneById);
-  expectedZones.forEach(zone => {
-    if (!grouped[zone] || !grouped[zone].length) throw new Error('Zone_Stage_Waves.csv 缺少地圖：' + zone);
-    grouped[zone].sort((a, b) => a[0] - b[0]);
-  });
-  return expectedZones.map(zone => '  ' + zone + ': ' + JSON.stringify(grouped[zone])).join(',\n');
-}
-
 /* ---------- 編輯清單：每筆 = {file, re(單一群組), value, label} ---------- */
 const edits = [];
 edits.push({
@@ -194,14 +151,6 @@ edits.push({
   re: /ZONE_STAGE_DROP_PROFILES\s*=\s*\{([\s\S]*?)\n\};/,
   grp: 1, value: zoneStageDropContent(), label: 'ZONE_STAGE_DROP_PROFILES（Zone_Stage_Drops.csv）', multiGroup: true
 });
-const zoneStageWaveValue = zoneStageWaveContent();
-if (zoneStageWaveValue !== null) {
-  edits.push({
-    file: 'data', scopeVar: 'ZONE_STAGE_WAVE_PROFILES',
-    re: /ZONE_STAGE_WAVE_PROFILES\s*=\s*\{([\s\S]*?)\n\};/,
-    grp: 1, value: zoneStageWaveValue, label: 'ZONE_STAGE_WAVE_PROFILES（Zone_Stage_Waves.csv）', multiGroup: true
-  });
-}
 /* 功能解鎖條件：獨立表 config/CSV/system_unlock.csv（由 system_unlock.xlsx 轉出）。
    欄位：系統類型、系統名稱、解鎖等級(等級/轉生等級)、系統說明文字；第三欄格式「等級/轉生次數」，兩條件需同時滿足。
    表裡缺列或格式錯誤就中止，不靜默沿用舊值。 */

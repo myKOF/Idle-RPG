@@ -51,7 +51,7 @@ Owner：Codex；單一開發者；分支 `ai/codex`。使用者於2026-10-22要�
 
 ## 修改檔案
 
-- 配置：config/Excel及config/CSV內Zones、NPC、Task、Zone_Stage_Drops、Zone_Stage_Waves、Runes，共十二檔。
+- 配置：config/Excel及config/CSV內Zones、NPC、Task、Zone_Stage_Drops、Runes，共十檔。2026-10-27移除冗餘波次表；全部地圖關卡共用game_parameters的「出怪間隔」與「棋盤格數」，不再另查波次區間，Zones仍為實際關卡上限的來源。
 - 遊戲：js/data.js、player.js、save.js、ui.js、battle-decor.js、battle-renderer.js、decor-nature.js、runeword_data.js。
 - 快取：index.html、js/bridge.js、js/worker/sim.worker.js、js/worker/decor-atlas.worker.js；Protocol內容及版本未變。
 - 工具：tools/config_tables.cjs新增Zones投影與新NPC表錨點，tools/apply_params.cjs改從Zones取得地圖名單；tools/scene-renewal/export-source.cjs支援六素材與局部重製；兩個場景預覽工具同步。

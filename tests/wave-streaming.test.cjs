@@ -1,7 +1,7 @@
 /* 波次串流（2026-08 戰鬥改造）
    敵人改成「每隔幾秒補一波，不等場上清空」，清不完就會愈積愈多，撐不住被打死退關。
    連帶改變的是推進判定：從「整波清空」改為「殺滿本關配額」。
-   本檔鎖住這四件事：串流補波、棋盤上限、BOSS 關不串流、間隔可由參數表依地圖／關卡調整。 */
+   本檔鎖住這四件事：串流補波、棋盤上限、BOSS 關不串流、全部關卡直接使用主參數表。 */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -71,28 +71,17 @@ test('場上達到同時上限後補波直接跳過，不會憑空產生放不�
   assert.equal(context.FIELD.monsters.length, full, '滿場時不得增加任何敵人');
 });
 
-/* 同時上限是難度的煞車：沒有它，清不完的怪會一路堆到棋盤滿格，
-   新角色在前幾關就會被打死到完全推不動（headless 模擬實測全程卡在復活倒數）。 */
-test('同時上限可依地圖與關卡區分，且不會超過棋盤格數', () => {
+test('全部地圖與關卡的同時上限直接跟隨參數表棋盤容量', () => {
   const context = loadCombatContext();
-  context.ZONE_STAGE_WAVE_PROFILES = {
-    desert: [[1, 49, 2, 4], [50, 9999, 2, 12]],
-    swamp: [[1, 9999, 2, 999]]
-  };
-  assert.equal(context.fieldMaxLiveEnemiesFor(10, 'desert'), 4);
-  assert.equal(context.fieldMaxLiveEnemiesFor(50, 'desert'), 12);
-  // 填超過棋盤格數也不會真的生出那麼多——放不下的本來就會被丟掉
-  assert.equal(context.fieldMaxLiveEnemiesFor(1, 'swamp'), context.bfCellCount());
-  // 沒列到的地圖 → 預設常數
-  assert.equal(context.fieldMaxLiveEnemiesFor(1, 'Icefield'),
-    Math.min(context.FIELD_MAX_LIVE_ENEMIES, context.bfCellCount()));
-  /* 填 0 或缺欄位＝不額外限制（＝棋盤格數）。這條很重要：把棋盤放大之後，
-     這一欄若還留著改版前的舊數字，敵人會卡在那個數字上不再增加。 */
-  context.ZONE_STAGE_WAVE_PROFILES = { desert: [[1, 9999, 2, 0]] };
-  assert.equal(context.fieldMaxLiveEnemiesFor(1, 'desert'), context.bfCellCount());
-  context.ZONE_STAGE_WAVE_PROFILES = { desert: [[1, 9999, 2]] };
-  assert.equal(context.fieldMaxLiveEnemiesFor(1, 'desert'),
-    Math.min(context.FIELD_MAX_LIVE_ENEMIES, context.bfCellCount()));
+  for (const [cols, rows, cap] of [[10, 10, 100], [3, 7, 21], [1, 1, 1]]) {
+    context.BF_COLS = cols;
+    context.BF_ROWS = rows;
+    for (const zone of context.ZONE_LIST) for (const stage of [1, 50, 9999]) {
+      context.G.stage.zone = zone;
+      context.G.stage.current = stage;
+      assert.equal(context.fieldMaxLiveEnemiesFor(), cap, zone + ' ' + stage);
+    }
+  }
 });
 
 test('fieldTick 每隔一個波次間隔補一波，不等場上清空', () => {
@@ -107,7 +96,6 @@ test('fieldTick 每隔一個波次間隔補一波，不等場上清空', () => {
   /* 間隔釘成單一值：參數表可以填候選陣列（每波隨機抽），那樣這支測試量到的
      interval 與模擬層下一波實際用的值會是不同的抽樣，時序假設就不成立。 */
   context.FIELD_WAVE_SPAWN_INTERVAL = 2;
-  context.ZONE_STAGE_WAVE_PROFILES = { desert: [[1, 9999, 0, 0]] };
 
   const interval = context.fieldWaveIntervalFor(context.G.stage.current, context.G.stage.zone);
   assert.ok(interval > 0);
@@ -210,34 +198,23 @@ test('推進改由擊殺配額觸發：殺滿才過關，沒殺滿不過關', ()
   assert.equal(context.FIELD.stageKills, 0, '推進後配額計數要歸零');
 });
 
-test('波次間隔可依地圖與關卡區分，且表壞掉時退回預設值', () => {
+test('全部地圖與1～9999關直接使用主參數間隔，修改主參數立即生效', () => {
   const context = loadCombatContext();
-  // 這支只驗查表行為，把預設值釘成單一數值（參數表也可以填候選陣列，另有專門的測試）
-  context.FIELD_WAVE_SPAWN_INTERVAL = 2;
-  // 表本體由 config/Excel/Zone_Stage_Waves.xlsx 管理
-  context.ZONE_STAGE_WAVE_PROFILES = {
-    desert: [[1, 49, 3, 8], [50, 9999, 1.5, 8]],
-    swamp: [[1, 9999, 0.8, 8]]
-  };
-  assert.equal(context.fieldWaveIntervalFor(10, 'desert'), 3);
-  assert.equal(context.fieldWaveIntervalFor(50, 'desert'), 1.5);
-  assert.equal(context.fieldWaveIntervalFor(1, 'swamp'), 0.8);
-  // 沒有列到的地圖 → 預設值
-  assert.equal(context.fieldWaveIntervalFor(1, 'Icefield'), context.FIELD_WAVE_SPAWN_INTERVAL);
-  // 關卡落在區間外 → 預設值
-  context.ZONE_STAGE_WAVE_PROFILES = { desert: [[1, 10, 3]] };
-  assert.equal(context.fieldWaveIntervalFor(99, 'desert'), context.FIELD_WAVE_SPAWN_INTERVAL);
-  // 表填 0 或負數 → 夾住，不得變成每個 tick 都出怪
-  context.ZONE_STAGE_WAVE_PROFILES = { desert: [[1, 9999, 0]] };
-  assert.ok(context.fieldWaveIntervalFor(1, 'desert') >= 0.2);
+  for (const value of [2, 4.5, 0.01]) {
+    context.FIELD_WAVE_SPAWN_INTERVAL = value;
+    for (const zone of context.ZONE_LIST) for (const stage of [1, 49, 50, 9999]) {
+      context.G.stage.zone = zone;
+      context.G.stage.current = stage;
+      assert.equal(context.fieldWaveIntervalFor(), Math.max(0.2, value));
+    }
+  }
 });
 
 test('出怪間隔分兩段：同關內用參數 a、切換關卡後用參數 b', () => {
   const context = loadCombatContext();
-  /* 同一關內：一波出完，下一波隔 fieldWaveIntervalFor（表填 0 就退回參數 a）。 */
-  context.ZONE_STAGE_WAVE_PROFILES = { desert: [[1, 9999, 0, 0]] };
+  /* 同一關內：一波出完，下一波直接使用參數 a。 */
   context.FIELD_WAVE_SPAWN_INTERVAL = 2.5;
-  assert.equal(context.fieldWaveIntervalFor(1, 'desert'), 2.5, '地圖表填 0＝沿用參數表的 a');
+  assert.equal(context.fieldWaveIntervalFor(), 2.5, '全部地圖直接使用參數表的 a');
   /* 切換關卡：改用參數 b，且不清場。 */
   context.holdFieldSpawn(context.FIELD_STAGE_SWITCH_DELAY);
   assert.equal(context.FIELD.spawnCd, context.FIELD_STAGE_SWITCH_DELAY);
@@ -247,7 +224,6 @@ test('出怪間隔分兩段：同關內用參數 a、切換關卡後用參數 b'
 
 test('出怪間隔的 a 可以填一組候選值，每波等機率抽一個', () => {
   const context = loadCombatContext();
-  context.ZONE_STAGE_WAVE_PROFILES = { desert: [[1, 9999, 0, 0]] };
   context.FIELD_WAVE_SPAWN_INTERVAL = [1, 2, 3, 5, 7];
 
   /* 等機率＝把 [0,1) 均分成 N 段，第 k 段對到第 k 個值。
@@ -266,16 +242,18 @@ test('出怪間隔的 a 可以填一組候選值，每波等機率抽一個', ()
   }
   assert.deepEqual([...seen].sort((a, b) => a - b), [1, 2, 3, 5, 7]);
 
-  /* 地圖表若指定了自己的秒數，仍然優先於參數表的候選值。 */
-  context.ZONE_STAGE_WAVE_PROFILES = { desert: [[1, 9999, 4.5, 0]] };
-  context.Math.random = () => 0;
-  assert.equal(context.fieldWaveIntervalFor(1, 'desert'), 4.5);
+  /* 重複候選值保留權重，不得去重。 */
+  context.FIELD_WAVE_SPAWN_INTERVAL = [1, 2, 2, 5];
+  const weighted = [0, 0.25, 0.5, 0.75].map((r) => {
+    context.Math.random = () => r;
+    return context.fieldWaveIntervalFor();
+  });
+  assert.deepEqual(weighted, [1, 2, 2, 5]);
 });
 
 test('候選值格式壞掉時退回安全值，不會變成每個 tick 出怪', () => {
   const context = loadCombatContext();
-  context.ZONE_STAGE_WAVE_PROFILES = { desert: [[1, 9999, 0, 0]] };
-  [[], [0, -1], ['x'], null].forEach((bad) => {
+  [[], [0, -1], ['x'], null, 0, -1, NaN, Infinity].forEach((bad) => {
     context.FIELD_WAVE_SPAWN_INTERVAL = bad;
     const v = context.fieldWaveIntervalFor(1, 'desert');
     assert.ok(v >= 0.2, '壞值 ' + JSON.stringify(bad) + ' 應該退回安全值，實際 ' + v);
@@ -291,19 +269,17 @@ test('出怪間隔不再受移動速度影響（純定值）', () => {
   assert.equal(/moveSpeed/.test(src), false, 'combat.js 不該再有任何 moveSpeed 參與出怪計時');
 });
 
-test('參數表預設值涵蓋所有地圖，數值合理', () => {
+test('刪除波次表後主參數仍涵蓋所有地圖，套用工具不再依賴該表', () => {
   const context = loadCombatContext();
-  const zones = ['desert', 'Icefield', 'swamp', 'undead_mountains',
-    'god_battlefield', 'god_chaos', 'god_sanctuary'];
-  zones.forEach((zone) => {
-    const rows = context.ZONE_STAGE_WAVE_PROFILES[zone];
-    assert.ok(Array.isArray(rows) && rows.length, '缺少地圖：' + zone);
-    rows.forEach((row) => {
-      assert.equal(row.length, 4, zone + ' 每列必須是 [最低關卡, 最高關卡, 間隔秒數, 同時上限隻數]');
-      assert.ok(row[0] >= 1 && row[1] >= row[0], zone + ' 關卡區間不合法');
-      /* 0＝沿用參數表「出怪間隔」的 a（與同時上限隻數的 0＝不額外限制同一慣例）。 */
-      assert.ok(row[2] >= 0 && row[2] <= 60, zone + ' 間隔秒數超出合理範圍（0＝沿用參數表預設值）');
-      assert.ok(row[3] >= 0 && row[3] <= 999, zone + ' 同時上限隻數超出合理範圍（0＝不額外限制）');
-    });
-  });
+  const root = path.resolve(__dirname, '..');
+  for (const ext of ['xlsx', 'csv']) {
+    const dir = ext === 'xlsx' ? 'Excel' : 'CSV';
+    assert.equal(fs.existsSync(path.join(root, 'config', dir, 'Zone_Stage_Waves.' + ext)), false);
+  }
+  assert.equal(typeof context.ZONE_STAGE_WAVE_PROFILES, 'undefined');
+  assert.equal(typeof context.fieldWaveProfileRow, 'undefined');
+  assert.equal(typeof context.FIELD_MAX_LIVE_ENEMIES, 'undefined');
+  assert.doesNotMatch(fs.readFileSync(path.join(root, 'tools/apply_params.cjs'), 'utf8'), /Zone_Stage_Waves|ZONE_STAGE_WAVE/);
+  assert.ok(context.FIELD_WAVE_SPAWN_INTERVAL.every(v => v > 0));
+  assert.equal(context.fieldMaxLiveEnemiesFor(), 100);
 });

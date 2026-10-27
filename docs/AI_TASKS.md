@@ -12786,3 +12786,19 @@ Worker 存活且頁面正常完成載入。
 - 廣域UI：整份skill2-ui為29項、27過／2失敗（SVG尺寸舊斷言、水流彈MP／冷卻舊值）；用git show HEAD的ui／skills2唯讀覆映並只跑該兩項，兩者於修改前同樣失敗，未改其斷言，不宣稱全庫全綠。最終瀏覽器用隔離隨機localhost及全新Edge context載正式遊戲與真Worker，測試存檔熟練度480、已投資1817、餘0；實點雷球群組／選項／確認後pick1 Lv.10→pick2 Lv.1，total1817／spent1808／available9，畫面剩9且tips分列480＋1337保留額度。Console error／warning及pageerror均0，非玩家真存檔；初始化神鑄開放提示於fixture預先標示已看過以避免干擾。截圖及JSON留本聊天visualizations/ult-switch，臨時服務與瀏覽器已關閉。
 - 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、js/save.js／player.js／forge.js、Worker指令／面板與scripts/sim/engine、Excel與字串匯出工具、package／Build工具及上述其他回歸、Claude的3D與字串差異。原加速齒輪配置／程式／測試及分段暫存均保留；本次無素材／素材庫變更，不建空素材Commit。
 - 交付：自我Review及必要驗證完成，無本次未完成實作；可供Review／合併，未合併或推送。Commit為本段所在「[Codex] fix: 終極進化零點重選並保留舊投資返還點數」，實際編號見回覆。已知限制為上述既有UI測試與未跑全庫／跨瀏覽器長戰；舊版程式會忽略新保留額度，須整合後重載新版主端及Worker，不要用舊分頁覆寫。下一步正常整合後重載遊戲驗收。
+
+
+## REMOVE-ZONE-STAGE-WAVES-20261027 — 移除冗餘波次配置表
+
+- Owner：Codex；Done，單一開發者。使用者授權刪除Zone_Stage_Waves Excel／CSV與查表接線，全部地圖關卡共用主參數表出怪間隔及戰場容量；固定1～9999為原適用範圍，不改Zones實際上限。
+- 允許：data／formula／combat相關波次程式、apply_params及csv_to_xlsx範例、原生波次與地圖回歸、必要index／bridge／Worker快取、LV／game_formula／地圖配置文件及本段；禁止其他玩法、掉落、存檔、Protocol、素材與使用者game_parameters.xlsx修改，不合併推送。
+- 驗收：刪表後參數乾跑與錨點、標量／候選間隔及容量擾動、近身波與遠方群／BOSS／推關、正式Worker回歸、Build與diff，完成後獨立Commit。
+- 完成16檔：刪除config/Excel/Zone_Stage_Waves.xlsx及同名CSV；移除data的波次區間與備援8隻常數、formula查表與兩種覆寫、apply_params整套波次CSV重建。fieldWaveIntervalFor直接讀主參數表a，fieldMaxLiveEnemiesFor直接取bfCellCount；combat呼叫端去除地圖／關卡參數，遠方群與BOSS原流程不變。主頁data108／formula74／combat96／bridge372，Worker入口與三份模擬匯入同步20261027-shared-field-waves；原Protocol／存檔／Zones及掉落資料不變。
+- 文件與回歸：更新既有wave-streaming／new-battle-zones回歸、LV總表／game_formula過時出怪公式／BATTLE_BIOMES配置清單、csv_to_xlsx範例及本段。新期望依使用者取消區間覆寫的需求，仍保留串流、數量硬上限、BOSS不串流、推關與切關延遲斷言，候選重複值權重／無效值保護及全十圖容量擾動涵蓋。
+- 已驗證：node --test --test-reporter=spec tests/wave-streaming.test.cjs tests/new-battle-zones.test.cjs tests/npc-roaming.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/multi-enemy.test.cjs tests/combat-pause.test.cjs，83/83。node tools/apply_params.cjs為579一致／0變更／0問題；唯讀HEAD原版580，差一個即本次移除的波次表錨點，沒有其他接線減少。--check-anchors擾動530數值後579錨點各命中一次。npm.cmd run build589檔通過，diff檢查通過。
+- 額外行為比對：正式Worker引擎、十圖各1／10／50／9999關、40個相同種子場景，每10秒檢查一次共120點；修改前HEAD與本次的完整G存檔及battle快照逐值雜湊完全一致，Worker ERROR為0。測試採記憶體新局，沒有讀寫玩家存檔；等價結果保存在本聊天visualizations/wave-table-removal/behavior-equivalence.json，不宣稱瀏覽器或真人長戰驗收。
+- 預檢：index與Claude未提交3D按鈕／importmap／renderer／ui／String快取不同區段，本次只動data／formula／combat／bridge；AI_TASKS在檔尾追加，對方在檔首插入。各以Claude HEAD作base／本次變更候選／對方工作檔作theirs跑merge-file，兩檔exit0、無語意相依，未整合或更動對方3D試作。波次工作簿當時開啟且Saved=True，經Excel原生API僅關閉這本再刪除；game_parameters開著的未儲存內容與使用者新增NPC.xlsx修改均保留，不套用、不提交。
+- 唯讀未改：共通規範／AGENTS／Workflow／prompts、套用參數BAT／config_tables讀表與戰場容量、遠方群／群組數量／BOSS／存檔／Worker協議、其他既有回歸與使用者Excel。沒有美術／VFX或素材庫變更，無素材庫Commit。
+- 全庫：node --test --test-reporter=tap "tests/*.test.cjs"完整執行14分45秒，4931項＝4340過／589失敗／2跳過。以修改前HEAD 14e7d8cb的本次來源唯讀覆映、按每個失敗名稱重跑，全589項均在原版重現，新增失敗0；沒有弱化既有斷言或擴修無關功能，不宣稱全庫全過。原始TAP與baseline-summary.json保留本聊天visualizations/wave-table-removal。
+- 同副本BOUNCE-DODGE聊天後續新增skills2、專項回歸及LV／任務表／index／Worker快取；本次以Git index分段暫存，保留其工作檔逐位元不變，提交只含本次區段（bridge372／原skills2快取），其較新工作檔快取維持373／skills2 364。以只覆映staged來源並隔離對方skills2的方式重跑上述83項，83/83通過；不納入對方進行中功能或文件。
+- 交付：本段所在「[Codex] refactor: 移除冗餘波次表並統一出怪參數來源」Commit，實際編號見回覆；無本次未完成項目，可供Review／合併，未合併或推送。已知限制為全庫589項既有失敗及未做瀏覽器／真人長戰，下一步正常整合後重載遊戲；使用者NPC與主參數表、其他聊天進行中修改保留未提交。

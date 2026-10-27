@@ -1313,24 +1313,6 @@ function isPurgatoryTowerFloor(floor) {
   return floor > TOWER_HELL_MAX_FLOOR && floor <= TOWER_PURGATORY_MAX_FLOOR;
 }
 
-/* 波次串流的兩個數字（表本體 → data.js ZONE_STAGE_WAVE_PROFILES，
-   由 config/Excel/Zone_Stage_Waves.xlsx 管理，每列 [最低關, 最高關, 間隔秒數, 同時上限]）。
-   共用同一支查表：找不到地圖或關卡區間就退回預設值。 */
-function fieldWaveProfileRow(stage, zone) {
-  var s = stage == null && typeof G !== 'undefined' && G && G.stage ? G.stage.current : stage;
-  s = Math.floor(Number(s) || 0);
-  var z = zone == null && typeof G !== 'undefined' && G && G.stage ? G.stage.zone : zone;
-  z = z || 'desert';
-  var rows = (typeof ZONE_STAGE_WAVE_PROFILES !== 'undefined') ? ZONE_STAGE_WAVE_PROFILES[z] : null;
-  if (!rows || !rows.length) return null;
-  for (var i = 0; i < rows.length; i++) {
-    var row = rows[i];
-    if (!row) continue;
-    if (s >= Number(row[0]) && s <= Number(row[1])) return row;
-  }
-  return null;
-}
-
 /* 出怪間隔可以是單一數值，也可以是一組候選值：參數表填 {0.75,1,1.5,2} 時，
    apply_params 會寫成陣列，這裡每次**等機率**抽一個。
    節奏不固定，玩家就無法背拍子，壓力來得比較自然。 */
@@ -1348,29 +1330,19 @@ function pickWaveInterval(value, fallback) {
   return (isFinite(v) && v > 0) ? v : fallback;
 }
 
-/* 這一關每隔幾秒補一波敵人。數值一律夾到 0.2 秒以上，避免表填 0 造成每個 tick 都出怪。
-   地圖表（Zone_Stage_Waves）填 0 就沿用參數表的 a。 */
-function fieldWaveIntervalFor(stage, zone) {
+/* 全部地圖與關卡共用參數表「出怪間隔」的 a，不另查關卡區間。
+   保留最短間隔保護，避免錯誤配置造成每個 tick 都出怪。 */
+function fieldWaveIntervalFor() {
   var fallback = 2;
-  var row = fieldWaveProfileRow(stage, zone);
-  var zoneVal = row ? Number(row[2]) : NaN;
-  if (isFinite(zoneVal) && zoneVal > 0) return Math.max(0.2, zoneVal);
   var base = (typeof FIELD_WAVE_SPAWN_INTERVAL !== 'undefined') ? FIELD_WAVE_SPAWN_INTERVAL : fallback;
   return Math.max(0.2, pickWaveInterval(base, fallback));
 }
 
-/* 場上同時最多站幾隻。這是難度的煞車：清不完的怪會一路堆積，要壓低壓力就調小它。
-   填 0（或留空、缺欄位）＝不額外限制，直接用棋盤格數。
-   ⚠️ 這個「0＝不限」很重要：把棋盤從 4×4 放大到 10×10 之後，若這一欄還留著改版前
-   的舊數字，敵人就會卡在那個數字上不再增加，而且完全看不出是被哪裡擋住。
-   任何情況下都不會超過棋盤格數——放不下的敵人本來就會在配格時被丟掉。 */
-function fieldMaxLiveEnemiesFor(stage, zone) {
+/* 全部地圖與關卡直接使用參數表「棋盤格數」的總容量，不另設波次數量上限。
+   遠方預置群與近身波次仍共用這份戰場總容量。 */
+function fieldMaxLiveEnemiesFor() {
   var cells = (typeof bfCellCount === 'function') ? bfCellCount() : 16;
-  var row = fieldWaveProfileRow(stage, zone);
-  var value = (row && row.length > 3) ? Number(row[3]) : NaN;
-  if (!isFinite(value) && typeof FIELD_MAX_LIVE_ENEMIES === 'number') value = FIELD_MAX_LIVE_ENEMIES;
-  if (!isFinite(value) || value <= 0) value = cells;   // 0／空白／壞值＝不額外限制
-  return Math.max(1, Math.min(Math.floor(value), cells));
+  return Math.max(1, Math.floor(cells));
 }
 
 /* 每波敵人數量的權重表挑選（表本體與參數表對應 → data.js §每波敵人數量）：

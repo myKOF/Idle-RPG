@@ -1504,26 +1504,6 @@ Object.keys(ZONE_STAGE_DROP_PROFILES).forEach(function (zoneKey) {
   });
 });
 
-/* ---- 野外出怪波次間隔（秒）：以地圖 × 關卡區間區分 ----
-   由 config/Excel/Zone_Stage_Waves.xlsx 管理（套用參數.bat 會轉成 CSV 再寫回這裡）。
-   每列 = [最低關卡, 最高關卡, 出怪間隔秒數, 同時上限隻數]。
-   語意：每隔這麼久就補一波敵人，**不等場上清空**——清不完就會愈積愈多，
-   撐不住被打死就退關（見 js/combat.js 的 fieldTick 波次串流）。
-   間隔越小＝補得越勤；同時上限＝場上最多站幾隻（棋盤只有 BF_COLS×BF_ROWS 格，
-   上限再高也不會超過格數）。上限是難度的煞車：沒有它，清不完的怪會一路堆到滿盤，
-   新角色在前幾關就會被打死到完全推不動。找不到對應區間時退回下面兩個預設值。 */
-var ZONE_STAGE_WAVE_PROFILES = {  desert: [[1,9999,0,0]],
-  Icefield: [[1,9999,0,0]],
-  mist_forest: [[1,9999,0,0]],
-  lava_mountain: [[1,9999,0,0]],
-  swamp: [[1,9999,0,0]],
-  thunder_peak: [[1,9999,0,0]],
-  undead_mountains: [[1,9999,0,0]],
-  god_battlefield: [[1,9999,0,0]],
-  god_chaos: [[1,9999,0,0]],
-  god_sanctuary: [[1,9999,0,0]]
-};
-
 function currentZoneDef() {
   return ZONES[(G.stage && G.stage.zone) || 'desert'] || ZONES.desert;
 }
@@ -1558,7 +1538,7 @@ var BF_OBSTACLE_MIN_M = 12;    // 地形障礙門檻（米）：野外擺件底�
 /* ---- 出怪間隔（參數表「表-固定參數／出怪間隔」一列兩個值）----
    a＝同一關內每一波的間隔、b＝切換到下一關（或換地圖）之後的間隔。
    兩者都是純定值：舊版的「× (1-移動速度%)」已取消，移動速度不再影響出怪節奏。
-   地圖／關卡要個別指定間隔時填 Zone_Stage_Waves 表，該表填 0 就沿用這裡的 a。 */
+   全部地圖與關卡共用；地圖實際關卡上限仍由 Zones 表決定。 */
 var FIELD_STAGE_SWITCH_DELAY = 3.0;
 
 /* 陣亡之後，場上的敵人定格幾秒才整批淡出（唯一會清場的情況）。 */
@@ -1574,9 +1554,8 @@ var FIELD_ENEMY_ENTER_STAGGER = 0.08; // 同一波每隻再錯開一點，不要
 
 /* 同一關內每一波的出怪間隔（秒）＝參數表「出怪間隔」的 a。
    可以是單一數值，也可以是一組候選值（參數表填 {0.75,1,2}）：是陣列就每波等機率抽一個。
-   地圖／關卡要個別指定時用 ZONE_STAGE_WAVE_PROFILES 覆蓋（該表填 0＝沿用這裡）。 */
+   全部地圖與關卡直接使用這份參數，不另設區間覆寫。 */
 var FIELD_WAVE_SPAWN_INTERVAL = [0.75, 1, 1.5, 1.75, 2, 2, 2, 3, 3, 3, 4, 5];
-var FIELD_MAX_LIVE_ENEMIES = 8;      // 場上同時存在的敵人上限預設值（同上表可逐地圖／關卡覆寫）
 var FIELD_ENEMY_DEATH_CLEAR_DELAY = 2.1; // 野外敵人死亡後保留戰鬥資訊時間（秒）；須長於 2 秒傷害飄字動畫
 var REVIVE_DELAY = 5.0;        // 死亡復活時間（秒）
 /* 擊殺目標後隔多久才對下一隻出手（秒）。沒有這個間隔的話，一刀清掉一隻就會
