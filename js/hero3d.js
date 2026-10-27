@@ -19,7 +19,7 @@
   'use strict';
 
   var STORE_KEY = 'idle-rpg.hero3d.v1';
-  var MODEL_URL = 'images/models/hero3d/sunbrand-knight.glb?v=20261027-grips8';   // 改了動畫就換版號，避免瀏覽器用到舊快取
+  var MODEL_URL = 'images/models/hero3d/sunbrand-knight.glb?v=20261027-grips9';   // 改了動畫就換版號，避免瀏覽器用到舊快取
   var GLTF_URL = 'js/vendor/three/loaders/GLTFLoader.js';
   var CLOTH_URL = 'images/models/hero3d/sunbrand-cloth.json';   // 布料頂點清單（披風、腰前布襠、關節處的藍布）：和 tools/meshy-pipeline/src/fix-grips.mjs 共用
 
@@ -35,9 +35,9 @@
     idle:    { clip: 'CombatIdle', loop: true },
     walk:    { clip: 'Run', loop: true },
     attack1: { clip: 'Attack1', loop: false, start: 0.62, hit: 0.92, end: 1.75 },
-    attack2: { clip: 'Attack2', loop: false, start: 0.37, hit: 0.67, end: 1.70 },   // end：收招已平順回到 start 的姿勢（見 tools/meshy-pipeline/src/fix-grips.mjs 的 CFG.Attack2.recover）
-    attack3: { clip: 'Attack1', loop: false, start: 0.62, hit: 0.92, end: 1.75 },
-    cast:    { clip: 'Attack2', loop: false, start: 0.37, hit: 0.67, end: 1.2 },
+    attack2: { clip: 'Attack2', loop: false, start: 0.37, hit: 1.12, end: 1.70 },   // end：收招已平順回到 start 的姿勢（見 tools/meshy-pipeline/src/fix-grips.mjs 的 CFG.Attack2.recover）
+    attack3: { clip: 'Attack2', loop: false, start: 1.90, hit: 2.30, end: 2.85 },   // 平砍：與 attack2 放在同一條 Attack2 時間軸（1.90 秒起），見 fix-grips.mjs 的 CFG.Attack2.meshy
+    cast:    { clip: 'Attack2', loop: false, start: 0.37, hit: 1.12, end: 1.25 },
     die:     { clip: 'Death', loop: false, hold: true },
     rise:    { clip: 'Death', loop: false, reverse: true }
   };

@@ -96,6 +96,10 @@
 
 - Attack2 斜劈改版（使用者背後視角示意圖）：高舉＝劍臂往人物左上約 45°，斜砍＝由左上越過頭上弧線揮向右下約 45° 結束（冠狀面軌跡，不再是前後向下劈）。刀刃全程順著砍向：劍局部 X（刃口，量自劍網格）固定取路徑切線垂直於劍身的分量，劍面法線垂直於砍向，中途不翻面、不會用刀背拍；手與劍維持參考幀的相對關係。腳本 fix-grips.mjs 的 path／sKeys／edge 規則；GLB 版號 grips7、hero3d.js?v=1.0.9。
 - Attack2 再改（使用者：敵人站在前方不是上方，要斬向肩到腰以下，且要跨步用全身力量）：用同一個模型在前方約 1.6 的站姿假人量測，劍刃穿過假人正面的位置由肩頸（y 1.42）→左肩胸（1.08）→腰（0.95）→腰下（0.78），不再掃到頭頂上方。路徑前伸分量加大（f0 1.0）、舉劍降到約 30°；新增 fixLunge：髖部前移 0.36、前腳跨出 0.6（途中抬腳）、後腳跟上，兩腿以兩段式 IK 接腳，收招由 recoverToStart 帶回起始姿勢（首尾仍相接）。前沖與劍伸出會超出原畫布，hero3d.js 的 SIZE／SPAN 同比例放大為 352／4.4（每公尺像素不變）。fix-grips.mjs 新增 tipTrack 供量劍尖軌跡。GLB 版號 grips8、hero3d.js?v=1.0.10。
+- Attack2 放棄手調軌跡，改用 Meshy 動作庫現成動作（使用者 2026-10-27 指示，點數上限 50，實際花 39 點）：以既有綁骨架任務（01a17bba-5676-7240-b5a2-d58ac6535c10）送動畫任務 01a17eb6-3406-74d4-a385-acd7ccaadeee（Charged Slash／Sword Judgment／Weapon Combo 2／Right-hand Sword Slash／Reaping Swing／Double Combo Attack，18 點）與 01a17eba-3f01-702b-a52c-b7a94ecbfe4e（Weapon Combo／Weapon Combo 1／Counterstrike／Dodge and Counter／Triple Combo Attack／Double Blade Spin／Charged Upward Slash，21 點）。這些都是「右手」動作，骨骼同名，直接套到鏡像成右手持劍的遊戲骨架。
+- 選用：Attack2（斜劈）＝Double Combo Attack 的第三下 1.74～2.82 秒（由右上高舉、斜劈過敵人肩到腰下），加 fixLunge 跨步半步（髖前移 0.3、前腳整步、後腳跟上、兩腿 IK）與 30° 瞄準修正（動作庫落點偏主角右側）；Attack3（新的平砍）＝Reaping Swing 1.5～2.1 秒（右往左橫掃身前），髖部下沉 0.2 壓低重心，放在同一條 Attack2 時間軸 1.90 秒起（CLIP_FOR.attack3，不新增 GLB 動畫）。普攻改為 attack1／attack2／attack3 三招混著出；施法借 attack2 的舉劍到劈下（0.37～1.25，會被加速到 0.5 秒內）。
+- 取樣工具：fix-grips.mjs --extract-meshy <Meshy 動畫.glb> <動作名> <起> <迄> <fps> <out.json> 產生 src/data/meshy-*.json；匯入時髖部位移平移成原地。驗證用「前方 1.6 站姿假人」量劍刃穿過假人正面的位置：Attack2 約由 肩（y 1.37，右側）→ 腰 1.0 → 腰下 0.66；Attack3 在 y 1.24～1.39 由右掃到正中。舊的手調軌跡（path／sKeys）保留為 meshy 沒設值時的備援。
+- 限制：Attack2／3 握劍是動作庫的自然握法，劍與前臂夾角最大約 55°（測試放寬到 60°）；Attack3 掃到正中後劍會往上（動作庫原本接著的舉劍），只取到 2.5 秒前；Attack1 仍是舊的雙手劈。SIZE／SPAN 放大為 352／4.4。GLB 版號 grips9、hero3d.js?v=1.0.11。
 ## SYNC-SHORTCUT-HOLD-20261027 — 修復捷徑中斷並保留Claude管線
 
 - Owner：Codex；Done（工具修復與必要驗證完成，實際同步結果見本輪報告）。使用者以1要求接續同步，並明確選擇將Claude本地Meshy提交8d1577c5保留、暫不併入develop。原develop bd0b982e已乾淨；這次卡在Antigravity的本機套用參數捷徑被skip-worktree隱藏，但遠端又更新該路徑，fast-forward拒絕覆寫。

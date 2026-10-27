@@ -49,3 +49,10 @@ node tools/meshy-pipeline/src/fix-grips.mjs <新匯出的.glb> images/models/her
 
 - Attack2 收招：t=1.46～1.70 全身平順回到起始姿勢（t=0.37），動作首尾相接；腳本 `CFG.Attack2.recover／startTime` 要和 `hero3d.js` 的 `CLIP_FOR.attack2.start／end` 一致（測試會檢查）。
 - 披風穿模在播放時處理（`hero3d.js` 的 `buildCape`，說明見該函式上方註解）：不是模型檔的內容，換模型要確認布料頂點清單 `sunbrand-cloth.json` 仍然對得上。
+
+### 改用 Meshy 動作庫的現成砍劈（2026-10-27）
+
+手調 Attack2 軌跡（上面第 6 點）無法讓使用者滿意，改成直接用 Meshy 動作庫的動作（骨骼同名、直接套用）：
+- Attack2（斜劈）：Double Combo Attack（action 92）1.74～2.82 秒；Attack3（平砍）：Reaping Swing（action 99）1.5～2.1 秒，兩段放在同一條 `Attack2` 動畫的 0.37 秒與 1.90 秒起（`CLIP_FOR.attack2／attack3`）。
+- 取樣檔在 `tools/meshy-pipeline/src/data/meshy-*.json`，匯入、原地化、瞄準修正、跨步／下沉、收招回起始姿勢都在 `fix-grips.mjs`（`CFG.Attack2.meshy`）。
+- 其餘候選（Charged Slash、Sword Judgment、Weapon Combo／1／2、Right-hand Sword Slash、Counterstrike、Dodge and Counter、Triple Combo Attack、Double Blade Spin、Charged Upward Slash）花了 39 點試過，未採用；任務編號見 `docs/AI_TASKS.md`。

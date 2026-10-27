@@ -9,7 +9,7 @@ const renderer = fs.readFileSync(require.resolve('../js/battle-renderer.js'), 'u
 const hero3d = fs.readFileSync(require.resolve('../js/hero3d.js'), 'utf8');
 
 test('攻擊動作只播有用的一段：start／hit／end，不整段照播', () => {
-  for (const name of ['attack1', 'attack2', 'cast']) {
+  for (const name of ['attack1', 'attack2', 'attack3', 'cast']) {
     const m = hero3d.match(new RegExp(name + ':\\s*\\{[^}]*\\}'));
     assert.ok(m, name + ' 不在 CLIP_FOR');
     assert.match(m[0], /start: [\d.]+, hit: [\d.]+, end: [\d.]+/, name + ' 少了 start／hit／end');
@@ -18,8 +18,8 @@ test('攻擊動作只播有用的一段：start／hit／end，不整段照播', 
   assert.match(hero3d, /currentCfg\.end && !currentCfg\.reverse && current\.time >= currentCfg\.end\) fireFinished\(\)/);
 });
 
-test('3D 普攻只用兩個動作、輪流出（不能再三選一讓其中一個佔 2/3）', () => {
-  assert.match(renderer, /var HERO3D_ATTACKS = \['attack1', 'attack2'\]/);
+test('3D 普攻三個動作（雙手劈／斜劈／平砍）混著出，不連續兩下同一招', () => {
+  assert.match(renderer, /var HERO3D_ATTACKS = \['attack1', 'attack2', 'attack3'\]/);
   assert.match(renderer, /\(p\.body && p\.body\.hero3d\) \? HERO3D_ATTACKS : playerAttackAnimNames\(sheet\)/);
 });
 
@@ -77,7 +77,8 @@ test('3D 模型修正仍在：盔甲剛性、披風只小幅伸縮、手腕不�
   assert.ok(r.attack1OffHandMaxDist <= 0.3, '副手離劍太遠：' + r.attack1OffHandMaxDist + '（未修的原動作約 0.78）');
   /* 動作首尾相接：Attack2 收招結束的姿勢要回到起始姿勢（使用者要求；不要停在斜劈結束的姿勢多放幾幀） */
   assert.ok(r.attack2LoopMaxDeg <= 3, 'Attack2 最後一幀沒有回到第一幀：全身骨骼最大差 ' + r.attack2LoopMaxDeg.toFixed(1) + '°');
-  assert.ok(r.attack2BladeMaxAngleDeg <= 5, '劍與前臂不成一直線：' + r.attack2BladeMaxAngleDeg + '°（未修的原動作約 83°）');
+  /* Attack2 改用 Meshy 動作庫的動作後，握劍是動作庫自己的自然握法（劈砍時劍與前臂有夾角），上限放寬到 60° */
+  assert.ok(r.attack2BladeMaxAngleDeg <= 60, '劍與前臂夾角過大：' + r.attack2BladeMaxAngleDeg + '°');
 });
 
 test('Attack2 的播放區間與腳本的收招設定一致（end＝收招結束、start＝起始姿勢）', () => {
