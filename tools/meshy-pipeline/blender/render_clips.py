@@ -25,6 +25,12 @@ for o in list(bpy.data.objects):
     if o.type == "MESH" and len(o.vertex_groups) == 0:
         bpy.data.objects.remove(o, do_unlink=True)
 
+if "--fix" in argv:
+    sys.path.insert(0, __import__("os").path.dirname(__file__))
+    import skin_fix
+    skinned = next(o for o in bpy.data.objects if o.type == "MESH" and len(o.vertex_groups) > 0)
+    print("SKIN_FIX", skin_fix.apply(skinned, arm))
+
 scene = bpy.context.scene
 scene.render.engine = "BLENDER_WORKBENCH"
 scene.render.resolution_x = scene.render.resolution_y = size
