@@ -77,7 +77,7 @@ test('終極首選／升級／批次都花點，重選返還舊點再花1點，�
   assert.equal(e.cmd('skill2.delete', { group: 'thrust', tier: 7 }).result, true);
   assert.equal(c.skills2PointView().available, 5);
 });
-test('超支舊檔保留投資，降級與GM開門不直接提供新點數；重置精確返點', () => {
+test('GM超額投資降級必返1點、可再投入，重置返還全部已移除投資', () => {
   const { e, c, p } = setup(1);
   p.skills2 = { levels: { thrust: Array(7).fill(10) }, ult: { thrust: { pick: 0, lv: 10 } } };
   c.GM_TEST.skillUnlock = true;
@@ -85,10 +85,12 @@ test('超支舊檔保留投資，降級與GM開門不直接提供新點數；重
   const gold = p.gold;
   assert.equal(e.cmd('skill2.downgrade', { group: 'thrust', tier: 6 }).result, null);
   assert.equal(c.skills2PointView().spent, 78);
-  assert.match(e.cmd('skill2.learn', { group: 'thrust', tier: 6 }).result, /技能點不足/);
+  assert.equal(c.skills2PointView().available, 1);
+  const cost = c.skills2UpgradeCost('thrust', 6, 9);
+  assert.equal(e.cmd('skill2.learn', { group: 'thrust', tier: 6 }).result, null);
   assert.equal(e.cmd('skill2.delete', { group: 'thrust', tier: 0 }).result, true);
-  assert.deepEqual(plain(c.skills2PointView()), { total: 1, spent: 0, available: 1 });
-  assert.equal(p.gold, gold);
+  assert.deepEqual(plain(c.skills2PointView()), { total: 79, spent: 0, available: 79 });
+  assert.equal(p.gold, gold - cost);
 });
 
 for (const mastery of [79, 480]) {
@@ -143,4 +145,78 @@ test('超支重選的失敗請求不扣金幣、不發保留額度，也不更�
     assert.equal(p.gold, gold);
     assert.equal(p.skills2.legacyPointCredit, undefined);
   }
+});
+
+function gmFullSkills(mastery = 480) {
+  const state = setup(mastery), { c } = state;
+  assert.equal(c.executeGMCommand('skill2max all').ok, true);
+  assert.equal(c.executeGMCommand('sgult all 1 max').ok, true);
+  assert.equal(c.skills2PointView().spent, 1817);
+  assert.equal(c.skills2PointView().available, 0);
+  return state;
+}
+
+for (const [tier, refund] of [79, 70, 60, 50, 40, 30, 20, 10].entries()) {
+  test(`GM全技能超過480點：重置第${tier + 1}階完整返${refund}點、重複重置不增發並可重讀`, () => {
+    const { e, c, p } = gmFullSkills();
+    const gold = p.gold, other = plain(p.skills2.levels.thrust);
+    assert.equal(e.cmd('skill2.delete', { group: 'firepillar', tier }).result, true);
+    assert.deepEqual(plain(e.panel('skills').skills2.points), { total: 1817, spent: 1817 - refund, available: refund });
+    assert.equal(p.skills2.legacyPointCredit, 1337);
+    assert.deepEqual(plain(p.skills2.levels.thrust), other);
+    assert.equal(p.gold, gold);
+    const after = plain(p.skills2);
+    assert.equal(e.cmd('skill2.delete', { group: 'firepillar', tier }).result, true);
+    assert.deepEqual(plain(p.skills2), after);
+    assert.equal(c.skills2PointView().available, refund);
+    const reloaded = createEngine({ seed: 27 }).boot(JSON.parse(e.saveJson()));
+    assert.deepEqual(plain(reloaded.panel('skills').skills2.points), plain(c.skills2PointView()));
+  });
+}
+
+for (const tier of [0, 6, 7]) {
+  test(`GM超額第${tier + 1}階降級精確返1點，升回僅消耗該1點`, () => {
+    const { e, c, p } = gmFullSkills();
+    assert.equal(e.cmd('skill2.downgrade', { group: 'firepillar', tier }).result, null);
+    assert.equal(c.skills2PointView().available, 1);
+    assert.equal(c.skills2PointView().total, 1817);
+    const credit = p.skills2.legacyPointCredit;
+    assert.equal(e.cmd('skill2.learn', { group: 'firepillar', tier }).result, null);
+    assert.equal(c.skills2PointView().available, 0);
+    assert.equal(p.skills2.legacyPointCredit, credit);
+  });
+}
+
+test('GM超額全重置可退超過480；正常角色退點仍封頂480，熟練度不因GM變動', () => {
+  const { e, c, p } = gmFullSkills(0);
+  for (const group of Object.keys(c.SKILLS2)) {
+    assert.equal(e.cmd('skill2.delete', { group, tier: 0 }).result, true);
+  }
+  assert.deepEqual(plain(c.skills2PointView()), { total: 1817, spent: 0, available: 1817 });
+  assert.equal(p.skillMastery.level, 0);
+  assert.equal(p.skills2.legacyPointCredit, 1817);
+  assert.equal(e.cmd('skill2.max', { group: 'firepillar', tier: 0 }).result, true);
+  assert.equal(c.skills2PointView().available, 1808);
+  const normal = setup();
+  assert.equal(normal.e.cmd('skill2.max', { group: 'firepillar', tier: 0 }).result, true);
+  assert.equal(normal.e.cmd('skill2.delete', { group: 'firepillar', tier: 0 }).result, true);
+  assert.deepEqual(plain(normal.c.skills2PointView()), { total: 480, spent: 0, available: 480 });
+  assert.equal(normal.p.skills2.legacyPointCredit, undefined);
+});
+
+test('無效／無投資的重置、拒絕降級及讀面板不新增GM額度', () => {
+  const { e, c, p } = gmFullSkills();
+  p.skills2.levels.firepillar = [1, 0, 0, 0, 0, 0, 0];
+  delete p.skills2.ult.firepillar;
+  const before = plain(p.skills2), gold = p.gold;
+  e.panel('skills'); e.panel('skills');
+  assert.equal(e.cmd('skill2.delete', { group: 'firepillar', tier: 0 }).result, true);
+  assert.equal(e.cmd('skill2.delete', { group: 'firepillar', tier: 7 }).result, true);
+  assert.equal(e.cmd('skill2.downgrade', { group: 'firepillar', tier: 0 }).result, c.STR(695));
+  assert.ok(e.cmd('skill2.delete', { group: 'missing', tier: 0 }).result.err);
+  assert.equal(e.cmd('skill2.delete', { group: 'firepillar', tier: 8 }).ok, false);
+  assert.deepEqual(plain(p.skills2), before);
+  assert.equal(p.gold, gold);
+  assert.equal(c.skills2PointView().available, 0);
+  assert.equal(p.skills2.legacyPointCredit, undefined);
 });

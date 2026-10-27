@@ -22,7 +22,7 @@ var _stringDataVersion = ((typeof self !== 'undefined' && self.location && /[?&]
 importScripts(
   '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../data.js?v=20261027-shared-field-waves', '../runeword_data.js?v=20261023-str-char', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261027-legendary-global', '../formula.js?v=20261027-shared-field-waves', '../battle-terrain.js?v=20261022-lava-terrain-develop-merge', '../battlefield.js?v=20261022-lava-terrain-develop-merge', '../stats.js?v=20261023-str-common',
   '../item.js?v=20261027-speed-gear-base', '../gem_resonance.js?v=20261026-system-unlock','../runeword.js?v=20261023-str-common',
-  '../skills.js?v=20261023-str-skill', '../skills2.js?v=20261027-bounce-dodge', '../elite_data.js?v=20261021-chain-hover', '../talents.js?v=20261026-system-unlock',
+  '../skills.js?v=20261023-str-skill', '../skills2.js?v=20261027-gm-skill-refund', '../elite_data.js?v=20261021-chain-hover', '../talents.js?v=20261026-system-unlock',
   '../player.js?v=20261027-legendary-global', '../special_rules.js?v=20261023-str-common',
   '../combat.js?v=20261027-shared-field-waves', '../elite.js?v=20261024-npc-skill-limit-sync', '../elite_boss.js?v=20261023-str-battle', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261027-legendary-global', '../tower.js?v=20261023-str-common',
   '../factory.js?v=20261027-speed-gear-base', '../newforge.js?v=20261027-speed-gear-base', '../forge.js?v=20261023-str-common', '../save.js?v=20261023-str-common',
@@ -1627,6 +1627,7 @@ var COMMAND_IMPL = {
     var tier = Math.floor(Number(a.tier));
     /* 超神進化那一格：刪除＝整個清掉選擇（等級歸零、可重新三選一，不退金幣）。 */
     if (typeof sgIsUltSlot === 'function' && sgIsUltSlot(a.group, tier)) {
+      if (sgUltPickOf(G.player.skills2 && G.player.skills2.ult, a.group)) skills2PreservePointCredit();
       if (G.player.skills2 && G.player.skills2.ult) delete G.player.skills2.ult[a.group];
       /* 超神進化的異動會開關【修羅亂舞】，進而改變屬性聚合；
          收尾一律走 js/skills2.js 的 sgAfterSkillChange，與面板端的三支指令保持一致。 */
@@ -1639,6 +1640,10 @@ var COMMAND_IMPL = {
     if (!lvs) return true;
     lvs = skills2StoredLevels(a.group);
     var minLv = (tier === 0 ? 1 : 0);
+    var removedPoints = lvs[tier] - minLv;
+    for (var refundTier = tier + 1; refundTier < lvs.length; refundTier++) removedPoints += lvs[refundTier];
+    var refundUlt = sgUltPickOf(G.player.skills2 && G.player.skills2.ult, a.group);
+    if (removedPoints > 0 || refundUlt) skills2PreservePointCredit();
     for (var i = tier + 1; i < lvs.length; i++) {
       lvs[i] = 0;
     }

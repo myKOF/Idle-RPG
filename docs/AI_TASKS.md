@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## SKILL-RESET-GM-POINTS-20261027 — GM超額技能降級與重置完整返點
+
+- Owner：Codex；Done，單一開發者。使用者回報火龍捲重置為Lv.1但剩餘仍0，明確補充GM技能允許超過正常480點，降級或重置一律退回實際移除的點數。
+- 前置：現有legacyPointCredit／終極重選保留額度及正式技能指令。允許skills2.js、Worker reset、bridge／index必要快取、skill2-points／reset回歸、LV／WORKER_PROTOCOL文件與本段；禁止擅改正常熟練度上限、技能平衡／配置／String／素材、玩家真存檔或其他副本，不合併推送。
+- 重現：熟練度480、GM全23組滿級投入1817點，重置firepillar第1階後spent1738但available仍0，79點被既有超額抵銷。既有重選路徑已保存超額，降級／重置尚未共用。
+- 設計：僅在驗證通過且實際移除投資前保留尚未涵蓋的超額，所有返點入口共用同一helper；正常額度仍由熟練度封頂480，GM／舊有超額獨立持久化；面板不發點、失敗與重複空重置不變動額度。
+- 驗收：全滿GM普通7階／終極重置精確79／70…20／10點、普通／終極降級各返1、反覆操作不重複發點、零熟練度GM與正常480、返點再投入／重讀／其他群組及金幣保留；專項回歸／Build／diff後獨立Commit，交使用者Review／整合。全部目標預檢無其他來源；無素材庫變更。
+- 完成8檔：skills2新增共用skills2PreservePointCredit，終極重選與普通／終極降級、Worker兩種重置於成功退點前使用；空重置不保存額度。沿既有legacyPointCredit與points.total／spent／available，不新增存檔欄位或協議版本；同步skills2主頁365／bridge374與Worker入口及skills2匯入20261027-gm-skill-refund。新增／調整skill2-points回歸，LV／協議補修說明與本紀錄同步，無UI／String／配置或素材變更。
+- 驗證：node --test --test-reporter=spec tests/skill2-points.test.cjs tests/skill2-reset.test.cjs tests/skill2-ult-switch.test.cjs tests/skill2-tower-unlock.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/skill-mastery.test.cjs tests/string-table.test.cjs，92/92通過。新增案例透過正式executeGMCommand的skill2max all及sgult all 1 max建立1817點，七普通階與終極8種重置、0／6／7三種降級、退款再升級、重讀、全23組重置可用1817點、正常角色退回480、重複／無效／無投資及純投影不增發均通過。npm.cmd run build 593檔及git diff --check通過；沒有降低既有斷言，舊超額不返點測試依使用者本次明確要求改驗返還及重新投入金幣扣費。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、gm_exec的兩種直設入口、save遷移、skills熟練度、UI保留額度tips／String資料、既有reset／ult-switch／tower／Worker／mastery回歸。計算與skills面板使用同一權威points；不修改G的投影及失敗原子性已釘住。沒有玩家真存檔／瀏覽器長戰驗收，純返點邏輯未另開UI；無素材或素材庫Commit。
+- 已知限制：舊版已成功清掉技能卻未保留的退款沒有歷史紀錄，不能由現存等級精確反推；本次不猜測或直接修改玩家存檔。本修正保證新版後續所有有效降級／重置返點，舊檔現有GM超額亦適用。
+- 交付：本段所在「[Codex] fix: GM超額技能降級與重置完整返還點數」，實際編號見回覆。無本次程式未完成項，可供Review／合併；未合併推送。下一步正常整合並重載新版主端與Worker，再以GM技能執行重置／降級驗收；若要補回先前已遺失的退款，需要重置前存檔或確定的原投資等級。
+
 ## SYNC-NATIVE-EXCEL-20261027 — 自動合併的原生Excel交接
 
 - Owner：Codex；Done。使用者反覆回報自動同步Excel 0x80070520，本聊天接續徹底修復同步之授權。當次遊戲衝突已用9081c60c保留雙方完成，現在於乾淨ai/codex修復工具；僅resolve-sync-conflicts、窄範圍原生Excel交接helper、相關真Git／Excel回歸與流程／本段，禁止放寬CLI沙箱、任意主機命令、丟棄修改或動3D hold／main。
