@@ -886,8 +886,9 @@ var BattleRenderer = (function () {
      沒有輪廓貼圖（產生失敗或 ?outline=0）就回 null，其餘流程照舊。 */
   function makeOutlineSprite(sheetName, body) {
     var sheet = S.sheets[sheetName];
-    if (!sheet || !sheet.outline || !body) return null;
-    if (body.hero3d) return null;        // 3D 身體沒有逐幀的輪廓圖，不畫
+    if (!body) return null;
+    /* 3D 身體沒有逐幀的輪廓圖，輪廓貼圖由 Hero3D 每幀即時算（見 hero3d.js makeBody）；2D 則查素材的輪廓圖集 */
+    if (!body.hero3d && (!sheet || !sheet.outline)) return null;
     if (!S.layers || !S.layers.outline || outlineDisabledByQuery()) return null;
     var sp = new PIXI.Sprite();
     sp.anchor.copyFrom(body.anchor);
@@ -915,7 +916,8 @@ var BattleRenderer = (function () {
     var body = ent.body, wrap = ent.bodyWrap, root = ent.root;
     if (!body || body.destroyed || !wrap || !root || root.destroyed) { sp.visible = false; return; }
     var sheet = S.sheets[ent.sheetName];
-    var tex = (sheet && sheet.outline) ? sheet.outline.map.get(body.texture) : null;
+    var tex = body.hero3d ? body.hero3dOutlineTex
+      : ((sheet && sheet.outline) ? sheet.outline.map.get(body.texture) : null);
     if (!tex) { sp.visible = false; return; }   // 查不到對應幀就寧可不畫，也不要畫錯姿勢
     var pt = _outlinePt;
     pt.x = body.x * wrap.scale.x;
