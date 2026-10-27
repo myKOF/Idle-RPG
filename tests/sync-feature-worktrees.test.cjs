@@ -36,6 +36,86 @@ function fixture(owners=['codex']) {
     fs.rmSync(root,{recursive:true,force:true,maxRetries:5,retryDelay:200});
   }};
 }
+function publisher(f,branch='ai/claude-kpj271',file='cloud.txt') {
+  const repo=path.join(f.root,'publisher-'+file.replace(/\W/g,''));
+  git(f.root,'clone','--no-checkout',f.remote,repo);
+  git(repo,'config','user.name','Claude');git(repo,'config','user.email','cloud@example.invalid');
+  git(repo,'switch','--detach',f.initial);
+  fs.writeFileSync(path.join(repo,file),'latest '+branch);git(repo,'add','.');git(repo,'commit','-m','[Claude] fix: cloud task');
+  const sha=git(repo,'rev-parse','HEAD');git(repo,'push','origin','HEAD:refs/heads/'+branch);
+  return {repo,sha,branch,file};
+}
+test('fetch後發現未簽出雲端及任意名稱AI來源，整合原始提交且不回寫來源分支',{skip:!windows},()=>{
+  const f=fixture([]);try{
+    const cloud=publisher(f),local=publisher(f,'work/animation-fix','local-task.txt');
+    const main=publisher(f,'main','main-only.txt');
+    git(f.repo,'fetch',local.repo,'HEAD:refs/heads/'+local.branch);
+    assert.notEqual(spawnSync('git',['-C',f.repo,'show-ref','--verify','refs/remotes/origin/'+cloud.branch],{stdio:'ignore'}).status,0);
+    const r=f.run();assert.equal(r.status,0,f.log(r));
+    const head=git(f.repo,'rev-parse','HEAD');
+    for(const p of [cloud,local]){
+      assert.equal(git(f.repo,'merge-base','--is-ancestor',p.sha,head),'');
+      assert.equal(fs.readFileSync(path.join(f.repo,p.file),'utf8'),'latest '+p.branch);
+      assert.equal(git(f.remote,'rev-parse',p.branch),p.sha);
+    }
+    assert.equal(git(f.repo,'rev-parse',local.branch),local.sha);
+    assert.ok(!fs.existsSync(path.join(f.repo,main.file)));
+    assert.equal(git(f.remote,'rev-parse','main'),main.sha);
+    for(const b of ['develop','ai/codex','ai/claude','ai/antigravity']){
+      assert.equal(git(f.repo,'rev-parse',b),head);assert.equal(git(f.remote,'rev-parse',b),head);
+    }
+    assert.equal((git(f.repo,'worktree','list','--porcelain').match(/^worktree /gm)||[]).length,4);
+    const again=f.run();assert.equal(again.status,0,f.log(again));assert.equal(git(f.repo,'rev-parse','HEAD'),head);
+  }finally{f.clean();}
+});
+test('來源預檢與報告顯示未簽出分支，hold保留雲端來源直到解除',{skip:!windows},()=>{
+  const f=fixture([]);try{
+    const cloud=publisher(f);git(f.repo,'fetch','origin');
+    const refs=git(f.repo,'show-ref');
+    const preview=spawnSync('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',path.join(f.repo,'tools/invoke-sync-with-report.ps1'),'-RepositoryPath',f.repo,'-ValidateOnly','-SkipAssetLibrary'],{encoding:'utf8',timeout:30000});
+    assert.equal(preview.status,0,f.log(preview));assert.equal(git(f.repo,'show-ref'),refs);
+    const report=fs.readFileSync(path.join(f.repo,'logs/sync-ai-worktrees/latest.md'),'utf8');
+    assert.match(report,/refs\/remotes\/origin\/ai\/claude-kpj271/);assert.match(report,/尚未包含於 develop/);
+    assert.match(f.log(preview),/待整合來源／本機參照快照/);
+    git(f.repo,'config','branch.ai/claude.codexSyncHold','true');
+    const held=f.run();assert.equal(held.status,0,f.log(held));assert.ok(!fs.existsSync(path.join(f.repo,cloud.file)));
+    git(f.repo,'config','branch.ai/claude.codexSyncHold','false');
+    git(f.repo,'config','branch.'+cloud.branch+'.codexSyncHold','true');
+    const exact=f.run();assert.equal(exact.status,0,f.log(exact));assert.ok(!fs.existsSync(path.join(f.repo,cloud.file)));
+    git(f.repo,'config','branch.'+cloud.branch+'.codexSyncHold','false');
+    const released=f.run();assert.equal(released.status,0,f.log(released));assert.equal(git(f.repo,'merge-base','--is-ancestor',cloud.sha,'HEAD'),'');
+  }finally{f.clean();}
+});
+test('任意名稱已簽出AI來源有未提交內容時保留現場並停止',{skip:!windows},()=>{
+  const f=fixture([]);try{
+    const p=publisher(f,'work/latest-game');git(f.repo,'fetch',p.repo,'HEAD:refs/heads/'+p.branch);
+    const dir=path.join(f.root,'arbitrary');git(f.repo,'worktree','add',dir,p.branch);fs.writeFileSync(path.join(dir,'draft.txt'),'keep');
+    const r=f.run();assert.notEqual(r.status,0);assert.match(f.log(r),/未提交變更/);
+    assert.equal(fs.readFileSync(path.join(dir,'draft.txt'),'utf8'),'keep');assert.equal(git(f.remote,'rev-parse','develop'),f.initial);
+  }finally{f.clean();}
+});
+test('未簽出任務來源的衝突可識別並保留原MERGE_HEAD供下次接續',{skip:!windows},()=>{
+  const f=fixture([]);try{
+    const cloud=publisher(f);fs.writeFileSync(path.join(cloud.repo,'base.txt'),'cloud base\n');git(cloud.repo,'add','.');git(cloud.repo,'commit','-m','[Claude] fix: base');git(cloud.repo,'push','origin','HEAD:refs/heads/'+cloud.branch);
+    const incoming=git(cloud.repo,'rev-parse','HEAD');
+    fs.writeFileSync(path.join(f.repo,'base.txt'),'local base\n');git(f.repo,'add','.');git(f.repo,'commit','-m','[Codex] fix: local base');
+    const first=f.run();assert.notEqual(first.status,0);assert.match(f.log(first),/NoAutoResolve/);
+    assert.equal(git(f.repo,'rev-parse','MERGE_HEAD'),incoming);const head=git(f.repo,'rev-parse','HEAD');
+    const resumed=f.run();assert.notEqual(resumed.status,0);assert.match(f.log(resumed),/自動接續 develop 尚未完成的任務來源合併/);assert.doesNotMatch(f.log(resumed),/不是已知 AI 分支/);
+    assert.equal(git(f.repo,'rev-parse','MERGE_HEAD'),incoming);assert.equal(git(f.repo,'rev-parse','HEAD'),head);assert.equal(git(f.remote,'rev-parse','develop'),f.initial);
+  }finally{f.clean();}
+});
+test('整合期間雲端來源前進時不推送不宣稱完成，重跑納入最新提交',{skip:!windows},()=>{
+  const f=fixture([]);try{
+    const cloud=publisher(f),hook=path.join(f.root,'advance.cjs');
+    fs.writeFileSync(hook,`const fs=require('node:fs'),{execFileSync}=require('node:child_process');const repo=${JSON.stringify(cloud.repo)};const git=(...a)=>execFileSync('git',['-C',repo,...a]);const once=${JSON.stringify(path.join(f.root,'advanced'))};if(!fs.existsSync(once)){fs.writeFileSync(once,'1');fs.writeFileSync(${JSON.stringify(path.join(cloud.repo,'cloud-new.txt'))},'newest');git('add','.');git('commit','-m','[Claude] fix: newer cloud');git('push','origin','HEAD:refs/heads/${cloud.branch}');}`);
+    const hooks=path.join(f.repo,'.git','hooks');fs.writeFileSync(path.join(hooks,'post-merge'),'#!/bin/sh\n"'+process.execPath.replace(/\\/g,'/')+'" "'+hook.replace(/\\/g,'/')+'"\n');
+    const r=f.run();assert.notEqual(r.status,0,f.log(r));assert.match(f.log(r),/整合期間變更/);
+    assert.equal(git(f.remote,'rev-parse','develop'),f.initial);assert.equal(git(f.repo,'merge-base','--is-ancestor',cloud.sha,'HEAD'),'');
+    const again=f.run();assert.equal(again.status,0,f.log(again));assert.equal(fs.readFileSync(path.join(f.repo,'cloud-new.txt'),'utf8'),'newest');
+    assert.equal(git(f.repo,'merge-base','--is-ancestor',git(cloud.repo,'rev-parse','HEAD'),'HEAD'),'');
+  }finally{f.clean();}
+});
 test('專用分支預檢不建立副本、不切換分支、不推送',{skip:!windows},()=>{
   const f=fixture();try{
     const r=f.run(['-ValidateOnly']);assert.equal(r.status,0,f.log(r));

@@ -1,5 +1,11 @@
 # AI_TASKS.md
 
+## SYNC-ALL-AI-SOURCES-20261028 — 主線完整整合與雲端來源補掃
+
+- Owner：Codex；In Progress。使用者指出bf37b93未被最新同步包含，並明確定義「所有AI同步到最新」是完整整合所有可同步AI成果至主線，不受來源分支名稱或是否有worktree限制；本聊天授權保留各方修改、修復同步工具並完成正常整合／推送，既有hold與main發布限制維持。
+- 查證：三固定分支／develop均c092d66f，但origin/ai/claude-kpj271為其後代bf37b93b；舊工具僅掃固定三分支及已簽出role/*專用分支，完全漏掉未簽出雲端來源。已fetch核對並於乾淨ai/codex安全ff至bf37b93b，先保留其原提交與六檔更新；其餘AI副本不切換。範圍：同步來源探索／快照／pending merge接續、報告、真Git回歸、使用者規範／流程／本段與必要Renderer快取／LV，素材庫只同步必要SOURCE來源紀錄。
+- 設計：掃描所有本地／指定遠端branch refs，辨識ai/*、role/*及任意名稱下有AI提交者／前綴的未整合成果，main／develop／明確hold排除；已簽出AI來源仍要求乾淨並走原固定同步，未簽出來源只讀／以固定SHA整合，不建立副本或回寫任務分支。fetch後再掃且推送前驗來源快照／待整合餘額，不能只比較三固定HEAD。補bf37b93漏升的hero3d／battle-renderer主頁快取，完整保留3D五項修正與原主線功能。
+
 ## SKILL-RESET-GM-POINTS-20261027 — GM超額技能降級與重置完整返點
 
 - Owner：Codex；Done，單一開發者。使用者回報火龍捲重置為Lv.1但剩餘仍0，明確補充GM技能允許超過正常480點，降級或重置一律退回實際移除的點數。

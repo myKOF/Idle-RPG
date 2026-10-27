@@ -252,6 +252,51 @@ function Register-AiTasksMergeDriver {
         'config', '--local', 'merge.ai-tasks.driver', $wanted)
 }
 
+function Test-SyncBranchHeld {
+    param([string]$Repository, [string]$Branch, [string]$Owner)
+    $hold = Get-GitTextSoft -Worktree $Repository -GitArguments @('config', '--bool', '--get', "branch.$Branch.codexSyncHold")
+    if ($hold -eq 'true') { return $true }
+    if ($Branch -in @('codex/knight3d-prototype', 'codex/knight-makehuman-motion', 'codex/knight-makehuman') -and $hold -ne 'false') { return $true }
+    if (-not $Owner -and $Branch -match '^(?:ai/)?(codex|claude|antigravity)(?:[-/]|$)') { $Owner = $Matches[1] }
+    if ($Owner -and $Branch -ne "ai/$Owner") {
+        $parentHold = Get-GitTextSoft -Worktree $Repository -GitArguments @('config', '--bool', '--get', "branch.ai/$Owner.codexSyncHold")
+        if ($parentHold -eq 'true') { return $true }
+    }
+    return $false
+}
+
+function Get-SyncIntegrationRefs {
+    param([string]$Repository, [string[]]$CoveredBranches)
+    $listing = Get-GitText -Worktree $Repository -GitArguments @('for-each-ref', '--format=%(refname)%09%(objectname)', 'refs/heads/', "refs/remotes/$Remote/")
+    $remotePrefix = "refs/remotes/$Remote/"
+    foreach ($line in ($listing -split "`n")) {
+        if (-not $line) { continue }
+        $parts = $line -split "`t", 2; $ref = $parts[0]; $sha = $parts[1]
+        $branch = if ($ref.StartsWith('refs/heads/')) { $ref.Substring(11) } else { $ref.Substring($remotePrefix.Length) }
+        if ($branch -in @('HEAD', 'main', $developBranch) -or $CoveredBranches -contains $branch) { continue }
+        if (Test-SyncBranchHeld -Repository $Repository -Branch $branch) { continue }
+        $ancestor = Invoke-GitSoft -Worktree $Repository -GitArguments @('merge-base', '--is-ancestor', $sha, $developBranch)
+        if ($ancestor -eq 0) { continue }
+        if ($ancestor -ne 1) { throw "無法驗證來源 $ref 的主線關係。" }
+        $owner = ''
+        $known = $branch -match '^(ai/|(?:codex|claude|antigravity)/)'
+        if ($branch -match '^(?:ai/)?(codex|claude|antigravity)(?:[-/]|$)') { $owner = $Matches[1] }
+        if (-not $owner) {
+            # Names are not the authority: also recognize AI-authored commits on
+            # arbitrary task branches. The project requires these author prefixes.
+            $history = Get-GitText -Worktree $Repository -GitArguments @('log', '--format=%s%x09%an', "${developBranch}..$sha")
+            if ($history -match '(?im)(?:^\[(Codex|Claude|Antigravity)\]|\t(Codex|Claude|Antigravity)$)') {
+                $owner = if ($Matches.ContainsKey(1) -and $Matches[1]) { $Matches[1].ToLowerInvariant() } else { $Matches[2].ToLowerInvariant() }
+                $known = $true
+            }
+        }
+        if (-not $known -or (Test-SyncBranchHeld -Repository $Repository -Branch $branch -Owner $owner)) { continue }
+        $active = Get-WorktreeMap -AnyWorktree $Repository
+        if ($active.ContainsKey($branch)) { Assert-CleanWorktree -Worktree $active[$branch] -ExpectedBranch $branch }
+        [pscustomobject]@{ Ref = $ref; Branch = $branch; Sha = $sha; Owner = $owner }
+    }
+}
+
 function Get-WorktreeMap {
     param([string]$AnyWorktree)
 
@@ -269,9 +314,7 @@ function Get-WorktreeMap {
             if ($path -and $branch) {
                 # User holds the knight 3D prototype until explicit final OK.
                 # Exclude it before feature discovery: no sync, push or merge.
-                $held3D = $branch -in @('codex/knight3d-prototype', 'codex/knight-makehuman-motion', 'codex/knight-makehuman')
-                $hold = Get-GitTextSoft -Worktree $AnyWorktree -GitArguments @('config', '--bool', '--get', "branch.$branch.codexSyncHold")
-                if ($hold -eq 'true' -or ($held3D -and $hold -ne 'false')) {
+                if (Test-SyncBranchHeld -Repository $AnyWorktree -Branch $branch) {
                     Write-Host "[試作保護] $branch 等待使用者最終 OK，跳過自動同步／推送／合併。"
                     $path = $null
                     $branch = $null
@@ -313,7 +356,7 @@ function Assert-CleanWorktree {
 function Initialize-SyncWorktrees {
     param([string]$Repository, [hashtable]$Worktrees)
 
-    $features = @($Worktrees.Keys | Where-Object { $_ -match '^(codex|claude|antigravity)/.+' } | Sort-Object)
+    $features = @($Worktrees.Keys | Where-Object { $_ -match '^(?:(codex|claude|antigravity)/.+|ai/.+)' -and $_ -notin @('ai/codex', 'ai/claude', 'ai/antigravity') } | Sort-Object)
     foreach ($branch in $features) {
         Assert-CleanWorktree -Worktree $Worktrees[$branch] -ExpectedBranch $branch
     }
@@ -346,7 +389,7 @@ function Test-SyncRemoteBranch {
     param([string]$Repository, [string]$Branch)
     $ref = Get-GitTextSoft -Worktree $Repository -GitArguments @('rev-parse', '--verify', "refs/remotes/$Remote/$Branch")
     if ($ref) { return $true }
-    if ($Branch -notmatch '^(codex|claude|antigravity)/.+') { throw "找不到必要遠端分支 $Remote/$Branch。" }
+    if ($Branch -in @('ai/codex', 'ai/claude', 'ai/antigravity') -or $Branch -notmatch '^(?:(codex|claude|antigravity)/.+|ai/.+)') { throw "找不到必要遠端分支 $Remote/$Branch。" }
     Write-Host "[新專用分支] $Branch 尚未推送；本輪將保留歷史並建立遠端分支。"
     return $false
 }
@@ -369,11 +412,12 @@ function Complete-DevelopConflict {
 }
 
 function Merge-AiBranch {
-    param([string]$Worktree, [string]$Ref)
+    param([string]$Worktree, [string]$Ref, [string]$Label)
 
     Assert-CleanWorktree -Worktree $Worktree -ExpectedBranch $developBranch
     $incoming = Get-GitText -Worktree $Worktree -GitArguments @('rev-parse', $Ref)
-    $message = "[Codex] merge: 自動整合 $Ref"
+    if (-not $Label) { $Label = $Ref }
+    $message = "[Codex] merge: 自動整合 $Label"
     $code = Invoke-GitSoft -Worktree $Worktree -GitArguments @('merge', '--no-ff', $incoming, '-m', $message)
     if ($code -eq 0) { return }
     $pending = Get-GitTextSoft -Worktree $Worktree -GitArguments @('rev-parse', '--verify', 'MERGE_HEAD')
@@ -396,6 +440,13 @@ function Resume-DevelopConflict {
                 Complete-DevelopConflict -Worktree $Worktree -IncomingSha $pending -Message "[Codex] merge: 自動解決衝突並整合 $ref"
                 return
             }
+        }
+    }
+    foreach ($source in @(Get-SyncIntegrationRefs -Repository $Worktree -CoveredBranches $agentBranches)) {
+        if ($source.Sha -eq $pending) {
+            Write-Step "自動接續 develop 尚未完成的任務來源合併：$($source.Ref)"
+            Complete-DevelopConflict -Worktree $Worktree -IncomingSha $pending -Message "[Codex] merge: 自動解決衝突並整合 $($source.Ref)"
+            return
         }
     }
     throw 'develop 的 MERGE_HEAD 不是已知 AI 分支目前的提交；保留現場，不自行選擇合併來源。'
@@ -450,6 +501,9 @@ try {
     Write-Host ('遠端：{0}（{1}）' -f $Remote, $remoteUrl)
 
     if ($ValidateOnly) {
+        foreach ($source in @(Get-SyncIntegrationRefs -Repository $developWorktree -CoveredBranches $agentBranches)) {
+            Write-Host "[待整合來源／本機參照快照] $($source.Ref) -> $($source.Sha)"
+        }
         Write-Step '預檢完成；未執行 pull、push 或 merge'
         return
     }
@@ -507,6 +561,10 @@ try {
         }
     }
 
+    $integrationRefs = @(Get-SyncIntegrationRefs -Repository $developWorktree -CoveredBranches $agentBranches)
+    foreach ($source in $integrationRefs) {
+        Write-Host "[待整合來源] $($source.Ref) -> $($source.Sha)"
+    }
     Write-Step '在 develop Worktree 合併所有 AI 分支'
     # 用 merge 而不是 pull：上面幾行才剛 fetch --prune 過，遠端追蹤參照已經是最新的，
     # 這裡再 pull 只是多一次網路往返，而且會把結果押在 FETCH_HEAD 上。
@@ -522,6 +580,25 @@ try {
     foreach ($branch in $agentBranches) {
         Merge-AiBranch -Worktree $developWorktree -Ref "$Remote/$branch"
     }
+    foreach ($source in $integrationRefs) {
+        Merge-AiBranch -Worktree $developWorktree -Ref $source.Sha -Label $source.Ref
+    }
+
+    # Pin task sources during integration; fetch again before publishing so a
+    # newly pushed task cannot be silently omitted from a successful run.
+    Invoke-Git -Worktree $developWorktree -GitArguments @('fetch', '--prune', $Remote)
+    foreach ($source in $integrationRefs) {
+        $current = Get-GitTextSoft -Worktree $developWorktree -GitArguments @('rev-parse', '--verify', $source.Ref)
+        if ($current -ne $source.Sha -or (Test-SyncBranchHeld -Repository $repository -Branch $source.Branch -Owner $source.Owner)) {
+            throw "來源 $($source.Ref) 在整合期間變更；保留本地整合，暫不推送 develop，請重跑同步。"
+        }
+    }
+    foreach ($branch in $agentBranches) {
+        $current = Get-GitText -Worktree $developWorktree -GitArguments @('rev-parse', "$Remote/$branch")
+        if ($current -ne $pushedHeads[$branch]) { throw "$Remote/$branch 在整合期間變更，暫不推送 develop。" }
+    }
+    $remaining = @(Get-SyncIntegrationRefs -Repository $developWorktree -CoveredBranches $agentBranches)
+    if ($remaining.Count -gt 0) { throw "仍有新的 AI 來源未整合，暫不推送 develop：$($remaining.Ref -join ', ')；請重跑同步。" }
 
     Assert-CleanWorktree -Worktree $developWorktree -ExpectedBranch $developBranch
     # Conflict resolution may have saved/committed necessary assets after the initial sync.
@@ -550,7 +627,7 @@ try {
 
     Write-Step '同步完成'
     $finalHead = Get-GitText -Worktree $developWorktree -GitArguments @('rev-parse', '--short', 'HEAD')
-    Write-Host "develop 與所有 AI 分支目前都指向 $finalHead。" -ForegroundColor Green
+    Write-Host "develop 與本輪同步的 AI 工作區目前都指向 $finalHead；已確認可同步 AI 來源均在主線歷史內。" -ForegroundColor Green
 
     # 素材庫的失敗留到這裡才影響結束碼：程式碼已經整合完了，那是事實，
     # 不該因為另一個儲存庫出事就報成整體失敗；但也不能靜靜吞掉。
