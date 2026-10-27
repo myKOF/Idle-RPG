@@ -12772,3 +12772,17 @@ Worker 存活且頁面正常完成載入。
 - 全庫：node --test --test-reporter=tap "tests/*.test.cjs"完整執行16分10秒，4931項＝4338過／591失敗／2跳過；同步工具測試亦完整結束。以未修改HEAD的本次來源唯讀覆映、對失敗名稱定向重跑，137檔中588項原樣失敗；另外3項為同副本進行中ULT-SWITCH-POINTS的技能點／UI／String期間不一致，該聊天修正後，本次來源與未修改來源都已通過3/3。無本次新增失敗，不把既有測試債改成接受現況；未宣稱全庫全過或正式瀏覽器長戰驗收。
 - 協作與交付：後續同副本技能任務更新bridge371／Worker入口20261027-ult-switch-points及skills2引用，工作檔保留其最新快取；本次以獨立index候選僅暫存自己的formula73／item33／bridge370與四個Worker來源、熔爐LV段及本任務段，提交仍是可獨立載入的20261027-speed-gear-base。其String、UI、技能、測試及任務／LV段完整留在工作區，不stage、不回退。無本次未完成項，可供Review／合併；未合併推送。Commit為本段所在「[Codex] fix: 移除加速齒輪固定加成並同步配置與顯示」，實際編號見回覆。
 - 收尾來源保護：全庫執行期間使用者在原生Excel另存game_parameters.xlsx，現況計算表增加最後三列、主表最後三列ID重排為357／358／359；原生唯讀比較確認固定加成列仍已刪除，其他差異屬本任務外。磁碟工作檔完整保留、不覆寫、不匯出其未驗證修改；提交改納本次先前正常重開／逐值／格式驗證過的候選（SHA256 CE0E6A5ED86BF0934AB2C5E667D7B1161E4C96AEF4F2FE1CFFDEB0A3BBB55E27）及其對應CSV。提交後使用者Excel修改與另一技能任務仍留未提交狀態，不將其偽稱為本次測過或提交。
+
+## ULT-SWITCH-POINTS-20261027 — 終極進化零餘額切換與返點
+
+- Owner：Codex；Done，單一開發者。使用者要求剩餘0點仍可切換終極進化，舊Lv.10返還10點、選新Lv.1扣1點，最後可用9點。
+- 前置：既有技能點推導及原子重選。允許skills2／ui、必要index／bridge／Worker快取、Protocol與文件／版本回歸同步、String.xlsx／CSV／strings_data新增額度提示、skill2-points／skill2-ui回歸、LV與本段；禁止其餘玩法／配置／Excel／素材／3D及其他任務，不合併推送。
+- 原因：舊存檔超支時total-spent為負，UI及Worker先以退款補欠額而拒絕切換。成功切換時將既有超支投資記為持久legacyPointCredit，重選後精確返還淨差；失敗不建立credit，不反覆發點，面板純讀取，新投資仍消耗點數，保存／重載不遺失。
+- 預檢：skills2及兩份回歸無其他來源；ui與Claude之initHero3dToggle不同函式，tasks對方頁首／本次文末，僅帶本次hunk三方merge-file均0且無語意相依。index同UI快取一行已獲使用者明確同意升220、保留雙方；String新增2150與Claude2145～2147為不同列，CSV換行正規化後隔離新列三方試跑0，不納入其3D字串。其他本副本加速齒輪工作完整保留，不納本次提交。
+- 驗收：正常零點及超支舊檔Lv.10→1餘9、Lv.1重選不發點、9點可再花、重複確認／金幣不足／門檻不足無異動、存讀檔與投影／UI一致；相關回歸、Build及diff後獨立Commit，交使用者Review／合併。
+- 完成15檔：js/skills2.js成功原子重選前保留既有超支額度，points.total計入持久legacyPointCredit，只有通過金幣／報價／門檻後才寫入；js/ui.js依可用餘額加原等級判斷切換，tips分開說明熟練度及保留額度；String.xlsx／CSV／strings_data新增2150、index字串23f745de／skills2 363／ui220／bridge371／protocol62，bridge入口及Worker的skills2／protocol引用同步。Protocol.js版本61→62與docs/WORKER_PROTOCOL.md同步total語意，快照欄位及指令數不變。兩份技能回歸與協議版本回歸、LV及本段同步。
+- Excel：以專案原生Excel更新工具在2142後插入2150，只寫入5格；兩次正常重開核對全部2138列7欄及0物件，獨立原生Excel重開Saved=True、無修復提示。唯讀OOXML逐列依ID核對原2137列的值／儲存格樣式／列屬性不變，styles.xml／欄寬／sheetViews不變，原表與新版局部渲染已檢視；未手改XML、未改原有文字或翻譯。源Excel匯出CSV再產生JS，不合併Claude的3D字串。
+- 驗證：node --test --test-reporter=spec（最終dot）tests/skill2-points.test.cjs tests/skill2-reset.test.cjs tests/skill2-ult-switch.test.cjs tests/skill2-tower-unlock.test.cjs tests/skill-mastery.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/string-table.test.cjs共79/79；node --test --test-reporter=spec --test-name-pattern="技能點不足|終極重選按鈕|切換二次確認|終極進化：" tests/skill2-ui.test.cjs另4/4。新增正常零餘額與23群組超支重選、存讀檔、Lv.1重選不增發、9點可全數再投入及各失敗原子保留；依使用者新規則更新兩個舊的「超支不得重選」斷言，其餘不足／門檻保護不放寬。npm.cmd run build589檔通過；apply_strings --check同步、build_string_csv --check寫死0條。
+- 廣域UI：整份skill2-ui為29項、27過／2失敗（SVG尺寸舊斷言、水流彈MP／冷卻舊值）；用git show HEAD的ui／skills2唯讀覆映並只跑該兩項，兩者於修改前同樣失敗，未改其斷言，不宣稱全庫全綠。最終瀏覽器用隔離隨機localhost及全新Edge context載正式遊戲與真Worker，測試存檔熟練度480、已投資1817、餘0；實點雷球群組／選項／確認後pick1 Lv.10→pick2 Lv.1，total1817／spent1808／available9，畫面剩9且tips分列480＋1337保留額度。Console error／warning及pageerror均0，非玩家真存檔；初始化神鑄開放提示於fixture預先標示已看過以避免干擾。截圖及JSON留本聊天visualizations/ult-switch，臨時服務與瀏覽器已關閉。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、js/save.js／player.js／forge.js、Worker指令／面板與scripts/sim/engine、Excel與字串匯出工具、package／Build工具及上述其他回歸、Claude的3D與字串差異。原加速齒輪配置／程式／測試及分段暫存均保留；本次無素材／素材庫變更，不建空素材Commit。
+- 交付：自我Review及必要驗證完成，無本次未完成實作；可供Review／合併，未合併或推送。Commit為本段所在「[Codex] fix: 終極進化零點重選並保留舊投資返還點數」，實際編號見回覆。已知限制為上述既有UI測試與未跑全庫／跨瀏覽器長戰；舊版程式會忽略新保留額度，須整合後重載新版主端及Worker，不要用舊分頁覆寫。下一步正常整合後重載遊戲驗收。

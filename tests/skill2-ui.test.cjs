@@ -267,7 +267,7 @@ test('技能點不足時單級與批次停用，tips顯示消耗；點數變動�
   assert.doesNotMatch(h, /data-skill2-ultswitch="thrust:1"[^>]*disabled/);
   snap.skills2.points.total = 1;
   h = c.sgbUltHTML('thrust', snap.skills2.levels.thrust, snap, 1e20, '');
-  assert.match(h, /data-skill2-ultswitch="thrust:1"[^>]*disabled/);
+  assert.doesNotMatch(h, /data-skill2-ultswitch="thrust:1"[^>]*disabled/, '重選先退原等級點數，超支不應擋住');
   assert.equal(c.STR(2133), '打怪獲得技能經驗並提升熟練度<br>熟練度升級可獲得1點技能點');
   assert.match(html, /id="skill-points-remaining"/);
   assert.match(html, /data-tt-desc:2133/);
@@ -382,6 +382,23 @@ test('終極進化：未開放顯示還差幾階，未選三選一，已選升�
   assert.match(poor, /data-skill2-ultswitch="thrust:0"[^>]*disabled/);
   snap.skills2.levels.thrust[6] = 9;
   assert.doesNotMatch(c.sgbDetailHTML('thrust', snap, { player: { gold: 1e15 } }), /data-skill2-ultswitch/);
+});
+
+test('終極重選按鈕使用可用餘額加退款，超支舊檔零點仍可換Lv.1', () => {
+  const c = loadContext();
+  const snap = snapshot({ thunderorb: Array(7).fill(10) });
+  snap.skills2.progress = { level: 1000, reinc: 10, towerHighest: 150 };
+  snap.skills2.ult = { thunderorb: { pick: 1, lv: 10 } };
+  snap.skills2.points = { total: 480, spent: 1817, available: 0 };
+  detail(c, 'thunderorb', snap, 0, undefined, 'ult');
+  c.UI.sgBrowse.ultFocus = 2;
+  const h = c.sgbDetailHTML('thunderorb', snap, { player: { gold: 1e15 } });
+  assert.match(h, /data-skill2-ultswitch="thunderorb:2"/);
+  assert.doesNotMatch(h, /data-skill2-ultswitch="thunderorb:2"[^>]*disabled/);
+  assert.match(h, /返還原技能的 10 點技能點.*消耗 1 點/);
+  snap.skills2.ult.thunderorb.lv = 1;
+  assert.doesNotMatch(c.sgbDetailHTML('thunderorb', snap, { player: { gold: 1e15 } }), /data-skill2-ultswitch="thunderorb:2"[^>]*disabled/);
+  assert.match(c.sgbDetailHTML('thunderorb', snap, { player: { gold: 0 } }), /data-skill2-ultswitch="thunderorb:2"[^>]*disabled/);
 });
 
 test('切換二次確認顯示完整費用；取消不送指令，確認只送原子切換', async () => {

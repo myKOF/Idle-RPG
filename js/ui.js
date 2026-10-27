@@ -8881,7 +8881,10 @@ function renderSkills() {
   if (pointsEl) {
     var pointView = skillsSnapshot.skills2 && skillsSnapshot.skills2.points || { total: 0, spent: 0, available: 0 };
     pointsEl.textContent = STR(2132, pointView.available);
-    setAttrIfChanged(pointsEl, 'data-tt-desc', STR(2139, pointView.total, pointView.spent));
+    var legacyCredit = Math.max(0, pointView.total - (mastery.level || 0));
+    setAttrIfChanged(pointsEl, 'data-tt-desc', legacyCredit > 0
+      ? STR(2150, mastery.level || 0, legacyCredit, pointView.spent)
+      : STR(2139, pointView.total, pointView.spent));
   }
   if (masteryLvEl) {
     // 說明文字移到資訊列的滑鼠提示（index.html .sgb-mastery），這裡只放等級
@@ -9349,7 +9352,7 @@ function sgbUltHTML(gid, lvs, skillsSnapshot, gold, pendingAttrs) {
   } else {
     var switchCost = skills2UltCost(gid, f, 0);
     var pointView = skillsSnapshot.skills2 && skillsSnapshot.skills2.points;
-    var canSwitchPoints = pointView && pointView.total - pointView.spent + pick.lv >= 1;
+    var canSwitchPoints = pointView && points + pick.lv >= 1;
     h += '<button class="btn sgb-btn-primary" data-skill2-ultswitch="' + gid + ':' + f + '"' + pendingAttrs + (gold < switchCost || !canSwitchPoints ? ' disabled' : '') + ' data-tip="' + esc(STR(2138, switchCost.toLocaleString('en-US'), pick.lv)) + '">' + STR(800, fmt(switchCost)) + '</button>';
   }
   return h + '</div>' + skillTowerUnlockHintHTML(list[f], skillsSnapshot) + '</div></div>';

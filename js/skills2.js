@@ -1359,10 +1359,16 @@ function skills2StoredLevels(gid) {
     return Math.max(i === 0 ? 1 : 0, Math.min(SG_TIER_MAX_LV, isFinite(n) ? n : 0));
   });
 }
+/* 舊存檔超支投資在成功重選時保留為額度，避免退款先被負餘額吞掉。
+   只讀取已保存的額度；面板投影不可因為被查詢而發點。 */
+function skills2LegacyPointCredit() {
+  var credit = Math.floor(Number(G.player.skills2 && G.player.skills2.legacyPointCredit) || 0);
+  return isFinite(credit) ? Math.max(0, credit) : 0;
+}
 function skills2PointView() {
   var p = G.player;
   var level = Math.floor(Number(p.skillMastery && p.skillMastery.level) || 0);
-  var total = Math.max(0, Math.min(SKILL_MASTERY_MAX_LEVEL, isFinite(level) ? level : 0));
+  var total = Math.max(0, Math.min(SKILL_MASTERY_MAX_LEVEL, isFinite(level) ? level : 0)) + skills2LegacyPointCredit();
   var spent = 0;
   for (var gid in SKILLS2) {
     var lvs = skills2StoredLevels(gid);
@@ -1421,8 +1427,11 @@ function skills2UltSwitch(group, optIdx, fromOpt, fromLv, quotedCost) {
   var cost = skills2UltCost(group, optIdx, 0);
   if (cost !== quotedCost) return STR(690);
   var points = skills2PointView();
-  if (points.total - points.spent + cur.lv < 1) return STR(2134);
   if ((G.player.gold || 0) < cost) return STR(91);
+  /* 先保留原有投資額度，再以舊等級退款、新等級扣點。確認失敗不可改額度。 */
+  if (points.spent > points.total) {
+    G.player.skills2.legacyPointCredit = skills2LegacyPointCredit() + points.spent - points.total;
+  }
   G.player.gold -= cost;
   sgUltStore()[group] = { pick: optIdx, lv: 1 };
   sgAfterSkillChange();
