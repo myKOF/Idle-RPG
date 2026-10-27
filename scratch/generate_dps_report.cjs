@@ -48,12 +48,12 @@ lines.push('---');
 lines.push('');
 lines.push('## 1. 測試環境與標準化規範');
 lines.push('1. **核心傷害詞條絕對一致**：');
-lines.push('   * 全身 13 格 100 級傳奇裝備（強化 +40，滿詞條數值），物攻與魔攻（~50,000）、物理穿透與魔法穿透（100% 滿穿透）絕對對齊。');
-lines.push('   * 暴擊率 100% 滿暴擊，全屬性增傷 +1000%，連擊數 3，格擋率 50%，格擋減傷 80%。');
+lines.push('   * 全身 13 格 100 級傳奇裝備（強化 +40，滿詞條數值），物攻與魔攻（~50,000）、物理穿透與魔法穿透保持 90%（即敵人還有 10% 的物理/魔法防禦）絕對對齊。');
+lines.push('   * 命中率 100% 滿命中（完全壓制 300 級敵人閃避，達成零 MISS 必中基準），暴擊率 100% 滿暴擊，全屬性增傷 +300%，連擊數 3，格擋率 50%，格擋減傷 80%。');
 lines.push('2. **傳奇特效配置（Mandatory Legendary Affixes）**：');
 lines.push('   * 每個技能群組在測試時，**嚴格裝載該技能專屬的 5 個傳奇特效**。');
 lines.push('   * 雙手武器（雙手巨劍、雙手魔劍、雙手法杖、雙手斧）依專案核心規則享有 **2.0x 傳奇效果倍率補償**（`TWO_HAND_EFFECT_VALUE_MULT`）。');
-lines.push('3. **測試地圖與三種情境（300 級沼澤 Swamp，DEF=0 / MDEF=0）**：');
+lines.push('3. **測試地圖與三種情境（300 級沼澤 Swamp，受 90% 穿透後保留 10% 有效防禦）**：');
 lines.push('   * **小怪**：普通小怪群戰（20 隻/波，總血量 ~3.55 兆）');
 lines.push('   * **菁英**：菁英怪攻堅（5 隻/波，總血量 ~3.55 兆）');
 lines.push('   * **BOSS**：單體 BOSS 戰（1 隻/波，總血量 ~2.66 兆）');
@@ -61,7 +61,7 @@ lines.push('4. **測試時長與數據統計口徑（2分30秒穩定態採樣）
 lines.push('   * **總測試時長**：每招技能每種情境持續戰鬥 **2 分 30 秒（150 秒）**。');
 lines.push('   * **前 30 秒預熱排除**：排除前期 DOT 疊層、Buff 啟動、怪物進場走位等啟動偏差，前 30 秒數據**不計入**。');
 lines.push('   * **後 2 分鐘精確統計**：嚴格採樣 **30 秒～150 秒（共 120 秒）** 的純淨穩定態輸出。');
-lines.push('   * $\\text{平均 DPS} = \\frac{\\text{後 2 分鐘（120 秒）內累計輸出總傷害}}{120\\text{ 秒}}$。格式統一為：`總傷 | DPS`。');
+lines.push('   * $\\text{平均 DPS} = \\frac{\\text{後 2 分鐘（120 秒）內累計輸出總傷害}}{120\\text{ 秒}}$。格式統一為：`總傷 | DPS | 傷害次數`。');
 lines.push('');
 lines.push('---');
 lines.push('');
@@ -108,15 +108,18 @@ for (const [gid, list] of Object.entries(groups)) {
     const eliteNote = (elite.avgDps === 0 && note.elite) ? ' ' + note.elite : '';
     const bossNote = ((boss.avgDps === 0 || t.ultId === 'fateReversal') && note.boss) ? ' ' + note.boss : '';
 
+    const mobHits = (mob.hitCount || 0).toLocaleString();
+    const eliteHits = (elite.hitCount || 0).toLocaleString();
+    const bossHits = (boss.hitCount || 0).toLocaleString();
+
     lines.push(`**${t.ultName}** (\`${t.ultId}\`)`);
-    lines.push(`小怪：${fmtDmg(mob.totalDamage)} | ${fmtDps(mob.avgDps)}${mobNote}`);
-    lines.push(`菁英：${fmtDmg(elite.totalDamage)} | ${fmtDps(elite.avgDps)}${eliteNote}`);
-    lines.push(`BOSS：${fmtDmg(boss.totalDamage)} | ${fmtDps(boss.avgDps)}${bossNote}`);
+    lines.push(`小怪：${fmtDmg(mob.totalDamage)} | ${fmtDps(mob.avgDps)} | ${mobHits} 次${mobNote}`);
+    lines.push(`菁英：${fmtDmg(elite.totalDamage)} | ${fmtDps(elite.avgDps)} | ${eliteHits} 次${eliteNote}`);
+    lines.push(`BOSS：${fmtDmg(boss.totalDamage)} | ${fmtDps(boss.avgDps)} | ${bossHits} 次${bossNote}`);
     if (uIdx < list.length - 1) {
       lines.push('');
     }
   });
-
 
   lines.push('');
   lines.push('---');
@@ -130,14 +133,15 @@ lines.push('');
 const topMob = [...results].sort((a, b) => b.normalMob.avgDps - a.normalMob.avgDps).slice(0, 10);
 lines.push('### 3.1 🌾 普通小怪群戰 DPS 天梯榜 (AOE / 清怪割草王者)');
 lines.push('');
-lines.push('| 排名 | 技能群組 | 超神技能 | 專屬傳奇效果 | 小怪 DPS | 小怪採樣總傷害 | 超神技能效果摘要 |');
-lines.push('| :---: | :--- | :--- | :--- | :---: | :---: | :--- |');
+lines.push('| 排名 | 技能群組 | 超神技能 | 專屬傳奇效果 | 小怪 DPS | 小怪採樣總傷害 | 傷害次數 | 超神技能效果摘要 |');
+lines.push('| :---: | :--- | :--- | :--- | :---: | :---: | :---: | :--- |');
 topMob.forEach((r, idx) => {
   const t = r.target;
   const m = r.normalMob;
   const affs = t.affixes.map(a => a.name).join('、');
   const desc = t.ultDesc.replace(/[\r\n]+/g, ' ').slice(0, 35) + '...';
-  lines.push(`| **#${idx + 1}** | **${t.groupName}** | **${t.ultName}** | ${affs} | **${fmtDps(m.avgDps)}** | ${fmtDmg(m.totalDamage)} | ${desc} |`);
+  const hits = (m.hitCount || 0).toLocaleString();
+  lines.push(`| **#${idx + 1}** | **${t.groupName}** | **${t.ultName}** | ${affs} | **${fmtDps(m.avgDps)}** | ${fmtDmg(m.totalDamage)} | ${hits} 次 | ${desc} |`);
 });
 lines.push('');
 
@@ -145,14 +149,15 @@ lines.push('');
 const topElite = [...results].sort((a, b) => b.elite.avgDps - a.elite.avgDps).slice(0, 10);
 lines.push('### 3.2 🛡️ 菁英怪攻堅 DPS 天梯榜 (多目標攻堅王者)');
 lines.push('');
-lines.push('| 排名 | 技能群組 | 超神技能 | 專屬傳奇效果 | 菁英怪 DPS | 菁英採樣總傷害 | 超神技能效果摘要 |');
-lines.push('| :---: | :--- | :--- | :--- | :---: | :---: | :--- |');
+lines.push('| 排名 | 技能群組 | 超神技能 | 專屬傳奇效果 | 菁英怪 DPS | 菁英採樣總傷害 | 傷害次數 | 超神技能效果摘要 |');
+lines.push('| :---: | :--- | :--- | :--- | :---: | :---: | :---: | :--- |');
 topElite.forEach((r, idx) => {
   const t = r.target;
   const e = r.elite;
   const affs = t.affixes.map(a => a.name).join('、');
   const desc = t.ultDesc.replace(/[\r\n]+/g, ' ').slice(0, 35) + '...';
-  lines.push(`| **#${idx + 1}** | **${t.groupName}** | **${t.ultName}** | ${affs} | **${fmtDps(e.avgDps)}** | ${fmtDmg(e.totalDamage)} | ${desc} |`);
+  const hits = (e.hitCount || 0).toLocaleString();
+  lines.push(`| **#${idx + 1}** | **${t.groupName}** | **${t.ultName}** | ${affs} | **${fmtDps(e.avgDps)}** | ${fmtDmg(e.totalDamage)} | ${hits} 次 | ${desc} |`);
 });
 lines.push('');
 
@@ -160,14 +165,15 @@ lines.push('');
 const topBoss = [...results].sort((a, b) => b.boss.avgDps - a.boss.avgDps).slice(0, 10);
 lines.push('### 3.3 👑 單體 BOSS 戰 DPS 天梯榜 (單體極限爆發王者)');
 lines.push('');
-lines.push('| 排名 | 技能群組 | 超神技能 | 專屬傳奇效果 | BOSS DPS | BOSS 採樣總傷害 | 超神技能效果摘要 |');
-lines.push('| :---: | :--- | :--- | :--- | :---: | :---: | :--- |');
+lines.push('| 排名 | 技能群組 | 超神技能 | 專屬傳奇效果 | BOSS DPS | BOSS 採樣總傷害 | 傷害次數 | 超神技能效果摘要 |');
+lines.push('| :---: | :--- | :--- | :--- | :---: | :---: | :---: | :--- |');
 topBoss.forEach((r, idx) => {
   const t = r.target;
   const b = r.boss;
   const affs = t.affixes.map(a => a.name).join('、');
   const desc = t.ultDesc.replace(/[\r\n]+/g, ' ').slice(0, 35) + '...';
-  lines.push(`| **#${idx + 1}** | **${t.groupName}** | **${t.ultName}** | ${affs} | **${fmtDps(b.avgDps)}** | ${fmtDmg(b.totalDamage)} | ${desc} |`);
+  const hits = (b.hitCount || 0).toLocaleString();
+  lines.push(`| **#${idx + 1}** | **${t.groupName}** | **${t.ultName}** | ${affs} | **${fmtDps(b.avgDps)}** | ${fmtDmg(b.totalDamage)} | ${hits} 次 | ${desc} |`);
 });
 lines.push('');
 
@@ -175,13 +181,18 @@ lines.push('---');
 lines.push('');
 lines.push('## 4. 傳奇效果協同與關鍵機制點評');
 lines.push('');
-lines.push('* **風刃 5 大傳奇（裂風、增壓、風之痕、風蝕、斷空刃）**：');
-lines.push('  * 【斷空刃】將暴風真空刃連射數強制改寫至 3 道且技能傷害 +30%；【風之痕】兩側小型風刃再帶 1.3 倍獨立乘區；【裂風】隨命中持續疊層增傷。');
-lines.push('  * 實測中**嵐之山**具備風土雙系滿加成，小怪 DPS 達 **5.03 B**（總傷 2015 億），位列全遊戲第四；**天穹崩裂**受擊被動連環發射風刃達 **4.12 B**；**暴風萬刃**追擊 7 秒達 **4.02 B**。');
-lines.push('* **落雷術 5 大傳奇（三重雷、雷鎖、震雷、雷之再生、引雷針）**：');
-lines.push('  * 【雷電矩陣】小怪 DPS 達 **10.18 B**（總傷 4076 億），橫掃全場；【雷霆天劫】達 **8.84 B**；【永恒雷獄】達 **8.81 B**。');
 lines.push('* **雙刀亂舞 5 大傳奇（狂舞、狂戰士、不屈之誓、殺千刀、雙生刃）**：');
-lines.push('  * 享有雙手補償與狂舞縮短間隔，【修羅亂舞】與【火之神樂】對單體 BOSS DPS 達 **4.68 B**（總傷 1873 億），為單體天花板。');
+lines.push('  * 享有雙手武器 2.0x 傳奇倍率與【狂舞】極限縮短間隔，搭配【雙生刃】與【殺千刀】之暴擊極限加乘，在小怪（7,667 B）、菁英（9,118 B）、BOSS（11,190 B / 總傷 1342 兆）三榜皆拔得頭籌，為全遊戲極限輸出天花板。');
+lines.push('* **飛刀 5 大傳奇（連鎖、分裂者、處刑者、影刃、輪舞刃）**：');
+lines.push('  * 在 100% 命中保證下，【無限追魂刃】的金刃彈射鏈完全不受 MISS 截斷干擾，且暴擊減 CD 機制持續高頻刷新，在單體 BOSS 戰中彈射累積 13,022 次傷害，DPS 高達 **1,647.44 B（總傷 197.69 兆）**，強勢名列單體 BOSS 天梯榜第 4 名！');
+lines.push('* **突刺 5 大傳奇（凝鋒穿刺、千瘡百孔、貫日之刺、迅雷穿刺、穿心裂血）**：');
+lines.push('  * 【幻影八方陣】向八方發射貫穿突刺，配合 6 米範圍群體擴散與每 0.05 秒跳血的穿心裂血流血，在小怪群戰中創造了驚人的 **158,876 次** 傷害跳數，小怪 DPS 達 **2,897.99 B（總傷 347.76 兆）**，名列小怪天梯榜第 10 名。');
+lines.push('* **落雷術 5 大傳奇（三重雷、雷鎖、震雷、雷之再生、引雷針）**：');
+lines.push('  * 【永恒雷獄】被擊中後持續在 8 米內引發額外落雷，小怪 DPS 達 **3,640.15 B**（總傷 436.82 兆、命中 97,488 次），為全遊戲最強法系雷電 AOE；【雷霆天劫】小怪亦達 **3,010.20 B**。');
+lines.push('* **火球術 5 大傳奇（連珠火、燃燼、火池、烈焰之心、爆裂）**：');
+lines.push('  * 【天火流星】多顆巨型隕石伴隨無數小火球轟炸，單體 BOSS 戰輸出高達 **915.99 B（總傷 109.92 兆）**，名列單體 BOSS 天梯第 5 名。');
+lines.push('* **反擊 5 大傳奇（堅韌誓言、怒火、完美姿態、以血還血、風之體）**：');
+lines.push('  * 【戰神體】每秒自損血量累積神力，在菁英怪攻堅戰中爆發出 **3,925.58 B（總傷 471.07 兆）** 的頂級攻堅輸出，名列菁英天梯榜第 4 名。');
 lines.push('');
 
 fs.writeFileSync(REPORT_PATH, lines.join('\n'), 'utf8');

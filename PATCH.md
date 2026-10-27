@@ -1,5 +1,36 @@
 # PATCH.md
 
+## 依新規範（命中100%、穿透90%、增傷300%）重新實測全69招超神進化DPS報表（Antigravity 2026-10-27）
+
+- **規範參數精確調整與模擬器實裝**：
+  - **命中率 100%**：玩家命中設為 `100 + maxEnemyDodge`，徹底消除閃避導致的 MISS 截斷，達成零 MISS 必中基準。
+  - **物魔穿透保持 90%（敵人保留 10% 有效防禦）**：根據專案防禦與穿透公式（`defReduction = pDef / (pDef + 20000)`，`PEN_IGNORE_A = 0.75`），在穿透設為 90 時，怪物防禦精確配置為 `def: 4888.89, mdef: 4888.89`，經穿透折算後有效防禦為 `2222.22`，使防禦減傷率恰好維持在 10.00%（實質受到傷害為 90%）。
+  - **全屬性增傷改為 300%**：玩家總增傷 `totalDmgPct` 與全元素增傷 `elemDmgUp` 精確調整為 +300%。
+- **全量 69 招超神進化重新實測**：
+  - 平行 Worker 重新模擬 207 場情境（小怪、菁英、BOSS 各 120 秒採樣窗），產出最新全量數據至 `scratch/all_69_ults_dps_results.json`。
+  - 更新 `scratch/generate_dps_report.cjs` 並重新生成 `docs/ULT_EVOLUTION_ALL_69_SKILLS_DPS_REPORT.md`，同步更新第 1 節規範描述、各群組數據、Top 10 天梯榜與第 4 節機制點評（包括雙刀亂舞登頂、飛刀無限追魂刃在 100% 命中下金刃不斷裂直衝單體第 4 名等）。
+- **驗證通過**：
+  - `node --test tests/ult-dps-benchmark.test.cjs` 13 項測試全數通過。
+  - `node tools/build_check.cjs` 587 個檔案語法與編譯檢查通過。
+
+
+## 修復 300 級怪物高閃避導致命中截斷，全面重新實測 69 招超神進化總傷/DPS/傷害次數（Antigravity 2026-10-27）
+
+- **修復 300 級怪物高閃避（273.5）導致命中率截斷為 5% 致命缺陷**：
+  - 發現 `scratch/run_all_69_ults_dps.cjs` 先前未對抗 300 級沼澤怪物閃避（273.5），且未快取 `ctx.getStats = () => pStats`，導致戰鬥實時以角色基礎命中（100.1）計算，淨命中率直接被公式下限截斷為 5%（面臨高達 95% MISS 閃避率）。
+  - 當 95% 攻擊 MISS 時，飛刀（knife）等依賴命中彈射（`bouncePct`）與暴擊減 CD 的技能，首發飛刀 MISS 即中斷整個彈射鏈，且無法觸發第 7 階神速飛刀減 CD，導致技能卡死在 8 秒 CD，120 秒內僅命中 18 次。
+  - 於 `runSimulation` 中補齊 `pStats.critRate = 100`、`pStats.hit = 100 + maxEnemyDodge`（100% 絕對必中基準）並綁定 `ctx.getStats = () => pStats` 快取。
+  - 重新執行全量 69 招超神進化實測，飛刀【暴雨梨花】命中次數由 18 次正常回升至 5,385 次（DPS 由 328M 飆升至 1,249B），全面消除異常極端落差。
+  - 同步重新生成 `docs/ULT_EVOLUTION_ALL_69_SKILLS_DPS_REPORT.md` 與 `scratch/all_69_ults_dps_results.json`。
+
+## 全 23 大技能群組（69 招超神進化）實測總傷、DPS 與傷害次數（Antigravity 2026-10-27）
+
+- **超神實測指標補齊傷害次數（Hit Count）**：
+  - 依 `docs/ULT_EVOLUTION_ALL_69_SKILLS_DPS_REPORT.md` 規範，全面實測全 23 系群組共 69 招超神進化技能在 300 級沼澤（DEF=0 / MDEF=0）環境下的「總傷 / DPS / 傷害次數」。
+  - 於 `scratch/run_all_69_ults_dps.cjs` 中加入 `hitCount` 採集機制，嚴格在 30 秒至 150 秒（純淨穩態 120 秒採樣窗）內統計所有有效傷害判定次數，並升級多執行緒 Worker 平行計算以全速完成 207 場情境模擬。
+  - 更新 `scratch/generate_dps_report.cjs`，於各技能細項輸出「小怪/菁英/BOSS：總傷 | DPS | 傷害次數」，並於 Top 10 天梯榜中同步補齊傷害次數欄位。
+  - 重新產出報表檔案 `docs/ULT_EVOLUTION_ALL_69_SKILLS_DPS_REPORT.md` 與全量結果數據 `scratch/all_69_ults_dps_results.json`。
+
 ## 將全技能解鎖規範正式載入超神進化 DPS 總結報表（Antigravity 2026-10-27）
 
 - **超神 DPS 實測標準化規範補全**：
