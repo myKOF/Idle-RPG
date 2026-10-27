@@ -1,7 +1,9 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const vm = require('vm');
+const { Worker, isMainThread, parentPort, workerData } = require('worker_threads');
 
 const ROOT = path.resolve(__dirname, '..');
 const OUTPUT_JSON = path.join(__dirname, 'all_69_ults_dps_results.json');
@@ -146,7 +148,7 @@ function runSimulation(target, scenarioType, totalDuration = 150.0, warmupDurati
   const gid = target.gid;
   const optIdx = target.ultIndex;
 
-  ctx.GM_TEST = { skillUnlock: true };
+  ctx.GM_TEST = { skillUnlock: true, hpLock: true, mpLock: true };
   ctx.G = ctx.newGameState();
   ctx.G.player.level = 100;
   ctx.G.player.reincarnations = 1;
@@ -234,10 +236,12 @@ function runSimulation(target, scenarioType, totalDuration = 150.0, warmupDurati
   }
 
   let totalDamageDealt = 0;
+  let hitCount = 0;
   ctx.trackDps = function(dmg) {
     if (dmg > 0) {
-      if (ctx.GT >= warmupDuration) {
+      if (ctx.GT >= warmupDuration && ctx.GT <= totalDuration) {
         totalDamageDealt += dmg;
+        hitCount++;
       }
       ctx.FIELD.dpsWindow.push([ctx.GT, dmg]);
     }
@@ -349,7 +353,7 @@ function runSimulation(target, scenarioType, totalDuration = 150.0, warmupDurati
     }
   }
 
-  const effectiveDuration = Math.max(0.1, ctx.GT - warmupDuration);
+  const effectiveDuration = Math.max(0.1, totalDuration - warmupDuration); // 120s
   const avgDps = effectiveDuration > 0 ? totalDamageDealt / effectiveDuration : 0;
   const estimatedFullClearTime = avgDps > 0 ? totalWaveHp / avgDps : 999999;
 
@@ -359,48 +363,92 @@ function runSimulation(target, scenarioType, totalDuration = 150.0, warmupDurati
     sampleDuration: Number(effectiveDuration.toFixed(2)),
     totalDamage: Math.round(totalDamageDealt),
     avgDps: Math.round(avgDps),
+    hitCount: hitCount,
     cleared: false,
     clearedTime: 0,
     estimatedFullClearTime: Number(estimatedFullClearTime.toFixed(2))
   };
 }
 
-if (require.main === module) {
-  console.log(`⚔️ 開始執行全部 ${TARGETS.length} 招超神進化技能 DPS 驗證測試（總時長 2分30秒，排除前 30秒預熱，採集後 2分鐘穩定數據）...`);
-  const allResults = [];
-
-  TARGETS.forEach((target, idx) => {
-    const affNames = target.affixes.map(a => a.name).join('、');
-    process.stdout.write(`[${idx + 1}/${TARGETS.length}] ${target.groupName} - ${target.ultName} (${target.ultId}) [傳奇: ${affNames}] ... `);
-    
+if (!isMainThread && workerData === 'ult-worker') {
+  parentPort.on('message', index => {
+    const target = TARGETS[index];
     const mob = runSimulation(target, 1, 150.0, 30.0);
     const elite = runSimulation(target, 2, 150.0, 30.0);
     const boss = runSimulation(target, 3, 150.0, 30.0);
+    parentPort.postMessage({ index, mob, elite, boss });
+  });
+} else if (require.main === module) {
+  (async () => {
+    const numWorkers = Math.min(6, os.cpus().length || 4);
+    console.log(`⚔️ 啟動 ${numWorkers} 組平行 Worker 執行全部 ${TARGETS.length} 招超神進化技能 DPS 驗證測試...`);
+    console.log(`   測試條件：300級 0防禦沼澤 / 總時長 150秒 / 前 30秒預熱排除 / 採集後 120秒穩定態數據`);
+    console.log(`   採集指標：總傷害 (totalDamage) / 平均 DPS / 傷害次數 (hitCount)\n`);
 
-    allResults.push({
-      target: {
-        gid: target.gid,
-        groupName: target.groupName,
-        elem: target.elem,
-        dmgType: target.dmgType,
-        ultIndex: target.ultIndex,
-        ultId: target.ultId,
-        ultName: target.ultName,
-        ultDesc: target.ultDesc,
-        affixes: target.affixes.map(a => ({ id: a.id, name: a.name })),
-        primaryWp: target.primaryWp,
-        isTwoHand: target.isTwoHand
-      },
-      normalMob: mob,
-      elite: elite,
-      boss: boss
+    const allResults = new Array(TARGETS.length);
+    let next = 0;
+    let completed = 0;
+    const workers = [];
+    const t0 = Date.now();
+
+    await new Promise((resolve, reject) => {
+      for (let i = 0; i < numWorkers; i++) {
+        const worker = new Worker(__filename, { workerData: 'ult-worker' });
+        workers.push(worker);
+
+        worker.on('message', ({ index, mob, elite, boss }) => {
+          const target = TARGETS[index];
+          allResults[index] = {
+            target: {
+              gid: target.gid,
+              groupName: target.groupName,
+              elem: target.elem,
+              dmgType: target.dmgType,
+              ultIndex: target.ultIndex,
+              ultId: target.ultId,
+              ultName: target.ultName,
+              ultDesc: target.ultDesc,
+              affixes: target.affixes.map(a => ({ id: a.id, name: a.name })),
+              primaryWp: target.primaryWp,
+              isTwoHand: target.isTwoHand
+            },
+            normalMob: mob,
+            elite: elite,
+            boss: boss
+          };
+          completed++;
+          console.log(`[${String(completed).padStart(2, ' ')}/69] ${target.groupName.padEnd(5, ' ')} - ${target.ultName.padEnd(7, ' ')} (${target.ultId.padEnd(20, ' ')}) | 小怪: ${(mob.avgDps / 1e9).toFixed(2).padStart(7, ' ')}B (${mob.hitCount.toLocaleString()}次) | 菁英: ${(elite.avgDps / 1e9).toFixed(2).padStart(7, ' ')}B (${elite.hitCount.toLocaleString()}次) | BOSS: ${(boss.avgDps / 1e6).toFixed(2).padStart(8, ' ')}M (${boss.hitCount.toLocaleString()}次)`);
+
+          if (completed === TARGETS.length) {
+            resolve();
+          } else if (next < TARGETS.length) {
+            worker.postMessage(next++);
+          }
+        });
+
+        worker.on('error', reject);
+        worker.on('exit', code => {
+          if (code !== 0 && completed < TARGETS.length) {
+            reject(new Error(`Worker exited with code ${code}`));
+          }
+        });
+
+        if (next < TARGETS.length) {
+          worker.postMessage(next++);
+        }
+      }
     });
 
-    console.log(`小怪: ${(mob.avgDps / 1e9).toFixed(2)}B | 菁英: ${(elite.avgDps / 1e9).toFixed(2)}B | BOSS: ${(boss.avgDps / 1e6).toFixed(2)}M`);
-  });
+    await Promise.all(workers.map(w => w.terminate()));
 
-  fs.writeFileSync(OUTPUT_JSON, JSON.stringify(allResults, null, 2), 'utf8');
-  console.log(`\n✅ 69 招超神進化技能全部測試完畢！結果已寫入: ${OUTPUT_JSON}`);
+    const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+    console.log(`\n🎉 全部 69 招超神進化技能測試完畢！（總耗時: ${elapsed} 秒）`);
+    fs.writeFileSync(OUTPUT_JSON, JSON.stringify(allResults, null, 2), 'utf8');
+    console.log(`✅ 結果已寫入: ${OUTPUT_JSON}`);
+  })().catch(err => {
+    console.error('❌ 模擬執行失敗:', err);
+    process.exitCode = 1;
+  });
 }
 
-module.exports = { runSimulation, TARGETS };
+module.exports = { runSimulation, buildEquipment, createSimContext, TARGETS };

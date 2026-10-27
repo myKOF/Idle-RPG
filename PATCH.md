@@ -1,5 +1,13 @@
 # PATCH.md
 
+## 全 23 大技能群組（69 招超神進化）實測總傷、DPS 與傷害次數（Antigravity 2026-10-27）
+
+- **超神實測指標補齊傷害次數（Hit Count）**：
+  - 依 `docs/ULT_EVOLUTION_ALL_69_SKILLS_DPS_REPORT.md` 規範，全面實測全 23 系群組共 69 招超神進化技能在 300 級沼澤（DEF=0 / MDEF=0）環境下的「總傷 / DPS / 傷害次數」。
+  - 於 `scratch/run_all_69_ults_dps.cjs` 中加入 `hitCount` 採集機制，嚴格在 30 秒至 150 秒（純淨穩態 120 秒採樣窗）內統計所有有效傷害判定次數，並升級多執行緒 Worker 平行計算以全速完成 207 場情境模擬。
+  - 更新 `scratch/generate_dps_report.cjs`，於各技能細項輸出「小怪/菁英/BOSS：總傷 | DPS | 傷害次數」，並於 Top 10 天梯榜中同步補齊傷害次數欄位。
+  - 重新產出報表檔案 `docs/ULT_EVOLUTION_ALL_69_SKILLS_DPS_REPORT.md` 與全量結果數據 `scratch/all_69_ults_dps_results.json`。
+
 ## 將全技能解鎖規範正式載入超神進化 DPS 總結報表（Antigravity 2026-10-27）
 
 - **超神 DPS 實測標準化規範補全**：

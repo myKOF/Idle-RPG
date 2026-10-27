@@ -61,7 +61,7 @@ lines.push('4. **測試時長與數據統計口徑（2分30秒穩定態採樣）
 lines.push('   * **總測試時長**：每招技能每種情境持續戰鬥 **2 分 30 秒（150 秒）**。');
 lines.push('   * **前 30 秒預熱排除**：排除前期 DOT 疊層、Buff 啟動、怪物進場走位等啟動偏差，前 30 秒數據**不計入**。');
 lines.push('   * **後 2 分鐘精確統計**：嚴格採樣 **30 秒～150 秒（共 120 秒）** 的純淨穩定態輸出。');
-lines.push('   * $\\text{平均 DPS} = \\frac{\\text{後 2 分鐘（120 秒）內累計輸出總傷害}}{120\\text{ 秒}}$。格式統一為：`總傷 | DPS`。');
+lines.push('   * $\\text{平均 DPS} = \\frac{\\text{後 2 分鐘（120 秒）內累計輸出總傷害}}{120\\text{ 秒}}$。格式統一為：`總傷 | DPS | 傷害次數`。');
 lines.push('');
 lines.push('---');
 lines.push('');
@@ -108,15 +108,18 @@ for (const [gid, list] of Object.entries(groups)) {
     const eliteNote = (elite.avgDps === 0 && note.elite) ? ' ' + note.elite : '';
     const bossNote = ((boss.avgDps === 0 || t.ultId === 'fateReversal') && note.boss) ? ' ' + note.boss : '';
 
+    const mobHits = (mob.hitCount || 0).toLocaleString();
+    const eliteHits = (elite.hitCount || 0).toLocaleString();
+    const bossHits = (boss.hitCount || 0).toLocaleString();
+
     lines.push(`**${t.ultName}** (\`${t.ultId}\`)`);
-    lines.push(`小怪：${fmtDmg(mob.totalDamage)} | ${fmtDps(mob.avgDps)}${mobNote}`);
-    lines.push(`菁英：${fmtDmg(elite.totalDamage)} | ${fmtDps(elite.avgDps)}${eliteNote}`);
-    lines.push(`BOSS：${fmtDmg(boss.totalDamage)} | ${fmtDps(boss.avgDps)}${bossNote}`);
+    lines.push(`小怪：${fmtDmg(mob.totalDamage)} | ${fmtDps(mob.avgDps)} | ${mobHits} 次${mobNote}`);
+    lines.push(`菁英：${fmtDmg(elite.totalDamage)} | ${fmtDps(elite.avgDps)} | ${eliteHits} 次${eliteNote}`);
+    lines.push(`BOSS：${fmtDmg(boss.totalDamage)} | ${fmtDps(boss.avgDps)} | ${bossHits} 次${bossNote}`);
     if (uIdx < list.length - 1) {
       lines.push('');
     }
   });
-
 
   lines.push('');
   lines.push('---');
@@ -130,14 +133,15 @@ lines.push('');
 const topMob = [...results].sort((a, b) => b.normalMob.avgDps - a.normalMob.avgDps).slice(0, 10);
 lines.push('### 3.1 🌾 普通小怪群戰 DPS 天梯榜 (AOE / 清怪割草王者)');
 lines.push('');
-lines.push('| 排名 | 技能群組 | 超神技能 | 專屬傳奇效果 | 小怪 DPS | 小怪採樣總傷害 | 超神技能效果摘要 |');
-lines.push('| :---: | :--- | :--- | :--- | :---: | :---: | :--- |');
+lines.push('| 排名 | 技能群組 | 超神技能 | 專屬傳奇效果 | 小怪 DPS | 小怪採樣總傷害 | 傷害次數 | 超神技能效果摘要 |');
+lines.push('| :---: | :--- | :--- | :--- | :---: | :---: | :---: | :--- |');
 topMob.forEach((r, idx) => {
   const t = r.target;
   const m = r.normalMob;
   const affs = t.affixes.map(a => a.name).join('、');
   const desc = t.ultDesc.replace(/[\r\n]+/g, ' ').slice(0, 35) + '...';
-  lines.push(`| **#${idx + 1}** | **${t.groupName}** | **${t.ultName}** | ${affs} | **${fmtDps(m.avgDps)}** | ${fmtDmg(m.totalDamage)} | ${desc} |`);
+  const hits = (m.hitCount || 0).toLocaleString();
+  lines.push(`| **#${idx + 1}** | **${t.groupName}** | **${t.ultName}** | ${affs} | **${fmtDps(m.avgDps)}** | ${fmtDmg(m.totalDamage)} | ${hits} 次 | ${desc} |`);
 });
 lines.push('');
 
@@ -145,14 +149,15 @@ lines.push('');
 const topElite = [...results].sort((a, b) => b.elite.avgDps - a.elite.avgDps).slice(0, 10);
 lines.push('### 3.2 🛡️ 菁英怪攻堅 DPS 天梯榜 (多目標攻堅王者)');
 lines.push('');
-lines.push('| 排名 | 技能群組 | 超神技能 | 專屬傳奇效果 | 菁英怪 DPS | 菁英採樣總傷害 | 超神技能效果摘要 |');
-lines.push('| :---: | :--- | :--- | :--- | :---: | :---: | :--- |');
+lines.push('| 排名 | 技能群組 | 超神技能 | 專屬傳奇效果 | 菁英怪 DPS | 菁英採樣總傷害 | 傷害次數 | 超神技能效果摘要 |');
+lines.push('| :---: | :--- | :--- | :--- | :---: | :---: | :---: | :--- |');
 topElite.forEach((r, idx) => {
   const t = r.target;
   const e = r.elite;
   const affs = t.affixes.map(a => a.name).join('、');
   const desc = t.ultDesc.replace(/[\r\n]+/g, ' ').slice(0, 35) + '...';
-  lines.push(`| **#${idx + 1}** | **${t.groupName}** | **${t.ultName}** | ${affs} | **${fmtDps(e.avgDps)}** | ${fmtDmg(e.totalDamage)} | ${desc} |`);
+  const hits = (e.hitCount || 0).toLocaleString();
+  lines.push(`| **#${idx + 1}** | **${t.groupName}** | **${t.ultName}** | ${affs} | **${fmtDps(e.avgDps)}** | ${fmtDmg(e.totalDamage)} | ${hits} 次 | ${desc} |`);
 });
 lines.push('');
 
@@ -160,14 +165,15 @@ lines.push('');
 const topBoss = [...results].sort((a, b) => b.boss.avgDps - a.boss.avgDps).slice(0, 10);
 lines.push('### 3.3 👑 單體 BOSS 戰 DPS 天梯榜 (單體極限爆發王者)');
 lines.push('');
-lines.push('| 排名 | 技能群組 | 超神技能 | 專屬傳奇效果 | BOSS DPS | BOSS 採樣總傷害 | 超神技能效果摘要 |');
-lines.push('| :---: | :--- | :--- | :--- | :---: | :---: | :--- |');
+lines.push('| 排名 | 技能群組 | 超神技能 | 專屬傳奇效果 | BOSS DPS | BOSS 採樣總傷害 | 傷害次數 | 超神技能效果摘要 |');
+lines.push('| :---: | :--- | :--- | :--- | :---: | :---: | :---: | :--- |');
 topBoss.forEach((r, idx) => {
   const t = r.target;
   const b = r.boss;
   const affs = t.affixes.map(a => a.name).join('、');
   const desc = t.ultDesc.replace(/[\r\n]+/g, ' ').slice(0, 35) + '...';
-  lines.push(`| **#${idx + 1}** | **${t.groupName}** | **${t.ultName}** | ${affs} | **${fmtDps(b.avgDps)}** | ${fmtDmg(b.totalDamage)} | ${desc} |`);
+  const hits = (b.hitCount || 0).toLocaleString();
+  lines.push(`| **#${idx + 1}** | **${t.groupName}** | **${t.ultName}** | ${affs} | **${fmtDps(b.avgDps)}** | ${fmtDmg(b.totalDamage)} | ${hits} 次 | ${desc} |`);
 });
 lines.push('');
 
