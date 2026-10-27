@@ -34,19 +34,20 @@ function toggleCombatPaused() {
     return setCombatPaused(!COMBAT_PAUSED);
 }
 
-/* GM 鎖血是測試用的無傷狀態：若啟用前角色正好卡在暈眩／倒地閘門，
-   生命雖然不再下降，技能列卻會永遠看似就緒而完全不出手。一般遊戲不走
-   這條例外，只有 HP_lock 啟用時解除這兩個行動阻擋。施法中的硬直仍由
-   skillCastInProgress 自己管理，不在這裡繞過。 */
+/* 玩家保留控制狀態，但 act／aspd 不生效（ccLockOn）。死亡復甦與施法時間
+   仍走各自閘門；GM 鎖血沿用既有的倒地例外。 */
 function playerActionControlBlocked(pEnt, includeDowned) {
     if (typeof gmHpLockActive === 'function' && gmHpLockActive(pEnt)) return false;
-    if (effectActive(pEnt, 'stun')) return true;
+    if (ccActionLocked(pEnt)) return true;
     return includeDowned !== false &&
         (typeof skill2DownedActive === 'function') && skill2DownedActive();
 }
 
 function newPlayerEntity(st) {
-    return { hp: st.hp, mp: st.mp, shield: 0, shieldMax: 0, shieldMaxVersion: SHIELD_MAX_VERSION, atkCd: 1 / st.aspd, _targetSwitchCd: 0, skillCds: {}, buffs: {}, dots: [], effects: {}, _lastStandAt: 0, _skillCastRemaining: 0, _skillCastId: '' };
+    var ent = { hp: st.hp, mp: st.mp, shield: 0, shieldMax: 0, shieldMaxVersion: SHIELD_MAX_VERSION, atkCd: 1 / st.aspd, _targetSwitchCd: 0, skillCds: {}, buffs: {}, dots: [], effects: {}, _lastStandAt: 0, _skillCastRemaining: 0, _skillCastId: '' };
+    // 純執行期身分，不加入戰鬥快照或存檔欄位。
+    Object.defineProperty(ent, 'isPlayer', { value: true });
+    return ent;
 }
 
 function targetSwitchDelaySeconds() {
@@ -783,7 +784,7 @@ function hasConfiguredHigherZone(zoneKey) {
      控場  ent.ccLock[cat]          控場實際生效到什麼時候＝施加時間 + 持續時間 × 遞減倍率
            ent.ccDr[cat]            { n 已計次數, last 上次計次時刻, f 這一輪的遞減倍率 }
    遞減歸零只代表「控場效果沒有了」，狀態依然完整掛在身上。
-   只有帶 _spawnAt 的敵人實體會遞減；玩家與沒登記過的實體一律視為控場永遠生效。 */
+   只有帶 _spawnAt 的敵人實體會遞減；玩家不遞減，另由 ccLockOn 排除出手控制。 */
 function ccTracked(ent) { return !!(ent && ent._spawnAt !== undefined && ent._spawnAt !== null); }
 
 /* 登記一次控場：依類別決定算不算新的一次、定下這一輪的遞減倍率，並把控場生效時間往後推。
@@ -806,8 +807,9 @@ function ccRegister(ent, cats, dur) {
         ent.ccLock[c] = active ? Math.max(lockUntil, until) : until;
     }
 }
-/* 這一類控場現在有沒有在作用。沒登記的實體（玩家等）恆為 true，行為與改版前一致。 */
+/* 玩家只免疫出手控制，狀態與移動控制仍保留；未追蹤的其他實體不吃控場遞減。 */
 function ccLockOn(ent, cat) {
+    if (ent && ent.isPlayer === true && (cat === 'act' || cat === 'aspd')) return false;
     if (!ccTracked(ent)) return true;
     return !!(ent.ccLock && (ent.ccLock[cat] || 0) > GT);
 }
@@ -1928,14 +1930,14 @@ function fieldTick(dt) {
        施放硬直本來就不該影響普攻節奏（見 formula.js SKILL_CAST_LOCK：技能不改動 atkCd）。
        夾在 0 是 2026-08-16「追擊遠方敵人累積負數冷卻」修正的核心，必須保留：
        等待期間只保持 ready，不會在抵達當下連續補攻。
-       暈眩期間維持停住（無法行動就不該累積 ready），與下方玩家行動閘門一致。
+       實際被限制行動時才停止冷卻；玩家的暈眩狀態不影響出手。
           新版技能【狂風斬】同樣是突破上限的攻速乘算（js/skills2.js skill2AspdFactor）。
        ── 例外：**剛好在這一步歸零**時，超過 0 的那一點要留著（最多一步的量），出手後從週期裡扣掉。
           出手只發生在步與步的交界（一步 0.1 秒），整個夾掉的話，週期只要比步長的倍數多一點點
           就得多等一整步：攻速 5（0.2 秒）實測有三分之一的間隔變成 0.3 秒，實際每秒不到 4 下
           （2026-09-22）。上一步就已經是 0 的（等待中）照樣夾在 0，所以欠債最多一步、不會連續補攻。 */
     var playerAttackRate = playerBasicAttackRate(p, st);
-    if (!effectActive(p, 'stun')) {
+    if (!ccActionLocked(p)) {
         var atkCdBefore = p.atkCd;
         var atkCdAfter = atkCdBefore - dt * playerAttackRate;
         p.atkCd = atkCdBefore > 0 ? atkCdAfter : Math.max(0, atkCdAfter);

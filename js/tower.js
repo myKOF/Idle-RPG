@@ -246,7 +246,7 @@ function towerTick(dt) {
     if (legendaryTick && legendaryTick.playerKilled) { endTowerFight(false, 'death'); return; }
   }
 
-  // 玩家行動（減速 -30%；攻速增益加速）
+  // 玩家行動：控制狀態不降低攻速或禁止出手，攻速增益照常。
   var skillCastTick = (typeof tickSkillCast === 'function') ? tickSkillCast(p, dt) : null;
   if (skillCastTick && skillCastTick.completed) {
     TOWER.dmgDealt += Math.max(0, skillCastTick.dmg || 0);

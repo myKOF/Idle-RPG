@@ -45,13 +45,13 @@ function bfContactDist() { return bfNum('BF_CONTACT_DIST', 46); }     // 走到�
 /* 我方只有一種速度：不是在移動就是站著。追擊與空場推進共用同一個值——
    兩段速度會讓畫面看起來忽快忽慢，像一下走路一下跑步。 */
 function bfPlayerSpeed() { return bfNum('BF_PLAYER_SPEED', 300); }
-/* 我方跑速的乘區：來源是新版技能的增益（岩甲術傳奇【輕飛甲】，
-   收斂在 js/skills2.js 的 skill2PlayerMoveFactor）。
-   本檔不認識任何技能，只認得「有沒有人提供倍率」——沒載入就恆為 1。 */
+/* 我方跑速＝技能移速增益 × 移動減速；狀態的出手控制免疫不移除移動減速。
+   兩個來源分別收斂在 skill2PlayerMoveFactor／playerMoveSlowFactor，未載入則恆為 1。 */
 function bfPlayerSpeedFactor(pEnt) {
-  if (typeof skill2PlayerMoveFactor !== 'function') return 1;
-  var f = Number(skill2PlayerMoveFactor(pEnt));
-  return (isFinite(f) && f > 0) ? f : 1;
+  var f = typeof skill2PlayerMoveFactor === 'function' ? Number(skill2PlayerMoveFactor(pEnt)) : 1;
+  if (!isFinite(f) || !(f > 0)) f = 1;
+  var slow = typeof playerMoveSlowFactor === 'function' ? Number(playerMoveSlowFactor(pEnt)) : 1;
+  return f * ((isFinite(slow) && slow >= 0) ? slow : 1);
 }
 /* 敵人跑速是獨立的值，不由我方換算——兩邊要能分開調。
    這是「沒有個別設定」時的預設；NPC 表有填移動速度的敵人用自己的 ent.runSpeed（bfEnemyRunSpeed）。 */

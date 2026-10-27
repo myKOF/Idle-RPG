@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## PLAYER-OFFENSE-CONTROL-IMMUNITY-20261028 — 玩家出手控制免疫與狀態保留
+
+- Owner：Codex；Done，單一開發者。使用者要求玩家不受攻速降低、禁止普攻或施放技能的控制，相關狀態仍保留；移動緩速、拉扯及擊退允許生效。
+- 範圍：combat共用控制判定／玩家實體標記、formula／battlefield的減速與移動、skills2各自動出手入口、tower註解、主端及Worker快取、專項與storm-dance回歸、LV／game_formula及本段。禁止修改敵人／BOSS免控規則、技能數值／Excel／字串／素材、死亡復甦或施法時間、存檔與協議；不合併推送。
+- 設計：玩家戰鬥實體明確標記，act／aspd控制讀取回傳不生效，狀態寫入與顯示保留；玩家slow改為既有減速幅度的移動減速，其他移動減益仍作用。主動／自動／重複施放及普攻冷卻使用實際控制判定，不以狀態存在直接封鎖。
+- 預檢：全部目標無其他副本或分支修改。驗收野外／高塔正常攻擊與施法、各自動排程、狀態／畫面事件保留、移速／拉扯／擊退／牆體保留、敵人控制及BOSS原規則、死亡／復甦／施法時間保護；相關回歸、Build與diff檢查後獨立Commit。
+- 完成13檔：combat的新玩家實體以不可列舉isPlayer標記身分，不增加序列化快照或存檔欄位；ccLockOn統一排除玩家act／aspd，主動出手與普攻冷卻改讀實際控制。skills2五個自動／重施閘門及暴風之舞同步；formula新增玩家移動減速出口、battlefield套用slow及複合減益的移動部分，攻速增益仍有效。tower同步註解；主頁formula75／battlefield19／skills2 366／combat97／tower38／bridge375，Worker入口與五個匯入統一20261028-player-offense-control；LV／game_formula同步。
+- 專項：node --test --test-reporter=spec tests/player-control-immunity.test.cjs，14/14通過；涵蓋實際敵人命中及狀態條目／浮字、野外與高塔普攻次數／時序／冷卻及VFX時長相同、正式就緒佇列火球扣血／MP／CD、四種自動技能及舊配置重施、複合減益只慢移動、移速／攻速增益保留、拉扯／擊退／隔牆可及性、死亡／復甦／施法時間保護。storm-dance兩項舊暈眩斷言依使用者新規改驗照常普攻與自動施放、狀態保留，2/2通過。
+- 廣域指令：node --test --test-reporter=tap tests/player-control-immunity.test.cjs tests/boss-control-immunity.test.cjs tests/control-decay.test.cjs tests/status-system.test.cjs tests/battlefield.test.cjs tests/tower-battlefield.test.cjs tests/multi-enemy.test.cjs tests/elite-engine.test.cjs tests/boss-player-skill.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/skill-cooldown-display.test.cjs tests/boss-skill-lock.test.cjs tests/storm-dance.test.cjs；210項＝193過／17失敗／0跳過。17項為control-decay七項舊參數／元素特效、skill-cooldown-display七項舊進度／數值、elite-engine一項飛彈事件與storm-dance兩項素材斷言；以git show HEAD原版來源唯讀覆映、同四份測試70項完整重跑，17項名稱逐一一致，新增失敗0，未弱化其斷言。彙總保留本聊天visualizations/player-control-immunity的comparison與兩份summary JSON。
+- 其他驗證：npm.cmd run build，596檔通過；node tools/apply_params.cjs，579一致／0變更／0錨點問題；git diff --check通過。唯讀未改：AI_RULES／AGENTS／Workflow／prompts、Status及NPC／Skills2配置、elite／elite_data／elite_boss／recipes、skills／legendary／save、Worker協議與shim、上述其他既有回歸。無新增顯示文字／Excel／美術／素材庫變更；無素材庫Commit。
+- 交付：本段所在「[Codex] fix: 玩家保留控制狀態但免疫出手限制」Commit，實際編號見回覆。無本次未完成實作，可供Review／合併，未合併或推送。限制：上述17項既有失敗、未跑全庫或瀏覽器長戰；保留正常射程、牆體碰撞、死亡復甦與施法時間條件。下一步正常整合後重載主端與Worker驗收。
+
 ## SYNC-ALL-AI-SOURCES-20261028 — 主線完整整合與雲端來源補掃
 
 - Owner：Codex；Done（程式、來源保留與驗證完成；本聊天接續正常同步，推送結果以最新同步報告與回覆為準）。使用者指出bf37b93未被最新同步包含，並明確定義「所有AI同步到最新」是完整整合所有可同步AI成果至主線，不受來源分支名稱或是否有worktree限制；本聊天授權保留各方修改、修復同步工具並完成正常整合／推送，既有hold與main發布限制維持。

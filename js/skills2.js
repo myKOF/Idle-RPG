@@ -8526,7 +8526,7 @@ function sgTickInfiniteLightning(ctx, dt) {
   if (!(SKILL2_RT.infiniteLightningAt > 0)) { SKILL2_RT.infiniteLightningAt = GT + gap; return; }
   if (GT < SKILL2_RT.infiniteLightningAt) return;
   SKILL2_RT.infiniteLightningAt = GT + gap;
-  if (typeof effectActive === 'function' && effectActive(ctx.pEnt, 'stun')) return;
+  if (typeof ccActionLocked === 'function' && ccActionLocked(ctx.pEnt)) return;
   var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
   if (!sgAutoCastCanPay(ctx.pEnt, 'chainlightning')) return;
   var res = castSkill2(ctx.pEnt, enemies, 'chainlightning', ctx.floatSel, { repeat: true, singleChain: true });
@@ -8573,8 +8573,8 @@ function sgTickUltRepeat(ctx, dt) {
     while (rp.nextAt <= GT && rp.until > GT && guard < 50) {
       guard++;
       rp.nextAt += Math.max(0.1, rp.gap);
-      // 暈眩中跳過該次，錯過的不補發（比照暴風之舞與【天霸風神斬】）
-      if (typeof effectActive === 'function' && effectActive(ctx.pEnt, 'stun')) continue;
+      // 實際被限制行動時才跳過該次；玩家控制狀態不禁止出手（比照暴風之舞與【天霸風神斬】）
+      if (typeof ccActionLocked === 'function' && ccActionLocked(ctx.pEnt)) continue;
       var res = castSkill2(ctx.pEnt, enemies, gid, ctx.floatSel, { repeat: true });
       if (!res) continue;
       if (ctx.onDamage) ctx.onDamage(res.dmg);
@@ -10468,7 +10468,7 @@ function sgTickCrystalResonance(ctx, dt) {
    走 castSkill2 的 opts.repeat（不進冷卻）而不是【天霸風神斬】那條付費路徑：
    節拍比冷卻短一個數量級，付費路徑會讓冷卻被永遠重設。法力改由 sgAutoCastPay 每一拍另外扣
   （2026-10-25 起自動施放不再免費）。
-   其餘規則比照既有的自動施放：沒裝配在技能列不生效、暈眩中跳過該次且不補發、
+   其餘規則比照既有的自動施放：沒裝配在技能列不生效、實際被限制行動時跳過該次且不補發、
    死亡／倒地時節拍往後推。 */
 function sgTickInfiniteNova(ctx, dt) {
   var u = sgUlt('frostnova', 'infiniteNova');
@@ -10481,7 +10481,7 @@ function sgTickInfiniteNova(ctx, dt) {
   if (!(SKILL2_RT.infiniteNovaAt > 0)) { SKILL2_RT.infiniteNovaAt = GT + gap; return; }
   if (GT < SKILL2_RT.infiniteNovaAt) return;
   SKILL2_RT.infiniteNovaAt = GT + gap;
-  if (typeof effectActive === 'function' && effectActive(ctx.pEnt, 'stun')) return;
+  if (typeof ccActionLocked === 'function' && ccActionLocked(ctx.pEnt)) return;
   var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
   if (!sgAutoCastCanPay(ctx.pEnt, 'frostnova')) return;
   var res = castSkill2(ctx.pEnt, enemies, 'frostnova', ctx.floatSel, { repeat: true });
@@ -11409,7 +11409,7 @@ function sgTickVoidAnnihilation(ctx, dt) {
   if (!(SKILL2_RT.voidAnnihilateAt > 0)) { SKILL2_RT.voidAnnihilateAt = GT + gap; return; }
   if (GT < SKILL2_RT.voidAnnihilateAt) return;
   SKILL2_RT.voidAnnihilateAt = GT + gap;
-  if (typeof effectActive === 'function' && effectActive(ctx.pEnt, 'stun')) return;
+  if (typeof ccActionLocked === 'function' && ccActionLocked(ctx.pEnt)) return;
   var lvs = skills2Levels('vacuumslash');
   var st = (typeof getStats === 'function') ? getStats() : null;
   if (!lvs || lvs[6] < 1 || !st) return;
@@ -12115,7 +12115,7 @@ function skill2DownedActive() {
    自動不等於不受角色狀態限制：人倒下了，他的技能就不該繼續打。
    涵蓋【地爆天星】【天霸風神斬】【阿修羅霸王拳】【暴風之舞】與傳奇的三個自動觸發。
 
-   為什麼是「暫停」而不是「跳過這一拍」（暈眩走的是後者）：
+   為什麼是「暫停」而不是「跳過這一拍」：
      ・跳過的話，倒地期間到期的那一發會消失，但【地爆天星】的黑影預警可能已經播完，
        畫面上會出現「殞石照樣落下卻沒有任何傷害」的鬼影
      ・排程若原封不動，復活的瞬間會把倒地期間累積的節拍一次補發（等效免費爆發）
@@ -12453,7 +12453,7 @@ function sgTickUltAutoCast(ctx, dt) {
   if (!(next > 0)) { SKILL2_RT.ultAuto.cleave = GT + gap; return; }
   if (next > GT) return;
   SKILL2_RT.ultAuto.cleave = GT + gap;
-  if (typeof effectActive === 'function' && effectActive(ctx.pEnt, 'stun')) return;
+  if (typeof ccActionLocked === 'function' && ccActionLocked(ctx.pEnt)) return;
   var cost = skills2ManaCost('cleave');
   if (ctx.pEnt.mp < cost && !(typeof gmMpLockActive === 'function' && gmMpLockActive(ctx.pEnt))) return;
   var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
@@ -12476,8 +12476,8 @@ function sgTickStorm(ctx, dt) {
     stm.nextAt = sgPauseSchedule(stm.nextAt, dt);
     return;
   }
-  /* 暈眩中不揮舞（比照一般技能施放被暈眩擋下）；節拍照走、錯過的不補發。 */
-  var stunned = (typeof effectActive === 'function') && effectActive(ctx.pEnt, 'stun');
+  /* 使用實際控制閘門：玩家的暈眩狀態仍保留，但不禁止揮舞。 */
+  var stunned = (typeof ccActionLocked === 'function') && ccActionLocked(ctx.pEnt);
   var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
   if (!stm.tgt || stm.tgt.hp <= 0 ||
       (typeof bfPos === 'function' && bfPos(stm.tgt) && typeof bfPlayerCanReach === 'function' && bfPlayerCanReach(stm.tgt))) {

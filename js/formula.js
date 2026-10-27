@@ -574,6 +574,15 @@ function slowFactor(ent) {
   return f;
 }
 
+/* 玩家 slow 沿用既有減速幅度，但只影響移動；複合減益也只取移動那一半。
+   攻速免控由 ccLockOn 的 aspd 特例處理，不刪除任何狀態。 */
+function playerMoveSlowFactor(ent) {
+  if (!ent) return 1;
+  var f = typeof effectActive === 'function' && effectActive(ent, 'slow') ? SLOW_ASPD_FACTOR : 1;
+  if (typeof skill2SlowMoveFactor === 'function') f *= skill2SlowMoveFactor(ent);
+  return f;
+}
+
 // 高塔 BOSS 不受會改變攻擊頻率的控制效果影響。
 function isBossControlImmune(ent) { return !!(ent && ent.isBoss); }
 function isAttackFrequencyControlKey(key) {
