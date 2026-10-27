@@ -87,9 +87,5 @@
       }
     }
   ],
-  "weaponBone": "Sword",
-  "fist": {
-    "from": "Right",
-    "to": "Left"
-  }
+  "weaponBone": "Sword"
 }
