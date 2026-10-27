@@ -141,14 +141,14 @@ def apply(ob, arm, hand="Right", weapon_group=None):
 
 
 # ---- fist -------------------------------------------------------------------------------------
-# Meshy's left hand is open and the rig has no finger bones, so the fist is a rest-pose mesh edit:
-# every vertex past the knuckle line follows a folded path, the way real fingers close. The path goes
-# out from the knuckle, folds back over itself, then tucks onto the palm (three joints), and each
-# vertex keeps its own offset from the finger's centre line. The hand is not turned at all.
-FIST_KNUCKLE_AT = 0.09  # metres from the wrist along the hand: where the fingers start
-FIST_SEGMENT = 0.037  # length of one finger section
-FIST_JOINT_WIDTH = 0.022  # how gradually a joint bends
-FIST_FOLDS_DEG = (95.0, 95.0, 70.0)  # bend at each of the three joints
+# Meshy's left hand is open and the rig has no finger bones, so the fist is a rest-pose mesh edit. The
+# gauntlet is metal: the plates between the joints must not bend or stretch, so each finger section is
+# moved as one rigid piece and only the vertices inside a joint's own span (measured from the rings of
+# vertices in the original hand) turn. The path out of the knuckle folds three times, the way real
+# fingers close, and every vertex keeps its offset from the finger's centre line. The hand is not turned.
+# Reach = metres from the wrist along the hand; the spans are the knuckle, middle and fingertip joints.
+FIST_JOINTS = ((0.075, 0.105), (0.115, 0.145), (0.158, 0.175))
+FIST_FOLDS_DEG = (95.0, 100.0, 75.0)  # bend at each of the three joints
 
 
 def curl_fist(ob, arm, side="Left", palm_sign=-1.0):
@@ -167,7 +167,8 @@ def curl_fist(ob, arm, side="Left", palm_sign=-1.0):
     normal = normal - along * (normal @ along)
     normal = palm_sign * normal / np.linalg.norm(normal)
     lateral = np.cross(along, normal)
-    knuckle = wrist + along * FIST_KNUCKLE_AT
+    start = FIST_JOINTS[0][0]
+    knuckle = wrist + along * start
 
     def smooth(t):
         t = np.clip(t, 0.0, 1.0)
@@ -175,7 +176,7 @@ def curl_fist(ob, arm, side="Left", palm_sign=-1.0):
 
     du = 0.001
     us = np.arange(0.0, 0.25, du)
-    phi = sum(math.radians(a) * smooth((us - j * FIST_SEGMENT) / FIST_JOINT_WIDTH + 0.5) for j, a in enumerate(FIST_FOLDS_DEG))
+    phi = sum(math.radians(a) * smooth((us + start - lo) / (hi - lo)) for (lo, hi), a in zip(FIST_JOINTS, FIST_FOLDS_DEG))
     heading = np.outer(np.cos(phi), along) + np.outer(np.sin(phi), normal)
     path = np.cumsum(heading * du, axis=0) - heading * du  # position of the centre line at each u
     side_dir = np.outer(-np.sin(phi), along) + np.outer(np.cos(phi), normal)  # the "up" of the finger at each u
