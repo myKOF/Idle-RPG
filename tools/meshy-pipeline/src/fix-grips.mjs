@@ -10,7 +10,9 @@
               用兩段式 IK（上臂＋前臂，保留原本手肘彎曲的方向）重新解出 LeftArm／LeftForeArm，再把 LeftHand 轉回握劍的朝向。
      Attack2：重新設計下劈那一段（t≈1.14～）右臂的軌跡：高舉 → 由左上往右下一路斜砍而下，劍沿手臂成一直線，
               停在斜下方。原動作在 t=1.24～1.30 手臂近乎水平（劍停在頭部高度＝平砍），之後往下再往後拉。
-              用兩段式 IK 解右臂，手臂方向用「相對身體面向」的仰角／側偏曲線（CHOP）給定。
+              用兩段式 IK 解右臂，手臂方向用「相對身體面向」的仰角／側偏曲線（chop）給定。
+              手臂各段的「扭轉」用瞄準＋參考幀的固定偏移決定（不累積），手與劍相對前臂只保留繞軸的自然握法、沒有手腕彎折，
+              所以手掌順著手臂延伸的朝向，不會像只做最小旋轉那樣把手掌轉好幾圈。
    兩者都用權重 0～1 漸入漸出，沒被修到的幀與原動作逐位元相同。
 
    披風下擺：下擺最末端的頂點整個綁在腿骨骼上（權重只有腿、沒有髖部），腿一跨步它們就被拖開，三角面被拉成一根根細絲
@@ -42,12 +44,17 @@ const CFG = {
     gripLocalOffset: null
   },
   Attack2: {
-    rampIn: [1.14, 1.20],     // 原動作 → 下劈軌跡的漸入；漸入後一路保持到動作結束（落在斜下方，與待機姿勢接近）
+    rampIn: [1.14, 1.20],     // 原動作 → 下劈軌跡的漸入；之後一路保持到動作結束（落在斜下方，與待機姿勢接近）
     rampOut: null,
+    refTime: 1.30,            // 手臂／手／劍「扭轉」的參考幀：原動作這一幀手臂前伸、握劍姿勢自然
     /* 右臂方向（肩→手）曲線：[時間, 仰角°, 側偏°]。仰角相對水平（+上／−下），側偏相對身體面向（+向角色右）。
-       1.20 高舉在左上前方 → 一路下降經過水平不停留 → 1.46 落在斜下方，保持。
-       使用者回報（t=1.21／1.27 紅箭頭）：高舉後由左上至右下斜砍而下，不是平砍再後拉。 */
-    chop: [[1.20, 55, -35], [1.24, 40, -25], [1.28, 18, -12], [1.32, -8, 0], [1.36, -32, 6], [1.40, -48, 10], [1.46, -58, 10]]
+       以「劍尖高度」設計（劍沿手臂成一直線，劍尖高 ≈ 肩高 1.35 + 1.7 × sin(仰角)）：
+         起手 +24° → 劍尖約 1.95 m（高舉到頭上不遠）
+         +5° → 約 1.5 m（敵人肩高）、−9° → 約 1.1 m（敵人腰高）：劈中的這一道「肩部斜向腰部」
+         收招 −28° → 約 0.5 m（膝腰之間，與待機姿勢接近），不劈到地面。
+       由左往右帶一點側偏（−32° → +10°）。
+       使用者回報：+55° 起手的版本劍尖超過 2.5 m、像在砍空中單位；−46° 收招劍尖貼地。 */
+    chop: [[1.20, 24, -32], [1.24, 17, -24], [1.28, 5, -14], [1.32, -9, -4], [1.36, -20, 4], [1.40, -26, 9], [1.46, -28, 10]]
   }
 };
 
@@ -221,9 +228,30 @@ function bodyFrame(rig, W) {
   if (fwd.dot(hz) < 0) fwd.negate();
   return { fwd, right, up: new Vector3(0, 1, 0) };
 }
+/* 瞄準：局部 +Y 指向 dir，局部 +X 取 up × dir（扭轉固定相對於 up，不隨路徑累積） */
+function aimQuat(dir, up) {
+  const y = dir.clone().normalize();
+  const x = new Vector3().crossVectors(up, y);
+  if (x.lengthSq() < 1e-8) x.set(1, 0, 0);
+  x.normalize();
+  const z = new Vector3().crossVectors(x, y).normalize();
+  return new Quaternion().setFromRotationMatrix(new Matrix4().makeBasis(x, y, z));
+}
+/* 只留繞局部 Y 軸的扭轉（swing-twist 的 twist 部分）：骨骼沿 Y 軸延伸，去掉彎折後只剩「手掌朝哪面」 */
+function twistAboutY(q) {
+  const len = Math.hypot(q.y, q.w);
+  return len < 1e-9 ? new Quaternion() : new Quaternion(0, q.y / len, 0, q.w / len);
+}
 function fixAttack2Chop(rig, clip, cfg) {
   const id = (n) => rig.byName[n];
   const SW = id('Sword'), RS = id('RightShoulder'), RA = id('RightArm'), RF = id('RightForeArm'), RH = id('RightHand');
+  const UP = new Vector3(0, 1, 0);
+  // 參考幀：各段相對「瞄準」的固定偏移（＝原動作那一刻自然的扭轉）、手與劍的繞軸扭轉
+  const refPose = poseAt(rig, clip, cfg.refTime), refW = worldMatrices(rig, refPose);
+  const rS = wPos(refW(RA)), rE = wPos(refW(RF)), rWr = wPos(refW(RH));
+  const offUA = aimQuat(rE.clone().sub(rS), UP).invert().multiply(wRot(refW(RA)));
+  const offFA = aimQuat(rWr.clone().sub(rE), UP).invert().multiply(wRot(refW(RF)));
+  const handLocal = twistAboutY(refPose[RH].q), swordLocal = twistAboutY(refPose[SW].q);
   const result = {};
   for (let i = 0; i < clip.keyTimes.length; i++) {
     const t = clip.keyTimes[i], w = weightAt(t, cfg);
@@ -232,39 +260,27 @@ function fixAttack2Chop(rig, clip, cfg) {
     const fr = bodyFrame(rig, W);
     const S = wPos(W(RA)), E = wPos(W(RF)), Wr = wPos(W(RH));
     const L1 = S.distanceTo(E), L2 = E.distanceTo(Wr), reach = Math.min(S.distanceTo(Wr), (L1 + L2) * 0.995);
-    const dirOrig = Wr.clone().sub(S).normalize();
     const [pitch, yaw] = chopAt(cfg.chop, t), pr = pitch * Math.PI / 180, yr = yaw * Math.PI / 180;
-    const dirTarget = new Vector3().addScaledVector(fr.fwd, Math.cos(pr) * Math.cos(yr)).addScaledVector(fr.right, Math.cos(pr) * Math.sin(yr)).addScaledVector(fr.up, Math.sin(pr)).normalize();
-    // 原方向 → 目標方向，依權重走一段弧
-    const arc = new Quaternion().setFromUnitVectors(dirOrig, dirTarget);
-    const dirNew = dirOrig.clone().applyQuaternion(new Quaternion().slerp(arc, w)).normalize();
-    const T = S.clone().addScaledVector(dirNew, reach);
-    // 兩段式 IK（上臂 RightArm＋前臂 RightForeArm），手肘彎向沿用原本偏離肩→手軸的那一側
+    const dir = new Vector3().addScaledVector(fr.fwd, Math.cos(pr) * Math.cos(yr)).addScaledVector(fr.right, Math.cos(pr) * Math.sin(yr)).addScaledVector(fr.up, Math.sin(pr)).normalize();
+    const T = S.clone().addScaledVector(dir, reach);
+    // 兩段式 IK：手肘位置（彎向沿用原本偏離肩→手軸的那一側）
     const a = (L1 * L1 - L2 * L2 + reach * reach) / (2 * reach), h = Math.sqrt(Math.max(0, L1 * L1 - a * a));
     const eo = E.clone().sub(S);
-    let pole = eo.sub(dirNew.clone().multiplyScalar(eo.dot(dirNew)));
-    if (pole.lengthSq() < 1e-8) pole = new Vector3(0, -1, 0).sub(dirNew.clone().multiplyScalar(-dirNew.y));
+    let pole = eo.sub(dir.clone().multiplyScalar(eo.dot(dir)));
+    if (pole.lengthSq() < 1e-8) pole = new Vector3(0, -1, 0).sub(dir.clone().multiplyScalar(-dir.y));
     pole.normalize();
-    const E2 = S.clone().addScaledVector(dirNew, a).addScaledVector(pole, h);
-    const raW = wRot(W(RA)), shW = wRot(W(RS));
-    const arc1 = new Quaternion().setFromUnitVectors(E.clone().sub(S).normalize(), E2.clone().sub(S).normalize());
-    const raW2 = arc1.clone().multiply(raW);
-    pose[RA].q.copy(shW.clone().invert().multiply(raW2).normalize());
-    const W1 = worldMatrices(rig, pose);
-    const E1 = wPos(W1(RF)), Wr1 = wPos(W1(RH));
-    const arc2 = new Quaternion().setFromUnitVectors(Wr1.clone().sub(E1).normalize(), T.clone().sub(E1).normalize());
-    const rfW2 = arc2.clone().multiply(wRot(W1(RF)));
-    pose[RF].q.copy(raW2.clone().invert().multiply(rfW2).normalize());
-    // 手相對前臂的角度不變 → 手跟著前臂轉；劍相對手不動，再讓劍身沿「手肘→手腕」成一直線（與手臂同向）
-    const W2 = worldMatrices(rig, pose);
-    const forearmDir = wPos(W2(RH)).sub(wPos(W2(RF))).normalize();
-    const swQ = wRot(W2(SW));
-    const blade = new Vector3(0, 1, 0).applyQuaternion(swQ).normalize();          // 劍身方向：Sword 局部 +Y（柄端 → 劍尖）
-    const aim = new Quaternion().setFromUnitVectors(blade, forearmDir).multiply(swQ.clone());
-    const swW = swQ.clone().slerp(aim, w);
+    const E2 = S.clone().addScaledVector(dir, a).addScaledVector(pole, h);
+    // 各段朝向＝瞄準 × 參考幀偏移（扭轉固定，不累積）
+    const raW = aimQuat(E2.clone().sub(S), UP).multiply(offUA);
+    const rfW = aimQuat(T.clone().sub(E2), UP).multiply(offFA);
+    const shW = wRot(W(RS));
+    const raL = shW.clone().invert().multiply(raW).normalize();
+    const rfL = raW.clone().invert().multiply(rfW).normalize();
+    // 與原動作依權重混合（漸入）
+    const mix = (orig, nw) => orig.clone().slerp(nw, w);
     result[i] = {
-      RightArm: pose[RA].q.clone(), RightForeArm: pose[RF].q.clone(),
-      Sword: wRot(W2(RH)).invert().multiply(swW).normalize()
+      RightArm: mix(pose[RA].q, raL), RightForeArm: mix(pose[RF].q, rfL),
+      RightHand: mix(pose[RH].q, handLocal), Sword: mix(pose[SW].q, swordLocal)
     };
   }
   return result;
