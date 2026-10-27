@@ -4,13 +4,15 @@
 .world-map-current-zone .ui-ico { width: 20px; height: 20px; }
 /* 共用按鈕主題使用!important，入口顏色需同層級覆寫。 */
 #btn-world-map { flex: 0 0 auto; background: #ead99a !important; border-color: #b8a365 !important; color: #332a19 !important; text-shadow: none; }
+.zone-bar-tools { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+#btn-hero3d[hidden] { display: none; }
 #btn-world-map:hover, #btn-world-map:focus-visible { background: #f3e4b4 !important; border-color: #d6bf77 !important; color: #332a19 !important; }
 .stage-navigation { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; }
 #stage-label { font-size: 18px; }
 #ui-shell:not(.battle-fullscreen) .battle-navigation { display: grid; grid-template-columns: minmax(0, 1fr) max-content minmax(0, 1fr); grid-template-rows: 32px 32px; align-items: center; row-gap: 4px; margin-bottom: 12px; container-type: inline-size; }
 #ui-shell:not(.battle-fullscreen) #zone-bar, #ui-shell:not(.battle-fullscreen) #stage-bar { display: contents; }
 #ui-shell:not(.battle-fullscreen) #current-zone-name { grid-column: 1; grid-row: 1; justify-self: start; }
-#ui-shell:not(.battle-fullscreen) #btn-world-map { grid-column: 3; grid-row: 1; justify-self: end; }
+#ui-shell:not(.battle-fullscreen) .zone-bar-tools { grid-column: 3; grid-row: 1; justify-self: end; }
 #ui-shell:not(.battle-fullscreen) .stage-main-controls { display: contents; }
 #ui-shell:not(.battle-fullscreen) .stage-main-controls > .chk { grid-column: 1; grid-row: 2; justify-self: start; white-space: nowrap; }
 #ui-shell:not(.battle-fullscreen) .stage-navigation { grid-column: 2; grid-row: 1 / 3; align-self: center; justify-self: center; }

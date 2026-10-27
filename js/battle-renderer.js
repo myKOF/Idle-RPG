@@ -977,7 +977,30 @@ var BattleRenderer = (function () {
     if (!set) return sheet.anims[animName];
     return set[entity.dir | 0] || set[0];
   }
+  /* 3D 身體（Hero3D.makeBody）：動作名沿用 2D 的，由 Hero3D.CLIP_FOR 對到 GLB 動畫。
+     播完、保持最後一格、播完接回 baseAnim 的規則與下面 2D 那一套一致。 */
+  function playHero3dAnim(entity, animName, backTo) {
+    var sheet = S.sheets[entity.sheetName];
+    var cfg = Hero3D.CLIP_FOR[animName];
+    if (!cfg || !entity.body) return;
+    if (entity.curAnim === animName && cfg.loop) return;
+    entity.curAnim = animName;
+    entity.texAnim = animName;
+    entity.body.hero3dPlay(cfg, sheet && sheet.speeds && sheet.speeds[animName]);
+    entity.body.loop = !!cfg.loop;
+    if (cfg.hold) {
+      entity.body.onComplete = null;
+    } else if (!cfg.loop) {
+      entity.body.onComplete = function () {
+        entity.curAnim = '';
+        playAnim(entity, entity.baseAnim || backTo || 'idle');
+      };
+    } else {
+      entity.body.onComplete = null;
+    }
+  }
   function playAnim(entity, animName, backTo) {
+    if (entity.body && entity.body.hero3d) { playHero3dAnim(entity, animName, backTo); return; }
     var sheet = S.sheets[entity.sheetName];
     if (!sheet || !sheet.anims[animName] || !entity.body) return;
     if (entity.curAnim === animName && sheet.manifest.anims[animName].loop) return;
@@ -1014,6 +1037,7 @@ var BattleRenderer = (function () {
     if (entity.dir === d) return;
     entity.dir = d;
     var body = entity.body;
+    if (body && body.hero3d) return;   // 3D 身體用連續轉角（turnToward 已經餵過），不分八格
     var set = entity.texAnim && sheet.dirAnims[entity.texAnim];
     if (!body || body.destroyed || !set) return;
     var frame = body.currentFrame, playing = body.playing, speed = body.animationSpeed;
@@ -1033,6 +1057,7 @@ var BattleRenderer = (function () {
   function turnToward(entity, dx, dy, sticky) {
     var sheet = entity && S.sheets[entity.sheetName];
     if (!sheet || !sheet.dirAnims || (!dx && !dy)) return;
+    if (entity.body && entity.body.hero3d) entity.body.hero3dFace(dx, dy);   // 3D：連續轉角，不用遲滯
     var n = sheet.dirCount;
     var d = dirFromVector(n, dx, dy);
     if (sticky && typeof entity.dir === 'number' && d !== entity.dir) {
@@ -1738,13 +1763,40 @@ var BattleRenderer = (function () {
     }
   }
 
+  /* ---- 3D 主角（內測，js/hero3d.js）----
+     只換主角「身體怎麼畫」：站位、鏡頭、陰影、特效、血條全沿用 2D 那一套。
+     Hero3D.enabled() 在正式版恆為 false，這裡直接回傳、不下載 three.js 與模型。
+     載入失敗就關掉開關退回 2D，不讓戰鬥畫面壞掉。 */
+  function loadHero3d() {
+    if (typeof Hero3D === 'undefined' || !Hero3D.enabled()) return null;
+    return Hero3D.create().then(function (ctrl) {
+      S.hero3d = ctrl;
+    }).catch(function (err) {
+      console.warn('[battle-renderer] 3D 主角載入失敗，退回 2D 序列幀：', err);
+      S.hero3d = null;
+      Hero3D.setEnabled(false);
+      var btn = document.getElementById('btn-hero3d');
+      if (btn && typeof STR === 'function') {
+        btn.textContent = STR(2145);
+        btn.setAttribute('aria-pressed', 'false');
+      }
+    });
+  }
+  function makeHero3dBody() {
+    var sheet = S.sheets.player;
+    var body = Hero3D.makeBody(S.hero3d);
+    body.scale.set(Hero3D.displayScale(S.hero3d));
+    body.hero3dPlay(Hero3D.CLIP_FOR.idle, sheet && sheet.speeds ? sheet.speeds.idle : 0.5);
+    return body;
+  }
+
   /* ---- 玩家 ---- */
   function makePlayer() {
     var root = new PIXI.Container();
     var sheet = S.sheets.player;
     var manifest = sheet ? sheet.manifest : {};
     /* 影子畫在序列幀裡的（騎士）就不再疊一個橢圓：兩層影子會一深一淺、方向也對不上 */
-    if (!manifest.bakedShadow) {
+    if (!manifest.bakedShadow || S.hero3d) {   // 3D 角色沒有畫好的影子，一律補橢圓
       var shadow = new PIXI.Graphics();
       shadow.ellipse(0, 0, 24, 8).fill({ color: 0x000000, alpha: 0.4 });
       root.addChild(shadow);
@@ -1752,11 +1804,11 @@ var BattleRenderer = (function () {
     var bodyWrap = new PIXI.Container();
     /* 縮放交給 player.json 的 scale：那個倍率取決於素材裡的角色佔格子多大，
        是素材的性質而不是程式的設定（原本寫死 1.09，換一組圖就得改這一行）。 */
-    var body = makeAnimSprite('player', 'idle');
+    var body = S.hero3d ? makeHero3dBody() : makeAnimSprite('player', 'idle');
     bodyWrap.addChild(body);
     root.addChild(bodyWrap);
-    /* 穿透式角色輪廓（見 PLAYER_OUTLINE）：獨立掛在特效層之上，逐幀鏡像本體。 */
-    var outline = makeOutlineSprite('player', body);
+    /* 穿透式角色輪廓（見 PLAYER_OUTLINE）：獨立掛在特效層之上，逐幀鏡像本體。3D 身體沒有逐幀的輪廓圖，不畫。 */
+    var outline = S.hero3d ? null : makeOutlineSprite('player', body);
 
     /* 復活倒數：技能與狀態列都收進彈出面板後，倒地資訊只剩畫面上這一條 */
     var reviveText = new PIXI.Text({
@@ -1832,12 +1884,13 @@ var BattleRenderer = (function () {
       var naturalMs = Array.isArray(meta.durations)
         ? meta.durations.reduce(function (sum, ms) { return sum + ms; }, 0)
         : played / meta.fps * 1000;
+      if (p.body.hero3d) naturalMs = p.body.naturalMs;   // 3D 動作原速播完的長度
       /* 短於原素材時加速整段，保留各影格比例；低攻速不把揮刀拖成慢動作。 */
       p.body.animationSpeed *= Math.max(1, naturalMs / (duration * 1000));
     }
     /* 施法：硬直 leadMs 之後技能才真的放出去、特效才出現。把幀定義的 release（釋放那一幀）對到那一刻：
        first→release 這段要在 leadMs 內播完。預設硬直 0.2 秒、first 2、release 8 剛好是 30 fps。 */
-    if (!melee && meta && p.body && leadMs > 0 && meta.release > (meta.first | 0)) {
+    if (!melee && meta && p.body && !p.body.hero3d && leadMs > 0 && meta.release > (meta.first | 0)) {
       var castFps = (meta.release - (meta.first | 0)) / (leadMs / 1000);
       p.body.animationSpeed = Math.max(CAST_FPS_MIN, Math.min(CAST_FPS_MAX, castFps)) / 60;
     }
@@ -7779,6 +7832,7 @@ var BattleRenderer = (function () {
            圖集與幀定義由 tools/build_character_sprites.cjs 從素材庫 characters/knight-hd 產生。 */
         loadSheet('player', 'images/sprites/knight/knight', { outline: true }),
         loadSheet('boss', 'images/sprites/boss_generic'),
+        loadHero3d(),
         loadFireFlare(),
         PIXI.Assets.load('images/vfx/assets/codex-authored/thrust/thrust_lance.png?v=20260815-narrow-rect').then(function (tex) {
           S.thrustLanceTex = tex;
@@ -7830,6 +7884,7 @@ var BattleRenderer = (function () {
     }).catch(function (err) {
       console.warn('[battle-renderer] 初始化失敗，退回 DOM 戰鬥畫面：', err && err.message ? err.message : err);
       S.failed = true;
+      try { if (S.hero3d) { S.hero3d.dispose(); S.hero3d = null; } } catch (e) {}
       try { if (app && app.destroy) app.destroy(true, { children: true }); } catch (e) {}
       return false;
     });

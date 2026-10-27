@@ -11619,6 +11619,25 @@ function exitBattleFullscreen() {
   return true;
 }
 
+/* 內測專用：主角動畫系統切換（2D 序列幀／3D 骨架動畫，js/hero3d.js）。
+   正式版 isInternalServer() 為 false：按鈕保持 hidden、不綁事件，Hero3D.enabled() 也恆為 false。
+   渲染器在啟動時決定畫法，所以切換＝存好設定後重新整理頁面。 */
+function initHero3dToggle() {
+  var btn = $id('btn-hero3d');
+  if (!btn || typeof Hero3D === 'undefined' || !isInternalServer()) return;
+  function paint() {
+    var on = Hero3D.enabled();
+    btn.textContent = STR(on ? 2152 : 2151);
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+  btn.addEventListener('click', function () {
+    Hero3D.setEnabled(!Hero3D.enabled());
+    location.reload();
+  });
+  paint();
+  btn.hidden = false;
+}
+
 function initUI() {
   // 捕獲階段先守門，避免已開啟的面板或晚到的點擊改動本機配置草稿。
   document.addEventListener('click', function (e) {
@@ -11675,6 +11694,7 @@ function initUI() {
   }
   syncVfxQualityForTab();
   initBattleCanvasMode();
+  initHero3dToggle();
 
   var battleFullscreenBtn = $id('btn-battle-fullscreen');
   if (battleFullscreenBtn) battleFullscreenBtn.addEventListener('click', function () {

@@ -1,5 +1,21 @@
 # AI_TASKS.md
 
+## MERGE-HERO3D-20261027 — 保留轉生文字與內測3D切換
+
+- Owner：Codex；Done。使用者提供本次同步失敗畫面，延續本聊天保留各AI修改並完成develop合併的授權；HEAD c39e075e、incoming 530cf77c、base b78097b6。保留原四個衝突及其餘incoming來源，先備份；下段Blocked為先前沙箱執行環境的歷史結果。
+- 範圍：String原生合併／CSV／strings_data、index／UI控制引用、AI_TASKS雙方段落及必要LV、內測閘門回歸與GLB素材備存。2145～2147撞號時保留既有傳奇／轉生文字，incoming三個3D控制改2151～2153；ui快取升221。未改3D模型／動畫／轉生玩法、未發布main；MakeHuman試作保持hold。
+- Excel：候選基於ours，在戰鬥模塊2144後原生插入三列、寫12格，工具兩次正常重開核對2141列7欄、0物件；獨立Excel重開Saved且非RepairMode，所有原字串逐格不變、舊列高／欄寬／標題格式／凍結不變、篩選隨插列擴展。檢查來源SHA未變後覆蓋衝突工作檔，重產2140條字串acc75b7b。兩個同檔任務區段全部保留，沒有整份選一方或手改XML。
+- 素材：原GLB／SOURCE／製作spec與process規格保存至素材庫claude-authored/hero3d/sunbrand-knight，四檔SHA相同，先素材Commit 7c811b5。官方Meshy條款3.2及方案文件連結記在source.json，原記錄為使用者Pro方案與明確指定的Meshy內測例外；沿原正式版前使用者確認要求，不替換MakeHuman候選。未找到管線忽略的原始Blend，保留可編輯GLB與規格，不假稱封存全部製作來源；既有素材庫其他未提交修改不動。
+- 驗證：node --test --test-reporter=spec執行string-table、confirm-dialog、reincarnate-gate、legendary-global、worker-protocol、worker-shim、vfx-editor-cache-versions，65/65通過；新增hero3d-internal-toggle 3/3，驗正式環境有殘留3D偏好仍不啟用／顯示／下載、內測兩狀態文字與切換／重載、原轉生模板保持、GLB五動畫／骨骼／內嵌貼圖。npm.cmd run build：592檔通過，完整diff檢查通過。未跑全庫／真GPU或玩家存檔驗收，不宣稱渲染品質或正式部署已驗收。
+- 唯讀未改：規範／Workflow／prompts、Excel更新／字串匯出器、3D來源與vendor MIT授權、父提交及素材庫其他內容。原3D／renderer／世界地圖CSS／Blender匯出工具與three.js原樣保留；無新增付費生成。遊戲Commit為本段所在[Codex] merge: 保留既有文字並整合內測3D主角切換，編號見回覆；正常分支最後同步與自動Excel環境修復另記新任務，已知限制如上。
+
+## MERGE-530CF77-20261027 - Blocked by native Excel validation
+
+- Owner: Codex. Scope: this pending develop integration only; HEAD c39e075e0ad944a20e64539930b323000190697e, incoming 530cf77c15a6d1c489724096ec788843f2403adf, base b78097b67d23d29e1708fb5e345de04ddc2aff13. Read project rules, workflow, task entries, Codex instructions, three-way conflicts, export tools, UI references and model provenance.
+- String IDs 2145-2147 collide between existing legendary/reincarnation text and incoming 3D controls. Proposed resolution: preserve existing IDs and allocate incoming controls 2151-2153 with matching references; not implemented.
+- Native Excel probe: New-Object -ComObject Excel.Application failed with HRESULT 0x80070520 (specified logon session does not exist). Required normal Excel reopening and no-repair validation cannot be performed. Workbook and all existing merge content remain intact; only this task record was added. No asset-library changes, staging or commits.
+- Validation: git rev-parse HEAD MERGE_HEAD confirmed unchanged revisions. git diff HEAD --check failed on existing unresolved markers in this file, index.html and js/strings_data.js. Tests/build not run because integration and Excel validation remain blocked. Not ready to merge. Resume in an environment supporting native Excel, resolve and regenerate CSV/JS, synchronize caches, run relevant tests/build and complete-result whitespace checks.
+
 ## REINCARNATION-CONFIRM-20261027 — 金框、深底與新解鎖預告
 
 - Owner：Codex；Done，單一開發者。使用者要求轉生確認外框華麗金色、灰白底加深20%、本次新解鎖逐行黃色「解鎖【XXXXX】系統」；追加倍率文案由×3.5改提高250%，依正式倍率換算。
@@ -38,6 +54,13 @@
 - 畫面：隔離隨機localhost來源與全新Edge context載正式遊戲／真Worker；協議61、傳奇值10，先裝ring2生效／後裝ring灰字rgb(156,163,175)並帶(重覆)，卸下優先者後另一件恢復，重裝原件則排最後。最終pageerror／Console error／warning／資源失敗皆0；未讀寫玩家存檔。duplicate-tooltip.png及browser-report.json保存本聊天visualizations/legendary，已目視檢查兩件裝備的金色／灰色對照。
 - 唯讀未改：AI規範／AGENTS／Workflow／prompts、save.js、tower.js、skills.js、runeword.js及data、其餘配置表、Claude Meshy管線與其他副本。自我Review確認共載純函式不寫狀態、無新Timer或美術／VFX來源；無必要素材修改，素材庫不建立空Commit。
 - 交付：遊戲Commit為本段所在「[Codex] feat: 新增全局傳奇並統一固定值與先裝優先規則」，回覆附編號。功能與必要驗證完成，無待套用資料或未完成實作，可供Review後合併；未合併／推送develop或main。已知限制：舊檔無法還原歷史穿戴順序，首次按欄位決定；既有廣域測試債及跨瀏覽器／玩家存檔長戰尚未驗收。下一步正常整合後重新載入遊戲，驗收新傳奇與裝備tips。
+
+## HERO3D-TOGGLE-20261027 — 內測用 2D／3D 主角動畫切換
+
+- Owner：Claude；Done（內測功能完成，build／test 結果見本輪回報）。使用者要求在戰鬥區上方、「世界地圖」按鈕左邊加按鈕，切換主角的 2D 序列幀與新版 3D 動畫；切換可刷新網頁；只有內測可見可用，外部正式服不行。使用者核准下載 three.js（MIT）、範圍只換主角（敵人／BOSS 維持 2D）、先不推送。
+- 設計：`js/hero3d.js` 以 three.js r160 在離屏 WebGL canvas 畫 GLB，轉成 `PIXI.Texture` 貼在模仿 AnimatedSprite 成員的 Sprite 上，站位、鏡頭、血條、特效沿用 2D 那一套；動作名沿用 2D（`Hero3D.CLIP_FOR`），朝向用連續轉角。`Hero3D.enabled()` 在正式版恆為 false，不下載 three.js 與模型；載入失敗自動關開關退回 2D。three.js 以 importmap 動態載入，不開 3D 就不下載。
+- 修改：新增 js/hero3d.js、js/vendor/three/（three@0.160.0 原封不動＋LICENSE＋README）、images/models/hero3d/sunbrand-knight.glb（約 700 KB）與 SOURCE.md；index.html（importmap、#btn-hero3d）、css/world-map.css（按鈕位置）、js/ui.js（initHero3dToggle，內測判斷用既有 isInternalServer()）、js/battle-renderer.js（3D 身體分支）；String 表新增 2145～2147（按鈕兩種狀態與提示）並同步 CSV／strings_data.js；tools/meshy-pipeline/blender/export_assets.py 新增 --max-texture。
+- 已知限制：Meshy 模型授權須由使用者確認後才能用於正式版（見 SOURCE.md）；3D 主角無逐幀輪廓圖，穿透輪廓不畫；AI_RULES 8.7.1 規定 3D 以 MakeHuman＋Blender 製作，本模型是使用者明確指示的例外。素材庫雙庫提交規則尚未處理 GLB。未做真實正式服驗證（只靠 isInternalServer 判斷）。
 
 ## SYNC-SHORTCUT-HOLD-20261027 — 修復捷徑中斷並保留Claude管線
 

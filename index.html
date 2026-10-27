@@ -588,7 +588,11 @@
         <div class="battle-navigation">
           <div id="zone-bar" class="world-map-current-bar">
             <span id="current-zone-name" class="world-map-current-zone" data-str="566"></span>
-            <button id="btn-world-map" class="btn sm" type="button" aria-haspopup="dialog" aria-controls="world-map-modal" data-str="2121"></button>
+            <span id="zone-bar-tools" class="zone-bar-tools">
+              <!-- 內測專用：切換主角的動畫系統（2D 序列幀／3D 骨架動畫）。正式版永遠 hidden，ui.js initHero3dToggle 只在 isInternalServer() 時顯示。 -->
+              <button id="btn-hero3d" class="btn sm" type="button" hidden aria-pressed="false" data-str-attr="data-tip:2153"></button>
+              <button id="btn-world-map" class="btn sm" type="button" aria-haspopup="dialog" aria-controls="world-map-modal" data-str="2121"></button>
+            </span>
           </div>
           <div id="stage-bar">
             <div class="stage-main-controls">
@@ -957,7 +961,7 @@
        已移除（主執行緒零呼叫，只在 Worker 內跑）：
          special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/util.js?v=1.0.4"></script>
-  <script src="js/strings_data.js?v=23f745de"></script>
+  <script src="js/strings_data.js?v=acc75b7b"></script>
   <script src="js/strings.js?v=1.0.1"></script>
   <script src="js/ui-scale.js?v=1.0.1"></script>
   <script src="js/data.js?v=1.0.108"></script>
@@ -972,6 +976,10 @@
   <!-- PixiJS（本地 vendor，零建置專案不用 CDN）＋ Canvas 戰鬥渲染器。
        渲染器只在主執行緒跑，模擬層與 Worker 完全不知道它存在。 -->
   <script src="js/vendor/pixi.min.js"></script>
+  <!-- three.js（js/vendor/three/README.md）：只給內測的 3D 主角（js/hero3d.js）用，第一次開 3D 才動態 import。
+       GLTFLoader 用裸模組名稱 'three' 匯入，importmap 必須在任何 import() 之前宣告。 -->
+  <script type="importmap">{"imports":{"three":"./js/vendor/three/three.module.min.js"}}</script>
+  <script src="js/hero3d.js?v=1.0.2"></script>
   <!-- VFX Preset 運行時（docs/vfx/VFX_RUNTIME_ADAPTER.md）：Core 是純運算、
        Backend 是 Pixi 繪圖、Runtime 是「事件 → 角色 → 擺哪裡」的轉接層。
        必須在 battle-renderer 之前載入：它的 init() 會直接組裝這三支。 -->
@@ -989,7 +997,7 @@
   <!-- 封魔塔魔王祭壇（BOSS 戰專用場景）：沿用 battle-decor 的繪圖工具，battle-renderer 的 init() 會建立它。 -->
   <script src="js/battle-arena.js?v=1.0.8"></script>
   <script src="js/battle-elite.js?v=1.0.8"></script>
-  <script src="js/battle-renderer.js?v=1.6.202"></script>
+  <script src="js/battle-renderer.js?v=1.6.203"></script>
   <script src="js/stats.js?v=1.0.6"></script>
   <script src="js/item.js?v=1.0.33"></script>
   <script src="js/gem_resonance.js?v=1.0.7"></script>
@@ -1004,7 +1012,7 @@
   <script src="js/tower.js?v=1.0.37"></script>
   <script src="js/save.js?v=1.0.24"></script>
   <script src="js/ui-inventory-skin.js?v=1.0.1"></script>
-  <script src="js/ui.js?v=1.0.220"></script>
+  <script src="js/ui.js?v=1.0.221"></script>
   <script src="js/ui-world-map.js?v=1.0.4"></script>
   <script src="js/ui-runeword.js?v=1.0.16"></script>
   <script src="js/ui-gem-resonance.js?v=1.0.21"></script>
