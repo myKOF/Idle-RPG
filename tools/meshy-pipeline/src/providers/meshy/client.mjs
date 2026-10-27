@@ -39,6 +39,14 @@ export class MeshyClient {
     return this.get(`/openapi/v2/text-to-3d/${id}`);
   }
 
+  createRig(params) {
+    return this.post('/openapi/v1/rigging', params);
+  }
+
+  getRig(id) {
+    return this.get(`/openapi/v1/rigging/${id}`);
+  }
+
   createRetexture(params) {
     return this.post('/openapi/v1/retexture', params);
   }

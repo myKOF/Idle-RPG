@@ -25,6 +25,10 @@
     "target_formats": ["glb"],
     "estimatedCredits": 10
   },
+  "rig": {
+    "height_meters": 1.8,
+    "estimatedCredits": 5
+  },
   "concepts": {
     "A": {
       "label": "cape to the calves",

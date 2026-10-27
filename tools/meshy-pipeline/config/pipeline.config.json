@@ -6,7 +6,7 @@
   },
   "folders": ["Models", "Textures", "Rigs", "Animations", "Previews", "Exports", "Reports", "Cache"],
   "polyBudget": { "target": 5000, "softMax": 5000, "hardMax": 6000 },
-  "budget": { "perTaskCredits": 80, "perBatchCredits": 200 },
+  "budget": { "perTaskCredits": 130, "perBatchCredits": 200 },
   "retry": { "maxAttempts": 1, "retryableStatus": [429, 500, 502, 503, 504] },
   "provider": "meshy",
   "meshy": {
