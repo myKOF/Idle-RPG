@@ -1,0 +1,18 @@
+{
+  "id": "sunbrand-knight",
+  "common": {
+    "ai_model": "nano-banana-2-lite",
+    "pose_mode": "a-pose",
+    "remove_background": true
+  },
+  "concepts": {
+    "A": {
+      "label": "cape to the calves",
+      "prompt": "Full-body front view concept art of a stylized dark-fantasy golden knight, about 7.5 heads tall, standing in a neutral A-pose with arms slightly away from the body and legs apart, plain light gray background. Polished gold plate armor with silver trim, rounded dome helmet with a narrow horizontal visor slit and a low fin crest, large rounded shoulder pauldrons with a sun-disk emblem, short navy tabard above the knees. A thin dark navy cape hangs from the shoulders down to the calves. The right hand holds a one-handed broadsword with a leaf-shaped blade and round sun-disk pommel, blade pointing down beside the leg, blade length about half the character height. Clean silhouette, hand-painted game art style."
+    },
+    "B": {
+      "label": "short shoulder mantle",
+      "prompt": "Full-body front view concept art of a stylized dark-fantasy golden knight, about 7.5 heads tall, standing in a neutral A-pose with arms slightly away from the body and legs apart, plain light gray background. Polished gold plate armor with silver trim, rounded dome helmet with a narrow horizontal visor slit and a low fin crest, large rounded shoulder pauldrons with a sun-disk emblem, short navy tabard above the knees. A short navy shoulder mantle covers only the shoulders and upper back. The right hand holds a one-handed broadsword with a leaf-shaped blade and round sun-disk pommel, blade pointing down beside the leg, blade length about half the character height. Clean silhouette, hand-painted game art style."
+    }
+  }
+}

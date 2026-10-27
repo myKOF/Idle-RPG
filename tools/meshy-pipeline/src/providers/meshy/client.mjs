@@ -39,6 +39,14 @@ export class MeshyClient {
     return this.get(`/openapi/v2/text-to-3d/${id}`);
   }
 
+  createTextToImage(params) {
+    return this.post('/openapi/v1/text-to-image', params);
+  }
+
+  getTextToImage(id) {
+    return this.get(`/openapi/v1/text-to-image/${id}`);
+  }
+
   balance() {
     return this.get('/openapi/v1/balance');
   }
