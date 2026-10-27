@@ -5944,6 +5944,8 @@ function renderDetail() {
   var h = slotMode ?
     '<div class="equip-socket-header">' + slotHeaderHtml + '</div><div class="equip-socket-page">' + slotHolesHtml + '</div><div class="equip-socket-gems">' + slotStockHtml + '</div>' :
     sharedNoteHtml + itemDetailHTML(it, null, {
+      equipment: equipViewEquipment(uiEquipPanelSnapshot()),
+      asuraOn: uiAsuraDualWield(),
       gold: player && player.gold,
       essence: player && player.essence,
       justUpgraded: justUpgraded,
@@ -9878,7 +9880,13 @@ function showItemTooltip(it, anchorEl, opts) {
 
   var tooltipHeaderSnapshot = uiHeaderPanelSnapshot();
   var tooltipPlayer = tooltipHeaderSnapshot && tooltipHeaderSnapshot.player;
+  var tooltipEquipSnapshot = uiEquipPanelSnapshot();
+  var tooltipInvEquipment = uiInventoryPanelSnapshot();
+  var tooltipEquipment = tooltipEquipSnapshot ? equipViewEquipment(tooltipEquipSnapshot)
+    : (tooltipInvEquipment && tooltipInvEquipment.viewEquipment);
   var detailHtml = itemDetailHTML(it, null, {
+    equipment: tooltipEquipment,
+    asuraOn: uiAsuraDualWield(),
     showAffixReroll: false,
     gold: tooltipPlayer && tooltipPlayer.gold,
     essence: tooltipPlayer && tooltipPlayer.essence
@@ -9894,6 +9902,8 @@ function showItemTooltip(it, anchorEl, opts) {
     (twoHandShared ? twoHandSharedBadgeHTML(true) : '') + detailHtml + '</div>';
   if (compareItem && compareItem.id !== it.id) {
     var compCard = '<div class="equip-detail-card' + (compareItem.rarity === 6 ? ' mythic-detail' : '') + '">' + itemDetailHTML(compareItem, null, {
+      equipment: tooltipEquipment,
+      asuraOn: uiAsuraDualWield(),
       isEquipped: true,
       showAffixReroll: false,
       gold: tooltipPlayer && tooltipPlayer.gold,

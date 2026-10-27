@@ -664,8 +664,8 @@ function sgLegend(gid) {
   return ((typeof legendarySkill2Mods === 'function') ? legendarySkill2Mods(gid) : null) || {};
 }
 
-/* 「次數／個數 +N」型傳奇規格的取值：值放在 LEGENDARY_FX_NON_VALUE_KEYS 的保護鍵裡
-   （count／hits／sec…），沒有裝備該特效時規格物件不存在＝回 0。
+/* 「次數／個數 +N」型傳奇規格的取值：讀取固定規格的 count／hits／sec 等鍵，
+   沒有裝備該特效時規格物件不存在＝回 0。
    收斂成一支的理由：這種讀法在施放端會重複十幾次，各自寫一串 Math.max(0, Math.floor(...))
    遲早會有一處漏掉取整或漏掉 null 保護。 */
 function sgLegendCount(spec, key) {
@@ -2680,6 +2680,7 @@ function castSkill2(pEnt, target, gid, floatSel, opts) {
   if (!freeCast) {
     if (!(typeof gmMpLockActive === 'function' && gmMpLockActive(pEnt))) {
       pEnt.mp = Math.max(0, pEnt.mp - manaCost);
+      if (typeof legendaryOnManaSpent === 'function') legendaryOnManaSpent(pEnt, manaCost);
     }
     if (!pEnt.skillCds) pEnt.skillCds = {};
     pEnt.skillCds[SG_PREFIX + gid] = skills2Cooldown(gid, lvs, pEnt);
@@ -11692,6 +11693,7 @@ function sgCounterPayMp(pEnt, tierIdx) {
   if (typeof gmMpLockActive === 'function' && gmMpLockActive(pEnt)) return true;
   if (!pEnt || !((pEnt.mp || 0) >= cost)) return false;
   pEnt.mp -= cost;
+  if (typeof legendaryOnManaSpent === 'function') legendaryOnManaSpent(pEnt, cost);
   return true;
 }
 /* 基本反擊的最低起手法力：最高已學習階段，超神生效時優先；各階不累加。
@@ -12413,7 +12415,9 @@ function sgAutoCastCanPay(pEnt, gid) {
 }
 function sgAutoCastPay(pEnt, gid) {
   if (!pEnt || (typeof gmMpLockActive === 'function' && gmMpLockActive(pEnt))) return;
-  pEnt.mp = Math.max(0, pEnt.mp - sgAutoCastManaCost(gid));
+  var cost = Math.min(pEnt.mp, sgAutoCastManaCost(gid));
+  pEnt.mp = Math.max(0, pEnt.mp - cost);
+  if (typeof legendaryOnManaSpent === 'function') legendaryOnManaSpent(pEnt, cost);
 }
 
 function sgUltAutoCastGap(u) { return Math.max(0.5, sgUltVal(u, 'sec')); }

@@ -1247,6 +1247,7 @@
 1239,裝備,日誌｜ui.js:13707 sortInventory,,🎽 已開啟自動穿裝：空的裝備部位會自動穿上裝備，已穿戴部位不再替換,,
 1240,裝備,日誌｜ui.js:13708 sortInventory,,🎽 已關閉自動穿裝,,
 2143,裝備,裝備詳情標題：查看未套用裝備套的提醒,,(尚未套用),,
+2145,裝備,傳奇特效｜同名較後穿戴者不生效,,(重覆),,
 1241,神鑄,文字｜forge.js:158 forgePlaceItem、forge.js:184 forgePlaceGem、forge.js:208 forgeRemoveItem…等4處,,鑄造進行中，請等待完成,,
 1242,神鑄,文字｜forge.js:159 forgePlaceItem,,法陣中已放入寶石，裝備與寶石不可混放,,
 1243,神鑄,文字｜forge.js:162 forgePlaceItem,,找不到該裝備,,

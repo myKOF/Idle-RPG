@@ -7,6 +7,10 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
 var LEGENDARY_RT = null;
 
 function resetLegendaryRT() {
+  var players = [];
+  if (typeof FIELD !== 'undefined' && FIELD && FIELD.player) players.push(FIELD.player);
+  if (typeof TOWER !== 'undefined' && TOWER && TOWER.player) players.push(TOWER.player);
+  players.forEach(function (p) { delete p._legendaryStaggers; delete p._legendaryRefunds; });
   LEGENDARY_RT = {
     basicAttackCount: 0,
     berserkStacks: 0,
@@ -40,32 +44,60 @@ function legendaryClone(value) {
   return value === undefined ? undefined : JSON.parse(JSON.stringify(value));
 }
 
-var LEGENDARY_FX_NON_VALUE_KEYS = {
-  chance: true, count: true, bounces: true, hits: true, maxStacks: true,
-  tickSec: true, sec: true, dur: true, gap: true, interval: true, cd: true, cooldownSec: true,
-  /* 減免類的百分比：×2 會把「降低 50%」變成「降低 100%」＝代價完全消失，
-     方向與補償的用意（讓雙手武器的一個特效抵得上兩個）相反，因此不放大。 */
-  reducePct: true,
-  basicAttackThreshold: true,
-  killExtend: true, double: true, triple: true
-};
-
-function legendaryScaleFxValues(value, mult, key) {
-  if (Array.isArray(value)) return value.map(function (v) { return legendaryScaleFxValues(v, mult, key); });
-  if (!value || typeof value !== 'object') {
-    return typeof value === 'number' && !LEGENDARY_FX_NON_VALUE_KEYS[key] ? value * mult : value;
-  }
-  var out = {};
-  for (var k in value) out[k] = legendaryScaleFxValues(value[k], mult, k);
-  return out;
-}
-
 function legendaryFx(key) {
   var def = PASSIVE_POOL[key];
   if (!def || !def.fx) return {};
-  var st = (typeof getStats === 'function') ? getStats() : null;
-  var mult = st && st.legendaryEffectMults ? Number(st.legendaryEffectMults[key]) || 1 : 1;
-  return mult === 1 ? def.fx : legendaryScaleFxValues(def.fx, mult, '');
+  return def.fx;
+}
+
+function legendaryValue(st, key) {
+  return legendaryHas(st, key) ? passiveValueFor(key) : 0;
+}
+function legendaryDebuffs(ent) {
+  return typeof statusEntries === 'function' ? statusEntries(ent).filter(function (s) { return s.kind === 'debuff' || s.kind === 'ctrl'; }) : [];
+}
+function legendaryIncomingDamageMultiplier(pEnt) {
+  var st = getStats();
+  return (pEnt.shield || 0) > 0 ? 1 : 1 - clamp(legendaryValue(st, 'fortify'), 0, 100) / 100;
+}
+/* 延後失血與返還法力綁定實際戰鬥實體，使用模擬時鐘；切場景不轉移到新實體。 */
+function legendaryDeferHit(pEnt, damage, maxHp) {
+  var st = getStats(), pct = legendaryValue(st, 'softenBlow');
+  if (!(pct > 0 && maxHp > 0 && damage > maxHp * pct / 100)) return damage;
+  var fx = legendaryFx('softenBlow').stagger;
+  if (!pEnt._legendaryStaggers) pEnt._legendaryStaggers = [];
+  pEnt._legendaryStaggers.push({ next: GT + fx.tickSec, interval: fx.tickSec, remaining: fx.sec / fx.tickSec, loss: maxHp * pct / 100 * fx.tickSec / fx.sec });
+  return 0;
+}
+function legendaryOnManaSpent(pEnt, spent) {
+  var st = getStats(), pct = legendaryValue(st, 'manaReflux');
+  if (!(pct > 0 && spent > 0)) return;
+  var fx = legendaryFx('manaReflux').manaRefund;
+  if (!chance(fx.chance)) return;
+  if (!pEnt._legendaryRefunds) pEnt._legendaryRefunds = [];
+  pEnt._legendaryRefunds.push({ start: GT, until: GT + fx.sec, rate: spent * pct / 100 / fx.sec });
+}
+function legendaryTickDeferred(pEnt, st, dt, floatSel) {
+  var staggers = pEnt._legendaryStaggers || [];
+  for (var i = 0; i < staggers.length && pEnt.hp > 0; i++) {
+    var s = staggers[i];
+    while (s.remaining > 0 && s.next <= GT && pEnt.hp > 0) {
+      var floor = typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.god ? 1 : 0;
+      var loss = typeof gmHpLockActive === 'function' && gmHpLockActive(pEnt) ? 0 : Math.min(Math.max(0, pEnt.hp - floor), s.loss);
+      pEnt.hp = Math.max(0, pEnt.hp - loss);
+      if (loss > 0 && typeof sgWarGodBodyOnDamaged === 'function') sgWarGodBodyOnDamaged(loss, pEnt);
+      if (loss > 0 && typeof floatText === 'function') floatText(floatSel, '-' + fmt(loss), 'mdmg');
+      s.remaining--; s.next += s.interval;
+    }
+  }
+  pEnt._legendaryStaggers = staggers.filter(function (s) { return s.remaining > 0; });
+  var refunds = pEnt._legendaryRefunds || [];
+  for (var j = 0; j < refunds.length && pEnt.hp > 0; j++) {
+    var r = refunds[j], seconds = Math.max(0, Math.min(GT, r.until) - Math.max(GT - dt, r.start));
+    var gain = gainPlayerMana(pEnt, r.rate * seconds, st);
+    if (gain > 0 && typeof floatText === 'function') floatText(floatSel, '+' + fmt(gain), 'mana');
+  }
+  pEnt._legendaryRefunds = refunds.filter(function (r) { return r.until > GT; });
 }
 
 /* ---- 新版技能（js/skills2.js）的傳奇改寫收斂點（2026-08-19）----
@@ -200,6 +232,12 @@ function legendaryOutgoingDamageMultiplier(attacker, defender, aCfg) {
   var st = getStats();
   var rt = legendaryEnsureRT();
   var mult = 1;
+  if (legendaryHas(st, 'bloodthirst') || legendaryHas(st, 'chainReaction')) {
+    var debuffs = legendaryDebuffs(defender), seen = {};
+    debuffs.forEach(function (s) { seen[s.sid || s.name] = true; });
+    if (debuffs.some(function (s) { return /bleed/i.test(s.sid); })) mult *= 1 + legendaryValue(st, 'bloodthirst') / 100;
+    if (legendaryHas(st, 'chainReaction')) mult *= 1 + Math.min(Object.keys(seen).length, legendaryFx('chainReaction').debuffDamage.maxStacks) * legendaryValue(st, 'chainReaction') / 100;
+  }
   if (legendaryHas(st, 'mountainSunderer') && defender &&
       (effectActive(defender, 'stun') || effectActive(defender, 'slow'))) {
     mult *= 1 + legendaryFx('mountainSunderer').controlledTargetDamagePct / 100;
@@ -418,7 +456,7 @@ function legendaryOnPlayerDamaged(attacker, pEnt, hpDamage, blocked, hitResult, 
     var guard = legendaryFx('unyieldingGuard').onBlock;
     if (chance(guard.chance)) {
       var blockReduction = typeof blockDmgReduction === 'function'
-        ? blockDmgReduction(st.blockDmgRed || 0) : (st.blockDmgRed || 0);
+        ? blockDmgReduction(st.blockDmgRed || 0, st.blockDmgRedCap) : (st.blockDmgRed || 0);
       var reflectMultiplier = blockReduction / 100 * guard.reflectBlockPct / 100;
       var reflect = legendaryDealReflectedBasicAttack(
         pEnt, attacker, reflectMultiplier, enemyFloatSel, STR(1161));
@@ -658,6 +696,8 @@ function tickLegendaryEffects(dt, ctx) {
   if (!ctx || !ctx.pEnt || typeof getStats !== 'function') return { playerKilled: false };
   var pEnt = ctx.pEnt;
   var st = getStats();
+  legendaryTickDeferred(pEnt, st, dt, ctx.floatSel === 'tb-float' ? 'tp-float' : 'pv-float');
+  if (pEnt.hp <= 0) return { playerKilled: true };
   legendaryEnsureKnives(pEnt, st);
   legendaryEnsureDolls(pEnt, st);
   legendaryTickAutomaticSkills(ctx, pEnt, st, dt);

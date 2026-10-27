@@ -179,6 +179,13 @@ function statusStackCfg(def, maxOverride) {
   return { rule: 'stack', max: Math.max(1, max) };
 }
 function statusIdByKey(key) { return STATUS_BY_KEY[key] || (statusDef(key) ? key : ''); }
+/* 激昂只提高敵方可疊層減益；由兩個低階寫入器呼叫，避免高低階重複加成。 */
+function legendaryDebuffStackCfg(ent, sid, cfg) {
+  if (!ent || !ent.maxHp || !cfg || cfg.rule !== 'stack' || !statusIsDebuff(sid) || typeof getStats !== 'function') return cfg;
+  var st = getStats();
+  if (!st || !st.legendaryEffects || !st.legendaryEffects.elation) return cfg;
+  return { rule: cfg.rule, max: Math.max(1, Number(cfg.max) || 1) + passiveValueFor('elation') };
+}
 function statusIdByName(name) { return STATUS_BY_NAME[name] || ''; }
 function statusName(sid, fallback) { var d = statusDef(sid); return d ? d.name : (fallback || ''); }
 /* 增益鍵的顯示名稱：狀態表是唯一來源（表上查無的鍵才回傳原鍵，供除錯辨識）。 */

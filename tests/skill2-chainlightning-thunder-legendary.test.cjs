@@ -717,7 +717,7 @@ test('【永恒雷獄】舊秒數配置過渡：每 gap 秒免費重施，持續
    5) 接線與參數表
    =========================================================================== */
 
-test('第八批十個傳奇特效：各自只出現在指定武器類型，且關聯到新版技能群組', () => {
+test('第八批十個傳奇特效：全部位可出現，且關聯到新版技能群組', () => {
   const c = loadContext();
   const NEW_ONES = {
     chainlightningSurge: ['電荷連鎖', 'sword1h', 'chainlightning'],
@@ -738,7 +738,7 @@ test('第八批十個傳奇特效：各自只出現在指定武器類型，且�
     assert.equal(def.name, name);
     assert.equal(def.legendary, true);
     assert.equal(def.type, 'lightning', id + ' 應為雷屬性');
-    assert.deepEqual(Array.from(def.weaponTypes || []), [weaponType]);
+    assert.deepEqual(Array.from(def.weaponTypes || []), []);
     assert.equal(def.relatedSkill, gid);
     assert.ok(def.desc && def.desc.length > 0);
   });

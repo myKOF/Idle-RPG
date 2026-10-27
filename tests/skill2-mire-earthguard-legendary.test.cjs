@@ -536,7 +536,7 @@ test('參數表往返：Skills2 的六個超神進化列與 Equipment_Affix 的�
     .forEach((sid) => assert.ok(statusCsv.indexOf(sid) >= 0, 'Status.csv 應有 ' + sid));
 });
 
-test('十個新特效的武器限定：泥沼術＝魔劍、大地守護＝盾牌', () => {
+test('泥沼術與大地守護傳奇特效均不限武器部位', () => {
   const c = loadContext();
   const mire = ['mireSpread', 'mireWeaken', 'mireCorrupt', 'mireLavaBurn', 'mireErode'];
   const guard = ['earthguardManaFeed', 'earthguardLifeFeed', 'earthguardSoulLink',
@@ -546,13 +546,13 @@ test('十個新特效的武器限定：泥沼術＝魔劍、大地守護＝盾�
     assert.ok(def, k);
     assert.equal(def.legendary, true);
     assert.equal(def.relatedSkill, 'mire');
-    assert.deepEqual(Array.from(def.weaponTypes || []), ['magicSword1h']);
+    assert.deepEqual(Array.from(def.weaponTypes || []), []);
   });
   guard.forEach((k) => {
     const def = c.PASSIVE_POOL[k];
     assert.ok(def, k);
     assert.equal(def.legendary, true);
     assert.equal(def.relatedSkill, 'earthguard');
-    assert.deepEqual(Array.from(def.weaponTypes || []), ['shield']);
+    assert.deepEqual(Array.from(def.weaponTypes || []), []);
   });
 });

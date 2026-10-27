@@ -57,13 +57,16 @@ function stripNsPrefix(xml) {
 /* ---------- XML 實體解碼（&amp; 最後解，避免二次解碼） ---------- */
 function decodeXml(s) {
   return s
+    .replace(/\r\n?/g, '\n') // XML literal line endings normalize before OOXML escapes.
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
     .replace(/&apos;/g, "'")
     .replace(/&#x([0-9a-fA-F]+);/g, (m, h) => String.fromCodePoint(parseInt(h, 16)))
     .replace(/&#(\d+);/g, (m, d) => String.fromCodePoint(parseInt(d, 10)))
-    .replace(/&amp;/g, '&');
+    .replace(/&amp;/g, '&')
+    // OOXML 字串逸出只解一次；_x005F_x000D_ 必須保留為字面 _x000D_。
+    .replace(/_x([0-9a-fA-F]{4})_/g, (m, h) => String.fromCharCode(parseInt(h, 16)));
 }
 
 /* ---------- 數字清理：走一趟 Number 用最短往返表示，洗掉 Excel 的滿精度雜訊 ----------

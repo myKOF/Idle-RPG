@@ -185,6 +185,7 @@ function computeStats(equipmentOverride) {
   var asuraOn = (typeof skills2AsuraDualWield === 'function') && skills2AsuraDualWield();
   var asuraAffixMult = 1 + (asuraOn ?
     ((typeof skills2AsuraAffixPct === 'function') ? skills2AsuraAffixPct() : 0) : 0) / 100;
+  var passiveOwners = equippedPassiveOwners(equipment, asuraOn);
 
   SLOT_LIST.forEach(function (slot) {
     var it = equipment[slot];
@@ -202,14 +203,13 @@ function computeStats(equipmentOverride) {
     });
     // 符文與符文真言（js/runeword.js）：屬性條目併入同一組桶；機制（fx／procs）由聚合器彙整
     if (rwAgg) rwAddItem(rwAgg, it).forEach(function (e) { addAffixLike(e.key, e.val); });
-    if (it.passive) {
-      passives[it.passive.key] = (passives[it.passive.key] || 0) + passiveValue(it, it.passive);
+    if (it.passive && passiveOwners[it.passive.key] === slot) {
+      passives[it.passive.key] = passiveValue(it, it.passive);
       var passiveDef = PASSIVE_POOL[it.passive.key];
+      if (passiveDef && passiveDef.fx && passiveDef.fx.xpBonus) A.xpBonus += passives[it.passive.key];
+      if (passiveDef && passiveDef.fx && passiveDef.fx.goldBonus) A.goldBonus += passives[it.passive.key];
       if (passiveDef && passiveDef.legendary) {
         legendaryEffects[it.passive.key] = true;
-        if (typeof isTwoHandItem === 'function' && isTwoHandItem(it)) {
-          legendaryEffectMults[it.passive.key] = TWO_HAND_EFFECT_VALUE_MULT;
-        }
       }
     }
     // 神鑄創世專屬特效：屬性型直接併入聚合桶，觸發型併入 passives 供戰鬥掛勾讀取
@@ -380,7 +380,8 @@ function computeStats(equipmentOverride) {
   st.base.mdef = DERIVED_COEF.mdefBase + st.int * PRIMARY_STAT_EFFECTS.intMdef + st.vit * PRIMARY_STAT_EFFECTS.vitMdef;
   st.mdef = Math.round((st.base.mdef + A.mdefFlat + st.reincFlatBonus.mdef) * (1 + A.mdefPct / 100) * (1 + (talent.mdefPct || 0) / 100));
   st.blockRate = capValue(A.blockRate, STAT_CAPS.blockRate);                      // 格擋率上限（上限 0＝無上限）
-  st.blockDmgRed = capValue(A.blockDmgRed, STAT_CAPS.blockDmgRed);                  // 額外格擋減傷上限（總減傷 = 格擋基礎減傷 + 此值；上限 0＝不夾上限）
+  st.blockDmgRedCap = passives.shieldWall > 0 ? Math.max(blockDmgRedTotalCap(), passives.shieldWall) : blockDmgRedTotalCap();
+  st.blockDmgRed = capValue(A.blockDmgRed, st.blockDmgRedCap > 0 ? Math.max(0, st.blockDmgRedCap - BLOCK_DMG_RED_BASE) : 0);
   st.evasion = capValue(st.agi * PRIMARY_STAT_EFFECTS.agiEvasion + A.evasion, STAT_CAPS.evasion);          // 閃避：敏捷係數（上限 0＝無上限）
   // 韌性（上限見 STAT_CAPS.tenacity）：同時作用於「被控場機率」（resistCtrl）、
   // 「被控場持續時間」（ccFactor）與「被爆擊機率」（resolveHit 暴擊段）三處。
@@ -793,6 +794,10 @@ function applyEnemyHpDamage(ent, damage, drainHits, opts) {
     if (amount > 0 && !(ent.maxHp > 0) && typeof skills2ManaShieldAbsorb === 'function') {
       amount = Math.max(0, amount - skills2ManaShieldAbsorb(ent, amount));
     }
+    if (amount > 0 && !(ent.maxHp > 0) && typeof legendaryIncomingDamageMultiplier === 'function') {
+      amount *= legendaryIncomingDamageMultiplier(ent);
+      amount = legendaryDeferHit(ent, amount, getStats().hp);
+    }
     var hpBeforeDirect = ent.hp;
     ent.hp = Math.max(gmFloor, ent.hp - amount);
     // 持續／衍生傷害同樣會暴露玩家位置，與視野發現共用警戒轉換。
@@ -974,7 +979,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   // 格擋（機率減傷）：機率與減傷上限共用 STAT_CAPS，0 代表不設上限。
   var blockChance = capValue(dCfg.blockRate || 0, STAT_CAPS.blockRate);
   if (blockChance > 0 && chance(blockChance)) {
-    dmg *= 1 - blockDmgReduction(dCfg.blockDmgRed || 0) / 100;
+    dmg *= 1 - blockDmgReduction(dCfg.blockDmgRed || 0, dCfg.blockDmgRedCap) / 100;
     out.blocked = true;
   }
   // 神鑄特效【聖佑】：受到的所有傷害按比例降低（上限見特效設定）
@@ -983,6 +988,9 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
      刻意與【聖佑】的 dmgRed 分開：那條是加算池且夾 50% 上限，混在一起會互相吃掉空間。 */
   if (dCfg.isPlayer && typeof skill2DamageTakenMultiplier === 'function') {
     dmg *= skill2DamageTakenMultiplier(defender, attacker);
+  }
+  if (dCfg.isPlayer && typeof legendaryIncomingDamageMultiplier === 'function') {
+    dmg *= legendaryIncomingDamageMultiplier(defender);
   }
   if (!dCfg.isPlayer && typeof skill2AbyssDamageTakenMultiplier === 'function') {
     dmg *= skill2AbyssDamageTakenMultiplier(defender);
@@ -1035,6 +1043,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
     }
   }
   if (dCfg.isPlayer && gmHpLockActive(defender)) dmg = 0;
+  if (dCfg.isPlayer && typeof legendaryDeferHit === 'function') dmg = legendaryDeferHit(defender, dmg, dCfg.maxHp);
   out.hpDamage = dmg;
   var hpBeforeHit = defender.hp;
   defender.hp -= dmg;
@@ -1984,28 +1993,49 @@ var ITEM_SCORE_PER_RARITY = 0.06;
 var UPGRADE_VALUE_MULT = 0.05;   // 參數表「6-裝備／強化倍率」：每 +1 全詞條數值提高的比率
 function upgradeMult(item) { return 1 + UPGRADE_VALUE_MULT * (item.upgrade || 0); }
 
-// 傳奇特效數值 = base + perR × (稀有度 - 傳說級)
+// 傳奇數值唯一來源為基礎值；不受裝備品質、等級、強化或雙手倍率影響。
 function passiveValueFor(key, rarity) {
   var pd = PASSIVE_POOL[key];
   if (!pd) return 0;
-  return Math.round((pd.base + pd.perR * (rarity - PASSIVE_MIN_RARITY)) * 10) / 10;
+  return Number(pd.base) || 0;
 }
 /* ---- 傳奇特效數值的唯一讀取入口 ----
-   數值完全由 key + 裝備稀有度決定（沒有隨機成分），所以存檔只留 { key }。
-   算不出來（特效已下架／稀有度不明）才沿用凍結的舊 val。 */
+   數值完全由 key 決定，所以存檔只留 { key }；下架效果才沿用凍結的舊 val。 */
 function passiveValue(it, p) {
   if (!p) return 0;
-  var r = it ? Number(it.rarity) : NaN;
-  if (!PASSIVE_POOL[p.key] || !isFinite(r)) return Number(p.val) || 0;
-  var mult = (typeof isTwoHandItem === 'function' && isTwoHandItem(it))
-    ? TWO_HAND_EFFECT_VALUE_MULT : 1;
-  return Math.round(passiveValueFor(p.key, r) * mult * 10) / 10;
+  if (!PASSIVE_POOL[p.key]) return Number(p.val) || 0;
+  return passiveValueFor(p.key);
+}
+
+/* 純函式：每套獨立選先穿者；舊檔未記順序時依裝備欄順序，早於後來的新穿戴。 */
+function equippedPassiveOwners(equipment, asuraOn) {
+  var owners = {}, ranks = {};
+  SLOT_LIST.forEach(function (slot, i) {
+    var it = equipment && equipment[slot];
+    if (!it || !it.passive || !PASSIVE_POOL[it.passive.key]) return;
+    if (slot === 'weapon2' && isTwoHandItem(it) && !asuraOn) return;
+    var key = it.passive.key;
+    var order = Number(it.legendaryEquipOrder);
+    var rank = order > 0 && isFinite(order) ? order : i - SLOT_LIST.length;
+    if (owners[key] === undefined || rank < ranks[key]) { owners[key] = slot; ranks[key] = rank; }
+  });
+  return owners;
+}
+function equippedPassiveRepeated(it, equipment, asuraOn) {
+  if (!it || !it.passive || !equipment) return false;
+  var ownSlot = null;
+  SLOT_LIST.some(function (slot) {
+    var cur = equipment[slot];
+    if (cur && (cur === it || (it.id !== undefined && cur.id === it.id))) { ownSlot = slot; return true; }
+    return false;
+  });
+  var owner = equippedPassiveOwners(equipment, asuraOn)[it.passive.key];
+  return ownSlot !== null && owner !== undefined && owner !== ownSlot;
 }
 // 舊存檔的傳奇特效：數值可推導 → 直接丟掉凍結值（冪等）
 function ensurePassiveSource(it, p) {
   if (!p || p.val === undefined) return p;
-  var r = it ? Number(it.rarity) : NaN;
-  if (!PASSIVE_POOL[p.key] || !isFinite(r)) return p;  // 推不出來：保留 val 當凍結值
+  if (!PASSIVE_POOL[p.key]) return p;  // 已下架：保留 val 當凍結值
   delete p.val;
   return p;
 }

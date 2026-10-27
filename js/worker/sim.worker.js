@@ -11,7 +11,7 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-importScripts('protocol.js?v=20261027-skill-points', '../game-clock.js?v=1.0.1', 'shim.js?v=20261018-potential-remove');
+importScripts('protocol.js?v=20261027-legendary-global', '../game-clock.js?v=1.0.1', 'shim.js?v=20261018-potential-remove');
 // 離線結算等分批工作亦共用暫停時鐘；訊息與loop仍能回應存檔及PING。
 if (typeof GameClock !== 'undefined') {
   globalThis.setTimeout = GameClock.setTimeout;
@@ -20,11 +20,11 @@ if (typeof GameClock !== 'undefined') {
 /* String 表：資料檔版本由主執行緒（bridge.js）以網址 sv= 傳入，改文字不必動本檔。 */
 var _stringDataVersion = ((typeof self !== 'undefined' && self.location && /[?&]sv=(\w+)/.exec(self.location.search || '')) || [])[1] || '0';
 importScripts(
-  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../data.js?v=20261027-develop-merge', '../runeword_data.js?v=20261023-str-char', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261023-str-skill', '../formula.js?v=20261027-develop-merge', '../battle-terrain.js?v=20261022-lava-terrain-develop-merge', '../battlefield.js?v=20261022-lava-terrain-develop-merge', '../stats.js?v=20261023-str-common',
-  '../item.js?v=20261023-str-common', '../gem_resonance.js?v=20261026-system-unlock','../runeword.js?v=20261023-str-common',
-  '../skills.js?v=20261023-str-skill', '../skills2.js?v=20261027-develop-merge', '../elite_data.js?v=20261021-chain-hover', '../talents.js?v=20261026-system-unlock',
-  '../player.js?v=20261023-str-common', '../special_rules.js?v=20261023-str-common',
-  '../combat.js?v=20261025-frenzy-threshold', '../elite.js?v=20261024-npc-skill-limit-sync', '../elite_boss.js?v=20261023-str-battle', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261023-str-equip', '../tower.js?v=20261023-str-common',
+  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../data.js?v=20261027-legendary-global', '../runeword_data.js?v=20261023-str-char', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261027-legendary-global', '../formula.js?v=20261027-legendary-global', '../battle-terrain.js?v=20261022-lava-terrain-develop-merge', '../battlefield.js?v=20261022-lava-terrain-develop-merge', '../stats.js?v=20261023-str-common',
+  '../item.js?v=20261027-legendary-global', '../gem_resonance.js?v=20261026-system-unlock','../runeword.js?v=20261023-str-common',
+  '../skills.js?v=20261023-str-skill', '../skills2.js?v=20261027-legendary-global', '../elite_data.js?v=20261021-chain-hover', '../talents.js?v=20261026-system-unlock',
+  '../player.js?v=20261027-legendary-global', '../special_rules.js?v=20261023-str-common',
+  '../combat.js?v=20261027-legendary-global', '../elite.js?v=20261024-npc-skill-limit-sync', '../elite_boss.js?v=20261023-str-battle', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261027-legendary-global', '../tower.js?v=20261023-str-common',
   '../factory.js?v=20261023-str-common', '../newforge.js?v=20261023-str-common', '../forge.js?v=20261023-str-common', '../save.js?v=20261023-str-common',
   '../tasks.js?v=20261023-str-guard'
 );

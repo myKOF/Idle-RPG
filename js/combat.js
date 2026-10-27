@@ -868,7 +868,7 @@ function applyBuff(ent, key, val, dur, sid, stackCfg) {
     ccRegister(ent, statusControlCats(key), dur);
     if (!ent.buffs) ent.buffs = {};
     var prev = ent.buffs[key];
-    var st = stackStep(stackCfg, prev && prev.until > GT ? prev : null, val);
+    var st = stackStep(legendaryDebuffStackCfg(ent, sid || statusIdByKey(key), stackCfg), prev && prev.until > GT ? prev : null, val);
     // sid＝狀態表 ID（未帶時由增益鍵反查），供 UI 取狀態圖標與名稱。
     // unit／stacks＝疊層規則用（單層值與層數；val 恆為 unit × stacks）。
     ent.buffs[key] = { val: st.value, until: GT + dur, dur: dur, sid: sid || statusIdByKey(key),
@@ -1009,6 +1009,7 @@ function applyDot(ent, dps, dur, name, sid, interval, stackCfg, sourceCtx) {
         var sdef2 = statusDef(sid);
         stackCfg = sdef2 ? { rule: sdef2.stack, max: sdef2.maxStacks } : { rule: 'strongest' };
     }
+    stackCfg = legendaryDebuffStackCfg(ent, sid, stackCfg);
     var sKey = (sourceCtx && (sourceCtx.sourceKey || sourceCtx.statKey)) || '';
     var sName = (sourceCtx && (sourceCtx.sourceName || sourceCtx.skillName)) || '';
     var sLv = (sourceCtx && sourceCtx.sourceLevel !== undefined) ? sourceCtx.sourceLevel : undefined;
@@ -1329,7 +1330,7 @@ function playerDefCfg(pEnt) {
     return {
         def: st.def * defMul, mdef: st.mdef * defMul, level: st.level,
         dodge: st.evasion + buffVal(pEnt, 'evasionUp'),
-        blockRate: st.blockRate + buffVal(pEnt, 'blockUp'), blockDmgRed: st.blockDmgRed,
+        blockRate: st.blockRate + buffVal(pEnt, 'blockUp'), blockDmgRed: st.blockDmgRed, blockDmgRedCap: st.blockDmgRedCap,
         pRes: st.pRes, mRes: st.mRes, resist: st.resist, ctrlRes: st.resist.ctrl,
         // 韌性：控場持續時間縮短（ccFactor）＋ 控場機率與被爆擊機率折減（resistCtrl／resolveHit 暴擊段）
         ccFactor: (1 - st.tenacity / 100) * (1 - st.ccRed / 100),

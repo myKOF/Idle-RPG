@@ -96,7 +96,8 @@
    brake使用三次ease-out停駐；holdSec是到達後停留秒數；角度皆為判定平面弧度。
    缺省保持原飛行；elite-missile-flight固定落點、粒子按真實時間播放。 */
 // v60：skills.skills2.points 投影熟練度總點數、已投資與可用點數。
-var WORKER_PROTOCOL_VERSION = 60;
+// v61：完整裝備快照可帶 legendaryEquipOrder；stats 可帶 blockDmgRedCap。
+var WORKER_PROTOCOL_VERSION = 61;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {

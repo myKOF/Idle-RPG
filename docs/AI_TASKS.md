@@ -1,5 +1,24 @@
 # AI_TASKS.md
 
+## LEGENDARY-GLOBAL-20261027 — 全部位傳奇、固定值與先裝優先
+
+- Owner：Codex；Done，單一開發者。使用者四項要求：依線上文件新增九個全局傳奇、所有傳奇不限部位、同名只取先裝上的一件且重覆tips灰字、固定基礎值不吃等級／品質／雙手倍率。
+- 來源：https://docs.google.com/spreadsheets/d/1RysqEzKOjr2oqHLdXapoTM28tlXpZ2wk/edit?gid=1805975024，第127～135列；採文檔名稱「以柔剋剛」「返哺」。九效果需涵蓋直傷／DOT、異常疊層、經驗／金幣、無盾減傷、延後失血、格擋上限及實際施放耗魔返還。
+- 範圍：裝備配置／String新增列及既有儲存格待套用差異、data／formula／player／item／legendary／combat／status／skills2／ui、必要Worker快取／協議說明、回歸、LV及本紀錄。禁止其它玩法／素材／3D管線及其他副本，不合併推送develop／main。
+- 預檢：上述目標無其他副本／分支來源；Claude進行中Meshy管線不重疊。Excel既有格依AI_RULES 8.5先暫存，不先改正式CSV冒充套用；新增列使用原生Excel API及重開驗證。
+- 驗收：全13格／所有品質固定值；先後裝卸／搬格／存讀檔／切套；重覆灰字與String；九項實際結算及顯示一致；相關回歸、Build、來源同步與diff。歷史存檔沒有裝備先後資料，採既有SLOT_LIST順序作首次決定，之後保存新順序。
+- 完成：傳奇池135→144，九效果透過原生Excel插列；String新增2145「(重覆)」。使用者本輪明確回覆「授權直接套用這128格」，已用param-patches安全合併清空既有128格限定武器類型；請求、原始Excel及寫入收據保存在本機config/param-patches/archive/2026-10-27T06-26-13-389Z-81225807-3c4d-4725-9b7c-f673832289b0，沒有待套用差異。每階perR欄保留供舊資料相容但計算不再使用；複合效果JSON維持表內固定規格，取消舊雙手放大器。
+- 順序：equipItem在各套保存legendaryEquipOrder；搬格保留，卸下再穿排最後。computeStats與tips共用純函式，排除未啟用修羅亂舞的副手雙手裝；統計不寫入裝備，實際裝卸才補歷史順序。主端只讀快照；Worker協議60→61，文件與主頁／Worker快取同步。既有符文真言自身屬性／神鑄／普通詞條倍率保持。
+- 九效果接線：流血／各種異常的增傷共用直傷與DOT乘區；激昂只提高敵方可堆疊減益一層，DOT／buff低階各只加一次；經驗／金幣在去重後併入原聚合桶；強固為無盾額外乘算；以柔剋剛在護盾與法力防禦後判斷嚴格超過門檻，每次獨立排五次固定最大生命失血，可致死、不再重入減傷／延後；返哺從實際付費的手動／反擊／自動施放觸發，免費／失敗／GM免耗不觸發，緩慢回復走gainPlayerMana唯一入帳點。戰鬥重置清除兩種待結算狀態，避免復活後補扣。
+- Excel來源QA：原生正常開啟、RepairMode=False；既有3707個非授權Equipment_Affix儲存格及14917個String儲存格內容保留，128格限制確實清空；欄寬及抽樣原列高／字型／底色相同，新增列承襲原表格式。往返工具將少數原有數字轉成文字／滿精度字面，已用原始Excel儲存格原生Copy還原原值與型別；沒有手改XML。CSV僅有必要資料／原生數字最短表示的文字差異，config_tables --apply Equipment_Affix回報4個字面值、語意變更0。
+- 必要匯出修正：tools/xlsx_to_csv.cjs與tools/config_tables.cjs新增單次OOXML字串逸出解碼與XML換行正規化，解決原生Excel把多行表頭寫成_x000D_後無法辨識出現部位的問題；不更改一般詞條限制。新增xlsx-string-escapes真來源回歸驗兩個讀取器與AFFIX／PASSIVE重建一致。修改前曾出現讀表遺漏slots的候選，已修復並保留正式AFFIX_POOL原內容，沒有降低玩法正確性。
+- 修改檔案：config/Excel及CSV的Equipment_Affix／String、js/data／formula／item／player／legendary／status／combat／skills2／ui／strings_data／bridge、js/worker/protocol／sim.worker、index、兩支Excel讀取器、LV、WORKER_PROTOCOL、本段；新增tests/legendary-global及xlsx-string-escapes，更新effect-value-storage／two-hand-weapon-scaling／legendary-affix／8份skill2傳奇資料或倍率斷言及worker-protocol。只依新需求改部位／固定值預期，保留其餘既有失敗斷言。
+- 驗證指令：node --test --test-reporter=spec tests/legendary-global.test.cjs tests/xlsx-string-escapes.test.cjs tests/effect-value-storage.test.cjs tests/equip-set-preview-stats.test.cjs tests/equipment-tooltip-compare.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/string-table.test.cjs，核心75/75；其中新傳奇12項含真正resolveHit／castSkill2／反擊及自動施放、migrateSave與實際切套。npm.cmd run build：589檔通過。apply_params：581個參數、將變更0／錨點問題0；apply_strings --check：2132條同步461fceb6；build_string_csv --check：仍寫死0條；git diff --check通過。
+- 擴大驗證：node --test --test-reporter=spec tests/skill2-*legendary.test.cjs為198項、121過／77失敗；完整隔離複製修改前HEAD來源及測試／依賴同為198／121／77，失敗集合無新增（真空斬舊倍率測試更名仍在同一既有失敗位置）。legendary-affix加two-hand-weapon-scaling為17項12過5失敗，兩項技能既有數值／三項舊鑲孔預期亦於原版重現。額外來源／DOT／資源／裝備驗證原107項105過2失敗，符文表封魔塔舊解鎖預期與吸魔舊成長值在隔離原版重現；新增邊界測試後核心另全數通過。未跑完整npm test，不宣稱全庫全綠。
+- 畫面：隔離隨機localhost來源與全新Edge context載正式遊戲／真Worker；協議61、傳奇值10，先裝ring2生效／後裝ring灰字rgb(156,163,175)並帶(重覆)，卸下優先者後另一件恢復，重裝原件則排最後。最終pageerror／Console error／warning／資源失敗皆0；未讀寫玩家存檔。duplicate-tooltip.png及browser-report.json保存本聊天visualizations/legendary，已目視檢查兩件裝備的金色／灰色對照。
+- 唯讀未改：AI規範／AGENTS／Workflow／prompts、save.js、tower.js、skills.js、runeword.js及data、其餘配置表、Claude Meshy管線與其他副本。自我Review確認共載純函式不寫狀態、無新Timer或美術／VFX來源；無必要素材修改，素材庫不建立空Commit。
+- 交付：遊戲Commit為本段所在「[Codex] feat: 新增全局傳奇並統一固定值與先裝優先規則」，回覆附編號。功能與必要驗證完成，無待套用資料或未完成實作，可供Review後合併；未合併／推送develop或main。已知限制：舊檔無法還原歷史穿戴順序，首次按欄位決定；既有廣域測試債及跨瀏覽器／玩家存檔長戰尚未驗收。下一步正常整合後重新載入遊戲，驗收新傳奇與裝備tips。
+
 ## SYNC-SHORTCUT-HOLD-20261027 — 修復捷徑中斷並保留Claude管線
 
 - Owner：Codex；Done（工具修復與必要驗證完成，實際同步結果見本輪報告）。使用者以1要求接續同步，並明確選擇將Claude本地Meshy提交8d1577c5保留、暫不併入develop。原develop bd0b982e已乾淨；這次卡在Antigravity的本機套用參數捷徑被skip-worktree隱藏，但遠端又更新該路徑，fast-forward拒絕覆寫。

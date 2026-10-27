@@ -678,7 +678,7 @@ test('legendarySkill2Mods 只合併「同群組且已生效」的火系傳奇 fx
   assert.equal(fb.firepillarResonancePct, undefined, '不得跨群組外洩');
 });
 
-test('數量／段數包在規格物件裡：雙手補償只放大威力，不放大次數', () => {
+test('傳奇數量、段數與威力均不受舊雙手倍率影響', () => {
   const c = loadContext();
   const base = c.getStats();
   c.getStats = () => Object.assign({}, base, {
@@ -687,5 +687,5 @@ test('數量／段數包在規格物件裡：雙手補償只放大威力，不�
   });
   const fp = c.legendarySkill2Mods('firepillar');
   assert.equal(fp.firepillarHitsAdd.hits, 3, '段數是受保護的鍵，不吃 ×2');
-  assert.equal(fp.firepillarResonancePct, 20, '威力照吃 ×2');
+  assert.equal(fp.firepillarResonancePct, 10, '威力維持固定值');
 });

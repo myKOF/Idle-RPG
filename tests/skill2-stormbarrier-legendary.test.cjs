@@ -134,7 +134,7 @@ test('第十二批的五個傳奇特效都在池子裡，且掛在盾牌／暴�
     assert.ok(def, k + ' 應在傳奇特效池');
     assert.equal(def.legendary, true);
     assert.equal(def.relatedSkill, 'stormbarrier');
-    assert.equal(def.weaponTypes.join(','), 'shield');
+    assert.deepEqual(Array.from(def.weaponTypes || []), []);
     assert.equal(def.type, 'wind');
     assert.ok(def.fx && Object.keys(def.fx).length > 0, k + ' 缺 fx 規格');
   });

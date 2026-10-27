@@ -861,7 +861,7 @@ test('五個新掛點都接上了戰鬥主流程（不是只寫了函式沒人�
   assert.match(renderer, /var rGrowTo = Math\.max\(1, Number\(a\.rGrowTo\) \|\| 1\);/);
 });
 
-test('十個新傳奇特效：各自只出現在指定武器類型，且關聯到對應的技能群組', () => {
+test('十個傳奇特效：全部位可出現，且關聯到對應的技能群組', () => {
   const c = loadContext();
   const EXPECT = {
     firehuntAmplify: ['增焰', 'orb', 'firehunt'],
@@ -882,7 +882,7 @@ test('十個新傳奇特效：各自只出現在指定武器類型，且關聯�
     assert.equal(def.name, name);
     assert.equal(def.legendary, true);
     assert.equal(def.relatedSkill, gid);
-    assert.deepEqual(Array.from(def.weaponTypes || []), [weapon]);
+    assert.deepEqual(Array.from(def.weaponTypes || []), []);
     assert.ok(def.desc && def.desc.length > 0, key + ' 缺說明');
     assert.ok(def.fx && Object.keys(def.fx).length > 0, key + ' 缺效果參數');
   });

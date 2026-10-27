@@ -10,7 +10,7 @@
         真空風刃（額外的小型風刃）、空間澎脹（體積）、虛空漲落（虛空斬持續時間）
      4. 真空斬三個超神：萬象風劫（命中留下靜止的真空斬）、虛空滅界（每 2 秒自動一道虛空斬）、
         時空崩解（虛空斬改為固定環繞＋持續時間）
-     5. 雙手補償：真空斬那五個的保護鍵（次數／層數／秒數）不得被 ×2，體積要被 ×2
+     5. 傳奇固定值：次數、層數、秒數與體積都不受雙手倍率影響
 
    ⚠️ 本檔只驗「機制有沒有接上」，不驗「數字調校得對不對」（那是參數表的事）。 */
 const test = require('node:test');
@@ -120,14 +120,14 @@ test('第十一批的十個傳奇特效都在池子裡，且掛在正確的武�
     assert.ok(def, k + ' 應在傳奇特效池');
     assert.equal(def.legendary, true);
     assert.equal(def.relatedSkill, 'windblade');
-    assert.equal(def.weaponTypes.join(','), 'wand1h', '風刃五個掛在單手魔杖');
+    assert.deepEqual(Array.from(def.weaponTypes || []), [], '風刃五個可出現在全部位');
     assert.equal(def.type, 'wind');
   });
   vacuum.forEach((k) => {
     const def = c.PASSIVE_POOL[k];
     assert.ok(def, k + ' 應在傳奇特效池');
     assert.equal(def.relatedSkill, 'vacuumslash');
-    assert.equal(def.weaponTypes.join(','), 'axe2h', '真空斬五個掛在雙手斧');
+    assert.deepEqual(Array.from(def.weaponTypes || []), [], '真空斬五個可出現在全部位');
     assert.equal(def.type, 'wind');
   });
 });
@@ -476,7 +476,7 @@ test('【虛空漲落】：虛空斬的持續時間 +3 秒', () => {
   assert.equal(flux.c.SKILL2_RT.orbits[0].until - flux.c.GT, 9, '+3 秒');
 });
 
-test('雙手補償：真空斬的保護鍵不被 ×2，體積百分比要被 ×2', () => {
+test('真空斬的次數、時間與體積皆不受舊雙手倍率影響', () => {
   const mults = { vacuumRift: 2, vacuumFlux: 2, vacuumExpand: 2, vacuumResonance: 2, vacuumWindBlade: 2 };
   const base = castVacuum([]);
   const doubled = castVacuum(['vacuumRift', 'vacuumFlux', 'vacuumExpand', 'vacuumResonance', 'vacuumWindBlade'],
@@ -488,7 +488,7 @@ test('雙手補償：真空斬的保護鍵不被 ×2，體積百分比要被 ×2
   assert.equal(doubled.hits.length / base.hits.length, 4 / 3, 'hits 是保護鍵：仍然只多 1 次');
   const b = base.specs.filter((s) => s.fxKind === 'slash')[0];
   const d = doubled.specs.filter((s) => s.fxKind === 'slash')[0];
-  assert.ok(Math.abs(d.lineLength - b.lineLength * 1.5) < 1e-6, '體積百分比吃雙手補償（25% → 50%）');
+  assert.ok(Math.abs(d.lineLength - b.lineLength * 1.25) < 1e-6, '體積百分比維持固定值');
 });
 
 /* ===========================================================================
