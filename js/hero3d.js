@@ -19,7 +19,7 @@
   'use strict';
 
   var STORE_KEY = 'idle-rpg.hero3d.v1';
-  var MODEL_URL = 'images/models/hero3d/sunbrand-knight.glb?v=20261027-grips7';   // 改了動畫就換版號，避免瀏覽器用到舊快取
+  var MODEL_URL = 'images/models/hero3d/sunbrand-knight.glb?v=20261027-grips8';   // 改了動畫就換版號，避免瀏覽器用到舊快取
   var GLTF_URL = 'js/vendor/three/loaders/GLTFLoader.js';
   var CLOTH_URL = 'images/models/hero3d/sunbrand-cloth.json';   // 布料頂點清單（披風、腰前布襠、關節處的藍布）：和 tools/meshy-pipeline/src/fix-grips.mjs 共用
 
@@ -44,8 +44,8 @@
 
   /* 離屏畫布與鏡頭。畫布 SIZE 像素涵蓋 SPAN 公尺（揮劍、倒地躺平時劍會伸出去，留夠邊）。
      鏡頭仰角 ELEV_DEG：2D 場景的地面縱向壓縮 0.5＝sin(30°)，用同一個仰角 3D 角色的透視才與地面一致。 */
-  var SIZE = 288;
-  var SPAN = 3.6;
+  var SIZE = 352;
+  var SPAN = 4.4;
   var ELEV_DEG = 30;
   var TARGET_Y = 1.0;            // 鏡頭對準的高度（公尺）
   var YAW_TAU_SEC = 0.09;        // 轉向的時間常數：越小轉越快

@@ -62,12 +62,13 @@ const CFG = {
          右分量 −0.58 → +0.58、上分量 +0.58 → −0.58（直線），中間再加一點往上的拱（bulge，對應示意圖的弧），
          前分量 0.45 並在中段多一點（劍要伸到身體前方才砍得到敵人）。
        s(t) 前慢後快（揮劍加速）。 */
-    path: { r0: -0.58, r1: 0.58, u0: 0.58, u1: -0.58, bulge: 0.30, f0: 0.45, fbulge: 0.20 },
-    sKeys: [[1.20, 0], [1.24, 0], [1.27, 0.10], [1.30, 0.28], [1.33, 0.52], [1.36, 0.76], [1.39, 0.92], [1.42, 1], [1.46, 1]],
+    path: { r0: -0.35, r1: 0.30, u0: 0.30, u1: -0.62, bulge: 0.05, f0: 1.0, fbulge: 0.15 },
+    sKeys: [[1.20,0],[1.24,0],[1.28,0.10],[1.32,0.30],[1.36,0.55],[1.40,0.78],[1.44,0.93],[1.48,1],[1.52,1]],
     /* 收招：使用者要求最後一幀回到第一幀的動作（動作首尾相接，不要停在斜劈結束的姿勢多放幾幀）。
        從 recover[0] 到 recover[1]，全身所有骨骼（旋轉、位移）平順過渡回 startTime 那一幀的姿勢（smoothstep），之後保持。
        startTime 要和 hero3d.js 的 CLIP_FOR.attack2.start 一致；recover[1] 要和 CLIP_FOR.attack2.end 一致。 */
-    recover: [1.46, 1.70],
+    recover: [1.52, 1.70],
+    lunge: { dist: 0.6, hipsK: 0.6, rearK: 0.8, t0: 1.10, t1: 1.34, lift: 0.12 },   // 往前跨一大步劈下：髖部前移 0.36、前腳整步、後腳跟上
     startTime: 0.37
   }
 };
@@ -322,6 +323,64 @@ function fixAttack2Chop(rig, clip, cfg) {
     };
   }
   return result;
+}
+
+
+/* ---- Attack2 踏步前進：敵人在一大步外，主角要跨步上前才砍得到 ----
+   髖部往身體前方移 hipsK×dist，前腳（起始姿勢較前的那隻）整步 dist（途中抬腳）、後腳跟上 rearK×dist；
+   兩腿各用兩段式 IK 接到新的腳位置，腳掌維持原本的世界朝向。收招時由 recoverToStart 把髖與腿平順帶回起始姿勢。 */
+function fixLunge(rig, clip, cfg) {
+  const L = cfg.lunge;
+  if (!L) return { rot: {}, hips: {} };
+  const id = (n) => rig.byName[n];
+  const HIPS = id('Hips');
+  const legs = ['Left', 'Right'].map((sd) => ({ sd, U: id(sd + 'UpLeg'), K: id(sd + 'Leg'), F: id(sd + 'Foot') }));
+  const p0 = poseAt(rig, clip, cfg.startTime), W0 = worldMatrices(rig, p0), fr0 = bodyFrame(rig, W0);
+  const fw = fr0.fwd, up = new Vector3(0, 1, 0);
+  legs.sort((a, b) => wPos(W0(b.F)).dot(fw) - wPos(W0(a.F)).dot(fw));
+  const [front, rear] = legs;
+  const rot = {}, hips = {};
+  for (let i = 0; i < clip.keyTimes.length; i++) {
+    const t = clip.keyTimes[i];
+    if (t < L.t0) continue;
+    const lam = smooth((t - L.t0) / (L.t1 - L.t0)), lamR = smooth((t - L.t0 - 0.04) / (L.t1 - L.t0));
+    if (lam <= 0 && t > L.t0) continue;
+    if (t > cfg.recover[0]) continue;                                    // 收招段交給 recoverToStart
+    const pose = poseAt(rig, clip, t), W = worldMatrices(rig, pose);
+    const dh = fw.clone().multiplyScalar(L.dist * L.hipsK * lam);
+    const par = W(rig.parent[HIPS]).clone().invert();
+    const o = new Vector3().applyMatrix4(par);
+    hips[i] = pose[HIPS].t.clone().add(dh.clone().applyMatrix4(par).sub(o));
+    const hipsNew = pose.map((q) => ({ t: q.t.clone(), q: q.q.clone(), s: q.s.clone() }));
+    hipsNew[HIPS].t.copy(hips[i]);
+    const Wn = worldMatrices(rig, hipsNew);
+    rot[i] = {};
+    for (const lg of [front, rear]) {
+      const isFront = lg === front;
+      const stepK = isFront ? lam : lamR * L.rearK;
+      const S = wPos(Wn(lg.U)), K0 = wPos(W(lg.K)).add(dh), F0 = wPos(W(lg.F));
+      const T = F0.clone().addScaledVector(fw, L.dist * stepK);
+      if (isFront) T.addScaledVector(up, L.lift * Math.sin(Math.PI * lam));
+      const l1 = S.distanceTo(K0), l2 = K0.distanceTo(wPos(W(lg.F)).add(dh)), reach0 = S.distanceTo(T);
+      const reach = Math.min(reach0, (l1 + l2) * 0.998), dir = T.clone().sub(S).normalize();
+      const a = (l1 * l1 - l2 * l2 + reach * reach) / (2 * reach), h = Math.sqrt(Math.max(0, l1 * l1 - a * a));
+      const ko = K0.clone().sub(S); let pole = ko.sub(dir.clone().multiplyScalar(ko.dot(dir)));
+      if (pole.lengthSq() < 1e-8) pole = fw.clone();
+      pole.normalize();
+      const K2 = S.clone().addScaledVector(dir, a).addScaledVector(pole, h);
+      const Tcl = S.clone().addScaledVector(dir, reach);
+      const swing = (from, to) => new Quaternion().setFromUnitVectors(from.clone().normalize(), to.clone().normalize());
+      const uW0 = wRot(W(lg.U)), kW0 = wRot(W(lg.K)), fW0 = wRot(W(lg.F));
+      const uW = swing(wPos(W(lg.K)).sub(wPos(W(lg.U))), K2.clone().sub(S)).multiply(uW0);
+      const kW = swing(wPos(W(lg.F)).sub(wPos(W(lg.K))), Tcl.clone().sub(K2)).multiply(kW0);
+      const hipsW = wRot(Wn(HIPS));
+      const uL = hipsW.clone().invert().multiply(uW).normalize();
+      const kL = uW.clone().invert().multiply(kW).normalize();
+      const fL = kW.clone().invert().multiply(fW0).normalize();
+      rot[i][lg.sd + 'UpLeg'] = uL; rot[i][lg.sd + 'Leg'] = kL; rot[i][lg.sd + 'Foot'] = fL;
+    }
+  }
+  return { rot, hips };
 }
 
 /* ---- 收招：全身平順回到起始姿勢（讓動作首尾相接） ---- */
@@ -685,6 +744,21 @@ function writeQuats(g, clip, nodeName, edits) {
   }
 }
 
+/* ---- 劍尖軌跡（除錯／驗證用）：回傳每個時間點劍尖在「人物身體座標」下的位置（以 Hips 為原點，單位＝模型單位），以及身體高度參考 ---- */
+export function tipTrack(file, clipName, t0, t1, dt) {
+  const g = readGlb(file), rig = buildRig(g), clip = readClip(g, rig, clipName);
+  const id = (n) => rig.byName[n], rows = [];
+  let ref = null;
+  for (let t = t0; t <= t1 + 1e-9; t += dt) {
+    const pose = poseAt(rig, clip, t), W = worldMatrices(rig, pose), fr = bodyFrame(rig, W);
+    const tip = new Vector3(4.8, 100.18, 1.0).applyMatrix4(W(id('Sword')));
+    const hips = wPos(W(id('Hips'))), rel = tip.clone().sub(hips);
+    ref = { head: wPos(W(id('Head'))).y - hips.y, shoulder: wPos(W(id('RightShoulder'))).y - hips.y, hips: hips.y };
+    rows.push({ t: +t.toFixed(3), fwd: rel.dot(fr.fwd), right: rel.dot(fr.right), up: rel.y, world: tip.toArray(), hips: hips.toArray(), fwdVec: fr.fwd.toArray() });
+  }
+  return { rows, ref };
+}
+
 /* ---- 驗證（給測試用）：量測某個 GLB 現在的握劍狀況 ---- */
 export function verifyGrips(file) {
   const g = readGlb(file), rig = buildRig(g);
@@ -728,6 +802,9 @@ const regroup = (edits) => {
 if (!checkOnly) {
   for (const [nm, ed] of Object.entries(regroup(e1))) writeQuats(g, a1, nm, ed);
   for (const [nm, ed] of Object.entries(regroup(e2))) writeQuats(g, a2, nm, ed);
+  const lunge = fixLunge(rig, a2, CFG.Attack2);
+  for (const [nm, ed] of Object.entries(regroup(lunge.rot))) writeQuats(g, a2, nm, ed);
+  if (Object.keys(lunge.hips).length) writeVecs(g, a2, 'Hips', lunge.hips);
   recoverToStart(g, rig, a2, CFG.Attack2);
   limitWrists(g, rig);
   removeStrayTriangles(g, rig);
