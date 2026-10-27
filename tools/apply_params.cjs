@@ -825,7 +825,6 @@ scalar('formula', 'CONTROL_DECAY_MERGE_SEC', '3-戰鬥核心', '控場遞減', 3
 scalar('formula', 'BASE_HP_REGEN', '2-屬性派生', '野外基礎生命恢復', 0);
 scalar('formula', 'WAVE_CLEAR_HEAL_PCT', '3-戰鬥核心', '過關回復', 0);
 scalar('formula', 'DROP_RATE_EFFECT_MULT', '5-掉落通則', '掉寶率效果折半', 0);
-scalar('formula', 'SPEED_GEAR_FIXED_BONUS', '5-掉落通則', '加速齒輪固定加成', 0);
 scalarValue('formula', 'ANCIENT_AFFIX_SALVAGE_CHANCE', 50, 'ANCIENT_AFFIX_SALVAGE_CHANCE'); // 每條太古詞條的拆解判定機率
 scalarValue('formula', 'SALVAGE_SLOT_MAX', 20, 'SALVAGE_SLOT_MAX');
 scalarValue('formula', 'SALVAGE_SLOT_INITIAL', 10, 'SALVAGE_SLOT_INITIAL');

@@ -452,16 +452,26 @@ test('零件自由裝配：依類型安裝目前等級、同型可重複裝滿�
   assert.equal(G.factory.parts.length, 0);
 });
 
-test('加速齒輪效果生效：同型堆疊、速度倍率＝1＋Σ(數值＋固定加成)/100', () => {
+test('加速齒輪只按表成長：T1為25%、T10為250%，提示與實際速度一致且可堆疊', () => {
   const c = loadContext(LOGIC_FILES);
   const G = freshG(c);
   const fu = G.newForge.furnaces[0];
-  const sg = mkPart(c, 'sg1', 'speedGear', 2);
-  G.factory.partLevels.speedGear = 2;
-  c.newForgeInstallPart(fu.id, 'speedGear');
-  c.newForgeInstallPart(fu.id, 'speedGear');
-  const one = c.effectiveFactoryPartValue('speedGear', sg.val);
-  assert.ok(Math.abs(c.newForgeFurnaceSpeed(fu) - (1 + (one * 2) / 100)) < 1e-9, '同型零件效果應堆疊');
+  G.factory.parts = [{ id: 'sg-legacy', key: 'speedGear', tier: 1 }];
+  G.factory.installed.salvage = ['sg-legacy'];
+  for (const [level, bonus, speed] of [[1, 25, 1.25], [10, 250, 3.5]]) {
+    G.factory.partLevels.speedGear = level;
+    fu.parts = [{ key: 'speedGear' }];
+    assert.equal(c.partValueForLevel('speedGear', level), bonus);
+    assert.equal(c.partDesc({ key: 'speedGear', level }), '分解速度 +' + bonus + '%');
+    assert.equal(c.partBonus('salvage', 'speedGear'), bonus, '舊分解槽也只使用表內效果');
+    assert.equal(c.newForgePartRawBonus(fu, 'speedGear'), bonus);
+    assert.equal(c.newForgeFurnaceSpeed(fu), speed);
+    fu.parts.push({ key: 'speedGear' });
+    assert.equal(c.newForgeFurnaceSpeed(fu), 1 + bonus * 2 / 100, '同型零件效果應堆疊');
+  }
+  G.factory.partLevels.furnaceCore = 1;
+  fu.parts.push({ key: 'furnaceCore' });
+  assert.equal(c.newForgeFurnaceSpeed(fu), 1 + 500 * (1 + c.partValueForLevel('furnaceCore', 1) / 100) / 100, '核心仍放大加速齒輪');
 });
 
 test('sanitize：舊 id 陣列轉成只含 key、無效項剔除、超量截斷', () => {

@@ -12758,3 +12758,17 @@ Worker 存活且頁面正常完成載入。
 - 驗證：完整benchmark、report生成及--check皆通過；node --test tests/ult-dps-benchmark.test.cjs共13/13通過，新增三敵種實際必中與活目標最後一擊完整Overkill、死後直接命中／直接扣血／DOT歸零、原生復活後可再計傷；原有等級／補怪／殺敵去重／資源鎖定／死亡稽核保留。Build586檔通過，diff／staged／25份來源SHA核對見交付。沒有為通過測試降低正式技能或放寬傷害驗收。
 - 唯讀未改：規範／Agent文件、21份正式JS、技能／狀態／傳奇配置、原Antigravity工具／報告與Excel，另查counter盾損、resolveHit結算順序與普攻／技能統計出口。Skills2.xlsx屬使用者進行中未提交修改，本次不寫入／套用／提交；無LV／素材／存檔或素材庫變動。完整批次開始／結束25份SHA一致；收尾再核對時，24份來源仍一致，只有未供Runtime載入的xlsx在批次完成後另有外部儲存（測試時2ecb8480…、收尾e818a072…）。保留測試當時SHA作追溯，不改成新SHA冒稱測過未匯出表；不影響本次JS／CSV與工具的結果。
 - 本項已完成，可供Review／合併保存，未合併推送。限制：單seed／受控受擊、鎖血抑制瀕死能力、原生同批DOT為一筆結算；致死最後一下仍完整計入，故DPS與殺敵數不等價，不能僅依傷害榜判斷平衡。Commit為「[Codex] test: 實際必中重測並限制死亡後計傷」，編號見回覆。
+
+## SPEED-GEAR-BASE-20261027 — 移除加速齒輪固定加成
+
+- Owner：Codex；Done，單一開發者。使用者要求刪除參數表第169列的加速齒輪固定加成，T10回到25＋25×9＝250%。
+- 前置：目前參數Excel雙表鏡像／零件等級公式。允許game_parameters.xlsx／CSV、formula／factory／newforge／item、apply_params、index／bridge／Worker快取、零件相關回歸、LV及本紀錄；禁止其他玩法／存檔／素材與Claude的3D試作，不合併推送。
+- 預檢：除index及任務表外均無其他來源；Claude修改主角3D按鈕及其快取／頁首任務，本次只改formula／item／bridge引用與文末任務。以Claude HEAD為base、其工作檔為theirs三方試跑均0，保留其內容，無語意相依。Excel刪列屬param-patches不支援的結構修改，以原生Excel API候選編修／正常重開驗證，不手改XML。
+- 驗收：Excel及鏡像刪除固定加成列、更新兩筆舊說明、保留其餘值／公式／格式／穩定編號；移除常數及參數錨點與額外加成呼叫，T1／T10提示和實際速度一致、同型堆疊與核心倍率保留。必要主端／Worker快取、專項／全庫／參數錨點／Build及diff檢查後Commit；後續使用者Review／合併。
+- 完成14檔：game_parameters.xlsx主表第169列／計算表第170列原生刪除，計算表兩筆舊說明同步；修正刪列後編號鏈為=A169+2，保留其餘穩定ID與全部鏡像公式。CSV由來源重匯出，只有刪列與兩筆說明差異。移除formula固定常數／helper、factory／newforge／item加成呼叫與apply_params錨點，保留其他掉寶率計算及核心倍率。主頁formula73／item33／bridge370、Worker入口與四個來源統一20261027-speed-gear-base；LV同步。
+- Excel驗證：來源獨占檢查／SHA保護，候選內編修、全表逐值比對（浮點重算容差1e-12）、欄寬與0物件保留，兩次正常重開且Saved／非RepairMode後才寫回。唯讀OOXML核對12649格樣式、手動列高／欄樣式／視圖／保護無改，無錯誤儲存格或#REF；既有原生Excel會正規化字型度量與自動列高（預設14.4→15、計算表自動列67為15→15.75），未手改內部XML。前後局部預覽已檢視，未更改字型、內容排版或手動格式。
+- 已通過：node tools/apply_params.cjs：581→580，恰少本次刪除設定，變更0／錨點問題0；--check-anchors擾動530個數值後580錨點全部命中。node --test --test-reporter=spec執行new-forge／factory-parts／drop-rate-halving／apply-params／apply-params-scientific／apply-params-anchor-independence／worker-shim／worker-protocol共63/63通過，含T1=25%／1.25倍、T10=250%／3.5倍、同型堆疊、核心與舊分解槽一致。npm.cmd run build589檔通過，git diff --check通過。
+- 唯讀未改：共通／Agent／Workflow規範、PARAM_PATCHES、Excel更新／匯出工具、data與UI實際提示鏈、其他零件／存檔與Worker回歸。額外part-fused-value-storage共10/12，兩項融合功能失敗用HEAD來源唯讀覆映完全重現；不擴修或放寬斷言。未新增文字／素材，不改String、存檔或解鎖；素材庫無變動，不建空Commit。同副本ULT-SWITCH-POINTS的skills2／ui／任務紀錄保留且不納本次提交。
+- 全庫：node --test --test-reporter=tap "tests/*.test.cjs"完整執行16分10秒，4931項＝4338過／591失敗／2跳過；同步工具測試亦完整結束。以未修改HEAD的本次來源唯讀覆映、對失敗名稱定向重跑，137檔中588項原樣失敗；另外3項為同副本進行中ULT-SWITCH-POINTS的技能點／UI／String期間不一致，該聊天修正後，本次來源與未修改來源都已通過3/3。無本次新增失敗，不把既有測試債改成接受現況；未宣稱全庫全過或正式瀏覽器長戰驗收。
+- 協作與交付：後續同副本技能任務更新bridge371／Worker入口20261027-ult-switch-points及skills2引用，工作檔保留其最新快取；本次以獨立index候選僅暫存自己的formula73／item33／bridge370與四個Worker來源、熔爐LV段及本任務段，提交仍是可獨立載入的20261027-speed-gear-base。其String、UI、技能、測試及任務／LV段完整留在工作區，不stage、不回退。無本次未完成項，可供Review／合併；未合併推送。Commit為本段所在「[Codex] fix: 移除加速齒輪固定加成並同步配置與顯示」，實際編號見回覆。
+- 收尾來源保護：全庫執行期間使用者在原生Excel另存game_parameters.xlsx，現況計算表增加最後三列、主表最後三列ID重排為357／358／359；原生唯讀比較確認固定加成列仍已刪除，其他差異屬本任務外。磁碟工作檔完整保留、不覆寫、不匯出其未驗證修改；提交改納本次先前正常重開／逐值／格式驗證過的候選（SHA256 CE0E6A5ED86BF0934AB2C5E667D7B1161E4C96AEF4F2FE1CFFDEB0A3BBB55E27）及其對應CSV。提交後使用者Excel修改與另一技能任務仍留未提交狀態，不將其偽稱為本次測過或提交。

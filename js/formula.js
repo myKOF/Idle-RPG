@@ -1540,15 +1540,11 @@ var PART_KEY_MIGRATIONS = {
   fortuneChip: 'luckHeart',
   archivist: 'knowledgeCore'
 };
-var SPEED_GEAR_FIXED_BONUS = 50;
 function effectiveDropRateEffect(value) {
   return (Number(value) || 0) * DROP_RATE_EFFECT_MULT;
 }
 function effectivePartEffectValue(key, value) {
   return DROP_RATE_PART_KEYS[key] ? effectiveDropRateEffect(value) : value;
-}
-function effectiveFactoryPartValue(key, value) {
-  return key === 'speedGear' ? (Number(value) || 0) + SPEED_GEAR_FIXED_BONUS : value;
 }
 
 /* ---- 自動機組零件的數值、等級與升級費用 ----

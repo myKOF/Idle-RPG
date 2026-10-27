@@ -1123,7 +1123,7 @@ function rerollSingleAffix(it, affixKey) {
 function makePart(tier, node) { return null; }
 function partDesc(p) {
   // 小於 1 的機率值保留兩位小數（如 0.15%），其餘一位
-  var val = effectivePartEffectValue(p.key, effectiveFactoryPartValue(p.key, partValue(p)));
+  var val = effectivePartEffectValue(p.key, partValue(p));
   var vs = (val < 1) ? String(Math.round(val * 100) / 100) : fmt1(val);
   return PART_TYPES[p.key].desc.replace('{v}', vs);
 }
