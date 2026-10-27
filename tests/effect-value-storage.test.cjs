@@ -46,12 +46,12 @@ test('產出的傳奇特效只存 key，不存數值', () => {
   assert.equal(c.passiveValue(it, it.passive), c.passiveValueFor(it.passive.key, it.rarity));
 });
 
-test('傳奇特效數值隨裝備稀有度算出（稀有度提升即跟著提升）', () => {
+test('傳奇特效數值固定取基礎值，稀有度提升不再成長', () => {
   const c = loadContext();
   const it = makeItem({ rarity: 5, passive: { key: 'sunder' } });
   assert.equal(c.passiveValue(it, it.passive), 10);   // base 10、傳說級為基準
   it.rarity = 7;
-  assert.equal(c.passiveValue(it, it.passive), 14);   // +perR 2 × 2 階
+  assert.equal(c.passiveValue(it, it.passive), 10);
 });
 
 test('調整 PASSIVE_POOL 後，舊存檔既有傳奇特效跟著套用新值', () => {

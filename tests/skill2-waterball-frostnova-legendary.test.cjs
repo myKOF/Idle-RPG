@@ -638,7 +638,7 @@ test('十個傳奇特效落在正確的部位與關聯技能，且都帶得動�
     assert.equal(def.legendary, true);
     assert.equal(def.type, 'ice');
     // vm 內建立的陣列跨 realm，deepStrictEqual 會因原型不同而失敗——比字串即可
-    assert.equal(def.weaponTypes.join(','), expect[key][0]);
+    assert.deepEqual(Array.from(def.weaponTypes || []), []);
     assert.equal(def.relatedSkill, expect[key][1]);
     assert.ok(Object.prototype.hasOwnProperty.call(def.fx, expect[key][2]), key + ' 的 fx 缺少 ' + expect[key][2]);
   });

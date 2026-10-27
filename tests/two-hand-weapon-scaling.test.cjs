@@ -48,30 +48,30 @@ test('two-handed weapon affix values use the 2x multiplier', () => {
       c.TWO_HAND_AFFIX_VALUE_MULT));
 });
 
-test('two-handed weapon passive and godforged values use the 2x multiplier', () => {
+test('legendary values stay fixed on two-handed weapons; godforged values retain the 2x multiplier', () => {
   const c = loadContext(['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/status.js', 'js/formula.js']);
   const oneHand = item();
   const twoHand = item({ weaponType: 'greatsword2h' });
 
   assert.equal(c.passiveValue(oneHand, { key: 'sunder' }), 10);
-  assert.equal(c.passiveValue(twoHand, { key: 'sunder' }), 20);
+  assert.equal(c.passiveValue(twoHand, { key: 'sunder' }), 10);
   assert.equal(c.godPassiveValue({ key: 'godMight', roll: 500 }, oneHand), 18);
   assert.equal(c.godPassiveValue({ key: 'godMight', roll: 500 }, twoHand), 36);
 });
 
-test('two-handed legendary effect numeric values are doubled without changing timing/count fields', () => {
+test('legendary effect parameters ignore legacy two-handed multipliers', () => {
   const c = loadContext(['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/legendary.js']);
   c.getStats = () => ({ legendaryEffectMults: { mountainSunderer: 2 } });
 
   const fx = c.legendaryFx('mountainSunderer');
-  assert.equal(fx.controlDurationMult, 4);
-  assert.equal(fx.controlledTargetDamagePct, 600);
+  assert.equal(fx.controlDurationMult, 2);
+  assert.equal(fx.controlledTargetDamagePct, 300);
 
   c.getStats = () => ({ legendaryEffectMults: {} });
   assert.equal(c.legendaryFx('mountainSunderer').controlledTargetDamagePct, 300);
 });
 
-test('computeStats records the two-handed multiplier for legendary effects and godforged values', () => {
+test('computeStats keeps legendary effects fixed and godforged values scaled', () => {
   const c = loadContext(['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/item.js', 'js/player.js']);
   c.G = c.newGameState();
   const baseline = c.computeStats();
@@ -82,7 +82,7 @@ test('computeStats records the two-handed multiplier for legendary effects and g
   });
 
   const st = c.computeStats();
-  assert.equal(st.legendaryEffectMults.mountainSunderer, c.TWO_HAND_EFFECT_VALUE_MULT);
+  assert.equal(st.legendaryEffectMults.mountainSunderer, undefined);
   const godMight = c.godPassiveValue({ key: 'godMight', roll: 0 }, c.G.equipment.weapon);
   assert.equal(st.atk, Math.round(baseline.atk * (1 + godMight / 100)));
 });

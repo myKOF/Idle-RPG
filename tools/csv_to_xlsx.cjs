@@ -10,9 +10,9 @@ const path = require('path');
 const zlib = require('zlib');
 
 const ROOT = path.resolve(__dirname, '..');
-/* 預設轉主參數表；帶一個表名參數就轉同名的那張（例如 Zone_Stage_Waves）：
+/* 預設轉主參數表；帶一個表名參數就轉同名的那張（例如 Zone_Stage_Drops）：
      node tools/csv_to_xlsx.cjs                    → game_parameters
-     node tools/csv_to_xlsx.cjs Zone_Stage_Waves   → Zone_Stage_Waves */
+     node tools/csv_to_xlsx.cjs Zone_Stage_Drops   → Zone_Stage_Drops */
 const TABLE_NAME = (process.argv[2] || 'game_parameters').replace(/\.(csv|xlsx)$/i, '');
 const CSV_PATH = path.join(ROOT, 'config', 'CSV', TABLE_NAME + '.csv');
 const XLSX_PATH = path.join(ROOT, 'config', 'Excel', TABLE_NAME + '.xlsx');

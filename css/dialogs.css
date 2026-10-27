@@ -50,7 +50,44 @@ body.game-menu-paused :is(.quest-fly-reward, .fly-trail-particle, .game-floating
 /* 單一斜面框取代舊裝飾角與轉生彩虹框，避免多套外框相疊。 */
 .modal-box::after, .detail-log-box::after,
 .confirm-modal.reincarnation-confirm .confirm-box::before { display: none !important; }
-.confirm-modal.reincarnation-confirm .confirm-box { animation: none; }
+#confirm-modal.reincarnation-confirm .confirm-box {
+  /* 原灰白斜面各 RGB 通道乘 0.8，只加深底色，不降低文字亮度。 */
+  --dialog-surface: linear-gradient(135deg, #727672, #424746 38%, #2a2e2d 62%, #616662);
+  --dialog-frame: linear-gradient(135deg, #fff0ad, #c39131 24%, #74501b 48%, #efd380 73%, #a57426);
+  background-blend-mode: normal;
+  background-size: auto;
+  border-width: 8px !important;
+  box-shadow: 0 18px 56px #000c, 0 0 18px #d8aa4538,
+    0 0 0 1px #6e4b1c, inset 0 0 0 1px #fff0b278,
+    inset 0 0 0 4px #312917, inset 0 0 0 5px #d7af626e !important;
+  animation: none;
+}
+/* 四角金色雕飾置於框內；中央留空，不阻擋文字、按鈕或捲動。 */
+.confirm-modal.reincarnation-confirm .confirm-box::after {
+  display: block !important;
+  content: "";
+  position: absolute;
+  inset: 5px;
+  pointer-events: none;
+  border: 1px solid #e8c67880;
+  background:
+    linear-gradient(135deg, #ffe5a0 0 5px, transparent 5px) top left,
+    linear-gradient(225deg, #ffe5a0 0 5px, transparent 5px) top right,
+    linear-gradient(45deg, #b98a37 0 5px, transparent 5px) bottom left,
+    linear-gradient(315deg, #b98a37 0 5px, transparent 5px) bottom right;
+  background-size: 24px 24px;
+  background-repeat: no-repeat;
+}
+#confirm-modal.reincarnation-confirm .confirm-title {
+  color: #ffe5a0 !important;
+  border-bottom-color: #d7b56580;
+}
+.reincarnation-unlock {
+  display: block;
+  margin-top: 10px;
+  color: #ffdf58;
+  font-weight: 700;
+}
 
 /* 普通小框自行捲動；大型flex視窗保留內文捲動與固定標頭。 */
 .modal-box:not(:is(#summary-modal-box, #quest-modal > .modal-box)),

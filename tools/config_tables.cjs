@@ -190,10 +190,12 @@ function readZipEntries(buf) {
   return entries;
 }
 function decodeXml(s) {
-  return s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'")
+  return s.replace(/\r\n?/g, '\n').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'")
     .replace(/&#x([0-9a-fA-F]+);/g, (m, h) => String.fromCodePoint(parseInt(h, 16)))
     .replace(/&#(\d+);/g, (m, d) => String.fromCodePoint(parseInt(d, 10)))
-    .replace(/&amp;/g, '&');
+    .replace(/&amp;/g, '&')
+    // Excel 原生存檔的 CR 等字串逸出；單次解碼保留 _x005F_ 保護的字面值。
+    .replace(/_x([0-9a-fA-F]{4})_/g, (m, h) => String.fromCharCode(parseInt(h, 16)));
 }
 function colIndex(ref) { const m = /^([A-Z]+)/.exec(ref); let n = 0; for (const ch of m[1]) n = n * 26 + (ch.charCodeAt(0) - 64); return n - 1; }
 /* 命名空間正規化：OpenXML SDK 系工具存的 <x:row>/<x:c>… 剝成 <row>/<c>…（屬性如 r:id 不受影響） */

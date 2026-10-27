@@ -5944,6 +5944,8 @@ function renderDetail() {
   var h = slotMode ?
     '<div class="equip-socket-header">' + slotHeaderHtml + '</div><div class="equip-socket-page">' + slotHolesHtml + '</div><div class="equip-socket-gems">' + slotStockHtml + '</div>' :
     sharedNoteHtml + itemDetailHTML(it, null, {
+      equipment: equipViewEquipment(uiEquipPanelSnapshot()),
+      asuraOn: uiAsuraDualWield(),
       gold: player && player.gold,
       essence: player && player.essence,
       justUpgraded: justUpgraded,
@@ -8879,7 +8881,10 @@ function renderSkills() {
   if (pointsEl) {
     var pointView = skillsSnapshot.skills2 && skillsSnapshot.skills2.points || { total: 0, spent: 0, available: 0 };
     pointsEl.textContent = STR(2132, pointView.available);
-    setAttrIfChanged(pointsEl, 'data-tt-desc', STR(2139, pointView.total, pointView.spent));
+    var legacyCredit = Math.max(0, pointView.total - (mastery.level || 0));
+    setAttrIfChanged(pointsEl, 'data-tt-desc', legacyCredit > 0
+      ? STR(2150, mastery.level || 0, legacyCredit, pointView.spent)
+      : STR(2139, pointView.total, pointView.spent));
   }
   if (masteryLvEl) {
     // 說明文字移到資訊列的滑鼠提示（index.html .sgb-mastery），這裡只放等級
@@ -9347,7 +9352,7 @@ function sgbUltHTML(gid, lvs, skillsSnapshot, gold, pendingAttrs) {
   } else {
     var switchCost = skills2UltCost(gid, f, 0);
     var pointView = skillsSnapshot.skills2 && skillsSnapshot.skills2.points;
-    var canSwitchPoints = pointView && pointView.total - pointView.spent + pick.lv >= 1;
+    var canSwitchPoints = pointView && points + pick.lv >= 1;
     h += '<button class="btn sgb-btn-primary" data-skill2-ultswitch="' + gid + ':' + f + '"' + pendingAttrs + (gold < switchCost || !canSwitchPoints ? ' disabled' : '') + ' data-tip="' + esc(STR(2138, switchCost.toLocaleString('en-US'), pick.lv)) + '">' + STR(800, fmt(switchCost)) + '</button>';
   }
   return h + '</div>' + skillTowerUnlockHintHTML(list[f], skillsSnapshot) + '</div></div>';
@@ -9878,7 +9883,13 @@ function showItemTooltip(it, anchorEl, opts) {
 
   var tooltipHeaderSnapshot = uiHeaderPanelSnapshot();
   var tooltipPlayer = tooltipHeaderSnapshot && tooltipHeaderSnapshot.player;
+  var tooltipEquipSnapshot = uiEquipPanelSnapshot();
+  var tooltipInvEquipment = uiInventoryPanelSnapshot();
+  var tooltipEquipment = tooltipEquipSnapshot ? equipViewEquipment(tooltipEquipSnapshot)
+    : (tooltipInvEquipment && tooltipInvEquipment.viewEquipment);
   var detailHtml = itemDetailHTML(it, null, {
+    equipment: tooltipEquipment,
+    asuraOn: uiAsuraDualWield(),
     showAffixReroll: false,
     gold: tooltipPlayer && tooltipPlayer.gold,
     essence: tooltipPlayer && tooltipPlayer.essence
@@ -9894,6 +9905,8 @@ function showItemTooltip(it, anchorEl, opts) {
     (twoHandShared ? twoHandSharedBadgeHTML(true) : '') + detailHtml + '</div>';
   if (compareItem && compareItem.id !== it.id) {
     var compCard = '<div class="equip-detail-card' + (compareItem.rarity === 6 ? ' mythic-detail' : '') + '">' + itemDetailHTML(compareItem, null, {
+      equipment: tooltipEquipment,
+      asuraOn: uiAsuraDualWield(),
       isEquipped: true,
       showAffixReroll: false,
       gold: tooltipPlayer && tooltipPlayer.gold,
@@ -11057,6 +11070,27 @@ function openVideoPip() {
 }
 
 /* ---- 事件綁定 ---- */
+// 只預告本次轉生後（等級重置為 1）立即新開放的系統，不寫入遊戲狀態。
+function reincarnationUnlockNotices(header) {
+  var player = header && header.player || {};
+  var level = Number(player.level) || 0;
+  var count = Math.max(0, Math.floor(Number(player.reincarnations) || 0));
+  var forge = peekUiPanelData('forge');
+  var systems = [
+    [STR(874), TALENT_UNLOCK_LEVEL, TALENT_UNLOCK_REINCARNATION],
+    [STR(66), FORGE_UNLOCK_LEVEL, FORGE_UNLOCK_REINCARNATION, !!(forge && forge.forge && forge.forge.unlocked)],
+    [STR(1511), GEM_RESONANCE_UNLOCK_LEVEL, GEM_RESONANCE_UNLOCK_REINCARNATION],
+    [STR(2148), GEM_FUSION_UNLOCK_LEVEL, GEM_FUSION_UNLOCK_REINCARNATIONS]
+  ];
+  EQUIP_SET_UNLOCK_LEVELS.forEach(function (requiredLevel, i) {
+    systems.push([STR(2149, STR(1168 + i)), requiredLevel, EQUIP_SET_UNLOCK_REINCARNATIONS[i]]);
+  });
+  return systems.filter(function (system) {
+    var alreadyUnlocked = system[3] || (level >= system[1] && count >= system[2]);
+    return !alreadyUnlocked && 1 >= system[1] && count + 1 >= system[2];
+  }).map(function (system) { return STR(2147, system[0]); });
+}
+
 function showConfirmDialog(message, onConfirm, options) {
   var modal = $id('confirm-modal');
   var msg = $id('confirm-message');
@@ -11085,6 +11119,12 @@ function showConfirmDialog(message, onConfirm, options) {
       msg.appendChild(document.createTextNode(plainMessage.slice(highlightAt + options.highlightText.length)));
     }
   }
+  (options.unlockNotices || []).forEach(function (notice) {
+    var line = document.createElement('div');
+    line.className = 'reincarnation-unlock';
+    line.textContent = notice;
+    msg.appendChild(line);
+  });
   if (options.title === '轉生成功' && uiReincarnationCount() === 1) {
     var talentUnlockNotice = document.createElement('div');
     talentUnlockNotice.className = 'confirm-highlight';
@@ -11729,7 +11769,7 @@ function initUI() {
       var actTitle = isGodAction ? STR(193) : STR(436);
 
       showConfirmDialog(
-        STR(827, actTitle, reincarnationTotalMultiplier(nextCount), actTitle),
+        STR(2146, actTitle, Math.round((reincarnationTotalMultiplier(nextCount) - 1) * 100), actTitle),
         function () {
           sendUiCommand('player.reincarnate', {}, {
             silentResultError: true,  // 下方 .then 自行回報
@@ -11743,7 +11783,8 @@ function initUI() {
           });
           return;
         },
-        { title: STR(194, actTitle), okText: STR(195, actTitle), dialogClass: 'reincarnation-confirm' }
+        { title: STR(194, actTitle), okText: STR(195, actTitle), dialogClass: 'reincarnation-confirm',
+          unlockNotices: reincarnationUnlockNotices(header) }
       );
     });
   }

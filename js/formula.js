@@ -185,6 +185,7 @@ function computeStats(equipmentOverride) {
   var asuraOn = (typeof skills2AsuraDualWield === 'function') && skills2AsuraDualWield();
   var asuraAffixMult = 1 + (asuraOn ?
     ((typeof skills2AsuraAffixPct === 'function') ? skills2AsuraAffixPct() : 0) : 0) / 100;
+  var passiveOwners = equippedPassiveOwners(equipment, asuraOn);
 
   SLOT_LIST.forEach(function (slot) {
     var it = equipment[slot];
@@ -202,14 +203,13 @@ function computeStats(equipmentOverride) {
     });
     // 符文與符文真言（js/runeword.js）：屬性條目併入同一組桶；機制（fx／procs）由聚合器彙整
     if (rwAgg) rwAddItem(rwAgg, it).forEach(function (e) { addAffixLike(e.key, e.val); });
-    if (it.passive) {
-      passives[it.passive.key] = (passives[it.passive.key] || 0) + passiveValue(it, it.passive);
+    if (it.passive && passiveOwners[it.passive.key] === slot) {
+      passives[it.passive.key] = passiveValue(it, it.passive);
       var passiveDef = PASSIVE_POOL[it.passive.key];
+      if (passiveDef && passiveDef.fx && passiveDef.fx.xpBonus) A.xpBonus += passives[it.passive.key];
+      if (passiveDef && passiveDef.fx && passiveDef.fx.goldBonus) A.goldBonus += passives[it.passive.key];
       if (passiveDef && passiveDef.legendary) {
         legendaryEffects[it.passive.key] = true;
-        if (typeof isTwoHandItem === 'function' && isTwoHandItem(it)) {
-          legendaryEffectMults[it.passive.key] = TWO_HAND_EFFECT_VALUE_MULT;
-        }
       }
     }
     // 神鑄創世專屬特效：屬性型直接併入聚合桶，觸發型併入 passives 供戰鬥掛勾讀取
@@ -380,7 +380,8 @@ function computeStats(equipmentOverride) {
   st.base.mdef = DERIVED_COEF.mdefBase + st.int * PRIMARY_STAT_EFFECTS.intMdef + st.vit * PRIMARY_STAT_EFFECTS.vitMdef;
   st.mdef = Math.round((st.base.mdef + A.mdefFlat + st.reincFlatBonus.mdef) * (1 + A.mdefPct / 100) * (1 + (talent.mdefPct || 0) / 100));
   st.blockRate = capValue(A.blockRate, STAT_CAPS.blockRate);                      // 格擋率上限（上限 0＝無上限）
-  st.blockDmgRed = capValue(A.blockDmgRed, STAT_CAPS.blockDmgRed);                  // 額外格擋減傷上限（總減傷 = 格擋基礎減傷 + 此值；上限 0＝不夾上限）
+  st.blockDmgRedCap = passives.shieldWall > 0 ? Math.max(blockDmgRedTotalCap(), passives.shieldWall) : blockDmgRedTotalCap();
+  st.blockDmgRed = capValue(A.blockDmgRed, st.blockDmgRedCap > 0 ? Math.max(0, st.blockDmgRedCap - BLOCK_DMG_RED_BASE) : 0);
   st.evasion = capValue(st.agi * PRIMARY_STAT_EFFECTS.agiEvasion + A.evasion, STAT_CAPS.evasion);          // 閃避：敏捷係數（上限 0＝無上限）
   // 韌性（上限見 STAT_CAPS.tenacity）：同時作用於「被控場機率」（resistCtrl）、
   // 「被控場持續時間」（ccFactor）與「被爆擊機率」（resolveHit 暴擊段）三處。
@@ -793,6 +794,10 @@ function applyEnemyHpDamage(ent, damage, drainHits, opts) {
     if (amount > 0 && !(ent.maxHp > 0) && typeof skills2ManaShieldAbsorb === 'function') {
       amount = Math.max(0, amount - skills2ManaShieldAbsorb(ent, amount));
     }
+    if (amount > 0 && !(ent.maxHp > 0) && typeof legendaryIncomingDamageMultiplier === 'function') {
+      amount *= legendaryIncomingDamageMultiplier(ent);
+      amount = legendaryDeferHit(ent, amount, getStats().hp);
+    }
     var hpBeforeDirect = ent.hp;
     ent.hp = Math.max(gmFloor, ent.hp - amount);
     // 持續／衍生傷害同樣會暴露玩家位置，與視野發現共用警戒轉換。
@@ -974,7 +979,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   // 格擋（機率減傷）：機率與減傷上限共用 STAT_CAPS，0 代表不設上限。
   var blockChance = capValue(dCfg.blockRate || 0, STAT_CAPS.blockRate);
   if (blockChance > 0 && chance(blockChance)) {
-    dmg *= 1 - blockDmgReduction(dCfg.blockDmgRed || 0) / 100;
+    dmg *= 1 - blockDmgReduction(dCfg.blockDmgRed || 0, dCfg.blockDmgRedCap) / 100;
     out.blocked = true;
   }
   // 神鑄特效【聖佑】：受到的所有傷害按比例降低（上限見特效設定）
@@ -983,6 +988,9 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
      刻意與【聖佑】的 dmgRed 分開：那條是加算池且夾 50% 上限，混在一起會互相吃掉空間。 */
   if (dCfg.isPlayer && typeof skill2DamageTakenMultiplier === 'function') {
     dmg *= skill2DamageTakenMultiplier(defender, attacker);
+  }
+  if (dCfg.isPlayer && typeof legendaryIncomingDamageMultiplier === 'function') {
+    dmg *= legendaryIncomingDamageMultiplier(defender);
   }
   if (!dCfg.isPlayer && typeof skill2AbyssDamageTakenMultiplier === 'function') {
     dmg *= skill2AbyssDamageTakenMultiplier(defender);
@@ -1035,6 +1043,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
     }
   }
   if (dCfg.isPlayer && gmHpLockActive(defender)) dmg = 0;
+  if (dCfg.isPlayer && typeof legendaryDeferHit === 'function') dmg = legendaryDeferHit(defender, dmg, dCfg.maxHp);
   out.hpDamage = dmg;
   var hpBeforeHit = defender.hp;
   defender.hp -= dmg;
@@ -1304,24 +1313,6 @@ function isPurgatoryTowerFloor(floor) {
   return floor > TOWER_HELL_MAX_FLOOR && floor <= TOWER_PURGATORY_MAX_FLOOR;
 }
 
-/* 波次串流的兩個數字（表本體 → data.js ZONE_STAGE_WAVE_PROFILES，
-   由 config/Excel/Zone_Stage_Waves.xlsx 管理，每列 [最低關, 最高關, 間隔秒數, 同時上限]）。
-   共用同一支查表：找不到地圖或關卡區間就退回預設值。 */
-function fieldWaveProfileRow(stage, zone) {
-  var s = stage == null && typeof G !== 'undefined' && G && G.stage ? G.stage.current : stage;
-  s = Math.floor(Number(s) || 0);
-  var z = zone == null && typeof G !== 'undefined' && G && G.stage ? G.stage.zone : zone;
-  z = z || 'desert';
-  var rows = (typeof ZONE_STAGE_WAVE_PROFILES !== 'undefined') ? ZONE_STAGE_WAVE_PROFILES[z] : null;
-  if (!rows || !rows.length) return null;
-  for (var i = 0; i < rows.length; i++) {
-    var row = rows[i];
-    if (!row) continue;
-    if (s >= Number(row[0]) && s <= Number(row[1])) return row;
-  }
-  return null;
-}
-
 /* 出怪間隔可以是單一數值，也可以是一組候選值：參數表填 {0.75,1,1.5,2} 時，
    apply_params 會寫成陣列，這裡每次**等機率**抽一個。
    節奏不固定，玩家就無法背拍子，壓力來得比較自然。 */
@@ -1339,29 +1330,19 @@ function pickWaveInterval(value, fallback) {
   return (isFinite(v) && v > 0) ? v : fallback;
 }
 
-/* 這一關每隔幾秒補一波敵人。數值一律夾到 0.2 秒以上，避免表填 0 造成每個 tick 都出怪。
-   地圖表（Zone_Stage_Waves）填 0 就沿用參數表的 a。 */
-function fieldWaveIntervalFor(stage, zone) {
+/* 全部地圖與關卡共用參數表「出怪間隔」的 a，不另查關卡區間。
+   保留最短間隔保護，避免錯誤配置造成每個 tick 都出怪。 */
+function fieldWaveIntervalFor() {
   var fallback = 2;
-  var row = fieldWaveProfileRow(stage, zone);
-  var zoneVal = row ? Number(row[2]) : NaN;
-  if (isFinite(zoneVal) && zoneVal > 0) return Math.max(0.2, zoneVal);
   var base = (typeof FIELD_WAVE_SPAWN_INTERVAL !== 'undefined') ? FIELD_WAVE_SPAWN_INTERVAL : fallback;
   return Math.max(0.2, pickWaveInterval(base, fallback));
 }
 
-/* 場上同時最多站幾隻。這是難度的煞車：清不完的怪會一路堆積，要壓低壓力就調小它。
-   填 0（或留空、缺欄位）＝不額外限制，直接用棋盤格數。
-   ⚠️ 這個「0＝不限」很重要：把棋盤從 4×4 放大到 10×10 之後，若這一欄還留著改版前
-   的舊數字，敵人就會卡在那個數字上不再增加，而且完全看不出是被哪裡擋住。
-   任何情況下都不會超過棋盤格數——放不下的敵人本來就會在配格時被丟掉。 */
-function fieldMaxLiveEnemiesFor(stage, zone) {
+/* 全部地圖與關卡直接使用參數表「棋盤格數」的總容量，不另設波次數量上限。
+   遠方預置群與近身波次仍共用這份戰場總容量。 */
+function fieldMaxLiveEnemiesFor() {
   var cells = (typeof bfCellCount === 'function') ? bfCellCount() : 16;
-  var row = fieldWaveProfileRow(stage, zone);
-  var value = (row && row.length > 3) ? Number(row[3]) : NaN;
-  if (!isFinite(value) && typeof FIELD_MAX_LIVE_ENEMIES === 'number') value = FIELD_MAX_LIVE_ENEMIES;
-  if (!isFinite(value) || value <= 0) value = cells;   // 0／空白／壞值＝不額外限制
-  return Math.max(1, Math.min(Math.floor(value), cells));
+  return Math.max(1, Math.floor(cells));
 }
 
 /* 每波敵人數量的權重表挑選（表本體與參數表對應 → data.js §每波敵人數量）：
@@ -1531,15 +1512,11 @@ var PART_KEY_MIGRATIONS = {
   fortuneChip: 'luckHeart',
   archivist: 'knowledgeCore'
 };
-var SPEED_GEAR_FIXED_BONUS = 50;
 function effectiveDropRateEffect(value) {
   return (Number(value) || 0) * DROP_RATE_EFFECT_MULT;
 }
 function effectivePartEffectValue(key, value) {
   return DROP_RATE_PART_KEYS[key] ? effectiveDropRateEffect(value) : value;
-}
-function effectiveFactoryPartValue(key, value) {
-  return key === 'speedGear' ? (Number(value) || 0) + SPEED_GEAR_FIXED_BONUS : value;
 }
 
 /* ---- 自動機組零件的數值、等級與升級費用 ----
@@ -1984,28 +1961,49 @@ var ITEM_SCORE_PER_RARITY = 0.06;
 var UPGRADE_VALUE_MULT = 0.05;   // 參數表「6-裝備／強化倍率」：每 +1 全詞條數值提高的比率
 function upgradeMult(item) { return 1 + UPGRADE_VALUE_MULT * (item.upgrade || 0); }
 
-// 傳奇特效數值 = base + perR × (稀有度 - 傳說級)
+// 傳奇數值唯一來源為基礎值；不受裝備品質、等級、強化或雙手倍率影響。
 function passiveValueFor(key, rarity) {
   var pd = PASSIVE_POOL[key];
   if (!pd) return 0;
-  return Math.round((pd.base + pd.perR * (rarity - PASSIVE_MIN_RARITY)) * 10) / 10;
+  return Number(pd.base) || 0;
 }
 /* ---- 傳奇特效數值的唯一讀取入口 ----
-   數值完全由 key + 裝備稀有度決定（沒有隨機成分），所以存檔只留 { key }。
-   算不出來（特效已下架／稀有度不明）才沿用凍結的舊 val。 */
+   數值完全由 key 決定，所以存檔只留 { key }；下架效果才沿用凍結的舊 val。 */
 function passiveValue(it, p) {
   if (!p) return 0;
-  var r = it ? Number(it.rarity) : NaN;
-  if (!PASSIVE_POOL[p.key] || !isFinite(r)) return Number(p.val) || 0;
-  var mult = (typeof isTwoHandItem === 'function' && isTwoHandItem(it))
-    ? TWO_HAND_EFFECT_VALUE_MULT : 1;
-  return Math.round(passiveValueFor(p.key, r) * mult * 10) / 10;
+  if (!PASSIVE_POOL[p.key]) return Number(p.val) || 0;
+  return passiveValueFor(p.key);
+}
+
+/* 純函式：每套獨立選先穿者；舊檔未記順序時依裝備欄順序，早於後來的新穿戴。 */
+function equippedPassiveOwners(equipment, asuraOn) {
+  var owners = {}, ranks = {};
+  SLOT_LIST.forEach(function (slot, i) {
+    var it = equipment && equipment[slot];
+    if (!it || !it.passive || !PASSIVE_POOL[it.passive.key]) return;
+    if (slot === 'weapon2' && isTwoHandItem(it) && !asuraOn) return;
+    var key = it.passive.key;
+    var order = Number(it.legendaryEquipOrder);
+    var rank = order > 0 && isFinite(order) ? order : i - SLOT_LIST.length;
+    if (owners[key] === undefined || rank < ranks[key]) { owners[key] = slot; ranks[key] = rank; }
+  });
+  return owners;
+}
+function equippedPassiveRepeated(it, equipment, asuraOn) {
+  if (!it || !it.passive || !equipment) return false;
+  var ownSlot = null;
+  SLOT_LIST.some(function (slot) {
+    var cur = equipment[slot];
+    if (cur && (cur === it || (it.id !== undefined && cur.id === it.id))) { ownSlot = slot; return true; }
+    return false;
+  });
+  var owner = equippedPassiveOwners(equipment, asuraOn)[it.passive.key];
+  return ownSlot !== null && owner !== undefined && owner !== ownSlot;
 }
 // 舊存檔的傳奇特效：數值可推導 → 直接丟掉凍結值（冪等）
 function ensurePassiveSource(it, p) {
   if (!p || p.val === undefined) return p;
-  var r = it ? Number(it.rarity) : NaN;
-  if (!PASSIVE_POOL[p.key] || !isFinite(r)) return p;  // 推不出來：保留 val 當凍結值
+  if (!PASSIVE_POOL[p.key]) return p;  // 已下架：保留 val 當凍結值
   delete p.val;
   return p;
 }

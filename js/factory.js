@@ -13,7 +13,7 @@ function partBonus(node, key) {
     var p = findPart(id);
     if (p && p.key === key) {
       var level = G.factory.partLevels && G.factory.partLevels[key];
-      sum += effectiveFactoryPartValue(p.key, level !== undefined ? partValueForLevel(p.key, level) : partValue(p));
+      sum += (level !== undefined ? partValueForLevel(p.key, level) : partValue(p));
     }
   });
   return sum;

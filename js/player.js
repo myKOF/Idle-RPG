@@ -350,6 +350,16 @@ function equipTargetSlot(it, eq) {
 function equipItem(it, slotKey, eq) {
   eq = eq || G.equipment;
   var key = slotKey || equipTargetSlot(it, eq);
+  var alreadyEquipped = SLOT_LIST.some(function (s) { return eq[s] === it; });
+  var missingOrder = SLOT_LIST.filter(function (s) { return eq[s] && !(eq[s].legendaryEquipOrder > 0); }).length;
+  var legacyOrder = 0, order = 0;
+  SLOT_LIST.forEach(function (s) {
+    var cur = eq[s];
+    if (!cur) return;
+    cur.legendaryEquipOrder = cur.legendaryEquipOrder > 0 ? cur.legendaryEquipOrder + missingOrder : ++legacyOrder;
+    order = Math.max(order, cur.legendaryEquipOrder);
+  });
+  if (!alreadyEquipped) it.legendaryEquipOrder = order + 1;
   /* 裝上雙手武器 → 副手一併卸下。
      修羅亂舞的例外只開給「副手放的也是雙手武器」——它讓你同時拿兩把雙手武器，
      不是讓你在拿雙手武器的同時保留一面盾。少了後半段條件，玩家只要先在副手放盾、

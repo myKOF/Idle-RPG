@@ -710,10 +710,13 @@ function consumeRerollResources(cost) {
   if (G.factory && G.factory.stats) G.factory.stats.rerolled = (G.factory.stats.rerolled || 0) + 1;
 }
 
-// it：特效數值需要裝備稀有度才能算（passiveValue → js/formula.js §6）
+// 傳奇數值由 passiveValue 讀固定基礎值；裝備參數僅保留呼叫相容。
 function passiveLine(it, p) {
   var d = PASSIVE_POOL[p.key];
-  return '【' + d.name + '】' + d.desc.replace('{v}', fmt1(passiveValue(it, p)));
+  var val = passiveValue(it, p);
+  var desc = d.desc.replace(/\{v\}/g, fmt1(val));
+  if (d.fx && d.fx.stagger) desc = desc.replace('{tick}', fmt1(val / d.fx.stagger.sec));
+  return '【' + d.name + '】' + desc;
 }
 
 // it：附魔數值需要裝備等級與稀有度才能算（enchantValue → js/formula.js §6）
@@ -975,20 +978,14 @@ function itemDetailHTML(it, cmp, opts) {
     h += '<div class="it-passive" style="color: #f87171; text-decoration: line-through;">' + esc(passiveLine(cmp, cmp.passive)) + '</div>';
   }
   if (it.passive) {
-    if (!cmp) {
+    if (equippedPassiveRepeated(it, opts.equipment, opts.asuraOn)) {
+      h += '<div class="it-passive it-passive-repeated" style="color: #6b7280">' + esc(passiveLine(it, it.passive) + STR(2145)) + '</div>';
+    } else if (!cmp) {
       h += '<div class="it-passive">' + esc(passiveLine(it, it.passive)) + '</div>';
     } else if (!cmp.passive || cmp.passive.key !== it.passive.key) {
       h += '<div class="it-passive" style="color: #4ade80">' + esc(passiveLine(it, it.passive)) + '</div>';
     } else {
-      var diff = passiveValue(it, it.passive) - passiveValue(cmp, cmp.passive);
-      var diffStr = '';
-      if (Math.abs(diff) > 0.05) {
-        if (diff > 0) diffStr = ' <span style="color: #4ade80">↑' + fmt1(diff) + '</span>';
-        else diffStr = ' <span style="color: #f87171">↓' + fmt1(-diff) + '</span>';
-      }
-      var p = it.passive;
-      var d = PASSIVE_POOL[p.key];
-      h += '<div class="it-passive">【' + esc(d.name) + '】' + esc(d.desc).replace('{v}', fmt1(passiveValue(it, p)) + diffStr) + '</div>';
+      h += '<div class="it-passive">' + esc(passiveLine(it, it.passive)) + '</div>';
     }
   }
 
@@ -1126,7 +1123,7 @@ function rerollSingleAffix(it, affixKey) {
 function makePart(tier, node) { return null; }
 function partDesc(p) {
   // 小於 1 的機率值保留兩位小數（如 0.15%），其餘一位
-  var val = effectivePartEffectValue(p.key, effectiveFactoryPartValue(p.key, partValue(p)));
+  var val = effectivePartEffectValue(p.key, partValue(p));
   var vs = (val < 1) ? String(Math.round(val * 100) / 100) : fmt1(val);
   return PART_TYPES[p.key].desc.replace('{v}', vs);
 }

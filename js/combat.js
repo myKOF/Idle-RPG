@@ -338,9 +338,8 @@ function spawnFieldMonster(append) {
               Math.max(1, Number(typeof BF_BOSS_H !== 'undefined' ? BF_BOSS_H : 2) || 1)
             : 1;
         var free = (typeof bfFreeCellCount === 'function') ? bfFreeCellCount(standing) : count;
-        /* 同時上限（參數表可逐地圖／關卡調）：清不完的怪會一直堆，沒有煞車的話
-           新角色前幾關就會被打死到推不動。棋盤格數是另一道硬上限。 */
-        var room = fieldMaxLiveEnemiesFor(s, G.stage.zone) - fieldWavePopulation(standing);
+        // 波次與遠方群共用參數表的戰場容量，配格時再扣除全部存活敵人。
+        var room = fieldMaxLiveEnemiesFor() - fieldWavePopulation(standing);
         count = Math.min(count, room, Math.floor(free / cellsEach));
         if (count < 1) return [];   // 場上滿了：這一波跳過，下一個間隔再試
     }
@@ -484,7 +483,7 @@ function spawnEliteWave(append, eliteStage, encounter) {
     var room = Infinity;
     if (append) {
         var free = (typeof bfFreeCellCount === 'function') ? bfFreeCellCount(standing) : Infinity;
-        room = encounter ? free : Math.min(fieldMaxLiveEnemiesFor(s, G.stage.zone) - fieldWavePopulation(standing), free);
+        room = encounter ? free : Math.min(fieldMaxLiveEnemiesFor() - fieldWavePopulation(standing), free);
         if (room < 1) return [];
     }
     var leadersCfg = Math.max(1, Math.floor(Number(ELITE_GROUP.leaders) || 1));
@@ -868,7 +867,7 @@ function applyBuff(ent, key, val, dur, sid, stackCfg) {
     ccRegister(ent, statusControlCats(key), dur);
     if (!ent.buffs) ent.buffs = {};
     var prev = ent.buffs[key];
-    var st = stackStep(stackCfg, prev && prev.until > GT ? prev : null, val);
+    var st = stackStep(legendaryDebuffStackCfg(ent, sid || statusIdByKey(key), stackCfg), prev && prev.until > GT ? prev : null, val);
     // sid＝狀態表 ID（未帶時由增益鍵反查），供 UI 取狀態圖標與名稱。
     // unit／stacks＝疊層規則用（單層值與層數；val 恆為 unit × stacks）。
     ent.buffs[key] = { val: st.value, until: GT + dur, dur: dur, sid: sid || statusIdByKey(key),
@@ -1009,6 +1008,7 @@ function applyDot(ent, dps, dur, name, sid, interval, stackCfg, sourceCtx) {
         var sdef2 = statusDef(sid);
         stackCfg = sdef2 ? { rule: sdef2.stack, max: sdef2.maxStacks } : { rule: 'strongest' };
     }
+    stackCfg = legendaryDebuffStackCfg(ent, sid, stackCfg);
     var sKey = (sourceCtx && (sourceCtx.sourceKey || sourceCtx.statKey)) || '';
     var sName = (sourceCtx && (sourceCtx.sourceName || sourceCtx.skillName)) || '';
     var sLv = (sourceCtx && sourceCtx.sourceLevel !== undefined) ? sourceCtx.sourceLevel : undefined;
@@ -1329,7 +1329,7 @@ function playerDefCfg(pEnt) {
     return {
         def: st.def * defMul, mdef: st.mdef * defMul, level: st.level,
         dodge: st.evasion + buffVal(pEnt, 'evasionUp'),
-        blockRate: st.blockRate + buffVal(pEnt, 'blockUp'), blockDmgRed: st.blockDmgRed,
+        blockRate: st.blockRate + buffVal(pEnt, 'blockUp'), blockDmgRed: st.blockDmgRed, blockDmgRedCap: st.blockDmgRedCap,
         pRes: st.pRes, mRes: st.mRes, resist: st.resist, ctrlRes: st.resist.ctrl,
         // 韌性：控場持續時間縮短（ccFactor）＋ 控場機率與被爆擊機率折減（resistCtrl／resolveHit 暴擊段）
         ccFactor: (1 - st.tenacity / 100) * (1 - st.ccRed / 100),
@@ -2003,7 +2003,7 @@ function fieldTick(dt) {
        GM 演武場（技能測試模式）暫停過關結算：測試擊殺不推進關卡。 */
     if (FIELD._waveClearPending && !FIELD._gmArena) completeFieldWave(st);
 
-    /* 出怪：波次串流。每隔 fieldWaveIntervalFor（地圖 × 關卡，可調參數表）補一波，
+    /* 出怪：波次串流。每隔 fieldWaveIntervalFor（共用主參數表）補一波，
        不管上一波清了沒——敵人會愈積愈多，撐不住被打死就退關（設計如此）。
        BOSS 還活著時不補波：BOSS 一關只有一隻，補下去會變成每幾秒多一隻 BOSS。
        新波在本輪繼續往下走，讓敵人能在生成當下完成首次攻擊。
@@ -2013,7 +2013,7 @@ function fieldTick(dt) {
         FIELD.spawnCd = (typeof FIELD.spawnCd === 'number') ? FIELD.spawnCd - dt : 0;
         if (FIELD.spawnCd <= 0) {
             var added = spawnFieldMonster(true);
-            FIELD.spawnCd = fieldWaveIntervalFor(G.stage.current, G.stage.zone);
+            FIELD.spawnCd = fieldWaveIntervalFor();
             if (added && added.length) spawnedEnemies = added;
         }
     }

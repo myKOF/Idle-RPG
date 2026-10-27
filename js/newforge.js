@@ -219,7 +219,7 @@ function newForgePartRawBonus(fu, key) {
   var sum = 0;
   for (var i = 0; i < fu.parts.length; i++) {
     var p = fu.parts[i];
-    if (p && p.key === key) sum += effectiveFactoryPartValue(key, value);
+    if (p && p.key === key) sum += value;
   }
   return sum;
 }

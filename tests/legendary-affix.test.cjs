@@ -81,7 +81,7 @@ const REMOVED_LEGACY_SKILL_LEGENDARIES = [
   'lightningLeap', 'auroraStaff', 'iceShriek', 'venomMist', 'oathOfCondemnation', 'manaGuard'
 ];
 
-test('附檔保留的 13 個效果皆進入傳奇特效池，並保留正確武器類型限制；18 個舊技能專屬詞條已移除', () => {
+test('附檔保留的 13 個效果均不限武器類型；18 個舊技能專屬詞條已移除', () => {
   const context = loadContext(['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js']);
   assert.equal(Object.keys(IMPORTED_LEGENDARIES).length, 13);
   assert.equal(REMOVED_LEGACY_SKILL_LEGENDARIES.length, 18);
@@ -90,7 +90,7 @@ test('附檔保留的 13 個效果皆進入傳奇特效池，並保留正確武�
     assert.ok(def, id + ' 必須存在');
     assert.equal(def.name, name);
     assert.equal(def.legendary, true);
-    assert.deepEqual(Array.from(def.weaponTypes || []), [weaponType]);
+    assert.deepEqual(Array.from(def.weaponTypes || []), []);
     assert.equal(typeof def.desc, 'string');
     assert.ok(def.desc.length > 0);
   });
@@ -109,8 +109,8 @@ test('附檔保留的 13 個效果皆進入傳奇特效池，並保留正確武�
      2026-08-26：第八批 10 個（連鎖閃電 5 ＋ 落雷術 5）；第九批 10 個（雷球 5 ＋ 寒冰箭 5）
      2026-08-28：第十批 10 個（水流彈 5 ＋ 冰霜新星 5）；第十一批 10 個（風刃 5 ＋ 真空斬 5）；
      第十二批 5 個（暴風屏障 5，最後一組） */
-  assert.equal(Object.keys(context.PASSIVE_POOL).length, 135,
-    '既有 7 個效果 ＋ 附檔保留 13 個 ＋ 傳奇進化 115 個（153 − 舊技能專屬詞條 18）');
+  assert.equal(Object.keys(context.PASSIVE_POOL).length, 144,
+    '既有135個加上9個全局傳奇');
 });
 
 test('附檔保留的 13 個傳奇特效皆有執行期路由，戰鬥主流程已接線', () => {
@@ -128,7 +128,7 @@ test('附檔保留的 13 個傳奇特效皆有執行期路由，戰鬥主流程�
   assert.match(tower, /tickLegendaryEffects\(dt,/);
 });
 
-test('傳奇特效只會進入指定武器類型的隨機池', () => {
+test('傳奇特效進入全部裝備部位的隨機池', () => {
   const context = loadContext(['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js', 'js/item.js']);
   const dagger = { kind: 'equip', slot: 'weapon', weaponType: 'dagger1h' };
   const axe = { kind: 'equip', slot: 'weapon', weaponType: 'axe2h' };
@@ -137,11 +137,11 @@ test('傳奇特效只會進入指定武器類型的隨機池', () => {
   const axeKeys = context.passiveKeysForItem(axe);
   const chestKeys = context.passiveKeysForItem(chest);
   assert.ok(daggerKeys.includes('shadowTracker'));
-  assert.ok(!daggerKeys.includes('mountainSunderer'));
+  assert.ok(daggerKeys.includes('mountainSunderer'));
   assert.ok(axeKeys.includes('mountainSunderer'));
-  assert.ok(!axeKeys.includes('shadowTracker'));
-  assert.ok(!chestKeys.includes('shadowTracker'));
-  assert.ok(!chestKeys.includes('mountainSunderer'));
+  assert.ok(axeKeys.includes('shadowTracker'));
+  assert.ok(chestKeys.includes('shadowTracker'));
+  assert.ok(chestKeys.includes('mountainSunderer'));
   assert.ok(chestKeys.includes('sunder'), '無類型限制的既有效果仍可出現在非武器裝備');
 });
 

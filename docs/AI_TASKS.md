@@ -1,5 +1,44 @@
 # AI_TASKS.md
 
+## REINCARNATION-CONFIRM-20261027 — 金框、深底與新解鎖預告
+
+- Owner：Codex；Done，單一開發者。使用者要求轉生確認外框華麗金色、灰白底加深20%、本次新解鎖逐行黃色「解鎖【XXXXX】系統」；追加倍率文案由×3.5改提高250%，依正式倍率換算。
+- 前置：既有確認視窗／Header及forge快照、system_unlock衍生常數及String機制。允許js/ui.js、css/dialogs.css、index必要快取、String.xlsx／CSV／strings_data、tests/confirm-dialog.test.cjs、LV及本段；使用者追加要求連其修改一起Commit，納入Equipment_Affix.xlsx／CSV、js/data.js及bridge／Worker必要快取。禁止擅改玩法、解鎖門檻、Protocol／存檔、其他配置／素材與其他副本，不合併推送。
+- 預檢目標無其他來源；String新增百分比版確認與解鎖格式，不改既有儲存格；Excel原生API寫入及正常重開驗證後匯出。驗收立即新解鎖／已開放不重報／轉生回1級仍須滿足門檻／多系統、百分比、確認取消、窄螢幕與Console、相關回歸／Build及diff後獨立Commit，交使用者Review與整合。
+- 完成14檔：UI增加唯讀新解鎖預告、文字安全DOM獨立黃字行及百分比換算；dialogs增加8px金色斜面、雙層內線與四角，灰白斜面通道乘0.8、清除舊流光混色；String以Excel原生API在角色模塊插入2146～2149，匯出CSV／strings_data e996e91c；index同步dialogs4／ui219／data107／bridge369，bridge入口與Worker的data匯入統一20261027-reincarnation-user-affix。既有轉生／解鎖與指令保護維持；LV及本紀錄同步。使用者Equipment_Affix原始修改與data保留，共59列CSV差異含29格浮點序列化，7項perR清0及傳奇說明清理；讀表試跑4個字面值但語意變更0，Excel另匯出236列比對僅29格數字表示差異、其餘完全一致。
+- Excel：工具兩次正常重開核對寫入19格、全部資料與0物件一致；獨立原生Excel唯讀重開Saved=True、未進修復模式，2133列原資料逐格不變，新增4列、7欄寬／標題字型字號顏色底色／抽樣列高保留。沒有手改內部XML或覆寫既有文字列，舊827保留供舊版相容，新版取百分比模板2146。
+- 驗證：node --test --test-reporter=dot tests/confirm-dialog.test.cjs tests/reincarnate-gate.test.cjs tests/string-table.test.cjs tests/modal-close-hitbox.test.cjs tests/legendary-global.test.cjs tests/equipment-tooltip-compare.test.cjs tests/xlsx-string-escapes.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs，70/70通過；共享文字高亮處理與預告追加順序收尾後重跑confirm-dialog 8/8。npm.cmd run build 589檔通過；apply_strings --check同步、build_string_csv --check寫死0及diff檢查通過。額外tooltip-modal-close 1項因舊closeSkillModal名稱靜態擷取為空而失敗，以git show HEAD:js/ui.js唯讀映射重跑同樣失敗，未改斷言或擴修。
+- 畫面：隔離隨機localhost來源與全新Edge context載正式DOM／全部CSS及UI、String與配置，只綁正式轉生按鈕區段，無模擬／玩家存檔。實點確認／取消、1轉50%／2轉150%／3轉250%／4轉400%、1轉威能／2轉神鑄／4轉共鳴預告、一般確認不殘留；900×600及360×480目視無溢出，金框8px／角飾不攔操作／黃字rgb(255,223,88)，Console error／warning及pageerror皆0。自我Review修正CSS高權重覆蓋及舊screen混色，確認底色與文字亮度獨立。
+- 唯讀檢查未改：AI規範／AGENTS／Workflow／prompts、formula／player轉生閘門、forge永久解鎖、talents／gem_resonance及system_unlock來源、String／Excel匯出工具、上述其餘回歸與Build工具。無獨立美術素材或VFX修改；素材庫僅既有其他任務codex-authored/thunder未追蹤目錄，保留、不納本次提交，無素材庫新Commit。使用者其餘CSV僅換行差異隨Git正常化，未丟棄任何資料。
+- 交付：本段所在「[Codex] fix: 美化轉生確認並一併保存使用者詞條配置」，實際編號見回覆；無本次未完成項，可供Review／合併，未合併推送。已知限制為上述既有Tooltip測試及尚未以真Worker／玩家存檔長戰驗收，下一步由使用者正常整合後重載遊戲查看。
+
+## LEGENDARY-DUPLICATE-GRAY-20261027 — 重覆傳奇文字加深灰色
+
+- Owner：Codex；Done。使用者要求重覆傳奇的字再灰一些；僅將重覆行由#9ca3af調暗為#6b7280，含名稱、說明及(重覆)，不改生效判斷。允許item、必要主頁／Worker快取、既有回歸的顏色預期、LV及本紀錄；禁止玩法／配置／素材及其他副本。目標衝突預檢乾淨。
+- 驗收：沿用legendary-global回歸與Build、diff檢查；無需為單純顏色新增測試，完成後獨立Commit，不合併推送。
+- 完成7檔：js/item.js重覆行灰色、既有tests/legendary-global.test.cjs顏色預期、index item32／bridge368快取、js/bridge.js及js/worker/sim.worker.js的item快取20261027-legendary-dim、LV及本段。唯讀檢查規範／Workflow／原任務、現有tooltip渲染與比較回歸，未改配置／String／效果計算或素材；無素材庫變更。
+- 驗證：node --test --test-reporter=spec tests/legendary-global.test.cjs tests/equipment-tooltip-compare.test.cjs，18/18通過；npm.cmd run build，589檔通過；git diff --check通過。自我Review確認灰字只作用於重覆行，原文字與先裝優先規則保持；本次未另開瀏覽器，暗度由使用者重載驗收。
+- 交付：Commit為本段所在[Codex] fix: 加深重覆傳奇特效的灰字，回覆附編號。無未完成項或新增已知風險，可合併；未合併推送，下一步正常整合後重載遊戲查看。
+
+## LEGENDARY-GLOBAL-20261027 — 全部位傳奇、固定值與先裝優先
+
+- Owner：Codex；Done，單一開發者。使用者四項要求：依線上文件新增九個全局傳奇、所有傳奇不限部位、同名只取先裝上的一件且重覆tips灰字、固定基礎值不吃等級／品質／雙手倍率。
+- 來源：https://docs.google.com/spreadsheets/d/1RysqEzKOjr2oqHLdXapoTM28tlXpZ2wk/edit?gid=1805975024，第127～135列；採文檔名稱「以柔剋剛」「返哺」。九效果需涵蓋直傷／DOT、異常疊層、經驗／金幣、無盾減傷、延後失血、格擋上限及實際施放耗魔返還。
+- 範圍：裝備配置／String新增列及既有儲存格待套用差異、data／formula／player／item／legendary／combat／status／skills2／ui、必要Worker快取／協議說明、回歸、LV及本紀錄。禁止其它玩法／素材／3D管線及其他副本，不合併推送develop／main。
+- 預檢：上述目標無其他副本／分支來源；Claude進行中Meshy管線不重疊。Excel既有格依AI_RULES 8.5先暫存，不先改正式CSV冒充套用；新增列使用原生Excel API及重開驗證。
+- 驗收：全13格／所有品質固定值；先後裝卸／搬格／存讀檔／切套；重覆灰字與String；九項實際結算及顯示一致；相關回歸、Build、來源同步與diff。歷史存檔沒有裝備先後資料，採既有SLOT_LIST順序作首次決定，之後保存新順序。
+- 完成：傳奇池135→144，九效果透過原生Excel插列；String新增2145「(重覆)」。使用者本輪明確回覆「授權直接套用這128格」，已用param-patches安全合併清空既有128格限定武器類型；請求、原始Excel及寫入收據保存在本機config/param-patches/archive/2026-10-27T06-26-13-389Z-81225807-3c4d-4725-9b7c-f673832289b0，沒有待套用差異。每階perR欄保留供舊資料相容但計算不再使用；複合效果JSON維持表內固定規格，取消舊雙手放大器。
+- 順序：equipItem在各套保存legendaryEquipOrder；搬格保留，卸下再穿排最後。computeStats與tips共用純函式，排除未啟用修羅亂舞的副手雙手裝；統計不寫入裝備，實際裝卸才補歷史順序。主端只讀快照；Worker協議60→61，文件與主頁／Worker快取同步。既有符文真言自身屬性／神鑄／普通詞條倍率保持。
+- 九效果接線：流血／各種異常的增傷共用直傷與DOT乘區；激昂只提高敵方可堆疊減益一層，DOT／buff低階各只加一次；經驗／金幣在去重後併入原聚合桶；強固為無盾額外乘算；以柔剋剛在護盾與法力防禦後判斷嚴格超過門檻，每次獨立排五次固定最大生命失血，可致死、不再重入減傷／延後；返哺從實際付費的手動／反擊／自動施放觸發，免費／失敗／GM免耗不觸發，緩慢回復走gainPlayerMana唯一入帳點。戰鬥重置清除兩種待結算狀態，避免復活後補扣。
+- Excel來源QA：原生正常開啟、RepairMode=False；既有3707個非授權Equipment_Affix儲存格及14917個String儲存格內容保留，128格限制確實清空；欄寬及抽樣原列高／字型／底色相同，新增列承襲原表格式。往返工具將少數原有數字轉成文字／滿精度字面，已用原始Excel儲存格原生Copy還原原值與型別；沒有手改XML。CSV僅有必要資料／原生數字最短表示的文字差異，config_tables --apply Equipment_Affix回報4個字面值、語意變更0。
+- 必要匯出修正：tools/xlsx_to_csv.cjs與tools/config_tables.cjs新增單次OOXML字串逸出解碼與XML換行正規化，解決原生Excel把多行表頭寫成_x000D_後無法辨識出現部位的問題；不更改一般詞條限制。新增xlsx-string-escapes真來源回歸驗兩個讀取器與AFFIX／PASSIVE重建一致。修改前曾出現讀表遺漏slots的候選，已修復並保留正式AFFIX_POOL原內容，沒有降低玩法正確性。
+- 修改檔案：config/Excel及CSV的Equipment_Affix／String、js/data／formula／item／player／legendary／status／combat／skills2／ui／strings_data／bridge、js/worker/protocol／sim.worker、index、兩支Excel讀取器、LV、WORKER_PROTOCOL、本段；新增tests/legendary-global及xlsx-string-escapes，更新effect-value-storage／two-hand-weapon-scaling／legendary-affix／8份skill2傳奇資料或倍率斷言及worker-protocol。只依新需求改部位／固定值預期，保留其餘既有失敗斷言。
+- 驗證指令：node --test --test-reporter=spec tests/legendary-global.test.cjs tests/xlsx-string-escapes.test.cjs tests/effect-value-storage.test.cjs tests/equip-set-preview-stats.test.cjs tests/equipment-tooltip-compare.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/string-table.test.cjs，核心75/75；其中新傳奇12項含真正resolveHit／castSkill2／反擊及自動施放、migrateSave與實際切套。npm.cmd run build：589檔通過。apply_params：581個參數、將變更0／錨點問題0；apply_strings --check：2132條同步461fceb6；build_string_csv --check：仍寫死0條；git diff --check通過。
+- 擴大驗證：node --test --test-reporter=spec tests/skill2-*legendary.test.cjs為198項、121過／77失敗；完整隔離複製修改前HEAD來源及測試／依賴同為198／121／77，失敗集合無新增（真空斬舊倍率測試更名仍在同一既有失敗位置）。legendary-affix加two-hand-weapon-scaling為17項12過5失敗，兩項技能既有數值／三項舊鑲孔預期亦於原版重現。額外來源／DOT／資源／裝備驗證原107項105過2失敗，符文表封魔塔舊解鎖預期與吸魔舊成長值在隔離原版重現；新增邊界測試後核心另全數通過。未跑完整npm test，不宣稱全庫全綠。
+- 畫面：隔離隨機localhost來源與全新Edge context載正式遊戲／真Worker；協議61、傳奇值10，先裝ring2生效／後裝ring灰字rgb(156,163,175)並帶(重覆)，卸下優先者後另一件恢復，重裝原件則排最後。最終pageerror／Console error／warning／資源失敗皆0；未讀寫玩家存檔。duplicate-tooltip.png及browser-report.json保存本聊天visualizations/legendary，已目視檢查兩件裝備的金色／灰色對照。
+- 唯讀未改：AI規範／AGENTS／Workflow／prompts、save.js、tower.js、skills.js、runeword.js及data、其餘配置表、Claude Meshy管線與其他副本。自我Review確認共載純函式不寫狀態、無新Timer或美術／VFX來源；無必要素材修改，素材庫不建立空Commit。
+- 交付：遊戲Commit為本段所在「[Codex] feat: 新增全局傳奇並統一固定值與先裝優先規則」，回覆附編號。功能與必要驗證完成，無待套用資料或未完成實作，可供Review後合併；未合併／推送develop或main。已知限制：舊檔無法還原歷史穿戴順序，首次按欄位決定；既有廣域測試債及跨瀏覽器／玩家存檔長戰尚未驗收。下一步正常整合後重新載入遊戲，驗收新傳奇與裝備tips。
+
 ## SYNC-SHORTCUT-HOLD-20261027 — 修復捷徑中斷並保留Claude管線
 
 - Owner：Codex；Done（工具修復與必要驗證完成，實際同步結果見本輪報告）。使用者以1要求接續同步，並明確選擇將Claude本地Meshy提交8d1577c5保留、暫不併入develop。原develop bd0b982e已乾淨；這次卡在Antigravity的本機套用參數捷徑被skip-worktree隱藏，但遠端又更新該路徑，fast-forward拒絕覆寫。
@@ -8,6 +47,18 @@
 - 使用者選擇落實為本機git config branch.ai/claude.codexSyncHold=true；Claude工作區與8d1577c5保持。只有未來使用者另行核准，才可解除保留。素材庫仍有既有未提交及分歧，本輪正常程式碼同步使用-SkipAssetLibrary，不碰素材庫／main或未核准3D試作。
 - 驗證：新增hold回歸先在未修版重現「預檢錯誤規劃建立ai/claude」，修復後涵蓋保留未提交草稿、本地／遠端HEAD與檔案保持、其他AI同步、重跑、解除hold但仍有草稿時停止及乾淨後才整合。node --test --test-reporter=tap tests/sync-feature-worktrees.test.cjs tests/sync-ai-worktrees.test.cjs tests/sync-auto-conflicts.test.cjs tests/sync-index-recovery.test.cjs，59/59通過、無略過；另Worker protocol／shim／Editor cache三檔27/27通過。npm.cmd run build：587檔通過；git diff --check通過，未降低斷言。
 - 唯讀檢查未改：規範／Workflow／Agent、原同步報告、捷徑目標、index修復／報告包裝、Claude管線及各分支關係；四檔以外不納入本次修復Commit。Commit為本段所在[Codex] fix: 同步工具尊重固定AI分支保留設定；正常同步／遠端最終HEAD見codex或develop的logs/sync-ai-worktrees/latest.md。已知限制為Claude有意保留、素材庫尚未同步及未跑全庫／玩家長戰；本輪不宣稱所有分支或素材均完全一致。
+
+## BOUNCE-DODGE-20261027 — 彈射遭閃避後繼續
+
+- Owner：Codex；Done，單一開發者。使用者要求盤點所有彈射技能，飛刀、連鎖閃電等遭閃避仍繼續彈射，閃避消耗本段次數，保留原範圍／無候選停止及命中觸發條件。
+- 允許：js/skills2.js相關續彈、tests/skill2-bounce-dodge.test.cjs、必要index／bridge／Worker快取、LV與本段；禁止配置／平衡／素材／存檔／Protocol及其他任務邏輯，不合併推送。前置為既有飛行佇列與命中判定；接手為使用者Review／整合。
+- 修正：sgCastKnife首段抵達回呼不再因res.miss跳過後續彈射；其餘命中後觸發與次數消耗保持。普通連鎖／自動無限閃電、永恒超導體、分裂／追魂飛刀、雷球連鎖雷爆與水流彈本來已獨立續段，盤點確認並新增回歸。NPC同名連鎖閃電只有單一玩家目標，沒有彈射佇列；舊skills／legendary未另藏彈射管線。
+- 本次功能提交6檔：skills2、專項回歸、index技能364／bridge373、Worker的skills2匯入20261027-bounce-dodge、LV及本段；第7檔bridge入口20261027-shared-field-waves-bounce-dodge已由同副本波次任務4ab079f6先行保存，兩任務共用快取更新授權。配置／傷害倍率／距離／解鎖／Protocol／存檔與素材均未修改，無素材庫Commit。
+- 驗證：node --test --test-reporter=spec tests/skill2-bounce-dodge.test.cjs為20/20，首擊／中途／連續閃避的次數、傷害／MISS、VFX續段、真實resolveHit絕對閃避、普通／分裂／追魂、普通／永久自動雷鏈／永恒超導體、雷爆、水流彈、範圍／無候選／死亡取消；全程閃避的正式Worker shim轉送與實際Runtime逐段曲線中點／時長／清除皆通過。
+- 擴大回歸：node --test --test-reporter=tap執行新專項（當時19項）、knife-flight、soulhunter、skill2-knife-range、infinite-lightning、lightning-vfx-lifecycle、skill2-chainlightning-active-cap、waterball-vfx-integration、water-prison-dome、worker-protocol、worker-shim、skill2-vfx，共139項121過18失敗；以啟動時來源唯讀映射取代本次修改的四份JS／HTML，舊120項102過18失敗且失敗名稱完全一致，無新增。既有失敗涉及配置期望／舊靜態渲染斷言，不降低斷言、不擅改配置。之後新增Worker→Runtime專項並重跑20/20。
+- npm.cmd run build：590檔通過；diff檢查通過。唯讀檢查未改：AI規範／AGENTS／Workflow／prompts、formula／combat命中判定、skills／elite／legendary、battlefield選敵、Renderer／Runtime／Core／Worker shim及上述既有回歸；未讀寫玩家存檔，未執行全庫或瀏覽器長戰。
+- 重疊：使用者明確同意保留全部邏輯並更新共用快取（background-catchup的刷新續戰與本副本波次快取）；不整合對方玩法。AI_TASKS插入既有MERGE-DEVELOP段前，與Claude檔首及background-catchup檔尾追加分離，初次以啟動時本檔作base試跑兩者exit0；交付前再以各對方HEAD作base、只套本次完整任務區段作ours、對方現檔作theirs，兩者merge-file仍exit0。Worker僅技能匯入快取，與對方battle-replay／loop區段分離，同法技能快取候選試跑exit0；同副本波次任務與使用者Excel改動保留，不納入本次功能提交。
+- 交付：本段所在「[Codex] fix: 彈射技能遭閃避後繼續剩餘彈射」，實際編號見回覆。無本次未完成實作，可供Review／合併；未合併推送。已知限制為上述既有18項測試與未做真瀏覽器／玩家長戰，下一步使用者正常整合後重載新版遊戲驗收。
 
 ## MERGE-DEVELOP-20261027 — 使用者快捷指令接手整合
 
@@ -12719,3 +12770,47 @@ Worker 存活且頁面正常完成載入。
 - 驗證：完整benchmark、report生成及--check皆通過；node --test tests/ult-dps-benchmark.test.cjs共13/13通過，新增三敵種實際必中與活目標最後一擊完整Overkill、死後直接命中／直接扣血／DOT歸零、原生復活後可再計傷；原有等級／補怪／殺敵去重／資源鎖定／死亡稽核保留。Build586檔通過，diff／staged／25份來源SHA核對見交付。沒有為通過測試降低正式技能或放寬傷害驗收。
 - 唯讀未改：規範／Agent文件、21份正式JS、技能／狀態／傳奇配置、原Antigravity工具／報告與Excel，另查counter盾損、resolveHit結算順序與普攻／技能統計出口。Skills2.xlsx屬使用者進行中未提交修改，本次不寫入／套用／提交；無LV／素材／存檔或素材庫變動。完整批次開始／結束25份SHA一致；收尾再核對時，24份來源仍一致，只有未供Runtime載入的xlsx在批次完成後另有外部儲存（測試時2ecb8480…、收尾e818a072…）。保留測試當時SHA作追溯，不改成新SHA冒稱測過未匯出表；不影響本次JS／CSV與工具的結果。
 - 本項已完成，可供Review／合併保存，未合併推送。限制：單seed／受控受擊、鎖血抑制瀕死能力、原生同批DOT為一筆結算；致死最後一下仍完整計入，故DPS與殺敵數不等價，不能僅依傷害榜判斷平衡。Commit為「[Codex] test: 實際必中重測並限制死亡後計傷」，編號見回覆。
+
+## SPEED-GEAR-BASE-20261027 — 移除加速齒輪固定加成
+
+- Owner：Codex；Done，單一開發者。使用者要求刪除參數表第169列的加速齒輪固定加成，T10回到25＋25×9＝250%。
+- 前置：目前參數Excel雙表鏡像／零件等級公式。允許game_parameters.xlsx／CSV、formula／factory／newforge／item、apply_params、index／bridge／Worker快取、零件相關回歸、LV及本紀錄；禁止其他玩法／存檔／素材與Claude的3D試作，不合併推送。
+- 預檢：除index及任務表外均無其他來源；Claude修改主角3D按鈕及其快取／頁首任務，本次只改formula／item／bridge引用與文末任務。以Claude HEAD為base、其工作檔為theirs三方試跑均0，保留其內容，無語意相依。Excel刪列屬param-patches不支援的結構修改，以原生Excel API候選編修／正常重開驗證，不手改XML。
+- 驗收：Excel及鏡像刪除固定加成列、更新兩筆舊說明、保留其餘值／公式／格式／穩定編號；移除常數及參數錨點與額外加成呼叫，T1／T10提示和實際速度一致、同型堆疊與核心倍率保留。必要主端／Worker快取、專項／全庫／參數錨點／Build及diff檢查後Commit；後續使用者Review／合併。
+- 完成14檔：game_parameters.xlsx主表第169列／計算表第170列原生刪除，計算表兩筆舊說明同步；修正刪列後編號鏈為=A169+2，保留其餘穩定ID與全部鏡像公式。CSV由來源重匯出，只有刪列與兩筆說明差異。移除formula固定常數／helper、factory／newforge／item加成呼叫與apply_params錨點，保留其他掉寶率計算及核心倍率。主頁formula73／item33／bridge370、Worker入口與四個來源統一20261027-speed-gear-base；LV同步。
+- Excel驗證：來源獨占檢查／SHA保護，候選內編修、全表逐值比對（浮點重算容差1e-12）、欄寬與0物件保留，兩次正常重開且Saved／非RepairMode後才寫回。唯讀OOXML核對12649格樣式、手動列高／欄樣式／視圖／保護無改，無錯誤儲存格或#REF；既有原生Excel會正規化字型度量與自動列高（預設14.4→15、計算表自動列67為15→15.75），未手改內部XML。前後局部預覽已檢視，未更改字型、內容排版或手動格式。
+- 已通過：node tools/apply_params.cjs：581→580，恰少本次刪除設定，變更0／錨點問題0；--check-anchors擾動530個數值後580錨點全部命中。node --test --test-reporter=spec執行new-forge／factory-parts／drop-rate-halving／apply-params／apply-params-scientific／apply-params-anchor-independence／worker-shim／worker-protocol共63/63通過，含T1=25%／1.25倍、T10=250%／3.5倍、同型堆疊、核心與舊分解槽一致。npm.cmd run build589檔通過，git diff --check通過。
+- 唯讀未改：共通／Agent／Workflow規範、PARAM_PATCHES、Excel更新／匯出工具、data與UI實際提示鏈、其他零件／存檔與Worker回歸。額外part-fused-value-storage共10/12，兩項融合功能失敗用HEAD來源唯讀覆映完全重現；不擴修或放寬斷言。未新增文字／素材，不改String、存檔或解鎖；素材庫無變動，不建空Commit。同副本ULT-SWITCH-POINTS的skills2／ui／任務紀錄保留且不納本次提交。
+- 全庫：node --test --test-reporter=tap "tests/*.test.cjs"完整執行16分10秒，4931項＝4338過／591失敗／2跳過；同步工具測試亦完整結束。以未修改HEAD的本次來源唯讀覆映、對失敗名稱定向重跑，137檔中588項原樣失敗；另外3項為同副本進行中ULT-SWITCH-POINTS的技能點／UI／String期間不一致，該聊天修正後，本次來源與未修改來源都已通過3/3。無本次新增失敗，不把既有測試債改成接受現況；未宣稱全庫全過或正式瀏覽器長戰驗收。
+- 協作與交付：後續同副本技能任務更新bridge371／Worker入口20261027-ult-switch-points及skills2引用，工作檔保留其最新快取；本次以獨立index候選僅暫存自己的formula73／item33／bridge370與四個Worker來源、熔爐LV段及本任務段，提交仍是可獨立載入的20261027-speed-gear-base。其String、UI、技能、測試及任務／LV段完整留在工作區，不stage、不回退。無本次未完成項，可供Review／合併；未合併推送。Commit為本段所在「[Codex] fix: 移除加速齒輪固定加成並同步配置與顯示」，實際編號見回覆。
+- 收尾來源保護：全庫執行期間使用者在原生Excel另存game_parameters.xlsx，現況計算表增加最後三列、主表最後三列ID重排為357／358／359；原生唯讀比較確認固定加成列仍已刪除，其他差異屬本任務外。磁碟工作檔完整保留、不覆寫、不匯出其未驗證修改；提交改納本次先前正常重開／逐值／格式驗證過的候選（SHA256 CE0E6A5ED86BF0934AB2C5E667D7B1161E4C96AEF4F2FE1CFFDEB0A3BBB55E27）及其對應CSV。提交後使用者Excel修改與另一技能任務仍留未提交狀態，不將其偽稱為本次測過或提交。
+
+## ULT-SWITCH-POINTS-20261027 — 終極進化零餘額切換與返點
+
+- Owner：Codex；Done，單一開發者。使用者要求剩餘0點仍可切換終極進化，舊Lv.10返還10點、選新Lv.1扣1點，最後可用9點。
+- 前置：既有技能點推導及原子重選。允許skills2／ui、必要index／bridge／Worker快取、Protocol與文件／版本回歸同步、String.xlsx／CSV／strings_data新增額度提示、skill2-points／skill2-ui回歸、LV與本段；禁止其餘玩法／配置／Excel／素材／3D及其他任務，不合併推送。
+- 原因：舊存檔超支時total-spent為負，UI及Worker先以退款補欠額而拒絕切換。成功切換時將既有超支投資記為持久legacyPointCredit，重選後精確返還淨差；失敗不建立credit，不反覆發點，面板純讀取，新投資仍消耗點數，保存／重載不遺失。
+- 預檢：skills2及兩份回歸無其他來源；ui與Claude之initHero3dToggle不同函式，tasks對方頁首／本次文末，僅帶本次hunk三方merge-file均0且無語意相依。index同UI快取一行已獲使用者明確同意升220、保留雙方；String新增2150與Claude2145～2147為不同列，CSV換行正規化後隔離新列三方試跑0，不納入其3D字串。其他本副本加速齒輪工作完整保留，不納本次提交。
+- 驗收：正常零點及超支舊檔Lv.10→1餘9、Lv.1重選不發點、9點可再花、重複確認／金幣不足／門檻不足無異動、存讀檔與投影／UI一致；相關回歸、Build及diff後獨立Commit，交使用者Review／合併。
+- 完成15檔：js/skills2.js成功原子重選前保留既有超支額度，points.total計入持久legacyPointCredit，只有通過金幣／報價／門檻後才寫入；js/ui.js依可用餘額加原等級判斷切換，tips分開說明熟練度及保留額度；String.xlsx／CSV／strings_data新增2150、index字串23f745de／skills2 363／ui220／bridge371／protocol62，bridge入口及Worker的skills2／protocol引用同步。Protocol.js版本61→62與docs/WORKER_PROTOCOL.md同步total語意，快照欄位及指令數不變。兩份技能回歸與協議版本回歸、LV及本段同步。
+- Excel：以專案原生Excel更新工具在2142後插入2150，只寫入5格；兩次正常重開核對全部2138列7欄及0物件，獨立原生Excel重開Saved=True、無修復提示。唯讀OOXML逐列依ID核對原2137列的值／儲存格樣式／列屬性不變，styles.xml／欄寬／sheetViews不變，原表與新版局部渲染已檢視；未手改XML、未改原有文字或翻譯。源Excel匯出CSV再產生JS，不合併Claude的3D字串。
+- 驗證：node --test --test-reporter=spec（最終dot）tests/skill2-points.test.cjs tests/skill2-reset.test.cjs tests/skill2-ult-switch.test.cjs tests/skill2-tower-unlock.test.cjs tests/skill-mastery.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/string-table.test.cjs共79/79；node --test --test-reporter=spec --test-name-pattern="技能點不足|終極重選按鈕|切換二次確認|終極進化：" tests/skill2-ui.test.cjs另4/4。新增正常零餘額與23群組超支重選、存讀檔、Lv.1重選不增發、9點可全數再投入及各失敗原子保留；依使用者新規則更新兩個舊的「超支不得重選」斷言，其餘不足／門檻保護不放寬。npm.cmd run build589檔通過；apply_strings --check同步、build_string_csv --check寫死0條。
+- 廣域UI：整份skill2-ui為29項、27過／2失敗（SVG尺寸舊斷言、水流彈MP／冷卻舊值）；用git show HEAD的ui／skills2唯讀覆映並只跑該兩項，兩者於修改前同樣失敗，未改其斷言，不宣稱全庫全綠。最終瀏覽器用隔離隨機localhost及全新Edge context載正式遊戲與真Worker，測試存檔熟練度480、已投資1817、餘0；實點雷球群組／選項／確認後pick1 Lv.10→pick2 Lv.1，total1817／spent1808／available9，畫面剩9且tips分列480＋1337保留額度。Console error／warning及pageerror均0，非玩家真存檔；初始化神鑄開放提示於fixture預先標示已看過以避免干擾。截圖及JSON留本聊天visualizations/ult-switch，臨時服務與瀏覽器已關閉。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、js/save.js／player.js／forge.js、Worker指令／面板與scripts/sim/engine、Excel與字串匯出工具、package／Build工具及上述其他回歸、Claude的3D與字串差異。原加速齒輪配置／程式／測試及分段暫存均保留；本次無素材／素材庫變更，不建空素材Commit。
+- 交付：自我Review及必要驗證完成，無本次未完成實作；可供Review／合併，未合併或推送。Commit為本段所在「[Codex] fix: 終極進化零點重選並保留舊投資返還點數」，實際編號見回覆。已知限制為上述既有UI測試與未跑全庫／跨瀏覽器長戰；舊版程式會忽略新保留額度，須整合後重載新版主端及Worker，不要用舊分頁覆寫。下一步正常整合後重載遊戲驗收。
+
+
+## REMOVE-ZONE-STAGE-WAVES-20261027 — 移除冗餘波次配置表
+
+- Owner：Codex；Done，單一開發者。使用者授權刪除Zone_Stage_Waves Excel／CSV與查表接線，全部地圖關卡共用主參數表出怪間隔及戰場容量；固定1～9999為原適用範圍，不改Zones實際上限。
+- 允許：data／formula／combat相關波次程式、apply_params及csv_to_xlsx範例、原生波次與地圖回歸、必要index／bridge／Worker快取、LV／game_formula／地圖配置文件及本段；禁止其他玩法、掉落、存檔、Protocol、素材與使用者game_parameters.xlsx修改，不合併推送。
+- 驗收：刪表後參數乾跑與錨點、標量／候選間隔及容量擾動、近身波與遠方群／BOSS／推關、正式Worker回歸、Build與diff，完成後獨立Commit。
+- 完成16檔：刪除config/Excel/Zone_Stage_Waves.xlsx及同名CSV；移除data的波次區間與備援8隻常數、formula查表與兩種覆寫、apply_params整套波次CSV重建。fieldWaveIntervalFor直接讀主參數表a，fieldMaxLiveEnemiesFor直接取bfCellCount；combat呼叫端去除地圖／關卡參數，遠方群與BOSS原流程不變。主頁data108／formula74／combat96／bridge372，Worker入口與三份模擬匯入同步20261027-shared-field-waves；原Protocol／存檔／Zones及掉落資料不變。
+- 文件與回歸：更新既有wave-streaming／new-battle-zones回歸、LV總表／game_formula過時出怪公式／BATTLE_BIOMES配置清單、csv_to_xlsx範例及本段。新期望依使用者取消區間覆寫的需求，仍保留串流、數量硬上限、BOSS不串流、推關與切關延遲斷言，候選重複值權重／無效值保護及全十圖容量擾動涵蓋。
+- 已驗證：node --test --test-reporter=spec tests/wave-streaming.test.cjs tests/new-battle-zones.test.cjs tests/npc-roaming.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/multi-enemy.test.cjs tests/combat-pause.test.cjs，83/83。node tools/apply_params.cjs為579一致／0變更／0問題；唯讀HEAD原版580，差一個即本次移除的波次表錨點，沒有其他接線減少。--check-anchors擾動530數值後579錨點各命中一次。npm.cmd run build589檔通過，diff檢查通過。
+- 額外行為比對：正式Worker引擎、十圖各1／10／50／9999關、40個相同種子場景，每10秒檢查一次共120點；修改前HEAD與本次的完整G存檔及battle快照逐值雜湊完全一致，Worker ERROR為0。測試採記憶體新局，沒有讀寫玩家存檔；等價結果保存在本聊天visualizations/wave-table-removal/behavior-equivalence.json，不宣稱瀏覽器或真人長戰驗收。
+- 預檢：index與Claude未提交3D按鈕／importmap／renderer／ui／String快取不同區段，本次只動data／formula／combat／bridge；AI_TASKS在檔尾追加，對方在檔首插入。各以Claude HEAD作base／本次變更候選／對方工作檔作theirs跑merge-file，兩檔exit0、無語意相依，未整合或更動對方3D試作。波次工作簿當時開啟且Saved=True，經Excel原生API僅關閉這本再刪除；game_parameters開著的未儲存內容與使用者新增NPC.xlsx修改均保留，不套用、不提交。
+- 唯讀未改：共通規範／AGENTS／Workflow／prompts、套用參數BAT／config_tables讀表與戰場容量、遠方群／群組數量／BOSS／存檔／Worker協議、其他既有回歸與使用者Excel。沒有美術／VFX或素材庫變更，無素材庫Commit。
+- 全庫：node --test --test-reporter=tap "tests/*.test.cjs"完整執行14分45秒，4931項＝4340過／589失敗／2跳過。以修改前HEAD 14e7d8cb的本次來源唯讀覆映、按每個失敗名稱重跑，全589項均在原版重現，新增失敗0；沒有弱化既有斷言或擴修無關功能，不宣稱全庫全過。原始TAP與baseline-summary.json保留本聊天visualizations/wave-table-removal。
+- 同副本BOUNCE-DODGE聊天後續新增skills2、專項回歸及LV／任務表／index／Worker快取；本次以Git index分段暫存，保留其工作檔逐位元不變，提交只含本次區段（bridge372／原skills2快取），其較新工作檔快取維持373／skills2 364。以只覆映staged來源並隔離對方skills2的方式重跑上述83項，83/83通過；不納入對方進行中功能或文件。
+- 交付：本段所在「[Codex] refactor: 移除冗餘波次表並統一出怪參數來源」Commit，實際編號見回覆；無本次未完成項目，可供Review／合併，未合併或推送。已知限制為全庫589項既有失敗及未做瀏覽器／真人長戰，下一步正常整合後重載遊戲；使用者NPC與主參數表、其他聊天進行中修改保留未提交。

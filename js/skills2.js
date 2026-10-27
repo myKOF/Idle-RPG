@@ -664,8 +664,8 @@ function sgLegend(gid) {
   return ((typeof legendarySkill2Mods === 'function') ? legendarySkill2Mods(gid) : null) || {};
 }
 
-/* 「次數／個數 +N」型傳奇規格的取值：值放在 LEGENDARY_FX_NON_VALUE_KEYS 的保護鍵裡
-   （count／hits／sec…），沒有裝備該特效時規格物件不存在＝回 0。
+/* 「次數／個數 +N」型傳奇規格的取值：讀取固定規格的 count／hits／sec 等鍵，
+   沒有裝備該特效時規格物件不存在＝回 0。
    收斂成一支的理由：這種讀法在施放端會重複十幾次，各自寫一串 Math.max(0, Math.floor(...))
    遲早會有一處漏掉取整或漏掉 null 保護。 */
 function sgLegendCount(spec, key) {
@@ -1359,10 +1359,16 @@ function skills2StoredLevels(gid) {
     return Math.max(i === 0 ? 1 : 0, Math.min(SG_TIER_MAX_LV, isFinite(n) ? n : 0));
   });
 }
+/* 舊存檔超支投資在成功重選時保留為額度，避免退款先被負餘額吞掉。
+   只讀取已保存的額度；面板投影不可因為被查詢而發點。 */
+function skills2LegacyPointCredit() {
+  var credit = Math.floor(Number(G.player.skills2 && G.player.skills2.legacyPointCredit) || 0);
+  return isFinite(credit) ? Math.max(0, credit) : 0;
+}
 function skills2PointView() {
   var p = G.player;
   var level = Math.floor(Number(p.skillMastery && p.skillMastery.level) || 0);
-  var total = Math.max(0, Math.min(SKILL_MASTERY_MAX_LEVEL, isFinite(level) ? level : 0));
+  var total = Math.max(0, Math.min(SKILL_MASTERY_MAX_LEVEL, isFinite(level) ? level : 0)) + skills2LegacyPointCredit();
   var spent = 0;
   for (var gid in SKILLS2) {
     var lvs = skills2StoredLevels(gid);
@@ -1421,8 +1427,11 @@ function skills2UltSwitch(group, optIdx, fromOpt, fromLv, quotedCost) {
   var cost = skills2UltCost(group, optIdx, 0);
   if (cost !== quotedCost) return STR(690);
   var points = skills2PointView();
-  if (points.total - points.spent + cur.lv < 1) return STR(2134);
   if ((G.player.gold || 0) < cost) return STR(91);
+  /* 先保留原有投資額度，再以舊等級退款、新等級扣點。確認失敗不可改額度。 */
+  if (points.spent > points.total) {
+    G.player.skills2.legacyPointCredit = skills2LegacyPointCredit() + points.spent - points.total;
+  }
   G.player.gold -= cost;
   sgUltStore()[group] = { pick: optIdx, lv: 1 };
   sgAfterSkillChange();
@@ -2680,6 +2689,7 @@ function castSkill2(pEnt, target, gid, floatSel, opts) {
   if (!freeCast) {
     if (!(typeof gmMpLockActive === 'function' && gmMpLockActive(pEnt))) {
       pEnt.mp = Math.max(0, pEnt.mp - manaCost);
+      if (typeof legendaryOnManaSpent === 'function') legendaryOnManaSpent(pEnt, manaCost);
     }
     if (!pEnt.skillCds) pEnt.skillCds = {};
     pEnt.skillCds[SG_PREFIX + gid] = skills2Cooldown(gid, lvs, pEnt);
@@ -3508,7 +3518,8 @@ function sgCastKnife(pEnt, st, g, lvs, pool, primary, floatSel, out) {
 
   for(var ki=waltz?1:0;ki<knives.length;ki++)(function(target){
     sgQueueKnifeFlight(cfg,null,target,dmgVal,0,false,'knife',function(res,angle){
-      if((res&&res.miss)||bouncePct<=0)return;
+      // 閃避只取消本段傷害；抵達後仍照剩餘次數彈射。
+      if(bouncePct<=0)return;
       var bounces=Math.max(1,Math.floor(Number(t[2].fx.count)||1))+
         (lvs[3]>0?sgRollCount(sgVal(t[3].fx,'add',lvs[3])):0)+((lg.knifeBounceProc&&chance(Number(lg.knifeBounceProc.chance)||0))?sgLegendCount(lg.knifeBounceProc):0);  // 傳奇【連鎖】：每把飛刀各擲一次機率
       var chainMax=lvs[5]>0?Math.max(0,Math.floor(Number(t[5].fx.max)||4)):0;
@@ -11692,6 +11703,7 @@ function sgCounterPayMp(pEnt, tierIdx) {
   if (typeof gmMpLockActive === 'function' && gmMpLockActive(pEnt)) return true;
   if (!pEnt || !((pEnt.mp || 0) >= cost)) return false;
   pEnt.mp -= cost;
+  if (typeof legendaryOnManaSpent === 'function') legendaryOnManaSpent(pEnt, cost);
   return true;
 }
 /* 基本反擊的最低起手法力：最高已學習階段，超神生效時優先；各階不累加。
@@ -12413,7 +12425,9 @@ function sgAutoCastCanPay(pEnt, gid) {
 }
 function sgAutoCastPay(pEnt, gid) {
   if (!pEnt || (typeof gmMpLockActive === 'function' && gmMpLockActive(pEnt))) return;
-  pEnt.mp = Math.max(0, pEnt.mp - sgAutoCastManaCost(gid));
+  var cost = Math.min(pEnt.mp, sgAutoCastManaCost(gid));
+  pEnt.mp = Math.max(0, pEnt.mp - cost);
+  if (typeof legendaryOnManaSpent === 'function') legendaryOnManaSpent(pEnt, cost);
 }
 
 function sgUltAutoCastGap(u) { return Math.max(0.5, sgUltVal(u, 'sec')); }

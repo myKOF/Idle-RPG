@@ -43,10 +43,10 @@ test('BIOMES-ROUTE 新檔每圖末關留在原圖，主動前進並保留神界1
   assert.equal(c.isZoneUnlocked(next),true);c.switchZone(next);assert.equal(c.G.stage.zone,next);assert.equal(c.G.stage.current,1);
  }
 });
-test('BIOMES-CONFIG 六份Excel／CSV逐格一致、任務可達、掉落及波次覆蓋全部關卡',()=>{
- const c=load();for(const n of ['Zones','NPC','Task','Zone_Stage_Drops','Zone_Stage_Waves','Runes']){const x=tables.readXlsxRows(path.join(root,'config/Excel',n+'.xlsx')),csv=tables.csvParse(fs.readFileSync(path.join(root,'config/CSV',n+'.csv'),'utf8')).filter(r=>r.length>1);assert.deepEqual(csv,x.map(r=>r.map(String)),n);}
+test('BIOMES-CONFIG 五份Excel／CSV逐格一致、任務可達、掉落及共用波次覆蓋全部關卡',()=>{
+ const c=load();c.G=c.newGameState();for(const n of ['Zones','NPC','Task','Zone_Stage_Drops','Runes']){const x=tables.readXlsxRows(path.join(root,'config/Excel',n+'.xlsx')),csv=tables.csvParse(fs.readFileSync(path.join(root,'config/CSV',n+'.csv'),'utf8')).filter(r=>r.length>1);assert.deepEqual(csv,x.map(r=>r.map(String)),n);}
  for(const t of c.TASKS)if(t.type==='stageClear')assert.ok(t.count<=c.ZONES[t.param].maxStage,t.name);
- for(const z of ids)for(let s=1;s<=c.ZONES[z].maxStage;s++){const d=c.zoneStageDropConfigFor(z,s);assert.ok(s>=d.min&&s<=d.max,z+' '+s);assert.ok(c.ZONE_STAGE_WAVE_PROFILES[z].some(r=>s>=r[0]&&s<=r[1]));}
+ for(const z of ids)for(let s=1;s<=c.ZONES[z].maxStage;s++){const d=c.zoneStageDropConfigFor(z,s);assert.ok(s>=d.min&&s<=d.max,z+' '+s);c.G.stage.zone=z;c.G.stage.current=s;assert.ok(c.FIELD_WAVE_SPAWN_INTERVAL.includes(c.fieldWaveIntervalFor()));assert.equal(c.fieldMaxLiveEnemiesFor(),c.bfCellCount());}
  const npc=tables.csvParse(fs.readFileSync(path.join(root,'config/CSV/NPC.csv'),'utf8')).slice(1).filter(r=>r.length>1);for(const z of ids)assert.equal(npc.filter(r=>r[2]===z).length,48);
 });
 test('BIOMES-ROUNDTRIP 地圖再匯入可變更名稱上限與解鎖，拒絕前置環路或越界',()=>{

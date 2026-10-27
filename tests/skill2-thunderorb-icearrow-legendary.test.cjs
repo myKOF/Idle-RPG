@@ -835,7 +835,7 @@ test('十個新傳奇特效：武器類型與關聯群組正確，且都落在 E
     assert.ok(def, key + ' 應在傳奇特效池內');
     assert.equal(def.legendary, true);
     // ⚠️ vm 沙盒的陣列與宿主不同 realm，deepStrictEqual 會因原型不同而誤判，故比字串
-    assert.equal(def.weaponTypes.join('|'), expect[key], key + ' 的武器類型');
+    assert.deepEqual(Array.from(def.weaponTypes || []), [], key + ' 可出現在全部位');
     assert.equal(def.relatedSkill, expect[key] === 'orb' ? 'thunderorb' : 'icearrow');
     assert.ok(def.fx && Object.keys(def.fx).length > 0, key + ' 缺 fx');
     assert.ok(csv.includes(',' + key + ','), key + ' 沒落到參數表');
