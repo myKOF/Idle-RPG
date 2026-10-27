@@ -29,6 +29,15 @@
     "height_meters": 1.8,
     "estimatedCredits": 5
   },
+  "animate": {
+    "clips": [
+      { "name": "Idle", "action_id": 11 },
+      { "name": "Attack", "action_id": 4 },
+      { "name": "Hit", "action_id": 178 },
+      { "name": "Death", "action_id": 189 }
+    ],
+    "estimatedCredits": 12
+  },
   "concepts": {
     "A": {
       "label": "cape to the calves",
