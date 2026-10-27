@@ -1,0 +1,49 @@
+{
+  "id": "sunbrand-knight",
+  "displayName": "Sunbrand Knight",
+  "status": "draft-awaiting-approval",
+  "style": "stylized dark-fantasy ARPG, 3/4 top-down friendly, slightly cartoon",
+  "bodyType": "humanoid-biped",
+  "heightMeters": 1.8,
+  "polyBudget": { "target": 5000, "softMax": 5000, "hardMax": 6000 },
+  "referencePolicy": {
+    "usedAsInput": false,
+    "note": "Reference image is never uploaded. Design is described in original words; differences are listed below.",
+    "differences": [
+      "helmet: reference has tall winged crown; ours is a rounded dome with a low horizontal fin crest and no wings",
+      "neck/shoulders: reference has a white fur collar; ours has a plain metal gorget and large round sun-disk pauldrons",
+      "lower body: reference has a long robe/tabard; ours is a short navy tabard above the knees over a silver chain skirt",
+      "palette: reference is white-silver with gold; ours is gold-dominant with silver trim and navy cloth",
+      "emblem: sun-disk radial motif (original) instead of the reference's ornaments",
+      "proportions: stylized ~5.5 heads with chunky gauntlets and greaves, not realistic",
+      "weapon: one-handed leaf-blade broadsword with sun-disk pommel, not the reference's two-handed sword"
+    ]
+  },
+  "meshy": {
+    "preview": {
+      "mode": "preview",
+      "ai_model": "meshy-6",
+      "model_type": "standard",
+      "should_remesh": true,
+      "topology": "triangle",
+      "target_polycount": 4800,
+      "pose_mode": "a-pose",
+      "prompt": "Full-body stylized dark-fantasy knight, cartoon proportions about 5.5 heads tall, standing in A-pose, arms slightly away from the body, legs apart, facing forward. Heavy plate armor in polished gold with silver trim and dark engraved lines. Rounded dome helmet with a horizontal slit visor and a low fin crest, no wings. Large round shoulder pauldrons with a radiating sun-disk emblem, segmented gold chest plate, chunky gauntlets and greaves. Short dark navy tabard ending above the knees over a silver chain skirt. Right hand holds a one-handed broadsword with a leaf-shaped blade and sun-disk pommel, blade length about half the character height, pointing down. Hand-painted game art style, clean readable silhouette, plain background."
+    },
+    "refine": {
+      "mode": "refine",
+      "enable_pbr": false,
+      "texture_resolution": "2k",
+      "texture_prompt": "Hand-painted stylized gold armor with silver trim, dark navy cloth, subtle scratches, warm highlights, no baked lighting"
+    },
+    "rig": { "height_meters": 1.8 },
+    "estimatedCredits": { "preview": 20, "refine": 10, "rig": 5, "animations": 15, "total": 50, "note": "from docs examples/README; actual consumed_credits will be recorded" }
+  },
+  "animations": {
+    "Idle":   { "source": "library", "candidates": [0, 11, 12], "loop": true },
+    "Walk":   { "source": "library", "candidates": [21], "loop": true, "footSlideCheck": true },
+    "Attack": { "source": "library", "candidates": [242, 237, 221], "fallback": "text-to-motion", "events": ["windup", "swing", "impact", "recover"] },
+    "Hit":    { "source": "library", "candidates": [178, 179], "loop": false },
+    "Death":  { "source": "library", "candidates": [8, 189, 188], "loop": false, "holdLastFrame": true }
+  }
+}
