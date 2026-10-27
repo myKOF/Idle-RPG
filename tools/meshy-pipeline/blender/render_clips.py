@@ -29,7 +29,11 @@ if "--fix" in argv:
     sys.path.insert(0, __import__("os").path.dirname(__file__))
     import skin_fix
     skinned = next(o for o in bpy.data.objects if o.type == "MESH" and len(o.vertex_groups) > 0)
-    print("SKIN_FIX", skin_fix.apply(skinned, arm))
+    hand = "Left"
+    if "--mirror" in argv:
+        skin_fix.mirror_model(skinned)
+        hand = "Right"
+    print("SKIN_FIX", skin_fix.apply(skinned, arm, hand))
 
 scene = bpy.context.scene
 scene.render.engine = "BLENDER_WORKBENCH"
