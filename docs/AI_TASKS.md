@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## IRON-DANCE-PHYSICAL-20261028 — 鐵血之舞物理流血與敵方承受比例
+
+- Owner：Codex；Done，單一開發者。使用者要求自身流血改為物理傷害，基值100%、每級+10%；附近敵人承受該基準流血的比例基值50%、每級+5%，滿級雙方每0.35秒皆為200%物理傷害。算例不寫入技能說明。
+- 前置：共通規範／Workflow／Agent文件與現行技能、狀態、DOT管線已讀；目標衝突預檢無其他來源。使用者回覆相關Excel已關閉，依受保護param-patches流程套用；有同格衝突即停止。
+- 允許：skills2鐵血公式、Skills2／Status Excel及來源匯出CSV／JS、必要index／bridge／Worker快取、技能回歸、LV及本段。禁止其他技能平衡、傷害共用公式、存檔／Protocol／素材及合併推送。
+- 驗收：Lv.1／Lv.10與相鄰等級增量、敵方倍率乘自身基準、血量／BOSS不改流血基值、範圍／節拍／到期／刷新／自身直扣生命、狂戰士獨立調整、狀態投影／VFX參數與說明一致；Excel正常重開與逐格／格式核對、回歸／Build／diff後獨立Commit。後續使用者Review／整合。
+- 完成13檔：Skills2.xlsx第五階效果JSON／說明／唯讀摘要3格，Status.xlsx鐵血裂傷的來源／傷害／說明3格；經原生param-patches套用後由xlsx_to_csv及config_tables產生兩份CSV與skills2／status字面值。公式以st.atk定版自身每跳量，敵方乘enemyPct後獨立套狂戰士增傷；移除敵人maxHp及BOSS百分比減幅。沿用基值＋增量×等級，Lv.1自身110%、敵方承受55%，Lv.10自身200%、承受100%；5米／0.35秒／3秒與自身直扣生命保留。index的status44／skills2 366／bridge377，Worker入口與兩份匯入20261028-iron-dance-physical；LV同步，Protocol與存檔不變。
+- Excel驗證：首輪主鍵定位因階數實際為文字而安全停止、來源未寫入；以原生Excel確認型別後只更正主鍵型別、不改before，第二輪6格全部受保護套用、無同格衝突，收據／原檔／候選保留archive/2026-10-28T09-13-38-681Z-5c0289f2-6d6e-4dc9-b908-37fafb7db390。獨立原生Excel正常重開Saved=True、非RepairMode，Skills2三頁／Status兩頁保留。唯讀OOXML逐格比較13865＋1534格，僅AV56／AW56／AX56及H30／I30／T30內容改變，公式／有效樣式／手動列高／視圖保持；Excel正常儲存使欄寬誤差小於0.063字元、自動列高與字型下降度量正規化，重複的General樣式合併但有效樣式一致，未手改XML。兩本來源與結果局部渲染已比較，沿用原有表格排版。
+- 回歸：node --test --test-reporter=spec tests/skill2-iron-dance.test.cjs為10/10，含Lv.1／5／10、逐級增量、滿級說明、物攻／HP／魔攻／BOSS隔離、狂戰士兩端、範圍／刷新／到期／直接扣血、真實施放入口及原生Worker載入／視覺事件／狀態投影，Worker ERROR為0。原skill2-system鐵血案例補足施放所需測試MP並更新新需求斷言；node --test --test-reporter=spec --test-name-pattern='鐵血|狂戰士|雙刀選敵' tests/skill2-system.test.cjs tests/skill2-ult-evolution.test.cjs共7/7。
+- 擴大測試：node --test --test-reporter=tap執行iron-dance、skill2-status-slots、status-system、worker-protocol、worker-shim、legendary-global、skill2-ult-evolution，最終152項124過／28失敗。28項以修改前HEAD的skills2／status／兩CSV唯讀覆映、按原失敗名稱重跑全部重現，最終失敗名稱集合完全相同，新增失敗0；另查原system的狂暴／嗜血兩項也在原版原樣失敗，不擴修或降低其斷言。node tools/config_tables.cjs --apply重建30個字面值語意變更0；node tools/apply_params.cjs為593一致、0變更、0錨點問題；npm.cmd run build最終597檔通過，git diff --check通過。未修改參數接線，不觸及其他平衡配置。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、PARAM_PATCHES、Excel更新／匯出／差異工具、combat／formula／legendary／battlefield／Worker協議與投影、scripts/sim/engine、相關既有回歸。技能說明由Skills2表讀取、無新寫死字串；無素材或素材庫變動，不建立空素材Commit。自我Review完成，沒有本次未完成項；可供Review／合併，未合併或推送。限制：既有測試債、未執行全庫或真瀏覽器／玩家長戰。Commit為本段所在「[Codex] fix: 鐵血之舞改為物理流血並獨立計算敵方比例」，編號見交付；下一步整合後重載新版主端與Worker驗收。
+
 ## DIVINE-FORGE-V2-20261028 — 四功能神鑄改造
 
 - Owner：Codex；Done，單一開發者。使用者授權以線上新版及七格水晶圖取代原神鑄，並確認神話配方產出神鑄神話、無效刻印按第七項返石、四功能皆收金幣且所有參數放game_parameters。來源：Google Sheet gid=2018764646，2026-10-28讀取。
