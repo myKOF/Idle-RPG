@@ -52,7 +52,10 @@ const CFG = {
     /* 改用使用者在 Meshy 網頁重新綁骨架後套的動作庫動作 Sword Judgment（右手單手劍：小跳躍→轉一圈→斜砍），不改動作本身（不做 IK、不限手腕）：
        取樣檔 data/meshy-sword-judgment.json（來源 0.3～1.25 秒＝小跳、轉圈、斜砍到落地，後面的長時間跪姿不取；重新瞄準到遊戲骨架）放在 Attack1 的 0.10 秒起，收招 recover 回到起始姿勢，
        只動劍：Sword 旋轉設成模型原本的握法（fitSwordGrip），劍跟著手走，動作、骨骼、網格權重都不動。上面 refTime／rampIn 是舊的副手 IK，retarget 有值時不用。 */
-    retarget: { name: 'judgment', file: 'meshy-sword-judgment.json', at: 0.10, recover: [0.90, 1.40], startTime: 0.10 }
+    retarget: { name: 'judgment', file: 'meshy-sword-judgment.json', at: 0.10, recover: [0.90, 1.40], startTime: 0.10,
+                /* 繞劍身軸翻轉（拳頭＋劍一起，刀刃指的方向不變）：掃 0～150° 找「劍尖移動方向落在劍面上的比例」最低的角度——用刃口砍而不是用劍面／刀背拍。
+                   原本（0°）比例 0.83～0.94＝幾乎都在用劍面拍；90° 只降到 0.33～0.53；Attack1 最佳約 70°（0.11）、Attack2／3 約 62°（0.08～0.2）。 */
+                gripRoll: 70 }
   },
   Attack2: {
     rampIn: [1.14, 1.20],     // 原動作 → 下劈軌跡的漸入；之後一路保持到動作結束（落在斜下方，與待機姿勢接近）
@@ -87,7 +90,8 @@ const CFG = {
              { name: 'combo2', retarget: true, file: 'meshy-double-combo-2.json', at: 1.72, speed: 1.3, recover: [2.66, 3.11],
                aim: { deg: -70, ramp: [1.72, 2.05] } }],   // 這招原本邊揮邊往左轉約 45°，砍的方向不在起始朝向的正前方；轉 −70° 後劍穿過正前方 1.5 處敵人的肩到胸（高度 1.03～1.39）
     lunge: { dist: 0.6, hipsK: 0.6, rearK: 0.8, t0: 1.10, t1: 1.34, lift: 0.12 },   // 往前跨一大步劈下：髖部前移 0.36、前腳整步、後腳跟上
-    startTime: 0.10
+    startTime: 0.10,
+    gripRoll: 62      // 同 Attack1.retarget.gripRoll 的說明
   }
 };
 
@@ -526,13 +530,14 @@ function probeRetarget(glbFile, clipName, dt) {
    使用者指出：原動作裡手是沿著手臂方向伸出的，刀刃就該順著這個方向（刀刃＝手臂的延伸）。遊戲模型的拳頭是握著劍的，拳頭握柄軸與指尖方向（手骨骼 +Y）差約 44°，
    所以保持原本握法的話刀刃會偏離手的方向。把右手骨骼的局部旋轉右乘一個固定的校正 C（把劍身軸轉到手骨骼 +Y），拳頭與劍是一起轉的，
    劍與拳頭的相對位置不變（不會像單獨轉劍那樣把手套拉成碎片），刀刃就落在原動作手的方向上。這是兩套模型的手形狀不同所需的固定校正，不是改動作。 */
-function alignGripToHand(g, rig, clip) {
+function alignGripToHand(g, rig, clip, rollDeg = 0) {
   const tr = clip.tracks['RightHand.rotation'];
   if (!tr || tr.times.length !== clip.keyTimes.length) return;
   const b0 = new Vector3(0, 1, 0).applyQuaternion(rig.rest[rig.byName.Sword].q), C = new Quaternion().setFromUnitVectors(b0, new Vector3(0, 1, 0)), ed = {};
-  for (let i = 0; i < tr.times.length; i++) ed[i] = new Quaternion(tr.values[i * 4], tr.values[i * 4 + 1], tr.values[i * 4 + 2], tr.values[i * 4 + 3]).multiply(C);
+  const roll = new Quaternion().setFromAxisAngle(b0.clone().normalize(), rollDeg * Math.PI / 180);   // 繞劍身軸翻轉（拳頭＋劍一起轉，刀刃指的方向不變，只是刃口朝哪邊）
+  for (let i = 0; i < tr.times.length; i++) ed[i] = new Quaternion(tr.values[i * 4], tr.values[i * 4 + 1], tr.values[i * 4 + 2], tr.values[i * 4 + 3]).multiply(C).multiply(roll);
   writeQuats(g, clip, 'RightHand', ed);
-  console.log(clip.name + ' 握姿校正：拳頭＋劍整體轉 ' + (b0.angleTo(new Vector3(0, 1, 0)) * 180 / Math.PI).toFixed(1) + '° 讓刀刃順著手的方向');
+  console.log(clip.name + ' 握姿校正：拳頭＋劍整體轉 ' + (b0.angleTo(new Vector3(0, 1, 0)) * 180 / Math.PI).toFixed(1) + '° 讓刀刃順著手的方向，再繞劍身軸翻 ' + rollDeg + '° 讓刃口朝砍的方向');
 }
 
 /* ---- 收招：全身平順回到起始姿勢（讓動作首尾相接） ---- */
@@ -1078,6 +1083,24 @@ export function bladeVsSourceHand(file, clipName, seg) {
   return worst;
 }
 
+
+/* 驗證：刀刃是不是朝著砍的方向。劍尖速度垂直於劍身的分量，投影到劍面法線（劍局部 Z）的比例（0＝完全用刃口砍、1＝完全用劍面／刀背拍），以速度加權平均；
+   只算揮砍時段（各招 [t0,t1]）。 */
+export function flatRatio(file, clipName, t0, t1) {
+  const g = readGlb(file), rig = buildRig(g), clip = readClip(g, rig, clipName), id = (n) => rig.byName[n];
+  let num = 0, den = 0, prev = null;
+  for (let t = t0; t <= t1 + 1e-9; t += 0.02) {
+    const W = worldMatrices(rig, poseAt(rig, clip, t)), sw = W(id('Sword')), tip = new Vector3(4.8, 100.18, 1).applyMatrix4(sw), q = wRot(sw);
+    if (prev) {
+      const v = tip.clone().sub(prev), bl = new Vector3(0, 1, 0).applyQuaternion(q), z = new Vector3(0, 0, 1).applyQuaternion(q);
+      v.sub(bl.clone().multiplyScalar(v.dot(bl)));
+      const sp = v.length(); if (sp > 1e-6) { num += sp * Math.abs(v.dot(z) / sp); den += sp; }
+    }
+    prev = tip;
+  }
+  return den ? num / den : 0;
+}
+
 /* ---- 驗證（給測試用）：量測某個 GLB 現在的握劍狀況 ---- */
 export function verifyGrips(file) {
   const g = readGlb(file), rig = buildRig(g);
@@ -1095,6 +1118,10 @@ export function verifyGrips(file) {
     armorRigidRatio: armorSoftness(g, rig),                              // 盔甲頂點中完全剛性（100% 單一骨骼）的比例
     maxClothStretch: maxClothStretch(g, rig),                            // 披風三角面最長邊被拉長的最大倍數
     bladeVsHandDeg: Math.max(...[['Attack1', CFG.Attack1.retarget], ...CFG.Attack2.meshy.map((sg) => ['Attack2', { ...sg, recover: sg.recover || CFG.Attack2.recover }])].map(([c, sg]) => bladeVsSourceHand(file, c, sg))),   // 刀刃與「原動作手的方向」的最大夾角（收招開始前）：應為 0
+    flat: {                                                              // 刀刃朝砍的方向：劍尖速度落在劍面（刀背拍）的比例，0＝刃口、1＝劍面
+      attack1: flatRatio(file, 'Attack1', 0.62, 0.95), attack2a: flatRatio(file, 'Attack2', 0.40, 0.70),
+      attack2b: flatRatio(file, 'Attack2', 1.00, 1.20), attack3: flatRatio(file, 'Attack2', 2.10, 2.55)
+    },
     hits: {                                                              // 能不能砍到正前方 1.5 處的敵人（各招的揮砍時段）
       attack1: hitFrames(file, 'Attack1', CFG.Attack1.retarget.at, 0.70, 0.90, 1.5),
       attack2a: hitFrames(file, 'Attack2', CFG.Attack2.startTime, 0.40, 0.70, 1.5),
@@ -1171,7 +1198,7 @@ if (!checkOnly) {
     importRetarget(g, rig, a1, seg);
     recoverToStart(g, rig, a1, { startTime: seg.startTime, recover: seg.recover });
     fitSwordGrip(g, rig, a1);
-    alignGripToHand(g, rig, a1);
+    alignGripToHand(g, rig, a1, CFG.Attack1.retarget.gripRoll);
   }
   if (CFG.Attack2.meshy) {
     for (const seg of CFG.Attack2.meshy) {
@@ -1184,7 +1211,7 @@ if (!checkOnly) {
       recoverToStart(g, rig, a2, { startTime: seg.at, recover: seg.recover || CFG.Attack2.recover });
     }
     fitSwordGrip(g, rig, a2);                                                  // 兩招共用同一個握姿（模型原本的握法）
-    alignGripToHand(g, rig, a2);
+    alignGripToHand(g, rig, a2, CFG.Attack2.gripRoll);
   } else {
     const lunge = fixLunge(rig, a2, CFG.Attack2);
     for (const [nm, ed] of Object.entries(regroup(lunge.rot))) writeQuats(g, a2, nm, ed);

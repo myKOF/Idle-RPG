@@ -79,6 +79,8 @@ test('3D 模型修正仍在：盔甲剛性、披風只小幅伸縮、手腕不�
   /* 劍身要是直的：Meshy 原網格的劍身中心線有錯位、越往劍尖越偏（迴歸斜率約 −0.041），拉直後接近 0 */
   /* 刀刃順著手的方向（原動作裡手沿手臂伸出，刀刃就是它的延伸）：拳頭＋劍整體校正，劍與拳頭的相對位置不變 */
   assert.ok(r.bladeVsHandDeg < 1, '刀刃沒有順著手的方向：夾角 ' + r.bladeVsHandDeg.toFixed(1) + '°');
+  /* 用刀刃砍、不是用刀背／劍面拍：劍尖移動方向落在劍面法線上的比例（0＝刃口、1＝劍面）；原本約 0.83～0.94 */
+  for (const k of ['attack1', 'attack2a', 'attack2b', 'attack3']) assert.ok(r.flat[k] <= 0.3, k + ' 砍的是刀背／劍面：比例 ' + r.flat[k].toFixed(2));
   /* 每一招的揮砍都要能砍到站在正前方 1.5 處的敵人（劍身穿過半徑 0.28、高 0.35～1.6 的圓柱）；Attack3 原動作邊揮邊往左轉 45°，要把落點轉正 */
   for (const k of ['attack1', 'attack2a', 'attack2b', 'attack3']) assert.ok(r.hits[k].frames >= 1, k + ' 砍不到正前方 1.5 處的敵人（劍身沒有進入敵人身體）');
   assert.ok(Math.abs(r.bladeLean) <= 0.01, '劍身是彎的：x 對 y 的斜率 ' + r.bladeLean.toFixed(3) + '（原模型 −0.041）');
