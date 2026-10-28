@@ -74,7 +74,9 @@ test('3D 模型修正仍在：盔甲剛性、披風只小幅伸縮、手腕不�
   assert.ok(r.maxWristTwistDeg <= 100, '手腕扭轉超過人體極限：' + r.maxWristTwistDeg.toFixed(0) + '°（未修的原模型 208°）');
   assert.ok(r.maxForearmTwistDeg <= 90.5, '前臂扭轉超過 90°：' + r.maxForearmTwistDeg.toFixed(0) + '°');
   assert.equal(r.strayTriangles, 0, '劍上還有錯綁到手／腿的三角面（揮動時會被拉成尖刺）：' + r.strayTriangles + ' 個（未修的原模型 8 個）');
-  assert.ok(r.attack1OffHandMaxDist <= 0.3, '副手離劍太遠：' + r.attack1OffHandMaxDist + '（未修的原動作約 0.78）');
+  /* Attack1 改用 Meshy 動作庫的單手動作（小跳躍→轉圈→斜砍），動作本身不改，只調劍相對右手的朝向：劍身要順著前臂方向，收招回到起始姿勢 */
+  assert.ok(r.attack1BladeMaxAngleDeg <= 35, 'Attack1 劍與前臂夾角過大：' + r.attack1BladeMaxAngleDeg + '°');
+  assert.ok(r.attack1LoopMaxDeg <= 3, 'Attack1 最後一幀沒有回到第一幀：全身骨骼最大差 ' + r.attack1LoopMaxDeg.toFixed(1) + '°');
   /* 動作首尾相接：Attack2 收招結束的姿勢要回到起始姿勢（使用者要求；不要停在斜劈結束的姿勢多放幾幀） */
   assert.ok(r.attack2LoopMaxDeg <= 3, 'Attack2 最後一幀沒有回到第一幀：全身骨骼最大差 ' + r.attack2LoopMaxDeg.toFixed(1) + '°');
   /* Attack2 改用 Meshy 動作庫的動作後，握劍是動作庫自己的自然握法（劈砍時劍與前臂有夾角），上限放寬到 60° */

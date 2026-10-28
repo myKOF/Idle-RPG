@@ -100,6 +100,8 @@
 - 選用：Attack2（斜劈）＝Double Combo Attack 的第三下 1.74～2.82 秒（由右上高舉、斜劈過敵人肩到腰下），加 fixLunge 跨步半步（髖前移 0.3、前腳整步、後腳跟上、兩腿 IK）與 30° 瞄準修正（動作庫落點偏主角右側）；Attack3（新的平砍）＝Reaping Swing 1.5～2.1 秒（右往左橫掃身前），髖部下沉 0.2 壓低重心，放在同一條 Attack2 時間軸 1.90 秒起（CLIP_FOR.attack3，不新增 GLB 動畫）。普攻改為 attack1／attack2／attack3 三招混著出；施法借 attack2 的舉劍到劈下（0.37～1.25，會被加速到 0.5 秒內）。
 - 取樣工具：fix-grips.mjs --extract-meshy <Meshy 動畫.glb> <動作名> <起> <迄> <fps> <out.json> 產生 src/data/meshy-*.json；匯入時髖部位移平移成原地。驗證用「前方 1.6 站姿假人」量劍刃穿過假人正面的位置：Attack2 約由 肩（y 1.37，右側）→ 腰 1.0 → 腰下 0.66；Attack3 在 y 1.24～1.39 由右掃到正中。舊的手調軌跡（path／sKeys）保留為 meshy 沒設值時的備援。
 - 限制：Attack2／3 握劍是動作庫的自然握法，劍與前臂夾角最大約 55°（測試放寬到 60°）；Attack3 掃到正中後劍會往上（動作庫原本接著的舉劍），只取到 2.5 秒前；Attack1 仍是舊的雙手劈。SIZE／SPAN 放大為 352／4.4。GLB 版號 grips9、hero3d.js?v=1.0.11。
+- Attack1 改為使用者上傳的 Meshy 網頁動作 Sword Judgment（右手單手劍：小跳躍→轉一圈→斜砍；使用者在網頁重新綁骨架，Mixamo 範本、40 根骨骼含手指與披風骨，任務花費由使用者帳號負擔）：不改動作本身（不做 IK、不限手腕、不修落點），只用「世界旋轉差」重新瞄準到遊戲 24 根骨骼（fix-grips.mjs 的 extractRetarget／importRetarget；脊椎名稱順序相反依層級對應；四肢補最小擺動修正讓方向與來源一致；Attack1 的最上節 Spine 只有常數軌跡，其動作併進 Spine01），取來源 0.30～1.25 秒（後面是長時間跪姿，不取）放在 Attack1 的 0.10 秒起，收招 0.90～1.40 回到起始姿勢（首尾相接）。
+- 劍：遊戲模型本來就是右手持劍、有獨立 Sword 骨骼（父骨＝右手），不需再換手或新綁。新增 fitSwordGrip：只調整 Attack1 裡 Sword 相對右手的旋轉（該動作的 Sword 軌跡是常數），把劍身軸對準「前臂→手」方向的平均（轉 68°，劍柄位置不動）；量測劍與前臂夾角最大 26.9°（手腕本身在動作中的彎折），首尾姿勢差 0.26°。CLIP_FOR.attack1＝0.10→1.40、hit 0.62；舊的雙手劈與副手 IK 保留為 retarget 沒設值時的備援，verifyGrips／測試改檢查新 Attack1 的劍夾角與首尾相接。
 ## SYNC-SHORTCUT-HOLD-20261027 — 修復捷徑中斷並保留Claude管線
 
 - Owner：Codex；Done（工具修復與必要驗證完成，實際同步結果見本輪報告）。使用者以1要求接續同步，並明確選擇將Claude本地Meshy提交8d1577c5保留、暫不併入develop。原develop bd0b982e已乾淨；這次卡在Antigravity的本機套用參數捷徑被skip-worktree隱藏，但遠端又更新該路徑，fast-forward拒絕覆寫。

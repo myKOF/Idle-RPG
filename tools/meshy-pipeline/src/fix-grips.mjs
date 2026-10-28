@@ -48,7 +48,11 @@ const CFG = {
     refTime: 0.92,            // 副手握得最好的那一幀（量測：離劍軸約 0.1、位置約在劍身 0.18）
     rampIn: [0.90, 1.00],     // 權重 0 → 1
     rampOut: null,            // 之後一直保持到動作結束
-    gripLocalOffset: null
+    gripLocalOffset: null,
+    /* 改用使用者在 Meshy 網頁重新綁骨架後套的動作庫動作 Sword Judgment（右手單手劍：小跳躍→轉一圈→斜砍），不改動作本身（不做 IK、不限手腕）：
+       取樣檔 data/meshy-sword-judgment.json（來源 0.3～1.25 秒＝小跳、轉圈、斜砍到落地，後面的長時間跪姿不取；重新瞄準到遊戲骨架）放在 Attack1 的 0.10 秒起，收招 recover 回到起始姿勢，
+       只調整劍相對右手的朝向（fitSwordGrip：劍身對準前臂延伸方向）。上面 refTime／rampIn 是舊的副手 IK，retarget 有值時不用。 */
+    retarget: { name: 'judgment', file: 'meshy-sword-judgment.json', at: 0.10, recover: [0.90, 1.40], startTime: 0.10 }
   },
   Attack2: {
     rampIn: [1.14, 1.20],     // 原動作 → 下劈軌跡的漸入；之後一路保持到動作結束（落在斜下方，與待機姿勢接近）
@@ -451,6 +455,109 @@ function importMeshySegment(g, rig, clip, seg) {
   console.log('匯入', seg.name, '：', data.clip, data.from + '～' + data.to, '→ 遊戲動作 t=' + seg.at + '～' + (seg.at + len).toFixed(2), '（' + keyIdx.length + ' 格）');
 }
 
+
+/* ---- Meshy 網頁綁骨架（Mixamo 範本）的動作 → 遊戲骨架：重新瞄準（retarget） ----
+   使用者在 Meshy 網頁上重新綁骨架（Mixamo 範本，骨骼名稱 mixamorig:*，帶手指與披風骨骼）再套動作庫，下載的 GLB 與遊戲骨架（24 根）名稱與層級都不同。
+   做法：只用共同的 24 根身體骨骼，以「世界空間旋轉差」搬動作——來源骨骼在動作中的世界旋轉 × 來源靜止姿勢世界旋轉的反矩陣＝世界旋轉差 D，
+   遊戲骨骼世界旋轉＝D × 遊戲靜止世界旋轉；四肢再補一個最小的擺動修正，讓「骨骼→子骨骼」的方向與來源完全一致（兩套靜止姿勢的手臂角度略有不同），扭轉保持來源的。
+   髖部位移：高度＝遊戲靜止高度＋來源高度變化×尺寸比；水平位移相對片段起點（原地）。
+   脊椎名稱順序相反：遊戲的 Spine 是最上面那節、Spine02 最下面（Mixamo 的 Spine 最下、Spine2 最上），所以依層級對應。 */
+const RT_BONES = [   // [遊戲骨骼, 來源骨骼]
+  ['Hips', 'Hips'], ['Spine02', 'Spine'], ['Spine01', 'Spine1'], ['Spine', 'Spine2'], ['neck', 'Neck'], ['Head', 'Head'],
+  ...['Left', 'Right'].flatMap((sd) => [['Shoulder', 'Shoulder'], ['Arm', 'Arm'], ['ForeArm', 'ForeArm'], ['Hand', 'Hand'], ['UpLeg', 'UpLeg'], ['Leg', 'Leg'], ['Foot', 'Foot'], ['ToeBase', 'ToeBase']].map(([a, b]) => [sd + a, sd + b]))
+];
+const RT_DIR = { LeftArm: 'LeftForeArm', RightArm: 'RightForeArm', LeftForeArm: 'LeftHand', RightForeArm: 'RightHand', LeftUpLeg: 'LeftLeg', RightUpLeg: 'RightLeg', LeftLeg: 'LeftFoot', RightLeg: 'RightFoot' };   // 補擺動修正的骨骼 → 它指向的子骨骼
+function restWorld(rig) { return worldMatrices(rig, rig.rest.map((r) => ({ t: r.t.clone(), q: r.q.clone(), s: r.s.clone() }))); }
+function extractRetarget(glbFile, clipName, from, to, fps, outFile) {
+  const g = readGlb(glbFile), rig = buildRig(g), clip = readClip(g, rig, clipName);
+  const sid = (n) => rig.byName['mixamorig:' + n], R = restWorld(rig);
+  const n = Math.round((to - from) * fps), rest = {}, rot = {}, dirs = {}, hips = [];
+  for (const [, sn] of RT_BONES) { rest[sn] = wRot(R(sid(sn))).toArray(); rot[sn] = []; }
+  const restHips = wPos(R(sid('Hips'))).toArray();
+  for (let i = 0; i <= n; i++) {
+    const W = worldMatrices(rig, poseAt(rig, clip, from + i / fps));
+    for (const [, sn] of RT_BONES) rot[sn].push(wRot(W(sid(sn))).toArray().map((v) => +v.toFixed(6)));
+    for (const [a, b] of Object.entries(RT_DIR)) (dirs[a] ||= []).push(wPos(W(sid(b))).sub(wPos(W(sid(a)))).normalize().toArray().map((v) => +v.toFixed(6)));
+    hips.push(wPos(W(sid('Hips'))).toArray().map((v) => +v.toFixed(6)));
+  }
+  fs.writeFileSync(outFile, JSON.stringify({ format: 2, source: path.basename(glbFile), clip: clipName, from, to, fps, rest, restHips, rot, dirs, hips }));
+  console.log('已取樣（重新瞄準用）', clipName, from + '～' + to, '→', outFile, '（' + (n + 1) + ' 格）');
+}
+function importRetarget(g, rig, clip, seg) {
+  const data = JSON.parse(fs.readFileSync(path.join(here, 'data', seg.file), 'utf8'));
+  const n = data.hips.length, len = data.to - data.from;
+  const interp = (arr, u, kind) => {
+    const f = Math.max(0, Math.min(n - 1, u * data.fps)), i = Math.floor(f), j = Math.min(n - 1, i + 1), k = f - i;
+    if (kind === 'q') return new Quaternion(...arr[i]).slerp(new Quaternion(...arr[j]), k);
+    return new Vector3(...arr[i]).lerp(new Vector3(...arr[j]), k);
+  };
+  const id = (nm) => rig.byName[nm], R0 = restWorld(rig);
+  const rest0 = {};   // 遊戲靜止世界旋轉、關節位置
+  for (const [gn] of RT_BONES) rest0[gn] = { q: wRot(R0(id(gn))), p: wPos(R0(id(gn))) };
+  const srcName = Object.fromEntries(RT_BONES);
+  const keyIdx = [];
+  clip.keyTimes.forEach((t, i) => { if (t >= seg.at - 1e-6 && t <= seg.at + len + 1e-6) keyIdx.push(i); });
+  const gameHipsH = rest0.Hips.p.y, srcHipsH = data.restHips[1], scale = gameHipsH / srcHipsH;
+  const out = {}, hipsEd = {};
+  const h0 = interp(data.hips, 0, 'v');
+  for (const i of keyIdx) {
+    const u = clip.keyTimes[i] - seg.at;
+    const pose = rig.rest.map((r) => ({ t: r.t.clone(), q: r.q.clone(), s: r.s.clone() }));
+    // 髖部位移（世界）→ 髖部父節點區域座標
+    const hp = interp(data.hips, u, 'v');
+    const target = new Vector3(rest0.Hips.p.x + (hp.x - h0.x) * scale, gameHipsH + (hp.y - data.restHips[1]) * scale, rest0.Hips.p.z + (hp.z - h0.z) * scale);
+    const parInv = restWorld(rig)(rig.parent[id('Hips')]).clone().invert();
+    pose[id('Hips')].t.copy(target.applyMatrix4(parInv));
+    const wantW = (gn) => interp(data.rot[srcName[gn]], u, 'q').multiply(new Quaternion(...data.rest[srcName[gn]]).invert()).multiply(rest0[gn].q);   // D × 遊戲靜止世界旋轉，D＝來源世界旋轉 × 來源靜止世界旋轉⁻¹
+    for (const [gn] of RT_BONES) {
+      if (!clip.tracks[gn + '.rotation'] || clip.tracks[gn + '.rotation'].times.length !== clip.keyTimes.length) {
+        // 這個動作的這根骨骼只有常數軌跡（寫不進逐格的值）：保持原值，它的動作併進下方的脊椎（Spine01）——胸口朝向仍然正確
+        const cq = pose[id(gn)].q = poseAt(rig, clip, 0)[id(gn)].q.clone();
+        if (gn === 'Spine') pose[id('Spine01')].q.copy(wRot(worldMatrices(rig, pose)(id('Spine02'))).invert().multiply(wantW('Spine').multiply(cq.clone().invert())).normalize());
+        continue;
+      }
+      let Wa = wantW(gn);
+      const W = worldMatrices(rig, pose);
+      if (RT_DIR[gn]) {
+        const child = RT_DIR[gn], dRest = rest0[child].p.clone().sub(rest0[gn].p).normalize();
+        const cand = dRest.clone().applyQuaternion(rest0[gn].q.clone().invert()).applyQuaternion(Wa);
+        const want = interp(data.dirs[gn], u, 'v').normalize();
+        Wa = new Quaternion().setFromUnitVectors(cand, want).multiply(Wa);
+      }
+      const parentW = rig.parent[id(gn)] !== undefined ? wRot(W(rig.parent[id(gn)])) : new Quaternion();
+      pose[id(gn)].q.copy(parentW.invert().multiply(Wa).normalize());
+    }
+    for (const [gn] of RT_BONES) if (clip.tracks[gn + '.rotation'] && clip.tracks[gn + '.rotation'].times.length === clip.keyTimes.length) (out[gn] ||= {})[i] = pose[id(gn)].q.clone();
+    hipsEd[i] = pose[id('Hips')].t.clone();
+  }
+  for (const [gn, ed] of Object.entries(out)) if (clip.tracks[gn + '.rotation']) writeQuats(g, clip, gn, ed);
+  writeVecs(g, clip, 'Hips', hipsEd);
+  console.log('匯入（重新瞄準）', seg.name, '：', data.clip, data.from + '～' + data.to, '→ 遊戲動作 t=' + seg.at + '～' + (seg.at + len).toFixed(2), '（' + keyIdx.length + ' 格）');
+}
+
+
+/* ---- 劍的握姿：劍身對準前臂延伸方向 ----
+   遊戲模型的手是一個固定的拳頭（沒有手指骨骼），劍是獨立的 Sword 骨骼（父骨＝持劍的右手）。動作庫的動作不知道這把劍怎麼握，
+   所以逐動作調整 Sword 相對右手的旋轉（動作的 Sword 旋轉軌跡只有 2 個關鍵幀＝常數）：把劍身軸（Sword 局部 +Y）轉到
+   「前臂→手」方向在手局部座標下的平均方向，劍柄位置（Sword 骨骼原點）不動、繞軸扭轉盡量維持原樣。動作本身一個關鍵幀都不改。 */
+function fitSwordGrip(g, rig, clip, seg) {
+  const id = (n) => rig.byName[n];
+  const tr = clip.tracks['Sword.rotation'];
+  const q0 = new Quaternion(tr.values[0], tr.values[1], tr.values[2], tr.values[3]);
+  const data = JSON.parse(fs.readFileSync(path.join(here, 'data', seg.file), 'utf8'));
+  const acc = new Vector3();
+  for (const t of clip.keyTimes) {
+    if (t < seg.at || t > seg.at + (data.to - data.from)) continue;
+    const W = worldMatrices(rig, poseAt(rig, clip, t));
+    const f = wPos(W(id('RightHand'))).sub(wPos(W(id('RightForeArm')))).normalize();
+    acc.add(f.applyQuaternion(wRot(W(id('RightHand'))).invert()));
+  }
+  const b1 = acc.normalize(), b0 = new Vector3(0, 1, 0).applyQuaternion(q0);
+  const q = new Quaternion().setFromUnitVectors(b0, b1).multiply(q0).normalize();
+  writeQuats(g, clip, 'Sword', { 0: q, 1: q });
+  console.log('劍握姿：Sword 相對右手轉了 ' + (b0.angleTo(b1) * 180 / Math.PI).toFixed(1) + '°（劍身對準前臂方向）');
+}
+
 /* ---- 收招：全身平順回到起始姿勢（讓動作首尾相接） ---- */
 function recoverToStart(g, rig, clip, cfg) {
   if (!cfg.recover) return;
@@ -763,6 +870,7 @@ function limitWristTwist(g, rig, clip, side) {
 function limitWrists(g, rig) {
   let total = 0;
   for (const name of g.json.animations.map((a) => a.name)) {
+    if (CFG.Attack1.retarget && name === 'Attack1') continue;                    // 使用者要求不改動作庫動作本身
     const clip = readClip(g, rig, name);
     let m = 0;
     for (const side of ['Right', 'Left']) m += limitWristTwist(g, rig, clip, side);
@@ -775,6 +883,7 @@ function wristLimits(g, rig) {
   // 量測：所有動作裡手腕扭轉與前臂扭轉的最大絕對值（連續展開後）
   let w = 0, f = 0;
   for (const name of g.json.animations.map((a) => a.name)) {
+    if (CFG.Attack1.retarget && name === 'Attack1') continue;
     const clip = readClip(g, rig, name);
     for (const side of ['Right', 'Left']) {
       const th = clip.tracks[side + 'Hand.rotation'], tf = clip.tracks[side + 'ForeArm.rotation'];
@@ -843,7 +952,16 @@ export function verifyGrips(file) {
     armorRigidRatio: armorSoftness(g, rig),                              // 盔甲頂點中完全剛性（100% 單一骨骼）的比例
     maxClothStretch: maxClothStretch(g, rig),                            // 披風三角面最長邊被拉長的最大倍數
     strayTriangles: strayTriangles(g, rig).stray.length,                // 錯綁的尖刺三角面數（應為 0）
-    attack1OffHandMaxDist: Math.max(...m1.map((r) => r[1])),          // 劈下去那段副手離劍軸最遠多少
+    attack1OffHandMaxDist: CFG.Attack1.retarget ? 0 : Math.max(...m1.map((r) => r[1])),   // 舊雙手劈：副手離劍軸最遠多少（改用單手動作後不適用）
+    attack1BladeMaxAngleDeg: (() => {                                    // 新 Attack1（單手）：劍身與前臂方向的夾角最大多少
+      const seg = CFG.Attack1.retarget, clip = readClip(g, rig, 'Attack1'), len = JSON.parse(fs.readFileSync(path.join(here, 'data', seg.file), 'utf8'));
+      return Math.max(...measure(rig, clip, 'Attack2').filter((r) => r[0] >= seg.at && r[0] <= seg.at + len.to - len.from).map((r) => r[1]));
+    })(),
+    attack1LoopMaxDeg: (() => {                                          // 新 Attack1 收招姿勢與起始姿勢全身骨骼旋轉最大差（度）
+      const seg = CFG.Attack1.retarget, clip = readClip(g, rig, 'Attack1');
+      const a = poseAt(rig, clip, seg.startTime), b = poseAt(rig, clip, seg.recover[1]);
+      return Math.max(...rig.nodes.map((_, i) => 2 * Math.acos(Math.min(1, Math.abs(a[i].q.dot(b[i].q)))) * 180 / Math.PI));
+    })(),
     attack2BladeMaxAngleDeg: Math.max(...m2.map((r) => r[1]))         // 劍與前臂方向的夾角最大多少
   };
 }
@@ -851,6 +969,7 @@ export function verifyGrips(file) {
 /* ---- 主程式 ---- */
 function main() {
 const args = process.argv.slice(2);
+if (args[0] === '--extract-retarget') { extractRetarget(args[1], args[2], Number(args[3]), Number(args[4]), Number(args[5]), args[6]); return; }
 if (args[0] === '--extract-meshy') { extractMeshyClip(args[1], args[2], Number(args[3]), Number(args[4]), Number(args[5]), args[6]); return; }
 const checkOnly = args.includes('--check');
 const analyze = args.includes('--analyze');
@@ -862,7 +981,7 @@ if (!inFile || (!outFile && !checkOnly)) {
 const g = readGlb(inFile), rig = buildRig(g);
 const a1 = readClip(g, rig, 'Attack1'), a2 = readClip(g, rig, 'Attack2');
 const before1 = measure(rig, a1, 'Attack1'), before2 = measure(rig, a2, 'Attack2');
-const e1 = fixAttack1(rig, a1, CFG.Attack1), e2 = CFG.Attack2.meshy ? {} : fixAttack2Chop(rig, a2, CFG.Attack2);
+const e1 = CFG.Attack1.retarget ? {} : fixAttack1(rig, a1, CFG.Attack1), e2 = CFG.Attack2.meshy ? {} : fixAttack2Chop(rig, a2, CFG.Attack2);
 if (process.env.FIXGRIPS_SEGS) CFG.Attack2.meshy = JSON.parse(process.env.FIXGRIPS_SEGS);   // 試做用：覆寫要匯入的片段
 const hipsRef = poseAt(rig, a2, CFG.Attack2.startTime)[rig.byName.Hips].t.clone();
 const regroup = (edits) => {
@@ -873,6 +992,12 @@ const regroup = (edits) => {
 if (!checkOnly) {
   for (const [nm, ed] of Object.entries(regroup(e1))) writeQuats(g, a1, nm, ed);
   for (const [nm, ed] of Object.entries(regroup(e2))) writeQuats(g, a2, nm, ed);
+  if (CFG.Attack1.retarget) {
+    const seg = CFG.Attack1.retarget;
+    importRetarget(g, rig, a1, seg);
+    recoverToStart(g, rig, a1, { startTime: seg.startTime, recover: seg.recover });
+    if (!process.env.FIXGRIPS_NOFIT) fitSwordGrip(g, rig, a1, seg);
+  }
   if (CFG.Attack2.meshy) {
     for (const seg of CFG.Attack2.meshy) {
       importMeshySegment(g, rig, a2, { ...seg, hipsRef });
