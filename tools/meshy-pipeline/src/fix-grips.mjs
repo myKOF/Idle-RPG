@@ -95,7 +95,7 @@ const CFG = {
   },
   /* 倒地：改用使用者在 Meshy 網頁重新綁骨架後套的 Dead 動作（取樣檔 data/meshy-dead.json，來源 0～2.9667 秒，30 fps）。原 Death 動作長 2.75 秒、
      67 個關鍵幀，寫不下 2.967 秒，所以來源時間均勻壓縮 speed 倍（≈1.079）塞進去。不限手腕、不做 IK，動作與骨骼不動；Sword 旋轉設成模型原本的握法（fitSwordGrip），倒下途中劍脫手落地（dropSword）。 */
-  Death: { retarget: { name: 'dead', file: 'meshy-dead.json', at: 0, speed: 2.9667 / 2.75 }, swing: { forwardDeg: 20, faceDown: -1, keys: [ { t: 1.6 }, { t: 1.7, pitch: -45 }, { t: 1.8, pitch: -10 }, { t: 1.9, lying: true } ] } }
+  Death: { retarget: { name: 'dead', file: 'meshy-dead.json', at: 0, speed: 2.9667 / 2.75 }, swing: { forwardDeg: 20, lyingRollDeg: -90, keys: [ { t: 1.6 }, { t: 1.7, pitch: -45 }, { t: 1.8, pitch: -10 }, { t: 1.9, lying: true } ] } }
 };
 
 /* ---- GLB ---- */
@@ -553,10 +553,13 @@ function swingSword(g, rig, clip, cfg) {
   const Wend = worldMatrices(rig, poseAt(rig, clip, tr.times[n - 1]));
   const fwd = wPos(Wend(id('Head'))).sub(wPos(Wend(id('Hips')))); fwd.y = 0; fwd.normalize();
   const left = new Vector3(0, 1, 0).cross(fwd), dir = (pitchDeg) => fwd.clone().multiplyScalar(Math.cos(pitchDeg * Math.PI / 180)).addScaledVector(new Vector3(0, 1, 0), Math.sin(pitchDeg * Math.PI / 180)).normalize();   // pitch：水平線以上為正、以下為負
-  const th = cfg.forwardDeg * Math.PI / 180, ey = left.clone().multiplyScalar(Math.cos(th)).addScaledVector(fwd, Math.sin(th)).normalize(), ez = new Vector3(0, cfg.faceDown, 0), ex = new Vector3().crossVectors(ey, ez).normalize();
-  const lying = new Quaternion().setFromRotationMatrix(new Matrix4().makeBasis(ex, ey, ez));
+  const th = cfg.forwardDeg * Math.PI / 180, ey = left.clone().multiplyScalar(Math.cos(th)).addScaledVector(fwd, Math.sin(th)).normalize();
   const natural = (t) => { const W = worldMatrices(rig, poseAt(rig, clip, t)); return wRot(W(id('RightHand'))).multiply(q0); };
   const toward = (t, d) => { const N = natural(t), s = new Vector3(0, 1, 0).applyQuaternion(N); return new Quaternion().setFromUnitVectors(s, d).multiply(N); };   // N 做最小旋轉讓劍身指向 d
+  const tEnd = tr.times[n - 1];
+  // 躺平：手原本的朝向（最後一格）做最小旋轉讓劍身指向 B，再繞劍身軸轉 lyingRollDeg。握拳的拳頭與劍柄固定，「劍身水平朝 B」時掌心朝下與劍面朝地無法同時成立
+  // （掌心朝下時劍面是立的）；roll 取折衷 −90°：手背朝上 0.75（掌心朝下、手不翻 180°），劍面法線 y=0.60（劍躺著、傾約 37°）。
+  const lying = new Quaternion().setFromAxisAngle(ey, cfg.lyingRollDeg * Math.PI / 180).multiply(toward(tEnd, ey));
   const keys = cfg.keys.map((k) => ({ t: k.t, q: k.lying ? lying : (k.pitch === undefined ? natural(k.t) : toward(k.t, dir(k.pitch))) }));
   const ed = {};
   for (let i = 0; i < n; i++) {
@@ -1217,11 +1220,11 @@ export function verifyGrips(file) {
     })(),
     strayTriangles: strayTriangles(g, rig).stray.length,                // 錯綁的尖刺三角面數（應為 0）
     attack1OffHandMaxDist: CFG.Attack1.retarget ? 0 : Math.max(...m1.map((r) => r[1])),   // 舊雙手劈：副手離劍軸最遠多少（改用單手動作後不適用）
-    deathSwordEnd: (() => {      // 倒地最後一格：劍面朝地（flat 法線的 y，應 ≤ −0.9）、劍身水平、朝身體左側（劍身 · 左方向）
+    deathSwordEnd: (() => {      // 倒地最後一格：劍身水平朝身體左側、劍面大致朝地（flat 法線 y）、掌心朝下（手骨骼 +X 的 y 為正＝手背朝上；手沒有被翻 180°）
       const g = readGlb(file), rig = buildRig(g), clip = readClip(g, rig, 'Death'), W = worldMatrices(rig, poseAt(rig, clip, clip.duration)), q = wRot(W(rig.byName.Sword));
       const fwd = wPos(W(rig.byName.Head)).sub(wPos(W(rig.byName.Hips))); fwd.y = 0; fwd.normalize();
       const blade = new Vector3(0, 1, 0).applyQuaternion(q);
-      return { flatNormalY: new Vector3(0, 0, 1).applyQuaternion(q).y, bladeY: blade.y, bladeLeft: blade.dot(new Vector3(0, 1, 0).cross(fwd)) };
+      return { flatNormalY: new Vector3(0, 0, 1).applyQuaternion(q).y, bladeY: blade.y, bladeLeft: blade.dot(new Vector3(0, 1, 0).cross(fwd)), palmY: new Vector3(1, 0, 0).applyQuaternion(wRot(W(rig.byName.RightHand))).y };
     })(),
     retargetMaxDeg: Math.max(...[['Attack1', CFG.Attack1.retarget], ['Death', CFG.Death.retarget], ...CFG.Attack2.meshy.map((sg) => ['Attack2', { ...sg, recover: sg.recover || CFG.Attack2.recover }])].flatMap(([c, sg]) => Object.values(retargetError(file, c, sg)))),   // 動作庫動作（收招開始前）四肢方向與來源的最大差：應為 0，代表沒有被改動
     swordGripMaxDeg: (() => {                                            // Attack1／Attack2 的 Sword 旋轉與模型原本握法（靜止局部旋轉）的最大差：應為 0
