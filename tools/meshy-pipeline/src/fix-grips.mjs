@@ -664,6 +664,30 @@ function removeStrayTriangles(g, rig) {
   return stray.length;
 }
 
+
+/* ---- 護手右翼端錯綁在右手上 ----
+   劍的護手（橫檔）右邊翼端的 11 個頂點（含貼圖接縫的重複頂點）在 Meshy 的權重裡 100% 綁在右手而不是劍：
+   左翼跟著劍、右翼跟著手，劍相對手一轉（Attack1 把劍身對準前臂轉了 68°）護手就一邊歪掉。
+   以劍骨骼的局部座標找出來（x 10.5～19、y 7～16、z 0～5.5，劍身軸為 y），全部改綁 100% 劍骨骼。 */
+const GUARD_WING_EXPECT = 11;
+function fixGuardWing(g, rig) {
+  const sd = readSkinData(g), sj = sd.joints.indexOf('Sword'), rh = sd.joints.indexOf('RightHand');
+  const inv = new Matrix4().fromArray(sd.invBind, sj * 16), v = new Vector3();
+  const hit = [];
+  for (let i = 0; i < sd.n; i++) {
+    if (!(sd.jnt[i * 4] === rh && sd.wgt[i * 4] > 0.999)) continue;
+    v.set(sd.pos[i * 3], sd.pos[i * 3 + 1], sd.pos[i * 3 + 2]).applyMatrix4(inv);
+    if (v.x >= 10.5 && v.x <= 19 && v.y >= 7 && v.y <= 16 && v.z >= 0 && v.z <= 5.5) hit.push(i);
+  }
+  if (hit.length === 0) { console.log('護手：右翼端沒有錯綁頂點（已修過）'); return 0; }
+  if (hit.length !== GUARD_WING_EXPECT) throw new Error('護手右翼端找到 ' + hit.length + ' 個錯綁頂點，預期 ' + GUARD_WING_EXPECT + '：不是這個模型，中止');
+  for (const i of hit) {
+    for (let k = 0; k < 4; k++) { g.buf[sd.ja.offset + i * 4 + k] = k === 0 ? sj : 0; g.buf.writeFloatLE(k === 0 ? 1 : 0, sd.wa.offset + (i * 4 + k) * 4); }
+  }
+  console.log('護手：右翼端 ' + hit.length + ' 個頂點改綁劍骨骼');
+  return hit.length;
+}
+
 /* ---- 蒙皮與拉伸量測 ---- */
 function readSkinData(g) {
   const prim = g.json.meshes[0].primitives[0];
@@ -966,6 +990,12 @@ export function verifyGrips(file) {
     maxForearmTwistDeg: wristLimits(g, rig).forearm,                     // 前臂（相對上臂）扭轉最大值（度）
     armorRigidRatio: armorSoftness(g, rig),                              // 盔甲頂點中完全剛性（100% 單一骨骼）的比例
     maxClothStretch: maxClothStretch(g, rig),                            // 披風三角面最長邊被拉長的最大倍數
+    guardWingStray: (() => {                                             // 護手右翼端仍綁在右手的頂點數（應為 0）
+      const sd = readSkinData(g), sj = sd.joints.indexOf('Sword'), rh = sd.joints.indexOf('RightHand'), inv = new Matrix4().fromArray(sd.invBind, sj * 16), v = new Vector3();
+      let n = 0;
+      for (let i = 0; i < sd.n; i++) { if (!(sd.jnt[i * 4] === rh && sd.wgt[i * 4] > 0.999)) continue; v.set(sd.pos[i * 3], sd.pos[i * 3 + 1], sd.pos[i * 3 + 2]).applyMatrix4(inv); if (v.x >= 10.5 && v.x <= 19 && v.y >= 7 && v.y <= 16 && v.z >= 0 && v.z <= 5.5) n++; }
+      return n;
+    })(),
     strayTriangles: strayTriangles(g, rig).stray.length,                // 錯綁的尖刺三角面數（應為 0）
     attack1OffHandMaxDist: CFG.Attack1.retarget ? 0 : Math.max(...m1.map((r) => r[1])),   // 舊雙手劈：副手離劍軸最遠多少（改用單手動作後不適用）
     attack1MaxStepDeg: maxKeyStep(g, rig, 'Attack1', CFG.Attack1.retarget.at, CFG.Attack1.retarget.recover[1]),   // 相鄰兩格之間任一骨骼轉動的最大角度（抓瞬移）
@@ -1035,6 +1065,7 @@ if (!checkOnly) {
   limitWrists(g, rig);
   removeStrayTriangles(g, rig);
   hardenArmor(g, rig);
+  fixGuardWing(g, rig);                                                          // 要在 hardenArmor 之後：其中 3 個頂點原本是手＋前臂混合權重，被 hardenArmor 改成 100% 右手
   removeClothSlivers(g, rig, analyze);
   fs.writeFileSync(outFile, g.buf);
 }

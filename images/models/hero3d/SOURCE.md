@@ -57,3 +57,4 @@ node tools/meshy-pipeline/src/fix-grips.mjs <新匯出的.glb> images/models/her
 - 取樣檔在 `tools/meshy-pipeline/src/data/meshy-*.json`，匯入、原地化、瞄準修正、跨步／下沉、收招回起始姿勢都在 `fix-grips.mjs`（`CFG.Attack2.meshy`）。
 - 其餘候選（Charged Slash、Sword Judgment、Weapon Combo／1／2、Right-hand Sword Slash、Counterstrike、Dodge and Counter、Triple Combo Attack、Double Blade Spin、Charged Upward Slash）花了 39 點試過，未採用；任務編號見 `docs/AI_TASKS.md`。
 - Attack1（2026-10-28）：使用者上傳的 Meshy 網頁動作 Sword Judgment 0.30～1.25 秒（右手單手劍，小跳躍→轉圈→斜砍），以世界旋轉差重新瞄準到本模型骨架，動作不改；只調 Sword 相對右手的旋轉。取樣檔 `tools/meshy-pipeline/src/data/meshy-sword-judgment.json`，匯入與握姿見 `fix-grips.mjs`（`CFG.Attack1.retarget`）。
+- 護手（2026-10-28）：護手右翼端 11 個頂點在 Meshy 權重裡綁在右手而非劍，會讓護手一邊跟著手歪；`fix-grips.mjs` 的 `fixGuardWing` 改綁劍骨骼。

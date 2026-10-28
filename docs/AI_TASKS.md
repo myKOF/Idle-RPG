@@ -103,6 +103,7 @@
 - Attack1 改為使用者上傳的 Meshy 網頁動作 Sword Judgment（右手單手劍：小跳躍→轉一圈→斜砍；使用者在網頁重新綁骨架，Mixamo 範本、40 根骨骼含手指與披風骨，任務花費由使用者帳號負擔）：不改動作本身（不做 IK、不限手腕、不修落點），只用「世界旋轉差」重新瞄準到遊戲 24 根骨骼（fix-grips.mjs 的 extractRetarget／importRetarget；脊椎名稱順序相反依層級對應；四肢補最小擺動修正讓方向與來源一致；Attack1 的最上節 Spine 只有常數軌跡，其動作併進 Spine01），取來源 0.30～1.25 秒（後面是長時間跪姿，不取）放在 Attack1 的 0.10 秒起，收招 0.90～1.40 回到起始姿勢（首尾相接）。
 - 劍：遊戲模型本來就是右手持劍、有獨立 Sword 骨骼（父骨＝右手），不需再換手或新綁。新增 fitSwordGrip：只調整 Attack1 裡 Sword 相對右手的旋轉（該動作的 Sword 軌跡是常數），把劍身軸對準「前臂→手」方向的平均（轉 68°，劍柄位置不動）；量測劍與前臂夾角最大 26.9°（手腕本身在動作中的彎折），首尾姿勢差 0.26°。CLIP_FOR.attack1＝0.10→1.40、hit 0.62；舊的雙手劈與副手 IK 保留為 retarget 沒設值時的備援，verifyGrips／測試改檢查新 Attack1 的劍夾角與首尾相接。
 - 修 Attack1 斜砍結束處瞬移（使用者回報）：不是動作被改，是匯入只覆寫片段內的格，片段之後留著舊動作的資料，收招混合時在片段結束處跳格（相鄰兩格最大 82°）；改成片段之後停在最後一格再收招（Attack1 最大單格 40°，來自轉圈本身）。同時發現 Attack2／3 的 Sword 旋轉軌跡還是舊動作的逐格資料，劍在手裡瞬間翻 164°——改成 Attack2／3 也固定劍相對右手的握姿並對準前臂（劍與前臂夾角最大 15°）。新增 maxKeyStep 量測與測試（單格 ≤60°）。GLB 版號 grips11、hero3d.js?v=1.0.13。
+- 修劍護手一邊歪掉（使用者回報）：不是蒙皮拉扯，是護手右翼端 11 個頂點（含貼圖接縫重複頂點）在 Meshy 權重裡 100% 綁在右手而不是劍；左翼跟劍、右翼跟手，Attack1 把劍相對手轉 68° 後就歪了。fix-grips.mjs 新增 fixGuardWing（在 hardenArmor 之後，以劍局部座標找出 11 個頂點改綁 100% 劍骨骼），verifyGrips／測試新增 guardWingStray＝0。GLB 版號 grips12、hero3d.js?v=1.0.14。
 ## SYNC-SHORTCUT-HOLD-20261027 — 修復捷徑中斷並保留Claude管線
 
 - Owner：Codex；Done（工具修復與必要驗證完成，實際同步結果見本輪報告）。使用者以1要求接續同步，並明確選擇將Claude本地Meshy提交8d1577c5保留、暫不併入develop。原develop bd0b982e已乾淨；這次卡在Antigravity的本機套用參數捷徑被skip-worktree隱藏，但遠端又更新該路徑，fast-forward拒絕覆寫。
