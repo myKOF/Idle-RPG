@@ -113,20 +113,13 @@ test('舊普通與融合寶石可正常顯示／取下，取下後不能重新�
   assert.match(c.socketFusedGem(eq, 'old', 1), /已關閉/);
 });
 
-test('神鑄擋放入及舊法陣結算，素材與魔塵可全部取回', () => {
-  const c = game();
-  assert.match(c.forgePlaceGem('ruby', 5), /已關閉/);
-  const f = c.forgeState();
-  f.slots = Array.from({ length: 6 }, () => ({ kind: 'gem', type: 'ruby', level: 5 }));
-  const gold = c.G.player.gold, dust = c.G.player.dust;
-  assert.match(c.doForge(), /已關閉/);
-  f.crafting = { startedAt: 1, durationMs: 1, cost: 1, dustCount: 1, rate: 100 };
-  c.forgeTick(10);
-  assert.equal(f.crafting, null);
-  assert.equal(c.G.player.gold, gold);
-  assert.equal(c.G.player.dust, dust);
-  assert.equal(c.forgeUnloadAll(), 6);
-  assert.equal(c.gemCount('ruby', 5), 14);
+test('新版拒收關閉寶石；舊法陣載入取消並完整退回',()=>{
+ const c=game();c.G.player.reincarnations=4;c.forgeSetOperation('gem');
+ assert.ok(c.forgePlaceGem('ruby',10));
+ const gold=c.G.player.gold,dust=c.G.player.dust;
+ c.G.forge={slots:Array.from({length:6},()=>({kind:'gem',type:'ruby',level:5})),crafting:{startedAt:1,durationMs:1,rate:100}};
+ c.forgeState();assert.equal(c.G.forge.crafting,undefined);assert.equal(c.forgeItemCount(),0);
+ assert.equal(c.G.player.gold,gold);assert.equal(c.G.player.dust,dust);assert.equal(c.gemCount('ruby',5),14);
 });
 
 test('商店僅生成開放寶石，舊商品無法單買且全買略過', () => {

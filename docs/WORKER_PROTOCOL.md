@@ -1,4 +1,10 @@
-# Worker 協議 v62
+# Worker 協議 v63
+
+v63（2026-10-28 神鑄改造）：神鑄指令10→7，總數94→91。保留forge.placeItem、removeItem、placeGem、unloadAll、start；新增forge.setOperation（mode=equip／ancient／gem／imprint）與forge.setStones（count=非負整數）。刪除cancel／toggleDust／autoFillDust／setAuto／setAutoFill，舊指令不執行。start由Worker完整驗證轉數、配方、神性之石與金幣後一次結算，沒有計時與自動重複。
+
+forge子狀態／存檔為version=2、operation、六格slots、stones、result、log、unlocked及unlockNotified；石頭只預選，仍在dust庫存。面板另帶rate／slotsNeeded／modes；params.craft只增加裝備候選投影。舊版待製作於讀檔補預設值前記錄來源版本，再取消並完整退料一次。神鑄神話追加rarity=11，舊0..10不重編號，不自然掉落。
+
+裝備可帶單一imprint（kind及可選index／affix／passive／refund），原詞條及孔不被刻印直接改寫，重刻撤回舊效果。神級寶石沿既有fusedGems及socket.fused容器，帶divine=true、level=10、兩筆stats（type及divine=true），數值依10級配置及game_parameters保留率回算，不可再次融合／拆解。主端只取快照，與Worker共用DIVINE_FORGE及純函式。
 
 v62補修（2026-10-27 GM降級／重置返點）：沿用相同points及legacyPointCredit欄位，額度保留擴及成功的普通階／終極降級與重置。退點前僅補足已存在的超額投資差額，等級實際減少多少就釋出多少點；重複空重置、拒絕操作及面板查詢不增加額度。正常熟練度預算最高480，GM投資的獨立保留額度可超過此值；沒有新增存檔或協議欄位。重選亦共用同一退點前置函式。此前已由舊版清除的投資沒有歷史退款紀錄，不能由重置後等級精確反推，不猜測補點。
 
@@ -194,7 +200,7 @@ v1 用「參數名叫 `itemId` 就自動解析」的慣例會出事——`forgeP
 
 型別檢查擋不住列舉值與範圍，所以指令可宣告 `limit`：
 
-- `enum`：`settings.set.key` 只允許 `compareEq`、`forge.setAuto.key` 只允許 `autoDust`/`autoForge`。
+- `enum`：`settings.set.key` 只允許 `compareEq`；`forge.setOperation.mode` 只允許四種神鑄功能。
   任意 key/value 等於開一個能寫進任何狀態的後門。
 - `min` / `max`：例如 `tower.start.floor >= 1`。
 
@@ -214,7 +220,7 @@ v1 用「參數名叫 `itemId` 就自動解析」的慣例會出事——`forgeP
 
 ### 4.4 指令清單
 
-完整清單見 `js/worker/protocol.js` 的 `COMMANDS`，現行共 **94 條**
+完整清單見 `js/worker/protocol.js` 的 `COMMANDS`，現行共 **91 條**
 （v1 凍結時 67 條，v3 補 14 條、v4 再補 4 條、v8 補 1 條、v16 補 1 條、v18 補 1 條、v19 補 2 條、
 v21 補 2 條、v23 補 1 條）。
 

@@ -1,5 +1,21 @@
 # AI_TASKS.md
 
+## DIVINE-FORGE-V2-20261028 — 四功能神鑄改造
+
+- Owner：Codex；Done，單一開發者。使用者授權以線上新版及七格水晶圖取代原神鑄，並確認神話配方產出神鑄神話、無效刻印按第七項返石、四功能皆收金幣且所有參數放game_parameters。來源：Google Sheet gid=2018764646，2026-10-28讀取。
+- 範圍：forge／裝備與寶石計算、必要存檔遷移、UI／CSS／背景、Worker協議及快取、原生Excel新增配置／String與匯出／參數接線、相關回歸、LV及本紀錄。禁止擴修無關玩法、覆寫他人修改、合併推送develop／main。
+- 前置：規範與現有流程已讀；正式目標衝突預檢皆無來源。新增神鑄神話保留舊稀有度ID，避免舊存檔重編號。舊法陣待製作一律取消並退還素材，神性之石沿用dust庫存；移除舊自動／時間／金幣／失敗獎勵及舊專屬特效。
+- 驗收：四功能轉數與素材原子驗證、成功／失敗與石頭上限、七種刻印與重刻撤回、實際屬性與藍色tips、神級寶石鑲拆／存讀檔、真Worker指令、七格UI與窄屏、Excel正常重開／來源同步、參數錨點／回歸／Build／diff，完成後獨立Commit及必要素材雙倉庫提交。後續使用者驗收／正常整合。
+- 完成：forge整套四功能即時原子結算；39項可調數值及神鑄神話品質列加入game_parameters，主表舊配方14列移除。神鑄神話追加ID11，不重編舊0～10；baseRarity與rarityRank使排序及符文孔檢查按品質階序，維持單調／上限保護。Worker v63、神鑄指令10→7、總數94→91；讀檔在補預設值前辨識舊版，取消待製作並完整退料一次。刻印獨立欄位與計算／藍色tips共用數值；新增傳奇沿用先裝優先去重，神級寶石沿既有fused容器動態回算，禁止再次融合／拆解。
+- 金幣初版：裝備神鑄神話／創世／混沌為2000萬／1億／5億；精鑄1000萬／5000萬／2.5億；刻印3000萬／1.5億／7.5億；神級寶石5000萬。全部在上述39列，可用原BAT調整；配方數量／失敗損失／權重加入防止越界或無效配置的套用檢查。舊system_unlock神鑄轉數不再覆寫新版門檻；轉生預告與LV總表同步四功能。
+- Excel：原生工具新增52個神鑄字串；使用者明確授權的24格「魔塵→神性之石」經param-patches受保護合併，原檔／候選／收據保留archive。原生正常重開驗證，新增參數560個數值格以Value2寫成數字；Excel讀回比對原String2140列無遺失、僅24格舊值變更，參數原338列除14舊配方移除外其餘資料／公式不變，原儲存格格式差異0。String共2192條ba384f1e，CSV／JS同步、寫死0條；config_tables全部30個字面值語意變更0。
+- 瀏覽器：隨機localhost＋全新Edge context＋正式DOM／CSS／真Worker／隔離測試存檔，實點六件神話→神鑄神話、精鑄、雙類10級寶石→神級寶石、刻印與石頭至100%，全部完成。驗六外圈＋中央共七格、單件功能置灰五格、六角邊長誤差<1%、480視窗文件寬480，Console error／warning及pageerror均0；頂列及頁面不再顯示魔塵。修正舊aspect-ratio使水晶遮擋按鈕及停用元素transform偏移。截圖與JSON保存在本聊天visualizations，未接觸玩家真存檔，瀏覽器／服務均關閉。
+- 測試：核心命令node --test --test-reporter=spec執行divine-forge、forge既有專項、sim-forge-craft、worker-protocol、legendary-global、string-table、confirm-dialog、effect-value-storage及vfx-editor-cache-versions共97/97；符文／裝備UI等追查279項，274過／5個修改前既有失敗，新增失敗0。595錨點初版移除system_unlock兩個舊門檻錨點後為593，一致593／將變更0／問題0；擾動543個數值後593錨點均各命中一次。npm.cmd run build596檔通過；完整diff檢查通過。舊神鑄的計時／自動／失敗送材料等斷言依需求換為新版回歸，沒有為通過而保留舊功能。
+- 全庫：完整node --test --test-reporter=tap "tests/*.test.cjs"執行15分52秒，4993項＝4273過／718失敗／2跳過（開發中首輪）。修改前HEAD唯讀覆映153個失敗來源檔、按原失敗名稱逐項重跑，576項在原版同樣失敗；其他141項舊規格或當輪回歸問題與1個新增測試失敗已逐一處理，並以最終來源追查279項確認無新增失敗。保留其餘原有斷言；未宣稱最終全庫全綠。五個相關既有失敗為封魔塔符文資訊舊門檻、stats舊統計鉤子及三個雙手鑲孔舊值；原始TAP／baseline-summary／current-audit-summary留本聊天visualizations。
+- 修改檔案：data／formula／item／forge／player／save／ui、bridge／Worker兩檔及index／新增divine-forge.css；String與game_parameters Excel／CSV及strings_data；apply_params／config_tables、模擬策略／直譯器／指令覆蓋登記，神鑄／品質／符文／裝備UI／統計名稱／傳奇存檔等相關回歸，新增divine-forge測試，LV／WORKER_PROTOCOL／DIVINE_FORGE及本段。唯讀未改：共通規範／AGENTS／Workflow／prompts、combat／tower／skills2／runeword執行層、其餘配置及3D資源；無其他AI重疊來源。
+- 素材：使用者提供的ChatGPT水晶PNG按原檔匯入、未改像素，遊戲及素材庫SHA256皆56e197724f5758e7289bf23d5c6d34d5edfe2c3cce3a6fad970f6e52458a29df；素材庫source.json記錄來源與明確使用授權，先提交98100d5d7c5c993938e635feef082c7daa639105。無新增VFX Preset／第三方素材；共享素材庫原thunder未追蹤內容保留、不納本次提交。遊戲Commit為本段所在「[Codex] feat: 改造四功能神鑄與神性之石介面」，實際編號見回覆。
+- 交付：自我Review及必要驗證完成，沒有本次未完成實作，可供Review／合併；未合併或推送develop／main。下一步正常整合後重載新版主端及Worker驗收；新版刻印／神級寶石須由新版讀寫，避免舊分頁覆寫。全庫既有失敗與未做玩家真存檔長戰為已知限制。
+
 ## SYNC-HOLD-SCOPE-20261028 — 修正保留範圍並納入977e425
 
 - Owner：Codex；Done。使用者指出同步成功但漏掉977e425，明確要求不論來源分支，將最新成果完整整合至develop並讓三個AI工作區取得整合結果。本次授權解除ai/claude舊hold；codex/background-catchup明確隔離維持，不發布main。

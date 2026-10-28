@@ -71,7 +71,7 @@ test('legendary effect parameters ignore legacy two-handed multipliers', () => {
   assert.equal(c.legendaryFx('mountainSunderer').controlledTargetDamagePct, 300);
 });
 
-test('computeStats keeps legendary effects fixed and godforged values scaled', () => {
+test('computeStats keeps legendary effects fixed and ignores retired godforged effects', () => {
   const c = loadContext(['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/item.js', 'js/player.js']);
   c.G = c.newGameState();
   const baseline = c.computeStats();
@@ -83,8 +83,7 @@ test('computeStats keeps legendary effects fixed and godforged values scaled', (
 
   const st = c.computeStats();
   assert.equal(st.legendaryEffectMults.mountainSunderer, undefined);
-  const godMight = c.godPassiveValue({ key: 'godMight', roll: 0 }, c.G.equipment.weapon);
-  assert.equal(st.atk, Math.round(baseline.atk * (1 + godMight / 100)));
+  assert.equal(st.atk, baseline.atk);
 });
 
 /* ---- 雙手武器數量加成（2026-08-05 調整）----

@@ -139,7 +139,7 @@ test('stats／passives／legend／fx／procs 只用已實作的詞彙', () => {
 
 test('RUNE_SETTINGS／RARITIES.runeSlots：孔數表對得上稀有度、單調不減、不超過上限；合成／掉落常數合理', () => {
   const s = c.RUNE_SETTINGS;
-  const slots = c.RARITIES.map((r) => r.runeSlots);
+  const slots = Array.from(c.RARITIES, (r,i)=>({slots:r.runeSlots,rank:c.rarityRank(i)})).sort((a,b)=>a.rank-b.rank).map(r=>r.slots);
   assert.ok(!('slotsByRarity' in s), '各稀有度的孔數只有一個來源：game_parameters 的參數g → RARITIES.runeSlots');
   assert.equal(s.maxSlots, 5, '設計上限：配方最長 5 顆');
   slots.forEach((n, i) => {

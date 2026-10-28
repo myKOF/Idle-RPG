@@ -287,7 +287,7 @@ function arrayContent(file, varName, contentStr, label) {
 /* ===========================================================================
    映射定義
    =========================================================================== */
-const RAR_KEYS = { '普通': 'common', '精良': 'uncommon', '稀有': 'rare', '獨特': 'unique', '史詩': 'epic', '傳說': 'legendary', '神話': 'mythic', '創世': 'genesis', '神鑄創世': 'godforged', '混沌': 'chaos', '神鑄混沌': 'chaosGodforged' };
+const RAR_KEYS = { '普通': 'common', '精良': 'uncommon', '稀有': 'rare', '獨特': 'unique', '史詩': 'epic', '傳說': 'legendary', '神話': 'mythic', '創世': 'genesis', '神鑄創世': 'godforged', '混沌': 'chaos', '神鑄混沌': 'chaosGodforged', '神鑄神話': 'mythicGodforged' };
 // 稀有度表：mult(0) affix下限(1) affix上限(2) sockets(3) enchants(4) salv(5) runeSlots(6)
 Object.keys(RAR_KEYS).forEach(nm => {
   const anchor = "key: '" + RAR_KEYS[nm] + "'";
@@ -367,7 +367,7 @@ scalar('data', 'REINCARNATION_MAX', '1-成長經驗', '可轉生等級 / 最高�
     scalarValue('data', levelVar, u.level, levelVar + '（system_unlock）');
     scalarValue('data', reincVar, u.reinc, reincVar + '（system_unlock）');
   };
-  bind('神鑄系統', 'FORGE_UNLOCK_LEVEL', 'FORGE_UNLOCK_REINCARNATION');
+  // 神鑄四功能門檻由 game_parameters「6-新版神鑄」管理。
   bind('天堂威能', 'TALENT_UNLOCK_LEVEL', 'TALENT_UNLOCK_REINCARNATION');
   bind('寶石融合', 'GEM_FUSION_UNLOCK_LEVEL', 'GEM_FUSION_UNLOCK_REINCARNATIONS');
   bind('寶石共鳴', 'GEM_RESONANCE_UNLOCK_LEVEL', 'GEM_RESONANCE_UNLOCK_REINCARNATION');
@@ -379,29 +379,65 @@ scalar('data', 'REINCARNATION_MAX', '1-成長經驗', '可轉生等級 / 最高�
     });
   });
 }
-scalar('data', 'FORGE_DUST_RATE', '6-神鑄', '裝備神鑄成功率', 0);
-scalar('data', 'FORGE_CHAOS_DUST_RATE', '6-神鑄', '裝備神鑄混沌魔塵加成', 0);
-scalar('data', 'FORGE_GEM_DUST_RATE', '6-神鑄', '寶石神鑄成功率', 0);
-scalar('data', 'FORGE_FAIL_CONSUME', '6-神鑄', '神鑄失敗', 0);
-scalar('data', 'FORGE_SLOTS', '6-神鑄', '神鑄槽位 / 魔塵上限', 0);
-// FORGE_BASE_RATE / FORGE_GOLD_COST / FORGE_EQUIP_DURATION（物件）
-objField('data', 'FORGE_BASE_RATE = {', '5', '6-神鑄', '裝備神鑄基礎成功率', 0, 'FORGE_BASE_RATE');
-objField('data', 'FORGE_BASE_RATE = {', '6', '6-神鑄', '裝備神鑄基礎成功率', 1, 'FORGE_BASE_RATE');
-objField('data', 'FORGE_BASE_RATE = {', '7', '6-神鑄', '裝備神鑄基礎成功率', 2, 'FORGE_BASE_RATE');
-scalar('data', 'FORGE_CHAOS_BASE_RATE', '6-神鑄', '裝備神鑄混沌基礎成功率', 0);
-objField('data', 'FORGE_GOLD_COST = {', '5', '6-神鑄', '裝備神鑄金幣', 0, 'FORGE_GOLD_COST');
-objField('data', 'FORGE_GOLD_COST = {', '6', '6-神鑄', '裝備神鑄金幣', 1, 'FORGE_GOLD_COST');
-objField('data', 'FORGE_GOLD_COST = {', '7', '6-神鑄', '裝備神鑄金幣', 2, 'FORGE_GOLD_COST');
-scalar('data', 'FORGE_CHAOS_GOLD_COST', '6-神鑄', '裝備神鑄混沌金幣', 0);
-objField('data', 'FORGE_EQUIP_DURATION = {', '5', '6-神鑄', '裝備神鑄時間(秒)', 0, 'FORGE_EQUIP_DURATION');
-objField('data', 'FORGE_EQUIP_DURATION = {', '6', '6-神鑄', '裝備神鑄時間(秒)', 1, 'FORGE_EQUIP_DURATION');
-objField('data', 'FORGE_EQUIP_DURATION = {', '7', '6-神鑄', '裝備神鑄時間(秒)', 2, 'FORGE_EQUIP_DURATION');
-scalar('data', 'FORGE_CHAOS_DURATION', '6-神鑄', '裝備神鑄混沌時間(秒)', 0);
-['0', '1', '2', '3', '4'].forEach((k, idx) => {
-  const codeKey = [5, 6, 7, 8, 9][idx];
-  objField('data', 'FORGE_GEM_BASE_RATE = {', String(codeKey), '6-神鑄', '寶石神鑄基礎成功率', idx, 'FORGE_GEM_BASE_RATE');
-  objField('data', 'FORGE_GEM_DURATION = {', String(codeKey), '6-神鑄', '寶石神鑄時間(秒)', idx, 'FORGE_GEM_DURATION');
-});
+// 新版神鑄的每一項數值皆由 game_parameters 的新版分類管理。
+{
+  const number = name => {
+    const v = Number(P('6-新版神鑄', name, 0));
+    if (!Number.isFinite(v) || v < 0) throw Error('新版神鑄參數必須為非負有限數值：' + name);
+    return v;
+  };
+  const equipment = number('裝備神鑄素材件數');
+  const gems = number('神級寶石每類顆數');
+  if (!Number.isInteger(equipment) || equipment < 1 || equipment > 6) throw Error('裝備神鑄素材件數必須為1～6整數');
+  if (!Number.isInteger(gems) || gems < 1 || gems > 3) throw Error('神級寶石每類顆數必須為1～3整數');
+  if (number('精鑄刻印素材件數') !== 1) throw Error('精鑄刻印素材件數必須為1');
+  const min = number('裝備神鑄失敗最少損失'), max = number('裝備神鑄失敗最多損失');
+  if (!Number.isInteger(min) || !Number.isInteger(max) || min > max || max > equipment) throw Error('裝備神鑄失敗損失必須為整數，且最少≤最多≤素材件數');
+  for (const name of ['裝備神鑄每石成功率','精鑄寶石刻印每石成功率']) if (!(number(name) > 0)) throw Error('每石成功率必須大於0：' + name);
+  for (const name of ['裝備神鑄神話成功率','裝備神鑄創世成功率','裝備神鑄混沌成功率','精鑄刻印神話成功率','精鑄刻印創世成功率','精鑄刻印混沌成功率','神級寶石成功率']) if (number(name) > 100) throw Error('成功率不可超過100：' + name);
+  if (number('無效果神性之石返還率') > 1) throw Error('神性之石返還率不可超過1');
+  const weights = ['神聖詞條刻印權重','太古詞條刻印權重','神聖鑲孔刻印權重','額外普通詞條刻印權重','額外太古詞條刻印權重','額外傳奇特效刻印權重','無效果刻印權重'];
+  if (!(weights.reduce((sum, name) => sum + number(name), 0) > 0)) throw Error('刻印權重總和必須大於0');
+}
+objFieldML('data', 'DIVINE_FORGE = {', 'equipUnlock', '6-新版神鑄', '裝備神鑄開放轉數', 0, '神鑄.equipUnlock');
+objFieldML('data', 'DIVINE_FORGE = {', 'ancientUnlock', '6-新版神鑄', '太古精鑄開放轉數', 0, '神鑄.ancientUnlock');
+objFieldML('data', 'DIVINE_FORGE = {', 'gemUnlock', '6-新版神鑄', '神級寶石開放轉數', 0, '神鑄.gemUnlock');
+objFieldML('data', 'DIVINE_FORGE = {', 'imprintUnlock', '6-新版神鑄', '神聖刻印開放轉數', 0, '神鑄.imprintUnlock');
+objFieldML('data', 'DIVINE_FORGE = {', 'equipMythicRate', '6-新版神鑄', '裝備神鑄神話成功率', 0, '神鑄.equipMythicRate');
+objFieldML('data', 'DIVINE_FORGE = {', 'equipGenesisRate', '6-新版神鑄', '裝備神鑄創世成功率', 0, '神鑄.equipGenesisRate');
+objFieldML('data', 'DIVINE_FORGE = {', 'equipChaosRate', '6-新版神鑄', '裝備神鑄混沌成功率', 0, '神鑄.equipChaosRate');
+objFieldML('data', 'DIVINE_FORGE = {', 'singleMythicRate', '6-新版神鑄', '精鑄刻印神話成功率', 0, '神鑄.singleMythicRate');
+objFieldML('data', 'DIVINE_FORGE = {', 'singleGenesisRate', '6-新版神鑄', '精鑄刻印創世成功率', 0, '神鑄.singleGenesisRate');
+objFieldML('data', 'DIVINE_FORGE = {', 'singleChaosRate', '6-新版神鑄', '精鑄刻印混沌成功率', 0, '神鑄.singleChaosRate');
+objFieldML('data', 'DIVINE_FORGE = {', 'gemRate', '6-新版神鑄', '神級寶石成功率', 0, '神鑄.gemRate');
+objFieldML('data', 'DIVINE_FORGE = {', 'equipStoneRate', '6-新版神鑄', '裝備神鑄每石成功率', 0, '神鑄.equipStoneRate');
+objFieldML('data', 'DIVINE_FORGE = {', 'singleStoneRate', '6-新版神鑄', '精鑄寶石刻印每石成功率', 0, '神鑄.singleStoneRate');
+objFieldML('data', 'DIVINE_FORGE = {', 'equipMythicGold', '6-新版神鑄', '裝備神鑄神話金幣', 0, '神鑄.equipMythicGold');
+objFieldML('data', 'DIVINE_FORGE = {', 'equipGenesisGold', '6-新版神鑄', '裝備神鑄創世金幣', 0, '神鑄.equipGenesisGold');
+objFieldML('data', 'DIVINE_FORGE = {', 'equipChaosGold', '6-新版神鑄', '裝備神鑄混沌金幣', 0, '神鑄.equipChaosGold');
+objFieldML('data', 'DIVINE_FORGE = {', 'ancientMythicGold', '6-新版神鑄', '太古精鑄神話金幣', 0, '神鑄.ancientMythicGold');
+objFieldML('data', 'DIVINE_FORGE = {', 'ancientGenesisGold', '6-新版神鑄', '太古精鑄創世金幣', 0, '神鑄.ancientGenesisGold');
+objFieldML('data', 'DIVINE_FORGE = {', 'ancientChaosGold', '6-新版神鑄', '太古精鑄混沌金幣', 0, '神鑄.ancientChaosGold');
+objFieldML('data', 'DIVINE_FORGE = {', 'imprintMythicGold', '6-新版神鑄', '神聖刻印神話金幣', 0, '神鑄.imprintMythicGold');
+objFieldML('data', 'DIVINE_FORGE = {', 'imprintGenesisGold', '6-新版神鑄', '神聖刻印創世金幣', 0, '神鑄.imprintGenesisGold');
+objFieldML('data', 'DIVINE_FORGE = {', 'imprintChaosGold', '6-新版神鑄', '神聖刻印混沌金幣', 0, '神鑄.imprintChaosGold');
+objFieldML('data', 'DIVINE_FORGE = {', 'gemGold', '6-新版神鑄', '神級寶石金幣', 0, '神鑄.gemGold');
+objFieldML('data', 'DIVINE_FORGE = {', 'equipCount', '6-新版神鑄', '裝備神鑄素材件數', 0, '神鑄.equipCount');
+objFieldML('data', 'DIVINE_FORGE = {', 'singleCount', '6-新版神鑄', '精鑄刻印素材件數', 0, '神鑄.singleCount');
+objFieldML('data', 'DIVINE_FORGE = {', 'gemPerType', '6-新版神鑄', '神級寶石每類顆數', 0, '神鑄.gemPerType');
+objFieldML('data', 'DIVINE_FORGE = {', 'failMin', '6-新版神鑄', '裝備神鑄失敗最少損失', 0, '神鑄.failMin');
+objFieldML('data', 'DIVINE_FORGE = {', 'failMax', '6-新版神鑄', '裝備神鑄失敗最多損失', 0, '神鑄.failMax');
+objFieldML('data', 'DIVINE_FORGE = {', 'gemValue', '6-新版神鑄', '神級寶石屬性保留率', 0, '神鑄.gemValue');
+objFieldML('data', 'DIVINE_FORGE = {', 'sacredValue', '6-新版神鑄', '神聖詞條倍率', 0, '神鑄.sacredValue');
+objFieldML('data', 'DIVINE_FORGE = {', 'socketValue', '6-新版神鑄', '神聖鑲孔倍率', 0, '神鑄.socketValue');
+objFieldML('data', 'DIVINE_FORGE = {', 'refundRate', '6-新版神鑄', '無效果神性之石返還率', 0, '神鑄.refundRate');
+objFieldML('data', 'DIVINE_FORGE = {', 'sacredAffixWeight', '6-新版神鑄', '神聖詞條刻印權重', 0, '神鑄.sacredAffixWeight');
+objFieldML('data', 'DIVINE_FORGE = {', 'ancientAffixWeight', '6-新版神鑄', '太古詞條刻印權重', 0, '神鑄.ancientAffixWeight');
+objFieldML('data', 'DIVINE_FORGE = {', 'sacredSocketWeight', '6-新版神鑄', '神聖鑲孔刻印權重', 0, '神鑄.sacredSocketWeight');
+objFieldML('data', 'DIVINE_FORGE = {', 'extraAffixWeight', '6-新版神鑄', '額外普通詞條刻印權重', 0, '神鑄.extraAffixWeight');
+objFieldML('data', 'DIVINE_FORGE = {', 'extraAncientWeight', '6-新版神鑄', '額外太古詞條刻印權重', 0, '神鑄.extraAncientWeight');
+objFieldML('data', 'DIVINE_FORGE = {', 'legendaryWeight', '6-新版神鑄', '額外傳奇特效刻印權重', 0, '神鑄.legendaryWeight');
+objFieldML('data', 'DIVINE_FORGE = {', 'refundWeight', '6-新版神鑄', '無效果刻印權重', 0, '神鑄.refundWeight');
 // 魔塵掉落由 Zone_Stage_Drops.csv 管理；高塔 BOSS 魔塵仍由 game_parameters 管理。
 scalar('data', 'DUST_BOSS_BASE', '4-高塔BOSS', '高塔 BOSS 魔塵', 1);
 scalar('data', 'DUST_BOSS_PER_LEVEL', '4-高塔BOSS', '高塔 BOSS 魔塵', 2);
@@ -1008,8 +1044,6 @@ scalar('formula', 'AFFIX_REROLL_UPPER_BASE_WEIGHT', '7-洗煉', '數值洗煉分
 scalar('formula', 'AFFIX_REROLL_BIAS_EXPONENT', '7-洗煉', '數值洗煉分段權重', 2);
 
 /* ---- §8 寶石 ---- */
-objFieldML('formula', 'FORGE_GEM_COST = {', 'base', '6-神鑄', '寶石神鑄金幣', 0, '寶石神鑄金-基');
-objFieldML('formula', 'FORGE_GEM_COST = {', 'perTier', '6-神鑄', '寶石神鑄金幣', 0, '寶石神鑄金-每階');
 /* 寶石商店升級費用改由 data.js 的三個具名常數承接（見上方 GEM_SHOP_UPGRADE_* 的 scalar），
    原本這裡是三條 inline／inlineRegex 錨點，直接改寫 formula.js 算式裡的字面值。
 

@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="css/gems.css?v=1.0.25">
   <link rel="stylesheet" href="css/dialogs.css?v=1.0.4">
   <link rel="stylesheet" href="css/world-map.css?v=1.0.5">
+  <link rel="stylesheet" href="css/divine-forge.css?v=1.0.2">
 </head>
 
 <body>
@@ -287,44 +288,35 @@
         <section id="tab-forge" class="tab">
           <div class="pg-top">
             <h2 class="pg-title" data-str="66"></h2>
-            <button type="button" class="pg-help" data-str-attr="aria-label:1288;data-tt-title:1289;data-tt-desc:1290">?</button>
+            <button type="button" class="pg-help" data-str-attr="aria-label:1288;data-tt-title:1289;data-tt-desc:2190">?</button>
           </div>
           <div class="panel forge-panel">
-            <div class="forge-head">
-              <div class="forge-inv-tabs" role="group" data-str-attr="aria-label:1291">
-                <button type="button" id="forge-invtab-items" class="btn sm active" data-str="1292"></button>
-                <button type="button" id="forge-invtab-gems" class="btn sm" data-str="1293"></button>
-              </div>
-              <span id="forge-rate" class="forge-rate"></span>
+            <div class="forge-mode-tabs" role="group" data-str-attr="aria-label:66">
+              <button type="button" id="forge-mode-equip" class="btn active" data-str="2154"></button>
+              <button type="button" id="forge-mode-ancient" class="btn" data-str="2155"></button>
+              <button type="button" id="forge-mode-gem" class="btn" data-str="2156"></button>
+              <button type="button" id="forge-mode-imprint" class="btn" data-str="2157"></button>
             </div>
+            <p id="forge-description" class="forge-description"></p>
+            <div id="forge-imprint-rules" class="forge-imprint-rules"></div>
             <div id="forge-stage">
-              <div class="forge-info-btn" data-str-attr="data-tip:1294"
-               >
-                !</div>
-              <div id="forge-log" class="forge-log"></div>
               <div id="forge-hex"></div>
-              <div class="forge-actions">
-                <button id="forge-unload" class="btn forge-btn" data-str="1296"></button>
-                <div class="forge-auto-wrap">
-                  <button id="forge-autofill" class="btn forge-btn forge-auto-btn" data-str="1297"></button>
-                  <div id="forge-auto-menu" class="forge-auto-menu" style="display:none"></div>
-                </div>
-                <button id="forge-go" class="btn forge-btn" data-str="1329"></button>
-              </div>
             </div>
-            <div class="forge-foot">
-              <label class="chk"><input type="checkbox" id="forge-autodust"> <span data-str="1298"></span></label>
-              <label class="chk"><input type="checkbox" id="forge-autoforge" checked> <span data-str="1299"></span></label>
-              <span id="forge-dust-own" class="dim-text"></span>
-            </div>
-            <div id="forge-progress" class="forge-progress" style="display:none">
-              <div class="forge-progress-head">
-                <span id="forge-progress-status" data-str="1314"></span>
-                <span id="forge-progress-remain" class="forge-progress-remain"></span>
-                <button id="forge-cancel" class="btn sm warn" style="margin-right: 12px; padding: 2px 8px; font-size: 11px; height: auto; line-height: 1.2;" data-str="76"></button>
-                <span id="forge-progress-countdown" data-str="1300"></span>
+            <div class="forge-summary">
+              <div id="forge-rate" aria-live="polite"></div><div id="forge-cost"></div>
+              <div id="forge-dust-own"></div>
+              <div class="forge-stone-controls">
+                <label for="forge-stone-count" data-str="2188"></label>
+                <input id="forge-stone-count" type="number" min="0" step="1" value="0">
+                <button id="forge-stone-max" type="button" class="btn sm" data-str="2189"></button>
               </div>
-              <div class="forge-progress-track"><div id="forge-progress-fill"></div></div>
+              <div class="forge-v2-actions">
+                <button id="forge-unload" type="button" class="btn" data-str="1296"></button>
+                <button id="forge-go" type="button" class="btn" data-str="2186"></button>
+              </div>
+              <p class="hint" data-str="2197"></p>
+              <div id="forge-result" aria-live="polite"></div>
+              <div id="forge-log" class="forge-log" role="log"></div>
             </div>
           </div>
           <!-- 裝備神鑄：裝備頁那一個背包框（#inv-section-box）在神鑄頁期間搬進這裡，兩頁是同一份背包（見 ui.js mountInventoryBox） -->
@@ -332,7 +324,7 @@
           <div id="forge-gem-box" class="equip-section-box" style="display:none">
             <div class="inv-head">
               <span class="sec-title"><span data-str="122"></span> <span id="forge-gem-count">0</span> <span data-str="1301"></span></span>
-              <span class="dim-text" data-str="1302"></span>
+              <span class="dim-text" data-str="2190"></span>
             </div>
             <div id="forge-gem-grid"></div>
           </div>
@@ -961,14 +953,14 @@
        已移除（主執行緒零呼叫，只在 Worker 內跑）：
          special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/util.js?v=1.0.4"></script>
-  <script src="js/strings_data.js?v=acc75b7b"></script>
+  <script src="js/strings_data.js?v=ba384f1e"></script>
   <script src="js/strings.js?v=1.0.1"></script>
   <script src="js/ui-scale.js?v=1.0.1"></script>
-  <script src="js/data.js?v=1.0.108"></script>
+  <script src="js/data.js?v=1.0.110"></script>
   <script src="js/status.js?v=1.0.43"></script>
   <script src="js/runeword_data.js?v=1.0.21"></script>
   <script src="js/gem_resonance_data.js?v=1.0.1"></script>
-  <script src="js/formula.js?v=1.0.74"></script>
+  <script src="js/formula.js?v=1.0.76"></script>
   <script src="js/battle-terrain.js?v=1.0.2"></script>
   <script src="js/battlefield.js?v=1.4.18"></script>
   <script src="js/game-clock.js?v=1.0.1"></script>
@@ -999,7 +991,7 @@
   <script src="js/battle-elite.js?v=1.0.8"></script>
   <script src="js/battle-renderer.js?v=1.6.205"></script>
   <script src="js/stats.js?v=1.0.6"></script>
-  <script src="js/item.js?v=1.0.33"></script>
+  <script src="js/item.js?v=1.0.35"></script>
   <script src="js/gem_resonance.js?v=1.0.7"></script>
   <script src="js/runeword.js?v=1.0.18"></script>
   <script src="js/skills.js?v=1.0.44"></script>
@@ -1007,12 +999,12 @@
   <script src="js/skills2.js?v=1.0.365"></script>
   <script src="js/elite_data.js?v=1.0.7"></script>
   <script src="js/talents.js?v=1.0.13"></script>
-  <script src="js/player.js?v=1.0.22"></script>
+  <script src="js/player.js?v=1.0.24"></script>
   <script src="js/combat.js?v=1.0.96"></script>
   <script src="js/tower.js?v=1.0.37"></script>
-  <script src="js/save.js?v=1.0.24"></script>
+  <script src="js/save.js?v=1.0.26"></script>
   <script src="js/ui-inventory-skin.js?v=1.0.1"></script>
-  <script src="js/ui.js?v=1.0.221"></script>
+  <script src="js/ui.js?v=1.0.223"></script>
   <script src="js/ui-world-map.js?v=1.0.4"></script>
   <script src="js/ui-runeword.js?v=1.0.16"></script>
   <script src="js/ui-gem-resonance.js?v=1.0.21"></script>
@@ -1030,7 +1022,7 @@
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
-  <script src="js/bridge.js?v=1.0.374"></script>
+  <script src="js/bridge.js?v=1.0.376"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->
