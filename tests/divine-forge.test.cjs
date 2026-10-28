@@ -184,15 +184,17 @@ test('實際migrateSave在補預設值後仍辨識舊神鑄，完整退還一次
   const again=c.migrateSave(plain(migrated));
   assert.equal(again.inventory.filter(x=>x.id===it.id).length,1);assert.equal(again.player.gems.ruby[9],1);
 });
-test('正式Worker指令與面板：拒絕舊指令、低轉數不可繞過、即時完成與持久化',()=>{
+test('正式Worker指令與面板：三秒結算與持久化',()=>{
   const e=createEngine({seed:8}).boot(null),c=e.ctx;
   c.G.player.reincarnations=5;c.G.player.gold=1e12;c.G.player.dust=100;
   for(let i=0;i<6;i++){const it=c.makeEquipment(100,{rarity:6});c.G.inventory.push(it);assert.equal(c.runCommand('forge.placeItem',{itemId:it.id}).result,null);}
   c.runCommand('forge.setStones',{count:13});
   const before=e.saveJson();e.panel('forge');assert.equal(e.saveJson(),before);
   assert.equal(e.panel('forge').rate.total,100);
-  assert.ok(!c.runCommand('forge.start',{}).err);assert.equal(c.G.inventory[0].rarity,11);
-  assert.equal(c.runCommand('forge.setAuto',{key:'autoForge',on:true}).ok,false);
+  assert.ok(!c.runCommand('forge.start',{}).err);assert.equal(c.G.inventory.length,0);
+  e.stepSeconds(2.9);assert.equal(c.G.inventory.length,0);
+  e.stepSeconds(.1);assert.equal(c.G.inventory[0].rarity,11);
+  assert.equal(c.runCommand('forge.setAutoFill',{on:true}).ok,false);
   const loaded=createEngine({seed:8}).boot(JSON.parse(e.saveJson()));
   assert.equal(loaded.ctx.G.inventory[0].rarity,11);
 });

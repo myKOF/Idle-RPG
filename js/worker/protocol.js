@@ -98,7 +98,8 @@
 // v60：skills.skills2.points 投影熟練度總點數、已投資與可用點數。
 // v61：完整裝備快照可帶 legendaryEquipOrder；stats 可帶 blockDmgRedCap。
 // v62：skills2.points.total 包含超支舊檔成功重選後保留的投資額度，欄位與指令不變。
-var WORKER_PROTOCOL_VERSION = 63;
+// v64：神鑄3秒作業／品質篩選／原子補料／連續自動，forge 7→10，總數91→94。
+var WORKER_PROTOCOL_VERSION = 64;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -420,7 +421,10 @@ var COMMANDS = {
   'forge.unloadAll':    { fn:'forgeUnloadAll', args:{}, dirty:['forge','inv','gems'] },
   'forge.setOperation': { fn:'forgeSetOperation', args:{ mode:'str' }, limit:{ mode:{ enum:['equip','ancient','gem','imprint'] } }, dirty:['forge','inv','gems'] },
   'forge.setStones':    { fn:'forgeSetStones', args:{ count:'int' }, limit:{ count:{ min:0 } }, dirty:['forge'] },
-  'forge.start':        { fn:'doForge', args:{}, dirty:['forge','inv','gems','header'] },
+  'forge.start':        { fn:'startForge', args:{}, dirty:['forge','inv','gems','header'] },
+  'forge.setQuality':   { fn:'forgeSetQuality', args:{ rarity:'int' }, limit:{ rarity:{ enum:[6,7,9] } }, dirty:['forge','inv'] },
+  'forge.autoFill':     { fn:'forgeAutoFill', args:{}, dirty:['forge','inv'] },
+  'forge.setAuto':      { fn:'forgeSetAuto', args:{ on:'bool' }, dirty:['forge','inv','header'] },
 
   /* -- 熔爐（newforge）--
      furnaceId 由 nf.nextId++ 產生，是數字。

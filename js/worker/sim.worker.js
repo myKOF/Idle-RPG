@@ -11,7 +11,7 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-importScripts('protocol.js?v=20261028-divine-forge-v2-final', '../game-clock.js?v=1.0.1', 'shim.js?v=20261018-potential-remove');
+importScripts('protocol.js?v=20261029-divine-forge-experience', '../game-clock.js?v=1.0.1', 'shim.js?v=20261018-potential-remove');
 // 離線結算等分批工作亦共用暫停時鐘；訊息與loop仍能回應存檔及PING。
 if (typeof GameClock !== 'undefined') {
   globalThis.setTimeout = GameClock.setTimeout;
@@ -23,9 +23,9 @@ importScripts(
   '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../data.js?v=20261028-develop-merge-a8acfe', '../runeword_data.js?v=20261028-develop-merge-a8acfe', '../gem_resonance_data.js?v=20261028-develop-merge-a8acfe','../status.js?v=20261028-develop-merge-a8acfe', '../formula.js?v=20261028-sync-cloud-control', '../battle-terrain.js?v=20261022-lava-terrain-develop-merge', '../battlefield.js?v=20261028-sync-cloud-control', '../stats.js?v=20261028-develop-merge-a8acfe',
   '../item.js?v=20261028-develop-merge-a8acfe', '../gem_resonance.js?v=20261026-system-unlock','../runeword.js?v=20261023-str-common',
   '../skills.js?v=20261023-str-skill', '../skills2.js?v=20261028-sync-cloud-control', '../elite_data.js?v=20261028-develop-merge-a8acfe', '../talents.js?v=20261026-system-unlock',
-  '../player.js?v=20261028-develop-merge-a8acfe', '../special_rules.js?v=20261023-str-common',
+  '../player.js?v=20261029-divine-forge-experience', '../special_rules.js?v=20261023-str-common',
   '../combat.js?v=20261028-sync-cloud-control', '../elite.js?v=20261028-develop-merge-a8acfe', '../elite_boss.js?v=20261023-str-battle', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261028-develop-merge-a8acfe', '../tower.js?v=20261028-sync-cloud-control',
-  '../factory.js?v=20261027-speed-gear-base', '../newforge.js?v=20261028-develop-merge-a8acfe', '../forge.js?v=20261028-develop-merge-a8acfe', '../save.js?v=20261028-develop-merge-a8acfe',
+  '../factory.js?v=20261027-speed-gear-base', '../newforge.js?v=20261028-develop-merge-a8acfe', '../forge.js?v=20261029-divine-forge-experience', '../save.js?v=20261028-develop-merge-a8acfe',
   '../tasks.js?v=20261023-str-guard'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
@@ -634,7 +634,10 @@ function inventoryCellView(it) {
 function buildForgePanel(params) {
   var f = forgeState();
   var out = { forge: f, unlocked: !!f.unlocked || reincarnationCount() >= DIVINE_FORGE.equipUnlock,
-    rate: divineForgeRateInfo(f, G.player.dust), slotsNeeded: divineForgeSlotCount(f.operation),
+    rate: forgeRateInfo(), slotsNeeded: divineForgeSlotCount(f.operation),
+    craftProgress: f.crafting ? { durationMs: f.crafting.durationMs,
+      elapsedMs: Math.max(0, Math.min(f.crafting.durationMs, (_menuPaused ? _menuPausedAt : Date.now()) - f.crafting.startedAt)),
+      paused: _menuPaused } : null,
     modes: Object.keys(DIVINE_FORGE_MODES).filter(function (mode) { return reincarnationCount() >= divineForgeUnlock(mode); }) };
   if (params && params.craft) {
     out.equip = {};
