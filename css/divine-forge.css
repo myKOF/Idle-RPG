@@ -1,12 +1,13 @@
 /* 神鑄舞台：使用者提供的背景與水晶原圖，光暈／氣旋以CSS繪製。 */
-#tab-forge { position:relative; isolation:isolate; --forge-stage-height:clamp(220px,calc(100dvh - 365px),440px); background:#061022; }
-#tab-forge::before { content:""; position:absolute; inset:0 0 auto; height:calc(var(--forge-stage-height) + 270px); z-index:-1; pointer-events:none; border-radius:12px; background:linear-gradient(180deg,#07132425,#050c1c20 65%,#061022),url('../images/ui/divine-forge-background.jpg') center/cover no-repeat; }
-#tab-forge .forge-panel { padding:12px 14px 0; margin-bottom:8px; background:transparent!important; border:1px solid #83b9df66; box-shadow:inset 0 0 25px #07122488; }
+#tab-forge { position:relative; isolation:isolate; min-height:0; background:#061022; }
+#tab-forge .pg-top { flex:none; background:#061022; }
+#tab-forge .forge-panel { position:relative; isolation:isolate; flex:1; min-height:0; display:flex; flex-direction:column; padding:12px 14px 0; margin-bottom:0; background:transparent!important; border:1px solid #83b9df66; box-shadow:inset 0 0 25px #07122488; }
+#tab-forge .forge-panel::before { content:""; position:absolute; inset:0; z-index:-1; pointer-events:none; border-radius:12px; background-image:linear-gradient(180deg,#07132425,#050c1c20 65%,#06102255),url('../images/ui/divine-forge-background.jpg'); background-position:center,center bottom; background-size:100% 100%,105% 100%; background-repeat:no-repeat; }
 .forge-mode-tabs { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:7px; position:relative; z-index:3; }
 #tab-forge .forge-mode-tabs .btn { white-space:normal; min-height:36px; padding:6px 8px; color:#c5def5!important; background:#08162cd9!important; border:1px solid #739fc17a!important; }
 #tab-forge .forge-mode-tabs .btn.active { color:#f3fbff!important; background:linear-gradient(#25486fe8,#102440e8)!important; border-color:#b5dff2!important; box-shadow:inset 0 0 12px #6dc6ff33,0 0 10px #75c4ff33; }
-#tab-forge #forge-stage { position:relative; height:var(--forge-stage-height)!important; min-height:0!important; aspect-ratio:auto!important; padding:0!important; overflow:visible; background:none!important; display:flex; align-items:center; justify-content:center; border:0; }
-#forge-crystal-float { position:relative; z-index:2; width:min(72%,calc(100dvh - 425px),380px); min-width:185px; aspect-ratio:1; margin-bottom:38px; animation:forge-hover 6s ease-in-out infinite; }
+#tab-forge #forge-stage { position:relative; flex:1; container-type:size; height:auto!important; min-height:0!important; aspect-ratio:auto!important; padding:0!important; overflow:visible; background:none!important; display:flex; align-items:center; justify-content:center; border:0; }
+#forge-crystal-float { position:relative; z-index:2; flex:none; width:min(78cqw,calc(100cqh - 90px),680px); aspect-ratio:1; margin-bottom:42px; animation:forge-hover 6s ease-in-out infinite; }
 #forge-crystal-float:hover,#forge-crystal-float:focus-within { animation-play-state:paused; }
 #tab-forge #forge-hex { position:relative; width:100%; height:auto!important; aspect-ratio:1; margin:0; background:url('../images/ui/divine-forge-crystal.png') center/contain no-repeat!important; transform:none; inset:auto; filter:drop-shadow(0 0 12px #5187f880); }
 #tab-forge #forge-hex::before { display:none; }
@@ -44,13 +45,15 @@
 #forge-auto:checked { background:#8f7130; border-color:#ffe5a0; }
 #forge-auto:checked::after { transform:translateX(13px); background:#fff1be; box-shadow:0 0 6px #ffd875; }
 #forge-auto:disabled { opacity:.45; cursor:default; }
-#forge-quality-tabs { display:flex; align-items:center; gap:9px; padding:8px 12px; background:#071426c9; border:1px solid #91b6d052; border-bottom:0; }
+#forge-quality-tabs { flex:none; display:flex; align-items:center; gap:9px; padding:8px 12px; background:#071426c9; border:1px solid #91b6d052; border-bottom:0; }
 #forge-quality-tabs[hidden] { display:none; }
 #tab-forge #forge-quality-tabs .btn { min-width:76px; min-height:30px; padding:4px 14px; color:#b6cbdd; background:#0b1b2ccc; border:1px solid #6c91ac66; }
 #tab-forge #forge-quality-tabs .btn.active { color:#ffe7a3; border-color:#e0c67e; background:linear-gradient(#58462fc9,#241e20de); box-shadow:inset 0 -2px #f7d58b,0 0 10px #e0b95a22; }
-#tab-forge #inv-section-box { margin-top:0; background:#050d1ce0!important; border-color:#91b6d052; }
+#tab-forge #forge-inv-slot,#tab-forge #forge-gem-box { flex:none; }
+#tab-forge #inv-section-box { margin:0!important; padding:8px!important; background:#050d1ce0!important; border-color:#91b6d052; }
 #tab-forge #inv-section-box .inv-head { display:none!important; }
-#tab-forge #inventory-grid { min-height:82px; max-height:180px; padding:8px; }
+#tab-forge #inventory-grid { --inventory-visible-rows:2!important; height:122px; min-height:122px; max-height:122px; padding:0!important; }
+#tab-forge #inventory-grid .item-cell { height:58px; min-height:0; aspect-ratio:auto; }
 #tab-forge #forge-gem-box { background:#050d1ce0!important; }
 #tab-forge .forge-gem-cell { position:relative; }
 .forge-aura { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
@@ -78,7 +81,7 @@
   #tab-forge .forge-v2-actions { bottom:34px; }
   #tab-forge .forge-v2-actions .btn { min-width:88px; min-height:30px; font-size:12px; }
   .forge-auto-control { bottom:8px; }
-  #forge-crystal-float { margin-bottom:65px; }
+  #forge-crystal-float { width:min(78cqw,calc(100cqh - 115px),680px); margin-bottom:65px; }
 }
 @media(prefers-reduced-motion:reduce) {
   #forge-crystal-float,.forge-aura i,.forge-aura::after { animation:none; }

@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## DIVINE-FORGE-FILL-LAYOUT-20261029 — 放大神鑄舞台、兩行背包貼底與背景定位
+
+- Owner：Codex；Done。使用者要求放大上方、背包只留兩完整行並貼底、移除下方空白；後續指定效能優先，明確暫停追加特效，只完成尺寸與背景後直接Commit、清理工作區供使用者合併。單一開發者；規範／既有實作已讀、目標衝突預檢乾淨。
+- 修改5檔：css/divine-forge.css、index.html（CSS快取1.0.4）、LV_upgrade_system.md、docs/DIVINE_FORGE.md及本段。舞台改用Flex填滿實際可用高度，水晶以容器cqw／cqh配置、最大680，不再使用380上限及viewport固定高度；背包固定兩列58px＋列距6px，總122px，兩行下緣貼頁底。移除神鑄背包額外padding及aspect-ratio撐高，避免第三行切半或第二行邊框被裁切；更多裝備在原格線內捲動，裝備頁原排數不改。標題純底色，背景改掛於其下的神鑄面板，寬105%、高度鋪滿，不再cover大量裁掉兩側水晶。
+- 使用者暫停追加特效後，本輪試作的光帶／粒子／脈動強化全部撤回，最終diff沒有新增動畫、DOM、JS迴圈或粒子生成；保留前版效果。沒有新增素材或修改圖片／Excel／Worker／玩法，素材庫無本輪變動，不建立空素材Commit。
+- 驗證：node --test --test-reporter=spec tests/forge-shared-inventory.test.cjs tests/divine-forge-interaction.test.cjs tests/inventory-rarity-filter.test.cjs，18／18；npm.cmd run build599檔通過；完整diff檢查通過。隔離Edge／隨機localhost／正式index與真Worker，240件神話素材驗1920×1080、1280×800、830×716、1024×600、390×844，皆精確兩完整行、grid122px、背包底距約0px（浮點誤差<0.001），背包內可捲至底、頁面不需拖動、六格位於水晶內；Console error／warning及pageerror0。1280視窗水晶由250擴至418px，1920視窗560px，舞台跟隨剩餘空間擴張。檢查截圖／layout-report保存本聊天visualizations/divine-forge-update。
+- 唯讀未改：UI背包虛擬捲動／排數記憶、Worker神鑄計時／自動與協議、原圖／素材工具、共通規範與Excel。自我Review完成，無本次尺寸／背景未完成項，可合併；特效追加依使用者最新指示停止，不列入本次交付。未跑全庫或效能對照（沒有交付新特效）；不合併／推送develop或main。Commit為本段所在「[Codex] fix: 放大神鑄舞台並將兩行背包貼底」，編號見回覆；後續使用者正常合併並重載。
+
 ## DIVINE-FORGE-EXPERIENCE-20261029 — 神鑄舞台、三秒鑄造與連續自動
 
 - Owner：Codex；Done，單一開發者。使用者授權完整改造八項介面需求，後續全權授權途中取捨；不合併／推送develop或main。
