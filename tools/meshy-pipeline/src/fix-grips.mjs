@@ -95,7 +95,7 @@ const CFG = {
   },
   /* 倒地：改用使用者在 Meshy 網頁重新綁骨架後套的 Dead 動作（取樣檔 data/meshy-dead.json，來源 0～2.9667 秒，30 fps）。原 Death 動作長 2.75 秒、
      67 個關鍵幀，寫不下 2.967 秒，所以來源時間均勻壓縮 speed 倍（≈1.079）塞進去。不限手腕、不做 IK，動作與骨骼不動；手掌不另外轉動（使用者：從跪地到倒地手掌別轉，順著手臂的自然方向握劍），Sword 旋轉設成模型原本的握法（fitSwordGrip），劍隨時與手保持正握（劍從虎口出去）。 */
-  Death: { retarget: { name: 'dead', file: 'meshy-dead.json', at: 0, speed: 2.9667 / 2.75 }, swordDir: { forwardDeg: 20, keys: [ { t: 1.6 }, { t: 1.7, pitch: -45 }, { t: 1.8, pitch: -10 }, { t: 1.9, lying: true } ] } }
+  Death: { retarget: { name: 'dead', file: 'meshy-dead.json', at: 0, speed: 2.9667 / 2.75 }, swordDir: { elevDeg: 30, keys: [ { t: 1.8 }, { t: 1.9, front: 28 }, { t: 2.0, front: 15 }, { t: 2.1, front: 0 } ] } }
 };
 
 /* ---- GLB ---- */
@@ -544,9 +544,10 @@ function alignGripToHand(g, rig, clip, rollDeg = 0) {
 }
 
 /* ---- 倒地：只改劍的方向（手完全不動）----
-   使用者：倒地的手掌（掌心朝下）正確，不要再動手；只調整劍的方向：1.6 秒以前照手的握法；1.7 秒劍朝身體前方斜下 45°；1.8 秒朝前略向下 10°；
-   1.9 秒起劍身水平、朝身體左側偏前 swordDir.forwardDeg 度。右手骨骼的動作維持 Dead 搬過來的樣子，只改 Sword 骨骼相對手的旋轉
-   （每個關鍵時刻決定「劍的世界朝向」＝手原本握法的朝向做最小旋轉讓劍身指向目標方向，中間球面內插）。 */
+   使用者：倒地的手掌（掌心朝下）正確，不要再動手；劍的方向照他在「正面角度」三張倒地畫面上畫的箭頭：箭頭由畫面右下斜（約 28°）、略斜（約 15°）到水平向右（0°）。
+   正面角度＝鏡頭在角色正前方、仰角 ELEV（30°，同 js/hero3d.js），畫面右邊＝角色左邊。所以箭頭「畫面向右、往下 θ 度」＝ 左方 L×cosθ ＋（畫面向下＝往前 F×sin30°、往下 −Up×cos30°）×sinθ。
+   三張圖大約是倒地後 1.9、2.0、2.1 秒；1.8 秒以前照手的握法，之後從 1.8 秒的朝向平順接到 1.9 秒的箭頭。右手骨骼的動作維持 Dead 搬過來的樣子，只改 Sword 骨骼相對手的旋轉
+   （每個關鍵時刻的劍世界朝向＝手原本握法的朝向做最小旋轉讓劍身指向目標方向，中間球面內插）。 */
 function swordDirection(g, rig, clip, cfg) {
   const id = (n) => rig.byName[n], tr = clip.tracks['Sword.rotation'], q0 = rig.rest[id('Sword')].q.clone(), n = tr.times.length;
   const handW = (t) => wRot(worldMatrices(rig, poseAt(rig, clip, t))(id('RightHand')));
@@ -554,10 +555,10 @@ function swordDirection(g, rig, clip, cfg) {
   const Wend = worldMatrices(rig, poseAt(rig, clip, tr.times[n - 1]));
   const fwd = wPos(Wend(id('Head'))).sub(wPos(Wend(id('Hips')))); fwd.y = 0; fwd.normalize();
   const left = new Vector3(0, 1, 0).cross(fwd), up = new Vector3(0, 1, 0);
-  const dirPitch = (deg) => fwd.clone().multiplyScalar(Math.cos(deg * Math.PI / 180)).addScaledVector(up, Math.sin(deg * Math.PI / 180)).normalize();   // 水平線以上為正
-  const th = cfg.forwardDeg * Math.PI / 180, lyingDir = left.clone().multiplyScalar(Math.cos(th)).addScaledVector(fwd, Math.sin(th)).normalize();
+  const E = cfg.elevDeg * Math.PI / 180, screenDown = fwd.clone().multiplyScalar(Math.sin(E)).addScaledVector(up, -Math.cos(E));      // 正面鏡頭：畫面向下的世界方向
+  const dirFront = (deg) => left.clone().multiplyScalar(Math.cos(deg * Math.PI / 180)).addScaledVector(screenDown, Math.sin(deg * Math.PI / 180)).normalize();   // 畫面向右、往下 deg 度
   const toward = (t, d) => { const N = natural(t), s = new Vector3(0, 1, 0).applyQuaternion(N); return new Quaternion().setFromUnitVectors(s, d).multiply(N); };
-  const keys = cfg.keys.map((k) => ({ t: k.t, q: k.lying ? toward(tr.times[n - 1], lyingDir) : (k.pitch === undefined ? natural(k.t) : toward(k.t, dirPitch(k.pitch))) }));
+  const keys = cfg.keys.map((k) => ({ t: k.t, q: k.front === undefined ? natural(k.t) : toward(k.t, dirFront(k.front)) }));
   const ed = {};
   for (let i = 0; i < n; i++) {
     const t = tr.times[i];
@@ -571,7 +572,7 @@ function swordDirection(g, rig, clip, cfg) {
     ed[i] = handW(t).invert().multiply(q).normalize();      // Sword 局部旋轉＝手的世界旋轉⁻¹ × 想要的劍世界旋轉
   }
   writeQuats(g, clip, 'Sword', ed);
-  console.log('倒地：只改劍的方向 ' + cfg.keys.map((k) => k.t + (k.lying ? ' 平放左側' : k.pitch === undefined ? ' 原樣' : ' 前方' + k.pitch + '°')).join('→'));
+  console.log('倒地：只改劍的方向 ' + cfg.keys.map((k) => k.t + (k.front === undefined ? ' 原樣' : ' 正面畫面往右下' + k.front + '°')).join('→'));
 }
 
 /* ---- 收招：全身平順回到起始姿勢（讓動作首尾相接） ---- */
