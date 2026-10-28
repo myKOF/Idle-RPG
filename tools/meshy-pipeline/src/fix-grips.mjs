@@ -94,8 +94,8 @@ const CFG = {
     gripRoll: 62      // 同 Attack1.retarget.gripRoll 的說明
   },
   /* 倒地：改用使用者在 Meshy 網頁重新綁骨架後套的 Dead 動作（取樣檔 data/meshy-dead.json，來源 0～2.9667 秒，30 fps）。原 Death 動作長 2.75 秒、
-     67 個關鍵幀，寫不下 2.967 秒，所以來源時間均勻壓縮 speed 倍（≈1.079）塞進去。不限手腕、不做 IK，動作與骨骼不動；只把 Sword 旋轉設成模型原本的握法（fitSwordGrip）。 */
-  Death: { retarget: { name: 'dead', file: 'meshy-dead.json', at: 0, speed: 2.9667 / 2.75 } }
+     67 個關鍵幀，寫不下 2.967 秒，所以來源時間均勻壓縮 speed 倍（≈1.079）塞進去。不限手腕、不做 IK，動作與骨骼不動；Sword 旋轉設成模型原本的握法（fitSwordGrip），再把拳頭＋劍整體校正成劍身順著手的方向（alignGripToHand，roll 0，不翻刃口）。 */
+  Death: { retarget: { name: 'dead', file: 'meshy-dead.json', at: 0, speed: 2.9667 / 2.75 }, gripRoll: 0 }
 };
 
 /* ---- GLB ---- */
@@ -1225,6 +1225,7 @@ if (!checkOnly) {
     const a3 = readClip(g, rig, 'Death');
     importRetarget(g, rig, a3, CFG.Death.retarget);
     fitSwordGrip(g, rig, a3);
+    alignGripToHand(g, rig, a3, CFG.Death.gripRoll);       // 保持原握法時劍在跪地幀會穿進小腿護甲（距離 0.01）；劍身順著手的方向（同攻擊動作的固定校正）整段與身體的最近距離 ≥0.117
   }
   limitWrists(g, rig);
   removeStrayTriangles(g, rig);
@@ -1251,3 +1252,4 @@ fmt(before2, after2, 'Attack2 劍身與前臂方向夾角（度）', '目標：1
 console.log(checkOnly ? '（--check：未寫檔）' : '已寫出 ' + outFile);
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) main();
+export { readGlb, buildRig, readClip, poseAt, worldMatrices, readSkinData, skinnedPositions, loadCloth, wPos, wRot, writeQuats };
