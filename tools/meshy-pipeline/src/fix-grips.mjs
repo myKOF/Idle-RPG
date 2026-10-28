@@ -94,8 +94,8 @@ const CFG = {
     gripRoll: 62      // 同 Attack1.retarget.gripRoll 的說明
   },
   /* 倒地：改用使用者在 Meshy 網頁重新綁骨架後套的 Dead 動作（取樣檔 data/meshy-dead.json，來源 0～2.9667 秒，30 fps）。原 Death 動作長 2.75 秒、
-     67 個關鍵幀，寫不下 2.967 秒，所以來源時間均勻壓縮 speed 倍（≈1.079）塞進去。不限手腕、不做 IK，動作與骨骼不動；Sword 旋轉設成模型原本的握法（fitSwordGrip），倒下途中劍脫手落地（dropSword）。 */
-  Death: { retarget: { name: 'dead', file: 'meshy-dead.json', at: 0, speed: 2.9667 / 2.75 }, swing: { forwardDeg: 20, faceDown: -1, keys: [ { t: 1.6 }, { t: 1.7, pitch: -45 }, { t: 1.8, pitch: -10 }, { t: 1.9, lying: true } ] } }
+     67 個關鍵幀，寫不下 2.967 秒，所以來源時間均勻壓縮 speed 倍（≈1.079）塞進去。不限手腕、不做 IK，動作與骨骼不動；手掌不另外轉動（使用者：從跪地到倒地手掌別轉，順著手臂的自然方向握劍），Sword 旋轉設成模型原本的握法（fitSwordGrip），劍隨時與手保持正握（劍從虎口出去）。 */
+  Death: { retarget: { name: 'dead', file: 'meshy-dead.json', at: 0, speed: 2.9667 / 2.75 }, swordDir: { elevDeg: 30, keys: [ { t: 1.8 }, { t: 1.9, front: 28 }, { t: 2.0, front: 15 }, { t: 2.1, front: 0 } ] } }
 };
 
 /* ---- GLB ---- */
@@ -543,21 +543,22 @@ function alignGripToHand(g, rig, clip, rollDeg = 0) {
   console.log(clip.name + ' 握姿校正：拳頭＋劍整體轉 ' + (b0.angleTo(new Vector3(0, 1, 0)) * 180 / Math.PI).toFixed(1) + '° 讓刀刃順著手的方向，再繞劍身軸翻 ' + rollDeg + '° 讓刃口朝砍的方向');
 }
 
-/* ---- 倒地：劍隨身體倒下甩出去，最後平放在地上，手握著 ----
-   使用者逐幀指定（倒下動作的縮圖上畫箭頭）：1.6 秒以前劍照手的握法垂在身側；1.7 秒劍朝身體前方、斜下 45°；1.8 秒朝前、略向下；1.9 秒起劍平放在地上，
-   伸向身體左側往前 20°、劍面朝地、刃口不朝地（之前的箭頭）。遊戲模型的手是固定的拳頭，所以是整隻手（拳頭＋劍）繞手腕轉：每個關鍵時刻決定「劍的世界朝向」，
-   中間用球面內插，手腕的局部旋轉由這個朝向反推。1.7、1.8 秒的朝向是在「手原本握法的朝向」上做最小旋轉得到的（繞劍身軸的滾轉仍由手部動作決定）；
-   1.6 秒以前不動。手臂與身體的動作一個都不動；不為了閃開身體而轉手腕（使用者：劍的軌跡要由手的動作決定，穿一點可以接受）。 */
-function swingSword(g, rig, clip, cfg) {
-  const id = (n) => rig.byName[n], tr = clip.tracks['RightHand.rotation'], q0 = rig.rest[id('Sword')].q.clone(), n = tr.times.length;
+/* ---- 倒地：只改劍的方向（手完全不動）----
+   使用者：倒地的手掌（掌心朝下）正確，不要再動手；劍的方向照他在「正面角度」三張倒地畫面上畫的箭頭：箭頭由畫面右下斜（約 28°）、略斜（約 15°）到水平向右（0°）。
+   正面角度＝鏡頭在角色正前方、仰角 ELEV（30°，同 js/hero3d.js），畫面右邊＝角色左邊。所以箭頭「畫面向右、往下 θ 度」＝ 左方 L×cosθ ＋（畫面向下＝往前 F×sin30°、往下 −Up×cos30°）×sinθ。
+   三張圖大約是倒地後 1.9、2.0、2.1 秒；1.8 秒以前照手的握法，之後從 1.8 秒的朝向平順接到 1.9 秒的箭頭。右手骨骼的動作維持 Dead 搬過來的樣子，只改 Sword 骨骼相對手的旋轉
+   （每個關鍵時刻的劍世界朝向＝手原本握法的朝向做最小旋轉讓劍身指向目標方向，中間球面內插）。 */
+function swordDirection(g, rig, clip, cfg) {
+  const id = (n) => rig.byName[n], tr = clip.tracks['Sword.rotation'], q0 = rig.rest[id('Sword')].q.clone(), n = tr.times.length;
+  const handW = (t) => wRot(worldMatrices(rig, poseAt(rig, clip, t))(id('RightHand')));
+  const natural = (t) => handW(t).multiply(q0);
   const Wend = worldMatrices(rig, poseAt(rig, clip, tr.times[n - 1]));
   const fwd = wPos(Wend(id('Head'))).sub(wPos(Wend(id('Hips')))); fwd.y = 0; fwd.normalize();
-  const left = new Vector3(0, 1, 0).cross(fwd), dir = (pitchDeg) => fwd.clone().multiplyScalar(Math.cos(pitchDeg * Math.PI / 180)).addScaledVector(new Vector3(0, 1, 0), Math.sin(pitchDeg * Math.PI / 180)).normalize();   // pitch：水平線以上為正、以下為負
-  const th = cfg.forwardDeg * Math.PI / 180, ey = left.clone().multiplyScalar(Math.cos(th)).addScaledVector(fwd, Math.sin(th)).normalize(), ez = new Vector3(0, cfg.faceDown, 0), ex = new Vector3().crossVectors(ey, ez).normalize();
-  const lying = new Quaternion().setFromRotationMatrix(new Matrix4().makeBasis(ex, ey, ez));
-  const natural = (t) => { const W = worldMatrices(rig, poseAt(rig, clip, t)); return wRot(W(id('RightHand'))).multiply(q0); };
-  const toward = (t, d) => { const N = natural(t), s = new Vector3(0, 1, 0).applyQuaternion(N); return new Quaternion().setFromUnitVectors(s, d).multiply(N); };   // N 做最小旋轉讓劍身指向 d
-  const keys = cfg.keys.map((k) => ({ t: k.t, q: k.lying ? lying : (k.pitch === undefined ? natural(k.t) : toward(k.t, dir(k.pitch))) }));
+  const left = new Vector3(0, 1, 0).cross(fwd), up = new Vector3(0, 1, 0);
+  const E = cfg.elevDeg * Math.PI / 180, screenDown = fwd.clone().multiplyScalar(Math.sin(E)).addScaledVector(up, -Math.cos(E));      // 正面鏡頭：畫面向下的世界方向
+  const dirFront = (deg) => left.clone().multiplyScalar(Math.cos(deg * Math.PI / 180)).addScaledVector(screenDown, Math.sin(deg * Math.PI / 180)).normalize();   // 畫面向右、往下 deg 度
+  const toward = (t, d) => { const N = natural(t), s = new Vector3(0, 1, 0).applyQuaternion(N); return new Quaternion().setFromUnitVectors(s, d).multiply(N); };
+  const keys = cfg.keys.map((k) => ({ t: k.t, q: k.front === undefined ? natural(k.t) : toward(k.t, dirFront(k.front)) }));
   const ed = {};
   for (let i = 0; i < n; i++) {
     const t = tr.times[i];
@@ -566,14 +567,12 @@ function swingSword(g, rig, clip, cfg) {
     if (t >= keys[keys.length - 1].t) q = keys[keys.length - 1].q;
     else {
       let j = 0; while (keys[j + 1].t < t) j++;
-      const a = (t - keys[j].t) / (keys[j + 1].t - keys[j].t);
-      q = (j === 0 ? natural(t) : keys[j].q).clone().slerp(keys[j + 1].q, a);      // 第一段從「手原本的朝向（隨時間變）」接到下一個關鍵朝向
+      q = (j === 0 ? natural(t) : keys[j].q).clone().slerp(keys[j + 1].q, (t - keys[j].t) / (keys[j + 1].t - keys[j].t));
     }
-    const par = wRot(worldMatrices(rig, poseAt(rig, clip, t))(rig.parent[id('RightHand')]));
-    ed[i] = par.clone().invert().multiply(q).multiply(q0.clone().invert()).normalize();
+    ed[i] = handW(t).invert().multiply(q).normalize();      // Sword 局部旋轉＝手的世界旋轉⁻¹ × 想要的劍世界旋轉
   }
-  writeQuats(g, clip, 'RightHand', ed);
-  console.log('倒地：' + cfg.keys.map((k) => k.t + (k.lying ? ' 平放' : k.pitch === undefined ? ' 原樣' : ' 前方' + k.pitch + '°')).join('→'));
+  writeQuats(g, clip, 'Sword', ed);
+  console.log('倒地：只改劍的方向 ' + cfg.keys.map((k) => k.t + (k.front === undefined ? ' 原樣' : ' 正面畫面往右下' + k.front + '°')).join('→'));
 }
 
 /* ---- 收招：全身平順回到起始姿勢（讓動作首尾相接） ---- */
@@ -1217,11 +1216,11 @@ export function verifyGrips(file) {
     })(),
     strayTriangles: strayTriangles(g, rig).stray.length,                // 錯綁的尖刺三角面數（應為 0）
     attack1OffHandMaxDist: CFG.Attack1.retarget ? 0 : Math.max(...m1.map((r) => r[1])),   // 舊雙手劈：副手離劍軸最遠多少（改用單手動作後不適用）
-    deathSwordEnd: (() => {      // 倒地最後一格：劍面朝地（flat 法線的 y，應 ≤ −0.9）、劍身水平、朝身體左側（劍身 · 左方向）
-      const g = readGlb(file), rig = buildRig(g), clip = readClip(g, rig, 'Death'), W = worldMatrices(rig, poseAt(rig, clip, clip.duration)), q = wRot(W(rig.byName.Sword));
+    deathEnd: (() => {      // 倒地最後一格：劍身水平（y≈0）、朝身體左側；手維持 Dead 搬過來的朝向（手背朝上＝手骨骼 +X 的 y 為正，使用者確認這是對的，不可再動）
+      const g = readGlb(file), rig = buildRig(g), clip = readClip(g, rig, 'Death'), W = worldMatrices(rig, poseAt(rig, clip, clip.duration));
       const fwd = wPos(W(rig.byName.Head)).sub(wPos(W(rig.byName.Hips))); fwd.y = 0; fwd.normalize();
-      const blade = new Vector3(0, 1, 0).applyQuaternion(q);
-      return { flatNormalY: new Vector3(0, 0, 1).applyQuaternion(q).y, bladeY: blade.y, bladeLeft: blade.dot(new Vector3(0, 1, 0).cross(fwd)) };
+      const blade = new Vector3(0, 1, 0).applyQuaternion(wRot(W(rig.byName.Sword)));
+      return { bladeY: blade.y, bladeLeft: blade.dot(new Vector3(0, 1, 0).cross(fwd)), handX_y: new Vector3(1, 0, 0).applyQuaternion(wRot(W(rig.byName.RightHand))).y };
     })(),
     retargetMaxDeg: Math.max(...[['Attack1', CFG.Attack1.retarget], ['Death', CFG.Death.retarget], ...CFG.Attack2.meshy.map((sg) => ['Attack2', { ...sg, recover: sg.recover || CFG.Attack2.recover }])].flatMap(([c, sg]) => Object.values(retargetError(file, c, sg)))),   // 動作庫動作（收招開始前）四肢方向與來源的最大差：應為 0，代表沒有被改動
     swordGripMaxDeg: (() => {                                            // Attack1／Attack2 的 Sword 旋轉與模型原本握法（靜止局部旋轉）的最大差：應為 0
@@ -1302,6 +1301,7 @@ if (!checkOnly) {
     const a3 = readClip(g, rig, 'Death');
     importRetarget(g, rig, a3, CFG.Death.retarget);
     fitSwordGrip(g, rig, a3);
+    swordDirection(g, rig, a3, CFG.Death.swordDir);
   }
   limitWrists(g, rig);
   removeStrayTriangles(g, rig);
@@ -1311,7 +1311,6 @@ if (!checkOnly) {
   inflateCape(g, 0.02);
   softenCapeLegs(g, rig, 0.8);
   removeClothSlivers(g, rig, analyze);
-  swingSword(g, rig, readClip(g, rig, 'Death'), CFG.Death.swing);
   fs.writeFileSync(outFile, g.buf);
 }
 // 重新讀檔量測修正後（--check 時以記憶體中的結果量測不到，直接說明）

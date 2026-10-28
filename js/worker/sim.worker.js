@@ -20,11 +20,11 @@ if (typeof GameClock !== 'undefined') {
 /* String 表：資料檔版本由主執行緒（bridge.js）以網址 sv= 傳入，改文字不必動本檔。 */
 var _stringDataVersion = ((typeof self !== 'undefined' && self.location && /[?&]sv=(\w+)/.exec(self.location.search || '')) || [])[1] || '0';
 importScripts(
-  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../data.js?v=20261028-develop-merge-a8acfe', '../runeword_data.js?v=20261028-develop-merge-a8acfe', '../gem_resonance_data.js?v=20261028-develop-merge-a8acfe','../status.js?v=20261028-develop-merge-a8acfe', '../formula.js?v=20261028-develop-merge-a8acfe', '../battle-terrain.js?v=20261022-lava-terrain-develop-merge', '../battlefield.js?v=20261022-lava-terrain-develop-merge', '../stats.js?v=20261028-develop-merge-a8acfe',
+  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../data.js?v=20261028-develop-merge-a8acfe', '../runeword_data.js?v=20261028-develop-merge-a8acfe', '../gem_resonance_data.js?v=20261028-develop-merge-a8acfe','../status.js?v=20261028-develop-merge-a8acfe', '../formula.js?v=20261028-sync-cloud-control', '../battle-terrain.js?v=20261022-lava-terrain-develop-merge', '../battlefield.js?v=20261028-sync-cloud-control', '../stats.js?v=20261028-develop-merge-a8acfe',
   '../item.js?v=20261028-develop-merge-a8acfe', '../gem_resonance.js?v=20261026-system-unlock','../runeword.js?v=20261023-str-common',
-  '../skills.js?v=20261023-str-skill', '../skills2.js?v=20261028-develop-merge-a8acfe', '../elite_data.js?v=20261028-develop-merge-a8acfe', '../talents.js?v=20261026-system-unlock',
+  '../skills.js?v=20261023-str-skill', '../skills2.js?v=20261028-sync-cloud-control', '../elite_data.js?v=20261028-develop-merge-a8acfe', '../talents.js?v=20261026-system-unlock',
   '../player.js?v=20261028-develop-merge-a8acfe', '../special_rules.js?v=20261023-str-common',
-  '../combat.js?v=20261028-develop-merge-a8acfe', '../elite.js?v=20261028-develop-merge-a8acfe', '../elite_boss.js?v=20261023-str-battle', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261028-develop-merge-a8acfe', '../tower.js?v=20261028-develop-merge-a8acfe',
+  '../combat.js?v=20261028-sync-cloud-control', '../elite.js?v=20261028-develop-merge-a8acfe', '../elite_boss.js?v=20261023-str-battle', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261028-develop-merge-a8acfe', '../tower.js?v=20261028-sync-cloud-control',
   '../factory.js?v=20261027-speed-gear-base', '../newforge.js?v=20261028-develop-merge-a8acfe', '../forge.js?v=20261028-develop-merge-a8acfe', '../save.js?v=20261028-develop-merge-a8acfe',
   '../tasks.js?v=20261023-str-guard'
 );

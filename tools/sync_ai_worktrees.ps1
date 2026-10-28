@@ -404,6 +404,16 @@ function Test-SyncRemoteBranch {
     return $false
 }
 
+function Test-SyncHeadsDiverged {
+    param([string]$Worktree, [string]$Ref)
+    foreach ($pair in @(@('HEAD', $Ref), @($Ref, 'HEAD'))) {
+        $code = Invoke-GitSoft -Worktree $Worktree -GitArguments @('merge-base', '--is-ancestor', $pair[0], $pair[1])
+        if ($code -eq 0) { return $false }
+        if ($code -ne 1) { throw "無法驗證 $Worktree 與 $Ref 的提交關係，保留現場。" }
+    }
+    return $true
+}
+
 function Complete-DevelopConflict {
     param([string]$Worktree, [string]$IncomingSha, [string]$Message)
 
@@ -442,7 +452,7 @@ function Resume-DevelopConflict {
     if (-not $pending) { return }
     if ($ValidateOnly) { throw 'develop 有待完成合併；預檢模式不會呼叫 Codex 或修改檔案。' }
     # Resume only a single, known AI branch head. Do not guess about an unrelated merge.
-    foreach ($branch in $agentBranches) {
+    foreach ($branch in (@($agentBranches) + @($developBranch))) {
         foreach ($ref in @($branch, "$Remote/$branch")) {
             $sha = Get-GitTextSoft -Worktree $Worktree -GitArguments @('rev-parse', '--verify', $ref)
             if ($sha -eq $pending) {
@@ -540,12 +550,16 @@ try {
            改用 ff-only 之後三種情況都合理：
              遠端是祖先（本地領先）→ Already up to date，什麼都不做
              本地沒有新東西       → 直接 fast-forward
-             真的分歧             → 停下來報錯，交給人看
-           第三種正是該讓人知道的事；靜靜地改寫共用歷史比停下來糟得多。 #>
+             真的分歧             → 保留兩端，稍後在 develop 合併
+           分歧不使用 rebase／強推，也不在各 AI 工作區留下合併衝突。 #>
         Write-Step '先把所有必要分支對齊遠端（fast-forward）'
         foreach ($branch in $requiredBranches) {
             if (Test-SyncRemoteBranch -Repository $repository -Branch $branch) {
-                Invoke-Git -Worktree $worktrees[$branch] -GitArguments @('merge', '--ff-only', "$Remote/$branch")
+                if (Test-SyncHeadsDiverged -Worktree $worktrees[$branch] -Ref "$Remote/$branch") {
+                    Write-Host "[分岔保留] $branch 與 $Remote/$branch 稍後交由 develop 整合雙方。" -ForegroundColor Yellow
+                } else {
+                    Invoke-Git -Worktree $worktrees[$branch] -GitArguments @('merge', '--ff-only', "$Remote/$branch")
+                }
             }
         }
     }
@@ -555,21 +569,32 @@ try {
 
     Write-Step 'Fast-forward 並推送所有 AI 分支'
     $pushedHeads = @{}
+    $remoteHeads = @{}
+    $divergedBranches = @()
     foreach ($branch in $agentBranches) {
         $worktree = $worktrees[$branch]
         # 同上：緊接在 fetch --prune 之後，用 merge 對遠端追蹤參照動作即可，
         # 不必再 pull 一次（同樣的 FETCH_HEAD 重複項會讓 --ff-only 直接 fatal）。
         if (Test-SyncRemoteBranch -Repository $repository -Branch $branch) {
-            Invoke-Git -Worktree $worktree -GitArguments @('merge', '--ff-only', "$Remote/$branch")
+            if (Test-SyncHeadsDiverged -Worktree $worktree -Ref "$Remote/$branch") {
+                $divergedBranches += $branch
+                $remoteHeads[$branch] = Get-GitText -Worktree $worktree -GitArguments @('rev-parse', "$Remote/$branch")
+                Write-Host "[分岔保留] $branch 暫不推送；固定本地／遠端提交，於 develop 整合後再回同步。" -ForegroundColor Yellow
+            } else {
+                Invoke-Git -Worktree $worktree -GitArguments @('merge', '--ff-only', "$Remote/$branch")
+            }
         }
-        Invoke-Git -Worktree $worktree -GitArguments @('push', '--set-upstream', $Remote, "${branch}:${branch}")
+        if ($divergedBranches -notcontains $branch) {
+            Invoke-Git -Worktree $worktree -GitArguments @('push', '--set-upstream', $Remote, "${branch}:${branch}")
+            $remoteHeads[$branch] = Get-GitText -Worktree $worktree -GitArguments @('rev-parse', 'HEAD')
+        }
         $pushedHeads[$branch] = Get-GitText -Worktree $worktree -GitArguments @('rev-parse', 'HEAD')
     }
 
     Invoke-Git -Worktree $developWorktree -GitArguments @('fetch', '--prune', $Remote)
     foreach ($branch in $agentBranches) {
         $remoteHead = Get-GitText -Worktree $developWorktree -GitArguments @('rev-parse', "$Remote/$branch")
-        if ($remoteHead -ne $pushedHeads[$branch]) {
+        if ($remoteHead -ne $remoteHeads[$branch]) {
             throw "$Remote/$branch 在推送後又有新變更。為保護並行工作，已停止同步。"
         }
     }
@@ -589,9 +614,16 @@ try {
     #   也就是說失敗的是一個本來就沒事要做的步驟）。
     # merge --ff-only 直接對 $Remote/$developBranch 動作，完全不碰 FETCH_HEAD，
     # 語意不變而且與下方「fast-forward 回各 AI 分支」那段一致。
-    Invoke-Git -Worktree $developWorktree -GitArguments @('merge', '--ff-only', "$Remote/$developBranch")
+    if (Test-SyncHeadsDiverged -Worktree $developWorktree -Ref "$Remote/$developBranch") {
+        Merge-AiBranch -Worktree $developWorktree -Ref "$Remote/$developBranch"
+    } else {
+        Invoke-Git -Worktree $developWorktree -GitArguments @('merge', '--ff-only', "$Remote/$developBranch")
+    }
     foreach ($branch in $agentBranches) {
         Merge-AiBranch -Worktree $developWorktree -Ref "$Remote/$branch"
+        if ($divergedBranches -contains $branch) {
+            Merge-AiBranch -Worktree $developWorktree -Ref $pushedHeads[$branch] -Label $branch
+        }
     }
     foreach ($source in $integrationRefs) {
         Merge-AiBranch -Worktree $developWorktree -Ref $source.Sha -Label $source.Ref
@@ -608,7 +640,10 @@ try {
     }
     foreach ($branch in $agentBranches) {
         $current = Get-GitText -Worktree $developWorktree -GitArguments @('rev-parse', "$Remote/$branch")
-        if ($current -ne $pushedHeads[$branch]) { throw "$Remote/$branch 在整合期間變更，暫不推送 develop。" }
+        if ($current -ne $remoteHeads[$branch]) { throw "$Remote/$branch 在整合期間變更，暫不推送 develop。" }
+        $local = Get-GitText -Worktree $worktrees[$branch] -GitArguments @('rev-parse', 'HEAD')
+        if ($local -ne $pushedHeads[$branch]) { throw "$branch 在整合期間收到新的 commit，暫不推送 develop。" }
+        Assert-CleanWorktree -Worktree $worktrees[$branch] -ExpectedBranch $branch
     }
     $remaining = @(Get-SyncIntegrationRefs -Repository $developWorktree -CoveredBranches $agentBranches)
     if ($remaining.Count -gt 0) { throw "仍有新的 AI 來源未整合，暫不推送 develop：$($remaining.Ref -join ', ')；請重跑同步。" }
@@ -635,7 +670,7 @@ try {
         }
 
         Invoke-Git -Worktree $worktree -GitArguments @('merge', '--ff-only', "$Remote/$developBranch")
-        Invoke-Git -Worktree $worktree -GitArguments @('push', $Remote, "${branch}:${branch}")
+        Invoke-Git -Worktree $worktree -GitArguments @('push', '--set-upstream', $Remote, "${branch}:${branch}")
     }
 
     $heldRefs = @(Get-SyncHeldRefs -Repository $developWorktree)

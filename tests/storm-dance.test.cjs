@@ -43,16 +43,19 @@ function setup(tower) {
   return { c, p, m, hits, auto: () => auto, tick: dt => tower ? c.towerTick(dt) : c.fieldTick(dt) };
 }
 
-for (const tower of [false, true]) test((tower ? '高塔' : '野外') + '：化身期間普攻與自動施放並行，暈眩仍禁止出手', () => {
+for (const tower of [false, true]) test((tower ? '高塔' : '野外') + '：化身期間普攻與自動施放並行，玩家帶暈眩仍照常出手', () => {
   const s = setup(tower);
   for (let i = 1; i <= 20; i++) { s.c.GT = i * 0.1; s.tick(0.1); }
   assert.ok(s.hits.length >= 3 && s.hits.length <= 5, '兩秒內維持原有每秒兩次普攻');
   assert.ok(s.auto() >= 5, '化身每0.35秒仍自動施放');
   for (let i = 1; i < s.hits.length; i++) assert.ok(s.hits[i] - s.hits[i-1] >= 0.49);
   const before = s.hits.length;
+  const autoBefore = s.auto();
   s.p.effects.stun = 10;
-  s.c.GT = 2.1; s.tick(0.1);
-  assert.equal(s.hits.length, before);
+  for (let i = 21; i <= 30; i++) { s.c.GT = i * 0.1; s.tick(0.1); }
+  assert.ok(s.hits.length > before, '暈眩狀態不禁止玩家普攻');
+  assert.ok(s.auto() > autoBefore, '暈眩狀態不禁止玩家化身自動施放');
+  assert.equal(s.c.effectActive(s.p, 'stun'), true, '狀態仍保留');
   delete s.p.effects.stun;
   s.c.GT = 4; s.tick(0.1);
   assert.equal(s.c.skill2StormActive(), false);
