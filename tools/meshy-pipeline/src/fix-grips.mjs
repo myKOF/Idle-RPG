@@ -635,6 +635,29 @@ function fixGuardWing(g, rig) {
 }
 
 
+
+/* ---- 拉直劍身 ----
+   Meshy 原網格的劍身是彎的：以劍骨骼局部座標（y＝劍身軸，柄頭 −24、護手約 0～23、劍尖 100）量，劍身中心線在 y≈55 有約 1.8 單位的錯位（約劍寬的四分之一），
+   越往劍尖越偏向一邊（脊線 x：5.2@23、4.9@51、3.1@61、3.3@81、3.7@93）；把劍身軸轉成朝上、並排看不同係數：0.04 時劍尖正好在護手與握柄的同一條軸線上、最直（0.03 略偏，反向更糟）。對所有劍頂點（Sword 骨骼 100%）在 y>BLADE_Y0 的部分做一個只依 y 的剪切 x += BLADE_LEAN×(y−BLADE_Y0)，
+   貼圖接縫的重複頂點位置相同、位移也相同，不會裂開；護手與握柄（y≤BLADE_Y0）不動。 */
+const BLADE_Y0 = 23, BLADE_LEAN = 0.04;
+function straightenBlade(g) {
+  const sd = readSkinData(g), sj = sd.joints.indexOf('Sword');
+  const inv = new Matrix4().fromArray(sd.invBind, sj * 16), bind = inv.clone().invert(), v = new Vector3();
+  let n = 0;
+  for (let i = 0; i < sd.n; i++) {
+    if (!(sd.jnt[i * 4] === sj && sd.wgt[i * 4] > 0.999)) continue;
+    v.set(sd.pos[i * 3], sd.pos[i * 3 + 1], sd.pos[i * 3 + 2]).applyMatrix4(inv);
+    if (v.y <= BLADE_Y0) continue;
+    v.x += BLADE_LEAN * (v.y - BLADE_Y0);
+    v.applyMatrix4(bind);
+    [v.x, v.y, v.z].forEach((x, k) => g.buf.writeFloatLE(x, sd.pa.offset + (i * 3 + k) * 4));
+    n++;
+  }
+  console.log('劍身：拉直 ' + n + ' 個頂點（x += ' + BLADE_LEAN + '×(y−' + BLADE_Y0 + ')）');
+  return n;
+}
+
 /* ---- 蒙皮與拉伸量測 ---- */
 function readSkinData(g) {
   const prim = g.json.meshes[0].primitives[0];
@@ -964,6 +987,19 @@ export function retargetError(file, clipName, seg) {
 
 
 
+
+/* 偵察：某動作某時間，劍身（Sword 骨骼 100% 的頂點）蒙皮後偏離「刀尖到柄」直線的最大距離（模型單位）與劍長——直的劍應接近 0 */
+export function swordBend(file, clipName, t) {
+  const g = readGlb(file), rig = buildRig(g), clip = readClip(g, rig, clipName), sd = readSkinData(g), sj = sd.joints.indexOf('Sword');
+  const need = new Uint8Array(sd.n); const ids = [];
+  for (let i = 0; i < sd.n; i++) { if (sd.jnt[i * 4] === sj && sd.wgt[i * 4] > 0.999) { need[i] = 1; ids.push(i); } }
+  const P = skinnedPositions(rig, sd, poseAt(rig, clip, t), need);
+  const W = worldMatrices(rig, poseAt(rig, clip, t)), axis = new Vector3(0, 1, 0).applyQuaternion(wRot(W(rig.byName.Sword))).normalize(), o = wPos(W(rig.byName.Sword));
+  let dev = 0, len = 0; const v = new Vector3();
+  for (const i of ids) { v.set(P[i * 3], P[i * 3 + 1], P[i * 3 + 2]).sub(o); const along = v.dot(axis); len = Math.max(len, along); }
+  return { vertsOnSword: ids.length, bladeLength: +len.toFixed(3), scaleOfSwordBone: new Vector3().setFromMatrixScale(W(rig.byName.Sword)).toArray().map((x) => +x.toFixed(3)), handScale: new Vector3().setFromMatrixScale(W(rig.byName.RightHand)).toArray().map((x) => +x.toFixed(3)) };
+}
+
 /* ---- 驗證（給測試用）：量測某個 GLB 現在的握劍狀況 ---- */
 export function verifyGrips(file) {
   const g = readGlb(file), rig = buildRig(g);
@@ -980,6 +1016,13 @@ export function verifyGrips(file) {
     attack12WristTwistDeg: wristLimits(g, rig, ['Attack1', 'Attack2']).wrist,   // Meshy 網頁動作（不改）自己的手腕扭轉最大值，僅供參考                     // 前臂（相對上臂）扭轉最大值（度）
     armorRigidRatio: armorSoftness(g, rig),                              // 盔甲頂點中完全剛性（100% 單一骨骼）的比例
     maxClothStretch: maxClothStretch(g, rig),                            // 披風三角面最長邊被拉長的最大倍數
+    bladeLean: (() => {                                                  // 劍身頂點 x 對 y 的迴歸斜率（劍骨骼局部座標）：直的劍接近 0，原模型約 −0.03
+      const sd = readSkinData(g), sj = sd.joints.indexOf('Sword'), inv = new Matrix4().fromArray(sd.invBind, sj * 16), v = new Vector3(), xs = [], ys = [];
+      for (let i = 0; i < sd.n; i++) { if (!(sd.jnt[i * 4] === sj && sd.wgt[i * 4] > 0.999)) continue; v.set(sd.pos[i * 3], sd.pos[i * 3 + 1], sd.pos[i * 3 + 2]).applyMatrix4(inv); if (v.y > BLADE_Y0) { xs.push(v.x); ys.push(v.y); } }
+      const mx = xs.reduce((a, b) => a + b, 0) / xs.length, my = ys.reduce((a, b) => a + b, 0) / ys.length;
+      let num = 0, den = 0; xs.forEach((x, k) => { num += (x - mx) * (ys[k] - my); den += (ys[k] - my) ** 2; });
+      return num / den;
+    })(),
     guardWingStray: (() => {                                             // 護手右翼端仍綁在右手的頂點數（應為 0）
       const sd = readSkinData(g), sj = sd.joints.indexOf('Sword'), rh = sd.joints.indexOf('RightHand'), inv = new Matrix4().fromArray(sd.invBind, sj * 16), v = new Vector3();
       let n = 0;
@@ -1064,6 +1107,7 @@ if (!checkOnly) {
   limitWrists(g, rig);
   removeStrayTriangles(g, rig);
   hardenArmor(g, rig);
+  straightenBlade(g);
   fixGuardWing(g, rig);                                                          // 要在 hardenArmor 之後：其中 3 個頂點原本是手＋前臂混合權重，被 hardenArmor 改成 100% 右手
   removeClothSlivers(g, rig, analyze);
   fs.writeFileSync(outFile, g.buf);

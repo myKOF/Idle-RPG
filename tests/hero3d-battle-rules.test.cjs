@@ -76,6 +76,8 @@ test('3D 模型修正仍在：盔甲剛性、披風只小幅伸縮、手腕不�
   assert.ok(r.maxForearmTwistDeg <= 90.5, '前臂扭轉超過 90°：' + r.maxForearmTwistDeg.toFixed(0) + '°');
   assert.equal(r.strayTriangles, 0, '劍上還有錯綁到手／腿的三角面（揮動時會被拉成尖刺）：' + r.strayTriangles + ' 個（未修的原模型 8 個）');
   /* Attack1 改用 Meshy 動作庫的單手動作（小跳躍→轉圈→斜砍），動作本身不改，只調劍相對右手的朝向：劍身要順著前臂方向，收招回到起始姿勢 */
+  /* 劍身要是直的：Meshy 原網格的劍身中心線有錯位、越往劍尖越偏（迴歸斜率約 −0.041），拉直後接近 0 */
+  assert.ok(Math.abs(r.bladeLean) <= 0.01, '劍身是彎的：x 對 y 的斜率 ' + r.bladeLean.toFixed(3) + '（原模型 −0.041）');
   assert.equal(r.guardWingStray, 0, '劍護手右翼端還有 ' + r.guardWingStray + ' 個頂點綁在右手（劍相對手一轉護手就一邊歪掉；未修的原模型 11 個）');
   /* 劍留在拳頭原本的握法裡（不轉離握法，否則手套被拉成星形碎片）；動作庫動作的角色動作、骨骼、權重一個都不動 */
   assert.ok(r.swordGripMaxDeg < 0.1, 'Attack1／2 的劍離開了模型原本的握法：' + r.swordGripMaxDeg.toFixed(1) + '°');
