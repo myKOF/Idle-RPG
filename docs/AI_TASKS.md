@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## SYNC-STAGED-DELETION-20261028 — 自動合併可重複暫存已刪除檔案
+
+- Owner：Codex；Done（工具與驗證完成；提交後接續一般同步，最後HEAD以報告為準）。使用者1接續同步失敗；原合併已完成dfc7148b，再修正實際停止原因。允許resolve-sync-conflicts的逐檔暫存、真Git回歸、SYNC_AI_WORKTREES及本紀錄；禁止玩法／Excel／素材修改、放寬路徑／漏報／Build／父提交護欄，不發布main或解除背景分支hold。
+- 設計：回報檔案已不存在時，先以literal pathspec及cached diff確認該確切路徑是否已暫存刪除；僅此情況略過重複git add。尚未暫存的刪除仍照常add，從未追蹤且不存在的誤報仍失敗並保留合併。
+- 前置：codex已乾淨快轉至完成合併，四檔預檢均無外部修改。驗收真Git重現來源已暫存刪除、工作區新刪除、未知缺檔拒絕及原路徑／素材／Build護欄；通過後獨立提交、正常同步並確認所有可同步來源在develop歷史，三固定分支與遠端一致。後續接手使用者驗收。
+- 完成四檔：resolve-sync-conflicts新增8行精確檢查，測試fixture新增兩個含空白／方括號的舊動畫檔與工作區新刪除／未知缺檔三案例，流程及本紀錄同步。先以舊工具重現pathspec不存在的真Git失敗；修正後node --test --test-reporter=spec --test-name-pattern="Reported deletion|Missing reported path|PowerShell scripts|Real local remotes|Independent build|Resolver escape|Asset controller" tests/sync-auto-conflicts.test.cjs共9/9通過、無略過，含原父提交合併／推送／三分支一致、拒絕越界與未知缺檔、Build失敗停推及素材既有暫存保護。
+- npm.cmd run build597檔通過、node --check tests/sync-auto-conflicts.test.cjs及git diff --check通過。唯讀檢查既有index恢復、CLI／Excel交接、其餘同步流程與各工作區狀態；未改上述程式、遊戲內容、玩家文字、配置、素材或素材庫，無本項素材Commit。自我Review完成，無本項未完成實作，可合併；未再跑完整全庫／付費CLI人工衝突。提交為本段所在「[Codex] fix: 自動合併可重複處理已暫存刪除」，正常同步與最終來源包含核對記於develop/logs/sync-ai-worktrees/latest.md及完成收據。
+
 ## MERGE-BA3C949F-20261028 — 接續已暫存的主角動畫整合
 
 - Owner：Codex；Done（本輪合併驗證完成，提交後接續一般同步）。使用者輸入1授權處理develop；原HEAD 86200e0f、MERGE_HEAD ba3c949f，所有衝突已由前輪程序解開、13檔已暫存。停止原因是控制器再次git add已暫存刪除的meshy-double-combo-attack.json，並非內容仍有衝突；保留原父提交／來源修改，未reset或abort。

@@ -36,6 +36,14 @@ function Stage-ReportedFiles {
         $fullPath = [IO.Path]::GetFullPath((Join-Path $Root $relativePath))
         if (-not $fullPath.StartsWith($Root.TrimEnd('\', '/') + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase) -or
             (Test-Path -LiteralPath $fullPath -PathType Container)) { throw 'Reported path escapes the worktree or names a directory.' }
+        if (-not (Test-Path -LiteralPath $fullPath)) {
+            # Git already removes clean incoming deletions from the merge index.
+            # Re-adding that absent path fails; accept only an exact staged deletion.
+            & git --literal-pathspecs -C $Root diff --cached --quiet --no-renames --diff-filter=D -- $relativePath
+            $deletionCheck = $LASTEXITCODE
+            if ($deletionCheck -eq 1) { continue }
+            if ($deletionCheck -ne 0) { throw "Could not verify reported deletion: $relativePath" }
+        }
         & git --literal-pathspecs -C $Root add --all -- $relativePath
         if ($LASTEXITCODE -ne 0) { throw "Could not stage reported file: $relativePath" }
     }
