@@ -84,7 +84,8 @@ const CFG = {
                 Double Combo Attack（右手）：右上往左下斜砍，再反著揮回原位。不改動作本身；來源 0.10～1.32 秒（整段時間均勻壓縮 1.3 倍＝遊戲 1.72～2.66 秒，
                 形狀與各段相對速度不變，遊戲本來就會依攻速縮放播放時間），收招 2.66～3.11 回到起始姿勢——收招必須在整段播完之後才開始，
                 不能壓在動作上（否則會把後半段「反著揮回」往起始姿勢拉，與原動作不同）。 */
-             { name: 'combo2', retarget: true, file: 'meshy-double-combo-2.json', at: 1.72, speed: 1.3, recover: [2.66, 3.11] }],
+             { name: 'combo2', retarget: true, file: 'meshy-double-combo-2.json', at: 1.72, speed: 1.3, recover: [2.66, 3.11],
+               aim: { deg: -70, ramp: [1.72, 2.05] } }],   // 這招原本邊揮邊往左轉約 45°，砍的方向不在起始朝向的正前方；轉 −70° 後劍穿過正前方 1.5 處敵人的肩到胸（高度 1.03～1.39）
     lunge: { dist: 0.6, hipsK: 0.6, rearK: 0.8, t0: 1.10, t1: 1.34, lift: 0.12 },   // 往前跨一大步劈下：髖部前移 0.36、前腳整步、後腳跟上
     startTime: 0.10
   }
@@ -418,14 +419,15 @@ function extractRetarget(glbFile, clipName, from, to, fps, outFile) {
   const sid = (n) => rig.byName['mixamorig:' + n], R = restWorld(rig);
   const n = Math.round((to - from) * fps), rest = {}, rot = {}, dirs = {}, hips = [];
   for (const [, sn] of RT_BONES) { rest[sn] = wRot(R(sid(sn))).toArray(); rot[sn] = []; }
-  const restHips = wPos(R(sid('Hips'))).toArray();
+  const restHips = wPos(R(sid('Hips'))).toArray(), handDir = { LeftHand: [], RightHand: [] };
   for (let i = 0; i <= n; i++) {
     const W = worldMatrices(rig, poseAt(rig, clip, from + i / fps));
     for (const [, sn] of RT_BONES) rot[sn].push(wRot(W(sid(sn))).toArray().map((v) => +v.toFixed(6)));
     for (const [a, b] of Object.entries(RT_DIR)) (dirs[a] ||= []).push(wPos(W(sid(b))).sub(wPos(W(sid(a)))).normalize().toArray().map((v) => +v.toFixed(6)));
     hips.push(wPos(W(sid('Hips'))).toArray().map((v) => +v.toFixed(6)));
+    for (const sd of ['Left', 'Right']) handDir[sd + 'Hand'].push(wPos(W(sid(sd + 'HandMiddle1'))).sub(wPos(W(sid(sd + 'Hand')))).normalize().toArray().map((v) => +v.toFixed(6)));
   }
-  fs.writeFileSync(outFile, JSON.stringify({ format: 2, source: path.basename(glbFile), clip: clipName, from, to, fps, rest, restHips, rot, dirs, hips }));
+  fs.writeFileSync(outFile, JSON.stringify({ format: 2, source: path.basename(glbFile), clip: clipName, from, to, fps, rest, restHips, rot, dirs, hips, handDir }));
   console.log('已取樣（重新瞄準用）', clipName, from + '～' + to, '→', outFile, '（' + (n + 1) + ' 格）');
 }
 function importRetarget(g, rig, clip, seg) {
@@ -463,6 +465,11 @@ function importRetarget(g, rig, clip, seg) {
       }
       let Wa = wantW(gn);
       const W = worldMatrices(rig, pose);
+      if (gn === 'LeftHand' || gn === 'RightHand') {
+        // 手：遊戲手骨骼局部 +Y（指尖方向）對齊來源動作的手方向（Hand→Middle1）：兩套骨架手的靜止朝向不同，只做旋轉差會讓手的絕對朝向和原動作不一樣
+        const cand = new Vector3(0, 1, 0).applyQuaternion(Wa), want = interp(data.handDir[gn], u, 'v').normalize();
+        Wa = new Quaternion().setFromUnitVectors(cand, want).multiply(Wa);
+      }
       if (RT_DIR[gn]) {
         const child = RT_DIR[gn], dRest = rest0[child].p.clone().sub(rest0[gn].p).normalize();
         const cand = dRest.clone().applyQuaternion(rest0[gn].q.clone().invert()).applyQuaternion(Wa);
@@ -474,6 +481,16 @@ function importRetarget(g, rig, clip, seg) {
     }
     for (const [gn] of RT_BONES) if (clip.tracks[gn + '.rotation'] && clip.tracks[gn + '.rotation'].times.length === clip.keyTimes.length) (out[gn] ||= {})[i] = pose[id(gn)].q.clone();
     hipsEd[i] = pose[id('Hips')].t.clone();
+  }
+  // 瞄準：這個動作砍的方向偏離起始朝向（Double Combo 邊揮邊往左轉約 45°），敵人在起始朝向的正前方，整個身體（髖部連同腿）繞垂直軸轉 aim.deg，
+  // yaw 由 0 在 aim.ramp 內漸入（動作起頭不受影響），收招段由 recoverToStart 帶回起始姿勢
+  if (seg.aim && out.Hips) {
+    const HIPS = id('Hips'), P = restWorld(rig)(rig.parent[HIPS]), Pr = wRot(P);
+    for (const i of keyIdx) {
+      const t = clip.keyTimes[i], k = smooth((t - seg.aim.ramp[0]) / (seg.aim.ramp[1] - seg.aim.ramp[0]));
+      const yaw = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), seg.aim.deg * k * Math.PI / 180);
+      if (out.Hips[i]) out.Hips[i] = Pr.clone().invert().multiply(yaw).multiply(Pr).multiply(out.Hips[i]);
+    }
   }
   for (const [gn, ed] of Object.entries(out)) if (clip.tracks[gn + '.rotation']) writeQuats(g, clip, gn, ed);
   writeVecs(g, clip, 'Hips', hipsEd);
@@ -502,6 +519,20 @@ function probeRetarget(glbFile, clipName, dt) {
     const W = worldMatrices(rig, poseAt(rig, clip, t)), P = (n) => wPos(W(sid(n))).sub(h0).toArray().map((v) => v.toFixed(2)).join(',');
     console.log(t.toFixed(2), 'hips', P('Hips'), '| 左手', P('LeftHand'), '| 右手', P('RightHand'));
   }
+}
+
+
+/* ---- 刀刃順著手的方向（拳頭＋劍當一個整體轉）----
+   使用者指出：原動作裡手是沿著手臂方向伸出的，刀刃就該順著這個方向（刀刃＝手臂的延伸）。遊戲模型的拳頭是握著劍的，拳頭握柄軸與指尖方向（手骨骼 +Y）差約 44°，
+   所以保持原本握法的話刀刃會偏離手的方向。把右手骨骼的局部旋轉右乘一個固定的校正 C（把劍身軸轉到手骨骼 +Y），拳頭與劍是一起轉的，
+   劍與拳頭的相對位置不變（不會像單獨轉劍那樣把手套拉成碎片），刀刃就落在原動作手的方向上。這是兩套模型的手形狀不同所需的固定校正，不是改動作。 */
+function alignGripToHand(g, rig, clip) {
+  const tr = clip.tracks['RightHand.rotation'];
+  if (!tr || tr.times.length !== clip.keyTimes.length) return;
+  const b0 = new Vector3(0, 1, 0).applyQuaternion(rig.rest[rig.byName.Sword].q), C = new Quaternion().setFromUnitVectors(b0, new Vector3(0, 1, 0)), ed = {};
+  for (let i = 0; i < tr.times.length; i++) ed[i] = new Quaternion(tr.values[i * 4], tr.values[i * 4 + 1], tr.values[i * 4 + 2], tr.values[i * 4 + 3]).multiply(C);
+  writeQuats(g, clip, 'RightHand', ed);
+  console.log(clip.name + ' 握姿校正：拳頭＋劍整體轉 ' + (b0.angleTo(new Vector3(0, 1, 0)) * 180 / Math.PI).toFixed(1) + '° 讓刀刃順著手的方向');
 }
 
 /* ---- 收招：全身平順回到起始姿勢（讓動作首尾相接） ---- */
@@ -974,6 +1005,7 @@ export function retargetError(file, clipName, seg) {
     const W = worldMatrices(rig, poseAt(rig, clip, t));
     for (const [a, b] of Object.entries(RT_DIR)) {
       const want = new Vector3(...data.dirs[a][i]).lerp(new Vector3(...data.dirs[a][j]), k).normalize();
+      if (seg.aim) want.applyQuaternion(new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), seg.aim.deg * smooth((t - seg.aim.ramp[0]) / (seg.aim.ramp[1] - seg.aim.ramp[0])) * Math.PI / 180));   // 瞄準偏轉算進去
       const got = wPos(W(rig.byName[b])).sub(wPos(W(rig.byName[a]))).normalize();
       worst[a] = Math.max(worst[a] || 0, got.angleTo(want) * 180 / Math.PI);
     }
@@ -1000,6 +1032,52 @@ export function swordBend(file, clipName, t) {
   return { vertsOnSword: ids.length, bladeLength: +len.toFixed(3), scaleOfSwordBone: new Vector3().setFromMatrixScale(W(rig.byName.Sword)).toArray().map((x) => +x.toFixed(3)), handScale: new Vector3().setFromMatrixScale(W(rig.byName.RightHand)).toArray().map((x) => +x.toFixed(3)) };
 }
 
+
+/* 偵察：靜止姿勢下，遊戲的右手骨骼局部 +Y（指尖方向）、劍身軸、前臂方向（前臂→手）互相的夾角 */
+export function handAxes(file) {
+  const g = readGlb(file), rig = buildRig(g), W = restWorld(rig), id = (n) => rig.byName[n];
+  const hq = wRot(W(id('RightHand'))), sq = wRot(W(id('Sword')));
+  const hy = new Vector3(0, 1, 0).applyQuaternion(hq), blade = new Vector3(0, 1, 0).applyQuaternion(sq), fore = wPos(W(id('RightHand'))).sub(wPos(W(id('RightForeArm')))).normalize();
+  const deg = (a, b) => +(a.angleTo(b) * 180 / Math.PI).toFixed(1);
+  return { handY_vs_forearm: deg(hy, fore), blade_vs_forearm: deg(blade, fore), blade_vs_handY: deg(blade, hy), handY: hy.toArray().map((x) => +x.toFixed(2)), blade: blade.toArray().map((x) => +x.toFixed(2)), fore: fore.toArray().map((x) => +x.toFixed(2)) };
+}
+
+
+/* 驗證：能不能砍到站在正前方的敵人。敵人＝起始朝向正前方 D 處、半徑 0.28、高 0.35～1.6 的圓柱；
+   回傳 [t0,t1] 內劍身（握柄上方到劍尖）進入圓柱的格數（每 0.02 秒一格）與進入時的高度範圍。 */
+export function hitFrames(file, clipName, tStart, t0, t1, D) {
+  const g = readGlb(file), rig = buildRig(g), clip = readClip(g, rig, clipName), id = (n) => rig.byName[n];
+  const W0 = worldMatrices(rig, poseAt(rig, clip, tStart));
+  const q = wRot(W0(id('Hips'))), f = new Vector3(0, 0, 1).applyQuaternion(q); f.y = 0; f.normalize();
+  const hp0 = wPos(W0(id('Hips'))), ex = hp0.x + f.x * D, ez = hp0.z + f.z * D;
+  let n = 0, hmin = 9, hmax = -9;
+  for (let t = t0; t <= t1 + 1e-9; t += 0.02) {
+    const W = worldMatrices(rig, poseAt(rig, clip, t)), sw = W(id('Sword')), a = new Vector3(4.8, 15, 1).applyMatrix4(sw), b = new Vector3(4.8, 100.18, 1).applyMatrix4(sw);
+    let hit = null;
+    for (let k = 0; k <= 40; k++) { const p = a.clone().lerp(b, k / 40); if (p.y >= 0.35 && p.y <= 1.6 && Math.hypot(p.x - ex, p.z - ez) < 0.28) { hit = hit || { ymin: p.y, ymax: p.y }; hit.ymin = Math.min(hit.ymin, p.y); hit.ymax = Math.max(hit.ymax, p.y); } }
+    if (hit) { n++; hmin = Math.min(hmin, hit.ymin); hmax = Math.max(hmax, hit.ymax); }
+  }
+  return { frames: n, hmin: n ? +hmin.toFixed(2) : null, hmax: n ? +hmax.toFixed(2) : null };
+}
+
+
+/* 驗證：劍身軸（世界）與原動作手方向（取樣檔 handDir：Hand→Middle1）的最大夾角，只看收招開始前的格。刀刃要是手方向的延伸，應為 0。 */
+export function bladeVsSourceHand(file, clipName, seg) {
+  const g = readGlb(file), rig = buildRig(g), clip = readClip(g, rig, clipName);
+  const data = JSON.parse(fs.readFileSync(path.join(here, 'data', seg.file), 'utf8')), speed = seg.speed || 1, n = data.hips.length;
+  let worst = 0;
+  for (const t of clip.keyTimes) {
+    if (t < seg.at || t > seg.recover[0]) continue;
+    const u = (t - seg.at) * speed, f = Math.max(0, Math.min(n - 1, u * data.fps)), i = Math.floor(f), j = Math.min(n - 1, i + 1), k = f - i;
+    const want = new Vector3(...data.handDir.RightHand[i]).lerp(new Vector3(...data.handDir.RightHand[j]), k).normalize();
+    if (seg.aim) want.applyQuaternion(new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), seg.aim.deg * smooth((t - seg.aim.ramp[0]) / (seg.aim.ramp[1] - seg.aim.ramp[0])) * Math.PI / 180));   // 瞄準偏轉也要算進去
+    const W = worldMatrices(rig, poseAt(rig, clip, t)), blade = new Vector3(0, 1, 0).applyQuaternion(wRot(W(rig.byName.Sword)));
+    worst = Math.max(worst, blade.angleTo(want) * 180 / Math.PI);
+    if (process.env.FIXGRIPS_DEBUG) console.log('bladeVsHand', clipName, t.toFixed(3), (blade.angleTo(want) * 180 / Math.PI).toFixed(1));
+  }
+  return worst;
+}
+
 /* ---- 驗證（給測試用）：量測某個 GLB 現在的握劍狀況 ---- */
 export function verifyGrips(file) {
   const g = readGlb(file), rig = buildRig(g);
@@ -1016,6 +1094,13 @@ export function verifyGrips(file) {
     attack12WristTwistDeg: wristLimits(g, rig, ['Attack1', 'Attack2']).wrist,   // Meshy 網頁動作（不改）自己的手腕扭轉最大值，僅供參考                     // 前臂（相對上臂）扭轉最大值（度）
     armorRigidRatio: armorSoftness(g, rig),                              // 盔甲頂點中完全剛性（100% 單一骨骼）的比例
     maxClothStretch: maxClothStretch(g, rig),                            // 披風三角面最長邊被拉長的最大倍數
+    bladeVsHandDeg: Math.max(...[['Attack1', CFG.Attack1.retarget], ...CFG.Attack2.meshy.map((sg) => ['Attack2', { ...sg, recover: sg.recover || CFG.Attack2.recover }])].map(([c, sg]) => bladeVsSourceHand(file, c, sg))),   // 刀刃與「原動作手的方向」的最大夾角（收招開始前）：應為 0
+    hits: {                                                              // 能不能砍到正前方 1.5 處的敵人（各招的揮砍時段）
+      attack1: hitFrames(file, 'Attack1', CFG.Attack1.retarget.at, 0.70, 0.90, 1.5),
+      attack2a: hitFrames(file, 'Attack2', CFG.Attack2.startTime, 0.40, 0.70, 1.5),
+      attack2b: hitFrames(file, 'Attack2', CFG.Attack2.startTime, 1.00, 1.20, 1.5),
+      attack3: hitFrames(file, 'Attack2', CFG.Attack2.meshy[1].at, 2.10, 2.60, 1.5)
+    },
     bladeLean: (() => {                                                  // 劍身頂點 x 對 y 的迴歸斜率（劍骨骼局部座標）：直的劍接近 0，原模型約 −0.03
       const sd = readSkinData(g), sj = sd.joints.indexOf('Sword'), inv = new Matrix4().fromArray(sd.invBind, sj * 16), v = new Vector3(), xs = [], ys = [];
       for (let i = 0; i < sd.n; i++) { if (!(sd.jnt[i * 4] === sj && sd.wgt[i * 4] > 0.999)) continue; v.set(sd.pos[i * 3], sd.pos[i * 3 + 1], sd.pos[i * 3 + 2]).applyMatrix4(inv); if (v.y > BLADE_Y0) { xs.push(v.x); ys.push(v.y); } }
@@ -1086,6 +1171,7 @@ if (!checkOnly) {
     importRetarget(g, rig, a1, seg);
     recoverToStart(g, rig, a1, { startTime: seg.startTime, recover: seg.recover });
     fitSwordGrip(g, rig, a1);
+    alignGripToHand(g, rig, a1);
   }
   if (CFG.Attack2.meshy) {
     for (const seg of CFG.Attack2.meshy) {
@@ -1098,6 +1184,7 @@ if (!checkOnly) {
       recoverToStart(g, rig, a2, { startTime: seg.at, recover: seg.recover || CFG.Attack2.recover });
     }
     fitSwordGrip(g, rig, a2);                                                  // 兩招共用同一個握姿（模型原本的握法）
+    alignGripToHand(g, rig, a2);
   } else {
     const lunge = fixLunge(rig, a2, CFG.Attack2);
     for (const [nm, ed] of Object.entries(regroup(lunge.rot))) writeQuats(g, a2, nm, ed);
