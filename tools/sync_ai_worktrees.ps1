@@ -253,16 +253,26 @@ function Register-AiTasksMergeDriver {
 }
 
 function Test-SyncBranchHeld {
-    param([string]$Repository, [string]$Branch, [string]$Owner)
+    param([string]$Repository, [string]$Branch)
     $hold = Get-GitTextSoft -Worktree $Repository -GitArguments @('config', '--bool', '--get', "branch.$Branch.codexSyncHold")
     if ($hold -eq 'true') { return $true }
     if ($Branch -in @('codex/knight3d-prototype', 'codex/knight-makehuman-motion', 'codex/knight-makehuman') -and $hold -ne 'false') { return $true }
-    if (-not $Owner -and $Branch -match '^(?:ai/)?(codex|claude|antigravity)(?:[-/]|$)') { $Owner = $Matches[1] }
-    if ($Owner -and $Branch -ne "ai/$Owner") {
-        $parentHold = Get-GitTextSoft -Worktree $Repository -GitArguments @('config', '--bool', '--get', "branch.ai/$Owner.codexSyncHold")
-        if ($parentHold -eq 'true') { return $true }
-    }
+    # A hold applies to this exact branch, not every task by the same AI.
     return $false
+}
+
+function Get-SyncHeldRefs {
+    param([string]$Repository)
+    $remotePrefix = "refs/remotes/$Remote/"
+    $listing = Get-GitText -Worktree $Repository -GitArguments @('for-each-ref', '--format=%(refname)%09%(objectname)', 'refs/heads/', $remotePrefix)
+    foreach ($line in ($listing -split "`n")) {
+        if (-not $line) { continue }
+        $parts = $line -split "`t", 2
+        $branch = if ($parts[0].StartsWith('refs/heads/')) { $parts[0].Substring(11) } else { $parts[0].Substring($remotePrefix.Length) }
+        if (Test-SyncBranchHeld -Repository $Repository -Branch $branch) {
+            [pscustomobject]@{ Ref = $parts[0]; Sha = $parts[1] }
+        }
+    }
 }
 
 function Get-SyncIntegrationRefs {
@@ -290,7 +300,7 @@ function Get-SyncIntegrationRefs {
                 $known = $true
             }
         }
-        if (-not $known -or (Test-SyncBranchHeld -Repository $Repository -Branch $branch -Owner $owner)) { continue }
+        if (-not $known) { continue }
         $active = Get-WorktreeMap -AnyWorktree $Repository
         if ($active.ContainsKey($branch)) { Assert-CleanWorktree -Worktree $active[$branch] -ExpectedBranch $branch }
         [pscustomobject]@{ Ref = $ref; Branch = $branch; Sha = $sha; Owner = $owner }
@@ -501,6 +511,9 @@ try {
     Write-Host ('遠端：{0}（{1}）' -f $Remote, $remoteUrl)
 
     if ($ValidateOnly) {
+        foreach ($held in @(Get-SyncHeldRefs -Repository $developWorktree)) {
+            Write-Host "[未同步保留來源] $($held.Ref) -> $($held.Sha)" -ForegroundColor Yellow
+        }
         foreach ($source in @(Get-SyncIntegrationRefs -Repository $developWorktree -CoveredBranches $agentBranches)) {
             Write-Host "[待整合來源／本機參照快照] $($source.Ref) -> $($source.Sha)"
         }
@@ -589,7 +602,7 @@ try {
     Invoke-Git -Worktree $developWorktree -GitArguments @('fetch', '--prune', $Remote)
     foreach ($source in $integrationRefs) {
         $current = Get-GitTextSoft -Worktree $developWorktree -GitArguments @('rev-parse', '--verify', $source.Ref)
-        if ($current -ne $source.Sha -or (Test-SyncBranchHeld -Repository $repository -Branch $source.Branch -Owner $source.Owner)) {
+        if ($current -ne $source.Sha -or (Test-SyncBranchHeld -Repository $repository -Branch $source.Branch)) {
             throw "來源 $($source.Ref) 在整合期間變更；保留本地整合，暫不推送 develop，請重跑同步。"
         }
     }
@@ -625,7 +638,15 @@ try {
         Invoke-Git -Worktree $worktree -GitArguments @('push', $Remote, "${branch}:${branch}")
     }
 
-    Write-Step '同步完成'
+    $heldRefs = @(Get-SyncHeldRefs -Repository $developWorktree)
+    if ($heldRefs.Count -gt 0) {
+        Write-Step '同步完成（有保留來源未同步）'
+        foreach ($held in $heldRefs) {
+            Write-Host "[未同步保留來源] $($held.Ref) -> $($held.Sha)" -ForegroundColor Yellow
+        }
+    } else {
+        Write-Step '同步完成'
+    }
     $finalHead = Get-GitText -Worktree $developWorktree -GitArguments @('rev-parse', '--short', 'HEAD')
     Write-Host "develop 與本輪同步的 AI 工作區目前都指向 $finalHead；已確認可同步 AI 來源均在主線歷史內。" -ForegroundColor Green
 

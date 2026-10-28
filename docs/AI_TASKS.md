@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## SYNC-HOLD-SCOPE-20261028 — 修正保留範圍並納入977e425
+
+- Owner：Codex；In Progress。使用者指出同步成功但漏掉977e425，明確要求不論來源分支，將最新成果完整整合至develop並讓三個AI工作區取得整合結果。本次授權解除ai/claude舊hold；codex/background-catchup明確隔離維持，不發布main。
+- 原因：固定ai/claude的本機hold被工具擴張繼承到獨立ai/claude-kpj271與任意名稱Claude來源，來源完整性檢查也排除它們；成功訊息沒有在結尾列出被保留的來源，導致誤判全數最新。
+- 範圍：同步工具的hold判斷／完成訊息、真Git回歸、流程與AGENTS同步定義、本紀錄；正常合併977e425的既有成果，必要index快取及任務紀錄衝突保留雙方。禁止玩法擴修、覆蓋進行中修改、發布main或解除其他隔離。
+- 前置與驗收：所有正式參與工作區乾淨、先fetch並固定來源；雲端來源九筆新增提交，merge-tree僅AI_TASKS及index文字衝突。預檢五檔無其他修改來源。驗證hold僅限明確分支、獨立雲端成果仍納入、結尾列出保留範圍；相關同步／3D／快取回歸及Build，檢查來源為develop祖先且三固定分支與遠端一致後回報。後續接手：使用者驗收；測試與提交結果完成後補記。
+- 工具驗證完成：先以新增真Git案例重現舊版漏掉雲端提交，再修正為精確分支hold；node --test --test-reporter=spec tests/sync-feature-worktrees.test.cjs tests/sync-ai-worktrees.test.cjs tests/sync-auto-conflicts.test.cjs tests/sync-index-recovery.test.cjs tests/sync-excel-handoff.test.cjs共73/73通過、無略過；npm.cmd run build595檔通過、git diff --check通過。工具修正獨立提交，實際整合接續。
+- 必要素材：從固定977e4254原始Git blob備存GLB、布料清單、SOURCE、三份製作規格、修正腳本與兩份動作取樣，九檔逐一SHA256一致，加source.json收據；素材庫Commit 5773ad94262719a5930e7869e50d9aa53dee62c8。未執行生成或付費API，原內測／正式發布限制維持；既有thunder未追蹤素材保留，不納本次提交，素材庫未推送。
+
 ## SYNC-ALL-AI-SOURCES-20261028 — 主線完整整合與雲端來源補掃
 
 - Owner：Codex；Done（程式、來源保留與驗證完成；本聊天接續正常同步，推送結果以最新同步報告與回覆為準）。使用者指出bf37b93未被最新同步包含，並明確定義「所有AI同步到最新」是完整整合所有可同步AI成果至主線，不受來源分支名稱或是否有worktree限制；本聊天授權保留各方修改、修復同步工具並完成正常整合／推送，既有hold與main發布限制維持。
