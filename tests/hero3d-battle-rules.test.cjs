@@ -69,8 +69,8 @@ test('3D 模型修正仍在：盔甲剛性、披風只小幅伸縮、手腕不�
   /* 盔甲是硬的、不能形變：內部頂點要 100% 綁單一骨骼（未修的原模型只有 13%） */
   assert.ok(r.armorRigidRatio >= 0.5, '盔甲還是柔性蒙皮（揮動時會被拉扯壓扁）：剛性頂點只有 ' + (r.armorRigidRatio * 100).toFixed(0) + '%');
   /* 披風只准小幅伸縮（未修的原模型最大 66 倍，會被拉成細絲） */
-  /* 倒地：手維持 Dead 搬過來的朝向（使用者確認掌心朝下是對的，不可再動），只有劍的方向被指定：最後劍身水平、朝身體左側 */
-  assert.ok(Math.abs(r.deathEnd.bladeY) <= 0.1 && r.deathEnd.bladeLeft >= 0.8 && r.deathEnd.handX_y >= 0.5, '倒地最後一格不對：劍身 y=' + r.deathEnd.bladeY.toFixed(2) + '，朝左 ' + r.deathEnd.bladeLeft.toFixed(2) + '，手背朝上 ' + r.deathEnd.handX_y.toFixed(2));
+  /* 倒地：手不另外轉動，劍隨時與手保持原本的正握（劍從虎口出去）；Sword 旋轉＝模型原本的握法 */
+  assert.ok(r.deathGripMaxDeg < 0.1, '倒地時劍離開了原本的握法：' + r.deathGripMaxDeg.toFixed(2) + '°');
   assert.ok(r.maxClothStretch <= 25.1, '披風有三角面被拉長 ' + r.maxClothStretch.toFixed(1) + ' 倍（細絲）');
   /* 手腕只能左右約 90 度，這裡抓 65°：Meshy 網頁動作（Mixamo 骨架沒有前臂扭轉骨）整個手腕扭轉都在手上，最大 233°，
      會把前臂護甲與手之間的網格擰成碎片；超過 60° 的部分改由前臂（上限 90°）、再由上臂繞軸滾動吸收，手與前臂的世界朝向不變 */
