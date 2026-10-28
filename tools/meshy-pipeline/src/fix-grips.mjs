@@ -95,6 +95,9 @@ const CFG = {
   },
   /* 倒地：改用使用者在 Meshy 網頁重新綁骨架後套的 Dead 動作（取樣檔 data/meshy-dead.json，來源 0～2.9667 秒，30 fps）。原 Death 動作長 2.75 秒、
      67 個關鍵幀，寫不下 2.967 秒，所以來源時間均勻壓縮 speed 倍（≈1.079）塞進去。不限手腕、不做 IK，動作與骨骼不動；手掌不另外轉動（使用者：從跪地到倒地手掌別轉，順著手臂的自然方向握劍），Sword 旋轉設成模型原本的握法（fitSwordGrip），劍隨時與手保持正握（劍從虎口出去）。 */
+  /* 跑步：改用使用者在 Meshy 網頁套的 Female_Throwing_Stance_Charge_inplace（原地、右手擺動很小；取樣檔 data/meshy-run.json，30 fps，來源 0.5333 秒），來源時間均勻拉長到 Run 的 0.625 秒（speed＝0.5333/0.625）。
+     不限手腕、不做 IK；Sword 旋轉設成模型原本的握法（fitSwordGrip）。 */
+  Run: { retarget: { name: 'run', file: 'meshy-run.json', at: 0, speed: 0.5333 / 0.625 } },
   Death: { retarget: { name: 'dead', file: 'meshy-dead.json', at: 0, speed: 2.9667 / 2.75 }, arrows: { elevDeg: 30, pivotDeg: 55, keys: [ { t: 1.8 }, { t: 1.9, phi: 3 }, { t: 2.0, phi: 26 }, { t: 2.1, phi: 39 }, { t: 2.75, phi: 46 } ] } }
 };
 
@@ -976,7 +979,7 @@ function limitWristTwist(g, rig, clip, side) {
 function limitWrists(g, rig) {
   let total = 0;
   for (const name of g.json.animations.map((a) => a.name)) {
-    if (name === 'Attack1' || name === 'Attack2' || name === 'Death') continue;   // Meshy 網頁動作：不動角色的動作與骨骼（使用者要求只調整劍）
+    if (name === 'Attack1' || name === 'Attack2' || name === 'Death' || name === 'Run') continue;   // Meshy 網頁動作：不動角色的動作與骨骼（使用者要求只調整劍）
     const clip = readClip(g, rig, name);
     let m = 0;
     for (const side of ['Right', 'Left']) m += limitWristTwist(g, rig, clip, side);
@@ -989,7 +992,7 @@ function wristLimits(g, rig, only) {
   // 量測：所有動作裡手腕扭轉與前臂扭轉的最大絕對值（連續展開後）
   let w = 0, f = 0;
   for (const name of g.json.animations.map((a) => a.name)) {
-    if (only ? !only.includes(name) : (name === 'Attack1' || name === 'Attack2' || name === 'Death')) continue;
+    if (only ? !only.includes(name) : (name === 'Attack1' || name === 'Attack2' || name === 'Death' || name === 'Run')) continue;
     const clip = readClip(g, rig, name);
     for (const side of ['Right', 'Left']) {
       const th = clip.tracks[side + 'Hand.rotation'], tf = clip.tracks[side + 'ForeArm.rotation'];
@@ -1302,6 +1305,11 @@ if (!checkOnly) {
     importRetarget(g, rig, a3, CFG.Death.retarget);
     fitSwordGrip(g, rig, a3);
     swordArrows(g, rig, a3, CFG.Death.arrows);
+  }
+  {
+    const a4 = readClip(g, rig, 'Run');
+    importRetarget(g, rig, a4, CFG.Run.retarget);
+    fitSwordGrip(g, rig, a4);
   }
   limitWrists(g, rig);
   removeStrayTriangles(g, rig);
