@@ -95,7 +95,7 @@ const CFG = {
   },
   /* 倒地：改用使用者在 Meshy 網頁重新綁骨架後套的 Dead 動作（取樣檔 data/meshy-dead.json，來源 0～2.9667 秒，30 fps）。原 Death 動作長 2.75 秒、
      67 個關鍵幀，寫不下 2.967 秒，所以來源時間均勻壓縮 speed 倍（≈1.079）塞進去。不限手腕、不做 IK，動作與骨骼不動；Sword 旋轉設成模型原本的握法（fitSwordGrip），倒下途中劍脫手落地（dropSword）。 */
-  Death: { retarget: { name: 'dead', file: 'meshy-dead.json', at: 0, speed: 2.9667 / 2.75 }, settle: { from: 1.9, to: 2.35, forwardDeg: 20, faceDown: -1 } }
+  Death: { retarget: { name: 'dead', file: 'meshy-dead.json', at: 0, speed: 2.9667 / 2.75 }, avoid: { minDist: 0.07, maxDeg: 45, stepDeg: 15, until: 1.9, fadeTo: 2.35 }, settle: { from: 1.9, to: 2.35, forwardDeg: 20, faceDown: -1 } }
 };
 
 /* ---- GLB ---- */
@@ -565,6 +565,59 @@ function settleHand(g, rig, clip, cfg) {
   console.log('倒地：' + cfg.from + '～' + cfg.to + ' 秒手腕轉到劍平放（水平朝身體左側往前 ' + cfg.forwardDeg + '°）');
 }
 
+/* ---- 倒地：劍不穿身體 ----
+   手部動作來自「手張開、沒拿劍」的原動作，劍固定在拳頭裡，有幾幀劍會穿進腿、膝蓋護甲。逐格檢查：劍的頂點離身體（盔甲，不含右臂與劍自己）最近的距離若小於 cfg.minDist，
+   就把手腕（右手骨骼的區域旋轉，只轉手腕；拳頭＋劍一起轉，劍相對拳頭不動）在小範圍內（每軸 ±cfg.maxDeg）搜尋最接近上一格轉法、又不穿身體的轉角。手臂與身體的動作不動。 */
+function avoidBody(g, rig, clip, cfg) {
+  const id = (n) => rig.byName[n], tr = clip.tracks['RightHand.rotation'], sd = readSkinData(g), cloth = loadCloth(g, sd.n), sj = sd.joints.indexOf('Sword');
+  const skip = new Set(['RightHand', 'RightForeArm', 'RightArm', 'RightShoulder', 'Sword']), need = new Uint8Array(sd.n), body = [];
+  for (let i = 0; i < sd.n; i++) {
+    if (cloth[i]) continue;
+    let best = 0, bw = 0; for (let k = 0; k < 4; k++) if (sd.wgt[i * 4 + k] > bw) { bw = sd.wgt[i * 4 + k]; best = sd.jnt[i * 4 + k]; }
+    if (skip.has(sd.joints[best])) continue;
+    need[i] = 1; body.push(i);
+  }
+  const inv = new Matrix4().fromArray(sd.invBind, sj * 16), sv = [];
+  for (let i = 0, c = 0; i < sd.n; i++) if (sd.jnt[i * 4] === sj && sd.wgt[i * 4] > 0.5 && (c++ % 2 === 0)) sv.push(new Vector3(sd.pos[i * 3], sd.pos[i * 3 + 1], sd.pos[i * 3 + 2]).applyMatrix4(inv));
+  const grid = []; const A = cfg.maxDeg, st = cfg.stepDeg;
+  for (let x = -A; x <= A; x += st) for (let y = -A; y <= A; y += st) for (let z = -A; z <= A; z += st) grid.push([x, y, z]);
+  const rq = (v) => new Quaternion().setFromEuler(new THREE.Euler(v[0] * Math.PI / 180, v[1] * Math.PI / 180, v[2] * Math.PI / 180, 'XYZ'));
+  const n = tr.times.length, ed = {}; let prev = [0, 0, 0], adjusted = 0, worstBefore = 1e9, worstAfter = 1e9;
+  for (let i = 0; i < n; i++) {
+    const t = tr.times[i], pose = poseAt(rig, clip, t);
+    const cur = new Quaternion(tr.values[i * 4], tr.values[i * 4 + 1], tr.values[i * 4 + 2], tr.values[i * 4 + 3]);
+    if (t >= cfg.until) {      // 躺平階段不再搜尋（那一段由 settleHand 帶到使用者要的姿勢），只把前面的調整量漸漸收掉，免得接縫跳格
+      const k = 1 - Math.min(1, smooth((t - cfg.until) / (cfg.fadeTo - cfg.until)));
+      const v = prev.map((x) => x * k);
+      if (v[0] || v[1] || v[2]) ed[i] = cur.clone().multiply(rq(v));
+      continue;
+    }
+    const P = skinnedPositions(rig, sd, pose, need);
+    const hand = wPos(worldMatrices(rig, pose)(id('RightHand'))), near = body.filter((b) => Math.hypot(P[b * 3] - hand.x, P[b * 3 + 1] - hand.y, P[b * 3 + 2] - hand.z) < 1.4);
+    const dist = (v) => {
+      pose[id('RightHand')].q.copy(cur).multiply(rq(v));
+      const M = worldMatrices(rig, pose)(id('Sword')), p = new Vector3(); let m = 1e9;
+      for (const l of sv) { p.copy(l).applyMatrix4(M); for (const b of near) { const dx = P[b * 3] - p.x, dy = P[b * 3 + 1] - p.y, dz = P[b * 3 + 2] - p.z, d = dx * dx + dy * dy + dz * dz; if (d < m) m = d; } }
+      return Math.sqrt(m);
+    };
+    const d0 = dist([0, 0, 0]); worstBefore = Math.min(worstBefore, d0);
+    let pick = [0, 0, 0], pd = d0;
+    if (d0 < cfg.minDist || (prev[0] || prev[1] || prev[2])) {
+      let bestCost = 1e18, bestFar = [0, 0, 0], farD = -1;
+      for (const v of [prev, ...grid]) {
+        const d = dist(v);
+        if (d > farD) { farD = d; bestFar = v; }
+        if (d >= cfg.minDist) { const cost = (v[0] - prev[0]) ** 2 + (v[1] - prev[1]) ** 2 + (v[2] - prev[2]) ** 2 + 0.05 * (v[0] ** 2 + v[1] ** 2 + v[2] ** 2); if (cost < bestCost) { bestCost = cost; pick = v; pd = d; } }
+      }
+      if (bestCost === 1e18) { pick = bestFar; pd = farD; }
+    }
+    prev = pick; worstAfter = Math.min(worstAfter, pd);
+    if (pick[0] || pick[1] || pick[2]) { ed[i] = cur.clone().multiply(rq(pick)); adjusted++; }
+  }
+  writeQuats(g, clip, 'RightHand', ed);
+  console.log('倒地：劍避開身體，調整手腕 ' + adjusted + ' 格；劍到身體最近距離 ' + worstBefore.toFixed(3) + ' → ' + worstAfter.toFixed(3));
+}
+
 /* ---- 收招：全身平順回到起始姿勢（讓動作首尾相接） ---- */
 function recoverToStart(g, rig, clip, cfg) {
   if (!cfg.recover) return;
@@ -780,7 +833,7 @@ function clothStretch(g, rig, sd, cloth) {
   const edgeLen = (P, i, j) => Math.hypot(P[i * 3] - P[j * 3], P[i * 3 + 1] - P[j * 3 + 1], P[i * 3 + 2] - P[j * 3 + 2]);
   const restPose = rig.rest.map((r) => ({ t: r.t.clone(), q: r.q.clone(), s: r.s.clone() }));
   const rest = skinnedPositions(rig, sd, restPose, need);
-  const worst = new Float32Array(sd.idx.length / 3);
+  const worst = new Float32Array(sd.idx.length / 3), longest = new Float32Array(sd.idx.length / 3);
   for (const name of g.json.animations.map((a) => a.name)) {
     const clip = readClip(g, rig, name);
     for (let t = 0; t <= clip.duration + 1e-6; t += 1 / 12) {
@@ -790,11 +843,12 @@ function clothStretch(g, rig, sd, cloth) {
         for (const [i, j] of [[a, b], [b, c], [c, a]]) {
           const r = edgeLen(P, i, j) / (edgeLen(rest, i, j) + 1e-4);
           if (r > worst[tri]) worst[tri] = r;
+          const L = edgeLen(P, i, j); if (L > longest[tri]) longest[tri] = L;
         }
       }
     }
   }
-  return { worst, tris };
+  return { worst, tris, longest };
 }
 
 /* ---- 重寫索引緩衝區（拿掉指定三角形）；索引數量就地改，JSON 長度不變 ---- */
@@ -861,10 +915,47 @@ function armorSoftness(g, rig) {
   return rigid / armor;      // 剛性頂點占盔甲頂點的比例
 }
 
+/* ---- 披風下擺貼著腿的頂點：權重往髖部拉 ----
+   被刪的 62 個細絲三角面全都是「髖部頂點接腿骨頂點」：披風髖部高度（y≈0.25）有一圈頂點 100% 綁在腿骨（LeftLeg／RightLeg＋UpLeg）上，腿一動披風就被拉成長條，
+   刪掉之後披風出現破洞（Attack1 舉劍、倒地躺平都看得到）。與其刪三角面，不如把這些頂點的權重往髖部拉 cfg.toHips（0＝不動、1＝全給髖部），三角面就不會被扯長，也不用刪。 */
+function softenCapeLegs(g, rig, toHips) {
+  if (!(toHips > 0)) return 0;
+  const sd = readSkinData(g), cloth = loadCloth(g, sd.n), { worst, tris } = clothStretch(g, rig, sd, cloth);
+  const hips = sd.joints.indexOf('Hips'), legs = new Set(['LeftLeg', 'RightLeg', 'LeftUpLeg', 'RightUpLeg'].map((n) => sd.joints.indexOf(n)));
+  const verts = new Set();
+  for (const t of tris) if (worst[t] > STRETCH_MAX) for (let k = 0; k < 3; k++) { const v = sd.idx[t * 3 + k]; if (cloth[v] && legs.has(sd.jnt[v * 4])) verts.add(v); }
+  for (const v of verts) {
+    const w = new Map();
+    for (let k = 0; k < 4; k++) if (sd.wgt[v * 4 + k] > 0) w.set(sd.jnt[v * 4 + k], (w.get(sd.jnt[v * 4 + k]) || 0) + sd.wgt[v * 4 + k] * (1 - toHips));
+    w.set(hips, (w.get(hips) || 0) + toHips);
+    const use = [...w.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4), tot = use.reduce((q, x) => q + x[1], 0);
+    for (let k = 0; k < 4; k++) {
+      g.buf[sd.ja.offset + v * 4 + k] = k < use.length ? use[k][0] : 0;
+      g.buf.writeFloatLE(k < use.length ? use[k][1] / tot : 0, sd.wa.offset + (v * 4 + k) * 4);
+    }
+  }
+  console.log('披風：' + verts.size + ' 個貼腿頂點權重往髖部拉 ' + toHips);
+  return verts.size;
+}
+
+/* ---- 披風離身體遠一點 ----
+   倒地躺平時披風被手臂護甲頂穿一個洞（金色從披風裡露出來）。披風（背後 z<−0.04 的布料頂點）整片往背後移 inflate 公尺，脖子附近（y 1.35→1.55）漸漸收到 0，領口不裂開。 */
+function inflateCape(g, inflate) {
+  if (!(inflate > 0)) return 0;
+  const sd = readSkinData(g), cloth = loadCloth(g, sd.n); let n = 0;
+  for (let i = 0; i < sd.n; i++) {
+    if (!cloth[i] || sd.pos[i * 3 + 2] >= -0.04) continue;
+    const y = sd.pos[i * 3 + 1], k = 1 - Math.max(0, Math.min(1, (y - 1.35) / 0.2));
+    g.buf.writeFloatLE(sd.pos[i * 3 + 2] - inflate * k, sd.pa.offset + (i * 3 + 2) * 4); n++;
+  }
+  console.log('披風：' + n + ' 個頂點往背後移 ' + inflate + ' 公尺');
+  return n;
+}
+
 /* ---- 披風細絲：刪掉被拉成細絲的布料三角面 ---- */
 function removeClothSlivers(g, rig, analyze) {
   const sd = readSkinData(g), cloth = loadCloth(g, sd.n);
-  const { worst, tris } = clothStretch(g, rig, sd, cloth);
+  const { worst, tris, longest } = clothStretch(g, rig, sd, cloth);
   if (analyze) {
     const th = [1.5, 2, 3, 4, 6, 10, 30];
     console.log('披風三角面（共 ' + tris.length + ' 個）最長邊被拉長倍數分佈：' + th.map((x) => '>' + x + '倍 ' + tris.filter((t) => worst[t] > x).length + ' 個').join('，'));
@@ -1253,14 +1344,17 @@ if (!checkOnly) {
     const a3 = readClip(g, rig, 'Death');
     importRetarget(g, rig, a3, CFG.Death.retarget);
     fitSwordGrip(g, rig, a3);
-    settleHand(g, rig, a3, CFG.Death.settle);     // 原握法的劍在跪地幀（約 1.55～1.65 秒）會穿進小腿護甲、躺平時刃口朝地：改成脫手落地
   }
   limitWrists(g, rig);
   removeStrayTriangles(g, rig);
   hardenArmor(g, rig);
   straightenBlade(g);
   fixGuardWing(g, rig);                                                          // 要在 hardenArmor 之後：其中 3 個頂點原本是手＋前臂混合權重，被 hardenArmor 改成 100% 右手
+  inflateCape(g, 0.02);
+  softenCapeLegs(g, rig, 0.8);
   removeClothSlivers(g, rig, analyze);
+  avoidBody(g, rig, readClip(g, rig, 'Death'), CFG.Death.avoid);
+  settleHand(g, rig, readClip(g, rig, 'Death'), CFG.Death.settle);          // 要在 avoidBody 之後：從調整過的手腕帶到平放
   fs.writeFileSync(outFile, g.buf);
 }
 // 重新讀檔量測修正後（--check 時以記憶體中的結果量測不到，直接說明）
@@ -1281,3 +1375,4 @@ console.log(checkOnly ? '（--check：未寫檔）' : '已寫出 ' + outFile);
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) main();
 export { readGlb, buildRig, readClip, poseAt, worldMatrices, readSkinData, skinnedPositions, loadCloth, wPos, wRot, writeQuats };
+
