@@ -27,7 +27,7 @@ atkDown,攻擊,⚔️,debuff,stat,atkDown,,,0,,0,18,6,0,refresh,1,,,,目標攻�
 defDown,防禦,🛡️,debuff,stat,defDown,,,0,,0,0,6,0,refresh,1,,,,目標防禦力下降（舊存檔融合技快照相容保留，新設計改用穿透提升）。
 sgBleed,血刃流血,🩸,debuff,dot,,,skill,30,,0,0,5,1,strongest,1,,,,新版技能【血刃斬】：每次作用造成技能傷害一定比例的傷害；每跳量與間隔由技能各階決定（引擎以 dps 覆寫）。
 sgPoison,血刃劇毒,☠️,debuff,dot,,poison,skill,25,,0,0,4,0.5,strongest,1,curse-poison,,hit-poison,新版技能【血毒刃】：毒屬性持續傷害；每跳量與間隔由技能各階決定（引擎以 dps 覆寫）。
-sgIronBleed,鐵血裂傷,🗡️,debuff,dot,,,maxHp,3.5,,0,0,3,0.35,refresh,1,,,,新版技能【鐵血之舞】：占最大生命比例的流血；自身流血直接扣生命、不吃護盾。
+sgIronBleed,鐵血裂傷,🗡️,debuff,dot,,,skill,100,,0,0,3,0.35,refresh,1,,,,新版技能【鐵血之舞】：依施法者物理攻擊計算流血；附近敵人按自身流血基準的承受比例計算。自身流血直接扣生命、不吃護盾。
 sgGale,狂風,💨,buff,stat,sgGale,,,0,,0,20,5,0,refresh,1,,,,新版技能【狂風斬】：攻速額外提高（突破攻速上限、與自身攻速相乘）。
 sgFrenzyCr,狂暴·爆擊率,🔥,buff,stat,sgCritUp,,,0,,0,50,6,0,refresh,1,,,,新版技能【狂暴之舞】：爆擊率提高。
 sgFrenzyCd,狂暴·爆擊傷害,💥,buff,stat,sgCritDmgUp,,,0,,0,200,6,0,refresh,1,,,,新版技能【狂暴之舞】：爆擊傷害提高。

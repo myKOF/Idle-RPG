@@ -104,7 +104,8 @@ test('符文孔放滿：放不下的被拒；孔數隨稀有度（RARITIES.runeS
   const counts = c.RARITIES.map((r, i) => c.runeSlotCountFor({ rarity: i }));
   assert.deepEqual(plain(counts), plain(c.RARITIES.map((r) => r.runeSlots)), '一般裝備的孔數就是稀有度表的 runeSlots');
   assert.ok(Math.max(...counts) <= c.RUNE_SETTINGS.maxSlots);
-  assert.ok(counts.every((n, i) => i === 0 || n >= counts[i - 1]), '稀有度越高孔數不減');
+  const ordered=Array.from(c.RARITIES,(r,i)=>({rank:c.rarityRank(i),n:counts[i]})).sort((a,b)=>a.rank-b.rank);
+  assert.ok(ordered.every((r,i)=>!i||r.n>=ordered[i-1].n),'稀有度越高孔數不減');
 });
 
 test('eraseRune 抹除符文：扣碎片與精華、符文不退還、孔恢復為空、資源不足被擋；分解裝備時鑲著的符文自動取回；寶石鑲孔的操作不碰符文', () => {
@@ -133,13 +134,11 @@ test('eraseRune 抹除符文：扣碎片與精華、符文不退還、孔恢復�
   assert.equal(c.runeCount('r05'), 1, '分解不得吃掉符文');
 });
 
-test('神鑄素材取回（forgeReclaimSockets）同樣退回符文', () => {
-  const c = loadRuneEnv();
-  const it = makeItem(c, { rarity: 5 });
-  fillRunes(it, ['r07', 'r07']);
-  c.forgeReclaimSockets(it);
-  assert.equal(c.runeCount('r07'), 2);
-  assert.deepEqual(it.runes.filter(Boolean), []);
+test('新版神鑄取回裝備保留原有符文，不拆出或複製',()=>{
+  const c=loadRuneEnv();c.G.player.reincarnations=2;
+  const it=makeItem(c,{rarity:6});fillRunes(it,['r07','r07']);c.G.inventory.push(it);
+  assert.equal(c.forgePlaceItem(it.id),null);assert.equal(c.forgeRemoveItem(0),null);
+  assert.equal(c.G.inventory[0].runes.filter(Boolean).length,2);assert.equal(c.runeCount('r07'),0);
 });
 
 test('舊版（符文與寶石共用鑲孔）的存檔：rwMigrateSocketRunes 把符文搬進符文孔，放不下的退回庫存，冪等', () => {

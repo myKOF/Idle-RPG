@@ -193,7 +193,7 @@ test('掉落統計 HTML：品質分行上色、材料含圖示、寶石逐行、
   // 材料：有專用圖示者加圖示
   assert.match(html, /icon_scrap\.png[^>]*>[^<]*<[^>]*>裝備碎片/);
   assert.match(html, /icon_essence\.png[^>]*>[^<]*<[^>]*>附魔精華/);
-  assert.match(html, /💫[^<]*<[^>]*>魔塵/);
+  assert.match(html, /💫[^<]*<[^>]*>神性之石/);
   // 寶石：寶石圖（依階級）＋階級＋名稱
   assert.match(html, /gem-topaz-01.png[^>]*>s*<span[^>]*>一級黃玉/);
   assert.match(html, /gem-amethyst-02.png[^>]*>s*<span[^>]*>二級紫水晶/);

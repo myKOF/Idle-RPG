@@ -56,10 +56,7 @@ test('戰鬥日誌分類與色彩樣式規則驗證', () => {
   assert.match(css, /\.log-line\.log-enemy-buff\s*\{[\s\S]*?color:\s*#d7ccc8;[\s\S]*?\}/);
 
   // 4. 驗證神鑄日誌與 Worker 寶石批次日誌歸類到 factory，不屬於 loot
-  assert.match(forge, /blog\('🔯 神鑄成功！6 顆'[\s\S]*?,\s*'good',\s*'factory'\);/);
-  assert.match(forge, /blog\('🔯 鑄造失敗！損失 '[\s\S]*?,\s*'warn',\s*'factory'\);/);
-  assert.match(forge, /blog\('🔯 神鑄成功！獲得 '[\s\S]*?,\s*'good',\s*'factory'\);/);
-  assert.match(forge, /blog\('🔯 鑄造失敗！損失 '[\s\S]*?,\s*'warn',\s*'factory'\);/);
+    assert.match(forge, /blog\(message, success \? 'good' : 'warn', 'factory'\)/);
   assert.match(worker, /'gem\.composeAll'[\s\S]*blog\('♻️ 全部合成：'[\s\S]*'good',\s*'factory'\);/);
   assert.match(worker, /'gem\.dismantleAll'[\s\S]*blog\('⛏️ 全部拆解：'[\s\S]*'good',\s*'factory'\);/);
 

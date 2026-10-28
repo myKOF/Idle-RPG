@@ -1,11 +1,58 @@
 # AI_TASKS.md
 
+## DEVELOP-MERGE-1C662CCB-3F8160DA-20261028 — 整合死亡原因、世界地圖、鐵血之舞與新版神鑄
+
+- Owner：Codex（整合）；Done。依使用者授權處理 develop 的既有 merge，保留雙方功能與測試；衝突限定 LV_upgrade_system.md、docs/AI_TASKS.md、index.html、js/bridge.js、js/worker/sim.worker.js。
+- 合併策略：文件任務紀錄並列保留；主頁各腳本採實際內容對應的新版本；Bridge 與 Worker 使用新的合併快取鍵，Worker 各匯入同時涵蓋死亡原因、鐵血之舞及新版神鑄。
+- 驗證：合併相關五檔測試共56項，55過／1個既有失敗；失敗為 stats-panel 對 tower 舊掉落統計掛點的斷言，修改前 HEAD 的同一測試與 tower 內容已確認同樣缺少該掛點，新增失敗0。新版神鑄16／鐵血之舞10／其餘Worker、世界地圖與死亡原因案例通過；npm.cmd run build 為597檔全數通過；完整合併結果 diff --check 通過。最初衝突清單沒有XLSX，提示中的 Name.xlsx 為控制器未替換的範例且倉庫不存在，故未建立或套用Excel計畫，也未修改任何活頁簿。
+- 交付：五個工作檔皆無衝突標記；未操作索引、commit、push或其他worktree，HEAD／MERGE_HEAD維持不變。無素材庫待辦，可由控制器依回報檔案完成stage與merge commit。
+
 ## STATS-DEATH-CAUSES-20261028 — 統計面板死亡數下方顯示每次死亡原因（最多10條）
 
 - Owner：Antigravity；Done，單一開發者。使用者要求於統計日誌面板的「死亡數」下方寫入每次死亡的原因，格式包含「敵人(或自己)名稱 / 使用技能名稱 / 造成傷害值」，最多顯示10條；衝突預檢已向使用者回報並獲授權先於本分支提交、後續再整合合併。
 - 範圍：js/stats.js、js/combat.js、js/elite.js、js/legendary.js、js/skills2.js、js/tower.js、index.html、js/bridge.js、js/worker/sim.worker.js、tests/stats-panel.test.cjs、LV_upgrade_system.md、PATCH.md 與本段。禁止改動傷害計算、存檔結構或其他無關系統。
 - 完成12檔：stats.js 新增 deathCauses（最多保留最新10筆）、recordPlayerDamageHit、clearLastPlayerDamage、playerSelfDeathName 與 statsDeathCausesHtml；combat.js、elite.js、legendary.js、skills2.js、tower.js 串接敵人普攻／技能、DoT 與自身技能／傳奇扣血來源紀錄；同步 index.html、js/bridge.js、js/worker/sim.worker.js 快取版本；新增 tests/stats-panel.test.cjs 測試案例並更新 LV_upgrade_system.md、PATCH.md。
 - 驗證：執行 tests/stats-panel.test.cjs、tests/string-table.test.cjs、node tools/string-table/build_string_csv.cjs --check、node tools/build_check.cjs 及全量測試確認無新增錯誤後建立 Commit。
+
+## WORLD-MAP-PROGRESS-PORTAL-20261028 — 最高進度、名稱下方提示與神界傳送門
+
+- Owner：Codex；Done，單一開發者。使用者確認括號改為最高到達／地圖上限，提示固定名稱下方，人界最高上限地圖真正通關後出現神界傳送門，地圖名稱不可寫死。
+- 前置：規範／Workflow／Agent文件與既有WorldMapUI、battle.zoneProgress／zones已讀，目標衝突預檢乾淨。允許js/ui-world-map.js、css/world-map.css、index.html、tests/world-map-ui.test.cjs、String.xlsx／CSV／strings_data.js、docs/WORLD_MAP.md、LV_upgrade_system.md及本段；禁止其他玩法／Worker／Protocol／存檔／素材與其他工作區，不合併推送。
+- 驗收：最高進度不隨退關下降、未載入／鎖定安全、提示於各名稱下方與縮放／窄屏、最高人界動態配置及到達末關未通關不開門、真正通關與神界瀏覽／前進權限、String來源／Excel正常重開／回歸／Build／Console及diff。完成後獨立Commit，後續使用者Review／正常整合。
+- 完成10檔：WorldMapUI名稱／ARIA括號改讀best，保留current供實際前進；tips取消依左右／上下翻轉，固定名稱及進度下方並水平限縮，神界按場景實際位置定位、resize／scroll更新。CSS保留窄屏最小間距，修正神界min-height與aspect-ratio撐寬。人界最高maxStage動態取ZONES，並列最高皆須cleared到頂，缺快照不開門；入口只切頁、保留返回及既有unlocked權限，不寫入玩家進度。傳送門為本輪CSS自製介面圖形，無獨立素材／VFX／素材庫變動；地圖與游標原圖不改。主頁CSS1.0.6、WorldMapUI1.0.5及String快取e623d5b6同步，LV／WORLD_MAP同步。
+- String：原生Excel工具追加2206「神界傳送門」4個非空儲存格，2193→2194列、7欄及0物件；正常重開兩次通過，xlsx_to_csv／apply_strings產生正式CSV／JS，CSV僅新增一列。首輪以通用試算表API讀取完整文字出現正規化差異，已在來源未被外部更動的hash檢查後還原本輪原檔，再以Excel原生值建立目標並重跑；最終唯讀比對原有全部儲存格值／樣式、列高／欄寬差異均0。局部渲染已檢視，無手工XML寫入、翻譯或改既有文字。
+- 測試：node --test --test-reporter=spec tests/world-map-ui.test.cjs tests/world-map.test.cjs tests/string-table.test.cjs tests/combat-pause.test.cjs tests/stage-jump-ui.test.cjs tests/fullscreen-toggle.test.cjs tests/battle-fullscreen.test.cjs，43/43通過。新增回歸涵蓋退關／切圖／重開、名稱與ARIA最高進度、各位置提示／縮放／滾動、末關未通關／真正通關差別、0轉可瀏覽但不可前進及新增最高人界配置。npm.cmd run build最終597檔通過；apply_strings --check同步2193條、build_string_csv --check寫死0條，diff檢查通過。
+- 瀏覽器：CUA／IAB隨機localhost隔離fixture載正式DOM／全套CSS／WorldMapUI／String／ZONES，390×844及1558×869共14組人界量測，卡片皆低於名稱進度且在視窗內；神界窄屏按鈕不超寬、tips在其下方且不出界，入口／返回／鎖定條件可用，Console error／warning0。另正式index＋真Worker＋全新seed1028角色實際退至3關，最高5關及地圖(5/100)保持，未讀寫玩家原存檔。地圖預覽／驗證JSON保留本聊天visualizations/world-map-update。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts/codex、data／combat最高進度及cleared語意、ui場景接線、Worker面板／協議、既有world-map／String匯出工具及素材來源。自我Review完成、無本次未完成項，可供Review／合併；未合併／推送develop或main，未執行全庫或玩家真存檔長戰。Commit為本段所在「[Codex] fix: 修正世界地圖最高進度與提示並加入神界傳送門」，編號見交付；下一步正常整合並重載驗收。
+- 額外素材來源檢查：export-source --check因既有本機素材庫D:/MyGame/Asset缺少codex-authored/world-map/source.json而無法完成，另一舊effects-materials路徑亦無來源。未修改Root設定／素材庫；git diff HEAD -- images/world-map為空，沒有本次圖檔或雙倉庫素材提交待辦。此限制不影響本次CSS／既有圖片顯示與43項功能回歸，不宣稱母來源SHA核對通過。
+
+## IRON-DANCE-PHYSICAL-20261028 — 鐵血之舞物理流血與敵方承受比例
+
+- Owner：Codex；Done，單一開發者。使用者要求自身流血改為物理傷害，基值100%、每級+10%；附近敵人承受該基準流血的比例基值50%、每級+5%，滿級雙方每0.35秒皆為200%物理傷害。算例不寫入技能說明。
+- 前置：共通規範／Workflow／Agent文件與現行技能、狀態、DOT管線已讀；目標衝突預檢無其他來源。使用者回覆相關Excel已關閉，依受保護param-patches流程套用；有同格衝突即停止。
+- 允許：skills2鐵血公式、Skills2／Status Excel及來源匯出CSV／JS、必要index／bridge／Worker快取、技能回歸、LV及本段。禁止其他技能平衡、傷害共用公式、存檔／Protocol／素材及合併推送。
+- 驗收：Lv.1／Lv.10與相鄰等級增量、敵方倍率乘自身基準、血量／BOSS不改流血基值、範圍／節拍／到期／刷新／自身直扣生命、狂戰士獨立調整、狀態投影／VFX參數與說明一致；Excel正常重開與逐格／格式核對、回歸／Build／diff後獨立Commit。後續使用者Review／整合。
+- 完成13檔：Skills2.xlsx第五階效果JSON／說明／唯讀摘要3格，Status.xlsx鐵血裂傷的來源／傷害／說明3格；經原生param-patches套用後由xlsx_to_csv及config_tables產生兩份CSV與skills2／status字面值。公式以st.atk定版自身每跳量，敵方乘enemyPct後獨立套狂戰士增傷；移除敵人maxHp及BOSS百分比減幅。沿用基值＋增量×等級，Lv.1自身110%、敵方承受55%，Lv.10自身200%、承受100%；5米／0.35秒／3秒與自身直扣生命保留。index的status44／skills2 366／bridge377，Worker入口與兩份匯入20261028-iron-dance-physical；LV同步，Protocol與存檔不變。
+- Excel驗證：首輪主鍵定位因階數實際為文字而安全停止、來源未寫入；以原生Excel確認型別後只更正主鍵型別、不改before，第二輪6格全部受保護套用、無同格衝突，收據／原檔／候選保留archive/2026-10-28T09-13-38-681Z-5c0289f2-6d6e-4dc9-b908-37fafb7db390。獨立原生Excel正常重開Saved=True、非RepairMode，Skills2三頁／Status兩頁保留。唯讀OOXML逐格比較13865＋1534格，僅AV56／AW56／AX56及H30／I30／T30內容改變，公式／有效樣式／手動列高／視圖保持；Excel正常儲存使欄寬誤差小於0.063字元、自動列高與字型下降度量正規化，重複的General樣式合併但有效樣式一致，未手改XML。兩本來源與結果局部渲染已比較，沿用原有表格排版。
+- 回歸：node --test --test-reporter=spec tests/skill2-iron-dance.test.cjs為10/10，含Lv.1／5／10、逐級增量、滿級說明、物攻／HP／魔攻／BOSS隔離、狂戰士兩端、範圍／刷新／到期／直接扣血、真實施放入口及原生Worker載入／視覺事件／狀態投影，Worker ERROR為0。原skill2-system鐵血案例補足施放所需測試MP並更新新需求斷言；node --test --test-reporter=spec --test-name-pattern='鐵血|狂戰士|雙刀選敵' tests/skill2-system.test.cjs tests/skill2-ult-evolution.test.cjs共7/7。
+- 擴大測試：node --test --test-reporter=tap執行iron-dance、skill2-status-slots、status-system、worker-protocol、worker-shim、legendary-global、skill2-ult-evolution，最終152項124過／28失敗。28項以修改前HEAD的skills2／status／兩CSV唯讀覆映、按原失敗名稱重跑全部重現，最終失敗名稱集合完全相同，新增失敗0；另查原system的狂暴／嗜血兩項也在原版原樣失敗，不擴修或降低其斷言。node tools/config_tables.cjs --apply重建30個字面值語意變更0；node tools/apply_params.cjs為593一致、0變更、0錨點問題；npm.cmd run build最終597檔通過，git diff --check通過。未修改參數接線，不觸及其他平衡配置。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、PARAM_PATCHES、Excel更新／匯出／差異工具、combat／formula／legendary／battlefield／Worker協議與投影、scripts/sim/engine、相關既有回歸。技能說明由Skills2表讀取、無新寫死字串；無素材或素材庫變動，不建立空素材Commit。自我Review完成，沒有本次未完成項；可供Review／合併，未合併或推送。限制：既有測試債、未執行全庫或真瀏覽器／玩家長戰。Commit為本段所在「[Codex] fix: 鐵血之舞改為物理流血並獨立計算敵方比例」，編號見交付；下一步整合後重載新版主端與Worker驗收。
+
+## DIVINE-FORGE-V2-20261028 — 四功能神鑄改造
+
+- Owner：Codex；Done，單一開發者。使用者授權以線上新版及七格水晶圖取代原神鑄，並確認神話配方產出神鑄神話、無效刻印按第七項返石、四功能皆收金幣且所有參數放game_parameters。來源：Google Sheet gid=2018764646，2026-10-28讀取。
+- 範圍：forge／裝備與寶石計算、必要存檔遷移、UI／CSS／背景、Worker協議及快取、原生Excel新增配置／String與匯出／參數接線、相關回歸、LV及本紀錄。禁止擴修無關玩法、覆寫他人修改、合併推送develop／main。
+- 前置：規範與現有流程已讀；正式目標衝突預檢皆無來源。新增神鑄神話保留舊稀有度ID，避免舊存檔重編號。舊法陣待製作一律取消並退還素材，神性之石沿用dust庫存；移除舊自動／時間／金幣／失敗獎勵及舊專屬特效。
+- 驗收：四功能轉數與素材原子驗證、成功／失敗與石頭上限、七種刻印與重刻撤回、實際屬性與藍色tips、神級寶石鑲拆／存讀檔、真Worker指令、七格UI與窄屏、Excel正常重開／來源同步、參數錨點／回歸／Build／diff，完成後獨立Commit及必要素材雙倉庫提交。後續使用者驗收／正常整合。
+- 完成：forge整套四功能即時原子結算；39項可調數值及神鑄神話品質列加入game_parameters，主表舊配方14列移除。神鑄神話追加ID11，不重編舊0～10；baseRarity與rarityRank使排序及符文孔檢查按品質階序，維持單調／上限保護。Worker v63、神鑄指令10→7、總數94→91；讀檔在補預設值前辨識舊版，取消待製作並完整退料一次。刻印獨立欄位與計算／藍色tips共用數值；新增傳奇沿用先裝優先去重，神級寶石沿既有fused容器動態回算，禁止再次融合／拆解。
+- 金幣初版：裝備神鑄神話／創世／混沌為2000萬／1億／5億；精鑄1000萬／5000萬／2.5億；刻印3000萬／1.5億／7.5億；神級寶石5000萬。全部在上述39列，可用原BAT調整；配方數量／失敗損失／權重加入防止越界或無效配置的套用檢查。舊system_unlock神鑄轉數不再覆寫新版門檻；轉生預告與LV總表同步四功能。
+- Excel：原生工具新增52個神鑄字串；使用者明確授權的24格「魔塵→神性之石」經param-patches受保護合併，原檔／候選／收據保留archive。原生正常重開驗證，新增參數560個數值格以Value2寫成數字；Excel讀回比對原String2140列無遺失、僅24格舊值變更，參數原338列除14舊配方移除外其餘資料／公式不變，原儲存格格式差異0。String共2192條ba384f1e，CSV／JS同步、寫死0條；config_tables全部30個字面值語意變更0。
+- 瀏覽器：隨機localhost＋全新Edge context＋正式DOM／CSS／真Worker／隔離測試存檔，實點六件神話→神鑄神話、精鑄、雙類10級寶石→神級寶石、刻印與石頭至100%，全部完成。驗六外圈＋中央共七格、單件功能置灰五格、六角邊長誤差<1%、480視窗文件寬480，Console error／warning及pageerror均0；頂列及頁面不再顯示魔塵。修正舊aspect-ratio使水晶遮擋按鈕及停用元素transform偏移。截圖與JSON保存在本聊天visualizations，未接觸玩家真存檔，瀏覽器／服務均關閉。
+- 測試：核心命令node --test --test-reporter=spec執行divine-forge、forge既有專項、sim-forge-craft、worker-protocol、legendary-global、string-table、confirm-dialog、effect-value-storage及vfx-editor-cache-versions共97/97；符文／裝備UI等追查279項，274過／5個修改前既有失敗，新增失敗0。595錨點初版移除system_unlock兩個舊門檻錨點後為593，一致593／將變更0／問題0；擾動543個數值後593錨點均各命中一次。npm.cmd run build596檔通過；完整diff檢查通過。舊神鑄的計時／自動／失敗送材料等斷言依需求換為新版回歸，沒有為通過而保留舊功能。
+- 全庫：完整node --test --test-reporter=tap "tests/*.test.cjs"執行15分52秒，4993項＝4273過／718失敗／2跳過（開發中首輪）。修改前HEAD唯讀覆映153個失敗來源檔、按原失敗名稱逐項重跑，576項在原版同樣失敗；其他141項舊規格或當輪回歸問題與1個新增測試失敗已逐一處理，並以最終來源追查279項確認無新增失敗。保留其餘原有斷言；未宣稱最終全庫全綠。五個相關既有失敗為封魔塔符文資訊舊門檻、stats舊統計鉤子及三個雙手鑲孔舊值；原始TAP／baseline-summary／current-audit-summary留本聊天visualizations。
+- 修改檔案：data／formula／item／forge／player／save／ui、bridge／Worker兩檔及index／新增divine-forge.css；String與game_parameters Excel／CSV及strings_data；apply_params／config_tables、模擬策略／直譯器／指令覆蓋登記，神鑄／品質／符文／裝備UI／統計名稱／傳奇存檔等相關回歸，新增divine-forge測試，LV／WORKER_PROTOCOL／DIVINE_FORGE及本段。唯讀未改：共通規範／AGENTS／Workflow／prompts、combat／tower／skills2／runeword執行層、其餘配置及3D資源；無其他AI重疊來源。
+- 素材：使用者提供的ChatGPT水晶PNG按原檔匯入、未改像素，遊戲及素材庫SHA256皆56e197724f5758e7289bf23d5c6d34d5edfe2c3cce3a6fad970f6e52458a29df；素材庫source.json記錄來源與明確使用授權，先提交98100d5d7c5c993938e635feef082c7daa639105。無新增VFX Preset／第三方素材；共享素材庫原thunder未追蹤內容保留、不納本次提交。遊戲Commit為本段所在「[Codex] feat: 改造四功能神鑄與神性之石介面」，實際編號見回覆。
+- 交付：自我Review及必要驗證完成，沒有本次未完成實作，可供Review／合併；未合併或推送develop／main。下一步正常整合後重載新版主端及Worker驗收；新版刻印／神級寶石須由新版讀寫，避免舊分頁覆寫。全庫既有失敗與未做玩家真存檔長戰為已知限制。
 
 ## SYNC-HOLD-SCOPE-20261028 — 修正保留範圍並納入977e425
 
@@ -12906,3 +12953,15 @@ Worker 存活且頁面正常完成載入。
 - 全庫：node --test --test-reporter=tap "tests/*.test.cjs"完整執行14分45秒，4931項＝4340過／589失敗／2跳過。以修改前HEAD 14e7d8cb的本次來源唯讀覆映、按每個失敗名稱重跑，全589項均在原版重現，新增失敗0；沒有弱化既有斷言或擴修無關功能，不宣稱全庫全過。原始TAP與baseline-summary.json保留本聊天visualizations/wave-table-removal。
 - 同副本BOUNCE-DODGE聊天後續新增skills2、專項回歸及LV／任務表／index／Worker快取；本次以Git index分段暫存，保留其工作檔逐位元不變，提交只含本次區段（bridge372／原skills2快取），其較新工作檔快取維持373／skills2 364。以只覆映staged來源並隔離對方skills2的方式重跑上述83項，83/83通過；不納入對方進行中功能或文件。
 - 交付：本段所在「[Codex] refactor: 移除冗餘波次表並統一出怪參數來源」Commit，實際編號見回覆；無本次未完成項目，可供Review／合併，未合併或推送。已知限制為全庫589項既有失敗及未做瀏覽器／真人長戰，下一步正常整合後重載遊戲；使用者NPC與主參數表、其他聊天進行中修改保留未提交。
+
+
+## WORLD-MAP-PORTAL-QUALITY-20261028 — 神界傳送門質感與動態升級
+
+- Owner：Codex；Done，單一開發者。使用者已核准目前傳送門外觀並明確要求Commit。沿既有HTML／CSS介面圖形重做古金屬拱門、頂冠、門座、能量旋渦與光粒，不產出獨立圖片或VFX Preset。
+- 前置：既有地圖與入口已完成；允許index.html門體標記及CSS快取、css/world-map.css門體樣式、docs/WORLD_MAP.md、LV_upgrade_system.md及本段；禁止JS／玩法／解鎖／存檔／配置／原圖／其他工作區／合併推送。
+- 驗收：桌面／窄屏外觀與動畫、隱藏／縮減動態、入口點擊與焦點、地圖回歸／Build／Console及diff均已完成；使用者2026-10-28核准目前外觀並要求提交，解除本輪暫不提交限制。本次五檔獨立Commit，不合併／推送；後續使用者正常整合。
+- 完成五檔：index內嵌自製SVG金屬漸層／刻紋／頂冠寶石／石階，CSS重做門內反向能量流、旋渦核心、星點、上升六光粒、門緣循環光紋及底座光環；hover／focus微抬升提亮，裝飾不攔截指標，縮減動態包含偽元素皆停止動畫。320／390窄屏門體下移避免頂端裁切，主頁CSS快取1.0.7；WORLD_MAP與LV同步。沒有新增JS／Timer、獨立素材、VFX Preset或玩家文字；不需String／素材庫Commit。
+- 回歸：node --test --test-reporter=spec tests/world-map-ui.test.cjs tests/world-map.test.cjs tests/string-table.test.cjs tests/fullscreen-toggle.test.cjs tests/battle-fullscreen.test.cjs為33/33，npm.cmd run build最終597檔通過，git diff --check通過。沒有新增純樣式斷言或改既有測試期望。
+- 瀏覽器：CUA／IAB隔離fixture載正式DOM／全套CSS／地圖程式與配置，320×720／390×844／1558×869皆驗入口邊界、裝飾pointer-events:none、能量流動transform持續改變，實際點擊及鍵盤Enter開神界頁、返回正常，鍵盤焦點框可見，Console error／warning0。縮減動態為CSS規則檢查，未修改或模擬使用者OS偏好；未讀寫玩家存檔。32幀真實瀏覽器截圖編為portal-motion.gif，另portal-world-map.png／portal-narrow.png與驗證JSON保留本聊天visualizations/portal-quality；中間影格已清理。
+- 衝突：Antigravity ffa165b3新增統計原因，index僅改stats／skills2／combat／tower／bridge快取，與本次CSS版本及門體無語意相依；但該分支缺少前輪傳送門／神鑄基礎，對現況做三方試合併（統一CRLF／LF後）仍在world-map CSS版本及門體區塊回報衝突，已依AI_RULES 3.2詢問；使用者後續明確核准目前新版及本次提交，只提交ai/codex五檔，Antigravity成果留待正常整合。AI_TASKS採檔尾追加，對方檔首新增，當輪增量merge-file exit0；LV檔尾候選亦exit0但未套用。無其他AI工作區或分支被修改／整合。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、WorldMapUI解鎖與指令、String表／資料、Worker／存檔、既有測試及地圖PNG；自我Review及使用者外觀驗收已完成。已知限制為未做全庫、真人長戰與OS減少動態實機切換；本次無未完成實作。Commit為本段所在「[Codex] feat: 升級神界傳送門質感與能量動態」，編號見交付；可供合併，未合併／推送。提交前確認五檔程式／樣式內容與已驗證版本一致，本輪僅更新交付狀態，不重跑未受影響測試。

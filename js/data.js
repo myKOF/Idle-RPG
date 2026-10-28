@@ -2,31 +2,92 @@
 if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 var CHAOS_IDX = 9;
 var CHAOS_GODFORGED_IDX = 10;
-var MAX_RARITY_IDX = CHAOS_GODFORGED_IDX;
+var MAX_RARITY_IDX = 11; // 追加神鑄神話ID，保留既有稀有度編號
 var REROLL_CHAOS_ESSENCE_COST = 27;
 var REROLL_CHAOS_GODFORGED_ESSENCE_COST = 36;
-var FORGE_CHAOS_BASE_RATE = 20;
-var FORGE_CHAOS_GOLD_COST = 500000000;
-var FORGE_CHAOS_DUST_RATE = 3;
-var FORGE_CHAOS_DURATION = 13;
-function isGodforgedRarity(rarity) {
-  return rarity === GODFORGED_IDX || rarity === CHAOS_GODFORGED_IDX;
+var DIVINE_FORGE = {
+  equipUnlock: 2,
+  ancientUnlock: 3,
+  gemUnlock: 4,
+  imprintUnlock: 5,
+  equipMythicRate: 35,
+  equipGenesisRate: 25,
+  equipChaosRate: 15,
+  singleMythicRate: 40,
+  singleGenesisRate: 30,
+  singleChaosRate: 20,
+  gemRate: 15,
+  equipStoneRate: 5,
+  singleStoneRate: 1,
+  equipMythicGold: 20000000,
+  equipGenesisGold: 100000000,
+  equipChaosGold: 500000000,
+  ancientMythicGold: 10000000,
+  ancientGenesisGold: 50000000,
+  ancientChaosGold: 250000000,
+  imprintMythicGold: 30000000,
+  imprintGenesisGold: 150000000,
+  imprintChaosGold: 750000000,
+  gemGold: 50000000,
+  equipCount: 6,
+  singleCount: 1,
+  gemPerType: 3,
+  failMin: 3,
+  failMax: 4,
+  gemValue: 0.75,
+  sacredValue: 1.7,
+  socketValue: 1.4,
+  refundRate: 0.5,
+  sacredAffixWeight: 10,
+  ancientAffixWeight: 25,
+  sacredSocketWeight: 8,
+  extraAffixWeight: 30,
+  extraAncientWeight: 5,
+  legendaryWeight: 4,
+  refundWeight: 18
+};
+var DIVINE_FORGE_MODES = { equip: 2154, ancient: 2155, gem: 2156, imprint: 2157 };
+function divineForgeBaseRarity(r) { return r === 11 ? 6 : r === 8 ? 7 : r === 10 ? 9 : r; }
+function rarityRank(r) { var def = RARITIES[r]; return def && def.baseRarity !== undefined ? def.baseRarity + 0.5 : r; }
+function divineForgeOutputRarity(r) { return r === 6 ? 11 : r === 7 ? 8 : r === 9 ? 10 : null; }
+function divineForgeUnlock(mode) { return DIVINE_FORGE[mode + 'Unlock']; }
+function divineForgeSlotCount(mode) { return mode === 'equip' ? DIVINE_FORGE.equipCount : mode === 'gem' ? DIVINE_FORGE.gemPerType * 2 : DIVINE_FORGE.singleCount; }
+function divineForgeAncientCandidates(it) {
+  var imprint = it.imprint;
+  var out = (it.affixes || []).filter(function (a, index) {
+    return !a.ancient && !(imprint && !imprint.inactive && imprint.kind === 'ancientAffix' && imprint.index === index);
+  });
+  if (imprint && imprint.affix && !imprint.affix.ancient) out.push(imprint.affix);
+  return out;
 }
-function forgeBaseRateFor(rarity) {
-  return rarity === CHAOS_IDX ? FORGE_CHAOS_BASE_RATE : (FORGE_BASE_RATE[rarity] || 0);
+function divineForgeItemEligible(it, mode) {
+  if (!it || it.kind === 'gem') return false;
+  var r = divineForgeBaseRarity(it.rarity);
+  if (r !== 6 && r !== 7 && r !== 9) return false;
+  if (mode === 'equip') return !isGodforgedRarity(it.rarity);
+  if (mode === 'ancient') return !it.affixes || divineForgeAncientCandidates(it).length > 0;
+  return mode === 'imprint';
 }
-function forgeGoldCostFor(rarity) {
-  return rarity === CHAOS_IDX ? FORGE_CHAOS_GOLD_COST : (FORGE_GOLD_COST[rarity] || 0);
+function divineForgeRateInfo(f, owned) {
+  var mode = f && f.operation;
+  if (!DIVINE_FORGE_MODES[mode]) return null;
+  var first = (f.slots || []).filter(Boolean)[0];
+  if (!first) return null;
+  var tier = divineForgeBaseRarity(first.rarity);
+  var suffix = tier === 6 ? 'Mythic' : tier === 7 ? 'Genesis' : 'Chaos';
+  var base = mode === 'gem' ? DIVINE_FORGE.gemRate : DIVINE_FORGE[(mode === 'equip' ? 'equip' : 'single') + suffix + 'Rate'];
+  var per = mode === 'equip' ? DIVINE_FORGE.equipStoneRate : DIVINE_FORGE.singleStoneRate;
+  var max = Math.max(0, Math.ceil((100 - base) / per));
+  var stones = Math.min(max, Math.max(0, Math.floor(Number(f.stones) || 0)), Math.max(0, Math.floor(Number(owned) || 0)));
+  return { mode: mode, base: base, per: per, maxStones: max, stones: stones, dust: stones * per,
+    total: clamp(base + stones * per, 0, 100), cost: mode === 'gem' ? DIVINE_FORGE.gemGold : DIVINE_FORGE[mode + suffix + 'Gold'] };
 }
-function forgeEquipDurationFor(rarity) {
-  return rarity === CHAOS_IDX ? FORGE_CHAOS_DURATION : (FORGE_EQUIP_DURATION[rarity] || 0);
-}
-function forgeDustRateFor(rarity) {
-  return rarity === CHAOS_IDX ? FORGE_CHAOS_DUST_RATE : FORGE_DUST_RATE;
-}
-function isForgeableEquipmentRarity(rarity) {
-  return rarity === CHAOS_IDX || Object.prototype.hasOwnProperty.call(FORGE_BASE_RATE, rarity);
-}
+
+function isGodforgedRarity(rarity) { return rarity === 8 || rarity === 10 || rarity === 11; }
+function isForgeableEquipmentRarity(rarity) { return rarity === 6 || rarity === 7 || rarity === 9; }
+function forgeBaseRateFor(rarity) { var r = divineForgeBaseRarity(rarity); return DIVINE_FORGE[r === 6 ? 'equipMythicRate' : r === 7 ? 'equipGenesisRate' : 'equipChaosRate']; }
+function forgeGoldCostFor(rarity) { var r = divineForgeBaseRarity(rarity); return DIVINE_FORGE[r === 6 ? 'equipMythicGold' : r === 7 ? 'equipGenesisGold' : 'equipChaosGold']; }
+function forgeDustRateFor() { return DIVINE_FORGE.equipStoneRate; }
 /* ============ 遊戲資料定義 ============ */
 
 /* ---- 稀有度（11 階）----
@@ -44,7 +105,8 @@ var RARITIES = [
   { key: 'genesis', name: '創世', color: '#b8860b', mult: 6.8, affix: [7, 7], sockets: 3, enchants: 3, runeSlots: 3, salv: 30 },
   { key: 'godforged', name: '神鑄創世', color: '#f5c542', mult: 10.2, affix: [8, 8], sockets: 3, enchants: 3, runeSlots: 3, salv: 45 },
   { key: 'chaos', name: '混沌', color: '#c084fc', mult: 15.3, affix: [9, 9], sockets: 4, enchants: 3, runeSlots: 4, salv: 67.5 },
-  { key: 'chaosGodforged', name: '神鑄混沌', color: '#ff6bcb', mult: 22.95, affix: [10, 10], sockets: 4, enchants: 3, runeSlots: 4, salv: 101.25 }
+  { key: 'chaosGodforged', name: '神鑄混沌', color: '#ff6bcb', mult: 22.95, affix: [10, 10], sockets: 4, enchants: 3, runeSlots: 4, salv: 101.25 },
+  { key: 'mythicGodforged', baseRarity: 6, name: STR(2158), color: '#78bfff', mult: 7.8, affix: [7, 7], sockets: 2, enchants: 2, runeSlots: 2, salv: 28.5 }
 ];
 var PASSIVE_MIN_RARITY = 5; // 傳說級（含）以上附帶傳奇特效
 var MAX_AFFIXES = 10; // 單件裝備詞條數安全硬上限（目前稀有度表最高 10 條）
@@ -524,7 +586,7 @@ var SLOT_BASENAMES = {
   ring: [STR(968), STR(969), STR(970)],
   amulet: [STR(971), STR(972), STR(973)]
 };
-var RARITY_PREFIX = [STR(974), STR(975), STR(976), STR(977), STR(978), STR(979), STR(980), STR(981), STR(982), STR(983), STR(984)];
+var RARITY_PREFIX = [STR(974), STR(975), STR(976), STR(977), STR(978), STR(979), STR(980), STR(981), STR(982), STR(983), STR(984), STR(2159)];
 // 新舊名稱共用同一辨識規則，讀檔與品質提升時先移除既有前綴。
 var RARITY_PREFIX_PATTERN = new RegExp('^(?:' + RARITY_PREFIX.join('|') + '|神鑄混沌的|混沌的|神鑄創世的|粗糙的|堅實的|精工的|奇異的|大師級|傳世的|神鑄的|創世的|普通的|精良的|稀有的|獨特的|史詩的|傳說的|神話的)');
 var ACCESSORY_SLOTS = ['ring', 'amulet'];
@@ -600,22 +662,12 @@ var EQUIP_SET_UNLOCK_REINCARNATIONS = [0, 0, 0]; // 第 1/2/3 套裝備的最低
 var FORGE_UNLOCK_LEVEL = 1;               // 神鑄系統解鎖等級（條件一：等級 ≥ 此值）；解鎖後永久保留
 var TALENT_UNLOCK_LEVEL = 1;                  // 天堂威能解鎖等級（system_unlock 表；與轉生次數須同時滿足）
 var TALENT_UNLOCK_REINCARNATION = 1;          // 天堂威能解鎖所需轉生次數（system_unlock 表）
-var FORGE_UNLOCK_REINCARNATION = 2;          // 神鑄系統解鎖所需轉生次數（條件二：轉生 ≥ 此值）；需與條件一同時滿足
-var FORGE_MIN_RARITY = 5;                    // 可入爐最低品質（傳說）
-var FORGE_SLOTS = 6;                         // 六芒星槽位數
-var FORGE_BASE_RATE = { 5: 55, 6: 40, 7: 25 };                  // 基礎成功率 %（依素材品質）
-var FORGE_GOLD_COST = { 5: 5000000, 6: 20000000, 7: 100000000 }; // 單次金幣消耗（傳說 500 萬｜神話 2000 萬｜創世 1 億）
-var FORGE_DUST_RATE = 5;                     // 每個魔塵 +5% 成功率（裝備鑄造）
-var FORGE_FAIL_CONSUME = 3;                  // 鑄造失敗消耗件數
-var FORGE_EQUIP_DURATION = { 5: 3, 6: 5, 7: 8 };                // 裝備神鑄時間（秒）
-/* 寶石神鑄：6 顆同種同階（5~9 階）→ 1 顆高一階（上限 10 階）。
-   費用公式 forgeGemCost、成功率 forgeGemSuccessRateFor → js/formula.js §6 */
-var FORGE_GEM_BASE_RATE = { 5: 50, 6: 40, 7: 35, 8: 25, 9: 15 }; // 基礎成功率 %（依素材階級）
-var FORGE_GEM_DUST_RATE = 3;                 // 每個魔塵 +3% 成功率（寶石鑄造）
-var FORGE_GEM_DURATION = { 5: 1, 6: 2, 7: 3, 8: 4, 9: 6 };       // 寶石神鑄時間（秒）
-var DUST_BOSS_BASE = 2;                      // 高塔 BOSS 魔塵基礎掉落率 %
-var DUST_BOSS_PER_LEVEL = 0.2;               // 高塔樓層每 +1 層的掉落率加成 %
-var DUST_BOSS_CAP = 30;                      // 高塔 BOSS 魔塵掉落率上限 %
+var FORGE_UNLOCK_REINCARNATION = DIVINE_FORGE.equipUnlock; // 新版門檻統一由 game_parameters 管理
+var FORGE_MIN_RARITY = 6;
+var FORGE_SLOTS = 6;
+var DUST_BOSS_BASE = 2;
+var DUST_BOSS_PER_LEVEL = 0.2;
+var DUST_BOSS_CAP = 30;
 
 /* ---- 神鑄創世專屬特效池（12 種，僅出現於神鑄創世裝備，生成時必帶 2 條）----
    stats: 直接併入 computeStats 的屬性聚合桶；無 stats 者為戰鬥觸發型

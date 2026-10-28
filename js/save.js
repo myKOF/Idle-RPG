@@ -283,6 +283,7 @@ function migrateSave(data) {
   var hadSkillMastery = !!(data.player && data.player.skillMastery && typeof data.player.skillMastery === 'object');
   var hadZone = data.stage && data.stage.zone !== undefined; // 需在 mergeDefaults 前判斷
   var hadForgeUnlockNotice = !!(data.forge && data.forge.unlockNotified);
+  var hadDivineForgeV2 = !!(data.forge && data.forge.version === 2);
   var hadSalvageSlots = !!(data.factory && data.factory.salvageSlots !== undefined);
   // 熔爐合併改版旗標：需在 mergeDefaults 前判斷（merge 會補 noticeShown/tabSeen 預設 true）。
   // 合併前的存檔（含外服舊熔爐玩家）→ 載入後顯示改版公告彈窗＋熔爐頁籤閃爍。
@@ -490,6 +491,8 @@ function migrateSave(data) {
       if (Array.isArray(fu.belt)) fu.belt.forEach(function (it) { fixLoadedItem(it); });
     });
   }
+  if (!hadDivineForgeV2 && data.forge) delete data.forge.version;
+  if (typeof forgeMigrateState === 'function') forgeMigrateState(data);
   if (data.settings) delete data.settings.useAncientEssence;
   // 神鑄永久開放相容：舊存檔只有 unlockNotified，合併預設後補回永久解鎖旗標。
   if (hadForgeUnlockNotice && data.forge) data.forge.unlocked = true;
@@ -825,7 +828,7 @@ function migrateSave(data) {
        （ensureFusedGemSource → js/formula.js §8）。之後寶石 base／曲線調整會等比套用，
        不再需要 gemAttrDmgBaseV1 那種「改 base 後手動縮放快照」的一次性遷移。 */
     if (typeof ensureFusedGemSource === 'function') ensureFusedGemSource(fg);
-    if (!fg || fg.leaves !== undefined) return;
+    if (!fg || fg.divine || fg.leaves !== undefined) return;
     var oldF = fg.fusions || 1;
     fg.leaves = oldF + 1;
     fg.fusions = Math.max(1, Math.ceil(Math.log(oldF + 1) / Math.LN2));
@@ -867,7 +870,7 @@ function migrateSave(data) {
   data.factory.synthBuffer.forEach(fixName);
   (typeof newForgeAllQueuedItems === 'function' ? newForgeAllQueuedItems(data) : ((data.newForge && data.newForge.queue) || [])).forEach(fixName);
   ((data.forge && data.forge.slots) || []).forEach(function (it) { if (it && it.kind !== 'gem') fixName(it); });
-  if (data.forge && data.forge.result && data.forge.result.kind !== 'gem') fixName(data.forge.result);
+  if (data.forge && data.forge.result && data.forge.result.kind !== 'gem' && data.forge.result.kind !== 'divineGem') fixName(data.forge.result);
 
   return data;
 }

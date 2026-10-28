@@ -21,11 +21,11 @@ function gpRarityRows() {
   return { rows, head, list: rows.filter((r) => r[cCat] === '表-稀有度').map((r) => ({ id: Number(r[cId]), name: r[cName], g: r[cG], desc: r[cF] })) };
 }
 
-test('game_parameters 編號 321～331 的參數g ＝ RARITIES.runeSlots：11 個稀有度各一格、與程式一致、說明欄有寫 g', () => {
+test('game_parameters 編號 321～331 的參數g ＝ RARITIES.runeSlots：12 個稀有度各一格、與程式一致、說明欄有寫 g', () => {
   const { list } = gpRarityRows();
   const rarities = cfg.evalLiteral(cfg.extractLiteral(fs.readFileSync(path.join(root, 'js', 'data.js'), 'utf8'), 'RARITIES').literal);
-  assert.equal(list.length, 11);
-  assert.deepEqual(list.map((r) => r.id), [321, 322, 323, 324, 325, 326, 327, 328, 329, 330, 331]);
+  assert.equal(list.length, 12);
+  assert.deepEqual(list.map((r) => r.id), [321, 322, 323, 324, 325, 326, 327, 328, 329, 330, 331, 399]);
   list.forEach((r, i) => {
     assert.equal(r.name, rarities[i].name, '列順序與稀有度順序一致');
     assert.equal(Number(r.g), rarities[i].runeSlots, `${r.name} 的符文孔數：配置表與程式一致`);

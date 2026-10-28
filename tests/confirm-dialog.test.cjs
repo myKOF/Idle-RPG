@@ -98,9 +98,9 @@ test('轉生預告依正式門檻，只列轉生回1級立即新開放的系統'
   const notices = (count, level = 1000) => Array.from(c.reincarnationUnlockNotices({ player: { level, reincarnations: count } }));
   assert.deepEqual(notices(0), ['解鎖【天堂威能】系統']);
   assert.deepEqual(notices(1), ['解鎖【神鑄】系統']);
-  assert.deepEqual(notices(2), []);
-  assert.deepEqual(notices(3), ['解鎖【寶石共鳴】系統']);
-  assert.deepEqual(notices(4), []);
+  assert.deepEqual(notices(2), ['解鎖【太古精鑄】系統']);
+  assert.deepEqual(notices(3), ['解鎖【神級寶石】系統', '解鎖【寶石共鳴】系統']);
+  assert.deepEqual(notices(4), ['解鎖【神聖刻印】系統']);
   assert.deepEqual(notices(10), []); // 融合雖達轉數，仍缺重置後的等級門檻。
   c.FORGE_UNLOCK_REINCARNATION = 1;
   c.GEM_RESONANCE_UNLOCK_REINCARNATION = 1;
@@ -160,7 +160,7 @@ test('實際轉生按鈕換算提高50%與250%及解鎖預告，確認才送一�
   header.player.reincarnations = 2;
   click();
   assert.match(elements.get('confirm-message').textContent, /提高250%/);
-  assert.equal(elements.get('confirm-message').children.length, 0);
+  assert.equal(elements.get('confirm-message').children[0].textContent, '解鎖【太古精鑄】系統');
   header.player.level = 999;
   elements.get('confirm-cancel').onclick();
   click();

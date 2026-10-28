@@ -22,7 +22,7 @@ function emptyEquipment(context) {
   }, {});
 }
 
-test('神力改為物理與魔法攻擊的額外乘區', () => {
+test('新版不再套用舊神力攻擊乘區', () => {
   const context = loadGameContext();
   context.G = {
     player: { level: 1, reincarnations: 0, skills: {} },
@@ -42,12 +42,11 @@ test('神力改為物理與魔法攻擊的額外乘區', () => {
   const expectedBase = context.DERIVED_COEF.matkBase + stats.int * context.PRIMARY_STAT_EFFECTS.intMatk;
   assert.equal(stats.base.matk, expectedBase, '基礎魔攻 = 係數 + 智力 × 每點智力魔攻');
   // 神力 20% 是額外乘區：base × (1 + matkPct%) × (1 + 神力%)
-  assert.equal(stats.matk, Math.round(expectedBase * (1 + 100 / 100) * (1 + 20 / 100)));
+  assert.equal(stats.matk, Math.round(expectedBase * (1 + 100 / 100)));
   assert.equal(stats.A.matkPct, 100);
 });
 
-test('神力提示改為額外提高', () => {
-  const root = path.resolve(__dirname, '..');
-  const data = fs.readFileSync(path.join(root, 'js/data.js'), 'utf8');
-  assert.match(data, /godMight:\s*\{[^}]*desc:\s*'物理與魔法攻擊額外提高 \{v\}%'/);
+test('舊神力來源正規化後移除',()=>{
+ const c=loadGameContext(),it={godPassives:[{key:'godMight',val:20}],affixes:[],sockets:[]};
+ c.normalizeItemValueSources(it);assert.equal(it.godPassives,undefined);
 });

@@ -98,7 +98,7 @@
 // v60：skills.skills2.points 投影熟練度總點數、已投資與可用點數。
 // v61：完整裝備快照可帶 legendaryEquipOrder；stats 可帶 blockDmgRedCap。
 // v62：skills2.points.total 包含超支舊檔成功重選後保留的投資額度，欄位與指令不變。
-var WORKER_PROTOCOL_VERSION = 62;
+var WORKER_PROTOCOL_VERSION = 63;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -413,23 +413,14 @@ var COMMANDS = {
   'tower.flee':            { fn: 'fleeTower',        args: {},                                    dirty: ['tower', 'battle'] },
   'tower.stopAuto':        { fn: 'stopTowerAutoFromResult', args: {},                             dirty: ['tower'] },
 
-  /* -- 神鑄（forge）--
-     forgePlaceItem(id) 收字串 id，所以沒有 resolve；forgePlaceGem(type, level)
-     收一般寶石的 type+level；forgeToggleDust(idx) 需要索引，v1 宣告成無參數是錯的。 */
-  'forge.placeItem':       { fn: 'forgePlaceItem',   args: { itemId: 'id' },                      dirty: ['forge', 'inv'] },
-  'forge.removeItem':      { fn: 'forgeRemoveItem',  args: { slotIndex: 'int' }, limit: { slotIndex: { min: 0 } }, dirty: ['forge', 'inv'] },
-  'forge.placeGem':        { fn: 'forgePlaceGem',    args: { type: 'str', level: 'int' },         dirty: ['forge', 'gems'] },
-  'forge.unloadAll':       { fn: 'forgeUnloadAll',   args: {},                                    dirty: ['forge', 'inv', 'gems'] },
-  'forge.toggleDust':      { fn: 'forgeToggleDust',  args: { index: 'int' }, limit: { index: { min: 0 } }, dirty: ['forge'] },
-  'forge.autoFillDust':    { fn: 'forgeAutoFillDust', args: {},                                   dirty: ['forge'] },
-  'forge.start':           { fn: 'doForge',          args: {},                                    dirty: ['forge', 'inv', 'gems'] },
-  'forge.cancel':          { fn: 'cancelForge',      args: {},                                    dirty: ['forge', 'inv', 'gems'] },
-  'forge.setAuto':         { fn: null,               args: { key: 'str', on: 'bool' },
-                             limit: { key: { enum: ['autoDust', 'autoForge'] } },                 dirty: ['forge'] },
-  /* 自動放入設定：kind='equip' 帶 rarity，kind='gem' 帶 gemType+gemLevel，
-     兩者皆省略表示清除該設定。 */
-  'forge.setAutoFill':     { fn: null,               args: { kind: 'str', rarity: 'int?', gemType: 'str?', gemLevel: 'int?' },
-                             limit: { kind: { enum: ['equip', 'gem', 'clear'] } },                dirty: ['forge'] },
+  /* -- 四功能神鑄（v63）：即時原子結算，不保留舊自動與計時指令。 -- */
+  'forge.placeItem':    { fn:'forgePlaceItem', args:{ itemId:'id' }, dirty:['forge','inv'] },
+  'forge.removeItem':   { fn:'forgeRemoveItem', args:{ slotIndex:'int' }, limit:{ slotIndex:{ min:0, max:5 } }, dirty:['forge','inv','gems'] },
+  'forge.placeGem':     { fn:'forgePlaceGem', args:{ type:'str', level:'int' }, dirty:['forge','gems'] },
+  'forge.unloadAll':    { fn:'forgeUnloadAll', args:{}, dirty:['forge','inv','gems'] },
+  'forge.setOperation': { fn:'forgeSetOperation', args:{ mode:'str' }, limit:{ mode:{ enum:['equip','ancient','gem','imprint'] } }, dirty:['forge','inv','gems'] },
+  'forge.setStones':    { fn:'forgeSetStones', args:{ count:'int' }, limit:{ count:{ min:0 } }, dirty:['forge'] },
+  'forge.start':        { fn:'doForge', args:{}, dirty:['forge','inv','gems','header'] },
 
   /* -- 熔爐（newforge）--
      furnaceId 由 nf.nextId++ 產生，是數字。

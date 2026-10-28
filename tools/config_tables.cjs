@@ -1763,7 +1763,7 @@ function runeRaritySlots(rarities) {
 }
 function runeTableRarities() {
   const RARITIES = evalLiteral(extractLiteral(readUtf8(JS.data), 'RARITIES').literal);
-  return RARITIES.map(r => ({ key: r.key, name: r.name }));
+  return RARITIES.map(r => ({ key: r.key, name: r.name, baseRarity: r.baseRarity }));
 }
 // 設定列：[[settingKey, 說明, 取值函式(settings)]]
 function runeSettingDefs(rarities) {
@@ -1874,12 +1874,16 @@ SCHEMAS.Runes = {
     const slots = runeRaritySlots(rarities);
     slots.forEach((n, i) => {
       if (!isInt(n) || n < 0 || n > maxSlots) fail('game_parameters「表-稀有度」「' + rarities[i].name + '」的參數g（符文孔數）必須是 0~' + maxSlots + ' 的整數（Runes 表的符文孔數上限），目前是 ' + n);
-      if (i && n < slots[i - 1]) fail('game_parameters「表-稀有度」：符文孔數（參數g）不可隨稀有度變少（' + rarities[i - 1].name + ' ' + slots[i - 1] + ' → ' + rarities[i].name + ' ' + n + '）');
+    });
+    // 追加的神鑄神話保留存檔ID；依品質階序檢查，不把追加ID當最高品質。
+    const ordered = rarities.map((r, i) => ({ name:r.name, slots:slots[i], rank:r.baseRarity === undefined ? i : r.baseRarity + 0.5 })).sort((a,b) => a.rank - b.rank);
+    ordered.forEach((r,i) => {
+      if (i && r.slots < ordered[i-1].slots) fail('game_parameters「表-稀有度」：符文孔數（參數g）不可隨稀有度變少（' + ordered[i-1].name + ' ' + ordered[i-1].slots + ' → ' + r.name + ' ' + r.slots + '）');
     });
     if (!(Math.max.apply(null, slots) >= 1)) fail('game_parameters「表-稀有度」的參數g（符文孔數）全是 0，沒有任何裝備能鑲符文');
     const bonus = val.twoHandBonusSlots;
     if (!isInt(bonus) || bonus < 0) fail('Runes 表：雙手武器額外符文孔數必須是 ≥0 的整數');
-    if (slots[slots.length - 1] + bonus > maxSlots) fail('Runes 表：最高稀有度的孔數 ' + slots[slots.length - 1] + '（game_parameters 參數g）＋雙手加成 ' + bonus + ' 超過符文孔數上限 ' + maxSlots);
+    if (Math.max.apply(null, slots) + bonus > maxSlots) fail('Runes 表：最高稀有度的孔數 ' + Math.max.apply(null, slots) + '（game_parameters 參數g）＋雙手加成 ' + bonus + ' 超過符文孔數上限 ' + maxSlots);
     ['erase_scrapPerTier', 'erase_essencePerTier', 'erase_goldPerTier'].forEach(k => { if (!(val[k] >= 0)) fail('Runes 表：「' + k + '」必須是 ≥0 的數字（0＝不收這種幣）'); });
     if (!isInt(val.composeMaxTier) || val.composeMaxTier < 1) fail('Runes 表：最高合成階必須是 ≥1 的整數');
     if (!isInt(val.composeCount) || val.composeCount < 2) fail('Runes 表：合成所需顆數必須是 ≥2 的整數');
