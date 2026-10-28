@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## STATS-DEATH-CAUSES-20261028 — 統計面板死亡數下方顯示每次死亡原因（最多10條）
+
+- Owner：Antigravity；Done，單一開發者。使用者要求於統計日誌面板的「死亡數」下方寫入每次死亡的原因，格式包含「敵人(或自己)名稱 / 使用技能名稱 / 造成傷害值」，最多顯示10條；衝突預檢已向使用者回報並獲授權先於本分支提交、後續再整合合併。
+- 範圍：js/stats.js、js/combat.js、js/elite.js、js/legendary.js、js/skills2.js、js/tower.js、index.html、js/bridge.js、js/worker/sim.worker.js、tests/stats-panel.test.cjs、LV_upgrade_system.md、PATCH.md 與本段。禁止改動傷害計算、存檔結構或其他無關系統。
+- 完成12檔：stats.js 新增 deathCauses（最多保留最新10筆）、recordPlayerDamageHit、clearLastPlayerDamage、playerSelfDeathName 與 statsDeathCausesHtml；combat.js、elite.js、legendary.js、skills2.js、tower.js 串接敵人普攻／技能、DoT 與自身技能／傳奇扣血來源紀錄；同步 index.html、js/bridge.js、js/worker/sim.worker.js 快取版本；新增 tests/stats-panel.test.cjs 測試案例並更新 LV_upgrade_system.md、PATCH.md。
+- 驗證：執行 tests/stats-panel.test.cjs、tests/string-table.test.cjs、node tools/string-table/build_string_csv.cjs --check、node tools/build_check.cjs 及全量測試確認無新增錯誤後建立 Commit。
+
 ## SYNC-HOLD-SCOPE-20261028 — 修正保留範圍並納入977e425
 
 - Owner：Codex；Done。使用者指出同步成功但漏掉977e425，明確要求不論來源分支，將最新成果完整整合至develop並讓三個AI工作區取得整合結果。本次授權解除ai/claude舊hold；codex/background-catchup明確隔離維持，不發布main。

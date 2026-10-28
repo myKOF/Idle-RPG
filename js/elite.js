@@ -233,6 +233,14 @@ function eliteHitPlayer(m, o) {
   if (o.sure) cfg.hit = 100000;
   var dCfg = playerDefCfg(p);
   var res = resolveHit(m, p, cfg, dCfg);
+  if (p && Array.isArray(p.dots) && m && m.name) {
+    for (var pdi = 0; pdi < p.dots.length; pdi++) {
+      if (p.dots[pdi] && !p.dots[pdi].sourceName) {
+        p.dots[pdi].sourceName = m.name;
+        p.dots[pdi].sourceKey = p.dots[pdi].sourceKey || 'enemy';
+      }
+    }
+  }
   var pf = elitePF();
   if (res.invuln) { floatPlayerEvent(pf, STR(498), 'defend'); return res; }
   if (res.miss) { floatPlayerEvent(pf, STR(500), 'dodge defend'); return res; }
@@ -241,18 +249,21 @@ function eliteHitPlayer(m, o) {
   floatText(pf, text, res.crit ? 'crit' : 'mdmg');
   if (res.blocked) floatPlayerEvent(pf, STR(502), 'defend');
   var hpDamage = Math.max(0, res.dmg - (res.absorbed || 0));
+  if (res.dmg > 0 && window.recordPlayerDamageHit) {
+    window.recordPlayerDamageHit((m && m.name) || STR(459), (o && o.label) || STR(41), res.dmg);
+  }
   settleEnemyAttackRetaliation({
     attacker: m, target: p, floatSel: pf, result: res, hpDamage: hpDamage,
     blocked: !!res.blocked, defCfg: dCfg, thornsApplied: true
   });
-  eliteApplyStatus(p, dCfg, res, o);
+  eliteApplyStatus(p, dCfg, res, o, m);
   if (!o.quiet && typeof blog === 'function') {
     blog(STR(531, (m.name || STR(459)), (o.label || STR(41)), fmt(res.dmg)),
       'log-enemy-skill', 'combat');
   }
   return res;
 }
-function eliteApplyStatus(p, dCfg, res, o) {
+function eliteApplyStatus(p, dCfg, res, o, m) {
   var pf = elitePF();
   var ccf = (dCfg.ccFactor === undefined) ? 1 : dCfg.ccFactor;
   if (o.stun > 0 && !resistCtrl(dCfg)) {
@@ -265,7 +276,11 @@ function eliteApplyStatus(p, dCfg, res, o) {
   }
   if (o.dot && o.dot.dur > 0 && res.dmg > 0) {
     var dps = Math.max(1, res.dmg * o.dot.pct / 100 / o.dot.dur);
-    applyDot(p, dps, o.dot.dur, o.dot.name, o.dot.id);
+    applyDot(p, dps, o.dot.dur, o.dot.name, o.dot.id, undefined, undefined, {
+      sourceName: m && m.name,
+      sourceKey: 'enemy',
+      subType: o.dot.name || o.label
+    });
     floatPlayerEvent(pf, o.dot.name + '!', 'debuff');
   }
   if (o.atkDown > 0) applyBuff(p, 'atkDown', o.atkDown, o.dur || 6, 'atkDown');
@@ -1069,7 +1084,12 @@ function eliteCastCurse(m, d) {
   eliteLater(0.3, function () {
     if (!(m.hp > 0) || !elitePlayerAlive()) return;
     var ce = eliteStatusEntry(d, 'enemy');   // 詛咒的上身畫面由 Status 表決定
-    if (ce && typeof applyStatus === 'function' && elitePlayer()) applyStatus(elitePlayer(), ce.id, { dur: eliteStatusDur(d, 'enemy', d.dur) });
+    if (ce && typeof applyStatus === 'function' && elitePlayer()) {
+      applyStatus(elitePlayer(), ce.id, {
+        dur: eliteStatusDur(d, 'enemy', d.dur),
+        source: { sourceName: m && m.name, sourceKey: 'enemy', subType: d.name }
+      });
+    }
     eliteHitPlayer(m, {
       mult: d.dmg, elem: d.elem, sure: true, atkDown: d.atkDown, defDown: d.defDown, dur: d.dur, label: d.name
     });

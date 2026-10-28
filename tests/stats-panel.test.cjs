@@ -140,6 +140,39 @@ test('基本統計 HTML 含統計時間、戰鬥場次與殺敵數', () => {
   assert.match(html, /3/);
 });
 
+test('基本統計於死亡數下方顯示每次死亡原因（敵人或自己名稱 / 使用技能名稱 / 造成傷害值，最多10條）', () => {
+  const context = loadStatsContext();
+  context.recordPlayerDamageHit('荒漠毒蠍', '劇毒穿刺', 12500);
+  context.recordLootDeath('field');
+
+  context.recordPlayerDamageHit(context.playerSelfDeathName(), '血飲術', 85000);
+  context.recordLootDeath('field');
+
+  let html = context.statsBasicHtml();
+  assert.ok(html.indexOf('死亡數') < html.indexOf('荒漠毒蠍'));
+  assert.match(html, /荒漠毒蠍<\/span> \/ 劇毒穿刺 \/ 12\.5K/);
+  assert.match(html, /冒險者（你）<\/span> \/ 血飲術 \/ 85\.0K/);
+
+  // 連續再記錄 10 次死亡（共 12 次），驗證最多只保留與顯示最新 10 條
+  for (let i = 1; i <= 10; i++) {
+    context.recordPlayerDamageHit('首領' + i, '重擊' + i, i * 100);
+    context.recordLootDeath('field');
+  }
+  assert.equal(context.LOOT_STATS.deaths, 12);
+  assert.equal(context.LOOT_STATS.deathCauses.length, 10);
+  html = context.statsBasicHtml();
+  assert.doesNotMatch(html, /荒漠毒蠍/);
+  assert.doesNotMatch(html, /血飲術/);
+  assert.match(html, /首領1<\/span> \/ 重擊1 \/ 100/);
+  assert.match(html, /首領10<\/span> \/ 重擊10 \/ 1\.00K/);
+  assert.equal((html.match(/class="summary-sub-row"/g) || []).length, 10);
+
+  // 清理後死亡原因歸零
+  context.resetLootStats();
+  assert.equal(context.LOOT_STATS.deathCauses.length, 0);
+  assert.doesNotMatch(context.statsBasicHtml(), /summary-sub-row/);
+});
+
 test('掉落統計 HTML：品質分行上色、材料含圖示、寶石逐行、金幣完整數字', () => {
   const context = loadStatsContext();
   context.recordLootEquip(1, 100);
