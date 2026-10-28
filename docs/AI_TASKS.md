@@ -12939,3 +12939,15 @@ Worker 存活且頁面正常完成載入。
 - 全庫：node --test --test-reporter=tap "tests/*.test.cjs"完整執行14分45秒，4931項＝4340過／589失敗／2跳過。以修改前HEAD 14e7d8cb的本次來源唯讀覆映、按每個失敗名稱重跑，全589項均在原版重現，新增失敗0；沒有弱化既有斷言或擴修無關功能，不宣稱全庫全過。原始TAP與baseline-summary.json保留本聊天visualizations/wave-table-removal。
 - 同副本BOUNCE-DODGE聊天後續新增skills2、專項回歸及LV／任務表／index／Worker快取；本次以Git index分段暫存，保留其工作檔逐位元不變，提交只含本次區段（bridge372／原skills2快取），其較新工作檔快取維持373／skills2 364。以只覆映staged來源並隔離對方skills2的方式重跑上述83項，83/83通過；不納入對方進行中功能或文件。
 - 交付：本段所在「[Codex] refactor: 移除冗餘波次表並統一出怪參數來源」Commit，實際編號見回覆；無本次未完成項目，可供Review／合併，未合併或推送。已知限制為全庫589項既有失敗及未做瀏覽器／真人長戰，下一步正常整合後重載遊戲；使用者NPC與主參數表、其他聊天進行中修改保留未提交。
+
+
+## WORLD-MAP-PORTAL-QUALITY-20261028 — 神界傳送門質感與動態升級
+
+- Owner：Codex；Done，單一開發者。使用者已核准目前傳送門外觀並明確要求Commit。沿既有HTML／CSS介面圖形重做古金屬拱門、頂冠、門座、能量旋渦與光粒，不產出獨立圖片或VFX Preset。
+- 前置：既有地圖與入口已完成；允許index.html門體標記及CSS快取、css/world-map.css門體樣式、docs/WORLD_MAP.md、LV_upgrade_system.md及本段；禁止JS／玩法／解鎖／存檔／配置／原圖／其他工作區／合併推送。
+- 驗收：桌面／窄屏外觀與動畫、隱藏／縮減動態、入口點擊與焦點、地圖回歸／Build／Console及diff均已完成；使用者2026-10-28核准目前外觀並要求提交，解除本輪暫不提交限制。本次五檔獨立Commit，不合併／推送；後續使用者正常整合。
+- 完成五檔：index內嵌自製SVG金屬漸層／刻紋／頂冠寶石／石階，CSS重做門內反向能量流、旋渦核心、星點、上升六光粒、門緣循環光紋及底座光環；hover／focus微抬升提亮，裝飾不攔截指標，縮減動態包含偽元素皆停止動畫。320／390窄屏門體下移避免頂端裁切，主頁CSS快取1.0.7；WORLD_MAP與LV同步。沒有新增JS／Timer、獨立素材、VFX Preset或玩家文字；不需String／素材庫Commit。
+- 回歸：node --test --test-reporter=spec tests/world-map-ui.test.cjs tests/world-map.test.cjs tests/string-table.test.cjs tests/fullscreen-toggle.test.cjs tests/battle-fullscreen.test.cjs為33/33，npm.cmd run build最終597檔通過，git diff --check通過。沒有新增純樣式斷言或改既有測試期望。
+- 瀏覽器：CUA／IAB隔離fixture載正式DOM／全套CSS／地圖程式與配置，320×720／390×844／1558×869皆驗入口邊界、裝飾pointer-events:none、能量流動transform持續改變，實際點擊及鍵盤Enter開神界頁、返回正常，鍵盤焦點框可見，Console error／warning0。縮減動態為CSS規則檢查，未修改或模擬使用者OS偏好；未讀寫玩家存檔。32幀真實瀏覽器截圖編為portal-motion.gif，另portal-world-map.png／portal-narrow.png與驗證JSON保留本聊天visualizations/portal-quality；中間影格已清理。
+- 衝突：Antigravity ffa165b3新增統計原因，index僅改stats／skills2／combat／tower／bridge快取，與本次CSS版本及門體無語意相依；但該分支缺少前輪傳送門／神鑄基礎，對現況做三方試合併（統一CRLF／LF後）仍在world-map CSS版本及門體區塊回報衝突，已依AI_RULES 3.2詢問；使用者後續明確核准目前新版及本次提交，只提交ai/codex五檔，Antigravity成果留待正常整合。AI_TASKS採檔尾追加，對方檔首新增，當輪增量merge-file exit0；LV檔尾候選亦exit0但未套用。無其他AI工作區或分支被修改／整合。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、WorldMapUI解鎖與指令、String表／資料、Worker／存檔、既有測試及地圖PNG；自我Review及使用者外觀驗收已完成。已知限制為未做全庫、真人長戰與OS減少動態實機切換；本次無未完成實作。Commit為本段所在「[Codex] feat: 升級神界傳送門質感與能量動態」，編號見交付；可供合併，未合併／推送。提交前確認五檔程式／樣式內容與已驗證版本一致，本輪僅更新交付狀態，不重跑未受影響測試。

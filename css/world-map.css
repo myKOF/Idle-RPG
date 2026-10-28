@@ -58,10 +58,41 @@ body.world-map-open { overflow: hidden; }
 @keyframes world-map-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 @keyframes world-map-halo { 0%, 100% { opacity: .4; } 50% { opacity: .95; } }
 .world-map-info { position: absolute; z-index: 3; width: min(270px, calc(100% - 16px)); box-sizing: border-box; transform: translateX(-50%); padding: 13px 15px; background: rgba(13,16,16,.97); border: 1px solid #9b8051; border-radius: 4px; box-shadow: 0 6px 22px rgba(0,0,0,.7); pointer-events: auto; }
-.world-map-god-portal { position: absolute; left: 16%; top: 22%; transform: translate(-50%, -50%); display: grid; justify-items: center; gap: 5px; padding: 8px; border: 0; background: none; box-shadow: none; color: #fff0bc; font-size: clamp(10px, 1.1cqw, 18px); text-shadow: 0 1px 3px #000, 0 0 4px #000; cursor: pointer; }
-.world-map-god-portal:hover, .world-map-god-portal:focus-visible { background: none; transform: translate(-50%, -50%); filter: brightness(1.2); }
-.world-map-god-portal:focus-visible { outline: 2px solid #fff0bc; outline-offset: 2px; }
-.world-map-portal-ring { display: block; width: clamp(26px, 4cqw, 66px); aspect-ratio: 2 / 3; border: 3px solid #d7c48b; border-radius: 50%; background: radial-gradient(ellipse, #ebf9ff 0%, #9bd5ee 15%, #4f72ae 42%, #30255b 62%, #b2eaff 70%, #6d647d 76%); box-shadow: 0 0 10px #a7e6ff, inset 0 0 12px #e1f6ff; }
+/* 神界入口是可編輯的SVG／CSS介面裝飾；門內流動，雕刻門框與石階保持穩定。 */
+.world-map-god-portal { position: absolute; left: 16%; top: 22%; transform: translate(-50%, -50%); display: grid; justify-items: center; gap: 0; padding: 3px 8px; border: 0; background: none; box-shadow: none; color: #fff0bc; cursor: pointer; isolation: isolate; }
+.world-map-god-portal:hover, .world-map-god-portal:focus-visible { background: none; transform: translate(-50%, -50%); }
+.world-map-god-portal:focus-visible { outline: 2px solid #fff0bc; outline-offset: 4px; border-radius: 6px; }
+.world-map-portal-art { display: block; position: relative; width: clamp(62px, 10.2cqw, 170px); aspect-ratio: 180 / 220; pointer-events: none; transition: transform .25s ease, filter .25s ease; }
+.world-map-god-portal:hover .world-map-portal-art, .world-map-god-portal:focus-visible .world-map-portal-art { transform: translateY(-3px); filter: brightness(1.12); }
+.world-map-portal-aura { position: absolute; inset: -9% -23% -2%; background: radial-gradient(ellipse at 50% 45%, rgba(102,201,242,.24), rgba(62,106,184,.13) 36%, transparent 65%); animation: world-map-portal-breathe 4s ease-in-out infinite; }
+.world-map-portal-orbit { position: absolute; left: 2%; bottom: 1%; width: 96%; height: 20%; border: 1px solid rgba(168,219,224,.55); border-radius: 50%; background: radial-gradient(ellipse, transparent 43%, rgba(140,206,227,.28) 50%, transparent 58%, rgba(201,223,186,.35) 62%, transparent 66%); box-shadow: 0 0 10px rgba(103,191,225,.3), inset 0 0 6px rgba(145,224,255,.3); animation: world-map-portal-breathe 4s ease-in-out infinite; }
+.world-map-portal-aperture { position: absolute; left: 27%; top: 15%; width: 46%; height: 63%; overflow: hidden; border-radius: 50%; background: radial-gradient(ellipse at 48% 60%, #d0f7ff 0%, #548eac 7%, #345b8b 19%, #1d3155 37%, #102340 59%, #4591ad 83%, #b6eff5 100%); box-shadow: 0 0 9px rgba(144,230,255,.8), inset 0 0 9px #8cdefa; }
+.world-map-portal-flow, .world-map-portal-depth { position: absolute; inset: -38% -90%; border-radius: 44%; background: conic-gradient(from 20deg, transparent 4%, #88d4ed 12%, #274674 20%, transparent 31%, #6b8db8 42%, #daffff 46%, transparent 54%, #18305b 64%, #80c2dd 76%, transparent 85%); mask-image: radial-gradient(ellipse, transparent 18%, #000 30%, transparent 62%); opacity: .85; animation: world-map-portal-turn 12s linear infinite; }
+.world-map-portal-depth { inset: -12% -53%; background: repeating-conic-gradient(from 80deg, transparent 0 35deg, rgba(177,222,246,.75) 42deg, rgba(60,90,155,.1) 65deg, transparent 90deg); mask-image: radial-gradient(ellipse, transparent 8%, #000 28%, transparent 59%); opacity: .65; animation-direction: reverse; animation-duration: 18s; }
+.world-map-portal-stars { position: absolute; inset: 0; background: radial-gradient(circle at 32% 26%, #efffff 0 1px, transparent 1.8px), radial-gradient(circle at 69% 34%, #b8e6ff 0 .7px, transparent 1.5px), radial-gradient(circle at 38% 67%, #d5f7ff 0 .8px, transparent 1.6px), radial-gradient(circle at 68% 77%, #edfaff 0 1px, transparent 1.8px), radial-gradient(circle at 52% 12%, #defbff 0 .7px, transparent 1.3px); animation: world-map-portal-stars 5s ease-in-out infinite; }
+.world-map-portal-rift { position: absolute; inset: 29% 16%; border-radius: 50%; background: radial-gradient(ellipse at 50% 52%, #ecffff 0%, #b9ebf4 3%, #436b99 12%, rgba(29,51,86,.5) 28%, transparent 50%); animation: world-map-portal-breathe 4s ease-in-out infinite reverse; }
+.world-map-portal-rift::before, .world-map-portal-rift::after { content: ''; position: absolute; inset: 1% -9%; border: 1px solid transparent; border-top-color: #b6f1ff; border-left-color: rgba(109,189,235,.7); border-radius: 50%; box-shadow: -2px -2px 5px rgba(138,213,245,.4); animation: world-map-portal-turn 7s linear infinite; }
+.world-map-portal-rift::after { inset: 17% 8%; border-top-color: #ecffff; border-left-color: rgba(186,215,255,.8); animation-duration: 5s; animation-direction: reverse; }
+.world-map-portal-architecture { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 2px 2px rgba(0,0,0,.75)); }
+.world-map-portal-seal { filter: drop-shadow(0 0 3px #94deff); stroke-dasharray: 24 11 7 19; animation: world-map-portal-circuit 8s linear infinite; }
+.world-map-portal-jewel { filter: drop-shadow(0 0 4px #95e5ff); }
+.world-map-portal-motes { position: absolute; inset: 10% 20% 10%; }
+.world-map-portal-motes i { position: absolute; left: 24%; bottom: 8%; width: 2px; height: 3px; border-radius: 50%; background: #dcfaff; box-shadow: 0 0 4px #86cfff; opacity: 0; animation: world-map-portal-rise 4.8s ease-out infinite; }
+.world-map-portal-motes i:nth-child(2) { left: 72%; bottom: 13%; animation-delay: -.8s; }
+.world-map-portal-motes i:nth-child(3) { left: 12%; bottom: 24%; animation-delay: -1.6s; }
+.world-map-portal-motes i:nth-child(4) { left: 81%; bottom: 32%; animation-delay: -2.4s; }
+.world-map-portal-motes i:nth-child(5) { left: 34%; bottom: 4%; animation-delay: -3.2s; }
+.world-map-portal-motes i:nth-child(6) { left: 60%; bottom: 18%; animation-delay: -4s; }
+.world-map-portal-caption { display: block; margin-top: -2px; font-family: 'DFKai-SB', 'KaiTi', 'Noto Serif TC', serif; font-size: clamp(10px, 1.15cqw, 19px); font-weight: 700; letter-spacing: .12em; color: #f2dfae; text-shadow: 0 1px 2px #111c23, 0 0 5px #14212a, 1px 0 2px #14212a; white-space: nowrap; }
+@keyframes world-map-portal-turn { to { transform: rotate(360deg); } }
+@keyframes world-map-portal-circuit { to { stroke-dashoffset: -366; } }
+@keyframes world-map-portal-breathe { 0%, 100% { opacity: .65; } 50% { opacity: 1; } }
+@keyframes world-map-portal-stars { 0%, 100% { opacity: .45; transform: translateY(1px); } 50% { opacity: 1; transform: translateY(-2px); } }
+@keyframes world-map-portal-rise { 0% { opacity: 0; transform: translate(0, 0) scale(.5); } 18% { opacity: .85; } 75% { opacity: .5; } 100% { opacity: 0; transform: translate(4px, -38px) scale(.3); } }
+@media (prefers-reduced-motion: reduce) {
+  .world-map-portal-art, .world-map-portal-art *, .world-map-portal-art *::before, .world-map-portal-art *::after { animation: none !important; transition: none !important; }
+  .world-map-portal-motes i { opacity: .6; }
+}
 .world-map-info h3 { margin: 0 0 9px; font-size: 17px; color: #ebd6a2; }
 .world-map-info p { margin: 5px 0; line-height: 1.5; font-size: 13px; }
 #world-map-scene-status { color: #b8ae99; }
@@ -83,6 +114,7 @@ body.world-map-open { overflow: hidden; }
   .world-map-tools { gap: 4px; }
   #world-map-close { width: 28px; height: 28px; font-size: 20px; }
   .world-map-hotspot { min-height: 24px; min-width: 40px; }
+  .world-map-god-portal { top: 28%; }
   .world-map-info { padding: 9px 12px; }
   .world-map-info h3 { font-size: 15px; margin-bottom: 4px; }
   .world-map-info p { font-size: 12px; margin: 3px 0; }

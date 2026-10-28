@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="css/runeword.css?v=1.0.8">
   <link rel="stylesheet" href="css/gems.css?v=1.0.25">
   <link rel="stylesheet" href="css/dialogs.css?v=1.0.4">
-  <link rel="stylesheet" href="css/world-map.css?v=1.0.6">
+  <link rel="stylesheet" href="css/world-map.css?v=1.0.7">
   <link rel="stylesheet" href="css/divine-forge.css?v=1.0.2">
 </head>
 
@@ -824,7 +824,47 @@
         <div id="world-map-human">
           <img id="world-map-image" src="images/world-map/salvien.png?v=1" loading="lazy" decoding="async" draggable="false" data-str-attr="alt:2127">
           <div id="world-map-hotspots"><span id="world-map-marker" class="world-map-marker" role="img" hidden data-str-attr="aria-label:2107"><span class="world-map-marker-motion"><img src="images/world-map/location-cursor.png?v=2" alt="" aria-hidden="true" decoding="async"></span></span></div>
-          <button id="world-map-god-portal" class="world-map-god-portal" type="button" hidden><span class="world-map-portal-ring" aria-hidden="true"></span><span data-str="2206"></span></button>
+          <button id="world-map-god-portal" class="world-map-god-portal" type="button" hidden>
+            <span class="world-map-portal-art" aria-hidden="true">
+              <span class="world-map-portal-aura"></span>
+              <span class="world-map-portal-orbit"></span>
+              <span class="world-map-portal-aperture"><span class="world-map-portal-flow"></span><span class="world-map-portal-depth"></span><span class="world-map-portal-stars"></span><span class="world-map-portal-rift"></span></span>
+              <svg class="world-map-portal-architecture" viewBox="0 0 180 220" fill="none" focusable="false">
+                <defs>
+                  <linearGradient id="wm-portal-metal" x1="32" y1="18" x2="146" y2="190" gradientUnits="userSpaceOnUse"><stop stop-color="#f6e7b8"/><stop offset=".18" stop-color="#9e8755"/><stop offset=".35" stop-color="#3d403d"/><stop offset=".5" stop-color="#d7bd7d"/><stop offset=".64" stop-color="#6e5938"/><stop offset=".82" stop-color="#b6a575"/><stop offset="1" stop-color="#292d30"/></linearGradient>
+                  <linearGradient id="wm-portal-edge" x1="45" y1="32" x2="131" y2="169" gradientUnits="userSpaceOnUse"><stop stop-color="#fff3c6"/><stop offset=".4" stop-color="#b2a16e"/><stop offset=".65" stop-color="#514b38"/><stop offset="1" stop-color="#edd69e"/></linearGradient>
+                  <linearGradient id="wm-portal-stone" x1="90" y1="174" x2="90" y2="213" gradientUnits="userSpaceOnUse"><stop stop-color="#696961"/><stop offset=".3" stop-color="#333c42"/><stop offset=".65" stop-color="#192b37"/><stop offset="1" stop-color="#0d1923"/></linearGradient>
+                  <radialGradient id="wm-portal-gem"><stop stop-color="#f1ffff"/><stop offset=".25" stop-color="#a6edff"/><stop offset=".7" stop-color="#3c859c"/><stop offset="1" stop-color="#142e49"/></radialGradient>
+                </defs>
+                <ellipse cx="90" cy="204" rx="66" ry="10" fill="#081f2b" opacity=".65"/>
+                <path d="M42 175L28 187L18 197L32 207H148L162 197L151 188L137 175Z" fill="url(#wm-portal-stone)" stroke="#232c2b" stroke-width="2"/>
+                <path d="M30 189H150M23 197H157M33 205H147" stroke="#a39060" stroke-opacity=".8"/>
+                <path d="M48 181H132L144 190H36Z" fill="#44555b" stroke="#d0bc88"/>
+                <ellipse cx="90" cy="183" rx="40" ry="6" stroke="#8edef1" opacity=".75"/>
+                <path d="M52 51L39 42L32 23L30 63L18 57L26 83L17 101L32 99L33 136L43 166L49 179L57 169L46 133L43 95Z" fill="url(#wm-portal-metal)" stroke="#292d28" stroke-width="2"/>
+                <path d="M128 51L141 42L148 23L150 63L162 57L154 83L163 101L148 99L147 136L137 166L131 179L123 169L134 133L137 95Z" fill="url(#wm-portal-metal)" stroke="#292d28" stroke-width="2"/>
+                <path d="M36 56L40 78L32 88M30 66L35 80M39 102L40 131L48 154M144 56L140 78L148 88M150 66L145 80M141 102L140 131L132 154" stroke="#e3cc91" stroke-width="1.3" opacity=".85"/>
+                <ellipse cx="90" cy="102" rx="49" ry="77" stroke="#162a31" stroke-width="13"/>
+                <ellipse cx="90" cy="102" rx="49" ry="77" stroke="url(#wm-portal-metal)" stroke-width="9"/>
+                <ellipse cx="90" cy="102" rx="53" ry="81" stroke="#f1d9a1" stroke-width="1" opacity=".8"/>
+                <ellipse cx="90" cy="102" rx="44" ry="72" stroke="url(#wm-portal-edge)" stroke-width="2"/>
+                <ellipse class="world-map-portal-seal" cx="90" cy="102" rx="40.5" ry="68.5" stroke="#a5efff" stroke-width="1.5"/>
+                <g stroke="#e6d7a9" stroke-width="1.2" opacity=".85">
+                  <path d="M66 38L61 43L66 46M53 57L49 62L53 67M46 83L43 88L46 93M45 110L42 115L46 120M51 139L48 145L53 148M65 159L61 162L66 167M114 38L119 43L114 46M127 57L131 62L127 67M134 83L137 88L134 93M135 110L138 115L134 120M129 139L132 145L127 148M115 159L119 162L114 167"/>
+                  <path d="M78 29L80 32L77 35M102 29L100 32L103 35M80 174L82 177M98 177L100 174"/>
+                </g>
+                <path d="M64 23L76 25L90 3L104 25L116 23L107 40L96 34H84L73 40Z" fill="url(#wm-portal-metal)" stroke="#2b3030" stroke-width="2"/>
+                <path d="M76 27L90 10L104 27M76 34L84 29H96L104 34" stroke="#f8e3ab" stroke-width="1.3"/>
+                <path class="world-map-portal-jewel" d="M90 16L97 27L90 38L83 27Z" fill="url(#wm-portal-gem)" stroke="#e3edce" stroke-width="1.3"/>
+                <path d="M90 16V38M83 27H97" stroke="#dbffff" stroke-width=".6" opacity=".8"/>
+                <path d="M39 85L45 94L39 104L34 94ZM141 85L146 94L141 104L135 94Z" fill="url(#wm-portal-gem)" stroke="#c9bc8e"/>
+                <path d="M77 191L90 185L103 191L90 197Z" fill="url(#wm-portal-metal)" stroke="#a6b99b"/>
+                <path d="M84 191H96M90 188V194" stroke="#c3faff"/>
+              </svg>
+              <span class="world-map-portal-motes"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+            </span>
+            <span class="world-map-portal-caption" data-str="2206"></span>
+          </button>
           <div id="world-map-image-error" class="world-map-image-error" role="status" hidden data-str="2128"></div>
         </div>
         <div id="world-map-god" class="world-map-god" hidden>
