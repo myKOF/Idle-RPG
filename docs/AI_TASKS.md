@@ -2,7 +2,7 @@
 
 ## SYNC-HOLD-SCOPE-20261028 — 修正保留範圍並納入977e425
 
-- Owner：Codex；In Progress。使用者指出同步成功但漏掉977e425，明確要求不論來源分支，將最新成果完整整合至develop並讓三個AI工作區取得整合結果。本次授權解除ai/claude舊hold；codex/background-catchup明確隔離維持，不發布main。
+- Owner：Codex；Done。使用者指出同步成功但漏掉977e425，明確要求不論來源分支，將最新成果完整整合至develop並讓三個AI工作區取得整合結果。本次授權解除ai/claude舊hold；codex/background-catchup明確隔離維持，不發布main。
 - 原因：固定ai/claude的本機hold被工具擴張繼承到獨立ai/claude-kpj271與任意名稱Claude來源，來源完整性檢查也排除它們；成功訊息沒有在結尾列出被保留的來源，導致誤判全數最新。
 - 範圍：同步工具的hold判斷／完成訊息、真Git回歸、流程與AGENTS同步定義、本紀錄；正常合併977e425的既有成果，必要index快取及任務紀錄衝突保留雙方。禁止玩法擴修、覆蓋進行中修改、發布main或解除其他隔離。
 - 前置與驗收：所有正式參與工作區乾淨、先fetch並固定來源；雲端來源九筆新增提交，merge-tree僅AI_TASKS及index文字衝突。預檢五檔無其他修改來源。驗證hold僅限明確分支、獨立雲端成果仍納入、結尾列出保留範圍；相關同步／3D／快取回歸及Build，檢查來源為develop祖先且三固定分支與遠端一致後回報。後續接手：使用者驗收；測試與提交結果完成後補記。
@@ -11,6 +11,7 @@
 - 整合驗證完成：工具Commit 2d2b43f4；保留977e4254及其九筆新增提交，在ai/codex正常雙親合併。AI_TASKS改以原始三階段執行git merge-file（exit0）完整保留紀錄，index採hero3d12／renderer205；模型及來源檔維持incoming原位元，LV補本次內測三動作及披風修正記錄。來源三處內部skipped診斷標記改用length／samples，避免誤判玩家文字，未改畫面／碰撞／動作語意或放寬測試。
 - 遊戲驗證：node --test --test-reporter=spec tests/hero3d-battle-rules.test.cjs tests/hero3d-internal-toggle.test.cjs tests/player-directional-sprite.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs，最終38/38通過；npm.cmd run build595檔通過，最後hero3d診斷修改另node --check通過；git diff HEAD --check通過。既有three.js在Node測試有模組類型自動判讀警告，未擴改package設定；未做瀏覽器GPU外觀或玩家存檔長戰驗收，不宣稱全庫驗證。
 - 唯讀未改：AI_RULES／Workflow／prompts、同步index恢復與Excel交接器、String.xlsx／CSV／生成字串、Worker協議／模擬、其他AI未提交工作與main。正常同步將在此合併提交後執行，實際最後HEAD、三固定分支與遠端包含977e4254之驗證，以develop/logs/sync-ai-worktrees/latest.md及本聊天完成報告為準。原隔離背景續戰分支持續保留，不能把它計為本輪已同步。
+- 實際同步完成：遊戲合併b4457ea3經原工具推送並整合成develop c6e0ed54，三個固定AI工作區及其遠端均已對齊，977e4254為develop祖先；本機ai/claude hold=false，background-catchup hold=true維持。同步exit0，報告sync-20261028-095706-c8c3d228.md明列保留來源；收尾本段獨立docs提交後再依同一流程同步，最終SHA以latest.md為準。無本次未完成程式或合併項，下一步重載內測遊戲驗收三個動作；未做正式發布。
 
 ## SYNC-ALL-AI-SOURCES-20261028 — 主線完整整合與雲端來源補掃
 
