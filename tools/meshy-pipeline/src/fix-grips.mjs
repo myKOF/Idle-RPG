@@ -95,7 +95,7 @@ const CFG = {
   },
   /* 倒地：改用使用者在 Meshy 網頁重新綁骨架後套的 Dead 動作（取樣檔 data/meshy-dead.json，來源 0～2.9667 秒，30 fps）。原 Death 動作長 2.75 秒、
      67 個關鍵幀，寫不下 2.967 秒，所以來源時間均勻壓縮 speed 倍（≈1.079）塞進去。不限手腕、不做 IK，動作與骨骼不動；Sword 旋轉設成模型原本的握法（fitSwordGrip），倒下途中劍脫手落地（dropSword）。 */
-  Death: { retarget: { name: 'dead', file: 'meshy-dead.json', at: 0, speed: 2.9667 / 2.75 }, drop: { tiltDeg: 5, from: 1.1, to: 1.8 } }
+  Death: { retarget: { name: 'dead', file: 'meshy-dead.json', at: 0, speed: 2.9667 / 2.75 }, settle: { from: 1.9, to: 2.35, forwardDeg: 20, faceDown: -1 } }
 };
 
 /* ---- GLB ---- */
@@ -543,27 +543,26 @@ function alignGripToHand(g, rig, clip, rollDeg = 0) {
   console.log(clip.name + ' 握姿校正：拳頭＋劍整體轉 ' + (b0.angleTo(new Vector3(0, 1, 0)) * 180 / Math.PI).toFixed(1) + '° 讓刀刃順著手的方向，再繞劍身軸翻 ' + rollDeg + '° 讓刃口朝砍的方向');
 }
 
-/* ---- 倒地：劍脫手掉在地上 ----
-   使用者：原作的手本來是放開的，劍可以脫手掉在地上，不必死了還握著。站著時握法與模型原樣一致（fitSwordGrip），從 drop.from 到 drop.to 劍的世界旋轉由「跟著手」漸漸轉成
-   「躺在地上」：劍身水平、朝手臂延伸方向（最後一格前臂方向的水平分量），劍面朝地、刃口在側（劍不會刃口朝地）。劍骨骼的原點仍跟著手，所以落點就在手邊；手與身體的動作一個都不動。 */
-function dropSword(g, rig, clip, cfg) {
-  const id = (n) => rig.byName[n], tr = clip.tracks['Sword.rotation'], q0 = rig.rest[id('Sword')].q.clone(), ed = {};
-  const Wend = worldMatrices(rig, poseAt(rig, clip, clip.keyTimes[clip.keyTimes.length - 1]));
-  const arm = wPos(Wend(id('RightHand'))).sub(wPos(Wend(id('RightForeArm'))));
-  arm.y = 0; arm.normalize();
-  const th = (cfg.tiltDeg || 0) * Math.PI / 180;      // 劍骨骼原點離地約 0.09、劍長約 1：劍尖朝地微傾幾度剛好貼地，不會懸空
-  const ey = arm.clone().multiplyScalar(Math.cos(th)).addScaledVector(new Vector3(0, -1, 0), Math.sin(th));
-  const ez = new Vector3(0, -1, 0).addScaledVector(ey, ey.y).normalize(), ex = new Vector3().crossVectors(ey, ez).normalize();   // ez：劍面朝地（扣掉沿劍身的分量）
-  const lying = new Quaternion().setFromRotationMatrix(new Matrix4().makeBasis(ex, ey, ez));
-  for (let i = 0; i < tr.times.length; i++) {
+/* ---- 倒地：劍平放在地上，手握著 ----
+   使用者：趴倒後劍要平放在地面、伸向身體左側（朝向偏前一點，如他畫的箭頭），手還握著劍，手正常平放、手背朝上。遊戲模型的手是固定的拳頭（沒有手指，張不開），
+   所以用「整隻手（拳頭＋劍）轉」的方式：站著時握法與模型原樣一致（fitSwordGrip）；身體落地（settle.from～to，約 1.9～2.35 秒）手腕由原動作的朝向漸漸轉到
+   「劍身水平朝 B 方向、劍面朝地」的朝向（B＝身體左側往前偏 settle.forwardDeg 度）。手臂、身體的動作不動，只轉手腕；劍相對拳頭不動，所以拳頭不會被拉扯。 */
+function settleHand(g, rig, clip, cfg) {
+  const id = (n) => rig.byName[n], tr = clip.tracks['RightHand.rotation'], q0 = rig.rest[id('Sword')].q.clone(), n = tr.times.length, ed = {};
+  const Wend = worldMatrices(rig, poseAt(rig, clip, tr.times[n - 1]));
+  const fwd = wPos(Wend(id('Head'))).sub(wPos(Wend(id('Hips')))); fwd.y = 0; fwd.normalize();
+  const left = new Vector3(0, 1, 0).cross(fwd), th = cfg.forwardDeg * Math.PI / 180;
+  const ey = left.clone().multiplyScalar(Math.cos(th)).addScaledVector(fwd, Math.sin(th)).normalize(), ez = new Vector3(0, cfg.faceDown, 0), ex = new Vector3().crossVectors(ey, ez).normalize();
+  const lying = new Quaternion().setFromRotationMatrix(new Matrix4().makeBasis(ex, ey, ez)), handTarget = lying.clone().multiply(q0.clone().invert());
+  for (let i = 0; i < n; i++) {
     const t = tr.times[i], w = smooth((t - cfg.from) / (cfg.to - cfg.from));
-    if (w <= 0) { ed[i] = q0; continue; }
-    const W = worldMatrices(rig, poseAt(rig, clip, t)), hand = wRot(W(id('RightHand')));
-    const held = hand.clone().multiply(q0), now = held.clone().slerp(lying, w);
-    ed[i] = hand.clone().invert().multiply(now).normalize();
+    if (w <= 0) continue;
+    const W = worldMatrices(rig, poseAt(rig, clip, t)), par = wRot(W(rig.parent[id('RightHand')]));
+    const cur = new Quaternion(tr.values[i * 4], tr.values[i * 4 + 1], tr.values[i * 4 + 2], tr.values[i * 4 + 3]);
+    ed[i] = par.clone().invert().multiply(par.clone().multiply(cur).slerp(handTarget, w)).normalize();
   }
-  writeQuats(g, clip, 'Sword', ed);
-  console.log('倒地：劍在 ' + cfg.from + '～' + cfg.to + ' 秒脫手落地（劍面朝地、水平朝手臂方向）');
+  writeQuats(g, clip, 'RightHand', ed);
+  console.log('倒地：' + cfg.from + '～' + cfg.to + ' 秒手腕轉到劍平放（水平朝身體左側往前 ' + cfg.forwardDeg + '°）');
 }
 
 /* ---- 收招：全身平順回到起始姿勢（讓動作首尾相接） ---- */
@@ -1169,9 +1168,11 @@ export function verifyGrips(file) {
     })(),
     strayTriangles: strayTriangles(g, rig).stray.length,                // 錯綁的尖刺三角面數（應為 0）
     attack1OffHandMaxDist: CFG.Attack1.retarget ? 0 : Math.max(...m1.map((r) => r[1])),   // 舊雙手劈：副手離劍軸最遠多少（改用單手動作後不適用）
-    deathSwordEnd: (() => {      // 倒地最後一格：劍面朝地（flat 法線的 y，應 ≤ −0.9）、劍身近水平（|y| 應小）
-      const g = readGlb(file), rig = buildRig(g), clip = readClip(g, rig, 'Death'), q = wRot(worldMatrices(rig, poseAt(rig, clip, clip.duration))(rig.byName.Sword));
-      return { flatNormalY: new Vector3(0, 0, 1).applyQuaternion(q).y, bladeY: new Vector3(0, 1, 0).applyQuaternion(q).y };
+    deathSwordEnd: (() => {      // 倒地最後一格：劍面朝地（flat 法線的 y，應 ≤ −0.9）、劍身水平、朝身體左側（劍身 · 左方向）
+      const g = readGlb(file), rig = buildRig(g), clip = readClip(g, rig, 'Death'), W = worldMatrices(rig, poseAt(rig, clip, clip.duration)), q = wRot(W(rig.byName.Sword));
+      const fwd = wPos(W(rig.byName.Head)).sub(wPos(W(rig.byName.Hips))); fwd.y = 0; fwd.normalize();
+      const blade = new Vector3(0, 1, 0).applyQuaternion(q);
+      return { flatNormalY: new Vector3(0, 0, 1).applyQuaternion(q).y, bladeY: blade.y, bladeLeft: blade.dot(new Vector3(0, 1, 0).cross(fwd)) };
     })(),
     retargetMaxDeg: Math.max(...[['Attack1', CFG.Attack1.retarget], ['Death', CFG.Death.retarget], ...CFG.Attack2.meshy.map((sg) => ['Attack2', { ...sg, recover: sg.recover || CFG.Attack2.recover }])].flatMap(([c, sg]) => Object.values(retargetError(file, c, sg)))),   // 動作庫動作（收招開始前）四肢方向與來源的最大差：應為 0，代表沒有被改動
     swordGripMaxDeg: (() => {                                            // Attack1／Attack2 的 Sword 旋轉與模型原本握法（靜止局部旋轉）的最大差：應為 0
@@ -1252,7 +1253,7 @@ if (!checkOnly) {
     const a3 = readClip(g, rig, 'Death');
     importRetarget(g, rig, a3, CFG.Death.retarget);
     fitSwordGrip(g, rig, a3);
-    dropSword(g, rig, a3, CFG.Death.drop);     // 原握法的劍在跪地幀（約 1.55～1.65 秒）會穿進小腿護甲、躺平時刃口朝地：改成脫手落地
+    settleHand(g, rig, a3, CFG.Death.settle);     // 原握法的劍在跪地幀（約 1.55～1.65 秒）會穿進小腿護甲、躺平時刃口朝地：改成脫手落地
   }
   limitWrists(g, rig);
   removeStrayTriangles(g, rig);

@@ -19,7 +19,7 @@
   'use strict';
 
   var STORE_KEY = 'idle-rpg.hero3d.v1';
-  var MODEL_URL = 'images/models/hero3d/sunbrand-knight.glb?v=20261027-grips24';   // 改了動畫就換版號，避免瀏覽器用到舊快取
+  var MODEL_URL = 'images/models/hero3d/sunbrand-knight.glb?v=20261027-grips25';   // 改了動畫就換版號，避免瀏覽器用到舊快取
   var GLTF_URL = 'js/vendor/three/loaders/GLTFLoader.js';
   var CLOTH_URL = 'images/models/hero3d/sunbrand-cloth.json';   // 布料頂點清單（披風、腰前布襠、關節處的藍布）：和 tools/meshy-pipeline/src/fix-grips.mjs 共用
 
