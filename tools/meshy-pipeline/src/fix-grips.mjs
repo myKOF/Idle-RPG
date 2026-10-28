@@ -95,7 +95,7 @@ const CFG = {
   },
   /* 倒地：改用使用者在 Meshy 網頁重新綁骨架後套的 Dead 動作（取樣檔 data/meshy-dead.json，來源 0～2.9667 秒，30 fps）。原 Death 動作長 2.75 秒、
      67 個關鍵幀，寫不下 2.967 秒，所以來源時間均勻壓縮 speed 倍（≈1.079）塞進去。不限手腕、不做 IK，動作與骨骼不動；手掌不另外轉動（使用者：從跪地到倒地手掌別轉，順著手臂的自然方向握劍），Sword 旋轉設成模型原本的握法（fitSwordGrip），劍隨時與手保持正握（劍從虎口出去）。 */
-  Death: { retarget: { name: 'dead', file: 'meshy-dead.json', at: 0, speed: 2.9667 / 2.75 } }
+  Death: { retarget: { name: 'dead', file: 'meshy-dead.json', at: 0, speed: 2.9667 / 2.75 }, lift: { from: 1.8, to: 2.1, pitchDeg: -10 } }
 };
 
 /* ---- GLB ---- */
@@ -541,6 +541,27 @@ function alignGripToHand(g, rig, clip, rollDeg = 0) {
   for (let i = 0; i < tr.times.length; i++) ed[i] = new Quaternion(tr.values[i * 4], tr.values[i * 4 + 1], tr.values[i * 4 + 2], tr.values[i * 4 + 3]).multiply(C).multiply(roll);
   writeQuats(g, clip, 'RightHand', ed);
   console.log(clip.name + ' 握姿校正：拳頭＋劍整體轉 ' + (b0.angleTo(new Vector3(0, 1, 0)) * 180 / Math.PI).toFixed(1) + '° 讓刀刃順著手的方向，再繞劍身軸翻 ' + rollDeg + '° 讓刃口朝砍的方向');
+}
+
+/* ---- 倒地：劍尖不陷進地面，平放 ----
+   手不動（使用者確認掌心朝下是對的）。只把 Sword 相對手轉一個角度：從 lift.from 到 lift.to 秒，劍身繞「水平且垂直於劍身」的軸抬起，抬到只剩 lift.leftPitchDeg 度的俯角（負＝劍尖朝下），
+   劍身朝向（水平分量）不變。劍相對手轉動會牽動拳頭／護腕尾端的交界（同一塊焊接網格），抬得越多撕得越明顯，所以只抬到劍尖剛好貼地。 */
+function liftSword(g, rig, clip, cfg) {
+  const id = (n) => rig.byName[n], tr = clip.tracks['Sword.rotation'], q0 = rig.rest[id('Sword')].q.clone(), n = tr.times.length, ed = {};
+  const handW = (t) => wRot(worldMatrices(rig, poseAt(rig, clip, t))(id('RightHand')));
+  const up = new Vector3(0, 1, 0);
+  for (let i = 0; i < n; i++) {
+    const t = tr.times[i], w = smooth((t - cfg.from) / (cfg.to - cfg.from));
+    if (w <= 0) continue;
+    const N = handW(t).multiply(q0), b = new Vector3(0, 1, 0).applyQuaternion(N), pitch = Math.asin(Math.max(-1, Math.min(1, b.y)));
+    const want = cfg.pitchDeg * Math.PI / 180, axis = new Vector3().crossVectors(b, up);
+    if (axis.lengthSq() < 1e-8) continue;
+    axis.normalize();
+    const R = new Quaternion().setFromAxisAngle(axis, (want - pitch) * w);
+    ed[i] = handW(t).invert().multiply(R).multiply(N).normalize();
+  }
+  writeQuats(g, clip, 'Sword', ed);
+  console.log('倒地：' + cfg.from + '～' + cfg.to + ' 秒劍抬到俯角 ' + cfg.pitchDeg + '°（手不動）');
 }
 
 /* ---- 收招：全身平順回到起始姿勢（讓動作首尾相接） ---- */
@@ -1268,6 +1289,7 @@ if (!checkOnly) {
     const a3 = readClip(g, rig, 'Death');
     importRetarget(g, rig, a3, CFG.Death.retarget);
     fitSwordGrip(g, rig, a3);
+    liftSword(g, rig, a3, CFG.Death.lift);
   }
   limitWrists(g, rig);
   removeStrayTriangles(g, rig);
