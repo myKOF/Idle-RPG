@@ -81,8 +81,10 @@ const CFG = {
                 取來源 0.30～1.55 秒、重新瞄準到遊戲骨架，放在 Attack2 的 0.10 秒起，收招 recover 回到起始姿勢。 */
              { name: 'slash2', retarget: true, file: 'meshy-left-slash.json', at: 0.10 },
              /* 第三個攻擊（Attack3，放在同一條 Attack2 時間軸的 1.74 秒起，hero3d.js 的 CLIP_FOR.attack3）：使用者上傳的 Meshy 網頁動作
-                Double Combo Attack（右手）：右上往左下斜砍，再反著揮回原位。不改動作本身；來源 0.00～1.35 秒，收招 2.55～3.09 回到起始姿勢。 */
-             { name: 'combo2', retarget: true, file: 'meshy-double-combo-2.json', at: 1.74, recover: [2.55, 3.09] }],
+                Double Combo Attack（右手）：右上往左下斜砍，再反著揮回原位。不改動作本身；來源 0.10～1.32 秒（整段時間均勻壓縮 1.3 倍＝遊戲 1.72～2.66 秒，
+                形狀與各段相對速度不變，遊戲本來就會依攻速縮放播放時間），收招 2.66～3.11 回到起始姿勢——收招必須在整段播完之後才開始，
+                不能壓在動作上（否則會把後半段「反著揮回」往起始姿勢拉，與原動作不同）。 */
+             { name: 'combo2', retarget: true, file: 'meshy-double-combo-2.json', at: 1.72, speed: 1.3, recover: [2.66, 3.11] }],
     lunge: { dist: 0.6, hipsK: 0.6, rearK: 0.8, t0: 1.10, t1: 1.34, lift: 0.12 },   // 往前跨一大步劈下：髖部前移 0.36、前腳整步、後腳跟上
     startTime: 0.10
   }
@@ -428,7 +430,7 @@ function extractRetarget(glbFile, clipName, from, to, fps, outFile) {
 }
 function importRetarget(g, rig, clip, seg) {
   const data = JSON.parse(fs.readFileSync(path.join(here, 'data', seg.file), 'utf8'));
-  const n = data.hips.length, len = data.to - data.from;
+  const n = data.hips.length, len = data.to - data.from, speed = seg.speed || 1;   // speed：來源時間均勻壓縮的倍數
   const interp = (arr, u, kind) => {
     const f = Math.max(0, Math.min(n - 1, u * data.fps)), i = Math.floor(f), j = Math.min(n - 1, i + 1), k = f - i;
     if (kind === 'q') return new Quaternion(...arr[i]).slerp(new Quaternion(...arr[j]), k);
@@ -444,7 +446,7 @@ function importRetarget(g, rig, clip, seg) {
   const out = {}, hipsEd = {};
   const h0 = interp(data.hips, 0, 'v');
   for (const i of keyIdx) {
-    const u = clip.keyTimes[i] - seg.at;
+    const u = (clip.keyTimes[i] - seg.at) * speed;
     const pose = rig.rest.map((r) => ({ t: r.t.clone(), q: r.q.clone(), s: r.s.clone() }));
     // 髖部位移（世界）→ 髖部父節點區域座標
     const hp = interp(data.hips, u, 'v');
@@ -475,7 +477,7 @@ function importRetarget(g, rig, clip, seg) {
   }
   for (const [gn, ed] of Object.entries(out)) if (clip.tracks[gn + '.rotation']) writeQuats(g, clip, gn, ed);
   writeVecs(g, clip, 'Hips', hipsEd);
-  console.log('匯入（重新瞄準）', seg.name, '：', data.clip, data.from + '～' + data.to, '→ 遊戲動作 t=' + seg.at + '～' + (seg.at + len).toFixed(2), '（' + keyIdx.length + ' 格）');
+  console.log('匯入（重新瞄準）', seg.name, '：', data.clip, data.from + '～' + data.to, '→ 遊戲動作 t=' + seg.at + '～' + (seg.at + len / speed).toFixed(2), '（' + keyIdx.length + ' 格）');
 }
 
 
@@ -672,6 +674,7 @@ function fixGuardWing(g, rig) {
   return hit.length;
 }
 
+
 /* ---- 蒙皮與拉伸量測 ---- */
 function readSkinData(g) {
   const prim = g.json.meshes[0].primitives[0];
@@ -764,6 +767,24 @@ function dropTriangles(g, sd, dropSet) {
   return kept.length;
 }
 
+
+/* ---- 劍與手之間焊接網格的連接面 ----
+   整個模型是一整片焊接網格，劍握柄和手套之間有 20 多個三角面同時含劍頂點與手／前臂頂點。劍是獨立剛體（Sword 骨骼），
+   劍相對手一轉（Attack1～3 把劍身對準前臂並翻轉刀刃）這些三角面就被拉成幾根尖刺（黃色星形碎片，使用者回報手部結構怪怪的）。
+   這些面都在拳頭裡面（握柄穿過手套的地方），整個刪掉看不到缺口。 */
+const SWORD_CONNECTOR_RANGE = [10, 40];                                   // 這個模型約 20～26 個（刪除前的步驟順序不同會有出入）；範圍外代表不是這個模型
+function removeSwordConnectors(g) {
+  const sd = readSkinData(g), sj = sd.joints.indexOf('Sword');
+  const isSword = (v) => { for (let k = 0; k < 4; k++) if (sd.jnt[v * 4 + k] === sj && sd.wgt[v * 4 + k] > 0.999) return true; return false; };
+  const drop = new Set();
+  for (let t = 0; t < sd.idx.length / 3; t++) { const c = [sd.idx[t * 3], sd.idx[t * 3 + 1], sd.idx[t * 3 + 2]].filter(isSword).length; if (c > 0 && c < 3) drop.add(t); }
+  if (drop.size === 0) { console.log('劍與手之間：沒有連接面（已清理過）'); return 0; }
+  if (drop.size < SWORD_CONNECTOR_RANGE[0] || drop.size > SWORD_CONNECTOR_RANGE[1]) throw new Error('劍與手之間找到 ' + drop.size + ' 個連接面，預期 ' + SWORD_CONNECTOR_RANGE.join('～') + '：不是這個模型，中止');
+  dropTriangles(g, sd, drop);
+  console.log('劍與手之間：刪除 ' + drop.size + ' 個連接面（劍相對手轉動時會被拉成尖刺）');
+  return drop.size;
+}
+
 /* ---- 盔甲剛性化：內部頂點 100% 綁單一骨骼，只有骨骼交界那一圈保留原權重 ---- */
 function hardenArmor(g, rig) {
   const sd = readSkinData(g), cloth = loadCloth(g, sd.n), rep = weldRep(sd.pos, sd.n);
@@ -834,7 +855,7 @@ function maxClothStretch(g, rig) {
 }
 
 /* ---- 關節限制：手腕扭轉過量 → 搬到前臂 ---- */
-const WRIST_MAX = 60, FOREARM_MAX = 90;      // 度。手腕（骨架上的 Hand）與前臂（相對上臂）繞自己軸的扭轉上限
+const WRIST_MAX = 60, FOREARM_MAX = 90, ARM_MAX = 150;      // 度。手腕（骨架上的 Hand）與前臂（相對上臂）繞自己軸的扭轉上限
 const twistQuat = (deg) => new Quaternion(0, Math.sin(deg * Math.PI / 360), 0, Math.cos(deg * Math.PI / 360));
 function twistDegOf(q) {
   const len = Math.hypot(q.y, q.w);
@@ -851,34 +872,34 @@ function unwrapSeries(vals) {
 }
 const clampTo = (x, m) => Math.max(-m, Math.min(m, x));
 function limitWristTwist(g, rig, clip, side) {
-  const th = clip.tracks[side + 'Hand.rotation'], tf = clip.tracks[side + 'ForeArm.rotation'];
-  if (!th || !tf || th.times.length !== tf.times.length) return 0;
-  const n = th.times.length;
-  const qh = [], qf = [];
-  for (let i = 0; i < n; i++) {
-    qh.push(new Quaternion(th.values[i * 4], th.values[i * 4 + 1], th.values[i * 4 + 2], th.values[i * 4 + 3]));
-    qf.push(new Quaternion(tf.values[i * 4], tf.values[i * 4 + 1], tf.values[i * 4 + 2], tf.values[i * 4 + 3]));
-  }
-  const h = unwrapSeries(qh.map(twistDegOf)), f = unwrapSeries(qf.map(twistDegOf));
-  const editH = {}, editF = {};
+  const th = clip.tracks[side + 'Hand.rotation'], tf = clip.tracks[side + 'ForeArm.rotation'], ta = clip.tracks[side + 'Arm.rotation'];
+  if (!th || !tf || !ta || th.times.length !== tf.times.length || th.times.length !== ta.times.length) return 0;
+  const n = th.times.length, Q = (tr, i) => new Quaternion(tr.values[i * 4], tr.values[i * 4 + 1], tr.values[i * 4 + 2], tr.values[i * 4 + 3]);
+  const qh = [], qf = [], qa = [];
+  for (let i = 0; i < n; i++) { qh.push(Q(th, i)); qf.push(Q(tf, i)); qa.push(Q(ta, i)); }
+  const h = unwrapSeries(qh.map(twistDegOf)), f = unwrapSeries(qf.map(twistDegOf)), a = unwrapSeries(qa.map(twistDegOf));
+  const editH = {}, editF = {}, editA = {};
   let moved = 0;
   for (let i = 0; i < n; i++) {
     const excess = h[i] - clampTo(h[i], WRIST_MAX);
     if (Math.abs(excess) < 0.5) continue;
-    const absorbed = clampTo(f[i] + excess, FOREARM_MAX) - f[i];       // 前臂還能多轉多少（不超過上限）
-    if (Math.abs(absorbed) < 0.5) continue;
-    // 前臂多轉 absorbed，手相對前臂就少轉 absorbed：手的世界朝向不變
-    editF[i] = qf[i].clone().multiply(twistQuat(absorbed));
-    editH[i] = twistQuat(-absorbed).multiply(qh[i]);
+    // 手腕超出的部分整個交給前臂（手相對前臂少轉 a1）；前臂相對上臂的扭轉若因此超過上限，超出的 a2 由上臂繞自己的軸滾動吸收
+    // （上臂多轉 a2、前臂在上臂座標下補轉 −a2）。每一步都只是重新分配「繞骨骼軸的滾動」，前臂與手的世界朝向都不變，手肘位置在上臂軸上也不動。
+    const sg = Math.sign(excess), room = (cur, max) => Math.max(0, sg * (sg * max - cur));
+    const a1 = sg * Math.min(Math.abs(excess), room(f[i], FOREARM_MAX) + room(a[i], ARM_MAX));
+    const a2 = (f[i] + a1) - clampTo(f[i] + a1, FOREARM_MAX);
+    if (Math.abs(a1) < 0.5) continue;
+    editA[i] = qa[i].clone().multiply(twistQuat(a2));
+    editF[i] = twistQuat(-a2).multiply(qf[i]).multiply(twistQuat(a1));
+    editH[i] = twistQuat(-a1).multiply(qh[i]);
     moved++;
   }
-  if (moved) { writeQuats(g, clip, side + 'Hand', editH); writeQuats(g, clip, side + 'ForeArm', editF); }
+  if (moved) { writeQuats(g, clip, side + 'Hand', editH); writeQuats(g, clip, side + 'ForeArm', editF); writeQuats(g, clip, side + 'Arm', editA); }
   return moved;
 }
 function limitWrists(g, rig) {
   let total = 0;
   for (const name of g.json.animations.map((a) => a.name)) {
-    if (CFG.Attack1.retarget && (name === 'Attack1' || name === 'Attack2')) continue;   // 使用者要求不改動作庫動作本身（Attack1 與 Attack2 都是 Meshy 網頁動作）
     const clip = readClip(g, rig, name);
     let m = 0;
     for (const side of ['Right', 'Left']) m += limitWristTwist(g, rig, clip, side);
@@ -891,7 +912,7 @@ function wristLimits(g, rig, only) {
   // 量測：所有動作裡手腕扭轉與前臂扭轉的最大絕對值（連續展開後）
   let w = 0, f = 0;
   for (const name of g.json.animations.map((a) => a.name)) {
-    if (only ? !only.includes(name) : (CFG.Attack1.retarget && (name === 'Attack1' || name === 'Attack2'))) continue;
+    if (only && !only.includes(name)) continue;
     const clip = readClip(g, rig, name);
     for (const side of ['Right', 'Left']) {
       const th = clip.tracks[side + 'Hand.rotation'], tf = clip.tracks[side + 'ForeArm.rotation'];
@@ -944,6 +965,23 @@ export function tipTrack(file, clipName, t0, t1, dt) {
   return { rows, ref };
 }
 
+
+/* 兩個姿勢的差（度）：看得到的姿勢。手腕限制只重新分配上臂／前臂／手繞骨骼軸的滾動：上臂與前臂的局部與世界旋轉都會變、手與劍的世界旋轉不變，
+   所以上臂與前臂不比；手的世界旋轉相對於脊椎頂端（去掉身體整個轉圈的影響）比；其餘骨骼比局部旋轉。 */
+const ROLL_SHARED = new Set(['LeftArm', 'RightArm', 'LeftForeArm', 'RightForeArm']);
+function worldPoseDiffDeg(rig, a, b, localOnly) {
+  const Wa = worldMatrices(rig, a), Wb = worldMatrices(rig, b), sp = rig.byName.Spine;
+  const ang = (p, q) => 2 * Math.acos(Math.min(1, Math.abs(p.dot(q)))) * 180 / Math.PI;
+  let worst = 0;
+  for (let i = 0; i < rig.nodes.length; i++) {
+    const nm = rig.nodes[i].name;
+    if (ROLL_SHARED.has(nm)) continue;
+    if (nm === 'LeftHand' || nm === 'RightHand') worst = Math.max(worst, ang(wRot(Wa(sp)).invert().multiply(wRot(Wa(i))), wRot(Wb(sp)).invert().multiply(wRot(Wb(i)))));
+    else worst = Math.max(worst, ang(a[i].q, b[i].q));
+  }
+  return worst;
+}
+
 /* 相鄰兩個關鍵幀之間，任一骨骼旋轉變化的最大角度（度）：時間窗內有瞬間跳格（資料接不起來）就會很大 */
 function maxKeyStep(g, rig, clipName, t0, t1) {
   const clip = readClip(g, rig, clipName);
@@ -951,12 +989,73 @@ function maxKeyStep(g, rig, clipName, t0, t1) {
   let worst = 0;
   for (let i = 1; i < keys.length; i++) {
     const a = poseAt(rig, clip, keys[i - 1]), b = poseAt(rig, clip, keys[i]);
-    for (let k = 0; k < rig.nodes.length; k++) {
-      const d = 2 * Math.acos(Math.min(1, Math.abs(a[k].q.dot(b[k].q)))) * 180 / Math.PI;
-      if (d > worst) { worst = d; if (process.env.FIXGRIPS_DEBUG) console.log('maxKeyStep', clipName, keys[i - 1].toFixed(3), '→', keys[i].toFixed(3), rig.nodes[k].name, d.toFixed(0) + '°'); }
+    worst = Math.max(worst, worldPoseDiffDeg(rig, a, b));
+  }
+  return worst;
+}
+
+
+/* 驗證：遊戲動作裡四肢（上臂、前臂、大腿、小腿）方向與來源動作的差異（度），只看片段內「收招還沒開始」的格 */
+export function retargetError(file, clipName, seg) {
+  const g = readGlb(file), rig = buildRig(g), clip = readClip(g, rig, clipName);
+  const data = JSON.parse(fs.readFileSync(path.join(here, 'data', seg.file), 'utf8')), speed = seg.speed || 1, n = data.hips.length;
+  const worst = {};
+  for (const t of clip.keyTimes) {
+    const end = seg.recover ? seg.recover[0] : seg.at + (data.to - data.from) / speed;
+    if (t < seg.at || t > end) continue;
+    const u = (t - seg.at) * speed, f = Math.max(0, Math.min(n - 1, u * data.fps)), i = Math.floor(f), j = Math.min(n - 1, i + 1), k = f - i;
+    const W = worldMatrices(rig, poseAt(rig, clip, t));
+    for (const [a, b] of Object.entries(RT_DIR)) {
+      const want = new Vector3(...data.dirs[a][i]).lerp(new Vector3(...data.dirs[a][j]), k).normalize();
+      const got = wPos(W(rig.byName[b])).sub(wPos(W(rig.byName[a]))).normalize();
+      worst[a] = Math.max(worst[a] || 0, got.angleTo(want) * 180 / Math.PI);
     }
   }
   return worst;
+}
+
+
+/* 偵察：某動作某時間窗內右手（相對前臂）與右前臂（相對上臂）的扭轉角（度，連續展開） */
+export function twistSeries(file, clipName, t0, t1) {
+  const g = readGlb(file), rig = buildRig(g), clip = readClip(g, rig, clipName), out = [];
+  const th = clip.tracks['RightHand.rotation'], tf = clip.tracks['RightForeArm.rotation'], ta = clip.tracks['RightArm.rotation'];
+  const q = (tr, i) => new Quaternion(tr.values[i * 4], tr.values[i * 4 + 1], tr.values[i * 4 + 2], tr.values[i * 4 + 3]);
+  const hs = unwrapSeries(Array.from({ length: th.times.length }, (_, i) => twistDegOf(q(th, i)))), fs_ = unwrapSeries(Array.from({ length: tf.times.length }, (_, i) => twistDegOf(q(tf, i))));
+  const as_ = unwrapSeries(Array.from({ length: ta.times.length }, (_, i) => twistDegOf(q(ta, i))));
+  th.times.forEach((t, i) => { if (t >= t0 && t <= t1 && i % 2 === 0) out.push([+t.toFixed(2), +hs[i].toFixed(0), +fs_[i].toFixed(0), +as_[i].toFixed(0)]); });
+  return out;
+}
+
+
+/* 偵察：某動作某時間，哪些三角面（非披風）的邊相對靜止姿勢被拉長超過 ratio 倍，列出它們的骨骼權重組合與數量 */
+export function wristByClip(file) { const g = readGlb(file), rig = buildRig(g); return Object.fromEntries(g.json.animations.map((a) => [a.name, +wristLimits(g, rig, [a.name]).wrist.toFixed(0)])); }
+export function stretchedTriangles(file, clipName, t, ratio) {
+  const g = readGlb(file), rig = buildRig(g), clip = readClip(g, rig, clipName), sd = readSkinData(g), cloth = loadCloth(g, sd.n);
+  const need = new Uint8Array(sd.n).fill(1);
+  const rest = skinnedPositions(rig, sd, rig.rest.map((r) => ({ t: r.t.clone(), q: r.q.clone(), s: r.s.clone() })), need);
+  const cur = skinnedPositions(rig, sd, poseAt(rig, clip, t), need);
+  const len = (a, i, j) => Math.hypot(a[i * 3] - a[j * 3], a[i * 3 + 1] - a[j * 3 + 1], a[i * 3 + 2] - a[j * 3 + 2]);
+  const groups = {}, jn = (v) => { const o = []; for (let k = 0; k < 4; k++) if (sd.wgt[v * 4 + k] > 0.01) o.push(sd.joints[sd.jnt[v * 4 + k]] + ':' + sd.wgt[v * 4 + k].toFixed(1)); return o.join('+'); };
+  for (let tri = 0; tri < sd.idx.length / 3; tri++) {
+    const v = [sd.idx[tri * 3], sd.idx[tri * 3 + 1], sd.idx[tri * 3 + 2]];
+    if (v.some((x) => cloth[x])) continue;
+    let worst = 0; for (const [a, b] of [[0, 1], [1, 2], [2, 0]]) { const r0 = len(rest, v[a], v[b]); if (r0 > 1e-6) worst = Math.max(worst, len(cur, v[a], v[b]) / r0); }
+    if (worst > ratio) { const key = v.map(jn).join(' | '); groups[key] = (groups[key] || 0) + 1; }
+  }
+  return Object.entries(groups).sort((x, y) => y[1] - x[1]).slice(0, 14);
+}
+
+
+/* 偵察：同時含「劍骨骼 100% 頂點」與「非劍頂點」的三角面（劍與手之間焊接網格的連接面）數量 */
+export function swordConnectorTriangles(file) {
+  const g = readGlb(file), sd = readSkinData(g), sj = sd.joints.indexOf('Sword');
+  const isSword = (v) => { for (let k = 0; k < 4; k++) if (sd.jnt[v * 4 + k] === sj && sd.wgt[v * 4 + k] > 0.999) return true; return false; };
+  let n = 0; const verts = new Set();
+  for (let t = 0; t < sd.idx.length / 3; t++) {
+    const v = [sd.idx[t * 3], sd.idx[t * 3 + 1], sd.idx[t * 3 + 2]], c = v.filter(isSword).length;
+    if (c > 0 && c < 3) { n++; v.forEach((x) => { if (!isSword(x)) verts.add(x); }); }
+  }
+  return { triangles: n, nonSwordVerts: verts.size };
 }
 
 /* ---- 驗證（給測試用）：量測某個 GLB 現在的握劍狀況 ---- */
@@ -968,13 +1067,14 @@ export function verifyGrips(file) {
     attack2LoopMaxDeg: (() => {                                          // Attack2 收招姿勢與起始姿勢全身骨骼旋轉最大差（度）：首尾相接
       const clip = readClip(g, rig, 'Attack2');
       const a = poseAt(rig, clip, CFG.Attack2.startTime), b = poseAt(rig, clip, CFG.Attack2.recover[1]);
-      return Math.max(...rig.nodes.map((_, i) => 2 * Math.acos(Math.min(1, Math.abs(a[i].q.dot(b[i].q)))) * 180 / Math.PI));
+      return worldPoseDiffDeg(rig, a, b);
     })(),
     maxWristTwistDeg: wristLimits(g, rig).wrist,                         // 所有動作裡手腕扭轉最大值（度）
     maxForearmTwistDeg: wristLimits(g, rig).forearm,
     attack12WristTwistDeg: wristLimits(g, rig, ['Attack1', 'Attack2']).wrist,   // Meshy 網頁動作（不改）自己的手腕扭轉最大值，僅供參考                     // 前臂（相對上臂）扭轉最大值（度）
     armorRigidRatio: armorSoftness(g, rig),                              // 盔甲頂點中完全剛性（100% 單一骨骼）的比例
     maxClothStretch: maxClothStretch(g, rig),                            // 披風三角面最長邊被拉長的最大倍數
+    swordConnectorTriangles: swordConnectorTriangles(file).triangles,    // 劍與手之間焊接網格的連接面數（應為 0；劍相對手轉動時會被拉成尖刺）
     guardWingStray: (() => {                                             // 護手右翼端仍綁在右手的頂點數（應為 0）
       const sd = readSkinData(g), sj = sd.joints.indexOf('Sword'), rh = sd.joints.indexOf('RightHand'), inv = new Matrix4().fromArray(sd.invBind, sj * 16), v = new Vector3();
       let n = 0;
@@ -983,11 +1083,11 @@ export function verifyGrips(file) {
     })(),
     strayTriangles: strayTriangles(g, rig).stray.length,                // 錯綁的尖刺三角面數（應為 0）
     attack1OffHandMaxDist: CFG.Attack1.retarget ? 0 : Math.max(...m1.map((r) => r[1])),   // 舊雙手劈：副手離劍軸最遠多少（改用單手動作後不適用）
+    retargetMaxDeg: Math.max(...[['Attack1', CFG.Attack1.retarget], ...CFG.Attack2.meshy.map((sg) => ['Attack2', { ...sg, recover: sg.recover || CFG.Attack2.recover }])].flatMap(([c, sg]) => Object.values(retargetError(file, c, sg)))),   // 動作庫動作（收招開始前）四肢方向與來源的最大差：應為 0，代表沒有被改動
     attack3BladeMaxAngleDeg: Math.max(...measure(rig, readClip(g, rig, 'Attack2'), 'Attack2').filter((r) => r[0] >= CFG.Attack2.meshy[1].at && r[0] <= CFG.Attack2.meshy[1].recover[1]).map((r) => r[1])),   // Attack3：劍身與前臂方向的夾角最大多少
     attack3LoopMaxDeg: (() => {                                          // Attack3 收招姿勢與起始姿勢全身骨骼旋轉最大差（度）
       const sg = CFG.Attack2.meshy[1], clip = readClip(g, rig, 'Attack2'), a = poseAt(rig, clip, sg.at), b = poseAt(rig, clip, sg.recover[1]);
-      if (process.env.FIXGRIPS_DEBUG) rig.nodes.forEach((n, i) => { const d = 2 * Math.acos(Math.min(1, Math.abs(a[i].q.dot(b[i].q)))) * 180 / Math.PI; if (d > 1) console.log('loop3', n.name, d.toFixed(1)); });
-      return Math.max(...rig.nodes.map((_, i) => 2 * Math.acos(Math.min(1, Math.abs(a[i].q.dot(b[i].q)))) * 180 / Math.PI));
+      return worldPoseDiffDeg(rig, a, b);
     })(),
     attack1MaxStepDeg: maxKeyStep(g, rig, 'Attack1', CFG.Attack1.retarget.at, CFG.Attack1.retarget.recover[1]),   // 相鄰兩格之間任一骨骼轉動的最大角度（抓瞬移）
     attack2MaxStepDeg: Math.max(...(CFG.Attack2.meshy || [{ at: CFG.Attack2.startTime }]).map((sg) => maxKeyStep(g, rig, 'Attack2', sg.at, (sg.recover || CFG.Attack2.recover)[1]))),   // 每一招各自的播放區間
@@ -998,7 +1098,7 @@ export function verifyGrips(file) {
     attack1LoopMaxDeg: (() => {                                          // 新 Attack1 收招姿勢與起始姿勢全身骨骼旋轉最大差（度）
       const seg = CFG.Attack1.retarget, clip = readClip(g, rig, 'Attack1');
       const a = poseAt(rig, clip, seg.startTime), b = poseAt(rig, clip, seg.recover[1]);
-      return Math.max(...rig.nodes.map((_, i) => 2 * Math.acos(Math.min(1, Math.abs(a[i].q.dot(b[i].q)))) * 180 / Math.PI));
+      return worldPoseDiffDeg(rig, a, b);
     })(),
     attack2BladeMaxAngleDeg: Math.max(...m2.map((r) => r[1]))         // 劍與前臂方向的夾角最大多少
   };
@@ -1045,7 +1145,7 @@ if (!checkOnly) {
       }
       recoverToStart(g, rig, a2, { startTime: seg.at, recover: seg.recover || CFG.Attack2.recover });
     }
-    fitSwordGrip(g, rig, a2, [[0.10, 1.35, 1.70], [1.74, 3.09, 99]]);   // 兩招各自對準前臂＋刀刃順著揮砍方向（第三格＝這個區間負責到幾秒）
+    fitSwordGrip(g, rig, a2, [[0.10, 1.35, 1.70], [1.72, 2.66, 99]]);   // 兩招各自對準前臂＋刀刃順著揮砍方向（第三格＝這個區間負責到幾秒）
   } else {
     const lunge = fixLunge(rig, a2, CFG.Attack2);
     for (const [nm, ed] of Object.entries(regroup(lunge.rot))) writeQuats(g, a2, nm, ed);
@@ -1056,6 +1156,7 @@ if (!checkOnly) {
   removeStrayTriangles(g, rig);
   hardenArmor(g, rig);
   fixGuardWing(g, rig);                                                          // 要在 hardenArmor 之後：其中 3 個頂點原本是手＋前臂混合權重，被 hardenArmor 改成 100% 右手
+  removeSwordConnectors(g);                                                      // 要在 fixGuardWing 之後（護手翼端先改綁劍，剩下的才是真正的劍與手連接面）
   removeClothSlivers(g, rig, analyze);
   fs.writeFileSync(outFile, g.buf);
 }
