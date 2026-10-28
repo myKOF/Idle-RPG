@@ -2,7 +2,7 @@
 /* 自動產生，請勿手改。來源：config/Excel/String.xlsx（Excel 是唯一來源）。
    重新產生：node tools/string-table/apply_strings.cjs（套用參數.bat 會自動執行）。
    每列＝[繁體中文, 簡體中文, 英文]；後面的空欄已省略。讀取請用 js/strings.js 的 STR()。 */
-var STRING_DATA_VERSION = 'ba384f1e';
+var STRING_DATA_VERSION = 'e623d5b6';
 var STRING_DATA = {
   "1": ["冰霜"],
   "2": ["毒霧"],
@@ -2195,5 +2195,6 @@ var STRING_DATA = {
   "2202": ["額外能力"],
   "2203": ["神級寶石：{0}"],
   "2204": ["{0}：{1}%"],
-  "2205": ["神聖詞條 {0}倍；神聖鑲孔 {1}倍。"]
+  "2205": ["神聖詞條 {0}倍；神聖鑲孔 {1}倍。"],
+  "2206": ["神界傳送門"]
 };

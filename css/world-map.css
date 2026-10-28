@@ -34,7 +34,7 @@ body.world-map-open { overflow: hidden; }
 #world-map-close:hover { border-color: #bda47b !important; color: #f0ddaf !important; filter: brightness(1.1); transform: none; }
 #world-map-close:focus-visible { outline: 2px solid #dec58f; outline-offset: 3px; }
 .world-map-realm[aria-pressed="true"] { border-color: #b3945d; color: #f2d79b; }
-.world-map-canvas { position: relative; width: 100%; }
+.world-map-canvas { position: relative; width: 100%; container-type: inline-size; }
 /* 外緣白底屬於原圖：只收掉薄邊，內部圖稿及熱區比例保持原樣。 */
 #world-map-human { position: relative; container-type: inline-size; clip-path: inset(1.4% .6% 1.6% 1.6%); }
 /* 底圖不接收滑鼠事件，避免瀏覽器浮出圖片AI工具；場景按鈕仍可操作。 */
@@ -57,13 +57,17 @@ body.world-map-open { overflow: hidden; }
 .world-map-marker::after { content: ''; position: absolute; left: 4%; bottom: -12%; width: 92%; height: 25%; box-sizing: border-box; border: 1px solid rgba(185,239,145,.8); border-radius: 50%; background: radial-gradient(ellipse, rgba(175,222,135,.36), rgba(114,172,99,.16) 50%, transparent 75%); box-shadow: 0 0 7px rgba(159,215,127,.48); opacity: .7; animation: world-map-halo 2.4s ease-in-out infinite; }
 @keyframes world-map-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 @keyframes world-map-halo { 0%, 100% { opacity: .4; } 50% { opacity: .95; } }
-.world-map-info { position: absolute; z-index: 3; width: min(238px, 27%); padding: 13px 15px; background: rgba(13,16,16,.97); border: 1px solid #9b8051; border-radius: 4px; box-shadow: 0 6px 22px rgba(0,0,0,.7); pointer-events: auto; }
+.world-map-info { position: absolute; z-index: 3; width: min(270px, calc(100% - 16px)); box-sizing: border-box; transform: translateX(-50%); padding: 13px 15px; background: rgba(13,16,16,.97); border: 1px solid #9b8051; border-radius: 4px; box-shadow: 0 6px 22px rgba(0,0,0,.7); pointer-events: auto; }
+.world-map-god-portal { position: absolute; left: 16%; top: 22%; transform: translate(-50%, -50%); display: grid; justify-items: center; gap: 5px; padding: 8px; border: 0; background: none; box-shadow: none; color: #fff0bc; font-size: clamp(10px, 1.1cqw, 18px); text-shadow: 0 1px 3px #000, 0 0 4px #000; cursor: pointer; }
+.world-map-god-portal:hover, .world-map-god-portal:focus-visible { background: none; transform: translate(-50%, -50%); filter: brightness(1.2); }
+.world-map-god-portal:focus-visible { outline: 2px solid #fff0bc; outline-offset: 2px; }
+.world-map-portal-ring { display: block; width: clamp(26px, 4cqw, 66px); aspect-ratio: 2 / 3; border: 3px solid #d7c48b; border-radius: 50%; background: radial-gradient(ellipse, #ebf9ff 0%, #9bd5ee 15%, #4f72ae 42%, #30255b 62%, #b2eaff 70%, #6d647d 76%); box-shadow: 0 0 10px #a7e6ff, inset 0 0 12px #e1f6ff; }
 .world-map-info h3 { margin: 0 0 9px; font-size: 17px; color: #ebd6a2; }
 .world-map-info p { margin: 5px 0; line-height: 1.5; font-size: 13px; }
 #world-map-scene-status { color: #b8ae99; }
 #world-map-go { width: 100%; margin-top: 8px; border-color: #98723d; color: #f0d396; }
 .world-map-overlay button:disabled { opacity: .5; cursor: default; }
-.world-map-god { position: relative; aspect-ratio: 1672 / 941; box-sizing: border-box; min-height: 330px; padding: 60px 30px 30px; background: radial-gradient(ellipse at top, #29272e, #111315 70%); }
+.world-map-god { position: relative; width: 100%; aspect-ratio: 1672 / 941; box-sizing: border-box; min-height: 330px; padding: 60px 30px 30px; background: radial-gradient(ellipse at top, #29272e, #111315 70%); }
 .world-map-god > p { margin: 0 0 22px; color: #b7abc7; }
 .world-map-god-zones { display: flex; gap: 20px; }
 .world-map-god-scene { flex: 1; min-height: 110px; background: #17171c; color: #fff0bc; border: 1px solid #655575; border-radius: 4px; cursor: pointer; }
@@ -79,7 +83,7 @@ body.world-map-open { overflow: hidden; }
   .world-map-tools { gap: 4px; }
   #world-map-close { width: 28px; height: 28px; font-size: 20px; }
   .world-map-hotspot { min-height: 24px; min-width: 40px; }
-  .world-map-info { position: fixed; left: 8px !important; top: auto !important; bottom: 12px; width: calc(100% - 16px); box-sizing: border-box; padding: 9px 12px; }
+  .world-map-info { padding: 9px 12px; }
   .world-map-info h3 { font-size: 15px; margin-bottom: 4px; }
   .world-map-info p { font-size: 12px; margin: 3px 0; }
   .world-map-info #world-map-go { margin-top: 5px; }

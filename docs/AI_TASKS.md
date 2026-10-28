@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## WORLD-MAP-PROGRESS-PORTAL-20261028 — 最高進度、名稱下方提示與神界傳送門
+
+- Owner：Codex；Done，單一開發者。使用者確認括號改為最高到達／地圖上限，提示固定名稱下方，人界最高上限地圖真正通關後出現神界傳送門，地圖名稱不可寫死。
+- 前置：規範／Workflow／Agent文件與既有WorldMapUI、battle.zoneProgress／zones已讀，目標衝突預檢乾淨。允許js/ui-world-map.js、css/world-map.css、index.html、tests/world-map-ui.test.cjs、String.xlsx／CSV／strings_data.js、docs/WORLD_MAP.md、LV_upgrade_system.md及本段；禁止其他玩法／Worker／Protocol／存檔／素材與其他工作區，不合併推送。
+- 驗收：最高進度不隨退關下降、未載入／鎖定安全、提示於各名稱下方與縮放／窄屏、最高人界動態配置及到達末關未通關不開門、真正通關與神界瀏覽／前進權限、String來源／Excel正常重開／回歸／Build／Console及diff。完成後獨立Commit，後續使用者Review／正常整合。
+- 完成10檔：WorldMapUI名稱／ARIA括號改讀best，保留current供實際前進；tips取消依左右／上下翻轉，固定名稱及進度下方並水平限縮，神界按場景實際位置定位、resize／scroll更新。CSS保留窄屏最小間距，修正神界min-height與aspect-ratio撐寬。人界最高maxStage動態取ZONES，並列最高皆須cleared到頂，缺快照不開門；入口只切頁、保留返回及既有unlocked權限，不寫入玩家進度。傳送門為本輪CSS自製介面圖形，無獨立素材／VFX／素材庫變動；地圖與游標原圖不改。主頁CSS1.0.6、WorldMapUI1.0.5及String快取e623d5b6同步，LV／WORLD_MAP同步。
+- String：原生Excel工具追加2206「神界傳送門」4個非空儲存格，2193→2194列、7欄及0物件；正常重開兩次通過，xlsx_to_csv／apply_strings產生正式CSV／JS，CSV僅新增一列。首輪以通用試算表API讀取完整文字出現正規化差異，已在來源未被外部更動的hash檢查後還原本輪原檔，再以Excel原生值建立目標並重跑；最終唯讀比對原有全部儲存格值／樣式、列高／欄寬差異均0。局部渲染已檢視，無手工XML寫入、翻譯或改既有文字。
+- 測試：node --test --test-reporter=spec tests/world-map-ui.test.cjs tests/world-map.test.cjs tests/string-table.test.cjs tests/combat-pause.test.cjs tests/stage-jump-ui.test.cjs tests/fullscreen-toggle.test.cjs tests/battle-fullscreen.test.cjs，43/43通過。新增回歸涵蓋退關／切圖／重開、名稱與ARIA最高進度、各位置提示／縮放／滾動、末關未通關／真正通關差別、0轉可瀏覽但不可前進及新增最高人界配置。npm.cmd run build最終597檔通過；apply_strings --check同步2193條、build_string_csv --check寫死0條，diff檢查通過。
+- 瀏覽器：CUA／IAB隨機localhost隔離fixture載正式DOM／全套CSS／WorldMapUI／String／ZONES，390×844及1558×869共14組人界量測，卡片皆低於名稱進度且在視窗內；神界窄屏按鈕不超寬、tips在其下方且不出界，入口／返回／鎖定條件可用，Console error／warning0。另正式index＋真Worker＋全新seed1028角色實際退至3關，最高5關及地圖(5/100)保持，未讀寫玩家原存檔。地圖預覽／驗證JSON保留本聊天visualizations/world-map-update。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts/codex、data／combat最高進度及cleared語意、ui場景接線、Worker面板／協議、既有world-map／String匯出工具及素材來源。自我Review完成、無本次未完成項，可供Review／合併；未合併／推送develop或main，未執行全庫或玩家真存檔長戰。Commit為本段所在「[Codex] fix: 修正世界地圖最高進度與提示並加入神界傳送門」，編號見交付；下一步正常整合並重載驗收。
+- 額外素材來源檢查：export-source --check因既有本機素材庫D:/MyGame/Asset缺少codex-authored/world-map/source.json而無法完成，另一舊effects-materials路徑亦無來源。未修改Root設定／素材庫；git diff HEAD -- images/world-map為空，沒有本次圖檔或雙倉庫素材提交待辦。此限制不影響本次CSS／既有圖片顯示與43項功能回歸，不宣稱母來源SHA核對通過。
+
 ## IRON-DANCE-PHYSICAL-20261028 — 鐵血之舞物理流血與敵方承受比例
 
 - Owner：Codex；Done，單一開發者。使用者要求自身流血改為物理傷害，基值100%、每級+10%；附近敵人承受該基準流血的比例基值50%、每級+5%，滿級雙方每0.35秒皆為200%物理傷害。算例不寫入技能說明。
