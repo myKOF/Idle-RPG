@@ -2,10 +2,16 @@
 
 ## SYNC-DIVERGED-AI-CLOUD-20261028 — 分岔分支整合不再阻擋Claude雲端
 
-- Owner：Codex；In Progress，單一開發者。延續使用者保留全部AI修改並完成正常同步的授權；本次畫面停在ai/codex，實際本地9be211aa領先1／落後42，遠端／develop為6aa3150d，Claude雲端08282cba另有4筆尚未整合。不是雲端名稱辨識失敗，而是舊流程在來源掃描前只接受ff而中止。
+- Owner：Codex；Done（整合、工具修正與驗證完成；本聊天接續正常同步，實際推送結果見最新報告與回覆），單一開發者。延續使用者保留全部AI修改並完成正常同步的授權；本次畫面停在ai/codex，實際本地9be211aa領先1／落後42，遠端／develop為6aa3150d，Claude雲端08282cba另有4筆尚未整合。不是雲端名稱辨識失敗，而是舊流程在來源掃描前只接受ff而中止。
 - 範圍：保留9be211aa玩家控制免疫與現有主線／雲端全部提交、必要快取與LV／本段；同步工具的分岔本地／遠端來源整合、真Git回歸與同步說明。禁止force／reset／rebase／改玩法或主動發布main；共享素材庫其他未提交工作與明確hold保留。必要模型更新僅保存來源既有素材／工具，不重製。
 - 設計：AI本地與遠端分岔時，固定兩個SHA送develop依序合併；本地工作區及遠端分支保持原提交直到整合完成，再安全ff／普通push。實際內容衝突沿原自動解衝突與獨立驗證，不將分岔誤當歷史重寫，也不強推。來源變動／dirty／未知merge仍停止；來源包含證明涵蓋兩端及雲端。
 - 前置處理：已fetch確認來源，乾淨ai/codex合併6aa3150d；僅LV並列雙方新增、AI_TASKS保留主線及本地完整段落、index及Worker快取整合，戰鬥程式三方合併乾淨。後續先驗證本地玩家控制與主線功能，再修工具並整合雲端08282cba；回歸、Build／diff後提交，最後同步並核對遠端與四工作區。
+- 完成：32db9e11合併主線並保留本地玩家控制免疫；08d5de8f納入雲端08282cba全部4筆（GLB、hero3d模型快取grips32／主頁34、fix-grips與來源測試），只合併任務紀錄並列雙方完整內容，沒有重製或覆寫模型。主端與Worker同時保留本地及主線戰鬥成果，合併來源快取同步；原始Excel／CSV內容沿主線，未編輯工作簿。
+- 工具三檔：sync_ai_worktrees新增雙向祖先檢查，分岔來源固定本地／遠端SHA且延後推送，在develop依序整合，推送前核對兩端與dirty狀態；develop本身分岔同樣正常合併／接續原衝突；最終全程普通push，沿用原生Excel與index修復護欄。sync-feature-worktrees新增4種真Git回歸（包含三AI、兩啟動模式、主線分岔、真內容衝突保留／接續、中途本地／遠端新提交停止與重跑），SYNC_AI_WORKTREES同步流程說明。未改變雲端來源原分支指向或擴張hold。
+- 素材庫：26a3c5f僅保存claude-authored/hero3d/sunbrand-knight的最新GLB／SOURCE／cloth、既有fix-grips與四份動作取樣及SHA manifest；原有spec／process及歷史來源紀錄保留，未付費呼叫或重生素材。共享素材庫其他岩壁、hero3d試作及VFX未提交內容原樣保留，該庫不推送；遊戲GLB與08282cba原始blob一致。
+- 同步驗證指令：node --test --test-reporter=spec tests/sync-feature-worktrees.test.cjs tests/sync-ai-worktrees.test.cjs tests/sync-auto-conflicts.test.cjs tests/sync-index-recovery.test.cjs tests/sync-excel-handoff.test.cjs，80/80通過，0略過；含真正原生Excel兩輪交接、BAT／報告、現有staged delete、hold、未知來源／中途移動及index保護，沒有降低既有斷言。
+- 遊戲驗證：node --test --test-reporter=tap tests/player-control-immunity.test.cjs tests/boss-control-immunity.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/hero3d-battle-rules.test.cjs tests/hero3d-internal-toggle.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/divine-forge.test.cjs tests/skill2-iron-dance.test.cjs tests/stats-panel.test.cjs tests/world-map-ui.test.cjs tests/string-table.test.cjs，117項＝116過／1失敗；唯一「野外戰鬥、高塔與分解已掛上統計記錄」為舊recordLootGold來源斷言，以6aa3150d原始八檔來源唯讀覆映重跑stats-panel，修改前後同10項9過1失敗、名稱一致，新增失敗0。報告與唯讀基準工具在忽略版控的logs/sync-divergence-verification；未修改測試接受現況。npm.cmd run build 598檔及git diff --check通過。
+- 唯讀檢查未改：AI_RULES／AGENTS／Workflow／prompts、同步報告wrapper／index recovery／原生Excel控制器、來源Excel／CSV、three vendor、其餘玩法與其他工作區。無本次未完成實作，可合併；既有統計測試債及瀏覽器長戰尚未驗收，不宣稱全庫全綠。下一步以正常同步回填三AI、核對08282cba與9be211aa／6aa3150d均在develop歷史，再重載遊戲；同步最後檢查之後才到達的新提交留待下一輪。main及明確未核准分支維持隔離。
 
 ## PLAYER-OFFENSE-CONTROL-IMMUNITY-20261028 — 玩家出手控制免疫與狀態保留
 

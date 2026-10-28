@@ -28,7 +28,7 @@ function fixture(owners=['codex']) {
       commits.push(git(worktree,'rev-parse','HEAD'));
     }
   }
-  const run=(extra=[])=>spawnSync('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',path.join(repo,'tools/sync_ai_worktrees.ps1'),'-RepositoryPath',repo,'-SkipAssetLibrary','-SyncRemoteFirst','-NoAutoResolve',...extra],{encoding:'utf8',timeout:60000});
+  const run=(extra=[],remoteFirst=true)=>spawnSync('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',path.join(repo,'tools/sync_ai_worktrees.ps1'),'-RepositoryPath',repo,'-SkipAssetLibrary',...(remoteFirst?['-SyncRemoteFirst']:[]),'-NoAutoResolve',...extra],{encoding:'utf8',timeout:60000});
   const log=r=>(r.stdout||'')+'\n'+(r.stderr||'');
   return {root,repo,remote,initial,commits,features,run,log,clean(){
     assert.ok(path.resolve(root).startsWith(path.resolve(os.tmpdir())+path.sep));
@@ -45,6 +45,53 @@ function publisher(f,branch='ai/claude-kpj271',file='cloud.txt') {
   const sha=git(repo,'rev-parse','HEAD');git(repo,'push','origin','HEAD:refs/heads/'+branch);
   return {repo,sha,branch,file};
 }
+test('三個AI任一本地與遠端分岔仍保留雙方並納入Claude雲端，兩種啟動模式皆可重跑',{skip:!windows},()=>{
+  for(const [owner,remoteFirst]of [['codex',true],['claude',false],['antigravity',true]]){
+    const f=fixture([]);try{
+      const remote=publisher(f,'ai/'+owner,'remote-'+owner+'.txt'),cloud=publisher(f);
+      const local=git(path.join(f.root,owner),'rev-parse','HEAD');
+      const preview=f.run(['-ValidateOnly'],remoteFirst);assert.equal(preview.status,0,f.log(preview));
+      assert.equal(git(path.join(f.root,owner),'rev-parse','HEAD'),local);assert.equal(git(f.remote,'rev-parse','ai/'+owner),remote.sha);
+      const r=f.run([],remoteFirst);assert.equal(r.status,0,f.log(r));assert.match(f.log(r),/分岔保留/);
+      const head=git(f.repo,'rev-parse','HEAD');
+      for(const sha of [...f.commits,remote.sha,cloud.sha])assert.equal(git(f.repo,'merge-base','--is-ancestor',sha,head),'');
+      for(const file of [owner+'.txt',remote.file,cloud.file])assert.ok(fs.existsSync(path.join(f.repo,file)),file);
+      for(const b of ['develop','ai/codex','ai/claude','ai/antigravity']){
+        assert.equal(git(f.repo,'rev-parse',b),head);assert.equal(git(f.remote,'rev-parse',b),head);
+      }
+      assert.equal(git(f.remote,'rev-parse',cloud.branch),cloud.sha);
+      const again=f.run([],remoteFirst);assert.equal(again.status,0,f.log(again));assert.equal(git(f.repo,'rev-parse','HEAD'),head);
+    }finally{f.clean();}
+  }
+});
+test('分岔來源有真內容衝突時只保留develop合併，AI兩端不改指或推送',{skip:!windows},()=>{
+  const f=fixture([]);try{
+    const p=publisher(f,'ai/codex','remote-codex.txt');fs.writeFileSync(path.join(p.repo,'codex.txt'),'remote content');git(p.repo,'add','.');git(p.repo,'commit','-m','[Codex] fix: remote overlap');git(p.repo,'push','origin','HEAD:refs/heads/ai/codex');const remote=git(p.repo,'rev-parse','HEAD');
+    const worktree=path.join(f.root,'codex'),local=git(worktree,'rev-parse','HEAD');
+    const r=f.run();assert.notEqual(r.status,0);assert.match(f.log(r),/NoAutoResolve/);
+    assert.equal(git(worktree,'rev-parse','HEAD'),local);assert.equal(git(worktree,'status','--porcelain'),'');assert.equal(git(f.remote,'rev-parse','ai/codex'),remote);assert.equal(git(f.remote,'rev-parse','develop'),f.initial);assert.equal(git(f.repo,'rev-parse','MERGE_HEAD'),local);
+    const again=f.run();assert.notEqual(again.status,0);assert.match(f.log(again),/自動接續 develop 尚未完成的合併/);assert.equal(git(f.repo,'rev-parse','MERGE_HEAD'),local);
+  }finally{f.clean();}
+});
+test('develop本地與遠端分岔亦正常合併並回同步所有AI',{skip:!windows},()=>{
+  const f=fixture([]);try{
+    const remote=publisher(f,'develop','remote-develop.txt');fs.writeFileSync(path.join(f.repo,'local-develop.txt'),'local');git(f.repo,'add','.');git(f.repo,'commit','-m','[Codex] fix: local mainline');const local=git(f.repo,'rev-parse','HEAD');
+    const r=f.run();assert.equal(r.status,0,f.log(r));for(const sha of [remote.sha,local,...f.commits])assert.equal(git(f.repo,'merge-base','--is-ancestor',sha,'HEAD'),'');
+    const head=git(f.repo,'rev-parse','HEAD');for(const b of ['develop','ai/codex','ai/claude','ai/antigravity'])assert.equal(git(f.remote,'rev-parse',b),head);
+  }finally{f.clean();}
+});
+test('分岔整合中任一本地或遠端收到新提交都先停止develop推送，重跑再完整納入',{skip:!windows},()=>{
+  for(const side of ['local','remote']){
+    const f=fixture([]);try{
+      const p=publisher(f,'ai/codex','remote-codex.txt'),worktree=path.join(f.root,'codex');
+      const repo=side==='local'?worktree:p.repo,hook=path.join(f.root,'advance-'+side+'.cjs');
+      fs.writeFileSync(hook,`const fs=require('node:fs'),{execFileSync}=require('node:child_process');const repo=${JSON.stringify(repo)};const git=(...a)=>execFileSync('git',['-C',repo,...a]);const once=${JSON.stringify(path.join(f.root,'advanced'))};if(!fs.existsSync(once)){fs.writeFileSync(once,'1');fs.writeFileSync(${JSON.stringify(path.join(repo,'new-'+side+'.txt'))},'new');git('add','.');git('commit','-m','[Codex] fix: concurrent ${side}');${side==='remote'?"git('push','origin','HEAD:refs/heads/ai/codex');":''}}`);
+      fs.writeFileSync(path.join(f.repo,'.git','hooks','post-merge'),'#!/bin/sh\n"'+process.execPath.replace(/\\/g,'/')+'" "'+hook.replace(/\\/g,'/')+'"\n');
+      const r=f.run();assert.notEqual(r.status,0,f.log(r));assert.match(f.log(r),/整合期間.*(?:變更|新的 commit)/);assert.equal(git(f.remote,'rev-parse','develop'),f.initial);
+      const latest=git(repo,'rev-parse','HEAD');const again=f.run();assert.equal(again.status,0,f.log(again));assert.equal(git(f.repo,'merge-base','--is-ancestor',latest,'HEAD'),'');assert.equal(fs.readFileSync(path.join(f.repo,'new-'+side+'.txt'),'utf8'),'new');
+    }finally{f.clean();}
+  }
+});
 test('fetch後發現未簽出雲端及任意名稱AI來源，整合原始提交且不回寫來源分支',{skip:!windows},()=>{
   const f=fixture([]);try{
     const cloud=publisher(f),local=publisher(f,'work/animation-fix','local-task.txt');
