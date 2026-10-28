@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## MERGE-BA3C949F-20261028 — 接續已暫存的主角動畫整合
+
+- Owner：Codex；Done（本輪合併驗證完成，提交後接續一般同步）。使用者輸入1授權處理develop；原HEAD 86200e0f、MERGE_HEAD ba3c949f，所有衝突已由前輪程序解開、13檔已暫存。停止原因是控制器再次git add已暫存刪除的meshy-double-combo-attack.json，並非內容仍有衝突；保留原父提交／來源修改，未reset或abort。
+- 範圍：檢查既有13檔合併、補LV／本紀錄與必要素材備存，完成原合併再同步；後續控制器刪檔重複暫存修正另記獨立任務。來源的攻擊／倒地握劍／披風修正、死亡原因、地圖傳送門、鐵血之舞、新版神鑄與原主線修改完整保留。備份index及binary diff存logs/merge-ba3c949f-repair；預檢無外部未提交來源。
+- 驗證：node --test --test-reporter=spec tests/hero3d-battle-rules.test.cjs tests/hero3d-internal-toggle.test.cjs tests/world-map-ui.test.cjs tests/divine-forge.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs共81/81通過；npm.cmd run build597檔通過；apply_params試跑593一致／0變更／0錨點問題，apply_strings --check為2193條同步，git diff HEAD --check通過。未修改Excel或參數接線；既有three.js Node模組判讀警告保留，不擴改package。
+- 素材：更新本地素材庫既有sunbrand-knight歸檔，模型／布料／SOURCE／三份規格／修正腳本／四份取樣共11檔與實際遊戲來源逐一SHA256一致，舊取樣按來源刪除、Git歷史保留；fix-grips只有原控制器去除檔尾空白行，收據明記。素材Commit ccb41a2及534ec97；既有thunder未追蹤內容不動、素材庫未推送，無新素材生成或付費API。
+- 唯讀未改：共通／協作規範、原父提交、既有衝突控制器結果、全部Excel／CSV、Worker協議及存檔、相關測試；本次除任務紀錄及LV補述外不再改遊戲程式或動作。無未完成合併實作，可提交並一般同步；main與背景續戰隔離保持，未做瀏覽器GPU／玩家存檔長戰驗收。最後同步HEAD與來源包含驗證見最新報告及回覆。
+
 ## DEVELOP-MERGE-1C662CCB-3F8160DA-20261028 — 整合死亡原因、世界地圖、鐵血之舞與新版神鑄
 
 - Owner：Codex（整合）；Done。依使用者授權處理 develop 的既有 merge，保留雙方功能與測試；衝突限定 LV_upgrade_system.md、docs/AI_TASKS.md、index.html、js/bridge.js、js/worker/sim.worker.js。
@@ -178,6 +186,21 @@
 - 選用：Attack2（斜劈）＝Double Combo Attack 的第三下 1.74～2.82 秒（由右上高舉、斜劈過敵人肩到腰下），加 fixLunge 跨步半步（髖前移 0.3、前腳整步、後腳跟上、兩腿 IK）與 30° 瞄準修正（動作庫落點偏主角右側）；Attack3（新的平砍）＝Reaping Swing 1.5～2.1 秒（右往左橫掃身前），髖部下沉 0.2 壓低重心，放在同一條 Attack2 時間軸 1.90 秒起（CLIP_FOR.attack3，不新增 GLB 動畫）。普攻改為 attack1／attack2／attack3 三招混著出；施法借 attack2 的舉劍到劈下（0.37～1.25，會被加速到 0.5 秒內）。
 - 取樣工具：fix-grips.mjs --extract-meshy <Meshy 動畫.glb> <動作名> <起> <迄> <fps> <out.json> 產生 src/data/meshy-*.json；匯入時髖部位移平移成原地。驗證用「前方 1.6 站姿假人」量劍刃穿過假人正面的位置：Attack2 約由 肩（y 1.37，右側）→ 腰 1.0 → 腰下 0.66；Attack3 在 y 1.24～1.39 由右掃到正中。舊的手調軌跡（path／sKeys）保留為 meshy 沒設值時的備援。
 - 限制：Attack2／3 握劍是動作庫的自然握法，劍與前臂夾角最大約 55°（測試放寬到 60°）；Attack3 掃到正中後劍會往上（動作庫原本接著的舉劍），只取到 2.5 秒前；Attack1 仍是舊的雙手劈。SIZE／SPAN 放大為 352／4.4。GLB 版號 grips9、hero3d.js?v=1.0.11。
+- Attack1 改為使用者上傳的 Meshy 網頁動作 Sword Judgment（右手單手劍：小跳躍→轉一圈→斜砍；使用者在網頁重新綁骨架，Mixamo 範本、40 根骨骼含手指與披風骨，任務花費由使用者帳號負擔）：不改動作本身（不做 IK、不限手腕、不修落點），只用「世界旋轉差」重新瞄準到遊戲 24 根骨骼（fix-grips.mjs 的 extractRetarget／importRetarget；脊椎名稱順序相反依層級對應；四肢補最小擺動修正讓方向與來源一致；Attack1 的最上節 Spine 只有常數軌跡，其動作併進 Spine01），取來源 0.30～1.25 秒（後面是長時間跪姿，不取）放在 Attack1 的 0.10 秒起，收招 0.90～1.40 回到起始姿勢（首尾相接）。
+- 劍：遊戲模型本來就是右手持劍、有獨立 Sword 骨骼（父骨＝右手），不需再換手或新綁。新增 fitSwordGrip：只調整 Attack1 裡 Sword 相對右手的旋轉（該動作的 Sword 軌跡是常數），把劍身軸對準「前臂→手」方向的平均（轉 68°，劍柄位置不動）；量測劍與前臂夾角最大 26.9°（手腕本身在動作中的彎折），首尾姿勢差 0.26°。CLIP_FOR.attack1＝0.10→1.40、hit 0.62；舊的雙手劈與副手 IK 保留為 retarget 沒設值時的備援，verifyGrips／測試改檢查新 Attack1 的劍夾角與首尾相接。
+- 修 Attack1 斜砍結束處瞬移（使用者回報）：不是動作被改，是匯入只覆寫片段內的格，片段之後留著舊動作的資料，收招混合時在片段結束處跳格（相鄰兩格最大 82°）；改成片段之後停在最後一格再收招（Attack1 最大單格 40°，來自轉圈本身）。同時發現 Attack2／3 的 Sword 旋轉軌跡還是舊動作的逐格資料，劍在手裡瞬間翻 164°——改成 Attack2／3 也固定劍相對右手的握姿並對準前臂（劍與前臂夾角最大 15°）。新增 maxKeyStep 量測與測試（單格 ≤60°）。GLB 版號 grips11、hero3d.js?v=1.0.13。
+- 修劍護手一邊歪掉（使用者回報）：不是蒙皮拉扯，是護手右翼端 11 個頂點（含貼圖接縫重複頂點）在 Meshy 權重裡 100% 綁在右手而不是劍；左翼跟劍、右翼跟手，Attack1 把劍相對手轉 68° 後就歪了。fix-grips.mjs 新增 fixGuardWing（在 hardenArmor 之後，以劍局部座標找出 11 個頂點改綁 100% 劍骨骼），verifyGrips／測試新增 guardWingStray＝0。GLB 版號 grips12、hero3d.js?v=1.0.14。
+- Attack2 改為使用者上傳的 Meshy 網頁動作 Left Slash（名稱叫 Left，實測是右手在揮、左手護在身前，所以不鏡像；右下往左上的上撩斜砍，再由左上往右下斜砍回到右下）：流程同 Attack1——重新瞄準到遊戲骨架（data/meshy-left-slash.json，來源 0.30～1.55 秒），放在 Attack2 的 0.10 秒起，收招 1.15～1.65 回到起始姿勢；動作本身不改（不做 IK、不限手腕、不轉落點、不加跨步）。取代原本的 Double Combo 斜劈（刪除 data/meshy-double-combo-attack.json）；Attack3 平砍仍在同一條時間軸 1.90 秒起。CLIP_FOR.attack2＝0.10→1.65、hit 0.62；施法借 0.10→0.95。
+- 劍的握姿新增「刀刃順著揮砍方向」：fitSwordGrip 在劍身對準前臂之後，再繞劍身軸搜一個常數翻轉（0～179°，刀刃兩側都開刃），使劍尖速度垂直於劍身的分量落在刃口方向、不打在劍面上（以速度加權，快的地方最重要）；Attack2 斜砍翻 46°、Attack3 翻 42°，Attack1（使用者已確認）不調。Attack2 區間 0.10～1.85 與 Attack3 區間 1.90～ 各自一組握姿。
+- 手腕限制不再套用在 Attack1／Attack2（Meshy 網頁動作，使用者要求不改動作）；其他動作維持 ≤100°（目前 68°）。Meshy 動作自己的手腕扭轉量測最大 233°（包含兩套骨架靜止姿勢不同造成的差），前臂與手交界處盔甲有些許撕裂碎片（候選處理：只對這兩招限制手腕，但會改動作，等使用者決定）。GLB 版號 grips13、hero3d.js?v=1.0.15。
+- Attack3 改為使用者上傳的 Meshy 網頁動作 Double Combo Attack（右手：右上往左下斜砍，再反著揮回原位；骨骼同名重新瞄準，不改動作）：來源 0.00～1.35 秒（data/meshy-double-combo-2.json），放在 Attack2 時間軸的 1.74 秒起（CLIP_FOR.attack3＝1.74→3.09、hit 2.36），收招 2.55～3.09 回到起始姿勢（首尾差 0.04°）。取代原本的 Reaping Swing 平砍（刪除 data/meshy-reaping-swing.json，並移除舊 API 骨架匯入程式 importMeshySegment／extractMeshyClip，只保留 Mixamo 重新瞄準）。劍握姿：劍身轉 72.6° 對準前臂、繞劍身翻 56° 讓刀刃順著揮砍；護手修正（fixGuardWing）對所有動作有效。
+- 修握姿切換：兩招共用 Sword 旋轉軌跡，第二招起始姿勢落在兩格之間時內插到前一格（第一招的握姿），首尾差 6.1°；改為第二招的握姿往前多取半格。新增 attack3 loop／刀夾角／區間一致測試。GLB 版號 grips14、hero3d.js?v=1.0.16。
+- 修 Attack3 後半段與原動作不同（使用者回報）：收招混合從遊戲 2.55 秒開始，對應來源 0.81 秒，壓在「反著揮回」（來源 0.9～1.3 秒）上把它往起始姿勢拉。改成：取來源 0.10～1.32 秒、整段時間均勻壓縮 1.3 倍（形狀與各段相對速度不變，遊戲本來就依攻速縮放播放時間）放在 1.72～2.66 秒，收招 2.66～3.11 只在整段播完之後才開始。新增 retargetError／verifyGrips.retargetMaxDeg：收招開始前四肢方向與來源動作的最大差＝0°，測試 ≤1°。Attack1／Attack2 的收招仍有 0.15～0.20 秒與動作尾端重疊（使用者已確認），沒有改。CLIP_FOR.attack3＝1.72→3.11、hit 2.18；GLB 版號 grips15、hero3d.js?v=1.0.17。
+- 修手部結構怪怪（使用者回報前臂護甲與手之間星形尖刺碎片）：查到兩個原因。(1) Mixamo 骨架沒有前臂扭轉骨，Meshy 網頁動作的整個手腕扭轉都落在手骨骼上，最大 233°（Attack2）／110°（Attack3），前臂護甲與手交界被擰碎；改成對所有動作（含 Attack1／2／3）套用手腕限制並分三段分攤：手 ≤60°、超出的整個交給前臂（≤90°）、前臂超過的再由上臂繞軸滾動吸收（上臂 ≤150°，前臂在上臂座標下補轉），手、前臂的世界朝向與手肘位置都不變，所以動作看起來完全一樣（retargetError 仍 0°）。(2) 整個模型是一整片焊接網格，劍握柄與手套之間有 26 個三角面同時含劍頂點與手／前臂頂點，劍相對手轉動時被拉成尖刺；全部刪除（都在拳頭裡面）。曾試過把手腕混合權重圈改成剛性，反而保證拉長，已放棄。fixWristRing 未保留。新增 swordConnectorTriangles／stretchedTriangles／twistSeries 偵察。披風被拉長細絲刪除數隨動作姿勢變多（128 個）。GLB 版號 grips16、hero3d.js?v=1.0.18。
+- 【更正：撤回對角色的改動，只動劍】使用者指出「別去動角色本身的動作、骨骼或形變，只調整劍」，而手部仍有問題。查證：手套碎片（星形尖刺）的真正來源是我自己把劍轉離了拳頭原本的握法（劍身轉 68° 對準前臂、再繞軸翻轉刀刃）——拳頭與握柄之間有 26 個焊接三角面，劍相對手一轉就被拉成碎片；我先前改的手腕扭轉分攤（手→前臂→上臂）、手腕混合權重圈剛性化、刪除連接面（讓手套出現破洞）都是在補自己造成的問題，而且動了角色。全部撤回：Attack1／2／3 為 Meshy 動作原樣（只做重新瞄準）、不做手腕限制、不改權重、不刪三角面；手腕限制維持原狀只套在原有的 CombatIdle／Death 等舊動作。劍的處理只剩一件事：fitSwordGrip 把每個動作的 Sword 旋轉軌跡設成模型原本的握法（也蓋掉 Attack2 舊動作殘留的逐格劍旋轉），整支劍跟著手走，拳頭保持乾淨握著握柄。取消「劍身對準前臂」與「繞軸翻轉刀刃」（兩者都會讓劍離開握法）。護手右翼端 11 個頂點綁在右手的錯綁仍修（屬於劍）。測試改為檢查 swordGripMaxDeg＝0、retargetMaxDeg≈0，移除劍與前臂夾角檢查。GLB 版號 grips17、hero3d.js?v=1.0.19。
+- 修劍彎了（使用者回報）：把劍單獨拉出來、劍身軸轉成朝上檢視，Meshy 原網格的劍身確實是彎的（中心線在 y≈55 有約 1.8 單位錯位，越往劍尖越偏一邊，x 對 y 迴歸斜率 −0.041）；先前每一格都帶著它。fix-grips.mjs 新增 straightenBlade：對 Sword 骨骼 100% 的頂點在 y>23 做只依 y 的剪切 x += 0.04×(y−23)（並排試過 0／0.03／0.04／0.05／−0.03：0.04 劍尖正好在護手與握柄同一條軸線上；重複頂點位移相同不裂開；護手與握柄不動）。verifyGrips.bladeLean 與測試（|斜率|≤0.01，修後約 −0.001）。劍是這次唯一動的網格。GLB 版號 grips18、hero3d.js?v=1.0.20。
+- 【刀刃方向與能不能砍到敵人】使用者給原動作預覽圖：手沿著手臂方向伸出，刀刃應是它的延伸（紅箭頭），而且劍的方向要想「砍不砍得到站在前面的敵人」。查證與修正：(1) 重新瞄準原本只對齊上臂／前臂方向，手骨骼的絕對朝向沒對（兩套骨架手的靜止朝向不同）——取樣檔新增 handDir（Hand→Middle1），匯入時把遊戲手骨骼 +Y 對齊它。(2) 遊戲拳頭握柄軸與手 +Y 差 44.2°，劍留在原握法時刀刃偏離手的方向；新增 alignGripToHand：Attack1／2 的右手骨骼局部旋轉右乘固定校正 C（把劍身軸轉到手 +Y），拳頭與劍一起轉、相對位置不變（不會再把手套拉碎），刀刃落在原動作手的方向上；這是兩套模型手形狀不同的固定校正，不是改動作。(3) 新增 hitFrames：敵人＝起始朝向正前方 1.5、半徑 0.28、高 0.35～1.6 的圓柱，量各招揮砍時段劍身進入圓柱的格數——Attack1（0.78）胸口高度 1.3～1.45、Attack2 兩下 1.19～1.27／1.06～1.46、Attack3 原本完全打不到（最近 0.81，原動作邊揮邊往左轉約 45°），加 aim：髖部繞垂直軸 −70°（1.72～2.05 漸入）後穿過肩到胸 0.99～1.42。測試 bladeVsHandDeg＜1°、每招 hits≥1。CLIP_FOR hit：attack1 0.78、attack2 0.50、attack3 2.34。GLB 版號 grips19、hero3d.js?v=1.0.21。
+- 【刀刃朝砍的方向，不是刀背】使用者指出砍下去是用刀背（劍面）拍敵人。量化：flatRatio＝劍尖移動方向（垂直於劍身的分量）落在劍面法線（劍局部 Z）上的速度加權比例，0＝刃口、1＝劍面；原本 0.83～0.94＝幾乎全用劍面拍。alignGripToHand 新增 rollDeg：拳頭＋劍整體繞劍身軸再翻一個固定角度（刀刃指的方向不變、劍與拳頭相對位置不變，手腕等於轉一個固定角）。掃 0～150°：90° 只降到 0.33～0.53，並不最佳；最佳 Attack1 約 70°（0.11）、Attack2／3 約 62°（0.08～0.17），採 CFG.Attack1.retarget.gripRoll＝70、CFG.Attack2.gripRoll＝62。測試 flat≤0.3；hits、loop、retarget、bladeVsHand 不變。GLB 版號 grips20、hero3d.js?v=1.0.22。
 ## SYNC-SHORTCUT-HOLD-20261027 — 修復捷徑中斷並保留Claude管線
 
 - Owner：Codex；Done（工具修復與必要驗證完成，實際同步結果見本輪報告）。使用者以1要求接續同步，並明確選擇將Claude本地Meshy提交8d1577c5保留、暫不併入develop。原develop bd0b982e已乾淨；這次卡在Antigravity的本機套用參數捷徑被skip-worktree隱藏，但遠端又更新該路徑，fast-forward拒絕覆寫。
@@ -12953,8 +12976,6 @@ Worker 存活且頁面正常完成載入。
 - 全庫：node --test --test-reporter=tap "tests/*.test.cjs"完整執行14分45秒，4931項＝4340過／589失敗／2跳過。以修改前HEAD 14e7d8cb的本次來源唯讀覆映、按每個失敗名稱重跑，全589項均在原版重現，新增失敗0；沒有弱化既有斷言或擴修無關功能，不宣稱全庫全過。原始TAP與baseline-summary.json保留本聊天visualizations/wave-table-removal。
 - 同副本BOUNCE-DODGE聊天後續新增skills2、專項回歸及LV／任務表／index／Worker快取；本次以Git index分段暫存，保留其工作檔逐位元不變，提交只含本次區段（bridge372／原skills2快取），其較新工作檔快取維持373／skills2 364。以只覆映staged來源並隔離對方skills2的方式重跑上述83項，83/83通過；不納入對方進行中功能或文件。
 - 交付：本段所在「[Codex] refactor: 移除冗餘波次表並統一出怪參數來源」Commit，實際編號見回覆；無本次未完成項目，可供Review／合併，未合併或推送。已知限制為全庫589項既有失敗及未做瀏覽器／真人長戰，下一步正常整合後重載遊戲；使用者NPC與主參數表、其他聊天進行中修改保留未提交。
-
-
 ## WORLD-MAP-PORTAL-QUALITY-20261028 — 神界傳送門質感與動態升級
 
 - Owner：Codex；Done，單一開發者。使用者已核准目前傳送門外觀並明確要求Commit。沿既有HTML／CSS介面圖形重做古金屬拱門、頂冠、門座、能量旋渦與光粒，不產出獨立圖片或VFX Preset。
@@ -12965,3 +12986,17 @@ Worker 存活且頁面正常完成載入。
 - 瀏覽器：CUA／IAB隔離fixture載正式DOM／全套CSS／地圖程式與配置，320×720／390×844／1558×869皆驗入口邊界、裝飾pointer-events:none、能量流動transform持續改變，實際點擊及鍵盤Enter開神界頁、返回正常，鍵盤焦點框可見，Console error／warning0。縮減動態為CSS規則檢查，未修改或模擬使用者OS偏好；未讀寫玩家存檔。32幀真實瀏覽器截圖編為portal-motion.gif，另portal-world-map.png／portal-narrow.png與驗證JSON保留本聊天visualizations/portal-quality；中間影格已清理。
 - 衝突：Antigravity ffa165b3新增統計原因，index僅改stats／skills2／combat／tower／bridge快取，與本次CSS版本及門體無語意相依；但該分支缺少前輪傳送門／神鑄基礎，對現況做三方試合併（統一CRLF／LF後）仍在world-map CSS版本及門體區塊回報衝突，已依AI_RULES 3.2詢問；使用者後續明確核准目前新版及本次提交，只提交ai/codex五檔，Antigravity成果留待正常整合。AI_TASKS採檔尾追加，對方檔首新增，當輪增量merge-file exit0；LV檔尾候選亦exit0但未套用。無其他AI工作區或分支被修改／整合。
 - 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、WorldMapUI解鎖與指令、String表／資料、Worker／存檔、既有測試及地圖PNG；自我Review及使用者外觀驗收已完成。已知限制為未做全庫、真人長戰與OS減少動態實機切換；本次無未完成實作。Commit為本段所在「[Codex] feat: 升級神界傳送門質感與能量動態」，編號見交付；可供合併，未合併／推送。提交前確認五檔程式／樣式內容與已驗證版本一致，本輪僅更新交付狀態，不重跑未受影響測試。
+
+- 披風破洞（HERO3D，Attack1 舉劍幀）：原因是細絲判定門檻 4 倍連仍填著布面的三角面一起刪（133 個）。門檻改 25 倍（只刪 62 個真細絲），只動索引緩衝區；骨架、動作、劍皆未動。測試的披風伸長上限同步改 25.1，模型版號 grips21、hero3d.js?v=1.0.23。
+- 倒地死亡（HERO3D）：改用使用者上傳的 Meshy Dead 動作（取樣檔 data/meshy-dead.json，30 fps，來源 2.967 秒，均勻壓縮 1.079 倍塞進 Death 的 2.75 秒），同 Attack 的重新瞄準流程，四肢方向與來源誤差 0；只把 Sword 設成模型原本握法，不做手腕限制與握姿旋轉。retargetMaxDeg 納入 Death，模型版號 grips22、hero3d.js?v=1.0.24。
+- 倒地死亡的劍穿模修正：原握法在跪地幀（約 1.55～1.65 秒）劍穿進小腿護甲（劍到身體最近距離 0.01）。掃描拳頭＋劍繞手軸旋轉的各角度，選用與攻擊動作相同的固定校正（劍身順著手的方向，roll 0），整段最近距離 ≥0.117；動作不動。模型版號 grips23、hero3d.js?v=1.0.25。
+- 倒地死亡的劍改成脫手落地（使用者：原作的手是放開的）：站著時握法回到模型原樣（撤銷之前加的 44° 校正），1.1～1.8 秒劍的世界旋轉漸漸由跟著手轉成躺平（劍面朝地、水平朝手臂方向、劍尖微傾 5° 貼地）；劍骨骼原點仍跟著手所以落點在手邊。跪地幀不再穿腿（最近距離 ≥0.085），動作不動。測試加 deathSwordEnd。模型版號 grips24、hero3d.js?v=1.0.26。
+- 倒地死亡最後的劍（使用者改指示：劍留在手上、平放地面伸向身體左側、手背朝上）：不讓劍脫手（拳頭與握柄是同一塊網格，拆不開）。落地時（1.9～2.35 秒）只把手腕由原動作朝向漸漸轉到「劍身水平朝左側往前 20°、劍面朝地」，手臂與身體動作不動；站著時握法為模型原樣。遊戲模型的手是不能張開的拳頭，所以不是張開的手。測試 deathSwordEnd 加「朝左」。模型版號 grips25、hero3d.js?v=1.0.27。
+- 倒地死亡回饋（劍穿模、劍變形、躺地披風破洞）：①avoidBody：劍的頂點離身體（盔甲，不含右臂）最近距離由 0.005 提高到 0.061（落地前，只轉手腕、每軸 ±45°，逐格取最接近上一格的轉法）；躺平階段不搜尋，調整量漸漸收掉再由 settleHand 帶到平放。②披風：貼腿的 41 個頂點權重往髖部拉 0.8（被刪細絲三角面 62→10）；披風整片往背後移 0.02（躺平時手臂護甲頂穿披風的洞消失）。動作與骨骼不動。模型版號 grips27、hero3d.js?v=1.0.29。
+
+
+## MERGE-HERO3D-DEVELOP-20261028 — 整合 HERO3D 動作與傳送門成果
+
+- Owner：Codex；Done。依使用者授權處理 develop 的 pending merge（HEAD 86200e0f、MERGE_HEAD ba3c949f），不操作 index、Commit、推送或其他工作區。
+- 衝突解法：`docs/AI_TASKS.md` 同時保留 ours 的 WORLD-MAP-PORTAL-QUALITY 完整紀錄及 theirs 的 HERO3D 披風／死亡／持劍迭代紀錄；`index.html` 使用與 incoming `js/hero3d.js` 及 grips27 模型相符的 `hero3d.js?v=1.0.29`。未發現原始 XLSX 衝突，不需 Excel DATA plan；素材庫無額外檔案。
+- 驗證：`node --test --test-reporter=spec tests/hero3d-battle-rules.test.cjs` 11/11 通過；`npm.cmd run build` 597 檔全數通過；`git diff HEAD --check` 通過。兩個衝突檔已無 conflict marker；controller 對 `tools/meshy-pipeline/src/fix-grips.mjs` 的 EOF 空白機械修正保留。
