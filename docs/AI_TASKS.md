@@ -107,6 +107,8 @@
 - Attack2 改為使用者上傳的 Meshy 網頁動作 Left Slash（名稱叫 Left，實測是右手在揮、左手護在身前，所以不鏡像；右下往左上的上撩斜砍，再由左上往右下斜砍回到右下）：流程同 Attack1——重新瞄準到遊戲骨架（data/meshy-left-slash.json，來源 0.30～1.55 秒），放在 Attack2 的 0.10 秒起，收招 1.15～1.65 回到起始姿勢；動作本身不改（不做 IK、不限手腕、不轉落點、不加跨步）。取代原本的 Double Combo 斜劈（刪除 data/meshy-double-combo-attack.json）；Attack3 平砍仍在同一條時間軸 1.90 秒起。CLIP_FOR.attack2＝0.10→1.65、hit 0.62；施法借 0.10→0.95。
 - 劍的握姿新增「刀刃順著揮砍方向」：fitSwordGrip 在劍身對準前臂之後，再繞劍身軸搜一個常數翻轉（0～179°，刀刃兩側都開刃），使劍尖速度垂直於劍身的分量落在刃口方向、不打在劍面上（以速度加權，快的地方最重要）；Attack2 斜砍翻 46°、Attack3 翻 42°，Attack1（使用者已確認）不調。Attack2 區間 0.10～1.85 與 Attack3 區間 1.90～ 各自一組握姿。
 - 手腕限制不再套用在 Attack1／Attack2（Meshy 網頁動作，使用者要求不改動作）；其他動作維持 ≤100°（目前 68°）。Meshy 動作自己的手腕扭轉量測最大 233°（包含兩套骨架靜止姿勢不同造成的差），前臂與手交界處盔甲有些許撕裂碎片（候選處理：只對這兩招限制手腕，但會改動作，等使用者決定）。GLB 版號 grips13、hero3d.js?v=1.0.15。
+- Attack3 改為使用者上傳的 Meshy 網頁動作 Double Combo Attack（右手：右上往左下斜砍，再反著揮回原位；骨骼同名重新瞄準，不改動作）：來源 0.00～1.35 秒（data/meshy-double-combo-2.json），放在 Attack2 時間軸的 1.74 秒起（CLIP_FOR.attack3＝1.74→3.09、hit 2.36），收招 2.55～3.09 回到起始姿勢（首尾差 0.04°）。取代原本的 Reaping Swing 平砍（刪除 data/meshy-reaping-swing.json，並移除舊 API 骨架匯入程式 importMeshySegment／extractMeshyClip，只保留 Mixamo 重新瞄準）。劍握姿：劍身轉 72.6° 對準前臂、繞劍身翻 56° 讓刀刃順著揮砍；護手修正（fixGuardWing）對所有動作有效。
+- 修握姿切換：兩招共用 Sword 旋轉軌跡，第二招起始姿勢落在兩格之間時內插到前一格（第一招的握姿），首尾差 6.1°；改為第二招的握姿往前多取半格。新增 attack3 loop／刀夾角／區間一致測試。GLB 版號 grips14、hero3d.js?v=1.0.16。
 ## SYNC-SHORTCUT-HOLD-20261027 — 修復捷徑中斷並保留Claude管線
 
 - Owner：Codex；Done（工具修復與必要驗證完成，實際同步結果見本輪報告）。使用者以1要求接續同步，並明確選擇將Claude本地Meshy提交8d1577c5保留、暫不併入develop。原develop bd0b982e已乾淨；這次卡在Antigravity的本機套用參數捷徑被skip-worktree隱藏，但遠端又更新該路徑，fast-forward拒絕覆寫。

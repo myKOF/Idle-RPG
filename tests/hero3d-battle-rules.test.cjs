@@ -82,6 +82,8 @@ test('3D 模型修正仍在：盔甲剛性、披風只小幅伸縮、手腕不�
   assert.ok(r.attack2LoopMaxDeg <= 3, 'Attack2 最後一幀沒有回到第一幀：全身骨骼最大差 ' + r.attack2LoopMaxDeg.toFixed(1) + '°');
   /* Attack2 改用 Meshy 動作庫的動作後，握劍是動作庫自己的自然握法（劈砍時劍與前臂有夾角），上限放寬到 60° */
   assert.ok(r.attack2BladeMaxAngleDeg <= 25, '劍與前臂夾角過大：' + r.attack2BladeMaxAngleDeg + '°');
+  assert.ok(r.attack3LoopMaxDeg <= 3, 'Attack3 最後一幀沒有回到第一幀：全身骨骼最大差 ' + r.attack3LoopMaxDeg.toFixed(1) + '°');
+  assert.ok(r.attack3BladeMaxAngleDeg <= 35, 'Attack3 劍與前臂夾角過大：' + r.attack3BladeMaxAngleDeg + '°');
   /* 不能有瞬移：相鄰兩格任一骨骼轉動不超過 60°（修掉的 bug：片段後面留著舊動作資料，收招混合時在片段結束處跳格 82°；舊劍旋轉軌跡在手裡翻 164°） */
   assert.ok(r.attack1MaxStepDeg <= 60, 'Attack1 相鄰兩格轉動 ' + r.attack1MaxStepDeg.toFixed(0) + '°（瞬移）');
   assert.ok(r.attack2MaxStepDeg <= 60, 'Attack2／3 相鄰兩格轉動 ' + r.attack2MaxStepDeg.toFixed(0) + '°（瞬移）');
@@ -94,6 +96,15 @@ test('Attack2 的播放區間與腳本的收招設定一致（end＝收招結束
   assert.ok(cfg, '找不到 CLIP_FOR.attack2');
   assert.match(script, new RegExp('startTime: ' + cfg[1].replace('.', '\\.') + '[,\\s]'), 'CLIP_FOR.attack2.start 與腳本 startTime 不同');
   assert.match(script, new RegExp('recover: \\[[\\d.]+, ' + cfg[2].replace('.', '\\.') + '\\]'), 'CLIP_FOR.attack2.end 與腳本 recover 結束時間不同');
+});
+
+test('Attack3 的播放區間與腳本的第二個片段一致（start＝片段開頭、end＝收招結束）', () => {
+  const hero3d = fs.readFileSync(require.resolve('../js/hero3d.js'), 'utf8');
+  const script = fs.readFileSync(require.resolve('../tools/meshy-pipeline/src/fix-grips.mjs'), 'utf8');
+  const cfg = hero3d.match(/attack3: \{ clip: 'Attack2', loop: false, start: ([\d.]+), hit: [\d.]+, end: ([\d.]+) \}/);
+  assert.ok(cfg, '找不到 CLIP_FOR.attack3');
+  assert.match(script, new RegExp("name: 'combo2'[^}]*at: " + cfg[1].replace('.', '\\.') + ","), 'CLIP_FOR.attack3.start 與腳本片段 at 不同');
+  assert.match(script, new RegExp("name: 'combo2'[^}]*recover: \\[[\\d.]+, " + cfg[2].replace('.', '\\.') + "\\]"), 'CLIP_FOR.attack3.end 與腳本 recover 結束時間不同');
 });
 
 test('3D 披風碰撞：披風拆成獨立網格、用骨骼膠囊碰撞體推開穿進身體的布料、再鬆弛', () => {

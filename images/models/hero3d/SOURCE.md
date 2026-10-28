@@ -59,3 +59,4 @@ node tools/meshy-pipeline/src/fix-grips.mjs <新匯出的.glb> images/models/her
 - Attack1（2026-10-28）：使用者上傳的 Meshy 網頁動作 Sword Judgment 0.30～1.25 秒（右手單手劍，小跳躍→轉圈→斜砍），以世界旋轉差重新瞄準到本模型骨架，動作不改；只調 Sword 相對右手的旋轉。取樣檔 `tools/meshy-pipeline/src/data/meshy-sword-judgment.json`，匯入與握姿見 `fix-grips.mjs`（`CFG.Attack1.retarget`）。
 - 護手（2026-10-28）：護手右翼端 11 個頂點在 Meshy 權重裡綁在右手而非劍，會讓護手一邊跟著手歪；`fix-grips.mjs` 的 `fixGuardWing` 改綁劍骨骼。
 - Attack2（2026-10-28）：使用者上傳的 Meshy 網頁動作 Left Slash 0.30～1.55 秒（右手：上撩斜砍＋斜砍回位）重新瞄準到本模型，取代舊斜劈；取樣檔 `tools/meshy-pipeline/src/data/meshy-left-slash.json`。劍握姿＝劍身對準前臂＋繞劍身翻轉讓刀刃順著揮砍方向（`fitSwordGrip`）。
+- Attack3（2026-10-28）：使用者上傳的 Meshy 網頁動作 Double Combo Attack 0～1.35 秒（右手：右上往左下斜砍＋反著揮回），重新瞄準到本模型，放在 `Attack2` 動畫的 1.74～3.09 秒（`CLIP_FOR.attack3`）；取樣檔 `tools/meshy-pipeline/src/data/meshy-double-combo-2.json`。
