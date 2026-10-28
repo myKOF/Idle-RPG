@@ -71,19 +71,21 @@ const CFG = {
     /* 收招：使用者要求最後一幀回到第一幀的動作（動作首尾相接，不要停在斜劈結束的姿勢多放幾幀）。
        從 recover[0] 到 recover[1]，全身所有骨骼（旋轉、位移）平順過渡回 startTime 那一幀的姿勢（smoothstep），之後保持。
        startTime 要和 hero3d.js 的 CLIP_FOR.attack2.start 一致；recover[1] 要和 CLIP_FOR.attack2.end 一致。 */
-    recover: [1.30, 1.70],
+    recover: [1.15, 1.65],
     /* 改用 Meshy 動作庫的現成動作（使用者 2026-10-27 決定放棄手調軌跡）：Double Combo Attack（action 92）的第三下——
        右手由右上高舉、斜劈過敵人肩膀到腰下、劍落在左下。取樣檔 data/meshy-double-combo-attack.json（from 1.74～2.82 秒，原地、去掉前進位移），
        放在遊戲動作 Attack2 的 0.37 秒起，收招 recover 回到起始姿勢。上面的 path／sKeys／lunge 是舊的手調軌跡，meshy 有值時不用。 */
     meshy: [
-             { name: 'diag', file: 'meshy-double-combo-attack.json', at: 0.37, hold: 0, yawDeg: 30, yawRamp: [0.45, 0.90],
-               lunge: { dist: 0.5, hipsK: 0.6, rearK: 0.8, t0: 0.40, t1: 0.95, lift: 0.12, tEnd: 1.46 } },
+             /* 斜砍（Attack2）：使用者上傳的 Meshy 網頁動作 Left Slash（名稱雖叫 Left，實際是右手在揮，左手護在身前）：
+                右下往左上的上撩斜砍，再由左上往右下斜砍回到右下。不改動作本身（不做 IK、不限手腕、不轉落點、不加跨步），
+                取來源 0.30～1.55 秒、重新瞄準到遊戲骨架，放在 Attack2 的 0.10 秒起，收招 recover 回到起始姿勢。 */
+             { name: 'slash2', retarget: true, file: 'meshy-left-slash.json', at: 0.10 },
              /* 平砍（第三個攻擊動作，放在同一條 Attack2 時間軸的 1.90 秒起，hero3d.js 的 CLIP_FOR.attack3）：Reaping Swing（action 99）的 1.5～2.1 秒，
                 右手由右往左橫掃過身前；髖部下沉 0.2（壓低重心，讓揮砍落在胸肩高而不是脖頸）。 */
              { name: 'flat', file: 'meshy-reaping-swing.json', at: 1.90, hold: 0, recover: [2.30, 2.85],
                lunge: { dist: 0.3, hipsK: 0.6, rearK: 0.8, t0: 1.92, t1: 2.25, lift: 0.1, drop: 0.2, tEnd: 2.52 } }],   // 動作庫的劈砍原地只伸到身前約 1.2，敵人在約 1.6 外，要再跨半步（lunge）才砍得到
     lunge: { dist: 0.6, hipsK: 0.6, rearK: 0.8, t0: 1.10, t1: 1.34, lift: 0.12 },   // 往前跨一大步劈下：髖部前移 0.36、前腳整步、後腳跟上
-    startTime: 0.37
+    startTime: 0.10
   }
 };
 
@@ -540,22 +542,63 @@ function importRetarget(g, rig, clip, seg) {
    遊戲模型的手是一個固定的拳頭（沒有手指骨骼），劍是獨立的 Sword 骨骼（父骨＝持劍的右手）。動作庫的動作不知道這把劍怎麼握，
    所以逐動作調整 Sword 相對右手的旋轉（動作的 Sword 旋轉軌跡只有 2 個關鍵幀＝常數）：把劍身軸（Sword 局部 +Y）轉到
    「前臂→手」方向在手局部座標下的平均方向，劍柄位置（Sword 骨骼原點）不動、繞軸扭轉盡量維持原樣。動作本身一個關鍵幀都不改。 */
-function fitSwordGrip(g, rig, clip, windows) {
+function fitSwordGrip(g, rig, clip, windows, opt = {}) {
   const id = (n) => rig.byName[n];
   const tr = clip.tracks['Sword.rotation'], q0 = rig.rest[id('Sword')].q.clone();    // 以模型原本的握法（Sword 靜止局部旋轉）為基準
-  const acc = new Vector3();
-  for (const t of clip.keyTimes) {
-    if (!windows.some(([a, b]) => t >= a && t <= b)) continue;
-    const W = worldMatrices(rig, poseAt(rig, clip, t));
-    const f = wPos(W(id('RightHand'))).sub(wPos(W(id('RightForeArm')))).normalize();
-    acc.add(f.applyQuaternion(wRot(W(id('RightHand'))).invert()));
+  const perKey = new Array(tr.times.length);
+  let lastQ = null;
+  const keyOf = (i) => (tr.times.length === clip.keyTimes.length ? clip.keyTimes[i] : (i === 0 ? 0 : 1e9));   // 2 格的常數軌跡：第 0 格當開頭、第 1 格當結尾
+  for (const [a, b, upto] of windows) {
+    // 1. 劍身軸對準「前臂→手」方向在手局部座標下的平均
+    const acc = new Vector3(), keys = clip.keyTimes.filter((t) => t >= a && t <= b);
+    for (const t of keys) {
+      const W = worldMatrices(rig, poseAt(rig, clip, t));
+      const f = wPos(W(id('RightHand'))).sub(wPos(W(id('RightForeArm')))).normalize();
+      acc.add(f.applyQuaternion(wRot(W(id('RightHand'))).invert()));
+    }
+    const b1 = acc.normalize(), b0 = new Vector3(0, 1, 0).applyQuaternion(q0);
+    let q = new Quaternion().setFromUnitVectors(b0, b1).multiply(q0).normalize();
+    // 2. 刀刃順著揮砍方向：繞劍身軸翻轉（劍相對手的常數），讓劍尖速度垂直於劍身的分量落在「刃口方向（局部 X）」上、不要打在劍面（局部 Z）上，
+    //    也就是不用刀背拍；加權＝速度平方，快的地方（真正在砍）最重要。刀刃兩側都開刃，所以翻 180° 等價，只搜 0～179°。
+    let roll = 0;
+    if (opt.roll !== false) {
+      const samples = [];
+      for (let k = 1; k < keys.length; k++) {
+        const Wa = worldMatrices(rig, poseAt(rig, clip, keys[k - 1])), Wb = worldMatrices(rig, poseAt(rig, clip, keys[k]));
+        const tip = (W) => new Vector3(0, 100, 0).applyMatrix4(new Matrix4().compose(wPos(W(id('RightHand'))), wRot(W(id('RightHand'))), new Vector3(1, 1, 1)).multiply(new Matrix4().makeRotationFromQuaternion(q)));
+        const v = tip(Wb).sub(tip(Wa)), hq = wRot(Wb(id('RightHand'))).multiply(q);
+        const bl = new Vector3(0, 1, 0).applyQuaternion(hq);
+        v.sub(bl.clone().multiplyScalar(v.dot(bl)));
+        if (v.length() > 1e-6) samples.push({ v, hq });
+      }
+      let best = Infinity;
+      for (let d = 0; d < 180; d += 2) {
+        const rq = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), d * Math.PI / 180);
+        let cost = 0;
+        for (const { v, hq } of samples) { const z = new Vector3(0, 0, 1).applyQuaternion(hq.clone().multiply(rq)); cost += v.length() * Math.pow(v.dot(z), 2); }   // |v|²·cos²：v·z 的平方乘上 |v|
+        if (cost < best) { best = cost; roll = d; }
+      }
+      q = q.clone().multiply(new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), roll * Math.PI / 180));
+    }
+    lastQ = q;
+    for (let i = 0; i < tr.times.length; i++) { const t = keyOf(i); if (t >= a - 1e-6 && t <= upto) perKey[i] = q; }
+    console.log(clip.name + ' 劍握姿 [' + a + '～' + b + ']：劍身轉 ' + (b0.angleTo(b1) * 180 / Math.PI).toFixed(1) + '°對準前臂，繞劍身翻 ' + roll + '°讓刀刃順著揮砍方向');
   }
-  const b1 = acc.normalize(), b0 = new Vector3(0, 1, 0).applyQuaternion(q0);
-  const q = new Quaternion().setFromUnitVectors(b0, b1).multiply(q0).normalize();
-  const ed = {};
-  for (let i = 0; i < tr.times.length; i++) ed[i] = q;                                // 劍相對手固定不變：每一格都寫同一個值（舊動作的逐格劍旋轉會讓劍在手裡亂翻）
+  const ed = {}, fallback = perKey.find(Boolean) || lastQ;                          // 常數軌跡（2 格）沒有落在任何區間時用最後算出的值
+  for (let i = 0; i < tr.times.length; i++) ed[i] = perKey[i] || fallback;
   writeQuats(g, clip, 'Sword', ed);
-  console.log(clip.name + ' 劍握姿：Sword 相對右手轉了 ' + (b0.angleTo(b1) * 180 / Math.PI).toFixed(1) + '°（劍身對準前臂方向）');
+}
+
+
+/* 偵察：列出 Mixamo 骨架動作各時間點兩手與髖部的世界位置（相對髖部起點，身體前方＝+z、角色左手＝+x），看哪隻手在揮、怎麼揮 */
+function probeRetarget(glbFile, clipName, dt) {
+  const g = readGlb(glbFile), rig = buildRig(g), clip = readClip(g, rig, clipName), sid = (n) => rig.byName['mixamorig:' + n];
+  console.log(clipName, '長度', clip.duration.toFixed(2), '秒，關鍵幀', clip.keyTimes.length);
+  const h0 = wPos(worldMatrices(rig, poseAt(rig, clip, 0))(sid('Hips')));
+  for (let t = 0; t <= clip.duration + 1e-6; t += dt) {
+    const W = worldMatrices(rig, poseAt(rig, clip, t)), P = (n) => wPos(W(sid(n))).sub(h0).toArray().map((v) => v.toFixed(2)).join(',');
+    console.log(t.toFixed(2), 'hips', P('Hips'), '| 左手', P('LeftHand'), '| 右手', P('RightHand'));
+  }
 }
 
 /* ---- 收招：全身平順回到起始姿勢（讓動作首尾相接） ---- */
@@ -894,7 +937,7 @@ function limitWristTwist(g, rig, clip, side) {
 function limitWrists(g, rig) {
   let total = 0;
   for (const name of g.json.animations.map((a) => a.name)) {
-    if (CFG.Attack1.retarget && name === 'Attack1') continue;                    // 使用者要求不改動作庫動作本身
+    if (CFG.Attack1.retarget && (name === 'Attack1' || name === 'Attack2')) continue;   // 使用者要求不改動作庫動作本身（Attack1 與 Attack2 都是 Meshy 網頁動作）
     const clip = readClip(g, rig, name);
     let m = 0;
     for (const side of ['Right', 'Left']) m += limitWristTwist(g, rig, clip, side);
@@ -903,11 +946,11 @@ function limitWrists(g, rig) {
   }
   return total;
 }
-function wristLimits(g, rig) {
+function wristLimits(g, rig, only) {
   // 量測：所有動作裡手腕扭轉與前臂扭轉的最大絕對值（連續展開後）
   let w = 0, f = 0;
   for (const name of g.json.animations.map((a) => a.name)) {
-    if (CFG.Attack1.retarget && name === 'Attack1') continue;
+    if (only ? !only.includes(name) : (CFG.Attack1.retarget && (name === 'Attack1' || name === 'Attack2'))) continue;
     const clip = readClip(g, rig, name);
     for (const side of ['Right', 'Left']) {
       const th = clip.tracks[side + 'Hand.rotation'], tf = clip.tracks[side + 'ForeArm.rotation'];
@@ -987,7 +1030,8 @@ export function verifyGrips(file) {
       return Math.max(...rig.nodes.map((_, i) => 2 * Math.acos(Math.min(1, Math.abs(a[i].q.dot(b[i].q)))) * 180 / Math.PI));
     })(),
     maxWristTwistDeg: wristLimits(g, rig).wrist,                         // 所有動作裡手腕扭轉最大值（度）
-    maxForearmTwistDeg: wristLimits(g, rig).forearm,                     // 前臂（相對上臂）扭轉最大值（度）
+    maxForearmTwistDeg: wristLimits(g, rig).forearm,
+    attack12WristTwistDeg: wristLimits(g, rig, ['Attack1', 'Attack2']).wrist,   // Meshy 網頁動作（不改）自己的手腕扭轉最大值，僅供參考                     // 前臂（相對上臂）扭轉最大值（度）
     armorRigidRatio: armorSoftness(g, rig),                              // 盔甲頂點中完全剛性（100% 單一骨骼）的比例
     maxClothStretch: maxClothStretch(g, rig),                            // 披風三角面最長邊被拉長的最大倍數
     guardWingStray: (() => {                                             // 護手右翼端仍綁在右手的頂點數（應為 0）
@@ -1016,6 +1060,7 @@ export function verifyGrips(file) {
 /* ---- 主程式 ---- */
 function main() {
 const args = process.argv.slice(2);
+if (args[0] === '--probe-retarget') { probeRetarget(args[1], args[2], Number(args[3] || 0.1)); return; }
 if (args[0] === '--extract-retarget') { extractRetarget(args[1], args[2], Number(args[3]), Number(args[4]), Number(args[5]), args[6]); return; }
 if (args[0] === '--extract-meshy') { extractMeshyClip(args[1], args[2], Number(args[3]), Number(args[4]), Number(args[5]), args[6]); return; }
 const checkOnly = args.includes('--check');
@@ -1043,11 +1088,11 @@ if (!checkOnly) {
     const seg = CFG.Attack1.retarget;
     importRetarget(g, rig, a1, seg);
     recoverToStart(g, rig, a1, { startTime: seg.startTime, recover: seg.recover });
-    if (!process.env.FIXGRIPS_NOFIT) fitSwordGrip(g, rig, a1, [[seg.at, seg.at + 0.95]]);
+    if (!process.env.FIXGRIPS_NOFIT) fitSwordGrip(g, rig, a1, [[seg.at, seg.at + 0.95, 99]], { roll: false });   // Attack1 使用者已確認，不調翻轉
   }
   if (CFG.Attack2.meshy) {
     for (const seg of CFG.Attack2.meshy) {
-      importMeshySegment(g, rig, a2, { ...seg, hipsRef });
+      if (seg.retarget) importRetarget(g, rig, a2, seg); else importMeshySegment(g, rig, a2, { ...seg, hipsRef });
       if (seg.lunge) {
         const lg = fixLunge(rig, a2, { startTime: seg.at, recover: [seg.lunge.tEnd, 0], lunge: seg.lunge });
         for (const [nm, ed] of Object.entries(regroup(lg.rot))) writeQuats(g, a2, nm, ed);
@@ -1055,7 +1100,7 @@ if (!checkOnly) {
       }
       recoverToStart(g, rig, a2, { startTime: seg.at, recover: seg.recover || CFG.Attack2.recover });
     }
-    fitSwordGrip(g, rig, a2, [[0.37, 1.45], [1.90, 2.50]]);   // 兩招共用同一個握姿
+    fitSwordGrip(g, rig, a2, [[0.10, 1.35, 1.85], [1.90, 2.50, 99]]);   // 每個區間各自對準前臂＋刀刃順著揮砍方向（第三格是這個區間負責到幾秒）
   } else {
     const lunge = fixLunge(rig, a2, CFG.Attack2);
     for (const [nm, ed] of Object.entries(regroup(lunge.rot))) writeQuats(g, a2, nm, ed);
