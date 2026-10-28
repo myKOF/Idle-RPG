@@ -13060,6 +13060,10 @@ Worker 存活且頁面正常完成載入。
 - 倒地手掌／劍（使用者最後指示）：從跪地到倒地手掌不另外轉動，順著手臂的自然方向握劍，劍隨時與手保持正握（劍從虎口出去）。移除所有為了讓劍指向某方向、閃身體而轉手腕的處理（avoidBody／settleHand／swingSword 全數刪除），倒地只剩：重新瞄準 Dead 動作＋ Sword 旋轉＝模型原本的握法（fitSwordGrip）。測試改檢查 Sword 旋轉＝原握法（deathGripMaxDeg<0.1）。已知：躺平後手掌朝下、劍沿原握法斜向前下約 42°，劍尖會陷進地面約 0.5 公尺（地面 y≈−0.07、劍尖 y≈−0.55），這是「手不轉＋正握」的結果，使用者未要求處理。模型版號 grips30、hero3d.js?v=1.0.32。
 - 倒地：手完全不動、只改劍的方向（使用者確認掌心朝下是對的）。右手骨骼維持 Dead 搬過來的動作，改 Sword 骨骼相對手的旋轉：1.6 秒前照手的握法，1.7 秒劍朝前斜下 45°、1.8 秒朝前略向下 10°、1.9 秒起劍身水平朝身體左側偏前 20°（皆為使用者在縮圖上畫的箭頭）。每個關鍵時刻的劍世界朝向＝手原本握法的朝向做最小旋轉，中間球面內插。劍在拳頭裡轉動，握柄尾端會從拳頭一側露出來（劍相對手不再固定）。測試：最後一格劍身水平、朝左、手背朝上（防止手被改動）。模型版號 grips31、hero3d.js?v=1.0.33。
 - 倒地劍的方向改照使用者在「正面角度」三張倒地畫面上畫的箭頭（畫面右下 ~28°、~15°、水平向右）：手仍完全不動（掌心朝下維持）；正面鏡頭仰角 30°、畫面右邊＝角色左邊，箭頭「畫面向右、往下 θ」換算成世界方向＝ L·cosθ ＋（F·sin30° − Up·cos30°）·sinθ。三張約對應 1.9／2.0／2.1 秒（以正面 GIF 的手位置比對估計）；1.8 秒以前照手的握法，之後平順接到 1.9 秒的箭頭，2.1 秒起劍水平朝角色左側。取代上一版依側面箭頭的 1.7／1.8／1.9 秒設定。模型版號 grips32、hero3d.js?v=1.0.34。
+- 倒地劍的方向退回 bce648c 的版本（手不轉、劍隨時與手保持原本的正握）：把劍相對手轉動時，拳頭／護腕尾端／握柄是同一塊焊接網格（交界約 29 個頂點綁在 Sword 骨骼上），護腕尾端會被撕出白色尖角；用 Blender 重新指派權重（0.5/0.5 混合）也沒有消除。移除 swordDirection 與依箭頭設定的劍方向，要乾淨控制劍的方向需另做模型（手張開、劍獨立綁骨架）。模型版號 grips33、hero3d.js?v=1.0.35。
+- 倒地劍尖不陷進地面（使用者要求平放）：手不動，1.8～2.1 秒把 Sword 相對手繞「水平且垂直於劍身」的軸抬到俯角 −10°（劍身朝向的水平分量不變），劍尖貼地（劍尖 y≈−0.055、身體最低 −0.066），原本陷入約 0.5 公尺。只轉 10° 所以拳頭／護腕尾端的撕裂比大角度小很多，2.1 秒護腕尾端有一小片白色碎片（已知，未處理）。模型版號 grips34、hero3d.js?v=1.0.36。
+- 倒地劍的方向照使用者在「鏡頭跟著右手」特寫圖上逐幀畫的箭頭（1.9／2.0／2.1／2.75 秒，畫面右上 3°／26°／39°／46°）。手不動；鏡頭＝正交、仰角 30°、模型繞 Y 轉 55°，箭頭只給畫面內方向，深度取劍原本的深度分量（最小旋轉）。1.8 秒前照手的握法。劍相對手最多轉約 84°，護腕尾端被牽動成楔形碎片（已知、使用者知情，Blender 裡重新指派權重也無法消除）。劍尖不再陷地。取代上一版的「抬 10°」。模型版號 grips35、hero3d.js?v=1.0.37。
+- 跑步（HERO3D）：改用使用者上傳的 Meshy Female_Throwing_Stance_Charge_inplace（原地、右手擺動很小；取樣檔 data/meshy-run.json，30 fps，0.5333 秒），來源時間均勻拉長到 Run 的 0.625 秒（speed＝0.8533）。同 Attack／Death 的重新瞄準流程，不限手腕、不做 IK；Sword 旋轉＝模型原本的握法（劍已在右手）。模型版號 grips36、hero3d.js?v=1.0.38。
 
 
 
@@ -13069,3 +13073,11 @@ Worker 存活且頁面正常完成載入。
 - Owner：Codex；Done。依使用者授權處理 develop 的 pending merge（HEAD 86200e0f、MERGE_HEAD ba3c949f），不操作 index、Commit、推送或其他工作區。
 - 衝突解法：`docs/AI_TASKS.md` 同時保留 ours 的 WORLD-MAP-PORTAL-QUALITY 完整紀錄及 theirs 的 HERO3D 披風／死亡／持劍迭代紀錄；`index.html` 使用與 incoming `js/hero3d.js` 及 grips27 模型相符的 `hero3d.js?v=1.0.29`。未發現原始 XLSX 衝突，不需 Excel DATA plan；素材庫無額外檔案。
 - 驗證：`node --test --test-reporter=spec tests/hero3d-battle-rules.test.cjs` 11/11 通過；`npm.cmd run build` 597 檔全數通過；`git diff HEAD --check` 通過。兩個衝突檔已無 conflict marker；controller 對 `tools/meshy-pipeline/src/fix-grips.mjs` 的 EOF 空白機械修正保留。
+
+## MERGE-HERO3D-RUN-20261029 — 整合持劍方向與跑步動畫
+
+- Owner：Codex；Done。僅處理使用者授權的 pending merge：HEAD 931a287ee49bc21749ec74939bc96d7ff14eef9e、MERGE_HEAD 551c3553618f8e6e7c092f0e9c28592a366da404，base 08282cba；不操作 index、Commit、推送或其他工作區，後續由 controller stage／建立合併提交。
+- 衝突解法：唯一衝突 docs/AI_TASKS.md 保留 incoming 的 grips33～36 持劍／跑步迭代完整紀錄，接回 ours 的 MERGE-HERO3D-DEVELOP-20261028 整合紀錄；其他主線任務及功能保留。已檢查兩側與 base；乾淨合併的模型、修正工具、跑步取樣與測試保留，主頁 hero3d 1.0.38 對應模型 grips36，無 Worker／Preset 合併快取需求。保留控制器既有 EOF 機械修正；沒有 XLSX 衝突或 Excel 計畫。
+- 素材：依既有 claude-authored/hero3d/sunbrand-knight 歸檔流程保存更新 GLB、tools/fix-grips.mjs、新增 tools/data/meshy-run.json 並更新 source.json，11 份遊戲來源與素材庫檔案 SHA256 全相符；未生成素材或呼叫付費 API，其他素材庫工作保留。素材庫四個路徑交 controller 先提交，本輪未自行提交。
+- 驗證：node --test --test-reporter=spec tests/hero3d-battle-rules.test.cjs tests/hero3d-internal-toggle.test.cjs：14/14 通過；npm.cmd run build：599 檔通過；git diff HEAD --check：完整合併結果通過。工作檔無衝突標記，HEAD／MERGE_HEAD 不變。唯讀檢查規範／Workflow／Agent、package、模型來源與管線文件及相關測試；未修改 Excel／CSV、Worker、玩法或既有測試斷言。
+- 交付：可由 controller 完成本次合併；index 尚有 unmerged entry 屬預期。沒有本次未完成實作；未做瀏覽器 GPU 視覺驗收，保留 incoming 已記錄的護腕尾端碎片限制。
