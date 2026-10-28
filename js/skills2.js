@@ -1899,7 +1899,13 @@ function sgBloodrageBackfire(ent) {
   var gmFloor = (typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.god) ? 1 : 0;
   var hpBeforeRage = pEnt.hp;
   pEnt.hp = Math.max(gmFloor, pEnt.hp - selfDmg);
-  sgWarGodBodyOnDamaged(hpBeforeRage - pEnt.hp, pEnt);
+  var rageLoss = hpBeforeRage - pEnt.hp;
+  if (rageLoss > 0 && window.recordPlayerDamageHit) {
+    var selfName = (typeof playerSelfDeathName === 'function') ? playerSelfDeathName() : STR(371);
+    var rageSkillName = (SKILLS2.bloodrage && SKILLS2.bloodrage.tiers[5] && SKILLS2.bloodrage.tiers[5].name) || SKILLS2.bloodrage.name;
+    window.recordPlayerDamageHit(selfName, rageSkillName, rageLoss);
+  }
+  sgWarGodBodyOnDamaged(rageLoss, pEnt);
   /* 傳奇【燃血】：每一次生命損失疊 1 層。掛在扣血之後而不是之前，
      語意才是「造成了生命損失」——距離判定沒過的那些不算。 */
   if (lg.rageBurnBlood && typeof applyStatus === 'function') {
@@ -4068,7 +4074,16 @@ function sgTickDeathDefer(ctx) {
      RT 因此不會被 resetSkillRT 重建），這裡就會每個 tick 把生命重新歸零＝直接鎖死。 */
   d.done = true;
   if (ctx.pEnt && ctx.pEnt.hp > 0 &&
-      !(typeof gmHpLockActive === 'function' && gmHpLockActive(ctx.pEnt))) ctx.pEnt.hp = 0;
+      !(typeof gmHpLockActive === 'function' && gmHpLockActive(ctx.pEnt))) {
+    var deferLoss = ctx.pEnt.hp;
+    ctx.pEnt.hp = 0;
+    if (window.recordPlayerDamageHit) {
+      var selfNameDefer = (typeof playerSelfDeathName === 'function') ? playerSelfDeathName() : STR(371);
+      var deferName = (typeof PASSIVE_POOL !== 'undefined' && PASSIVE_POOL.danceDeathDefer && PASSIVE_POOL.danceDeathDefer.name) ||
+        (SKILLS2.dualdance ? SKILLS2.dualdance.name : STR(41));
+      window.recordPlayerDamageHit(selfNameDefer, deferName, deferLoss);
+    }
+  }
 }
 
 /* ---- 嗜血狂怒（純增益爆發；傷害為 0，訊息由 castSkill2 尾端統一處理） ---- */
@@ -11896,7 +11911,12 @@ function sgWarGodBodyState(pEnt, startAt) {
         var floor = (typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.god) ? 1 : 0;
         pEnt.hp = Math.max(floor, before - st.hp * Math.max(0, sgUltVal(u, 'hpPct')) / 100);
       }
-      if (st.hp > 0) body.collected += Math.max(0, before - pEnt.hp) / st.hp * 100;
+      var warLoss = Math.max(0, before - pEnt.hp);
+      if (warLoss > 0 && window.recordPlayerDamageHit) {
+        var selfNameWar = (typeof playerSelfDeathName === 'function') ? playerSelfDeathName() : STR(371);
+        window.recordPlayerDamageHit(selfNameWar, (u && u.name) || (SKILLS2.counter ? SKILLS2.counter.name : STR(41)), warLoss);
+      }
+      if (st.hp > 0) body.collected += warLoss / st.hp * 100;
       body.nextDrain += gap;
       if (!(pEnt.hp > 0)) { rt.warBody = null; return null; }
     } else {
@@ -11952,7 +11972,14 @@ function sgCounterApplyLegends(pEnt, st, pct, cfg) {
     if (pEnt && !(typeof gmHpLockActive === 'function' && gmHpLockActive(pEnt))) {
       var hpBeforeCounter = pEnt.hp;
       pEnt.hp = Math.max(gmFloor, pEnt.hp - cost);
-      sgWarGodBodyOnDamaged(hpBeforeCounter - pEnt.hp, pEnt);
+      var counterLoss = hpBeforeCounter - pEnt.hp;
+      if (counterLoss > 0 && window.recordPlayerDamageHit) {
+        var selfNameCounter = (typeof playerSelfDeathName === 'function') ? playerSelfDeathName() : STR(371);
+        var bloodPayName = (typeof PASSIVE_POOL !== 'undefined' && PASSIVE_POOL.counterBloodPay && PASSIVE_POOL.counterBloodPay.name) ||
+          (SKILLS2.counter ? SKILLS2.counter.name : STR(41));
+        window.recordPlayerDamageHit(selfNameCounter, bloodPayName, counterLoss);
+      }
+      sgWarGodBodyOnDamaged(counterLoss, pEnt);
     }
   }
   if (cfg.warGodPct > 0) pct *= 1 + cfg.warGodPct / 100;  // 超神【戰神體】

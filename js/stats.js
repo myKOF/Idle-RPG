@@ -16,8 +16,10 @@ var LOOT_MAT_DEFS = [
   { key: 'part',           name: STR(385), emoji: '🔧' }
 ];
 
+var MAX_DEATH_CAUSES = 10;
+
 function newLootStatsBucket() {
-  return { battles: 0, kills: 0, deaths: 0, dropRolls: 0, gold: 0, equip: {}, mats: {}, gems: {} };
+  return { battles: 0, kills: 0, deaths: 0, dropRolls: 0, gold: 0, equip: {}, mats: {}, gems: {}, deathCauses: [] };
 }
 
 function currentLootStats() {
@@ -31,11 +33,52 @@ function lootSourceBucket(source) {
   return st.sources[key];
 }
 
+function playerSelfDeathName() {
+  var rank = (typeof reincarnationRankName === 'function') ? reincarnationRankName() : STR(371);
+  return STR(129, rank || STR(371));
+}
+
+function normalizeDeathCause(cause) {
+  if (!cause || typeof cause !== 'object') return null;
+  var attacker = cause.attacker ? String(cause.attacker) : playerSelfDeathName();
+  var skill = cause.skill ? String(cause.skill) : STR(479);
+  var damage = Math.max(0, Number(cause.damage) || 0);
+  return { attacker: attacker, skill: skill, damage: damage };
+}
+
+function pushBoundedDeathCause(list, cause) {
+  if (!Array.isArray(list) || !cause) return;
+  list.push(cause);
+  while (list.length > MAX_DEATH_CAUSES) list.shift();
+}
+
+function recordPlayerDamageHit(attacker, skill, damage) {
+  var st = currentLootStats();
+  if (!st) return;
+  if (attacker && typeof attacker === 'object') {
+    st.lastDamage = normalizeDeathCause(attacker);
+    return;
+  }
+  var dmg = Math.max(0, Number(damage) || 0);
+  if (!(dmg > 0)) return;
+  st.lastDamage = normalizeDeathCause({
+    attacker: attacker || playerSelfDeathName(),
+    skill: skill || STR(479),
+    damage: dmg
+  });
+}
+
+function clearLastPlayerDamage() {
+  var st = currentLootStats();
+  if (st) st.lastDamage = null;
+}
+
 window.LOOT_STATS = null;
 function resetLootStats() {
   var st = newLootStatsBucket();
   st.start = Date.now();
   st.sources = {};
+  st.lastDamage = null;
   window.LOOT_STATS = st;
 }
 resetLootStats();
@@ -50,11 +93,26 @@ function recordLootKill(n, source) {
   currentLootStats().kills += n;
   lootSourceBucket(source).kills += n;
 }
-function recordLootDeath(n, source) {
-  if (typeof n === 'string') { source = n; n = 1; }
+function recordLootDeath(n, source, cause) {
+  if (n && typeof n === 'object') { cause = n; n = 1; source = undefined; }
+  else if (typeof n === 'string') {
+    if (source && typeof source === 'object') cause = source;
+    source = n;
+    n = 1;
+  }
   n = n === undefined ? 1 : n;
-  currentLootStats().deaths += n;
-  lootSourceBucket(source).deaths += n;
+  var st = currentLootStats();
+  st.deaths += n;
+  var sourceSt = lootSourceBucket(source);
+  sourceSt.deaths += n;
+  var resolvedCause = normalizeDeathCause(cause || st.lastDamage);
+  st.lastDamage = null;
+  if (resolvedCause) {
+    if (!Array.isArray(st.deathCauses)) st.deathCauses = [];
+    if (!Array.isArray(sourceSt.deathCauses)) sourceSt.deathCauses = [];
+    pushBoundedDeathCause(st.deathCauses, resolvedCause);
+    pushBoundedDeathCause(sourceSt.deathCauses, resolvedCause);
+  }
 }
 function recordLootDrop(source) {
   currentLootStats().dropRolls++;
@@ -138,6 +196,23 @@ function statsCardRow(label, value) {
   return '<div class="summary-card-row"><span style="color:var(--accent)">' + label + '</span>：' + value + '</div>';
 }
 
+function statsDeathCausesHtml(st) {
+  var list = (st && Array.isArray(st.deathCauses)) ? st.deathCauses.slice(-MAX_DEATH_CAUSES) : [];
+  if (!list.length) return '';
+  var html = '<div class="summary-sub-group">';
+  for (var i = 0; i < list.length; i++) {
+    var c = list[i];
+    if (!c) continue;
+    var attacker = typeof esc === 'function' ? esc(c.attacker || '') : (c.attacker || '');
+    var skill = typeof esc === 'function' ? esc(c.skill || '') : (c.skill || '');
+    var dmgStr = typeof fmt === 'function' ? fmt(c.damage || 0) : fmtFull(c.damage || 0);
+    html += '<div class="summary-sub-row"><span class="summary-sub-bullet">└ </span><span class="summary-sub-name">' +
+      attacker + '</span> / ' + skill + ' / ' + dmgStr + '</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
 /* 基本統計卡片內容（統計時間由 ui.js 每秒重繪達成即時更新） */
 function statsBasicHtml() {
   var st = currentLootStats();
@@ -145,7 +220,8 @@ function statsBasicHtml() {
     statsCardRow(STR(403), statsDurationStr(Date.now() - st.start)) +
     statsCardRow(STR(398), fmtFull(st.battles)) +
     statsCardRow(STR(399), fmtFull(st.kills)) +
-    statsCardRow(STR(404), fmtFull(st.deaths));
+    statsCardRow(STR(404), fmtFull(st.deaths)) +
+    statsDeathCausesHtml(st);
 }
 
 /* 掉落物統計卡片內容：裝備（品質色）→ 材料（圖示）→ 寶石 → 金幣（完整數字） */
