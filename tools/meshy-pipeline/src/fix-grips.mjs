@@ -92,7 +92,10 @@ const CFG = {
     lunge: { dist: 0.6, hipsK: 0.6, rearK: 0.8, t0: 1.10, t1: 1.34, lift: 0.12 },   // 往前跨一大步劈下：髖部前移 0.36、前腳整步、後腳跟上
     startTime: 0.10,
     gripRoll: 62      // 同 Attack1.retarget.gripRoll 的說明
-  }
+  },
+  /* 倒地：改用使用者在 Meshy 網頁重新綁骨架後套的 Dead 動作（取樣檔 data/meshy-dead.json，來源 0～2.9667 秒，30 fps）。原 Death 動作長 2.75 秒、
+     67 個關鍵幀，寫不下 2.967 秒，所以來源時間均勻壓縮 speed 倍（≈1.079）塞進去。不限手腕、不做 IK，動作與骨骼不動；只把 Sword 旋轉設成模型原本的握法（fitSwordGrip）。 */
+  Death: { retarget: { name: 'dead', file: 'meshy-dead.json', at: 0, speed: 2.9667 / 2.75 } }
 };
 
 /* ---- GLB ---- */
@@ -902,7 +905,7 @@ function limitWristTwist(g, rig, clip, side) {
 function limitWrists(g, rig) {
   let total = 0;
   for (const name of g.json.animations.map((a) => a.name)) {
-    if (CFG.Attack1.retarget && (name === 'Attack1' || name === 'Attack2')) continue;   // Meshy 網頁動作：不動角色的動作與骨骼（使用者要求只調整劍）
+    if (name === 'Attack1' || name === 'Attack2' || name === 'Death') continue;   // Meshy 網頁動作：不動角色的動作與骨骼（使用者要求只調整劍）
     const clip = readClip(g, rig, name);
     let m = 0;
     for (const side of ['Right', 'Left']) m += limitWristTwist(g, rig, clip, side);
@@ -915,7 +918,7 @@ function wristLimits(g, rig, only) {
   // 量測：所有動作裡手腕扭轉與前臂扭轉的最大絕對值（連續展開後）
   let w = 0, f = 0;
   for (const name of g.json.animations.map((a) => a.name)) {
-    if (only ? !only.includes(name) : (CFG.Attack1.retarget && (name === 'Attack1' || name === 'Attack2'))) continue;
+    if (only ? !only.includes(name) : (name === 'Attack1' || name === 'Attack2' || name === 'Death')) continue;
     const clip = readClip(g, rig, name);
     for (const side of ['Right', 'Left']) {
       const th = clip.tracks[side + 'Hand.rotation'], tf = clip.tracks[side + 'ForeArm.rotation'];
@@ -1143,7 +1146,7 @@ export function verifyGrips(file) {
     })(),
     strayTriangles: strayTriangles(g, rig).stray.length,                // 錯綁的尖刺三角面數（應為 0）
     attack1OffHandMaxDist: CFG.Attack1.retarget ? 0 : Math.max(...m1.map((r) => r[1])),   // 舊雙手劈：副手離劍軸最遠多少（改用單手動作後不適用）
-    retargetMaxDeg: Math.max(...[['Attack1', CFG.Attack1.retarget], ...CFG.Attack2.meshy.map((sg) => ['Attack2', { ...sg, recover: sg.recover || CFG.Attack2.recover }])].flatMap(([c, sg]) => Object.values(retargetError(file, c, sg)))),   // 動作庫動作（收招開始前）四肢方向與來源的最大差：應為 0，代表沒有被改動
+    retargetMaxDeg: Math.max(...[['Attack1', CFG.Attack1.retarget], ['Death', CFG.Death.retarget], ...CFG.Attack2.meshy.map((sg) => ['Attack2', { ...sg, recover: sg.recover || CFG.Attack2.recover }])].flatMap(([c, sg]) => Object.values(retargetError(file, c, sg)))),   // 動作庫動作（收招開始前）四肢方向與來源的最大差：應為 0，代表沒有被改動
     swordGripMaxDeg: (() => {                                            // Attack1／Attack2 的 Sword 旋轉與模型原本握法（靜止局部旋轉）的最大差：應為 0
       const q0 = rig.rest[rig.byName.Sword].q;
       return Math.max(...['Attack1', 'Attack2'].map((c) => { const tr = readClip(g, rig, c).tracks['Sword.rotation']; let w = 0; for (let i = 0; i < tr.times.length; i++) w = Math.max(w, 2 * Math.acos(Math.min(1, Math.abs(q0.dot(new Quaternion(tr.values[i * 4], tr.values[i * 4 + 1], tr.values[i * 4 + 2], tr.values[i * 4 + 3]))))) * 180 / Math.PI); return w; }));
@@ -1217,6 +1220,11 @@ if (!checkOnly) {
     for (const [nm, ed] of Object.entries(regroup(lunge.rot))) writeQuats(g, a2, nm, ed);
     if (Object.keys(lunge.hips).length) writeVecs(g, a2, 'Hips', lunge.hips);
     recoverToStart(g, rig, a2, CFG.Attack2);
+  }
+  {
+    const a3 = readClip(g, rig, 'Death');
+    importRetarget(g, rig, a3, CFG.Death.retarget);
+    fitSwordGrip(g, rig, a3);
   }
   limitWrists(g, rig);
   removeStrayTriangles(g, rig);
