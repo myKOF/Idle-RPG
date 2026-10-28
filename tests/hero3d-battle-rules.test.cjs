@@ -80,7 +80,10 @@ test('3D 模型修正仍在：盔甲剛性、披風只小幅伸縮、手腕不�
   /* 動作首尾相接：Attack2 收招結束的姿勢要回到起始姿勢（使用者要求；不要停在斜劈結束的姿勢多放幾幀） */
   assert.ok(r.attack2LoopMaxDeg <= 3, 'Attack2 最後一幀沒有回到第一幀：全身骨骼最大差 ' + r.attack2LoopMaxDeg.toFixed(1) + '°');
   /* Attack2 改用 Meshy 動作庫的動作後，握劍是動作庫自己的自然握法（劈砍時劍與前臂有夾角），上限放寬到 60° */
-  assert.ok(r.attack2BladeMaxAngleDeg <= 60, '劍與前臂夾角過大：' + r.attack2BladeMaxAngleDeg + '°');
+  assert.ok(r.attack2BladeMaxAngleDeg <= 25, '劍與前臂夾角過大：' + r.attack2BladeMaxAngleDeg + '°');
+  /* 不能有瞬移：相鄰兩格任一骨骼轉動不超過 60°（修掉的 bug：片段後面留著舊動作資料，收招混合時在片段結束處跳格 82°；舊劍旋轉軌跡在手裡翻 164°） */
+  assert.ok(r.attack1MaxStepDeg <= 60, 'Attack1 相鄰兩格轉動 ' + r.attack1MaxStepDeg.toFixed(0) + '°（瞬移）');
+  assert.ok(r.attack2MaxStepDeg <= 60, 'Attack2／3 相鄰兩格轉動 ' + r.attack2MaxStepDeg.toFixed(0) + '°（瞬移）');
 });
 
 test('Attack2 的播放區間與腳本的收招設定一致（end＝收招結束、start＝起始姿勢）', () => {

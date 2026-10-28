@@ -427,7 +427,7 @@ function importMeshySegment(g, rig, clip, seg) {
     return new Vector3(...arr[i]).lerp(new Vector3(...arr[j]), k);
   };
   const keyIdx = [];
-  clip.keyTimes.forEach((t, i) => { if (t >= seg.at - 1e-6 && t <= seg.at + len + seg.hold) keyIdx.push(i); });
+  clip.keyTimes.forEach((t, i) => { if (t >= seg.at - 1e-6) keyIdx.push(i); });   // 片段之後到動作結束都停在最後一格（取樣檔內插夾在尾端）——不能留舊動作的資料，否則收招混合時會在片段結束處跳格
   for (const [nm, arr] of Object.entries(data.rot)) {
     if (!clip.tracks[nm + '.rotation'] || nm === 'Sword' || clip.tracks[nm + '.rotation'].times.length !== clip.keyTimes.length) continue;
     const ed = {};
@@ -496,7 +496,7 @@ function importRetarget(g, rig, clip, seg) {
   for (const [gn] of RT_BONES) rest0[gn] = { q: wRot(R0(id(gn))), p: wPos(R0(id(gn))) };
   const srcName = Object.fromEntries(RT_BONES);
   const keyIdx = [];
-  clip.keyTimes.forEach((t, i) => { if (t >= seg.at - 1e-6 && t <= seg.at + len + 1e-6) keyIdx.push(i); });
+  clip.keyTimes.forEach((t, i) => { if (t >= seg.at - 1e-6) keyIdx.push(i); });   // 片段之後到動作結束停在最後一格，理由同 importMeshySegment
   const gameHipsH = rest0.Hips.p.y, srcHipsH = data.restHips[1], scale = gameHipsH / srcHipsH;
   const out = {}, hipsEd = {};
   const h0 = interp(data.hips, 0, 'v');
@@ -540,22 +540,22 @@ function importRetarget(g, rig, clip, seg) {
    遊戲模型的手是一個固定的拳頭（沒有手指骨骼），劍是獨立的 Sword 骨骼（父骨＝持劍的右手）。動作庫的動作不知道這把劍怎麼握，
    所以逐動作調整 Sword 相對右手的旋轉（動作的 Sword 旋轉軌跡只有 2 個關鍵幀＝常數）：把劍身軸（Sword 局部 +Y）轉到
    「前臂→手」方向在手局部座標下的平均方向，劍柄位置（Sword 骨骼原點）不動、繞軸扭轉盡量維持原樣。動作本身一個關鍵幀都不改。 */
-function fitSwordGrip(g, rig, clip, seg) {
+function fitSwordGrip(g, rig, clip, windows) {
   const id = (n) => rig.byName[n];
-  const tr = clip.tracks['Sword.rotation'];
-  const q0 = new Quaternion(tr.values[0], tr.values[1], tr.values[2], tr.values[3]);
-  const data = JSON.parse(fs.readFileSync(path.join(here, 'data', seg.file), 'utf8'));
+  const tr = clip.tracks['Sword.rotation'], q0 = rig.rest[id('Sword')].q.clone();    // 以模型原本的握法（Sword 靜止局部旋轉）為基準
   const acc = new Vector3();
   for (const t of clip.keyTimes) {
-    if (t < seg.at || t > seg.at + (data.to - data.from)) continue;
+    if (!windows.some(([a, b]) => t >= a && t <= b)) continue;
     const W = worldMatrices(rig, poseAt(rig, clip, t));
     const f = wPos(W(id('RightHand'))).sub(wPos(W(id('RightForeArm')))).normalize();
     acc.add(f.applyQuaternion(wRot(W(id('RightHand'))).invert()));
   }
   const b1 = acc.normalize(), b0 = new Vector3(0, 1, 0).applyQuaternion(q0);
   const q = new Quaternion().setFromUnitVectors(b0, b1).multiply(q0).normalize();
-  writeQuats(g, clip, 'Sword', { 0: q, 1: q });
-  console.log('劍握姿：Sword 相對右手轉了 ' + (b0.angleTo(b1) * 180 / Math.PI).toFixed(1) + '°（劍身對準前臂方向）');
+  const ed = {};
+  for (let i = 0; i < tr.times.length; i++) ed[i] = q;                                // 劍相對手固定不變：每一格都寫同一個值（舊動作的逐格劍旋轉會讓劍在手裡亂翻）
+  writeQuats(g, clip, 'Sword', ed);
+  console.log(clip.name + ' 劍握姿：Sword 相對右手轉了 ' + (b0.angleTo(b1) * 180 / Math.PI).toFixed(1) + '°（劍身對準前臂方向）');
 }
 
 /* ---- 收招：全身平順回到起始姿勢（讓動作首尾相接） ---- */
@@ -936,6 +936,21 @@ export function tipTrack(file, clipName, t0, t1, dt) {
   return { rows, ref };
 }
 
+/* 相鄰兩個關鍵幀之間，任一骨骼旋轉變化的最大角度（度）：時間窗內有瞬間跳格（資料接不起來）就會很大 */
+function maxKeyStep(g, rig, clipName, t0, t1) {
+  const clip = readClip(g, rig, clipName);
+  const keys = clip.keyTimes.filter((t) => t >= t0 && t <= t1);
+  let worst = 0;
+  for (let i = 1; i < keys.length; i++) {
+    const a = poseAt(rig, clip, keys[i - 1]), b = poseAt(rig, clip, keys[i]);
+    for (let k = 0; k < rig.nodes.length; k++) {
+      const d = 2 * Math.acos(Math.min(1, Math.abs(a[k].q.dot(b[k].q)))) * 180 / Math.PI;
+      if (d > worst) { worst = d; if (process.env.FIXGRIPS_DEBUG) console.log('maxKeyStep', clipName, keys[i - 1].toFixed(3), '→', keys[i].toFixed(3), rig.nodes[k].name, d.toFixed(0) + '°'); }
+    }
+  }
+  return worst;
+}
+
 /* ---- 驗證（給測試用）：量測某個 GLB 現在的握劍狀況 ---- */
 export function verifyGrips(file) {
   const g = readGlb(file), rig = buildRig(g);
@@ -953,6 +968,8 @@ export function verifyGrips(file) {
     maxClothStretch: maxClothStretch(g, rig),                            // 披風三角面最長邊被拉長的最大倍數
     strayTriangles: strayTriangles(g, rig).stray.length,                // 錯綁的尖刺三角面數（應為 0）
     attack1OffHandMaxDist: CFG.Attack1.retarget ? 0 : Math.max(...m1.map((r) => r[1])),   // 舊雙手劈：副手離劍軸最遠多少（改用單手動作後不適用）
+    attack1MaxStepDeg: maxKeyStep(g, rig, 'Attack1', CFG.Attack1.retarget.at, CFG.Attack1.retarget.recover[1]),   // 相鄰兩格之間任一骨骼轉動的最大角度（抓瞬移）
+    attack2MaxStepDeg: Math.max(...(CFG.Attack2.meshy || [{ at: CFG.Attack2.startTime }]).map((sg) => maxKeyStep(g, rig, 'Attack2', sg.at, (sg.recover || CFG.Attack2.recover)[1]))),   // 每一招各自的播放區間
     attack1BladeMaxAngleDeg: (() => {                                    // 新 Attack1（單手）：劍身與前臂方向的夾角最大多少
       const seg = CFG.Attack1.retarget, clip = readClip(g, rig, 'Attack1'), len = JSON.parse(fs.readFileSync(path.join(here, 'data', seg.file), 'utf8'));
       return Math.max(...measure(rig, clip, 'Attack2').filter((r) => r[0] >= seg.at && r[0] <= seg.at + len.to - len.from).map((r) => r[1]));
@@ -996,7 +1013,7 @@ if (!checkOnly) {
     const seg = CFG.Attack1.retarget;
     importRetarget(g, rig, a1, seg);
     recoverToStart(g, rig, a1, { startTime: seg.startTime, recover: seg.recover });
-    if (!process.env.FIXGRIPS_NOFIT) fitSwordGrip(g, rig, a1, seg);
+    if (!process.env.FIXGRIPS_NOFIT) fitSwordGrip(g, rig, a1, [[seg.at, seg.at + 0.95]]);
   }
   if (CFG.Attack2.meshy) {
     for (const seg of CFG.Attack2.meshy) {
@@ -1008,6 +1025,7 @@ if (!checkOnly) {
       }
       recoverToStart(g, rig, a2, { startTime: seg.at, recover: seg.recover || CFG.Attack2.recover });
     }
+    fitSwordGrip(g, rig, a2, [[0.37, 1.45], [1.90, 2.50]]);   // 兩招共用同一個握姿
   } else {
     const lunge = fixLunge(rig, a2, CFG.Attack2);
     for (const [nm, ed] of Object.entries(regroup(lunge.rot))) writeQuats(g, a2, nm, ed);
