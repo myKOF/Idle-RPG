@@ -745,7 +745,7 @@ function skinnedPositions(rig, sd, pose, need) {
   }
   return out;
 }
-const STRETCH_MAX = 4;     // 披風三角面最長邊被拉長超過幾倍就算細絲（布料只准小幅伸縮）
+const STRETCH_MAX = 25;    // 披風三角面最長邊被拉長超過幾倍才算細絲。4 倍會連「站姿裡仍填著布面」的三角面一起刪，Attack1 舉劍時披風破洞（腿露出來）；25 只刪真正的細絲
 function clothStretch(g, rig, sd, cloth) {
   const need = new Uint8Array(sd.n), tris = [];
   for (let t = 0; t < sd.idx.length / 3; t++) {
