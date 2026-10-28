@@ -1860,7 +1860,7 @@ var BattleRenderer = (function () {
   /* 施法動作把「釋放」那一幀對到硬直結束時，播放速度的上下限（fps）：硬直很短或很長時不要快成一閃、慢成停格 */
   var CAST_FPS_MIN = 12, CAST_FPS_MAX = 60;
   /* 3D 主角的普攻動作（GLB 只有 Attack1／Attack2 兩個）、施法把劍揮到的時刻對到技能釋放時刻時最多加速幾倍 */
-  var HERO3D_ATTACKS = ['attack1', 'attack2'];
+  var HERO3D_ATTACKS = ['attack1', 'attack2', 'attack3'];
   var HERO3D_CAST_SPEED_MAX = 4;
   var HERO3D_ACTION_GRACE_MS = 80;   // 出手動作剛開始的這段時間不做「移動就打斷」：事件與位置各自緩衝，可能差一幀
   var HERO3D_CAST_MAX_MS = 500;   // 3D 施法動作最長播多久：施法是插進移動裡的，播完立刻繼續跑
@@ -1893,7 +1893,7 @@ var BattleRenderer = (function () {
     if (melee) {
       /* 隨機混著出，但不連續兩下同一招：純隨機會連抽同一段，看起來像卡住重播；
          只輪流又太規律（使用者 2026-09-22 要兩段普攻與特殊攻擊隨機混合）。 */
-      var attacks = (p.body && p.body.hero3d) ? HERO3D_ATTACKS : playerAttackAnimNames(sheet);   // 3D 只有兩個普攻動作，輪流出
+      var attacks = (p.body && p.body.hero3d) ? HERO3D_ATTACKS : playerAttackAnimNames(sheet);   // 3D 三個普攻動作（雙手劈／斜劈／平砍），不連續兩下同一招
       var pool = attacks.length > 1
         ? attacks.filter(function (n) { return n !== p.lastAttack; }) : attacks;
       name = pool[Math.floor(Math.random() * pool.length)] || attacks[0];
