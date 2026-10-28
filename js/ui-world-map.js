@@ -48,6 +48,16 @@ var WorldMapUI = (function () {
     node.style.top = point.y + '%';
     if (point.width) node.style.width = point.width + '%';
   }
+  function humanWorldCleared() {
+    var keys = Object.keys(ZONES).filter(function (key) { return ZONES[key].realm === 'human'; });
+    var highest = keys.reduce(function (max, key) { return Math.max(max, Number(ZONES[key].maxStage) || 0); }, 0);
+    var battle = peekUiPanelData('battle') || {};
+    // best到達上限仍不代表通關；只讀既有權威cleared，不從best推算末關勝利。
+    return highest > 0 && keys.filter(function (key) { return Number(ZONES[key].maxStage) === highest; }).every(function (key) {
+      var info = zoneState(key), progress = battle.zoneProgress && battle.zoneProgress[key];
+      return info && info.ready && progress && Number(progress.cleared) >= highest;
+    });
+  }
   function showCard(key, selected) {
     var info = zoneState(key);
     var card = el('world-map-info');
@@ -63,11 +73,16 @@ var WorldMapUI = (function () {
     go.textContent = state.pending ? STR(2109) : STR(2110);
     if (state.realm === 'human' && locations[key]) {
       var point = locations[key];
-      // 右側場景提示向左展開，上方場景提示向下展開，避免越界。
-      card.style.left = Math.max(2, Math.min(72, point.x - (point.x > 70 ? 21 : 5))) + '%';
-      card.style.top = (point.y > 60 ? point.y - 24 : point.y + 5) + '%';
+      card.style.left = 'clamp(min(143px, 50%), ' + point.x + '%, max(calc(100% - 143px), 50%))';
+      card.style.top = 'calc(' + point.y + '% + max(2.6cqw, 20px))';
     } else {
-      card.style.left = '50%'; card.style.top = '58%';
+      var node = document.querySelector('[data-world-zone="' + key + '"]');
+      var canvas = el('world-map-canvas');
+      var bounds = canvas.getBoundingClientRect(), anchor = node.getBoundingClientRect();
+      var scaleX = bounds.width ? canvas.clientWidth / bounds.width : 1;
+      var scaleY = bounds.height ? canvas.clientHeight / bounds.height : 1;
+      card.style.left = 'clamp(min(143px, 50%), ' + ((anchor.left + anchor.width / 2 - bounds.left) * scaleX) + 'px, max(calc(100% - 143px), 50%))';
+      card.style.top = ((anchor.bottom - bounds.top) * scaleY + 8) + 'px';
     }
   }
   function select(key) {
@@ -88,7 +103,10 @@ var WorldMapUI = (function () {
     var hasGodProgress = (REALMS.god.zones || []).some(function (key) {
       var info = zoneState(key); return info && (info.active || info.unlocked);
     });
-    var showRealms = hasGodProgress || Number(header.player && header.player.reincarnations) >= 11;
+    var portalVisible = humanWorldCleared();
+    var showRealms = portalVisible || hasGodProgress || Number(header.player && header.player.reincarnations) >= 11;
+    el('world-map-god-portal').hidden = !portalVisible;
+    el('world-map-god-portal').disabled = !!state.pending;
     el('world-map-realm-god').hidden = !showRealms;
     el('world-map-realm-human').hidden = !showRealms;
     var marker = el('world-map-marker');
@@ -110,6 +128,7 @@ var WorldMapUI = (function () {
     Object.keys(ZONES).forEach(function (key) { signature.push(JSON.stringify(zoneState(key))); });
     var header = peekUiPanelData('header') || {};
     signature.push(header.player && header.player.reincarnations);
+    signature.push(humanWorldCleared());
     signature = signature.join('|');
     if (signature === state.signature) return;
     state.signature = signature;
@@ -123,10 +142,10 @@ var WorldMapUI = (function () {
       var progress = el('world-map-level-' + key);
       if (progress) {
         progress.hidden = !info.unlocked;
-        progress.textContent = info.unlocked ? STR(2144, info.current, info.max) : '';
+        progress.textContent = info.unlocked ? STR(2144, info.best, info.max) : '';
       }
       node.setAttribute('aria-pressed', state.selected === key ? 'true' : 'false');
-      node.setAttribute('aria-label', info.name + (info.unlocked ? STR(2144, info.current, info.max) : '') + (info.active ? STR(2113) : '') +
+      node.setAttribute('aria-label', info.name + (info.unlocked ? STR(2144, info.best, info.max) : '') + (info.active ? STR(2113) : '') +
         (info.ready ? STR(2114, info.best, info.max) : STR(2115)) +
         (info.ready && !info.unlocked ? STR(2116) : ''));
     });
@@ -236,6 +255,15 @@ var WorldMapUI = (function () {
     el('world-map-go').addEventListener('click', go);
     el('world-map-realm-human').addEventListener('click', function () { setRealm('human'); });
     el('world-map-realm-god').addEventListener('click', function () { setRealm('god'); });
+    el('world-map-god-portal').addEventListener('click', function () {
+      if (humanWorldCleared()) setRealm('god');
+    });
+    window.addEventListener('resize', function () {
+      if (state.open && (state.selected || state.hovered)) showCard(state.selected || state.hovered, !!state.selected);
+    });
+    el('world-map-god').addEventListener('scroll', function () {
+      if (state.open && state.realm === 'god' && (state.selected || state.hovered)) showCard(state.selected || state.hovered, !!state.selected);
+    });
     el('world-map-modal').addEventListener('click', function (event) {
       if (event.target === this) close();
       else if (event.target === el('world-map-image') || event.target === el('world-map-human')) {

@@ -812,11 +812,12 @@ test('雙刀亂舞設定：狂暴之舞、鐵血之舞、嗜血狂化數值與�
   const c = loadContext();
   const tiers = c.SKILLS2.dualdance.tiers;
   assert.deepEqual(plain(tiers[3].fx), { cr: 100, crPer: 10, add: 1, addPer: 0.1, sec: 6 });
-  assert.deepEqual(plain(tiers[4].fx), { pct: 3.5, pctPer: 0.35, sec: 3, gap: 0.35, m: 5 });
+  assert.deepEqual(plain(tiers[4].fx), { pct: 100, pctPer: 10, enemyPct: 50, enemyPctPer: 5, sec: 3, gap: 0.35, m: 5 });
   assert.deepEqual(plain(tiers[5].fx), { pct: 0.25, pctPer: 0.025, sec: 6 });
   assert.match(tiers[3].desc, /暴擊率.*連擊數/);
   assert.doesNotMatch(tiers[3].desc, /暴擊傷害/);
-  assert.match(tiers[4].desc, /最大生命值/);
+  assert.match(tiers[4].desc, /物理傷害.*\{enemyPct\}%/);
+  assert.doesNotMatch(tiers[4].desc, /最大生命值/);
   assert.match(tiers[5].desc, /技能傷害提升/);
 });
 
@@ -841,12 +842,13 @@ test('狂暴之舞：暴擊率與連擊數持續 6 秒，不再提供暴擊傷�
   assert.equal(c.rollComboHits({ comboHits: 0 }), 0, '狂暴到期後不應再追加連擊');
 });
 
-test('鐵血之舞：自身與 5 米內敵人依最大生命值附加 0.35 秒流血', () => {
+test('鐵血之舞：自身物理流血與 5 米內敵方承受比例，節拍維持 0.35 秒', () => {
   const c = loadContext();
   stubHits(c);
   c.chance = () => false;
   c.G.player.skills2.levels.dualdance = [1, 1, 1, 1, 1, 1, 0];
   const p = playerEnt();
+  p.mp = 10000;
   const near = enemy(2000, 40, 0);
   const far = enemy(2000, 200, 0);
   c.GT = 0;
@@ -855,8 +857,8 @@ test('鐵血之舞：自身與 5 米內敵人依最大生命值附加 0.35 秒�
   const nearBleed = near.dots.find((d) => d.sid === 'sgIronBleed');
   assert.ok(ownBleed && nearBleed, '自身與範圍內敵人都應流血');
   assert.equal(ownBleed.interval, 0.35);
-  assert.equal(ownBleed.dps, 110, '自身每跳應為 1000 × 3.85%');
-  assert.equal(Math.round(nearBleed.dps * nearBleed.interval), 77, '敵人每跳應為 2000 × 3.85%');
+  assert.ok(Math.abs(ownBleed.dps * ownBleed.interval - 1100) < 1e-9, '自身每跳應為物理攻擊的110%');
+  assert.ok(Math.abs(nearBleed.dps * nearBleed.interval - 605) < 1e-9, '敵人每跳為自身基準1100的55%');
   assert.equal(far.dots.length, 0, '範圍外敵人不應流血');
 });
 

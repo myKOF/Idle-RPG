@@ -193,7 +193,7 @@ function computeStats(equipmentOverride) {
     var twoHand = (typeof isTwoHandItem === 'function') && isTwoHandItem(it);
     if (slot === 'weapon2' && twoHand && !asuraOn) return;   // 修羅亂舞沒生效＝副手的雙手武器不生效
     if (it.sockets) {
-      it.sockets.forEach(function (g) { if (g && (g.fused || GEM_TYPES[g.type])) socketed.push(g); });
+      it.sockets.forEach(function (g, index) { if (g && (g.fused || GEM_TYPES[g.type])) socketed.push({ gem: g, mult: divineSocketMultiplier(it, index) }); });
     }
     var um = upgradeMult(it); // 強化倍率：每 +1 詞條數值 +5%
     it.affixes.forEach(function (a) {
@@ -201,36 +201,20 @@ function computeStats(equipmentOverride) {
       // 詞條值由強度值當場算出（affixValue → §6）；修羅亂舞只放大雙手武器的詞條，不含特效／附魔／寶石
       addAffixLike(a.key, affixValue(it, a) * um * (twoHand ? asuraAffixMult : 1));
     });
+    if (it.imprint && it.imprint.affix) {
+      var extra = it.imprint.affix;
+      addAffixLike(extra.key, affixValue(it, extra) * um * (twoHand ? asuraAffixMult : 1));
+    }
     // 符文與符文真言（js/runeword.js）：屬性條目併入同一組桶；機制（fx／procs）由聚合器彙整
     if (rwAgg) rwAddItem(rwAgg, it).forEach(function (e) { addAffixLike(e.key, e.val); });
-    if (it.passive && passiveOwners[it.passive.key] === slot) {
-      passives[it.passive.key] = passiveValue(it, it.passive);
-      var passiveDef = PASSIVE_POOL[it.passive.key];
-      if (passiveDef && passiveDef.fx && passiveDef.fx.xpBonus) A.xpBonus += passives[it.passive.key];
-      if (passiveDef && passiveDef.fx && passiveDef.fx.goldBonus) A.goldBonus += passives[it.passive.key];
-      if (passiveDef && passiveDef.legendary) {
-        legendaryEffects[it.passive.key] = true;
-      }
-    }
-    // 神鑄創世專屬特效：屬性型直接併入聚合桶，觸發型併入 passives 供戰鬥掛勾讀取
-    if (it.godPassives) {
-      it.godPassives.forEach(function (gp) {
-        var gd = GODFORGE_POOL[gp.key];
-        if (!gd) return;
-        var gv = godPassiveValue(gp, it);   // 由強度值當場算出（§6）
-        if (gd.stats) {
-          if (gp.key === 'godMight') {
-            godAttackMultiplier *= 1 + gv / 100;
-            return;
-          }
-          gd.stats.forEach(function (bk) {
-            if (A[bk] !== undefined) A[bk] += bk === 'loot' ? effectiveDropRateEffect(gv) : gv;
-          });
-        } else {
-          passives[gp.key] = (passives[gp.key] || 0) + gv;
-        }
-      });
-    }
+    itemPassives(it).forEach(function (passive) {
+      if (passiveOwners[passive.key] !== slot) return;
+      passives[passive.key] = passiveValue(it, passive);
+      var pd = PASSIVE_POOL[passive.key];
+      if (pd && pd.fx && pd.fx.xpBonus) A.xpBonus += passives[passive.key];
+      if (pd && pd.fx && pd.fx.goldBonus) A.goldBonus += passives[passive.key];
+      if (pd && pd.legendary) legendaryEffects[passive.key] = true;
+    });
     itemEnchants(it).forEach(function (en) {
       var ek = en.key, ev = enchantValue(it, en);   // 由附魔當下的寶石等級當場算出（§6）
       var e = ENCHANTS[ek];
@@ -267,11 +251,12 @@ function computeStats(equipmentOverride) {
     else if (du) elemDmgUp[du] += v;
     else if (A[key] !== undefined) A[key] += v;
   }
-  socketed.forEach(function (g) {
+  socketed.forEach(function (entry) {
+    var g = entry.gem;
     if (g.fused) {
-      g.fused.stats.forEach(function (s) { applyGemStat(s.type, fusedStatValue(s)); });
+      g.fused.stats.forEach(function (s) { applyGemStat(s.type, fusedStatValue(s) * entry.mult); });
     } else if (GEM_TYPES[g.type]) {
-      applyGemStat(g.type, gemStatValue(g.type, g.level));
+      applyGemStat(g.type, gemStatValue(g.type, g.level) * entry.mult);
     }
   });
   // 寶石共鳴：孔內寶石自身能力＋孔等級帶來的相鄰加成（js/gem_resonance.js），與裝備鑲嵌同樣受鑲嵌效率放大。
@@ -1747,7 +1732,7 @@ function ancientEssenceDropChanceForBoss(floor) {
     ANCIENT_ESSENCE_BOSS_BASE_RATE + (floor - 40) * ANCIENT_ESSENCE_BOSS_LEVEL_RATE);
 }
 function ancientEssenceSalvageChanceForRarity(rarity) {
-  return ANCIENT_ESSENCE_SALVAGE_CHANCE[rarity] || 0;
+  return ANCIENT_ESSENCE_SALVAGE_CHANCE[rarity === 11 ? 6 : rarity] || 0;
 }
 
 // 高塔挑戰金幣消耗 = round(a × 樓層^b)，a/b 依樓層分層（TOWER_CHALLENGE_COST_TIERS → data.js）
@@ -1922,8 +1907,13 @@ function affixValue(it, a) {
   if (a.roll === undefined || a.roll === null) return Number(a.val) || 0;
   var mult = (typeof isTwoHandItem === 'function' && isTwoHandItem(it))
     ? TWO_HAND_AFFIX_VALUE_MULT : 1;
+  var imprint = it && it.imprint;
+  var index = it && it.affixes ? it.affixes.indexOf(a) : -1;
+  var affected = imprint && index >= 0 && imprint.index === index && !imprint.inactive;
+  var ancient = a.ancient || (affected && imprint.kind === 'ancientAffix');
+  if (affected && imprint.kind === 'sacredAffix') mult *= DIVINE_FORGE.sacredValue / ANCIENT_AFFIX_VALUE_MULT;
   return affixValueFromStrength(a.key, it ? it.level : 1, it ? it.rarity : 0,
-    a.roll, a.ancient, mult);
+    a.roll, ancient, mult);
 }
 /* 就地把舊格式（只有 val）換算為強度值並移除 val；已有 roll 則不動（冪等，可重複讀檔）。
    ⚠️ 換算用的是「現行參數」推出的基準值，所以只有在調整詞條參數**之前**完成換算才精確
@@ -1985,16 +1975,26 @@ function passiveValue(it, p) {
 }
 
 /* 純函式：每套獨立選先穿者；舊檔未記順序時依裝備欄順序，早於後來的新穿戴。 */
+function itemPassives(it) {
+  var list = it && it.passive ? [it.passive] : [];
+  if (it && it.imprint && it.imprint.passive && !it.imprint.inactive && !list.some(function (p) { return p.key === it.imprint.passive.key; })) list.push(it.imprint.passive);
+  return list;
+}
+function divineSocketMultiplier(it, index) {
+  return it && it.imprint && it.imprint.kind === 'sacredSocket' && !it.imprint.inactive && it.imprint.index === index ? DIVINE_FORGE.socketValue : 1;
+}
 function equippedPassiveOwners(equipment, asuraOn) {
   var owners = {}, ranks = {};
   SLOT_LIST.forEach(function (slot, i) {
     var it = equipment && equipment[slot];
-    if (!it || !it.passive || !PASSIVE_POOL[it.passive.key]) return;
+    if (!it) return;
     if (slot === 'weapon2' && isTwoHandItem(it) && !asuraOn) return;
-    var key = it.passive.key;
     var order = Number(it.legendaryEquipOrder);
     var rank = order > 0 && isFinite(order) ? order : i - SLOT_LIST.length;
-    if (owners[key] === undefined || rank < ranks[key]) { owners[key] = slot; ranks[key] = rank; }
+    itemPassives(it).forEach(function (p) {
+      if (!PASSIVE_POOL[p.key]) return;
+      if (owners[p.key] === undefined || rank < ranks[p.key]) { owners[p.key] = slot; ranks[p.key] = rank; }
+    });
   });
   return owners;
 }
@@ -2038,21 +2038,7 @@ function ensureGodPassiveSource(gp) {
   return gp;
 }
 
-// 神鑄成功率（裝備）= 基礎（依素材品質）+ 魔塵數 × 每魔塵加成
-function forgeSuccessRateFor(rarity, dustCount) {
-  return clamp(forgeBaseRateFor(rarity) + dustCount * forgeDustRateFor(rarity), 0, 100);
-}
 
-// 神鑄成功率（寶石）= 基礎（依素材階級）+ 魔塵數 × 每魔塵加成
-function forgeGemSuccessRateFor(level, dustCount) {
-  return clamp((FORGE_GEM_BASE_RATE[level] || 0) + dustCount * FORGE_GEM_DUST_RATE, 0, 100);
-}
-
-// 寶石神鑄金幣費用 = 基礎值 + (素材階級 - 起始階級) × 每階增量
-var FORGE_GEM_COST = { base: 1000000, perTier: 1000000 };
-function forgeGemCost(level) {
-  return FORGE_GEM_COST.base + (level - GEM_MAX_LEVEL) * FORGE_GEM_COST.perTier;
-}
 
 /* ---- 附魔數值 ----
    攻擊類威力 = (5 + 裝備等級×1.2) × 稀有度倍率 × (1 + 0.15×寶石等級)
@@ -2121,7 +2107,8 @@ function normalizeItemValueSources(it) {
   if (!it || typeof it !== 'object') return it;
   ensureItemAffixRolls(it);
   if (it.passive) ensurePassiveSource(it, it.passive);
-  if (Array.isArray(it.godPassives)) it.godPassives.forEach(ensureGodPassiveSource);
+  delete it.godPassives;
+  if (it.imprint && it.imprint.affix) ensureAffixRoll(it, it.imprint.affix);
   var ens = (typeof itemEnchants === 'function') ? itemEnchants(it) : it.enchants;
   if (Array.isArray(ens)) {
     for (var i = 0; i < ens.length; i++) ensureEnchantSource(it, ens[i]);
@@ -2141,15 +2128,16 @@ function itemScore(it) {
     var a = it.affixes[i];
     s += (SCORE_WEIGHTS[a.key] || 1) * affixValue(it, a) * um;
   }
+  if (it.imprint && it.imprint.affix) s += (SCORE_WEIGHTS[it.imprint.affix.key] || 1) * affixValue(it, it.imprint.affix) * um;
   // 鑲嵌的寶石計入評分；融合寶石逐屬性計
   if (it.sockets) {
     for (var j = 0; j < it.sockets.length; j++) {
       var g = it.sockets[j];
       if (!g) continue;
       if (g.fused) {
-        g.fused.stats.forEach(function (fs) { s += fusedStatValue(fs) * (SCORE_WEIGHTS[GEM_TYPES[fs.type].stat] || 1); });
+        g.fused.stats.forEach(function (fs) { s += fusedStatValue(fs) * divineSocketMultiplier(it, j) * (SCORE_WEIGHTS[GEM_TYPES[fs.type].stat] || 1); });
       } else if (GEM_TYPES[g.type]) {
-        s += gemStatValue(g.type, g.level) * (SCORE_WEIGHTS[GEM_TYPES[g.type].stat] || 1);
+        s += gemStatValue(g.type, g.level) * divineSocketMultiplier(it, j) * (SCORE_WEIGHTS[GEM_TYPES[g.type].stat] || 1);
       }
     }
   }
@@ -2160,13 +2148,13 @@ function itemScore(it) {
     if (typeof rwActiveWord === 'function' && rwActiveWord(it)) s *= 1 + 0.12 * rwActiveWord(it).word.tier;
   }
   if (it.passive) s *= 1.15;
-  if (it.godPassives && it.godPassives.length) s *= 1 + ITEM_SCORE_GODFORGED_PER_PASSIVE * it.godPassives.length; // 神鑄創世專屬特效
+  if (it.imprint && it.imprint.passive) s *= 1.15;
   var ens = itemEnchants(it);
   for (var ei = 0; ei < ens.length; ei++) {
     var e = ENCHANTS[ens[ei].key];
     if (e) s += (e.cat === 'atk') ? enchantValue(it, ens[ei]) * 1.2 : enchantValue(it, ens[ei]) * 2;
   }
-  s *= 1 + it.rarity * ITEM_SCORE_PER_RARITY;
+  s *= 1 + rarityRank(it.rarity) * ITEM_SCORE_PER_RARITY;
   return s;
 }
 
@@ -2241,11 +2229,11 @@ function upgradeSuccessChance(it) {
    REROLL_ESSENCE_COST 的逐稀有度表，表上沒有的稀有度退回 1 + 稀有度。 */
 var REROLL_COST_GOLD = { coef: 40, base: 1.7, perLevel: 0.15 };
 function rerollCost(it) {
-  var baseEssence = REROLL_ESSENCE_COST[it.rarity];
+  var baseEssence = REROLL_ESSENCE_COST[it.rarity === 11 ? 6 : it.rarity];
   if (baseEssence === undefined) baseEssence = 1 + it.rarity;
   var essence = Math.floor(baseEssence * it.level / REROLL_ESSENCE_LEVEL_DIVISOR);
   return {
-    gold: Math.round(REROLL_COST_GOLD.coef * Math.pow(REROLL_COST_GOLD.base, it.rarity) * (1 + it.level * REROLL_COST_GOLD.perLevel)),
+    gold: Math.round(REROLL_COST_GOLD.coef * Math.pow(REROLL_COST_GOLD.base, it.rarity === 11 ? 6 : it.rarity) * (1 + it.level * REROLL_COST_GOLD.perLevel)),
     essence: essence
   };
 }
@@ -2312,6 +2300,7 @@ function gemStatValue(type, level) {
    （改 base 後手動縮放所有融合寶石快照）從此不再需要。 */
 function fusedStatValue(s) {
   if (!s) return 0;
+  if (s.divine) return gemStatValue(s.type, GEM_FORGE_MAX_LEVEL) * DIVINE_FORGE.gemValue;
   if (s.mult === undefined || s.mult === null) return Number(s.val) || 0;  // 舊格式／已下架寶石
   var base5 = GEM_TYPES[s.type] ? gemStatValue(s.type, GEM_MAX_LEVEL) : 0;
   if (!(base5 > 0)) return Number(s.val) || 0;
@@ -2333,6 +2322,7 @@ function fusedStatMult(type, val) {
 function ensureFusedGemSource(fg) {
   if (!fg || !Array.isArray(fg.stats)) return fg;
   fg.stats.forEach(function (s) {
+    if (fg.divine || (s && s.divine)) return;
     if (!s || (s.mult !== undefined && s.mult !== null)) return;
     if (!GEM_TYPES[s.type] || !(gemStatValue(s.type, GEM_MAX_LEVEL) > 0)) return;
     s.mult = fusedStatMult(s.type, s.val);
@@ -2424,7 +2414,7 @@ function gemDismantlePlan(slots) {
    ※ fg.fusions 為「融合世代」（max+1，見 item.js），僅用於顯示與成功率遞減；
      舊存檔無 leaves 欄位時以 (fusions+1) 後備（migrateSave 會補）。 */
 function fusedGemL1Worth(fg) { return gemL1Worth(GEM_MAX_LEVEL) * (fg.leaves || ((fg.fusions || 0) + 1)); }
-function fusedGemDismantleYield(fg) { return Math.floor(fusedGemL1Worth(fg) * GEM_DISMANTLE_KEEP); }
+function fusedGemDismantleYield(fg) { return fg.divine ? 0 : Math.floor(fusedGemL1Worth(fg) * GEM_DISMANTLE_KEEP); }
 
 // 寶石融合成功率 = 基礎率 - 每次遞減 ×（雙方累計成功融合次數），並有下限
 function gemFuseRate(m1, m2) {

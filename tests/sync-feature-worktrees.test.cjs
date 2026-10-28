@@ -77,13 +77,32 @@ test('來源預檢與報告顯示未簽出分支，hold保留雲端來源直到�
     const report=fs.readFileSync(path.join(f.repo,'logs/sync-ai-worktrees/latest.md'),'utf8');
     assert.match(report,/refs\/remotes\/origin\/ai\/claude-kpj271/);assert.match(report,/尚未包含於 develop/);
     assert.match(f.log(preview),/待整合來源／本機參照快照/);
-    git(f.repo,'config','branch.ai/claude.codexSyncHold','true');
-    const held=f.run();assert.equal(held.status,0,f.log(held));assert.ok(!fs.existsSync(path.join(f.repo,cloud.file)));
-    git(f.repo,'config','branch.ai/claude.codexSyncHold','false');
     git(f.repo,'config','branch.'+cloud.branch+'.codexSyncHold','true');
     const exact=f.run();assert.equal(exact.status,0,f.log(exact));assert.ok(!fs.existsSync(path.join(f.repo,cloud.file)));
+    assert.match(f.log(exact),/同步完成（有保留來源未同步）/);
+    assert.match(f.log(exact),/未同步保留來源.*ai\/claude-kpj271/);
     git(f.repo,'config','branch.'+cloud.branch+'.codexSyncHold','false');
     const released=f.run();assert.equal(released.status,0,f.log(released));assert.equal(git(f.repo,'merge-base','--is-ancestor',cloud.sha,'HEAD'),'');
+  }finally{f.clean();}
+});
+
+test('固定Claude的hold只保留該分支，獨立雲端及任意名稱成果仍整合並列明未同步範圍',{skip:!windows},()=>{
+  const f=fixture([]);try{
+    const cloud=publisher(f),other=publisher(f,'work/latest-animation','animation.txt');
+    const worktree=path.join(f.root,'claude'),before=git(worktree,'rev-parse','HEAD');
+    fs.writeFileSync(path.join(worktree,'draft.txt'),'keep private work');
+    git(f.repo,'config','branch.ai/claude.codexSyncHold','true');
+    const r=f.run();assert.equal(r.status,0,f.log(r));
+    for(const p of [cloud,other]){
+      assert.equal(git(f.repo,'merge-base','--is-ancestor',p.sha,'HEAD'),'');
+      assert.equal(git(f.remote,'rev-parse',p.branch),p.sha);
+    }
+    assert.equal(git(worktree,'rev-parse','HEAD'),before);
+    assert.equal(fs.readFileSync(path.join(worktree,'draft.txt'),'utf8'),'keep private work');
+    assert.ok(!fs.existsSync(path.join(f.repo,'claude.txt')));
+    assert.match(f.log(r),/同步完成（有保留來源未同步）/);
+    assert.match(f.log(r),/未同步保留來源.*ai\/claude/);
+    assert.doesNotMatch(f.log(r),/未同步保留來源.*ai\/claude-kpj271/);
   }finally{f.clean();}
 });
 test('任意名稱已簽出AI來源有未提交內容時保留現場並停止',{skip:!windows},()=>{

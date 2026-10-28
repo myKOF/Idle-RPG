@@ -161,12 +161,8 @@ function newGameState() {
     // 主線任務（2026-08-05）：idx = 下一個可領取的任務索引（TASKS → js/data.js），
     // 之前的任務一律視為已領取；進度本身不存檔（由統計與現況即時計算，見 js/tasks.js）
     taskState: { idx: 0 },
-    forge: {  // 神鑄系統：六芒星槽位 / 六格魔塵符位 / 自動魔塵 / 自動鑄造 / 等待狀態 / 上次產物 / 法陣紀錄
-      slots: [null, null, null, null, null, null],
-      dustSlots: [false, false, false, false, false, false],
-      autoDust: false, result: null, log: [], unlockNotified: false, unlocked: false,
-      autoFill: null, autoForge: true, crafting: null
-    },
+    forge: { version: 2, operation: 'equip', slots: [null, null, null, null, null, null],
+      stones: 0, result: null, log: [], unlockNotified: false, unlocked: false },
     settings: { compareEq: true },
     firstRunAt: Date.now()
   };

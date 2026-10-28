@@ -1,57 +1,18 @@
-const test = require('node:test');
-const { readExpanded } = require('./helpers/str-expand.cjs');
-const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
+'use strict';
+const test=require('node:test'), assert=require('node:assert/strict');
+const {loadRuneEnv}=require('./helpers/runeword-env.cjs');
+function setup(){const c=loadRuneEnv();c.G.player.reincarnations=5;c.G.player.gold=1e12;c.G.player.dust=100;return c;}
+function gear(c){const it=c.makeEquipment(100,{rarity:6});c.G.inventory.push(it);return it;}
 
-const root = path.resolve(__dirname, '..');
-
-test('神鑄底部使用兩個可見 checkbox 控制項', () => {
-  const html = readExpanded(path.join(root, 'index.html'));
-  const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
-  const ui = readExpanded(path.join(root, 'js/ui.js'));
-
-  assert.match(html, /<div class="forge-foot">[\s\S]*id="forge-autodust"[\s\S]*id="forge-autoforge"[\s\S]*<\/div>/);
-  assert.match(html, /<input type="checkbox" id="forge-autodust">\s*(?:<span>)?自動使用魔塵/);
-  assert.match(html, /<input type="checkbox" id="forge-autoforge" checked>\s*(?:<span>)?自動鑄造/);
-  assert.doesNotMatch(html, /<button[^>]*id="forge-autodust"/);
-  assert.doesNotMatch(html, /<button[^>]*id="forge-autoforge"/);
-  assert.doesNotMatch(html, /id="forge-autodust">\s*✅/);
-  assert.doesNotMatch(html, /id="forge-autoforge">\s*✅/);
-  const autoForgeHandler = ui.match(/\$id\('forge-autoforge'\)\.addEventListener\('change', function \(\) \{([\s\S]*?)\n\s{4}\}\);/);
-  assert.ok(autoForgeHandler, '找不到自動鑄造勾選事件');
-  assert.doesNotMatch(autoForgeHandler[1], /doForge\(/, '勾選自動鑄造時不應立即開始鑄造');
-  assert.doesNotMatch(autoForgeHandler[1], /forgeAutoFillApply\(/, '勾選自動鑄造時不應自動放入素材');
-  const inputBlock = css.match(/\.forge-foot\s+\.chk\s+input\s*\{([^}]*)\}/s);
-  assert.ok(inputBlock, '找不到神鑄底部 checkbox 專用樣式');
-  assert.match(inputBlock[1], /appearance:\s*none;/);
-  assert.match(inputBlock[1], /width:\s*18px;/);
-  assert.match(inputBlock[1], /height:\s*18px;/);
-  assert.match(inputBlock[1], /opacity:\s*1;/);
-  assert.doesNotMatch(inputBlock[1], /display:\s*none;/);
+const fs=require('node:fs');
+test('中央石頭數量可超過舊六格上限，按配方與持有量限制',()=>{
+ const c=setup();c.forgeSetOperation('imprint');c.forgePlaceItem(gear(c).id);
+ c.forgeSetStones(100);assert.equal(c.forgeDustCount(),60);
+ c.G.player.dust=7;c.forgeSetStones(100);assert.equal(c.forgeDustCount(),7);
+ assert.ok(c.forgeSetStones(-1));assert.ok(c.forgeSetStones(1.2));
 });
-
-test('取消自動使用魔塵時卸下所有法陣上的魔塵', () => {
-  const fs = require('node:fs');
-  const vm = require('node:vm');
-  const context = { console, UI: { dirty: {} } };
-  context.window = context;
-  vm.createContext(context);
-  ['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/forge.js'].forEach(file => {
-    vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
-  });
-
-  context.G = {
-    player: { dust: 10 },
-    forge: {
-      dustSlots: [true, true, true, true, true, true],
-      autoDust: true,
-      slots: [null, null, null, null, null, null],
-      log: []
-    }
-  };
-
-  // 測試 forgeClearDust
-  context.forgeClearDust();
-  assert.deepEqual(context.G.forge.dustSlots, [false, false, false, false, false, false], '所有魔塵應已被卸下');
+test('介面提供中央數量、至100%與金幣費用，移除舊自動控制',()=>{
+ const html=fs.readFileSync(require.resolve('../index.html'),'utf8');
+ for(const id of ['forge-stone-count','forge-stone-max','forge-cost'])assert.ok(html.includes('id="'+id+'"'));
+ assert.doesNotMatch(html,/id="forge-autodust"|id="forge-autoforge"|id="forge-progress"/);
 });

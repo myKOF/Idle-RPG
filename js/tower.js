@@ -355,6 +355,7 @@ function endTowerFight(win, reason) {
   TOWER.showingResult = true;
   if (window.recordLootBattle) window.recordLootBattle('tower'); // 每次高塔挑戰算一場戰鬥
   if (win && window.recordLootKill) window.recordLootKill(undefined, 'tower'); // 擊敗 BOSS 計入殺敵數
+  if (!win && reason !== 'death' && window.clearLastPlayerDamage) window.clearLastPlayerDamage();
   if (!win && window.recordLootDeath) window.recordLootDeath('tower');
 
   var result = {

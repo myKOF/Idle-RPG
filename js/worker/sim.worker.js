@@ -11,7 +11,7 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-importScripts('protocol.js?v=20261027-ult-switch-points', '../game-clock.js?v=1.0.1', 'shim.js?v=20261018-potential-remove');
+importScripts('protocol.js?v=20261028-divine-forge-v2-final', '../game-clock.js?v=1.0.1', 'shim.js?v=20261018-potential-remove');
 // 離線結算等分批工作亦共用暫停時鐘；訊息與loop仍能回應存檔及PING。
 if (typeof GameClock !== 'undefined') {
   globalThis.setTimeout = GameClock.setTimeout;
@@ -20,12 +20,12 @@ if (typeof GameClock !== 'undefined') {
 /* String 表：資料檔版本由主執行緒（bridge.js）以網址 sv= 傳入，改文字不必動本檔。 */
 var _stringDataVersion = ((typeof self !== 'undefined' && self.location && /[?&]sv=(\w+)/.exec(self.location.search || '')) || [])[1] || '0';
 importScripts(
-  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../data.js?v=20261027-shared-field-waves', '../runeword_data.js?v=20261023-str-char', '../gem_resonance_data.js?v=20261018-resonance-crit-phys','../status.js?v=20261027-legendary-global', '../formula.js?v=20261028-player-offense-control', '../battle-terrain.js?v=20261022-lava-terrain-develop-merge', '../battlefield.js?v=20261028-player-offense-control', '../stats.js?v=20261023-str-common',
-  '../item.js?v=20261027-speed-gear-base', '../gem_resonance.js?v=20261026-system-unlock','../runeword.js?v=20261023-str-common',
-  '../skills.js?v=20261023-str-skill', '../skills2.js?v=20261028-player-offense-control', '../elite_data.js?v=20261021-chain-hover', '../talents.js?v=20261026-system-unlock',
-  '../player.js?v=20261027-legendary-global', '../special_rules.js?v=20261023-str-common',
-  '../combat.js?v=20261028-player-offense-control', '../elite.js?v=20261024-npc-skill-limit-sync', '../elite_boss.js?v=20261023-str-battle', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261027-legendary-global', '../tower.js?v=20261028-player-offense-control',
-  '../factory.js?v=20261027-speed-gear-base', '../newforge.js?v=20261027-speed-gear-base', '../forge.js?v=20261023-str-common', '../save.js?v=20261023-str-common',
+  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../data.js?v=20261028-develop-merge-a8acfe', '../runeword_data.js?v=20261028-develop-merge-a8acfe', '../gem_resonance_data.js?v=20261028-develop-merge-a8acfe','../status.js?v=20261028-develop-merge-a8acfe', '../formula.js?v=20261028-sync-cloud-control', '../battle-terrain.js?v=20261022-lava-terrain-develop-merge', '../battlefield.js?v=20261028-sync-cloud-control', '../stats.js?v=20261028-develop-merge-a8acfe',
+  '../item.js?v=20261028-develop-merge-a8acfe', '../gem_resonance.js?v=20261026-system-unlock','../runeword.js?v=20261023-str-common',
+  '../skills.js?v=20261023-str-skill', '../skills2.js?v=20261028-sync-cloud-control', '../elite_data.js?v=20261028-develop-merge-a8acfe', '../talents.js?v=20261026-system-unlock',
+  '../player.js?v=20261028-develop-merge-a8acfe', '../special_rules.js?v=20261023-str-common',
+  '../combat.js?v=20261028-sync-cloud-control', '../elite.js?v=20261028-develop-merge-a8acfe', '../elite_boss.js?v=20261023-str-battle', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261028-develop-merge-a8acfe', '../tower.js?v=20261028-sync-cloud-control',
+  '../factory.js?v=20261027-speed-gear-base', '../newforge.js?v=20261028-develop-merge-a8acfe', '../forge.js?v=20261028-develop-merge-a8acfe', '../save.js?v=20261028-develop-merge-a8acfe',
   '../tasks.js?v=20261023-str-guard'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
@@ -632,77 +632,21 @@ function inventoryCellView(it) {
 
    ⚠️ 純讀取：只呼叫遊戲的查詢函式，一個欄位都不寫回 G。 */
 function buildForgePanel(params) {
-  var out = { forge: (typeof forgeState === 'function') ? forgeState() : G.forge };
-  if (!params || !params.craft) return out;
-
-  var keep = Math.max(1, Math.floor(Number(params.keepPerRarity) || (FORGE_SLOTS + 2)));
-  /* ⚠️ 不可以呼叫 forgeUnlocked()——它會**寫入存檔**：條件成立時把
-     f.unlocked = true 快取回 G.forge（js/forge.js:44）。面板必須唯讀，
-     否則「有沒有建過面板」會改變存檔雜湊，決定論一破所有 A/B 比對都失效
-     （tests/sim-forge-craft.test.cjs 以存檔雜湊反證）。
-     所以這裡讀同一組條件但不回寫。 */
-  out.unlocked = !!(out.forge && out.forge.unlocked)
-    || ((G.player && G.player.level) >= FORGE_UNLOCK_LEVEL
-      && (typeof reincarnationCount === 'function' ? reincarnationCount() : 0) >= FORGE_UNLOCK_REINCARNATION);
-  out.slotsNeeded = FORGE_SLOTS;
-  out.minRarity = (typeof FORGE_MIN_RARITY === 'number') ? FORGE_MIN_RARITY : null;
-  out.failConsume = (typeof FORGE_FAIL_CONSUME === 'number') ? FORGE_FAIL_CONSUME : null;
-  out.dustOwned = (G.player && G.player.dust) || 0;
-  out.placed = (typeof forgeItemCount === 'function') ? forgeItemCount() : 0;
-  out.crafting = !!(out.forge && out.forge.crafting);
-
-  /* ---- 裝備：逐品質的候選 ---- */
-  var byR = {};
-  var inv = Array.isArray(G.inventory) ? G.inventory : [];
-  for (var i = 0; i < inv.length; i++) {
-    var it = inv[i];
-    if (!it || it.locked || it.kind === 'gem') continue;          // 與 forgeAutoFillApply 同一組條件
-    var r = it.rarity;
-    if (typeof isForgeableEquipmentRarity === 'function' && !isForgeableEquipmentRarity(r)) continue;
-    var b = byR[r] || (byR[r] = { count: 0, all: [] });
-    b.count++;
-    b.all.push({ id: it.id, level: it.level || 1 });
-  }
-  out.equip = {};
-  for (var rk in byR) {
-    var bucket = byR[rk];
-    /* 等級高的在前。同級時維持原順序即可——決定論只要求「同一份輸入給同一份輸出」。 */
-    bucket.all.sort(function (a, b2) { return b2.level - a.level; });
-    var n = bucket.all.length;
-    out.equip[rk] = {
-      count: bucket.count,
-      /* 等級最高的幾件（挑「等級載體」用）與等級最低的幾件（挑墊檔用）。
-         兩份都裁到 keep 筆，避免深局背包上千件時把面板灌爆。 */
-      top: bucket.all.slice(0, keep),
-      low: bucket.all.slice(Math.max(0, n - keep)).reverse(),
-      base: (typeof forgeBaseRateFor === 'function') ? forgeBaseRateFor(Number(rk)) : null,
-      dustRate: (typeof forgeDustRateFor === 'function') ? forgeDustRateFor(Number(rk)) : null,
-      cost: (typeof forgeGoldCostFor === 'function') ? forgeGoldCostFor(Number(rk)) : null
-    };
-  }
-
-  /* ---- 寶石：逐階級「哪些種類湊得滿六顆」---- */
-  out.gem = {};
-  var gems = (G.player && G.player.gems) || {};
-  for (var type in gems) {
-    var byLv = gems[type] || {};
-    for (var lv in byLv) {
-      var have = Number(byLv[lv]) || 0;
-      if (have < FORGE_SLOTS) continue;
-      if (!(typeof FORGE_GEM_BASE_RATE !== 'undefined' && FORGE_GEM_BASE_RATE[lv] !== undefined)) continue;
-      var slot = out.gem[lv] || (out.gem[lv] = {
-        types: [],
-        base: FORGE_GEM_BASE_RATE[lv],
-        dustRate: (typeof FORGE_GEM_DUST_RATE === 'number') ? FORGE_GEM_DUST_RATE : null,
-        cost: (typeof forgeGemCost === 'function') ? forgeGemCost(Number(lv)) : null
-      });
-      slot.types.push({ type: type, count: have });
-    }
-  }
-  for (var glv in out.gem) {
-    /* 數量多的先燒，並以種類名穩定排序——同數量時的順序不能隨物件列舉順序漂移。 */
-    out.gem[glv].types.sort(function (a, b3) {
-      return (b3.count - a.count) || (a.type < b3.type ? -1 : (a.type > b3.type ? 1 : 0));
+  var f = forgeState();
+  var out = { forge: f, unlocked: !!f.unlocked || reincarnationCount() >= DIVINE_FORGE.equipUnlock,
+    rate: divineForgeRateInfo(f, G.player.dust), slotsNeeded: divineForgeSlotCount(f.operation),
+    modes: Object.keys(DIVINE_FORGE_MODES).filter(function (mode) { return reincarnationCount() >= divineForgeUnlock(mode); }) };
+  if (params && params.craft) {
+    out.equip = {};
+    out.placed = f.slots.filter(Boolean).length;
+    out.dustOwned = G.player.dust || 0;
+    [6, 7, 9].forEach(function (r) {
+      var items = G.inventory.filter(function (it) { return it && !it.locked && it.rarity === r; });
+      items.sort(function (a, b) { return b.level - a.level; });
+      var keep = Math.max(DIVINE_FORGE.equipCount, Math.floor(Number(params.keepPerRarity) || 8));
+      var info = divineForgeRateInfo({ operation:'equip', slots:[{rarity:r}], stones:0 }, G.player.dust);
+      out.equip[r] = { count:items.length, top:items.slice(0,keep), low:items.slice(-keep).reverse(),
+        base:info.base, cost:info.cost, maxStones:info.maxStones };
     });
   }
   return out;
@@ -1452,8 +1396,8 @@ var COMMAND_IMPL = {
         var ancientB = typeof getItemAncientCount === 'function' ? getItemAncientCount(itemB) : 0;
         var lvA = Number(itemA.level) || 0;
         var lvB = Number(itemB.level) || 0;
-        var rarA = Number(itemA.rarity) || 0;
-        var rarB = Number(itemB.rarity) || 0;
+        var rarA = rarityRank(Number(itemA.rarity) || 0);
+        var rarB = rarityRank(Number(itemB.rarity) || 0);
         var idA = Number(itemA.id) || 0;
         var idB = Number(itemB.id) || 0;
 
@@ -1497,41 +1441,6 @@ var COMMAND_IMPL = {
   },
 
   /* ---- 神鑄 ---- */
-  'forge.setAuto': function (a) {
-    var fst = forgeState();
-    fst[a.key] = !!a.on; // key 已由協議的 enum 白名單擋過 ('autoDust' | 'autoForge')
-    if (a.key === 'autoDust' && !a.on) {
-      forgeClearDust();
-    }
-    UI.dirty.forge = true;
-    return true;
-  },
-
-  'forge.setAutoFill': function (a) {
-    var fst = forgeState();
-    if (a.kind === 'clear') {
-      fst.autoFill = null;
-      blog(STR(1303), 'info');
-      UI.dirty.forge = true;
-      return { autoFill: null };
-    }
-    var pick = (a.kind === 'gem')
-      ? { kind: 'gem', type: a.gemType, level: a.gemLevel }
-      : { kind: 'equip', rarity: a.rarity };
-    if (forgeItemCount() > 0) forgeUnloadAll(); // 先清空法陣再放入指定素材
-    fst.autoFill = pick;
-    var err = forgeAutoFillApply();
-    if (err) {
-      fst.autoFill = null;
-      blog(STR(1304, err), 'warn');
-      UI.dirty.forge = true;
-      return { err: err };
-    }
-    blog(STR(1305, forgeAutoFillLabel()), 'good');
-    UI.dirty.forge = true;
-    return { autoFill: pick };
-  },
-
   /* ---- 熔爐 ---- */
   'newforge.setQuality': function (a) {
     var fu = findNewForgeFurnace(a.furnaceId);

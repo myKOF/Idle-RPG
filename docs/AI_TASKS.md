@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## SYNC-DIVERGED-AI-CLOUD-20261028 — 分岔分支整合不再阻擋Claude雲端
+
+- Owner：Codex；In Progress，單一開發者。延續使用者保留全部AI修改並完成正常同步的授權；本次畫面停在ai/codex，實際本地9be211aa領先1／落後42，遠端／develop為6aa3150d，Claude雲端08282cba另有4筆尚未整合。不是雲端名稱辨識失敗，而是舊流程在來源掃描前只接受ff而中止。
+- 範圍：保留9be211aa玩家控制免疫與現有主線／雲端全部提交、必要快取與LV／本段；同步工具的分岔本地／遠端來源整合、真Git回歸與同步說明。禁止force／reset／rebase／改玩法或主動發布main；共享素材庫其他未提交工作與明確hold保留。必要模型更新僅保存來源既有素材／工具，不重製。
+- 設計：AI本地與遠端分岔時，固定兩個SHA送develop依序合併；本地工作區及遠端分支保持原提交直到整合完成，再安全ff／普通push。實際內容衝突沿原自動解衝突與獨立驗證，不將分岔誤當歷史重寫，也不強推。來源變動／dirty／未知merge仍停止；來源包含證明涵蓋兩端及雲端。
+- 前置處理：已fetch確認來源，乾淨ai/codex合併6aa3150d；僅LV並列雙方新增、AI_TASKS保留主線及本地完整段落、index及Worker快取整合，戰鬥程式三方合併乾淨。後續先驗證本地玩家控制與主線功能，再修工具並整合雲端08282cba；回歸、Build／diff後提交，最後同步並核對遠端與四工作區。
+
 ## PLAYER-OFFENSE-CONTROL-IMMUNITY-20261028 — 玩家出手控制免疫與狀態保留
 
 - Owner：Codex；Done，單一開發者。使用者要求玩家不受攻速降低、禁止普攻或施放技能的控制，相關狀態仍保留；移動緩速、拉扯及擊退允許生效。
@@ -11,6 +18,96 @@
 - 廣域指令：node --test --test-reporter=tap tests/player-control-immunity.test.cjs tests/boss-control-immunity.test.cjs tests/control-decay.test.cjs tests/status-system.test.cjs tests/battlefield.test.cjs tests/tower-battlefield.test.cjs tests/multi-enemy.test.cjs tests/elite-engine.test.cjs tests/boss-player-skill.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/skill-cooldown-display.test.cjs tests/boss-skill-lock.test.cjs tests/storm-dance.test.cjs；210項＝193過／17失敗／0跳過。17項為control-decay七項舊參數／元素特效、skill-cooldown-display七項舊進度／數值、elite-engine一項飛彈事件與storm-dance兩項素材斷言；以git show HEAD原版來源唯讀覆映、同四份測試70項完整重跑，17項名稱逐一一致，新增失敗0，未弱化其斷言。彙總保留本聊天visualizations/player-control-immunity的comparison與兩份summary JSON。
 - 其他驗證：npm.cmd run build，596檔通過；node tools/apply_params.cjs，579一致／0變更／0錨點問題；git diff --check通過。唯讀未改：AI_RULES／AGENTS／Workflow／prompts、Status及NPC／Skills2配置、elite／elite_data／elite_boss／recipes、skills／legendary／save、Worker協議與shim、上述其他既有回歸。無新增顯示文字／Excel／美術／素材庫變更；無素材庫Commit。
 - 交付：本段所在「[Codex] fix: 玩家保留控制狀態但免疫出手限制」Commit，實際編號見回覆。無本次未完成實作，可供Review／合併，未合併或推送。限制：上述17項既有失敗、未跑全庫或瀏覽器長戰；保留正常射程、牆體碰撞、死亡復甦與施法時間條件。下一步正常整合後重載主端與Worker驗收。
+
+## MERGE-A2613A88-20261028 — 納入同步期間新增的倒地劍軌跡
+
+- Owner：Codex；Done（驗證完成後提交並一般同步）。使用者本輪1持續授權；同步前fetch發現Claude雲端由ba3c949f前進a2613a88，保留新成果，不將舊快照當成最新。原合併HEAD f55eaa33、MERGE_HEAD a2613a88；程式／模型／主頁自動合入，只有AI_TASKS檔尾「先前合併紀錄」與「新倒地軌跡紀錄」衝突，兩段完整保留、按語意先列HERO3D迭代再列合併紀錄，未覆寫其他任務。
+- 範圍與驗證：保留來源五檔修改、補LV及本紀錄，無玩法／Excel／配置擴修；node --test --test-reporter=spec tests/hero3d-battle-rules.test.cjs tests/hero3d-internal-toggle.test.cjs tests/string-table.test.cjs最終27/27通過；node --check js/hero3d.js及tools/meshy-pipeline/src/fix-grips.mjs通過，npm.cmd run build597檔及git diff HEAD --check通過。原本其餘模組沿前段81/81及控制器9/9驗證，未修改其來源；最後同步SHA以本輪報告為準。
+- 素材：與新來源一致的模型及修正腳本、全部11檔歸檔SHA核對完成，素材Commit 3aa54db；舊版有Git歷史可回溯，未生成新素材，既有thunder未追蹤內容保留、素材庫不推送。只更動內測動作，hero3d快取30／模型grips28，正式環境限制／2D／結算／存檔不變。
+- 已知限制：未做真瀏覽器GPU／玩家存檔長戰；使用者在來源明確接受部分姿勢的淺穿模，保留其最新設定，不自行改動作。原規範／原始模型來源／所有配置與Worker協議唯讀，沒有Excel待處理或本項未完成程式；可合併，main與背景續戰hold保持。推送前重新fetch核對來源，最後三個固定AI與遠端狀態由正常工具確認。
+
+## SYNC-STAGED-DELETION-20261028 — 自動合併可重複暫存已刪除檔案
+
+- Owner：Codex；Done（工具與驗證完成；提交後接續一般同步，最後HEAD以報告為準）。使用者1接續同步失敗；原合併已完成dfc7148b，再修正實際停止原因。允許resolve-sync-conflicts的逐檔暫存、真Git回歸、SYNC_AI_WORKTREES及本紀錄；禁止玩法／Excel／素材修改、放寬路徑／漏報／Build／父提交護欄，不發布main或解除背景分支hold。
+- 設計：回報檔案已不存在時，先以literal pathspec及cached diff確認該確切路徑是否已暫存刪除；僅此情況略過重複git add。尚未暫存的刪除仍照常add，從未追蹤且不存在的誤報仍失敗並保留合併。
+- 前置：codex已乾淨快轉至完成合併，四檔預檢均無外部修改。驗收真Git重現來源已暫存刪除、工作區新刪除、未知缺檔拒絕及原路徑／素材／Build護欄；通過後獨立提交、正常同步並確認所有可同步來源在develop歷史，三固定分支與遠端一致。後續接手使用者驗收。
+- 完成四檔：resolve-sync-conflicts新增8行精確檢查，測試fixture新增兩個含空白／方括號的舊動畫檔與工作區新刪除／未知缺檔三案例，流程及本紀錄同步。先以舊工具重現pathspec不存在的真Git失敗；修正後node --test --test-reporter=spec --test-name-pattern="Reported deletion|Missing reported path|PowerShell scripts|Real local remotes|Independent build|Resolver escape|Asset controller" tests/sync-auto-conflicts.test.cjs共9/9通過、無略過，含原父提交合併／推送／三分支一致、拒絕越界與未知缺檔、Build失敗停推及素材既有暫存保護。
+- npm.cmd run build597檔通過、node --check tests/sync-auto-conflicts.test.cjs及git diff --check通過。唯讀檢查既有index恢復、CLI／Excel交接、其餘同步流程與各工作區狀態；未改上述程式、遊戲內容、玩家文字、配置、素材或素材庫，無本項素材Commit。自我Review完成，無本項未完成實作，可合併；未再跑完整全庫／付費CLI人工衝突。提交為本段所在「[Codex] fix: 自動合併可重複處理已暫存刪除」，正常同步與最終來源包含核對記於develop/logs/sync-ai-worktrees/latest.md及完成收據。
+
+## MERGE-BA3C949F-20261028 — 接續已暫存的主角動畫整合
+
+- Owner：Codex；Done（本輪合併驗證完成，提交後接續一般同步）。使用者輸入1授權處理develop；原HEAD 86200e0f、MERGE_HEAD ba3c949f，所有衝突已由前輪程序解開、13檔已暫存。停止原因是控制器再次git add已暫存刪除的meshy-double-combo-attack.json，並非內容仍有衝突；保留原父提交／來源修改，未reset或abort。
+- 範圍：檢查既有13檔合併、補LV／本紀錄與必要素材備存，完成原合併再同步；後續控制器刪檔重複暫存修正另記獨立任務。來源的攻擊／倒地握劍／披風修正、死亡原因、地圖傳送門、鐵血之舞、新版神鑄與原主線修改完整保留。備份index及binary diff存logs/merge-ba3c949f-repair；預檢無外部未提交來源。
+- 驗證：node --test --test-reporter=spec tests/hero3d-battle-rules.test.cjs tests/hero3d-internal-toggle.test.cjs tests/world-map-ui.test.cjs tests/divine-forge.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs共81/81通過；npm.cmd run build597檔通過；apply_params試跑593一致／0變更／0錨點問題，apply_strings --check為2193條同步，git diff HEAD --check通過。未修改Excel或參數接線；既有three.js Node模組判讀警告保留，不擴改package。
+- 素材：更新本地素材庫既有sunbrand-knight歸檔，模型／布料／SOURCE／三份規格／修正腳本／四份取樣共11檔與實際遊戲來源逐一SHA256一致，舊取樣按來源刪除、Git歷史保留；fix-grips只有原控制器去除檔尾空白行，收據明記。素材Commit ccb41a2及534ec97；既有thunder未追蹤內容不動、素材庫未推送，無新素材生成或付費API。
+- 唯讀未改：共通／協作規範、原父提交、既有衝突控制器結果、全部Excel／CSV、Worker協議及存檔、相關測試；本次除任務紀錄及LV補述外不再改遊戲程式或動作。無未完成合併實作，可提交並一般同步；main與背景續戰隔離保持，未做瀏覽器GPU／玩家存檔長戰驗收。最後同步HEAD與來源包含驗證見最新報告及回覆。
+
+## DEVELOP-MERGE-1C662CCB-3F8160DA-20261028 — 整合死亡原因、世界地圖、鐵血之舞與新版神鑄
+
+- Owner：Codex（整合）；Done。依使用者授權處理 develop 的既有 merge，保留雙方功能與測試；衝突限定 LV_upgrade_system.md、docs/AI_TASKS.md、index.html、js/bridge.js、js/worker/sim.worker.js。
+- 合併策略：文件任務紀錄並列保留；主頁各腳本採實際內容對應的新版本；Bridge 與 Worker 使用新的合併快取鍵，Worker 各匯入同時涵蓋死亡原因、鐵血之舞及新版神鑄。
+- 驗證：合併相關五檔測試共56項，55過／1個既有失敗；失敗為 stats-panel 對 tower 舊掉落統計掛點的斷言，修改前 HEAD 的同一測試與 tower 內容已確認同樣缺少該掛點，新增失敗0。新版神鑄16／鐵血之舞10／其餘Worker、世界地圖與死亡原因案例通過；npm.cmd run build 為597檔全數通過；完整合併結果 diff --check 通過。最初衝突清單沒有XLSX，提示中的 Name.xlsx 為控制器未替換的範例且倉庫不存在，故未建立或套用Excel計畫，也未修改任何活頁簿。
+- 交付：五個工作檔皆無衝突標記；未操作索引、commit、push或其他worktree，HEAD／MERGE_HEAD維持不變。無素材庫待辦，可由控制器依回報檔案完成stage與merge commit。
+
+## STATS-DEATH-CAUSES-20261028 — 統計面板死亡數下方顯示每次死亡原因（最多10條）
+
+- Owner：Antigravity；Done，單一開發者。使用者要求於統計日誌面板的「死亡數」下方寫入每次死亡的原因，格式包含「敵人(或自己)名稱 / 使用技能名稱 / 造成傷害值」，最多顯示10條；衝突預檢已向使用者回報並獲授權先於本分支提交、後續再整合合併。
+- 範圍：js/stats.js、js/combat.js、js/elite.js、js/legendary.js、js/skills2.js、js/tower.js、index.html、js/bridge.js、js/worker/sim.worker.js、tests/stats-panel.test.cjs、LV_upgrade_system.md、PATCH.md 與本段。禁止改動傷害計算、存檔結構或其他無關系統。
+- 完成12檔：stats.js 新增 deathCauses（最多保留最新10筆）、recordPlayerDamageHit、clearLastPlayerDamage、playerSelfDeathName 與 statsDeathCausesHtml；combat.js、elite.js、legendary.js、skills2.js、tower.js 串接敵人普攻／技能、DoT 與自身技能／傳奇扣血來源紀錄；同步 index.html、js/bridge.js、js/worker/sim.worker.js 快取版本；新增 tests/stats-panel.test.cjs 測試案例並更新 LV_upgrade_system.md、PATCH.md。
+- 驗證：執行 tests/stats-panel.test.cjs、tests/string-table.test.cjs、node tools/string-table/build_string_csv.cjs --check、node tools/build_check.cjs 及全量測試確認無新增錯誤後建立 Commit。
+
+## WORLD-MAP-PROGRESS-PORTAL-20261028 — 最高進度、名稱下方提示與神界傳送門
+
+- Owner：Codex；Done，單一開發者。使用者確認括號改為最高到達／地圖上限，提示固定名稱下方，人界最高上限地圖真正通關後出現神界傳送門，地圖名稱不可寫死。
+- 前置：規範／Workflow／Agent文件與既有WorldMapUI、battle.zoneProgress／zones已讀，目標衝突預檢乾淨。允許js/ui-world-map.js、css/world-map.css、index.html、tests/world-map-ui.test.cjs、String.xlsx／CSV／strings_data.js、docs/WORLD_MAP.md、LV_upgrade_system.md及本段；禁止其他玩法／Worker／Protocol／存檔／素材與其他工作區，不合併推送。
+- 驗收：最高進度不隨退關下降、未載入／鎖定安全、提示於各名稱下方與縮放／窄屏、最高人界動態配置及到達末關未通關不開門、真正通關與神界瀏覽／前進權限、String來源／Excel正常重開／回歸／Build／Console及diff。完成後獨立Commit，後續使用者Review／正常整合。
+- 完成10檔：WorldMapUI名稱／ARIA括號改讀best，保留current供實際前進；tips取消依左右／上下翻轉，固定名稱及進度下方並水平限縮，神界按場景實際位置定位、resize／scroll更新。CSS保留窄屏最小間距，修正神界min-height與aspect-ratio撐寬。人界最高maxStage動態取ZONES，並列最高皆須cleared到頂，缺快照不開門；入口只切頁、保留返回及既有unlocked權限，不寫入玩家進度。傳送門為本輪CSS自製介面圖形，無獨立素材／VFX／素材庫變動；地圖與游標原圖不改。主頁CSS1.0.6、WorldMapUI1.0.5及String快取e623d5b6同步，LV／WORLD_MAP同步。
+- String：原生Excel工具追加2206「神界傳送門」4個非空儲存格，2193→2194列、7欄及0物件；正常重開兩次通過，xlsx_to_csv／apply_strings產生正式CSV／JS，CSV僅新增一列。首輪以通用試算表API讀取完整文字出現正規化差異，已在來源未被外部更動的hash檢查後還原本輪原檔，再以Excel原生值建立目標並重跑；最終唯讀比對原有全部儲存格值／樣式、列高／欄寬差異均0。局部渲染已檢視，無手工XML寫入、翻譯或改既有文字。
+- 測試：node --test --test-reporter=spec tests/world-map-ui.test.cjs tests/world-map.test.cjs tests/string-table.test.cjs tests/combat-pause.test.cjs tests/stage-jump-ui.test.cjs tests/fullscreen-toggle.test.cjs tests/battle-fullscreen.test.cjs，43/43通過。新增回歸涵蓋退關／切圖／重開、名稱與ARIA最高進度、各位置提示／縮放／滾動、末關未通關／真正通關差別、0轉可瀏覽但不可前進及新增最高人界配置。npm.cmd run build最終597檔通過；apply_strings --check同步2193條、build_string_csv --check寫死0條，diff檢查通過。
+- 瀏覽器：CUA／IAB隨機localhost隔離fixture載正式DOM／全套CSS／WorldMapUI／String／ZONES，390×844及1558×869共14組人界量測，卡片皆低於名稱進度且在視窗內；神界窄屏按鈕不超寬、tips在其下方且不出界，入口／返回／鎖定條件可用，Console error／warning0。另正式index＋真Worker＋全新seed1028角色實際退至3關，最高5關及地圖(5/100)保持，未讀寫玩家原存檔。地圖預覽／驗證JSON保留本聊天visualizations/world-map-update。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts/codex、data／combat最高進度及cleared語意、ui場景接線、Worker面板／協議、既有world-map／String匯出工具及素材來源。自我Review完成、無本次未完成項，可供Review／合併；未合併／推送develop或main，未執行全庫或玩家真存檔長戰。Commit為本段所在「[Codex] fix: 修正世界地圖最高進度與提示並加入神界傳送門」，編號見交付；下一步正常整合並重載驗收。
+- 額外素材來源檢查：export-source --check因既有本機素材庫D:/MyGame/Asset缺少codex-authored/world-map/source.json而無法完成，另一舊effects-materials路徑亦無來源。未修改Root設定／素材庫；git diff HEAD -- images/world-map為空，沒有本次圖檔或雙倉庫素材提交待辦。此限制不影響本次CSS／既有圖片顯示與43項功能回歸，不宣稱母來源SHA核對通過。
+
+## IRON-DANCE-PHYSICAL-20261028 — 鐵血之舞物理流血與敵方承受比例
+
+- Owner：Codex；Done，單一開發者。使用者要求自身流血改為物理傷害，基值100%、每級+10%；附近敵人承受該基準流血的比例基值50%、每級+5%，滿級雙方每0.35秒皆為200%物理傷害。算例不寫入技能說明。
+- 前置：共通規範／Workflow／Agent文件與現行技能、狀態、DOT管線已讀；目標衝突預檢無其他來源。使用者回覆相關Excel已關閉，依受保護param-patches流程套用；有同格衝突即停止。
+- 允許：skills2鐵血公式、Skills2／Status Excel及來源匯出CSV／JS、必要index／bridge／Worker快取、技能回歸、LV及本段。禁止其他技能平衡、傷害共用公式、存檔／Protocol／素材及合併推送。
+- 驗收：Lv.1／Lv.10與相鄰等級增量、敵方倍率乘自身基準、血量／BOSS不改流血基值、範圍／節拍／到期／刷新／自身直扣生命、狂戰士獨立調整、狀態投影／VFX參數與說明一致；Excel正常重開與逐格／格式核對、回歸／Build／diff後獨立Commit。後續使用者Review／整合。
+- 完成13檔：Skills2.xlsx第五階效果JSON／說明／唯讀摘要3格，Status.xlsx鐵血裂傷的來源／傷害／說明3格；經原生param-patches套用後由xlsx_to_csv及config_tables產生兩份CSV與skills2／status字面值。公式以st.atk定版自身每跳量，敵方乘enemyPct後獨立套狂戰士增傷；移除敵人maxHp及BOSS百分比減幅。沿用基值＋增量×等級，Lv.1自身110%、敵方承受55%，Lv.10自身200%、承受100%；5米／0.35秒／3秒與自身直扣生命保留。index的status44／skills2 366／bridge377，Worker入口與兩份匯入20261028-iron-dance-physical；LV同步，Protocol與存檔不變。
+- Excel驗證：首輪主鍵定位因階數實際為文字而安全停止、來源未寫入；以原生Excel確認型別後只更正主鍵型別、不改before，第二輪6格全部受保護套用、無同格衝突，收據／原檔／候選保留archive/2026-10-28T09-13-38-681Z-5c0289f2-6d6e-4dc9-b908-37fafb7db390。獨立原生Excel正常重開Saved=True、非RepairMode，Skills2三頁／Status兩頁保留。唯讀OOXML逐格比較13865＋1534格，僅AV56／AW56／AX56及H30／I30／T30內容改變，公式／有效樣式／手動列高／視圖保持；Excel正常儲存使欄寬誤差小於0.063字元、自動列高與字型下降度量正規化，重複的General樣式合併但有效樣式一致，未手改XML。兩本來源與結果局部渲染已比較，沿用原有表格排版。
+- 回歸：node --test --test-reporter=spec tests/skill2-iron-dance.test.cjs為10/10，含Lv.1／5／10、逐級增量、滿級說明、物攻／HP／魔攻／BOSS隔離、狂戰士兩端、範圍／刷新／到期／直接扣血、真實施放入口及原生Worker載入／視覺事件／狀態投影，Worker ERROR為0。原skill2-system鐵血案例補足施放所需測試MP並更新新需求斷言；node --test --test-reporter=spec --test-name-pattern='鐵血|狂戰士|雙刀選敵' tests/skill2-system.test.cjs tests/skill2-ult-evolution.test.cjs共7/7。
+- 擴大測試：node --test --test-reporter=tap執行iron-dance、skill2-status-slots、status-system、worker-protocol、worker-shim、legendary-global、skill2-ult-evolution，最終152項124過／28失敗。28項以修改前HEAD的skills2／status／兩CSV唯讀覆映、按原失敗名稱重跑全部重現，最終失敗名稱集合完全相同，新增失敗0；另查原system的狂暴／嗜血兩項也在原版原樣失敗，不擴修或降低其斷言。node tools/config_tables.cjs --apply重建30個字面值語意變更0；node tools/apply_params.cjs為593一致、0變更、0錨點問題；npm.cmd run build最終597檔通過，git diff --check通過。未修改參數接線，不觸及其他平衡配置。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、PARAM_PATCHES、Excel更新／匯出／差異工具、combat／formula／legendary／battlefield／Worker協議與投影、scripts/sim/engine、相關既有回歸。技能說明由Skills2表讀取、無新寫死字串；無素材或素材庫變動，不建立空素材Commit。自我Review完成，沒有本次未完成項；可供Review／合併，未合併或推送。限制：既有測試債、未執行全庫或真瀏覽器／玩家長戰。Commit為本段所在「[Codex] fix: 鐵血之舞改為物理流血並獨立計算敵方比例」，編號見交付；下一步整合後重載新版主端與Worker驗收。
+
+## DIVINE-FORGE-V2-20261028 — 四功能神鑄改造
+
+- Owner：Codex；Done，單一開發者。使用者授權以線上新版及七格水晶圖取代原神鑄，並確認神話配方產出神鑄神話、無效刻印按第七項返石、四功能皆收金幣且所有參數放game_parameters。來源：Google Sheet gid=2018764646，2026-10-28讀取。
+- 範圍：forge／裝備與寶石計算、必要存檔遷移、UI／CSS／背景、Worker協議及快取、原生Excel新增配置／String與匯出／參數接線、相關回歸、LV及本紀錄。禁止擴修無關玩法、覆寫他人修改、合併推送develop／main。
+- 前置：規範與現有流程已讀；正式目標衝突預檢皆無來源。新增神鑄神話保留舊稀有度ID，避免舊存檔重編號。舊法陣待製作一律取消並退還素材，神性之石沿用dust庫存；移除舊自動／時間／金幣／失敗獎勵及舊專屬特效。
+- 驗收：四功能轉數與素材原子驗證、成功／失敗與石頭上限、七種刻印與重刻撤回、實際屬性與藍色tips、神級寶石鑲拆／存讀檔、真Worker指令、七格UI與窄屏、Excel正常重開／來源同步、參數錨點／回歸／Build／diff，完成後獨立Commit及必要素材雙倉庫提交。後續使用者驗收／正常整合。
+- 完成：forge整套四功能即時原子結算；39項可調數值及神鑄神話品質列加入game_parameters，主表舊配方14列移除。神鑄神話追加ID11，不重編舊0～10；baseRarity與rarityRank使排序及符文孔檢查按品質階序，維持單調／上限保護。Worker v63、神鑄指令10→7、總數94→91；讀檔在補預設值前辨識舊版，取消待製作並完整退料一次。刻印獨立欄位與計算／藍色tips共用數值；新增傳奇沿用先裝優先去重，神級寶石沿既有fused容器動態回算，禁止再次融合／拆解。
+- 金幣初版：裝備神鑄神話／創世／混沌為2000萬／1億／5億；精鑄1000萬／5000萬／2.5億；刻印3000萬／1.5億／7.5億；神級寶石5000萬。全部在上述39列，可用原BAT調整；配方數量／失敗損失／權重加入防止越界或無效配置的套用檢查。舊system_unlock神鑄轉數不再覆寫新版門檻；轉生預告與LV總表同步四功能。
+- Excel：原生工具新增52個神鑄字串；使用者明確授權的24格「魔塵→神性之石」經param-patches受保護合併，原檔／候選／收據保留archive。原生正常重開驗證，新增參數560個數值格以Value2寫成數字；Excel讀回比對原String2140列無遺失、僅24格舊值變更，參數原338列除14舊配方移除外其餘資料／公式不變，原儲存格格式差異0。String共2192條ba384f1e，CSV／JS同步、寫死0條；config_tables全部30個字面值語意變更0。
+- 瀏覽器：隨機localhost＋全新Edge context＋正式DOM／CSS／真Worker／隔離測試存檔，實點六件神話→神鑄神話、精鑄、雙類10級寶石→神級寶石、刻印與石頭至100%，全部完成。驗六外圈＋中央共七格、單件功能置灰五格、六角邊長誤差<1%、480視窗文件寬480，Console error／warning及pageerror均0；頂列及頁面不再顯示魔塵。修正舊aspect-ratio使水晶遮擋按鈕及停用元素transform偏移。截圖與JSON保存在本聊天visualizations，未接觸玩家真存檔，瀏覽器／服務均關閉。
+- 測試：核心命令node --test --test-reporter=spec執行divine-forge、forge既有專項、sim-forge-craft、worker-protocol、legendary-global、string-table、confirm-dialog、effect-value-storage及vfx-editor-cache-versions共97/97；符文／裝備UI等追查279項，274過／5個修改前既有失敗，新增失敗0。595錨點初版移除system_unlock兩個舊門檻錨點後為593，一致593／將變更0／問題0；擾動543個數值後593錨點均各命中一次。npm.cmd run build596檔通過；完整diff檢查通過。舊神鑄的計時／自動／失敗送材料等斷言依需求換為新版回歸，沒有為通過而保留舊功能。
+- 全庫：完整node --test --test-reporter=tap "tests/*.test.cjs"執行15分52秒，4993項＝4273過／718失敗／2跳過（開發中首輪）。修改前HEAD唯讀覆映153個失敗來源檔、按原失敗名稱逐項重跑，576項在原版同樣失敗；其他141項舊規格或當輪回歸問題與1個新增測試失敗已逐一處理，並以最終來源追查279項確認無新增失敗。保留其餘原有斷言；未宣稱最終全庫全綠。五個相關既有失敗為封魔塔符文資訊舊門檻、stats舊統計鉤子及三個雙手鑲孔舊值；原始TAP／baseline-summary／current-audit-summary留本聊天visualizations。
+- 修改檔案：data／formula／item／forge／player／save／ui、bridge／Worker兩檔及index／新增divine-forge.css；String與game_parameters Excel／CSV及strings_data；apply_params／config_tables、模擬策略／直譯器／指令覆蓋登記，神鑄／品質／符文／裝備UI／統計名稱／傳奇存檔等相關回歸，新增divine-forge測試，LV／WORKER_PROTOCOL／DIVINE_FORGE及本段。唯讀未改：共通規範／AGENTS／Workflow／prompts、combat／tower／skills2／runeword執行層、其餘配置及3D資源；無其他AI重疊來源。
+- 素材：使用者提供的ChatGPT水晶PNG按原檔匯入、未改像素，遊戲及素材庫SHA256皆56e197724f5758e7289bf23d5c6d34d5edfe2c3cce3a6fad970f6e52458a29df；素材庫source.json記錄來源與明確使用授權，先提交98100d5d7c5c993938e635feef082c7daa639105。無新增VFX Preset／第三方素材；共享素材庫原thunder未追蹤內容保留、不納本次提交。遊戲Commit為本段所在「[Codex] feat: 改造四功能神鑄與神性之石介面」，實際編號見回覆。
+- 交付：自我Review及必要驗證完成，沒有本次未完成實作，可供Review／合併；未合併或推送develop／main。下一步正常整合後重載新版主端及Worker驗收；新版刻印／神級寶石須由新版讀寫，避免舊分頁覆寫。全庫既有失敗與未做玩家真存檔長戰為已知限制。
+
+## SYNC-HOLD-SCOPE-20261028 — 修正保留範圍並納入977e425
+
+- Owner：Codex；Done。使用者指出同步成功但漏掉977e425，明確要求不論來源分支，將最新成果完整整合至develop並讓三個AI工作區取得整合結果。本次授權解除ai/claude舊hold；codex/background-catchup明確隔離維持，不發布main。
+- 原因：固定ai/claude的本機hold被工具擴張繼承到獨立ai/claude-kpj271與任意名稱Claude來源，來源完整性檢查也排除它們；成功訊息沒有在結尾列出被保留的來源，導致誤判全數最新。
+- 範圍：同步工具的hold判斷／完成訊息、真Git回歸、流程與AGENTS同步定義、本紀錄；正常合併977e425的既有成果，必要index快取及任務紀錄衝突保留雙方。禁止玩法擴修、覆蓋進行中修改、發布main或解除其他隔離。
+- 前置與驗收：所有正式參與工作區乾淨、先fetch並固定來源；雲端來源九筆新增提交，merge-tree僅AI_TASKS及index文字衝突。預檢五檔無其他修改來源。驗證hold僅限明確分支、獨立雲端成果仍納入、結尾列出保留範圍；相關同步／3D／快取回歸及Build，檢查來源為develop祖先且三固定分支與遠端一致後回報。後續接手：使用者驗收；測試與提交結果完成後補記。
+- 工具驗證完成：先以新增真Git案例重現舊版漏掉雲端提交，再修正為精確分支hold；node --test --test-reporter=spec tests/sync-feature-worktrees.test.cjs tests/sync-ai-worktrees.test.cjs tests/sync-auto-conflicts.test.cjs tests/sync-index-recovery.test.cjs tests/sync-excel-handoff.test.cjs共73/73通過、無略過；npm.cmd run build595檔通過、git diff --check通過。工具修正獨立提交，實際整合接續。
+- 必要素材：從固定977e4254原始Git blob備存GLB、布料清單、SOURCE、三份製作規格、修正腳本與兩份動作取樣，九檔逐一SHA256一致，加source.json收據；素材庫Commit 5773ad94262719a5930e7869e50d9aa53dee62c8。未執行生成或付費API，原內測／正式發布限制維持；既有thunder未追蹤素材保留，不納本次提交，素材庫未推送。
+- 整合驗證完成：工具Commit 2d2b43f4；保留977e4254及其九筆新增提交，在ai/codex正常雙親合併。AI_TASKS改以原始三階段執行git merge-file（exit0）完整保留紀錄，index採hero3d12／renderer205；模型及來源檔維持incoming原位元，LV補本次內測三動作及披風修正記錄。來源三處內部skipped診斷標記改用length／samples，避免誤判玩家文字，未改畫面／碰撞／動作語意或放寬測試。
+- 遊戲驗證：node --test --test-reporter=spec tests/hero3d-battle-rules.test.cjs tests/hero3d-internal-toggle.test.cjs tests/player-directional-sprite.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs，最終38/38通過；npm.cmd run build595檔通過，最後hero3d診斷修改另node --check通過；git diff HEAD --check通過。既有three.js在Node測試有模組類型自動判讀警告，未擴改package設定；未做瀏覽器GPU外觀或玩家存檔長戰驗收，不宣稱全庫驗證。
+- 唯讀未改：AI_RULES／Workflow／prompts、同步index恢復與Excel交接器、String.xlsx／CSV／生成字串、Worker協議／模擬、其他AI未提交工作與main。正常同步將在此合併提交後執行，實際最後HEAD、三固定分支與遠端包含977e4254之驗證，以develop/logs/sync-ai-worktrees/latest.md及本聊天完成報告為準。原隔離背景續戰分支持續保留，不能把它計為本輪已同步。
+- 實際同步完成：遊戲合併b4457ea3經原工具推送並整合成develop c6e0ed54，三個固定AI工作區及其遠端均已對齊，977e4254為develop祖先；本機ai/claude hold=false，background-catchup hold=true維持。同步exit0，報告sync-20261028-095706-c8c3d228.md明列保留來源；收尾本段獨立docs提交後再依同一流程同步，最終SHA以latest.md為準。無本次未完成程式或合併項，下一步重載內測遊戲驗收三個動作；未做正式發布。
 
 ## SYNC-ALL-AI-SOURCES-20261028 — 主線完整整合與雲端來源補掃
 
@@ -109,8 +206,35 @@
 - 修改：新增 js/hero3d.js、js/vendor/three/（three@0.160.0 原封不動＋LICENSE＋README）、images/models/hero3d/sunbrand-knight.glb（約 700 KB）與 SOURCE.md；index.html（importmap、#btn-hero3d）、css/world-map.css（按鈕位置）、js/ui.js（initHero3dToggle，內測判斷用既有 isInternalServer()）、js/battle-renderer.js（3D 身體分支）；String 表新增 2151～2153（原 2145～2147，合併時被他處新增的 2145～2150 擠後）（按鈕兩種狀態與提示）並同步 CSV／strings_data.js；tools/meshy-pipeline/blender/export_assets.py 新增 --max-texture。
 - 內測回報修正（同日）：①普攻動作播一半重播、③攻速對不上——根因是技能施法借用 Attack2 整段 3.17 秒原速播、期間擋掉所有普攻動作，加上普攻動作整段 2.4～3.2 秒遠長於攻擊間隔。現在每個攻擊動作只播有用的一段（`CLIP_FOR` 的 start／hit／end，由劍骨骼逐幀位移量出），再加速塞進攻擊間隔。④普攻改為 Attack1／Attack2 嚴格輪播（原本 attack3 也對到 Attack1，三選一讓它佔 2/3）。②追擊滑步——出手動作期間只要畫面上真的有位移就立刻切跑步（看 `stillFor === 0`，不看拖尾 0.22 秒的 `walking`）。施法規則（使用者指定）：出手動作播放中不插施法動作、只播技能特效；其餘時候借一個攻擊動作、加速到 0.5 秒內播完，模擬端施法硬直本來就會停下移動。⑤復活——3D 的 seek 對倒著播的動作沒有反向，起身變成正播死亡動作；改為死亡動作在復活倒數前 30% 播完，其後到倒數結束倒著播，一般死亡倒數與大地守護共用同一個驅動（`hero3dDriveRise`）。驗證：以 Playwright 加假時鐘在真實渲染器逐幀量測；測試 `tests/hero3d-battle-rules.test.cjs`。
 - 辨識度修正（同日，使用者回報遊戲裡人物縮小後「除披風外一片暗黃、看不到白與黃的細節」）：縮到遊戲大小（約 100 像素高）後金、銀、披風糊成一片，又被滿屏特效蓋住。處理：①補上穿透式輪廓——2D 主角本來就有（`PLAYER_OUTLINE` 綠色、畫在特效層之上），3D 沒做；現在輪廓貼圖由 3D 畫布剪影每幀即時算（`hero3d.js` makeBody 的 `drawOutline`），走同一套 `makeOutlineSprite`／`syncOutline`。②貼圖調色（金調亮調飽和、銀拉白、披風略提亮，`gradeTexture`）＋同一張當自發光貼圖＋背後冷色邊緣光、環境光壓低主光加強。曾比較過紅羽飾與太陽光環：縮到遊戲大小看不見羽飾、光環過大突兀，未採用。模擬圖以 Playwright 在使用者截圖背景上合成；實際遊戲畫面以真實渲染器截圖確認輪廓位置對得上。
+- 握劍修正（同日，使用者看 25% 慢動作 GIF 後回報）：Meshy 原動作有兩處手沒握在劍上。①Attack1 雙手直劈：劈下去那段（t≈1.0～1.5）副手鬆開、握拳甩到旁邊，離劍軸最遠 0.78 公尺。②Attack2：右臂前伸的幾幀（t≈1.25～1.40）劍與前臂夾角 48～83 度，使用者逐幀用紅箭頭標出正確劍向（右上、右、右下、左下）。沒有 Blender，所以寫 `tools/meshy-pipeline/src/fix-grips.mjs` 直接改 GLB 內烘焙好的關鍵幀：Attack1 以副手握得最好的那一幀（t=0.92）為準，兩段式 IK（保留手肘彎向）把副手放回劍上；Attack2 把劍旋轉到沿前臂（手肘→手腕）成一直線，t=1.20～1.25 漸入、1.40～1.55 漸出。修後：副手離劍軸最遠 0.249、劍與前臂夾角最大 2.4°；與使用者箭頭比對畫面角度約差 3～14 度（箭頭是從縮圖目測，本身有約 10 度誤差）。模型改了動畫，`hero3d.js` 的模型網址加版號避免快取。測試 `tests/hero3d-battle-rules.test.cjs` 量測 GLB，重新從 Blender 匯出蓋掉修正會失敗提醒重新套用。
+- 劍上尖刺（同日，使用者看慢動作 GIF 後回報「刀有一個尖刺、會隨揮動軌跡變形，刪掉」）：劍的網格有 8 個三角面，其中一個頂點被 Meshy 錯綁到右手 65%＋右腿 35%，腿一動頂點被拖走，三角面被拉成長尖刺。以「三個頂點平均：劍／手權重 ≥0.25 且同時有腿／髖權重 ≥0.05」找出，剛好 8 個；渲染比對刪除前後：靜止姿勢的劍、護手、劍身完全沒變，揮動時尖刺消失。`fix-grips.mjs` 增加這一步（只改索引緩衝區、索引數量就地改，檔案大小不變；找到的數量不是 8 就中止，避免對別的模型誤刪）；模型 4911 → 4903 個三角面。測試會檢查 `strayTriangles === 0`。
+- 披風下擺細絲與下劈軌跡（同日，使用者回報）：①披風末端的細絲——下擺最末端頂點整個綁在腿骨骼（權重只有腿），跨步時被拉成細絲；下擺（y<0.6）改成以髖部為主、越往下越多（380 個頂點、176 組，位置重疊的接縫頂點同組共用權重，否則接縫會裂開；清單存 `tools/meshy-pipeline/src/data/sunbrand-cape-hem.json`，純幾何條件會多選到 26 個小腿護甲頂點所以不用）。②披風上半部綁在肩膀／手臂骨骼，揮劍時被手臂拉出大折疊——試過重配權重沿脊椎過渡，大折疊略小但披風變貼身、露出後背金甲，屬主觀取捨且遊戲縮小後幾乎看不見，**未採用**，待使用者決定。③Attack2 下劈：原動作 t=1.24～1.30 手臂近乎水平（平砍）再往下往後拉；使用者要「高舉後由左上至右下斜砍而下」。重新設計右臂軌跡（相對身體面向的仰角／側偏曲線，兩段式 IK 解右臂，劍沿手臂成一直線，落在斜下方保持）。仍待使用者看 GIF 確認方向與幅度。
+- 下劈再修（同日，使用者看 GIF 後回報兩點）：①手掌被轉了好幾圈——重算手臂時每段只做最小旋轉，沒管繞自己軸的扭轉，路徑一換扭轉就累積成怪角度；改成各段「瞄準」＋參考幀（原動作 t=1.30，手臂前伸、握劍自然）的固定偏移決定扭轉，手與劍相對前臂只保留繞軸的自然握法（沒有手腕彎折）。②劍舉太高、軌跡偏上像砍空中單位——使用者要「敵人肩部斜向腰部」這一道；改以劍尖高度設計：起手劍尖約 1.9 m（頭上不遠）→ 掃過 1.47 m（肩高）→ 1.17 m（腰高）→ 收招停在約 0.5 m（原本 +55° 起手劍尖超過 2.5 m、收招貼地）。曲線在 `fix-grips.mjs` 的 `CFG.Attack2.chop`。
+- 結構性修正（同日，使用者批評「手部結構完全壞了、腿跟披風黏在一起；你是不是用代碼控制各部位？盔甲是硬的不能形變，只有披風和布襠能小幅變形；手腕只能左右約 90 度、多數時候不用轉」）：使用者說得對——前幾版直接用程式改手臂角度與披風權重，沒尊重物理限制。根因與修法：①盔甲被拉扯變形（前臂護甲被壓成扁楔形）：Meshy 權重是柔性的，骨骼一轉盔甲就被拉；改成盔甲內部頂點 100% 單一骨骼（約 1,600 個），只有骨骼交界那一圈保留原權重（盔甲連成一整片，整塊綁死會撕成長條）。②披風黏在腿上：上一版把下擺全改綁髖部造成，已移除；細絲改成「逐幀量測披風三角面拉長倍數，只刪超過 4 倍的」（原最大 66 倍 → 3.97 倍）。③手腕超限：Meshy 原動作右手腕扭轉最大 208°（Attack1 158°、Attack2 176°、Death 180°），前臂只用 20～40°；把超過 60° 的扭轉搬到前臂（上限 90°），手的朝向與劍向不變；Attack2 轉身舉劍 4 個關鍵幀仍到 96°（原動作需約 186°）。④量測「劍的最高點」用劍上實際頂點蒙皮位置（先前用骨骼局部座標換算劍尖高度單位不對）：Meshy 原動作劈砍起手最高 1.72 m、v4（使用者說太高）2.59 m、現在 1.86 m，掃過 1.46 m（肩）→ 1.27 m（腰）→ 收在 0.98 m（劍尖約 0.5 m）。測試改為量測盔甲剛性比例、披風最大拉長、手腕／前臂扭轉。
+- 下劈／收招／披風穿模（同日，使用者回報三點）：①最後三幀多餘——要求最後一幀回到第一幀、中間過渡自己設計：Attack2 從 t=1.46 到 1.70 全身所有骨骼（旋轉、位移）以 smoothstep 平順過渡回起始姿勢（t=0.37），`CLIP_FOR.attack2.end` 改 1.70；首尾全身骨骼最大只差 1.0°（原本差到 100°）。Attack1 沒動（使用者沒提），同樣做法可套用。②披風穿模嚴重：穿模取決於當下姿勢，無法預先算進動畫資料，改在播放時處理（`hero3d.js` 的 `buildCape`）：布料三角面拆成獨立網格、身體只畫盔甲；每根骨骼用以它為主（權重≥0.6）的盔甲頂點量出膠囊碰撞體，另外量骨盆與胸腔；每幀 CPU 蒙皮算布料位置，穿進膠囊的推出，推開量在相鄰頂點平滑，再做布料鬆弛（上緣貼肩背的不動）後再碰撞一次；只推「綁定姿勢下本來就在碰撞體外」的頂點；接縫的重複頂點成組共用。披風更新約 1.3 ms／幀。布料頂點清單移到 `images/models/hero3d/sunbrand-cloth.json`（腳本與遊戲共用）。深蹲收招時披風原本被壓成尖角碎片，鬆弛後平順。③劈砍太像斬首：依使用者「上臂下壓約 30°」，整條仰角曲線壓低 30°（起手 +24° → −4°）、側偏拉大（−42° → +16°），讓它是斜劈不是橫掃。
 - 已知限制：Meshy 模型授權須由使用者確認後才能用於正式版（見 SOURCE.md）；3D 主角無逐幀輪廓圖，穿透輪廓不畫；AI_RULES 8.7.1 規定 3D 以 MakeHuman＋Blender 製作，本模型是使用者明確指示的例外。素材庫雙庫提交規則尚未處理 GLB。未做真實正式服驗證（只靠 isInternalServer 判斷）。
 
+- Attack2 斜劈改版（使用者背後視角示意圖）：高舉＝劍臂往人物左上約 45°，斜砍＝由左上越過頭上弧線揮向右下約 45° 結束（冠狀面軌跡，不再是前後向下劈）。刀刃全程順著砍向：劍局部 X（刃口，量自劍網格）固定取路徑切線垂直於劍身的分量，劍面法線垂直於砍向，中途不翻面、不會用刀背拍；手與劍維持參考幀的相對關係。腳本 fix-grips.mjs 的 path／sKeys／edge 規則；GLB 版號 grips7、hero3d.js?v=1.0.9。
+- Attack2 再改（使用者：敵人站在前方不是上方，要斬向肩到腰以下，且要跨步用全身力量）：用同一個模型在前方約 1.6 的站姿假人量測，劍刃穿過假人正面的位置由肩頸（y 1.42）→左肩胸（1.08）→腰（0.95）→腰下（0.78），不再掃到頭頂上方。路徑前伸分量加大（f0 1.0）、舉劍降到約 30°；新增 fixLunge：髖部前移 0.36、前腳跨出 0.6（途中抬腳）、後腳跟上，兩腿以兩段式 IK 接腳，收招由 recoverToStart 帶回起始姿勢（首尾仍相接）。前沖與劍伸出會超出原畫布，hero3d.js 的 SIZE／SPAN 同比例放大為 352／4.4（每公尺像素不變）。fix-grips.mjs 新增 tipTrack 供量劍尖軌跡。GLB 版號 grips8、hero3d.js?v=1.0.10。
+- Attack2 放棄手調軌跡，改用 Meshy 動作庫現成動作（使用者 2026-10-27 指示，點數上限 50，實際花 39 點）：以既有綁骨架任務（01a17bba-5676-7240-b5a2-d58ac6535c10）送動畫任務 01a17eb6-3406-74d4-a385-acd7ccaadeee（Charged Slash／Sword Judgment／Weapon Combo 2／Right-hand Sword Slash／Reaping Swing／Double Combo Attack，18 點）與 01a17eba-3f01-702b-a52c-b7a94ecbfe4e（Weapon Combo／Weapon Combo 1／Counterstrike／Dodge and Counter／Triple Combo Attack／Double Blade Spin／Charged Upward Slash，21 點）。這些都是「右手」動作，骨骼同名，直接套到鏡像成右手持劍的遊戲骨架。
+- 選用：Attack2（斜劈）＝Double Combo Attack 的第三下 1.74～2.82 秒（由右上高舉、斜劈過敵人肩到腰下），加 fixLunge 跨步半步（髖前移 0.3、前腳整步、後腳跟上、兩腿 IK）與 30° 瞄準修正（動作庫落點偏主角右側）；Attack3（新的平砍）＝Reaping Swing 1.5～2.1 秒（右往左橫掃身前），髖部下沉 0.2 壓低重心，放在同一條 Attack2 時間軸 1.90 秒起（CLIP_FOR.attack3，不新增 GLB 動畫）。普攻改為 attack1／attack2／attack3 三招混著出；施法借 attack2 的舉劍到劈下（0.37～1.25，會被加速到 0.5 秒內）。
+- 取樣工具：fix-grips.mjs --extract-meshy <Meshy 動畫.glb> <動作名> <起> <迄> <fps> <out.json> 產生 src/data/meshy-*.json；匯入時髖部位移平移成原地。驗證用「前方 1.6 站姿假人」量劍刃穿過假人正面的位置：Attack2 約由 肩（y 1.37，右側）→ 腰 1.0 → 腰下 0.66；Attack3 在 y 1.24～1.39 由右掃到正中。舊的手調軌跡（path／sKeys）保留為 meshy 沒設值時的備援。
+- 限制：Attack2／3 握劍是動作庫的自然握法，劍與前臂夾角最大約 55°（測試放寬到 60°）；Attack3 掃到正中後劍會往上（動作庫原本接著的舉劍），只取到 2.5 秒前；Attack1 仍是舊的雙手劈。SIZE／SPAN 放大為 352／4.4。GLB 版號 grips9、hero3d.js?v=1.0.11。
+- Attack1 改為使用者上傳的 Meshy 網頁動作 Sword Judgment（右手單手劍：小跳躍→轉一圈→斜砍；使用者在網頁重新綁骨架，Mixamo 範本、40 根骨骼含手指與披風骨，任務花費由使用者帳號負擔）：不改動作本身（不做 IK、不限手腕、不修落點），只用「世界旋轉差」重新瞄準到遊戲 24 根骨骼（fix-grips.mjs 的 extractRetarget／importRetarget；脊椎名稱順序相反依層級對應；四肢補最小擺動修正讓方向與來源一致；Attack1 的最上節 Spine 只有常數軌跡，其動作併進 Spine01），取來源 0.30～1.25 秒（後面是長時間跪姿，不取）放在 Attack1 的 0.10 秒起，收招 0.90～1.40 回到起始姿勢（首尾相接）。
+- 劍：遊戲模型本來就是右手持劍、有獨立 Sword 骨骼（父骨＝右手），不需再換手或新綁。新增 fitSwordGrip：只調整 Attack1 裡 Sword 相對右手的旋轉（該動作的 Sword 軌跡是常數），把劍身軸對準「前臂→手」方向的平均（轉 68°，劍柄位置不動）；量測劍與前臂夾角最大 26.9°（手腕本身在動作中的彎折），首尾姿勢差 0.26°。CLIP_FOR.attack1＝0.10→1.40、hit 0.62；舊的雙手劈與副手 IK 保留為 retarget 沒設值時的備援，verifyGrips／測試改檢查新 Attack1 的劍夾角與首尾相接。
+- 修 Attack1 斜砍結束處瞬移（使用者回報）：不是動作被改，是匯入只覆寫片段內的格，片段之後留著舊動作的資料，收招混合時在片段結束處跳格（相鄰兩格最大 82°）；改成片段之後停在最後一格再收招（Attack1 最大單格 40°，來自轉圈本身）。同時發現 Attack2／3 的 Sword 旋轉軌跡還是舊動作的逐格資料，劍在手裡瞬間翻 164°——改成 Attack2／3 也固定劍相對右手的握姿並對準前臂（劍與前臂夾角最大 15°）。新增 maxKeyStep 量測與測試（單格 ≤60°）。GLB 版號 grips11、hero3d.js?v=1.0.13。
+- 修劍護手一邊歪掉（使用者回報）：不是蒙皮拉扯，是護手右翼端 11 個頂點（含貼圖接縫重複頂點）在 Meshy 權重裡 100% 綁在右手而不是劍；左翼跟劍、右翼跟手，Attack1 把劍相對手轉 68° 後就歪了。fix-grips.mjs 新增 fixGuardWing（在 hardenArmor 之後，以劍局部座標找出 11 個頂點改綁 100% 劍骨骼），verifyGrips／測試新增 guardWingStray＝0。GLB 版號 grips12、hero3d.js?v=1.0.14。
+- Attack2 改為使用者上傳的 Meshy 網頁動作 Left Slash（名稱叫 Left，實測是右手在揮、左手護在身前，所以不鏡像；右下往左上的上撩斜砍，再由左上往右下斜砍回到右下）：流程同 Attack1——重新瞄準到遊戲骨架（data/meshy-left-slash.json，來源 0.30～1.55 秒），放在 Attack2 的 0.10 秒起，收招 1.15～1.65 回到起始姿勢；動作本身不改（不做 IK、不限手腕、不轉落點、不加跨步）。取代原本的 Double Combo 斜劈（刪除 data/meshy-double-combo-attack.json）；Attack3 平砍仍在同一條時間軸 1.90 秒起。CLIP_FOR.attack2＝0.10→1.65、hit 0.62；施法借 0.10→0.95。
+- 劍的握姿新增「刀刃順著揮砍方向」：fitSwordGrip 在劍身對準前臂之後，再繞劍身軸搜一個常數翻轉（0～179°，刀刃兩側都開刃），使劍尖速度垂直於劍身的分量落在刃口方向、不打在劍面上（以速度加權，快的地方最重要）；Attack2 斜砍翻 46°、Attack3 翻 42°，Attack1（使用者已確認）不調。Attack2 區間 0.10～1.85 與 Attack3 區間 1.90～ 各自一組握姿。
+- 手腕限制不再套用在 Attack1／Attack2（Meshy 網頁動作，使用者要求不改動作）；其他動作維持 ≤100°（目前 68°）。Meshy 動作自己的手腕扭轉量測最大 233°（包含兩套骨架靜止姿勢不同造成的差），前臂與手交界處盔甲有些許撕裂碎片（候選處理：只對這兩招限制手腕，但會改動作，等使用者決定）。GLB 版號 grips13、hero3d.js?v=1.0.15。
+- Attack3 改為使用者上傳的 Meshy 網頁動作 Double Combo Attack（右手：右上往左下斜砍，再反著揮回原位；骨骼同名重新瞄準，不改動作）：來源 0.00～1.35 秒（data/meshy-double-combo-2.json），放在 Attack2 時間軸的 1.74 秒起（CLIP_FOR.attack3＝1.74→3.09、hit 2.36），收招 2.55～3.09 回到起始姿勢（首尾差 0.04°）。取代原本的 Reaping Swing 平砍（刪除 data/meshy-reaping-swing.json，並移除舊 API 骨架匯入程式 importMeshySegment／extractMeshyClip，只保留 Mixamo 重新瞄準）。劍握姿：劍身轉 72.6° 對準前臂、繞劍身翻 56° 讓刀刃順著揮砍；護手修正（fixGuardWing）對所有動作有效。
+- 修握姿切換：兩招共用 Sword 旋轉軌跡，第二招起始姿勢落在兩格之間時內插到前一格（第一招的握姿），首尾差 6.1°；改為第二招的握姿往前多取半格。新增 attack3 loop／刀夾角／區間一致測試。GLB 版號 grips14、hero3d.js?v=1.0.16。
+- 修 Attack3 後半段與原動作不同（使用者回報）：收招混合從遊戲 2.55 秒開始，對應來源 0.81 秒，壓在「反著揮回」（來源 0.9～1.3 秒）上把它往起始姿勢拉。改成：取來源 0.10～1.32 秒、整段時間均勻壓縮 1.3 倍（形狀與各段相對速度不變，遊戲本來就依攻速縮放播放時間）放在 1.72～2.66 秒，收招 2.66～3.11 只在整段播完之後才開始。新增 retargetError／verifyGrips.retargetMaxDeg：收招開始前四肢方向與來源動作的最大差＝0°，測試 ≤1°。Attack1／Attack2 的收招仍有 0.15～0.20 秒與動作尾端重疊（使用者已確認），沒有改。CLIP_FOR.attack3＝1.72→3.11、hit 2.18；GLB 版號 grips15、hero3d.js?v=1.0.17。
+- 修手部結構怪怪（使用者回報前臂護甲與手之間星形尖刺碎片）：查到兩個原因。(1) Mixamo 骨架沒有前臂扭轉骨，Meshy 網頁動作的整個手腕扭轉都落在手骨骼上，最大 233°（Attack2）／110°（Attack3），前臂護甲與手交界被擰碎；改成對所有動作（含 Attack1／2／3）套用手腕限制並分三段分攤：手 ≤60°、超出的整個交給前臂（≤90°）、前臂超過的再由上臂繞軸滾動吸收（上臂 ≤150°，前臂在上臂座標下補轉），手、前臂的世界朝向與手肘位置都不變，所以動作看起來完全一樣（retargetError 仍 0°）。(2) 整個模型是一整片焊接網格，劍握柄與手套之間有 26 個三角面同時含劍頂點與手／前臂頂點，劍相對手轉動時被拉成尖刺；全部刪除（都在拳頭裡面）。曾試過把手腕混合權重圈改成剛性，反而保證拉長，已放棄。fixWristRing 未保留。新增 swordConnectorTriangles／stretchedTriangles／twistSeries 偵察。披風被拉長細絲刪除數隨動作姿勢變多（128 個）。GLB 版號 grips16、hero3d.js?v=1.0.18。
+- 【更正：撤回對角色的改動，只動劍】使用者指出「別去動角色本身的動作、骨骼或形變，只調整劍」，而手部仍有問題。查證：手套碎片（星形尖刺）的真正來源是我自己把劍轉離了拳頭原本的握法（劍身轉 68° 對準前臂、再繞軸翻轉刀刃）——拳頭與握柄之間有 26 個焊接三角面，劍相對手一轉就被拉成碎片；我先前改的手腕扭轉分攤（手→前臂→上臂）、手腕混合權重圈剛性化、刪除連接面（讓手套出現破洞）都是在補自己造成的問題，而且動了角色。全部撤回：Attack1／2／3 為 Meshy 動作原樣（只做重新瞄準）、不做手腕限制、不改權重、不刪三角面；手腕限制維持原狀只套在原有的 CombatIdle／Death 等舊動作。劍的處理只剩一件事：fitSwordGrip 把每個動作的 Sword 旋轉軌跡設成模型原本的握法（也蓋掉 Attack2 舊動作殘留的逐格劍旋轉），整支劍跟著手走，拳頭保持乾淨握著握柄。取消「劍身對準前臂」與「繞軸翻轉刀刃」（兩者都會讓劍離開握法）。護手右翼端 11 個頂點綁在右手的錯綁仍修（屬於劍）。測試改為檢查 swordGripMaxDeg＝0、retargetMaxDeg≈0，移除劍與前臂夾角檢查。GLB 版號 grips17、hero3d.js?v=1.0.19。
+- 修劍彎了（使用者回報）：把劍單獨拉出來、劍身軸轉成朝上檢視，Meshy 原網格的劍身確實是彎的（中心線在 y≈55 有約 1.8 單位錯位，越往劍尖越偏一邊，x 對 y 迴歸斜率 −0.041）；先前每一格都帶著它。fix-grips.mjs 新增 straightenBlade：對 Sword 骨骼 100% 的頂點在 y>23 做只依 y 的剪切 x += 0.04×(y−23)（並排試過 0／0.03／0.04／0.05／−0.03：0.04 劍尖正好在護手與握柄同一條軸線上；重複頂點位移相同不裂開；護手與握柄不動）。verifyGrips.bladeLean 與測試（|斜率|≤0.01，修後約 −0.001）。劍是這次唯一動的網格。GLB 版號 grips18、hero3d.js?v=1.0.20。
+- 【刀刃方向與能不能砍到敵人】使用者給原動作預覽圖：手沿著手臂方向伸出，刀刃應是它的延伸（紅箭頭），而且劍的方向要想「砍不砍得到站在前面的敵人」。查證與修正：(1) 重新瞄準原本只對齊上臂／前臂方向，手骨骼的絕對朝向沒對（兩套骨架手的靜止朝向不同）——取樣檔新增 handDir（Hand→Middle1），匯入時把遊戲手骨骼 +Y 對齊它。(2) 遊戲拳頭握柄軸與手 +Y 差 44.2°，劍留在原握法時刀刃偏離手的方向；新增 alignGripToHand：Attack1／2 的右手骨骼局部旋轉右乘固定校正 C（把劍身軸轉到手 +Y），拳頭與劍一起轉、相對位置不變（不會再把手套拉碎），刀刃落在原動作手的方向上；這是兩套模型手形狀不同的固定校正，不是改動作。(3) 新增 hitFrames：敵人＝起始朝向正前方 1.5、半徑 0.28、高 0.35～1.6 的圓柱，量各招揮砍時段劍身進入圓柱的格數——Attack1（0.78）胸口高度 1.3～1.45、Attack2 兩下 1.19～1.27／1.06～1.46、Attack3 原本完全打不到（最近 0.81，原動作邊揮邊往左轉約 45°），加 aim：髖部繞垂直軸 −70°（1.72～2.05 漸入）後穿過肩到胸 0.99～1.42。測試 bladeVsHandDeg＜1°、每招 hits≥1。CLIP_FOR hit：attack1 0.78、attack2 0.50、attack3 2.34。GLB 版號 grips19、hero3d.js?v=1.0.21。
+- 【刀刃朝砍的方向，不是刀背】使用者指出砍下去是用刀背（劍面）拍敵人。量化：flatRatio＝劍尖移動方向（垂直於劍身的分量）落在劍面法線（劍局部 Z）上的速度加權比例，0＝刃口、1＝劍面；原本 0.83～0.94＝幾乎全用劍面拍。alignGripToHand 新增 rollDeg：拳頭＋劍整體繞劍身軸再翻一個固定角度（刀刃指的方向不變、劍與拳頭相對位置不變，手腕等於轉一個固定角）。掃 0～150°：90° 只降到 0.33～0.53，並不最佳；最佳 Attack1 約 70°（0.11）、Attack2／3 約 62°（0.08～0.17），採 CFG.Attack1.retarget.gripRoll＝70、CFG.Attack2.gripRoll＝62。測試 flat≤0.3；hits、loop、retarget、bladeVsHand 不變。GLB 版號 grips20、hero3d.js?v=1.0.22。
 ## SYNC-SHORTCUT-HOLD-20261027 — 修復捷徑中斷並保留Claude管線
 
 - Owner：Codex；Done（工具修復與必要驗證完成，實際同步結果見本輪報告）。使用者以1要求接續同步，並明確選擇將Claude本地Meshy提交8d1577c5保留、暫不併入develop。原develop bd0b982e已乾淨；這次卡在Antigravity的本機套用參數捷徑被skip-worktree隱藏，但遠端又更新該路徑，fast-forward拒絕覆寫。
@@ -12886,3 +13010,29 @@ Worker 存活且頁面正常完成載入。
 - 全庫：node --test --test-reporter=tap "tests/*.test.cjs"完整執行14分45秒，4931項＝4340過／589失敗／2跳過。以修改前HEAD 14e7d8cb的本次來源唯讀覆映、按每個失敗名稱重跑，全589項均在原版重現，新增失敗0；沒有弱化既有斷言或擴修無關功能，不宣稱全庫全過。原始TAP與baseline-summary.json保留本聊天visualizations/wave-table-removal。
 - 同副本BOUNCE-DODGE聊天後續新增skills2、專項回歸及LV／任務表／index／Worker快取；本次以Git index分段暫存，保留其工作檔逐位元不變，提交只含本次區段（bridge372／原skills2快取），其較新工作檔快取維持373／skills2 364。以只覆映staged來源並隔離對方skills2的方式重跑上述83項，83/83通過；不納入對方進行中功能或文件。
 - 交付：本段所在「[Codex] refactor: 移除冗餘波次表並統一出怪參數來源」Commit，實際編號見回覆；無本次未完成項目，可供Review／合併，未合併或推送。已知限制為全庫589項既有失敗及未做瀏覽器／真人長戰，下一步正常整合後重載遊戲；使用者NPC與主參數表、其他聊天進行中修改保留未提交。
+## WORLD-MAP-PORTAL-QUALITY-20261028 — 神界傳送門質感與動態升級
+
+- Owner：Codex；Done，單一開發者。使用者已核准目前傳送門外觀並明確要求Commit。沿既有HTML／CSS介面圖形重做古金屬拱門、頂冠、門座、能量旋渦與光粒，不產出獨立圖片或VFX Preset。
+- 前置：既有地圖與入口已完成；允許index.html門體標記及CSS快取、css/world-map.css門體樣式、docs/WORLD_MAP.md、LV_upgrade_system.md及本段；禁止JS／玩法／解鎖／存檔／配置／原圖／其他工作區／合併推送。
+- 驗收：桌面／窄屏外觀與動畫、隱藏／縮減動態、入口點擊與焦點、地圖回歸／Build／Console及diff均已完成；使用者2026-10-28核准目前外觀並要求提交，解除本輪暫不提交限制。本次五檔獨立Commit，不合併／推送；後續使用者正常整合。
+- 完成五檔：index內嵌自製SVG金屬漸層／刻紋／頂冠寶石／石階，CSS重做門內反向能量流、旋渦核心、星點、上升六光粒、門緣循環光紋及底座光環；hover／focus微抬升提亮，裝飾不攔截指標，縮減動態包含偽元素皆停止動畫。320／390窄屏門體下移避免頂端裁切，主頁CSS快取1.0.7；WORLD_MAP與LV同步。沒有新增JS／Timer、獨立素材、VFX Preset或玩家文字；不需String／素材庫Commit。
+- 回歸：node --test --test-reporter=spec tests/world-map-ui.test.cjs tests/world-map.test.cjs tests/string-table.test.cjs tests/fullscreen-toggle.test.cjs tests/battle-fullscreen.test.cjs為33/33，npm.cmd run build最終597檔通過，git diff --check通過。沒有新增純樣式斷言或改既有測試期望。
+- 瀏覽器：CUA／IAB隔離fixture載正式DOM／全套CSS／地圖程式與配置，320×720／390×844／1558×869皆驗入口邊界、裝飾pointer-events:none、能量流動transform持續改變，實際點擊及鍵盤Enter開神界頁、返回正常，鍵盤焦點框可見，Console error／warning0。縮減動態為CSS規則檢查，未修改或模擬使用者OS偏好；未讀寫玩家存檔。32幀真實瀏覽器截圖編為portal-motion.gif，另portal-world-map.png／portal-narrow.png與驗證JSON保留本聊天visualizations/portal-quality；中間影格已清理。
+- 衝突：Antigravity ffa165b3新增統計原因，index僅改stats／skills2／combat／tower／bridge快取，與本次CSS版本及門體無語意相依；但該分支缺少前輪傳送門／神鑄基礎，對現況做三方試合併（統一CRLF／LF後）仍在world-map CSS版本及門體區塊回報衝突，已依AI_RULES 3.2詢問；使用者後續明確核准目前新版及本次提交，只提交ai/codex五檔，Antigravity成果留待正常整合。AI_TASKS採檔尾追加，對方檔首新增，當輪增量merge-file exit0；LV檔尾候選亦exit0但未套用。無其他AI工作區或分支被修改／整合。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、WorldMapUI解鎖與指令、String表／資料、Worker／存檔、既有測試及地圖PNG；自我Review及使用者外觀驗收已完成。已知限制為未做全庫、真人長戰與OS減少動態實機切換；本次無未完成實作。Commit為本段所在「[Codex] feat: 升級神界傳送門質感與能量動態」，編號見交付；可供合併，未合併／推送。提交前確認五檔程式／樣式內容與已驗證版本一致，本輪僅更新交付狀態，不重跑未受影響測試。
+
+- 披風破洞（HERO3D，Attack1 舉劍幀）：原因是細絲判定門檻 4 倍連仍填著布面的三角面一起刪（133 個）。門檻改 25 倍（只刪 62 個真細絲），只動索引緩衝區；骨架、動作、劍皆未動。測試的披風伸長上限同步改 25.1，模型版號 grips21、hero3d.js?v=1.0.23。
+- 倒地死亡（HERO3D）：改用使用者上傳的 Meshy Dead 動作（取樣檔 data/meshy-dead.json，30 fps，來源 2.967 秒，均勻壓縮 1.079 倍塞進 Death 的 2.75 秒），同 Attack 的重新瞄準流程，四肢方向與來源誤差 0；只把 Sword 設成模型原本握法，不做手腕限制與握姿旋轉。retargetMaxDeg 納入 Death，模型版號 grips22、hero3d.js?v=1.0.24。
+- 倒地死亡的劍穿模修正：原握法在跪地幀（約 1.55～1.65 秒）劍穿進小腿護甲（劍到身體最近距離 0.01）。掃描拳頭＋劍繞手軸旋轉的各角度，選用與攻擊動作相同的固定校正（劍身順著手的方向，roll 0），整段最近距離 ≥0.117；動作不動。模型版號 grips23、hero3d.js?v=1.0.25。
+- 倒地死亡的劍改成脫手落地（使用者：原作的手是放開的）：站著時握法回到模型原樣（撤銷之前加的 44° 校正），1.1～1.8 秒劍的世界旋轉漸漸由跟著手轉成躺平（劍面朝地、水平朝手臂方向、劍尖微傾 5° 貼地）；劍骨骼原點仍跟著手所以落點在手邊。跪地幀不再穿腿（最近距離 ≥0.085），動作不動。測試加 deathSwordEnd。模型版號 grips24、hero3d.js?v=1.0.26。
+- 倒地死亡最後的劍（使用者改指示：劍留在手上、平放地面伸向身體左側、手背朝上）：不讓劍脫手（拳頭與握柄是同一塊網格，拆不開）。落地時（1.9～2.35 秒）只把手腕由原動作朝向漸漸轉到「劍身水平朝左側往前 20°、劍面朝地」，手臂與身體動作不動；站著時握法為模型原樣。遊戲模型的手是不能張開的拳頭，所以不是張開的手。測試 deathSwordEnd 加「朝左」。模型版號 grips25、hero3d.js?v=1.0.27。
+- 倒地死亡回饋（劍穿模、劍變形、躺地披風破洞）：①avoidBody：劍的頂點離身體（盔甲，不含右臂）最近距離由 0.005 提高到 0.061（落地前，只轉手腕、每軸 ±45°，逐格取最接近上一格的轉法）；躺平階段不搜尋，調整量漸漸收掉再由 settleHand 帶到平放。②披風：貼腿的 41 個頂點權重往髖部拉 0.8（被刪細絲三角面 62→10）；披風整片往背後移 0.02（躺平時手臂護甲頂穿披風的洞消失）。動作與骨骼不動。模型版號 grips27、hero3d.js?v=1.0.29。
+- 倒地死亡的劍軌跡（使用者在 1.4～2.3 秒縮圖上逐幀畫箭頭）：移除「為閃身體而轉手腕」的 avoidBody，劍由手的動作決定。1.6 秒以前照手的握法；1.7 秒劍朝身體前方斜下 45°、1.8 秒朝前略向下 10°、1.9 秒起平放（伸向左側往前 20°、劍面朝地）。整隻手（拳頭＋劍）繞手腕轉，每個關鍵時刻決定劍的世界朝向、中間球面內插，1.7／1.8 秒的朝向由手原本的朝向做最小旋轉得到。不閃身體，所以 0.35～0.45、1.5～1.6 秒劍與身體的最近距離只有 0.01～0.02（碰到，穿得很淺，使用者表示可接受）。模型版號 grips28、hero3d.js?v=1.0.30。
+
+
+
+## MERGE-HERO3D-DEVELOP-20261028 — 整合 HERO3D 動作與傳送門成果
+
+- Owner：Codex；Done。依使用者授權處理 develop 的 pending merge（HEAD 86200e0f、MERGE_HEAD ba3c949f），不操作 index、Commit、推送或其他工作區。
+- 衝突解法：`docs/AI_TASKS.md` 同時保留 ours 的 WORLD-MAP-PORTAL-QUALITY 完整紀錄及 theirs 的 HERO3D 披風／死亡／持劍迭代紀錄；`index.html` 使用與 incoming `js/hero3d.js` 及 grips27 模型相符的 `hero3d.js?v=1.0.29`。未發現原始 XLSX 衝突，不需 Excel DATA plan；素材庫無額外檔案。
+- 驗證：`node --test --test-reporter=spec tests/hero3d-battle-rules.test.cjs` 11/11 通過；`npm.cmd run build` 597 檔全數通過；`git diff HEAD --check` 通過。兩個衝突檔已無 conflict marker；controller 對 `tools/meshy-pipeline/src/fix-grips.mjs` 的 EOF 空白機械修正保留。

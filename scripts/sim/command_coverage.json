@@ -96,17 +96,9 @@
       "類別": "redundant",
       "理由": "tower.finish 涵蓋"
     },
-    "forge.cancel": {
-      "類別": "redundant",
-      "理由": "forge.setAuto／forge.start 的自動流程涵蓋"
-    },
     "forge.removeItem": {
       "類別": "redundant",
-      "理由": "手動熔爐工序，forge.setAuto／forge.start 的自動流程已涵蓋"
-    },
-    "forge.toggleDust": {
-      "類別": "redundant",
-      "理由": "手動熔爐工序，自動流程已涵蓋"
+      "理由": "新版模擬策略以forge.unloadAll完整退料；單格移除由真Worker回歸驗證。"
     },
     "item.enchant": {
       "類別": "disabled",
@@ -217,6 +209,14 @@
     "skill2.delete": {
       "類別": "noRule",
       "理由": "刪除會破壞累積投資，文件沒有重配規則"
+    },
+    "forge.setOperation": {
+      "類別": "noRule",
+      "理由": "新版模擬策略目前僅執行裝備神鑄；精鑄／神級寶石／刻印由專項真Worker回歸驗證。"
+    },
+    "forge.placeGem": {
+      "類別": "noRule",
+      "理由": "新版神級寶石改為兩種類型各三顆10級，舊低階升階策略已移除，雙屬性選擇尚無模擬策略規則。"
     }
   }
 }

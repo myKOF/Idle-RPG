@@ -34,11 +34,13 @@ const findRow = (rows, kind, id) => rows.find((r) => r[0] === kind && r[1] === i
 /* 各稀有度的符文孔數在 game_parameters「表-稀有度」的參數g，不在 Runes 表：驗證時讀 CSV，
    測試用環境變數 GAME_PARAMETERS_CSV 指到暫存副本，把 11 個稀有度的孔數換成 slots。 */
 function withSlots(slots, fn) {
+  // 前十一個既有ID保持不變；新增神鑄神話ID沿用神話孔數，也可明確傳第十二項測試。
+  if (slots.length === 11) slots = slots.concat(slots[6]);
   const rows = cfg.csvParse(fs.readFileSync(path.join(root, 'config', 'CSV', 'game_parameters.csv'), 'utf8'));
   const cCat = rows[0].indexOf('系統分類'), cG = rows[0].indexOf('參數g');
   let k = 0;
   rows.forEach((r) => { if (r[cCat] === '表-稀有度') r[cG] = String(slots[k++]); });
-  assert.equal(k, slots.length, '表-稀有度 共 11 列');
+  assert.equal(k, slots.length, '表-稀有度 共 12 列');
   const tmp = path.join(os.tmpdir(), 'gp-rune-slots-' + process.pid + '-' + Date.now() + '.csv');
   fs.writeFileSync(tmp, cfg.csvStringify(rows), 'utf8');
   const prev = process.env.GAME_PARAMETERS_CSV;

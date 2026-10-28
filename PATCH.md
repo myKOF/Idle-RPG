@@ -1,5 +1,18 @@
 # PATCH.md
 
+## 統計面板死亡數下方新增每次死亡原因明細（最多10條）（Antigravity 2026-10-28）
+
+- **統計面板死亡原因記錄與顯示（`js/stats.js`、`js/combat.js`、`js/elite.js`、`js/legendary.js`、`js/skills2.js`、`js/tower.js`、`tests/stats-panel.test.cjs`）**：
+  - 於 `LOOT_STATS` 新增 `deathCauses`（上限保留最新 10 筆）與最近一次受擊資訊 `lastDamage`，按「清理」（`resetLootStats()`）時一併歸零。
+  - 新增 `recordPlayerDamageHit(attacker, skill, damage)` 與 `clearLastPlayerDamage()`：
+    - 敵人普攻／重擊／高塔 BOSS 蓄力重擊（`doMonsterAttack`）記錄敵人名稱、技能或普攻名稱及當次傷害。
+    - 菁英與 BOSS 技能（`eliteHitPlayer`）記錄敵人名稱、技能名稱及當次傷害。
+    - 持續傷害 DoT（`tickStatuses`）區分敵方施加狀態與自身【鐵血之舞】等技能狀態，記錄來源名稱、狀態／技能名稱與當次跳傷。
+    - 自身扣血效果（【血飲術】、【戰神體】、【以血還血】、【不屈之誓】、【以柔剋剛】、【火靈護盾】）記錄自身角色名稱（如 `冒險者（你）`）、技能／特效名稱與扣血量。
+    - 高塔非死亡結算（超時／撤退）自動清除非致死受擊紀錄，不誤記為死亡原因。
+  - 於 `statsBasicHtml()` 的「死亡數」下方以子列格式渲染：`└ 敵人(或自己)名稱 / 使用技能名稱 / 造成傷害值`，最多顯示 10 條。
+  - 補充單元測試（`tests/stats-panel.test.cjs`），驗證敵人與自身死亡原因格式、10 條上限滾動保留與清理歸零。
+
 ## 新增 GM 指令 skill_point 增加或扣除技能點數（Antigravity 2026-10-27）
 
 - **新增 GM 指令 `skill_point`（`js/gm_exec.js`、`js/gm.js`、`js/ai-key-setting.js`、`GM_command.md`、`tests/gm-skill-point.test.cjs`）**：

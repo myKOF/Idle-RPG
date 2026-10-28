@@ -45,11 +45,11 @@ test('SHINV-1 神鑄頁沒有第二份背包格線，只留借用插槽與寶石
   assert.ok(html.indexOf('id="inv-section-box"') > equipStart && html.indexOf('id="inv-section-box"') < equipEnd);
 });
 
-test('SHINV-2 裝備／寶石切換移到法陣面板頂端，不放在背包表頭', () => {
+test('SHINV-2 四個功能切換位於法陣上方，寶石模式由功能決定', () => {
   const forge = forgeSection();
-  const head = forge.slice(forge.indexOf('class="forge-head"'), forge.indexOf('id="forge-stage"'));
-  assert.match(head, /id="forge-invtab-items"/);
-  assert.match(head, /id="forge-invtab-gems"/);
+  for (const mode of ['equip','ancient','gem','imprint']) assert.match(forge,new RegExp('id="forge-mode-'+mode+'"'));
+  assert.ok(forge.indexOf('forge-mode-equip')<forge.indexOf('id="forge-stage"'));
+  assert.doesNotMatch(forge,/forge-invtab-/);
 });
 
 function fakeNode(id) {
@@ -112,10 +112,10 @@ test('SHINV-4 switchTab 每次都決定背包框掛在哪一頁', () => {
 test('SHINV-5 神鑄頁的格子點擊是放入法陣、不可鑄造品質置灰，且不畫裝備詳情', () => {
   const body = functionBody('renderInventory');
   assert.match(body, /itemCellHTML\(it, 'forgeinv', dimClass, forgePendingKey\)/);
-  assert.match(body, /isForgeableEquipmentRarity\(it\.rarity\)\) dimClass \+= ' forge-na'/);
+  assert.match(body, /divineForgeItemEligible\(it, forgeViewMode/);
   assert.match(body, /if \(inventoryForgeMode\(\)\) return;\s*if \(UI\.inventoryScrolling\) updateSelectionUI\(\);/);
   // 寶石神鑄時背包框藏起來，裝備神鑄才畫背包
-  assert.match(functionBody('renderForge'), /if \(invTab !== 'gems'\) \{[\s\S]*?renderInventory\(\);/);
+  assert.match(functionBody('renderForge'), /if \(!gemMode\) renderInventory\(\);/);
 });
 
 function fakeCell(classes, attrs) {

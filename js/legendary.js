@@ -85,6 +85,11 @@ function legendaryTickDeferred(pEnt, st, dt, floatSel) {
       var floor = typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.god ? 1 : 0;
       var loss = typeof gmHpLockActive === 'function' && gmHpLockActive(pEnt) ? 0 : Math.min(Math.max(0, pEnt.hp - floor), s.loss);
       pEnt.hp = Math.max(0, pEnt.hp - loss);
+      if (loss > 0 && window.recordPlayerDamageHit) {
+        var selfName = (typeof playerSelfDeathName === 'function') ? playerSelfDeathName() : STR(371);
+        var softenName = (typeof PASSIVE_POOL !== 'undefined' && PASSIVE_POOL.softenBlow && PASSIVE_POOL.softenBlow.name) || STR(41);
+        window.recordPlayerDamageHit(selfName, softenName, loss);
+      }
       if (loss > 0 && typeof sgWarGodBodyOnDamaged === 'function') sgWarGodBodyOnDamaged(loss, pEnt);
       if (loss > 0 && typeof floatText === 'function') floatText(floatSel, '-' + fmt(loss), 'mdmg');
       s.remaining--; s.next += s.interval;
@@ -672,6 +677,11 @@ function legendaryTickFireSpirit(pEnt, st, dt) {
     var loss = Math.min(Math.max(0, pEnt.hp), st.hp * spec.selfHpDrainPctPerSec / 100);
     if (!(typeof gmHpLockActive === 'function' && gmHpLockActive(pEnt))) {
       pEnt.hp = Math.max(0, pEnt.hp - loss);
+      if (loss > 0 && window.recordPlayerDamageHit) {
+        var selfName2 = (typeof playerSelfDeathName === 'function') ? playerSelfDeathName() : STR(371);
+        var fireName = (typeof PASSIVE_POOL !== 'undefined' && PASSIVE_POOL.fireSpiritShield && PASSIVE_POOL.fireSpiritShield.name) || STR(41);
+        window.recordPlayerDamageHit(selfName2, fireName, loss);
+      }
       if (typeof sgWarGodBodyOnDamaged === 'function') sgWarGodBodyOnDamaged(loss, pEnt);
     }
     rt.nextFireDrainAt += 1;

@@ -78,63 +78,25 @@ test('傳奇特效已下架時沿用凍結值，不崩也不歸零', () => {
   assert.equal(c.passiveValue(it, it.passive), 42);
 });
 
-/* ---- 神鑄創世專屬特效 ---- */
-
-test('產出的神鑄特效只存強度值，數值落在 base 的 80%~120%', () => {
-  const c = loadContext();
-  const it = c.makeEquipment(200, { rarity: c.GODFORGED_IDX, level: 200, slot: 'chest' });
-  assert.equal(it.godPassives.length, c.GODFORGE_PASSIVE_COUNT);
-  it.godPassives.forEach((gp) => {
-    assert.equal(Object.prototype.hasOwnProperty.call(gp, 'val'), false, '存檔不得再出現 val');
-    assert.equal(gp.roll, Math.floor(gp.roll));
-    assert.ok(gp.roll >= 0 && gp.roll <= c.STRENGTH_ROLL_MAX);
-    const base = c.GODFORGE_POOL[gp.key].base;
-    const v = c.godPassiveValue(gp);
-    assert.ok(v >= base * 0.8 - 0.05 && v <= base * 1.2 + 0.05, gp.key + ' = ' + v);
-  });
+/* ---- 新版移除舊神鑄專屬特效，來源正規化保留其他欄位 ---- */
+test('三種神鑄裝備皆不再產生舊專屬特效',()=>{
+  const c=loadContext();
+  for(const rarity of [8,10,11]){
+    const it=c.makeEquipment(200,{rarity,level:200,slot:'chest'});
+    assert.equal(it.godPassives,undefined);assert.ok(it.affixes.length>0);assert.ok(it.passive);
+  }
 });
-
-test('神鑄特效：強度值 0／滿值對應區間兩端，調整 base 後等比變動', () => {
-  const c = loadContext();
-  const base = c.GODFORGE_POOL.godMight.base;
-  assert.equal(c.godPassiveValue({ key: 'godMight', roll: 0 }), Math.round(base * 0.8 * 10) / 10);
-  assert.equal(c.godPassiveValue({ key: 'godMight', roll: c.STRENGTH_ROLL_MAX }),
-    Math.round(base * 1.2 * 10) / 10);
-
-  const gp = { key: 'godMight', roll: 500 };
-  const before = c.godPassiveValue(gp);
-  c.GODFORGE_POOL.godMight.base *= 2;
-  assert.equal(c.godPassiveValue(gp), Math.round(before * 2 * 10) / 10);
-  assert.equal(gp.roll, 500, '強度值不因參數調整而變動');
+test('舊特效來源移除且冪等，既有傳奇與附魔仍換算',()=>{
+  const c=loadContext(),it=makeItem({rarity:8,godPassives:[{key:'smite',val:12}],passive:{key:'thorns',val:8},enchants:[{key:'vigor',val:30}]});
+  c.normalizeItemValueSources(it);assert.equal(it.godPassives,undefined);
+  const first=JSON.stringify(it);c.normalizeItemValueSources(it);assert.equal(JSON.stringify(it),first);
+  assert.equal(it.passive.val,undefined);assert.equal(typeof it.enchants[0].gemLv,'number');
 });
-
-test('舊存檔的神鑄特效：val → 強度值且數值不變', () => {
-  const c = loadContext();
-  const oldVal = c.godPassiveValue({ key: 'smite', roll: 640 });
-  const it = makeItem({ rarity: c.GODFORGED_IDX, godPassives: [{ key: 'smite', val: oldVal }] });
-  c.normalizeItemValueSources(it);
-  assert.equal(Object.prototype.hasOwnProperty.call(it.godPassives[0], 'val'), false);
-  assert.equal(c.godPassiveValue(it.godPassives[0]), oldVal, '換算不得改變玩家看到的數值');
-  /* 舊值只留到小數一位，反推強度值必然帶進位誤差：smite base 12 → 區間寬度 4.8，
-     0.05 的進位誤差在 1000 階刻度上約 10 階。保證的是數值不變，不是還原出同一個 roll。 */
-  assert.ok(Math.abs(it.godPassives[0].roll - 640) <= 15, '實際 ' + it.godPassives[0].roll);
-});
-
-test('神力（godMight）乘區吃算出來的數值', () => {
-  const c = loadContext(['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js',
-    'js/item.js', 'js/skills.js', 'js/talents.js', 'js/player.js']);
-  c.G = c.newGameState();
-  c.G.player.level = 100;
-  const it = makeItem({
-    slot: 'chest', rarity: c.GODFORGED_IDX,
-    godPassives: [{ key: 'godMight', roll: c.STRENGTH_ROLL_MAX }]
-  });
-  const base = c.computeStats().atk;
-  c.G.equipment.chest = it;
-  const withGod = c.computeStats().atk;
-  const pct = c.godPassiveValue(it.godPassives[0]);
-  assert.ok(pct > 0);
-  assert.equal(withGod, Math.round(base * (1 + pct / 100)));
+test('舊神力來源不再增加攻擊',()=>{
+  const c=loadContext(['js/util.js','js/strings_data.js','js/strings.js','js/data.js','js/status.js','js/formula.js','js/battlefield.js','js/item.js','js/skills.js','js/talents.js','js/player.js']);
+  c.G=c.newGameState();const before=c.computeStats().atk;
+  c.G.equipment.chest=makeItem({slot:'chest',rarity:8,godPassives:[{key:'godMight',roll:1000}]});
+  assert.equal(c.computeStats().atk,before);
 });
 
 /* ---- 附魔 ---- */
@@ -237,9 +199,9 @@ test('存檔載入會一併換算特效與附魔（migrateSave → fixLoadedItem
   const it = out.inventory[0];
   assert.equal(Object.prototype.hasOwnProperty.call(it.affixes[0], 'val'), false, '詞條');
   assert.equal(Object.prototype.hasOwnProperty.call(it.passive, 'val'), false, '傳奇特效');
-  assert.equal(Object.prototype.hasOwnProperty.call(it.godPassives[0], 'val'), false, '神鑄特效');
+  assert.equal(it.godPassives, undefined, '舊神鑄特效已移除');
   assert.equal(Object.prototype.hasOwnProperty.call(it.enchants[0], 'val'), false, '附魔');
-  assert.equal(typeof it.godPassives[0].roll, 'number');
+  assert.equal(it.godPassives, undefined);
   assert.equal(typeof it.enchants[0].gemLv, 'number');
   assert.ok(c.itemScore(it) > 0, '評分仍算得出來');
 });

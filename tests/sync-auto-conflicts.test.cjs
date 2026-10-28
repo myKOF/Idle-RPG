@@ -6,7 +6,7 @@ const {spawnSync,execFileSync}=require('node:child_process');
 const source=path.resolve(__dirname,'..');
 const windows=process.platform==='win32';
 function git(cwd,...args){return execFileSync('git',['-C',cwd,...args],{encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim();}
-function fixture({conflict=true,buildFails=false,incomingWhitespace=false}={}){
+function fixture({conflict=true,buildFails=false,incomingWhitespace=false,incomingDeletion=false}={}){
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'sync auto conflicts '));
  const repo=path.join(root,'develop'),remote=path.join(root,'remote.git');
  fs.mkdirSync(repo);git(repo,'init','-b','develop');git(repo,'config','user.name','Sync Test');git(repo,'config','user.email','sync@example.invalid');
@@ -17,12 +17,17 @@ function fixture({conflict=true,buildFails=false,incomingWhitespace=false}={}){
  fs.writeFileSync(path.join(repo,'tools','build_check.cjs'),`process.exit(${buildFails?1:0});\n`);
  fs.writeFileSync(path.join(repo,'state.txt'),'base\n');git(repo,'add','.');git(repo,'commit','-m','base');
  fs.writeFileSync(path.join(repo,'untouched.txt'),'unchanged\n');git(repo,'add','untouched.txt');git(repo,'commit','-m','untouched guard');
+ if(incomingDeletion){
+  for(const file of ['obsolete anim [1].json','obsolete anim 2.json'])fs.writeFileSync(path.join(repo,file),'old animation\n');
+  git(repo,'add','.');git(repo,'commit','-m','old animations');
+ }
  for(const name of ['antigravity','claude','codex'])git(repo,'worktree','add','-b','ai/'+name,path.join(root,name));
  git(repo,'init','--bare',remote);git(repo,'remote','add','origin',remote);git(repo,'push','origin','--all');
  const initialRemote=git(repo,'rev-parse','refs/remotes/origin/develop');
  if(conflict){
   fs.writeFileSync(path.join(repo,'state.txt'),'ours\n');git(repo,'add','state.txt');git(repo,'commit','-m','ours');
   const agent=path.join(root,'codex');fs.writeFileSync(path.join(agent,'state.txt'),'theirs\n');git(agent,'add','state.txt');
+  if(incomingDeletion)git(agent,'rm','--','obsolete anim [1].json','obsolete anim 2.json');
   if(incomingWhitespace){fs.mkdirSync(path.join(agent,'.agents'));fs.writeFileSync(path.join(agent,'.agents','AGENTS.md'),'preserved incoming content\n\n');git(agent,'add','.agents/AGENTS.md');}
   git(agent,'commit','-m','theirs');
  }
@@ -50,6 +55,9 @@ if(!['blocked','unmerged'].includes(mode)){
 }
 if(assets)fs.writeFileSync(path.join(assets,'new.json'),'{"saved":true}\n');
 const files=mode==='escape'?['../outside.txt']:['state.txt'];
+if(mode==='deleted')files.push('obsolete anim [1].json','obsolete anim 2.json');
+if(mode==='deleted-worktree'){fs.unlinkSync(path.join(repo,'untouched.txt'));files.push('untouched.txt');}
+if(mode==='missing-report')files.push('never-tracked.json');
 if(fs.existsSync(path.join(repo,'.agents','AGENTS.md'))){
  if(!prompt.includes('git diff HEAD --check'))process.exit(9);
  // The controller must fix protected instruction files before the model starts.
@@ -67,6 +75,28 @@ fs.writeFileSync(arg('--output-last-message'),JSON.stringify({status:mode==='blo
   fs.rmSync(root,{recursive:true,force:true,maxRetries:6,retryDelay:200});
  }};
 }
+for(const staged of [true,false])test(`Reported deletion: ${staged?'already staged incoming removal is idempotent':'new worktree removal is staged normally'}`,{skip:!windows},()=>{
+ const f=fixture({incomingDeletion:staged});try{
+  const r=f.run(staged?'deleted':'deleted-worktree');assert.equal(r.status,0,f.log(r));
+  const removed=staged?['obsolete anim [1].json','obsolete anim 2.json']:['untouched.txt'];
+  for(const file of removed){
+   assert.ok(!fs.existsSync(path.join(f.repo,file)));
+   assert.notEqual(spawnSync('git',['-C',f.repo,'ls-files','--error-unmatch','--',file],{stdio:'ignore'}).status,0);
+  }
+  const head=git(f.repo,'rev-parse','HEAD');assert.equal(f.remoteHead(),head);assert.equal(f.pending(),false);
+  assert.equal(fs.readFileSync(path.join(f.repo,'state.txt'),'utf8'),'ours + theirs\n');
+  assert.equal(git(f.repo,'status','--porcelain'),'');
+  for(const b of ['ai/antigravity','ai/claude','ai/codex'])assert.equal(git(f.remote,'rev-parse',b),head);
+ }finally{f.clean();}
+});
+
+test('Missing reported path without a staged deletion is rejected and preserves the merge',{skip:!windows},()=>{
+ const f=fixture();try{
+  const r=f.run('missing-report');assert.notEqual(r.status,0);assert.match(f.log(r),/Could not stage reported file: never-tracked.json/);
+  assert.equal(f.pending(),true);assert.equal(git(f.repo,'rev-parse','HEAD'),f.original);assert.equal(f.remoteHead(),f.initialRemote);
+ }finally{f.clean();}
+});
+
 test('PowerShell scripts parse and BAT stays ASCII/CRLF', {skip:!windows},()=>{
  const bat=fs.readFileSync(path.join(source,'sync_ai_worktrees.bat'));
  assert.ok([...bat].every(n=>n<128));assert.ok(!/(?<!\r)\n/.test(bat.toString()));

@@ -1,0 +1,43 @@
+/* 四功能神鑄覆蓋舊六芒星樣式；美術原圖由使用者提供。 */
+#tab-forge .forge-panel { padding:18px; background:linear-gradient(160deg,#101c38,#080b18); border:1px solid #536eab; }
+.forge-mode-tabs { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
+.forge-mode-tabs .btn { white-space:normal; min-height:44px; }
+#tab-forge .forge-mode-tabs .btn:not(:disabled) { color:#c2d9ff!important; background:#101b30!important; border-color:#506b9b!important; }
+#tab-forge .forge-mode-tabs .btn.active { color:#ecf7ff!important; background:#27436b!important; border-color:#a2ceff!important; box-shadow:inset 0 0 18px #376dc788,0 0 10px #4085ff33; }
+.forge-description { text-align:center; color:#c2d3ed; min-height:2.8em; margin:14px 0 0; line-height:1.6; }
+.forge-imprint-rules { display:flex; flex-wrap:wrap; gap:6px 16px; justify-content:center; color:#91bcfa; font-size:11px; line-height:1.6; }
+#tab-forge #forge-stage { position:relative; height:auto!important; min-height:0!important; aspect-ratio:auto!important; padding:0!important; overflow:visible; background:none!important; display:block; border:0; }
+#tab-forge #forge-hex { position:relative; width:min(100%,620px); height:auto!important; aspect-ratio:1; margin:0 auto; background:url('../images/ui/divine-forge-crystal.png') center/contain no-repeat!important; transform:none; inset:auto; }
+#tab-forge #forge-hex::before,#tab-forge #forge-hex::after { display:none!important; }
+#tab-forge .forge-slot,#tab-forge .forge-stone { position:absolute; width:12%; height:auto; aspect-ratio:1; transform:translate(-50%,-50%); border-radius:9px; border:2px solid #b6d7ff; background:linear-gradient(135deg,#111d35f5,#050a17f5); box-shadow:0 0 14px #3486ff88,inset 0 0 10px #638de544; display:flex; align-items:center; justify-content:center; padding:3px; }
+#tab-forge .forge-slot .item-icon { max-width:95%; max-height:95%; }
+#tab-forge .forge-slot,#tab-forge .forge-stone { transform:translate(-50%,-50%)!important; }
+#tab-forge #forge-stone-center { opacity:1; color:#dceaff!important; background:#080f27ed!important; line-height:1.2; }
+#tab-forge .forge-slot.empty { border-style:dashed; opacity:1; }
+#tab-forge .forge-slot.forge-inactive { border:1px solid #58606b; background:#10141bf0; box-shadow:none; filter:grayscale(1); opacity:.78; }
+#tab-forge .forge-slot:disabled,#tab-forge .forge-stone:disabled,#tab-forge button:disabled { cursor:default; }
+#tab-forge .forge-stone { left:50%; top:50%; width:14%; border-color:#a0b8ff; font-size:30px; flex-direction:column; z-index:2; color:#dceaff; }
+#tab-forge .forge-stone span { font-size:14px; font-weight:bold; }
+#tab-forge .forge-stone.lit { box-shadow:0 0 28px #50caff,inset 0 0 20px #3b76f566; }
+.forge-summary { max-width:660px; margin:0 auto; text-align:center; display:grid; gap:10px; color:#cddfff; }
+#forge-rate { color:#93d9ff; font-size:16px; font-weight:600; }
+#forge-cost { color:#ffd989; }
+.forge-stone-controls,.forge-v2-actions { display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; }
+#forge-stone-count { width:90px; padding:7px; background:#090f20; color:#e0edff; border:1px solid #627fac; border-radius:5px; }
+.forge-v2-actions .btn { min-width:120px; min-height:42px; }
+#tab-forge #forge-go { color:#e6f4ff; border:1px solid #90c5ff; background:linear-gradient(#3164a7,#1c325b); }
+#tab-forge #forge-go:disabled { opacity:.45; }
+#tab-forge #forge-log { position:static; width:100%; max-width:none; box-sizing:border-box; max-height:120px; min-height:0; overflow:auto; padding:8px; border:1px solid #2c3c5a; background:#080d19; text-align:left; }
+#forge-result { color:#8fd6ff; }
+#tab-forge .forge-gem-cell { position:relative; }
+.socket.sacred-socket,.socket.sacred-socket * { color:#60a5fa!important; border-color:#60a5fa; }
+.it-imprint { color:#60a5fa!important; }
+.sacred-affix,.sacred-affix * { color:#60a5fa!important; }
+@media(max-width:600px) {
+  #tab-forge .forge-panel { padding:10px; }
+  .forge-mode-tabs { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .forge-description { font-size:12px; }
+  #tab-forge .forge-stone { font-size:20px; }
+  #tab-forge .forge-slot,#tab-forge .forge-stone { border-radius:5px; border-width:1px; }
+  #tab-forge .forge-slot .ic-lv { font-size:9px; }
+}

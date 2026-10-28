@@ -1247,6 +1247,21 @@ function tickStatuses(ent, dt, dotContext) {
                 }
             }
         }
+        if (dotDealt > 0 && !(ent.maxHp > 0) && window.recordPlayerDamageHit) {
+            var lastDotItem = dotDamageItems.length ? dotDamageItems[dotDamageItems.length - 1].d : null;
+            var isSelfDot = !!(lastDotItem && lastDotItem.sourceKey && String(lastDotItem.sourceKey).indexOf('skill2:') === 0);
+            var dotAttacker = isSelfDot
+                ? ((typeof playerSelfDeathName === 'function') ? playerSelfDeathName() : STR(371))
+                : ((lastDotItem && lastDotItem.sourceName) ||
+                   (typeof FIELD !== 'undefined' && FIELD && FIELD.monster && FIELD.monster.name) ||
+                   (typeof TOWER !== 'undefined' && TOWER && TOWER.boss && TOWER.boss.name) ||
+                   STR(459));
+            var dotSkill = isSelfDot
+                ? ((lastDotItem && (lastDotItem.name || lastDotItem.sourceName)) || STR(733))
+                : ((lastDotItem && lastDotItem.subType) || (dotNames.length === 1 ? dotNames[0]
+                    : STR(474, (dotNames.length ? '（' + dotNames.join('、') + '）' : ''))));
+            window.recordPlayerDamageHit(dotAttacker, dotSkill, dotDealt);
+        }
         // 單一狀態直接報狀態名（例：「受到中毒」），多個才合併報「持續傷害（流血、燃燒）」
         logEnemyDirectDamage(ent, dotNames.length === 1 ? dotNames[0]
             : STR(474, (dotNames.length ? '（' + dotNames.join('、') + '）' : '')), dotDealt, ent.hp <= 0);
@@ -1736,6 +1751,14 @@ function doMonsterAttack(mEnt, pEnt, floatSel, mult, skillName) {
     var retaliationDelaySec = enemyAttackRetaliationDelaySec(mEnt);
     if (retaliationDelaySec > 0) dCfg.deferThorns = true;
     var res = resolveHit(mEnt, pEnt, monsterAtkCfg(mEnt, mult), dCfg);
+    if (pEnt && Array.isArray(pEnt.dots) && mEnt && mEnt.name) {
+        for (var pdi = 0; pdi < pEnt.dots.length; pdi++) {
+            if (pEnt.dots[pdi] && !pEnt.dots[pdi].sourceName) {
+                pEnt.dots[pdi].sourceName = mEnt.name;
+                pEnt.dots[pdi].sourceKey = pEnt.dots[pdi].sourceKey || 'enemy';
+            }
+        }
+    }
     var skillLabel = skillName ? ' ' + STR(495, skillName) : '';
     var logMsg = (mEnt.name || STR(475)) + skillLabel + (mult && mult > 1 ? ' ' + STR(496) : ' ' + STR(497));
     var playerFloatSel = playerEventFloatTarget(floatSel);
@@ -1781,6 +1804,9 @@ function doMonsterAttack(mEnt, pEnt, floatSel, mult, skillName) {
         floatText(playerFloatSel, dmgStr, isCrit ? 'crit' : 'mdmg');
         if (res.blocked) floatPlayerEvent(playerFloatSel, STR(502), 'defend');
         hpDamage = Math.max(0, res.dmg - (res.absorbed || 0));
+        if (res.dmg > 0 && window.recordPlayerDamageHit) {
+            window.recordPlayerDamageHit((mEnt && mEnt.name) || STR(475), skillName || STR(479), res.dmg);
+        }
         logMsg += STR(482, (res.crit ? STR(503) + ' ' : STR(481) + ' ') + fmt(res.dmg) + (mEnt.magic ? ' ' + STR(12) : ''));
         if (res.blocked) logMsg += STR(505);
         /* 護盾吸收量只寫進戰鬥紀錄，不再飄字（2026-09-21 使用者要求）。 */

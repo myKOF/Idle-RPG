@@ -140,6 +140,7 @@ function dismantleFusedGem(id) {
   var fg = findFusedGem(id);
   if (!fg) return { err: STR(1531) };
   if (!isFusedGemEnabled(fg)) return { err: STR(1532) };
+  if (fg.divine) return { err: STR(2185) };
   var total = fusedGemDismantleYield(fg);
   removeFusedGem(id);
   var types = fg.stats.map(function (s) { return s.type; });
@@ -180,6 +181,7 @@ function fusedGemIconHTML(fg, cls) {
     stats.map(function (s) { return gemIconHTML(s.type, fg.level || GEM_MAX_LEVEL, 'gem-ico-part'); }).join('') + '</span>';
 }
 function fusedGemLabel(fg) {
+  if (fg.divine) return STR(2203, fusedGemStatText(fg));
   var emojis = fg.stats.map(function (s) { return GEM_TYPES[s.type].emoji; }).join('');
   return STR(1533, emojis, fusedGemStatText(fg));
 }
@@ -213,6 +215,7 @@ function normalizeFuseMaterial(ref) {
     };
   }
   var fg = findFusedGem(ref.id);
+  if (fg && fg.divine) return null;
   if (!isFusedGemEnabled(fg)) return null;
   return { stats: fg.stats, fusions: fg.fusions || 0, leaves: fg.leaves || ((fg.fusions || 0) + 1), ref: ref };
 }
@@ -577,7 +580,7 @@ function makeEquipment(stage, opts) {
     rarity: rarity,
     level: lvl,
     name: RARITY_PREFIX[rarity] + pick(weaponType ? WEAPON_TYPES[weaponType].basenames : SLOT_BASENAMES[slot]),
-    affixes: rollAffixes(affixCount, rarity, slot, ancientSet, undefined, lvl),
+    affixes: rollAffixes(affixCount, rarity === 11 ? 6 : rarity, slot, ancientSet, undefined, lvl),
     passive: null,
     enchant: null,   // { key, val }
     sockets: [],     // 寶石插槽 [{type, level}|null, ...]
@@ -596,15 +599,6 @@ function makeEquipment(stage, opts) {
     if (passiveKeys.length) {
       // 只存 key：傳奇特效數值完全由 key + 稀有度決定（passiveValue → formula.js §6）
       it.passive = { key: pick(passiveKeys) };
-    }
-  }
-  // 神鑄創世：必帶 2 條不重複的專屬特效（池 GODFORGE_POOL）；只存強度值，數值當場算
-  if (isGodforgedRarity(rarity)) {
-    var gkeys = Object.keys(GODFORGE_POOL).slice();
-    it.godPassives = [];
-    for (var gi = 0; gi < GODFORGE_PASSIVE_COUNT && gkeys.length; gi++) {
-      var gk = gkeys.splice(Math.floor(Math.random() * gkeys.length), 1)[0];
-      it.godPassives.push({ key: gk, roll: rollStrength() });
     }
   }
   return it;
@@ -744,14 +738,15 @@ function itemSocketHTML(it, mode) {
   var h = '<div class="it-sockets">' + (mode ? '' : '<div class="it-sockets-title">' + STR(1132) + '</div>');
   for (var si = 0; si < sockets.length; si++) {
     var g = sockets[si], text;
-    if (g && g.fused) text = (si + 1) + '. ' + fusedGemIconHTML(g.fused, 'gi-inline') + ' ' + esc(STR(1133, fusedGemStatText(g.fused)));
+    var socketMult = divineSocketMultiplier(it, si);
+    if (g && g.fused) text = (si + 1) + '. ' + fusedGemIconHTML(g.fused, 'gi-inline') + ' ' + esc(STR(1133, g.fused.stats.map(function (s) { var def = GEM_TYPES[s.type], v = fusedStatValue(s) * socketMult; return def.statName + ' +' + (def.pct ? pctStr(v) : fmt(v)); }).join('、')));
     else if (g && GEM_TYPES[g.type]) {
       var gt = GEM_TYPES[g.type];
       text = '<span class="sk-name">' + (si + 1) + '. ' + gemIconHTML(g.type, g.level, 'gi-inline') + ' ' + esc(GEM_NAMES[g.level] + gt.name) + '</span>' +
         '<span class="sk-val">' + esc(gt.statName.replace('%', '')) + ' +' +
-        (gt.pct ? pctStr(gemStatValue(g.type, g.level)) : fmt(gemStatValue(g.type, g.level))) + '</span>';
+        (gt.pct ? pctStr(gemStatValue(g.type, g.level) * socketMult) : fmt(gemStatValue(g.type, g.level) * socketMult)) + '</span>';
     } else text = STR(1134, (si + 1));
-    var cls = 'socket ' + (g ? 'filled' + (g.fused ? ' fused-socket' : '') : 'empty');
+    var cls = 'socket ' + (socketMult > 1 ? 'sacred-socket ' : '') + (g ? 'filled' + (g.fused ? ' fused-socket' : '') : 'empty');
     if (mode) {
       h += '<div class="' + cls + ' socket-row' + (mode.selIdx === si ? ' is-socket-selected' : '') + '">' +
         '<button type="button" class="socket-pick" data-socket-pick="' + si + '" aria-pressed="' + (mode.selIdx === si) + '"' +
@@ -927,12 +922,13 @@ function itemDetailHTML(it, cmp, opts) {
     var limitMult = k === 'loot' ? DROP_RATE_EFFECT_MULT : 1;
     var minDisplay = def.pct ? pctStr(limits.min * um * limitMult) : fmt(limits.min * um * limitMult);
     var maxDisplay = def.pct ? pctStr(limits.max * um * limitMult) : fmt(limits.max * um * limitMult);
-    var isAncient = !!it.affixes[i].ancient;
+    var isImprinted = it.imprint && !it.imprint.inactive && it.imprint.index === i && (it.imprint.kind === 'sacredAffix' || it.imprint.kind === 'ancientAffix');
+    var isAncient = !!it.affixes[i].ancient || !!isImprinted;
     var limitTip = isAncient
       ? STR(1148)
       : STR(1149, minDisplay, maxDisplay);
 
-    var valColor = isMax ? '#fbbf24' : '';
+    var valColor = isImprinted ? '#60a5fa' : isMax ? '#fbbf24' : '';
     var valHtml = '<span' + (valColor ? ' style="color:' + valColor + ';font-weight:bold"' : '') + '>' + (def.pct ? pctStr(vCur) : fmt(vCur)) + '</span>';
 
     var rrSelected = rerollActive && i === rerollSelIdx;
@@ -946,9 +942,10 @@ function itemDetailHTML(it, cmp, opts) {
       }
     }
 
-    var lineStyle = (vCmp === 0 && cmp && !isAncient) ? 'color: #4ade80;' : '';
+    var lineStyle = isImprinted ? 'color:#60a5fa;' : (vCmp === 0 && cmp && !isAncient) ? 'color: #4ade80;' : '';
     var catClass = ' afx-' + affixCat(k);   // 詞條分類分色（基礎紫/進攻粉/防禦青/功能綠）
     if (isAncient) catClass += ' ancient-affix';
+    if (isImprinted) catClass += ' sacred-affix';
     var marker = isAncient ? '<span class="ancient-star" aria-label="' + STR(1150) + '">✡</span>' : '◆';
     if (showAffixReroll) {
       var rowClass = rerollActive ? ' is-reroll-pickable' + (rrSelected ? ' is-reroll-selected' : '') : '';
@@ -989,17 +986,14 @@ function itemDetailHTML(it, cmp, opts) {
     }
   }
 
-  // 神鑄創世專屬特效（2 條，不參與比較差值）
-  if (it.godPassives && it.godPassives.length) {
-    it.godPassives.forEach(function (gp) {
-      var gd = GODFORGE_POOL[gp.key];
-      if (!gd) return;
-      var gv = godPassiveValue(gp, it);
-      var gpDesc = gp.key === 'greed'
-        ? STR(1151, fmt1(gv), fmt1(effectiveDropRateEffect(gv)))
-        : esc(gd.desc).replace('{v}', fmt1(gv));
-      h += '<div class="it-godpassive">【' + esc(gd.name) + '】' + gpDesc + '</div>';
-    });
+  if (it.imprint) {
+    var ip = it.imprint;
+    h += '<div class="it-imprint" style="color:#60a5fa">' + esc(STR(2177, STR(2178 + ['sacredAffix','ancientAffix','sacredSocket','extraAffix','extraAncient','legendary','refund'].indexOf(ip.kind), DIVINE_FORGE.refundRate * 100))) + '</div>';
+    if (ip.affix && AFFIX_POOL[ip.affix.key]) {
+      var def = AFFIX_POOL[ip.affix.key], value = affixValue(it, ip.affix) * um;
+      h += '<div class="it-imprint" style="color:#60a5fa">' + esc(def.name) + ' +' + (def.pct ? pctStr(value) : fmt(value)) + '</div>';
+    }
+    if (ip.passive) h += '<div class="it-imprint" style="color:#60a5fa">' + esc(passiveLine(it, ip.passive)) + '</div>';
   }
 
   // 附魔與寶石區塊可移至裝備頁右側；懸停提示仍保留完整效果。
