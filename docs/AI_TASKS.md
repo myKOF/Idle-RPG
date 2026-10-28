@@ -1,5 +1,27 @@
 # AI_TASKS.md
 
+## DIVINE-FORGE-FILL-LAYOUT-20261029 — 放大神鑄舞台、兩行背包貼底與背景定位
+
+- Owner：Codex；Done。使用者要求放大上方、背包只留兩完整行並貼底、移除下方空白；後續指定效能優先，明確暫停追加特效，只完成尺寸與背景後直接Commit、清理工作區供使用者合併。單一開發者；規範／既有實作已讀、目標衝突預檢乾淨。
+- 修改5檔：css/divine-forge.css、index.html（CSS快取1.0.4）、LV_upgrade_system.md、docs/DIVINE_FORGE.md及本段。舞台改用Flex填滿實際可用高度，水晶以容器cqw／cqh配置、最大680，不再使用380上限及viewport固定高度；背包固定兩列58px＋列距6px，總122px，兩行下緣貼頁底。移除神鑄背包額外padding及aspect-ratio撐高，避免第三行切半或第二行邊框被裁切；更多裝備在原格線內捲動，裝備頁原排數不改。標題純底色，背景改掛於其下的神鑄面板，寬105%、高度鋪滿，不再cover大量裁掉兩側水晶。
+- 使用者暫停追加特效後，本輪試作的光帶／粒子／脈動強化全部撤回，最終diff沒有新增動畫、DOM、JS迴圈或粒子生成；保留前版效果。沒有新增素材或修改圖片／Excel／Worker／玩法，素材庫無本輪變動，不建立空素材Commit。
+- 驗證：node --test --test-reporter=spec tests/forge-shared-inventory.test.cjs tests/divine-forge-interaction.test.cjs tests/inventory-rarity-filter.test.cjs，18／18；npm.cmd run build599檔通過；完整diff檢查通過。隔離Edge／隨機localhost／正式index與真Worker，240件神話素材驗1920×1080、1280×800、830×716、1024×600、390×844，皆精確兩完整行、grid122px、背包底距約0px（浮點誤差<0.001），背包內可捲至底、頁面不需拖動、六格位於水晶內；Console error／warning及pageerror0。1280視窗水晶由250擴至418px，1920視窗560px，舞台跟隨剩餘空間擴張。檢查截圖／layout-report保存本聊天visualizations/divine-forge-update。
+- 唯讀未改：UI背包虛擬捲動／排數記憶、Worker神鑄計時／自動與協議、原圖／素材工具、共通規範與Excel。自我Review完成，無本次尺寸／背景未完成項，可合併；特效追加依使用者最新指示停止，不列入本次交付。未跑全庫或效能對照（沒有交付新特效）；不合併／推送develop或main。Commit為本段所在「[Codex] fix: 放大神鑄舞台並將兩行背包貼底」，編號見回覆；後續使用者正常合併並重載。
+
+## DIVINE-FORGE-EXPERIENCE-20261029 — 神鑄舞台、三秒鑄造與連續自動
+
+- Owner：Codex；Done，單一開發者。使用者授權完整改造八項介面需求，後續全權授權途中取捨；不合併／推送develop或main。
+- 前置：已讀規範／Workflow／Codex文件、現有神鑄／背包／Worker計時與素材流程，目標衝突預檢乾淨。
+- 允許：forge／ui／神鑄CSS與HTML、Worker指令／投影／快取及協議文件、String原生Excel追加與匯出、使用者背景原檔及來源紀錄、相關回歸、LV／DIVINE_FORGE及本段。禁止無關玩法／配方平衡／其他工作區及素材庫其他進行中內容。
+- 驗收：六格內收及尺寸80%、左上10筆、三品質獨立篩選、首行背包可見、中央材料選取／加減／上限、3秒前不結算與操作鎖、連續補料／沿用石頭／缺料停機、存讀／暫停／真Worker、正常Excel重開／來源同步、Build／回歸／瀏覽器與Console／diff、必要雙倉庫Commit。後續使用者Review／正常整合。
+- 完成22檔：index、divine-forge.css、ui、forge、player、bridge、Worker協議／入口、String.xlsx／CSV／strings_data、使用者JPG、模擬policy_interpreter、divine-forge／sim-forge-craft／worker-protocol既有測試、新divine-forge-interaction回歸、素材同步工具及LV／DIVINE_FORGE／WORKER_PROTOCOL／本段。素材格12%→9.6%、中央14%→11.2%，六角半徑33%→26%；最大水晶620→380，背景底座與浮晶對位，CSS光暈氣旋／微光與3秒晶紋亮起。背包表頭僅在神鑄隱藏，三品質獨立篩選，保留裝備頁原篩選；太古／刻印包含同品質神鑄版本，避免新頁籤封住既有加工入口。規則與費用移至頁籤／中央材料提示，下方僅兩按鈕及右下連續開關；結果移左上最多10行，超長可懸浮檢視。
+- Worker v64、94指令：start啟動3000ms作業，期間鎖素材及石頭，到期再次驗證才結算；保留原doForge配方供內部呼叫。autoFill足額才搬動，沿用品質與stonePreference，缺裝備／錢／指定石頭停止，不靜默降低設定；關閉連續自動讓本輪完成。新遊戲與舊v2補預設偏好，菜單暫停／存讀延續；每Tick最多結算一輪，不追補長時間離線自動消耗。模擬策略識別crafting，等待期間不重送。主頁UI224／player25／bridge380／CSS3、Worker入口及協議匯入皆更新快取。
+- Excel：依規範以原生Excel讀出來源完整內容，原生工具在神鑄模塊末尾插8列（2207～2214），正常模式重開兩次全格比對通過、33個非空格寫入、0繪圖物件保留；既有字串內容不改，最終CSV僅新增8列。xlsx_to_csv／apply_strings同步2201條、版本94545fa4；String檢查無寫死字串。未手改XML、未修改既有配置格或玩法參數。
+- 測試：node --test --test-reporter=spec執行divine-forge-interaction、divine-forge、forge-shared-inventory、worker-protocol、worker-shim、game-menu-pause、sim-forge-craft、string-table、vfx-editor-cache-versions、inventory-rarity-filter、inventory-keyword-filter、equipment-tooltip-compare、equipment-selection-border、gem-enabled及sim-harness-sync，共118／118通過。10項新回歸涵蓋精確到期／防重入／沿用設定／失敗退料／資源競用／讀檔／菜單暫停，原配方成功與失敗斷言保留；舊即時完成與指令數測試依本次需求更新。npm.cmd run build599檔通過；apply_params數值無變更、String同步與寫死0條、素材來源hash及完整diff檢查通過。
+- 瀏覽器：IAB無可用後端，改用bundled Playwright＋隔離全新Edge context／隨機localhost／正式index及真Worker，以新造存檔驗收，不接觸玩家原存檔。1920×1080／1280×800／830×716／1024×600／390×844皆確認不捲動可見完整首行、六格全在水晶內。實點三品質、石頭加減至上限／外點收起、自動補六件、三秒前未扣料與按鈕鎖、連續四輪至缺裝備停止、神級寶石及已神鑄裝備太古／刻印三秒流程；body及晶紋動畫均3s，手動結果最終約3085ms到達UI，Console error／warning及pageerror0。截圖／browser-report保留本聊天visualizations/divine-forge-update。
+- 素材：使用者原JPG無像素修改，源檔／素材庫／遊戲SHA256皆01740b268ca63dc3448cd9f8582eb3f1ef98a39cf4ba77c2cd1f6af25cd028f0。來源／授權紀錄及原圖先提交Effects-Materials `6b87462`，遊戲附tools/divine-forge/sync-library.cjs重複匯出／核對。原水晶PNG不改，無新增Preset；共享素材庫其他既有wall／hero3d等修改不暫存或提交。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、save遷移／菜單時間補償、data配方／公式、item／gem計算、模擬engine、Excel工具與原水晶來源。自我Review完成，無本次未完成項；可供Review／合併，遊戲Commit為本段所在「[Codex] feat: 改造神鑄舞台與三秒連續鑄造」，編號見回覆。限制：未執行全庫／多瀏覽器長時間掛機；極窄視窗仍沿用遊戲既有整體縮放。下一步正常整合後重新載入主端與Worker驗收，未合併或推送develop／main。
+
 ## SYNC-DIVERGED-AI-CLOUD-20261028 — 分岔分支整合不再阻擋Claude雲端
 
 - Owner：Codex；Done（整合、工具修正與驗證完成；本聊天接續正常同步，實際推送結果見最新報告與回覆），單一開發者。延續使用者保留全部AI修改並完成正常同步的授權；本次畫面停在ai/codex，實際本地9be211aa領先1／落後42，遠端／develop為6aa3150d，Claude雲端08282cba另有4筆尚未整合。不是雲端名稱辨識失敗，而是舊流程在來源掃描前只接受ff而中止。

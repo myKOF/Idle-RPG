@@ -5,6 +5,9 @@ function forgeMigrateState(data) {
   var f = data.forge;
   if (f && f.version === 2) {
     if (f.unlocked === undefined) f.unlocked = !!f.unlockNotified;
+    if ([6, 7, 9].indexOf(f.quality) < 0) f.quality = 6;
+    if (!Number.isInteger(f.stonePreference) || f.stonePreference < 0) f.stonePreference = Math.max(0, Math.floor(Number(f.stones) || 0));
+    f.auto = f.operation === 'equip' && f.auto === true;
     return f;
   }
   // 舊製作尚未扣款，取消並完整退回素材，包括滿背包。
@@ -17,7 +20,7 @@ function forgeMigrateState(data) {
     } else (data.inventory || (data.inventory = [])).push(it);
   });
   return data.forge = { version: 2, operation: 'equip', slots: [null, null, null, null, null, null],
-    stones: 0, result: null, log: [], unlocked: !!(f && (f.unlocked || f.unlockNotified)),
+    stones: 0, stonePreference: 0, quality: 6, auto: false, result: null, log: [], unlocked: !!(f && (f.unlocked || f.unlockNotified)),
     unlockNotified: !!(f && f.unlockNotified) };
 }
 function forgeState() { return forgeMigrateState(G); }
@@ -33,7 +36,7 @@ function forgeOperationUnlocked(mode) {
 function forgeLog(msg, cls) {
   var f = forgeState();
   f.log.unshift({ msg: msg, cls: cls || '' });
-  f.log.length = Math.min(f.log.length, 25);
+  f.log.length = Math.min(f.log.length, 10);
   UI.dirty.forge = true;
 }
 function forgeMode() { return forgeState().operation; }
@@ -43,28 +46,39 @@ function forgeRarity() {
   return first && first.kind !== 'gem' ? first.rarity : null;
 }
 function forgeSetOperation(mode) {
+  if (forgeState().crafting) return STR(2209);
   if (!forgeOperationUnlocked(mode)) return STR(2160, divineForgeUnlock(mode));
   forgeUnloadAll();
+  forgeState().auto = false;
   forgeState().operation = mode;
   forgeState().result = null;
   UI.dirty.forge = true;
   return null;
 }
-function forgeRateInfo() { return divineForgeRateInfo(forgeState(), G.player.dust); }
+function forgeRateInfo() {
+  var f = forgeState();
+  // 空法陣仍可依所選品質預設石頭數，不需先放入裝備。
+  var view = f.operation === 'equip' && !forgeItemCount()
+    ? Object.assign({}, f, { slots: [{ rarity: f.quality }] }) : f;
+  return divineForgeRateInfo(view, G.player.dust);
+}
 function forgeDustCount() {
   var f = forgeState(), info = forgeRateInfo();
   f.stones = info ? info.stones : 0;
   return f.stones;
 }
 function forgeSetStones(count) {
+  if (forgeState().crafting) return STR(2209);
   if (!Number.isInteger(count) || count < 0) return STR(2161);
   forgeState().stones = count;
   forgeDustCount();
+  forgeState().stonePreference = forgeState().stones;
   UI.dirty.forge = true;
   return null;
 }
 function forgePlaceItem(id) {
   var f = forgeState();
+  if (f.crafting) return STR(2209);
   if (!forgeOperationUnlocked(f.operation)) return STR(2160, divineForgeUnlock(f.operation));
   if (f.operation === 'gem') return STR(2162);
   var index = G.inventory.findIndex(function (it) { return it.id === id; });
@@ -83,6 +97,7 @@ function forgePlaceItem(id) {
 }
 function forgePlaceGem(type, level) {
   var f = forgeState();
+  if (f.crafting) return STR(2209);
   if (!forgeOperationUnlocked(f.operation)) return STR(2160, divineForgeUnlock(f.operation));
   if (f.operation !== 'gem' || level !== GEM_FORGE_MAX_LEVEL || !GEM_TYPES[type] || !isGemEnabled(type)) return STR(2166, GEM_FORGE_MAX_LEVEL, DIVINE_FORGE.gemPerType);
   var counts = {};
@@ -104,6 +119,7 @@ function forgeReturnItem(it) {
 }
 function forgeRemoveItem(index) {
   var f = forgeState();
+  if (f.crafting) return STR(2209);
   if (!Number.isInteger(index) || index < 0 || index >= FORGE_SLOTS) return STR(2161);
   var it = f.slots[index];
   if (!it) return null;
@@ -115,11 +131,66 @@ function forgeRemoveItem(index) {
   return null;
 }
 function forgeUnloadAll() {
+  if (forgeState().crafting) return STR(2209);
+  forgeState().auto = false;
   var n = forgeItemCount();
   for (var i = 0; i < FORGE_SLOTS; i++) forgeRemoveItem(i);
   forgeState().stones = 0;
   UI.dirty.forge = true;
   return n;
+}
+function forgeSetQuality(rarity) {
+  var f = forgeState();
+  if (f.crafting) return STR(2209);
+  if ([6, 7, 9].indexOf(rarity) < 0) return STR(2164);
+  if (rarity !== f.quality) {
+    forgeUnloadAll();
+    f.quality = rarity;
+    f.stones = f.stonePreference;
+    forgeDustCount();
+    f.stonePreference = f.stones;
+    UI.dirty.inv = UI.dirty.forge = true;
+  }
+  return null;
+}
+function forgeAutoFill() {
+  var f = forgeState();
+  if (f.crafting) return STR(2209);
+  if (f.operation !== 'equip') return STR(2164);
+  if (!forgeOperationUnlocked(f.operation)) return STR(2160, divineForgeUnlock(f.operation));
+  if (f.slots.some(function (it) { return it && it.rarity !== f.quality; })) return STR(2165, DIVINE_FORGE.equipCount);
+  var missing = DIVINE_FORGE.equipCount - forgeItemCount();
+  // 全部候選足額才入槽；鎖定與已神鑄的裝備不會被自動消耗。
+  var candidates = G.inventory.filter(function (it) {
+    return it && !it.locked && it.rarity === f.quality && divineForgeItemEligible(it, 'equip');
+  });
+  if (candidates.length < missing) return STR(2210);
+  for (var i = 0; i < missing; i++) forgePlaceItem(candidates[i].id);
+  f.stones = f.stonePreference;
+  forgeDustCount();
+  return null;
+}
+function forgeStopAuto(reason) {
+  forgeState().auto = false;
+  if (reason) forgeLog(STR(2211, reason), 'warn');
+  UI.dirty.forge = true;
+}
+function forgeSetAuto(on) {
+  var f = forgeState();
+  if (on && f.operation !== 'equip') return STR(2164);
+  if (!on) { forgeStopAuto(); return null; }
+  if (!forgeOperationUnlocked(f.operation)) return STR(2160, divineForgeUnlock(f.operation));
+  f.auto = true;
+  if (!f.crafting) return forgeAutoNext();
+  UI.dirty.forge = true;
+  return null;
+}
+function forgeAutoNext() {
+  var f = forgeState(), error = forgeAutoFill();
+  if (!error && (G.player.dust || 0) < f.stonePreference) error = STR(2168);
+  if (!error) { f.stones = f.stonePreference; error = startForge(); }
+  if (error) forgeStopAuto(error);
+  return error || null;
 }
 function forgeApplyImprint(it, stones) {
   delete it.imprint;
@@ -153,7 +224,7 @@ function forgeApplyImprint(it, stones) {
   it.imprint = imprint;
   return imprint;
 }
-function doForge() {
+function forgeValidate() {
   var f = forgeState(), mode = f.operation;
   if (!forgeOperationUnlocked(mode)) return STR(2160, divineForgeUnlock(mode));
   var items = f.slots.filter(Boolean), counts = {};
@@ -166,6 +237,27 @@ function doForge() {
   var info = forgeRateInfo();
   if (!info || f.stones !== info.stones || (G.player.dust || 0) < info.stones) return STR(2168);
   if (G.player.gold < info.cost) return STR(1267, fmt(info.cost), fmt(G.player.gold));
+  return null;
+}
+// UI指令只啟動作業；結算仍由同一份原子配方處理，模擬工具可直接使用doForge。
+var DIVINE_FORGE_DURATION_MS = 3000;
+function startForge() {
+  var f = forgeState();
+  if (f.crafting) return STR(2209);
+  var error = forgeValidate();
+  if (error) return error;
+  f.result = null;
+  f.crafting = { startedAt: Date.now(), durationMs: DIVINE_FORGE_DURATION_MS };
+  UI.dirty.forge = true;
+  return null;
+}
+function doForge() {
+  var f = forgeState();
+  if (f.crafting) return STR(2209);
+  var error = forgeValidate();
+  if (error) return error;
+  var mode = f.operation, items = f.slots.filter(Boolean), counts = {}, info = forgeRateInfo();
+  if (mode === 'gem') items.forEach(function (g) { counts[g.type] = (counts[g.type] || 0) + 1; });
   G.player.gold -= info.cost;
   G.player.dust = (G.player.dust || 0) - info.stones;
   f.slots = [null, null, null, null, null, null];
@@ -212,5 +304,19 @@ function doForge() {
   UI.dirty.header = UI.dirty.inv = UI.dirty.gems = UI.dirty.equip = UI.dirty.forge = true;
   return null;
 }
-// 模擬生命週期接點；新版沒有計時或自動執行。
-function forgeTick() { if (G.forge && G.forge.version !== 2) forgeState(); }
+function forgeTick(now) {
+  if (!G.forge) return;
+  var f = forgeState(), job = f.crafting;
+  if (!job) return;
+  UI.dirty.forge = true;
+  if (now < job.startedAt + job.durationMs) return;
+  delete f.crafting;
+  var error = doForge();
+  if (error) {
+    if (f.auto) forgeStopAuto(error);
+    else forgeLog(error, 'warn');
+    return;
+  }
+  // 每個Tick最多結算一次；背景節流／離線不追補大量不可見的自動消耗。
+  if (f.auto) forgeAutoNext();
+}

@@ -3363,7 +3363,7 @@ function decide(state, policy, memo) {
       var cfg = r.forgeCraft, pan = pathVal(state, cfg.source);
       var gold = Number(pathVal(state, cfg.gold)) || 0;
       var ratio = typeof cfg.goldRatio === 'number' ? cfg.goldRatio : 0.5;
-      if (pan && pan.unlocked && pan.forge && pan.forge.operation === 'equip') {
+      if (pan && pan.unlocked && pan.forge && !pan.forge.crafting && pan.forge.operation === 'equip') {
         if (pan.placed > 0 && pan.placed < pan.slotsNeeded) {
           out.push({name:'forge.unloadAll',args:{},ruleId:r.id});
         } else if (pan.placed >= pan.slotsNeeded) {

@@ -1,4 +1,8 @@
-# Worker 協議 v63
+# Worker 協議 v64
+
+v64（2026-10-29 神鑄體驗）：神鑄指令7→10，總數91→94。新增`forge.setQuality({rarity:6|7|9})`、`forge.autoFill({})`及`forge.setAuto({on:boolean})`；`forge.start`改呼叫startForge啟動3000ms作業。只有forgeTick到期才沿同一doForge配方再次驗證並原子結算，UI不能提前扣料／擲骰。作業中拒絕重啟、換品質／模式、取放素材及變更石頭，允許關閉連續自動讓本輪完成。
+
+version=2的forge新增`quality`（缺省6）、`stonePreference`（缺省原stones）、`auto`（缺省false）及可選`crafting={startedAt,durationMs}`。forge面板新增`craftProgress={durationMs,elapsedMs,paused}|null`，UI按此時長／進度由中心向外亮起，菜單暫停與既有crafting時間補償共用。空裝備法陣rate改以所選品質預覽。裝備素材原子補滿足額才搬動；連續自動精確重用石頭偏好，裝備／金幣／指定石頭不足停止，單Tick最多結算一次，不追補離線自動消耗。成功失敗記錄保留最新10行。
 
 v63（2026-10-28 神鑄改造）：神鑄指令10→7，總數94→91。保留forge.placeItem、removeItem、placeGem、unloadAll、start；新增forge.setOperation（mode=equip／ancient／gem／imprint）與forge.setStones（count=非負整數）。刪除cancel／toggleDust／autoFillDust／setAuto／setAutoFill，舊指令不執行。start由Worker完整驗證轉數、配方、神性之石與金幣後一次結算，沒有計時與自動重複。
 
@@ -220,7 +224,7 @@ v1 用「參數名叫 `itemId` 就自動解析」的慣例會出事——`forgeP
 
 ### 4.4 指令清單
 
-完整清單見 `js/worker/protocol.js` 的 `COMMANDS`，現行共 **91 條**
+完整清單見 `js/worker/protocol.js` 的 `COMMANDS`，現行共 **94 條**
 （v1 凍結時 67 條，v3 補 14 條、v4 再補 4 條、v8 補 1 條、v16 補 1 條、v18 補 1 條、v19 補 2 條、
 v21 補 2 條、v23 補 1 條）。
 

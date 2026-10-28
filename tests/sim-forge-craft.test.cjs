@@ -13,11 +13,13 @@ test('新版策略面板唯讀，投影費用／石頭上限來自正式配方',
  assert.equal(e.saveJson(),before);assert.equal(p.equip[6].cost,2e7);assert.equal(p.equip[6].maxStones,13);
  assert.equal(p.equip[5],undefined);assert.equal(p.gem,undefined);
 });
-test('策略以一件最高等級載體及五件最低墊料、足額石頭即時產出神鑄神話',()=>{
+test('策略以最高等級載體及五件墊料，三秒後產出神鑄神話且中途不重送',()=>{
  const e=setup(),c=e.ctx,cmds=decide(e),placed=cmds.filter(x=>x.name==='forge.placeItem');
  assert.equal(placed.length,6);assert.equal(c.G.inventory.find(it=>it.id===placed[0].args.itemId).level,300);
  assert.ok(cmds.some(x=>x.name==='forge.setStones'&&x.args.count===13));
  cmds.forEach(cmd=>{const result=c.runCommand(cmd.name,cmd.args);assert.equal(result.ok,true);assert.ok(result.result===null||typeof result.result==='number');});
+ assert.equal(c.G.inventory.some(it=>it.rarity===11),false);assert.deepEqual(decide(e),[]);
+ e.stepSeconds(3);
  const made=c.G.inventory.find(it=>it.rarity===11);assert.ok(made);assert.equal(made.level,300);
 });
 test('低轉數／金幣不足／上鎖不足六件不產生消耗指令',()=>{

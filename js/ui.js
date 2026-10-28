@@ -5416,7 +5416,7 @@ function renderInventory() {
   if (kwInput) {
     kwInput.style.display = isInternal ? 'inline-block' : 'none';
   }
-  var filterKeyword = (kwInput && isInternal && kwInput.style.display !== 'none') ? kwInput.value.trim() : '';
+  var filterKeyword = (!inventoryForgeMode() && kwInput && isInternal && kwInput.style.display !== 'none') ? kwInput.value.trim() : '';
 
   var inventoryItems = inventoryViewItems(invSnapshot);
   /* ---- 只把可視範圍的格子掛進 DOM ----
@@ -5435,11 +5435,13 @@ function renderInventory() {
     box.innerHTML = '<div class="hint" style="grid-column: 1 / -1; padding: 10px;">' + STR(1195) + '</div>';
   } else {
     var ancientFilterSelect = $id('inv-ancient-filter');
-    var filterAncient = ancientFilterSelect ? ancientFilterSelect.value : '';
+    var filterAncient = !inventoryForgeMode() && ancientFilterSelect ? ancientFilterSelect.value : '';
     var filterSelect = $id('inv-rarity-filter');
     var filterRarity = filterSelect ? filterSelect.value : '';
+    var forgeFilter = inventoryForgeMode() ? forgeViewState(uiForgePanelSnapshot()) : null;
+    if (forgeFilter) filterRarity = String(forgeFilter.quality || 6);
     var filterCacheKey = virtualize
-      ? [UI_WORKER_STATE.panelVersions.inv || 0, filterKeyword, filterAncient, filterRarity, UI.inventorySortIndex].join('\u001f')
+      ? [UI_WORKER_STATE.panelVersions.inv || 0, filterKeyword, filterAncient, filterRarity, forgeFilter && forgeFilter.operation, UI.inventorySortIndex].join('\u001f')
       : null;
     var displayedItems = null;
     if (virtualize && UI.inventoryFilterCacheKey === filterCacheKey && UI.inventoryFilterCacheItems !== null) {
@@ -5459,7 +5461,8 @@ function renderInventory() {
           }
           if (filterRarity !== '') {
             var rVal = parseInt(filterRarity, 10);
-            if (it.rarity !== rVal) return false;
+            var itemRarity = forgeFilter && forgeFilter.operation !== 'equip' ? divineForgeBaseRarity(it.rarity) : it.rarity;
+            if (itemRarity !== rVal) return false;
           }
           return true;
         });
@@ -5509,7 +5512,7 @@ function renderInventory() {
         cellKeys.push(it.id);
         if (forgeMode) {
           // 神鑄頁：點擊放入法陣；不是傳說／神話／創世／混沌的置灰（見 mountInventoryBox）
-          if (it.locked || !divineForgeItemEligible(it, forgeViewMode(forgeViewState(uiForgePanelSnapshot())))) dimClass += ' forge-na';
+          if (it.locked || (forgeFilter && forgeFilter.crafting) || !divineForgeItemEligible(it, forgeViewMode(forgeViewState(uiForgePanelSnapshot())))) dimClass += ' forge-na';
           cellsHtmlList.push(itemCellHTML(it, 'forgeinv', dimClass, forgePendingKey));
         } else {
           cellsHtmlList.push(itemCellHTML(it, 'inv', dimClass, itemPendingKey(it.id)));
@@ -6816,9 +6819,19 @@ function bindNewForgeEvents() {
 
 /* ---- 四功能神鑄：六個外圈素材格與中央神性之石 ---- */
 var FORGE_SLOT_POS = [
-  { x: 50, y: 17 }, { x: 78.6, y: 33.5 }, { x: 78.6, y: 66.5 },
-  { x: 50, y: 83 }, { x: 21.4, y: 66.5 }, { x: 21.4, y: 33.5 }
+  { x: 50, y: 24 }, { x: 72.5, y: 37 }, { x: 72.5, y: 63 },
+  { x: 50, y: 76 }, { x: 27.5, y: 63 }, { x: 27.5, y: 37 }
 ];
+function forgeViewRate(f, owned) {
+  return divineForgeRateInfo(f.operation === 'equip' && !forgeViewItemCount(f)
+    ? Object.assign({}, f, { slots: [{ rarity:f.quality || 6 }] }) : f, owned);
+}
+function closeForgeStonePicker() {
+  UI.forgeStoneOpen = false;
+  var popover = $id('forge-stone-popover'), center = $id('forge-stone-center');
+  if (popover) popover.hidden = true;
+  if (center) center.setAttribute('aria-expanded', 'false');
+}
 function forgeInventoryTab(forge) { return forge && forge.operation === 'gem' ? 'gems' : 'items'; }
 function renderForge() {
   var hex = $id('forge-hex'), snap = uiForgePanelSnapshot();
@@ -6826,7 +6839,7 @@ function renderForge() {
   var f = forgeViewState(snap), player = header && header.player;
   if (!hex || !f || !inv || !gems || !player) return;
   var mode = f.operation, rc = Number(player.reincarnations) || 0;
-  var pending = isUiCommandPending(nodePendingKey('forge'));
+  var pending = isUiCommandPending(nodePendingKey('forge')) || !!f.crafting;
   Object.keys(DIVINE_FORGE_MODES).forEach(function (key) {
     var btn = $id('forge-mode-' + key), unlocked = rc >= divineForgeUnlock(key);
     btn.disabled = pending || !unlocked;
@@ -6850,37 +6863,58 @@ function renderForge() {
     keys.push('slot:' + i);
     htmls.push('<button type="button" class="' + cls + '"' + attrs + (pending || !active ? ' disabled' : '') + '>' + content + '</button>');
   }
-  var rate = divineForgeRateInfo(f, player.dust);
+  var rate = forgeViewRate(f, player.dust);
   keys.push('stones');
-  htmls.push('<button type="button" class="forge-stone' + (rate && rate.stones ? ' lit' : '') + '" id="forge-stone-center" data-tip="' + esc(STR(2187)) + '"' + (pending || !rate ? ' disabled' : '') + '>💎<span>' + (rate ? rate.stones : 0) + '</span></button>');
+  htmls.push('<button type="button" class="forge-stone' + (rate && rate.stones ? ' lit' : '') + '" id="forge-stone-center" aria-label="' + esc(STR(2187)) + '" aria-expanded="' + !!UI.forgeStoneOpen + '" aria-controls="forge-stone-popover"' + (pending || !rate ? ' disabled' : '') + '><span class="forge-material-icon" aria-hidden="true">💫</span><span>' + (rate ? rate.stones : 0) + '</span></button>');
   syncItemGridCells(hex, keys, htmls);
+  var progress = snap.craftProgress, stage = $id('forge-stage');
+  var animationKey = f.crafting ? String(f.crafting.startedAt) : '';
+  if (stage.getAttribute('data-craft-key') !== animationKey) {
+    // 自動下一輪仍有is-crafting，須在作業交替時重啟同一條三秒動畫。
+    stage.classList.remove('is-crafting');
+    if (animationKey) void hex.offsetWidth;
+    stage.setAttribute('data-craft-key', animationKey);
+    hex.style.setProperty('--forge-duration', (progress ? progress.durationMs : (f.crafting ? f.crafting.durationMs : 0)) + 'ms');
+    hex.style.setProperty('--forge-delay', -(progress ? progress.elapsedMs : 0) + 'ms');
+  }
+  stage.classList.toggle('is-crafting', !!f.crafting);
+  stage.classList.toggle('is-paused', !!(progress && progress.paused));
+  if (f.crafting) closeForgeStonePicker();
+  $id('forge-stone-popover').hidden = !UI.forgeStoneOpen;
   setTextIfChanged($id('forge-rate'), rate ? STR(2173, fmt1(rate.total), fmt1(rate.base), fmt1(rate.dust)) : STR(2176));
   setTextIfChanged($id('forge-cost'), rate ? STR(2175, fmt(rate.cost)) : '');
   var description = mode === 'equip' ? STR(2193, DIVINE_FORGE.equipCount, DIVINE_FORGE.failMin, DIVINE_FORGE.failMax)
     : mode === 'gem' ? STR(2195, GEM_FORGE_MAX_LEVEL, DIVINE_FORGE.gemPerType, DIVINE_FORGE.gemValue * 100)
     : mode === 'imprint' ? STR(2196, DIVINE_FORGE.refundRate * 100) : STR(2194);
-  setTextIfChanged($id('forge-description'), description);
+  $id('forge-mode-' + mode).setAttribute('data-tip', description + ' ' + STR(2197));
   var weights = ['sacredAffix','ancientAffix','sacredSocket','extraAffix','extraAncient','legendary','refund'];
   var weightSum = weights.reduce(function (sum, key) { return sum + DIVINE_FORGE[key + 'Weight']; }, 0);
-  setHtmlIfChanged($id('forge-imprint-rules'), mode !== 'imprint' ? '' : weights.map(function (key, index) {
-    return '<span>' + esc(STR(2204, STR(2178 + index, DIVINE_FORGE.refundRate * 100), fmt1(DIVINE_FORGE[key + 'Weight'] / weightSum * 100))) + '</span>';
-  }).join('') + '<span>' + esc(STR(2205, DIVINE_FORGE.sacredValue, DIVINE_FORGE.socketValue)) + '</span>');
+  if (mode === 'imprint') $id('forge-mode-imprint').setAttribute('data-tip', description + ' ' + STR(2197) + ' ' + weights.map(function (key, index) {
+    return STR(2204, STR(2178 + index, DIVINE_FORGE.refundRate * 100), fmt1(DIVINE_FORGE[key + 'Weight'] / weightSum * 100));
+  }).join(' · ') + ' ' + STR(2205, DIVINE_FORGE.sacredValue, DIVINE_FORGE.socketValue));
   setTextIfChanged($id('forge-dust-own'), STR(2174, fmt(player.dust || 0), rate ? rate.stones : 0, rate ? rate.maxStones : 0));
-  var input = $id('forge-stone-count');
-  if (document.activeElement !== input) input.value = rate ? rate.stones : 0;
-  input.max = rate ? Math.min(rate.maxStones, player.dust || 0) : 0;
-  input.disabled = pending || !rate;
-  $id('forge-stone-max').disabled = pending || !rate;
-  $id('forge-unload').disabled = pending || !forgeViewItemCount(f);
+  setTextIfChanged($id('forge-stone-value'), rate ? rate.stones : 0);
+  $id('forge-stone-minus').disabled = pending || !rate || rate.stones <= 0;
+  $id('forge-stone-plus').disabled = pending || !rate || rate.stones >= Math.min(rate.maxStones, player.dust || 0);
+  var occupied = forgeViewItemCount(f);
+  setTextIfChanged($id('forge-unload'), occupied ? STR(1296) : STR(2207));
+  $id('forge-unload').disabled = pending || (!occupied && mode !== 'equip');
   $id('forge-go').disabled = pending || !rate || forgeViewItemCount(f) !== needed || player.gold < rate.cost || rc < divineForgeUnlock(mode);
-  setHtmlIfChanged($id('forge-log'), (f.log || []).map(function (entry) { return '<div class="forge-log-line ' + entry.cls + '">' + esc(entry.msg) + '</div>'; }).join(''));
-  var result = f.result;
-  setHtmlIfChanged($id('forge-result'), !result ? '' : result.kind === 'divineGem'
-    ? fusedGemIconHTML(result.gem, 'gi-inline') + esc(STR(2203, fusedGemStatText(result.gem)))
-    : esc(STR(2169, result.name)));
+  setTextIfChanged($id('forge-go'), f.crafting ? STR(2209) : STR(2208));
+  $id('forge-auto').checked = !!f.auto;
+  $id('forge-auto').disabled = mode !== 'equip' || isUiCommandPending(nodePendingKey('forge'));
+  setHtmlIfChanged($id('forge-log'), (f.log || []).slice(0,10).map(function (entry) { return '<div class="forge-log-line ' + entry.cls + '" data-tip="' + esc(entry.msg) + '">' + esc(entry.msg) + '</div>'; }).join(''));
+  document.querySelectorAll('[data-forge-quality]').forEach(function (btn) {
+    var rarity = Number(btn.getAttribute('data-forge-quality'));
+    setTextIfChanged(btn, RARITIES[rarity].name);
+    btn.classList.toggle('active', rarity === (f.quality || 6));
+    btn.setAttribute('aria-pressed', String(rarity === (f.quality || 6)));
+    btn.disabled = pending;
+  });
   var gemMode = mode === 'gem';
   UI.forgeInvTab = gemMode ? 'gems' : 'items';
   $id('forge-inv-slot').style.display = gemMode ? 'none' : '';
+  $id('forge-quality-tabs').hidden = gemMode;
   $id('forge-gem-box').style.display = gemMode ? '' : 'none';
   if (!gemMode) renderInventory();
   else {
@@ -7976,9 +8010,10 @@ function requestUiPanels(keys) {
 /* 指令名 → 給玩家看的動作名稱。查不到就退回指令名本身：訊息會醜一點，
    但仍然說得出「哪個動作失敗、為什麼」，比什麼都不說好。 */
 var UI_COMMAND_LABELS = {
-  'forge.start': STR(2186), 'forge.unloadAll': STR(162),
+  'forge.start': STR(2208), 'forge.unloadAll': STR(1296),
   'forge.placeItem': STR(1338), 'forge.placeGem': STR(1339),
   'forge.removeItem': STR(1340), 'forge.setOperation': STR(66), 'forge.setStones': STR(2187),
+  'forge.autoFill': STR(2207), 'forge.setQuality': STR(66), 'forge.setAuto': STR(2212),
   'item.equip': STR(46), 'item.unequip': STR(74), 'item.salvage': STR(1213), 'item.setLock': STR(1141),
   'item.upgrade': STR(1199), 'item.enchant': STR(1214), 'item.removeEnchant': STR(1215),
   'item.rerollAffix': STR(1200), 'gem.socket': STR(1591), 'gem.unsocket': STR(1592), 'rune.socket': STR(1802),
@@ -12372,7 +12407,8 @@ function initUI() {
       return;
     }
     if (!e.target.closest('#affix-pool-overlay')) hideAffixPool();
-    // 神鑄：法陣槽位（點擊取回）/ 魔塵符位（點擊放入或取下）
+    if (!e.target.closest('#forge-stone-center, #forge-stone-popover')) closeForgeStonePicker();
+    // 神鑄：法陣槽位取回；中央材料格開啟數量選擇。
     var fslot = e.target.closest('[data-forge-slot]');
     if (fslot) {
       if (isUiCommandPending(nodePendingKey('forge'))) return;
@@ -12389,9 +12425,11 @@ function initUI() {
       return;
     }
     if (e.target.closest('#forge-stone-center')) {
-      var current = forgeViewState(uiForgePanelSnapshot()), player = uiHeaderPanelSnapshot().player;
-      var info = divineForgeRateInfo(current, player.dust);
-      if (info) sendUiCommand('forge.setStones', { count: info.stones ? 0 : Math.min(info.maxStones, player.dust || 0) }, { keys:[nodePendingKey('forge')], panels:['forge'] });
+      var current = forgeViewState(uiForgePanelSnapshot());
+      if (!current || current.crafting || isUiCommandPending(nodePendingKey('forge'))) return;
+      UI.forgeStoneOpen = !UI.forgeStoneOpen;
+      $id('forge-stone-popover').hidden = !UI.forgeStoneOpen;
+      $id('forge-stone-center').setAttribute('aria-expanded', String(UI.forgeStoneOpen));
       return;
     }
     // 神鑄寶石頁：點擊寶石放入法陣
@@ -12913,12 +12951,23 @@ function initUI() {
       $id('forge-mode-' + key).addEventListener('click', function () { forgeCommand('forge.setOperation', { mode:key }); });
     });
     $id('forge-go').addEventListener('click', function () { forgeCommand('forge.start'); });
-    $id('forge-unload').addEventListener('click', function () { forgeCommand('forge.unloadAll'); });
-    $id('forge-stone-count').addEventListener('change', function () { forgeCommand('forge.setStones', { count:Number(this.value) }); });
-    $id('forge-stone-max').addEventListener('click', function () {
-      var f = forgeViewState(uiForgePanelSnapshot()), p = uiHeaderPanelSnapshot().player;
-      var info = divineForgeRateInfo(f, p.dust);
-      if (info) forgeCommand('forge.setStones', { count:Math.min(info.maxStones, p.dust || 0) });
+    $id('forge-unload').addEventListener('click', function () {
+      var f = forgeViewState(uiForgePanelSnapshot());
+      forgeCommand(f && forgeViewItemCount(f) ? 'forge.unloadAll' : 'forge.autoFill');
+    });
+    ['minus','plus'].forEach(function (key) {
+      $id('forge-stone-' + key).addEventListener('click', function () {
+        var f = forgeViewState(uiForgePanelSnapshot()), p = uiHeaderPanelSnapshot().player;
+        var info = f && forgeViewRate(f, p.dust);
+        if (info) forgeCommand('forge.setStones', { count:Math.max(0, Math.min(info.stones + (key === 'plus' ? 1 : -1), info.maxStones, p.dust || 0)) });
+      });
+    });
+    document.querySelectorAll('[data-forge-quality]').forEach(function (btn) {
+      btn.addEventListener('click', function () { forgeCommand('forge.setQuality', { rarity:Number(btn.getAttribute('data-forge-quality')) }); });
+    });
+    $id('forge-auto').addEventListener('change', function () { forgeCommand('forge.setAuto', { on:this.checked }); });
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') closeForgeStonePicker();
     });
   }
   $id('toggle-compare').addEventListener('change', function () {
