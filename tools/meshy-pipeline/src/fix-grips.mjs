@@ -95,7 +95,7 @@ const CFG = {
   },
   /* 倒地：改用使用者在 Meshy 網頁重新綁骨架後套的 Dead 動作（取樣檔 data/meshy-dead.json，來源 0～2.9667 秒，30 fps）。原 Death 動作長 2.75 秒、
      67 個關鍵幀，寫不下 2.967 秒，所以來源時間均勻壓縮 speed 倍（≈1.079）塞進去。不限手腕、不做 IK，動作與骨骼不動；Sword 旋轉設成模型原本的握法（fitSwordGrip），倒下途中劍脫手落地（dropSword）。 */
-  Death: { retarget: { name: 'dead', file: 'meshy-dead.json', at: 0, speed: 2.9667 / 2.75 }, avoid: { minDist: 0.07, maxDeg: 45, stepDeg: 15, until: 1.9, fadeTo: 2.35 }, settle: { from: 1.9, to: 2.35, forwardDeg: 20, faceDown: -1 } }
+  Death: { retarget: { name: 'dead', file: 'meshy-dead.json', at: 0, speed: 2.9667 / 2.75 }, swing: { forwardDeg: 20, faceDown: -1, keys: [ { t: 1.6 }, { t: 1.7, pitch: -45 }, { t: 1.8, pitch: -10 }, { t: 1.9, lying: true } ] } }
 };
 
 /* ---- GLB ---- */
@@ -543,79 +543,37 @@ function alignGripToHand(g, rig, clip, rollDeg = 0) {
   console.log(clip.name + ' 握姿校正：拳頭＋劍整體轉 ' + (b0.angleTo(new Vector3(0, 1, 0)) * 180 / Math.PI).toFixed(1) + '° 讓刀刃順著手的方向，再繞劍身軸翻 ' + rollDeg + '° 讓刃口朝砍的方向');
 }
 
-/* ---- 倒地：劍平放在地上，手握著 ----
-   使用者：趴倒後劍要平放在地面、伸向身體左側（朝向偏前一點，如他畫的箭頭），手還握著劍，手正常平放、手背朝上。遊戲模型的手是固定的拳頭（沒有手指，張不開），
-   所以用「整隻手（拳頭＋劍）轉」的方式：站著時握法與模型原樣一致（fitSwordGrip）；身體落地（settle.from～to，約 1.9～2.35 秒）手腕由原動作的朝向漸漸轉到
-   「劍身水平朝 B 方向、劍面朝地」的朝向（B＝身體左側往前偏 settle.forwardDeg 度）。手臂、身體的動作不動，只轉手腕；劍相對拳頭不動，所以拳頭不會被拉扯。 */
-function settleHand(g, rig, clip, cfg) {
-  const id = (n) => rig.byName[n], tr = clip.tracks['RightHand.rotation'], q0 = rig.rest[id('Sword')].q.clone(), n = tr.times.length, ed = {};
+/* ---- 倒地：劍隨身體倒下甩出去，最後平放在地上，手握著 ----
+   使用者逐幀指定（倒下動作的縮圖上畫箭頭）：1.6 秒以前劍照手的握法垂在身側；1.7 秒劍朝身體前方、斜下 45°；1.8 秒朝前、略向下；1.9 秒起劍平放在地上，
+   伸向身體左側往前 20°、劍面朝地、刃口不朝地（之前的箭頭）。遊戲模型的手是固定的拳頭，所以是整隻手（拳頭＋劍）繞手腕轉：每個關鍵時刻決定「劍的世界朝向」，
+   中間用球面內插，手腕的局部旋轉由這個朝向反推。1.7、1.8 秒的朝向是在「手原本握法的朝向」上做最小旋轉得到的（繞劍身軸的滾轉仍由手部動作決定）；
+   1.6 秒以前不動。手臂與身體的動作一個都不動；不為了閃開身體而轉手腕（使用者：劍的軌跡要由手的動作決定，穿一點可以接受）。 */
+function swingSword(g, rig, clip, cfg) {
+  const id = (n) => rig.byName[n], tr = clip.tracks['RightHand.rotation'], q0 = rig.rest[id('Sword')].q.clone(), n = tr.times.length;
   const Wend = worldMatrices(rig, poseAt(rig, clip, tr.times[n - 1]));
   const fwd = wPos(Wend(id('Head'))).sub(wPos(Wend(id('Hips')))); fwd.y = 0; fwd.normalize();
-  const left = new Vector3(0, 1, 0).cross(fwd), th = cfg.forwardDeg * Math.PI / 180;
-  const ey = left.clone().multiplyScalar(Math.cos(th)).addScaledVector(fwd, Math.sin(th)).normalize(), ez = new Vector3(0, cfg.faceDown, 0), ex = new Vector3().crossVectors(ey, ez).normalize();
-  const lying = new Quaternion().setFromRotationMatrix(new Matrix4().makeBasis(ex, ey, ez)), handTarget = lying.clone().multiply(q0.clone().invert());
+  const left = new Vector3(0, 1, 0).cross(fwd), dir = (pitchDeg) => fwd.clone().multiplyScalar(Math.cos(pitchDeg * Math.PI / 180)).addScaledVector(new Vector3(0, 1, 0), Math.sin(pitchDeg * Math.PI / 180)).normalize();   // pitch：水平線以上為正、以下為負
+  const th = cfg.forwardDeg * Math.PI / 180, ey = left.clone().multiplyScalar(Math.cos(th)).addScaledVector(fwd, Math.sin(th)).normalize(), ez = new Vector3(0, cfg.faceDown, 0), ex = new Vector3().crossVectors(ey, ez).normalize();
+  const lying = new Quaternion().setFromRotationMatrix(new Matrix4().makeBasis(ex, ey, ez));
+  const natural = (t) => { const W = worldMatrices(rig, poseAt(rig, clip, t)); return wRot(W(id('RightHand'))).multiply(q0); };
+  const toward = (t, d) => { const N = natural(t), s = new Vector3(0, 1, 0).applyQuaternion(N); return new Quaternion().setFromUnitVectors(s, d).multiply(N); };   // N 做最小旋轉讓劍身指向 d
+  const keys = cfg.keys.map((k) => ({ t: k.t, q: k.lying ? lying : (k.pitch === undefined ? natural(k.t) : toward(k.t, dir(k.pitch))) }));
+  const ed = {};
   for (let i = 0; i < n; i++) {
-    const t = tr.times[i], w = smooth((t - cfg.from) / (cfg.to - cfg.from));
-    if (w <= 0) continue;
-    const W = worldMatrices(rig, poseAt(rig, clip, t)), par = wRot(W(rig.parent[id('RightHand')]));
-    const cur = new Quaternion(tr.values[i * 4], tr.values[i * 4 + 1], tr.values[i * 4 + 2], tr.values[i * 4 + 3]);
-    ed[i] = par.clone().invert().multiply(par.clone().multiply(cur).slerp(handTarget, w)).normalize();
+    const t = tr.times[i];
+    if (t <= keys[0].t) continue;
+    let q;
+    if (t >= keys[keys.length - 1].t) q = keys[keys.length - 1].q;
+    else {
+      let j = 0; while (keys[j + 1].t < t) j++;
+      const a = (t - keys[j].t) / (keys[j + 1].t - keys[j].t);
+      q = (j === 0 ? natural(t) : keys[j].q).clone().slerp(keys[j + 1].q, a);      // 第一段從「手原本的朝向（隨時間變）」接到下一個關鍵朝向
+    }
+    const par = wRot(worldMatrices(rig, poseAt(rig, clip, t))(rig.parent[id('RightHand')]));
+    ed[i] = par.clone().invert().multiply(q).multiply(q0.clone().invert()).normalize();
   }
   writeQuats(g, clip, 'RightHand', ed);
-  console.log('倒地：' + cfg.from + '～' + cfg.to + ' 秒手腕轉到劍平放（水平朝身體左側往前 ' + cfg.forwardDeg + '°）');
-}
-
-/* ---- 倒地：劍不穿身體 ----
-   手部動作來自「手張開、沒拿劍」的原動作，劍固定在拳頭裡，有幾幀劍會穿進腿、膝蓋護甲。逐格檢查：劍的頂點離身體（盔甲，不含右臂與劍自己）最近的距離若小於 cfg.minDist，
-   就把手腕（右手骨骼的區域旋轉，只轉手腕；拳頭＋劍一起轉，劍相對拳頭不動）在小範圍內（每軸 ±cfg.maxDeg）搜尋最接近上一格轉法、又不穿身體的轉角。手臂與身體的動作不動。 */
-function avoidBody(g, rig, clip, cfg) {
-  const id = (n) => rig.byName[n], tr = clip.tracks['RightHand.rotation'], sd = readSkinData(g), cloth = loadCloth(g, sd.n), sj = sd.joints.indexOf('Sword');
-  const skip = new Set(['RightHand', 'RightForeArm', 'RightArm', 'RightShoulder', 'Sword']), need = new Uint8Array(sd.n), body = [];
-  for (let i = 0; i < sd.n; i++) {
-    if (cloth[i]) continue;
-    let best = 0, bw = 0; for (let k = 0; k < 4; k++) if (sd.wgt[i * 4 + k] > bw) { bw = sd.wgt[i * 4 + k]; best = sd.jnt[i * 4 + k]; }
-    if (skip.has(sd.joints[best])) continue;
-    need[i] = 1; body.push(i);
-  }
-  const inv = new Matrix4().fromArray(sd.invBind, sj * 16), sv = [];
-  for (let i = 0, c = 0; i < sd.n; i++) if (sd.jnt[i * 4] === sj && sd.wgt[i * 4] > 0.5 && (c++ % 2 === 0)) sv.push(new Vector3(sd.pos[i * 3], sd.pos[i * 3 + 1], sd.pos[i * 3 + 2]).applyMatrix4(inv));
-  const grid = []; const A = cfg.maxDeg, st = cfg.stepDeg;
-  for (let x = -A; x <= A; x += st) for (let y = -A; y <= A; y += st) for (let z = -A; z <= A; z += st) grid.push([x, y, z]);
-  const rq = (v) => new Quaternion().setFromEuler(new THREE.Euler(v[0] * Math.PI / 180, v[1] * Math.PI / 180, v[2] * Math.PI / 180, 'XYZ'));
-  const n = tr.times.length, ed = {}; let prev = [0, 0, 0], adjusted = 0, worstBefore = 1e9, worstAfter = 1e9;
-  for (let i = 0; i < n; i++) {
-    const t = tr.times[i], pose = poseAt(rig, clip, t);
-    const cur = new Quaternion(tr.values[i * 4], tr.values[i * 4 + 1], tr.values[i * 4 + 2], tr.values[i * 4 + 3]);
-    if (t >= cfg.until) {      // 躺平階段不再搜尋（那一段由 settleHand 帶到使用者要的姿勢），只把前面的調整量漸漸收掉，免得接縫跳格
-      const k = 1 - Math.min(1, smooth((t - cfg.until) / (cfg.fadeTo - cfg.until)));
-      const v = prev.map((x) => x * k);
-      if (v[0] || v[1] || v[2]) ed[i] = cur.clone().multiply(rq(v));
-      continue;
-    }
-    const P = skinnedPositions(rig, sd, pose, need);
-    const hand = wPos(worldMatrices(rig, pose)(id('RightHand'))), near = body.filter((b) => Math.hypot(P[b * 3] - hand.x, P[b * 3 + 1] - hand.y, P[b * 3 + 2] - hand.z) < 1.4);
-    const dist = (v) => {
-      pose[id('RightHand')].q.copy(cur).multiply(rq(v));
-      const M = worldMatrices(rig, pose)(id('Sword')), p = new Vector3(); let m = 1e9;
-      for (const l of sv) { p.copy(l).applyMatrix4(M); for (const b of near) { const dx = P[b * 3] - p.x, dy = P[b * 3 + 1] - p.y, dz = P[b * 3 + 2] - p.z, d = dx * dx + dy * dy + dz * dz; if (d < m) m = d; } }
-      return Math.sqrt(m);
-    };
-    const d0 = dist([0, 0, 0]); worstBefore = Math.min(worstBefore, d0);
-    let pick = [0, 0, 0], pd = d0;
-    if (d0 < cfg.minDist || (prev[0] || prev[1] || prev[2])) {
-      let bestCost = 1e18, bestFar = [0, 0, 0], farD = -1;
-      for (const v of [prev, ...grid]) {
-        const d = dist(v);
-        if (d > farD) { farD = d; bestFar = v; }
-        if (d >= cfg.minDist) { const cost = (v[0] - prev[0]) ** 2 + (v[1] - prev[1]) ** 2 + (v[2] - prev[2]) ** 2 + 0.05 * (v[0] ** 2 + v[1] ** 2 + v[2] ** 2); if (cost < bestCost) { bestCost = cost; pick = v; pd = d; } }
-      }
-      if (bestCost === 1e18) { pick = bestFar; pd = farD; }
-    }
-    prev = pick; worstAfter = Math.min(worstAfter, pd);
-    if (pick[0] || pick[1] || pick[2]) { ed[i] = cur.clone().multiply(rq(pick)); adjusted++; }
-  }
-  writeQuats(g, clip, 'RightHand', ed);
-  console.log('倒地：劍避開身體，調整手腕 ' + adjusted + ' 格；劍到身體最近距離 ' + worstBefore.toFixed(3) + ' → ' + worstAfter.toFixed(3));
+  console.log('倒地：' + cfg.keys.map((k) => k.t + (k.lying ? ' 平放' : k.pitch === undefined ? ' 原樣' : ' 前方' + k.pitch + '°')).join('→'));
 }
 
 /* ---- 收招：全身平順回到起始姿勢（讓動作首尾相接） ---- */
@@ -1353,8 +1311,7 @@ if (!checkOnly) {
   inflateCape(g, 0.02);
   softenCapeLegs(g, rig, 0.8);
   removeClothSlivers(g, rig, analyze);
-  avoidBody(g, rig, readClip(g, rig, 'Death'), CFG.Death.avoid);
-  settleHand(g, rig, readClip(g, rig, 'Death'), CFG.Death.settle);          // 要在 avoidBody 之後：從調整過的手腕帶到平放
+  swingSword(g, rig, readClip(g, rig, 'Death'), CFG.Death.swing);
   fs.writeFileSync(outFile, g.buf);
 }
 // 重新讀檔量測修正後（--check 時以記憶體中的結果量測不到，直接說明）
