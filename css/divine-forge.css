@@ -5,21 +5,26 @@
 #tab-forge .forge-panel::before { content:""; position:absolute; inset:0; z-index:-1; pointer-events:none; background-image:linear-gradient(180deg,#0c0d1020,#0c0d1010 65%,#0c0d1038),url('../images/ui/divine-forge-background.jpg'); background-position:center,center bottom; background-size:100% 100%,105% 100%; background-repeat:no-repeat; }
 .forge-mode-tabs { display:flex; gap:4px; padding:4px; border:0; border-bottom:1px solid #23262d; border-radius:0; background:#0e1013; position:relative; z-index:3; }
 #tab-forge .forge-mode-tabs .btn { flex:1 1 0; white-space:normal; min-height:32px; padding:4px 8px; font-size:13px; color:var(--afl-text-dim)!important; background:transparent!important; border:1px solid transparent!important; border-radius:6px!important; }
-#tab-forge .forge-mode-tabs .btn:hover:not(:disabled) { color:var(--afl-text)!important; background:transparent!important; border-color:transparent!important; }
+#tab-forge .forge-mode-tabs .btn:hover:not(:disabled):not(.active) { color:var(--afl-text)!important; background:transparent!important; border-color:transparent!important; }
 #tab-forge .forge-mode-tabs .btn.active { color:var(--afl-gold-text)!important; background:var(--afl-gold-bg)!important; border-color:var(--afl-gold-line)!important; box-shadow:none; }
 #tab-forge #forge-stage { position:relative; flex:1; container-type:size; height:auto!important; min-height:0!important; aspect-ratio:auto!important; padding:0!important; overflow:visible; background:none!important; display:flex; align-items:center; justify-content:center; border:0; }
 #forge-crystal-float { position:relative; z-index:2; flex:none; width:min(78cqw,calc(100cqh - 90px),680px); aspect-ratio:1; margin-bottom:42px; animation:forge-hover 6s ease-in-out infinite; }
 #forge-crystal-float:hover,#forge-crystal-float:focus-within { animation-play-state:paused; }
-#tab-forge #forge-hex { position:relative; width:100%; height:auto!important; aspect-ratio:1; margin:0; background:url('../images/ui/divine-forge-crystal.png') center/contain no-repeat!important; transform:none; inset:auto; filter:drop-shadow(0 0 12px #5187f880); }
-#tab-forge #forge-hex::before { display:none; }
-#tab-forge #forge-hex::after { content:""; display:block; position:absolute; inset:0; pointer-events:none; background:url('../images/ui/divine-forge-crystal.png') center/contain no-repeat; opacity:0; z-index:1; }
-#tab-forge .forge-slot,#tab-forge .forge-stone { position:absolute; z-index:2; width:9.6%; height:auto; aspect-ratio:1; transform:translate(-50%,-50%)!important; border-radius:6px; border:1px solid var(--afl-line-hover); background:#0c0d10e6; box-shadow:none; display:flex; align-items:center; justify-content:center; padding:2px; }
+#tab-forge #forge-hex { position:relative; width:100%; height:auto!important; aspect-ratio:1; margin:0; background:url('../images/ui/divine-forge-crystal.png') center/contain no-repeat!important; transform:none; inset:auto; filter:brightness(.7) drop-shadow(0 0 12px #5187f880); }
+#tab-forge #forge-hex::before { content:""; display:block; position:absolute; inset:14%; pointer-events:none; border-radius:50%; border:3px solid #dff3ff; box-shadow:0 0 18px #8fd0ff,inset 0 0 18px #8fd0ff; opacity:0; z-index:1; }
+#tab-forge #forge-hex::after { content:""; display:block; position:absolute; inset:0; pointer-events:none; background:radial-gradient(circle,#fff 0 10%,#d8efff 20%,#79bcff66 38%,transparent 60%); opacity:0; z-index:1; }
+#tab-forge .forge-slot,#tab-forge .forge-stone { position:absolute; z-index:2; width:9.6%; height:auto; aspect-ratio:1; transform:translate(-50%,-50%)!important; border-radius:6px; border:1px solid var(--afl-line-hover); background:#141a2a66; box-shadow:inset 0 0 8px #0a0e1a66; display:flex; align-items:center; justify-content:center; padding:2px; }
 #tab-forge .forge-slot .item-icon { max-width:95%; max-height:95%; }
 #tab-forge .forge-slot .ic-lv { font-size:9px; bottom:0; }
 #tab-forge .forge-slot.empty { border-style:dashed; opacity:1; }
-#tab-forge .forge-slot.forge-inactive { border-color:var(--afl-line); background:var(--afl-list); box-shadow:none; filter:grayscale(1); opacity:.65; }
+/* 填入的裝備維持原色：[disabled] 全域規則會把鑄造中的按鈕變半透明＋去色，這裡取消；格子本身半透明，邊框帶品質色（見 renderForge） */
+#tab-forge .forge-slot.filled { background:linear-gradient(145deg,#4a546ccc,#1c2234cc); }
+#tab-forge .forge-slot.filled:disabled:not(.forge-inactive) { opacity:1; filter:none; }
+/* 未使用的格子：灰底灰框＋中央亮色鎖頭（不用 opacity／filter，鎖頭才不會跟著變暗） */
+#tab-forge .forge-slot.forge-inactive { border-color:#5a5d66; background:#2a2d34b3; box-shadow:none; filter:none; opacity:1; }
+#tab-forge .forge-slot.forge-inactive::after { content:""; position:absolute; left:50%; top:50%; width:54%; height:54%; transform:translate(-50%,-50%); background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23f2f4fa' fill-rule='evenodd' d='M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5zM9 10V7a3 3 0 0 1 6 0v3H9zm3 4a2 2 0 0 1 1 3.7V19h-2v-1.3A2 2 0 0 1 12 14z'/%3E%3C/svg%3E") center/contain no-repeat; filter:drop-shadow(0 1px 3px #000); pointer-events:none; }
 #tab-forge button:disabled { cursor:default; }
-#tab-forge #forge-stone-center { left:50%; top:50%; width:11.2%; color:var(--afl-text)!important; background:#0c0d10f2!important; border-color:var(--afl-gold-line); flex-direction:column; gap:0; line-height:1; opacity:1; }
+#tab-forge #forge-stone-center { left:50%; top:50%; width:11.2%; color:var(--afl-text)!important; background:#141a2a99!important; border-color:var(--afl-gold-line); flex-direction:column; gap:0; line-height:1; opacity:1; }
 #tab-forge .forge-stone span { font-size:10px; font-weight:bold; }
 #tab-forge .forge-stone .forge-material-icon { font-size:clamp(15px,2vw,24px); }
 #tab-forge .forge-stone.lit,#tab-forge .forge-stone[aria-expanded="true"] { border-color:var(--afl-gold-text); box-shadow:0 0 12px #f0cf8655; }
@@ -34,7 +39,7 @@
 #tab-forge .forge-v2-actions .btn { min-width:100px; min-height:34px; padding:6px 16px; }
 #tab-forge #forge-go { box-shadow:none; }
 #tab-forge #forge-go:disabled { opacity:.5; }
-#tab-forge #forge-log { position:absolute; top:12px; left:0; width:36%; max-width:340px; min-height:0; max-height:none; padding:6px 8px; border:0; border-left:2px solid var(--afl-line-hi); border-radius:0; background:linear-gradient(90deg,#0c0d10e6,#0c0d1040); text-align:left; z-index:3; pointer-events:auto; }
+#tab-forge #forge-log { position:absolute; top:0; left:0; width:36%; max-width:340px; min-height:0; max-height:none; padding:6px 8px; border:0; border-radius:0; background:none; text-shadow:0 1px 3px #000,0 0 6px #000; text-align:left; z-index:3; pointer-events:auto; }
 #tab-forge #forge-log:empty { display:none; }
 #forge-log .forge-log-line { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:19px; font-size:11px; }
 #forge-log .good { color:#a4edc8; }
@@ -55,7 +60,10 @@
 #tab-forge #inv-section-box .inv-head { display:none!important; }
 #tab-forge #inventory-grid { --inventory-visible-rows:2!important; height:122px; min-height:122px; max-height:122px; padding:0!important; }
 #tab-forge #inventory-grid .item-cell { height:58px; min-height:0; aspect-ratio:auto; }
-#tab-forge #forge-gem-box { background:var(--afl-card)!important; margin-top:8px; }
+/* 底部區塊高度與裝備神鑄一致（品質分頁 40＋間距 8＋背包框 140＋間距 8），切模式時上方水晶舞台不變動 */
+#tab-forge #forge-gem-box { display:flex; flex-direction:column; box-sizing:border-box; height:188px; margin:8px 0 0!important; padding:8px!important; background:var(--afl-card)!important; border:1px solid var(--afl-line)!important; border-radius:8px!important; box-shadow:none!important; }
+#tab-forge #forge-gem-box .inv-head { flex:none; margin:0 0 6px!important; padding:0!important; border:0!important; background:none!important; }
+#tab-forge #forge-gem-grid { flex:1; min-height:0; max-height:none!important; }
 #tab-forge .forge-gem-cell { position:relative; }
 .forge-aura { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
 .forge-aura::before,.forge-aura::after { content:""; position:absolute; left:50%; top:42%; width:62%; height:60%; transform:translate(-50%,-50%); border-radius:50%; background:radial-gradient(ellipse,#4eacff1f,transparent 65%); }
@@ -63,9 +71,10 @@
 .forge-aura i { position:absolute; left:50%; top:46%; width:45%; height:24%; border:1px solid #7dd5ff3d; border-left:2px solid #99e8ffb3; border-right:2px solid #9d9aff85; border-radius:50%; box-shadow:0 0 12px #7dd5ff33; animation:forge-vortex 9s linear infinite; }
 .forge-aura i:nth-child(2) { width:53%; height:18%; top:51%; animation-duration:12s; animation-direction:reverse; }
 .forge-aura i:nth-child(3) { width:39%; height:32%; top:39%; animation-delay:-4s; opacity:.5; }
-#tab-forge .is-crafting #forge-hex::after { animation:forge-ignite var(--forge-duration,3000ms) linear var(--forge-delay,0ms) both; }
+#tab-forge .is-crafting #forge-hex::after { animation:forge-burst var(--forge-duration,3000ms) linear var(--forge-delay,0ms) both; }
+#tab-forge .is-crafting #forge-hex::before { animation:forge-ring var(--forge-duration,3000ms) linear var(--forge-delay,0ms) both; }
 #tab-forge .is-crafting #forge-hex { animation:forge-charge var(--forge-duration,3000ms) linear var(--forge-delay,0ms) both; }
-#tab-forge .is-paused #forge-hex,#tab-forge .is-paused #forge-hex::after { animation-play-state:paused; }
+#tab-forge .is-paused #forge-hex,#tab-forge .is-paused #forge-hex::before,#tab-forge .is-paused #forge-hex::after { animation-play-state:paused; }
 .socket.sacred-socket,.socket.sacred-socket * { color:#60a5fa!important; border-color:#60a5fa; }
 .it-imprint,.sacred-affix,.sacred-affix * { color:#60a5fa!important; }
 /* 華麗層：全是 transform／opacity 動畫（走合成器，不重繪），共 1 道旋轉光芒＋1 圈地面脈動＋8 顆上升光點。 */
@@ -87,8 +96,10 @@
 @keyframes forge-hover { 0%,100% { transform:translateY(-3px); } 50% { transform:translateY(4px); } }
 @keyframes forge-vortex { from { transform:translate(-50%,-50%) rotate(-12deg); } to { transform:translate(-50%,-50%) rotate(348deg); } }
 @keyframes forge-motes { 0%,100% { transform:translate(-50%,-46%); opacity:.25; } 50% { transform:translate(-50%,-56%); opacity:.9; } }
-@keyframes forge-ignite { 0% { clip-path:circle(0% at 50% 50%); opacity:.2; filter:brightness(.2); } 80% { clip-path:circle(64% at 50% 50%); opacity:.8; filter:brightness(1.6); } 100% { clip-path:circle(75% at 50% 50%); opacity:1; filter:brightness(2); } }
-@keyframes forge-charge { 0% { filter:brightness(.3) saturate(.5); } 85% { filter:brightness(.85) drop-shadow(0 0 20px #79d9ff); } 100% { filter:brightness(1.3) drop-shadow(0 0 26px #caf7ff); } }
+/* 鑄造 3 秒：平時就是 70% 亮度的暗態；0~50%（約 1.5 秒）逐漸亮起，60~100%（約 1.2 秒）亮光與環波向外發散，結尾收回暗態避免跳變。 */
+@keyframes forge-charge { 0% { filter:brightness(.7) saturate(1) drop-shadow(0 0 12px #5187f880); } 50% { filter:brightness(2.1) saturate(.8) drop-shadow(0 0 40px #dff4ff); } 72% { filter:brightness(2.4) saturate(.7) drop-shadow(0 0 48px #fff); } 100% { filter:brightness(.7) saturate(1) drop-shadow(0 0 12px #5187f880); } }
+@keyframes forge-burst { 0%,58% { opacity:0; transform:scale(.3); } 66% { opacity:1; transform:scale(.9); } 100% { opacity:0; transform:scale(2.3); } }
+@keyframes forge-ring { 0%,60% { opacity:0; transform:scale(.4); } 68% { opacity:.95; } 100% { opacity:0; transform:scale(2.1); } }
 @media(max-width:600px) {
   #tab-forge .forge-panel { padding:8px 8px 0; }
   #tab-forge .forge-mode-tabs .btn { font-size:11px; min-height:34px; padding:4px 1px; }

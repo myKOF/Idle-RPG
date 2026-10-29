@@ -6839,13 +6839,17 @@ function renderForge() {
   var f = forgeViewState(snap), player = header && header.player;
   if (!hex || !f || !inv || !gems || !player) return;
   var mode = f.operation, rc = Number(player.reincarnations) || 0;
+  // 永遠要有一頁被選中：存檔裡的模式不存在或尚未開放時，顯示第一頁
+  if (!DIVINE_FORGE_MODES[mode] || rc < divineForgeUnlock(mode)) mode = 'equip';
   var pending = isUiCommandPending(nodePendingKey('forge')) || !!f.crafting;
   Object.keys(DIVINE_FORGE_MODES).forEach(function (key) {
     var btn = $id('forge-mode-' + key), unlocked = rc >= divineForgeUnlock(key);
     btn.disabled = pending || !unlocked;
     btn.classList.toggle('active', key === mode);
     btn.setAttribute('aria-pressed', String(key === mode));
-    btn.setAttribute('data-tip', STR(2191, STR(DIVINE_FORGE_MODES[key]), divineForgeUnlock(key)));
+    // 只有尚未開放的頁籤才說明開放條件；已開放的不顯示提示
+    if (unlocked) btn.removeAttribute('data-tip');
+    else btn.setAttribute('data-tip', STR(2191, STR(DIVINE_FORGE_MODES[key]), divineForgeUnlock(key)));
   });
   var keys = [], htmls = [], needed = divineForgeSlotCount(mode);
   for (var i = 0; i < FORGE_SLOTS; i++) {
@@ -6858,6 +6862,7 @@ function renderForge() {
       content = icon ? '<img class="item-icon" src="images/' + icon + '" alt="">' : info.emoji;
       content += ancientStarBadgeHTML(it) + '<span class="ic-lv">' + it.level + '</span>';
       attrs += ' data-id="' + esc(it.id) + '"';
+      attrs = attrs.replace('style="', 'style="border-color:' + RARITIES[it.rarity].color + ';box-shadow:inset 0 0 10px ' + RARITIES[it.rarity].color + '33;');
     }
     if (!it) attrs += ' data-tip="' + esc(active ? STR(2198, i + 1) : STR(2199)) + '"';
     keys.push('slot:' + i);
@@ -6883,15 +6888,6 @@ function renderForge() {
   $id('forge-stone-popover').hidden = !UI.forgeStoneOpen;
   setTextIfChanged($id('forge-rate'), rate ? STR(2173, fmt1(rate.total), fmt1(rate.base), fmt1(rate.dust)) : STR(2176));
   setTextIfChanged($id('forge-cost'), rate ? STR(2175, fmt(rate.cost)) : '');
-  var description = mode === 'equip' ? STR(2193, DIVINE_FORGE.equipCount, DIVINE_FORGE.failMin, DIVINE_FORGE.failMax)
-    : mode === 'gem' ? STR(2195, GEM_FORGE_MAX_LEVEL, DIVINE_FORGE.gemPerType, DIVINE_FORGE.gemValue * 100)
-    : mode === 'imprint' ? STR(2196, DIVINE_FORGE.refundRate * 100) : STR(2194);
-  $id('forge-mode-' + mode).setAttribute('data-tip', description + ' ' + STR(2197));
-  var weights = ['sacredAffix','ancientAffix','sacredSocket','extraAffix','extraAncient','legendary','refund'];
-  var weightSum = weights.reduce(function (sum, key) { return sum + DIVINE_FORGE[key + 'Weight']; }, 0);
-  if (mode === 'imprint') $id('forge-mode-imprint').setAttribute('data-tip', description + ' ' + STR(2197) + ' ' + weights.map(function (key, index) {
-    return STR(2204, STR(2178 + index, DIVINE_FORGE.refundRate * 100), fmt1(DIVINE_FORGE[key + 'Weight'] / weightSum * 100));
-  }).join(' · ') + ' ' + STR(2205, DIVINE_FORGE.sacredValue, DIVINE_FORGE.socketValue));
   setTextIfChanged($id('forge-dust-own'), STR(2174, fmt(player.dust || 0), rate ? rate.stones : 0, rate ? rate.maxStones : 0));
   setTextIfChanged($id('forge-stone-value'), rate ? rate.stones : 0);
   $id('forge-stone-minus').disabled = pending || !rate || rate.stones <= 0;
@@ -6899,8 +6895,13 @@ function renderForge() {
   var occupied = forgeViewItemCount(f);
   setTextIfChanged($id('forge-unload'), occupied ? STR(1296) : STR(2207));
   $id('forge-unload').disabled = pending || (!occupied && mode !== 'equip');
-  $id('forge-go').disabled = pending || !rate || forgeViewItemCount(f) !== needed || player.gold < rate.cost || rc < divineForgeUnlock(mode);
-  setTextIfChanged($id('forge-go'), f.crafting ? STR(2209) : STR(2208));
+  $id('forge-go').disabled = pending || !rate || forgeViewItemCount(f) !== needed || rc < divineForgeUnlock(mode); // 金幣不夠不鎖按鈕：按下後才檢查並提示
+  // 開始按鈕的名稱與提示依功能而異；提示第二行的金幣消耗，空法陣時以所選品質預設值估算
+  var goLabelIds = { equip:2208, ancient:2215, gem:2216, imprint:2217 }, goTipIds = { equip:2218, ancient:2219, gem:2220, imprint:2221 };
+  var goRate = rate || divineForgeRateInfo({ operation:mode, slots:[{ rarity:f.quality || 6 }], stones:0 }, 0);
+  var goBtn = $id('forge-go');
+  setTextIfChanged(goBtn, f.crafting ? STR(2209) : STR(goLabelIds[mode]));
+  setAttrIfChanged(goBtn, 'data-tip', STR(goTipIds[mode]) + (goRate ? '<br>' + STR(2222, fmt(goRate.cost)) : ''));
   $id('forge-auto').checked = !!f.auto;
   $id('forge-auto').disabled = mode !== 'equip' || isUiCommandPending(nodePendingKey('forge'));
   setHtmlIfChanged($id('forge-log'), (f.log || []).slice(0,10).map(function (entry) { return '<div class="forge-log-line ' + entry.cls + '" data-tip="' + esc(entry.msg) + '">' + esc(entry.msg) + '</div>'; }).join(''));
@@ -12959,7 +12960,12 @@ function initUI() {
         forgeCommand('forge.setOperation', { mode:key });
       });
     });
-    $id('forge-go').addEventListener('click', function () { forgeCommand('forge.start'); });
+    $id('forge-go').addEventListener('click', function () {
+      var f = forgeViewState(uiForgePanelSnapshot()), p = uiHeaderPanelSnapshot().player;
+      var info = f && forgeViewRate(f, p.dust);
+      if (info && (p.gold || 0) < info.cost) { showFloatingText(this, STR(91), '#fca5a5'); return; }
+      forgeCommand('forge.start');
+    });
     $id('forge-unload').addEventListener('click', function () {
       var f = forgeViewState(uiForgePanelSnapshot());
       forgeCommand(f && forgeViewItemCount(f) ? 'forge.unloadAll' : 'forge.autoFill');

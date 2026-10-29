@@ -493,6 +493,8 @@ function migrateSave(data) {
   }
   if (!hadDivineForgeV2 && data.forge) delete data.forge.version;
   if (typeof forgeMigrateState === 'function') forgeMigrateState(data);
+  // 神鑄鑄造記錄只是暫存：重新載入（網頁刷新）就清空，不跨次保留
+  if (data.forge) data.forge.log = [];
   if (data.settings) delete data.settings.useAncientEssence;
   // 神鑄永久開放相容：舊存檔只有 unlockNotified，合併預設後補回永久解鎖旗標。
   if (hadForgeUnlockNotice && data.forge) data.forge.unlocked = true;

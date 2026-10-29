@@ -5,6 +5,7 @@ function forgeMigrateState(data) {
   var f = data.forge;
   if (f && f.version === 2) {
     if (f.unlocked === undefined) f.unlocked = !!f.unlockNotified;
+    if (!DIVINE_FORGE_MODES[f.operation]) f.operation = 'equip';
     if ([6, 7, 9].indexOf(f.quality) < 0) f.quality = 6;
     if (!Number.isInteger(f.stonePreference) || f.stonePreference < 0) f.stonePreference = Math.max(0, Math.floor(Number(f.stones) || 0));
     f.auto = f.operation === 'equip' && f.auto === true;
