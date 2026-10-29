@@ -6839,6 +6839,8 @@ function renderForge() {
   var f = forgeViewState(snap), player = header && header.player;
   if (!hex || !f || !inv || !gems || !player) return;
   var mode = f.operation, rc = Number(player.reincarnations) || 0;
+  // 永遠要有一頁被選中：存檔裡的模式不存在或尚未開放時，顯示第一頁
+  if (!DIVINE_FORGE_MODES[mode] || rc < divineForgeUnlock(mode)) mode = 'equip';
   var pending = isUiCommandPending(nodePendingKey('forge')) || !!f.crafting;
   Object.keys(DIVINE_FORGE_MODES).forEach(function (key) {
     var btn = $id('forge-mode-' + key), unlocked = rc >= divineForgeUnlock(key);
