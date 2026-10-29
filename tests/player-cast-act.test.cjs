@@ -31,7 +31,7 @@ function fn(src, name) {
   return src.slice(start, end);
 }
 
-function loadBeginCast(castSec, execResult) {
+function loadBeginCast(castSec, execResult, hold) {
   const acts = [], executed = [];
   const c = {
     Math, SKILL_CAST_RT: [],
@@ -41,8 +41,9 @@ function loadBeginCast(castSec, execResult) {
     bfPickPrimary: (list, locked) => (locked && list.indexOf(locked) >= 0 ? locked : list[list.length - 1]),
     emitPlayerAct: (...args) => acts.push(args)
   };
+  if (hold !== undefined) c.SKILL_CAST_HOLD = hold;
   vm.createContext(c);
-  vm.runInContext(fn(skills, 'skillCastActEmit') + ';' + fn(skills, 'beginSkillCast'), c);
+  vm.runInContext(fn(skills, 'skillCastActEmit') + ';' + fn(skills, 'skillCastHoldStart') + ';' + fn(skills, 'beginSkillCast'), c);
   return { c, acts, executed };
 }
 
@@ -72,6 +73,23 @@ test('CAST-2 沒有硬直：技能放出去之後才送（失敗的不播）', (
   r = loadBeginCast(0, null);
   r.c.beginSkillCast({ pEnt: {}, target: { hp: 3 }, skillId: 'thrust', floatSel: 'mv-float' });
   assert.equal(r.acts.length, 0, '沒放成功（例如距離不夠）就不擺施法姿勢');
+});
+
+test('CAST-2b 放出後站定：參數 SKILL_CAST_HOLD 有填才設 _skillHold，沒填（0）不站定；失敗的不站定', () => {
+  let r = loadBeginCast(0, { dmg: 5 }, 0.3), pEnt = {};
+  r.c.beginSkillCast({ pEnt, target: { hp: 3 }, skillId: 'thrust', floatSel: 'mv-float' });
+  assert.equal(pEnt._skillHold, 0.3, '技能放出去之後角色再站定 0.3 秒，3D 技能動作才播得完');
+  r = loadBeginCast(0, { dmg: 5 }, 0); pEnt = {};
+  r.c.beginSkillCast({ pEnt, target: { hp: 3 }, skillId: 'thrust', floatSel: 'mv-float' });
+  assert.equal(pEnt._skillHold, undefined, '參數 0＝不站定（Excel 還沒填值時的預設）');
+  r = loadBeginCast(0, null, 0.3); pEnt = {};
+  r.c.beginSkillCast({ pEnt, target: { hp: 3 }, skillId: 'thrust', floatSel: 'mv-float' });
+  assert.equal(pEnt._skillHold, undefined, '沒放成功（例如距離不夠）不站定');
+});
+
+test('CAST-2c 站定期間 bfTickPlayer 不移動，站定結束才繼續追', () => {
+  const bf = fs.readFileSync(path.join(__dirname, '..', 'js', 'battlefield.js'), 'utf8');
+  assert.match(bf, /Number\(pEnt\._skillHold\) > 0\) \{\s*pEnt\._skillHold = Math\.max\(0, pEnt\._skillHold - \(dt > 0 \? dt : 0\)\);\s*BF_PLAYER_CHASING = false;\s*return false;/);
 });
 
 test('CAST-3 shim：act 走低延遲 visual 批次，只帶圖層 id 與毫秒數', () => {

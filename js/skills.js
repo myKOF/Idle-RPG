@@ -21,6 +21,7 @@ function resetSkillRT() {
     requeueSkillAfterFailedCast(interrupted.pEnt, interrupted.loadoutKey || interrupted.skillId);
     interrupted.pEnt._skillCastRemaining = 0;
     interrupted.pEnt._skillCastId = '';
+    interrupted.pEnt._skillHold = 0;
   }
   SKILL_CAST_RT = [];
   if (typeof resetLegendaryRT === 'function') resetLegendaryRT();
@@ -182,6 +183,14 @@ function skillCastTimeFor(def, opts) {
   return isFinite(sec) && sec >= 0 ? sec : SKILL_CAST_DEFAULT_SEC;
 }
 
+/* 技能放出之後角色再站定一小段（SKILL_CAST_HOLD，參數表「施放硬直」參數b）：3D 技能動作要播完才繼續移動。
+   只影響走位（bfTickPlayer 讀 _skillHold），技能放出的時間與普攻 atkCd 都不變。 */
+function skillCastHoldStart(pEnt) {
+  if (!pEnt) return;
+  var hold = (typeof SKILL_CAST_HOLD === 'number' && isFinite(SKILL_CAST_HOLD) && SKILL_CAST_HOLD > 0) ? SKILL_CAST_HOLD : 0;
+  if (hold > 0) pEnt._skillHold = hold;
+}
+
 function skillCastJobFor(pEnt) {
   for (var i = 0; i < SKILL_CAST_RT.length; i++) {
     if (SKILL_CAST_RT[i] && SKILL_CAST_RT[i].pEnt === pEnt) return SKILL_CAST_RT[i];
@@ -225,7 +234,7 @@ function beginSkillCast(job) {
   if (!(sec > 0)) {
     var immediate = executeSkillCastJob(job);
     if (!immediate) requeueSkillAfterFailedCast(pEnt, readyKey);
-    else skillCastActEmit(job, 0);   // 沒有硬直：技能已經放出去了，確定成功才播
+    else { skillCastActEmit(job, 0); skillCastHoldStart(pEnt); }   // 沒有硬直：技能已經放出去了，確定成功才播
     return immediate;
   }
   skillCastActEmit(job, sec);
@@ -270,6 +279,7 @@ function tickSkillCast(pEnt, dt) {
   pEnt._skillCastId = '';
   var result = executeSkillCastJob(entry);
   if (!result) requeueSkillAfterFailedCast(pEnt, entry.loadoutKey || entry.skillId);
+  else skillCastHoldStart(pEnt);
   result = result || { killed: false, dmg: 0 };
   return {
     completed: true,

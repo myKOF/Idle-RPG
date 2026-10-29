@@ -13075,10 +13075,6 @@ Worker 存活且頁面正常完成載入。
 - 倒地劍尖不陷進地面（使用者要求平放）：手不動，1.8～2.1 秒把 Sword 相對手繞「水平且垂直於劍身」的軸抬到俯角 −10°（劍身朝向的水平分量不變），劍尖貼地（劍尖 y≈−0.055、身體最低 −0.066），原本陷入約 0.5 公尺。只轉 10° 所以拳頭／護腕尾端的撕裂比大角度小很多，2.1 秒護腕尾端有一小片白色碎片（已知，未處理）。模型版號 grips34、hero3d.js?v=1.0.36。
 - 倒地劍的方向照使用者在「鏡頭跟著右手」特寫圖上逐幀畫的箭頭（1.9／2.0／2.1／2.75 秒，畫面右上 3°／26°／39°／46°）。手不動；鏡頭＝正交、仰角 30°、模型繞 Y 轉 55°，箭頭只給畫面內方向，深度取劍原本的深度分量（最小旋轉）。1.8 秒前照手的握法。劍相對手最多轉約 84°，護腕尾端被牽動成楔形碎片（已知、使用者知情，Blender 裡重新指派權重也無法消除）。劍尖不再陷地。取代上一版的「抬 10°」。模型版號 grips35、hero3d.js?v=1.0.37。
 - 跑步（HERO3D）：改用使用者上傳的 Meshy Female_Throwing_Stance_Charge_inplace（原地、右手擺動很小；取樣檔 data/meshy-run.json，30 fps，0.5333 秒），來源時間均勻拉長到 Run 的 0.625 秒（speed＝0.8533）。同 Attack／Death 的重新瞄準流程，不限手腕、不做 IK；Sword 旋轉＝模型原本的握法（劍已在右手）。模型版號 grips36、hero3d.js?v=1.0.38。
-
-
-
-
 ## MERGE-HERO3D-DEVELOP-20261028 — 整合 HERO3D 動作與傳送門成果
 
 - Owner：Codex；Done。依使用者授權處理 develop 的 pending merge（HEAD 86200e0f、MERGE_HEAD ba3c949f），不操作 index、Commit、推送或其他工作區。
@@ -13092,3 +13088,12 @@ Worker 存活且頁面正常完成載入。
 - 素材：依既有 claude-authored/hero3d/sunbrand-knight 歸檔流程保存更新 GLB、tools/fix-grips.mjs、新增 tools/data/meshy-run.json 並更新 source.json，11 份遊戲來源與素材庫檔案 SHA256 全相符；未生成素材或呼叫付費 API，其他素材庫工作保留。素材庫四個路徑交 controller 先提交，本輪未自行提交。
 - 驗證：node --test --test-reporter=spec tests/hero3d-battle-rules.test.cjs tests/hero3d-internal-toggle.test.cjs：14/14 通過；npm.cmd run build：599 檔通過；git diff HEAD --check：完整合併結果通過。工作檔無衝突標記，HEAD／MERGE_HEAD 不變。唯讀檢查規範／Workflow／Agent、package、模型來源與管線文件及相關測試；未修改 Excel／CSV、Worker、玩法或既有測試斷言。
 - 交付：可由 controller 完成本次合併；index 尚有 unmerged entry 屬預期。沒有本次未完成實作；未做瀏覽器 GPU 視覺驗收，保留 incoming 已記錄的護腕尾端碎片限制。
+
+- 3D 出手動作播完＋技能動作隨機（使用者 2026-10-29 內測回報）：①普攻動作播一半目標死亡，角色一開始移動就被切成跑步——移除 battle-renderer 的「有位移就切跑步」（含 HERO3D_ACTION_GRACE_MS），出手動作（普攻、技能）一律播完才回到跑步／站立（playAnim 的 onComplete 讀當下 baseAnim），代價是揮擊剩餘段會邊跑邊播。②技能動作原本固定借 Attack2 前 0.85 秒，改成與普攻相同的三個攻擊動作隨機（不連續兩下同一招，與普攻共用 lastAttack）；p.actionKind 區分 melee／cast，施法動作播放中不被普攻蓋掉；已在出手動作中則不插技能動作（維持原規則）。技能釋放時刻對齊仍沿用 hitMs／lockMs（SKILL_CAST_LOCK 預設 0.2 秒，模擬層停步只有這 0.2 秒）。尚未處理：使用者要「停下來播完技能動作再繼續移動」，模擬層目前只停 0.2 秒，動作被加速約 3 倍塞進去，之後角色會邊跑邊把剩下的動作播完——要整段站定需在模擬層（js/battlefield.js bfTickPlayer）加停步時間與參數表欄位，等使用者決定。index.html battle-renderer.js?v=1.6.204。
+- 技能放出後站定到動作播完（使用者選方案 1，2026-10-29）：新增 `SKILL_CAST_HOLD`（js/formula.js；apply_params 以 scalarOpt 讀「9-技能／施放硬直」的**參數b**）。技能放出之後（有硬直的在 tickSkillCast 放出時、沒硬直的在 beginSkillCast 成功時）呼叫 skillCastHoldStart 設 `pEnt._skillHold`；`bfTickPlayer`（js/battlefield.js）在 `_skillHold>0` 時扣時間並不移動。技能放出時間與普攻 atkCd 不變，只影響走位。參數表：config/Excel 的 game_parameters「施放硬直」參數b 目前為 0，已用 param-patches 暫存「參數b＝0.3」（config/param-patches/30fef292-….json），**待使用者關閉 Excel 後執行套用參數.bat 才生效**；在那之前 SKILL_CAST_HOLD＝0＝不站定（行為與現在相同）。0.3 是依三個攻擊動作加速到 0.5 秒內播完、減去 0.2 秒硬直算的上限；中文說明格未改。順手修 hero3d.js 兩個診斷字串（':長度'／':樣本'）造成 string-table 測試失敗（改成 ':len'／':n'，只進 stats.skipped 診斷，不顯示給玩家）。測試：player-cast-act CAST-2b／2c。Worker 快取版號 formula／battlefield／skills 20261029-cast-hold。
+
+## MERGE-CAST-HOLD-DEVELOP-20261029 — 整合技能站定與主線神鑄成果
+
+- Owner：Codex（整合）；Done。依使用者授權處理 pending merge：原 HEAD 10ae29bdd9b50a7ceb93a51e8a1dd6d155b614e2、MERGE_HEAD 943f9c201ab2980e53e5bcb03e1e078c8626255e、base 551c3553618f8e6e7c092f0e9c28592a366da404；未操作 index、Commit、推送、同步腳本或其他工作區。
+- 衝突解法：完整保留主線神鑄／既有同步成果與 incoming 的技能施放停步、3D 出手動作及測試。hero3d 診斷沿用非玩家文字且語意清楚的 `length=`／`samples=`；主頁採新的 formula 1.0.78、battlefield 1.4.21、skills 1.0.46、battle-renderer 1.6.207，Worker 對三個合併後來源統一使用 `20261029-merge-cd5ad556`，避免任一側舊快取遮蔽功能。原始衝突沒有 XLSX，不建立 Excel 計畫；無素材庫檔案。
+- 驗證：`node --check js/hero3d.js`、`node --check js/worker/sim.worker.js` 通過；`node --test --test-reporter=spec tests/hero3d-battle-rules.test.cjs tests/hero3d-internal-toggle.test.cjs tests/player-cast-act.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs` 40/40 通過；`npm.cmd run build` exit 0；`git diff HEAD --check` 對完整合併結果通過。四個工作檔已無衝突標記，HEAD／MERGE_HEAD 維持不變；index 尚有 unmerged entries 由 controller 依回報檔案暫存，屬預期。
