@@ -5885,6 +5885,8 @@ function renderDetail() {
   }
   if (it && it.rarity === 6) pane.classList.add('mythic-detail');
   else pane.classList.remove('mythic-detail');
+  if (it && it.rarity === 7) pane.classList.add('genesis-detail');
+  else pane.classList.remove('genesis-detail');
   if (twoHandShared) pane.classList.add('twohand-shared');
   else pane.classList.remove('twohand-shared');
   if (!it) pane.classList.remove('is-socket-page');
@@ -9515,11 +9517,11 @@ function showItemTooltip(it, anchorEl, opts) {
 
   var h = '';
   var twoHandShared = uiIsTwoHandSharedSlot(it, tooltipSource, anchorEl && anchorEl.getAttribute('data-slot'));
-  var mainCard = '<div class="equip-detail-card' + (it.rarity === 6 ? ' mythic-detail' : '') +
+  var mainCard = '<div class="equip-detail-card' + (it.rarity === 6 ? ' mythic-detail' : it.rarity === 7 ? ' genesis-detail' : '') +
     (twoHandShared ? ' twohand-shared' : '') + '">' +
     (twoHandShared ? twoHandSharedBadgeHTML(true) : '') + detailHtml + '</div>';
   if (compareItem && compareItem.id !== it.id) {
-    var compCard = '<div class="equip-detail-card' + (compareItem.rarity === 6 ? ' mythic-detail' : '') + '">' + itemDetailHTML(compareItem, null, {
+    var compCard = '<div class="equip-detail-card' + (compareItem.rarity === 6 ? ' mythic-detail' : compareItem.rarity === 7 ? ' genesis-detail' : '') + '">' + itemDetailHTML(compareItem, null, {
       equipment: tooltipEquipment,
       asuraOn: uiAsuraDualWield(),
       isEquipped: true,

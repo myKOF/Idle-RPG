@@ -3075,8 +3075,11 @@ textarea#save-io {
 }
 
 .eff-genesis::before {
-  background: conic-gradient(from 0deg, #b8860b, #e6c229, #8b6508, #e6c229, #b8860b);
-  animation: borderSpin 2s linear infinite;
+  inset: 0;
+  width: auto;
+  height: auto;
+  background: var(--genesis-frame-metal);
+  animation: none;
 }
 
 /* ?�層?�罩?��?中�?，只?��?�?*/
@@ -3108,7 +3111,10 @@ textarea#save-io {
 .eff-genesis::after,
 .eq-slot.eff-genesis::after {
   inset: 2px;
-  background: linear-gradient(to bottom, rgba(184, 134, 11, 0.9) 0%, rgba(139, 101, 8, 0.95) 45%, var(--panel) 80%);
+  border: 1px solid #bda7d180;
+  border-radius: 1px;
+  border-image: var(--genesis-corner-frame) 25% / 9px stretch;
+  background: var(--genesis-slot-surface);
 }
 
 /* 高品質效果會接管 ::after 與 border；雙手武器的副手複製格仍需保留佔用提示。 */
@@ -3192,7 +3198,7 @@ textarea#save-io {
 .eff-genesis.twohand-duplicate::after {
   background:
     linear-gradient(rgba(165, 243, 252, 0.25), rgba(34, 211, 238, 0.16)),
-    linear-gradient(to bottom, rgba(184, 134, 11, 0.9) 0%, rgba(139, 101, 8, 0.95) 45%, var(--panel) 80%);
+    var(--genesis-slot-surface);
 }
 
 .eff-godforged.twohand-duplicate::after {
@@ -6039,6 +6045,114 @@ textarea:disabled,
 #sk-tooltip .mythic-detail .it-level,
 #tab-equip #detail-pane.mythic-detail .it-level {
   color: #d2c8b6 !important;
+}
+
+/* 創世R7：自製銀紫卷枝角飾；九宮格延伸長邊，圖示與詳情共用。 */
+.eff-genesis,
+.genesis-detail,
+.equip-detail-frame:has(> #detail-pane.has-detail.genesis-detail) {
+  --genesis-corner-frame: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20160%20160%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22s%22%20x2%3D%22.5%22%20y2%3D%221%22%3E%3Cstop%20stop-color%3D%22%23fff6ff%22%2F%3E%3Cstop%20offset%3D%22.28%22%20stop-color%3D%22%23dfcee9%22%2F%3E%3Cstop%20offset%3D%22.58%22%20stop-color%3D%22%23857491%22%2F%3E%3Cstop%20offset%3D%22.82%22%20stop-color%3D%22%23c7b8d8%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%235c5068%22%2F%3E%3C%2FlinearGradient%3E%3Cg%20id%3D%22c%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M3%2038V3H38M7%2032V7H32%22%20stroke%3D%22%23171122%22%20stroke-width%3D%223%22%2F%3E%3Cpath%20d%3D%22M3%2038V3H38M7%2032V7H32%22%20stroke%3D%22url(%23s)%22%20stroke-width%3D%221.3%22%2F%3E%3Cpath%20d%3D%22M3%2027C16%2029%209%2013%2022%2012C29%2012%2025%205%2036%203M27%203C29%2016%2013%209%2012%2022C12%2029%205%2025%203%2036M7%2018C10%2020%2014%2019%2016%2016C19%2014%2020%2010%2018%207%22%20stroke%3D%22%23eadcf5%22%20stroke-width%3D%221.15%22%2F%3E%3Cpath%20d%3D%22M3%2017L11%2011L17%203M7%207L12%2012M18%2018L23%2023L18%2028L13%2023ZM22%2012L28%2017M12%2022L17%2028%22%20stroke%3D%22%23b6a0c9%22%20stroke-width%3D%22.9%22%2F%3E%3Cpath%20d%3D%22M3%203L6%204L4%206ZM18%2020L21%2023L18%2026L15%2023Z%22%20fill%3D%22%23f8eafa%22%20stroke%3D%22none%22%2F%3E%3C%2Fg%3E%3C%2Fdefs%3E%3Crect%20x%3D%223%22%20y%3D%223%22%20width%3D%22154%22%20height%3D%22154%22%20fill%3D%22none%22%20stroke%3D%22url(%23s)%22%20stroke-width%3D%221.2%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%227%22%20width%3D%22146%22%20height%3D%22146%22%20fill%3D%22none%22%20stroke%3D%22%23cbb7df%22%20stroke-opacity%3D%22.6%22%20stroke-width%3D%22.65%22%2F%3E%3Cuse%20href%3D%22%23c%22%2F%3E%3Cuse%20href%3D%22%23c%22%20transform%3D%22translate(160%200)%20scale(-1%201)%22%2F%3E%3Cuse%20href%3D%22%23c%22%20opacity%3D%22.65%22%20transform%3D%22translate(0%20160)%20scale(1%20-1)%22%2F%3E%3Cuse%20href%3D%22%23c%22%20opacity%3D%22.65%22%20transform%3D%22translate(160%20160)%20scale(-1%20-1)%22%2F%3E%3C%2Fsvg%3E");
+  --genesis-frame-metal: linear-gradient(155deg, #f9edff, #bda7d1 23%, #65536f 58%, #b4a2c5 84%, #e4d4ed);
+  --genesis-slot-surface:
+    radial-gradient(ellipse at 50% 20%, #dec0f480, transparent 72%),
+    linear-gradient(155deg, #766184, #564060 58%, #684c6a);
+}
+
+.eff-genesis {
+  border-radius: 2px;
+  box-shadow: inset 0 0 10px #c4a2ed26, 0 0 5px #bda7d147 !important;
+}
+
+#sk-tooltip .equip-detail-card.genesis-detail,
+#tab-equip .equip-detail-frame:has(> #detail-pane.has-detail.genesis-detail) {
+  border: 3px solid transparent !important;
+  border-radius: 2px !important;
+  background:
+    radial-gradient(ellipse at 85% 0%, #9a6ec02e, transparent 60%) padding-box,
+    linear-gradient(158deg, #241c36, #201928 65%, #2d2430) padding-box,
+    var(--genesis-frame-metal) border-box !important;
+  background-blend-mode: normal !important;
+  padding: 19px 17px 17px !important;
+  box-shadow: inset 0 0 26px #120e1b80, 0 0 8px #bda7d126 !important;
+  color: #eee7f1;
+}
+
+#sk-tooltip .equip-detail-card.genesis-detail::before,
+#tab-equip .equip-detail-frame:has(> #detail-pane.has-detail.genesis-detail)::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border: 1px solid #cbb7df70;
+  box-shadow: inset 0 0 0 2px #140f21, inset 0 0 0 3px #a38ab245;
+  pointer-events: none;
+}
+
+#sk-tooltip .equip-detail-card.genesis-detail::after,
+#tab-equip .equip-detail-frame:has(> #detail-pane.has-detail.genesis-detail)::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border: 24px solid transparent;
+  /* 依viewBox比例切四角，避免SVG固有尺寸使卷枝被拉進文字區。 */
+  border-image: var(--genesis-corner-frame) 25% stretch;
+  pointer-events: none;
+}
+
+#tab-equip .equip-detail-frame:has(> #detail-pane.has-detail.genesis-detail) {
+  border-width: 1px !important;
+  padding: 0 8px 0 0 !important;
+}
+
+#tab-equip .equip-detail-frame:has(> #detail-pane.has-detail.genesis-detail)::before,
+#tab-equip .equip-detail-frame:has(> #detail-pane.has-detail.genesis-detail)::after {
+  inset: -1px;
+  z-index: 0;
+}
+
+#tab-equip .equip-detail-frame > #detail-pane.has-detail.genesis-detail {
+  height: 100% !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  padding: 12px 6px 11px 14px !important;
+  position: relative;
+  z-index: 1;
+}
+
+.genesis-detail .it-name {
+  color: #fff0ff !important;
+  text-shadow: 0 1px 2px #100a1b, 0 0 8px #d8b1f342;
+}
+
+.genesis-detail .it-sub {
+  position: relative;
+  color: #d4addf;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #b7a3ba65;
+}
+
+.genesis-detail .it-sub::after {
+  content: "";
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  left: calc(50% - 3px);
+  bottom: -4px;
+  transform: rotate(45deg);
+  background: #302638;
+  border: 1px solid #cab5cf;
+  box-shadow: -5px 5px 0 -1px #a892b4, 5px -5px 0 -1px #a892b4;
+  pointer-events: none;
+}
+
+.genesis-detail .it-level {
+  color: #e4d9ea !important;
+}
+
+/* 雙手共用沿用青色提示；品質底色與角飾仍為創世銀紫。 */
+.genesis-detail.twohand-shared .twohand-shared-tag {
+  color: #d0edf2;
 }
 
 /* 比�?容器：�? tips 並�? */

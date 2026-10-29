@@ -1,5 +1,34 @@
 # AI_TASKS.md
 
+## GENESIS-ICON-BRIGHTNESS-20261029 — 調亮創世圖示底色
+
+- Owner：Codex；Done。使用者要求創世icon太黑、調亮一些。只提高創世圖示紫色內襯與局部高光亮度，保持既有詳情／tips、24px角飾、圖案與狀態提示。允許css/style.css、index.html CSS快取、LV_upgrade_system.md及本段；禁止JS／玩法／文字／獨立素材／其他工作區及合併推送。前置角飾比例確認完成、四檔預檢乾淨；驗相同裝備前後對照及選取／置灰／雙手提示、回歸／Build／diff後Commit。
+- 完成四檔：僅調亮--genesis-slot-surface兩層漸層，增加中央淡紫高光，原部位PNG無修改；沒有對整格或圖片加brightness/filter，不影響品質色與狀態。index CSS快取102、LV及本段同步，無新素材／素材庫變更。唯讀檢查前輪紀錄、神話與創世CSS、相關JS及三項既有回歸，未修改JS／測試／資料。
+- 驗證：`node --test --test-reporter=spec tests/equipment-tooltip-compare.test.cjs tests/equipment-two-hand-display.test.cjs tests/equipment-selection-border.test.cjs`16/16、`npm.cmd run build`599檔、`git diff --check`通過。隔離Edge＋正式itemCellHTML與全套CSS，胸甲／武器／戒指各以前後同物件及神話三列比較；置灰仍opacity=.25及grayscale/brightness(.4)、選取outline=solid、雙手副手仍青色輪廓與覆層，Console error／warning及pageerror0。截圖comparison.png與verification.json保留本聊天visualizations/genesis-icon-brightness；未跑真Worker／完整遊玩／多瀏覽器。自我Review完成，無本次未完成實作／已知功能風險，可合併；提交為本段所在「[Codex] fix: 調亮創世裝備圖示紫色內襯」，編號見交付；未合併推送，下一步使用者正常整合並重載。
+
+## GENESIS-CORNER-BALANCE-20261029 — 創世角飾略大於神話
+
+- Owner：Codex；Done。使用者要求前輪角飾至少與神話同大或稍大，且不蓋字。將提示／詳情角飾16px調至24px（神話23.2px），保留25%比例切片避免再拉伸；圖示沿用與神話相同9px。允許css/style.css、index.html CSS快取、LV_upgrade_system.md與本段，禁止其他玩法／文字／素材／其他工作區及合併推送。前置前輪修正完成、四檔衝突預檢乾淨；驗兩品質並排／詳情與窄屏、相關回歸／Build／diff後Commit。
+- 完成四檔：CSS僅角飾16→24px，index樣式快取101、LV及本段同步；沒有移動文字或重製SVG／素材。`node --test --test-reporter=spec tests/equipment-tooltip-compare.test.cjs tests/equipment-two-hand-display.test.cjs tests/equipment-selection-border.test.cjs` 16/16、`npm.cmd run build`599檔及`git diff --check`通過。唯讀檢查前輪紀錄、神話角飾／現有CSS與三項回歸，未修改JS／資料／測試。
+- 隔離Edge沿正式裝備函式＋全套CSS fixture驗1024×830創世詳情／創世與神話比較、390×844無水平溢出；24px角飾未蓋標題及底部文字。詳情壓至300px高並捲246px，外框固定、裝飾pointer-events=none，Console error／warning及pageerror0。對照／桌面／窄屏截圖及JSON存本聊天visualizations/genesis-corners-balanced；未做真Worker／完整遊玩或多瀏覽器驗收。無新素材或素材庫變更，自我Review完成，無本次未完成實作／已知功能風險，可合併；提交為本段所在「[Codex] fix: 將創世角飾調至略大神話比例」，編號見交付，未合併推送。下一步使用者正常整合並重載。
+
+## GENESIS-CORNER-SIZE-20261029 — 縮小創世角飾避開文字
+
+- Owner：Codex；Done。依使用者回饋對照神話級，縮小創世tips／詳情四角裝飾，避免蓋住標題及底部內容；圖示角飾同步縮小。允許css/style.css、index.html樣式快取、LV_upgrade_system.md及本段，禁止修改文字／玩法／資料／獨立素材及其他工作區，不合併推送。前置GENESIS-SILVER-VIOLET完成，四檔衝突預檢乾淨；驗收兩品質對照、桌面／窄屏／捲動、相關回歸／Build及diff後Commit。
+- 完成四檔：提示／詳情角飾28→16px，圖示12→9px；border-image依viewBox比例改25%切片，修正固有尺寸下卷枝沿長邊拉伸侵入文字的問題。保留原文字起點、銀紫底與雙框／神話外觀，CSS快取100，LV及任務同步。使用者兩張截圖只作參考，自製內嵌SVG內容未改，無新素材／素材庫Commit。
+- 驗證：`node --test --test-reporter=spec tests/equipment-tooltip-compare.test.cjs tests/equipment-two-hand-display.test.cjs tests/equipment-selection-border.test.cjs` 16/16；`npm.cmd run build`599檔通過；`git diff --check`通過。隔離Edge＋正式裝備函式／全套CSS fixture驗1024×830創世詳情及創世／神話並排比較，角飾不再延伸到標題與底部文字；390×844 documentWidth=390，詳情壓至300px高並捲246px時外框固定，裝飾pointer-events=none；Console error／warning及pageerror0。對照／桌面／窄屏截圖及JSON保留本聊天visualizations/genesis-corners。沒有改測試或玩家存檔，未跑完整遊玩／真Worker／多瀏覽器驗收，屬本次純CSS範圍限制。
+- 唯讀檢查：既有規範與前輪紀錄、神話CSS／裝備渲染與三項既有回歸。自我Review完成，無未完成實作／已知功能風險，可供合併；提交為本段所在「[Codex] fix: 縮小創世角飾並避免覆蓋文字」，編號見交付；未合併推送。下一步使用者正常整合並重載。
+
+## GENESIS-SILVER-VIOLET-20261029 — 創世裝備銀紫雕飾外觀
+
+- Owner：Codex；Done，單一開發者。使用者指定參考圖的銀白角飾、深紫底及淡紫高光，套用創世級裝備tips、比較卡、詳情與圖示框。參考圖只作風格參考，裝飾以CSS及內嵌自製SVG完成，不複製外部圖片。
+- 前置：既有裝備UI與品質分類完成；工作區ai/codex乾淨，目標衝突預檢無來源。允許js/ui.js、css/style.css、index.html快取、既有裝備比較回歸、LV_upgrade_system.md與本段；禁止玩法／品質資料／配置／Worker／存檔／獨立素材／其他工作區及合併推送。
+- 驗收：創世R7單卡及混合品質比較正確、詳情切換清除樣式、圖示與雙手／選取狀態保持、桌面與窄屏視覺／捲動／Console、相關裝備回歸及Build與diff；完成後獨立Commit，交使用者正常整合。
+- 完成六檔：ui為R7詳情及主／副比較卡各自掛genesis-detail，切換品質或空選取時清除；style以九宮格自製卷枝銀框、雙層細線、深紫內襯、白紫標題／淡紫品質及菱形分隔統一三種入口。eff-genesis由暗金旋轉改靜態銀紫框，雙手副手保留青色佔用覆層、選取／置灰沿既有高優先提示；原部位圖案不重繪，其他品質不改。index CSS99／UI231，LV與既有比較回歸同步涵蓋全部R0～11及反向R7比較。
+- 測試：`node --test --test-reporter=spec tests/equipment-tooltip-compare.test.cjs tests/equipment-selection-border.test.cjs tests/equipment-two-hand-display.test.cjs tests/godforged-border-effect.test.cjs tests/inventory-rarity-filter.test.cjs tests/string-table.test.cjs`：31/31通過。`npm.cmd run build`：599檔通過；`git diff --check`通過。沒有降低既有斷言，沒有新增純樣式鏡像測試。
+- 瀏覽器：IAB無可用後端，使用bundled Playwright＋獨立headless Edge、新隨機localhost來源，正式裝備渲染函式及全套CSS的隔離fixture。驗1200×900與390×844、R7→6→8→9→空選取、R7／R6混合比較、詳情捲動／外框固定與圖示animationName=none，窄屏documentWidth=390、卡寬280；最終Console error／warning及pageerror皆0。初次fixture未設定favicon造成404，補fixture路由後重載為0，正式遊戲favicon原已存在。截圖保留本聊天visualizations/genesis-style；未操作玩家存檔，未跑真Worker／完整遊玩／多瀏覽器長戰，這些為驗收範圍限制。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、itemHeaderHTML／itemDetailHTML／itemIconFile與品質資料、既有選取／雙手及String回歸、全部Excel／CSV／玩法／Worker／存檔。無獨立美術檔或VFX Preset，CSS內嵌向量屬介面程式圖形，不需素材庫Commit；沒有引入參考原圖或新增玩家文字。自我Review完成，無本次未完成實作／已知功能風險，可供Review／合併；遊戲Commit為本段所在「[Codex] feat: 統一創世裝備銀紫雕飾外觀」，編號見交付。未合併或推送develop／main；下一步由使用者正常整合並重新載入驗收。
+
 ## MERGE-PARAM-DIRECT-EDIT-20261029 — integrate native Excel handoff
 
 - Owner: Codex; Done. Integrated HEAD `3a2c1b9e` with MERGE_HEAD `34619366`, preserving the develop divine-forge/Skills2 changes and the incoming direct-parameter workflow plus skill cast hold value.
