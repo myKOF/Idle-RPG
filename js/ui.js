@@ -6859,6 +6859,7 @@ function renderForge() {
   for (var i = 0; i < FORGE_SLOTS; i++) {
     var it = f.slots[i], pos = FORGE_SLOT_POS[i], active = i < needed;
     var content = '', cls = 'forge-slot ' + (it ? 'filled' : 'empty') + (active ? '' : ' forge-inactive');
+    if (it && it.kind !== 'gem') cls += (it.rarity === 6) ? ' eff-mythic' : (it.rarity >= GODFORGED_IDX ? ' eff-godforged' : (it.rarity === 7 ? ' eff-genesis' : '')); // 與背包格同一套品質底框
     var attrs = ' style="left:' + pos.x + '%;top:' + pos.y + '%;" data-forge-slot="' + i + '"';
     if (it && it.kind === 'gem') content = gemIconHTML(it.type, it.level, 'gi-cell');
     else if (it) {

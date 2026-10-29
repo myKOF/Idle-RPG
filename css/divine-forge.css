@@ -20,6 +20,7 @@
 #tab-forge .forge-slot.empty { border-style:dashed; opacity:1; }
 /* 填入的裝備維持原色：[disabled] 全域規則會把鑄造中的按鈕變半透明＋去色，這裡取消；格子本身半透明，邊框帶品質色（見 renderForge） */
 #tab-forge .forge-slot.filled { background:linear-gradient(145deg,#4a546cff,#1c2234ff); }
+#tab-forge .forge-slot.filled.eff-mythic,#tab-forge .forge-slot.filled.eff-genesis,#tab-forge .forge-slot.filled.eff-godforged { background:none; padding:0; }
 #tab-forge .forge-slot.filled:disabled:not(.forge-inactive) { opacity:1; filter:none; }
 /* 未使用的格子：灰底灰框＋中央亮色鎖頭（不用 opacity／filter，鎖頭才不會跟著變暗） */
 #tab-forge .forge-slot.forge-inactive { border-color:#5a5d66; background:#2a2d34b3; box-shadow:none; filter:none; opacity:1; }
