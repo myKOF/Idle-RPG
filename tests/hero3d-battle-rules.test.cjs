@@ -45,12 +45,13 @@ test('3D 技能動作與普攻一樣在三個攻擊動作間隨機（不連續�
 test('3D 起身：死亡動作倒著播，由復活倒數進度驅動（一般倒數與大地守護共用）', () => {
   /* seek 的 0..1 對倒著播的動作要反過來，否則起身會變成把死亡動作正著播 */
   assert.match(hero3d, /if \(currentCfg && currentCfg\.reverse\) fraction = 1 - fraction;/);
-  assert.match(renderer, /function hero3dDriveRise\(p, progress\)/);
+  assert.match(renderer, /function hero3dDriveRise\(p, progress, riseStart\)/);
   assert.match(renderer, /if \(p\.body && p\.body\.hero3d\) hero3dDriveRise\(p, p\.deathFogK\)/);
-  assert.match(renderer, /if \(p\.body && p\.body\.hero3d\) \{\s*hero3dDriveRise\(p, revivalProgress\)/);
+  assert.match(renderer, /if \(p\.body && p\.body\.hero3d\) \{\s*hero3dDriveRise\(p, revivalProgress, 0\)/);
   /* 倒下時把死亡動作加速到在倒數前段播完 */
   assert.match(renderer, /hero3dFitDie\(p, p\.deathFogDuration\)/);
-  assert.match(renderer, /hero3dFitDie\(p, p\.revival\.endAt - p\.revival\.startAt\)/);
+  /* 大地守護：倒地動作原速播完，不加速 */
+  assert.doesNotMatch(renderer, /hero3dFitDie\(p, p\.revival\.endAt - p\.revival\.startAt\)/);
 });
 
 test('3D 主角也有穿透式輪廓：輪廓貼圖由 3D 畫布剪影每幀算出，走 2D 同一套輪廓圖層', () => {

@@ -7681,6 +7681,7 @@ function skills2RebirthAvailableCharges(pEnt) {
 /* 【天地共生】（T7）：死亡攔截。掛在野外 onPlayerFieldDeath 與高塔 endTowerFight
    兩個判死收斂點的最前端——持續傷害、自傷技能與敵人攻擊都會經過那裡。
    冷卻寫進 pEnt.skillCds['sg:earthguard']，直接沿用技能格的通用冷卻顯示。 */
+var SG_REBIRTH_DIE_SEC = 2.75;   // 倒地死亡動作長度（秒）＝3D 主角 Death 動畫原速長度，見 images/models/hero3d/SOURCE.md
 function skills2TryRebirth(pEnt) {
   if (!pEnt || typeof getStats !== 'function') return false;
   if (SKILL2_RT.earthguardRevival && SKILL2_RT.earthguardRevival.pEnt === pEnt) return true;
@@ -7699,15 +7700,15 @@ function skills2TryRebirth(pEnt) {
   pEnt._skillCastRemaining = 0;
   pEnt._skillCastId = '';
   var riseSec = Math.max(0.5, Number(fx.riseSec) || 5);
-  pEnt._sgRevival = { startAt: GT, endAt: GT + riseSec, mode: 'earthguard' };
-  SKILL2_RT.earthguardRevival = { pEnt: pEnt, startAt: GT, endAt: GT + riseSec };
+  /* 先把倒地死亡動作播完（SG_REBIRTH_DIE_SEC），之後才放復活光束、開始 riseSec 倒數並同步起身動作。 */
+  var riseStart = GT + SG_REBIRTH_DIE_SEC;
+  pEnt._sgRevival = { diedAt: GT, startAt: riseStart, endAt: riseStart + riseSec, mode: 'earthguard' };
+  SKILL2_RT.earthguardRevival = { pEnt: pEnt, startAt: riseStart, endAt: riseStart + riseSec, beamPending: true, riseSec: riseSec };
   /* 先花掉「冷卻已結束」的那一次，累積的次數留到最後——這樣冷卻才會立刻開始跑，
      不會出現「還有存量所以冷卻一直停在 0」的無限復活。 */
   if (ready) pEnt.skillCds[SG_PREFIX + 'earthguard'] = sgRebirthCdSec(lvs);
   else SKILL2_RT.rebirth.charges = stored - 1;
   if (SKILL2_RT.rebirth) SKILL2_RT.rebirth.started = true;
-  sgEmitPlayerVfx('earthguard', 'pv-float', { fxKind: 'rain', variant: 'pillar', elem: 'light', dur: riseSec, vfxTier: 7,
-    vfxRoles: { attack: sgVfxRoles('earthguard', { vfxTier: 7, vfxBase: true }).attack } });
   if (typeof floatPlayerEvent === 'function') floatPlayerEvent('pv-float', STR(716), 'buff');
   if (typeof blog === 'function') {
     var left = (SKILL2_RT.rebirth && skills2RebirthMaxCharges() > 1)
@@ -7717,9 +7718,15 @@ function skills2TryRebirth(pEnt) {
   if (typeof UI !== 'undefined' && UI.dirty) { UI.dirty.battle = true; UI.dirty.skills = true; }
   return true;
 }
+/* 倒地死亡動作播完才放復活光束：由 sgTickEarthguardRevival 在倒數起點（startAt）放一次。 */
+function sgEmitRebirthBeam(riseSec) {
+  sgEmitPlayerVfx('earthguard', 'pv-float', { fxKind: 'rain', variant: 'pillar', elem: 'light', dur: riseSec, vfxTier: 7,
+    vfxRoles: { attack: sgVfxRoles('earthguard', { vfxTier: 7, vfxBase: true }).attack } });
+}
 function sgTickEarthguardRevival(pEnt) {
   var r = SKILL2_RT && SKILL2_RT.earthguardRevival;
   if (!r || !pEnt || r.pEnt !== pEnt || !pEnt._sgRevival) return false;
+  if (r.beamPending && GT + 1e-8 >= r.startAt) { r.beamPending = false; sgEmitRebirthBeam(r.riseSec); }
   var progress = GT + 1e-8 >= r.endAt ? 1
     : Math.max(0, Math.min(1, (GT - r.startAt) / (r.endAt - r.startAt)));
   pEnt.hp = getStats().hp * progress;
