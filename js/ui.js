@@ -6845,7 +6845,9 @@ function renderForge() {
     btn.disabled = pending || !unlocked;
     btn.classList.toggle('active', key === mode);
     btn.setAttribute('aria-pressed', String(key === mode));
-    btn.setAttribute('data-tip', STR(2191, STR(DIVINE_FORGE_MODES[key]), divineForgeUnlock(key)));
+    // 只有尚未開放的頁籤才說明開放條件；已開放的不顯示提示
+    if (unlocked) btn.removeAttribute('data-tip');
+    else btn.setAttribute('data-tip', STR(2191, STR(DIVINE_FORGE_MODES[key]), divineForgeUnlock(key)));
   });
   var keys = [], htmls = [], needed = divineForgeSlotCount(mode);
   for (var i = 0; i < FORGE_SLOTS; i++) {
@@ -6883,15 +6885,6 @@ function renderForge() {
   $id('forge-stone-popover').hidden = !UI.forgeStoneOpen;
   setTextIfChanged($id('forge-rate'), rate ? STR(2173, fmt1(rate.total), fmt1(rate.base), fmt1(rate.dust)) : STR(2176));
   setTextIfChanged($id('forge-cost'), rate ? STR(2175, fmt(rate.cost)) : '');
-  var description = mode === 'equip' ? STR(2193, DIVINE_FORGE.equipCount, DIVINE_FORGE.failMin, DIVINE_FORGE.failMax)
-    : mode === 'gem' ? STR(2195, GEM_FORGE_MAX_LEVEL, DIVINE_FORGE.gemPerType, DIVINE_FORGE.gemValue * 100)
-    : mode === 'imprint' ? STR(2196, DIVINE_FORGE.refundRate * 100) : STR(2194);
-  $id('forge-mode-' + mode).setAttribute('data-tip', description + ' ' + STR(2197));
-  var weights = ['sacredAffix','ancientAffix','sacredSocket','extraAffix','extraAncient','legendary','refund'];
-  var weightSum = weights.reduce(function (sum, key) { return sum + DIVINE_FORGE[key + 'Weight']; }, 0);
-  if (mode === 'imprint') $id('forge-mode-imprint').setAttribute('data-tip', description + ' ' + STR(2197) + ' ' + weights.map(function (key, index) {
-    return STR(2204, STR(2178 + index, DIVINE_FORGE.refundRate * 100), fmt1(DIVINE_FORGE[key + 'Weight'] / weightSum * 100));
-  }).join(' · ') + ' ' + STR(2205, DIVINE_FORGE.sacredValue, DIVINE_FORGE.socketValue));
   setTextIfChanged($id('forge-dust-own'), STR(2174, fmt(player.dust || 0), rate ? rate.stones : 0, rate ? rate.maxStones : 0));
   setTextIfChanged($id('forge-stone-value'), rate ? rate.stones : 0);
   $id('forge-stone-minus').disabled = pending || !rate || rate.stones <= 0;
