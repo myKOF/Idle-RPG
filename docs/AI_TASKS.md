@@ -13157,3 +13157,31 @@ Worker 存活且頁面正常完成載入。
 - Owner：Codex（整合）；Done。依使用者授權處理 pending merge：原 HEAD 465e6ef7679930d4716e98363b5882660b38b065、MERGE_HEAD 2bf885c1827b5bb3b4881363646a1250bd6b232f、base 943f9c201ab2980e53e5bcb03e1e078c8626255e；未操作 index、Commit、推送、同步腳本或其他工作區。
 - 衝突解法：`docs/AI_TASKS.md` 同時保留既有 MERGE-CAST-HOLD-DEVELOP 整合紀錄與 incoming 的參數差異更正；乾淨套用的 param-patch 重新命名保留，來源由錯誤的 game_parameters 改為實際輸入所在的「計算表」工作表。原始衝突沒有 XLSX，不建立 Excel DATA plan；無素材庫檔案。
 - 驗證：`node --test --test-reporter=spec tests/param-patches.test.cjs tests/player-cast-act.test.cjs` 15/16 通過；唯一失敗為 sandbox Windows session 無法建立 Excel COM（HRESULT 0x80070520），屬本任務明示的環境限制，未啟動 Excel 或修改 XLSX。`npm.cmd run build` 599 檔全數通過；`git diff HEAD --check` 與 `git diff --cached --check` 對完整合併結果通過。工作檔已移除 conflict marker，HEAD／MERGE_HEAD 維持不變；index 尚有 unmerged entry 由 controller 依回報檔案暫存，屬預期。
+
+## MYTHIC-DETAIL-WARM-TINT-20261029 — 神話詳情與tips暖金底色
+
+- Owner：Codex；Done。使用者要求神話級裝備詳情與tips參照創世，增加呼應品質外框的淡底色，並明確限定不改icon。允許css/style.css、index.html CSS快取、LV_upgrade_system.md及本段；禁止JS／文字／玩法／素材／其他工作區及合併推送。前置既有品質樣式完成，程式三檔預檢乾淨；AI_TASKS與Antigravity 46423fce僅檔首符文統計紀錄重疊，本任務追加檔尾，無語意相依，三方試跑乾淨後寫入。驗暖金閱讀底／雙手共用銀藍底／神話與創世對照、桌面／窄屏／捲動、相關回歸／Build與diff後Commit。
+- 完成四檔：神話tips卡與詳情外框的reading-veil由極深綠黑改淡暖金棕內襯，雙手共用副手另以淡銀藍內襯配其原銀藍框；僅兩個局部CSS變數，不動icon共用漸層／文字／邊框與角飾／創世外觀。index CSS103，LV及本段同步；沒有JS／資料／獨立美術檔或素材庫變動。
+- 驗證：`node --test --test-reporter=spec tests/equipment-tooltip-compare.test.cjs tests/equipment-two-hand-display.test.cjs tests/equipment-selection-border.test.cjs`16/16、`npm.cmd run build`599檔、`git diff --check`通過。隔離Edge＋正式渲染函式及全套CSS fixture驗1024×830神話詳情、神話tips與創世對照；390×844 documentWidth=390、詳情壓300px高並捲176px時外框固定；實際雙手斧副手詳情與tips皆帶twohand-shared並用銀藍veil，icon仍原漸層。Console error／warning及pageerror0，截圖與JSON保存本聊天visualizations/mythic-reading-tint；未跑真Worker／完整遊玩／多瀏覽器。
+- 唯讀檢查規範／前輪紀錄、神話圖示／詳情CSS與三項裝備回歸、Antigravity符文統計提交；未修改其紀錄／分支或其他工作區。自我Review完成，無本次未完成實作／已知功能風險，可合併；提交為本段所在「[Codex] feat: 神話裝備詳情與提示加入暖金底色」，編號見交付。未合併推送，下一步使用者正常整合並重新載入。
+
+## MYTHIC-READING-LIGHTEN-20261029 — 神話詳情與tips底色減深兩成
+
+- Owner：Codex；Done。使用者要求神話底色再淺約-20%，沿前輪明確範圍僅調整詳情／tips，icon不變。將暖金棕及雙手共用銀藍閱讀遮罩不透明度乘0.8；保留配色、文字與外框。允許css/style.css、index.html CSS快取、LV_upgrade_system.md及本段；禁止JS／文字／玩法／獨立素材／其他工作區與合併推送。前置前輪樣式完成，三程式檔預檢乾淨；AI_TASKS本次只追加檔尾，與Antigravity 46423fce檔首符文統計紀錄分段、無語意相依，三方試跑exit0後寫入。驗詳情／tips與兩種內襯、文字對比、相關回歸／Build與diff後Commit。
+- 完成四檔：暖金棕veil .82/.80→.656/.64，銀藍veil .78/.82→.624/.656，均精確減少20%遮罩深度，不代表整個畫面每像素亮度固定增20%；index CSS104、LV及本段同步。沒有改icon漸層、圖片、文字、邊框／角飾或其他品質，無素材庫變更。
+- 驗證：`node --test --test-reporter=spec tests/equipment-tooltip-compare.test.cjs tests/equipment-two-hand-display.test.cjs tests/equipment-selection-border.test.cjs`16/16、`npm.cmd run build`599檔、`git diff --check`通過。隔離Edge＋正式渲染函式及全套CSS fixture驗800×760詳情／tips相同veil、文字清楚，390×844 documentWidth=390／捲動正常；雙手斧共用副手詳情與tips皆正確套銀藍veil，Console error／warning及pageerror0。詳情單圖、詳情與tips並排、窄屏及JSON存本聊天visualizations/mythic-reading-lighter；未驗真Worker／完整遊玩／多瀏覽器。
+- 唯讀檢查前輪紀錄與品質CSS、既有裝備回歸及Antigravity任務增量；其他分支／工作區未動。自我Review完成，無本項未完成實作／已知功能風險，可供合併；提交為本段所在「[Codex] fix: 神話裝備詳情與提示底色減深兩成」，編號見交付，未合併推送。下一步使用者正常整合並重載。
+
+## MYTHIC-READING-DARKEN-20261029 — 更正神話底色為加深兩成
+
+- Owner：Codex；Done。使用者更正「再深20%」，以改淺前bb0b68bf為基準：恢復原暖金棕／銀藍veil，再僅背景疊20%黑色遮罩，避免將veil直接推近全不透明而失去原色。只改詳情／tips，icon、文字、角飾不動。允許css/style.css、index.html CSS快取、LV_upgrade_system.md及本段；禁止JS／資料／素材／其他工作區與合併推送。前置原底色版本完成，三程式檔預檢乾淨；本段追加檔尾，Antigravity46423fce只在檔首增符文統計，無語意相依，三方試跑exit0後寫入。驗詳情／tips、雙手共用、窄屏與回歸／Build／diff後Commit。
+- 完成四檔：恢復暖金veil .82/.80與銀藍.78/.82，背景首層加入20%黑色且只限padding-box，因此文字／角飾／邊框未被壓暗；無整格filter，icon及其他品質無差異。index CSS105、LV及本段同步，沒有獨立素材／素材庫變動。
+- 驗證：`node --test --test-reporter=spec tests/equipment-tooltip-compare.test.cjs tests/equipment-two-hand-display.test.cjs tests/equipment-selection-border.test.cjs`16/16、`npm.cmd run build`599檔、`git diff --check`通過。隔離Edge＋正式裝備函式及全套CSS，800×760詳情／tips皆確認首層black alpha=.2、暖金色仍可見且文字清楚，390×844無水平溢出、詳情可捲176px；雙手斧共用副手詳情與tips皆恢復銀藍veil並同疊兩成黑底。Console error／warning及pageerror0，詳情與tips並排、詳情單圖、窄屏及JSON存本聊天visualizations/mythic-reading-darker。未驗真Worker／完整遊玩／多瀏覽器。
+- 唯讀檢查前輪兩版CSS與任務紀錄、既有裝備回歸及Antigravity檔首增量；其他分支／工作區未動。自我Review完成，無本項未完成實作／已知功能風險，可供合併；提交為本段所在「[Codex] fix: 更正神話詳情與提示底色為加深兩成」，編號見交付，未合併推送。下一步使用者正常整合並重載。
+
+## MERGE-MYTHIC-READING-20261030 — 保留符文統計與神話閱讀底色紀錄
+
+- Owner：Codex（本次整合）；Done。使用者明確授權 pending merge：HEAD dcceab4b4aa1045649b5c5b15f99590b6e497af3、MERGE_HEAD 90a4c9e548e2924cebce26cdc1c4affcc5bd7b42、base afef310162a28bf9177e725a835b4162708be32d。僅處理本次合併，不操作索引、提交、同步或其他工作區。
+- 唯一原始衝突 docs/AI_TASKS.md：保留主線檔首符文統計及來源檔尾三輪神話底色紀錄；以唯讀三方逐行順序核對，base／ours／theirs 全部內容均保留，工作檔無衝突標記。保留自動合入的 css/style.css、index.html（CSS105）與 LV_upgrade_system.md，神話詳情／tips 最終採暖金／共用銀藍底加20%黑色背景；主線創世圖示調亮及符文報告不受影響。沒有 Excel、JS／Worker、生成資料或素材庫變更。
+- 驗證：node --test --test-reporter=spec tests/equipment-tooltip-compare.test.cjs tests/equipment-two-hand-display.test.cjs tests/equipment-selection-border.test.cjs 全部16/16通過；npm.cmd run build 全部599檔通過；git diff HEAD --check 完整合併結果通過。未改測試斷言。唯讀檢查共通規範、Workflow、Codex規範、三方任務差異及來源三檔樣式／文件差異；未執行瀏覽器視覺或完整遊玩驗收。
+- 無本項未完成實作或已知新增回歸，可由 controller 暫存四個回報檔案並建立 merge commit；HEAD／MERGE_HEAD 保持原值，索引尚有 unmerged entry 為交接預期。本輪不提交、不推送，無素材庫路徑或 Excel DATA plan。
