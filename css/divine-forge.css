@@ -13,13 +13,18 @@
 #tab-forge #forge-hex { position:relative; width:100%; height:auto!important; aspect-ratio:1; margin:0; background:url('../images/ui/divine-forge-crystal.png') center/contain no-repeat!important; transform:none; inset:auto; filter:brightness(.7) drop-shadow(0 0 12px #5187f880); }
 #tab-forge #forge-hex::before { content:""; display:block; position:absolute; inset:14%; pointer-events:none; border-radius:50%; border:3px solid #dff3ff; box-shadow:0 0 18px #8fd0ff,inset 0 0 18px #8fd0ff; opacity:0; z-index:1; }
 #tab-forge #forge-hex::after { content:""; display:block; position:absolute; inset:0; pointer-events:none; background:radial-gradient(circle,#fff 0 10%,#d8efff 20%,#79bcff66 38%,transparent 60%); opacity:0; z-index:1; }
-#tab-forge .forge-slot,#tab-forge .forge-stone { position:absolute; z-index:2; width:9.6%; height:auto; aspect-ratio:1; transform:translate(-50%,-50%)!important; border-radius:6px; border:1px solid var(--afl-line-hover); background:#0c0d10e6; box-shadow:none; display:flex; align-items:center; justify-content:center; padding:2px; }
+#tab-forge .forge-slot,#tab-forge .forge-stone { position:absolute; z-index:2; width:9.6%; height:auto; aspect-ratio:1; transform:translate(-50%,-50%)!important; border-radius:6px; border:1px solid var(--afl-line-hover); background:#141a2a66; box-shadow:inset 0 0 8px #0a0e1a66; display:flex; align-items:center; justify-content:center; padding:2px; }
 #tab-forge .forge-slot .item-icon { max-width:95%; max-height:95%; }
 #tab-forge .forge-slot .ic-lv { font-size:9px; bottom:0; }
 #tab-forge .forge-slot.empty { border-style:dashed; opacity:1; }
-#tab-forge .forge-slot.forge-inactive { border-color:var(--afl-line); background:var(--afl-list); box-shadow:none; filter:grayscale(1); opacity:.65; }
+/* 填入的裝備維持原色：[disabled] 全域規則會把鑄造中的按鈕變半透明＋去色，這裡取消；格子本身半透明，邊框帶品質色（見 renderForge） */
+#tab-forge .forge-slot.filled { background:linear-gradient(145deg,#4a546ccc,#1c2234cc); }
+#tab-forge .forge-slot.filled:disabled:not(.forge-inactive) { opacity:1; filter:none; }
+/* 未使用的格子：灰底灰框＋中央亮色鎖頭（不用 opacity／filter，鎖頭才不會跟著變暗） */
+#tab-forge .forge-slot.forge-inactive { border-color:#5a5d66; background:#2a2d34b3; box-shadow:none; filter:none; opacity:1; }
+#tab-forge .forge-slot.forge-inactive::after { content:""; position:absolute; left:50%; top:50%; width:54%; height:54%; transform:translate(-50%,-50%); background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23f2f4fa' fill-rule='evenodd' d='M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5zM9 10V7a3 3 0 0 1 6 0v3H9zm3 4a2 2 0 0 1 1 3.7V19h-2v-1.3A2 2 0 0 1 12 14z'/%3E%3C/svg%3E") center/contain no-repeat; filter:drop-shadow(0 1px 3px #000); pointer-events:none; }
 #tab-forge button:disabled { cursor:default; }
-#tab-forge #forge-stone-center { left:50%; top:50%; width:11.2%; color:var(--afl-text)!important; background:#0c0d10f2!important; border-color:var(--afl-gold-line); flex-direction:column; gap:0; line-height:1; opacity:1; }
+#tab-forge #forge-stone-center { left:50%; top:50%; width:11.2%; color:var(--afl-text)!important; background:#141a2a99!important; border-color:var(--afl-gold-line); flex-direction:column; gap:0; line-height:1; opacity:1; }
 #tab-forge .forge-stone span { font-size:10px; font-weight:bold; }
 #tab-forge .forge-stone .forge-material-icon { font-size:clamp(15px,2vw,24px); }
 #tab-forge .forge-stone.lit,#tab-forge .forge-stone[aria-expanded="true"] { border-color:var(--afl-gold-text); box-shadow:0 0 12px #f0cf8655; }

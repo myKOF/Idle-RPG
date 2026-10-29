@@ -6862,6 +6862,7 @@ function renderForge() {
       content = icon ? '<img class="item-icon" src="images/' + icon + '" alt="">' : info.emoji;
       content += ancientStarBadgeHTML(it) + '<span class="ic-lv">' + it.level + '</span>';
       attrs += ' data-id="' + esc(it.id) + '"';
+      attrs = attrs.replace('style="', 'style="border-color:' + RARITIES[it.rarity].color + ';box-shadow:inset 0 0 10px ' + RARITIES[it.rarity].color + '33;');
     }
     if (!it) attrs += ' data-tip="' + esc(active ? STR(2198, i + 1) : STR(2199)) + '"';
     keys.push('slot:' + i);
