@@ -13164,3 +13164,10 @@ Worker 存活且頁面正常完成載入。
 - 完成四檔：暖金棕veil .82/.80→.656/.64，銀藍veil .78/.82→.624/.656，均精確減少20%遮罩深度，不代表整個畫面每像素亮度固定增20%；index CSS104、LV及本段同步。沒有改icon漸層、圖片、文字、邊框／角飾或其他品質，無素材庫變更。
 - 驗證：`node --test --test-reporter=spec tests/equipment-tooltip-compare.test.cjs tests/equipment-two-hand-display.test.cjs tests/equipment-selection-border.test.cjs`16/16、`npm.cmd run build`599檔、`git diff --check`通過。隔離Edge＋正式渲染函式及全套CSS fixture驗800×760詳情／tips相同veil、文字清楚，390×844 documentWidth=390／捲動正常；雙手斧共用副手詳情與tips皆正確套銀藍veil，Console error／warning及pageerror0。詳情單圖、詳情與tips並排、窄屏及JSON存本聊天visualizations/mythic-reading-lighter；未驗真Worker／完整遊玩／多瀏覽器。
 - 唯讀檢查前輪紀錄與品質CSS、既有裝備回歸及Antigravity任務增量；其他分支／工作區未動。自我Review完成，無本項未完成實作／已知功能風險，可供合併；提交為本段所在「[Codex] fix: 神話裝備詳情與提示底色減深兩成」，編號見交付，未合併推送。下一步使用者正常整合並重載。
+
+## MYTHIC-READING-DARKEN-20261029 — 更正神話底色為加深兩成
+
+- Owner：Codex；Done。使用者更正「再深20%」，以改淺前bb0b68bf為基準：恢復原暖金棕／銀藍veil，再僅背景疊20%黑色遮罩，避免將veil直接推近全不透明而失去原色。只改詳情／tips，icon、文字、角飾不動。允許css/style.css、index.html CSS快取、LV_upgrade_system.md及本段；禁止JS／資料／素材／其他工作區與合併推送。前置原底色版本完成，三程式檔預檢乾淨；本段追加檔尾，Antigravity46423fce只在檔首增符文統計，無語意相依，三方試跑exit0後寫入。驗詳情／tips、雙手共用、窄屏與回歸／Build／diff後Commit。
+- 完成四檔：恢復暖金veil .82/.80與銀藍.78/.82，背景首層加入20%黑色且只限padding-box，因此文字／角飾／邊框未被壓暗；無整格filter，icon及其他品質無差異。index CSS105、LV及本段同步，沒有獨立素材／素材庫變動。
+- 驗證：`node --test --test-reporter=spec tests/equipment-tooltip-compare.test.cjs tests/equipment-two-hand-display.test.cjs tests/equipment-selection-border.test.cjs`16/16、`npm.cmd run build`599檔、`git diff --check`通過。隔離Edge＋正式裝備函式及全套CSS，800×760詳情／tips皆確認首層black alpha=.2、暖金色仍可見且文字清楚，390×844無水平溢出、詳情可捲176px；雙手斧共用副手詳情與tips皆恢復銀藍veil並同疊兩成黑底。Console error／warning及pageerror0，詳情與tips並排、詳情單圖、窄屏及JSON存本聊天visualizations/mythic-reading-darker。未驗真Worker／完整遊玩／多瀏覽器。
+- 唯讀檢查前輪兩版CSS與任務紀錄、既有裝備回歸及Antigravity檔首增量；其他分支／工作區未動。自我Review完成，無本項未完成實作／已知功能風險，可供合併；提交為本段所在「[Codex] fix: 更正神話詳情與提示底色為加深兩成」，編號見交付，未合併推送。下一步使用者正常整合並重載。
