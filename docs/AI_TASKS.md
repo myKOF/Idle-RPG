@@ -13222,3 +13222,14 @@ Worker 存活且頁面正常完成載入。
 - 驗證：node --test --test-reporter=spec tests/world-map-ui.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs全部27/27通過；npm.cmd run build全部601檔通過；git diff --check通過。隔離Edge載入正式index／真Worker與獨立測試檔，1558×900／390×844確認門內旋流transform持續改變、裝飾pointer-events:none、點擊與鍵盤Space可開神界及返回、焦點框可見；窄屏documentWidth390、入口完整，emulateMedia減少動態時門體全部animation:none。原測試服/favicon.ico既有404保留，新增Console Error／Warning及pageerror0。
 - 預覽：32幀實際瀏覽器截圖編成portal-motion.gif，桌面／窄屏／局部與browser-report.json保留本聊天visualizations/portal-cloud-vortex；中間影格已刪除。IAB舊連線失效後先以隔離Playwright驗證，再重設CUA恢復連線、重載使用者8131頁並確認新版，戰鬥暫停停在人界入口。內測Enter既有GM快捷鍵會開指令框，故本次鍵盤驗收使用Space，未修改GM或世界地圖JS。
 - 唯讀檢查未改：規範／Workflow／Codex規範、WorldMapUI／Worker關卡權限、String及地圖原圖、既有三項回歸、其他AI差異。自我Review完成，可供Review／合併，沒有本項未完成實作；未驗全庫／多瀏覽器長戰。提交只含本任務五檔增量，index其他GM快取與AI_TASKS檔首新GM任務及其他JS進行中修改保留、不暫存；不合併推送。Commit為本段所在「[Codex] feat: 傳送門改為浮雲與黑洞氣旋」，編號見交付。
+
+
+## WORLD-MAP-PORTAL-GOLDEN-LIGHT-20261030 — 金白神光與黃金旋流
+
+- Owner：Codex；Done，單一開發者。使用者要求中央黑洞不再突兀，改為通往神界的光明／黃金色光芒氛圍，以美觀優先。前置51bd6f45浮雲與旋流完成。
+- 允許：css/world-map.css、index.html傳送門色彩與該CSS快取、docs/WORLD_MAP.md、LV既有傳送門說明及本段；禁止JS／GM／Worker／玩法／存檔／文字表／獨立素材、其他工作區及合併推送。共用工作區GM任務的script快取、JS／測試及檔首任務保留，逐hunk暫存。
+- 預檢：CSS／WORLD_MAP無外部來源；本任務index候選（排除他項未提交GM增量）與共同祖先及Claude實際工作檔merge-file exit0，修改區段與神鑄／script快取獨立。LV沿用本聊天使用者已明確核准的僅更新傳送門說明範圍；既有檔首GM／Claude規則衝突不碰、不合併。
+- 驗收：柔和金白核心、香檳金旋流、暖光暈／氣流、保留框體陰影及雲層層次；桌面／窄屏、動畫／減少動態、點擊／Space及返回、Console、相關回歸／Build／diff後獨立Commit。全為既有SVG／CSS，無新增獨立素材或Preset。
+- 完成五檔：門內深黑洞口與硬邊核心圈改為漸淡金白柔光及縱橫細光芒；香檳金三臂旋流放緩至8.4秒一圈，門外暖金氣流／呼吸光暈／光粒、頂冠寶石及浮雲淡金受光一致，保留金屬陰影及雲層冷灰陰影，不套整格濾鏡。主頁world-map CSS快取1.0.9、WORLD_MAP與LV既有傳送門說明同步；未改玩家文字、解鎖、門體尺寸或地圖原圖，無獨立素材／素材庫Commit。
+- 驗證：node --test --test-reporter=spec tests/world-map-ui.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs全部27/27通過；npm.cmd run build全部602檔通過；git diff --check通過。隔離Edge／正式index與真Worker，1558×900及390×844驗旋流transform連續改變、點擊與Space開神界／返回、焦點框、裝飾pointer-events:none；窄屏寬390不溢出，減少動態時門內外全部動畫停用。pageerror及新增Console Error／Warning0；原測試服favicon.ico既有404保留。
+- 預覽：32幀實際瀏覽器截圖編成portal-motion.gif，桌面／局部／窄屏與browser-report.json保留本聊天visualizations/portal-golden-light，中間影格已清理；沿用前輪獨立8131測試服。唯讀未改規範／Workflow／既有WorldMapUI、Worker／存檔、String及相關回歸與GM進行中程式／測試。自我Review完成，無本項未完成實作，可供Review／合併；未驗全庫／多瀏覽器長戰。提交僅本項五檔增量，其他GM任務及LV檔尾／index其他script快取保留、不暫存；不合併推送。Commit為本段所在「[Codex] feat: 神界傳送門改為金白神光」，編號見交付。
