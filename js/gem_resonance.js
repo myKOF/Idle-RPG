@@ -119,7 +119,7 @@ function resonanceUpgradeCost(holeLevel) {
 /* ---- Worker 端指令實作（回傳 null＝成功，字串＝錯誤訊息）---- */
 /* 寶石共鳴系統解鎖：等級與轉生次數須同時滿足（GEM_RESONANCE_UNLOCK_*，system_unlock 表）。 */
 function gemResonanceUnlockedAt(level, reincarnations) {
-  return Number(level) >= GEM_RESONANCE_UNLOCK_LEVEL && Number(reincarnations) >= GEM_RESONANCE_UNLOCK_REINCARNATION;
+  return progressReached(level, reincarnations, GEM_RESONANCE_UNLOCK_LEVEL, GEM_RESONANCE_UNLOCK_REINCARNATION);
 }
 function gemResonanceLockedMessage() {
   return STR(2131, GEM_RESONANCE_UNLOCK_LEVEL, GEM_RESONANCE_UNLOCK_REINCARNATION);

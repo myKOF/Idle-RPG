@@ -26,7 +26,7 @@ function equipmentSetUnlockedAtLevel(i, level, reincarnations) {
   var requiredReincarnations = Array.isArray(EQUIP_SET_UNLOCK_REINCARNATIONS)
     ? Number(EQUIP_SET_UNLOCK_REINCARNATIONS[idx]) || 0
     : 0;
-  return Number(level) >= EQUIP_SET_UNLOCK_LEVELS[idx] && Number(reincarnations) >= requiredReincarnations;
+  return progressReached(level, reincarnations, EQUIP_SET_UNLOCK_LEVELS[idx], requiredReincarnations);
 }
 function equipmentSetUnlocked(i) {
   if (typeof G === 'undefined' || !G.player) return false;

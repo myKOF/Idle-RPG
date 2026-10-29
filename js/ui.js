@@ -2864,8 +2864,8 @@ function updateTalentTabVisibility() {
   var snapshot = uiTalentPanelSnapshot();
   if (!snapshot) return;
   var talentHeader = uiHeaderPanelSnapshot();
-  var unlocked = (Number(talentHeader && talentHeader.player && talentHeader.player.level) || 0) >= TALENT_UNLOCK_LEVEL &&
-    talentViewReincarnations(snapshot) >= TALENT_UNLOCK_REINCARNATION;
+  var unlocked = progressReached(talentHeader && talentHeader.player && talentHeader.player.level,
+    talentViewReincarnations(snapshot), TALENT_UNLOCK_LEVEL, TALENT_UNLOCK_REINCARNATION);
   btn.style.display = unlocked ? '' : 'none';
   setAttrIfChanged(btn, 'aria-hidden', unlocked ? 'false' : 'true');
   if (!unlocked && UI.tab === 'talents') switchTab('equip');
@@ -3025,8 +3025,7 @@ function renderHeader() {
   var forgeSnapshot = peekUiPanelData('forge');
   var forgeUnlockedView = forgeSnapshot && forgeSnapshot.forge
     ? !!forgeSnapshot.forge.unlocked
-    : (Number(p.level) >= FORGE_UNLOCK_LEVEL &&
-      Number(p.reincarnations) >= FORGE_UNLOCK_REINCARNATION);
+    : progressReached(p.level, p.reincarnations, FORGE_UNLOCK_LEVEL, FORGE_UNLOCK_REINCARNATION);
   if (forgeTabBtn) forgeTabBtn.style.display = forgeUnlockedView ? '' : 'none';
   var gemTip = [];
   for (var gt in GEM_TYPES) {
@@ -3383,7 +3382,10 @@ function renderAttrPanel(st, headerSnapshot) {
   /* 等級前不出現的屬性（AFFIX_LEVEL_GATES → data.js）：角色等級 ≤ 門檻的列整列收起，避免面板過於龐雜。
      骨架只建一次（保留各分組的展開狀態），所以不重建，而是逐列切換 display；
      收起的列不更新內容、也不計入「N 項為 0」。取不到等級（NaN）視為不擋。 */
-  var attrLevel = headerSnapshot && headerSnapshot.player ? Number(headerSnapshot.player.level) : NaN;
+  // 轉生過（≥1 轉）＝已越過所有 0 轉等級門檻（1 轉 1 級 ≈ 0 轉 1000 級），所以換算成 0 轉等級再比。
+  var attrLevel = headerSnapshot && headerSnapshot.player
+    ? zeroRebirthLevel(headerSnapshot.player.level, headerSnapshot.player.reincarnations)
+    : NaN;
   STAT_GROUPS.forEach(function (g, gi) {
     var zeroCount = 0;
     g.rows.forEach(function (row, ri) {
@@ -4098,7 +4100,7 @@ function renderBattleSkillBar(pEnt, snapshotGt) {
   for (var i = 0; i < TOTAL_SLOTS; i++) {
     var isUnlocked = i < cap;
     if (!isUnlocked) {
-      var reqLv = (i - 4 + 1) * 50;
+      var reqLv = (i - LOADOUT_SIZE.base + 1) * LOADOUT_SIZE.perLevels;   // 與 8535 同一組參數；原寫死 (i-3)*50 與參數表不符
       var lockDesc = STR(742, reqLv);
       var lockedState = { kind: 'locked', index: i, lockDesc: lockDesc };
       lockedState.key = battleSkillSlotKey(lockedState);
@@ -9899,8 +9901,8 @@ function setGemFuseLevel(lv) {
 function gemResonanceUiUnlocked(headerSnapshot) {
   var header = headerSnapshot || uiHeaderPanelSnapshot();
   var player = header && header.player;
-  return Number(player && player.level) >= GEM_RESONANCE_UNLOCK_LEVEL &&
-    Math.floor(Number(player && player.reincarnations) || 0) >= GEM_RESONANCE_UNLOCK_REINCARNATION;
+  return progressReached(player && player.level, player && player.reincarnations,
+    GEM_RESONANCE_UNLOCK_LEVEL, GEM_RESONANCE_UNLOCK_REINCARNATION);
 }
 
 function setGemTool(tool) {
@@ -10344,8 +10346,8 @@ function renderGemFusion(gemsSnapshot, headerSnapshot) {
   if (!gemsSnapshot) return;
   headerSnapshot = headerSnapshot || uiHeaderPanelSnapshot();
   var player = headerSnapshot && headerSnapshot.player;
-  var fusionUnlocked = Number(player && player.level) >= GEM_FUSION_UNLOCK_LEVEL &&
-    uiReincarnationCount(headerSnapshot) >= GEM_FUSION_UNLOCK_REINCARNATIONS;
+  var fusionUnlocked = progressReached(player && player.level, uiReincarnationCount(headerSnapshot),
+    GEM_FUSION_UNLOCK_LEVEL, GEM_FUSION_UNLOCK_REINCARNATIONS);
   var fusionButton = $id('gfuse-btn');
   var clearButton = $id('gfuse-clear');
   if (!fusionUnlocked) {
@@ -10706,8 +10708,8 @@ function reincarnationUnlockNotices(header) {
     systems.push([STR(2149, STR(1168 + i)), requiredLevel, EQUIP_SET_UNLOCK_REINCARNATIONS[i]]);
   });
   return systems.filter(function (system) {
-    var alreadyUnlocked = system[3] || (level >= system[1] && count >= system[2]);
-    return !alreadyUnlocked && 1 >= system[1] && count + 1 >= system[2];
+    var alreadyUnlocked = system[3] || progressReached(level, count, system[1], system[2]);
+    return !alreadyUnlocked && progressReached(1, count + 1, system[1], system[2]);
   }).map(function (system) { return STR(2147, system[0]); });
 }
 
@@ -12167,8 +12169,8 @@ function initUI() {
     gfuseBtn.addEventListener('click', function () {
       var header = uiHeaderPanelSnapshot();
       var player = header && header.player;
-      if (Number(player && player.level) < GEM_FUSION_UNLOCK_LEVEL ||
-        uiReincarnationCount(header) < GEM_FUSION_UNLOCK_REINCARNATIONS) {
+      if (!progressReached(player && player.level, uiReincarnationCount(header),
+        GEM_FUSION_UNLOCK_LEVEL, GEM_FUSION_UNLOCK_REINCARNATIONS)) {
         blog(STR(196), 'warn');
         return;
       }
@@ -12572,8 +12574,8 @@ function initUI() {
     if (gfp) {
       var gfHeader = uiHeaderPanelSnapshot();
       var gfPlayer = gfHeader && gfHeader.player;
-      if (Number(gfPlayer && gfPlayer.level) < GEM_FUSION_UNLOCK_LEVEL ||
-        uiReincarnationCount(gfHeader) < GEM_FUSION_UNLOCK_REINCARNATIONS) {
+      if (!progressReached(gfPlayer && gfPlayer.level, uiReincarnationCount(gfHeader),
+        GEM_FUSION_UNLOCK_LEVEL, GEM_FUSION_UNLOCK_REINCARNATIONS)) {
         blog(STR(196), 'warn');
         return;
       }

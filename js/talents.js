@@ -82,7 +82,7 @@ function talentUnlocked(id) {
 }
 
 function talentSystemUnlockedAt(level, reincarnations) {
-  return Number(level) >= TALENT_UNLOCK_LEVEL && Number(reincarnations) >= TALENT_UNLOCK_REINCARNATION;
+  return progressReached(level, reincarnations, TALENT_UNLOCK_LEVEL, TALENT_UNLOCK_REINCARNATION);
 }
 
 function talentSystemUnlocked() {

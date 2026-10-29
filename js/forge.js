@@ -28,7 +28,7 @@ function forgeState() { return forgeMigrateState(G); }
 function forgeUnlocked() {
   if (!G || !G.player) return false;
   var f = forgeState();
-  if (G.player.level >= FORGE_UNLOCK_LEVEL && reincarnationCount() >= FORGE_UNLOCK_REINCARNATION) f.unlocked = true;
+  if (progressReached(G.player.level, reincarnationCount(), FORGE_UNLOCK_LEVEL, FORGE_UNLOCK_REINCARNATION)) f.unlocked = true;
   return !!f.unlocked;
 }
 function forgeOperationUnlocked(mode) {
