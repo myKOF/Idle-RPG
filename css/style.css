@@ -5938,8 +5938,14 @@ textarea:disabled,
 
 #sk-tooltip .equip-detail-card.mythic-detail,
 #tab-equip .equip-detail-frame:has(> #detail-pane.has-detail.mythic-detail) {
-  /* tips與詳情共用深色內襯，彩色背景只保留20%；文字與品質框不受影響。 */
-  --mythic-reading-veil: linear-gradient(rgb(7 16 13 / 0.938039216), rgb(7 16 13 / 0.887843137));
+  /* 暖金棕閱讀底呼應品質金屬框，僅調整tips與詳情，不影響圖示。 */
+  --mythic-reading-veil: linear-gradient(rgb(24 18 13 / 0.82), rgb(24 18 13 / 0.80));
+}
+
+#sk-tooltip .equip-detail-card.mythic-detail.twohand-shared,
+#tab-equip .equip-detail-frame:has(> #detail-pane.has-detail.mythic-detail.twohand-shared) {
+  /* 複製副手的銀藍框仍配銀藍閱讀底，保持共用提示。 */
+  --mythic-reading-veil: linear-gradient(rgb(15 24 25 / 0.78), rgb(13 20 23 / 0.82));
 }
 
 #sk-tooltip .equip-detail-card.mythic-detail::before,
