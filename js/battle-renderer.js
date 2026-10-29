@@ -352,27 +352,31 @@ var BattleRenderer = (function () {
   /* 0.5 ≒ 相機仰角 30°。2026-09-22 先做了 0.7（≒ 44°，仍接近正上方俯視，跟 3/4 視角畫的騎士對不起來），
      使用者看過 0.7／0.5／0.4 同一格畫面的並排比較後選 0.5；示意圖量出來的地磚菱形也是 0.46～0.52。 */
   var GROUND_Y_SCALE = 0.5;
-  /* game_parameters：100＝原距離，125＝拉遠25%。只改顯示，不改世界座標與戰鬥判定。 */
-  var BATTLE_CAMERA_DISTANCE_PERCENT = 125;
+  /* game_parameters：100＝原距離，90＝拉近10%。只改顯示，不改世界座標與戰鬥判定。 */
+  var BATTLE_CAMERA_DISTANCE_PERCENT = 90;
+  /* 全螢幕只拉近場景：正常戰鬥鏡頭距離 90%、全螢幕 65%，倍率 = 90 ÷ 65；不隨參數表距離改變。 */
+  var BATTLE_CAMERA_FULLSCREEN_ZOOM = 90 / 65;
   function internalCameraDistancePercent() {
     return typeof isInternalVersion === 'function' && isInternalVersion() ?
       (S.cameraDistancePercent || 100) : 100;
   }
   function cameraZoom() {
     var distance = Number(BATTLE_CAMERA_DISTANCE_PERCENT);
-    var zoom = 100 / (isFinite(distance) && distance > 0 ? distance : 125);
+    var zoom = 100 / (isFinite(distance) && distance > 0 ? distance : 90);
     return zoom * cameraFullscreenMultiplier() * 100 / internalCameraDistancePercent();
   }
   function cameraFullscreenMultiplier() {
     var shell = typeof document !== 'undefined' && document.getElementById('ui-shell');
     // 全螢幕只拉近場景；HUD仍位於原本的螢幕層，退出後恢復參數表距離。
-    return shell && shell.classList.contains('battle-fullscreen') ? 1.3 : 1;
+    return shell && shell.classList.contains('battle-fullscreen') ? BATTLE_CAMERA_FULLSCREEN_ZOOM : 1;
   }
   function updateCameraDistanceLabel() {
     var label = document.getElementById('battle-camera-distance');
     if (!label || typeof isInternalVersion !== 'function' || !isInternalVersion()) return;
-    // 百分比一律以正常戰鬥區的預設距離為基準，與實際場景倍率互為倒數。
-    label.textContent = Math.round(internalCameraDistancePercent() / cameraFullscreenMultiplier()) + '%';
+    // 顯示實際鏡頭距離：正常戰鬥預設 90%、全螢幕預設 65%，滾輪再依比例增減。
+    var distance = Number(BATTLE_CAMERA_DISTANCE_PERCENT);
+    label.textContent = Math.round((isFinite(distance) && distance > 0 ? distance : 90) *
+      internalCameraDistancePercent() / 100 / cameraFullscreenMultiplier()) + '%';
   }
   function initCameraWheel() {
     if (S.cameraWheelBound || !S.host || typeof isInternalVersion !== 'function' || !isInternalVersion()) return;
