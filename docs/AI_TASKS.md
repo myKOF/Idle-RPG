@@ -1,5 +1,54 @@
 # AI_TASKS.md
 
+## SYNC-MERGE-5D5A98DE-20261030 ? ?? develop ????
+
+- Owner?Codex?Done????????????controller??????????????????????????HEAD 3c2e7f9e?incoming 5d5a98de?base 1b0cba48?
+- ???LV_upgrade_system.md?index.html?js/bridge.js???????????????????????????????
+- ????LV??????????GM?????30??????????????????bridge?1.0.386?Worker????????20261030-merge-unlock-gm-5d5a98de?Worker?????????????Excel????????????
+- ???????????ai/codex???????Git ownership??????????????????controller??????????
+- ???`node --test --test-reporter=dot tests/ai-key-setting.test.cjs tests/gm-fastpath.test.cjs tests/gm-natural-timeout.test.cjs tests/gm-command.test.cjs tests/gm-modequip.test.cjs tests/gm-perf-command.test.cjs tests/gm-skill-point.test.cjs tests/gm-skill-test-tools.test.cjs tests/gm-translation-cache.test.cjs tests/gm-affix-limits.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/unlock-progress-rule.test.cjs tests/unlock-thresholds.test.cjs tests/world-map.test.cjs tests/world-map-ui.test.cjs`?167??165??2?????
+- ???stdin Node?fs.readFileSync??????js???`git show 3c2e7f9e826c43316e549470271f707e9be52efc:<path>`???require unlock-thresholds?????1??2????41?52?false !== true????????????????????????????`--test-reporter=spec`??164?164???
+- `npm.cmd run build`?603????`git diff HEAD --check`?????????????Worker????????????????????bridge?gm_exec???????????????????????????HEAD?MERGE_HEAD??????????????????????????controller???
+- ?????AI_RULES.md?AGENTS.md?docs/AI_WORKFLOW.md?prompts/codex.md?package.json???base???Worker????????????Review???
+
+
+## GM-AFFIX-LIMITS-20261030 — GM詞條遵守正常數量與明確突破授權
+
+- Owner：Codex；Done，單一開發者。使用者授權修正GM發裝／指定屬性：遵守品質與雙手正常詞條數，缺少指定屬性改替換，只有明確要求突破詞條上限才允許追加。保留舊裝備與玩家存檔，不自動刪除既有超規詞條。
+- 範圍：js/gm_exec.js、js/gm.js、js/ai-key-setting.js、bridge／Worker匯入及index快取、相關GM／快取回歸與新tests/gm-affix-limits.test.cjs、GM_command.md、LV檔尾與本段。禁止掉落／配置／公式／Worker協議欄位／素材、其他工作區及合併推送。一般生成仍共用makeEquipment，不修改最高權威資料。
+- 預檢：GM核心／AI／測試／GM文件無外部來源；bridge快取與Claude828c666c同常數、LV既有檔首合併衝突，使用者已明確核准只分段更新快取、LV檔尾追加並保留所有其他修改。同工作區進行中傳送門任務佔用index SVG／world-map CSS快取及AI_TASKS檔尾，本次僅改GM／bridge script與本段檔首，逐hunk暫存，不提交對方工作；Worker只動gm_exec匯入快取，不改Claude其他匯入或神鑄邏輯。
+- 驗收：創世胸甲7條、雙手加成與其他品質正常發放；既有屬性修改／缺少屬性替換、同句多屬性不互蓋、全太古仍不增條、索引與降品質不得繞過上限、明確突破才能追加；本機／AI／舊快取不得自行授權突破，負向／未完整辨識句不部分執行。GM序列只以字串附帶暫時批次標記，不新增Worker payload欄位或存檔欄位；回歸、Build、真Worker隔離驗證、diff及獨立Commit，使用者正常整合。
+- 完成12檔：GM執行器以WeakMap暫存批次指定屬性，缺少屬性優先替換未指定的一般詞條，既有屬性維持原位；同批槽數不足與不存在序號拒絕、降品質檢查正常上限，保留雙手原配置。GM面板每次提交新批次，子指令共用，cache不保存內部標記；AI提示同步替換語意，原始輸入以正向明確要求授權，否定／條件／疑問／引述提及不授權，AI自加旗標移除；快取語意版本2淘汰舊資料。index GM／AI各1.0.4、bridge1.0.385、Worker入口20261030-gm-affix-limits與gm_exec匯入20261030-affix-limits。GM指南與LV檔尾同步，沒有配置／公式／協議或存檔欄位變更。
+- 測試：`node --test --test-reporter=dot tests/ai-key-setting.test.cjs tests/gm-fastpath.test.cjs tests/gm-natural-timeout.test.cjs tests/gm-command.test.cjs tests/gm-modequip.test.cjs tests/gm-perf-command.test.cjs tests/gm-skill-point.test.cjs tests/gm-skill-test-tools.test.cjs tests/gm-translation-cache.test.cjs tests/gm-affix-limits.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs` 141/141通過；補強否定／引述授權檢查後重跑其中AI／fastpath／timeout／cache／affix五檔53/53通過。既有斷言只對新增內部批次字串正規化，仍驗原始目標與命令；新測試沿真item／formula／player，未降低上限要求。
+- 瀏覽器：IAB無backend，改隔離headless Edge、新localhost來源；正式GM UI／AI解析器與真sim.worker，測試頁adapter僅傳既有cmd與接ACK，未載正式bridge／完整主頁。真Worker全身13件均7條；鍵盤輸入吸血／吸魔保留兩者且7條，同批ID一致。雲端替身擅帶兩個突破旗標被移除，count7；重送走快取、雲端僅1次、下一提交新batch且快取無內部ID；全太古7、索引8拒絕，明確白話突破加攻速才變8。Worker錯誤、console error／warning與pageerror皆0。初次人工fixture用了本機不支援的「經驗加成」，因此等待預期訊息逾時；改用支援的「攻速」後完整腳本通過，未改產品解析範圍。report.json／result.png與重跑腳本保存本聊天visualizations/gm-affix-limits；未讀寫使用者存檔／金鑰，雲端使用假回應，未做完整遊玩／多瀏覽器。
+- 建置與差異：`npm.cmd run build` 602檔全數通過；`git diff --check`及`git diff --cached --check`通過。瀏覽器重跑：`node C:/Users/alway/.codex/visualizations/2026/10/29/01a1889d-5852-7a41-867c-b0690a143381/gm-affix-limits/browser-check.cjs D:/MyGame/Idle-RPG/codex`，需本機bundled Playwright與Edge。
+- 唯讀檢查：規範、既有GM模式／命令與相關回歸、RARITIES／TWO_HAND_BONUS_AFFIXES、makeEquipment與affixValue、Worker協議／shim／面板、Claude與同工作區傳送門差異，未修改其玩法／公式／素材。自我Review完成；舊超額裝備保留，批次仍沿既有逐條執行而非全批回滾。無本次未完成實作，可供Review／合併。傳送門任務已另提交51bd6f45，本次只提交剩餘GM差異；無素材／素材庫變更。Commit為本段所在「[Codex] fix: GM指定屬性改為替換並限制詞條上限」，編號見交付，未合併／推送；下一步正常整合並重載主頁與Worker。
+
+## GM-FAST-MODELS-CACHE-20261030 — 快速模型、成功翻譯快取與常用預設
+
+- Owner：Codex；Done，單一開發者。延續前輪d344a71c，使用者要求完成原建議第3／4項；後續明確將10秒改為每次30秒、初次外最多重試3次，保留取消／遲到防護及完整本機解析。
+- 允許：js/ai-key-setting.js、js/gm.js、index兩檔快取、tests/ai-key-setting.test.cjs、tests/gm-natural-timeout.test.cjs、新tests/gm-translation-cache.test.cjs、GM_command.md、LV_upgrade_system.md與本段；禁止玩法／Worker協議／存檔／Excel／素材、其他工作區及合併推送。LV原有檔首紀錄與Claude828c666c門檻規則合併試跑衝突，使用者已明確同意僅檔尾追加本次紀錄，保留前輪GM與Claude規則。
+- 預檢：程式／測試／GM文件無外部來源；index與Claude僅同檔不同script快取，本輪只升GM兩檔1.0.3，候選＋共同祖先＋對方實際工作檔merge-file exit0，無語意相依。模型資料依Google官方models／generate-content/thinking／deprecations查證（2026-10-30）。
+- 驗收：快速文字模型固定優先序、僅首選及一個備援，不被最後成功模型改序；按模型能力降低思考、不選Pro／圖片／語音模型。成功執行後才保存翻譯，整句與資料語意版本綁定／期限及容量限制／可清除，不快取失敗、逾時、狀態依賴或含選取ID指令；每次命中仍送Worker並使用當下選取。常用預設僅填入輸入框，由使用者送出。相關GM回歸、瀏覽器／Console、Build／diff後獨立Commit。
+- 最新等待規格：每次30秒（包含fetch與body），初次外最多重試3次，總計4次／120秒。每次獨立AbortController及Promise競速，總期限與新提交／關框取消整輪；超過單次時間先abort再提示「已超過30秒無回應，重試中…」與模型／重試次數，只交付目前有效的一次回應。原10秒測試依使用者新規格更新，保留實際期限／背景timer節流／遲到成功／body掛起等安全斷言，並增加每次abort與重試數邊界驗證。
+- 完成九檔：兩支GM JS、index、兩項既有測試及新cache回歸、GM_command／LV／本段。預設3.5 Flash-Lite minimal、3.8 Flash low；設定測試可依已知快速模型優先序取得一首選一備援，2.5舊帳號用budget0，模型清單24小時／版本2，解析不再查模型清單或依最後成功模型改序。增有效輸出上限1024、排除thought與截斷／非法回應，避免思考與指令被切斷。主頁GM／AI兩檔快取均1.0.3。
+- 成功翻譯快取：整批Worker成功才保存抽象指令，完整句／版本1／開放寶石簽章綁定，7天／32筆、傳回副本，命中失敗移除；相對／狀態依賴語句及@sel ID不保存，每次選取上下文仍當下附加。清除／更換金鑰會清快取，存取失敗退當頁記憶體；預設四按鈕只填入、Enter才執行，另有清除按鈕。無玩法／Worker／存檔／Excel／素材庫變更。
+- 測試：`node --test --test-reporter=spec tests/ai-key-setting.test.cjs tests/gm-fastpath.test.cjs tests/gm-natural-timeout.test.cjs tests/gm-translation-cache.test.cjs tests/gm-command.test.cjs tests/gm-modequip.test.cjs tests/gm-perf-command.test.cjs tests/gm-skill-point.test.cjs tests/gm-skill-test-tools.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs`全部104/104通過；`npm.cmd run build`全部601檔通過；`git diff --check`通過。最後移除模型查詢已不使用的request參數並整理縮排後，前三項API／timeout／cache套件31/31再通過，語法由測試載入驗證。沒有降低既有斷言；未重跑前輪已確認為基線失敗的gm-skill-unlock容量舊斷言。
+- 瀏覽器：沿前輪IAB無後端的fallback，bundled Playwright＋獨立headless Edge／隨機localhost／正式GM腳本與全套CSS，執行層及雲端用隔離替身／假Key。原生計時30019ms顯示超過30秒重試1/3並取消初次連線，備援於31026ms完成且只執行一條；同句再次及reload均無新增雲端請求，清除後重新生成；四預設只填入，390×844 documentWidth390／panel右緣378、清除按鈕正常換行。Console error／warning及pageerror0，截圖與browser-report.json保留本聊天visualizations/gm-fast-models-cache。沒有使用真API或玩家存檔；未完整遊玩／多瀏覽器，真實雲端速度與帳號模型權限尚需使用者實機確認，不保證30秒內成功。
+- 唯讀未改：規範／Workflow／前輪任務、gm_exec目標／詞條語意、既有GM／技能／String／快取測試、package、Claude index／LV差異及官方模型文件。自我Review完成，無本次未完成實作，可供Review／合併；LV僅按使用者核准追加，既有檔首合併衝突留正常整合流程保留雙方。Commit為本段所在「[Codex] feat: GM快速模型與翻譯快取並加入三十秒重試」，編號見交付；工作區提交後保持乾淨，不合併／推送。下一步正常整合並重載，必要時在設定測試金鑰更新該帳號可用快速模型。
+
+## GM-FAST-PARSE-DEADLINE-20261030 — 常用白話本機解析與雲端十秒取消
+
+- Owner：Codex；Done，單一開發者。使用者授權擴充常用白話解析、雲端整體最多10秒並取消逾時請求，禁止遲到結果執行。前置：既有GM／Worker執行介面完成。
+- 允許：js/ai-key-setting.js、js/gm.js、兩檔主頁快取、tests/ai-key-setting.test.cjs、tests/gm-fastpath.test.cjs、新增tests/gm-natural-timeout.test.cjs、GM_command.md、LV_upgrade_system.md及本段。禁止玩法／Worker協議／Excel／素材、其他工作區及合併推送。
+- 預檢：程式／測試／文件無外部來源；index與Claude 4b0844ce只重疊於同檔，不同行（對方strings_data快取，本次GM兩檔快取），無語意相依，實際候選＋共同祖先＋Claude工作檔merge-file試跑exit0，可分段修改。
+- 驗收：常見語助詞／數量單位／複合句及裝備修改直譯；未知或未完整辨識的句子不部分執行；模型探索、重試與回應讀取共用10秒期限、AbortSignal取消、遲到結果／新指令／關框失效；相關GM回歸、Build、Console及diff驗證後獨立Commit，使用者正常整合。
+- 完成九檔：上述兩支JS、index、兩項既有測試與新增timeout回歸、GM_command／LV／本段。增加語助詞與數量後綴、小數與萬億兆／kmb單位、材料扣減／多資源共量、裝備強化／太古／部分詞條本機解析；完整辨識後才送Worker，未吃完的裝備描述不能誤發全套。保留既有「當前裝備太古」目標語意與詞條小數，平面數值加百分比等歧義回退。雲端以AbortController＋Promise競速＋交付前實際期限檢查保護探索／重試／body，最多兩模型、共用10秒；新提交與關框取消，generation阻擋舊回應覆蓋新狀態。只取消尚未交付的翻譯，已執行Worker操作不撤銷。兩支JS主頁快取均升1.0.2，無Worker／存檔／Excel／素材變更。
+- 驗證指令：`node --test --test-reporter=spec tests/ai-key-setting.test.cjs tests/gm-fastpath.test.cjs tests/gm-natural-timeout.test.cjs tests/gm-command.test.cjs tests/gm-modequip.test.cjs tests/gm-perf-command.test.cjs tests/gm-skill-point.test.cjs tests/gm-skill-test-tools.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs` 全部91/91通過；`npm.cmd run build`全部600檔通過；`git diff --check`通過。修正原備援測試輸入，使其確實呼叫兩次雲端替身，而非被本機快徑攔截；未降低斷言。
+- 額外既有問題：加入`tests/gm-skill-unlock.test.cjs`的94項套件為93過／1失敗（關閉解鎖後loadoutSize實際2、舊斷言4）。以唯讀fs覆映將該測試所有js載入來源改取`git show HEAD:<path>`，修改前同為2過／1失敗、同一斷言；該測試不載入本次兩支JS，未改斷言或無關玩法。
+- 瀏覽器：IAB無可用backend，改bundled Playwright＋隔離headless Edge、隨機localhost，載入正式兩支GM腳本，Worker執行替身／假Key及本地延遲12秒雲端替身。實際鍵盤提交複合白話17ms送出兩條正確指令；原生timer約10023ms取消網路連線，超過原12秒回應時刻仍無遲到指令；新指令／Escape各取消舊請求，共3次原生abort，Console error／warning與pageerror0。截圖與browser-report.json存本聊天visualizations/gm-fast-parse，非玩家存檔；未呼叫真Gemini或完整遊玩／多瀏覽器。背景節流可能延遲提示出現，但交付前仍拒絕過期結果。
+- 唯讀未改：共通規範／Workflow／Agent、gm_exec目標與詞條語意、既有GM／技能／String／快取回歸、package與Claude index快取差異。自我Review完成，無本次未完成項或新增已知功能風險，可供Review／合併；無素材庫變更。Commit為本段所在「[Codex] fix: 加速常用GM白話指令並限制雲端解析十秒」，編號見交付；未合併／推送。下一步使用者正常整合並重新載入遊戲驗收，未知自由描述保留雲端處理。
+
 ## RUNE-BALANCE-STATS-20261029 — 符文與符文真言各部位屬性最大值平衡性統計報告
 
 - Owner：Antigravity；Done，單一開發者。使用者要求統計現有符文在各裝備（武器、裝備／防具、飾品三大部位）上的總合數值強度與可獲得各類屬性最大值，符文與符文真言分開統計（符文全統計完再統計符文真言），並輸出為 `.md` 檔。
@@ -13185,3 +13234,26 @@ Worker 存活且頁面正常完成載入。
 - 唯一原始衝突 docs/AI_TASKS.md：保留主線檔首符文統計及來源檔尾三輪神話底色紀錄；以唯讀三方逐行順序核對，base／ours／theirs 全部內容均保留，工作檔無衝突標記。保留自動合入的 css/style.css、index.html（CSS105）與 LV_upgrade_system.md，神話詳情／tips 最終採暖金／共用銀藍底加20%黑色背景；主線創世圖示調亮及符文報告不受影響。沒有 Excel、JS／Worker、生成資料或素材庫變更。
 - 驗證：node --test --test-reporter=spec tests/equipment-tooltip-compare.test.cjs tests/equipment-two-hand-display.test.cjs tests/equipment-selection-border.test.cjs 全部16/16通過；npm.cmd run build 全部599檔通過；git diff HEAD --check 完整合併結果通過。未改測試斷言。唯讀檢查共通規範、Workflow、Codex規範、三方任務差異及來源三檔樣式／文件差異；未執行瀏覽器視覺或完整遊玩驗收。
 - 無本項未完成實作或已知新增回歸，可由 controller 暫存四個回報檔案並建立 merge commit；HEAD／MERGE_HEAD 保持原值，索引尚有 unmerged entry 為交接預期。本輪不提交、不推送，無素材庫路徑或 Excel DATA plan。
+
+
+## WORLD-MAP-PORTAL-CLOUD-VORTEX-20261030 — 懸空雲底與黑洞氣旋傳送門
+
+- Owner：Codex；Done，單一開發者。使用者要求取消實體底座，改為適合空中的浮雲；沿用藍白帶黑色，增加門內黑洞／旋渦及門外光暈／氣旋。
+- 允許：index.html傳送門SVG／裝飾標記及world-map CSS快取、css/world-map.css、docs/WORLD_MAP.md、LV_upgrade_system.md既有傳送門說明及本段；禁止玩法／JS／Worker／存檔／Excel／顯示文字／地圖原圖／獨立素材、其他工作區及合併推送。前置既有門體及400關通關測試存檔完成。
+- 衝突預檢：CSS／WORLD_MAP／AI_TASKS無外部來源；index與Claude神鑄標記／其他script快取不同區段，實際候選對共同祖先及Claude工作檔merge-file exit0。LV檔尾追加試跑衝突，改更新既有傳送門說明後仍因檔首前輪GM紀錄與Claude規則的既有衝突回報exit1；使用者已明確核准僅分段更新既有傳送門說明，保留檔首及其他區段，既有衝突留正常整合。
+- 驗收：浮雲取代石階、門內旋流與深黑核心、門外光暈／流動風弧、點擊／鍵盤／返回、縮減動態、桌面與窄屏、Console／相關回歸／Build／diff；完成後獨立Commit。全為既有介面SVG／CSS，無獨立美術檔及VFX Preset／素材庫變更。
+- 完成五檔：index刪除石階／平台／底座寶石，以內嵌SVG雲層承托門框；共用單條螺旋路徑生成三臂旋流，深黑核心及反向光環、門外四道氣流／光暈／光粒由CSS動畫呈現，各風弧依dash週期無縫循環。world-map CSS快取升1.0.8，WORLD_MAP及LV既有傳送門說明同步；未新增玩家文字、Timer、JS、獨立美術檔或Preset，素材庫無變動／無Commit。
+- 驗證：node --test --test-reporter=spec tests/world-map-ui.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs全部27/27通過；npm.cmd run build全部601檔通過；git diff --check通過。隔離Edge載入正式index／真Worker與獨立測試檔，1558×900／390×844確認門內旋流transform持續改變、裝飾pointer-events:none、點擊與鍵盤Space可開神界及返回、焦點框可見；窄屏documentWidth390、入口完整，emulateMedia減少動態時門體全部animation:none。原測試服/favicon.ico既有404保留，新增Console Error／Warning及pageerror0。
+- 預覽：32幀實際瀏覽器截圖編成portal-motion.gif，桌面／窄屏／局部與browser-report.json保留本聊天visualizations/portal-cloud-vortex；中間影格已刪除。IAB舊連線失效後先以隔離Playwright驗證，再重設CUA恢復連線、重載使用者8131頁並確認新版，戰鬥暫停停在人界入口。內測Enter既有GM快捷鍵會開指令框，故本次鍵盤驗收使用Space，未修改GM或世界地圖JS。
+- 唯讀檢查未改：規範／Workflow／Codex規範、WorldMapUI／Worker關卡權限、String及地圖原圖、既有三項回歸、其他AI差異。自我Review完成，可供Review／合併，沒有本項未完成實作；未驗全庫／多瀏覽器長戰。提交只含本任務五檔增量，index其他GM快取與AI_TASKS檔首新GM任務及其他JS進行中修改保留、不暫存；不合併推送。Commit為本段所在「[Codex] feat: 傳送門改為浮雲與黑洞氣旋」，編號見交付。
+
+
+## WORLD-MAP-PORTAL-GOLDEN-LIGHT-20261030 — 金白神光與黃金旋流
+
+- Owner：Codex；Done，單一開發者。使用者要求中央黑洞不再突兀，改為通往神界的光明／黃金色光芒氛圍，以美觀優先。前置51bd6f45浮雲與旋流完成。
+- 允許：css/world-map.css、index.html傳送門色彩與該CSS快取、docs/WORLD_MAP.md、LV既有傳送門說明及本段；禁止JS／GM／Worker／玩法／存檔／文字表／獨立素材、其他工作區及合併推送。共用工作區GM任務的script快取、JS／測試及檔首任務保留，逐hunk暫存。
+- 預檢：CSS／WORLD_MAP無外部來源；本任務index候選（排除他項未提交GM增量）與共同祖先及Claude實際工作檔merge-file exit0，修改區段與神鑄／script快取獨立。LV沿用本聊天使用者已明確核准的僅更新傳送門說明範圍；既有檔首GM／Claude規則衝突不碰、不合併。
+- 驗收：柔和金白核心、香檳金旋流、暖光暈／氣流、保留框體陰影及雲層層次；桌面／窄屏、動畫／減少動態、點擊／Space及返回、Console、相關回歸／Build／diff後獨立Commit。全為既有SVG／CSS，無新增獨立素材或Preset。
+- 完成五檔：門內深黑洞口與硬邊核心圈改為漸淡金白柔光及縱橫細光芒；香檳金三臂旋流放緩至8.4秒一圈，門外暖金氣流／呼吸光暈／光粒、頂冠寶石及浮雲淡金受光一致，保留金屬陰影及雲層冷灰陰影，不套整格濾鏡。主頁world-map CSS快取1.0.9、WORLD_MAP與LV既有傳送門說明同步；未改玩家文字、解鎖、門體尺寸或地圖原圖，無獨立素材／素材庫Commit。
+- 驗證：node --test --test-reporter=spec tests/world-map-ui.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs全部27/27通過；npm.cmd run build全部602檔通過；git diff --check通過。隔離Edge／正式index與真Worker，1558×900及390×844驗旋流transform連續改變、點擊與Space開神界／返回、焦點框、裝飾pointer-events:none；窄屏寬390不溢出，減少動態時門內外全部動畫停用。pageerror及新增Console Error／Warning0；原測試服favicon.ico既有404保留。
+- 預覽：32幀實際瀏覽器截圖編成portal-motion.gif，桌面／局部／窄屏與browser-report.json保留本聊天visualizations/portal-golden-light，中間影格已清理；沿用前輪獨立8131測試服。唯讀未改規範／Workflow／既有WorldMapUI、Worker／存檔、String及相關回歸與GM進行中程式／測試。自我Review完成，無本項未完成實作，可供Review／合併；未驗全庫／多瀏覽器長戰。提交僅本項五檔增量，其他GM任務及LV檔尾／index其他script快取保留、不暫存；不合併推送。Commit為本段所在「[Codex] feat: 神界傳送門改為金白神光」，編號見交付。

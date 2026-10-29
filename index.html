@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="css/runeword.css?v=1.0.8">
   <link rel="stylesheet" href="css/gems.css?v=1.0.25">
   <link rel="stylesheet" href="css/dialogs.css?v=1.0.4">
-  <link rel="stylesheet" href="css/world-map.css?v=1.0.7">
+  <link rel="stylesheet" href="css/world-map.css?v=1.0.9">
   <link rel="stylesheet" href="css/divine-forge.css?v=1.0.12">
 </head>
 
@@ -833,20 +833,26 @@
           <button id="world-map-god-portal" class="world-map-god-portal" type="button" hidden>
             <span class="world-map-portal-art" aria-hidden="true">
               <span class="world-map-portal-aura"></span>
-              <span class="world-map-portal-orbit"></span>
-              <span class="world-map-portal-aperture"><span class="world-map-portal-flow"></span><span class="world-map-portal-depth"></span><span class="world-map-portal-stars"></span><span class="world-map-portal-rift"></span></span>
+              <svg class="world-map-portal-cyclone" viewBox="0 0 180 220" fill="none" focusable="false">
+                <defs><linearGradient id="wm-portal-wind" x1="4" y1="180" x2="164" y2="38" gradientUnits="userSpaceOnUse"><stop stop-color="#e6b85b" stop-opacity="0"/><stop offset=".3" stop-color="#f8df9c" stop-opacity=".65"/><stop offset=".55" stop-color="#fff8dd"/><stop offset=".8" stop-color="#edc570" stop-opacity=".6"/><stop offset="1" stop-color="#d4a050" stop-opacity="0"/></linearGradient></defs>
+                <path class="world-map-portal-wind world-map-portal-wind-wide" d="M27 184C-12 157-3 85 31 46C67 5 134 5 161 47C194 98 168 163 127 180"/>
+                <path class="world-map-portal-wind" d="M39 179C4 155-7 111 21 73C54 28 131 17 166 54C192 82 181 128 150 150"/>
+                <path class="world-map-portal-wind world-map-portal-wind-reverse" d="M9 159C-11 134 16 115 55 126C99 139 132 178 166 167C188 160 181 140 169 133"/>
+                <path class="world-map-portal-wind world-map-portal-wind-low" d="M20 195C-4 181 34 166 73 175C120 185 162 212 178 189C187 174 164 169 150 174"/>
+              </svg>
+              <svg class="world-map-portal-clouds" viewBox="0 0 180 220" fill="none" focusable="false">
+                <defs><linearGradient id="wm-portal-cloud" x1="90" y1="166" x2="90" y2="212" gradientUnits="userSpaceOnUse"><stop stop-color="#fff8e5"/><stop offset=".38" stop-color="#e6dcc7"/><stop offset=".73" stop-color="#8b969b"/><stop offset="1" stop-color="#344754" stop-opacity="0"/></linearGradient></defs>
+                <path d="M9 191C1 182 13 175 25 178C26 168 41 164 51 169C57 156 76 158 83 168C96 156 114 162 117 172C131 163 146 169 147 178C163 170 178 181 170 191C184 203 163 211 144 206C128 217 108 209 96 211C79 220 60 209 49 212C31 215 22 205 14 204C2 203-3 196 9 191Z" fill="url(#wm-portal-cloud)"/>
+                <path d="M13 185C21 179 30 183 34 186M31 175C39 168 51 173 55 180M57 170C65 162 80 169 81 177M88 172C100 163 114 173 112 181M120 178C130 170 143 176 145 184M149 184C158 178 168 183 169 189" stroke="#fff8e6" stroke-opacity=".82" stroke-width="2" stroke-linecap="round"/>
+                <path d="M20 196C36 205 48 188 65 194S91 203 107 194S140 201 160 194M41 205C61 210 74 200 91 204S120 209 139 202" stroke="#dbcfad" stroke-opacity=".45" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+              <span class="world-map-portal-aperture"><svg class="world-map-portal-vortex" viewBox="0 0 120 120" preserveAspectRatio="none" fill="none" focusable="false"><defs><radialGradient id="wm-portal-vortex-light" cx="60" cy="60" r="57" gradientUnits="userSpaceOnUse"><stop offset=".12" stop-color="#f6e1ac"/><stop offset=".32" stop-color="#fff3c5"/><stop offset=".58" stop-color="#fff9e8"/><stop offset=".82" stop-color="#ecca7c"/><stop offset="1" stop-color="#ad803c" stop-opacity="0"/></radialGradient><path id="wm-portal-spiral-arm" d="M70.00 60.00 L70.52 60.78 L70.97 61.63 L71.36 62.56 L71.66 63.55 L71.88 64.59 L72.00 65.69 L72.03 66.83 L71.95 68.01 L71.75 69.20 L71.45 70.41 L71.03 71.63 L70.49 72.83 L69.82 74.02 L69.04 75.18 L68.15 76.29 L67.13 77.35 L66.00 78.35 L64.76 79.28 L63.42 80.12 L61.98 80.86 L60.45 81.50 L58.83 82.02 L57.14 82.41 L55.39 82.68 L53.58 82.80 L51.73 82.78 L49.85 82.61 L47.95 82.28 L46.04 81.79 L44.14 81.14 L42.27 80.33 L40.43 79.35 L38.64 78.21 L36.91 76.91 L35.26 75.45 L33.70 73.84 L32.25 72.08 L30.92 70.18 L29.72 68.15 L28.66 66.00 L27.76 63.74 L27.03 61.37 L26.47 58.92 L26.10 56.39 L25.92 53.80 L25.94 51.17 L26.16 48.51 L26.60 45.83 L27.25 43.15 L28.11 40.50 L29.19 37.88 L30.49 35.32 L31.99 32.83 L33.71 30.42 L35.63 28.13 L37.75 25.96 L40.05 23.94 L42.54 22.06 L45.19 20.37 L48.00 18.86 L50.95 17.55 L54.03 16.45 L57.23 15.59 L60.51 14.96 L63.88 14.57 L67.31 14.44 L70.77 14.57 L74.26 14.97 L77.75 15.63 L81.21 16.57 L84.63 17.78 L87.99 19.26 L91.26 21.01 L94.42 23.02 L97.46 25.28 L100.34 27.80 L103.06 30.55 L105.59 33.53 L107.91 36.73 L110.00 40.12 L111.85 43.70 L113.45 47.44 L114.77 51.33 L115.81 55.35"/></defs><g class="world-map-portal-vortex-spin" stroke="url(#wm-portal-vortex-light)" stroke-linecap="round"><g stroke-width="6" opacity=".24"><use href="#wm-portal-spiral-arm"/><use href="#wm-portal-spiral-arm" transform="rotate(120 60 60)"/><use href="#wm-portal-spiral-arm" transform="rotate(240 60 60)"/></g><g stroke-width="1.7"><use href="#wm-portal-spiral-arm"/><use href="#wm-portal-spiral-arm" transform="rotate(120 60 60)"/><use href="#wm-portal-spiral-arm" transform="rotate(240 60 60)"/></g></g></svg><span class="world-map-portal-depth"></span><span class="world-map-portal-stars"></span><span class="world-map-portal-rift"></span></span>
               <svg class="world-map-portal-architecture" viewBox="0 0 180 220" fill="none" focusable="false">
                 <defs>
                   <linearGradient id="wm-portal-metal" x1="32" y1="18" x2="146" y2="190" gradientUnits="userSpaceOnUse"><stop stop-color="#f6e7b8"/><stop offset=".18" stop-color="#9e8755"/><stop offset=".35" stop-color="#3d403d"/><stop offset=".5" stop-color="#d7bd7d"/><stop offset=".64" stop-color="#6e5938"/><stop offset=".82" stop-color="#b6a575"/><stop offset="1" stop-color="#292d30"/></linearGradient>
                   <linearGradient id="wm-portal-edge" x1="45" y1="32" x2="131" y2="169" gradientUnits="userSpaceOnUse"><stop stop-color="#fff3c6"/><stop offset=".4" stop-color="#b2a16e"/><stop offset=".65" stop-color="#514b38"/><stop offset="1" stop-color="#edd69e"/></linearGradient>
-                  <linearGradient id="wm-portal-stone" x1="90" y1="174" x2="90" y2="213" gradientUnits="userSpaceOnUse"><stop stop-color="#696961"/><stop offset=".3" stop-color="#333c42"/><stop offset=".65" stop-color="#192b37"/><stop offset="1" stop-color="#0d1923"/></linearGradient>
-                  <radialGradient id="wm-portal-gem"><stop stop-color="#f1ffff"/><stop offset=".25" stop-color="#a6edff"/><stop offset=".7" stop-color="#3c859c"/><stop offset="1" stop-color="#142e49"/></radialGradient>
+                  <radialGradient id="wm-portal-gem"><stop stop-color="#fffef3"/><stop offset=".25" stop-color="#ffedb1"/><stop offset=".7" stop-color="#cc9f56"/><stop offset="1" stop-color="#655033"/></radialGradient>
                 </defs>
-                <ellipse cx="90" cy="204" rx="66" ry="10" fill="#081f2b" opacity=".65"/>
-                <path d="M42 175L28 187L18 197L32 207H148L162 197L151 188L137 175Z" fill="url(#wm-portal-stone)" stroke="#232c2b" stroke-width="2"/>
-                <path d="M30 189H150M23 197H157M33 205H147" stroke="#a39060" stroke-opacity=".8"/>
-                <path d="M48 181H132L144 190H36Z" fill="#44555b" stroke="#d0bc88"/>
-                <ellipse cx="90" cy="183" rx="40" ry="6" stroke="#8edef1" opacity=".75"/>
                 <path d="M52 51L39 42L32 23L30 63L18 57L26 83L17 101L32 99L33 136L43 166L49 179L57 169L46 133L43 95Z" fill="url(#wm-portal-metal)" stroke="#292d28" stroke-width="2"/>
                 <path d="M128 51L141 42L148 23L150 63L162 57L154 83L163 101L148 99L147 136L137 166L131 179L123 169L134 133L137 95Z" fill="url(#wm-portal-metal)" stroke="#292d28" stroke-width="2"/>
                 <path d="M36 56L40 78L32 88M30 66L35 80M39 102L40 131L48 154M144 56L140 78L148 88M150 66L145 80M141 102L140 131L132 154" stroke="#e3cc91" stroke-width="1.3" opacity=".85"/>
@@ -854,7 +860,7 @@
                 <ellipse cx="90" cy="102" rx="49" ry="77" stroke="url(#wm-portal-metal)" stroke-width="9"/>
                 <ellipse cx="90" cy="102" rx="53" ry="81" stroke="#f1d9a1" stroke-width="1" opacity=".8"/>
                 <ellipse cx="90" cy="102" rx="44" ry="72" stroke="url(#wm-portal-edge)" stroke-width="2"/>
-                <ellipse class="world-map-portal-seal" cx="90" cy="102" rx="40.5" ry="68.5" stroke="#a5efff" stroke-width="1.5"/>
+                <ellipse class="world-map-portal-seal" cx="90" cy="102" rx="40.5" ry="68.5" stroke="#fff0bb" stroke-width="1.5"/>
                 <g stroke="#e6d7a9" stroke-width="1.2" opacity=".85">
                   <path d="M66 38L61 43L66 46M53 57L49 62L53 67M46 83L43 88L46 93M45 110L42 115L46 120M51 139L48 145L53 148M65 159L61 162L66 167M114 38L119 43L114 46M127 57L131 62L127 67M134 83L137 88L134 93M135 110L138 115L134 120M129 139L132 145L127 148M115 159L119 162L114 167"/>
                   <path d="M78 29L80 32L77 35M102 29L100 32L103 35M80 174L82 177M98 177L100 174"/>
@@ -862,10 +868,8 @@
                 <path d="M64 23L76 25L90 3L104 25L116 23L107 40L96 34H84L73 40Z" fill="url(#wm-portal-metal)" stroke="#2b3030" stroke-width="2"/>
                 <path d="M76 27L90 10L104 27M76 34L84 29H96L104 34" stroke="#f8e3ab" stroke-width="1.3"/>
                 <path class="world-map-portal-jewel" d="M90 16L97 27L90 38L83 27Z" fill="url(#wm-portal-gem)" stroke="#e3edce" stroke-width="1.3"/>
-                <path d="M90 16V38M83 27H97" stroke="#dbffff" stroke-width=".6" opacity=".8"/>
+                <path d="M90 16V38M83 27H97" stroke="#fff8dd" stroke-width=".6" opacity=".8"/>
                 <path d="M39 85L45 94L39 104L34 94ZM141 85L146 94L141 104L135 94Z" fill="url(#wm-portal-gem)" stroke="#c9bc8e"/>
-                <path d="M77 191L90 185L103 191L90 197Z" fill="url(#wm-portal-metal)" stroke="#a6b99b"/>
-                <path d="M84 191H96M90 188V194" stroke="#c3faff"/>
               </svg>
               <span class="world-map-portal-motes"><i></i><i></i><i></i><i></i><i></i><i></i></span>
             </span>
@@ -1059,7 +1063,7 @@
   <script src="js/ui-newforge-visuals.js?v=1.0.8"></script>
   <script src="js/param_autoreload.js"></script>
   <!-- GM 面板。指令執行層在 js/gm_exec.js，由 Worker importScripts 載入 -->
-  <script src="js/gm.js?v=1.0.1"></script>
+  <script src="js/gm.js?v=1.0.4"></script>
   <!-- 戰鬥效能診斷（FPS 計數器下方的多行疊層、perfReport()）。只在內部版本才做事，
        正式遊玩是空殼。必須排在 ui.js（用它的 isInternalVersion）之後、VFX Runtime 建立（main 開機）之前。 -->
   <script src="js/battle-perf.js?v=1.0.3"></script>
@@ -1069,7 +1073,7 @@
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
-  <script src="js/bridge.js?v=1.0.384"></script>
+  <script src="js/bridge.js?v=1.0.386"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->
@@ -1079,7 +1083,7 @@
        DOMContentLoaded 就把 ui.js 的渲染函式包起來。用法：網址加 ?lag=1 -->
   <script src="js/lagprobe.js?v=1.0.18"></script>
   <script src="js/game-menu.js?v=1.0.3"></script>
-  <script src="js/ai-key-setting.js?v=1.0.1"></script>
+  <script src="js/ai-key-setting.js?v=1.0.4"></script>
   <script src="js/main.js?v=1.0.4"></script>
 </body>
 

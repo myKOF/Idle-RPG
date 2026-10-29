@@ -594,8 +594,41 @@
     return text.trim();
   }
 
-  function gmModSingleEquip(item, targetDesc, args) {
+  // 僅存在Worker記憶體：同一提交的指定詞條不可被後續子指令覆蓋，不寫入裝備／存檔。
+  var gmEquipEditSessions = new WeakMap();
+
+  function gmNormalAffixLimit(item, rarity) {
+    var row = RARITIES[rarity === undefined ? item.rarity : rarity];
+    if (!row || !row.affix) return null;
+    var bonus = typeof isTwoHandItem === 'function' && isTwoHandItem(item) ? TWO_HAND_BONUS_AFFIXES : 0;
+    return Math.max(0, Math.floor(Number(row.affix[1]) + bonus));
+  }
+
+  function gmEquipEditSession(item, batch) {
+    var state = gmEquipEditSessions.get(item) || { cursor: 0, keys: new Set(), recentKeys: new Set() };
+    if (!batch || state.batch !== batch) state.keys = new Set();
+    state.batch = batch;
+    gmEquipEditSessions.set(item, state);
+    return state;
+  }
+
+  function gmReplacementIndex(item, state) {
+    var count = item.affixes.length;
+    for (var pass = 0; pass < 4; pass++) {
+      for (var offset = 0; offset < count; offset++) {
+        var index = (state.cursor + offset) % count;
+        var affix = item.affixes[index];
+        if (!state.keys.has(affix.key) && (pass >= 2 || !state.recentKeys.has(affix.key)) &&
+            (pass % 2 || !affix.ancient)) return index;
+      }
+    }
+    return -1;
+  }
+
+  function gmModSingleEquip(item, targetDesc, args, batch) {
     if (!item) return { ok: false, message: targetDesc + ' 目前沒有裝備，無法修改屬性。' };
+    var allowOvercap = args.indexOf('--allow-overcap') >= 0;
+    args = args.filter(function (arg) { return arg !== '--allow-overcap'; });
 
     var op = String(args[0]).toLowerCase();
 
@@ -675,6 +708,10 @@
     if (op === 'rarity' || op === '品質') {
       var rVal = gmRarity(args[1]);
       if (rVal === null) return { ok: false, message: '無效的品質：' + args[1] };
+      var newLimit = gmNormalAffixLimit(item, rVal);
+      if (!allowOvercap && (item.affixes || []).length > newLimit) {
+        return { ok: false, message: '目前詞條數超過目標品質正常上限 ' + newLimit + ' 條；請先明確刪除多餘詞條，或使用 --allow-overcap。' };
+      }
       item.rarity = rVal;
       if (typeof ensureSockets === 'function') ensureSockets(item);
       gmFinishEquipMod();
@@ -685,6 +722,7 @@
     if (op === 'clear' || op === '清空') {
       item.affixes = [];
       item.ancientCount = 0;
+      gmEquipEditSessions.delete(item);
       gmFinishEquipMod();
       return { ok: true, message: targetDesc + '：所有詞條已清空' };
     }
@@ -762,9 +800,15 @@
     }
 
     if (!item.affixes) item.affixes = [];
+    if (affixIndex !== null && affixIndex >= item.affixes.length && !allowOvercap) {
+      return { ok: false, message: '指定的詞條序號不存在；一般修改只替換現有詞條，追加需明確使用 --allow-overcap。' };
+    }
+    var editState = gmEquipEditSession(item, batch);
     var existingAffix = null;
     if (affixIndex !== null && item.affixes[affixIndex]) {
       existingAffix = item.affixes[affixIndex];
+      editState.keys.delete(existingAffix.key);
+      editState.recentKeys.delete(existingAffix.key);
       existingAffix.key = targetAffixKey;
     } else {
       existingAffix = item.affixes.find(function (a) { return a.key === targetAffixKey; });
@@ -797,10 +841,24 @@
         roll: rollVal,
         ancient: isAnc
       };
-      item.affixes.push(existingAffix);
-      actionDesc = '已追加詞條';
+      if (allowOvercap) {
+        item.affixes.push(existingAffix);
+        actionDesc = '已明確允許突破上限，追加詞條';
+      } else {
+        var normalLimit = gmNormalAffixLimit(item);
+        var replacement = gmReplacementIndex(item, editState);
+        if (replacement < 0 || editState.keys.size >= Math.min(normalLimit, item.affixes.length)) {
+          return { ok: false, message: '沒有可替換的詞條；本次指定屬性已占滿現有詞條，請指定序號替換，或明確要求突破詞條上限。' };
+        }
+        editState.recentKeys.delete(item.affixes[replacement].key);
+        item.affixes[replacement] = existingAffix;
+        editState.cursor = (replacement + 1) % item.affixes.length;
+        actionDesc = '已替換第 ' + (replacement + 1) + ' 條詞條';
+      }
     }
 
+    editState.keys.add(targetAffixKey);
+    editState.recentKeys.add(targetAffixKey);
     item.ancientCount = (item.affixes || []).filter(function (a) { return a && a.ancient; }).length;
     gmFinishEquipMod();
 
@@ -814,7 +872,7 @@
     };
   }
 
-  function gmModEquip(args, selContext) {
+  function gmModEquip(args, selContext, batch) {
     if (!G) return { ok: false, message: '遊戲狀態尚未載入。' };
     var resolved = gmResolveEquipItem(args, selContext);
     if (resolved.error) return { ok: false, message: resolved.error };
@@ -834,7 +892,7 @@
       var lastMsg = '';
       for (var mi = 0; mi < resolved.items.length; mi++) {
         var itEntry = resolved.items[mi];
-        var singleRes = gmModSingleEquip(itEntry.item, itEntry.desc, args.slice());
+        var singleRes = gmModSingleEquip(itEntry.item, itEntry.desc, args.slice(), batch);
         if (!singleRes.ok) {
           return singleRes;
         }
@@ -858,7 +916,7 @@
       return { ok: true, message: gmItemInfoText(item, targetDesc) };
     }
 
-    return gmModSingleEquip(item, targetDesc, args);
+    return gmModSingleEquip(item, targetDesc, args, batch);
   }
 
   function gmGivePart(tier, node, count) {
@@ -1286,6 +1344,9 @@
     if (!text) return { ok: false, message: '指令不可為空白。' };
 
     var selContext = selOverride || null;
+    var batchMatch = text.match(/\s+@gm-batch:([a-zA-Z0-9_-]+)/);
+    var batch = batchMatch ? batchMatch[1] : null;
+    text = text.replace(/\s+@gm-batch:[^\s]+/g, '').trim();
     var selMatch = text.match(/\s+@sel:([^\s]+)/);
     if (selMatch) {
       text = text.replace(/\s+@sel:[^\s]+/, '').trim();
@@ -1528,7 +1589,7 @@
     }
     if (command === 'modequip' || command === 'editequip' || command === 'equipmod' ||
         command === 'setequip' || command === 'itemmod' || command === 'meq' || command === '改裝備') {
-      return gmModEquip(args, selContext);
+      return gmModEquip(args, selContext, batch);
     }
     if (command === 'part') {
       level = gmNumber(args[0], 1, PART_MAX_TIER);

@@ -64,7 +64,9 @@ function setup(hostname, initialStorage = {}) {
     document: doc,
     location: win.location,
     localStorage: win.localStorage,
-    setTimeout: (fn) => fn(),
+    setTimeout,
+    clearTimeout,
+    AbortController,
     fetch: () => Promise.resolve({ ok: true, json: () => Promise.resolve({ models: [] }) }),
     GameMenu: { openSettings: () => {} },
     module: { exports: {} }
@@ -127,8 +129,10 @@ test('HTML 檔案確保預設包含 AI 金鑰相關節點且預設 display:none'
 
 test('parseNaturalCommand 成功透過 Gemini 轉譯白話指令為 GM 指令陣列', async () => {
   const { mod, ctx } = setup('localhost', { idle_rpg_gemini_api_key: 'AIzaFakeKey123' });
+  let generated = 0;
   ctx.fetch = async (url, opts) => {
     if (opts && opts.method === 'POST') {
+      generated++;
       assert.match(url, /:generateContent/);
       return {
         ok: true,
@@ -148,7 +152,7 @@ test('parseNaturalCommand 成功透過 Gemini 轉譯白話指令為 GM 指令陣
       ok: true,
       json: async () => ({
         models: [
-          { name: 'models/gemini-2.0-flash', supportedGenerationMethods: ['generateContent'] }
+          { name: 'models/gemini-3.5-flash-lite', supportedGenerationMethods: ['generateContent'] }
         ]
       })
     };
@@ -156,6 +160,7 @@ test('parseNaturalCommand 成功透過 Gemini 轉譯白話指令為 GM 指令陣
 
   const cmds = await mod.parseNaturalCommand('加全身強化+50的神話裝備，並都是4太古的詞條，並加金幣1000億');
   assert.deepEqual([...cmds], ['equipset mythic 500 50 4 wear', 'gold 100000000000']);
+  assert.equal(generated, 1, '此案例須實際走雲端替身，不可被快徑攔截');
 });
 
 test('parseNaturalCommand 遇到首選模型 High Demand (503) 時能自動切換備用模型成功', async () => {
@@ -192,14 +197,14 @@ test('parseNaturalCommand 遇到首選模型 High Demand (503) 時能自動切�
       ok: true,
       json: async () => ({
         models: [
-          { name: 'models/gemini-2.0-flash', supportedGenerationMethods: ['generateContent'] },
-          { name: 'models/gemini-1.5-flash', supportedGenerationMethods: ['generateContent'] }
+          { name: 'models/gemini-3.5-flash-lite', supportedGenerationMethods: ['generateContent'] },
+          { name: 'models/gemini-3.8-flash', supportedGenerationMethods: ['generateContent'] }
         ]
       })
     };
   };
 
-  const cmds = await mod.parseNaturalCommand('加金幣999999');
+  const cmds = await mod.parseNaturalCommand('替我的測試角色準備足夠金幣');
   assert.strictEqual(callCount, 2, '應自動呼叫下一個模型重試');
   assert.deepEqual([...cmds], ['gold 999999']);
 });

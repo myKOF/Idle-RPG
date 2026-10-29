@@ -6,6 +6,64 @@
 (function () {
   var STORAGE_KEY = 'idle_rpg_gemini_api_key';
   var MODELS_CACHE_KEY = 'idle_rpg_gemini_models';
+  var MODELS_CACHE_VERSION = 2;
+  var MODELS_CACHE_TTL_MS = 86400000;
+  // 官方 generateContent thinking 文件：3.x 用 level，2.5 Flash 用 budget；不採用 Pro／媒體專用模型。
+  var FAST_MODEL_PROFILES = [
+    { name: 'gemini-3.5-flash-lite', thinkingConfig: { thinkingLevel: 'minimal', includeThoughts: false } },
+    { name: 'gemini-3.8-flash', thinkingConfig: { thinkingLevel: 'low', includeThoughts: false } },
+    { name: 'gemini-3.1-flash-lite', thinkingConfig: { thinkingLevel: 'minimal', includeThoughts: false } },
+    { name: 'gemini-3.6-flash', thinkingConfig: { thinkingLevel: 'minimal', includeThoughts: false } },
+    { name: 'gemini-2.5-flash-lite', thinkingConfig: { thinkingBudget: 0, includeThoughts: false } },
+    { name: 'gemini-2.5-flash', thinkingConfig: { thinkingBudget: 0, includeThoughts: false } }
+  ];
+  var TRANSLATIONS_KEY = 'idle_rpg_gm_translations';
+  // GM指令契約／翻譯規則變動時升版，避免重用舊語意。
+  var TRANSLATIONS_VERSION = 2;
+  var TRANSLATIONS_TTL_MS = 7 * 86400000;
+  var TRANSLATIONS_LIMIT = 32;
+  var translationMemory = [];
+  var translationStorageUnavailable = false;
+  var NATURAL_ATTEMPT_TIMEOUT_MS = 30000;
+  var NATURAL_MAX_RETRIES = 3;
+  var NATURAL_TIMEOUT_MS = NATURAL_ATTEMPT_TIMEOUT_MS * (NATURAL_MAX_RETRIES + 1);
+  var activeNaturalRequest = null;
+
+  function cancelNaturalCommand() {
+    if (activeNaturalRequest) activeNaturalRequest.cancel();
+  }
+
+  // 整輪重試共用總期限；每個模型請求另有獨立期限與AbortController。
+  function createNaturalRequest() {
+    var controller = new AbortController();
+    var deadline = Date.now() + NATURAL_TIMEOUT_MS;
+    var stopped = null;
+    var rejectStopped;
+    var timer;
+    var request = {
+      signal: controller.signal,
+      stopped: new Promise(function (_, reject) { rejectStopped = reject; }),
+      check: function () {
+        if (!stopped && Date.now() >= deadline) stop(true);
+        if (stopped) throw stopped;
+      },
+      cancel: function () { stop(false); },
+      finish: function () {
+        clearTimeout(timer);
+        if (activeNaturalRequest === request) activeNaturalRequest = null;
+      }
+    };
+    function stop(timedOut) {
+      if (stopped) return;
+      stopped = new Error(timedOut ? '雲端解析已達等待上限（每次30秒、最多重試3次），已取消，指令未執行。' : '已取消本次雲端解析，指令未執行。');
+      stopped.name = timedOut ? 'TimeoutError' : 'AbortError';
+      rejectStopped(stopped);
+      controller.abort();
+    }
+    timer = setTimeout(function () { stop(true); }, NATURAL_TIMEOUT_MS);
+    activeNaturalRequest = request;
+    return request;
+  }
 
   function isInternal() {
     if (typeof isInternalServer === 'function') {
@@ -42,6 +100,7 @@
           localStorage.removeItem(STORAGE_KEY);
         }
         localStorage.removeItem(MODELS_CACHE_KEY);
+        clearNaturalCommandCache();
         return true;
       }
     } catch (e) {}
@@ -55,6 +114,12 @@
   function maskKey(key) {
     if (!key || key.length < 8) return '****';
     return key.slice(0, 6) + '...' + key.slice(-4);
+  }
+
+  function rankFastModels(names) {
+    return FAST_MODEL_PROFILES.filter(function (profile) {
+      return names.indexOf(profile.name) >= 0;
+    }).slice(0, 2).map(function (profile) { return profile.name; });
   }
 
   /* 查詢 Google API 獲取該金鑰真正支援的可用生成模型，並快取至本機 */
@@ -83,40 +148,35 @@
           return (m.name || '').replace(/^models\//, '');
         }).filter(Boolean);
 
-        // 排序優先度：包含 flash 的優先（極速），其次 2.0、1.5、pro
-        var ranked = [];
-        ['2.0-flash', '1.5-flash', 'flash', '2.0', '1.5', 'pro'].forEach(function (kw) {
-          supported.forEach(function (name) {
-            if (name.toLowerCase().indexOf(kw) >= 0 && ranked.indexOf(name) === -1) {
-              ranked.push(name);
-            }
-          });
-        });
-        supported.forEach(function (name) {
-          if (ranked.indexOf(name) === -1) ranked.push(name);
-        });
+        var ranked = rankFastModels(supported);
+        if (!ranked.length) throw new Error('此金鑰未提供支援的快速文字模型，請確認 Gemini 模型權限。');
 
         if (ranked.length && typeof localStorage !== 'undefined') {
-          try { localStorage.setItem(MODELS_CACHE_KEY, JSON.stringify(ranked)); } catch (e) {}
+          try {
+            localStorage.setItem(MODELS_CACHE_KEY, JSON.stringify({
+              version: MODELS_CACHE_VERSION, savedAt: Date.now(), models: ranked
+            }));
+          } catch (e) {}
         }
         return ranked;
       });
   }
 
-  /* 取得候選模型：若本機已有快取則 0ms 立即回傳；無快取才連線發現一次 */
-  function getCandidateModels(targetKey) {
+  /* 解析關鍵路徑不查詢模型清單；設定中的「測試金鑰」可更新可用快速模型。 */
+  function getCandidateModels(request) {
+    if (request) request.check();
     try {
       if (typeof localStorage !== 'undefined') {
         var cached = JSON.parse(localStorage.getItem(MODELS_CACHE_KEY) || 'null');
-        if (Array.isArray(cached) && cached.length > 0) {
-          return Promise.resolve(cached);
+        if (cached && cached.version === MODELS_CACHE_VERSION && Array.isArray(cached.models) &&
+            Number.isFinite(cached.savedAt) && Date.now() >= cached.savedAt && Date.now() - cached.savedAt < MODELS_CACHE_TTL_MS) {
+          var ranked = rankFastModels(cached.models);
+          if (ranked.length) return Promise.resolve(ranked);
         }
       }
     } catch (e) {}
 
-    return fetchAvailableModels(targetKey).catch(function () {
-      return ['gemini-2.0-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-flash', 'gemini-2.5-flash'];
-    });
+    return Promise.resolve(FAST_MODEL_PROFILES.slice(0, 2).map(function (profile) { return profile.name; }));
   }
 
   /* 測試金鑰是否可用並更新本機模型快取 */
@@ -138,24 +198,186 @@
     }).map(function (k) { return k + '(' + GEM_TYPES[k].name + ')'; }).join('、');
   }
 
+  function translationSignature() {
+    return TRANSLATIONS_VERSION + ':' + gemKeyHint();
+  }
+
+  function cacheablePrompt(prompt) {
+    return prompt.length > 0 && prompt.length <= 2000 &&
+      !/目前|現在|當前|剛才|上次|上一|再|多一|少一|隨機|適合|足夠|最好|最強|剩[下餘]|依照|根據/.test(prompt);
+  }
+
+  function cacheableCommands(commands) {
+    return Array.isArray(commands) && commands.length > 0 && commands.length <= 32 && commands.every(function (line) {
+      return typeof line === 'string' && line.length <= 256 && !/[\r\n]|@sel:|@gm-batch:/i.test(line) &&
+        /^(gold|scrap|essence|dust|equipset|equip|modequip|socketall|stage|level|turn|bag|skillmax|skill_unlock|skill_point|skillxp|masterylv|gem|rune|runeword|xp|mat|part)\s+\S/.test(line);
+    });
+  }
+
+  function allowsAffixOverflow(prompt) {
+    var text = String(prompt || '');
+    if (/(?:不(?:要|可|准|允許|需要|必|能|想|打算)?|禁止|別|沒有|沒|未|無需|無須|毋須)[^，,。；;\n]{0,12}突破/.test(text)) return false;
+    if (/如果|假如|除非|是否|能否|先問|先詢問|先確認|確認後|需要時|才允許|才能|[嗎呢？?]/.test(text)) return false;
+    return /(?:^|[，,。；;（(\n]|且|並)\s*(?:(?:本次|這次)?(?:我(?:明確)?允許|允許|請允許|請(?:幫我)?|幫我)\s*)?突破詞條(?:數量)?上限/.test(text);
+  }
+
+  // 突破權限只取自原始人類輸入；不採信AI自行加的旗標，也不保存內部批次標記。
+  function applyAffixOverflowPolicy(commands, prompt) {
+    var allowed = allowsAffixOverflow(prompt);
+    return commands.map(function (line) {
+      var clean = line.replace(/(?:^|\s)--allow-overcap(?=\s|$)/g, ' ')
+        .replace(/\s+@gm-batch:[^\s]+/g, '').trim();
+      if (allowed && /^(modequip|editequip|equipmod|setequip|itemmod|meq|改裝備)\s/i.test(clean)) {
+        clean += ' --allow-overcap';
+      }
+      return clean;
+    });
+  }
+
+  function readTranslationCache() {
+    var entries = translationMemory;
+    try {
+      if (typeof localStorage !== 'undefined' && !translationStorageUnavailable) {
+        var raw = localStorage.getItem(TRANSLATIONS_KEY);
+        var data = raw && raw.length <= 300000 ? JSON.parse(raw) : null;
+        entries = data && data.version === TRANSLATIONS_VERSION && Array.isArray(data.entries) ? data.entries : [];
+      }
+    } catch (e) { translationStorageUnavailable = true; }
+    var signature = translationSignature();
+    return entries.slice(-TRANSLATIONS_LIMIT).filter(function (entry) {
+      return entry && entry.signature === signature && typeof entry.prompt === 'string' && cacheablePrompt(entry.prompt) &&
+        Number.isFinite(entry.savedAt) && Date.now() >= entry.savedAt && Date.now() - entry.savedAt < TRANSLATIONS_TTL_MS &&
+        cacheableCommands(entry.commands);
+    });
+  }
+
+  function writeTranslationCache(entries) {
+    translationMemory = entries;
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(TRANSLATIONS_KEY, JSON.stringify({ version: TRANSLATIONS_VERSION, entries: entries }));
+        translationStorageUnavailable = false;
+      }
+    } catch (e) { translationStorageUnavailable = true; }
+  }
+
+  function getCachedNaturalCommand(prompt) {
+    if (!isInternal()) return null;
+    var text = String(prompt || '').trim();
+    var entries = readTranslationCache();
+    for (var i = entries.length - 1; i >= 0; i--) {
+      if (entries[i].prompt === text) return applyAffixOverflowPolicy(entries[i].commands, text);
+    }
+    return null;
+  }
+
+  // 由GM面板在整批Worker操作成功後呼叫；不保存選取ID或遊戲狀態。
+  function rememberNaturalCommand(prompt, commands) {
+    var text = String(prompt || '').trim();
+    if (!isInternal() || !cacheablePrompt(text) || !cacheableCommands(commands)) return;
+    commands = applyAffixOverflowPolicy(commands, text);
+    var entries = readTranslationCache().filter(function (entry) { return entry.prompt !== text; });
+    entries.push({ prompt: text, signature: translationSignature(), commands: commands.slice(), savedAt: Date.now() });
+    writeTranslationCache(entries.slice(-TRANSLATIONS_LIMIT));
+  }
+
+  function forgetNaturalCommand(prompt) {
+    if (!isInternal()) return;
+    var text = String(prompt || '').trim();
+    writeTranslationCache(readTranslationCache().filter(function (entry) { return entry.prompt !== text; }));
+  }
+
+  function clearNaturalCommandCache() {
+    if (!isInternal()) return;
+    translationMemory = [];
+    translationStorageUnavailable = false;
+    try { if (typeof localStorage !== 'undefined') localStorage.removeItem(TRANSLATIONS_KEY); }
+    catch (e) { translationStorageUnavailable = true; }
+  }
+
+  function getNaturalPresets() {
+    if (!isInternal()) return [];
+    return [
+      { label: '常用材料', prompt: '金幣、裝備碎片、附魔精華、魔塵各加1000億個' },
+      { label: '神話全套', prompt: '加全身強化+50神話4太古裝備' },
+      { label: '鑲滿10級', prompt: '全身鑲滿10級寶石' },
+      { label: '技能滿級', prompt: '技能全部滿級' }
+    ];
+  }
+
   /* ============ 本地高速直譯通道（Fast-Path，0ms 無延遲直譯） ============ */
-  function parseChineseNum(str) {
+  function parseChineseNum(str, allowFraction) {
     if (!str) return null;
     var s = String(str).trim();
     var sign = 1;
     if (s.charAt(0) === '+') s = s.slice(1).trim();
     else if (s.charAt(0) === '-') { sign = -1; s = s.slice(1).trim(); }
 
-    var m = s.match(/^(\d+(?:\.\d+)?)\s*([億萬千kmb]?)$/i);
+    var m = s.match(/^(\d+(?:\.\d+)?)\s*([兆億萬千百kmb]?)$/i);
     if (!m) return null;
     var val = parseFloat(m[1]);
     var unit = (m[2] || '').toLowerCase();
-    if (unit === '億') val *= 1e8;
+    if (unit === '兆') val *= 1e12;
+    else if (unit === '億') val *= 1e8;
     else if (unit === '萬') val *= 1e4;
     else if (unit === '千' || unit === 'k') val *= 1e3;
     else if (unit === 'm') val *= 1e6;
     else if (unit === 'b') val *= 1e9;
-    return sign * Math.round(val);
+    else if (unit === '百') val *= 1e2;
+    if (!Number.isFinite(val)) return null;
+    return sign * (allowFraction ? val : Math.round(val));
+  }
+
+  function normalizeFastClause(text) {
+    return String(text || '').trim().replace(/^(?:(?:請|麻煩|幫我|幫忙)\s*)+/, '')
+      .replace(/[。！!]+$/, '').replace(/(?:吧|謝謝)$/, '').trim();
+  }
+
+  // 僅完整匹配已知資源名稱，避免數字以外的需求被忽略。
+  function parseFastResources(text) {
+    var s = normalizeFastClause(text);
+    var names = '(?:金幣|錢|裝備碎片|碎片|附魔精華|精華|魔塵|gold|scrap|essence|dust)';
+    var amount = '([+-]?\\d+(?:\\.\\d+)?\\s*[兆億萬千百kmb]?)';
+    var list = '(' + names + '(?:\\s*[、和與及,，]\\s*' + names + ')*)';
+    var m = s.match(new RegExp('^(加|增加|給我|獲得|扣除|減少|扣)?\\s*' + list + '\\s*(?:各)?\\s*(加|增加|扣除|減少|扣)?\\s*' + amount + '\\s*(?:個|枚|份)?$', 'i'));
+    var resources, raw, verb;
+    if (m) { resources = m[2]; raw = m[4]; verb = (m[1] || '') + (m[3] || ''); }
+    else {
+      m = s.match(new RegExp('^(加|增加|給我|獲得|扣除|減少|扣)?\\s*' + amount + '\\s*(?:個|枚|份)?\\s*' + list + '$', 'i'));
+      if (!m) return null;
+      resources = m[3]; raw = m[2]; verb = m[1] || '';
+    }
+    var value = parseChineseNum(raw);
+    if (value === null) return null;
+    if (/扣|減少/.test(verb)) {
+      if (value < 0 || /加|增加/.test(verb)) return null;
+      value = -value;
+    }
+    return resources.split(/\s*[、和與及,，]\s*/).map(function (name) {
+      var key = /^(金幣|錢|gold)$/i.test(name) ? 'gold' : /^(裝備碎片|碎片|scrap)$/i.test(name) ? 'scrap' :
+        /^(附魔精華|精華|essence)$/i.test(name) ? 'essence' : 'dust';
+      return key + ' ' + value;
+    });
+  }
+
+  function parseFastEquipMod(s) {
+    var m = s.match(/^(?:把)?(全身(?:的)?裝備|身上(?:的)?裝備|選中(?:的)?裝備|這件裝備|全身|身上|選中|這件|主手武器|主手|副手|武器|頭盔|肩甲|胸甲|腰帶|手套|護腕|護腿|靴子|戒指1|戒指2|戒指|項鍊|項鏈)(?:的)?\s*(.+)$/);
+    if (!m) return null;
+    var targets = { 主手武器: 'weapon', 主手: 'weapon', 武器: 'weapon', 副手: 'weapon2', 頭盔: 'helmet', 肩甲: 'shoulder', 胸甲: 'chest', 腰帶: 'belt', 手套: 'gloves', 護腕: 'wrist', 護腿: 'legs', 靴子: 'boots', 戒指1: 'ring', 戒指: 'ring', 戒指2: 'ring2', 項鍊: 'amulet', 項鏈: 'amulet' };
+    var target = /^(全身|身上)/.test(m[1]) ? 'wear' : targets[m[1]] || 'sel';
+    var prefix = 'modequip ' + target + ' ';
+    var rest = m[2].trim();
+    if (/^(?:全部|都)?(?:改成|設為|變成)?(?:全|全部)?太古$/.test(rest)) return prefix + 'ancient all';
+    if (/^(?:全部|都)?(?:改成|設為|變成)?(?:非太古|普通詞條)$/.test(rest)) return prefix + 'ancient none';
+    var up = rest.match(/^(?:強化\s*(?:設為|改成|到)?\s*\+?|\+)(\d+)$/);
+    if (up) return prefix + '+' + up[1];
+    var affix = rest.match(/^(?:加上|增加|新增)?(物理攻擊|物攻|魔法攻擊|魔攻|生命|吸血|吸魔|寶石鑲嵌效率|暴擊率|暴傷|冷卻縮減|攻速)\s*(?:設為|改成|改為|到)?\s*([+-]?\d+(?:\.\d+)?\s*[兆億萬千百kmb]?)\s*(%|％)?\s*(?:(?:且|並)?(?:為|設為)?(太古|非太古))?$/i);
+    if (!affix) return null;
+    if (affix[3] && /^(物理攻擊|物攻|魔法攻擊|魔攻|生命)$/.test(affix[1])) return null;
+    var keys = { 物理攻擊: 'atkFlat', 物攻: 'atkFlat', 魔法攻擊: 'matkFlat', 魔攻: 'matkFlat', 生命: 'hpFlat', 吸血: 'lifesteal', 吸魔: 'manaSteal', 寶石鑲嵌效率: 'gemEff', 暴擊率: 'critRate', 暴傷: 'critDmg', 冷卻縮減: 'cdr', 攻速: 'aspd' };
+    var value = parseChineseNum(affix[2], true);
+    if (value === null) return null;
+    return prefix + keys[affix[1]] + ' ' + value + (affix[4] ? (affix[4] === '太古' ? ' ancient' : ' normal') : '');
   }
 
   var FAST_RARITY_MAP = {
@@ -173,8 +395,11 @@
   };
 
   function parseSingleFastClause(rawClause) {
-    var s = String(rawClause || '').trim();
+    var s = normalizeFastClause(rawClause);
     if (!s) return null;
+    var modification = parseFastEquipMod(s);
+    if (modification) return modification;
+    s = s.replace(/(\d)\s*(?:個|顆|點)$/, '$1');
 
     // 1. 貨幣與材料：金幣 / 碎片 / 精華 / 魔塵
     var mGold = s.match(/^(?:加|增加|給我|獲得)?\s*(?:金幣|錢|gold)\s*([+-]?\d+[\w億萬千kmb]*)$/i) ||
@@ -218,6 +443,15 @@
       }
 
       if (qMatch) {
+        // 發放裝備必須吃完整句；不能把修改單件、未知附加要求當成發放全套。
+        var remainder = s.replace(qWord, ' ').replace(/\d+\s*級|(?:強化\s*\+?|\+)\d+|\d+\s*太古|全太古/g, '')
+          .replace(/^(?:加|增加|給我|獲得|穿上|換上|換成)/, '')
+          .replace(/^全身換(?:成|上)?/, '全身')
+          .replace(/全身|套裝|裝備|穿戴|放入背包|放背包|進背包|到背包|的/g, '').trim();
+        if (remainder || !/全身|套裝/.test(s) && !/^(?:加|增加|給我|獲得|穿上|換上|換成)/.test(s)) return null;
+        if ((s.match(/\d+\s*級/g) || []).length > 1 ||
+            (s.match(/(?:強化\s*\+?|\+)\d+/g) || []).length > 1 ||
+            (s.match(/\d+\s*太古|全太古/g) || []).length > 1) return null;
         var lvMatch = s.match(/(\d+)\s*級/);
         var setLv = lvMatch ? parseInt(lvMatch[1], 10) : 500;
         var upMatch = s.match(/(?:\+|強化\s*\+?)(\d+)/);
@@ -322,36 +556,50 @@
 
   function parseFastPath(userPrompt) {
     if (!userPrompt) return null;
-    var trimmed = String(userPrompt).trim();
+    var trimmed = normalizeFastClause(userPrompt);
     if (!trimmed) return null;
+    if (allowsAffixOverflow(userPrompt)) {
+      trimmed = trimmed.replace(/(?:且|並且|並)?\s*(?:[（(]\s*)?(?:允許)?突破詞條(?:數量)?上限(?:\s*[）)])?/g, '').trim();
+    }
+
+    var resources = parseFastResources(trimmed);
+    if (resources) return resources;
 
     // 將白話文句按分隔符分割成子句
-    var parts = trimmed.split(/(?:[，,、;；\n]+|然後|並且|再把|再加|接著)/);
+    var parts = trimmed.split(/(?:[，,、;；\n。]+|然後|並且|而且|再把|再加|接著)/);
     var clauses = parts.map(function (p) { return p.trim(); }).filter(Boolean);
     if (!clauses.length) return null;
 
     var resultCmds = [];
     for (var i = 0; i < clauses.length; i++) {
+      var resourceCmds = parseFastResources(clauses[i]);
+      if (resourceCmds) {
+        resultCmds = resultCmds.concat(resourceCmds);
+        continue;
+      }
       var cmd = parseSingleFastClause(clauses[i]);
       if (!cmd) {
         return null; // 若有任何一個子句無法完全由本機直譯，交回 Gemini LLM
       }
       resultCmds.push(cmd);
     }
-    return resultCmds.length ? resultCmds : null;
+    return resultCmds.length ? applyAffixOverflowPolicy(resultCmds, userPrompt) : null;
   }
 
   /* 使用 Gemini 將白話文自然語言轉為標準 GM 指令陣列 */
-  function parseNaturalCommand(userPrompt, customKey) {
+  function parseNaturalCommand(userPrompt, customKey, onProgress) {
     if (!isInternal()) {
       return Promise.reject(new Error('自然語言 GM 功能僅限內測環境使用'));
     }
+    cancelNaturalCommand();
 
     // 優先執行 0ms 本地高速直譯
     var fastResult = parseFastPath(userPrompt);
     if (fastResult && fastResult.length) {
       return Promise.resolve(fastResult);
     }
+    var cachedResult = getCachedNaturalCommand(userPrompt);
+    if (cachedResult) return Promise.resolve(cachedResult);
 
     var key = customKey || getApiKey();
     if (!key) {
@@ -375,7 +623,10 @@
       '     * 太古數：例如「4太古」填 4，未提填 0\n' +
       '     * wear/inv：提到換裝、穿上、全身或套裝一律填 wear；放背包填 inv\n' +
       '   - equip <品質> <裝備等級> [部位] [數量] [強化等級] [太古數]：單件裝備\n' +
-      '   - modequip [目標] <屬性> <數值> [ancient|normal]：直接修改裝備詞條、數值或太古\n' +
+      '   - modequip [目標] <屬性> <數值> [ancient|normal]：修改已有詞條；不存在時替換現有詞條，不增加條數\n' +
+      '     * 一般裝備詞條數必須維持品質正常數量，雙手武器依正常加成；全太古只改既有詞條。創世胸甲是7條，不能因指定吸血／吸魔變成9條。\n' +
+      '     * 同句多個屬性用多條modequip依序設定，系統會保護本批次先前指定的詞條；超過現有槽數須報錯，不能自行突破。\n' +
+      '     * 只有玩家原句明確說「突破詞條上限」時，才能加 --allow-overcap 允許追加；單純「加上／增加屬性」不代表突破，禁止自行加旗標。\n' +
       '     * 目標：wear（全身 13 件穿戴裝備批次修改）、sel / 省略（選中裝備）、inv（背包選中裝備）、set1 weapon（第1套主手）、1 1（第1套第1部位）、weapon、helmet、amulet 等\n' +
       '     * 太古操作：modequip wear ancient all（全身裝備全部變太古）、modequip [目標] ancient all、ancient none（全部變非太古）、ancient 4（前4條太古）\n' +
       '     * 強化操作：modequip wear +100（全身強化設為+100）、modequip [目標] +100\n' +
@@ -430,10 +681,12 @@
       '輸入：「紅寶石10級給我50顆，符文每種10個」\n' +
       '輸出：["gem ruby 10 50", "rune all 10"]\n';
 
-    return getCandidateModels(key).then(function (candidates) {
-      if (AiKeySetting._lastWorkingModel && candidates.indexOf(AiKeySetting._lastWorkingModel) >= 0) {
-        candidates = [AiKeySetting._lastWorkingModel].concat(candidates.filter(function (m) { return m !== AiKeySetting._lastWorkingModel; }));
-      }
+    var request = createNaturalRequest();
+    var parsing = Promise.resolve().then(function () {
+      return getCandidateModels(request);
+    }).then(function (candidates) {
+      request.check();
+      candidates = candidates.slice(0, 2);
 
       var body = {
         contents: [
@@ -445,18 +698,58 @@
         ],
         generationConfig: {
           temperature: 0,
-          maxOutputTokens: 256,
+          maxOutputTokens: 1024,
           response_mime_type: 'application/json'
         }
       };
 
       function callSingleModel(modelName) {
+        request.check();
+        var controller = new AbortController();
+        var deadline = Date.now() + NATURAL_ATTEMPT_TIMEOUT_MS;
+        var stopped = null;
+        var rejectStopped;
+        var attemptStopped = new Promise(function (_, reject) { rejectStopped = reject; });
+        function stopAttempt(error) {
+          if (stopped) return;
+          stopped = error;
+          rejectStopped(error);
+          controller.abort();
+        }
+        function timeoutError() {
+          var error = new Error('已超過30秒無回應');
+          error.name = 'AttemptTimeoutError';
+          return error;
+        }
+        function checkAttempt() {
+          request.check();
+          if (!stopped && Date.now() >= deadline) stopAttempt(timeoutError());
+          if (stopped) throw stopped;
+        }
+        function cancelAttempt() {
+          try { request.check(); } catch (error) { stopAttempt(error); }
+        }
+        var timer = setTimeout(function () { stopAttempt(timeoutError()); }, NATURAL_ATTEMPT_TIMEOUT_MS);
+        request.signal.addEventListener('abort', cancelAttempt, { once: true });
+        function finishAttempt() {
+          clearTimeout(timer);
+          request.signal.removeEventListener('abort', cancelAttempt);
+        }
+        var profile = FAST_MODEL_PROFILES.find(function (item) { return item.name === modelName; });
+        var modelBody = Object.assign({}, body, {
+          generationConfig: Object.assign({}, body.generationConfig, { thinkingConfig: profile.thinkingConfig })
+        });
         var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(modelName) + ':generateContent?key=' + encodeURIComponent(key);
-        return fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
+        var work = Promise.resolve().then(function () {
+          checkAttempt();
+          return fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            signal: controller.signal,
+            body: JSON.stringify(modelBody)
+          });
         }).then(function (res) {
+          checkAttempt();
           if (!res.ok) {
             return res.json().catch(function () { return {}; }).then(function (data) {
               var msg = (data && data.error && data.error.message) || ('HTTP ' + res.status);
@@ -465,38 +758,70 @@
           }
           return res.json();
         }).then(function (data) {
+          checkAttempt();
           var candidate = data && data.candidates && data.candidates[0];
-          var part = candidate && candidate.content && candidate.content.parts && candidate.content.parts[0];
-          var rawText = (part && part.text) || '';
+          if (candidate && candidate.finishReason && candidate.finishReason !== 'STOP') {
+            throw new Error('AI 指令回應未完整結束');
+          }
+          var parts = candidate && candidate.content && candidate.content.parts || [];
+          var rawText = parts.filter(function (part) { return part && !part.thought && typeof part.text === 'string'; })
+            .map(function (part) { return part.text; }).join('');
           if (!rawText.trim()) throw new Error('AI 未回傳任何指令');
           var list = JSON.parse(rawText);
           if (!Array.isArray(list)) {
             if (typeof list === 'string') list = [list];
             else throw new Error('AI 回傳格式不正確');
           }
+          checkAttempt();
           AiKeySetting._lastWorkingModel = modelName;
-          return list.map(function (c) { return String(c).trim(); }).filter(Boolean);
+          if (!list.every(function (c) { return typeof c === 'string' && c.trim() && !/[\r\n]/.test(c); })) {
+            throw new Error('AI 回傳的指令格式不正確');
+          }
+          return applyAffixOverflowPolicy(list.map(function (c) { return c.trim(); }), userPrompt);
+        });
+        return Promise.race([work, attemptStopped]).then(function (commands) {
+          checkAttempt();
+          return commands;
+        }).then(function (commands) {
+          finishAttempt();
+          return commands;
+        }, function (error) {
+          finishAttempt();
+          throw error;
         });
       }
 
       var lastError = null;
-      function tryModel(index) {
-        if (index >= candidates.length) {
+      function tryModel(index, previousError) {
+        request.check();
+        if (!candidates.length || index > NATURAL_MAX_RETRIES) {
           try {
             if (typeof localStorage !== 'undefined') localStorage.removeItem(MODELS_CACHE_KEY);
           } catch (e) {}
           var detailMsg = lastError ? (lastError.message || String(lastError)) : '所有備用模型均無法回應';
-          throw new Error('AI 解析失敗：Google Gemini 所有可用備用模型均處於尖峰或無法回應（' + detailMsg + '），請稍候 30 秒至 1 分鐘後再試。');
+          throw new Error('雲端解析失敗，最多重試3次已用完，指令未執行（' + detailMsg + '）。');
         }
-        var modelName = candidates[index];
+        var modelName = candidates[index % candidates.length];
+        if (typeof onProgress === 'function') onProgress({
+          model: modelName, attempt: index + 1, retry: index,
+          reason: previousError && previousError.name === 'AttemptTimeoutError' ? 'timeout' : index ? 'error' : 'start'
+        });
         return callSingleModel(modelName).catch(function (err) {
+          request.check();
           lastError = new Error(modelName + ': ' + err.message);
-          console.warn('[AI GM] 模型 ' + modelName + ' 回應異常 (' + err.message + ')，自動切換至下一個備用模型...');
-          return tryModel(index + 1);
+          return tryModel(index + 1, err);
         });
       }
 
       return tryModel(0);
+    });
+    return Promise.race([parsing, request.stopped]).then(function (commands) {
+      request.check();
+      request.finish();
+      return commands;
+    }).catch(function (err) {
+      request.finish();
+      throw err;
     });
   }
 
@@ -609,6 +934,16 @@
     testApiKey: testApiKey,
     parseFastPath: parseFastPath,
     parseNaturalCommand: parseNaturalCommand,
+    cancelNaturalCommand: cancelNaturalCommand,
+    getCachedNaturalCommand: getCachedNaturalCommand,
+    rememberNaturalCommand: rememberNaturalCommand,
+    forgetNaturalCommand: forgetNaturalCommand,
+    clearNaturalCommandCache: clearNaturalCommandCache,
+    getNaturalPresets: getNaturalPresets,
+    applyAffixOverflowPolicy: applyAffixOverflowPolicy,
+    getNaturalTiming: function () {
+      return { attemptTimeoutMs: NATURAL_ATTEMPT_TIMEOUT_MS, maxRetries: NATURAL_MAX_RETRIES, totalTimeoutMs: NATURAL_TIMEOUT_MS };
+    },
     initUI: initUI
   };
 
