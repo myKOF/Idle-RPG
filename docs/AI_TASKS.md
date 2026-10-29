@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## GM-FAST-PARSE-DEADLINE-20261030 — 常用白話本機解析與雲端十秒取消
+
+- Owner：Codex；Done，單一開發者。使用者授權擴充常用白話解析、雲端整體最多10秒並取消逾時請求，禁止遲到結果執行。前置：既有GM／Worker執行介面完成。
+- 允許：js/ai-key-setting.js、js/gm.js、兩檔主頁快取、tests/ai-key-setting.test.cjs、tests/gm-fastpath.test.cjs、新增tests/gm-natural-timeout.test.cjs、GM_command.md、LV_upgrade_system.md及本段。禁止玩法／Worker協議／Excel／素材、其他工作區及合併推送。
+- 預檢：程式／測試／文件無外部來源；index與Claude 4b0844ce只重疊於同檔，不同行（對方strings_data快取，本次GM兩檔快取），無語意相依，實際候選＋共同祖先＋Claude工作檔merge-file試跑exit0，可分段修改。
+- 驗收：常見語助詞／數量單位／複合句及裝備修改直譯；未知或未完整辨識的句子不部分執行；模型探索、重試與回應讀取共用10秒期限、AbortSignal取消、遲到結果／新指令／關框失效；相關GM回歸、Build、Console及diff驗證後獨立Commit，使用者正常整合。
+- 完成九檔：上述兩支JS、index、兩項既有測試與新增timeout回歸、GM_command／LV／本段。增加語助詞與數量後綴、小數與萬億兆／kmb單位、材料扣減／多資源共量、裝備強化／太古／部分詞條本機解析；完整辨識後才送Worker，未吃完的裝備描述不能誤發全套。保留既有「當前裝備太古」目標語意與詞條小數，平面數值加百分比等歧義回退。雲端以AbortController＋Promise競速＋交付前實際期限檢查保護探索／重試／body，最多兩模型、共用10秒；新提交與關框取消，generation阻擋舊回應覆蓋新狀態。只取消尚未交付的翻譯，已執行Worker操作不撤銷。兩支JS主頁快取均升1.0.2，無Worker／存檔／Excel／素材變更。
+- 驗證指令：`node --test --test-reporter=spec tests/ai-key-setting.test.cjs tests/gm-fastpath.test.cjs tests/gm-natural-timeout.test.cjs tests/gm-command.test.cjs tests/gm-modequip.test.cjs tests/gm-perf-command.test.cjs tests/gm-skill-point.test.cjs tests/gm-skill-test-tools.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs` 全部91/91通過；`npm.cmd run build`全部600檔通過；`git diff --check`通過。修正原備援測試輸入，使其確實呼叫兩次雲端替身，而非被本機快徑攔截；未降低斷言。
+- 額外既有問題：加入`tests/gm-skill-unlock.test.cjs`的94項套件為93過／1失敗（關閉解鎖後loadoutSize實際2、舊斷言4）。以唯讀fs覆映將該測試所有js載入來源改取`git show HEAD:<path>`，修改前同為2過／1失敗、同一斷言；該測試不載入本次兩支JS，未改斷言或無關玩法。
+- 瀏覽器：IAB無可用backend，改bundled Playwright＋隔離headless Edge、隨機localhost，載入正式兩支GM腳本，Worker執行替身／假Key及本地延遲12秒雲端替身。實際鍵盤提交複合白話17ms送出兩條正確指令；原生timer約10023ms取消網路連線，超過原12秒回應時刻仍無遲到指令；新指令／Escape各取消舊請求，共3次原生abort，Console error／warning與pageerror0。截圖與browser-report.json存本聊天visualizations/gm-fast-parse，非玩家存檔；未呼叫真Gemini或完整遊玩／多瀏覽器。背景節流可能延遲提示出現，但交付前仍拒絕過期結果。
+- 唯讀未改：共通規範／Workflow／Agent、gm_exec目標與詞條語意、既有GM／技能／String／快取回歸、package與Claude index快取差異。自我Review完成，無本次未完成項或新增已知功能風險，可供Review／合併；無素材庫變更。Commit為本段所在「[Codex] fix: 加速常用GM白話指令並限制雲端解析十秒」，編號見交付；未合併／推送。下一步使用者正常整合並重新載入遊戲驗收，未知自由描述保留雲端處理。
+
 ## RUNE-BALANCE-STATS-20261029 — 符文與符文真言各部位屬性最大值平衡性統計報告
 
 - Owner：Antigravity；Done，單一開發者。使用者要求統計現有符文在各裝備（武器、裝備／防具、飾品三大部位）上的總合數值強度與可獲得各類屬性最大值，符文與符文真言分開統計（符文全統計完再統計符文真言），並輸出為 `.md` 檔。

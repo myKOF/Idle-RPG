@@ -5,6 +5,14 @@
 
 (function () {
   var gmUi = null;
+  var parseGeneration = 0;
+
+  function cancelPendingParse() {
+    parseGeneration++;
+    if (typeof AiKeySetting !== 'undefined' && typeof AiKeySetting.cancelNaturalCommand === 'function') {
+      AiKeySetting.cancelNaturalCommand();
+    }
+  }
 
   /* 本機判定。gm_exec.js 也有同名函式，但 P5 起那支只由 Worker 載入，
      主執行緒拿不到——這裡是純環境檢查、沒有狀態，複製一份比為了它把
@@ -73,8 +81,8 @@
     return cmdLine;
   }
 
-  function executeCommandSequence(commands, originPrompt) {
-    setGMStatus('🤖 AI 解析為：[' + commands.join('; ') + ']，執行中…', true);
+  function executeCommandSequence(commands, originPrompt, local) {
+    setGMStatus((local ? '⚡ 本機' : '🤖 AI') + '解析為：[' + commands.join('; ') + ']，執行中…', true);
     var index = 0;
     var results = [];
 
@@ -116,6 +124,8 @@
   function submitGMCommand(text) {
     var rawText = String(text || '').trim();
     if (!rawText) return;
+    cancelPendingParse();
+    var generation = parseGeneration;
 
     var local = runClientCommand(rawText);
     if (local) { setGMStatus(local.message, local.ok); return; }
@@ -129,7 +139,7 @@
         if (typeof AiKeySetting.parseFastPath === 'function') {
           var fastCmds = AiKeySetting.parseFastPath(rawText);
           if (fastCmds && fastCmds.length) {
-            executeCommandSequence(fastCmds, rawText);
+            executeCommandSequence(fastCmds, rawText, true);
             return;
           }
         }
@@ -139,14 +149,23 @@
             setGMStatus('⚠️ 檢測到白話指令，但尚未設定 Gemini 金鑰。請按 Esc ➔ 設置貼上金鑰。', false);
             return;
           }
-          setGMStatus('🤖 AI 正在理解指令中…', true);
+          var parseDeadline = Date.now() + 10000;
+          setGMStatus('🤖 AI 正在理解指令中…（最多10秒）', true);
           AiKeySetting.parseNaturalCommand(rawText).then(function (cmdList) {
+            if (generation !== parseGeneration) return;
+            // 背景分頁的 timer 可能延後觸發，交付指令前再核對實際時間。
+            if (Date.now() >= parseDeadline) {
+              cancelPendingParse();
+              setGMStatus('❌ 雲端解析超過10秒，已取消，指令未執行。', false);
+              return;
+            }
             if (!cmdList || !cmdList.length) {
               setGMStatus('❌ AI 無法識別該指令，請換個說法試試。', false);
               return;
             }
             executeCommandSequence(cmdList, rawText);
           }).catch(function (err) {
+            if (generation !== parseGeneration) return;
             setGMStatus('❌ AI 解析失敗：' + (err && err.message ? err.message : String(err)), false);
           });
           return;
@@ -164,6 +183,7 @@
   }
 
   function closeGM() {
+    cancelPendingParse();
     if (!gmUi) return;
     gmUi.panel.style.display = 'none';
   }
