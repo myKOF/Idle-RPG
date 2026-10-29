@@ -465,6 +465,7 @@ function takeAutoSalvageCandidate(items) {
    若包內全為神話+，則與「未鎖定中評分最低者」捨弱留強交換，
    新物品較弱（或包內全上鎖）時分解新物品。上鎖裝備永不被動分解。 */
 function addToInventory(it) {
+  if (typeof forgeNoteRarity === 'function') forgeNoteRarity(it);
   var cap = typeof inventoryCapacityWithTalents === 'function' ? inventoryCapacityWithTalents() : INVENTORY_CAP + (G.player.invUpgrades || 0);
   if (G.inventory.length < cap) {
     G.inventory.push(it);

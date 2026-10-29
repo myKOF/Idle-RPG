@@ -6908,13 +6908,14 @@ function renderForge() {
   setAttrIfChanged(goBtn, 'data-tip', STR(goTipIds[mode]) + (goRate ? '<br>' + STR(2222, fmt(goRate.cost)) : ''));
   $id('forge-auto').checked = !!f.auto;
   $id('forge-auto').disabled = mode !== 'equip' || isUiCommandPending(nodePendingKey('forge'));
-  setHtmlIfChanged($id('forge-log'), (f.log || []).slice(0,10).map(function (entry) { return '<div class="forge-log-line ' + entry.cls + '" data-tip="' + esc(entry.msg) + '">' + esc(entry.msg) + '</div>'; }).join(''));
+  setHtmlIfChanged($id('forge-log'), (f.log || []).slice(0,10).map(function (entry) { return '<div class="forge-log-line ' + entry.cls + '">' + esc(entry.msg) + '</div>'; }).join(''));
   document.querySelectorAll('[data-forge-quality]').forEach(function (btn) {
     var rarity = Number(btn.getAttribute('data-forge-quality'));
     setTextIfChanged(btn, RARITIES[rarity].name);
     btn.classList.toggle('active', rarity === (f.quality || 6));
     btn.setAttribute('aria-pressed', String(rarity === (f.quality || 6)));
     btn.disabled = pending;
+    btn.hidden = !forgeQualityUnlocked(rarity, f.seenRarity);
   });
   var gemMode = mode === 'gem';
   UI.forgeInvTab = gemMode ? 'gems' : 'items';
