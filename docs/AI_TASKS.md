@@ -13210,3 +13210,15 @@ Worker 存活且頁面正常完成載入。
 - 唯一原始衝突 docs/AI_TASKS.md：保留主線檔首符文統計及來源檔尾三輪神話底色紀錄；以唯讀三方逐行順序核對，base／ours／theirs 全部內容均保留，工作檔無衝突標記。保留自動合入的 css/style.css、index.html（CSS105）與 LV_upgrade_system.md，神話詳情／tips 最終採暖金／共用銀藍底加20%黑色背景；主線創世圖示調亮及符文報告不受影響。沒有 Excel、JS／Worker、生成資料或素材庫變更。
 - 驗證：node --test --test-reporter=spec tests/equipment-tooltip-compare.test.cjs tests/equipment-two-hand-display.test.cjs tests/equipment-selection-border.test.cjs 全部16/16通過；npm.cmd run build 全部599檔通過；git diff HEAD --check 完整合併結果通過。未改測試斷言。唯讀檢查共通規範、Workflow、Codex規範、三方任務差異及來源三檔樣式／文件差異；未執行瀏覽器視覺或完整遊玩驗收。
 - 無本項未完成實作或已知新增回歸，可由 controller 暫存四個回報檔案並建立 merge commit；HEAD／MERGE_HEAD 保持原值，索引尚有 unmerged entry 為交接預期。本輪不提交、不推送，無素材庫路徑或 Excel DATA plan。
+
+
+## WORLD-MAP-PORTAL-CLOUD-VORTEX-20261030 — 懸空雲底與黑洞氣旋傳送門
+
+- Owner：Codex；Done，單一開發者。使用者要求取消實體底座，改為適合空中的浮雲；沿用藍白帶黑色，增加門內黑洞／旋渦及門外光暈／氣旋。
+- 允許：index.html傳送門SVG／裝飾標記及world-map CSS快取、css/world-map.css、docs/WORLD_MAP.md、LV_upgrade_system.md既有傳送門說明及本段；禁止玩法／JS／Worker／存檔／Excel／顯示文字／地圖原圖／獨立素材、其他工作區及合併推送。前置既有門體及400關通關測試存檔完成。
+- 衝突預檢：CSS／WORLD_MAP／AI_TASKS無外部來源；index與Claude神鑄標記／其他script快取不同區段，實際候選對共同祖先及Claude工作檔merge-file exit0。LV檔尾追加試跑衝突，改更新既有傳送門說明後仍因檔首前輪GM紀錄與Claude規則的既有衝突回報exit1；使用者已明確核准僅分段更新既有傳送門說明，保留檔首及其他區段，既有衝突留正常整合。
+- 驗收：浮雲取代石階、門內旋流與深黑核心、門外光暈／流動風弧、點擊／鍵盤／返回、縮減動態、桌面與窄屏、Console／相關回歸／Build／diff；完成後獨立Commit。全為既有介面SVG／CSS，無獨立美術檔及VFX Preset／素材庫變更。
+- 完成五檔：index刪除石階／平台／底座寶石，以內嵌SVG雲層承托門框；共用單條螺旋路徑生成三臂旋流，深黑核心及反向光環、門外四道氣流／光暈／光粒由CSS動畫呈現，各風弧依dash週期無縫循環。world-map CSS快取升1.0.8，WORLD_MAP及LV既有傳送門說明同步；未新增玩家文字、Timer、JS、獨立美術檔或Preset，素材庫無變動／無Commit。
+- 驗證：node --test --test-reporter=spec tests/world-map-ui.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs全部27/27通過；npm.cmd run build全部601檔通過；git diff --check通過。隔離Edge載入正式index／真Worker與獨立測試檔，1558×900／390×844確認門內旋流transform持續改變、裝飾pointer-events:none、點擊與鍵盤Space可開神界及返回、焦點框可見；窄屏documentWidth390、入口完整，emulateMedia減少動態時門體全部animation:none。原測試服/favicon.ico既有404保留，新增Console Error／Warning及pageerror0。
+- 預覽：32幀實際瀏覽器截圖編成portal-motion.gif，桌面／窄屏／局部與browser-report.json保留本聊天visualizations/portal-cloud-vortex；中間影格已刪除。IAB舊連線失效後先以隔離Playwright驗證，再重設CUA恢復連線、重載使用者8131頁並確認新版，戰鬥暫停停在人界入口。內測Enter既有GM快捷鍵會開指令框，故本次鍵盤驗收使用Space，未修改GM或世界地圖JS。
+- 唯讀檢查未改：規範／Workflow／Codex規範、WorldMapUI／Worker關卡權限、String及地圖原圖、既有三項回歸、其他AI差異。自我Review完成，可供Review／合併，沒有本項未完成實作；未驗全庫／多瀏覽器長戰。提交只含本任務五檔增量，index其他GM快取與AI_TASKS檔首新GM任務及其他JS進行中修改保留、不暫存；不合併推送。Commit為本段所在「[Codex] feat: 傳送門改為浮雲與黑洞氣旋」，編號見交付。
