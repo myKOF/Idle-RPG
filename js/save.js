@@ -492,7 +492,7 @@ function migrateSave(data) {
     });
   }
   if (!hadDivineForgeV2 && data.forge) delete data.forge.version;
-  if (typeof forgeMigrateState === 'function') forgeMigrateState(data);
+  if (typeof forgeMigrateState === 'function') forgeMigrateState(data, true);
   // 神鑄鑄造記錄只是暫存：重新載入（網頁刷新）就清空，不跨次保留
   if (data.forge) data.forge.log = [];
   if (data.settings) delete data.settings.useAncientEssence;
