@@ -6930,7 +6930,7 @@ function renderForge() {
       if (!count || !isGemEnabled(type)) continue;
       var enabled = !pending && (counts[type] || 0) < DIVINE_FORGE.gemPerType && (!!counts[type] || Object.keys(counts).length < 2);
       gemKeys.push(type);
-      gemHtml.push('<button type="button" class="item-cell forge-gem-cell" data-forge-gem="' + type + ':' + GEM_FORGE_MAX_LEVEL + '" data-tip="' + esc(gemLabel(type, GEM_FORGE_MAX_LEVEL)) + '"' + (enabled ? '' : ' disabled') + '>' + gemIconHTML(type, GEM_FORGE_MAX_LEVEL, 'gi-cell') + '<span class="gem-cnt">×' + fmt(count) + '</span></button>');
+      gemHtml.push('<button type="button" class="item-cell forge-gem-cell" data-forge-gem="' + type + ':' + GEM_FORGE_MAX_LEVEL + '" data-tip="' + esc(gemLabel(type, GEM_FORGE_MAX_LEVEL)) + '<br>' + esc(GEM_TYPES[type].statName.replace('%', '') + ' ' + gemValueText(type, GEM_FORGE_MAX_LEVEL)) + '"' + (enabled ? '' : ' disabled') + '>' + gemIconHTML(type, GEM_FORGE_MAX_LEVEL, 'gi-cell') + '<span class="gem-cnt">×' + fmt(count) + '</span></button>');
     }
     syncItemGridCells($id('forge-gem-grid'), gemKeys, gemHtml);
     setTextIfChanged($id('forge-gem-count'), fmt(forgeViewTotalGems(gems)));
