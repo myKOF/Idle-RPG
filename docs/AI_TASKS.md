@@ -13157,3 +13157,10 @@ Worker 存活且頁面正常完成載入。
 - 完成四檔：神話tips卡與詳情外框的reading-veil由極深綠黑改淡暖金棕內襯，雙手共用副手另以淡銀藍內襯配其原銀藍框；僅兩個局部CSS變數，不動icon共用漸層／文字／邊框與角飾／創世外觀。index CSS103，LV及本段同步；沒有JS／資料／獨立美術檔或素材庫變動。
 - 驗證：`node --test --test-reporter=spec tests/equipment-tooltip-compare.test.cjs tests/equipment-two-hand-display.test.cjs tests/equipment-selection-border.test.cjs`16/16、`npm.cmd run build`599檔、`git diff --check`通過。隔離Edge＋正式渲染函式及全套CSS fixture驗1024×830神話詳情、神話tips與創世對照；390×844 documentWidth=390、詳情壓300px高並捲176px時外框固定；實際雙手斧副手詳情與tips皆帶twohand-shared並用銀藍veil，icon仍原漸層。Console error／warning及pageerror0，截圖與JSON保存本聊天visualizations/mythic-reading-tint；未跑真Worker／完整遊玩／多瀏覽器。
 - 唯讀檢查規範／前輪紀錄、神話圖示／詳情CSS與三項裝備回歸、Antigravity符文統計提交；未修改其紀錄／分支或其他工作區。自我Review完成，無本次未完成實作／已知功能風險，可合併；提交為本段所在「[Codex] feat: 神話裝備詳情與提示加入暖金底色」，編號見交付。未合併推送，下一步使用者正常整合並重新載入。
+
+## MYTHIC-READING-LIGHTEN-20261029 — 神話詳情與tips底色減深兩成
+
+- Owner：Codex；Done。使用者要求神話底色再淺約-20%，沿前輪明確範圍僅調整詳情／tips，icon不變。將暖金棕及雙手共用銀藍閱讀遮罩不透明度乘0.8；保留配色、文字與外框。允許css/style.css、index.html CSS快取、LV_upgrade_system.md及本段；禁止JS／文字／玩法／獨立素材／其他工作區與合併推送。前置前輪樣式完成，三程式檔預檢乾淨；AI_TASKS本次只追加檔尾，與Antigravity 46423fce檔首符文統計紀錄分段、無語意相依，三方試跑exit0後寫入。驗詳情／tips與兩種內襯、文字對比、相關回歸／Build與diff後Commit。
+- 完成四檔：暖金棕veil .82/.80→.656/.64，銀藍veil .78/.82→.624/.656，均精確減少20%遮罩深度，不代表整個畫面每像素亮度固定增20%；index CSS104、LV及本段同步。沒有改icon漸層、圖片、文字、邊框／角飾或其他品質，無素材庫變更。
+- 驗證：`node --test --test-reporter=spec tests/equipment-tooltip-compare.test.cjs tests/equipment-two-hand-display.test.cjs tests/equipment-selection-border.test.cjs`16/16、`npm.cmd run build`599檔、`git diff --check`通過。隔離Edge＋正式渲染函式及全套CSS fixture驗800×760詳情／tips相同veil、文字清楚，390×844 documentWidth=390／捲動正常；雙手斧共用副手詳情與tips皆正確套銀藍veil，Console error／warning及pageerror0。詳情單圖、詳情與tips並排、窄屏及JSON存本聊天visualizations/mythic-reading-lighter；未驗真Worker／完整遊玩／多瀏覽器。
+- 唯讀檢查前輪紀錄與品質CSS、既有裝備回歸及Antigravity任務增量；其他分支／工作區未動。自我Review完成，無本項未完成實作／已知功能風險，可供合併；提交為本段所在「[Codex] fix: 神話裝備詳情與提示底色減深兩成」，編號見交付，未合併推送。下一步使用者正常整合並重載。

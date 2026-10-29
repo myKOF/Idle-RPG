@@ -5939,13 +5939,13 @@ textarea:disabled,
 #sk-tooltip .equip-detail-card.mythic-detail,
 #tab-equip .equip-detail-frame:has(> #detail-pane.has-detail.mythic-detail) {
   /* 暖金棕閱讀底呼應品質金屬框，僅調整tips與詳情，不影響圖示。 */
-  --mythic-reading-veil: linear-gradient(rgb(24 18 13 / 0.82), rgb(24 18 13 / 0.80));
+  --mythic-reading-veil: linear-gradient(rgb(24 18 13 / 0.656), rgb(24 18 13 / 0.64));
 }
 
 #sk-tooltip .equip-detail-card.mythic-detail.twohand-shared,
 #tab-equip .equip-detail-frame:has(> #detail-pane.has-detail.mythic-detail.twohand-shared) {
   /* 複製副手的銀藍框仍配銀藍閱讀底，保持共用提示。 */
-  --mythic-reading-veil: linear-gradient(rgb(15 24 25 / 0.78), rgb(13 20 23 / 0.82));
+  --mythic-reading-veil: linear-gradient(rgb(15 24 25 / 0.624), rgb(13 20 23 / 0.656));
 }
 
 #sk-tooltip .equip-detail-card.mythic-detail::before,
