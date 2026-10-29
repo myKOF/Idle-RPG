@@ -12941,14 +12941,23 @@ function initUI() {
   });
 
   // 四功能神鑄：所有狀態更動交由 Worker 驗證。
+  function forgeMarkActive(selector, target) {
+    if (target.disabled) return;
+    document.querySelectorAll(selector).forEach(function (btn) { btn.classList.toggle('active', btn === target); });
+  }
+  // 只等這個指令真正會改到的面板：每多等一個，就多一次 Worker 往返（inv 要複製整個背包），按鈕就晚一拍才解鎖。
+  var FORGE_WAIT_PANELS = { 'forge.setOperation':['forge','inv'], 'forge.setQuality':['forge','inv'], 'forge.setStones':['forge'], 'forge.setAuto':['forge','inv','header'] };
   function forgeCommand(name, args) {
-    return sendUiCommand(name, args || {}, { keys:[nodePendingKey('forge')], panels:['forge','inv','gems','header'] }).catch(function (error) {
+    return sendUiCommand(name, args || {}, { keys:[nodePendingKey('forge')], panels:FORGE_WAIT_PANELS[name] || ['forge','inv','gems','header'] }).catch(function (error) {
       reportUiCommandFailure(STR(66), error, ['forge','inv','gems']);
     });
   }
   if ($id('forge-go')) {
     Object.keys(DIVINE_FORGE_MODES).forEach(function (key) {
-      $id('forge-mode-' + key).addEventListener('click', function () { forgeCommand('forge.setOperation', { mode:key }); });
+      $id('forge-mode-' + key).addEventListener('click', function () {
+        forgeMarkActive('.forge-mode-tabs .btn', this); // 先亮起來，等 Worker 回覆後 renderForge 會以真實狀態校正
+        forgeCommand('forge.setOperation', { mode:key });
+      });
     });
     $id('forge-go').addEventListener('click', function () { forgeCommand('forge.start'); });
     $id('forge-unload').addEventListener('click', function () {
@@ -12963,7 +12972,10 @@ function initUI() {
       });
     });
     document.querySelectorAll('[data-forge-quality]').forEach(function (btn) {
-      btn.addEventListener('click', function () { forgeCommand('forge.setQuality', { rarity:Number(btn.getAttribute('data-forge-quality')) }); });
+      btn.addEventListener('click', function () {
+        forgeMarkActive('#forge-quality-tabs .btn', btn);
+        forgeCommand('forge.setQuality', { rarity:Number(btn.getAttribute('data-forge-quality')) });
+      });
     });
     $id('forge-auto').addEventListener('change', function () { forgeCommand('forge.setAuto', { on:this.checked }); });
     document.addEventListener('keydown', function (event) {

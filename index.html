@@ -17,7 +17,7 @@
   <link rel="stylesheet" href="css/gems.css?v=1.0.25">
   <link rel="stylesheet" href="css/dialogs.css?v=1.0.4">
   <link rel="stylesheet" href="css/world-map.css?v=1.0.7">
-  <link rel="stylesheet" href="css/divine-forge.css?v=1.0.4">
+  <link rel="stylesheet" href="css/divine-forge.css?v=1.0.7">
 </head>
 
 <body>
@@ -299,7 +299,7 @@
             </div>
             <div id="forge-stage">
               <div id="forge-log" class="forge-log" role="log" aria-live="polite"></div>
-              <div class="forge-aura" aria-hidden="true"><i></i><i></i><i></i></div>
+              <div class="forge-aura" aria-hidden="true"><b class="fa-ray"></b><u class="fa-ground"></u><i></i><i></i><i></i><s></s><s></s><s></s><s></s><s></s><s></s><s></s><s></s></div>
               <div id="forge-crystal-float">
                 <div id="forge-hex"></div>
                 <div id="forge-stone-popover" hidden>
@@ -1007,7 +1007,7 @@
   <script src="js/status.js?v=1.0.44"></script>
   <script src="js/runeword_data.js?v=1.0.21"></script>
   <script src="js/gem_resonance_data.js?v=1.0.1"></script>
-  <script src="js/formula.js?v=1.0.78"></script>
+  <script src="js/formula.js?v=1.0.79"></script>
   <script src="js/battle-terrain.js?v=1.0.2"></script>
   <script src="js/battlefield.js?v=1.4.21"></script>
   <script src="js/game-clock.js?v=1.0.1"></script>
@@ -1051,7 +1051,7 @@
   <script src="js/tower.js?v=1.0.39"></script>
   <script src="js/save.js?v=1.0.26"></script>
   <script src="js/ui-inventory-skin.js?v=1.0.1"></script>
-  <script src="js/ui.js?v=1.0.224"></script>
+  <script src="js/ui.js?v=1.0.225"></script>
   <script src="js/ui-world-map.js?v=1.0.5"></script>
   <script src="js/ui-runeword.js?v=1.0.16"></script>
   <script src="js/ui-gem-resonance.js?v=1.0.21"></script>
@@ -1069,7 +1069,7 @@
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
-  <script src="js/bridge.js?v=1.0.380"></script>
+  <script src="js/bridge.js?v=1.0.381"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->
