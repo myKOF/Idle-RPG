@@ -11,9 +11,10 @@ const {extractFunction, buildSceneTree, fakePixi} = require('./helpers/battle-sc
 const root = path.resolve(__dirname, '..');
 const source = readExpanded(path.join(root, 'js/battle-renderer.js'));
 const DEFAULT = Number(/var BATTLE_CAMERA_DISTANCE_PERCENT = ([\d.]+);/.exec(source)[1]);
+const Z = 100 / DEFAULT, FS = 90 / 65;
 function load() {
   const S = buildSceneTree(source);
-  const c = {S, Math, Number, isFinite, PIXI: fakePixi, BATTLE_CAMERA_DISTANCE_PERCENT: DEFAULT, perfMode: false,
+  const c = {S, Math, Number, isFinite, PIXI: fakePixi, BATTLE_CAMERA_DISTANCE_PERCENT: DEFAULT, BATTLE_CAMERA_FULLSCREEN_ZOOM: FS, perfMode: false,
     playerPos: () => ({x: 30, y: 80}), currentResolution: () => 2, layoutScene() {},
     perspectiveTopScale: () => .82, PERSPECTIVE_MESH_VERTS: 8};
   c.fullscreen = false;
@@ -49,49 +50,49 @@ function wheelSetup(internal = true) {
 
 test('CAMERA 內測滾輪100→80%，場景確實拉近且HUD不縮放，反向可還原', () => {
   const {c, label, listeners, wheel} = wheelSetup();
-  assert.equal(label.hidden, false); assert.equal(label.textContent, '100%');
+  assert.equal(label.hidden, false); assert.equal(label.textContent, '90%');
   assert.equal(listeners[0].name, 'wheel'); assert.equal(listeners[0].options.passive, false);
   c.initCameraWheel(); assert.equal(listeners.length, 1, '不得重複註冊');
   const baseline = c.S.cameraScale;
   for (let i = 0; i < 4; i++) {
     const e = wheel(-100); assert.equal(e.prevented, 1); assert.equal(e.stopped, 1);
   }
-  assert.equal(label.textContent, '80%'); near(c.S.cameraScale, baseline / .8);
-  assert.equal(c.S.W, 800); near(c.S.app.stage.scale.x, 1);
+  assert.equal(label.textContent, '72%'); near(c.S.cameraScale, baseline / .8);
+  near(c.S.W, 800 / c.S.cameraScale); near(c.S.app.stage.scale.x, 1);
   for (let i = 0; i < 4; i++) wheel(100);
-  assert.equal(label.textContent, '100%'); near(c.S.cameraScale, baseline);
+  assert.equal(label.textContent, '90%'); near(c.S.cameraScale, baseline);
 });
 
-test('CAMERA 全屏百分比統一以正常戰鬥為100%，同尺寸切換即更新且不累積', () => {
+test('CAMERA 全屏百分比：正常戰鬥預設90%、全螢幕預設65%，同尺寸切換即更新且不累積', () => {
   const {c, label, wheel} = wheelSetup();
   const baseline = c.S.cameraScale;
   for (let i = 0; i < 3; i++) {
     c.fullscreen = true; c.resize();
-    assert.equal(label.textContent, '77%'); near(c.S.cameraScale, baseline * 1.3);
-    wheel(-100); assert.equal(label.textContent, '73%');
-    near(c.S.cameraScale, baseline * 1.3 / .95);
+    assert.equal(label.textContent, '65%'); near(c.S.cameraScale, baseline * FS);
+    wheel(-100); assert.equal(label.textContent, '62%');
+    near(c.S.cameraScale, baseline * FS / .95);
     c.fullscreen = false; c.resize();
-    assert.equal(label.textContent, '95%'); near(c.S.cameraScale, baseline / .95);
-    wheel(100); assert.equal(label.textContent, '100%');
+    assert.equal(label.textContent, '86%'); near(c.S.cameraScale, baseline / .95);
+    wheel(100); assert.equal(label.textContent, '90%');
   }
   c.fullscreen = true; c.resize();
   for (let i = 0; i < 4; i++) wheel(-100);
-  assert.equal(label.textContent, '62%'); near(c.S.cameraScale, baseline * 1.3 / .8);
+  assert.equal(label.textContent, '52%'); near(c.S.cameraScale, baseline * FS / .8);
 });
 
 test('CAMERA 內測距離限制50～200%，到界仍阻止外層捲動，正式版不顯示／不綁定／不套用', () => {
   const {c, label, wheel} = wheelSetup();
   for (let i = 0; i < 80; i++) wheel(-100);
-  assert.equal(c.S.cameraDistancePercent, 50); assert.equal(label.textContent, '50%');
+  assert.equal(c.S.cameraDistancePercent, 50); assert.equal(label.textContent, '45%');
   assert.equal(wheel(-100).prevented, 1);
   for (let i = 0; i < 80; i++) wheel(100);
-  assert.equal(c.S.cameraDistancePercent, 200); assert.equal(label.textContent, '200%');
+  assert.equal(c.S.cameraDistancePercent, 200); assert.equal(label.textContent, '180%');
   const publicVersion = wheelSetup(false);
   assert.equal(publicVersion.label.hidden, true); assert.equal(publicVersion.listeners.length, 0);
   assert.equal(publicVersion.wheel(-100).prevented, 0);
   publicVersion.c.S.cameraDistancePercent = 50;
-  publicVersion.c.resize(); near(publicVersion.c.S.cameraScale, .8);
-  publicVersion.c.fullscreen = true; publicVersion.c.resize(); near(publicVersion.c.S.cameraScale, 1.04);
+  publicVersion.c.resize(); near(publicVersion.c.S.cameraScale, Z);
+  publicVersion.c.fullscreen = true; publicVersion.c.resize(); near(publicVersion.c.S.cameraScale, 100 / 65);
 });
 
 test('CAMERA 不攔截HUD／控制元件、瀏覽器縮放／橫向捲動及無效事件；未就緒不縮放', () => {
@@ -106,19 +107,19 @@ test('CAMERA 不攔截HUD／控制元件、瀏覽器縮放／橫向捲動及無�
   assert.equal(c.S.cameraDistancePercent, 100);
 });
 
-test('CAMERA 距離125%擴大視野25%，角色中心不移動，浮字和空中特效使用同一落點', () => {
+test('CAMERA 距離90%縮小視野10%，角色中心不移動，浮字和空中特效使用同一落點', () => {
   const c=load(), S=c.S;
-  assert.equal(DEFAULT,125);
+  assert.equal(DEFAULT,90);
   c.setCameraViewport(800,600);
-  assert.equal(S.W,1000); assert.equal(S.H,750);
-  assert.equal(S.cameraStage.scale.x,.8); assert.equal(S.cameraStage.scale.y,.8);
+  near(S.W,720); near(S.H,540);
+  near(S.cameraStage.scale.x,Z); near(S.cameraStage.scale.y,Z);
   S.layers.world.x=S.W/2-30; S.layers.world.y=S.H/2-80;
   for(const top of [1,.82]) {
     S.persp={layout:c.perspectiveLayout(S.W,S.H,top)};
     const centre=c.worldToScreenPoint(30,80);
     near(centre.x,400); near(centre.y,300);
     const point=c.worldToScreenPoint(130,180), air=c.airScreenPose(130,180);
-    near(point.x,air.x*.8); near(point.y,air.y*.8);
+    near(point.x,air.x*Z); near(point.y,air.y*Z);
   }
   for(const key of ['decorAmbient','arenaAmbient','airBack','airPlayer','airFx','enemyAir'])
     assert.equal(S.layers[key].parent,S.cameraStage,key);
@@ -138,24 +139,24 @@ test('CAMERA 重繪維持實際畫布尺寸，不逐幀重建；改距離會重�
   c.BATTLE_CAMERA_DISTANCE_PERCENT=150; c.resize();
   assert.equal(calls.length,2); near(c.S.cameraScale,2/3);
   for(const invalid of [0,-100,NaN,Infinity]) {
-    c.BATTLE_CAMERA_DISTANCE_PERCENT=invalid; near(c.cameraZoom(),.8);
+    c.BATTLE_CAMERA_DISTANCE_PERCENT=invalid; near(c.cameraZoom(),Z);
   }
 });
 
-test('CAMERA 全螢幕拉近30%，同尺寸切換亦刷新、退出還原且重入不累積', () => {
+test('CAMERA 全螢幕拉近（90÷65），同尺寸切換亦刷新、退出還原且重入不累積', () => {
   const c=load(), S=c.S, calls=[];
   S.host={clientWidth:800,clientHeight:600};
   S.app.renderer={resize:(w,h)=>calls.push([w,h])};
   c.resize();const normal=S.cameraScale,normalWidth=S.W;
   for(let i=0;i<3;i++) {
     c.fullscreen=true;c.resize();
-    near(S.cameraScale,normal*1.3);near(S.W,normalWidth/1.3);
-    near(S.cameraStage.scale.x,1.04);near(S.cameraStage.scale.y,1.04);
+    near(S.cameraScale,normal*FS);near(S.W,normalWidth/FS);
+    near(S.cameraStage.scale.x,100/65);near(S.cameraStage.scale.y,100/65);
     const count=calls.length;c.resize();assert.equal(calls.length,count,'相同倍率不得逐幀重建');
     c.fullscreen=false;c.resize();near(S.cameraScale,normal);near(S.W,normalWidth);
   }
   assert.equal(calls.length,7);
-  c.BATTLE_CAMERA_DISTANCE_PERCENT=150;c.fullscreen=true;near(c.cameraZoom(),(100/150)*1.3);
+  c.BATTLE_CAMERA_DISTANCE_PERCENT=150;c.fullscreen=true;near(c.cameraZoom(),(100/150)*FS);
   c.document.getElementById=()=>null;near(c.cameraZoom(),100/150);
 });
 
@@ -198,7 +199,7 @@ test('CAMERA 透視貼圖置於鏡頭內且像素密度不膨脹，平行投影�
   const P=S.persp;
   assert.equal(P.mesh.parent,S.cameraStage);
   assert.equal(S.sceneRoot.parent,null);
-  near(P.rt.resolution,1.6);
+  near(P.rt.resolution,2*Z);
   // 畫布角落反推必須落在離屏範圍內；鏡頭拉遠不能露白。
   const L=P.layout;
   for(const [xs,ys] of [[0,0],[800,0],[0,600],[800,600]]) {
@@ -218,7 +219,7 @@ test('CAMERA 透視貼圖置於鏡頭內且像素密度不膨脹，平行投影�
   c.perfMode=false; c.syncPerspective();
   assert.ok(perfTexture.destroyed);
   assert.equal(P.rt.antialias,true,'關閉效能模式恢復抗鋸齒');
-  near(P.rt.resolution,1.6);
+  near(P.rt.resolution,2*Z);
   c.perspectiveTopScale=()=>1; c.syncPerspective();
   assert.equal(S.sceneRoot.parent,S.cameraStage);
   assert.ok(P.rt.destroyed); assert.ok(P.mesh.destroyed);
@@ -246,7 +247,7 @@ test('CAMERA 參數表鏡頭列與程式一致，調參只命中具名鏡頭錨�
   const temp=fs.mkdtempSync(path.join(os.tmpdir(),'battle-camera-'));
   try {
     const file=path.join(temp,'params.csv');
-    fs.writeFileSync(file,csv.replace(row,row.replace(',125,',',150,')));
+    fs.writeFileSync(file,csv.replace(row,row.replace(`,${DEFAULT},`,',150,')));
     const r=spawnSync(process.execPath,[path.join(root,'tools/apply_params.cjs')],{
       env:{...process.env,PARAMS_CSV:file},encoding:'utf8'});
     assert.equal(r.status,0,r.stderr);
