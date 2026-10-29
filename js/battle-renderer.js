@@ -1910,11 +1910,12 @@ var BattleRenderer = (function () {
     p.body.animationSpeed *= Math.max(1, p.body.naturalMs / (HERO3D_RISE_START * windowSec * 1000));
   }
   /* 起身：progress（0..1，復活倒數走了多少）過了 HERO3D_RISE_START 之後，把死亡動作倒著播，倒數結束剛好站起來 */
-  function hero3dDriveRise(p, progress) {
-    if (progress < HERO3D_RISE_START) return;
+  function hero3dDriveRise(p, progress, riseStart) {
+    if (riseStart === undefined) riseStart = HERO3D_RISE_START;
+    if (progress < riseStart) return;
     if (p.curAnim !== 'rise') playAnim(p, 'rise');
     var total = p.body.totalFrames;
-    p.body.gotoAndStop(Math.min(total - 1, Math.floor((progress - HERO3D_RISE_START) / (1 - HERO3D_RISE_START) * total)));
+    p.body.gotoAndStop(Math.min(total - 1, Math.floor((progress - riseStart) / (1 - riseStart) * total)));
   }
   function playerAttackAnim(kind, targetId, duration, leadMs) {
     var p = S.player;
@@ -2216,8 +2217,8 @@ var BattleRenderer = (function () {
       p.revivalGt = panel.gt;
       var earthguardRevival = p.revival && p.revival.mode === 'earthguard';
       if (earthguardRevival && !wasEarthguardRevival) {
+        /* 天地共生：倒地動作原速播完（不加速），播完才開始倒數與起身（見 js/skills2.js SG_REBIRTH_DIE_SEC） */
         playAnim(p, p.dieAnim ? 'die' : 'idle');
-        hero3dFitDie(p, p.revival.endAt - p.revival.startAt);
       }
       else if (wasEarthguardRevival && !earthguardRevival) playAnim(p, 'idle');
       else if (p.revival && !earthguardRevival && p.curAnim !== 'idle') playAnim(p, 'idle');
@@ -2251,7 +2252,9 @@ var BattleRenderer = (function () {
          面板 5Hz 才來一次，這裡照快照時間扣掉已經過的秒數（同 ui.js 的做法）。 */
       if (p.reviveText) {
         p.reviveText.visible = dead || earthguardRevival;
-        if (earthguardRevival) {
+        if (earthguardRevival && p.revival.startAt > panel.gt) {
+          p.reviveText.visible = false;   // 倒地動作還在播：復活倒數與光束一起開始
+        } else if (earthguardRevival) {
           var earthguardLeft = (typeof uiCountdownRemain === 'function')
             ? uiCountdownRemain(p.revival.endAt - panel.gt, panel.gt) : p.revival.endAt - panel.gt;
           p.reviveText.text = STR(446, Math.max(1, Math.ceil(Math.max(0, earthguardLeft))));
@@ -6700,10 +6703,14 @@ var BattleRenderer = (function () {
           : p.revival.endAt - p.revivalGt;
         var revivalProgress = Math.max(0, Math.min(1, 1 - revivalLeft / (p.revival.endAt - p.revival.startAt)));
         if (p.revival.mode === 'earthguard') {
-          // 倒地 → 逐漸站起；浮空到中段最高，五秒結束時落回原位。
+          // 倒地動作播完（倒數尚未開始）→ 光束與倒數同時開始，逐漸站起；浮空到中段最高，五秒結束時落回原位。
+          var earthguardDying = revivalLeft > p.revival.endAt - p.revival.startAt;
+          if (earthguardDying) revivalProgress = 0;
           p.bodyWrap.y = -60 * Math.sin(Math.PI * revivalProgress);
-          if (p.body && p.body.hero3d) {
-            hero3dDriveRise(p, revivalProgress);
+          if (earthguardDying && p.dieAnim) {
+            p.bodyWrap.rotation = 0;
+          } else if (p.body && p.body.hero3d) {
+            hero3dDriveRise(p, revivalProgress, 0);
             p.bodyWrap.rotation = 0;
           } else if (p.dieAnim && S.sheets[p.sheetName].anims.rise && revivalProgress >= 0.2) {
             if (p.curAnim !== 'rise') playAnim(p, 'rise');
