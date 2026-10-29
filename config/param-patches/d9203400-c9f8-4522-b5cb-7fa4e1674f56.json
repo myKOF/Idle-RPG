@@ -5,7 +5,7 @@
   "changes": [
     {
       "workbook": "game_parameters.xlsx",
-      "sheet": "game_parameters",
+      "sheet": "計算表",
       "headerRow": 1,
       "key": {
         "編號": 287
