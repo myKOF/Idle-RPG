@@ -1,5 +1,11 @@
 # AI_TASKS.md
 
+## GENESIS-CORNER-BALANCE-20261029 — 創世角飾略大於神話
+
+- Owner：Codex；Done。使用者要求前輪角飾至少與神話同大或稍大，且不蓋字。將提示／詳情角飾16px調至24px（神話23.2px），保留25%比例切片避免再拉伸；圖示沿用與神話相同9px。允許css/style.css、index.html CSS快取、LV_upgrade_system.md與本段，禁止其他玩法／文字／素材／其他工作區及合併推送。前置前輪修正完成、四檔衝突預檢乾淨；驗兩品質並排／詳情與窄屏、相關回歸／Build／diff後Commit。
+- 完成四檔：CSS僅角飾16→24px，index樣式快取101、LV及本段同步；沒有移動文字或重製SVG／素材。`node --test --test-reporter=spec tests/equipment-tooltip-compare.test.cjs tests/equipment-two-hand-display.test.cjs tests/equipment-selection-border.test.cjs` 16/16、`npm.cmd run build`599檔及`git diff --check`通過。唯讀檢查前輪紀錄、神話角飾／現有CSS與三項回歸，未修改JS／資料／測試。
+- 隔離Edge沿正式裝備函式＋全套CSS fixture驗1024×830創世詳情／創世與神話比較、390×844無水平溢出；24px角飾未蓋標題及底部文字。詳情壓至300px高並捲246px，外框固定、裝飾pointer-events=none，Console error／warning及pageerror0。對照／桌面／窄屏截圖及JSON存本聊天visualizations/genesis-corners-balanced；未做真Worker／完整遊玩或多瀏覽器驗收。無新素材或素材庫變更，自我Review完成，無本次未完成實作／已知功能風險，可合併；提交為本段所在「[Codex] fix: 將創世角飾調至略大神話比例」，編號見交付，未合併推送。下一步使用者正常整合並重載。
+
 ## GENESIS-CORNER-SIZE-20261029 — 縮小創世角飾避開文字
 
 - Owner：Codex；Done。依使用者回饋對照神話級，縮小創世tips／詳情四角裝飾，避免蓋住標題及底部內容；圖示角飾同步縮小。允許css/style.css、index.html樣式快取、LV_upgrade_system.md及本段，禁止修改文字／玩法／資料／獨立素材及其他工作區，不合併推送。前置GENESIS-SILVER-VIOLET完成，四檔衝突預檢乾淨；驗收兩品質對照、桌面／窄屏／捲動、相關回歸／Build及diff後Commit。

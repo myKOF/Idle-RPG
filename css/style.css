@@ -6092,7 +6092,7 @@ textarea:disabled,
   content: "";
   position: absolute;
   inset: -2px;
-  border: 16px solid transparent;
+  border: 24px solid transparent;
   /* 依viewBox比例切四角，避免SVG固有尺寸使卷枝被拉進文字區。 */
   border-image: var(--genesis-corner-frame) 25% stretch;
   pointer-events: none;
