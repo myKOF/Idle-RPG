@@ -1862,9 +1862,8 @@ var BattleRenderer = (function () {
   /* 3D 主角的普攻動作（GLB 只有 Attack1／Attack2 兩個）、施法把劍揮到的時刻對到技能釋放時刻時最多加速幾倍 */
   var HERO3D_ATTACKS = ['attack1', 'attack2', 'attack3'];
   var HERO3D_CAST_SPEED_MAX = 4;
-  var HERO3D_ACTION_GRACE_MS = 80;   // 出手動作剛開始的這段時間不做「移動就打斷」：事件與位置各自緩衝，可能差一幀
   var HERO3D_CAST_MAX_MS = 500;   // 3D 施法動作最長播多久：施法是插進移動裡的，播完立刻繼續跑
-  var HERO3D_ACTIONS = { attack1: 1, attack2: 1, attack3: 1, cast: 1 };   // 出手動作（劍揮到之後可被走路打斷）
+  var HERO3D_ACTIONS = { attack1: 1, attack2: 1, attack3: 1, cast: 1 };   // 出手動作（普攻、技能）：一律播完，不被移動打斷
   /* 3D 倒地：die 要在這段進度內播完，之後到倒數結束把死亡動作倒著播（起身）。進度＝復活倒數走了多少（0..1） */
   var HERO3D_RISE_START = 0.3;
   /* 倒下的那一刻：把 die 加速到能在 windowSec（整段復活倒數）的前 HERO3D_RISE_START 內播完 */
@@ -1885,7 +1884,7 @@ var BattleRenderer = (function () {
     var melee = kind !== 'cast';
     var sheet = S.sheets[p.sheetName];
     /* 施法動作播完之前普攻不插隊：高攻速時每秒好幾下普攻，照舊「後到的蓋掉先到的」，施法動作永遠看不到 */
-    if (melee && p.curAnim === 'cast') return;
+    if (melee && (p.curAnim === 'cast' || (p.body && p.body.hero3d && p.actionKind === 'cast' && HERO3D_ACTIONS[p.curAnim]))) return;
     /* 3D：已經在播出手動作（普攻或上一個施法）就不再插施法動作，只讓技能特效照常播；沒有專屬施法動作，
        其餘時候（移動中、站著）借一個攻擊動作快速播完。 */
     if (!melee && p.body && p.body.hero3d && HERO3D_ACTIONS[p.curAnim]) return;
@@ -1898,11 +1897,17 @@ var BattleRenderer = (function () {
         ? attacks.filter(function (n) { return n !== p.lastAttack; }) : attacks;
       name = pool[Math.floor(Math.random() * pool.length)] || attacks[0];
       p.lastAttack = name;
+    } else if (p.body && p.body.hero3d) {
+      /* 3D 技能動作：與普攻一樣在三個攻擊動作之間隨機挑（使用者 2026-10-29），不連續兩下同一招 */
+      var castPool = HERO3D_ATTACKS.filter(function (n) { return n !== p.lastAttack; });
+      name = castPool[Math.floor(Math.random() * castPool.length)] || HERO3D_ATTACKS[0];
+      p.lastAttack = name;
     } else {
       name = (sheet && sheet.anims && sheet.anims.cast) ? 'cast' : 'attack2';
     }
     p.baseAnim = p.walking ? 'walk' : 'idle';
     playAnim(p, name, p.baseAnim);
+    p.actionKind = melee ? 'melee' : 'cast';
     var meta = sheet && sheet.manifest.anims[name];
     if (p.body && p.body.hero3d) {
       /* 3D：有用的那一段（蓄力到收招）要塞進攻擊間隔；施法則讓劍揮到的時刻對上技能釋放（硬直結束）的時刻。
@@ -6633,13 +6638,9 @@ var BattleRenderer = (function () {
         if (!moving) p.runSpeed = 0;
         if (!p.curAnim || p.curAnim === 'idle' || p.curAnim === 'walk') playAnim(p, p.baseAnim);
       }
-      /* 3D：出手動作一定是停下來播的，不准滑步。目標跑開、主角要追上去時，立刻把出手動作切成跑步
-         （2D 的揮擊很短不會有這個問題）。看「這一幀真的有位移」（stillFor 為 0）而不是 p.walking：
-         p.walking 停下後還會拖 0.22 秒才放掉，施法硬直一開始會被它誤判成在移動。 */
-      if (!p.dead && p.body.hero3d && p.stillFor === 0 && HERO3D_ACTIONS[p.curAnim] && nowMs() - (p.actionAt || 0) > HERO3D_ACTION_GRACE_MS) {
-        p.baseAnim = 'walk';
-        playAnim(p, 'walk');
-      }
+      /* 3D：出手動作（普攻、技能）一律播完（使用者 2026-10-29：目標剛死、手才舉起來就切去跑步很怪）。
+         動作中若角色已開始移動，剩下的揮擊會邊跑邊播完，播完才回到跑步／站立（見 playAnim 的 baseAnim）。
+         以前這裡一有位移就把出手動作切成跑步，現在不再打斷。 */
       /* 出手時往前送一小段。多方向素材沿面向的那一格送（這是地面上的位移，縱向照投影壓縮） */
       var lungeX = 0, lungeY = 0;
       if (p.lunge > 0) {

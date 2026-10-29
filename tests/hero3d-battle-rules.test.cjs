@@ -29,10 +29,17 @@ test('3D 施法：出手動作播放中不插施法動作；其餘時候快速�
   assert.match(renderer, /p\.body\.naturalMs \/ HERO3D_CAST_MAX_MS/);
 });
 
-test('3D 出手動作一定是停下來播：有位移就立刻切跑步，不滑步', () => {
-  assert.match(renderer, /p\.stillFor === 0 && HERO3D_ACTIONS\[p\.curAnim\]/);
-  /* 看真正的位移，不看拖尾 0.22 秒的 p.walking */
+test('3D 出手動作一律播完：目標剛死、角色開始移動也不切成跑步（使用者 2026-10-29）', () => {
+  /* 以前有位移就把出手動作切成跑步；現在不再打斷，播完才回到跑步／站立 */
+  assert.doesNotMatch(renderer, /p\.stillFor === 0 && HERO3D_ACTIONS\[p\.curAnim\]/);
+  assert.doesNotMatch(renderer, /HERO3D_ACTION_GRACE_MS/);
   assert.doesNotMatch(renderer, /p\.walking && !p\.dead && p\.body\.hero3d/);
+});
+
+test('3D 技能動作與普攻一樣在三個攻擊動作間隨機（不連續兩下同一招），施法中不被普攻蓋掉', () => {
+  assert.match(renderer, /var castPool = HERO3D_ATTACKS\.filter\(function \(n\) \{ return n !== p\.lastAttack; \}\);/);
+  assert.match(renderer, /p\.actionKind = melee \? 'melee' : 'cast';/);
+  assert.match(renderer, /p\.actionKind === 'cast' && HERO3D_ACTIONS\[p\.curAnim\]/);
 });
 
 test('3D 起身：死亡動作倒著播，由復活倒數進度驅動（一般倒數與大地守護共用）', () => {
