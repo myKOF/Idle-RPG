@@ -1,5 +1,11 @@
 # AI_TASKS.md
 
+## GENESIS-ICON-BRIGHTNESS-20261029 — 調亮創世圖示底色
+
+- Owner：Codex；Done。使用者要求創世icon太黑、調亮一些。只提高創世圖示紫色內襯與局部高光亮度，保持既有詳情／tips、24px角飾、圖案與狀態提示。允許css/style.css、index.html CSS快取、LV_upgrade_system.md及本段；禁止JS／玩法／文字／獨立素材／其他工作區及合併推送。前置角飾比例確認完成、四檔預檢乾淨；驗相同裝備前後對照及選取／置灰／雙手提示、回歸／Build／diff後Commit。
+- 完成四檔：僅調亮--genesis-slot-surface兩層漸層，增加中央淡紫高光，原部位PNG無修改；沒有對整格或圖片加brightness/filter，不影響品質色與狀態。index CSS快取102、LV及本段同步，無新素材／素材庫變更。唯讀檢查前輪紀錄、神話與創世CSS、相關JS及三項既有回歸，未修改JS／測試／資料。
+- 驗證：`node --test --test-reporter=spec tests/equipment-tooltip-compare.test.cjs tests/equipment-two-hand-display.test.cjs tests/equipment-selection-border.test.cjs`16/16、`npm.cmd run build`599檔、`git diff --check`通過。隔離Edge＋正式itemCellHTML與全套CSS，胸甲／武器／戒指各以前後同物件及神話三列比較；置灰仍opacity=.25及grayscale/brightness(.4)、選取outline=solid、雙手副手仍青色輪廓與覆層，Console error／warning及pageerror0。截圖comparison.png與verification.json保留本聊天visualizations/genesis-icon-brightness；未跑真Worker／完整遊玩／多瀏覽器。自我Review完成，無本次未完成實作／已知功能風險，可合併；提交為本段所在「[Codex] fix: 調亮創世裝備圖示紫色內襯」，編號見交付；未合併推送，下一步使用者正常整合並重載。
+
 ## GENESIS-CORNER-BALANCE-20261029 — 創世角飾略大於神話
 
 - Owner：Codex；Done。使用者要求前輪角飾至少與神話同大或稍大，且不蓋字。將提示／詳情角飾16px調至24px（神話23.2px），保留25%比例切片避免再拉伸；圖示沿用與神話相同9px。允許css/style.css、index.html CSS快取、LV_upgrade_system.md與本段，禁止其他玩法／文字／素材／其他工作區及合併推送。前置前輪修正完成、四檔衝突預檢乾淨；驗兩品質並排／詳情與窄屏、相關回歸／Build／diff後Commit。
