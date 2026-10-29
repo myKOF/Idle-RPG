@@ -19,12 +19,92 @@ function load() {
   c.fullscreen = false;
   c.document = {getElementById: id => id === 'ui-shell' ? {classList:{contains: name => name === 'battle-fullscreen' && c.fullscreen}} : null};
   vm.createContext(c);
-  for (const name of ['cameraZoom', 'setCameraViewport', 'boardMetrics', 'resize', 'perspectiveLayout',
+  for (const name of ['internalCameraDistancePercent', 'cameraFullscreenMultiplier', 'cameraZoom', 'updateCameraDistanceLabel', 'initCameraWheel', 'setCameraViewport', 'boardMetrics', 'resize', 'perspectiveLayout',
     'perspScreenPoint', 'worldToScreenPoint', 'airScreenPose', 'syncPerspective'])
     vm.runInContext(extractFunction(source, name), c);
   return c;
 }
 const near = (a,b) => assert.ok(Math.abs(a-b)<1e-8, `${a} != ${b}`);
+
+function wheelSetup(internal = true) {
+  const c = load(), listeners = [];
+  const label = {hidden: true, textContent: ''};
+  const getElement = c.document.getElementById;
+  c.document.getElementById = id => id === 'battle-camera-distance' ? label : getElement(id);
+  c.isInternalVersion = () => internal;
+  Object.assign(c.S, {ready: true, failed: false, cameraDistancePercent: 100, cameraWheelBound: false});
+  c.S.host = {clientWidth: 800, clientHeight: 600,
+    addEventListener: (name, handler, options) => listeners.push({name, handler, options})};
+  c.S.app.renderer = {resize() {}};
+  c.resize();
+  c.initCameraWheel();
+  function wheel(deltaY, extra = {}) {
+    const event = {deltaY, target: {closest: () => null}, prevented: 0, stopped: 0,
+      preventDefault() {this.prevented++;}, stopPropagation() {this.stopped++;}, ...extra};
+    if (listeners[0]) listeners[0].handler(event);
+    return event;
+  }
+  return {c, label, listeners, wheel};
+}
+
+test('CAMERA 內測滾輪100→80%，場景確實拉近且HUD不縮放，反向可還原', () => {
+  const {c, label, listeners, wheel} = wheelSetup();
+  assert.equal(label.hidden, false); assert.equal(label.textContent, '100%');
+  assert.equal(listeners[0].name, 'wheel'); assert.equal(listeners[0].options.passive, false);
+  c.initCameraWheel(); assert.equal(listeners.length, 1, '不得重複註冊');
+  const baseline = c.S.cameraScale;
+  for (let i = 0; i < 4; i++) {
+    const e = wheel(-100); assert.equal(e.prevented, 1); assert.equal(e.stopped, 1);
+  }
+  assert.equal(label.textContent, '80%'); near(c.S.cameraScale, baseline / .8);
+  assert.equal(c.S.W, 800); near(c.S.app.stage.scale.x, 1);
+  for (let i = 0; i < 4; i++) wheel(100);
+  assert.equal(label.textContent, '100%'); near(c.S.cameraScale, baseline);
+});
+
+test('CAMERA 全屏百分比統一以正常戰鬥為100%，同尺寸切換即更新且不累積', () => {
+  const {c, label, wheel} = wheelSetup();
+  const baseline = c.S.cameraScale;
+  for (let i = 0; i < 3; i++) {
+    c.fullscreen = true; c.resize();
+    assert.equal(label.textContent, '77%'); near(c.S.cameraScale, baseline * 1.3);
+    wheel(-100); assert.equal(label.textContent, '73%');
+    near(c.S.cameraScale, baseline * 1.3 / .95);
+    c.fullscreen = false; c.resize();
+    assert.equal(label.textContent, '95%'); near(c.S.cameraScale, baseline / .95);
+    wheel(100); assert.equal(label.textContent, '100%');
+  }
+  c.fullscreen = true; c.resize();
+  for (let i = 0; i < 4; i++) wheel(-100);
+  assert.equal(label.textContent, '62%'); near(c.S.cameraScale, baseline * 1.3 / .8);
+});
+
+test('CAMERA 內測距離限制50～200%，到界仍阻止外層捲動，正式版不顯示／不綁定／不套用', () => {
+  const {c, label, wheel} = wheelSetup();
+  for (let i = 0; i < 80; i++) wheel(-100);
+  assert.equal(c.S.cameraDistancePercent, 50); assert.equal(label.textContent, '50%');
+  assert.equal(wheel(-100).prevented, 1);
+  for (let i = 0; i < 80; i++) wheel(100);
+  assert.equal(c.S.cameraDistancePercent, 200); assert.equal(label.textContent, '200%');
+  const publicVersion = wheelSetup(false);
+  assert.equal(publicVersion.label.hidden, true); assert.equal(publicVersion.listeners.length, 0);
+  assert.equal(publicVersion.wheel(-100).prevented, 0);
+  publicVersion.c.S.cameraDistancePercent = 50;
+  publicVersion.c.resize(); near(publicVersion.c.S.cameraScale, .8);
+  publicVersion.c.fullscreen = true; publicVersion.c.resize(); near(publicVersion.c.S.cameraScale, 1.04);
+});
+
+test('CAMERA 不攔截HUD／控制元件、瀏覽器縮放／橫向捲動及無效事件；未就緒不縮放', () => {
+  const {c, wheel} = wheelSetup();
+  for (const extra of [{ctrlKey: true}, {metaKey: true}, {altKey: true}, {shiftKey: true},
+    {defaultPrevented: true}, {deltaX: 200}, {target: {closest: () => ({})}}]) {
+    const e = wheel(-100, extra); assert.equal(e.prevented, 0); assert.equal(e.stopped, 0);
+  }
+  for (const delta of [0, NaN, Infinity]) assert.equal(wheel(delta).prevented, 0);
+  c.S.ready = false; assert.equal(wheel(-100).prevented, 0);
+  c.S.ready = true; c.S.failed = true; assert.equal(wheel(-100).prevented, 0);
+  assert.equal(c.S.cameraDistancePercent, 100);
+});
 
 test('CAMERA 距離125%擴大視野25%，角色中心不移動，浮字和空中特效使用同一落點', () => {
   const c=load(), S=c.S;

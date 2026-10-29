@@ -156,6 +156,7 @@ var BattleRenderer = (function () {
     layers: null,             // ground / zone / entity / fx / float / overlay
     W: 0, H: 0,
     canvasW: 0, canvasH: 0, cameraScale: 1, cameraStage: null,
+    cameraDistancePercent: 100, cameraWheelBound: false,
     /* 正在畫的場景：'field'＝野外，'tower:<BOSS 生成時刻>'＝某一場魔王戰（見 sceneKeyOf）。
        模擬層換場景是瞬間的，畫面要先跑完黑圈收合才真的換（phase：closing → black → opening）。 */
     scene: { key: 'field', phase: '', t: 0 },
@@ -353,12 +354,45 @@ var BattleRenderer = (function () {
   var GROUND_Y_SCALE = 0.5;
   /* game_parameters：100＝原距離，125＝拉遠25%。只改顯示，不改世界座標與戰鬥判定。 */
   var BATTLE_CAMERA_DISTANCE_PERCENT = 125;
+  function internalCameraDistancePercent() {
+    return typeof isInternalVersion === 'function' && isInternalVersion() ?
+      (S.cameraDistancePercent || 100) : 100;
+  }
   function cameraZoom() {
     var distance = Number(BATTLE_CAMERA_DISTANCE_PERCENT);
     var zoom = 100 / (isFinite(distance) && distance > 0 ? distance : 125);
+    return zoom * cameraFullscreenMultiplier() * 100 / internalCameraDistancePercent();
+  }
+  function cameraFullscreenMultiplier() {
     var shell = typeof document !== 'undefined' && document.getElementById('ui-shell');
     // 全螢幕只拉近場景；HUD仍位於原本的螢幕層，退出後恢復參數表距離。
-    return shell && shell.classList.contains('battle-fullscreen') ? zoom * 1.3 : zoom;
+    return shell && shell.classList.contains('battle-fullscreen') ? 1.3 : 1;
+  }
+  function updateCameraDistanceLabel() {
+    var label = document.getElementById('battle-camera-distance');
+    if (!label || typeof isInternalVersion !== 'function' || !isInternalVersion()) return;
+    // 百分比一律以正常戰鬥區的預設距離為基準，與實際場景倍率互為倒數。
+    label.textContent = Math.round(internalCameraDistancePercent() / cameraFullscreenMultiplier()) + '%';
+  }
+  function initCameraWheel() {
+    if (S.cameraWheelBound || !S.host || typeof isInternalVersion !== 'function' || !isInternalVersion()) return;
+    var label = document.getElementById('battle-camera-distance');
+    if (!label) return;
+    updateCameraDistanceLabel();
+    label.hidden = false;
+    S.host.addEventListener('wheel', function (e) {
+      if (!S.ready || S.failed || !isInternalVersion() || e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey ||
+        !isFinite(e.deltaY) || !e.deltaY || Math.abs(e.deltaX || 0) > Math.abs(e.deltaY)) return;
+      // HUD與互動控制保留自己的操作；只縮放戰場，並阻止事件觸發外層背包展開。
+      if (e.target && e.target.closest && e.target.closest('button, a, input, select, textarea, [contenteditable], #battle-hud, #quest-bar, #tower-canvas-hud')) return;
+      e.preventDefault();
+      e.stopPropagation();
+      var next = Math.max(50, Math.min(200, internalCameraDistancePercent() + (e.deltaY > 0 ? 5 : -5)));
+      if (next === S.cameraDistancePercent) return;
+      S.cameraDistancePercent = next;
+      resize();
+    }, { passive: false });
+    S.cameraWheelBound = true;
   }
   function setCameraViewport(w, h) {
     S.canvasW = w; S.canvasH = h;
@@ -7556,6 +7590,7 @@ var BattleRenderer = (function () {
   }
   function resize() {
     if (!S.app || !S.host) return;
+    updateCameraDistanceLabel();
     var w = S.host.clientWidth, h = S.host.clientHeight;
     if (w < 40 || h < 40) return;
     if (w === S.canvasW && h === S.canvasH && S.cameraScale === cameraZoom() && S._lastRes === currentResolution()) return;
@@ -7923,6 +7958,7 @@ var BattleRenderer = (function () {
       window.addEventListener('resize', resize, { passive: true });
       S.watchdogTimer = setInterval(fxWatchdog, FX_WATCHDOG_MS);
       S.ready = true;
+      initCameraWheel();
       bootVfxRuntime();
       flushPendingFloats();
       /* 開機時 battle 面板可能已經在手上（bridge 比渲染器先跑），先同步一次 */

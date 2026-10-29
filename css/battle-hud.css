@@ -14,6 +14,23 @@
   --hud-scale: min(1, calc((var(--af-combat-w, 820px) - 48px) / 772px));
 }
 
+/* 內測鏡頭距離放在右上狂暴資訊下方，保持螢幕大小、不攔截操作。 */
+#battle-camera-distance {
+  position: absolute;
+  top: 70px;
+  right: 12px;
+  z-index: 30;
+  color: #e4d19a;
+  font: bold 13px/1.4 monospace;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 3px #000;
+  pointer-events: none;
+}
+
+#ui-shell.battle-fullscreen #battle-camera-distance {
+  top: 104px;
+}
+
 #battle-canvas-host #battle-hud {
   position: absolute;
   left: 50%;
