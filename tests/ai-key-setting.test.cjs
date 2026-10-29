@@ -152,7 +152,7 @@ test('parseNaturalCommand 成功透過 Gemini 轉譯白話指令為 GM 指令陣
       ok: true,
       json: async () => ({
         models: [
-          { name: 'models/gemini-2.0-flash', supportedGenerationMethods: ['generateContent'] }
+          { name: 'models/gemini-3.5-flash-lite', supportedGenerationMethods: ['generateContent'] }
         ]
       })
     };
@@ -197,8 +197,8 @@ test('parseNaturalCommand 遇到首選模型 High Demand (503) 時能自動切�
       ok: true,
       json: async () => ({
         models: [
-          { name: 'models/gemini-2.0-flash', supportedGenerationMethods: ['generateContent'] },
-          { name: 'models/gemini-1.5-flash', supportedGenerationMethods: ['generateContent'] }
+          { name: 'models/gemini-3.5-flash-lite', supportedGenerationMethods: ['generateContent'] },
+          { name: 'models/gemini-3.8-flash', supportedGenerationMethods: ['generateContent'] }
         ]
       })
     };

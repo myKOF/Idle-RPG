@@ -81,16 +81,24 @@
     return cmdLine;
   }
 
-  function executeCommandSequence(commands, originPrompt, local) {
-    setGMStatus((local ? '⚡ 本機' : '🤖 AI') + '解析為：[' + commands.join('; ') + ']，執行中…', true);
+  function executeCommandSequence(commands, originPrompt, source) {
+    var sourceLabel = source === 'cache' ? '⚡ 快取' : source === 'local' ? '⚡ 本機' : '🤖 AI';
+    setGMStatus(sourceLabel + '解析為：[' + commands.join('; ') + ']，執行中…', true);
     var index = 0;
     var results = [];
 
     function next() {
       if (index >= commands.length) {
         var allOk = results.every(function (r) { return r.ok; });
+        if (typeof AiKeySetting !== 'undefined') {
+          if (allOk && source === 'cloud' && typeof AiKeySetting.rememberNaturalCommand === 'function') {
+            AiKeySetting.rememberNaturalCommand(originPrompt, commands);
+          } else if (!allOk && source === 'cache' && typeof AiKeySetting.forgetNaturalCommand === 'function') {
+            AiKeySetting.forgetNaturalCommand(originPrompt);
+          }
+        }
         var summary = results.map(function (r) { return r.message; }).join(' | ');
-        setGMStatus('🤖 已執行 [' + commands.join('; ') + ']：' + summary, allOk);
+        setGMStatus(sourceLabel + ' 已執行 [' + commands.join('; ') + ']：' + summary, allOk);
         if (typeof blog === 'function') {
           blog('🤖 [AI GM] ' + originPrompt + ' ➔ ' + commands.join('; '), allOk ? 'good' : 'bad');
         }
@@ -139,7 +147,14 @@
         if (typeof AiKeySetting.parseFastPath === 'function') {
           var fastCmds = AiKeySetting.parseFastPath(rawText);
           if (fastCmds && fastCmds.length) {
-            executeCommandSequence(fastCmds, rawText, true);
+            executeCommandSequence(fastCmds, rawText, 'local');
+            return;
+          }
+        }
+        if (typeof AiKeySetting.getCachedNaturalCommand === 'function') {
+          var cachedCmds = AiKeySetting.getCachedNaturalCommand(rawText);
+          if (cachedCmds) {
+            executeCommandSequence(cachedCmds, rawText, 'cache');
             return;
           }
         }
@@ -149,21 +164,27 @@
             setGMStatus('⚠️ 檢測到白話指令，但尚未設定 Gemini 金鑰。請按 Esc ➔ 設置貼上金鑰。', false);
             return;
           }
-          var parseDeadline = Date.now() + 10000;
-          setGMStatus('🤖 AI 正在理解指令中…（最多10秒）', true);
-          AiKeySetting.parseNaturalCommand(rawText).then(function (cmdList) {
+          var timing = AiKeySetting.getNaturalTiming();
+          var parseDeadline = Date.now() + timing.totalTimeoutMs;
+          setGMStatus('🤖 AI 正在理解指令中…（每次最多30秒，最多重試3次）', true);
+          AiKeySetting.parseNaturalCommand(rawText, undefined, function (progress) {
+            if (generation !== parseGeneration) return;
+            var text = progress.reason === 'timeout' ? '已超過30秒無回應，重試中…' :
+              progress.reason === 'error' ? '雲端解析失敗，重試中…' : 'AI 正在理解指令中…';
+            setGMStatus('🤖 ' + text + '（' + progress.model + (progress.retry ? '，重試' + progress.retry + '/3' : '，每次最多30秒') + '）', true);
+          }).then(function (cmdList) {
             if (generation !== parseGeneration) return;
             // 背景分頁的 timer 可能延後觸發，交付指令前再核對實際時間。
             if (Date.now() >= parseDeadline) {
               cancelPendingParse();
-              setGMStatus('❌ 雲端解析超過10秒，已取消，指令未執行。', false);
+              setGMStatus('❌ 雲端解析已達等待上限，已取消，指令未執行。', false);
               return;
             }
             if (!cmdList || !cmdList.length) {
               setGMStatus('❌ AI 無法識別該指令，請換個說法試試。', false);
               return;
             }
-            executeCommandSequence(cmdList, rawText);
+            executeCommandSequence(cmdList, rawText, 'cloud');
           }).catch(function (err) {
             if (generation !== parseGeneration) return;
             setGMStatus('❌ AI 解析失敗：' + (err && err.message ? err.message : String(err)), false);
@@ -210,6 +231,34 @@
     status.className = 'gm-status';
     panel.appendChild(input);
     panel.appendChild(status);
+    var shortcuts = document.createElement('div');
+    shortcuts.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;margin-top:6px';
+    function addShortcut(label, handler, title) {
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = label;
+      button.title = title || label;
+      button.style.cssText = 'font-size:11px;padding:3px 7px;cursor:pointer';
+      button.addEventListener('click', handler);
+      shortcuts.appendChild(button);
+    }
+    if (typeof AiKeySetting !== 'undefined' && typeof AiKeySetting.getNaturalPresets === 'function') {
+      AiKeySetting.getNaturalPresets().forEach(function (preset) {
+        addShortcut(preset.label, function () {
+          cancelPendingParse();
+          input.value = preset.prompt;
+          setGMStatus('已填入常用指令，確認內容後按 Enter 執行。', true);
+          input.focus();
+        }, preset.prompt);
+      });
+      addShortcut('清除翻譯快取', function () {
+        cancelPendingParse();
+        AiKeySetting.clearNaturalCommandCache();
+        setGMStatus('已清除本機翻譯快取。', true);
+        input.focus();
+      });
+    }
+    panel.appendChild(shortcuts);
     document.body.appendChild(panel);
 
     input.addEventListener('keydown', function (e) {

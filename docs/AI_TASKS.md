@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## GM-FAST-MODELS-CACHE-20261030 — 快速模型、成功翻譯快取與常用預設
+
+- Owner：Codex；Done，單一開發者。延續前輪d344a71c，使用者要求完成原建議第3／4項；後續明確將10秒改為每次30秒、初次外最多重試3次，保留取消／遲到防護及完整本機解析。
+- 允許：js/ai-key-setting.js、js/gm.js、index兩檔快取、tests/ai-key-setting.test.cjs、tests/gm-natural-timeout.test.cjs、新tests/gm-translation-cache.test.cjs、GM_command.md、LV_upgrade_system.md與本段；禁止玩法／Worker協議／存檔／Excel／素材、其他工作區及合併推送。LV原有檔首紀錄與Claude828c666c門檻規則合併試跑衝突，使用者已明確同意僅檔尾追加本次紀錄，保留前輪GM與Claude規則。
+- 預檢：程式／測試／GM文件無外部來源；index與Claude僅同檔不同script快取，本輪只升GM兩檔1.0.3，候選＋共同祖先＋對方實際工作檔merge-file exit0，無語意相依。模型資料依Google官方models／generate-content/thinking／deprecations查證（2026-10-30）。
+- 驗收：快速文字模型固定優先序、僅首選及一個備援，不被最後成功模型改序；按模型能力降低思考、不選Pro／圖片／語音模型。成功執行後才保存翻譯，整句與資料語意版本綁定／期限及容量限制／可清除，不快取失敗、逾時、狀態依賴或含選取ID指令；每次命中仍送Worker並使用當下選取。常用預設僅填入輸入框，由使用者送出。相關GM回歸、瀏覽器／Console、Build／diff後獨立Commit。
+- 最新等待規格：每次30秒（包含fetch與body），初次外最多重試3次，總計4次／120秒。每次獨立AbortController及Promise競速，總期限與新提交／關框取消整輪；超過單次時間先abort再提示「已超過30秒無回應，重試中…」與模型／重試次數，只交付目前有效的一次回應。原10秒測試依使用者新規格更新，保留實際期限／背景timer節流／遲到成功／body掛起等安全斷言，並增加每次abort與重試數邊界驗證。
+- 完成九檔：兩支GM JS、index、兩項既有測試及新cache回歸、GM_command／LV／本段。預設3.5 Flash-Lite minimal、3.8 Flash low；設定測試可依已知快速模型優先序取得一首選一備援，2.5舊帳號用budget0，模型清單24小時／版本2，解析不再查模型清單或依最後成功模型改序。增有效輸出上限1024、排除thought與截斷／非法回應，避免思考與指令被切斷。主頁GM／AI兩檔快取均1.0.3。
+- 成功翻譯快取：整批Worker成功才保存抽象指令，完整句／版本1／開放寶石簽章綁定，7天／32筆、傳回副本，命中失敗移除；相對／狀態依賴語句及@sel ID不保存，每次選取上下文仍當下附加。清除／更換金鑰會清快取，存取失敗退當頁記憶體；預設四按鈕只填入、Enter才執行，另有清除按鈕。無玩法／Worker／存檔／Excel／素材庫變更。
+- 測試：`node --test --test-reporter=spec tests/ai-key-setting.test.cjs tests/gm-fastpath.test.cjs tests/gm-natural-timeout.test.cjs tests/gm-translation-cache.test.cjs tests/gm-command.test.cjs tests/gm-modequip.test.cjs tests/gm-perf-command.test.cjs tests/gm-skill-point.test.cjs tests/gm-skill-test-tools.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs`全部104/104通過；`npm.cmd run build`全部601檔通過；`git diff --check`通過。最後移除模型查詢已不使用的request參數並整理縮排後，前三項API／timeout／cache套件31/31再通過，語法由測試載入驗證。沒有降低既有斷言；未重跑前輪已確認為基線失敗的gm-skill-unlock容量舊斷言。
+- 瀏覽器：沿前輪IAB無後端的fallback，bundled Playwright＋獨立headless Edge／隨機localhost／正式GM腳本與全套CSS，執行層及雲端用隔離替身／假Key。原生計時30019ms顯示超過30秒重試1/3並取消初次連線，備援於31026ms完成且只執行一條；同句再次及reload均無新增雲端請求，清除後重新生成；四預設只填入，390×844 documentWidth390／panel右緣378、清除按鈕正常換行。Console error／warning及pageerror0，截圖與browser-report.json保留本聊天visualizations/gm-fast-models-cache。沒有使用真API或玩家存檔；未完整遊玩／多瀏覽器，真實雲端速度與帳號模型權限尚需使用者實機確認，不保證30秒內成功。
+- 唯讀未改：規範／Workflow／前輪任務、gm_exec目標／詞條語意、既有GM／技能／String／快取測試、package、Claude index／LV差異及官方模型文件。自我Review完成，無本次未完成實作，可供Review／合併；LV僅按使用者核准追加，既有檔首合併衝突留正常整合流程保留雙方。Commit為本段所在「[Codex] feat: GM快速模型與翻譯快取並加入三十秒重試」，編號見交付；工作區提交後保持乾淨，不合併／推送。下一步正常整合並重載，必要時在設定測試金鑰更新該帳號可用快速模型。
+
 ## GM-FAST-PARSE-DEADLINE-20261030 — 常用白話本機解析與雲端十秒取消
 
 - Owner：Codex；Done，單一開發者。使用者授權擴充常用白話解析、雲端整體最多10秒並取消逾時請求，禁止遲到結果執行。前置：既有GM／Worker執行介面完成。

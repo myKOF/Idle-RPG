@@ -8,7 +8,7 @@ const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 const MODEL_CACHE = 'idle_rpg_gemini_models';
 const unknownPrompt = '請替我的測試角色準備足夠金幣';
-const flush = async () => { for (let i = 0; i < 40; i++) await Promise.resolve(); };
+const flush = async () => { for (let i = 0; i < 160; i++) await Promise.resolve(); };
 const deferred = () => {
   let resolve;
   const promise = new Promise((r) => { resolve = r; });
@@ -23,7 +23,8 @@ function setup({ cache = true, key = true } = {}) {
   const timers = new Map();
   const storage = {};
   if (key) storage.idle_rpg_gemini_api_key = 'fake-test-key';
-  if (cache) storage[MODEL_CACHE] = JSON.stringify(['first-flash', 'second-flash', 'third-flash']);
+  if (cache) storage[MODEL_CACHE] = JSON.stringify({ version: 2, savedAt: 0,
+    models: ['gemini-3.5-flash-lite', 'gemini-3.8-flash', 'gemini-3.6-flash'] });
   const calls = [], sent = [];
   function element(tagName) {
     return { tagName, style: {}, children: [], listeners: {}, value: '',
@@ -72,72 +73,82 @@ test('常用白話無Key直接送Worker，完全不建立雲端請求或計時�
   assert.equal(env.timers.size, 0);
 });
 
-test('模型探索也受10秒期限保護，取消後遲到探索不快取、不繼續生成', async () => {
+test('無模型快取時直接呼叫快速首選，不等待模型清單；30秒逾時先取消再重試', async () => {
   const env = setup({ cache: false });
   const pending = deferred();
   env.context.respond = () => pending.promise;
   env.type(unknownPrompt); await flush();
   assert.equal(env.calls.length, 1);
-  assert.equal(env.calls[0].options.method, 'GET');
-  await env.advance(9999);
+  assert.equal(env.calls[0].options.method, 'POST');
+  assert.match(env.calls[0].url, /gemini-3.5-flash-lite/);
+  await env.advance(29999);
   assert.equal(env.calls[0].options.signal.aborted, false);
   assert.match(env.status.textContent, /理解/);
   await env.advance(1);
   assert.equal(env.calls[0].options.signal.aborted, true);
-  assert.match(env.status.textContent, /超過10秒.*取消.*未執行/);
+  assert.match(env.status.textContent, /已超過30秒無回應，重試中.*重試1\/3/);
+  assert.equal(env.calls.length, 2);
+  assert.match(env.calls[1].url, /gemini-3.8-flash/);
   const timeoutStatus = env.status.textContent;
-  pending.resolve({ ok: true, json: async () => ({ models: [{ name: 'models/late-flash', supportedGenerationMethods: ['generateContent'] }] }) });
+  env.ai.cancelNaturalCommand(); await flush();
+  pending.resolve(success());
   await flush();
-  assert.equal(env.calls.length, 1);
+  assert.equal(env.calls.length, 2);
   assert.equal(env.storage[MODEL_CACHE], undefined);
   assert.equal(env.sent.length, 0);
-  assert.equal(env.status.textContent, timeoutStatus);
+  assert.match(timeoutStatus, /重試1\/3/);
   assert.equal(env.timers.size, 0);
 });
 
-test('生成請求掛起到10秒會abort，fetch忽略取消仍不能執行遲到指令', async () => {
+test('每次最多30秒，初次加三次重試後停止，fetch忽略取消也不能執行遲到指令', async () => {
   const env = setup();
   const pending = deferred(); env.context.respond = () => pending.promise;
-  env.type(unknownPrompt); await flush(); await env.advance(10000);
+  env.type(unknownPrompt); await flush();
+  for (let retry = 1; retry <= 3; retry++) {
+    await env.advance(30000);
+    assert.equal(env.calls.length, retry + 1);
+    assert.equal(env.calls[retry - 1].options.signal.aborted, true);
+    assert.equal(env.calls[retry].options.signal.aborted, false);
+    assert.match(env.status.textContent, new RegExp('重試' + retry + '/3'));
+  }
+  await env.advance(30000);
   assert.equal(env.calls[0].options.signal.aborted, true);
   pending.resolve(success()); await flush();
   assert.equal(env.sent.length, 0);
-  assert.equal(env.calls.length, 1, '逾時不能重試備援');
+  assert.equal(env.calls.length, 4, '最多初次加三次重試');
+  assert.ok(env.calls.every((call) => call.options.signal.aborted));
   assert.equal(env.ai._lastWorkingModel, undefined);
-  assert.match(env.status.textContent, /超過10秒/);
+  assert.match(env.status.textContent, /等待上限.*取消.*未執行/);
+  assert.equal(env.timers.size, 0);
 });
 
 test('headers已到但回應body掛起仍算逾時，遲到body不執行', async () => {
   const env = setup();
   const body = deferred(); env.context.respond = async () => ({ ok: true, json: () => body.promise });
-  env.type(unknownPrompt); await flush(); await env.advance(10000);
+  env.type(unknownPrompt); await flush(); await env.advance(120000);
   body.resolve(await success().json()); await flush();
   assert.equal(env.sent.length, 0);
   assert.equal(env.ai._lastWorkingModel, undefined);
   assert.equal(env.calls[0].options.signal.aborted, true);
 });
 
-test('探索耗時與模型重試共用原始期限，不因切換備援重新給10秒', async () => {
-  const env = setup({ cache: false });
-  const discovery = deferred(), first = deferred(), second = deferred();
-  env.context.respond = (url, options) => options.method === 'GET' ? discovery.promise : /first-flash/.test(url) ? first.promise : second.promise;
-  env.type(unknownPrompt); await flush(); await env.advance(3000);
-  discovery.resolve({ ok: true, json: async () => ({ models: [
-    { name: 'models/first-flash', supportedGenerationMethods: ['generateContent'] },
-    { name: 'models/second-flash', supportedGenerationMethods: ['generateContent'] }
-  ] }) });
-  await flush(); await env.advance(3000);
-  first.resolve({ ok: false, status: 503, json: async () => ({ error: { message: 'busy' } }) });
-  await flush();
-  assert.equal(env.calls.length, 3);
-  await env.advance(3999); assert.equal(env.calls[2].options.signal.aborted, false);
-  await env.advance(1); assert.equal(env.calls[2].options.signal.aborted, true);
-  second.resolve(success()); await flush();
+test('第一次逾時的成功結果晚到時仍被丟棄，只有目前重試可執行一次', async () => {
+  const env = setup();
+  const first = deferred(), second = deferred();
+  env.context.respond = () => env.calls.length === 1 ? first.promise : second.promise;
+  env.type(unknownPrompt); await flush(); await env.advance(30000);
+  first.resolve(success(['gold 999'])); await flush();
   assert.equal(env.sent.length, 0);
-  assert.match(env.status.textContent, /超過10秒/);
+  assert.equal(env.ai._lastWorkingModel, undefined);
+  second.resolve(success(['gold 123'])); await flush();
+  assert.deepEqual(env.sent.map((s) => s.line), ['gold 123']);
+  assert.equal(env.calls.length, 2);
+  assert.equal(env.timers.size, 0);
+  await env.advance(120000);
+  assert.equal(env.sent.length, 1);
 });
 
-test('期限內備援成功只執行一次並清除timer；最多嘗試兩個模型', async () => {
+test('錯誤可立即重試；僅使用兩種快速模型，總計最多四次嘗試', async () => {
   const env = setup();
   env.context.respond = async () => env.calls.length === 1 ? { ok: false, status: 503, json: async () => ({}) } : success();
   env.type(unknownPrompt); await flush();
@@ -150,21 +161,36 @@ test('期限內備援成功只執行一次並清除timer；最多嘗試兩個模
   const failed = setup();
   failed.context.respond = async () => ({ ok: false, status: 503, json: async () => ({}) });
   failed.type(unknownPrompt); await flush();
-  assert.equal(failed.calls.length, 2);
+  assert.equal(failed.calls.length, 4);
+  assert.equal(new Set(failed.calls.map((call) => call.url)).size, 2);
   assert.equal(failed.sent.length, 0);
   assert.equal(failed.timers.size, 0);
   assert.match(failed.status.textContent, /未執行/);
 });
 
-test('計時器延後觸發時仍以實際期限拒絕遲到成功回應', async () => {
+test('單次timer被節流時仍依實際期限丟棄過期回應並重試', async () => {
   const env = setup();
   const pending = deferred(); env.context.respond = () => pending.promise;
   env.type(unknownPrompt); await flush();
-  env.jump(10001); // 模擬背景分頁timer被節流，未觸發計時器。
+  env.jump(30001); // 模擬背景分頁timer被節流，未觸發計時器。
+  env.context.respond = () => new Promise(() => {});
   pending.resolve(success()); await flush();
   assert.equal(env.sent.length, 0);
   assert.equal(env.calls[0].options.signal.aborted, true);
-  assert.match(env.status.textContent, /超過10秒/);
+  assert.match(env.status.textContent, /已超過30秒無回應，重試中/);
+  assert.equal(env.calls.length, 2);
+  env.ai.cancelNaturalCommand(); await flush();
+});
+
+test('總timer被節流到超過兩分鐘仍拒絕遲到結果，不再追加重試', async () => {
+  const env = setup();
+  const pending = deferred(); env.context.respond = () => pending.promise;
+  env.type(unknownPrompt); await flush();
+  env.jump(120001); pending.resolve(success()); await flush();
+  assert.equal(env.sent.length, 0);
+  assert.equal(env.calls.length, 1);
+  assert.equal(env.calls[0].options.signal.aborted, true);
+  assert.equal(env.timers.size, 0);
 });
 
 test('新白話／原生指令送出時取消舊解析，遲到結果不能蓋掉新結果', async () => {
@@ -213,6 +239,6 @@ test('未知複合句等待整句翻譯，逾時不能先執行已認得的子�
   env.type('幫我加金幣1000億，替我準備一套適合打王的裝備'); await flush();
   assert.equal(env.sent.length, 0);
   assert.equal(env.calls.length, 1);
-  await env.advance(10000);
+  await env.advance(120000);
   assert.equal(env.sent.length, 0);
 });
