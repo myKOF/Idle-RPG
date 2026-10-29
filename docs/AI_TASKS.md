@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## PARAM-DIRECT-EDIT-20261029 — 先解決站定參數定位，再恢復關閉Excel後直接編修
+
+- Owner：Codex；Done。使用者要求先解決現有「編號287找不到」，再移除Agent暫存合併、恢復原Excel→CSV→遊戲並寫入規範。只處理既有站定參數b=0.3提案、BAT／相關工具及回歸、共通規範與流程文件／本段；禁止改其他平衡、使用者Skills2.xlsx、素材、其他進行中內容，未授權合併／推送。
+- 查證：Claude與Codex的game_parameters.xlsx原SHA相同；原生Excel唯讀確認計算表第286列，編號287為公式=A285+1，系統分類9-技能／名稱施放硬直，a=0.2、b=0。舊Cell-Value回傳公式物件，造成數字主鍵無法命中；修正提案為穩定的分類＋名稱定位，保留before=0／after=0.3，不降低同格保護。Claude目前Skills2未提交修改完整保留。
+- 後續恢復規則：相關Excel必須先儲存並關閉，其他人／AI才能直接修改；不新增待套用JSON，不在BAT啟動Excel／備份工作簿／逐格合併。歷史archive保留，剩餘提案須逐一明確處理，不能靜默丟棄；Excel來源、原生正常開啟驗證及來源→CSV／JS同步維持。預檢現有目標無外部重疊，完成必要驗證後獨立Commit，交使用者正常整合。
+- 先完成現有提案：Claude／Codex各以原生Excel成功套用唯一H286=0.3，before=0不變；兩次正常重開驗證，獨立原生唯讀重開Saved=True、2頁保持，主表H267連動0.3。唯讀OOXML全格比較僅sheet2 H286及sheet1 H267快取0→0.3，公式／所有格位樣式差異0；未手改XML。提案及收據保留各自archive/2026-10-29T11-25-54-214Z-4ee11e04-ddb3-4bfc-8366-523db214a548與11-26-02-803Z-20204697-bfee-4d5d-9300-76352337712b，原始請求另保留logs/param-direct-edit-20261029，兩副本active queue均空。未覆寫Claude既有Skills2修改。
+- 完成19檔：BAT刪除0/3及patchfail；param-patches CLI改成明確停用訊息，刪除舊PowerShell合併器、舊暫存測試／Excel fixture，以params-direct-edit真BAT回歸取代。AI_RULES §8.5為新協作規範唯一權威，Workflow／PARAM_PATCHES停用說明／使用指南同步，指南明示計算表輸入、主表保留連動公式。已完成提案自active移除，game_parameters Excel／CSV及formula常數0.3一致，主頁formula79／bridge381、Bridge入口及Worker formula匯入20261029-direct-excel-cast-hold同步，LV補本次既有設定落地。
+- 驗證：node --test --test-reporter=spec tests/params-direct-edit.test.cjs tests/player-cast-act.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/apply-params.test.cjs tests/apply-params-anchor-independence.test.cjs共43/43通過。包含舊stage／merge拒絕且不消耗請求、真BAT即使有舊JSON仍不呼叫合併器、不建立archive、真實XLSX匯出與後續順序、前段失敗不套用遊戲、站定與Worker快取。新舊測試更換是依使用者移除暫存功能，未放寬仍存在功能的斷言。
+- 完整真BAT實測2.3486秒、exit0，0/3不再出現；Excel→CSV→30個字面值語意變更0、String2201條一致、apply_params594錨點一致／0變更／0問題。593→594為本次非零站定b啟用既有optional錨點，apply_params --check-anchors擾動544個數值後594各命中一次。npm.cmd run build599檔通過；git diff --check通過。沒有承諾各電腦固定耗時；未跑全庫／真人存檔長戰。
+- 唯讀未改：Excel原生工具、xlsx_to_csv、config_tables、apply_params錨點、String來源／生成字串、Worker協議／指令及其他遊戲邏輯、素材／素材庫。沒有本項素材Commit；完整BAT造成String.csv純換行差異會依Git正常化而不納語意修改。自我Review完成，可供正常合併；程式提交為本段所在「[Codex] fix: 恢復直接套用參數並取消Excel暫存合併」，未合併／推送develop或main。使用者實際執行的Claude工作區將以逐檔原版SHA檢查同步本任務檔案，保留其既有Skills2與Excel來源；實際部署收據見logs/param-direct-edit-20261029。
+
 ## BATTLE-INTERNAL-CAMERA-ZOOM-20261029 — 內測戰鬥滾輪鏡頭與距離百分比
 
 - Owner：Codex；Done，單一開發者。使用者要求一般與全屏戰鬥可用滑鼠滾輪調整鏡頭，右上角顯示距離百分比，僅內測可用；補充統一以正常戰鬥區為100%。
