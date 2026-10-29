@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## MERGE-PARAM-DIRECT-EDIT-20261029 — integrate native Excel handoff
+
+- Owner: Codex; Done. Integrated HEAD `3a2c1b9e` with MERGE_HEAD `34619366`, preserving the develop divine-forge/Skills2 changes and the incoming direct-parameter workflow plus skill cast hold value.
+- The only original conflict was `config/Excel/game_parameters.xlsx`. The trusted native updater applied the combined workbook outside the sandbox and reopened it normally (SHA256 `D931EDD98B65DAF7FA23D0AD523D12C285E903BA5BAFCC8E98D13E47239484C1`, Excel 16.0, two sheets). This validation pass did not start Excel or alter the workbook bytes.
+- Regenerated `config/CSV/game_parameters.csv` from the actual workbook with `node tools/xlsx_to_csv.cjs` (365 rows x 18 columns). `node tools/apply_params.cjs` reported 594/594 values consistent with zero changes and zero anchor problems; `--check-anchors` independently disturbed 544 values and matched all 594 anchors exactly once. The generated CSV also preserves Excel's cached numeric representation `2.2000000000000002` for the existing enemy-size value; it is numerically equivalent to 2.2 and no runtime literal changed.
+- Validation: the targeted parameter/cast-hold/Worker/cache/divine-forge/inventory suite passed 61/61; `npm.cmd run build` passed all 599 files. `git diff HEAD --check` and `git diff --cached --check` passed; the only conflict-like separator matches found by the bounded repository scan are intentional report separators/string data, not merge markers. No asset-library files are involved. The controller will stage the reported files and create the merge commit; this pass did not stage, commit, push, switch, reset, or modify Git metadata.
+
 ## PARAM-DIRECT-EDIT-20261029 — 先解決站定參數定位，再恢復關閉Excel後直接編修
 
 - Owner：Codex；Done。使用者要求先解決現有「編號287找不到」，再移除Agent暫存合併、恢復原Excel→CSV→遊戲並寫入規範。只處理既有站定參數b=0.3提案、BAT／相關工具及回歸、共通規範與流程文件／本段；禁止改其他平衡、使用者Skills2.xlsx、素材、其他進行中內容，未授權合併／推送。
