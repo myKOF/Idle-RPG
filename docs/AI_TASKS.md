@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## GENESIS-CORNER-SIZE-20261029 — 縮小創世角飾避開文字
+
+- Owner：Codex；Done。依使用者回饋對照神話級，縮小創世tips／詳情四角裝飾，避免蓋住標題及底部內容；圖示角飾同步縮小。允許css/style.css、index.html樣式快取、LV_upgrade_system.md及本段，禁止修改文字／玩法／資料／獨立素材及其他工作區，不合併推送。前置GENESIS-SILVER-VIOLET完成，四檔衝突預檢乾淨；驗收兩品質對照、桌面／窄屏／捲動、相關回歸／Build及diff後Commit。
+- 完成四檔：提示／詳情角飾28→16px，圖示12→9px；border-image依viewBox比例改25%切片，修正固有尺寸下卷枝沿長邊拉伸侵入文字的問題。保留原文字起點、銀紫底與雙框／神話外觀，CSS快取100，LV及任務同步。使用者兩張截圖只作參考，自製內嵌SVG內容未改，無新素材／素材庫Commit。
+- 驗證：`node --test --test-reporter=spec tests/equipment-tooltip-compare.test.cjs tests/equipment-two-hand-display.test.cjs tests/equipment-selection-border.test.cjs` 16/16；`npm.cmd run build`599檔通過；`git diff --check`通過。隔離Edge＋正式裝備函式／全套CSS fixture驗1024×830創世詳情及創世／神話並排比較，角飾不再延伸到標題與底部文字；390×844 documentWidth=390，詳情壓至300px高並捲246px時外框固定，裝飾pointer-events=none；Console error／warning及pageerror0。對照／桌面／窄屏截圖及JSON保留本聊天visualizations/genesis-corners。沒有改測試或玩家存檔，未跑完整遊玩／真Worker／多瀏覽器驗收，屬本次純CSS範圍限制。
+- 唯讀檢查：既有規範與前輪紀錄、神話CSS／裝備渲染與三項既有回歸。自我Review完成，無未完成實作／已知功能風險，可供合併；提交為本段所在「[Codex] fix: 縮小創世角飾並避免覆蓋文字」，編號見交付；未合併推送。下一步使用者正常整合並重載。
+
 ## GENESIS-SILVER-VIOLET-20261029 — 創世裝備銀紫雕飾外觀
 
 - Owner：Codex；Done，單一開發者。使用者指定參考圖的銀白角飾、深紫底及淡紫高光，套用創世級裝備tips、比較卡、詳情與圖示框。參考圖只作風格參考，裝飾以CSS及內嵌自製SVG完成，不複製外部圖片。

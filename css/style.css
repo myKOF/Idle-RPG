@@ -3113,7 +3113,7 @@ textarea#save-io {
   inset: 2px;
   border: 1px solid #bda7d180;
   border-radius: 1px;
-  border-image: var(--genesis-corner-frame) 40 / 12px stretch;
+  border-image: var(--genesis-corner-frame) 25% / 9px stretch;
   background: var(--genesis-slot-surface);
 }
 
@@ -6092,8 +6092,9 @@ textarea:disabled,
   content: "";
   position: absolute;
   inset: -2px;
-  border: 28px solid transparent;
-  border-image: var(--genesis-corner-frame) 40 stretch;
+  border: 16px solid transparent;
+  /* 依viewBox比例切四角，避免SVG固有尺寸使卷枝被拉進文字區。 */
+  border-image: var(--genesis-corner-frame) 25% stretch;
   pointer-events: none;
 }
 
