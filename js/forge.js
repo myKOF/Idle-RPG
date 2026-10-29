@@ -1,7 +1,7 @@
 'use strict';
 if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* 四功能神鑄。素材入槽時移出庫存；神性之石只預選，執行時才扣除。 */
-function forgeMigrateState(data) {
+function forgeMigrateState(data, scanSeen) {
   var f = data.forge;
   if (f && f.version === 2) {
     if (f.unlocked === undefined) f.unlocked = !!f.unlockNotified;
@@ -9,6 +9,7 @@ function forgeMigrateState(data) {
     if ([6, 7, 9].indexOf(f.quality) < 0) f.quality = 6;
     if (!Number.isInteger(f.stonePreference) || f.stonePreference < 0) f.stonePreference = Math.max(0, Math.floor(Number(f.stones) || 0));
     f.auto = f.operation === 'equip' && f.auto === true;
+    if (scanSeen && !Number.isInteger(f.seenRarity)) { var seen = forgeScanSeenRarity(data); if (seen > 6) f.seenRarity = seen; } // 預設 6 不寫入，存檔維持原樣
     return f;
   }
   // 舊製作尚未扣款，取消並完整退回素材，包括滿背包。
@@ -20,15 +21,32 @@ function forgeMigrateState(data) {
       byLv[it.level] = (Number(byLv[it.level]) || 0) + 1;
     } else (data.inventory || (data.inventory = [])).push(it);
   });
-  return data.forge = { version: 2, operation: 'equip', slots: [null, null, null, null, null, null],
+  data.forge = { version: 2, operation: 'equip', slots: [null, null, null, null, null, null],
     stones: 0, stonePreference: 0, quality: 6, auto: false, result: null, log: [], unlocked: !!(f && (f.unlocked || f.unlockNotified)),
     unlockNotified: !!(f && f.unlockNotified) };
+  if (scanSeen) { var seen0 = forgeScanSeenRarity(data); if (seen0 > 6) data.forge.seenRarity = seen0; }
+  return data.forge;
+}
+/* 裝備品質分頁解鎖：記下玩家擁有過的最高裝備品質（創世／混沌第一次入手才開放對應分頁）。
+   舊存檔沒有這個欄位時，依目前背包、穿戴與法陣內的裝備補算。 */
+function forgeScanSeenRarity(data) {
+  var best = 6;
+  function note(it) { if (it && it.kind !== 'gem' && it.rarity > best) best = it.rarity; }
+  (data.inventory || []).forEach(note);
+  Object.keys(data.equipment || {}).forEach(function (slot) { note(data.equipment[slot]); });
+  ((data.forge && data.forge.slots) || []).forEach(note);
+  return best;
+}
+function forgeNoteRarity(it) {
+  if (!it || it.kind === 'gem' || !G || !G.forge) return;
+  var f = forgeState();
+  if (it.rarity > (f.seenRarity || 6)) { f.seenRarity = it.rarity; UI.dirty.forge = true; }
 }
 function forgeState() { return forgeMigrateState(G); }
 function forgeUnlocked() {
   if (!G || !G.player) return false;
   var f = forgeState();
-  if (G.player.level >= FORGE_UNLOCK_LEVEL && reincarnationCount() >= FORGE_UNLOCK_REINCARNATION) f.unlocked = true;
+  if (progressReached(G.player.level, reincarnationCount(), FORGE_UNLOCK_LEVEL, FORGE_UNLOCK_REINCARNATION)) f.unlocked = true;
   return !!f.unlocked;
 }
 function forgeOperationUnlocked(mode) {
@@ -115,6 +133,7 @@ function forgePlaceGem(type, level) {
   return null;
 }
 function forgeReturnItem(it) {
+  forgeNoteRarity(it);
   G.inventory.push(it);
   UI.dirty.inv = true;
 }

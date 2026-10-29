@@ -245,8 +245,7 @@ function degradeFuseMaterial(m) {
 
 /* 執行融合 v2；回傳 { err } 或 { success, result } 或 { success:false, degraded } */
 function gemFusionUnlockedAtLevel(level, reincarnations) {
-  return Number(level) >= GEM_FUSION_UNLOCK_LEVEL &&
-    Number(reincarnations) >= GEM_FUSION_UNLOCK_REINCARNATIONS;
+  return progressReached(level, reincarnations, GEM_FUSION_UNLOCK_LEVEL, GEM_FUSION_UNLOCK_REINCARNATIONS);
 }
 
 function gemFusionUnlocked() {

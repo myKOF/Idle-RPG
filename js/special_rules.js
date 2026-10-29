@@ -49,7 +49,8 @@ function playerHasEquipmentRarity(minRarity) {
 function specialGrantsOnKill(monster) {
   if (typeof G === 'undefined' || !G || !G.player) return;
   var state = ensureSpecialGrantsState();
-  var level = Math.floor(Number(G.player.level) || 1);   // 玩家等級 → 判斷窗口
+  // 玩家等級 → 判斷窗口。窗口寫的是 0 轉等級；轉生過＝已越過（換算後 > 1000），走「已超出窗口」的補發判定。
+  var level = Math.floor(zeroRebirthLevel(Math.floor(Number(G.player.level) || 1), G.player.reincarnations));
   // 怪物等級 → 決定發放裝備的等級（無怪物時退回目前階段）
   var monsterLevel = (monster && monster.level) ? Math.floor(Number(monster.level)) : ((G.stage && G.stage.current) || 1);
   for (var i = 0; i < SPECIAL_GRANT_MILESTONES.length; i++) {

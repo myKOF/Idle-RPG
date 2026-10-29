@@ -1856,7 +1856,7 @@ var BattleRenderer = (function () {
       text: '',
       style: {
         fontFamily: 'sans-serif', fontSize: 24, fontWeight: 'bold',
-        fill: '#ff9b9b', stroke: { color: '#000000', width: 4 }
+        fill: REVIVE_TEXT_RED, stroke: { color: '#000000', width: 4 }
       }
     });
     reviveText.anchor.set(0.5, 1);
@@ -1864,13 +1864,24 @@ var BattleRenderer = (function () {
     reviveText.visible = false;
     /* 倒數是 HUD，不放進會旋轉的角色 root，也讓死亡迷霧不會蓋掉文字。 */
     S.layers.overlay.addChild(reviveText);
+    /* 倒地說明（角色下方）：正常死亡＝紅字「你已經死了，關卡倒退N關」；技能復活＝黃字「聖光降臨中…」 */
+    var reviveSubText = new PIXI.Text({
+      text: '',
+      style: {
+        fontFamily: 'sans-serif', fontSize: 18, fontWeight: 'bold',
+        fill: REVIVE_TEXT_RED, stroke: { color: '#000000', width: 4 }
+      }
+    });
+    reviveSubText.anchor.set(0.5, 0);
+    reviveSubText.visible = false;
+    S.layers.overlay.addChild(reviveSubText);
 
     root.x = 0; root.y = 0;
     root.zIndex = 0;
     S.layers.entity.addChild(root);
     S.player = {
       id: 'pv-float', root: root, body: body, bodyWrap: bodyWrap, outline: outline,
-      reviveText: reviveText,
+      reviveText: reviveText, reviveSubText: reviveSubText,
       sheetName: 'player', curAnim: 'idle', baseAnim: 'idle', texAnim: 'idle',
       hitHeight: 70, walking: false, dead: false, stillFor: 99, fallK: 0,
       flash: 0, jolt: 0, lunge: 0, facing: 1,
@@ -1898,6 +1909,7 @@ var BattleRenderer = (function () {
   /* 施法動作把「釋放」那一幀對到硬直結束時，播放速度的上下限（fps）：硬直很短或很長時不要快成一閃、慢成停格 */
   var CAST_FPS_MIN = 12, CAST_FPS_MAX = 60;
   /* 3D 主角的普攻動作（GLB 只有 Attack1／Attack2 兩個）、施法把劍揮到的時刻對到技能釋放時刻時最多加速幾倍 */
+  var REVIVE_TEXT_RED = '#ff5a5a', REVIVE_TEXT_YELLOW = '#ffd43b';   // 倒地／復活文字顏色
   var HERO3D_ATTACKS = ['attack1', 'attack2', 'attack3'];
   var HERO3D_CAST_SPEED_MAX = 4;
   var HERO3D_CAST_MAX_MS = 500;   // 3D 施法動作最長播多久：施法是插進移動裡的，播完立刻繼續跑
@@ -2252,16 +2264,27 @@ var BattleRenderer = (function () {
          面板 5Hz 才來一次，這裡照快照時間扣掉已經過的秒數（同 ui.js 的做法）。 */
       if (p.reviveText) {
         p.reviveText.visible = dead || earthguardRevival;
+        var sub = p.reviveSubText, subText = '', subFill = REVIVE_TEXT_RED;
         if (earthguardRevival && p.revival.startAt > panel.gt) {
           p.reviveText.visible = false;   // 倒地動作還在播：復活倒數與光束一起開始
         } else if (earthguardRevival) {
           var earthguardLeft = (typeof uiCountdownRemain === 'function')
             ? uiCountdownRemain(p.revival.endAt - panel.gt, panel.gt) : p.revival.endAt - panel.gt;
           p.reviveText.text = STR(446, Math.max(1, Math.ceil(Math.max(0, earthguardLeft))));
+          p.reviveText.style.fill = REVIVE_TEXT_YELLOW;
+          /* 點點像 loading：1、2、3 個輪播，一秒換兩格 */
+          subText = STR(2224, '.'.repeat(Math.floor(Date.now() / 500) % 3 + 1));
+          subFill = REVIVE_TEXT_YELLOW;
         } else if (dead) {
           var left = (typeof uiCountdownRemain === 'function')
             ? uiCountdownRemain(reviveLeft, panel.gt) : reviveLeft;
           p.reviveText.text = STR(447, Math.max(1, Math.ceil(Math.max(0, left))));
+          p.reviveText.style.fill = REVIVE_TEXT_RED;
+          subText = STR(2223, typeof FIELD_DEATH_STAGE_RETREAT === 'number' ? FIELD_DEATH_STAGE_RETREAT : 10);
+        }
+        if (sub) {
+          sub.visible = !!subText;
+          if (subText) { sub.text = subText; sub.style.fill = subFill; }
         }
       }
       /* 我方座標由模擬層給（FIELD.playerPos ←→ js/battlefield.js bfPlayerPos）。
@@ -6772,6 +6795,11 @@ var BattleRenderer = (function () {
       var revivePt = worldToScreenPoint(p.root.x, p.root.y - 104);
       p.reviveText.x = revivePt.x;
       p.reviveText.y = revivePt.y;
+    }
+    if (p && p.reviveSubText && p.reviveSubText.visible) {
+      var reviveSubPt = worldToScreenPoint(p.root.x, p.root.y + 26);
+      p.reviveSubText.x = reviveSubPt.x;
+      p.reviveSubText.y = reviveSubPt.y;
     }
 
     // 菁英標記：群組環、詞條圖示、狀態光環、生命鏈結連線（js/battle-elite.js）

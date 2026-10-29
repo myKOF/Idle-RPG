@@ -832,6 +832,28 @@ function affixAvailableAtLevel(key, level) {
   return !isFinite(lv) || lv > gate;
 }
 
+/* ---- 等級／轉生數門檻的統一判斷（2026-10-30 規則）----
+   1 轉 1 級 ≈ 0 轉 1000 級（等級上限），所以進度是「先比轉生數、轉生數相同才比等級」：
+     · 只寫等級的門檻（轉生數 0）＝指 0 轉那一輪的 XXX 級，只要轉生過（≥1 轉）就視為已超過、解除限制。
+     · 只寫轉生數的門檻（等級 1）＝指到達該轉生數即可，不必再等級。
+     · 兩者都寫＝「第 N 轉的 L 級」，轉生數更高者一律放行。
+   與 skills2.js sgTierUnlockedBy 是同一套比法；新增任何等級／轉生門檻都走這支，不要自己寫 && 兩條件。
+   level 不是有限數字且轉生數相同時回 false（與舊寫法 Number(level) >= x 的行為一致）。 */
+function progressReached(level, reincarnations, needLevel, needReincarnations) {
+  var rc = Math.max(0, Math.floor(Number(reincarnations) || 0));
+  var need = Math.max(0, Math.floor(Number(needReincarnations) || 0));
+  if (rc !== need) return rc > need;
+  return Number(level) >= (Number(needLevel) || 0);
+}
+/* 換算成「0 轉等級」：給只認等級的規則（詞條門檻、保底窗口）用。
+   轉生過（≥1 轉）一律大於可轉生等級，等於已越過所有 0 轉等級門檻；0 轉時原樣回傳（含 NaN，維持「不擋」）。 */
+function zeroRebirthLevel(level, reincarnations) {
+  var rc = Math.max(0, Math.floor(Number(reincarnations) || 0));
+  if (rc < 1) return Number(level);
+  var lv = Number(level);
+  return REINCARNATION_LEVEL + (isFinite(lv) ? Math.max(1, lv) : 1);
+}
+
 /* 屬性面板的一列對應哪一條「有門檻」的詞條（沒有則 null）。
    列名是「🔥 火屬性傷害提升」這種帶 emoji 的字串，與 statPanelRowIsAllLocked 同樣用詞條名稱做包含比對；
    只比對有門檻的鍵，並把結果記在列上（跟著 AFFIX_LEVEL_GATES 換表時失效重算）。 */
