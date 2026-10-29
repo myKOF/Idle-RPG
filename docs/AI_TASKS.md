@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## RUNE-BALANCE-STATS-20261029 — 符文與符文真言各部位屬性最大值平衡性統計報告
+
+- Owner：Antigravity；Done，單一開發者。使用者要求統計現有符文在各裝備（武器、裝備／防具、飾品三大部位）上的總合數值強度與可獲得各類屬性最大值，符文與符文真言分開統計（符文全統計完再統計符文真言），並輸出為 `.md` 檔。
+- 完成檔案：新增 `docs/RUNE_BALANCE_STATS.md`（607 行），並同步更新 `PATCH.md` 與本段紀錄；未修改任何遊戲程式碼、配置表或測試。
+- 統計內容：以遊戲實際公式環境（`tests/helpers/runeword-env.cjs`）核算 33 種符文與 65 組符文真言在武器（區分單手、雙手2倍、主手+副手、修羅雙持雙手）、防具（單件與8件總和）、飾品（單件與3件總和）各類屬性的最大設計倍率與 Lv100 傳說／Lv100 神鑄混沌／Lv1000 神鑄混沌面板實數；真言部分同時列出純真言 `stats`（區分純部位專屬與含 `any` 通用【創世紀】）、特殊效果 `fx`/`passives`/`procs`/`legend` 以及「真言＋鑲嵌符文」實戰綜合最大值。
+- 驗證：`node tools/build_check.cjs` 與 `node --test tests/runeword-data.test.cjs tests/runeword.test.cjs` 通過。
+
 ## GENESIS-ICON-BRIGHTNESS-20261029 — 調亮創世圖示底色
 
 - Owner：Codex；Done。使用者要求創世icon太黑、調亮一些。只提高創世圖示紫色內襯與局部高光亮度，保持既有詳情／tips、24px角飾、圖案與狀態提示。允許css/style.css、index.html CSS快取、LV_upgrade_system.md及本段；禁止JS／玩法／文字／獨立素材／其他工作區及合併推送。前置角飾比例確認完成、四檔預檢乾淨；驗相同裝備前後對照及選取／置灰／雙手提示、回歸／Build／diff後Commit。
