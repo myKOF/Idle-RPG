@@ -42,7 +42,6 @@ function forgeNoteRarity(it) {
   var f = forgeState();
   if (it.rarity > (f.seenRarity || 6)) { f.seenRarity = it.rarity; UI.dirty.forge = true; }
 }
-function forgeQualityUnlocked(rarity, seenRarity) { return rarity <= 6 || (Number(seenRarity) || 6) >= rarity; }
 function forgeState() { return forgeMigrateState(G); }
 function forgeUnlocked() {
   if (!G || !G.player) return false;

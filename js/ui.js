@@ -6915,7 +6915,7 @@ function renderForge() {
     btn.classList.toggle('active', rarity === (f.quality || 6));
     btn.setAttribute('aria-pressed', String(rarity === (f.quality || 6)));
     btn.disabled = pending;
-    btn.hidden = !forgeQualityUnlocked(rarity, f.seenRarity);
+    btn.hidden = rarity > 6 && (Number(f.seenRarity) || 6) < rarity; // 創世／混沌第一次入手才開放（seenRarity 由 Worker 記錄）
   });
   var gemMode = mode === 'gem';
   UI.forgeInvTab = gemMode ? 'gems' : 'items';
