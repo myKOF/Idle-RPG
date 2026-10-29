@@ -63,13 +63,14 @@ test('關閉比較、空目標槽或相同裝備維持單卡', () => {
   assert.equal(tooltip('inv', { id: 'ring-worn-1' }, 'ring').cards.length, 1);
 });
 
-test('混合品質比較各自保留神話框，單卡及其他高品質不誤用神話樣式', () => {
+test('混合品質比較各自保留神話與創世框，單卡及其他高品質不誤用樣式', () => {
   const classes = result => Array.from(result.tip.innerHTML.matchAll(/class="(equip-detail-card[^"]*)"/g), m => m[1]);
-  for (let rarity = 0; rarity <= 8; rarity++) {
+  for (let rarity = 0; rarity <= 11; rarity++) {
     const item = { id: 'candidate', rarity };
-    const expected = rarity === 6 ? 'equip-detail-card mythic-detail' : 'equip-detail-card';
+    const expected = rarity === 6 ? 'equip-detail-card mythic-detail' : rarity === 7 ? 'equip-detail-card genesis-detail' : 'equip-detail-card';
     assert.deepEqual(classes(tooltip('equip', item, 'weapon')), [expected]);
     assert.deepEqual(classes(tooltip('inv', item, 'weapon', true, 6)), [expected, 'equip-detail-card mythic-detail']);
+    assert.deepEqual(classes(tooltip('inv', item, 'weapon', true, 7)), [expected, 'equip-detail-card genesis-detail']);
     assert.deepEqual(classes(tooltip('inv', item, 'weapon', true, 5)), [expected, 'equip-detail-card']);
   }
 });

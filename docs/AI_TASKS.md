@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## GENESIS-SILVER-VIOLET-20261029 — 創世裝備銀紫雕飾外觀
+
+- Owner：Codex；Done，單一開發者。使用者指定參考圖的銀白角飾、深紫底及淡紫高光，套用創世級裝備tips、比較卡、詳情與圖示框。參考圖只作風格參考，裝飾以CSS及內嵌自製SVG完成，不複製外部圖片。
+- 前置：既有裝備UI與品質分類完成；工作區ai/codex乾淨，目標衝突預檢無來源。允許js/ui.js、css/style.css、index.html快取、既有裝備比較回歸、LV_upgrade_system.md與本段；禁止玩法／品質資料／配置／Worker／存檔／獨立素材／其他工作區及合併推送。
+- 驗收：創世R7單卡及混合品質比較正確、詳情切換清除樣式、圖示與雙手／選取狀態保持、桌面與窄屏視覺／捲動／Console、相關裝備回歸及Build與diff；完成後獨立Commit，交使用者正常整合。
+- 完成六檔：ui為R7詳情及主／副比較卡各自掛genesis-detail，切換品質或空選取時清除；style以九宮格自製卷枝銀框、雙層細線、深紫內襯、白紫標題／淡紫品質及菱形分隔統一三種入口。eff-genesis由暗金旋轉改靜態銀紫框，雙手副手保留青色佔用覆層、選取／置灰沿既有高優先提示；原部位圖案不重繪，其他品質不改。index CSS99／UI231，LV與既有比較回歸同步涵蓋全部R0～11及反向R7比較。
+- 測試：`node --test --test-reporter=spec tests/equipment-tooltip-compare.test.cjs tests/equipment-selection-border.test.cjs tests/equipment-two-hand-display.test.cjs tests/godforged-border-effect.test.cjs tests/inventory-rarity-filter.test.cjs tests/string-table.test.cjs`：31/31通過。`npm.cmd run build`：599檔通過；`git diff --check`通過。沒有降低既有斷言，沒有新增純樣式鏡像測試。
+- 瀏覽器：IAB無可用後端，使用bundled Playwright＋獨立headless Edge、新隨機localhost來源，正式裝備渲染函式及全套CSS的隔離fixture。驗1200×900與390×844、R7→6→8→9→空選取、R7／R6混合比較、詳情捲動／外框固定與圖示animationName=none，窄屏documentWidth=390、卡寬280；最終Console error／warning及pageerror皆0。初次fixture未設定favicon造成404，補fixture路由後重載為0，正式遊戲favicon原已存在。截圖保留本聊天visualizations/genesis-style；未操作玩家存檔，未跑真Worker／完整遊玩／多瀏覽器長戰，這些為驗收範圍限制。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、itemHeaderHTML／itemDetailHTML／itemIconFile與品質資料、既有選取／雙手及String回歸、全部Excel／CSV／玩法／Worker／存檔。無獨立美術檔或VFX Preset，CSS內嵌向量屬介面程式圖形，不需素材庫Commit；沒有引入參考原圖或新增玩家文字。自我Review完成，無本次未完成實作／已知功能風險，可供Review／合併；遊戲Commit為本段所在「[Codex] feat: 統一創世裝備銀紫雕飾外觀」，編號見交付。未合併或推送develop／main；下一步由使用者正常整合並重新載入驗收。
+
 ## MERGE-PARAM-DIRECT-EDIT-20261029 — integrate native Excel handoff
 
 - Owner: Codex; Done. Integrated HEAD `3a2c1b9e` with MERGE_HEAD `34619366`, preserving the develop divine-forge/Skills2 changes and the incoming direct-parameter workflow plus skill cast hold value.
