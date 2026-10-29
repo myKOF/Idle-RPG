@@ -47,12 +47,15 @@
 #forge-log .good { color:#a4edc8; }
 #forge-log .bad { color:#ff9292; }
 #forge-log .warn { color:#f2d18b; }
-.forge-auto-control { position:absolute; right:14px; bottom:15px; display:flex; gap:7px; align-items:center; z-index:4; font-size:12px; color:var(--afl-text-soft); cursor:pointer; }
-#forge-auto { appearance:none; width:30px; height:17px; margin:0; border-radius:12px; background:var(--afl-btn); border:1px solid var(--afl-line-hi); cursor:pointer; position:relative; }
-#forge-auto::after { content:""; position:absolute; left:2px; top:2px; width:11px; height:11px; border-radius:50%; background:var(--afl-text-dim); transition:transform .2s; }
-#forge-auto:checked { background:var(--afl-gold-bg); border-color:var(--afl-gold-line); }
-#forge-auto:checked::after { transform:translateX(13px); background:var(--afl-gold-text); box-shadow:none; }
-#forge-auto:disabled { opacity:.45; cursor:default; }
+.forge-auto-control { position:absolute; right:14px; bottom:15px; display:inline-flex; gap:7px; align-items:center; z-index:4; font-size:12px; color:#a39d90; cursor:pointer; }
+/* 開關樣式與熔爐的運轉開關（ashen-forge.css .nf-switch）一致 */
+#forge-auto { position:absolute; width:1px; height:1px; opacity:0; margin:0; }
+.forge-auto-track { position:relative; width:34px; height:18px; border-radius:999px; background:#3a3d44; }
+.forge-auto-track::after { content:""; position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%; background:#d8d0c0; transition:transform .15s; }
+#forge-auto:checked + .forge-auto-track { background:#b8932f; }
+#forge-auto:checked + .forge-auto-track::after { transform:translateX(16px); }
+#forge-auto:focus-visible + .forge-auto-track { outline:2px solid #f0cf86; outline-offset:2px; }
+#forge-auto:disabled + .forge-auto-track { opacity:.45; }
 #forge-quality-tabs { position:absolute; left:14px; bottom:12px; z-index:4; display:flex; align-items:center; gap:4px; padding:4px; background:#0e1013cc; border:1px solid #23262d; border-radius:8px; }
 #forge-quality-tabs[hidden],#tab-forge #forge-quality-tabs .btn[hidden] { display:none!important; }
 #tab-forge #forge-quality-tabs .btn { min-width:76px; min-height:30px; padding:4px 14px; font-size:13px; color:var(--afl-text-dim)!important; background:transparent!important; border:1px solid transparent!important; }
