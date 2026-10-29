@@ -6894,8 +6894,13 @@ function renderForge() {
   var occupied = forgeViewItemCount(f);
   setTextIfChanged($id('forge-unload'), occupied ? STR(1296) : STR(2207));
   $id('forge-unload').disabled = pending || (!occupied && mode !== 'equip');
-  $id('forge-go').disabled = pending || !rate || forgeViewItemCount(f) !== needed || player.gold < rate.cost || rc < divineForgeUnlock(mode);
-  setTextIfChanged($id('forge-go'), f.crafting ? STR(2209) : STR(2208));
+  $id('forge-go').disabled = pending || !rate || forgeViewItemCount(f) !== needed || rc < divineForgeUnlock(mode); // 金幣不夠不鎖按鈕：按下後才檢查並提示
+  // 開始按鈕的名稱與提示依功能而異；提示第二行的金幣消耗，空法陣時以所選品質預設值估算
+  var goLabelIds = { equip:2208, ancient:2215, gem:2216, imprint:2217 }, goTipIds = { equip:2218, ancient:2219, gem:2220, imprint:2221 };
+  var goRate = rate || divineForgeRateInfo({ operation:mode, slots:[{ rarity:f.quality || 6 }], stones:0 }, 0);
+  var goBtn = $id('forge-go');
+  setTextIfChanged(goBtn, f.crafting ? STR(2209) : STR(goLabelIds[mode]));
+  setAttrIfChanged(goBtn, 'data-tip', STR(goTipIds[mode]) + (goRate ? '<br>' + STR(2222, fmt(goRate.cost)) : ''));
   $id('forge-auto').checked = !!f.auto;
   $id('forge-auto').disabled = mode !== 'equip' || isUiCommandPending(nodePendingKey('forge'));
   setHtmlIfChanged($id('forge-log'), (f.log || []).slice(0,10).map(function (entry) { return '<div class="forge-log-line ' + entry.cls + '" data-tip="' + esc(entry.msg) + '">' + esc(entry.msg) + '</div>'; }).join(''));
@@ -12954,7 +12959,12 @@ function initUI() {
         forgeCommand('forge.setOperation', { mode:key });
       });
     });
-    $id('forge-go').addEventListener('click', function () { forgeCommand('forge.start'); });
+    $id('forge-go').addEventListener('click', function () {
+      var f = forgeViewState(uiForgePanelSnapshot()), p = uiHeaderPanelSnapshot().player;
+      var info = f && forgeViewRate(f, p.dust);
+      if (info && (p.gold || 0) < info.cost) { showFloatingText(this, STR(91), '#fca5a5'); return; }
+      forgeCommand('forge.start');
+    });
     $id('forge-unload').addEventListener('click', function () {
       var f = forgeViewState(uiForgePanelSnapshot());
       forgeCommand(f && forgeViewItemCount(f) ? 'forge.unloadAll' : 'forge.autoFill');
