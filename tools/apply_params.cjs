@@ -793,6 +793,8 @@ scalarOpt('formula', 'OFFLINE_STAGE_ROUND', '10-離線', '計算等級', 1);
 scalarOpt('formula', 'OFFLINE_STAGE_RATIO', '10-離線', '計算等級', 2);
 scalarOpt('formula', 'OFFLINE_ELITE', '10-離線', '怪物種類', 0);
 scalar('formula', 'SKILL_CAST_LOCK', '9-技能', '施放硬直', 0);
+// 參數b：放出後角色多站定幾秒（等 Excel 參數b 填值才生效；填 0 或空白＝不站定，scalarOpt 會跳過）
+scalarOpt('formula', 'SKILL_CAST_HOLD', '9-技能', '施放硬直', 1);
 scalar('formula', 'SKILL_MIN_CAST_INTERVAL', '9-技能', '技能施放最短間隔', 0);
 // ESSENCE_SALVAGE_CHANCE_BY_RARITY = [0.1,0.5,1,2,4,8,20,100,100]
 arrayContent('formula', 'ESSENCE_SALVAGE_CHANCE_BY_RARITY',

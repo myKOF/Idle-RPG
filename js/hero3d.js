@@ -183,13 +183,13 @@
       if (!kids.length) continue;
       var tail = new THREE.Vector3(); kids.forEach(function (ci) { tail.add(heads[ci]); }); tail.multiplyScalar(1 / kids.length);
       var A = heads[bi], B = tail;
-      if (A.distanceTo(B) < 0.02) { skipped.push(name + ':長度' + A.distanceTo(B).toFixed(3)); continue; }
+      if (A.distanceTo(B) < 0.02) { skipped.push(name + ':len' + A.distanceTo(B).toFixed(3)); continue; }
       var ds = [];
       for (var v = 0; v < n; v++) {
         if (cloth[v] || si.getX(v) !== bi || sw.getX(v) < 0.6) continue;
         ds.push(segDist(new THREE.Vector3().fromBufferAttribute(pos0, v).applyMatrix4(skinned.bindMatrix), A, B));
       }
-      if (ds.length < 8) { skipped.push(name + ':樣本' + ds.length); continue; }
+      if (ds.length < 8) { skipped.push(name + ':n' + ds.length); continue; }
       ds.sort(function (x, y) { return x - y; });
       capsules.push({ bone: bi, name: name, A: A, B: B, r: ds[Math.floor(ds.length * 0.9)] });
     }
@@ -209,7 +209,7 @@
         if (Math.abs(pb.x) > 0.25 || pb.y < A2.y || pb.y > B2.y) continue;
         ds2.push(segDist(pb, A2, B2));
       }
-      if (ds2.length < 8) { skipped.push(name + ':樣本' + ds2.length); return; }
+      if (ds2.length < 8) { skipped.push(name + ':n' + ds2.length); return; }
       ds2.sort(function (x, y) { return x - y; });
       capsules.push({ bone: bi2, name: name, A: A2, B: B2, r: ds2[Math.floor(ds2.length * 0.9)] });
     }

@@ -444,6 +444,12 @@ function bfTickPlayer(enemies, dt, preferred, pEnt) {
     BF_PLAYER_CHASING = false;
     return false;
   }
+  /* 技能放出之後的站定（js/skills.js skillCastHoldStart）：3D 技能動作播完才繼續移動 */
+  if (pEnt && Number(pEnt._skillHold) > 0) {
+    pEnt._skillHold = Math.max(0, pEnt._skillHold - (dt > 0 ? dt : 0));
+    BF_PLAYER_CHASING = false;
+    return false;
+  }
   if (!(dt > 0)) return false;
   if (typeof elitePlayerLocked === 'function' && elitePlayerLocked()) { BF_PLAYER_CHASING = false; return false; }   // 被漩渦拉扯中
   var home = bfPlayerPos();
