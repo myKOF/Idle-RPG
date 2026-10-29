@@ -39,7 +39,7 @@
 #tab-forge .forge-v2-actions .btn { min-width:100px; min-height:34px; padding:6px 16px; }
 #tab-forge #forge-go { box-shadow:none; }
 #tab-forge #forge-go:disabled { opacity:.5; }
-#tab-forge #forge-log { position:absolute; top:0; left:0; width:36%; max-width:340px; min-height:0; max-height:none; padding:6px 8px; border:0; border-radius:0; background:none; text-shadow:0 1px 3px #000,0 0 6px #000; text-align:left; z-index:3; pointer-events:auto; }
+#tab-forge #forge-log { position:absolute; top:0; left:0; width:36%; max-width:340px; min-height:0; max-height:none; padding:6px 8px; border:0; border-radius:0; background:none; text-shadow:0 1px 3px #000,0 0 6px #000; text-align:left; z-index:3; pointer-events:auto; align-items:flex-start; margin:0; }
 #tab-forge #forge-log:empty { display:none; }
 #forge-log .forge-log-line { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:19px; font-size:11px; }
 #forge-log .good { color:#a4edc8; }
@@ -51,19 +51,19 @@
 #forge-auto:checked { background:var(--afl-gold-bg); border-color:var(--afl-gold-line); }
 #forge-auto:checked::after { transform:translateX(13px); background:var(--afl-gold-text); box-shadow:none; }
 #forge-auto:disabled { opacity:.45; cursor:default; }
-#forge-quality-tabs { flex:none; display:flex; align-items:center; gap:4px; padding:4px; margin:8px 0 0; background:#0e1013; border:1px solid #23262d; border-radius:8px; }
+#forge-quality-tabs { position:absolute; left:14px; bottom:12px; z-index:4; display:flex; align-items:center; gap:4px; padding:4px; background:#0e1013cc; border:1px solid #23262d; border-radius:8px; }
 #forge-quality-tabs[hidden] { display:none; }
 #tab-forge #forge-quality-tabs .btn { min-width:76px; min-height:30px; padding:4px 14px; font-size:13px; color:var(--afl-text-dim)!important; background:transparent!important; border:1px solid transparent!important; }
 #tab-forge #forge-quality-tabs .btn.active { color:var(--afl-gold-text)!important; border-color:var(--afl-gold-line)!important; background:var(--afl-gold-bg)!important; box-shadow:none; }
 #tab-forge #forge-inv-slot,#tab-forge #forge-gem-box { flex:none; }
 #tab-forge #inv-section-box { margin:8px 0 0!important; padding:8px!important; background:var(--afl-card)!important; border:1px solid var(--afl-line)!important; border-radius:8px!important; box-shadow:none!important; }
 #tab-forge #inv-section-box .inv-head { display:none!important; }
-#tab-forge #inventory-grid { --inventory-visible-rows:2!important; height:122px; min-height:122px; max-height:122px; padding:0!important; }
+#tab-forge #inventory-grid { --inventory-visible-rows:3!important; height:186px; min-height:186px; max-height:186px; padding:0!important; }
 #tab-forge #inventory-grid .item-cell { height:58px; min-height:0; aspect-ratio:auto; }
-/* 底部區塊高度與裝備神鑄一致（品質分頁 40＋間距 8＋背包框 140＋間距 8），切模式時上方水晶舞台不變動 */
-#tab-forge #forge-gem-box { display:flex; flex-direction:column; box-sizing:border-box; height:188px; margin:8px 0 0!important; padding:8px!important; background:var(--afl-card)!important; border:1px solid var(--afl-line)!important; border-radius:8px!important; box-shadow:none!important; }
+/* 背包與寶石欄都顯示三行（3×58＋2×6） */
+#tab-forge #forge-gem-box { display:flex; flex-direction:column; box-sizing:border-box; margin:8px 0 0!important; padding:8px!important; background:var(--afl-card)!important; border:1px solid var(--afl-line)!important; border-radius:8px!important; box-shadow:none!important; }
 #tab-forge #forge-gem-box .inv-head { flex:none; margin:0 0 6px!important; padding:0!important; border:0!important; background:none!important; }
-#tab-forge #forge-gem-grid { flex:1; min-height:0; max-height:none!important; }
+#tab-forge #forge-gem-grid { flex:none; height:186px; max-height:none!important; }
 #tab-forge .forge-gem-cell { position:relative; }
 .forge-aura { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
 .forge-aura::before,.forge-aura::after { content:""; position:absolute; left:50%; top:42%; width:62%; height:60%; transform:translate(-50%,-50%); border-radius:50%; background:radial-gradient(ellipse,#4eacff1f,transparent 65%); }
