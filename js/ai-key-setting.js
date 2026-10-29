@@ -19,7 +19,7 @@
   ];
   var TRANSLATIONS_KEY = 'idle_rpg_gm_translations';
   // GM指令契約／翻譯規則變動時升版，避免重用舊語意。
-  var TRANSLATIONS_VERSION = 1;
+  var TRANSLATIONS_VERSION = 2;
   var TRANSLATIONS_TTL_MS = 7 * 86400000;
   var TRANSLATIONS_LIMIT = 32;
   var translationMemory = [];
@@ -209,8 +209,28 @@
 
   function cacheableCommands(commands) {
     return Array.isArray(commands) && commands.length > 0 && commands.length <= 32 && commands.every(function (line) {
-      return typeof line === 'string' && line.length <= 256 && !/[\r\n]|@sel:/i.test(line) &&
+      return typeof line === 'string' && line.length <= 256 && !/[\r\n]|@sel:|@gm-batch:/i.test(line) &&
         /^(gold|scrap|essence|dust|equipset|equip|modequip|socketall|stage|level|turn|bag|skillmax|skill_unlock|skill_point|skillxp|masterylv|gem|rune|runeword|xp|mat|part)\s+\S/.test(line);
+    });
+  }
+
+  function allowsAffixOverflow(prompt) {
+    var text = String(prompt || '');
+    if (/(?:不(?:要|可|准|允許|需要|必|能|想|打算)?|禁止|別|沒有|沒|未|無需|無須|毋須)[^，,。；;\n]{0,12}突破/.test(text)) return false;
+    if (/如果|假如|除非|是否|能否|先問|先詢問|先確認|確認後|需要時|才允許|才能|[嗎呢？?]/.test(text)) return false;
+    return /(?:^|[，,。；;（(\n]|且|並)\s*(?:(?:本次|這次)?(?:我(?:明確)?允許|允許|請允許|請(?:幫我)?|幫我)\s*)?突破詞條(?:數量)?上限/.test(text);
+  }
+
+  // 突破權限只取自原始人類輸入；不採信AI自行加的旗標，也不保存內部批次標記。
+  function applyAffixOverflowPolicy(commands, prompt) {
+    var allowed = allowsAffixOverflow(prompt);
+    return commands.map(function (line) {
+      var clean = line.replace(/(?:^|\s)--allow-overcap(?=\s|$)/g, ' ')
+        .replace(/\s+@gm-batch:[^\s]+/g, '').trim();
+      if (allowed && /^(modequip|editequip|equipmod|setequip|itemmod|meq|改裝備)\s/i.test(clean)) {
+        clean += ' --allow-overcap';
+      }
+      return clean;
     });
   }
 
@@ -246,7 +266,7 @@
     var text = String(prompt || '').trim();
     var entries = readTranslationCache();
     for (var i = entries.length - 1; i >= 0; i--) {
-      if (entries[i].prompt === text) return entries[i].commands.slice();
+      if (entries[i].prompt === text) return applyAffixOverflowPolicy(entries[i].commands, text);
     }
     return null;
   }
@@ -255,6 +275,7 @@
   function rememberNaturalCommand(prompt, commands) {
     var text = String(prompt || '').trim();
     if (!isInternal() || !cacheablePrompt(text) || !cacheableCommands(commands)) return;
+    commands = applyAffixOverflowPolicy(commands, text);
     var entries = readTranslationCache().filter(function (entry) { return entry.prompt !== text; });
     entries.push({ prompt: text, signature: translationSignature(), commands: commands.slice(), savedAt: Date.now() });
     writeTranslationCache(entries.slice(-TRANSLATIONS_LIMIT));
@@ -537,6 +558,9 @@
     if (!userPrompt) return null;
     var trimmed = normalizeFastClause(userPrompt);
     if (!trimmed) return null;
+    if (allowsAffixOverflow(userPrompt)) {
+      trimmed = trimmed.replace(/(?:且|並且|並)?\s*(?:[（(]\s*)?(?:允許)?突破詞條(?:數量)?上限(?:\s*[）)])?/g, '').trim();
+    }
 
     var resources = parseFastResources(trimmed);
     if (resources) return resources;
@@ -559,7 +583,7 @@
       }
       resultCmds.push(cmd);
     }
-    return resultCmds.length ? resultCmds : null;
+    return resultCmds.length ? applyAffixOverflowPolicy(resultCmds, userPrompt) : null;
   }
 
   /* 使用 Gemini 將白話文自然語言轉為標準 GM 指令陣列 */
@@ -599,7 +623,10 @@
       '     * 太古數：例如「4太古」填 4，未提填 0\n' +
       '     * wear/inv：提到換裝、穿上、全身或套裝一律填 wear；放背包填 inv\n' +
       '   - equip <品質> <裝備等級> [部位] [數量] [強化等級] [太古數]：單件裝備\n' +
-      '   - modequip [目標] <屬性> <數值> [ancient|normal]：直接修改裝備詞條、數值或太古\n' +
+      '   - modequip [目標] <屬性> <數值> [ancient|normal]：修改已有詞條；不存在時替換現有詞條，不增加條數\n' +
+      '     * 一般裝備詞條數必須維持品質正常數量，雙手武器依正常加成；全太古只改既有詞條。創世胸甲是7條，不能因指定吸血／吸魔變成9條。\n' +
+      '     * 同句多個屬性用多條modequip依序設定，系統會保護本批次先前指定的詞條；超過現有槽數須報錯，不能自行突破。\n' +
+      '     * 只有玩家原句明確說「突破詞條上限」時，才能加 --allow-overcap 允許追加；單純「加上／增加屬性」不代表突破，禁止自行加旗標。\n' +
       '     * 目標：wear（全身 13 件穿戴裝備批次修改）、sel / 省略（選中裝備）、inv（背包選中裝備）、set1 weapon（第1套主手）、1 1（第1套第1部位）、weapon、helmet、amulet 等\n' +
       '     * 太古操作：modequip wear ancient all（全身裝備全部變太古）、modequip [目標] ancient all、ancient none（全部變非太古）、ancient 4（前4條太古）\n' +
       '     * 強化操作：modequip wear +100（全身強化設為+100）、modequip [目標] +100\n' +
@@ -750,7 +777,7 @@
           if (!list.every(function (c) { return typeof c === 'string' && c.trim() && !/[\r\n]/.test(c); })) {
             throw new Error('AI 回傳的指令格式不正確');
           }
-          return list.map(function (c) { return c.trim(); });
+          return applyAffixOverflowPolicy(list.map(function (c) { return c.trim(); }), userPrompt);
         });
         return Promise.race([work, attemptStopped]).then(function (commands) {
           checkAttempt();
@@ -913,6 +940,7 @@
     forgetNaturalCommand: forgetNaturalCommand,
     clearNaturalCommandCache: clearNaturalCommandCache,
     getNaturalPresets: getNaturalPresets,
+    applyAffixOverflowPolicy: applyAffixOverflowPolicy,
     getNaturalTiming: function () {
       return { attemptTimeoutMs: NATURAL_ATTEMPT_TIMEOUT_MS, maxRetries: NATURAL_MAX_RETRIES, totalTimeoutMs: NATURAL_TIMEOUT_MS };
     },

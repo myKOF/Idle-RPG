@@ -117,7 +117,9 @@ test('翻譯快取跨重新載入有效，傳回副本避免污染，不保存�
   commands[0] = 'gold 999';
   second.type(prompt); await flush();
   assert.equal(second.calls.length, 0);
-  assert.equal(second.sent[0].line, 'modequip sel atkFlat 50000 @sel:inv:222');
+  assert.equal(second.sent[0].line.replace(/ @gm-batch:[\w-]+$/, ''), 'modequip sel atkFlat 50000 @sel:inv:222');
+  assert.match(second.sent[0].line, / @gm-batch:[\w-]+$/);
+  assert.equal(first.storage[CACHE].includes('@gm-batch:'), false);
 });
 
 test('部分Worker失敗、Promise拒絕、無效JSON與截斷回應都不快取', async () => {
@@ -181,7 +183,7 @@ test('不保存狀態依賴語句、空結果、非指令、非法清單或已�
     env.ai.rememberNaturalCommand(text, ['level 500']);
     assert.equal(env.ai.getCachedNaturalCommand(text), null);
   }
-  for (const list of [[], [{}], ['eval anything'], ['gold 1\nscrap 2'], ['modequip sel atkFlat 3 @sel:inv:123']]) {
+  for (const list of [[], [{}], ['eval anything'], ['gold 1\nscrap 2'], ['modequip sel atkFlat 3 @sel:inv:123'], ['modequip sel atkFlat 3 @gm-batch:old']]) {
     env.ai.rememberNaturalCommand(prompt, list);
     assert.equal(env.ai.getCachedNaturalCommand(prompt), null);
   }
@@ -227,4 +229,39 @@ test('非內部環境不能讀取／寫入快取、取得預設或建立GM工具
   assert.equal(env.storage[CACHE], undefined);
   assert.equal(env.ai.getNaturalPresets().length, 0);
   assert.equal(env.buttons.length, 0);
+});
+
+test('AI輸出或快取不能自行授權突破；只有原句明確授權才送出旗標', async () => {
+  for (const allowed of [false, true]) {
+    const env = setup();
+    env.ctx.respond = async () => success(['modequip weapon atkFlat 50000 --allow-overcap']);
+    const text = allowed ? '允許突破詞條上限，' + prompt : prompt;
+    env.type(text); await flush();
+    assert.equal(env.sent.length, 1);
+    assert.equal(env.sent[0].line.includes('--allow-overcap'), allowed);
+    assert.equal(env.ai.getCachedNaturalCommand(text)[0].includes('--allow-overcap'), allowed);
+  }
+});
+
+test('同句子指令共用批次；重複輸入使用新批次，快取不保存批次標記', async () => {
+  const env = setup();
+  env.ctx.respond = async () => success(['modequip weapon lifesteal 100', 'modequip weapon manaSteal 100']);
+  env.type(prompt); await flush(); env.type(prompt); await flush();
+  assert.equal(env.sent.length, 4);
+  const batches = env.sent.map(s => s.line.match(/@gm-batch:([\w-]+)/)[1]);
+  assert.equal(batches[0], batches[1]);
+  assert.equal(batches[2], batches[3]);
+  assert.notEqual(batches[0], batches[2]);
+  assert.equal(env.storage[CACHE].includes('@gm-batch:'), false);
+  assert.equal(env.calls.length, 1);
+});
+
+test('詞條規則升版後，舊版追加語意的翻譯快取失效', () => {
+  const env = setup();
+  env.ai.rememberNaturalCommand(prompt, ['modequip weapon lifesteal 100']);
+  const data = JSON.parse(env.storage[CACHE]);
+  assert.equal(data.version, 2);
+  data.version = 1;
+  env.storage[CACHE] = JSON.stringify(data);
+  assert.equal(env.ai.getCachedNaturalCommand(prompt), null);
 });

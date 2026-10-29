@@ -68,7 +68,8 @@ test('常用白話無Key直接送Worker，完全不建立雲端請求或計時�
   const env = setup({ key: false });
   env.type('請幫我加金幣1000億個，然後幫我全身強化+50');
   await flush();
-  assert.deepEqual(env.sent.map((s) => s.line), ['gold 100000000000', 'modequip wear +50']);
+  assert.deepEqual(env.sent.map((s) => s.line.replace(/ @gm-batch:[\w-]+$/, '')), ['gold 100000000000', 'modequip wear +50']);
+  assert.match(env.sent[1].line, / @gm-batch:[\w-]+$/);
   assert.equal(env.calls.length, 0);
   assert.equal(env.timers.size, 0);
 });

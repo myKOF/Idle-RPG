@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## GM-AFFIX-LIMITS-20261030 — GM詞條遵守正常數量與明確突破授權
+
+- Owner：Codex；Done，單一開發者。使用者授權修正GM發裝／指定屬性：遵守品質與雙手正常詞條數，缺少指定屬性改替換，只有明確要求突破詞條上限才允許追加。保留舊裝備與玩家存檔，不自動刪除既有超規詞條。
+- 範圍：js/gm_exec.js、js/gm.js、js/ai-key-setting.js、bridge／Worker匯入及index快取、相關GM／快取回歸與新tests/gm-affix-limits.test.cjs、GM_command.md、LV檔尾與本段。禁止掉落／配置／公式／Worker協議欄位／素材、其他工作區及合併推送。一般生成仍共用makeEquipment，不修改最高權威資料。
+- 預檢：GM核心／AI／測試／GM文件無外部來源；bridge快取與Claude828c666c同常數、LV既有檔首合併衝突，使用者已明確核准只分段更新快取、LV檔尾追加並保留所有其他修改。同工作區進行中傳送門任務佔用index SVG／world-map CSS快取及AI_TASKS檔尾，本次僅改GM／bridge script與本段檔首，逐hunk暫存，不提交對方工作；Worker只動gm_exec匯入快取，不改Claude其他匯入或神鑄邏輯。
+- 驗收：創世胸甲7條、雙手加成與其他品質正常發放；既有屬性修改／缺少屬性替換、同句多屬性不互蓋、全太古仍不增條、索引與降品質不得繞過上限、明確突破才能追加；本機／AI／舊快取不得自行授權突破，負向／未完整辨識句不部分執行。GM序列只以字串附帶暫時批次標記，不新增Worker payload欄位或存檔欄位；回歸、Build、真Worker隔離驗證、diff及獨立Commit，使用者正常整合。
+- 完成12檔：GM執行器以WeakMap暫存批次指定屬性，缺少屬性優先替換未指定的一般詞條，既有屬性維持原位；同批槽數不足與不存在序號拒絕、降品質檢查正常上限，保留雙手原配置。GM面板每次提交新批次，子指令共用，cache不保存內部標記；AI提示同步替換語意，原始輸入以正向明確要求授權，否定／條件／疑問／引述提及不授權，AI自加旗標移除；快取語意版本2淘汰舊資料。index GM／AI各1.0.4、bridge1.0.385、Worker入口20261030-gm-affix-limits與gm_exec匯入20261030-affix-limits。GM指南與LV檔尾同步，沒有配置／公式／協議或存檔欄位變更。
+- 測試：`node --test --test-reporter=dot tests/ai-key-setting.test.cjs tests/gm-fastpath.test.cjs tests/gm-natural-timeout.test.cjs tests/gm-command.test.cjs tests/gm-modequip.test.cjs tests/gm-perf-command.test.cjs tests/gm-skill-point.test.cjs tests/gm-skill-test-tools.test.cjs tests/gm-translation-cache.test.cjs tests/gm-affix-limits.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs` 141/141通過；補強否定／引述授權檢查後重跑其中AI／fastpath／timeout／cache／affix五檔53/53通過。既有斷言只對新增內部批次字串正規化，仍驗原始目標與命令；新測試沿真item／formula／player，未降低上限要求。
+- 瀏覽器：IAB無backend，改隔離headless Edge、新localhost來源；正式GM UI／AI解析器與真sim.worker，測試頁adapter僅傳既有cmd與接ACK，未載正式bridge／完整主頁。真Worker全身13件均7條；鍵盤輸入吸血／吸魔保留兩者且7條，同批ID一致。雲端替身擅帶兩個突破旗標被移除，count7；重送走快取、雲端僅1次、下一提交新batch且快取無內部ID；全太古7、索引8拒絕，明確白話突破加攻速才變8。Worker錯誤、console error／warning與pageerror皆0。初次人工fixture用了本機不支援的「經驗加成」，因此等待預期訊息逾時；改用支援的「攻速」後完整腳本通過，未改產品解析範圍。report.json／result.png與重跑腳本保存本聊天visualizations/gm-affix-limits；未讀寫使用者存檔／金鑰，雲端使用假回應，未做完整遊玩／多瀏覽器。
+- 建置與差異：`npm.cmd run build` 602檔全數通過；`git diff --check`及`git diff --cached --check`通過。瀏覽器重跑：`node C:/Users/alway/.codex/visualizations/2026/10/29/01a1889d-5852-7a41-867c-b0690a143381/gm-affix-limits/browser-check.cjs D:/MyGame/Idle-RPG/codex`，需本機bundled Playwright與Edge。
+- 唯讀檢查：規範、既有GM模式／命令與相關回歸、RARITIES／TWO_HAND_BONUS_AFFIXES、makeEquipment與affixValue、Worker協議／shim／面板、Claude與同工作區傳送門差異，未修改其玩法／公式／素材。自我Review完成；舊超額裝備保留，批次仍沿既有逐條執行而非全批回滾。無本次未完成實作，可供Review／合併。傳送門任務已另提交51bd6f45，本次只提交剩餘GM差異；無素材／素材庫變更。Commit為本段所在「[Codex] fix: GM指定屬性改為替換並限制詞條上限」，編號見交付，未合併／推送；下一步正常整合並重載主頁與Worker。
+
 ## GM-FAST-MODELS-CACHE-20261030 — 快速模型、成功翻譯快取與常用預設
 
 - Owner：Codex；Done，單一開發者。延續前輪d344a71c，使用者要求完成原建議第3／4項；後續明確將10秒改為每次30秒、初次外最多重試3次，保留取消／遲到防護及完整本機解析。

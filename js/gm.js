@@ -6,6 +6,7 @@
 (function () {
   var gmUi = null;
   var parseGeneration = 0;
+  var editBatchSequence = 0;
 
   function cancelPendingParse() {
     parseGeneration++;
@@ -81,7 +82,23 @@
     return cmdLine;
   }
 
+  function appendGMEditContext(line, batch) {
+    var selected = appendSelectionContext(line);
+    if (/^(modequip|editequip|equipmod|setequip|itemmod|meq|改裝備)\s/i.test(selected)) {
+      return selected.replace(/\s+@gm-batch:[^\s]+/g, '') + ' @gm-batch:' + batch;
+    }
+    return selected;
+  }
+
+  function newGMEditBatch() {
+    return 'gm' + Date.now().toString(36) + '_' + (++editBatchSequence);
+  }
+
   function executeCommandSequence(commands, originPrompt, source) {
+    if (typeof AiKeySetting !== 'undefined' && typeof AiKeySetting.applyAffixOverflowPolicy === 'function') {
+      commands = AiKeySetting.applyAffixOverflowPolicy(commands, originPrompt);
+    }
+    var batch = newGMEditBatch();
     var sourceLabel = source === 'cache' ? '⚡ 快取' : source === 'local' ? '⚡ 本機' : '🤖 AI';
     setGMStatus(sourceLabel + '解析為：[' + commands.join('; ') + ']，執行中…', true);
     var index = 0;
@@ -104,7 +121,7 @@
         }
         return;
       }
-      var cmd = appendSelectionContext(commands[index++]);
+      var cmd = appendGMEditContext(commands[index++], batch);
       WorkerBridge.send('gm.exec', { line: cmd }).then(function (res) {
         syncTestFlags(res);
         results.push({ ok: !!(res && res.ok), message: res && res.message ? res.message : '成功' });
@@ -119,7 +136,7 @@
 
   function executeSingleWorkerCommand(text) {
     setGMStatus('執行中…', true);
-    var payload = appendSelectionContext(text);
+    var payload = appendGMEditContext(text, newGMEditBatch());
     WorkerBridge.send('gm.exec', { line: payload }).then(function (res) {
       syncTestFlags(res);
       setGMStatus(res && res.message ? res.message : '已執行', !!(res && res.ok));
