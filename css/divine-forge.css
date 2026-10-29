@@ -10,9 +10,9 @@
 #tab-forge #forge-stage { position:relative; flex:1; container-type:size; height:auto!important; min-height:0!important; aspect-ratio:auto!important; padding:0!important; overflow:visible; background:none!important; display:flex; align-items:center; justify-content:center; border:0; }
 #forge-crystal-float { position:relative; z-index:2; flex:none; width:min(78cqw,calc(100cqh - 90px),680px); aspect-ratio:1; margin-bottom:42px; animation:forge-hover 6s ease-in-out infinite; }
 #forge-crystal-float:hover,#forge-crystal-float:focus-within { animation-play-state:paused; }
-#tab-forge #forge-hex { position:relative; width:100%; height:auto!important; aspect-ratio:1; margin:0; background:url('../images/ui/divine-forge-crystal.png') center/contain no-repeat!important; transform:none; inset:auto; filter:drop-shadow(0 0 12px #5187f880); }
-#tab-forge #forge-hex::before { display:none; }
-#tab-forge #forge-hex::after { content:""; display:block; position:absolute; inset:0; pointer-events:none; background:url('../images/ui/divine-forge-crystal.png') center/contain no-repeat; opacity:0; z-index:1; }
+#tab-forge #forge-hex { position:relative; width:100%; height:auto!important; aspect-ratio:1; margin:0; background:url('../images/ui/divine-forge-crystal.png') center/contain no-repeat!important; transform:none; inset:auto; filter:brightness(.7) drop-shadow(0 0 12px #5187f880); }
+#tab-forge #forge-hex::before { content:""; display:block; position:absolute; inset:14%; pointer-events:none; border-radius:50%; border:3px solid #dff3ff; box-shadow:0 0 18px #8fd0ff,inset 0 0 18px #8fd0ff; opacity:0; z-index:1; }
+#tab-forge #forge-hex::after { content:""; display:block; position:absolute; inset:0; pointer-events:none; background:radial-gradient(circle,#fff 0 10%,#d8efff 20%,#79bcff66 38%,transparent 60%); opacity:0; z-index:1; }
 #tab-forge .forge-slot,#tab-forge .forge-stone { position:absolute; z-index:2; width:9.6%; height:auto; aspect-ratio:1; transform:translate(-50%,-50%)!important; border-radius:6px; border:1px solid var(--afl-line-hover); background:#0c0d10e6; box-shadow:none; display:flex; align-items:center; justify-content:center; padding:2px; }
 #tab-forge .forge-slot .item-icon { max-width:95%; max-height:95%; }
 #tab-forge .forge-slot .ic-lv { font-size:9px; bottom:0; }
@@ -63,9 +63,10 @@
 .forge-aura i { position:absolute; left:50%; top:46%; width:45%; height:24%; border:1px solid #7dd5ff3d; border-left:2px solid #99e8ffb3; border-right:2px solid #9d9aff85; border-radius:50%; box-shadow:0 0 12px #7dd5ff33; animation:forge-vortex 9s linear infinite; }
 .forge-aura i:nth-child(2) { width:53%; height:18%; top:51%; animation-duration:12s; animation-direction:reverse; }
 .forge-aura i:nth-child(3) { width:39%; height:32%; top:39%; animation-delay:-4s; opacity:.5; }
-#tab-forge .is-crafting #forge-hex::after { animation:forge-ignite var(--forge-duration,3000ms) linear var(--forge-delay,0ms) both; }
+#tab-forge .is-crafting #forge-hex::after { animation:forge-burst var(--forge-duration,3000ms) linear var(--forge-delay,0ms) both; }
+#tab-forge .is-crafting #forge-hex::before { animation:forge-ring var(--forge-duration,3000ms) linear var(--forge-delay,0ms) both; }
 #tab-forge .is-crafting #forge-hex { animation:forge-charge var(--forge-duration,3000ms) linear var(--forge-delay,0ms) both; }
-#tab-forge .is-paused #forge-hex,#tab-forge .is-paused #forge-hex::after { animation-play-state:paused; }
+#tab-forge .is-paused #forge-hex,#tab-forge .is-paused #forge-hex::before,#tab-forge .is-paused #forge-hex::after { animation-play-state:paused; }
 .socket.sacred-socket,.socket.sacred-socket * { color:#60a5fa!important; border-color:#60a5fa; }
 .it-imprint,.sacred-affix,.sacred-affix * { color:#60a5fa!important; }
 /* 華麗層：全是 transform／opacity 動畫（走合成器，不重繪），共 1 道旋轉光芒＋1 圈地面脈動＋8 顆上升光點。 */
@@ -87,8 +88,10 @@
 @keyframes forge-hover { 0%,100% { transform:translateY(-3px); } 50% { transform:translateY(4px); } }
 @keyframes forge-vortex { from { transform:translate(-50%,-50%) rotate(-12deg); } to { transform:translate(-50%,-50%) rotate(348deg); } }
 @keyframes forge-motes { 0%,100% { transform:translate(-50%,-46%); opacity:.25; } 50% { transform:translate(-50%,-56%); opacity:.9; } }
-@keyframes forge-ignite { 0% { clip-path:circle(0% at 50% 50%); opacity:.2; filter:brightness(.2); } 80% { clip-path:circle(64% at 50% 50%); opacity:.8; filter:brightness(1.6); } 100% { clip-path:circle(75% at 50% 50%); opacity:1; filter:brightness(2); } }
-@keyframes forge-charge { 0% { filter:brightness(.3) saturate(.5); } 85% { filter:brightness(.85) drop-shadow(0 0 20px #79d9ff); } 100% { filter:brightness(1.3) drop-shadow(0 0 26px #caf7ff); } }
+/* 鑄造 3 秒：平時就是 70% 亮度的暗態；0~60%（約 1.8 秒）逐漸亮起，60~100%（約 1.2 秒）亮光與環波向外發散，結尾收回暗態避免跳變。 */
+@keyframes forge-charge { 0% { filter:brightness(.7) drop-shadow(0 0 12px #5187f880); } 60% { filter:brightness(1.2) drop-shadow(0 0 22px #79d9ff); } 72% { filter:brightness(1.65) drop-shadow(0 0 34px #caf7ff); } 100% { filter:brightness(.7) drop-shadow(0 0 12px #5187f880); } }
+@keyframes forge-burst { 0%,58% { opacity:0; transform:scale(.3); } 66% { opacity:1; transform:scale(.9); } 100% { opacity:0; transform:scale(2.3); } }
+@keyframes forge-ring { 0%,60% { opacity:0; transform:scale(.4); } 68% { opacity:.95; } 100% { opacity:0; transform:scale(2.1); } }
 @media(max-width:600px) {
   #tab-forge .forge-panel { padding:8px 8px 0; }
   #tab-forge .forge-mode-tabs .btn { font-size:11px; min-height:34px; padding:4px 1px; }
