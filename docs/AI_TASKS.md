@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## BATTLE-INTERNAL-CAMERA-ZOOM-20261029 — 內測戰鬥滾輪鏡頭與距離百分比
+
+- Owner：Codex；Done，單一開發者。使用者要求一般與全屏戰鬥可用滑鼠滾輪調整鏡頭，右上角顯示距離百分比，僅內測可用；補充統一以正常戰鬥區為100%。
+- 前置：沿用既有鏡頭投影與 isInternalVersion；依使用者補充，一律以正常戰鬥區原視角為100%，全屏保留既有1.3倍拉近，因此原視角約77%。共享本次頁面內的調整比例，向上拉近、向下拉遠，每次為正常基準5%，調整比例限制50%～200%（全屏顯示約38%～154%），重新載入回預設。
+- 允許：js/battle-renderer.js、css/battle-hud.css、index.html快取與百分比節點、tests/battle-camera-distance.test.cjs、LV_upgrade_system.md及本段；禁止戰鬥計算／Worker／存檔／配置／素材／其他工作區／合併推送。百分比為內測診斷數字，不新增玩家文字。
+- 完成六檔：renderer沿既有cameraStage／投影與resize調整鏡頭，僅內測成功初始化後在host綁單一非passive wheel，排除HUD／按鈕／輸入／修飾鍵／無效及橫向捲動；消費事件防止誤觸外層背包展開。百分比依正常預設距離與全屏實際倍率換算為整數。index新增預設hidden的output，renderer快取206／HUD CSS19；CSS在一般／全屏的狂暴資訊下方定位，pointer-events:none。四項新鏡頭回歸及LV總表、本段同步。
+- 驗證指令：node --test --test-reporter=spec tests/battle-camera-distance.test.cjs tests/battle-fullscreen.test.cjs tests/fullscreen-toggle.test.cjs tests/battle-perspective.test.cjs tests/battle-ground-projection.test.cjs tests/hero3d-internal-toggle.test.cjs tests/string-table.test.cjs。共59項＝57通過／2既有失敗；本次鏡頭12／12通過。PERSP-4缺perfMode及PROJ-9缺skyEntryPoint，將renderer唯讀覆映為修改前HEAD 086239df後兩項原錯誤均重現，未降低斷言或擴修無關測試。npm.cmd run build599檔通過、git diff --check通過。
+- 瀏覽器：CUA／IAB獨立隨機localhost來源，正式index與真Worker新局，2D實際滾輪100→95→80，全屏顯示62、向下滾至65、退出回85；3D切換重載後回100、再滾至80。右上距離／狂暴／按鈕無重疊，HUD大小不變，Console error／warning0。截圖normal／fullscreen／3d保存本聊天visualizations；未接觸玩家原來源存檔。正式版不顯示、不綁定、不套用殘留倍率由回歸驗證，未做正式網域瀏覽器部署測試。
+- 衝突：本地預檢乾淨；補查fetch後遠端origin/ai/claude-kpj271的2b91f663修改renderer的3D出手函式（與鏡頭不同區段），index同一renderer快取行204與本地原205／本次206重疊；merge-tree唯讀試跑在index及歷史任務表衝突，未套用結果。使用者已明確同意本次使用206完成獨立提交，雲端成果留待後續正常整合；未合併、覆蓋或推送遠端／其他工作區。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、內測判定與全屏切換UI、game_parameters及String表／生成資料、既有投影／全屏／3D／String回歸、Worker／戰鬥判定／存檔／模型。無新素材或素材庫變動，不建立素材庫Commit。自我Review完成，本次無未完成實作；未跑全庫／多瀏覽器長戰，兩項既有測試錯誤及後續雲端快取整合為已知限制。Commit為本段所在「[Codex] feat: 新增內測戰鬥滾輪鏡頭與距離百分比」，實際編號見回覆；可供Review／合併，下一步正常整合並重載，未合併或推送develop／main。
+
 ## DIVINE-FORGE-FILL-LAYOUT-20261029 — 放大神鑄舞台、兩行背包貼底與背景定位
 
 - Owner：Codex；Done。使用者要求放大上方、背包只留兩完整行並貼底、移除下方空白；後續指定效能優先，明確暫停追加特效，只完成尺寸與背景後直接Commit、清理工作區供使用者合併。單一開發者；規範／既有實作已讀、目標衝突預檢乾淨。
