@@ -25,7 +25,7 @@ importScripts(
   '../skills.js?v=20261029-merge-cd5ad556', '../skills2.js?v=20261028-sync-cloud-control', '../elite_data.js?v=20261028-develop-merge-a8acfe', '../talents.js?v=20261026-system-unlock',
   '../player.js?v=20261029-divine-forge-experience', '../special_rules.js?v=20261023-str-common',
   '../combat.js?v=20261028-sync-cloud-control', '../elite.js?v=20261028-develop-merge-a8acfe', '../elite_boss.js?v=20261023-str-battle', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261028-develop-merge-a8acfe', '../tower.js?v=20261028-sync-cloud-control',
-  '../factory.js?v=20261027-speed-gear-base', '../newforge.js?v=20261028-develop-merge-a8acfe', '../forge.js?v=20261029-divine-forge-mode-fallback', '../save.js?v=20261028-develop-merge-a8acfe',
+  '../factory.js?v=20261027-speed-gear-base', '../newforge.js?v=20261028-develop-merge-a8acfe', '../forge.js?v=20261029-divine-forge-mode-fallback', '../save.js?v=20261029-forge-log-transient',
   '../tasks.js?v=20261023-str-guard'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
