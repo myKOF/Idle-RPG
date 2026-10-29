@@ -130,7 +130,7 @@ test('玩家倒地只旋轉本體，血條與死亡倒數維持水平並顯示�
 
   assert.match(playerTick, /p\.bodyWrap\.rotation\s*=\s*-\(Math\.PI\s*\/\s*2\)/);
   assert.doesNotMatch(playerTick, /p\.root\.rotation/);
-  assert.match(renderer, /p\.reviveText\.text\s*=\s*'💀 復活倒數 '\s*\+\s*Math\.max\(1,\s*Math\.ceil/);
+  assert.match(renderer, /p\.reviveText\.text\s*=\s*'還有'\s*\+\s*Math\.max\(1,\s*Math\.ceil/);
   assert.doesNotMatch(renderer, /p\.reviveText\.text\s*=.*Math\.round\(.*\*\s*10/);
 });
 
