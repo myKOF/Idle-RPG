@@ -240,7 +240,7 @@ test('精簡資訊仍提供正確費用Tooltip、禁用／滿級／鎖定原因�
 });
 
 test('右側共鳴效果只合計所選孔的額外相鄰能力；空孔／0級／取下無效果，插入與升級即刷新',()=>{
- const {c,nodes,element}=ui({diamond:{1:100,2:100,4:2,6:3},ruby:{4:1}});
+ const {c,nodes,element}=ui({diamond:{4:2,6:3},lapis:{1:100,2:100,4:2},ruby:{4:1}});
  const holes=c.G.player.resonance.holes;
  holes['1:0']={lv:0,gems:[{type:'diamond',level:6},{type:'diamond',level:6}]};
  holes['1:2']={lv:0,gems:[{type:'diamond',level:4}]};
@@ -249,7 +249,7 @@ test('右側共鳴效果只合計所選孔的額外相鄰能力；空孔／0級�
  holes['1:1']={lv:1,gems:[]};c.gresSelectHole(1,1);
  const empty='<div class="sec-sub">共鳴效果：</div><div class="gres-list"></div>';
  assert.equal(nodes['gres-total'].innerHTML,empty);assert.match(nodes['gres-detail'].innerHTML,/能力\+0%/);
- const put=()=>nodes['gem-focus'].handlers.click({target:element({'data-gres-gem':'diamond:4'})});
+ const put=()=>nodes['gem-focus'].handlers.click({target:element({'data-gres-gem':'lapis:4'})});
  put();
  const check=rate=>{
   const match=nodes['gres-total'].innerHTML.match(/^<div class="sec-sub">共鳴效果：<\/div><div class="gres-list"><div>物理防禦 \+([\d.]+)<\/div><\/div>$/);
@@ -267,9 +267,9 @@ test('右側共鳴效果只合計所選孔的額外相鄰能力；空孔／0級�
  assert.equal(holes['1:1'].lv,2);
 });
 
-test('說明精確三句；切入共鳴預設物傷左上孔、重入重設，頁內選孔與刷新保持原選擇',()=>{
+test('說明包含相鄰異種規則；切入共鳴預設物傷左上孔、重入重設，頁內選孔與刷新保持原選擇',()=>{
  const {c,nodes}=ui();
- assert.equal(nodes['gres-help'].attrs['data-tt-desc'],'把寶石鑲入共鳴鑲孔中以獲取寶石能力。<br>升級鑲孔可獲得相鄰寶石效果的額外加成。<br>中央區將在周圍六大區鑲孔都升至10級時解鎖。');
+ assert.equal(nodes['gres-help'].attrs['data-tt-desc'],'把寶石鑲入共鳴鑲孔中以獲取寶石能力。<br>升級鑲孔可獲得相鄰寶石效果的額外加成，僅限不同類型寶石，同類型無法獲得。<br>同孔有多顆寶石時，只要其中一顆與相鄰寶石類型不同，即可獲得該相鄰寶石的加成，每顆相鄰寶石只計算一次。<br>中央區將在周圍六大區鑲孔都升至10級時解鎖。');
  c.UI.gemBrowse.resHole=undefined;assert.deepEqual(Array.from(c.gresSelected()),[5,6]);
  c.setGemTool('compose');c.UI.gemBrowse.resHole=[1,2];c.UI.gemBrowse.resFilter='def';c.setGemTool('resonance');
  assert.deepEqual(Array.from(c.UI.gemBrowse.resHole),[5,6]);assert.equal(c.UI.gemBrowse.resFilter,'all');
@@ -277,6 +277,30 @@ test('說明精確三句；切入共鳴預設物傷左上孔、重入重設，�
  c.gresSelectHole(0,2);c.renderGems();c.setGemTool('resonance');assert.deepEqual(Array.from(c.UI.gemBrowse.resHole),[0,2]);
  c.setGemTool('compose');c.setGemTool('resonance');assert.deepEqual(Array.from(c.UI.gemBrowse.resHole),[5,6]);
  c.setGemTool('fusion');c.setGemTool('shop');assert.equal(c.UI.gemBrowse.tool,'resonance');
+});
+
+test('同種不同階顯示零加成；混合孔的異種寶石只加一次，實際取下後效果與百分比同步歸零',()=>{
+ const {c,nodes,element}=ui({sapphire:{6:1}});
+ const holes=c.G.player.resonance.holes;
+ holes['0:0']={lv:10,gems:[{type:'sapphire',level:6}]};
+ holes['0:1']={lv:10,gems:[{type:'sapphire',level:4}]};
+ c.gresSelectHole(0,0);
+ const empty='<div class="sec-sub">共鳴效果：</div><div class="gres-list"></div>';
+ assert.equal(nodes['gres-total'].innerHTML,empty);assert.match(nodes['gres-detail'].innerHTML,/能力\+0%/);
+ c.gresSelectHole(0,1);
+ assert.equal(nodes['gres-total'].innerHTML,empty);assert.match(nodes['gres-detail'].innerHTML,/能力\+0%/);
+ assert.equal(c.socketResonanceGem(0,0,'sapphire',6),null);c.renderGems();
+ assert.equal(nodes['gres-total'].innerHTML,empty); // 同孔兩顆同種也不能與外圈同種共鳴
+ assert.equal(c.unsocketResonanceGem(0,0,1),null);
+ c.addGem('amethyst',6,1);assert.equal(c.socketResonanceGem(0,0,'amethyst',6),null);c.renderGems();
+ assert.equal(nodes['gres-total'].innerHTML,'<div class="sec-sub">共鳴效果：</div><div class="gres-list"><div>'+c.gresStatText('amethyst',c.gemStatValue('amethyst',6)*.3)+'</div></div>');
+ assert.match(nodes['gres-detail'].innerHTML,/能力\+30%/);
+ c.gresSelectHole(0,0);
+ assert.equal(nodes['gres-total'].innerHTML,'<div class="sec-sub">共鳴效果：</div><div class="gres-list"><div>'+c.gresStatText('sapphire',c.gemStatValue('sapphire',4)*.3)+'</div></div>');
+ nodes['gres-detail'].handlers.click({target:element({'data-gres-take':'1'})});
+ assert.equal(nodes['gres-total'].innerHTML,empty);assert.match(nodes['gres-detail'].innerHTML,/能力\+0%/);
+ c.gresSelectHole(0,1);assert.equal(nodes['gres-total'].innerHTML,empty);assert.match(nodes['gres-detail'].innerHTML,/能力\+0%/);
+ assert.equal(c.gemCount('amethyst',6),1);assert.equal(holes['0:0'].lv,10);assert.equal(holes['0:1'].lv,10);
 });
 
 test('石榴石在物理區篩選可見並可鑲入，魔法區不顯示且拒絕拖放，取下退回',()=>{

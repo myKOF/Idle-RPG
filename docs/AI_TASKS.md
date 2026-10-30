@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## GEM-RESONANCE-DIFFERENT-TYPES-20261030 — 相鄰異種寶石才能共鳴
+
+- Owner：Codex；Done，單一開發者。使用者要求相鄰不同類型寶石才能獲得額外加成，同類型不提供額外效果；自身能力保留。前置：既有相鄰純函式與UI共用計算已完成，修改前衝突預檢無外部來源。
+- 允許：js/gem_resonance.js、js/ui-gem-resonance.js百分比顯示、相關兩項共鳴回歸、String.xlsx原生Excel更新及CSV／strings_data生成、index／bridge／sim.worker快取、LV與本段。禁止無關數值／鑲嵌限制／解鎖／存檔格式／其他工作區、合併及推送。
+- 多寶石孔逐顆判斷鄰孔寶石：接收孔至少一顆類型不同才計一次，沿用不因接收寶石數倍乘規則。驗同種不同階、異種、混合多顆／中央區、鑲入升級取下、computeStats與UI一致、原生Excel正常重開與來源同步、相關回歸／Build／diff。完成後獨立Commit，交使用者正常Review／整合。
+- 完成12檔：共載resonanceHoleBonusEntries排除沒有異種類型配對的來源；computeStats與UI明細沿用同函式，無有效相鄰能力時百分比顯示0。String1575補異種／多顆不倍乘說明，原生Excel取得獨占存取後僅寫E1647一格、正常儲存重開兩次；再獨立以Excel16.0正常唯讀重開，Saved=True、單頁與原行高15.75／不換行保持。唯讀全格／格式比對僅該格文字變更，公式／樣式／行列格式差異0，未手改XML。xlsx_to_csv與apply_strings同步2213條／af15653e；index共鳴9、UI22、bridge391及Worker入口／import快取同步，協議無變更。LV總表及兩項既有回歸同步，新增中央混合、UI百分比與正式Worker指令快取測試。
+- 測試：`node --test --test-reporter=spec tests/gem-resonance.test.cjs tests/gem-resonance-ui.test.cjs tests/gem-tooltip.test.cjs tests/gem-enabled.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs`初次97項96通過／1既有融合tooltip失敗；新增Worker回歸後單跑gem-resonance為21/21，合計98項97通過／1既有失敗。gem-tooltip第108行素材池測試於第116行讀undefined.innerHTML，以修改前HEAD的本次所有JS唯讀記憶體覆映重跑亦同錯誤（原ui.js亦未修改），未降低斷言或擴修。`npm.cmd run build`604檔通過、String同步及寫死0條、`git diff --check`通過。
+- 驗證範圍：NodeVM正式UI渲染／鑲入／取下／升級，以及原封載入sim.worker入口的headless宿主驗正式runCommand、屬性快取失效與gems面板；未做瀏覽器實際操作／畫面或全庫回歸。唯讀未改：規範／Workflow／prompts、Gem_resonance.xlsx／CSV／data、formula.js／item.js／save.js／ui.js、Worker協議與模擬宿主；無素材或素材庫變動，不建立空素材Commit。
+- 自我Review完成，本次無未完成實作，可供Review／合併；已知限制為上述既有失敗及未跑項。Commit為本段所在「[Codex] feat: 寶石共鳴限定相鄰異種類型」，實際編號見交付；未合併或推送develop／main。後續使用者正常整合並重新載入。工作期間同副本另一聊天新增CHAOS-PREVIEW-REPAIR獨立任務段，只分段暫存本共鳴紀錄，保留其進行中修改。
+
 ## CHAOS-AUTHORIZED-FRAME-20261030 — 授權混沌邊框與清淡紅光
 
 - Owner：Codex；Done，單一開發者。使用者授權直接使用所附406×600裝備圖，要求混沌／神鑄混沌的tips、icon、詳情復刻，補充左下紅光調淡以利閱讀。沿用原圖的紅金藤紋與寶石邊框，CSS九宮格只顯示邊緣、空白區域作底色取樣；文字／數值／裝備圖案仍由現行資料顯示，左下光暈以低透明度CSS處理。

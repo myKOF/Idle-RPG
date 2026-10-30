@@ -223,7 +223,7 @@ function gresDetailHTML(snapshot, headerSnapshot, state, sel) {
   var cap = resonanceHoleCap(region, hole);
   var min = resonanceHoleMinLevel(region, hole);
   var locked = resonanceRegionLockReason(state, region);
-  var bonusPct = locked || !slot.gems.length ? 0 : Math.round(resonanceBonusMult(slot.lv) * 100);
+  var bonusPct = resonanceHoleBonusEntries(state, region, hole).length ? Math.round(resonanceBonusMult(slot.lv) * 100) : 0;
   var h = '<div class="gres-summary"><div class="gres-title">' + STR(1562, esc(reg.name + (reg.types ? STR(1560) : STR(1561))), min) + '</div><div class="gres-level">' + STR(1563, slot.lv) + '</div><div class="gres-bonus">' + STR(1564, bonusPct) + '</div></div>';
 
   h += '<div class="gres-slots">';
