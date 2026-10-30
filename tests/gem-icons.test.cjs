@@ -96,7 +96,7 @@ test('介面各處的寶石圖示改走 gemIconHTML；只剩純文字位置（�
     'gemIconHTML(s.type, s.lv, \'gi-conv\')', 'gemIconHTML(item.type, item.lv, \'gi-shop\')']) {
     assert.ok(ui.includes(fn), 'ui.js 缺少 ' + fn);
   }
-  assert.equal((ui.match(/fusedGemIconHTML\(fg, 'gi-chip'\)/g) || []).length, 2, '保留的融合與商店小格，拆解頁已移除融合清單');
+  assert.equal((ui.match(/fusedGemIconHTML\(fg, 'gi-chip'\)/g) || []).length, 0, '融合功能與融合清單已移除');
   assert.match(fs.readFileSync(path.join(root, 'js/ui-gem-workshop.js'), 'utf8'), /gemIconHTML\(s.type, s.lv, 'gi-conv'\)/);
   assert.match(stats, /gemIconHTML\(parts\[0\], \+parts\[1\], 'gi-inline'\)/);
 });

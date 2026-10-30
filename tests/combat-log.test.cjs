@@ -68,7 +68,7 @@ test('戰鬥日誌分類與色彩樣式規則驗證', () => {
 
   // 寶石 UI 只送協議指令；Worker 產生的 log Event 再由主執行緒分類與渲染
   for (const command of [
-    'gem.convert', 'gem.fuse',
+    'gem.convert',
     'gem.shopBuyAll', 'gem.shopRefresh', 'gem.shopUpgrade'
   ]) {
     assert.match(ui, new RegExp("sendGemUiCommand\\(\\s*['\"]" + command.replace('.', '\\.') + "['\"]"));

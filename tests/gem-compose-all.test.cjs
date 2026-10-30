@@ -146,7 +146,7 @@ test('寶石合成介面與紀錄使用共用逐階配方，寶石頁只保留�
   assert.match(workshop, /gemComposeInputCount\(lv\)/);
   assert.match(workshop, /all \? 'gem\.composeAll' : 'gem\.compose'/);
   assert.deepEqual([...index.matchAll(/data-gem-tool-btn="([^"]+)"/g)].map(m=>m[1]),['compose','convert','dismantle','resonance']);
-  assert.match(index,/data-gem-panel="fusion" hidden/);assert.match(index,/data-gem-panel="shop" hidden/);
+  assert.doesNotMatch(index,/data-gem-panel="fusion"/);assert.match(index,/data-gem-panel="shop" hidden/);
 });
 
 test('Worker 全部合成選「全部類型寶石」時，紀錄文字不查 GEM_TYPES（合成完成卻拋例外）', () => {

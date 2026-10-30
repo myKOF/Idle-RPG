@@ -105,12 +105,11 @@ var WorldMapUI = (function () {
     el('world-map-title').textContent = human ? STR(2124) : STR(212);
     el('world-map-realm-human').setAttribute('aria-pressed', human ? 'true' : 'false');
     el('world-map-realm-god').setAttribute('aria-pressed', human ? 'false' : 'true');
-    var header = peekUiPanelData('header') || {};
     var hasGodProgress = (REALMS.god.zones || []).some(function (key) {
       var info = zoneState(key); return info && (info.active || info.unlocked);
     });
     var portalVisible = humanWorldCleared();
-    var showRealms = portalVisible || hasGodProgress || Number(header.player && header.player.reincarnations) >= 11;
+    var showRealms = portalVisible || hasGodProgress;
     el('world-map-god-portal').hidden = !portalVisible;
     el('world-map-god-portal').disabled = !!state.pending;
     el('world-map-human-portal').disabled = !!state.pending;

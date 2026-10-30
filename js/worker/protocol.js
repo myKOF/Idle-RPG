@@ -302,8 +302,7 @@ var TICK_VIEW_KEYS = ['gold', 'scrap', 'essence', 'dust', 'ancientEssence', 'sou
      - 一般寶石：是 { type, level } 的計數，**根本沒有 id** → 必須傳 type + level
      - 技能、天賦、附魔書：用定義鍵（definition key），不是實例 id
      - 熔爐：id 由 nf.nextId++ 產生，是**數字**不是字串
-   寶石融合素材（fuseGemsV2 的 ref）另有結構：
-     { kind:'plain', type, lv } 或 { kind:'fused', id } */
+   */
 var COMMANDS = {
   /* -- 關卡與戰鬥 -- */
   'stage.go':              { fn: 'stageGo',          args: { delta: 'int' },                      dirty: ['battle', 'header'] },
@@ -346,7 +345,6 @@ var COMMANDS = {
      逐次跨執行緒往返不可行，必須在 Worker 內一次跑完再回報結果。 */
   'gem.composeAll':        { fn: null,               args: { type: 'str', level: 'int' },         dirty: ['gems', 'header'] },
   'gem.dismantleAll':      { fn: null,               args: { type: 'str', level: 'int' },         dirty: ['gems', 'header'] },
-  'gem.fuse':              { fn: 'fuseGemsV2',       args: { ref1: 'ref', ref2: 'ref' },          dirty: ['gems'] },
   /* -- 符文（符文真言；js/runeword.js）--
      符文是 { 符文id: 數量 } 的計數，沒有實例 id，所以用 runeId（符文 id 字串）定位。
      符文鑲在裝備專屬的符文孔 it.runes（v46 起，與寶石鑲孔分開）：鑲嵌 rune.socket、抹除 rune.erase（v49）。 */
@@ -508,14 +506,6 @@ function isValidCommand(name) {
 
 function _isInt(v) { return typeof v === 'number' && isFinite(v) && Math.floor(v) === v; }
 
-/* 寶石融合素材：{ kind:'plain', type, lv } 或 { kind:'fused', id } */
-function _isGemRef(v) {
-  if (!v || typeof v !== 'object') return false;
-  if (v.kind === 'plain') return typeof v.type === 'string' && (v.lv === undefined || _isInt(v.lv));
-  if (v.kind === 'fused') return typeof v.id === 'string' && v.id.length > 0;
-  return false;
-}
-
 /* 寶石轉換槽：[{ type, lv, n }, ...] */
 function _isGemSlots(v) {
   return Array.isArray(v) && v.length > 0 && v.every(function (s) {
@@ -530,7 +520,6 @@ function _typeOk(type, v) {
     case 'bool': return typeof v === 'boolean';
     case 'str': return typeof v === 'string';
     case 'id': return typeof v === 'string' && v.length > 0;
-    case 'ref': return _isGemRef(v);
     case 'slots': return _isGemSlots(v);
     case 'obj': return !!v && typeof v === 'object' && !Array.isArray(v);
     case 'any': return true;

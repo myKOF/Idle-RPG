@@ -4100,7 +4100,7 @@ function renderBattleSkillBar(pEnt, snapshotGt) {
   for (var i = 0; i < TOTAL_SLOTS; i++) {
     var isUnlocked = i < cap;
     if (!isUnlocked) {
-      var reqLv = (i - LOADOUT_SIZE.base + 1) * LOADOUT_SIZE.perLevels;   // 與 8535 同一組參數；原寫死 (i-3)*50 與參數表不符
+      var reqLv = loadoutSlotUnlock(i).level;   // 門檻來自 system_unlock 表（LOADOUT_SLOT_UNLOCKS）
       var lockDesc = STR(742, reqLv);
       var lockedState = { kind: 'locked', index: i, lockDesc: lockDesc };
       lockedState.key = battleSkillSlotKey(lockedState);
@@ -7849,32 +7849,6 @@ function gemsViewFindFused(snapshot, id) {
   return null;
 }
 
-function gemsViewNormalizeFuseMaterial(snapshot, ref) {
-  if (!ref) return null;
-  if (ref.kind === 'plain') {
-    if (!isGemEnabled(ref.type)) return null;
-    var level = ref.lv || GEM_MAX_LEVEL;
-    if (level < GEM_MAX_LEVEL || level > GEM_FORGE_MAX_LEVEL ||
-      gemsViewCount(snapshot, ref.type, level) < 1) {
-      return null;
-    }
-    return {
-      stats: [{ type: ref.type, mult: Math.pow(2, level - GEM_MAX_LEVEL) }],
-      fusions: 0,
-      leaves: Math.pow(2, level - GEM_MAX_LEVEL),
-      ref: ref
-    };
-  }
-  var fused = gemsViewFindFused(snapshot, ref.id);
-  if (!isFusedGemEnabled(fused)) return null;
-  return {
-    stats: fused.stats,
-    fusions: fused.fusions || 0,
-    leaves: fused.leaves || ((fused.fusions || 0) + 1),
-    ref: ref
-  };
-}
-
 function gemsViewShopRefreshCost(shop) {
   var resetNo = (Number(shop && shop.refreshCount) || 0) + 1;
   return Math.round(GEM_SHOP_REFRESH_BASE * Math.pow(resetNo, GEM_SHOP_REFRESH_EXPONENT));
@@ -8536,7 +8510,7 @@ function renderSkills() {
   for (var i = 0; i < TOTAL_SLOTS; i++) {
     var isUnlocked = i < cap;
     if (!isUnlocked) {
-      var reqLv = (i - LOADOUT_SIZE.base + 1) * LOADOUT_SIZE.perLevels;
+      var reqLv = loadoutSlotUnlock(i).level;
       var lockDesc = STR(742, reqLv);
       lh += '<div class="battle-skill-slot locked" data-slot-index="' + i + '" data-index="' + i + '" data-tt-title="' + STR(737, (i + 1)) + '" data-tt-desc="' + esc(lockDesc) + '"><span class="bss-lock">🔒</span><span class="bss-slot-num">' + (i + 1) + '</span></div>';
       continue;
@@ -9984,7 +9958,6 @@ function renderGems() {
   renderFuseInfo(gemsSnapshot);
   renderGemConvert(gemsSnapshot);
   renderGemDismantle(gemsSnapshot);
-  renderGemFusion(gemsSnapshot, headerSnapshot);
   var resonanceOpen = gemResonanceUiUnlocked(headerSnapshot);
   var resonanceTab = $id('gem-tool-resonance');
   if (resonanceTab) {
@@ -9999,16 +9972,6 @@ function renderGems() {
     }
   }
   if (!resonanceOpen && UI.gemBrowse.tool === 'resonance') { UI.gemBrowse.tool = 'compose'; setGemTool('compose'); return; }
-  // 融合未解鎖時 renderGemFusion 會把面板藏起來；分頁仍可點，改顯示解鎖條件。
-  var fusionPanel = $id('gem-fusion-panel');
-  var fusionLocked = !fusionPanel || fusionPanel.style.display === 'none';
-  var fusionLockNote = $id('gx-fusion-locked');
-  if (fusionLockNote) fusionLockNote.hidden = !fusionLocked;
-  var fusionTab = $id('gem-tool-fusion');
-  if (fusionTab) {
-    var fusionTabClass = 'gx-tab' + (fusionLocked ? ' is-locked' : '');
-    if (fusionTab.className !== fusionTabClass) fusionTab.className = fusionTabClass;
-  }
   renderGemShop(gemsSnapshot, headerSnapshot);
   if (typeof renderGemResonance === 'function') renderGemResonance(gemsSnapshot, headerSnapshot);
 }
@@ -10326,108 +10289,6 @@ function renderGemDismantle(gemsSnapshot) {
   if (typeof renderGemDismantleWorkshop === 'function') renderGemDismantleWorkshop(gemsSnapshot);
 }
 
-function gfuseShow(msg, type) {
-  var box = $id('gfuse-result');
-  if (!box) return;
-  if (!UI.gfuseMsgs) UI.gfuseMsgs = [];
-  UI.gfuseMsgs.unshift({ t: msg, c: type });
-  if (UI.gfuseMsgs.length > 3) UI.gfuseMsgs.length = 3;
-  box.innerHTML = UI.gfuseMsgs.map(function (m) {
-    var cls = m.c === 'yellow' ? ' yellow' : (m.c === 'warn' ? ' warn' : '');
-    return '<span class="gr-line' + cls + '">' + m.t + '</span>';
-  }).join('');
-}
-/* ---- 寶石融合 v2（雙屬性，5 階以上寶石均可） ---- */
-function renderGemFusion(gemsSnapshot, headerSnapshot) {
-  var fusionPanel = $id('gem-fusion-panel');
-  // HTML 初始為隱藏；每次載入／重繪都重新依目前角色條件決定是否顯示。
-  if (fusionPanel) fusionPanel.style.display = 'none';
-  var slotBox = $id('gfuse-slots');
-  if (!slotBox) return;
-  gemsSnapshot = resolveGemsPanelSnapshot(gemsSnapshot);
-  if (!gemsSnapshot) return;
-  headerSnapshot = headerSnapshot || uiHeaderPanelSnapshot();
-  var player = headerSnapshot && headerSnapshot.player;
-  var fusionUnlocked = progressReached(player && player.level, uiReincarnationCount(headerSnapshot),
-    GEM_FUSION_UNLOCK_LEVEL, GEM_FUSION_UNLOCK_REINCARNATIONS);
-  var fusionButton = $id('gfuse-btn');
-  var clearButton = $id('gfuse-clear');
-  if (!fusionUnlocked) {
-    UI.gemFuseSlots = [null, null];
-    return;
-  }
-  if (fusionPanel) fusionPanel.style.display = '';
-  if (fusionButton) fusionButton.disabled = false;
-  if (clearButton) clearButton.disabled = false;
-  if (!UI.gemFuseSlots) UI.gemFuseSlots = [null, null];
-  var h = '';
-  for (var i = 0; i < 2; i++) {
-    var ref = UI.gemFuseSlots[i];
-    if (ref) {
-      if (ref.kind === 'plain') {
-        var t = ref.type, flv = ref.lv || GEM_MAX_LEVEL;
-        var fcol = GEM_TIER_COLORS[flv] || '#ffd700';
-        h += '<span class="gem-chip gem-inventory-cell" data-gfuse-remove="' + i + '" style="border-color:' + fcol + '" data-tip="' + STR(1609, esc(gemLabel(t, flv))) + '"><span class="gem-chip-count">×1</span><span class="gem-chip-emoji">' + gemIconHTML(t, flv, 'gi-chip') + '</span><span class="gem-chip-level">' + flv + '</span></span>';
-      } else {
-        var fg = gemsViewFindFused(gemsSnapshot, ref.id);
-        if (fg) {
-          h += '<span class="gem-chip fused-chip gem-inventory-cell" data-gfuse-remove="' + i + '" data-tip="' + STR(1609, esc(fusedGemLabel(fg))) + '"><span class="gem-chip-count">×1</span><span class="gem-chip-emoji">' + fusedGemIconHTML(fg, 'gi-chip') + '</span><span class="gem-chip-level" style="color:#f0abfc">' + STR(1610, (fg.fusions || 0)) + '</span></span>';
-        } else {
-          h += '<span class="loadout-slot filled" data-gfuse-remove="' + i + '">' + STR(1611) + '</span>';
-        }
-      }
-    } else {
-      h += '<span class="loadout-slot" style="display:inline-flex;align-items:center;height:48px;box-sizing:border-box;vertical-align:top;">' + STR(1612, (i + 1)) + '</span>';
-    }
-  }
-  slotBox.innerHTML = h;
-  // 資訊列
-  var info = $id('gfuse-info');
-  var m1 = UI.gemFuseSlots[0]
-    ? gemsViewNormalizeFuseMaterial(gemsSnapshot, UI.gemFuseSlots[0])
-    : null;
-  var m2 = UI.gemFuseSlots[1]
-    ? gemsViewNormalizeFuseMaterial(gemsSnapshot, UI.gemFuseSlots[1])
-    : null;
-  if (m1 && m2) {
-    var types = gemFuseTypesOk(m1, m2);
-    if (types) {
-      info.textContent = STR(1613, gemFuseRate(m1, m2), types.map(function (t) { return GEM_TYPES[t].statName.replace('%', ''); }).join('＋'));
-    } else {
-      info.textContent = STR(1614);
-    }
-  } else {
-    info.textContent = STR(1615);
-  }
-  // 素材池（5 階以上一般寶石，高階神鑄寶石一併列出）
-  var pool = $id('gfuse-pool');
-  var chips = [];
-  var chipKeys = [];
-  for (var flv = GEM_MAX_LEVEL; flv <= GEM_FORGE_MAX_LEVEL; flv++) {
-    for (var t in GEM_TYPES) {
-      if (!isGemEnabled(t)) continue;
-      var n = gemsViewCount(gemsSnapshot, t, flv);
-      if (n > 0) {
-        var fcol = GEM_TIER_COLORS[flv] || '#ffd700';
-        chipKeys.push('plain:' + t + ':' + flv);
-        chips.push('<span class="gem-chip gem-inventory-cell" data-gfuse-pick="plain:' + t + ':' + flv + '" style="border-color:' + fcol + '" ' +
-          'data-tip="' + esc(STR(1616, gemLabel(t, flv), GEM_TYPES[t].statName.replace('%', ''), (GEM_TYPES[t].pct ? pctStr(gemStatValue(t, flv)) : fmt(gemStatValue(t, flv))))) + '">' +
-          '<span class="gem-chip-count">×' + fmt(n) + '</span>' +
-          '<span class="gem-chip-emoji">' + gemIconHTML(t, flv, 'gi-chip') + '</span>' +
-          '<span class="gem-chip-level">' + flv + '</span></span>');
-      }
-    }
-  }
-  gemsViewFused(gemsSnapshot).forEach(function (fg) {
-    if (!isFusedGemEnabled(fg)) return;
-    chipKeys.push('fused:' + fg.id);
-    chips.push('<span class="gem-chip fused-chip gem-inventory-cell" data-gfuse-pick="fused:' + fg.id + '" data-tip="' + STR(1617, esc(fusedGemLabel(fg)), (fg.fusions || 0)) + '"><span class="gem-chip-count">×1</span><span class="gem-chip-emoji">' + fusedGemIconHTML(fg, 'gi-chip') + '</span><span class="gem-chip-level" style="color:#f0abfc">' + STR(1610, (fg.fusions || 0)) + '</span></span>');
-  });
-  // 逐格比對，理由同轉換頁：整份重建會把使用者正壓著的 chip 換掉，那一下點擊就消失
-  if (!chips.length) pool.innerHTML = STR(1618);
-  else syncItemGridCells(pool, chipKeys, chips);
-}
-
 /* ---- 寶石商店 ---- */
 var GEM_TIER_COLORS = {
   1: '#9aa5b1', 2: '#4ade80', 3: '#38bdf8', 4: '#c084fc', 5: '#ffd700',
@@ -10703,8 +10564,7 @@ function reincarnationUnlockNotices(header) {
     [STR(2155), 1, DIVINE_FORGE.ancientUnlock],
     [STR(2156), 1, DIVINE_FORGE.gemUnlock],
     [STR(2157), 1, DIVINE_FORGE.imprintUnlock],
-    [STR(1511), GEM_RESONANCE_UNLOCK_LEVEL, GEM_RESONANCE_UNLOCK_REINCARNATION],
-    [STR(2148), GEM_FUSION_UNLOCK_LEVEL, GEM_FUSION_UNLOCK_REINCARNATIONS]
+    [STR(1511), GEM_RESONANCE_UNLOCK_LEVEL, GEM_RESONANCE_UNLOCK_REINCARNATION]
   ];
   EQUIP_SET_UNLOCK_LEVELS.forEach(function (requiredLevel, i) {
     systems.push([STR(2149, STR(1168 + i)), requiredLevel, EQUIP_SET_UNLOCK_REINCARNATIONS[i]]);
@@ -12165,47 +12025,6 @@ function initUI() {
   // 寶石合成與拆解九宮格
   if (typeof initGemWorkshopUi === 'function') initGemWorkshopUi();
 
-  // 寶石融合 v2（雙屬性）
-  var gfuseBtn = $id('gfuse-btn');
-  if (gfuseBtn) {
-    gfuseBtn.addEventListener('click', function () {
-      var header = uiHeaderPanelSnapshot();
-      var player = header && header.player;
-      if (!progressReached(player && player.level, uiReincarnationCount(header),
-        GEM_FUSION_UNLOCK_LEVEL, GEM_FUSION_UNLOCK_REINCARNATIONS)) {
-        blog(STR(196), 'warn');
-        return;
-      }
-      if (!UI.gemFuseSlots || !UI.gemFuseSlots[0] || !UI.gemFuseSlots[1]) {
-        blog(STR(833), 'warn');
-        return;
-      }
-
-      var refs = UI.gemFuseSlots.slice();
-      sendGemUiCommand(
-        'gem.fuse',
-        { ref1: refs[0], ref2: refs[1] },
-        'gem-fuse',
-        ['gems'],
-        function (result) {
-          if (result.success) {
-            gfuseShow(STR(834, fusedGemLabel(result.result), result.rate), 'yellow');
-            blog(STR(835, fusedGemLabel(result.result), result.rate), 'good', 'factory');
-          } else {
-            gfuseShow(STR(836, result.rate, result.degraded.n, gemLabel(result.degraded.type, result.degraded.lv)), 'warn');
-          }
-          UI.gemFuseSlots = [null, null];
-          renderGemFusion();
-        }
-      );
-      return;
-    });
-    $id('gfuse-clear').addEventListener('click', function () {
-      UI.gemFuseSlots = [null, null];
-      renderGemFusion();
-    });
-  }
-
   // 寶石商店
   var shopBuyAll = $id('shop-buy-all');
   if (shopBuyAll) {
@@ -12569,43 +12388,6 @@ function initUI() {
         });
         return;
       }
-      return;
-    }
-    // 寶石融合 v2：素材放入 / 移出
-    var gfp = e.target.closest('[data-gfuse-pick]');
-    if (gfp) {
-      var gfHeader = uiHeaderPanelSnapshot();
-      var gfPlayer = gfHeader && gfHeader.player;
-      if (!progressReached(gfPlayer && gfPlayer.level, uiReincarnationCount(gfHeader),
-        GEM_FUSION_UNLOCK_LEVEL, GEM_FUSION_UNLOCK_REINCARNATIONS)) {
-        blog(STR(196), 'warn');
-        return;
-      }
-      if (!UI.gemFuseSlots) UI.gemFuseSlots = [null, null];
-      var pv = gfp.getAttribute('data-gfuse-pick').split(':');
-      var pref = pv[0] === 'plain'
-        ? { kind: 'plain', type: pv[1], lv: parseInt(pv[2], 10) || GEM_MAX_LEVEL }
-        : { kind: 'fused', id: pv[1] };
-      // 融合寶石不可重複放入；一般寶石同種同階需有足夠數量
-      var dupFused = pref.kind === 'fused' && UI.gemFuseSlots.some(function (r) { return r && r.kind === 'fused' && r.id === pref.id; });
-      if (dupFused) { blog(STR(1626), 'warn'); return; }
-      var slotIdx = UI.gemFuseSlots[0] ? (UI.gemFuseSlots[1] ? -1 : 1) : 0;
-      if (slotIdx < 0) { blog(STR(198), 'warn'); return; }
-      if (pref.kind === 'plain') {
-        var sameCnt = UI.gemFuseSlots.filter(function (r) { return r && r.kind === 'plain' && r.type === pref.type && (r.lv || GEM_MAX_LEVEL) === pref.lv; }).length;
-        if (gemsViewCount(uiGemsPanelSnapshot(), pref.type, pref.lv) < sameCnt + 1) {
-          blog(STR(1627), 'warn');
-          return;
-        }
-      }
-      UI.gemFuseSlots[slotIdx] = pref;
-      renderGemFusion();
-      return;
-    }
-    var gfr = e.target.closest('[data-gfuse-remove]');
-    if (gfr) {
-      UI.gemFuseSlots[parseInt(gfr.getAttribute('data-gfuse-remove'), 10)] = null;
-      renderGemFusion();
       return;
     }
     // 寶石商店：單顆購買

@@ -76,33 +76,6 @@ test('零件加成（partBonus）吃推導值', () => {
 
 /* ---- 融合寶石 ---- */
 
-test('融合結果只存 5 階等值倍率，數值由寶石表當場算', () => {
-  const c = loadContext();
-  c.G = { player: { level: 1, reincarnations: 3, gems: {}, fusedGems: [] } };
-  c.gemCount = () => 2;
-  c.addGem = () => {};
-  c.chance = () => true;                       // 融合必成功
-  const r = c.fuseGemsV2({ kind: 'plain', type: 'ruby', lv: 5 }, { kind: 'plain', type: 'ruby', lv: 5 });
-  assert.equal(r.success, true);
-  const fg = r.result;
-  assert.equal(fg.stats.length, 1);
-  assert.equal(Object.prototype.hasOwnProperty.call(fg.stats[0], 'val'), false, '存檔不得再出現 val');
-  assert.ok(fg.stats[0].mult >= 1 && fg.stats[0].mult <= 2, '同屬性融合：介於 1 倍與 2 倍之間');
-  assert.equal(c.fusedStatValue(fg.stats[0]),
-    Math.round(c.gemStatValue('ruby', c.GEM_MAX_LEVEL) * fg.stats[0].mult * 100) / 100);
-});
-
-test('素材倍率：5 階＝1 倍，每高 1 階 ×2', () => {
-  const c = loadContext();
-  c.G = { player: { level: 1, reincarnations: 3, gems: {}, fusedGems: [] } };
-  c.gemCount = () => 2;
-  assert.equal(c.normalizeFuseMaterial({ kind: 'plain', type: 'topaz', lv: 5 }).stats[0].mult, 1);
-  assert.equal(c.normalizeFuseMaterial({ kind: 'plain', type: 'topaz', lv: 7 }).stats[0].mult, 4);
-  // 倍率換算回數值＝該階寶石數值
-  const m7 = c.normalizeFuseMaterial({ kind: 'plain', type: 'topaz', lv: 7 });
-  assert.equal(c.fusedStatValue(m7.stats[0]), c.gemStatValue('topaz', 7));
-});
-
 test('調整寶石 5 階數值後，融合寶石數值等比跟著變（gemAttrDmgBaseV1 那類遷移不再需要）', () => {
   const c = loadContext();
   const fg = { id: 'f1', level: 5, fusions: 1, leaves: 2, stats: [{ type: 'topaz', mult: 1.6 }] };
@@ -169,17 +142,3 @@ test('存檔載入會換算庫存與插槽內的融合寶石（migrateSave）', 
   assert.equal(c.partValueForLevel('speedGear', out.factory.partLevels.speedGear), 50);
 });
 
-test('融合公式在倍率空間與改造前等價（同屬性取 rnd(較小, 較大×2)）', () => {
-  const c = loadContext();
-  c.G = { player: { level: 1, reincarnations: 3, gems: {}, fusedGems: [] } };
-  c.gemCount = () => 2;
-  c.addGem = () => {};
-  c.chance = () => true;
-  c.rnd = (a, b) => b;                         // 取區間上限
-  const r = c.fuseGemsV2(
-    { kind: 'plain', type: 'ruby', lv: 5 },    // 1 倍
-    { kind: 'plain', type: 'ruby', lv: 6 }     // 2 倍
-  );
-  assert.equal(r.result.stats[0].mult, 4, '上限＝較大值(2)×2');
-  assert.equal(c.fusedStatValue(r.result.stats[0]), c.gemStatValue('ruby', c.GEM_MAX_LEVEL) * 4);
-});

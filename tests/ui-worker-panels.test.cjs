@@ -39,7 +39,7 @@ test('寶石頁由 Worker panel 投影渲染並以 Command 修改狀態', () => 
   assert.doesNotMatch(countdown, /\b(?:gemShop|shopHourlyReset)\(/);
 
   for (const command of [
-    'gem.convert', 'gem.fuse',
+    'gem.convert',
     'gem.shopBuy', 'gem.shopBuyAll', 'gem.shopRefresh', 'gem.shopUpgrade'
   ]) {
     assert.match(ui, new RegExp("sendGemUiCommand\\(\\s*'" + command.replace('.', '\\.') + "'"));

@@ -161,7 +161,11 @@ test('所在地圖示隨快照移動；神界瀏覽不自行傳送，仍須選�
   assert.equal(marker.hidden, false); const oldX = marker.style.left;
   t.panels.header.stage.zone = 'swamp'; t.c.WorldMapUI.refresh();
   assert.notEqual(marker.style.left, oldX); assert.match(marker.getAttribute('aria-label'), /月影沼澤/);
+  // 神界入口只有一個條件：通關人界最後一張地圖。光是轉生數 11 不會讓頁籤出現。
   t.panels.header.player.reincarnations = 11; t.c.WorldMapUI.refresh();
+  assert.equal(t.ids['world-map-realm-god'].hidden, true);
+  t.panels.battle.zones.find(z => z.key === 'undead_mountains').unlocked = true;
+  t.panels.battle.zoneProgress.undead_mountains = { cleared: 400 }; t.c.WorldMapUI.refresh();
   assert.equal(t.ids['world-map-realm-god'].hidden, false);
   t.ids['world-map-realm-god'].dispatch('click');
   assert.equal(t.ids['world-map-human'].hidden, true); assert.equal(marker.hidden, true);

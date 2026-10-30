@@ -164,43 +164,37 @@ test('屬性面板列：只隱藏有門檻的那幾列，依角色等級切換',
   assert.equal(context.statPanelRowHiddenAtLevel(find('命中率'), 51), false);
 });
 
-test('參數表：預設列存在，且 apply_params 能重建、能擋打錯的鍵', () => {
+test('參數表：system_unlock 預設列存在，且 apply_params 能重建、能擋非 0 的轉生欄', () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'affix-gate-params-'));
   try {
     fs.mkdirSync(path.join(tmp, 'tools'));
     fs.cpSync(path.join(root, 'config/CSV'), path.join(tmp, 'config/CSV'), { recursive: true });
     fs.cpSync(path.join(root, 'js'), path.join(tmp, 'js'), { recursive: true });
     fs.copyFileSync(path.join(root, 'tools/apply_params.cjs'), path.join(tmp, 'tools/apply_params.cjs'));
-    const csvPath = path.join(tmp, 'config/CSV/game_parameters.csv');
+    const csvPath = path.join(tmp, 'config/CSV/system_unlock.csv');
     const dataPath = path.join(tmp, 'js/data.js');
     const run = (...args) => execFileSync(process.execPath, ['tools/apply_params.cjs', ...args], { cwd: tmp, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
 
     const csv = fs.readFileSync(csvPath, 'utf8');
-    const rowRe = /^(\d+,[^,]*,6-裝備,等級前不出現的屬性,.*)$/m;
-    assert.match(csv, rowRe, '參數表缺少「6-裝備／等級前不出現的屬性」列');
+    assert.match(csv, /,元素傷害詞條,201\/0,/, 'system_unlock 缺少「元素傷害詞條」列');
+    assert.match(csv, /,屬性抗性詞條,201\/0,/, 'system_unlock 缺少「屬性抗性詞條」列');
     assert.match(run(), /將變更 0、錨點問題 0/, '預設列與 data.js 的預設值要一致');
 
-    // 改成兩組：250 級擋一個、100 級擋另兩個
-    const lines = csv.split('\r\n');
-    const at = lines.findIndex((l) => l.includes(',6-裝備,等級前不出現的屬性,'));
-    // 預設列尾端是 a~l：200,"{…逗號分隔…}",0×10（陣列格因含逗號而有引號）
-    const tail = '250,{resFire},100,{hit;hpFlat},0,0,0,0,0,0,0,0';
-    const replaced = lines[at].replace(/,200,"[^"]*",(?:0,){9}0$/, ',' + tail);
-    assert.notEqual(replaced, lines[at], '預設列的 a~l 格式與預期不同');
-    lines[at] = replaced;
-    fs.writeFileSync(csvPath, lines.join('\r\n'));
+    // 表上的等級＝「從這一級起出現」，程式內 level 是「這一級（含）以前不出現」，所以差 1
+    const changed = csv.replace(',元素傷害詞條,201/0,', ',元素傷害詞條,251/0,').replace(',屬性抗性詞條,201/0,', ',屬性抗性詞條,101/0,');
+    fs.writeFileSync(csvPath, changed);
     assert.match(run(), /將變更 1、/);
     run('--write');
     const data = fs.readFileSync(dataPath, 'utf8');
-    assert.match(data, /\{ level: 250, keys: \['resFire'\] \}/);
-    assert.match(data, /\{ level: 100, keys: \['hit', 'hpFlat'\] \}/);
+    assert.match(data, /\{ level: 250, keys: \['elemDmgFire'[^\]]*'elemDmgWind'\] \}/);
+    assert.match(data, /\{ level: 100, keys: \['resFire'[^\]]*'resAll'\] \}/);
     execFileSync(process.execPath, ['--check', dataPath]);
     assert.match(run(), /將變更 0、錨點問題 0/, '第二次套用不應再有變更');
 
-    // 打錯詞條鍵：中止，且不改檔
-    fs.writeFileSync(csvPath, lines.join('\r\n').replace('hpFlat', 'hpFlatt'));
+    // 轉生欄不是 0：中止，且不改檔
+    fs.writeFileSync(csvPath, changed.replace(',屬性抗性詞條,101/0,', ',屬性抗性詞條,101/1,'));
     const before = fs.readFileSync(dataPath);
-    assert.throws(() => run('--write'), /詞條池沒有的鍵：hpFlatt/);
+    assert.throws(() => run('--write'), /只支援等級門檻/);
     assert.deepEqual(fs.readFileSync(dataPath), before);
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });

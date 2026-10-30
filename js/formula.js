@@ -2306,12 +2306,6 @@ function fusedStatValue(s) {
   if (!(base5 > 0)) return Number(s.val) || 0;
   return Math.round(base5 * (Number(s.mult) || 0) * 100) / 100;
 }
-// 融合素材的 5 階等值倍率（舊格式素材以 val 反推，融合結果與改造前一致）
-function fusedMaterialMult(s) {
-  if (!s) return 0;
-  if (s.mult !== undefined && s.mult !== null) return Number(s.mult) || 0;
-  return fusedStatMult(s.type, s.val);
-}
 // 數值 → 5 階等值倍率（產出與舊存檔換算共用）
 function fusedStatMult(type, val) {
   var base5 = GEM_TYPES[type] ? gemStatValue(type, GEM_MAX_LEVEL) : 0;
@@ -2409,17 +2403,12 @@ function gemDismantlePlan(slots) {
   return { outputs: Object.keys(outputs).map(function (key) { return outputs[key]; }), count: count };
 }
 /* 融合寶石拆解：融合素材樹的葉子都是 5 階寶石（3 合 1 時各值 81 顆 1 級）。
-   fg.leaves 記錄素材 5 階總數（融合時雙方相加；不計成功率，一律視為 100%）
+   fg.leaves 記錄素材 5 階總數（融合寶石已無玩家入口，僅神級寶石與舊存檔會有）
    → 總成本 = gemL1Worth(5) × leaves 顆 1 級，拆解產出 = ⌊總成本 × 0.7⌋（依屬性種類均分）。
-   ※ fg.fusions 為「融合世代」（max+1，見 item.js），僅用於顯示與成功率遞減；
+   ※ fg.fusions 為「融合世代」，僅用於顯示；
      舊存檔無 leaves 欄位時以 (fusions+1) 後備（migrateSave 會補）。 */
 function fusedGemL1Worth(fg) { return gemL1Worth(GEM_MAX_LEVEL) * (fg.leaves || ((fg.fusions || 0) + 1)); }
 function fusedGemDismantleYield(fg) { return fg.divine ? 0 : Math.floor(fusedGemL1Worth(fg) * GEM_DISMANTLE_KEEP); }
-
-// 寶石融合成功率 = 基礎率 - 每次遞減 ×（雙方累計成功融合次數），並有下限
-function gemFuseRate(m1, m2) {
-  return Math.max(GEM_FUSE_MIN_RATE, GEM_FUSE_BASE_RATE - GEM_FUSE_RATE_DECAY * ((m1 ? m1.fusions : 0) + (m2 ? m2.fusions : 0)));
-}
 
 // 商店手動刷新費用 = 基礎費用 ×（下一次重置序號 ^ 指數）；次數每隔固定時間重置
 function shopRefreshCost() {
@@ -2453,16 +2442,27 @@ function skillCooldownWithMinimum(cooldown) {
   return Math.max(skillMinimumInterval(), Math.max(0, Number(cooldown) || 0));
 }
 
-// 裝載欄：參數表「技能裝載欄」＝clamp(b + ⌊等級/a⌋, b, c)；1 轉後解鎖全部上限。
-var LOADOUT_SIZE = { perLevels: 100, min: 2, base: 2, max: 6 };
+// 裝載欄：前 LOADOUT_BASE_SLOTS 格開局即有；之後每格各有一條解鎖門檻（system_unlock 表「技能裝載欄 第N格」，
+// 等級/轉生次數，走 progressReached）。只寫等級的門檻在轉生過後視為已越過，所以 1 轉後自然全開。
+var LOADOUT_BASE_SLOTS = 2;
+var LOADOUT_SLOT_UNLOCKS = [
+  { level: 100, reinc: 0 },
+  { level: 200, reinc: 0 },
+  { level: 300, reinc: 0 },
+  { level: 400, reinc: 0 }
+];
+var LOADOUT_SIZE = { base: LOADOUT_BASE_SLOTS, max: LOADOUT_BASE_SLOTS + LOADOUT_SLOT_UNLOCKS.length };
+// 第 index 格（0 起算）的解鎖門檻；開局就有的格回傳 null
+function loadoutSlotUnlock(index) { return LOADOUT_SLOT_UNLOCKS[index - LOADOUT_SIZE.base] || null; }
 /* 純函式版本：不讀 G，讓讀檔遷移（save.js）能對「存檔裡的」等級與轉數算格數。
    loadoutSize() 是它讀取現況 G 的包裝，兩者必須是同一套規則——分成兩份算法遲早會飄。 */
 function loadoutSizeFor(level, reincarnations) {
   if (typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.skillUnlock) return LOADOUT_SIZE.max;
-  if ((Math.floor(Number(reincarnations)) || 0) >= 1) return LOADOUT_SIZE.max;
-  var lvl = Math.max(1, Math.floor(Number(level)) || 1);
-  return Math.min(LOADOUT_SIZE.max, Math.max(LOADOUT_SIZE.min,
-    LOADOUT_SIZE.base + Math.floor(lvl / LOADOUT_SIZE.perLevels)));
+  var size = LOADOUT_SIZE.base;
+  LOADOUT_SLOT_UNLOCKS.forEach(function (u) {
+    if (progressReached(level, reincarnations, u.level, u.reinc)) size++;
+  });
+  return Math.min(LOADOUT_SIZE.max, size);
 }
 function loadoutSize() {
   if (typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.skillUnlock) return LOADOUT_SIZE.max;
