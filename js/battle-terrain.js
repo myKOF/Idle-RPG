@@ -104,22 +104,22 @@ var BattleTerrain = (function () {
       ld: [['arch',3,220,200],['giantBones',1.5,260,130]]
     },
     god_battlefield: {
-      s: [['deadTree',1.6,110,156],['banner',2,88,146],['sword',2.2,62,99],['rock',2.1,105,76],['giantBones',0.8,144,85],['dryGrass',2.8,77,49],['rubble',1.8,85,57]],
-      d: [['arch',1,144,140],['banner',1.4,83,138],['sword',2.5,62,99],['deadTree',1.8,106,142],['rubble',2,84,56],['dryGrass',2,75,48],['brazier',1.2,58,80]],
-      ls: [['giantBones',2,270,140],['arch',1.5,220,190],['rock',1.5,190,130]],
-      ld: [['arch',2,220,200],['giantBones',2,270,140]]
+      s: [['godBlade',3,100,174],['warCrown',2,133,166],['sunRelic',1.4,114,153],['chainShard',2.5,104,104]],
+      d: [['warCrown',2.4,141,181],['godBlade',3,107,187],['sunRelic',1.7,122,165],['chainShard',2.2,111,114]],
+      ls: [['godBlade',2,174,292],['warCrown',1.4,225,270]],
+      ld: [['warCrown',2,234,280],['sunRelic',1.5,210,260]]
     },
     god_chaos: {
-      s: [['crystals',3,88,129],['runeStone',1.7,76,119],['rock',2,103,75],['deadTree',1.1,108,146],['spire',1.6,78,128],['shrub',2,74,53],['dryGrass',1.3,72,46],['rubble',1.3,82,54]],
-      d: [['arch',1.1,143,137],['crystals',3.2,89,132],['runeStone',2,74,120],['spire',1.5,76,130],['deadTree',1,102,144],['shrub',2,74,53],['dryGrass',1.3,72,46],['rubble',1.4,85,56]],
-      ls: [['crystals',3,160,230],['rock',2,190,140]],
-      ld: [['crystals',4,170,240],['runeStone',1.5,90,200]]
+      s: [['voidGyre',1.8,133,177],['voidPrism',3,126,161],['voidSpindle',2.2,81,164],['voidLens',1.8,125,154]],
+      d: [['voidGyre',2.5,143,190],['voidPrism',2.8,134,172],['voidSpindle',2.3,87,176],['voidLens',2,134,168]],
+      ls: [['voidGyre',2,225,292],['voidLens',1,214,265]],
+      ld: [['voidGyre',2,237,300],['voidSpindle',1,142,278]]
     },
     god_sanctuary: {
-      s: [['pillar',2.1,75,150],['urn',1.6,62,73],['shrub',3.5,88,59],['rock',1.6,88,66],['runeStone',1.4,76,121],['ruinWall',1,128,87],['rubble',1.4,86,57]],
-      d: [['arch',1.3,145,139],['pillar',2,74,145],['urn',1.7,60,70],['shrub',3,85,58],['runeStone',1.6,74,118],['rubble',1.7,86,57],['brazier',1,58,80]],
-      ls: [['arch',3,220,210],['runeStone',1.5,90,200]],
-      ld: [['arch',3,220,210],['runeStone',2,90,200]]
+      s: [['seraphWing',2.4,137,188],['celestialHarp',1.8,121,171],['haloDais',2,113,166],['lightLotus',3,95,86]],
+      d: [['seraphWing',2.3,145,198],['celestialHarp',2,129,183],['haloDais',2.4,123,181],['lightLotus',2.8,103,96]],
+      ls: [['seraphWing',2,224,290],['haloDais',1.5,196,272]],
+      ld: [['celestialHarp',1.5,217,286],['seraphWing',2,234,300]]
     }
   };
   CATALOG[''] = CATALOG.desert;
@@ -130,6 +130,9 @@ var BattleTerrain = (function () {
      ground：地面坑洞之類，永遠可以走過去。
      沒列在這裡的種類（草、灌木、小碎石…）底座很小，一律不擋。 */
   var FOOT = {
+    godBlade:{span:.8,d:.5},warCrown:{span:.8,d:.5},sunRelic:{span:.8,d:.5},chainShard:{span:.7,d:.4},
+    voidGyre:{span:.72,d:.4},voidPrism:{ground:true},voidSpindle:{ground:true},voidLens:{span:.7,d:.4},
+    seraphWing:{span:.8,d:.5},celestialHarp:{span:.8,d:.5},haloDais:{span:.8,d:.5},lightLotus:{ground:true},
     rock: { span: 0.9, d: 0.7 }, basalt: { span: 0.9, d: 0.7 }, obsidian: { span: 0.7, d: 0.7 },
     lavaOutcrop: { span: 1, d: 0.7 }, crystals: { span: 0.8, d: 0.7 }, stormSpire: { span: 0.8, d: 0.7 },
     ruinWall: { span: 1, d: 0.3 }, log: { span: 0.9, d: 0.3 }, giantBones: { span: 0.8, d: 0.4 },

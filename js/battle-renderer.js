@@ -7080,6 +7080,9 @@ var BattleRenderer = (function () {
        每幀先畫進離屏貼圖再由透視網格貼到畫面；沒開就直接掛在 stage 上。由 syncPerspective 決定。 */
     var sceneRoot = new PIXI.Container();
     sceneRoot.addChild(bg);
+    // 天空河在地板／遠霧之上、全部角色與戰鬥效果之後，共用場景透視。
+    var decorDistant = new PIXI.Container();
+    sceneRoot.addChild(decorDistant);
     sceneRoot.addChild(world);
     /* 場景、空中角色與特效共用鏡頭；HUD留在實際畫布座標。 */
     var cameraStage = new PIXI.Container();
@@ -7151,7 +7154,7 @@ var BattleRenderer = (function () {
       groundUnder: groundUnder, groundOver: groundOver,
       outline: outlineLayer,
       playerHud: playerHud, overlay: overlay,
-      decorPlane: decorPlane, decorDecal: decorDecal, decorLight: decorLight, decorAmbient: decorAmbient,
+      decorDistant: decorDistant, decorPlane: decorPlane, decorDecal: decorDecal, decorLight: decorLight, decorAmbient: decorAmbient,
       arenaPlane: arenaPlane, arenaBase: arenaBase, arenaGlow: arenaGlow, arenaAmbient: arenaAmbient, arenaTitle: arenaTitle
     };
     drawDeathFog(0);
@@ -7905,7 +7908,7 @@ var BattleRenderer = (function () {
       S.decor = BattleDecor.create({
         PIXI: PIXI, groundScale: GROUND_Y_SCALE,
         decalLayer: S.layers.decorDecal, lightLayer: S.layers.decorLight,
-        propLayer: S.layers.entity, ambientLayer: S.layers.decorAmbient,
+        propLayer: S.layers.entity, ambientLayer: S.layers.decorAmbient, distantLayer: S.layers.decorDistant,
         billboard: sceneBillboardBasis,
         onTint: function (tint) {
           S.groundTint = tint;

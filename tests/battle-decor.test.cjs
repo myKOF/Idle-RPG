@@ -29,11 +29,11 @@ test('DECOR-IMAGE-LOAD 完整素材載入去重、失敗重試只補缺圖，等
   const nature=ctx.DecorNature,calls=[],pending=[];
   const loader=url=>{calls.push(url);return new Promise((resolve,reject)=>pending.push({url,resolve,reject}));};
   const first=nature.loadImages('https://game.test/',loader),second=nature.loadImages('https://game.test/',loader);
-  assert.equal(first,second);assert.equal(calls.length,35);
+  assert.equal(first,second);assert.equal(calls.length,47);
   for(const p of pending)if(p.url.includes('/willow.png'))p.reject(new Error('network'));else p.resolve({width:200,height:100});
   await assert.rejects(first,/network/);await Promise.resolve();
   await nature.loadImages('https://game.test/',url=>{calls.push(url);return Promise.resolve({width:100,height:200});});
-  assert.equal(calls.length,36);assert.ok(calls.every(url=>url.startsWith('https://game.test/images/scene/')));
+  assert.equal(calls.length,48);assert.ok(calls.every(url=>url.startsWith('https://game.test/images/scene/')));
   await nature.loadImages('https://game.test/',()=>{throw new Error('已載入不應重新請求');});
   const draws=[],g=fakeContext();g.drawImage=(...args)=>draws.push(args);
   nature.drawBody(g,'willow',0,0,100,120,1,{});
@@ -421,7 +421,8 @@ test('DECOR-NATURE-1 每張地圖的直立物件都有獨立接觸區，苔沼�
         assert.ok(foot.w > p.w && foot.h > p.w * .5, '接觸區必須容納漸隱留白');
         if (p.type === 'rock') assert.equal(p.nature, true, '各地圖岩石都走新版風化畫法');
       }
-      assert.ok(plan.specs.some(s => s.type === 'litter'), '每張地圖都要有地貌碎屑');
+      if(zone.startsWith('god_'))assert.ok(!plan.specs.some(s => s.type === 'litter'), '神界不再沿用人界泥土碎屑');
+      else assert.ok(plan.specs.some(s => s.type === 'litter'), '人界保留地貌碎屑');
       if (zone === 'swamp') {
         for (const type of ['fern', 'log', 'roots', 'puddle']) assert.ok(plan.specs.some(s => s.type === type && s.nature), type);
       }
@@ -521,4 +522,50 @@ test('DECOR-BB 透視抵銷（opts.billboard）：擺件與火焰被抵銷後 Pi
     assert.ok(Math.abs(flame.x - (flame._bbParent.x + shear * flame._bbOffY)) < 1e-9, '火焰 x 跟著火盆的矩陣');
     assert.ok(Math.abs(flame.y - (flame._bbParent.y + w * flame._bbOffY)) < 1e-9, '火焰 y 跟著火盆的矩陣');
   }
+});
+
+test('DIVINE-SCENE 三圖地表與深層僅用專屬物件、地面及完整天空河，圖集沒有越界', () => {
+  const { BattleDecor, warnings } = loadDecor();
+  const mortal = new Set(Object.entries(BattleDecor.KITS).filter(([key]) => key && !key.startsWith('god_')).flatMap(([,kit]) => [...kit.props, ...kit.deepProps].map(p => p[0])));
+  const sets = [];
+  for (const zone of ['god_battlefield','god_chaos','god_sanctuary']) {
+    const types = new Set();
+    for (const deep of [false,true]) {
+      const plan = BattleDecor.buildAtlas(zone,deep);
+      for (const spec of plan.specs) {
+        assert.ok(spec.px + spec.pw <= plan.width && spec.py + spec.ph <= plan.height, zone + ' 圖集被裁斷 ' + spec.key);
+        if (spec.kind === 'prop') { assert.ok(!mortal.has(spec.type), zone + ' 重用人界 ' + spec.type); types.add(spec.type); }
+      }
+      assert.equal(plan.specs.filter(s => s.key === 'skyRiver').length,1);
+      assert.ok(plan.specs.some(s => s.type === 'divine'));
+    }
+    sets.push(types);
+  }
+  assert.ok(sets.every((set,i) => sets.every((other,j) => i === j || [...set].every(type => !other.has(type)))), '三圖物件也彼此獨立');
+  assert.deepEqual(warnings,[]);
+});
+
+test('DIVINE-MOTION 天空河與符紋固定上限，暫停／隱藏凍結，換圖與退出全部回收', () => {
+  const { BattleDecor } = loadDecor(), P = fakePixi();
+  const layers = { decal:new P.Container(), light:new P.Container(), prop:new P.Container(), ambient:new P.Container(), distant:new P.Container() };
+  const decor=BattleDecor.create({PIXI:P.PIXI,groundScale:.5,decalLayer:layers.decal,lightLayer:layers.light,propLayer:layers.prop,ambientLayer:layers.ambient,distantLayer:layers.distant,buildBudgetMs:Infinity,prebuildBudgetMs:0,worker:false});
+  const v=view(0,0), tick=dt=>decor.update({...v,dt});
+  const shape=()=>JSON.stringify([...layers.distant.children,...layers.decal.children.filter(s=>s._decorLocal)].map(s=>[s.x,s.y,s.rotation,s.alpha]));
+  for(const zone of ['god_battlefield','god_chaos','god_sanctuary']) {
+    decor.setScene(zone,1);tick(.1);tick(.1);
+    assert.equal(decor.stats().skyRiver,3);assert.equal(layers.distant.children.length,4);
+    assert.ok(decor.stats().localSources > 0 && decor.stats().localSources <= 6);
+    assert.ok(decor.stats().localParticles <= 18);
+    const moving=shape();tick(.1);assert.notEqual(shape(),moving);
+    decor.setMotionEnabled(false);const stopped=shape();tick(.1);assert.equal(shape(),stopped);
+    decor.setMotionEnabled(true);tick(0);assert.equal(shape(),stopped);
+    decor.setVisible(false);tick(.1);assert.equal(shape(),stopped);assert.equal(layers.distant.visible,false);
+    decor.setVisible(true);tick(.1);assert.equal(layers.distant.visible,true);
+  }
+  decor.setScene('desert',1);tick(.1);tick(.1);assert.equal(layers.distant.children.length,0);assert.equal(decor.stats().skyRiver,0);
+  decor.destroy();assert.equal(P.alive(),0);
+  const lite = loadDecor({location:{search:'?decor=lite'}}).BattleDecor;
+  const reduced=lite.create({PIXI:P.PIXI,groundScale:.5,decalLayer:layers.decal,lightLayer:layers.light,propLayer:layers.prop,ambientLayer:layers.ambient,distantLayer:layers.distant,buildBudgetMs:Infinity,prebuildBudgetMs:0,worker:false});
+  reduced.setScene('god_chaos',11);reduced.update(v);reduced.update(v);
+  assert.ok(reduced.stats().localSources<=2);assert.ok(reduced.stats().localParticles<=2);reduced.destroy();assert.equal(P.alive(),0);
 });

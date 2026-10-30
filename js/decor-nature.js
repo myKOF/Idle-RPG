@@ -4,6 +4,7 @@
 var DecorNature = (function () {
   'use strict';
   var SPRITE_FILES={willow:'willow',deadTree:'burnt-tree',pine:'snow-pine',giantBones:'beast-bones',cactus:'cactus',ice:'ice-cluster',void:'void-crystal',log:'fallen-log',stump:'swamp-stump',runeStone:'rune-stele',pillar:'stone-column',arch:'ruined-arch',ruinWall:'ruined-wall',rubble:'fallen-masonry',urn:'weathered-urn',grave:'old-gravestone',arenaGate:'arena-gate',arenaBrazier:'arena-brazier',arenaSpire:'arena-spire',arenaCandles:'arena-candles'};
+  Object.assign(SPRITE_FILES,{godBlade:'divine-god-blade',warCrown:'divine-war-crown',sunRelic:'divine-sun-relic',chainShard:'divine-chain-shard',voidGyre:'divine-void-gyre',voidPrism:'divine-void-prism',voidSpindle:'divine-void-spindle',voidLens:'divine-void-lens',seraphWing:'divine-seraph-wing',celestialHarp:'divine-celestial-harp',haloDais:'divine-halo-dais',lightLotus:'divine-light-lotus'});
   var sprites={},loading=null;
   SPRITE_FILES.mistTree='mist-elder';SPRITE_FILES.lavaOutcrop='lava-outcrop';SPRITE_FILES.stormSpire='storm-spire';
   SPRITE_FILES.rootGate='root-arch';SPRITE_FILES.lavaVent='lava-vent';SPRITE_FILES.windPine='wind-pine';
@@ -309,7 +310,12 @@ var DecorNature = (function () {
     g.restore();
   }
   function drawContact(g,x,y,width,seed,style) {
-    g.save();g.translate(x,y);groundContact(g,rng(seed),width,!!style.moss,style);g.restore();
+    g.save();g.translate(x,y);
+    if((style.theme||'').indexOf('god_')===0){
+      wash(g,0,2,width*.64,width*.2,'rgba(9,15,39,.38)');
+      wash(g,0,0,width*.5,width*.16,style.theme==='god_sanctuary'?'rgba(130,219,247,.16)':style.theme==='god_chaos'?'rgba(154,87,255,.25)':'rgba(255,166,78,.2)');
+    }else groundContact(g,rng(seed),width,!!style.moss,style);
+    g.restore();
   }
   function drawSurface(g,type,w,h,seed,style) {
     var r=rng(seed);g.save();g.translate(w/2,h/2);
