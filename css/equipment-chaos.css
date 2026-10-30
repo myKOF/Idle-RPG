@@ -1,0 +1,134 @@
+/* 使用者授權原圖直接九宮格顯示。中心不使用 fill，避免截圖文字進入遊戲。
+   內襯只取原圖 (240,370) 的 120×180 空白區，並疊右上金光／清淡左下紅暈。 */
+.eff-chaos,
+.chaos-detail,
+.equip-detail-frame:has(> #detail-pane.has-detail.chaos-detail) {
+  --chaos-frame: url('../images/ui/equipment/chaos-reference.png');
+  --chaos-surface:
+    radial-gradient(ellipse at 100% 0%, rgb(196 154 61 / .38), transparent 55%),
+    radial-gradient(ellipse at 0% 100%, rgb(124 27 31 / .09), transparent 46%),
+    url('../images/ui/equipment/chaos-reference.png') 83.916084% 88.095238% / 338.333333% 333.333333% no-repeat,
+    #081b12;
+}
+
+.item-cell.eff-chaos,
+#workspace-area .item-cell.eff-chaos,
+.eq-slot.eff-chaos,
+.forge-slot.eff-chaos {
+  isolation: isolate;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: var(--chaos-surface) !important;
+  box-shadow: none !important;
+}
+
+.eff-chaos::before,
+.eff-chaos::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid transparent;
+  border-image: var(--chaos-frame) 40 28 42 30 / 9px 6px 9px 6px stretch;
+  /* 排除原截圖邊框上方的其他介面，只保留中央寶石的尖端。 */
+  clip-path: polygon(2px 2px, calc(50% - 3px) 2px, 50% 0, calc(50% + 3px) 2px, calc(100% - 2px) 2px, calc(100% - 2px) 100%, 2px 100%);
+  background: none;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* 圖框不影響紙娃娃各槽原有的絕對定位與大小。 */
+.eq-slot.eff-chaos { transform: translate(-50%, -50%); }
+.eq-slot.eff-chaos.twohand-duplicate::after { background: none; }
+.eff-chaos .ic-lv { bottom: 5px !important; z-index: 3; }
+.eff-chaos :is(.ic-up, .ic-lock, .ic-enc, .ic-syn, .ancient-star-badge) { z-index: 3; }
+.eq-slot.eff-chaos.inventory-selection-match {
+  box-shadow: 0 0 0 3px #d4b3e5, 0 0 14px #d4b3e58c !important;
+}
+.item-cell.eff-chaos.selected,
+.eq-slot.eff-chaos.selected {
+  box-shadow: 0 0 12px #ffe35466 !important;
+}
+
+#sk-tooltip .equip-detail-card.chaos-detail,
+#tab-equip .equip-detail-frame:has(> #detail-pane.has-detail.chaos-detail) {
+  position: relative;
+  isolation: isolate;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: var(--chaos-surface) !important;
+  background-blend-mode: normal !important;
+  box-shadow: none !important;
+  color: #b7c0ad;
+  padding: 25px 21px 34px !important;
+}
+
+#sk-tooltip .equip-detail-card.chaos-detail::before,
+#sk-tooltip .equip-detail-card.chaos-detail::after,
+#tab-equip .equip-detail-frame:has(> #detail-pane.has-detail.chaos-detail)::before,
+#tab-equip .equip-detail-frame:has(> #detail-pane.has-detail.chaos-detail)::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid transparent;
+  border-image: var(--chaos-frame) 40 28 42 30 / 28px 19px 29px 21px stretch;
+  clip-path: polygon(4px 6px, calc(50% - 10px) 6px, 50% 0, calc(50% + 10px) 6px, calc(100% - 6px) 6px, calc(100% - 6px) 100%, 4px 100%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* 同一張邊框的紫色副層：左／下保留紅色，上／右逐漸轉紫。
+   對角方向依矩形比例計算，左上及右下皆以連續透明度混合，不切硬邊。 */
+.eff-chaos::before,
+#sk-tooltip .equip-detail-card.chaos-detail::before,
+#tab-equip .equip-detail-frame:has(> #detail-pane.has-detail.chaos-detail)::before {
+  filter: sepia(1) saturate(2.4) hue-rotate(225deg);
+  mask-image: linear-gradient(to top right, transparent 25%, #000 75%);
+  z-index: 3;
+}
+
+/* 詳情只捲動內容，外框和光暈固定在外層。 */
+#tab-equip .equip-detail-frame:has(> #detail-pane.has-detail.chaos-detail) {
+  padding: 0 !important;
+}
+#tab-equip .equip-detail-frame > #detail-pane.has-detail.chaos-detail {
+  height: 100% !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  padding: 25px 21px 34px !important;
+  position: relative;
+  z-index: 1;
+}
+
+.chaos-detail .it-name { color: #c9a1e4 !important; text-shadow: 0 1px 2px #0009; }
+.chaos-detail .it-sub {
+  position: relative;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 2px 6px;
+  white-space: normal;
+  color: #b8b9a5;
+  padding-bottom: 11px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #81907c45;
+}
+.chaos-detail .it-sub > span:first-child {
+  margin-right: auto;
+  white-space: nowrap;
+}
+.chaos-detail .it-sub::after {
+  content: '';
+  position: absolute;
+  left: calc(50% - 3px);
+  bottom: -4px;
+  width: 5px;
+  height: 5px;
+  transform: rotate(45deg);
+  background: #243b2b;
+  border: 1px solid #91a08c;
+  outline: 2px solid #0c1f15;
+}
+.chaos-detail .it-level { color: #c2c4ac !important; }
+.chaos-detail .it-passive { color: #d1b985; }
+.chaos-detail .it-sockets { color: #b4bfac; }
+.chaos-detail .socket { border-color: #75836b66; color: #a7b39f; }

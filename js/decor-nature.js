@@ -4,6 +4,9 @@
 var DecorNature = (function () {
   'use strict';
   var SPRITE_FILES={willow:'willow',deadTree:'burnt-tree',pine:'snow-pine',giantBones:'beast-bones',cactus:'cactus',ice:'ice-cluster',void:'void-crystal',log:'fallen-log',stump:'swamp-stump',runeStone:'rune-stele',pillar:'stone-column',arch:'ruined-arch',ruinWall:'ruined-wall',rubble:'fallen-masonry',urn:'weathered-urn',grave:'old-gravestone',arenaGate:'arena-gate',arenaBrazier:'arena-brazier',arenaSpire:'arena-spire',arenaCandles:'arena-candles'};
+  Object.assign(SPRITE_FILES,{godBlade:'divine-god-blade',warCrown:'divine-war-crown',sunRelic:'divine-sun-relic',chainShard:'divine-chain-shard',voidGyre:'divine-void-gyre',voidPrism:'divine-void-prism',voidSpindle:'divine-void-spindle',voidLens:'divine-void-lens',seraphWing:'divine-seraph-wing',celestialHarp:'divine-celestial-harp',haloDais:'divine-halo-dais',lightLotus:'divine-light-lotus'});
+  Object.assign(SPRITE_FILES,{'warRampart':'war-rampart','titanHelm':'titan-helm','charredStandard':'charred-standard','siegeWreck':'siege-wreck','emberCrater':'ember-crater','bladeGrave':'blade-grave','riftAnchor':'rift-anchor','voidArch':'void-arch','orbitCubes':'orbit-cubes','astralSpine':'astral-spine','nullBloom':'null-bloom','riftObelisk':'rift-obelisk','celestialArch':'celestial-arch','starDial':'star-dial','crystalFountain':'crystal-fountain','sanctumStairs':'sanctum-stairs','prismGarden':'prism-garden','fallenCapital':'fallen-capital'});
+  var GROUND_FILES={god_battlefield:'ground_god_battlefield',god_chaos:'ground_god_chaos'};
   var sprites={},loading=null;
   SPRITE_FILES.mistTree='mist-elder';SPRITE_FILES.lavaOutcrop='lava-outcrop';SPRITE_FILES.stormSpire='storm-spire';
   SPRITE_FILES.rootGate='root-arch';SPRITE_FILES.lavaVent='lava-vent';SPRITE_FILES.windPine='wind-pine';
@@ -11,16 +14,17 @@ var DecorNature = (function () {
   var scriptRoot=typeof document!=='undefined'&&document.currentScript?new URL('../',document.currentScript.src).href:null;
   function registerImages(images){Object.keys(images).forEach(function(key){sprites[key]=images[key];});}
   function loadImages(base,loader){
-    if(Object.keys(SPRITE_FILES).every(function(key){return !!sprites[key];}))return Promise.resolve();
+    if(Object.keys(SPRITE_FILES).concat(Object.keys(GROUND_FILES)).every(function(key){return !!sprites[key];}))return Promise.resolve();
     if(loading)return loading;
     base=base||scriptRoot||(typeof location!=='undefined'?new URL('./',location.href).href:'');
     loader=loader||function(url){
       if(typeof createImageBitmap==='function')return fetch(url).then(function(response){if(!response.ok)throw new Error('Scene sprite HTTP '+response.status+': '+url);return response.blob();}).then(function(blob){return createImageBitmap(blob);});
       return new Promise(function(resolve,reject){var image=new Image();image.onload=function(){resolve(image);};image.onerror=function(){reject(new Error('Scene sprite load: '+url));};image.src=url;});
     };
-    loading=Promise.all(Object.keys(SPRITE_FILES).map(function(key){
+    loading=Promise.all(Object.keys(SPRITE_FILES).concat(Object.keys(GROUND_FILES)).map(function(key){
       if(sprites[key])return;
-      return loader(new URL('images/scene/'+SPRITE_FILES[key]+'.png?v=20261008-boss-arena',base).href).then(function(image){sprites[key]=image;});
+      var file=GROUND_FILES[key]?'images/ground/'+GROUND_FILES[key]+'.png?v=20261030-ground-aura':'images/scene/'+SPRITE_FILES[key]+'.png?v=20261030-painted-realms';
+      return loader(new URL(file,base).href).then(function(image){sprites[key]=image;});
     })).then(function(){loading=null;},function(error){loading=null;throw error;});
     return loading;
   }
@@ -28,6 +32,16 @@ var DecorNature = (function () {
     var image=sprites[key];if(!image)throw new Error('完整場景素材尚未載入：'+key);
     var k=Math.min(w/image.width,h/image.height),dw=image.width*k,dh=image.height*k;
     g.drawImage(image,-dw/2,-dh,dw,dh);
+  }
+  // 鏡像接續是貼圖取樣方式，不改原畫；相鄰邊緣採相同像素，避免素材邊界出現硬接縫。
+  function drawGround(g,zone,size) {
+    var image=sprites[zone];if(!image)return false;
+    var half=size/2;
+    for(var row=0;row<2;row++)for(var col=0;col<2;col++){
+      g.save();g.translate(col?size:0,row?size:0);g.scale(col?-1:1,row?-1:1);
+      g.drawImage(image,0,0,half,half);g.restore();
+    }
+    return true;
   }
   function rng(seed) {
     return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0;
@@ -309,7 +323,12 @@ var DecorNature = (function () {
     g.restore();
   }
   function drawContact(g,x,y,width,seed,style) {
-    g.save();g.translate(x,y);groundContact(g,rng(seed),width,!!style.moss,style);g.restore();
+    g.save();g.translate(x,y);
+    if((style.theme||'').indexOf('god_')===0){
+      wash(g,0,2,width*.64,width*.2,'rgba(9,15,39,.38)');
+      wash(g,0,0,width*.5,width*.16,style.theme==='god_sanctuary'?'rgba(130,219,247,.16)':style.theme==='god_chaos'?'rgba(154,87,255,.25)':'rgba(255,166,78,.2)');
+    }else groundContact(g,rng(seed),width,!!style.moss,style);
+    g.restore();
   }
   function drawSurface(g,type,w,h,seed,style) {
     var r=rng(seed);g.save();g.translate(w/2,h/2);
@@ -325,5 +344,5 @@ var DecorNature = (function () {
     } else throw new Error('Unknown nature ground: '+type);
     g.restore();
   }
-  return { drawBody:drawBody, drawContact:drawContact, drawSurface:drawSurface, drawArenaFloor:drawArenaFloor, loadImages:loadImages, registerImages:registerImages, spriteSize:function(key){var image=sprites[key];if(!image)throw new Error("Scene sprite not loaded: "+key);return {width:image.width,height:image.height};}, spriteFiles:SPRITE_FILES };
+  return { drawGround:drawGround, groundFiles:GROUND_FILES, drawBody:drawBody, drawContact:drawContact, drawSurface:drawSurface, drawArenaFloor:drawArenaFloor, loadImages:loadImages, registerImages:registerImages, spriteSize:function(key){var image=sprites[key];if(!image)throw new Error("Scene sprite not loaded: "+key);return {width:image.width,height:image.height};}, spriteFiles:SPRITE_FILES };
 })();

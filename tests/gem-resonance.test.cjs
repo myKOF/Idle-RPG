@@ -100,7 +100,7 @@ test('相鄰不跨區域，也不含自己孔的寶石', () => {
   assert.deepEqual(e.map((x) => x.type + ':' + x.mult), ['sapphire:1', 'iolite:1', 'diamond:1']);
 });
 
-test('computeStats 把共鳴能力併入屬性（並受鑲嵌效率放大）', () => {
+test('computeStats 只併入異種相鄰共鳴；同種不同階僅保留自身能力', () => {
   const c = game({});
   c.G.equipment = c.SLOT_LIST.reduce((m, s) => { m[s] = null; return m; }, {});
   const base = c.computeStats().hit;
@@ -110,7 +110,9 @@ test('computeStats 把共鳴能力併入屬性（並受鑲嵌效率放大）', (
   } };
   const value = (lv) => c.gemStatValue('catseye', lv);
   const got = c.computeStats().hit - base;
-  assert.ok(Math.abs(got - (value(6) + value(4) + value(6) * 0.3)) < 1e-6, String(got));
+  assert.ok(Math.abs(got - (value(6) + value(4))) < 1e-6, String(got));
+  c.G.player.resonance.holes['5:1'].gems = [{ type: 'ruby', level: 4 }];
+  assert.ok(Math.abs(c.computeStats().hit - base - value(6) * 1.3) < 1e-6);
 });
 
 test('鑲嵌：種類限制、最低階、容量、庫存扣除與取下退回', () => {
@@ -286,7 +288,7 @@ test('單孔共鳴只接收同區相鄰的每顆寶石，不含自身／其他�
   '1:1':{lv:10,gems:[{type:'diamond',level:4}]}
  }};
  assert.deepEqual(plain(c.resonanceHoleBonusEntries(state,0,0)),[
-  {type:'amethyst',level:4,mult:.12},{type:'sapphire',level:4,mult:.12},{type:'iolite',level:5,mult:.12}
+  {type:'amethyst',level:4,mult:.12},{type:'iolite',level:5,mult:.12}
  ]);
  assert.deepEqual(plain(c.resonanceHoleBonusEntries(state,0,1)),[
   {type:'sapphire',level:6,mult:.3},{type:'sapphire',level:7,mult:.3},{type:'sapphire',level:4,mult:.3}
@@ -300,22 +302,64 @@ test('單孔共鳴只接收同區相鄰的每顆寶石，不含自身／其他�
  assert.deepEqual(plain(c.resonanceHoleBonusEntries(state,6,0)),[]); // 中央尚未解鎖
 });
 
-test('空孔升級無共鳴；正式鑲入、升級與取下立即改變實際屬性，取下保留強化等級',()=>{
- const c=game({catseye:{1:100,2:100,4:2,6:2}});
+test('空孔升級無共鳴；正式鑲入異種、升級與取下立即改變實際屬性，取下保留強化等級',()=>{
+ const c=game({catseye:{6:2},ruby:{1:100,2:100,4:2}});
  c.G.equipment=c.SLOT_LIST.reduce((m,s)=>{m[s]=null;return m;},{});
  const base=c.computeStats().hit,value=lv=>c.gemStatValue('catseye',lv);
  assert.equal(c.socketResonanceGem(5,0,'catseye',6),null);
  assert.equal(c.upgradeResonanceHole(5,6),null);
  assert.ok(Math.abs(c.computeStats().hit-base-value(6))<1e-6);
  assert.deepEqual(plain(c.resonanceHoleBonusEntries(c.G.player.resonance,5,6)),[]);
- assert.equal(c.socketResonanceGem(5,6,'catseye',4),null);
- assert.ok(Math.abs(c.computeStats().hit-base-value(4)-value(6)*1.03)<1e-6);
+ assert.equal(c.socketResonanceGem(5,6,'ruby',4),null);
+ assert.ok(Math.abs(c.computeStats().hit-base-value(6)*1.03)<1e-6);
  assert.equal(c.upgradeResonanceHole(5,6),null);
- assert.ok(Math.abs(c.computeStats().hit-base-value(4)-value(6)*1.06)<1e-6);
+ assert.ok(Math.abs(c.computeStats().hit-base-value(6)*1.06)<1e-6);
  assert.equal(c.unsocketResonanceGem(5,6,0),null);
  assert.equal(c.G.player.resonance.holes['5:6'].lv,2);
- assert.equal(c.gemCount('catseye',4),2);
+ assert.equal(c.gemCount('ruby',4),2);
  assert.ok(Math.abs(c.computeStats().hit-base-value(6))<1e-6);
+});
+
+test('中央多寶石逐顆比對類型：同種不同階無共鳴，混合異種只計一次且取下後立即失效',()=>{
+ const c=game();maxOuter(c);
+ const state=c.G.player.resonance;
+ state.holes['6:0']={lv:10,gems:[{type:'ruby',level:10},{type:'ruby',level:10}]};
+ state.holes['6:1']={lv:10,gems:[{type:'ruby',level:8}]};
+ state.holes['6:2']={lv:10,gems:[{type:'sapphire',level:8}]};
+ assert.deepEqual(plain(c.resonanceHoleBonusEntries(state,6,0)),[{type:'sapphire',level:8,mult:.3}]);
+ assert.deepEqual(plain(c.resonanceHoleBonusEntries(state,6,1)),[{type:'sapphire',level:8,mult:.3}]);
+ assert.deepEqual(plain(c.resonanceHoleBonusEntries(state,6,2)),[
+  {type:'ruby',level:10,mult:.3},{type:'ruby',level:10,mult:.3},{type:'ruby',level:8,mult:.3}
+ ]);
+ state.holes['6:0'].gems.push({type:'sapphire',level:10},{type:'opal',level:10});
+ assert.deepEqual(plain(c.resonanceHoleBonusEntries(state,6,0)),[
+  {type:'ruby',level:8,mult:.3},{type:'sapphire',level:8,mult:.3}
+ ]);
+ assert.equal(c.unsocketResonanceGem(6,0,3),null);
+ assert.equal(c.unsocketResonanceGem(6,0,2),null);
+ assert.deepEqual(plain(c.resonanceHoleBonusEntries(state,6,0)),[{type:'sapphire',level:8,mult:.3}]);
+ assert.equal(state.holes['6:0'].lv,10);
+});
+
+test('正式Worker指令即時刷新屬性快取與面板：同種無加成、換異種生效、取下失效',()=>{
+ const {createEngine}=require('../scripts/sim/engine.js');
+ const e=createEngine({seed:30});e.boot();
+ const c=e.ctx,g=e.state();g.player.reincarnations=4;g.player.gold=1e12;
+ g.player.gems.catseye={4:1,6:1};g.player.gems.ruby={4:1};
+ g.player.resonance={holes:{'5:6':{lv:10,gems:[]}}};c.markStatsDirty();
+ const base=c.getStats().hit,value=lv=>c.gemStatValue('catseye',lv);
+ const socket=(hole,type,level)=>{const result=e.cmd('gem.resonanceSocket',{region:5,hole,type,level});assert.equal(result.ok,true,JSON.stringify(result));};
+ const take=()=>{const result=e.cmd('gem.resonanceUnsocket',{region:5,hole:6,index:0});assert.equal(result.ok,true,JSON.stringify(result));};
+ socket(0,'catseye',6);socket(6,'catseye',4);
+ assert.ok(Math.abs(c.getStats().hit-base-value(6)-value(4))<1e-6);
+ take();socket(6,'ruby',4);
+ assert.ok(Math.abs(c.getStats().hit-base-value(6)*1.3)<1e-6);
+ const snapshot=e.panel('gems');
+ assert.equal(snapshot.resonance.holes['5:6'].gems[0].type,'ruby');
+ assert.deepEqual(plain(c.resonanceHoleBonusEntries(snapshot.resonance,5,6)),[{type:'catseye',level:6,mult:.3}]);
+ take();assert.ok(Math.abs(c.getStats().hit-base-value(6))<1e-6);
+ assert.equal(g.player.resonance.holes['5:6'].lv,10);
+ assert.equal(g.player.gems.catseye[4],1);assert.equal(g.player.gems.ruby[4],1);
 });
 
 test('暴擊傷害石榴石只歸物理區與不限種類中央區；舊魔法孔退回庫存並保留強化及其他寶石',()=>{

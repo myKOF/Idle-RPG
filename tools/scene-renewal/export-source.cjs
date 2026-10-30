@@ -13,6 +13,8 @@ const hash = (file, binary) => crypto.createHash('sha256').update(binary ? fs.re
 const sprites = {willow:'willow',burnt:'burnt-tree',pine:'snow-pine',bones:'beast-bones',cactus:'cactus',ice:'ice-cluster',void:'void-crystal',log:'fallen-log',stump:'swamp-stump',monolith:'rune-stele',pillar:'stone-column',arch:'ruined-arch',wall:'ruined-wall',rubble:'fallen-masonry',urn:'weathered-urn',grave:'old-gravestone',arenaGate:'arena-gate',arenaBrazier:'arena-brazier',arenaSpire:'arena-spire',arenaCandles:'arena-candles'};
 Object.assign(sprites,{mistElder:'mist-elder',lavaOutcrop:'lava-outcrop',stormSpire:'storm-spire'});
 Object.assign(sprites,{rootArch:'root-arch',lavaVent:'lava-vent',windPine:'wind-pine'});
+Object.assign(sprites,{godBlade:'divine-god-blade',warCrown:'divine-war-crown',sunRelic:'divine-sun-relic',chainShard:'divine-chain-shard',voidGyre:'divine-void-gyre',voidPrism:'divine-void-prism',voidSpindle:'divine-void-spindle',voidLens:'divine-void-lens',seraphWing:'divine-seraph-wing',celestialHarp:'divine-celestial-harp',haloDais:'divine-halo-dais',lightLotus:'divine-light-lotus'});
+Object.assign(sprites,{'warRampart':'war-rampart','titanHelm':'titan-helm','charredStandard':'charred-standard','siegeWreck':'siege-wreck','emberCrater':'ember-crater','bladeGrave':'blade-grave','riftAnchor':'rift-anchor','voidArch':'void-arch','orbitCubes':'orbit-cubes','astralSpine':'astral-spine','nullBloom':'null-bloom','riftObelisk':'rift-obelisk','celestialArch':'celestial-arch','starDial':'star-dial','crystalFountain':'crystal-fountain','sanctumStairs':'sanctum-stairs','prismGarden':'prism-garden','fallenCapital':'fallen-capital'});
 for(const v of ['A','B','C'])Object.assign(sprites,{['magmaPool'+v]:'magma-pool-'+v.toLowerCase(),['burningLog'+v]:'burning-log-'+v.toLowerCase(),['slagBoulder'+v]:'slag-boulder-'+v.toLowerCase()});
 async function main(){
   if(mode==='--make-sprites'){
@@ -40,6 +42,7 @@ async function main(){
   const files=[['decor-nature.js','js/decor-nature.js',false],['battle-decor.js','js/battle-decor.js',false],['gen_ground_tiles.py','tools/gen_ground_tiles.py',false]];
   for(const name of Object.values(sprites))files.push(['sprites/'+name+'.png','images/scene/'+name+'.png',true]);
   for(const zone of ['default','desert','Icefield','swamp','undead_mountains','god_battlefield','god_chaos','god_sanctuary'])files.push(['ground/ground_'+zone+'.png','images/ground/ground_'+zone+'.png',true]);
+  for(const name of ['battlefield','chaos','sanctuary'])files.push(['painted/sky-god-'+name+'.png','images/scene/sky-god-'+name+'.png',true]);
   for(const [sourceRel,targetRel,binary] of files){const source=path.join(sourceRoot,sourceRel),target=path.join(REPO_ROOT,targetRel);
     if(mode==='--apply'){fs.mkdirSync(path.dirname(target),{recursive:true});fs.writeFileSync(target,binary?fs.readFileSync(source):read(source));}
     if(hash(source,binary)!==hash(target,binary))throw new Error(targetRel+' 母來源與遊戲匯出不同');

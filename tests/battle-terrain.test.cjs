@@ -234,3 +234,25 @@ test('TERRAIN-9 敵人逼近我方時繞過障礙，不卡死', () => {
   }
   assert.ok(inRange, '敵人繞不過去，卡死了');
 });
+
+test('TERRAIN-DIVINE-VARIETY 神界保留舊物件並以十種以上造景形成多樣區塊', () => {
+  const BT=loadTerrain();
+  const retained={god_battlefield:['godBlade','warCrown','sunRelic','chainShard'],god_chaos:['voidGyre','voidPrism','voidSpindle','voidLens'],god_sanctuary:['seraphWing','celestialHarp','haloDais','lightLotus']};
+  for(const [zone,oldTypes] of Object.entries(retained).filter(([zone])=>zone!=='god_sanctuary'))for(const deep of [false,true]){
+    const rows=deep?BT.CATALOG[zone].d:BT.CATALOG[zone].s;
+    assert.ok(new Set(rows.map(p=>p[0])).size>=10);for(const type of oldTypes)assert.ok(rows.some(p=>p[0]===type));
+    const types=new Set(),seed=BT.sceneSeed(zone,deep,deep?1:0);
+    for(let y=-1;y<=1;y++)for(let x=-1;x<=1;x++)for(const item of BT.layoutChunk(zone,deep,seed,x,y))types.add(item.type);
+    assert.ok(types.size>=7,zone+' 附近九區塊必須有足夠不同造景，實際'+types.size);
+  }
+  assert.equal(BT.isSolid('emberCrater',300),false);assert.equal(BT.isSolid('riftAnchor',300),false);
+  assert.equal(BT.isSolid('warRampart',235),true);assert.equal(BT.footShapes('celestialArch',0,0,236,1).length,2);
+});
+
+test('TERRAIN-SANCTUARY 聖域地表與深層均無隨機擺件、地標及隱形障礙', () => {
+  const BT=loadTerrain();for(const list of Object.values(BT.CATALOG.god_sanctuary))assert.equal(list.length,0);
+  for(const stage of [1,11]){BT.setScene('god_sanctuary',stage);const deep=stage===11,seed=BT.sceneSeed('god_sanctuary',deep,deep?1:0);
+    for(let y=-2;y<=2;y++)for(let x=-2;x<=2;x++)assert.equal(BT.layoutChunk('god_sanctuary',deep,seed,x,y).length,0);
+    assert.equal(BT.segmentBlocked(-800,-600,900,700),false);
+  }
+});

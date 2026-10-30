@@ -10,7 +10,7 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
    只存「有內容」的孔；區域與孔以版面編號定址（區域 0~5＝外圍區，6＝中央區；孔 0＝中心，1~6＝外圈）。
    鑲進孔的寶石由庫存扣除（與裝備鑲嵌同一套），取下退回庫存。
 
-   屬性：孔裡的每顆寶石提供自己的能力；接收孔已鑲寶石時，孔等級 L 另外讓「相鄰孔的寶石」多算
+   屬性：孔裡的每顆寶石提供自己的能力；接收孔已鑲不同類型寶石時，孔等級 L 另外讓「相鄰孔的寶石」多算
    min(L × perLevelPct, maxPct)%。相鄰＝同一區域內：中心孔與六個外圈孔互為相鄰，
    外圈孔與左右兩個外圈孔相鄰。不跨區域。 */
 
@@ -78,7 +78,8 @@ function resonanceRegionLockReason(state, region) {
   return resonanceRegionUnlocked(state, region) ? '' : STR(1465, resonanceMaxHoleLevel());
 }
 
-/* 所選孔獲得的相鄰額外能力；接收孔須已鑲寶石，空孔不產生共鳴。 */
+/* 所選孔獲得的相鄰額外能力；接收孔須有不同類型寶石，空孔／僅有同類型不產生共鳴。
+   鄰孔每顆寶石最多計一次，不因接收孔內有多顆不同類型寶石而倍乘。 */
 function resonanceHoleBonusEntries(state, region, hole) {
   var out = [];
   if (!resonanceValidHole(region, hole) || !resonanceRegionUnlocked(state, region)) return out;
@@ -88,7 +89,9 @@ function resonanceHoleBonusEntries(state, region, hole) {
   if (!(bonus > 0)) return out;
   resonanceNeighbors(hole).forEach(function (neighbor) {
     resonanceHoleState(state, region, neighbor).gems.forEach(function (gem) {
-      out.push({ type: gem.type, level: gem.level, mult: bonus });
+      if (self.gems.some(function (own) { return own.type !== gem.type; })) {
+        out.push({ type: gem.type, level: gem.level, mult: bonus });
+      }
     });
   });
   return out;
