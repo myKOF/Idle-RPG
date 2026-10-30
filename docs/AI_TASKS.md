@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## GOD-WORLD-MAP-20261030 — 神界圖稿、三場景熱區與遺跡返回門
+
+- Owner：Codex；Done，單一開發者。使用者指定god_world.jpg作神界大地圖，圖名改神界、同人界名稱／最高到達／解鎖／前進規則；補充太古戰場左側既有門結合遺跡改大型人界傳送門並加特效，點擊只回人界大地圖。
+- 範圍：ui-world-map.js、world-map.css、index.html／快取、神界圖稿與素材庫來源／匯出紀錄、world-map匯出工具、String.xlsx來源及CSV／strings_data必要文字、WORLD_MAP／LV及本段與相關回歸。禁止改戰鬥／解鎖／Worker協議／存檔／既有人界圖稿、其他進行中來源與合併推送。沿用0轉依前圖末關通關規則。
+- 預檢上述既有與新增遊戲檔無外部來源；素材庫僅新增本項god-world-map資料夾並逐檔Commit，不碰其他素材。先檢查RPG Mote Studio可用性，無法連線則內建imagegen編修使用者授權圖稿；門洞特效為UI CSS裝飾，不新增VFX Preset。驗文字／數值非烘焙、雙向門只切頁／焦點／鍵盤／資訊卡／目前標記、真Worker／窄屏／Console／Build／回歸、Excel原生相容及來源資料一致，先素材庫再遊戲獨立Commit，交使用者正常整合。
+- 完成遊戲12檔：js/ui-world-map.js、css/world-map.css、index.html、images/world-map/god-realm.png、tools/world-map/export-source.cjs、String.xlsx／String.csv／strings_data.js、tests/world-map-ui.test.cjs、WORLD_MAP／LV及本段。神界完整1678×937背景，三場景依比例熱區共用人界金灰名稱／best上限／tips／前進，神界所在地指針與動態無障礙標題；底部空白卷軸以String212顯示神界。兩端門切頁後聚焦對面入口，不送切圖命令；神界返回門石框／底座來自圖稿，CSS門洞光流／光環／粒子對齊藍白孔洞，隱藏暫停、減少動態停用。世界地圖JS1.0.6／CSS1.0.10、Stringff729ce3；無Worker／Protocol／解鎖／存檔變更。
+- 圖稿：RPG Mote Studio本次連線無法開啟，內建imagegen以使用者原圖直接編修，去三處名稱及數字／舊卷軸標題／烘焙叉號、石門改大型遺跡門，其他主構圖保留但有細部生成差異。素材庫codex-authored/god-world-map含使用者原始JPG、最終PNG、source.json尺寸／SHA／熱區及SOURCE.md完整提示詞／使用依據；沒有引入其他外部素材。既有人界圖／游標／覆片hash不變；node tools/world-map/export-source.cjs --apply及--check均驗原稿／編修稿／遊戲SHA一致。
+- String：依使用者規範以tools/excel-update-sheets.ps1原生Excel編修，來源獨占讀寫確認可取得；使用者開啟的是其他工作簿，不關閉或接觸。新增2225人界傳送門／2226神界底圖alt（戰鬥模塊），8個非空格寫入，原有內容不變；工具正常重開、再儲存再重開、全格比對與Shapes0保留通過，沒有修復提示或手改XML。xlsx_to_csv以String／7欄匯出2214列，apply_strings同步2213條；CSV僅新增兩列，原字串未改。
+- 回歸：node --test --test-reporter=spec tests/world-map-ui.test.cjs tests/world-map.test.cjs tests/new-battle-zones.test.cjs tests/stage-rework.test.cjs tests/gm-stage-clear.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs全部56/56通過；npm.cmd run build604檔通過；git diff --check通過。既有神界列表卡片像素位置測試改驗本次同人界比例熱區，保留固定下方／縮放／鎖定及前進斷言；新增雙向門不切角色場景、焦點、神界指針、最高紀錄與圖片失敗恢復測試。
+- 瀏覽器：隔離headless Edge、隨機localhost、正式index與真Worker，0轉通關亡靈400後實點人界門進神界；首圖1/450、後圖灰字隱藏進度，混沌tips顯示通關太古450且不可前進。返回門Space回人界及焦點交回，再Space進神界、實點太古前進獲Worker成功快照；補神界通關後驗450/450、500/500、1/600及神界所在地指針。返回切頁前後header.stage相同；動畫transform隨時間改變、減少動態所有返回門animation:none。1558×900桌面、390×844神界／資訊卡截圖已視覺檢查且寬390不溢出，Console error／warning及pageerror0；QA截圖及browser-report保存本聊天visualizations/god-world-map。未動使用者原來源存檔。
+- 唯讀未改：共通規範／Workflow、地圖進度／ZONES／GM／Worker／存讀檔、既有人界原圖與素材索引、String原生工具與字串匯出器。自我Review完成，無本項未完成實作；未做全庫／多瀏覽器／長時間遊玩，圖片為單次生成編修而非原圖像素級不變。可供Review／合併。素材庫Commit de5b360已先完成，遊戲Commit為本段所在「[Codex] feat: 加入神界大地圖與遺跡返回傳送門」，編號見交付；未合併推送。下一步正常整合並重新載入，另一台電腦需同步兩庫。
+
 ## GOD-ZONE-PREVIOUS-CLEAR-20261030 — 神界依前圖末關通關解鎖
 
 - Owner：Codex；Done，單一開發者。使用者要求神界三圖移除轉生／等級門檻，與人界相同只看前一張地圖最高關通關；前置既有世界地圖與通關紀錄完成。

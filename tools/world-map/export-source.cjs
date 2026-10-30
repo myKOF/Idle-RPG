@@ -23,3 +23,13 @@ for (const entry of [{ file: 'salvien.png', sha256: record.sha256 }, record.curs
   if (!fs.existsSync(target) || hash(target) !== entry.sha256) throw new Error(entry.file + '素材庫與遊戲匯出不同');
 }
 console.log('薩爾維恩世界地圖／游標／名稱覆片：素材庫與遊戲SHA256一致。');
+
+const godRoot = path.join(resolveLibraryRoot({ libraryId: 'effects-materials' }).root, 'codex-authored/god-world-map');
+const godRecord = JSON.parse(fs.readFileSync(path.join(godRoot, 'source.json'), 'utf8'));
+if (godRecord.file !== 'god-realm.png' || godRecord.original.file !== 'god-world-user-original.jpg') throw new Error('未知神界地圖來源');
+if (hash(path.join(godRoot, godRecord.original.file)) !== godRecord.original.sha256) throw new Error('神界使用者原稿與紀錄不同');
+if (hash(path.join(godRoot, godRecord.file)) !== godRecord.sha256) throw new Error('神界編修圖與紀錄不同');
+const godTarget = path.join(REPO_ROOT, 'images/world-map', godRecord.file);
+if (mode === '--apply') fs.copyFileSync(path.join(godRoot, godRecord.file), godTarget);
+if (!fs.existsSync(godTarget) || hash(godTarget) !== godRecord.sha256) throw new Error('神界地圖素材庫與遊戲匯出不同');
+console.log('神界大地圖：使用者原稿與編修圖SHA256驗證通過，素材庫與遊戲一致。');

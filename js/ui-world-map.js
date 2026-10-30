@@ -10,7 +10,10 @@ var WorldMapUI = (function () {
     lava_mountain: { x: 38.8, y: 54.6, width: 9.0 },
     swamp: { x: 80.7, y: 66.6, width: 12.0 },
     thunder_peak: { x: 63.7, y: 57.7, width: 9.0 },
-    undead_mountains: { x: 56.2, y: 34.7, width: 12.0 }
+    undead_mountains: { x: 56.2, y: 34.7, width: 12.0 },
+    god_battlefield: { x: 38.1, y: 56.0, width: 12.0 },
+    god_chaos: { x: 63.4, y: 59.1, width: 10.0 },
+    god_sanctuary: { x: 80.7, y: 35.0, width: 12.0 }
   };
   var state = { open: false, realm: 'human', selected: null, hovered: null, pending: null,
     acknowledged: false, error: '', signature: '', returnFocus: null, bound: false };
@@ -71,7 +74,7 @@ var WorldMapUI = (function () {
     go.hidden = !selected;
     go.disabled = !info.ready || !info.unlocked || info.active || !!state.pending;
     go.textContent = state.pending ? STR(2109) : STR(2110);
-    if (state.realm === 'human' && locations[key]) {
+    if (locations[key]) {
       var point = locations[key];
       card.style.left = 'clamp(min(143px, 50%), ' + point.x + '%, max(calc(100% - 143px), 50%))';
       card.style.top = 'calc(' + point.y + '% + max(2.6cqw, 20px))';
@@ -97,6 +100,9 @@ var WorldMapUI = (function () {
     var human = state.realm === 'human';
     el('world-map-human').hidden = !human;
     el('world-map-god').hidden = human;
+    el('world-map-modal').setAttribute('data-world-realm', state.realm);
+    el('world-map-title').setAttribute('data-str', human ? '2124' : '212');
+    el('world-map-title').textContent = human ? STR(2124) : STR(212);
     el('world-map-realm-human').setAttribute('aria-pressed', human ? 'true' : 'false');
     el('world-map-realm-god').setAttribute('aria-pressed', human ? 'false' : 'true');
     var header = peekUiPanelData('header') || {};
@@ -107,15 +113,19 @@ var WorldMapUI = (function () {
     var showRealms = portalVisible || hasGodProgress || Number(header.player && header.player.reincarnations) >= 11;
     el('world-map-god-portal').hidden = !portalVisible;
     el('world-map-god-portal').disabled = !!state.pending;
+    el('world-map-human-portal').disabled = !!state.pending;
     el('world-map-realm-god').hidden = !showRealms;
     el('world-map-realm-human').hidden = !showRealms;
-    var marker = el('world-map-marker');
     var point = locations[currentZone()];
-    marker.hidden = !human || !point;
-    if (point) {
-      place(marker, { x: point.x, y: point.y - 3.5 });
-      marker.setAttribute('aria-label', STR(2111, ZONES[currentZone()].name));
-    }
+    ['world-map-marker', 'world-map-god-marker'].forEach(function (id) {
+      var marker = el(id);
+      var markerRealm = id === 'world-map-marker' ? 'human' : 'god';
+      marker.hidden = state.realm !== markerRealm || !point || ZONES[currentZone()].realm !== markerRealm;
+      if (point) {
+        place(marker, { x: point.x, y: point.y - 3.5 });
+        marker.setAttribute('aria-label', STR(2111, ZONES[currentZone()].name));
+      }
+    });
   }
   function refresh() {
     if (!state.open) return;
@@ -218,9 +228,9 @@ var WorldMapUI = (function () {
         // 原名稱烘焙於母圖；常駐無字地貌覆片，讓名稱能反映解鎖狀態。
         // 覆片母圖1672px寬，裁切寬度=字數*22+24、高42px；cqw沿母圖容器等比縮放。
         var coverWidth = (ZONES[key].name.length * 22 + 24) / 1672 * 100;
-        node.innerHTML = '<img class="world-map-label-cover" src="images/world-map/label-cover-' + key.toLowerCase() + '.png?v=1" alt="" aria-hidden="true" style="width:' + coverWidth + 'cqw;height:2.51196cqw">' +
+        node.innerHTML = (ZONES[key].realm === 'human' ? '<img class="world-map-label-cover" src="images/world-map/label-cover-' + key.toLowerCase() + '.png?v=1" alt="" aria-hidden="true" style="width:' + coverWidth + 'cqw;height:2.51196cqw">' : '') +
           '<span class="world-map-hover-name" aria-hidden="true">' + esc(ZONES[key].name) + '</span>';
-        el('world-map-hotspots').appendChild(node);
+        el(ZONES[key].realm === 'human' ? 'world-map-hotspots' : 'world-map-god-zones').appendChild(node);
       } else {
         node.className = 'world-map-god-scene';
         node.innerHTML = zoneIconHtml(key, ZONES[key]) + ' <span class="world-map-hover-name" aria-hidden="true">' + esc(ZONES[key].name) + '</span>';
@@ -256,7 +266,15 @@ var WorldMapUI = (function () {
     el('world-map-realm-human').addEventListener('click', function () { setRealm('human'); });
     el('world-map-realm-god').addEventListener('click', function () { setRealm('god'); });
     el('world-map-god-portal').addEventListener('click', function () {
-      if (humanWorldCleared()) setRealm('god');
+      if (humanWorldCleared() && !state.pending) {
+        setRealm('god');
+        el('world-map-human-portal').focus();
+      }
+    });
+    el('world-map-human-portal').addEventListener('click', function () {
+      if (state.pending) return;
+      setRealm('human');
+      (el('world-map-god-portal').hidden ? el('world-map-close') : el('world-map-god-portal')).focus();
     });
     window.addEventListener('resize', function () {
       if (state.open && (state.selected || state.hovered)) showCard(state.selected || state.hovered, !!state.selected);
@@ -266,13 +284,17 @@ var WorldMapUI = (function () {
     });
     el('world-map-modal').addEventListener('click', function (event) {
       if (event.target === this) close();
-      else if (event.target === el('world-map-image') || event.target === el('world-map-human')) {
+      else if (event.target === el('world-map-image') || event.target === el('world-map-human') ||
+        event.target === el('world-map-god-image') || event.target === el('world-map-god')) {
         state.selected = null; state.hovered = null; state.signature = ''; refresh();
       }
     });
     var image = el('world-map-image');
     image.addEventListener('error', function () { el('world-map-image-error').hidden = false; });
     image.addEventListener('load', function () { el('world-map-image-error').hidden = true; });
+    var godImage = el('world-map-god-image');
+    godImage.addEventListener('error', function () { el('world-map-god-image-error').hidden = false; });
+    godImage.addEventListener('load', function () { el('world-map-god-image-error').hidden = true; });
     document.addEventListener('keydown', function (event) {
       if (!state.open) return;
       if (event.key === 'Escape') {

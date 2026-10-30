@@ -194,7 +194,7 @@ test('最高到達關卡不因目前退關、切圖或重開地圖下降，名�
   assert.equal(t.ids['world-map-level-desert'].textContent, '(60/100)');
 });
 
-test('各人界提示固定名稱下方，選取不翻轉；神界提示跟隨其場景並處理縮放', () => {
+test('兩界大地圖提示皆固定名稱下方，選取及縮放不改相對位置', () => {
   const t = setup(); t.c.WorldMapUI.open();
   for (const key of t.c.REALMS.human.zones) {
     t.button(key).dispatch('click');
@@ -203,16 +203,61 @@ test('各人界提示固定名稱下方，選取不翻轉；神界提示跟隨�
     assert.ok(t.ids['world-map-info'].style.left.includes(anchor.left));
   }
   t.ids['world-map-realm-god'].dispatch('click');
-  const node = t.button('god_battlefield');
-  node.rect = { left: 200, top: 60, bottom: 170, width: 300, height: 110 };
-  node.dispatch('click');
-  assert.equal(t.ids['world-map-info'].style.top, '178px');
-  assert.ok(t.ids['world-map-info'].style.left.includes('350px'));
-  node.rect.bottom = 230;
-  t.documentEvents.resize[0]();
-  assert.equal(t.ids['world-map-info'].style.top, '238px');
-  node.rect.bottom = 200; t.ids['world-map-god'].dispatch('scroll');
-  assert.equal(t.ids['world-map-info'].style.top, '208px');
+  for (const key of t.c.REALMS.god.zones) {
+    const node = t.button(key);
+    node.dispatch('click');
+    const expected = 'calc(' + node.style.top + ' + max(2.6cqw, 20px))';
+    assert.equal(t.ids['world-map-info'].style.top, expected);
+    assert.ok(t.ids['world-map-info'].style.left.includes(node.style.left));
+    t.documentEvents.resize[0]();
+    assert.equal(t.ids['world-map-info'].style.top, expected);
+  }
+});
+
+test('神界底圖／三處熱區同人界進度規則，兩端傳送門只切頁並移交鍵盤焦點', () => {
+  const t = setup();
+  const row = t.panels.battle.zones.find(z => z.key === 'undead_mountains');
+  row.unlocked = true;
+  t.panels.battle.zoneProgress.undead_mountains = { cleared: 400 };
+  t.c.WorldMapUI.open();
+  t.ids['world-map-god-portal'].dispatch('click');
+  assert.equal(t.ids['world-map-god'].hidden, false);
+  assert.equal(t.ids['world-map-modal'].getAttribute('data-world-realm'), 'god');
+  assert.equal(t.ids['world-map-title'].textContent, '神界');
+  assert.equal(t.document.activeElement, t.ids['world-map-human-portal']);
+  assert.equal(t.ids['world-map-god-image'].getAttribute('src'), 'images/world-map/god-realm.png?v=1');
+  for (const key of t.c.REALMS.god.zones) {
+    assert.equal(t.button(key).parent, t.ids['world-map-god-zones']);
+    assert.equal(t.button(key).className, 'world-map-hotspot');
+    assert.equal(t.ids['world-map-level-' + key].hidden, true, '鎖定場景隱藏進度');
+    assert.ok(!t.button(key).innerHTML.includes('label-cover-'), '神界圖已去字不需人界覆片');
+  }
+  const god = t.panels.battle.zones.find(z => z.key === 'god_battlefield');
+  god.unlocked = true; god.best = 123; god.current = 20;
+  t.panels.header.stage = { zone: 'god_battlefield', current: 20, best: 123 };
+  t.c.WorldMapUI.refresh();
+  assert.equal(t.ids['world-map-level-god_battlefield'].textContent, '(123/450)');
+  assert.equal(t.ids['world-map-god-marker'].hidden, false);
+  assert.equal(t.ids['world-map-marker'].hidden, true);
+  assert.equal(t.ids['world-map-god-marker'].style.left, t.button('god_battlefield').style.left);
+  t.button('god_chaos').dispatch('click');
+  assert.equal(t.ids['world-map-go'].disabled, true);
+  assert.match(t.ids['world-map-scene-status'].textContent, /太古戰場.*450/);
+  t.ids['world-map-human-portal'].dispatch('click');
+  assert.equal(t.ids['world-map-human'].hidden, false);
+  assert.equal(t.ids['world-map-info'].hidden, true);
+  assert.equal(t.document.activeElement, t.ids['world-map-god-portal']);
+  assert.equal(t.panels.header.stage.zone, 'god_battlefield');
+  assert.equal(t.commands.length, 0);
+});
+
+test('神界底圖載入錯誤可提示與恢復，避免更改人界圖片提示', () => {
+  const t = setup();
+  t.ids['world-map-god-image'].dispatch('error');
+  assert.equal(t.ids['world-map-god-image-error'].hidden, false);
+  assert.equal(t.ids['world-map-image-error'].hidden, true);
+  t.ids['world-map-god-image'].dispatch('load');
+  assert.equal(t.ids['world-map-god-image-error'].hidden, true);
 });
 
 test('人界最高地圖須真正通關才出現傳送門，入口不受轉生數影響但不授予場景權限', () => {
