@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="css/runeword.css?v=1.0.8">
   <link rel="stylesheet" href="css/gems.css?v=1.0.25">
   <link rel="stylesheet" href="css/dialogs.css?v=1.0.4">
-  <link rel="stylesheet" href="css/world-map.css?v=1.0.9">
+  <link rel="stylesheet" href="css/world-map.css?v=1.0.10">
   <link rel="stylesheet" href="css/divine-forge.css?v=1.0.12">
 </head>
 
@@ -878,8 +878,14 @@
           <div id="world-map-image-error" class="world-map-image-error" role="status" hidden data-str="2128"></div>
         </div>
         <div id="world-map-god" class="world-map-god" hidden>
-          <p data-str="2129"></p>
-          <div id="world-map-god-zones" class="world-map-god-zones"></div>
+          <img id="world-map-god-image" src="images/world-map/god-realm.png?v=2" loading="lazy" decoding="async" draggable="false" data-str-attr="alt:2226">
+          <div id="world-map-god-zones" class="world-map-god-zones"><span id="world-map-god-marker" class="world-map-marker" role="img" hidden data-str-attr="aria-label:2107"><span class="world-map-marker-motion"><img src="images/world-map/location-cursor.png?v=2" alt="" aria-hidden="true" decoding="async"></span></span></div>
+          <button id="world-map-human-portal" class="world-map-human-portal" type="button" data-str-attr="aria-label:2225">
+            <span class="world-map-return-energy" aria-hidden="true"><span class="world-map-return-current"></span><span class="world-map-return-rings"></span><span class="world-map-return-motes"><i></i><i></i><i></i><i></i></span></span>
+            <span class="world-map-return-caption" data-str="2225"></span>
+          </button>
+          <span class="world-map-god-title" data-str="212" aria-hidden="true"></span>
+          <div id="world-map-god-image-error" class="world-map-image-error" role="status" hidden data-str="2128"></div>
         </div>
         <aside id="world-map-info" class="world-map-info" aria-live="polite" hidden>
           <h3 id="world-map-scene-name"></h3>
@@ -1004,10 +1010,10 @@
        已移除（主執行緒零呼叫，只在 Worker 內跑）：
          special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/util.js?v=1.0.4"></script>
-  <script src="js/strings_data.js?v=29b9f175"></script>
+  <script src="js/strings_data.js?v=ff729ce3"></script>
   <script src="js/strings.js?v=1.0.1"></script>
   <script src="js/ui-scale.js?v=1.0.1"></script>
-  <script src="js/data.js?v=1.0.111"></script>
+  <script src="js/data.js?v=1.0.112"></script>
   <script src="js/status.js?v=1.0.44"></script>
   <script src="js/runeword_data.js?v=1.0.21"></script>
   <script src="js/gem_resonance_data.js?v=1.0.1"></script>
@@ -1056,7 +1062,7 @@
   <script src="js/save.js?v=1.0.27"></script>
   <script src="js/ui-inventory-skin.js?v=1.0.1"></script>
   <script src="js/ui.js?v=1.0.235"></script>
-  <script src="js/ui-world-map.js?v=1.0.5"></script>
+  <script src="js/ui-world-map.js?v=1.0.6"></script>
   <script src="js/ui-runeword.js?v=1.0.16"></script>
   <script src="js/ui-gem-resonance.js?v=1.0.21"></script>
   <script src="js/ui-gem-workshop.js?v=1.0.2"></script>
@@ -1073,7 +1079,7 @@
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
-  <script src="js/bridge.js?v=1.0.387"></script>
+  <script src="js/bridge.js?v=1.0.388"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->

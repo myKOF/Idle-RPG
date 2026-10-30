@@ -1,5 +1,39 @@
 # AI_TASKS.md
 
+## GOD-PORTAL-ROCK-PERSPECTIVE-20261030 — 返回門周圍岩台透視
+
+- Owner：Codex；Done。使用者保留現有傳送門造型，要求修正太古戰場門周圍岩石造形／角度，使較直立門體與斜向浮島地形融合。以前輪已完成神界圖為唯一編修基準，單一開發者。
+- 範圍：神界PNG、素材庫該圖來源／版本紀錄、index圖片快取、WORLD_MAP／LV既有門體說明及本段；僅需時微調world-map.css門洞動畫對齊及快取。禁止其他圖區／人界圖／遊戲進度／解鎖／文字來源／Worker／存檔、其他工作區及合併推送。現有檔案預檢乾淨，素材庫乾淨；沿用本聊天已查證RPG Mote Studio無法連線，內建imagegen局部編修。
+- 驗圖稿局部岩台／斷岩／台階銜接、門洞位置及動畫／返回互動、桌面及窄屏、素材庫／遊戲SHA、相關回歸／Build／diff；先素材庫再遊戲提交，保留使用者原稿及前版門體來源，交正常整合並重載測試服。
+- 完成遊戲六檔：神界PNG、index圖片快取v2、world-map-ui測試僅對應圖片版號1→2、WORLD_MAP／LV及本段。素材庫四檔：最新PNG／SOURCE完整本次提示詞／source.json版本2及新增god-realm-before-rock-perspective.png保留首版。新的厚實斜向斷岩、承托平台、階梯與熔岩反光銜接門腳，門框／門洞及三場景比例位置保留；CSS／JS／互動／文字來源不變。圖稿為內建imagegen編修，有細部生成差異，非逐像素局部替換。
+- 驗證：node tools/world-map/export-source.cjs --apply及--check均通過原稿／最終圖／遊戲SHA；另核對前版保留PNG等於修改前SHA。node --test --test-reporter=spec tests/world-map-ui.test.cjs tests/world-map.test.cjs tests/vfx-editor-cache-versions.test.cjs全部20/20通過，npm.cmd run build604檔通過，兩庫git diff --check通過。沒有新增低影響美術專用測試，也未降低既有互動斷言。
+- 實際測試服8131：CUA舊連線失效後重設runtime並取得原IAB分頁，重載確認1678×937與god-realm.png?v=2；核對岩台及動畫門洞貼合、flow transform隨時間改變、點返回人界再進神界均正常且仍在太古戰場1關。未改玩家測試進度或戰鬥開關；留下神界畫面供使用者檢視。當前453×611窄分頁畫面及完整生成圖已視覺檢查，截圖visualizations/god-world-map/rock-perspective-live.png，Console error／warning0。本輪未另開桌面viewport或全庫長戰；純背景未改版面及CSS。
+- 唯讀未改：規範／Workflow、ui-world-map.js／world-map.css、Worker／ZONES／存檔／String來源、使用者JPG原稿／人界素材及匯出器。自我Review完成，無本項未完成實作，可供Review／合併；素材庫Commit3c4a50c，遊戲Commit為本段所在「[Codex] fix: 修正神界傳送門岩台透視」，未合併推送。下一步正常整合兩庫；目前測試服已刷新新版。
+
+## GOD-WORLD-MAP-20261030 — 神界圖稿、三場景熱區與遺跡返回門
+
+- Owner：Codex；Done，單一開發者。使用者指定god_world.jpg作神界大地圖，圖名改神界、同人界名稱／最高到達／解鎖／前進規則；補充太古戰場左側既有門結合遺跡改大型人界傳送門並加特效，點擊只回人界大地圖。
+- 範圍：ui-world-map.js、world-map.css、index.html／快取、神界圖稿與素材庫來源／匯出紀錄、world-map匯出工具、String.xlsx來源及CSV／strings_data必要文字、WORLD_MAP／LV及本段與相關回歸。禁止改戰鬥／解鎖／Worker協議／存檔／既有人界圖稿、其他進行中來源與合併推送。沿用0轉依前圖末關通關規則。
+- 預檢上述既有與新增遊戲檔無外部來源；素材庫僅新增本項god-world-map資料夾並逐檔Commit，不碰其他素材。先檢查RPG Mote Studio可用性，無法連線則內建imagegen編修使用者授權圖稿；門洞特效為UI CSS裝飾，不新增VFX Preset。驗文字／數值非烘焙、雙向門只切頁／焦點／鍵盤／資訊卡／目前標記、真Worker／窄屏／Console／Build／回歸、Excel原生相容及來源資料一致，先素材庫再遊戲獨立Commit，交使用者正常整合。
+- 完成遊戲12檔：js/ui-world-map.js、css/world-map.css、index.html、images/world-map/god-realm.png、tools/world-map/export-source.cjs、String.xlsx／String.csv／strings_data.js、tests/world-map-ui.test.cjs、WORLD_MAP／LV及本段。神界完整1678×937背景，三場景依比例熱區共用人界金灰名稱／best上限／tips／前進，神界所在地指針與動態無障礙標題；底部空白卷軸以String212顯示神界。兩端門切頁後聚焦對面入口，不送切圖命令；神界返回門石框／底座來自圖稿，CSS門洞光流／光環／粒子對齊藍白孔洞，隱藏暫停、減少動態停用。世界地圖JS1.0.6／CSS1.0.10、Stringff729ce3；無Worker／Protocol／解鎖／存檔變更。
+- 圖稿：RPG Mote Studio本次連線無法開啟，內建imagegen以使用者原圖直接編修，去三處名稱及數字／舊卷軸標題／烘焙叉號、石門改大型遺跡門，其他主構圖保留但有細部生成差異。素材庫codex-authored/god-world-map含使用者原始JPG、最終PNG、source.json尺寸／SHA／熱區及SOURCE.md完整提示詞／使用依據；沒有引入其他外部素材。既有人界圖／游標／覆片hash不變；node tools/world-map/export-source.cjs --apply及--check均驗原稿／編修稿／遊戲SHA一致。
+- String：依使用者規範以tools/excel-update-sheets.ps1原生Excel編修，來源獨占讀寫確認可取得；使用者開啟的是其他工作簿，不關閉或接觸。新增2225人界傳送門／2226神界底圖alt（戰鬥模塊），8個非空格寫入，原有內容不變；工具正常重開、再儲存再重開、全格比對與Shapes0保留通過，沒有修復提示或手改XML。xlsx_to_csv以String／7欄匯出2214列，apply_strings同步2213條；CSV僅新增兩列，原字串未改。
+- 回歸：node --test --test-reporter=spec tests/world-map-ui.test.cjs tests/world-map.test.cjs tests/new-battle-zones.test.cjs tests/stage-rework.test.cjs tests/gm-stage-clear.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs全部56/56通過；npm.cmd run build604檔通過；git diff --check通過。既有神界列表卡片像素位置測試改驗本次同人界比例熱區，保留固定下方／縮放／鎖定及前進斷言；新增雙向門不切角色場景、焦點、神界指針、最高紀錄與圖片失敗恢復測試。
+- 瀏覽器：隔離headless Edge、隨機localhost、正式index與真Worker，0轉通關亡靈400後實點人界門進神界；首圖1/450、後圖灰字隱藏進度，混沌tips顯示通關太古450且不可前進。返回門Space回人界及焦點交回，再Space進神界、實點太古前進獲Worker成功快照；補神界通關後驗450/450、500/500、1/600及神界所在地指針。返回切頁前後header.stage相同；動畫transform隨時間改變、減少動態所有返回門animation:none。1558×900桌面、390×844神界／資訊卡截圖已視覺檢查且寬390不溢出，Console error／warning及pageerror0；QA截圖及browser-report保存本聊天visualizations/god-world-map。未動使用者原來源存檔。
+- 唯讀未改：共通規範／Workflow、地圖進度／ZONES／GM／Worker／存讀檔、既有人界原圖與素材索引、String原生工具與字串匯出器。自我Review完成，無本項未完成實作；未做全庫／多瀏覽器／長時間遊玩，圖片為單次生成編修而非原圖像素級不變。可供Review／合併。素材庫Commit de5b360已先完成，遊戲Commit為本段所在「[Codex] feat: 加入神界大地圖與遺跡返回傳送門」，編號見交付；未合併推送。下一步正常整合並重新載入，另一台電腦需同步兩庫。
+
+## GOD-ZONE-PREVIOUS-CLEAR-20261030 — 神界依前圖末關通關解鎖
+
+- Owner：Codex；Done，單一開發者。使用者要求神界三圖移除轉生／等級門檻，與人界相同只看前一張地圖最高關通關；前置既有世界地圖與通關紀錄完成。
+- 允許：Zones.xlsx來源三格最低轉生次數11→0及匯出Zones.csv／生成data.js、主頁／Worker必要快取、受影響地圖／GM回歸、LV／WORLD_MAP／GM指南及本段；禁止改上限／怪物／倍率／掉落／素材／Protocol或存檔格式、其他工作區及合併推送。前圖末關只到達不解鎖，保留既有已解鎖進度相容。
+- 預檢：上述正式檔案與stage-rework／new-battle-zones測試無外部來源，Excel無開啟行程；寫入前取得來源獨占存取。來源→CSV→JS同步，驗原生Excel正常開啟／值與格式、0轉各圖末關前後／不能跨圖／Worker前進與介面提示、相關回歸／Build／Console／diff後獨立Commit。交使用者正常整合，素材庫無本項變動。
+- 完成15檔：config/Excel/Zones.xlsx、config/CSV/Zones.csv、js/data.js、js/bridge.js、js/worker/sim.worker.js、index.html，tests/stage-rework／new-battle-zones／world-map／world-map-ui／gm-stage-clear，以及LV_upgrade_system／GM_command／WORLD_MAP與本段。來源H9:H11最低轉生次數11→數值0，生成ZONES移除三圖reqReincarnation，其餘資料／倍率未動；共用isZoneUnlocked、switchZone、存檔遷移及UI提示自然沿用前置通關判斷，不另建門檻邏輯。主頁data112／bridge388、Worker入口及data匯入20261030-god-zone-previous-clear。
+- Excel：依試算表技能使用artifact-tool匯入原檔，只寫三格、重算及匯出；修改前後預覽已檢查。原生Excel正常模式重開候選，Saved=True；143格逐格比較僅H9／H10／H11的值／字面公式11→0，其餘值／公式／數字格式／字型／底色／對齊／換行／列高／欄寬差異0，工作表數／Shapes／篩選／凍結／分割／Table數差異0。來源獨占存取且SHA仍等於原值才寫入；原生重開最終來源並對候選全格及上述格式比對0差異。沒有手改XML或Excel修復提示。
+- 資料驗證：node tools/xlsx_to_csv.cjs（PARAMS_XLSX=Zones.xlsx、PARAMS_SHEET=地圖、PARAMS_MIN_COLUMNS=13、PARAMS_CSV_OUT=Zones.csv）及node tools/config_tables.cjs --apply --write Zones，3個區塊僅ZONES一項語意變更；再執行node tools/config_tables.cjs --apply Zones回報0變更。new-battle-zones既有五表Excel／CSV逐格一致通過；String表查無神界11轉寫死文案，不改顯示文字來源。
+- 測試：node --test --test-reporter=spec tests/stage-rework.test.cjs tests/new-battle-zones.test.cjs tests/world-map.test.cjs tests/world-map-ui.test.cjs tests/gm-stage-clear.test.cjs tests/god-realm-zones.test.cjs tests/gm-command.test.cjs tests/gm-fastpath.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/params-direct-edit.test.cjs，111/111通過；npm.cmd run build604檔通過；git diff --check通過。依使用者新規則更新舊11轉斷言，保留末關尚未通關拒絕、自然打贏通關、手動跨圖及舊存檔相容驗證。
+- 瀏覽器：隔離headless Edge、隨機localhost、正式index與真Worker新局，0轉逐一驗亡靈400／太古450／混沌500尚未通關時下一圖unlocked=false、送stage.switchZone後不換圖；設通關後unlocked=true、實點傳送門／神界場景／前進依序進太古／混沌／永恒，提示皆為可前進且無轉生條件。saveAutoNow後重載仍在永恒神域、0轉；1558×900及390×844截圖與browser-report保留本聊天visualizations/god-zone-unlock，Console error／warning及pageerror0，未動使用者原來源存檔。
+- 唯讀未改：共通規範／Workflow、config_tables匯出器及schema、通關／解鎖／戰鬥／GM執行器／UI／存檔程式、String／NPC／掉落來源及素材。舊gm-command測試中的自訂reqReincarnation fixture仍驗通用配置支援，非正式三圖設定。自我Review完成，無本項未完成實作；未驗全庫／多瀏覽器長戰，可供Review／合併。Commit為本段所在「[Codex] fix: 神界地圖改以前圖末關通關解鎖」，編號見交付；未合併推送。下一步正常整合兩輪成果並重載，既有已通關進度可直接解鎖，不必重打或改轉生。
+
 ## GM-STAGE-CLEAR-20261030 — 白話通關進度與神界入口
 
 - Owner：Codex；Done，單一開發者。使用者回報要求亡靈山脈400關已通關卻無神界入口，截圖確認AI誤譯為stage亡靈山脈400（cleared399）。前置既有傳送門／Worker與GM流程完成。

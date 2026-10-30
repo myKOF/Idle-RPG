@@ -28,18 +28,18 @@ test('十張地圖依圖片順序與100～600有限上限', () => {
   ]);
   assert.deepEqual(JSON.parse(JSON.stringify(c.ZONE_LIST.map((z) => c.ZONES[z].maxStage))), [100, 150, 200, 250, 300, 350, 400, 450, 500, 600]);
   assert.equal(c.ZONES.undead_mountains.name, '亡靈山脈');
-  assert.equal(c.ZONES.god_battlefield.reqReincarnation, 11);
+  for (const key of ['god_battlefield', 'god_chaos', 'god_sanctuary']) assert.equal(c.ZONES[key].reqReincarnation, undefined);
 });
 
-test('地圖解鎖需要前圖最後一關真正通關，神界另需11轉', () => {
+test('所有地圖只需前圖最後一關真正通關，0轉也依序解鎖神界三圖', () => {
   const c=load(['js/util.js', 'js/strings_data.js', 'js/strings.js','js/data.js','js/status.js','js/formula.js']);
   c.G={player:{reincarnations:0},stage:{zone:'desert',best:1},zoneProgress:{}};
   for(let i=1;i<c.ZONE_LIST.length;i++){
     const prev=c.ZONE_LIST[i-1],next=c.ZONE_LIST[i],cap=c.ZONES[prev].maxStage;
     c.G.zoneProgress[prev]={best:cap,cleared:cap-1};assert.equal(c.isZoneUnlocked(next),false);
     c.G.zoneProgress[prev].cleared=cap;
-    if(c.ZONES[next].realm==='god'){c.G.player.reincarnations=0;assert.equal(c.isZoneUnlocked(next),false);c.G.player.reincarnations=11;}
     assert.equal(c.isZoneUnlocked(next),true);
+    assert.equal(c.G.player.reincarnations,0);
   }
 });
 

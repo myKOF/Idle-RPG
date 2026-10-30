@@ -109,9 +109,30 @@ body.world-map-open { overflow: hidden; }
 #world-map-scene-status { color: #b8ae99; }
 #world-map-go { width: 100%; margin-top: 8px; border-color: #98723d; color: #f0d396; }
 .world-map-overlay button:disabled { opacity: .5; cursor: default; }
-.world-map-god { position: relative; width: 100%; aspect-ratio: 1672 / 941; box-sizing: border-box; min-height: 330px; padding: 60px 30px 30px; background: radial-gradient(ellipse at top, #29272e, #111315 70%); }
-.world-map-god > p { margin: 0 0 22px; color: #b7abc7; }
-.world-map-god-zones { display: flex; gap: 20px; }
+.world-map-overlay[data-world-realm="god"] .world-map-dialog { width: min(calc(100vw - 16px), calc((100dvh - 16px) * 1678 / 937)); }
+.world-map-god { position: relative; width: 100%; aspect-ratio: 1678 / 937; container-type: inline-size; }
+#world-map-god-image { display: block; width: 100%; height: auto; pointer-events: none; user-select: none; }
+.world-map-god-zones { position: absolute; inset: 0; pointer-events: none; }
+.world-map-god-title { position: absolute; left: 50%; top: 97%; transform: translate(-50%, -50%); color: #17130e; font: 700 clamp(10px, 2.6cqw, 44px)/1 'DFKai-SB', 'KaiTi', 'Noto Serif TC', serif; letter-spacing: .35em; text-indent: .35em; pointer-events: none; }
+/* 返回門的石造門框與台階在神界母圖內；光流只覆於門洞，沒有第二座浮空門。 */
+.world-map-human-portal { position: absolute; left: 20.4%; top: 51.5%; width: 13.5%; height: 29%; padding: 0; border: 0; border-radius: 42% 42% 15% 15%; background: none; box-shadow: none; transform: translate(-50%, -50%); cursor: pointer; isolation: isolate; }
+.world-map-human-portal:hover, .world-map-human-portal:focus-visible { background: none; box-shadow: none; }
+.world-map-human-portal:focus-visible { outline: 2px solid #bff5ff; outline-offset: 3px; }
+.world-map-return-energy { position: absolute; left: 52%; top: 51%; width: 37%; height: 60%; transform: translate(-50%, -50%) rotate(-9deg); border-radius: 50%; overflow: hidden; pointer-events: none; mix-blend-mode: screen; filter: drop-shadow(0 0 5px #60dbff); }
+.world-map-return-current { position: absolute; inset: -25% -90%; border-radius: 50%; background: repeating-conic-gradient(from 0deg, transparent 0 31deg, #2fa6ed33 44deg, #cef7ff99 49deg, transparent 59deg 120deg); animation: world-map-return-flow 8s linear infinite; }
+.world-map-return-rings { position: absolute; inset: 3%; border: 1px solid #c5f8ff; border-radius: 50%; box-shadow: inset 0 0 10px #77dcff, 0 0 8px #48bcff; animation: world-map-return-breathe 3.2s ease-in-out infinite; }
+.world-map-return-motes { position: absolute; inset: 0; }
+.world-map-return-motes i { position: absolute; left: 25%; top: 88%; width: max(1px, .15cqw); height: max(1px, .15cqw); border-radius: 50%; background: #e6fbff; box-shadow: 0 0 4px #b9f4ff; animation: world-map-return-rise 3.6s linear infinite; }
+.world-map-return-motes i:nth-child(2) { left: 65%; animation-delay: -.9s; }
+.world-map-return-motes i:nth-child(3) { left: 40%; animation-delay: -1.8s; }
+.world-map-return-motes i:nth-child(4) { left: 76%; animation-delay: -2.7s; }
+.world-map-return-caption { position: absolute; left: 50%; top: 102%; transform: translateX(-50%); white-space: nowrap; color: #c6f4ff; font: 700 clamp(7px, 1.1cqw, 19px)/1.2 'DFKai-SB', 'KaiTi', 'Noto Serif TC', serif; -webkit-text-stroke: 1px #000; paint-order: stroke fill; pointer-events: none; }
+.world-map-human-portal:hover .world-map-return-energy, .world-map-human-portal:focus-visible .world-map-return-energy { filter: drop-shadow(0 0 7px #a2eeff) brightness(1.2); }
+.world-map-god[hidden] .world-map-return-energy *, .world-map-overlay[hidden] .world-map-return-energy * { animation-play-state: paused; }
+@keyframes world-map-return-flow { to { transform: rotate(360deg); } }
+@keyframes world-map-return-breathe { 0%, 100% { opacity: .3; transform: scale(.96); } 50% { opacity: .85; transform: scale(1.02); } }
+@keyframes world-map-return-rise { 0% { opacity: 0; transform: translateY(0); } 20%, 70% { opacity: .9; } 100% { opacity: 0; transform: translateY(-8cqw); } }
+@media (prefers-reduced-motion: reduce) { .world-map-return-energy * { animation: none !important; } }
 .world-map-god-scene { flex: 1; min-height: 110px; background: #17171c; color: #fff0bc; border: 1px solid #655575; border-radius: 4px; cursor: pointer; }
 .world-map-god-scene .world-map-hover-name { display: inline-block; font-size: 18px; }
 .world-map-god-scene .world-map-level { margin-top: 5px; font-size: 15px; }
@@ -130,7 +151,4 @@ body.world-map-open { overflow: hidden; }
   .world-map-info h3 { font-size: 15px; margin-bottom: 4px; }
   .world-map-info p { font-size: 12px; margin: 3px 0; }
   .world-map-info #world-map-go { margin-top: 5px; }
-  .world-map-god-zones { flex-direction: column; gap: 8px; }
-  .world-map-god { padding: 58px 16px 16px; min-height: 330px; max-height: calc(100dvh - 16px); overflow: auto; }
-  .world-map-god-scene { min-height: 60px; flex: none; }
 }
