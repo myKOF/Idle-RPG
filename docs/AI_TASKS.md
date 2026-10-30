@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## GM-STAGE-CLEAR-20261030 — 白話通關進度與神界入口
+
+- Owner：Codex；Done，單一開發者。使用者回報要求亡靈山脈400關已通關卻無神界入口，截圖確認AI誤譯為stage亡靈山脈400（cleared399）。前置既有傳送門／Worker與GM流程完成。
+- 範圍：js/gm_exec.js新增stage_clear、js/gm.js指令辨識、js/ai-key-setting.js本機／雲端轉譯與快取升版，bridge／Worker匯入及index快取、GM／世界地圖／LV文件與相關回歸及本段。禁止更改正常跳關語意、一般解鎖／戰鬥獎勵／配置／素材／Protocol或存檔欄位、其他工作區與合併推送。
+- 使用者補充：設定目標已通關代表前面所有場景皆通關。新指令補齊前置場景並提升目標已通關／最高到達紀錄，保留目前所在地、後續場景進度與轉生數、不補獎勵；保留stage跳到但尚未通關的既有行為。驗收白話／雲端提示／舊快取失效、Worker執行與地圖入口、前置通關與後續保留、重複／無效／外部環境、相關回歸／Build／Console／diff後獨立Commit，交使用者正常整合。
+- 預檢上述檔案全部無其他副本或分支修改；沒有新素材或Excel變動，素材庫無本項Commit。
+- 完成13檔：GM執行器／面板／AI設定、bridge／Worker／index快取、tests/gm-stage-clear.test.cjs與兩項既有GM回歸、GM_command／WORLD_MAP／LV與本段。stage_clear依ZONE_LIST補前置全通關，目標cleared只增不減、best至少下一關並受上限限制，保留當前關卡／後續紀錄／資源／轉生；錯誤參數先拒絕才寫入。白話本機完整匹配設定句及通關到，中文參數標準指令不走雲端，雲端提示同語意；翻譯快取3淘汰舊stage結果。主頁GM／AI1.0.5、bridge1.0.387、Worker入口20261030-gm-stage-clear及gm_exec匯入20261030-stage-clear。
+- 驗證：node --test --test-reporter=dot執行gm-stage-clear、ai-key-setting、gm-fastpath、gm-natural-timeout、gm-command、gm-modequip、gm-perf-command、gm-skill-point、gm-skill-test-tools、gm-translation-cache、gm-affix-limits、worker-protocol、worker-shim、string-table、vfx-editor-cache-versions、world-map、world-map-ui共17檔全部通過；npm.cmd run build604檔通過、git diff --check通過。新增通關／前置補齊／不重設後續／不換圖／不發獎勵／重複不倒退／無效不部分寫入／正式網域拒絕／本機語句／舊快取淘汰／提示契約回歸；既有快取版本斷言2→3配合本次升版，其餘既有語意保留。
+- 瀏覽器：隔離headless Edge、隨機localhost、正式index與真Worker新局；先重現stage亡靈山脈400→cleared399且入口隱藏，再以實際GM textarea白話輸入（無API金鑰）→stage_clear、cleared400、前面六圖皆達各自上限、入口可點開神界／返回。0轉神界場景仍鎖定；saveAutoNow完成後重載，通關與入口保留。1558×900及390×844截圖已視覺檢查，窄屏寬390不溢出，最終Console error／warning及pageerror0。QA截圖與browser-report存本聊天visualizations/gm-stage-clear，未接觸使用者原來源或原存檔。
+- 唯讀未改：規範／Workflow／prompts、data正常通關／BOSS／isZoneUnlocked、save遷移／持久化、world-map UI與既有門體、Worker投影及Protocol、配置／素材與既有GM／地圖回歸。自我Review完成，無本項未完成實作；未跑全庫／多瀏覽器長戰或真實雲端API翻譯（提示與回應流程用stub驗證），未自動修玩家當前存檔。可供Review／合併；Commit為本段所在「[Codex] fix: 區分已通關與跳關並補齊前置場景」，編號見交付，未合併推送。下一步正常整合及重新載入後，再輸入「亡靈山脈400關設為已通關」。
+
 ## SYNC-MERGE-5D5A98DE-20261030 ? ?? develop ????
 
 - Owner?Codex?Done????????????controller??????????????????????????HEAD 3c2e7f9e?incoming 5d5a98de?base 1b0cba48?

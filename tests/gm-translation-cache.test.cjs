@@ -260,8 +260,37 @@ test('詞條規則升版後，舊版追加語意的翻譯快取失效', () => {
   const env = setup();
   env.ai.rememberNaturalCommand(prompt, ['modequip weapon lifesteal 100']);
   const data = JSON.parse(env.storage[CACHE]);
-  assert.equal(data.version, 2);
+  assert.equal(data.version, 3);
   data.version = 1;
   env.storage[CACHE] = JSON.stringify(data);
   assert.equal(env.ai.getCachedNaturalCommand(prompt), null);
+});
+
+test('通關語意升版淘汰舊stage翻譯，本機無金鑰也能執行；中文參數標準命令不交雲端', async () => {
+  const env = setup();
+  const text = '亡靈山脈400關改為已通關狀態';
+  env.ai.rememberNaturalCommand(text, ['stage 亡靈山脈 400']);
+  const old = JSON.parse(env.storage[CACHE]);
+  old.version = 2;
+  old.entries.forEach(entry => { entry.signature = entry.signature.replace(/^3:/, '2:'); });
+  env.storage[CACHE] = JSON.stringify(old);
+  assert.equal(env.ai.getCachedNaturalCommand(text), null);
+  delete env.storage.idle_rpg_gemini_api_key;
+  env.type(text); await flush();
+  env.type('stage_clear 亡靈山脈 400'); await flush();
+  assert.deepEqual(env.sent.map(s => s.line), ['stage_clear 亡靈山脈 400', 'stage_clear 亡靈山脈 400']);
+  assert.equal(env.calls.length, 0);
+  env.ai.rememberNaturalCommand(text, ['stage_clear 亡靈山脈 400']);
+  assert.deepEqual(Array.from(env.ai.getCachedNaturalCommand(text)), ['stage_clear 亡靈山脈 400']);
+});
+
+test('雲端提示區分到達與通關並規定補前置及保留後續進度', async () => {
+  const env = setup();
+  env.ctx.respond = async () => success(['stage_clear 亡靈山脈 400']);
+  await env.ai.parseNaturalCommand('請協助把人界最後一張地圖設為完成，關卡是400');
+  const request = JSON.stringify(JSON.parse(env.calls[0].options.body));
+  assert.match(request, /stage_clear/);
+  assert.match(request, /前面所有場景設為全部通關/);
+  assert.match(request, /保留後續場景/);
+  assert.match(request, /不能用stage近似/);
 });
