@@ -10,6 +10,17 @@
 - 驗證範圍：NodeVM正式UI渲染／鑲入／取下／升級，以及原封載入sim.worker入口的headless宿主驗正式runCommand、屬性快取失效與gems面板；未做瀏覽器實際操作／畫面或全庫回歸。唯讀未改：規範／Workflow／prompts、Gem_resonance.xlsx／CSV／data、formula.js／item.js／save.js／ui.js、Worker協議與模擬宿主；無素材或素材庫變動，不建立空素材Commit。
 - 自我Review完成，本次無未完成實作，可供Review／合併；已知限制為上述既有失敗及未跑項。Commit為本段所在「[Codex] feat: 寶石共鳴限定相鄰異種類型」，實際編號見交付；未合併或推送develop／main。後續使用者正常整合並重新載入。工作期間同副本另一聊天新增CHAOS-PREVIEW-REPAIR獨立任務段，只分段暫存本共鳴紀錄，保留其進行中修改。
 
+## CHAOS-RED-PURPLE-GRADIENT-20261030 — 紅紫漸層混沌外框
+
+- Owner：Codex；Done，單一開發者。使用者要求左／下紅色、上／右紫色，交界柔和漸變，不可突然接色；沿前輪授權圖框，兩品質tips／ICON／詳情共用。前置54e0d5dd外觀與預覽修正完成。
+- 允許css/equipment-chaos.css、LV既有說明及本段、聊天visualizations隔離預覽；禁止JS／數值／文字／素材原圖／Worker／存檔／其他品質與其他工作區、合併推送。CSS／LV／docs預檢無外部來源；index與Claude進行中內容的全檔合併試跑有既有差異衝突，本次不修改index，無JS快取變動。CSS更新驗收用新預覽URL，實機須Ctrl+F5強制重新載入。
+- 沿用同一九宮格圖片，新增僅作用於邊框的紫色副層，以朝右上的連續alpha遮罩混合，左上／右下過渡不硬切；暗綠內襯、右上金光及淡紅光不變。驗兩品質三處表現、載圖／文字／選取與雙手／詳情捲動、原圖SHA不變、相關回歸／Build／瀏覽器及完整存檔後重開截圖；完成後獨立Commit，交正常Review／使用者整合。
+
+- 完成三檔：equipment-chaos.css沿原::after框保留左／下紅色，新增同圖九宮格::before紫色副層，以sepia／saturate／hue-rotate只調該層，to top right遮罩25%透明→75%不透明連續混合，左上／右下無硬接縫。ICON／tips／固定詳情框使用相同來源、filter與mask；表現層pointer-events:none，不覆蓋內容底色或玩家互動。LV說明及本段同步，無JS／圖片或素材庫變動。
+- 驗證：node --test --test-reporter=spec tests/equipment-tooltip-compare.test.cjs tests/equipment-two-hand-display.test.cjs tests/equipment-selection-border.test.cjs全部16/16通過；npm.cmd run build604檔通過；node tools/equipment-ui/export-source.cjs --check確認授權原圖與遊戲匯出SHA256一致；git diff --check及暫存diff檢查通過，未改測試。Build為既有逐檔串行node --check，等待完成後才交付。
+- 瀏覽器：沿前輪隔離正式UI／CSS／測試裝備預覽，8139新URL載入CSS；兩品質ICON完整載入，三處computed filter及連續mask相同、邊框仍指同一原圖，品質列scrollWidth238＝clientWidth238，兩內頁page error監聽皆[]。四卡／兩ICON已視覺核對紅色左下、紫色右上與柔和角落過渡；comparison-full.jpg完整截圖保存後已用view_image從磁碟重開確認，與browser-report.json／可重現預覽存本聊天visualizations/chaos-red-purple。沿用前輪IAB多iframe無來源MutationObserver診斷，原樣記錄在report，未聲稱多iframe工具Console全0；本項無JS改動及新增頁面錯誤。詳情幾何與既有可捲動結構未改，沿前輪0→164／184固定框驗收；本輪未另跑完整遊玩／真Worker／多瀏覽器。
+- 唯讀未改：原授權PNG、既有預覽／裝備回歸、index與Claude融合／版號增量、正式UI／玩法／Worker／存檔、素材匯出器。自我Review完成，無本項未完成實作，可供Review／合併；只提交本項三檔，原素材未改／無素材庫Commit，未合併推送。Commit為本段所在「[Codex] fix: 混沌外框改為柔和紅紫漸層」，編號見交付；整合後請Ctrl+F5強制重新載入CSS（本次刻意不碰有外部衝突來源的index）。
+
 ## CHAOS-PREVIEW-REPAIR-20261030 — 修正混沌裝備預覽交付
 
 - Owner：Codex；Done。使用者指出上一輪預覽圖片只剩逐字標題與黑底，要求修好並重新截取混沌／神鑄混沌的實際tips、ICON與詳情。

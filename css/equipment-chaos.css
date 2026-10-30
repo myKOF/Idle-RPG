@@ -22,6 +22,7 @@
   box-shadow: none !important;
 }
 
+.eff-chaos::before,
 .eff-chaos::after {
   content: '';
   position: absolute;
@@ -61,7 +62,9 @@
   padding: 25px 21px 34px !important;
 }
 
+#sk-tooltip .equip-detail-card.chaos-detail::before,
 #sk-tooltip .equip-detail-card.chaos-detail::after,
+#tab-equip .equip-detail-frame:has(> #detail-pane.has-detail.chaos-detail)::before,
 #tab-equip .equip-detail-frame:has(> #detail-pane.has-detail.chaos-detail)::after {
   content: '';
   position: absolute;
@@ -71,6 +74,16 @@
   clip-path: polygon(4px 6px, calc(50% - 10px) 6px, 50% 0, calc(50% + 10px) 6px, calc(100% - 6px) 6px, calc(100% - 6px) 100%, 4px 100%);
   pointer-events: none;
   z-index: 2;
+}
+
+/* 同一張邊框的紫色副層：左／下保留紅色，上／右逐漸轉紫。
+   對角方向依矩形比例計算，左上及右下皆以連續透明度混合，不切硬邊。 */
+.eff-chaos::before,
+#sk-tooltip .equip-detail-card.chaos-detail::before,
+#tab-equip .equip-detail-frame:has(> #detail-pane.has-detail.chaos-detail)::before {
+  filter: sepia(1) saturate(2.4) hue-rotate(225deg);
+  mask-image: linear-gradient(to top right, transparent 25%, #000 75%);
+  z-index: 3;
 }
 
 /* 詳情只捲動內容，外框和光暈固定在外層。 */
