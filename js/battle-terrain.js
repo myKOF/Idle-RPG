@@ -115,12 +115,7 @@ var BattleTerrain = (function () {
       ls: [['riftAnchor',2,237,278],['voidArch',1.6,215,280],['voidGyre',0.7,225,292],['orbitCubes',1.2,215,237]],
       ld: [['riftAnchor',2,248,292],['voidArch',1.6,226,295],['riftObelisk',1.5,162,280],['voidSpindle',0.5,142,278]]
     },
-    god_sanctuary: {
-      s: [['seraphWing',0.7,137,188],['celestialHarp',0.4,121,171],['haloDais',0.5,113,166],['lightLotus',0.8,95,86],['celestialArch',1.8,155,192],['starDial',2,116,60],['crystalFountain',1.7,125,154],['sanctumStairs',1.8,165,98],['prismGarden',2.2,107,102],['fallenCapital',2,121,58]],
-      d: [['seraphWing',0.7,145,198],['celestialHarp',0.4,129,183],['haloDais',0.6,123,181],['lightLotus',0.9,103,96],['celestialArch',1.9,168,208],['starDial',2,128,60],['crystalFountain',1.8,135,166],['sanctumStairs',1.8,179,106],['prismGarden',2.2,117,112],['fallenCapital',2,132,60]],
-      ls: [['celestialArch',2.4,236,292],['crystalFountain',1.8,212,255],['sanctumStairs',1.5,247,165],['seraphWing',0.8,224,290]],
-      ld: [['celestialArch',2.4,245,300],['crystalFountain',1.8,225,272],['sanctumStairs',1.5,256,180],['seraphWing',0.8,234,300]]
-    }
+    god_sanctuary: { s: [], d: [], ls: [], ld: [] }
   };
   CATALOG[''] = CATALOG.desert;
 
@@ -191,6 +186,7 @@ var BattleTerrain = (function () {
      棄用舊亂數流：位置改由專屬的一條亂數流決定，與地面貼片（decal）的亂數分開，
      才不會因為貼片數量或圖集建好與否而改變擺件位置。 */
   function layoutChunk(kitKey, deep, seedBase, cx, cy) {
+    if(kitKey==='god_sanctuary')return [];
     var cat = CATALOG[kitKey] || CATALOG[''];
     var props = deep ? cat.d : cat.s;
     var lms = deep ? cat.ld : cat.ls;

@@ -1348,7 +1348,7 @@ var BattleRenderer = (function () {
     return PIXI.Texture.from(c);
   }
   var _groundTexCache = {};
-  var GROUND_ASSET_VERSION = '20261030-painted-god-realms';
+  var GROUND_ASSET_VERSION = '20261030-ground-aura';
   function loadGroundTexture(zoneKey) {
     var name = zoneKey ? ('ground_' + zoneKey) : 'ground_default';
     if (_groundTexCache[name] === 'failed') return;
@@ -1372,8 +1372,6 @@ var BattleRenderer = (function () {
     if (!S.groundTile || S.groundTile.destroyed || !tex || typeof tex === 'string') return;
     if (S.arena && S.arena.active()) return;   // 魔王祭壇有自己的地板；野外的貼圖晚到也不能蓋掉它
     S.groundTile.texture = tex;
-    // 混沌岩台已畫好朝下的厚斷面，保留原朝向；其他地貌沿用菱形投影。
-    S.groundTile.tileRotation = S.zoneKey === 'god_chaos' ? 0 : GROUND_TILE_ROTATION;
     // 用圖本身的顏色；地形裝飾的「地下」階段帶會壓暗（S.groundTint，見 js/battle-decor.js）
     S.groundTile.tint = S.groundTint || 0xffffff;
   }
@@ -1388,9 +1386,8 @@ var BattleRenderer = (function () {
     var g = S.groundTile;
     if (!g) return;
     var tex = g.texture;
-    var tilePeriod = S.zoneKey === 'god_chaos' ? 1 : GROUND_TILE_PERIOD;
-    var perX = ((tex && tex.width) || 128) * tilePeriod;
-    var perY = ((tex && tex.height) || 128) * tilePeriod;
+    var perX = ((tex && tex.width) || 128) * GROUND_TILE_PERIOD;
+    var perY = ((tex && tex.height) || 128) * GROUND_TILE_PERIOD;
     g.tilePosition.x = -(cam.x % perX) + shx;
     g.tilePosition.y = -(cam.y % perY) + screenToGroundY(shy);
   }
@@ -7083,9 +7080,6 @@ var BattleRenderer = (function () {
        每幀先畫進離屏貼圖再由透視網格貼到畫面；沒開就直接掛在 stage 上。由 syncPerspective 決定。 */
     var sceneRoot = new PIXI.Container();
     sceneRoot.addChild(bg);
-    // 天空河在地板／遠霧之上、全部角色與戰鬥效果之後，共用場景透視。
-    var decorDistant = new PIXI.Container();
-    sceneRoot.addChild(decorDistant);
     sceneRoot.addChild(world);
     /* 場景、空中角色與特效共用鏡頭；HUD留在實際畫布座標。 */
     var cameraStage = new PIXI.Container();
@@ -7157,7 +7151,7 @@ var BattleRenderer = (function () {
       groundUnder: groundUnder, groundOver: groundOver,
       outline: outlineLayer,
       playerHud: playerHud, overlay: overlay,
-      decorDistant: decorDistant, decorPlane: decorPlane, decorDecal: decorDecal, decorLight: decorLight, decorAmbient: decorAmbient,
+      decorPlane: decorPlane, decorDecal: decorDecal, decorLight: decorLight, decorAmbient: decorAmbient,
       arenaPlane: arenaPlane, arenaBase: arenaBase, arenaGlow: arenaGlow, arenaAmbient: arenaAmbient, arenaTitle: arenaTitle
     };
     drawDeathFog(0);
@@ -7911,7 +7905,7 @@ var BattleRenderer = (function () {
       S.decor = BattleDecor.create({
         PIXI: PIXI, groundScale: GROUND_Y_SCALE,
         decalLayer: S.layers.decorDecal, lightLayer: S.layers.decorLight,
-        propLayer: S.layers.entity, ambientLayer: S.layers.decorAmbient, distantLayer: S.layers.decorDistant,
+        propLayer: S.layers.entity, ambientLayer: S.layers.decorAmbient,
         billboard: sceneBillboardBasis,
         onTint: function (tint) {
           S.groundTint = tint;

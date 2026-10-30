@@ -29,11 +29,11 @@ test('DECOR-IMAGE-LOAD 完整素材載入去重、失敗重試只補缺圖，等
   const nature=ctx.DecorNature,calls=[],pending=[];
   const loader=url=>{calls.push(url);return new Promise((resolve,reject)=>pending.push({url,resolve,reject}));};
   const first=nature.loadImages('https://game.test/',loader),second=nature.loadImages('https://game.test/',loader);
-  assert.equal(first,second);assert.equal(calls.length,68);
+  assert.equal(first,second);assert.equal(calls.length,67);
   for(const p of pending)if(p.url.includes('/willow.png'))p.reject(new Error('network'));else p.resolve({width:200,height:100});
   await assert.rejects(first,/network/);await Promise.resolve();
   await nature.loadImages('https://game.test/',url=>{calls.push(url);return Promise.resolve({width:100,height:200});});
-  assert.equal(calls.length,69);assert.ok(calls.every(url=>url.startsWith('https://game.test/images/scene/')));
+  assert.equal(calls.length,68);assert.ok(calls.every(url=>url.startsWith('https://game.test/images/scene/')||url.startsWith('https://game.test/images/ground/')));
   await nature.loadImages('https://game.test/',()=>{throw new Error('已載入不應重新請求');});
   const draws=[],g=fakeContext();g.drawImage=(...args)=>draws.push(args);
   nature.drawBody(g,'willow',0,0,100,120,1,{});
@@ -67,7 +67,7 @@ function loadDecor(extra) {
   // 載入順序同 index.html：浮雕繪圖（decor-sculpt）在前
   vm.runInContext(readExpanded(path.join(root, 'js/decor-sculpt.js')), ctx);
   vm.runInContext(readExpanded(path.join(root, 'js/decor-nature.js')), ctx);
-  ctx.DecorNature.registerImages(Object.fromEntries(Object.keys(ctx.DecorNature.spriteFiles).concat(Object.keys(ctx.DecorNature.skyFiles)).map(key=>[key,{width:128,height:192}])));
+  ctx.DecorNature.registerImages(Object.fromEntries(Object.keys(ctx.DecorNature.spriteFiles).concat(Object.keys(ctx.DecorNature.groundFiles)).map(key=>[key,{width:128,height:192}])));
   vm.runInContext(readExpanded(path.join(root, 'js/battle-terrain.js')), ctx);   // 擺件位置清單（battle-decor 的 buildChunk 依它擺）
   vm.runInContext(readExpanded(path.join(root, 'js/battle-decor.js')), ctx);
   return { BattleDecor: ctx.BattleDecor, DecorSculpt: ctx.DecorSculpt, warnings, ctx };
@@ -529,7 +529,7 @@ test('DECOR-BB 透視抵銷（opts.billboard）：擺件與火焰被抵銷後 Pi
   }
 });
 
-test('DIVINE-SCENE 三圖地表與深層僅用專屬物件、地面及完整天空河，圖集沒有越界', () => {
+test('DIVINE-SCENE 三圖無天空，戰場與混沌用專屬物件、聖域僅用地板光陣，圖集沒有越界', () => {
   const { BattleDecor, warnings } = loadDecor();
   const mortal = new Set(Object.entries(BattleDecor.KITS).filter(([key]) => key && !key.startsWith('god_')).flatMap(([,kit]) => [...kit.props, ...kit.deepProps].map(p => p[0])));
   const sets = [];
@@ -541,8 +541,8 @@ test('DIVINE-SCENE 三圖地表與深層僅用專屬物件、地面及完整天�
         assert.ok(spec.px + spec.pw <= plan.width && spec.py + spec.ph <= plan.height, zone + ' 圖集被裁斷 ' + spec.key);
         if (spec.kind === 'prop') { assert.ok(!mortal.has(spec.type), zone + ' 重用人界 ' + spec.type); types.add(spec.type); }
       }
-      assert.equal(plan.specs.filter(s => s.key === 'skyRiver').length,1);
-      if(zone==='god_sanctuary')assert.ok(plan.specs.some(s=>s.type==='divine'));
+      assert.equal(plan.specs.filter(s=>s.kind==='sky'||s.key==='skyRiver').length,0,'三圖均不可再建天空圖框');
+      if(zone==='god_sanctuary'){assert.equal(plan.props.length,0);assert.equal(plan.landmarks.length,0);for(const type of ['sanctumSeal','sanctumFlow'])assert.ok(plan.specs.some(s=>s.type===type));}
       else assert.ok(!plan.specs.some(s=>s.type==='divine'||s.type==='divineOrbit'||s.type==='runes'),'戰場與混沌不再套聖域法陣');
     }
     sets.push(types);
@@ -551,22 +551,22 @@ test('DIVINE-SCENE 三圖地表與深層僅用專屬物件、地面及完整天�
   assert.deepEqual(warnings,[]);
 });
 
-test('DIVINE-MOTION 天空河與符紋固定上限，暫停／隱藏凍結，換圖與退出全部回收', () => {
+test('DIVINE-MOTION 無天空、場景特效固定上限，暫停／隱藏凍結，換圖與退出全部回收', () => {
   const { BattleDecor } = loadDecor(), P = fakePixi();
   const layers = { decal:new P.Container(), light:new P.Container(), prop:new P.Container(), ambient:new P.Container(), distant:new P.Container() };
   const decor=BattleDecor.create({PIXI:P.PIXI,groundScale:.5,decalLayer:layers.decal,lightLayer:layers.light,propLayer:layers.prop,ambientLayer:layers.ambient,distantLayer:layers.distant,buildBudgetMs:Infinity,prebuildBudgetMs:0,worker:false});
   const v=view(0,0), tick=dt=>decor.update({...v,dt});
-  const shape=()=>JSON.stringify([...layers.distant.children,...layers.decal.children.filter(s=>s._decorLocal)].map(s=>[s.x,s.y,s.rotation,s.alpha]));
+  const shape=()=>JSON.stringify([...layers.decal.children,...layers.light.children,...layers.prop.children].filter(s=>s._decorLocal).map(s=>[s.x,s.y,s.rotation,s.alpha]));
   for(const zone of ['god_battlefield','god_chaos','god_sanctuary']) {
     decor.setScene(zone,1);tick(.1);tick(.1);
-    assert.equal(decor.stats().skyRiver,1);assert.equal(layers.distant.children.length,1);
+    assert.equal(decor.stats().skyRiver,0);assert.equal(layers.distant.children.length,0);
     assert.ok(decor.stats().localSources > 0 && decor.stats().localSources <= 6);
     assert.ok(decor.stats().localParticles <= 18);
     const moving=shape();tick(.1);assert.notEqual(shape(),moving);
     decor.setMotionEnabled(false);const stopped=shape();tick(.1);assert.equal(shape(),stopped);
     decor.setMotionEnabled(true);tick(0);assert.equal(shape(),stopped);
-    decor.setVisible(false);tick(.1);assert.equal(shape(),stopped);assert.equal(layers.distant.visible,false);
-    decor.setVisible(true);tick(.1);assert.equal(layers.distant.visible,true);
+    decor.setVisible(false);tick(.1);assert.equal(shape(),stopped);
+    decor.setVisible(true);tick(.1);
   }
   decor.setScene('desert',1);tick(.1);tick(.1);assert.equal(layers.distant.children.length,0);assert.equal(decor.stats().skyRiver,0);
   decor.destroy();assert.equal(P.alive(),0);
@@ -576,16 +576,16 @@ test('DIVINE-MOTION 天空河與符紋固定上限，暫停／隱藏凍結，換
   assert.ok(reduced.stats().localSources<=2);assert.ok(reduced.stats().localParticles<=2);reduced.destroy();assert.equal(P.alive(),0);
 });
 
-test('DIVINE-GROUND 混沌保留岩台斷面朝向，捲動一個完整週期不跳位；其他地貌維持菱形投影', () => {
+test('DIVINE-GROUND 三圖完整地表統一地面投影，捲動一個完整週期不跳位', () => {
   const {extractFunction}=require('./helpers/battle-scene.cjs');
   const source=readExpanded(path.join(root,'js/battle-renderer.js'));
   const tile={tilePosition:{},destroyed:false},S={groundTile:tile,zoneKey:'god_chaos',groundTint:0xffffff};
-  const ctx={S,GROUND_TILE_ROTATION:Math.PI/4,GROUND_TILE_PERIOD:Math.SQRT2,screenToGroundY:y=>y*2};vm.createContext(ctx);
-  vm.runInContext(extractFunction(source,'applyGroundTexture')+'\n'+extractFunction(source,'syncGroundScroll'),ctx);
-  ctx.applyGroundTexture({width:1024,height:1024});assert.equal(tile.tileRotation,0);
-  ctx.syncGroundScroll({x:31,y:47},0,0);const first=[tile.tilePosition.x,tile.tilePosition.y];
-  ctx.syncGroundScroll({x:31+1024,y:47+1024},0,0);assert.deepEqual([tile.tilePosition.x,tile.tilePosition.y],first);
-  S.zoneKey='god_sanctuary';ctx.applyGroundTexture({width:1024,height:1024});assert.equal(tile.tileRotation,Math.PI/4);
-  ctx.syncGroundScroll({x:31+1024*Math.SQRT2,y:47+1024*Math.SQRT2},0,0);
-  assert.ok(Math.abs(tile.tilePosition.x-first[0])<1e-9&&Math.abs(tile.tilePosition.y-first[1])<1e-9);
+  const ctx={S,GROUND_TILE_PERIOD:Math.SQRT2,screenToGroundY:y=>y*2};vm.createContext(ctx);
+  vm.runInContext(extractFunction(source,'syncGroundScroll'),ctx);
+  for(const zone of ['god_battlefield','god_chaos','god_sanctuary']){
+    S.zoneKey=zone;tile.texture={width:1024,height:1024};
+    ctx.syncGroundScroll({x:31,y:47},0,0);const first=[tile.tilePosition.x,tile.tilePosition.y];
+    ctx.syncGroundScroll({x:31+1024*Math.SQRT2,y:47+1024*Math.SQRT2},0,0);
+    assert.ok(Math.abs(tile.tilePosition.x-first[0])<1e-9&&Math.abs(tile.tilePosition.y-first[1])<1e-9);
+  }
 });
