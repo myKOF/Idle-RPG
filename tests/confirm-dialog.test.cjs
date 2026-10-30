@@ -101,7 +101,7 @@ test('轉生預告依正式門檻，只列轉生回1級立即新開放的系統'
   assert.deepEqual(notices(2), ['解鎖【太古精鑄】系統']);
   assert.deepEqual(notices(3), ['解鎖【神級寶石】系統', '解鎖【寶石共鳴】系統']);
   assert.deepEqual(notices(4), ['解鎖【神聖刻印】系統']);
-  assert.deepEqual(notices(10), []); // 融合雖達轉數，仍缺重置後的等級門檻。
+  assert.deepEqual(notices(10), []);
   c.FORGE_UNLOCK_REINCARNATION = 1;
   c.GEM_RESONANCE_UNLOCK_REINCARNATION = 1;
   assert.deepEqual(notices(0), ['解鎖【天堂威能】系統', '解鎖【神鑄】系統', '解鎖【寶石共鳴】系統']);
@@ -109,10 +109,8 @@ test('轉生預告依正式門檻，只列轉生回1級立即新開放的系統'
   assert.deepEqual(notices(0), ['解鎖【天堂威能】系統', '解鎖【寶石共鳴】系統']);
   c.TALENT_UNLOCK_LEVEL = 2;
   assert.deepEqual(notices(0), ['解鎖【寶石共鳴】系統']);
-  c.GEM_FUSION_UNLOCK_LEVEL = 1;
-  c.GEM_FUSION_UNLOCK_REINCARNATIONS = 1;
   c.EQUIP_SET_UNLOCK_REINCARNATIONS[2] = 1;
-  assert.deepEqual(notices(0), ['解鎖【寶石共鳴】系統', '解鎖【寶石融合】系統', '解鎖【裝備方案 第三套】系統']);
+  assert.deepEqual(notices(0), ['解鎖【寶石共鳴】系統', '解鎖【裝備方案 第三套】系統']);
 });
 
 test('新解鎖各自使用純文字獨立行，重開一般確認不殘留', () => {

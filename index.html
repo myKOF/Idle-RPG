@@ -8,9 +8,9 @@
   <link rel="icon" href="images/icon_avatar.png" type="image/png">
   <link rel="preload" as="image" href="images/ui/gem-resonance/hex-backplate.png" fetchpriority="low">
   <link rel="preload" as="image" href="images/ui/heaven-power/dark-gold-seal.png?v=1" fetchpriority="low">
-  <link rel="stylesheet" href="css/style.css?v=1.0.105">
+  <link rel="stylesheet" href="css/style.css?v=1.0.106">
   <link rel="stylesheet" href="css/inventory-offset.css">
-  <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.93">
+  <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.94">
   <link rel="stylesheet" href="css/ashen-forge-flat.css?v=1.0.3">
   <link rel="stylesheet" href="css/battle-hud.css?v=1.0.19">
   <link rel="stylesheet" href="css/runeword.css?v=1.0.8">
@@ -407,22 +407,6 @@
                   </div>
                 </div>
                 <div class="gconv-shortcut" data-str="1607"></div>
-              </div>
-
-              <div class="gx-panel" data-gem-panel="fusion" hidden>
-                <div id="gx-fusion-locked" class="gx-locked" data-str="1505"></div>
-                <div id="gem-fusion-panel" style="display:none">
-                  <div class="hint" data-str-html="1506"></div>
-                  <div id="gfuse-slots" class="chip-row"></div>
-                  <div class="gx-actions">
-                    <button id="gfuse-btn" class="btn" data-str="1507"></button>
-                    <button id="gfuse-clear" class="btn sm" data-str="1494"></button>
-                  </div>
-                  <div class="node-info" id="gfuse-info"></div>
-                  <div class="sec-sub" data-str="1508"></div>
-                  <div id="gfuse-pool" class="chip-row"></div>
-                  <div id="gfuse-result" class="gem-result gem-result-3" data-str="1509"></div>
-                </div>
               </div>
 
               <div class="gx-panel" data-gem-panel="resonance">
@@ -1013,11 +997,11 @@
   <script src="js/strings_data.js?v=ff729ce3"></script>
   <script src="js/strings.js?v=1.0.1"></script>
   <script src="js/ui-scale.js?v=1.0.1"></script>
-  <script src="js/data.js?v=1.0.112"></script>
+  <script src="js/data.js?v=1.0.113"></script>
   <script src="js/status.js?v=1.0.44"></script>
   <script src="js/runeword_data.js?v=1.0.21"></script>
   <script src="js/gem_resonance_data.js?v=1.0.1"></script>
-  <script src="js/formula.js?v=1.0.79"></script>
+  <script src="js/formula.js?v=1.0.80"></script>
   <script src="js/battle-terrain.js?v=1.0.2"></script>
   <script src="js/battlefield.js?v=1.4.21"></script>
   <script src="js/game-clock.js?v=1.0.1"></script>
@@ -1048,7 +1032,7 @@
   <script src="js/battle-elite.js?v=1.0.8"></script>
   <script src="js/battle-renderer.js?v=1.6.207"></script>
   <script src="js/stats.js?v=1.0.7"></script>
-  <script src="js/item.js?v=1.0.36"></script>
+  <script src="js/item.js?v=1.0.37"></script>
   <script src="js/gem_resonance.js?v=1.0.8"></script>
   <script src="js/runeword.js?v=1.0.18"></script>
   <script src="js/skills.js?v=1.0.46"></script>
@@ -1061,7 +1045,7 @@
   <script src="js/tower.js?v=1.0.39"></script>
   <script src="js/save.js?v=1.0.27"></script>
   <script src="js/ui-inventory-skin.js?v=1.0.1"></script>
-  <script src="js/ui.js?v=1.0.235"></script>
+  <script src="js/ui.js?v=1.0.236"></script>
   <script src="js/ui-world-map.js?v=1.0.6"></script>
   <script src="js/ui-runeword.js?v=1.0.16"></script>
   <script src="js/ui-gem-resonance.js?v=1.0.21"></script>
@@ -1074,7 +1058,7 @@
        正式遊玩是空殼。必須排在 ui.js（用它的 isInternalVersion）之後、VFX Runtime 建立（main 開機）之前。 -->
   <script src="js/battle-perf.js?v=1.0.3"></script>
   <!-- 模擬 Worker 的協議與橋接。bridge.js 於 DOMContentLoaded 開機 -->
-  <script src="js/worker/protocol.js?v=64"></script>
+  <script src="js/worker/protocol.js?v=20261030-gem-fusion-removed"></script>
   <script src="js/storage.js?v=1.0.1"></script>
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
@@ -1087,7 +1071,7 @@
   <!-- 卡頓探針。與錄製器同樣是「只在本機／內網加了旗標才做事」的空殼，
        正式遊玩不包裝任何函式、不攔任何屬性。排在 main 之前，才來得及在
        DOMContentLoaded 就把 ui.js 的渲染函式包起來。用法：網址加 ?lag=1 -->
-  <script src="js/lagprobe.js?v=1.0.18"></script>
+  <script src="js/lagprobe.js?v=1.0.19"></script>
   <script src="js/game-menu.js?v=1.0.3"></script>
   <script src="js/ai-key-setting.js?v=1.0.5"></script>
   <script src="js/main.js?v=1.0.4"></script>

@@ -4,7 +4,7 @@
    3. 拆解 (Dismantle) 獲得一級寶石（帶 30% 損耗公式）
    4. 合成 (Combine) 低階寶石合成 5 階寶石
    5. 九宮格轉換 (Grid Transform) 寶石種類轉換
-   6. 融合 (Fusion) 5 階寶石融合與 fusedStatValue 5 階等值倍率運算
+   6. 融合寶石（神級寶石／舊存檔留下的實體）鑲嵌與 fusedStatValue 5 階等值倍率運算
 */
 
 const test = require('node:test');
@@ -151,43 +151,17 @@ test('5. 九宮格轉換 (Grid Transform) 穿透寶石流程', () => {
   assert.equal(ctx.gemCount('piercePhys', 5), 1, '2顆原料應獲得1顆同階物理穿透寶石');
 });
 
-test('6. 融合 (Fusion) 穿透寶石流程與 fusedStatValue 5 階等值倍率運算', () => {
+test('6. 融合寶石鑲嵌穿透屬性，數值依 fusedStatValue 的 5 階等值倍率運算', () => {
   const ctx = loadFullGameContext();
-  // 準備 2 顆 5 階物理穿透寶石 & 1 顆 5 階紅寶石
-  ctx.addGem('piercePhys', 5, 1);
-  ctx.addGem('ruby', 5, 1);
-
-  const ref1 = { kind: 'plain', type: 'piercePhys', lv: 5 };
-  const ref2 = { kind: 'plain', type: 'ruby', lv: 5 };
-
-  // 執行寶石融合
-  let fuseRes = ctx.fuseGemsV2(ref1, ref2);
-  // 如果隨機失敗，重複測試直到成功以驗證產出結構與 fusedStatValue 邏輯
-  for (let i = 0; i < 50 && !fuseRes.result; i++) {
-    ctx.addGem('piercePhys', 5, 1);
-    ctx.addGem('ruby', 5, 1);
-    fuseRes = ctx.fuseGemsV2(ref1, ref2);
-  }
-
-  assert.equal(fuseRes.err, undefined, '寶石融合不應報錯');
-  assert.ok(fuseRes.result, '應包含融合結果');
-
-  const fused = fuseRes.result;
-  assert.equal(fused.level, 5);
-  assert.ok(Array.isArray(fused.stats));
-  assert.equal(fused.stats.length, 2);
-
-  const physStat = fused.stats.find((s) => s.type === 'piercePhys');
-  assert.ok(physStat, '融合寶石應包含 piercePhys 屬性');
-  assert.ok(typeof physStat.mult === 'number', 'piercePhys 屬性應使用 5 階等值倍率 (mult)');
+  const fused = { id: 'fg-pen-1', level: 5, fusions: 1, leaves: 2, stats: [{ type: 'piercePhys', mult: 1.4 }, { type: 'ruby', mult: 1 }] };
+  ctx.G.player.fusedGems = [fused];
+  const physStat = fused.stats[0];
 
   // 驗證 fusedStatValue 計算：5 階 piercePhys 基礎值 = 50%
   const base5Val = ctx.gemStatValue('piercePhys', 5);
   assert.equal(base5Val, 50, '5 階物理穿透寶石基礎值應為 50%');
-
   const calculatedVal = ctx.fusedStatValue(physStat);
-  const expectedVal = Math.round(base5Val * physStat.mult * 100) / 100;
-  assert.equal(calculatedVal, expectedVal, 'fusedStatValue 應等於 50 * mult');
+  assert.equal(calculatedVal, Math.round(base5Val * physStat.mult * 100) / 100, 'fusedStatValue 應等於 50 * mult');
 
   // 測試將該融合寶石鑲嵌至裝備插槽
   const baseStats = ctx.computeStats();

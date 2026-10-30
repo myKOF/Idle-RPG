@@ -182,7 +182,7 @@ test('兩個新提示文字精確，拆解只保留清空與一鍵拆解，移�
   const html = readExpanded(path.join(ROOT, 'index.html'));
   assert.match(html, /data-tt-desc="選取上方寶石以合成更高階的寶石"/);
   assert.match(html, /data-tt-desc="選擇上方寶石進行拆解，可將高級寶石拆解為前一階寶石&#10;拆解過程不會產生任何損耗。"/);
-  const panel = html.slice(html.indexOf('data-gem-panel="dismantle"'), html.indexOf('data-gem-panel="fusion"'));
+  const panel = html.slice(html.indexOf('data-gem-panel="dismantle"'), html.indexOf('data-gem-panel="resonance"'));
   assert.deepEqual([...panel.matchAll(/<button id="([^"]+)"/g)].map(m => m[1]), ['gdis-clear', 'gdis-btn']);
   assert.doesNotMatch(panel, /id="gdis-(?:type|level|fused|result|all-btn)"/);
 });

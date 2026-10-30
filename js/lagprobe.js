@@ -215,7 +215,7 @@
     'checkForUpdates', 'saveGame', 'renderStatsPanel', 'renderQuestModal',
     'drawMiniCanvas', 'renderMiniWindow', 'syncUiScale', 'resize',
     // 寶石頁：整支與各子區塊分開量，才看得出是哪一塊慢
-    'renderGems', 'renderGemConvert', 'renderGemFusion', 'renderGemShop', 'renderGemDismantle', 'renderGemResonance',
+    'renderGems', 'renderGemConvert', 'renderGemShop', 'renderGemDismantle', 'renderGemResonance',
     'renderFuseInfo', 'updateShopCountdown',
     /* 技能頁：點技能圖標 → 升級彈窗。2026-09-12 回報「點了約 1 秒才彈出，彈窗裡的
        操作也一樣慢」，而這條路徑上原本一支都不在名單裡——正是本段開頭警告的那種

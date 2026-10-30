@@ -190,7 +190,6 @@ panel { name:'inv', params:{ detailIds?: [id, ...], full?: true } }
 | **一般寶石** | `type` + `level` | **沒有 id**，是計數。`socketGem(it, type)`、`dismantleGem(type, lv)` |
 | 技能、天賦、附魔書 | 定義鍵（definition key） | 不是實例 id |
 | 熔爐 | 數字 `id` | `nf.nextId++` 產生，型別是 `int` 不是 `str` |
-| 寶石融合素材 | `{ kind:'plain', type, lv }` 或 `{ kind:'fused', id }` | `fuseGemsV2(ref1, ref2)` |
 
 **解析改為逐指令白名單**：指令的 `resolve` 欄位列出哪些參數要由 id 解析成物件。
 v1 用「參數名叫 `itemId` 就自動解析」的慣例會出事——`forgePlaceItem(id)` 收的是字串 id，

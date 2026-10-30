@@ -3907,7 +3907,6 @@ html *::-webkit-scrollbar-corner {
 #tab-gems[data-gem-tool="compose"] [data-gem-tool-btn="compose"],
 #tab-gems[data-gem-tool="convert"] [data-gem-tool-btn="convert"],
 #tab-gems[data-gem-tool="dismantle"] [data-gem-tool-btn="dismantle"],
-#tab-gems[data-gem-tool="fusion"] [data-gem-tool-btn="fusion"],
 #tab-gems[data-gem-tool="shop"] [data-gem-tool-btn="shop"],
 #tab-gems[data-gem-tool="resonance"] [data-gem-tool-btn="resonance"] {
   border-color: #7a6440;
@@ -3931,7 +3930,6 @@ html *::-webkit-scrollbar-corner {
 #tab-gems[data-gem-tool="compose"] .gx-panel[data-gem-panel="compose"],
 #tab-gems[data-gem-tool="convert"] .gx-panel[data-gem-panel="convert"],
 #tab-gems[data-gem-tool="dismantle"] .gx-panel[data-gem-panel="dismantle"],
-#tab-gems[data-gem-tool="fusion"] .gx-panel[data-gem-panel="fusion"],
 #tab-gems[data-gem-tool="shop"] .gx-panel[data-gem-panel="shop"],
 #tab-gems[data-gem-tool="resonance"] .gx-panel[data-gem-panel="resonance"] {
   display: flex;
@@ -3943,12 +3941,6 @@ html *::-webkit-scrollbar-corner {
 #tab-gems .gx-panel .chip-row,
 #tab-gems .gx-panel .gem-result {
   margin: 0;
-}
-
-#tab-gems #gem-fusion-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
 }
 
 #tab-gems .gx-row {

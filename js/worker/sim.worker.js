@@ -11,7 +11,7 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-importScripts('protocol.js?v=20261029-divine-forge-experience', '../game-clock.js?v=1.0.1', 'shim.js?v=20261018-potential-remove');
+importScripts('protocol.js?v=20261030-gem-fusion-removed', '../game-clock.js?v=1.0.1', 'shim.js?v=20261018-potential-remove');
 // 離線結算等分批工作亦共用暫停時鐘；訊息與loop仍能回應存檔及PING。
 if (typeof GameClock !== 'undefined') {
   globalThis.setTimeout = GameClock.setTimeout;
@@ -20,8 +20,8 @@ if (typeof GameClock !== 'undefined') {
 /* String 表：資料檔版本由主執行緒（bridge.js）以網址 sv= 傳入，改文字不必動本檔。 */
 var _stringDataVersion = ((typeof self !== 'undefined' && self.location && /[?&]sv=(\w+)/.exec(self.location.search || '')) || [])[1] || '0';
 importScripts(
-  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../data.js?v=20261030-god-zone-previous-clear', '../runeword_data.js?v=20261028-develop-merge-a8acfe', '../gem_resonance_data.js?v=20261028-develop-merge-a8acfe','../status.js?v=20261028-develop-merge-a8acfe', '../formula.js?v=20261029-direct-excel-cast-hold', '../battle-terrain.js?v=20261022-lava-terrain-develop-merge', '../battlefield.js?v=20261029-merge-cd5ad556', '../stats.js?v=20261028-develop-merge-a8acfe',
-  '../item.js?v=20261030-unlock-progress', '../gem_resonance.js?v=20261030-unlock-progress','../runeword.js?v=20261023-str-common',
+  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../data.js?v=20261030-gem-fusion-removed', '../runeword_data.js?v=20261028-develop-merge-a8acfe', '../gem_resonance_data.js?v=20261028-develop-merge-a8acfe','../status.js?v=20261028-develop-merge-a8acfe', '../formula.js?v=20261030-gem-fusion-removed', '../battle-terrain.js?v=20261022-lava-terrain-develop-merge', '../battlefield.js?v=20261029-merge-cd5ad556', '../stats.js?v=20261028-develop-merge-a8acfe',
+  '../item.js?v=20261030-gem-fusion-removed', '../gem_resonance.js?v=20261030-unlock-progress','../runeword.js?v=20261023-str-common',
   '../skills.js?v=20261029-merge-cd5ad556', '../skills2.js?v=20261028-sync-cloud-control', '../elite_data.js?v=20261028-develop-merge-a8acfe', '../talents.js?v=20261030-unlock-progress',
   '../player.js?v=20261030-unlock-progress', '../special_rules.js?v=20261030-unlock-progress',
   '../combat.js?v=20261028-sync-cloud-control', '../elite.js?v=20261028-develop-merge-a8acfe', '../elite_boss.js?v=20261023-str-battle', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261028-develop-merge-a8acfe', '../tower.js?v=20261028-sync-cloud-control',

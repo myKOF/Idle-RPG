@@ -4003,7 +4003,6 @@ textarea#save-io {
 
 /* 寶石庫�?：�?神�??��??�縮小�? 30%，改?�方形�?示便?�辨識�??�寶??*/
 #gconv-pool,
-#gfuse-pool,
 #gdis-fused {
   display: grid;
   grid-template-columns: repeat(auto-fill, 48px);
@@ -4013,9 +4012,7 @@ textarea#save-io {
 }
 
 #gconv-pool .gem-inventory-cell,
-#gfuse-pool .gem-inventory-cell,
-#gdis-fused .gem-inventory-cell,
-#gfuse-slots .gem-inventory-cell {
+#gdis-fused .gem-inventory-cell {
   position: relative;
   width: 48px;
   height: 48px;
@@ -4032,14 +4029,12 @@ textarea#save-io {
 }
 
 #gconv-pool .gem-chip-emoji,
-#gfuse-pool .gem-chip-emoji,
 #gdis-fused .gem-chip-emoji {
   font-size: 17px;
   line-height: 1;
 }
 
 #gconv-pool .gem-chip-count,
-#gfuse-pool .gem-chip-count,
 #gdis-fused .gem-chip-count {
   position: absolute;
   left: 3px;
@@ -4051,7 +4046,6 @@ textarea#save-io {
 }
 
 #gconv-pool .gem-chip-level,
-#gfuse-pool .gem-chip-level,
 #gdis-fused .gem-chip-level {
   position: absolute;
   left: 0;

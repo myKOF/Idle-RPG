@@ -137,7 +137,7 @@ function validArgs(c, name) {
   const args = {};
   for (const [key, type] of Object.entries(c.COMMANDS[name].args)) {
     if (type.endsWith('?')) continue;
-    args[key] = type === 'ref' ? { kind: 'plain', type: 'ruby', lv: 1 } : type === 'int' ? (key === 'fromLv' ? 1 : 0) : type === 'num' ? 0 : type === 'bool' ? true : 'example';
+    args[key] = type === 'int' ? (key === 'fromLv' ? 1 : 0) : type === 'num' ? 0 : type === 'bool' ? true : 'example';
   }
   assert.equal(c.validateCommand(name, args), null, name);
   return args;
@@ -169,7 +169,7 @@ test('BOSS 中全部配置指令在 UI 與 Worker 拒絕，不改物品／金幣
 
 test('BOSS 戰保留瀏覽／改名／素材合成與一般技能升級', async () => {
   const c = configEnvironment();
-  for (const name of ['player.setEquipView', 'player.renameEquipSet', 'gem.compose', 'gem.fuse', 'rune.compose',
+  for (const name of ['player.setEquipView', 'player.renameEquipSet', 'gem.compose', 'rune.compose',
     'skill2.learn', 'skill2.max', 'item.setLock', 'tower.flee']) {
     assert.equal(c.bossFightBlocksCommand(name), false, name);
     assert.equal(c.runCommand(name, validArgs(c, name)).ok, true, name);

@@ -87,13 +87,11 @@ test('全部合成與強化材料只消耗開放種類，庫存總數仍包含�
   assert.equal(c.gemCount('sapphire', 2), 1);
 });
 
-test('關閉的一般及混合融合寶石不能融合、拆解或鑲嵌', () => {
+test('關閉的一般及混合融合寶石不能拆解或鑲嵌', () => {
   const c = game(), before = JSON.stringify(c.G);
   const eq = { rarity: 4, slot: 'helmet', sockets: [null] };
   assert.match(c.socketGem(eq, 'ruby', 0, 5), /已關閉/);
   assert.match(c.socketFusedGem(eq, 'old', 0), /已關閉/);
-  assert.ok(c.fuseGemsV2({ kind: 'plain', type: 'ruby', lv: 5 }, { kind: 'plain', type: 'sapphire', lv: 5 }).err);
-  assert.ok(c.fuseGemsV2({ kind: 'fused', id: 'old' }, { kind: 'plain', type: 'sapphire', lv: 5 }).err);
   assert.match(c.dismantleFusedGem('old').err, /已關閉/);
   assert.equal(JSON.stringify(c.G), before);
   assert.equal(eq.sockets[0], null);

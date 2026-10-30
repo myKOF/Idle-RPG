@@ -367,9 +367,13 @@ scalar('data', 'REINCARNATION_MAX', '1-成長經驗', '可轉生等級 / 最高�
     scalarValue('data', levelVar, u.level, levelVar + '（system_unlock）');
     scalarValue('data', reincVar, u.reinc, reincVar + '（system_unlock）');
   };
-  // 神鑄四功能門檻由 game_parameters「6-新版神鑄」管理。
+  // 神鑄四功能（裝備神鑄／太古精鑄／神級寶石／神聖刻印）：只看轉生次數，等級欄必須填 1。
+  [['裝備神鑄', 'equipUnlock'], ['太古精鑄', 'ancientUnlock'], ['神級寶石', 'gemUnlock'], ['神聖刻印', 'imprintUnlock']].forEach(([sysName, field]) => {
+    const u = systemUnlock(sysName);
+    if (Number(u.level) !== 1) throw new Error('system_unlock.csv 「' + sysName + '」只支援轉生次數門檻，等級欄必須是 1（目前 ' + u.level + '）');
+    objFieldMLValue('data', 'DIVINE_FORGE = {', field, u.reinc, '神鑄（system_unlock）');
+  });
   bind('天堂威能', 'TALENT_UNLOCK_LEVEL', 'TALENT_UNLOCK_REINCARNATION');
-  bind('寶石融合', 'GEM_FUSION_UNLOCK_LEVEL', 'GEM_FUSION_UNLOCK_REINCARNATIONS');
   bind('寶石共鳴', 'GEM_RESONANCE_UNLOCK_LEVEL', 'GEM_RESONANCE_UNLOCK_REINCARNATION');
   const sets = ['裝備方案 第1套', '裝備方案 第2套', '裝備方案 第3套'].map(systemUnlock);
   [['EQUIP_SET_UNLOCK_LEVELS', 'level'], ['EQUIP_SET_UNLOCK_REINCARNATIONS', 'reinc']].forEach(([varName, key]) => {
@@ -399,10 +403,6 @@ scalar('data', 'REINCARNATION_MAX', '1-成長經驗', '可轉生等級 / 最高�
   const weights = ['神聖詞條刻印權重','太古詞條刻印權重','神聖鑲孔刻印權重','額外普通詞條刻印權重','額外太古詞條刻印權重','額外傳奇特效刻印權重','無效果刻印權重'];
   if (!(weights.reduce((sum, name) => sum + number(name), 0) > 0)) throw Error('刻印權重總和必須大於0');
 }
-objFieldML('data', 'DIVINE_FORGE = {', 'equipUnlock', '6-新版神鑄', '裝備神鑄開放轉數', 0, '神鑄.equipUnlock');
-objFieldML('data', 'DIVINE_FORGE = {', 'ancientUnlock', '6-新版神鑄', '太古精鑄開放轉數', 0, '神鑄.ancientUnlock');
-objFieldML('data', 'DIVINE_FORGE = {', 'gemUnlock', '6-新版神鑄', '神級寶石開放轉數', 0, '神鑄.gemUnlock');
-objFieldML('data', 'DIVINE_FORGE = {', 'imprintUnlock', '6-新版神鑄', '神聖刻印開放轉數', 0, '神鑄.imprintUnlock');
 objFieldML('data', 'DIVINE_FORGE = {', 'equipMythicRate', '6-新版神鑄', '裝備神鑄神話成功率', 0, '神鑄.equipMythicRate');
 objFieldML('data', 'DIVINE_FORGE = {', 'equipGenesisRate', '6-新版神鑄', '裝備神鑄創世成功率', 0, '神鑄.equipGenesisRate');
 objFieldML('data', 'DIVINE_FORGE = {', 'equipChaosRate', '6-新版神鑄', '裝備神鑄混沌成功率', 0, '神鑄.equipChaosRate');
@@ -481,9 +481,6 @@ scalar('data', 'GEM_FORGE_MAX_LEVEL', '表-固定參數', '寶石一般上限 / 
 scalar('data', 'GEM_COMPOSE_INPUT_COUNT', '8-寶石', '寶石合成(手動)', 0);
 scalar('data', 'GEM_COMPOSE_HIGH_INPUT_COUNT', '8-寶石', '寶石合成(手動)', 1);
 scalar('data', 'GEM_COMPOSE_TOP_INPUT_COUNT', '8-寶石', '寶石合成(手動)', 2);
-scalar('data', 'GEM_FUSE_BASE_RATE', '8-寶石', '寶石融合成功率', 1);
-scalar('data', 'GEM_FUSE_RATE_DECAY', '8-寶石', '寶石融合成功率', 2);
-scalar('data', 'GEM_FUSE_MIN_RATE', '8-寶石', '寶石融合成功率', 0);
 scalarValue('data', 'GEM_SHOP_MAX_LEVEL', 20, 'GEM_SHOP_MAX_LEVEL');
 scalar('data', 'GEM_SHOP_REFRESH_BASE', '8-寶石商店', '手動刷新費用', 0);
 scalar('data', 'GEM_SHOP_REFRESH_EXPONENT', '8-寶石商店', '手動刷新費用', 1);

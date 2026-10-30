@@ -102,7 +102,7 @@ test('神級寶石需要兩種10級各3顆；75%雙屬性隨配置回算、鑲�
   for(const s of fg.stats)assert.equal(c.fusedStatValue(s),c.gemStatValue(s.type,10)*.75);
   const it=gear(c);assert.equal(c.socketFusedGem(it,fg.id,0),null);
   c.unsocketGem(it,0);assert.equal(c.G.player.fusedGems[0].id,fg.id);
-  assert.ok(c.dismantleFusedGem(fg.id).err);assert.equal(c.normalizeFuseMaterial({kind:'fused',id:fg.id}),null);
+  assert.ok(c.dismantleFusedGem(fg.id).err);
   const saved=JSON.stringify(c.G);c.G=c.migrateSave(JSON.parse(saved));
   assert.equal(c.G.player.fusedGems[0].stats[0].divine,true);
 });

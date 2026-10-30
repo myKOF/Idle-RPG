@@ -1869,15 +1869,6 @@ var GEM_COMPOSE_HIGH_INPUT_COUNT = 4;
 var GEM_COMPOSE_TOP_INPUT_COUNT = 6;
 var FUSE_GOLD_COST = [0, 100, 300, 900, 2700, 8100, 24300, 72900, 218700, 656100]; // 金幣費用，依素材等級
 
-/* ---- 寶石融合 v2（僅限 5 階）----
-   不同屬性 x2 → 雙屬性寶石（數值隨機）；同屬性 → 數值介於兩者間、上限 2 倍。
-   成功率 60%，融合成品每成功一次 -10%（最低 10%）。
-   失敗：較弱的一顆降解為低階寶石（4~8 顆 1 級或 2~4 顆 2 級同屬性）。 */
-var GEM_FUSE_BASE_RATE = 60;
-var GEM_FUSE_RATE_DECAY = 10;
-var GEM_FUSE_MIN_RATE = 10;
-var GEM_FUSION_UNLOCK_LEVEL = 9999;
-var GEM_FUSION_UNLOCK_REINCARNATIONS = 11;
 var GEM_RESONANCE_UNLOCK_LEVEL = 1;           // 寶石共鳴解鎖等級（system_unlock 表；與轉生次數須同時滿足）
 var GEM_RESONANCE_UNLOCK_REINCARNATION = 4;   // 寶石共鳴解鎖所需轉生次數（system_unlock 表）
 

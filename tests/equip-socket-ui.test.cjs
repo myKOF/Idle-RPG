@@ -36,7 +36,7 @@ function mount(){
   c.uiGemsPanelSnapshot=()=>({gems:{ruby:{1:3,5:2},sapphire:{2:1}},fusedGems:[{id:'f',level:5,stats:[{type:'ruby',mult:1}],fusions:1}]});
   c.hideAffixPool=c.hideTooltip=c.updateSelectionUI=()=>{};c.UI.tab='equip';c.UI.sel={id:'gear',source:'equip'};c.pending=new Set();c.isUiCommandPending=k=>c.pending.has(k);
   c.commands=[];c.sendUiCommand=(name,args,opts)=>{c.commands.push({name,args:JSON.parse(JSON.stringify(args))});opts.keys.forEach(k=>c.pending.add(k));c.renderDetail();return new Promise(resolve=>c.finish=result=>{c.pending.clear();resolve(result);});};
-  const start=ui.indexOf('    // 洗煉模式：點詞條'),end=ui.indexOf('    // 寶石融合 v2：',start);assert(start>=0&&end>start);
+  const start=ui.indexOf('    // 洗煉模式：點詞條'),end=ui.indexOf('    // 寶石商店：單顆購買',start);assert(start>=0&&end>start);
   vm.runInContext('function areaClick(e){'+ui.slice(start,end)+'}',c);
   const enchantStart=ui.indexOf("    var er = e.target.closest('[data-enchant-remove]');"),enchantEnd=ui.indexOf("    var tf = e.target.closest('[data-tower-floor]');",enchantStart);
   assert(enchantStart>=0&&enchantEnd>enchantStart);vm.runInContext('function enchantClick(e){'+ui.slice(enchantStart,enchantEnd)+'}',c);
