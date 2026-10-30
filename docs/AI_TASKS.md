@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## WORLD-MAP-PORTAL-STABILITY-COLOR-20261030 — 轉場定位與神界入口繽紛光效
+
+- Owner：Codex；Done，單一開發者。使用者回報轉場時兩端傳送門／返回門光效偏移，補充神界入口光暈與漩渦需更繽紛。前置為已完成兩界2.5秒轉場；確認全域disabled的transform:none!important覆蓋地圖定位，實測入口偏移半個按鈕寬高。
+- 允許world-map.css、index門內SVG漸層／CSS快取、WORLD_MAP／LV與本段；必要時相關回歸。禁止改玩法／解鎖／進度／Worker／存檔／String／地圖圖片／其他任務程式與合併推送。純CSS／既有內嵌SVG介面裝飾，無獨立素材或素材庫變更。
+- 預檢無外部分支衝突。本副本另有GOD-SCENERY-REBUILD進行中：index僅改CSS版號及門漸層、AI_TASKS僅檔頭新增本段，與對方script快取及檔尾任務無重疊／語意依賴；提交只暫存本項區段，保留對方修改。
+- 驗雙向轉場前／期間／完成的門體及場景標籤座標、神界門洞光效定位與可見彩色層次、取消／重開及Console、既有地圖／快取／文字回歸與Build／diff後獨立Commit，交正常Review／合併並更新8131測試服。
+- 完成五檔：world-map.css對地圖熱區／雙向門的disabled局部保留translate!important與彩度／透明度，保留原防重入；入口門內底色／氣流／漩渦漸層／光暈／粒子改青藍、紫羅蘭、玫紅與淡金，index CSS1.0.12與兩段SVG漸層、WORLD_MAP／LV及本段同步。未改地圖原圖、門框造型／動畫時長／JS定位與玩法資料，無新增獨立素材／素材庫Commit。
+- 驗證：node --test --test-reporter=spec tests/world-map-ui.test.cjs tests/world-map.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs全部36/36通過；npm.cmd run build604檔通過；git diff --check通過。純樣式與配色不新增鏡像測試，原36項時序／取消／解鎖／互動斷言保持。
+- 真瀏覽器8131先重現舊入口x77.164→121.266、y278.305→330.422且transform變none；重載後入口及七標籤所有rect／transform在轉場前與期間完全一致，神界返回門及門洞光效前／期間／下次完成後座標完全一致，雙向切圖／Esc取消／重開正常。彩色效果實拍portal-color-stable.png及portal-fixed-transit.png、座標report存本聊天visualizations/god-world-map；留下人界入口供測試。Console無本項錯誤；同副本另一造景進行中修改有divine-god-blade.png HTTP404建圖回退warning，未納入本項或自行修改。未調玩家進度／戰鬥設定；未另跑多瀏覽器或減少動態偏好實測，既有縮減規則不變。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、ui-world-map.js及相關回歸、共用style.css、String／Worker／存檔／地圖圖片／素材庫。自我Review完成，可供Review／合併，無本項未完成實作；遊戲Commit為本段所在「[Codex] fix: 穩定轉場傳送門定位並豐富光效配色」。僅本項五檔區段提交，其餘造景進行中修改保留、不暫存；未合併推送。下一步由使用者正常整合，8131重載可直接測試。
+
 ## WORLD-MAP-REALM-TRANSITION-20261030 — 兩界大地圖傳送轉場
 
 - Owner：Codex；Done，單一開發者。使用者要求人界→神界及神界→人界大地圖有約2～3秒轉場；採2.5秒門口光芒擴散、遮蔽中點切頁、另一界顯現。兩端門與既有位面頁籤一致，僅切大地圖，不改玩家場景。
