@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## EQUIPMENT-GODFORGED-APPEARANCE-20261030 — 神鑄裝備沿用原品質外觀
+
+- Owner：Codex；Done，單一開發者。使用者要求神鑄裝備的icon、tips、詳情等介面與對應非神鑄品質一致；沿用data.js既有divineForgeBaseRarity映射，神鑄神話／創世／混沌分別共用神話／創世／混沌外觀；混沌保留既有流動框。
+- 前置：既有品質CSS及神鑄品質映射完成。允許js/ui.js顯示邏輯、index該檔快取、兩項既有裝備tips／雙手顯示回歸、LV與本段；禁止改玩法／數值／名稱／存檔／Worker／Excel／素材及其他工作區、合併推送。六檔衝突預檢無外部來源；本副本地圖／神界造景進行中，index只改ui.js版號，LV及AI_TASKS只加本段，逐段暫存保留他項修改。
+- 驗背包／神鑄共用背包、身上裝備／雙手副手、神鑄材料槽、單卡／比較tips、詳情品質切換及空選取；相關回歸、瀏覽器／Console、Build與diff後獨立Commit，交正常Review／使用者整合。無獨立素材或素材庫變更。
+
+- 完成六檔：ui.js共用既有divineForgeBaseRarity，在背包／神鑄背包、身上裝備／雙手共用副手與神鑄材料槽使用對應原品質色與效果class；tips／比較卡及詳情共同套用品質class。神話沿暖金框／內襯、創世沿銀白雕飾／紫底；混沌保留原流動框，神鑄混沌配色對齊混沌。index UI快取1.0.236，LV及本段同步；兩個既有回歸改按新規格驗三組映射及混合品質比較，不改玩法／數值／名稱或CSS素材。
+- 驗證：node --test --test-reporter=spec tests/equipment-tooltip-compare.test.cjs tests/equipment-two-hand-display.test.cjs tests/equipment-selection-border.test.cjs tests/equip-reroll-ui.test.cjs tests/equip-socket-ui.test.cjs tests/forge-shared-inventory.test.cjs tests/inventory-mythic-skin.test.cjs tests/godforged-border-effect.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs全部79/79通過；npm.cmd run build 604檔通過；git diff --check及暫存diff檢查通過。
+- 擴大檢查加入forge-auto-menu後為80/81：唯一失敗的舊斷言禁止forge.setAuto，但現行功能已有此指令。以唯讀fs覆映將該套件ui.js來源改讀git show HEAD:js/ui.js，修改前同為1過／1失敗、同一斷言，未修改該測試或無關自動神鑄功能。
+- 瀏覽器：獨立IAB、本機8136隔離fixture載入正式UI／item／formula及全套CSS，沒有玩家存檔／真Worker。31項核對含三組背包及神鑄背包、裝備／雙手副手、正式神鑄材料槽、tips／詳情及取消選取；三組實際computed圖示class／底色／邊框與tips卡框底色一致。Console error／warning 0；comparison.png、browser-report.json及fixture保留本聊天visualizations/godforged-appearance。未驗完整遊玩或多瀏覽器。
+- 唯讀未改：規範／Workflow／prompts、data.js品質映射及武器圖示、item.js顯示／數值、style.css與神話背包背景快取、String／Worker、神鑄及鑲嵌既有回歸；其他地圖／神界造景任務工作檔均保留。自我Review完成，無本項未完成實作，既有神鑄選單測試失敗留後續修正；可供Review／合併。本次僅六檔自身增量獨立Commit，無素材庫修改／Commit，未合併推送。Commit為本段所在「[Codex] fix: 神鑄裝備沿用對應原品質外觀」，編號見交付；下一步正常整合並重新載入主頁。
+
 ## WORLD-MAP-PORTAL-STABILITY-COLOR-20261030 — 轉場定位與神界入口繽紛光效
 
 - Owner：Codex；Done，單一開發者。使用者回報轉場時兩端傳送門／返回門光效偏移，補充神界入口光暈與漩渦需更繽紛。前置為已完成兩界2.5秒轉場；確認全域disabled的transform:none!important覆蓋地圖定位，實測入口偏移半個按鈕寬高。

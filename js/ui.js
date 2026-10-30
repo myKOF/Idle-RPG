@@ -4955,8 +4955,8 @@ function itemIconFile(it, info) {
   return weaponIcon || (info && info.icon) || '';
 }
 function itemCellHTML(it, source, extraClass, pendingKey) {
-  var r = RARITIES[it.rarity];
-  var effClass = (it.rarity === 6) ? ' eff-mythic' : (it.rarity >= GODFORGED_IDX ? ' eff-godforged' : (it.rarity === 7 ? ' eff-genesis' : ''));
+  var r = RARITIES[divineForgeBaseRarity(it.rarity)];
+  var effClass = itemRarityEffectClass(it);
   var info = SLOT_INFO[it.slot];
   var iconFile = itemIconFile(it, info);
   var iconHtml = iconFile ? '<img src="images/' + iconFile + '" class="item-icon">' : '<span class="ic-emoji">' + info.emoji + '</span>';
@@ -5059,6 +5059,16 @@ function syncItemGridCells(box, keys, htmls) {
   }
 }
 
+// 只映射顯示外觀，裝備本身的品質、名稱與數值仍使用原始 rarity。
+function itemRarityEffectClass(it) {
+  var rarity = divineForgeBaseRarity(it.rarity);
+  return rarity === 6 ? ' eff-mythic' : rarity === 7 ? ' eff-genesis' : rarity === 9 ? ' eff-godforged' : '';
+}
+function itemDetailClass(it) {
+  var rarity = it && divineForgeBaseRarity(it.rarity);
+  return rarity === 6 ? ' mythic-detail' : rarity === 7 ? ' genesis-detail' : '';
+}
+
 function twoHandSharedBadgeHTML(detail) {
   return '<span class="twohand-shared-tag' + (detail ? ' twohand-shared-note' : '') + '">' +
     '<svg viewBox="0 0 20 12" aria-hidden="true"><path d="M8 3H5a3 3 0 000 6h3m4-6h3a3 3 0 010 6h-3M6 6h8"></path></svg>' + STR(1185) + '</span>';
@@ -5096,8 +5106,8 @@ function renderEquip() {
     var inert = !!it && slot === 'weapon2' && !twoHandDuplicate && !asuraOn &&
       typeof isTwoHandItem === 'function' && isTwoHandItem(it);
     if (it) {
-      var r = RARITIES[it.rarity];
-      var effClass = (it.rarity === 6) ? ' eff-mythic' : (it.rarity >= GODFORGED_IDX ? ' eff-godforged' : (it.rarity === 7 ? ' eff-genesis' : ''));
+      var r = RARITIES[divineForgeBaseRarity(it.rarity)];
+      var effClass = itemRarityEffectClass(it);
       var iconFile = itemIconFile(it, info);
       var iconHtml = iconFile ? '<img src="images/' + iconFile + '" class="eq-icon">' : '<div class="eq-emoji">' + info.emoji + '</div>';
       var flashHtml = equipFlashActive(slot) ? '<span class="equip-flash-overlay" aria-hidden="true"></span>' : '';
@@ -5885,9 +5895,10 @@ function renderDetail() {
     requestPanelData('inv', true, { detailIds: [it.id] });
     return;
   }
-  if (it && it.rarity === 6) pane.classList.add('mythic-detail');
+  var detailClass = itemDetailClass(it);
+  if (detailClass === ' mythic-detail') pane.classList.add('mythic-detail');
   else pane.classList.remove('mythic-detail');
-  if (it && it.rarity === 7) pane.classList.add('genesis-detail');
+  if (detailClass === ' genesis-detail') pane.classList.add('genesis-detail');
   else pane.classList.remove('genesis-detail');
   if (twoHandShared) pane.classList.add('twohand-shared');
   else pane.classList.remove('twohand-shared');
@@ -6859,7 +6870,7 @@ function renderForge() {
   for (var i = 0; i < FORGE_SLOTS; i++) {
     var it = f.slots[i], pos = FORGE_SLOT_POS[i], active = i < needed;
     var content = '', cls = 'forge-slot ' + (it ? 'filled' : 'empty') + (active ? '' : ' forge-inactive');
-    if (it && it.kind !== 'gem') cls += (it.rarity === 6) ? ' eff-mythic' : (it.rarity >= GODFORGED_IDX ? ' eff-godforged' : (it.rarity === 7 ? ' eff-genesis' : '')); // 與背包格同一套品質底框
+    if (it && it.kind !== 'gem') cls += itemRarityEffectClass(it); // 與背包格同一套品質底框
     var attrs = ' style="left:' + pos.x + '%;top:' + pos.y + '%;" data-forge-slot="' + i + '"';
     if (it && it.kind === 'gem') content = gemIconHTML(it.type, it.level, 'gi-cell');
     else if (it) {
@@ -6867,7 +6878,8 @@ function renderForge() {
       content = icon ? '<img class="item-icon" src="images/' + icon + '" alt="">' : info.emoji;
       content += ancientStarBadgeHTML(it) + '<span class="ic-lv">' + it.level + '</span>';
       attrs += ' data-id="' + esc(it.id) + '"';
-      attrs = attrs.replace('style="', 'style="border-color:' + RARITIES[it.rarity].color + ';box-shadow:inset 0 0 10px ' + RARITIES[it.rarity].color + '33;');
+      var rarityColor = RARITIES[divineForgeBaseRarity(it.rarity)].color;
+      attrs = attrs.replace('style="', 'style="border-color:' + rarityColor + ';box-shadow:inset 0 0 10px ' + rarityColor + '33;');
     }
     if (!it) attrs += ' data-tip="' + esc(active ? STR(2198, i + 1) : STR(2199)) + '"';
     keys.push('slot:' + i);
@@ -9521,11 +9533,11 @@ function showItemTooltip(it, anchorEl, opts) {
 
   var h = '';
   var twoHandShared = uiIsTwoHandSharedSlot(it, tooltipSource, anchorEl && anchorEl.getAttribute('data-slot'));
-  var mainCard = '<div class="equip-detail-card' + (it.rarity === 6 ? ' mythic-detail' : it.rarity === 7 ? ' genesis-detail' : '') +
+  var mainCard = '<div class="equip-detail-card' + itemDetailClass(it) +
     (twoHandShared ? ' twohand-shared' : '') + '">' +
     (twoHandShared ? twoHandSharedBadgeHTML(true) : '') + detailHtml + '</div>';
   if (compareItem && compareItem.id !== it.id) {
-    var compCard = '<div class="equip-detail-card' + (compareItem.rarity === 6 ? ' mythic-detail' : compareItem.rarity === 7 ? ' genesis-detail' : '') + '">' + itemDetailHTML(compareItem, null, {
+    var compCard = '<div class="equip-detail-card' + itemDetailClass(compareItem) + '">' + itemDetailHTML(compareItem, null, {
       equipment: tooltipEquipment,
       asuraOn: uiAsuraDualWield(),
       isEquipped: true,

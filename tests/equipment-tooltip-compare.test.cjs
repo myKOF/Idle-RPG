@@ -28,7 +28,8 @@ function tooltip(sourceName, item, target, checked = true, equippedRarity = 5, c
     itemDetailHTML(it, unused, opts) { cards.push({ id: it.id, equipped: !!opts.isEquipped }); return '<div>' + it.id + '</div>'; }
   };
   vm.createContext(c);
-  vm.runInContext(source.slice(source.indexOf('function twoHandSharedBadgeHTML('), source.indexOf('function renderEquip(')), c);
+  vm.runInContext(fs.readFileSync(path.join(__dirname, '../js/data.js'), 'utf8').match(/^function divineForgeBaseRarity[^\n]+/m)[0], c);
+  vm.runInContext(source.slice(source.indexOf('function itemRarityEffectClass('), source.indexOf('function renderEquip(')), c);
   vm.runInContext(source.slice(source.indexOf('function showItemTooltip('), source.indexOf('function showTowerTooltip(')), c);
   c.showItemTooltip(item, { getAttribute: name => name === 'data-src' ? sourceName : name === 'data-slot' ? target : null, getBoundingClientRect: () => ({ left: 10, right: 60, top: 40 }) });
   return { tip, cards };
@@ -63,14 +64,17 @@ test('關閉比較、空目標槽或相同裝備維持單卡', () => {
   assert.equal(tooltip('inv', { id: 'ring-worn-1' }, 'ring').cards.length, 1);
 });
 
-test('混合品質比較各自保留神話與創世框，單卡及其他高品質不誤用樣式', () => {
+test('混合品質比較依原品質套框，包含神鑄神話與神鑄創世，混沌不誤套框', () => {
   const classes = result => Array.from(result.tip.innerHTML.matchAll(/class="(equip-detail-card[^"]*)"/g), m => m[1]);
   for (let rarity = 0; rarity <= 11; rarity++) {
     const item = { id: 'candidate', rarity };
-    const expected = rarity === 6 ? 'equip-detail-card mythic-detail' : rarity === 7 ? 'equip-detail-card genesis-detail' : 'equip-detail-card';
+    const expected = [6, 11].includes(rarity) ? 'equip-detail-card mythic-detail' : [7, 8].includes(rarity) ? 'equip-detail-card genesis-detail' : 'equip-detail-card';
     assert.deepEqual(classes(tooltip('equip', item, 'weapon')), [expected]);
     assert.deepEqual(classes(tooltip('inv', item, 'weapon', true, 6)), [expected, 'equip-detail-card mythic-detail']);
     assert.deepEqual(classes(tooltip('inv', item, 'weapon', true, 7)), [expected, 'equip-detail-card genesis-detail']);
+    assert.deepEqual(classes(tooltip('inv', item, 'weapon', true, 11)), [expected, 'equip-detail-card mythic-detail']);
+    assert.deepEqual(classes(tooltip('inv', item, 'weapon', true, 8)), [expected, 'equip-detail-card genesis-detail']);
+    assert.deepEqual(classes(tooltip('inv', item, 'weapon', true, 10)), [expected, 'equip-detail-card']);
     assert.deepEqual(classes(tooltip('inv', item, 'weapon', true, 5)), [expected, 'equip-detail-card']);
   }
 });

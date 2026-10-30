@@ -33,7 +33,7 @@ test('雙手武器在副手欄顯示同一把武器，但仍以視覺 duplicate 
       weapon2: { icon: 'icon_weapon.png', emoji: '⚔️' }
     },
     GODFORGED_IDX: 8,
-    RARITIES: [{ color: '#9aa5b1' }],
+    RARITIES: Array.from({ length: 12 }, (_, i) => ({ color: 'rarity-' + i })),
     uiEquipPanelSnapshot: () => ({ equipView: 0, equipActive: 0, sets: [{ weapon: twoHand, weapon2: null }] }),
     uiHeaderPanelSnapshot: () => ({ player: {} }),
     equipViewEquipment: (snapshot) => snapshot.sets[0],
@@ -49,7 +49,8 @@ test('雙手武器在副手欄顯示同一把武器，但仍以視覺 duplicate 
     uiAsuraDualWield: () => false
   };
   vm.createContext(context);
-  vm.runInContext(functionBody('twoHandSharedBadgeHTML') + '\n' + functionBody('renderEquip'), context);
+  vm.runInContext(fs.readFileSync(path.join(root, 'js/data.js'), 'utf8').match(/^function divineForgeBaseRarity[^\n]+/m)[0], context);
+  vm.runInContext(functionBody('itemRarityEffectClass') + '\n' + functionBody('twoHandSharedBadgeHTML') + '\n' + functionBody('renderEquip'), context);
   context.renderEquip();
 
   const html = equipGrid.innerHTML;
@@ -60,6 +61,14 @@ test('雙手武器在副手欄顯示同一把武器，但仍以視覺 duplicate 
   assert.doesNotMatch(html, /slot-weapon2[^>]*twohand-occupied/);
   assert.equal((html.match(/雙手共用/g) || []).length, 1);
   assert.match(html, /slot-weapon2[\s\S]*twohand-shared-tag/);
+  for (const [base, forged] of [[6, 11], [7, 8], [9, 10]]) {
+    twoHand.rarity = base;
+    context.renderEquip();
+    const original = equipGrid.innerHTML;
+    twoHand.rarity = forged;
+    context.renderEquip();
+    assert.equal(equipGrid.innerHTML, original, 'main/off-hand appearance must match base rarity ' + base);
+  }
 });
 
 test('雙手武器裝備成功時，主手與副手都進入閃光狀態', () => {
