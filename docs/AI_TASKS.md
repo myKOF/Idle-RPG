@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## GOD-ZONE-PREVIOUS-CLEAR-20261030 — 神界依前圖末關通關解鎖
+
+- Owner：Codex；Done，單一開發者。使用者要求神界三圖移除轉生／等級門檻，與人界相同只看前一張地圖最高關通關；前置既有世界地圖與通關紀錄完成。
+- 允許：Zones.xlsx來源三格最低轉生次數11→0及匯出Zones.csv／生成data.js、主頁／Worker必要快取、受影響地圖／GM回歸、LV／WORLD_MAP／GM指南及本段；禁止改上限／怪物／倍率／掉落／素材／Protocol或存檔格式、其他工作區及合併推送。前圖末關只到達不解鎖，保留既有已解鎖進度相容。
+- 預檢：上述正式檔案與stage-rework／new-battle-zones測試無外部來源，Excel無開啟行程；寫入前取得來源獨占存取。來源→CSV→JS同步，驗原生Excel正常開啟／值與格式、0轉各圖末關前後／不能跨圖／Worker前進與介面提示、相關回歸／Build／Console／diff後獨立Commit。交使用者正常整合，素材庫無本項變動。
+- 完成15檔：config/Excel/Zones.xlsx、config/CSV/Zones.csv、js/data.js、js/bridge.js、js/worker/sim.worker.js、index.html，tests/stage-rework／new-battle-zones／world-map／world-map-ui／gm-stage-clear，以及LV_upgrade_system／GM_command／WORLD_MAP與本段。來源H9:H11最低轉生次數11→數值0，生成ZONES移除三圖reqReincarnation，其餘資料／倍率未動；共用isZoneUnlocked、switchZone、存檔遷移及UI提示自然沿用前置通關判斷，不另建門檻邏輯。主頁data112／bridge388、Worker入口及data匯入20261030-god-zone-previous-clear。
+- Excel：依試算表技能使用artifact-tool匯入原檔，只寫三格、重算及匯出；修改前後預覽已檢查。原生Excel正常模式重開候選，Saved=True；143格逐格比較僅H9／H10／H11的值／字面公式11→0，其餘值／公式／數字格式／字型／底色／對齊／換行／列高／欄寬差異0，工作表數／Shapes／篩選／凍結／分割／Table數差異0。來源獨占存取且SHA仍等於原值才寫入；原生重開最終來源並對候選全格及上述格式比對0差異。沒有手改XML或Excel修復提示。
+- 資料驗證：node tools/xlsx_to_csv.cjs（PARAMS_XLSX=Zones.xlsx、PARAMS_SHEET=地圖、PARAMS_MIN_COLUMNS=13、PARAMS_CSV_OUT=Zones.csv）及node tools/config_tables.cjs --apply --write Zones，3個區塊僅ZONES一項語意變更；再執行node tools/config_tables.cjs --apply Zones回報0變更。new-battle-zones既有五表Excel／CSV逐格一致通過；String表查無神界11轉寫死文案，不改顯示文字來源。
+- 測試：node --test --test-reporter=spec tests/stage-rework.test.cjs tests/new-battle-zones.test.cjs tests/world-map.test.cjs tests/world-map-ui.test.cjs tests/gm-stage-clear.test.cjs tests/god-realm-zones.test.cjs tests/gm-command.test.cjs tests/gm-fastpath.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/params-direct-edit.test.cjs，111/111通過；npm.cmd run build604檔通過；git diff --check通過。依使用者新規則更新舊11轉斷言，保留末關尚未通關拒絕、自然打贏通關、手動跨圖及舊存檔相容驗證。
+- 瀏覽器：隔離headless Edge、隨機localhost、正式index與真Worker新局，0轉逐一驗亡靈400／太古450／混沌500尚未通關時下一圖unlocked=false、送stage.switchZone後不換圖；設通關後unlocked=true、實點傳送門／神界場景／前進依序進太古／混沌／永恒，提示皆為可前進且無轉生條件。saveAutoNow後重載仍在永恒神域、0轉；1558×900及390×844截圖與browser-report保留本聊天visualizations/god-zone-unlock，Console error／warning及pageerror0，未動使用者原來源存檔。
+- 唯讀未改：共通規範／Workflow、config_tables匯出器及schema、通關／解鎖／戰鬥／GM執行器／UI／存檔程式、String／NPC／掉落來源及素材。舊gm-command測試中的自訂reqReincarnation fixture仍驗通用配置支援，非正式三圖設定。自我Review完成，無本項未完成實作；未驗全庫／多瀏覽器長戰，可供Review／合併。Commit為本段所在「[Codex] fix: 神界地圖改以前圖末關通關解鎖」，編號見交付；未合併推送。下一步正常整合兩輪成果並重載，既有已通關進度可直接解鎖，不必重打或改轉生。
+
 ## GM-STAGE-CLEAR-20261030 — 白話通關進度與神界入口
 
 - Owner：Codex；Done，單一開發者。使用者回報要求亡靈山脈400關已通關卻無神界入口，截圖確認AI誤譯為stage亡靈山脈400（cleared399）。前置既有傳送門／Worker與GM流程完成。

@@ -45,14 +45,18 @@ test('通關後仍能主動進入下一場景並恢復該場景先前的停留�
   assert.equal(c.G.stage.best, 40);
   assert.equal(c.G.zoneProgress.desert.cleared, 100);
 });
-test('未通關前置場景或轉生不足時手動前進仍被權威模擬拒絕', () => {
+test('未通關前置末關時手動前進仍被權威模擬拒絕，通關後0轉即可進神界', () => {
   const c = load();
-  c.G = { player: { reincarnations: 10 }, stage: { zone: 'desert', current: 100, best: 100, kills: 0, autoAdvance: true },
-    zoneProgress: { desert: { cleared: 99 }, undead_mountains: { cleared: 400, best: 400 } }, tower: { active: false } };
+  c.G = { player: { reincarnations: 0 }, stage: { zone: 'desert', current: 100, best: 100, kills: 0, autoAdvance: true },
+    zoneProgress: { desert: { cleared: 99 }, undead_mountains: { cleared: 399, best: 400 } }, tower: { active: false } };
   c.switchZone('Icefield');
   assert.equal(c.G.stage.zone, 'desert');
   c.switchZone('god_battlefield');
   assert.equal(c.G.stage.zone, 'desert');
+  c.G.zoneProgress.undead_mountains.cleared = 400;
+  c.switchZone('god_battlefield');
+  assert.equal(c.G.stage.zone, 'god_battlefield');
+  assert.equal(c.G.player.reincarnations, 0);
 });
 test('上限重複刷關不重複發出通關與世界地圖提示', () => {
   const c = load(), logs = [];

@@ -233,7 +233,8 @@ test('人界最高地圖須真正通關才出現傳送門，入口不受轉生�
   assert.equal(t.commands.length, 0);
   t.button('god_battlefield').dispatch('click');
   assert.equal(t.ids['world-map-go'].disabled, true);
-  assert.match(t.ids['world-map-scene-status'].textContent, /11/);
+  assert.match(t.ids['world-map-scene-status'].textContent, /亡靈山脈.*400/);
+  assert.doesNotMatch(t.ids['world-map-scene-status'].textContent, /轉/);
   t.ids['world-map-go'].dispatch('click'); assert.equal(t.commands.length, 0);
   t.ids['world-map-realm-human'].dispatch('click');
   assert.equal(t.ids['world-map-human'].hidden, false);

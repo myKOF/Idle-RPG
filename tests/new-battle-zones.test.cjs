@@ -28,7 +28,7 @@ test('BIOMES-SAVE 舊後圖進度補通新增前圖、先保留超上限通關�
  const noZone=c.newGameState();delete noZone.stage.zone;noZone.stage.best=180;noZone.stage.current=150;delete noZone.fieldBiomesV2;
  assert.equal(c.migrateSave(noZone).zoneProgress.desert.cleared,100,'無地圖欄位的最早期存檔也保留已通關上限');
 });
-test('BIOMES-ROUTE 新檔每圖末關留在原圖，主動前進並保留神界11轉門檻',()=>{
+test('BIOMES-ROUTE 0轉新檔每圖末關留在原圖，通關後主動前進包含神界三圖',()=>{
  const c=load(['combat']);c.G=c.newGameState();
  c.FIELD.player=null;
  for(let i=0;i<ids.length-1;i++){
@@ -39,8 +39,8 @@ test('BIOMES-ROUTE 新檔每圖末關留在原圖，主動前進並保留神界1
   c.FIELD._waveClearPending=true;c.completeFieldWave({hp:100});
   assert.equal(c.G.stage.zone,z,'自動推關不得跨場景');
   assert.equal(c.G.zoneProgress[z].cleared,cap);
-  if(i>=6){c.G.player.reincarnations=0;assert.equal(c.isZoneUnlocked(next),false);c.switchZone(next);assert.equal(c.G.stage.zone,z);c.G.player.reincarnations=11;}
   assert.equal(c.isZoneUnlocked(next),true);c.switchZone(next);assert.equal(c.G.stage.zone,next);assert.equal(c.G.stage.current,1);
+  assert.equal(c.G.player.reincarnations,0);
  }
 });
 test('BIOMES-CONFIG 五份Excel／CSV逐格一致、任務可達、掉落及共用波次覆蓋全部關卡',()=>{

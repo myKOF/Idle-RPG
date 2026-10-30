@@ -31,7 +31,7 @@ test('白話已通關補齊前置場景及400關完成；保留所在地、後�
     assert.equal(c.isZoneUnlocked(key), true, key);
   }
   assert.equal(c.isFieldBossDefeated('undead_mountains', 400), true);
-  assert.equal(c.isZoneUnlocked('god_battlefield'), false, '入口出現不免除11轉門檻');
+  assert.equal(c.isZoneUnlocked('god_battlefield'), true, '0轉在前圖400關已通關後即可前進');
   assert.deepEqual(JSON.parse(JSON.stringify(c.G.stage)), before.stage);
   assert.deepEqual(JSON.parse(JSON.stringify(c.G.player)), before.player);
   assert.deepEqual(JSON.parse(JSON.stringify(c.G.zoneProgress.god_chaos)), before.zoneProgress.god_chaos);
