@@ -7,11 +7,22 @@ const root = path.resolve(__dirname, '..');
 
 function setup() {
   const ids = {}, nodes = [], documentEvents = {};
+  let now = 0, timerId = 0;
+  const timers = new Map();
+  function advance(ms) {
+    const end = now + ms;
+    for (;;) {
+      const next = [...timers].filter(([, t]) => t.at <= end).sort((a, b) => a[1].at - b[1].at || a[0] - b[0])[0];
+      if (!next) break;
+      timers.delete(next[0]); now = next[1].at; next[1].fn();
+    }
+    now = end;
+  }
   let document;
   class Element {
     constructor(tag = 'div') {
       this.tagName = tag; this.children = []; this.attrs = {}; this.listeners = {};
-      this.style = {}; this.hidden = false; this.disabled = false; this.isConnected = true; this.textContent = '';
+      this.style = { setProperty(key, value) { this[key] = value; } }; this.hidden = false; this.disabled = false; this.isConnected = true; this.textContent = '';
       this.classes = new Set();
       this.classList = { add: name => this.classes.add(name), remove: name => this.classes.delete(name),
         toggle: (name, on) => on ? this.classes.add(name) : this.classes.delete(name), contains: name => this.classes.has(name) };
@@ -52,6 +63,8 @@ function setup() {
     querySelector: selector => nodes.find(n => selector === '[data-world-zone="' + n.getAttribute('data-world-zone') + '"]'),
     addEventListener(type, fn) { (documentEvents[type] ||= []).push(fn); } };
   const c = { console, document, esc: s => String(s), zoneIconHtml: () => '', peekUiPanelData: name => panels[name],
+    setTimeout(fn, ms) { const id = ++timerId; timers.set(id, { fn, at: now + ms }); return id; },
+    clearTimeout(id) { timers.delete(id); },
     nodePendingKey: name => name, requestPanelData() {}, isUiCommandPending: () => inFlight,
     uiCommandResultError: result => result && result.error, reportUiCommandFailure() {},
     sendUiCommand: (...args) => { commands.push(args); inFlight = true; return new Promise((resolve, reject) => { resolveCommand = resolve; rejectCommand = reject; }); } };
@@ -67,7 +80,7 @@ function setup() {
   let inFlight = false, resolveCommand, rejectCommand;
   vm.runInContext(fs.readFileSync(path.join(root, 'js/ui-world-map.js'), 'utf8'), c);
   c.WorldMapUI.init();
-  return { c, ids, panels, nodes, commands, document, documentEvents,
+  return { c, ids, panels, nodes, commands, document, documentEvents, advance,
     button: key => nodes.find(n => n.getAttribute('data-world-zone') === key),
     ack: async () => { resolveCommand({}); await Promise.resolve(); },
     reject: async () => { inFlight = false; rejectCommand(new Error('test rejection')); await Promise.resolve(); await Promise.resolve(); },
@@ -163,7 +176,7 @@ test('所在地圖示隨快照移動；神界瀏覽不自行傳送，仍須選�
   assert.notEqual(marker.style.left, oldX); assert.match(marker.getAttribute('aria-label'), /月影沼澤/);
   t.panels.header.player.reincarnations = 11; t.c.WorldMapUI.refresh();
   assert.equal(t.ids['world-map-realm-god'].hidden, false);
-  t.ids['world-map-realm-god'].dispatch('click');
+  t.ids['world-map-realm-god'].dispatch('click'); t.advance(2500);
   assert.equal(t.ids['world-map-human'].hidden, true); assert.equal(marker.hidden, true);
   assert.equal(t.commands.length, 0);
 });
@@ -202,7 +215,7 @@ test('兩界大地圖提示皆固定名稱下方，選取及縮放不改相對�
     assert.equal(t.ids['world-map-info'].style.top, 'calc(' + anchor.top + ' + max(2.6cqw, 20px))');
     assert.ok(t.ids['world-map-info'].style.left.includes(anchor.left));
   }
-  t.ids['world-map-realm-god'].dispatch('click');
+  t.ids['world-map-realm-god'].dispatch('click'); t.advance(2500);
   for (const key of t.c.REALMS.god.zones) {
     const node = t.button(key);
     node.dispatch('click');
@@ -220,7 +233,7 @@ test('神界底圖／三處熱區同人界進度規則，兩端傳送門只切�
   row.unlocked = true;
   t.panels.battle.zoneProgress.undead_mountains = { cleared: 400 };
   t.c.WorldMapUI.open();
-  t.ids['world-map-god-portal'].dispatch('click');
+  t.ids['world-map-god-portal'].dispatch('click'); t.advance(2500);
   assert.equal(t.ids['world-map-god'].hidden, false);
   assert.equal(t.ids['world-map-modal'].getAttribute('data-world-realm'), 'god');
   assert.equal(t.ids['world-map-title'].textContent, '神界');
@@ -243,7 +256,7 @@ test('神界底圖／三處熱區同人界進度規則，兩端傳送門只切�
   t.button('god_chaos').dispatch('click');
   assert.equal(t.ids['world-map-go'].disabled, true);
   assert.match(t.ids['world-map-scene-status'].textContent, /太古戰場.*450/);
-  t.ids['world-map-human-portal'].dispatch('click');
+  t.ids['world-map-human-portal'].dispatch('click'); t.advance(2500);
   assert.equal(t.ids['world-map-human'].hidden, false);
   assert.equal(t.ids['world-map-info'].hidden, true);
   assert.equal(t.document.activeElement, t.ids['world-map-god-portal']);
@@ -272,7 +285,7 @@ test('人界最高地圖須真正通關才出現傳送門，入口不受轉生�
   t.panels.battle.zoneProgress.undead_mountains.cleared = row.maxStage;
   t.c.WorldMapUI.refresh();
   assert.equal(portal.hidden, false);
-  portal.dispatch('click');
+  portal.dispatch('click'); t.advance(2500);
   assert.equal(t.ids['world-map-god'].hidden, false);
   assert.equal(t.ids['world-map-realm-human'].hidden, false);
   assert.equal(t.commands.length, 0);
@@ -281,7 +294,7 @@ test('人界最高地圖須真正通關才出現傳送門，入口不受轉生�
   assert.match(t.ids['world-map-scene-status'].textContent, /亡靈山脈.*400/);
   assert.doesNotMatch(t.ids['world-map-scene-status'].textContent, /轉/);
   t.ids['world-map-go'].dispatch('click'); assert.equal(t.commands.length, 0);
-  t.ids['world-map-realm-human'].dispatch('click');
+  t.ids['world-map-realm-human'].dispatch('click'); t.advance(2500);
   assert.equal(t.ids['world-map-human'].hidden, false);
   delete t.panels.battle.zoneProgress; t.c.WorldMapUI.refresh();
   assert.equal(portal.hidden, true);
@@ -301,4 +314,90 @@ test('最高人界依地圖配置決定，新增／調高其他地圖後不沿�
   // 神界上限更高不參與人界最高值；沒有權威地圖快照時不顯示。
   t.panels.battle.zones = [];
   t.c.WorldMapUI.refresh(); assert.equal(t.ids['world-map-god-portal'].hidden, true);
+});
+
+test('兩方向轉場皆2.5秒，中點才換圖，期間防連點／頁籤／前進且不送Worker命令', () => {
+  const t = setup();
+  t.panels.battle.zones.find(z => z.key === 'undead_mountains').unlocked = true;
+  t.panels.battle.zoneProgress.undead_mountains = { cleared: 400 };
+  t.c.WorldMapUI.open();
+  const before = JSON.stringify(t.panels.header.stage);
+  for (const [trigger, destination, sourceId, destinationId] of [
+    ['world-map-god-portal', 'god', 'world-map-human', 'world-map-god'],
+    ['world-map-human-portal', 'human', 'world-map-god', 'world-map-human']
+  ]) {
+    t.ids[trigger].dispatch('click');
+    const layer = t.ids['world-map-transition'];
+    assert.equal(layer.hidden, false);
+    assert.equal(layer.getAttribute('data-destination'), destination);
+    assert.equal(layer.style['--wm-transit-duration'], '2500ms');
+    assert.equal(t.ids['world-map-modal'].getAttribute('aria-busy'), 'true');
+    assert.equal(t.document.activeElement, t.ids['world-map-close']);
+    for (const id of ['world-map-god-portal', 'world-map-human-portal', 'world-map-realm-god', 'world-map-realm-human']) {
+      assert.equal(t.ids[id].disabled, true, id);
+      t.ids[id].dispatch('click'); // fake事件刻意穿過disabled，仍須有邏輯防重入。
+    }
+    assert.equal(t.button('Icefield').disabled, true);
+    t.button('Icefield').dispatch('click');
+    t.ids['world-map-go'].dispatch('click');
+    assert.equal(t.commands.length, 0);
+    t.advance(1249);
+    assert.equal(t.ids[sourceId].hidden, false);
+    assert.equal(t.ids[destinationId].hidden, true);
+    t.advance(1);
+    assert.equal(t.ids[sourceId].hidden, true);
+    assert.equal(t.ids[destinationId].hidden, false);
+    assert.equal(layer.hidden, false);
+    t.advance(1249);
+    assert.equal(t.ids[trigger].disabled, true);
+    t.advance(1);
+    assert.equal(layer.hidden, true);
+    assert.equal(t.ids['world-map-modal'].getAttribute('aria-busy'), 'false');
+    assert.equal(t.ids[trigger].disabled, false);
+    assert.equal(t.button('Icefield').disabled, false);
+    assert.equal(t.document.activeElement, t.ids[destination === 'god' ? 'world-map-human-portal' : 'world-map-god-portal']);
+    assert.equal(JSON.stringify(t.panels.header.stage), before);
+    assert.equal(t.commands.length, 0);
+  }
+});
+
+test('轉場關閉／Esc取消舊回呼，重開與新轉場不被遲到回呼切走或復活', () => {
+  for (const elapsed of [300, 1500]) {
+    const t = setup();
+    t.panels.battle.zones.find(z => z.key === 'undead_mountains').unlocked = true;
+    t.panels.battle.zoneProgress.undead_mountains = { cleared: 400 };
+    t.c.WorldMapUI.open();
+    t.ids['world-map-god-portal'].dispatch('click');
+    t.advance(elapsed);
+    if (elapsed === 300) t.ids['world-map-close'].dispatch('click');
+    else t.documentEvents.keydown[0]({ key: 'Escape', preventDefault() {}, stopImmediatePropagation() {} });
+    assert.equal(t.ids['world-map-modal'].hidden, true);
+    assert.equal(t.ids['world-map-transition'].hidden, true);
+    assert.equal(t.document.activeElement, t.ids['btn-world-map']);
+    t.advance(5000);
+    assert.equal(t.ids['world-map-modal'].hidden, true);
+    t.c.WorldMapUI.open();
+    assert.equal(t.ids['world-map-human'].hidden, false);
+    assert.equal(t.ids['world-map-human-portal'].disabled, false);
+    t.ids['world-map-realm-god'].dispatch('click');
+    t.advance(2500);
+    assert.equal(t.ids['world-map-god'].hidden, false);
+    assert.equal(t.ids['world-map-transition'].hidden, true);
+    assert.equal(t.commands.length, 0);
+  }
+});
+
+test('目標圖預載，門洞光芒起點取實際門位置；已在相同界不重播轉場', () => {
+  const t = setup();
+  t.panels.battle.zoneProgress.undead_mountains = { cleared: 400 };
+  t.panels.battle.zones.find(z => z.key === 'undead_mountains').unlocked = true;
+  t.c.WorldMapUI.open();
+  t.ids['world-map-realm-human'].dispatch('click');
+  assert.equal(t.ids['world-map-transition'].hidden, true);
+  t.ids['world-map-canvas'].rect = { left: 100, top: 200, width: 1000, height: 600 };
+  t.ids['world-map-god-portal'].rect = { left: 200, top: 260, width: 100, height: 120 };
+  t.ids['world-map-god-portal'].dispatch('click');
+  assert.equal(t.ids['world-map-transition'].style['--wm-portal-x'], '15%');
+  assert.equal(t.ids['world-map-transition'].style['--wm-portal-y'], '20%');
+  assert.equal(t.ids['world-map-god-image'].getAttribute('loading'), 'eager');
 });

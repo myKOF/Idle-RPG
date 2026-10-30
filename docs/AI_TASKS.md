@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## WORLD-MAP-REALM-TRANSITION-20261030 — 兩界大地圖傳送轉場
+
+- Owner：Codex；Done，單一開發者。使用者要求人界→神界及神界→人界大地圖有約2～3秒轉場；採2.5秒門口光芒擴散、遮蔽中點切頁、另一界顯現。兩端門與既有位面頁籤一致，僅切大地圖，不改玩家場景。
+- 範圍：js/ui-world-map.js、css/world-map.css、index轉場裝飾／快取、world-map-ui回歸、WORLD_MAP／LV及本段。禁止改素材／String／玩法／解鎖／Worker／存檔、其他工作區及合併推送。現有目標預檢無外部來源；純UI CSS效果，不新增VFX Preset或美術素材。
+- 驗中點與完成時序、防連點／前進／頁籤競爭、關閉／Esc後取消舊回呼與重開、焦點／減少動態、真瀏覽器兩方向畫面／Console、相關回歸／Build／diff後獨立Commit，交使用者正常整合並重載測試服。
+- 完成七檔：ui-world-map.js管理兩個可取消計時器及防重入、world-map.css光芒／光圈／遮罩、index裝飾層及JS1.0.7／CSS1.0.11快取、world-map-ui回歸、WORLD_MAP／LV及本段。門體畫面座標作擴散起點，1.25秒切圖、2.5秒恢復操作，預載目的底圖；場景／前進／頁籤與門在轉場期間鎖定，關閉／Esc立即取消、舊回呼不影響重開；完成聚焦對面門。減少動態只保留同時長淡出淡入。
+- 驗證：node --test --test-reporter=spec tests/world-map-ui.test.cjs tests/world-map.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs全部36/36通過；npm.cmd run build604檔通過；git diff --check通過。新增雙向精確時序／重入與Worker防護／取消回呼／重開／焦點／門位置及預載回歸，既有測試僅等待新轉場結束後維持原斷言。
+- 測試服8131真瀏覽器：重載新JS／CSS、雙向門切換正常，CSS計算時長2.5s、操作鎖定與目的門焦點正常；Esc中途關閉後重開神界正常，角色仍太古戰場1關，Console error／warning0。未操作GM或戰鬥開關。轉場實拍存本聊天visualizations/god-world-map/realm-transition.png；保留神界分頁供使用者測試。減少動態以CSS規則檢視，未變更系統偏好另行實測；未跑全庫長戰或多瀏覽器矩陣。
+- 唯讀未改：規範／Workflow／prompts、既有地圖素材／String來源、ZONES／Worker／存檔／進度解鎖、素材庫。自我Review完成，無本項未完成實作；可供Review／合併，遊戲Commit為本段所在「[Codex] feat: 加入兩界大地圖傳送轉場」，無素材Commit。未合併推送；下一步正常整合，使用者可直接於8131重載測試。
+
 ## GOD-PORTAL-ROCK-PERSPECTIVE-20261030 — 返回門周圍岩台透視
 
 - Owner：Codex；Done。使用者保留現有傳送門造型，要求修正太古戰場門周圍岩石造形／角度，使較直立門體與斜向浮島地形融合。以前輪已完成神界圖為唯一編修基準，單一開發者。

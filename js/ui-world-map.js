@@ -16,7 +16,9 @@ var WorldMapUI = (function () {
     god_sanctuary: { x: 80.7, y: 35.0, width: 12.0 }
   };
   var state = { open: false, realm: 'human', selected: null, hovered: null, pending: null,
-    acknowledged: false, error: '', signature: '', returnFocus: null, bound: false };
+    acknowledged: false, error: '', signature: '', returnFocus: null, bound: false, transition: null };
+  var REALM_TRANSITION_MS = 2500;
+  var transitionTimers = [], transitionToken = 0;
 
   function el(id) { return document.getElementById(id); }
   function currentZone() {
@@ -72,7 +74,7 @@ var WorldMapUI = (function () {
       (!info.unlocked ? lockReason(key) : (info.active ? STR(2107) : STR(2108, (info.current || 1)))));
     var go = el('world-map-go');
     go.hidden = !selected;
-    go.disabled = !info.ready || !info.unlocked || info.active || !!state.pending;
+    go.disabled = !info.ready || !info.unlocked || info.active || !!state.pending || !!state.transition;
     go.textContent = state.pending ? STR(2109) : STR(2110);
     if (locations[key]) {
       var point = locations[key];
@@ -89,7 +91,7 @@ var WorldMapUI = (function () {
     }
   }
   function select(key) {
-    if (state.pending) return;
+    if (state.pending || state.transition) return;
     state.selected = key;
     state.hovered = null;
     state.error = '';
@@ -112,8 +114,11 @@ var WorldMapUI = (function () {
     var portalVisible = humanWorldCleared();
     var showRealms = portalVisible || hasGodProgress || Number(header.player && header.player.reincarnations) >= 11;
     el('world-map-god-portal').hidden = !portalVisible;
-    el('world-map-god-portal').disabled = !!state.pending;
-    el('world-map-human-portal').disabled = !!state.pending;
+    var busy = !!state.pending || !!state.transition;
+    el('world-map-god-portal').disabled = busy;
+    el('world-map-human-portal').disabled = busy;
+    el('world-map-realm-god').disabled = busy;
+    el('world-map-realm-human').disabled = busy;
     el('world-map-realm-god').hidden = !showRealms;
     el('world-map-realm-human').hidden = !showRealms;
     var point = locations[currentZone()];
@@ -134,7 +139,7 @@ var WorldMapUI = (function () {
       state.pending = null;
       state.error = STR(2112);
     }
-    var signature = [currentZone(), state.realm, state.selected, state.hovered, state.pending, state.error];
+    var signature = [currentZone(), state.realm, state.selected, state.hovered, state.pending, state.error, state.transition];
     Object.keys(ZONES).forEach(function (key) { signature.push(JSON.stringify(zoneState(key))); });
     var header = peekUiPanelData('header') || {};
     signature.push(header.player && header.player.reincarnations);
@@ -146,6 +151,7 @@ var WorldMapUI = (function () {
     document.querySelectorAll('[data-world-zone]').forEach(function (node) {
       var key = node.getAttribute('data-world-zone'), info = zoneState(key);
       if (!info) return;
+      node.disabled = !!state.transition;
       node.classList.toggle('is-current', info.active);
       node.classList.toggle('is-locked', !info.unlocked);
       node.classList.toggle('is-selected', state.selected === key);
@@ -165,6 +171,7 @@ var WorldMapUI = (function () {
   }
   function close() {
     if (!state.open) return;
+    cancelRealmTransition();
     state.open = false;
     state.pending = null;
     var modal = el('world-map-modal');
@@ -191,7 +198,7 @@ var WorldMapUI = (function () {
   }
   function go() {
     var key = state.selected, info = zoneState(key);
-    if (!info || !info.unlocked || info.active || state.pending) return;
+    if (!info || !info.unlocked || info.active || state.pending || state.transition) return;
     state.pending = key; state.acknowledged = false; state.error = ''; state.signature = '';
     refresh();
     sendUiCommand('stage.switchZone', { zoneKey: key }, {
@@ -209,10 +216,57 @@ var WorldMapUI = (function () {
       refresh();
     });
   }
-  function setRealm(realm) {
-    if (state.pending) return;
+  function applyRealm(realm) {
     state.realm = realm; state.selected = null; state.hovered = null;
     state.error = ''; state.signature = ''; refresh();
+  }
+  function cancelRealmTransition() {
+    transitionToken++;
+    transitionTimers.forEach(function (timer) { clearTimeout(timer); });
+    transitionTimers = [];
+    state.transition = null;
+    var layer = el('world-map-transition');
+    layer.hidden = true;
+    layer.classList.remove('is-running');
+    el('world-map-modal').setAttribute('aria-busy', 'false');
+    state.signature = '';
+  }
+  function setRealm(realm) {
+    if (!state.open || state.pending || state.transition || state.realm === realm) return;
+    var source = el(state.realm === 'human' ? 'world-map-god-portal' : 'world-map-human-portal');
+    if (source.hidden || !source.getClientRects().length) source = el(realm === 'god' ? 'world-map-realm-god' : 'world-map-realm-human');
+    var bounds = el('world-map-canvas').getBoundingClientRect(), anchor = source.getBoundingClientRect();
+    var layer = el('world-map-transition');
+    var x = bounds.width ? (anchor.left + anchor.width / 2 - bounds.left) / bounds.width * 100 : 50;
+    var y = bounds.height ? (anchor.top + anchor.height / 2 - bounds.top) / bounds.height * 100 : 50;
+    layer.style.setProperty('--wm-portal-x', Math.max(0, Math.min(100, x)) + '%');
+    layer.style.setProperty('--wm-portal-y', Math.max(0, Math.min(100, y)) + '%');
+    layer.style.setProperty('--wm-transit-duration', REALM_TRANSITION_MS + 'ms');
+    layer.setAttribute('data-destination', realm);
+    // 預先載入目標圖，切頁時仍沿用原圖錯誤提示與既有快照。
+    el(realm === 'god' ? 'world-map-god-image' : 'world-map-image').setAttribute('loading', 'eager');
+    state.transition = realm;
+    state.selected = null; state.hovered = null; state.error = ''; state.signature = '';
+    el('world-map-modal').setAttribute('aria-busy', 'true');
+    layer.hidden = false;
+    layer.classList.remove('is-running');
+    void layer.offsetWidth;
+    layer.classList.add('is-running');
+    refresh();
+    el('world-map-close').focus();
+    var token = ++transitionToken;
+    // 遮蔽中央才換地圖；完成後才恢復互動。關閉會取消兩個回呼。
+    transitionTimers.push(setTimeout(function () {
+      if (!state.open || token !== transitionToken) return;
+      applyRealm(realm);
+    }, REALM_TRANSITION_MS / 2));
+    transitionTimers.push(setTimeout(function () {
+      if (!state.open || token !== transitionToken) return;
+      cancelRealmTransition();
+      refresh();
+      var destination = el(realm === 'god' ? 'world-map-human-portal' : 'world-map-god-portal');
+      (destination.hidden ? el('world-map-close') : destination).focus();
+    }, REALM_TRANSITION_MS));
   }
   function init() {
     if (state.bound || !el('world-map-modal')) return;
@@ -243,19 +297,19 @@ var WorldMapUI = (function () {
       progress.setAttribute('aria-hidden', 'true');
       node.appendChild(progress);
       node.addEventListener('pointerenter', function () {
-        if (state.selected) return;
+        if (state.selected || state.transition) return;
         state.hovered = key; state.signature = ''; refresh();
       });
       node.addEventListener('pointerleave', function () {
-        if (state.selected) return;
+        if (state.selected || state.transition) return;
         state.hovered = null; state.signature = ''; refresh();
       });
       node.addEventListener('focus', function () {
-        if (state.selected) return;
+        if (state.selected || state.transition) return;
         state.hovered = key; state.signature = ''; refresh();
       });
       node.addEventListener('blur', function () {
-        if (state.selected) return;
+        if (state.selected || state.transition) return;
         state.hovered = null; state.signature = ''; refresh();
       });
       node.addEventListener('click', function () { select(key); });
@@ -268,13 +322,11 @@ var WorldMapUI = (function () {
     el('world-map-god-portal').addEventListener('click', function () {
       if (humanWorldCleared() && !state.pending) {
         setRealm('god');
-        el('world-map-human-portal').focus();
       }
     });
     el('world-map-human-portal').addEventListener('click', function () {
       if (state.pending) return;
       setRealm('human');
-      (el('world-map-god-portal').hidden ? el('world-map-close') : el('world-map-god-portal')).focus();
     });
     window.addEventListener('resize', function () {
       if (state.open && (state.selected || state.hovered)) showCard(state.selected || state.hovered, !!state.selected);
