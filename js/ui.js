@@ -5062,11 +5062,11 @@ function syncItemGridCells(box, keys, htmls) {
 // 只映射顯示外觀，裝備本身的品質、名稱與數值仍使用原始 rarity。
 function itemRarityEffectClass(it) {
   var rarity = divineForgeBaseRarity(it.rarity);
-  return rarity === 6 ? ' eff-mythic' : rarity === 7 ? ' eff-genesis' : rarity === 9 ? ' eff-godforged' : '';
+  return rarity === 6 ? ' eff-mythic' : rarity === 7 ? ' eff-genesis' : rarity === 9 ? ' eff-chaos' : '';
 }
 function itemDetailClass(it) {
   var rarity = it && divineForgeBaseRarity(it.rarity);
-  return rarity === 6 ? ' mythic-detail' : rarity === 7 ? ' genesis-detail' : '';
+  return rarity === 6 ? ' mythic-detail' : rarity === 7 ? ' genesis-detail' : rarity === 9 ? ' chaos-detail' : '';
 }
 
 function twoHandSharedBadgeHTML(detail) {
@@ -5900,6 +5900,8 @@ function renderDetail() {
   else pane.classList.remove('mythic-detail');
   if (detailClass === ' genesis-detail') pane.classList.add('genesis-detail');
   else pane.classList.remove('genesis-detail');
+  if (detailClass === ' chaos-detail') pane.classList.add('chaos-detail');
+  else pane.classList.remove('chaos-detail');
   if (twoHandShared) pane.classList.add('twohand-shared');
   else pane.classList.remove('twohand-shared');
   if (!it) pane.classList.remove('is-socket-page');

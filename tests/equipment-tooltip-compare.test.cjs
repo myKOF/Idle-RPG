@@ -64,17 +64,17 @@ test('關閉比較、空目標槽或相同裝備維持單卡', () => {
   assert.equal(tooltip('inv', { id: 'ring-worn-1' }, 'ring').cards.length, 1);
 });
 
-test('混合品質比較依原品質套框，包含神鑄神話與神鑄創世，混沌不誤套框', () => {
+test('混合品質比較依原品質套框，包含神鑄神話與神鑄創世，混沌兩品質共用授權框', () => {
   const classes = result => Array.from(result.tip.innerHTML.matchAll(/class="(equip-detail-card[^"]*)"/g), m => m[1]);
   for (let rarity = 0; rarity <= 11; rarity++) {
     const item = { id: 'candidate', rarity };
-    const expected = [6, 11].includes(rarity) ? 'equip-detail-card mythic-detail' : [7, 8].includes(rarity) ? 'equip-detail-card genesis-detail' : 'equip-detail-card';
+    const expected = [6, 11].includes(rarity) ? 'equip-detail-card mythic-detail' : [7, 8].includes(rarity) ? 'equip-detail-card genesis-detail' : [9, 10].includes(rarity) ? 'equip-detail-card chaos-detail' : 'equip-detail-card';
     assert.deepEqual(classes(tooltip('equip', item, 'weapon')), [expected]);
     assert.deepEqual(classes(tooltip('inv', item, 'weapon', true, 6)), [expected, 'equip-detail-card mythic-detail']);
     assert.deepEqual(classes(tooltip('inv', item, 'weapon', true, 7)), [expected, 'equip-detail-card genesis-detail']);
     assert.deepEqual(classes(tooltip('inv', item, 'weapon', true, 11)), [expected, 'equip-detail-card mythic-detail']);
     assert.deepEqual(classes(tooltip('inv', item, 'weapon', true, 8)), [expected, 'equip-detail-card genesis-detail']);
-    assert.deepEqual(classes(tooltip('inv', item, 'weapon', true, 10)), [expected, 'equip-detail-card']);
+    assert.deepEqual(classes(tooltip('inv', item, 'weapon', true, 10)), [expected, 'equip-detail-card chaos-detail']);
     assert.deepEqual(classes(tooltip('inv', item, 'weapon', true, 5)), [expected, 'equip-detail-card']);
   }
 });

@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## CHAOS-AUTHORIZED-FRAME-20261030 — 授權混沌邊框與清淡紅光
+
+- Owner：Codex；Done，單一開發者。使用者授權直接使用所附406×600裝備圖，要求混沌／神鑄混沌的tips、icon、詳情復刻，補充左下紅光調淡以利閱讀。沿用原圖的紅金藤紋與寶石邊框，CSS九宮格只顯示邊緣、空白區域作底色取樣；文字／數值／裝備圖案仍由現行資料顯示，左下光暈以低透明度CSS處理。
+- 前置：c5b3c504神鑄對應外觀完成。允許js/ui.js品質class、css/equipment-chaos.css、授權原圖遊戲匯出、index快取／CSS載入、既有裝備tooltip回歸、tools/equipment-ui/export-source.cjs、LV及本段、素材庫user-authorized/chaos-equipment-ui原稿／授權紀錄。禁止玩法／數值／文字表／Worker／存檔／其他品質外觀、其他工作區及合併推送。
+- 修改前預檢無外部來源。直接複製授權PNG、不修改獨立圖片，因此無需生成或繪圖工具；CSS依原稿九宮格與漸層構成可伸縮介面，既有選取／置灰／鎖定／雙手提示保留。驗兩品質icon／tips／比較／詳情與捲動／窄屏、其他品質回歸／Console／Build／diff、兩庫SHA；先素材庫再遊戲Commit，交正常Review／使用者整合。
+
+- 完成遊戲八檔：新增授權PNG、css/equipment-chaos.css與tools/equipment-ui/export-source.cjs；ui.js將R9／R10共同映射eff-chaos／chaos-detail，詳情換件與取消會清理class；index載入CSS1.0.1／UI1.0.237、既有tooltip比較斷言同步、LV及本段更新。原PNG完整保存，CSS只取四邊與無字內襯，clip-path排除原截圖上／右雜邊；紅光alpha .09，右上金光 .38，圖框／等級與星等／鎖定／選取／雙手標記分層保留，詳情框固定在捲動容器外。
+- 授權及素材庫：使用者本輪明確允許復刻與直接使用，來源與聲明保存user-authorized/chaos-equipment-ui/SOURCE.md／source.json；沒有引入其他參考庫素材或新繪／AI生成。素材庫Commit fec4b70，三檔原稿／來源／授權紀錄；node tools/equipment-ui/export-source.cjs --apply及--check通過，遊戲／素材／附件原PNG SHA256皆619855c231fb0a7af060f2a673eb5bacc24fd6218ebcecdd7d0e3c755951468d。素材庫乾淨，未推送。
+- 測試：node --test --test-reporter=spec tests/equipment-tooltip-compare.test.cjs tests/equipment-two-hand-display.test.cjs tests/equipment-selection-border.test.cjs tests/equip-reroll-ui.test.cjs tests/equip-socket-ui.test.cjs tests/forge-shared-inventory.test.cjs tests/inventory-mythic-skin.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs全部78/78通過；npm.cmd run build604檔、node --check tools/equipment-ui/export-source.cjs、兩庫diff／暫存diff檢查通過。只更新新規格對應的既有品質斷言，未降低操作／數值要求。
+- 瀏覽器：獨立IAB／8137隔離fixture載入正式UI／item／formula與全套CSS，11項核對含混沌／神鑄混沌背包、神鑄背包、身上／共用副手、神鑄材料槽、tips／詳情與取消選取。實際computed背景／邊框來源相同；桌面與390×844窄屏、文字可讀／圖框底部留白／icon等級、詳情捲動時外框文件座標及尺寸固定；窄屏documentWidth380≤390。最終新分頁Console error／warning0；初始fixture移動未附回DOM的節點曾報錯，已修正測試頁並以新分頁重驗，非遊戲程式問題。comparison.png、desktop.png、narrow.png、detail-scroll.png、browser-report.json及fixture保存本聊天visualizations/chaos-authorized-frame；未使用玩家存檔／真Worker，未驗完整遊玩或多瀏覽器。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、data.js品質與圖示、item.js／formula數值、style.css／ashen-forge／divine-forge／神話快取及既有神鑄／雙手／鑲嵌測試、String／Worker／存檔、其他造景內容。自我Review完成，無本項未完成實作或已知新增功能風險，可供Review／合併；面板以九宮格伸縮保留原裝飾，並非將整張截圖及示例文字硬貼。遊戲Commit為本段所在「[Codex] feat: 混沌裝備採用授權圖框並淡化紅光」，編號見交付。未合併推送；下一步使用者正常整合兩庫並重載主頁。
+
 ## EQUIPMENT-GODFORGED-APPEARANCE-20261030 — 神鑄裝備沿用原品質外觀
 
 - Owner：Codex；Done，單一開發者。使用者要求神鑄裝備的icon、tips、詳情等介面與對應非神鑄品質一致；沿用data.js既有divineForgeBaseRarity映射，神鑄神話／創世／混沌分別共用神話／創世／混沌外觀；混沌保留既有流動框。
