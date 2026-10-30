@@ -9,7 +9,7 @@ function loadContext() {
   const context = { console, Math };
   context.window = context;
   vm.createContext(context);
-  ['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/player.js', 'js/forge.js', 'js/item.js'].forEach((file) => {
+  ['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/formula.js', 'js/player.js', 'js/forge.js', 'js/item.js'].forEach((file) => {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });
   context.reincarnationCount = () => Number(context.G.player.reincarnations || 0);
@@ -63,4 +63,27 @@ test('神鑄四功能依 system_unlock 表的轉生數逐一開放（裝備神�
     context.G.player.reincarnations = need[mode];
     assert.equal(context.forgeOperationUnlocked(mode), true, mode);
   });
+});
+
+test('技能裝載欄第 3~6 格、詞條門檻、神界都在 system_unlock 表，且程式常數與表一致', () => {
+  const context = loadContext();
+  const csv = fs.readFileSync(path.join(__dirname, '..', 'config', 'CSV', 'system_unlock.csv'), 'utf8');
+  const row = (name) => {
+    const hit = csv.split(/\r?\n/).map((l) => l.split(',')).find((c) => c[1] === name);
+    assert.ok(hit, name + ' 必須在 system_unlock 表內');
+    const m = /^(\d+)\/(\d+)$/.exec(hit[2]);
+    assert.ok(m, name + ' 格式須為 等級/轉生：' + hit[2]);
+    return { level: Number(m[1]), reinc: Number(m[2]) };
+  };
+  [3, 4, 5, 6].forEach((n, i) => {
+    const t = row('技能裝載欄 第' + n + '格');
+    assert.equal(context.LOADOUT_SLOT_UNLOCKS[i].level, t.level, '第' + n + '格等級');
+    assert.equal(context.LOADOUT_SLOT_UNLOCKS[i].reinc, t.reinc, '第' + n + '格轉生');
+  });
+  assert.equal(context.LOADOUT_SIZE.max, 6);
+  assert.ok(row('神界'), '神界索引列');
+  // 表上「從這級起出現」＝程式內「這級（含）以前不出現」+1
+  const gateLevels = Array.from(context.AFFIX_LEVEL_GATES, (g) => g.level);
+  assert.deepEqual(gateLevels, [row('元素傷害詞條').level - 1]);
+  assert.equal(row('元素傷害詞條').level, row('屬性抗性詞條').level);
 });

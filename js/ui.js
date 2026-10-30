@@ -4100,7 +4100,7 @@ function renderBattleSkillBar(pEnt, snapshotGt) {
   for (var i = 0; i < TOTAL_SLOTS; i++) {
     var isUnlocked = i < cap;
     if (!isUnlocked) {
-      var reqLv = (i - LOADOUT_SIZE.base + 1) * LOADOUT_SIZE.perLevels;   // 與 8535 同一組參數；原寫死 (i-3)*50 與參數表不符
+      var reqLv = loadoutSlotUnlock(i).level;   // 門檻來自 system_unlock 表（LOADOUT_SLOT_UNLOCKS）
       var lockDesc = STR(742, reqLv);
       var lockedState = { kind: 'locked', index: i, lockDesc: lockDesc };
       lockedState.key = battleSkillSlotKey(lockedState);
@@ -8510,7 +8510,7 @@ function renderSkills() {
   for (var i = 0; i < TOTAL_SLOTS; i++) {
     var isUnlocked = i < cap;
     if (!isUnlocked) {
-      var reqLv = (i - LOADOUT_SIZE.base + 1) * LOADOUT_SIZE.perLevels;
+      var reqLv = loadoutSlotUnlock(i).level;
       var lockDesc = STR(742, reqLv);
       lh += '<div class="battle-skill-slot locked" data-slot-index="' + i + '" data-index="' + i + '" data-tt-title="' + STR(737, (i + 1)) + '" data-tt-desc="' + esc(lockDesc) + '"><span class="bss-lock">🔒</span><span class="bss-slot-num">' + (i + 1) + '</span></div>';
       continue;

@@ -2442,16 +2442,27 @@ function skillCooldownWithMinimum(cooldown) {
   return Math.max(skillMinimumInterval(), Math.max(0, Number(cooldown) || 0));
 }
 
-// 裝載欄：參數表「技能裝載欄」＝clamp(b + ⌊等級/a⌋, b, c)；1 轉後解鎖全部上限。
-var LOADOUT_SIZE = { perLevels: 100, min: 2, base: 2, max: 6 };
+// 裝載欄：前 LOADOUT_BASE_SLOTS 格開局即有；之後每格各有一條解鎖門檻（system_unlock 表「技能裝載欄 第N格」，
+// 等級/轉生次數，走 progressReached）。只寫等級的門檻在轉生過後視為已越過，所以 1 轉後自然全開。
+var LOADOUT_BASE_SLOTS = 2;
+var LOADOUT_SLOT_UNLOCKS = [
+  { level: 100, reinc: 0 },
+  { level: 200, reinc: 0 },
+  { level: 300, reinc: 0 },
+  { level: 400, reinc: 0 }
+];
+var LOADOUT_SIZE = { base: LOADOUT_BASE_SLOTS, max: LOADOUT_BASE_SLOTS + LOADOUT_SLOT_UNLOCKS.length };
+// 第 index 格（0 起算）的解鎖門檻；開局就有的格回傳 null
+function loadoutSlotUnlock(index) { return LOADOUT_SLOT_UNLOCKS[index - LOADOUT_SIZE.base] || null; }
 /* 純函式版本：不讀 G，讓讀檔遷移（save.js）能對「存檔裡的」等級與轉數算格數。
    loadoutSize() 是它讀取現況 G 的包裝，兩者必須是同一套規則——分成兩份算法遲早會飄。 */
 function loadoutSizeFor(level, reincarnations) {
   if (typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.skillUnlock) return LOADOUT_SIZE.max;
-  if ((Math.floor(Number(reincarnations)) || 0) >= 1) return LOADOUT_SIZE.max;
-  var lvl = Math.max(1, Math.floor(Number(level)) || 1);
-  return Math.min(LOADOUT_SIZE.max, Math.max(LOADOUT_SIZE.min,
-    LOADOUT_SIZE.base + Math.floor(lvl / LOADOUT_SIZE.perLevels)));
+  var size = LOADOUT_SIZE.base;
+  LOADOUT_SLOT_UNLOCKS.forEach(function (u) {
+    if (progressReached(level, reincarnations, u.level, u.reinc)) size++;
+  });
+  return Math.min(LOADOUT_SIZE.max, size);
 }
 function loadoutSize() {
   if (typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.skillUnlock) return LOADOUT_SIZE.max;

@@ -20,30 +20,30 @@ function loadFormulaContext() {
    LOADOUT_SIZE（改參數請改 xlsx，改 config/CSV 會被下次 sync 沖掉）。
    依 AI_RULES.md 9.1 例外，測試刻意釘住目前數值：參數表一動這裡就會紅，
    這是預期行為——確認新值是有意調整後，把期望值一併更新。
-   2026-09-23 使用者調整：a=50、b=4、c=6。 */
+   2026-10-30 改由 system_unlock 表管理（100／200／300／400 級各 +1 格，前 2 格開局即有）。 */
 test('未轉生玩家技能裝載欄依等級成長與上限計算', () => {
   const context = loadFormulaContext();
   context.G.player.level = 1;
-  assert.equal(context.loadoutSize(), 4);
-  context.G.player.level = 49;
-  assert.equal(context.loadoutSize(), 4);
-  context.G.player.level = 50;
-  assert.equal(context.loadoutSize(), 5);
+  assert.equal(context.loadoutSize(), 2);
   context.G.player.level = 99;
-  assert.equal(context.loadoutSize(), 5);
+  assert.equal(context.loadoutSize(), 2);
   context.G.player.level = 100;
-  assert.equal(context.loadoutSize(), 6);
+  assert.equal(context.loadoutSize(), 3);
+  context.G.player.level = 199;
+  assert.equal(context.loadoutSize(), 3);
   context.G.player.level = 200;
-  assert.equal(context.loadoutSize(), 6);
-  context.G.player.level = 250;
+  assert.equal(context.loadoutSize(), 4);
+  context.G.player.level = 300;
+  assert.equal(context.loadoutSize(), 5);
+  context.G.player.level = 400;
   assert.equal(context.loadoutSize(), 6);
   context.G.player.level = 9999;
-  assert.equal(context.loadoutSize(), 6);   // 封頂＝「技能裝載欄」param c
+  assert.equal(context.loadoutSize(), 6);   // 封頂＝前 2 格＋4 條解鎖（system_unlock「技能裝載欄 第3~6格」）
 });
 
 test('1 轉以上玩家不論等級皆解鎖全數 6 格裝載欄位', () => {
   const context = loadFormulaContext();
   context.reincarnationCount = () => 1;
   context.G.player.level = 1;
-  assert.equal(context.loadoutSize(), 6);   // 1 轉直接給滿＝「技能裝載欄」param c
+  assert.equal(context.loadoutSize(), 6);   // 只寫等級的門檻，轉生過視為越過
 });

@@ -1052,10 +1052,11 @@ scalar('formula', 'AFFIX_REROLL_BIAS_EXPONENT', '7-洗煉', '數值洗煉分段�
    改成具名常數之後，錨點綁的是變數名，與算式怎麼寫無關。 */
 
 /* ---- §9 技能 ---- */
-objFieldML('formula', 'LOADOUT_SIZE = {', 'perLevels', '1-成長經驗', '技能裝載欄', 0, '裝載欄-每級');
-objFieldML('formula', 'LOADOUT_SIZE = {', 'min', '1-成長經驗', '技能裝載欄', 1, '裝載欄-下限');
-objFieldML('formula', 'LOADOUT_SIZE = {', 'base', '1-成長經驗', '技能裝載欄', 1, '裝載欄-基準');
-objFieldML('formula', 'LOADOUT_SIZE = {', 'max', '1-成長經驗', '技能裝載欄', 2, '裝載欄-上限');
+// 技能裝載欄：第 3~6 格各一條解鎖門檻（system_unlock 表「技能裝載欄 第N格」；前 2 格開局即有，見 formula.js LOADOUT_BASE_SLOTS）
+arrayContent('formula', 'LOADOUT_SLOT_UNLOCKS', '\n' + [3, 4, 5, 6].map(n => {
+  const u = systemUnlock('技能裝載欄 第' + n + '格');
+  return '  { level: ' + u.level + ', reinc: ' + u.reinc + ' }';
+}).join(',\n') + '\n', 'LOADOUT_SLOT_UNLOCKS（system_unlock）');
 
 /* ---- Batch2a：補接 formula.js 內漏接的可調單值（多值行用正規式避免相依錨點失配） ---- */
 objFieldML('formula', 'TOWER_REWARD = {', 'goldPerFloor', '5-高塔獎勵', '金幣', 0, '高塔-金幣');
@@ -1103,37 +1104,36 @@ scalar('formula', 'SKILL_MASTERY_XP_B', '1-成長經驗', '技能熟練度經驗
 scalar('formula', 'SKILL_MASTERY_XP_C', '1-成長經驗', '技能熟練度經驗需求', 2);
 scalar('formula', 'SKILL_MASTERY_MAX_LEVEL', '1-成長經驗', '技能熟練度', 0);
 scalar('formula', 'SKILL_MASTERY_XP_RATE', '1-成長經驗', '技能熟練度', 1);
-/* 等級前不出現的屬性（2026-10-05）→ data.js AFFIX_LEVEL_GATES。
-   「6-裝備／等級前不出現的屬性」一列：參數 a／b＝第一組（等級／{詞條鍵,詞條鍵…}），c／d＝第二組…，
-   最多六組。等級為空或 0 的那一組略過（Excel 會把空格補成 0）；裝備等級（掉落、洗煉）或角色等級
-   （屬性面板）≤ 該等級時，陣列內的詞條不出現。
-   詞條鍵必須存在於 Equipment_Affix 表的詞條池，打錯就中止——否則那一筆限制會靜靜地失效。
-   表上還沒有這一列時跳過，data.js 保留預設值（Excel 與程式的更新順序不一定同步）。 */
+/* 等級前不出現的屬性 → data.js AFFIX_LEVEL_GATES（2026-10-30 起改由 system_unlock 表管理）。
+   表裡「元素傷害詞條」「屬性抗性詞條」兩列的等級＝「從這一級起出現」（與其他解鎖列同一個意思）；
+   程式內 AFFIX_LEVEL_GATES 的 level 是「這一級（含）以前不出現」，所以寫入時 -1。轉生欄只支援 0。
+   詞條鍵必須存在於 Equipment_Affix 表的詞條池，打錯就中止——否則那一筆限制會靜靜地失效。 */
 {
-  const GATE_CAT = '6-裝備', GATE_NAME = '等級前不出現的屬性';
-  const gateRow = index[GATE_CAT] && index[GATE_CAT][GATE_NAME];
-  if (!gateRow) {
-    skippedParams.push(GATE_CAT + ' / ' + GATE_NAME + ' → AFFIX_LEVEL_GATES');
-  } else {
-    const affixCsvPath = process.env.EQUIPMENT_AFFIX_CSV || path.join(ROOT, 'config', 'CSV', 'Equipment_Affix.csv');
-    const knownAffixKeys = new Set(parseCsv(fs.readFileSync(affixCsvPath, 'utf8'))
-      .filter(r => r[0] === '詞條池').map(r => r[1]));
-    const groups = [];
-    for (let i = 0; i + 1 < gateRow.length; i += 2) {
-      const lvTxt = String(gateRow[i] == null ? '' : gateRow[i]).trim();
-      const listTxt = String(gateRow[i + 1] == null ? '' : gateRow[i + 1]).trim();
-      if (lvTxt === '' || Number(lvTxt) === 0) continue;
-      const level = Number(lvTxt);
-      if (!Number.isFinite(level) || level < 0) throw new Error(GATE_NAME + ' 的等級不是正數：「' + lvTxt + '」');
-      const keys = listTxt.replace(/^\{|\}$/g, '').split(/[,;、\s]+/).map(x => x.trim()).filter(x => x !== '' && x !== '0');
-      if (!keys.length) throw new Error(GATE_NAME + ' 的等級 ' + lvTxt + ' 沒有對應的屬性陣列（應為 {詞條鍵,詞條鍵…}）');
-      const unknown = keys.filter(k => !knownAffixKeys.has(k));
-      if (unknown.length) throw new Error(GATE_NAME + ' 含有詞條池沒有的鍵：' + unknown.join('、') + '（詞條鍵見 Equipment_Affix 表「詞條池」的 id 欄）');
-      groups.push('  { level: ' + level + ', keys: [' + keys.map(k => "'" + k + "'").join(', ') + '] }');
-    }
-    arrayContent('data', 'AFFIX_LEVEL_GATES', groups.length ? '\n' + groups.join(',\n') + '\n' : '', 'AFFIX_LEVEL_GATES');
-  }
+  const AFFIX_GATE_ROWS = [
+    ['元素傷害詞條', ['elemDmgFire', 'elemDmgIce', 'elemDmgLightning', 'elemDmgPoison', 'elemDmgLight', 'elemDmgDark', 'elemDmgEarth', 'elemDmgWind']],
+    ['屬性抗性詞條', ['resFire', 'resIce', 'resLightning', 'resPoison', 'resLight', 'resDark', 'resEarth', 'resWind', 'resAll']]
+  ];
+  const affixCsvPath = process.env.EQUIPMENT_AFFIX_CSV || path.join(ROOT, 'config', 'CSV', 'Equipment_Affix.csv');
+  const knownAffixKeys = new Set(parseCsv(fs.readFileSync(affixCsvPath, 'utf8'))
+    .filter(r => r[0] === '詞條池').map(r => r[1]));
+  const byLevel = new Map();
+  AFFIX_GATE_ROWS.forEach(([sysName, keys]) => {
+    const u = systemUnlock(sysName);
+    if (Number(u.reinc) !== 0) throw new Error('system_unlock.csv 「' + sysName + '」只支援等級門檻，轉生欄必須是 0（目前 ' + u.reinc + '）');
+    const level = Number(u.level) - 1;
+    if (!(level >= 0)) throw new Error('system_unlock.csv 「' + sysName + '」等級必須 ≥ 1');
+    const unknown = keys.filter(k => !knownAffixKeys.has(k));
+    if (unknown.length) throw new Error(sysName + ' 含有詞條池沒有的鍵：' + unknown.join('、'));
+    if (level === 0) return; // 1 級起就出現＝沒有門檻
+    if (!byLevel.has(level)) byLevel.set(level, []);
+    byLevel.get(level).push(...keys);
+  });
+  const groups = Array.from(byLevel.entries()).map(([level, keys]) =>
+    '  { level: ' + level + ', keys: [' + keys.map(k => "'" + k + "'").join(', ') + '] }');
+  arrayContent('data', 'AFFIX_LEVEL_GATES', groups.length ? '\n' + groups.join(',\n') + '\n' : '', 'AFFIX_LEVEL_GATES（system_unlock）');
 }
+// 神界：開放條件是「通關人界最後一張地圖」，由 Zones 表前置欄管理；system_unlock 只放一列說明，這裡確認它還在。
+systemUnlock('神界');
 /* ===========================================================================
    套用引擎
    =========================================================================== */

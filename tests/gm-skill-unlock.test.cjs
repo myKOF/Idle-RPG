@@ -132,6 +132,6 @@ test('skill_unlock 再次執行關閉時：恢復為正常限制條件', () => {
 
   // 3. 裝載欄恢復1級容量
   c.G.player.level = 1;
-  assert.equal(c.loadoutSize(), 4);
+  assert.equal(c.loadoutSize(), 2);
 
 });
