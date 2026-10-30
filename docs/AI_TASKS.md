@@ -10,6 +10,18 @@
 - 驗證範圍：NodeVM正式UI渲染／鑲入／取下／升級，以及原封載入sim.worker入口的headless宿主驗正式runCommand、屬性快取失效與gems面板；未做瀏覽器實際操作／畫面或全庫回歸。唯讀未改：規範／Workflow／prompts、Gem_resonance.xlsx／CSV／data、formula.js／item.js／save.js／ui.js、Worker協議與模擬宿主；無素材或素材庫變動，不建立空素材Commit。
 - 自我Review完成，本次無未完成實作，可供Review／合併；已知限制為上述既有失敗及未跑項。Commit為本段所在「[Codex] feat: 寶石共鳴限定相鄰異種類型」，實際編號見交付；未合併或推送develop／main。後續使用者正常整合並重新載入。工作期間同副本另一聊天新增CHAOS-PREVIEW-REPAIR獨立任務段，只分段暫存本共鳴紀錄，保留其進行中修改。
 
+## CHAOS-PREVIEW-REPAIR-20261030 — 修正混沌裝備預覽交付
+
+- Owner：Codex；Done。使用者指出上一輪預覽圖片只剩逐字標題與黑底，要求修好並重新截取混沌／神鑄混沌的實際tips、ICON與詳情。
+- 範圍：聊天visualizations內隔離預覽／測試伺服器／截圖及本段紀錄；允許css/equipment-chaos.css必要文字換行修正、index該CSS快取與LV說明，唯讀正式UI／原稿，禁止修改玩法、素材、其他進行中內容與合併推送。docs預檢無外部來源，只插入本獨立段落並逐段暫存。
+- 已重開磁碟comparison.png確認上一輪交付確實損壞；同輪desktop.png仍可顯示裝備，但存在大段空白，只含一份詳情。此次以外層獨立版面與兩個iframe隔離正式遊戲CSS，各自呼叫正式itemCellHTML／renderEquip／showItemTooltip／renderDetail；不使用裁切截圖，保存完整結果後重新讀取檔案視覺核對。驗四張卡片及兩品質圖示可見／尺寸／文字／載圖／Console與詳情捲動，完成交付紀錄及獨立Commit。
+
+- 完成預覽：外層只載自己的版面CSS，兩個iframe各載正式遊戲CSS與JS、100級測試裝備，分別顯示64×64背包ICON、280px tips與280×500詳情；不再以裁切API輸出。新comparison-full.jpg為完整頁面，已經view_image從磁碟重新讀取確認兩圖示／四卡完整、無逐字窄欄與大段空白；檔案位於本聊天visualizations/chaos-preview-fixed，index.html／frame.html／server.py及browser-report.json一併保留供重現。
+- 實際顯示修正：正式神鑄混沌tips品質列在238px文字區發生245px溢出；css/equipment-chaos.css加入flex-wrap、空間不足將評分換至靠右下一行，品質文字保留。兩品質重新量測scrollWidth均238＝clientWidth238；ICON圖片complete且naturalWidth>0，四張卡均可見，兩內頁documentWidth607＝viewport607。index該CSS快取1.0.2，LV既有說明同步，無JS／數值／String／Worker／素材變動。
+- 預檢分段：index與Claude未提交的融合面板移除（原409行）同檔不同區段，本次只升檔首chaos CSS版號；候選與共同祖先／Claude實際工作檔merge-file exit0，無語意依賴，未碰對方工作區。docs內同副本寶石共鳴任務紀錄保留，僅提交本段。
+- 驗證：node --test --test-reporter=spec tests/equipment-tooltip-compare.test.cjs tests/equipment-two-hand-display.test.cjs tests/equipment-selection-border.test.cjs全部16/16通過；npm.cmd run build604檔通過；git diff --check及暫存diff檢查通過。正式兩品質詳情在預覽測試縮至300px後，End實際從0捲至164／184（各等於最大值），圖框rect前後相同；兩獨立測試頁page error監聽與Console error／warning皆0。IAB多iframe觀察曾回報一個無來源MutationObserver錯誤，讀過的全部正式載入JS不含該API；保留於browser-report，不宣稱整個多iframe工具Console完全0，獨立頁面及可見渲染不受影響。
+- 唯讀未改：正式ui.js／item.js／data.js／formula、原授權PNG、其餘品質CSS／回歸測試、共鳴／Worker／String／存檔與Claude融合增量。只有遊戲四檔CSS／index／LV／AI_TASKS變更，無素材庫修改／Commit。自我Review完成，無本項未完成實作；預覽沿正式渲染函式的隔離裝備資料，不是玩家存檔或完整遊玩／真Worker驗收。Commit為本段所在「[Codex] fix: 修復混沌裝備預覽並避免品質列溢出」，編號見交付；未合併推送，可正常Review／合併，下一步整合後重新載入。
+
 ## CHAOS-AUTHORIZED-FRAME-20261030 — 授權混沌邊框與清淡紅光
 
 - Owner：Codex；Done，單一開發者。使用者授權直接使用所附406×600裝備圖，要求混沌／神鑄混沌的tips、icon、詳情復刻，補充左下紅光調淡以利閱讀。沿用原圖的紅金藤紋與寶石邊框，CSS九宮格只顯示邊緣、空白區域作底色取樣；文字／數值／裝備圖案仍由現行資料顯示，左下光暈以低透明度CSS處理。
