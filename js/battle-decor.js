@@ -1339,7 +1339,7 @@ var BattleDecor = (function () {
     g.fillStyle=gr;g.beginPath();g.ellipse(w/2,h/2,w*.28,h*.42,.5,0,Math.PI*2);g.fill();
   }
   var PARTICLE_SPECS = [['dot',16,16,1],['fog',200,120,2],['glow',32,32,3],['streak',36,10,4],['flake',16,16,5],['spark',24,24,6],['ray',64,256,7],['ripple',48,24,8],['petal',16,16,9]];
-  var PARTICLE_DRAW = {skyVeil:particleSkyVeil,skyRiver:particleSkyRiver,divineOrbit:particleDivineOrbit,dot:particleDot,fog:particleFog,glow:particleGlow,streak:particleStreak,flake:particleFlake,spark:particleSpark,ray:particleRay,ripple:particleRipple,petal:particlePetal};
+  var PARTICLE_DRAW = {divineOrbit:particleDivineOrbit,dot:particleDot,fog:particleFog,glow:particleGlow,streak:particleStreak,flake:particleFlake,spark:particleSpark,ray:particleRay,ripple:particleRipple,petal:particlePetal};
   var PARTICLE_W = {};
   PARTICLE_SPECS.forEach(function (p) { PARTICLE_W[p[0]] = p[1]; });
 
@@ -1425,7 +1425,7 @@ var BattleDecor = (function () {
   }
   /* 可平鋪的週期雜訊地表，不用方向性波紋，避免投影後看起來像水面或規則格線。 */
   function buildGround(zoneKey) {
-    if(zoneKey&&zoneKey.indexOf('god_')===0)return divineGround(zoneKey);
+
     var colors={mist_forest:[39,59,49],lava_mountain:[56,44,43],thunder_peak:[63,74,88]};
     var c=colors[zoneKey];if(!c)return null;
     var canvas=document.createElement('canvas');canvas.width=canvas.height=256;var g=canvas.getContext('2d'),im=g.createImageData(256,256);
@@ -1440,41 +1440,6 @@ var BattleDecor = (function () {
       var k=(y*256+x)*4;for(var j=0;j<3;j++)im.data[k+j]=c[j]+n;im.data[k+3]=255;
     }
     g.putImageData(im,0,0);return canvas;
-  }
-
-  /* 周期Voronoi讓虛空裂片真正分離；聖域為珍珠瓷面，戰場為神金殘台，皆非泥土。 */
-  function divineGround(zoneKey) {
-    var S=512,c=document.createElement('canvas');c.width=c.height=S;
-    var g=c.getContext('2d'),im=g.createImageData(S,S),r=mulberry(strHash(zoneKey)),cells=[];
-    var holy=zoneKey==='god_sanctuary',chaos=zoneKey==='god_chaos';
-    for(var cy=0;cy<5;cy++)for(var cx=0;cx<5;cx++)cells.push({x:(cx+.18+r()*.64)*S/5,y:(cy+.18+r()*.64)*S/5,k:r()});
-    for(var y=0;y<S;y++)for(var x=0;x<S;x++){
-      var first=1e9,second=1e9,cell=null;
-      for(var i=0;i<cells.length;i++){
-        var p=cells[i],dx=Math.abs(x-p.x),dy=Math.abs(y-p.y);dx=Math.min(dx,S-dx);dy=Math.min(dy,S-dy);
-        var dist=dx*dx+dy*dy;
-        if(dist<first){second=first;first=dist;cell=p;}else if(dist<second)second=dist;
-      }
-      var seam=(Math.sqrt(second)-Math.sqrt(first)),noise=(hash3(x,y,71)/4294967296-.5)*2;
-      var base,light=cell.k*10+noise;
-      if(chaos){
-        if(seam<24){var edge=Math.max(0,1-Math.abs(seam-22)/2);base=[5+edge*59,7+edge*67,19+edge*113];}
-        else{var bevel=Math.min(1,(seam-24)/7);base=[26+light*1.1+bevel*5,31+light+bevel*7,59+light*1.7+bevel*11];}
-      }else if(holy){
-        var vein=Math.sin(x*Math.PI*4/S+Math.sin(y*Math.PI*2/S)*2)*Math.sin(y*Math.PI*2/S+x*Math.PI*2/S);
-        var shine=Math.pow(Math.max(0,Math.cos((x+y)*Math.PI*2/S)),12)*12;
-        // 聖域以寬大無縫瓷面承托金紋，避開混沌裂片相同的拼塊輪廓。
-        base=[173+noise+shine+vein*6,193+noise+shine+vein*5,208+noise+shine+vein*4];
-      }else{
-        var glow=Math.max(0,1-Math.abs(seam-1.3)/1.2);
-        base=seam<3?[40+glow*64,34+glow*39,43+glow*10]:[64+light,58+light*.8,69+light*.7];
-      }
-      var off=(y*S+x)*4;for(var ch=0;ch<3;ch++)im.data[off+ch]=base[ch];im.data[off+3]=255;
-    }
-    g.putImageData(im,0,0);
-    // 零星星點襯出深淵與裂片的距離。
-    if(chaos)for(var st=0;st<180;st++){g.fillStyle=st%3?'rgba(165,180,255,.38)':'rgba(244,217,255,.6)';g.fillRect(r()*S,r()*S,.6+r(),.6+r());}
-    return c;
   }
 
   function decalDivine(g,w,h,r,pal) {
@@ -1498,30 +1463,6 @@ var BattleDecor = (function () {
     g.restore();
   }
 
-  /* 遠方天空河：單張預烘霧帶與星塵，三層視差；不在每幀重繪Canvas。 */
-  function particleSkyRiver(g,w,h,r) {
-    for(var band=0;band<18;band++){
-      g.beginPath();
-      for(var i=0;i<=80;i++){
-        var x=i/80*w,y=h*.49+Math.sin(x/w*Math.PI*1.7-.8)*h*.19+(band-8.5)*h*.012;
-        if(!i)g.moveTo(x,y);else g.lineTo(x,y);
-      }
-      g.strokeStyle='rgba(255,255,255,'+(.018+Math.sin(band/18*Math.PI)*.025)+')';g.lineWidth=h*(.025+Math.sin(band/18*Math.PI)*.055);g.stroke();
-    }
-    for(var star=0;star<850;star++){
-      var sx=r()*w,mid=h*.49+Math.sin(sx/w*Math.PI*1.7-.8)*h*.19;
-      var sy=mid+(r()+r()+r()-1.5)*h*.19,sz=.3+Math.pow(r(),8)*2.1;
-      g.fillStyle='rgba(255,255,255,'+(.12+r()*.6)+')';g.fillRect(sx,sy,sz,sz);
-      if(sz>1.8){g.fillStyle='rgba(255,255,255,.3)';g.fillRect(sx-3,sy+.5,7,.6);g.fillRect(sx+.5,sy-3,.6,7);}
-    }
-    // 兩端及上下均淡出，縮放或超寬視窗也不露出矩形邊界。
-    var fade=g.createLinearGradient(0,0,w,0);fade.addColorStop(0,'transparent');fade.addColorStop(.12,'white');fade.addColorStop(.88,'white');fade.addColorStop(1,'transparent');
-    g.globalCompositeOperation='destination-in';g.fillStyle=fade;g.fillRect(0,0,w,h);g.globalCompositeOperation='source-over';
-  }
-  function particleSkyVeil(g,w,h) {
-    var gr=g.createLinearGradient(0,0,0,h);gr.addColorStop(0,'white');gr.addColorStop(.32,'rgba(255,255,255,.96)');gr.addColorStop(.6,'rgba(255,255,255,.7)');gr.addColorStop(1,'transparent');
-    g.fillStyle=gr;g.fillRect(0,0,w,h);
-  }
   function particleDivineOrbit(g,w,h) {
     g.save();g.translate(w/2,h/2);g.strokeStyle='rgba(255,255,255,.65)';g.lineWidth=1.1;
     for(var i=0;i<3;i++){g.beginPath();g.arc(0,0,w*(.29+i*.06),i*2,i*2+1.6);g.stroke();}
@@ -1631,16 +1572,16 @@ var BattleDecor = (function () {
       deep: [['arch',1.2,145,142],['grave',2.5,72,96],['skullPile',2,96,70],['urn',1.2,53,62],['pillar',1.6,72,133],['dryGrass',1.4,70,46],['brazier',1.4,58,80,{metal:'#4a4450',fire:'#9a4aff',fire2:'#e8c8ff'}]]
     },
     god_battlefield: {
-      surface: [['godBlade',3,100,174],['warCrown',2,133,166],['sunRelic',1.4,114,153],['chainShard',2.5,104,104]],
-      deep: [['warCrown',2.4,141,181],['godBlade',3,107,187],['sunRelic',1.7,122,165],['chainShard',2.2,111,114]]
+      surface: [['godBlade',0.5,100,174],['warCrown',0.35,133,166],['sunRelic',0.25,114,153],['chainShard',0.8,104,104],['warRampart',1.6,155,128],['titanHelm',1.7,115,105],['charredStandard',1.8,94,150],['siegeWreck',1.7,146,107],['emberCrater',2.8,156,58],['bladeGrave',2.7,108,56]],
+      deep: [['godBlade',0.6,107,187],['warCrown',0.4,141,181],['sunRelic',0.3,122,165],['chainShard',0.9,111,114],['warRampart',1.7,168,144],['titanHelm',1.8,126,116],['charredStandard',1.8,98,158],['siegeWreck',1.8,153,115],['emberCrater',3,165,60],['bladeGrave',2.5,117,59]]
     },
     god_chaos: {
-      surface: [['voidGyre',1.8,133,177],['voidPrism',3,126,161],['voidSpindle',2.2,81,164],['voidLens',1.8,125,154]],
-      deep: [['voidGyre',2.5,143,190],['voidPrism',2.8,134,172],['voidSpindle',2.3,87,176],['voidLens',2,134,168]]
+      surface: [['voidGyre',0.6,133,177],['voidPrism',0.8,126,161],['voidSpindle',0.6,81,164],['voidLens',0.4,125,154],['riftAnchor',1.8,150,178],['voidArch',1.5,130,181],['orbitCubes',2.1,114,126],['astralSpine',2.3,148,60],['nullBloom',1.7,112,142],['riftObelisk',1.9,94,151]],
+      deep: [['voidGyre',0.7,143,190],['voidPrism',0.9,134,172],['voidSpindle',0.6,87,176],['voidLens',0.5,134,168],['riftAnchor',1.8,164,195],['voidArch',1.6,144,199],['orbitCubes',2.1,126,140],['astralSpine',2.3,158,60],['nullBloom',1.8,122,154],['riftObelisk',2,105,167]]
     },
     god_sanctuary: {
-      surface: [['seraphWing',2.4,137,188],['celestialHarp',1.8,121,171],['haloDais',2,113,166],['lightLotus',3,95,86]],
-      deep: [['seraphWing',2.3,145,198],['celestialHarp',2,129,183],['haloDais',2.4,123,181],['lightLotus',2.8,103,96]]
+      surface: [['seraphWing',0.7,137,188],['celestialHarp',0.4,121,171],['haloDais',0.5,113,166],['lightLotus',0.8,95,86],['celestialArch',1.8,155,192],['starDial',2,116,60],['crystalFountain',1.7,125,154],['sanctumStairs',1.8,165,98],['prismGarden',2.2,107,102],['fallenCapital',2,121,58]],
+      deep: [['seraphWing',0.7,145,198],['celestialHarp',0.4,129,183],['haloDais',0.6,123,181],['lightLotus',0.9,103,96],['celestialArch',1.9,168,208],['starDial',2,128,60],['crystalFountain',1.8,135,166],['sanctumStairs',1.8,179,106],['prismGarden',2.2,117,112],['fallenCapital',2,132,60]]
     }
   };
   Object.keys(REBUILT_PROPS).forEach(function(key){
@@ -1676,12 +1617,12 @@ var BattleDecor = (function () {
 
   ['god_battlefield','god_chaos','god_sanctuary'].forEach(function(key){
     var kit=KITS[key],holy=key==='god_sanctuary',chaos=key==='god_chaos';
-    kit.tint=0xffffff;kit.deepTint=holy?0xd9e1f5:chaos?0xc2b7e8:0xd5bdac;
-    kit.decals=[['divine',3,360,{kind:holy?'sanctuary':chaos?'chaos':'battlefield'}]];
-    kit.deepDecals=[['divine',3,400,{kind:holy?'sanctuary':chaos?'chaos':'battlefield'}]];
-    kit.motion={wind:0,local:'divine'};
-    kit.skyRiver={colors:holy?[0x8caee3,0xffe4ae,0xe9c3eb]:chaos?[0x7758df,0x78c5ed,0xdba5ee]:[0xb26961,0xffd39b,0xa8c4ed]};
-    kit.ambient={kind:'motes',count:holy?22:26,color:holy?0xffe9bd:chaos?0xa5cfff:0xffc98b,fog:holy?2:1,fogTint:holy?0xc1d9ef:chaos?0x695f9f:0xb69c98,fogAlpha:.07,rays:holy?2:0,rayColor:0xffecc8};
+    kit.tint=0xffffff;kit.deepTint=holy?0xd6dbef:chaos?0xd5c5e9:0xd5b4a0;
+    kit.decals=holy?[['divine',1,270,{kind:'sanctuary'}]]:chaos?[['light',1,250,{color:'#5148b0'}]]:[['patch',3,280,{color:'#170d0b',alpha:.18}],['pebbles',1,120,{color:'#302724'}]];
+    kit.deepDecals=kit.decals;
+    kit.motion={wind:0,local:holy?'divine':chaos?'void':'smoke'};
+    kit.skyRiver={painted:true};
+    kit.ambient={kind:holy||chaos?'motes':'embers',count:holy?18:chaos?22:24,color:holy?0xffe9bd:chaos?0xa5cfff:0xffc98b,fog:holy?2:1,fogTint:holy?0xc1d9ef:chaos?0x695f9f:0xb69c98,fogAlpha:.07,rays:holy?2:0,rayColor:0xffecc8};
     kit.deepAmbient=kit.ambient;
   });
 
@@ -1705,16 +1646,16 @@ var BattleDecor = (function () {
       deep: [['arch', 3, 220, 200, { base: '#5a5662' }], ['giantBones', 1.5, 260, 130, { bone: '#beb4a0' }]]
     },
     god_battlefield: {
-      surface: [['godBlade',2,174,292],['warCrown',1.4,225,270]],
-      deep: [['warCrown',2,234,280],['sunRelic',1.5,210,260]]
+      surface: [['warRampart',2.4,235,220],['siegeWreck',2,225,175],['godBlade',0.8,174,292],['titanHelm',1.5,205,180]],
+      deep: [['warRampart',2.4,246,235],['godBlade',1,180,300],['titanHelm',1.8,218,190],['siegeWreck',2,237,183]]
     },
     god_chaos: {
-      surface: [['voidGyre',2,225,292],['voidLens',1,214,265]],
-      deep: [['voidGyre',2,237,300],['voidSpindle',1,142,278]]
+      surface: [['riftAnchor',2,237,278],['voidArch',1.6,215,280],['voidGyre',0.7,225,292],['orbitCubes',1.2,215,237]],
+      deep: [['riftAnchor',2,248,292],['voidArch',1.6,226,295],['riftObelisk',1.5,162,280],['voidSpindle',0.5,142,278]]
     },
     god_sanctuary: {
-      surface: [['seraphWing',2,224,290],['haloDais',1.5,196,272]],
-      deep: [['celestialHarp',1.5,217,286],['seraphWing',2,234,300]]
+      surface: [['celestialArch',2.4,236,292],['crystalFountain',1.8,212,255],['sanctumStairs',1.5,247,165],['seraphWing',0.8,224,290]],
+      deep: [['celestialArch',2.4,245,300],['crystalFountain',1.8,225,272],['sanctumStairs',1.5,256,180],['seraphWing',0.8,234,300]]
     }
   };
   var LANDMARK_CHANCE = 0.14;
@@ -1738,7 +1679,7 @@ var BattleDecor = (function () {
   };
   /* 背景建圖 Worker（相對於 index.html）。改了 decor-sculpt／decor-nature／battle-decor 要一起更新
      這裡的版本與 Worker 檔內 importScripts 的版本字串，否則 Worker 會吃到快取的舊畫法。 */
-  var ATLAS_WORKER_URL = 'js/worker/decor-atlas.worker.js?v=1.0.21';
+  var ATLAS_WORKER_URL = 'js/worker/decor-atlas.worker.js?v=1.0.22';
   var VARIANTS = 3;          // 每種擺件／地面裝飾畫幾個變體
   var TEX_SCALE = 1.5;       // 圖集解析度（畫面放大或高 DPI 時仍清楚；開 mipmap 避免縮小時閃爍）
 
@@ -1774,7 +1715,7 @@ var BattleDecor = (function () {
       for (var v = 0; v < nv; v++) specs.push({ kind: 'decal', key: 'd' + i + '_' + v, type: d[0], w: d[2], h: d[2], pal: d[3], seed: strHash(kitKey + d[0] + i + '_' + v + (deep ? 'd' : '')) });
     });
     var style = natureStyle(kitKey, deep);
-    var natureProps = ['godBlade','warCrown','sunRelic','chainShard','voidGyre','voidPrism','voidSpindle','voidLens','seraphWing','celestialHarp','haloDais','lightLotus','magmaPool','burningLog','slagBoulder','mistTree','rootGate','lavaVent','windPine','lavaOutcrop','stormSpire','rock','stump','log','fern','reeds','mushrooms','grass','willow','pine','deadTree','shrub','dryGrass','cactus','pillar','grave','urn','arch','ruinWall','rubble','runeStone','crystals','spire','skullPile','giantBones','banner','sword'];
+    var natureProps = ['warRampart','titanHelm','charredStandard','siegeWreck','emberCrater','bladeGrave','riftAnchor','voidArch','orbitCubes','astralSpine','nullBloom','riftObelisk','celestialArch','starDial','crystalFountain','sanctumStairs','prismGarden','fallenCapital','godBlade','warCrown','sunRelic','chainShard','voidGyre','voidPrism','voidSpindle','voidLens','seraphWing','celestialHarp','haloDais','lightLotus','magmaPool','burningLog','slagBoulder','mistTree','rootGate','lavaVent','windPine','lavaOutcrop','stormSpire','rock','stump','log','fern','reeds','mushrooms','grass','willow','pine','deadTree','shrub','dryGrass','cactus','pillar','grave','urn','arch','ruinWall','rubble','runeStone','crystals','spire','skullPile','giantBones','banner','sword'];
     var contacts = [];
     specs.forEach(function (s) {
       s.natureStyle = style;
@@ -1788,18 +1729,22 @@ var BattleDecor = (function () {
     specs = specs.concat(contacts);
     PARTICLE_SPECS.forEach(function (p) { specs.push({ kind: 'particle', key: p[0], type: p[0], w: p[1], h: p[2], seed: p[3] }); });
     if(kit.skyRiver){
-      specs.push({kind:'particle',key:'skyVeil',type:'skyVeil',w:256,h:256,seed:1});
-      specs.push({kind:'particle',key:'skyRiver',type:'skyRiver',w:768,h:240,seed:1327});
-      specs.push({kind:'particle',key:'divineOrbit',type:'divineOrbit',w:128,h:128,seed:7});
+      specs.push({kind:'sky',key:'skyRiver',type:'skyBackdrop',w:960,h:560,seed:1,natureStyle:style});
+      if(kitKey==='god_sanctuary')specs.push({kind:'particle',key:'divineOrbit',type:'divineOrbit',w:128,h:128,seed:7});
     }
     // 架子式打包
     var PAD = 6, MAXW = 2048;
     var x = PAD, y = PAD, rowH = 0;
     specs.sort(function (a, b) { return b.h - a.h; });
+    var sharedFrames={};
     specs.forEach(function (s) {
+      var identity=kit.skyRiver&&(s.kind==='prop'||s.kind==='contact')?s.kind+':'+s.type+':'+s.w+':'+s.h:null;
+      var shared=identity&&sharedFrames[identity];
+      if(shared){s.px=shared.px;s.py=shared.py;s.pw=shared.pw;s.ph=shared.ph;s.sharedFrame=true;return;}
       var pw = Math.ceil(s.w * TEX_SCALE), ph = Math.ceil(s.h * TEX_SCALE);
       if (x + pw + PAD > MAXW) { x = PAD; y += rowH + PAD; rowH = 0; }
       s.px = x; s.py = y; s.pw = pw; s.ph = ph;
+      if(identity)sharedFrames[identity]=s;
       x += pw + PAD;
       rowH = Math.max(rowH, ph);
     });
@@ -1821,13 +1766,15 @@ var BattleDecor = (function () {
   }
 
   function drawSpec(g, s) {
+    if(s.sharedFrame)return;
     g.save();
     g.beginPath(); g.rect(s.px, s.py, s.pw, s.ph); g.clip();
     g.translate(s.px, s.py);
     g.scale(TEX_SCALE, TEX_SCALE);
     var r = mulberry(s.seed);
     try {
-      if (s.kind === 'contact') {
+      if(s.kind==='sky')DecorNature.drawSky(g,s.natureStyle.theme,s.w,s.h);
+      else if (s.kind === 'contact') {
         g.translate(s.w / 2, s.h / 2); g.scale(1, 2);
         DecorNature.drawContact(g, 0, 0, s.propW, s.seed, s.natureStyle);
         if (s.natureStyle.theme === 'lava_mountain') drawLavaContact(g,s.propW,r);
@@ -2136,7 +2083,7 @@ var BattleDecor = (function () {
       var r = mulberry(hash3(cx, cy, D.seedBase));
       var chunk = { cx: cx, cy: cy, decals: [], props: [], flames: [], lights: [], emitters: [], debug: [] };
       var x0 = cx * CHUNK_W, y0 = cy * CHUNK_H;
-      var nDecal = lite ? 2 : 2 + Math.floor(r() * 2);
+      var nDecal = D.kitKey==='god_sanctuary'?(r()<.65?1:0):lite?2:2+Math.floor(r()*2);
       for (var i = 0; i < nDecal; i++) {
         var di = weightedPick(r, atlas.decals);
         var d = atlas.decals[di];
@@ -2151,7 +2098,7 @@ var BattleDecor = (function () {
         s.rotation = r() * Math.PI * 2;
         s.x = x0 + r() * CHUNK_W;
         s.y = y0 + r() * CHUNK_H;
-        s.alpha = isLight ? 0.55 : range(r, 0.75, 1);
+        s.alpha = isLight ? (D.kitKey==='god_chaos'?.18:.55) : range(r, 0.75, 1);
         (isLight ? chunk.lights : chunk.decals).push(s);
         if(d[0]==='puddle'&&(D.kitKey==='swamp'||D.kitKey==='Icefield'))chunk.emitters.push({key:cx+':'+cy+':d'+i,x:s.x,y:s.y,height:0,kind:D.kitKey==='swamp'?'gas':'frost',seed:hash3(cx,cy,i)});
         if(d[0]==='divine')chunk.emitters.push({key:cx+':'+cy+':divine'+i,x:s.x,y:s.y,height:0,width:d[2]*k*TEX_SCALE,kind:'divine',seed:hash3(cx,cy,i)});
@@ -2176,6 +2123,8 @@ var BattleDecor = (function () {
         ps._naturePhase = (hash3(cx,cy,Math.floor(px+py))>>>0)/4294967296*Math.PI*2;
         var localKind = (D.atlas.kit.motion || {}).local;
         var localSource = localKind==='smoke'?p[0]==='deadTree':localKind==='gas'?p[0]==='stump':localKind==='frost'?p[0]==='crystals':localKind==='void'?p[0]==='crystals'||p[0]==='runeStone':localKind==='petal'?p[0]==='shrub':p[0]==='dryGrass';
+        if(D.kitKey==='god_battlefield')localSource=p[0]==='emberCrater'||p[0]==='siegeWreck';
+        if(D.kitKey==='god_chaos')localSource=['riftAnchor','riftObelisk','orbitCubes','voidPrism'].indexOf(p[0])>=0;
         if(D.kitKey==='mist_forest')localSource=p[0]==='rootGate';
         if(D.kitKey==='lava_mountain'){
           localSource=['lavaVent','lavaOutcrop','magmaPool','burningLog','slagBoulder'].indexOf(p[0])>=0;
@@ -2311,6 +2260,12 @@ var BattleDecor = (function () {
           var front = s.y > py && s.y - s._decorH < py + 4;
           var over = Math.abs(s.x - px) < s._decorW * 0.5 + 18;
           var target = front && over ? PLAYER_FADE_ALPHA : 1;
+          if(D.atlas.kit.skyRiver){
+            var R=view.drawRect,screenY=s.y-view.camY*groundScale+view.H/2;
+            var horizon=Math.max(0,Math.min(1,(screenY-R.y-R.height*.34)/(R.height*.12)));
+            target*=horizon;
+            if(s._decorGround)s._decorGround.alpha=horizon;
+          }
           if (s.alpha !== target) s.alpha += (target - s.alpha) * 0.25;
           if (Math.abs(s.alpha - target) < 0.02) s.alpha = target;
         }
@@ -2377,13 +2332,8 @@ var BattleDecor = (function () {
       if (!amb) return;
       D.ambient = amb;
       if(D.atlas.kit.skyRiver&&distantLayer){
-        D.skyVeil=new PIXI.Sprite(texFor('skyVeil'));D.skyVeil.anchor.set(0);
-        D.skyVeil.tint=D.kitKey==='god_sanctuary'?0x303c62:D.kitKey==='god_chaos'?0x09091f:0x1a1726;
-        distantLayer.addChild(D.skyVeil);
-        D.atlas.kit.skyRiver.colors.forEach(function(color){
-          var river=new PIXI.Sprite(texFor('skyRiver'));river.anchor.set(.5);river.tint=color;
-          river.blendMode='add';river._decorSkyRiver=true;distantLayer.addChild(river);D.river.push(river);
-        });
+        var river=new PIXI.Sprite(texFor('skyRiver'));river.anchor.set(.5);river._decorSkyRiver=true;
+        distantLayer.addChild(river);D.river.push(river);
       }
       var count = lite ? Math.round(amb.count * 0.4) : amb.count;
       var r = mulberry(D.seedBase ^ 99);
@@ -2463,13 +2413,11 @@ var BattleDecor = (function () {
       var kind = D.ambient ? D.ambient.kind : '';
       var T = D.time;
       var far=view.drawRect||{x:0,y:0,width:W,height:H};
-      if(D.skyVeil){D.skyVeil.x=far.x;D.skyVeil.y=far.y;D.skyVeil.width=far.width;D.skyVeil.height=far.height*.38;}
-      // 遠景只做極小視差；上緣淡入的星河不蓋住中央戰鬥與角色。
-      (D.river||[]).forEach(function(s,i){
-        s.x=far.x+far.width*.5+Math.sin(T*.035+i)*far.width*.025-Math.sin(view.camX/2400)*far.width*.018;
-        s.y=far.y+far.height*(.065+i*.045)+Math.sin(T*.045+i*1.6)*far.height*.009-Math.sin(view.camY/3200)*far.height*.006;
-        s.width=far.width*(1.65+i*.10);s.height=far.height*(.40+i*.055);
-        s.alpha=(i===1?.8:.48)*(D.deep?.8:1);
+      // 完整天空畫幅保留雲層與星河的構圖，只做極小視差與緩慢漂移。
+      (D.river||[]).forEach(function(s){
+        s.x=far.x+far.width*.5+Math.sin(T*.025)*far.width*.009-Math.sin(view.camX/3200)*far.width*.009;
+        s.y=far.y+far.height*.19+Math.sin(T*.021)*far.height*.004;
+        s.height=far.height*.67;s.width=Math.max(far.width*1.05,s.height*960/560);s.alpha=1;
       });
       for (var i = 0; i < D.particles.length; i++) {
         var p = D.particles[i];
@@ -2553,6 +2501,7 @@ var BattleDecor = (function () {
         var candidates=[];
         D.chunks.forEach(function(c){c.emitters.forEach(function(e){
           var dx=e.x-view.camX,dy=(e.y-view.camY)*groundScale;
+          if(D.atlas.kit.skyRiver&&dy+view.H/2<view.drawRect.y+view.drawRect.height*.42)return;
           if(Math.abs(dx)<view.W/2+100&&Math.abs(dy)<view.H/2+100)candidates.push({e:e,d:dx*dx+dy*dy});
         });});
         candidates.sort(function(a,b){return a.d-b.d||(a.e.key<b.e.key?-1:1);});

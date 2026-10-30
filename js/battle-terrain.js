@@ -104,22 +104,22 @@ var BattleTerrain = (function () {
       ld: [['arch',3,220,200],['giantBones',1.5,260,130]]
     },
     god_battlefield: {
-      s: [['godBlade',3,100,174],['warCrown',2,133,166],['sunRelic',1.4,114,153],['chainShard',2.5,104,104]],
-      d: [['warCrown',2.4,141,181],['godBlade',3,107,187],['sunRelic',1.7,122,165],['chainShard',2.2,111,114]],
-      ls: [['godBlade',2,174,292],['warCrown',1.4,225,270]],
-      ld: [['warCrown',2,234,280],['sunRelic',1.5,210,260]]
+      s: [['godBlade',0.5,100,174],['warCrown',0.35,133,166],['sunRelic',0.25,114,153],['chainShard',0.8,104,104],['warRampart',1.6,155,128],['titanHelm',1.7,115,105],['charredStandard',1.8,94,150],['siegeWreck',1.7,146,107],['emberCrater',2.8,156,58],['bladeGrave',2.7,108,56]],
+      d: [['godBlade',0.6,107,187],['warCrown',0.4,141,181],['sunRelic',0.3,122,165],['chainShard',0.9,111,114],['warRampart',1.7,168,144],['titanHelm',1.8,126,116],['charredStandard',1.8,98,158],['siegeWreck',1.8,153,115],['emberCrater',3,165,60],['bladeGrave',2.5,117,59]],
+      ls: [['warRampart',2.4,235,220],['siegeWreck',2,225,175],['godBlade',0.8,174,292],['titanHelm',1.5,205,180]],
+      ld: [['warRampart',2.4,246,235],['godBlade',1,180,300],['titanHelm',1.8,218,190],['siegeWreck',2,237,183]]
     },
     god_chaos: {
-      s: [['voidGyre',1.8,133,177],['voidPrism',3,126,161],['voidSpindle',2.2,81,164],['voidLens',1.8,125,154]],
-      d: [['voidGyre',2.5,143,190],['voidPrism',2.8,134,172],['voidSpindle',2.3,87,176],['voidLens',2,134,168]],
-      ls: [['voidGyre',2,225,292],['voidLens',1,214,265]],
-      ld: [['voidGyre',2,237,300],['voidSpindle',1,142,278]]
+      s: [['voidGyre',0.6,133,177],['voidPrism',0.8,126,161],['voidSpindle',0.6,81,164],['voidLens',0.4,125,154],['riftAnchor',1.8,150,178],['voidArch',1.5,130,181],['orbitCubes',2.1,114,126],['astralSpine',2.3,148,60],['nullBloom',1.7,112,142],['riftObelisk',1.9,94,151]],
+      d: [['voidGyre',0.7,143,190],['voidPrism',0.9,134,172],['voidSpindle',0.6,87,176],['voidLens',0.5,134,168],['riftAnchor',1.8,164,195],['voidArch',1.6,144,199],['orbitCubes',2.1,126,140],['astralSpine',2.3,158,60],['nullBloom',1.8,122,154],['riftObelisk',2,105,167]],
+      ls: [['riftAnchor',2,237,278],['voidArch',1.6,215,280],['voidGyre',0.7,225,292],['orbitCubes',1.2,215,237]],
+      ld: [['riftAnchor',2,248,292],['voidArch',1.6,226,295],['riftObelisk',1.5,162,280],['voidSpindle',0.5,142,278]]
     },
     god_sanctuary: {
-      s: [['seraphWing',2.4,137,188],['celestialHarp',1.8,121,171],['haloDais',2,113,166],['lightLotus',3,95,86]],
-      d: [['seraphWing',2.3,145,198],['celestialHarp',2,129,183],['haloDais',2.4,123,181],['lightLotus',2.8,103,96]],
-      ls: [['seraphWing',2,224,290],['haloDais',1.5,196,272]],
-      ld: [['celestialHarp',1.5,217,286],['seraphWing',2,234,300]]
+      s: [['seraphWing',0.7,137,188],['celestialHarp',0.4,121,171],['haloDais',0.5,113,166],['lightLotus',0.8,95,86],['celestialArch',1.8,155,192],['starDial',2,116,60],['crystalFountain',1.7,125,154],['sanctumStairs',1.8,165,98],['prismGarden',2.2,107,102],['fallenCapital',2,121,58]],
+      d: [['seraphWing',0.7,145,198],['celestialHarp',0.4,129,183],['haloDais',0.6,123,181],['lightLotus',0.9,103,96],['celestialArch',1.9,168,208],['starDial',2,128,60],['crystalFountain',1.8,135,166],['sanctumStairs',1.8,179,106],['prismGarden',2.2,117,112],['fallenCapital',2,132,60]],
+      ls: [['celestialArch',2.4,236,292],['crystalFountain',1.8,212,255],['sanctumStairs',1.5,247,165],['seraphWing',0.8,224,290]],
+      ld: [['celestialArch',2.4,245,300],['crystalFountain',1.8,225,272],['sanctumStairs',1.5,256,180],['seraphWing',0.8,234,300]]
     }
   };
   CATALOG[''] = CATALOG.desert;
@@ -130,6 +130,9 @@ var BattleTerrain = (function () {
      ground：地面坑洞之類，永遠可以走過去。
      沒列在這裡的種類（草、灌木、小碎石…）底座很小，一律不擋。 */
   var FOOT = {
+    warRampart:{span:.9,d:.35},titanHelm:{span:.85,d:.65},charredStandard:{span:.3,d:.4},siegeWreck:{span:.8,d:.55},emberCrater:{ground:true},bladeGrave:{ground:true},
+    riftAnchor:{ground:true},voidArch:{ground:true},orbitCubes:{ground:true},astralSpine:{ground:true},nullBloom:{ground:true},riftObelisk:{ground:true},
+    celestialArch:{span:.9,d:.5,legs:[[-.34,.26],[.34,.26]]},starDial:{span:.85,d:.6},crystalFountain:{span:.85,d:.6},sanctumStairs:{span:.9,d:.7},prismGarden:{span:.65,d:.5},fallenCapital:{span:.8,d:.4},
     godBlade:{span:.8,d:.5},warCrown:{span:.8,d:.5},sunRelic:{span:.8,d:.5},chainShard:{span:.7,d:.4},
     voidGyre:{span:.72,d:.4},voidPrism:{ground:true},voidSpindle:{ground:true},voidLens:{span:.7,d:.4},
     seraphWing:{span:.8,d:.5},celestialHarp:{span:.8,d:.5},haloDais:{span:.8,d:.5},lightLotus:{ground:true},
@@ -194,13 +197,15 @@ var BattleTerrain = (function () {
     var r = mulberry(hash3(cx, cy, seedBase ^ 0x3c6ef372));
     var x0 = cx * CHUNK_W, y0 = cy * CHUNK_H;
     var items = [];
-    var nProp = r() < 0.12 ? 0 : 1 + Math.floor(r() * 2.6);
-    var nSmall = 1 + Math.floor(r() * 2);
+    var divine=(kitKey||'').indexOf('god_')===0,usedTypes={};
+    var nProp = divine?2+Math.floor(r()*2.8):r()<.12?0:1+Math.floor(r()*2.6);
+    var nSmall = divine ? 1 : 1 + Math.floor(r() * 2);
     var smallList = [];
     props.forEach(function (p, i) { if (p[3] <= 60) smallList.push(i); });
     var placed = [];   // [x, y, 橫向避讓, 縱向避讓]
     function add(src, idx, row, x, y, k, variants) {
       var shapes = isSolid(row[0], row[2]) ? footShapes(row[0], x, y, row[2], k) : null;
+      usedTypes[row[0]]=true;
       items.push({
         src: src, idx: idx, type: row[0], w: row[2], h: row[3],
         variant: Math.floor(r() * variants), x: x, y: y, k: k,
@@ -220,9 +225,9 @@ var BattleTerrain = (function () {
       if (small && !smallList.length) break;
       var pi = small
         ? smallList[weightedPick(r, smallList, function (i) { return props[i][1]; })]
-        : weightedPick(r, props, function (p) { return p[1]; });
+        : weightedPick(r, props, function (p) { return p[1] * (divine && usedTypes[p[0]] ? .12 : 1); });
       var px = x0 + range(r, 0.06, 0.94) * CHUNK_W, py = y0 + range(r, 0.06, 0.94) * CHUNK_H;
-      var gapX = small ? 70 : 150, gapY = small ? 80 : 180;
+      var gapX = small ? 70 : divine?112:150, gapY = small ? 80 : divine?148:180;
       var clash = placed.some(function (q) { return Math.abs(q[0] - px) < Math.max(gapX, q[2] || 0) && Math.abs(q[1] - py) < Math.max(gapY, q[3] || 0); });
       if (clash) continue;
       placed.push([px, py]);

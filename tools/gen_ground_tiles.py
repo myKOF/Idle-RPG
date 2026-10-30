@@ -2,7 +2,7 @@
 """可無縫拼接的地板貼圖產生器。
 
 輸出 images/ground/*.png，由 js/battle-renderer.js 以 TilingSprite 平鋪。
-256×256 原創材質，不畫規則磚縫；所有輸出均保存於素材庫。
+人界沿用256×256原創材質；神界手繪地表由scene-renewal匯出器管理，本工具不覆寫。
 
 刻意做得「淡」：地板只是襯底，對比太高會蓋過敵人與傷害數字。
 所有花紋以模數運算繞回，保證上下左右接縫連續。
@@ -71,9 +71,8 @@ def main():
     make_tile('ground_Icefield', (71, 90, 103), (188, 213, 226), 1002)
     make_tile('ground_swamp', (46, 63, 46), (138, 166, 115), 1003, crack=False)
     make_tile('ground_undead_mountains', (53, 49, 59), (129, 124, 139), 1004)
-    make_tile('ground_god_battlefield', (66, 54, 45), (151, 130, 105), 1005)
-    make_tile('ground_god_chaos', (52, 42, 66), (143, 119, 164), 1006)
-    make_tile('ground_god_sanctuary', (98, 96, 83), (189, 184, 158), 1007)
+    # 神界是手繪來源，不再以舊程序色塊蓋回；由export-source.cjs核對／匯出。
+    print('preserved painted god-realm ground textures')
 
 
 if __name__ == '__main__':
