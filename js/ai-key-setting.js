@@ -19,7 +19,7 @@
   ];
   var TRANSLATIONS_KEY = 'idle_rpg_gm_translations';
   // GM指令契約／翻譯規則變動時升版，避免重用舊語意。
-  var TRANSLATIONS_VERSION = 2;
+  var TRANSLATIONS_VERSION = 3;
   var TRANSLATIONS_TTL_MS = 7 * 86400000;
   var TRANSLATIONS_LIMIT = 32;
   var translationMemory = [];
@@ -210,7 +210,7 @@
   function cacheableCommands(commands) {
     return Array.isArray(commands) && commands.length > 0 && commands.length <= 32 && commands.every(function (line) {
       return typeof line === 'string' && line.length <= 256 && !/[\r\n]|@sel:|@gm-batch:/i.test(line) &&
-        /^(gold|scrap|essence|dust|equipset|equip|modequip|socketall|stage|level|turn|bag|skillmax|skill_unlock|skill_point|skillxp|masterylv|gem|rune|runeword|xp|mat|part)\s+\S/.test(line);
+        /^(gold|scrap|essence|dust|equipset|equip|modequip|socketall|stage|stage_clear|level|turn|bag|skillmax|skill_unlock|skill_point|skillxp|masterylv|gem|rune|runeword|xp|mat|part)\s+\S/.test(line);
     });
   }
 
@@ -527,7 +527,15 @@
       return 'bag ' + mBag[1];
     }
 
-    // 8. 跳關
+    // 8. 已通關與到達關卡不同；完整匹配明確設定句，否定／疑問不在本機部分執行。
+    var mClear = s.match(/^(?:把|將)?\s*([^\s\d]+?)\s*(?:第\s*)?(\d+)\s*(?:關|階)\s*(?:改為|改成|設為|設定為|調整為|標記為)\s*(?:已)?通關(?:狀態)?$/i) ||
+      s.match(/^(?:設定|標記|調整)\s*([^\s\d]+?)\s*(?:第\s*)?(\d+)\s*(?:關|階)\s*(?:為|成)\s*(?:已)?通關(?:狀態)?$/i) ||
+      s.match(/^(?:把|將)?\s*([^\s\d]+?)\s*(?:已)?通關(?:到|至)\s*(?:第\s*)?(\d+)\s*(?:關|階)$/i);
+    if (mClear && !/不|別|勿|未|不要/.test(mClear[1])) {
+      return 'stage_clear ' + mClear[1] + ' ' + mClear[2];
+    }
+
+    // 跳關維持「到達但尚未通關」的既有語意。
     var mStage = s.match(/^跳關(?:到)?\s*([^\s\d]+)\s*(\d+)(?:關|階)?$/i);
     if (mStage) {
       return 'stage ' + mStage[1] + ' ' + mStage[2];
@@ -634,7 +642,8 @@
       '3. 全身鑲滿寶石與符文：\n' +
       '   - socketall [等級1~10]：全身 13 件裝備所有孔位鑲滿指定等級隨機寶石與高階符文（例：socketall 10）\n' +
       '4. 場景與關卡跳關：\n' +
-      '   - stage <場景名稱或編號> <關卡數>：例如「跳關到亡靈山脈240關」-> stage 亡靈山脈 240\n' +
+      '   - stage <場景名稱或編號> <關卡數>：跳到但尚未通關該關，會重設後續場景；例如「跳關到亡靈山脈240關」-> stage 亡靈山脈 240\n' +
+      '   - stage_clear <場景名稱或編號> <已通關關卡>：明確要求「已通關／通關狀態」必須用此指令，將前面所有場景設為全部通關並提升指定場景紀錄，保留後續場景與所在地，不補獎勵、不改轉生。例：「亡靈山脈400關改為已通關狀態」-> stage_clear 亡靈山脈 400；不能用stage近似，400/400到達不代表通關。神界入口仍依人界最高上限通關，神界場景仍依原條件解鎖。\n' +
       '5. 角色等級與轉生：\n' +
       '   - level <等級>：設定角色等級（如 level 1000）\n' +
       '   - turn <次數>：設定轉生次數（如 turn 1）\n' +

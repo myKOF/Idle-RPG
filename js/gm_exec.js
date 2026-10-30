@@ -984,6 +984,38 @@
     return { ok: true, message: '玩家轉生次數已由 ' + before + ' 轉切換為 ' + count + ' 轉' };
   }
 
+  function gmClearStage(rawZone, rawStage) {
+    var zone = gmParseScene(rawZone);
+    if (!zone || rawStage === undefined) return { ok: false, message: '格式：stage_clear <場景> <已通關關卡>' };
+    var cap = zoneMaxStage(zone);
+    var cleared = gmNumber(rawStage, 1, cap);
+    if (cleared === null || !Number.isInteger(cleared)) return { ok: false, message: '已通關關卡必須是 1~' + cap + ' 的整數' };
+    var zoneKeys = (typeof ZONE_LIST !== 'undefined' && ZONE_LIST) ? ZONE_LIST : Object.keys(ZONES);
+    var targetIdx = zoneKeys.indexOf(zone);
+    if (targetIdx < 0) return { ok: false, message: '場景不在關卡順序中：' + zone };
+    if (!G.zoneProgress) G.zoneProgress = {};
+    // 設定通關代表前面所有場景皆通關；後續紀錄不重設，仍由既有解鎖條件控制。
+    for (var i = 0; i < targetIdx; i++) {
+      var previous = zoneKeys[i], previousCap = zoneMaxStage(previous);
+      var prior = G.zoneProgress[previous];
+      if (!prior) prior = G.zoneProgress[previous] = { current: 1, best: 1, cleared: 0 };
+      prior.cleared = previousCap;
+      prior.best = previousCap;
+      if (G.stage && G.stage.zone === previous) G.stage.best = previousCap;
+    }
+    var progress = G.zoneProgress[zone];
+    if (!progress) progress = G.zoneProgress[zone] = { current: 1, best: 1, cleared: 0 };
+    // 不沿用跳關的全圖重設，也不代替正常戰鬥補發獎勵。
+    progress.cleared = Math.max(Number(progress.cleared) || 0, cleared);
+    progress.best = Math.max(Number(progress.best) || 1, Math.min(cap, cleared + 1));
+    if (G.stage && G.stage.zone === zone) {
+      G.stage.best = Math.max(Number(G.stage.best) || 1, progress.best);
+      progress.best = G.stage.best;
+    }
+    gmDirty();
+    return { ok: true, message: '【' + ZONES[zone].name + '】已通關至第 ' + progress.cleared + ' 關（前面場景全部通關，保留後續進度，不補發獎勵）' };
+  }
+
   function gmJumpStage(raw1, raw2) {
     if (typeof ZONES === 'undefined' || !ZONES) return { ok: false, message: '目前找不到關卡進度資料。' };
     var zoneKeys = (typeof ZONE_LIST !== 'undefined' && ZONE_LIST) ? ZONE_LIST : Object.keys(ZONES);
@@ -1376,6 +1408,11 @@
     }
     if (command === 'inv_expand' || command === 'bag_expand' || command === 'expand_inv') {
       return gmSetInventoryCap(args[0], true);
+    }
+
+    if (command === 'stage_clear') {
+      if (args.length !== 2) return { ok: false, message: '格式：stage_clear <場景> <已通關關卡>' };
+      return gmClearStage(args[0], args[1]);
     }
 
     if (command === 'stage_jump' || command === 'stage' || command === 'set_stage' || command === 'setstage' || command === 'stage_set' || command === 'stageset' || command === 'zone_jump' || command === 'zone') {

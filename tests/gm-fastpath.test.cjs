@@ -80,6 +80,20 @@ test('FastPath 本地直譯：無法規則解析時回傳 null 回退給 Gemini 
   assert.equal(unknown, null);
 });
 
+test('白話通關與跳關分流，完整辨識設定句；否定／疑問／額外需求不部分執行', () => {
+  const ai = loadAiKeyContext();
+  for (const text of ['亡靈山脈400關改為已通關狀態', '請幫我將亡靈山脈第400關設為已通關',
+    '把亡靈山脈400關標記為通關', '調整亡靈山脈400關為已通關狀態', '亡靈山脈通關到400關']) {
+    assert.deepEqual(Array.from(ai.parseFastPath(text)), ['stage_clear 亡靈山脈 400'], text);
+  }
+  assert.deepEqual(Array.from(ai.parseFastPath('亡靈山脈400關設為已通關，然後加金幣10')), ['stage_clear 亡靈山脈 400', 'gold 10']);
+  assert.deepEqual(Array.from(ai.parseFastPath('跳關到亡靈山脈400關')), ['stage 亡靈山脈 400']);
+  for (const text of ['不要把亡靈山脈400關設為已通關', '亡靈山脈400關設為未通關',
+    '亡靈山脈400關設為已通關嗎？', '亡靈山脈400關設為已通關但不要動前面場景']) {
+    assert.equal(ai.parseFastPath(text), null, text);
+  }
+});
+
 test('常用白話：語助詞、數量後綴、數字在資源前後與中文單位', () => {
   const ai = loadAiKeyContext();
   const cases = [
