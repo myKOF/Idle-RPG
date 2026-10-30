@@ -225,7 +225,7 @@ test('神界底圖／三處熱區同人界進度規則，兩端傳送門只切�
   assert.equal(t.ids['world-map-modal'].getAttribute('data-world-realm'), 'god');
   assert.equal(t.ids['world-map-title'].textContent, '神界');
   assert.equal(t.document.activeElement, t.ids['world-map-human-portal']);
-  assert.equal(t.ids['world-map-god-image'].getAttribute('src'), 'images/world-map/god-realm.png?v=1');
+  assert.equal(t.ids['world-map-god-image'].getAttribute('src'), 'images/world-map/god-realm.png?v=2');
   for (const key of t.c.REALMS.god.zones) {
     assert.equal(t.button(key).parent, t.ids['world-map-god-zones']);
     assert.equal(t.button(key).className, 'world-map-hotspot');

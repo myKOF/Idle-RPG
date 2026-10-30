@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## GOD-PORTAL-ROCK-PERSPECTIVE-20261030 — 返回門周圍岩台透視
+
+- Owner：Codex；Done。使用者保留現有傳送門造型，要求修正太古戰場門周圍岩石造形／角度，使較直立門體與斜向浮島地形融合。以前輪已完成神界圖為唯一編修基準，單一開發者。
+- 範圍：神界PNG、素材庫該圖來源／版本紀錄、index圖片快取、WORLD_MAP／LV既有門體說明及本段；僅需時微調world-map.css門洞動畫對齊及快取。禁止其他圖區／人界圖／遊戲進度／解鎖／文字來源／Worker／存檔、其他工作區及合併推送。現有檔案預檢乾淨，素材庫乾淨；沿用本聊天已查證RPG Mote Studio無法連線，內建imagegen局部編修。
+- 驗圖稿局部岩台／斷岩／台階銜接、門洞位置及動畫／返回互動、桌面及窄屏、素材庫／遊戲SHA、相關回歸／Build／diff；先素材庫再遊戲提交，保留使用者原稿及前版門體來源，交正常整合並重載測試服。
+- 完成遊戲六檔：神界PNG、index圖片快取v2、world-map-ui測試僅對應圖片版號1→2、WORLD_MAP／LV及本段。素材庫四檔：最新PNG／SOURCE完整本次提示詞／source.json版本2及新增god-realm-before-rock-perspective.png保留首版。新的厚實斜向斷岩、承托平台、階梯與熔岩反光銜接門腳，門框／門洞及三場景比例位置保留；CSS／JS／互動／文字來源不變。圖稿為內建imagegen編修，有細部生成差異，非逐像素局部替換。
+- 驗證：node tools/world-map/export-source.cjs --apply及--check均通過原稿／最終圖／遊戲SHA；另核對前版保留PNG等於修改前SHA。node --test --test-reporter=spec tests/world-map-ui.test.cjs tests/world-map.test.cjs tests/vfx-editor-cache-versions.test.cjs全部20/20通過，npm.cmd run build604檔通過，兩庫git diff --check通過。沒有新增低影響美術專用測試，也未降低既有互動斷言。
+- 實際測試服8131：CUA舊連線失效後重設runtime並取得原IAB分頁，重載確認1678×937與god-realm.png?v=2；核對岩台及動畫門洞貼合、flow transform隨時間改變、點返回人界再進神界均正常且仍在太古戰場1關。未改玩家測試進度或戰鬥開關；留下神界畫面供使用者檢視。當前453×611窄分頁畫面及完整生成圖已視覺檢查，截圖visualizations/god-world-map/rock-perspective-live.png，Console error／warning0。本輪未另開桌面viewport或全庫長戰；純背景未改版面及CSS。
+- 唯讀未改：規範／Workflow、ui-world-map.js／world-map.css、Worker／ZONES／存檔／String來源、使用者JPG原稿／人界素材及匯出器。自我Review完成，無本項未完成實作，可供Review／合併；素材庫Commit3c4a50c，遊戲Commit為本段所在「[Codex] fix: 修正神界傳送門岩台透視」，未合併推送。下一步正常整合兩庫；目前測試服已刷新新版。
+
 ## GOD-WORLD-MAP-20261030 — 神界圖稿、三場景熱區與遺跡返回門
 
 - Owner：Codex；Done，單一開發者。使用者指定god_world.jpg作神界大地圖，圖名改神界、同人界名稱／最高到達／解鎖／前進規則；補充太古戰場左側既有門結合遺跡改大型人界傳送門並加特效，點擊只回人界大地圖。
