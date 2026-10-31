@@ -10,6 +10,39 @@
 - 驗證範圍：NodeVM正式UI渲染／鑲入／取下／升級，以及原封載入sim.worker入口的headless宿主驗正式runCommand、屬性快取失效與gems面板；未做瀏覽器實際操作／畫面或全庫回歸。唯讀未改：規範／Workflow／prompts、Gem_resonance.xlsx／CSV／data、formula.js／item.js／save.js／ui.js、Worker協議與模擬宿主；無素材或素材庫變動，不建立空素材Commit。
 - 自我Review完成，本次無未完成實作，可供Review／合併；已知限制為上述既有失敗及未跑項。Commit為本段所在「[Codex] feat: 寶石共鳴限定相鄰異種類型」，實際編號見交付；未合併或推送develop／main。後續使用者正常整合並重新載入。工作期間同副本另一聊天新增CHAOS-PREVIEW-REPAIR獨立任務段，只分段暫存本共鳴紀錄，保留其進行中修改。
 
+## CHAOS-ICON-BICOLOR-CONTRAST-20261031 — 強化左下酒紅與右上紫色
+
+- Owner：Codex；Done，單一開發者。使用者肯定目前框底融合做法，要求雙色更明顯，左下偏酒紅／右上偏紫，中間自然漸變，以區別創世裝備。前置5e6ba4f2已完成；本輪只改ICON配色。
+- 允許equipment-chaos.css的金屬外沿與內底色階／高光、index該CSS快取、LV既有說明及本段、聊天visualizations預覽；禁止改框幾何／內收／陰影分層、tips／詳情、JS／玩法／素材／Worker／存檔／String／其他品質及其他工作區、合併推送。fetch後四檔預檢無外部來源，工作區乾淨。
+- 完成：左下酒紅#8f2541與右上紫晶#704bb0提高色差，中段經暗玫紫自然過渡，保留有色角落高光及同色金屬邊；框幾何、2px內收與暗邊分層不變。混沌／神鑄混沌在背包／身上裝備／雙手共用副手／神鑄格共用；快取1.0.5，LV既有說明同步。純CSS無獨立美術檔或素材庫變動。
+- 測試：`node --test --test-reporter=spec tests/equipment-tooltip-compare.test.cjs tests/equipment-two-hand-display.test.cjs tests/equipment-selection-border.test.cjs tests/inventory-mythic-skin.test.cjs tests/forge-shared-inventory.test.cjs`全部30/30；`node tools/equipment-ui/export-source.cjs --check`通過；`npm.cmd run build`全部604檔通過；diff／暫存範圍核對通過。
+- UI：隔離預覽載入正式itemCellHTML／renderEquip／renderForge，神話／創世對照與6部位、選取／兩種置灰／鎖定／星標共33張圖全載入，21個混沌格底色一致；1280桌面及390窄屏（48px格，無橫向溢出）通過。tips／詳情仍用授權PNG原框、原閱讀底與紫色副層，Console Error／Warning為0。截圖保存後轉PNG並重開核對，連同browser-report保留本聊天visualizations/chaos-icon-bicolor-20261031/{comparison-full.png,narrow.png,browser-report.json}；JPEG展示異常，交付PNG。未作完整玩家存檔／多瀏覽器驗證。
+- 唯讀檢查未改：規範／Workflow／prompts、ui.js／style.css／測試、授權PNG與匯出器、其他品質／玩法／Worker／String。自我Review完成，無未完成實作／已知新增功能風險，可供Review／合併；下一步由使用者正常整合並重新載入。Commit為本段所在「[Codex] fix: 強化混沌圖示的酒紅紫色漸層」，編號見交付；未合併推送。期間另一聊天修改聖域檔案、index腳本快取與本文件獨立末段，均不暫存；另ai/claude的index變動僅formula／skills2／combat快取，與本次CSS連結不同區段，三方merge-file試跑exit0，無語意相依。
+
+## CHAOS-ICON-INTEGRATED-FRAME-20261031 — 酒紅紫晶ICON一體框底
+
+- Owner：Codex；Done，單一開發者。使用者否定上一版白灰底像貼紙，要求參照神話／創世做法，必要時重做框，底色用雙色或多色。本次只改混沌與神鑄混沌ICON，tips／詳情維持先前授權圖框及閱讀內襯。
+- 前置：9184efc5已完成，使用者本輪取代其ICON視覺方向。允許equipment-chaos.css的ICON框底／必要分層、index該CSS快取、LV既有說明及本段、聊天visualizations預覽；禁止玩法／JS／Worker／存檔／String／原PNG素材、其他品質及其他工作區、合併推送。
+- fetch後四檔預檢無外部來源。同副本GOD-GROUND-SHEEN仍進行中：index場景script／bridge快取、LV神界段及AI_TASKS檔尾不碰，只改本項CSS快取／圖框段／獨立任務段，分段暫存。沿遊戲現有創世SVG角飾幾何與神話／創世的金屬外沿→內收底層作法，形成酒紅／紫晶有色高光、暗邊與金屬框，無獨立點陣作圖或新增外部素材。驗多部位／兩品質／選取置灰標記／裝備及神鑄格、閱讀面板不受影響、瀏覽器截圖存後重開／Console／回歸／Build／diff後獨立Commit，交正常Review／使用者整合。
+
+- 完成四檔：移除ICON白灰高光及原截圖框的ICON切片；沿style.css既有創世角飾幾何做內嵌SVG紅紫雕飾，外沿金屬漸層、內層inset2px、內框暗邊／陰影與酒紅→暗玫紫→紫晶有色漸層共同構成。沿神話／創世::before外沿／::after內底負z-index分層，裝備圖案與標記在上；複製副手亦明確保留2px內收及相同底色。tips／詳情保留原授權圖框、紅紫遮罩和暗綠閱讀底。index混沌CSS1.0.4，LV及本段同步；無JS／數值／獨立美術檔或素材庫變動。
+- 驗證：node --test --test-reporter=spec tests/equipment-tooltip-compare.test.cjs tests/equipment-two-hand-display.test.cjs tests/equipment-selection-border.test.cjs tests/inventory-mythic-skin.test.cjs tests/forge-shared-inventory.test.cjs全部30/30通過；npm.cmd run build604檔通過；node tools/equipment-ui/export-source.cjs --check原圖／匯出SHA一致；git diff --check及暫存diff檢查通過。沒有新增鏡像測試或改既有斷言。
+- 瀏覽器：IAB／獨立8141／正式ICON、裝備、神鑄、tips及詳情函式；33張六部位／狀態與裝備圖示完整載入。兩品質、主手／神鑄格及複製副手的::after背景相同、內框為SVG、inset2px，圖案下分層為-2／-1且ICON無舊紫色濾鏡遮罩；選取／兩種置灰／鎖定／星等／等級與雙手標記正常。隱藏正式tips卡及固定詳情框仍指原PNG及原紫色濾鏡，閱讀背景保留。390×844實際重載後width390＝viewport390、格寬48；桌面格寬58，Console error／warning0。截圖comparison-full.jpg及narrow.jpg已保存並從磁碟以view_image原尺寸重開核對，browser-report.json及可重現預覽保留本聊天visualizations/chaos-icon-integrated-20261031。
+- 唯讀未改：規範／Workflow／prompts、神話與創世CSS幾何／光影、現有UI／data／公式與回歸、原授權PNG／匯出器、String／Worker／存檔與其他場景工作。角飾為既有專案SVG程式延伸，非新繪點陣或引入外部素材；無本項素材庫Commit。本次只提交自身四檔增量，保留同副本GOD-GROUND-SHEEN內容與其提交歷史。
+- 自我Review完成，無本項未完成實作或已知新增程序風險，可供Review／合併；未驗完整玩家存檔／真Worker遊玩、多瀏覽器或低階GPU大量ICON。遊戲Commit為本段所在「[Codex] fix: 重製混沌圖示的酒紅紫晶框底」，編號見交付。未合併推送，下一步正常整合並重新載入新版CSS。
+
+## CHAOS-ICON-SURFACE-20261031 — 混沌ICON柔亮漸層底
+
+- Owner：Codex；Done，單一開發者。使用者提供背包畫面，要求混沌icon像神話／創世一樣有清楚的底色；神鑄混沌沿既有原品質映射共用。採柔亮灰紫漸層與上方霧白高光，讓深色裝備圖案易辨，紅紫框維持。
+- 前置：既有授權紅紫框與品質映射完成。允許css/equipment-chaos.css的ICON專屬底色、index該CSS快取、LV既有說明及本段、聊天visualizations預覽；禁止JS／玩法／文字表／Worker／存檔／原PNG素材、tips與詳情底色或其他品質、其他工作區及合併推送。fetch後四檔預檢無外部來源，工作區乾淨。
+- 只替背包／身上裝備／神鑄材料格的eff-chaos定義新背景，不修改共用chaos-surface閱讀內襯；保留星等／等級／選取／鎖定／置灰／雙手共用。驗神話／創世對照、混沌與神鑄混沌多部位、裝備／神鑄格、兩類置灰與選取、tips／詳情內襯未變、Console／相關回歸／Build／diff及完整截圖重開後獨立Commit，交正常Review／使用者整合。純CSS無新美術檔或素材庫變動。
+
+- 完成四檔：CSS新增僅eff-chaos使用的chaos-icon-surface（灰紫基底／霧白橢圓高光），背包、裝備欄與神鑄材料格改讀該背景；紅紫框、圖案、尺寸與標記保持。共用chaos-surface閱讀底完全未改，因此tips／詳情維持暗綠及原光暈。index混沌CSS快取1.0.3，LV與本段同步；無JS／圖片／字串表或素材庫變動。
+- 驗證：node --test --test-reporter=spec tests/equipment-tooltip-compare.test.cjs tests/equipment-two-hand-display.test.cjs tests/equipment-selection-border.test.cjs tests/inventory-mythic-skin.test.cjs tests/forge-shared-inventory.test.cjs全部30/30通過；npm.cmd run build604檔通過；node tools/equipment-ui/export-source.cjs --check原圖及匯出SHA一致；git diff --check與暫存diff檢查通過。低影響CSS修改未新增鏡像測試，既有斷言未改。
+- 瀏覽器：IAB／獨立8140來源／正式itemCellHTML、renderEquip、renderForge、renderDetail與showItemTooltip，測試裝備六部位並排神話／創世、混沌舊底、新底與神鑄混沌；39張正式圖片完整載入，新兩品質及3個裝備格（含雙手副手）／2個神鑄格computed背景一致。選取黃框、兩種置灰、鎖定／星等／等級正常，tips computed背景仍含原圖暗綠取樣。390×844重載後documentWidth390、格寬48且不溢出；還原桌面後格寬58。Console error／warning0，未載玩家存檔／真Worker或完整遊玩／多瀏覽器。
+- 截圖：comparison-full.jpg及narrow.jpg保存後均已view_image從磁碟重新開啟，確認圖案與新底色、紅紫框正常；browser-report.json／可重現預覽保留本聊天visualizations/chaos-icon-surface-20261031。參考僅使用者本輪遊戲截圖與既有神話／創世CSS，沒有新增或修改獨立美術資源，無素材庫Commit。
+- 同副本工作：本項開始後GOD-GROUND-SHEEN另在battle-decor／場景快取／素材等區段開工，index僅同檔不同CSS／script行、LV與AI_TASKS不同段，無語意相依；只暫存本項四檔自身增量，保留對方全部未提交內容。唯讀未改規範／Workflow／prompts、神話／創世背景、正式UI及SLOT_INFO、現有回歸／原圖／匯出器、場景進行中內容／Worker／存檔／文字表。自我Review完成，本項無未完成實作或已知新增功能風險，可供Review／合併；Commit為本段所在「[Codex] feat: 混沌裝備圖示加入柔亮漸層底色」，編號見交付。未合併推送；下一步正常整合並重新載入新版CSS。
+
 ## CHAOS-RED-PURPLE-GRADIENT-20261030 — 紅紫漸層混沌外框
 
 - Owner：Codex；Done，單一開發者。使用者要求左／下紅色、上／右紫色，交界柔和漸變，不可突然接色；沿前輪授權圖框，兩品質tips／ICON／詳情共用。前置54e0d5dd外觀與預覽修正完成。
@@ -13423,3 +13456,55 @@ Worker 存活且頁面正常完成載入。
 - 衝突解法：`index.html` 與 `js/worker/sim.worker.js` 同時保留主線的 system_unlock／裝載欄／移除寶石融合，以及 incoming 的神域場景／地形光環／異種寶石共鳴。主頁為 data 1.0.113、formula 1.0.82、battle-terrain 1.0.6、item 1.0.38、gem-resonance 1.0.10；Worker 五份來源及 `js/bridge.js` 使用新的 `20261030-unlock-god-zone-merge` 合併快取。同步更新 decor atlas Worker 與兩份預覽工具的 battle-terrain 1.0.6，避免編輯器與主頁脫節。原始衝突沒有 XLSX，不建立 Excel DATA plan；無素材庫檔案。
 - 驗證：`node --check js/worker/sim.worker.js`、`node --check js/bridge.js` 通過；12 份相關回歸 `136/136` 通過；`npm.cmd run build` 604 檔全數通過。首次回歸只因新主頁 terrain 快取尚未同步 atlas／preview 而有 DECOR-NATURE-3 失敗，完成必要同步後整套重跑全綠，未放寬斷言。完整 merged result 的 `git diff HEAD --check`、衝突標記及 HEAD／MERGE_HEAD 維持檢查於交付前完成。
 - 交付：保留 controller 對未變 incoming 檔案的 EOF 機械修正；可由 controller 暫存回報檔案並建立 merge commit。未執行瀏覽器視覺驗收或全庫測試，無本次已知新增回歸或未完成整合項。
+
+
+## GOD-GROUND-SHEEN-20261031 — 混沌細裂幽光與聖域反光
+
+- Owner：Codex；Done，單一開發者。使用者追加混沌界地表的小裂痕透幽光、永恒神域地板反光。前置2c327ceb及86a65d9b整合完成，保留無天空、完整土地、聖域無隨機物件與固定光陣。
+- 範圍：battle-decor原有Canvas建圖／流光、index／Bridge／圖集Worker及兩預覽工具必要快取、SCENE_NATURE／LV既有神界說明及本段，對應素材庫程序母來源／製作紀錄／聖域地板PNG；必要時局部場景回歸。禁止玩法／地形碰撞／解鎖／存檔／Protocol／Excel／玩家文字／其他場景美術、其他工作區與合併推送。
+- fetch後預檢無外部衝突；同副本CHAOS-ICON-SURFACE進行中修改equipment-chaos.css、index檔首CSS快取、LV檔首圖框段及AI_TASKS檔首任務，本項僅改index尾端場景script、LV神界場景段及AI_TASKS檔尾，無語意相依，保留其修改且只暫存本項。程序光紋沿既有Canvas美術，無獨立外部圖片編修，毋須Mote／imagegen。驗地表／深層幽光細裂／反光、拼接邊界、光陣動態／停止／隱藏／減量／回收、主端與Worker像素、桌面窄屏／Console／相關回歸／Build與兩庫SHA；先素材庫再遊戲Commit，交正常Review與使用者整合。
+
+- 完成遊戲10檔：`js/battle-decor.js`／`bridge.js`／`worker/decor-atlas.worker.js`、`index.html`、`tools/scene-preview.html`／`decor-preview.html`、`images/ground/ground_god_sanctuary.png`、`docs/SCENE_NATURE.md`／本段及`LV_upgrade_system.md`既有神界段。混沌在鏡像接續的原畫上以獨立固定種子烘入24道短分岔裂紋，1.15px亮芯加4.8px柔光（1024建圖尺寸），裂紋避開邊界、不挖洞或改碰撞。聖域加入逐磚裁切的同向寬柔反射與窄高光，角飾／鑲線仍清楚；既有流光圖框加入橢圓柔光，隨原光環緩轉，沿用六組十八精靈／lite兩組兩精靈與原停止／隱藏／回收，無新增精靈、Timer、每幀貼圖重畫或Preset來源。場景與Worker快取鏈同步，沒有新增玩家文字、玩法、進度、解鎖或存檔變更。
+- 素材庫4檔：程序母來源battle-decor.js、聖域地板PNG、換前PNG備份、ground-sheen-records.json製作紀錄（程序／底畫／輸出SHA）。純既有Canvas美術，無外部素材與獨立圖片編修／imagegen，混沌AI底畫及其他PNG維持；聖域PNG1024×1024、1,210,787 bytes（原288,141，增加922,646 bytes，執行期生成同尺寸貼圖）。`node tools/scene-renewal/export-source.cjs --apply`與`--check`核對79份來源／遊戲輸出通過，紀錄的全部SHA另行比對一致，舊來源保留不刪。素材庫先Commit `f8ca659`，無推送。
+- 測試指令：`node --test --test-reporter=spec tests/battle-decor.test.cjs tests/battle-terrain.test.cjs tests/battle-arena.test.cjs tests/scene-startup-ready.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/battle-camera-distance.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/string-table.test.cjs`全部104/104通過；`npm.cmd run build`604檔通過；`node tools/string-table/build_string_csv.cjs --check`寫死0條；兩庫diff及暫存diff檢查通過。沿用既有回歸，另以實際Canvas檢查相對HEAD地板的像素變化，混沌只改9,104／1,048,576像素（約0.87%）、其中4,549有明顯藍綠增光，兩圖仍全不透明；聖域582,914像素增亮超過20，確認反光確實進入地板。
+- 瀏覽器／視覺：獨立headless Edge／隨機localhost／正式Renderer三圖地表與深層、390寬host344、鏡頭前進1800再返回及lite預算通過。三份地板水平／垂直邊界RGBA差0；六套主端與OffscreenCanvas Worker圖集alpha與預乘RGB差0，最大2048×2153，聖域仍2048×588。光陣流動／暫停／隱藏凍結與恢復皆真測通過；正式index獨立新局真Worker依序切三圖，alive／errors0且聖域無物件。pageerror與Console Error0，正式頁另有1條原index未使用dark-gold-seal預載圖的既有warning（HEAD已有相同preload標籤，本次未改），未擴修；沒有讀寫玩家原來源存檔。前後像素比較／拼接／Worker／窄屏JSON、六圖與正式頁、兩圖overview、32幀瀏覽器截圖生成的聖域動態GIF／QA腳本與測試／Build紀錄保存在本聊天visualizations/god-ground-sheen，未放進遊戲倉庫。
+- 同檔協作：另一聊天已獨立提交CHAOS-ICON-SURFACE `9184efc5`。本次index尾端script／LV神界段／AI_TASKS檔尾與其CSS快取／檔首段分離；以原86a65d9b、該提交和本項候選對三檔實跑merge-file全部exit0，合併結果與工作檔一致，無語意相依，沒有合併或修改其功能。唯讀檢查未改：共通規範／AGENTS／Workflow／prompts、decor-nature／battle-terrain／battle-renderer／battle-arena與原素材、scene-renewal匯出器、角色／敵人／戰鬥計算、VFX Runtime／Preset、Worker協議、String／Excel／CSV／ZONES及存檔。獨立VM比較七人界×兩階段×49區塊共686組配置與HEAD逐位一致。
+- 自我Review完成，本項無未完成實作或已知新增功能風險，可供Review／合併。反光採預烘石面高光及原流光動畫；未驗低階手機／多瀏覽器或長時間大量技能GPU負載。遊戲Commit為本段所在「[Codex] feat: 混沌地表加入幽光裂痕與聖域地板反光」，實際編號見交付；不合併推送develop／main。建議正常整合兩庫後重載驗收。
+
+
+## CHAOS-NARROW-RIFT-20261031 — 混沌窄岩隙與內部幽光
+
+- Owner：Codex；Done，單一開發者。使用者補充小裂痕需像附件的立體岩層裂隙，能看見斷面與內部幽光，但寬度約一步可跨越，長度可自行決定；明確允許用附件調整。取代前輪平面亮線，保留無天空、聖域反光與無隨機物件。
+- 範圍：混沌ground PNG、battle-decor移除舊亮線建圖、decor-nature／renderer／Bridge與圖集Worker必要素材／腳本快取、index及兩預覽工具、SCENE_NATURE／LV神界段／本段，對應素材庫原畫／匯出／母來源／生成紀錄與舊地表備份。禁止物件配置／碰撞／墜落／角色移動／玩法數值／解鎖／存檔／Protocol／Excel／玩家文字、其他地圖美術、其他工作區與合併推送。
+- 起始遊戲乾淨，HEAD5e6ba4f2；fetch後全修改檔預檢無其他副本／分支來源。素材庫僅有兩個既有未追蹤第三方目錄GandalfHardcore Hell Asset Pack 32x32及Monsters Creatures Fantasy 2，本項不讀取／引用／刪除／提交，codex-authored母來源無待改。RPG Mote前輪已確認可開，其像素畫布流程不適合1024完整地表重繪；採imagegen技能／內建工具，原混沌自製底圖為編修目標、使用者附件只作斷面／幽光參考，生成新佈局，不直接裁入附件。驗實際角色尺度／窄裂隙辨識度、地表／深層、拼接與捲動、無天空／聖域維持、Worker／主端一致、Console／窄屏／相關回歸／Build及兩庫來源SHA；先素材庫再遊戲Commit，交正常Review與使用者整合。
+
+- 完成12檔：battle-decor移除24道平面亮線、decor-nature／battle-renderer／bridge及圖集Worker與index／兩預覽工具快取、混沌ground PNG、SCENE_NATURE／LV及本段。原自製底圖與使用者附件分別為編修目標及材質參考；以內建imagegen生成新窄岩隙佈局，標準縮放1254原稿為1024 PNG，經2×2鏡像取樣以512象限顯示，岩緣／凹入岩壁與紫藍內光可讀，角色旁可跨越。使用者實際看到場景後回覆「好，這個可以」，本版已核准。聖域與太古美術／配置／碰撞／移動規則未改，沒有新精靈／Timer／Preset／玩家文字。
+- 素材庫6檔保存兩程序母來源、新混沌地面、原稿、換前備份及chaos-narrow-rift-records.json完整提示詞／輸入角色／參考與來源及匯出SHA；未直接裁入或再分發附件。新PNG2,570,898 bytes，原2,042,106 bytes，尺寸1024不變；原稿2,951,388 bytes。source --apply／--check核對79份通過，完整生成紀錄可追溯。素材先Commit `30f9b91`；兩個起始未追蹤第三方素材目錄保留、不讀取引用或提交。
+- 驗證指令：node --test --test-reporter=spec tests/battle-decor.test.cjs tests/battle-terrain.test.cjs tests/battle-arena.test.cjs tests/scene-startup-ready.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/battle-camera-distance.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/string-table.test.cjs全部104/104；npm.cmd run build全部604檔；node tools/string-table/build_string_csv.cjs --check寫死0條；兩庫diff／暫存diff通過。沿用既有回歸並以隔離Edge真Renderer驗三圖地表／深層、三份地板水平垂直邊界RGBA差0、六套主端／Worker圖集alpha／預乘RGB差0；光陣動態／暫停／隱藏／恢復、窄屏host344／390、前進1800與返回、lite兩組兩精靈通過。正式index真Worker逐一切三圖alive／errors0，Console Error／Warning及pageerror0，未接觸玩家原來源存檔。預覽六圖／窄屏／正式頁、browser-report及QA／測試／Build／來源紀錄保留本聊天visualizations/chaos-narrow-rift。
+- 唯讀檢查未改：規範／AGENTS／Workflow／prompts、battle-terrain／arena／worker協議、角色／敵人／技能計算、String／其他Excel與CSV／ZONES／存檔、65件物件與太古／聖域PNG及scene-renewal匯出器。自我Review完成，本項無未完成實作／已知新增功能風險，可供合併；未驗低階手機／多瀏覽器／長時間大量技能GPU。遊戲Commit為本段所在「[Codex] feat: 混沌改為可跨越的幽光窄岩隙」，編號見交付；未合併推送。使用者另追加聖域華麗花紋與強化光陣，接續獨立任務處理，混沌核准版保留。
+
+
+## SANCTUARY-ORNATE-20261031 — 聖域華麗鑲金石磚與強化光陣
+
+- Owner：Codex；Done，單一開發者。使用者追加永恒神域採新附件的華麗藍白大理石／金框／寶石星形接點花紋，法陣／光暈加強；補充原圖不能直接用，須重畫，可接近參考外觀。混沌已核准並完成遊戲e0cd29d5／素材30f9b91，本項保留其PNG。前置無天空／聖域無隨機物件與反光已完成。
+- 範圍：聖域ground PNG、decor-nature地板載入與接邊取樣、battle-decor地板入口與法陣圖集／亮度、renderer／Bridge／圖集Worker與index／兩預覽工具快取、battle-decor既有載入數回歸、SCENE_NATURE／LV／本段及素材庫母來源／原稿／舊地板備份／生成紀錄。禁止角色／隨機物件／碰撞／玩法／解鎖／存檔／Protocol／Excel／玩家文字／混沌及太古美術、其他工作區與合併推送。
+- 起始遊戲乾淨，所有修改檔預檢無外部來源；素材庫仍有兩個既有未追蹤第三方目錄，不引用／刪除／提交。依imagegen技能以舊自製地板與使用者附件作風格參考，內建工具重畫2×2直排原創地磚，原圖與角色／法陣截圖不裁入輸出。Mote先前確認可開，其像素畫布不適合完整1024地板，沿本聊天生成流程。新地板以同向平鋪與接邊取樣保持藍白交錯，既有光陣／流光預烘加亮加柔光，維持原精靈數與動態池；驗地表／深層、邊界／鏡頭、光陣生命週期／減量、Worker一致、Console／窄屏／真Worker／回歸／Build及兩庫SHA，先素材再遊戲Commit。
+
+- 完成遊戲13檔：js/battle-decor.js／decor-nature.js／battle-renderer.js／bridge.js／worker/decor-atlas.worker.js、index.html、兩場景預覽工具、tests/battle-decor.test.cjs載入數、聖域ground PNG、SCENE_NATURE／LV／本段。imagegen重畫獨立2×2藍白大理石、金屬雕飾與寶石星形接點，標準縮放1254原稿為1024；不直接使用附件或把角色／法陣裁入原畫。Runtime同向512象限採樣、10px接邊融合後重複，維持原4×4地磚密度與藍白交錯；舊程序僅作素材未載入後備。法陣／流光alpha由.46／.62／.40改.62／.82／.58、呼吸幅度.08→.10，暖金／青藍／淡紫色更亮，環線加粗、星芒加大，底環預烘柔光及流光反射加濃。仍六組十八精靈／lite兩組兩精靈，無新Timer、每幀重畫或Preset；不改隨機物件／碰撞／解鎖／存檔／玩法／顯示文字。
+- 素材庫6檔：兩程序母來源、聖域PNG、原稿、換前備份及sanctuary-ornate-records.json，保存完整提示詞／參考角色／參考與原稿及輸出SHA；使用者圖片只作風格參考、不再分發入庫。新PNG3,038,136 bytes（原1,210,787），1024 RGBA不變；原稿2,895,451 bytes，新增一份被載入的聖域原畫（解碼4,194,304 bytes／主端或Worker副本，不含GPU）。載入總數67→68、失敗重試數依實際素材68→69，主頁／Worker／預覽快取全部同步。source --apply／--check核對79份輸出與母來源及生成紀錄全部SHA通過；先素材Commit `3c245ed`。起始兩個未追蹤第三方目錄保留未引用／提交，無素材刪除。
+- 回歸指令：node --test --test-reporter=spec tests/battle-decor.test.cjs tests/battle-terrain.test.cjs tests/battle-arena.test.cjs tests/scene-startup-ready.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/battle-camera-distance.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/string-table.test.cjs全部104/104；npm.cmd run build604檔通過；String --check寫死0條；兩庫diff與暫存diff通過。只更新新增聖域圖片的載入計數，原圖集／生命週期／減量／回收等斷言維持。實際Canvas驗4×4地板明暗為213/80、81/215交錯重複、三份地板水平／垂直邊界RGBA差0，六套主端與OffscreenCanvas Worker圖集alpha／預乘RGB差0，聖域圖集仍2048×588，沒有新增圖框或執行期精靈。
+- 瀏覽器：隔離Edge真Renderer驗三圖地表／深層，聖域無物件、法陣反向轉動、暫停／隱藏凍結與恢復、鏡頭前進1800／返回、390寬host344、lite兩組兩精靈通過；正式index獨立新局真Worker逐一切三圖，alive／errors0；Console Error／Warning及pageerror0，未接觸玩家原來源存檔。QA最初因重複讀同Canvas16次出現readback建議warning，僅將測試改為一次讀取後取樣，正式程式未作額外調整，完整瀏覽器重跑零警告。六圖／窄屏／正式頁、兩圖overview、32幀實際瀏覽器動畫GIF與QA／JSON／測試／Build紀錄保存在本聊天visualizations/sanctuary-ornate，不放進遊戲倉庫。混沌核准版PNG與e0cd29d5逐位相同，其他地貌配置獨立VM比較686組與HEAD完全相同。
+- 同檔協作：另一聊天於本項期間完成c3d15114混沌ICON漸層，index檔首CSS／LV圖框／AI_TASKS檔首與本項尾端script／神界段／檔尾任務獨立；以e0cd29d5／該提交／本項候選實跑三方三檔均exit0且合併結果與工作檔一致，保留對方成果、不合併分支。唯讀檢查未改：AI_RULES／AGENTS／Workflow／prompts、battle-terrain／arena及Worker協議、角色／敵人／技能計算、VFX Runtime／Preset、String／其他Excel與CSV／ZONES／存檔、65件物件與太古／混沌PNG、scene-renewal匯出器。自我Review完成，本項無未完成實作或已知新增功能風險，可供視覺驗收／Review與合併；未驗低階手機／多瀏覽器／長時間大量技能GPU，新增圖檔載入與解碼成本如上。遊戲Commit為本段所在「[Codex] feat: 聖域重繪鑲金石磚並強化法陣光暈」，編號見交付；未合併推送develop／main。下一步正常整合兩庫並重新載入驗收。
+
+
+## FORGE-STONE-TIP-HOLD-20261031 — 神性之石簡潔提示與長按調整
+
+- Owner：Codex；Done，單一開發者。使用者兩次指示：移除紅線的使用／最多、基礎與加成明細、金幣消耗，剩餘文字置中加大2px；加減長按500ms後每50ms調整一次。前置既有神鑄介面與Worker數量驗證已完成。
+- 允許：ui.js神性之石顯示與加減事件、divine-forge.css、index對應結構與快取、String.xlsx原生Excel更新／CSV及strings_data生成、相關獨立回歸、LV及本段。禁止玩法公式／解鎖／費用／存檔／Worker協議／無關UI、美術與其他工作區、合併推送。
+- fetch後預檢僅index有Claude343b058b的formula／skills2／combat版號；本項HTML提示列與CSS／ui／String版號皆不同區段，候選三方merge-file exit0，無語意相依。起始聖域任務已另行提交b88d37cd，本項不修改其成果。原生Excel先確認獨占再修改，正常儲存重開驗證；驗短按／500ms門檻／20Hz連續／上限與零／放開與取消及關閉停止／Worker提交不重複、相關回歸、瀏覽器Console及Build，完成獨立Commit後交使用者Review／合併。
+- 完成9檔：`js/ui.js`、`css/divine-forge.css`、`index.html`、String.xlsx／CSV及`js/strings_data.js`、`tests/forge-stone-controls.test.cjs`、LV與本段。提示只留持有量／加減數量／總成功率；移除金幣列與無素材提示的費用敘述，沿用String2173／2174／2176。文字11→13px、數量16→18px、按鈕符號18→20px並置中；CSS及UI快取1.0.13／1.0.238，String生成e9ecf455。無新增素材／素材庫變更，不建立空素材Commit。
+- 長按500ms後每50ms按實際經過時間更新選定數量及成功率，延遲時追上應有進度；放開一次送最後值，避免Worker pending鎖阻擋20Hz選取。短按與鍵盤點擊各一次、長按尾隨click不重加，庫存／投入上限／零邊界仍共用正式公式及Worker驗證；指標捕獲搭配document放開／取消、失焦／隱藏／關閉／切頁停止，無持續Timer。等待Worker回覆期間保留最後顯示，收到權威面板再校正，修正放開時短暫跳回的情況。未變更費用／機率／解鎖／存檔或協議。
+- Excel：先取得FileShare.None確認來源關閉，再用`tools/excel-update-sheets.ps1`的Excel原生API逐格更新，兩次正常儲存重開逐格驗證；本次總共8格（C／D／E1382、C／D／E1383、C／E1385），無翻譯欄填寫。另以唯讀封裝比對確認所有其餘值、儲存格樣式、styles.xml、欄寬／視圖／格式／篩選／合併／驗證與物件一致，未手工改寫XML。`PARAMS_XLSX=…String.xlsx PARAMS_CSV_OUT=…String.csv PARAMS_SHEET=String node tools/xlsx_to_csv.cjs`及`node tools/string-table/apply_strings.cjs`沿既有管線生成，2213條同步、寫死0條。
+- 測試指令：`node --test --test-reporter=spec tests/forge-stone-controls.test.cjs tests/divine-forge-interaction.test.cjs tests/forge-shared-inventory.test.cjs tests/string-table.test.cjs tests/stage-jump-ui.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs`全部66/66通過（新增長按回歸7項）；`node tools/string-table/apply_strings.cjs --check`、`node tools/string-table/build_string_csv.cjs --check`及`git diff --check`通過；`npm.cmd run build`605檔通過。另首輪跑`tests/divine-forge.test.cjs`的16項為15過／1既有失敗：第195行期待2.9秒背包0件，實際2件。以修改前ui.js及strings_data.js唯讀記憶體覆映重跑同一案例，仍為2 !== 0；其餘模擬程式本項未改，不放寬斷言或擴修。
+- 瀏覽器：隔離隨機localhost／headless Edge，種子新局經正式Worker boot與正式index，未讀寫玩家原來源存檔。驗13px／18px／20px與center計算樣式、無紅線文字／金幣列、原生滑鼠350ms不動／約1.5秒選至28、放開Worker收到28且不重加、短按減1、390窄屏提示在viewport內；另59長按至60、按鈕停用仍能由document放開提交60與維持最終顯示。Console Error／Warning及pageerror皆0；提示桌面／窄屏PNG、正式頁、browser-report與Excel差異紀錄／QA腳本在本聊天visualizations/forge-tip，未納入遊戲倉庫。
+- 唯讀檢查未改：AI_RULES／AGENTS／Workflow／prompts、data／forge／Worker／bridge／save與原有神鑄回歸、其他Excel／CSV與String其他列、聖域場景與素材；與Claude同檔僅不同腳本版號，最終候選合併試跑另驗exit0。自我Review完成，無本項未完成實作或已知新增功能風險；既有神鑄回歸失敗如上，未驗實體觸控設備／多瀏覽器或全庫測試。Commit為本段所在「[Codex] feat: 簡化神性之石提示並加入長按連續調整」，實際編號見交付。可供Review／合併，建議使用者正常整合後重新載入驗收；未合併推送develop／main。

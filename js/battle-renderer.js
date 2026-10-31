@@ -1348,7 +1348,7 @@ var BattleRenderer = (function () {
     return PIXI.Texture.from(c);
   }
   var _groundTexCache = {};
-  var GROUND_ASSET_VERSION = '20261030-ground-aura';
+  var GROUND_ASSET_VERSION = '20261031-sanctuary-ornate';
   function loadGroundTexture(zoneKey) {
     var name = zoneKey ? ('ground_' + zoneKey) : 'ground_default';
     if (_groundTexCache[name] === 'failed') return;

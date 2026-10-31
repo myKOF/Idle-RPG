@@ -30,13 +30,12 @@
 #tab-forge .forge-stone span { font-size:10px; font-weight:bold; }
 #tab-forge .forge-stone .forge-material-icon { font-size:clamp(15px,2vw,24px); }
 #tab-forge .forge-stone.lit,#tab-forge .forge-stone[aria-expanded="true"] { border-color:var(--afl-gold-text); box-shadow:0 0 12px #f0cf8655; }
-#forge-stone-popover { position:absolute; top:57%; left:50%; transform:translateX(-50%); width:260px; max-width:85vw; z-index:8; background:var(--afl-card); color:var(--afl-text-soft); border:1px solid var(--afl-line-hi); border-radius:8px; box-shadow:0 8px 24px #000a; padding:9px; text-align:center; font-size:11px; line-height:1.65; }
+#forge-stone-popover { position:absolute; top:57%; left:50%; transform:translateX(-50%); width:260px; max-width:85vw; z-index:8; background:var(--afl-card); color:var(--afl-text-soft); border:1px solid var(--afl-line-hi); border-radius:8px; box-shadow:0 8px 24px #000a; padding:9px; text-align:center; font-size:13px; line-height:1.65; }
 #forge-stone-popover[hidden] { display:none; }
 .forge-stone-controls { display:flex; align-items:center; justify-content:center; gap:16px; margin:5px 0; }
-#tab-forge .forge-stone-controls .btn { min-width:32px; min-height:28px; font-size:18px; padding:0; }
-#forge-stone-value { min-width:24px; color:var(--afl-text); font-size:16px; }
+#tab-forge .forge-stone-controls .btn { min-width:32px; min-height:28px; font-size:20px; padding:0; touch-action:none; user-select:none; -webkit-user-select:none; }
+#forge-stone-value { min-width:24px; color:var(--afl-text); font-size:18px; }
 #forge-rate { color:var(--afl-text-soft); }
-#forge-cost { color:var(--afl-gold-text); }
 #tab-forge .forge-v2-actions { position:absolute; bottom:12px; left:50%; transform:translateX(-50%); z-index:4; display:flex; justify-content:center; gap:10px; white-space:nowrap; }
 #tab-forge .forge-v2-actions .btn { min-width:100px; min-height:34px; padding:6px 16px; }
 #tab-forge #forge-go { box-shadow:none; }
