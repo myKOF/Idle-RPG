@@ -13712,3 +13712,16 @@ Worker 存活且頁面正常完成載入。
 - 回歸：`node --test --test-reporter=spec tests/god-realm-zones.test.cjs tests/world-map.test.cjs tests/world-map-ui.test.cjs tests/gm-command.test.cjs tests/unlock-thresholds.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs`60/60通過；另跑new-battle-zones／zone-attr-tooltip共11項9過2失敗（NPC.xlsx倍率1.5與尚未套用CSV的1不一致、舊tooltip fixture缺showTowerTooltip）。以HEAD原受改來源／Excel／CSV唯讀記憶體覆映重跑，同樣11項9過2同名失敗，沒有弱化斷言或擴修。`npm.cmd run build`616檔通過，diff及暫存diff檢查通過。
 - 瀏覽器：沿用已確認不可用的IAB之Edge後備，隔離headless Edge／隨機localhost，載正式全CSS／JS與world-map-modal，只用測試面板快照。真滑鼠打開神界圖、點god_sanctuary，頂列名稱／動態地圖按鈕／資訊卡皆永恒神殿，圖片alt亦為新名；Console Error／Warning及pageerror0，未讀寫玩家存檔。world-map.png已存後重開，表格前後預覽、原生Excel／全格差異、測試與基準及browser-report留聊天visualizations/sanctuary-rename。最終候選與Claude實際工作檔三檔merge-file再次exit0；同檔僅換行或獨立圖示函式，保留對方成果。
 - 唯讀未改：規範／AGENTS／Workflow／prompts、Excel／CSV匯出工具、ui.js及ui-world-map.js動態讀名邏輯、其餘12份Excel、NPC／掉落／技能數值、原素材及素材庫、Worker協議／save。無素材變更或素材庫Commit。自我Review完成，本項無未完成實作，可供Review／合併；已知限制是上述兩項既有測試及未跑全庫／多瀏覽器／完整長玩。Commit為本段所在「[Codex] fix: 永恒神域同步更名為永恒神殿」，SHA見交付；未合併推送develop／main。下一步正常整合後重載主端與Worker驗收。
+
+## EQUIP-AI-ICONS-20261031 — 輕型與硬質護甲圖示統一
+
+- Owner：Codex；Done（素材已匯入 Codex，主線整合待使用者流程），單一開發者。使用者已確認布衣／皮靴 AI 預覽風格，並追加授權重製現有硬質護甲及「全換上」，解除本次原先不得改重甲圖的限制。
+- 允許 images/equip/ 清單20張、images/icon_{helmet,shoulder,chest,belt,gloves,wrist,legs_armor,legs}.png 八張硬甲，以及本段；遊戲程式／CSS／索引與其他圖片不動。素材庫另保存原生生圖、1024輸出、提示與雜湊。禁止武器／飾品通用圖、配置／存檔及其他工作區／合併推送。
+- 前置：提示與名稱接線在 Claude 4349766d／c2b6962a，Codex 尚未整合；本次依使用者明確要求替換該20張暫用圖，不覆寫其程式。硬甲及任務文件預檢乾淨，輕型圖預檢來源正是使用者指定要替換的4349766d。驗證用隔離候選載入已提交接線，正式程式不改。
+- 產出：imagegen 內建工具，以已核准布衣與皮靴當風格錨，1024平方PNG／純黑底／無字無框；每張低於2MB，驗20張名稱、三處UI與28px辨識、舊裝備與武器tips、Build及兩庫雜湊後，先素材庫再遊戲 [Codex] Commit。無玩法／解鎖改動，LV無需更新。
+- 完成29檔：images/equip 原清單20張、八張通用硬甲與本任務段。內建imagegen逐張生成，兩張已核准預覽作風格錨；硬甲另參考原本輪廓，改明亮灰銀鋼材、皮革及暖邊光。全數1024×1024不透明PNG，檔名與c2b6962a提示表20/20完全一致，最小634847／最大1699559 bytes，四角純黑28/28；尺寸與近黑背景雜訊正規化未重畫物件。原生1254圖、全提示／來源授權／SHA及normalize.ps1／export.cjs保存在素材庫，未接觸API key。
+- 雙庫驗證：node素材庫export.cjs <game-root> --apply及--check，原圖／匯出／遊戲28份SHA全相符。素材庫先提交 dbbb254（[Codex] feat: 製作二十八張統一風格裝備圖示素材），僅本package及PROVENANCE；工作區乾淨。遊戲Commit為本段所在「[Codex] feat: 統一輕型與硬質護甲二十八張裝備圖示」，SHA見交付。
+- 測試：node --test --test-reporter=dot tests/equipment-weapon-icons.test.cjs tests/equipment-tooltip-compare.test.cjs tests/equipment-two-hand-display.test.cjs tests/equipment-quality-name.test.cjs 全數通過（15項）；npm.cmd run build 616檔全過，git diff／stat／check與暫存check通過，沒有新增測試或改舊斷言。
+- 瀏覽器：IAB連線不可用，依後備流程用bundled Playwright＋隔離headless Edge。載正式index全CSS／JS（停main避免啟動存檔），只在HTTP候選將4349766d已提交的data名稱接線、item標題、ui選圖及28px CSS精確覆映至本分支；不寫入正式程式。以正式makeEquipment／itemCellHTML／renderEquip／itemHeaderHTML驗28件三處src完全符合、標題28×28，全圖載入126張破圖0；showItemTooltip完整驗28件＋12武器類型＋無weaponType舊武器共41/41，Console Error／Warning／pageerror0。最終PNG重載後通過；QA拼版初版受原slot定位影響，修正的是QA容器，產品無改。實拍重開確認輕型／硬甲縮圖可分辨，all-icons-game-render、hard-armor-preview、browser-report與PNG-checks保留本聊天visualizations/equipment-icons。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／Codex規範、c2b6962a提示表／4349766d四份接線、data／item／ui／formula／save／Worker／CSS／index／配置表／武器與通用戒指項鍊圖，LV玩法與解鎖無變故不改。現有武器素材及程式／存檔格式完全未改，未讀寫玩家存檔；舊武器回退與舊名硬甲顯示均驗證。自我Review完成，無本次素材待辦；未測完整真Worker遊玩、多瀏覽器與正式玩家舊檔。
+- 後續／合併：可交使用者正常整合；Codex正式分支尚未含4349766d名稱接線，因此新輕型圖要和該既有功能一起整合才會啟用，本輪未自行合併他AI分支或develop／main、未推送。若與4349766d的20張向量暫用圖發生add/add，按使用者原任務與「全換上」保留本次AI生成版本，接線程式保留Claude原實作；硬甲原路徑已直接替換。
