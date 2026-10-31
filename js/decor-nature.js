@@ -6,7 +6,7 @@ var DecorNature = (function () {
   var SPRITE_FILES={willow:'willow',deadTree:'burnt-tree',pine:'snow-pine',giantBones:'beast-bones',cactus:'cactus',ice:'ice-cluster',void:'void-crystal',log:'fallen-log',stump:'swamp-stump',runeStone:'rune-stele',pillar:'stone-column',arch:'ruined-arch',ruinWall:'ruined-wall',rubble:'fallen-masonry',urn:'weathered-urn',grave:'old-gravestone',arenaGate:'arena-gate',arenaBrazier:'arena-brazier',arenaSpire:'arena-spire',arenaCandles:'arena-candles'};
   Object.assign(SPRITE_FILES,{godBlade:'divine-god-blade',warCrown:'divine-war-crown',sunRelic:'divine-sun-relic',chainShard:'divine-chain-shard',voidGyre:'divine-void-gyre',voidPrism:'divine-void-prism',voidSpindle:'divine-void-spindle',voidLens:'divine-void-lens',seraphWing:'divine-seraph-wing',celestialHarp:'divine-celestial-harp',haloDais:'divine-halo-dais',lightLotus:'divine-light-lotus'});
   Object.assign(SPRITE_FILES,{'warRampart':'war-rampart','titanHelm':'titan-helm','charredStandard':'charred-standard','siegeWreck':'siege-wreck','emberCrater':'ember-crater','bladeGrave':'blade-grave','riftAnchor':'rift-anchor','voidArch':'void-arch','orbitCubes':'orbit-cubes','astralSpine':'astral-spine','nullBloom':'null-bloom','riftObelisk':'rift-obelisk','celestialArch':'celestial-arch','starDial':'star-dial','crystalFountain':'crystal-fountain','sanctumStairs':'sanctum-stairs','prismGarden':'prism-garden','fallenCapital':'fallen-capital'});
-  var GROUND_FILES={god_battlefield:'ground_god_battlefield',god_chaos:'ground_god_chaos'};
+  var GROUND_FILES={god_battlefield:'ground_god_battlefield',god_chaos:'ground_god_chaos',god_sanctuary:'ground_god_sanctuary'};
   var sprites={},loading=null;
   SPRITE_FILES.mistTree='mist-elder';SPRITE_FILES.lavaOutcrop='lava-outcrop';SPRITE_FILES.stormSpire='storm-spire';
   SPRITE_FILES.rootGate='root-arch';SPRITE_FILES.lavaVent='lava-vent';SPRITE_FILES.windPine='wind-pine';
@@ -23,7 +23,7 @@ var DecorNature = (function () {
     };
     loading=Promise.all(Object.keys(SPRITE_FILES).concat(Object.keys(GROUND_FILES)).map(function(key){
       if(sprites[key])return;
-      var file=GROUND_FILES[key]?'images/ground/'+GROUND_FILES[key]+'.png?v=20261031-chaos-narrow-rift':'images/scene/'+SPRITE_FILES[key]+'.png?v=20261030-painted-realms';
+      var file=GROUND_FILES[key]?'images/ground/'+GROUND_FILES[key]+'.png?v=20261031-sanctuary-ornate':'images/scene/'+SPRITE_FILES[key]+'.png?v=20261030-painted-realms';
       return loader(new URL(file,base).href).then(function(image){sprites[key]=image;});
     })).then(function(){loading=null;},function(error){loading=null;throw error;});
     return loading;
@@ -33,10 +33,22 @@ var DecorNature = (function () {
     var k=Math.min(w/image.width,h/image.height),dw=image.width*k,dh=image.height*k;
     g.drawImage(image,-dw/2,-dh,dw,dh);
   }
-  // 鏡像接續是貼圖取樣方式，不改原畫；相鄰邊緣採相同像素，避免素材邊界出現硬接縫。
+  // 建圖時接邊取樣：太古／混沌鏡像，聖域同向平鋪以保持藍白交錯。
   function drawGround(g,zone,size) {
     var image=sprites[zone];if(!image)return false;
     var half=size/2;
+    if(zone==='god_sanctuary'){
+      // 同向接續才能維持藍白交錯；只融合接邊取樣，不改母圖。
+      var tile=document.createElement('canvas');tile.width=tile.height=half;
+      var tg=tile.getContext('2d');tg.drawImage(image,0,0,half,half);
+      var pixels=tg.getImageData(0,0,half,half),data=pixels.data,border=10;
+      function join(a,b,mix){for(var c=0;c<4;c++){var average=(data[a+c]+data[b+c])*.5;data[a+c]+=(average-data[a+c])*mix;data[b+c]+=(average-data[b+c])*mix;}}
+      for(var edge=0;edge<border;edge++)for(var p=0;p<half;p++)join((p*half+edge)*4,(p*half+half-1-edge)*4,Math.pow(1-edge/border,2));
+      for(var edge=0;edge<border;edge++)for(var p=0;p<half;p++)join((edge*half+p)*4,((half-1-edge)*half+p)*4,Math.pow(1-edge/border,2));
+      tg.putImageData(pixels,0,0);
+      for(var row=0;row<2;row++)for(var col=0;col<2;col++)g.drawImage(tile,col*half,row*half);
+      return true;
+    }
     for(var row=0;row<2;row++)for(var col=0;col<2;col++){
       g.save();g.translate(col?size:0,row?size:0);g.scale(col?-1:1,row?-1:1);
       g.drawImage(image,0,0,half,half);g.restore();

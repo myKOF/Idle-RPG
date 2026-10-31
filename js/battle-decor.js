@@ -1427,7 +1427,9 @@ var BattleDecor = (function () {
   function buildGround(zoneKey) {
     if(zoneKey==='god_sanctuary'){
       var sanctuary=document.createElement('canvas');sanctuary.width=sanctuary.height=1024;
-      drawSanctuaryFloor(sanctuary.getContext('2d'),1024);return sanctuary;
+      var ground=sanctuary.getContext('2d');
+      if(!DecorNature.drawGround(ground,zoneKey,1024))drawSanctuaryFloor(ground,1024);
+      return sanctuary;
     }
     if(zoneKey==='god_battlefield'||zoneKey==='god_chaos'){
       var painted=document.createElement('canvas');painted.width=painted.height=1024;
@@ -1507,8 +1509,11 @@ var BattleDecor = (function () {
 
   function particleSanctumSeal(g,w,h) {
     var cx=w/2,cy=h/2;
-    g.save();g.translate(cx,cy);g.strokeStyle='rgba(255,255,255,.86)';
-    [.32,.37,.41,.44].forEach(function(k,i){g.lineWidth=i===1?2:1;g.beginPath();g.arc(0,0,w*k,0,Math.PI*2);g.stroke();});
+    g.save();g.translate(cx,cy);
+    var halo=g.createRadialGradient(0,0,w*.30,0,0,w*.48);
+    halo.addColorStop(0,'rgba(255,255,255,0)');halo.addColorStop(.45,'rgba(255,255,255,.17)');halo.addColorStop(.68,'rgba(255,255,255,.10)');halo.addColorStop(1,'rgba(255,255,255,0)');
+    g.fillStyle=halo;g.fillRect(-w/2,-h/2,w,h);g.strokeStyle='rgba(255,255,255,.94)';
+    [.32,.37,.41,.44].forEach(function(k,i){g.lineWidth=i===1?2.6:1.3;g.beginPath();g.arc(0,0,w*k,0,Math.PI*2);g.stroke();});
     for(var i=0;i<24;i++){
       g.save();g.rotate(i*Math.PI/12);g.lineWidth=1.5;
       g.beginPath();g.moveTo(-4,-w*.38);g.lineTo(-4,-w*.405);g.lineTo(3,-w*.395);g.lineTo(4,-w*.42);g.stroke();g.restore();
@@ -1525,17 +1530,17 @@ var BattleDecor = (function () {
     // 地面柔亮反射與法陣同向掠過，預烘柔邊，不另增精靈或每幀重畫。
     var reflected=g.createRadialGradient(0,0,w*.13,0,0,w*.43);
     reflected.addColorStop(0,'rgba(255,255,255,0)');reflected.addColorStop(.42,'rgba(255,255,255,.015)');
-    reflected.addColorStop(.78,'rgba(255,255,255,.11)');reflected.addColorStop(1,'rgba(255,255,255,0)');
+    reflected.addColorStop(.78,'rgba(255,255,255,.18)');reflected.addColorStop(1,'rgba(255,255,255,0)');
     g.save();g.rotate(-.5);g.scale(1,.45);g.fillStyle=reflected;g.fillRect(-w/2,-h/2,w,h);g.restore();
     for(var arm=0;arm<2;arm++)for(var i=0;i<64;i++){
       var angle=arm*Math.PI+i/64*Math.PI*1.25,r=w*(arm?.34:.44),a=.025+Math.pow(i/64,2)*.9;
-      g.strokeStyle='rgba(255,255,255,'+a+')';g.lineWidth=1.2+i/64*2.4;
+      g.strokeStyle='rgba(255,255,255,'+a+')';g.lineWidth=1.5+i/64*3.2;
       g.beginPath();g.arc(0,0,r,angle,angle+Math.PI*1.25/64+.004);g.stroke();
     }
     for(var k=0;k<4;k++){
       var a=k*Math.PI/2+.7,x=Math.cos(a)*w*.44,y=Math.sin(a)*h*.44;
       g.strokeStyle='rgba(255,255,255,.9)';g.lineWidth=1;
-      g.beginPath();g.moveTo(x-5,y);g.lineTo(x+5,y);g.moveTo(x,y-5);g.lineTo(x,y+5);g.stroke();
+      g.beginPath();g.moveTo(x-7,y);g.lineTo(x+7,y);g.moveTo(x,y-7);g.lineTo(x,y+7);g.stroke();
     }
     g.restore();
   }
@@ -1743,7 +1748,7 @@ var BattleDecor = (function () {
   };
   /* 背景建圖 Worker（相對於 index.html）。改了 decor-sculpt／decor-nature／battle-decor 要一起更新
      這裡的版本與 Worker 檔內 importScripts 的版本字串，否則 Worker 會吃到快取的舊畫法。 */
-  var ATLAS_WORKER_URL = 'js/worker/decor-atlas.worker.js?v=1.0.25';
+  var ATLAS_WORKER_URL = 'js/worker/decor-atlas.worker.js?v=1.0.26';
   var VARIANTS = 3;          // 每種擺件／地面裝飾畫幾個變體
   var TEX_SCALE = 1.5;       // 圖集解析度（畫面放大或高 DPI 時仍清楚；開 mipmap 避免縮小時閃爍）
 
@@ -2565,7 +2570,7 @@ var BattleDecor = (function () {
             s._decorLocal=true;s._natureBubble=bubble;s._natureIndex=i;s._natureTexture=texture;
             s._natureFireHalo=halo;
             s.tint=fire?0xffffff:halo?0xff661b:e.kind==='fire'?0x736460:e.kind==='gas'?0xa6b969:e.kind==='frost'?0xc5e6ee:e.kind==='void'?0xb297db:e.kind==='smoke'?0x9e9b8b:0xe5cfac;
-            if(sanctum)s.tint=[0xe9c475,0x86e7ff,0xd5b7ff][i];
+            if(sanctum)s.tint=[0xffd778,0x9de9ff,0xebceff][i];
             if(battleHeat&&i<2)s.tint=i?0xffb45e:0xff8440;
             // 固定來源的形狀／深度只在取出池時設定；投影仍每幀跟隨腳點與鏡頭。
             if(fire){
@@ -2591,7 +2596,7 @@ var BattleDecor = (function () {
             var factor=si===0?1:si===1?1.06:.82;
             s.scale.set(e.width*factor/(384*TEX_SCALE));s.x=e.x;s.y=e.y;
             s.rotation=si===0?0:D.time*(si===1?.13:-.085)+si*1.1;
-            s.alpha=(si===0?.46:si===1?.62:.40)+Math.sin(D.time*.65+si*1.7)*.08;
+            s.alpha=(si===0?.62:si===1?.82:.58)+Math.sin(D.time*.65+si*1.7)*.10;
           }else if(s._natureTexture==='envFlame0'){
             var ft=D.time*24+phase*ENV_FIRE_FRAMES;
             s.texture=group.frames[Math.floor(ft)%ENV_FIRE_FRAMES];
