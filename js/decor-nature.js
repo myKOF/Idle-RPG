@@ -23,7 +23,7 @@ var DecorNature = (function () {
     };
     loading=Promise.all(Object.keys(SPRITE_FILES).concat(Object.keys(GROUND_FILES)).map(function(key){
       if(sprites[key])return;
-      var file=GROUND_FILES[key]?'images/ground/'+GROUND_FILES[key]+'.png?v=20261030-ground-aura':'images/scene/'+SPRITE_FILES[key]+'.png?v=20261030-painted-realms';
+      var file=GROUND_FILES[key]?'images/ground/'+GROUND_FILES[key]+'.png?v=20261031-chaos-narrow-rift':'images/scene/'+SPRITE_FILES[key]+'.png?v=20261030-painted-realms';
       return loader(new URL(file,base).href).then(function(image){sprites[key]=image;});
     })).then(function(){loading=null;},function(error){loading=null;throw error;});
     return loading;

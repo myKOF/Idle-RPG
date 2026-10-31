@@ -1433,7 +1433,6 @@ var BattleDecor = (function () {
       var painted=document.createElement('canvas');painted.width=painted.height=1024;
       var ground=painted.getContext('2d');
       if(!DecorNature.drawGround(ground,zoneKey,1024))return null;
-      if(zoneKey==='god_chaos')drawChaosFissures(ground,1024);
       return painted;
     }
 
@@ -1451,30 +1450,6 @@ var BattleDecor = (function () {
       var k=(y*256+x)*4;for(var j=0;j<3;j++)im.data[k+j]=c[j]+n;im.data[k+3]=255;
     }
     g.putImageData(im,0,0);return canvas;
-  }
-
-  /* 細裂幽光只烘入建圖，短裂紋不碰貼圖邊緣，也不形成地形缺口。 */
-  function drawChaosFissures(g,size) {
-    var r=mulberry(731904),scale=size/1024;
-    g.save();g.scale(scale,scale);g.lineCap='round';g.lineJoin='round';
-    for(var i=0;i<24;i++){
-      var x=range(r,95,929),y=range(r,95,929),angle=range(r,0,Math.PI*2);
-      var points=[[x,y]],segments=4+Math.floor(r()*3);
-      for(var j=0;j<segments;j++){
-        angle+=range(r,-.65,.65);var step=range(r,6,12);
-        x+=Math.cos(angle)*step;y+=Math.sin(angle)*step;points.push([x,y]);
-      }
-      var branch=points[2],a=angle+range(r,.7,1.2);
-      var twig=[branch,[branch[0]+Math.cos(a)*10,branch[1]+Math.sin(a)*10],[branch[0]+Math.cos(a+.35)*19,branch[1]+Math.sin(a+.35)*19]];
-      function stroke(path,width,color){g.strokeStyle=color;g.lineWidth=width;g.beginPath();g.moveTo(path[0][0],path[0][1]);for(var p=1;p<path.length;p++)g.lineTo(path[p][0],path[p][1]);g.stroke();}
-      [points,twig].forEach(function(path){
-        stroke(path,4.8,'rgba(96,91,209,.22)');
-        stroke(path,2.6,'rgba(88,163,207,.35)');
-        stroke(path,1.15,'rgba(141,219,240,.78)');
-        stroke(path,.45,'rgba(215,220,255,.74)');
-      });
-    }
-    g.restore();
   }
 
   /* 由整數分格與周期石紋構成，左右／上下邊界是同一條金屬接縫。 */
@@ -1768,7 +1743,7 @@ var BattleDecor = (function () {
   };
   /* 背景建圖 Worker（相對於 index.html）。改了 decor-sculpt／decor-nature／battle-decor 要一起更新
      這裡的版本與 Worker 檔內 importScripts 的版本字串，否則 Worker 會吃到快取的舊畫法。 */
-  var ATLAS_WORKER_URL = 'js/worker/decor-atlas.worker.js?v=1.0.24';
+  var ATLAS_WORKER_URL = 'js/worker/decor-atlas.worker.js?v=1.0.25';
   var VARIANTS = 3;          // 每種擺件／地面裝飾畫幾個變體
   var TEX_SCALE = 1.5;       // 圖集解析度（畫面放大或高 DPI 時仍清楚；開 mipmap 避免縮小時閃爍）
 
