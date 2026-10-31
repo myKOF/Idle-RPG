@@ -10,6 +10,15 @@
 - 驗證範圍：NodeVM正式UI渲染／鑲入／取下／升級，以及原封載入sim.worker入口的headless宿主驗正式runCommand、屬性快取失效與gems面板；未做瀏覽器實際操作／畫面或全庫回歸。唯讀未改：規範／Workflow／prompts、Gem_resonance.xlsx／CSV／data、formula.js／item.js／save.js／ui.js、Worker協議與模擬宿主；無素材或素材庫變動，不建立空素材Commit。
 - 自我Review完成，本次無未完成實作，可供Review／合併；已知限制為上述既有失敗及未跑項。Commit為本段所在「[Codex] feat: 寶石共鳴限定相鄰異種類型」，實際編號見交付；未合併或推送develop／main。後續使用者正常整合並重新載入。工作期間同副本另一聊天新增CHAOS-PREVIEW-REPAIR獨立任務段，只分段暫存本共鳴紀錄，保留其進行中修改。
 
+## CHAOS-ICON-BICOLOR-CONTRAST-20261031 — 強化左下酒紅與右上紫色
+
+- Owner：Codex；Done，單一開發者。使用者肯定目前框底融合做法，要求雙色更明顯，左下偏酒紅／右上偏紫，中間自然漸變，以區別創世裝備。前置5e6ba4f2已完成；本輪只改ICON配色。
+- 允許equipment-chaos.css的金屬外沿與內底色階／高光、index該CSS快取、LV既有說明及本段、聊天visualizations預覽；禁止改框幾何／內收／陰影分層、tips／詳情、JS／玩法／素材／Worker／存檔／String／其他品質及其他工作區、合併推送。fetch後四檔預檢無外部來源，工作區乾淨。
+- 完成：左下酒紅#8f2541與右上紫晶#704bb0提高色差，中段經暗玫紫自然過渡，保留有色角落高光及同色金屬邊；框幾何、2px內收與暗邊分層不變。混沌／神鑄混沌在背包／身上裝備／雙手共用副手／神鑄格共用；快取1.0.5，LV既有說明同步。純CSS無獨立美術檔或素材庫變動。
+- 測試：`node --test --test-reporter=spec tests/equipment-tooltip-compare.test.cjs tests/equipment-two-hand-display.test.cjs tests/equipment-selection-border.test.cjs tests/inventory-mythic-skin.test.cjs tests/forge-shared-inventory.test.cjs`全部30/30；`node tools/equipment-ui/export-source.cjs --check`通過；`npm.cmd run build`全部604檔通過；diff／暫存範圍核對通過。
+- UI：隔離預覽載入正式itemCellHTML／renderEquip／renderForge，神話／創世對照與6部位、選取／兩種置灰／鎖定／星標共33張圖全載入，21個混沌格底色一致；1280桌面及390窄屏（48px格，無橫向溢出）通過。tips／詳情仍用授權PNG原框、原閱讀底與紫色副層，Console Error／Warning為0。截圖保存後轉PNG並重開核對，連同browser-report保留本聊天visualizations/chaos-icon-bicolor-20261031/{comparison-full.png,narrow.png,browser-report.json}；JPEG展示異常，交付PNG。未作完整玩家存檔／多瀏覽器驗證。
+- 唯讀檢查未改：規範／Workflow／prompts、ui.js／style.css／測試、授權PNG與匯出器、其他品質／玩法／Worker／String。自我Review完成，無未完成實作／已知新增功能風險，可供Review／合併；下一步由使用者正常整合並重新載入。Commit為本段所在「[Codex] fix: 強化混沌圖示的酒紅紫色漸層」，編號見交付；未合併推送。期間另一聊天修改聖域檔案、index腳本快取與本文件獨立末段，均不暫存；另ai/claude的index變動僅formula／skills2／combat快取，與本次CSS連結不同區段，三方merge-file試跑exit0，無語意相依。
+
 ## CHAOS-ICON-INTEGRATED-FRAME-20261031 — 酒紅紫晶ICON一體框底
 
 - Owner：Codex；Done，單一開發者。使用者否定上一版白灰底像貼紙，要求參照神話／創世做法，必要時重做框，底色用雙色或多色。本次只改混沌與神鑄混沌ICON，tips／詳情維持先前授權圖框及閱讀內襯。
