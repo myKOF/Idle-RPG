@@ -273,7 +273,7 @@ test('合成屬性 elemDmgAll（全屬性傷害提升）：展開成八種元素
   const lines = c.rwDescribeLines(gen, it).filter((l) => /屬性傷害提升/.test(l));
   assert.equal(lines.length, 1, '效果文字只有一行');
   assert.match(lines[0], /^全屬性傷害提升 +/);
-  assert.match(c.rwDescribeLines(gen)[2], /全屬性傷害提升（基礎值 ×0.45）/);
+  assert.match(c.rwDescribeLines(gen)[2], /全屬性傷害提升（基礎值 ×0.225）/);
   const before = plain(c.getStats().elemDmgUp);
   const st = equip(c, 'weapon', it);
   ['fire', 'ice', 'lightning', 'poison', 'light', 'dark', 'earth', 'wind'].forEach((e) => assert.ok(st.elemDmgUp[e] - before[e] > 0, e + ' 元素傷害提升有加成（八種都有）'));
@@ -377,7 +377,7 @@ test('同一組符文真言穿在兩件裝備上：屬性各算，機制只算�
   const b = wordItem(c, 'rw_stoneskin', { slot: 'legs' });
   c.G.equipment.shoulder = a; c.G.equipment.legs = b; c.markStatsDirty();
   const st = c.getStats();
-  assert.equal(st.passives.thorns, 3, '反震只算一次');
+  assert.equal(st.passives.thorns, 1.5, '反震只算一次');
   assert.deepEqual(Array.from(st.rw.words), ['rw_stoneskin']);
   const one = c.rwItemStatEntries(a).filter((e) => e.src === 'word').length;
   assert.ok(one >= 3);

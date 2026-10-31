@@ -99,7 +99,8 @@
 // v61：完整裝備快照可帶 legendaryEquipOrder；stats 可帶 blockDmgRedCap。
 // v62：skills2.points.total 包含超支舊檔成功重選後保留的投資額度，欄位與指令不變。
 // v64：神鑄3秒作業／品質篩選／原子補料／連續自動，forge 7→10，總數91→94。
-var WORKER_PROTOCOL_VERSION = 64;
+// v65（2026-10-31 成就系統）：PANEL_KEYS 新增 achv（成就頁投影，js/achievements.js achPanelData）；指令數不變。
+var WORKER_PROTOCOL_VERSION = 65;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -148,7 +149,7 @@ var MSG_OUT = {
    沿用既有 UI.dirty 的命名，不得新增別名。模擬層現有 158 處 UI.dirty.* 標記
    即為髒區來源，Worker 端據此決定 tick 要附帶哪些面板資料。 */
 var PANEL_KEYS = ['header', 'battle', 'equip', 'inv', 'forge', 'newforge',
-                  'factory', 'tower', 'gems', 'skills', 'talents', 'task'];
+                  'factory', 'tower', 'gems', 'skills', 'talents', 'task', 'achv'];
 
 /* ---- 事件種類（一般事件隨 tick 合批；視覺事件可走 MSG_OUT.VISUAL）---- */
 var EVENT_KINDS = {

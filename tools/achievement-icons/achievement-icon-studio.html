@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>成就圖示工作站</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; padding: 12px; background: #14151a; color: #ddd6c8; font: 13px/1.5 system-ui, "Microsoft JhengHei", sans-serif; }
+  .bar { display: flex; gap: 8px; align-items: center; margin: 6px 0 12px; flex-wrap: wrap; }
+  button { background: #2a2c34; color: #eee; border: 1px solid #4a4d58; border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+  #log { color: #9ab; }
+  .grid { display: flex; flex-wrap: wrap; gap: 8px; }
+  .card { background: #0c0d10; border: 1px solid #2a2c34; border-radius: 6px; padding: 4px; text-align: center; font-size: 11px; }
+  .card canvas { display: block; }
+</style>
+</head>
+<body>
+<b>成就圖示工作站</b>　參數：?sheet=1-24（只畫這幾枚並寫總覽圖到暫存區）&amp;sz=256&amp;cols=8　?export=1（輸出全部到 images/achievements，128x128）
+<div class="bar">
+  <button id="btn-export">輸出全部到 images/achievements</button>
+  <button id="btn-all">畫全部（預覽）</button>
+  <span id="log"></span>
+</div>
+<div class="grid" id="grid"></div>
+<script src="achievement-icon-painter.js?v=1"></script>
+<script src="ach-motifs-equip.js?v=1"></script>
+<script src="ach-motifs-craft.js?v=1"></script>
+<script src="ach-motifs-skill.js?v=1"></script>
+<script>
+  var qs = new URLSearchParams(location.search);
+  var log = document.getElementById('log');
+  var grid = document.getElementById('grid');
+  var OUT = 128;
+  function parseCsv(t) {
+    t = t.replace(/^﻿/, '');
+    return t.split(/\r?\n/).filter(Boolean).slice(1).map(function (l) {
+      var f = l.split(',');
+      return { id: +f[0], name: f[1], icon: f[2], desc: f[3], type: f[4], param: f[5], count: +f[6] };
+    });
+  }
+  function drawOne(e) { var cv = document.createElement('canvas'); cv.width = cv.height = 256; ACH.paintIcon(cv.getContext('2d'), e); return cv; }
+  function down(cv, px) {
+    var o = document.createElement('canvas'); o.width = o.height = px; var x = o.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(cv, 0, 0, px, px); return o;
+  }
+  function post(url, cv) { return fetch(url, { method: 'POST', body: cv.toDataURL('image/png') }).then(function (r) { return r.text(); }); }
+  function sheet(list, sz, cols, name) {
+    var pad = 6, W = cols * (sz + pad) + pad, rows = Math.ceil(list.length / cols), H = rows * (sz + pad) + pad;
+    var cv = document.createElement('canvas'); cv.width = W; cv.height = H; var x = cv.getContext('2d');
+    x.fillStyle = '#1a1b22'; x.fillRect(0, 0, W, H);
+    list.forEach(function (e, i) {
+      var px = pad + (i % cols) * (sz + pad), py = pad + Math.floor(i / cols) * (sz + pad);
+      x.imageSmoothingQuality = 'high'; x.drawImage(drawOne(e), px, py, sz, sz);
+      x.fillStyle = '#fff'; x.font = '12px sans-serif'; x.fillText(e.id, px + 3, py + 13);
+    });
+    return post('/preview?name=' + name, cv);
+  }
+  fetch('/config/CSV/Achievement.csv').then(function (r) { return r.text(); }).then(function (t) {
+    var list = parseCsv(t);
+    return ACH.preload().then(function () { return list; });
+  }).then(function (list) {
+    if (qs.get('stones')) {
+      var cv = document.createElement('canvas'); cv.width = 8 * 170; cv.height = 5 * 170; var x = cv.getContext('2d'); x.fillStyle = '#222'; x.fillRect(0, 0, cv.width, cv.height);
+      for (var i = 1; i <= 33; i++) { var im = ACH.getImg('/images/runes/stone-r' + (i < 10 ? '0' : '') + i + '.png'); x.drawImage(im, ((i - 1) % 8) * 170 + 5, Math.floor((i - 1) / 8) * 170 + 5, 160, 160); x.fillStyle = '#fff'; x.fillText(i, ((i - 1) % 8) * 170 + 8, Math.floor((i - 1) / 8) * 170 + 14); }
+      post('/preview?name=stones', cv).then(function () { document.title = 'done'; }); return;
+    }
+    if (qs.get('check')) {
+      Promise.all(list.map(function (e) { return new Promise(function (res) { var im = new Image(); im.onload = function () { var cv = document.createElement('canvas'); cv.width = im.width; cv.height = im.height; var x = cv.getContext('2d'); x.drawImage(im, 0, 0); var d = x.getImageData(0, 0, im.width, im.height).data, sw = 0, sx = 0, sy = 0, op = 0; for (var i = 0; i < im.height; i++) for (var j = 0; j < im.width; j++) { var a = d[(i * im.width + j) * 4 + 3]; if (a > 40) op++; sw += a; sx += a * j; sy += a * i; } res({ id: e.id, w: im.width, h: im.height, dx: +(sx / sw - im.width / 2).toFixed(1), dy: +(sy / sw - im.height / 2).toFixed(1), op: op }); }; im.onerror = function () { res({ id: e.id, err: 1 }); }; im.src = '/images/achievements/' + e.icon + '.png?' + Date.now(); }); })).then(function (r) { window.CHECK = r; document.title = 'checked'; });
+      return;
+    }
+    if (qs.get('sheet')) {
+      var ab = qs.get('sheet').split('-').map(Number), sub = list.filter(function (e) { return e.id >= ab[0] && e.id <= (ab[1] || ab[0]); });
+      var sz = +(qs.get('sz') || 256), cols = +(qs.get('cols') || 8);
+      sheet(sub, sz, cols, 'sheet_' + qs.get('sheet') + '_' + sz).then(function (p) { log.textContent = 'sheet -> ' + p; document.title = 'done'; });
+      return;
+    }
+    function drawAll() { grid.innerHTML = ''; list.forEach(function (e) { var d = document.createElement('div'); d.className = 'card'; d.appendChild(down(drawOne(e), 128)); d.append(e.id + ' ' + e.name); grid.appendChild(d); }); }
+    document.getElementById('btn-all').onclick = drawAll;
+    async function exportAll() {
+      for (var i = 0; i < list.length; i++) {
+        var e = list[i]; log.textContent = 'export ' + e.icon;
+        await post('/save?name=' + e.icon, down(drawOne(e), OUT));
+      }
+      log.textContent = 'exported ' + list.length; document.title = 'exported';
+    }
+    document.getElementById('btn-export').onclick = exportAll;
+    if (qs.get('export')) exportAll();
+  });
+</script>
+</body>
+</html>

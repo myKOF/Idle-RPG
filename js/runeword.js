@@ -60,6 +60,7 @@ function composeRune(id) {
   var next = RUNES[r.tier];            // tier 是 1 起算，RUNES[tier] 即下一階
   addRune(id, -RUNE_COMPOSE_COUNT);
   addRune(next.id, 1);
+  if (typeof achNoteRune === 'function') achNoteRune(next.id);
   return null;
 }
 

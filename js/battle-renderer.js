@@ -177,6 +177,9 @@ var BattleRenderer = (function () {
     shake: 0,                 // 畫面震動剩餘強度（px）
     sheets: {},               // name -> { tex, manifest, anims: {name: [Texture]} }
     imgTex: {},               // 敵人圖檔快取：src -> Texture | 'loading' | 'failed'
+    npcSheetState: {},        // 'npc:<NPC識別碼>' -> 'loading' | 'ready' | 'failed'（NPC 序列幀，見 requestNpcSheet）
+    npcManifest: null,        // images/sprites/npc/npc.json
+    npcManifestP: null,
     thrustLanceTex: null,     // 突刺光槍圖片；載入失敗時由 spawnThrustLine 保留程序化退化畫法
     groundTile: null,
     sceneRoot: null,          // 地板＋world；開透視時畫進離屏貼圖（見 syncPerspective）
@@ -1397,6 +1400,7 @@ var BattleRenderer = (function () {
     if (zoneKey === S.zoneKey) return;
     S.zoneKey = zoneKey;
     loadGroundTexture(zoneKey);
+    preloadZoneNpcSprites(zoneKey);
   }
 
   /* ============ 實體 ============ */
@@ -1565,6 +1569,99 @@ var BattleRenderer = (function () {
     syncNpcRankGlow(e);
   }
 
+  /* ---- NPC 序列幀（2026-10-31）----
+     NPC 配置表的「站立／移動／攻擊／死亡圖像」→ NPC_CONFIG_TABLE[id].sprite（檔名，不含 .png），
+     檔案與逐檔節奏在 images/sprites/npc/（由 tools/npc-sprites/build_npc_sprites.py 產生）。
+     動作缺了就退回：移動→站立、攻擊→不播（沿用撲擊）、死亡→舊的壓扁淡出；站立都沒有就繼續用 emoji。
+     圖還沒載到之前先用 emoji 頂著，載到後 adoptNpcSprite 把場上同款敵人的本體換成序列幀。 */
+  var NPC_SPRITE_DIR = 'images/sprites/npc/';
+  var NPC_SPRITE_VER = '20261031c';
+  function npcSpriteDef(data) {
+    var t = (typeof NPC_CONFIG_TABLE !== 'undefined' && data && data.npcId) ? NPC_CONFIG_TABLE[data.npcId] : null;
+    return (t && t.sprite && t.sprite.idle) ? t : null;
+  }
+  function loadNpcManifest() {
+    if (S.npcManifestP) return S.npcManifestP;
+    S.npcManifestP = fetch(NPC_SPRITE_DIR + 'npc.json?v=' + NPC_SPRITE_VER).then(function (r) {
+      if (!r.ok) throw new Error('npc manifest http ' + r.status);
+      return r.json();
+    }).then(function (m) { S.npcManifest = m; return m; });
+    return S.npcManifestP;
+  }
+  function requestNpcSheet(def) {
+    var name = 'npc:' + def.id;
+    if (S.npcSheetState[name]) return;
+    S.npcSheetState[name] = 'loading';
+    loadNpcManifest().then(function (man) {
+      var sp = def.sprite, idleMeta = man.stems[sp.idle];
+      if (!idleMeta) throw new Error('站立圖像不在 npc.json：' + sp.idle);
+      var ch = man.chars[idleMeta.char];
+      var anims = {}, speeds = {}, metaAnims = {};
+      var jobs = ['idle', 'walk', 'attack', 'die'].map(function (a) {
+        var stem = sp[a];
+        /* 移動圖與站立圖同名（懸浮怪、只有一組動畫）就不另註冊 walk，免得兩個動作切換時一直從頭播 */
+        var meta = (stem && (a === 'idle' || stem !== sp.idle)) ? man.stems[stem] : null;
+        if (!meta) return null;
+        return PIXI.Assets.load(NPC_SPRITE_DIR + stem + '.png').then(function (tex) {
+          tex.source.scaleMode = 'nearest';
+          var c = man.chars[meta.char], frames = [];
+          for (var i = 0; i < meta.frames; i++) {
+            frames.push(new PIXI.Texture({ source: tex.source, frame: new PIXI.Rectangle(i * c.cellW, 0, c.cellW, c.cellH) }));
+          }
+          anims[a] = frames;
+          speeds[a] = meta.fps / 60;
+          metaAnims[a] = { loop: !!meta.loop, hold: !!meta.hold, frames: meta.frames };
+        });
+      }).filter(Boolean);
+      return Promise.all(jobs).then(function () {
+        S.sheets[name] = {
+          manifest: { anims: metaAnims, anchorX: ch.anchorX, anchorY: ch.anchorY, scale: ch.scale, facing: ch.facing },
+          anims: anims, speeds: speeds, outline: null, isNpc: true
+        };
+        S.npcSheetState[name] = 'ready';
+        for (var id in S.entities) {
+          if (!Object.prototype.hasOwnProperty.call(S.entities, id)) continue;
+          adoptNpcSprite(S.entities[id]);
+        }
+      });
+    }).catch(function (err) {
+      S.npcSheetState[name] = 'failed';
+      if (typeof console !== 'undefined' && console.warn) console.warn('[battle-renderer] NPC 序列幀載入失敗，沿用 emoji：', def.id, err && err.message ? err.message : err);
+    });
+  }
+  function makeNpcSpriteBody(sheetName, visScale) {
+    var body = makeAnimSprite(sheetName, 'idle');
+    if (body) body.scale.set(body.scale.x * visScale);
+    return body;
+  }
+  function adoptNpcSprite(e) {
+    if (!e || !e.data || e.state === 'dying' || e.npcSprite) return;
+    var def = npcSpriteDef(e.data);
+    if (!def) return;
+    var name = 'npc:' + def.id;
+    if (!S.sheets[name]) return;
+    var next = makeNpcSpriteBody(name, e.visScale);
+    if (!next) return;
+    var idx = e.bodyWrap.getChildIndex(e.body);
+    e.body.destroy();
+    e.body = next;
+    e.bodyWrap.addChildAt(next, idx);
+    e.bodyWrap.rotation = 0; e.bodyWrap.scale.set(1);
+    e.sheetName = name; e.curAnim = 'idle'; e.baseAnim = 'idle'; e.npcSprite = true;
+    e.npcFacing = S.sheets[name].manifest.facing | 0;
+    if (e.eliteDeco) e.eliteDeco.baseScale = next.scale.x;
+    syncNpcRankGlow(e);
+  }
+  /* 進到地圖時先把那張圖的 NPC 序列幀載好，第一批敵人出現時多半已經就緒 */
+  function preloadZoneNpcSprites(zoneKey) {
+    var z = typeof ZONES !== 'undefined' ? ZONES[zoneKey] : null;
+    if (!z || !z.pool) return;
+    z.pool.forEach(function (entry) {
+      var def = typeof NPC_CONFIG_TABLE !== 'undefined' ? NPC_CONFIG_TABLE[entry.id] : null;
+      if (def && def.sprite && def.sprite.idle) requestNpcSheet(def);
+    });
+  }
+
   /* 敵人狀態列（buff/debuff 圖示）：借用 ui.js 的 entStatus() 產字串再剝掉標籤 */
   var _statusStrip = null;
   /* 這支是「每個敵人 × 每次面板同步」跑一遍，而同一份狀態字串在連續幾拍之間
@@ -1597,7 +1694,8 @@ var BattleRenderer = (function () {
        沒有 _size 的（舊事件、測試替身）沿用原本尺寸。 */
     var tierSize = Number(data._size) > 0 ? Number(data._size) : 0;
     var tierName = data._tier || '';
-    var visScale = (tierSize || (isBoss ? 1 : (isElite ? 1.28 : 1))) * dScale;
+    var npcCfg = (typeof NPC_CONFIG_TABLE !== 'undefined' && data.npcId) ? NPC_CONFIG_TABLE[data.npcId] : null;
+    var visScale = (tierSize || (isBoss ? 1 : (isElite ? 1.28 : 1))) * dScale * (npcCfg && npcCfg.scale > 0 ? npcCfg.scale : 1);
 
     var root = new PIXI.Container();
     var sz = cellSize();
@@ -1616,7 +1714,11 @@ var BattleRenderer = (function () {
     var bodyWrap = new PIXI.Container();
     var body;
     var sheetName = '';
-    if (isBoss && S.sheets.boss) {
+    var npcDef = npcSpriteDef(data);
+    if (npcDef && S.sheets['npc:' + npcDef.id]) {
+      sheetName = 'npc:' + npcDef.id;
+      body = makeNpcSpriteBody(sheetName, visScale);
+    } else if (isBoss && S.sheets.boss) {
       sheetName = 'boss';
       body = makeAnimSprite('boss', 'idle');
       var targetH = tierSize ? 64 * visScale : sz.h * 2.1;     // 高級敵人：普通敵人（64px）的 N 倍
@@ -1624,6 +1726,7 @@ var BattleRenderer = (function () {
     } else {
       body = makeMobBody(data, visScale);
       if (data.img) requestMobImage(data.img);
+      if (npcDef) requestNpcSheet(npcDef);
     }
     bodyWrap.addChild(body);
     view.addChild(bodyWrap);
@@ -1675,6 +1778,8 @@ var BattleRenderer = (function () {
       hpBar: hpBar, nameText: name, statusText: status,
       sheetName: sheetName, curAnim: sheetName ? 'idle' : '', baseAnim: 'idle',
       isBoss: isBoss, isElite: isElite, visScale: visScale,
+      npcSprite: sheetName.indexOf('npc:') === 0,
+      npcFacing: sheetName.indexOf('npc:') === 0 ? (S.sheets[sheetName].manifest.facing | 0) : 0,
       barW: barW, hitHeight: tierSize ? 64 * visScale : (isBoss ? sz.h * 1.9 : 64 * visScale),
       wx: 0, wy: 0,                   // 畫面上的世界座標（內插後的結果）
       samples: null,                  // 模擬層座標的取樣緩衝（見 posTrack/posSolve）
@@ -1912,16 +2017,11 @@ var BattleRenderer = (function () {
   var REVIVE_TEXT_RED = '#ff5a5a', REVIVE_TEXT_YELLOW = '#ffd43b';   // 倒地／復活文字顏色
   var HERO3D_ATTACKS = ['attack1', 'attack2', 'attack3'];
   var HERO3D_CAST_SPEED_MAX = 4;
-  var HERO3D_CAST_MAX_MS = 500;   // 3D 施法動作最長播多久：施法是插進移動裡的，播完立刻繼續跑
+  var HERO3D_CAST_MAX_MS = 300;   // 3D 施法動作最長播多久（使用者 2026-10-31：約 0.3 秒）：施法是插進移動裡的，角色在這段時間站定，播完立刻繼續跑。要與模擬層站定時間（SKILL_CAST_LOCK＋SKILL_CAST_HOLD）一致
   var HERO3D_ACTIONS = { attack1: 1, attack2: 1, attack3: 1, cast: 1 };   // 出手動作（普攻、技能）：一律播完，不被移動打斷
-  /* 3D 倒地：die 要在這段進度內播完，之後到倒數結束把死亡動作倒著播（起身）。進度＝復活倒數走了多少（0..1） */
-  var HERO3D_RISE_START = 0.3;
-  /* 倒下的那一刻：把 die 加速到能在 windowSec（整段復活倒數）的前 HERO3D_RISE_START 內播完 */
-  function hero3dFitDie(p, windowSec) {
-    if (!p.body || !p.body.hero3d || !(windowSec > 0)) return;
-    p.body.animationSpeed *= Math.max(1, p.body.naturalMs / (HERO3D_RISE_START * windowSec * 1000));
-  }
-  /* 起身：progress（0..1，復活倒數走了多少）過了 HERO3D_RISE_START 之後，把死亡動作倒著播，倒數結束剛好站起來 */
+  /* 3D 起身：天地共生用復活倒數的進度（riseStart＝0），正常死亡用起身時間的進度；
+     progress（0..1）走到哪，就把死亡動作倒著播到哪 */
+  var HERO3D_RISE_START = 0;
   function hero3dDriveRise(p, progress, riseStart) {
     if (riseStart === undefined) riseStart = HERO3D_RISE_START;
     if (progress < riseStart) return;
@@ -1968,8 +2068,7 @@ var BattleRenderer = (function () {
       else k3d = Math.max(leadMs > 0 ? p.body.hitMs / leadMs : 0, p.body.naturalMs / HERO3D_CAST_MAX_MS);
       if (k3d > 0) p.body.animationSpeed *= Math.max(1, Math.min(melee ? 8 : HERO3D_CAST_SPEED_MAX, k3d));
       p.actionAt = nowMs();
-      p.lunge = melee ? 0.18 : 0.12;
-      return;
+      return;   // 3D 不做出手前送（lunge）：角色站定播完動作，再多的位移都是滑步
     }
     if (meta && p.body && duration > 0) {
       /* 以實際會播的幀數算（多方向素材從 first 開始播，不是整條 frames） */
@@ -2234,7 +2333,18 @@ var BattleRenderer = (function () {
       }
       else if (wasEarthguardRevival && !earthguardRevival) playAnim(p, 'idle');
       else if (p.revival && !earthguardRevival && p.curAnim !== 'idle') playAnim(p, 'idle');
-      var dead = reviveLeft > 0;
+      /* 正常死亡：倒數期間（reviveLeft）維持倒地姿態；倒數結束才起身（riseCd，js/combat.js），
+         起身播完戰鬥才恢復。起身期間仍算 dead（不移動、不出手），只是不再顯示倒數。 */
+      var riseLeft = Number(field.riseCd) || 0;
+      if (riseLeft > 0 && typeof uiCountdownRemain === 'function') riseLeft = uiCountdownRemain(riseLeft, panel.gt);
+      var counting = reviveLeft > 0;
+      var rising = !counting && riseLeft > 0;
+      var dead = counting || rising;
+      p.riseLeft = rising ? riseLeft : 0;
+      if (rising !== !!p.rising) {
+        p.rising = rising;
+        if (rising && !(p.body && p.body.hero3d) && p.dieAnim && S.sheets[p.sheetName].anims.rise) playAnim(p, 'rise');
+      }
       if (dead !== p.dead) {
         /* 倒地與起身都要有過程：瞬間翻 90 度看起來像穿模，不像被打倒。
            實際的角度由 tickWorld 逐幀補間（見 p.fallK）。 */
@@ -2248,13 +2358,11 @@ var BattleRenderer = (function () {
            沒有的（舊素材）照舊站姿＋ tickWorld 把本體轉 90 度。 */
         if (dead) {
           p.lunge = 0;
-          playAnim(p, p.dieAnim ? 'die' : 'idle');
-          hero3dFitDie(p, p.deathFogDuration);
+          playAnim(p, p.dieAnim ? 'die' : 'idle');   // 原速播完倒地，之後停在最後一格直到倒數結束
         } else {
           p.baseAnim = 'idle';
-          /* 3D 的起身在倒數期間就倒著播完了（見 hero3dDriveRise），倒數結束直接回站立 */
-          if (p.body && p.body.hero3d) playAnim(p, 'idle');
-          else playAnim(p, (p.dieAnim && S.sheets[p.sheetName].anims.rise) ? 'rise' : 'idle', 'idle');
+          /* 起身已經在 riseCd 期間播完（3D 見 hero3dDriveRise，2D 見上面的 rise），這裡直接回站立 */
+          playAnim(p, 'idle');
         }
       }
       /* 倒地期間：模擬層已經把技能執行期狀態整批清掉，畫面上還在的持續場域
@@ -2263,7 +2371,7 @@ var BattleRenderer = (function () {
       /* 倒地倒數：狀態列收進彈出面板後，畫面上只剩這一條告訴玩家發生什麼事。
          面板 5Hz 才來一次，這裡照快照時間扣掉已經過的秒數（同 ui.js 的做法）。 */
       if (p.reviveText) {
-        p.reviveText.visible = dead || earthguardRevival;
+        p.reviveText.visible = counting || earthguardRevival;
         var sub = p.reviveSubText, subText = '', subFill = REVIVE_TEXT_RED;
         if (earthguardRevival && p.revival.startAt > panel.gt) {
           p.reviveText.visible = false;   // 倒地動作還在播：復活倒數與光束一起開始
@@ -2275,8 +2383,8 @@ var BattleRenderer = (function () {
           /* 點點像 loading：1、2、3 個輪播，一秒換兩格 */
           subText = STR(2224, '.'.repeat(Math.floor(Date.now() / 500) % 3 + 1));
           subFill = REVIVE_TEXT_YELLOW;
-        } else if (dead) {
-          var left = (typeof uiCountdownRemain === 'function')
+        } else if (counting) {
+          var left =(typeof uiCountdownRemain === 'function')
             ? uiCountdownRemain(reviveLeft, panel.gt) : reviveLeft;
           p.reviveText.text = STR(447, Math.max(1, Math.ceil(Math.max(0, left))));
           p.reviveText.style.fill = REVIVE_TEXT_RED;
@@ -2318,6 +2426,7 @@ var BattleRenderer = (function () {
     var from = sourceId ? posOf(sourceId) : null;
     var sourceEnt = sourceId ? S.entities[sourceId] : null;
     var hit = spec.hit !== false;
+    if (sourceEnt && sourceEnt.npcSprite && sourceEnt.state !== 'dying') playAnim(sourceEnt, 'attack', 'idle');
     var themeSpec = {
       elem: spec.elem || null, cat: 'enemy', color: spec.color || '#ff6b6b',
       variant: spec.variant || null, glyph: spec.glyph || '💢'
@@ -2337,7 +2446,7 @@ var BattleRenderer = (function () {
 
     /* 保留近戰敵人的衝刺／BOSS 攻擊動作；若來源已 dying，這段不依賴
        dying 狀態的 lunge 更新，仍用玩家位置上的弧光表現「先出手」。 */
-    if (sourceEnt && sourceEnt.isBoss && sourceEnt.sheetName && sourceEnt.state !== 'dying') {
+    if (sourceEnt && sourceEnt.isBoss && sourceEnt.sheetName && !sourceEnt.npcSprite && sourceEnt.state !== 'dying') {
       playAnim(sourceEnt, 'attack', 'idle');
     }
     if (sourceEnt && sourceEnt.state === 'idle') {
@@ -2368,12 +2477,17 @@ var BattleRenderer = (function () {
     ent.dieAt = nowMs();
     ent.realDeath = !!realDeath;
     S.lastPos[ent.id] = { x: ent.root.x, y: ent.root.y - ent.hitHeight * 0.55, footY: ent.root.y, at: nowMs() };
-    if (ent.isBoss) {
-      removeBossBar(ent.id);
-      if (ent.sheetName) {
-        ent.baseAnim = 'hurt';   // onComplete 讀 baseAnim；垂死期間 hurt 循環播放
-        playAnim(ent, 'hurt', 'hurt');
-      }
+    if (ent.isBoss) removeBossBar(ent.id);
+    var dieSheet = ent.npcSprite ? S.sheets[ent.sheetName] : null;
+    if (dieSheet && dieSheet.anims.die) {
+      /* NPC 序列幀有死亡動作：播完停在最後一格，再淡出（見 tickWorld 的 dying 段） */
+      ent.sprDie = true;
+      ent.dieDur = dieSheet.manifest.anims.die.frames / Math.max(1, dieSheet.speeds.die * 60);
+      ent.baseAnim = 'die';
+      playAnim(ent, 'die', 'die');
+    } else if (ent.isBoss && ent.sheetName && !ent.npcSprite) {
+      ent.baseAnim = 'hurt';   // onComplete 讀 baseAnim；垂死期間 hurt 循環播放
+      playAnim(ent, 'hurt', 'hurt');
     }
   }
 
@@ -6664,9 +6778,17 @@ var BattleRenderer = (function () {
         p.fallTinted = false;
       }
       if (p.dead) {
-        p.deathFogK = Math.min(1, (p.deathFogK || 0) + dt / Math.max(1, p.deathFogDuration || 1));
-        updateDeathFog(p.deathFogK);
-        if (p.body && p.body.hero3d) hero3dDriveRise(p, p.deathFogK);
+        var riseSec = typeof REVIVE_RISE_SEC === 'number' ? REVIVE_RISE_SEC : 1.5;
+        if (p.rising) {
+          /* 起身：迷霧隨起身退去；3D 把死亡動作倒著播，進度＝起身走了多少 */
+          var riseProgress = Math.max(0, Math.min(1, 1 - p.riseLeft / riseSec));
+          p.deathFogK = 1 - riseProgress;
+          updateDeathFog(p.deathFogK);
+          if (p.body && p.body.hero3d) hero3dDriveRise(p, riseProgress, 0);
+        } else {
+          p.deathFogK = Math.min(1, (p.deathFogK || 0) + dt / Math.max(1, p.deathFogDuration || 1));
+          updateDeathFog(p.deathFogK);
+        }
       }
 
       var moving = false;
@@ -6820,7 +6942,14 @@ var BattleRenderer = (function () {
       e.wx = eAt.x; e.wy = eAt.y;
       var movedLen = Math.sqrt(edx * edx + edy * edy);
 
-      if (e.state === 'entering' || movedLen > 0.6 * dt * 60) {
+      if (e.npcSprite) {
+        /* 序列幀自己會動：不套擺動／呼吸。走路與站立依實際位移切換；出招中與死亡中不打斷。 */
+        if (e.state !== 'dying') {
+          var wantAnim = (S.sheets[e.sheetName].anims.walk && (e.state === 'entering' || movedLen > 0.6 * dt * 60)) ? 'walk' : 'idle';
+          e.baseAnim = wantAnim;
+          if ((e.curAnim === 'idle' || e.curAnim === 'walk') && e.curAnim !== wantAnim) playAnim(e, wantAnim);
+        }
+      } else if (e.state === 'entering' || movedLen > 0.6 * dt * 60) {
         /* 走路擺動：小怪左右搖 + 輕微縮放跳動（類倖存者小怪步態） */
         e.bodyWrap.rotation = Math.sin(t / 90 * e.wobble) * 0.08;
         e.bodyWrap.scale.y = 1 + Math.sin(t / 80 * e.wobble) * 0.045;
@@ -6862,7 +6991,12 @@ var BattleRenderer = (function () {
         /* 死亡進度用 dt 累積：暫停時屍體凍結，不會在解除暫停時瞬間消失 */
         e.dieT = (e.dieT || 0) + dt;
         var dieT = e.dieT;
-        if (e.realDeath) {
+        if (e.realDeath && e.sprDie) {
+          /* 死亡動畫播完再淡出 */
+          var sdk = Math.max(0, Math.min(1, (dieT - (e.dieDur || 0.6)) / 0.3));
+          e.root.alpha = 1 - sdk;
+          if (sdk >= 1) { destroyEntity(id); continue; }
+        } else if (e.realDeath) {
           /* 死亡：壓扁 + 淡出 + 微沉 */
           var dk = Math.min(1, dieT / 0.6);
           e.bodyWrap.scale.y = 1 - dk * 0.5;
@@ -6877,6 +7011,14 @@ var BattleRenderer = (function () {
         }
       }
 
+      if (e.npcSprite && e.npcFacing && e.state !== 'dying') {
+        /* 原圖朝右的角色面向玩家（水平差 6 以內不翻，免得貼身時左右抖動） */
+        var faceDx = playerPos().x - e.wx;
+        if (Math.abs(faceDx) > 6) {
+          var faceSign = (faceDx >= 0 ? 1 : -1) * e.npcFacing, faceAbs = Math.abs(e.body.scale.x);
+          if (e.body.scale.x !== faceSign * faceAbs) e.body.scale.x = faceSign * faceAbs;
+        }
+      }
       updateFlashJolt(e, dt);
       syncNpcRankGlow(e);
       /* 撲擊位移是世界座標（地面上的一段路），跟站位一起投影 */
@@ -8132,7 +8274,7 @@ var BattleRenderer = (function () {
         home: playerPos(),
         entities: Object.keys(S.entities).map(function (id) {
           var e = S.entities[id];
-          return { id: id, x: Math.round(e.wx), y: Math.round(e.wy), state: e.state, lunge: +(e.lunge || 0).toFixed(2), magic: !!(e.data && e.data.magic) };
+          return { id: id, x: Math.round(e.wx), y: Math.round(e.wy), state: e.state, lunge: +(e.lunge || 0).toFixed(2), magic: !!(e.data && e.data.magic), npc: e.data && e.data.npcId, sheet: e.sheetName, anim: e.curAnim };
         })
       };
     }

@@ -69,8 +69,11 @@ test('NPC-SKILL-4 資料同步：套用後 js/data.js 一致（NPC pool 的 skil
   assert.equal(c.BOSS_LIST.length, 10);
   c.BOSS_LIST.forEach((b, i) => { assert.equal(b.id, 'tower_boss_' + (i + 1)); assert.ok(b.skills.ex.length >= 1); assert.deepEqual(Array.from(b.skills.rnd), [4, 6]); });
   const fresh = cfg.SCHEMAS.NPC.extract(fs.readFileSync(path.join(root, 'js/data.js'), 'utf8'));
-  assert.equal(cfg.csvStringify([cfg.SCHEMAS.NPC.header].concat(fresh)).replace(/^﻿/, '').replace(/\r\n/g, '\n'),
-    fs.readFileSync(path.join(root, 'config/CSV/NPC.csv'), 'utf8').replace(/^﻿/, '').replace(/\r\n/g, '\n'), '備註欄是自動產生的，改了技能請重新產生 CSV');
+  /* 「圖像備註」是人工維護的說明（新版／舊版、缺哪些圖），不在自動產生的比對範圍內 */
+  const blankImageNote = (rows) => { const k = rows[0].indexOf('圖像備註'); return rows.map((r, i) => i && k >= 0 ? r.map((v, j) => j === k ? '' : v) : r); };
+  const actual = cfg.csvParse(fs.readFileSync(path.join(root, 'config/CSV/NPC.csv'), 'utf8'));
+  assert.equal(cfg.csvStringify(blankImageNote([cfg.SCHEMAS.NPC.header].concat(fresh))).replace(/^﻿/, '').replace(/\r\n/g, '\n'),
+    cfg.csvStringify(blankImageNote(actual)).replace(/^﻿/, '').replace(/\r\n/g, '\n'), '備註欄是自動產生的，改了技能請重新產生 CSV');
 });
 
 test('NPC-SKILL-5 套用檢查：未知專屬技能、隨機數量超出技能池、上限小於下限、未知類型、專屬技能重複都會中止', () => {

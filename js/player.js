@@ -161,6 +161,7 @@ function newGameState() {
     // 主線任務（2026-08-05）：idx = 下一個可領取的任務索引（TASKS → js/data.js），
     // 之前的任務一律視為已領取；進度本身不存檔（由統計與現況即時計算，見 js/tasks.js）
     taskState: { idx: 0 },
+    achv: { got: {}, st: {} },   // 成就（js/achievements.js）：got＝已達成 { 編號: 時間 }、st＝累計統計
     forge: { version: 2, operation: 'equip', slots: [null, null, null, null, null, null],
       stones: 0, stonePreference: 0, quality: 6, auto: false, result: null, log: [], unlockNotified: false, unlocked: false },
     settings: { compareEq: true },
@@ -260,6 +261,7 @@ function reincarnate() {
   var count = reincarnationCount();
   if (count >= REINCARNATION_MAX) return STR(375, REINCARNATION_MAX);
   if (p.level < REINCARNATION_LEVEL) return STR(376, REINCARNATION_LEVEL);
+  if (typeof achCheck === 'function') achCheck();   // 轉生會重置等級：先結算一次成就
   p.reincarnations = count + 1;
   p.level = 1;
   p.xp = 0;

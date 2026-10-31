@@ -42,7 +42,8 @@ const JS = {
   status: path.join(ROOT, 'js', 'status.js'),
   runes: path.join(ROOT, 'js', 'runeword_data.js'),
   elite: path.join(ROOT, 'js', 'elite_data.js'),
-  gemRes: path.join(ROOT, 'js', 'gem_resonance_data.js')
+  gemRes: path.join(ROOT, 'js', 'gem_resonance_data.js'),
+  ach: path.join(ROOT, 'js', 'achievement_data.js')
 };
 const WRITE = process.argv.includes('--write');
 
@@ -450,9 +451,25 @@ function npcSkillCells(sk) {
   const rnd = (sk && sk.rnd) || [0, 0];
   return [ex.join(';'), rnd[1] > 0 ? numStr(rnd[0]) : '', rnd[1] > 0 ? numStr(rnd[1]) : ''];
 }
+/* NPC 序列幀（2026-10-31）：「站立／移動／攻擊／死亡圖像」填 images/sprites/npc/ 的檔名（不含 .png，清單在 npc.json 的 stems）。
+   不是檔名的格子（舊版 emoji 寫「舊版:🐸」、封魔塔 BOSS 的靜態圖檔名）一律視為尚無序列幀；
+   檔名格式正確卻不在 npc.json 就中止套用，免得拼錯字讓敵人靜靜退回 emoji。
+   「圖像備註」純說明（新版正式圖像／舊版圖像、缺哪些圖），不寫回遊戲。 */
+const NPC_SPRITE_ACTIONS = [['idle', '站立圖像'], ['walk', '移動圖像'], ['attack', '攻擊圖像'], ['die', '死亡圖像']];
+function npcSpriteStems() {
+  const p = path.join(ROOT, 'images', 'sprites', 'npc', 'npc.json');
+  return fs.existsSync(p) ? Object.keys(JSON.parse(fs.readFileSync(p, 'utf8')).stems || {}) : [];
+}
+function npcSpriteCells(entry) {
+  const sp = entry.sprite || {};
+  const old = '舊版:' + (entry.emoji || entry.appearance || '');
+  /* 缺的動作寫「（缺）」讓使用者一眼看到；圖像備註是人工維護的說明（新版／舊版、缺哪些圖），由 --gen 產生的只是起始文字 */
+  return NPC_SPRITE_ACTIONS.map(a => sp[a[0]] || (sp.idle ? '（缺）' : old)).concat([sp.idle ? '新版正式圖像' : '舊版圖像（emoji 備援），尚無正式圖：缺站立／移動／攻擊／死亡']);
+}
 SCHEMAS.NPC = {
   name: 'NPC', jsFile: 'data', sheet: 'NPC', vars: NPC_POOL_DEFS.map(d => d.varName).concat(['BOSS_LIST']),
-  header: ['NPC識別碼', 'NPC名稱', '所屬地圖識別碼', '類型', '屬性', '外觀', '移動速度(米/秒)', '攻擊速度(次/秒)', '攻擊距離(米)', '視野範圍(米)', '魔法型（1是／0否）', '出現權重',
+  header: ['NPC識別碼', 'NPC名稱', '所屬地圖識別碼', '類型', '屬性', '外觀', '站立圖像', '移動圖像', '攻擊圖像', '死亡圖像', '圖像備註', '縮放比',
+    '移動速度(米/秒)', '攻擊速度(次/秒)', '攻擊距離(米)', '視野範圍(米)', '魔法型（1是／0否）', '出現權重',
     '專屬技能', '隨機技能下限', '隨機技能上限', '備註'],
   extract(src) {
     const rows = [];
@@ -461,14 +478,14 @@ SCHEMAS.NPC = {
       const pool = evalLiteral(extractLiteral(src, def.varName).literal);
       pool.forEach((entry, index) => {
         const id = entry.id || (def.zone + '_' + (index + 1));
-        const base = [entry.attr || '', entry.appearance || entry.emoji || '',
+        const base = [entry.attr || '', entry.appearance || entry.emoji || ''].concat(npcSpriteCells(entry), [numStr(entry.scale > 0 ? entry.scale : 1),
           numStr(entry.runSpeed == null ? '' : entry.runSpeed), numStr(entry.atkSpeed == null ? '' : entry.atkSpeed),
           numStr(entry.atkRange == null ? '' : entry.atkRange),
-          entry.magic ? '1' : '0', numStr(entry.weight == null ? 1 : entry.weight)];
+          entry.magic ? '1' : '0', numStr(entry.weight == null ? 1 : entry.weight)]);
         ['normal', 'elite', 'elite_adv', 'boss'].forEach(type => {
           const sk = type === 'normal' ? null : (entry.skills && entry.skills[type]) || null;
           const row = [id, entry.name, def.zone, type].concat(base, npcSkillCells(sk), [npcSkillNote(type, sk, catalog)]);
-          row.splice(9, 0, numStr(entry.sightRanges && entry.sightRanges[type] != null ? entry.sightRanges[type] : 50));
+          row.splice(15, 0, numStr(entry.sightRanges && entry.sightRanges[type] != null ? entry.sightRanges[type] : 50));
           rows.push(row);
         });
       });
@@ -477,6 +494,7 @@ SCHEMAS.NPC = {
     bosses.forEach((b, index) => {
       const sk = (b.skills) || null;
       rows.push([b.id || ('tower_boss_' + (index + 1)), b.name, NPC_TOWER_ZONE, 'tower_boss', b.attr || b.elem || '', b.emoji || '',
+        b.img || '', b.img || '', b.img || '', b.img || '', '舊版靜態圖（' + (b.img || '無') + '），尚無序列幀：缺移動／攻擊／死亡動畫', '1',
         '', '', '', numStr(b.sightRange == null ? 50 : b.sightRange), b.elem ? '1' : '0', ''].concat(npcSkillCells(sk), [npcSkillNote('tower_boss', sk, catalog)]));
     });
     return rows;
@@ -498,6 +516,7 @@ SCHEMAS.NPC = {
     });
     const oldBosses = evalLiteral(extractLiteral(existingSrc, 'BOSS_LIST').literal);
     const catalog = enemySkillCatalog();
+    const spriteStems = npcSpriteStems();
     const randomPoolSize = Object.keys(catalog).filter(k => catalog[k].pool === 'random').length;
     const skillsById = {};     // id → { type → { ex, rnd } }
     const sightById = {};      // 各類型列自己的視野（米），不由 normal 列覆蓋
@@ -553,6 +572,22 @@ SCHEMAS.NPC = {
       }
       o.magic = toBool(get(row, '魔法型（1是／0否）'));
       o.weight = toNum(get(row, '出現權重'));
+      const sprite = {};
+      NPC_SPRITE_ACTIONS.forEach(a => {
+        const v = get(row, a[1]).trim();
+        if (!/^[a-z0-9_]+$/.test(v)) return;
+        if (spriteStems.indexOf(v) < 0) throw new Error('NPC ' + lineOf(index) + '「' + a[1] + '」的圖像 ' + v + ' 不在 images/sprites/npc/npc.json（先放進圖檔並執行 tools/npc-sprites/build_npc_sprites.py）');
+        sprite[a[0]] = v;
+      });
+      if (sprite.idle) o.sprite = sprite; else delete o.sprite;
+      /* 縮放比：相對目前預設大小的倍數（1＝不變），NPC 所有階級共用，只認 normal 列；空白或 1 都不寫入 */
+      const scaleRaw = get(row, '縮放比').trim();
+      if (scaleRaw === '' || Number(scaleRaw) === 1) delete o.scale;
+      else {
+        const sv = Number(scaleRaw);
+        if (!(sv > 0) || !Number.isFinite(sv)) throw new Error('NPC ' + lineOf(index) + '「縮放比」必須是大於 0 的數字：' + scaleRaw);
+        o.scale = sv;
+      }
       /* 移動／攻擊三項：空白格＝沿用系統預設（欄位不寫入）；填了就必須是正數，
          填 0 或負數多半是誤植，寧可中止套用也不要讓敵人靜靜變成不動或不攻擊。 */
       [['移動速度(米/秒)', 'runSpeed'], ['攻擊速度(次/秒)', 'atkSpeed'], ['攻擊距離(米)', 'atkRange']].forEach(function (pair) {
@@ -2087,6 +2122,55 @@ SCHEMAS.Gem_resonance = {
   }
 };
 
+/* ---- Achievement ← ACHIEVEMENTS（js/achievement_data.js）成就表（2026-10-31） ----
+   欄位：編號／名稱／圖示（images/achievements/<圖示>.png）／達成條件（顯示給玩家）／目標類型／目標參數／目標數量。
+   「達成條件」是給玩家看的文字，「目標類型」才是程式判定用的（js/achievements.js achProgress）。
+   skillUlt 的目標參數＝「群組ID:超神ID」（Skills2 表的群組ID與超神ID欄）。xlsx 由 Excel 本身維護，--gen 只寫 CSV。 */
+const ACH_TYPES = ['equipFull', 'level', 'enhanceLevel', 'ancientEquipped', 'rerollCount', 'socketEquipped', 'gemLevel', 'gemAllTypes',
+  'gemDivine', 'godEquip', 'ancientCast', 'imprintCount', 'dualLegend', 'divineConsumed', 'upgradeCount', 'forgePartsMax', 'goldTotal',
+  'runewordActive', 'runewordDistinct', 'runeMade', 'runewordTier', 'reincarnation', 'towerFloor', 'monsterPower', 'skillUlt'];
+SCHEMAS.Achievement = {
+  name: 'Achievement', jsFile: 'ach', sheet: 'Achievement', vars: ['ACHIEVEMENTS'], noXlsxGen: true,
+  header: ['編號', '名稱', '圖示', '達成條件', '目標類型', '目標參數', '目標數量'],
+  extract(src) {
+    return evalLiteral(extractLiteral(src, 'ACHIEVEMENTS').literal).map(a => [numStr(a.id), a.name, a.icon, a.desc, a.type, a.param || '', numStr(a.count)]);
+  },
+  rebuild(dataRows, header) {
+    const get = rowGetter(header);
+    const fail = msg => { throw new Error(msg); };
+    let skills = null;
+    try { skills = evalLiteral(extractLiteral(readUtf8(JS.skills2), 'SKILLS2').literal); } catch (e) { skills = null; }
+    const seen = new Set();
+    const entries = dataRows.filter(r => get(r, '編號').trim() !== '').map((r, i) => {
+      const where = 'Achievement 表 第' + (i + 2) + '列';
+      let id; try { id = toNum(get(r, '編號')); } catch (e) { fail(where + '的「編號」' + e.message); }
+      if (!Number.isInteger(id) || id < 1) fail(where + '：「編號」必須是正整數');
+      if (seen.has(id)) fail(where + '：編號 ' + id + ' 重複');
+      seen.add(id);
+      const o = { id, name: get(r, '名稱').trim(), icon: get(r, '圖示').trim(), desc: get(r, '達成條件').trim(), type: get(r, '目標類型').trim() };
+      if (o.name === '') fail(where + '（編號 ' + id + '）：「名稱」不可空白');
+      if (o.icon === '') fail(where + '（編號 ' + id + '）：「圖示」不可空白');
+      if (!/^[A-Za-z0-9_-]+$/.test(o.icon)) fail(where + '（編號 ' + id + '）：「圖示」只能用英數、底線、連字號（對應 images/achievements/<圖示>.png）');
+      if (!ACH_TYPES.includes(o.type)) fail(where + '（編號 ' + id + '）：「目標類型」未知：「' + o.type + '」（可用：' + ACH_TYPES.join('／') + '）');
+      const param = get(r, '目標參數').trim(); if (param !== '') o.param = param;
+      try { o.count = toNum(get(r, '目標數量') || '0'); } catch (e) { fail(where + '（編號 ' + id + '）的「目標數量」' + e.message); }
+      if (o.count < 0) fail(where + '（編號 ' + id + '）：「目標數量」不得小於 0');
+      if (o.type === 'skillUlt') {
+        const m = /^([A-Za-z0-9_]+):([A-Za-z0-9_]+)$/.exec(param);
+        if (!m) fail(where + '（編號 ' + id + '）：skillUlt 的「目標參數」必須是「群組ID:超神ID」');
+        if (skills) {
+          const g = skills[m[1]];
+          if (!g) fail(where + '（編號 ' + id + '）：Skills2 沒有群組「' + m[1] + '」');
+          if (!(Array.isArray(g.ult) && g.ult.some(u => u.id === m[2]))) fail(where + '（編號 ' + id + '）：群組「' + m[1] + '」沒有超神「' + m[2] + '」');
+        }
+      }
+      return '  ' + jsLit(o);
+    });
+    if (!entries.length) fail('Achievement 表沒有任何成就列');
+    return { ACHIEVEMENTS: 'var ACHIEVEMENTS = [\n' + entries.join(',\n') + '\n];' };
+  }
+};
+
 /* 地圖中繼資料也由 Excel 投影；上限／名稱／前置不再依賴手工同步。 */
 SCHEMAS.Zones = {
   name:'Zones',jsFile:'data',sheet:'地圖',noXlsxGen:true,vars:['ZONES','ZONE_LIST','REALMS'],
@@ -2123,7 +2207,7 @@ SCHEMAS.Zones = {
     return list.map((id,i)=>{const z=zones[id];return [i+1,id,z.name,z.realm,z.maxStage,z.reqZone||'',z.reqStage||'',z.reqReincarnation||0,z.hpMult,z.atkMult,z.defMult,z.aspdMult,z.rewardMult].map(String);});
   }
 };
-const TABLE_ORDER = ['Skills2', 'Status', 'Gems', 'Talents', 'Equipment_Affix', 'NPC', 'Zones', 'Task', 'Runes', 'Gem_resonance'];
+const TABLE_ORDER = ['Skills2', 'Status', 'Gems', 'Talents', 'Equipment_Affix', 'NPC', 'Zones', 'Task', 'Runes', 'Gem_resonance', 'Achievement'];
 
 /* ===========================================================================
    模式：--gen / --sync / --apply
@@ -2286,7 +2370,7 @@ if (mode === 'gen') cmdGen(only);
 else if (mode === 'sync') cmdSync();
 else if (mode === 'apply') cmdApply(only);
 else {
-  console.log('用法：node tools/config_tables.cjs [--gen | --sync | --apply [--write]] [Skills2|Status|Gems|Talents|Equipment_Affix|NPC|Task|Runes|Gem_resonance]');
+  console.log('用法：node tools/config_tables.cjs [--gen | --sync | --apply [--write]] [Skills2|Status|Gems|Talents|Equipment_Affix|NPC|Task|Runes|Gem_resonance|Achievement]');
   process.exit(1);
 }
 

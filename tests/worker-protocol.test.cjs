@@ -12,7 +12,7 @@ const VALID_ARG_TYPES = new Set([
 ]);
 const EXPECTED_PANEL_KEYS = [
   'header', 'battle', 'equip', 'inv', 'factory', 'forge',
-  'newforge', 'tower', 'gems', 'skills', 'talents', 'task'
+  'newforge', 'tower', 'gems', 'skills', 'talents', 'task', 'achv'
 ];
 const EXPECTED_COMMAND_COUNTS = {
   stage: 4,
@@ -39,7 +39,7 @@ const SIMULATION_FILES = [
   'util.js', 'strings_data.js', 'strings.js', 'data.js', 'runeword_data.js', 'gem_resonance_data.js', 'formula.js', 'stats.js', 'item.js', 'gem_resonance.js', 'runeword.js', 'skills.js',
   'skills2.js', 'talents.js', 'player.js', 'special_rules.js', 'combat.js', 'legendary.js',
   'tower.js', 'factory.js', 'newforge.js', 'forge.js', 'save.js',
-  'tasks.js'
+  'tasks.js', 'achievements.js'
 ];
 
 function baseType(typeSpec) {
@@ -126,7 +126,7 @@ test('凍結的 Worker 指令表有 93 條且分類數量固定', () => {
   // v47：battle 新增技能列權威計時投影，指令數不變。
   // v48：gems 面板新增 runewordSeen（成形過的符文真言），指令數不變。
   // v49：rune.unsocket 改為 rune.erase（抹除符文，扣碎片與精華、不退還），指令數不變。
-  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 64);
+  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 65);
   assert.equal(protocol.MSG_OUT.VISUAL, 'visual');
   assert.equal(protocol.EVENT_KINDS.VFX, 'vfx');
   assert.equal(protocol.EVENT_KINDS.ACT, 'act');

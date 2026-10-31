@@ -1,4 +1,6 @@
-# Worker 協議 v64
+# Worker 協議 v65
+
+v65（2026-10-31 成就系統）：`PANEL_KEYS` 新增 `achv`（成就頁投影：`{ list: [{id, at, prog, goal}], got }`，只送達成時間與進度）；指令數不變。成就名稱、圖示、條件文字由兩端共載的 `ACHIEVEMENTS`（js/achievement_data.js，來源 config/Excel/Achievement.xlsx）提供，不進協議；判定與累計統計（js/achievements.js）只在 Worker 端載入，存檔欄位 `G.achv = { got, st }`。達成時送一次 `notice` 事件 `key: 'achievementUnlocked'`（`data.id`）。
 
 v64（2026-10-29 神鑄體驗）：神鑄指令7→10，總數91→94。新增`forge.setQuality({rarity:6|7|9})`、`forge.autoFill({})`及`forge.setAuto({on:boolean})`；`forge.start`改呼叫startForge啟動3000ms作業。只有forgeTick到期才沿同一doForge配方再次驗證並原子結算，UI不能提前扣料／擲骰。作業中拒絕重啟、換品質／模式、取放素材及變更石頭，允許關閉連續自動讓本輪完成。
 

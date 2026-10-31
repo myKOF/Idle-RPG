@@ -11,7 +11,7 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-importScripts('protocol.js?v=20261030-gem-fusion-removed', '../game-clock.js?v=1.0.1', 'shim.js?v=20261018-potential-remove');
+importScripts('protocol.js?v=20261031-achv', '../game-clock.js?v=1.0.1', 'shim.js?v=20261018-potential-remove');
 // 離線結算等分批工作亦共用暫停時鐘；訊息與loop仍能回應存檔及PING。
 if (typeof GameClock !== 'undefined') {
   globalThis.setTimeout = GameClock.setTimeout;
@@ -20,13 +20,13 @@ if (typeof GameClock !== 'undefined') {
 /* String 表：資料檔版本由主執行緒（bridge.js）以網址 sv= 傳入，改文字不必動本檔。 */
 var _stringDataVersion = ((typeof self !== 'undefined' && self.location && /[?&]sv=(\w+)/.exec(self.location.search || '')) || [])[1] || '0';
 importScripts(
-  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../data.js?v=20261030-unlock-god-zone-merge', '../runeword_data.js?v=20261028-develop-merge-a8acfe', '../gem_resonance_data.js?v=20261028-develop-merge-a8acfe','../status.js?v=20261028-develop-merge-a8acfe', '../formula.js?v=20261030-unlock-god-zone-merge', '../battle-terrain.js?v=20261030-unlock-god-zone-merge', '../battlefield.js?v=20261029-merge-cd5ad556', '../stats.js?v=20261028-develop-merge-a8acfe',
-  '../item.js?v=20261030-unlock-god-zone-merge', '../gem_resonance.js?v=20261030-unlock-god-zone-merge','../runeword.js?v=20261023-str-common',
+  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../data.js?v=20261030-unlock-god-zone-merge', '../runeword_data.js?v=20261031-rune-halve', '../gem_resonance_data.js?v=20261028-develop-merge-a8acfe', '../achievement_data.js?v=20261031-achv','../status.js?v=20261028-develop-merge-a8acfe', '../formula.js?v=20261030-unlock-god-zone-merge', '../battle-terrain.js?v=20261030-unlock-god-zone-merge', '../battlefield.js?v=20261029-merge-cd5ad556', '../stats.js?v=20261028-develop-merge-a8acfe',
+  '../item.js?v=20261030-unlock-god-zone-merge', '../gem_resonance.js?v=20261030-unlock-god-zone-merge','../runeword.js?v=20261031-achv',
   '../skills.js?v=20261029-merge-cd5ad556', '../skills2.js?v=20261028-sync-cloud-control', '../elite_data.js?v=20261028-develop-merge-a8acfe', '../talents.js?v=20261030-unlock-progress',
-  '../player.js?v=20261030-unlock-progress', '../special_rules.js?v=20261030-unlock-progress',
-  '../combat.js?v=20261028-sync-cloud-control', '../elite.js?v=20261028-develop-merge-a8acfe', '../elite_boss.js?v=20261023-str-battle', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261028-develop-merge-a8acfe', '../tower.js?v=20261028-sync-cloud-control',
-  '../factory.js?v=20261027-speed-gear-base', '../newforge.js?v=20261028-develop-merge-a8acfe', '../forge.js?v=20261030-quality-unlock', '../save.js?v=20261029-forge-log-transient',
-  '../tasks.js?v=20261023-str-guard'
+  '../player.js?v=20261031-achv', '../special_rules.js?v=20261030-unlock-progress',
+  '../combat.js?v=20261031-achv', '../elite.js?v=20261028-develop-merge-a8acfe', '../elite_boss.js?v=20261023-str-battle', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261028-develop-merge-a8acfe', '../tower.js?v=20261028-sync-cloud-control',
+  '../factory.js?v=20261031-achv', '../newforge.js?v=20261028-develop-merge-a8acfe', '../forge.js?v=20261031-achv', '../save.js?v=20261031-achv',
+  '../tasks.js?v=20261031-achv', '../achievements.js?v=20261031-achv'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
    它自己會擋非本機 hostname；Worker 的 location 是本檔的 URL，判定結果與主執行緒一致。 */
@@ -379,6 +379,7 @@ function simStep(dt) {
   t1 = _phNow(); _loopPh.factory += t1 - t0; t0 = t1;
   if (typeof newForgeTick === 'function') newForgeTick(dt);
   _loopPh.newForge += _phNow() - t0;
+  if (typeof achTick === 'function') achTick(dt);
 }
 function slowLoopBegin() { for (var k in _loopPh) _loopPh[k] = 0; return _phNow(); }
 function slowLoopEnd(t0, steps) {
@@ -992,6 +993,9 @@ function buildPanel(name, params) {
           };
         })()
       };
+    case 'achv':
+      // 成就頁：只送達成時間與進度；名稱、圖示、條件文字由主執行緒讀共載的 ACHIEVEMENTS（js/achievement_data.js）
+      return (typeof achPanelData === 'function') ? achPanelData() : null;
     case 'task':
       // 任務總覽（v18）：只送動態欄位（進度/已領/可領）；
       // 名稱、目標數量、獎勵文字由主執行緒讀共載的 TASKS 表（js/data.js）

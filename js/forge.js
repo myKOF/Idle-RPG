@@ -285,6 +285,7 @@ function doForge() {
   var success = chance(info.total), message;
   if (success) {
     if (mode === 'equip') {
+      if (typeof achAddStat === 'function') achAddStat('divineConsumed', items.length);
       var maxLevel = Math.max.apply(null, items.map(function (it) { return it.level; }));
       var out = makeEquipment(maxLevel, { rarity: divineForgeOutputRarity(items[0].rarity), level: maxLevel });
       forgeReturnItem(out);
@@ -301,6 +302,7 @@ function doForge() {
       if (mode === 'ancient') {
         var a = pick(divineForgeAncientCandidates(item));
         a.ancient = true; a.roll = STRENGTH_ROLL_MAX;
+        if (typeof achAddStat === 'function') achAddStat('ancientCast', 1);
         if (item.imprint && item.imprint.affix === a) item.imprint.kind = 'extraAncient';
       } else forgeApplyImprint(item, info.stones);
       forgeReturnItem(item);
@@ -308,6 +310,7 @@ function doForge() {
       message = STR(2169, item.name);
       if (mode === 'imprint' && item.imprint) {
         var ip = item.imprint;
+        if (ip.kind !== 'refund' && typeof achAddStat === 'function') achAddStat('imprint', 1);
         var kindIndex = ['sacredAffix','ancientAffix','sacredSocket','extraAffix','extraAncient','legendary','refund'].indexOf(ip.kind);
         message += ' · ' + (ip.kind === 'refund' ? STR(2201, ip.refund) : STR(2177, STR(2178 + kindIndex)));
       }
@@ -316,6 +319,7 @@ function doForge() {
     var remaining = items.slice(), lost = ri(DIVINE_FORGE.failMin, DIVINE_FORGE.failMax);
     for (var n = 0; n < lost; n++) remaining.splice(ri(0, remaining.length - 1), 1);
     remaining.forEach(forgeReturnItem);
+    if (typeof achAddStat === 'function') achAddStat('divineConsumed', lost);
     message = STR(2171, lost, remaining.length);
   } else message = STR(2172);
   forgeLog(message, success ? 'good' : 'bad');

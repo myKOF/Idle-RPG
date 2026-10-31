@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="css/runeword.css?v=1.0.8">
   <link rel="stylesheet" href="css/gems.css?v=1.0.25">
   <link rel="stylesheet" href="css/dialogs.css?v=1.0.4">
+  <link rel="stylesheet" href="css/achievements.css?v=1.0.10">
   <link rel="stylesheet" href="css/world-map.css?v=1.0.12">
   <link rel="stylesheet" href="css/divine-forge.css?v=1.0.13">
   <link rel="stylesheet" href="css/equipment-chaos.css?v=1.0.5">
@@ -731,12 +732,30 @@
         <button id="game-menu-reload" type="button" data-str="1946"></button>
         <button id="game-menu-exit" type="button" data-str="1947"></button>
         <button id="game-menu-save" type="button" data-str="1948"></button>
+        <button id="game-menu-achv" type="button" data-str="2228"></button>
         <button id="game-menu-settings" type="button" data-str="1949"></button>
         <button id="game-menu-ai-key" type="button" style="display:none; border:1px dashed #0284c7; color:#38bdf8;" data-str="1950"></button>
       </div>
       <div id="game-menu-status" class="system-menu-status" role="status" aria-live="polite"></div>
     </div>
   </div>
+  <!-- 成就頁：由 Esc 菜單進入，與設置頁同級（js/ui-achievements.js；清單依 achv 面板與 ACHIEVEMENTS 表填入） -->
+  <div id="achv-modal" class="system-overlay" style="display:none" aria-hidden="true">
+    <div class="system-card achv-card-box" role="dialog" aria-modal="true" aria-labelledby="achv-modal-title">
+      <i class="achv-corner tl"></i><i class="achv-corner tr"></i><i class="achv-corner bl"></i><i class="achv-corner br"></i>
+      <div class="achv-heading"><div class="achv-banner"><h2 id="achv-modal-title" data-str="2228"></h2></div><button id="achv-modal-close" class="system-close" type="button" data-str-attr="aria-label:2234">×</button></div>
+      <div class="achv-top">
+        <div class="achv-total"><div id="achv-summary" aria-live="polite"></div><div class="achv-total-track"><i id="achv-total-bar"></i></div></div>
+        <div class="achv-filters">
+          <button id="achv-filter-all" type="button" class="on" data-str="2230"></button>
+          <button id="achv-filter-done" type="button" data-str="2231"></button>
+          <button id="achv-filter-todo" type="button" data-str="2232"></button>
+        </div>
+      </div>
+      <div id="achv-list"></div>
+    </div>
+  </div>
+  <div id="achv-toast" aria-live="polite"></div>
   <div id="settings-modal" class="system-overlay" style="display:none" aria-hidden="true">
     <div class="system-card system-settings-card" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
       <div class="system-settings-heading"><h2 id="settings-modal-title" data-str="1949"></h2><button id="settings-modal-close" class="system-close" type="button" data-str-attr="aria-label:1951">×</button></div>
@@ -996,18 +1015,19 @@
        已移除（主執行緒零呼叫，只在 Worker 內跑）：
          special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/util.js?v=1.0.4"></script>
-  <script src="js/strings_data.js?v=e9ecf455"></script>
+  <script src="js/strings_data.js?v=ac4fe3da"></script>
   <script src="js/strings.js?v=1.0.1"></script>
   <script src="js/ui-scale.js?v=1.0.1"></script>
-  <script src="js/data.js?v=1.0.113"></script>
+  <script src="js/data.js?v=1.0.115"></script>
   <script src="js/status.js?v=1.0.44"></script>
-  <script src="js/runeword_data.js?v=1.0.21"></script>
+  <script src="js/runeword_data.js?v=1.0.22"></script>
   <script src="js/gem_resonance_data.js?v=1.0.1"></script>
-  <script src="js/formula.js?v=1.0.83"></script>
+  <script src="js/achievement_data.js?v=1.0.0"></script>
+  <script src="js/formula.js?v=1.0.84"></script>
   <script src="js/battle-terrain.js?v=1.0.6"></script>
   <script src="js/battlefield.js?v=1.4.21"></script>
   <script src="js/game-clock.js?v=1.0.1"></script>
-  <script src="js/vfx.js?v=1.0.82"></script>
+  <script src="js/vfx.js?v=1.0.83"></script>
   <!-- PixiJS（本地 vendor，零建置專案不用 CDN）＋ Canvas 戰鬥渲染器。
        渲染器只在主執行緒跑，模擬層與 Worker 完全不知道它存在。 -->
   <script src="js/vendor/pixi.min.js"></script>
@@ -1032,24 +1052,25 @@
   <!-- 封魔塔魔王祭壇（BOSS 戰專用場景）：沿用 battle-decor 的繪圖工具，battle-renderer 的 init() 會建立它。 -->
   <script src="js/battle-arena.js?v=1.0.8"></script>
   <script src="js/battle-elite.js?v=1.0.8"></script>
-  <script src="js/battle-renderer.js?v=1.6.212"></script>
+  <script src="js/battle-renderer.js?v=1.6.217"></script>
   <script src="js/stats.js?v=1.0.7"></script>
   <script src="js/item.js?v=1.0.38"></script>
   <script src="js/gem_resonance.js?v=1.0.10"></script>
-  <script src="js/runeword.js?v=1.0.18"></script>
-  <script src="js/skills.js?v=1.0.46"></script>
+  <script src="js/runeword.js?v=1.0.19"></script>
+  <script src="js/skills.js?v=1.0.47"></script>
   <!-- 新版主動技能系統（2026-08-13 技能改造第一批）：定義表＋引擎＋純函式說明 -->
   <script src="js/skills2.js?v=1.0.368"></script>
   <script src="js/elite_data.js?v=1.0.7"></script>
   <script src="js/talents.js?v=1.0.14"></script>
-  <script src="js/player.js?v=1.0.27"></script>
-  <script src="js/combat.js?v=1.0.99"></script>
-  <script src="js/tower.js?v=1.0.39"></script>
-  <script src="js/save.js?v=1.0.27"></script>
+  <script src="js/player.js?v=1.0.28"></script>
+  <script src="js/combat.js?v=1.0.101"></script>
+  <script src="js/tower.js?v=1.0.40"></script>
+  <script src="js/save.js?v=1.0.28"></script>
   <script src="js/ui-inventory-skin.js?v=1.0.1"></script>
-  <script src="js/ui.js?v=1.0.238"></script>
+  <script src="js/ui.js?v=1.0.239"></script>
   <script src="js/ui-world-map.js?v=1.0.7"></script>
   <script src="js/ui-runeword.js?v=1.0.16"></script>
+  <script src="js/ui-achievements.js?v=1.0.0"></script>
   <script src="js/ui-gem-resonance.js?v=1.0.22"></script>
   <script src="js/ui-gem-workshop.js?v=1.0.2"></script>
   <script src="js/ui-newforge-visuals.js?v=1.0.8"></script>
@@ -1060,7 +1081,7 @@
        正式遊玩是空殼。必須排在 ui.js（用它的 isInternalVersion）之後、VFX Runtime 建立（main 開機）之前。 -->
   <script src="js/battle-perf.js?v=1.0.3"></script>
   <!-- 模擬 Worker 的協議與橋接。bridge.js 於 DOMContentLoaded 開機 -->
-  <script src="js/worker/protocol.js?v=20261030-gem-fusion-removed"></script>
+  <script src="js/worker/protocol.js?v=20261031-achv"></script>
   <script src="js/storage.js?v=1.0.1"></script>
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
@@ -1074,7 +1095,7 @@
        正式遊玩不包裝任何函式、不攔任何屬性。排在 main 之前，才來得及在
        DOMContentLoaded 就把 ui.js 的渲染函式包起來。用法：網址加 ?lag=1 -->
   <script src="js/lagprobe.js?v=1.0.19"></script>
-  <script src="js/game-menu.js?v=1.0.3"></script>
+  <script src="js/game-menu.js?v=1.0.4"></script>
   <script src="js/ai-key-setting.js?v=1.0.5"></script>
   <script src="js/main.js?v=1.0.4"></script>
 </body>

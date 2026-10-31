@@ -15,6 +15,18 @@
   3. 技能後站定：量測確認技能傷害在 0.2 秒硬直時如期結算（完全不延遲）；套用 `SKILL_CAST_HOLD = 0.3` 後角色額外站定 0.3 秒（總站定 0.5 秒）讓 3D 技能動作播完才繼續移動。
 - 交付：新增 `docs/SKILL_TEST_FAILURES_VALIDATION_REPORT.md`、更新 `PATCH.md` 與本段。無程式／測試／配置表修改。
 
+## ACHIEVEMENTS-20261031 — 成就系統
+
+- Owner：Claude；Done。使用者提供 Achievement.xlsx（條件文字），要求命名、做 icon、入口放 Esc 菜單；技能類成就直接用超神名稱。
+- 內容：配置表 Achievement（新增目標類型／參數／數量三欄，schema 在 config_tables.cjs）→ js/achievement_data.js；Worker 判定與累計統計 js/achievements.js（存檔 G.achv）；achv 面板（協議 v65）；Esc 菜單「成就」按鈕＋成就頁 js/ui-achievements.js＋css/achievements.css；解鎖提示；String 2227～2236；115 張 128px icon（images/achievements，繪製器 tools/achievement-icons）。細節見 docs/ACHIEVEMENTS.md。
+- 掛點：金幣累計（combat／factory／save 離線／tasks）、符文合成、神鑄消耗／太古精鑄／神聖刻印（forge.js）、轉生前結算（player.js）。
+- 測試：tests/achievements.test.cjs 11 項全過；worker-protocol、string-table 通過；全套 `node --test "tests/*.test.cjs"` 的失敗皆為既有紅燈（與本項檔案無關）。瀏覽器：真實 Worker 以 GM 穿傳說套裝＋給寶石，成就 1–4、12、14、20、21 自動解鎖；成就頁 115 張圖載入。未做完整遊玩。
+- 已知：表上第 52、103、114、115 列技能名已依 Skills2 改正；泥沼術三個超神尚無成就列；同名「天穹崩裂」兩個。
+
+## SYNC-MERGE-364B087B-20261031 — develop 整合衝突處理
+
+- Owner：Codex；Done。整合 `769b0b08` 與 `364b087b`，唯一衝突為本檔開頭的任務紀錄。
+- 解法：保留 ours 的技能測試深度驗證紀錄與 theirs 的成就系統紀錄；未改動配置表、生成資料、程式或素材。衝突標記檢查通過；`node --test --test-reporter=spec tests/achievements.test.cjs tests/worker-protocol.test.cjs tests/string-table.test.cjs` 34/34 通過；`npm.cmd run build` 612 檔通過；完整合併結果 `git diff HEAD --check` 通過。
 
 ## GEM-RESONANCE-DIFFERENT-TYPES-20261030 — 相鄰異種寶石才能共鳴
 
