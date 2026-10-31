@@ -1,0 +1,693 @@
+{
+ "chars": {
+  "male_damned": {
+   "cellW": 64,
+   "cellH": 64,
+   "anchorX": 0.4844,
+   "anchorY": 1.0,
+   "scale": 1.2857,
+   "facing": 0,
+   "height": 54
+  },
+  "female_damned": {
+   "cellW": 64,
+   "cellH": 64,
+   "anchorX": 0.5,
+   "anchorY": 1.0,
+   "scale": 1.3171,
+   "facing": 0,
+   "height": 54
+  },
+  "twisted_damned": {
+   "cellW": 64,
+   "cellH": 64,
+   "anchorX": 0.4688,
+   "anchorY": 1.0,
+   "scale": 1.2558,
+   "facing": 0,
+   "height": 54
+  },
+  "burning_damned": {
+   "cellW": 64,
+   "cellH": 64,
+   "anchorX": 0.4844,
+   "anchorY": 1.0,
+   "scale": 1.1739,
+   "facing": 0,
+   "height": 54
+  },
+  "burning_damned_blue": {
+   "cellW": 64,
+   "cellH": 64,
+   "anchorX": 0.4844,
+   "anchorY": 1.0,
+   "scale": 1.1739,
+   "facing": 0,
+   "height": 54
+  },
+  "bloated_damned": {
+   "cellW": 64,
+   "cellH": 64,
+   "anchorX": 0.4922,
+   "anchorY": 1.0,
+   "scale": 1.3488,
+   "facing": 0,
+   "height": 58
+  },
+  "burning_skull": {
+   "cellW": 64,
+   "cellH": 64,
+   "anchorX": 0.5156,
+   "anchorY": 0.75,
+   "scale": 1.1111,
+   "facing": 0,
+   "height": 50
+  },
+  "burning_skull_blue": {
+   "cellW": 64,
+   "cellH": 64,
+   "anchorX": 0.5156,
+   "anchorY": 0.75,
+   "scale": 1.1111,
+   "facing": 0,
+   "height": 50
+  },
+  "skull_candle": {
+   "cellW": 64,
+   "cellH": 64,
+   "anchorX": 0.5156,
+   "anchorY": 0.9922,
+   "scale": 0.8254,
+   "facing": 0,
+   "height": 52
+  },
+  "demon_mine": {
+   "cellW": 64,
+   "cellH": 64,
+   "anchorX": 0.4922,
+   "anchorY": 0.8281,
+   "scale": 1.0256,
+   "facing": 0,
+   "height": 40
+  },
+  "demon_eye": {
+   "cellW": 64,
+   "cellH": 64,
+   "anchorX": 0.5078,
+   "anchorY": 0.875,
+   "scale": 1.2821,
+   "facing": 0,
+   "height": 50
+  },
+  "flying_demon_head": {
+   "cellW": 64,
+   "cellH": 64,
+   "anchorX": 0.5234,
+   "anchorY": 0.7031,
+   "scale": 1.5385,
+   "facing": 0,
+   "height": 40
+  },
+  "plague_flies": {
+   "cellW": 32,
+   "cellH": 32,
+   "anchorX": 0.5,
+   "anchorY": 0.7812,
+   "scale": 1.0732,
+   "facing": 0,
+   "height": 22
+  },
+  "cheeky_devil": {
+   "cellW": 64,
+   "cellH": 64,
+   "anchorX": 0.5,
+   "anchorY": 1.0,
+   "scale": 1.2414,
+   "facing": 0,
+   "height": 54
+  },
+  "hell_giant": {
+   "cellW": 112,
+   "cellH": 128,
+   "anchorX": 0.5045,
+   "anchorY": 1.0,
+   "scale": 0.7541,
+   "facing": 0,
+   "height": 92
+  },
+  "old_demon": {
+   "cellW": 80,
+   "cellH": 64,
+   "anchorX": 0.5062,
+   "anchorY": 1.0,
+   "scale": 1.0545,
+   "facing": 1,
+   "height": 58
+  },
+  "memento_skeleton": {
+   "cellW": 128,
+   "cellH": 64,
+   "anchorX": 0.5078,
+   "anchorY": 1.0,
+   "scale": 0.9062,
+   "facing": 0,
+   "height": 58
+  },
+  "the_devil": {
+   "cellW": 112,
+   "cellH": 112,
+   "anchorX": 0.5,
+   "anchorY": 1.0,
+   "scale": 0.7547,
+   "facing": 0,
+   "height": 80
+  },
+  "large_skull": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5156,
+   "anchorY": 0.8555,
+   "scale": 0.7885,
+   "facing": 0,
+   "height": 82
+  },
+  "imp": {
+   "cellW": 64,
+   "cellH": 64,
+   "anchorX": 0.5156,
+   "anchorY": 1.0,
+   "scale": 1.9167,
+   "facing": 0,
+   "height": 46
+  },
+  "tree_damned": {
+   "cellW": 64,
+   "cellH": 64,
+   "anchorX": 0.4688,
+   "anchorY": 1.0,
+   "scale": 1.2157,
+   "facing": 0,
+   "height": 62
+  },
+  "bat": {
+   "cellW": 87,
+   "cellH": 87,
+   "anchorX": 0.546,
+   "anchorY": 0.7126,
+   "scale": 1.6667,
+   "facing": 0,
+   "height": 40
+  },
+  "rat": {
+   "cellW": 70,
+   "cellH": 70,
+   "anchorX": 0.5,
+   "anchorY": 0.6429,
+   "scale": 1.6667,
+   "facing": 1,
+   "height": 30
+  },
+  "slime": {
+   "cellW": 156,
+   "cellH": 156,
+   "anchorX": 0.5,
+   "anchorY": 0.5577,
+   "scale": 2.2857,
+   "facing": 1,
+   "height": 40
+  },
+  "mimic": {
+   "cellW": 146,
+   "cellH": 146,
+   "anchorX": 0.5308,
+   "anchorY": 0.5685,
+   "scale": 2.0,
+   "facing": 1,
+   "height": 56
+  }
+ },
+ "stems": {
+  "male_damned_idle": {
+   "char": "male_damned",
+   "frames": 5,
+   "fps": 8,
+   "loop": true,
+   "hold": false
+  },
+  "male_damned_walk": {
+   "char": "male_damned",
+   "frames": 8,
+   "fps": 12,
+   "loop": true,
+   "hold": false
+  },
+  "male_damned_attack": {
+   "char": "male_damned",
+   "frames": 6,
+   "fps": 12,
+   "loop": false,
+   "hold": false
+  },
+  "male_damned_die": {
+   "char": "male_damned",
+   "frames": 7,
+   "fps": 10,
+   "loop": false,
+   "hold": true
+  },
+  "female_damned_idle": {
+   "char": "female_damned",
+   "frames": 5,
+   "fps": 8,
+   "loop": true,
+   "hold": false
+  },
+  "female_damned_walk": {
+   "char": "female_damned",
+   "frames": 8,
+   "fps": 12,
+   "loop": true,
+   "hold": false
+  },
+  "female_damned_attack": {
+   "char": "female_damned",
+   "frames": 6,
+   "fps": 12,
+   "loop": false,
+   "hold": false
+  },
+  "female_damned_die": {
+   "char": "female_damned",
+   "frames": 7,
+   "fps": 10,
+   "loop": false,
+   "hold": true
+  },
+  "twisted_damned_idle": {
+   "char": "twisted_damned",
+   "frames": 5,
+   "fps": 8,
+   "loop": true,
+   "hold": false
+  },
+  "twisted_damned_walk": {
+   "char": "twisted_damned",
+   "frames": 8,
+   "fps": 12,
+   "loop": true,
+   "hold": false
+  },
+  "twisted_damned_attack": {
+   "char": "twisted_damned",
+   "frames": 6,
+   "fps": 12,
+   "loop": false,
+   "hold": false
+  },
+  "twisted_damned_die": {
+   "char": "twisted_damned",
+   "frames": 7,
+   "fps": 10,
+   "loop": false,
+   "hold": true
+  },
+  "burning_damned_idle": {
+   "char": "burning_damned",
+   "frames": 5,
+   "fps": 8,
+   "loop": true,
+   "hold": false
+  },
+  "burning_damned_walk": {
+   "char": "burning_damned",
+   "frames": 8,
+   "fps": 12,
+   "loop": true,
+   "hold": false
+  },
+  "burning_damned_attack": {
+   "char": "burning_damned",
+   "frames": 6,
+   "fps": 12,
+   "loop": false,
+   "hold": false
+  },
+  "burning_damned_die": {
+   "char": "burning_damned",
+   "frames": 7,
+   "fps": 10,
+   "loop": false,
+   "hold": true
+  },
+  "burning_damned_blue_idle": {
+   "char": "burning_damned_blue",
+   "frames": 5,
+   "fps": 8,
+   "loop": true,
+   "hold": false
+  },
+  "burning_damned_blue_walk": {
+   "char": "burning_damned_blue",
+   "frames": 8,
+   "fps": 12,
+   "loop": true,
+   "hold": false
+  },
+  "burning_damned_blue_attack": {
+   "char": "burning_damned_blue",
+   "frames": 6,
+   "fps": 12,
+   "loop": false,
+   "hold": false
+  },
+  "burning_damned_blue_die": {
+   "char": "burning_damned_blue",
+   "frames": 7,
+   "fps": 10,
+   "loop": false,
+   "hold": true
+  },
+  "bloated_damned_idle": {
+   "char": "bloated_damned",
+   "frames": 5,
+   "fps": 8,
+   "loop": true,
+   "hold": false
+  },
+  "bloated_damned_walk": {
+   "char": "bloated_damned",
+   "frames": 8,
+   "fps": 12,
+   "loop": true,
+   "hold": false
+  },
+  "bloated_damned_die": {
+   "char": "bloated_damned",
+   "frames": 6,
+   "fps": 9,
+   "loop": false,
+   "hold": true
+  },
+  "burning_skull_idle": {
+   "char": "burning_skull",
+   "frames": 5,
+   "fps": 8,
+   "loop": true,
+   "hold": false
+  },
+  "burning_skull_die": {
+   "char": "burning_skull",
+   "frames": 7,
+   "fps": 10,
+   "loop": false,
+   "hold": true
+  },
+  "burning_skull_blue_idle": {
+   "char": "burning_skull_blue",
+   "frames": 5,
+   "fps": 8,
+   "loop": true,
+   "hold": false
+  },
+  "burning_skull_blue_die": {
+   "char": "burning_skull_blue",
+   "frames": 7,
+   "fps": 10,
+   "loop": false,
+   "hold": true
+  },
+  "skull_candle_idle": {
+   "char": "skull_candle",
+   "frames": 6,
+   "fps": 8,
+   "loop": true,
+   "hold": false
+  },
+  "skull_candle_die": {
+   "char": "skull_candle",
+   "frames": 7,
+   "fps": 10,
+   "loop": false,
+   "hold": true
+  },
+  "demon_mine_idle": {
+   "char": "demon_mine",
+   "frames": 6,
+   "fps": 8,
+   "loop": true,
+   "hold": false
+  },
+  "demon_mine_die": {
+   "char": "demon_mine",
+   "frames": 7,
+   "fps": 10,
+   "loop": false,
+   "hold": true
+  },
+  "demon_eye_idle": {
+   "char": "demon_eye",
+   "frames": 7,
+   "fps": 8,
+   "loop": true,
+   "hold": false
+  },
+  "demon_eye_die": {
+   "char": "demon_eye",
+   "frames": 6,
+   "fps": 9,
+   "loop": false,
+   "hold": true
+  },
+  "flying_demon_head_idle": {
+   "char": "flying_demon_head",
+   "frames": 5,
+   "fps": 8,
+   "loop": true,
+   "hold": false
+  },
+  "flying_demon_head_die": {
+   "char": "flying_demon_head",
+   "frames": 6,
+   "fps": 9,
+   "loop": false,
+   "hold": true
+  },
+  "plague_flies_idle": {
+   "char": "plague_flies",
+   "frames": 4,
+   "fps": 14,
+   "loop": true,
+   "hold": false
+  },
+  "plague_flies_die": {
+   "char": "plague_flies",
+   "frames": 5,
+   "fps": 8,
+   "loop": false,
+   "hold": true
+  },
+  "cheeky_devil_idle": {
+   "char": "cheeky_devil",
+   "frames": 10,
+   "fps": 8,
+   "loop": true,
+   "hold": false
+  },
+  "hell_giant_idle": {
+   "char": "hell_giant",
+   "frames": 10,
+   "fps": 8,
+   "loop": true,
+   "hold": false
+  },
+  "old_demon_idle": {
+   "char": "old_demon",
+   "frames": 7,
+   "fps": 8,
+   "loop": true,
+   "hold": false
+  },
+  "memento_skeleton_idle": {
+   "char": "memento_skeleton",
+   "frames": 24,
+   "fps": 8,
+   "loop": true,
+   "hold": false
+  },
+  "the_devil_idle": {
+   "char": "the_devil",
+   "frames": 24,
+   "fps": 8,
+   "loop": true,
+   "hold": false
+  },
+  "large_skull_idle": {
+   "char": "large_skull",
+   "frames": 10,
+   "fps": 8,
+   "loop": true,
+   "hold": false
+  },
+  "large_skull_attack": {
+   "char": "large_skull",
+   "frames": 10,
+   "fps": 20,
+   "loop": false,
+   "hold": false
+  },
+  "large_skull_die": {
+   "char": "large_skull",
+   "frames": 10,
+   "fps": 14,
+   "loop": false,
+   "hold": true
+  },
+  "imp_idle": {
+   "char": "imp",
+   "frames": 10,
+   "fps": 8,
+   "loop": true,
+   "hold": false
+  },
+  "imp_attack": {
+   "char": "imp",
+   "frames": 5,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "imp_walk": {
+   "char": "imp",
+   "frames": 8,
+   "fps": 12,
+   "loop": true,
+   "hold": false
+  },
+  "imp_die": {
+   "char": "imp",
+   "frames": 6,
+   "fps": 9,
+   "loop": false,
+   "hold": true
+  },
+  "tree_damned_idle": {
+   "char": "tree_damned",
+   "frames": 1,
+   "fps": 8,
+   "loop": true,
+   "hold": false
+  },
+  "tree_damned_die": {
+   "char": "tree_damned",
+   "frames": 7,
+   "fps": 10,
+   "loop": false,
+   "hold": true
+  },
+  "bat_idle": {
+   "char": "bat",
+   "frames": 11,
+   "fps": 8,
+   "loop": true,
+   "hold": false
+  },
+  "bat_attack": {
+   "char": "bat",
+   "frames": 11,
+   "fps": 22,
+   "loop": false,
+   "hold": false
+  },
+  "bat_die": {
+   "char": "bat",
+   "frames": 4,
+   "fps": 8,
+   "loop": false,
+   "hold": true
+  },
+  "rat_idle": {
+   "char": "rat",
+   "frames": 10,
+   "fps": 8,
+   "loop": true,
+   "hold": false
+  },
+  "rat_walk": {
+   "char": "rat",
+   "frames": 8,
+   "fps": 12,
+   "loop": true,
+   "hold": false
+  },
+  "rat_attack": {
+   "char": "rat",
+   "frames": 12,
+   "fps": 24,
+   "loop": false,
+   "hold": false
+  },
+  "rat_die": {
+   "char": "rat",
+   "frames": 6,
+   "fps": 9,
+   "loop": false,
+   "hold": true
+  },
+  "slime_idle": {
+   "char": "slime",
+   "frames": 14,
+   "fps": 8,
+   "loop": true,
+   "hold": false
+  },
+  "slime_walk": {
+   "char": "slime",
+   "frames": 6,
+   "fps": 12,
+   "loop": true,
+   "hold": false
+  },
+  "slime_attack": {
+   "char": "slime",
+   "frames": 19,
+   "fps": 30,
+   "loop": false,
+   "hold": false
+  },
+  "slime_die": {
+   "char": "slime",
+   "frames": 11,
+   "fps": 16,
+   "loop": false,
+   "hold": true
+  },
+  "mimic_idle": {
+   "char": "mimic",
+   "frames": 9,
+   "fps": 8,
+   "loop": true,
+   "hold": false
+  },
+  "mimic_walk": {
+   "char": "mimic",
+   "frames": 6,
+   "fps": 12,
+   "loop": true,
+   "hold": false
+  },
+  "mimic_attack": {
+   "char": "mimic",
+   "frames": 14,
+   "fps": 28,
+   "loop": false,
+   "hold": false
+  },
+  "mimic_die": {
+   "char": "mimic",
+   "frames": 6,
+   "fps": 9,
+   "loop": false,
+   "hold": true
+  }
+ }
+}

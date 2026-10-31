@@ -50,7 +50,7 @@ test('NPC 配置表與地圖權重表可選出亡靈山脈指定 NPC', () => {
   c.Math.random = () => 0;
   c.spawnFieldMonster();
   assert.equal(c.FIELD.monsters[0].npcId, 'undead_1');
-  assert.equal(c.FIELD.monsters[0].appearance, 'skeleton');
+  assert.equal(c.FIELD.monsters[0].appearance, 'male_damned');
   assert.equal(c.FIELD.monsters[0].attr, 'dark');
   assert.ok(c.NPC_CONFIG_TABLE.undead_12);
 });
