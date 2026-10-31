@@ -2345,9 +2345,13 @@ var BattleRenderer = (function () {
          起身播完戰鬥才恢復。起身期間仍算 dead（不移動、不出手），只是不再顯示倒數。 */
       var riseLeft = Number(field.riseCd) || 0;
       if (riseLeft > 0 && typeof uiCountdownRemain === 'function') riseLeft = uiCountdownRemain(riseLeft, panel.gt);
-      var counting = reviveLeft > 0;
-      var rising = !counting && riseLeft > 0;
-      var dead = counting || rising;
+      /* 死亡動作（dieCd）先播完，reviveCd 倒數才開始：動作期間算倒地但不顯示倒數 */
+      var dieLeft = Number(field.dieCd) || 0;
+      if (dieLeft > 0 && typeof uiCountdownRemain === 'function') dieLeft = uiCountdownRemain(dieLeft, panel.gt);
+      var dying = dieLeft > 0 && reviveLeft > 0;
+      var counting = reviveLeft > 0 && !dying;
+      var rising = !counting && !dying && riseLeft > 0;
+      var dead = dying || counting || rising;
       p.riseLeft = rising ? riseLeft : 0;
       if (rising !== !!p.rising) {
         p.rising = rising;
@@ -2358,7 +2362,7 @@ var BattleRenderer = (function () {
            實際的角度由 tickWorld 逐幀補間（見 p.fallK）。 */
         p.dead = dead;
         p.deathFogK = 0;
-        p.deathFogDuration = Math.max(1, reviveLeft);
+        p.deathFogDuration = Math.max(1, reviveLeft + dieLeft);
         updateDeathFog(p.deathFogK);
         if (S.deathFog) S.deathFog.visible = dead;
         if (S.vignette) S.vignette.visible = !dead;

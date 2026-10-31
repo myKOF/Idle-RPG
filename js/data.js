@@ -1667,7 +1667,8 @@ var FIELD_ENEMY_ENTER_STAGGER = 0.08; // 同一波每隻再錯開一點，不要
    全部地圖與關卡直接使用這份參數，不另設區間覆寫。 */
 var FIELD_WAVE_SPAWN_INTERVAL = [0.75, 1, 1.5, 1.75, 2, 2, 2, 3, 3, 3, 4, 5];
 var FIELD_ENEMY_DEATH_CLEAR_DELAY = 2.1; // 野外敵人死亡後保留戰鬥資訊時間（秒）；須長於 2 秒傷害飄字動畫
-var REVIVE_DELAY = 5.0;        // 死亡復活時間（秒）：倒地姿態維持整段倒數
+var REVIVE_DIE_SEC = 2.75;     // 倒地死亡動作長度（秒）＝3D 主角 Death 動畫原速長度；播完才開始 REVIVE_DELAY 倒數
+var REVIVE_DELAY = 5.0;        // 死亡復活時間（秒）：死亡動作播完後才開始計算，倒地姿態維持整段倒數
 var REVIVE_RISE_SEC = 1.5;     // 倒數結束後的起身動作（秒）：播完才開始新一輪戰鬥
 /* 擊殺目標後隔多久才對下一隻出手（秒）。沒有這個間隔的話，一刀清掉一隻就會
    在同一個 tick 轉頭砍下一隻，看起來像瞬移連斬。0＝不等待。 */
