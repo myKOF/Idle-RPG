@@ -26,20 +26,20 @@ def row(r, n):
 
 def damned(file):
     d = {'idle': row(0, 5), 'walk': row(1, 8), 'attack': row(2, 6), 'die': row(3, 7)}
-    return dict(src=os.path.join(G, file), cw=64, ch=64, anims=d, h=54, facing=0)
+    return dict(src=os.path.join(G, file), cw=64, ch=64, anims=d, h=54, facing=-1)
 
 
-def g(file, cw, ch, h, anims, facing=0, **kw):
+def g(file, cw, ch, h, anims, facing=1, **kw):
     d = dict(src=os.path.join(G, file), cw=cw, ch=ch, h=h, facing=facing, anims=anims)
     d.update(kw)
     return d
 
 
 def m(files, cw, h, facing):
-    return dict(files=files, cw=cw, ch=cw, h=h, facing=facing, base=M)
+    return dict(files=files, cw=cw, ch=cw, h=h, facing=facing or 1, base=M)
 
 
-# h＝普通階級的可見身高（像素）；facing＝原圖朝向（1 朝右、0 正面不翻轉）。
+# h＝普通階級的可見身高（像素）；facing＝原圖朝向（1 朝右、-1 朝左）；正面或左右對稱的角色填 1，一律面向玩家翻轉。
 # 動作：{名稱: [(列, 欄)…]}，單檔多列拼成一組；素材沒有的動作就不寫，配置表標為缺圖。
 CHARS = {
     'male_damned': damned('Male Damned covered.png'),
@@ -47,7 +47,7 @@ CHARS = {
     'twisted_damned': damned('Twisted Damned.png'),
     'burning_damned': damned('Burning Damned.png'),
     'burning_damned_blue': damned('Burning Damned blue.png'),
-    'bloated_damned': g('Bloated Damned.png', 64, 64, 58, {'idle': row(0, 5), 'walk': row(1, 8), 'die': row(2, 6)}),
+    'bloated_damned': g('Bloated Damned.png', 64, 64, 58, {'idle': row(0, 5), 'walk': row(1, 8), 'die': row(2, 6)}, facing=-1),
     'burning_skull': g('Burning Skull.png', 64, 64, 50, {'idle': row(0, 5), 'die': row(1, 7)}),
     'burning_skull_blue': g('Burning Skull blue.png', 64, 64, 50, {'idle': row(0, 5), 'die': row(1, 7)}),
     'skull_candle': g('Skull with candle.png', 64, 64, 52, {'idle': row(0, 6), 'die': row(1, 7)}),
@@ -57,7 +57,7 @@ CHARS = {
     'plague_flies': g('Plague Flies.png', 32, 32, 22, {'idle': row(0, 4), 'die': row(1, 5)}, idle_fps=14),
     'cheeky_devil': g('Cheeky Devil.png', 64, 64, 54, {'idle': row(0, 10)}),
     'hell_giant': g('Female Hell Giant covered.png', 112, 128, 92, {'idle': row(0, 10)}),
-    'old_demon': g('Old Demon covered.png', 80, 64, 58, {'idle': row(0, 7)}, facing=1),
+    'old_demon': g('Old Demon covered.png', 80, 64, 58, {'idle': row(0, 7)}, facing=-1),
     'memento_skeleton': g('Memento Mori Skeleton.png', 128, 64, 58,
                           {'idle': [(r, c) for r in range(6) for c in range(4)]}),
     'the_devil': g('The Devil.png', 112, 112, 80, {'idle': [(r, c) for r in range(4) for c in range(6)]}),

@@ -6,7 +6,7 @@
    "anchorX": 0.4844,
    "anchorY": 1.0,
    "scale": 1.2857,
-   "facing": 0,
+   "facing": -1,
    "height": 54
   },
   "female_damned": {
@@ -15,7 +15,7 @@
    "anchorX": 0.5,
    "anchorY": 1.0,
    "scale": 1.3171,
-   "facing": 0,
+   "facing": -1,
    "height": 54
   },
   "twisted_damned": {
@@ -24,7 +24,7 @@
    "anchorX": 0.4688,
    "anchorY": 1.0,
    "scale": 1.2558,
-   "facing": 0,
+   "facing": -1,
    "height": 54
   },
   "burning_damned": {
@@ -33,7 +33,7 @@
    "anchorX": 0.4844,
    "anchorY": 1.0,
    "scale": 1.1739,
-   "facing": 0,
+   "facing": -1,
    "height": 54
   },
   "burning_damned_blue": {
@@ -42,7 +42,7 @@
    "anchorX": 0.4844,
    "anchorY": 1.0,
    "scale": 1.1739,
-   "facing": 0,
+   "facing": -1,
    "height": 54
   },
   "bloated_damned": {
@@ -51,7 +51,7 @@
    "anchorX": 0.4922,
    "anchorY": 1.0,
    "scale": 1.3488,
-   "facing": 0,
+   "facing": -1,
    "height": 58
   },
   "burning_skull": {
@@ -60,7 +60,7 @@
    "anchorX": 0.5156,
    "anchorY": 0.75,
    "scale": 1.1111,
-   "facing": 0,
+   "facing": 1,
    "height": 50
   },
   "burning_skull_blue": {
@@ -69,7 +69,7 @@
    "anchorX": 0.5156,
    "anchorY": 0.75,
    "scale": 1.1111,
-   "facing": 0,
+   "facing": 1,
    "height": 50
   },
   "skull_candle": {
@@ -78,7 +78,7 @@
    "anchorX": 0.5156,
    "anchorY": 0.9922,
    "scale": 0.8254,
-   "facing": 0,
+   "facing": 1,
    "height": 52
   },
   "demon_mine": {
@@ -87,7 +87,7 @@
    "anchorX": 0.4922,
    "anchorY": 0.8281,
    "scale": 1.0256,
-   "facing": 0,
+   "facing": 1,
    "height": 40
   },
   "demon_eye": {
@@ -96,7 +96,7 @@
    "anchorX": 0.5078,
    "anchorY": 0.875,
    "scale": 1.2821,
-   "facing": 0,
+   "facing": 1,
    "height": 50
   },
   "flying_demon_head": {
@@ -105,7 +105,7 @@
    "anchorX": 0.5234,
    "anchorY": 0.7031,
    "scale": 1.5385,
-   "facing": 0,
+   "facing": 1,
    "height": 40
   },
   "plague_flies": {
@@ -114,7 +114,7 @@
    "anchorX": 0.5,
    "anchorY": 0.7812,
    "scale": 1.0732,
-   "facing": 0,
+   "facing": 1,
    "height": 22
   },
   "cheeky_devil": {
@@ -123,7 +123,7 @@
    "anchorX": 0.5,
    "anchorY": 1.0,
    "scale": 1.2414,
-   "facing": 0,
+   "facing": 1,
    "height": 54
   },
   "hell_giant": {
@@ -132,7 +132,7 @@
    "anchorX": 0.5045,
    "anchorY": 1.0,
    "scale": 0.7541,
-   "facing": 0,
+   "facing": 1,
    "height": 92
   },
   "old_demon": {
@@ -141,7 +141,7 @@
    "anchorX": 0.5062,
    "anchorY": 1.0,
    "scale": 1.0545,
-   "facing": 1,
+   "facing": -1,
    "height": 58
   },
   "memento_skeleton": {
@@ -150,7 +150,7 @@
    "anchorX": 0.5078,
    "anchorY": 1.0,
    "scale": 0.9062,
-   "facing": 0,
+   "facing": 1,
    "height": 58
   },
   "the_devil": {
@@ -159,7 +159,7 @@
    "anchorX": 0.5,
    "anchorY": 1.0,
    "scale": 0.7547,
-   "facing": 0,
+   "facing": 1,
    "height": 80
   },
   "large_skull": {
@@ -168,7 +168,7 @@
    "anchorX": 0.5156,
    "anchorY": 0.8555,
    "scale": 0.7885,
-   "facing": 0,
+   "facing": 1,
    "height": 82
   },
   "imp": {
@@ -177,7 +177,7 @@
    "anchorX": 0.5156,
    "anchorY": 1.0,
    "scale": 1.9167,
-   "facing": 0,
+   "facing": 1,
    "height": 46
   },
   "tree_damned": {
@@ -186,7 +186,7 @@
    "anchorX": 0.4688,
    "anchorY": 1.0,
    "scale": 1.2157,
-   "facing": 0,
+   "facing": 1,
    "height": 62
   },
   "bat": {
@@ -195,7 +195,7 @@
    "anchorX": 0.546,
    "anchorY": 0.7126,
    "scale": 1.6667,
-   "facing": 0,
+   "facing": 1,
    "height": 40
   },
   "rat": {
