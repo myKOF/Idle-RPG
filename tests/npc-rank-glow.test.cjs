@@ -10,7 +10,7 @@ function setup() {
   vm.createContext(c);
   vm.runInContext(fs.readFileSync(path.join(root, 'js/vendor/pixi.min.js'), 'utf8'), c);
   vm.runInContext(src.slice(src.indexOf('  var NPC_RANK_MASKS'), src.indexOf('  function npcRankStyle')) +
-    ['npcRankStyle', 'syncNpcRankGlow', 'refreshMobBody', 'destroyEntity'].map(n => extractFunction(src, n)).join('\n'), c);
+    ['npcRankStyle', 'syncNpcRankGlow', 'refreshMobBody', 'destroyEntity', 'entityCenterHeight'].map(n => extractFunction(src, n)).join('\n'), c);
   const P = c.PIXI;
   const tex = (w, h) => new P.Texture({ source: new P.TextureSource({ width: w, height: h }) });
   const frameA = tex(64, 40), frameB = tex(64, 40);
