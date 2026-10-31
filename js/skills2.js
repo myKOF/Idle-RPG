@@ -7427,9 +7427,10 @@ function skill2PassiveDamageTakenMultiplier() {
   var eg = skill2EarthguardLevels();
   return eg && eg[0] > 0 ? 1 - Math.min(90, sgVal(SKILLS2.earthguard.tiers[0].fx, 'pct', eg[0])) / 100 : 1;
 }
-function skill2DamageTakenMultiplier(pEnt, attacker) {
+function skill2DamageTakenMultiplier(pEnt, attacker, skipRebirth) {
   var mult = skill2PassiveDamageTakenMultiplier();
-  mult *= skill2RebirthDamageTakenMultiplier(pEnt);
+  /* skipRebirth：持續傷害走 applyEnemyHpDamage，那裡已單獨乘過重生保護，這裡不能再乘一次。 */
+  if (!skipRebirth) mult *= skill2RebirthDamageTakenMultiplier(pEnt);
   var rk = skill2RockLevels(pEnt);
   if (rk && rk[6] > 0) {
     var red = sgVal(SKILLS2.rockarmor.tiers[6].fx, 'pct', rk[6]) * (1 - skill2RockShieldRemain(pEnt));
