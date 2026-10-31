@@ -111,7 +111,7 @@ function elitePlayerAlive() {
   var p = elitePlayer();
   if (!p || !(p.hp > 0) || p._sgRevival) return false;
   if (eliteTowerOn()) return true;
-  return !(FIELD.reviveCd > 0);
+  return !(FIELD.reviveCd > 0) && !(FIELD.riseCd > 0);
 }
 /* 這隻現在能不能行動：還在進場倒數、塔戰登場演出中都不行。 */
 function eliteReady(m) {
@@ -530,7 +530,7 @@ function eliteTick(dt) {
     if (pending) onFieldDeaths();
   }
   var p = elitePlayer();
-  if (p && p.hp <= 0 && (tower || !(FIELD.reviveCd > 0))) {
+  if (p && p.hp <= 0 && (tower || !(FIELD.reviveCd > 0 || FIELD.riseCd > 0))) {
     if (!tower) onPlayerFieldDeath();
     return true;
   }

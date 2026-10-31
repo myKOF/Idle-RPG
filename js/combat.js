@@ -9,6 +9,7 @@ var FIELD = {
     monsters: [],
     spawnCd: 0,
     reviveCd: 0,
+    riseCd: 0,         // 死亡復活倒數結束後的起身動作剩餘秒數（REVIVE_RISE_SEC）
     dpsWindow: []      // [ [GT, dmg], ... ] 供 DPS 顯示
 };
 
@@ -1983,8 +1984,17 @@ function fieldTick(dt) {
             p.hp = st.hp; p.mp = st.mp; p.shield = 0; p.shieldMax = 0; p.shieldMaxVersion = SHIELD_MAX_VERSION;
             cleanse(p);
             blog(STR(510), 'info');
+            FIELD.riseCd = REVIVE_RISE_SEC;   // 倒數結束才起身；起身播完才恢復戰鬥
             UI.dirty.battle = true;
         }
+        return;
+    }
+    // 起身動作：角色站起來之前不戰鬥、不移動（顯示層同步播起身）
+    if (FIELD.riseCd > 0) {
+        tickSkillCds(p, dt);
+        tickFieldDeathDespawn(dt);
+        FIELD.riseCd -= dt;
+        UI.dirty.battle = true;
         return;
     }
 
@@ -2168,6 +2178,7 @@ function fieldTick(dt) {
             if (primary && inReach) {
                 p.atkCd += 1 / st.aspd;
                 p._lockTarget = primary;
+                if (typeof playerAttackHoldStart === 'function') playerAttackHoldStart(p, 1 / st.aspd);   // 揮擊播完才能再跑，不滑步
                 // 殺神降臨追加範圍內目標；追加普攻不再遞迴觸發普攻特效。
                 var basicTargets = (typeof skill2RageBasicAttackTargets === 'function')
                     ? skill2RageBasicAttackTargets(primary, combatFieldEnemies()) : [primary];

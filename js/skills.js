@@ -191,6 +191,17 @@ function skillCastHoldStart(pEnt) {
   if (hold > 0) pEnt._skillHold = hold;
 }
 
+/* 普攻之後角色站定到揮擊動作播完（只影響走位，不動 atkCd）：動作整段播完才能開始跑，否則會邊揮邊滑。
+   顯示層把揮擊壓進攻擊間隔播（js/battle-renderer.js playerAttackAnim），最長不超過 3D 揮擊原速的長度。 */
+var PLAYER_ATTACK_HOLD_MAX = 1.55, PLAYER_ATTACK_HOLD_MIN = 0.19;
+function playerAttackHoldStart(pEnt, intervalSec) {
+  if (!pEnt) return;
+  var iv = Number(intervalSec);
+  if (!(iv > 0)) iv = PLAYER_ATTACK_HOLD_MAX;
+  var hold = Math.max(PLAYER_ATTACK_HOLD_MIN, Math.min(PLAYER_ATTACK_HOLD_MAX, iv));
+  if (!(Number(pEnt._skillHold) >= hold)) pEnt._skillHold = hold;
+}
+
 function skillCastJobFor(pEnt) {
   for (var i = 0; i < SKILL_CAST_RT.length; i++) {
     if (SKILL_CAST_RT[i] && SKILL_CAST_RT[i].pEnt === pEnt) return SKILL_CAST_RT[i];

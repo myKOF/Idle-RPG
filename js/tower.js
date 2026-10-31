@@ -285,6 +285,7 @@ function towerTick(dt) {
       var res = doPlayerAttack(p, b, 'tb-float');
       TOWER.dmgDealt += Math.max(0, (res.dmg || 0));
       p.atkCd += 1 / st.aspd;
+      if (typeof playerAttackHoldStart === 'function') playerAttackHoldStart(p, 1 / st.aspd);   // 揮擊播完才能再跑，不滑步
       if (res.killed) { endTowerFight(true); return; }
       // 普攻期間的自傷（新版技能【血飲術】反噬）也可能致死：與上方自傷技能同樣補判
       if (p.hp <= 0) { endTowerFight(false, 'death'); return; }

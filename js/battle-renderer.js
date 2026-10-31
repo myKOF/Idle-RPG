@@ -2017,16 +2017,11 @@ var BattleRenderer = (function () {
   var REVIVE_TEXT_RED = '#ff5a5a', REVIVE_TEXT_YELLOW = '#ffd43b';   // 倒地／復活文字顏色
   var HERO3D_ATTACKS = ['attack1', 'attack2', 'attack3'];
   var HERO3D_CAST_SPEED_MAX = 4;
-  var HERO3D_CAST_MAX_MS = 500;   // 3D 施法動作最長播多久：施法是插進移動裡的，播完立刻繼續跑
+  var HERO3D_CAST_MAX_MS = 300;   // 3D 施法動作最長播多久（使用者 2026-10-31：約 0.3 秒）：施法是插進移動裡的，角色在這段時間站定，播完立刻繼續跑。要與模擬層站定時間（SKILL_CAST_LOCK＋SKILL_CAST_HOLD）一致
   var HERO3D_ACTIONS = { attack1: 1, attack2: 1, attack3: 1, cast: 1 };   // 出手動作（普攻、技能）：一律播完，不被移動打斷
-  /* 3D 倒地：die 要在這段進度內播完，之後到倒數結束把死亡動作倒著播（起身）。進度＝復活倒數走了多少（0..1） */
-  var HERO3D_RISE_START = 0.3;
-  /* 倒下的那一刻：把 die 加速到能在 windowSec（整段復活倒數）的前 HERO3D_RISE_START 內播完 */
-  function hero3dFitDie(p, windowSec) {
-    if (!p.body || !p.body.hero3d || !(windowSec > 0)) return;
-    p.body.animationSpeed *= Math.max(1, p.body.naturalMs / (HERO3D_RISE_START * windowSec * 1000));
-  }
-  /* 起身：progress（0..1，復活倒數走了多少）過了 HERO3D_RISE_START 之後，把死亡動作倒著播，倒數結束剛好站起來 */
+  /* 3D 起身：天地共生用復活倒數的進度（riseStart＝0），正常死亡用起身時間的進度；
+     progress（0..1）走到哪，就把死亡動作倒著播到哪 */
+  var HERO3D_RISE_START = 0;
   function hero3dDriveRise(p, progress, riseStart) {
     if (riseStart === undefined) riseStart = HERO3D_RISE_START;
     if (progress < riseStart) return;
@@ -2073,8 +2068,7 @@ var BattleRenderer = (function () {
       else k3d = Math.max(leadMs > 0 ? p.body.hitMs / leadMs : 0, p.body.naturalMs / HERO3D_CAST_MAX_MS);
       if (k3d > 0) p.body.animationSpeed *= Math.max(1, Math.min(melee ? 8 : HERO3D_CAST_SPEED_MAX, k3d));
       p.actionAt = nowMs();
-      p.lunge = melee ? 0.18 : 0.12;
-      return;
+      return;   // 3D 不做出手前送（lunge）：角色站定播完動作，再多的位移都是滑步
     }
     if (meta && p.body && duration > 0) {
       /* 以實際會播的幀數算（多方向素材從 first 開始播，不是整條 frames） */
@@ -2339,7 +2333,18 @@ var BattleRenderer = (function () {
       }
       else if (wasEarthguardRevival && !earthguardRevival) playAnim(p, 'idle');
       else if (p.revival && !earthguardRevival && p.curAnim !== 'idle') playAnim(p, 'idle');
-      var dead = reviveLeft > 0;
+      /* 正常死亡：倒數期間（reviveLeft）維持倒地姿態；倒數結束才起身（riseCd，js/combat.js），
+         起身播完戰鬥才恢復。起身期間仍算 dead（不移動、不出手），只是不再顯示倒數。 */
+      var riseLeft = Number(field.riseCd) || 0;
+      if (riseLeft > 0 && typeof uiCountdownRemain === 'function') riseLeft = uiCountdownRemain(riseLeft, panel.gt);
+      var counting = reviveLeft > 0;
+      var rising = !counting && riseLeft > 0;
+      var dead = counting || rising;
+      p.riseLeft = rising ? riseLeft : 0;
+      if (rising !== !!p.rising) {
+        p.rising = rising;
+        if (rising && !(p.body && p.body.hero3d) && p.dieAnim && S.sheets[p.sheetName].anims.rise) playAnim(p, 'rise');
+      }
       if (dead !== p.dead) {
         /* 倒地與起身都要有過程：瞬間翻 90 度看起來像穿模，不像被打倒。
            實際的角度由 tickWorld 逐幀補間（見 p.fallK）。 */
@@ -2353,13 +2358,11 @@ var BattleRenderer = (function () {
            沒有的（舊素材）照舊站姿＋ tickWorld 把本體轉 90 度。 */
         if (dead) {
           p.lunge = 0;
-          playAnim(p, p.dieAnim ? 'die' : 'idle');
-          hero3dFitDie(p, p.deathFogDuration);
+          playAnim(p, p.dieAnim ? 'die' : 'idle');   // 原速播完倒地，之後停在最後一格直到倒數結束
         } else {
           p.baseAnim = 'idle';
-          /* 3D 的起身在倒數期間就倒著播完了（見 hero3dDriveRise），倒數結束直接回站立 */
-          if (p.body && p.body.hero3d) playAnim(p, 'idle');
-          else playAnim(p, (p.dieAnim && S.sheets[p.sheetName].anims.rise) ? 'rise' : 'idle', 'idle');
+          /* 起身已經在 riseCd 期間播完（3D 見 hero3dDriveRise，2D 見上面的 rise），這裡直接回站立 */
+          playAnim(p, 'idle');
         }
       }
       /* 倒地期間：模擬層已經把技能執行期狀態整批清掉，畫面上還在的持續場域
@@ -2368,7 +2371,7 @@ var BattleRenderer = (function () {
       /* 倒地倒數：狀態列收進彈出面板後，畫面上只剩這一條告訴玩家發生什麼事。
          面板 5Hz 才來一次，這裡照快照時間扣掉已經過的秒數（同 ui.js 的做法）。 */
       if (p.reviveText) {
-        p.reviveText.visible = dead || earthguardRevival;
+        p.reviveText.visible = counting || earthguardRevival;
         var sub = p.reviveSubText, subText = '', subFill = REVIVE_TEXT_RED;
         if (earthguardRevival && p.revival.startAt > panel.gt) {
           p.reviveText.visible = false;   // 倒地動作還在播：復活倒數與光束一起開始
@@ -2380,8 +2383,8 @@ var BattleRenderer = (function () {
           /* 點點像 loading：1、2、3 個輪播，一秒換兩格 */
           subText = STR(2224, '.'.repeat(Math.floor(Date.now() / 500) % 3 + 1));
           subFill = REVIVE_TEXT_YELLOW;
-        } else if (dead) {
-          var left = (typeof uiCountdownRemain === 'function')
+        } else if (counting) {
+          var left =(typeof uiCountdownRemain === 'function')
             ? uiCountdownRemain(reviveLeft, panel.gt) : reviveLeft;
           p.reviveText.text = STR(447, Math.max(1, Math.ceil(Math.max(0, left))));
           p.reviveText.style.fill = REVIVE_TEXT_RED;
@@ -6775,9 +6778,17 @@ var BattleRenderer = (function () {
         p.fallTinted = false;
       }
       if (p.dead) {
-        p.deathFogK = Math.min(1, (p.deathFogK || 0) + dt / Math.max(1, p.deathFogDuration || 1));
-        updateDeathFog(p.deathFogK);
-        if (p.body && p.body.hero3d) hero3dDriveRise(p, p.deathFogK);
+        var riseSec = typeof REVIVE_RISE_SEC === 'number' ? REVIVE_RISE_SEC : 1.5;
+        if (p.rising) {
+          /* 起身：迷霧隨起身退去；3D 把死亡動作倒著播，進度＝起身走了多少 */
+          var riseProgress = Math.max(0, Math.min(1, 1 - p.riseLeft / riseSec));
+          p.deathFogK = 1 - riseProgress;
+          updateDeathFog(p.deathFogK);
+          if (p.body && p.body.hero3d) hero3dDriveRise(p, riseProgress, 0);
+        } else {
+          p.deathFogK = Math.min(1, (p.deathFogK || 0) + dt / Math.max(1, p.deathFogDuration || 1));
+          updateDeathFog(p.deathFogK);
+        }
       }
 
       var moving = false;

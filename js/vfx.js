@@ -664,7 +664,7 @@ function vfxTargetIsLive(targetId) {
     if (typeof uiBattlePanelSnapshot === 'function') {
       var snapshot = uiBattlePanelSnapshot();
       var field = snapshot && snapshot.field;
-      if (field && Number(field.reviveCd) > 0) return false;
+      if (field && (Number(field.reviveCd) > 0 || Number(field.riseCd) > 0)) return false;
     }
   }
   return true;
