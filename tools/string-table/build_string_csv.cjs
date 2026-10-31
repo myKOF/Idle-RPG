@@ -45,7 +45,7 @@ for (const fn of fs.readdirSync(path.join(root, 'config/CSV'))) {
   if (!fn.endsWith('.csv') || fn === 'String.csv') continue;
   for (const r of parseCsv(fs.readFileSync(path.join(root, 'config/CSV', fn), 'utf8').replace(/^\uFEFF/, ''))) for (const c of r) if (c) cells.add(c);
 }
-const DATA_FILES = /^js\/(data|skills2|status|runeword_data|elite_data|gem_resonance_data|elite_boss_recipes)\.js$/;
+const DATA_FILES = /^js\/(data|skills2|status|runeword_data|elite_data|gem_resonance_data|achievement_data|elite_boss_recipes)\.js$/;
 
 /* ---------- 排除範圍 ---------- */
 const { scopeReason } = require('./scope.cjs');

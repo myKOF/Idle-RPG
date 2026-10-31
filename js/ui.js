@@ -382,6 +382,7 @@ function desiredUiPanelSubscriptions() {
   include(UI_PANEL_SUBSCRIPTIONS_BY_TAB[UI.tab]);
   if (UI.statsPanelOpen) include(['battle']);
   if (UI.questPanelOpen) include(['task']); // 任務總覽開著才訂閱 task 面板
+  if (UI.achvPanelOpen) include(['achv']); // 成就頁開著才訂閱 achv 面板
   if (typeof UI_COMMAND_PENDING !== 'undefined' && UI_COMMAND_PENDING) {
     Object.keys(UI_COMMAND_PENDING.byToken).forEach(function (token) {
       include(Object.keys(UI_COMMAND_PENDING.byToken[token].waitPanels));
@@ -997,6 +998,8 @@ function handleWorkerUiEvents(events) {
       UI.pendingTowerResult = event.data || null;
       requestPanelData('tower', true);
       requestPanelData('header', true);
+    } else if (event.key === 'achievementUnlocked') {
+      if (typeof AchievementUI !== 'undefined') AchievementUI.onUnlocked(event.data);
     } else if (event.key === 'forgeUnlocked') {
       requestPanelData('forge', true);
       requestPanelData('header', true);
@@ -1395,6 +1398,7 @@ function bindWorkerUiState() {
     if (msg.name === 'tower' || msg.name === 'header') showPendingTowerResultModalIfReady();
     if (msg.name === 'battle' && UI.statsPanelOpen) renderStatsPanel();
     if (msg.name === 'task' && UI.questPanelOpen) renderQuestModal();
+    if (msg.name === 'achv' && UI.achvPanelOpen && typeof AchievementUI !== 'undefined') AchievementUI.render();
     if (msg.name === 'newforge') {
       updateForgeTabGlow();
       showForgeRebuildNotice();

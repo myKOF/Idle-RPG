@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## ACHIEVEMENTS-20261031 — 成就系統
+
+- Owner：Claude；Done。使用者提供 Achievement.xlsx（條件文字），要求命名、做 icon、入口放 Esc 菜單；技能類成就直接用超神名稱。
+- 內容：配置表 Achievement（新增目標類型／參數／數量三欄，schema 在 config_tables.cjs）→ js/achievement_data.js；Worker 判定與累計統計 js/achievements.js（存檔 G.achv）；achv 面板（協議 v65）；Esc 菜單「成就」按鈕＋成就頁 js/ui-achievements.js＋css/achievements.css；解鎖提示；String 2227～2236；115 張 128px icon（images/achievements，繪製器 tools/achievement-icons）。細節見 docs/ACHIEVEMENTS.md。
+- 掛點：金幣累計（combat／factory／save 離線／tasks）、符文合成、神鑄消耗／太古精鑄／神聖刻印（forge.js）、轉生前結算（player.js）。
+- 測試：tests/achievements.test.cjs 11 項全過；worker-protocol、string-table 通過；全套 `node --test "tests/*.test.cjs"` 的失敗皆為既有紅燈（與本項檔案無關）。瀏覽器：真實 Worker 以 GM 穿傳說套裝＋給寶石，成就 1–4、12、14、20、21 自動解鎖；成就頁 115 張圖載入。未做完整遊玩。
+- 已知：表上第 52、103、114、115 列技能名已依 Skills2 改正；泥沼術三個超神尚無成就列；同名「天穹崩裂」兩個。
+
 ## GEM-RESONANCE-DIFFERENT-TYPES-20261030 — 相鄰異種寶石才能共鳴
 
 - Owner：Codex；Done，單一開發者。使用者要求相鄰不同類型寶石才能獲得額外加成，同類型不提供額外效果；自身能力保留。前置：既有相鄰純函式與UI共用計算已完成，修改前衝突預檢無外部來源。

@@ -33,14 +33,14 @@ var GameMenu = (function () {
     if (busy) return;
     pauseGame(true);
     if (!visible('game-menu') && !visible('settings-modal')) previousFocus = document.activeElement;
-    show('settings-modal', false);
+    show('settings-modal', false); closeAchievementsView();
     show('game-menu', true);
     status('');
     var title = el('game-menu-title'); if (title) { title.setAttribute('tabindex', '-1'); title.focus(); }
   }
   function close() {
     if (busy) return;
-    show('game-menu', false); show('settings-modal', false);
+    show('game-menu', false); show('settings-modal', false); closeAchievementsView();
     pauseGame(false);
     if (previousFocus && typeof previousFocus.focus === 'function' && previousFocus.isConnected !== false) previousFocus.focus();
   }
@@ -53,9 +53,21 @@ var GameMenu = (function () {
     var button = el('settings-modal-close'); if (button) button.focus();
   }
   function closeSettings() { if (!busy) open(); }
+  // 成就頁與設置頁同級：開著時遊戲維持暫停，返回回到菜單
+  function achievementsVisible() { return typeof AchievementUI !== 'undefined' && AchievementUI.isOpen(); }
+  function closeAchievementsView() { if (achievementsVisible()) AchievementUI.close(); }
+  function openAchievements() {
+    if (busy || typeof AchievementUI === 'undefined') return;
+    pauseGame(true);
+    if (!visible('game-menu') && !visible('settings-modal') && !achievementsVisible()) previousFocus = document.activeElement;
+    show('game-menu', false); show('settings-modal', false);
+    AchievementUI.open();
+  }
+  function closeAchievements() { if (!busy) open(); }
   function handleEscape() {
     if (busy) return true;
-    if (visible('settings-modal')) closeSettings();
+    if (achievementsVisible()) closeAchievements();
+    else if (visible('settings-modal')) closeSettings();
     else if (visible('game-menu')) close();
     else open();
     return true;
@@ -69,6 +81,7 @@ var GameMenu = (function () {
   function runAction(action) {
     if (busy) return Promise.resolve(false);
     if (action === 'settings') { openSettings(); return Promise.resolve(true); }
+    if (action === 'achievements') { openAchievements(); return Promise.resolve(true); }
     if (action !== 'reload' && action !== 'save' && action !== 'exit') return Promise.resolve(false);
     setBusy(true); status(STR(1941));
     return Promise.resolve().then(function () { return WorkerBridge.saveAutoNow(); }).then(function () {
@@ -91,6 +104,12 @@ var GameMenu = (function () {
     ['reload', 'exit', 'save', 'settings'].forEach(function (action) {
       el('game-menu-' + action).addEventListener('click', function () { runAction(action); });
     });
+    var achvButton = el('game-menu-achv');
+    if (achvButton) achvButton.addEventListener('click', function () { runAction('achievements'); });
+    var achvClose = el('achv-modal-close');
+    if (achvClose) achvClose.addEventListener('click', closeAchievements);
+    var achvModal = el('achv-modal');
+    if (achvModal) achvModal.addEventListener('click', function (event) { if (event.target === achvModal) closeAchievements(); });
     el('game-menu-close').addEventListener('click', close);
     el('settings-modal-close').addEventListener('click', closeSettings);
     ['game-menu', 'settings-modal'].forEach(function (id) {
@@ -103,7 +122,7 @@ var GameMenu = (function () {
       // 既有確認／輸入彈窗有自己的焦點處理，不能把焦點搶回設定視窗。
       var confirm = el('confirm-modal');
       if (confirm && confirm.style.display !== 'none') return;
-      var modal = visible('settings-modal') ? el('settings-modal') : visible('game-menu') ? el('game-menu') : null;
+      var modal = achievementsVisible() ? el('achv-modal') : visible('settings-modal') ? el('settings-modal') : visible('game-menu') ? el('game-menu') : null;
       if (!modal) return;
       var buttons = Array.prototype.filter.call(modal.querySelectorAll('button, input, select, textarea, a[href], [tabindex]'), function (node) {
         return !node.disabled && node.tabIndex !== -1 && node.getClientRects().length > 0;
@@ -115,5 +134,5 @@ var GameMenu = (function () {
     });
   }
   return { init: init, open: open, close: close, openSettings: openSettings, closeSettings: closeSettings,
-    handleEscape: handleEscape, runAction: runAction, isSettingsOpen: function () { return visible('settings-modal'); } };
+    openAchievements: openAchievements, closeAchievements: closeAchievements, handleEscape: handleEscape, runAction: runAction, isSettingsOpen: function () { return visible('settings-modal'); } };
 })();

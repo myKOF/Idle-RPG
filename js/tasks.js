@@ -166,7 +166,7 @@ function taskGrantReward(def) {
   var p = G.player;
   var qty = Math.max(0, Math.floor(Number(def.rewardQty) || 0));
   switch (def.rewardType) {
-    case 'gold': p.gold += qty; break;
+    case 'gold': p.gold += qty; if (typeof achAddGold === 'function') achAddGold(qty); break;
     case 'scrap': p.scrap += qty; break;
     case 'essence': p.essence += qty; break;
     case 'skillXp':

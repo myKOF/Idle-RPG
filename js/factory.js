@@ -207,6 +207,7 @@ function doSalvage(it, silent, bonus) {
   // 入帳（順序固定，日誌可完整列出本次所有實得產物）
   G.player.scrap += res.scrap;
   G.player.gold += res.gold;
+  if (typeof achAddGold === 'function') achAddGold(res.gold);
   if (window.recordLootMat) window.recordLootMat('scrap', res.scrap, 'factory');
   if (window.recordLootGold) window.recordLootGold(res.gold, 'factory');
   if (res.essence) {

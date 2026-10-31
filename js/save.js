@@ -858,6 +858,10 @@ function migrateSave(data) {
   if (!data.taskState || typeof data.taskState !== 'object') data.taskState = { idx: 0 };
   var taskMax = (typeof TASKS !== 'undefined' && TASKS) ? TASKS.length : 0;
   data.taskState.idx = clamp(Math.floor(Number(data.taskState.idx) || 0), 0, taskMax);
+  // 成就（2026-10-31）：缺漏由 mergeDefaults 補；這裡只防呆（got／st 必須是物件）
+  if (!data.achv || typeof data.achv !== 'object') data.achv = { got: {}, st: {} };
+  if (!data.achv.got || typeof data.achv.got !== 'object' || Array.isArray(data.achv.got)) data.achv.got = {};
+  if (!data.achv.st || typeof data.achv.st !== 'object' || Array.isArray(data.achv.st)) data.achv.st = {};
   
   // 統一新舊裝備名稱前綴，重複讀檔不疊加「級」。
   var fixName = function(it) {
@@ -1218,6 +1222,7 @@ function applyOfflineProgress(options) {
   var xpPer = Math.round(m.xp * rw * (1 + st.xpBonus / 100));
   var gold = goldPer * kills, xp = xpPer * kills;
   G.player.gold += gold;
+  if (typeof achAddGold === 'function') achAddGold(gold);
   gainXp(xp);
   // 技能熟練度經驗（2026-07-30）：離線擊殺比照野外
   if (typeof gainSkillMasteryXp === 'function') gainSkillMasteryXp(Math.round(xp * SKILL_MASTERY_XP_RATE / 100));

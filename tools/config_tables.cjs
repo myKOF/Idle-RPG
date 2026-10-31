@@ -42,7 +42,8 @@ const JS = {
   status: path.join(ROOT, 'js', 'status.js'),
   runes: path.join(ROOT, 'js', 'runeword_data.js'),
   elite: path.join(ROOT, 'js', 'elite_data.js'),
-  gemRes: path.join(ROOT, 'js', 'gem_resonance_data.js')
+  gemRes: path.join(ROOT, 'js', 'gem_resonance_data.js'),
+  ach: path.join(ROOT, 'js', 'achievement_data.js')
 };
 const WRITE = process.argv.includes('--write');
 
@@ -579,7 +580,6 @@ SCHEMAS.NPC = {
         sprite[a[0]] = v;
       });
       if (sprite.idle) o.sprite = sprite; else delete o.sprite;
-      /* 移動／攻擊三項：空白格＝沿用系統預設（欄位不寫入）；填了就必須是正數，
       /* 縮放比：相對目前預設大小的倍數（1＝不變），NPC 所有階級共用，只認 normal 列；空白或 1 都不寫入 */
       const scaleRaw = get(row, '縮放比').trim();
       if (scaleRaw === '' || Number(scaleRaw) === 1) delete o.scale;
@@ -588,6 +588,7 @@ SCHEMAS.NPC = {
         if (!(sv > 0) || !Number.isFinite(sv)) throw new Error('NPC ' + lineOf(index) + '「縮放比」必須是大於 0 的數字：' + scaleRaw);
         o.scale = sv;
       }
+      /* 移動／攻擊三項：空白格＝沿用系統預設（欄位不寫入）；填了就必須是正數，
          填 0 或負數多半是誤植，寧可中止套用也不要讓敵人靜靜變成不動或不攻擊。 */
       [['移動速度(米/秒)', 'runSpeed'], ['攻擊速度(次/秒)', 'atkSpeed'], ['攻擊距離(米)', 'atkRange']].forEach(function (pair) {
         const raw = get(row, pair[0]).trim();
@@ -2121,6 +2122,55 @@ SCHEMAS.Gem_resonance = {
   }
 };
 
+/* ---- Achievement ← ACHIEVEMENTS（js/achievement_data.js）成就表（2026-10-31） ----
+   欄位：編號／名稱／圖示（images/achievements/<圖示>.png）／達成條件（顯示給玩家）／目標類型／目標參數／目標數量。
+   「達成條件」是給玩家看的文字，「目標類型」才是程式判定用的（js/achievements.js achProgress）。
+   skillUlt 的目標參數＝「群組ID:超神ID」（Skills2 表的群組ID與超神ID欄）。xlsx 由 Excel 本身維護，--gen 只寫 CSV。 */
+const ACH_TYPES = ['equipFull', 'level', 'enhanceLevel', 'ancientEquipped', 'rerollCount', 'socketEquipped', 'gemLevel', 'gemAllTypes',
+  'gemDivine', 'godEquip', 'ancientCast', 'imprintCount', 'dualLegend', 'divineConsumed', 'upgradeCount', 'forgePartsMax', 'goldTotal',
+  'runewordActive', 'runewordDistinct', 'runeMade', 'runewordTier', 'reincarnation', 'towerFloor', 'monsterPower', 'skillUlt'];
+SCHEMAS.Achievement = {
+  name: 'Achievement', jsFile: 'ach', sheet: 'Achievement', vars: ['ACHIEVEMENTS'], noXlsxGen: true,
+  header: ['編號', '名稱', '圖示', '達成條件', '目標類型', '目標參數', '目標數量'],
+  extract(src) {
+    return evalLiteral(extractLiteral(src, 'ACHIEVEMENTS').literal).map(a => [numStr(a.id), a.name, a.icon, a.desc, a.type, a.param || '', numStr(a.count)]);
+  },
+  rebuild(dataRows, header) {
+    const get = rowGetter(header);
+    const fail = msg => { throw new Error(msg); };
+    let skills = null;
+    try { skills = evalLiteral(extractLiteral(readUtf8(JS.skills2), 'SKILLS2').literal); } catch (e) { skills = null; }
+    const seen = new Set();
+    const entries = dataRows.filter(r => get(r, '編號').trim() !== '').map((r, i) => {
+      const where = 'Achievement 表 第' + (i + 2) + '列';
+      let id; try { id = toNum(get(r, '編號')); } catch (e) { fail(where + '的「編號」' + e.message); }
+      if (!Number.isInteger(id) || id < 1) fail(where + '：「編號」必須是正整數');
+      if (seen.has(id)) fail(where + '：編號 ' + id + ' 重複');
+      seen.add(id);
+      const o = { id, name: get(r, '名稱').trim(), icon: get(r, '圖示').trim(), desc: get(r, '達成條件').trim(), type: get(r, '目標類型').trim() };
+      if (o.name === '') fail(where + '（編號 ' + id + '）：「名稱」不可空白');
+      if (o.icon === '') fail(where + '（編號 ' + id + '）：「圖示」不可空白');
+      if (!/^[A-Za-z0-9_-]+$/.test(o.icon)) fail(where + '（編號 ' + id + '）：「圖示」只能用英數、底線、連字號（對應 images/achievements/<圖示>.png）');
+      if (!ACH_TYPES.includes(o.type)) fail(where + '（編號 ' + id + '）：「目標類型」未知：「' + o.type + '」（可用：' + ACH_TYPES.join('／') + '）');
+      const param = get(r, '目標參數').trim(); if (param !== '') o.param = param;
+      try { o.count = toNum(get(r, '目標數量') || '0'); } catch (e) { fail(where + '（編號 ' + id + '）的「目標數量」' + e.message); }
+      if (o.count < 0) fail(where + '（編號 ' + id + '）：「目標數量」不得小於 0');
+      if (o.type === 'skillUlt') {
+        const m = /^([A-Za-z0-9_]+):([A-Za-z0-9_]+)$/.exec(param);
+        if (!m) fail(where + '（編號 ' + id + '）：skillUlt 的「目標參數」必須是「群組ID:超神ID」');
+        if (skills) {
+          const g = skills[m[1]];
+          if (!g) fail(where + '（編號 ' + id + '）：Skills2 沒有群組「' + m[1] + '」');
+          if (!(Array.isArray(g.ult) && g.ult.some(u => u.id === m[2]))) fail(where + '（編號 ' + id + '）：群組「' + m[1] + '」沒有超神「' + m[2] + '」');
+        }
+      }
+      return '  ' + jsLit(o);
+    });
+    if (!entries.length) fail('Achievement 表沒有任何成就列');
+    return { ACHIEVEMENTS: 'var ACHIEVEMENTS = [\n' + entries.join(',\n') + '\n];' };
+  }
+};
+
 /* 地圖中繼資料也由 Excel 投影；上限／名稱／前置不再依賴手工同步。 */
 SCHEMAS.Zones = {
   name:'Zones',jsFile:'data',sheet:'地圖',noXlsxGen:true,vars:['ZONES','ZONE_LIST','REALMS'],
@@ -2157,7 +2207,7 @@ SCHEMAS.Zones = {
     return list.map((id,i)=>{const z=zones[id];return [i+1,id,z.name,z.realm,z.maxStage,z.reqZone||'',z.reqStage||'',z.reqReincarnation||0,z.hpMult,z.atkMult,z.defMult,z.aspdMult,z.rewardMult].map(String);});
   }
 };
-const TABLE_ORDER = ['Skills2', 'Status', 'Gems', 'Talents', 'Equipment_Affix', 'NPC', 'Zones', 'Task', 'Runes', 'Gem_resonance'];
+const TABLE_ORDER = ['Skills2', 'Status', 'Gems', 'Talents', 'Equipment_Affix', 'NPC', 'Zones', 'Task', 'Runes', 'Gem_resonance', 'Achievement'];
 
 /* ===========================================================================
    模式：--gen / --sync / --apply
@@ -2320,7 +2370,7 @@ if (mode === 'gen') cmdGen(only);
 else if (mode === 'sync') cmdSync();
 else if (mode === 'apply') cmdApply(only);
 else {
-  console.log('用法：node tools/config_tables.cjs [--gen | --sync | --apply [--write]] [Skills2|Status|Gems|Talents|Equipment_Affix|NPC|Task|Runes|Gem_resonance]');
+  console.log('用法：node tools/config_tables.cjs [--gen | --sync | --apply [--write]] [Skills2|Status|Gems|Talents|Equipment_Affix|NPC|Task|Runes|Gem_resonance|Achievement]');
   process.exit(1);
 }
 

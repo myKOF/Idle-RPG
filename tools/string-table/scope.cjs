@@ -16,7 +16,7 @@ function scopeReason(r) {
   return '';
 }
 /* 資料型檔案：裡面和配置表儲存格完全相同的字串，來源是配置表，不進 String 表（也不能改成 STR，否則下次套用參數會被蓋回去） */
-const DATA_FILES = /^js\/(data|skills2|status|runeword_data|elite_data|gem_resonance_data|elite_boss_recipes)\.js$/;
+const DATA_FILES = /^js\/(data|skills2|status|runeword_data|elite_data|gem_resonance_data|achievement_data|elite_boss_recipes)\.js$/;
 let _cells = null;
 function csvCells() {
   if (_cells) return _cells;

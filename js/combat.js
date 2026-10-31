@@ -2296,6 +2296,7 @@ function onFieldKill(m) {
     var goldGain = Math.round(m.gold * (1 + st.goldBonus / 100));
     var xpGain = Math.round(m.xp * (1 + st.xpBonus / 100));
     G.player.gold += goldGain;
+    if (typeof achAddGold === 'function') achAddGold(goldGain);
     gainXp(xpGain);
     // 技能熟練度經驗（2026-07-30）：擊殺給怪物經驗 × SKILL_MASTERY_XP_RATE%
     if (typeof gainSkillMasteryXp === 'function') gainSkillMasteryXp(Math.round(xpGain * SKILL_MASTERY_XP_RATE / 100));
