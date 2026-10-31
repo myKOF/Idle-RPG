@@ -101,7 +101,8 @@
 // v64：神鑄3秒作業／品質篩選／原子補料／連續自動，forge 7→10，總數91→94。
 // v65（2026-10-31 成就系統）：PANEL_KEYS 新增 achv（成就頁投影，js/achievements.js achPanelData）；指令數不變。
 // v65：內測目前轉數威能直接全滿／歸零，外服於Worker拒絕；指令93→94。
-var WORKER_PROTOCOL_VERSION = 65;
+// v66：背包格投影新增 ancientForgeCount／ancientForgeOrders，精鑄上限與星星來源分色。
+var WORKER_PROTOCOL_VERSION = 66;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {

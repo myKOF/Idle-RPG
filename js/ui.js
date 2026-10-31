@@ -4953,7 +4953,9 @@ function ancientStarBadgeHTML(it) {
   if (!count) return '';
   var shown = Math.min(7, count);
   var stars = '';
-  for (var i = 0; i < shown; i++) stars += '<span class="ancient-star">✡</span>';
+  var orders = divineForgeAncientOrders(it);
+  for (var i = 0; i < shown - orders.length; i++) stars += '<span class="ancient-star">✡</span>';
+  for (var j = 0; j < orders.length; j++) stars += '<span class="ancient-star' + ancientForgeAffixClass(Number(orders[j])) + '">✡</span>';
   var overlapClass = shown > 4 ? ' overlap' : '';
   return '<span class="ancient-star-badge' + overlapClass + '" aria-label="' + STR(1184, count) + '">' + stars + '</span>';
 }
@@ -7888,7 +7890,7 @@ function inventoryGridSnapshotEqual(previous, next) {
   if (a.length !== b.length) return false;
   /* 純量欄位逐一比對；enchant／enchants 是唯二可能是物件的欄位，另外處理。 */
   var fields = ['id', 'rarity', 'slot', 'level', 'upgrade', 'synthesized',
-    'locked', 'name', 'weaponType', 'kind', 'ancientCount'];
+    'locked', 'name', 'weaponType', 'kind', 'ancientCount', 'ancientForgeCount', 'ancientForgeOrders'];
   for (var i = 0; i < a.length; i++) {
     var ai = a[i], bi = b[i];
     if (!ai || !bi) return false;

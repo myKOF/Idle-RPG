@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## ANCIENT-FORGE-TWO-20261031 — 太古精鑄兩條上限與來源分色
+
+- Owner：Codex；Done，單一開發者。使用者要求同件裝備最多由太古精鑄轉化兩條，達上限拒絕轉化及入槽；第一條淺藍、第二條深藍，詞條與裝備星星一致。前置既有四功能神鑄已完成，fetch後修改檔衝突預檢乾淨。
+- 允許：data／forge／item／ui、style、Worker背包投影／protocol及文件、必要主端／Worker快取、相關回歸、LV與本段；禁止更動成功率／費用／解鎖、自然太古生成、玩家存檔操作、無關配置／素材、其他工作區及合併推送。
+- 新增裝備精鑄累計與詞條來源順序，缺欄舊裝備不猜測歷史；沿用既有JSON存讀與洗煉位置。驗兩次成功／第三次拒絕與零扣款、自然太古不占額度、刻印附加詞條、洗煉與存讀、投影／星星／詳情分色、相關回歸、Build、Console及diff。完成後獨立Commit，交使用者Review／整合；無獨立素材。
+- 完成15檔：js/data.js共用上限／來源查詢、forge.js成功時累計、item.js顯示及洗煉標記保存、ui.js星星與格線差異比對、css/style.css分色、js/worker/sim.worker.js精簡投影、protocol.js與WORKER_PROTOCOL.md（v65→66）、bridge.js及index快取、ancient-forge-limit新回歸、inventory-detail-preservation及worker-protocol既有fixture／版本期待、LV與本段。第1條#7dd3fc／第2條#3b82f6，名稱／數值／詞條星星／ICON星星同色；原生太古維持原色。星星最多7顆時仍保留兩種精鑄色。刻印附加普通詞條轉化也記錄，重刻印不退回已用額度。無新增玩家文案、Excel或素材／素材庫變更，不建空素材Commit。
+- 指令：`node --test --test-reporter=spec tests/ancient-forge-limit.test.cjs tests/ancient-affix.test.cjs tests/item-ancient-count-location.test.cjs tests/inventory-detail-preservation.test.cjs tests/inventory-ancient-filter-sort.test.cjs tests/forge-shared-inventory.test.cjs tests/divine-forge-interaction.test.cjs tests/forge-duration.test.cjs tests/forge-failure.test.cjs tests/equipment-tooltip-compare.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs`全部92/92；新增10項涵蓋六品質／自然太古額度隔離、偽造槽直接結算零消耗、反向位置的先後順序、單條／全部洗煉、存讀、刻印額外詞條與撤回、正式Worker三秒流程／投影及七顆上限、UI快照刷新。`npm.cmd run build`614檔通過，String --check寫死0條，git diff／check通過。
+- 另跑`node --test --test-reporter=spec tests/divine-forge.test.cjs`為15/16，一項第195行舊三秒背包測試期待0件、實際2件。以起始HEAD8c7321c1所有本次變動JS唯讀記憶體覆映重跑，仍15/16且同一位置／相同2 !== 0；未改舊斷言或擴修，沒有新增回歸失敗。
+- 瀏覽器：IAB無法連線，改bundled Playwright／隔離headless Edge及隨機localhost，載正式JS／CSS／完整sim.worker入口；僅測試新局，真滑鼠啟動兩次各3秒精鑄、正式cmd／panel驗結果。實際computedStyle五處（名稱／數值／行／詞條星星／ICON星星）逐一等於125,211,252及59,130,246；第三次直接指令拒絕，金幣／神性之石不變，滿額格套用既有置灰。390寬不溢出，Console Error／Warning、pageerror與Worker error均0；桌面／窄屏PNG存後重開檢視，QA／browser-report與舊版覆映證據留聊天visualizations/ancient-forge-two，不納入遊戲倉庫。
+- 唯讀未改：規範／AGENTS／Workflow／prompts、save.js與JSON遷移、formula.js的數值正規化與詞條公式、原神鑄／太古／裝備回歸、String及其他Excel／CSV與素材。自我Review完成，本項無未完成實作，可供Review／合併；限制為舊裝備無來源歷史而不能追溯分色／次數、既有三秒測試失敗、未驗多瀏覽器／實體觸控及全庫回歸。Commit為本段所在「[Codex] feat: 太古精鑄限制兩條並依來源順序分色」，SHA見交付；未合併推送develop／main。下一步使用者正常整合後重新載入主頁與Worker驗收。
+
 ## FORGE-STONE-HOVER-TIP-20261031 — 神鑄中央神性之石滑鼠提示
 
 - Owner：Codex；Done，單一開發者。使用者指定中央神性之石滑鼠移上顯示兩行「點擊放入神性之石」「神性之石可增加成功率」。前置：既有神鑄中央素材與數量面板完成；工作區乾淨，七檔衝突預檢無外部來源。

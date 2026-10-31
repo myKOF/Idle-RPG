@@ -301,6 +301,8 @@ function doForge() {
       var item = items[0];
       if (mode === 'ancient') {
         var a = pick(divineForgeAncientCandidates(item));
+        item.ancientForgeCount = divineForgeAncientCount(item) + 1;
+        a.ancientForgeOrder = item.ancientForgeCount;
         a.ancient = true; a.roll = STRENGTH_ROLL_MAX;
         if (typeof achAddStat === 'function') achAddStat('ancientCast', 1);
         if (item.imprint && item.imprint.affix === a) item.imprint.kind = 'extraAncient';

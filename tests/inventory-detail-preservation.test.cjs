@@ -63,6 +63,7 @@ test('selected inventory item survives an ordinary panel refresh with detail dat
     equipViewEquipment: snapshot => snapshot && snapshot.equipment ? snapshot.equipment : {}
   };
   vm.createContext(context);
+  vm.runInContext(fs.readFileSync(path.join(root, 'js/data.js'), 'utf8'), context);
   vm.runInContext([
     extractFunction(workerSource, 'inventoryCellView'),
     extractFunction(workerSource, 'buildInventoryPanel'),

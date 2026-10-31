@@ -8,7 +8,7 @@
   <link rel="icon" href="images/icon_avatar.png" type="image/png">
   <link rel="preload" as="image" href="images/ui/gem-resonance/hex-backplate.png" fetchpriority="low">
   <link rel="preload" as="image" href="images/ui/heaven-power/dark-gold-seal.png?v=1" fetchpriority="low">
-  <link rel="stylesheet" href="css/style.css?v=1.0.106">
+  <link rel="stylesheet" href="css/style.css?v=1.0.107">
   <link rel="stylesheet" href="css/inventory-offset.css">
   <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.96">
   <link rel="stylesheet" href="css/ashen-forge-flat.css?v=1.0.3">
@@ -1016,7 +1016,7 @@
   <script src="js/strings_data.js?v=9966cb90"></script>
   <script src="js/strings.js?v=1.0.1"></script>
   <script src="js/ui-scale.js?v=1.0.1"></script>
-  <script src="js/data.js?v=1.0.115"></script>
+  <script src="js/data.js?v=1.0.116"></script>
   <script src="js/status.js?v=1.0.44"></script>
   <script src="js/runeword_data.js?v=1.0.22"></script>
   <script src="js/gem_resonance_data.js?v=1.0.1"></script>
@@ -1052,7 +1052,7 @@
   <script src="js/battle-elite.js?v=1.0.8"></script>
   <script src="js/battle-renderer.js?v=1.6.217"></script>
   <script src="js/stats.js?v=1.0.7"></script>
-  <script src="js/item.js?v=1.0.38"></script>
+  <script src="js/item.js?v=1.0.39"></script>
   <script src="js/gem_resonance.js?v=1.0.10"></script>
   <script src="js/runeword.js?v=1.0.19"></script>
   <script src="js/skills.js?v=1.0.47"></script>
@@ -1065,7 +1065,7 @@
   <script src="js/tower.js?v=1.0.40"></script>
   <script src="js/save.js?v=1.0.28"></script>
   <script src="js/ui-inventory-skin.js?v=1.0.1"></script>
-  <script src="js/ui.js?v=1.0.242"></script>
+  <script src="js/ui.js?v=1.0.243"></script>
   <script src="js/ui-world-map.js?v=1.0.8"></script>
   <script src="js/ui-runeword.js?v=1.0.16"></script>
   <script src="js/ui-achievements.js?v=1.0.0"></script>
@@ -1079,12 +1079,12 @@
        正式遊玩是空殼。必須排在 ui.js（用它的 isInternalVersion）之後、VFX Runtime 建立（main 開機）之前。 -->
   <script src="js/battle-perf.js?v=1.0.3"></script>
   <!-- 模擬 Worker 的協議與橋接。bridge.js 於 DOMContentLoaded 開機 -->
-  <script src="js/worker/protocol.js?v=20261031-achv-talent-mastery-merge"></script>
+  <script src="js/worker/protocol.js?v=20261031-ancient-forge-two"></script>
   <script src="js/storage.js?v=1.0.1"></script>
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
-  <script src="js/bridge.js?v=1.0.399"></script>
+  <script src="js/bridge.js?v=1.0.400"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->

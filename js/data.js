@@ -52,6 +52,24 @@ function rarityRank(r) { var def = RARITIES[r]; return def && def.baseRarity !==
 function divineForgeOutputRarity(r) { return r === 6 ? 11 : r === 7 ? 8 : r === 9 ? 10 : null; }
 function divineForgeUnlock(mode) { return DIVINE_FORGE[mode + 'Unlock']; }
 function divineForgeSlotCount(mode) { return mode === 'equip' ? DIVINE_FORGE.equipCount : mode === 'gem' ? DIVINE_FORGE.gemPerType * 2 : DIVINE_FORGE.singleCount; }
+var ANCIENT_FORGE_LIMIT = 2;
+function divineForgeAncientOrders(it) {
+  if (!it) return '';
+  if (typeof it.ancientForgeOrders === 'string') return it.ancientForgeOrders;
+  var orders = {};
+  function note(a) { if (a && a.ancient && (a.ancientForgeOrder === 1 || a.ancientForgeOrder === 2)) orders[a.ancientForgeOrder] = true; }
+  (it.affixes || []).forEach(note);
+  if (it.imprint && !it.imprint.inactive) note(it.imprint.affix);
+  return (orders[1] ? '1' : '') + (orders[2] ? '2' : '');
+}
+function divineForgeAncientCount(it) {
+  if (!it) return 0;
+  var orders = divineForgeAncientOrders(it);
+  return Math.max(Math.floor(Number(it.ancientForgeCount) || 0), orders.indexOf('2') >= 0 ? 2 : orders ? 1 : 0);
+}
+function ancientForgeAffixClass(order) {
+  return order === 1 ? ' ancient-forged-first' : order === 2 ? ' ancient-forged-second' : '';
+}
 function divineForgeAncientCandidates(it) {
   var imprint = it.imprint;
   var out = (it.affixes || []).filter(function (a, index) {
@@ -65,7 +83,7 @@ function divineForgeItemEligible(it, mode) {
   var r = divineForgeBaseRarity(it.rarity);
   if (r !== 6 && r !== 7 && r !== 9) return false;
   if (mode === 'equip') return !isGodforgedRarity(it.rarity);
-  if (mode === 'ancient') return !it.affixes || divineForgeAncientCandidates(it).length > 0;
+  if (mode === 'ancient') return divineForgeAncientCount(it) < ANCIENT_FORGE_LIMIT && (!it.affixes || divineForgeAncientCandidates(it).length > 0);
   return mode === 'imprint';
 }
 function divineForgeRateInfo(f, owned) {

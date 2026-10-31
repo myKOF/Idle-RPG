@@ -1,4 +1,6 @@
-# Worker 協議 v65
+# Worker 協議 v66
+
+v66（2026-10-31 太古精鑄）：背包格投影新增 `ancientForgeCount`（同件裝備精鑄成功累計）與 `ancientForgeOrders`（目前可見精鑄詞條序號字串：`''`／`'1'`／`'2'`／`'12'`），主端共用資格判斷與星星分色，列表差異比對包含兩欄。完整裝備新增可選 `ancientForgeCount`、各轉化詞條新增 `ancientForgeOrder: 1|2`，JSON存讀保留；洗煉沿用位置標記，移除刻印附加詞條不返還已用額度。舊資料缺欄視為未記錄，不以自然太古數猜測精鑄次數；舊快照無來源時沿用原色。`ancientCount`計入精鑄轉化的刻印附加詞條。指令與面板數不變。
 
 v65（2026-10-31 成就系統）：`PANEL_KEYS` 新增 `achv`（成就頁投影：`{ list: [{id, at, prog, goal}], got }`，只送達成時間與進度）；指令數不變。成就名稱、圖示、條件文字由兩端共載的 `ACHIEVEMENTS`（js/achievement_data.js，來源 config/Excel/Achievement.xlsx）提供，不進協議；判定與累計統計（js/achievements.js）只在 Worker 端載入，存檔欄位 `G.achv = { got, st }`。達成時送一次 `notice` 事件 `key: 'achievementUnlocked'`（`data.id`）。
 
@@ -156,7 +158,8 @@ v35 新增可選 `battle.field.player._sgRevival = {startAt, endAt}`（GT 秒）
 ```
 panel { name:'inv', params:{ detailIds?: [id, ...], full?: true } }
   → { items: [{ id, rarity, slot, level, upgrade, synthesized, locked,
-                name, weaponType, enchant, enchants, kind, ancientCount }],
+                name, weaponType, enchant, enchants, kind, ancientCount,
+                ancientForgeCount, ancientForgeOrders }],
       details: { <id>: <完整裝備> } | null,
       count, cap, settings, equipment, viewEquipment }
 ```
