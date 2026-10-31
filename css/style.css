@@ -2946,6 +2946,24 @@ textarea#save-io {
   margin-left: 0;
 }
 
+.ancient-forged-first { --ancient-forge-color: #7dd3fc; }
+.ancient-forged-second { --ancient-forge-color: #3b82f6; }
+.ancient-forged-first,
+.ancient-forged-second,
+:is(.ancient-forged-first, .ancient-forged-second) :is(.act-btn-tooltip, .ancient-star),
+.ancient-star-badge .ancient-star:is(.ancient-forged-first, .ancient-forged-second) {
+  color: var(--ancient-forge-color) !important;
+}
+:is(.ancient-forged-first, .ancient-forged-second) .ancient-star,
+.ancient-star:is(.ancient-forged-first, .ancient-forged-second) {
+  text-shadow: 0 0 5px var(--ancient-forge-color);
+}
+.ancient-star-badge .ancient-star:is(.ancient-forged-first, .ancient-forged-second) {
+  -webkit-text-stroke: 0.6px var(--ancient-forge-color);
+  text-shadow: -1px -1px 0 #16283e, 1px -1px 0 #16283e,
+    -1px 1px 0 #16283e, 1px 1px 0 #16283e, 0 0 3px #000;
+}
+
 /* 超�??��??��??�?�相?��??�平?��?幅�??��??��?多出?��??��?中�??��?後�?顆�?*/
 .ancient-star-badge.overlap .ancient-star+.ancient-star {
   margin-left: -4px;

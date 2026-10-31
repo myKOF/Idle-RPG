@@ -11,7 +11,7 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-  importScripts('protocol.js?v=20261031-achv-talent-mastery-merge', '../game-clock.js?v=1.0.1', 'shim.js?v=20261018-potential-remove');
+  importScripts('protocol.js?v=20261101-merge-fd276618', '../game-clock.js?v=1.0.1', 'shim.js?v=20261018-potential-remove');
 // 離線結算等分批工作亦共用暫停時鐘；訊息與loop仍能回應存檔及PING。
 if (typeof GameClock !== 'undefined') {
   globalThis.setTimeout = GameClock.setTimeout;
@@ -20,12 +20,12 @@ if (typeof GameClock !== 'undefined') {
 /* String 表：資料檔版本由主執行緒（bridge.js）以網址 sv= 傳入，改文字不必動本檔。 */
 var _stringDataVersion = ((typeof self !== 'undefined' && self.location && /[?&]sv=(\w+)/.exec(self.location.search || '')) || [])[1] || '0';
 importScripts(
-  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../data.js?v=20261030-unlock-god-zone-merge', '../runeword_data.js?v=20261031-rune-halve', '../gem_resonance_data.js?v=20261028-develop-merge-a8acfe', '../achievement_data.js?v=20261031-achv-talent-mastery-merge', '../status.js?v=20261028-develop-merge-a8acfe', '../formula.js?v=20261031-achv-talent-mastery-merge', '../battle-terrain.js?v=20261030-unlock-god-zone-merge', '../battlefield.js?v=20261029-merge-cd5ad556', '../stats.js?v=20261028-develop-merge-a8acfe',
-  '../item.js?v=20261030-unlock-god-zone-merge', '../gem_resonance.js?v=20261030-unlock-god-zone-merge','../runeword.js?v=20261031-achv',
+  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../data.js?v=20261101-merge-fd276618', '../runeword_data.js?v=20261031-rune-halve', '../gem_resonance_data.js?v=20261028-develop-merge-a8acfe', '../achievement_data.js?v=20261031-achv-talent-mastery-merge', '../status.js?v=20261028-develop-merge-a8acfe', '../formula.js?v=20261031-achv-talent-mastery-merge', '../battle-terrain.js?v=20261030-unlock-god-zone-merge', '../battlefield.js?v=20261029-merge-cd5ad556', '../stats.js?v=20261028-develop-merge-a8acfe',
+  '../item.js?v=20261101-merge-fd276618', '../gem_resonance.js?v=20261030-unlock-god-zone-merge','../runeword.js?v=20261031-achv',
   '../skills.js?v=20261029-merge-cd5ad556', '../skills2.js?v=20261031-wind-ult-rename', '../elite_data.js?v=20261028-develop-merge-a8acfe', '../talents.js?v=20261031-achv-talent-mastery-merge',
   '../player.js?v=20261031-achv', '../special_rules.js?v=20261030-unlock-progress',
-  '../combat.js?v=20261031-achv', '../elite.js?v=20261028-develop-merge-a8acfe', '../elite_boss.js?v=20261023-str-battle', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261028-develop-merge-a8acfe', '../tower.js?v=20261028-sync-cloud-control',
-  '../factory.js?v=20261031-achv', '../newforge.js?v=20261028-develop-merge-a8acfe', '../forge.js?v=20261031-achv', '../save.js?v=20261031-achv',
+  '../combat.js?v=20261031-achv', '../elite.js?v=20261028-develop-merge-a8acfe', '../elite_boss.js?v=20261023-str-battle', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261028-develop-merge-a8acfe', '../tower.js?v=20261101-merge-fd276618',
+  '../factory.js?v=20261031-achv', '../newforge.js?v=20261028-develop-merge-a8acfe', '../forge.js?v=20261101-merge-fd276618', '../save.js?v=20261031-achv',
   '../tasks.js?v=20261031-achv', '../achievements.js?v=20261031-achv-talent-mastery-merge'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
@@ -600,6 +600,8 @@ function inventoryCellView(it) {
      這裡傳的是真實物品（有 affixes、沒有 ancientCount），走的是逐條計數那條路徑；
      item.js 裡的 ancientCount 短路分支是給主執行緒讀投影用的。 */
   out.ancientCount = getItemAncientCount(it);
+  out.ancientForgeCount = divineForgeAncientCount(it);
+  out.ancientForgeOrders = divineForgeAncientOrders(it);
   /* 裝備強弱評分。與 ancientCount 同理：投影裁掉了 affixes/sockets，
      而 itemScore() 需要那些欄位，所以只能在還握有真實物品的這裡算。
 

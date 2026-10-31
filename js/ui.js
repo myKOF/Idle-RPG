@@ -4953,7 +4953,9 @@ function ancientStarBadgeHTML(it) {
   if (!count) return '';
   var shown = Math.min(7, count);
   var stars = '';
-  for (var i = 0; i < shown; i++) stars += '<span class="ancient-star">✡</span>';
+  var orders = divineForgeAncientOrders(it);
+  for (var i = 0; i < shown - orders.length; i++) stars += '<span class="ancient-star">✡</span>';
+  for (var j = 0; j < orders.length; j++) stars += '<span class="ancient-star' + ancientForgeAffixClass(Number(orders[j])) + '">✡</span>';
   var overlapClass = shown > 4 ? ' overlap' : '';
   return '<span class="ancient-star-badge' + overlapClass + '" aria-label="' + STR(1184, count) + '">' + stars + '</span>';
 }
@@ -6985,7 +6987,7 @@ function renderForge() {
   }
   var rate = forgeStonePickerRate(f, player.dust);
   keys.push('stones');
-  htmls.push('<button type="button" class="forge-stone' + (rate && rate.stones ? ' lit' : '') + '" id="forge-stone-center" aria-label="' + esc(STR(2187)) + '" aria-expanded="' + !!UI.forgeStoneOpen + '" aria-controls="forge-stone-popover"' + (pending || !rate ? ' disabled' : '') + '><span class="forge-material-icon" aria-hidden="true">💫</span><span>' + (rate ? rate.stones : 0) + '</span></button>');
+  htmls.push('<button type="button" class="forge-stone' + (rate && rate.stones ? ' lit' : '') + '" id="forge-stone-center" data-tip="' + esc(STR(2239)) + '" aria-label="' + esc(STR(2187)) + '" aria-expanded="' + !!UI.forgeStoneOpen + '" aria-controls="forge-stone-popover"' + (pending || !rate ? ' disabled' : '') + '><span class="forge-material-icon" aria-hidden="true">💫</span><span>' + (rate ? rate.stones : 0) + '</span></button>');
   syncItemGridCells(hex, keys, htmls);
   var progress = snap.craftProgress, stage = $id('forge-stage');
   var animationKey = f.crafting ? String(f.crafting.startedAt) : '';
@@ -7213,6 +7215,10 @@ function renderTower() {
   var towerState = snapshot.tower || {};
   var runtime = snapshot.runtime || {};
   var player = headerSnapshot.player || {};
+  var advanceToggle = $id('tw-auto-advance');
+  if (advanceToggle && !isUiCommandPending(nodePendingKey('tower-advance'))) {
+    advanceToggle.checked = towerState.autoAdvance !== false;
+  }
   if (towerState.active && !towerCanvasHudActive()) {
     fightBox.style.display = '';
     listBox.style.display = 'none';
@@ -7887,7 +7893,7 @@ function inventoryGridSnapshotEqual(previous, next) {
   if (a.length !== b.length) return false;
   /* 純量欄位逐一比對；enchant／enchants 是唯二可能是物件的欄位，另外處理。 */
   var fields = ['id', 'rarity', 'slot', 'level', 'upgrade', 'synthesized',
-    'locked', 'name', 'weaponType', 'kind', 'ancientCount'];
+    'locked', 'name', 'weaponType', 'kind', 'ancientCount', 'ancientForgeCount', 'ancientForgeOrders'];
   for (var i = 0; i < a.length; i++) {
     var ai = a[i], bi = b[i];
     if (!ai || !bi) return false;
@@ -12911,6 +12917,17 @@ function initUI() {
       if (event.key === 'Escape') closeForgeStonePicker();
     });
   }
+  var towerAdvanceToggle = $id('tw-auto-advance');
+  if (towerAdvanceToggle) {
+    towerAdvanceToggle.setAttribute('data-ui-pending-key', nodePendingKey('tower-advance'));
+    towerAdvanceToggle.addEventListener('change', function () {
+      sendUiCommand('tower.setAutoAdvance', { on: !!this.checked }, {
+        keys: [nodePendingKey('tower-advance')], panels: ['tower']
+      }).catch(function (error) {
+        reportUiCommandFailure(STR(2240), error, ['tower']);
+      });
+    });
+  }
   $id('toggle-compare').addEventListener('change', function () {
 
     sendUiCommand('settings.set', { key: 'compareEq', value: this.checked }, {
@@ -13240,6 +13257,7 @@ function showTowerResultModal(r, p, b, myDmg, bDmg, options) {
       var canStopAuto = countdown > 0 && r && r.autoContinue;
       stopAutoBtn.style.display = canStopAuto ? 'inline-block' : 'none';
       stopAutoBtn.disabled = !canStopAuto;
+      stopAutoBtn.textContent = r && r.advanceFloor ? STR(2242) : STR(1819);
     }
     if (countdown > 0) {
       UI.towerResultCountdownTimer = (typeof GameClock !== 'undefined' ? GameClock.setInterval : setInterval)(function () {

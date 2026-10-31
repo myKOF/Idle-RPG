@@ -302,6 +302,7 @@ function getItemAncientCount(it) {
   for (var i = 0; i < it.affixes.length; i++) {
     if (it.affixes[i] && it.affixes[i].ancient) c++;
   }
+  if (it.imprint && !it.imprint.inactive && it.imprint.affix && it.imprint.affix.ancient && it.imprint.affix.ancientForgeOrder) c++;
   return c;
 }
 
@@ -811,7 +812,8 @@ function itemDetailHTML(it, cmp, opts) {
       ? STR(1148)
       : STR(1149, minDisplay, maxDisplay);
 
-    var valColor = isImprinted ? '#60a5fa' : isMax ? '#fbbf24' : '';
+    var forgedClass = isAncient ? ancientForgeAffixClass(it.affixes[i].ancientForgeOrder) : '';
+    var valColor = forgedClass ? 'var(--ancient-forge-color)' : isImprinted ? '#60a5fa' : isMax ? '#fbbf24' : '';
     var valHtml = '<span' + (valColor ? ' style="color:' + valColor + ';font-weight:bold"' : '') + '>' + (def.pct ? pctStr(vCur) : fmt(vCur)) + '</span>';
 
     var rrSelected = rerollActive && i === rerollSelIdx;
@@ -829,6 +831,7 @@ function itemDetailHTML(it, cmp, opts) {
     var catClass = ' afx-' + affixCat(k);   // 詞條分類分色（基礎紫/進攻粉/防禦青/功能綠）
     if (isAncient) catClass += ' ancient-affix';
     if (isImprinted) catClass += ' sacred-affix';
+    catClass += forgedClass;
     var marker = isAncient ? '<span class="ancient-star" aria-label="' + STR(1150) + '">✡</span>' : '◆';
     if (showAffixReroll) {
       var rowClass = rerollActive ? ' is-reroll-pickable' + (rrSelected ? ' is-reroll-selected' : '') : '';
@@ -874,7 +877,8 @@ function itemDetailHTML(it, cmp, opts) {
     h += '<div class="it-imprint" style="color:#60a5fa">' + esc(STR(2177, STR(2178 + ['sacredAffix','ancientAffix','sacredSocket','extraAffix','extraAncient','legendary','refund'].indexOf(ip.kind), DIVINE_FORGE.refundRate * 100))) + '</div>';
     if (ip.affix && AFFIX_POOL[ip.affix.key]) {
       var def = AFFIX_POOL[ip.affix.key], value = affixValue(it, ip.affix) * um;
-      h += '<div class="it-imprint" style="color:#60a5fa">' + esc(def.name) + ' +' + (def.pct ? pctStr(value) : fmt(value)) + '</div>';
+      var ipForgedClass = ip.affix.ancient ? ancientForgeAffixClass(ip.affix.ancientForgeOrder) : '';
+      h += '<div class="it-imprint' + ipForgedClass + '" style="color:#60a5fa">' + (ipForgedClass ? '<span class="ancient-star">✡</span> ' : '') + esc(def.name) + ' +' + (def.pct ? pctStr(value) : fmt(value)) + '</div>';
     }
     if (ip.passive) h += '<div class="it-imprint" style="color:#60a5fa">' + esc(passiveLine(it, ip.passive)) + '</div>';
   }
@@ -940,10 +944,12 @@ function rerollItemAffixes(it) {
   var affixCap = getStats().affixCap;
   // 太古位置永久固定：洗煉沿用原太古位置（必滿值換種類），非太古位置永不洗出太古
   var ancientSet = {};
+  var forgedOrders = it.affixes.map(function (a) { return a.ancientForgeOrder; });
   for (var ai = 0; ai < it.affixes.length; ai++) {
     if (it.affixes[ai].ancient) ancientSet[ai] = true;
   }
   it.affixes = rollAffixes(it.affixes.length, it.rarity, it.slot, ancientSet, affixCap, it.level);
+  it.affixes.forEach(function (a, i) { if (a.ancient && forgedOrders[i]) a.ancientForgeOrder = forgedOrders[i]; });
   markStatsDirty();
   UI.dirty.header = true; UI.dirty.equip = true; UI.dirty.inv = true;
   return null;
@@ -985,11 +991,13 @@ function rerollSingleAffix(it, affixKey) {
   var newKey = wpick(pool);
   // 太古與否只看位置：太古位置洗煉必為滿值、只變換詞條種類；非太古位置永不洗出太古
   var isAncient = !!it.affixes[targetIdx].ancient;
+  var forgedOrder = it.affixes[targetIdx].ancientForgeOrder;
   it.affixes[targetIdx] = {
     key: newKey,
     roll: isAncient ? STRENGTH_ROLL_MAX : rollAffixStrength(affixCap),
     ancient: isAncient
   };
+  if (isAncient && forgedOrder) it.affixes[targetIdx].ancientForgeOrder = forgedOrder;
 
   markStatsDirty();
   UI.dirty.header = true; UI.dirty.equip = true; UI.dirty.inv = true;

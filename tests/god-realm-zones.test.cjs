@@ -50,7 +50,7 @@ test('神界練功地圖資料與敵人 Monster Pools 正確定義', () => {
   assert.equal(env.ZONES.god_chaos.reqZone, 'god_battlefield');
 
   assert.ok(env.ZONES.god_sanctuary);
-  assert.equal(env.ZONES.god_sanctuary.name, '永恒神域');
+  assert.equal(env.ZONES.god_sanctuary.name, '永恒神殿');
   assert.equal(env.ZONES.god_sanctuary.pool.length, 12);
   assert.equal(env.ZONES.god_sanctuary.reqZone, 'god_chaos');
 });

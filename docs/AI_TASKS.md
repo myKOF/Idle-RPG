@@ -1,5 +1,45 @@
 # AI_TASKS.md
 
+## MERGE-fd276618-20261101 - Authorized develop integration
+
+- Owner: Codex; Done. Scope: this pending merge only, b89ce4a9 + fd276618; no staging, commits, delegation, pushes or other-worktree edits. Controller owns the merge commit.
+- Base d87e25fe has none of the 20 add/add icons. Ours contains Claude 4349766d procedural placeholders and name/tooltip wiring; incoming contains the approved 28-icon replacement. EQUIP-AI-ICONS-20261031 explicitly requires the incoming generated images on add/add and retention of Claude wiring. Exported the approved package; all 28 source/export/game SHA256 hashes match. Existing asset-library commit dbbb254 already preserves these assets; no asset-library edits required.
+- Preserved all incoming staged changes and EOF corrections. New combined cache token 20261101-merge-fd276618 for data/item/UI/tower/forge/protocol/bridge and Worker imports/entry. No original Excel conflicts, no workbook writes or Excel plans. Existing String CSV/JS synchronization verified.
+- Preflight executed: known ai/codex changes belong to this authorized incoming history. Other worktrees could not be inspected due to ownership checks; no extra trust was configured.
+- Validation: node asset-package export.cjs <game-root> --apply and --check: 28/28 hashes, PNG signature, 1024 square, under 2 MiB. npm.cmd run build: 616 files passed. node --test --test-reporter=tap tests/equipment-weapon-icons.test.cjs tests/equipment-tooltip-compare.test.cjs tests/equipment-two-hand-display.test.cjs tests/equipment-quality-name.test.cjs tests/ancient-forge-limit.test.cjs tests/forge-stone-mode-switch.test.cjs tests/tower-auto-advance.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/god-realm-zones.test.cjs: 87/88 passed. The sole failure is the old static weapon-selector regex; original HEAD JS overlaid read-only in memory reproduces the identical regex failure. Assertions were not changed. Initial cache-edit overmatch was corrected before final validation; string synchronization now passes.
+- git diff HEAD --check passes on the complete merged result. No new gameplay, unlock or formula changes; existing LV updates retained. No browser session or full-suite validation claimed. HEAD/MERGE_HEAD must stay unchanged; expected unmerged index entries remain for controller staging. Ready for controller commit; no new regression identified.
+
+## TOWER-AUTO-ADVANCE-20261031 — 封魔塔勝利自動推進
+
+- Owner：Codex；Done，單一開發者。使用者要求頂列新增預設開啟的「自動推進」，一般挑戰勝利接下一層 BOSS；連續挑戰同層期間及最後一場均不生效。前置既有塔戰／結算倒數完成；工作區起始乾淨、修改檔衝突預檢無外部來源。
+- 允許：tower／ui、Worker protocol／快取及文件、index／塔頁樣式、String.xlsx 原生編修與 CSV／strings_data、相關回歸、LV 與本段；禁止戰鬥公式／費用／獎勵／解鎖、正式存檔操作、無關配置／素材、其他工作區及合併推送。
+- 沿用三秒結算與停止入口，Worker 決定下一層並重驗可挑戰及金幣；設定隨 G.tower 存讀，缺欄預設開啟。驗勝敗／撤退／關閉／同層連挑含末場／最高層／不足金幣／重複確認、UI 指令與快照、Excel 儲存重開、相關回歸與 Build。完成 Commit 交使用者 Review／整合。
+- 完成17檔：js/tower.js 設定與接關、ui.js 勾選／快照／停止文案、protocol.js 新增 tower.setAutoAdvance（v67，95條指令）、Worker／bridge／index 必要快取、css/ashen-forge.css 頂列勾選、String.xlsx 新增2240～2242與CSV／strings_data生成、兩份文件與LV、tower-auto-advance新回歸及worker-protocol／tower-rewards-ui／potential-removal配套測試。獎勵測試明確關閉自動推進以隔離單場斷言，費用／獎勵／解鎖不變。存檔缺欄以 !== false 判定開啟，既有完整 tower 投影與JSON存讀保留設定，不需遷移；重複確認不再中斷新場。
+- 驗證：`node --test --test-reporter=dot tests/tower-*.test.cjs tests/purgatory-tower.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs` 82/82通過；新增10項含正式Worker入口、存讀與通知、50／100跨塔、150停止、勝敗／撤退、連挑末場／僅一場／停止、資源與資格重驗、取消／去重及UI指令。`npm.cmd run build`615檔通過；String --check寫死0條；diff／check通過。另跑potential-removal為5/7，既有兩項失敗：83行舊威脅預期56實際200、113行既有配置表不一致；以起始HEAD全部受影響JS及原測試唯讀記憶體覆映重跑仍同兩項失敗（另有已修正的舊版本60斷言），未更改其數值／表格／斷言。
+- String先確認獨占存取、備份，再以tools/excel-update-sheets.ps1原生插列與寫入12格，Excel正常重開兩次全格一致／繪圖物件0保持；只新增3列。Artifact Tool唯讀渲染前後版，既有空白參數誤讀445的現象兩版相同，未匯出覆寫。無素材或素材庫變動，不建立素材庫Commit。
+- 瀏覽器：IAB不可用，改bundled Playwright／隔離headless Edge，正式塔頁HTML／CSS／JS與模擬層、抽取原勾選及挑戰綁定，只用測試新局，橋接替身便於主動觸發勝利；真Worker另由上列引擎測試驗證。真滑鼠取消／開啟、單場結算、三秒倒數接關、停止推進、連挑2場與末場回野外通過；900／745／390寬勾選可見、無水平溢出，Console error／warning／pageerror 0。390既有雙欄塔頁仍裁切詳情，未擴修其行動版面；未測完整長跑戰鬥、多瀏覽器或實體觸控。截圖重開確認，證據留聊天visualizations/tower-advance。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、player／save／formula／shim／engine及其他配置／素材。期間同工作區另出現神鑄舞台／切功能用石修正，與本項不同區段無語意相依，保留其forge／divine-forge／獨立測試及index／LV／任務紀錄hunk，只逐檔／逐hunk提交本項。自我Review完成，無本需求未完成實作，可供Review／合併；Commit為本段所在「[Codex] feat: 封魔塔新增預設開啟的自動推進」，SHA見交付，未合併／推送。下一步使用者整合後重新載入主頁及Worker驗收。
+
+## ANCIENT-FORGE-TWO-20261031 — 太古精鑄兩條上限與來源分色
+
+- Owner：Codex；Done，單一開發者。使用者要求同件裝備最多由太古精鑄轉化兩條，達上限拒絕轉化及入槽；第一條淺藍、第二條深藍，詞條與裝備星星一致。前置既有四功能神鑄已完成，fetch後修改檔衝突預檢乾淨。
+- 允許：data／forge／item／ui、style、Worker背包投影／protocol及文件、必要主端／Worker快取、相關回歸、LV與本段；禁止更動成功率／費用／解鎖、自然太古生成、玩家存檔操作、無關配置／素材、其他工作區及合併推送。
+- 新增裝備精鑄累計與詞條來源順序，缺欄舊裝備不猜測歷史；沿用既有JSON存讀與洗煉位置。驗兩次成功／第三次拒絕與零扣款、自然太古不占額度、刻印附加詞條、洗煉與存讀、投影／星星／詳情分色、相關回歸、Build、Console及diff。完成後獨立Commit，交使用者Review／整合；無獨立素材。
+- 完成15檔：js/data.js共用上限／來源查詢、forge.js成功時累計、item.js顯示及洗煉標記保存、ui.js星星與格線差異比對、css/style.css分色、js/worker/sim.worker.js精簡投影、protocol.js與WORKER_PROTOCOL.md（v65→66）、bridge.js及index快取、ancient-forge-limit新回歸、inventory-detail-preservation及worker-protocol既有fixture／版本期待、LV與本段。第1條#7dd3fc／第2條#3b82f6，名稱／數值／詞條星星／ICON星星同色；原生太古維持原色。星星最多7顆時仍保留兩種精鑄色。刻印附加普通詞條轉化也記錄，重刻印不退回已用額度。無新增玩家文案、Excel或素材／素材庫變更，不建空素材Commit。
+- 指令：`node --test --test-reporter=spec tests/ancient-forge-limit.test.cjs tests/ancient-affix.test.cjs tests/item-ancient-count-location.test.cjs tests/inventory-detail-preservation.test.cjs tests/inventory-ancient-filter-sort.test.cjs tests/forge-shared-inventory.test.cjs tests/divine-forge-interaction.test.cjs tests/forge-duration.test.cjs tests/forge-failure.test.cjs tests/equipment-tooltip-compare.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs`全部92/92；新增10項涵蓋六品質／自然太古額度隔離、偽造槽直接結算零消耗、反向位置的先後順序、單條／全部洗煉、存讀、刻印額外詞條與撤回、正式Worker三秒流程／投影及七顆上限、UI快照刷新。`npm.cmd run build`614檔通過，String --check寫死0條，git diff／check通過。
+- 另跑`node --test --test-reporter=spec tests/divine-forge.test.cjs`為15/16，一項第195行舊三秒背包測試期待0件、實際2件。以起始HEAD8c7321c1所有本次變動JS唯讀記憶體覆映重跑，仍15/16且同一位置／相同2 !== 0；未改舊斷言或擴修，沒有新增回歸失敗。
+- 瀏覽器：IAB無法連線，改bundled Playwright／隔離headless Edge及隨機localhost，載正式JS／CSS／完整sim.worker入口；僅測試新局，真滑鼠啟動兩次各3秒精鑄、正式cmd／panel驗結果。實際computedStyle五處（名稱／數值／行／詞條星星／ICON星星）逐一等於125,211,252及59,130,246；第三次直接指令拒絕，金幣／神性之石不變，滿額格套用既有置灰。390寬不溢出，Console Error／Warning、pageerror與Worker error均0；桌面／窄屏PNG存後重開檢視，QA／browser-report與舊版覆映證據留聊天visualizations/ancient-forge-two，不納入遊戲倉庫。
+- 唯讀未改：規範／AGENTS／Workflow／prompts、save.js與JSON遷移、formula.js的數值正規化與詞條公式、原神鑄／太古／裝備回歸、String及其他Excel／CSV與素材。自我Review完成，本項無未完成實作，可供Review／合併；限制為舊裝備無來源歷史而不能追溯分色／次數、既有三秒測試失敗、未驗多瀏覽器／實體觸控及全庫回歸。Commit為本段所在「[Codex] feat: 太古精鑄限制兩條並依來源順序分色」，SHA見交付；未合併推送develop／main。下一步使用者正常整合後重新載入主頁與Worker驗收。
+
+## FORGE-STONE-HOVER-TIP-20261031 — 神鑄中央神性之石滑鼠提示
+
+- Owner：Codex；Done，單一開發者。使用者指定中央神性之石滑鼠移上顯示兩行「點擊放入神性之石」「神性之石可增加成功率」。前置：既有神鑄中央素材與數量面板完成；工作區乾淨，七檔衝突預檢無外部來源。
+- 允許：js/ui.js 中央按鈕提示、String.xlsx 原生 Excel 新列及 CSV／strings_data 生成、index 快取、LV 與本段；禁止玩法／數值／解鎖／Worker／存檔／素材、其他工作區與合併推送。沿用 data-tip 及 STR，保留點擊加減面板。驗證原生 Excel 儲存重開、字串同步、既有神鑄／字串回歸、Build／Console 與 diff，完成獨立 Commit，交使用者 Review／整合。
+- 完成七檔：中央按鈕新增 data-tip，STR(2239) 讀取兩行文字，String 新列置於神鑄模塊末尾，保留原 aria／點擊及停用條件；index UI 快取升至1.0.242、字串版本9966cb90，LV 說明同步。先確認 String.xlsx 可獨占存取並備份，依使用者指定 tools/excel-update-sheets.ps1 原生 Excel 插列／寫入5格，正常重開兩次及全格驗證通過、繪圖物件0保持；xlsx_to_csv 與生成資料2226條同步，CSV 比對只有一個新增列。Artifact Tool 僅唯讀渲染核對新列，會將既有空白誤讀成445，未匯出或覆寫來源；保留既有表格格式。無素材與素材庫變動，不建空素材 Commit。
+- 測試指令：`node --test --test-reporter=dot tests/forge-stone-controls.test.cjs tests/forge-shared-inventory.test.cjs tests/divine-forge.test.cjs tests/string-table.test.cjs` 共43項42通過／1既有失敗：divine-forge第195行三秒前背包數預期0實際2；將本次兩支變動JS以HEAD版本唯讀記憶體覆映重跑，仍同一失敗（15/16），未改測試或擴修玩法。`npm.cmd run build` 613檔全通過；String apply --check 同步、build_string_csv --check 寫死0條；git diff／check通過。
+- 瀏覽器：IAB backend無法連線，改 bundled Playwright／隔離 headless Edge／隨機localhost。載正式util／String腳本，直接取正式中央按鈕產生語句、showStatTooltip及hover／click分支於隔離fixture，驗0／已選7顆／停用的hover兩行、移開收起及點擊展開數量面板，Console Error／Warning及pageerror0。fixture伺服器初次路徑分隔判定與favicon404已修正重跑，不改產品；hover.png存後重開檢視，String預覽與browser-result／baseline紀錄保留本聊天visualizations。未驗完整遊戲頁、玩家存檔或多瀏覽器。
+- 唯讀未改：規範／AGENTS／Workflow／prompts、String與Excel工具、forge.js／Worker／協議／公式／CSS、四項既有回歸與其他配置／素材。自我Review完成，本項無未完成實作，已知限制為上述基線失敗及未跑範圍；可供Review／合併。Commit為本段所在「[Codex] feat: 神鑄中央神性之石新增滑鼠提示」，實際SHA見交付；未合併推送develop／main。下一步由使用者正常整合並重新載入驗收。
+
 ## MERGE-ACHIEVEMENT-TALENT-MASTERY-20261031 — pending develop merge
 
 - Owner：Codex（整合）；Done。依使用者明確授權處理本次 pending merge：原 HEAD `6557b508d95fb1443595135ca84aa5be04a1e24f`、MERGE_HEAD `9912fae9ea457f0041ba924c3cbce57ce07b663a`；未操作 index、Commit、推送、同步腳本或其他工作區。
@@ -13657,3 +13697,40 @@ Worker 存活且頁面正常完成載入。
 - 測試指令：node --test --test-reporter=dot tests/equip-socket-ui.test.cjs tests/equip-reroll-ui.test.cjs tests/runeword-ui.test.cjs tests/string-table.test.cjs tests/boss-skill-lock.test.cjs，80/80通過；npm.cmd run build，607檔通過；node tools/string-table/build_string_csv.cjs --check寫死0條；最終新增快照回歸及previousPanel空值處理後node --check兩檔及diff／暫存diff檢查通過。新增3項門檻／舊草稿／快照回歸，既有兩套fixture明確設定已解鎖角色，不改原流程斷言。
 - 瀏覽器：隔離隨機localhost／headless Edge，載正式UI與CSS及真實DOM；以測試adapter餵header面板並走正式bindWorkerUiState／renderDetail／點擊處理。299→300即時開放、300→299鎖回、1轉1級開放／0轉1級鎖定、disabled事件繞過仍阻擋；實際樣式opacity=.42／grayscale(.45)／cursor=default。390寬按鈕在viewport內，Console Error／Warning與pageerror皆0。三張截圖／browser-report／QA腳本與候選檔留本聊天visualizations/rune-unlock，299級畫面已重開檢視；未接觸玩家存檔。最初QA將未建立模式的undefined期待為null，修正測試判斷，產品未因此修改。
 - 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、data的progressReached、runeword／ui-runeword／Worker與協議、String與其他Excel／CSV、CSS及原素材。ui.js最終候選與Claude工作檔的三方試跑exit0；index／AI_TASKS只按使用者核准分段修改。自我Review完成，可供合併，無本項未完成項目或已知新增風險；未跑全庫、多瀏覽器／實體觸控或完整真Worker遊玩。無素材變更、不建素材庫Commit。Commit為本段所在「[Codex] fix: 裝備符文按鈕改為零轉三百級開放」，SHA見交付；未合併推送develop／main。下一步正常整合後重載驗收。
+
+
+## FORGE-LOG-STONE-CONTEXT-20261031 — 神鑄日誌左上定位與跨功能石頭數量修正
+
+- Owner：Codex；Done，單一開發者。使用者要求修正日誌仍偏右，以及其他功能投入約50顆後切回裝備神鑄顯示13顆卻無法開始的異常。前置既有神鑄流程完成，fetch後目標預檢無外部分支／副本來源。
+- 允許：divine-forge.css父層舞台寬度、forge.js配方上限／連續偏好同步、必要index／Bridge／Worker快取、獨立神鑄回歸、LV及本段。禁止費用／機率／解鎖／存檔格式／字串／素材、其他工作區及合併推送；保留同副本封魔塔進行中修改，僅分段提交本項。
+- 驗收：正式DOM＋全CSS寬／窄畫面修正前後座標；太古／刻印／寶石50顆切回神話13／創世15／混沌17，直接開始與連續鑄造不報錯；既有卡住狀態可直接開始恢復，庫存不足仍停止、不靜默減量；正式Worker／UI、相關回歸、Build及Console／diff後獨立Commit，交使用者Review／整合。
+- 完成8檔：divine-forge.css覆寫舞台width:100%／max-width:none／margin:0，取消繼承style.css舊880px置中容器造成的偏移；forge.js集中依配方上限同步stones與stonePreference，於切功能、入槽／調整數量、開始前整理，既有卡住選取可直接開始。只按maxStones修正，不因庫存不足降低連續投入偏好，作業中資源不足仍拒絕並保留原料。index CSS13→14／Bridge401→402，bridge入口與Worker forge匯入20261031-forge-log-stones；LV、本段、新回歸同步。不改UI、配方／費用／機率／解鎖／協議／存檔格式或玩家文字，無素材／素材庫變更。
+- 測試：`node --test --test-reporter=spec tests/forge-stone-mode-switch.test.cjs tests/divine-forge-interaction.test.cjs tests/forge-stone-controls.test.cjs tests/forge-shared-inventory.test.cjs tests/ancient-forge-limit.test.cjs tests/ancient-affix.test.cjs tests/forge-duration.test.cjs tests/forge-failure.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs`全部99/99。新11項涵蓋三來源×三種已選品質、正式runCommand三秒結算與下一輪、舊卡住選取及存讀恢復、庫存／作業中資源不足保護；唯讀記憶體覆映起始fedb2388的forge.js重跑，新11項全部重現失敗，修正後全過。`npm.cmd run build`616檔通過，String --check寫死0條，diff及暫存diff檢查通過。
+- 瀏覽器：IAB無法連線，改bundled Playwright／隔離headless Edge及隨機localhost，正式神鑄section／全部CSS、renderForge／事件及完整sim.worker。1280寬修前面板1240／舞台880，父層偏179px；修後1280／1024／880／600／390五寬stageOffset／logOffset／logTop均0、文字左對齊且10行可見，原桌面8／6與窄屏4／4文字內距保持。版面用面板副本提供10行歷史；後續真Worker不注入結果。真滑鼠切太古、測試指令投入50顆、再切裝備及自動放入，顯示／實際／偏好皆13，實際按開始及連續開關各成功一輪，石頭1000→974、兩則成功日誌無數量異常。Console Error／Warning、pageerror與Worker error皆0，未接觸玩家存檔。修前／修後／窄屏／兩次成功PNG、QA／report及基準紀錄保存在聊天visualizations/forge-log-stone-fix，已存後重開檢視。QA曾補正式protocol依賴、處理讀檔清空歷史與明確等待結算、改點實際開關label後重跑，產品未因此擴改。
+- 使用者追加「做完連我改的一起commit」：既有暫存NPC.xlsx原樣獨立Commit `e6dc82c3`；唯讀匯出前後491列×22欄，僅490列縮放比1→1.5，暫存與磁碟SHA256同455859b337d17a58fa95bcf6552d95e1aca6fd77a734085dda8578f9dc8ce660。未重寫Excel或主動套用至NPC.csv／data.js，保留使用者來源；無素材Commit。同副本封魔塔7e8d6ef6已先完成提交，本項index神鑄CSS／LV神鑄段／任務檔尾／Worker forge匯入與其塔頁區段分離，Bridge共用版號等對方提交後才順序更新，保留其全部成果。
+- 唯讀未改：共通規範／AGENTS／Workflow／prompts、style／ashen-forge系列、ui.js及原石頭控制、data.js及成功率公式、save遷移、Worker協議與String等配置／素材。自我Review完成，本項無未完成實作，可供Review／合併；未跑全庫、多瀏覽器／實體觸控或長時間掛機，NPC來源倍率尚未套用遊戲。程式Commit為本段所在「[Codex] fix: 修正神鑄日誌定位與跨頁神性之石數量」，SHA見交付；未合併推送develop／main。下一步正常整合後重載主端／Worker驗收，NPC參數按後續套用流程處理。
+
+
+## SANCTUARY-TEMPLE-RENAME-20261031 — 永恒神域更名永恒神殿
+
+- Owner：Codex；Done，單一開發者。使用者要求場景名稱及相關表格／介面同步改為永恒神殿。前置既有Zones權威來源及動態地圖名稱完成。允許Zones／String／Task說明頁原生Excel改名、CSV／data及strings_data生成、相關工具／文件／既有期待與必要快取、本段及LV；禁止ID／數值／門檻／美術／存檔／其他工作區與合併推送。
+- 三工作簿獨占確認通過；CSV與Claude未提交變更僅換行差異，data與4349766d圖示新增不同函式／區段；以共同祖先及現況候選三方merge-file三檔皆exit0，無語意相依，可分段修改。驗原生Excel儲存及正常重開、全格／格式保留、來源生成一致、地圖／GM／解鎖／UI與String回歸、Build及diff後獨立Commit，交使用者Review／整合。
+- 完成23檔：Zones／String／Task三份xlsx、Zones／String兩份CSV、data／strings_data／bridge及sim.worker、index、config_tables的任務說明對照與scene-preview選項、god-realm-zones名稱期待／gm-command測試名稱fixture，以及GM_command／LV／game_formula／BATTLE_BIOMES／DEFENSIVE_LIMITS_AND_STRONGEST_MONSTERS_REPORT／RUNEWORD_DESIGN／WORLD_MAP／SCENE_NATURE與本段。僅名稱改動；god_sanctuary、順序、前置500關、上限600及所有公式／門檻維持。歷史AI任務與PATCH紀錄保留舊稱以維持可追溯性。
+- Excel依專案要求採原生API，只改Zones「地圖」C11、String E631／E2220（STR628／2226）、Task「參數定義」A47，未填翻譯欄。三簿均先獨占確認、正常儲存重開兩次，樣式名稱／數字格式／工作表與物件數保持；唯讀全格比較141／9665／473格，除四格指定替換外值、公式及style索引全部相同。String／Task的styles.xml逐位相同；Zones由原生Excel正常化字型排列與參照、補charset／內建樣式metadata，字型5個及cellXfs14個不增減、顯示格式維持，沒有手改XML。Artifact Tool僅唯讀渲染前後指定區域，不匯出覆蓋來源；String空白參數仍有既有誤讀445的預覽限制，以原生Excel及封裝全格核對為準。
+- 既有管線：PARAMS_XLSX／PARAMS_CSV_OUT／PARAMS_SHEET指定Zones「地圖」與String來源執行tools/xlsx_to_csv.cjs，node tools/config_tables.cjs --apply --write Zones只改ZONES名稱一項語意，再試跑變更0；node tools/string-table/apply_strings.cjs生成2229條／34026e4c，--check同步，build_string_csv --check寫死0條。主頁data116→117、Bridge402→403、Worker入口及data匯入20261031-sanctuary-temple；String快取自動同步。Task主資料及CSV不改，說明產生器對照同步，沒有套用上輪使用者的NPC倍率。
+- 回歸：`node --test --test-reporter=spec tests/god-realm-zones.test.cjs tests/world-map.test.cjs tests/world-map-ui.test.cjs tests/gm-command.test.cjs tests/unlock-thresholds.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs`60/60通過；另跑new-battle-zones／zone-attr-tooltip共11項9過2失敗（NPC.xlsx倍率1.5與尚未套用CSV的1不一致、舊tooltip fixture缺showTowerTooltip）。以HEAD原受改來源／Excel／CSV唯讀記憶體覆映重跑，同樣11項9過2同名失敗，沒有弱化斷言或擴修。`npm.cmd run build`616檔通過，diff及暫存diff檢查通過。
+- 瀏覽器：沿用已確認不可用的IAB之Edge後備，隔離headless Edge／隨機localhost，載正式全CSS／JS與world-map-modal，只用測試面板快照。真滑鼠打開神界圖、點god_sanctuary，頂列名稱／動態地圖按鈕／資訊卡皆永恒神殿，圖片alt亦為新名；Console Error／Warning及pageerror0，未讀寫玩家存檔。world-map.png已存後重開，表格前後預覽、原生Excel／全格差異、測試與基準及browser-report留聊天visualizations/sanctuary-rename。最終候選與Claude實際工作檔三檔merge-file再次exit0；同檔僅換行或獨立圖示函式，保留對方成果。
+- 唯讀未改：規範／AGENTS／Workflow／prompts、Excel／CSV匯出工具、ui.js及ui-world-map.js動態讀名邏輯、其餘12份Excel、NPC／掉落／技能數值、原素材及素材庫、Worker協議／save。無素材變更或素材庫Commit。自我Review完成，本項無未完成實作，可供Review／合併；已知限制是上述兩項既有測試及未跑全庫／多瀏覽器／完整長玩。Commit為本段所在「[Codex] fix: 永恒神域同步更名為永恒神殿」，SHA見交付；未合併推送develop／main。下一步正常整合後重載主端與Worker驗收。
+
+## EQUIP-AI-ICONS-20261031 — 輕型與硬質護甲圖示統一
+
+- Owner：Codex；Done（素材已匯入 Codex，主線整合待使用者流程），單一開發者。使用者已確認布衣／皮靴 AI 預覽風格，並追加授權重製現有硬質護甲及「全換上」，解除本次原先不得改重甲圖的限制。
+- 允許 images/equip/ 清單20張、images/icon_{helmet,shoulder,chest,belt,gloves,wrist,legs_armor,legs}.png 八張硬甲，以及本段；遊戲程式／CSS／索引與其他圖片不動。素材庫另保存原生生圖、1024輸出、提示與雜湊。禁止武器／飾品通用圖、配置／存檔及其他工作區／合併推送。
+- 前置：提示與名稱接線在 Claude 4349766d／c2b6962a，Codex 尚未整合；本次依使用者明確要求替換該20張暫用圖，不覆寫其程式。硬甲及任務文件預檢乾淨，輕型圖預檢來源正是使用者指定要替換的4349766d。驗證用隔離候選載入已提交接線，正式程式不改。
+- 產出：imagegen 內建工具，以已核准布衣與皮靴當風格錨，1024平方PNG／純黑底／無字無框；每張低於2MB，驗20張名稱、三處UI與28px辨識、舊裝備與武器tips、Build及兩庫雜湊後，先素材庫再遊戲 [Codex] Commit。無玩法／解鎖改動，LV無需更新。
+- 完成29檔：images/equip 原清單20張、八張通用硬甲與本任務段。內建imagegen逐張生成，兩張已核准預覽作風格錨；硬甲另參考原本輪廓，改明亮灰銀鋼材、皮革及暖邊光。全數1024×1024不透明PNG，檔名與c2b6962a提示表20/20完全一致，最小634847／最大1699559 bytes，四角純黑28/28；尺寸與近黑背景雜訊正規化未重畫物件。原生1254圖、全提示／來源授權／SHA及normalize.ps1／export.cjs保存在素材庫，未接觸API key。
+- 雙庫驗證：node素材庫export.cjs <game-root> --apply及--check，原圖／匯出／遊戲28份SHA全相符。素材庫先提交 dbbb254（[Codex] feat: 製作二十八張統一風格裝備圖示素材），僅本package及PROVENANCE；工作區乾淨。遊戲Commit為本段所在「[Codex] feat: 統一輕型與硬質護甲二十八張裝備圖示」，SHA見交付。
+- 測試：node --test --test-reporter=dot tests/equipment-weapon-icons.test.cjs tests/equipment-tooltip-compare.test.cjs tests/equipment-two-hand-display.test.cjs tests/equipment-quality-name.test.cjs 全數通過（15項）；npm.cmd run build 616檔全過，git diff／stat／check與暫存check通過，沒有新增測試或改舊斷言。
+- 瀏覽器：IAB連線不可用，依後備流程用bundled Playwright＋隔離headless Edge。載正式index全CSS／JS（停main避免啟動存檔），只在HTTP候選將4349766d已提交的data名稱接線、item標題、ui選圖及28px CSS精確覆映至本分支；不寫入正式程式。以正式makeEquipment／itemCellHTML／renderEquip／itemHeaderHTML驗28件三處src完全符合、標題28×28，全圖載入126張破圖0；showItemTooltip完整驗28件＋12武器類型＋無weaponType舊武器共41/41，Console Error／Warning／pageerror0。最終PNG重載後通過；QA拼版初版受原slot定位影響，修正的是QA容器，產品無改。實拍重開確認輕型／硬甲縮圖可分辨，all-icons-game-render、hard-armor-preview、browser-report與PNG-checks保留本聊天visualizations/equipment-icons。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／Codex規範、c2b6962a提示表／4349766d四份接線、data／item／ui／formula／save／Worker／CSS／index／配置表／武器與通用戒指項鍊圖，LV玩法與解鎖無變故不改。現有武器素材及程式／存檔格式完全未改，未讀寫玩家存檔；舊武器回退與舊名硬甲顯示均驗證。自我Review完成，無本次素材待辦；未測完整真Worker遊玩、多瀏覽器與正式玩家舊檔。
+- 後續／合併：可交使用者正常整合；Codex正式分支尚未含4349766d名稱接線，因此新輕型圖要和該既有功能一起整合才會啟用，本輪未自行合併他AI分支或develop／main、未推送。若與4349766d的20張向量暫用圖發生add/add，按使用者原任務與「全換上」保留本次AI生成版本，接線程式保留Claude原實作；硬甲原路徑已直接替換。

@@ -101,7 +101,9 @@
 // v64：神鑄3秒作業／品質篩選／原子補料／連續自動，forge 7→10，總數91→94。
 // v65（2026-10-31 成就系統）：PANEL_KEYS 新增 achv（成就頁投影，js/achievements.js achPanelData）；指令數不變。
 // v65：內測目前轉數威能直接全滿／歸零，外服於Worker拒絕；指令93→94。
-var WORKER_PROTOCOL_VERSION = 65;
+// v66：背包格投影新增 ancientForgeCount／ancientForgeOrders，精鑄上限與星星來源分色。
+// v67：封魔塔自動推進設定與勝利接續下一層，tower 指令6→7。
+var WORKER_PROTOCOL_VERSION = 67;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -409,6 +411,7 @@ var COMMANDS = {
      這個狀態轉移必須與開打同一個原子操作，否則清除與開打之間的 tick 會看到中間狀態。 */
   'tower.start':           { fn: null,               args: { floor: 'int' }, limit: { floor: { min: 1 } }, dirty: ['tower', 'battle'] },
   'tower.startAuto':       { fn: 'startTowerAuto',   args: { floor: 'int', count: 'int' }, limit: { floor: { min: 1 }, count: { min: 1 } }, dirty: ['tower', 'battle'] },
+  'tower.setAutoAdvance':  { fn: 'setTowerAutoAdvance', args: { on: 'bool' },                     dirty: ['tower'] },
   'tower.finish':          { fn: 'finishTowerFight', args: {},                                    dirty: ['tower', 'battle'] },
   /* 結算確認：含連挑續場判定，語意比 finish 大，不能用 finish 取代 */
   'tower.confirmResult':   { fn: 'confirmTowerResult', args: {},                                  dirty: ['tower', 'battle', 'header'] },

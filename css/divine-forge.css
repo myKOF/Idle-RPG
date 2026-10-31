@@ -7,7 +7,8 @@
 #tab-forge .forge-mode-tabs .btn { flex:1 1 0; white-space:normal; min-height:32px; padding:4px 8px; font-size:13px; color:var(--afl-text-dim)!important; background:transparent!important; border:1px solid transparent!important; border-radius:6px!important; }
 #tab-forge .forge-mode-tabs .btn:hover:not(:disabled):not(.active) { color:var(--afl-text)!important; background:transparent!important; border-color:transparent!important; }
 #tab-forge .forge-mode-tabs .btn.active { color:var(--afl-gold-text)!important; background:var(--afl-gold-bg)!important; border-color:var(--afl-gold-line)!important; box-shadow:none; }
-#tab-forge #forge-stage { position:relative; flex:1; container-type:size; height:auto!important; min-height:0!important; aspect-ratio:auto!important; padding:0!important; overflow:visible; background:none!important; display:flex; align-items:center; justify-content:center; border:0; }
+/* 舞台須與整張面板同寬；不可繼承舊版880px置中容器，否則left:0的日誌仍會向右內縮。 */
+#tab-forge #forge-stage { position:relative; flex:1; container-type:size; width:100%; max-width:none; margin:0; height:auto!important; min-height:0!important; aspect-ratio:auto!important; padding:0!important; overflow:visible; background:none!important; display:flex; align-items:center; justify-content:center; border:0; }
 #forge-crystal-float { position:relative; z-index:2; flex:none; width:min(78cqw,calc(100cqh - 90px),680px); aspect-ratio:1; margin-bottom:42px; animation:forge-hover 6s ease-in-out infinite; }
 #forge-crystal-float::before { content:""; position:absolute; inset:0; background:url('../images/ui/divine-forge-crystal.png') center/contain no-repeat; filter:brightness(.7) drop-shadow(0 0 12px #5187f880); }
 #forge-crystal-float:hover,#forge-crystal-float:focus-within { animation-play-state:paused; }
