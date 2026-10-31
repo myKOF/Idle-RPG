@@ -8,6 +8,22 @@ const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
 
+test('護手部位洗出命中率使用hit且不捏造數值，支援同類說法與明確數值', () => {
+  const ai = loadAiKeyContext();
+  for (const text of ['把護手部位洗出命中率屬性', '請幫我把護手部位洗出命中率屬性',
+    '護手洗出命中率', '將手套的部位洗成命中詞條', '把護手洗為命中率屬性']) {
+    assert.deepEqual(Array.from(ai.parseFastPath(text)), ['modequip gloves hit'], text);
+  }
+  assert.deepEqual(Array.from(ai.parseFastPath('把護手部位命中率設為50%')), ['modequip gloves hit 50']);
+  assert.deepEqual(Array.from(ai.parseFastPath('把護手部位洗出攻速屬性')), ['modequip gloves aspd']);
+  for (const text of ['不要把護手部位洗出命中率屬性', '把護手部位洗出命中率屬性嗎？',
+    '把護手部位洗出命中率屬性但不要改任何原詞條', '把護手部位洗出未知屬性',
+    '把護手部位洗出命中率50%屬性', '把護手部位洗出太古命中率屬性',
+    '把護手部位洗出命中率屬性且強化100']) {
+    assert.equal(ai.parseFastPath(text), null, text);
+  }
+});
+
 test('混沌戒指來源詞條替換使用品質條件，不猜左右或詞條序號', () => {
   const ai = loadAiKeyContext();
   for (const prompt of ['將我身上的混沌戒指的物理攻擊的太古詞條洗成冷卻縮減',

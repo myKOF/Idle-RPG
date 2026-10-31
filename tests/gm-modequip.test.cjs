@@ -10,6 +10,36 @@ const root = path.resolve(__dirname, '..');
 
 const replacePrompt = '將我身上的混沌戒指的物理攻擊的太古詞條洗成冷卻縮減';
 
+test('護手洗出命中率原句從本機解析到執行，已有則保留、缺少則替換且不增條', () => {
+  for (const existing of [true, false]) {
+    const c = loadContext();
+    vm.runInContext(fs.readFileSync(path.join(root, 'js/ai-key-setting.js'), 'utf8'), c);
+    const gloves = c.makeEquipment(200, { rarity: 5, level: 200, slot: 'gloves' });
+    gloves.affixes = ['str', 'agi', existing ? 'hit' : 'int', 'vit', 'critRate', 'atkFlat']
+      .map(key => ({ key, roll: 721, ancient: false }));
+    c.G.equipmentSets[0].gloves = gloves;
+    const other = c.makeEquipment(200, { rarity: 5, level: 200, slot: 'helmet' });
+    c.G.equipmentSets[0].helmet = other;
+    const otherBefore = JSON.stringify(other);
+    const before = JSON.parse(JSON.stringify(gloves.affixes));
+    const command = c.AiKeySetting.parseFastPath('把護手部位洗出命中率屬性')[0];
+    assert.equal(command, 'modequip gloves hit');
+    const result = c.executeGMCommand(command + ' @sel:equip:helmet');
+    assert.equal(result.ok, true, result.message);
+    assert.equal(gloves.affixes.length, before.length);
+    assert.equal(gloves.affixes.filter(a => a.key === 'hit').length, 1);
+    if (existing) assert.deepEqual(JSON.parse(JSON.stringify(gloves.affixes)), before);
+    else {
+      assert.deepEqual(JSON.parse(JSON.stringify(gloves.affixes.slice(1))), before.slice(1));
+      assert.equal(gloves.affixes[0].key, 'hit');
+      assert.equal(gloves.affixes[0].roll, 500);
+      assert.equal(gloves.affixes[0].ancient, false);
+    }
+    assert.equal(JSON.stringify(other), otherBefore);
+    assert.ok(c.affixValue(gloves, gloves.affixes.find(a => a.key === 'hit')) > 0);
+  }
+});
+
 function replacementFixture(chaosSlot = 'ring2') {
   const c = loadContext();
   vm.runInContext(fs.readFileSync(path.join(root, 'js/ai-key-setting.js'), 'utf8'), c);

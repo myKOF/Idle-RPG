@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## GM-WASH-HIT-20261031 — 護手洗出命中率自然語言修正
+
+- Owner：Codex；Done，單一開發者。使用者回報「把護手部位洗出命中率屬性」被翻成不存在的hitFlat。前置既有modequip替換／條數保護完成。
+- 允許ai-key-setting、index必要快取、gm-fastpath／gm-translation-cache／gm-modequip回歸、GM_command／LV與本段；禁止Worker修改／別名假key、公式／配置／存檔／玩家裝備操作／素材及其他工作區／合併推送。
+- 支援護手別名與部位語句、本機完整解析洗出屬性、命中率正確key hit；未指定值沿既有強度預設，不發明數字。雲端提示同步，舊快取失效；驗原句／同類說法／未知與多餘條件不部分執行、已有／缺少hit與詞條數、GM回歸／Build／隔離瀏覽器Console，獨立Commit交使用者Review／合併。
+- 預檢除index外皆無外部來源；Claude成就功能修改index，與本分支既有多處快取／新增script相鄰，完整三方試跑有衝突。依AI_RULES3.2先詢問使用者，獲明確同意「只更新AI快取版號」，本項僅ai-key-setting 1.0.6→1.0.7一行，不合併／更動Claude成就內容或其他快取。
+- 完成8檔：ai-key-setting／index、gm-fastpath／gm-modequip／gm-translation-cache三項回歸、GM_command／LV／本段。原句及護手／手套、部位、洗出／洗成／洗為、屬性／詞條說法本機解析為modequip gloves hit，未指定數值省略，已有命中則沿既有狀態／強度，缺少則沿既有500強度規則替換，不增條。新增命中／命中率具體值設定及具名替換的key映射；未知／否定／疑問／多餘條件不部分執行。雲端提示明列hit與gloves，禁止hitFlat及自行填值；快取語意升5淘汰舊翻譯，不改執行器或新增假key別名。無素材／素材庫變更，不建立空素材Commit。
+- 回歸指令：`node --test tests/gm-modequip.test.cjs tests/gm-fastpath.test.cjs tests/gm-translation-cache.test.cjs tests/gm-affix-limits.test.cjs tests/gm-command.test.cjs tests/ai-key-setting.test.cjs tests/gm-natural-timeout.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs`全部132/132通過；包含原句從解析到正式執行器、錯誤選取不影響護手、已有／缺少命中完整詞條比對／條數不增、舊v4快取失效／無金鑰零雲端、前輪混沌戒指回歸。雲端提示驗證用假回應，沒有真API使用或金鑰存取。
+- 瀏覽器：隔離隨機localhost／headless Edge，正式GM面板／解析器與完整sim.worker入口，fixture只初始化新局與讀快照，指令走原cmd／ack。真鍵盤輸入原句，在已有／缺少hit兩種護手均成功，三套所有裝備與預期逐位一致、未動選中的頭盔，cloudCalls0、Console Error／Warning與Worker error0。首次fixture比對因正式執行器補齊缺省ancientCount0而失敗，fixture初始化明確填0後完整重跑通過，產品未因此修改。verify.cjs／browser-report.json／browser-result.png與tests.log／build.log保留本聊天visualizations/gm-wash-hit，未放進倉庫。
+- `npm.cmd run build`607個檔案語法／編譯檢查全過、無空檔；git diff／暫存diff／check通過。唯讀未改：規範／AGENTS／Workflow／prompts、gm_exec命中別名與替換／強度算法、gm.js面板、data／item／formula／String／所有Excel／CSV、Worker入口／協議／Bridge／存檔與其他功能。未驗真雲端服務、完整遊玩、多瀏覽器；未改玩家裝備。自我Review完成，無本項未完成實作或已知新增功能風險，可供Review／合併，未合併／推送develop／main。Commit為本段所在「[Codex] fix: 支援護手洗出命中率自然語言」，SHA見交付。建議正常整合後重載主頁，再輸入原句；暫時也可手動輸入modequip gloves hit。
+
 ## WORLD-MAP-PRESENTATION-20261031 — 光暈邊界、入口簡化與文字位置／黑邊
 
 - Owner：Codex；Done，單一開發者。使用者要求修正神界入口光暈半透明方塊、刪除右上人界／神界頁籤；追加依圖移動太古戰場／混沌界／返回門文字及落雷峰，兩界場景名稱／關卡／傳送門文字顯示1px黑邊。沿用已完成雙向門2.5秒轉場。
