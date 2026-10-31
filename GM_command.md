@@ -956,7 +956,7 @@ sgult frostnova 2                     （冰霜新星＝極致之冰：凍結中
 sgult frostnova 3                     （冰霜新星＝冰皇領域：暴風雪放大 50%，每秒昇起 2～8 根冰錐）
 sgult windblade 1                     （風刃＝暴風萬刃：大型風刃改為全場追擊，每方向多射 1 道）
 sgult windblade 2                     （風刃＝嵐之山：暴風真空刃融合成四道巨型風刃）
-sgult windblade 3                     （風刃＝天穹崩裂：改為被動，受擊時 20% 機率射出一道）
+sgult windblade 3                     （風刃＝風之痕：改為被動，受擊時 20% 機率射出一道）
 sgult vacuumslash 1                   （真空斬＝萬象風劫：命中處留下會長大的靜止真空斬）
 sgult vacuumslash 2                   （真空斬＝虛空滅界：每 2 秒自動斬出 1 道虛空斬）
 sgult vacuumslash 3                   （真空斬＝時空崩解：虛空斬改為固定環繞周圍 12 米）

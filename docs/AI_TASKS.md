@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## WIND-ULT3-RENAME-20261031 — 風刃第三個終極進化改名
+
+- Owner：Codex；Done，單一開發者。使用者指定風刃第3個終極進化由「天穹崩裂」改名「風之痕」；前置既有Skills2來源與產生器完成。
+- 允許：Skills2.xlsx單格與匯出CSV／skills2資料、風刃相關名稱註解與測試標題、index／bridge／Worker必要快取、GM_command／game_formula相關名稱、LV及本段；禁止技能ID／效果／數值／解鎖／存檔／素材及其他工作區、合併推送。驗來源獨占、Excel正常重開與資料／格式保留、來源→CSV→JS一致、風系／終極進化回歸、Build及diff後獨立Commit；交使用者Review／合併。
+- 衝突預檢：除index外無外部來源；Claude b918febb僅改data／battle-renderer快取，本項skills2快取不同行無語意相依，候選＋共同祖先＋Claude實際工作檔merge-file exit0。保留同副本GM進行中修改，docs／GM指南／LV僅獨立區段，Worker僅skills2匯入；bridge共用快取待GM提交後再更新。
+- 完成11檔：config/Excel/Skills2.xlsx、config/CSV/Skills2.csv、js/skills2.js、js/bridge.js、js/worker/sim.worker.js、index.html、tests/skill2-windblade-vacuum-legendary.test.cjs、GM_command.md、game_formula.md、LV_upgrade_system.md及本文件。僅windblade／階10／skyCollapse名稱與對應註解、測試標題及文件名稱更新；保留效果、數值、ID、存檔及門檻。主頁skills2版本369／bridge397，Worker入口與skills2匯入20261031-wind-ult-rename。GM另一聊天先完成d9788710後才改bridge共用版本，該聊天全部內容保留，沒有同時改同值。
+- Excel：artifact-tool唯讀匯入將原檔空白儲存格錯讀為307，未以該工具匯出覆寫；改用使用者允許的Excel原生COM。先確認來源FileShare.None獨占存取，保留原檔備份；獨立Excel自動化啟動未完成即停止本聊天專用行程，來源尚未寫入，改連接已啟動Excel且不變更其全域設定。只寫C211，正常儲存並以一般唯讀模式重開，Saved=True、Excel16.0，整張Skills2值／公式比對僅C211「天穹崩裂」→「風之痕」；該格數字格式、樣式、字型、底色、列高、欄寬及換行相同，3頁、圖形數與篩選範圍保持。只關閉本項工作簿，不關使用者其他工作簿；未手改XML。名稱區前後預覽已存檔並重開檢視。
+- 資料：設定PARAMS_XLSX／PARAMS_CSV_OUT為Skills2來源／輸出、PARAMS_SHEET=Skills2，執行node tools/xlsx_to_csv.cjs（283列×52欄）、node tools/config_tables.cjs --apply --write Skills2（語意變更1），再node tools/config_tables.cjs --apply Skills2（語意變更0）。唯讀VM比較58df3a44與現況SKILLS2，除指定名稱其餘資料完整相同；去除註解並正規化指定名稱後，可執行原始碼完全相同，無玩法修改。
+- 驗證：node --test --test-reporter=spec tests/skill2-windblade-vacuum-legendary.test.cjs tests/skill2-ult-evolution.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs；技能兩檔單獨TAP重跑96項59通過／37失敗，以fs唯讀記憶體覆映58df3a44原skills2.js再跑，同樣96項59通過／37相同失敗，未降低斷言或順帶修舊問題。node --test --test-reporter=dot tests/worker-shim.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs全通過；npm.cmd run build606檔通過，最後bridge／Worker版本字串變更再node --check兩檔通過，git diff --check通過。
+- 瀏覽器：bundled Playwright隔離headless Edge／既有8131伺服器、正式index及腳本，新context不讀使用者存檔；實際sgbUltHTML選項卡及skill2UltOptionTooltipHTML提示皆包含風之痕、無舊名，選項順序暴風萬刃／嵐之山／風之痕，ID仍skyCollapse，pageerror及Console error0。資料、Excel、預覽及TAP／基線比對報告保留本聊天visualizations/wind-name，未做完整遊玩與多瀏覽器測試。
+- 唯讀檢查未改：規範／AGENTS／Workflow／prompts、Excel更新器／匯出器／配置產生器、String表（名稱已由Skills2權威表定義）、Worker協議與shim、UI技能渲染與提示函式、裝備傳奇風之痕與暴風屏障天穹崩裂、GM進行中修改及其他素材。無素材庫變動，不建空素材Commit。自我Review完成，可供合併；本次無未完成實作，已知限制為37項基線失敗及未做完整遊玩。Commit為本段所在「[Codex] fix: 風刃第三個終極進化更名風之痕」，SHA見交付；未合併／推送。下一步由使用者正常整合並重新載入主頁／Worker。
+
 ## GM-QUALIFIED-AFFIX-REPLACE-20261031 — 自然語言依品質定位穿戴裝備與來源詞條
 
 - Owner：Codex；Done，單一開發者。使用者回報「身上的混沌戒指物理攻擊太古詞條洗成冷卻縮減」卻改到左傳說戒指。前置既有GM翻譯／Worker修改器完成。
