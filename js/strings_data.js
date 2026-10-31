@@ -2,7 +2,7 @@
 /* 自動產生，請勿手改。來源：config/Excel/String.xlsx（Excel 是唯一來源）。
    重新產生：node tools/string-table/apply_strings.cjs（套用參數.bat 會自動執行）。
    每列＝[繁體中文, 簡體中文, 英文]；後面的空欄已省略。讀取請用 js/strings.js 的 STR()。 */
-var STRING_DATA_VERSION = 'd08d21f7';
+var STRING_DATA_VERSION = '9966cb90';
 var STRING_DATA = {
   "1": ["冰霜"],
   "2": ["毒霧"],
@@ -2228,5 +2228,6 @@ var STRING_DATA = {
   "2235": ["成就達成"],
   "2236": ["進度 {0} / {1}"],
   "2237": ["一鍵全滿"],
-  "2238": ["一鍵歸零"]
+  "2238": ["一鍵歸零"],
+  "2239": ["點擊放入神性之石<br>神性之石可增加成功率"]
 };

@@ -6986,7 +6986,7 @@ function renderForge() {
   }
   var rate = forgeStonePickerRate(f, player.dust);
   keys.push('stones');
-  htmls.push('<button type="button" class="forge-stone' + (rate && rate.stones ? ' lit' : '') + '" id="forge-stone-center" aria-label="' + esc(STR(2187)) + '" aria-expanded="' + !!UI.forgeStoneOpen + '" aria-controls="forge-stone-popover"' + (pending || !rate ? ' disabled' : '') + '><span class="forge-material-icon" aria-hidden="true">💫</span><span>' + (rate ? rate.stones : 0) + '</span></button>');
+  htmls.push('<button type="button" class="forge-stone' + (rate && rate.stones ? ' lit' : '') + '" id="forge-stone-center" data-tip="' + esc(STR(2239)) + '" aria-label="' + esc(STR(2187)) + '" aria-expanded="' + !!UI.forgeStoneOpen + '" aria-controls="forge-stone-popover"' + (pending || !rate ? ' disabled' : '') + '><span class="forge-material-icon" aria-hidden="true">💫</span><span>' + (rate ? rate.stones : 0) + '</span></button>');
   syncItemGridCells(hex, keys, htmls);
   var progress = snap.craftProgress, stage = $id('forge-stage');
   var animationKey = f.crafting ? String(f.crafting.startedAt) : '';

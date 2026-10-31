@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## FORGE-STONE-HOVER-TIP-20261031 — 神鑄中央神性之石滑鼠提示
+
+- Owner：Codex；Done，單一開發者。使用者指定中央神性之石滑鼠移上顯示兩行「點擊放入神性之石」「神性之石可增加成功率」。前置：既有神鑄中央素材與數量面板完成；工作區乾淨，七檔衝突預檢無外部來源。
+- 允許：js/ui.js 中央按鈕提示、String.xlsx 原生 Excel 新列及 CSV／strings_data 生成、index 快取、LV 與本段；禁止玩法／數值／解鎖／Worker／存檔／素材、其他工作區與合併推送。沿用 data-tip 及 STR，保留點擊加減面板。驗證原生 Excel 儲存重開、字串同步、既有神鑄／字串回歸、Build／Console 與 diff，完成獨立 Commit，交使用者 Review／整合。
+- 完成七檔：中央按鈕新增 data-tip，STR(2239) 讀取兩行文字，String 新列置於神鑄模塊末尾，保留原 aria／點擊及停用條件；index UI 快取升至1.0.242、字串版本9966cb90，LV 說明同步。先確認 String.xlsx 可獨占存取並備份，依使用者指定 tools/excel-update-sheets.ps1 原生 Excel 插列／寫入5格，正常重開兩次及全格驗證通過、繪圖物件0保持；xlsx_to_csv 與生成資料2226條同步，CSV 比對只有一個新增列。Artifact Tool 僅唯讀渲染核對新列，會將既有空白誤讀成445，未匯出或覆寫來源；保留既有表格格式。無素材與素材庫變動，不建空素材 Commit。
+- 測試指令：`node --test --test-reporter=dot tests/forge-stone-controls.test.cjs tests/forge-shared-inventory.test.cjs tests/divine-forge.test.cjs tests/string-table.test.cjs` 共43項42通過／1既有失敗：divine-forge第195行三秒前背包數預期0實際2；將本次兩支變動JS以HEAD版本唯讀記憶體覆映重跑，仍同一失敗（15/16），未改測試或擴修玩法。`npm.cmd run build` 613檔全通過；String apply --check 同步、build_string_csv --check 寫死0條；git diff／check通過。
+- 瀏覽器：IAB backend無法連線，改 bundled Playwright／隔離 headless Edge／隨機localhost。載正式util／String腳本，直接取正式中央按鈕產生語句、showStatTooltip及hover／click分支於隔離fixture，驗0／已選7顆／停用的hover兩行、移開收起及點擊展開數量面板，Console Error／Warning及pageerror0。fixture伺服器初次路徑分隔判定與favicon404已修正重跑，不改產品；hover.png存後重開檢視，String預覽與browser-result／baseline紀錄保留本聊天visualizations。未驗完整遊戲頁、玩家存檔或多瀏覽器。
+- 唯讀未改：規範／AGENTS／Workflow／prompts、String與Excel工具、forge.js／Worker／協議／公式／CSS、四項既有回歸與其他配置／素材。自我Review完成，本項無未完成實作，已知限制為上述基線失敗及未跑範圍；可供Review／合併。Commit為本段所在「[Codex] feat: 神鑄中央神性之石新增滑鼠提示」，實際SHA見交付；未合併推送develop／main。下一步由使用者正常整合並重新載入驗收。
+
 ## MERGE-ACHIEVEMENT-TALENT-MASTERY-20261031 — pending develop merge
 
 - Owner：Codex（整合）；Done。依使用者明確授權處理本次 pending merge：原 HEAD `6557b508d95fb1443595135ca84aa5be04a1e24f`、MERGE_HEAD `9912fae9ea457f0041ba924c3cbce57ce07b663a`；未操作 index、Commit、推送、同步腳本或其他工作區。
