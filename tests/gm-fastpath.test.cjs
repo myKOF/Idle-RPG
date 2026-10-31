@@ -8,6 +8,22 @@ const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
 
+test('混沌戒指來源詞條替換使用品質條件，不猜左右或詞條序號', () => {
+  const ai = loadAiKeyContext();
+  for (const prompt of ['將我身上的混沌戒指的物理攻擊的太古詞條洗成冷卻縮減',
+    '請把身上的混沌戒指物理攻擊太古詞條改成冷卻縮減']) {
+    assert.deepEqual(Array.from(ai.parseFastPath(prompt)), ['modequip worn:ring:chaos replace 物理攻擊 cdr ancient']);
+  }
+  for (const prompt of ['不要將我身上的混沌戒指的物理攻擊的太古詞條洗成冷卻縮減',
+    '將我身上的混沌戒指的物理攻擊的太古詞條洗成冷卻縮減但其他太古也改掉']) {
+    assert.equal(ai.parseFastPath(prompt), null);
+  }
+  assert.throws(() => ai.applyAffixOverflowPolicy(['modequip ring cdr ancient'], '將我身上的混沌戒指的物理攻擊的太古詞條洗成冷卻縮減'), /拒絕/);
+  assert.throws(() => ai.applyAffixOverflowPolicy(['modequip worn:ring:chaos 4 cdr ancient'], '將我身上的混沌戒指的物理攻擊的太古詞條洗成冷卻縮減'), /拒絕/);
+  assert.deepEqual(Array.from(ai.parseFastPath('將身上的混沌戒指的物理攻擊百分比太古詞條洗成冷卻縮減')),
+    ['modequip worn:ring:chaos replace atkPct cdr ancient']);
+});
+
 function loadAiKeyContext() {
   const context = {
     console,

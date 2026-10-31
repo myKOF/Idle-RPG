@@ -8,6 +8,73 @@ const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
 
+const replacePrompt = '將我身上的混沌戒指的物理攻擊的太古詞條洗成冷卻縮減';
+
+function replacementFixture(chaosSlot = 'ring2') {
+  const c = loadContext();
+  vm.runInContext(fs.readFileSync(path.join(root, 'js/ai-key-setting.js'), 'utf8'), c);
+  const chaos = c.makeEquipment(500, { rarity: 9, level: 500, slot: 'ring' });
+  chaos.affixes = [
+    { key: 'matkFlat', roll: 440, ancient: false },
+    { key: 'fireDmg', roll: 620, ancient: false },
+    { key: 'atkPct', roll: 1000, ancient: true },
+    { key: 'critRate', roll: 1000, ancient: true },
+    { key: 'atkFlat', roll: 530, ancient: false }
+  ];
+  chaos.ancientCount = 2;
+  const other = c.makeEquipment(200, { rarity: 5, level: 200, slot: 'ring' });
+  c.G.equipmentSets[0][chaosSlot] = chaos;
+  c.G.equipmentSets[0][chaosSlot === 'ring' ? 'ring2' : 'ring'] = other;
+  c.G.equipView = 1;
+  c.G.equipmentSets[1].ring = c.makeEquipment(500, { rarity: 9, level: 500, slot: 'ring' });
+  const commands = c.AiKeySetting.parseFastPath(replacePrompt);
+  assert.deepEqual(Array.from(commands), ['modequip worn:ring:chaos replace 物理攻擊 cdr ancient']);
+  return { c, chaos, other, command: commands[0] };
+}
+
+for (const slot of ['ring', 'ring2']) {
+  test(`自然語言依品質定位${slot}並只替換物攻百分比太古，忽略錯誤選取與檢視套裝`, () => {
+    const { c, chaos, other, command } = replacementFixture(slot);
+    const otherBefore = JSON.stringify(other);
+    const viewedBefore = JSON.stringify(c.G.equipmentSets[1]);
+    const expected = JSON.parse(JSON.stringify(chaos.affixes));
+    expected[2].key = 'cdr';
+    const result = c.executeGMCommand(command + ' @sel:equip:' + (slot === 'ring' ? 'ring2' : 'ring'));
+    assert.equal(result.ok, true, result.message);
+    assert.deepEqual(JSON.parse(JSON.stringify(chaos.affixes)), expected);
+    assert.equal(chaos.ancientCount, 2);
+    assert.equal(JSON.stringify(other), otherBefore);
+    assert.equal(JSON.stringify(c.G.equipmentSets[1]), viewedBefore);
+    assert.equal(c.affixValue(chaos, chaos.affixes[2]), 43.3);
+  });
+}
+
+test('品質無匹配／兩枚混沌／來源缺少或非太古／重名太古／已有冷卻均拒絕且零修改', () => {
+  for (const scenario of ['missing-item', 'two-items', 'missing-affix', 'normal-affix', 'duplicate-source', 'existing-destination']) {
+    const { c, chaos, other, command } = replacementFixture();
+    if (scenario === 'missing-item') chaos.rarity = 5;
+    if (scenario === 'two-items') other.rarity = 9;
+    if (scenario === 'missing-affix') chaos.affixes[2].key = 'hpFlat';
+    if (scenario === 'normal-affix') chaos.affixes[2].ancient = false;
+    if (scenario === 'duplicate-source') chaos.affixes[4].ancient = true;
+    if (scenario === 'existing-destination') chaos.affixes[0].key = 'cdr';
+    const before = JSON.stringify(c.G);
+    const result = c.executeGMCommand(command);
+    assert.equal(result.ok, false, scenario);
+    assert.equal(JSON.stringify(c.G), before, scenario);
+  }
+});
+
+test('身上品質定位跟隨使用中套裝，不使用第一套或檢視套裝', () => {
+  const { c, chaos, command } = replacementFixture();
+  c.G.equipmentSets[2].ring = chaos;
+  c.G.equipmentSets[0].ring2 = null;
+  c.G.equipActive = 2;
+  const result = c.executeGMCommand(command);
+  assert.equal(result.ok, true, result.message);
+  assert.equal(chaos.affixes[2].key, 'cdr');
+});
+
 function loadContext() {
   const context = {
     console,

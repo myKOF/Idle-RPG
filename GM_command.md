@@ -448,6 +448,7 @@ modequip [目標] <子指令/屬性名稱> [數值] [ancient|normal] [--allow-ov
 別名：`editequip`、`equipmod`、`setequip`、`itemmod`、`meq`、`改裝備`
 
 #### 1. 目標裝備解析規則（[目標]）
+- **依品質定位身上唯一裝備**：`worn:<部位>:<品質key>`，例如 `worn:ring:chaos`。只查當前使用中的套裝；`ring`在這個條件中搜尋左右兩枚戒指，品質必須完全一致。找到0件或多件均拒絕，不依畫面選取或檢視套裝猜測。
 - **全身穿戴裝備批次修改（wear / all / 全身）**：
   - `wear`、`all`、`full`、`全身`、`身上`：批次作用於當前穿戴套裝的全部 13 件裝備！
   - `set<套數> wear` 或 `set<套數> all`（例：`set1 wear`、`set2 all`）：批次作用於指定套裝的全部 13 件裝備。
@@ -467,6 +468,9 @@ modequip [目標] <子指令/屬性名稱> [數值] [ancient|normal] [--allow-ov
 > 1: `weapon`（主手）、2: `weapon2`（副手）、3: `helmet`（頭盔）、4: `shoulder`（肩甲）、5: `chest`（胸甲）、6: `belt`（腰帶）、7: `gloves`（護手）、8: `wrist`（手腕）、9: `legs`（護腿）、10: `boots`（靴子）、11: `ring`（戒指）、12: `ring2`（戒指Ⅱ）、13: `amulet`（項鍊）。
 
 #### 2. 修改詞條屬性與數值
+
+指定來源詞條替換：`modequip worn:ring:chaos replace 物理攻擊 cdr ancient`。對應「將我身上的混沌戒指的物理攻擊的太古詞條洗成冷卻縮減」，本機直接翻譯，不需要雲端。`replace <來源名稱或key> <目標key> [ancient|normal]`依來源名稱及太古／一般狀態找唯一詞條，原位更換屬性，保留太古狀態與詞條總數。來源中文未寫`%`時同時考慮平面與百分比同名屬性，再依太古條件縮小；有歧義、來源缺少或目標屬性已存在均拒絕。可明確寫`atkFlat`或`atkPct`區分；不猜第幾條。雲端若遺失身上品質條件則拒絕執行，舊翻譯快取升版失效。
+
 ```text
 modequip [目標] <屬性名稱> <數值> [ancient|normal]
 modequip [目標] <詞條序號 1~N> <數值> [ancient|normal]

@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## GM-QUALIFIED-AFFIX-REPLACE-20261031 — 自然語言依品質定位穿戴裝備與來源詞條
+
+- Owner：Codex；Done，單一開發者。使用者回報「身上的混沌戒指物理攻擊太古詞條洗成冷卻縮減」卻改到左傳說戒指。前置既有GM翻譯／Worker修改器完成。
+- 允許：ai-key-setting／gm_exec、bridge／sim.worker及index必要快取、GM專項回歸、GM_command／LV與本段。禁止存檔補償、玩家實際裝備操作、公式／配置／協議欄位／素材／其他工作區與合併推送。
+- 修正：以品質及部位在Worker當下使用中套裝唯一定位；按來源詞條名稱替換，保留太古，條件不符／多件或多詞條歧義拒絕。同步本機／雲端翻譯與舊快取失效。驗左右互換、選取／檢視套裝不干擾、缺少／多件／普通來源拒絕及其他詞條完整不變、GM回歸／Build／Console與diff，完成獨立Commit交使用者Review／合併。
+- fetch後除index外預檢無外部來源；Claude b918febb僅改index的data／battle-renderer版號，本項只改AI／bridge版號，不同行無語意相依，提交前做三方合併試跑。
+- 完成11檔：ai-key-setting／gm_exec、bridge／sim.worker及index快取、gm-modequip／gm-fastpath／gm-translation-cache三項回歸、GM_command／LV與本段。worn品質條件在Worker執行時依equipActive搜尋左右戒指，零／多件拒絕；replace依來源名稱與太古條件唯一定位，物攻中文未寫%時兼查平面／百分比，再按太古篩選；同名多條、來源缺少／非太古、目標屬性已有均零修改。原位替換保留其他詞條、條數與太古標記，不猜序號或數值。原句本機解析，雲端品質遺失與原句來源誤譯拒絕，成功抽象條件可快取；語意版本4淘汰舊錯譯，主頁AI1.0.6／bridge1.0.396及Worker匯入同步。無素材／素材庫變更。
+- 測試指令：`node --test tests/gm-modequip.test.cjs tests/gm-fastpath.test.cjs tests/gm-translation-cache.test.cjs tests/gm-affix-limits.test.cjs tests/gm-command.test.cjs tests/ai-key-setting.test.cjs tests/gm-natural-timeout.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs`全部128/128；`npm.cmd run build`606檔通過；diff／暫存diff／check通過。首次新測試把太古數值誤當一般基礎值，改為明確驗43.3太古冷卻值；舊快取版號斷言同步4，未放寬操作保護。
+- 瀏覽器：獨立隨機localhost／headless Edge，載正式GM面板／解析器與完整sim.worker入口；測試adapter僅初始化獨立新局裝備及讀快照，GM走原cmd／ack派送。真鍵盤輸入原句，在混沌左／右與兩枚混沌三種案例逐位比對全部三套裝備，僅指定詞條變更或完整拒絕；選中另一戒指與檢視第二套均不干擾，Console Error／Warning與Worker error0。初次fixture誤等input（正式GM是textarea且需Enter開啟）逾時，修正fixture後完整通過，產品未因此變更。QA／browser-report／browser-result與測試Build紀錄在本聊天visualizations/gm-qualified-replace，未碰玩家存檔或真API金鑰；雲端以假回應驗正確／錯誤指令，未驗真雲端服務、多瀏覽器或完整長時間遊玩。
+- 同檔協作：Claude index只動data／renderer快取，本項候選以共同祖先與對方版本、統一CRLF／LF後merge-file exit0；無語意相依。另一聊天本輪新增WIND-ULT3-RENAME任務，保留其任務段，不提交其變更；其bridge快取明訂等本項提交後再更新，其他index／Worker／指南／LV僅不同區段。唯讀未改：規範／AGENTS／Workflow／prompts、data／item／formula／品質權威表、gm.js面板本體、Worker協議／shim／派送、String／Excel／CSV／存檔／其他進行中功能。自我Review完成，無本項未完成實作與已知新增風險；已被改錯的舊戒指無原詞條歷史，未猜測復原。可供Review／合併，Commit為本段所在「[Codex] fix: GM依品質定位戒指並替換指定太古詞條」，編號見交付。僅提交自身11檔區段，未合併推送develop／main；下一步使用者正常整合並重載新版主頁／Worker後輸入原句驗收。
+
 ## CHAOS-READING-FRAME-TRIM-20261031 — 混沌閱讀外框收薄3px
 
 - Owner：Codex；Done，單一開發者。使用者截圖標示混沌戒指詳情左上／右上與左下符文孔文字被框遮擋，要求外框縮減約3px。沿既有授權PNG與紅紫漸層，僅將混沌／神鑄混沌tips、比較卡及詳情的九宮格四邊顯示厚度各減3px，不移動文字或改ICON。

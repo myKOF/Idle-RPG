@@ -13,6 +13,42 @@ const success = (commands = ['modequip weapon atkFlat 50000']) => ({ ok: true, j
   candidates: [{ finishReason: 'STOP', content: { parts: [{ text: JSON.stringify(commands) }] } }]
 }) });
 
+test('舊版錯誤戒指翻譯快取失效，新原句本機翻譯且不呼叫雲端', async () => {
+  const prompt = '將我身上的混沌戒指的物理攻擊的太古詞條洗成冷卻縮減';
+  const env = setup();
+  env.storage[CACHE] = JSON.stringify({ version: 3, entries: [{ prompt, signature: '3:', savedAt: 100000,
+    commands: ['modequip ring cdr ancient'] }] });
+  assert.equal(env.ai.getCachedNaturalCommand(prompt), null);
+  env.type(prompt);
+  await flush();
+  assert.equal(env.calls.length, 0);
+  assert.equal(env.sent.length, 1);
+  assert.match(env.sent[0].line, /^modequip worn:ring:chaos replace 物理攻擊 cdr ancient/);
+});
+
+test('雲端翻譯省略身上品質條件時拒絕執行，也不保存錯誤快取', async () => {
+  const env = setup();
+  env.ctx.respond = async () => success(['modequip ring cdr ancient']);
+  env.type('協助將我身上的混沌戒指物理攻擊太古詞條洗成冷卻縮減');
+  await flush();
+  assert.ok(env.calls.length > 0);
+  assert.equal(env.sent.length, 0);
+  assert.match(env.status.textContent, /拒絕/);
+  assert.equal(env.storage[CACHE], undefined);
+});
+
+test('雲端使用品質條件與具名替換時才送Worker，成功後保留抽象條件', async () => {
+  const env = setup();
+  env.ctx.respond = async () => success(['modequip worn:ring:chaos replace 物理攻擊 cdr ancient']);
+  env.type('協助將我身上的混沌戒指物理攻擊太古詞條洗成冷卻縮減');
+  await flush();
+  assert.equal(env.sent.length, 1);
+  assert.match(env.sent[0].line, /^modequip worn:ring:chaos replace 物理攻擊 cdr ancient/);
+  const cache = JSON.parse(env.storage[CACHE]);
+  assert.equal(cache.version, 4);
+  assert.equal(cache.entries[0].commands[0], 'modequip worn:ring:chaos replace 物理攻擊 cdr ancient');
+});
+
 function setup(storage = {}, host = 'localhost') {
   let now = 100000;
   storage.idle_rpg_gemini_api_key = storage.idle_rpg_gemini_api_key || 'fake-test-key';
@@ -260,7 +296,7 @@ test('詞條規則升版後，舊版追加語意的翻譯快取失效', () => {
   const env = setup();
   env.ai.rememberNaturalCommand(prompt, ['modequip weapon lifesteal 100']);
   const data = JSON.parse(env.storage[CACHE]);
-  assert.equal(data.version, 3);
+  assert.equal(data.version, 4);
   data.version = 1;
   env.storage[CACHE] = JSON.stringify(data);
   assert.equal(env.ai.getCachedNaturalCommand(prompt), null);
@@ -272,7 +308,7 @@ test('通關語意升版淘汰舊stage翻譯，本機無金鑰也能執行；中
   env.ai.rememberNaturalCommand(text, ['stage 亡靈山脈 400']);
   const old = JSON.parse(env.storage[CACHE]);
   old.version = 2;
-  old.entries.forEach(entry => { entry.signature = entry.signature.replace(/^3:/, '2:'); });
+  old.entries.forEach(entry => { entry.signature = entry.signature.replace(/^4:/, '2:'); });
   env.storage[CACHE] = JSON.stringify(old);
   assert.equal(env.ai.getCachedNaturalCommand(text), null);
   delete env.storage.idle_rpg_gemini_api_key;

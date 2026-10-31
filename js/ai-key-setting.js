@@ -19,7 +19,7 @@
   ];
   var TRANSLATIONS_KEY = 'idle_rpg_gm_translations';
   // GM指令契約／翻譯規則變動時升版，避免重用舊語意。
-  var TRANSLATIONS_VERSION = 3;
+  var TRANSLATIONS_VERSION = 4;
   var TRANSLATIONS_TTL_MS = 7 * 86400000;
   var TRANSLATIONS_LIMIT = 32;
   var translationMemory = [];
@@ -223,6 +223,15 @@
 
   // 突破權限只取自原始人類輸入；不採信AI自行加的旗標，也不保存內部批次標記。
   function applyAffixOverflowPolicy(commands, prompt) {
+    // 雲端或快取不得把明確的品質／部位條件降成左戒指、選取或全身。
+    var qualified = qualifiedWornTarget(String(prompt || ''));
+    if (qualified && commands.some(function (line) {
+      return /^(modequip|editequip|equipmod|setequip|itemmod|meq|改裝備)\s/i.test(line) && line.split(/\s+/)[1] !== qualified;
+    })) throw new Error('裝備翻譯遺失品質或穿戴部位條件，已拒絕執行，請重新描述。');
+    var replacement = parseFastEquipReplace(normalizeFastClause(prompt));
+    if (replacement && (commands.length !== 1 || commands[0].trim() !== replacement)) {
+      throw new Error('裝備翻譯與指定的來源詞條不符，已拒絕執行。');
+    }
     var allowed = allowsAffixOverflow(prompt);
     return commands.map(function (line) {
       var clean = line.replace(/(?:^|\s)--allow-overcap(?=\s|$)/g, ' ')
@@ -360,7 +369,34 @@
     });
   }
 
+  function qualifiedWornTarget(s) {
+    var m = s.match(/(?:身上(?:的)?|穿戴(?:中)?(?:的)?)(神鑄混沌|神鑄創世|混沌|創世|神話|傳說|史詩|獨特|稀有|精良|普通)(戒指|項鍊|項鏈|頭盔|肩甲|胸甲|腰帶|手套|護腕|護腿|靴子|主手|副手)/);
+    if (!m) return null;
+    var slots = { 戒指: 'ring', 項鍊: 'amulet', 項鏈: 'amulet', 頭盔: 'helmet', 肩甲: 'shoulder', 胸甲: 'chest', 腰帶: 'belt', 手套: 'gloves', 護腕: 'wrist', 護腿: 'legs', 靴子: 'boots', 主手: 'weapon', 副手: 'weapon2' };
+    return 'worn:' + slots[m[2]] + ':' + FAST_RARITY_MAP[m[1]];
+  }
+
+  function parseFastEquipReplace(s) {
+    var m = s.match(/^(?:將|把)?(?:我)?((?:身上(?:的)?|穿戴(?:中)?(?:的)?)(?:神鑄混沌|神鑄創世|混沌|創世|神話|傳說|史詩|獨特|稀有|精良|普通)(?:戒指|項鍊|項鏈|頭盔|肩甲|胸甲|腰帶|手套|護腕|護腿|靴子|主手|副手))(?:的)?(.+?)(?:的)?(?:(太古|一般|普通)詞條|詞條)(?:洗成|洗為|改成|改為|換成|替換成)(.+)$/);
+    if (!m) return null;
+    var keys = { 物理攻擊: 'atkFlat', 物理攻擊百分比: 'atkPct', 物攻: 'atkFlat', 魔法攻擊: 'matkFlat', 魔攻: 'matkFlat', 生命: 'hpFlat', 吸血: 'lifesteal', 吸魔: 'manaSteal', 寶石鑲嵌效率: 'gemEff', 暴擊率: 'critRate', 暴傷: 'critDmg', 冷卻縮減: 'cdr', 攻速: 'aspd' };
+    function key(raw) {
+      if (keys[raw]) return keys[raw];
+      if (typeof AFFIX_POOL !== 'undefined') {
+        if (AFFIX_POOL[raw]) return raw;
+        for (var k in AFFIX_POOL) if (AFFIX_POOL[k].name === raw || AFFIX_POOL[k].name.replace(/%/g, '') === raw) return k;
+      }
+      return null;
+    }
+    var source = m[2], destination = key(m[4]);
+    if (!key(source) || !destination || /\s/.test(source)) return null;
+    if (source === '物理攻擊百分比') source = 'atkPct';
+    return 'modequip ' + qualifiedWornTarget(m[1]) + ' replace ' + source + ' ' + destination + (m[3] ? (m[3] === '太古' ? ' ancient' : ' normal') : '');
+  }
+
   function parseFastEquipMod(s) {
+    var replacement = parseFastEquipReplace(s);
+    if (replacement) return replacement;
     var m = s.match(/^(?:把)?(全身(?:的)?裝備|身上(?:的)?裝備|選中(?:的)?裝備|這件裝備|全身|身上|選中|這件|主手武器|主手|副手|武器|頭盔|肩甲|胸甲|腰帶|手套|護腕|護腿|靴子|戒指1|戒指2|戒指|項鍊|項鏈)(?:的)?\s*(.+)$/);
     if (!m) return null;
     var targets = { 主手武器: 'weapon', 主手: 'weapon', 武器: 'weapon', 副手: 'weapon2', 頭盔: 'helmet', 肩甲: 'shoulder', 胸甲: 'chest', 腰帶: 'belt', 手套: 'gloves', 護腕: 'wrist', 護腿: 'legs', 靴子: 'boots', 戒指1: 'ring', 戒指: 'ring', 戒指2: 'ring2', 項鍊: 'amulet', 項鏈: 'amulet' };
@@ -636,6 +672,8 @@
       '     * 同句多個屬性用多條modequip依序設定，系統會保護本批次先前指定的詞條；超過現有槽數須報錯，不能自行突破。\n' +
       '     * 只有玩家原句明確說「突破詞條上限」時，才能加 --allow-overcap 允許追加；單純「加上／增加屬性」不代表突破，禁止自行加旗標。\n' +
       '     * 目標：wear（全身 13 件穿戴裝備批次修改）、sel / 省略（選中裝備）、inv（背包選中裝備）、set1 weapon（第1套主手）、1 1（第1套第1部位）、weapon、helmet、amulet 等\n' +
+      '     * 身上明確指定品質與部位，必須用 worn:<部位>:<品質key>，例如混沌戒指為 worn:ring:chaos；由Worker在使用中套裝找唯一品質相符戒指，不能猜左右或用sel／ring代替。\n' +
+      '     * 指定把某詞條洗成另一詞條，必須用 modequip <目標> replace <來源名稱或key> <目標key> [ancient|normal]；太古／一般是來源條件且會保留，不得猜序號或數值。物理攻擊未說百分比時來源保留中文名稱，Worker依現有太古詞條唯一定位。例：將我身上的混沌戒指的物理攻擊的太古詞條洗成冷卻縮減 → modequip worn:ring:chaos replace 物理攻擊 cdr ancient。\n' +
       '     * 太古操作：modequip wear ancient all（全身裝備全部變太古）、modequip [目標] ancient all、ancient none（全部變非太古）、ancient 4（前4條太古）\n' +
       '     * 強化操作：modequip wear +100（全身強化設為+100）、modequip [目標] +100\n' +
       '     * 重要屬性 key：寶石鑲嵌效率為 gemEff，吸血為 lifesteal，吸魔為 manaSteal，物攻為 atkFlat，魔攻為 matkFlat，生命為 hpFlat，暴擊率為 critRate，暴傷為 critDmg，冷卻縮減為 cdr，攻速為 aspd\n' +
