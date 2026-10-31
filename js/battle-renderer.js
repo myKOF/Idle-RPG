@@ -506,7 +506,7 @@ var BattleRenderer = (function () {
   function screenPosOf(elId) {
     if (elId === 'pv-float' && S.player) return { x: S.player.root.x, y: S.player.root.y - 46 };
     var ent = S.entities[elId];
-    if (ent) return { x: ent.root.x, y: ent.root.y - ent.hitHeight * 0.55 };
+    if (ent) return { x: ent.root.x, y: ent.root.y - entityCenterHeight(ent) };
     var last = S.lastPos[elId];
     if (last && nowMs() - last.at < LASTPOS_KEEP_MS) return { x: last.x, y: last.y };
     /* 目標已經不在（延遲期間被打死、或生成當下就被秒殺沒來得及建實體）：
@@ -1629,12 +1629,59 @@ var BattleRenderer = (function () {
       if (typeof console !== 'undefined' && console.warn) console.warn('[battle-renderer] NPC 序列幀載入失敗，沿用 emoji：', def.id, err && err.message ? err.message : err);
     });
   }
-  /* 序列幀本體腳底以上的實際高度。受擊／投射物的錨點（hitHeight）要跟著貼圖大小走，
-     否則貼圖比 64px 公式高的敵人（BOSS）特效會落在腳邊或頭頂。只給有序列幀的本體呼叫；其餘沿用公式。 */
-  function spriteHitHeight(body) {
-    if (!body || !body.texture || !body.anchor) return 0;
-    var h = body.texture.height * Math.abs(body.scale.y) * (body.anchor ? body.anchor.y : 1);
-    return isFinite(h) && h > 0 ? h : 0;
+  /* 貼圖「有畫到東西」的上下列（透明度 > 40）。序列幀常在人物上下留一大塊透明邊，
+     整張圖的高度不等於人的高度；受擊點要對準人，所以掃一次像素，結果依貼圖快取。
+     讀不到像素（跨來源、尚未載入）回 null，呼叫端退回公式。 */
+  var contentRowsCache = {};
+  function textureContentRows(tex) {
+    if (!tex || !tex.source || !tex.frame) return null;
+    var fr = tex.frame;
+    var key = tex.source.uid + ':' + fr.x + ',' + fr.y + ',' + fr.width + ',' + fr.height;
+    if (key in contentRowsCache) return contentRowsCache[key];
+    var rows = null;
+    try {
+      var res = tex.source.resource;
+      if (res && fr.width > 0 && fr.height > 0) {
+        var c = document.createElement('canvas');
+        c.width = fr.width; c.height = fr.height;
+        var cx = c.getContext('2d', { willReadFrequently: true });
+        cx.drawImage(res, fr.x, fr.y, fr.width, fr.height, 0, 0, fr.width, fr.height);
+        var d = cx.getImageData(0, 0, c.width, c.height).data;
+        var top = -1, bot = -1;
+        for (var y = 0; y < c.height; y++) {
+          for (var x = 0; x < c.width; x++) {
+            if (d[(y * c.width + x) * 4 + 3] > 40) { if (top < 0) top = y; bot = y; break; }
+          }
+        }
+        if (top >= 0) rows = { top: top, bot: bot + 1 };
+      }
+    } catch (e) { rows = null; }
+    contentRowsCache[key] = rows;
+    return rows;
+  }
+  /* 序列幀本體的受擊點：height＝可見人物頂端到腳底的高度、center＝可見人物中心到腳底的高度（畫面像素）。
+     受擊／投射物的錨點要跟著「人」走，否則貼圖留白多的敵人（BOSS）特效會飄在頭頂。
+     只給有序列幀的本體呼叫；回 null＝沿用公式。 */
+  function spriteHitBox(body) {
+    if (!body || !body.texture || !body.anchor) return null;
+    var rows = textureContentRows(body.texture);
+    if (!rows) return null;
+    var k = Math.abs(body.scale.y);
+    var anchorPx = body.anchor.y * body.texture.frame.height;
+    var h = (anchorPx - rows.top) * k;
+    var c = (anchorPx - (rows.top + rows.bot) / 2) * k;
+    return (isFinite(h) && h > 0 && isFinite(c) && c > 0) ? { height: h, center: c } : null;
+  }
+  /* 身體中心離腳底的高度；沒掃到可見範圍就用高度的 0.55 倍（舊公式） */
+  function entityCenterHeight(ent) {
+    return ent.hitCenter > 0 ? ent.hitCenter : ent.hitHeight * 0.55;
+  }
+  /* 特效尺寸的體型倍率：相對「一般敵人（64px）」。密度縮放兩邊都有，約掉。 */
+  function bodyScaleOfEntity(id) {
+    var ent = S.entities[id];
+    if (!ent || !ent.visScale) return 1;
+    var k = ent.visScale / densityScale();
+    return k > 0 && isFinite(k) ? k : 1;
   }
   function makeNpcSpriteBody(sheetName, visScale) {
     var body = makeAnimSprite(sheetName, 'idle');
@@ -1655,7 +1702,8 @@ var BattleRenderer = (function () {
     e.bodyWrap.addChildAt(next, idx);
     e.bodyWrap.rotation = 0; e.bodyWrap.scale.set(1);
     e.sheetName = name; e.curAnim = 'idle'; e.baseAnim = 'idle'; e.npcSprite = true;
-    e.hitHeight = spriteHitHeight(next) || e.hitHeight;
+    var hitBox = spriteHitBox(next);
+    if (hitBox) { e.hitHeight = hitBox.height; e.hitCenter = hitBox.center; }
     e.npcFacing = S.sheets[name].manifest.facing | 0;
     if (e.eliteDeco) e.eliteDeco.baseScale = next.scale.x;
     syncNpcRankGlow(e);
@@ -1780,6 +1828,7 @@ var BattleRenderer = (function () {
     status.y = (isBoss ? 32 : 28) * Math.max(0.7, dScale);
     view.addChild(status);
 
+    var hitBox = sheetName ? spriteHitBox(body) : null;
     var ent = {
       id: data.floatSel, data: data,
       root: root, view: view, bodyWrap: bodyWrap, body: body, shadow: shadow,
@@ -1788,7 +1837,8 @@ var BattleRenderer = (function () {
       isBoss: isBoss, isElite: isElite, visScale: visScale,
       npcSprite: sheetName.indexOf('npc:') === 0,
       npcFacing: sheetName.indexOf('npc:') === 0 ? (S.sheets[sheetName].manifest.facing | 0) : 0,
-      barW: barW, hitHeight: (sheetName && spriteHitHeight(body)) || (tierSize ? 64 * visScale : (isBoss ? sz.h * 1.9 : 64 * visScale)),
+      barW: barW, hitCenter: hitBox ? hitBox.center : 0,
+      hitHeight: (hitBox && hitBox.height) || (tierSize ? 64 * visScale : (isBoss ? sz.h * 1.9 : 64 * visScale)),
       wx: 0, wy: 0,                   // 畫面上的世界座標（內插後的結果）
       samples: null,                  // 模擬層座標的取樣緩衝（見 posTrack/posSolve）
       state: 'entering',              // entering → idle → dying → gone
@@ -2488,7 +2538,7 @@ var BattleRenderer = (function () {
     ent.state = 'dying';
     ent.dieAt = nowMs();
     ent.realDeath = !!realDeath;
-    S.lastPos[ent.id] = { x: ent.root.x, y: ent.root.y - ent.hitHeight * 0.55, footY: ent.root.y, at: nowMs() };
+    S.lastPos[ent.id] = { x: ent.root.x, y: ent.root.y - entityCenterHeight(ent), footY: ent.root.y, at: nowMs() };
     if (ent.isBoss) removeBossBar(ent.id);
     var dieSheet = ent.npcSprite ? S.sheets[ent.sheetName] : null;
     if (dieSheet && dieSheet.anims.die) {
@@ -2506,7 +2556,7 @@ var BattleRenderer = (function () {
   function destroyEntity(id) {
     var ent = S.entities[id];
     if (!ent) return;
-    S.lastPos[id] = { x: ent.root.x, y: ent.root.y - ent.hitHeight * 0.55, footY: ent.root.y, at: nowMs() };
+    S.lastPos[id] = { x: ent.root.x, y: ent.root.y - entityCenterHeight(ent), footY: ent.root.y, at: nowMs() };
     ent.root.destroy({ children: true });
     delete S.entities[id];
   }
@@ -7942,6 +7992,7 @@ var BattleRenderer = (function () {
           return id === 'pv-float' ? screenMuzzle() : screenPosOf(id);
         },
         footOf: screenFootOf,
+        bodyScaleOf: bodyScaleOfEntity,
         playerPos: screenMuzzle,
         projectileTargetPoint: function (id, sec) {
           /* 預判用的是世界座標的移動取樣，算完再投影 */

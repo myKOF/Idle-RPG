@@ -400,6 +400,13 @@ var VFXRuntime = (function () {
     /* 一般受擊爆點打在身體中心；落雷命中、施放光環與狀態光環的原點在腳底（名目身高 60px 的 0 點）。
        沒有 footOf 就退回 posOf——光環會浮高半個身位，但不會壞掉。 */
     var footOf = ctx.footOf || ctx.posOf;
+    /* 目標體型相對一般敵人的倍率（高級敵人／BOSS 比 64px 的普通敵人大）。受擊與狀態光環的 Preset 名目尺寸是
+       一般大小的身體，不乘這個倍率就會在大隻的 BOSS 上顯得過小，而且中心對不上身體。
+       ctx 沒給（編輯器、測試、高塔卡片）＝1，行為不變。 */
+    function bodyScaleOf(id) {
+      var k = ctx.bodyScaleOf ? num(ctx.bodyScaleOf(id), 1) : 1;
+      return k > 0 ? k : 1;
+    }
     /* 斜俯視的縱向比例（見 screenSpaceSpec）。給了就代表 ctx 回傳的是畫面座標；
        繞行軌道也改用同一個比例壓扁，才會和地板、地面光圈一致。 */
     var groundScale = (num(o.groundScale, 1) > 0 && num(o.groundScale, 1) < 1) ? num(o.groundScale, 1) : 1;
@@ -887,7 +894,9 @@ var VFXRuntime = (function () {
       var ids = Array.isArray(spec.targets) ? spec.targets.slice(0, 8) : [];
       if (!ids.length) return false;
       var any = false;
+      var baseScale = scale;
       for (var i = 0; i < ids.length; i++) {
+        scale = hitClass ? baseScale * bodyScaleOf(ids[i]) : baseScale;
         // 復活光柱與落雷的 Preset 原點在地板；身體中心會讓命中光圈懸在怪物腰部。
         var groundFoot = (spec.variant === 'pillar' &&
           (presetId === 'pillar-light' || presetId === 'pillar-earth')) ||
@@ -2087,7 +2096,7 @@ var VFXRuntime = (function () {
             return;
           }
           var a = { key: e.key, presetId: presetId, expireAt: clock + AURA_KEEP_SEC,
-            mult: r > 0 ? profile.areaScale : profile.scale };
+            mult: r > 0 ? profile.areaScale : profile.scale * bodyScaleOf(e.key) };
           auraTarget(a, r);
           a.sx = a.tsx; a.sy = a.tsy;
           /* 整份標 perspective:false 的光罩（護盾球…）走 billboard 層：不受視角方向與 FOV 影響；其餘（地面光環）留在場景層 */

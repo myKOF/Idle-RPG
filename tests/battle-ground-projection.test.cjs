@@ -191,7 +191,7 @@ function loadAnchors() {
   };
   vm.createContext(ctx);
   const names = ['groundToScreenY', 'screenToGroundY', 'screenToGround', 'playerPos',
-    'footOf', 'screenFootOf', 'playerMuzzle', 'screenMuzzle', 'posOf', 'screenPosOf'];
+    'footOf', 'screenFootOf', 'playerMuzzle', 'screenMuzzle', 'posOf', 'screenPosOf', 'entityCenterHeight'];
   vm.runInContext('var GROUND_Y_SCALE = ' + K + ';' + names.map((n) => extractFunction(renderer, n)).join(';'), ctx);
   return ctx;
 }
