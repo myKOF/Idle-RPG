@@ -83,7 +83,7 @@
 #achv-modal .achv-card { position: relative; min-height: 112px; gap: 14px; padding: 12px 16px; border-radius: 6px; }
 #achv-modal .achv-card.done {
   border: 8px solid transparent; padding: 4px 10px; box-shadow: none;
-  border-image: url(../images/ui/achievements/done-frame.png) 48 / 24px stretch;
+  border-image: url(../images/ui/achievements/done-frame.png?v=2) 48 / 24px stretch;
   background: linear-gradient(#3a2a1e, #241911) padding-box; margin: 0;
 }
 #achv-modal .achv-card.todo {
