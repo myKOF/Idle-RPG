@@ -13734,3 +13734,15 @@ Worker 存活且頁面正常完成載入。
 - 瀏覽器：IAB連線不可用，依後備流程用bundled Playwright＋隔離headless Edge。載正式index全CSS／JS（停main避免啟動存檔），只在HTTP候選將4349766d已提交的data名稱接線、item標題、ui選圖及28px CSS精確覆映至本分支；不寫入正式程式。以正式makeEquipment／itemCellHTML／renderEquip／itemHeaderHTML驗28件三處src完全符合、標題28×28，全圖載入126張破圖0；showItemTooltip完整驗28件＋12武器類型＋無weaponType舊武器共41/41，Console Error／Warning／pageerror0。最終PNG重載後通過；QA拼版初版受原slot定位影響，修正的是QA容器，產品無改。實拍重開確認輕型／硬甲縮圖可分辨，all-icons-game-render、hard-armor-preview、browser-report與PNG-checks保留本聊天visualizations/equipment-icons。
 - 唯讀未改：AI_RULES／AGENTS／Workflow／Codex規範、c2b6962a提示表／4349766d四份接線、data／item／ui／formula／save／Worker／CSS／index／配置表／武器與通用戒指項鍊圖，LV玩法與解鎖無變故不改。現有武器素材及程式／存檔格式完全未改，未讀寫玩家存檔；舊武器回退與舊名硬甲顯示均驗證。自我Review完成，無本次素材待辦；未測完整真Worker遊玩、多瀏覽器與正式玩家舊檔。
 - 後續／合併：可交使用者正常整合；Codex正式分支尚未含4349766d名稱接線，因此新輕型圖要和該既有功能一起整合才會啟用，本輪未自行合併他AI分支或develop／main、未推送。若與4349766d的20張向量暫用圖發生add/add，按使用者原任務與「全換上」保留本次AI生成版本，接線程式保留Claude原實作；硬甲原路徑已直接替換。
+
+## EQUIP-ICON-ALPHA-20261101 — 移除二十八張裝備圖示黑底
+
+- Owner：Codex；Done，單一開發者。使用者實拍指出上一批黑底在品質底色上形成方塊，要求去背；本次以內建imagegen逐張移除28張原圖黑底，保留裝備造型與材質，輸出真正RGBA透明PNG。
+- 允許上一批images/equip二十張、images/icon_{helmet,shoulder,chest,belt,gloves,wrist,legs_armor,legs}.png八張及本段；素材庫既有package保存原始黑底版／新增去背來源，更新輸出、來源記錄、正規化與匯出驗證。禁止遊戲程式／CSS／配置／存檔／其他圖片／其他工作區與合併推送，LV無玩法變更不動。
+- 前置：上批資產及名稱接線已整合，起始2b63e08b乾淨；fetch後29個目標預檢皆乾淨，素材庫亦乾淨。驗真正alpha、1024平方／檔名／大小、深淺品質底色及28px／背包與裝備欄／tips／武器回退、Build與兩庫SHA後，先素材庫再遊戲獨立[Codex] Commit。
+- 完成：同名覆蓋28張（images/equip 20張及既有八張通用硬甲）與本任務紀錄，遊戲程式／CSS／配置／LV／其他素材完全未改。保留物件內側暗面，去除輪廓外及戒指／項鍊／腰帶圈內、成對物件間的黑底；疾風靴保留羽翼與半透明光。imagegen原生1254×1254去背PNG保存alpha-sources，原始黑底sources不刪，source.json保留兩版SHA／全提示與本次授權；以SourceCopy與透明畫布縮至1024，沒有使用黑色閾值挖掉深色裝備。
+- 格式與雙庫：全部IHDR color type6／1024平方，四角alpha0，逐圖完整像素盤點均有透明與可見物件（透明比例最低41.65%）；799458～1983602 bytes，全部低於2MiB。素材庫normalize.ps1產生alpha-validation.json，export.cjs --apply／--check核對原始黑底來源、去背來源、匯出與遊戲28份SHA；兩庫一致。先素材庫Commit 5c1c476（[Codex] fix: 裝備圖示移除黑底並保留透明通道），再遊戲本段所在「[Codex] fix: 二十八張裝備圖示改為透明背景」，SHA見交付。
+- 回歸指令：node --test --test-reporter=spec tests/equipment-tooltip-compare.test.cjs tests/equipment-two-hand-display.test.cjs tests/equipment-quality-name.test.cjs tests/equipment-weapon-transparency.test.cjs 14/14通過；node --test --test-reporter=spec tests/equipment-background-removal.test.cjs 1/1通過；npm.cmd run build 616檔通過。沒有新增鏡像測試、修改斷言或略過失敗；git diff／stat／check及暫存check通過。
+- 瀏覽器：IAB仍無backend，按技能後備用bundled Playwright／隔離headless Edge／隨機localhost。載本分支正式index全部CSS／JS，停main避免讀寫玩家存檔，只注入測試面板快照，這輪不需接線來源覆映。以正式makeEquipment／itemCellHTML／renderEquip／itemHeaderHTML驗28件三處src正確、28px標題、破圖0；完整showItemTooltip驗28件＋12武器類型＋舊無weaponType武器41/41，Console Error／Warning／pageerror0。紫色漸層與淺灰底逐圖視檢邊緣、完整正式裝備欄以創世紫底與原武器／法器對照，黑方塊已消失且環內／兩件之間透底。三份實拍已重開檢視，fixture.js／browser-report／alpha-validation與截圖存本聊天visualizations/equipment-alpha。
+- 唯讀未改：規範／AGENTS／Workflow／Codex規範、data名稱映射與equipIconFile、item／ui正式渲染與CSS／index、save／Worker／存檔與裝備資料、全部武器／原通用戒指項鍊圖及其他配置；原素材庫黑底sources逐份SHA保持。未使用外部第三方素材、未讀寫API key。自我Review完成，無本次未完成項目或已知新增功能風險；未驗完整真Worker遊玩／正式玩家舊檔／多瀏覽器。
+- 交付：可合併，交使用者正常整合遊戲與素材庫後強制重新載入圖示；未合併推送develop／main。只有圖片alpha改動，不改裝備名稱／數值／存檔格式；下一步確認實際玩家裝備欄底色能透出。
