@@ -1431,7 +1431,10 @@ var BattleDecor = (function () {
     }
     if(zoneKey==='god_battlefield'||zoneKey==='god_chaos'){
       var painted=document.createElement('canvas');painted.width=painted.height=1024;
-      return DecorNature.drawGround(painted.getContext('2d'),zoneKey,1024)?painted:null;
+      var ground=painted.getContext('2d');
+      if(!DecorNature.drawGround(ground,zoneKey,1024))return null;
+      if(zoneKey==='god_chaos')drawChaosFissures(ground,1024);
+      return painted;
     }
 
     var colors={mist_forest:[39,59,49],lava_mountain:[56,44,43],thunder_peak:[63,74,88]};
@@ -1448,6 +1451,30 @@ var BattleDecor = (function () {
       var k=(y*256+x)*4;for(var j=0;j<3;j++)im.data[k+j]=c[j]+n;im.data[k+3]=255;
     }
     g.putImageData(im,0,0);return canvas;
+  }
+
+  /* 細裂幽光只烘入建圖，短裂紋不碰貼圖邊緣，也不形成地形缺口。 */
+  function drawChaosFissures(g,size) {
+    var r=mulberry(731904),scale=size/1024;
+    g.save();g.scale(scale,scale);g.lineCap='round';g.lineJoin='round';
+    for(var i=0;i<24;i++){
+      var x=range(r,95,929),y=range(r,95,929),angle=range(r,0,Math.PI*2);
+      var points=[[x,y]],segments=4+Math.floor(r()*3);
+      for(var j=0;j<segments;j++){
+        angle+=range(r,-.65,.65);var step=range(r,6,12);
+        x+=Math.cos(angle)*step;y+=Math.sin(angle)*step;points.push([x,y]);
+      }
+      var branch=points[2],a=angle+range(r,.7,1.2);
+      var twig=[branch,[branch[0]+Math.cos(a)*10,branch[1]+Math.sin(a)*10],[branch[0]+Math.cos(a+.35)*19,branch[1]+Math.sin(a+.35)*19]];
+      function stroke(path,width,color){g.strokeStyle=color;g.lineWidth=width;g.beginPath();g.moveTo(path[0][0],path[0][1]);for(var p=1;p<path.length;p++)g.lineTo(path[p][0],path[p][1]);g.stroke();}
+      [points,twig].forEach(function(path){
+        stroke(path,4.8,'rgba(96,91,209,.22)');
+        stroke(path,2.6,'rgba(88,163,207,.35)');
+        stroke(path,1.15,'rgba(141,219,240,.78)');
+        stroke(path,.45,'rgba(215,220,255,.74)');
+      });
+    }
+    g.restore();
   }
 
   /* 由整數分格與周期石紋構成，左右／上下邊界是同一條金屬接縫。 */
@@ -1468,6 +1495,18 @@ var BattleDecor = (function () {
       g.strokeStyle=dark?'#a48e60':'#9a875d';g.lineWidth=2;g.strokeRect(ox+7,oy+7,cell-14,cell-14);
       g.strokeStyle=dark?'rgba(224,215,179,.18)':'rgba(100,98,86,.16)';g.lineWidth=1;g.strokeRect(ox+13,oy+13,cell-26,cell-26);
       var cx=ox+cell/2,cy=oy+cell/2;
+      // 珍珠與青金石面的同向反射：寬柔光＋窄高光，裁在單塊石磚內。
+      g.save();g.beginPath();g.rect(ox+15,oy+15,cell-30,cell-30);g.clip();
+      g.translate(cx,cy);g.rotate(-.38);
+      var gloss=g.createLinearGradient(-cell*.65,0,cell*.65,0);
+      gloss.addColorStop(0,'rgba(186,218,234,0)');gloss.addColorStop(.22,'rgba(186,218,234,0)');
+      gloss.addColorStop(.44,dark?'rgba(183,218,233,.27)':'rgba(255,255,242,.34)');
+      gloss.addColorStop(.51,dark?'rgba(230,246,255,.40)':'rgba(255,255,248,.56)');
+      gloss.addColorStop(.59,dark?'rgba(183,218,233,.14)':'rgba(255,255,242,.18)');gloss.addColorStop(.82,'rgba(186,218,234,0)');gloss.addColorStop(1,'rgba(186,218,234,0)');
+      g.fillStyle=gloss;g.fillRect(-cell,-cell,cell*2,cell*2);
+      var streak=g.createLinearGradient(0,-cell*.7,0,cell*.7);
+      streak.addColorStop(0,'rgba(240,250,255,0)');streak.addColorStop(.4,'rgba(240,250,255,.04)');streak.addColorStop(.48,dark?'rgba(240,250,255,.30)':'rgba(255,255,248,.40)');streak.addColorStop(.52,'rgba(240,250,255,.02)');streak.addColorStop(1,'rgba(240,250,255,0)');
+      g.fillStyle=streak;g.fillRect(-cell,-cell,cell*2,cell*2);g.restore();
       for(var corner=0;corner<4;corner++){
         g.save();g.translate(cx,cy);g.rotate(corner*Math.PI/2);
         line([[-cell*.5+18,-cell*.5+47],[-cell*.5+18,-cell*.5+18],[-cell*.5+47,-cell*.5+18]],'#b29b69',2);
@@ -1508,6 +1547,11 @@ var BattleDecor = (function () {
   }
   function particleSanctumFlow(g,w,h) {
     g.save();g.translate(w/2,h/2);
+    // 地面柔亮反射與法陣同向掠過，預烘柔邊，不另增精靈或每幀重畫。
+    var reflected=g.createRadialGradient(0,0,w*.13,0,0,w*.43);
+    reflected.addColorStop(0,'rgba(255,255,255,0)');reflected.addColorStop(.42,'rgba(255,255,255,.015)');
+    reflected.addColorStop(.78,'rgba(255,255,255,.11)');reflected.addColorStop(1,'rgba(255,255,255,0)');
+    g.save();g.rotate(-.5);g.scale(1,.45);g.fillStyle=reflected;g.fillRect(-w/2,-h/2,w,h);g.restore();
     for(var arm=0;arm<2;arm++)for(var i=0;i<64;i++){
       var angle=arm*Math.PI+i/64*Math.PI*1.25,r=w*(arm?.34:.44),a=.025+Math.pow(i/64,2)*.9;
       g.strokeStyle='rgba(255,255,255,'+a+')';g.lineWidth=1.2+i/64*2.4;
@@ -1724,7 +1768,7 @@ var BattleDecor = (function () {
   };
   /* 背景建圖 Worker（相對於 index.html）。改了 decor-sculpt／decor-nature／battle-decor 要一起更新
      這裡的版本與 Worker 檔內 importScripts 的版本字串，否則 Worker 會吃到快取的舊畫法。 */
-  var ATLAS_WORKER_URL = 'js/worker/decor-atlas.worker.js?v=1.0.23';
+  var ATLAS_WORKER_URL = 'js/worker/decor-atlas.worker.js?v=1.0.24';
   var VARIANTS = 3;          // 每種擺件／地面裝飾畫幾個變體
   var TEX_SCALE = 1.5;       // 圖集解析度（畫面放大或高 DPI 時仍清楚；開 mipmap 避免縮小時閃爍）
 
