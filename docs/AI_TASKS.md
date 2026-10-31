@@ -10,6 +10,18 @@
 - 驗證範圍：NodeVM正式UI渲染／鑲入／取下／升級，以及原封載入sim.worker入口的headless宿主驗正式runCommand、屬性快取失效與gems面板；未做瀏覽器實際操作／畫面或全庫回歸。唯讀未改：規範／Workflow／prompts、Gem_resonance.xlsx／CSV／data、formula.js／item.js／save.js／ui.js、Worker協議與模擬宿主；無素材或素材庫變動，不建立空素材Commit。
 - 自我Review完成，本次無未完成實作，可供Review／合併；已知限制為上述既有失敗及未跑項。Commit為本段所在「[Codex] feat: 寶石共鳴限定相鄰異種類型」，實際編號見交付；未合併或推送develop／main。後續使用者正常整合並重新載入。工作期間同副本另一聊天新增CHAOS-PREVIEW-REPAIR獨立任務段，只分段暫存本共鳴紀錄，保留其進行中修改。
 
+## CHAOS-ICON-SURFACE-20261031 — 混沌ICON柔亮漸層底
+
+- Owner：Codex；Done，單一開發者。使用者提供背包畫面，要求混沌icon像神話／創世一樣有清楚的底色；神鑄混沌沿既有原品質映射共用。採柔亮灰紫漸層與上方霧白高光，讓深色裝備圖案易辨，紅紫框維持。
+- 前置：既有授權紅紫框與品質映射完成。允許css/equipment-chaos.css的ICON專屬底色、index該CSS快取、LV既有說明及本段、聊天visualizations預覽；禁止JS／玩法／文字表／Worker／存檔／原PNG素材、tips與詳情底色或其他品質、其他工作區及合併推送。fetch後四檔預檢無外部來源，工作區乾淨。
+- 只替背包／身上裝備／神鑄材料格的eff-chaos定義新背景，不修改共用chaos-surface閱讀內襯；保留星等／等級／選取／鎖定／置灰／雙手共用。驗神話／創世對照、混沌與神鑄混沌多部位、裝備／神鑄格、兩類置灰與選取、tips／詳情內襯未變、Console／相關回歸／Build／diff及完整截圖重開後獨立Commit，交正常Review／使用者整合。純CSS無新美術檔或素材庫變動。
+
+- 完成四檔：CSS新增僅eff-chaos使用的chaos-icon-surface（灰紫基底／霧白橢圓高光），背包、裝備欄與神鑄材料格改讀該背景；紅紫框、圖案、尺寸與標記保持。共用chaos-surface閱讀底完全未改，因此tips／詳情維持暗綠及原光暈。index混沌CSS快取1.0.3，LV與本段同步；無JS／圖片／字串表或素材庫變動。
+- 驗證：node --test --test-reporter=spec tests/equipment-tooltip-compare.test.cjs tests/equipment-two-hand-display.test.cjs tests/equipment-selection-border.test.cjs tests/inventory-mythic-skin.test.cjs tests/forge-shared-inventory.test.cjs全部30/30通過；npm.cmd run build604檔通過；node tools/equipment-ui/export-source.cjs --check原圖及匯出SHA一致；git diff --check與暫存diff檢查通過。低影響CSS修改未新增鏡像測試，既有斷言未改。
+- 瀏覽器：IAB／獨立8140來源／正式itemCellHTML、renderEquip、renderForge、renderDetail與showItemTooltip，測試裝備六部位並排神話／創世、混沌舊底、新底與神鑄混沌；39張正式圖片完整載入，新兩品質及3個裝備格（含雙手副手）／2個神鑄格computed背景一致。選取黃框、兩種置灰、鎖定／星等／等級正常，tips computed背景仍含原圖暗綠取樣。390×844重載後documentWidth390、格寬48且不溢出；還原桌面後格寬58。Console error／warning0，未載玩家存檔／真Worker或完整遊玩／多瀏覽器。
+- 截圖：comparison-full.jpg及narrow.jpg保存後均已view_image從磁碟重新開啟，確認圖案與新底色、紅紫框正常；browser-report.json／可重現預覽保留本聊天visualizations/chaos-icon-surface-20261031。參考僅使用者本輪遊戲截圖與既有神話／創世CSS，沒有新增或修改獨立美術資源，無素材庫Commit。
+- 同副本工作：本項開始後GOD-GROUND-SHEEN另在battle-decor／場景快取／素材等區段開工，index僅同檔不同CSS／script行、LV與AI_TASKS不同段，無語意相依；只暫存本項四檔自身增量，保留對方全部未提交內容。唯讀未改規範／Workflow／prompts、神話／創世背景、正式UI及SLOT_INFO、現有回歸／原圖／匯出器、場景進行中內容／Worker／存檔／文字表。自我Review完成，本項無未完成實作或已知新增功能風險，可供Review／合併；Commit為本段所在「[Codex] feat: 混沌裝備圖示加入柔亮漸層底色」，編號見交付。未合併推送；下一步正常整合並重新載入新版CSS。
+
 ## CHAOS-RED-PURPLE-GRADIENT-20261030 — 紅紫漸層混沌外框
 
 - Owner：Codex；Done，單一開發者。使用者要求左／下紅色、上／右紫色，交界柔和漸變，不可突然接色；沿前輪授權圖框，兩品質tips／ICON／詳情共用。前置54e0d5dd外觀與預覽修正完成。

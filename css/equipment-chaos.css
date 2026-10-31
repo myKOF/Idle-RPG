@@ -11,6 +11,13 @@
     #081b12;
 }
 
+/* ICON獨立使用柔亮灰紫底與霧白高光，深色裝備更清楚；閱讀面板維持原暗綠內襯。 */
+.eff-chaos {
+  --chaos-icon-surface:
+    radial-gradient(ellipse at 50% 24%, #f2e9f1a3, transparent 74%),
+    linear-gradient(145deg, #918a99, #6b6276 58%, #785868);
+}
+
 .item-cell.eff-chaos,
 #workspace-area .item-cell.eff-chaos,
 .eq-slot.eff-chaos,
@@ -18,7 +25,7 @@
   isolation: isolate;
   border: 0 !important;
   border-radius: 0 !important;
-  background: var(--chaos-surface) !important;
+  background: var(--chaos-icon-surface) !important;
   box-shadow: none !important;
 }
 
