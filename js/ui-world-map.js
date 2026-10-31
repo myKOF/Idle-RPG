@@ -9,10 +9,10 @@ var WorldMapUI = (function () {
     mist_forest: { x: 80.8, y: 34.5, width: 12.0 },
     lava_mountain: { x: 38.8, y: 54.6, width: 9.0 },
     swamp: { x: 80.7, y: 66.6, width: 12.0 },
-    thunder_peak: { x: 63.7, y: 57.7, width: 9.0 },
+    thunder_peak: { x: 60.0, y: 54.5, width: 9.0 },
     undead_mountains: { x: 56.2, y: 34.7, width: 12.0 },
-    god_battlefield: { x: 38.1, y: 56.0, width: 12.0 },
-    god_chaos: { x: 63.4, y: 59.1, width: 10.0 },
+    god_battlefield: { x: 36.0, y: 48.5, width: 12.0 },
+    god_chaos: { x: 66.0, y: 64.5, width: 10.0 },
     god_sanctuary: { x: 80.7, y: 35.0, width: 12.0 }
   };
   var state = { open: false, realm: 'human', selected: null, hovered: null, pending: null,
@@ -105,21 +105,11 @@ var WorldMapUI = (function () {
     el('world-map-modal').setAttribute('data-world-realm', state.realm);
     el('world-map-title').setAttribute('data-str', human ? '2124' : '212');
     el('world-map-title').textContent = human ? STR(2124) : STR(212);
-    el('world-map-realm-human').setAttribute('aria-pressed', human ? 'true' : 'false');
-    el('world-map-realm-god').setAttribute('aria-pressed', human ? 'false' : 'true');
-    var hasGodProgress = (REALMS.god.zones || []).some(function (key) {
-      var info = zoneState(key); return info && (info.active || info.unlocked);
-    });
     var portalVisible = humanWorldCleared();
-    var showRealms = portalVisible || hasGodProgress;
     el('world-map-god-portal').hidden = !portalVisible;
     var busy = !!state.pending || !!state.transition;
     el('world-map-god-portal').disabled = busy;
     el('world-map-human-portal').disabled = busy;
-    el('world-map-realm-god').disabled = busy;
-    el('world-map-realm-human').disabled = busy;
-    el('world-map-realm-god').hidden = !showRealms;
-    el('world-map-realm-human').hidden = !showRealms;
     var point = locations[currentZone()];
     ['world-map-marker', 'world-map-god-marker'].forEach(function (id) {
       var marker = el(id);
@@ -233,7 +223,7 @@ var WorldMapUI = (function () {
   function setRealm(realm) {
     if (!state.open || state.pending || state.transition || state.realm === realm) return;
     var source = el(state.realm === 'human' ? 'world-map-god-portal' : 'world-map-human-portal');
-    if (source.hidden || !source.getClientRects().length) source = el(realm === 'god' ? 'world-map-realm-god' : 'world-map-realm-human');
+    if (source.hidden) return;
     var bounds = el('world-map-canvas').getBoundingClientRect(), anchor = source.getBoundingClientRect();
     var layer = el('world-map-transition');
     var x = bounds.width ? (anchor.left + anchor.width / 2 - bounds.left) / bounds.width * 100 : 50;
@@ -278,11 +268,19 @@ var WorldMapUI = (function () {
       if (locations[key]) {
         node.className = 'world-map-hotspot';
         place(node, locations[key]);
-        // 原名稱烘焙於母圖；常駐無字地貌覆片，讓名稱能反映解鎖狀態。
+        // 原名稱烘焙於母圖；覆片獨立於文字熱區，移動文字時仍蓋住原字。
         // 覆片母圖1672px寬，裁切寬度=字數*22+24、高42px；cqw沿母圖容器等比縮放。
         var coverWidth = (ZONES[key].name.length * 22 + 24) / 1672 * 100;
-        node.innerHTML = (ZONES[key].realm === 'human' ? '<img class="world-map-label-cover" src="images/world-map/label-cover-' + key.toLowerCase() + '.png?v=1" alt="" aria-hidden="true" style="width:' + coverWidth + 'cqw;height:2.51196cqw">' : '') +
-          '<span class="world-map-hover-name" aria-hidden="true">' + esc(ZONES[key].name) + '</span>';
+        if (ZONES[key].realm === 'human') {
+          var cover = document.createElement('img');
+          cover.className = 'world-map-label-cover';
+          cover.setAttribute('src', 'images/world-map/label-cover-' + key.toLowerCase() + '.png?v=1');
+          cover.setAttribute('alt', ''); cover.setAttribute('aria-hidden', 'true');
+          place(cover, key === 'thunder_peak' ? { x: 63.7, y: 57.7 } : locations[key]);
+          cover.style.width = coverWidth + 'cqw'; cover.style.height = '2.51196cqw';
+          el('world-map-hotspots').appendChild(cover);
+        }
+        node.innerHTML = '<span class="world-map-hover-name" aria-hidden="true">' + esc(ZONES[key].name) + '</span>';
         el(ZONES[key].realm === 'human' ? 'world-map-hotspots' : 'world-map-god-zones').appendChild(node);
       } else {
         node.className = 'world-map-god-scene';
@@ -316,8 +314,6 @@ var WorldMapUI = (function () {
     el('btn-world-map').addEventListener('click', open);
     el('world-map-close').addEventListener('click', close);
     el('world-map-go').addEventListener('click', go);
-    el('world-map-realm-human').addEventListener('click', function () { setRealm('human'); });
-    el('world-map-realm-god').addEventListener('click', function () { setRealm('god'); });
     el('world-map-god-portal').addEventListener('click', function () {
       if (humanWorldCleared() && !state.pending) {
         setRealm('god');

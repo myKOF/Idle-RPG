@@ -1,5 +1,11 @@
 # AI_TASKS.md
 
+## MERGE-ACHIEVEMENT-TALENT-MASTERY-20261031 — pending develop merge
+
+- Owner：Codex（整合）；Done。依使用者明確授權處理本次 pending merge：原 HEAD `6557b508d95fb1443595135ca84aa5be04a1e24f`、MERGE_HEAD `9912fae9ea457f0041ba924c3cbce57ce07b663a`；未操作 index、Commit、推送、同步腳本或其他工作區。
+- 衝突解法：保留主線成就系統、符文減半及 incoming 的內測威能頁捷徑、技能熟練300級、世界地圖／GM／技能增量。Worker protocol v65 同時記錄成就投影與 `talent.devSetPage`；主頁保留成就資源並採各功能實際較新版快取，Worker／bridge／protocol 統一使用新合併快取 `20261031-achv-talent-mastery-merge`。String.xlsx 已由 controller 的原生 Excel updater 合併、正常重開並驗證 SHA-256；本輪只讀實際 workbook 重生 String.csv／strings_data.js，兩側獨立字串（成就 2227～2236、威能 2237～2238）均保留。
+- 驗證：`node --check js/bridge.js`、`node --check js/worker/protocol.js`、`node --check js/worker/sim.worker.js` 通過；String apply／CSV check 均通過（2225 條、版本 d08d21f7、硬寫顯示文字 0）。核心整合回歸 `achievements`、`talent-page-dev`、`skill-mastery`、`worker-protocol`、`string-table` 共 45/45 通過；擴大相關套件 194 項中 183 通過，talent 字串碰撞修正後重跑已通過，另 10 項 windblade／vacuum 傳奇失敗可由 HEAD↔MERGE_HEAD 差異確認來源只改名稱與測試名稱、非本次合併新增行為回歸。`npm.cmd run build` 613 檔全數通過。完整合併結果的衝突標記、`git diff HEAD --check`、HEAD／MERGE_HEAD 維持檢查於交付前完成。無素材庫檔案；index 保留 unmerged entries 由 controller 依回報檔案暫存，屬預期。
+
 ## SKILL-TEST-VALIDATION-20261031 — 技能單元測試失敗深度驗證與實機動作實測
 
 - Owner：Antigravity；Done，唯讀驗證與回報。依使用者指示確認「286 項技能測試失敗」是真實程式問題還是測試／資料未更新造成的假失敗，並於遊戲內實測 2b91f66 與 943f9c2 的三項實機行為。
@@ -27,6 +33,108 @@
 
 - Owner：Codex；Done。整合 `769b0b08` 與 `364b087b`，唯一衝突為本檔開頭的任務紀錄。
 - 解法：保留 ours 的技能測試深度驗證紀錄與 theirs 的成就系統紀錄；未改動配置表、生成資料、程式或素材。衝突標記檢查通過；`node --test --test-reporter=spec tests/achievements.test.cjs tests/worker-protocol.test.cjs tests/string-table.test.cjs` 34/34 通過；`npm.cmd run build` 612 檔通過；完整合併結果 `git diff HEAD --check` 通過。
+## ELITE-MASK-20-20261031 — 菁英與高級菁英遮罩降低20%
+
+- Owner：Codex；Done，單一開發者。使用者要求菁英藍色及高級菁英黃色遮罩先降低20%；既有輪廓覆光已完成。允許renderer兩階內外覆光alpha、index與scene-preview對應快取、既有npc-rank-glow回歸、LV及本段；禁止玩法／Worker／配置／存檔／新素材及其他工作區、合併推送。
+- fetch與預檢發現Claude的NPC序列幀／縮放／朝向與renderer同檔不同段，候選三方merge-file exit0；index的renderer快取同行（本區212、Claude216）及其他既有差異共8處衝突，任務紀錄1處既有衝突。依AI_RULES3.2詢問，使用者明確同意「只做上述分段修改」；僅改本項遮罩、快取及獨立紀錄，不合併Claude功能。
+- 驗收藍黃內外覆光均為原80%、BOSS原強度、受擊／死亡alpha／換幀／回收與普通怪維持；執行既有相關回歸、Build、隔離瀏覽器Console及diff後獨立Commit，交使用者Review／整合。無新素材或素材庫變更。
+- 完成6檔：js/battle-renderer.js的NPC_RANK_STYLES兩階alpha=.8、BOSS=1，syncNpcRankGlow讓內外覆光乘上本體alpha與階級alpha；index及tools/scene-preview.html Renderer快取212→217（避開Claude已用216）；tests/npc-rank-glow.test.cjs更新既有階級切換斷言並驗兩層／本體，LV及本段同步。無新增節點、重建貼圖、Timer、文字或美術資源，無素材庫修改／Commit。
+- 指令：node --test --test-reporter=spec tests/npc-rank-glow.test.cjs tests/battle-renderer-pause.test.cjs tests/battle-elite.test.cjs tests/battle-perspective.test.cjs tests/vfx-editor-cache-versions.test.cjs，33項32過／1既有失敗。PERSP-4的syncPerspective fixture缺perfMode，錯誤ReferenceError；以HEAD原renderer唯讀記憶體覆映重跑透視15項仍14過／相同1失敗，未放寬斷言或擴修。npm.cmd run build全部607檔通過，git diff --check及暫存diff通過。
+- 隔離headless Edge載實際Pixi及正式遮罩／emoji／同步函式，同畫布上下比較HEAD與新版本：兩階兩層alpha1→.8，BOSS1→1，本體全部1，180次重複同步仍三節點；Console Error／Warning與pageerror0。使用既有原圖初驗後換正式emoji備援重驗，最終before-after.png已從磁碟重開檢視；browser-qa.cjs／browser-report.json及候選／三方試跑保留本聊天visualizations/elite-mask，未放入倉庫。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、battle-elite及暫停／透視／快取回歸、原遮罩生成及普通怪／載圖／死亡／回收邏輯、elite模擬／Worker／協議／存檔／String／Excel與CSV、Claude NPC序列幀與成就內容。自我Review完成，無本項未完成項目或已知新增風險；既有測試失敗如上，未驗完整真Worker遊玩／多瀏覽器／手機。Commit為本段所在「[Codex] fix: 菁英藍黃遮罩強度降低兩成」，SHA見交付。可供Review／合併；未合併推送develop／main，建議正常整合後重新載入觀察。
+
+## SKILL-MASTERY-300-20261031 — 0轉1000級時熟練度約300級
+
+- Owner：Codex；Done，單一開發者。使用者要求提高熟練度經驗需求，使新角色主要靠打怪／高塔／離線升到0轉1000級時熟練度約300級；沿目前角色經驗與50%熟練度收益反推，三次方係數30→1240，次方3／常數20／上限480／獲得率50%維持。既有等級、經驗餘額及技能投資不倒扣、不遷移。
+- 前置：既有參數錨點與來源Excel完成。允許game_parameters.xlsx單格與CSV／formula同步、既有熟練度測試與必要回歸、game_formula／LV／本段、index／Bridge／Worker必要快取。禁止角色經驗／戰鬥／收益公式、String／技能定義／存檔格式／其他素材／工作區與合併推送。
+- fetch後預檢：來源／CSV／formula／Bridge／測試／公式與LV無外部來源；Claude f676fc87成就修改index新增script／多處版本、Worker第23行新增achievement_data且與formula匯入同列、AI_TASKS新增成就段。候選三方試跑index7處／Worker2處／任務1處既有衝突，已依AI_RULES3.2詢問並取得使用者明確同意「只做上述分段修改」；只改本項formula／Bridge快取與Worker的formula匯入、另加本任務段，保留其他內容，不合併成就。
+- 驗證：Excel獨占／原生單格儲存與正常重開／其餘數值格式維持，匯出CSV及既有錨點同步；新局1→1000角色經驗帶入50%熟練度後約300、各級需求／上限與舊檔保留／技能點同步，相關回歸／真Worker與UI／Console／Build／String／diff。獨立Commit後交正常Review／使用者整合；任務與快取衝突分段授權如上。
+- 完成10檔：config/Excel/game_parameters.xlsx單格G13及匯出CSV、js/formula.js單一係數、index／js/bridge.js／js/worker/sim.worker.js必要版本、tests/skill-mastery.test.cjs、game_formula／LV／本段。原生Excel先取得FileShare.None確認來源關閉，只寫數值1240，保留數值格式／樣式／字型／尺寸，正常儲存重開Saved=True；來源SHA未變才覆蓋。唯讀比較全簿13,171個儲存格，只有G13的30→1240、型態與樣式不變；styles.xml逐位相同、欄寬／視圖／篩選／合併／驗證維持。未手工寫XML、未新增文字或素材，素材庫無變更、不建空Commit。
+- 既有管線：node tools/xlsx_to_csv.cjs匯出365列×18欄；node tools/apply_params.cjs試跑586項只有SKILL_MASTERY_XP_A一項變更，--write沿scalar既有錨點回寫；再試跑586一致／變更0／錨點問題0，--check-anchors擾動535值後586錨點各命中1次。沒有改錨點或其他公式；生成器未產生其他受管檔差異。formula主頁84／Bridge399／Worker入口與formula匯入20261031-mastery-300同步。
+- 實際引擎驗算：0轉1→1000級需4,990,005,039,960角色經驗，50%為2,495,002,519,980熟練度經驗；新公式0→300級需2,494,287,906,000，餘714,613,980／下級33,480,000,020，即300級＋2.13445%。面板total／available為300，存讀保持；另一400級／1000經驗存檔重讀不倒扣、後續入帳按新需求累積。任務加技能經驗、熔爐只加角色經驗及逐筆取整仍會令實際結果偏移。
+- 回歸：`node --test --test-reporter=spec tests/skill-mastery.test.cjs tests/gm-skill-point.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/string-table.test.cjs`47/47；`node --test --test-reporter=spec tests/apply-params.test.cjs tests/apply-params-anchor-independence.test.cjs tests/apply-params-scientific.test.cjs`5/5。新增2項目標曲線／存讀與既有投資保留回歸、更新原需求期待，不放寬上限與技能點保護。`npm.cmd run build`607檔通過、String --check寫死0條、diff／暫存diff檢查通過。
+- 額外`node --test --test-reporter=spec tests/skill2-points.test.cjs tests/potential-removal.test.cjs tests/gm-skill-unlock.test.cjs`31項29過／2既有失敗：potential-removal「新角色與正式Worker投影…」的舊指令清單期待，及「威能整轉全滿…」期待56實際200。以起始5451cf18原formula.js唯讀記憶體覆映重跑，失敗名稱與數值相同；技能點與GM全解鎖均通過。未改舊斷言、潛力移除、威能資料或順帶擴修；全庫未跑。
+- 瀏覽器：隔離隨機localhost／headless Edge、正式index與真Worker，驗技能頁Lv.300/480、經驗714613980／33480000020、300總點與可用點，主端與Worker需求一致、實際請求入口／公式快取均為新版；400級舊檔另以新context boot保持Lv.400與1000經驗、400點。Console Error／Warning及pageerror0，未讀寫玩家原來源存檔。技能頁實拍已重開檢視，excel-native-report／calculation／browser-report／來源格式QA及測試／基線紀錄在本聊天visualizations/mastery-300。
+- 唯讀未改：規範／AGENTS／Workflow、apply_params錨點與Excel匯出器、data角色經驗係數／skills2點數及投資規則／skills入帳、combat／tower／save／factory／tasks的收益接線、String及其他Excel／CSV、Worker協議、其他素材及Claude成就檔案。自我Review完成，無本項未完成實作或已知新增風險，可供Review／合併；未驗完整自然打怪耗時、多瀏覽器與實體觸控，既有2失敗如上。Commit為本段所在「[Codex] feat: 調整熟練度需求使零轉千級約三百級」，SHA見交付。未合併／推送develop或main；下一步正常整合後重載主頁與Worker。衝突檔只按使用者核准分段更新，未合併成就或調整其字串／協議。
+
+## GM-WASH-HIT-20261031 — 護手洗出命中率自然語言修正
+
+- Owner：Codex；Done，單一開發者。使用者回報「把護手部位洗出命中率屬性」被翻成不存在的hitFlat。前置既有modequip替換／條數保護完成。
+- 允許ai-key-setting、index必要快取、gm-fastpath／gm-translation-cache／gm-modequip回歸、GM_command／LV與本段；禁止Worker修改／別名假key、公式／配置／存檔／玩家裝備操作／素材及其他工作區／合併推送。
+- 支援護手別名與部位語句、本機完整解析洗出屬性、命中率正確key hit；未指定值沿既有強度預設，不發明數字。雲端提示同步，舊快取失效；驗原句／同類說法／未知與多餘條件不部分執行、已有／缺少hit與詞條數、GM回歸／Build／隔離瀏覽器Console，獨立Commit交使用者Review／合併。
+- 預檢除index外皆無外部來源；Claude成就功能修改index，與本分支既有多處快取／新增script相鄰，完整三方試跑有衝突。依AI_RULES3.2先詢問使用者，獲明確同意「只更新AI快取版號」，本項僅ai-key-setting 1.0.6→1.0.7一行，不合併／更動Claude成就內容或其他快取。
+- 完成8檔：ai-key-setting／index、gm-fastpath／gm-modequip／gm-translation-cache三項回歸、GM_command／LV／本段。原句及護手／手套、部位、洗出／洗成／洗為、屬性／詞條說法本機解析為modequip gloves hit，未指定數值省略，已有命中則沿既有狀態／強度，缺少則沿既有500強度規則替換，不增條。新增命中／命中率具體值設定及具名替換的key映射；未知／否定／疑問／多餘條件不部分執行。雲端提示明列hit與gloves，禁止hitFlat及自行填值；快取語意升5淘汰舊翻譯，不改執行器或新增假key別名。無素材／素材庫變更，不建立空素材Commit。
+- 回歸指令：`node --test tests/gm-modequip.test.cjs tests/gm-fastpath.test.cjs tests/gm-translation-cache.test.cjs tests/gm-affix-limits.test.cjs tests/gm-command.test.cjs tests/ai-key-setting.test.cjs tests/gm-natural-timeout.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs`全部132/132通過；包含原句從解析到正式執行器、錯誤選取不影響護手、已有／缺少命中完整詞條比對／條數不增、舊v4快取失效／無金鑰零雲端、前輪混沌戒指回歸。雲端提示驗證用假回應，沒有真API使用或金鑰存取。
+- 瀏覽器：隔離隨機localhost／headless Edge，正式GM面板／解析器與完整sim.worker入口，fixture只初始化新局與讀快照，指令走原cmd／ack。真鍵盤輸入原句，在已有／缺少hit兩種護手均成功，三套所有裝備與預期逐位一致、未動選中的頭盔，cloudCalls0、Console Error／Warning與Worker error0。首次fixture比對因正式執行器補齊缺省ancientCount0而失敗，fixture初始化明確填0後完整重跑通過，產品未因此修改。verify.cjs／browser-report.json／browser-result.png與tests.log／build.log保留本聊天visualizations/gm-wash-hit，未放進倉庫。
+- `npm.cmd run build`607個檔案語法／編譯檢查全過、無空檔；git diff／暫存diff／check通過。唯讀未改：規範／AGENTS／Workflow／prompts、gm_exec命中別名與替換／強度算法、gm.js面板、data／item／formula／String／所有Excel／CSV、Worker入口／協議／Bridge／存檔與其他功能。未驗真雲端服務、完整遊玩、多瀏覽器；未改玩家裝備。自我Review完成，無本項未完成實作或已知新增功能風險，可供Review／合併，未合併／推送develop／main。Commit為本段所在「[Codex] fix: 支援護手洗出命中率自然語言」，SHA見交付。建議正常整合後重載主頁，再輸入原句；暫時也可手動輸入modequip gloves hit。
+
+## WORLD-MAP-PRESENTATION-20261031 — 光暈邊界、入口簡化與文字位置／黑邊
+
+- Owner：Codex；Done，單一開發者。使用者要求修正神界入口光暈半透明方塊、刪除右上人界／神界頁籤；追加依圖移動太古戰場／混沌界／返回門文字及落雷峰，兩界場景名稱／關卡／傳送門文字顯示1px黑邊。沿用已完成雙向門2.5秒轉場。
+- 允許world-map CSS／JS、index標記及快取、world-map-ui回歸、WORLD_MAP／LV與本段。禁止改玩法／解鎖／進度／Worker／存檔／String／地圖圖片／素材及其他工作區、合併推送。原烘焙名稱覆片須留在原位，移動文字／熱區／資訊卡及指針同步。
+- 起始工作區乾淨。預檢僅index有Claude b918febb的data／renderer快取差異，本項門按鈕及world-map快取不同行且無語意相依；共同祖先／候選／ai/claude三方merge-file exit0，分段修改。不改共用主題；純介面CSS／SVG不新增獨立素材，素材庫無變更。
+- 驗光暈橢圓柔化／消除直角、頁籤確實不存在且雙向門／2.5秒／Esc／焦點保留、四處文字位置／原圖去字／熱區與資訊卡／黑邊、Console及地圖／String／快取回歸／Build／diff後獨立Commit，交正常Review及合併並刷新8131。
+- 完成七檔：CSS光暈橢圓遮罩漸退、雙向門文字及場景／進度共用1px八方向黑色外框；JS三個名稱熱區／資訊卡／指針移位，人界七張去字覆片獨立置於原字位置；返回門caption移到階梯，門洞不移動；index實際刪除兩頁籤、JS監聽／狀態與CSS選中樣式刪除，CSS1.0.13／JS1.0.8快取；world-map-ui回歸、WORLD_MAP／LV及本段同步。未增文字／獨立素材，素材庫無變更。
+- 驗證指令：node --test --test-reporter=spec tests/world-map-ui.test.cjs tests/world-map.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs全部37/37通過；npm.cmd run build607檔通過；git diff --check通過。舊頁籤回歸改由正式門進入，保留末關通關門檻、2.5秒時序／防重入／取消／焦點斷言，新增移位後覆片不跟隨且資訊卡／指針跟隨熱區驗證。全庫及多瀏覽器未重跑。
+- 真瀏覽器8131：實際檢查偏心彩光原無遮罩，修後中心橢圓遮罩／50%圓角生效；兩頁籤DOM數0。一般窄分頁與1920×1080依參考圖驗證三場景／返回門caption位置及黑邊，人界原字沒有殘影，落雷峰新位置點擊資訊卡仍在其下，雙向傳送／Esc中止／重開及焦點正常。Console error／warning0，未改玩家進度／戰鬥設定。完整桌面實拍map-labels-human-desktop.png／map-labels-god-desktop.png及窄分頁實拍保留本聊天visualizations/god-world-map；臨時桌面viewport已reset，留下人界頁供驗收。
+- 唯讀未改：規範／Workflow／prompts、共用style.css、String／ZONES／Worker／存檔／配置、既有地圖PNG／覆片／素材庫。自我Review完成，無本項未完成或已知新增風險，可供Review／合併；遊戲Commit為本段所在「[Codex] fix: 修正地圖光暈邊界與名稱顯示並移除位面頁籤」，SHA見交付。最終index與Claude三方試跑exit0；未合併推送，下一步正常整合後重載8131驗收。
+
+## TALENT-CENTER-RANK-20261031 — 威能星盤中央顯示對應轉生稱號
+
+- Owner：Codex；Done，單一開發者。使用者指定中心「X轉」改為該頁轉生稱號，例如10轉顯示位面創世神。前置既有reincarnationRankName／game_parameters階級名稱完成。
+- 允許ui.js中心標題、ashen-forge.css標題排版、index對應快取、LV與本段；禁止改稱號權威值／Excel／String／玩法／解鎖／Worker／存檔／素材及其他工作區、合併推送。沿用既有配置表名稱，不新增寫死玩家文字。
+- 起始d7a7898a、工作區乾淨；fetch後預檢僅index有Claude b918febb的data／renderer快取，本項UI／CSS快取不同行、無語意相依，以共同祖先／候選／Claude實際工作檔merge-file exit0。驗1～10頁稱號、切頁與角色當前轉數隔離、最長稱號完整置中、進度／全滿外觀與內測按鈕維持、Console／相關回歸／Build／String／diff；完成Commit交使用者正常Review／整合。
+- 完成5檔：js/ui.js僅talentBoardHTML中央文字，呼叫reincarnationRankName(turn)並esc；css/ashen-forge.css中央稱號26→20px、行高1.25、置中不斷行，最長五字可置於116px圓內；index對應UI／CSS快取240／96；LV及本段同步。稱號由既有game_parameters配置讀取，無新增文字、表格編修或素材，素材庫無變更、不建空Commit。
+- 驗證指令：`node --test --test-reporter=spec tests/talent-page-dev.test.cjs tests/boss-skill-lock.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/string-table.test.cjs`全部52/52；`npm.cmd run build`607檔通過；`node tools/string-table/build_string_csv.cjs --check`寫死0條；`git diff --check`通過。純顯示小改沿用既有回歸，不新增鏡像實作的測試。前項21個舊威能基線失敗本次不擴修，未重跑全庫。
+- 瀏覽器：隔離隨機localhost／headless Edge、正式index與真Worker，6轉角色逐一原生點擊1～10頁，依序顯示勇者／大劍師／破世者／不朽者／王者／大主宰／神聖尊者／大聖王／至高主宰／位面創世神；所有標題均完整置中、不取角色當前轉數，0/80等進度維持。2轉一鍵全滿後仍顯示大劍師並沿原is-complete金色樣式；390寬最長稱號不裁切。Console Error／Warning及pageerror0，未讀寫玩家原來源存檔。實拍rank-10／rank-full／narrow及JSON／QA／測試紀錄保留本聊天visualizations/talent-rank，已重開檢視10轉畫面。
+- 唯讀未改：AI_RULES／AGENTS／Workflow、data／formula／game_parameters Excel與CSV、String／strings_data、talents／Worker／Bridge／存檔／戰鬥／其他UI／原素材與既有回歸。無本項未完成或已知新增風險；未驗實體觸控與多瀏覽器。自我Review完成，可供合併；Commit為本段所在「[Codex] feat: 威能星盤中央改顯示轉生稱號」，SHA見交付。未合併推送develop／main，下一步正常整合後重載主頁驗收。
+
+## TALENT-PAGE-DEV-20261031 — 內測威能目前頁一鍵全滿／歸零
+
+- Owner：Codex；Done，單一開發者。使用者要求威能頁右上角新增切換按鈕，直接將目前轉數的威能全滿或歸零，僅內測服顯示及可用。
+- 前置：既有威能Worker權威與內測主機規則完成。允許talents／ui／威能CSS、protocol及文件／測試、必要Worker與Bridge／index快取、String原生Excel與CSV／strings_data、本段及LV。禁止其他玩法／費用／解鎖／存檔格式／素材／其他工作區及合併推送。
+- 全滿不扣金、歸零不退金；只改已解鎖的目前轉數、跳過停用節點，保留BOSS配置鎖。共用內測主機判定，Worker獨立驗證外服拒絕；原威脅／屬性與面板刷新流程沿用。
+- fetch後預檢除index外皆無外部來源。Claude b918febb只改data／renderer快取，本項UI／talents／protocol／Bridge／String及CSS版號不同區段、無語意依賴，以共同祖先／本候選／Claude實際index三方merge-file exit0。同副本風刃改名已提交616edbd7，起始乾淨，保留其成果。
+- 驗證：目前頁與其他頁隔離、全滿／歸零／不扣退金／停用節點、解鎖與BOSS限制、內測與外服偽造呼叫、存讀／屬性／威脅／UI快照、正式瀏覽器與Console、相關回歸／String／Build／diff。完成獨立Commit，交使用者Review及正常整合。
+- 完成16檔：`js/talents.js`／`ui.js`、`css/ashen-forge.css`、`js/worker/protocol.js`／`sim.worker.js`／`js/bridge.js`、`index.html`、String.xlsx／CSV及strings_data、`tests/talent-page-dev.test.cjs`／`boss-skill-lock.test.cjs`／`worker-protocol.test.cjs`、WORKER_PROTOCOL／LV／本段。單一按鈕依目前頁快照顯示全滿或歸零；一次權威設定後同步威脅與屬性。等待ACK與六項面板期間鎖同頁節點及按鈕，BOSS view即時鎖入口。協議64→65，主端／Worker與CSS快取均同步。無素材新增／修改，素材庫無本項變更、不建空Commit。
+- String新增2227／2228，先獨占確認來源已關閉，依專案要求用Excel原生API插入兩列並寫8格；正常模式儲存重開驗證，2215條CSV／生成JS同步。唯讀封裝核對10,467個原儲存格的值／型態／樣式全保留、styles.xml逐位相同，欄寬／視圖／合併／資料驗證維持，篩選由Excel隨插列擴展；未手工改XML或主動翻譯。
+- 測試指令：`node --test --test-reporter=spec tests/talent-page-dev.test.cjs tests/boss-skill-lock.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/string-table.test.cjs`全部52/52通過（新增6項）；`npm.cmd run build`607檔通過；`node tools/string-table/apply_strings.cjs --check`、`node tools/string-table/build_string_csv.cjs --check`及`git diff --check`通過，寫死0條。
+- 既有測試限制：另跑`node --test --test-reporter=spec tests/talents.test.cjs tests/talent-elem-attach.test.cjs tests/talents-perf-equivalence.test.cjs tests/power-rework.test.cjs`共51項，30過／21失敗。以起始616edbd7的所有受改JS唯讀記憶體覆映重跑，21個失敗名稱完全相同：talents／elem-attach／perf共18、power3，皆為既有表值／舊期待差異（例威脅23期待20、爆傷50期待75、Tooltip5%期待1.25%）。沒有改動原斷言、數值權威表或擴修；本項無新增回歸失敗。
+- 真瀏覽器：隔離隨機localhost／headless Edge、正式index與真Worker，內測原生按鈕全滿→切頁→歸零、已鎖7轉停用與390寬不溢出；金幣123維持，1轉Lv3保留、2轉8節點全10／全0，魔物威能105%→123%→102%。外服`game.example.com`無入口，故意覆寫主端開關後直接送兩種指令，Worker均回Internal server only且等級不變；Console Error／Warning與pageerror0。外服HTTP驗證加測試用secure-origin旗標以啟用navigator.locks，正式程式未改。QA／截圖／JSON及測試／基線紀錄留本聊天visualizations/talent-page-dev；未讀寫玩家原來源存檔。
+- 唯讀檢查未改：AI_RULES／AGENTS／Workflow、gm_exec／GM指南、威能與其他數值Excel／CSV／data／formula／stats、存檔與移動／戰鬥計算、原威能回歸與素材。index完整候選與Claude實際工作檔再次三方merge-file exit0，同檔僅不同script版號且無語意相依。自我Review完成，無本項未完成實作或已知新增風險，可供Review／合併；未驗實體觸控／多瀏覽器，全庫測試未跑，既有21項失敗如上。Commit為本段所在「[Codex] feat: 內測威能頁新增一鍵全滿與歸零」，實際編號見交付；未合併推送develop／main。建議正常整合後重載主頁與Worker驗收。
+
+## WIND-ULT3-RENAME-20261031 — 風刃第三個終極進化改名
+
+- Owner：Codex；Done，單一開發者。使用者指定風刃第3個終極進化由「天穹崩裂」改名「風之痕」；前置既有Skills2來源與產生器完成。
+- 允許：Skills2.xlsx單格與匯出CSV／skills2資料、風刃相關名稱註解與測試標題、index／bridge／Worker必要快取、GM_command／game_formula相關名稱、LV及本段；禁止技能ID／效果／數值／解鎖／存檔／素材及其他工作區、合併推送。驗來源獨占、Excel正常重開與資料／格式保留、來源→CSV→JS一致、風系／終極進化回歸、Build及diff後獨立Commit；交使用者Review／合併。
+- 衝突預檢：除index外無外部來源；Claude b918febb僅改data／battle-renderer快取，本項skills2快取不同行無語意相依，候選＋共同祖先＋Claude實際工作檔merge-file exit0。保留同副本GM進行中修改，docs／GM指南／LV僅獨立區段，Worker僅skills2匯入；bridge共用快取待GM提交後再更新。
+- 完成11檔：config/Excel/Skills2.xlsx、config/CSV/Skills2.csv、js/skills2.js、js/bridge.js、js/worker/sim.worker.js、index.html、tests/skill2-windblade-vacuum-legendary.test.cjs、GM_command.md、game_formula.md、LV_upgrade_system.md及本文件。僅windblade／階10／skyCollapse名稱與對應註解、測試標題及文件名稱更新；保留效果、數值、ID、存檔及門檻。主頁skills2版本369／bridge397，Worker入口與skills2匯入20261031-wind-ult-rename。GM另一聊天先完成d9788710後才改bridge共用版本，該聊天全部內容保留，沒有同時改同值。
+- Excel：artifact-tool唯讀匯入將原檔空白儲存格錯讀為307，未以該工具匯出覆寫；改用使用者允許的Excel原生COM。先確認來源FileShare.None獨占存取，保留原檔備份；獨立Excel自動化啟動未完成即停止本聊天專用行程，來源尚未寫入，改連接已啟動Excel且不變更其全域設定。只寫C211，正常儲存並以一般唯讀模式重開，Saved=True、Excel16.0，整張Skills2值／公式比對僅C211「天穹崩裂」→「風之痕」；該格數字格式、樣式、字型、底色、列高、欄寬及換行相同，3頁、圖形數與篩選範圍保持。只關閉本項工作簿，不關使用者其他工作簿；未手改XML。名稱區前後預覽已存檔並重開檢視。
+- 資料：設定PARAMS_XLSX／PARAMS_CSV_OUT為Skills2來源／輸出、PARAMS_SHEET=Skills2，執行node tools/xlsx_to_csv.cjs（283列×52欄）、node tools/config_tables.cjs --apply --write Skills2（語意變更1），再node tools/config_tables.cjs --apply Skills2（語意變更0）。唯讀VM比較58df3a44與現況SKILLS2，除指定名稱其餘資料完整相同；去除註解並正規化指定名稱後，可執行原始碼完全相同，無玩法修改。
+- 驗證：node --test --test-reporter=spec tests/skill2-windblade-vacuum-legendary.test.cjs tests/skill2-ult-evolution.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs；技能兩檔單獨TAP重跑96項59通過／37失敗，以fs唯讀記憶體覆映58df3a44原skills2.js再跑，同樣96項59通過／37相同失敗，未降低斷言或順帶修舊問題。node --test --test-reporter=dot tests/worker-shim.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs全通過；npm.cmd run build606檔通過，最後bridge／Worker版本字串變更再node --check兩檔通過，git diff --check通過。
+- 瀏覽器：bundled Playwright隔離headless Edge／既有8131伺服器、正式index及腳本，新context不讀使用者存檔；實際sgbUltHTML選項卡及skill2UltOptionTooltipHTML提示皆包含風之痕、無舊名，選項順序暴風萬刃／嵐之山／風之痕，ID仍skyCollapse，pageerror及Console error0。資料、Excel、預覽及TAP／基線比對報告保留本聊天visualizations/wind-name，未做完整遊玩與多瀏覽器測試。
+- 唯讀檢查未改：規範／AGENTS／Workflow／prompts、Excel更新器／匯出器／配置產生器、String表（名稱已由Skills2權威表定義）、Worker協議與shim、UI技能渲染與提示函式、裝備傳奇風之痕與暴風屏障天穹崩裂、GM進行中修改及其他素材。無素材庫變動，不建空素材Commit。自我Review完成，可供合併；本次無未完成實作，已知限制為37項基線失敗及未做完整遊玩。Commit為本段所在「[Codex] fix: 風刃第三個終極進化更名風之痕」，SHA見交付；未合併／推送。下一步由使用者正常整合並重新載入主頁／Worker。
+
+## GM-QUALIFIED-AFFIX-REPLACE-20261031 — 自然語言依品質定位穿戴裝備與來源詞條
+
+- Owner：Codex；Done，單一開發者。使用者回報「身上的混沌戒指物理攻擊太古詞條洗成冷卻縮減」卻改到左傳說戒指。前置既有GM翻譯／Worker修改器完成。
+- 允許：ai-key-setting／gm_exec、bridge／sim.worker及index必要快取、GM專項回歸、GM_command／LV與本段。禁止存檔補償、玩家實際裝備操作、公式／配置／協議欄位／素材／其他工作區與合併推送。
+- 修正：以品質及部位在Worker當下使用中套裝唯一定位；按來源詞條名稱替換，保留太古，條件不符／多件或多詞條歧義拒絕。同步本機／雲端翻譯與舊快取失效。驗左右互換、選取／檢視套裝不干擾、缺少／多件／普通來源拒絕及其他詞條完整不變、GM回歸／Build／Console與diff，完成獨立Commit交使用者Review／合併。
+- fetch後除index外預檢無外部來源；Claude b918febb僅改index的data／battle-renderer版號，本項只改AI／bridge版號，不同行無語意相依，提交前做三方合併試跑。
+- 完成11檔：ai-key-setting／gm_exec、bridge／sim.worker及index快取、gm-modequip／gm-fastpath／gm-translation-cache三項回歸、GM_command／LV與本段。worn品質條件在Worker執行時依equipActive搜尋左右戒指，零／多件拒絕；replace依來源名稱與太古條件唯一定位，物攻中文未寫%時兼查平面／百分比，再按太古篩選；同名多條、來源缺少／非太古、目標屬性已有均零修改。原位替換保留其他詞條、條數與太古標記，不猜序號或數值。原句本機解析，雲端品質遺失與原句來源誤譯拒絕，成功抽象條件可快取；語意版本4淘汰舊錯譯，主頁AI1.0.6／bridge1.0.396及Worker匯入同步。無素材／素材庫變更。
+- 測試指令：`node --test tests/gm-modequip.test.cjs tests/gm-fastpath.test.cjs tests/gm-translation-cache.test.cjs tests/gm-affix-limits.test.cjs tests/gm-command.test.cjs tests/ai-key-setting.test.cjs tests/gm-natural-timeout.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs`全部128/128；`npm.cmd run build`606檔通過；diff／暫存diff／check通過。首次新測試把太古數值誤當一般基礎值，改為明確驗43.3太古冷卻值；舊快取版號斷言同步4，未放寬操作保護。
+- 瀏覽器：獨立隨機localhost／headless Edge，載正式GM面板／解析器與完整sim.worker入口；測試adapter僅初始化獨立新局裝備及讀快照，GM走原cmd／ack派送。真鍵盤輸入原句，在混沌左／右與兩枚混沌三種案例逐位比對全部三套裝備，僅指定詞條變更或完整拒絕；選中另一戒指與檢視第二套均不干擾，Console Error／Warning與Worker error0。初次fixture誤等input（正式GM是textarea且需Enter開啟）逾時，修正fixture後完整通過，產品未因此變更。QA／browser-report／browser-result與測試Build紀錄在本聊天visualizations/gm-qualified-replace，未碰玩家存檔或真API金鑰；雲端以假回應驗正確／錯誤指令，未驗真雲端服務、多瀏覽器或完整長時間遊玩。
+- 同檔協作：Claude index只動data／renderer快取，本項候選以共同祖先與對方版本、統一CRLF／LF後merge-file exit0；無語意相依。另一聊天本輪新增WIND-ULT3-RENAME任務，保留其任務段，不提交其變更；其bridge快取明訂等本項提交後再更新，其他index／Worker／指南／LV僅不同區段。唯讀未改：規範／AGENTS／Workflow／prompts、data／item／formula／品質權威表、gm.js面板本體、Worker協議／shim／派送、String／Excel／CSV／存檔／其他進行中功能。自我Review完成，無本項未完成實作與已知新增風險；已被改錯的舊戒指無原詞條歷史，未猜測復原。可供Review／合併，Commit為本段所在「[Codex] fix: GM依品質定位戒指並替換指定太古詞條」，編號見交付。僅提交自身11檔區段，未合併推送develop／main；下一步使用者正常整合並重載新版主頁／Worker後輸入原句驗收。
+
+## CHAOS-READING-FRAME-TRIM-20261031 — 混沌閱讀外框收薄3px
+
+- Owner：Codex；Done，單一開發者。使用者截圖標示混沌戒指詳情左上／右上與左下符文孔文字被框遮擋，要求外框縮減約3px。沿既有授權PNG與紅紫漸層，僅將混沌／神鑄混沌tips、比較卡及詳情的九宮格四邊顯示厚度各減3px，不移動文字或改ICON。
+- 前置：c3d15114雙色ICON及現有閱讀框完成。允許css/equipment-chaos.css該border-image寬度、index該CSS快取、LV既有說明、本段及聊天visualizations隔離預覽；禁止JS／玩法／數值／字串／Worker／存檔／授權原PNG／ICON／其他品質及其他工作區、合併推送。起始工作區乾淨，fetch及四檔衝突預檢無外部來源。
+- 驗收：正式渲染兩品質戒指的tips／詳情、窄寬版文字與鎖定標記／符文孔／固定框捲動、紅紫過渡及ICON維持，截圖存後重開；既有裝備回歸、原圖匯出檢查、Build、Console及diff後獨立Commit，交正常Review／使用者整合。純CSS不產生獨立素材或素材庫Commit。
+- 完成四檔：閱讀框兩個偽元素共用的border-image顯示寬度，由上／右／下／左28／19／29／21px改25／16／26／18px，來源切片、外沿位置、紅紫遮罩／底色及內容padding不變；CSS快取1.0.6，LV說明同步。原圖及ICON無變動，無素材庫變更。
+- 驗證：`node --test --test-reporter=spec tests/equipment-tooltip-compare.test.cjs tests/equipment-two-hand-display.test.cjs tests/equipment-selection-border.test.cjs tests/inventory-mythic-skin.test.cjs tests/forge-shared-inventory.test.cjs`全部30/30；`node tools/equipment-ui/export-source.cjs --check`原圖SHA一致；`npm.cmd run build`606檔通過；git diff／暫存diff／check通過。未新增低影響CSS鏡像測試。
+- UI：IAB隔離載正式itemCellHTML／renderEquip／showItemTooltip與500級測試戒指，兩品質280px tips及570px詳情，四框computed厚度一致25／16／26／18px；名稱／鎖定／詞條按鈕／符文與寶石孔可辨，品質列clientWidth＝scrollWidth（238／528px）。詳情scrollTop0→115框固定，390窄屏documentWidth390、兩框280px，Console error／warning及頁面error皆0。完整截圖chaos.png／godforged-chaos.png／scrolled.png／narrow.png存後均從磁碟重開核對，與browser-report.json／可重現預覽保留本聊天visualizations/chaos-frame-trim-20261031；未載玩家存檔或真Worker遊玩／多瀏覽器。
+- 唯讀未改：規範／Workflow／prompts、ui.js／item.js／data.js／其他CSS、既有回歸、PNG／素材匯出器、String／Worker／玩法／存檔。自我Review完成，無本項未完成實作／已知新增功能風險，可供Review與合併；Commit為本段所在「[Codex] fix: 混沌閱讀外框收薄三像素」，實際編號見交付。未合併推送，下一步由使用者正常整合並重新載入新版CSS。
 
 ## GEM-RESONANCE-DIFFERENT-TYPES-20261030 — 相鄰異種寶石才能共鳴
 
@@ -13536,3 +13644,16 @@ Worker 存活且頁面正常完成載入。
 - 測試指令：`node --test --test-reporter=spec tests/forge-stone-controls.test.cjs tests/divine-forge-interaction.test.cjs tests/forge-shared-inventory.test.cjs tests/string-table.test.cjs tests/stage-jump-ui.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs`全部66/66通過（新增長按回歸7項）；`node tools/string-table/apply_strings.cjs --check`、`node tools/string-table/build_string_csv.cjs --check`及`git diff --check`通過；`npm.cmd run build`605檔通過。另首輪跑`tests/divine-forge.test.cjs`的16項為15過／1既有失敗：第195行期待2.9秒背包0件，實際2件。以修改前ui.js及strings_data.js唯讀記憶體覆映重跑同一案例，仍為2 !== 0；其餘模擬程式本項未改，不放寬斷言或擴修。
 - 瀏覽器：隔離隨機localhost／headless Edge，種子新局經正式Worker boot與正式index，未讀寫玩家原來源存檔。驗13px／18px／20px與center計算樣式、無紅線文字／金幣列、原生滑鼠350ms不動／約1.5秒選至28、放開Worker收到28且不重加、短按減1、390窄屏提示在viewport內；另59長按至60、按鈕停用仍能由document放開提交60與維持最終顯示。Console Error／Warning及pageerror皆0；提示桌面／窄屏PNG、正式頁、browser-report與Excel差異紀錄／QA腳本在本聊天visualizations/forge-tip，未納入遊戲倉庫。
 - 唯讀檢查未改：AI_RULES／AGENTS／Workflow／prompts、data／forge／Worker／bridge／save與原有神鑄回歸、其他Excel／CSV與String其他列、聖域場景與素材；與Claude同檔僅不同腳本版號，最終候選合併試跑另驗exit0。自我Review完成，無本項未完成實作或已知新增功能風險；既有神鑄回歸失敗如上，未驗實體觸控設備／多瀏覽器或全庫測試。Commit為本段所在「[Codex] feat: 簡化神性之石提示並加入長按連續調整」，實際編號見交付。可供Review／合併，建議使用者正常整合後重新載入驗收；未合併推送develop／main。
+
+
+## EQUIP-RUNE-300-20261031 — 裝備符文按鈕零轉300級開放
+
+- Owner：Codex；Done，單一開發者。使用者要求裝備詳情符文功能按鈕於0轉300級開放，此前置灰且不可用；已轉生角色依progressReached規則放行。前置既有角色進度快照／符文頁已完成。
+- 允許js/ui.js符文入口與快照刷新、index對應快取、equip-socket／equip-reroll相關回歸、LV及本獨立任務段；禁止符文庫／掉落／配方／數值／Worker協議／存檔／Excel／String／素材及其他工作區、合併推送。完成後交使用者Review／整合。
+- fetch後預檢：ui.js與Claude成就f676fc87不同區段，現況三方試跑exit0；index現況7處與AI_TASKS現況1處既有衝突，依AI_RULES3.2詢問後，使用者明確同意「同意，只做上述分段修改」。只更新本項UI快取／獨立任務紀錄，保留其他內容，不合併成就分支。
+- 驗收：零轉299／300邊界、1轉1級、角色與裝備等級分離、缺快照與舊草稿阻擋、角色升級即時更新、寶石及原符文流程回歸、Console／Build／String／diff。無新增玩家文字或素材；素材庫無本項變動、不建空Commit。
+
+- 完成6檔：js/ui.js、index.html、tests/equip-socket-ui.test.cjs、tests/equip-reroll-ui.test.cjs、LV_upgrade_system.md及本段。沿用progressReached(player.level, player.reincarnations, 300, 0)，按鈕disabled套用既有灰階／透明度／一般游標，入口事件額外判定；失效符文模式／草稿不可刻印。header面板跨門檻與首份快照到達即刷新詳情，無須換裝備或重開頁面。UI快取240→241，沒有Worker／協議／存檔變更。
+- 測試指令：node --test --test-reporter=dot tests/equip-socket-ui.test.cjs tests/equip-reroll-ui.test.cjs tests/runeword-ui.test.cjs tests/string-table.test.cjs tests/boss-skill-lock.test.cjs，80/80通過；npm.cmd run build，607檔通過；node tools/string-table/build_string_csv.cjs --check寫死0條；最終新增快照回歸及previousPanel空值處理後node --check兩檔及diff／暫存diff檢查通過。新增3項門檻／舊草稿／快照回歸，既有兩套fixture明確設定已解鎖角色，不改原流程斷言。
+- 瀏覽器：隔離隨機localhost／headless Edge，載正式UI與CSS及真實DOM；以測試adapter餵header面板並走正式bindWorkerUiState／renderDetail／點擊處理。299→300即時開放、300→299鎖回、1轉1級開放／0轉1級鎖定、disabled事件繞過仍阻擋；實際樣式opacity=.42／grayscale(.45)／cursor=default。390寬按鈕在viewport內，Console Error／Warning與pageerror皆0。三張截圖／browser-report／QA腳本與候選檔留本聊天visualizations/rune-unlock，299級畫面已重開檢視；未接觸玩家存檔。最初QA將未建立模式的undefined期待為null，修正測試判斷，產品未因此修改。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、data的progressReached、runeword／ui-runeword／Worker與協議、String與其他Excel／CSV、CSS及原素材。ui.js最終候選與Claude工作檔的三方試跑exit0；index／AI_TASKS只按使用者核准分段修改。自我Review完成，可供合併，無本項未完成項目或已知新增風險；未跑全庫、多瀏覽器／實體觸控或完整真Worker遊玩。無素材變更、不建素材庫Commit。Commit為本段所在「[Codex] fix: 裝備符文按鈕改為零轉三百級開放」，SHA見交付；未合併推送develop／main。下一步正常整合後重載驗收。

@@ -247,6 +247,31 @@ function refreshMonsterPower() {
   });
 }
 
+/* 內測頁面捷徑兩端共用主機規則；Worker 仍以自己的 location 驗證。 */
+function talentDevServer() {
+  var loc = (typeof window !== 'undefined' && window.location) || (typeof location !== 'undefined' && location);
+  if (!loc) return false;
+  var host = loc.hostname || '';
+  return loc.protocol === 'file:' ||
+    ['localhost', '127.0.0.1', '::1', '[::1]', '0.0.0.0'].indexOf(host) !== -1 ||
+    /^192\.168\.\d+\.\d+$/.test(host) || /^10\.\d+\.\d+\.\d+$/.test(host) ||
+    /^172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+$/.test(host) || /\.(local|test)$/.test(host);
+}
+
+/* 內測直接設定，不經金幣升級／退款；一次完成後沿正式路徑刷新。 */
+function talentDevSetPage(turn, full) {
+  if (!talentDevServer()) throw new Error('Internal server only');
+  if (!Number.isInteger(turn) || turn < 1 || turn > TALENT_IMPLEMENTED_REINCARNATIONS || !TALENT_TREES[turn] || typeof full !== 'boolean') throw new Error('Invalid talent page');
+  if (G.tower && G.tower.active) return STR(164);
+  if (reincarnationCountSafe() < turn) return STR(846, turn);
+  var levels = talentState().levels;
+  TALENT_TREES[turn].forEach(function (def) {
+    if (!def.disabled) levels[def.id] = full ? TALENT_MAX_LEVEL : 0;
+  });
+  talentRefresh();
+  return null;
+}
+
 function talentUpgrade(id) {
   var def = talentDef(id);
   if (!def) return STR(844);

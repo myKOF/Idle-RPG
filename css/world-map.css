@@ -33,7 +33,6 @@ body.world-map-open { overflow: hidden; }
 #world-map-close .world-map-close-icon { display: block; width: 16px; height: 16px; pointer-events: none; }
 #world-map-close:hover { border-color: #bda47b !important; color: #f0ddaf !important; filter: brightness(1.1); transform: none; }
 #world-map-close:focus-visible { outline: 2px solid #dec58f; outline-offset: 3px; }
-.world-map-realm[aria-pressed="true"] { border-color: #b3945d; color: #f2d79b; }
 .world-map-canvas { position: relative; width: 100%; container-type: inline-size; }
 /* 外緣白底屬於原圖：只收掉薄邊，內部圖稿及熱區比例保持原樣。 */
 #world-map-human { position: relative; container-type: inline-size; clip-path: inset(1.4% .6% 1.6% 1.6%); }
@@ -64,7 +63,8 @@ body.world-map-open { overflow: hidden; }
 .world-map-god-portal:focus-visible { outline: 2px solid #fff0bc; outline-offset: 4px; border-radius: 6px; }
 .world-map-portal-art { display: block; position: relative; width: clamp(62px, 10.2cqw, 170px); aspect-ratio: 180 / 220; pointer-events: none; transition: transform .25s ease, filter .25s ease; }
 .world-map-god-portal:hover .world-map-portal-art, .world-map-god-portal:focus-visible .world-map-portal-art { transform: translateY(-3px); filter: brightness(1.12); }
-.world-map-portal-aura { position: absolute; inset: -16% -35% -4%; background: radial-gradient(ellipse at 28% 47%, #52e6ed55, transparent 54%), radial-gradient(ellipse at 72% 44%, #e279ee4d, transparent 54%), radial-gradient(ellipse at 50% 25%, #9274fa40, transparent 60%); animation: world-map-portal-breathe 3.8s ease-in-out infinite; }
+/* 偏心彩光在矩形邊緣仍有顏色，以中心橢圓遮罩柔化到完全透明。 */
+.world-map-portal-aura { position: absolute; inset: -16% -35% -4%; border-radius: 50%; mask-image: radial-gradient(ellipse closest-side, #000 55%, transparent 100%); background: radial-gradient(ellipse at 28% 47%, #52e6ed55, transparent 54%), radial-gradient(ellipse at 72% 44%, #e279ee4d, transparent 54%), radial-gradient(ellipse at 50% 25%, #9274fa40, transparent 60%); animation: world-map-portal-breathe 3.8s ease-in-out infinite; }
 .world-map-portal-aura::before, .world-map-portal-aura::after { content: ''; position: absolute; inset: 10% 16% 17%; border-radius: 50%; border: 1px solid rgba(255,225,155,.2); box-shadow: 0 0 14px rgba(249,214,134,.23), inset 0 0 12px rgba(248,218,158,.15); }
 .world-map-portal-aura::after { inset: 17% 23% 24%; border-color: #97eafa66; box-shadow: -3px 0 12px #5bdfe84d, 3px 0 12px #e99aee4d; }
 .world-map-portal-cyclone { position: absolute; inset: -4% -15% 0; width: 130%; height: 104%; overflow: visible; filter: drop-shadow(0 0 2px #b9b6ff99); }
@@ -131,7 +131,9 @@ body.world-map-open { overflow: hidden; }
 .world-map-return-motes i:nth-child(2) { left: 65%; animation-delay: -.9s; }
 .world-map-return-motes i:nth-child(3) { left: 40%; animation-delay: -1.8s; }
 .world-map-return-motes i:nth-child(4) { left: 76%; animation-delay: -2.7s; }
-.world-map-return-caption { position: absolute; left: 50%; top: 102%; transform: translateX(-50%); white-space: nowrap; color: #c6f4ff; font: 700 clamp(7px, 1.1cqw, 19px)/1.2 'DFKai-SB', 'KaiTi', 'Noto Serif TC', serif; -webkit-text-stroke: 1px #000; paint-order: stroke fill; pointer-events: none; }
+.world-map-return-caption { position: absolute; left: 59%; top: 80%; transform: translateX(-50%); white-space: nowrap; color: #c6f4ff; font: 700 clamp(7px, 1.1cqw, 19px)/1.2 'DFKai-SB', 'KaiTi', 'Noto Serif TC', serif; pointer-events: none; }
+/* 八方向1px外框保留字面填色；所有場景／關卡及雙向門名稱共用。 */
+.world-map-canvas :is(.world-map-hover-name, .world-map-level, .world-map-portal-caption, .world-map-return-caption) { -webkit-text-stroke: 1px #000; paint-order: stroke fill; text-shadow: -1px -1px 0 #000, 0 -1px 0 #000, 1px -1px 0 #000, -1px 0 0 #000, 1px 0 0 #000, -1px 1px 0 #000, 0 1px 0 #000, 1px 1px 0 #000; }
 .world-map-human-portal:hover .world-map-return-energy, .world-map-human-portal:focus-visible .world-map-return-energy { filter: drop-shadow(0 0 7px #a2eeff) brightness(1.2); }
 .world-map-god[hidden] .world-map-return-energy *, .world-map-overlay[hidden] .world-map-return-energy * { animation-play-state: paused; }
 @keyframes world-map-return-flow { to { transform: rotate(360deg); } }

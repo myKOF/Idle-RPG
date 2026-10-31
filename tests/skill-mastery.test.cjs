@@ -60,9 +60,39 @@ test('技能熟練度未升級時也刷新技能面板進度', () => {
   assert.equal(c.UI.dirty.skills, true);
 });
 
-test('熟練度經驗需求依參數表：⌊30×L³+20⌋', () => {
+test('熟練度經驗需求依參數表：⌊1240×L³+20⌋', () => {
   const c = loadGameContext();
   assert.equal(c.skillMasteryXpForLevel(0), 20);
-  assert.equal(c.skillMasteryXpForLevel(1), 50);
-  assert.equal(c.skillMasteryXpForLevel(10), 30020);
+  assert.equal(c.skillMasteryXpForLevel(1), 1260);
+  assert.equal(c.skillMasteryXpForLevel(10), 1240020);
+});
+
+test('新角色0轉1→1000級的打怪經驗對應熟練度300級與300點，存讀保留', () => {
+  const { createEngine } = require('../scripts/sim/engine.js');
+  const e = createEngine({ seed: 1031 }).boot(null), c = e.ctx;
+  let xp = 0;
+  for (let level = 1; level < 1000; level++) xp += c.xpForLevel(level);
+  assert.equal(xp, 4990005039960, '角色升級需求沒有改動');
+  c.gainXp(xp);
+  c.gainSkillMasteryXp(Math.round(xp * c.SKILL_MASTERY_XP_RATE / 100));
+  assert.equal(c.G.player.level, 1000);
+  assert.equal(c.G.player.reincarnations, 0);
+  assert.equal(c.G.player.skillMastery.level, 300);
+  assert.equal(c.G.player.skillMastery.xp, 714613980);
+  assert.equal(c.skillMasteryXpForLevel(300), 33480000020);
+  assert.equal(e.panel('skills').skills2.points.total, 300);
+  const reloaded = createEngine({ seed: 1032 }).boot(JSON.parse(e.saveJson()));
+  assert.deepEqual(JSON.parse(JSON.stringify(reloaded.ctx.G.player.skillMastery)), { level: 300, xp: 714613980 });
+});
+
+test('提高需求不倒扣既有熟練度等級與經驗，後續按新需求累積', () => {
+  const { createEngine } = require('../scripts/sim/engine.js');
+  const e = createEngine({ seed: 1031 }).boot(null);
+  e.ctx.G.player.skillMastery = { level: 400, xp: 1000 };
+  const reloaded = createEngine({ seed: 1032 }).boot(JSON.parse(e.saveJson()));
+  assert.deepEqual(JSON.parse(JSON.stringify(reloaded.ctx.G.player.skillMastery)), { level: 400, xp: 1000 });
+  reloaded.ctx.gainSkillMasteryXp(1000);
+  assert.equal(reloaded.ctx.G.player.skillMastery.level, 400);
+  assert.equal(reloaded.ctx.G.player.skillMastery.xp, 2000);
+  assert.equal(reloaded.panel('skills').skills2.points.total, 400);
 });

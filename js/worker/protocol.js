@@ -100,6 +100,7 @@
 // v62：skills2.points.total 包含超支舊檔成功重選後保留的投資額度，欄位與指令不變。
 // v64：神鑄3秒作業／品質篩選／原子補料／連續自動，forge 7→10，總數91→94。
 // v65（2026-10-31 成就系統）：PANEL_KEYS 新增 achv（成就頁投影，js/achievements.js achPanelData）；指令數不變。
+// v65：內測目前轉數威能直接全滿／歸零，外服於Worker拒絕；指令93→94。
 var WORKER_PROTOCOL_VERSION = 65;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
@@ -401,6 +402,7 @@ var COMMANDS = {
   'talent.max':            { fn: 'talentMax',        args: { id: 'str' },                         dirty: ['talents', 'header'] },
   'talent.downgrade':      { fn: 'talentDowngrade',  args: { id: 'str' },                         dirty: ['talents', 'header'] },
   'talent.delete':         { fn: 'talentDelete',     args: { id: 'str' },                         dirty: ['talents', 'header'] },
+  'talent.devSetPage':     { fn: 'talentDevSetPage', args: { turn: 'int', full: 'bool' }, limit: { turn: { min: 1, max: 10 } }, dirty: ['talents', 'header', 'equip', 'skills', 'battle', 'tower'] },
 
   /* -- 煉獄之塔 -- */
   /* fn:null：手動挑戰同時代表「取消等待中的連挑」（ui.js 現行是先清 TOWER.auto 再開打）。
@@ -584,6 +586,7 @@ function bossFightBlocksCommand(name) {
     'gem.socket', 'gem.socketFused', 'gem.unsocket', 'rune.socket', 'rune.erase',
     'gem.resonanceSocket', 'gem.resonanceUnsocket',
     'talent.upgrade', 'talent.max', 'talent.downgrade', 'talent.delete',
+    'talent.devSetPage',
   ].indexOf(name) !== -1;
 }
 

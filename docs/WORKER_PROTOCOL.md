@@ -2,6 +2,8 @@
 
 v65（2026-10-31 成就系統）：`PANEL_KEYS` 新增 `achv`（成就頁投影：`{ list: [{id, at, prog, goal}], got }`，只送達成時間與進度）；指令數不變。成就名稱、圖示、條件文字由兩端共載的 `ACHIEVEMENTS`（js/achievement_data.js，來源 config/Excel/Achievement.xlsx）提供，不進協議；判定與累計統計（js/achievements.js）只在 Worker 端載入，存檔欄位 `G.achv = { got, st }`。達成時送一次 `notice` 事件 `key: 'achievementUnlocked'`（`data.id`）。
 
+v65（2026-10-31 內測威能頁捷徑）：新增 `talent.devSetPage({turn:1..10, full:boolean})`，指令93→94。Worker以自己的location驗證既有內測主機範圍（file、本機、私有區網、.local／.test），外服直接拒絕。只設定已解鎖目標轉數的啟用節點為TALENT_MAX_LEVEL或0，不扣／退金幣；沿用BOSS戰配置鎖，沒有新存檔欄位。一次talentRefresh同步屬性與場上魔物威脅，dirty為talents／header／equip／skills／battle／tower。UI只在內測顯示右上角切換按鈕、以Worker快照判斷全滿及目前頁，等待回覆與面板期間鎖住按鈕及同頁節點。
+
 v64（2026-10-29 神鑄體驗）：神鑄指令7→10，總數91→94。新增`forge.setQuality({rarity:6|7|9})`、`forge.autoFill({})`及`forge.setAuto({on:boolean})`；`forge.start`改呼叫startForge啟動3000ms作業。只有forgeTick到期才沿同一doForge配方再次驗證並原子結算，UI不能提前扣料／擲骰。作業中拒絕重啟、換品質／模式、取放素材及變更石頭，允許關閉連續自動讓本輪完成。
 
 version=2的forge新增`quality`（缺省6）、`stonePreference`（缺省原stones）、`auto`（缺省false）及可選`crafting={startedAt,durationMs}`。forge面板新增`craftProgress={durationMs,elapsedMs,paused}|null`，UI按此時長／進度由中心向外亮起，菜單暫停與既有crafting時間補償共用。空裝備法陣rate改以所選品質預覽。裝備素材原子補滿足額才搬動；連續自動精確重用石頭偏好，裝備／金幣／指定石頭不足停止，單Tick最多結算一次，不追補離線自動消耗。成功失敗記錄保留最新10行。

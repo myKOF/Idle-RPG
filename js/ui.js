@@ -1180,7 +1180,7 @@ function bossConfigControlsSelector() {
     '[data-gem-socket], [data-gem-socket-fused], [data-socket-remove], [data-rune-socket], [data-rune-erase], [data-enchant-remove], ' +
     '[data-skill-equip], [data-skill-unequip], [data-skill2-downgrade], [data-skill2-delete], [data-skill2-ultpick], [data-skill2-ultswitch], ' +
     '[data-skill-learn], [data-skill-max], [data-skill-downgrade], [data-skill-delete], ' +
-    '[data-talent-up], [data-talent-max], [data-talent-down], [data-talent-delete]';
+    '[data-talent-up], [data-talent-max], [data-talent-down], [data-talent-delete], [data-talent-dev-page]';
 }
 
 function syncBossConfigControls() {
@@ -1364,6 +1364,8 @@ function bindWorkerUiState() {
       renderEquip();
       UI.dirty.equip = false;
     }
+    if (msg.name === 'header' && UI.tab === 'equip' &&
+        equipRuneUiUnlocked(previousPanel || null) !== equipRuneUiUnlocked(msg.data)) renderDetail();
     releaseUiPendingByPanel(msg.name);
     if (msg.name === 'gems' && UI.tab === 'equip' && equipSlotPageModeFor(findSelItem())) renderDetail();
     if (UI_WORKER_STATE.panelQueued[msg.name]) {
@@ -5686,9 +5688,16 @@ function equipSlotsOf(it, kind) {
   return it.sockets || [];
 }
 
+function equipRuneUiUnlocked(headerSnapshot) {
+  if (headerSnapshot === undefined) headerSnapshot = uiHeaderPanelSnapshot();
+  var player = headerSnapshot && headerSnapshot.player;
+  return !!player && progressReached(player.level, player.reincarnations, 300, 0);
+}
+
 function equipSlotModeFor(it, kind) {
   var mode = UI.equipMatMode;
   if (!it || !mode || mode.itemId !== it.id || mode.mode !== kind) return null;
+  if (kind === 'rune' && !equipRuneUiUnlocked()) { UI.equipMatMode = null; return null; }
   var sockets = equipSlotsOf(it, kind);
   if (kind === 'rune') {
     /* 符文頁：mode.draft = { 孔索引: 符文id } 是還沒刻印的暫放符文，只存在本機；已被真正鑲上或超出孔數的就清掉，
@@ -6017,7 +6026,7 @@ function renderDetail() {
     /* 有暫放的符文：「符文」鈕變「刻印」，按下才真的鑲上 */
     actionsHtml += '<button class="btn btn-primary act-btn-tooltip" data-act="engrave-rune" data-tip="' + esc(STR(1207, Object.keys(runeMode.draft).length)) + '"' + pendingUiButtonAttributes(pendingKey) + '>' + STR(1208) + '</button>';
   } else {
-    actionsHtml += '<button class="btn' + (runeMode ? ' btn-primary' : '') + '" data-act="toggle-rune" aria-pressed="' + (matMode === 'rune') + '">' + STR(150) + '</button>';
+    actionsHtml += '<button class="btn' + (runeMode ? ' btn-primary' : '') + '" data-act="toggle-rune" aria-pressed="' + (matMode === 'rune') + '"' + (equipRuneUiUnlocked(headerSnapshot) ? '' : ' disabled') + '>' + STR(150) + '</button>';
   }
   if (!fromInv) {
     actionsHtml += '<button class="btn btn-icon act-btn-tooltip" data-act="unequip" aria-label="' + STR(74) + '" data-tip="' + STR(74) + '"' +
@@ -8234,6 +8243,36 @@ function closeOfflineSummary() {
 /* 天堂威能：選取節點後直接在圖示下方升降級，數值由 Worker 快照提供。 */
 UI.talentBrowse = { turn: null };
 
+function talentDevButtonHTML(snapshot, turn) {
+  if (!talentDevServer()) return '';
+  var disabled = talentViewReincarnations(snapshot) < turn || bossFightConfigLocked() ||
+    isUiCommandPending(nodePendingKey('talent-page-dev'));
+  return '<button type="button" class="tlx-dev-page" data-talent-dev-page' +
+    (disabled ? ' disabled' : '') + '>' + (talentViewTreeComplete(snapshot, turn) ? STR(2238) : STR(2237)) + '</button>';
+}
+
+function runTalentDevPageAction() {
+  if (!talentDevServer() || bossFightConfigLocked() || isUiCommandPending(nodePendingKey('talent-page-dev'))) return;
+  var snapshot = uiTalentPanelSnapshot();
+  var turn = UI.talentBrowse.turn;
+  if (!snapshot || !TALENT_TREES[turn] || talentViewReincarnations(snapshot) < turn) return;
+  var panels = ['talents', 'header', 'equip', 'skills', 'battle', 'tower'];
+  var action = sendUiCommand('talent.devSetPage', { turn: turn, full: !talentViewTreeComplete(snapshot, turn) }, {
+    silentResultError: true,
+    keys: [nodePendingKey('talent-page-dev')].concat((TALENT_TREES[turn] || []).map(function (def) { return nodePendingKey('talent:' + def.id); })),
+    panels: panels
+  }).then(function (result) {
+    var error = uiCommandResultError(result);
+    if (error) reportUiCommandFailure(STR(851), error, panels);
+    renderTalents();
+  }, function (error) {
+    reportUiCommandFailure(STR(851), error, panels);
+    renderTalents();
+  });
+  renderTalents();
+  return action;
+}
+
 function talentTreeMaxTotal(turn) {
   return TALENT_MAX_LEVEL * (TALENT_TREES[turn] || []).filter(function (def) { return !def.disabled; }).length;
 }
@@ -8310,7 +8349,7 @@ function talentBoardHTML(turn, snapshot) {
     spokes += '<span class="tlx-spoke' + (lv > 0 ? ' is-lit' : '') + (lv >= TALENT_MAX_LEVEL ? ' is-max' : '') + '" style="--a:' + angle + 'deg"></span>';
     nodes += talentNodeHTML(def, turn, snapshot, i, tree.length);
   });
-  return '<span class="tlx-board-caption" aria-hidden="true">' + STR(868) + '</span><span class="tlx-orbit" aria-hidden="true"></span><span class="tlx-orbit is-inner" aria-hidden="true"></span>' + spokes + '<div class="tlx-core' + (complete ? ' is-complete' : '') + '" tabindex="0" data-tt-title="' + STR(866) + '" data-tt-desc="' + STR(867, Math.round((TALENT_COMPLETE_EFFECT_MULTIPLIER - 1) * 100)) + '">' + STR(869, turn) + '<span>' + fmtFull(total) + '/' + fmtFull(max) + '</span></div>' + nodes;
+  return '<span class="tlx-board-caption" aria-hidden="true">' + STR(868) + '</span><span class="tlx-orbit" aria-hidden="true"></span><span class="tlx-orbit is-inner" aria-hidden="true"></span>' + spokes + '<div class="tlx-core' + (complete ? ' is-complete' : '') + '" tabindex="0" data-tt-title="' + STR(866) + '" data-tt-desc="' + STR(867, Math.round((TALENT_COMPLETE_EFFECT_MULTIPLIER - 1) * 100)) + '">' + '<b>' + esc(reincarnationRankName(turn)) + '</b><span>' + fmtFull(total) + '/' + fmtFull(max) + '</span></div>' + nodes;
 }
 
 function renderTalents() {
@@ -8325,7 +8364,7 @@ function renderTalents() {
   var rc = talentViewReincarnations(snapshot);
   if (!UI.talentBrowse.turn || !TALENT_TREES[UI.talentBrowse.turn]) UI.talentBrowse.turn = talentDefaultTurn(snapshot);
   var turn = UI.talentBrowse.turn;
-  var h = '<div class="pg-top"><h2 class="pg-title">' + STR(874) + '</h2>' + STR(876, fmtFull(talentViewGold(snapshot)), rc) + '<span class="pg-pill tlx-monster-power" tabindex="0" data-tt-title="' + STR(871) + '" data-tt-desc="' + STR(872) + '">' + STR(2095, talentThreatIconHTML()) + ' <b>' + (100 + talentThreatTotal(talentViewLevels(snapshot))) + '%</b></span><button type="button" class="pg-help" aria-label="' + STR(873) + '" data-tt-title="' + STR(874) + '" data-tt-desc="' + STR(875) + '">?</button></div>';
+  var h = '<div class="pg-top"><h2 class="pg-title">' + STR(874) + '</h2>' + STR(876, fmtFull(talentViewGold(snapshot)), rc) + '<span class="pg-pill tlx-monster-power" tabindex="0" data-tt-title="' + STR(871) + '" data-tt-desc="' + STR(872) + '">' + STR(2095, talentThreatIconHTML()) + ' <b>' + (100 + talentThreatTotal(talentViewLevels(snapshot))) + '%</b></span>' + talentDevButtonHTML(snapshot, turn) + '<button type="button" class="pg-help" aria-label="' + STR(873) + '" data-tt-title="' + STR(874) + '" data-tt-desc="' + STR(875) + '">?</button></div>';
   if (rc < 1) h += '<div class="tlx-locked-banner">' + STR(878) + '</div>';
   h += '<div class="tlx-tiers" role="tablist" aria-label="' + STR(879) + '">' + talentTierTabsHTML(snapshot) + '</div>';
   h += '<div class="tlx"><div class="tlx-board">' + talentBoardHTML(turn, snapshot) + '</div></div>';
@@ -11392,6 +11431,11 @@ function initUI() {
 
   // 技能：學習/升級/裝載/融合（事件委派）
   document.addEventListener('click', function (e) {
+    var talentDevPage = e.target.closest('[data-talent-dev-page]');
+    if (talentDevPage) {
+      if (!talentDevPage.disabled) runTalentDevPageAction();
+      return;
+    }
     var talentSelect = e.target.closest('[data-talent-select]');
     if (talentSelect) {
       var talentParts = talentSelect.getAttribute('data-talent-select').split(':');
@@ -12431,6 +12475,7 @@ function initUI() {
     if (actBtn) {
       if (actBtn.disabled) return;
       var act = actBtn.getAttribute('data-act');
+      if ((act === 'toggle-rune' || act === 'engrave-rune') && !equipRuneUiUnlocked()) return;
       if (act === 'engrave-rune') { engraveRuneDrafts(); return; }
       if (act === 'toggle-socket' || act === 'toggle-rune') {
         var matIt = findSelItem();

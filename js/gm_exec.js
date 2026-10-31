@@ -481,6 +481,25 @@
 
     var token = String(args[0]).toLowerCase();
 
+    // 品質限定的身上裝備只查使用中套裝，不採用目前選取或檢視套裝。
+    if (token.indexOf('worn:') === 0) {
+      var filter = token.split(':');
+      var filterSlot = gmResolveSlotKey(filter[1]);
+      var filterRarity = gmRarity(filter[2]);
+      if (filter.length !== 3 || !filterSlot || filterRarity === null || filterRarity === undefined) {
+        return { error: '❌ 身上裝備條件格式：worn:<部位>:<品質>' };
+      }
+      args.shift();
+      var wornSetIdx = G.equipActive || 0;
+      var wornSet = (G.equipmentSets && G.equipmentSets[wornSetIdx]) || G.equipment || {};
+      var candidates = (filterSlot === 'ring' ? ['ring', 'ring2'] : [filterSlot]).filter(function (slot) {
+        return wornSet[slot] && wornSet[slot].rarity === filterRarity;
+      });
+      if (candidates.length !== 1) return { error: '❌ 身上符合部位與品質的裝備有 ' + candidates.length + ' 件，請明確指定唯一裝備。' };
+      var wornSlot = candidates[0];
+      return { item: wornSet[wornSlot], desc: '第 ' + (wornSetIdx + 1) + ' 套【' + gmSlotLabel(wornSlot) + '】【' + wornSet[wornSlot].name + '】', isEquip: true, slotKey: wornSlot, setIdx: wornSetIdx };
+    }
+
     // 1) 顯式指定背包裝備 inv / bag / 背包
     if (token === 'inv' || token === 'bag' || token === '背包') {
       args.shift();
@@ -631,6 +650,28 @@
     args = args.filter(function (arg) { return arg !== '--allow-overcap'; });
 
     var op = String(args[0]).toLowerCase();
+
+    // 以來源名稱定位後沿用既有單條修改，不讓模型猜詞條序號。
+    if (op === 'replace') {
+      var sourceKey = gmResolveAffixKey(args[1]);
+      var replacementKey = gmResolveAffixKey(args[2]);
+      var sourceAncient = args[3];
+      if (!sourceKey || !replacementKey || args.length > 4 ||
+          (sourceAncient !== undefined && sourceAncient !== 'ancient' && sourceAncient !== 'normal')) {
+        return { ok: false, message: '格式：replace <來源屬性> <目標屬性> [ancient|normal]' };
+      }
+      var sourceIndexes = [];
+      (item.affixes || []).forEach(function (a, index) {
+        var def = a && typeof AFFIX_POOL !== 'undefined' && AFFIX_POOL[a.key];
+        var matchesName = def && def.name.replace(/%/g, '') === args[1];
+        if (a && (a.key === sourceKey || matchesName) && (sourceAncient === undefined || !!a.ancient === (sourceAncient === 'ancient'))) sourceIndexes.push(index);
+      });
+      if (sourceIndexes.length !== 1) return { ok: false, message: '來源詞條符合條件有 ' + sourceIndexes.length + ' 條，無法唯一定位，未修改裝備。' };
+      if (item.affixes[sourceIndexes[0]].key !== replacementKey && item.affixes.some(function (a) { return a && a.key === replacementKey; })) {
+        return { ok: false, message: '目標屬性已存在，未修改裝備。' };
+      }
+      return gmModSingleEquip(item, targetDesc, [String(sourceIndexes[0] + 1), replacementKey], batch);
+    }
 
     // ---- 太古操作 ----
     if (op === 'ancient' || op === '太古') {
