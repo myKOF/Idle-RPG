@@ -1573,7 +1573,7 @@ var BattleDecor = (function () {
       deepAmbient: { kind: 'motes', count: 30, color: 0x9ad8ff }
     },
     mist_forest: {
-      tint:0xffffff,deepTint:0x819d96,
+      tint:0xffffff,deepTint:0xc4d0cc,
       props:[['mistTree',4,172,215,{}],['fanFern',4,86,54,{}],['rootGate',1,148,115,{}]],
       deepProps:[['rootGate',3,168,128,{}],['fanFern',3,86,54,{}],['mistTree',1,145,180,{}]],
       decals:[['biomass',6,280,{kind:'forest'}],['patch',4,330,{color:'#102c24',alpha:.22}],['roots',2,170,{}]],
@@ -1598,7 +1598,7 @@ var BattleDecor = (function () {
       ambient:{kind:'rain',count:70,color:0xb9d3eb,fog:3,fogTint:0x91a7bf,fogAlpha:.15,fogWind:-1},deepAmbient:{kind:'motes',count:25,color:0xacc6eb,fog:2,fogTint:0x6e7da4,fogAlpha:.12},motion:{wind:1.6,local:'frost'}
     },
     swamp: {
-      tint: 0xffffff, deepTint: 0x7c8a78,
+      tint: 0xffffff, deepTint: 0xc0c8b8,
       props: [['reeds', 4, 70, 96, { base: '#6a7a3a', head: '#4a2e1a' }], ['mushrooms', 2.6, 62, 66, { cap: '#8a3a6a', stem: '#d8d0b8', spot: '#f0e0f0', glow: '#c070ff' }],
         ['stump', 2, 82, 66, { wood: '#4a3424', ring: '#8a6a48', moss: '#4a6a2a' }], ['rock', 2.4, 84, 64, MOSSROCK, { moss: '#5a8a3a' }], ['deadTree', 1.4, 96, 132, { wood: '#2a2a1e', hi: '#8a9a6a' }],
         ['grass', 2, 54, 40, { base: '#5a7a34' }], ['fern', 3, 76, 50, { base: '#5a7a34' }], ['log', 1.8, 120, 62, { wood: '#4a3424' }]],
@@ -1612,7 +1612,7 @@ var BattleDecor = (function () {
       ambient: { kind: 'fireflies', count: 26, color: 0xd8ff7a, fog: 3 }, deepAmbient: { kind: 'fireflies', count: 30, color: 0x60ffd8, fog: 4 }
     },
     undead_mountains: {
-      tint: 0xffffff, deepTint: 0x7a7480,
+      tint: 0xffffff, deepTint: 0xc4bece,
       props: [['grave', 4, 54, 72, { base: '#7a7a82', dirt: '#2e2a26' }, { moss: '#4a5a3a' }], ['skullPile', 2, 66, 52, { bone: '#cfc6b4' }], ['deadTree', 2.4, 100, 140, { wood: '#1e1a1e', hi: '#8a8090' }],
         ['rock', 3, 66, 52, DARKSTONE], ['ruinWall', 1.2, 116, 72, { base: '#5a5660' }], ['rubble', 1.2, 62, 46, DARKSTONE]],
       deepProps: [['grave', 3, 54, 72, { base: '#6a6672', dirt: '#24201e' }], ['skullPile', 3, 70, 56, { bone: '#c6bca8' }], ['ruinWall', 2.4, 120, 80, { base: '#4a4652' }],

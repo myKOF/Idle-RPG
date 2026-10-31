@@ -9,7 +9,8 @@ var FIELD = {
     monsters: [],
     spawnCd: 0,
     reviveCd: 0,
-    riseCd: 0,         // 死亡復活倒數結束後的起身動作剩餘秒數（REVIVE_RISE_SEC）
+    dieCd: 0,          // 死亡動作剩餘秒數（REVIVE_DIE_SEC）：播完才開始 reviveCd 倒數
+    riseCd: 0,        // 死亡復活倒數結束後的起身動作剩餘秒數（REVIVE_RISE_SEC）
     dpsWindow: []      // [ [GT, dmg], ... ] 供 DPS 顯示
 };
 
@@ -1979,6 +1980,13 @@ function fieldTick(dt) {
         // 死亡期間技能仍在走冷卻；否則 UI 以 GT 顯示的倒數會在下一份快照回到死亡瞬間的舊值。
         tickSkillCds(p, dt);
         tickFieldDeathDespawn(dt);   // 陣亡定格中的敵人：時間到就整批淡出
+        // 死亡動作播完才開始復活倒數；播完當步剩下的時間算進倒數，不吃掉
+        if (FIELD.dieCd > 0) {
+            FIELD.dieCd -= dt;
+            if (FIELD.dieCd > 0) { UI.dirty.battle = true; return; }
+            dt = -FIELD.dieCd;
+            FIELD.dieCd = 0;
+        }
         FIELD.reviveCd -= dt;
         if (FIELD.reviveCd <= 0) {
             p.hp = st.hp; p.mp = st.mp; p.shield = 0; p.shieldMax = 0; p.shieldMaxVersion = SHIELD_MAX_VERSION;
@@ -2422,6 +2430,7 @@ function onPlayerFieldDeath() {
        這是唯一會清場的情況——切關、換圖都不清。 */
     FIELD.despawnCd = FIELD_DEATH_DESPAWN_DELAY;
     FIELD._waveClearPending = false;
+    FIELD.dieCd = REVIVE_DIE_SEC;
     FIELD.reviveCd = REVIVE_DELAY;
     G.stage.kills = 0;
     G.stage.current = retreatStage;

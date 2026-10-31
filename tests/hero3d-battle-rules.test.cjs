@@ -50,7 +50,7 @@ test('3D 起身：死亡動作倒著播，一般死亡由起身時間驅動、�
   assert.match(renderer, /if \(p\.body && p\.body\.hero3d\) \{\s*hero3dDriveRise\(p, revivalProgress, 0\)/);
   /* 一般死亡：倒地動作原速播完後停在最後一格，倒數結束才起身（combat.js riseCd），起身播完才恢復戰鬥 */
   assert.doesNotMatch(renderer, /hero3dFitDie/);
-  assert.match(renderer, /var rising = !counting && riseLeft > 0;/);
+  assert.match(renderer, /var rising = !counting && !dying && riseLeft > 0;/);
 });
 
 test('3D 主角也有穿透式輪廓：輪廓貼圖由 3D 畫布剪影每幀算出，走 2D 同一套輪廓圖層', () => {

@@ -4958,8 +4958,7 @@ function ancientStarBadgeHTML(it) {
   return '<span class="ancient-star-badge' + overlapClass + '" aria-label="' + STR(1184, count) + '">' + stars + '</span>';
 }
 function itemIconFile(it, info) {
-  var weaponIcon = (typeof weaponIconForItem === 'function') ? weaponIconForItem(it) : null;
-  return weaponIcon || (info && info.icon) || '';
+  return equipIconFile(it) || (info && info.icon) || '';
 }
 function itemCellHTML(it, source, extraClass, pendingKey) {
   var r = RARITIES[divineForgeBaseRarity(it.rarity)];
