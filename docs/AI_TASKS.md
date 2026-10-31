@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## CHAOS-READING-FRAME-TRIM-20261031 — 混沌閱讀外框收薄3px
+
+- Owner：Codex；Done，單一開發者。使用者截圖標示混沌戒指詳情左上／右上與左下符文孔文字被框遮擋，要求外框縮減約3px。沿既有授權PNG與紅紫漸層，僅將混沌／神鑄混沌tips、比較卡及詳情的九宮格四邊顯示厚度各減3px，不移動文字或改ICON。
+- 前置：c3d15114雙色ICON及現有閱讀框完成。允許css/equipment-chaos.css該border-image寬度、index該CSS快取、LV既有說明、本段及聊天visualizations隔離預覽；禁止JS／玩法／數值／字串／Worker／存檔／授權原PNG／ICON／其他品質及其他工作區、合併推送。起始工作區乾淨，fetch及四檔衝突預檢無外部來源。
+- 驗收：正式渲染兩品質戒指的tips／詳情、窄寬版文字與鎖定標記／符文孔／固定框捲動、紅紫過渡及ICON維持，截圖存後重開；既有裝備回歸、原圖匯出檢查、Build、Console及diff後獨立Commit，交正常Review／使用者整合。純CSS不產生獨立素材或素材庫Commit。
+- 完成四檔：閱讀框兩個偽元素共用的border-image顯示寬度，由上／右／下／左28／19／29／21px改25／16／26／18px，來源切片、外沿位置、紅紫遮罩／底色及內容padding不變；CSS快取1.0.6，LV說明同步。原圖及ICON無變動，無素材庫變更。
+- 驗證：`node --test --test-reporter=spec tests/equipment-tooltip-compare.test.cjs tests/equipment-two-hand-display.test.cjs tests/equipment-selection-border.test.cjs tests/inventory-mythic-skin.test.cjs tests/forge-shared-inventory.test.cjs`全部30/30；`node tools/equipment-ui/export-source.cjs --check`原圖SHA一致；`npm.cmd run build`606檔通過；git diff／暫存diff／check通過。未新增低影響CSS鏡像測試。
+- UI：IAB隔離載正式itemCellHTML／renderEquip／showItemTooltip與500級測試戒指，兩品質280px tips及570px詳情，四框computed厚度一致25／16／26／18px；名稱／鎖定／詞條按鈕／符文與寶石孔可辨，品質列clientWidth＝scrollWidth（238／528px）。詳情scrollTop0→115框固定，390窄屏documentWidth390、兩框280px，Console error／warning及頁面error皆0。完整截圖chaos.png／godforged-chaos.png／scrolled.png／narrow.png存後均從磁碟重開核對，與browser-report.json／可重現預覽保留本聊天visualizations/chaos-frame-trim-20261031；未載玩家存檔或真Worker遊玩／多瀏覽器。
+- 唯讀未改：規範／Workflow／prompts、ui.js／item.js／data.js／其他CSS、既有回歸、PNG／素材匯出器、String／Worker／玩法／存檔。自我Review完成，無本項未完成實作／已知新增功能風險，可供Review與合併；Commit為本段所在「[Codex] fix: 混沌閱讀外框收薄三像素」，實際編號見交付。未合併推送，下一步由使用者正常整合並重新載入新版CSS。
+
 ## GEM-RESONANCE-DIFFERENT-TYPES-20261030 — 相鄰異種寶石才能共鳴
 
 - Owner：Codex；Done，單一開發者。使用者要求相鄰不同類型寶石才能獲得額外加成，同類型不提供額外效果；自身能力保留。前置：既有相鄰純函式與UI共用計算已完成，修改前衝突預檢無外部來源。
