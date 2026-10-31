@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## SKILL-MASTERY-300-20261031 — 0轉1000級時熟練度約300級
+
+- Owner：Codex；Done，單一開發者。使用者要求提高熟練度經驗需求，使新角色主要靠打怪／高塔／離線升到0轉1000級時熟練度約300級；沿目前角色經驗與50%熟練度收益反推，三次方係數30→1240，次方3／常數20／上限480／獲得率50%維持。既有等級、經驗餘額及技能投資不倒扣、不遷移。
+- 前置：既有參數錨點與來源Excel完成。允許game_parameters.xlsx單格與CSV／formula同步、既有熟練度測試與必要回歸、game_formula／LV／本段、index／Bridge／Worker必要快取。禁止角色經驗／戰鬥／收益公式、String／技能定義／存檔格式／其他素材／工作區與合併推送。
+- fetch後預檢：來源／CSV／formula／Bridge／測試／公式與LV無外部來源；Claude f676fc87成就修改index新增script／多處版本、Worker第23行新增achievement_data且與formula匯入同列、AI_TASKS新增成就段。候選三方試跑index7處／Worker2處／任務1處既有衝突，已依AI_RULES3.2詢問並取得使用者明確同意「只做上述分段修改」；只改本項formula／Bridge快取與Worker的formula匯入、另加本任務段，保留其他內容，不合併成就。
+- 驗證：Excel獨占／原生單格儲存與正常重開／其餘數值格式維持，匯出CSV及既有錨點同步；新局1→1000角色經驗帶入50%熟練度後約300、各級需求／上限與舊檔保留／技能點同步，相關回歸／真Worker與UI／Console／Build／String／diff。獨立Commit後交正常Review／使用者整合；任務與快取衝突分段授權如上。
+- 完成10檔：config/Excel/game_parameters.xlsx單格G13及匯出CSV、js/formula.js單一係數、index／js/bridge.js／js/worker/sim.worker.js必要版本、tests/skill-mastery.test.cjs、game_formula／LV／本段。原生Excel先取得FileShare.None確認來源關閉，只寫數值1240，保留數值格式／樣式／字型／尺寸，正常儲存重開Saved=True；來源SHA未變才覆蓋。唯讀比較全簿13,171個儲存格，只有G13的30→1240、型態與樣式不變；styles.xml逐位相同、欄寬／視圖／篩選／合併／驗證維持。未手工寫XML、未新增文字或素材，素材庫無變更、不建空Commit。
+- 既有管線：node tools/xlsx_to_csv.cjs匯出365列×18欄；node tools/apply_params.cjs試跑586項只有SKILL_MASTERY_XP_A一項變更，--write沿scalar既有錨點回寫；再試跑586一致／變更0／錨點問題0，--check-anchors擾動535值後586錨點各命中1次。沒有改錨點或其他公式；生成器未產生其他受管檔差異。formula主頁84／Bridge399／Worker入口與formula匯入20261031-mastery-300同步。
+- 實際引擎驗算：0轉1→1000級需4,990,005,039,960角色經驗，50%為2,495,002,519,980熟練度經驗；新公式0→300級需2,494,287,906,000，餘714,613,980／下級33,480,000,020，即300級＋2.13445%。面板total／available為300，存讀保持；另一400級／1000經驗存檔重讀不倒扣、後續入帳按新需求累積。任務加技能經驗、熔爐只加角色經驗及逐筆取整仍會令實際結果偏移。
+- 回歸：`node --test --test-reporter=spec tests/skill-mastery.test.cjs tests/gm-skill-point.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/string-table.test.cjs`47/47；`node --test --test-reporter=spec tests/apply-params.test.cjs tests/apply-params-anchor-independence.test.cjs tests/apply-params-scientific.test.cjs`5/5。新增2項目標曲線／存讀與既有投資保留回歸、更新原需求期待，不放寬上限與技能點保護。`npm.cmd run build`607檔通過、String --check寫死0條、diff／暫存diff檢查通過。
+- 額外`node --test --test-reporter=spec tests/skill2-points.test.cjs tests/potential-removal.test.cjs tests/gm-skill-unlock.test.cjs`31項29過／2既有失敗：potential-removal「新角色與正式Worker投影…」的舊指令清單期待，及「威能整轉全滿…」期待56實際200。以起始5451cf18原formula.js唯讀記憶體覆映重跑，失敗名稱與數值相同；技能點與GM全解鎖均通過。未改舊斷言、潛力移除、威能資料或順帶擴修；全庫未跑。
+- 瀏覽器：隔離隨機localhost／headless Edge、正式index與真Worker，驗技能頁Lv.300/480、經驗714613980／33480000020、300總點與可用點，主端與Worker需求一致、實際請求入口／公式快取均為新版；400級舊檔另以新context boot保持Lv.400與1000經驗、400點。Console Error／Warning及pageerror0，未讀寫玩家原來源存檔。技能頁實拍已重開檢視，excel-native-report／calculation／browser-report／來源格式QA及測試／基線紀錄在本聊天visualizations/mastery-300。
+- 唯讀未改：規範／AGENTS／Workflow、apply_params錨點與Excel匯出器、data角色經驗係數／skills2點數及投資規則／skills入帳、combat／tower／save／factory／tasks的收益接線、String及其他Excel／CSV、Worker協議、其他素材及Claude成就檔案。自我Review完成，無本項未完成實作或已知新增風險，可供Review／合併；未驗完整自然打怪耗時、多瀏覽器與實體觸控，既有2失敗如上。Commit為本段所在「[Codex] feat: 調整熟練度需求使零轉千級約三百級」，SHA見交付。未合併／推送develop或main；下一步正常整合後重載主頁與Worker。衝突檔只按使用者核准分段更新，未合併成就或調整其字串／協議。
+
 ## GM-WASH-HIT-20261031 — 護手洗出命中率自然語言修正
 
 - Owner：Codex；Done，單一開發者。使用者回報「把護手部位洗出命中率屬性」被翻成不存在的hitFlat。前置既有modequip替換／條數保護完成。

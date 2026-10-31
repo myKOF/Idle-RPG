@@ -2516,7 +2516,7 @@ function loadoutSize() {
    打怪／道具獲得技能經驗；初始 0 級、上限 SKILL_MASTERY_MAX_LEVEL。
    經驗需求曲線先沿用玩家升級公式的未轉生版：a × L^b + c。 */
 var SKILL_MASTERY_MAX_LEVEL = 480;   // 熟練度等級上限
-var SKILL_MASTERY_XP_A = 30;          // 熟練度經驗需求 係數 a
+var SKILL_MASTERY_XP_A = 1240;          // 熟練度經驗需求 係數 a
 var SKILL_MASTERY_XP_B = 3;           // 熟練度經驗需求 次方 b
 var SKILL_MASTERY_XP_C = 20;          // 熟練度經驗需求 常數 c
 var SKILL_MASTERY_XP_RATE = 50;      // 擊殺獲得技能經驗 =怪物經驗 × 此% （道具/GM 直接給值）
