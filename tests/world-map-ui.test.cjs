@@ -174,13 +174,14 @@ test('所在地圖示隨快照移動；神界瀏覽不自行傳送，仍須選�
   assert.equal(marker.hidden, false); const oldX = marker.style.left;
   t.panels.header.stage.zone = 'swamp'; t.c.WorldMapUI.refresh();
   assert.notEqual(marker.style.left, oldX); assert.match(marker.getAttribute('aria-label'), /月影沼澤/);
-  // 神界入口只有一個條件：通關人界最後一張地圖。光是轉生數 11 不會讓頁籤出現。
+  // 神界入口只有一個條件：通關人界最後一張地圖，不提供頁籤捷徑。
   t.panels.header.player.reincarnations = 11; t.c.WorldMapUI.refresh();
-  assert.equal(t.ids['world-map-realm-god'].hidden, true);
+  assert.equal(t.ids['world-map-god-portal'].hidden, true);
+  assert.equal(t.ids['world-map-realm-god'], undefined);
   t.panels.battle.zones.find(z => z.key === 'undead_mountains').unlocked = true;
   t.panels.battle.zoneProgress.undead_mountains = { cleared: 400 }; t.c.WorldMapUI.refresh();
-  assert.equal(t.ids['world-map-realm-god'].hidden, false);
-  t.ids['world-map-realm-god'].dispatch('click'); t.advance(2500);
+  assert.equal(t.ids['world-map-god-portal'].hidden, false);
+  t.ids['world-map-god-portal'].dispatch('click'); t.advance(2500);
   assert.equal(t.ids['world-map-human'].hidden, true); assert.equal(marker.hidden, true);
   assert.equal(t.commands.length, 0);
 });
@@ -212,14 +213,14 @@ test('最高到達關卡不因目前退關、切圖或重開地圖下降，名�
 });
 
 test('兩界大地圖提示皆固定名稱下方，選取及縮放不改相對位置', () => {
-  const t = setup(); t.c.WorldMapUI.open();
+  const t = setup(); t.panels.battle.zoneProgress.undead_mountains = { cleared: 400 }; t.c.WorldMapUI.open();
   for (const key of t.c.REALMS.human.zones) {
     t.button(key).dispatch('click');
     const anchor = t.button(key).style;
     assert.equal(t.ids['world-map-info'].style.top, 'calc(' + anchor.top + ' + max(2.6cqw, 20px))');
     assert.ok(t.ids['world-map-info'].style.left.includes(anchor.left));
   }
-  t.ids['world-map-realm-god'].dispatch('click'); t.advance(2500);
+  t.ids['world-map-god-portal'].dispatch('click'); t.advance(2500);
   for (const key of t.c.REALMS.god.zones) {
     const node = t.button(key);
     node.dispatch('click');
@@ -291,14 +292,14 @@ test('人界最高地圖須真正通關才出現傳送門，入口不受轉生�
   assert.equal(portal.hidden, false);
   portal.dispatch('click'); t.advance(2500);
   assert.equal(t.ids['world-map-god'].hidden, false);
-  assert.equal(t.ids['world-map-realm-human'].hidden, false);
+  assert.equal(t.ids['world-map-realm-human'], undefined);
   assert.equal(t.commands.length, 0);
   t.button('god_battlefield').dispatch('click');
   assert.equal(t.ids['world-map-go'].disabled, true);
   assert.match(t.ids['world-map-scene-status'].textContent, /亡靈山脈.*400/);
   assert.doesNotMatch(t.ids['world-map-scene-status'].textContent, /轉/);
   t.ids['world-map-go'].dispatch('click'); assert.equal(t.commands.length, 0);
-  t.ids['world-map-realm-human'].dispatch('click'); t.advance(2500);
+  t.ids['world-map-human-portal'].dispatch('click'); t.advance(2500);
   assert.equal(t.ids['world-map-human'].hidden, false);
   delete t.panels.battle.zoneProgress; t.c.WorldMapUI.refresh();
   assert.equal(portal.hidden, true);
@@ -320,7 +321,7 @@ test('最高人界依地圖配置決定，新增／調高其他地圖後不沿�
   t.c.WorldMapUI.refresh(); assert.equal(t.ids['world-map-god-portal'].hidden, true);
 });
 
-test('兩方向轉場皆2.5秒，中點才換圖，期間防連點／頁籤／前進且不送Worker命令', () => {
+test('兩方向轉場皆2.5秒，中點才換圖，期間防連點／前進且不送Worker命令', () => {
   const t = setup();
   t.panels.battle.zones.find(z => z.key === 'undead_mountains').unlocked = true;
   t.panels.battle.zoneProgress.undead_mountains = { cleared: 400 };
@@ -337,7 +338,7 @@ test('兩方向轉場皆2.5秒，中點才換圖，期間防連點／頁籤／�
     assert.equal(layer.style['--wm-transit-duration'], '2500ms');
     assert.equal(t.ids['world-map-modal'].getAttribute('aria-busy'), 'true');
     assert.equal(t.document.activeElement, t.ids['world-map-close']);
-    for (const id of ['world-map-god-portal', 'world-map-human-portal', 'world-map-realm-god', 'world-map-realm-human']) {
+    for (const id of ['world-map-god-portal', 'world-map-human-portal']) {
       assert.equal(t.ids[id].disabled, true, id);
       t.ids[id].dispatch('click'); // fake事件刻意穿過disabled，仍須有邏輯防重入。
     }
@@ -383,7 +384,7 @@ test('轉場關閉／Esc取消舊回呼，重開與新轉場不被遲到回呼�
     t.c.WorldMapUI.open();
     assert.equal(t.ids['world-map-human'].hidden, false);
     assert.equal(t.ids['world-map-human-portal'].disabled, false);
-    t.ids['world-map-realm-god'].dispatch('click');
+    t.ids['world-map-god-portal'].dispatch('click');
     t.advance(2500);
     assert.equal(t.ids['world-map-god'].hidden, false);
     assert.equal(t.ids['world-map-transition'].hidden, true);
@@ -391,12 +392,12 @@ test('轉場關閉／Esc取消舊回呼，重開與新轉場不被遲到回呼�
   }
 });
 
-test('目標圖預載，門洞光芒起點取實際門位置；已在相同界不重播轉場', () => {
+test('目標圖預載，門洞光芒起點取實際門位置；隱藏門不能反向觸發轉場', () => {
   const t = setup();
   t.panels.battle.zoneProgress.undead_mountains = { cleared: 400 };
   t.panels.battle.zones.find(z => z.key === 'undead_mountains').unlocked = true;
   t.c.WorldMapUI.open();
-  t.ids['world-map-realm-human'].dispatch('click');
+  t.ids['world-map-human-portal'].dispatch('click');
   assert.equal(t.ids['world-map-transition'].hidden, true);
   t.ids['world-map-canvas'].rect = { left: 100, top: 200, width: 1000, height: 600 };
   t.ids['world-map-god-portal'].rect = { left: 200, top: 260, width: 100, height: 120 };
@@ -404,4 +405,21 @@ test('目標圖預載，門洞光芒起點取實際門位置；已在相同界�
   assert.equal(t.ids['world-map-transition'].style['--wm-portal-x'], '15%');
   assert.equal(t.ids['world-map-transition'].style['--wm-portal-y'], '20%');
   assert.equal(t.ids['world-map-god-image'].getAttribute('loading'), 'eager');
+});
+
+test('場景文字移位仍覆蓋原圖烘焙文字，資訊卡與所在地指針跟隨新熱區', () => {
+  const t = setup();
+  const cover = t.nodes.find(n => n.getAttribute('src') === 'images/world-map/label-cover-thunder_peak.png?v=1');
+  const label = t.button('thunder_peak');
+  assert.equal(cover.parent, t.ids['world-map-hotspots']);
+  assert.notEqual(cover.style.left, label.style.left);
+  assert.notEqual(cover.style.top, label.style.top);
+  const original = { ...cover.style };
+  t.panels.header.stage.zone = 'thunder_peak';
+  t.c.WorldMapUI.open(); label.dispatch('click');
+  assert.equal(t.ids['world-map-marker'].style.left, label.style.left);
+  assert.ok(t.ids['world-map-info'].style.top.includes(label.style.top));
+  assert.deepEqual(cover.style, original);
+  assert.equal(t.ids['world-map-realm-human'], undefined);
+  assert.equal(t.ids['world-map-realm-god'], undefined);
 });

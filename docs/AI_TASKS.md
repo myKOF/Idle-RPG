@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## WORLD-MAP-PRESENTATION-20261031 — 光暈邊界、入口簡化與文字位置／黑邊
+
+- Owner：Codex；Done，單一開發者。使用者要求修正神界入口光暈半透明方塊、刪除右上人界／神界頁籤；追加依圖移動太古戰場／混沌界／返回門文字及落雷峰，兩界場景名稱／關卡／傳送門文字顯示1px黑邊。沿用已完成雙向門2.5秒轉場。
+- 允許world-map CSS／JS、index標記及快取、world-map-ui回歸、WORLD_MAP／LV與本段。禁止改玩法／解鎖／進度／Worker／存檔／String／地圖圖片／素材及其他工作區、合併推送。原烘焙名稱覆片須留在原位，移動文字／熱區／資訊卡及指針同步。
+- 起始工作區乾淨。預檢僅index有Claude b918febb的data／renderer快取差異，本項門按鈕及world-map快取不同行且無語意相依；共同祖先／候選／ai/claude三方merge-file exit0，分段修改。不改共用主題；純介面CSS／SVG不新增獨立素材，素材庫無變更。
+- 驗光暈橢圓柔化／消除直角、頁籤確實不存在且雙向門／2.5秒／Esc／焦點保留、四處文字位置／原圖去字／熱區與資訊卡／黑邊、Console及地圖／String／快取回歸／Build／diff後獨立Commit，交正常Review及合併並刷新8131。
+- 完成七檔：CSS光暈橢圓遮罩漸退、雙向門文字及場景／進度共用1px八方向黑色外框；JS三個名稱熱區／資訊卡／指針移位，人界七張去字覆片獨立置於原字位置；返回門caption移到階梯，門洞不移動；index實際刪除兩頁籤、JS監聽／狀態與CSS選中樣式刪除，CSS1.0.13／JS1.0.8快取；world-map-ui回歸、WORLD_MAP／LV及本段同步。未增文字／獨立素材，素材庫無變更。
+- 驗證指令：node --test --test-reporter=spec tests/world-map-ui.test.cjs tests/world-map.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs全部37/37通過；npm.cmd run build607檔通過；git diff --check通過。舊頁籤回歸改由正式門進入，保留末關通關門檻、2.5秒時序／防重入／取消／焦點斷言，新增移位後覆片不跟隨且資訊卡／指針跟隨熱區驗證。全庫及多瀏覽器未重跑。
+- 真瀏覽器8131：實際檢查偏心彩光原無遮罩，修後中心橢圓遮罩／50%圓角生效；兩頁籤DOM數0。一般窄分頁與1920×1080依參考圖驗證三場景／返回門caption位置及黑邊，人界原字沒有殘影，落雷峰新位置點擊資訊卡仍在其下，雙向傳送／Esc中止／重開及焦點正常。Console error／warning0，未改玩家進度／戰鬥設定。完整桌面實拍map-labels-human-desktop.png／map-labels-god-desktop.png及窄分頁實拍保留本聊天visualizations/god-world-map；臨時桌面viewport已reset，留下人界頁供驗收。
+- 唯讀未改：規範／Workflow／prompts、共用style.css、String／ZONES／Worker／存檔／配置、既有地圖PNG／覆片／素材庫。自我Review完成，無本項未完成或已知新增風險，可供Review／合併；遊戲Commit為本段所在「[Codex] fix: 修正地圖光暈邊界與名稱顯示並移除位面頁籤」，SHA見交付。最終index與Claude三方試跑exit0；未合併推送，下一步正常整合後重載8131驗收。
+
 ## TALENT-CENTER-RANK-20261031 — 威能星盤中央顯示對應轉生稱號
 
 - Owner：Codex；Done，單一開發者。使用者指定中心「X轉」改為該頁轉生稱號，例如10轉顯示位面創世神。前置既有reincarnationRankName／game_parameters階級名稱完成。
