@@ -32,7 +32,8 @@ function mount(){
   const c={console,setTimeout(){return 0;},document:{addEventListener(){},querySelectorAll(){return[];},getElementById(id){return elements[id]||null;}}};c.window=c;vm.createContext(c);
   for(const name of ['util','strings_data','strings','data','runeword_data','status','formula','item','runeword','ui','ui-runeword'])vm.runInContext(fs.readFileSync(path.join(root,'js',name+'.js'),'utf8'),c);
   c.it={id:'gear',slot:'weapon',name:'劍',level:50,rarity:5,affixes:[{key:'str',roll:1}],sockets:[null,null,null,null],enchants:[{key:'fire',gemLv:1}],runes:['r01',null,null,null],upgrade:0};
-  c.findSelItem=()=>c.it;c.uiHeaderPanelSnapshot=()=>({player:{gold:1e12,scrap:1e12,essence:1e12}});c.uiInventoryPanelSnapshot=()=>null;
+  c.player={level:300,reincarnations:0,gold:1e12,scrap:1e12,essence:1e12};
+  c.findSelItem=()=>c.it;c.uiHeaderPanelSnapshot=()=>({player:c.player});c.uiInventoryPanelSnapshot=()=>null;
   c.uiGemsPanelSnapshot=()=>({gems:{ruby:{1:3,5:2},sapphire:{2:1}},fusedGems:[{id:'f',level:5,stats:[{type:'ruby',mult:1}],fusions:1}]});
   c.hideAffixPool=c.hideTooltip=c.updateSelectionUI=()=>{};c.UI.tab='equip';c.UI.sel={id:'gear',source:'equip'};c.pending=new Set();c.isUiCommandPending=k=>c.pending.has(k);
   c.commands=[];c.sendUiCommand=(name,args,opts)=>{c.commands.push({name,args:JSON.parse(JSON.stringify(args))});opts.keys.forEach(k=>c.pending.add(k));c.renderDetail();return new Promise(resolve=>c.finish=result=>{c.pending.clear();resolve(result);});};
@@ -298,4 +299,38 @@ test('庫存清單替換後重新同步禁用，pending及換件仍正確',()=>{
   c.pending.clear();c.syncEquipSocketPending();assert.ok(gems.buttons.every(b=>!b.disabled));
   c.it.id='other';c.UI.sel.id='other';c.click({act:'toggle-socket'});assert.notEqual(p.gems,gems);assert.ok(p.gems.buttons.every(b=>!b.disabled));
   c.click({'socket-pick':'0'});assert.ok(p.gems.buttons.every(b=>b.disabled));
+});
+
+test('裝備符文入口：零轉300級開放，轉生後低等級仍開放；以角色進度判斷',()=>{
+  for(const [level,reincarnations,unlocked] of [[1,0,false],[30,0,false],[299,0,false],[300,0,true],[301,0,true],[1,1,true],[1,2,true]]){
+    const c=mount();Object.assign(c.player,{level,reincarnations});c.it.level=500;c.renderDetail();
+    const button=c.elements['equip-action-bar'].innerHTML.match(/<button[^>]*data-act="toggle-rune"[^>]*>/)[0];
+    assert.equal(/\sdisabled\b/.test(button),!unlocked,level+'級／'+reincarnations+'轉');
+    c.click({act:'toggle-rune'});assert.equal(!!c.UI.equipMatMode,unlocked,'繞過disabled的事件仍受門檻保護');
+    assert.equal(c.commands.length,0);
+  }
+});
+test('未達符文門檻仍可用寶石；缺少角色快照鎖入口，舊符文草稿不可刻印',()=>{
+  const c=mount();c.player.level=299;c.renderDetail();c.click({act:'toggle-socket'});
+  assert.equal(c.UI.equipMatMode.mode,'socket');
+  c.click({act:'toggle-rune'});assert.equal(c.UI.equipMatMode.mode,'socket');
+  c.player.level=300;c.click({act:'toggle-rune'});c.UI.equipMatMode.draft={1:'r01'};
+  c.player.level=299;c.click({act:'engrave-rune'});assert.equal(c.commands.length,0);
+  c.renderDetail();assert.equal(c.UI.equipMatMode,null);assert.doesNotMatch(c.elements['equip-action-bar'].innerHTML,/engrave-rune/);
+  c.uiHeaderPanelSnapshot=()=>null;c.renderDetail();assert.match(c.elements['equip-action-bar'].innerHTML,/data-act="toggle-rune"[^>]* disabled/);
+});
+
+test('角色快照抵達即同步符文入口：初次載入與299升300級，不必重選裝備',()=>{
+  const c=mount(),callbacks={};
+  vm.runInContext(fs.readFileSync(path.join(root,'js/worker/protocol.js'),'utf8'),c);
+  c.WorkerBridge={on:(name,fn)=>{callbacks[name]=fn;}};
+  c.refreshUiPanelSubscriptions=c.updateWorkerSafeModeMarker=c.requestPanelData=c.releaseUiPendingByPanel=c.showPendingTowerResultModalIfReady=()=>{};
+  c.uiHeaderPanelSnapshot=()=>c.UI_WORKER_STATE.panels.header;
+  c.renderDetail();assert.match(c.elements['equip-action-bar'].innerHTML,/data-act="toggle-rune"[^>]* disabled/);
+  assert.equal(c.bindWorkerUiState(),true);
+  for(const [level,reincarnations,unlocked] of [[300,0,true],[299,0,false],[300,0,true],[1,1,true],[1,0,false]]){
+    callbacks[c.MSG_OUT.PANEL]({name:'header',data:{player:{...c.player,level,reincarnations}}});
+    const button=c.elements['equip-action-bar'].innerHTML.match(/<button[^>]*data-act="toggle-rune"[^>]*>/)[0];
+    assert.equal(/\sdisabled\b/.test(button),!unlocked);
+  }
 });

@@ -13601,3 +13601,16 @@ Worker 存活且頁面正常完成載入。
 - 測試指令：`node --test --test-reporter=spec tests/forge-stone-controls.test.cjs tests/divine-forge-interaction.test.cjs tests/forge-shared-inventory.test.cjs tests/string-table.test.cjs tests/stage-jump-ui.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs`全部66/66通過（新增長按回歸7項）；`node tools/string-table/apply_strings.cjs --check`、`node tools/string-table/build_string_csv.cjs --check`及`git diff --check`通過；`npm.cmd run build`605檔通過。另首輪跑`tests/divine-forge.test.cjs`的16項為15過／1既有失敗：第195行期待2.9秒背包0件，實際2件。以修改前ui.js及strings_data.js唯讀記憶體覆映重跑同一案例，仍為2 !== 0；其餘模擬程式本項未改，不放寬斷言或擴修。
 - 瀏覽器：隔離隨機localhost／headless Edge，種子新局經正式Worker boot與正式index，未讀寫玩家原來源存檔。驗13px／18px／20px與center計算樣式、無紅線文字／金幣列、原生滑鼠350ms不動／約1.5秒選至28、放開Worker收到28且不重加、短按減1、390窄屏提示在viewport內；另59長按至60、按鈕停用仍能由document放開提交60與維持最終顯示。Console Error／Warning及pageerror皆0；提示桌面／窄屏PNG、正式頁、browser-report與Excel差異紀錄／QA腳本在本聊天visualizations/forge-tip，未納入遊戲倉庫。
 - 唯讀檢查未改：AI_RULES／AGENTS／Workflow／prompts、data／forge／Worker／bridge／save與原有神鑄回歸、其他Excel／CSV與String其他列、聖域場景與素材；與Claude同檔僅不同腳本版號，最終候選合併試跑另驗exit0。自我Review完成，無本項未完成實作或已知新增功能風險；既有神鑄回歸失敗如上，未驗實體觸控設備／多瀏覽器或全庫測試。Commit為本段所在「[Codex] feat: 簡化神性之石提示並加入長按連續調整」，實際編號見交付。可供Review／合併，建議使用者正常整合後重新載入驗收；未合併推送develop／main。
+
+
+## EQUIP-RUNE-300-20261031 — 裝備符文按鈕零轉300級開放
+
+- Owner：Codex；Done，單一開發者。使用者要求裝備詳情符文功能按鈕於0轉300級開放，此前置灰且不可用；已轉生角色依progressReached規則放行。前置既有角色進度快照／符文頁已完成。
+- 允許js/ui.js符文入口與快照刷新、index對應快取、equip-socket／equip-reroll相關回歸、LV及本獨立任務段；禁止符文庫／掉落／配方／數值／Worker協議／存檔／Excel／String／素材及其他工作區、合併推送。完成後交使用者Review／整合。
+- fetch後預檢：ui.js與Claude成就f676fc87不同區段，現況三方試跑exit0；index現況7處與AI_TASKS現況1處既有衝突，依AI_RULES3.2詢問後，使用者明確同意「同意，只做上述分段修改」。只更新本項UI快取／獨立任務紀錄，保留其他內容，不合併成就分支。
+- 驗收：零轉299／300邊界、1轉1級、角色與裝備等級分離、缺快照與舊草稿阻擋、角色升級即時更新、寶石及原符文流程回歸、Console／Build／String／diff。無新增玩家文字或素材；素材庫無本項變動、不建空Commit。
+
+- 完成6檔：js/ui.js、index.html、tests/equip-socket-ui.test.cjs、tests/equip-reroll-ui.test.cjs、LV_upgrade_system.md及本段。沿用progressReached(player.level, player.reincarnations, 300, 0)，按鈕disabled套用既有灰階／透明度／一般游標，入口事件額外判定；失效符文模式／草稿不可刻印。header面板跨門檻與首份快照到達即刷新詳情，無須換裝備或重開頁面。UI快取240→241，沒有Worker／協議／存檔變更。
+- 測試指令：node --test --test-reporter=dot tests/equip-socket-ui.test.cjs tests/equip-reroll-ui.test.cjs tests/runeword-ui.test.cjs tests/string-table.test.cjs tests/boss-skill-lock.test.cjs，80/80通過；npm.cmd run build，607檔通過；node tools/string-table/build_string_csv.cjs --check寫死0條；最終新增快照回歸及previousPanel空值處理後node --check兩檔及diff／暫存diff檢查通過。新增3項門檻／舊草稿／快照回歸，既有兩套fixture明確設定已解鎖角色，不改原流程斷言。
+- 瀏覽器：隔離隨機localhost／headless Edge，載正式UI與CSS及真實DOM；以測試adapter餵header面板並走正式bindWorkerUiState／renderDetail／點擊處理。299→300即時開放、300→299鎖回、1轉1級開放／0轉1級鎖定、disabled事件繞過仍阻擋；實際樣式opacity=.42／grayscale(.45)／cursor=default。390寬按鈕在viewport內，Console Error／Warning與pageerror皆0。三張截圖／browser-report／QA腳本與候選檔留本聊天visualizations/rune-unlock，299級畫面已重開檢視；未接觸玩家存檔。最初QA將未建立模式的undefined期待為null，修正測試判斷，產品未因此修改。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、data的progressReached、runeword／ui-runeword／Worker與協議、String與其他Excel／CSV、CSS及原素材。ui.js最終候選與Claude工作檔的三方試跑exit0；index／AI_TASKS只按使用者核准分段修改。自我Review完成，可供合併，無本項未完成項目或已知新增風險；未跑全庫、多瀏覽器／實體觸控或完整真Worker遊玩。無素材變更、不建素材庫Commit。Commit為本段所在「[Codex] fix: 裝備符文按鈕改為零轉三百級開放」，SHA見交付；未合併推送develop／main。下一步正常整合後重載驗收。

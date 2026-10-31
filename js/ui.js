@@ -1361,6 +1361,8 @@ function bindWorkerUiState() {
       renderEquip();
       UI.dirty.equip = false;
     }
+    if (msg.name === 'header' && UI.tab === 'equip' &&
+        equipRuneUiUnlocked(previousPanel || null) !== equipRuneUiUnlocked(msg.data)) renderDetail();
     releaseUiPendingByPanel(msg.name);
     if (msg.name === 'gems' && UI.tab === 'equip' && equipSlotPageModeFor(findSelItem())) renderDetail();
     if (UI_WORKER_STATE.panelQueued[msg.name]) {
@@ -5682,9 +5684,16 @@ function equipSlotsOf(it, kind) {
   return it.sockets || [];
 }
 
+function equipRuneUiUnlocked(headerSnapshot) {
+  if (headerSnapshot === undefined) headerSnapshot = uiHeaderPanelSnapshot();
+  var player = headerSnapshot && headerSnapshot.player;
+  return !!player && progressReached(player.level, player.reincarnations, 300, 0);
+}
+
 function equipSlotModeFor(it, kind) {
   var mode = UI.equipMatMode;
   if (!it || !mode || mode.itemId !== it.id || mode.mode !== kind) return null;
+  if (kind === 'rune' && !equipRuneUiUnlocked()) { UI.equipMatMode = null; return null; }
   var sockets = equipSlotsOf(it, kind);
   if (kind === 'rune') {
     /* 符文頁：mode.draft = { 孔索引: 符文id } 是還沒刻印的暫放符文，只存在本機；已被真正鑲上或超出孔數的就清掉，
@@ -6013,7 +6022,7 @@ function renderDetail() {
     /* 有暫放的符文：「符文」鈕變「刻印」，按下才真的鑲上 */
     actionsHtml += '<button class="btn btn-primary act-btn-tooltip" data-act="engrave-rune" data-tip="' + esc(STR(1207, Object.keys(runeMode.draft).length)) + '"' + pendingUiButtonAttributes(pendingKey) + '>' + STR(1208) + '</button>';
   } else {
-    actionsHtml += '<button class="btn' + (runeMode ? ' btn-primary' : '') + '" data-act="toggle-rune" aria-pressed="' + (matMode === 'rune') + '">' + STR(150) + '</button>';
+    actionsHtml += '<button class="btn' + (runeMode ? ' btn-primary' : '') + '" data-act="toggle-rune" aria-pressed="' + (matMode === 'rune') + '"' + (equipRuneUiUnlocked(headerSnapshot) ? '' : ' disabled') + '>' + STR(150) + '</button>';
   }
   if (!fromInv) {
     actionsHtml += '<button class="btn btn-icon act-btn-tooltip" data-act="unequip" aria-label="' + STR(74) + '" data-tip="' + STR(74) + '"' +
@@ -12462,6 +12471,7 @@ function initUI() {
     if (actBtn) {
       if (actBtn.disabled) return;
       var act = actBtn.getAttribute('data-act');
+      if ((act === 'toggle-rune' || act === 'engrave-rune') && !equipRuneUiUnlocked()) return;
       if (act === 'engrave-rune') { engraveRuneDrafts(); return; }
       if (act === 'toggle-socket' || act === 'toggle-rune') {
         var matIt = findSelItem();
