@@ -70,7 +70,7 @@ test('Achievement：編號與圖示不重複、類型都有判定、技能成就
 test('Achievement：圖示檔案齊全（images/achievements/<圖示>.png）', { skip: !fs.existsSync(path.join(root, 'images/achievements')) }, () => {
   const c = loadContext();
   const missing = c.ACHIEVEMENTS.filter((a) => !fs.existsSync(path.join(root, 'images/achievements', a.icon + '.png'))).map((a) => a.icon);
-  assert.deepEqual(missing, []);
+  assert.deepEqual(Array.from(missing), []);
 });
 
 /* ---- 2. 存檔 ---- */
