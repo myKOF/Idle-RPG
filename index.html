@@ -10,7 +10,7 @@
   <link rel="preload" as="image" href="images/ui/heaven-power/dark-gold-seal.png?v=1" fetchpriority="low">
   <link rel="stylesheet" href="css/style.css?v=1.0.107">
   <link rel="stylesheet" href="css/inventory-offset.css">
-  <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.96">
+  <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.97">
   <link rel="stylesheet" href="css/ashen-forge-flat.css?v=1.0.3">
   <link rel="stylesheet" href="css/battle-hud.css?v=1.0.19">
   <link rel="stylesheet" href="css/runeword.css?v=1.0.8">
@@ -542,6 +542,7 @@
             <div class="pg-top">
               <h2 class="pg-title" data-str="103"></h2>
               <div id="tower-tiers" class="twx-tiers" role="tablist" data-str-attr="aria-label:1811"></div>
+              <label class="twx-advance" data-str-attr="data-tip:2241"><input type="checkbox" id="tw-auto-advance" checked><span data-str="2240"></span></label>
               <span class="pg-pill twx-highest"><span data-str="1812"></span> <b id="tower-highest" data-str="1882"></b></span>
               <button type="button" class="pg-help twx-help" data-str-attr="aria-label:1813;data-tt-desc:1814;data-tt-title:103">?</button>
             </div>
@@ -1013,7 +1014,7 @@
        已移除（主執行緒零呼叫，只在 Worker 內跑）：
          special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/util.js?v=1.0.4"></script>
-  <script src="js/strings_data.js?v=9966cb90"></script>
+  <script src="js/strings_data.js?v=1decf51a"></script>
   <script src="js/strings.js?v=1.0.1"></script>
   <script src="js/ui-scale.js?v=1.0.1"></script>
   <script src="js/data.js?v=1.0.116"></script>
@@ -1062,10 +1063,10 @@
   <script src="js/talents.js?v=1.0.15"></script>
   <script src="js/player.js?v=1.0.28"></script>
   <script src="js/combat.js?v=1.0.101"></script>
-  <script src="js/tower.js?v=1.0.40"></script>
+  <script src="js/tower.js?v=1.0.41"></script>
   <script src="js/save.js?v=1.0.28"></script>
   <script src="js/ui-inventory-skin.js?v=1.0.1"></script>
-  <script src="js/ui.js?v=1.0.243"></script>
+  <script src="js/ui.js?v=1.0.244"></script>
   <script src="js/ui-world-map.js?v=1.0.8"></script>
   <script src="js/ui-runeword.js?v=1.0.16"></script>
   <script src="js/ui-achievements.js?v=1.0.0"></script>
@@ -1079,12 +1080,12 @@
        正式遊玩是空殼。必須排在 ui.js（用它的 isInternalVersion）之後、VFX Runtime 建立（main 開機）之前。 -->
   <script src="js/battle-perf.js?v=1.0.3"></script>
   <!-- 模擬 Worker 的協議與橋接。bridge.js 於 DOMContentLoaded 開機 -->
-  <script src="js/worker/protocol.js?v=20261031-ancient-forge-two"></script>
+  <script src="js/worker/protocol.js?v=20261031-tower-advance"></script>
   <script src="js/storage.js?v=1.0.1"></script>
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
-  <script src="js/bridge.js?v=1.0.400"></script>
+  <script src="js/bridge.js?v=1.0.401"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->

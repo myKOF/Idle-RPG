@@ -11,7 +11,7 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-  importScripts('protocol.js?v=20261031-ancient-forge-two', '../game-clock.js?v=1.0.1', 'shim.js?v=20261018-potential-remove');
+  importScripts('protocol.js?v=20261031-tower-advance', '../game-clock.js?v=1.0.1', 'shim.js?v=20261018-potential-remove');
 // 離線結算等分批工作亦共用暫停時鐘；訊息與loop仍能回應存檔及PING。
 if (typeof GameClock !== 'undefined') {
   globalThis.setTimeout = GameClock.setTimeout;
@@ -24,7 +24,7 @@ importScripts(
   '../item.js?v=20261031-ancient-forge-two', '../gem_resonance.js?v=20261030-unlock-god-zone-merge','../runeword.js?v=20261031-achv',
   '../skills.js?v=20261029-merge-cd5ad556', '../skills2.js?v=20261031-wind-ult-rename', '../elite_data.js?v=20261028-develop-merge-a8acfe', '../talents.js?v=20261031-achv-talent-mastery-merge',
   '../player.js?v=20261031-achv', '../special_rules.js?v=20261030-unlock-progress',
-  '../combat.js?v=20261031-achv', '../elite.js?v=20261028-develop-merge-a8acfe', '../elite_boss.js?v=20261023-str-battle', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261028-develop-merge-a8acfe', '../tower.js?v=20261028-sync-cloud-control',
+  '../combat.js?v=20261031-achv', '../elite.js?v=20261028-develop-merge-a8acfe', '../elite_boss.js?v=20261023-str-battle', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261028-develop-merge-a8acfe', '../tower.js?v=20261031-tower-advance',
   '../factory.js?v=20261031-achv', '../newforge.js?v=20261028-develop-merge-a8acfe', '../forge.js?v=20261031-ancient-forge-two', '../save.js?v=20261031-achv',
   '../tasks.js?v=20261031-achv', '../achievements.js?v=20261031-achv-talent-mastery-merge'
 );

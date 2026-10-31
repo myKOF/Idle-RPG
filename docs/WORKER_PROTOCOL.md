@@ -1,4 +1,6 @@
-# Worker 協議 v66
+# Worker 協議 v67
+
+v67（2026-10-31 封魔塔自動推進）：新增 `tower.setAutoAdvance({on:boolean})`，指令94→95。`G.tower.autoAdvance` 為可選存檔欄位，缺欄預設開啟；`tower` 面板沿用完整 tower 投影。一般勝利且未達最高層、金幣足夠時，結算新增 `advanceFloor`，沿用 `autoContinue`／`autoCountdown` 三秒倒數及 `tower.stopAuto` 停止；`tower.confirmResult` 退出本場後依設定接下一層，再走原挑戰資格／費用檢查。連挑含最後一場均不轉入推進，失敗／撤退不推進，重複結算確認不再重開戰鬥。Worker notice 使用既有 towerResult 結構傳遞。
 
 v66（2026-10-31 太古精鑄）：背包格投影新增 `ancientForgeCount`（同件裝備精鑄成功累計）與 `ancientForgeOrders`（目前可見精鑄詞條序號字串：`''`／`'1'`／`'2'`／`'12'`），主端共用資格判斷與星星分色，列表差異比對包含兩欄。完整裝備新增可選 `ancientForgeCount`、各轉化詞條新增 `ancientForgeOrder: 1|2`，JSON存讀保留；洗煉沿用位置標記，移除刻印附加詞條不返還已用額度。舊資料缺欄視為未記錄，不以自然太古數猜測精鑄次數；舊快照無來源時沿用原色。`ancientCount`計入精鑄轉化的刻印附加詞條。指令與面板數不變。
 

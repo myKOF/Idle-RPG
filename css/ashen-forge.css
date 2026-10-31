@@ -4728,8 +4728,34 @@ html *::-webkit-scrollbar-corner {
   cursor: default;
 }
 
-#tab-tower .twx-highest {
+#tab-tower .twx-advance {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   margin-left: auto;
+  color: #f0cf86;
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+#tab-tower .twx-advance input {
+  margin: 0;
+  accent-color: #d9b45e;
+}
+
+#tab-tower .twx-highest {
+  margin-left: 0;
+  white-space: nowrap;
+}
+
+#tab-tower .twx-advance:has(input:disabled) {
+  opacity: 0.45;
+  cursor: default;
+}
+
+#tab-tower .twx-advance input:disabled {
+  cursor: default;
 }
 
 #tab-tower .twx-help {

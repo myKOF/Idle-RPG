@@ -34,6 +34,15 @@ var TOWER_BOSS_SPAWN_DIST = 260;
 var TOWER_INTRO_SEC = 2.4;
 var TOWER_EXIT_SPAWN_HOLD_SEC = 2.4;
 
+function setTowerAutoAdvance(on) {
+  G.tower.autoAdvance = !!on;
+  if (!on && TOWER.result && TOWER.result.advanceFloor) {
+    TOWER.result.autoContinue = false;
+    TOWER.result.autoCountdown = false;
+  }
+  UI.dirty.tower = true;
+}
+
 function makeBoss(floor) {
   var bd = BOSS_LIST[(floor - 1) % BOSS_LIST.length];
   var bs = bossStatsFor(floor);              // BOSS 數值公式 → formula.js §4
@@ -522,16 +531,32 @@ function endTowerFight(win, reason) {
     return;
   }
 
+  // 連挑分支已 return，包含次數用完而清空 auto 的最後一場。
+  // 缺欄舊存檔與新局皆預設開啟；仍照常支付下一層的挑戰費。
+  if (win && G.tower.autoAdvance !== false && floor < TOWER_MAX_FLOOR &&
+      G.player.gold >= towerChallengeCost(floor + 1)) {
+    result.advanceFloor = floor + 1;
+    result.autoContinue = true;
+    result.autoCountdown = true;
+  }
   if (typeof showTowerResultModal === 'function') {
-    showTowerResultModal(result, TOWER.player, TOWER.boss, TOWER.dmgDealt, TOWER.bossDmgDealt);
+    showTowerResultModal(result, TOWER.player, TOWER.boss, TOWER.dmgDealt, TOWER.bossDmgDealt,
+      result.autoCountdown ? { autoCountdown: true, countdown: TOWER_AUTO_RESULT_DELAY } : null);
   }
 }
 
 function confirmTowerResult() {
   var result = TOWER.result;
+  if (!result || !TOWER.showingResult) return;
   var auto = TOWER.auto;
   var shouldStartNext = !!(result && result.autoContinue && auto);
+  var advanceFloor = result.win && result.autoContinue && !auto &&
+    G.tower.autoAdvance !== false ? result.advanceFloor : 0;
   finishTowerFight();
+  if (advanceFloor) {
+    startTowerFight(advanceFloor);
+    return;
+  }
   if (!shouldStartNext) return;
   startTowerFight(auto.floor);
   if (!G.tower.active) {

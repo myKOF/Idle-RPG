@@ -30,6 +30,8 @@ for (const floor of [1, 35, 51, 101, 150]) {
     const c = loadEliteEnv();
     c.G.player.gold = 1e14;
     c.G.tower.highest = floor - 1;
+    // 本項隔離驗證單場獎勵；預設開啟的接關另由 tower-auto-advance 覆蓋。
+    c.setTowerAutoAdvance(false);
     c.showTowerResultModal = () => {};
     const goldEvents = [];
     c.recordLootGold = (...args) => goldEvents.push(args);

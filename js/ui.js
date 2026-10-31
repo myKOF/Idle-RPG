@@ -7216,6 +7216,10 @@ function renderTower() {
   var towerState = snapshot.tower || {};
   var runtime = snapshot.runtime || {};
   var player = headerSnapshot.player || {};
+  var advanceToggle = $id('tw-auto-advance');
+  if (advanceToggle && !isUiCommandPending(nodePendingKey('tower-advance'))) {
+    advanceToggle.checked = towerState.autoAdvance !== false;
+  }
   if (towerState.active && !towerCanvasHudActive()) {
     fightBox.style.display = '';
     listBox.style.display = 'none';
@@ -12914,6 +12918,17 @@ function initUI() {
       if (event.key === 'Escape') closeForgeStonePicker();
     });
   }
+  var towerAdvanceToggle = $id('tw-auto-advance');
+  if (towerAdvanceToggle) {
+    towerAdvanceToggle.setAttribute('data-ui-pending-key', nodePendingKey('tower-advance'));
+    towerAdvanceToggle.addEventListener('change', function () {
+      sendUiCommand('tower.setAutoAdvance', { on: !!this.checked }, {
+        keys: [nodePendingKey('tower-advance')], panels: ['tower']
+      }).catch(function (error) {
+        reportUiCommandFailure(STR(2240), error, ['tower']);
+      });
+    });
+  }
   $id('toggle-compare').addEventListener('change', function () {
 
     sendUiCommand('settings.set', { key: 'compareEq', value: this.checked }, {
@@ -13243,6 +13258,7 @@ function showTowerResultModal(r, p, b, myDmg, bDmg, options) {
       var canStopAuto = countdown > 0 && r && r.autoContinue;
       stopAutoBtn.style.display = canStopAuto ? 'inline-block' : 'none';
       stopAutoBtn.disabled = !canStopAuto;
+      stopAutoBtn.textContent = r && r.advanceFloor ? STR(2242) : STR(1819);
     }
     if (countdown > 0) {
       UI.towerResultCountdownTimer = (typeof GameClock !== 'undefined' ? GameClock.setInterval : setInterval)(function () {

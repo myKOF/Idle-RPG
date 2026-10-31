@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## TOWER-AUTO-ADVANCE-20261031 — 封魔塔勝利自動推進
+
+- Owner：Codex；Done，單一開發者。使用者要求頂列新增預設開啟的「自動推進」，一般挑戰勝利接下一層 BOSS；連續挑戰同層期間及最後一場均不生效。前置既有塔戰／結算倒數完成；工作區起始乾淨、修改檔衝突預檢無外部來源。
+- 允許：tower／ui、Worker protocol／快取及文件、index／塔頁樣式、String.xlsx 原生編修與 CSV／strings_data、相關回歸、LV 與本段；禁止戰鬥公式／費用／獎勵／解鎖、正式存檔操作、無關配置／素材、其他工作區及合併推送。
+- 沿用三秒結算與停止入口，Worker 決定下一層並重驗可挑戰及金幣；設定隨 G.tower 存讀，缺欄預設開啟。驗勝敗／撤退／關閉／同層連挑含末場／最高層／不足金幣／重複確認、UI 指令與快照、Excel 儲存重開、相關回歸與 Build。完成 Commit 交使用者 Review／整合。
+- 完成17檔：js/tower.js 設定與接關、ui.js 勾選／快照／停止文案、protocol.js 新增 tower.setAutoAdvance（v67，95條指令）、Worker／bridge／index 必要快取、css/ashen-forge.css 頂列勾選、String.xlsx 新增2240～2242與CSV／strings_data生成、兩份文件與LV、tower-auto-advance新回歸及worker-protocol／tower-rewards-ui／potential-removal配套測試。獎勵測試明確關閉自動推進以隔離單場斷言，費用／獎勵／解鎖不變。存檔缺欄以 !== false 判定開啟，既有完整 tower 投影與JSON存讀保留設定，不需遷移；重複確認不再中斷新場。
+- 驗證：`node --test --test-reporter=dot tests/tower-*.test.cjs tests/purgatory-tower.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs` 82/82通過；新增10項含正式Worker入口、存讀與通知、50／100跨塔、150停止、勝敗／撤退、連挑末場／僅一場／停止、資源與資格重驗、取消／去重及UI指令。`npm.cmd run build`615檔通過；String --check寫死0條；diff／check通過。另跑potential-removal為5/7，既有兩項失敗：83行舊威脅預期56實際200、113行既有配置表不一致；以起始HEAD全部受影響JS及原測試唯讀記憶體覆映重跑仍同兩項失敗（另有已修正的舊版本60斷言），未更改其數值／表格／斷言。
+- String先確認獨占存取、備份，再以tools/excel-update-sheets.ps1原生插列與寫入12格，Excel正常重開兩次全格一致／繪圖物件0保持；只新增3列。Artifact Tool唯讀渲染前後版，既有空白參數誤讀445的現象兩版相同，未匯出覆寫。無素材或素材庫變動，不建立素材庫Commit。
+- 瀏覽器：IAB不可用，改bundled Playwright／隔離headless Edge，正式塔頁HTML／CSS／JS與模擬層、抽取原勾選及挑戰綁定，只用測試新局，橋接替身便於主動觸發勝利；真Worker另由上列引擎測試驗證。真滑鼠取消／開啟、單場結算、三秒倒數接關、停止推進、連挑2場與末場回野外通過；900／745／390寬勾選可見、無水平溢出，Console error／warning／pageerror 0。390既有雙欄塔頁仍裁切詳情，未擴修其行動版面；未測完整長跑戰鬥、多瀏覽器或實體觸控。截圖重開確認，證據留聊天visualizations/tower-advance。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、player／save／formula／shim／engine及其他配置／素材。期間同工作區另出現神鑄舞台／切功能用石修正，與本項不同區段無語意相依，保留其forge／divine-forge／獨立測試及index／LV／任務紀錄hunk，只逐檔／逐hunk提交本項。自我Review完成，無本需求未完成實作，可供Review／合併；Commit為本段所在「[Codex] feat: 封魔塔新增預設開啟的自動推進」，SHA見交付，未合併／推送。下一步使用者整合後重新載入主頁及Worker驗收。
+
 ## ANCIENT-FORGE-TWO-20261031 — 太古精鑄兩條上限與來源分色
 
 - Owner：Codex；Done，單一開發者。使用者要求同件裝備最多由太古精鑄轉化兩條，達上限拒絕轉化及入槽；第一條淺藍、第二條深藍，詞條與裝備星星一致。前置既有四功能神鑄已完成，fetch後修改檔衝突預檢乾淨。
