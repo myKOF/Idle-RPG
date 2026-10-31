@@ -2779,6 +2779,7 @@ function markTabDirty(name) {
 }
 
 function switchTab(name) {
+  if (name !== 'forge') closeForgeStonePicker();
   if (name === 'settings' && typeof GameMenu !== 'undefined') { GameMenu.openSettings(); return; }
   if (name === 'talents') {
     var talentSnapshot = uiTalentPanelSnapshot();
@@ -6844,10 +6845,93 @@ function forgeViewRate(f, owned) {
     ? Object.assign({}, f, { slots: [{ rarity:f.quality || 6 }] }) : f, owned);
 }
 function closeForgeStonePicker() {
+  finishForgeStoneHold();
   UI.forgeStoneOpen = false;
   var popover = $id('forge-stone-popover'), center = $id('forge-stone-center');
   if (popover) popover.hidden = true;
   if (center) center.setAttribute('aria-expanded', 'false');
+}
+function forgeStonePickerRate(f, owned) {
+  var hold = UI.forgeStoneHold;
+  if (hold && !isUiCommandPending(nodePendingKey('forge'))) hold.submittedCount = null;
+  var count = hold && (hold.count !== null ? hold.count : hold.submittedCount);
+  return forgeViewRate(count != null && !f.crafting
+    ? Object.assign({}, f, { stones:count }) : f, owned);
+}
+function updateForgeStonePicker(f, player, pending) {
+  var rate = forgeStonePickerRate(f, player.dust);
+  setTextIfChanged($id('forge-rate'), rate ? STR(2173, fmt1(rate.total)) : STR(2176));
+  setTextIfChanged($id('forge-dust-own'), STR(2174, fmt(player.dust || 0)));
+  setTextIfChanged($id('forge-stone-value'), rate ? rate.stones : 0);
+  var center = $id('forge-stone-center');
+  if (center) setTextIfChanged(center.lastElementChild, rate ? rate.stones : 0);
+  $id('forge-stone-minus').disabled = pending || !rate || rate.stones <= 0;
+  $id('forge-stone-plus').disabled = pending || !rate || rate.stones >= Math.min(rate.maxStones, player.dust || 0);
+}
+function finishForgeStoneHold(cancel) {
+  var hold = UI.forgeStoneHold;
+  if (!hold || hold.pointerId === null) return;
+  clearTimeout(hold.timer);
+  var count = hold.count, btn = hold.button, pointerId = hold.pointerId;
+  hold.timer = null;
+  hold.pointerId = null;
+  hold.count = null;
+  if (btn.hasPointerCapture && btn.hasPointerCapture(pointerId)) btn.releasePointerCapture(pointerId);
+  var f = forgeViewState(uiForgePanelSnapshot()), player = (uiHeaderPanelSnapshot() || {}).player;
+  var rate = f && player && forgeViewRate(f, player.dust);
+  if (!cancel && count !== null && rate && !f.crafting && !isUiCommandPending(nodePendingKey('forge')) && count !== rate.stones) {
+    hold.submittedCount = count;
+    hold.send(count);
+  }
+  UI.dirty.forge = true;
+}
+function bindForgeStoneControls(send) {
+  var hold = UI.forgeStoneHold = { timer:null, pointerId:null, button:null, count:null, submittedCount:null, send:send };
+  ['minus','plus'].forEach(function (key) {
+    var btn = $id('forge-stone-' + key), delta = key === 'plus' ? 1 : -1, suppressClick = false;
+    btn.addEventListener('click', function (event) {
+      if (event.detail && suppressClick) { event.preventDefault(); return; }
+      if (btn.disabled || isUiCommandPending(nodePendingKey('forge'))) return;
+      var f = forgeViewState(uiForgePanelSnapshot()), player = (uiHeaderPanelSnapshot() || {}).player;
+      var rate = f && player && forgeViewRate(f, player.dust);
+      if (rate && !f.crafting) send(Math.max(0, Math.min(rate.stones + delta, rate.maxStones, player.dust || 0)));
+    });
+    btn.addEventListener('pointerdown', function (event) {
+      if (event.button !== 0 || btn.disabled || hold.pointerId !== null || isUiCommandPending(nodePendingKey('forge'))) return;
+      var f = forgeViewState(uiForgePanelSnapshot()), player = (uiHeaderPanelSnapshot() || {}).player;
+      var rate = f && player && forgeViewRate(f, player.dust);
+      if (!rate || f.crafting) return;
+      suppressClick = false;
+      hold.pointerId = event.pointerId;
+      hold.button = btn;
+      var startedAt = stageHoldNow(), startCount = rate.stones;
+      if (btn.setPointerCapture) btn.setPointerCapture(event.pointerId);
+      function repeat() {
+        if (hold.pointerId === null) return;
+        var current = forgeViewState(uiForgePanelSnapshot()), p = (uiHeaderPanelSnapshot() || {}).player;
+        if (!current || !p || current.crafting || !UI.forgeStoneOpen || UI.tab !== 'forge' || document.hidden || isUiCommandPending(nodePendingKey('forge'))) {
+          finishForgeStoneHold(true);
+          return;
+        }
+        var info = forgeViewRate(current, p.dust);
+        if (!info) { finishForgeStoneHold(true); return; }
+        suppressClick = true;
+        var steps = 1 + Math.floor(Math.max(0, stageHoldNow() - startedAt - 500) / 50);
+        hold.count = Math.max(0, Math.min(startCount + delta * steps, info.maxStones, p.dust || 0));
+        // 長按先顯示選定數量，放開才送最終值，避免每秒二十次 Worker 往返互相鎖住。
+        updateForgeStonePicker(current, p, false);
+        if (hold.count === 0 || hold.count === Math.min(info.maxStones, p.dust || 0)) return;
+        hold.timer = setTimeout(repeat, Math.max(0, startedAt + 500 + steps * 50 - stageHoldNow()));
+      }
+      hold.timer = setTimeout(repeat, 500);
+    });
+    btn.addEventListener('lostpointercapture', function () { if (hold.button === btn) finishForgeStoneHold(); });
+    btn.addEventListener('contextmenu', function (event) { event.preventDefault(); });
+  });
+  document.addEventListener('pointerup', function (event) { if (event.pointerId === hold.pointerId) finishForgeStoneHold(); }, true);
+  document.addEventListener('pointercancel', function (event) { if (event.pointerId === hold.pointerId) finishForgeStoneHold(); }, true);
+  document.addEventListener('visibilitychange', function () { if (document.hidden) finishForgeStoneHold(); });
+  window.addEventListener('blur', function () { finishForgeStoneHold(); });
 }
 function forgeInventoryTab(forge) { return forge && forge.operation === 'gem' ? 'gems' : 'items'; }
 function renderForge() {
@@ -6887,7 +6971,7 @@ function renderForge() {
     keys.push('slot:' + i);
     htmls.push('<button type="button" class="' + cls + '"' + attrs + (pending || !active ? ' disabled' : '') + '>' + content + '</button>');
   }
-  var rate = forgeViewRate(f, player.dust);
+  var rate = forgeStonePickerRate(f, player.dust);
   keys.push('stones');
   htmls.push('<button type="button" class="forge-stone' + (rate && rate.stones ? ' lit' : '') + '" id="forge-stone-center" aria-label="' + esc(STR(2187)) + '" aria-expanded="' + !!UI.forgeStoneOpen + '" aria-controls="forge-stone-popover"' + (pending || !rate ? ' disabled' : '') + '><span class="forge-material-icon" aria-hidden="true">💫</span><span>' + (rate ? rate.stones : 0) + '</span></button>');
   syncItemGridCells(hex, keys, htmls);
@@ -6905,12 +6989,7 @@ function renderForge() {
   stage.classList.toggle('is-paused', !!(progress && progress.paused));
   if (f.crafting) closeForgeStonePicker();
   $id('forge-stone-popover').hidden = !UI.forgeStoneOpen;
-  setTextIfChanged($id('forge-rate'), rate ? STR(2173, fmt1(rate.total), fmt1(rate.base), fmt1(rate.dust)) : STR(2176));
-  setTextIfChanged($id('forge-cost'), rate ? STR(2175, fmt(rate.cost)) : '');
-  setTextIfChanged($id('forge-dust-own'), STR(2174, fmt(player.dust || 0), rate ? rate.stones : 0, rate ? rate.maxStones : 0));
-  setTextIfChanged($id('forge-stone-value'), rate ? rate.stones : 0);
-  $id('forge-stone-minus').disabled = pending || !rate || rate.stones <= 0;
-  $id('forge-stone-plus').disabled = pending || !rate || rate.stones >= Math.min(rate.maxStones, player.dust || 0);
+  updateForgeStonePicker(f, player, pending);
   var occupied = forgeViewItemCount(f);
   setTextIfChanged($id('forge-unload'), occupied ? STR(1296) : STR(2207));
   $id('forge-unload').disabled = pending || (!occupied && mode !== 'equip');
@@ -12772,13 +12851,7 @@ function initUI() {
       var f = forgeViewState(uiForgePanelSnapshot());
       forgeCommand(f && forgeViewItemCount(f) ? 'forge.unloadAll' : 'forge.autoFill');
     });
-    ['minus','plus'].forEach(function (key) {
-      $id('forge-stone-' + key).addEventListener('click', function () {
-        var f = forgeViewState(uiForgePanelSnapshot()), p = uiHeaderPanelSnapshot().player;
-        var info = f && forgeViewRate(f, p.dust);
-        if (info) forgeCommand('forge.setStones', { count:Math.max(0, Math.min(info.stones + (key === 'plus' ? 1 : -1), info.maxStones, p.dust || 0)) });
-      });
-    });
+    bindForgeStoneControls(function (count) { forgeCommand('forge.setStones', { count:count }); });
     document.querySelectorAll('[data-forge-quality]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         forgeMarkActive('#forge-quality-tabs .btn', btn);
