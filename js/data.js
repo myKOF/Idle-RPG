@@ -478,6 +478,38 @@ function weaponIconForItem(it) {
   if (!it || !WEAPON_TYPES[it.weaponType]) return null;
   return WEAPON_TYPE_ICONS[it.weaponType] || null;
 }
+/* 依裝備名稱（基底名）指定圖示：布／皮／麻／鎖／草等輕型裝備用 images/equip/ 的專屬圖，
+   未列入的（板甲、龍鱗、鐵護手等重型名稱）沿用部位通用圖 SLOT_INFO.icon。
+   圖由 tools/equipment-ui/gen_equip_icons.cjs 產生。key 為 STR 編號（見 SLOT_BASENAMES）。 */
+var EQUIP_NAME_ICON_BY_STR = {
+  938: 'helmet_leather', 939: 'helmet_iron',
+  942: 'shoulder_cloth', 943: 'shoulder_iron',
+  946: 'chest_cloth', 947: 'chest_mail',
+  950: 'belt_rope', 952: 'belt_chain',
+  954: 'gloves_cloth', 955: 'gloves_leather',
+  958: 'wrist_cloth', 959: 'wrist_leather',
+  962: 'legs_cloth',
+  965: 'boots_straw', 966: 'boots_leather', 967: 'boots_wind',
+  968: 'ring_bronze', 969: 'ring_silver',
+  971: 'amulet_wood', 972: 'amulet_silver'
+};
+var EQUIP_NAME_ICONS = null;
+function equipNameIconForItem(it) {
+  if (!it || typeof it.name !== 'string') return null;
+  if (!EQUIP_NAME_ICONS) {
+    EQUIP_NAME_ICONS = [];
+    for (var id in EQUIP_NAME_ICON_BY_STR) EQUIP_NAME_ICONS.push([STR(+id), 'equip/icon_' + EQUIP_NAME_ICON_BY_STR[id] + '.png']);
+  }
+  for (var i = 0; i < EQUIP_NAME_ICONS.length; i++) {
+    if (it.name.indexOf(EQUIP_NAME_ICONS[i][0]) >= 0) return EQUIP_NAME_ICONS[i][1];
+  }
+  return null;
+}
+/* 物品圖示檔（相對 images/）：武器類型圖 → 名稱專屬圖 → 部位通用圖；皆無回空字串。 */
+function equipIconFile(it) {
+  var info = it && SLOT_INFO[it.slot];
+  return weaponIconForItem(it) || equipNameIconForItem(it) || (info && info.icon) || '';
+}
 /* 武器專屬特殊能力（預留架構，尚未實裝）：
    之後每種武器類型掛專屬能力，規劃結構 {key: {name, desc, base, ...}}（比照 GODFORGE_POOL）；
    裝備欄位 it.weaponAbility 已預留（null＝無），實際能力池與數值待設計後填入。 */

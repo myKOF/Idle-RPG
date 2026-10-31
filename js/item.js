@@ -751,7 +751,7 @@ function itemHeaderHTML(it, opts) {
     '</span>';
 
   var h = '<div class="it-name" style="position:relative; color:' + r.color + '">' +
-    (wdet ? wdet.emoji : SLOT_INFO[it.slot].emoji) + ' ' + esc(it.name) +
+    (equipIconFile(it) ? '<img class="it-name-icon" src="images/' + equipIconFile(it) + '" alt="">' : (wdet ? wdet.emoji : SLOT_INFO[it.slot].emoji) + ' ') + esc(it.name) +
     (it.upgrade ? ' <span class="it-up' + ((opts && opts.justUpgraded) ? ' upgrade-pop' : '') + '">+' + it.upgrade + '</span>' : '') +
     (it.synthesized ? ' ' + STR(1144) : '') +
     headActionsHtml +

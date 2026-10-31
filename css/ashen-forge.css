@@ -973,6 +973,16 @@ select option {
   padding-right: 56px !important;
 }
 
+/* 標題左側的裝備縮圖（取代原本的 emoji） */
+.it-name-icon {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  vertical-align: middle;
+  margin-right: 8px;
+  filter: drop-shadow(0 1px 2px #000);
+}
+
 .it-sub,
 .it-score {
   border-color: #79708066;
