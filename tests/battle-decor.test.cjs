@@ -283,6 +283,13 @@ test('DECOR-5 每 10 個階段換一帶：單數帶地表、雙數帶地下，�
   assert.equal(decor.stats().scene, 'undead_mountains#deep');
   assert.equal(tints[tints.length - 1], BattleDecor.KITS.undead_mountains.deepTint);
   assert.notEqual(BattleDecor.KITS.undead_mountains.deepTint, 0xffffff);
+  // 地下階段帶的色調會乘在地板上；地板本身偏暗的地圖（地板平均色見 images/ground）不能被壓成近乎全黑。
+  const FLOOR = { undead_mountains: [53, 49, 59], swamp: [46, 63, 46], mist_forest: [39, 59, 49] };
+  Object.keys(FLOOR).forEach(function (k) {
+    const t = BattleDecor.KITS[k].deepTint;
+    const eff = [(t >> 16) & 255, (t >> 8) & 255, t & 255].map(function (c, i) { return FLOOR[k][i] * c / 255; });
+    assert.ok(Math.min.apply(null, eff) >= 28, k + ' 地下地板過暗：' + eff.join(','));
+  });
   decor.setScene('undead_mountains', 21);
   assert.equal(decor.stats().scene, 'undead_mountains');
   // 不認得的地圖退回預設組合，不會整個不見
