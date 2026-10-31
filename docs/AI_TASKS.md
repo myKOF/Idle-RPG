@@ -10,6 +10,18 @@
 - 驗證範圍：NodeVM正式UI渲染／鑲入／取下／升級，以及原封載入sim.worker入口的headless宿主驗正式runCommand、屬性快取失效與gems面板；未做瀏覽器實際操作／畫面或全庫回歸。唯讀未改：規範／Workflow／prompts、Gem_resonance.xlsx／CSV／data、formula.js／item.js／save.js／ui.js、Worker協議與模擬宿主；無素材或素材庫變動，不建立空素材Commit。
 - 自我Review完成，本次無未完成實作，可供Review／合併；已知限制為上述既有失敗及未跑項。Commit為本段所在「[Codex] feat: 寶石共鳴限定相鄰異種類型」，實際編號見交付；未合併或推送develop／main。後續使用者正常整合並重新載入。工作期間同副本另一聊天新增CHAOS-PREVIEW-REPAIR獨立任務段，只分段暫存本共鳴紀錄，保留其進行中修改。
 
+## CHAOS-ICON-INTEGRATED-FRAME-20261031 — 酒紅紫晶ICON一體框底
+
+- Owner：Codex；Done，單一開發者。使用者否定上一版白灰底像貼紙，要求參照神話／創世做法，必要時重做框，底色用雙色或多色。本次只改混沌與神鑄混沌ICON，tips／詳情維持先前授權圖框及閱讀內襯。
+- 前置：9184efc5已完成，使用者本輪取代其ICON視覺方向。允許equipment-chaos.css的ICON框底／必要分層、index該CSS快取、LV既有說明及本段、聊天visualizations預覽；禁止玩法／JS／Worker／存檔／String／原PNG素材、其他品質及其他工作區、合併推送。
+- fetch後四檔預檢無外部來源。同副本GOD-GROUND-SHEEN仍進行中：index場景script／bridge快取、LV神界段及AI_TASKS檔尾不碰，只改本項CSS快取／圖框段／獨立任務段，分段暫存。沿遊戲現有創世SVG角飾幾何與神話／創世的金屬外沿→內收底層作法，形成酒紅／紫晶有色高光、暗邊與金屬框，無獨立點陣作圖或新增外部素材。驗多部位／兩品質／選取置灰標記／裝備及神鑄格、閱讀面板不受影響、瀏覽器截圖存後重開／Console／回歸／Build／diff後獨立Commit，交正常Review／使用者整合。
+
+- 完成四檔：移除ICON白灰高光及原截圖框的ICON切片；沿style.css既有創世角飾幾何做內嵌SVG紅紫雕飾，外沿金屬漸層、內層inset2px、內框暗邊／陰影與酒紅→暗玫紫→紫晶有色漸層共同構成。沿神話／創世::before外沿／::after內底負z-index分層，裝備圖案與標記在上；複製副手亦明確保留2px內收及相同底色。tips／詳情保留原授權圖框、紅紫遮罩和暗綠閱讀底。index混沌CSS1.0.4，LV及本段同步；無JS／數值／獨立美術檔或素材庫變動。
+- 驗證：node --test --test-reporter=spec tests/equipment-tooltip-compare.test.cjs tests/equipment-two-hand-display.test.cjs tests/equipment-selection-border.test.cjs tests/inventory-mythic-skin.test.cjs tests/forge-shared-inventory.test.cjs全部30/30通過；npm.cmd run build604檔通過；node tools/equipment-ui/export-source.cjs --check原圖／匯出SHA一致；git diff --check及暫存diff檢查通過。沒有新增鏡像測試或改既有斷言。
+- 瀏覽器：IAB／獨立8141／正式ICON、裝備、神鑄、tips及詳情函式；33張六部位／狀態與裝備圖示完整載入。兩品質、主手／神鑄格及複製副手的::after背景相同、內框為SVG、inset2px，圖案下分層為-2／-1且ICON無舊紫色濾鏡遮罩；選取／兩種置灰／鎖定／星等／等級與雙手標記正常。隱藏正式tips卡及固定詳情框仍指原PNG及原紫色濾鏡，閱讀背景保留。390×844實際重載後width390＝viewport390、格寬48；桌面格寬58，Console error／warning0。截圖comparison-full.jpg及narrow.jpg已保存並從磁碟以view_image原尺寸重開核對，browser-report.json及可重現預覽保留本聊天visualizations/chaos-icon-integrated-20261031。
+- 唯讀未改：規範／Workflow／prompts、神話與創世CSS幾何／光影、現有UI／data／公式與回歸、原授權PNG／匯出器、String／Worker／存檔與其他場景工作。角飾為既有專案SVG程式延伸，非新繪點陣或引入外部素材；無本項素材庫Commit。本次只提交自身四檔增量，保留同副本GOD-GROUND-SHEEN內容與其提交歷史。
+- 自我Review完成，無本項未完成實作或已知新增程序風險，可供Review／合併；未驗完整玩家存檔／真Worker遊玩、多瀏覽器或低階GPU大量ICON。遊戲Commit為本段所在「[Codex] fix: 重製混沌圖示的酒紅紫晶框底」，編號見交付。未合併推送，下一步正常整合並重新載入新版CSS。
+
 ## CHAOS-ICON-SURFACE-20261031 — 混沌ICON柔亮漸層底
 
 - Owner：Codex；Done，單一開發者。使用者提供背包畫面，要求混沌icon像神話／創世一樣有清楚的底色；神鑄混沌沿既有原品質映射共用。採柔亮灰紫漸層與上方霧白高光，讓深色裝備圖案易辨，紅紫框維持。
