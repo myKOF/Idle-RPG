@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## TALENT-CENTER-RANK-20261031 — 威能星盤中央顯示對應轉生稱號
+
+- Owner：Codex；Done，單一開發者。使用者指定中心「X轉」改為該頁轉生稱號，例如10轉顯示位面創世神。前置既有reincarnationRankName／game_parameters階級名稱完成。
+- 允許ui.js中心標題、ashen-forge.css標題排版、index對應快取、LV與本段；禁止改稱號權威值／Excel／String／玩法／解鎖／Worker／存檔／素材及其他工作區、合併推送。沿用既有配置表名稱，不新增寫死玩家文字。
+- 起始d7a7898a、工作區乾淨；fetch後預檢僅index有Claude b918febb的data／renderer快取，本項UI／CSS快取不同行、無語意相依，以共同祖先／候選／Claude實際工作檔merge-file exit0。驗1～10頁稱號、切頁與角色當前轉數隔離、最長稱號完整置中、進度／全滿外觀與內測按鈕維持、Console／相關回歸／Build／String／diff；完成Commit交使用者正常Review／整合。
+- 完成5檔：js/ui.js僅talentBoardHTML中央文字，呼叫reincarnationRankName(turn)並esc；css/ashen-forge.css中央稱號26→20px、行高1.25、置中不斷行，最長五字可置於116px圓內；index對應UI／CSS快取240／96；LV及本段同步。稱號由既有game_parameters配置讀取，無新增文字、表格編修或素材，素材庫無變更、不建空Commit。
+- 驗證指令：`node --test --test-reporter=spec tests/talent-page-dev.test.cjs tests/boss-skill-lock.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/string-table.test.cjs`全部52/52；`npm.cmd run build`607檔通過；`node tools/string-table/build_string_csv.cjs --check`寫死0條；`git diff --check`通過。純顯示小改沿用既有回歸，不新增鏡像實作的測試。前項21個舊威能基線失敗本次不擴修，未重跑全庫。
+- 瀏覽器：隔離隨機localhost／headless Edge、正式index與真Worker，6轉角色逐一原生點擊1～10頁，依序顯示勇者／大劍師／破世者／不朽者／王者／大主宰／神聖尊者／大聖王／至高主宰／位面創世神；所有標題均完整置中、不取角色當前轉數，0/80等進度維持。2轉一鍵全滿後仍顯示大劍師並沿原is-complete金色樣式；390寬最長稱號不裁切。Console Error／Warning及pageerror0，未讀寫玩家原來源存檔。實拍rank-10／rank-full／narrow及JSON／QA／測試紀錄保留本聊天visualizations/talent-rank，已重開檢視10轉畫面。
+- 唯讀未改：AI_RULES／AGENTS／Workflow、data／formula／game_parameters Excel與CSV、String／strings_data、talents／Worker／Bridge／存檔／戰鬥／其他UI／原素材與既有回歸。無本項未完成或已知新增風險；未驗實體觸控與多瀏覽器。自我Review完成，可供合併；Commit為本段所在「[Codex] feat: 威能星盤中央改顯示轉生稱號」，SHA見交付。未合併推送develop／main，下一步正常整合後重載主頁驗收。
+
 ## TALENT-PAGE-DEV-20261031 — 內測威能目前頁一鍵全滿／歸零
 
 - Owner：Codex；Done，單一開發者。使用者要求威能頁右上角新增切換按鈕，直接將目前轉數的威能全滿或歸零，僅內測服顯示及可用。

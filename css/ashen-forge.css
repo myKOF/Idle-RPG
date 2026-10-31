@@ -5482,7 +5482,10 @@ html *::-webkit-scrollbar-corner {
 
 #tab-talents .tlx-core b {
   font-family: var(--af-serif);
-  font-size: 26px;
+  font-size: 20px;
+  line-height: 1.25;
+  text-align: center;
+  white-space: nowrap;
   color: #fff0ba;
   text-shadow: 0 2px 4px #0008;
 }

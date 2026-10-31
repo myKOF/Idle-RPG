@@ -8336,7 +8336,7 @@ function talentBoardHTML(turn, snapshot) {
     spokes += '<span class="tlx-spoke' + (lv > 0 ? ' is-lit' : '') + (lv >= TALENT_MAX_LEVEL ? ' is-max' : '') + '" style="--a:' + angle + 'deg"></span>';
     nodes += talentNodeHTML(def, turn, snapshot, i, tree.length);
   });
-  return '<span class="tlx-board-caption" aria-hidden="true">' + STR(868) + '</span><span class="tlx-orbit" aria-hidden="true"></span><span class="tlx-orbit is-inner" aria-hidden="true"></span>' + spokes + '<div class="tlx-core' + (complete ? ' is-complete' : '') + '" tabindex="0" data-tt-title="' + STR(866) + '" data-tt-desc="' + STR(867, Math.round((TALENT_COMPLETE_EFFECT_MULTIPLIER - 1) * 100)) + '">' + STR(869, turn) + '<span>' + fmtFull(total) + '/' + fmtFull(max) + '</span></div>' + nodes;
+  return '<span class="tlx-board-caption" aria-hidden="true">' + STR(868) + '</span><span class="tlx-orbit" aria-hidden="true"></span><span class="tlx-orbit is-inner" aria-hidden="true"></span>' + spokes + '<div class="tlx-core' + (complete ? ' is-complete' : '') + '" tabindex="0" data-tt-title="' + STR(866) + '" data-tt-desc="' + STR(867, Math.round((TALENT_COMPLETE_EFFECT_MULTIPLIER - 1) * 100)) + '">' + '<b>' + esc(reincarnationRankName(turn)) + '</b><span>' + fmtFull(total) + '/' + fmtFull(max) + '</span></div>' + nodes;
 }
 
 function renderTalents() {
