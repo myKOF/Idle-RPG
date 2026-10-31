@@ -113,6 +113,7 @@ const configCommands = [
   'item.upgrade', 'item.rerollAffix', 'item.enchant', 'item.removeEnchant',
   'gem.socket', 'gem.socketFused', 'gem.unsocket', 'gem.resonanceSocket', 'gem.resonanceUnsocket', 'rune.socket', 'rune.erase',
   'talent.upgrade', 'talent.max', 'talent.downgrade', 'talent.delete',
+  'talent.devSetPage',
 ];
 function configEnvironment() {
   const c = { Promise, Error, G: { tower: { active: true }, equipment: { weapon: 'old' },
@@ -137,7 +138,7 @@ function validArgs(c, name) {
   const args = {};
   for (const [key, type] of Object.entries(c.COMMANDS[name].args)) {
     if (type.endsWith('?')) continue;
-    args[key] = type === 'int' ? (key === 'fromLv' ? 1 : 0) : type === 'num' ? 0 : type === 'bool' ? true : 'example';
+    args[key] = type === 'int' ? (key === 'fromLv' || key === 'turn' ? 1 : 0) : type === 'num' ? 0 : type === 'bool' ? true : 'example';
   }
   assert.equal(c.validateCommand(name, args), null, name);
   return args;

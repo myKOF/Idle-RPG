@@ -1177,7 +1177,7 @@ function bossConfigControlsSelector() {
     '[data-gem-socket], [data-gem-socket-fused], [data-socket-remove], [data-rune-socket], [data-rune-erase], [data-enchant-remove], ' +
     '[data-skill-equip], [data-skill-unequip], [data-skill2-downgrade], [data-skill2-delete], [data-skill2-ultpick], [data-skill2-ultswitch], ' +
     '[data-skill-learn], [data-skill-max], [data-skill-downgrade], [data-skill-delete], ' +
-    '[data-talent-up], [data-talent-max], [data-talent-down], [data-talent-delete]';
+    '[data-talent-up], [data-talent-max], [data-talent-down], [data-talent-delete], [data-talent-dev-page]';
 }
 
 function syncBossConfigControls() {
@@ -8230,6 +8230,36 @@ function closeOfflineSummary() {
 /* 天堂威能：選取節點後直接在圖示下方升降級，數值由 Worker 快照提供。 */
 UI.talentBrowse = { turn: null };
 
+function talentDevButtonHTML(snapshot, turn) {
+  if (!talentDevServer()) return '';
+  var disabled = talentViewReincarnations(snapshot) < turn || bossFightConfigLocked() ||
+    isUiCommandPending(nodePendingKey('talent-page-dev'));
+  return '<button type="button" class="tlx-dev-page" data-talent-dev-page' +
+    (disabled ? ' disabled' : '') + '>' + (talentViewTreeComplete(snapshot, turn) ? STR(2228) : STR(2227)) + '</button>';
+}
+
+function runTalentDevPageAction() {
+  if (!talentDevServer() || bossFightConfigLocked() || isUiCommandPending(nodePendingKey('talent-page-dev'))) return;
+  var snapshot = uiTalentPanelSnapshot();
+  var turn = UI.talentBrowse.turn;
+  if (!snapshot || !TALENT_TREES[turn] || talentViewReincarnations(snapshot) < turn) return;
+  var panels = ['talents', 'header', 'equip', 'skills', 'battle', 'tower'];
+  var action = sendUiCommand('talent.devSetPage', { turn: turn, full: !talentViewTreeComplete(snapshot, turn) }, {
+    silentResultError: true,
+    keys: [nodePendingKey('talent-page-dev')].concat((TALENT_TREES[turn] || []).map(function (def) { return nodePendingKey('talent:' + def.id); })),
+    panels: panels
+  }).then(function (result) {
+    var error = uiCommandResultError(result);
+    if (error) reportUiCommandFailure(STR(851), error, panels);
+    renderTalents();
+  }, function (error) {
+    reportUiCommandFailure(STR(851), error, panels);
+    renderTalents();
+  });
+  renderTalents();
+  return action;
+}
+
 function talentTreeMaxTotal(turn) {
   return TALENT_MAX_LEVEL * (TALENT_TREES[turn] || []).filter(function (def) { return !def.disabled; }).length;
 }
@@ -8321,7 +8351,7 @@ function renderTalents() {
   var rc = talentViewReincarnations(snapshot);
   if (!UI.talentBrowse.turn || !TALENT_TREES[UI.talentBrowse.turn]) UI.talentBrowse.turn = talentDefaultTurn(snapshot);
   var turn = UI.talentBrowse.turn;
-  var h = '<div class="pg-top"><h2 class="pg-title">' + STR(874) + '</h2>' + STR(876, fmtFull(talentViewGold(snapshot)), rc) + '<span class="pg-pill tlx-monster-power" tabindex="0" data-tt-title="' + STR(871) + '" data-tt-desc="' + STR(872) + '">' + STR(2095, talentThreatIconHTML()) + ' <b>' + (100 + talentThreatTotal(talentViewLevels(snapshot))) + '%</b></span><button type="button" class="pg-help" aria-label="' + STR(873) + '" data-tt-title="' + STR(874) + '" data-tt-desc="' + STR(875) + '">?</button></div>';
+  var h = '<div class="pg-top"><h2 class="pg-title">' + STR(874) + '</h2>' + STR(876, fmtFull(talentViewGold(snapshot)), rc) + '<span class="pg-pill tlx-monster-power" tabindex="0" data-tt-title="' + STR(871) + '" data-tt-desc="' + STR(872) + '">' + STR(2095, talentThreatIconHTML()) + ' <b>' + (100 + talentThreatTotal(talentViewLevels(snapshot))) + '%</b></span>' + talentDevButtonHTML(snapshot, turn) + '<button type="button" class="pg-help" aria-label="' + STR(873) + '" data-tt-title="' + STR(874) + '" data-tt-desc="' + STR(875) + '">?</button></div>';
   if (rc < 1) h += '<div class="tlx-locked-banner">' + STR(878) + '</div>';
   h += '<div class="tlx-tiers" role="tablist" aria-label="' + STR(879) + '">' + talentTierTabsHTML(snapshot) + '</div>';
   h += '<div class="tlx"><div class="tlx-board">' + talentBoardHTML(turn, snapshot) + '</div></div>';
@@ -11388,6 +11418,11 @@ function initUI() {
 
   // 技能：學習/升級/裝載/融合（事件委派）
   document.addEventListener('click', function (e) {
+    var talentDevPage = e.target.closest('[data-talent-dev-page]');
+    if (talentDevPage) {
+      if (!talentDevPage.disabled) runTalentDevPageAction();
+      return;
+    }
     var talentSelect = e.target.closest('[data-talent-select]');
     if (talentSelect) {
       var talentParts = talentSelect.getAttribute('data-talent-select').split(':');

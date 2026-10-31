@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## TALENT-PAGE-DEV-20261031 — 內測威能目前頁一鍵全滿／歸零
+
+- Owner：Codex；Done，單一開發者。使用者要求威能頁右上角新增切換按鈕，直接將目前轉數的威能全滿或歸零，僅內測服顯示及可用。
+- 前置：既有威能Worker權威與內測主機規則完成。允許talents／ui／威能CSS、protocol及文件／測試、必要Worker與Bridge／index快取、String原生Excel與CSV／strings_data、本段及LV。禁止其他玩法／費用／解鎖／存檔格式／素材／其他工作區及合併推送。
+- 全滿不扣金、歸零不退金；只改已解鎖的目前轉數、跳過停用節點，保留BOSS配置鎖。共用內測主機判定，Worker獨立驗證外服拒絕；原威脅／屬性與面板刷新流程沿用。
+- fetch後預檢除index外皆無外部來源。Claude b918febb只改data／renderer快取，本項UI／talents／protocol／Bridge／String及CSS版號不同區段、無語意依賴，以共同祖先／本候選／Claude實際index三方merge-file exit0。同副本風刃改名已提交616edbd7，起始乾淨，保留其成果。
+- 驗證：目前頁與其他頁隔離、全滿／歸零／不扣退金／停用節點、解鎖與BOSS限制、內測與外服偽造呼叫、存讀／屬性／威脅／UI快照、正式瀏覽器與Console、相關回歸／String／Build／diff。完成獨立Commit，交使用者Review及正常整合。
+- 完成16檔：`js/talents.js`／`ui.js`、`css/ashen-forge.css`、`js/worker/protocol.js`／`sim.worker.js`／`js/bridge.js`、`index.html`、String.xlsx／CSV及strings_data、`tests/talent-page-dev.test.cjs`／`boss-skill-lock.test.cjs`／`worker-protocol.test.cjs`、WORKER_PROTOCOL／LV／本段。單一按鈕依目前頁快照顯示全滿或歸零；一次權威設定後同步威脅與屬性。等待ACK與六項面板期間鎖同頁節點及按鈕，BOSS view即時鎖入口。協議64→65，主端／Worker與CSS快取均同步。無素材新增／修改，素材庫無本項變更、不建空Commit。
+- String新增2227／2228，先獨占確認來源已關閉，依專案要求用Excel原生API插入兩列並寫8格；正常模式儲存重開驗證，2215條CSV／生成JS同步。唯讀封裝核對10,467個原儲存格的值／型態／樣式全保留、styles.xml逐位相同，欄寬／視圖／合併／資料驗證維持，篩選由Excel隨插列擴展；未手工改XML或主動翻譯。
+- 測試指令：`node --test --test-reporter=spec tests/talent-page-dev.test.cjs tests/boss-skill-lock.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/string-table.test.cjs`全部52/52通過（新增6項）；`npm.cmd run build`607檔通過；`node tools/string-table/apply_strings.cjs --check`、`node tools/string-table/build_string_csv.cjs --check`及`git diff --check`通過，寫死0條。
+- 既有測試限制：另跑`node --test --test-reporter=spec tests/talents.test.cjs tests/talent-elem-attach.test.cjs tests/talents-perf-equivalence.test.cjs tests/power-rework.test.cjs`共51項，30過／21失敗。以起始616edbd7的所有受改JS唯讀記憶體覆映重跑，21個失敗名稱完全相同：talents／elem-attach／perf共18、power3，皆為既有表值／舊期待差異（例威脅23期待20、爆傷50期待75、Tooltip5%期待1.25%）。沒有改動原斷言、數值權威表或擴修；本項無新增回歸失敗。
+- 真瀏覽器：隔離隨機localhost／headless Edge、正式index與真Worker，內測原生按鈕全滿→切頁→歸零、已鎖7轉停用與390寬不溢出；金幣123維持，1轉Lv3保留、2轉8節點全10／全0，魔物威能105%→123%→102%。外服`game.example.com`無入口，故意覆寫主端開關後直接送兩種指令，Worker均回Internal server only且等級不變；Console Error／Warning與pageerror0。外服HTTP驗證加測試用secure-origin旗標以啟用navigator.locks，正式程式未改。QA／截圖／JSON及測試／基線紀錄留本聊天visualizations/talent-page-dev；未讀寫玩家原來源存檔。
+- 唯讀檢查未改：AI_RULES／AGENTS／Workflow、gm_exec／GM指南、威能與其他數值Excel／CSV／data／formula／stats、存檔與移動／戰鬥計算、原威能回歸與素材。index完整候選與Claude實際工作檔再次三方merge-file exit0，同檔僅不同script版號且無語意相依。自我Review完成，無本項未完成實作或已知新增風險，可供Review／合併；未驗實體觸控／多瀏覽器，全庫測試未跑，既有21項失敗如上。Commit為本段所在「[Codex] feat: 內測威能頁新增一鍵全滿與歸零」，實際編號見交付；未合併推送develop／main。建議正常整合後重載主頁與Worker驗收。
+
 ## WIND-ULT3-RENAME-20261031 — 風刃第三個終極進化改名
 
 - Owner：Codex；Done，單一開發者。使用者指定風刃第3個終極進化由「天穹崩裂」改名「風之痕」；前置既有Skills2來源與產生器完成。

@@ -890,6 +890,8 @@
 876,威能,界面文字(含標記)｜ui.js:8778 renderTalents,"{0}=代入參數：fmtFull(talentViewGold(snapshot))（數字(完整)）；{1}=代入參數：rc；<span class=""pg-pill"">…</span>=套用樣式 pg-pill；<b>…</b>=粗體","<span class=""pg-pill"">金幣 <b>{0}</b></span><span class=""pg-pill"">已轉生 <b>{1} 轉</b></span>",,
 878,威能,文字｜ui.js:8783 renderTalents,,🔒 威能系統將於完成 1 轉後開放。,,
 879,威能,文字｜ui.js:8784 renderTalents,,轉數,,
+2227,威能,內測專用：目前轉數威能全滿按鈕,,一鍵全滿,,
+2228,威能,內測專用：目前轉數威能歸零按鈕,,一鍵歸零,,
 880,威能,文字｜ui.js:9866 showTalentTooltip,{0}=代入參數：turn,{0} 轉威能,,
 881,威能,文字｜ui.js:9880 showTalentTooltip,{0}=代入參數：turn,🔒 需要達到 {0} 轉,,
 882,威能,文字｜ui.js:9881 showTalentTooltip,"{0}=代入參數：fmtFull(talentUpgradeCost(id,lv + 1))（數字(完整)）",升至下一級消耗 {0} 金幣,,

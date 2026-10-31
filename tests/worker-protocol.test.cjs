@@ -23,7 +23,7 @@ const EXPECTED_COMMAND_COUNTS = {
   player: 6,
   skill: 3,
   skill2: 6,
-  talent: 4,
+  talent: 5,
   tower: 6,
   forge: 10,
   newforge: 10,
@@ -91,7 +91,7 @@ function validArgs(spec) {
   return args;
 }
 
-test('凍結的 Worker 指令表有 93 條且分類數量固定', () => {
+test('凍結的 Worker 指令表有 94 條且分類數量固定', () => {
   // v8：新增 app.handoff（多分頁交接前先落地並停止模擬），85 → 86
   // v9：移除 visibility 的 pip 欄位（背景休眠機制取消），指令表未變動
   // v10：新增 vfx 事件（技能／增益特效），指令表未變動
@@ -126,12 +126,12 @@ test('凍結的 Worker 指令表有 93 條且分類數量固定', () => {
   // v47：battle 新增技能列權威計時投影，指令數不變。
   // v48：gems 面板新增 runewordSeen（成形過的符文真言），指令數不變。
   // v49：rune.unsocket 改為 rune.erase（抹除符文，扣碎片與精華、不退還），指令數不變。
-  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 64);
+  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 65);
   assert.equal(protocol.MSG_OUT.VISUAL, 'visual');
   assert.equal(protocol.EVENT_KINDS.VFX, 'vfx');
   assert.equal(protocol.EVENT_KINDS.ACT, 'act');
   const names = Object.keys(protocol.COMMANDS);
-  assert.equal(names.length, 93);
+  assert.equal(names.length, 94);
   assert.ok(!names.includes('gem.fuse'), 'gem.fuse 屬於已移除的寶石融合功能，不得復活');
   ['skill.learn', 'skill.maxUpgrade', 'skill.downgrade', 'skill.delete', 'skill.fuse', 'skill.deleteFusion']
     .forEach((name) => assert.ok(!names.includes(name), name + ' 屬於已移除的舊技能系統，不得復活'));

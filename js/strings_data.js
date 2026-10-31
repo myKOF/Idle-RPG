@@ -2,7 +2,7 @@
 /* 自動產生，請勿手改。來源：config/Excel/String.xlsx（Excel 是唯一來源）。
    重新產生：node tools/string-table/apply_strings.cjs（套用參數.bat 會自動執行）。
    每列＝[繁體中文, 簡體中文, 英文]；後面的空欄已省略。讀取請用 js/strings.js 的 STR()。 */
-var STRING_DATA_VERSION = 'e9ecf455';
+var STRING_DATA_VERSION = '8d183de9';
 var STRING_DATA = {
   "1": ["冰霜"],
   "2": ["毒霧"],
@@ -2216,5 +2216,7 @@ var STRING_DATA = {
   "2223": ["你已經死了，關卡倒退{0}關"],
   "2224": ["聖光降臨中{0}"],
   "2225": ["人界傳送門"],
-  "2226": ["神界大地圖，包含太古戰場、混沌界及永恒神域"]
+  "2226": ["神界大地圖，包含太古戰場、混沌界及永恒神域"],
+  "2227": ["一鍵全滿"],
+  "2228": ["一鍵歸零"]
 };

@@ -5667,6 +5667,33 @@ html *::-webkit-scrollbar-corner {
   cursor: default;
 }
 
+#tab-talents .tlx-dev-page {
+  flex: 0 0 auto;
+  min-height: 28px;
+  padding: 3px 10px;
+  border: 1px solid #8c7345;
+  border-radius: 4px;
+  background: #24251e;
+  color: #f0cf86;
+  font: inherit;
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+#tab-talents .tlx-dev-page:hover:not(:disabled),
+#tab-talents .tlx-dev-page:focus-visible {
+  border-color: #e7c47c;
+  background: #39372a;
+}
+
+#tab-talents .tlx-dev-page:disabled {
+  opacity: .38;
+  cursor: default;
+}
+
+#tab-talents .tlx-dev-page + .pg-help { margin-left: 0; }
+
 #tab-talents .tlx-monster-power {
   display: inline-flex;
   align-items: center;

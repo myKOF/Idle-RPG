@@ -1,4 +1,6 @@
-# Worker 協議 v64
+# Worker 協議 v65
+
+v65（2026-10-31 內測威能頁捷徑）：新增 `talent.devSetPage({turn:1..10, full:boolean})`，指令93→94。Worker以自己的location驗證既有內測主機範圍（file、本機、私有區網、.local／.test），外服直接拒絕。只設定已解鎖目標轉數的啟用節點為TALENT_MAX_LEVEL或0，不扣／退金幣；沿用BOSS戰配置鎖，沒有新存檔欄位。一次talentRefresh同步屬性與場上魔物威脅，dirty為talents／header／equip／skills／battle／tower。UI只在內測顯示右上角切換按鈕、以Worker快照判斷全滿及目前頁，等待回覆與面板期間鎖住按鈕及同頁節點。
 
 v64（2026-10-29 神鑄體驗）：神鑄指令7→10，總數91→94。新增`forge.setQuality({rarity:6|7|9})`、`forge.autoFill({})`及`forge.setAuto({on:boolean})`；`forge.start`改呼叫startForge啟動3000ms作業。只有forgeTick到期才沿同一doForge配方再次驗證並原子結算，UI不能提前扣料／擲骰。作業中拒絕重啟、換品質／模式、取放素材及變更石頭，允許關閉連續自動讓本輪完成。
 
