@@ -1630,9 +1630,9 @@ var BattleRenderer = (function () {
     });
   }
   /* 序列幀本體腳底以上的實際高度。受擊／投射物的錨點（hitHeight）要跟著貼圖大小走，
-     否則貼圖比 64px 公式高的敵人（BOSS）特效會落在腳邊或頭頂。非序列幀回 0，沿用公式。 */
+     否則貼圖比 64px 公式高的敵人（BOSS）特效會落在腳邊或頭頂。只給有序列幀的本體呼叫；其餘沿用公式。 */
   function spriteHitHeight(body) {
-    if (!body || !(body instanceof PIXI.AnimatedSprite) || !body.texture) return 0;
+    if (!body || !body.texture || !body.anchor) return 0;
     var h = body.texture.height * Math.abs(body.scale.y) * (body.anchor ? body.anchor.y : 1);
     return isFinite(h) && h > 0 ? h : 0;
   }
@@ -1788,7 +1788,7 @@ var BattleRenderer = (function () {
       isBoss: isBoss, isElite: isElite, visScale: visScale,
       npcSprite: sheetName.indexOf('npc:') === 0,
       npcFacing: sheetName.indexOf('npc:') === 0 ? (S.sheets[sheetName].manifest.facing | 0) : 0,
-      barW: barW, hitHeight: spriteHitHeight(body) || (tierSize ? 64 * visScale : (isBoss ? sz.h * 1.9 : 64 * visScale)),
+      barW: barW, hitHeight: (sheetName && spriteHitHeight(body)) || (tierSize ? 64 * visScale : (isBoss ? sz.h * 1.9 : 64 * visScale)),
       wx: 0, wy: 0,                   // 畫面上的世界座標（內插後的結果）
       samples: null,                  // 模擬層座標的取樣緩衝（見 posTrack/posSolve）
       state: 'entering',              // entering → idle → dying → gone
