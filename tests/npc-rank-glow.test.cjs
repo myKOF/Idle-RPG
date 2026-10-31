@@ -62,7 +62,12 @@ test('換幀使用該幀遮罩；階級／受擊alpha／visible即時同步，�
   ent.body.texture = frameB; ent.body.alpha = .95; ent.body.visible = false;
   ent.data._tier = 'elite_adv'; c.syncNpcRankGlow(ent);
   assert.equal(ent.rankGlow, glow); assert.equal(glow.inner.texture, maps.get(frameB).inner);
-  assert.equal(glow.inner.tint, 0xffe878); assert.equal(glow.inner.alpha, .95); assert.equal(glow.inner.visible, false);
+  assert.equal(glow.inner.tint, 0xffe878); assert.equal(glow.inner.alpha, .76); assert.equal(glow.outer.alpha, .76); assert.equal(glow.inner.visible, false);
+  ent.data._tier = 'elite'; c.syncNpcRankGlow(ent);
+  assert.equal(glow.inner.alpha, .76); assert.equal(glow.outer.alpha, .76);
+  ent.data.isBoss = true; c.syncNpcRankGlow(ent);
+  assert.equal(glow.inner.alpha, .95); assert.equal(glow.outer.alpha, .95);
+  assert.equal(ent.body.alpha, .95);
   ent.body.texture = P.Texture.EMPTY; c.syncNpcRankGlow(ent);
   assert.equal(glow.inner.visible, false); assert.equal(glow.outer.visible, false);
   ent.body.texture = frameB; ent.body.visible = true; c.syncNpcRankGlow(ent);

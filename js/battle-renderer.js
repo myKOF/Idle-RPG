@@ -1407,9 +1407,9 @@ var BattleRenderer = (function () {
   var NPC_RANK_MASKS = new WeakMap();
   var NPC_EMOJI_TEXTURES = new Map();
   var NPC_RANK_STYLES = {
-    elite: { rim: 0x329dff, inner: 0x70cfff },
-    elite_adv: { rim: 0xffcf32, inner: 0xffe878 },
-    boss: { rim: 0xff3020, inner: 0xffb43c }
+    elite: { rim: 0x329dff, inner: 0x70cfff, alpha: 0.8 },
+    elite_adv: { rim: 0xffcf32, inner: 0xffe878, alpha: 0.8 },
+    boss: { rim: 0xff3020, inner: 0xffb43c, alpha: 1 }
   };
   function npcRankStyle(data) {
     if (data.isBoss || data._tier === 'boss' || data._tier === 'tower') return NPC_RANK_STYLES.boss;
@@ -1516,7 +1516,7 @@ var BattleRenderer = (function () {
       sp.position.copyFrom(body.position); sp.scale.set(body.scale.x / masks.k, body.scale.y / masks.k);
       sp.rotation = body.rotation; sp.skew.copyFrom(body.skew);
       sp.pivot.set(body.pivot.x * masks.k, body.pivot.y * masks.k);
-      sp.alpha = body.alpha; sp.visible = body.visible;
+      sp.alpha = body.alpha * style.alpha; sp.visible = body.visible;
     }
   }
 

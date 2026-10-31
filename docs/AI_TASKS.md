@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## ELITE-MASK-20-20261031 — 菁英與高級菁英遮罩降低20%
+
+- Owner：Codex；Done，單一開發者。使用者要求菁英藍色及高級菁英黃色遮罩先降低20%；既有輪廓覆光已完成。允許renderer兩階內外覆光alpha、index與scene-preview對應快取、既有npc-rank-glow回歸、LV及本段；禁止玩法／Worker／配置／存檔／新素材及其他工作區、合併推送。
+- fetch與預檢發現Claude的NPC序列幀／縮放／朝向與renderer同檔不同段，候選三方merge-file exit0；index的renderer快取同行（本區212、Claude216）及其他既有差異共8處衝突，任務紀錄1處既有衝突。依AI_RULES3.2詢問，使用者明確同意「只做上述分段修改」；僅改本項遮罩、快取及獨立紀錄，不合併Claude功能。
+- 驗收藍黃內外覆光均為原80%、BOSS原強度、受擊／死亡alpha／換幀／回收與普通怪維持；執行既有相關回歸、Build、隔離瀏覽器Console及diff後獨立Commit，交使用者Review／整合。無新素材或素材庫變更。
+- 完成6檔：js/battle-renderer.js的NPC_RANK_STYLES兩階alpha=.8、BOSS=1，syncNpcRankGlow讓內外覆光乘上本體alpha與階級alpha；index及tools/scene-preview.html Renderer快取212→217（避開Claude已用216）；tests/npc-rank-glow.test.cjs更新既有階級切換斷言並驗兩層／本體，LV及本段同步。無新增節點、重建貼圖、Timer、文字或美術資源，無素材庫修改／Commit。
+- 指令：node --test --test-reporter=spec tests/npc-rank-glow.test.cjs tests/battle-renderer-pause.test.cjs tests/battle-elite.test.cjs tests/battle-perspective.test.cjs tests/vfx-editor-cache-versions.test.cjs，33項32過／1既有失敗。PERSP-4的syncPerspective fixture缺perfMode，錯誤ReferenceError；以HEAD原renderer唯讀記憶體覆映重跑透視15項仍14過／相同1失敗，未放寬斷言或擴修。npm.cmd run build全部607檔通過，git diff --check及暫存diff通過。
+- 隔離headless Edge載實際Pixi及正式遮罩／emoji／同步函式，同畫布上下比較HEAD與新版本：兩階兩層alpha1→.8，BOSS1→1，本體全部1，180次重複同步仍三節點；Console Error／Warning與pageerror0。使用既有原圖初驗後換正式emoji備援重驗，最終before-after.png已從磁碟重開檢視；browser-qa.cjs／browser-report.json及候選／三方試跑保留本聊天visualizations/elite-mask，未放入倉庫。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、battle-elite及暫停／透視／快取回歸、原遮罩生成及普通怪／載圖／死亡／回收邏輯、elite模擬／Worker／協議／存檔／String／Excel與CSV、Claude NPC序列幀與成就內容。自我Review完成，無本項未完成項目或已知新增風險；既有測試失敗如上，未驗完整真Worker遊玩／多瀏覽器／手機。Commit為本段所在「[Codex] fix: 菁英藍黃遮罩強度降低兩成」，SHA見交付。可供Review／合併；未合併推送develop／main，建議正常整合後重新載入觀察。
+
 ## SKILL-MASTERY-300-20261031 — 0轉1000級時熟練度約300級
 
 - Owner：Codex；Done，單一開發者。使用者要求提高熟練度經驗需求，使新角色主要靠打怪／高塔／離線升到0轉1000級時熟練度約300級；沿目前角色經驗與50%熟練度收益反推，三次方係數30→1240，次方3／常數20／上限480／獲得率50%維持。既有等級、經驗餘額及技能投資不倒扣、不遷移。
