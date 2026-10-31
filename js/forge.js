@@ -71,6 +71,7 @@ function forgeSetOperation(mode) {
   forgeState().auto = false;
   forgeState().operation = mode;
   forgeState().result = null;
+  forgeCapRecipeStones(forgeRateInfo());
   UI.dirty.forge = true;
   return null;
 }
@@ -81,8 +82,16 @@ function forgeRateInfo() {
     ? Object.assign({}, f, { slots: [{ rarity: f.quality }] }) : f;
   return divineForgeRateInfo(view, G.player.dust);
 }
+function forgeCapRecipeStones(info) {
+  if (!info) return;
+  var f = forgeState();
+  // 配方上限可因切換功能改變；庫存不足仍由驗證拒絕，不縮減連續鑄造的投入偏好。
+  f.stones = Math.min(f.stones, info.maxStones);
+  f.stonePreference = Math.min(f.stonePreference, info.maxStones);
+}
 function forgeDustCount() {
   var f = forgeState(), info = forgeRateInfo();
+  forgeCapRecipeStones(info);
   f.stones = info ? info.stones : 0;
   return f.stones;
 }
@@ -264,6 +273,7 @@ var DIVINE_FORGE_DURATION_MS = 3000;
 function startForge() {
   var f = forgeState();
   if (f.crafting) return STR(2209);
+  forgeCapRecipeStones(forgeRateInfo());
   var error = forgeValidate();
   if (error) return error;
   f.result = null;
