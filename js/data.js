@@ -1528,7 +1528,7 @@ var ZONES = {
   undead_mountains: { pool: UNDEAD_MOUNTAINS_POOL, enemyTable: ZONE_ENEMY_TABLES.undead_mountains, name: "亡靈山脈", emoji: "⛰️", realm: "human", maxStage: 400, reqZone: "thunder_peak", reqStage: 350, hpMult: 20, atkMult: 50, defMult: 10, aspdMult: 1.8, rewardMult: 2.25 },
   god_battlefield: { pool: GOD_BATTLEFIELD_POOL, enemyTable: ZONE_ENEMY_TABLES.god_battlefield, name: "太古戰場", emoji: "⚔️", realm: "god", maxStage: 450, reqZone: "undead_mountains", reqStage: 400, hpMult: 50, atkMult: 200, defMult: 25, aspdMult: 2, rewardMult: 4 },
   god_chaos: { pool: GOD_CHAOS_POOL, enemyTable: ZONE_ENEMY_TABLES.god_chaos, name: "混沌界", emoji: "🌀", realm: "god", maxStage: 500, reqZone: "god_battlefield", reqStage: 450, hpMult: 150, atkMult: 1000, defMult: 50, aspdMult: 2.2, rewardMult: 10 },
-  god_sanctuary: { pool: GOD_SANCTUARY_POOL, enemyTable: ZONE_ENEMY_TABLES.god_sanctuary, name: "永恒神域", emoji: "✨", realm: "god", maxStage: 600, reqZone: "god_chaos", reqStage: 500, hpMult: 500, atkMult: 8000, defMult: 100, aspdMult: 2.5, rewardMult: 24 }
+  god_sanctuary: { pool: GOD_SANCTUARY_POOL, enemyTable: ZONE_ENEMY_TABLES.god_sanctuary, name: "永恒神殿", emoji: "✨", realm: "god", maxStage: 600, reqZone: "god_chaos", reqStage: 500, hpMult: 500, atkMult: 8000, defMult: 100, aspdMult: 2.5, rewardMult: 24 }
 };
 
 function zoneMaxStage(zoneKey) {

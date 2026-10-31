@@ -419,7 +419,7 @@ test('stage_jump GM 指令（及 stage/set_stage/zone 等別名）可指定場�
       undead_mountains: { name: '亡靈山脈', emoji: '⛰️', maxStage: 500, reqZone: 'swamp', reqStage: 400 },
       god_battlefield: { name: '太古戰場', emoji: '⚔️', maxStage: 600, reqZone: 'undead_mountains', reqStage: 500, reqReincarnation: 11 },
       god_chaos: { name: '混沌界', emoji: '🌀', maxStage: 700, reqZone: 'god_battlefield', reqStage: 600, reqReincarnation: 11 },
-      god_sanctuary: { name: '永恒神域', emoji: '✨', maxStage: 800, reqZone: 'god_chaos', reqStage: 700, reqReincarnation: 11 }
+      god_sanctuary: { name: '永恒神殿', emoji: '✨', maxStage: 800, reqZone: 'god_chaos', reqStage: 700, reqReincarnation: 11 }
     };
     context.zoneMaxStage = (zKey) => (context.ZONES[zKey] ? context.ZONES[zKey].maxStage : 200);
     context.zoneBestProgress = (zKey) => (context.G.zoneProgress && context.G.zoneProgress[zKey] ? context.G.zoneProgress[zKey].best : 1);
