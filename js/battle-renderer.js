@@ -1629,6 +1629,13 @@ var BattleRenderer = (function () {
       if (typeof console !== 'undefined' && console.warn) console.warn('[battle-renderer] NPC 序列幀載入失敗，沿用 emoji：', def.id, err && err.message ? err.message : err);
     });
   }
+  /* 序列幀本體腳底以上的實際高度。受擊／投射物的錨點（hitHeight）要跟著貼圖大小走，
+     否則貼圖比 64px 公式高的敵人（BOSS）特效會落在腳邊或頭頂。非序列幀回 0，沿用公式。 */
+  function spriteHitHeight(body) {
+    if (!body || !(body instanceof PIXI.AnimatedSprite) || !body.texture) return 0;
+    var h = body.texture.height * Math.abs(body.scale.y) * (body.anchor ? body.anchor.y : 1);
+    return isFinite(h) && h > 0 ? h : 0;
+  }
   function makeNpcSpriteBody(sheetName, visScale) {
     var body = makeAnimSprite(sheetName, 'idle');
     if (body) body.scale.set(body.scale.x * visScale);
@@ -1648,6 +1655,7 @@ var BattleRenderer = (function () {
     e.bodyWrap.addChildAt(next, idx);
     e.bodyWrap.rotation = 0; e.bodyWrap.scale.set(1);
     e.sheetName = name; e.curAnim = 'idle'; e.baseAnim = 'idle'; e.npcSprite = true;
+    e.hitHeight = spriteHitHeight(next) || e.hitHeight;
     e.npcFacing = S.sheets[name].manifest.facing | 0;
     if (e.eliteDeco) e.eliteDeco.baseScale = next.scale.x;
     syncNpcRankGlow(e);
@@ -1780,7 +1788,7 @@ var BattleRenderer = (function () {
       isBoss: isBoss, isElite: isElite, visScale: visScale,
       npcSprite: sheetName.indexOf('npc:') === 0,
       npcFacing: sheetName.indexOf('npc:') === 0 ? (S.sheets[sheetName].manifest.facing | 0) : 0,
-      barW: barW, hitHeight: tierSize ? 64 * visScale : (isBoss ? sz.h * 1.9 : 64 * visScale),
+      barW: barW, hitHeight: spriteHitHeight(body) || (tierSize ? 64 * visScale : (isBoss ? sz.h * 1.9 : 64 * visScale)),
       wx: 0, wy: 0,                   // 畫面上的世界座標（內插後的結果）
       samples: null,                  // 模擬層座標的取樣緩衝（見 posTrack/posSolve）
       state: 'entering',              // entering → idle → dying → gone
