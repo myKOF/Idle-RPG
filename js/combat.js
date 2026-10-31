@@ -1049,6 +1049,7 @@ function applyDot(ent, dps, dur, name, sid, interval, stackCfg, sourceCtx) {
             if (sKey) cur.sourceKey = sKey;
             if (sLv !== undefined) cur.sourceLevel = sLv;
             if (subType) cur.subType = subType;
+            if (sourceCtx && sourceCtx.srcAtk) cur.srcAtk = sourceCtx.srcAtk;
             return;
         }
     }
@@ -1059,7 +1060,8 @@ function applyDot(ent, dps, dur, name, sid, interval, stackCfg, sourceCtx) {
         interval: interval, acc: 0, unit: step3.unit, stacks: step3.stacks,
         frostFormula: frostFormula, bodyDmg: frostBodyDmg, frostMult: frostMult,
         sourceName: sName || undefined, sourceKey: sKey || undefined, sourceLevel: sLv,
-        subType: subType || undefined
+        subType: subType || undefined,
+        srcAtk: (sourceCtx && sourceCtx.srcAtk) || undefined   // 施放者的敵種／等級／屬性（承受端減傷用）
     });
 }
 /* 持續傷害結算：依各狀態的「作用間隔」分段跳傷；回傳是否致死。
@@ -1147,6 +1149,51 @@ function dotOffenseCfg(ent) {
     return playerAtkCfg(pEnt);
 }
 
+/* 持續傷害的承受端減傷（2026-10-31）：防禦／抗性／元素抗性／聖佑／敵種抗性等「減傷類」乘區逐跳套用，
+   命中、閃避、格擋、浮動、爆擊不走。曲線與 resolveHit 同源，數學在 js/formula.js dotDamageAfterMitigation。
+   攻擊者設定依來源判定：打敵人＝玩家（playerAtkCfg，帶破甲與穿透）；打玩家且來源是玩家技能（sourceKey 為 skill2:）
+   ＝自傷，用玩家自己的攻擊設定、且不吃敵種抗性；打玩家的敵方 DoT 讀 applyDot 記下的 srcAtk（等級、敵種、屬性），
+   沒記的退回只帶玩家等級。dmgSource 為最大生命%的狀態是固定比例扣血，不吃防禦（清單見 docs/BOSS_PCT_HP_EFFECTS.md）。
+   ctx 由 tickStatuses 每次呼叫建立一份（惰性取得，沒有持續傷害時零成本）。 */
+function dotMitigationCtx(ent) {
+    var isPlayer = !(ent.maxHp > 0);
+    var pEnt = (typeof legendaryCurrentPlayer === 'function') ? legendaryCurrentPlayer() : null;
+    var ctx = { ok: false, isPlayer: isPlayer, pEnt: pEnt, dCfg: null, atk: null };
+    if (isPlayer) {
+        if (typeof playerDefCfg !== 'function' || typeof getStats !== 'function') return ctx;
+        ctx.dCfg = playerDefCfg(ent);
+    } else {
+        if (typeof monsterDefCfg !== 'function') return ctx;
+        ctx.dCfg = monsterDefCfg(ent);
+        if (pEnt && typeof playerAtkCfg === 'function') ctx.atk = playerAtkCfg(pEnt);
+    }
+    ctx.ok = true;
+    return ctx;
+}
+function dotMitigate(ctx, ent, d, dmg) {
+    if (!ctx.ok || !(dmg > 0)) return dmg;
+    var def = d.sid ? statusDef(d.sid) : null;
+    if (def && def.dmgSource === 'maxHp') return dmg;
+    var aCfg, skipTypeRed = false, magic = false;
+    if (!ctx.isPlayer) {
+        aCfg = ctx.atk;
+    } else if (d.sourceKey && String(d.sourceKey).indexOf('skill2:') === 0) {
+        aCfg = (ctx.pEnt && typeof playerAtkCfg === 'function') ? playerAtkCfg(ctx.pEnt) : null;
+        skipTypeRed = true;   // 自己打自己：沒有「敵種」可言
+    } else if (d.srcAtk) {
+        aCfg = d.srcAtk;
+        magic = !!d.srcAtk.magic;
+    } else {
+        aCfg = { level: getStats().level };
+    }
+    var out = dotDamageAfterMitigation(dmg, aCfg, ctx.dCfg,
+        { elem: def && def.elem || '', magic: magic, skipTypeRed: skipTypeRed });
+    if (ctx.isPlayer && typeof skill2DamageTakenMultiplier === 'function') {
+        out *= skill2DamageTakenMultiplier(ent, null, true);   // 大地守護／岩甲／風系等我方減傷乘區（重生保護已在 applyEnemyHpDamage 乘過）
+    }
+    return out;
+}
+
 /* 一批跳傷（tickCount 跳、合計 baseDamage）套上輸出加成：每一跳各自擲一次爆擊。 */
 function dotOffenseDamage(cfg, d, baseDamage, tickCount) {
     var def = d.sid ? statusDef(d.sid) : null;
@@ -1170,6 +1217,7 @@ function tickStatuses(ent, dt, dotContext) {
     var endedDots = [];
     var live = [];
     var dotOffense;   // 玩家輸出組態（惰性取得；undefined＝尚未取、null＝這個目標不吃玩家輸出加成）
+    var mitigation;   // 承受端減傷組態（惰性取得；dotMitigationCtx）
     for (var i = 0; i < ent.dots.length; i++) {
         var d = ent.dots[i];
         var expired = !(d.until > GT);
@@ -1199,6 +1247,8 @@ function tickStatuses(ent, dt, dotContext) {
             if (dDmg > 0) {
                 if (dotOffense === undefined) dotOffense = dotOffenseCfg(ent);
                 if (dotOffense) dDmg = dotOffenseDamage(dotOffense, d, dDmg, tickCount);
+                if (!mitigation) mitigation = dotMitigationCtx(ent);
+                dDmg = dotMitigate(mitigation, ent, d, dDmg);
             }
             if (dDmg > 0) drainHits += tickCount;
             statusTickVfxCollect(ent, d.sid);

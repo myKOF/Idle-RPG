@@ -1095,6 +1095,47 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   return out;
 }
 
+/* ---- 持續傷害（DoT）每一跳的減傷（2026-10-31）----
+   DoT 的 dps 是施放當下定版的平坦值、不經 resolveHit，因此命中、閃避、格擋、浮動、爆擊都不走；
+   但承受端的「減傷類」乘區在這裡逐跳補上，與 resolveHit 同一套曲線：
+     ① 防禦減傷率（有狀態元素或魔法來源走魔防＋魔抗＋該元素抗性，其餘走物防＋物抗；含破甲與穿透）
+     ② 神鑄【聖佑】dmgRed（上限同 resolveHit）
+     ③ 敵種傷害抗性（依攻擊者敵種）與對屬性敵人抗性
+   刻意不含：全局減傷（tickStatuses 已套）、承傷乘數／魔法盾／深淵易傷／重生（applyEnemyHpDamage 已套）、
+   以及 resolveHit 的「攻擊力 − 防禦」定值相減——DoT 每跳量只有 dps×間隔，相減會讓小跳量歸零，
+   且結果隨作用間隔而變，因此我方承受端也只用比例段 defReduction。
+   aCfg：{ level, pen, mPen, sunder, isElite, isBoss, attr }（來源不明時只帶 level）
+   dCfg：monsterDefCfg／playerDefCfg 的輸出
+   opts：{ elem, magic, skipTypeRed }　回傳：減傷後的傷害量。 */
+function dotDamageAfterMitigation(amount, aCfg, dCfg, opts) {
+  var dmg = Number(amount) || 0;
+  if (dmg <= 0 || !dCfg) return dmg;
+  aCfg = aCfg || {};
+  opts = opts || {};
+  var lvl = aCfg.level || 1;
+  var sunder = (aCfg.sunder || 0) / 100;
+  if (opts.elem || opts.magic) {
+    var mPen = (aCfg.mPen !== undefined && aCfg.mPen !== null) ? aCfg.mPen : (aCfg.pen || 0);
+    var mDef = (dCfg.mdef || 0) * (1 - sunder) * penDefMultiplier(penIgnoreRatio(mPen));
+    dmg *= 1 - defReduction(mDef, lvl);
+    dmg *= 1 - magicResistanceReduction(dCfg.mRes);
+    if (opts.elem) dmg *= elementalResistanceMultiplier(dCfg.resist, opts.elem, lvl);
+  } else {
+    var pDef = (dCfg.def || 0) * (1 - sunder) * penDefMultiplier(penIgnoreRatio(aCfg.pen || 0));
+    dmg *= 1 - defReduction(pDef, lvl);
+    dmg *= 1 - physicalResistanceReduction(dCfg.pRes);
+  }
+  if (dCfg.dmgRed) dmg *= 1 - clamp(dCfg.dmgRed, 0, GODFORGED_SANCTUARY_RED_CAP) / 100;
+  if (!opts.skipTypeRed) {
+    var typeRedTotal = aCfg.isBoss ? (dCfg.bossDmgRed || 0)
+      : (aCfg.isElite ? (dCfg.eliteDmgRed || 0) : (dCfg.normalDmgRed || 0));
+    if (typeRedTotal > 0) dmg *= 1 - enemyTypeDamageReduction(typeRedTotal, lvl);
+    var attrRedTotal = (dCfg.resVsElem && aCfg.attr) ? (dCfg.resVsElem[aCfg.attr] || 0) : 0;
+    if (attrRedTotal > 0) dmg *= 1 - enemyTypeDamageReduction(attrRedTotal, lvl);
+  }
+  return Math.max(0, dmg);
+}
+
 /* 控制抵抗判定：完全抵抗暈眩/減速的機率
    控制抵抗% 與韌性% 為兩道獨立擲骰，任一成功即抵抗：總機率 = 1 - (1-控抗%)×(1-韌性%)
   （韌性 60% + 控抗 50% → 1-0.4×0.5 = 80%；怪物 dCfg 無 tenacity 欄位，行為與改版前一致） */

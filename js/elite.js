@@ -279,7 +279,8 @@ function eliteApplyStatus(p, dCfg, res, o, m) {
     applyDot(p, dps, o.dot.dur, o.dot.name, o.dot.id, undefined, undefined, {
       sourceName: m && m.name,
       sourceKey: 'enemy',
-      subType: o.dot.name || o.label
+      subType: o.dot.name || o.label,
+      srcAtk: m ? { level: m.level, isElite: !!m.elite, isBoss: !!m.isBoss, attr: m.attr || null, magic: !!m.magic } : undefined
     });
     floatPlayerEvent(pf, o.dot.name + '!', 'debuff');
   }
