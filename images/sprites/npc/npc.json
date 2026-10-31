@@ -154,9 +154,9 @@
    "height": 58
   },
   "the_devil": {
-   "cellW": 112,
+   "cellW": 96,
    "cellH": 112,
-   "anchorX": 0.5,
+   "anchorX": 0.4896,
    "anchorY": 1.0,
    "scale": 0.7547,
    "facing": 1,
@@ -516,7 +516,7 @@
   },
   "the_devil_idle": {
    "char": "the_devil",
-   "frames": 24,
+   "frames": 28,
    "fps": 8,
    "loop": true,
    "hold": false

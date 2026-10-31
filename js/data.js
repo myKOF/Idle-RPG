@@ -1449,6 +1449,8 @@ function registerNpcPool(zoneKey, pool) {
       emoji: entry.emoji || '',
       /* 序列幀圖像（NPC 表的站立／移動／攻擊／死亡圖像，檔名在 images/sprites/npc/）；沒有＝繼續用 emoji */
       sprite: entry.sprite || null,
+      /* NPC 表的縮放比：相對預設大小的倍數，1＝不變（渲染器 makeEnemy 乘進體型） */
+      scale: Number(entry.scale) > 0 ? Number(entry.scale) : 1,
       weight: Number(entry.weight) > 0 ? Number(entry.weight) : 1,
       sightRanges: entry.sightRanges || null,
       hpMult: Number(entry.hpMult) > 0 ? Number(entry.hpMult) : 1,

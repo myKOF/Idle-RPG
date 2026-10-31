@@ -467,7 +467,7 @@ function npcSpriteCells(entry) {
 }
 SCHEMAS.NPC = {
   name: 'NPC', jsFile: 'data', sheet: 'NPC', vars: NPC_POOL_DEFS.map(d => d.varName).concat(['BOSS_LIST']),
-  header: ['NPC識別碼', 'NPC名稱', '所屬地圖識別碼', '類型', '屬性', '外觀', '站立圖像', '移動圖像', '攻擊圖像', '死亡圖像', '圖像備註',
+  header: ['NPC識別碼', 'NPC名稱', '所屬地圖識別碼', '類型', '屬性', '外觀', '站立圖像', '移動圖像', '攻擊圖像', '死亡圖像', '圖像備註', '縮放比',
     '移動速度(米/秒)', '攻擊速度(次/秒)', '攻擊距離(米)', '視野範圍(米)', '魔法型（1是／0否）', '出現權重',
     '專屬技能', '隨機技能下限', '隨機技能上限', '備註'],
   extract(src) {
@@ -477,14 +477,14 @@ SCHEMAS.NPC = {
       const pool = evalLiteral(extractLiteral(src, def.varName).literal);
       pool.forEach((entry, index) => {
         const id = entry.id || (def.zone + '_' + (index + 1));
-        const base = [entry.attr || '', entry.appearance || entry.emoji || ''].concat(npcSpriteCells(entry), [
+        const base = [entry.attr || '', entry.appearance || entry.emoji || ''].concat(npcSpriteCells(entry), [numStr(entry.scale > 0 ? entry.scale : 1),
           numStr(entry.runSpeed == null ? '' : entry.runSpeed), numStr(entry.atkSpeed == null ? '' : entry.atkSpeed),
           numStr(entry.atkRange == null ? '' : entry.atkRange),
           entry.magic ? '1' : '0', numStr(entry.weight == null ? 1 : entry.weight)]);
         ['normal', 'elite', 'elite_adv', 'boss'].forEach(type => {
           const sk = type === 'normal' ? null : (entry.skills && entry.skills[type]) || null;
           const row = [id, entry.name, def.zone, type].concat(base, npcSkillCells(sk), [npcSkillNote(type, sk, catalog)]);
-          row.splice(14, 0, numStr(entry.sightRanges && entry.sightRanges[type] != null ? entry.sightRanges[type] : 50));
+          row.splice(15, 0, numStr(entry.sightRanges && entry.sightRanges[type] != null ? entry.sightRanges[type] : 50));
           rows.push(row);
         });
       });
@@ -493,7 +493,7 @@ SCHEMAS.NPC = {
     bosses.forEach((b, index) => {
       const sk = (b.skills) || null;
       rows.push([b.id || ('tower_boss_' + (index + 1)), b.name, NPC_TOWER_ZONE, 'tower_boss', b.attr || b.elem || '', b.emoji || '',
-        b.img || '', b.img || '', b.img || '', b.img || '', '舊版靜態圖（' + (b.img || '無') + '），尚無序列幀：缺移動／攻擊／死亡動畫',
+        b.img || '', b.img || '', b.img || '', b.img || '', '舊版靜態圖（' + (b.img || '無') + '），尚無序列幀：缺移動／攻擊／死亡動畫', '1',
         '', '', '', numStr(b.sightRange == null ? 50 : b.sightRange), b.elem ? '1' : '0', ''].concat(npcSkillCells(sk), [npcSkillNote('tower_boss', sk, catalog)]));
     });
     return rows;
@@ -580,6 +580,14 @@ SCHEMAS.NPC = {
       });
       if (sprite.idle) o.sprite = sprite; else delete o.sprite;
       /* 移動／攻擊三項：空白格＝沿用系統預設（欄位不寫入）；填了就必須是正數，
+      /* 縮放比：相對目前預設大小的倍數（1＝不變），NPC 所有階級共用，只認 normal 列；空白或 1 都不寫入 */
+      const scaleRaw = get(row, '縮放比').trim();
+      if (scaleRaw === '' || Number(scaleRaw) === 1) delete o.scale;
+      else {
+        const sv = Number(scaleRaw);
+        if (!(sv > 0) || !Number.isFinite(sv)) throw new Error('NPC ' + lineOf(index) + '「縮放比」必須是大於 0 的數字：' + scaleRaw);
+        o.scale = sv;
+      }
          填 0 或負數多半是誤植，寧可中止套用也不要讓敵人靜靜變成不動或不攻擊。 */
       [['移動速度(米/秒)', 'runSpeed'], ['攻擊速度(次/秒)', 'atkSpeed'], ['攻擊距離(米)', 'atkRange']].forEach(function (pair) {
         const raw = get(row, pair[0]).trim();

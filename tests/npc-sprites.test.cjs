@@ -79,3 +79,20 @@ test('NPC-SPRITE-4 NPC 表：每一列都有四個動作圖像欄與圖像備註
     }
   });
 });
+
+test('NPC-SPRITE-5 縮放比：NPC 表每列都有大於 0 的數字，寫進遊戲資料；改成 1.5 套用後 NPC_CONFIG_TABLE 與 pool 都會變', () => {
+  const rows = cfg.csvParse(fs.readFileSync(path.join(root, 'config/CSV/NPC.csv'), 'utf8')).filter((r) => r.length > 1);
+  const k = rows[0].indexOf('縮放比');
+  assert.ok(k >= 0, '缺欄位 縮放比');
+  rows.slice(1).forEach((r) => assert.ok(Number(r[k]) > 0, r[0] + ' 縮放比要大於 0：' + r[k]));
+  const src = fs.readFileSync(path.join(root, 'js/data.js'), 'utf8');
+  const sc = cfg.SCHEMAS.NPC, iType = sc.header.indexOf('類型'), iId = sc.header.indexOf('NPC識別碼'), iScale = sc.header.indexOf('縮放比');
+  const data = sc.extract(src);
+  const target = data.find((r) => r[iId] === 'desert_1' && r[iType] === 'normal');
+  target[iScale] = '1.5';
+  const out = sc.rebuild(data, sc.header, src);
+  assert.match(out.DESERT_POOL, /id: 'desert_1'[^\n]*scale: 1\.5/);
+  assert.doesNotMatch(out.DESERT_POOL.split('\n')[2], /scale:/);   // 其他 NPC 維持 1 時不寫入
+  const c = loadData();
+  assert.equal(c.NPC_CONFIG_TABLE.desert_1.scale, 1);
+});

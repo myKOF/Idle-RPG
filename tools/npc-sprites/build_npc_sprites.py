@@ -60,7 +60,7 @@ CHARS = {
     'old_demon': g('Old Demon covered.png', 80, 64, 58, {'idle': row(0, 7)}, facing=-1),
     'memento_skeleton': g('Memento Mori Skeleton.png', 128, 64, 58,
                           {'idle': [(r, c) for r in range(6) for c in range(4)]}),
-    'the_devil': g('The Devil.png', 112, 112, 80, {'idle': [(r, c) for r in range(4) for c in range(6)]}),
+    'the_devil': g('The Devil.png', 96, 112, 80, {'idle': [(r, c) for r in range(4) for c in range(7)]}),
     'large_skull': g('Large Skull.png', 128, 128, 82, {'idle': row(0, 10), 'attack': row(1, 10), 'die': row(3, 10)}),
     'imp': g('Imp.png', 64, 64, 46, {'idle': row(0, 10), 'attack': row(1, 5), 'walk': row(2, 8), 'die': row(4, 6)}),
     'tree_damned': g('Tree Damned.png', 64, 64, 62, {'idle': [(0, 0)], 'die': row(0, 7)}),
