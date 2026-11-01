@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## STARTUP-CANVAS-DIAG-20261101 — 原存檔 Canvas 啟動卡住追查
+
+- Owner：Codex；Done，單一開發者。使用者最後確認關閉全部8123遊戲／診斷分頁、只開一個原網址後，已進入原角色遊戲。前次dirty競態修正後使用者確認原網址仍卡Loading，canvas=0可進入；補充NPC受詛亡者四階級縮放比改3後套用BAT未自動刷新。唯讀XML核對Excel L290:L293由1.5→3，但本副本NPC.csv及data仍為1、params_version未更新，未將問題歸因於倍率。
+- 允許本機唯讀診斷工具tools/startup-diagnostics.js／html、index載入接線及快取、本段，後續依實際診斷再確定修復範圍；禁止讀寫玩家存檔、修改原NPC Excel與未確認的玩法／表值、其他工作區與合併推送。工具檔fetch後預檢無衝突；檢查既有renderer／decor／storage／配置管線。工具僅local host及startupDiag=1啟用，不送資料到網路，顯示既有啟動狀態／錯誤供使用者複製，不需Console；內部診斷文字依AI_RULES 8.10豁免。使用者回報原頁無診斷按鈕，改以獨立html包同源全視窗遊戲frame、父頁診斷固定在上層，並記錄載入腳本版本以辨識來源／快取。驗完整頁啟動、複製／選取、一般網址不啟用、Build／diff；根因與原玩家驗收仍待診斷。
+- 已驗：bundled Edge新局與亡靈山脈真Worker刷新、同源route僅將主端NPC倍率改3亦可揭幕／sceneReady true／Console Error與pageerror0；未覆寫來源。診斷按鈕真滑鼠複製、一般網址／外部host不啟用、獨立頁單組父層按鈕、JS與HTML inline語法、Build616檔、String檢查硬寫0及diff/check均通過。首次獨立頁favicon404已補正，重載HTTP錯誤0；證據留本聊天visualizations/startup-refresh。
+- 使用者提供一般Chrome截圖：地址是tools/startup-diagnostics.html但內容仍為遊戲Loading，和伺服器直接回應的診斷HTML不符；無痕可正常顯示診斷，使用者貼回desert新局：Worker booted／alive true、Canvas ready／sceneReady true、missing／pendingFetch／errors皆空、main1.0.5。此結果僅證明無痕新環境正常，不能排除一般環境快取／擴充或原存檔狀態。正在請使用者以Ctrl+Shift+R而非功能鍵重載一般分頁；尚未取得原分頁報告，根因未確認、不宣稱修復。沒有清除任何瀏覽器資料或操作原存檔。Repo未找到ServiceWorker註冊，歷史亦未查到；未據此假定一般profile一定不存在舊註冊。Windows工具再次因無法確認Chrome URL而要求停止，該輪已立即停止並回報，後續未控制使用者Chrome。
+- 最終定位與恢復：Ctrl+Shift+R後一般視窗可顯示新版診斷框；回報lock=false、Worker started／booted=false、errors=[]，證明該分頁未取得控制權，並非在執行Canvas初始化。使用者點接管後，既有10秒逾時提示「另一個分頁沒有回應」；依既有提示關閉全部8123遊戲／診斷頁、只開單一原網址後，使用者明確回覆「已進入原角色遊戲」。可確認一般視窗舊頁／未回應持鎖分頁影響本次恢復；最初造成舊分頁不回應的底層原因（快取／擴充／瀏覽器凍結）沒有進一步證據，不宣稱唯一根因，也未強奪Web Lock或改存檔／接管規則。
+- 交付四檔：index的診斷script版本1.0.2、tools/startup-diagnostics.js／html及本紀錄。內部工具不需LV／String表變動；既有NPC.xlsx四格倍率3完整保留、未套用或提交，CSV／遊戲倍率仍1，使用者的數值套用需另在正確工作區完成，不以本次恢復冒稱已套用。唯讀檢查未改規範、UI／renderer／decor／Worker／tablock／storage／配置管線及其他工作區；自我Review完成，可供合併，未合併推送develop／main。獨立Commit「[Codex] chore: 新增本機啟動診斷並記錄分頁鎖恢復」，SHA見交付；無素材／素材庫變動。本次卡Loading修復驗收已完成，未做完整遊玩／多瀏覽器回歸；建議往後本機僅保留單一遊戲分頁，必要時用本機診斷工具判讀，不清除保存角色的網站資料。
+
 ## STARTUP-REFRESH-DIRTY-20261101 — 刷新後 Loading 等待首畫競態
 
 - Owner：Codex；Done（程式修復與隔離驗證完成，原玩家分頁待使用者驗收），單一開發者。使用者回報8123刷新後Loading持續動畫且無法開Console；隔離新局與一般刷新正常，已以正式main入口及可控frame重現：Worker／面板／場景均就緒，但每次揭幕前新資料標dirty，41幀內重繪21次仍不揭幕。
