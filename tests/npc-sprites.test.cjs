@@ -50,14 +50,19 @@ test('NPC-SPRITE-2 遊戲資料：每個 NPC 的 sprite 都指到 npc.json 裡�
   assert.ok(withSprite >= 25, '已套用新圖的 NPC 數量：' + withSprite);
 });
 
-test('NPC-SPRITE-3 素材庫那兩包的角色全部都有人使用（沒有白花錢的圖）', () => {
+test('NPC-SPRITE-3 現行正式角色全部有人使用；明確退役的舊圖保留但不可仍被配置', () => {
   const c = loadData();
   const used = new Set();
   Object.keys(c.NPC_CONFIG_TABLE).forEach((id) => {
     const sp = c.NPC_CONFIG_TABLE[id].sprite;
     if (sp) used.add(man.stems[sp.idle].char);
   });
-  const unused = Object.keys(man.chars).filter((k) => !used.has(k));
+  const retired = new Set(man.retiredChars || []);
+  for (const k of retired) {
+    assert.ok(man.chars[k], '退役角色 metadata 必須保留：' + k);
+    assert.ok(!used.has(k), '退役角色不可仍被現行 NPC 配置：' + k);
+  }
+  const unused = Object.keys(man.chars).filter((k) => !used.has(k) && !retired.has(k));
   assert.deepEqual(unused, [], '沒有 NPC 使用的角色：' + unused.join('、'));
 });
 

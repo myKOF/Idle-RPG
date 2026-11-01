@@ -224,6 +224,42 @@
    "scale": 2,
    "facing": 1,
    "height": 56
+  },
+  "skeleton_warrior_sword": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.75,
+   "facing": -1,
+   "height": 54
+  },
+  "skeleton_warrior_axe": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.75,
+   "facing": -1,
+   "height": 54
+  },
+  "skeleton_mage_staff": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7826,
+   "facing": -1,
+   "height": 54
+  },
+  "skeleton_mage_book": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.75,
+   "facing": -1,
+   "height": 54
   }
  },
  "stems": {
@@ -926,6 +962,124 @@
    "fps": 12,
    "loop": false,
    "hold": true
+  },
+  "skeleton_warrior_sword_idle": {
+   "char": "skeleton_warrior_sword",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "skeleton_warrior_sword_walk": {
+   "char": "skeleton_warrior_sword",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "skeleton_warrior_sword_attack": {
+   "char": "skeleton_warrior_sword",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "skeleton_warrior_sword_die": {
+   "char": "skeleton_warrior_sword",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "skeleton_warrior_axe_idle": {
+   "char": "skeleton_warrior_axe",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "skeleton_warrior_axe_walk": {
+   "char": "skeleton_warrior_axe",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "skeleton_warrior_axe_attack": {
+   "char": "skeleton_warrior_axe",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "skeleton_warrior_axe_die": {
+   "char": "skeleton_warrior_axe",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "skeleton_mage_staff_idle": {
+   "char": "skeleton_mage_staff",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "skeleton_mage_staff_walk": {
+   "char": "skeleton_mage_staff",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "skeleton_mage_staff_attack": {
+   "char": "skeleton_mage_staff",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "skeleton_mage_staff_die": {
+   "char": "skeleton_mage_staff",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "skeleton_mage_book_idle": {
+   "char": "skeleton_mage_book",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "skeleton_mage_book_walk": {
+   "char": "skeleton_mage_book",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "skeleton_mage_book_attack": {
+   "char": "skeleton_mage_book",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "skeleton_mage_book_die": {
+   "char": "skeleton_mage_book",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
   }
- }
+ },
+ "retiredChars": [
+  "memento_skeleton",
+  "cheeky_devil",
+  "hell_giant",
+  "the_devil"
+ ]
 }
