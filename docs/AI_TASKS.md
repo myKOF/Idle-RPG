@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## NPC-FACING-20261101 — NPC 序列幀面向玩家修正
+
+- Owner：Codex；Done，單一開發者。使用者實拍指出玩家右側紅袍巨顱及燭火骷髏朝外；前置既有NPC序列幀與左右翻面流程完成。逐款放大原圖證實七種朝左素材誤標朝右，renderer依錯誤metadata翻面。
+- 允許：images/sprites/npc/npc.json朝向、tools/npc-sprites/build_npc_sprites.py對應設定、battle-renderer僅manifest快取、index／scene-preview該JS快取、獨立NPC朝向回歸、LV及本段；素材庫保存修正metadata與匯出記錄。禁止改動PNG／原始素材、NPC數值／Excel／CSV／data／Worker／存檔及其他工作區、合併推送。保留起始NPC.xlsx／CSV／data等未提交參數變更，不納入本項。
+- 預檢：fetch後所有目標無外部副本／分支來源。驗manifest與打包工具再生一致、PNG逐檔雜湊不變、左右站位與跨越玩家轉向、動作／死亡及階級覆光、相關回歸／Build、隔離Edge實際Pixi畫面與Console、自我Review後素材庫先提交再遊戲提交，交使用者正常整合。
+- 完成八檔：npc.json與打包工具同步skull_candle／demon_eye／flying_demon_head／cheeky_devil／memento_skeleton／large_skull／imp的facing 1→-1；renderer僅NPC_SPRITE_VER更新20261101-facing，index／scene-preview版號217→218，新tests/npc-facing.test.cjs三項與LV／本段。未新增翻面演算法或改數值，原本朝右／對稱圖維持。已核對25款原圖，沒有重繪／修改獨立PNG，不需作圖工具。
+- 打包／雙庫：將正式工具複製至聊天visualizations隔離目錄、以已登記授權的Effects-Materials原包重跑，25角色／66動作；深比對metadata僅上述七欄有差異、66張PNG逐位相同。素材庫保存metadata／SHA／來源與export.cjs，--check核對雙庫manifest SHA及66張PNG均一致，node --check通過；素材庫先Commit c0d65ab（[Codex] fix: 保存七種NPC朝向修正與素材驗證記錄），其工作區乾淨。遊戲Commit為本段所在「[Codex] fix: 修正七種NPC素材朝向使其面向玩家」，SHA見交付。
+- 測試指令：`node --test --test-reporter=spec tests/npc-facing.test.cjs tests/npc-sprites.test.cjs tests/npc-rank-glow.test.cjs tests/battle-renderer-pause.test.cjs tests/vfx-editor-cache-versions.test.cjs` 20項19過／1既有失敗。NPC-SPRITE-5期待desert_2沒有scale，但原HEAD已是1.5；以唯讀fs覆映原HEAD data／manifest重跑同樣失敗，未改舊斷言或數值。新三項在原manifest全部重現失敗，修正後全過；其餘四套15/15亦通過。`npm.cmd run build`617檔全過；git diff／stat／check及暫存check通過。
+- 瀏覽器：IAB無backend，改bundled Playwright／隔離headless Edge＋隨機localhost。載實際Pixi、正式資料與全renderer，僅HTTP記憶體暴露內部函式供QA，以正式makeEnemy→requestNpcSheet→loadNpcManifest→adoptNpcSprite→tickWorld產生兩側NPC；原manifest14/14朝外，新manifest14/14朝玩家。另驗已預載素材的7種makeEnemy、160組階級／左右位置／現有動作及覆光方向，體型絕對值保持，Console Error／Warning與pageerror皆0。新unit亦驗跨越玩家、貼身遲滯、進場／出手、死亡方向保留及暫停恢復。before／after兩PNG均從磁碟重開視檢，browser-report／QA／再生輸出留本聊天visualizations/npc-facing。初次QA缺base URL及錯誤投影／取樣緩衝設定已修正QA重跑，產品未因fixture擴改。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、NPC_CONFIG_TABLE／數值管線、battle-elite與原rank-glow／pause／sprite／cache回歸、全PNG／原購入素材、String／Worker／協議／存檔。工作期間另出現game_parameters.xlsx未提交變動，一併保留、不暫存；本項未讀寫玩家存檔。自我Review完成，無本項未完成實作或已知新增功能風險；限制是上述既有失敗、未跑全庫／多瀏覽器／真Worker完整長玩。可供合併，未合併推送develop／main。下一步由使用者正常整合後重新載入主頁，manifest與JS兩層快取已更新。
+
 ## PARAMS-NPC-WORKSPACE-20261101 — 修正 Excel 參數套用入口指向錯誤工作區
 
 - Owner：Codex；Done，單一開發者。使用者要求查明套用BAT／NPC縮放比未生效，後續明確指定把三個AI入口都指向自身資料夾。原生WScript.Shell唯讀讀取證實三個副本config/Excel/套用參數.bat.lnk均硬指D:\MyGame\Idle-RPG\claude\套用參數.bat，Codex所改NPC.xlsx並未被該捷徑讀取；Claude CSV／params_version更新時間吻合，Codex版本仍舊。NPC縮放正常由normal列寫入pool、NPC_CONFIG_TABLE並乘入renderer，參數非未接線。

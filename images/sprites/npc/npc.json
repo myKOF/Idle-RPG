@@ -78,7 +78,7 @@
    "anchorX": 0.5156,
    "anchorY": 0.9922,
    "scale": 0.8254,
-   "facing": 1,
+   "facing": -1,
    "height": 52
   },
   "demon_mine": {
@@ -96,7 +96,7 @@
    "anchorX": 0.5078,
    "anchorY": 0.875,
    "scale": 1.2821,
-   "facing": 1,
+   "facing": -1,
    "height": 50
   },
   "flying_demon_head": {
@@ -105,7 +105,7 @@
    "anchorX": 0.5234,
    "anchorY": 0.7031,
    "scale": 1.5385,
-   "facing": 1,
+   "facing": -1,
    "height": 40
   },
   "plague_flies": {
@@ -123,7 +123,7 @@
    "anchorX": 0.5,
    "anchorY": 1.0,
    "scale": 1.2414,
-   "facing": 1,
+   "facing": -1,
    "height": 54
   },
   "hell_giant": {
@@ -150,7 +150,7 @@
    "anchorX": 0.5078,
    "anchorY": 1.0,
    "scale": 0.9062,
-   "facing": 1,
+   "facing": -1,
    "height": 58
   },
   "the_devil": {
@@ -168,7 +168,7 @@
    "anchorX": 0.5156,
    "anchorY": 0.8555,
    "scale": 0.7885,
-   "facing": 1,
+   "facing": -1,
    "height": 82
   },
   "imp": {
@@ -177,7 +177,7 @@
    "anchorX": 0.5156,
    "anchorY": 1.0,
    "scale": 1.9167,
-   "facing": 1,
+   "facing": -1,
    "height": 46
   },
   "tree_damned": {
