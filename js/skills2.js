@@ -710,6 +710,44 @@ function sgAfterSkillChange() {
   if (typeof UI !== 'undefined' && UI.dirty) { UI.dirty.skills = true; UI.dirty.header = true; }
 }
 
+/* 技能卸下：它在玩家身上掛的狀態與執行期殘留一併撤掉。
+   狀態是該技能的投影，技能不在了就不該繼續作用（嗜血狂怒、寒冰體、環體電球卸下後仍掛著）。
+   只撤「狀態ID相符」的增益實例，避免誤刪其他來源寫進同一個效果鍵的同名增益。 */
+function skills2OnUnequip(gid) {
+  var g = SKILLS2 && SKILLS2[gid];
+  if (!g) return;
+  var rows = [], t;
+  for (t = 0; t < (g.tiers || []).length; t++) rows.push(String(t + 1));
+  for (t = 0; t < (g.ult || []).length; t++) if (g.ult[t]) rows.push(g.ult[t].id);
+
+  var pEnt = sgCurrentPlayerEnt();
+  if (pEnt) {
+    for (var ri = 0; ri < rows.length; ri++) {
+      var list = sgStatusEntries(gid, rows[ri], 'self');
+      for (var i = 0; i < list.length; i++) {
+        var def = list[i] && statusDef(list[i].id);
+        if (!def) continue;
+        var key = def.effect === 'shield' ? 'shield' : def.key;
+        var b = pEnt.buffs && key && pEnt.buffs[key];
+        if (def.effect !== 'dot' && def.effect !== 'ctrl' && b && b.sid === list[i].id) {
+          delete pEnt.buffs[key];
+          if (key === 'shield') pEnt.shield = 0;
+        }
+      }
+    }
+  }
+  // 執行期殘留：環繞場域、狂怒計時、永久領域
+  if (SKILL2_RT) {
+    if (SKILL2_RT.orbits) {
+      SKILL2_RT.orbits = SKILL2_RT.orbits.filter(function (f) { return !f || f.gid !== gid; });
+    }
+    if (gid === 'bloodrage') SKILL2_RT.rage = null;
+    for (var role in SG_DOMAIN_SLOTS) {
+      if (Object.prototype.hasOwnProperty.call(SG_DOMAIN_SLOTS, role) && SG_DOMAIN_SLOTS[role].gid === gid) sgEndDomainStatus(role);
+    }
+  }
+}
+
 /* ---- 「你造成的所有傷害提高」的唯一加總入口 ----
    來源包含符文真言 allDmgUp、終極進化與傳奇效果。
    普攻（js/combat.js playerAtkCfg）與新版技能（sgAtkCfg）都讀這一支——
