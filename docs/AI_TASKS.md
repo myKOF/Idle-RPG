@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## PARAMS-NPC-WORKSPACE-20261101 — 修正 Excel 參數套用入口指向錯誤工作區
+
+- Owner：Codex；Done，單一開發者。使用者要求查明套用BAT／NPC縮放比未生效，後續明確指定把三個AI入口都指向自身資料夾。原生WScript.Shell唯讀讀取證實三個副本config/Excel/套用參數.bat.lnk均硬指D:\MyGame\Idle-RPG\claude\套用參數.bat，Codex所改NPC.xlsx並未被該捷徑讀取；Claude CSV／params_version更新時間吻合，Codex版本仍舊。NPC縮放正常由normal列寫入pool、NPC_CONFIG_TABLE並乘入renderer，參數非未接線。
+- 允許：依使用者最新明確指示修正三個AI副本Excel入口，各刪錯誤lnk並增加同名相對BAT（顯示解析出的Workspace）、Codex params-direct-edit回歸及本段；隔離暫存副本驗真NPC來源→CSV→JS→倍率與版本／刷新。現有NPC.xlsx四格3保留，不重寫Excel或實際遊戲資料。Claude未提交NPC.csv／data變更從1套1.5（CSV290:293及UNDEAD_POOL受詛亡者與Codex來源3重疊）；本次僅修正入口並隔離驗證，沒有改動這些衝突檔案，不需要為未執行的資料套用請求確認。
+- fetch後入口／測試／本段無外部來源；其他副本入口修改前均乾淨。使用者本輪明確授權三副本相同入口檔案操作，其餘禁止合併推送、存檔操作、覆寫其他Excel或其他AI副本內容。驗搬移工作區／非專案cwd／含空白中文路徑仍呼叫自身根BAT、真BAT成功／匯出失敗、完整來源套用及數值一致、相關回歸／Build／diff，自我Review後獨立Commit；各副本既有數值／素材等修改保留。
+- 完成：三個副本都刪除固定絕對路徑lnk、加入config/Excel/套用參數.bat，內容完全相同（SHA256 b2ca2de95676dcb01c668b6eae04192ccc5e9aac9b1574513672353a8b93a966），透過自身%~dp0向上兩層呼叫同名根BAT；ASCII＋CRLF並顯示解析後Workspace。Codex另更新params-direct-edit測試及本段；根BAT／JS／CSV／原NPC.xlsx均未改，無玩家文案／解鎖規則／素材變更，不需LV／String／快取或素材庫Commit。
+- 驗證：`node --test --test-reporter=spec tests/params-direct-edit.test.cjs tests/npc-sprites.test.cjs`11/11；含實際cmd的正確工作區與搬移、中文空白路徑、在外部工作區啟動、舊lnk移除與ASCII／CRLF、既有BAT成功與匯出失敗、不碰舊暫存流程。`npm.cmd run build`616檔通過，三副本相關diff/check通過。初次新BAT的LF解析錯誤已由測試攔下，修為專案規定CRLF並新增斷言，不降低測試。
+- 完整流程：隔離複製來源Excel／工具／遊戲資料與必要NPC manifest，從新的Excel入口實跑原根BAT，exit0完成，NPC.csv四列3、NPC_CONFIG_TABLE.undead_1.scale與UNDEAD_MOUNTAINS_POOL皆3，params_version更新。隔離輸出亦如實套用來源既存其他NPC1.5與SKILL_CAST_HOLD 0.3，不把這些測試結果回寫正式副本；測試環境初次漏帶NPC manifest已補齊重跑。full-bat.log與pipeline-report.json保留本聊天visualizations/params-workspace。此前隔離Edge亡靈山脈＋3倍顯示能正常sceneReady，無需修改縮放公式。
+- 提交／交接：Claude與Antigravity只逐檔提交兩個入口檔，兩分支因相同父提交／相同patch生成同一Commit 405cb82a（[Codex] fix: Excel 參數入口改為自身工作區相對路徑）；Codex提交本段所在同名Commit及測試，SHA見交付。保留Claude原本10份CSV與data／formula未提交變動、Codex原NPC.xlsx四格3未提交，未擅自提交數值或套用到正式遊戲、未合併推送。自我Review完成，可供合併，無本次入口修正未完成項；後續使用者儲存關閉目標Excel，再從該副本Excel資料夾的新BAT正常套用。原需求檢查已確認根因與參數接線，實際數值套用沒有冒稱完成。
+
 ## STARTUP-CANVAS-DIAG-20261101 — 原存檔 Canvas 啟動卡住追查
 
 - Owner：Codex；Done，單一開發者。使用者最後確認關閉全部8123遊戲／診斷分頁、只開一個原網址後，已進入原角色遊戲。前次dirty競態修正後使用者確認原網址仍卡Loading，canvas=0可進入；補充NPC受詛亡者四階級縮放比改3後套用BAT未自動刷新。唯讀XML核對Excel L290:L293由1.5→3，但本副本NPC.csv及data仍為1、params_version未更新，未將問題歸因於倍率。

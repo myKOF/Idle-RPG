@@ -44,3 +44,36 @@ for(const failure of [false,true])test('real BAT '+(failure?'stops on table expo
     else{assert.equal(r.status,0,r.stdout+r.stderr);assert.equal(steps,'--sync\n--apply\nstrings\nparams\n');assert.doesNotMatch(r.stdout,/\[0\/3\]/);}
   }finally{clean(root);}
 });
+
+test('Excel launcher follows its own movable workspace, even when launched from another workspace', {skip:process.platform!=='win32'}, () => {
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),'params-direct-edit-'));
+  try {
+    const other=path.join(root,'Claude copy'),own=path.join(root,'Codex 空白工作區');
+    for(const workspace of [other,own]) {
+      fs.mkdirSync(path.join(workspace,'config','Excel'),{recursive:true});
+      fs.copyFileSync(path.join(project,'config/Excel/套用參數.bat'),path.join(workspace,'config/Excel/套用參數.bat'));
+      fs.writeFileSync(path.join(workspace,'套用參數.bat'),'@echo off\r\ncd /d "%~dp0"\r\necho invoked>invoked.txt\r\nexit /b 0\r\n');
+    }
+    function launch(workspace) {
+      const launcher=path.join(workspace,'config','Excel','套用參數.bat');
+      const r=spawnSync('cmd.exe',['/d','/c','call "'+launcher+'"'],{
+        cwd:other,encoding:'utf8',timeout:10000,windowsHide:true,windowsVerbatimArguments:true
+      });
+      assert.equal(r.error,undefined);assert.equal(r.status,0,r.stdout+r.stderr);
+      assert.equal(fs.existsSync(path.join(workspace,'invoked.txt')),true,r.stdout+r.stderr);
+      assert.equal(fs.existsSync(path.join(other,'invoked.txt')),false,'不能誤跑啟動時所在的另一個工作區');
+    }
+    launch(own);
+    fs.unlinkSync(path.join(own,'invoked.txt'));
+    const moved=path.join(root,'搬移後的工作區');
+    fs.renameSync(own,moved);
+    launch(moved);
+  } finally { clean(root); }
+});
+
+test('Excel launcher replaces the absolute Windows shortcut', () => {
+  assert.equal(fs.existsSync(path.join(project,'config/Excel/套用參數.bat.lnk')),false);
+  const bytes=fs.readFileSync(path.join(project,'config/Excel/套用參數.bat'));
+  assert.ok(bytes.every(value=>value<128),'入口以ASCII避免cmd錯讀中文字元');
+  assert.doesNotMatch(bytes.toString('ascii'),/(?<!\r)\n/,'cmd批次檔必須使用CRLF');
+});
