@@ -1,16 +1,18 @@
 'use strict';
 const test = require('node:test'), assert = require('node:assert/strict');
 const fs = require('node:fs'), path = require('node:path'), vm = require('node:vm');
+const os = require('node:os');
+const { execFileSync } = require('node:child_process');
 const { extractFunction } = require('./helpers/battle-scene.cjs');
 const root = path.resolve(__dirname, '..');
 const src = fs.readFileSync(path.join(root, 'js/battle-renderer.js'), 'utf8');
 
-function setup() {
+function setup(rendererSource = src) {
   const c = { console, performance, setTimeout, clearTimeout, navigator: { userAgent: 'node' } };
   vm.createContext(c);
   vm.runInContext(fs.readFileSync(path.join(root, 'js/vendor/pixi.min.js'), 'utf8'), c);
-  vm.runInContext(src.slice(src.indexOf('  var NPC_RANK_MASKS'), src.indexOf('  function npcRankStyle')) +
-    ['npcRankStyle', 'syncNpcRankGlow', 'refreshMobBody', 'destroyEntity', 'entityCenterHeight'].map(n => extractFunction(src, n)).join('\n'), c);
+  vm.runInContext(rendererSource.slice(rendererSource.indexOf('  var NPC_RANK_MASKS'), rendererSource.indexOf('  function npcRankStyle')) +
+    ['npcRankStyle', 'syncNpcRankGlow', 'refreshMobBody', 'destroyEntity', 'entityCenterHeight'].map(n => extractFunction(rendererSource, n)).join('\n'), c);
   const P = c.PIXI;
   const tex = (w, h) => new P.Texture({ source: new P.TextureSource({ width: w, height: h }) });
   const frameA = tex(64, 40), frameB = tex(64, 40);
@@ -62,9 +64,9 @@ test('換幀使用該幀遮罩；階級／受擊alpha／visible即時同步，�
   ent.body.texture = frameB; ent.body.alpha = .95; ent.body.visible = false;
   ent.data._tier = 'elite_adv'; c.syncNpcRankGlow(ent);
   assert.equal(ent.rankGlow, glow); assert.equal(glow.inner.texture, maps.get(frameB).inner);
-  assert.equal(glow.inner.tint, 0xffe878); assert.equal(glow.inner.alpha, .76); assert.equal(glow.outer.alpha, .76); assert.equal(glow.inner.visible, false);
+  assert.equal(glow.inner.tint, 0xffe878); assert.equal(glow.inner.alpha, .95 * c.NPC_ELITE_ADV_GLOW_ALPHA); assert.equal(glow.outer.alpha, .95 * c.NPC_ELITE_ADV_GLOW_ALPHA); assert.equal(glow.inner.visible, false);
   ent.data._tier = 'elite'; c.syncNpcRankGlow(ent);
-  assert.equal(glow.inner.alpha, .76); assert.equal(glow.outer.alpha, .76);
+  assert.equal(glow.inner.alpha, .95 * c.NPC_ELITE_GLOW_ALPHA); assert.equal(glow.outer.alpha, .95 * c.NPC_ELITE_GLOW_ALPHA);
   ent.data.isBoss = true; c.syncNpcRankGlow(ent);
   assert.equal(glow.inner.alpha, .95); assert.equal(glow.outer.alpha, .95);
   assert.equal(ent.body.alpha, .95);
@@ -97,4 +99,46 @@ test('死亡／換場銷毀覆層但不銷毀共用貼圖；重複同步不新�
   c.destroyEntity('npc');
   assert.equal(glow.outer.destroyed, true); assert.equal(glow.inner.destroyed, true);
   assert.equal(maps.get(frameA).inner.destroyed, false); assert.equal(c.S.entities.npc, undefined);
+});
+
+test('參數表藍／黃濃度獨立套用到兩層實際覆光，支援0／1且不影響BOSS或本體', () => {
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'npc-glow-params-'));
+  try {
+    for (const file of ['tools/apply_params.cjs', 'js/data.js', 'js/formula.js', 'js/combat.js',
+      'js/item.js', 'js/player.js', 'js/save.js', 'js/battle-renderer.js',
+      'config/CSV/Zones.csv', 'config/CSV/Zone_Stage_Drops.csv',
+      'config/CSV/system_unlock.csv', 'config/CSV/Equipment_Affix.csv']) {
+      const target = path.join(temp, file);
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      fs.copyFileSync(path.join(root, file), target);
+    }
+    const csv = fs.readFileSync(path.join(root, 'config/CSV/game_parameters.csv'), 'utf8');
+    const row = csv.split(/\r?\n/).find(r => r.includes(',8-戰鬥畫面,菁英覆光濃度,'));
+    assert.ok(row, 'Excel匯出必須提供菁英覆光濃度列');
+    const baseline = setup().c;
+    assert.equal(Number(row.split(',')[6]), baseline.NPC_ELITE_GLOW_ALPHA);
+    assert.equal(Number(row.split(',')[7]), baseline.NPC_ELITE_ADV_GLOW_ALPHA);
+    for (const [blue, yellow] of [[0, 1], [.25, .6]]) {
+      const cells = row.split(','); cells[6] = String(blue); cells[7] = String(yellow);
+      const csvPath = path.join(temp, 'params.csv');
+      fs.writeFileSync(csvPath, csv.replace(row, cells.join(',')));
+      const out = execFileSync(process.execPath, ['tools/apply_params.cjs', '--write'], {
+        cwd: temp, encoding: 'utf8', env: { ...process.env, PARAMS_CSV: csvPath }
+      });
+      assert.match(out, /將變更 2、錨點問題 0/);
+      const applied = fs.readFileSync(path.join(temp, 'js/battle-renderer.js'), 'utf8');
+      const { c, ent } = setup(applied);
+      ent.body.alpha = .5;
+      for (const [data, intensity] of [[{ elite: true }, blue], [{ _tier: 'elite_adv' }, yellow],
+        [{ isBoss: true }, 1]]) {
+        ent.data = data; c.syncNpcRankGlow(ent);
+        assert.equal(ent.rankGlow.inner.alpha, intensity * .5);
+        assert.equal(ent.rankGlow.outer.alpha, intensity * .5);
+        assert.equal(ent.body.alpha, .5);
+      }
+    }
+  } finally {
+    assert.equal(path.dirname(temp), os.tmpdir());
+    fs.rmSync(temp, { recursive: true, force: true });
+  }
 });

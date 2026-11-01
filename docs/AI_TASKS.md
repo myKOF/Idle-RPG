@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## ELITE-GLOW-PARAMS-20261101 — 菁英覆光濃度加入參數表
+
+- Owner：Codex；Done，單一開發者。使用者要求將藍色菁英與黃色高級菁英覆光濃度放進參數表；前置既有NPC_RANK_STYLES與apply_params流程完成，後續接手者為使用者正常Review／整合。
+- 允許：game_parameters.xlsx／CSV新增8-戰鬥畫面「菁英覆光濃度」（a藍色、b黃色，0～1，維持.8）、renderer具名常數、apply_params名稱錨點、index／scene-preview快取、相關回歸、LV及本段。禁止BOSS／戰鬥數值／解鎖／Worker／存檔／素材與其他工作區、合併推送。
+- fetch後目標預檢無外部來源，Excel獨占確認通過；保留起始同副本Excel／CSV的敵人體型與其他未提交參數修改。工作檔與HEAD來源各用原生Excel窄幅插列／儲存／正常重開，暫存區只納入HEAD來源加上本列的Excel及CSV，既有Excel編輯／體型值仍留工作區未提交；Artifact Tool唯讀前後預覽。
+- 驗收：Excel→CSV→具名常數兩參數獨立套用、0／1邊界及兩層實際alpha、BOSS保持、apply_params將變更0／錨點問題0、錨點總數586→588、--check-anchors、node --test "tests/*.test.cjs"、Build及diff／自我Review後獨立Commit。
+- 完成9檔：game_parameters.xlsx的game_parameters頁第319列／編號400「8-戰鬥畫面／菁英覆光濃度」，G319／a藍色菁英、H319／b黃色高級菁英，均.8，加入0～1小數輸入驗證；CSV依既有xlsx_to_csv生成。renderer抽出NPC_ELITE_GLOW_ALPHA／NPC_ELITE_ADV_GLOW_ALPHA並接原NPC_RANK_STYLES，apply_params增加兩個scalar名稱錨點。index／scene-preview快取218→219，既有npc-rank-glow回歸與LV、本段同步。未改BOSS、遮罩／技能／出怪／解鎖／Worker／Protocol／存檔／素材，無素材庫變更或Commit。
+- Excel：遵守使用者優先的原生Excel API要求，只對主參數頁窄幅插列，複製鄰列格式、寫入18格且兩濃度為真正數字；各以正常模式重開／儲存兩次，繪圖物件0保持。唯讀封裝全格比較工作檔原有13333格、暫存來源原有13171格，依插列位移對齊後原值／公式／style索引全無變化；styles僅新增本列數字格式。暫存來源Excel另匯出CSV，與暫存CSV完全相符。原起始工作簿另有既存公式／計算表編輯，均保留且未隨本項提交；沒有手改XML。Artifact Tool只讀取／預覽前後指定範圍，不匯出覆寫；既有預覽文字擠在窄格的限制未擴修來源樣式。
+- 相關測試：`node --test --test-reporter=spec tests/npc-rank-glow.test.cjs tests/apply-params.test.cjs tests/apply-params-anchor-independence.test.cjs tests/apply-params-scientific.test.cjs tests/vfx-editor-cache-versions.test.cjs`14/14通過。新整合回歸在隔離副本實跑apply_params --write，以0／1及.25／.6各驗僅變更2項，再以正式Pixi與syncNpcRankGlow驗兩階兩層alpha、本體與BOSS；既有alpha斷言改讀具名配置，保留數值乘法驗證。初次fixture缺必要CSV，已補齊四份依賴後重跑，不擴改產品或放寬斷言。apply_params試跑588／將變更0／錨點問題0，--check-anchors擾動537值、588錨點各命中一次；`npm.cmd run build`617檔通過。diff及暫存diff檢查通過，自我Review完成。
+- 全庫限制：依規範執行`node --test --test-reporter=dot "tests/*.test.cjs"`，數個測試程序長時間不退出而中止；再以`node --test --test-timeout=60000 --test-reporter=tap "tests/*.test.cjs"`完整收集，5047項4438過／606失敗／1取消／2略過。超過120秒仍不退出的equip-no-duplicate、elite-engine、sim-bag-cache／dead-stock／evaluator／policy-smoke及sync-auto-conflicts／feature-worktrees／index-recovery測試程序有明確記錄後結束；此結果含中止測試，不能宣稱全庫通過。
+- 既有失敗對照：本次修改前的renderer／apply_params／原rank測試／index／scene-preview／LV／任務檔與起始Excel／CSV以唯讀fs覆映重跑全庫，5083項4467過／613失敗／1取消／2略過；同樣需結束不退出的測試程序，另含vfx-preset-coverage。以完成回報的失敗名稱比對，本次所有斷言失敗均出現在對照，額外只有被結束的elite-engine檔案層級失敗；對照該檔原已有兩項失敗。兩次中止程序與衍生工具執行不同，數量不能當作精確回歸率；未修無關既有失敗。原始log／失敗名稱對照／中止清單及Excel來源備份、全格報告、預覽保留本聊天visualizations/elite-glow-params，未接觸玩家存檔，沒有新增瀏覽器遊玩驗收。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、Excel匯出工具、其他CSV／NPC.xlsx／data.js既有體型修改、battle-elite、原遮罩／Pixi／技能與戰鬥模擬、Worker／存檔及原素材。使用者既有其他修改維持未提交，僅新增本參數與接線。可供Review／合併，本需求實作無未完成項；已知限制為全庫既有失敗／中止及未測多瀏覽器長玩。Commit為本段所在「[Codex] feat: 菁英覆光濃度納入參數表」，SHA見交付；未合併推送develop／main。下一步使用者正常整合後於G319／H319調值，儲存關閉Excel，執行本副本套用參數.bat再載入遊戲。
+
 ## NPC-FACING-20261101 — NPC 序列幀面向玩家修正
 
 - Owner：Codex；Done，單一開發者。使用者實拍指出玩家右側紅袍巨顱及燭火骷髏朝外；前置既有NPC序列幀與左右翻面流程完成。逐款放大原圖證實七種朝左素材誤標朝右，renderer依錯誤metadata翻面。
