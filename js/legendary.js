@@ -37,6 +37,7 @@ function legendaryEnsureRT() {
 }
 
 function legendaryHas(st, key) {
+  if (typeof LEGACY_LEGENDARY_DISABLED !== 'undefined' && LEGACY_LEGENDARY_DISABLED[key]) return false; // 舊版傳奇暫時停用（js/data.js）
   return !!(st && st.legendaryEffects && st.legendaryEffects[key]);
 }
 

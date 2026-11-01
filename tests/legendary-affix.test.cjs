@@ -29,6 +29,8 @@ function loadContext(files) {
   files.forEach((file) => {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });
+  // 舊版傳奇目前停用（js/data.js LEGACY_LEGENDARY_DISABLED）：這支測試守的是效果邏輯本身，載入後解除停用
+  vm.runInContext('LEGACY_LEGENDARY_DISABLED = {};', context);
   return context;
 }
 

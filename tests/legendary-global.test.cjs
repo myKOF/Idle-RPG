@@ -10,6 +10,7 @@ function load() {
   c.window = c; vm.createContext(c);
   for (const f of ['util','strings_data','strings','data','status','formula','battlefield','item','player','combat','skills','skills2','legendary','save'])
     vm.runInContext(fs.readFileSync(path.join(root,'js',f+'.js'),'utf8'),c,{filename:f+'.js'});
+  vm.runInContext('LEGACY_LEGENDARY_DISABLED = {};', c); // 舊版傳奇目前停用，這支測試守效果邏輯本身
   c.G=c.newGameState(); c.GT=0; c.blog=()=>{}; c.floatText=()=>{};
   return c;
 }
