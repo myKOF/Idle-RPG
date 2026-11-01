@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """NPC 序列幀打包工具（2026-10-31）。
 
-來源：素材庫 D:\\MyGame\\Asset 的 GandalfHardcore Hell Asset Pack 32x32 與
+來源：本機素材庫的 GandalfHardcore Hell Asset Pack 32x32 與
 Monsters Creatures Fantasy 2（授權與取得方式見素材庫 PROVENANCE.md）。
 產出：images/sprites/npc/<角色>_<動作>.png（橫向單列序列幀）與 npc.json。
 
@@ -11,10 +11,12 @@ NPC 配置表的「站立／移動／攻擊／死亡圖像」填的就是這裡�
 
 用法：python tools/npc-sprites/build_npc_sprites.py [素材庫路徑]
 """
-import json, os, shutil, statistics, sys
+import json, os, shutil, statistics, subprocess, sys
 from PIL import Image
 
-ASSET = sys.argv[1] if len(sys.argv) > 1 else r'D:\MyGame\Asset'
+ASSET = sys.argv[1] if len(sys.argv) > 1 else subprocess.check_output(
+    ['node', os.path.join(os.path.dirname(__file__), '..', 'vfx', 'vfx-library-root.cjs')],
+    encoding='utf-8').strip()
 G = os.path.join(ASSET, 'GandalfHardcore Hell Asset Pack 32x32', 'GandalfHardcore The Damned Enemies and NPCs')
 M = os.path.join(ASSET, 'Monsters Creatures Fantasy 2')
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'images', 'sprites', 'npc')
@@ -81,6 +83,8 @@ def frames_of(c, anim):
 
 
 def main():
+    # Fail before clearing the output if the editable supplemental package is missing.
+    subprocess.run(['node', os.path.join(os.path.dirname(__file__), 'export_supplemental.cjs'), '--source-check'], check=True)
     if os.path.isdir(OUT):
         shutil.rmtree(OUT)
     os.makedirs(OUT)
@@ -116,6 +120,8 @@ def main():
             manifest['stems'][stem] = {'char': key, 'frames': n, 'fps': fps, 'loop': loop, 'hold': hold}
     with open(os.path.join(OUT, 'npc.json'), 'w', encoding='utf-8') as fp:
         json.dump(manifest, fp, ensure_ascii=False, indent=1)
+    # Preserve approved supplemental actions when rebuilding the purchased packs.
+    subprocess.run(['node', os.path.join(os.path.dirname(__file__), 'export_supplemental.cjs'), '--apply'], check=True)
     print(len(manifest['chars']), 'chars,', len(manifest['stems']), 'stems')
     for k, v in manifest['chars'].items():
         print(k, v)

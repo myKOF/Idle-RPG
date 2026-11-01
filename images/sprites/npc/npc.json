@@ -4,7 +4,7 @@
    "cellW": 64,
    "cellH": 64,
    "anchorX": 0.4844,
-   "anchorY": 1.0,
+   "anchorY": 1,
    "scale": 1.2857,
    "facing": -1,
    "height": 54
@@ -13,7 +13,7 @@
    "cellW": 64,
    "cellH": 64,
    "anchorX": 0.5,
-   "anchorY": 1.0,
+   "anchorY": 1,
    "scale": 1.3171,
    "facing": -1,
    "height": 54
@@ -22,7 +22,7 @@
    "cellW": 64,
    "cellH": 64,
    "anchorX": 0.4688,
-   "anchorY": 1.0,
+   "anchorY": 1,
    "scale": 1.2558,
    "facing": -1,
    "height": 54
@@ -31,7 +31,7 @@
    "cellW": 64,
    "cellH": 64,
    "anchorX": 0.4844,
-   "anchorY": 1.0,
+   "anchorY": 1,
    "scale": 1.1739,
    "facing": -1,
    "height": 54
@@ -40,7 +40,7 @@
    "cellW": 64,
    "cellH": 64,
    "anchorX": 0.4844,
-   "anchorY": 1.0,
+   "anchorY": 1,
    "scale": 1.1739,
    "facing": -1,
    "height": 54
@@ -49,7 +49,7 @@
    "cellW": 64,
    "cellH": 64,
    "anchorX": 0.4922,
-   "anchorY": 1.0,
+   "anchorY": 1,
    "scale": 1.3488,
    "facing": -1,
    "height": 58
@@ -121,7 +121,7 @@
    "cellW": 64,
    "cellH": 64,
    "anchorX": 0.5,
-   "anchorY": 1.0,
+   "anchorY": 1,
    "scale": 1.2414,
    "facing": -1,
    "height": 54
@@ -130,7 +130,7 @@
    "cellW": 112,
    "cellH": 128,
    "anchorX": 0.5045,
-   "anchorY": 1.0,
+   "anchorY": 1,
    "scale": 0.7541,
    "facing": 1,
    "height": 92
@@ -139,7 +139,7 @@
    "cellW": 80,
    "cellH": 64,
    "anchorX": 0.5062,
-   "anchorY": 1.0,
+   "anchorY": 1,
    "scale": 1.0545,
    "facing": -1,
    "height": 58
@@ -148,7 +148,7 @@
    "cellW": 128,
    "cellH": 64,
    "anchorX": 0.5078,
-   "anchorY": 1.0,
+   "anchorY": 1,
    "scale": 0.9062,
    "facing": -1,
    "height": 58
@@ -157,7 +157,7 @@
    "cellW": 96,
    "cellH": 112,
    "anchorX": 0.4896,
-   "anchorY": 1.0,
+   "anchorY": 1,
    "scale": 0.7547,
    "facing": 1,
    "height": 80
@@ -175,7 +175,7 @@
    "cellW": 64,
    "cellH": 64,
    "anchorX": 0.5156,
-   "anchorY": 1.0,
+   "anchorY": 1,
    "scale": 1.9167,
    "facing": -1,
    "height": 46
@@ -184,7 +184,7 @@
    "cellW": 64,
    "cellH": 64,
    "anchorX": 0.4688,
-   "anchorY": 1.0,
+   "anchorY": 1,
    "scale": 1.2157,
    "facing": 1,
    "height": 62
@@ -221,7 +221,7 @@
    "cellH": 146,
    "anchorX": 0.5308,
    "anchorY": 0.5685,
-   "scale": 2.0,
+   "scale": 2,
    "facing": 1,
    "height": 56
   }
@@ -686,6 +686,244 @@
    "char": "mimic",
    "frames": 6,
    "fps": 9,
+   "loop": false,
+   "hold": true
+  },
+  "burning_skull_walk": {
+   "char": "burning_skull",
+   "frames": 8,
+   "fps": 12,
+   "loop": true,
+   "hold": false
+  },
+  "burning_skull_attack": {
+   "char": "burning_skull",
+   "frames": 6,
+   "fps": 12,
+   "loop": false,
+   "hold": false
+  },
+  "demon_eye_walk": {
+   "char": "demon_eye",
+   "frames": 8,
+   "fps": 12,
+   "loop": true,
+   "hold": false
+  },
+  "demon_eye_attack": {
+   "char": "demon_eye",
+   "frames": 6,
+   "fps": 12,
+   "loop": false,
+   "hold": false
+  },
+  "demon_mine_walk": {
+   "char": "demon_mine",
+   "frames": 8,
+   "fps": 12,
+   "loop": true,
+   "hold": false
+  },
+  "demon_mine_attack": {
+   "char": "demon_mine",
+   "frames": 6,
+   "fps": 12,
+   "loop": false,
+   "hold": false
+  },
+  "plague_flies_walk": {
+   "char": "plague_flies",
+   "frames": 8,
+   "fps": 12,
+   "loop": true,
+   "hold": false
+  },
+  "plague_flies_attack": {
+   "char": "plague_flies",
+   "frames": 6,
+   "fps": 12,
+   "loop": false,
+   "hold": false
+  },
+  "memento_skeleton_walk": {
+   "char": "memento_skeleton",
+   "frames": 8,
+   "fps": 12,
+   "loop": true,
+   "hold": false
+  },
+  "memento_skeleton_attack": {
+   "char": "memento_skeleton",
+   "frames": 6,
+   "fps": 12,
+   "loop": false,
+   "hold": false
+  },
+  "memento_skeleton_die": {
+   "char": "memento_skeleton",
+   "frames": 8,
+   "fps": 12,
+   "loop": false,
+   "hold": true
+  },
+  "tree_damned_walk": {
+   "char": "tree_damned",
+   "frames": 8,
+   "fps": 12,
+   "loop": true,
+   "hold": false
+  },
+  "tree_damned_attack": {
+   "char": "tree_damned",
+   "frames": 6,
+   "fps": 12,
+   "loop": false,
+   "hold": false
+  },
+  "cheeky_devil_walk": {
+   "char": "cheeky_devil",
+   "frames": 8,
+   "fps": 12,
+   "loop": true,
+   "hold": false
+  },
+  "cheeky_devil_attack": {
+   "char": "cheeky_devil",
+   "frames": 6,
+   "fps": 12,
+   "loop": false,
+   "hold": false
+  },
+  "cheeky_devil_die": {
+   "char": "cheeky_devil",
+   "frames": 8,
+   "fps": 12,
+   "loop": false,
+   "hold": true
+  },
+  "hell_giant_walk": {
+   "char": "hell_giant",
+   "frames": 8,
+   "fps": 12,
+   "loop": true,
+   "hold": false
+  },
+  "hell_giant_attack": {
+   "char": "hell_giant",
+   "frames": 6,
+   "fps": 12,
+   "loop": false,
+   "hold": false
+  },
+  "hell_giant_die": {
+   "char": "hell_giant",
+   "frames": 8,
+   "fps": 12,
+   "loop": false,
+   "hold": true
+  },
+  "flying_demon_head_walk": {
+   "char": "flying_demon_head",
+   "frames": 8,
+   "fps": 12,
+   "loop": true,
+   "hold": false
+  },
+  "flying_demon_head_attack": {
+   "char": "flying_demon_head",
+   "frames": 6,
+   "fps": 12.048192771084338,
+   "loop": false,
+   "hold": false
+  },
+  "old_demon_walk": {
+   "char": "old_demon",
+   "frames": 8,
+   "fps": 12,
+   "loop": true,
+   "hold": false
+  },
+  "old_demon_attack": {
+   "char": "old_demon",
+   "frames": 6,
+   "fps": 12,
+   "loop": false,
+   "hold": false
+  },
+  "old_demon_die": {
+   "char": "old_demon",
+   "frames": 8,
+   "fps": 12,
+   "loop": false,
+   "hold": true
+  },
+  "large_skull_walk": {
+   "char": "large_skull",
+   "frames": 8,
+   "fps": 12,
+   "loop": true,
+   "hold": false
+  },
+  "bat_walk": {
+   "char": "bat",
+   "frames": 8,
+   "fps": 12,
+   "loop": true,
+   "hold": false
+  },
+  "bloated_damned_attack": {
+   "char": "bloated_damned",
+   "frames": 6,
+   "fps": 12,
+   "loop": false,
+   "hold": false
+  },
+  "skull_candle_walk": {
+   "char": "skull_candle",
+   "frames": 8,
+   "fps": 12,
+   "loop": true,
+   "hold": false
+  },
+  "skull_candle_attack": {
+   "char": "skull_candle",
+   "frames": 6,
+   "fps": 12,
+   "loop": false,
+   "hold": false
+  },
+  "burning_skull_blue_walk": {
+   "char": "burning_skull_blue",
+   "frames": 8,
+   "fps": 12,
+   "loop": true,
+   "hold": false
+  },
+  "burning_skull_blue_attack": {
+   "char": "burning_skull_blue",
+   "frames": 6,
+   "fps": 12,
+   "loop": false,
+   "hold": false
+  },
+  "the_devil_walk": {
+   "char": "the_devil",
+   "frames": 8,
+   "fps": 12,
+   "loop": true,
+   "hold": false
+  },
+  "the_devil_attack": {
+   "char": "the_devil",
+   "frames": 6,
+   "fps": 12,
+   "loop": false,
+   "hold": false
+  },
+  "the_devil_die": {
+   "char": "the_devil",
+   "frames": 8,
+   "fps": 12,
    "loop": false,
    "hold": true
   }
