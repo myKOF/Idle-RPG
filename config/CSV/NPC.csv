@@ -1,20 +1,20 @@
 ﻿NPC識別碼,NPC名稱,所屬地圖識別碼,類型,屬性,外觀,站立圖像,移動圖像,攻擊圖像,死亡圖像,圖像備註,縮放比,移動速度(米/秒),攻擊速度(次/秒),攻擊距離(米),視野範圍(米),魔法型（1是／0否）,出現權重,專屬技能,隨機技能下限,隨機技能上限,備註
-desert_1,史萊姆,desert,normal,ice,🟢,舊版:🟢,舊版:🟢,舊版:🟢,舊版:🟢,,1.5,12,0.75,24,50,1,10,,,,普通攻擊，沒有特殊技能。
-desert_1,史萊姆,desert,elite,ice,🟢,舊版:🟢,舊版:🟢,舊版:🟢,舊版:🟢,,1.5,12,0.75,24,50,1,10,,2,2,菁英｜隨機：從隨機技能池抽 2 個
-desert_1,史萊姆,desert,elite_adv,ice,🟢,舊版:🟢,舊版:🟢,舊版:🟢,舊版:🟢,,1.5,12,0.75,24,50,1,10,,3,3,高級菁英｜隨機：從隨機技能池抽 3 個
-desert_1,史萊姆,desert,boss,ice,🟢,舊版:🟢,舊版:🟢,舊版:🟢,舊版:🟢,,1.5,12,0.75,24,50,1,10,e_poisonspit,3,3,野外BOSS｜專屬：劇毒吐息（吐出數團毒液，命中的目標會中毒。）｜隨機：從隨機技能池抽 3 個
-desert_2,哥布林,desert,normal,fire,👺,舊版:👺,舊版:👺,舊版:👺,舊版:👺,,1.5,12,1,6,50,0,1,,,,普通攻擊，沒有特殊技能。
-desert_2,哥布林,desert,elite,fire,👺,舊版:👺,舊版:👺,舊版:👺,舊版:👺,,1.5,12,1,6,50,0,1,,2,2,菁英｜隨機：從隨機技能池抽 2 個
-desert_2,哥布林,desert,elite_adv,fire,👺,舊版:👺,舊版:👺,舊版:👺,舊版:👺,,1.5,12,1,6,50,0,1,,3,3,高級菁英｜隨機：從隨機技能池抽 3 個
-desert_2,哥布林,desert,boss,fire,👺,舊版:👺,舊版:👺,舊版:👺,舊版:👺,,1.5,12,1,6,50,0,1,e_fireball,3,3,野外BOSS｜專屬：烈焰火球（丟出一顆巨大的火球，落地炸開並點燃目標。）｜隨機：從隨機技能池抽 3 個
-desert_3,野狼,desert,normal,ice,🐺,舊版:🐺,舊版:🐺,舊版:🐺,舊版:🐺,,1.5,24,1.5,6,50,1,1,,,,普通攻擊，沒有特殊技能。
-desert_3,野狼,desert,elite,ice,🐺,舊版:🐺,舊版:🐺,舊版:🐺,舊版:🐺,,1.5,24,1.5,6,50,1,1,,2,2,菁英｜隨機：從隨機技能池抽 2 個
-desert_3,野狼,desert,elite_adv,ice,🐺,舊版:🐺,舊版:🐺,舊版:🐺,舊版:🐺,,1.5,24,1.5,6,50,1,1,,3,3,高級菁英｜隨機：從隨機技能池抽 3 個
-desert_3,野狼,desert,boss,ice,🐺,舊版:🐺,舊版:🐺,舊版:🐺,舊版:🐺,,1.5,24,1.5,6,50,1,1,e_charge,3,3,野外BOSS｜專屬：野蠻衝鋒（先在你身上標出紅圈，隨後高速衝撞過來，撞上會被擊退並短暫暈眩。）｜隨機：從隨機技能池抽 3 個
-desert_4,骷髏兵,desert,normal,fire,💀,舊版:💀,舊版:💀,舊版:💀,舊版:💀,,1.5,6,1,6,50,0,1,,,,普通攻擊，沒有特殊技能。
-desert_4,骷髏兵,desert,elite,fire,💀,舊版:💀,舊版:💀,舊版:💀,舊版:💀,,1.5,6,1,6,50,0,1,,2,2,菁英｜隨機：從隨機技能池抽 2 個
-desert_4,骷髏兵,desert,elite_adv,fire,💀,舊版:💀,舊版:💀,舊版:💀,舊版:💀,,1.5,6,1,6,50,0,1,,3,3,高級菁英｜隨機：從隨機技能池抽 3 個
-desert_4,骷髏兵,desert,boss,fire,💀,舊版:💀,舊版:💀,舊版:💀,舊版:💀,,1.5,6,1,6,50,0,1,e_splitter,3,3,野外BOSS｜專屬：分裂（死亡時分裂成數隻較弱的分身。）｜隨機：從隨機技能池抽 3 個
+desert_1,史萊姆,desert,normal,ice,🟢,desert_slime_idle,desert_slime_walk,desert_slime_attack,desert_slime_die,新版正式圖像（專案AI自製荒漠NPC）；青綠／冰藍；待機／移動／攻擊／死亡六幀齊全,1.5,12,0.75,24,50,1,10,,,,普通攻擊，沒有特殊技能。
+desert_1,史萊姆,desert,elite,ice,🟢,desert_slime_idle,desert_slime_walk,desert_slime_attack,desert_slime_die,新版正式圖像（專案AI自製荒漠NPC）；青綠／冰藍；待機／移動／攻擊／死亡六幀齊全,1.5,12,0.75,24,50,1,10,,2,2,菁英｜隨機：從隨機技能池抽 2 個
+desert_1,史萊姆,desert,elite_adv,ice,🟢,desert_slime_idle,desert_slime_walk,desert_slime_attack,desert_slime_die,新版正式圖像（專案AI自製荒漠NPC）；青綠／冰藍；待機／移動／攻擊／死亡六幀齊全,1.5,12,0.75,24,50,1,10,,3,3,高級菁英｜隨機：從隨機技能池抽 3 個
+desert_1,史萊姆,desert,boss,ice,🟢,desert_slime_idle,desert_slime_walk,desert_slime_attack,desert_slime_die,新版正式圖像（專案AI自製荒漠NPC）；青綠／冰藍；待機／移動／攻擊／死亡六幀齊全,1.5,12,0.75,24,50,1,10,e_poisonspit,3,3,野外BOSS｜專屬：劇毒吐息（吐出數團毒液，命中的目標會中毒。）｜隨機：從隨機技能池抽 3 個
+desert_2,哥布林,desert,normal,fire,👺,desert_goblin_idle,desert_goblin_walk,desert_goblin_attack,desert_goblin_die,新版正式圖像（專案AI自製荒漠NPC）；橄欖綠／赭紅；待機／移動／攻擊／死亡六幀齊全,1.5,12,1,6,50,0,1,,,,普通攻擊，沒有特殊技能。
+desert_2,哥布林,desert,elite,fire,👺,desert_goblin_idle,desert_goblin_walk,desert_goblin_attack,desert_goblin_die,新版正式圖像（專案AI自製荒漠NPC）；橄欖綠／赭紅；待機／移動／攻擊／死亡六幀齊全,1.5,12,1,6,50,0,1,,2,2,菁英｜隨機：從隨機技能池抽 2 個
+desert_2,哥布林,desert,elite_adv,fire,👺,desert_goblin_idle,desert_goblin_walk,desert_goblin_attack,desert_goblin_die,新版正式圖像（專案AI自製荒漠NPC）；橄欖綠／赭紅；待機／移動／攻擊／死亡六幀齊全,1.5,12,1,6,50,0,1,,3,3,高級菁英｜隨機：從隨機技能池抽 3 個
+desert_2,哥布林,desert,boss,fire,👺,desert_goblin_idle,desert_goblin_walk,desert_goblin_attack,desert_goblin_die,新版正式圖像（專案AI自製荒漠NPC）；橄欖綠／赭紅；待機／移動／攻擊／死亡六幀齊全,1.5,12,1,6,50,0,1,e_fireball,3,3,野外BOSS｜專屬：烈焰火球（丟出一顆巨大的火球，落地炸開並點燃目標。）｜隨機：從隨機技能池抽 3 個
+desert_3,野狼,desert,normal,ice,🐺,desert_wolf_idle,desert_wolf_walk,desert_wolf_attack,desert_wolf_die,新版正式圖像（專案AI自製荒漠NPC）；灰褐／冷灰藍；待機／移動／攻擊／死亡六幀齊全,1.5,24,1.5,6,50,1,1,,,,普通攻擊，沒有特殊技能。
+desert_3,野狼,desert,elite,ice,🐺,desert_wolf_idle,desert_wolf_walk,desert_wolf_attack,desert_wolf_die,新版正式圖像（專案AI自製荒漠NPC）；灰褐／冷灰藍；待機／移動／攻擊／死亡六幀齊全,1.5,24,1.5,6,50,1,1,,2,2,菁英｜隨機：從隨機技能池抽 2 個
+desert_3,野狼,desert,elite_adv,ice,🐺,desert_wolf_idle,desert_wolf_walk,desert_wolf_attack,desert_wolf_die,新版正式圖像（專案AI自製荒漠NPC）；灰褐／冷灰藍；待機／移動／攻擊／死亡六幀齊全,1.5,24,1.5,6,50,1,1,,3,3,高級菁英｜隨機：從隨機技能池抽 3 個
+desert_3,野狼,desert,boss,ice,🐺,desert_wolf_idle,desert_wolf_walk,desert_wolf_attack,desert_wolf_die,新版正式圖像（專案AI自製荒漠NPC）；灰褐／冷灰藍；待機／移動／攻擊／死亡六幀齊全,1.5,24,1.5,6,50,1,1,e_charge,3,3,野外BOSS｜專屬：野蠻衝鋒（先在你身上標出紅圈，隨後高速衝撞過來，撞上會被擊退並短暫暈眩。）｜隨機：從隨機技能池抽 3 個
+desert_4,骷髏兵,desert,normal,fire,💀,desert_skeleton_idle,desert_skeleton_walk,desert_skeleton_attack,desert_skeleton_die,新版正式圖像（專案AI自製荒漠NPC）；骨白／青銅綠；待機／移動／攻擊／死亡六幀齊全,1.5,6,1,6,50,0,1,,,,普通攻擊，沒有特殊技能。
+desert_4,骷髏兵,desert,elite,fire,💀,desert_skeleton_idle,desert_skeleton_walk,desert_skeleton_attack,desert_skeleton_die,新版正式圖像（專案AI自製荒漠NPC）；骨白／青銅綠；待機／移動／攻擊／死亡六幀齊全,1.5,6,1,6,50,0,1,,2,2,菁英｜隨機：從隨機技能池抽 2 個
+desert_4,骷髏兵,desert,elite_adv,fire,💀,desert_skeleton_idle,desert_skeleton_walk,desert_skeleton_attack,desert_skeleton_die,新版正式圖像（專案AI自製荒漠NPC）；骨白／青銅綠；待機／移動／攻擊／死亡六幀齊全,1.5,6,1,6,50,0,1,,3,3,高級菁英｜隨機：從隨機技能池抽 3 個
+desert_4,骷髏兵,desert,boss,fire,💀,desert_skeleton_idle,desert_skeleton_walk,desert_skeleton_attack,desert_skeleton_die,新版正式圖像（專案AI自製荒漠NPC）；骨白／青銅綠；待機／移動／攻擊／死亡六幀齊全,1.5,6,1,6,50,0,1,e_splitter,3,3,野外BOSS｜專屬：分裂（死亡時分裂成數隻較弱的分身。）｜隨機：從隨機技能池抽 3 個
 desert_5,暗影蝠,desert,normal,fire,🦇,舊版:🦇,舊版:🦇,舊版:🦇,舊版:🦇,,1.5,18,1,24,50,1,1,,,,普通攻擊，沒有特殊技能。
 desert_5,暗影蝠,desert,elite,fire,🦇,舊版:🦇,舊版:🦇,舊版:🦇,舊版:🦇,,1.5,18,1,24,50,1,1,,2,2,菁英｜隨機：從隨機技能池抽 2 個
 desert_5,暗影蝠,desert,elite_adv,fire,🦇,舊版:🦇,舊版:🦇,舊版:🦇,舊版:🦇,,1.5,18,1,24,50,1,1,,3,3,高級菁英｜隨機：從隨機技能池抽 3 個

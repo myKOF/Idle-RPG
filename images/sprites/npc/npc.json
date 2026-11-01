@@ -260,6 +260,42 @@
    "scale": 0.75,
    "facing": -1,
    "height": 54
+  },
+  "desert_slime": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7083,
+   "facing": -1,
+   "height": 34
+  },
+  "desert_goblin": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7353,
+   "facing": -1,
+   "height": 50
+  },
+  "desert_wolf": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7037,
+   "facing": -1,
+   "height": 38
+  },
+  "desert_skeleton": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.75,
+   "facing": -1,
+   "height": 54
   }
  },
  "stems": {
@@ -1070,6 +1106,118 @@
   },
   "skeleton_mage_book_die": {
    "char": "skeleton_mage_book",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "desert_slime_idle": {
+   "char": "desert_slime",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "desert_slime_walk": {
+   "char": "desert_slime",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "desert_slime_attack": {
+   "char": "desert_slime",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "desert_slime_die": {
+   "char": "desert_slime",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "desert_goblin_idle": {
+   "char": "desert_goblin",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "desert_goblin_walk": {
+   "char": "desert_goblin",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "desert_goblin_attack": {
+   "char": "desert_goblin",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "desert_goblin_die": {
+   "char": "desert_goblin",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "desert_wolf_idle": {
+   "char": "desert_wolf",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "desert_wolf_walk": {
+   "char": "desert_wolf",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "desert_wolf_attack": {
+   "char": "desert_wolf",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "desert_wolf_die": {
+   "char": "desert_wolf",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "desert_skeleton_idle": {
+   "char": "desert_skeleton",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "desert_skeleton_walk": {
+   "char": "desert_skeleton",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "desert_skeleton_attack": {
+   "char": "desert_skeleton",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "desert_skeleton_die": {
+   "char": "desert_skeleton",
    "frames": 6,
    "fps": 8.333333333333334,
    "loop": false,
