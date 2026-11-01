@@ -1424,6 +1424,17 @@ var ENEMY_FRENZY_INTERVAL_SEC = 1;
 var ENEMY_FRENZY_STEP_PCT = 1;
 var ENEMY_FRENZY_FAST_COUNT_THRESHOLD = 30;
 var ENEMY_FRENZY_FAST_MULTIPLIER = 2;
+/* 只有離玩家這個距離（米，中心距離）以內的敵人才會累積狂暴化；遠處的敵人計時暫停，
+   不會因為遲遲沒進入視野就一路增強。走出範圍不歸零，回到範圍內從原本的進度繼續。 */
+var ENEMY_FRENZY_RANGE_M = 60;
+
+function enemyFrenzyInRange(m) {
+    if (typeof bfPos !== 'function' || typeof bfPlayerPos !== 'function') return true;
+    var p = bfPos(m), c = bfPlayerPos();
+    if (!p || !c) return true; // 沒有座標的實體（測試替身）維持原行為
+    var r = bfMeterPx(ENEMY_FRENZY_RANGE_M), dx = p.x - c.x, dy = p.y - c.y;
+    return dx * dx + dy * dy <= r * r;
+}
 
 function enemyFrenzyPct(m, now) {
     return m && Number.isFinite(m._frenzyPct) ? m._frenzyPct : 0;
@@ -1443,6 +1454,13 @@ function tickEnemyFrenzy(enemies, now) {
         if (!m || m.hp <= 0 || !Number.isFinite(m._spawnAt)) continue;
         if (m._encounterKey && !m._alerted) continue;
         var frenzyStart = Number.isFinite(m._frenzyStartAt) ? m._frenzyStartAt : m._spawnAt;
+        // 範圍外：把起算點順延同樣的時間＝這段期間不計
+        var since = Number.isFinite(m._frenzySeenAt) ? m._frenzySeenAt : now;
+        m._frenzySeenAt = now;
+        if (!enemyFrenzyInRange(m)) {
+            m._frenzyStartAt = frenzyStart + Math.max(0, now - since);
+            continue;
+        }
         var age = Math.max(0, now - frenzyStart - ENEMY_FRENZY_DELAY_SEC);
         var steps = Math.floor(age / ENEMY_FRENZY_INTERVAL_SEC + 1e-9);
         var previous = m._frenzySteps || 0;

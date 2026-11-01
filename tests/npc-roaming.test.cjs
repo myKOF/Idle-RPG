@@ -154,3 +154,14 @@ test('正式Worker未警戒時遊走、活群存在時不額外補群，面板�
  const p=c.buildPanel('battle');assert.equal(p.field.monsters[0].pos.x,c.FIELD.monsters[0].pos.x);
  assert.equal(engine.outbox().filter(m=>m.type===c.MSG_OUT.ERROR).length,0);
 });
+test('狂暴化只在玩家 60 米內累積：範圍外暫停、不歸零，回到範圍內從原進度繼續',()=>{
+ const c=env(),m={hp:100,_spawnAt:0,pos:{x:0,y:0}};
+ const far=c.bfMeterPx(61),near=c.bfMeterPx(59);
+ c.BF_PLAYER.x=0;c.BF_PLAYER.y=0;
+ c.tickEnemyFrenzy([m],0);c.tickEnemyFrenzy([m],20); // 範圍內：20 秒 → 扣掉 10 秒延遲 → 10%
+ assert.equal(c.enemyFrenzyPct(m),10);
+ m.pos.x=far;c.tickEnemyFrenzy([m],21);c.tickEnemyFrenzy([m],200); // 範圍外：不增加
+ assert.equal(c.enemyFrenzyPct(m),10);
+ m.pos.x=near;c.tickEnemyFrenzy([m],201);c.tickEnemyFrenzy([m],206); // 回到範圍內：200→206 共 6 秒都在範圍內
+ assert.equal(c.enemyFrenzyPct(m),16);
+});
