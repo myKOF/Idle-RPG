@@ -410,7 +410,7 @@ var ELITE_GROUP = {
   leaders: 1, minionHp: 1, minionAtk: 1, minionReward: 1,
   skillDmgPct: 100, cdPct: 100, firstCastMax: 3.5, maxZones: 100, summonCap: 10, linkBeam: 1,
   advChance: [6, 20], advHp: 8, advAtk: 3, advReward: 4,
-  sizeElite: 1.6, sizeAdv: 2.2, sizeBoss: 3.4, sizeTower: [5, 7],
+  sizeElite: 1.3, sizeAdv: 1.45, sizeBoss: 2, sizeTower: [3, 4],
   repoMin: 4, repoMax: 8, repoSpeed: 1.6,
   psDmgPct: 25, psTickPct: 20, psAreaPct: 60, psBuffPct: 25, psCtrlPct: 50, psShieldPct: 15, psReviveHpPct: 40, psPassiveGap: 4
 };
