@@ -97,7 +97,8 @@ var BF_PLAYER_OBS = { id: 0, side: 0 };     // 我方繞障礙的方向記憶（
 var BF_TERRAIN_ACTIVE = false;
 /* 每個 tick 開頭呼叫一次（bfTickPlayer／bfTickApproach）：同步場景、門檻，並記下這個 tick 有沒有地形。 */
 function bfTerrainSync() {
-  var on = typeof BattleTerrain !== 'undefined' && typeof G !== 'undefined' && !!G && !!G.stage && !(G.tower && G.tower.active);
+  var on = typeof BattleTerrain !== 'undefined' && typeof G !== 'undefined' && !!G && !!G.stage && !(G.tower && G.tower.active) &&
+    !(typeof FIELD !== 'undefined' && FIELD && FIELD._testMap);   // GM 測試場景是全空的地板，沒有障礙
   if (on) {
     BattleTerrain.setScene(G.stage.zone || '', G.stage.current);
     BattleTerrain.setMinWidth(bfNum('BF_OBSTACLE_MIN_M', 12) * BF_SYSTEM_UNITS_PER_METER);

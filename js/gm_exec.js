@@ -1838,6 +1838,31 @@
       gmDirty();
       return { ok: true, message: '測試基準組：攻速 ' + msAspd + '（上限）、冷卻縮減 ' + msCdr + '%（上限）、命中 999（statset clear 可清除）' };
     }
+    /* ---- NPC 外觀／動作測試場景（js/combat.js gmTestMapEnter）----
+       test_map／test_map off 由玩家輸入；test_map_move／test_map_atk 是顯示層點擊戰場時送來的內部指令。 */
+    if (command === 'test_map' || command === 'testmap') {
+      if (typeof gmTestMapEnter !== 'function') return { ok: false, message: '戰鬥模組未載入（gmTestMapEnter）' };
+      var tmFirst = String(args[0] || '').toLowerCase();
+      if (tmFirst === 'off' || tmFirst === 'clear' || tmFirst === '0') {
+        gmTestMapOff();
+        GM_GLOBAL.GM_TEST.god = false;
+        return { ok: true, message: '測試場景關閉：已清場、恢復自然出怪與鎖血關閉' };
+      }
+      if (G.tower && G.tower.active) return { ok: false, message: '封魔塔戰鬥中不可進入測試場景' };
+      var tmCount = gmTestMapEnter();
+      GM_GLOBAL.GM_TEST.god = true;   // 被動怪被打後會還擊，測試期間我方鎖血避免被打死
+      return { ok: true, message: '測試場景：已擺放 ' + tmCount + ' 隻 NPC（含封魔塔 BOSS，被動；點地面移動、點怪攻擊；已開鎖血；test_map off 離開）' };
+    }
+    if (command === 'test_map_move' || command === 'test_map_atk') {
+      if (typeof FIELD === 'undefined' || !FIELD._testMap) return { ok: false, message: '尚未進入測試場景（test_map）' };
+      if (command === 'test_map_move') {
+        var tmX = Number(args[0]), tmY = Number(args[1]);
+        if (!isFinite(tmX) || !isFinite(tmY)) return { ok: false, message: '格式：test_map_move x y' };
+        testMapSetMove(tmX, tmY);
+        return { ok: true, message: '移動' };
+      }
+      return testMapSetTarget(String(args[0] || '')) ? { ok: true, message: '攻擊' } : { ok: false, message: '目標不存在或已死亡' };
+    }
     if (command === 'spawn' || command === 'arena') {
       var spawnFirst = String(args[0] || '').toLowerCase();
       if (spawnFirst === 'off' || spawnFirst === 'clear' || spawnFirst === '0') {

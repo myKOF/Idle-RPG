@@ -245,6 +245,7 @@ function loadScene() {
     documentHidden: () => false,
     clearAllFx: () => calls.push(['clearFx']),
     killFx() {}, destroyEntity: (id) => { calls.push(['destroy', id]); delete c.S.entities[id]; },
+    setTestMapScene: () => {},   // GM 測試場景的地板切換；與塔戰轉場無關
     enterArena: (tv) => calls.push(['enterArena', tv.monsters[0].name]),
     exitArena: () => calls.push(['exitArena']),
     reconcileBattle: (panel, field) => calls.push(['reconcile', field.towerView ? 'tower' : 'field'])

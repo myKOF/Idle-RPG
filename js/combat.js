@@ -654,6 +654,7 @@ function gmArenaSpawn(count, kind, hpMult) {
     }
     if (typeof eliteReset === 'function') eliteReset();
     FIELD._gmArena = true;
+    FIELD._testMap = false;   // 改用演武場出怪＝離開測試場景
     FIELD._waveClearPending = false;
     FIELD.monsters = enemies;
     if (FIELD.player) FIELD.player._lockTarget = null; // 整批換場＝重新選目標
@@ -692,6 +693,7 @@ function gmArenaSpawnElite(groups, affixIds, size, hpMult, tier) {
     }
     eliteReset();
     FIELD._gmArena = true;
+    FIELD._testMap = false;   // 改用演武場出怪＝離開測試場景
     FIELD._waveClearPending = false;
     FIELD.monsters = enemies;
     if (FIELD.player) FIELD.player._lockTarget = null;
@@ -700,9 +702,164 @@ function gmArenaSpawnElite(groups, affixIds, size, hpMult, tier) {
     UI.dirty.battle = true;
     return enemies.length;
 }
+/* ---- GM 測試場景（test_map；僅由本機 GM 指令呼叫 → js/gm_exec.js）----
+   用來逐隻檢查 NPC 外觀與動作：全空的方格地板，NPC 表所有 NPC（含封魔塔 BOSS）從原點朝上、下、左
+   每 12 米擺一隻，全部是被動怪物——被打了才還擊，不攻擊就不理人。
+   - 沿用演武場旗標 FIELD._gmArena（暫停自然出怪與過關結算），另加 FIELD._testMap 讓顯示層換成方格地板、
+     移除地形，並讓玩家改成「點擊移動／點怪攻擊」（模擬層 testMapMovePlayer，不再自動索敵）。
+   - 站位、重生計時等執行期資料放在 TEST_MAP_RT（不進 FIELD，免得每次面板快照都帶一份）。
+   - 被打死的 NPC 過 TEST_MAP_RESPAWN_SEC 秒在原位重生，方便反覆看死亡動作。 */
+var TEST_MAP_STEP_M = 12;          // 相鄰兩隻的間距（米）
+var TEST_MAP_HP_MULT = 10;         // 血量倍率：讓每隻能撐住幾下，方便看受擊與攻擊動作
+var TEST_MAP_RESPAWN_SEC = 4;      // 死亡後原地重生的等待秒數（從陣亡起算）
+var TEST_MAP_RT = { slots: [], target: null, move: null };
+
+/* 要擺進場景的 NPC：各地圖的 NPC（依 ZONE_LIST 順序，每個識別碼一隻）＋ NPC 表其餘條目＋封魔塔 BOSS。 */
+function testMapNpcList() {
+    var out = [], seen = {};
+    var zoneKeys = (typeof ZONE_LIST !== 'undefined' && ZONE_LIST) ? ZONE_LIST : Object.keys(ZONES);
+    zoneKeys.forEach(function (zk) {
+        var zd = ZONES[zk];
+        ((zd && zd.pool) || []).forEach(function (mt) {
+            if (!mt || !mt.id || seen[mt.id]) return;
+            seen[mt.id] = true;
+            out.push({ mt: mt, tower: -1 });
+        });
+    });
+    Object.keys(NPC_CONFIG_TABLE || {}).forEach(function (id) {
+        if (!seen[id]) { seen[id] = true; out.push({ mt: NPC_CONFIG_TABLE[id], tower: -1 }); }
+    });
+    (typeof BOSS_LIST !== 'undefined' ? BOSS_LIST : []).forEach(function (bd, i) {
+        out.push({ mt: bd, tower: i });
+    });
+    return out;
+}
+function testMapMakeEnemy(entry, pos) {
+    var s = G.stage.current;
+    var boss = entry.tower >= 0;
+    var e = makeFieldEnemy(entry.mt, monsterStatsFor(s, false, boss), currentZoneDef(), s,
+        { boss: boss, enterCd: 0, rewardMult: 0 });
+    e.maxHp *= TEST_MAP_HP_MULT; e.hp = e.maxHp;
+    e.gold = 0; e.xp = 0;
+    e._stage = -1;          // 不計入過關配額
+    e._noDrop = true;
+    e.pos = { x: pos.x, y: pos.y };
+    // 被動：視野縮到幾乎為零，沒被打過就永遠「沒發現」玩家（bfEnemyAlerted）；被打後由 testMapTick 喚醒
+    e.sightRange = 0.001; e._alerted = false;
+    e._passive = true; e._passiveHp = e.hp;
+    if (boss) {
+        // 封魔塔 BOSS 的外觀與體型沿用塔戰（js/tower.js makeBoss）；不裝技能，也不啟用跑位
+        e.img = entry.mt.img; e.elem = entry.mt.elem; e.magic = !!entry.mt.elem;
+        if (typeof eliteTierSize === 'function') {
+            e._tier = 'tower';
+            e._size = eliteTierSize('tower', entry.tower, BOSS_LIST.length);
+            e._bodyR = (typeof bfBodyRadius === 'function' ? bfBodyRadius() : 20) * e._size;
+            e._elColor = eliteTierColor('tower', e.attr);
+        }
+    }
+    return e;
+}
+function gmTestMapEnter() {
+    var list = testMapNpcList();
+    var step = bfMeterPx(TEST_MAP_STEP_M);
+    var dirs = [{ x: 0, y: -1 }, { x: 0, y: 1 }, { x: -1, y: 0 }];   // 上、下、左（右邊留空，是角色面向的前方）
+    bfResetPlayer();
+    TEST_MAP_RT = { slots: [], target: null, move: null };
+    var enemies = [];
+    for (var i = 0; i < list.length; i++) {
+        var d = dirs[i % dirs.length], k = Math.floor(i / dirs.length) + 1;
+        var pos = { x: d.x * step * k, y: d.y * step * k };
+        var e = testMapMakeEnemy(list[i], pos);
+        TEST_MAP_RT.slots.push({ entry: list[i], pos: pos, ent: e, deadAt: null });
+        enemies.push(e);
+    }
+    if (typeof eliteReset === 'function') eliteReset();
+    FIELD._gmArena = true;
+    FIELD._testMap = true;
+    FIELD._waveClearPending = false;
+    FIELD.monsters = enemies;
+    if (FIELD.player) FIELD.player._lockTarget = null;
+    markFieldEnemyFloatTargets(enemies);
+    syncFieldPrimary();
+    UI.dirty.battle = true;
+    return enemies.length;
+}
+function gmTestMapOff() {
+    TEST_MAP_RT = { slots: [], target: null, move: null };
+    gmArenaOff();
+}
+/* 顯示層點地面：往該點走；點怪：走過去攻擊。 */
+function testMapSetMove(x, y) {
+    TEST_MAP_RT.move = { x: x, y: y };
+    TEST_MAP_RT.target = null;
+}
+function testMapSetTarget(floatSel) {
+    var list = fieldEnemyList();
+    for (var i = 0; i < list.length; i++) {
+        if (list[i] && list[i].floatSel === floatSel && list[i].hp > 0) {
+            TEST_MAP_RT.target = list[i];
+            TEST_MAP_RT.move = null;
+            return list[i];
+        }
+    }
+    return null;
+}
+function testMapAttackTarget() {
+    var t = TEST_MAP_RT.target;
+    if (t && !(t.hp > 0)) TEST_MAP_RT.target = t = null;
+    return t;
+}
+/* 每個 tick：被打過的被動怪醒來；死掉的過一會兒原位重生。 */
+function testMapTick() {
+    var list = fieldEnemyList(), i;
+    for (i = 0; i < list.length; i++) {
+        var m = list[i];
+        if (!m || !m._passive || m._alerted || !(m.hp > 0)) continue;
+        if (m.hp < m._passiveHp) bfAlertEnemy(m);
+        m._passiveHp = m.hp;
+    }
+    var born = [], gone = [];
+    for (i = 0; i < TEST_MAP_RT.slots.length; i++) {
+        var slot = TEST_MAP_RT.slots[i];
+        if (slot.ent && slot.ent.hp > 0) continue;
+        if (slot.deadAt === null) slot.deadAt = GT;
+        if (GT - slot.deadAt < TEST_MAP_RESPAWN_SEC) continue;
+        gone.push(slot.ent);
+        slot.ent = testMapMakeEnemy(slot.entry, slot.pos);
+        slot.deadAt = null;
+        born.push(slot.ent);
+    }
+    if (born.length) {
+        // 舊屍體若還沒被清掉就一併移走，免得同一格疊兩隻
+        FIELD.monsters = fieldEnemyList().filter(function (e) { return gone.indexOf(e) < 0; });
+        addFieldEnemies(born);
+    }
+}
+/* 測試場景的我方移動：沒有目標就不動；有點擊目標就走過去（攻擊目標走到近戰距離為止）。
+   閘門與 bfTickPlayer 一致（施法硬直、站定、被拉扯）。 */
+function testMapMovePlayer(p, dt) {
+    if (p && Number(p._skillHold) > 0) { p._skillHold = Math.max(0, p._skillHold - (dt > 0 ? dt : 0)); return false; }
+    if (!(dt > 0)) return false;
+    if (typeof elitePlayerLocked === 'function' && elitePlayerLocked()) return false;
+    var home = bfPlayerPos();
+    var step = bfPlayerSpeed() * bfPlayerSpeedFactor(p) * dt;
+    var pad = (typeof ELITE_PLAYER_BODY_R === 'number' ? ELITE_PLAYER_BODY_R : bfBodyRadius()) * 0.6;
+    var target = testMapAttackTarget();
+    if (target && bfPos(target)) {
+        var stopAt = bfContactDist() * 0.8;
+        if (bfEntityDistance(target) <= stopAt) return false;
+        return bfMoveToward(home, target.pos, step, pad, stopAt + bfEntityRadius(target));
+    }
+    var mv = TEST_MAP_RT.move;
+    if (!mv) return false;
+    var moved = bfMoveToward(home, mv, step, pad, 0);
+    if (!moved || Math.hypot(mv.x - home.x, mv.y - home.y) < 1) TEST_MAP_RT.move = null;
+    return moved;
+}
 function gmArenaOff() {
     if (typeof eliteReset === 'function') eliteReset();
     FIELD._gmArena = false;
+    FIELD._testMap = false;
     FIELD.monsters = [];
     FIELD.monster = null;
     FIELD.spawnCd = 0;
@@ -2081,7 +2238,11 @@ function fieldTick(dt) {
         if (p.hp <= 0) { onPlayerFieldDeath(); return; }
         playerMoveDt = skillCastTick.remainingDt;
     }
-    if (!p._sgRevival && targetSwitchReady && typeof bfTickPlayer === 'function') {
+    if (FIELD._testMap) {
+        // GM 測試場景：被動怪醒來／重生；我方只聽點擊指令（點地面走、點怪走過去打），不自動索敵
+        testMapTick();
+        if (!p._sgRevival) testMapMovePlayer(p, playerMoveDt);
+    } else if (!p._sgRevival && targetSwitchReady && typeof bfTickPlayer === 'function') {
         bfTickPlayer(fieldEnemyList(), playerMoveDt, p._lockTarget, p);
     }
     /* 逼近與推擠：敵人朝我方走、走到接觸距離就停，同伴之間互相推開。
@@ -2185,8 +2346,11 @@ function fieldTick(dt) {
        倒地時普攻與技能共用同一個行動閘門。 */
     if (!playerActionControlBlocked(p, true) &&
         (typeof skillCastInProgress !== 'function' || !skillCastInProgress(p))) {
+        // GM 測試場景：只打點擊指定的目標（沒有目標就不出手）
+        var testTarget = FIELD._testMap ? testMapAttackTarget() : null;
+        if (FIELD._testMap) p._lockTarget = testTarget;
         // 技能優先（依裝載順序）
-        var sres = pickAndCastSkill(p, enemies, 'mv-float');
+        var sres = (FIELD._testMap && !testTarget) ? null : pickAndCastSkill(p, FIELD._testMap ? [testTarget] : enemies, 'mv-float');
         combatDebugAuditFieldDeaths(debugFieldTick, 'skill cast');
         if (sres && sres.killed) {
             onFieldDeaths();
@@ -2194,9 +2358,9 @@ function fieldTick(dt) {
             if (!enemies.length) return;
         }
         if (p.hp <= 0) { onPlayerFieldDeath(); return; } // 技能自傷（如血飲術反噬）
-        if (targetSwitchReady && p.atkCd <= 0) {
+        if (targetSwitchReady && p.atkCd <= 0 && (!FIELD._testMap || (testTarget && testTarget.hp > 0))) {
             // 普攻打離我方最近的敵人（同距離隨機挑一個）；鎖定後直到該目標死亡才換 → js/battlefield.js
-            var primary = bfPickPrimary(combatFieldEnemies(), p._lockTarget);
+            var primary = FIELD._testMap ? testTarget : bfPickPrimary(combatFieldEnemies(), p._lockTarget);
             /* 普攻是近戰：目標還沒走到面前就不出手，也不進入冷卻——
                等牠走進距離的那一刻立刻補上這一擊。
                （座標制改版前只挑「最近的」而完全不看距離，所以會隔空砍人） */
