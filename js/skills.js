@@ -110,6 +110,8 @@ function unequipSkillFromLoadout(id) {
       （副手雙手武器是否計入）。裝載欄異動很罕見，一律讓屬性快取失效即可，
        不必在這裡認得是哪一個技能。 */
     if (typeof markStatsDirty === 'function') markStatsDirty();
+    // 卸下的技能不能再留狀態在身上
+    if (typeof id === 'string' && id.indexOf('sg:') === 0 && typeof skills2OnUnequip === 'function') skills2OnUnequip(id.slice(3));
     UI.dirty.skills = true;
   }
 }
