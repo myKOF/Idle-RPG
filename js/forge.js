@@ -110,14 +110,26 @@ function forgePlaceItem(id) {
   if (!forgeOperationUnlocked(f.operation)) return STR(2160, divineForgeUnlock(f.operation));
   if (f.operation === 'gem') return STR(2162);
   var index = G.inventory.findIndex(function (it) { return it.id === id; });
-  if (index < 0) return STR(1243);
-  var it = G.inventory[index];
+  var equippedSlot = null, it = index >= 0 ? G.inventory[index] : null;
+  // 僅單件精鑄／刻印可取目前穿戴裝備；所有資格驗證通過後才卸下。
+  if (!it && (f.operation === 'ancient' || f.operation === 'imprint')) {
+    for (var sk in G.equipment) {
+      if (G.equipment[sk] && G.equipment[sk].id === id) { equippedSlot = sk; it = G.equipment[sk]; break; }
+    }
+  }
+  if (!it) return STR(1243);
+  if (equippedSlot !== null && G.tower && G.tower.active) return STR(164);
   if (it.locked) return STR(2163);
   if (!divineForgeItemEligible(it, f.operation)) return STR(2164);
   if (f.operation === 'equip' && forgeRarity() !== null && forgeRarity() !== it.rarity) return STR(2165, DIVINE_FORGE.equipCount);
   var slot = f.slots.indexOf(null);
   if (slot < 0 || slot >= divineForgeSlotCount(f.operation)) return STR(1247);
-  f.slots[slot] = G.inventory.splice(index, 1)[0];
+  if (equippedSlot !== null) {
+    G.equipment[equippedSlot] = null;
+    f.slots[slot] = it;
+    markStatsDirty();
+    UI.dirty.equip = UI.dirty.header = true;
+  } else f.slots[slot] = G.inventory.splice(index, 1)[0];
   f.result = null;
   forgeDustCount();
   UI.dirty.forge = UI.dirty.inv = true;

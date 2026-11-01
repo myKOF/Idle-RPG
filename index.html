@@ -19,7 +19,7 @@
   <link rel="stylesheet" href="css/dialogs.css?v=1.0.4">
   <link rel="stylesheet" href="css/achievements.css?v=1.0.10">
   <link rel="stylesheet" href="css/world-map.css?v=1.0.13">
-  <link rel="stylesheet" href="css/divine-forge.css?v=1.0.14">
+  <link rel="stylesheet" href="css/divine-forge.css?v=1.0.15">
   <link rel="stylesheet" href="css/equipment-chaos.css?v=1.0.6">
 </head>
 
@@ -323,6 +323,7 @@
                 <button type="button" class="btn active" data-forge-quality="6"></button>
                 <button type="button" class="btn" data-forge-quality="7"></button>
                 <button type="button" class="btn" data-forge-quality="9"></button>
+                <button id="forge-equipped-tab" type="button" class="btn" data-str="2243" hidden></button>
               </div>
               <label class="forge-auto-control"><input id="forge-auto" type="checkbox" role="switch"><span class="forge-auto-track" aria-hidden="true"></span><span data-str="2212"></span></label>
             </div>
@@ -330,10 +331,6 @@
           <!-- 裝備神鑄：裝備頁那一個背包框（#inv-section-box）在神鑄頁期間搬進這裡，兩頁是同一份背包（見 ui.js mountInventoryBox） -->
           <div id="forge-inv-slot"></div>
           <div id="forge-gem-box" class="equip-section-box" style="display:none">
-            <div class="inv-head">
-              <span class="sec-title"><span data-str="122"></span> <span id="forge-gem-count">0</span> <span data-str="1301"></span></span>
-              <span class="dim-text" data-str="2190"></span>
-            </div>
             <div id="forge-gem-grid"></div>
           </div>
         </section>
@@ -1015,10 +1012,10 @@
        已移除（主執行緒零呼叫，只在 Worker 內跑）：
          special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/util.js?v=1.0.4"></script>
-  <script src="js/strings_data.js?v=34026e4c"></script>
+  <script src="js/strings_data.js?v=be138922"></script>
   <script src="js/strings.js?v=1.0.1"></script>
   <script src="js/ui-scale.js?v=1.0.1"></script>
-  <script src="js/data.js?v=20261101-merge-fd276618"></script>
+  <script src="js/data.js?v=20261101-desert-batch1"></script>
   <script src="js/status.js?v=1.0.44"></script>
   <script src="js/runeword_data.js?v=1.0.22"></script>
   <script src="js/gem_resonance_data.js?v=1.0.1"></script>
@@ -1052,7 +1049,7 @@
   <!-- 封魔塔魔王祭壇（BOSS 戰專用場景）：沿用 battle-decor 的繪圖工具，battle-renderer 的 init() 會建立它。 -->
   <script src="js/battle-arena.js?v=1.0.8"></script>
   <script src="js/battle-elite.js?v=1.0.8"></script>
-  <script src="js/battle-renderer.js?v=1.6.219"></script>
+  <script src="js/battle-renderer.js?v=1.6.222"></script>
   <script src="js/stats.js?v=1.0.7"></script>
   <script src="js/item.js?v=20261101-merge-fd276618"></script>
   <script src="js/gem_resonance.js?v=1.0.10"></script>
@@ -1067,7 +1064,7 @@
   <script src="js/tower.js?v=20261101-merge-fd276618"></script>
   <script src="js/save.js?v=1.0.28"></script>
   <script src="js/ui-inventory-skin.js?v=1.0.1"></script>
-  <script src="js/ui.js?v=20261101-merge-fd276618"></script>
+  <script src="js/ui.js?v=20261101-forge-equipped"></script>
   <script src="js/ui-world-map.js?v=1.0.8"></script>
   <script src="js/ui-runeword.js?v=1.0.16"></script>
   <script src="js/ui-achievements.js?v=1.0.0"></script>
@@ -1081,12 +1078,12 @@
        正式遊玩是空殼。必須排在 ui.js（用它的 isInternalVersion）之後、VFX Runtime 建立（main 開機）之前。 -->
   <script src="js/battle-perf.js?v=1.0.3"></script>
   <!-- 模擬 Worker 的協議與橋接。bridge.js 於 DOMContentLoaded 開機 -->
-  <script src="js/worker/protocol.js?v=20261031-tower-advance"></script>
+  <script src="js/worker/protocol.js?v=20261101-forge-equipped"></script>
   <script src="js/storage.js?v=1.0.1"></script>
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
-  <script src="js/bridge.js?v=20261101-merge-fd276618"></script>
+  <script src="js/bridge.js?v=20261101-desert-batch1"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->

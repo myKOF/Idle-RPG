@@ -5438,7 +5438,9 @@ function renderInventory() {
   }
   var filterKeyword = (!inventoryForgeMode() && kwInput && isInternal && kwInput.style.display !== 'none') ? kwInput.value.trim() : '';
 
-  var inventoryItems = inventoryViewItems(invSnapshot);
+  var forgeInventoryState = inventoryForgeMode() ? forgeViewState(uiForgePanelSnapshot()) : null;
+  var equippedForge = forgeShowsEquipped(forgeInventoryState);
+  var inventoryItems = forgeInventoryItems(invSnapshot, forgeInventoryState);
   /* ---- 只把可視範圍的格子掛進 DOM ----
      後期背包 1800 格全部掛著時，付錢的不只是背包本身：**每一次**樣式重算或版面計算
      都要把它們重新算一遍，於是戰鬥浮字定位、特效錨點、換波量敵人名稱、工具提示定位
@@ -5459,7 +5461,7 @@ function renderInventory() {
     var filterSelect = $id('inv-rarity-filter');
     var filterRarity = filterSelect ? filterSelect.value : '';
     var forgeFilter = inventoryForgeMode() ? forgeViewState(uiForgePanelSnapshot()) : null;
-    if (forgeFilter) filterRarity = String(forgeFilter.quality || 6);
+    if (forgeFilter) filterRarity = equippedForge ? '' : String(forgeFilter.quality || 6);
     var filterCacheKey = virtualize
       ? [UI_WORKER_STATE.panelVersions.inv || 0, filterKeyword, filterAncient, filterRarity, forgeFilter && forgeFilter.operation, UI.inventorySortIndex].join('\u001f')
       : null;
@@ -5575,6 +5577,10 @@ function findItemById(id, detailed) {
   var invSnapshot = peekUiPanelData('inv');
   var inventoryItem = inventoryViewItem(invSnapshot, id, !!detailed);
   if (inventoryItem) return inventoryItem;
+  if (inventoryForgeMode() && forgeShowsEquipped(forgeViewState(uiForgePanelSnapshot()))) {
+    var worn = invSnapshot && invSnapshot.equipment || {};
+    for (var slot in worn) if (worn[slot] && worn[slot].id === id) return worn[slot];
+  }
   var equipSnapshot = peekUiPanelData('equip');
   var eq = equipViewEquipment(equipSnapshot);
   for (var s in eq) if (eq[s] && eq[s].id === id) return eq[s];
@@ -6948,6 +6954,14 @@ function bindForgeStoneControls(send) {
   window.addEventListener('blur', function () { finishForgeStoneHold(); });
 }
 function forgeInventoryTab(forge) { return forge && forge.operation === 'gem' ? 'gems' : 'items'; }
+function forgeShowsEquipped(forge) {
+  return !!UI.forgeEquipment && !!forge && (forge.operation === 'ancient' || forge.operation === 'imprint');
+}
+function forgeInventoryItems(snapshot, forge) {
+  if (!forgeShowsEquipped(forge)) return inventoryViewItems(snapshot);
+  var eq = snapshot && snapshot.equipment || {};
+  return Object.keys(eq).map(function (slot) { return eq[slot]; }).filter(Boolean);
+}
 function renderForge() {
   var hex = $id('forge-hex'), snap = uiForgePanelSnapshot();
   var inv = uiInventoryPanelSnapshot(), gems = uiGemsPanelSnapshot(), header = uiHeaderPanelSnapshot();
@@ -7017,11 +7031,18 @@ function renderForge() {
   $id('forge-auto').checked = !!f.auto;
   $id('forge-auto').disabled = mode !== 'equip' || isUiCommandPending(nodePendingKey('forge'));
   setHtmlIfChanged($id('forge-log'), (f.log || []).slice(0,10).map(function (entry) { return '<div class="forge-log-line ' + entry.cls + '">' + esc(entry.msg) + '</div>'; }).join(''));
+  if (mode !== 'ancient' && mode !== 'imprint') UI.forgeEquipment = false;
+  var equippedForge = forgeShowsEquipped(f);
+  var equippedTab = $id('forge-equipped-tab');
+  equippedTab.hidden = mode !== 'ancient' && mode !== 'imprint';
+  equippedTab.disabled = pending;
+  equippedTab.classList.toggle('active', equippedForge);
+  equippedTab.setAttribute('aria-pressed', String(equippedForge));
   document.querySelectorAll('[data-forge-quality]').forEach(function (btn) {
     var rarity = Number(btn.getAttribute('data-forge-quality'));
     setTextIfChanged(btn, RARITIES[rarity].name);
-    btn.classList.toggle('active', rarity === (f.quality || 6));
-    btn.setAttribute('aria-pressed', String(rarity === (f.quality || 6)));
+    btn.classList.toggle('active', !equippedForge && rarity === (f.quality || 6));
+    btn.setAttribute('aria-pressed', String(!equippedForge && rarity === (f.quality || 6)));
     btn.disabled = pending;
     btn.hidden = rarity > 6 && (Number(f.seenRarity) || 6) < rarity; // 創世／混沌第一次入手才開放（seenRarity 由 Worker 記錄）
   });
@@ -7042,7 +7063,6 @@ function renderForge() {
       gemHtml.push('<button type="button" class="item-cell forge-gem-cell" data-forge-gem="' + type + ':' + GEM_FORGE_MAX_LEVEL + '" data-tip="' + esc(gemLabel(type, GEM_FORGE_MAX_LEVEL)) + '<br>' + esc(GEM_TYPES[type].statName.replace('%', '') + ' ' + gemValueText(type, GEM_FORGE_MAX_LEVEL)) + '"' + (enabled ? '' : ' disabled') + '>' + gemIconHTML(type, GEM_FORGE_MAX_LEVEL, 'gi-cell') + '<span class="gem-cnt">×' + fmt(count) + '</span></button>');
     }
     syncItemGridCells($id('forge-gem-grid'), gemKeys, gemHtml);
-    setTextIfChanged($id('forge-gem-count'), fmt(forgeViewTotalGems(gems)));
   }
 }
 
@@ -12432,9 +12452,9 @@ function initUI() {
 
         sendUiCommand('forge.placeItem', { itemId: fid }, {
           keys: [nodePendingKey('forge'), itemPendingKey(fid)],
-          panels: ['forge', 'inv']
+          panels: ['forge', 'inv', 'equip', 'header']
         }).catch(function (error) {
-          reportUiCommandFailure(STR(1348), error, ['forge', 'inv']);
+          reportUiCommandFailure(STR(1348), error, ['forge', 'inv', 'equip', 'header']);
         });
         return;
       }
@@ -12908,9 +12928,18 @@ function initUI() {
     bindForgeStoneControls(function (count) { forgeCommand('forge.setStones', { count:count }); });
     document.querySelectorAll('[data-forge-quality]').forEach(function (btn) {
       btn.addEventListener('click', function () {
+        UI.forgeEquipment = false;
+        $id('inventory-grid').scrollTop = 0;
         forgeMarkActive('#forge-quality-tabs .btn', btn);
         forgeCommand('forge.setQuality', { rarity:Number(btn.getAttribute('data-forge-quality')) });
       });
+    });
+    $id('forge-equipped-tab').addEventListener('click', function () {
+      var f = forgeViewState(uiForgePanelSnapshot());
+      if (!f || f.crafting || isUiCommandPending(nodePendingKey('forge')) || (f.operation !== 'ancient' && f.operation !== 'imprint')) return;
+      UI.forgeEquipment = true;
+      $id('inventory-grid').scrollTop = 0;
+      renderForge();
     });
     $id('forge-auto').addEventListener('change', function () { forgeCommand('forge.setAuto', { on:this.checked }); });
     document.addEventListener('keydown', function (event) {

@@ -67,7 +67,6 @@
 #tab-forge #inventory-grid .item-cell { height:58px; min-height:0; aspect-ratio:auto; }
 /* 背包與寶石欄都顯示三行（3×58＋2×6） */
 #tab-forge #forge-gem-box { display:flex; flex-direction:column; box-sizing:border-box; margin:8px 0 0!important; padding:8px!important; background:var(--afl-card)!important; border:1px solid var(--afl-line)!important; border-radius:8px!important; box-shadow:none!important; }
-#tab-forge #forge-gem-box .inv-head { flex:none; margin:0 0 6px!important; padding:0!important; border:0!important; background:none!important; }
 #tab-forge #forge-gem-grid { flex:none; height:186px; max-height:none!important; }
 #tab-forge .forge-gem-cell { position:relative; }
 .forge-aura { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
@@ -106,6 +105,8 @@
 @keyframes forge-burst { 0%,58% { opacity:0; transform:scale(.3); } 66% { opacity:1; transform:scale(.9); } 100% { opacity:0; transform:scale(2.3); } }
 @keyframes forge-ring { 0%,60% { opacity:0; transform:scale(.4); } 68% { opacity:.95; } 100% { opacity:0; transform:scale(2.1); } }
 @media(max-width:600px) {
+  #forge-quality-tabs { left:8px; right:8px; bottom:74px; }
+  #tab-forge #forge-quality-tabs .btn { flex:1; min-width:0; padding:4px 6px; font-size:12px; }
   #tab-forge .forge-panel { padding:8px 8px 0; }
   #tab-forge .forge-mode-tabs .btn { font-size:11px; min-height:34px; padding:4px 1px; }
   #tab-forge #forge-log { width:32%; padding:4px; }

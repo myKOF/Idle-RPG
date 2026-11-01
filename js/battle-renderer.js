@@ -1410,8 +1410,8 @@ var BattleRenderer = (function () {
      不使用每隻NPC各一份的離屏Filter，也不在Ticker重畫Canvas。 */
   var NPC_RANK_MASKS = new WeakMap();
   var NPC_EMOJI_TEXTURES = new Map();
-  var NPC_ELITE_GLOW_ALPHA = 0.8;
-  var NPC_ELITE_ADV_GLOW_ALPHA = 0.8;
+  var NPC_ELITE_GLOW_ALPHA = 0.6;
+  var NPC_ELITE_ADV_GLOW_ALPHA = 0.6;
   var NPC_RANK_STYLES = {
     elite: { rim: 0x329dff, inner: 0x70cfff, alpha: NPC_ELITE_GLOW_ALPHA },
     elite_adv: { rim: 0xffcf32, inner: 0xffe878, alpha: NPC_ELITE_ADV_GLOW_ALPHA },
@@ -1577,7 +1577,7 @@ var BattleRenderer = (function () {
      動作缺了就退回：移動→站立、攻擊→不播（沿用撲擊）、死亡→舊的壓扁淡出；站立都沒有就繼續用 emoji。
      圖還沒載到之前先用 emoji 頂著，載到後 adoptNpcSprite 把場上同款敵人的本體換成序列幀。 */
   var NPC_SPRITE_DIR = 'images/sprites/npc/';
-  var NPC_SPRITE_VER = '20261101-facing';
+  var NPC_SPRITE_VER = '20261101-desert-batch1';
   function npcSpriteDef(data) {
     var t = (typeof NPC_CONFIG_TABLE !== 'undefined' && data && data.npcId) ? NPC_CONFIG_TABLE[data.npcId] : null;
     return (t && t.sprite && t.sprite.idle) ? t : null;
