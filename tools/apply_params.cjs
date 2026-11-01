@@ -319,6 +319,8 @@ Object.keys(PART_KEYS).forEach(nm => {
 // 新遊戲／重新開局的初始資源（由參數表「0-遊戲預設」控制）。
 scalar('player', 'INITIAL_GOLD', '0-遊戲預設', '開場金幣', 0);
 scalar('renderer', 'BATTLE_CAMERA_DISTANCE_PERCENT', '8-戰鬥畫面', '戰鬥鏡頭距離', 0);
+scalar('renderer', 'NPC_ELITE_GLOW_ALPHA', '8-戰鬥畫面', '菁英覆光濃度', 0);
+scalar('renderer', 'NPC_ELITE_ADV_GLOW_ALPHA', '8-戰鬥畫面', '菁英覆光濃度', 1);
 scalar('player', 'INITIAL_SCRAP', '0-遊戲預設', '開場裝備碎片', 0);
 scalar('player', 'INITIAL_ESSENCE', '0-遊戲預設', '開場附魔精華', 0);
 
