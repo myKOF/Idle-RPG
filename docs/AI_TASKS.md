@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## STARTUP-REFRESH-DIRTY-20261101 — 刷新後 Loading 等待首畫競態
+
+- Owner：Codex；Done（程式修復與隔離驗證完成，原玩家分頁待使用者驗收），單一開發者。使用者回報8123刷新後Loading持續動畫且無法開Console；隔離新局與一般刷新正常，已以正式main入口及可控frame重現：Worker／面板／場景均就緒，但每次揭幕前新資料標dirty，41幀內重繪21次仍不揭幕。
+- 前置：既有Loading／Worker／場景就緒機制；允許js/main.js、index快取、tests/loading-screen.test.cjs、LV及本段；禁止玩法／數值／存檔格式／玩家資料／素材／其他工作區與合併推送。既有NPC.xlsx未提交修改保留。fetch後五檔預檢及遠端增量無衝突。
+- 實作：揭幕幀若有新資料先重繪並重驗場景，避免要求兩幀間完全沒有Worker更新；渲染未成功、轉場、背景或Worker失效仍走既有保護。驗可控frame競態、渲染失敗及轉場／背景回歸、Build、隔離Edge真Worker刷新與持續更新、Console／diff，自我Review後獨立Commit，交使用者驗收／整合。使用者實際存檔未讀取；實際分頁是否同一原因仍需驗收。
+- 完成五檔：main揭幕幀補畫最新資料並取消該次戰鬥節流，index main快取1.0.4→1.0.5、loading-screen新增四項回歸、LV及本段。無新增玩家文字／配置表／素材／素材庫修改，未建立空素材Commit。
+- 驗證指令：`node --test --test-reporter=spec tests/loading-screen.test.cjs tests/scene-startup-ready.test.cjs tests/tab-lock.test.cjs tests/save-origin-isolation.test.cjs tests/vfx-startup-loading.test.cjs` 51項45過／6項既有VFX測試缺skyEntryPoint替身；失敗套件只讀battle-renderer／vfx-core／vfx-runtime／preset／helper，這些與HEAD相同，未改舊斷言或擴修。去除該既有套件後以dot重跑其餘四檔45/45；`npm.cmd run build`616檔通過，git diff／check通過。
+- 瀏覽器：IAB無backend，改bundled Playwright／隔離headless Edge，正式8123全頁與真Worker。在每個rAF回呼前注入正常資料到達會設定的header／battle dirty，舊HEAD main經route唯讀覆映，7秒後仍Loading，booted／sceneReady均true、3519次注入、Console Error／pageerror 0；修正版相同條件揭幕成功（207次注入），同頁reload亦成功，Console Error／pageerror 0。這是放大訊息時序的控制測試，不冒充原存檔重現；一般刷新、停用decor、效能模式、冰原與6倍CPU節流亦已隔離檢查。慢速測試有既有unused-preload警告，無新增相關警告。PNG已存後重開檢視，JSON證據在本聊天visualizations/startup-refresh。Windows工具上輪因不能確定瀏覽器URL而停止，未再嘗試控制使用者分頁；待使用者Ctrl+F5驗收。
+- 唯讀未改：規範／Workflow／prompts、ui／bridge／renderer／decor／tablock／storage／save-origin與相關回歸、Worker／玩法／權威表與既有NPC.xlsx修改。自我Review完成，可供Review／合併；本項實作無未完成內容，風險／限制是原玩家分頁尚未確認是否僅此原因、未做完整遊玩／多瀏覽器與全庫回歸。Commit為本段所在「[Codex] fix: 修正持續戰鬥更新造成刷新載入無限等待」，SHA見交付；未合併／推送develop或main。
+
 ## MERGE-fd276618-20261101 - Authorized develop integration
 
 - Owner: Codex; Done. Scope: this pending merge only, b89ce4a9 + fd276618; no staging, commits, delegation, pushes or other-worktree edits. Controller owns the merge commit.

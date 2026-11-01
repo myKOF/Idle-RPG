@@ -238,3 +238,52 @@ test('已安排揭幕時 Worker 失效不重複揭幕或恢復 Loading', () => {
   const e=setup(); e.grant(); e.ready(); e.frame(); e.emit('workerDead'); e.frame();
   assert.equal(e.log.filter(x=>x==='hide').length,1);
 });
+
+test('揭幕前持續收到 Worker 更新時先補畫最新資料，不等待資料停止', () => {
+  const e = setup(); e.grant(); e.ready();
+  e.frame();
+  e.c.UI.dirty.header = e.c.UI.dirty.battle = true;
+  e.c.UI.lastBattleRenderAt = 123;
+  const render = e.c.uiTick;
+  e.c.uiTick = () => {
+    assert.equal(e.c.UI.lastBattleRenderAt, 0, '揭幕補畫不受戰鬥重繪節流擋住');
+    render();
+  };
+  e.frame();
+  assert.deepEqual(e.log.slice(-2), ['render', 'hide']);
+  assert.equal(e.log.filter(x => x === 'hide').length, 1);
+});
+
+test('揭幕補畫失敗仍持續 Loading，成功後才顯示', () => {
+  const e = setup(); e.grant(); e.ready(); e.frame();
+  e.c.UI.dirty.header = e.c.UI.dirty.battle = true;
+  const render = e.c.uiTick;
+  e.c.uiTick = () => { e.c.UI.dirty.header = false; };
+  e.frame(); e.frame();
+  assert.ok(!e.log.includes('hide'));
+  e.c.uiTick = render; e.frame(); e.frame();
+  assert.equal(e.log.at(-1), 'hide');
+});
+
+test('揭幕補畫新資料觸發轉場時，須重新等待新場景就緒', () => {
+  const e = setup(); e.grant(); e.ready(); e.frame();
+  e.c.UI.dirty.battle = true;
+  const render = e.c.uiTick;
+  e.c.uiTick = () => { render(); e.renderer.sceneReady = false; };
+  e.frame();
+  assert.ok(!e.log.includes('hide'));
+  e.c.uiTick = render; e.renderer.sceneReady = true; e.frame(); e.frame();
+  assert.equal(e.log.at(-1), 'hide');
+});
+
+test('揭幕幀轉背景時不補畫，回前景才顯示最新資料', () => {
+  const e = setup(); e.grant(); e.ready(); e.frame();
+  e.c.UI.dirty.header = e.c.UI.dirty.battle = true;
+  e.c.document.hidden = true;
+  const renders = e.log.filter(x => x === 'render').length;
+  e.frame();
+  assert.equal(e.log.filter(x => x === 'render').length, renders);
+  assert.ok(!e.log.includes('hide'));
+  e.c.document.hidden = false; e.frame(); e.frame();
+  assert.equal(e.log.at(-1), 'hide');
+});
