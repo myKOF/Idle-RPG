@@ -8,7 +8,7 @@ test('框選四款被完整全身骷髏取代，四階級來源／名稱／四�
  for(const [id,[key,name]]of Object.entries(expected)){
   const d=c.NPC_CONFIG_TABLE[id],matching=rows.slice(1).filter(r=>r[0]===id);assert.equal(matching.length,4);assert.equal(d.name,name);
   for(const [a,col]of [['idle','站立圖像'],['walk','移動圖像'],['attack','攻擊圖像'],['die','死亡圖像']]){
-   const stem=key+'_'+a;assert.equal(d.sprite[a],stem);assert.equal(m.stems[stem].frames,6);assert.equal(m.chars[key].cellH,128);assert.equal(m.chars[key].facing,-1);
+   const stem=key+'_'+a;assert.equal(d.sprite[a],stem);assert.equal(m.stems[stem].frames,a==='walk'?8:6);assert.equal(m.chars[key].cellH,128);assert.equal(m.chars[key].facing,-1);
    for(const row of matching){assert.equal(row[h.indexOf(col)],stem);assert.equal(row[1],name);}
   }
  }

@@ -296,6 +296,825 @@
    "scale": 0.75,
    "facing": -1,
    "height": 54
+  },
+  "desert_shadow_bat": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7037,
+   "facing": -1,
+   "height": 38
+  },
+  "desert_tree_spirit": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7561,
+   "facing": -1,
+   "height": 62
+  },
+  "desert_lizard_warrior": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.806,
+   "facing": -1,
+   "height": 54
+  },
+  "desert_orc": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7436,
+   "facing": -1,
+   "height": 58
+  },
+  "npc_desert_9": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7188,
+   "facing": -1,
+   "height": 46
+  },
+  "npc_desert_10": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7037,
+   "facing": -1,
+   "height": 38
+  },
+  "npc_desert_11": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7826,
+   "facing": -1,
+   "height": 54
+  },
+  "npc_desert_12": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7429,
+   "facing": -1,
+   "height": 52
+  },
+  "npc_icefield_1": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7037,
+   "facing": -1,
+   "height": 38
+  },
+  "npc_icefield_2": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7037,
+   "facing": -1,
+   "height": 38
+  },
+  "npc_icefield_3": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7083,
+   "facing": -1,
+   "height": 34
+  },
+  "npc_icefield_4": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.75,
+   "facing": -1,
+   "height": 54
+  },
+  "npc_icefield_5": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.75,
+   "facing": -1,
+   "height": 54
+  },
+  "npc_icefield_6": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7188,
+   "facing": -1,
+   "height": 46
+  },
+  "npc_icefield_7": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7188,
+   "facing": -1,
+   "height": 46
+  },
+  "npc_icefield_8": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.8846,
+   "facing": -1,
+   "height": 46
+  },
+  "npc_icefield_9": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.9643,
+   "facing": -1,
+   "height": 54
+  },
+  "npc_icefield_10": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7188,
+   "facing": -1,
+   "height": 46
+  },
+  "npc_icefield_11": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.75,
+   "facing": -1,
+   "height": 54
+  },
+  "npc_icefield_12": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7429,
+   "facing": -1,
+   "height": 52
+  },
+  "npc_mist_forest_1": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7037,
+   "facing": -1,
+   "height": 38
+  },
+  "npc_mist_forest_2": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.75,
+   "facing": -1,
+   "height": 54
+  },
+  "npc_mist_forest_3": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.68,
+   "facing": -1,
+   "height": 34
+  },
+  "npc_mist_forest_4": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7302,
+   "facing": -1,
+   "height": 46
+  },
+  "npc_mist_forest_5": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.75,
+   "facing": -1,
+   "height": 54
+  },
+  "npc_mist_forest_6": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7037,
+   "facing": -1,
+   "height": 38
+  },
+  "npc_mist_forest_7": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.75,
+   "facing": -1,
+   "height": 54
+  },
+  "npc_mist_forest_8": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.75,
+   "facing": -1,
+   "height": 54
+  },
+  "npc_mist_forest_9": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7037,
+   "facing": -1,
+   "height": 38
+  },
+  "npc_mist_forest_10": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7714,
+   "facing": -1,
+   "height": 54
+  },
+  "npc_mist_forest_11": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7037,
+   "facing": -1,
+   "height": 38
+  },
+  "npc_mist_forest_12": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.75,
+   "facing": -1,
+   "height": 54
+  },
+  "npc_lava_mountain_2": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.75,
+   "facing": -1,
+   "height": 54
+  },
+  "npc_lava_mountain_3": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7037,
+   "facing": -1,
+   "height": 38
+  },
+  "npc_lava_mountain_4": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.68,
+   "facing": -1,
+   "height": 34
+  },
+  "npc_lava_mountain_5": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7037,
+   "facing": -1,
+   "height": 38
+  },
+  "npc_lava_mountain_6": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.75,
+   "facing": -1,
+   "height": 54
+  },
+  "npc_lava_mountain_7": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7037,
+   "facing": -1,
+   "height": 38
+  },
+  "npc_lava_mountain_8": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.68,
+   "facing": -1,
+   "height": 34
+  },
+  "npc_lava_mountain_10": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7037,
+   "facing": -1,
+   "height": 38
+  },
+  "npc_lava_mountain_11": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 1,
+   "facing": -1,
+   "height": 54
+  },
+  "npc_lava_mountain_12": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.75,
+   "facing": -1,
+   "height": 54
+  },
+  "npc_swamp_6": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7083,
+   "facing": -1,
+   "height": 34
+  },
+  "npc_swamp_11": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7037,
+   "facing": -1,
+   "height": 38
+  },
+  "npc_thunder_peak_1": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7037,
+   "facing": -1,
+   "height": 38
+  },
+  "npc_thunder_peak_2": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7037,
+   "facing": -1,
+   "height": 38
+  },
+  "npc_thunder_peak_3": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.75,
+   "facing": -1,
+   "height": 54
+  },
+  "npc_thunder_peak_4": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7037,
+   "facing": -1,
+   "height": 38
+  },
+  "npc_thunder_peak_5": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7037,
+   "facing": -1,
+   "height": 38
+  },
+  "npc_thunder_peak_6": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.75,
+   "facing": -1,
+   "height": 54
+  },
+  "npc_thunder_peak_7": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7188,
+   "facing": -1,
+   "height": 46
+  },
+  "npc_thunder_peak_8": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7188,
+   "facing": -1,
+   "height": 46
+  },
+  "npc_thunder_peak_10": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7188,
+   "facing": -1,
+   "height": 46
+  },
+  "npc_thunder_peak_11": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7037,
+   "facing": -1,
+   "height": 38
+  },
+  "npc_thunder_peak_12": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7429,
+   "facing": -1,
+   "height": 52
+  },
+  "npc_god_battlefield_1": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7188,
+   "facing": -1,
+   "height": 46
+  },
+  "npc_god_battlefield_2": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.75,
+   "facing": -1,
+   "height": 54
+  },
+  "npc_god_battlefield_3": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.75,
+   "facing": -1,
+   "height": 54
+  },
+  "npc_god_battlefield_4": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.75,
+   "facing": -1,
+   "height": 54
+  },
+  "npc_god_battlefield_5": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.75,
+   "facing": -1,
+   "height": 54
+  },
+  "npc_god_battlefield_6": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.75,
+   "facing": -1,
+   "height": 54
+  },
+  "npc_god_battlefield_7": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.75,
+   "facing": -1,
+   "height": 54
+  },
+  "npc_god_battlefield_8": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7188,
+   "facing": -1,
+   "height": 46
+  },
+  "npc_god_battlefield_9": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.75,
+   "facing": -1,
+   "height": 54
+  },
+  "npc_god_battlefield_10": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7429,
+   "facing": -1,
+   "height": 52
+  },
+  "npc_god_battlefield_11": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.75,
+   "facing": -1,
+   "height": 54
+  },
+  "npc_god_battlefield_12": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7037,
+   "facing": -1,
+   "height": 38
+  },
+  "npc_god_chaos_1": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7037,
+   "facing": -1,
+   "height": 38
+  },
+  "npc_god_chaos_2": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.75,
+   "facing": -1,
+   "height": 54
+  },
+  "npc_god_chaos_3": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7188,
+   "facing": -1,
+   "height": 46
+  },
+  "npc_god_chaos_4": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7188,
+   "facing": -1,
+   "height": 46
+  },
+  "npc_god_chaos_5": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7037,
+   "facing": -1,
+   "height": 38
+  },
+  "npc_god_chaos_6": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.75,
+   "facing": -1,
+   "height": 54
+  },
+  "npc_god_chaos_7": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7188,
+   "facing": -1,
+   "height": 46
+  },
+  "npc_god_chaos_8": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7188,
+   "facing": -1,
+   "height": 46
+  },
+  "npc_god_chaos_9": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.75,
+   "facing": -1,
+   "height": 54
+  },
+  "npc_god_chaos_10": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7037,
+   "facing": -1,
+   "height": 38
+  },
+  "npc_god_chaos_11": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7188,
+   "facing": -1,
+   "height": 46
+  },
+  "npc_god_chaos_12": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.75,
+   "facing": -1,
+   "height": 54
+  },
+  "npc_god_sanctuary_1": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7188,
+   "facing": -1,
+   "height": 46
+  },
+  "npc_god_sanctuary_2": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7429,
+   "facing": -1,
+   "height": 52
+  },
+  "npc_god_sanctuary_3": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.75,
+   "facing": -1,
+   "height": 54
+  },
+  "npc_god_sanctuary_4": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.75,
+   "facing": -1,
+   "height": 54
+  },
+  "npc_god_sanctuary_5": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.75,
+   "facing": -1,
+   "height": 54
+  },
+  "npc_god_sanctuary_6": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7429,
+   "facing": -1,
+   "height": 52
+  },
+  "npc_god_sanctuary_7": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.75,
+   "facing": -1,
+   "height": 54
+  },
+  "npc_god_sanctuary_8": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7188,
+   "facing": -1,
+   "height": 46
+  },
+  "npc_god_sanctuary_9": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.75,
+   "facing": -1,
+   "height": 54
+  },
+  "npc_god_sanctuary_10": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.75,
+   "facing": -1,
+   "height": 54
+  },
+  "npc_god_sanctuary_11": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.7188,
+   "facing": -1,
+   "height": 46
+  },
+  "npc_god_sanctuary_12": {
+   "cellW": 128,
+   "cellH": 128,
+   "anchorX": 0.5,
+   "anchorY": 0.875,
+   "scale": 0.75,
+   "facing": -1,
+   "height": 54
   }
  },
  "stems": {
@@ -841,7 +1660,7 @@
   "tree_damned_walk": {
    "char": "tree_damned",
    "frames": 8,
-   "fps": 12,
+   "fps": 11.11111111111111,
    "loop": true,
    "hold": false
   },
@@ -911,7 +1730,7 @@
   "old_demon_walk": {
    "char": "old_demon",
    "frames": 8,
-   "fps": 12,
+   "fps": 11.11111111111111,
    "loop": true,
    "hold": false
   },
@@ -1008,8 +1827,8 @@
   },
   "skeleton_warrior_sword_walk": {
    "char": "skeleton_warrior_sword",
-   "frames": 6,
-   "fps": 10,
+   "frames": 8,
+   "fps": 11.11111111111111,
    "loop": true,
    "hold": false
   },
@@ -1036,8 +1855,8 @@
   },
   "skeleton_warrior_axe_walk": {
    "char": "skeleton_warrior_axe",
-   "frames": 6,
-   "fps": 10,
+   "frames": 8,
+   "fps": 11.11111111111111,
    "loop": true,
    "hold": false
   },
@@ -1064,8 +1883,8 @@
   },
   "skeleton_mage_staff_walk": {
    "char": "skeleton_mage_staff",
-   "frames": 6,
-   "fps": 10,
+   "frames": 8,
+   "fps": 11.11111111111111,
    "loop": true,
    "hold": false
   },
@@ -1092,8 +1911,8 @@
   },
   "skeleton_mage_book_walk": {
    "char": "skeleton_mage_book",
-   "frames": 6,
-   "fps": 10,
+   "frames": 8,
+   "fps": 11.11111111111111,
    "loop": true,
    "hold": false
   },
@@ -1148,8 +1967,8 @@
   },
   "desert_goblin_walk": {
    "char": "desert_goblin",
-   "frames": 6,
-   "fps": 10,
+   "frames": 8,
+   "fps": 11.11111111111111,
    "loop": true,
    "hold": false
   },
@@ -1204,8 +2023,8 @@
   },
   "desert_skeleton_walk": {
    "char": "desert_skeleton",
-   "frames": 6,
-   "fps": 10,
+   "frames": 8,
+   "fps": 11.11111111111111,
    "loop": true,
    "hold": false
   },
@@ -1218,6 +2037,2554 @@
   },
   "desert_skeleton_die": {
    "char": "desert_skeleton",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "desert_shadow_bat_idle": {
+   "char": "desert_shadow_bat",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "desert_shadow_bat_walk": {
+   "char": "desert_shadow_bat",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "desert_shadow_bat_attack": {
+   "char": "desert_shadow_bat",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "desert_shadow_bat_die": {
+   "char": "desert_shadow_bat",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "desert_tree_spirit_idle": {
+   "char": "desert_tree_spirit",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "desert_tree_spirit_walk": {
+   "char": "desert_tree_spirit",
+   "frames": 8,
+   "fps": 11.11111111111111,
+   "loop": true,
+   "hold": false
+  },
+  "desert_tree_spirit_attack": {
+   "char": "desert_tree_spirit",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "desert_tree_spirit_die": {
+   "char": "desert_tree_spirit",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "desert_lizard_warrior_idle": {
+   "char": "desert_lizard_warrior",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "desert_lizard_warrior_walk": {
+   "char": "desert_lizard_warrior",
+   "frames": 8,
+   "fps": 11.11111111111111,
+   "loop": true,
+   "hold": false
+  },
+  "desert_lizard_warrior_attack": {
+   "char": "desert_lizard_warrior",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "desert_lizard_warrior_die": {
+   "char": "desert_lizard_warrior",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "desert_orc_idle": {
+   "char": "desert_orc",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "desert_orc_walk": {
+   "char": "desert_orc",
+   "frames": 8,
+   "fps": 11.11111111111111,
+   "loop": true,
+   "hold": false
+  },
+  "desert_orc_attack": {
+   "char": "desert_orc",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "desert_orc_die": {
+   "char": "desert_orc",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_desert_9_idle": {
+   "char": "npc_desert_9",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_desert_9_walk": {
+   "char": "npc_desert_9",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_desert_9_attack": {
+   "char": "npc_desert_9",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_desert_9_die": {
+   "char": "npc_desert_9",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_desert_10_idle": {
+   "char": "npc_desert_10",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_desert_10_walk": {
+   "char": "npc_desert_10",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_desert_10_attack": {
+   "char": "npc_desert_10",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_desert_10_die": {
+   "char": "npc_desert_10",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_desert_11_idle": {
+   "char": "npc_desert_11",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_desert_11_walk": {
+   "char": "npc_desert_11",
+   "frames": 8,
+   "fps": 11.11111111111111,
+   "loop": true,
+   "hold": false
+  },
+  "npc_desert_11_attack": {
+   "char": "npc_desert_11",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_desert_11_die": {
+   "char": "npc_desert_11",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_desert_12_idle": {
+   "char": "npc_desert_12",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_desert_12_walk": {
+   "char": "npc_desert_12",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_desert_12_attack": {
+   "char": "npc_desert_12",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_desert_12_die": {
+   "char": "npc_desert_12",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_icefield_1_idle": {
+   "char": "npc_icefield_1",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_icefield_1_walk": {
+   "char": "npc_icefield_1",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_icefield_1_attack": {
+   "char": "npc_icefield_1",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_icefield_1_die": {
+   "char": "npc_icefield_1",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_icefield_2_idle": {
+   "char": "npc_icefield_2",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_icefield_2_walk": {
+   "char": "npc_icefield_2",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_icefield_2_attack": {
+   "char": "npc_icefield_2",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_icefield_2_die": {
+   "char": "npc_icefield_2",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_icefield_3_idle": {
+   "char": "npc_icefield_3",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_icefield_3_walk": {
+   "char": "npc_icefield_3",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_icefield_3_attack": {
+   "char": "npc_icefield_3",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_icefield_3_die": {
+   "char": "npc_icefield_3",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_icefield_4_idle": {
+   "char": "npc_icefield_4",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_icefield_4_walk": {
+   "char": "npc_icefield_4",
+   "frames": 8,
+   "fps": 11.11111111111111,
+   "loop": true,
+   "hold": false
+  },
+  "npc_icefield_4_attack": {
+   "char": "npc_icefield_4",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_icefield_4_die": {
+   "char": "npc_icefield_4",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_icefield_5_idle": {
+   "char": "npc_icefield_5",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_icefield_5_walk": {
+   "char": "npc_icefield_5",
+   "frames": 8,
+   "fps": 11.11111111111111,
+   "loop": true,
+   "hold": false
+  },
+  "npc_icefield_5_attack": {
+   "char": "npc_icefield_5",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_icefield_5_die": {
+   "char": "npc_icefield_5",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_icefield_6_idle": {
+   "char": "npc_icefield_6",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_icefield_6_walk": {
+   "char": "npc_icefield_6",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_icefield_6_attack": {
+   "char": "npc_icefield_6",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_icefield_6_die": {
+   "char": "npc_icefield_6",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_icefield_7_idle": {
+   "char": "npc_icefield_7",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_icefield_7_walk": {
+   "char": "npc_icefield_7",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_icefield_7_attack": {
+   "char": "npc_icefield_7",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_icefield_7_die": {
+   "char": "npc_icefield_7",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_icefield_8_idle": {
+   "char": "npc_icefield_8",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_icefield_8_walk": {
+   "char": "npc_icefield_8",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_icefield_8_attack": {
+   "char": "npc_icefield_8",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_icefield_8_die": {
+   "char": "npc_icefield_8",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_icefield_9_idle": {
+   "char": "npc_icefield_9",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_icefield_9_walk": {
+   "char": "npc_icefield_9",
+   "frames": 8,
+   "fps": 11.11111111111111,
+   "loop": true,
+   "hold": false
+  },
+  "npc_icefield_9_attack": {
+   "char": "npc_icefield_9",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_icefield_9_die": {
+   "char": "npc_icefield_9",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_icefield_10_idle": {
+   "char": "npc_icefield_10",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_icefield_10_walk": {
+   "char": "npc_icefield_10",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_icefield_10_attack": {
+   "char": "npc_icefield_10",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_icefield_10_die": {
+   "char": "npc_icefield_10",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_icefield_11_idle": {
+   "char": "npc_icefield_11",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_icefield_11_walk": {
+   "char": "npc_icefield_11",
+   "frames": 8,
+   "fps": 11.11111111111111,
+   "loop": true,
+   "hold": false
+  },
+  "npc_icefield_11_attack": {
+   "char": "npc_icefield_11",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_icefield_11_die": {
+   "char": "npc_icefield_11",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_icefield_12_idle": {
+   "char": "npc_icefield_12",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_icefield_12_walk": {
+   "char": "npc_icefield_12",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_icefield_12_attack": {
+   "char": "npc_icefield_12",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_icefield_12_die": {
+   "char": "npc_icefield_12",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_mist_forest_1_idle": {
+   "char": "npc_mist_forest_1",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_mist_forest_1_walk": {
+   "char": "npc_mist_forest_1",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_mist_forest_1_attack": {
+   "char": "npc_mist_forest_1",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_mist_forest_1_die": {
+   "char": "npc_mist_forest_1",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_mist_forest_2_idle": {
+   "char": "npc_mist_forest_2",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_mist_forest_2_walk": {
+   "char": "npc_mist_forest_2",
+   "frames": 8,
+   "fps": 11.11111111111111,
+   "loop": true,
+   "hold": false
+  },
+  "npc_mist_forest_2_attack": {
+   "char": "npc_mist_forest_2",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_mist_forest_2_die": {
+   "char": "npc_mist_forest_2",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_mist_forest_3_idle": {
+   "char": "npc_mist_forest_3",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_mist_forest_3_walk": {
+   "char": "npc_mist_forest_3",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_mist_forest_3_attack": {
+   "char": "npc_mist_forest_3",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_mist_forest_3_die": {
+   "char": "npc_mist_forest_3",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_mist_forest_4_idle": {
+   "char": "npc_mist_forest_4",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_mist_forest_4_walk": {
+   "char": "npc_mist_forest_4",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_mist_forest_4_attack": {
+   "char": "npc_mist_forest_4",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_mist_forest_4_die": {
+   "char": "npc_mist_forest_4",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_mist_forest_5_idle": {
+   "char": "npc_mist_forest_5",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_mist_forest_5_walk": {
+   "char": "npc_mist_forest_5",
+   "frames": 8,
+   "fps": 11.11111111111111,
+   "loop": true,
+   "hold": false
+  },
+  "npc_mist_forest_5_attack": {
+   "char": "npc_mist_forest_5",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_mist_forest_5_die": {
+   "char": "npc_mist_forest_5",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_mist_forest_6_idle": {
+   "char": "npc_mist_forest_6",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_mist_forest_6_walk": {
+   "char": "npc_mist_forest_6",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_mist_forest_6_attack": {
+   "char": "npc_mist_forest_6",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_mist_forest_6_die": {
+   "char": "npc_mist_forest_6",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_mist_forest_7_idle": {
+   "char": "npc_mist_forest_7",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_mist_forest_7_walk": {
+   "char": "npc_mist_forest_7",
+   "frames": 8,
+   "fps": 11.11111111111111,
+   "loop": true,
+   "hold": false
+  },
+  "npc_mist_forest_7_attack": {
+   "char": "npc_mist_forest_7",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_mist_forest_7_die": {
+   "char": "npc_mist_forest_7",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_mist_forest_8_idle": {
+   "char": "npc_mist_forest_8",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_mist_forest_8_walk": {
+   "char": "npc_mist_forest_8",
+   "frames": 8,
+   "fps": 11.11111111111111,
+   "loop": true,
+   "hold": false
+  },
+  "npc_mist_forest_8_attack": {
+   "char": "npc_mist_forest_8",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_mist_forest_8_die": {
+   "char": "npc_mist_forest_8",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_mist_forest_9_idle": {
+   "char": "npc_mist_forest_9",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_mist_forest_9_walk": {
+   "char": "npc_mist_forest_9",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_mist_forest_9_attack": {
+   "char": "npc_mist_forest_9",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_mist_forest_9_die": {
+   "char": "npc_mist_forest_9",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_mist_forest_10_idle": {
+   "char": "npc_mist_forest_10",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_mist_forest_10_walk": {
+   "char": "npc_mist_forest_10",
+   "frames": 8,
+   "fps": 11.11111111111111,
+   "loop": true,
+   "hold": false
+  },
+  "npc_mist_forest_10_attack": {
+   "char": "npc_mist_forest_10",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_mist_forest_10_die": {
+   "char": "npc_mist_forest_10",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_mist_forest_11_idle": {
+   "char": "npc_mist_forest_11",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_mist_forest_11_walk": {
+   "char": "npc_mist_forest_11",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_mist_forest_11_attack": {
+   "char": "npc_mist_forest_11",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_mist_forest_11_die": {
+   "char": "npc_mist_forest_11",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_mist_forest_12_idle": {
+   "char": "npc_mist_forest_12",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_mist_forest_12_walk": {
+   "char": "npc_mist_forest_12",
+   "frames": 8,
+   "fps": 11.11111111111111,
+   "loop": true,
+   "hold": false
+  },
+  "npc_mist_forest_12_attack": {
+   "char": "npc_mist_forest_12",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_mist_forest_12_die": {
+   "char": "npc_mist_forest_12",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_lava_mountain_2_idle": {
+   "char": "npc_lava_mountain_2",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_lava_mountain_2_walk": {
+   "char": "npc_lava_mountain_2",
+   "frames": 8,
+   "fps": 11.11111111111111,
+   "loop": true,
+   "hold": false
+  },
+  "npc_lava_mountain_2_attack": {
+   "char": "npc_lava_mountain_2",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_lava_mountain_2_die": {
+   "char": "npc_lava_mountain_2",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_lava_mountain_3_idle": {
+   "char": "npc_lava_mountain_3",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_lava_mountain_3_walk": {
+   "char": "npc_lava_mountain_3",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_lava_mountain_3_attack": {
+   "char": "npc_lava_mountain_3",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_lava_mountain_3_die": {
+   "char": "npc_lava_mountain_3",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_lava_mountain_4_idle": {
+   "char": "npc_lava_mountain_4",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_lava_mountain_4_walk": {
+   "char": "npc_lava_mountain_4",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_lava_mountain_4_attack": {
+   "char": "npc_lava_mountain_4",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_lava_mountain_4_die": {
+   "char": "npc_lava_mountain_4",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_lava_mountain_5_idle": {
+   "char": "npc_lava_mountain_5",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_lava_mountain_5_walk": {
+   "char": "npc_lava_mountain_5",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_lava_mountain_5_attack": {
+   "char": "npc_lava_mountain_5",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_lava_mountain_5_die": {
+   "char": "npc_lava_mountain_5",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_lava_mountain_6_idle": {
+   "char": "npc_lava_mountain_6",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_lava_mountain_6_walk": {
+   "char": "npc_lava_mountain_6",
+   "frames": 8,
+   "fps": 11.11111111111111,
+   "loop": true,
+   "hold": false
+  },
+  "npc_lava_mountain_6_attack": {
+   "char": "npc_lava_mountain_6",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_lava_mountain_6_die": {
+   "char": "npc_lava_mountain_6",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_lava_mountain_7_idle": {
+   "char": "npc_lava_mountain_7",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_lava_mountain_7_walk": {
+   "char": "npc_lava_mountain_7",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_lava_mountain_7_attack": {
+   "char": "npc_lava_mountain_7",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_lava_mountain_7_die": {
+   "char": "npc_lava_mountain_7",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_lava_mountain_8_idle": {
+   "char": "npc_lava_mountain_8",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_lava_mountain_8_walk": {
+   "char": "npc_lava_mountain_8",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_lava_mountain_8_attack": {
+   "char": "npc_lava_mountain_8",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_lava_mountain_8_die": {
+   "char": "npc_lava_mountain_8",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_lava_mountain_10_idle": {
+   "char": "npc_lava_mountain_10",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_lava_mountain_10_walk": {
+   "char": "npc_lava_mountain_10",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_lava_mountain_10_attack": {
+   "char": "npc_lava_mountain_10",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_lava_mountain_10_die": {
+   "char": "npc_lava_mountain_10",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_lava_mountain_11_idle": {
+   "char": "npc_lava_mountain_11",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_lava_mountain_11_walk": {
+   "char": "npc_lava_mountain_11",
+   "frames": 8,
+   "fps": 11.11111111111111,
+   "loop": true,
+   "hold": false
+  },
+  "npc_lava_mountain_11_attack": {
+   "char": "npc_lava_mountain_11",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_lava_mountain_11_die": {
+   "char": "npc_lava_mountain_11",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_lava_mountain_12_idle": {
+   "char": "npc_lava_mountain_12",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_lava_mountain_12_walk": {
+   "char": "npc_lava_mountain_12",
+   "frames": 8,
+   "fps": 11.11111111111111,
+   "loop": true,
+   "hold": false
+  },
+  "npc_lava_mountain_12_attack": {
+   "char": "npc_lava_mountain_12",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_lava_mountain_12_die": {
+   "char": "npc_lava_mountain_12",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_swamp_6_idle": {
+   "char": "npc_swamp_6",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_swamp_6_walk": {
+   "char": "npc_swamp_6",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_swamp_6_attack": {
+   "char": "npc_swamp_6",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_swamp_6_die": {
+   "char": "npc_swamp_6",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_swamp_11_idle": {
+   "char": "npc_swamp_11",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_swamp_11_walk": {
+   "char": "npc_swamp_11",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_swamp_11_attack": {
+   "char": "npc_swamp_11",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_swamp_11_die": {
+   "char": "npc_swamp_11",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_thunder_peak_1_idle": {
+   "char": "npc_thunder_peak_1",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_thunder_peak_1_walk": {
+   "char": "npc_thunder_peak_1",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_thunder_peak_1_attack": {
+   "char": "npc_thunder_peak_1",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_thunder_peak_1_die": {
+   "char": "npc_thunder_peak_1",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_thunder_peak_2_idle": {
+   "char": "npc_thunder_peak_2",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_thunder_peak_2_walk": {
+   "char": "npc_thunder_peak_2",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_thunder_peak_2_attack": {
+   "char": "npc_thunder_peak_2",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_thunder_peak_2_die": {
+   "char": "npc_thunder_peak_2",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_thunder_peak_3_idle": {
+   "char": "npc_thunder_peak_3",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_thunder_peak_3_walk": {
+   "char": "npc_thunder_peak_3",
+   "frames": 8,
+   "fps": 11.11111111111111,
+   "loop": true,
+   "hold": false
+  },
+  "npc_thunder_peak_3_attack": {
+   "char": "npc_thunder_peak_3",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_thunder_peak_3_die": {
+   "char": "npc_thunder_peak_3",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_thunder_peak_4_idle": {
+   "char": "npc_thunder_peak_4",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_thunder_peak_4_walk": {
+   "char": "npc_thunder_peak_4",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_thunder_peak_4_attack": {
+   "char": "npc_thunder_peak_4",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_thunder_peak_4_die": {
+   "char": "npc_thunder_peak_4",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_thunder_peak_5_idle": {
+   "char": "npc_thunder_peak_5",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_thunder_peak_5_walk": {
+   "char": "npc_thunder_peak_5",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_thunder_peak_5_attack": {
+   "char": "npc_thunder_peak_5",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_thunder_peak_5_die": {
+   "char": "npc_thunder_peak_5",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_thunder_peak_6_idle": {
+   "char": "npc_thunder_peak_6",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_thunder_peak_6_walk": {
+   "char": "npc_thunder_peak_6",
+   "frames": 8,
+   "fps": 11.11111111111111,
+   "loop": true,
+   "hold": false
+  },
+  "npc_thunder_peak_6_attack": {
+   "char": "npc_thunder_peak_6",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_thunder_peak_6_die": {
+   "char": "npc_thunder_peak_6",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_thunder_peak_7_idle": {
+   "char": "npc_thunder_peak_7",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_thunder_peak_7_walk": {
+   "char": "npc_thunder_peak_7",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_thunder_peak_7_attack": {
+   "char": "npc_thunder_peak_7",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_thunder_peak_7_die": {
+   "char": "npc_thunder_peak_7",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_thunder_peak_8_idle": {
+   "char": "npc_thunder_peak_8",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_thunder_peak_8_walk": {
+   "char": "npc_thunder_peak_8",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_thunder_peak_8_attack": {
+   "char": "npc_thunder_peak_8",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_thunder_peak_8_die": {
+   "char": "npc_thunder_peak_8",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_thunder_peak_10_idle": {
+   "char": "npc_thunder_peak_10",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_thunder_peak_10_walk": {
+   "char": "npc_thunder_peak_10",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_thunder_peak_10_attack": {
+   "char": "npc_thunder_peak_10",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_thunder_peak_10_die": {
+   "char": "npc_thunder_peak_10",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_thunder_peak_11_idle": {
+   "char": "npc_thunder_peak_11",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_thunder_peak_11_walk": {
+   "char": "npc_thunder_peak_11",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_thunder_peak_11_attack": {
+   "char": "npc_thunder_peak_11",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_thunder_peak_11_die": {
+   "char": "npc_thunder_peak_11",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_thunder_peak_12_idle": {
+   "char": "npc_thunder_peak_12",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_thunder_peak_12_walk": {
+   "char": "npc_thunder_peak_12",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_thunder_peak_12_attack": {
+   "char": "npc_thunder_peak_12",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_thunder_peak_12_die": {
+   "char": "npc_thunder_peak_12",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_god_battlefield_1_idle": {
+   "char": "npc_god_battlefield_1",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_battlefield_1_walk": {
+   "char": "npc_god_battlefield_1",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_battlefield_1_attack": {
+   "char": "npc_god_battlefield_1",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_god_battlefield_1_die": {
+   "char": "npc_god_battlefield_1",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_god_battlefield_2_idle": {
+   "char": "npc_god_battlefield_2",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_battlefield_2_walk": {
+   "char": "npc_god_battlefield_2",
+   "frames": 8,
+   "fps": 11.11111111111111,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_battlefield_2_attack": {
+   "char": "npc_god_battlefield_2",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_god_battlefield_2_die": {
+   "char": "npc_god_battlefield_2",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_god_battlefield_3_idle": {
+   "char": "npc_god_battlefield_3",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_battlefield_3_walk": {
+   "char": "npc_god_battlefield_3",
+   "frames": 8,
+   "fps": 11.11111111111111,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_battlefield_3_attack": {
+   "char": "npc_god_battlefield_3",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_god_battlefield_3_die": {
+   "char": "npc_god_battlefield_3",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_god_battlefield_4_idle": {
+   "char": "npc_god_battlefield_4",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_battlefield_4_walk": {
+   "char": "npc_god_battlefield_4",
+   "frames": 8,
+   "fps": 11.11111111111111,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_battlefield_4_attack": {
+   "char": "npc_god_battlefield_4",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_god_battlefield_4_die": {
+   "char": "npc_god_battlefield_4",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_god_battlefield_5_idle": {
+   "char": "npc_god_battlefield_5",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_battlefield_5_walk": {
+   "char": "npc_god_battlefield_5",
+   "frames": 8,
+   "fps": 11.11111111111111,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_battlefield_5_attack": {
+   "char": "npc_god_battlefield_5",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_god_battlefield_5_die": {
+   "char": "npc_god_battlefield_5",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_god_battlefield_6_idle": {
+   "char": "npc_god_battlefield_6",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_battlefield_6_walk": {
+   "char": "npc_god_battlefield_6",
+   "frames": 8,
+   "fps": 11.11111111111111,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_battlefield_6_attack": {
+   "char": "npc_god_battlefield_6",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_god_battlefield_6_die": {
+   "char": "npc_god_battlefield_6",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_god_battlefield_7_idle": {
+   "char": "npc_god_battlefield_7",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_battlefield_7_walk": {
+   "char": "npc_god_battlefield_7",
+   "frames": 8,
+   "fps": 11.11111111111111,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_battlefield_7_attack": {
+   "char": "npc_god_battlefield_7",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_god_battlefield_7_die": {
+   "char": "npc_god_battlefield_7",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_god_battlefield_8_idle": {
+   "char": "npc_god_battlefield_8",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_battlefield_8_walk": {
+   "char": "npc_god_battlefield_8",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_battlefield_8_attack": {
+   "char": "npc_god_battlefield_8",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_god_battlefield_8_die": {
+   "char": "npc_god_battlefield_8",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_god_battlefield_9_idle": {
+   "char": "npc_god_battlefield_9",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_battlefield_9_walk": {
+   "char": "npc_god_battlefield_9",
+   "frames": 8,
+   "fps": 11.11111111111111,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_battlefield_9_attack": {
+   "char": "npc_god_battlefield_9",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_god_battlefield_9_die": {
+   "char": "npc_god_battlefield_9",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_god_battlefield_10_idle": {
+   "char": "npc_god_battlefield_10",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_battlefield_10_walk": {
+   "char": "npc_god_battlefield_10",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_battlefield_10_attack": {
+   "char": "npc_god_battlefield_10",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_god_battlefield_10_die": {
+   "char": "npc_god_battlefield_10",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_god_battlefield_11_idle": {
+   "char": "npc_god_battlefield_11",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_battlefield_11_walk": {
+   "char": "npc_god_battlefield_11",
+   "frames": 8,
+   "fps": 11.11111111111111,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_battlefield_11_attack": {
+   "char": "npc_god_battlefield_11",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_god_battlefield_11_die": {
+   "char": "npc_god_battlefield_11",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_god_battlefield_12_idle": {
+   "char": "npc_god_battlefield_12",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_battlefield_12_walk": {
+   "char": "npc_god_battlefield_12",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_battlefield_12_attack": {
+   "char": "npc_god_battlefield_12",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_god_battlefield_12_die": {
+   "char": "npc_god_battlefield_12",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_god_chaos_1_idle": {
+   "char": "npc_god_chaos_1",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_chaos_1_walk": {
+   "char": "npc_god_chaos_1",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_chaos_1_attack": {
+   "char": "npc_god_chaos_1",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_god_chaos_1_die": {
+   "char": "npc_god_chaos_1",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_god_chaos_2_idle": {
+   "char": "npc_god_chaos_2",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_chaos_2_walk": {
+   "char": "npc_god_chaos_2",
+   "frames": 8,
+   "fps": 11.11111111111111,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_chaos_2_attack": {
+   "char": "npc_god_chaos_2",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_god_chaos_2_die": {
+   "char": "npc_god_chaos_2",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_god_chaos_3_idle": {
+   "char": "npc_god_chaos_3",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_chaos_3_walk": {
+   "char": "npc_god_chaos_3",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_chaos_3_attack": {
+   "char": "npc_god_chaos_3",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_god_chaos_3_die": {
+   "char": "npc_god_chaos_3",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_god_chaos_4_idle": {
+   "char": "npc_god_chaos_4",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_chaos_4_walk": {
+   "char": "npc_god_chaos_4",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_chaos_4_attack": {
+   "char": "npc_god_chaos_4",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_god_chaos_4_die": {
+   "char": "npc_god_chaos_4",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_god_chaos_5_idle": {
+   "char": "npc_god_chaos_5",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_chaos_5_walk": {
+   "char": "npc_god_chaos_5",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_chaos_5_attack": {
+   "char": "npc_god_chaos_5",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_god_chaos_5_die": {
+   "char": "npc_god_chaos_5",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_god_chaos_6_idle": {
+   "char": "npc_god_chaos_6",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_chaos_6_walk": {
+   "char": "npc_god_chaos_6",
+   "frames": 8,
+   "fps": 11.11111111111111,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_chaos_6_attack": {
+   "char": "npc_god_chaos_6",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_god_chaos_6_die": {
+   "char": "npc_god_chaos_6",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_god_chaos_7_idle": {
+   "char": "npc_god_chaos_7",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_chaos_7_walk": {
+   "char": "npc_god_chaos_7",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_chaos_7_attack": {
+   "char": "npc_god_chaos_7",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_god_chaos_7_die": {
+   "char": "npc_god_chaos_7",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_god_chaos_8_idle": {
+   "char": "npc_god_chaos_8",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_chaos_8_walk": {
+   "char": "npc_god_chaos_8",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_chaos_8_attack": {
+   "char": "npc_god_chaos_8",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_god_chaos_8_die": {
+   "char": "npc_god_chaos_8",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_god_chaos_9_idle": {
+   "char": "npc_god_chaos_9",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_chaos_9_walk": {
+   "char": "npc_god_chaos_9",
+   "frames": 8,
+   "fps": 11.11111111111111,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_chaos_9_attack": {
+   "char": "npc_god_chaos_9",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_god_chaos_9_die": {
+   "char": "npc_god_chaos_9",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_god_chaos_10_idle": {
+   "char": "npc_god_chaos_10",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_chaos_10_walk": {
+   "char": "npc_god_chaos_10",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_chaos_10_attack": {
+   "char": "npc_god_chaos_10",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_god_chaos_10_die": {
+   "char": "npc_god_chaos_10",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_god_chaos_11_idle": {
+   "char": "npc_god_chaos_11",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_chaos_11_walk": {
+   "char": "npc_god_chaos_11",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_chaos_11_attack": {
+   "char": "npc_god_chaos_11",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_god_chaos_11_die": {
+   "char": "npc_god_chaos_11",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_god_chaos_12_idle": {
+   "char": "npc_god_chaos_12",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_chaos_12_walk": {
+   "char": "npc_god_chaos_12",
+   "frames": 8,
+   "fps": 11.11111111111111,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_chaos_12_attack": {
+   "char": "npc_god_chaos_12",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_god_chaos_12_die": {
+   "char": "npc_god_chaos_12",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_god_sanctuary_1_idle": {
+   "char": "npc_god_sanctuary_1",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_sanctuary_1_walk": {
+   "char": "npc_god_sanctuary_1",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_sanctuary_1_attack": {
+   "char": "npc_god_sanctuary_1",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_god_sanctuary_1_die": {
+   "char": "npc_god_sanctuary_1",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_god_sanctuary_2_idle": {
+   "char": "npc_god_sanctuary_2",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_sanctuary_2_walk": {
+   "char": "npc_god_sanctuary_2",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_sanctuary_2_attack": {
+   "char": "npc_god_sanctuary_2",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_god_sanctuary_2_die": {
+   "char": "npc_god_sanctuary_2",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_god_sanctuary_3_idle": {
+   "char": "npc_god_sanctuary_3",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_sanctuary_3_walk": {
+   "char": "npc_god_sanctuary_3",
+   "frames": 8,
+   "fps": 11.11111111111111,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_sanctuary_3_attack": {
+   "char": "npc_god_sanctuary_3",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_god_sanctuary_3_die": {
+   "char": "npc_god_sanctuary_3",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_god_sanctuary_4_idle": {
+   "char": "npc_god_sanctuary_4",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_sanctuary_4_walk": {
+   "char": "npc_god_sanctuary_4",
+   "frames": 8,
+   "fps": 11.11111111111111,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_sanctuary_4_attack": {
+   "char": "npc_god_sanctuary_4",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_god_sanctuary_4_die": {
+   "char": "npc_god_sanctuary_4",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_god_sanctuary_5_idle": {
+   "char": "npc_god_sanctuary_5",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_sanctuary_5_walk": {
+   "char": "npc_god_sanctuary_5",
+   "frames": 8,
+   "fps": 11.11111111111111,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_sanctuary_5_attack": {
+   "char": "npc_god_sanctuary_5",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_god_sanctuary_5_die": {
+   "char": "npc_god_sanctuary_5",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_god_sanctuary_6_idle": {
+   "char": "npc_god_sanctuary_6",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_sanctuary_6_walk": {
+   "char": "npc_god_sanctuary_6",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_sanctuary_6_attack": {
+   "char": "npc_god_sanctuary_6",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_god_sanctuary_6_die": {
+   "char": "npc_god_sanctuary_6",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_god_sanctuary_7_idle": {
+   "char": "npc_god_sanctuary_7",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_sanctuary_7_walk": {
+   "char": "npc_god_sanctuary_7",
+   "frames": 8,
+   "fps": 11.11111111111111,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_sanctuary_7_attack": {
+   "char": "npc_god_sanctuary_7",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_god_sanctuary_7_die": {
+   "char": "npc_god_sanctuary_7",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_god_sanctuary_8_idle": {
+   "char": "npc_god_sanctuary_8",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_sanctuary_8_walk": {
+   "char": "npc_god_sanctuary_8",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_sanctuary_8_attack": {
+   "char": "npc_god_sanctuary_8",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_god_sanctuary_8_die": {
+   "char": "npc_god_sanctuary_8",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_god_sanctuary_9_idle": {
+   "char": "npc_god_sanctuary_9",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_sanctuary_9_walk": {
+   "char": "npc_god_sanctuary_9",
+   "frames": 8,
+   "fps": 11.11111111111111,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_sanctuary_9_attack": {
+   "char": "npc_god_sanctuary_9",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_god_sanctuary_9_die": {
+   "char": "npc_god_sanctuary_9",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_god_sanctuary_10_idle": {
+   "char": "npc_god_sanctuary_10",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_sanctuary_10_walk": {
+   "char": "npc_god_sanctuary_10",
+   "frames": 8,
+   "fps": 11.11111111111111,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_sanctuary_10_attack": {
+   "char": "npc_god_sanctuary_10",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_god_sanctuary_10_die": {
+   "char": "npc_god_sanctuary_10",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_god_sanctuary_11_idle": {
+   "char": "npc_god_sanctuary_11",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_sanctuary_11_walk": {
+   "char": "npc_god_sanctuary_11",
+   "frames": 6,
+   "fps": 10,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_sanctuary_11_attack": {
+   "char": "npc_god_sanctuary_11",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_god_sanctuary_11_die": {
+   "char": "npc_god_sanctuary_11",
+   "frames": 6,
+   "fps": 8.333333333333334,
+   "loop": false,
+   "hold": true
+  },
+  "npc_god_sanctuary_12_idle": {
+   "char": "npc_god_sanctuary_12",
+   "frames": 6,
+   "fps": 6.25,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_sanctuary_12_walk": {
+   "char": "npc_god_sanctuary_12",
+   "frames": 8,
+   "fps": 11.11111111111111,
+   "loop": true,
+   "hold": false
+  },
+  "npc_god_sanctuary_12_attack": {
+   "char": "npc_god_sanctuary_12",
+   "frames": 6,
+   "fps": 10,
+   "loop": false,
+   "hold": false
+  },
+  "npc_god_sanctuary_12_die": {
+   "char": "npc_god_sanctuary_12",
    "frames": 6,
    "fps": 8.333333333333334,
    "loop": false,
