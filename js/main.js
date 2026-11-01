@@ -89,6 +89,12 @@ function waitForStartupUi() {
           // 留一幀讓 Canvas 與 DOM 套用首次版面，再揭開黑幕。
           requestAnimationFrame(function () {
             if (finished) return; // 等待這一幀時 Worker 可能已失效。
+            if (!uiRenderingSuspended() && (UI.dirty.header || UI.dirty.battle)) {
+              // Worker 持續送新快照，不能要求兩幀之間完全沒有更新才揭幕。
+              // 在本幀補畫最新資料；若觸發轉場或重繪失敗，下面仍會繼續等待。
+              UI.lastBattleRenderAt = 0;
+              uiTick();
+            }
             if (uiRenderingSuspended() || !sceneReady() || UI.dirty.header || UI.dirty.battle) {
               requestAnimationFrame(check);
               return;

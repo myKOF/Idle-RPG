@@ -1,5 +1,34 @@
 # AI_TASKS.md
 
+## PARAMS-NPC-WORKSPACE-20261101 — 修正 Excel 參數套用入口指向錯誤工作區
+
+- Owner：Codex；Done，單一開發者。使用者要求查明套用BAT／NPC縮放比未生效，後續明確指定把三個AI入口都指向自身資料夾。原生WScript.Shell唯讀讀取證實三個副本config/Excel/套用參數.bat.lnk均硬指D:\MyGame\Idle-RPG\claude\套用參數.bat，Codex所改NPC.xlsx並未被該捷徑讀取；Claude CSV／params_version更新時間吻合，Codex版本仍舊。NPC縮放正常由normal列寫入pool、NPC_CONFIG_TABLE並乘入renderer，參數非未接線。
+- 允許：依使用者最新明確指示修正三個AI副本Excel入口，各刪錯誤lnk並增加同名相對BAT（顯示解析出的Workspace）、Codex params-direct-edit回歸及本段；隔離暫存副本驗真NPC來源→CSV→JS→倍率與版本／刷新。現有NPC.xlsx四格3保留，不重寫Excel或實際遊戲資料。Claude未提交NPC.csv／data變更從1套1.5（CSV290:293及UNDEAD_POOL受詛亡者與Codex來源3重疊）；本次僅修正入口並隔離驗證，沒有改動這些衝突檔案，不需要為未執行的資料套用請求確認。
+- fetch後入口／測試／本段無外部來源；其他副本入口修改前均乾淨。使用者本輪明確授權三副本相同入口檔案操作，其餘禁止合併推送、存檔操作、覆寫其他Excel或其他AI副本內容。驗搬移工作區／非專案cwd／含空白中文路徑仍呼叫自身根BAT、真BAT成功／匯出失敗、完整來源套用及數值一致、相關回歸／Build／diff，自我Review後獨立Commit；各副本既有數值／素材等修改保留。
+- 完成：三個副本都刪除固定絕對路徑lnk、加入config/Excel/套用參數.bat，內容完全相同（SHA256 b2ca2de95676dcb01c668b6eae04192ccc5e9aac9b1574513672353a8b93a966），透過自身%~dp0向上兩層呼叫同名根BAT；ASCII＋CRLF並顯示解析後Workspace。Codex另更新params-direct-edit測試及本段；根BAT／JS／CSV／原NPC.xlsx均未改，無玩家文案／解鎖規則／素材變更，不需LV／String／快取或素材庫Commit。
+- 驗證：`node --test --test-reporter=spec tests/params-direct-edit.test.cjs tests/npc-sprites.test.cjs`11/11；含實際cmd的正確工作區與搬移、中文空白路徑、在外部工作區啟動、舊lnk移除與ASCII／CRLF、既有BAT成功與匯出失敗、不碰舊暫存流程。`npm.cmd run build`616檔通過，三副本相關diff/check通過。初次新BAT的LF解析錯誤已由測試攔下，修為專案規定CRLF並新增斷言，不降低測試。
+- 完整流程：隔離複製來源Excel／工具／遊戲資料與必要NPC manifest，從新的Excel入口實跑原根BAT，exit0完成，NPC.csv四列3、NPC_CONFIG_TABLE.undead_1.scale與UNDEAD_MOUNTAINS_POOL皆3，params_version更新。隔離輸出亦如實套用來源既存其他NPC1.5與SKILL_CAST_HOLD 0.3，不把這些測試結果回寫正式副本；測試環境初次漏帶NPC manifest已補齊重跑。full-bat.log與pipeline-report.json保留本聊天visualizations/params-workspace。此前隔離Edge亡靈山脈＋3倍顯示能正常sceneReady，無需修改縮放公式。
+- 提交／交接：Claude與Antigravity只逐檔提交兩個入口檔，兩分支因相同父提交／相同patch生成同一Commit 405cb82a（[Codex] fix: Excel 參數入口改為自身工作區相對路徑）；Codex提交本段所在同名Commit及測試，SHA見交付。保留Claude原本10份CSV與data／formula未提交變動、Codex原NPC.xlsx四格3未提交，未擅自提交數值或套用到正式遊戲、未合併推送。自我Review完成，可供合併，無本次入口修正未完成項；後續使用者儲存關閉目標Excel，再從該副本Excel資料夾的新BAT正常套用。原需求檢查已確認根因與參數接線，實際數值套用沒有冒稱完成。
+
+## STARTUP-CANVAS-DIAG-20261101 — 原存檔 Canvas 啟動卡住追查
+
+- Owner：Codex；Done，單一開發者。使用者最後確認關閉全部8123遊戲／診斷分頁、只開一個原網址後，已進入原角色遊戲。前次dirty競態修正後使用者確認原網址仍卡Loading，canvas=0可進入；補充NPC受詛亡者四階級縮放比改3後套用BAT未自動刷新。唯讀XML核對Excel L290:L293由1.5→3，但本副本NPC.csv及data仍為1、params_version未更新，未將問題歸因於倍率。
+- 允許本機唯讀診斷工具tools/startup-diagnostics.js／html、index載入接線及快取、本段，後續依實際診斷再確定修復範圍；禁止讀寫玩家存檔、修改原NPC Excel與未確認的玩法／表值、其他工作區與合併推送。工具檔fetch後預檢無衝突；檢查既有renderer／decor／storage／配置管線。工具僅local host及startupDiag=1啟用，不送資料到網路，顯示既有啟動狀態／錯誤供使用者複製，不需Console；內部診斷文字依AI_RULES 8.10豁免。使用者回報原頁無診斷按鈕，改以獨立html包同源全視窗遊戲frame、父頁診斷固定在上層，並記錄載入腳本版本以辨識來源／快取。驗完整頁啟動、複製／選取、一般網址不啟用、Build／diff；根因與原玩家驗收仍待診斷。
+- 已驗：bundled Edge新局與亡靈山脈真Worker刷新、同源route僅將主端NPC倍率改3亦可揭幕／sceneReady true／Console Error與pageerror0；未覆寫來源。診斷按鈕真滑鼠複製、一般網址／外部host不啟用、獨立頁單組父層按鈕、JS與HTML inline語法、Build616檔、String檢查硬寫0及diff/check均通過。首次獨立頁favicon404已補正，重載HTTP錯誤0；證據留本聊天visualizations/startup-refresh。
+- 使用者提供一般Chrome截圖：地址是tools/startup-diagnostics.html但內容仍為遊戲Loading，和伺服器直接回應的診斷HTML不符；無痕可正常顯示診斷，使用者貼回desert新局：Worker booted／alive true、Canvas ready／sceneReady true、missing／pendingFetch／errors皆空、main1.0.5。此結果僅證明無痕新環境正常，不能排除一般環境快取／擴充或原存檔狀態。正在請使用者以Ctrl+Shift+R而非功能鍵重載一般分頁；尚未取得原分頁報告，根因未確認、不宣稱修復。沒有清除任何瀏覽器資料或操作原存檔。Repo未找到ServiceWorker註冊，歷史亦未查到；未據此假定一般profile一定不存在舊註冊。Windows工具再次因無法確認Chrome URL而要求停止，該輪已立即停止並回報，後續未控制使用者Chrome。
+- 最終定位與恢復：Ctrl+Shift+R後一般視窗可顯示新版診斷框；回報lock=false、Worker started／booted=false、errors=[]，證明該分頁未取得控制權，並非在執行Canvas初始化。使用者點接管後，既有10秒逾時提示「另一個分頁沒有回應」；依既有提示關閉全部8123遊戲／診斷頁、只開單一原網址後，使用者明確回覆「已進入原角色遊戲」。可確認一般視窗舊頁／未回應持鎖分頁影響本次恢復；最初造成舊分頁不回應的底層原因（快取／擴充／瀏覽器凍結）沒有進一步證據，不宣稱唯一根因，也未強奪Web Lock或改存檔／接管規則。
+- 交付四檔：index的診斷script版本1.0.2、tools/startup-diagnostics.js／html及本紀錄。內部工具不需LV／String表變動；既有NPC.xlsx四格倍率3完整保留、未套用或提交，CSV／遊戲倍率仍1，使用者的數值套用需另在正確工作區完成，不以本次恢復冒稱已套用。唯讀檢查未改規範、UI／renderer／decor／Worker／tablock／storage／配置管線及其他工作區；自我Review完成，可供合併，未合併推送develop／main。獨立Commit「[Codex] chore: 新增本機啟動診斷並記錄分頁鎖恢復」，SHA見交付；無素材／素材庫變動。本次卡Loading修復驗收已完成，未做完整遊玩／多瀏覽器回歸；建議往後本機僅保留單一遊戲分頁，必要時用本機診斷工具判讀，不清除保存角色的網站資料。
+
+## STARTUP-REFRESH-DIRTY-20261101 — 刷新後 Loading 等待首畫競態
+
+- Owner：Codex；Done（程式修復與隔離驗證完成，原玩家分頁待使用者驗收），單一開發者。使用者回報8123刷新後Loading持續動畫且無法開Console；隔離新局與一般刷新正常，已以正式main入口及可控frame重現：Worker／面板／場景均就緒，但每次揭幕前新資料標dirty，41幀內重繪21次仍不揭幕。
+- 前置：既有Loading／Worker／場景就緒機制；允許js/main.js、index快取、tests/loading-screen.test.cjs、LV及本段；禁止玩法／數值／存檔格式／玩家資料／素材／其他工作區與合併推送。既有NPC.xlsx未提交修改保留。fetch後五檔預檢及遠端增量無衝突。
+- 實作：揭幕幀若有新資料先重繪並重驗場景，避免要求兩幀間完全沒有Worker更新；渲染未成功、轉場、背景或Worker失效仍走既有保護。驗可控frame競態、渲染失敗及轉場／背景回歸、Build、隔離Edge真Worker刷新與持續更新、Console／diff，自我Review後獨立Commit，交使用者驗收／整合。使用者實際存檔未讀取；實際分頁是否同一原因仍需驗收。
+- 完成五檔：main揭幕幀補畫最新資料並取消該次戰鬥節流，index main快取1.0.4→1.0.5、loading-screen新增四項回歸、LV及本段。無新增玩家文字／配置表／素材／素材庫修改，未建立空素材Commit。
+- 驗證指令：`node --test --test-reporter=spec tests/loading-screen.test.cjs tests/scene-startup-ready.test.cjs tests/tab-lock.test.cjs tests/save-origin-isolation.test.cjs tests/vfx-startup-loading.test.cjs` 51項45過／6項既有VFX測試缺skyEntryPoint替身；失敗套件只讀battle-renderer／vfx-core／vfx-runtime／preset／helper，這些與HEAD相同，未改舊斷言或擴修。去除該既有套件後以dot重跑其餘四檔45/45；`npm.cmd run build`616檔通過，git diff／check通過。
+- 瀏覽器：IAB無backend，改bundled Playwright／隔離headless Edge，正式8123全頁與真Worker。在每個rAF回呼前注入正常資料到達會設定的header／battle dirty，舊HEAD main經route唯讀覆映，7秒後仍Loading，booted／sceneReady均true、3519次注入、Console Error／pageerror 0；修正版相同條件揭幕成功（207次注入），同頁reload亦成功，Console Error／pageerror 0。這是放大訊息時序的控制測試，不冒充原存檔重現；一般刷新、停用decor、效能模式、冰原與6倍CPU節流亦已隔離檢查。慢速測試有既有unused-preload警告，無新增相關警告。PNG已存後重開檢視，JSON證據在本聊天visualizations/startup-refresh。Windows工具上輪因不能確定瀏覽器URL而停止，未再嘗試控制使用者分頁；待使用者Ctrl+F5驗收。
+- 唯讀未改：規範／Workflow／prompts、ui／bridge／renderer／decor／tablock／storage／save-origin與相關回歸、Worker／玩法／權威表與既有NPC.xlsx修改。自我Review完成，可供Review／合併；本項實作無未完成內容，風險／限制是原玩家分頁尚未確認是否僅此原因、未做完整遊玩／多瀏覽器與全庫回歸。Commit為本段所在「[Codex] fix: 修正持續戰鬥更新造成刷新載入無限等待」，SHA見交付；未合併／推送develop或main。
+
 ## MERGE-fd276618-20261101 - Authorized develop integration
 
 - Owner: Codex; Done. Scope: this pending merge only, b89ce4a9 + fd276618; no staging, commits, delegation, pushes or other-worktree edits. Controller owns the merge commit.

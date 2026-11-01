@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>本機 Canvas 啟動診斷</title>
+  <link rel="icon" href="../images/icon_avatar.png" type="image/png">
+  <style>
+    body{margin:0;background:#030712;color:#f3f4f6;font:14px sans-serif}
+    iframe{position:fixed;inset:0;width:100%;height:100%;border:0}
+    aside{position:fixed;z-index:1;top:8px;left:8px;width:min(640px,calc(100vw - 40px));padding:12px;background:#111827;border:2px solid #fbbf24}
+    h1{font-size:18px;margin:0 0 8px}p{margin:8px 0}
+    textarea{display:block;width:100%;box-sizing:border-box;margin-top:8px;height:32vh;background:#030712;color:#f3f4f6;font:12px monospace}
+  </style>
+</head>
+<body>
+  <iframe id="game" title="受測遊戲"></iframe>
+  <aside>
+    <h1>本機 Canvas 啟動診斷・版本 20261101-1</h1>
+    <p>請取代原遊戲分頁開啟本頁，等待10秒後複製診斷，貼回聊天。</p>
+    <button id="copy" type="button">複製診斷</button>
+    <textarea id="report" readonly aria-label="診斷報告"></textarea>
+  </aside>
+  <script>
+    (function () {
+      if (!/^(localhost|127\.0\.0\.1|\[?::1\]?)$/.test(location.hostname)) {
+        document.getElementById('report').value = '僅供本機伺服器使用。';
+        return;
+      }
+      var frame = document.getElementById('game');
+      var report = document.getElementById('report');
+      var copy = document.getElementById('copy');
+      function refresh() {
+        try {
+          var w = frame.contentWindow, doc = w.document;
+          var worker = w.WorkerBridge ? w.WorkerBridge.status() : {};
+          var canvas = w.BattleRenderer ? w.BattleRenderer.status() : {};
+          var state = w.readStartupDiagnosticState ? w.readStartupDiagnosticState() : {
+            worker: { started:worker.started,booted:worker.booted,alive:worker.alive,deadReason:worker.deadReason,lastError:worker.lastError },
+            canvas: { ready:canvas.ready,failed:canvas.failed,sceneReady:canvas.sceneReady,zone:canvas.zone,scene:canvas.scene,decor:canvas.decor },
+            uiError: w.UI_TICK_DIAG && w.UI_TICK_DIAG.lastErrorMsg
+          };
+          state.diagnosticVersion = '20261101-1';
+          state.gameUrl = w.location.href;
+          state.pageReady = doc.readyState;
+          state.mainScript = Array.from(doc.scripts).map(function (script) {return script.src;}).filter(function (src) {return /\/(main|battle-renderer|battle-decor)\.js/.test(src);});
+          report.value = JSON.stringify(state, null, 2);
+        } catch (error) { report.value = 'Diagnostic error: ' + error.message; }
+      }
+      copy.addEventListener('click', function () {
+        refresh(); report.focus(); report.select();
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(report.value).then(function () {copy.textContent='已複製，請貼回聊天';},function () {copy.textContent='請按 Ctrl+C 複製';});
+        } else copy.textContent='請按 Ctrl+C 複製';
+      });
+      frame.src = '../?startupDiag=1';
+      frame.addEventListener('load', refresh);
+      setInterval(function () {if(document.activeElement!==report)refresh();},1000);
+    })();
+  </script>
+</body>
+</html>
