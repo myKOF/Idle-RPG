@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## FORGE-EQUIPPED-TABS-20261101 — 神鑄身上裝備切頁與寶石背包版面統一
+
+- Owner：Codex；Done，單一開發者。使用者要求太古精鑄／神聖刻印在品質切頁旁新增「身上」，切換下方為目前穿戴裝備；神級寶石移除額外背包表頭，保持四頁舞台及三行清單高度一致。
+- 前置：既有神鑄／共用背包及inv.equipment投影完成。允許ui.js、forge.js穿戴裝備原子入槽、divine-forge.css、index／Bridge／Worker／Protocol必要快取與文件、String來源原生Excel／CSV／strings_data、獨立回歸、LV及本段。禁止數值／配方／解鎖／新存檔欄位／素材／其他工作區與合併推送。
+- fetch後目標預檢全部無外部來源，起始工作區乾淨。身上切頁為獨立來源，不受背包品質篩選；只讀目前啟用套裝，不含預覽備用套裝。點擊先完整驗證，再將穿戴裝備直接移至法陣，沿用既有卸料／成功退回背包及失敗規則，無複製或新增保存格式。
+- 驗收：兩頁身上／品質切換、穿戴／鎖定／滿槽／作業中／不合資格拒絕不卸裝、目前套裝正確與備用保持、正式Worker三秒成功／失敗／卸料／存讀、tooltip／桌面及窄屏四頁尺寸／Console、相關回歸／String／Build／diff與自我Review；完成後獨立[Codex] Commit，交使用者正常Review／整合。無素材庫變更。
+- 完成15檔：js/ui.js新增身上／品質互斥選取、目前穿戴來源與完整tooltip查找，切來源重置捲動；js/forge.js先驗證再原子卸裝入槽，保留BOSS配置鎖及原取消／成功回背包、失敗消耗規則；css/divine-forge.css窄屏分頁分層避免遮到開始／連續開關；index.html新增來源按鈕並刪除寶石表頭。String.xlsx／CSV／strings_data新增2243「身上」，LV及本段同步。其餘js/bridge.js、js/worker/sim.worker.js、js/worker/protocol.js、docs/WORKER_PROTOCOL.md、tests/worker-protocol.test.cjs同步Protocol67→68／dirty及必要快取；新增tests/forge-equipped-inventory.test.cjs九項。無配方／數值／解鎖／存檔欄位或素材變更，不建素材庫Commit。
+- Excel：來源獨占確認後用tools/excel-update-sheets.ps1於String第2217列插入，沿用神鑄區格式，只填新四格、不填翻譯；原生Excel正常重開兩輪、形狀0保持。唯讀openpyxl核對原有15610格，依插列對齊後原值／公式／style／數字格式全部相同。Artifact Tool僅唯讀前後渲染，未匯出覆蓋來源。按PARAMS_XLSX／PARAMS_CSV_OUT／PARAMS_SHEET指定String執行tools/xlsx_to_csv.cjs，再node tools/string-table/apply_strings.cjs，2230條、be138922；index String快取同步。新ui／Bridge／Protocol與Worker forge匯入為20261101-forge-equipped，CSS14→15。
+- 測試指令：`node --test --test-reporter=spec tests/forge-equipped-inventory.test.cjs tests/forge-shared-inventory.test.cjs tests/divine-forge-interaction.test.cjs tests/forge-stone-controls.test.cjs tests/forge-stone-mode-switch.test.cjs tests/ancient-forge-limit.test.cjs tests/forge-duration.test.cjs tests/forge-failure.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/boss-fight-config-lock.test.cjs`98/98通過。新九項驗兩模式穿戴入槽／備用隔離／唯一物件／卸料／存讀與三秒成功失敗，以及七種拒絕零狀態變更、滿背包直入與UI來源／tooltip；初版fixture誤用equipSets名稱及讀檔後未暫停戰鬥收益，修正fixture重跑，未弱化斷言。`npm.cmd run build`618檔通過，String兩個--check同步且寫死0條，git diff／stat／check通過。
+- 瀏覽器：IAB無backend，依後備用bundled Playwright／隔離headless Edge＋隨機localhost。載正式神鑄／裝備section、全CSS及ui.js實際renderForge／renderInventory／事件綁定，由fixture轉接正式sim.worker的cmd／panel；未讀寫玩家存檔。1093／800／600／390四寬逐四模式量測同寬四頁panel469px、清單186px／top549px一致、stage426px（窄屏416px）一致，無橫向溢出；身上只顯示四件目前套裝且不含預覽備用，品質回切可恢復背包、完整hover與真滑鼠入槽／點槽退回一份皆通過。Console Error／Warning、pageerror與Worker error均0。已重開視檢equipped／gems／narrow三張PNG；QA／report及Excel前後資料保留本聊天visualizations/forge-equipped。QA補齊skills等面板依賴／initUI閉包helper、按實際部位順序比較集合，截圖關閉過場與以真滑鼠點持續漂浮槽位，產品未因fixture擴改。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts/codex、player.js既有三套裝備與卸裝流程、item／data／formula／save、原神鑄與背包回歸、Excel匯出及String生成工具、其他配置／原素材。自我Review完成，本項無未完成實作或已知新增風險；未跑全庫、多瀏覽器／實體觸控與玩家原存檔長玩。可供Review／合併，交使用者正常整合後重載；未合併或推送develop／main。Commit為本段所在「[Codex] feat: 神鑄新增身上切頁並統一寶石背包版面」，SHA見交付。
+
 ## ELITE-GLOW-PARAMS-20261101 — 菁英覆光濃度加入參數表
 
 - Owner：Codex；Done，單一開發者。使用者要求將藍色菁英與黃色高級菁英覆光濃度放進參數表；前置既有NPC_RANK_STYLES與apply_params流程完成，後續接手者為使用者正常Review／整合。

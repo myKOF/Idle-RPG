@@ -103,7 +103,8 @@
 // v65：內測目前轉數威能直接全滿／歸零，外服於Worker拒絕；指令93→94。
 // v66：背包格投影新增 ancientForgeCount／ancientForgeOrders，精鑄上限與星星來源分色。
 // v67：封魔塔自動推進設定與勝利接續下一層，tower 指令6→7。
-var WORKER_PROTOCOL_VERSION = 67;
+// v68：forge.placeItem 可於精鑄／刻印原子移入目前穿戴裝備，同步equip／header。
+var WORKER_PROTOCOL_VERSION = 68;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -419,7 +420,7 @@ var COMMANDS = {
   'tower.stopAuto':        { fn: 'stopTowerAutoFromResult', args: {},                             dirty: ['tower'] },
 
   /* -- 四功能神鑄（v63）：即時原子結算，不保留舊自動與計時指令。 -- */
-  'forge.placeItem':    { fn:'forgePlaceItem', args:{ itemId:'id' }, dirty:['forge','inv'] },
+  'forge.placeItem':    { fn:'forgePlaceItem', args:{ itemId:'id' }, dirty:['forge','inv','equip','header'] },
   'forge.removeItem':   { fn:'forgeRemoveItem', args:{ slotIndex:'int' }, limit:{ slotIndex:{ min:0, max:5 } }, dirty:['forge','inv','gems'] },
   'forge.placeGem':     { fn:'forgePlaceGem', args:{ type:'str', level:'int' }, dirty:['forge','gems'] },
   'forge.unloadAll':    { fn:'forgeUnloadAll', args:{}, dirty:['forge','inv','gems'] },
