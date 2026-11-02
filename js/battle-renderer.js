@@ -157,7 +157,7 @@ var BattleRenderer = (function () {
     W: 0, H: 0,
     canvasW: 0, canvasH: 0, cameraScale: 1, cameraStage: null,
     cameraDistancePercent: 100, cameraWheelBound: false,
-    /* 正在畫的場景：'field'＝野外，'tower:<BOSS 生成時刻>'＝某一場魔王戰（見 sceneKeyOf）。
+    /* 正在畫的場景：'field:<地圖>'＝某張野外地圖，'tower:<BOSS 生成時刻>'＝某一場魔王戰（見 sceneKeyOf）。
        模擬層換場景是瞬間的，畫面要先跑完黑圈收合才真的換（phase：closing → black → opening）。 */
     scene: { key: 'field', phase: '', t: 0 },
     lastPanel: null,
@@ -2325,7 +2325,11 @@ var BattleRenderer = (function () {
   var IRIS_CLOSE_SEC = 1.0, IRIS_HOLD_SEC = 0.35, IRIS_OPEN_SEC = 1.05;
   function sceneKeyOf(panel) {
     var tv = towerFieldView(panel);
-    if (!tv) return 'field';
+    if (!tv) {
+      /* 野外以地圖為場景：玩家切換地圖（G.stage.zone）也走黑圈轉場並清場 */
+      var zone = panel && panel.stage && panel.stage.zone;
+      return zone ? 'field:' + zone : 'field';
+    }
     var b = tv.monsters[0] || {};
     return 'tower:' + (b._spawnAt !== undefined ? b._spawnAt : (b.name || ''));
   }
@@ -2384,7 +2388,7 @@ var BattleRenderer = (function () {
       if (Object.prototype.hasOwnProperty.call(S.entities, id)) destroyEntity(id);
     }
     if (S.bossBar) { S.bossBar.root.destroy({ children: true }); S.bossBar = null; }
-    var tv = (key !== 'field' && panel) ? towerFieldView(panel) : null;
+    var tv = (key.indexOf('tower:') === 0 && panel) ? towerFieldView(panel) : null;
     if (tv) enterArena(tv, panel); else exitArena();
     if (S.decor) S.decor.setVisible(!tv);
     if (panel) reconcileBattle(panel, tv || panel.field || {});
@@ -2424,10 +2428,14 @@ var BattleRenderer = (function () {
     S.lastPanel = panel;
     setTestMapScene(!!(panel.field && panel.field._testMap));
     S.arenaEnraged = !!(panel.tower && panel.tower.enraged);
+    /* 第一張面板：初始鍵 'field' 還不知道地圖，直接採用（不是玩家切換，不轉場） */
+    if (S.scene.key === 'field' && !S.scene.phase && sceneKeyOf(panel).indexOf('field:') === 0) {
+      S.scene.key = sceneKeyOf(panel);
+    }
     if (!S.scene.phase && sceneKeyOf(panel) !== S.scene.key) beginSceneTransition();
     // 收合中與全黑時畫面凍結在舊場景（全黑那一刻 applySceneSwitch 會用最新面板重建）
     if (S.scene.phase === 'closing' || S.scene.phase === 'black') return;
-    var field = S.scene.key === 'field' ? (panel.field || {}) : towerFieldView(panel);
+    var field = S.scene.key.indexOf('tower:') !== 0 ? (panel.field || {}) : towerFieldView(panel);
     if (!field) return;   // 畫的是魔王戰、這張面板卻已經沒有塔戰：等下一次轉場
     reconcileBattle(panel, field);
   }

@@ -909,7 +909,18 @@ function switchZone(zoneKey) {
     G.stage.current = zp.current || 1;
     G.stage.best = zp.best || 1;
     G.stage.kills = 0;
-    /* 場上既有的敵人留著，不因換圖而憑空消失（只有陣亡才會清場）。 */
+    /* 換場景＝整個舞台換掉：前一個場景的敵人與其排程中的技能一併清掉
+       （顯示層在黑圈轉場全黑那一刻換景，js/battle-renderer.js sceneKeyOf 以地圖為場景鍵）。
+       下一波由 FIELD_STAGE_SWITCH_DELAY（≥ 黑圈整段 2.4 秒）延後，等黑圈展開後才出現。 */
+    if (typeof eliteReset === 'function') eliteReset();
+    if (typeof resetSkillRT === 'function') resetSkillRT();
+    FIELD.monster = null;
+    FIELD.monsters = [];
+    FIELD.despawnCd = 0;
+    if (FIELD.player) {
+        FIELD.player._lockTarget = null;
+        cleanse(FIELD.player);   // 原場景敵人留下的控場、減益與持續傷害不帶進新場景
+    }
     FIELD._waveClearPending = false;
     FIELD.mapComplete = false;
     holdFieldSpawn(FIELD_STAGE_SWITCH_DELAY);
@@ -2410,7 +2421,12 @@ function fieldTick(dt) {
         if (firstStrikers.length && firstStrikers.indexOf(m) >= 0) continue;
         if (spawnedEnemies && spawnedEnemies.indexOf(m) >= 0) continue;
         if (!ccActionLocked(m)) {
-            m.atkCd -= dt * slowFactor(m);
+            /* 倒數過零時保留超出的零頭；但已經 ≤0 卻打不出去（還在走向玩家、
+               距離不夠、被施法鎖住）就釘在 0，不再往負數累積——否則走位期間欠下的
+               計時會在進入射程後連續補打，看起來像剛接戰的 10～20 秒攻速爆衝
+               （玩家那一側 2221 行同樣的寫法）。 */
+            var mCdBefore = m.atkCd, mCdAfter = mCdBefore - dt * slowFactor(m);
+            m.atkCd = mCdBefore > 0 ? mCdAfter : Math.max(0, mCdAfter);
             if (m.atkCd <= 0 && fieldMonsterAttack(m, p)) return;
         }
     }

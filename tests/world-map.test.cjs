@@ -68,3 +68,19 @@ test('上限重複刷關不重複發出通關與世界地圖提示', () => {
   assert.equal(logs.filter(text => text.includes('世界地圖')).length, 1);
   assert.equal(c.G.stage.zone, 'desert');
 });
+test('切換場景會清掉前一個場景的敵人，並延後下一波（等黑圈轉場）', () => {
+  const c = load();
+  c.G = { player: { reincarnations: 0 }, stage: { zone: 'desert', current: 100, best: 100, kills: 0, autoAdvance: true },
+    zoneProgress: { desert: { cleared: 100 }, Icefield: { current: 1, best: 1 } }, tower: { active: false } };
+  const m = { hp: 10, floatSel: 'mv-float-1' };
+  c.FIELD.monsters = [m]; c.FIELD.monster = m;
+  c.FIELD.player = { _lockTarget: m, dots: [{ dmg: 1 }] };
+  c.switchZone('Icefield');
+  assert.equal(c.FIELD.player.dots.length, 0, '原場景的持續傷害一併清除');
+  assert.equal(c.G.stage.zone, 'Icefield');
+  assert.equal(c.FIELD.monsters.length, 0);
+  assert.equal(c.FIELD.monster, null);
+  assert.equal(c.FIELD.player._lockTarget, null);
+  assert.equal(c.FIELD.spawnCd, c.FIELD_STAGE_SWITCH_DELAY);
+  assert.ok(c.FIELD_STAGE_SWITCH_DELAY >= 2.4, '下一波要等黑圈整段轉場結束');
+});

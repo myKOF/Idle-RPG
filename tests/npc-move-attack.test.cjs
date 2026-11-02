@@ -125,3 +125,9 @@ test('攻擊表現看射程不看魔法型：24 米出投射物、6 米近身出
   assert.equal(c.enemyAttackIsRanged({ magic: true }), true);
   assert.equal(c.enemyAttackIsRanged({ magic: false }), false);
 });
+
+test('敵人普攻計時：打不出去時釘在 0，不往負數累積（避免進射程後連續補打）', () => {
+  const src = fs.readFileSync(path.join(root, 'js/combat.js'), 'utf8');
+  assert.match(src, /m\.atkCd = mCdBefore > 0 \? mCdAfter : Math\.max\(0, mCdAfter\);/);
+  assert.doesNotMatch(src, /m\.atkCd -= dt \* slowFactor\(m\);/);
+});
