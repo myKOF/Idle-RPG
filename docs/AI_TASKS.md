@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## NPC-OUTLINE-1PX-20261103 — 全戰鬥NPC／BOSS黑邊收細至1px
+
+- Owner：Codex；Done，單一開發者。使用者將所有NPC黑色描邊上限由2px改為1px，授權途中採建議方案持續完成及提交。起始ai/codex 7a751116乾淨；素材庫起始乾淨。只處理既有自製／已授權素材，不重畫或引入外部素材。
+- 範圍：124款角色（120現用＋4封存）四動作496張PNG，以及實際戰鬥使用通用BOSS圖集1張，共497檔／3250格（含BOSS四空格、實用11幀）。十張獨立BOSS為含背景的不透明頭像，戰鬥仍用通用動畫，未對頭像產生矩形黑框。NPC及BOSS動作metadata、Excel／CSV／data、數值與存檔不改。
+- 預檢：.claude/check-conflicts.ps1對496 NPC圖、通用BOSS、renderer、兩頁快取、兩測試、匯出入口及兩文件均無外部修改；追加遮罩修正前再次確認。沒有分支切換、同步、合併或推送。
+- 實作：素材庫原描邊包從before原畫重建，RADIUS=1並收除原2px暗邊，通用BOSS原放大3px暗邊亦收至1；保留孤立細暗線幾何／alpha並轉純黑。不是在前次成品疊加。496張NPC及通用BOSS PNG、outline.json、renderer素材版本及index／scene-preview renderer快取同步20261103-outline-1px。半透明細邊原會透入少量外暈，最後遮罩扣除時將alpha≥128視為完整覆蓋；只影響快取遮罩，原貼圖透明度與光暈參數保持。
+- 原生與像素驗證：Mote開啟本次史萊姆來源，確認max 1px／原畫兩層與六幀160ms；原生匯出768×128全RGBA差0。素材verify.cjs驗497 Mote／PNG及3250格完全一致，3,729,496個原不透明彩色像素保持，740,514個新增不透明像素均黑色且距原本體最多1px，移除110,729個舊暗邊／柔邊像素，新增圖格邊界0。fixtures驗舊2／3px實際收至1、無邊補1、細暗線及透明孔。蛇形fixture原貼地／低伏與彩色像素斷言保留，僅可見外輪廓允許因2→1px內縮一格；未修改原fixture。
+- 測試指令：bundled NODE_PATH執行node tools/npc-sprites/export_supplemental.cjs --source-check／--check；node素材庫author.cjs及verify.cjs；node --test tests/npc-black-outline.test.cjs tests/npc-ground-air.test.cjs tests/npc-idle-root-motion.test.cjs tests/npc-biped-gait.test.cjs tests/npc-all-new-art.test.cjs tests/npc-complete-actions.test.cjs tests/npc-facing.test.cjs tests/npc-death-ui.test.cjs tests/npc-rank-glow.test.cjs tests/battle-renderer-pause.test.cjs tests/vfx-editor-cache-versions.test.cjs；npm.cmd run build；雙庫git diff --check。結果103/103通過、Build633檔通過、來源與遊戲雜湊全一致。新增半透明遮罩回歸；初次一個殘骸幀缺純黑像素，修正細暗線顏色並保留幾何，未降低該斷言。
+- 正式渲染器驗收：私人localhost harness載入120款NPC四動作及BOSS11幀，16實體跨普通／菁英／高級菁英／BOSS抽樣5,637黑像素，內部混色及外側光暈均5,637/5,637保護，當頁Console錯誤／警告0。harness只在HTTP回應注入QA介面，不改正式API或玩家存檔；QA頁及服務驗收後關閉。
+- 素材交付：D:/MyGame/Effects-Materials/codex-authored/npc-black-outlines-20261102更新原生來源、正式匯出、計畫／SHA、製作器／匯出器／獨立驗證、SOURCE及qa對照GIF／遊戲實拍／原生匯出報告。先素材庫Commit ed1b894（乾淨），再本遊戲提交；唯一遊戲匯出入口保持tools/npc-sprites/export_supplemental.cjs，不增加第三種特效來源。
+- 修改檔案：497 PNG、images/sprites/npc/outline.json、js/battle-renderer.js、index.html、tools/scene-preview.html、tests/npc-black-outline.test.cjs、tests/npc-ground-air.test.cjs、LV_upgrade_system.md及本段。唯讀檢查AI_RULES／Workflow／Agent／prompt、原匯出入口、NPC／BOSS metadata與來源圖、相關動畫／階級測試、實際BOSS載圖優先順序；未修改配置表、其他NPC原製作包或動作資料。
+- 風險／未完成：無本項未完成實作；未跑全庫回歸或長時間實戰，十張不透明BOSS頭像不屬本次戰鬥圖集。可供使用者Review及正常合併；未合併develop／main或推送，下一步重載新版檢視1px輪廓。
+
 ## SYNC-ART-BOSS-20261102 — 整合裝備、NPC描邊與BOSS路徑
 
 - Owner：Codex；Done（整合與驗證完成，同步結果見交付）。使用者以1授權保留全部AI成果並同步。來源a816c30c（裝備）、2bc47516（NPC黑描邊）、23c281e4（BOSS圖移位）；保留三個原提交及main。允許合併、必要路徑／快取修正與本段，完成素材來源、相關回歸、配置一致性及Build後正常同步。
