@@ -703,35 +703,36 @@ function gmArenaSpawnElite(groups, affixIds, size, hpMult, tier) {
     return enemies.length;
 }
 /* ---- GM 測試場景（test_map；僅由本機 GM 指令呼叫 → js/gm_exec.js）----
-   用來逐隻檢查 NPC 外觀與動作：全空的方格地板，NPC 表所有 NPC（含封魔塔 BOSS）從原點朝上、下、左
-   每 12 米擺一隻，全部是被動怪物——被打了才還擊，不攻擊就不理人。
+   用來逐隻檢查 NPC 外觀與動作：全空的方格地板，NPC 表所有 NPC（含封魔塔 BOSS）從原點按場景分列，
+   同場景向右排列，後續場景向上另起一列；全部是被動怪物——被打了才還擊，不攻擊就不理人。
    - 沿用演武場旗標 FIELD._gmArena（暫停自然出怪與過關結算），另加 FIELD._testMap 讓顯示層換成方格地板、
      移除地形，並讓玩家改成「點擊移動／點怪攻擊」（模擬層 testMapMovePlayer，不再自動索敵）。
    - 站位、重生計時等執行期資料放在 TEST_MAP_RT（不進 FIELD，免得每次面板快照都帶一份）。
    - 被打死的 NPC 過 TEST_MAP_RESPAWN_SEC 秒在原位重生，方便反覆看死亡動作。 */
-var TEST_MAP_STEP_M = 12;          // 相鄰兩隻的間距（米）
+var TEST_MAP_STEP_M = 15;          // 相鄰兩隻與相鄰列的間距（米）
 var TEST_MAP_HP_MULT = 10;         // 血量倍率：讓每隻能撐住幾下，方便看受擊與攻擊動作
 var TEST_MAP_RESPAWN_SEC = 4;      // 死亡後原地重生的等待秒數（從陣亡起算）
 var TEST_MAP_RT = { slots: [], target: null, move: null };
 
 /* 要擺進場景的 NPC：各地圖的 NPC（依 ZONE_LIST 順序，每個識別碼一隻）＋ NPC 表其餘條目＋封魔塔 BOSS。 */
 function testMapNpcList() {
-    var out = [], seen = {};
+    var out = [], seen = {}, row = 0;
+    function appendRow(pool, tower) {
+        var col = 0;
+        (pool || []).forEach(function (mt, i) {
+            if (!mt || !mt.id || seen[mt.id]) return;
+            seen[mt.id] = true;
+            out.push({ mt: mt, tower: tower ? i : -1, row: row, col: col++ });
+        });
+        if (col) row++;
+    }
     var zoneKeys = (typeof ZONE_LIST !== 'undefined' && ZONE_LIST) ? ZONE_LIST : Object.keys(ZONES);
     zoneKeys.forEach(function (zk) {
         var zd = ZONES[zk];
-        ((zd && zd.pool) || []).forEach(function (mt) {
-            if (!mt || !mt.id || seen[mt.id]) return;
-            seen[mt.id] = true;
-            out.push({ mt: mt, tower: -1 });
-        });
+        appendRow(zd && zd.pool, false);
     });
-    Object.keys(NPC_CONFIG_TABLE || {}).forEach(function (id) {
-        if (!seen[id]) { seen[id] = true; out.push({ mt: NPC_CONFIG_TABLE[id], tower: -1 }); }
-    });
-    (typeof BOSS_LIST !== 'undefined' ? BOSS_LIST : []).forEach(function (bd, i) {
-        out.push({ mt: bd, tower: i });
-    });
+    appendRow(Object.keys(NPC_CONFIG_TABLE || {}).map(function (id) { return NPC_CONFIG_TABLE[id]; }), false);
+    appendRow(typeof BOSS_LIST !== 'undefined' ? BOSS_LIST : [], true);
     return out;
 }
 function testMapMakeEnemy(entry, pos) {
@@ -762,13 +763,11 @@ function testMapMakeEnemy(entry, pos) {
 function gmTestMapEnter() {
     var list = testMapNpcList();
     var step = bfMeterPx(TEST_MAP_STEP_M);
-    var dirs = [{ x: 0, y: -1 }, { x: 0, y: 1 }, { x: -1, y: 0 }];   // 上、下、左（右邊留空，是角色面向的前方）
     bfResetPlayer();
     TEST_MAP_RT = { slots: [], target: null, move: null };
     var enemies = [];
     for (var i = 0; i < list.length; i++) {
-        var d = dirs[i % dirs.length], k = Math.floor(i / dirs.length) + 1;
-        var pos = { x: d.x * step * k, y: d.y * step * k };
+        var pos = { x: list[i].col * step, y: list[i].row ? -list[i].row * step : 0 };
         var e = testMapMakeEnemy(list[i], pos);
         TEST_MAP_RT.slots.push({ entry: list[i], pos: pos, ent: e, deadAt: null });
         enemies.push(e);

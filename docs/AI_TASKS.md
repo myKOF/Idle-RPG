@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## TEST-MAP-ROWS-20261102 — 測試場景依地圖分列與十五米間距
+
+- Owner：Codex；Done，單一開發者。使用者要求從原點開始，同場景由左向右排一列，下個場景向上另起一列，NPC間隔15米，尺寸與原地圖一致。前置為既有test_map完成。
+- 允許：combat測試場景清單／站位、battlefield被動索敵防護、既有gm-test-map回歸、index／Bridge／Worker必要快取、GM_command／LV及本段；禁止原地圖玩法／配置表／素材／存檔修改與合併推送。沿既有NPC_CONFIG_TABLE縮放及正式renderer，一般怪對照原地圖普通階級，塔BOSS沿塔戰體型。
+- 預檢：Claude e1918408修改combat換景函式與index／Worker快取；使用者已明確同意分段修改，combat主頁採104、Worker／Bridge使用本次版本，不合併或更動Claude換景功能。battlefield及其餘目標無外部來源。保留本副本既有同步工具及任務紀錄未提交變更，只提交本項hunk。
+- 驗收：各場景單列／原點／左右順序與15米行列間距、完整NPC與塔BOSS、原點被動／移動攻擊／原位重生與原地圖尺寸比對，相關回歸、Build、隔離瀏覽器Console及diff後獨立Commit。無新素材或素材庫變更。
+- 完成9檔：combat清單增加row／col，依ZONE_LIST從(0,0)向右、逐列向上；未歸圖NPC及塔BOSS各接一列，不遺漏、不重複。battlefield讓未醒被動怪不靠距離索敵、不參與互斥推擠，避免原點自動還擊及大BOSS把15米間距擠開；受擊後沿既有追擊、攻擊與原位重生。index與Bridge／Worker必要快取、GM_command／LV與本段同步；測試在既有檔增加分列／邊界／尺寸及連續100Tick驗證，未改原地圖數值／NPC配置／renderer倍率。
+- 測試：`node --test --test-reporter=spec tests/gm-test-map.test.cjs tests/battlefield.test.cjs tests/npc-facing.test.cjs tests/npc-rank-glow.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs`92/92通過，含普通NPC與正式makeBoss→makeEnemy的倍率／本體高度逐隻對照、空場景／跨場景重複／未歸圖／塔BOSS分組、15米精確座標、原點被動、連續Tick大型BOSS不推擠、受擊追擊、點擊移動／攻擊、重生／離場。初次新fixture的跨VM Array原型與漏帶requestMobImage已修正，不改產品迎合測試。
+- 瀏覽器：bundled Playwright／隔離headless Edge＋隨機localhost，正式index及真Worker，走WorkerBridge.send('gm.exec',{line:'test_map'})進場；130隻／11列，逐一核對15米排位／被動、實際序列幀載入後與非測試旗標下正式makeEnemy的倍率／貼圖組／Sprite縮放一致，Console error／warning及pageerror0。首輪驗證發現大型BOSS原推擠造成移位，已修正並補連續Tick回歸；初版QA誤以不同動畫幀Texture必須相同，改比對共用貼圖組及實際縮放，沒有改renderer或素材。已重開檢視實拍；QA／report／PNG及三方試跑留本聊天visualizations，未讀寫玩家原存檔。
+- 同檔分段：combat與Claude換景修改不同行、無語意相依，以共同祖先及ai/claude三方merge-file退出0／標記0；battlefield亦退出0。index／Worker快取重疊依本輪使用者同意處理，未帶入Claude換景功能。唯讀未改規範／AGENTS／Workflow／prompts、data／NPC配置／Sprite及renderer、elite／tower正式尺寸、原素材與存檔；無素材庫變更、不建空素材Commit。未測多瀏覽器／實體觸控或全庫長玩；本項無已知新增風險，完成後可Review／合併，交使用者正常整合後重載並重新輸入test_map，未合併推送develop／main。
+- 最終`npm.cmd run build`625檔語法／編譯與空檔檢查通過、git diff／stat／check與暫存檢查通過，自我Review完成。Commit為本段所在「[Codex] fix: 測試場景依地圖分列並改為十五米間距」，SHA見交付；本項無未完成實作，保留原同步工具工作未提交。
+
 ## SYNC-SHORTCUT-RETIREMENT-20261102 — 排除舊參數捷徑阻擋同步
 
 - Owner：Codex；Done。使用者以「1」要求修復截圖中的同步中斷；範圍為三個固定AI工作區的舊參數捷徑、Git旗標、正常同步與本段紀錄，不修改玩法／Excel資料／同步控制器或解除既有試作保護，不發布main。
