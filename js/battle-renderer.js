@@ -1620,12 +1620,25 @@ var BattleRenderer = (function () {
     oc.globalAlpha = 0.35; oc.filter = 'blur(1.1px)'; oc.drawImage(band(1.2), 0, 0);
     /* Blur會重新滲入本體，最後再扣除完整輪廓，讓黑邊不被外側光暈蓋色。 */
     oc.filter = 'none'; oc.globalAlpha = 1; oc.globalCompositeOperation = 'destination-out';
+    /* 半透明細邊也完整遮住光暈；原本體貼圖與柔邊透明度保持。僅首次快取時處理。 */
+    if (typeof mc.getImageData === 'function') {
+      try {
+        var coverage = mc.getImageData(0, 0, mask.width, mask.height);
+        solidifyNpcOcclusionPixels(coverage.data);
+        mc.putImageData(coverage, 0, 0);
+      } catch (ignore) { /* 保留原Canvas輪廓退路。 */ }
+    }
     oc.drawImage(mask, 0, 0);
     /* 內部混色直接用本體輪廓的純色遮罩，依「混色濃度」把顏色揉進模型。 */
     var result = { inner: PIXI.Texture.from(inner), outer: PIXI.Texture.from(outer),
       width: orig.width, height: orig.height, k: k, pad: pad };
     NPC_RANK_MASKS.set(tex, result);
     return result;
+  }
+  function solidifyNpcOcclusionPixels(pixels) {
+    for (var p = 3; p < pixels.length; p += 4) {
+      if (pixels[p] >= 128) pixels[p] = 255;
+    }
   }
   function whitenNpcBlendPixels(pixels) {
     for (var p = 0; p < pixels.length; p += 4) {
@@ -1719,7 +1732,7 @@ var BattleRenderer = (function () {
      動作缺了就退回：移動→站立、攻擊→不播（沿用撲擊）、死亡→舊的壓扁淡出；站立都沒有就繼續用 emoji。
      圖還沒載到之前先用 emoji 頂著，載到後 adoptNpcSprite 把場上同款敵人的本體換成序列幀。 */
   var NPC_SPRITE_DIR = 'images/sprites/npc/';
-  var NPC_SPRITE_VER = '20261102-black-outlines';
+  var NPC_SPRITE_VER = '20261103-outline-1px';
   function npcSpriteDef(data) {
     var t = (typeof NPC_CONFIG_TABLE !== 'undefined' && data && data.npcId) ? NPC_CONFIG_TABLE[data.npcId] : null;
     return (t && t.sprite && t.sprite.idle) ? t : null;
