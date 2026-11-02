@@ -1686,7 +1686,19 @@ const RUNE_SETTING_NOTES = {
   drop_basePct: '野外每次擊殺的基礎掉落率（%），再乘掉寶率、地圖倍率與敵種倍率。',
   drop_towerBossPct: '封魔塔通關時的基礎掉落機率（%）。',
   drop_tierSpread: '階數稀有度：第 t+1 階的出現機率是第 t 階的這個倍數（0~1，越小高階越稀有）。階越高越稀有，與進度無關；進度只決定能掉到幾階。',
-  drop_progressPerTier: '進度（地圖序號＋關卡比例）每 +1 對應的最高掉落階增量（解鎖速度，不影響稀有度）。'
+  drop_progressPerTier: '進度（地圖序號＋關卡比例）每 +1 對應的最高掉落階增量（解鎖速度，不影響稀有度）。',
+  drop_towerBaseTier: '封魔塔通關掉落的最高階起點：最高掉落階＝此值＋（通關層數 ÷ 塔最高層）× 階數跨度，取整數。',
+  drop_towerTierSpan: '封魔塔通關掉落的最高階跨度：通關最高層時，最高掉落階比起點多出幾階。',
+  rw_depthLimit: '符文真言事件觸發的巢狀上限：擊殺→觸發→再擊殺…最多連鎖幾層，超過就不再觸發（防無限連鎖）。',
+  rw_hiHpPct: '「對高血敵人增傷」的門檻（%）：敵人生命比例高於此值才算高血（靜態效果 dmgHiHpPct）。',
+  rw_loHpPct: '「對低血敵人增傷」的門檻（%）：敵人生命比例低於此值才算低血（靜態效果 dmgLoHpPct）。',
+  rw_selfFullPct: '「自身高血增傷」的門檻（%）：自身生命比例達到此值以上才生效（靜態效果 dmgSelfFullPct）。',
+  rw_selfLowPct: '「自身低血增傷」的門檻（%）：自身生命比例在此值以下才生效（靜態效果 dmgSelfLowPct）。',
+  rw_perFoeMax: '「每多一隻敵人增傷」最多計入的敵人數（靜態效果 dmgPerFoePct）。',
+  rw_dmgMultMin: '符文真言傷害乘區的下限倍率（代價型效果為負數時，總乘區不會低於此值）。',
+  rw_aspdMultMin: '符文真言攻速乘區的下限倍率（靜態效果 aspdMult 為負數時不會低於此值）。',
+  rw_cdFactorMin: '符文真言技能冷卻倍率的下限（靜態效果 cdPct 再大也不會讓冷卻低於原本的這個倍率）。',
+  rw_tickCatchUp: '每秒觸發（tick）的補算上限：一次更新最多補觸發幾次（掛機久了不至於一次爆發大量觸發）。'
 };
 const RUNE_TIER_NAMES_FOR_TABLE = ['', '普通', '精良', '史詩', '傳說'];   // 沿用裝備品質名稱（js/runeword_data.js RUNEWORD_TIER_RARITY）
 /* Runes 表的「欄位說明」頁（xlsx 第二頁；程式不讀取，僅供編表者查閱）。 */
@@ -1707,7 +1719,9 @@ const RUNE_GLOSSARY_ROWS = [
   ['erase_scrapPerTier／erase_essencePerTier／erase_goldPerTier：抹除已刻印符文的費用（裝備碎片／附魔精華／金幣各自的每階單價，0＝不收這種幣）。實付＝單價 × 符文階數 × 裝備稀有度倍率，無條件進位；符文抹除後消失、不退還。'],
   ['composeCount／composeMaxTier／dismantleYield：合成（同種幾顆→下一階 1 顆）、最高合成階（更高階只能掉落）、拆解產出（必須小於合成所需顆數；預設 1＝只能降階頂替、不會變多）。'],
   ['statScale：全域屬性縮放，符文與符文真言的屬性加成一律乘此值（平衡用旋鈕，1＝不縮放）。'],
-  ['drop_*：掉落。basePct 野外每次擊殺的基礎掉落率(%)（再乘掉寶率與地圖獎勵倍率）、towerBossPct 封魔塔通關的基礎掉落率(%)、tierSpread 階數稀有度（相鄰兩階的機率比，0~1，越小高階越稀有）、progressPerTier 每 +1 進度對應的最高掉落階增量。'],
+  ['drop_*：掉落。basePct 野外每次擊殺的基礎掉落率(%)（再乘掉寶率與地圖獎勵倍率）、towerBossPct 封魔塔通關的基礎掉落率(%)、tierSpread 階數稀有度（相鄰兩階的機率比，0~1，越小高階越稀有）、progressPerTier 每 +1 進度對應的最高掉落階增量、towerBaseTier／towerTierSpan 封魔塔掉落最高階＝起點＋（通關層 ÷ 塔最高層）× 跨度。'],
+  ['rw_*：符文真言的戰鬥機制數值。rw_depthLimit 事件觸發巢狀上限；rw_hiHpPct／rw_loHpPct 對高血／低血敵人增傷的生命門檻(%)；rw_selfFullPct／rw_selfLowPct 自身高血／低血增傷門檻(%)；rw_perFoeMax 每多一敵增傷最多計幾隻；'],
+  ['　　rw_dmgMultMin／rw_aspdMultMin／rw_cdFactorMin 傷害乘區、攻速乘區、冷卻倍率的下限（代價型負值不會把倍率壓得更低）；rw_tickCatchUp 每秒觸發一次更新最多補算幾次。這些門檻的說明文字（String 表 1680／1681／1683／1684／1685）會自動代入此處的數值。'],
   ['　　取得難度只由「配方最高階那顆符文」決定；各級距的最高階區間與估算小時數見 docs/RUNEWORD_DESIGN.md，估算用 node tools/rw_econ_probe.cjs。'],
   [''],
   ['── 符文列 ──'],
@@ -1815,6 +1829,18 @@ function runeSettingDefs(rarities) {
   defs.push(['drop_towerBossPct', '封魔塔基礎掉落率(%)', s => s.drop.towerBossPct]);
   defs.push(['drop_tierSpread', '掉落階數分佈', s => s.drop.tierSpread]);
   defs.push(['drop_progressPerTier', '每進度的最高階增量', s => s.drop.progressPerTier]);
+  defs.push(['drop_towerBaseTier', '封魔塔掉落最高階起點', s => s.drop.towerBaseTier]);
+  defs.push(['drop_towerTierSpan', '封魔塔掉落最高階跨度', s => s.drop.towerTierSpan]);
+  defs.push(['rw_depthLimit', '真言觸發巢狀上限', s => s.combat.depthLimit]);
+  defs.push(['rw_hiHpPct', '對高血敵人增傷門檻(%)', s => s.combat.hiHpPct]);
+  defs.push(['rw_loHpPct', '對低血敵人增傷門檻(%)', s => s.combat.loHpPct]);
+  defs.push(['rw_selfFullPct', '自身高血增傷門檻(%)', s => s.combat.selfFullPct]);
+  defs.push(['rw_selfLowPct', '自身低血增傷門檻(%)', s => s.combat.selfLowPct]);
+  defs.push(['rw_perFoeMax', '每多一敵增傷最多計幾隻', s => s.combat.perFoeMax]);
+  defs.push(['rw_dmgMultMin', '真言傷害乘區下限', s => s.combat.dmgMultMin]);
+  defs.push(['rw_aspdMultMin', '真言攻速乘區下限', s => s.combat.aspdMultMin]);
+  defs.push(['rw_cdFactorMin', '真言冷卻倍率下限', s => s.combat.cdFactorMin]);
+  defs.push(['rw_tickCatchUp', '每秒觸發補算上限', s => s.combat.tickCatchUp]);
   return defs;
 }
 function runePairsText(pairs) { return (pairs || []).map(p => p[0] + ':' + numStr(p[1])).join(';'); }
@@ -1926,6 +1952,13 @@ SCHEMAS.Runes = {
     if (!(val.statScale > 0)) fail('Runes 表：全域屬性縮放必須大於 0');
     ['drop_basePct', 'drop_towerBossPct', 'drop_tierSpread', 'drop_progressPerTier'].forEach(k => { if (!(val[k] > 0)) fail('Runes 表：「' + k + '」必須大於 0'); });
     if (!(val.drop_tierSpread < 1)) fail('Runes 表：掉落階數分佈必須小於 1');
+    if (!(val.drop_towerBaseTier >= 1)) fail('Runes 表：「drop_towerBaseTier」必須 ≥1');
+    if (!(val.drop_towerTierSpan >= 0)) fail('Runes 表：「drop_towerTierSpan」必須 ≥0');
+    if (!isInt(val.rw_depthLimit) || val.rw_depthLimit < 1) fail('Runes 表：真言觸發巢狀上限必須是 ≥1 的整數');
+    ['rw_hiHpPct', 'rw_loHpPct', 'rw_selfFullPct', 'rw_selfLowPct'].forEach(k => { if (!(val[k] >= 0 && val[k] <= 100)) fail('Runes 表：「' + k + '」必須是 0~100 的數字（%）'); });
+    if (!isInt(val.rw_perFoeMax) || val.rw_perFoeMax < 1) fail('Runes 表：每多一敵增傷最多計幾隻必須是 ≥1 的整數');
+    ['rw_dmgMultMin', 'rw_aspdMultMin', 'rw_cdFactorMin'].forEach(k => { if (!(val[k] > 0 && val[k] <= 1)) fail('Runes 表：「' + k + '」必須大於 0 且不超過 1'); });
+    if (!isInt(val.rw_tickCatchUp) || val.rw_tickCatchUp < 1) fail('Runes 表：每秒觸發補算上限必須是 ≥1 的整數');
 
     /* ---- 符文 ---- */
     if (!runeRows.length) fail('Runes 表沒有任何符文列');
@@ -2024,7 +2057,8 @@ SCHEMAS.Runes = {
       '  composeMaxTier: ' + numStr(val.composeMaxTier) + ',\n' +
       '  dismantleYield: ' + numStr(val.dismantleYield) + ',\n' +
       '  statScale: ' + numStr(val.statScale) + ',\n' +
-      '  drop: ' + jsLit({ basePct: val.drop_basePct, towerBossPct: val.drop_towerBossPct, tierSpread: val.drop_tierSpread, progressPerTier: val.drop_progressPerTier }) + '\n};';
+      '  drop: ' + jsLit({ basePct: val.drop_basePct, towerBossPct: val.drop_towerBossPct, tierSpread: val.drop_tierSpread, progressPerTier: val.drop_progressPerTier, towerBaseTier: val.drop_towerBaseTier, towerTierSpan: val.drop_towerTierSpan }) + ',\n' +
+      '  combat: ' + jsLit({ depthLimit: val.rw_depthLimit, hiHpPct: val.rw_hiHpPct, loHpPct: val.rw_loHpPct, selfFullPct: val.rw_selfFullPct, selfLowPct: val.rw_selfLowPct, perFoeMax: val.rw_perFoeMax, dmgMultMin: val.rw_dmgMultMin, aspdMultMin: val.rw_aspdMultMin, cdFactorMin: val.rw_cdFactorMin, tickCatchUp: val.rw_tickCatchUp }) + '\n};';
     const runesText = 'var RUNES = [\n' + runes.map(r => '  ' + jsLit(r)).join(',\n') + '\n];';
     const wordLines = [];
     let lastTier = 0;

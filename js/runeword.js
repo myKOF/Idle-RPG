@@ -13,7 +13,8 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
    戰鬥期短暫狀態存在 RW_RT，不進存檔。 */
 
 var RW_STAT_SCALE = RUNE_SETTINGS.statScale;   // 全域縮放：符文與符文真言的 stats 一律乘此值（平衡用旋鈕；配置表 Runes 的 statScale）
-var RW_DEPTH_LIMIT = 3;         // 事件觸發的巢狀上限（擊殺 → 觸發 → 再擊殺…）
+var RW_COMBAT = RUNE_SETTINGS.combat;   // 戰鬥機制數值（配置表 Runes 的 rw_* 設定列）
+var RW_DEPTH_LIMIT = RW_COMBAT.depthLimit;   // 事件觸發的巢狀上限（擊殺 → 觸發 → 再擊殺…）
 
 /* ---- 戰鬥期狀態（不入存檔） ---- */
 var RW_RT = null;
@@ -507,33 +508,33 @@ function rwOutgoingMultiplier(attacker, defender, aCfg) {
   }
   if (defender && defender.maxHp > 0) {
     var hpRatio = defender.hp / defender.maxHp;
-    if (fx.dmgHiHpPct && hpRatio > 0.7) m *= 1 + fx.dmgHiHpPct / 100;
-    if (fx.dmgLoHpPct && hpRatio < 0.3) m *= 1 + fx.dmgLoHpPct / 100;
+    if (fx.dmgHiHpPct && hpRatio > RW_COMBAT.hiHpPct / 100) m *= 1 + fx.dmgHiHpPct / 100;
+    if (fx.dmgLoHpPct && hpRatio < RW_COMBAT.loHpPct / 100) m *= 1 + fx.dmgLoHpPct / 100;
   }
   if (fx.dmgCtrlPct && defender && typeof effectActive === 'function' &&
       (effectActive(defender, 'stun') || effectActive(defender, 'slow'))) m *= 1 + fx.dmgCtrlPct / 100;
   if ((fx.dmgSoloPct || fx.dmgPerFoePct) && typeof legendaryActiveEnemies === 'function') {
     var alive = legendaryActiveEnemies().length;
     if (fx.dmgSoloPct && alive === 1) m *= 1 + fx.dmgSoloPct / 100;
-    if (fx.dmgPerFoePct && alive > 1) m *= 1 + fx.dmgPerFoePct * Math.min(10, alive - 1) / 100;
+    if (fx.dmgPerFoePct && alive > 1) m *= 1 + fx.dmgPerFoePct * Math.min(RW_COMBAT.perFoeMax, alive - 1) / 100;
   }
   if ((fx.dmgSelfFullPct || fx.dmgSelfLowPct) && attacker && st.hp > 0) {
     var selfRatio = attacker.hp / st.hp;
-    if (fx.dmgSelfFullPct && selfRatio >= 0.9) m *= 1 + fx.dmgSelfFullPct / 100;
-    if (fx.dmgSelfLowPct && selfRatio <= 0.35) m *= 1 + fx.dmgSelfLowPct / 100;
+    if (fx.dmgSelfFullPct && selfRatio >= RW_COMBAT.selfFullPct / 100) m *= 1 + fx.dmgSelfFullPct / 100;
+    if (fx.dmgSelfLowPct && selfRatio <= RW_COMBAT.selfLowPct / 100) m *= 1 + fx.dmgSelfLowPct / 100;
   }
-  return Math.max(0.05, m);
+  return Math.max(RW_COMBAT.dmgMultMin, m);
 }
 
 /* 攻速（乘算、突破攻速上限）；與其他攻速倍率相乘。 */
 function rwAttackSpeedMultiplier() {
   var v = rwFxValue('aspdMult');
-  return v ? Math.max(0.2, 1 + v / 100) : 1;
+  return v ? Math.max(RW_COMBAT.aspdMultMin, 1 + v / 100) : 1;
 }
-/* 技能冷卻倍率（乘算、突破冷卻縮減上限；最低 ×0.2）。 */
+/* 技能冷卻倍率（乘算、突破冷卻縮減上限；最低 ×cdFactorMin）。 */
 function rwCooldownFactor() {
   var v = rwFxValue('cdPct');
-  return v ? Math.max(0.2, 1 - v / 100) : 1;
+  return v ? Math.max(RW_COMBAT.cdFactorMin, 1 - v / 100) : 1;
 }
 /* 技能法力消耗倍率（0~1）。 */
 function rwManaCostFactor() {
@@ -899,7 +900,7 @@ function rwTick(dt, ctx) {
     if (!s.next) s.next = GT + pr.every;
     if (blocked) { s.next += dt; continue; }
     var guard = 0;
-    while (s.next <= GT && guard++ < 3) {
+    while (s.next <= GT && guard++ < RW_COMBAT.tickCatchUp) {
       s.next += pr.every;
       var enemies = ctx.getEnemies ? ctx.getEnemies() : rwEnemies();
       if (!rwAliveOnly(enemies).length && rwProcNeedsEnemies(pr)) continue;
@@ -994,7 +995,7 @@ function rwRuneFindPct() {
 function rwRollTowerRuneDrop(floor, lootBonus) {
   var pct = RUNE_DROP.towerBossPct * (1 + (lootBonus || 0) / 100) * (1 + rwRuneFindPct() / 100);
   var n = rollDropCount(pct);
-  var tierMax = clamp(Math.floor(2 + (Number(floor) || 1) / TOWER_MAX_FLOOR * 20), 1, RUNES.length);
+  var tierMax = clamp(Math.floor(RUNE_DROP.towerBaseTier + (Number(floor) || 1) / TOWER_MAX_FLOOR * RUNE_DROP.towerTierSpan), 1, RUNES.length);
   var got = [];
   for (var i = 0; i < n; i++) {
     var r = RUNES[rollRuneTier(tierMax) - 1];
@@ -1016,12 +1017,12 @@ var RW_FX_TEXT = {
   manaCostRedPct: function (v) { return STR(1676, v); },
   maxHitPct: function (v) { return STR(1677, v); },
   maxHpPct: function (v) { return STR(1679, rwSigned(v), (v < 0 ? STR(1678) : '')); },
-  dmgHiHpPct: function (v) { return STR(1680, v); },
-  dmgLoHpPct: function (v) { return STR(1681, v); },
+  dmgHiHpPct: function (v) { return STR(1680, v, RW_COMBAT.hiHpPct); },
+  dmgLoHpPct: function (v) { return STR(1681, v, RW_COMBAT.loHpPct); },
   dmgSoloPct: function (v) { return STR(1682, v); },
-  dmgPerFoePct: function (v) { return STR(1683, v); },
-  dmgSelfFullPct: function (v) { return STR(1684, v); },
-  dmgSelfLowPct: function (v) { return STR(1685, v); },
+  dmgPerFoePct: function (v) { return STR(1683, v, RW_COMBAT.perFoeMax); },
+  dmgSelfFullPct: function (v) { return STR(1684, v, RW_COMBAT.selfFullPct); },
+  dmgSelfLowPct: function (v) { return STR(1685, v, RW_COMBAT.selfLowPct); },
   dmgCtrlPct: function (v) { return STR(1686, v); },
   killHealPct: function (v) { return STR(1687, v); },
   killManaPct: function (v) { return STR(1688, v); },
