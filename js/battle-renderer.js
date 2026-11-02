@@ -1536,8 +1536,8 @@ var BattleRenderer = (function () {
      不使用每隻NPC各一份的離屏Filter，也不在Ticker重畫Canvas。 */
   var NPC_RANK_MASKS = new WeakMap();
   var NPC_EMOJI_TEXTURES = new Map();
-  var NPC_ELITE_GLOW_ALPHA = 0.6;
-  var NPC_ELITE_ADV_GLOW_ALPHA = 0.6;
+  var NPC_ELITE_GLOW_ALPHA = 0.35;
+  var NPC_ELITE_ADV_GLOW_ALPHA = 0.35;
   var NPC_ELITE_BLEND_ALPHA = 0.25;
   var NPC_ELITE_ADV_BLEND_ALPHA = 0.25;
   var NPC_RANK_STYLES = {
@@ -1614,6 +1614,10 @@ var BattleRenderer = (function () {
   }
   function syncNpcRankGlow(ent) {
     var style = npcRankStyle(ent.data), body = ent.body, glow = ent.rankGlow;
+    if (ent.state === 'dying' || ent.state === 'gone') {
+      if (glow) { glow.outer.visible = false; glow.inner.visible = false; }
+      return;
+    }
     if (!style || !body || body.destroyed) {
       if (glow) { glow.outer.destroy(); glow.inner.destroy(); ent.rankGlow = null; }
       return;
@@ -1694,7 +1698,7 @@ var BattleRenderer = (function () {
      動作缺了就退回：移動→站立、攻擊→不播（沿用撲擊）、死亡→舊的壓扁淡出；站立都沒有就繼續用 emoji。
      圖還沒載到之前先用 emoji 頂著，載到後 adoptNpcSprite 把場上同款敵人的本體換成序列幀。 */
   var NPC_SPRITE_DIR = 'images/sprites/npc/';
-  var NPC_SPRITE_VER = '20261102-chase-facing';
+  var NPC_SPRITE_VER = '20261102-planted-idles';
   function npcSpriteDef(data) {
     var t = (typeof NPC_CONFIG_TABLE !== 'undefined' && data && data.npcId) ? NPC_CONFIG_TABLE[data.npcId] : null;
     return (t && t.sprite && t.sprite.idle) ? t : null;
@@ -2041,6 +2045,8 @@ var BattleRenderer = (function () {
   }
 
   function drawHpBar(ent) {
+    ent.hpBar.visible = ent.state !== 'dying' && ent.state !== 'gone' && ent.data.hp > 0;
+    if (!ent.hpBar.visible) return;
     var d = ent.data;
     var hp = Math.max(0, d.hp), max = Math.max(1, d.maxHp);
     var sh = Math.max(0, d.shield || 0);
@@ -2713,6 +2719,10 @@ var BattleRenderer = (function () {
       return;
     }
     ent.state = 'dying';
+    /* 裝飾立即退場，本體繼續原有死亡動畫；不能等整個 root 淡出。 */
+    ent.hpBar.visible = false;
+    if (ent.eliteDeco) ent.eliteDeco.ring.visible = false;
+    syncNpcRankGlow(ent);
     ent.dieAt = nowMs();
     ent.realDeath = !!realDeath;
     S.lastPos[ent.id] = { x: ent.root.x, y: ent.root.y - entityCenterHeight(ent), footY: ent.root.y, at: nowMs() };

@@ -121,7 +121,8 @@ var BattleElite = (function () {
           }
         }
         var dead = ent.state === 'dying' || d.hp <= 0;
-        deco.ring.alpha = dead ? 0.25 : 0.55 + 0.35 * (0.5 + 0.5 * Math.sin(nowMs / 420 + (d._gid || 0)));
+        deco.ring.visible = !dead;
+        deco.ring.alpha = 0.55 + 0.35 * (0.5 + 0.5 * Math.sin(nowMs / 420 + (d._gid || 0)));
         if (!dead && affixList(d).indexOf('e_lifelink') >= 0) {
           (groups || (groups = {}))[d._gid] = (groups[d._gid] || []);
           groups[d._gid].push(ent);

@@ -1,5 +1,43 @@
 # AI_TASKS.md
 
+## MERGE-PARAMS-46E5F9C-20261102 — 接續舊來源並完成最新AI同步
+
+- Owner：Codex；In Progress。使用者以1授權接續develop現場，HEAD9f21f92c／MERGE_HEAD46e5f9c為目前ai/codex祖先；分支前進使控制器安全停止。僅game_parameters.xlsx仍有unmerged項，全部原父提交與已合併素材／NPC／玩家縮劍成果保留。允許三方Excel、來源匯出／必要快取與本段，完成原合併後整合各AI最新提交；禁止整本選邊、手改XML、重寫歷史、解除hold或發布main。
+- 比對：ours有五格主參數文字／值更新，incoming只改計算表G279／H279為0.35，沒有競爭值。前輪已產生正常重開收據1F99C1CA，但工作檔將主參數G/H原公式改成文字，計算表亦為文字，四格格式變成@。本輪以ours為格式／公式基底，原生Excel只改計算表兩個數值為0.35，完整保留主表公式、其他五格與全部其他內容。原工作檔／三側／index及差異保存logs/merge-20261102-46e5f9c，先取得獨占確認並做兩輪儲存／正常重開驗證。
+- 原合併驗證：原生Excel兩輪儲存／正常重開Saved=True、Shapes0；全部兩頁儲存格／公式／樣式、行列尺寸及有效樣式、驗證規則／凍結／合併範圍均保留，只計算表G279／H279兩數字不同。Excel僅重編去重樣式ID，有效格式逐一相同。Artifact Tool唯讀匯入／前後渲染目視通過，不匯出覆寫來源。xlsx_to_csv366列×18欄；apply_params --write590一致／0變更／0錨點，無JS寫入。npc-death-ui／battle-elite／npc-rank-glow／npc-complete-actions／battle-renderer-pause／vfx-editor-cache-versions／npc-facing／npc-idle-root-motion／hero3d-battle-rules／hero3d-internal-toggle／apply-params／elite-params專項全數通過；Build629檔及完整diff check通過，未降低斷言。
+
+## SYNC-MERGE-20261102-46E5 - Authorized develop integration, final pass
+
+- Owner: Codex. Pending merge only: HEAD 9f21f92c4197dc1e79e89a81780e91d2e2cf0a02, incoming 46e5f9c2641e9fa282fa21c8168c110d9bb52162, base 719cd6b. Scope: original five conflicts and this record. No staging, commit, Git metadata, other-worktree or asset-library writes. Controller EOF corrections preserved.
+- Resolution: retain ours separate glow/blend with blend 0.25 and incoming glow 0.35; preserve NPC death UI hiding, planted idle sprites and shortened sword. Main and scene-preview share new renderer cache 20261102-merge-46e5-glow-idles; battle-elite 1.0.9 and hero3d 1.0.40 retained. No generated data/Worker JS changes requiring further cache updates.
+- Excel: first pass inspected base/ours/theirs read-only and supplied the ignored JSON DATA plan. Trusted native updater saved/reopened normally (Excel 16.0, corrupt_load 0). Final workbook SHA256 1F99C1CA0EE2270A7ABA9F3DE66860E3DCACDB1ABF37AE2D2943B7543D7F31BD matches native receipt. This pass did not touch XLSX bytes or invoke COM.
+- Regeneration: node tools/xlsx_to_csv.cjs passed (366 rows x 18 columns); node tools/apply_params.cjs --write passed (590/590 identical parameters, zero anchor issues, no JS writes). Combined parameter row preserves ours D/E/F/I/J and incoming G/H: glow 0.35/0.35, blend 0.25/0.25.
+- Regression command: node --test --test-reporter=dot tests/npc-death-ui.test.cjs tests/battle-elite.test.cjs tests/npc-rank-glow.test.cjs tests/npc-complete-actions.test.cjs tests/battle-renderer-pause.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/npc-facing.test.cjs tests/npc-idle-root-motion.test.cjs tests/hero3d-battle-rules.test.cjs tests/hero3d-internal-toggle.test.cjs passed 115/115.
+- Parameter regression command: node --test --test-reporter=dot tests/apply-params-anchor-independence.test.cjs tests/apply-params-scientific.test.cjs tests/apply-params.test.cjs tests/elite-params.test.cjs tests/xlsx-string-escapes.test.cjs passed 10/10. No assertions weakened.
+- Final checks: npm.cmd run build passed all 629 files; git diff HEAD --check passed for the complete merged result; working-file conflict-marker scan passed and HEAD/MERGE_HEAD remain unchanged. Workbook SHA256 remains identical to native receipt. Ready for controller staging and merge commit; no known new regression or unfinished implementation.
+- Read-only review: project instructions, original three revisions, parameter tools, Worker imports, related tests and native receipt. Preflight found expressly authorized incoming changes; other worktree ownership prevented their status reads, and no trust settings were changed. No new assets or player strings; no browser long-play validation this pass. Controller stages reported files and creates merge commit; index remains unmerged intentionally.
+
+## PLAYER-SWORD-LENGTH-20261102 — 玩家模型劍長縮短10%
+
+- Owner：Codex；Done，單一開發者。使用者指定玩家模型劍長減少10%；前置為現用sunbrand-knight／grips36模型完成。fetch及目標衝突預檢乾淨。
+- 允許：現用GLB、Blender可重建縮劍工具、hero3d與index快取、LV及本段；素材庫保存原始輸入、可編輯Blend、正式GLB、來源及驗證。禁止改人物／握柄／護手／骨架／權重／動畫／戰鬥判定／NPC表與既有未提交修改，不合併推送。
+- 以Sword局部軸量測整劍長，僅壓縮護手以外劍身，使整劍總長為原90%，保持寬厚及握持位置。Blender製作後驗證非劍身資料逐位保持、長度及動畫、預覽、相關回歸／Build／diff，先素材庫再遊戲Commit；交使用者正常Review／整合。
+- 完成六檔：GLB僅84個劍身頂點位置改變，整劍長比例0.8999999739374381；護手／握柄／寬厚與人物不動。所有非目標位置位元、骨架／權重／索引／貼圖與五動畫逐位保持。hero3d模型快取20261102-sword90、主頁hero3d 1.0.39→1.0.40，Blender重建工具與LV同步。沒有新外部素材，沿用既有模型／授權，未修改戰鬥射程或命中規則。
+- 素材庫先Commit 1a034ce（[Codex] fix: 保存玩家縮短劍身模型與Blender來源），位於claude-authored/hero3d/sunbrand-knight/sword-length-20261102；保存未縮短grips36輸入、相同工具、完整可編輯Blend、輸出GLB、實際成品預覽與SHA／量測。正式素材庫GLB、版本輸出、遊戲GLB及隔離Blender重建四份SHA皆AD6645D1DB9EBFD18240049E36D3DB075CA2E3AA27B7F3C1E6E568A2ED435BC4，素材庫乾淨。
+- 驗證：Blender 5.2.3 LTS背景執行shorten-sword.py兩次，隔離重建逐位相同；完整GLB重新匯入並保存Blend成功。既有render_previews.py輸出五視角，三分之四實拍重開檢視，劍身連續、護手與持握保持；預覽／重建輸出保留本聊天visualizations/sword90。未新增低影響鏡像測試。
+- 測試指令：node --test --test-reporter=dot tests/hero3d-battle-rules.test.cjs tests/hero3d-internal-toggle.test.cjs tests/vfx-editor-cache-versions.test.cjs為18/18通過；npm.cmd run build為629檔通過。首輪另包含tests/player-directional-sprite.test.cjs，擴大為27項26過1失敗，DIR-8既有2D死亡起身的原始碼正則斷言失敗，涉及renderer及該測試與HEAD皆完全相同（git diff --quiet退出0），本次GLB／模型URL無法影響該斷言，未修改或弱化它。Node既有Three模組類型Warning保持；未執行瀏覽器Console／遊玩驗證。
+- 唯讀未改：共通規範／AGENTS／Workflow／prompts、既有模型修正工具與布料清單、上述回歸、2D renderer、Worker協議／戰鬥／存檔／String。原NPC.xlsx／NPC.csv／data修改完整保留、不stage。本項無未完成實作，可供Review／使用者合併；限制為既有2D死亡回歸未修、本輪以Blender成品視檢而非實際瀏覽器長玩。建議整合雙庫後重載遊戲；不合併推送develop／main。遊戲Commit為本段所在「[Codex] fix: 將玩家模型劍長縮短百分之十」，SHA見交付。
+
+## NPC-DEATH-UI-20261102 — NPC死亡立即隱藏光圈與血條外框
+
+- Owner：Codex；Done，單一開發者。使用者要求NPC死亡時，腳下光圈、血條、血條背景及外框立即消失，保留本體死亡動畫。
+- 前置：既有NPC死亡動畫／快照同步及菁英標記完成；fetch與目標衝突預檢皆乾淨。允許battle-renderer死亡入口／血條及階級覆光可見性、battle-elite群組環、index／scene-preview必要快取、獨立npc-death-ui回歸、LV及本段。禁止改戰鬥計算／死亡時序／動畫素材／配置表／存檔／Worker協議、其他工作區或合併推送。
+- 驗收：死亡快照及離場立即隱藏整份血條與群組環／階級外框，後續重繪／換幀／重排不重新顯示；普通／菁英／高級菁英／BOSS及無死亡序列退路、暫停／背景清理／同ID重生保持。相關回歸／Build／Console／diff後獨立Commit，交正常Review與使用者整合。無素材庫變更。
+- 完成八檔：renderer死亡入口立即隱藏hpBar／群組環及階級內外覆光；drawHpBar在零血量或死亡狀態不顯示整份Graphics，覆光同步亦不因換幀／重排重新建立或顯示；battle-elite後續更新持續隱藏死亡光圈。index兩支JS快取分別1.0.9／20261102-npc-death-ui，scene-preview同步renderer，LV同步。新增npc-death-ui三項整合回歸；既有battle-elite死亡環斷言依本次需求由變淡改為立即隱藏，其餘功能斷言保持。未改本體死亡動作、既有淡出／清理時序或玩家文字。
+- 測試：`node --test --test-reporter=spec tests/npc-death-ui.test.cjs tests/battle-elite.test.cjs tests/npc-rank-glow.test.cjs tests/npc-complete-actions.test.cjs tests/battle-renderer-pause.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/npc-facing.test.cjs`共34/34通過；`npm.cmd run build`629檔通過；git diff／stat／check及自我Review通過。新增測試以真Pixi覆蓋四階級／暫停即時隱藏、死亡幀前進與hold、快照含／不含屍體持留、重複快照、同ID重生、零血量、舊圖退路與背景清理；首輪fixture缺syncVfxStatuses空掛點，補齊測試環境後重跑，未更動產品迎合fixture。
+- 實機：IAB不可連線，改bundled Playwright／隔離headless Edge＋隨機localhost，以正式完整renderer／battle-elite及哥布林圖片驗四階級。暫停中直接呼叫正式死亡入口即隱藏光圈／整份血條／階級覆光，後續180次正式動畫／血條／覆光與菁英更新仍保持隱藏，死亡播放至第六幀並停止；死亡當下root.alpha仍1，確認不是靠本體淡出。Console error／warning及pageerror皆0，三張PNG已重開目視；QA腳本與report.json保留本聊天visualizations目錄。僅HTTP測試回應暴露內部觀測，未改正式產品API或讀寫玩家存檔；首輪測試頁favicon404已補內嵌空圖示後重驗全過。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／Codex規範、原動畫／朝向／覆光及相關回歸、NPC素材與manifest、Worker協議／傷害／存檔／String。過程中使用者另改NPC.xlsx／NPC.csv／data，完整保留、不stage或納入本項Commit；沒有新美術素材或素材庫變動。無本項未完成實作或已知新增風險，可Review／使用者合併；未做全庫／多瀏覽器／真Worker長時間遊玩，不合併推送develop／main。下一步重新載入遊戲驗收；Commit為本段所在「[Codex] fix: NPC死亡立即隱藏光圈血條與外框」，SHA見交付。
+
 ## TEST-MAP-EXIT-20261102 — 恢復正式場景並統一全螢幕NPC比例
 
 - Owner：Codex；Done，單一開發者。使用者回報離開測試場景後無NPC、方格地板與正式場景裝飾混在一起。定位正常switchZone及GM跳關會清怪卻保留FIELD._gmArena／_testMap，導致自然出怪被關、renderer保留測試地板；選回同地圖另被早退擋掉。
@@ -14029,3 +14067,17 @@ Worker 存活且頁面正常完成載入。
 - 測試指令：node --test --test-reporter=spec tests/npc-facing.test.cjs tests/npc-ground-air.test.cjs tests/npc-complete-actions.test.cjs tests/npc-rank-glow.test.cjs tests/npc-idle-root-motion.test.cjs tests/battle-renderer-pause.test.cjs tests/vfx-editor-cache-versions.test.cjs共27/27；npm.cmd run build為628檔通過；兩倉diff／stat／check及自我Review通過。修正前原manifest的新npc-facing回歸為4項1過3失敗，修正後全過；原朝右素材、尺寸、暫停、攻擊完整播放與死亡朝向斷言維持。
 - 實機：IAB隔離隱藏localhost，以正式Pixi／data／完整renderer控制面板讓兩側各四階級毒蚊群連續接近玩家，8實體皆實際播walk；僅before頁將原metadata.facing=1在HTTP讀取時覆映，其他檔同版。修前0/8朝向玩家、修後8/8，兩次errors／warnings皆0。正式飛行anchorY1.3054與各尺寸保持，body方向符號依原圖實際朝左獨立判斷；前後實拍均從磁碟重開核對，report／QA／PNG及重建結果留本聊天visualizations/npc-chase-facing。不讀原玩家存檔、不改正式產品API或Worker。
 - 修改／唯讀範圍：遊戲修改上述八檔，素材庫僅新增本驗證包；唯讀未改共通規範／Workflow／prompts、NPC.xlsx／CSV／data／來源匯出器、所有PNG與動畫／移動判定／傷害／投射物／Worker協議／存檔／String。作業中使用者另改NPC.xlsx，完整保留且不stage，不納入本項提交。無本項未完成實作，可供Review／使用者正常合併；未合併推送develop／main。已知限制為未做全庫、多瀏覽器及長時間真Worker遊玩；建議正常整合雙庫後重新載入主頁驗收。遊戲Commit為本段所在「[Codex] fix: 修正毒蚊群追擊時背對玩家」，SHA見交付。
+
+## NPC-STATIONARY-IDLES-20261102（Codex，Done）
+- 使用者授權：所有人形／落地雙足待機雙腳固定，不可原地跨步；同時修正圈選樹妖、玄武岩衛、炭焰蜥蜴。
+- Owner：Codex，單一開發者。盤點66款落地角色，65款下肢有變化、腐爛樹人原單幀已固定。
+- 範圍：65款idle PNG、可編輯Mote修正來源與既有素材匯出流程、待機迴歸測試、快取版本、規格與任務紀錄。其餘動作、戰鬥數值與使用者未提交表格保持。
+- 驗收：全幀下肢RGBA完全相同、上半身保有微幅呼吸、循環接點穩定、65款GIF視覺檢查、素材雜湊／匯出／相關測試與build；素材庫先提交，再提交遊戲，不合併不推送。
+- 工具：Mote網頁可開啟但無WebMCP批次編輯能力，本次以既有Mote v3原生格式保存固定下肢／呼吸上身兩圖層，使用Node逐像素處理與驗證。
+- 完成：65款idle已接入，固定下肢RGBA完全相同、上半身1～2像素呼吸；所有431張其他PNG及npc.json與開始時逐檔SHA一致，原timing／anchor／scale亦一致。五個原製作包保留歷史來源，匯出明確選用本修正包，重建不會回復舊步態；無新增戰鬥API。
+- 修改檔案：65張images/sprites/npc/*_idle.png、idle-locks.json、tests/npc-idle-root-motion.test.cjs、tools/npc-sprites/export_supplemental.cjs、js/battle-renderer.js快取常數、index.html／tools/scene-preview.html版號、本文件及LV_upgrade_system.md。素材庫新增codex-authored/npc-stationary-idles-20261102（65原生雙圖層Mote、修改前來源、匯出PNG、可重建author／codec／preview、SHA及QA），並接入五個既有export.cjs。
+- 唯讀檢查未改：AI_RULES.md／AGENTS.md／docs/AI_WORKFLOW.md／prompts/codex.md、js/battle-renderer.js動作選擇／呼吸／載入邏輯、NPC表與js/data.js、其他動作及角色索引；既有使用者NPC.xlsx／NPC.csv／js/data.js未提交變更原樣保留且未stage。
+- 測試指令：node tools/npc-sprites/export_supplemental.cjs --apply／--check／--source-check均通過；node --test tests/npc-idle-root-motion.test.cjs為66/66通過；合併執行該測試與npc-biped-gait／npc-all-new-art／npc-sprites／npc-facing／npc-ground-air／npc-complete-actions／npc-skeleton-replacement／npc-move-attack／npc-death-ui共102項，99過3失敗；npm run build為629檔通過；兩庫diff --check通過。腳部舊序列的65款下肢差異皆已記錄於audit.json；新測試檢查整段下肢RGBA，不能只對齊腳點或改成原地踏步。
+- 既有測試失敗／風險：法師舊測試預期移速6而HEAD表已是10、封魔塔boss1圖像備註為空、舊縮放測試假設哥布林scale省略但HEAD表已有1.5。以唯讀preloader將HEAD NPC.csv與js/data.js在記憶體代入，確認同三項失敗；未改配置或放寬測試。本次只交付素材修正，這三項獨立設定測試待另行整理，無本項待機實作未完成。
+- 實機與視覺：65款五頁GIF／縮圖已產生；Mote匯入樹妖顯示六幀、兩圖層、160ms，原生網頁匯出768×128與遊戲PNG全RGBA差0。IAB隔離測試頁以正式Pixi／data／完整renderer的makeEnemy／requestNpcSheet／playAnim／tickEntityAnimation載入65角色260動作，示範六隻逐幀待機，console錯誤／警告0；不讀玩家存檔。QA含GIF、正式渲染器截圖、測試log、Mote roundtrip與範圍SHA報告，位於素材包qa/；聊天預覽另保存在visualizations/2026/11/02/npc-stationary-idles。
+- Commit：素材庫7bfb104（先提交）；遊戲為本段所在「[Codex] fix: 修正65款落地NPC待機滑步與換腳」，SHA見交付。可供Review及使用者正常合併（需一併更新素材庫），未合併／推送develop或main。建議整合後重新載入遊戲確認新快取版待機；未測全庫其他功能、多瀏覽器及長時間Worker遊玩。
