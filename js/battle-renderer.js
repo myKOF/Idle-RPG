@@ -1535,8 +1535,8 @@ var BattleRenderer = (function () {
      不使用每隻NPC各一份的離屏Filter，也不在Ticker重畫Canvas。 */
   var NPC_RANK_MASKS = new WeakMap();
   var NPC_EMOJI_TEXTURES = new Map();
-  var NPC_ELITE_GLOW_ALPHA = 0.6;
-  var NPC_ELITE_ADV_GLOW_ALPHA = 0.6;
+  var NPC_ELITE_GLOW_ALPHA = 0.35;
+  var NPC_ELITE_ADV_GLOW_ALPHA = 0.35;
   var NPC_RANK_STYLES = {
     elite: { rim: 0x329dff, inner: 0x70cfff, alpha: NPC_ELITE_GLOW_ALPHA },
     elite_adv: { rim: 0xffcf32, inner: 0xffe878, alpha: NPC_ELITE_ADV_GLOW_ALPHA },
