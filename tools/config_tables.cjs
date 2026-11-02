@@ -2205,10 +2205,77 @@ SCHEMAS.Achievement = {
   }
 };
 
+/* 地圖的出怪設定（菁英機率、群成員數、小怪／菁英群／BOSS 數量）也寫在 Zones 表，投影成 data.js 的 ZONE_ENCOUNTER。
+   儲存格寫法：多段用 | 分隔；每段 {關卡下限~上限,值…}，數量欄可寫單一數字或「下限~上限」。 */
+const ZONE_ENCOUNTER_COLS = [
+  { key: 'eliteChance', label: '普通關菁英機率', vals: 1, count: false },
+  { key: 'eliteSize', label: '菁英群成員數權重', vals: 2, count: false },
+  { key: 'elitePure', label: '純菁英群機率', vals: 1, count: false },
+  { key: 'mobCount', label: '小怪數量權重', vals: 2, count: true },
+  { key: 'eliteCount', label: '菁英群數量權重', vals: 2, count: true },
+  { key: 'bossCount', label: 'BOSS數量權重', vals: 2, count: true }
+];
+function parseZoneCell(raw, col, zone, maxStage) {
+  const where = 'Zones ' + zone + ' / ' + col.label;
+  const segs = String(raw == null ? '' : raw).split(/[|\n]/).map(x => x.trim()).filter(Boolean);
+  if (!segs.length) throw new Error(where + ' 沒有任何設定');
+  const num = '(-?\\d+(?:\\.\\d+)?)';
+  const re = col.count
+    ? new RegExp('^\\{\\s*(\\d+)\\s*~\\s*(\\d+)\\s*,\\s*(\\d+)\\s*(?:~\\s*(\\d+)\\s*)?,\\s*' + num + '\\s*\\}$')
+    : new RegExp('^\\{\\s*(\\d+)\\s*~\\s*(\\d+)\\s*,\\s*' + num + '\\s*' + (col.vals === 2 ? ',\\s*' + num + '\\s*' : '') + '\\}$');
+  const rows = [];
+  segs.forEach(seg => {
+    const m = re.exec(seg);
+    if (!m) throw new Error(where + ' 格式無法解析：「' + seg + '」（應為 ' + (col.count ? '{關卡下限~上限,數量或數量範圍,權重}' : col.vals === 2 ? '{關卡下限~上限,隻數,權重}' : '{關卡下限~上限,機率}') + '）');
+    const lo = Number(m[1]), hi = Number(m[2]);
+    if (!(hi >= lo)) throw new Error(where + ' 關卡區間上下界顛倒：「' + seg + '」');
+    if (col.count) {
+      const a = Number(m[3]), b = m[4] === undefined ? a : Number(m[4]), w = Number(m[5]);
+      if (!(b >= a) || !(w >= 0)) throw new Error(where + ' 數量或權重無效：「' + seg + '」');
+      rows.push({ lo, hi, a, b, w });
+    } else {
+      const v = [Number(m[3])].concat(col.vals === 2 ? [Number(m[4])] : []);
+      if (v.some(n => !(n >= 0))) throw new Error(where + ' 數值不可為負：「' + seg + '」');
+      rows.push({ lo, hi, v });
+    }
+  });
+  if (col.count) {   // 依關卡區間分組成 [[下限, 上限, [[數量, 權重]…]]…]，並要求 1~關卡上限 全被涵蓋
+    const groups = [];
+    rows.forEach(r => {
+      let g = groups.find(x => x[0] === r.lo && x[1] === r.hi);
+      if (!g) { g = [r.lo, r.hi, []]; groups.push(g); }
+      for (let n = r.a; n <= r.b; n++) g[2].push([n, r.w]);
+    });
+    for (let s = 1; s <= maxStage; s++) {
+      if (!groups.some(g => s >= g[0] && s <= g[1])) throw new Error(where + ' 第 ' + s + ' 關沒有被任何區間涵蓋');
+    }
+    return groups;
+  }
+  return rows.map(r => [r.lo, r.hi].concat(r.v));
+}
+function zoneCellText(col, table) {   // parseZoneCell 的反向（extract 用）
+  if (!col.count) return table.map(r => '{' + r.join(',') + '}').join('|');
+  const out = [];
+  table.forEach(g => {
+    const pairs = g[2];
+    for (let i = 0; i < pairs.length;) {
+      let j = i;
+      while (j + 1 < pairs.length && pairs[j + 1][0] === pairs[j][0] + 1 && pairs[j + 1][1] === pairs[i][1]) j++;
+      out.push('{' + g[0] + '~' + g[1] + ',' + (j > i ? pairs[i][0] + '~' + pairs[j][0] : pairs[i][0]) + ',' + pairs[i][1] + '}');
+      i = j + 1;
+    }
+  });
+  return out.join('|');
+}
+function zoneEncounterLiteral(entries) {
+  return 'var ZONE_ENCOUNTER = {\n' + entries.map(([id, o]) => '  ' + id + ': {\n' +
+    ZONE_ENCOUNTER_COLS.map(c => '    ' + c.key + ': ' + JSON.stringify(o[c.key]).replace(/\],\[/g, '], [')).join(',\n') + '\n  }').join(',\n') + '\n};';
+}
+
 /* 地圖中繼資料也由 Excel 投影；上限／名稱／前置不再依賴手工同步。 */
 SCHEMAS.Zones = {
-  name:'Zones',jsFile:'data',sheet:'地圖',noXlsxGen:true,vars:['ZONES','ZONE_LIST','REALMS'],
-  header:['順序','地圖識別碼','地圖名稱','位面','關卡上限','前置地圖識別碼','前置通關關卡','最低轉生次數','生命倍率','攻擊倍率','防禦倍率','攻速倍率','經驗金幣獎勵倍率'],
+  name:'Zones',jsFile:'data',sheet:'地圖',noXlsxGen:true,vars:['ZONES','ZONE_LIST','REALMS','ZONE_ENCOUNTER'],
+  header:['順序','地圖識別碼','地圖名稱','位面','關卡上限','前置地圖識別碼','前置通關關卡','最低轉生次數','生命倍率','攻擊倍率','防禦倍率','攻速倍率','經驗金幣獎勵倍率'].concat(ZONE_ENCOUNTER_COLS.map(c=>c.label)),
   evaluate(literal) {
     const scope={STR,ZONE_ENEMY_TABLES:Object.fromEntries(NPC_POOL_DEFS.map(d=>[d.zone,d.zone]))};
     NPC_POOL_DEFS.forEach(d=>scope[d.varName]=d.varName);
@@ -2218,7 +2285,7 @@ SCHEMAS.Zones = {
     const get=rowGetter(header),defs=Object.fromEntries(NPC_POOL_DEFS.map(d=>[d.zone,d]));
     const emoji={desert:'🏜️',Icefield:'🧊',mist_forest:'🌲',lava_mountain:'🌋',swamp:'🌙',thunder_peak:'🌩️',undead_mountains:'⛰️',god_battlefield:'⚔️',god_chaos:'🌀',god_sanctuary:'✨'};
     const ordered=rows.filter(r=>get(r,'地圖識別碼')).slice().sort((a,b)=>Number(get(a,'順序'))-Number(get(b,'順序')));
-    const seen=new Set(),zones=[],realmZones={human:[],god:[]};
+    const seen=new Set(),zones=[],realmZones={human:[],god:[]},encounter=[];
     for(const row of ordered) {
       const id=get(row,'地圖識別碼'),realm=get(row,'位面'),cap=Number(get(row,'關卡上限')),req=get(row,'前置地圖識別碼');
       if(!defs[id]||seen.has(id)||!realmZones[realm]||!Number.isInteger(cap)||cap<1)throw new Error('Zones 地圖識別碼／位面／上限無效：'+id);
@@ -2231,14 +2298,15 @@ SCHEMAS.Zones = {
       if(req){fields.reqZone=req;fields.reqStage=reqStage;}
       if(rebirth)fields.reqReincarnation=rebirth;
       for(const [field,label] of [['hpMult','生命倍率'],['atkMult','攻擊倍率'],['defMult','防禦倍率'],['aspdMult','攻速倍率'],['rewardMult','經驗金幣獎勵倍率']]){const n=Number(get(row,label));if(!Number.isFinite(n)||n<=0)throw new Error('Zones '+id+' '+label+' 必須大於0');fields[field]=n;}
+      encounter.push([id,Object.fromEntries(ZONE_ENCOUNTER_COLS.map(c=>[c.key,parseZoneCell(get(row,c.label),c,id,cap)]))]);
       zones.push('  '+id+': { pool: '+defs[id].varName+', enemyTable: ZONE_ENEMY_TABLES.'+id+', '+Object.entries(fields).map(([k,v])=>k+': '+JSON.stringify(v)).join(', ')+' }');
     }
     if(seen.size!==NPC_POOL_DEFS.length)throw new Error('Zones 缺少地圖資料');
-    return {ZONES:'var ZONES = {\n'+zones.join(',\n')+'\n};',ZONE_LIST:'var ZONE_LIST = '+JSON.stringify([...seen])+';',REALMS:'var REALMS = '+jsLit({human:{name:'凡人界',emoji:'🌍',zones:realmZones.human},god:{name:'神界',emoji:'✨',zones:realmZones.god}})+';'};
+    return {ZONE_ENCOUNTER:zoneEncounterLiteral(encounter),ZONES:'var ZONES = {\n'+zones.join(',\n')+'\n};',ZONE_LIST:'var ZONE_LIST = '+JSON.stringify([...seen])+';',REALMS:'var REALMS = '+jsLit({human:{name:'凡人界',emoji:'🌍',zones:realmZones.human},god:{name:'神界',emoji:'✨',zones:realmZones.god}})+';'};
   },
   extract(src) {
-    const zones=this.evaluate(extractLiteral(src,'ZONES').literal),list=evalLiteral(extractLiteral(src,'ZONE_LIST').literal);
-    return list.map((id,i)=>{const z=zones[id];return [i+1,id,z.name,z.realm,z.maxStage,z.reqZone||'',z.reqStage||'',z.reqReincarnation||0,z.hpMult,z.atkMult,z.defMult,z.aspdMult,z.rewardMult].map(String);});
+    const zones=this.evaluate(extractLiteral(src,'ZONES').literal),enc=evalLiteral(extractLiteral(src,'ZONE_ENCOUNTER').literal),list=evalLiteral(extractLiteral(src,'ZONE_LIST').literal);
+    return list.map((id,i)=>{const z=zones[id];return [i+1,id,z.name,z.realm,z.maxStage,z.reqZone||'',z.reqStage||'',z.reqReincarnation||0,z.hpMult,z.atkMult,z.defMult,z.aspdMult,z.rewardMult].concat(ZONE_ENCOUNTER_COLS.map(c=>zoneCellText(c,enc[id][c.key]))).map(String);});
   }
 };
 const TABLE_ORDER = ['Skills2', 'Status', 'Gems', 'Talents', 'Equipment_Affix', 'NPC', 'Zones', 'Task', 'Runes', 'Gem_resonance', 'Achievement'];

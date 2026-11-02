@@ -36,13 +36,13 @@ test('驗證 1：四張具名地圖與神界三圖菁英關出怪數量範圍（
      ⚠️ 30 隻要棋盤放得下才抽得到——BF_COLS×BF_ROWS 已由使用者調成 10×10（100 格）；
      若日後把棋盤縮回 4×4，這裡會被 bfCellCount() 夾成 16 而再次變紅。 */
   const zoneExpectations = {
-    desert: { min: 1, max: 3, table: ctx.FIELD_ELITE_COUNT_TABLE_BY_ZONE.desert },
-    Icefield: { min: 1, max: 4, table: ctx.FIELD_ELITE_COUNT_TABLE_BY_ZONE.Icefield },
-    swamp: { min: 1, max: 6, table: ctx.FIELD_ELITE_COUNT_TABLE_BY_ZONE.swamp },
-    undead_mountains: { min: 1, max: 30, table: ctx.FIELD_ELITE_COUNT_TABLE_BY_ZONE.undead_mountains },
-    god_realm_1: { min: 1, max: 11, table: ctx.FIELD_ELITE_COUNT_TABLE },
-    god_realm_2: { min: 1, max: 11, table: ctx.FIELD_ELITE_COUNT_TABLE },
-    god_realm_3: { min: 1, max: 11, table: ctx.FIELD_ELITE_COUNT_TABLE }
+    desert: { min: 1, max: 3, table: ctx.ZONE_ENCOUNTER.desert.eliteCount[0][2] },
+    Icefield: { min: 1, max: 4, table: ctx.ZONE_ENCOUNTER.Icefield.eliteCount[0][2] },
+    swamp: { min: 1, max: 6, table: ctx.ZONE_ENCOUNTER.swamp.eliteCount[0][2] },
+    undead_mountains: { min: 1, max: 30, table: ctx.ZONE_ENCOUNTER.undead_mountains.eliteCount[0][2] },
+    god_battlefield: { min: 1, max: 11, table: ctx.ZONE_ENCOUNTER.god_battlefield.eliteCount[0][2] },
+    god_chaos: { min: 1, max: 11, table: ctx.ZONE_ENCOUNTER.god_chaos.eliteCount[0][2] },
+    god_sanctuary: { min: 1, max: 11, table: ctx.ZONE_ENCOUNTER.god_sanctuary.eliteCount[0][2] }
   };
 
   Object.entries(zoneExpectations).forEach(([zone, exp]) => {
@@ -71,7 +71,7 @@ test('驗證 2：荒漠 1~100 關菁英不再固定 1 隻，並確認早期難�
   desertEarlyEliteStages.forEach((stage) => {
     const table = ctx.fieldCountTableFor('elite', stage, 'desert');
     assert.notDeepEqual(table, [[1, 1]], `荒漠第 ${stage} 關菁英不應再固定 1 隻`);
-    assert.equal(table, ctx.FIELD_ELITE_COUNT_TABLE_BY_ZONE.desert);
+    assert.equal(table, ctx.ZONE_ENCOUNTER.desert.eliteCount[0][2]);
   });
 
   // 2. 早期難度可接受性測試（模擬荒漠第 10 關菁英戰鬥）
@@ -103,17 +103,13 @@ test('驗證 2：荒漠 1~100 關菁英不再固定 1 隻，並確認早期難�
 test('驗證 3：小怪分段（荒漠，區間由列名決定）與 BOSS 固定 1 隻不變', () => {
   const ctx = loadCombatContext();
 
-  /* 分段表每一列自帶 [最低關卡, 最高關卡, 權重表]，不再是固定 20 關一段——
-     101~150 這種寬度不同的區間才表達得出來。 */
-  const rows = ctx.FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES;
-  const lastEnd = rows[rows.length - 1][1];
-  for (let s = 1; s <= lastEnd; s++) {
+  /* 分段表每一列自帶 [最低關卡, 最高關卡, 權重表]，不是固定 20 關一段。 */
+  const rows = ctx.ZONE_ENCOUNTER.desert.mobCount;
+  for (let s = 1; s <= 100; s++) {
     const row = rows.find((r) => s >= r[0] && s <= r[1]);
     assert.ok(row, `荒漠第 ${s} 關應該落在某一段裡（分段不得有斷點）`);
     assert.equal(ctx.fieldCountTableFor('normal', s, 'desert'), row[2], `荒漠第 ${s} 關小怪分段表`);
   }
-  assert.equal(ctx.fieldCountTableFor('normal', lastEnd + 1, 'desert'), ctx.FIELD_ENEMY_COUNT_TABLE,
-    `第 ${lastEnd + 1} 關恢復一般小怪表`);
 
   // BOSS 固定 1 隻
   const bossStages = [50, 100, 150, 200];
@@ -121,7 +117,7 @@ test('驗證 3：小怪分段（荒漠，區間由列名決定）與 BOSS 固定
     ctx.G.stage.current = stage;
     ctx.G.stage.zone = 'desert';
     const bossTable = ctx.fieldCountTableFor('boss', stage, 'desert');
-    assert.equal(bossTable, ctx.FIELD_BOSS_COUNT_TABLE, `第 ${stage} 關 BOSS 表`);
+    assert.equal(bossTable, ctx.ZONE_ENCOUNTER.desert.bossCount[0][2], `第 ${stage} 關 BOSS 表`);
 
     for (let i = 0; i < 50; i++) {
       ctx.spawnFieldMonster();

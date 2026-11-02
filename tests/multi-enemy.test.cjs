@@ -11,6 +11,7 @@ function loadFormulaContext() {
   ['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js'].forEach((file) => {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });
+  context.G = { stage: { current: 1, zone: 'desert' } };
   return context;
 }
 
@@ -38,6 +39,11 @@ function loadCombatContext() {
 
 /* 數量由權重表決定，期望值一律由表推導——寫死數字的話，
    每次在參數表調權重就會誤報成測試失敗（詳見 tests/enemy-hit.test.cjs 的同款教訓）。 */
+/* 地圖出怪設定表（Zones 表 → ZONE_ENCOUNTER）：取該地圖、該關卡的那一列權重表 */
+function encTable(context, key, zone, stage) {
+  const row = context.ZONE_ENCOUNTER[zone][key].find((r) => stage >= r[0] && stage <= r[1]);
+  return row ? row[2] : null;
+}
 function weightedRange(table) {
   const live = table.filter(([, w]) => w > 0).map(([n]) => n);
   return { min: Math.min(...live), max: Math.max(...live) };
@@ -45,137 +51,38 @@ function weightedRange(table) {
 
 test('每波數量依權重表擲骰：權重 0 不會被抽中，且不超過棋盤格數', () => {
   const context = loadFormulaContext();
-  const range = weightedRange(context.FIELD_ENEMY_COUNT_TABLE);
+  const range = weightedRange(encTable(context, 'mobCount', 'desert', 1));
   const seen = new Set();
   for (let i = 0; i < 5000; i++) seen.add(context.rollFieldEnemyCount('normal'));
   seen.forEach((n) => {
     assert.ok(n >= range.min && n <= range.max, n + ' 不在權重表的有效範圍內');
     assert.ok(n <= context.bfCellCount(), '不得超過棋盤格數');
-    const w = context.FIELD_ENEMY_COUNT_TABLE.find(([c]) => c === n);
+    const w = encTable(context, 'mobCount', 'desert', 1).find(([c]) => c === n);
     assert.ok(w && w[1] > 0, n + ' 的權重是 0，不該被抽中');
   });
 });
 
 test('小怪／菁英／BOSS 各用自己的權重表（菁英不會跟著小怪出一大群）', () => {
   const context = loadFormulaContext();
+  const mob = encTable(context, 'mobCount', 'desert', 151);
+  const elite = encTable(context, 'eliteCount', 'desert', 10);
+  const boss = encTable(context, 'bossCount', 'desert', 50);
   // 三張表必須是各自獨立的來源
-  assert.notEqual(context.FIELD_ELITE_COUNT_TABLE, context.FIELD_ENEMY_COUNT_TABLE);
-  assert.notEqual(context.FIELD_BOSS_COUNT_TABLE, context.FIELD_ENEMY_COUNT_TABLE);
+  assert.notEqual(elite, mob);
+  assert.notEqual(boss, mob);
 
-  const eliteMax = weightedRange(context.FIELD_ELITE_COUNT_TABLE).max;
-  const normalMax = weightedRange(context.FIELD_ENEMY_COUNT_TABLE).max;
-  assert.ok(eliteMax < normalMax, '菁英上限應低於小怪——菁英出一大群根本打不動');
+  const eliteMax = weightedRange(elite).max;
+  const normalMax = weightedRange(mob).max;
+  assert.ok(eliteMax < normalMax, '菁英上限應低於小怪（後期）——菁英出一大群根本打不動');
 
   for (let i = 0; i < 3000; i++) {
-    assert.ok(context.rollFieldEnemyCount('elite') <= eliteMax, '菁英數量超出自己的表');
-    assert.ok(context.rollFieldEnemyCount('boss') <= weightedRange(context.FIELD_BOSS_COUNT_TABLE).max,
-      'BOSS 數量超出自己的表');
+    assert.ok(context.rollFieldEnemyCount('elite', 10, 'desert') <= eliteMax, '菁英數量超出自己的表');
+    assert.ok(context.rollFieldEnemyCount('boss', 50, 'desert') <= weightedRange(boss).max, 'BOSS 數量超出自己的表');
   }
-  // 未指定敵種時沿用小怪表（既有呼叫端不受影響）；菁英未指定地圖時走預設地圖那張
-  assert.equal(context.fieldCountTableFor(), context.FIELD_ENEMY_COUNT_TABLE);
-  assert.equal(context.fieldCountTableFor('elite'), context.FIELD_ELITE_COUNT_TABLE_BY_ZONE.desert);
-  assert.equal(context.fieldCountTableFor('boss'), context.FIELD_BOSS_COUNT_TABLE);
-});
-
-/* 菁英數量逐張地圖分開（參數表「4-敵人數量」的菁英各列）。
-   這裡只釘「哪一張地圖用哪一張表」的對應關係；數量期望值一律由表推導，
-   權重被調整時不該誤報成測試失敗。 */
-test('菁英數量表逐張地圖選用，未列出的地圖走 500 關之後那張', () => {
-  const context = loadFormulaContext();
-  const byZone = context.FIELD_ELITE_COUNT_TABLE_BY_ZONE;
-  ['desert', 'Icefield', 'swamp', 'undead_mountains'].forEach((zone) => {
-    assert.ok(byZone[zone], zone + ' 缺少菁英數量表');
-    assert.equal(context.fieldCountTableFor('elite', 10, zone), byZone[zone], zone + ' 應用自己的菁英表');
-  });
-  ['god_battlefield', 'god_chaos', 'god_sanctuary'].forEach((zone) => {
-    assert.equal(context.fieldCountTableFor('elite', 10, zone), context.FIELD_ELITE_COUNT_TABLE,
-      zone + ' 未單獨列出，應走「500關之後」那張');
-  });
-  // 驗證各具名地圖與 500 關之後菁英上限（亡靈山脈為 30、神界為 11，見 zone-elite-count-verification.test.cjs）
-  const expectedLimits = { desert: 3, Icefield: 4, swamp: 6, undead_mountains: 30 };
-  Object.keys(expectedLimits).forEach((z) => {
-    assert.equal(weightedRange(byZone[z]).max, expectedLimits[z], z + ' 菁英數量上限應為 ' + expectedLimits[z]);
-  });
-  assert.equal(weightedRange(context.FIELD_ELITE_COUNT_TABLE).max, 11, '神界/500關之後菁英上限應為 11');
-});
-
-test('荒漠小怪分段表由列名帶區間，區間外恢復後備表', () => {
-  /* 分段不再是「固定 20 關一段」：每一列自帶 [最低關卡, 最高關卡, 權重表]，
-     所以 101~150 這種寬度不同的區間也表達得出來（見 data.js 該常數的說明）。 */
-  const context = loadFormulaContext();
-  const rows = context.FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES;
-  const tableOfStage = (stage) => {
-    const row = rows.find((r) => stage >= r[0] && stage <= r[1]);
-    return row ? row[2] : null;
-  };
-  /* 每一段的頭尾都要對到自己那張表 */
-  rows.forEach((r) => {
-    [r[0], r[1]].forEach((stage) => {
-      assert.equal(context.fieldCountTableFor('normal', stage, 'desert'), r[2],
-        '荒漠第 ' + stage + ' 關小怪分段');
-      assert.equal(context.fieldCountTableFor('elite', stage, 'desert'),
-        context.FIELD_ELITE_COUNT_TABLE_BY_ZONE.desert, '荒漠第 ' + stage + ' 關菁英應走荒漠菁英表');
-    });
-  });
-  /* 區間必須連續、不重疊，否則中間那段會靜默掉到後備表 */
-  rows.forEach((r, i) => {
-    assert.ok(r[0] <= r[1], '區間反向：' + JSON.stringify(r.slice(0, 2)));
-    if (i > 0) assert.equal(r[0], rows[i - 1][1] + 1, '分段必須連續：' + rows[i - 1][1] + ' → ' + r[0]);
-  });
-  const lastEnd = rows[rows.length - 1][1];
-  assert.equal(context.fieldCountTableFor('normal', lastEnd + 1, 'desert'), context.FIELD_ENEMY_COUNT_TABLE);
-  assert.equal(context.fieldCountTableFor('elite', lastEnd + 1, 'desert'), context.FIELD_ELITE_COUNT_TABLE_BY_ZONE.desert);
-  assert.equal(context.fieldCountTableFor('normal', 1, 'Icefield'), context.FIELD_ENEMY_COUNT_TABLE);
-  assert.equal(context.fieldCountTableFor('elite', 1, 'Icefield'), context.FIELD_ELITE_COUNT_TABLE_BY_ZONE.Icefield);
-
-  const combat = loadCombatContext();
-  rows.map((r) => r[0]).forEach((stage) => {
-    combat.G.stage.current = stage;
-    combat.G.stage.zone = 'desert';
-    combat.spawnFieldMonster();
-    const table = tableOfStage(stage);
-    const range = weightedRange(table);
-    assert.ok(combat.FIELD.monsters.length >= range.min && combat.FIELD.monsters.length <= range.max,
-      '實際出怪未套用荒漠第 ' + stage + ' 關分段表');
-  });
-  combat.G.stage.current = 10;
-  combat.spawnFieldMonster();
-  const desertEliteRange = weightedRange(combat.FIELD_ELITE_COUNT_TABLE_BY_ZONE.desert);
-  assert.ok(combat.FIELD.monsters.length >= desertEliteRange.min && combat.FIELD.monsters.length <= desertEliteRange.max,
-    '實際出怪的荒漠菁英應落在荒漠菁英表的範圍內');
-  combat.G.stage.current = 101;
-  combat.spawnFieldMonster();
-  const normalRange = weightedRange(combat.FIELD_ENEMY_COUNT_TABLE);
-  assert.ok(combat.FIELD.monsters.length >= normalRange.min && combat.FIELD.monsters.length <= normalRange.max,
-    '荒漠第 101 關應恢復一般小怪表');
-});
-
-test('出怪依階段敵種選用對應的數量表', () => {
-  const context = loadCombatContext();
-  // 這個 context 沒指定地圖＝預設地圖，菁英數量看的是該地圖那張表
-  const eliteMax = weightedRange(context.FIELD_ELITE_COUNT_TABLE_BY_ZONE.desert).max;
-
-  context.G.stage.current = 1;   // 小怪
-  for (let i = 0; i < 60; i++) {
-    context.spawnFieldMonster();
-    assert.ok(context.FIELD.monsters.every((e) => !e.elite && !e.isBoss));
-    assert.ok(context.FIELD.monsters.length >= 1);
-  }
-
-  context.G.stage.current = 10;  // 菁英（10 的倍數）
-  for (let i = 0; i < 60; i++) {
-    context.spawnFieldMonster();
-    assert.ok(context.FIELD.monsters.every((e) => e.elite), '第 10 階應為菁英');
-    assert.ok(context.FIELD.monsters.length <= eliteMax,
-      '菁英數量應受菁英表限制，實際 ' + context.FIELD.monsters.length);
-  }
-
-  context.G.stage.current = 50;  // BOSS（50 的倍數，優先於菁英）
-  for (let i = 0; i < 30; i++) {
-    context.spawnFieldMonster();
-    assert.ok(context.FIELD.monsters.every((e) => e.isBoss), '第 50 階應為 BOSS');
-    assert.ok(context.FIELD.monsters.length <= weightedRange(context.FIELD_BOSS_COUNT_TABLE).max);
-  }
+  // 未指定敵種時沿用小怪表；沒指定地圖時用目前地圖（預設荒漠）
+  assert.equal(context.fieldCountTableFor(), encTable(context, 'mobCount', 'desert', 1));
+  assert.equal(context.fieldCountTableFor('elite', 10), elite);
+  assert.equal(context.fieldCountTableFor('boss', 50), boss);
 });
 
 /* 2026-08 進場判定：新怪要先走進畫面（_enterCd）才能攻擊或被攻擊，
