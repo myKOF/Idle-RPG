@@ -110,7 +110,7 @@ test('NPC-SKILL-6 基本資料只認 normal 列：改其他類型列的名稱不
   assert.equal(desert[0].name, '史萊姆', '只認 normal 列');
   const bosses = cfg.evalLiteral(cfg.extractLiteral(out.BOSS_LIST, 'BOSS_LIST').literal);
   assert.equal(bosses[0].name, '新名字魔君');
-  assert.equal(bosses[0].img, 'boss_flame.png', '圖檔不受表控制');
+  assert.equal(bosses[0].img, 'sprites/boss/boss_flame.png', '圖檔不受表控制');
 });
 
 test('NPC-SKILL-7 Skills2 的敵人技能列：有「類別」欄、只有 enemy 列進 ENEMY_SKILLS2，玩家技能不受影響', () => {
