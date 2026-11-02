@@ -2096,11 +2096,13 @@ var VFXRuntime = (function () {
             return;
           }
           var a = { key: e.key, presetId: presetId, expireAt: clock + AURA_KEEP_SEC,
-            mult: r > 0 ? profile.areaScale : profile.scale * bodyScaleOf(e.key) };
+            mult: r > 0 ? profile.areaScale : profile.scale * bodyScaleOf(e.key),
+            fit: r <= 0 && !!ctx.bodyBoxOf && tuning(presetId, 'fitBody') === true, ox: 0, oy: 0, tox: 0, toy: 0 };
           auraTarget(a, r);
-          a.sx = a.tsx; a.sy = a.tsy;
+          auraFit(a);
+          a.sx = a.tsx; a.sy = a.tsy; a.ox = a.tox; a.oy = a.toy;
           /* 整份標 perspective:false 的光罩（護盾球…）走 billboard 層：不受視角方向與 FOV 影響；其餘（地面光環）留在場景層 */
-          a.ref = play(billboardPresets[presetId] ? rtBillboard : rtZone, presetId, { position: footOf(e.key), scaleX: a.sx, scaleY: a.sy }, a.mult);
+          a.ref = play(billboardPresets[presetId] ? rtBillboard : rtZone, presetId, { position: auraPosition(a), scaleX: a.sx, scaleY: a.sy }, a.mult);
           if (a.ref) auras[k] = a;
         });
       });
@@ -2111,6 +2113,23 @@ var VFXRuntime = (function () {
         stopRef(auras[k].ref);
         delete auras[k];
       });
+    }
+    /* 貼合本體：ctx.bodyBoxOf 量出圖像目前可見範圍（畫面像素：w／h＝寬高、cx／cy＝中心相對腳底的右／上偏移），
+       罩子的名目本體尺寸（sizing.authored）縮放到「可見範圍 × fitPadding」，中心對到可見範圍中心。
+       飛行或貼圖留白多的敵人因此不再罩在腳底的空位上。量不到（非圖片本體、讀不到像素）就沿用原本的體型倍率。 */
+    function auraFit(a) {
+      if (!a.fit) return;
+      var box = ctx.bodyBoxOf(a.key), sz = presetSizes[a.presetId], au = sz && sz.authored;
+      var aw = au && (au.width || au.radius * 2), ah = au && (au.height || au.radius * 2);
+      if (!box || !(box.w > 0) || !(box.h > 0) || !(aw > 0) || !(ah > 0) || !(a.mult > 0)) { a.tox = 0; a.toy = 0; return; }
+      var pad = tuning(a.presetId, 'fitPadding');
+      a.tsx = box.w * pad / (aw * a.mult); a.tsy = box.h * pad / (ah * a.mult);
+      /* 名目罩心在腳底上方 ah/2（Preset 座標），縮放後為 h×pad/2；補上到實際中心的差。 */
+      a.tox = box.cx; a.toy = -(box.cy - box.h * pad / 2);
+    }
+    function auraPosition(a) {
+      var p = footOf(a.key);
+      return a.fit ? { x: p.x + a.ox, y: p.y + a.oy } : p;
     }
     function statusAuraPreset(sid) {
       if (typeof statusVfxPreset !== 'function') return '';
@@ -2328,9 +2347,11 @@ var VFXRuntime = (function () {
         var tau=tuning(a.presetId,'auraTau');
         var auraK=step>0?(tau>0?1-Math.exp(-step/tau):1):0;
         if (a.expireAt <= clock) { stopRef(a.ref); delete auras[k]; return; }
+        auraFit(a);
         a.sx += (a.tsx - a.sx) * auraK;
         a.sy += (a.tsy - a.sy) * auraK;
-        if (!moveRef(a.ref, { position: footOf(a.key), scaleX: a.sx, scaleY: a.sy }, a.mult)) delete auras[k];
+        a.ox += (a.tox - a.ox) * auraK; a.oy += (a.toy - a.oy) * auraK;
+        if (!moveRef(a.ref, { position: auraPosition(a), scaleX: a.sx, scaleY: a.sy }, a.mult)) delete auras[k];
       });
 
       updateOrbits(step);

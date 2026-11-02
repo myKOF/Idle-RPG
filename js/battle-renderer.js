@@ -1791,13 +1791,19 @@ var BattleRenderer = (function () {
         var cx = c.getContext('2d', { willReadFrequently: true });
         cx.drawImage(res, fr.x, fr.y, fr.width, fr.height, 0, 0, fr.width, fr.height);
         var d = cx.getImageData(0, 0, c.width, c.height).data;
-        var top = -1, bot = -1;
+        var top = -1, bot = -1, left = c.width, right = -1;
         for (var y = 0; y < c.height; y++) {
+          var hit = false;
           for (var x = 0; x < c.width; x++) {
-            if (d[(y * c.width + x) * 4 + 3] > 40) { if (top < 0) top = y; bot = y; break; }
+            if (d[(y * c.width + x) * 4 + 3] > 40) {
+              hit = true;
+              if (x < left) left = x;
+              if (x > right) right = x;
+            }
           }
+          if (hit) { if (top < 0) top = y; bot = y; }
         }
-        if (top >= 0) rows = { top: top, bot: bot + 1 };
+        if (top >= 0) rows = { top: top, bot: bot + 1, left: left, right: right + 1 };
       }
     } catch (e) { rows = null; }
     contentRowsCache[key] = rows;
@@ -1815,6 +1821,20 @@ var BattleRenderer = (function () {
     var h = (anchorPx - rows.top) * k;
     var c = (anchorPx - (rows.top + rows.bot) / 2) * k;
     return (isFinite(h) && h > 0 && isFinite(c) && c > 0) ? { height: h, center: c } : null;
+  }
+  /* 本體目前這一幀的可見範圍（畫面像素）：w／h＝寬高、cx／cy＝中心相對腳底的右／上偏移。
+     狀態光環（護盾罩）用它貼合圖像，而不是依體型倍率猜；量不到回 null。 */
+  function entityBodyBox(id) {
+    var ent = S.entities[id], body = ent && ent.body;
+    if (!body || body.destroyed || !body.texture || !body.anchor || !body.scale) return null;
+    var rows = textureContentRows(body.texture);
+    if (!rows || !(rows.right > rows.left)) return null;
+    var fr = body.texture.frame, kx = body.scale.x, ky = Math.abs(body.scale.y);
+    var w = (rows.right - rows.left) * Math.abs(kx), h = (rows.bot - rows.top) * ky;
+    var cx = ((rows.left + rows.right) / 2 - body.anchor.x * fr.width) * kx;
+    var cy = (body.anchor.y * fr.height - (rows.top + rows.bot) / 2) * ky;
+    var wrap = ent.bodyWrap, sx = wrap ? Math.abs(wrap.scale.x) : 1, sy = wrap ? Math.abs(wrap.scale.y) : 1;
+    return (isFinite(w + h + cx + cy) && w > 0 && h > 0) ? { w: w * sx, h: h * sy, cx: cx * sx, cy: cy * sy } : null;
   }
   /* 身體中心離腳底的高度；沒掃到可見範圍就用高度的 0.55 倍（舊公式） */
   function entityCenterHeight(ent) {
@@ -8204,6 +8224,7 @@ var BattleRenderer = (function () {
         },
         footOf: screenFootOf,
         bodyScaleOf: bodyScaleOfEntity,
+        bodyBoxOf: entityBodyBox,
         playerPos: screenMuzzle,
         projectileTargetPoint: function (id, sec) {
           /* 預判用的是世界座標的移動取樣，算完再投影 */

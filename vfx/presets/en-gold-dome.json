@@ -183,6 +183,9 @@
       "perspective": false
     }
   ],
+  "playback": {
+    "fitBody": true
+  },
   "sizing": {
     "authored": {
       "height": 60,
