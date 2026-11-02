@@ -1486,7 +1486,9 @@ function buildSkillPanel() {
     for (var t = 0; t < g.tiers.length; t++) {
       var lv = lvs[t] || 0;
       var maxed = lv >= SG_TIER_MAX_LV;
-      var unlocked = !prg || sgTierUnlockedBy(g.tiers[t].unlock, prg.level, prg.reinc);
+      /* 第 4 個參數是封魔塔最高層數：各階／各終極進化選項的解鎖現在也看塔層（unlock.tower）。
+         少傳的話塔層被當成 0，需要塔層的階會被算成「已解鎖」，送出去才被遊戲回「需達到…」。 */
+      var unlocked = !prg || sgTierUnlockedBy(g.tiers[t].unlock, prg.level, prg.reinc, prg.towerHighest);
       tiers.push({
         lv: lv,
         maxed: maxed,
@@ -1509,7 +1511,13 @@ function buildSkillPanel() {
         pick: pick ? pick.idx : -1,
         lv: pick ? pick.lv : 0,
         nextCost: pick && pick.lv < SG_TIER_MAX_LV ? skills2UltCost(gid, pick.idx, pick.lv) : null,
-        optCosts: optCosts                                      // 選／切換到各選項 Lv.1 的費用
+        optCosts: optCosts,                                     // 選／切換到各選項 Lv.1 的費用
+        /* 各選項是否已解鎖（等級＋轉生＋封魔塔層數），由遊戲的 sgUltOptionUnlockedBy 回答。 */
+        optUnlocked: (function () {
+          var arr = [];
+          for (var k = 0; k < defs.length; k++) arr.push(!!sgUltOptionUnlockedBy(gid, k, lvs));
+          return arr;
+        })()
       };
     }
     groups[gid] = {
@@ -1524,6 +1532,8 @@ function buildSkillPanel() {
   }
   return {
     loadoutSize: loadoutSize(),
+    /* 技能升級現在每次要 1 個技能點（加金幣）：點數來自技能熟練度等級。 */
+    points: (typeof skills2PointView === 'function') ? skills2PointView() : { total: 0, spent: 0, available: 0 },
     loadout: (G.player.loadout || []).slice(),
     prefix: SG_PREFIX,
     tierMax: SG_TIER_MAX_LV,
@@ -1654,4 +1664,48 @@ function buildEquipSetsPanel(params) {
     candidates[si] = bySlot;
   }
   return { active: G.equipActive || 0, count: count, unlocked: unlocked, sets: sets, candidates: candidates };
+}
+
+
+/* ============ 寶石規則面板（harness 專用） ============
+
+   寶石的轉換與合成比例遊戲改過兩次（轉換：同階 1:1 → 任意兩顆換一顆；合成：上限 5 級 → 10 級，
+   5～8 級要 4 顆、9 級要 6 顆）。策略若自己寫死比例，遊戲一改就悄悄脫鉤——
+   轉換規劃會多算一倍的產出。比例與哪些種類被停用一律由遊戲函式回答。唯讀。 */
+function buildGemRulesPanel() {
+  var compose = {};
+  for (var lv = 1; lv < GEM_FORGE_MAX_LEVEL; lv++) compose[lv] = gemComposeInputCount(lv);
+  var enabled = {};
+  for (var t in GEM_TYPES) enabled[t] = !!isGemEnabled(t);
+  return {
+    convertInput: GEM_CONVERT_INPUT_COUNT,     // 同階任意幾顆換 1 顆指定種類
+    convertSlots: GEM_CONVERT_SLOTS,
+    convertStack: GEM_CONVERT_STACK,
+    maxLevel: GEM_FORGE_MAX_LEVEL,
+    compose: compose,                          // { 階級: 合成所需顆數 }
+    enabled: enabled
+  };
+}
+
+
+/* ============ 威能面板（harness 專用） ============
+
+   威能改成金幣制（取消威能點）、各節點另依轉數逐轉解鎖，而遊戲的 talents 面板只送各節點等級，
+   看不出「這個現在能不能升、要多少錢」。策略若每輪把整份清單全送，實測 2 小時送了 1,770 次、
+   96% 被回「金幣不足」或「尚未達到 4 轉」。等級、費用、開放與否都用遊戲函式現算。唯讀。 */
+function buildTalentPlanPanel() {
+  if (typeof talentList !== 'function') return null;
+  var out = {}, list = talentList();
+  for (var i = 0; i < list.length; i++) {
+    var id = list[i].def.id;            // talentList() 的元素是 { turn, def }，id 在 def 底下
+    var lv = talentLevel(id);
+    var maxed = lv >= TALENT_MAX_LEVEL;
+    out[id] = {
+      lv: lv,
+      maxed: maxed,
+      unlocked: !!talentUnlocked(id) && !(talentDef(id) && talentDef(id).disabled),
+      cost: maxed ? null : talentUpgradeCost(id, lv + 1)
+    };
+  }
+  return { talents: out, maxLevel: TALENT_MAX_LEVEL };
 }

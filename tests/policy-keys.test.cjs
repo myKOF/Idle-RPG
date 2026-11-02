@@ -40,6 +40,34 @@ function gemTypesIn(rule) {
   return out;
 }
 
+test('策略引用的寶石種類都還啟用中（isGemEnabled）', () => {
+  /* 停用的種類（遊戲用 GEM_TYPES[k].enabled=false 下架）送鑲嵌、轉換都會被回絕，
+     而且庫存永遠不會有它，規則整條靜靜落空。 */
+  for (const f of POLICY_FILES) {
+    const p = loadPolicy(f);
+    const used = new Set();
+    for (const rule of p.rules) {
+      for (const t of gemTypesIn(rule)) used.add(t);
+      const cfg = rule.socketEmpty || rule.unsocketOffPriority || rule.convertToPreferred;
+      for (const q of (cfg && cfg.quota) || []) used.add(q.type);
+    }
+    for (const t of used) {
+      assert.ok(ctx.isGemEnabled(t), f + ' 引用了已停用的寶石種類「' + t + '」');
+    }
+  }
+});
+
+test('寶石規則面板與遊戲一致：轉換比例、合成顆數、停用種類', () => {
+  const e = createEngine({ seed: 3 });
+  e.boot(null);
+  const R = e.panel('gemRules');
+  assert.equal(R.convertInput, e.ctx.GEM_CONVERT_INPUT_COUNT, '轉換比例要等於遊戲的');
+  for (let lv = 1; lv < e.ctx.GEM_FORGE_MAX_LEVEL; lv++) {
+    assert.equal(R.compose[lv], e.ctx.gemComposeInputCount(lv), lv + ' 階合成顆數要等於遊戲算的');
+  }
+  for (const t of Object.keys(e.ctx.GEM_TYPES)) assert.equal(R.enabled[t], !!e.ctx.isGemEnabled(t));
+});
+
 test('策略引用的寶石種類都存在於 GEM_TYPES', () => {
   for (const f of POLICY_FILES) {
     for (const rule of loadPolicy(f).rules) {
@@ -466,5 +494,16 @@ test('保留清單的詞條，在它每一個合法部位上都要受保護', ()
         `${f} 規則 ${rule.id}：\n  ` + holes.join('\n  ') +
         '\n（同一條詞條在不同部位待遇相反，會被自己的洗煉規則砸掉）');
     }
+  }
+});
+
+test('每份策略都有通關換圖規則', () => {
+  /* 每張地圖是有限關卡（沙漠 100 關），打到頂遊戲會夾住 current 並停止出怪，
+     推關指令照送、照回 ok，但關卡再也不動。沒有這條規則的策略會在地圖頂端永久停住，
+     而且沒有任何錯誤——先前只有 ROI 策略有，其餘 6 份在沙漠上限從 200 降到 100 之後會卡死。 */
+  for (const f of POLICY_FILES) {
+    const rule = loadPolicy(f).rules.find((r) => r.switchZone);
+    assert.ok(rule, f + ' 沒有通關換圖規則（switchZone）');
+    assert.equal(rule.cmd, 'stage.switchZone');
   }
 });

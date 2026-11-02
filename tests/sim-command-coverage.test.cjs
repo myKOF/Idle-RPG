@@ -90,3 +90,30 @@ test('disabled：對應功能重新開啟時，策略必須補上', () => {
     }
   }
 });
+
+test('策略引用的指令都還存在於協議（反方向：遊戲移除指令後，策略不能還在送）', () => {
+  /* 先前只檢查「協議 → 策略」：遊戲新增指令而策略沒人理。反過來沒人檢查——
+     遊戲移除了指令（寶石融合、潛力威能、神鑄舊操作…），策略還在送，
+     每次都被協議回「unknown command」，規則整場靜靜失效、報表只多一行拒絕。 */
+  const KEYS = ['cmd', 'retreatCmd', 'replaceWith', 'composeCmd'];
+  const dead = [];
+  const walk = (v, file, id) => {
+    if (Array.isArray(v)) { v.forEach((x) => walk(x, file, id)); return; }
+    if (!v || typeof v !== 'object') return;
+    for (const k of Object.keys(v)) {
+      if (KEYS.includes(k) && typeof v[k] === 'string' && /^[a-z]+\.[A-Za-z]+$/.test(v[k]) && !COMMAND_SET.has(v[k])) {
+        dead.push(file + ' 規則 ' + (v.id || id || '?') + ' → ' + v[k]);
+      }
+      walk(v[k], file, v.id || id);
+    }
+  };
+  for (const f of fs.readdirSync(SIM).filter((x) => /^policy\..*\.json$/.test(x))) {
+    walk(JSON.parse(fs.readFileSync(path.join(SIM, f), 'utf8')), f, null);
+  }
+  assert.deepEqual(dead, [], '策略還在送協議裡已經沒有的指令：\n  ' + dead.join('\n  '));
+
+  /* 直譯器原始碼裡寫死的指令名稱也一樣。 */
+  const interp = fs.readFileSync(path.join(SIM, 'policy_interpreter.js'), 'utf8');
+  const hard = [...new Set([...interp.matchAll(/name: '([a-z]+\.[A-Za-z]+)'/g)].map((m) => m[1]))].filter((c) => !COMMAND_SET.has(c));
+  assert.deepEqual(hard, [], '直譯器寫死了協議裡已經沒有的指令：' + hard.join(', '));
+});

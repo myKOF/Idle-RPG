@@ -276,6 +276,8 @@ function createEngine(opts) {
       if (name === 'skill') return ctx.buildSkillPanel(); // 技能決策（harness 專用，見 evaluator.js）
       if (name === 'taskGoal') return ctx.buildTaskGoalPanel(); // 任務目標（harness 專用，見 evaluator.js）
       if (name === 'equipRules') return ctx.buildEquipRulesPanel(); // 裝備欄規則（harness 專用，見 evaluator.js）
+      if (name === 'talentPlan') return ctx.buildTalentPlanPanel();    // 威能等級／費用／開放（harness 專用，見 evaluator.js）
+      if (name === 'gemRules') return ctx.buildGemRulesPanel();       // 寶石比例與停用種類（harness 專用，見 evaluator.js）
       if (name === 'equipSets') return ctx.buildEquipSetsPanel(params); // 三套裝備（harness 專用，見 evaluator.js）
       if (name === 'eval') return ctx.buildEvalPanel(params || evalParams);
       return ctx.buildPanel(name, params);

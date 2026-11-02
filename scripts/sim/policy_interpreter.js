@@ -1195,6 +1195,9 @@ function planSkills(state, policy, memo, ruleId) {
   var gold = Number(pathVal(state, cfg.gold || 'view.gold')) || 0;
   var size = Number(P.loadoutSize) || 0;
   var prefix = P.prefix || 'sg:';
+  /* 技能點：每學一級（含選終極進化）要 1 點。點數是熟練度等級給的，比金幣更稀缺；
+     沒有這個預算的話，點數用完之後每個決策點都送一整批必定被拒的指令。 */
+  var points = P.points ? Number(P.points.available) || 0 : Infinity;
 
   /* 目前裝配中的群組（先算，後面「保留已裝配」要用）。 */
   var cur = [];
@@ -1237,8 +1240,8 @@ function planSkills(state, policy, memo, ruleId) {
     var dg = P.groups[desired[di]];
     if (!dg || dg.castable) continue;
     var t0 = dg.tiers[0];
-    if (t0.unlocked && t0.prevOk && t0.cost !== null && t0.cost <= gold) {
-      gold -= t0.cost; learns++;
+    if (points >= 1 && t0.unlocked && t0.prevOk && t0.cost !== null && t0.cost <= gold) {
+      gold -= t0.cost; points--; learns++;
       out.push({ name: 'skill2.learn', args: { group: desired[di], tier: 0 }, ruleId: ruleId });
     }
   }
@@ -1256,14 +1259,15 @@ function planSkills(state, policy, memo, ruleId) {
       /* 超神進化階：已選就繼續升；7 階全滿但還沒選就依情境挑一個。 */
       if (grp.ult && grp.ult.unlocked) {
         if (grp.ult.pick < 0) {
-          var want = skillUltChoice(state, cfg, gid, ctx);
+          var want = skillUltChoice(state, cfg, gid, ctx, grp.ult.optUnlocked);
+          if (want < 0) continue;                       // 三個選項都還沒解鎖（封魔塔層數不夠）
           var oc = grp.ult.optCosts[want];
-          if (oc <= gold) {
-            gold -= oc; learns++;
+          if (points >= 1 && oc <= gold) {
+            gold -= oc; points--; learns++;
             out.push({ name: 'skill2.ultPick', args: { group: gid, opt: want }, ruleId: ruleId });
           }
-        } else if (grp.ult.nextCost !== null && grp.ult.nextCost <= gold) {
-          gold -= grp.ult.nextCost; learns++;
+        } else if (points >= 1 && grp.ult.nextCost !== null && grp.ult.nextCost <= gold) {
+          gold -= grp.ult.nextCost; points--; learns++;
           out.push({ name: 'skill2.learn', args: { group: gid, tier: grp.tiers.length }, ruleId: ruleId });
         }
         continue;
@@ -1272,8 +1276,8 @@ function planSkills(state, policy, memo, ruleId) {
       for (var ti = 0; ti < grp.tiers.length; ti++) {
         var tr = grp.tiers[ti];
         if (tr.maxed) continue;
-        if (tr.unlocked && tr.prevOk && tr.cost !== null && tr.cost <= gold) {
-          gold -= tr.cost; learns++;
+        if (points >= 1 && tr.unlocked && tr.prevOk && tr.cost !== null && tr.cost <= gold) {
+          gold -= tr.cost; points--; learns++;
           out.push({ name: 'skill2.learn', args: { group: gid, tier: ti }, ruleId: ruleId });
         }
         break;
@@ -1289,8 +1293,8 @@ function planSkills(state, policy, memo, ruleId) {
       for (var ui = 0; ui < desired.length; ui++) {
         var ug = P.groups[desired[ui]];
         if (!ug || !ug.ult || ug.ult.pick < 0) continue;
-        var target = skillUltChoice(state, cfg, desired[ui], ctx);
-        if (target === ug.ult.pick) continue;
+        var target = skillUltChoice(state, cfg, desired[ui], ctx, ug.ult.optUnlocked);
+        if (target < 0 || target === ug.ult.pick) continue;
         var cost = ug.ult.optCosts[target];
         if (gold < cost * (cfg.switchGoldMult || 2)) continue;
         gold -= cost;
@@ -1325,12 +1329,20 @@ function planSkills(state, policy, memo, ruleId) {
 }
 
 /* 超神進化三選項：依情境挑。對應表是策略資料（cfg.ult.byGroup），沒列到就用 cfg.ult.default。 */
-function skillUltChoice(state, cfg, gid, ctx) {
+function skillUltChoice(state, cfg, gid, ctx, optUnlocked) {
   var u = cfg.ult || {};
   var sit = skillSituation(state, cfg);
   var row = u.byGroup && u.byGroup[gid];
-  if (row && typeof row[sit] === 'number') return row[sit];
-  return (typeof u.default === 'number') ? u.default : 0;
+  var want = (row && typeof row[sit] === 'number') ? row[sit] : ((typeof u.default === 'number') ? u.default : 0);
+  /* 終極進化的各選項各有封魔塔層數門檻：偏好的選項還沒解鎖時退到其他已解鎖的
+     （先試同群組表上別的情境的選項，再依索引），三個都沒解鎖就回 -1。 */
+  if (!optUnlocked) return want;
+  if (optUnlocked[want]) return want;
+  var order = [];
+  if (row) for (var k in row) if (typeof row[k] === 'number' && order.indexOf(row[k]) < 0) order.push(row[k]);
+  for (var i = 0; i < optUnlocked.length; i++) if (order.indexOf(i) < 0) order.push(i);
+  for (var j = 0; j < order.length; j++) if (optUnlocked[order[j]]) return order[j];
+  return -1;
 }
 
 /* ============ 三套裝備（player_strategy.md §7） ============
@@ -2596,6 +2608,67 @@ function decide(state, policy, memo) {
         state.ctx.pushing = !!gArgs[gCfg.argKey || 'on'];
         out.push({ name: r.cmd, args: gArgs, ruleId: r.id });
       }
+    } else if (r.talentFocus) {
+      /* 威能：依清單順序，專注把「第一個還能升的」升滿，再換下一個（player_strategy.md：
+         優先將單個天賦升滿）。付不起就等，不要跳去升別的——那會把錢分散成一堆半吊子。
+
+         「還能升」＝遊戲說已開放（轉數夠）且沒滿級。先前每輪把整份清單全送，
+         還沒開放的與付不起的全都被回絕（實測 2 小時 1,770 次、96% 失敗）。 */
+      var tfCfg = r.talentFocus;
+      var tfPanel = pathVal(state, tfCfg.panel || 'panels.talentPlan');
+      var tfGold = Number(pathVal(state, tfCfg.gold || 'view.gold')) || 0;
+      if (tfPanel && tfPanel.talents) {
+        var tfBudget = (typeof tfCfg.maxPerDecision === 'number') ? tfCfg.maxPerDecision : 10;
+        var tfIds = [];
+        for (var tli = 0; tli < (tfCfg.lists || []).length; tli++) {
+          var tfl = (policy.lists && policy.lists[tfCfg.lists[tli]]) || [];
+          for (var tlj = 0; tlj < tfl.length; tlj++) tfIds.push(tfl[tlj]);
+        }
+        var tfLv = {};
+        for (var tfi = 0; tfi < tfIds.length && tfBudget > 0; tfi++) {
+          var tn = tfPanel.talents[tfIds[tfi]];
+          if (!tn || !tn.unlocked || tn.maxed || tn.cost === null) continue;
+          var curLv = tn.lv + (tfLv[tfIds[tfi]] || 0);
+          if (curLv >= (tfPanel.maxLevel || 10)) continue;
+          /* 一輪可以連升好幾級（金幣夠的話），但只升眼前這一個。費用逐級增加，
+             同一輪只知道下一級的價錢，所以一級一級來、下一個決策點再算。 */
+          if (tn.cost > tfGold) break;
+          tfGold -= tn.cost;
+          tfLv[tfIds[tfi]] = (tfLv[tfIds[tfi]] || 0) + 1;
+          tfBudget--;
+          out.push({ name: r.cmd, args: { id: tfIds[tfi] }, ruleId: r.id });
+          break;
+        }
+      }
+    } else if (r.gemComposeReady) {
+      /* 只送「這一階庫存夠合成」的 (種類, 階級)。
+
+         先前用 expand 把「每種有貨的寶石 × 每一階」全展開：合成上限放寬到 10 級之後是 9 階，
+         實測 4 小時送了 1.1 萬～2.8 萬次、100% 失敗（「不足 3 顆」「不足 4 顆」），
+         指令統計整個被淹掉。需要幾顆由遊戲回答（panels.gemRules.compose），
+         同一輪內低階合成出來的會流進高階，所以由低往高逐階預測庫存。 */
+      var gcCfg = r.gemComposeReady;
+      var gcGems = pathVal(state, gcCfg.gems) || {};
+      var gcRules = pathVal(state, gcCfg.rules || 'panels.gemRules') || {};
+      var gcNeed = gcRules.compose || {};
+      var gcEnabled = gcRules.enabled || {};
+      var gcTypes = Object.keys(gcGems).sort();
+      for (var gti = 0; gti < gcTypes.length; gti++) {
+        var gct = gcTypes[gti];
+        if (gcEnabled[gct] === false) continue;
+        var cnt = {};
+        for (var gl in gcGems[gct]) cnt[gl] = Number(gcGems[gct][gl]) || 0;
+        for (var glv = 1; glv < (gcRules.maxLevel || 10); glv++) {
+          var gk = Number(gcNeed[glv]);
+          if (!(gk > 0)) continue;
+          var have = cnt[glv] || 0;
+          if (have < gk) continue;
+          var made = Math.floor(have / gk);
+          cnt[glv] = have - made * gk;
+          cnt[glv + 1] = (cnt[glv + 1] || 0) + made;
+          out.push({ name: r.cmd, args: { type: gct, level: glv }, ruleId: r.id });
+        }
+      }
     } else if (r.convertToPreferred) {
       /* 把不在當前偏好段的寶石轉成偏好種類（九宮格轉換）。
 
@@ -2613,6 +2686,9 @@ function decide(state, policy, memo) {
          tests/policy-keys.test.cjs 有哨兵盯著這兩個值不得超過遊戲的上限。 */
       var cCfg = r.convertToPreferred;
       var cGems = pathVal(state, cCfg.gems) || {};
+      /* 轉換比例由遊戲回答：同階任意 k 顆換 1 顆（先前是 1:1）。
+         沒有這份面板時退回 1，行為與舊版相同。 */
+      var cK = Number(pathVal(state, cCfg.rules || 'panels.gemRules.convertInput')) || 1;
       var cBand = bandGroups(pickBand(state, cCfg.preferByLevel, cCfg.levelPath), cCfg.preferTypes);
 
       if (cBand.flat.length) {
@@ -2630,25 +2706,57 @@ function decide(state, policy, memo) {
         }
 
         /* 雜牌＝有貨、不在當前偏好段、也不是配額種類。轉換是同階進行的，
-           所以每個 (種類, 階級) 各佔一格。 */
-        var junk = [];
+           所以每個 (種類, 階級) 各佔一格。
+
+           ⚠️ 遊戲改成「同階任意 k 顆換 1 顆」（先前 1:1）：整個命令裡同一階的總數要 ≥ k，
+           只有 1 顆的階級會被回「同階寶石至少需要 2 顆」。實測 4 小時送了 800 多次、82～87% 是這個。
+           所以：①同階總數不足 k 的階級整階不送 ②同一階的所有格要去同一個目標，
+           不然輪流分配會把同階拆散到不同命令，每個命令裡都只剩 1 顆。 */
+        var junk = [], perLv = {};
         for (var jt in cGems) {
           if (cBand.set[jt] || keepTypes[jt]) continue;
           for (var jl in cGems[jt]) {
             var jn = Number(cGems[jt][jl]) || 0;
             var jlv = Number(jl);
-            if (jn > 0 && jlv >= 1) junk.push({ type: jt, lv: jlv, n: Math.min(jn, maxPerSlot) });
+            if (jn > 0 && jlv >= 1) {
+              var cap = Math.min(jn, maxPerSlot);
+              junk.push({ type: jt, lv: jlv, n: cap });
+              perLv[jlv] = (perLv[jlv] || 0) + cap;
+            }
           }
         }
+        junk = junk.filter(function (sl) { return perLv[sl.lv] >= cK; });
 
         /* 目標在偏好種類之間輪流分配。全部轉成同一種的話，101 段那個
-           「一半爆傷、一半六大屬性傷害加成」會被轉成清一色爆傷。 */
-        var buckets = {}, order = [];
-        for (var ji = 0; ji < junk.length; ji++) {
-          var tgt = cBand.flat[ji % cBand.flat.length];
-          if (!buckets[tgt]) { buckets[tgt] = []; order.push(tgt); }
-          buckets[tgt].push(junk[ji]);
-        }
+           「一半爆傷、一半六大屬性傷害加成」會被轉成清一色爆傷。
+
+           二換一之後每個目標在每一階拿到的顆數都要是 k 的整數倍，否則那個命令裡同階只剩零頭，
+           被遊戲回「同階寶石至少需要 2 顆」。所以以「每 k 顆為一單位」逐單位輪流發給各目標，
+           再依序從該階的各格裡扣出來（一格可以被拆給不同目標）。 */
+        var buckets = {}, order = [], rot = 0;
+        Object.keys(perLv).map(Number).sort(function (x, y) { return x - y; }).forEach(function (lvk) {
+          if (perLv[lvk] < cK) return;
+          var units = Math.floor(perLv[lvk] / cK), want = {};
+          for (var ui2 = 0; ui2 < units; ui2++) {
+            var tg = cBand.flat[(rot++) % cBand.flat.length];
+            want[tg] = (want[tg] || 0) + cK;
+          }
+          var slotsAtLv = junk.filter(function (sl) { return sl.lv === lvk; });
+          var tgs = Object.keys(want);
+          for (var ti2 = 0; ti2 < tgs.length; ti2++) {
+            var need2 = want[tgs[ti2]];
+            for (var si3 = 0; si3 < slotsAtLv.length && need2 > 0; si3++) {
+              var left = slotsAtLv[si3].n;
+              if (left <= 0) continue;
+              var take2 = Math.min(left, need2);
+              slotsAtLv[si3].n = left - take2;
+              need2 -= take2;
+              if (!buckets[tgs[ti2]]) { buckets[tgs[ti2]] = []; order.push(tgs[ti2]); }
+              buckets[tgs[ti2]].push({ type: slotsAtLv[si3].type, lv: lvk, n: take2 });
+            }
+          }
+        });
+
 
         /* rebalance：把「已經是偏好種類」的其中一種轉成另一群，直到後者佔到指定比例。
 
@@ -2676,13 +2784,17 @@ function decide(state, policy, memo) {
             for (var tlk in tl) if (Number(tlk) >= minLv) toTotal += Number(tl[tlk]) || 0;
           }
           var share = (typeof rb.toShare === 'number') ? rb.toShare : 0.5;
-          var budget = Math.floor(share * (fromTotal + toTotal)) - toTotal;
+          /* 搬 x 顆只產出 x/k 顆，所以要解 (T + x/k) = share × (F + T − x + x/k)：
+             x = (share×(F+T) − T) ÷ (1/k + share×(1 − 1/k))。k=1 時退化成舊公式。 */
+          var budget = Math.floor((share * (fromTotal + toTotal) - toTotal) / (1 / cK + share * (1 - 1 / cK)));
+          budget -= budget % cK;                           // 只能成對換
           if (budget <= 0) continue;
 
           fromByLv.sort(function (a, b) { return b.lv - a.lv; });   // 高階先換
           var tIdx = 0;
           for (var fbi = 0; fbi < fromByLv.length && budget > 0; fbi++) {
             var take = Math.min(fromByLv[fbi].n, budget, maxPerSlot);
+            take -= take % cK;
             if (take <= 0) continue;
             budget -= take;
             out.push({

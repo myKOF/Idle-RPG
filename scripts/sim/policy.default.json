@@ -22,7 +22,8 @@
     "skill",
     "taskGoal",
     "equipRules",
-    "equipSets"
+    "equipSets",
+    "gemRules"
   ],
   "lists": {
     "affixWeapon": [
@@ -249,6 +250,18 @@
         "retreatCmd": "stage.go"
       },
       "why": "依 player_strategy.md「前期優先生存任務指南」控制自動推關：裝備品質覆蓋率沒到門檻就關掉自動推關、留在原地掛機把裝備換上來。指南的核心是不要讓關卡跑在裝備前面——推太深只會一直死，死了就掉不到裝備，掉不到裝備就更推不動。先前是無條件每 15 秒送一次「開啟自動推關」，正是指南要防的那件事。覆蓋率只算身上真的有裝備的部位（空部位面板值為 -1，雙手武器會讓 weapon2 永遠空著，算進分母的話門檻永遠到不了、閘門永久關閉）"
+    },
+    {
+      "id": "switch-zone-when-cleared",
+      "everySec": 60,
+      "cmd": "stage.switchZone",
+      "switchZone": {
+        "zones": "panels.battle.zones",
+        "currentZone": "panels.battle.stage.zone"
+      },
+      "why": "打通一張圖就換下一張。每張地圖都是有限關卡（沙漠 100／冰原 150／迷霧森林 200／熔岩山 250／沼澤 300／雷霆峰 350／亡靈山脈 400，之後是神界三張），打到頂之後遊戲會夾住 current 並停止出怪——推關指令照送、照回 ok，但關卡再也不動，AI 會永久停在那裡而且完全沒有徵兆。沙漠上限從 200 降到 100 之後，一般模擬跑 10 小時就會打到頂，而這條規則先前只有 ROI 策略有，其餘 6 份會卡死",
+      "觸發時機_依據": "只有當前這張圖真的打通（best >= maxStage）才換。換過去是從第 1 關重新開始、怪物倍率更高、掉落裝等歸 1，短期必然退步；還推得動的時候換等於自己找罪受",
+      "目標選擇_依據": "取「已解鎖、且關卡上限比當前這張高」之中設計順序最小的那一張，照順序走一階不跳關。解鎖條件一律由遊戲的 isZoneUnlocked 回答，不在策略裡抄 Zones.csv"
     },
     {
       "id": "equip-set-switch",
@@ -478,31 +491,20 @@
             "minLevel": 6,
             "依據": "201以後把一半的爆傷寶石轉成元素屬性傷害加成寶石；只轉六級以上，低階的加成比爆傷還低"
           }
-        ]
+        ],
+        "rules": "panels.gemRules.convertInput"
       },
-      "why": "把不在當前偏好段的寶石同階轉成偏好種類。偏好種類只佔 40 種寶石裡的 5~7 種、掉落又隨機，光靠「挑有貨的鑲」永遠補不滿（實測 3 小時偏好種類只有 5/20 顆）。轉換在遊戲裡同階 1:1、數量不變、不花金幣（convertGems），是既有庫存的重新分配。排在 gem-compose 之前：先把同種類集中起來，合成才有 3 顆可併，鑲上去的階級才會跟著上去。配額種類（抗性、法力恢復）不轉走；目標在偏好種類間輪流分配，否則 101 段的「一半爆傷、一半屬性」會被轉成清一色爆傷。maxSlots/maxPerSlot 對應遊戲的 GEM_CONVERT_SLOTS/GEM_CONVERT_STACK，超過會整批被回絕"
+      "why": "把不在當前偏好段的寶石同階轉成偏好種類。偏好種類只佔 40 種寶石裡的 5~7 種、掉落又隨機，光靠「挑有貨的鑲」永遠補不滿（實測 3 小時偏好種類只有 5/20 顆）。轉換在遊戲裡同階 1:1、數量不變、不花金幣（convertGems），是既有庫存的重新分配。排在 gem-compose 之前：先把同種類集中起來，合成才有 3 顆可併，鑲上去的階級才會跟著上去。配額種類（抗性、法力恢復）不轉走；目標在偏好種類間輪流分配，否則 101 段的「一半爆傷、一半屬性」會被轉成清一色爆傷。maxSlots/maxPerSlot 對應遊戲的 GEM_CONVERT_SLOTS/GEM_CONVERT_STACK，超過會整批被回絕。轉換已改為同階任意兩顆換一顆（數量減半，不再 1:1），輸出與重新平衡的預算都照比例算"
     },
     {
       "id": "gem-compose",
       "everySec": 60,
       "cmd": "gem.composeAll",
-      "expand": [
-        {
-          "key": "type",
-          "path": "panels.gems.gems",
-          "nonEmpty": true
-        },
-        {
-          "key": "level",
-          "values": [
-            1,
-            2,
-            3,
-            4
-          ]
-        }
-      ],
-      "why": "鑲嵌前先把寶石向上合成至當前可合成的最高品質（一般合成上限為 5 級，GEM_MAX_LEVEL；6 級以上只能由熔爐產出，送 5~9 階必被回絕故不送）。nonEmpty 只送手上真的有貨的種類——遊戲開局就把 40 種寶石建好且數量為 0"
+      "gemComposeReady": {
+        "gems": "panels.gems.gems",
+        "rules": "panels.gemRules"
+      },
+      "why": "鑲嵌前先把寶石向上合成至當前可合成的最高品質。只送庫存夠合成的 (種類, 階級)，需要幾顆由遊戲回答（panels.gemRules.compose）；先前把「每種 × 每階」全展開，實測 4 小時 1.1~2.8 萬次、100% 失敗。合成上限已放寬到 10 級（遊戲改版）"
     },
     {
       "id": "unsocket-off-priority",
@@ -1106,7 +1108,7 @@
     {
       "id": "tower-auto",
       "everySec": 600,
-      "cmd": "tower.startAuto",
+      "cmd": "tower.start",
       "args": {
         "floor": {
           "$add": [
@@ -1115,22 +1117,27 @@
             },
             1
           ]
-        },
-        "count": 1
+        }
       },
-      "why": "挑戰高塔"
-    },
-    {
-      "id": "tower-finish-if-needed",
-      "everySec": 30,
       "if": [
         [
           "panels.tower.tower.active",
+          "falsy"
+        ]
+      ],
+      "why": "BOSS 高塔策略：每隔一段時間嘗試一次，打到失敗即停止。用 tower.start（吃自動推進）而不是 tower.startAuto"
+    },
+    {
+      "id": "tower-confirm",
+      "everySec": 10,
+      "cmd": "tower.confirmResult",
+      "if": [
+        [
+          "panels.tower.runtime.showingResult",
           "truthy"
         ]
       ],
-      "cmd": "tower.finish",
-      "why": "高塔挑戰結束後回到野外戰鬥"
+      "why": "塔戰結算中就確認：贏了且自動推進開啟時直接開下一層，輸了回野外"
     },
     {
       "id": "salvage-below-equipped",
