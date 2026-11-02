@@ -112,12 +112,13 @@ var BattleElite = (function () {
         }
         /* 復仇：體型隨同伴陣亡一步步長大（本體縮放；陰影與血條不動） */
         if (ent.body && ent.body.scale) {
-          if (deco.baseScale === undefined) deco.baseScale = ent.body.scale.x;
+          if (deco.baseScale === undefined) deco.baseScale = Math.abs(ent.body.scale.x);
           var wantScale = deco.baseScale * (Number(d._grow) > 0 ? Number(d._grow) : 1);
-          if (Math.abs(ent.body.scale.x - wantScale) > 0.001 && ent.body.scale.x === ent.body.scale.y) {
-            var cur = ent.body.scale.x;
+          /* 左右翻面的圖 scale.x 為負：只改大小、保留正負號，避免整張圖被拉成上下顛倒。 */
+          var curX = ent.body.scale.x, cur = Math.abs(curX);
+          if (Math.abs(cur - wantScale) > 0.001 && cur === ent.body.scale.y) {
             var nxt = cur + (wantScale - cur) * Math.min(1, dt * 6);
-            ent.body.scale.set(nxt);
+            ent.body.scale.set(curX < 0 ? -nxt : nxt, nxt);
           }
         }
         var dead = ent.state === 'dying' || d.hp <= 0;

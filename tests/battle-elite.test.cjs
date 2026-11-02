@@ -133,3 +133,16 @@ test('BATTLE-ELITE-6 高級敵人（有 _tier）：環用光暈色；體型由 r
   assert.equal(tags[0].color, '#e3b13a', '專屬技能標籤用亮暗金色');
   assert.equal(vm.runInContext("BattleElite.skillTags({ affixes: ['e_plague'] })[0].color", c), '#8fd46b', '隨機技能（瘟疫）用毒屬性綠色');
 });
+
+test('BATTLE-ELITE-5B 左右翻面（scale.x 為負）：成長只改大小、保留正負號，基準值不為負，不會整張上下顛倒', () => {
+  const c = env();
+  const be = vm.runInContext('BattleElite', c).create({ PIXI: c.PIXI, layer: new Container() });
+  const e = ent('a', { elite: true, hp: 10, _gid: 1, _grow: 1.44 });
+  e.body.scale = new Point(); e.body.scale.x = -1; e.body.scale.y = 1;
+  be.update({ a: e }, 0.016, 1000);
+  assert.equal(e.eliteDeco.baseScale, 1, '基準取絕對值');
+  e.body.scale.x = 1; e.body.scale.y = 1;           // 面向翻回正向後仍要往正的目標長大
+  for (let i = 0; i < 200; i++) be.update({ a: e }, 0.1, 1000 + i);
+  assert.ok(e.body.scale.x > 0 && e.body.scale.y > 0);
+  assert.ok(Math.abs(e.body.scale.x - 1.44) < 0.01);
+});
