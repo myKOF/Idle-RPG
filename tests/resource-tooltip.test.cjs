@@ -16,7 +16,7 @@ test('金幣與材料提示使用完整數值，寶石與附魔書提示維持�
   assert.equal(context.fmtFull(3700000000), '3,700,000,000');
   assert.match(ui, /updateResourceTip\('r-gold',[\s\S]*fmtFull\(p\.gold\)/);
   assert.match(ui, /updateResourceTip\('r-ancient-essence',[\s\S]*fmtFull\(p\.ancientEssence/);
-  assert.match(ui, /updateResourceTip\('r-gems', '寶石', gemTip/);
+  assert.doesNotMatch(ui, /updateResourceTip\('r-gems'/);
   assert.match(ui, /updateResourceTip\('r-books', '附魔書', bookTip/);
   assert.match(ui, /refreshOpenResourceTooltip\(\);/);
   assert.match(ui, /UI\.tooltipAnchor = anchorEl/);

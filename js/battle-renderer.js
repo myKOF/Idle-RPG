@@ -1530,17 +1530,20 @@ var BattleRenderer = (function () {
 
   /* ============ 實體 ============ */
 
-  /* 階級覆光只取本體 alpha，不包含陰影、血條或身後的圓形光暈。
+  /* 階級效果只取本體 alpha，不包含陰影、血條或身後的圓形光暈：
+     外框光暈（outer，只在輪廓外）與內部混色（inner，純色遮罩）濃度各自設定。
      每個本體 Texture 只製作一次無色遮罩，三階共用；逐幀僅換貼圖與姿勢，
      不使用每隻NPC各一份的離屏Filter，也不在Ticker重畫Canvas。 */
   var NPC_RANK_MASKS = new WeakMap();
   var NPC_EMOJI_TEXTURES = new Map();
   var NPC_ELITE_GLOW_ALPHA = 0.6;
   var NPC_ELITE_ADV_GLOW_ALPHA = 0.6;
+  var NPC_ELITE_BLEND_ALPHA = 0.25;
+  var NPC_ELITE_ADV_BLEND_ALPHA = 0.25;
   var NPC_RANK_STYLES = {
-    elite: { rim: 0x329dff, inner: 0x70cfff, alpha: NPC_ELITE_GLOW_ALPHA },
-    elite_adv: { rim: 0xffcf32, inner: 0xffe878, alpha: NPC_ELITE_ADV_GLOW_ALPHA },
-    boss: { rim: 0xff3020, inner: 0xffb43c, alpha: 1 }
+    elite: { rim: 0x329dff, inner: 0x70cfff, glow: NPC_ELITE_GLOW_ALPHA, blend: NPC_ELITE_BLEND_ALPHA },
+    elite_adv: { rim: 0xffcf32, inner: 0xffe878, glow: NPC_ELITE_ADV_GLOW_ALPHA, blend: NPC_ELITE_ADV_BLEND_ALPHA },
+    boss: { rim: 0xff3020, inner: 0xffb43c, glow: 1, blend: 0.3 }
   };
   function npcRankStyle(data) {
     if (data.isBoss || data._tier === 'boss' || data._tier === 'tower') return NPC_RANK_STYLES.boss;
@@ -1589,33 +1592,22 @@ var BattleRenderer = (function () {
     mc.drawImage(res, f.x * r, f.y * r, f.width * r, f.height * r,
       pad + (trim ? trim.x : 0) * k, pad + (trim ? trim.y : 0) * k, f.width * k, f.height * k);
     mc.globalCompositeOperation = 'source-in'; mc.fillStyle = '#ffffff'; mc.fillRect(0, 0, mask.width, mask.height);
-    /* 多個距離的侵蝕／膨脹差形成柔光：顏色從輪廓往內漸淡，深處僅淡染。
+    /* 外框光暈：多個距離的膨脹差只出現在輪廓外側，內部不疊光。
        全程Canvas合成，不讀ImageData；也不會把序列圖相鄰格的像素帶進來。 */
-    function band(radius, inside) {
+    function band(radius) {
       var c = canvas(), ctx = c.getContext('2d');
       ctx.drawImage(mask, 0, 0);
-      ctx.globalCompositeOperation = inside ? 'destination-in' : 'source-over';
       for (var i = 0; i < 8; i++) {
         var a = i * Math.PI / 4;
         ctx.drawImage(mask, Math.cos(a) * radius, Math.sin(a) * radius);
       }
-      if (inside) {
-        var edge = canvas(), ec = edge.getContext('2d'); ec.drawImage(mask, 0, 0);
-        ec.globalCompositeOperation = 'destination-out'; ec.drawImage(c, 0, 0); return edge;
-      }
       ctx.globalCompositeOperation = 'destination-out'; ctx.drawImage(mask, 0, 0); return c;
     }
-    var inner = canvas(), ic = inner.getContext('2d');
-    ic.globalAlpha = 0.025; ic.drawImage(mask, 0, 0);
-    ic.filter = 'blur(2px)'; ic.globalAlpha = 0.13;
-    [2, 4, 6, 8, 11, 15].forEach(function (radius) { ic.drawImage(band(radius, true), 0, 0); });
-    /* 柔化後再裁回本體，保留透明孔洞與模型外的留白。 */
-    ic.filter = 'none'; ic.globalAlpha = 1;
-    ic.globalCompositeOperation = 'destination-in'; ic.drawImage(mask, 0, 0);
     var outer = canvas(), oc = outer.getContext('2d');
-    oc.globalAlpha = 0.65; oc.filter = 'blur(2.4px)'; oc.drawImage(band(3, false), 0, 0);
-    oc.globalAlpha = 0.35; oc.filter = 'blur(1.1px)'; oc.drawImage(band(1.2, false), 0, 0);
-    var result = { inner: PIXI.Texture.from(inner), outer: PIXI.Texture.from(outer),
+    oc.globalAlpha = 0.65; oc.filter = 'blur(2.4px)'; oc.drawImage(band(3), 0, 0);
+    oc.globalAlpha = 0.35; oc.filter = 'blur(1.1px)'; oc.drawImage(band(1.2), 0, 0);
+    /* 內部混色直接用本體輪廓的純色遮罩，依「混色濃度」把顏色揉進模型。 */
+    var result = { inner: PIXI.Texture.from(mask), outer: PIXI.Texture.from(outer),
       width: orig.width, height: orig.height, k: k, pad: pad };
     NPC_RANK_MASKS.set(tex, result);
     return result;
@@ -1647,7 +1639,7 @@ var BattleRenderer = (function () {
       sp.position.copyFrom(body.position); sp.scale.set(body.scale.x / masks.k, body.scale.y / masks.k);
       sp.rotation = body.rotation; sp.skew.copyFrom(body.skew);
       sp.pivot.set(body.pivot.x * masks.k, body.pivot.y * masks.k);
-      sp.alpha = body.alpha * style.alpha; sp.visible = body.visible;
+      sp.alpha = body.alpha * (i ? style.blend : style.glow); sp.visible = body.visible;
     }
   }
 
