@@ -1684,7 +1684,7 @@ var BattleRenderer = (function () {
     e.body.destroy();
     e.body = next;
     e.bodyWrap.addChildAt(next, idx);
-    if (e.eliteDeco) e.eliteDeco.baseScale = next.scale.x;
+    if (e.eliteDeco) e.eliteDeco.baseScale = Math.abs(next.scale.x);
     syncNpcRankGlow(e);
   }
 
@@ -1824,7 +1824,7 @@ var BattleRenderer = (function () {
     var hitBox = spriteHitBox(next);
     if (hitBox) { e.hitHeight = hitBox.height; e.hitCenter = hitBox.center; }
     e.npcFacing = S.sheets[name].manifest.facing | 0;
-    if (e.eliteDeco) e.eliteDeco.baseScale = next.scale.x;
+    if (e.eliteDeco) e.eliteDeco.baseScale = Math.abs(next.scale.x);
     syncNpcRankGlow(e);
   }
   /* 進到地圖時先把那張圖的 NPC 序列幀載好，第一批敵人出現時多半已經就緒 */
@@ -1906,7 +1906,7 @@ var BattleRenderer = (function () {
     ent.nameText.style.fontSize = m.nameSize; ent.nameText.y = 8 + 6 * m.dScale;
     ent.statusText.style.fontSize = m.statusSize; ent.statusText.y = (m.isBoss ? 32 : 28) * Math.max(0.7, m.dScale);
     if (ent.eliteMark) ent.eliteMark.y = -58 * m.visScale;
-    if (ent.eliteDeco) ent.eliteDeco.baseScale = ent.body.scale.x;
+    if (ent.eliteDeco) ent.eliteDeco.baseScale = Math.abs(ent.body.scale.x);
     drawHpBar(ent); syncNpcRankGlow(ent);
   }
   function makeEnemy(data) {
