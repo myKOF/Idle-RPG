@@ -1,6 +1,6 @@
 /* GM 測試場景 test_map（2026-11-02）
    用來逐隻檢查 NPC 外觀與動作的空場景。守住：
-     1. 指令進出：NPC 表全部＋封魔塔 BOSS 擺進場，從原點朝上／下／左每 12 米一隻（右邊留空），off 清場
+     1. 指令進出：NPC 表全部＋封魔塔 BOSS 擺進場，從原點依場景向右分列、逐列向上，間隔 15 米，off 清場
      2. 被動怪：沒被打不索敵、不攻擊；被打（血量下降）之後才醒來
      3. 我方只聽點擊：沒有目標就不動；點地面走過去、點怪走到近戰距離
      4. 死亡後原位重生，而且重生的是新的被動怪 */
@@ -9,6 +9,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { extractFunction, fakePixi } = require('./helpers/battle-scene.cjs');
 
 const root = path.resolve(__dirname, '..');
 
@@ -37,7 +38,7 @@ function loadContext() {
 }
 const run = (c, code) => vm.runInContext(code, c);
 
-test('test_map：NPC 表全部＋封魔塔 BOSS，朝上／下／左每 12 米一隻，off 清場', () => {
+test('test_map：NPC 表全部＋封魔塔 BOSS，依場景向右分列、逐列向上每 15 米一隻，off 清場', () => {
   const c = loadContext();
   const res = c.executeGMCommand('test_map');
   assert.equal(res.ok, true, res.message);
@@ -47,13 +48,19 @@ test('test_map：NPC 表全部＋封魔塔 BOSS，朝上／下／左每 12 米�
   assert.equal(run(c, 'FIELD._testMap && FIELD._gmArena'), true);
   assert.equal(c.GM_TEST.god, true, '被動怪被打會還擊，測試期間鎖血');
 
-  const step = run(c, 'bfMeterPx(12)');
+  const step = run(c, 'bfMeterPx(15)');
+  const rows = run(c, 'ZONE_LIST.map(k => ZONES[k].pool.map(mt => mt.id))');
+  const seen = new Set();
+  const groups = [...rows, run(c, 'Object.keys(NPC_CONFIG_TABLE)'), run(c, 'BOSS_LIST.map(b => b.id)')]
+    .map(row => Array.from(row).filter(id => {
+      if (seen.has(id)) return false;
+      seen.add(id); return true;
+    })).filter(row => row.length);
+  const positions = new Map();
+  groups.forEach((row, r) => row.forEach((id, col) => positions.set(id, { x: col * step, y: r ? -r * step : 0 })));
   const ids = new Set();
   list.forEach((e, i) => {
-    const arm = i % 3, k = Math.floor(i / 3) + 1;
-    const want = [{ x: 0, y: -1 }, { x: 0, y: 1 }, { x: -1, y: 0 }][arm];
-    assert.deepEqual({ x: e.pos.x, y: e.pos.y }, { x: want.x * step * k, y: want.y * step * k }, '第 ' + i + ' 隻站位');
-    assert.ok(e.pos.x <= 0, '右邊（角色面向的前方）不擺');
+    assert.deepEqual({ x: e.pos.x, y: e.pos.y }, positions.get(e.npcId), '第 ' + i + ' 隻站位：' + e.npcId);
     assert.equal(e._passive, true);
     assert.equal(e._alerted, false);
     assert.equal(e._enterCd, 0, '立即可被打，不走進場動畫');
@@ -77,7 +84,8 @@ test('test_map：被動怪沒被打就不索敵；血量下降後才醒來', () 
   const c = loadContext();
   c.executeGMCommand('test_map');
   const e = run(c, 'fieldEnemyList()[0]');
-  // 玩家就站在原點、離牠 120 單位：視野幾乎為零，不算發現
+  assert.deepEqual({ x: e.pos.x, y: e.pos.y }, { x: 0, y: 0 }, '第一隻與玩家都在原點');
+  // 原點重疊與走近都不能喚醒被動怪
   assert.equal(run(c, 'bfEnemyAlerted(fieldEnemyList()[0])'), false);
   run(c, 'testMapTick()');
   assert.equal(e._alerted, false, '沒被打就維持被動');
@@ -87,6 +95,65 @@ test('test_map：被動怪沒被打就不索敵；血量下降後才醒來', () 
   assert.equal(run(c, 'bfEnemyAlerted(fieldEnemyList()[0])'), true);
   // 沒被打的其他怪仍然是被動
   assert.equal(run(c, 'fieldEnemyList()[1]._alerted'), false);
+});
+
+test('test_map：空場景不留空列、重複NPC只放首次場景，未歸圖NPC與塔BOSS接續分列', () => {
+  const c = loadContext();
+  run(c, `ZONE_LIST = ['empty', 'a', 'b'];
+    var types = Object.values(NPC_CONFIG_TABLE);
+    ZONES = { empty: { pool: [] }, a: { pool: [types[0], types[1]] }, b: { pool: [types[1], types[2]] } };`);
+  const entries = run(c, 'testMapNpcList()');
+  const where = Array.from(entries, e => [e.row, e.col]);
+  assert.deepEqual(where.slice(0, 5), [[0, 0], [0, 1], [1, 0], [2, 0], [2, 1]]);
+  const tower = entries.filter(e => e.tower >= 0);
+  assert.equal(tower.length, 10);
+  assert.ok(tower.every((e, i) => e.row === 3 && e.col === i && e.tower === i));
+  assert.equal(new Set(entries.map(e => e.mt.id)).size, entries.length);
+});
+
+test('test_map：正式makeEnemy尺寸與原地圖普通NPC及塔戰BOSS一致，不受排列或測試旗標影響', () => {
+  const c = loadContext();
+  ['js/elite.js', 'js/tower.js'].forEach(file => run(c, fs.readFileSync(path.join(root, file), 'utf8')));
+  c.executeGMCommand('test_map');
+  const source = fs.readFileSync(path.join(root, 'js/battle-renderer.js'), 'utf8');
+  Object.assign(c, { PIXI: fakePixi, S: { sheets: {}, layers: { entity: new fakePixi.Container() } },
+    playerPos: () => ({ x: 0, y: 0 }), npcSpriteDef: () => null,
+    densityScale: () => 0.75, cellSize: () => ({ w: 60, h: 50 }),
+    makeMobBody: (data, scale) => { const body = new fakePixi.Sprite({}); body.scale.set(scale); return body; },
+    enemyNameText: data => data.name, nowMs: () => 0, posTrack() {}, groundToScreenY: y => y,
+    syncNpcRankGlow() {}, applyEntityBillboard() {}, drawHpBar() {}, requestNpcSheet() {}, requestMobImage() {} });
+  run(c, extractFunction(source, 'enemyLayout') + '\n' + extractFunction(source, 'makeEnemy'));
+  const entries = run(c, 'testMapNpcList()');
+  entries.forEach((entry, i) => {
+    const preview = run(c, 'fieldEnemyList()')[i];
+    c.entry = entry;
+    const original = entry.tower >= 0 ? run(c, 'makeBoss(entry.tower + 1)') :
+      run(c, 'makeFieldEnemy(entry.mt, monsterStatsFor(1, false, false), currentZoneDef(), 1)');
+    const shown = c.makeEnemy(preview);
+    c.S.testMap = false;
+    const reference = c.makeEnemy(original);
+    c.S.testMap = true;
+    assert.equal(shown.visScale, reference.visScale, entry.mt.id + '配置倍率／階級體型');
+    assert.equal(shown.body.scale.y, reference.body.scale.y, entry.mt.id + '本體縮放');
+    assert.equal(shown.hitHeight, reference.hitHeight, entry.mt.id + '本體高度');
+  });
+});
+
+test('test_map：連續Tick大型塔BOSS也保持十五米排位，受擊後仍可追擊', () => {
+  const c = loadContext();
+  run(c, fs.readFileSync(path.join(root, 'js/elite.js'), 'utf8'));
+  c.executeGMCommand('test_map');
+  const enemies = run(c, 'fieldEnemyList()');
+  const positions = Array.from(enemies, e => ({ x: e.pos.x, y: e.pos.y }));
+  for (let i = 0; i < 100; i++) run(c, 'testMapTick(); bfTickApproach(fieldEnemyList(), 0.1)');
+  enemies.forEach((e, i) => {
+    assert.deepEqual({ x: e.pos.x, y: e.pos.y }, positions[i], e.npcId + '待機不移位');
+    assert.equal(e._alerted, false);
+  });
+  const last = enemies[enemies.length - 1]; last.hp -= 1;
+  run(c, 'testMapTick(); bfTickApproach(fieldEnemyList(), 0.1)');
+  assert.equal(last._alerted, true);
+  assert.notDeepEqual({ x: last.pos.x, y: last.pos.y }, positions[positions.length - 1], '受擊後照常追擊');
 });
 
 test('test_map：沒有點擊目標就不動；點地面走過去；點怪走到近戰距離', () => {
@@ -101,7 +168,7 @@ test('test_map：沒有點擊目標就不動；點地面走過去；點怪走到
   assert.ok(Math.hypot(home.x - 300, home.y - 200) < 1, '走到點擊的地面座標');
   assert.equal(run(c, 'TEST_MAP_RT.move'), null, '到了就清掉目的地');
 
-  const target = run(c, 'fieldEnemyList()[2]');   // 左邊第一隻（-120, 0）
+  const target = run(c, 'fieldEnemyList()[2]');
   assert.equal(c.executeGMCommand('test_map_atk ' + target.floatSel).ok, true);
   for (let i = 0; i < 80; i++) run(c, 'testMapMovePlayer(FIELD.player, 0.1)');
   assert.equal(run(c, 'bfPlayerCanReach(TEST_MAP_RT.target)'), true, '走到近戰距離');

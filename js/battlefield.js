@@ -157,6 +157,7 @@ function bfAlertEnemy(ent) {
 function bfEnemyAlerted(ent) {
   if (!ent || ent._enterCd > 0) return false;
   if (ent._alerted) return true;
+  if (ent._passive) return false;              // 測試場景：站在原點或玩家走近也不醒，受擊由 testMapTick 喚醒
   var range = Number(ent.sightRange);
   if (!(range > 0) || !isFinite(range)) return true;
   var p = bfPos(ent), c = bfPlayerPos();
@@ -379,6 +380,7 @@ function bfTickApproach(enemies, dt) {
      所以被剔除的配對在原本的判斷裡也一定會被略過，結果與逐對 sqrt 完全一致。 */
   var ps = [], rs = [], ms = [];
   for (i = 0; i < live.length; i++) {
+    if (live[i]._passive && !live[i]._alerted) continue;   // 測試場景的待機展位保持原位，不因大體型互相推開
     var pp = bfPos(live[i]);
     if (!pp) continue;
     ps.push(pp);

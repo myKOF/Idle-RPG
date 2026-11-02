@@ -16,7 +16,7 @@
   var GM_GLOBAL = (typeof self !== 'undefined') ? self
     : ((typeof window !== 'undefined') ? window : globalThis);
   if (!GM_GLOBAL.GM_TEST) GM_GLOBAL.GM_TEST = {
-    god: false, hpLock: false, mpLock: false, statOverride: null, skillUnlock: false
+    god: false, hpLock: false, mpLock: false, statOverride: null, skillUnlock: false, damageOverride: null
   };
 
   // 安全邊界：不依賴「是否為開發模式」等可被前端變數覆寫的旗標，只接受本機 hostname。
@@ -1442,6 +1442,22 @@
 
     if (command === 'help' || command === '?') {
       return { ok: true, message: '指令說明請查看根目錄 GM_command.md' };
+    }
+
+    if (command === 'damage') {
+      var damageArg = String(args[0] || '').toLowerCase();
+      if (args.length !== 1) return { ok: false, message: '格式：damage 傷害｜damage 百分比%｜damage off（例：damage 90、damage 10%）' };
+      if (damageArg === 'off' || damageArg === 'clear') {
+        GM_GLOBAL.GM_TEST.damageOverride = null;
+        return { ok: true, message: '傷害覆寫已解除，恢復正常傷害' };
+      }
+      var damagePct = /%$/.test(damageArg);
+      var damageVal = gmNumber(damagePct ? damageArg.slice(0, -1) : damageArg, 0, damagePct ? 100 : 1e300);
+      if (damageVal === null) return { ok: false, message: '傷害需為非負數；百分比範圍為0%～100%（damage off解除）' };
+      GM_GLOBAL.GM_TEST.damageOverride = { mode: damagePct ? 'percent' : 'fixed', value: damageVal };
+      return { ok: true, message: damagePct
+        ? '每次命中強制扣除目標最大生命的' + damageVal + '%（damage off解除）'
+        : '每次命中強制傷害為' + damageVal + '（damage off解除）' };
     }
 
     if (command === 'bag' || command === 'inv_cap' || command === 'invcap' || command === 'inv_size' || command === 'invsize' || command === 'bag_cap' || command === 'bagcap' || command === 'capacity') {

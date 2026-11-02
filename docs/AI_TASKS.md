@@ -1,5 +1,49 @@
 # AI_TASKS.md
 
+## NPC-ATTACK-ANIMATION-20261102 — NPC攻擊動作與初生重生尺寸一致
+
+- Owner：Codex；Done，單一開發者。使用者回報測試場景哥布林近戰有傷害／閃避數字，但未播攻擊或仍播移動。定位onVfx的Preset成功提前return，跳過舊路徑renderEnemyAttackVfx內的角色動作。前置既有NPC四動作與真Worker攻擊事件完成。
+- 允許：renderer敵人出手動作分派／去重、既有npc-complete-actions整合回歸、index與scene-preview必要快取、LV及本段。禁止改傷害／攻速／命中／Worker協議／配置／素材／存檔、其他工作區及合併推送；保留本副本既有NPC.xlsx／CSV／data參數套用修改。
+- 預檢：Claude e1918408的renderer換景段與本次onVfx／攻擊函式分離；index renderer快取同列，使用者已明確同意本輪分段修改，兩入口採20261102-npc-attack，不帶入換景功能。AI_TASKS的develop07dd716c只改同步工具任務紀錄，依候選三方驗證後分段保留。
+- 驗收：onVfx真分派的Preset接手／退路／延遲及載入重試／近戰與遠程／MISS仍攻擊、逐幀完成再接當下移動或站立／死亡不復活、特效不重複；真Worker哥布林重現修前修後與Console、相關回歸／Build／diff後獨立Commit，交正常Review／使用者整合。無新素材或素材庫變更。
+- 使用者追加：初生NPC較小、死亡重生才套尺寸。已在正式頁1200×800→全螢幕重現，舊史萊姆visScale1.4192820512820512／名字8px，新生2／11px；原因為密度縮放只在makeEnemy生成時計算，layoutScene未更新既有敵人。允許同renderer將enemyLayout尺寸計算共用於生成與重排，保持動畫／朝向／死亡進度，同步本體、血條／名稱／狀態／陰影／命中特效定位；既有gm-test-map fixture只補載抽出helper，新增尺寸回歸。NPC配置倍率與玩家縮放／玩法維持。
+- 使用者明確追加「做好後連我的一起commit」：包含NPC.xlsx、CSV與data既有參數套用成果，其餘套用產物也逐檔核對並提交實際變更。唯讀Excel→隔離CSV491列×22欄與工作CSV逐值完全一致，相對HEAD只有390列「縮放比」改動；config_tables --apply NPC試跑11個字面值、語意變更0。補齊index data／Bridge與Worker data／入口快取20261102-npc-scale，避免重新載入仍用舊表。Claude工作區未提交Worker只動combat匯入同行27，本次data匯入23不重疊、無語意相依，既有combat快取衝突保留待正常整合；不修改對方工作區。
+- 完成：抽出animateEnemyAttack在Preset／退路共用分派點播角色動作，同事件載入重試只播一次、退路不重播，保留近戰撲擊與遠程／MISS／死亡語意；enemyLayout共用生成與layoutScene重排公式，syncEnemyLayout原地更新本體／命中高度中心／陰影／血條／名稱狀態／菁英標記與覆光，不重建本體或重設動畫幀／朝向／死亡進度。延後載入的NPC也吃重排後的最新visScale。index與scene-preview renderer快取20261102-npc-attack；既有gm-test-map測試只補載抽出helper，npc-complete-actions新增五項真分派／逐幀／尺寸回歸。玩家／NPC正式數值、攻速／傷害與素材均未由本修復改動。
+- 測試：`node --test --test-reporter=spec tests/npc-complete-actions.test.cjs tests/gm-test-map.test.cjs tests/npc-facing.test.cjs tests/npc-rank-glow.test.cjs tests/battle-renderer-pause.test.cjs tests/enemy-attack-vfx-lifecycle.test.cjs tests/enemy-projectile-retaliation.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs`77/77通過；`npm.cmd run build`626檔通過，之後data／Bridge／Worker純快取補版另以node --check逐檔通過。初版fixture缺ENEMY_CONTACT_GAP／ENEMY_MAX_CHARGE、vfxrt.update及entity容器，均補齊依賴後重跑，不放寬斷言或改產品迎合fixture。diff／stat／check與暫存檢查通過，自我Review完成。
+- 瀏覽器：bundled Playwright／隔離headless Edge，隨機localhost正式index／Pixi／真Worker，HTTP唯讀覆映HEAD renderer作修前對照，暴露內部狀態供觀測。真gm.exec進test_map、點全螢幕，Worker僅喚醒原場景哥布林並鎖玩家血讓原doMonsterAttack自然出手；三次Preset近戰事件修前walk／idle／idle，修後三次attack，逐幀觀測攻擊幀0～5完整播放。史萊姆實際死亡並等原4秒重生：修前全螢幕原體1.419282→重生2，修後既有／新建／實際重生皆2，本體scale1.4166、名牌11px相同。Console error／warning及pageerror0，before／after實拍已重開檢視，未讀寫玩家原網址存檔。verify.cjs／report.json／PNG留本聊天visualizations/npc-attack-size。
+- Excel／使用者成果：沿專案xlsx_to_csv匯出至隔離目錄、未回寫來源；原生Excel開啟副本ReadOnly=True／Saved=True、491列×22欄、Shapes0，正常開啟無錯誤，原來源SHA256前後保持532CB3C81F397FD930AE8BFA60FC46EF425109DE985F9FF1950CEE5EB1CC727A。未編修／儲存Excel或手工XML；只核對並依使用者要求提交既有390筆縮放比更新。其餘CSV只有換行差異，依Git正常化處理，不捨棄使用者語意變更；沒有新增／修改獨立素材，無素材庫變更或空Commit。
+- 同檔分段：renderer與Claude現況三方merge-file退出0／衝突0；index renderer版本同行依本輪使用者同意採新版本。AI_TASKS與develop的試跑有原本GM-DAMAGE／TEST-MAP紀錄插入與同步紀錄的既存鄰接衝突，保留所有既有段落，本項只加獨立任務段，不合併／覆蓋同步紀錄。唯讀未改：規範／AGENTS／Workflow／prompts、combat／field／formula／skills／tower攻擊結算、Worker協議、NPC原圖／manifest及素材庫；未驗全庫、多瀏覽器／實體觸控。無本項未完成實作或已知新增風險，可供Review／使用者合併，未合併推送develop／main。Commit為本段所在「[Codex] fix: 修正NPC攻擊動畫與重生尺寸並同步配置倍率」，SHA見交付；建議正常整合後重新載入遊戲，再進test_map驗收，所有本副本需要保留的修改一起提交。
+
+## GM-DAMAGE-20261102 — 固定與最大生命百分比傷害指令
+
+- Owner：Codex；Done，單一開發者。使用者要求damage 90每次攻擊固定90、damage 10%每次造成生命百分比傷害。採目標最大生命，增加damage off恢復；前置既有gm.exec／傷害收斂點完成。
+- 允許：gm_exec執行期旗標／解析、formula共用扣血入口、index／Bridge／Worker必要快取、獨立gm-damage回歸、GM_command／LV／BOSS_PCT_HP_EFFECTS測試例外及本段。禁止改玩家原屬性／裝備／配置表／存檔格式／素材／其他工作區或合併推送。僅本機GM、刷新清除；普攻／技能／衍生與持續傷害套用，敵人打玩家不變；保留命中及無敵閘門，覆寫最終扣血，避免盾／暴擊／抗性／高塔上限改值。
+- 預檢：gm_exec／formula及其他目標無外部來源。index／Worker仍有Claude e1918408換景快取與前輪已核准的既存衝突；候選與改前試跑皆只有同一處原衝突，本輪formula／Bridge及gm_exec快取不碰其renderer／combat版本，沿前輪分段授權保留，不合併Claude功能。保留本副本同步工具既有未提交修改，只提交本項。
+- 驗收：合法／錯誤輸入不部分套用、數字／小數／百分比／解除／零、不同敵人maxHp與受傷後基準不變、正常傷害還原、玩家／敵方與Boss隔離、連擊／技能／持續／衍生、浮字與統計、真Worker／GM面板與Console、相關回歸／Build／diff後獨立Commit，交正常Review／使用者整合。
+- 完成10檔：gm_exec的damageOverride只放GM_TEST、不入G，嚴格解析固定非負數／0～100%／off或clear；formula的唯讀helper接resolveHit與applyEnemyHpDamage最終扣血，保留命中與無敵、旁路護盾／暴擊增減傷／塔戰上限；DoT合批依原drainHits乘回每跳。index formula84→85／Bridge與Worker formula及gm_exec匯入20261102-gm-damage。新增gm-damage八項回歸，GM_command／LV／BOSS_PCT_HP_EFFECTS記錄測試例外及本段；無玩家文案／String、Excel、素材或素材庫修改，不建空素材Commit。
+- 最終回歸：`node --test --test-reporter=spec tests/gm-damage.test.cjs tests/gm-command.test.cjs tests/gm-test-map.test.cjs tests/damage-random-crit.test.cjs tests/global-damage-reduction.test.cjs tests/npc-damage-aggro.test.cjs tests/dot-mitigation.test.cjs tests/dot-player-offense.test.cjs tests/combat-dot-log.test.cjs tests/purgatory-tower.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs`104/104通過。含真sgHitOne與tickStatuses五跳合批、浮字／DPS／輸出記錄、命中／一般與菁英無敵、敵人打玩家不變、0／解除／刷新初始旗標、錯誤指令零狀態變更／外部host拒絕。`npm.cmd run build`626檔語法／編譯及空檔檢查通過，diff／stat／check與暫存檢查通過。
+- 既有失敗：較早包含damage-drain的92項為91過／1失敗，該檔「持續傷害依狀態與實際跳數吸取」的playerDefCfg讀缺少resist.ctrl；以HEAD原formula.js唯讀fs覆映重跑該檔仍7過／相同1失敗。未放寬原斷言或擴修；最後104項不含該既有失敗檔，另以本項完整resist fixture驗真持續跳數。全庫與多瀏覽器／實體觸控未跑，非宣稱全庫綠燈。
+- 瀏覽器：隔離隨機localhost、headless Edge、正式index及真Worker；用真Enter開GM面板、輸入damage 90／-1／10%／off／0再Enter，固定兩擊[90,90]且護盾保持，2300maxHp敵人普攻兩擊＋sgHitOne＋直接傷害均230、HP1380；非法輸入保留90、off恢復、0不扣血，重載Worker.damageOverride為null。Worker.evaluate僅建立隔離測試目標、呼叫正式函式觀測，不修改正式檔／原玩家存檔。Console error／warning與pageerror0，實際新版formula／gm_exec／Bridge／Worker請求已記錄，GM面板PNG已重開檢視。腳本／browser-report／基線log及三方試跑留本聊天visualizations/gm-damage。
+- 唯讀未改：規範／AGENTS／Workflow／prompts、combat／skills2／elite／tower的正式攻擊與傷害規則、renderer／浮字及統計消費端、Worker協議／GM面板／save／String／配置表及素材。進行中另一項同步工具已自行提交46a8e031；後續同副本NPC.xlsx／CSV／data參數套用變動不屬本項，保持未提交且不stage。自我Review完成，本項無已知新增風險／未完成實作，可供Review／使用者合併；未合併推送develop／main。Commit為本段所在「[Codex] feat: 新增固定與生命百分比傷害GM指令」，SHA見交付；下一步正常整合後重載輸入damage 90或damage 10%，測完damage off。
+
+## TEST-MAP-ROWS-20261102 — 測試場景依地圖分列與十五米間距
+
+- Owner：Codex；Done，單一開發者。使用者要求從原點開始，同場景由左向右排一列，下個場景向上另起一列，NPC間隔15米，尺寸與原地圖一致。前置為既有test_map完成。
+- 允許：combat測試場景清單／站位、battlefield被動索敵防護、既有gm-test-map回歸、index／Bridge／Worker必要快取、GM_command／LV及本段；禁止原地圖玩法／配置表／素材／存檔修改與合併推送。沿既有NPC_CONFIG_TABLE縮放及正式renderer，一般怪對照原地圖普通階級，塔BOSS沿塔戰體型。
+- 預檢：Claude e1918408修改combat換景函式與index／Worker快取；使用者已明確同意分段修改，combat主頁採104、Worker／Bridge使用本次版本，不合併或更動Claude換景功能。battlefield及其餘目標無外部來源。保留本副本既有同步工具及任務紀錄未提交變更，只提交本項hunk。
+- 驗收：各場景單列／原點／左右順序與15米行列間距、完整NPC與塔BOSS、原點被動／移動攻擊／原位重生與原地圖尺寸比對，相關回歸、Build、隔離瀏覽器Console及diff後獨立Commit。無新素材或素材庫變更。
+- 完成9檔：combat清單增加row／col，依ZONE_LIST從(0,0)向右、逐列向上；未歸圖NPC及塔BOSS各接一列，不遺漏、不重複。battlefield讓未醒被動怪不靠距離索敵、不參與互斥推擠，避免原點自動還擊及大BOSS把15米間距擠開；受擊後沿既有追擊、攻擊與原位重生。index與Bridge／Worker必要快取、GM_command／LV與本段同步；測試在既有檔增加分列／邊界／尺寸及連續100Tick驗證，未改原地圖數值／NPC配置／renderer倍率。
+- 測試：`node --test --test-reporter=spec tests/gm-test-map.test.cjs tests/battlefield.test.cjs tests/npc-facing.test.cjs tests/npc-rank-glow.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs`92/92通過，含普通NPC與正式makeBoss→makeEnemy的倍率／本體高度逐隻對照、空場景／跨場景重複／未歸圖／塔BOSS分組、15米精確座標、原點被動、連續Tick大型BOSS不推擠、受擊追擊、點擊移動／攻擊、重生／離場。初次新fixture的跨VM Array原型與漏帶requestMobImage已修正，不改產品迎合測試。
+- 瀏覽器：bundled Playwright／隔離headless Edge＋隨機localhost，正式index及真Worker，走WorkerBridge.send('gm.exec',{line:'test_map'})進場；130隻／11列，逐一核對15米排位／被動、實際序列幀載入後與非測試旗標下正式makeEnemy的倍率／貼圖組／Sprite縮放一致，Console error／warning及pageerror0。首輪驗證發現大型BOSS原推擠造成移位，已修正並補連續Tick回歸；初版QA誤以不同動畫幀Texture必須相同，改比對共用貼圖組及實際縮放，沒有改renderer或素材。已重開檢視實拍；QA／report／PNG及三方試跑留本聊天visualizations，未讀寫玩家原存檔。
+- 同檔分段：combat與Claude換景修改不同行、無語意相依，以共同祖先及ai/claude三方merge-file退出0／標記0；battlefield亦退出0。index／Worker快取重疊依本輪使用者同意處理，未帶入Claude換景功能。唯讀未改規範／AGENTS／Workflow／prompts、data／NPC配置／Sprite及renderer、elite／tower正式尺寸、原素材與存檔；無素材庫變更、不建空素材Commit。未測多瀏覽器／實體觸控或全庫長玩；本項無已知新增風險，完成後可Review／合併，交使用者正常整合後重載並重新輸入test_map，未合併推送develop／main。
+- 最終`npm.cmd run build`625檔語法／編譯與空檔檢查通過、git diff／stat／check與暫存檢查通過，自我Review完成。Commit為本段所在「[Codex] fix: 測試場景依地圖分列並改為十五米間距」，SHA見交付；本項無未完成實作，保留原同步工具工作未提交。
+
+## MERGE-NPC-ATTACK-840A1DE-20261102 - Authorized develop integration
+
+- Owner: Codex; Done. Pending merge only: HEAD 2f70ada3276a733611b2d9509467fae361885b32, MERGE_HEAD 840a1de06b84485c88108b488cadf57834ef942f, base 9b0c458b4be27d9d5b722667575bc6b264b107a2. No index, commit, sync, other-worktree, or asset-library operations.
+- Resolution: retained the incoming NPC attack, GM damage, and test-map task records plus all existing develop records. Retained develop zone transition and attack-cooldown changes together with incoming NPC attack and test-map changes. battle-renderer, combat, Worker, Bridge WORKER_ASSET_VERSION, main Bridge import, and scene-preview now use new combined cache token 20261102-merge-840a1de. There were no original XLSX conflicts, so no Excel DATA plan; the cleanly merged NPC.xlsx and its CSV/JS outputs remain unchanged. No asset-library files.
+- Validation: node --check passed for sim.worker.js and bridge.js. Combined related regression run: 154/161 passed; all seven failures are the pre-existing control-decay mismatch where original HEAD game_parameters.csv already contains 10/10/10 while the original HEAD test expects 5/5/5. Neither conflict side changed that CSV and no assertion was weakened. npm.cmd run build passed all 626 files. Conflict-marker scan, git diff HEAD --check for the complete result, and unchanged HEAD/MERGE_HEAD are checked before handoff; unmerged index entries remain for the controller as expected.
+
 ## SYNC-SHORTCUT-AUTO-RECOVERY-20261102 — 自動處理舊參數捷徑阻擋同步
 
 - Owner：Codex；Done，單一開發者。使用者要求將本次捷徑修復納入sync_ai_worktrees.bat，下次自動備份、處理並繼續同步。前置為405cb82a既有相對路徑BAT與本次現場修復完成；目標檔衝突預檢皆退出0。
