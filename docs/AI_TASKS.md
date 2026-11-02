@@ -14099,6 +14099,19 @@ Worker 存活且頁面正常完成載入。
 - 實機：IAB隔離隱藏localhost，以正式Pixi／data／完整renderer控制面板讓兩側各四階級毒蚊群連續接近玩家，8實體皆實際播walk；僅before頁將原metadata.facing=1在HTTP讀取時覆映，其他檔同版。修前0/8朝向玩家、修後8/8，兩次errors／warnings皆0。正式飛行anchorY1.3054與各尺寸保持，body方向符號依原圖實際朝左獨立判斷；前後實拍均從磁碟重開核對，report／QA／PNG及重建結果留本聊天visualizations/npc-chase-facing。不讀原玩家存檔、不改正式產品API或Worker。
 - 修改／唯讀範圍：遊戲修改上述八檔，素材庫僅新增本驗證包；唯讀未改共通規範／Workflow／prompts、NPC.xlsx／CSV／data／來源匯出器、所有PNG與動畫／移動判定／傷害／投射物／Worker協議／存檔／String。作業中使用者另改NPC.xlsx，完整保留且不stage，不納入本項提交。無本項未完成實作，可供Review／使用者正常合併；未合併推送develop／main。已知限制為未做全庫、多瀏覽器及長時間真Worker遊玩；建議正常整合雙庫後重新載入主頁驗收。遊戲Commit為本段所在「[Codex] fix: 修正毒蚊群追擊時背對玩家」，SHA見交付。
 
+## NPC-BLACK-OUTLINES-20261102（Codex，Done）
+- Owner：Codex，單一開發者。使用者要求先量史萊姆1／2px描邊，再給所有敵人及BOSS加清楚黑邊，最多2px。原生圖格量測主要2px、斜角局部1px；量測座標／RGBA與8倍網格圖保存於素材包qa。
+- 完成：124款（120現用＋4封存）496張NPC動作圖及通用／封魔塔BOSS圖集1張，全動作加黑邊。最多2px，既有黑邊不再作膨脹種子，避免疊厚；封閉透明細節保留，新增像素不碰圖格邊界。原彩色本體像素位置／RGBA全保留，人物四動作、站腳、朝向、尺寸、fps、錨點與NPC配置／解鎖不變。
+- 修改檔案：上述497 PNG、images/sprites/npc/outline.json、tools/npc-sprites/export_supplemental.cjs、js/battle-renderer.js、index.html／tools/scene-preview.html快取、tests/npc-black-outline.test.cjs、tests/npc-ground-air.test.cjs及4份原蛇形本體fixture、本文件與LV_upgrade_system.md。素材庫新增npc-black-outlines-20261102（before／獨立原畫及黑邊圖層Mote／exports／source SHA／author／outline／verify／export／QA），並讓原五製作包及固定腳部待機匯出器解析最終黑邊版本。
+- 程式接線：仍沿用既有匯出與載入，描邊烘焙在PNG，不在Ticker逐格產生。內部混色遮罩略過黑色、外暈blur後再扣除本體，防止階級光把黑邊染色；貼圖首次建立時計算並快取，不新增精靈或VFX來源。BOSS PNG亦使用NPC_SPRITE_VER；共用快取版本20261102-black-outlines。
+- 工具／來源：Mote可用且有原生Outline，但無跨497檔的批次操作工具，故以Mote v3像素／圖層格式批次製作，未用AI重新生成角色。僅使用既有自製／已授權來源，未引入外部素材。Mote網頁匯入史萊姆顯示六幀160ms兩圖層，原生匯出768×128與遊戲RGBA差0。
+- 驗證：素材node author.cjs／verify.cjs及原匯出入口--apply／--source-check／--check通過；497檔3250格Mote／PNG一致（含BOSS4個未用空格），3,729,496個原彩色像素保持，1,730,746新增不透明像素均黑色且距原本體最多2px，新增圖格邊界像素0。原NPC與BOSS metadata語意SHA保持；輸出不疊加，來源變更會拒絕沿用舊描邊。
+- 測試指令：node --test tests/npc-black-outline.test.cjs tests/npc-idle-root-motion.test.cjs tests/npc-biped-gait.test.cjs tests/npc-all-new-art.test.cjs tests/npc-complete-actions.test.cjs tests/npc-facing.test.cjs tests/npc-ground-air.test.cjs tests/npc-death-ui.test.cjs tests/npc-rank-glow.test.cjs共95/95；npm run build為631檔通過，兩庫diff --check通過。蛇形幾何測試以原本體fixture維持原貼地／低伏比例及原像素位置，另驗外描邊最多2px，不把邊線當成腹部移位，也未放寬原本體斷言。
+- 實機：隔離IAB正式Pixi／data／renderer載入120款四動作＋通用BOSS11幀，16實體四階級抽樣9453黑像素，內部混色與外暈皆9453/9453排除，不讀玩家存檔；最新驗證頁Console錯誤／警告0。GIF、四階級截圖及量測在素材包qa/，聊天預覽在visualizations/2026/11/02/npc-black-outlines。
+- 唯讀未改：NPC.xlsx／CSV／js/data.js、NPC與BOSS圖格／動畫metadata、玩家／騎士圖、傷害／Worker／存檔／參數數值／String；檢查過共通規範、Workflow、原來源匯出及BOSS佔位產生器。未改其他AI進行中的裝備素材或原固定Codex工作區內容。
+- 分支與交付：原固定Codex工作區被另一同步程序置為detached且合併未解，未接手該合併；另建乾淨worktree codex-npc-outlines、分支codex/npc-black-outlines-20261102，起點df6baf2e。新分支預檢無外部衝突，497輸入與已合併基線逐檔SHA一致。素材庫先Commit 685eceb，遊戲為本段所在「[Codex] feat: 統一NPC與BOSS黑色描邊」，可供使用者合併此隔離分支並更新素材庫；未合併／推送develop或main。
+- 已知風險／未完成：本項無未完成內容；未測長時間Worker遊玩與多瀏覽器。原其他AI進行中的equipment-sets-20261102素材目錄保留且不stage。建議正常整合雙庫後重新載入，保留最新黑描邊快取版號。
+
 ## NPC-ELEMENT-TAILS-20261102（Codex，Done）
 - Owner Codex，單一開發者。使用者指示：兩款元素取消人形腿腳及長尖錐；狂暴體改雙色簡化，再依最後回覆增加約20%切面／接縫細節。最後明確要求先Commit供使用者合併。
 - 完成：冰晶元素下身改短而不規則晶簇，元素狂暴體重畫為深藍／暖橙大色面、少量肩甲／前臂／胸核心／尾部層次及短圓旋尾。兩款四動作各六幀一致，移動為懸浮，死亡為低矮殘骸。解除狂暴體attack第4幀舊poseOverrides，避免插回雜亂舊圖；無額外VFX來源。

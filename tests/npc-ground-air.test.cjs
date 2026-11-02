@@ -6,8 +6,8 @@ const png = require('../tools/vfx/vfx-image-facts.cjs')._internal;
 const root = path.resolve(__dirname, '..');
 const renderer = fs.readFileSync(path.join(root, 'js/battle-renderer.js'), 'utf8');
 const manifest = JSON.parse(fs.readFileSync(path.join(root, 'images/sprites/npc/npc.json')));
-function image(stem) {
-  const chunks = png.readPngChunks(fs.readFileSync(path.join(root, 'images/sprites/npc', stem + '.png')));
+function image(stem, folder = path.join(root, 'images/sprites/npc')) {
+  const chunks = png.readPngChunks(fs.readFileSync(path.join(folder, stem + '.png')));
   const header = png.parseIhdr(chunks.ihdr);
   return { ...header, data: png.decodeToRgba(header, chunks) };
 }
@@ -55,14 +55,30 @@ test('毒蚊群四動作共用飛行錨點，可見本體離地且命中特效�
 
 test('嵐翼飛蛇低伏貼地，六幀身體蜿蜒循環，死亡最後一幀攤平', () => {
   const key = 'npc_thunder_peak_4', meta = manifest.chars[key], baseline = meta.anchorY * meta.cellH;
+  const outline = JSON.parse(fs.readFileSync(path.join(root, 'images/sprites/npc/outline.json')));
+  assert.ok(outline.radius > 0 && outline.radius <= 2);
   for (const action of ['idle', 'walk', 'attack', 'die']) {
     const stem = key + '_' + action, def = manifest.stems[stem], im = image(stem), boxes = [];
+    const original = image(stem, path.join(__dirname, 'fixtures/npc-ground-air'));
     assert.equal(def.frames, 6);
     for (let i = 0; i < def.frames; i++) {
-      const b = bounds(im, i, meta.cellW, meta.cellH); boxes.push(b);
+      const visible = bounds(im, i, meta.cellW, meta.cellH);
+      const b = bounds(original, i, meta.cellW, meta.cellH); boxes.push(b);
+      // 對原本體保留原有貼地／比例斷言，再獨立檢查描邊擴張及原像素沒有移動。
       assert.ok(Math.abs(b.bottom - baseline) <= 1, stem + ' frame ' + i + ' belly must touch ground');
       assert.ok(b.right - b.left > (b.bottom - b.top) * 1.8, stem + ' low horizontal body');
       assert.ok(b.left >= 3 && b.right <= meta.cellW - 3 && b.top >= 3, stem + ' complete silhouette');
+      assert.ok(visible.left >= b.left - outline.radius && visible.left <= b.left);
+      assert.ok(visible.right <= b.right + outline.radius && visible.right >= b.right);
+      assert.ok(visible.top >= b.top - outline.radius && visible.top <= b.top);
+      assert.ok(visible.bottom <= b.bottom + outline.radius && visible.bottom >= b.bottom);
+      for (let y = 0; y < meta.cellH; y++) for (let x = 0; x < meta.cellW; x++) {
+        const at = (y * im.width + i * meta.cellW + x) * 4, a = original.data.subarray(at, at + 4), z = im.data.subarray(at, at + 4);
+        if (a[3] < 128) continue;
+        assert.ok(z[3] >= a[3], stem + ' original body pixel remains in place');
+        const dark = Math.max(a[0], a[1], a[2]) <= 48 && a[0] * .2126 + a[1] * .7152 + a[2] * .0722 <= 32;
+        if (!dark) assert.deepEqual(z, a, stem + ' original colored body detail unchanged');
+      }
     }
     if (action === 'walk') {
       for (let i = 0; i < 6; i++) {
