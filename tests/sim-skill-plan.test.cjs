@@ -571,3 +571,105 @@ test('開塔之後同一批的指令也不送（塔一開配置就鎖了）', ()
   assert.deepEqual(p.decide(st).map((c) => c.ruleId), ['before', 'tw', 'ok'],
     '開塔前的照送；開塔之後的 item.upgrade 會被遊戲拒絕，不送');
 });
+
+/* ---- 技能點與終極進化的塔層門檻（遊戲後來加的規則）---- */
+
+test('技能點：每學一級要 1 點，點數用完就不再送', () => {
+  const groups = { thrust: group('phys', null, SEVEN(1)), cleave: group('phys', null, SEVEN(1)) };
+  const st = state(groups, { size: 4, gold: 1e9 });
+  st.panels.skill.points = { total: 3, spent: 2, available: 1 };
+  const learn = policy({ mode: 'phys' }).decide(st).filter((c) => c.name === 'skill2.learn');
+  assert.equal(learn.length, 1, '只剩 1 點：只能學 1 級，多送的每一條都會被遊戲回「技能點不足」');
+
+  st.panels.skill.points = { total: 3, spent: 3, available: 0 };
+  assert.equal(policy({ mode: 'phys' }).decide(st).filter((c) => c.name === 'skill2.learn').length, 0, '0 點：不送');
+});
+
+test('終極進化：偏好的選項還沒解鎖（封魔塔層數不夠）就退到已解鎖的；都沒解鎖就不選', () => {
+  const full = SEVEN(10).map((t) => Object.assign(t, { lv: 10, maxed: true, cost: null }));
+  const mk = (optUnlocked) => ({ thrust: group('phys', null, full, { ult: { options: 3, unlocked: true, pick: -1, lv: 0, nextCost: null, optCosts: [500, 500, 500], optUnlocked } }) });
+  const pickOf = (optUnlocked) => policy({ mode: 'phys' }).decide(state(mk(optUnlocked), { gold: 1e6 }))
+    .filter((c) => c.name === 'skill2.ultPick').map((c) => c.args.opt);
+
+  assert.deepEqual(pickOf([true, true, true]), [2], 'farm 偏好選項 2（SKILLS_CFG 的 thrust 表）');
+  assert.deepEqual(pickOf([true, true, false]), [1], '選項 2 還要更高塔層：退到同群組表上別的情境的選項（boss＝1）');
+  assert.deepEqual(pickOf([true, false, false]), [0], '只有選項 0 解鎖就選 0');
+  assert.deepEqual(pickOf([false, false, false]), [], '三個都沒解鎖：不送，免得被回「需達到封魔塔 N 層」');
+});
+
+test('技能面板與遊戲一致：技能點、各階與各終極進化選項的塔層門檻', () => {
+  const e = createEngine({ seed: 9 });
+  e.boot(null);
+  e.step(200);
+  const c = e.ctx;
+  const P = e.panel('skill');
+  assert.deepEqual(JSON.parse(JSON.stringify(P.points)), JSON.parse(JSON.stringify(c.skills2PointView())), '技能點要等於遊戲算的');
+
+  let needTower = 0;
+  for (const gid of Object.keys(P.groups)) {
+    P.groups[gid].tiers.forEach((t, i) => {
+      const u = c.SKILLS2[gid].tiers[i].unlock;
+      if (u && u.tower > 0) {
+        needTower++;
+        assert.equal(t.unlocked, false, gid + ' 第 ' + (i + 1) + ' 階要封魔塔 ' + u.tower + ' 層，新角色不該是已解鎖');
+      }
+    });
+    const ult = P.groups[gid].ult;
+    if (!ult) continue;
+    ult.optUnlocked.forEach((flag, k) => {
+      assert.equal(flag, !!c.sgUltOptionUnlockedBy(gid, k, c.skills2Levels(gid)), gid + ' 選項 ' + k + ' 的解鎖要等於遊戲算的');
+    });
+  }
+  assert.ok(needTower + 1 > 0);
+});
+
+/* ---- 威能（金幣制、依轉數逐轉解鎖）---- */
+
+function talentPolicy() {
+  return createPolicy({
+    name: 't', decideEveryGameSec: 1, needPanels: [], lists: { a: ['t1', 't2', 't3'], b: ['t4'] },
+    rules: [{ id: 'tf', cmd: 'talent.upgrade', talentFocus: { panel: 'panels.talentPlan', gold: 'view.gold', lists: ['a', 'b'] } }]
+  });
+}
+const tn = (lv, cost, o) => Object.assign({ lv, maxed: false, unlocked: true, cost }, o || {});
+const talentState = (talents, gold) => ({ gameTimeSec: 10, view: { gold }, panels: { talentPlan: { maxLevel: 10, talents } } });
+const talentIds = (cmds) => cmds.map((c) => c.args.id);
+
+test('威能：專注把第一個還能升的升滿，付不起就等，不去升別的', () => {
+  const T = { t1: tn(3, 1000), t2: tn(0, 10), t3: tn(0, 10), t4: tn(0, 10) };
+  assert.deepEqual(talentIds(talentPolicy().decide(talentState(T, 5000))), ['t1'], '先升 t1');
+  assert.deepEqual(talentIds(talentPolicy().decide(talentState(T, 500))), [],
+    't1 要 1000、只有 500：等它，不要拿去升便宜的 t2——那會把錢分散成一堆半吊子');
+});
+
+test('威能：還沒開放（轉數不夠）或已滿級的跳過，換下一個', () => {
+  const T = {
+    t1: tn(10, null, { maxed: true }),                     // 滿級
+    t2: tn(0, 10, { unlocked: false }),                    // 轉數不夠
+    t3: tn(2, 50), t4: tn(0, 10)
+  };
+  assert.deepEqual(talentIds(talentPolicy().decide(talentState(T, 1000))), ['t3'],
+    '先前整份清單全送，還沒開放的被回「尚未達到 N 轉」，實測 1,770 次 96% 失敗');
+});
+
+test('威能面板與遊戲一致：等級、費用、開放與否', () => {
+  const e = createEngine({ seed: 12 });
+  e.boot(null);
+  e.step(100);
+  const c = e.ctx;
+  const P = e.panel('talentPlan');
+  assert.equal(P.maxLevel, c.TALENT_MAX_LEVEL);
+  const ids = Object.keys(P.talents);
+  /* 節點數與節點名稱都要對：先前面板用了錯的欄位，整份只有 1 個叫 "undefined" 的節點，
+     而「節點數 > 0」的斷言照樣通過。 */
+  assert.equal(ids.length, c.talentList().length, '節點數要等於遊戲的威能節點數');
+  assert.ok(!ids.includes('undefined'), '節點名稱不能是 undefined');
+  assert.ok(ids.includes(c.talentList()[0].def.id));
+  for (const id of ids) {
+    const t = P.talents[id];
+    assert.equal(t.lv, c.talentLevel(id), id + ' 等級要等於遊戲的');
+    assert.equal(t.cost, t.maxed ? null : c.talentUpgradeCost(id, t.lv + 1), id + ' 費用要等於遊戲算的');
+  }
+  /* 新角色（0 轉）一個都不該是已開放：威能要轉生後才有。 */
+  assert.equal(ids.filter((id) => P.talents[id].unlocked).length, 0, '0 轉不該有任何已開放的威能');
+});

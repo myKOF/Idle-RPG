@@ -680,11 +680,10 @@ test('轉換寶石：雜牌逐 (種類,階級) 成格，偏好種類不動', () 
   }));
   assert.equal(cmds.length, 1);
   assert.equal(cmds[0].args.targetType, 'topaz');
-  assert.deepEqual(cmds[0].args.slots, [
-    { type: 'catseye', lv: 1, n: 4 },
-    { type: 'catseye', lv: 3, n: 2 },
-    { type: 'opal', lv: 1, n: 1 }
-  ], '轉換是同階進行的，所以每個 (種類, 階級) 各佔一格；偏好種類與零庫存都不入格');
+  /* 格子在命令內的順序對遊戲沒有影響（依階級再依格子），比內容不比順序。 */
+  const key = (x) => x.type + ':' + x.lv + ':' + x.n;
+  assert.deepEqual(cmds[0].args.slots.map(key).sort(), ['catseye:1:4', 'catseye:3:2', 'opal:1:1'],
+    '轉換是同階進行的，所以每個 (種類, 階級) 各佔一格；偏好種類與零庫存都不入格');
 });
 
 test('轉換寶石：rebalance 把偏好種類的一半轉給另一群，且只轉夠階的', () => {
@@ -718,6 +717,27 @@ test('轉換寶石：rebalance 把偏好種類的一半轉給另一群，且只�
     '已經一半一半就別再轉——不收斂的話每個決策點都會來回轉');
 });
 
+test('轉換寶石：遊戲改成「同階任意兩顆換一顆」後，重新平衡的預算要照比例算', () => {
+  /* 搬 x 顆只產出 x/2 顆。照 1:1 的舊公式算會多搬一倍，搬完爆傷反而比元素寶石還少。 */
+  const rule = {
+    id: 'conv', cmd: 'gem.convert',
+    convertToPreferred: {
+      gems: 'panels.gems.gems', levelPath: 'view.level', rules: 'panels.gemRules.convertInput',
+      maxSlots: 9, maxPerSlot: 1000, maxCommands: 4,
+      preferByLevel: [{ types: ['garnet', 'coreFire'] }],
+      rebalance: [{ from: 'garnet', to: ['coreFire'], when: ['view.level', '>=', 201], toShare: 0.5, minLevel: 6 }]
+    }
+  };
+  const p = makePolicy([rule]);
+  const run = (k) => p.decide({
+    gameTimeSec: 100, view: { level: 201 },
+    panels: { gemRules: { convertInput: k }, gems: { gems: { garnet: { 6: 10 } } } }
+  }).map((c) => c.args.slots[0].n);
+
+  assert.deepEqual(run(1), [5], '1:1：10 顆搬 5 顆，5 對 5');
+  assert.deepEqual(run(2), [6], '2:1：搬 6 顆得 3 顆，剩 4 : 3，已接近一半（搬 7 顆也只能成對，取 6）');
+});
+
 test('轉換寶石：配額種類不能被當成雜牌轉走', () => {
   const p = makePolicy([Object.assign({}, CONVERT_RULE, {
     convertToPreferred: Object.assign({}, CONVERT_RULE.convertToPreferred, {
@@ -730,6 +750,47 @@ test('轉換寶石：配額種類不能被當成雜牌轉走', () => {
   const converted = cmds.flatMap((c) => c.args.slots.map((s) => s.type));
   assert.deepEqual(converted, ['catseye'],
     '抗性寶石被轉走的話，鑲嵌的配額就永遠補不到——實測 20 小時後身上一顆抗性都沒有');
+});
+
+test('轉換寶石：二換一時，同階總數不足 2 顆的階級整階不送；每個目標的同階顆數是 2 的倍數', () => {
+  /* 實測 4 小時送了 800 多次、82～87% 被回「同階寶石至少需要 2 顆」：
+     單顆的槽位換不了，而輪流分配把同階拆到不同命令，每個命令裡同階只剩 1 顆。 */
+  const rule = Object.assign({}, CONVERT_RULE, {
+    convertToPreferred: Object.assign({}, CONVERT_RULE.convertToPreferred, {
+      rules: 'panels.gemRules.convertInput', preferByLevel: [{ types: ['topaz', 'ruby'] }]
+    })
+  });
+  const p = makePolicy([rule]);
+  const cmds = p.decide({
+    gameTimeSec: 100, view: { level: 10 },
+    panels: { gemRules: { convertInput: 2 }, gems: { gems: {
+      catseye: { 1: 3, 4: 1 },      // 4 階只有 1 顆：整階不送
+      opal: { 1: 3 }
+    } } }
+  });
+  const perTargetLv = {};
+  for (const c of cmds) for (const sl of c.args.slots) {
+    const k = c.args.targetType + '@' + sl.lv;
+    perTargetLv[k] = (perTargetLv[k] || 0) + sl.n;
+  }
+  assert.ok(!Object.keys(perTargetLv).some((k) => k.endsWith('@4')), '只有 1 顆的 4 階不該出現');
+  for (const [k, n] of Object.entries(perTargetLv)) assert.equal(n % 2, 0, k + ' 拿到 ' + n + ' 顆，不是 2 的倍數');
+  assert.equal(Object.values(perTargetLv).reduce((a, b) => a + b, 0), 6, '1 階共 6 顆全部換掉（3 對）');
+  assert.deepEqual(Object.keys(perTargetLv).sort(), ['ruby@1', 'topaz@1'], '3 對輪流給兩個偏好種類，不是清一色');
+});
+
+test('合成寶石：只送庫存夠合成的 (種類, 階級)，並預測同一輪的連鎖', () => {
+  const p = makePolicy([{ id: 'gc', cmd: 'gem.composeAll', gemComposeReady: { gems: 'panels.gems.gems', rules: 'panels.gemRules' } }]);
+  const run = (gems) => p.decide({
+    gameTimeSec: 100,
+    panels: { gems: { gems }, gemRules: { maxLevel: 10, compose: { 1: 3, 2: 3, 3: 3, 4: 3, 5: 4 }, enabled: { ruby: true, agate: false } } }
+  }).map((c) => c.args.type + '@' + c.args.level);
+
+  assert.deepEqual(run({ ruby: { 1: 2 } }), [], '不夠 3 顆就不送（先前每種每階全送，100% 失敗）');
+  assert.deepEqual(run({ ruby: { 1: 3 } }), ['ruby@1']);
+  assert.deepEqual(run({ ruby: { 1: 9 } }), ['ruby@1', 'ruby@2'],
+    '9 顆 1 階合成出 3 顆 2 階，同一輪就能再合成 2 階——依序送出，連鎖成立');
+  assert.deepEqual(run({ agate: { 1: 30 } }), [], '停用的種類不送');
 });
 
 test('轉換寶石：目標在偏好種類之間輪流，不會轉成清一色', () => {
