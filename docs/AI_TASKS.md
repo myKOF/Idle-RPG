@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## SYNC-SHORTCUT-RETIREMENT-20261102 — 排除舊參數捷徑阻擋同步
+
+- Owner：Codex；Done。使用者以「1」要求修復截圖中的同步中斷；範圍為三個固定AI工作區的舊參數捷徑、Git旗標、正常同步與本段紀錄，不修改玩法／Excel資料／同步控制器或解除既有試作保護，不發布main。
+- 原因：三個AI工作區停在d87e25fe，本地config/Excel/套用參數.bat.lnk以skip-worktree隱藏；主線405cb82a已將該捷徑替換為自身工作區相對路徑的BAT，故預檢乾淨仍在fast-forward拒絕覆寫。Antigravity舊捷徑實際指向Codex；不是develop內容合併衝突或index寫入失敗。
+- 修復：確認各工作區只有這一個隱藏路徑、無其他未提交修改且HEAD未移動，先逐一備份完整index／原捷徑及SHA收據至Git metadata的sync-shortcut-retirement-20261102-*；再僅解除該舊路徑旗標、恢復原HEAD追蹤版本，交正常fast-forward套用既有刪除與新BAT。沒有整體reset／clean、重新加入舊捷徑或覆寫其他修改。
+- 第一輪sync_ai_worktrees.bat結束碼0，develop及三個固定AI分支／遠端對齊064fc40c，工具逐一確認可同步來源均已納入主線。素材庫master維持878c1c0且乾淨；codex/background-catchup明確保留於08013b4db0e3f03f336810a128cd801547f89f6d，未合併／推送。報告：develop/logs/sync-ai-worktrees/sync-20261102-112746-eeb27f4b.md。
+- 驗證：node --test --test-reporter=spec tests/params-direct-edit.test.cjs全部6/6通過，包含跨工作區啟動與可搬移路徑、舊捷徑已移除、正常參數流程及匯出失敗中止；沒有執行實際參數套用或變更工作簿。npm.cmd run build全部624檔通過，git diff --check通過；四工作區新入口SHA256一致、舊捷徑不存在且無隱藏旗標，素材庫乾淨。未新增產品程式碼，不重跑與本次修復無關的測試。
+- 同檔預檢docs/AI_TASKS.md退出0、無其他修改。唯讀檢查規範／Workflow／Agent、同步工具／舊報告、提交405cb82a與分支來源；本輪只新增任務紀錄，原入口修正沿用既有提交，不新增自動覆寫隱藏檔案規則或素材。完成後提交本段並依正常同步交付；不宣稱已保留試作也完成整合，未做全庫或玩家遊玩驗證。
+
 ## SYNC-MERGE-20261102-090007 ? pending merge 52519fed + bede803c
 
 - Owner?Codex?Done?????????? develop ???????????????????? Git metadata??????????
