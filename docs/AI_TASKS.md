@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## PLAYER-SWORD-LENGTH-20261102 — 玩家模型劍長縮短10%
+
+- Owner：Codex；Done，單一開發者。使用者指定玩家模型劍長減少10%；前置為現用sunbrand-knight／grips36模型完成。fetch及目標衝突預檢乾淨。
+- 允許：現用GLB、Blender可重建縮劍工具、hero3d與index快取、LV及本段；素材庫保存原始輸入、可編輯Blend、正式GLB、來源及驗證。禁止改人物／握柄／護手／骨架／權重／動畫／戰鬥判定／NPC表與既有未提交修改，不合併推送。
+- 以Sword局部軸量測整劍長，僅壓縮護手以外劍身，使整劍總長為原90%，保持寬厚及握持位置。Blender製作後驗證非劍身資料逐位保持、長度及動畫、預覽、相關回歸／Build／diff，先素材庫再遊戲Commit；交使用者正常Review／整合。
+- 完成六檔：GLB僅84個劍身頂點位置改變，整劍長比例0.8999999739374381；護手／握柄／寬厚與人物不動。所有非目標位置位元、骨架／權重／索引／貼圖與五動畫逐位保持。hero3d模型快取20261102-sword90、主頁hero3d 1.0.39→1.0.40，Blender重建工具與LV同步。沒有新外部素材，沿用既有模型／授權，未修改戰鬥射程或命中規則。
+- 素材庫先Commit 1a034ce（[Codex] fix: 保存玩家縮短劍身模型與Blender來源），位於claude-authored/hero3d/sunbrand-knight/sword-length-20261102；保存未縮短grips36輸入、相同工具、完整可編輯Blend、輸出GLB、實際成品預覽與SHA／量測。正式素材庫GLB、版本輸出、遊戲GLB及隔離Blender重建四份SHA皆AD6645D1DB9EBFD18240049E36D3DB075CA2E3AA27B7F3C1E6E568A2ED435BC4，素材庫乾淨。
+- 驗證：Blender 5.2.3 LTS背景執行shorten-sword.py兩次，隔離重建逐位相同；完整GLB重新匯入並保存Blend成功。既有render_previews.py輸出五視角，三分之四實拍重開檢視，劍身連續、護手與持握保持；預覽／重建輸出保留本聊天visualizations/sword90。未新增低影響鏡像測試。
+- 測試指令：node --test --test-reporter=dot tests/hero3d-battle-rules.test.cjs tests/hero3d-internal-toggle.test.cjs tests/vfx-editor-cache-versions.test.cjs為18/18通過；npm.cmd run build為629檔通過。首輪另包含tests/player-directional-sprite.test.cjs，擴大為27項26過1失敗，DIR-8既有2D死亡起身的原始碼正則斷言失敗，涉及renderer及該測試與HEAD皆完全相同（git diff --quiet退出0），本次GLB／模型URL無法影響該斷言，未修改或弱化它。Node既有Three模組類型Warning保持；未執行瀏覽器Console／遊玩驗證。
+- 唯讀未改：共通規範／AGENTS／Workflow／prompts、既有模型修正工具與布料清單、上述回歸、2D renderer、Worker協議／戰鬥／存檔／String。原NPC.xlsx／NPC.csv／data修改完整保留、不stage。本項無未完成實作，可供Review／使用者合併；限制為既有2D死亡回歸未修、本輪以Blender成品視檢而非實際瀏覽器長玩。建議整合雙庫後重載遊戲；不合併推送develop／main。遊戲Commit為本段所在「[Codex] fix: 將玩家模型劍長縮短百分之十」，SHA見交付。
+
 ## NPC-DEATH-UI-20261102 — NPC死亡立即隱藏光圈與血條外框
 
 - Owner：Codex；Done，單一開發者。使用者要求NPC死亡時，腳下光圈、血條、血條背景及外框立即消失，保留本體死亡動畫。
