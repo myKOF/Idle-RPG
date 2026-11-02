@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## TEST-MAP-EXIT-20261102 — 恢復正式場景並統一全螢幕NPC比例
+
+- Owner：Codex；Done，單一開發者。使用者回報離開測試場景後無NPC、方格地板與正式場景裝飾混在一起。定位正常switchZone及GM跳關會清怪卻保留FIELD._gmArena／_testMap，導致自然出怪被關、renderer保留測試地板；選回同地圖另被早退擋掉。
+- 允許：combat測試場景集中離場清理與合法地圖／關卡切換入口、gm_exec合法跳關掛點、index／Bridge／Worker必要快取、gm-test-map回歸、GM_command／LV與本段。禁止改玩法數值／解鎖／存檔／配置表／素材／其他工作區或合併推送；保留本副本既有NPC.xlsx／CSV／data未提交修改，本項不重寫表格。
+- 前置既有test_map與正常換圖完成；fetch與所有目標預檢退出0，無外部來源。有效返回同場景、換圖、手動切關、GM跳關及test_map off／spawn off皆清理測試旗標／目標／復生與暫時鎖血，恢復原自然出怪與地板；非法／未解鎖操作不提前退出。既有正常換圖延遲及地圖進度規則保持。
+- 驗收：真Worker與正式renderer在混沌界309關重現、比對旗標／出怪／底圖／裝飾；同圖／跨圖／GM／手動／off、非法不變、反覆進出及不再復生測試NPC；相關回歸／Build／Console／diff後獨立Commit，交使用者正常Review／整合。無素材庫變更。
+- 使用者追加一般戰鬥區與全螢幕NPC相對玩家身高差異：NPC身體額外乘隨容器變化的densityScale，玩家3D本體固定世界高度；取消本體的容器密度乘數，保留素材／NPC表與階級倍率，與玩家共用既有鏡頭縮放／透視。命中特效體型也採同一本體倍率；血條與名字的介面密度維持。追加renderer／npc-complete-actions／scene-preview必要修改及回歸，正常與全螢幕／鏡頭滾輪／重生的NPC玩家相對比例須一致，不改NPC配置表或玩家模型。
+- 完成17檔：combat集中清理測試重生槽／點擊目標／god與技能排程，遠方遭遇設pending補群；有效同圖／跨圖／手動切關與GM跳關呼叫離場，非法操作保持原狀。world-map僅在battle.field._testMap時開放目前地圖前進，等ACK與旗標清除才關閉，正常規則維持。renderer本體與命中特效去掉容器密度乘數、舊BOSS備援也用世界體型。index與scene-preview renderer20261102-test-map-exit-scale、world-map1.0.9、combat／GM執行層／Bridge及Worker入口20261102-test-map-exit；資料快取另更新如下。GM_command／LV及本段同步，未新增玩家文字／String或素材。
+- 依使用者前輪「做好後連我的一起commit」授權，交付包含本輪NPC.xlsx／NPC.csv／data既有已儲存並套用修改，不改寫來源。Excel→隔離CSV491列×22欄逐值相同，config_tables --apply NPC試跑重建11個字面值／語意變更0；與HEAD相比縮放比267格、移動速度216格、出現權重84格、攻擊距離88格、攻速28格。index及Worker data快取20261102-test-map-exit-data，避免新版主頁／Worker讀舊表。Excel正被使用時採共享唯讀快照，原生Excel只開副本ReadOnly=True／Saved=True、Shapes0、正常開啟無錯誤，原來源前後SHA256保持40F433284DC27569BEB5B707454D27D4DBC4E03BBE20AB48F7B3C250BA4C40D3；未操作使用者視窗、未儲存或覆寫工作簿。
+- 回歸指令：`node --test --test-reporter=spec tests/gm-test-map.test.cjs tests/npc-complete-actions.test.cjs tests/npc-facing.test.cjs tests/npc-rank-glow.test.cjs tests/battle-renderer-pause.test.cjs tests/world-map.test.cjs tests/world-map-ui.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/tower-scene-intro.test.cjs tests/scene-startup-ready.test.cjs tests/gm-command.test.cjs`121/121通過；`npm.cmd run build`628檔通過，最後data純快取補版再查Worker語法。含真Worker七種返回入口與自然出怪、非法拒絕／進度和裝備保持、世界地圖目前地圖前進與ACK防重送、實際視窗尺寸／普通菁英BOSS體型及命中特效倍率、既有動作／朝向／暫停／地圖／載入回歸。diff／stat／check及暫存檢查通過，自我Review完成。
+- 瀏覽器修前修後：bundled Playwright／隔離headless Edge＋隨機localhost、正式index／真Worker／renderer，HEAD combat／GM／renderer以HTTP唯讀覆映重現。從太古戰場測試模式前往混沌界309關：修前gm/test皆true、NPC0、slots130、grid=true；修後旗標皆false、NPC正常補出、slots0、grid=false，正確混沌地板／裝飾。另以真滑鼠開世界地圖→選目前混沌界→前進成功退出、地圖關閉，2D／3D兩模式皆通過。
+- 比例驗證：同一NPC與玩家在正常視窗／全螢幕／還原三次量測，修前2D身高比0.55907→0.78782、3D0.40985→0.57754；修後2D三次皆0.7878214285714286、3D三次皆0.5775447272727272，NPC表倍率不變，僅去除視窗另乘的縮放。兩模式Console error／warning與pageerror皆0，after-3d實拍已重開視檢；未讀寫玩家原網址存檔。verify.cjs／report.json／四張PNG、Excel唯讀報告與source比較留本聊天visualizations/test-map-return。
+- 唯讀未改：規範／AGENTS／Workflow／prompts、玩家3D模型／2D動畫／Hero3D縮放、傷害／技能數值公式、Worker協議與存檔、NPC原圖／manifest及其他素材。使用者NPC數值變更依已授權原樣提交，無素材庫變更／空Commit；未跑全庫、多瀏覽器／實體觸控或原玩家完整遊玩。無本項未完成實作／已知新增風險，可供Review／使用者合併；未合併推送develop／main。Commit為本段所在「[Codex] fix: 修正測試場景返回與全螢幕NPC比例」，SHA見交付；下一步重新載入遊戲，由世界地圖選目前地圖前進或test_map off返回驗收。
+
 ## STARTUP-FIELD-KEY-20261102 — 野外場景 Loading 無限等待
 
 - Owner：Codex；Done，單一開發者。使用者回報 Loading 點仍動但無法進遊戲；正式 localhost 診斷確認 Worker／面板／底圖裝飾完成、診斷 errors 空，scene.key 為 field:desert，sceneReady 卻為 false。

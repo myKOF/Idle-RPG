@@ -1097,6 +1097,8 @@
     var targetIdx = zoneKeys.indexOf(targetZone);
     if (targetIdx < 0) targetIdx = 0;
 
+    if (typeof FIELD !== 'undefined' && FIELD && FIELD._testMap && typeof gmTestMapOff === 'function') gmTestMapOff();
+
     if (!G) G = {};
     if (!G.zoneProgress) G.zoneProgress = {};
 

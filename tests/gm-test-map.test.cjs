@@ -10,6 +10,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const { extractFunction, fakePixi } = require('./helpers/battle-scene.cjs');
+const { createEngine } = require('../scripts/sim/engine');
 
 const root = path.resolve(__dirname, '..');
 
@@ -209,4 +210,50 @@ test('test_map：封魔塔戰鬥中不可進入；演武場指令會離開測試
   assert.equal(c.executeGMCommand('test_map').ok, true);
   assert.equal(c.executeGMCommand('spawn 2').ok, true);
   assert.equal(run(c, 'FIELD._testMap'), false);
+});
+
+test('真Worker：同圖返回／換圖／切關／GM跳關與off均清除測試旗標並恢復自然出怪', () => {
+  const actions = [
+    ['同圖', c => c.switchZone('god_chaos')],
+    ['換圖', c => c.switchZone('god_battlefield')],
+    ['切關', c => c.stageGo(-1)],
+    ['最高關', c => c.stageGoMax()],
+    ['GM跳關', c => assert.equal(c.executeGMCommand('stage_jump god_chaos 309').ok, true)],
+    ['test_map off', c => c.executeGMCommand('test_map off')],
+    ['spawn off', c => c.executeGMCommand('spawn off')]
+  ];
+  for (const [label, leave] of actions) {
+    const engine = createEngine({ seed: 8 }).boot(null), c = engine.ctx;
+    assert.equal(c.executeGMCommand('stage_jump god_chaos 309').ok, true);
+    c.G.stage.autoAdvance = false; c.G.stage.best = 499;
+    c.GM_TEST.hpLock = true; c.executeGMCommand('damage 0');
+    c.executeGMCommand('test_map');
+    const testIds = new Set(c.fieldEnemyList().map(e => e.floatSel));
+    c.testMapSetTarget(c.fieldEnemyList()[1].floatSel);
+    leave(c);
+    assert.equal(c.FIELD._testMap, false, label);
+    assert.equal(c.FIELD._gmArena, false, label);
+    assert.equal(c.GM_TEST.god, false, label);
+    assert.equal(c.TEST_MAP_RT.slots.length, 0, label);
+    assert.equal(c.TEST_MAP_RT.target, null, label);
+    assert.equal(c.TEST_MAP_RT.move, null, label);
+    engine.stepSeconds(c.FIELD_STAGE_SWITCH_DELAY + 1);
+    assert.ok(c.fieldEnemyList().some(e => e.hp > 0), label + '自然出怪恢復');
+    assert.ok(c.fieldEnemyList().every(e => !testIds.has(e.floatSel) && !e._passive), label + '不再生成測試NPC');
+  }
+});
+
+test('test_map：非法／未解鎖切換不退出，直接返回不修改場景進度與玩家設定', () => {
+  const engine = createEngine({ seed: 3 }).boot(null), c = engine.ctx;
+  c.executeGMCommand('test_map');
+  c.switchZone('no-zone'); c.switchZone('god_sanctuary'); c.stageGo(-1);
+  assert.equal(c.executeGMCommand('stage_jump no-zone 309').ok, false);
+  assert.equal(c.executeGMCommand('stage_jump desert 9999').ok, false);
+  assert.equal(c.FIELD._testMap, true); assert.equal(c.GM_TEST.god, true);
+  const before = JSON.stringify({ stage: c.G.stage, progress: c.G.zoneProgress, equipment: c.G.equipment });
+  c.switchZone('desert');
+  assert.equal(JSON.stringify({ stage: c.G.stage, progress: c.G.zoneProgress, equipment: c.G.equipment }), before);
+  assert.equal(c.FIELD._testMap, false);
+  c.GM_TEST.god = true; c.gmArenaOff();
+  assert.equal(c.GM_TEST.god, true, '非測試模式不關閉玩家自行開啟的god');
 });

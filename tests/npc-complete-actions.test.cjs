@@ -90,7 +90,7 @@ test('onVfx到逐幀tickWorld：攻擊完整前進，移動不能打斷，完成
  }
 });
 
-test('既有NPC重排與新生共用表格倍率／密度尺寸，保留本體、攻擊幀、朝向與死亡進度',()=>{
+test('既有NPC重排與新生共用表格倍率、本體不隨視窗變大，保留攻擊幀／朝向／死亡進度',()=>{
  const {c}=attackDispatch(),P=c.PIXI;c.density=.5;c.cell={w:60,h:50};c.S.layers.entity=new P.Container();
  c.NPC_CONFIG_TABLE={desert_2:{id:'desert_goblin',scale:2}};
  Object.assign(c,{densityScale:()=>c.density,cellSize:()=>c.cell,npcSpriteDef:()=>c.NPC_CONFIG_TABLE.desert_2,
@@ -98,11 +98,11 @@ test('既有NPC重排與新生共用表格倍率／密度尺寸，保留本體�
   spriteHitBox:body=>({height:64*body.scale.y,center:32*body.scale.y})});
  vm.runInContext(['makeNpcSpriteBody','enemyLayout','makeEnemy','syncEnemyLayout','adoptNpcSprite'].map(n=>extractFunction(renderer,n)).join('\n'),c);
  const data={npcId:'desert_2',floatSel:'first',hp:100,maxHp:100,pos:{x:0,y:0}},e=c.makeEnemy(data);
- assert.equal(e.visScale,1);assert.equal(e.nameText.style.fontSize,8);
+ assert.equal(e.visScale,2);assert.equal(e.nameText.style.fontSize,8);
  const body=e.body;c.playAnim(e,'attack');body.gotoAndStop(2);body.scale.x=-body.scale.x;e.state='dying';e.dieT=.2;e.bodyWrap.scale.y=.7;
  for(const [density,w,h]of [[1,100,80],[.5,60,50],[1,100,80]]){
   c.density=density;c.cell={w,h};c.syncEnemyLayout(e);const fresh=c.makeEnemy({...data,floatSel:'fresh'});
-  assert.equal(e.visScale,2*density);assert.equal(e.visScale,fresh.visScale);
+  assert.equal(e.visScale,2);assert.equal(e.visScale,fresh.visScale);
   assert.equal(Math.abs(e.body.scale.x),fresh.body.scale.x);assert.equal(e.body.scale.y,fresh.body.scale.y);
   assert.equal(e.hitHeight,fresh.hitHeight);assert.equal(e.hitCenter,fresh.hitCenter);
   assert.equal(e.barW,fresh.barW);assert.equal(e.nameText.style.fontSize,fresh.nameText.style.fontSize);
@@ -120,6 +120,22 @@ test('既有NPC重排與新生共用表格倍率／密度尺寸，保留本體�
  assert.equal(cold.npcSprite,true);assert.equal(cold.visScale,2);
  assert.equal(cold.body.scale.y,sheet.manifest.scale*2,'晚載素材採用重排後的最新倍率');
  cold.root.destroy({children:true});
+});
+
+test('真實視窗計算：NPC與玩家共用世界尺度，戰場尺寸與容量不改NPC體型及命中特效倍率',()=>{
+ const c={Math,S:{canvasW:700,canvasH:800,entities:{}},NPC_CONFIG_TABLE:{npc:{scale:3}},playerPos:()=>({x:0,y:0})};
+ vm.createContext(c);
+ vm.runInContext(['boardMetrics','cellSize','densityScale','enemyLayout','bodyScaleOfEntity'].map(n=>extractFunction(renderer,n)).join('\n'),c);
+ const nameSizes=[];
+ for(const [w,h]of [[700,800],[1920,1080],[390,600],[700,800]]){
+  c.S.canvasW=w;c.S.canvasH=h;
+  for(const [data,mult]of [[{npcId:'npc'},3],[{npcId:'npc',_size:2,elite:true},6],[{npcId:'npc',_size:3,isBoss:true},9]]){
+   const m=c.enemyLayout(data);assert.equal(m.visScale,mult);
+   c.S.entities.npc={visScale:m.visScale};assert.equal(c.bodyScaleOfEntity('npc'),mult);
+  }
+  nameSizes.push(c.enemyLayout({npcId:'npc'}).nameSize);
+ }
+ assert.ok(nameSizes.every(n=>n>=8),'介面文字仍保留最低可讀大小');
 });
 test('正式敵方出手事件播放攻擊，完成後接回當下移動／站立；死亡留在最後一幀',()=>{
  const c={console,performance,setTimeout,clearTimeout,navigator:{userAgent:'node'}};vm.createContext(c);

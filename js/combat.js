@@ -856,6 +856,12 @@ function testMapMovePlayer(p, dt) {
     return moved;
 }
 function gmArenaOff() {
+    if (FIELD._testMap) {
+        TEST_MAP_RT = { slots: [], target: null, move: null };
+        if (typeof GM_TEST !== 'undefined' && GM_TEST) GM_TEST.god = false;
+        if (typeof resetSkillRT === 'function') resetSkillRT();
+        FIELD_ENCOUNTER_RT.pending = true;
+    }
     if (typeof eliteReset === 'function') eliteReset();
     FIELD._gmArena = false;
     FIELD._testMap = false;
@@ -890,13 +896,18 @@ function tickFieldDeathDespawn(dt) {
 
 /* ---- 場景切換：各場景獨立保存進度與最高階段 ---- */
 function switchZone(zoneKey) {
-    if (!ZONES[zoneKey] || G.stage.zone === zoneKey) return;
+    if (!ZONES[zoneKey]) return;
+    if (G.stage.zone === zoneKey) {
+        if (FIELD._testMap) gmTestMapOff();
+        return;
+    }
     var zd = ZONES[zoneKey];
     if (!isZoneUnlocked(zoneKey)) return;
     if (zd.reqZone) {
         var cleared = zoneClearedStage(zd.reqZone);
         if (cleared < zd.reqStage) return;
     }
+    if (FIELD._testMap) gmTestMapOff();
     // 保存目前場景進度（cleared 只住在 zoneProgress，整包覆寫時必須帶著走）
     if (!G.zoneProgress) G.zoneProgress = {};
     var fromKey = G.stage.zone || 'desert';
@@ -2715,6 +2726,7 @@ function rollFieldDrops(m) {
 function stageGo(delta) {
     var t = G.stage.current + delta;
     if (t < 1 || t > Math.min(G.stage.best, zoneMaxStage(G.stage.zone))) return;
+    if (FIELD._testMap) gmTestMapOff();
     G.stage.current = t;
     G.stage.kills = 0;
     /* 手動切關同樣不清場：已經出現的敵人打完為止。 */

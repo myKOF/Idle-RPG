@@ -37,6 +37,7 @@ var WorldMapUI = (function () {
     var max = Math.max(1, Number(row && row.maxStage) || Number(def.maxStage) || 1);
     var unlocked = !!(row && row.unlocked);
     return { key: key, name: def.name, active: active, ready: !!row,
+      testMap: active && !!(battle.field && battle.field._testMap),
       unlocked: unlocked, max: max,
       best: unlocked ? Math.min(max, Math.max(0, Number(stage && stage.best) || 0)) : 0,
       current: unlocked ? Math.min(max, Math.max(0, Number(stage && stage.current) || 0)) : 0 };
@@ -74,7 +75,7 @@ var WorldMapUI = (function () {
       (!info.unlocked ? lockReason(key) : (info.active ? STR(2107) : STR(2108, (info.current || 1)))));
     var go = el('world-map-go');
     go.hidden = !selected;
-    go.disabled = !info.ready || !info.unlocked || info.active || !!state.pending || !!state.transition;
+    go.disabled = !info.ready || !info.unlocked || (info.active && !info.testMap) || !!state.pending || !!state.transition;
     go.textContent = state.pending ? STR(2109) : STR(2110);
     if (locations[key]) {
       var point = locations[key];
@@ -123,7 +124,7 @@ var WorldMapUI = (function () {
   }
   function refresh() {
     if (!state.open) return;
-    if (state.pending && state.acknowledged && currentZone() === state.pending) { close(); return; }
+    if (state.pending && state.acknowledged && currentZone() === state.pending && !zoneState(state.pending).testMap) { close(); return; }
     if (state.pending && state.acknowledged && !isUiCommandPending(nodePendingKey('zone'))) {
       state.pending = null;
       state.error = STR(2112);
@@ -187,7 +188,7 @@ var WorldMapUI = (function () {
   }
   function go() {
     var key = state.selected, info = zoneState(key);
-    if (!info || !info.unlocked || info.active || state.pending || state.transition) return;
+    if (!info || !info.unlocked || (info.active && !info.testMap) || state.pending || state.transition) return;
     state.pending = key; state.acknowledged = false; state.error = ''; state.signature = '';
     refresh();
     sendUiCommand('stage.switchZone', { zoneKey: key }, {
