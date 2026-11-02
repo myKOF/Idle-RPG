@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## NPC-DEATH-UI-20261102 — NPC死亡立即隱藏光圈與血條外框
+
+- Owner：Codex；Done，單一開發者。使用者要求NPC死亡時，腳下光圈、血條、血條背景及外框立即消失，保留本體死亡動畫。
+- 前置：既有NPC死亡動畫／快照同步及菁英標記完成；fetch與目標衝突預檢皆乾淨。允許battle-renderer死亡入口／血條及階級覆光可見性、battle-elite群組環、index／scene-preview必要快取、獨立npc-death-ui回歸、LV及本段。禁止改戰鬥計算／死亡時序／動畫素材／配置表／存檔／Worker協議、其他工作區或合併推送。
+- 驗收：死亡快照及離場立即隱藏整份血條與群組環／階級外框，後續重繪／換幀／重排不重新顯示；普通／菁英／高級菁英／BOSS及無死亡序列退路、暫停／背景清理／同ID重生保持。相關回歸／Build／Console／diff後獨立Commit，交正常Review與使用者整合。無素材庫變更。
+- 完成八檔：renderer死亡入口立即隱藏hpBar／群組環及階級內外覆光；drawHpBar在零血量或死亡狀態不顯示整份Graphics，覆光同步亦不因換幀／重排重新建立或顯示；battle-elite後續更新持續隱藏死亡光圈。index兩支JS快取分別1.0.9／20261102-npc-death-ui，scene-preview同步renderer，LV同步。新增npc-death-ui三項整合回歸；既有battle-elite死亡環斷言依本次需求由變淡改為立即隱藏，其餘功能斷言保持。未改本體死亡動作、既有淡出／清理時序或玩家文字。
+- 測試：`node --test --test-reporter=spec tests/npc-death-ui.test.cjs tests/battle-elite.test.cjs tests/npc-rank-glow.test.cjs tests/npc-complete-actions.test.cjs tests/battle-renderer-pause.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/npc-facing.test.cjs`共34/34通過；`npm.cmd run build`629檔通過；git diff／stat／check及自我Review通過。新增測試以真Pixi覆蓋四階級／暫停即時隱藏、死亡幀前進與hold、快照含／不含屍體持留、重複快照、同ID重生、零血量、舊圖退路與背景清理；首輪fixture缺syncVfxStatuses空掛點，補齊測試環境後重跑，未更動產品迎合fixture。
+- 實機：IAB不可連線，改bundled Playwright／隔離headless Edge＋隨機localhost，以正式完整renderer／battle-elite及哥布林圖片驗四階級。暫停中直接呼叫正式死亡入口即隱藏光圈／整份血條／階級覆光，後續180次正式動畫／血條／覆光與菁英更新仍保持隱藏，死亡播放至第六幀並停止；死亡當下root.alpha仍1，確認不是靠本體淡出。Console error／warning及pageerror皆0，三張PNG已重開目視；QA腳本與report.json保留本聊天visualizations目錄。僅HTTP測試回應暴露內部觀測，未改正式產品API或讀寫玩家存檔；首輪測試頁favicon404已補內嵌空圖示後重驗全過。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／Codex規範、原動畫／朝向／覆光及相關回歸、NPC素材與manifest、Worker協議／傷害／存檔／String。過程中使用者另改NPC.xlsx／NPC.csv／data，完整保留、不stage或納入本項Commit；沒有新美術素材或素材庫變動。無本項未完成實作或已知新增風險，可Review／使用者合併；未做全庫／多瀏覽器／真Worker長時間遊玩，不合併推送develop／main。下一步重新載入遊戲驗收；Commit為本段所在「[Codex] fix: NPC死亡立即隱藏光圈血條與外框」，SHA見交付。
+
 ## TEST-MAP-EXIT-20261102 — 恢復正式場景並統一全螢幕NPC比例
 
 - Owner：Codex；Done，單一開發者。使用者回報離開測試場景後無NPC、方格地板與正式場景裝飾混在一起。定位正常switchZone及GM跳關會清怪卻保留FIELD._gmArena／_testMap，導致自然出怪被關、renderer保留測試地板；選回同地圖另被早退擋掉。

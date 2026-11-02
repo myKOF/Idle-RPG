@@ -98,7 +98,7 @@ test('BATTLE-ELITE-4 資料缺欄位不炸：沒有 affixes、死亡中、已移
   assert.equal(gone.eliteDeco, undefined);
   weird.state = 'dying';
   assert.doesNotThrow(() => be.update({ w: weird }, 0.016, 50));
-  assert.ok(weird.eliteDeco.ring.alpha < 0.5, '死亡中環變淡');
+  assert.equal(weird.eliteDeco.ring.visible, false, '死亡中群組環立即隱藏');
 });
 
 test('BATTLE-ELITE-5 復仇：體型加成 _grow 讓本體逐步放大到目標，不會每幀累乘；沒有 _grow 就不動', () => {

@@ -1622,6 +1622,10 @@ var BattleRenderer = (function () {
   }
   function syncNpcRankGlow(ent) {
     var style = npcRankStyle(ent.data), body = ent.body, glow = ent.rankGlow;
+    if (ent.state === 'dying' || ent.state === 'gone') {
+      if (glow) { glow.outer.visible = false; glow.inner.visible = false; }
+      return;
+    }
     if (!style || !body || body.destroyed) {
       if (glow) { glow.outer.destroy(); glow.inner.destroy(); ent.rankGlow = null; }
       return;
@@ -2049,6 +2053,8 @@ var BattleRenderer = (function () {
   }
 
   function drawHpBar(ent) {
+    ent.hpBar.visible = ent.state !== 'dying' && ent.state !== 'gone' && ent.data.hp > 0;
+    if (!ent.hpBar.visible) return;
     var d = ent.data;
     var hp = Math.max(0, d.hp), max = Math.max(1, d.maxHp);
     var sh = Math.max(0, d.shield || 0);
@@ -2721,6 +2727,10 @@ var BattleRenderer = (function () {
       return;
     }
     ent.state = 'dying';
+    /* 裝飾立即退場，本體繼續原有死亡動畫；不能等整個 root 淡出。 */
+    ent.hpBar.visible = false;
+    if (ent.eliteDeco) ent.eliteDeco.ring.visible = false;
+    syncNpcRankGlow(ent);
     ent.dieAt = nowMs();
     ent.realDeath = !!realDeath;
     S.lastPos[ent.id] = { x: ent.root.x, y: ent.root.y - entityCenterHeight(ent), footY: ent.root.y, at: nowMs() };
