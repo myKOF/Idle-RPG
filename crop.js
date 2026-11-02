@@ -15,7 +15,7 @@ const bossNames = [
 
 async function run() {
   try {
-    const img = await Jimp.read('images/BOSS_avatar_10.png');
+    const img = await Jimp.read('images/sprites/boss/BOSS_avatar_10.png');
     const w = img.bitmap.width;
     const h = img.bitmap.height;
     console.log(`Image size: ${w}x${h}`);
@@ -34,7 +34,7 @@ async function run() {
         if (idx >= bossNames.length) break;
         const x = c * cropW;
         const y = r * cropH;
-        const outName = 'images/' + bossNames[idx];
+        const outName = 'images/sprites/boss/' + bossNames[idx];
         const clone = img.clone();
         clone.crop(x, y, cropW, cropH);
         await clone.writeAsync(outName);

@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## SYNC-ART-BOSS-20261102 — 整合裝備、NPC描邊與BOSS路徑
+
+- Owner：Codex；Done（整合與驗證完成，同步結果見交付）。使用者以1授權保留全部AI成果並同步。來源a816c30c（裝備）、2bc47516（NPC黑描邊）、23c281e4（BOSS圖移位）；保留三個原提交及main。允許合併、必要路徑／快取修正與本段，完成素材來源、相關回歸、配置一致性及Build後正常同步。
+- 預檢：固定及描邊工作區全乾淨；data的裝備與BOSS區段各自獨立且實際合併乾淨。AI_TASKS自訂driver因既存重複標題報衝突，但工作檔經base／ours／theirs精確比對為兩側新增段落無損聯集，無競爭文字。三個來源全部保留。
+- 完成：8bb2c78d整合裝備與黑描邊；本提交納入Claude十款BOSS圖與原生NPC Excel／CSV路徑搬移，data三方自動合併保留裝備池及BOSS設定。主端data／Bridge與Worker共用快取20261102-integrated-art-boss；renderer沿用20261102-black-outlines，String生成Hash c1b85e9d保持。未編修Excel，String三檔逐位等於a816c30c，NPC來源兩檔逐位等於23c281e4；所有NPC與BOSS圖集逐位等於2bc47516。
+- 驗證：node --test --test-reporter=tap，26檔192項191過／1既存失敗（完整清單與輸出logs/sync-art-boss-20261102/regression.tap）；NPC-SKILL-4源於原有19格提取差異，df6baf2e與23c281e4各自同樣19格，未因整合新增。未改或放寬測試；NPC apply試跑重建11字面值但語意變更0，apply_params為585一致／0變更／0錨點，String --check2292條。NPC及String Excel與CSV逐格差異均0（491／2293列），十個BOSS執行時路徑皆存在。
+- 素材：bundled NODE_PATH執行export_supplemental.cjs --source-check／--check全通過，含497 PNG／Mote黑描邊與65固定待機；export-equipment-art.cjs --check確認62新圖與43舊圖一致。素材庫三筆既有提交685eceb／1680c77／484a1f1均保留、乾淨待正常同步，本項未產生新素材。npm.cmd run build通過632檔，完整diff check無錯。
+- 範圍與風險：只額外改本紀錄及三支快取入口，無新增功能／數值或解鎖規則，因此既有LV兩項來源敘述已完整保留。唯讀檢查共通規範、Workflow、Agent文件、原提交、Excel／CSV、來源匯出器及測試。已知限制為NPC原有一致性回歸失敗，未做本輪瀏覽器長玩或全庫回歸；無本項未完成實作。原提交全保留、main保持不動，可同步已完成成果。
+
 ## EQUIPMENT-ART-SETS-20261102 — 六套防具與十四款首飾圖示
 
 - Owner：Codex；Done，單一開發者。使用者指定以現有裝備圖為品質參考，新製布甲／皮甲／鎧甲各兩套、戒指至少八款及項鏈至少六款，命名後套用現有裝備系統。每套含頭／肩／衣／腰／手／腕／腿／靴八部位，共62款；布甲黃白、皮甲黃橘、鎧甲深鐵色，六套輪廓各異。
