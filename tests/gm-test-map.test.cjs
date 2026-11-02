@@ -1,6 +1,6 @@
 /* GM 測試場景 test_map（2026-11-02）
    用來逐隻檢查 NPC 外觀與動作的空場景。守住：
-     1. 指令進出：NPC 表全部＋封魔塔 BOSS 擺進場，從原點依場景向右分列、逐列向上，間隔 15 米，off 清場
+     1. 指令進出：NPC 表全部＋封魔塔 BOSS 擺進場，從原點依場景向右分列、逐列向上，間隔 20 米，off 清場
      2. 被動怪：沒被打不索敵、不攻擊；被打（血量下降）之後才醒來
      3. 我方只聽點擊：沒有目標就不動；點地面走過去、點怪走到近戰距離
      4. 死亡後原位重生，而且重生的是新的被動怪 */
@@ -39,7 +39,7 @@ function loadContext() {
 }
 const run = (c, code) => vm.runInContext(code, c);
 
-test('test_map：NPC 表全部＋封魔塔 BOSS，依場景向右分列、逐列向上每 15 米一隻，off 清場', () => {
+test('test_map：NPC 表全部＋封魔塔 BOSS，依場景向右分列、逐列向上每 20 米一隻，off 清場', () => {
   const c = loadContext();
   const res = c.executeGMCommand('test_map');
   assert.equal(res.ok, true, res.message);
@@ -49,7 +49,7 @@ test('test_map：NPC 表全部＋封魔塔 BOSS，依場景向右分列、逐列
   assert.equal(run(c, 'FIELD._testMap && FIELD._gmArena'), true);
   assert.equal(c.GM_TEST.god, true, '被動怪被打會還擊，測試期間鎖血');
 
-  const step = run(c, 'bfMeterPx(15)');
+  const step = run(c, 'bfMeterPx(20)');
   const rows = run(c, 'ZONE_LIST.map(k => ZONES[k].pool.map(mt => mt.id))');
   const seen = new Set();
   const groups = [...rows, run(c, 'Object.keys(NPC_CONFIG_TABLE)'), run(c, 'BOSS_LIST.map(b => b.id)')]

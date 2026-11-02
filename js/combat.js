@@ -709,7 +709,7 @@ function gmArenaSpawnElite(groups, affixIds, size, hpMult, tier) {
      移除地形，並讓玩家改成「點擊移動／點怪攻擊」（模擬層 testMapMovePlayer，不再自動索敵）。
    - 站位、重生計時等執行期資料放在 TEST_MAP_RT（不進 FIELD，免得每次面板快照都帶一份）。
    - 被打死的 NPC 過 TEST_MAP_RESPAWN_SEC 秒在原位重生，方便反覆看死亡動作。 */
-var TEST_MAP_STEP_M = 15;          // 相鄰兩隻與相鄰列的間距（米）
+var TEST_MAP_STEP_M = 20;          // 相鄰兩隻與相鄰列的間距（米）
 var TEST_MAP_HP_MULT = 10;         // 血量倍率：讓每隻能撐住幾下，方便看受擊與攻擊動作
 var TEST_MAP_RESPAWN_SEC = 4;      // 死亡後原地重生的等待秒數（從陣亡起算）
 var TEST_MAP_RT = { slots: [], target: null, move: null };
