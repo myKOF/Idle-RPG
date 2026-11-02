@@ -45,6 +45,7 @@
 | 持續場域 | 位置／尺寸／角度平滑 0.14 秒，位置修正上限為速度 0.3 倍 | groundTau、groundCorrection |
 | ground-homing-wind-crescent | 航向／位置修正平滑 0.12 秒 | windTau |
 | 狀態光環 | 尺寸平滑 0.15 秒 | auraTau |
+| en-gold-dome（NPC 護盾罩） | 罩子大小／位置依體型倍率與腳底估算 | fitBody、fitPadding；開啟後依圖像目前幀的可見範圍（寬高與中心）貼合，預設比模型大 15%；量不到時退回原做法 |
 | 岩甲、泥沼、火龍捲、火牆柱 | 出場／退場縮放各 0.3 秒 | fieldEnter、fieldExit |
 | 吞噬場域 | 淡入 0.2 秒、淡出 0.3 秒 | devourEnter、devourExit |
 | 環繞 | 整組中心向上 12px | orbitLift，設在環繞本體；整組共享中心 |

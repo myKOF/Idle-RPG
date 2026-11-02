@@ -697,6 +697,8 @@ var VFXCore = (function () {
     groundCorrection: { label: '場域位置修正速度比例', default: .3, min: 0, max: 1 },
     windTau: { label: '追蹤風刃航向平滑（秒）', default: .12, min: .001, max: 1 },
     auraTau: { label: '狀態光環尺寸平滑（秒）', default: .15, min: 0, max: 1 },
+    fitBody: { label: '狀態光環貼合本體可見範圍（量圖像實際位置與大小）', default: false },
+    fitPadding: { label: '貼合本體時比模型放大的倍率', default: 1.15, min: 1, max: 2 },
     fieldEnter: { label: '場域長出時間（秒）', default: .3, min: 0, max: 5 },
     fieldExit: { label: '場域縮回時間（秒）', default: .3, min: 0, max: 5 },
     devourEnter: { label: '吞噬場域淡入（秒）', default: .2, min: 0, max: 5 },
