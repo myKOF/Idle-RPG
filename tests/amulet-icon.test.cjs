@@ -16,7 +16,7 @@ function loadSlotInfo() {
 
 test('項鏈使用專用透明圖示，不再誤用寶石資源圖', () => {
   const slotInfo = loadSlotInfo();
-  assert.equal(slotInfo.amulet.icon, 'icon_amulet.png');
+  assert.equal(slotInfo.amulet.icon, 'equipment/icon_amulet.png');
   assert.notEqual(slotInfo.amulet.icon, 'icon_gems.png');
 
   const iconPath = path.join(root, 'images', slotInfo.amulet.icon);

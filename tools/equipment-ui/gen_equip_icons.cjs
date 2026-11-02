@@ -1,10 +1,10 @@
 /* 產生「依名稱區分」的裝備圖示（輕甲／布甲／皮甲／鎖甲等）。
-   既有的重甲美術（images/icon_*.png）對應板甲、龍鱗等重型名稱；本腳本補的是布、皮、麻、鎖、草等輕型名稱。
-   用法：node tools/equipment-ui/gen_equip_icons.cjs  → 輸出 images/equip/*.svg 與 _render.html
+   既有的重甲美術（images/equipment/icon_*.png）對應板甲、龍鱗等重型名稱；本腳本補的是布、皮、麻、鎖、草等輕型名稱。
+   用法：node tools/equipment-ui/gen_equip_icons.cjs  → 輸出 images/equipment/*.svg 與 _render.html
    PNG 由 Chrome headless 轉出（見 tools/equipment-ui/render_equip_icons.cjs）。 */
 const fs = require('fs');
 const path = require('path');
-const OUT = path.join(__dirname, '..', '..', 'images', 'equip');
+const OUT = path.join(__dirname, '..', '..', 'images', 'equipment');
 fs.mkdirSync(OUT, { recursive: true });
 
 const MATS = {

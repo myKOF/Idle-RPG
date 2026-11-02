@@ -20,16 +20,17 @@ test('每種武器類型都有獨立圖示素材與資料映射', () => {
       : type === 'magicSword2h'
         ? 'icon_weapon_magic_sword2h.png'
         : `icon_weapon_${type}.png`;
-    const filePath = path.join(root, 'images', filename);
+    const filePath = path.join(root, 'images', 'equipment', filename);
     assert.equal(fs.existsSync(filePath), true, `missing ${filename}`);
     const signature = fs.readFileSync(filePath).subarray(0, 8).toString('hex');
     assert.equal(signature, '89504e470d0a1a0a', `${filename} is not a PNG`);
-    assert.match(dataSource, new RegExp(`${type}: ['"]${filename.replace('.', '\\.')}`));
+    assert.match(dataSource, new RegExp(`${type}: ['"]equipment/${filename.replace('.', '\\.')}`));
   }
 });
 
 test('裝備欄、背包與神鑄素材槽共用武器類型圖示選擇器', () => {
   assert.match(uiSource, /function itemIconFile\(it, info\)/);
   assert.equal((uiSource.match(/itemIconFile\(it, info\)/g) || []).length >= 4, true);
-  assert.match(uiSource, /var weaponIcon = \(typeof weaponIconForItem === 'function'\)/);
+  assert.match(uiSource, /return equipIconFile\(it\) \|\| \(info && info\.icon\) \|\| '';/);
+  assert.match(dataSource, /return weaponIconForItem\(it\) \|\| equipNameIconForItem\(it\) \|\| \(info && info\.icon\) \|\| '';/);
 });

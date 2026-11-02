@@ -437,26 +437,26 @@ var WEAPON_TYPES = {
 };
 // 武器類型專屬圖示；沒有 weaponType 的舊物品由 UI 退回 SLOT_INFO 的通用圖示。
 var WEAPON_TYPE_ICONS = {
-  sword1h: 'icon_weapon_sword1h.png',
-  dagger1h: 'icon_weapon_dagger1h.png',
-  wand1h: 'icon_weapon_wand1h.png',
-  magicSword1h: 'icon_weapon_magic_sword1h.png',
-  greatsword2h: 'icon_weapon_greatsword2h.png',
-  axe2h: 'icon_weapon_axe2h.png',
-  staff2h: 'icon_weapon_staff2h.png',
-  magicSword2h: 'icon_weapon_magic_sword2h.png',
-  shield: 'icon_weapon_shield.png',
-  focus: 'icon_weapon_focus.png',
-  spellbook: 'icon_weapon_spellbook.png',
-  orb: 'icon_weapon_orb.png'
+  sword1h: 'equipment/icon_weapon_sword1h.png',
+  dagger1h: 'equipment/icon_weapon_dagger1h.png',
+  wand1h: 'equipment/icon_weapon_wand1h.png',
+  magicSword1h: 'equipment/icon_weapon_magic_sword1h.png',
+  greatsword2h: 'equipment/icon_weapon_greatsword2h.png',
+  axe2h: 'equipment/icon_weapon_axe2h.png',
+  staff2h: 'equipment/icon_weapon_staff2h.png',
+  magicSword2h: 'equipment/icon_weapon_magic_sword2h.png',
+  shield: 'equipment/icon_weapon_shield.png',
+  focus: 'equipment/icon_weapon_focus.png',
+  spellbook: 'equipment/icon_weapon_spellbook.png',
+  orb: 'equipment/icon_weapon_orb.png'
 };
 function weaponIconForItem(it) {
   if (!it || !WEAPON_TYPES[it.weaponType]) return null;
   return WEAPON_TYPE_ICONS[it.weaponType] || null;
 }
-/* 依裝備名稱（基底名）指定圖示：布／皮／麻／鎖／草等輕型裝備用 images/equip/ 的專屬圖，
-   未列入的（板甲、龍鱗、鐵護手等重型名稱）沿用部位通用圖 SLOT_INFO.icon。
-   圖由 tools/equipment-ui/gen_equip_icons.cjs 產生。key 為 STR 編號（見 SLOT_BASENAMES）。 */
+/* 裝備圖統一放 images/equipment/。以基底名的 STR 編號對應專屬圖；
+   舊名稱映射保持，未列入的舊物品沿用 SLOT_INFO.icon。
+   新圖來源及匯出見 tools/equipment-ui/export-equipment-art.cjs。 */
 var EQUIP_NAME_ICON_BY_STR = {
   938: 'helmet_leather', 939: 'helmet_iron',
   942: 'shoulder_cloth', 943: 'shoulder_iron',
@@ -467,14 +467,77 @@ var EQUIP_NAME_ICON_BY_STR = {
   962: 'legs_cloth',
   965: 'boots_straw', 966: 'boots_leather', 967: 'boots_wind',
   968: 'ring_bronze', 969: 'ring_silver',
-  971: 'amulet_wood', 972: 'amulet_silver'
+  971: 'amulet_wood', 972: 'amulet_silver',
+  2244: 'dawnweave_helmet',
+  2245: 'dawnweave_shoulder',
+  2246: 'dawnweave_chest',
+  2247: 'dawnweave_belt',
+  2248: 'dawnweave_gloves',
+  2249: 'dawnweave_wrist',
+  2250: 'dawnweave_legs',
+  2251: 'dawnweave_boots',
+  2252: 'ivorypilgrim_helmet',
+  2253: 'ivorypilgrim_shoulder',
+  2254: 'ivorypilgrim_chest',
+  2255: 'ivorypilgrim_belt',
+  2256: 'ivorypilgrim_gloves',
+  2257: 'ivorypilgrim_wrist',
+  2258: 'ivorypilgrim_legs',
+  2259: 'ivorypilgrim_boots',
+  2260: 'amberhunt_helmet',
+  2261: 'amberhunt_shoulder',
+  2262: 'amberhunt_chest',
+  2263: 'amberhunt_belt',
+  2264: 'amberhunt_gloves',
+  2265: 'amberhunt_wrist',
+  2266: 'amberhunt_legs',
+  2267: 'amberhunt_boots',
+  2268: 'redwanderer_helmet',
+  2269: 'redwanderer_shoulder',
+  2270: 'redwanderer_chest',
+  2271: 'redwanderer_belt',
+  2272: 'redwanderer_gloves',
+  2273: 'redwanderer_wrist',
+  2274: 'redwanderer_legs',
+  2275: 'redwanderer_boots',
+  2276: 'blackoath_helmet',
+  2277: 'blackoath_shoulder',
+  2278: 'blackoath_chest',
+  2279: 'blackoath_belt',
+  2280: 'blackoath_gloves',
+  2281: 'blackoath_wrist',
+  2282: 'blackoath_legs',
+  2283: 'blackoath_boots',
+  2284: 'frostbastion_helmet',
+  2285: 'frostbastion_shoulder',
+  2286: 'frostbastion_chest',
+  2287: 'frostbastion_belt',
+  2288: 'frostbastion_gloves',
+  2289: 'frostbastion_wrist',
+  2290: 'frostbastion_legs',
+  2291: 'frostbastion_boots',
+  2292: 'ring_sunseal',
+  2293: 'ring_amberleaf',
+  2294: 'ring_moonpearl',
+  2295: 'ring_rubyfang',
+  2296: 'ring_mossknot',
+  2297: 'ring_sapphiretide',
+  2298: 'ring_violetcrown',
+  2299: 'ring_obsidianeye',
+  2300: 'amulet_dawncompass',
+  2301: 'amulet_amberacorn',
+  2302: 'amulet_ivorymoon',
+  2303: 'amulet_rubycrest',
+  2304: 'amulet_verdantkey',
+  2305: 'amulet_stormvial'
 };
 var EQUIP_NAME_ICONS = null;
 function equipNameIconForItem(it) {
   if (!it || typeof it.name !== 'string') return null;
   if (!EQUIP_NAME_ICONS) {
     EQUIP_NAME_ICONS = [];
-    for (var id in EQUIP_NAME_ICON_BY_STR) EQUIP_NAME_ICONS.push([STR(+id), 'equip/icon_' + EQUIP_NAME_ICON_BY_STR[id] + '.png']);
+    for (var id in EQUIP_NAME_ICON_BY_STR) EQUIP_NAME_ICONS.push([STR(+id), 'equipment/icon_' + EQUIP_NAME_ICON_BY_STR[id] + '.png']);
+    EQUIP_NAME_ICONS.sort(function (a, b) { return b[0].length - a[0].length; });
   }
   for (var i = 0; i < EQUIP_NAME_ICONS.length; i++) {
     if (it.name.indexOf(EQUIP_NAME_ICONS[i][0]) >= 0) return EQUIP_NAME_ICONS[i][1];
@@ -567,32 +630,32 @@ function itemTypeLabel(it) {
 }
 
 var SLOT_INFO = {
-  weapon: { name: STR(931), emoji: '⚔️', icon: 'icon_weapon.png' },
-  weapon2: { name: STR(16), emoji: '🗡️', icon: 'icon_weapon.png' },
-  helmet: { name: STR(17), emoji: '🪖', icon: 'icon_helmet.png' },
-  shoulder: { name: STR(932), emoji: '🦾', icon: 'icon_shoulder.png' },
-  chest: { name: STR(18), emoji: '🛡️', icon: 'icon_chest.png' },
-  belt: { name: STR(19), emoji: '🪢', icon: 'icon_belt.png' },
-  gloves: { name: STR(933), emoji: '🧤', icon: 'icon_gloves.png' },
-  wrist: { name: STR(934), emoji: '🦾', icon: 'icon_wrist.png' },
-  legs: { name: STR(20), emoji: '👖', icon: 'icon_legs_armor.png' },
-  boots: { name: STR(21), emoji: '🥾', icon: 'icon_legs.png' },
-  ring: { name: STR(22), emoji: '💍', icon: 'icon_ring.png' },
-  ring2: { name: STR(935), emoji: '💍', icon: 'icon_ring.png' },
-  amulet: { name: STR(23), emoji: '📿', icon: 'icon_amulet.png' }
+  weapon: { name: STR(931), emoji: '⚔️', icon: 'equipment/icon_weapon.png' },
+  weapon2: { name: STR(16), emoji: '🗡️', icon: 'equipment/icon_weapon.png' },
+  helmet: { name: STR(17), emoji: '🪖', icon: 'equipment/icon_helmet.png' },
+  shoulder: { name: STR(932), emoji: '🦾', icon: 'equipment/icon_shoulder.png' },
+  chest: { name: STR(18), emoji: '🛡️', icon: 'equipment/icon_chest.png' },
+  belt: { name: STR(19), emoji: '🪢', icon: 'equipment/icon_belt.png' },
+  gloves: { name: STR(933), emoji: '🧤', icon: 'equipment/icon_gloves.png' },
+  wrist: { name: STR(934), emoji: '🦾', icon: 'equipment/icon_wrist.png' },
+  legs: { name: STR(20), emoji: '👖', icon: 'equipment/icon_legs_armor.png' },
+  boots: { name: STR(21), emoji: '🥾', icon: 'equipment/icon_legs.png' },
+  ring: { name: STR(22), emoji: '💍', icon: 'equipment/icon_ring.png' },
+  ring2: { name: STR(935), emoji: '💍', icon: 'equipment/icon_ring.png' },
+  amulet: { name: STR(23), emoji: '📿', icon: 'equipment/icon_amulet.png' }
 };
 var SLOT_BASENAMES = {
   weapon: [STR(885), STR(886), STR(905), STR(936), STR(937)],
-  helmet: [STR(938), STR(939), STR(940), STR(941)],
-  shoulder: [STR(942), STR(943), STR(944), STR(945)],
-  chest: [STR(946), STR(947), STR(948), STR(949)],
-  belt: [STR(950), STR(951), STR(952), STR(953)],
-  gloves: [STR(954), STR(955), STR(956), STR(957)],
-  wrist: [STR(958), STR(959), STR(960), STR(961)],
-  legs: [STR(962), STR(963), STR(964)],
-  boots: [STR(965), STR(966), STR(967)],
-  ring: [STR(968), STR(969), STR(970)],
-  amulet: [STR(971), STR(972), STR(973)]
+  helmet: [STR(2244), STR(2252), STR(2260), STR(2268), STR(2276), STR(2284)],
+  shoulder: [STR(2245), STR(2253), STR(2261), STR(2269), STR(2277), STR(2285)],
+  chest: [STR(2246), STR(2254), STR(2262), STR(2270), STR(2278), STR(2286)],
+  belt: [STR(2247), STR(2255), STR(2263), STR(2271), STR(2279), STR(2287)],
+  gloves: [STR(2248), STR(2256), STR(2264), STR(2272), STR(2280), STR(2288)],
+  wrist: [STR(2249), STR(2257), STR(2265), STR(2273), STR(2281), STR(2289)],
+  legs: [STR(2250), STR(2258), STR(2266), STR(2274), STR(2282), STR(2290)],
+  boots: [STR(2251), STR(2259), STR(2267), STR(2275), STR(2283), STR(2291)],
+  ring: [STR(2292), STR(2293), STR(2294), STR(2295), STR(2296), STR(2297), STR(2298), STR(2299)],
+  amulet: [STR(2300), STR(2301), STR(2302), STR(2303), STR(2304), STR(2305)]
 };
 var RARITY_PREFIX = [STR(974), STR(975), STR(976), STR(977), STR(978), STR(979), STR(980), STR(981), STR(982), STR(983), STR(984), STR(2159)];
 // 新舊名稱共用同一辨識規則，讀檔與品質提升時先移除既有前綴。

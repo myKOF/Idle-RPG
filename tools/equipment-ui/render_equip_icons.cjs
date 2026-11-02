@@ -1,7 +1,7 @@
-/* 以 Chrome headless 把 images/equip/*.svg 轉成透明底 PNG（512x512），並移除 SVG 中繼檔。
+/* 以 Chrome headless 把 images/equipment/*.svg 轉成透明底 PNG（512x512），並移除 SVG 中繼檔。
    用法：node tools/equipment-ui/render_equip_icons.cjs [--keep-svg] */
 const fs = require('fs'), path = require('path'), cp = require('child_process');
-const DIR = path.join(__dirname, '..', '..', 'images', 'equip');
+const DIR = path.join(__dirname, '..', '..', 'images', 'equipment');
 const chrome = ['C:/Program Files/Google/Chrome/Application/chrome.exe', 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'].find(fs.existsSync);
 if (!chrome) throw new Error('找不到 Chrome/Edge');
 const keep = process.argv.includes('--keep-svg');

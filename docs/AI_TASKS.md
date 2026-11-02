@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## EQUIPMENT-ART-SETS-20261102 — 六套防具與十四款首飾圖示
+
+- Owner：Codex；Done，單一開發者。使用者指定以現有裝備圖為品質參考，新製布甲／皮甲／鎧甲各兩套、戒指至少八款及項鏈至少六款，命名後套用現有裝備系統。每套含頭／肩／衣／腰／手／腕／腿／靴八部位，共62款；布甲黃白、皮甲黃橘、鎧甲深鐵色，六套輪廓各異。
+- 前置：工作區原rebase已由原流程完成，起始ai/codex df6baf2e乾淨。允許images/equip新圖、equipment-ui素材清單／提示／重建匯出、data名稱池及圖示映射、String原生Excel來源及CSV／strings_data、必要主端／Worker快取、獨立回歸、LV與本段；素材庫保存原稿／來源／提示與正式匯出，先素材庫再遊戲Commit。禁止改數值／詞條／掉落率／存檔格式／玩家3D模型／既有圖、其他進行中任務及合併推送develop／main。
+- 預檢：data／String三檔／Bridge／Worker／LV及本段無外部來源。index與codex/npc-black-outlines-20261102同檔；本項只調data／strings_data／Bridge快取，對方NPC renderer快取，須實際merge-file乾跑確認分段無衝突。Mote可存取、現為像素畫布／筆刷／調色盤工具，不適合本次高細節手繪裝備圖，改用內建imagegen逐款原創生成，不複製參考圖像素。
+- 驗收：62款PNG逐款視檢、透明背景／邊界／唯一性、六套八部位及首飾數量、真實makeEquipment掉落／前綴及舊名稱圖示相容、String來源正常Excel重開及匯出同步、主端／Worker快取、裝備回歸／Build／真瀏覽器圖示與Console、雙庫雜湊及Commit。交使用者正常Review／整合。
+- 使用者補充：全部相關裝備圖集中images/equipment並同步讀圖程式。完成48款防具、八戒指、六項鏈；新增62張512×512 RGBA，原43張武器／通用／歷史圖搬移後逐位保持，共105張。新產出沿原SLOT_BASENAMES使用新名稱，舊存檔沿原名稱映射與通用退路；不增加材質屬性或套裝加成。data圖示路徑／名稱池、主頁三處快取及Bridge／Worker data匯入同步20261102-equipment-art-sets，String依生成Hash c1b85e9d。LV、圖片README、legacy工具路徑同步。
+- Excel：先確認String.xlsx獨占可開啟，tools/excel-update-sheets.ps1在973後插入62列，原生儲存／正常重開兩輪通過，0繪圖物件保持；唯讀逐格比較既有15617格內容／型別／有效字型、填色、邊框、對齊、保護、數字格式及欄寬／凍結／合併全部相同。PARAMS_XLSX／PARAMS_CSV_OUT／PARAMS_SHEET指定String執行xlsx_to_csv，再apply_strings產出2292條，兩個String --check同步且寫死0條；僅新增四欄×62格，不填簡體／英文。Artifact Tool前後唯讀匯入及目視渲染通過，未用其匯出覆寫原檔。
+- 素材：內建imagegen逐款生成，使用者截圖只作品質參考，未裁切或複製原圖像素；首張頭巾另以imagegen清除白暈。原稿／完整提示及清理提示／62份正式匯出／43張原圖／SHA／完整總覽／驗證保存在素材庫codex-authored/equipment-sets-20261102。export-equipment-art.cjs --check核對全部62＋43份與遊戲逐位一致；素材庫匯出器快照與遊戲SHA相同。先素材庫Commit 1680c77，驗證報告尾端空白收尾484a1f1，素材庫乾淨。正式圖未保留在僅Codex預設生成目錄，沒有新增第三方素材。
+- 測試：node --test --test-reporter=tap，實際傳入equipment-art-catalog、equipment-weapon-icons、amulet-icon、equipment-background-removal、equipment-weapon-transparency、equipment-quality-name、equipment-slot-selection、equipment-two-hand-display、equipment-tooltip-compare、forge-equipped-inventory、worker-shim、worker-protocol、string-table、vfx-editor-cache-versions的.test.cjs共14檔，79/79通過。新三項驗62名稱／PNG唯一及512尺寸、實際makeEquipment全部品質與JSON往返／可穿欄位、舊存檔及十二武器圖。初輪縮圖兩次resize導致592尺寸，已修成一次resize後留白並完整重出；武器舊測試只認已移除的UI局部變數，改驗現有共用選圖鏈，保留武器／透明檢查。另加跑equipment-quality-counts的兩項失敗，原始df6baf2e八份JS與原測試隔離同樣重現12品質對舊11品質／普通孔0對舊1的斷言，未改數值、該測試或放寬斷言。npm.cmd run build 631檔通過，git diff／stat／check及自我Review通過。
+- 瀏覽器：browser技能IAB後端無連線，改bundled Playwright／隔離headless Edge＋隨機localhost，載正式makeEquipment、itemCellHTML、itemIconFile、itemHeaderHTML及CSS。62新圖／43舊圖、含標題106個image全部解碼；八次點選詳情路徑一致，1440／390寬無橫向溢出，HTTP失敗／錯圖／Console Error／Warning皆0，兩張PNG與完整總覽已重開目視。只用隔離fixture、未讀寫玩家存檔；不宣稱完整Worker長戰或全庫回歸。實機報告、String保留核對與回歸TAP已納入素材庫validation。
+- 交付檔：images/equipment的62新圖／43搬移／README；data、strings_data、Bridge、Worker及index；String.xlsx／CSV；四份既有圖示測試與新equipment-art-catalog；equipment-ui的清單／匯出器及三份legacy工具／提示；LV及本段。唯讀未改：AI_RULES／AGENTS／Workflow／prompts、ui.js／item.js選圖與產出／詳情、既有Excel及String工具、存檔與品質數量／相關回歸、NPC／玩家模型及數值。index最初與NPC outlines任務同檔不同script，兩次merge-file乾跑皆0且無語意相依，最終預檢已無外部來源。無本項未完成實作或新增已知風險，可供Review／使用者正常合併；遊戲Commit為本段所在「[Codex] feat: 新增六套防具十四款首飾並集中裝備圖示」，SHA見交付。不合併或推送develop／main；建議整合雙庫後重載驗收新掉落造型。
+
 ## SYNC-MERGE-81F1C8C-20261102 — 保留元素短尾及主線修正
 
 - Owner：Codex；Done（衝突與驗證完成，本聊天接續正常同步，結果見最新報告）。本輪使用者以1授權外層接續；HEAD3e1913ca495a59baa5d83c51cfa788cb6ebde4ca／incoming81f1c8c601b50da3e473561c1786f3c34a6b49be，base f1eb5fad。前輪CLI子程序禁止staging／commit的限制屬其隔離任務範圍；本輪在保留原父提交與兩方完整內容、獨立驗證後由外層完成正常合併／同步，不重寫歷史、不取消hold、不發布main。

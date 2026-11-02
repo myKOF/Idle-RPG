@@ -1,0 +1,112 @@
+{
+  "task": "EQUIPMENT-ART-SETS-20261102",
+  "libraryRelativePath": "codex-authored/equipment-sets-20261102",
+  "gameRelativePath": "images/equipment",
+  "iconSize": 512,
+  "style": "Use case: stylized-concept. Create ONE original premium dark fantasy ARPG inventory equipment icon. Detailed hand-painted digital illustration, tactile medieval materials, fine craftsmanship, restrained weathering, convincing volume, warm upper-left light and subtle edge highlights. Three-quarter view, centered isolated object occupying 76 to 82 percent of a square canvas, ALL edges completely visible with generous clear margins. Genuine transparent background with clean alpha edges. No floor, no shadows outside the object, no white haze, no glow cloud, no colored fringe. No humans, body, face, mannequin, hands wearing the equipment, scenery, letters, text, border, watermark or additional equipment. Keep silhouettes clear and readable at 48 pixels. Subject: ",
+  "slots": ["helmet", "shoulder", "chest", "belt", "gloves", "wrist", "legs", "boots"],
+  "sets": [
+    {
+      "key": "dawnweave", "name": "晨曦織紋", "material": "cloth",
+      "theme": "Pale warm ivory and yellowish-white linen pilgrim clothing, sparse aged brass sun clasps, fine golden sunray stitched embroidery. Predominantly off-white cloth, very little metal. Soft flowing silhouette, coarse woven threads and layered hems.",
+      "items": [
+        ["兜帽", "a softly pointed linen hood with hollow dark opening, wrapped cowl and small round sun clasp"],
+        ["披肩", "a pair of soft layered cloth shoulder mantles joined by a narrow embroidered neck strap, scalloped hems"],
+        ["長袍", "an empty full-length flowing long-sleeved linen robe, deep layered V neckline, narrow sun embroidered vertical stole, soft tied waist"],
+        ["繫帶", "a wide folded linen sash belt arranged in a wearable oval, knotted fabric tails and a small round sun clasp"],
+        ["手套", "a pair of five-finger soft linen gloves with flared folded cuffs and fine sunray embroidery"],
+        ["護腕", "a pair of overlapping linen wrist wraps, tied cloth ends and tiny round brass sun buttons, no fingers"],
+        ["長褲", "a pair of loose ivory linen trousers with gathered waist, flowing folds and embroidered narrow ankle hems"],
+        ["軟靴", "a pair of soft ivory fabric ankle boots with folded cuffs, linen ties and sun-stitched toes, light tan soles"]
+      ]
+    },
+    {
+      "key": "ivorypilgrim", "name": "象牙巡禮", "material": "cloth",
+      "theme": "Yellowish-white and pale buttery cream padded cloth travel armor, diamond quilting, ochre cross-stitches and toggle closures, rolled edges. Compact practical structured silhouette, visibly cloth not leather or metal. Distinct from flowing embroidered robes.",
+      "items": [
+        ["軟帽", "a rounded padded coif cap with two short earflaps, diamond quilting, rolled brow and wooden toggle chin strap, hollow opening"],
+        ["肩墊", "a pair of compact thick quilted crescent shoulder pads with layered rolled hems, joined with wooden toggles"],
+        ["短衣", "an empty waist-length diamond-quilted gambeson jacket, short stiff stand collar, asymmetrical wooden toggle front and short sleeves, no hood"],
+        ["腰封", "a broad quilted cream cloth belt formed in a wearable oval, rectangular woven fastening, two small fabric pouches"],
+        ["手套", "a pair of compact five-finger quilted gloves with short square cuffs and ochre cross-stitch reinforcements"],
+        ["腕套", "a pair of thick rectangular quilted forearm cuffs with cream cord lacing, rolled edge, no fingers"],
+        ["護腿", "a pair of tapered diamond-quilted cloth trousers with reinforced padded knees and ochre stitched panels"],
+        ["行靴", "a pair of cream padded cloth mid-calf travel boots with three horizontal cord toggles and rolled tops, ochre fabric soles"]
+      ]
+    },
+    {
+      "key": "amberhunt", "name": "琥珀獵影", "material": "leather",
+      "theme": "Warm honey-yellow and orange amber leather ranger armor, slim angular leaf-shaped panels, braided edge stitching, small aged brass buckles. Predominantly golden orange leather, subtle wear and natural grain, agile asymmetrical silhouette. No cloth robe and no metal plate armor.",
+      "items": [
+        ["獵帽", "a low-profile angular leather ranger cap with swept triangular brim, folded side flap, fine braided edging, hollow opening, no feather"],
+        ["肩甲", "a pair of slim overlapping leaf-shaped amber leather pauldrons, one slightly longer, joined by a narrow buckled strap"],
+        ["獵衣", "an empty fitted sleeveless leather ranger vest with overlapping diagonal leaf panels, a high cut collar and one crossing chest strap"],
+        ["獵帶", "a narrow orange amber leather utility belt in a wearable oval, two small tapered pouches and a leaf-shaped brass buckle"],
+        ["手套", "a pair of slim five-finger orange leather ranger gloves with pointed extended cuffs and narrow braided seams"],
+        ["護腕", "a pair of tapered orange leather bracers with leaf-shaped ridges and two narrow buckle straps, no fingers"],
+        ["皮褲", "a pair of slim amber orange leather trousers with diagonal stitched thigh panels, flexible laced knees and fitted ankles"],
+        ["獵靴", "a pair of slim honey orange leather ranger boots with pointed folded tops, diagonal side lacing and slightly pointed toes"]
+      ]
+    },
+    {
+      "key": "redwanderer", "name": "赤砂行者", "material": "leather",
+      "theme": "Warm ochre-yellow to burnt-orange thick desert leather armor, broad rectangular overlapping leather lamellae, dark orange rawhide seams, bone toggles and square bronze rivets. Bulky rounded rugged silhouette, visibly hide not metal. Distinct from slim leaf-shaped ranger leather.",
+      "items": [
+        ["皮盔", "a thick rounded orange leather desert helmet with a broad brow band, padded neck flap and square rivets, hollow opening, no face"],
+        ["肩衛", "a pair of large rounded orange leather shoulder guards made of thick rectangular overlapping hide scales, square rivets"],
+        ["皮甲", "an empty broad sleeveless thick orange leather cuirass made of rectangular leather lamellae, low round collar, double horizontal bone toggles and split short skirt"],
+        ["腰帶", "a wide thick burnt-orange leather belt formed in a wearable oval, large square bronze buckle and layered rectangular protective hip flaps"],
+        ["手套", "a pair of heavy five-finger ochre-orange leather gloves with square riveted knuckle pads and broad rolled cuffs"],
+        ["臂甲", "a pair of broad cylindrical burnt-orange leather vambraces with rectangular lamellar plates and three bone toggle closures, no fingers"],
+        ["護褲", "a pair of sturdy ochre-orange leather trousers with wide layered rectangular thigh guards and round reinforced knees"],
+        ["厚靴", "a pair of heavy rounded-toe orange hide desert boots with broad rolled tops, three wide square-buckle straps and thick soles"]
+      ]
+    },
+    {
+      "key": "blackoath", "name": "黑鋼誓衛", "material": "plate",
+      "theme": "Moderately dark graphite iron and gunmetal full plate armor, rounded domed surfaces, smooth rolled rims, small steel rivets and subtle fluted sunburst engraving. Restrained cool metallic highlights, dark brown straps only as accents, iron clearly visible rather than pitch-black. No bright gold, no spikes, no glowing effects.",
+      "items": [
+        ["戰盔", "a rounded closed dark iron great helm with a narrow horizontal visor and a single low central ridge, smooth rolled neck rim, no horns"],
+        ["肩鎧", "a pair of rounded domed dark steel pauldrons with three smooth overlapping curved plates and small steel rivets"],
+        ["胸鎧", "an empty rounded dark iron breastplate with broad domed chest, shallow sunburst fluting, smooth rolled neck and three overlapping curved lower fauld plates"],
+        ["鋼帶", "an articulated dark iron plate belt in a wearable oval, smooth rounded rectangular links and a domed circular steel buckle"],
+        ["鐵手套", "a pair of articulated five-finger dark iron gauntlets with rounded knuckle plates and flared curved cuffs"],
+        ["護臂", "a pair of smoothly curved dark steel forearm vambraces with rolled rims, slim longitudinal flutes and dark leather closure straps, no hands"],
+        ["腿鎧", "a complete paired connected set of rounded dark iron thigh armor, domed knee cops and curved greaves arranged as empty armored legs, no boots"],
+        ["鐵靴", "a pair of rounded dark steel sabaton boots with overlapping curved toe plates, low iron ankle guards and muted metallic highlights"]
+      ]
+    },
+    {
+      "key": "frostbastion", "name": "霜鐵堡壘", "material": "plate",
+      "theme": "Dark weathered cold iron fortress plate armor, angular chamfered planes, geometric stepped ridges, heavy square rivets, thick beveled steel edges and charcoal leather joints. Gunmetal and desaturated slate highlights. Massive angular silhouette clearly different from rounded plate. No glowing ice, no bright silver, no gold or huge spikes.",
+      "items": [
+        ["面盔", "an angular dark iron sallet helmet with a long stepped rear neck guard, sharp squared brow, vertical slit visor and chamfered front, no horns"],
+        ["肩堡", "a pair of large angular stepped dark iron pauldrons made of faceted trapezoid plates, square rivets and raised geometric ridges"],
+        ["重鎧", "an empty broad angular dark iron cuirass with pronounced central keel ridge, squared neckline, layered trapezoid abdomen plates and heavy beveled hip tassets"],
+        ["鐵腰封", "a heavy dark iron armored belt in a wearable oval, angular trapezoid linked plates, hexagonal buckle and two short faceted tassets"],
+        ["重手套", "a pair of heavy five-finger angular dark iron gauntlets, faceted knuckle ridges and squared flared segmented cuffs"],
+        ["重臂甲", "a pair of angular dark iron forearm armor with raised central ridge, stepped layered outer plates and square rivets, no hands"],
+        ["重腿鎧", "a complete paired connected set of angular dark iron thigh guards, faceted diamond knee guards and sharply ridged greaves, arranged as empty armored legs, no boots"],
+        ["戰靴", "a pair of broad square-toe dark iron armored boots with angular segmented plates, faceted high ankle guards and thick beveled soles"]
+      ]
+    }
+  ],
+  "rings": [
+    ["sunseal", "日輪印戒", "a single thick aged-gold signet ring, round raised sun seal with radiating carved rays, dark engraved recesses, no gemstone"],
+    ["amberleaf", "琥珀葉戒", "a single copper ring with two delicately sculpted overlapping leaves holding a large translucent orange amber cabochon"],
+    ["moonpearl", "月露珠戒", "a single slim silver ring, asymmetrical crescent moon setting cradling a lustrous ivory pearl and tiny pale blue stone"],
+    ["rubyfang", "赤牙戒環", "a single dark iron ring with two curved claw prongs holding a triangular deep red ruby, sharply angular band"],
+    ["mossknot", "苔翠結戒", "a single bronze ring with an intricate open interwoven knot band and a rectangular forest green emerald"],
+    ["sapphiretide", "藍潮螺戒", "a single polished silver spiral ring, wave-like open curled band framing an oval deep blue sapphire"],
+    ["violetcrown", "紫曜冠戒", "a single aged gold ring with a low miniature crown setting and a faceted violet amethyst, beaded side shoulders"],
+    ["obsidianeye", "黑曜守戒", "a single broad weathered steel ring with a horizontal eye-shaped setting holding smooth black obsidian, precise tiny etched geometric grooves"]
+  ],
+  "amulets": [
+    ["dawncompass", "曙光羅盤項鏈", "one complete fine bronze chain necklace hanging in an oval loop, round antique compass pendant with an eight-point sun needle and small golden center stone"],
+    ["amberacorn", "蜜珀橡實項鏈", "one complete braided dark leather cord necklace in an oval loop, acorn-shaped translucent honey amber pendant in a sculpted bronze leaf cap"],
+    ["ivorymoon", "象牙弦月項鏈", "one complete delicate silver chain necklace in an oval loop, elegant ivory crescent moon pendant suspended from two points with one small dangling pearl"],
+    ["rubycrest", "赤晶誓章項鏈", "one complete heavy aged iron chain necklace in an oval loop, angular shield-shaped dark metal pendant with a deep red diamond-shaped ruby and engraved bevels"],
+    ["verdantkey", "青枝古鑰項鏈", "one complete antique gold chain necklace in an oval loop, ornate elongated key pendant with intertwined branch bow and a tiny square emerald"],
+    ["stormvial", "風暴晶瓶項鏈", "one complete braided bronze chain necklace in an oval loop, small tear-shaped blue crystal vial pendant with silver filigree cage, tiny cork cap, no magical fog"]
+  ]
+}

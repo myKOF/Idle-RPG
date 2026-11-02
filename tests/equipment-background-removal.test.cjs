@@ -25,6 +25,6 @@ function pngColorType(filePath) {
 }
 
 for (const fileName of EQUIPMENT_ICONS) {
-  const filePath = path.join(ROOT, 'images', fileName);
+  const filePath = path.join(ROOT, 'images', 'equipment', fileName);
   assert.equal(pngColorType(filePath), 6, `${fileName} 必須使用 RGBA PNG 以保存透明背景`);
 }

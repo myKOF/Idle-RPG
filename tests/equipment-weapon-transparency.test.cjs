@@ -15,7 +15,7 @@ const iconFiles = [
 
 test('所有武器圖示都是帶 alpha 通道的 RGBA PNG', () => {
   for (const filename of iconFiles) {
-    const bytes = fs.readFileSync(path.join(root, 'images', filename));
+    const bytes = fs.readFileSync(path.join(root, 'images', 'equipment', filename));
     assert.equal(bytes.subarray(0, 8).toString('hex'), '89504e470d0a1a0a', `${filename} is not a PNG`);
     // PNG IHDR 的 color type 6 代表 RGBA，確保背景可以透明而不是純 RGB 黑底。
     assert.equal(bytes[25], 6, `${filename} does not expose an alpha channel`);
