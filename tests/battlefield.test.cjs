@@ -169,7 +169,7 @@ test('我方會朝目標跑，進到近戰距離就停下來', () => {
 
 test('我方跑速符合 BF_PLAYER_SPEED', () => {
   const c = loadBattlefield();
-  c.bfTickPlayer([at(9000, 0)], 1);
+  c.bfTickPlayer([at(c.bfMeterPx(100), 0)], 1);
   assert.equal(Math.round(c.bfPlayerPos().x), c.BF_PLAYER_SPEED);
 });
 
@@ -202,7 +202,7 @@ test('敵人追的是我方當前位置，不會跟著我方平移', () => {
      → 我方停下後牠再自己追上來。 */
   const c = loadBattlefield();
   const chaser = at(-300, 0, { _enterCd: 0 });  // 我方後方
-  const bait = at(600, 0, { _enterCd: 0 });     // 指定成追擊目標，我方會朝右邊跑
+  const bait = at(390, 0, { _enterCd: 0 });     // 與追兵同在40米圈，指定後向右追擊
   const before = c.bfEntityDistance(chaser);
   const offsetBefore = chaser.pos.x - c.bfPlayerPos().x;
 
@@ -239,7 +239,7 @@ test('我方移動後，生成的新敵人圍著我方而不是原點', () => {
 
 /* ---- 選敵 ---- */
 
-test('普攻選最近的敵人；鎖定後直到目標死亡才換', () => {
+test('技能共用的舊主目標選法維持最近／鎖定；自動搜敵另測搜尋圈', () => {
   const c = loadBattlefield();
   const near = at(80, 0);
   const far = at(300, 0);
@@ -344,7 +344,7 @@ test('投射物飛行時間隨距離增加，並夾在上下限之間', () => {
 
 test('施法期間我方不移動', () => {
   const c = loadBattlefield();
-  const enemy = at(9000, 0);
+  const enemy = at(c.bfMeterPx(100), 0);
   const player = { _skillCastRemaining: 0.4 };
   assert.equal(c.bfTickPlayer([enemy], 1, null, player), false);
   assert.equal(c.bfPlayerPos().x, 0);

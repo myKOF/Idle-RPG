@@ -14015,6 +14015,21 @@ Worker 存活且頁面正常完成載入。
 - 瀏覽器實機：browser技能IAB backend仍不可連，已告知並以computer-use後備在獨立隱藏localhost頁驗證正式Pixi／data／完整renderer；120款×四階級共480實體全部四動作載入、攻擊回idle／walk、死亡最後幀停止及階級覆光通過，errors／warnings與主控台皆0。分頁展示八款、另保存寒冰魔像／骷髏弓箭手所在頁實拍；只在HTTP測試副本暴露內部函式，未修改玩家遊戲頁或存檔。完整四動作GIF總覽all-npc/index.html、47款重畫步態all-npc/walks.html、測試／重建／Excel／實拍證據保存在本聊天visualizations/all-npc。
 - 修改／唯讀範圍與交付：遊戲修改為NPC.xlsx／CSV／data、364新增PNG與8份walk／npc.json、renderer載圖快取、主頁／Bridge／Worker／scene-preview版號、補圖匯出器、兩套新增回歸與四骷髏測試、LV及本段；唯讀檢查共通規範／Workflow／config_tables與原動畫、朝向、覆光、戰鬥／移動／投射物、Worker協議及存檔。無本項未完成工作，可供使用者合併；限制為AI姿勢仍可依後續遊玩觀感調整、未執行長時間真Worker遊玩及多瀏覽器。先前已記錄14項舊全套測試失敗未在本輪修改或弱化，本輪33項相關回歸與Build全通過。素材庫已先提交，遊戲隨本段提交；沒有合併或推送develop／main。建議下一步正常整合雙庫並重載遊戲檢視。
 
+## PLAYER-SEARCH-RINGS-20261102 — 玩家逐圈隨機搜敵
+
+- Owner：Codex；Done，單一開發者。使用者指定40米起、每次增加10米、最高100米，第一個有敵人的圓圈內隨機選敵，明確不是最近優先。
+- 原因：bfPickPrimary使用無上限最近排序並永久保留存活鎖定，bfTickPlayer直接信任preferred且未在追擊起步鎖定；暴風之舞從全場隨機並覆寫_lockTarget，導致跳過附近敵人追遠方。
+- 允許：battlefield自動搜敵／移動、combat自動普攻接線、skills2僅暴風之舞追擊選敵、index／Bridge／Worker必要快取、獨立行為回歸與既有移動fixture、LV與本段。禁止修改配置Excel／CSV／數值／技能射程與彈射／GM點擊／存檔／素材／其他工作區或合併推送。起始game_parameters.xlsx使用者修改完整保留，不讀寫或提交。
+- 驗收：各圈與100米邊界、不同距離等機率可選、當前玩家中心／BOSS體型不插隊、死亡／離場／進場過濾、穩定追擊與內圈重選、正式fieldTick移動和普攻一致、暴風之舞及GM／塔戰回歸、快取／Build／diff及自我Review後獨立Commit。素材無變更，不建立空素材庫Commit。
+
+- 完成10檔：battlefield新增bfPickPlayerTarget，以中心距離逐圈隨機並在追擊起步保存鎖定；同圈鎖定穩定，內圈出現候選／舊目標無效時重選。combat普攻與skills2暴風之舞共用該入口；既有bfPickPrimary仍供技能／連鎖自身規格使用。index、Bridge與Worker三個匯入同步20261102-player-search-rings，LV戰鬥掛機規格及本段同步；獨立新增15項行為回歸，既有速度／施法fixture的900米改100米、前後追兵fixture改同40米圈，原速度／停止／位移斷言保持，舊helper斷言未弱化。
+- 同檔預檢：fetch後battlefield／skills2／Bridge／Worker／兩測試無外部來源；combat另一分支僅測試場景間距、index另一方僅其他script／CSS與材料列、LV與任務紀錄僅獨立區段。本次候選相對作業前檔、對develop與ai/claude實際工作檔共16次merge-file退出0，無語意相依。完整分支歷史試跑另有原renderer快取及同步紀錄衝突，確認均不在本次增量，未更動那些行／其他工作區。
+- 驗證指令：node --test --test-reporter=spec tests/player-search-rings.test.cjs tests/battlefield.test.cjs tests/battlefield-rt.test.cjs tests/gm-test-map.test.cjs tests/tower-battlefield.test.cjs tests/player-cast-act.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs為104/104通過；npm.cmd run build為630檔通過；git diff／stat／check與自我Review通過。新測試含各圈含邊界、400個等距PRNG樣本讓不同距離四候選各選100次、斜向圓／玩家平移／BOSS半徑、不進場／死怪／離場、100米外不追與空場推進、正式fieldTick真的走到選定目標才近戰及暴風之舞外圈重選。初版storm fixture玩家等級不足導致技能未啟用，補齊1000級前置後全過，產品未放寬條件。
+- 修前證據：唯讀preloader將三個正式JS替換成HEAD來源，兩個新fieldTick／暴風之舞整合回歸均失敗，修正版皆過。額外defensive-precast 3項中2過1失敗，storm-dance舊4項皆失敗；相同HEAD對照亦重現同5項，分別既有復甦前置、兩項ctrl fixture缺欄與兩項光圈素材規格不符；未改這些測試或產品配合舊斷言。不宣稱全庫測試通過。
+- 真瀏覽器Worker：browser技能IAB無backend，後備bundled Playwright＋隔離headless Edge／隨機localhost。兩個原生Worker正常boot，僅前版HTTP覆映作業前三JS、停用自動計時後以固定0.1秒驅動正式fieldTick；同場5／39／150米、初始舊遠方鎖定與固定PRNG，修前追到150米敵人（玩家x1440），修後從40米圈內選中39米者（玩家x330），兩者都在近戰距離才出手。暴風之舞修前維持150米者、修後39米者；errors／warnings皆0。這是可重現控制場景，未冒充原玩家存檔重現；示意線來自真Worker座標，未修改renderer。before／after報告、QA HTML／Worker與實拍存本聊天visualizations/player-search-rings，實拍已重開核對，不讀寫玩家存檔。
+- 唯讀未改：共通規範／Workflow／prompts、data／formula／NPC表、skills施法／連鎖／AOE幾何、tower、renderer／動畫／VFX與素材、Worker協議與save。起始game_parameters.xlsx使用者修改未讀寫／stage；作業期間使用者自行提交efef76c6「調整菁英尺寸」，本輪以其最新HEAD繼續，未覆蓋或重套數值。無素材庫變更、不建空素材Commit。
+- 交付：無本項未完成實作或已知新增風險，可供Review／使用者正常合併；未合併或推送develop／main。限制為未做全庫、多瀏覽器或原玩家長時間遊玩；建議整合後重新載入新版Worker驗收40→100米圈內隨機搜敵。Commit為本段所在「[Codex] fix: 玩家依四十至一百米搜尋圈隨機選敵」，SHA見交付。
+
 ## NPC-GROUND-AIR-20261102 — 毒蚊群飛行與嵐翼飛蛇貼地爬行
 
 - Owner：Codex；Done，單一開發者。使用者兩張實拍指定毒蚊群應飛在空中、嵐翼飛蛇應在地上爬行；以前者正式動畫與後者原創像素造型為基礎，不修改名稱或戰鬥數值。

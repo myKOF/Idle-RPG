@@ -2380,8 +2380,9 @@ function fieldTick(dt) {
         }
         if (p.hp <= 0) { onPlayerFieldDeath(); return; } // 技能自傷（如血飲術反噬）
         if (targetSwitchReady && p.atkCd <= 0 && (!FIELD._testMap || (testTarget && testTarget.hp > 0))) {
-            // 普攻打離我方最近的敵人（同距離隨機挑一個）；鎖定後直到該目標死亡才換 → js/battlefield.js
-            var primary = FIELD._testMap ? testTarget : bfPickPrimary(combatFieldEnemies(), p._lockTarget);
+            // 自動普攻與追擊共用 40→100 米搜尋圈，圈內隨機；GM 點擊仍只打指定目標。
+            var primary = FIELD._testMap ? testTarget : bfPickPlayerTarget(combatFieldEnemies(), p._lockTarget);
+            p._lockTarget = primary;
             /* 普攻是近戰：目標還沒走到面前就不出手，也不進入冷卻——
                等牠走進距離的那一刻立刻補上這一擊。
                （座標制改版前只挑「最近的」而完全不看距離，所以會隔空砍人） */

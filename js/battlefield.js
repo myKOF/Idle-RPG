@@ -83,6 +83,10 @@ function bfBossRadius() { return bfNum('BF_BOSS_RADIUS', 52); }
 /* ---- 我方座標 ----
    全場座標的原點。這個物件會被就地改寫（不重新指派），
    讓 combat.js 把它掛進 FIELD 之後，面板每次序列化都拿到最新值。 */
+/* 自動搜敵半徑（米）：先找最小的有敵人圓圈，再在圈內等機率隨機。 */
+var BF_PLAYER_SEARCH_MIN_M = 40;
+var BF_PLAYER_SEARCH_STEP_M = 10;
+var BF_PLAYER_SEARCH_MAX_M = 100;
 var BF_PLAYER = { x: 0, y: 0 };
 var BF_PLAYER_CHASING = false;     // 起步／停步的遲滯狀態（見 bfTickPlayer）
 function bfPlayerPos() { return BF_PLAYER; }
@@ -461,6 +465,7 @@ function bfTickPlayer(enemies, dt, preferred, pEnt) {
   var ox0 = home.x, oy0 = home.y;
   var live = bfLiveList(enemies).filter(function (e) { return !!bfPos(e); });
   if (!live.length) {
+    if (pEnt) pEnt._lockTarget = null;
     /* 空場：往前方（+x）推進，地板會跟著往後捲，不會呆站著等下一波。 */
     home.x += bfPlayerSpeed() * bfPlayerSpeedFactor(pEnt) * dt;
     if (typeof eliteClampMove === 'function' && eliteClampMove(ox0, oy0, home)) { BF_PLAYER_CHASING = false; return false; }
@@ -468,11 +473,11 @@ function bfTickPlayer(enemies, dt, preferred, pEnt) {
     BF_PLAYER_CHASING = true;
     return true;
   }
-  /* 追的目標要與「這一刀實際打誰」一致（combat.js 的鎖定目標），
-     否則會出現跑向 A 卻在打 B 的隔空攻擊。 */
-  var target = (preferred && preferred.hp > 0 && bfPos(preferred) && live.indexOf(preferred) >= 0)
-    ? preferred : bfPickPrimary(live, null);
-  if (!target) return false;
+  /* 追擊與普攻共用搜尋圈；舊鎖定落在更外圈時，先改追內圈隨機目標。
+     起步就保存目標，不能等普攻命中才鎖定，否則追擊途中會反覆抽選。 */
+  var target = bfPickPlayerTarget(live, preferred);
+  if (pEnt) pEnt._lockTarget = target;
+  if (!target) { BF_PLAYER_CHASING = false; return false; }
 
   /* 起步與停步用兩個不同的門檻（遲滯）。只用一個門檻的話，敵人被推擠而
      來回跨過那條線時，我方就會每個 tick 補一小步——畫面上是持續的微小抽動，
@@ -504,7 +509,32 @@ function bfLiveList(enemies) {
   return out;
 }
 
-/* 依距離排序的存活敵人；距離相同者隨機排列。 */
+/* 玩家自動搜敵：以玩家當前位置與敵人中心的直線距離判定圓圈，
+   不扣敵人體型，避免大 BOSS 從外圈插隊。40 米無人再依序查 50…100 米。
+   同圈內保留有效鎖定，較小圈出現敵人則重新抽選；100 米外不選。
+   技能、連鎖與 GM 點擊各有自身的目標／範圍規格，不用本入口代替。 */
+function bfPickPlayerTarget(enemies, locked) {
+  var home = bfPlayerPos();
+  var live = bfLiveList(enemies), positioned = [];
+  for (var i = 0; i < live.length; i++) {
+    var ent = live[i], p = bfPos(ent);
+    if (!p || ent._enterCd > 0) continue;
+    var dx = p.x - home.x, dy = p.y - home.y;
+    positioned.push({ ent: ent, d2: dx * dx + dy * dy });
+  }
+  for (var m = BF_PLAYER_SEARCH_MIN_M; m <= BF_PLAYER_SEARCH_MAX_M; m += BF_PLAYER_SEARCH_STEP_M) {
+    var radius = bfMeterPx(m), candidates = [];
+    for (var j = 0; j < positioned.length; j++) {
+      if (positioned[j].d2 <= radius * radius) candidates.push(positioned[j].ent);
+    }
+    if (!candidates.length) continue;
+    if (candidates.indexOf(locked) >= 0) return locked;
+    return candidates[Math.floor(Math.random() * candidates.length)];
+  }
+  return null;
+}
+
+/* 依距離排序的存活敵人；距離相同者隨機排列（技能指定最近目標時使用）。 */
 function bfSortedTargets(enemies) {
   var deco = bfLiveList(enemies).map(function (ent) {
     return { ent: ent, d: bfEntityDistance(ent), r: Math.random() };

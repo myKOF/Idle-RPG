@@ -12533,8 +12533,8 @@ function sgTickUltAutoCast(ctx, dt) {
   if (res.killed && ctx.onDeaths) ctx.onDeaths();
 }
 
-/* 暴風之舞：每 gap 秒自動施放 1 次雙刀亂舞；每次作用時挑一個敵方目標衝過去，
-   到達（可近戰）或目標死亡前不換目標。 */
+/* 暴風之舞：每 gap 秒自動施放 1 次雙刀亂舞。
+   追擊目標共用玩家搜尋圈，不能從全場抽選後覆寫成遠方目標。 */
 function sgTickStorm(ctx, dt) {
   var stm = SKILL2_RT.storm;
   if (!stm) return;
@@ -12549,12 +12549,8 @@ function sgTickStorm(ctx, dt) {
   /* 使用實際控制閘門：玩家的暈眩狀態仍保留，但不禁止揮舞。 */
   var stunned = (typeof ccActionLocked === 'function') && ccActionLocked(ctx.pEnt);
   var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
-  if (!stm.tgt || stm.tgt.hp <= 0 ||
-      (typeof bfPos === 'function' && bfPos(stm.tgt) && typeof bfPlayerCanReach === 'function' && bfPlayerCanReach(stm.tgt))) {
-    var live = enemies.filter(function (e) { return e && e.hp > 0; });
-    stm.tgt = live.length ? live[Math.floor(Math.random() * live.length)] : null;
-  }
-  if (stm.tgt) ctx.pEnt._lockTarget = stm.tgt;
+  stm.tgt = bfPickPlayerTarget(enemies, ctx.pEnt._lockTarget);
+  ctx.pEnt._lockTarget = stm.tgt;
   var guard = 0;
   while (stm.nextAt <= GT && stm.until > GT && guard < 50) {
     guard++;
