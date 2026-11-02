@@ -1686,7 +1686,19 @@ const RUNE_SETTING_NOTES = {
   drop_basePct: '野外每次擊殺的基礎掉落率（%），再乘掉寶率、地圖倍率與敵種倍率。',
   drop_towerBossPct: '封魔塔通關時的基礎掉落機率（%）。',
   drop_tierSpread: '階數稀有度：第 t+1 階的出現機率是第 t 階的這個倍數（0~1，越小高階越稀有）。階越高越稀有，與進度無關；進度只決定能掉到幾階。',
-  drop_progressPerTier: '進度（地圖序號＋關卡比例）每 +1 對應的最高掉落階增量（解鎖速度，不影響稀有度）。'
+  drop_progressPerTier: '進度（地圖序號＋關卡比例）每 +1 對應的最高掉落階增量（解鎖速度，不影響稀有度）。',
+  drop_towerBaseTier: '封魔塔通關掉落的最高階起點：最高掉落階＝此值＋（通關層數 ÷ 塔最高層）× 階數跨度，取整數。',
+  drop_towerTierSpan: '封魔塔通關掉落的最高階跨度：通關最高層時，最高掉落階比起點多出幾階。',
+  rw_depthLimit: '符文真言事件觸發的巢狀上限：擊殺→觸發→再擊殺…最多連鎖幾層，超過就不再觸發（防無限連鎖）。',
+  rw_hiHpPct: '「對高血敵人增傷」的門檻（%）：敵人生命比例高於此值才算高血（靜態效果 dmgHiHpPct）。',
+  rw_loHpPct: '「對低血敵人增傷」的門檻（%）：敵人生命比例低於此值才算低血（靜態效果 dmgLoHpPct）。',
+  rw_selfFullPct: '「自身高血增傷」的門檻（%）：自身生命比例達到此值以上才生效（靜態效果 dmgSelfFullPct）。',
+  rw_selfLowPct: '「自身低血增傷」的門檻（%）：自身生命比例在此值以下才生效（靜態效果 dmgSelfLowPct）。',
+  rw_perFoeMax: '「每多一隻敵人增傷」最多計入的敵人數（靜態效果 dmgPerFoePct）。',
+  rw_dmgMultMin: '符文真言傷害乘區的下限倍率（代價型效果為負數時，總乘區不會低於此值）。',
+  rw_aspdMultMin: '符文真言攻速乘區的下限倍率（靜態效果 aspdMult 為負數時不會低於此值）。',
+  rw_cdFactorMin: '符文真言技能冷卻倍率的下限（靜態效果 cdPct 再大也不會讓冷卻低於原本的這個倍率）。',
+  rw_tickCatchUp: '每秒觸發（tick）的補算上限：一次更新最多補觸發幾次（掛機久了不至於一次爆發大量觸發）。'
 };
 const RUNE_TIER_NAMES_FOR_TABLE = ['', '普通', '精良', '史詩', '傳說'];   // 沿用裝備品質名稱（js/runeword_data.js RUNEWORD_TIER_RARITY）
 /* Runes 表的「欄位說明」頁（xlsx 第二頁；程式不讀取，僅供編表者查閱）。 */
@@ -1707,7 +1719,9 @@ const RUNE_GLOSSARY_ROWS = [
   ['erase_scrapPerTier／erase_essencePerTier／erase_goldPerTier：抹除已刻印符文的費用（裝備碎片／附魔精華／金幣各自的每階單價，0＝不收這種幣）。實付＝單價 × 符文階數 × 裝備稀有度倍率，無條件進位；符文抹除後消失、不退還。'],
   ['composeCount／composeMaxTier／dismantleYield：合成（同種幾顆→下一階 1 顆）、最高合成階（更高階只能掉落）、拆解產出（必須小於合成所需顆數；預設 1＝只能降階頂替、不會變多）。'],
   ['statScale：全域屬性縮放，符文與符文真言的屬性加成一律乘此值（平衡用旋鈕，1＝不縮放）。'],
-  ['drop_*：掉落。basePct 野外每次擊殺的基礎掉落率(%)（再乘掉寶率與地圖獎勵倍率）、towerBossPct 封魔塔通關的基礎掉落率(%)、tierSpread 階數稀有度（相鄰兩階的機率比，0~1，越小高階越稀有）、progressPerTier 每 +1 進度對應的最高掉落階增量。'],
+  ['drop_*：掉落。basePct 野外每次擊殺的基礎掉落率(%)（再乘掉寶率與地圖獎勵倍率）、towerBossPct 封魔塔通關的基礎掉落率(%)、tierSpread 階數稀有度（相鄰兩階的機率比，0~1，越小高階越稀有）、progressPerTier 每 +1 進度對應的最高掉落階增量、towerBaseTier／towerTierSpan 封魔塔掉落最高階＝起點＋（通關層 ÷ 塔最高層）× 跨度。'],
+  ['rw_*：符文真言的戰鬥機制數值。rw_depthLimit 事件觸發巢狀上限；rw_hiHpPct／rw_loHpPct 對高血／低血敵人增傷的生命門檻(%)；rw_selfFullPct／rw_selfLowPct 自身高血／低血增傷門檻(%)；rw_perFoeMax 每多一敵增傷最多計幾隻；'],
+  ['　　rw_dmgMultMin／rw_aspdMultMin／rw_cdFactorMin 傷害乘區、攻速乘區、冷卻倍率的下限（代價型負值不會把倍率壓得更低）；rw_tickCatchUp 每秒觸發一次更新最多補算幾次。這些門檻的說明文字（String 表 1680／1681／1683／1684／1685）會自動代入此處的數值。'],
   ['　　取得難度只由「配方最高階那顆符文」決定；各級距的最高階區間與估算小時數見 docs/RUNEWORD_DESIGN.md，估算用 node tools/rw_econ_probe.cjs。'],
   [''],
   ['── 符文列 ──'],
@@ -1815,6 +1829,18 @@ function runeSettingDefs(rarities) {
   defs.push(['drop_towerBossPct', '封魔塔基礎掉落率(%)', s => s.drop.towerBossPct]);
   defs.push(['drop_tierSpread', '掉落階數分佈', s => s.drop.tierSpread]);
   defs.push(['drop_progressPerTier', '每進度的最高階增量', s => s.drop.progressPerTier]);
+  defs.push(['drop_towerBaseTier', '封魔塔掉落最高階起點', s => s.drop.towerBaseTier]);
+  defs.push(['drop_towerTierSpan', '封魔塔掉落最高階跨度', s => s.drop.towerTierSpan]);
+  defs.push(['rw_depthLimit', '真言觸發巢狀上限', s => s.combat.depthLimit]);
+  defs.push(['rw_hiHpPct', '對高血敵人增傷門檻(%)', s => s.combat.hiHpPct]);
+  defs.push(['rw_loHpPct', '對低血敵人增傷門檻(%)', s => s.combat.loHpPct]);
+  defs.push(['rw_selfFullPct', '自身高血增傷門檻(%)', s => s.combat.selfFullPct]);
+  defs.push(['rw_selfLowPct', '自身低血增傷門檻(%)', s => s.combat.selfLowPct]);
+  defs.push(['rw_perFoeMax', '每多一敵增傷最多計幾隻', s => s.combat.perFoeMax]);
+  defs.push(['rw_dmgMultMin', '真言傷害乘區下限', s => s.combat.dmgMultMin]);
+  defs.push(['rw_aspdMultMin', '真言攻速乘區下限', s => s.combat.aspdMultMin]);
+  defs.push(['rw_cdFactorMin', '真言冷卻倍率下限', s => s.combat.cdFactorMin]);
+  defs.push(['rw_tickCatchUp', '每秒觸發補算上限', s => s.combat.tickCatchUp]);
   return defs;
 }
 function runePairsText(pairs) { return (pairs || []).map(p => p[0] + ':' + numStr(p[1])).join(';'); }
@@ -1926,6 +1952,13 @@ SCHEMAS.Runes = {
     if (!(val.statScale > 0)) fail('Runes 表：全域屬性縮放必須大於 0');
     ['drop_basePct', 'drop_towerBossPct', 'drop_tierSpread', 'drop_progressPerTier'].forEach(k => { if (!(val[k] > 0)) fail('Runes 表：「' + k + '」必須大於 0'); });
     if (!(val.drop_tierSpread < 1)) fail('Runes 表：掉落階數分佈必須小於 1');
+    if (!(val.drop_towerBaseTier >= 1)) fail('Runes 表：「drop_towerBaseTier」必須 ≥1');
+    if (!(val.drop_towerTierSpan >= 0)) fail('Runes 表：「drop_towerTierSpan」必須 ≥0');
+    if (!isInt(val.rw_depthLimit) || val.rw_depthLimit < 1) fail('Runes 表：真言觸發巢狀上限必須是 ≥1 的整數');
+    ['rw_hiHpPct', 'rw_loHpPct', 'rw_selfFullPct', 'rw_selfLowPct'].forEach(k => { if (!(val[k] >= 0 && val[k] <= 100)) fail('Runes 表：「' + k + '」必須是 0~100 的數字（%）'); });
+    if (!isInt(val.rw_perFoeMax) || val.rw_perFoeMax < 1) fail('Runes 表：每多一敵增傷最多計幾隻必須是 ≥1 的整數');
+    ['rw_dmgMultMin', 'rw_aspdMultMin', 'rw_cdFactorMin'].forEach(k => { if (!(val[k] > 0 && val[k] <= 1)) fail('Runes 表：「' + k + '」必須大於 0 且不超過 1'); });
+    if (!isInt(val.rw_tickCatchUp) || val.rw_tickCatchUp < 1) fail('Runes 表：每秒觸發補算上限必須是 ≥1 的整數');
 
     /* ---- 符文 ---- */
     if (!runeRows.length) fail('Runes 表沒有任何符文列');
@@ -2024,7 +2057,8 @@ SCHEMAS.Runes = {
       '  composeMaxTier: ' + numStr(val.composeMaxTier) + ',\n' +
       '  dismantleYield: ' + numStr(val.dismantleYield) + ',\n' +
       '  statScale: ' + numStr(val.statScale) + ',\n' +
-      '  drop: ' + jsLit({ basePct: val.drop_basePct, towerBossPct: val.drop_towerBossPct, tierSpread: val.drop_tierSpread, progressPerTier: val.drop_progressPerTier }) + '\n};';
+      '  drop: ' + jsLit({ basePct: val.drop_basePct, towerBossPct: val.drop_towerBossPct, tierSpread: val.drop_tierSpread, progressPerTier: val.drop_progressPerTier, towerBaseTier: val.drop_towerBaseTier, towerTierSpan: val.drop_towerTierSpan }) + ',\n' +
+      '  combat: ' + jsLit({ depthLimit: val.rw_depthLimit, hiHpPct: val.rw_hiHpPct, loHpPct: val.rw_loHpPct, selfFullPct: val.rw_selfFullPct, selfLowPct: val.rw_selfLowPct, perFoeMax: val.rw_perFoeMax, dmgMultMin: val.rw_dmgMultMin, aspdMultMin: val.rw_aspdMultMin, cdFactorMin: val.rw_cdFactorMin, tickCatchUp: val.rw_tickCatchUp }) + '\n};';
     const runesText = 'var RUNES = [\n' + runes.map(r => '  ' + jsLit(r)).join(',\n') + '\n];';
     const wordLines = [];
     let lastTier = 0;
@@ -2171,10 +2205,77 @@ SCHEMAS.Achievement = {
   }
 };
 
+/* 地圖的出怪設定（菁英機率、群成員數、小怪／菁英群／BOSS 數量）也寫在 Zones 表，投影成 data.js 的 ZONE_ENCOUNTER。
+   儲存格寫法：多段用 | 分隔；每段 {關卡下限~上限,值…}，數量欄可寫單一數字或「下限~上限」。 */
+const ZONE_ENCOUNTER_COLS = [
+  { key: 'eliteChance', label: '普通關菁英機率', vals: 1, count: false },
+  { key: 'eliteSize', label: '菁英群成員數權重', vals: 2, count: false },
+  { key: 'elitePure', label: '純菁英群機率', vals: 1, count: false },
+  { key: 'mobCount', label: '小怪數量權重', vals: 2, count: true },
+  { key: 'eliteCount', label: '菁英群數量權重', vals: 2, count: true },
+  { key: 'bossCount', label: 'BOSS數量權重', vals: 2, count: true }
+];
+function parseZoneCell(raw, col, zone, maxStage) {
+  const where = 'Zones ' + zone + ' / ' + col.label;
+  const segs = String(raw == null ? '' : raw).split(/[|\n]/).map(x => x.trim()).filter(Boolean);
+  if (!segs.length) throw new Error(where + ' 沒有任何設定');
+  const num = '(-?\\d+(?:\\.\\d+)?)';
+  const re = col.count
+    ? new RegExp('^\\{\\s*(\\d+)\\s*~\\s*(\\d+)\\s*,\\s*(\\d+)\\s*(?:~\\s*(\\d+)\\s*)?,\\s*' + num + '\\s*\\}$')
+    : new RegExp('^\\{\\s*(\\d+)\\s*~\\s*(\\d+)\\s*,\\s*' + num + '\\s*' + (col.vals === 2 ? ',\\s*' + num + '\\s*' : '') + '\\}$');
+  const rows = [];
+  segs.forEach(seg => {
+    const m = re.exec(seg);
+    if (!m) throw new Error(where + ' 格式無法解析：「' + seg + '」（應為 ' + (col.count ? '{關卡下限~上限,數量或數量範圍,權重}' : col.vals === 2 ? '{關卡下限~上限,隻數,權重}' : '{關卡下限~上限,機率}') + '）');
+    const lo = Number(m[1]), hi = Number(m[2]);
+    if (!(hi >= lo)) throw new Error(where + ' 關卡區間上下界顛倒：「' + seg + '」');
+    if (col.count) {
+      const a = Number(m[3]), b = m[4] === undefined ? a : Number(m[4]), w = Number(m[5]);
+      if (!(b >= a) || !(w >= 0)) throw new Error(where + ' 數量或權重無效：「' + seg + '」');
+      rows.push({ lo, hi, a, b, w });
+    } else {
+      const v = [Number(m[3])].concat(col.vals === 2 ? [Number(m[4])] : []);
+      if (v.some(n => !(n >= 0))) throw new Error(where + ' 數值不可為負：「' + seg + '」');
+      rows.push({ lo, hi, v });
+    }
+  });
+  if (col.count) {   // 依關卡區間分組成 [[下限, 上限, [[數量, 權重]…]]…]，並要求 1~關卡上限 全被涵蓋
+    const groups = [];
+    rows.forEach(r => {
+      let g = groups.find(x => x[0] === r.lo && x[1] === r.hi);
+      if (!g) { g = [r.lo, r.hi, []]; groups.push(g); }
+      for (let n = r.a; n <= r.b; n++) g[2].push([n, r.w]);
+    });
+    for (let s = 1; s <= maxStage; s++) {
+      if (!groups.some(g => s >= g[0] && s <= g[1])) throw new Error(where + ' 第 ' + s + ' 關沒有被任何區間涵蓋');
+    }
+    return groups;
+  }
+  return rows.map(r => [r.lo, r.hi].concat(r.v));
+}
+function zoneCellText(col, table) {   // parseZoneCell 的反向（extract 用）
+  if (!col.count) return table.map(r => '{' + r.join(',') + '}').join('|');
+  const out = [];
+  table.forEach(g => {
+    const pairs = g[2];
+    for (let i = 0; i < pairs.length;) {
+      let j = i;
+      while (j + 1 < pairs.length && pairs[j + 1][0] === pairs[j][0] + 1 && pairs[j + 1][1] === pairs[i][1]) j++;
+      out.push('{' + g[0] + '~' + g[1] + ',' + (j > i ? pairs[i][0] + '~' + pairs[j][0] : pairs[i][0]) + ',' + pairs[i][1] + '}');
+      i = j + 1;
+    }
+  });
+  return out.join('|');
+}
+function zoneEncounterLiteral(entries) {
+  return 'var ZONE_ENCOUNTER = {\n' + entries.map(([id, o]) => '  ' + id + ': {\n' +
+    ZONE_ENCOUNTER_COLS.map(c => '    ' + c.key + ': ' + JSON.stringify(o[c.key]).replace(/\],\[/g, '], [')).join(',\n') + '\n  }').join(',\n') + '\n};';
+}
+
 /* 地圖中繼資料也由 Excel 投影；上限／名稱／前置不再依賴手工同步。 */
 SCHEMAS.Zones = {
-  name:'Zones',jsFile:'data',sheet:'地圖',noXlsxGen:true,vars:['ZONES','ZONE_LIST','REALMS'],
-  header:['順序','地圖識別碼','地圖名稱','位面','關卡上限','前置地圖識別碼','前置通關關卡','最低轉生次數','生命倍率','攻擊倍率','防禦倍率','攻速倍率','經驗金幣獎勵倍率'],
+  name:'Zones',jsFile:'data',sheet:'地圖',noXlsxGen:true,vars:['ZONES','ZONE_LIST','REALMS','ZONE_ENCOUNTER'],
+  header:['順序','地圖識別碼','地圖名稱','位面','關卡上限','前置地圖識別碼','前置通關關卡','最低轉生次數','生命倍率','攻擊倍率','防禦倍率','攻速倍率','經驗金幣獎勵倍率'].concat(ZONE_ENCOUNTER_COLS.map(c=>c.label)),
   evaluate(literal) {
     const scope={STR,ZONE_ENEMY_TABLES:Object.fromEntries(NPC_POOL_DEFS.map(d=>[d.zone,d.zone]))};
     NPC_POOL_DEFS.forEach(d=>scope[d.varName]=d.varName);
@@ -2184,7 +2285,7 @@ SCHEMAS.Zones = {
     const get=rowGetter(header),defs=Object.fromEntries(NPC_POOL_DEFS.map(d=>[d.zone,d]));
     const emoji={desert:'🏜️',Icefield:'🧊',mist_forest:'🌲',lava_mountain:'🌋',swamp:'🌙',thunder_peak:'🌩️',undead_mountains:'⛰️',god_battlefield:'⚔️',god_chaos:'🌀',god_sanctuary:'✨'};
     const ordered=rows.filter(r=>get(r,'地圖識別碼')).slice().sort((a,b)=>Number(get(a,'順序'))-Number(get(b,'順序')));
-    const seen=new Set(),zones=[],realmZones={human:[],god:[]};
+    const seen=new Set(),zones=[],realmZones={human:[],god:[]},encounter=[];
     for(const row of ordered) {
       const id=get(row,'地圖識別碼'),realm=get(row,'位面'),cap=Number(get(row,'關卡上限')),req=get(row,'前置地圖識別碼');
       if(!defs[id]||seen.has(id)||!realmZones[realm]||!Number.isInteger(cap)||cap<1)throw new Error('Zones 地圖識別碼／位面／上限無效：'+id);
@@ -2197,14 +2298,15 @@ SCHEMAS.Zones = {
       if(req){fields.reqZone=req;fields.reqStage=reqStage;}
       if(rebirth)fields.reqReincarnation=rebirth;
       for(const [field,label] of [['hpMult','生命倍率'],['atkMult','攻擊倍率'],['defMult','防禦倍率'],['aspdMult','攻速倍率'],['rewardMult','經驗金幣獎勵倍率']]){const n=Number(get(row,label));if(!Number.isFinite(n)||n<=0)throw new Error('Zones '+id+' '+label+' 必須大於0');fields[field]=n;}
+      encounter.push([id,Object.fromEntries(ZONE_ENCOUNTER_COLS.map(c=>[c.key,parseZoneCell(get(row,c.label),c,id,cap)]))]);
       zones.push('  '+id+': { pool: '+defs[id].varName+', enemyTable: ZONE_ENEMY_TABLES.'+id+', '+Object.entries(fields).map(([k,v])=>k+': '+JSON.stringify(v)).join(', ')+' }');
     }
     if(seen.size!==NPC_POOL_DEFS.length)throw new Error('Zones 缺少地圖資料');
-    return {ZONES:'var ZONES = {\n'+zones.join(',\n')+'\n};',ZONE_LIST:'var ZONE_LIST = '+JSON.stringify([...seen])+';',REALMS:'var REALMS = '+jsLit({human:{name:'凡人界',emoji:'🌍',zones:realmZones.human},god:{name:'神界',emoji:'✨',zones:realmZones.god}})+';'};
+    return {ZONE_ENCOUNTER:zoneEncounterLiteral(encounter),ZONES:'var ZONES = {\n'+zones.join(',\n')+'\n};',ZONE_LIST:'var ZONE_LIST = '+JSON.stringify([...seen])+';',REALMS:'var REALMS = '+jsLit({human:{name:'凡人界',emoji:'🌍',zones:realmZones.human},god:{name:'神界',emoji:'✨',zones:realmZones.god}})+';'};
   },
   extract(src) {
-    const zones=this.evaluate(extractLiteral(src,'ZONES').literal),list=evalLiteral(extractLiteral(src,'ZONE_LIST').literal);
-    return list.map((id,i)=>{const z=zones[id];return [i+1,id,z.name,z.realm,z.maxStage,z.reqZone||'',z.reqStage||'',z.reqReincarnation||0,z.hpMult,z.atkMult,z.defMult,z.aspdMult,z.rewardMult].map(String);});
+    const zones=this.evaluate(extractLiteral(src,'ZONES').literal),enc=evalLiteral(extractLiteral(src,'ZONE_ENCOUNTER').literal),list=evalLiteral(extractLiteral(src,'ZONE_LIST').literal);
+    return list.map((id,i)=>{const z=zones[id];return [i+1,id,z.name,z.realm,z.maxStage,z.reqZone||'',z.reqStage||'',z.reqReincarnation||0,z.hpMult,z.atkMult,z.defMult,z.aspdMult,z.rewardMult].concat(ZONE_ENCOUNTER_COLS.map(c=>zoneCellText(c,enc[id][c.key]))).map(String);});
   }
 };
 const TABLE_ORDER = ['Skills2', 'Status', 'Gems', 'Talents', 'Equipment_Affix', 'NPC', 'Zones', 'Task', 'Runes', 'Gem_resonance', 'Achievement'];

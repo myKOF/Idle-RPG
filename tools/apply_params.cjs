@@ -604,104 +604,19 @@ function parseCountTuples(cat, name) {
   if (!out.length) throw new Error('數量權重全空：' + cat + ' / ' + name);
   return out.join(', ');
 }
-/* 荒漠小怪分段：列名自己帶區間（「小怪 數量權重(荒漠101~150關)」），
-   這裡掃出所有符合的列並依起點排序——在 Excel 增減區間、改寬度都不必動程式。
-   後備列是「小怪 數量權重<N>關之後」，N 也一起讀出來對帳。 */
-const ENEMY_COUNT_CAT = '4-敵人數量';
-const enemyCountRowNames = Object.keys(index[ENEMY_COUNT_CAT] || {});
-const desertSegments = enemyCountRowNames
-  .map(n => { const m = /^小怪 數量權重\(荒漠(\d+)~(\d+)關\)$/.exec(n); return m ? { name: n, min: +m[1], max: +m[2] } : null; })
-  .filter(Boolean)
-  .sort((a, b) => a.min - b.min);
-if (!desertSegments.length) throw new Error('找不到任何「小怪 數量權重(荒漠a~b關)」列');
-desertSegments.forEach((r, i) => {
-  if (r.min > r.max) throw new Error('荒漠小怪分段的區間反向：' + r.name);
-  if (i > 0 && r.min !== desertSegments[i - 1].max + 1) {
-    throw new Error('荒漠小怪分段不連續：' + desertSegments[i - 1].name + ' 之後應該從第 ' +
-      (desertSegments[i - 1].max + 1) + ' 關接上，實際是 ' + r.name);
-  }
-});
-const fallbackRowName = enemyCountRowNames.find(n => /^小怪 數量權重\d+關之後$/.test(n));
-if (!fallbackRowName) throw new Error('找不到「小怪 數量權重<N>關之後」這一列');
-const fallbackFrom = Number(/^小怪 數量權重(\d+)關之後$/.exec(fallbackRowName)[1]);
-const lastSegEnd = desertSegments[desertSegments.length - 1].max;
-if (fallbackFrom !== lastSegEnd + 1) {
-  /* 只警告不中斷：後備表本來就是「其餘全部」，名字對不上不會壞掉，
-     但會讓看表的人以為某段有專屬設定，實際上走的是後備表。 */
-  console.warn('⚠️ ' + fallbackRowName + ' 與最後一段（結束於第 ' + lastSegEnd +
-    ' 關）對不上；第 ' + (lastSegEnd + 1) + '~' + (fallbackFrom - 1) + ' 關會走後備表。');
-}
-arrayContent('data', 'FIELD_ENEMY_COUNT_TABLE', parseCountTuples(ENEMY_COUNT_CAT, fallbackRowName), 'FIELD_ENEMY_COUNT_TABLE');
-const desertEarlyEnemyCountTables = desertSegments.map(r =>
-  r.min + ', ' + r.max + ', [' + parseCountTuples(ENEMY_COUNT_CAT, r.name) + ']');
-/* ⚠️ arrayContent 替換的是既有 `[ ... ]` **裡面**的內容（regex 第 2 組），
-   所以這裡只能給「元素們」，不能再自己包一層外括號——包了就會寫成 [[...]]，
-   變成長度 1 的陣列：[0] 是整包巢狀表、[1]~[4] 全是 undefined。
-   後果是 fieldCountTableFor() 在 1~20 關拿到不是權重表的東西（實測固定出 1 隻怪）、
-   21~100 關則因為 undefined 直接掉回後期表，五段分段等於完全沒生效。
-   隔壁 FIELD_ENEMY_COUNT_TABLE 傳的是 parseCountTuples() 的回傳值，本來就沒有外括號。 */
-arrayContent('data', 'FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES',
-  desertEarlyEnemyCountTables.map(row => '[' + row + ']').join(', '),
-  'FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES');
-/* 菁英數量逐張地圖一列。列名是「菁英 數量權重(地圖名+關卡區間)」，這裡把它對到地圖識別碼；
-   沒有列在這裡的地圖（神界三圖）吃「500關之後」那一列＝ FIELD_ELITE_COUNT_TABLE。
-   整個物件一次重建，錨點綁的是物件名（比照 ZONE_STAGE_DROP_PROFILES），不綁程式碼形狀。 */
-const ELITE_COUNT_ZONE_ROWS = [
-  ['desert', '菁英 數量權重(荒漠1~200關)'],
-  ['Icefield', '菁英 數量權重(冰原1~300關)'],
-  ['swamp', '菁英 數量權重(沼澤1~400關)'],
-  ['undead_mountains', '菁英 數量權重(亡靈山脈1~500關)']
-];
-edits.push({
-  file: 'data', scopeVar: 'FIELD_ELITE_COUNT_TABLE_BY_ZONE',
-  re: /FIELD_ELITE_COUNT_TABLE_BY_ZONE\s*=\s*\{([\s\S]*?)\n\};/,
-  grp: 1, multiGroup: true, label: 'FIELD_ELITE_COUNT_TABLE_BY_ZONE',
-  value: ELITE_COUNT_ZONE_ROWS.map(pair =>
-    '  ' + pair[0] + ': [' + parseCountTuples('4-敵人數量', pair[1]) + ']').join(',\n')
-});
-arrayContent('data', 'FIELD_ELITE_COUNT_TABLE', parseCountTuples('4-敵人數量', '菁英 數量權重500關之後'), 'FIELD_ELITE_COUNT_TABLE');
-arrayContent('data', 'FIELD_BOSS_COUNT_TABLE', parseCountTuples('4-敵人數量', 'BOSS 數量權重'), 'FIELD_BOSS_COUNT_TABLE');
+/* 每波小怪／菁英群／BOSS 數量、菁英機率與群成員數：已搬到 Zones 表右側六欄，
+   由 tools/config_tables.cjs 重建 data.js 的 ZONE_ENCOUNTER，這裡不再處理。 */
 /* 菁英群組（參數表「4-菁英群組」）→ data.js 的 ELITE_GROUP（整個物件重建，註解寫在物件外面）。
-   區間欄位寫法 {下限~上限,值…}：普通關菁英機率／純菁英群機率各 1 個值，群組成員數權重 2 個值（隻數,權重），
-   技能數量權重 3 個值（1／2／3 個的權重）。留空或 0 的格子略過；整列沒有任何有效格就中止（不猜）。
+   普通關菁英機率／群成員數／純菁英群機率在 Zones 表（ZONE_ENCOUNTER），不在這裡。
    群數權重沿用 {數量,權重} 的寫法（parseCountTuples）。 */
 const ELITE_GROUP_CAT = '4-菁英群組';
-const ELITE_GROUP_ZONES = [['desert', '荒漠'], ['Icefield', '冰原'], ['swamp', '沼澤'], ['undead_mountains', '亡靈山脈'], ['other', '其他地圖']];
-function parseEliteBandRows(name, valueCount) {
-  const params = index[ELITE_GROUP_CAT] && index[ELITE_GROUP_CAT][name];
-  if (!params) throw new Error('CSV 缺少列：' + ELITE_GROUP_CAT + ' / ' + name);
-  const re = new RegExp('^\\{\\s*(\\d+)\\s*~\\s*(\\d+)\\s*' + ',\\s*(-?[\\d.]+)\\s*'.repeat(valueCount) + '\\}$');
-  const out = [];
-  params.forEach(cell => {
-    const raw = (cell == null ? '' : String(cell)).trim();
-    if (raw === '' || raw === '0') return;             // Excel 會把留空欄填成 0
-    const m = re.exec(raw);
-    if (!m) throw new Error('菁英群組區間格式無法解析：' + name + ' →「' + raw + '」（應為 {下限~上限' + ',值'.repeat(valueCount) + '}）');
-    const lo = Number(m[1]), hi = Number(m[2]);
-    if (!(hi >= lo)) throw new Error('菁英群組區間上下界顛倒：' + name + ' →「' + raw + '」');
-    const vals = [];
-    for (let k = 0; k < valueCount; k++) {
-      const v = Number(m[3 + k]);
-      if (!Number.isFinite(v) || v < 0) throw new Error('菁英群組數值不可為負或非數字：' + name + ' →「' + raw + '」');
-      vals.push(v);
-    }
-    out.push('[' + [lo, hi].concat(vals).join(', ') + ']');
-  });
-  if (!out.length) throw new Error('菁英群組整列沒有有效格：' + name);
-  return '[' + out.join(', ') + ']';
-}
 function eliteGroupBody() {
-  const byZone = (prefix, valueCount) => '{\n' + ELITE_GROUP_ZONES.map(([key, zh]) =>
-    '    ' + key + ': ' + parseEliteBandRows(prefix + '(' + zh + ')', valueCount)).join(',\n') + '\n  }';
   const n = (name, i) => {
     const v = Number(P(ELITE_GROUP_CAT, name, i));
     if (!Number.isFinite(v) || v < 0) throw new Error('菁英群組數值不可為負或非數字：' + name + ' 參數#' + i);
     return String(v);
   };
-  return '\n  normalChance: ' + byZone('普通關菁英機率', 1) +
-    ',\n  sizeWeights: ' + byZone('群組成員數權重', 2) +
-    ',\n  pureChance: ' + byZone('純菁英群機率', 1) +
-    ',\n  normalGroupCount: [' + parseCountTuples(ELITE_GROUP_CAT, '普通關菁英群數量權重') + ']' +
+  return '\n  normalGroupCount: ['+ parseCountTuples(ELITE_GROUP_CAT, '普通關菁英群數量權重') + ']' +
     ',\n  leaders: ' + n('混合群與小兵', 0) + ', minionHp: ' + n('混合群與小兵', 1) +
     ', minionAtk: ' + n('混合群與小兵', 2) + ', minionReward: ' + n('混合群與小兵', 3) +
     ',\n  skillDmgPct: ' + n('菁英技能全域設定', 0) + ', cdPct: ' + n('菁英技能全域設定', 1) +

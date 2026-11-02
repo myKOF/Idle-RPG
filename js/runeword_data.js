@@ -115,6 +115,14 @@ var RUNE_BY_ID = (function () {
                       P(階 t) ∝ tierSpread^(t-1)，t 只能到「進度解鎖的最高階」；所以階越高越稀有，
                       取得難度只由階數決定（不會因為解鎖了更高階，舊階就變難拿）
      progressPerTier  進度（地圖序號＋關卡比例）每 1 對應的最高階增量（解鎖速度，不影響稀有度）
+     towerBaseTier／towerTierSpan  封魔塔掉落的最高階＝起點＋（通關層數 ÷ 塔最高層）× 跨度（取整數）
+   combat         符文真言的戰鬥機制數值（執行層 js/runeword.js §4 讀取，不在別處另寫數字）
+     depthLimit       事件觸發的巢狀上限（擊殺 → 觸發 → 再擊殺…）
+     hiHpPct／loHpPct 敵人生命高於／低於此 % 才算高血／低血（dmgHiHpPct／dmgLoHpPct）
+     selfFullPct／selfLowPct 自身生命達到／低於此 % 才算高血／低血（dmgSelfFullPct／dmgSelfLowPct）
+     perFoeMax        dmgPerFoePct 最多計入的敵人數
+     dmgMultMin／aspdMultMin／cdFactorMin  傷害乘區、攻速乘區、冷卻倍率的下限
+     tickCatchUp      tick 觸發一次更新最多補算幾次
 
    ---- 取得難度的設計目標（估算：node tools/rw_econ_probe.cjs；docs/RUNEWORD_DESIGN.md 有表）----
    以「每小時 3000 次擊殺、掉寶加成使基礎率 ×2」估算，湊齊配方（含合成與降階頂替）約需：
@@ -128,7 +136,8 @@ var RUNE_SETTINGS = {
   composeMaxTier: 20,
   dismantleYield: 1,
   statScale: 1,
-  drop: { basePct: 0.3, towerBossPct: 35, tierSpread: 0.74, progressPerTier: 3.2 }
+  drop: { basePct: 0.3, towerBossPct: 35, tierSpread: 0.74, progressPerTier: 3.2, towerBaseTier: 2, towerTierSpan: 20 },
+  combat: { depthLimit: 3, hiHpPct: 70, loHpPct: 30, selfFullPct: 90, selfLowPct: 35, perFoeMax: 10, dmgMultMin: 0.05, aspdMultMin: 0.2, cdFactorMin: 0.2, tickCatchUp: 3 }
 };
 /* 既有程式使用的具名常數：全部由上面的設定衍生（唯一來源），不要在別處另寫數字。 */
 var RUNE_MAX_SLOTS = RUNE_SETTINGS.maxSlots;

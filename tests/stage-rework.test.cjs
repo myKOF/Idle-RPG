@@ -69,15 +69,15 @@ test('NPC CSV 集中所有地圖的基本資料，不重複存放公式倍率', 
 test('地圖表承接場景專屬倍率與所有地圖的分段掉落資料', () => {
   const zones = fs.readFileSync(path.join(root, 'config/CSV/Zones.csv'), 'utf8').replace(/^\uFEFF/, '').trim().split(/\r?\n/);
   const drops = fs.readFileSync(path.join(root, 'config/CSV/Zone_Stage_Drops.csv'), 'utf8').replace(/^\uFEFF/, '').trim().split(/\r?\n/);
-  assert.equal(zones[0], '順序,地圖識別碼,地圖名稱,位面,關卡上限,前置地圖識別碼,前置通關關卡,最低轉生次數,生命倍率,攻擊倍率,防禦倍率,攻速倍率,經驗金幣獎勵倍率');
+  assert.ok(zones[0].startsWith('順序,地圖識別碼,地圖名稱,位面,關卡上限,前置地圖識別碼,前置通關關卡,最低轉生次數,生命倍率,攻擊倍率,防禦倍率,攻速倍率,經驗金幣獎勵倍率,'));
   /* 期望值＝Zones.csv 目前的設定。場景倍率 2026-08-10 從主參數表撥離到這張表之後，
      這裡是唯一來源；js/data.js 的 ZONES 由 apply_params 依此表回寫。
      測試釘住數值是刻意的（AI_RULES.md 9.1 的例外）：倍率被調整時這條會紅，
      讓「數值改了」變成一個需要有人明確同意的動作。
      2026-08-11（使用者確認）：荒漠不再是全 1 的基準圖，前兩個倍率調成 0.8。 */
-  assert.match(zones.find((line) => line.includes(',desert,')), /,0\.8,0\.8,1,1,1$/);
-  assert.match(zones.find((line) => line.includes(',undead_mountains,')), /,20,50,10,1\.8,2\.25$/);
-  assert.match(zones.find((line) => line.includes(',god_sanctuary,')), /,500,8000,100,2\.5,24$/);
+  assert.match(zones.find((line) => line.includes(',desert,')), /,0\.8,0\.8,1,1,1,/);
+  assert.match(zones.find((line) => line.includes(',undead_mountains,')), /,20,50,10,1\.8,2\.25,/);
+  assert.match(zones.find((line) => line.includes(',god_sanctuary,')), /,500,8000,100,2\.5,24,/);
   // 十圖版 Zone_Stage_Drops.csv 包含 44 列資料，另加標題列。
   assert.equal(drops.length, 45);
   assert.ok(drops.some((line) => line.startsWith('god_sanctuary,451,600,')));

@@ -26,7 +26,7 @@ function spawnAt(c, stage, zone) {
 
 test('ELITE-GROUP-1 菁英關每一波都是菁英群：每群 2~4 隻，群數受菁英表限制', () => {
   const c = loadEliteEnv();
-  const table = c.FIELD_ELITE_COUNT_TABLE_BY_ZONE.desert.filter((r) => r[1] > 0).map((r) => r[0]);
+  const table = c.ZONE_ENCOUNTER.desert.eliteCount[0][2].filter((r) => r[1] > 0).map((r) => r[0]);
   const maxGroups = Math.max.apply(null, table);
   for (let i = 0; i < 300; i++) {
     const wave = spawnAt(c, 10);
@@ -79,7 +79,7 @@ test('ELITE-GROUP-3 高級菁英機率吃參數（普通關／菁英關各一個
   run(c, 'ELITE_GROUP.advChance = [0, 100];');
   for (let i = 0; i < 60; i++) spawnAt(c, 10).filter((e) => e.elite).forEach((e) => assert.equal(e._tier, 'elite_adv', '菁英關機率 100%'));
   // 普通關（19 不是 10 的倍數）：把出菁英群的機率調到 100，用普通關那一格
-  run(c, 'ELITE_GROUP.advChance = [100, 0]; ELITE_GROUP.normalChance = { desert: [[1, 9999, 100]], other: [[1, 9999, 100]] };');
+  run(c, 'ELITE_GROUP.advChance = [100, 0]; ZONE_ENCOUNTER.desert.eliteChance = [[1, 9999, 100]];');
   for (let i = 0; i < 60; i++) spawnAt(c, 19).filter((e) => e.elite).forEach((e) => assert.equal(e._tier, 'elite_adv', '普通關機率 100%'));
 });
 
@@ -132,10 +132,10 @@ test('ELITE-GROUP-5 野外 BOSS：1 個專屬技能（NPC 表）＋3 個隨機�
 
 test('ELITE-GROUP-6 普通關也會遇到菁英群；機率吃參數表（0＝不會遇到）', () => {
   const c = loadEliteEnv();
-  run(c, "ELITE_GROUP.normalChance = { desert: [[1, 9999, 100]], other: [[1, 9999, 100]] };");
+  run(c, "ZONE_ENCOUNTER.desert.eliteChance = [[1, 9999, 100]];");
   const wave = spawnAt(c, 19);
   assert.ok(wave.some((e) => e.elite), '機率 100% 一定出菁英群');
-  run(c, "ELITE_GROUP.normalChance = { desert: [[1, 9999, 0.0001]], other: [[1, 9999, 0.0001]] }; Math.random = function () { return 0.99; };");
+  run(c, "ZONE_ENCOUNTER.desert.eliteChance = [[1, 9999, 0.0001]]; Math.random = function () { return 0.99; };");
   const wave2 = spawnAt(c, 19);
   assert.ok(wave2.every((e) => !e.elite), '機率近 0 不出菁英');
 });
@@ -143,7 +143,7 @@ test('ELITE-GROUP-6 普通關也會遇到菁英群；機率吃參數表（0＝�
 test('ELITE-GROUP-7 小兵倍率與獎勵倍率吃參數（沿用）', () => {
   const c = loadEliteEnv();
   run(c, 'ELITE_GROUP.leaders = 2; ELITE_GROUP.minionHp = 0.5; ELITE_GROUP.minionAtk = 0.25; ELITE_GROUP.minionReward = 0.1; ELITE_GROUP.advChance = [0, 0];');
-  run(c, "ELITE_GROUP.pureChance.desert = [[1, 9999, 0]]; ELITE_GROUP.sizeWeights.desert = [[1, 9999, 4, 1]];");
+  run(c, "ZONE_ENCOUNTER.desert.elitePure = [[1, 9999, 0]]; ZONE_ENCOUNTER.desert.eliteSize = [[1, 9999, 4, 1]];");
   let checked = 0;
   for (let i = 0; i < 60; i++) {
     groupsOf(spawnAt(c, 10)).forEach((g) => {

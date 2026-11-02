@@ -1395,34 +1395,26 @@ function fieldMaxLiveEnemiesFor() {
   return Math.max(1, Math.floor(cells));
 }
 
-/* 每波敵人數量的權重表挑選（表本體與參數表對應 → data.js §每波敵人數量）：
-     小怪  荒漠前 FIELD_DESERT_EARLY_* 涵蓋的關卡走分段表，其餘走 FIELD_ENEMY_COUNT_TABLE
-     菁英  逐張地圖各一張（FIELD_ELITE_COUNT_TABLE_BY_ZONE），未列出的地圖走 FIELD_ELITE_COUNT_TABLE
-     BOSS  FIELD_BOSS_COUNT_TABLE
+/* 地圖出怪設定（ZONE_ENCOUNTER → data.js；Zones 表右側六欄）：取該地圖 rows 中涵蓋此關卡的第一列。 */
+function zoneEncounterRows(key, zone) {
+  var z = zone == null && typeof G !== 'undefined' && G && G.stage ? G.stage.zone : zone;
+  z = z || 'desert';
+  var e = (typeof ZONE_ENCOUNTER !== 'undefined' && ZONE_ENCOUNTER) ? ZONE_ENCOUNTER[z] : null;
+  return (e && e[key]) || [];
+}
+/* 每波敵人數量的權重表挑選：小怪 mobCount、菁英群數 eliteCount、BOSS bossCount，
+   各自依「地圖＋關卡區間」從 Zones 表挑列；沒有任何區間涵蓋時只出 1 隻。
    權重 0 的列由 rollFieldEnemyCount 濾掉，數量再夾到棋盤總格數。 */
 function fieldCountTableFor(rank, stage, zone) {
   var s = stage == null && typeof G !== 'undefined' && G && G.stage ? G.stage.current : stage;
   s = Math.floor(Number(s) || 0);
-  var z = zone == null && typeof G !== 'undefined' && G && G.stage ? G.stage.zone : zone;
-  z = z || 'desert';
-  if (rank === 'boss' && typeof FIELD_BOSS_COUNT_TABLE !== 'undefined') return FIELD_BOSS_COUNT_TABLE;
-  if (rank === 'elite') {
-    var zoneEliteTable = (typeof FIELD_ELITE_COUNT_TABLE_BY_ZONE !== 'undefined')
-      ? FIELD_ELITE_COUNT_TABLE_BY_ZONE[z] : null;
-    if (zoneEliteTable) return zoneEliteTable;
-    if (typeof FIELD_ELITE_COUNT_TABLE !== 'undefined') return FIELD_ELITE_COUNT_TABLE;
+  var key = rank === 'boss' ? 'bossCount' : (rank === 'elite' ? 'eliteCount' : 'mobCount');
+  var rows = zoneEncounterRows(key, zone);
+  for (var ri = 0; ri < rows.length; ri++) {
+    var row = rows[ri];
+    if (row && s >= Number(row[0]) && s <= Number(row[1]) && row[2] && row[2].length) return row[2];
   }
-  /* 荒漠分段表：每一列自帶關卡區間（[最低, 最高, 權重表]），逐列比對。
-     舊版用「固定 20 關一段」的索引，寬度不一致的區間表達不出來。 */
-  if (z === 'desert' && s >= 1 && typeof FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES !== 'undefined') {
-    var rows = FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES;
-    for (var ri = 0; ri < rows.length; ri++) {
-      var row = rows[ri];
-      if (!row || row.length < 3) continue;
-      if (s >= Number(row[0]) && s <= Number(row[1]) && row[2] && row[2].length) return row[2];
-    }
-  }
-  return FIELD_ENEMY_COUNT_TABLE;
+  return [[1, 1]];
 }
 
 /* rank：'normal'（預設）／'elite'／'boss'，三者各有一張權重表。
@@ -1442,12 +1434,6 @@ function rollFieldEnemyCount(rank, stage, zone) {
 /* ---- 菁英群組（表本體與欄位語意 → data.js ELITE_GROUP）----
    這一組函式只負責「擲骰」：這一波要不要出菁英群、出幾群、每群幾隻、全員菁英還是帶小兵、
    每隻是菁英還是高級菁英由 combat.js spawnEliteWave 擲骰。技能與數量不在這裡：NPC 表決定（js/elite.js eliteRollSkills）。 */
-function eliteZoneKey(zone) {
-  var z = zone == null && typeof G !== 'undefined' && G && G.stage ? G.stage.zone : zone;
-  z = z || 'desert';
-  var t = (typeof ELITE_GROUP !== 'undefined' && ELITE_GROUP) ? ELITE_GROUP.normalChance : null;
-  return (t && t[z]) ? z : 'other';
-}
 /* 取「這一關落在哪一列」。列＝[最低關, 最高關, …]；沒有任何一列涵蓋時回 null。 */
 function eliteBandRows(rows, stage) {
   var s = Math.floor(Number(stage) || 0);
@@ -1458,21 +1444,14 @@ function eliteBandRows(rows, stage) {
   }
   return out;
 }
-function eliteGroupTable(name, zone) {
-  var g = (typeof ELITE_GROUP !== 'undefined') ? ELITE_GROUP : null;
-  if (!g || !g[name]) return [];
-  var tbl = g[name];
-  var key = eliteZoneKey(zone);
-  return tbl[key] || tbl.other || [];
-}
 /* 普通關：這一波變成菁英群的機率（%）。 */
 function eliteNormalChanceFor(stage, zone) {
-  var rows = eliteBandRows(eliteGroupTable('normalChance', zone), stage);
+  var rows = eliteBandRows(zoneEncounterRows('eliteChance', zone), stage);
   return rows.length ? Math.max(0, Number(rows[0][2]) || 0) : 0;
 }
 /* 群內隻數。表上沒有任何一列涵蓋時退回最小的一群（2 隻）。 */
 function rollEliteGroupSize(stage, zone) {
-  var rows = eliteBandRows(eliteGroupTable('sizeWeights', zone), stage);
+  var rows = eliteBandRows(zoneEncounterRows('eliteSize', zone), stage);
   var pairs = [];
   for (var i = 0; i < rows.length; i++) {
     var w = Number(rows[i][3]);
@@ -1482,7 +1461,7 @@ function rollEliteGroupSize(stage, zone) {
 }
 /* 這一群是不是全員菁英。 */
 function rollEliteGroupPure(stage, zone) {
-  var rows = eliteBandRows(eliteGroupTable('pureChance', zone), stage);
+  var rows = eliteBandRows(zoneEncounterRows('elitePure', zone), stage);
   var pct = rows.length ? Number(rows[0][2]) || 0 : 0;
   return chance(pct);
 }
