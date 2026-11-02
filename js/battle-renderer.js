@@ -1702,7 +1702,7 @@ var BattleRenderer = (function () {
      動作缺了就退回：移動→站立、攻擊→不播（沿用撲擊）、死亡→舊的壓扁淡出；站立都沒有就繼續用 emoji。
      圖還沒載到之前先用 emoji 頂著，載到後 adoptNpcSprite 把場上同款敵人的本體換成序列幀。 */
   var NPC_SPRITE_DIR = 'images/sprites/npc/';
-  var NPC_SPRITE_VER = '20261101-desert-batch1';
+  var NPC_SPRITE_VER = '20261102-npc-all';
   function npcSpriteDef(data) {
     var t = (typeof NPC_CONFIG_TABLE !== 'undefined' && data && data.npcId) ? NPC_CONFIG_TABLE[data.npcId] : null;
     return (t && t.sprite && t.sprite.idle) ? t : null;
@@ -1729,7 +1729,7 @@ var BattleRenderer = (function () {
         /* 移動圖與站立圖同名（懸浮怪、只有一組動畫）就不另註冊 walk，免得兩個動作切換時一直從頭播 */
         var meta = (stem && (a === 'idle' || stem !== sp.idle)) ? man.stems[stem] : null;
         if (!meta) return null;
-        return PIXI.Assets.load(NPC_SPRITE_DIR + stem + '.png').then(function (tex) {
+        return PIXI.Assets.load(NPC_SPRITE_DIR + stem + '.png?v=' + NPC_SPRITE_VER).then(function (tex) {
           tex.source.scaleMode = 'nearest';
           var c = man.chars[meta.char], frames = [];
           for (var i = 0; i < meta.frames; i++) {
