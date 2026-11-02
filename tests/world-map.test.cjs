@@ -74,8 +74,9 @@ test('切換場景會清掉前一個場景的敵人，並延後下一波（等�
     zoneProgress: { desert: { cleared: 100 }, Icefield: { current: 1, best: 1 } }, tower: { active: false } };
   const m = { hp: 10, floatSel: 'mv-float-1' };
   c.FIELD.monsters = [m]; c.FIELD.monster = m;
-  c.FIELD.player = { _lockTarget: m };
+  c.FIELD.player = { _lockTarget: m, dots: [{ dmg: 1 }] };
   c.switchZone('Icefield');
+  assert.equal(c.FIELD.player.dots.length, 0, '原場景的持續傷害一併清除');
   assert.equal(c.G.stage.zone, 'Icefield');
   assert.equal(c.FIELD.monsters.length, 0);
   assert.equal(c.FIELD.monster, null);

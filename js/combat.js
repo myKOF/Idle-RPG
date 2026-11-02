@@ -917,7 +917,10 @@ function switchZone(zoneKey) {
     FIELD.monster = null;
     FIELD.monsters = [];
     FIELD.despawnCd = 0;
-    if (FIELD.player) FIELD.player._lockTarget = null;
+    if (FIELD.player) {
+        FIELD.player._lockTarget = null;
+        cleanse(FIELD.player);   // 原場景敵人留下的控場、減益與持續傷害不帶進新場景
+    }
     FIELD._waveClearPending = false;
     FIELD.mapComplete = false;
     holdFieldSpawn(FIELD_STAGE_SWITCH_DELAY);
