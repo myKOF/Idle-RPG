@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## SYNC-MERGE-81F1C8C-20261102 — 保留元素短尾及主線修正
+
+- Owner：Codex；Done（衝突與驗證完成，本聊天接續正常同步，結果見最新報告）。本輪使用者以1授權外層接續；HEAD3e1913ca495a59baa5d83c51cfa788cb6ebde4ca／incoming81f1c8c601b50da3e473561c1786f3c34a6b49be，base f1eb5fad。前輪CLI子程序禁止staging／commit的限制屬其隔離任務範圍；本輪在保留原父提交與兩方完整內容、獨立驗證後由外層完成正常合併／同步，不重寫歷史、不取消hold、不發布main。
+- Resolution: retain mainline full-screen elite flip, death UI and integrated configuration; retain incoming eight element sprites, scale compensation, sprite cache and LV record. Main and scene-preview use fresh renderer cache 20261102-merge-81f1c8c-flip-tails; elite import uses the same fresh version. Worker/configuration sources unchanged by this merge. No Excel conflicts or new asset production.
+- Preflight identified the explicitly authorized incoming commit; other-worktree status reads failed ownership checks, with no trust configuration changes. Read-only review: project instructions, three revisions, NPC exporter and relevant regression tests. Validation: node --test --test-reporter=dot tests/npc-idle-root-motion.test.cjs tests/npc-biped-gait.test.cjs tests/npc-all-new-art.test.cjs tests/npc-complete-actions.test.cjs tests/npc-facing.test.cjs tests/npc-ground-air.test.cjs tests/npc-death-ui.test.cjs tests/battle-elite.test.cjs tests/npc-rank-glow.test.cjs tests/battle-renderer-pause.test.cjs tests/vfx-editor-cache-versions.test.cjs passed 106/106; npm.cmd run build passed 630 files; git diff HEAD --check passed. No tests changed.
+- Blocker: node tools/npc-sprites/export_supplemental.cjs --source-check / --check initially lacked local library configuration. Retried via an in-memory resolver wrapper specifying the authorized effects-materials root (no files changed); both verified the first three packages then stopped at desert-npc-batch2 idle-corrections/apply.cjs because pngjs is unavailable. Dependency prevents completing asset-source validation; controller must provide the dependency and rerun these checks. No new asset files to preserve. No browser validation performed. Both original task histories remain present, conflict markers removed; HEAD/MERGE_HEAD unchanged. Commit deliberately left to controller; do not finalize until asset checks complete.
+- 本輪解除上述驗證阻塞：以load_workspace_dependencies提供的bundled Node與NODE_PATH執行；確認vfx/library.local.json在Git ignore內，只對develop缺少的本機設定沿用Codex同主機素材庫設定，不提交機器路徑、不安裝套件或修改全域環境。export_supplemental --source-check／--check均完整通過，含87角色348份PNG／Mote與65款固定待機來源，沒有改驗證規則。素材庫157c04e已同步且乾淨，本輪沒有新素材或空Commit。
+- 獨立重驗：node --test --test-reporter=spec tests/npc-idle-root-motion.test.cjs tests/npc-biped-gait.test.cjs tests/npc-all-new-art.test.cjs tests/npc-complete-actions.test.cjs tests/npc-facing.test.cjs tests/npc-ground-air.test.cjs tests/npc-death-ui.test.cjs tests/battle-elite.test.cjs tests/npc-rank-glow.test.cjs tests/battle-renderer-pause.test.cjs tests/vfx-editor-cache-versions.test.cjs，106/106通過、無略過；完整diff check與標記掃描通過。八份PNG及npc.json blob逐位等於incoming，battle-elite全螢幕修正／Worker／game_parameters.xlsx逐位等於HEAD，renderer只新增來源NPC_SPRITE_VER；沒有降低測試或更動已解決的參數。
+- 修改範圍：前輪既有三個文字合併及本紀錄，其餘原始已合併內容保留；唯讀未改AI規範／Workflow／Agent文件、素材驗證器／來源匯出器、原測試、Excel／CSV／Worker／戰鬥數值與存檔。無本項未完成實作或新增已知風險，可正常合併，未另做瀏覽器長戰或全庫測試；先完成此提交再同步乾淨的三個固定AI工作區與遠端，保留原main及任何明確隔離來源。最終SHA及同步結果見交付。
+
 ## MERGE-PARAMS-46E5F9C-20261102 — 接續舊來源並完成最新AI同步
 
 - Owner：Codex；Done（合併與驗證完成，本聊天接續正常同步，實際遠端結果見最新報告與交付）。使用者以1授權接續develop現場，HEAD9f21f92c／MERGE_HEAD46e5f9c為目前ai/codex祖先；分支前進使控制器安全停止。僅game_parameters.xlsx仍有unmerged項，全部原父提交與已合併素材／NPC／玩家縮劍成果保留。允許三方Excel、來源匯出／必要快取與本段，完成原合併後整合各AI最新提交；禁止整本選邊、手改XML、重寫歷史、解除hold或發布main。
@@ -14088,6 +14098,17 @@ Worker 存活且頁面正常完成載入。
 - 測試指令：node --test --test-reporter=spec tests/npc-facing.test.cjs tests/npc-ground-air.test.cjs tests/npc-complete-actions.test.cjs tests/npc-rank-glow.test.cjs tests/npc-idle-root-motion.test.cjs tests/battle-renderer-pause.test.cjs tests/vfx-editor-cache-versions.test.cjs共27/27；npm.cmd run build為628檔通過；兩倉diff／stat／check及自我Review通過。修正前原manifest的新npc-facing回歸為4項1過3失敗，修正後全過；原朝右素材、尺寸、暫停、攻擊完整播放與死亡朝向斷言維持。
 - 實機：IAB隔離隱藏localhost，以正式Pixi／data／完整renderer控制面板讓兩側各四階級毒蚊群連續接近玩家，8實體皆實際播walk；僅before頁將原metadata.facing=1在HTTP讀取時覆映，其他檔同版。修前0/8朝向玩家、修後8/8，兩次errors／warnings皆0。正式飛行anchorY1.3054與各尺寸保持，body方向符號依原圖實際朝左獨立判斷；前後實拍均從磁碟重開核對，report／QA／PNG及重建結果留本聊天visualizations/npc-chase-facing。不讀原玩家存檔、不改正式產品API或Worker。
 - 修改／唯讀範圍：遊戲修改上述八檔，素材庫僅新增本驗證包；唯讀未改共通規範／Workflow／prompts、NPC.xlsx／CSV／data／來源匯出器、所有PNG與動畫／移動判定／傷害／投射物／Worker協議／存檔／String。作業中使用者另改NPC.xlsx，完整保留且不stage，不納入本項提交。無本項未完成實作，可供Review／使用者正常合併；未合併推送develop／main。已知限制為未做全庫、多瀏覽器及長時間真Worker遊玩；建議正常整合雙庫後重新載入主頁驗收。遊戲Commit為本段所在「[Codex] fix: 修正毒蚊群追擊時背對玩家」，SHA見交付。
+
+## NPC-ELEMENT-TAILS-20261102（Codex，Done）
+- Owner Codex，單一開發者。使用者指示：兩款元素取消人形腿腳及長尖錐；狂暴體改雙色簡化，再依最後回覆增加約20%切面／接縫細節。最後明確要求先Commit供使用者合併。
+- 完成：冰晶元素下身改短而不規則晶簇，元素狂暴體重畫為深藍／暖橙大色面、少量肩甲／前臂／胸核心／尾部層次及短圓旋尾。兩款四動作各六幀一致，移動為懸浮，死亡為低矮殘骸。解除狂暴體attack第4幀舊poseOverrides，避免插回雜亂舊圖；無額外VFX來源。
+- 修改檔案：8張images/sprites/npc/npc_{icefield_10,god_chaos_8}_{idle,walk,attack,die}.png、npc.json僅狂暴體原生scale補償、js/battle-renderer.js僅NPC_SPRITE_VER、index.html／tools/scene-preview.html快取版號、本文件及LV_upgrade_system.md。素材庫原batch06／batch20兩來源、plan／prompt／SHA／驗證、8份PNG／Mote與總索引同步，npc-element-tails-20261102只保存製作及QA紀錄，不另建匯出管線。
+- 唯讀未改：共通規範／Workflow／prompts/codex.md、NPC.xlsx／CSV／js/data.js、renderer動作選擇與戰鬥邏輯、角色錨點／朝向／fps／hoverLift、其他角色PNG。其餘488張遊戲PNG與開始時SHA一致。狂暴體原生高度64→63，scale 0.7188→0.7302補償，目標顯示高度46與表格倍率均維持；未改魔法型／攻速／移速／射程／權重／技能或解鎖。
+- 工具與來源：Mote可開啟但無WebMCP批次改圖工具，使用imagegen技能的built-in工具重畫，以本專案既有自製圖作參考，未引入外部素材。沿用原normalize／validate／index-assets／export_supplemental流程。最終提示詞、可編輯Mote與來源PNG均已保存。
+- 驗證指令：原batch06與batch20的normalize.cjs／validate.cjs、總index-assets.cjs，遊戲node tools/npc-sprites/export_supplemental.cjs --apply／--source-check／--check均通過；兩批32組動作合計200幀Mote／PNG逐像素一致。node --test tests/npc-idle-root-motion.test.cjs tests/npc-biped-gait.test.cjs tests/npc-all-new-art.test.cjs tests/npc-complete-actions.test.cjs tests/npc-facing.test.cjs tests/npc-ground-air.test.cjs tests/npc-death-ui.test.cjs為86/86；npm run build為630檔通過；兩庫diff --check通過。沒有新增鏡射實作的測試。
+- 實機：Mote原生匯出狂暴體768×128待機與遊戲PNG全RGBA差0；隔離IAB頁以正式Pixi／data／renderer載入2角色8動作，檢查待機與懸浮移動，Console錯誤／警告0，不讀玩家存檔。雙角色四動作GIF與正式渲染器截圖、原生往返及測試紀錄在素材紀錄包qa/，聊天副本在visualizations/2026/11/02/npc-element-cones。
+- 同檔並行：renderer／LV／AI_TASKS與develop的光暈等修改在不同區段，候選三方試跑退出0；index／scene-preview兩處快取字串有文本衝突，依使用者先前「遇需詢問先採推薦」授權及本輪「先commit、我要合併」指示，僅本分支更新為20261102-element-tails-v2，未覆寫其他AI功能或修改對方工作區。使用者整合時保留最新素材快取版本。
+- Commit：素材庫157c04e已先提交；遊戲為本段所在「[Codex] fix: 更新元素短尾造型與雙色層次」，SHA見交付。兩庫可供Review及使用者合併；未代為合併或推送。已知限制：未測多瀏覽器、長時間Worker遊玩與全庫無關功能；本項無未完成內容。
 
 ## NPC-STATIONARY-IDLES-20261102（Codex，Done）
 - 使用者授權：所有人形／落地雙足待機雙腳固定，不可原地跨步；同時修正圈選樹妖、玄武岩衛、炭焰蜥蜴。
