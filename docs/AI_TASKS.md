@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## STARTUP-FIELD-KEY-20261102 — 野外場景 Loading 無限等待
+
+- Owner：Codex；Done，單一開發者。使用者回報 Loading 點仍動但無法進遊戲；正式 localhost 診斷確認 Worker／面板／底圖裝飾完成、診斷 errors 空，scene.key 為 field:desert，sceneReady 卻為 false。
+- 原因：sceneKeyOf 已將野外按地圖命名，sceneAssetsReady 仍以 key !== field 判斷塔戰，等待野外不會啟用的祭壇。前置既有場景切換已完成。
+- 允許：battle-renderer 的就緒場景分類、scene-startup-ready 回歸、index／scene-preview 快取、LV 與本段；禁止修改存檔／Worker／戰鬥規則／素材／配置表及其他工作區，不合併推送 develop／main。衝突預檢上述檔案均無外部來源，fetch 完成。
+- 完成六檔：renderer 僅將塔戰分類改為 tower: 前綴；index／scene-preview 快取同步為20261102-loading-field；回歸改用正式 sceneKeyOf／towerFieldView 與未啟用祭壇，另覆蓋多張野外地圖／初始 field，保留底圖／可見區塊／塔戰／轉場等待。原實作下新測試可重現四項失敗，修後全通過，未弱化斷言。LV及本段同步，無新素材或素材庫修改。
+- 驗證：`node --test --test-reporter=spec tests/scene-startup-ready.test.cjs tests/loading-screen.test.cjs tests/tower-scene-intro.test.cjs tests/battle-renderer-pause.test.cjs tests/vfx-editor-cache-versions.test.cjs`33/33；`npm.cmd run build`626檔通過；git diff／stat／check及自我Review通過。未跑全庫／多瀏覽器長玩，無本項未完成實作。
+- 實機：使用者原Chrome http://127.0.0.1:8123/由本Codex工作區伺服器提供，以內建startupDiag重現，修後reload確認loading=false／sceneReady=true／Worker正常／pendingFetch空／errors空，再恢復原網址並確認黑幕is-hidden、Lv.173／100關／背包1140/2000及戰鬥畫面正常，無清除或手工改寫存檔。Console捕捉每次修前修後重載皆相同兩筆Object error，未發現新增Warning或本次新增錯誤；不宣稱原Console零Error。唯讀未改main／ui／bridge／arena／decor／存檔與規範；本項可Review／合併，建議其他工作區正常整合後重載；未合併推送develop／main。遊戲Commit為本段所在「[Codex] fix: 修正野外場景永久卡在Loading」，SHA見交付。
+
 ## NPC-ATTACK-ANIMATION-20261102 — NPC攻擊動作與初生重生尺寸一致
 
 - Owner：Codex；Done，單一開發者。使用者回報測試場景哥布林近戰有傷害／閃避數字，但未播攻擊或仍播移動。定位onVfx的Preset成功提前return，跳過舊路徑renderEnemyAttackVfx內的角色動作。前置既有NPC四動作與真Worker攻擊事件完成。

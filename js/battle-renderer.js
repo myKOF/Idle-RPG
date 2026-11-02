@@ -8424,7 +8424,7 @@ var BattleRenderer = (function () {
     if (!S.ready || S.failed || !S.lastPanel || S.scene.phase) return false;
     var key = sceneKeyOf(S.lastPanel);
     if (key !== S.scene.key) return false;
-    if (key !== 'field' && S.arena) return S.arena.active();
+    if (key.indexOf('tower:') === 0 && S.arena) return S.arena.active();
     var stage = S.lastPanel.stage || {};
     if (S.zoneKey !== (stage.zone || '')) return false;
     var name = S.zoneKey ? 'ground_' + S.zoneKey : 'ground_default';
