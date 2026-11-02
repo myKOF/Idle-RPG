@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## GM-DAMAGE-20261102 — 固定與最大生命百分比傷害指令
+
+- Owner：Codex；Done，單一開發者。使用者要求damage 90每次攻擊固定90、damage 10%每次造成生命百分比傷害。採目標最大生命，增加damage off恢復；前置既有gm.exec／傷害收斂點完成。
+- 允許：gm_exec執行期旗標／解析、formula共用扣血入口、index／Bridge／Worker必要快取、獨立gm-damage回歸、GM_command／LV／BOSS_PCT_HP_EFFECTS測試例外及本段。禁止改玩家原屬性／裝備／配置表／存檔格式／素材／其他工作區或合併推送。僅本機GM、刷新清除；普攻／技能／衍生與持續傷害套用，敵人打玩家不變；保留命中及無敵閘門，覆寫最終扣血，避免盾／暴擊／抗性／高塔上限改值。
+- 預檢：gm_exec／formula及其他目標無外部來源。index／Worker仍有Claude e1918408換景快取與前輪已核准的既存衝突；候選與改前試跑皆只有同一處原衝突，本輪formula／Bridge及gm_exec快取不碰其renderer／combat版本，沿前輪分段授權保留，不合併Claude功能。保留本副本同步工具既有未提交修改，只提交本項。
+- 驗收：合法／錯誤輸入不部分套用、數字／小數／百分比／解除／零、不同敵人maxHp與受傷後基準不變、正常傷害還原、玩家／敵方與Boss隔離、連擊／技能／持續／衍生、浮字與統計、真Worker／GM面板與Console、相關回歸／Build／diff後獨立Commit，交正常Review／使用者整合。
+- 完成10檔：gm_exec的damageOverride只放GM_TEST、不入G，嚴格解析固定非負數／0～100%／off或clear；formula的唯讀helper接resolveHit與applyEnemyHpDamage最終扣血，保留命中與無敵、旁路護盾／暴擊增減傷／塔戰上限；DoT合批依原drainHits乘回每跳。index formula84→85／Bridge與Worker formula及gm_exec匯入20261102-gm-damage。新增gm-damage八項回歸，GM_command／LV／BOSS_PCT_HP_EFFECTS記錄測試例外及本段；無玩家文案／String、Excel、素材或素材庫修改，不建空素材Commit。
+- 最終回歸：`node --test --test-reporter=spec tests/gm-damage.test.cjs tests/gm-command.test.cjs tests/gm-test-map.test.cjs tests/damage-random-crit.test.cjs tests/global-damage-reduction.test.cjs tests/npc-damage-aggro.test.cjs tests/dot-mitigation.test.cjs tests/dot-player-offense.test.cjs tests/combat-dot-log.test.cjs tests/purgatory-tower.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs`104/104通過。含真sgHitOne與tickStatuses五跳合批、浮字／DPS／輸出記錄、命中／一般與菁英無敵、敵人打玩家不變、0／解除／刷新初始旗標、錯誤指令零狀態變更／外部host拒絕。`npm.cmd run build`626檔語法／編譯及空檔檢查通過，diff／stat／check與暫存檢查通過。
+- 既有失敗：較早包含damage-drain的92項為91過／1失敗，該檔「持續傷害依狀態與實際跳數吸取」的playerDefCfg讀缺少resist.ctrl；以HEAD原formula.js唯讀fs覆映重跑該檔仍7過／相同1失敗。未放寬原斷言或擴修；最後104項不含該既有失敗檔，另以本項完整resist fixture驗真持續跳數。全庫與多瀏覽器／實體觸控未跑，非宣稱全庫綠燈。
+- 瀏覽器：隔離隨機localhost、headless Edge、正式index及真Worker；用真Enter開GM面板、輸入damage 90／-1／10%／off／0再Enter，固定兩擊[90,90]且護盾保持，2300maxHp敵人普攻兩擊＋sgHitOne＋直接傷害均230、HP1380；非法輸入保留90、off恢復、0不扣血，重載Worker.damageOverride為null。Worker.evaluate僅建立隔離測試目標、呼叫正式函式觀測，不修改正式檔／原玩家存檔。Console error／warning與pageerror0，實際新版formula／gm_exec／Bridge／Worker請求已記錄，GM面板PNG已重開檢視。腳本／browser-report／基線log及三方試跑留本聊天visualizations/gm-damage。
+- 唯讀未改：規範／AGENTS／Workflow／prompts、combat／skills2／elite／tower的正式攻擊與傷害規則、renderer／浮字及統計消費端、Worker協議／GM面板／save／String／配置表及素材。進行中另一項同步工具已自行提交46a8e031；後續同副本NPC.xlsx／CSV／data參數套用變動不屬本項，保持未提交且不stage。自我Review完成，本項無已知新增風險／未完成實作，可供Review／使用者合併；未合併推送develop／main。Commit為本段所在「[Codex] feat: 新增固定與生命百分比傷害GM指令」，SHA見交付；下一步正常整合後重載輸入damage 90或damage 10%，測完damage off。
+
 ## TEST-MAP-ROWS-20261102 — 測試場景依地圖分列與十五米間距
 
 - Owner：Codex；Done，單一開發者。使用者要求從原點開始，同場景由左向右排一列，下個場景向上另起一列，NPC間隔15米，尺寸與原地圖一致。前置為既有test_map完成。

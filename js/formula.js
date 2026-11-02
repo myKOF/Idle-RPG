@@ -755,6 +755,15 @@ function gmHpLockActive(ent) {
 function gmMpLockActive(ent) {
   return !!(ent && typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.mpLock);
 }
+/* GM 最終扣血覆寫：讀取執行期旗標，不改屬性或存檔；null＝走正常傷害管線。 */
+function gmDamageOverrideAmount(ent) {
+  var cfg = typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.damageOverride;
+  if (!cfg || !ent || !(ent.maxHp > 0) || !Number.isFinite(cfg.value) || cfg.value < 0) return null;
+  if (ent._el && typeof GT === 'number' && ent._el.invulnUntil > GT) return null;
+  if (cfg.mode === 'fixed') return cfg.value;
+  if (cfg.mode === 'percent' && cfg.value <= 100) return ent.maxHp * (cfg.value / 100);
+  return null;
+}
 /* 系統內建隱藏設定：「直接扣減目標生命百分比」類效果（占敵人最大生命 N% 的扣血／流血）對 BOSS 的倍率。
    不進設定表。⚠️ 新增這類效果時，扣血量必須乘 bossPctHpFactor(目標)；
    清單見 docs/BOSS_PCT_HP_EFFECTS.md。 */
@@ -778,6 +787,11 @@ function applyEnemyHpDamage(ent, damage, drainHits, opts) {
   amount = towerBossHpDamage(ent, amount);
   // 菁英詞條（js/elite.js）：減傷／無敵／鏈結分擔；持續傷害與衍生傷害也要吃到
   if (ent && ent.affixes && typeof eliteIncomingDamage === 'function') amount = eliteIncomingDamage(ent, amount, null);
+  var gmDamage = gmDamageOverrideAmount(ent);
+  if (gmDamage !== null && damage > 0) {
+    // 持續傷害可能將多跳合批；每跳仍各算一次覆寫，不因 Tick 合批少算。
+    amount = gmDamage * (drainHits > 0 ? drainHits : 1);
+  }
   if (ent) {
     if (gmHpLockActive(ent) || ent._sgRevival) amount = 0;
     /* GM 鎖血（僅本機 GM 指令 god → js/gm_exec.js）：我方生命最低鎖 1。
@@ -1009,8 +1023,9 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   }
   // 戰神體使用本次扣盾前的上限；破盾會在下方立即清空 shieldMax。
   var shieldMaxBeforeHit = dCfg.isPlayer ? Math.max(0, defender.shieldMax || 0, defender.shield || 0) : 0;
+  var gmDamage = aCfg.isPlayer && !dCfg.isPlayer ? gmDamageOverrideAmount(defender) : null;
   // 護盾吸收
-  if (defender.shield && defender.shield > 0) {
+  if (gmDamage === null && defender.shield && defender.shield > 0) {
     out.absorbed = Math.min(defender.shield, dmg);
     defender.shield = Math.max(0, defender.shield - out.absorbed);
     if (defender.shield <= 0) {
@@ -1019,7 +1034,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
     }
     dmg -= out.absorbed;
   }
-  dmg = towerBossHpDamage(defender, dmg);
+  dmg = gmDamage === null ? towerBossHpDamage(defender, dmg) : gmDamage;
   /* 新版技能【魔法盾】（大地守護 T5，js/skills2.js）：護盾吸收之後、扣生命之前，
      把一部分傷害改由法力承擔；manaRed 只降低實際扣除的 MP，不改變轉換的生命傷害量。 */
   if (dCfg.isPlayer && dmg > 0 &&
