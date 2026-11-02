@@ -1094,9 +1094,19 @@ var PASSIVE_POOL = {
   manaReflux: { name: '返哺', desc: '每次施放技能有25%機率回復該技能消耗的{v}%法力值，返還的法力將在5秒內緩慢回復', base: 80, perR: 0, legendary: true, fx: { manaRefund: { chance: 25, sec: 5 } } }
 };
 
+/* 舊版傳奇特效（第一批、不隸屬任何新版技能群組）暫時停用：不再生效、也不再出現在新裝備上，
+   已存在於裝備上的詞條原樣保留（資料不動，之後重新設計或解除停用時沿用）。
+   生效閘門是 js/legendary.js 的 legendaryHas；重新啟用就把鍵從這裡拿掉。 */
+var LEGACY_LEGENDARY_DISABLED = {
+  mountainSunderer: true, shadowTracker: true, whirlwindStab: true, doomProphet: true,
+  berserkBloodAxe: true, unyieldingGuard: true, thunderShock: true, burningLaw: true,
+  fireSpiritShield: true, magicLightShield: true, lightCollision: true, ghostLamp: true,
+  magicRecoil: true
+};
+
 // 傳奇特效皆可出現在全部裝備部位；保留舊表的武器欄只供相容。
 function passiveAllowedForItem(key, item) {
-  return !!PASSIVE_POOL[key];
+  return !!PASSIVE_POOL[key] && !LEGACY_LEGENDARY_DISABLED[key];
 }
 function passiveKeysForItem(item) {
   var out = [];

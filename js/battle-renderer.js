@@ -401,6 +401,79 @@ var BattleRenderer = (function () {
     }, { passive: false });
     S.cameraWheelBound = true;
   }
+  /* ---- GM 測試場景的點擊操作（test_map）----
+     點地面＝走到那一點；點怪＝走過去攻擊。位移與攻擊都由模擬層決定，這裡只把點擊換成世界座標或敵人 id，
+     以內部 GM 指令 test_map_move／test_map_atk 送到 Worker（只在 hostname 為本機時有效，與 GM 面板同一道防護）。
+     座標換算是 worldToScreenPoint 的反向：畫布像素 ÷ 鏡頭縮放 → 反透視 → 扣掉鏡頭平移 → 縱向除回 GROUND_Y_SCALE。 */
+  function screenToGroundPoint(cssX, cssY) {
+    var zoom = S.cameraScale || 1;
+    var ux = cssX / zoom, uy = cssY / zoom;
+    var L = S.persp && S.persp.layout;
+    if (L) {
+      var T = uy - L.cy, t = T / (1 + L.beta * T), w = 1 - L.beta * t;
+      ux = L.cx + (ux - L.cx) * w;
+      uy = L.cy + t;
+    }
+    var world = S.layers && S.layers.world;
+    return { x: ux - (world ? world.x : 0), y: screenToGroundY(uy - (world ? world.y : 0)) };
+  }
+  /* 點到哪隻怪：在畫面上比對每隻的身體矩形（腳底往上一個身高），多隻重疊取最靠前（腳底最低）的。 */
+  function testMapPick(cssX, cssY) {
+    var zoom = S.cameraScale || 1, best = null, bestY = -Infinity;
+    for (var id in S.entities) {
+      if (!Object.prototype.hasOwnProperty.call(S.entities, id)) continue;
+      var e = S.entities[id];
+      if (!e || e.state === 'dying' || !e.data || !(e.data.hp > 0) || !e.root) continue;
+      var foot = worldToScreenPoint(e.root.x, e.root.y);
+      var b = sceneBillboardBasis(e.root.x, e.root.y);
+      var sc = zoom / (b ? Math.max(0.3, b.w) : 1);
+      var h = Math.max(24, e.hitHeight || 64);
+      var halfW = Math.max(14, h * 0.28) * sc;
+      if (Math.abs(cssX - foot.x) > halfW || cssY > foot.y + 12 * sc || cssY < foot.y - h * sc) continue;
+      if (foot.y > bestY) { bestY = foot.y; best = e; }
+    }
+    return best;
+  }
+  function initTestMapClick() {
+    if (S.testMapClickBound || !S.host || !S.app) return;
+    var canvas = S.app.canvas, held = false, lastSent = 0;
+    function send(line) {
+      if (typeof WorkerBridge === 'undefined' || !WorkerBridge.send) return;
+      var p = WorkerBridge.send('gm.exec', { line: line });
+      if (p && p.catch) p.catch(function () {});
+    }
+    function cssPoint(ev) {
+      var r = canvas.getBoundingClientRect();
+      var kx = r.width > 0 ? (S.canvasW || r.width) / r.width : 1;
+      var ky = r.height > 0 ? (S.canvasH || r.height) / r.height : 1;
+      return { x: (ev.clientX - r.left) * kx, y: (ev.clientY - r.top) * ky };
+    }
+    function moveTo(pt) {
+      var g = screenToGroundPoint(pt.x, pt.y);
+      send('test_map_move ' + Math.round(g.x) + ' ' + Math.round(g.y));
+    }
+    S.host.addEventListener('pointerdown', function (ev) {
+      if (!S.ready || S.failed || !S.testMap || ev.button !== 0) return;
+      if (ev.target !== canvas && ev.target !== S.host) return;   // HUD、技能列、按鈕自己處理
+      var pt = cssPoint(ev), hit = testMapPick(pt.x, pt.y);
+      if (hit) { send('test_map_atk ' + hit.id); return; }
+      held = true;
+      lastSent = nowMs();
+      moveTo(pt);
+    });
+    // 按住拖曳：持續更新移動目的地（每 100ms 一次）；點怪不進入拖曳
+    S.host.addEventListener('pointermove', function (ev) {
+      if (!held || !S.testMap) return;
+      var t = nowMs();
+      if (t - lastSent < 100) return;
+      lastSent = t;
+      moveTo(cssPoint(ev));
+    });
+    function release() { held = false; }
+    window.addEventListener('pointerup', release);
+    window.addEventListener('pointercancel', release);
+    S.testMapClickBound = true;
+  }
   function setCameraViewport(w, h) {
     S.canvasW = w; S.canvasH = h;
     S.cameraScale = cameraZoom();
@@ -1371,8 +1444,59 @@ var BattleRenderer = (function () {
       if (name !== 'ground_default') loadGroundTexture(null);   // 退回通用底圖
     });
   }
+  /* ---- GM 測試場景（js/combat.js gmTestMapEnter）----
+     全空的方格地板：不鋪地形裝飾、不套地圖貼圖。方格軸向對齊世界座標（不轉 45°），
+     一格＝一次 12 米的擺放間距（120 單位），格內再切四等分當刻度。
+     點擊戰場（點地面走、點怪攻擊）也只在這個場景生效，座標換算見 testMapClick。 */
+  var TEST_MAP_CELL = 120;
+  var _testMapTex = null;
+  function testMapGridTexture() {
+    if (_testMapTex) return _testMapTex;
+    var size = TEST_MAP_CELL * 2, c = document.createElement('canvas');
+    c.width = c.height = size;
+    var g = c.getContext('2d');
+    g.fillStyle = '#34373f';
+    g.fillRect(0, 0, size, size);
+    g.fillStyle = '#2d3037';                       // 棋盤格交錯，遠處也分得出格子
+    g.fillRect(0, 0, TEST_MAP_CELL, TEST_MAP_CELL);
+    g.fillRect(TEST_MAP_CELL, TEST_MAP_CELL, TEST_MAP_CELL, TEST_MAP_CELL);
+    g.strokeStyle = 'rgba(255,255,255,0.07)';      // 刻度線
+    g.lineWidth = 1;
+    for (var i = 1; i < 8; i++) {
+      var q = i * TEST_MAP_CELL / 4;
+      g.beginPath(); g.moveTo(q + 0.5, 0); g.lineTo(q + 0.5, size); g.moveTo(0, q + 0.5); g.lineTo(size, q + 0.5); g.stroke();
+    }
+    g.strokeStyle = 'rgba(255,255,255,0.22)';      // 12 米格線
+    g.lineWidth = 2;
+    for (var j = 0; j < 2; j++) {
+      var m = j * TEST_MAP_CELL;
+      g.beginPath(); g.moveTo(m + 1, 0); g.lineTo(m + 1, size); g.moveTo(0, m + 1); g.lineTo(size, m + 1); g.stroke();
+    }
+    _testMapTex = new PIXI.Texture({ source: new PIXI.CanvasSource({ resource: c, scaleMode: 'linear', addressMode: 'repeat' }) });
+    return _testMapTex;
+  }
+  function setTestMapScene(on) {
+    on = !!on;
+    if (on === !!S.testMap) return;
+    S.testMap = on;
+    if (S.decor) S.decor.setVisible(!on);
+    var g = S.groundTile;
+    if (!g || g.destroyed) return;
+    if (on) {
+      g.tileRotation = 0;
+      g.texture = testMapGridTexture();
+      g.tint = 0xffffff;
+    } else {
+      g.tileRotation = GROUND_TILE_ROTATION;
+      var name = S.zoneKey ? ('ground_' + S.zoneKey) : 'ground_default';
+      var cached = _groundTexCache[name];
+      if (cached && typeof cached !== 'string') applyGroundTexture(cached);
+      else loadGroundTexture(S.zoneKey || null);
+    }
+  }
   function applyGroundTexture(tex) {
     if (!S.groundTile || S.groundTile.destroyed || !tex || typeof tex === 'string') return;
+    if (S.testMap) return;                      // 測試場景用自己的方格地板
     if (S.arena && S.arena.active()) return;   // 魔王祭壇有自己的地板；野外的貼圖晚到也不能蓋掉它
     S.groundTile.texture = tex;
     // 用圖本身的顏色；地形裝飾的「地下」階段帶會壓暗（S.groundTint，見 js/battle-decor.js）
@@ -1389,14 +1513,15 @@ var BattleRenderer = (function () {
     var g = S.groundTile;
     if (!g) return;
     var tex = g.texture;
-    var perX = ((tex && tex.width) || 128) * GROUND_TILE_PERIOD;
-    var perY = ((tex && tex.height) || 128) * GROUND_TILE_PERIOD;
+    var period = S.testMap ? 1 : GROUND_TILE_PERIOD;   // 測試場景的方格不轉角度，週期就是貼圖邊長
+    var perX = ((tex && tex.width) || 128) * period;
+    var perY = ((tex && tex.height) || 128) * period;
     g.tilePosition.x = -(cam.x % perX) + shx;
     g.tilePosition.y = -(cam.y % perY) + screenToGroundY(shy);
   }
   function syncZone(zoneKey, stageNum) {
     // 地形裝飾依「地圖＋階段帶」換組合（同一組時 setScene 直接返回，5Hz 呼叫沒有成本）
-    if (S.decor) S.decor.setScene(zoneKey, stageNum);
+    if (S.decor && !S.testMap) S.decor.setScene(zoneKey, stageNum);
     if (zoneKey === S.zoneKey) return;
     S.zoneKey = zoneKey;
     loadGroundTexture(zoneKey);
@@ -2283,6 +2408,11 @@ var BattleRenderer = (function () {
   function exitArena() {
     if (!S.arena || !S.arena.active()) return;
     S.arena.exit();
+    if (S.testMap && S.groundTile && !S.groundTile.destroyed) {   // 塔戰結束回到測試場景：換回方格地板
+      S.groundTile.texture = testMapGridTexture();
+      S.groundTile.tint = 0xffffff;
+      return;
+    }
     var name = S.zoneKey ? ('ground_' + S.zoneKey) : 'ground_default';
     var cached = _groundTexCache[name];
     if (cached && typeof cached !== 'string') applyGroundTexture(cached);
@@ -2292,6 +2422,7 @@ var BattleRenderer = (function () {
   function syncBattle(panel) {
     if (!S.ready || !panel) return;
     S.lastPanel = panel;
+    setTestMapScene(!!(panel.field && panel.field._testMap));
     S.arenaEnraged = !!(panel.tower && panel.tower.enraged);
     if (!S.scene.phase && sceneKeyOf(panel) !== S.scene.key) beginSceneTransition();
     // 收合中與全黑時畫面凍結在舊場景（全黑那一刻 applySceneSwitch 會用最新面板重建）
@@ -6959,7 +7090,7 @@ var BattleRenderer = (function () {
     world.x = S.W / 2 - cam.x + shx;
     world.y = S.H / 2 - groundToScreenY(cam.y) + shy;
     syncGroundScroll(cam, shx, shy);
-    if (S.decor) {
+    if (S.decor && !S.testMap) {
       // 地面裝飾的平面跟著 world 走（含震動）；擺件在 entity 層，本來就跟著 world
       S.layers.decorPlane.x = world.x;
       S.layers.decorPlane.y = world.y;
@@ -8206,6 +8337,7 @@ var BattleRenderer = (function () {
       S.watchdogTimer = setInterval(fxWatchdog, FX_WATCHDOG_MS);
       S.ready = true;
       initCameraWheel();
+      initTestMapClick();
       bootVfxRuntime();
       flushPendingFloats();
       /* 開機時 battle 面板可能已經在手上（bridge 比渲染器先跑），先同步一次 */
