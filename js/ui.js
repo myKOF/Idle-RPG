@@ -2983,21 +2983,6 @@ function applyReincarnationTitleClass(el, count) {
   el.classList.add('reinc-title-' + c);
 }
 
-function headerViewGemCount(player, type, level) {
-  var byType = player && player.gems && player.gems[type];
-  return Math.max(0, Number(byType && byType[level]) || 0);
-}
-
-function headerViewTotalGems(player) {
-  var total = 0;
-  for (var type in GEM_TYPES) {
-    for (var level = 1; level <= GEM_FORGE_MAX_LEVEL; level++) {
-      total += headerViewGemCount(player, type, level);
-    }
-  }
-  return total;
-}
-
 function renderHeader() {
   var headerSnapshot = uiHeaderPanelSnapshot();
   if (!headerSnapshot || !headerSnapshot.player || !headerSnapshot.stats) return;
@@ -3034,15 +3019,6 @@ function renderHeader() {
     ? !!forgeSnapshot.forge.unlocked
     : progressReached(p.level, p.reincarnations, FORGE_UNLOCK_LEVEL, FORGE_UNLOCK_REINCARNATION);
   if (forgeTabBtn) forgeTabBtn.style.display = forgeUnlockedView ? '' : 'none';
-  var gemTip = [];
-  for (var gt in GEM_TYPES) {
-    var tn = 0;
-    for (var lv = 1; lv <= GEM_FORGE_MAX_LEVEL; lv++) tn += headerViewGemCount(p, gt, lv);
-    if (tn) gemTip.push(GEM_TYPES[gt].emoji + GEM_TYPES[gt].name + ' x' + tn);
-  }
-  var totalGems = headerViewTotalGems(p);
-  setTextIfChanged($id('r-gems'), fmt(totalGems));
-  updateResourceTip('r-gems', STR(122), gemTip.join('、') || STR(123));
   var bookTotal = 0, bookTip = [];
   for (var bk in p.books) {
     bookTotal += p.books[bk];
@@ -3059,7 +3035,6 @@ function renderHeader() {
     { id: 'r-ancient-essence', val: p.ancientEssence || 0 },
     { id: 'r-soul-origin', val: p.soulOrigin || 0 },
     { id: 'r-demon-seed', val: p.demonSeed || 0 },
-    { id: 'r-gems', val: totalGems },
     { id: 'r-books', val: bookTotal }
   ];
   resVisMap.forEach(function (item) {
@@ -13586,7 +13561,7 @@ function spawnQuestRewardFlyFx(rewardType, sourceEl) {
       iconHtml = '<img src="images/icon_essence.png" alt="essence">';
       break;
     case 'gem':
-      destEl = document.getElementById('r-gems') ? document.getElementById('r-gems').parentElement : null;
+      destEl = document.querySelector('[data-tab="gems"]') || document.getElementById('r-gold');
       iconHtml = '<img src="images/icon_gems.png" alt="gems">';
       break;
     case 'book':
