@@ -6006,7 +6006,7 @@ function renderDetail() {
   actionsHtml += '<button class="btn' + (socketMode ? ' btn-primary' : '') + '" data-act="toggle-socket" aria-pressed="' + (matMode === 'socket') + '">' + STR(122) + '</button>';
   if (runeMode && Object.keys(runeMode.draft).length) {
     /* 有暫放的符文：「符文」鈕變「刻印」，按下才真的鑲上 */
-    actionsHtml += '<button class="btn btn-primary act-btn-tooltip" data-act="engrave-rune" data-tip="' + esc(STR(1207, Object.keys(runeMode.draft).length)) + '"' + pendingUiButtonAttributes(pendingKey) + '>' + STR(1208) + '</button>';
+    actionsHtml += '<button class="btn btn-primary act-btn-tooltip engrave-pending" data-act="engrave-rune" data-tip="' + esc(STR(1207, Object.keys(runeMode.draft).length)) + '"' + pendingUiButtonAttributes(pendingKey) + '>' + STR(1208) + '</button>';
   } else {
     actionsHtml += '<button class="btn' + (runeMode ? ' btn-primary' : '') + '" data-act="toggle-rune" aria-pressed="' + (matMode === 'rune') + '"' + (equipRuneUiUnlocked(headerSnapshot) ? '' : ' disabled') + '>' + STR(150) + '</button>';
   }
