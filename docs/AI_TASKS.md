@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## NPC-ATTACK-ANIMATION-20261102 — NPC攻擊動作與初生重生尺寸一致
+
+- Owner：Codex；Done，單一開發者。使用者回報測試場景哥布林近戰有傷害／閃避數字，但未播攻擊或仍播移動。定位onVfx的Preset成功提前return，跳過舊路徑renderEnemyAttackVfx內的角色動作。前置既有NPC四動作與真Worker攻擊事件完成。
+- 允許：renderer敵人出手動作分派／去重、既有npc-complete-actions整合回歸、index與scene-preview必要快取、LV及本段。禁止改傷害／攻速／命中／Worker協議／配置／素材／存檔、其他工作區及合併推送；保留本副本既有NPC.xlsx／CSV／data參數套用修改。
+- 預檢：Claude e1918408的renderer換景段與本次onVfx／攻擊函式分離；index renderer快取同列，使用者已明確同意本輪分段修改，兩入口採20261102-npc-attack，不帶入換景功能。AI_TASKS的develop07dd716c只改同步工具任務紀錄，依候選三方驗證後分段保留。
+- 驗收：onVfx真分派的Preset接手／退路／延遲及載入重試／近戰與遠程／MISS仍攻擊、逐幀完成再接當下移動或站立／死亡不復活、特效不重複；真Worker哥布林重現修前修後與Console、相關回歸／Build／diff後獨立Commit，交正常Review／使用者整合。無新素材或素材庫變更。
+- 使用者追加：初生NPC較小、死亡重生才套尺寸。已在正式頁1200×800→全螢幕重現，舊史萊姆visScale1.4192820512820512／名字8px，新生2／11px；原因為密度縮放只在makeEnemy生成時計算，layoutScene未更新既有敵人。允許同renderer將enemyLayout尺寸計算共用於生成與重排，保持動畫／朝向／死亡進度，同步本體、血條／名稱／狀態／陰影／命中特效定位；既有gm-test-map fixture只補載抽出helper，新增尺寸回歸。NPC配置倍率與玩家縮放／玩法維持。
+- 使用者明確追加「做好後連我的一起commit」：包含NPC.xlsx、CSV與data既有參數套用成果，其餘套用產物也逐檔核對並提交實際變更。唯讀Excel→隔離CSV491列×22欄與工作CSV逐值完全一致，相對HEAD只有390列「縮放比」改動；config_tables --apply NPC試跑11個字面值、語意變更0。補齊index data／Bridge與Worker data／入口快取20261102-npc-scale，避免重新載入仍用舊表。Claude工作區未提交Worker只動combat匯入同行27，本次data匯入23不重疊、無語意相依，既有combat快取衝突保留待正常整合；不修改對方工作區。
+- 完成：抽出animateEnemyAttack在Preset／退路共用分派點播角色動作，同事件載入重試只播一次、退路不重播，保留近戰撲擊與遠程／MISS／死亡語意；enemyLayout共用生成與layoutScene重排公式，syncEnemyLayout原地更新本體／命中高度中心／陰影／血條／名稱狀態／菁英標記與覆光，不重建本體或重設動畫幀／朝向／死亡進度。延後載入的NPC也吃重排後的最新visScale。index與scene-preview renderer快取20261102-npc-attack；既有gm-test-map測試只補載抽出helper，npc-complete-actions新增五項真分派／逐幀／尺寸回歸。玩家／NPC正式數值、攻速／傷害與素材均未由本修復改動。
+- 測試：`node --test --test-reporter=spec tests/npc-complete-actions.test.cjs tests/gm-test-map.test.cjs tests/npc-facing.test.cjs tests/npc-rank-glow.test.cjs tests/battle-renderer-pause.test.cjs tests/enemy-attack-vfx-lifecycle.test.cjs tests/enemy-projectile-retaliation.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs`77/77通過；`npm.cmd run build`626檔通過，之後data／Bridge／Worker純快取補版另以node --check逐檔通過。初版fixture缺ENEMY_CONTACT_GAP／ENEMY_MAX_CHARGE、vfxrt.update及entity容器，均補齊依賴後重跑，不放寬斷言或改產品迎合fixture。diff／stat／check與暫存檢查通過，自我Review完成。
+- 瀏覽器：bundled Playwright／隔離headless Edge，隨機localhost正式index／Pixi／真Worker，HTTP唯讀覆映HEAD renderer作修前對照，暴露內部狀態供觀測。真gm.exec進test_map、點全螢幕，Worker僅喚醒原場景哥布林並鎖玩家血讓原doMonsterAttack自然出手；三次Preset近戰事件修前walk／idle／idle，修後三次attack，逐幀觀測攻擊幀0～5完整播放。史萊姆實際死亡並等原4秒重生：修前全螢幕原體1.419282→重生2，修後既有／新建／實際重生皆2，本體scale1.4166、名牌11px相同。Console error／warning及pageerror0，before／after實拍已重開檢視，未讀寫玩家原網址存檔。verify.cjs／report.json／PNG留本聊天visualizations/npc-attack-size。
+- Excel／使用者成果：沿專案xlsx_to_csv匯出至隔離目錄、未回寫來源；原生Excel開啟副本ReadOnly=True／Saved=True、491列×22欄、Shapes0，正常開啟無錯誤，原來源SHA256前後保持532CB3C81F397FD930AE8BFA60FC46EF425109DE985F9FF1950CEE5EB1CC727A。未編修／儲存Excel或手工XML；只核對並依使用者要求提交既有390筆縮放比更新。其餘CSV只有換行差異，依Git正常化處理，不捨棄使用者語意變更；沒有新增／修改獨立素材，無素材庫變更或空Commit。
+- 同檔分段：renderer與Claude現況三方merge-file退出0／衝突0；index renderer版本同行依本輪使用者同意採新版本。AI_TASKS與develop的試跑有原本GM-DAMAGE／TEST-MAP紀錄插入與同步紀錄的既存鄰接衝突，保留所有既有段落，本項只加獨立任務段，不合併／覆蓋同步紀錄。唯讀未改：規範／AGENTS／Workflow／prompts、combat／field／formula／skills／tower攻擊結算、Worker協議、NPC原圖／manifest及素材庫；未驗全庫、多瀏覽器／實體觸控。無本項未完成實作或已知新增風險，可供Review／使用者合併，未合併推送develop／main。Commit為本段所在「[Codex] fix: 修正NPC攻擊動畫與重生尺寸並同步配置倍率」，SHA見交付；建議正常整合後重新載入遊戲，再進test_map驗收，所有本副本需要保留的修改一起提交。
+
 ## GM-DAMAGE-20261102 — 固定與最大生命百分比傷害指令
 
 - Owner：Codex；Done，單一開發者。使用者要求damage 90每次攻擊固定90、damage 10%每次造成生命百分比傷害。採目標最大生命，增加damage off恢復；前置既有gm.exec／傷害收斂點完成。

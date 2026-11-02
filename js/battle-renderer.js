@@ -1867,7 +1867,7 @@ var BattleRenderer = (function () {
     } catch (e) { return ''; }
   }
 
-  function makeEnemy(data) {
+  function enemyLayout(data) {
     var isBoss = !!data.isBoss;
     var isElite = !isBoss && !!data.elite;
     /* 密度縮放：棋盤格數越多，每隻可用的空間越小，整體跟著縮 */
@@ -1879,9 +1879,50 @@ var BattleRenderer = (function () {
     var tierName = data._tier || '';
     var npcCfg = (typeof NPC_CONFIG_TABLE !== 'undefined' && data.npcId) ? NPC_CONFIG_TABLE[data.npcId] : null;
     var visScale = (tierSize || (isBoss ? 1 : (isElite ? 1.28 : 1))) * dScale * (npcCfg && npcCfg.scale > 0 ? npcCfg.scale : 1);
+    var sz = cellSize();
+    return {
+      isBoss: isBoss, isElite: isElite, dScale: dScale, tierSize: tierSize, tierName: tierName, visScale: visScale, cell: sz,
+      shadowW: tierSize ? sz.w * 0.25 * Math.max(1, tierSize * 0.8) : (isBoss ? sz.w * 1.4 : sz.w * 0.5) * 0.5,
+      barW: tierSize ? Math.max(isBoss ? sz.w * 1.5 : 60 * dScale, 48 * dScale * Math.min(tierSize, 3.2)) : (isBoss ? sz.w * 1.5 : (isElite ? 60 : 48) * dScale),
+      nameSize: Math.max(8, Math.round((isBoss ? 14 : 11) * dScale)),
+      statusSize: Math.max(8, Math.round(11 * dScale))
+    };
+  }
+  /* 與初次生成共用尺寸；視窗／全螢幕重排不重建本體，不重設動畫、朝向或死亡進度。 */
+  function syncEnemyLayout(ent) {
+    if (!ent || !ent.data || !ent.body || ent.body.destroyed) return;
+    var m = enemyLayout(ent.data), sz = m.cell;
+    if (ent.visScale === m.visScale && ent.layoutCellW === sz.w && ent.layoutCellH === sz.h) return;
+    var ratio = m.visScale / ent.visScale;
+    if (ent.npcSprite && S.sheets[ent.sheetName]) {
+      var base = S.sheets[ent.sheetName].manifest.scale || 1;
+      var npcScale = base * m.visScale;
+      ent.body.scale.set((ent.body.scale.x < 0 ? -1 : 1) * npcScale, npcScale);
+    } else if (ent.isBoss && ent.sheetName) {
+      var k = (m.tierSize ? 64 * m.visScale : sz.h * 2.1) / ent.body.texture.height;
+      ent.body.scale.set((ent.body.scale.x < 0 ? -1 : 1) * k, k);
+    } else {
+      ent.body.scale.set(ent.body.scale.x * ratio, ent.body.scale.y * ratio);
+    }
+    ent.visScale = m.visScale; ent.layoutCellW = sz.w; ent.layoutCellH = sz.h;
+    var hitBox = ent.sheetName ? spriteHitBox(ent.body) : null;
+    ent.hitHeight = hitBox ? hitBox.height : (m.tierSize ? 64 * m.visScale : (m.isBoss ? sz.h * 1.9 : 64 * m.visScale));
+    ent.hitCenter = hitBox ? hitBox.center : 0;
+    ent.shadow.clear();
+    ent.shadow.ellipse(0, 0, m.shadowW, m.shadowW * 0.32).fill({ color: 0x000000, alpha: 0.35 });
+    ent.barW = m.barW; ent.hpShown = -1; ent.shieldShown = -1;
+    ent.nameText.style.fontSize = m.nameSize; ent.nameText.y = 8 + 6 * m.dScale;
+    ent.statusText.style.fontSize = m.statusSize; ent.statusText.y = (m.isBoss ? 32 : 28) * Math.max(0.7, m.dScale);
+    if (ent.eliteMark) ent.eliteMark.y = -58 * m.visScale;
+    if (ent.eliteDeco) ent.eliteDeco.baseScale = ent.body.scale.x;
+    drawHpBar(ent); syncNpcRankGlow(ent);
+  }
+  function makeEnemy(data) {
+    var m = enemyLayout(data);
+    var isBoss = m.isBoss, isElite = m.isElite, dScale = m.dScale, tierSize = m.tierSize, tierName = m.tierName, visScale = m.visScale;
 
     var root = new PIXI.Container();
-    var sz = cellSize();
+    var sz = m.cell;
     /* NPC 是直立的貼圖：只吃遠近縮放，不跟著整片場景的透視被拉歪（見 applyEntityBillboard）。
        抵銷矩陣掛在這一層，root 仍然只有位置、排序與受擊彈跳，其他程式看到的 root 語意不變。 */
     var view = new PIXI.Container();
@@ -1889,7 +1930,7 @@ var BattleRenderer = (function () {
 
     /* 陰影 */
     var shadow = new PIXI.Graphics();
-    var shw = (tierSize ? sz.w * 0.25 * Math.max(1, tierSize * 0.8) : (isBoss ? sz.w * 1.4 : sz.w * 0.5) * 0.5);
+    var shw = m.shadowW;
     shadow.ellipse(0, 0, shw, shw * 0.32).fill({ color: 0x000000, alpha: 0.35 });
     view.addChild(shadow);
 
@@ -1925,15 +1966,15 @@ var BattleRenderer = (function () {
     }
 
     /* 血條 + 名字（在腳下，不干擾本體動作） */
-    var barW = tierSize ? Math.max(isBoss ? sz.w * 1.5 : 60 * dScale, 48 * dScale * Math.min(tierSize, 3.2)) : (isBoss ? sz.w * 1.5 : (isElite ? 60 : 48) * dScale);
+    var barW = m.barW;
     var hpBar = new PIXI.Graphics();
     hpBar.y = 7;
     view.addChild(hpBar);
 
     /* 名條與狀態列同樣依密度縮放；格數多的時候不縮，字會糊成一片連在一起。
        字級有下限 8px，再小就完全看不出寫什麼了。 */
-    var nameSize = Math.max(8, Math.round((isBoss ? 14 : 11) * dScale));
-    var statusSize = Math.max(8, Math.round(11 * dScale));
+    var nameSize = m.nameSize;
+    var statusSize = m.statusSize;
     var name = new PIXI.Text({
       text: enemyNameText(data),
       style: {
@@ -1962,6 +2003,7 @@ var BattleRenderer = (function () {
       hpBar: hpBar, nameText: name, statusText: status,
       sheetName: sheetName, curAnim: sheetName ? 'idle' : '', baseAnim: 'idle',
       isBoss: isBoss, isElite: isElite, visScale: visScale,
+      layoutCellW: sz.w, layoutCellH: sz.h, eliteMark: isElite ? mark : null,
       npcSprite: sheetName.indexOf('npc:') === 0,
       npcFacing: sheetName.indexOf('npc:') === 0 ? (S.sheets[sheetName].manifest.facing | 0) : 0,
       barW: barW, hitCenter: hitBox ? hitBox.center : 0,
@@ -2614,14 +2656,27 @@ var BattleRenderer = (function () {
   /* 敵人出手：由模擬層即時送入，而不是等下一張面板快照反推。
      來源實體可能已進入 dying，因此魔法投射物用 sourceId／lastPos 建立起點；
      近戰則即使屍體已開始淡出，仍在玩家身上畫出致死前的攻擊弧光。 */
+  function animateEnemyAttack(spec) {
+    if (spec._enemyAttackAnimated) return;
+    spec._enemyAttackAnimated = true;
+    var sourceEnt = spec.sourceId ? S.entities[spec.sourceId] : null;
+    if (!sourceEnt || sourceEnt.state === 'dying' || sourceEnt.state === 'gone') return;
+    if (sourceEnt.npcSprite || (sourceEnt.isBoss && sourceEnt.sheetName)) playAnim(sourceEnt, 'attack', 'idle');
+    if (spec.variant !== 'enemy-projectile' && sourceEnt.state === 'idle') {
+      var pc = playerPos();
+      var dx = pc.x - sourceEnt.wx, dy = (pc.y - 26) - sourceEnt.wy;
+      var dist = Math.sqrt(dx * dx + dy * dy);
+      sourceEnt.lungeDur = Math.max(0.28, Math.min(0.8, 0.24 + dist / 900));
+      sourceEnt.lunge = sourceEnt.lungeDur;
+    }
+  }
   function renderEnemyAttackVfx(spec) {
+    animateEnemyAttack(spec);
     var targetId = Array.isArray(spec.targets) && spec.targets.length
       ? spec.targets[0] : 'pv-float';
     var sourceId = spec.sourceId || null;
     var from = sourceId ? posOf(sourceId) : null;
-    var sourceEnt = sourceId ? S.entities[sourceId] : null;
     var hit = spec.hit !== false;
-    if (sourceEnt && sourceEnt.npcSprite && sourceEnt.state !== 'dying') playAnim(sourceEnt, 'attack', 'idle');
     var themeSpec = {
       elem: spec.elem || null, cat: 'enemy', color: spec.color || '#ff6b6b',
       variant: spec.variant || null, glyph: spec.glyph || '💢'
@@ -2639,18 +2694,7 @@ var BattleRenderer = (function () {
       return;
     }
 
-    /* 保留近戰敵人的衝刺／BOSS 攻擊動作；若來源已 dying，這段不依賴
-       dying 狀態的 lunge 更新，仍用玩家位置上的弧光表現「先出手」。 */
-    if (sourceEnt && sourceEnt.isBoss && sourceEnt.sheetName && !sourceEnt.npcSprite && sourceEnt.state !== 'dying') {
-      playAnim(sourceEnt, 'attack', 'idle');
-    }
-    if (sourceEnt && sourceEnt.state === 'idle') {
-      var pc = playerPos();
-      var dx = pc.x - sourceEnt.wx, dy = (pc.y - 26) - sourceEnt.wy;
-      var dist = Math.sqrt(dx * dx + dy * dy);
-      sourceEnt.lungeDur = Math.max(0.28, Math.min(0.8, 0.24 + dist / 900));
-      sourceEnt.lunge = sourceEnt.lungeDur;
-    }
+    /* 來源已 dying 時仍用玩家位置上的弧光表現「先出手」，不重播屍體動作。 */
     var target = posOf(targetId);
     var angle = from ? Math.atan2(target.y - from.y, target.x - from.x) : 0;
     spawnSlash(target.x, target.y, themeSpec, false, angle);
@@ -6230,6 +6274,8 @@ var BattleRenderer = (function () {
     /* Preset 化（docs/vfx/VFX_RUNTIME_ADAPTER.md）：表格填了特效檔名、
        而且這一則的主要角色在手上時，整則交給 VFX Runtime。
        回 false＝沒有對應的 preset，照舊走下面的程式畫法。 */
+    // 角色出手與特效後端分開；Preset接手或載入中都要播，重試同一事件不能重播動作。
+    if (isEnemyAttack) animateEnemyAttack(spec);
     if (S.vfxLoading && deferVfxUntilReady(spec)) return;
     var presetHandled = S.vfxrt && S.vfxrt.tryPlay(spec);
     if (presetHandled && spec.cat !== 'basic') return;
@@ -7578,6 +7624,7 @@ var BattleRenderer = (function () {
       S.pauseVeil.text.x = W / 2; S.pauseVeil.text.y = H / 2;
     }
     if (S.bossBar) { S.bossBar.root.x = W / 2; S.bossBar.root.y = BOSS_BAR_Y; }
+    Object.keys(S.entities || {}).forEach(function (id) { syncEnemyLayout(S.entities[id]); });
     /* 槽位每幀由 tickWorld 依玩家位置重算，這裡不需要再覆寫實體座標 */
   }
 

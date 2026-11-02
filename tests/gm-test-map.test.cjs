@@ -122,7 +122,7 @@ test('test_map：正式makeEnemy尺寸與原地圖普通NPC及塔戰BOSS一致�
     makeMobBody: (data, scale) => { const body = new fakePixi.Sprite({}); body.scale.set(scale); return body; },
     enemyNameText: data => data.name, nowMs: () => 0, posTrack() {}, groundToScreenY: y => y,
     syncNpcRankGlow() {}, applyEntityBillboard() {}, drawHpBar() {}, requestNpcSheet() {}, requestMobImage() {} });
-  run(c, extractFunction(source, 'makeEnemy'));
+  run(c, extractFunction(source, 'enemyLayout') + '\n' + extractFunction(source, 'makeEnemy'));
   const entries = run(c, 'testMapNpcList()');
   entries.forEach((entry, i) => {
     const preview = run(c, 'fieldEnemyList()')[i];
