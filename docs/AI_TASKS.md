@@ -1,5 +1,28 @@
 # AI_TASKS.md
 
+## TEST-MAP-EXIT-20261102 — 恢復正式場景並統一全螢幕NPC比例
+
+- Owner：Codex；Done，單一開發者。使用者回報離開測試場景後無NPC、方格地板與正式場景裝飾混在一起。定位正常switchZone及GM跳關會清怪卻保留FIELD._gmArena／_testMap，導致自然出怪被關、renderer保留測試地板；選回同地圖另被早退擋掉。
+- 允許：combat測試場景集中離場清理與合法地圖／關卡切換入口、gm_exec合法跳關掛點、index／Bridge／Worker必要快取、gm-test-map回歸、GM_command／LV與本段。禁止改玩法數值／解鎖／存檔／配置表／素材／其他工作區或合併推送；保留本副本既有NPC.xlsx／CSV／data未提交修改，本項不重寫表格。
+- 前置既有test_map與正常換圖完成；fetch與所有目標預檢退出0，無外部來源。有效返回同場景、換圖、手動切關、GM跳關及test_map off／spawn off皆清理測試旗標／目標／復生與暫時鎖血，恢復原自然出怪與地板；非法／未解鎖操作不提前退出。既有正常換圖延遲及地圖進度規則保持。
+- 驗收：真Worker與正式renderer在混沌界309關重現、比對旗標／出怪／底圖／裝飾；同圖／跨圖／GM／手動／off、非法不變、反覆進出及不再復生測試NPC；相關回歸／Build／Console／diff後獨立Commit，交使用者正常Review／整合。無素材庫變更。
+- 使用者追加一般戰鬥區與全螢幕NPC相對玩家身高差異：NPC身體額外乘隨容器變化的densityScale，玩家3D本體固定世界高度；取消本體的容器密度乘數，保留素材／NPC表與階級倍率，與玩家共用既有鏡頭縮放／透視。命中特效體型也採同一本體倍率；血條與名字的介面密度維持。追加renderer／npc-complete-actions／scene-preview必要修改及回歸，正常與全螢幕／鏡頭滾輪／重生的NPC玩家相對比例須一致，不改NPC配置表或玩家模型。
+- 完成17檔：combat集中清理測試重生槽／點擊目標／god與技能排程，遠方遭遇設pending補群；有效同圖／跨圖／手動切關與GM跳關呼叫離場，非法操作保持原狀。world-map僅在battle.field._testMap時開放目前地圖前進，等ACK與旗標清除才關閉，正常規則維持。renderer本體與命中特效去掉容器密度乘數、舊BOSS備援也用世界體型。index與scene-preview renderer20261102-test-map-exit-scale、world-map1.0.9、combat／GM執行層／Bridge及Worker入口20261102-test-map-exit；資料快取另更新如下。GM_command／LV及本段同步，未新增玩家文字／String或素材。
+- 依使用者前輪「做好後連我的一起commit」授權，交付包含本輪NPC.xlsx／NPC.csv／data既有已儲存並套用修改，不改寫來源。Excel→隔離CSV491列×22欄逐值相同，config_tables --apply NPC試跑重建11個字面值／語意變更0；與HEAD相比縮放比267格、移動速度216格、出現權重84格、攻擊距離88格、攻速28格。index及Worker data快取20261102-test-map-exit-data，避免新版主頁／Worker讀舊表。Excel正被使用時採共享唯讀快照，原生Excel只開副本ReadOnly=True／Saved=True、Shapes0、正常開啟無錯誤，原來源前後SHA256保持40F433284DC27569BEB5B707454D27D4DBC4E03BBE20AB48F7B3C250BA4C40D3；未操作使用者視窗、未儲存或覆寫工作簿。
+- 回歸指令：`node --test --test-reporter=spec tests/gm-test-map.test.cjs tests/npc-complete-actions.test.cjs tests/npc-facing.test.cjs tests/npc-rank-glow.test.cjs tests/battle-renderer-pause.test.cjs tests/world-map.test.cjs tests/world-map-ui.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/tower-scene-intro.test.cjs tests/scene-startup-ready.test.cjs tests/gm-command.test.cjs`121/121通過；`npm.cmd run build`628檔通過，最後data純快取補版再查Worker語法。含真Worker七種返回入口與自然出怪、非法拒絕／進度和裝備保持、世界地圖目前地圖前進與ACK防重送、實際視窗尺寸／普通菁英BOSS體型及命中特效倍率、既有動作／朝向／暫停／地圖／載入回歸。diff／stat／check及暫存檢查通過，自我Review完成。
+- 瀏覽器修前修後：bundled Playwright／隔離headless Edge＋隨機localhost、正式index／真Worker／renderer，HEAD combat／GM／renderer以HTTP唯讀覆映重現。從太古戰場測試模式前往混沌界309關：修前gm/test皆true、NPC0、slots130、grid=true；修後旗標皆false、NPC正常補出、slots0、grid=false，正確混沌地板／裝飾。另以真滑鼠開世界地圖→選目前混沌界→前進成功退出、地圖關閉，2D／3D兩模式皆通過。
+- 比例驗證：同一NPC與玩家在正常視窗／全螢幕／還原三次量測，修前2D身高比0.55907→0.78782、3D0.40985→0.57754；修後2D三次皆0.7878214285714286、3D三次皆0.5775447272727272，NPC表倍率不變，僅去除視窗另乘的縮放。兩模式Console error／warning與pageerror皆0，after-3d實拍已重開視檢；未讀寫玩家原網址存檔。verify.cjs／report.json／四張PNG、Excel唯讀報告與source比較留本聊天visualizations/test-map-return。
+- 唯讀未改：規範／AGENTS／Workflow／prompts、玩家3D模型／2D動畫／Hero3D縮放、傷害／技能數值公式、Worker協議與存檔、NPC原圖／manifest及其他素材。使用者NPC數值變更依已授權原樣提交，無素材庫變更／空Commit；未跑全庫、多瀏覽器／實體觸控或原玩家完整遊玩。無本項未完成實作／已知新增風險，可供Review／使用者合併；未合併推送develop／main。Commit為本段所在「[Codex] fix: 修正測試場景返回與全螢幕NPC比例」，SHA見交付；下一步重新載入遊戲，由世界地圖選目前地圖前進或test_map off返回驗收。
+
+## STARTUP-FIELD-KEY-20261102 — 野外場景 Loading 無限等待
+
+- Owner：Codex；Done，單一開發者。使用者回報 Loading 點仍動但無法進遊戲；正式 localhost 診斷確認 Worker／面板／底圖裝飾完成、診斷 errors 空，scene.key 為 field:desert，sceneReady 卻為 false。
+- 原因：sceneKeyOf 已將野外按地圖命名，sceneAssetsReady 仍以 key !== field 判斷塔戰，等待野外不會啟用的祭壇。前置既有場景切換已完成。
+- 允許：battle-renderer 的就緒場景分類、scene-startup-ready 回歸、index／scene-preview 快取、LV 與本段；禁止修改存檔／Worker／戰鬥規則／素材／配置表及其他工作區，不合併推送 develop／main。衝突預檢上述檔案均無外部來源，fetch 完成。
+- 完成六檔：renderer 僅將塔戰分類改為 tower: 前綴；index／scene-preview 快取同步為20261102-loading-field；回歸改用正式 sceneKeyOf／towerFieldView 與未啟用祭壇，另覆蓋多張野外地圖／初始 field，保留底圖／可見區塊／塔戰／轉場等待。原實作下新測試可重現四項失敗，修後全通過，未弱化斷言。LV及本段同步，無新素材或素材庫修改。
+- 驗證：`node --test --test-reporter=spec tests/scene-startup-ready.test.cjs tests/loading-screen.test.cjs tests/tower-scene-intro.test.cjs tests/battle-renderer-pause.test.cjs tests/vfx-editor-cache-versions.test.cjs`33/33；`npm.cmd run build`626檔通過；git diff／stat／check及自我Review通過。未跑全庫／多瀏覽器長玩，無本項未完成實作。
+- 實機：使用者原Chrome http://127.0.0.1:8123/由本Codex工作區伺服器提供，以內建startupDiag重現，修後reload確認loading=false／sceneReady=true／Worker正常／pendingFetch空／errors空，再恢復原網址並確認黑幕is-hidden、Lv.173／100關／背包1140/2000及戰鬥畫面正常，無清除或手工改寫存檔。Console捕捉每次修前修後重載皆相同兩筆Object error，未發現新增Warning或本次新增錯誤；不宣稱原Console零Error。唯讀未改main／ui／bridge／arena／decor／存檔與規範；本項可Review／合併，建議其他工作區正常整合後重載；未合併推送develop／main。遊戲Commit為本段所在「[Codex] fix: 修正野外場景永久卡在Loading」，SHA見交付。
+
 ## NPC-ATTACK-ANIMATION-20261102 — NPC攻擊動作與初生重生尺寸一致
 
 - Owner：Codex；Done，單一開發者。使用者回報測試場景哥布林近戰有傷害／閃避數字，但未播攻擊或仍播移動。定位onVfx的Preset成功提前return，跳過舊路徑renderEnemyAttackVfx內的角色動作。前置既有NPC四動作與真Worker攻擊事件完成。
@@ -13970,3 +13993,39 @@ Worker 存活且頁面正常完成載入。
 - 驗證指令與結果：以bundled Node依賴重跑四個原套件及全部22批normalize／validate，26套原生RLE逐像素RGBA／色盤／尺寸／透明／不同姿勢／GIF延遲全部通過；node tools/npc-sprites/export_supplemental.cjs --source-check／--check通過。隔離完整build_npc_sprites.py重建的496組metadata與496張PNG逐位等於正式檔。node --test --test-reporter=spec tests/npc-skeleton-replacement.test.cjs tests/npc-complete-actions.test.cjs tests/npc-facing.test.cjs tests/enemy-projectile-retaliation.test.cjs tests/enemy-attack-vfx-lifecycle.test.cjs tests/npc-rank-glow.test.cjs tests/battle-renderer-pause.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/npc-biped-gait.test.cjs tests/npc-all-new-art.test.cjs共33/33通過；npm.cmd run build為623檔通過，git diff --check通過。新增兩套回歸覆蓋120款×四階級、47款八幀腿部循環及同檔名PNG快取；原四骷髏斷言依本次walk八幀更新，其餘動作仍六幀，沒有弱化既有失敗測試。
 - 瀏覽器實機：browser技能IAB backend仍不可連，已告知並以computer-use後備在獨立隱藏localhost頁驗證正式Pixi／data／完整renderer；120款×四階級共480實體全部四動作載入、攻擊回idle／walk、死亡最後幀停止及階級覆光通過，errors／warnings與主控台皆0。分頁展示八款、另保存寒冰魔像／骷髏弓箭手所在頁實拍；只在HTTP測試副本暴露內部函式，未修改玩家遊戲頁或存檔。完整四動作GIF總覽all-npc/index.html、47款重畫步態all-npc/walks.html、測試／重建／Excel／實拍證據保存在本聊天visualizations/all-npc。
 - 修改／唯讀範圍與交付：遊戲修改為NPC.xlsx／CSV／data、364新增PNG與8份walk／npc.json、renderer載圖快取、主頁／Bridge／Worker／scene-preview版號、補圖匯出器、兩套新增回歸與四骷髏測試、LV及本段；唯讀檢查共通規範／Workflow／config_tables與原動畫、朝向、覆光、戰鬥／移動／投射物、Worker協議及存檔。無本項未完成工作，可供使用者合併；限制為AI姿勢仍可依後續遊玩觀感調整、未執行長時間真Worker遊玩及多瀏覽器。先前已記錄14項舊全套測試失敗未在本輪修改或弱化，本輪33項相關回歸與Build全通過。素材庫已先提交，遊戲隨本段提交；沒有合併或推送develop／main。建議下一步正常整合雙庫並重載遊戲檢視。
+
+## NPC-GROUND-AIR-20261102 — 毒蚊群飛行與嵐翼飛蛇貼地爬行
+
+- Owner：Codex；Done，單一開發者。使用者兩張實拍指定毒蚊群應飛在空中、嵐翼飛蛇應在地上爬行；以前者正式動畫與後者原創像素造型為基礎，不修改名稱或戰鬥數值。
+- 前置：NPC四動作、腳底錨點與圖像管線已完成。允許相關manifest／可重建匯出流程、蛇四組PNG與可編輯來源／來源提示／驗證、renderer素材快取與兩入口、必要回歸、LV與本段；必要素材先素材庫再遊戲提交。不改Excel／CSV／data／玩法／存檔／其他工作區、不合併推送。
+- 預檢：fetch後所有既有目標與新增測試均無外部衝突。毒蚊群採素材錨點保留地面陰影與名牌，命中特效依既有spriteHitBox跟隨可見本體；蛇重畫低伏蜿蜒、四動作同腳點，完整身體與尾部，驗循環及死亡停幀。Mote網站可開啟，但沒有WebMCP批次繪圖工具，採內建imagegen重畫並保存Mote來源。
+- 完成：毒蚊群四階級共用anchorY 1.3054（普通素材離地18px），原四組PNG未改；build_npc_sprites.py由lift重建該定位。嵐翼飛蛇以本專案原圖作參考、內建imagegen重畫完整24姿勢，低伏橫向S形／蜿蜒移動／前咬／倒地攤平；原圖hoverLift14移除，六幀共用腹部基線。外形變矮變長，以素材height24保持低伏比例，NPC配置倍率未動。metadata與四PNG由既有來源匯出；索引／PNG及兩入口renderer快取統一20261102-npc-ground-air，LV同步。
+- 素材來源／雙庫：素材庫npc-completion-20261101/batches/batch13保存新原稿、完整提示GROUND_REVISION、四份原生Mote、SHA、實際PNG目視紀錄與GIF、舊原稿／原參考PNG；既有其餘三款PNG及Mote逐位保持。npc-actions的plan／SOURCE同步毒蚊群定位，購入原素材授權保持；蛇為本專案自製衍生，沒有引入外部圖像。素材庫先Commit f5e00f0（[Codex] fix: 保存毒蚊群飛行定位與貼地蛇形四動作），素材庫乾淨。
+- 驗證指令：bundled NODE_PATH下node素材庫batch13/normalize.cjs <預覽目錄>、validate.cjs <預覽目錄>及index-assets.cjs通過；16PNG與Mote的98張姿勢逐點RGBA／透明邊界／幀數／不同姿勢通過，新蛇24姿勢filmstrip與6接1視檢。node tools/npc-sprites/export_supplemental.cjs --source-check／--apply／--check通過。隔離完整python build_npc_sprites.py重建496PNG及全部metadata與正式逐位一致；首輪抓到手算錨點末位差0.0001，已依重建值統一1.3054後重驗通過，未放寬守門。
+- 回歸／Build：node --test --test-reporter=spec tests/npc-ground-air.test.cjs tests/npc-complete-actions.test.cjs tests/npc-facing.test.cjs tests/npc-rank-glow.test.cjs tests/npc-biped-gait.test.cjs tests/npc-all-new-art.test.cjs tests/battle-renderer-pause.test.cjs tests/vfx-editor-cache-versions.test.cjs為28/28通過；新測試驗飛行四動作離地／四尺寸命中中心／動作錨點保持、蛇各幀腹部貼地／低伏比例／腹尾相鄰變化含6接1／死亡攤平與hold。npm.cmd run build為627檔通過；兩倉diff／stat／check及自我Review通過。
+- 實機：IAB隔離隱藏localhost，以正式Pixi／data／完整renderer與正式檔案測兩款×四階級共8實體，四動作多幀播放、攻擊回位、死亡末幀停留、階級覆光保持。毒蚊群四尺寸可見離地約17.1／24.0／29.1／34.2px、蛇四尺寸腹部離地皆0；命中中心依可見圖像定位。頁面errors／warnings皆0，畫面已實拍／重開PNG視檢；僅測試HTTP回應暴露內部觀測，不改產品API，不載入玩家存檔。腳本、report、game-render.png、GIF與重建輸出保存本聊天visualizations/npc-ground-air。初次私有server路徑分隔符錯誤已修後重跑，產品檔未受影響。
+- 交付範圍：遊戲修改為npc.json、四張蛇PNG、打包工具、renderer僅素材快取、index／scene-preview僅快取、新回歸、LV與本段；唯讀未改AI規範／Workflow／prompts、配置產生器／Excel匯出器、NPC.csv／data／Worker／協議／戰鬥座標與結算／存檔／String／其餘PNG。作業中使用者另改NPC.xlsx，保留不開啟／寫入／暫存，不納入本次Commit。無本項未完成工作，可供正常Review／使用者合併；未合併推送develop／main。限制為未測全庫、多瀏覽器或長時間真Worker遊玩；建議整合雙庫後重新載入遊戲驗收。遊戲Commit為本段所在「[Codex] fix: 修正毒蚊群飛行與蛇形貼地動畫」，SHA見交付。
+
+## NPC-ORC-IDLE-20261102 — 半獸人原地待機修正
+
+- Owner：Codex；Done，單一開發者。使用者實拍指出desert_8半獸人待機持續向前再跳回，要求原地或僅小幅前後。測得原六幀腳底中心74／67.5／64／62／60／56.5，位移17.5個來源像素；同一角色原生Mote已存在，採Mote逐幀對齊腳點，保留原造型、呼吸、持刀與其他三動作，不重畫角色或改播放速度。
+- 前置：荒漠第二批四動作與八幀walk已完成，來源庫及遊戲起始乾淨。允許desert_orc_idle PNG／原生Mote、其素材來源修正與可重建對齊步驟／驗證／SHA／預覽、renderer僅素材快取與兩入口、獨立位移回歸、LV與本段；不改NPC.xlsx／CSV／data／manifest尺寸／戰鬥／存檔／其他NPC與其他動作／其他工作區，不合併推送。
+- fetch後遊戲目標預檢皆無外部衝突，素材庫單一工作區乾淨。先在Mote既有原生幀做小幅整體位移，檢查腳底／胸部與6接1、原始像素與肢體保持、PNG與Mote逐點一致、重建匯出、四階級真Pixi待機循環／其他動作回位／死亡停幀、相關回歸／Build／diff，自我Review後先素材庫再遊戲Commit。
+- 完成：在RPG Mote Studio開啟原生idle，逐幀Select All／方向鍵位移／取消選取，六幀(dx,dy)=(-10,1)、(-4,0)、(0,1)、(2,0)、(4,1)、(8,1)。原生保存.mote並匯出768×128水平PNG，PNG與原生RGBA逐點一致；來源六幀每個像素皆只是上述平移，無重畫／生成／失色／裁邊，160ms及六個姿勢保持。腳點中心修為64／63.5／64／64／64／64.5，水平跨度1px，實心腳底共用112px基線，胸部保留小幅呼吸變化，6接1平順。
+- 重建／來源：desert-npc-batch2素材庫idle-corrections保存Mote修正原生檔、原生歷史來源、可重建apply.cjs、固定偏移／來源及PNG SHA／驗證、SOURCE／前後GIF／實機報告。normalize.cjs在原四動作及八幀walk後套用修正版原生idle，無累加偏移；export.cjs額外核對PNG與Mote一致。只渲染原生幀、不畫新像素，保留原自製素材來源／授權。來源四動作GIF依最終輸出重出；先素材庫Commit 8688d2a（[Codex] fix: 校正半獸人待機原生幀並保存重建來源），素材庫乾淨。
+- 驗證：bundled NODE_PATH下node素材庫normalize.cjs <預覽>／validate.cjs <預覽>通過，四款16組102姿勢PNG與Mote逐點RGBA、邊界／六或八幀、不同姿勢／GIF36格×80ms全部通過；重建後正式匯出--source-check／--check通過。git確認全496張PNG中僅desert_orc_idle改變，manifest metadata及其他495張PNG保持；移動／攻擊／死亡、NPC.xlsx／CSV／data及使用者0df9175f最新倍率提交保持。自我Review／兩倉diff／stat／check通過。
+- 測試指令：node --test --test-reporter=spec tests/npc-idle-root-motion.test.cjs tests/npc-complete-actions.test.cjs tests/npc-biped-gait.test.cjs tests/npc-ground-air.test.cjs tests/npc-facing.test.cjs tests/npc-rank-glow.test.cjs tests/battle-renderer-pause.test.cjs tests/vfx-editor-cache-versions.test.cjs為28/28通過；npm.cmd run build為628檔通過。新回歸要求六姿勢仍不同、腳底中心跨度及6接1位移≤1px、腳底基線一致、胸部跨度≤4px與原速度／循環。原HEAD PNG唯讀覆映可重現新測試失敗，未改舊斷言；初次新fixture誤用Buffer.copy讀Uint8Array，改為set後完整重跑全過，產品未迎合fixture。
+- 實機：IAB隔離localhost正式Pixi／data／完整renderer驗普通／菁英／高級菁英／地圖BOSS四實體，各idle6／walk8／attack6／die6幀播放、攻擊回idle／死亡末幀hold與覆光通過，四階級腳點序列均一致／跨度1px、腳底離地0，errors／warnings皆0。實拍與原地呼吸連播已目視檢查，前後GIF／正式PNG／QA腳本及報告保存在本聊天visualizations/orc-idle，不讀玩家存檔。首次QA以alpha>40的淡邊計腳底造成小於一個來源像素的誤判，改用與腳點回歸一致的實心alpha>=128並補六幀漂移檢查後重驗通過；未改產品定位配合測試。
+- 交付：遊戲改單一desert_orc_idle.png、renderer僅NPC素材快取／index／scene-preview同步20261102-orc-idle、獨立回歸、LV與本段。唯讀未改共通規範／Workflow／prompts、NPC配置與數值來源、manifest尺寸／朝向／節奏、walk步態／其他動作及NPC、移動／戰鬥／投射物／Worker協議／存檔／String。無本項未完成內容，可供正常Review／使用者合併；不合併推送develop／main。限制為未跑全庫／多瀏覽器／真Worker長時間遊玩；建議正常整合雙庫後重載遊戲檢查半獸人待機。遊戲Commit為本段所在「[Codex] fix: 修正半獸人待機向前滑行循環」，SHA見交付。
+
+## NPC-CHASE-FACING-20261102 — 毒蚊群追擊反向修正
+
+- Owner：Codex；Done，單一開發者。使用者實拍毒蚊群在玩家左側追擊仍背對玩家。原32px素材待機／移動皆朝左，manifest卻facing=1；正式tickWorld依該metadata翻面，形成左右皆朝外。前置為既有NPC水平面向與飛行定位完成。
+- 允許：npc.json僅plague_flies.facing、build_npc_sprites對應來源設定、renderer僅NPC快取與index／scene-preview、既有npc-facing回歸、LV及本段；素材庫保存metadata修正／PNG不變與來源驗證。禁止改PNG／造型／動畫幀、NPC.xlsx／CSV／data／戰鬥規則／存檔／其他工作區／未授權的待機位移修正，不合併推送。
+- fetch後八個目標預檢無外部衝突，遊戲與素材庫起始乾淨。額外比對120款待機與移動首尾造型／既有朝向，修可確認的標記錯誤；驗左右追擊、跨越玩家、四階級／動作與死亡方向保持、飛行定位／PNG與尺寸保持、來源重建與相關回歸／Build／實際Pixi before／after、diff後先素材庫再遊戲Commit。
+- 完成八檔：npc.json僅plague_flies.facing 1→-1，build_npc_sprites.py同步facing=-1；renderer僅NPC_SPRITE_VER與index／scene-preview快取改20261102-chase-facing；npc-facing擴充毒蚊群原圖朝左、四尺寸追擊／左右跨越／待機／出手／死亡方向保持回歸，LV及本段同步。沒有新增演算法或修改圖片、飛行高度、尺寸或任何玩法／數值。
+- 額外核對：120款現用NPC各待機／移動首幀與末幀以可見頭部／眼睛／口器／武器方向逐款比對，五份放大總覽及素材來源保留本聊天visualizations/npc-chase-facing；本輪另確認的錯標只有毒蚊群，正面／對稱素材保持，不宣稱逐幀重新繪製或全部素材所有姿勢皆已排除其他問題。前次待機位移唯讀盤點的10款與9邊界案例未在本項修改。
+- 素材／重建：沒有新PNG或原生圖片修改，不需Mote或imagegen。素材庫npc-chase-facing-20261102保存單欄metadata before/after、四PNG與全部496PNG彙總SHA、120款朝向核對與before/after實機報告、verify.cjs及來源／授權說明；verify通過。既有npc-actions的plan是當初補製參數快照，未改它而造成補幀像素重建不同；正式來源仍由遊戲打包工具生成manifest。隔離完整python build_npc_sprites.py重建496PNG及全部metadata與正式逐位相同，git亦確認沒有任何PNG變動。素材庫先Commit 1447606（[Codex] fix: 保存毒蚊群追擊朝向修正與素材驗證），素材庫乾淨。
+- 測試指令：node --test --test-reporter=spec tests/npc-facing.test.cjs tests/npc-ground-air.test.cjs tests/npc-complete-actions.test.cjs tests/npc-rank-glow.test.cjs tests/npc-idle-root-motion.test.cjs tests/battle-renderer-pause.test.cjs tests/vfx-editor-cache-versions.test.cjs共27/27；npm.cmd run build為628檔通過；兩倉diff／stat／check及自我Review通過。修正前原manifest的新npc-facing回歸為4項1過3失敗，修正後全過；原朝右素材、尺寸、暫停、攻擊完整播放與死亡朝向斷言維持。
+- 實機：IAB隔離隱藏localhost，以正式Pixi／data／完整renderer控制面板讓兩側各四階級毒蚊群連續接近玩家，8實體皆實際播walk；僅before頁將原metadata.facing=1在HTTP讀取時覆映，其他檔同版。修前0/8朝向玩家、修後8/8，兩次errors／warnings皆0。正式飛行anchorY1.3054與各尺寸保持，body方向符號依原圖實際朝左獨立判斷；前後實拍均從磁碟重開核對，report／QA／PNG及重建結果留本聊天visualizations/npc-chase-facing。不讀原玩家存檔、不改正式產品API或Worker。
+- 修改／唯讀範圍：遊戲修改上述八檔，素材庫僅新增本驗證包；唯讀未改共通規範／Workflow／prompts、NPC.xlsx／CSV／data／來源匯出器、所有PNG與動畫／移動判定／傷害／投射物／Worker協議／存檔／String。作業中使用者另改NPC.xlsx，完整保留且不stage，不納入本項提交。無本項未完成實作，可供Review／使用者正常合併；未合併推送develop／main。已知限制為未做全庫、多瀏覽器及長時間真Worker遊玩；建議正常整合雙庫後重新載入主頁驗收。遊戲Commit為本段所在「[Codex] fix: 修正毒蚊群追擊時背對玩家」，SHA見交付。

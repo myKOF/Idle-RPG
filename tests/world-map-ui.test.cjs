@@ -125,6 +125,20 @@ test('鎖定場景與目前場景可檢視，但不得前進；沒收到Worker�
   assert.match(t.ids['world-map-progress'].textContent, /讀取/);
   assert.equal(t.ids['world-map-level-Icefield'].hidden, true);
 });
+
+test('測試場景可從世界地圖返回目前地圖；等待測試旗標清除後關閉，不重複送出', async () => {
+  const t = setup(); t.panels.battle.field = { _testMap: true };
+  t.c.WorldMapUI.open(); t.button('desert').dispatch('click');
+  assert.equal(t.ids['world-map-go'].disabled, false);
+  t.ids['world-map-go'].dispatch('click'); t.ids['world-map-go'].dispatch('click');
+  assert.equal(t.commands.length, 1); assert.equal(t.commands[0][0], 'stage.switchZone');
+  await t.ack();
+  assert.equal(t.ids['world-map-modal'].hidden, false, '只有ACK、模式尚未退出時保留地圖');
+  t.panels.battle.field._testMap = false; t.finish('desert');
+  assert.equal(t.ids['world-map-modal'].hidden, true);
+  t.c.WorldMapUI.open(); t.button('desert').dispatch('click');
+  assert.equal(t.ids['world-map-go'].disabled, true, '正常模式目前場景保持原本規則');
+});
 test('解鎖及關卡快照更新同步名稱狀態與等級；底圖不接收事件後仍可取消選取', () => {
   const t = setup(); t.c.WorldMapUI.open();
   const row = t.panels.battle.zones.find(row => row.key === 'swamp');

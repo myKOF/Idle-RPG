@@ -514,7 +514,7 @@ var BattleRenderer = (function () {
     var m = boardMetrics();
     return { w: Math.max(52, m.rx / m.cols * 1.15), h: Math.max(46, m.ry / m.rows * 1.35) };
   }
-  /* 密度縮放：容量越大，每隻可用的空間越小，精靈與血條就要跟著縮。 */
+  /* 介面密度縮放：只調整血條與名稱；人物本體與玩家共用世界尺度，不隨戰場容器變大小。 */
   function densityScale() {
     var m = boardMetrics();
     var w = m.rx * 2 / m.cols, h = m.ry * 2 / m.rows;
@@ -1702,7 +1702,7 @@ var BattleRenderer = (function () {
      動作缺了就退回：移動→站立、攻擊→不播（沿用撲擊）、死亡→舊的壓扁淡出；站立都沒有就繼續用 emoji。
      圖還沒載到之前先用 emoji 頂著，載到後 adoptNpcSprite 把場上同款敵人的本體換成序列幀。 */
   var NPC_SPRITE_DIR = 'images/sprites/npc/';
-  var NPC_SPRITE_VER = '20261102-npc-all';
+  var NPC_SPRITE_VER = '20261102-chase-facing';
   function npcSpriteDef(data) {
     var t = (typeof NPC_CONFIG_TABLE !== 'undefined' && data && data.npcId) ? NPC_CONFIG_TABLE[data.npcId] : null;
     return (t && t.sprite && t.sprite.idle) ? t : null;
@@ -1803,11 +1803,11 @@ var BattleRenderer = (function () {
   function entityCenterHeight(ent) {
     return ent.hitCenter > 0 ? ent.hitCenter : ent.hitHeight * 0.55;
   }
-  /* 特效尺寸的體型倍率：相對「一般敵人（64px）」。密度縮放兩邊都有，約掉。 */
+  /* 特效尺寸的體型倍率：相對「一般敵人（64px）」，與本體共用表格／階級倍率。 */
   function bodyScaleOfEntity(id) {
     var ent = S.entities[id];
     if (!ent || !ent.visScale) return 1;
-    var k = ent.visScale / densityScale();
+    var k = ent.visScale;
     return k > 0 && isFinite(k) ? k : 1;
   }
   function makeNpcSpriteBody(sheetName, visScale) {
@@ -1870,7 +1870,7 @@ var BattleRenderer = (function () {
   function enemyLayout(data) {
     var isBoss = !!data.isBoss;
     var isElite = !isBoss && !!data.elite;
-    /* 密度縮放：棋盤格數越多，每隻可用的空間越小，整體跟著縮 */
+    /* 血條與名字保留介面密度縮放，本體只讀素材、NPC表與階級倍率。 */
     var dScale = densityScale();
     /* 高級敵人（菁英／高級菁英／野外 BOSS／封魔塔 BOSS）的體型由模擬層給：data._size＝相對普通敵人的倍率
        （參數表「敵人體型倍率」）；data._elColor留給腳下群組環，模型覆光依階級固定配色。
@@ -1878,7 +1878,7 @@ var BattleRenderer = (function () {
     var tierSize = Number(data._size) > 0 ? Number(data._size) : 0;
     var tierName = data._tier || '';
     var npcCfg = (typeof NPC_CONFIG_TABLE !== 'undefined' && data.npcId) ? NPC_CONFIG_TABLE[data.npcId] : null;
-    var visScale = (tierSize || (isBoss ? 1 : (isElite ? 1.28 : 1))) * dScale * (npcCfg && npcCfg.scale > 0 ? npcCfg.scale : 1);
+    var visScale = (tierSize || (isBoss ? 1 : (isElite ? 1.28 : 1))) * (npcCfg && npcCfg.scale > 0 ? npcCfg.scale : 1);
     var sz = cellSize();
     return {
       isBoss: isBoss, isElite: isElite, dScale: dScale, tierSize: tierSize, tierName: tierName, visScale: visScale, cell: sz,
@@ -1899,14 +1899,14 @@ var BattleRenderer = (function () {
       var npcScale = base * m.visScale;
       ent.body.scale.set((ent.body.scale.x < 0 ? -1 : 1) * npcScale, npcScale);
     } else if (ent.isBoss && ent.sheetName) {
-      var k = (m.tierSize ? 64 * m.visScale : sz.h * 2.1) / ent.body.texture.height;
+      var k = 64 * m.visScale / ent.body.texture.height;
       ent.body.scale.set((ent.body.scale.x < 0 ? -1 : 1) * k, k);
     } else {
       ent.body.scale.set(ent.body.scale.x * ratio, ent.body.scale.y * ratio);
     }
     ent.visScale = m.visScale; ent.layoutCellW = sz.w; ent.layoutCellH = sz.h;
     var hitBox = ent.sheetName ? spriteHitBox(ent.body) : null;
-    ent.hitHeight = hitBox ? hitBox.height : (m.tierSize ? 64 * m.visScale : (m.isBoss ? sz.h * 1.9 : 64 * m.visScale));
+    ent.hitHeight = hitBox ? hitBox.height : 64 * m.visScale;
     ent.hitCenter = hitBox ? hitBox.center : 0;
     ent.shadow.clear();
     ent.shadow.ellipse(0, 0, m.shadowW, m.shadowW * 0.32).fill({ color: 0x000000, alpha: 0.35 });
@@ -1945,7 +1945,7 @@ var BattleRenderer = (function () {
     } else if (isBoss && S.sheets.boss) {
       sheetName = 'boss';
       body = makeAnimSprite('boss', 'idle');
-      var targetH = tierSize ? 64 * visScale : sz.h * 2.1;     // 高級敵人：普通敵人（64px）的 N 倍
+      var targetH = 64 * visScale;     // 與玩家共用世界尺度，體型由NPC表與階級決定
       body.scale.set(targetH / body.texture.height);
     } else {
       body = makeMobBody(data, visScale);
@@ -2007,7 +2007,7 @@ var BattleRenderer = (function () {
       npcSprite: sheetName.indexOf('npc:') === 0,
       npcFacing: sheetName.indexOf('npc:') === 0 ? (S.sheets[sheetName].manifest.facing | 0) : 0,
       barW: barW, hitCenter: hitBox ? hitBox.center : 0,
-      hitHeight: (hitBox && hitBox.height) || (tierSize ? 64 * visScale : (isBoss ? sz.h * 1.9 : 64 * visScale)),
+      hitHeight: (hitBox && hitBox.height) || 64 * visScale,
       wx: 0, wy: 0,                   // 畫面上的世界座標（內插後的結果）
       samples: null,                  // 模擬層座標的取樣緩衝（見 posTrack/posSolve）
       state: 'entering',              // entering → idle → dying → gone
@@ -8424,7 +8424,7 @@ var BattleRenderer = (function () {
     if (!S.ready || S.failed || !S.lastPanel || S.scene.phase) return false;
     var key = sceneKeyOf(S.lastPanel);
     if (key !== S.scene.key) return false;
-    if (key !== 'field' && S.arena) return S.arena.active();
+    if (key.indexOf('tower:') === 0 && S.arena) return S.arena.active();
     var stage = S.lastPanel.stage || {};
     if (S.zoneKey !== (stage.zone || '')) return false;
     var name = S.zoneKey ? 'ground_' + S.zoneKey : 'ground_default';

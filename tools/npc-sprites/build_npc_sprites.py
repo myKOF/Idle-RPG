@@ -56,7 +56,7 @@ CHARS = {
     'demon_mine': g('Demon Mine.png', 64, 64, 40, {'idle': row(0, 6), 'die': row(1, 7)}),
     'demon_eye': g('Demon eye.png', 64, 64, 50, {'idle': row(0, 7), 'die': row(1, 6)}, facing=-1),
     'flying_demon_head': g('Flying Demon Head.png', 64, 64, 40, {'idle': row(0, 5), 'die': row(1, 6)}, facing=-1),
-    'plague_flies': g('Plague Flies.png', 32, 32, 22, {'idle': row(0, 4), 'die': row(1, 5)}, idle_fps=14),
+    'plague_flies': g('Plague Flies.png', 32, 32, 22, {'idle': row(0, 4), 'die': row(1, 5)}, facing=-1, idle_fps=14, lift=18),
     'cheeky_devil': g('Cheeky Devil.png', 64, 64, 54, {'idle': row(0, 10)}, facing=-1),
     'hell_giant': g('Female Hell Giant covered.png', 112, 128, 92, {'idle': row(0, 10)}),
     'old_demon': g('Old Demon covered.png', 80, 64, 58, {'idle': row(0, 7)}, facing=-1),
@@ -99,7 +99,9 @@ def main():
         ux1 = max(b[2] for b in boxes)
         manifest['chars'][key] = {
             'cellW': c['cw'], 'cellH': c['ch'],
-            'anchorX': round((ux0 + ux1) / 2 / c['cw'], 4), 'anchorY': round(anchor_y, 4),
+            # 飛行離地量屬於素材定位；地面陰影／名牌仍留在實體原點，命中高度由可見本體計算。
+            'anchorX': round((ux0 + ux1) / 2 / c['cw'], 4),
+            'anchorY': round(anchor_y + c.get('lift', 0) / (c['h'] / ref_h) / c['ch'], 4),
             'scale': round(c['h'] / ref_h, 4), 'facing': c['facing'], 'height': c['h']
         }
         for a, fr in sets.items():

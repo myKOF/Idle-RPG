@@ -6,7 +6,7 @@ const root = path.resolve(__dirname, '..');
 const source = fs.readFileSync(path.join(root, 'js/battle-renderer.js'), 'utf8');
 const manifest = JSON.parse(fs.readFileSync(path.join(root, 'images/sprites/npc/npc.json'), 'utf8'));
 // 依原圖的眼睛／鼻口方向人工核對，不能從待測metadata重算期望值。
-const leftFacing = ['skull_candle', 'demon_eye', 'flying_demon_head', 'cheeky_devil', 'memento_skeleton', 'large_skull', 'imp'];
+const leftFacing = ['skull_candle', 'demon_eye', 'flying_demon_head', 'cheeky_devil', 'memento_skeleton', 'large_skull', 'imp', 'plague_flies'];
 
 function setup(key) {
   const c = { console, performance, setTimeout, clearTimeout, navigator: { userAgent: 'node' } };
@@ -37,12 +37,31 @@ function setup(key) {
   return { c, e, tick: () => c.tickWorld({ deltaMS: 16.7, deltaTime: 1 }) };
 }
 
-test('七種實際朝左的NPC不可標成朝右；原本朝右的圖保持方向', () => {
+test('實際朝左的NPC不可標成朝右，包含毒蚊群；原本朝右的圖保持方向', () => {
   for (const key of leftFacing) assert.equal(manifest.chars[key].facing, -1, key);
   for (const key of ['burning_skull', 'burning_skull_blue', 'hell_giant', 'rat']) {
     assert.equal(manifest.chars[key].facing, 1, key);
   }
   for (const [key, meta] of Object.entries(manifest.chars)) assert.ok([-1, 1].includes(meta.facing), key);
+});
+
+test('毒蚊群四階級追擊、待機與攻擊均朝向玩家，跨越玩家後翻面，死亡保留原方向', () => {
+  for (const scale of [1, 1.28, 2, 3]) {
+    const { c, e, tick } = setup('plague_flies');
+    e.body.scale.set(scale); e.state = 'entering'; e.enterT = 0; e.enterDur = 10;
+    for (const playerX of [0, 200, 0]) {
+      c.target.x = playerX; tick();
+      assert.equal(e.curAnim, 'walk', '進場／追擊使用移動動畫');
+      assert.equal(Math.sign(e.body.scale.x) * -1, Math.sign(playerX - e.wx), '實際原圖朝左，與metadata獨立驗證');
+      assert.equal(Math.abs(e.body.scale.x), scale);
+    }
+    e.state = 'idle'; tick(); assert.equal(e.curAnim, 'idle');
+    c.playAnim(e, 'attack'); c.target.x = 200; tick();
+    assert.equal(e.curAnim, 'attack'); assert.equal(e.body.scale.x, -scale);
+    c.playAnim(e, 'die'); e.state = 'dying'; e.realDeath = true; e.sprDie = true; e.dieDur = 1;
+    c.target.x = 0; tick(); assert.equal(e.curAnim, 'die'); assert.equal(e.body.scale.x, -scale);
+    e.body.destroy();
+  }
 });
 
 test('正式tickWorld：左右兩側面向玩家，跨越玩家後翻面且不改變體型', () => {

@@ -112,9 +112,9 @@
    "cellW": 32,
    "cellH": 32,
    "anchorX": 0.5,
-   "anchorY": 0.7812,
+   "anchorY": 1.3054,
    "scale": 1.0732,
-   "facing": 1,
+   "facing": -1,
    "height": 22
   },
   "cheeky_devil": {
@@ -725,9 +725,9 @@
    "cellH": 128,
    "anchorX": 0.5,
    "anchorY": 0.875,
-   "scale": 0.7037,
+   "scale": 0.8571,
    "facing": -1,
-   "height": 38
+   "height": 24
   },
   "npc_thunder_peak_5": {
    "cellW": 128,
