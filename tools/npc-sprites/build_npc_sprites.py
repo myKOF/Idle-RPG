@@ -56,7 +56,7 @@ CHARS = {
     'demon_mine': g('Demon Mine.png', 64, 64, 40, {'idle': row(0, 6), 'die': row(1, 7)}),
     'demon_eye': g('Demon eye.png', 64, 64, 50, {'idle': row(0, 7), 'die': row(1, 6)}, facing=-1),
     'flying_demon_head': g('Flying Demon Head.png', 64, 64, 40, {'idle': row(0, 5), 'die': row(1, 6)}, facing=-1),
-    'plague_flies': g('Plague Flies.png', 32, 32, 22, {'idle': row(0, 4), 'die': row(1, 5)}, idle_fps=14, lift=18),
+    'plague_flies': g('Plague Flies.png', 32, 32, 22, {'idle': row(0, 4), 'die': row(1, 5)}, facing=-1, idle_fps=14, lift=18),
     'cheeky_devil': g('Cheeky Devil.png', 64, 64, 54, {'idle': row(0, 10)}, facing=-1),
     'hell_giant': g('Female Hell Giant covered.png', 112, 128, 92, {'idle': row(0, 10)}),
     'old_demon': g('Old Demon covered.png', 80, 64, 58, {'idle': row(0, 7)}, facing=-1),
