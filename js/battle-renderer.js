@@ -797,7 +797,7 @@ var BattleRenderer = (function () {
       return r.json();
     }).then(function (manifest) {
       if (Array.isArray(manifest.directions)) return loadDirectionalSheet(name, base, manifest, opts);
-      return PIXI.Assets.load(base + '.png').then(function (tex) {
+      return PIXI.Assets.load(base + '.png' + (opts && opts.assetVersion ? '?v=' + opts.assetVersion : '')).then(function (tex) {
         tex.source.scaleMode = 'nearest';   // 像素風：放大不要糊
         var anims = {};
         var speeds = {};
@@ -1588,12 +1588,24 @@ var BattleRenderer = (function () {
     }
     var mask = canvas(), mc = mask.getContext('2d');
     if (!mc) return null;
+    mc.imageSmoothingEnabled = false;
     var trim = tex.trim, r = tex.source.resolution || 1;
     mc.drawImage(res, f.x * r, f.y * r, f.width * r, f.height * r,
       pad + (trim ? trim.x : 0) * k, pad + (trim ? trim.y : 0) * k, f.width * k, f.height * k);
+    /* 黑色描邊維持黑色：內部混色遮罩略過黑色像素。只在貼圖首次快取時讀取，
+       不在Ticker逐幀掃描，也不改外側階級光暈的完整輪廓。 */
+    var inner = canvas(), ic = inner.getContext('2d');
+    if (ic && typeof ic.getImageData === 'function') {
+      try {
+        ic.drawImage(mask, 0, 0);
+        var blendPixels = ic.getImageData(0, 0, inner.width, inner.height);
+        whitenNpcBlendPixels(blendPixels.data);
+        ic.putImageData(blendPixels, 0, 0);
+      } catch (ignore) { inner = mask; }
+    } else { inner = mask; }
     mc.globalCompositeOperation = 'source-in'; mc.fillStyle = '#ffffff'; mc.fillRect(0, 0, mask.width, mask.height);
     /* 外框光暈：多個距離的膨脹差只出現在輪廓外側，內部不疊光。
-       全程Canvas合成，不讀ImageData；也不會把序列圖相鄰格的像素帶進來。 */
+       外側光暈維持Canvas合成，也不會把序列圖相鄰格的像素帶進來。 */
     function band(radius) {
       var c = canvas(), ctx = c.getContext('2d');
       ctx.drawImage(mask, 0, 0);
@@ -1606,11 +1618,20 @@ var BattleRenderer = (function () {
     var outer = canvas(), oc = outer.getContext('2d');
     oc.globalAlpha = 0.65; oc.filter = 'blur(2.4px)'; oc.drawImage(band(3), 0, 0);
     oc.globalAlpha = 0.35; oc.filter = 'blur(1.1px)'; oc.drawImage(band(1.2), 0, 0);
+    /* Blur會重新滲入本體，最後再扣除完整輪廓，讓黑邊不被外側光暈蓋色。 */
+    oc.filter = 'none'; oc.globalAlpha = 1; oc.globalCompositeOperation = 'destination-out';
+    oc.drawImage(mask, 0, 0);
     /* 內部混色直接用本體輪廓的純色遮罩，依「混色濃度」把顏色揉進模型。 */
-    var result = { inner: PIXI.Texture.from(mask), outer: PIXI.Texture.from(outer),
+    var result = { inner: PIXI.Texture.from(inner), outer: PIXI.Texture.from(outer),
       width: orig.width, height: orig.height, k: k, pad: pad };
     NPC_RANK_MASKS.set(tex, result);
     return result;
+  }
+  function whitenNpcBlendPixels(pixels) {
+    for (var p = 0; p < pixels.length; p += 4) {
+      if (pixels[p] <= 8 && pixels[p + 1] <= 8 && pixels[p + 2] <= 8) pixels[p + 3] = 0;
+      pixels[p] = pixels[p + 1] = pixels[p + 2] = 255;
+    }
   }
   function syncNpcRankGlow(ent) {
     var style = npcRankStyle(ent.data), body = ent.body, glow = ent.rankGlow;
@@ -1698,7 +1719,7 @@ var BattleRenderer = (function () {
      動作缺了就退回：移動→站立、攻擊→不播（沿用撲擊）、死亡→舊的壓扁淡出；站立都沒有就繼續用 emoji。
      圖還沒載到之前先用 emoji 頂著，載到後 adoptNpcSprite 把場上同款敵人的本體換成序列幀。 */
   var NPC_SPRITE_DIR = 'images/sprites/npc/';
-  var NPC_SPRITE_VER = '20261102-element-tails-v2';
+  var NPC_SPRITE_VER = '20261102-black-outlines';
   function npcSpriteDef(data) {
     var t = (typeof NPC_CONFIG_TABLE !== 'undefined' && data && data.npcId) ? NPC_CONFIG_TABLE[data.npcId] : null;
     return (t && t.sprite && t.sprite.idle) ? t : null;
@@ -8355,7 +8376,7 @@ var BattleRenderer = (function () {
         /* 2026-09-22 主角換成 8 方向的騎士（Clarice 的 player.png／player.json 留在原處沒刪）。
            圖集與幀定義由 tools/build_character_sprites.cjs 從素材庫 characters/knight-hd 產生。 */
         loadSheet('player', 'images/sprites/knight/knight', { outline: true }),
-        loadSheet('boss', 'images/sprites/boss_generic'),
+        loadSheet('boss', 'images/sprites/boss_generic', { assetVersion: NPC_SPRITE_VER }),
         loadHero3d(),
         loadFireFlare(),
         PIXI.Assets.load('images/vfx/assets/codex-authored/thrust/thrust_lance.png?v=20260815-narrow-rect').then(function (tex) {

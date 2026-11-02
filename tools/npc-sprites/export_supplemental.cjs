@@ -4,6 +4,8 @@ const path=require('node:path');
 const {resolveLibraryRoot}=require('../vfx/vfx-library-root.cjs');
 const game=path.resolve(__dirname,'../..');
 const libraryRoot=resolveLibraryRoot().root;
+const black=require(path.join(libraryRoot,'codex-authored','npc-black-outlines-20261102','export.cjs'));
+black.verify();
 const stationary=require(path.join(libraryRoot,'codex-authored','npc-stationary-idles-20261102','export.cjs'));
 stationary.verify();
 for(const name of ['npc-actions-20261101','skeleton-four-20261101','desert-npc-batch1-20261101','desert-npc-batch2-20261101','npc-completion-20261101']){
@@ -12,3 +14,4 @@ for(const name of ['npc-actions-20261101','skeleton-four-20261101','desert-npc-b
   require(path.join(packageRoot,'export.cjs')).exportAssets(game,process.argv[2]||'--check');
 }
 stationary.exportAssets(game,process.argv[2]||'--check');
+black.exportAssets(game,process.argv[2]||'--check');
