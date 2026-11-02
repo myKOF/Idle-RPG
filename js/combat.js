@@ -2421,7 +2421,12 @@ function fieldTick(dt) {
         if (firstStrikers.length && firstStrikers.indexOf(m) >= 0) continue;
         if (spawnedEnemies && spawnedEnemies.indexOf(m) >= 0) continue;
         if (!ccActionLocked(m)) {
-            m.atkCd -= dt * slowFactor(m);
+            /* 倒數過零時保留超出的零頭；但已經 ≤0 卻打不出去（還在走向玩家、
+               距離不夠、被施法鎖住）就釘在 0，不再往負數累積——否則走位期間欠下的
+               計時會在進入射程後連續補打，看起來像剛接戰的 10～20 秒攻速爆衝
+               （玩家那一側 2221 行同樣的寫法）。 */
+            var mCdBefore = m.atkCd, mCdAfter = mCdBefore - dt * slowFactor(m);
+            m.atkCd = mCdBefore > 0 ? mCdAfter : Math.max(0, mCdAfter);
             if (m.atkCd <= 0 && fieldMonsterAttack(m, p)) return;
         }
     }

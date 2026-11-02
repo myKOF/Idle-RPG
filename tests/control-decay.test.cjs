@@ -236,7 +236,7 @@ test('敵人出手與攻擊冷卻改走 ccActionLocked（暈眩狀態還在但�
   const combat = fs.readFileSync(path.join(root, 'js', 'combat.js'), 'utf8');
   const tower = fs.readFileSync(path.join(root, 'js', 'tower.js'), 'utf8');
   assert.match(combat, /ccActionLocked\(m\)\) return false/);
-  assert.match(combat, /if \(!ccActionLocked\(m\)\) \{\s*m\.atkCd -= dt \* slowFactor\(m\)/);
+  assert.match(combat, /if \(!ccActionLocked\(m\)\) \{[\s\S]*?mCdAfter = mCdBefore - dt \* slowFactor\(m\)/);
   assert.match(tower, /if \(!ccActionLocked\(b\)\)/);
   assert.doesNotMatch(combat, /effectActive\(m, 'stun'\)/);
   assert.doesNotMatch(tower, /effectActive\(b, 'stun'\)/);

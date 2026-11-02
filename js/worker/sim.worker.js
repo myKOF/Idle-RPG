@@ -24,7 +24,7 @@ importScripts(
   '../item.js?v=20261101-merge-fd276618', '../gem_resonance.js?v=20261030-unlock-god-zone-merge','../runeword.js?v=20261031-achv',
   '../skills.js?v=20261029-merge-cd5ad556', '../skills2.js?v=20261031-wind-ult-rename', '../elite_data.js?v=20261028-develop-merge-a8acfe', '../talents.js?v=20261031-achv-talent-mastery-merge',
   '../player.js?v=20261031-achv', '../special_rules.js?v=20261030-unlock-progress',
-  '../combat.js?v=20261102-zone-clear2', '../elite.js?v=20261028-develop-merge-a8acfe', '../elite_boss.js?v=20261023-str-battle', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261028-develop-merge-a8acfe', '../tower.js?v=20261101-merge-fd276618',
+  '../combat.js?v=20261102-atkcd-clamp', '../elite.js?v=20261028-develop-merge-a8acfe', '../elite_boss.js?v=20261023-str-battle', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261028-develop-merge-a8acfe', '../tower.js?v=20261101-merge-fd276618',
   '../factory.js?v=20261031-achv', '../newforge.js?v=20261028-develop-merge-a8acfe', '../forge.js?v=20261101-forge-equipped', '../save.js?v=20261031-achv',
   '../tasks.js?v=20261031-achv', '../achievements.js?v=20261031-achv-talent-mastery-merge'
 );
