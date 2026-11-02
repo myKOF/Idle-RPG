@@ -14066,6 +14066,17 @@ Worker 存活且頁面正常完成載入。
 - 實機：IAB隔離隱藏localhost，以正式Pixi／data／完整renderer控制面板讓兩側各四階級毒蚊群連續接近玩家，8實體皆實際播walk；僅before頁將原metadata.facing=1在HTTP讀取時覆映，其他檔同版。修前0/8朝向玩家、修後8/8，兩次errors／warnings皆0。正式飛行anchorY1.3054與各尺寸保持，body方向符號依原圖實際朝左獨立判斷；前後實拍均從磁碟重開核對，report／QA／PNG及重建結果留本聊天visualizations/npc-chase-facing。不讀原玩家存檔、不改正式產品API或Worker。
 - 修改／唯讀範圍：遊戲修改上述八檔，素材庫僅新增本驗證包；唯讀未改共通規範／Workflow／prompts、NPC.xlsx／CSV／data／來源匯出器、所有PNG與動畫／移動判定／傷害／投射物／Worker協議／存檔／String。作業中使用者另改NPC.xlsx，完整保留且不stage，不納入本項提交。無本項未完成實作，可供Review／使用者正常合併；未合併推送develop／main。已知限制為未做全庫、多瀏覽器及長時間真Worker遊玩；建議正常整合雙庫後重新載入主頁驗收。遊戲Commit為本段所在「[Codex] fix: 修正毒蚊群追擊時背對玩家」，SHA見交付。
 
+## NPC-ELEMENT-TAILS-20261102（Codex，Done）
+- Owner Codex，單一開發者。使用者指示：兩款元素取消人形腿腳及長尖錐；狂暴體改雙色簡化，再依最後回覆增加約20%切面／接縫細節。最後明確要求先Commit供使用者合併。
+- 完成：冰晶元素下身改短而不規則晶簇，元素狂暴體重畫為深藍／暖橙大色面、少量肩甲／前臂／胸核心／尾部層次及短圓旋尾。兩款四動作各六幀一致，移動為懸浮，死亡為低矮殘骸。解除狂暴體attack第4幀舊poseOverrides，避免插回雜亂舊圖；無額外VFX來源。
+- 修改檔案：8張images/sprites/npc/npc_{icefield_10,god_chaos_8}_{idle,walk,attack,die}.png、npc.json僅狂暴體原生scale補償、js/battle-renderer.js僅NPC_SPRITE_VER、index.html／tools/scene-preview.html快取版號、本文件及LV_upgrade_system.md。素材庫原batch06／batch20兩來源、plan／prompt／SHA／驗證、8份PNG／Mote與總索引同步，npc-element-tails-20261102只保存製作及QA紀錄，不另建匯出管線。
+- 唯讀未改：共通規範／Workflow／prompts/codex.md、NPC.xlsx／CSV／js/data.js、renderer動作選擇與戰鬥邏輯、角色錨點／朝向／fps／hoverLift、其他角色PNG。其餘488張遊戲PNG與開始時SHA一致。狂暴體原生高度64→63，scale 0.7188→0.7302補償，目標顯示高度46與表格倍率均維持；未改魔法型／攻速／移速／射程／權重／技能或解鎖。
+- 工具與來源：Mote可開啟但無WebMCP批次改圖工具，使用imagegen技能的built-in工具重畫，以本專案既有自製圖作參考，未引入外部素材。沿用原normalize／validate／index-assets／export_supplemental流程。最終提示詞、可編輯Mote與來源PNG均已保存。
+- 驗證指令：原batch06與batch20的normalize.cjs／validate.cjs、總index-assets.cjs，遊戲node tools/npc-sprites/export_supplemental.cjs --apply／--source-check／--check均通過；兩批32組動作合計200幀Mote／PNG逐像素一致。node --test tests/npc-idle-root-motion.test.cjs tests/npc-biped-gait.test.cjs tests/npc-all-new-art.test.cjs tests/npc-complete-actions.test.cjs tests/npc-facing.test.cjs tests/npc-ground-air.test.cjs tests/npc-death-ui.test.cjs為86/86；npm run build為630檔通過；兩庫diff --check通過。沒有新增鏡射實作的測試。
+- 實機：Mote原生匯出狂暴體768×128待機與遊戲PNG全RGBA差0；隔離IAB頁以正式Pixi／data／renderer載入2角色8動作，檢查待機與懸浮移動，Console錯誤／警告0，不讀玩家存檔。雙角色四動作GIF與正式渲染器截圖、原生往返及測試紀錄在素材紀錄包qa/，聊天副本在visualizations/2026/11/02/npc-element-cones。
+- 同檔並行：renderer／LV／AI_TASKS與develop的光暈等修改在不同區段，候選三方試跑退出0；index／scene-preview兩處快取字串有文本衝突，依使用者先前「遇需詢問先採推薦」授權及本輪「先commit、我要合併」指示，僅本分支更新為20261102-element-tails-v2，未覆寫其他AI功能或修改對方工作區。使用者整合時保留最新素材快取版本。
+- Commit：素材庫157c04e已先提交；遊戲為本段所在「[Codex] fix: 更新元素短尾造型與雙色層次」，SHA見交付。兩庫可供Review及使用者合併；未代為合併或推送。已知限制：未測多瀏覽器、長時間Worker遊玩與全庫無關功能；本項無未完成內容。
+
 ## NPC-STATIONARY-IDLES-20261102（Codex，Done）
 - 使用者授權：所有人形／落地雙足待機雙腳固定，不可原地跨步；同時修正圈選樹妖、玄武岩衛、炭焰蜥蜴。
 - Owner：Codex，單一開發者。盤點66款落地角色，65款下肢有變化、腐爛樹人原單幀已固定。
