@@ -60,6 +60,14 @@ Windows sandbox 實作沿用既有 `config.toml` 的 `[windows].sandbox` 設定�
 
 BAT 透過 `tools/invoke-sync-with-report.ps1` 包裝原同步程序，保留其非零結束碼及原同步流程。直接執行 `tools/sync_ai_worktrees.ps1` 不經報告包裝；需要報告時請使用 BAT，或執行 `powershell -NoProfile -ExecutionPolicy Bypass -File tools/invoke-sync-with-report.ps1 -ValidateOnly`。
 
+## 自動處理舊參數捷徑阻擋快轉
+
+`sync_ai_worktrees.bat` 預設會處理本次舊捷徑被 `skip-worktree` 隱藏、導致「local changes would be overwritten」的情況。只限 `config/Excel/套用參數.bat.lnk`：原提交必須追蹤此檔，固定快轉目標必須移除它，並新增既有標準的自身工作區相對路徑 `config/Excel/套用參數.bat`；目標入口內容與根目錄BAT均須通過核對。它不會自動覆寫其他捷徑或一般檔案。
+
+處理前確認分支／HEAD／目標、index與旗標、檔案鎖定及非連結路徑，並以獨立index確認其他內容沒有未提交修改，包含被隱藏的修改。先將原捷徑、完整index與雜湊收據保存到各工作區Git metadata的 `sync-index-recovery/shortcut-<識別碼>/`，再只將舊捷徑還原成原HEAD追蹤版本、解除該檔隱藏旗標，交由正常fast-forward完成入口替換並繼續同步。原捷徑備份持續保留，主控台與Markdown報告會列出位置；不執行reset／clean或修改其他檔案的旗標。
+
+中斷時留下 `sync-index-recovery/shortcut-pending.json`，重跑BAT會先核對收據、備份及工作區再接續。另有index寫入失敗時先沿既有index修復完成，再確認捷徑替換；新修改、來源移動、備份受損、非標準替代入口、路徑被占用或鎖定均停止並保留現場。`-ValidateOnly`不修復也不寫收據；`-NoShortcutRecovery`停用此功能，與 `-NoIndexRecovery`／`-NoAutoResolve` 分開控制。有尚未完成的捷徑收據時，預檢或停用模式會回報並保留它。
+
 ## 自動修復 index 寫入失敗
 
 BAT 已包含本次 `error: unable to write new index file` 的修復。適用於 develop 或 AI 工作區在 fast-forward 時，檔案已完整更新，但 Git index／分支仍停在原提交的情況，不會呼叫 Codex 或消耗模型額度。
@@ -97,6 +105,7 @@ Windows 沙箱使用的登入工作階段可能無法啟動 Excel COM（`0x80070
 sync_ai_worktrees.bat -ValidateOnly
 sync_ai_worktrees.bat -NoAutoResolve
 sync_ai_worktrees.bat -NoIndexRecovery
+sync_ai_worktrees.bat -NoShortcutRecovery
 sync_ai_worktrees.bat -SkipAssetLibrary
 sync_ai_worktrees.bat -CodexCommand "C:\path\to\codex.cmd"
 ```

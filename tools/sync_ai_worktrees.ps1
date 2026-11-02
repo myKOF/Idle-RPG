@@ -8,6 +8,7 @@ param(
     [switch]$SkipAssetLibrary,
     [switch]$NoAutoResolve,
     [switch]$NoIndexRecovery,
+    [switch]$NoShortcutRecovery,
     [string]$CodexCommand = 'codex.cmd'
 )
 
@@ -18,6 +19,7 @@ param(
 #   sync_ai_worktrees.bat -SkipAssetLibrary       # 只同步程式碼，不碰 VFX 素材庫
 #   sync_ai_worktrees.bat -NoAutoResolve          # 衝突時停止，不呼叫 Codex
 #   sync_ai_worktrees.bat -NoIndexRecovery        # 停用 fast-forward index 自動修復
+#   sync_ai_worktrees.bat -NoShortcutRecovery     # 停用已退役參數捷徑的自動替換
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -508,12 +510,14 @@ try {
             continue
         }
         Resume-SyncIndexRecovery -Worktree $worktrees[$branch] -ReadOnly:$ValidateOnly
+        Resume-SyncShortcutRecovery -Worktree $worktrees[$branch] -ReadOnly:$ValidateOnly
         Assert-CleanWorktree -Worktree $worktrees[$branch] -ExpectedBranch $branch
         Write-Host ('[正常] {0}' -f $branch) -ForegroundColor Green
     }
 
     $developWorktree = $worktrees[$developBranch]
     Resume-SyncIndexRecovery -Worktree $developWorktree -ReadOnly:$ValidateOnly
+    Resume-SyncShortcutRecovery -Worktree $developWorktree -ReadOnly:$ValidateOnly
     Resume-DevelopConflict -Worktree $developWorktree
     Assert-CleanWorktree -Worktree $developWorktree -ExpectedBranch $developBranch
     Write-Host ('[正常] {0}' -f $developBranch) -ForegroundColor Green
