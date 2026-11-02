@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## SYNC-SHORTCUT-AUTO-RECOVERY-20261102 — 自動處理舊參數捷徑阻擋同步
+
+- Owner：Codex；Done，單一開發者。使用者要求將本次捷徑修復納入sync_ai_worktrees.bat，下次自動備份、處理並繼續同步。前置為405cb82a既有相對路徑BAT與本次現場修復完成；目標檔衝突預檢皆退出0。
+- 允許：BAT說明、sync_ai_worktrees.ps1參數／接續掛點、sync-index-recovery.ps1內針對舊參數捷徑的獨立修復流程、獨立真Git回歸、同步文件與本段。禁止泛用隱藏檔覆寫、玩法／Excel／素材／既有保留分支設定／main發布。
+- 設計：僅限config/Excel/套用參數.bat.lnk已追蹤且skip-worktree隱藏，固定fast-forward目標明確移除它並新增既有標準相對入口。核對工作區／分支／index／完整其他內容與鎖定，保存原捷徑、index及持續收據後才還原舊追蹤內容、解除該旗標並一般快轉；中斷可依收據接續，其他錯誤保留現場。ValidateOnly不寫入；提供獨立停用選項，不改index寫入修復政策。
+- 驗收：真Git本機遠端與三AI副本完整同步、備份雜湊、重跑、中斷接續、停用／預檢、一般或其他隱藏修改、非標準替代入口、已移動來源／鎖定均不覆寫；既有index與同步回歸、Build及diff後Commit。無素材變更，不建立空素材Commit；完成後依既有授權整合本次工具修復供下一次BAT使用。
+- 完成六檔：沿原BAT啟動鏈接到快轉前的限定修復，復用工作區控制器互斥，獨立shortcut-pending.json原子收據保留prepared／ready／completed及兩旗標中間狀態。使用原分支／固定提交／完整index項目與旗標、備份SHA、非連結路徑與標準替代BAT驗證；僅解除舊捷徑旗標並還原其原HEAD版本，後續仍走正常merge --ff-only／既有index恢復。NoShortcutRecovery與其餘選項分開；預檢不修復。
+- 測試：node --test --test-reporter=spec tests/sync-shortcut-recovery.test.cjs本輪18項17通過、1故障fixture失敗；fixture原先用未更新stat的獨立index模擬簽出，改為複製正式index並refresh，且在設定GIT_INDEX_FILE前固定原index路徑後，以--test-name-pattern=cooperate補跑1/1通過，合計18個不同情境皆通過，未放寬斷言。包含真BAT三AI與本機遠端同步／重跑、雙旗標及解除途中中斷、預檢／停用只讀、其他隱藏修改、備份損壞／鎖定／來源變動／稀疏簽出／非標準替代，以及同一輪index寫入修復。
+- 既有回歸：tests/sync-ai-worktrees.test.cjs及tests/sync-index-recovery.test.cjs共20/20；sync-auto-conflicts的PowerShell解析／BAT ASCII與CRLF、正常真BAT報告、無衝突與預檢共3/3；sync-feature-worktrees的未核准試作保護及完整三AI／兩專用分支共2個通過。專用分支案例首輪在並行負載下超過原60秒fixture時限（null狀態），未改時限／斷言，獨立重跑通過。總共43個不同相關回歸通過；npm.cmd run build625檔通過，diff check通過。初版另修正Git一次只套最後一個旗標選項與Windows PowerShell傳入.NET空字串引用的相容性，產品未以忽略錯誤通過。
+- 同副本TEST-MAP-ROWS任務中途開始，只與本項紀錄同檔不同區段，無語意相依；以HEAD／僅本項／僅對方的三方merge-file驗證後，只暫存本項六檔與自身任務段，保留對方遊戲修改與任務段，不在髒工作區同步或切分支。唯讀檢查規範／Agent／Workflow、既有index測試與同步測試、原參數入口，未改Excel／素材／玩法。自我Review完成，可整合本次工具修復；未跑全庫或玩家遊玩驗證。診斷暫存目錄清理曾被自動審核以政策限制拒絕，保留原診斷副本，未繞過限制或納入Git。
+
 ## SYNC-SHORTCUT-RETIREMENT-20261102 — 排除舊參數捷徑阻擋同步
 
 - Owner：Codex；Done。使用者以「1」要求修復截圖中的同步中斷；範圍為三個固定AI工作區的舊參數捷徑、Git旗標、正常同步與本段紀錄，不修改玩法／Excel資料／同步控制器或解除既有試作保護，不發布main。

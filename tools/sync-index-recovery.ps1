@@ -167,6 +167,192 @@ function Resume-SyncIndexRecovery {
     } finally { $guard.Dispose() }
 }
 
+# Deliberately limited to the retired Excel launcher, not arbitrary .lnk files.
+function Assert-SyncShortcutPaths {
+    param([string]$Worktree)
+    foreach ($part in @('', 'config', 'config/Excel', 'config/Excel/套用參數.bat.lnk', 'config/Excel/套用參數.bat')) {
+        $path = if ($part) { Join-Path $Worktree $part } else { $Worktree }
+        if (Test-Path -LiteralPath $path) {
+            if ((Get-Item -LiteralPath $path -Force).Attributes -band [IO.FileAttributes]::ReparsePoint) {
+                throw "捷徑修復路徑包含連結，不自動處理：$path"
+            }
+        }
+    }
+}
+
+function Assert-SyncShortcutBackup {
+    param([string]$Directory, $Record)
+    $backup = [IO.Path]::GetFullPath($Record.Backup)
+    if ([IO.Path]::GetDirectoryName($backup) -ine [IO.Path]::GetFullPath($Directory) -or
+        [IO.Path]::GetFileName($backup) -notmatch '^shortcut-[a-f0-9]{32}$') { throw '捷徑備份路徑不在本工作區修復目錄，保留現場。' }
+    foreach ($name in @('', 'shortcut.original.lnk', 'shortcut.index.before')) {
+        $path = if ($name) { Join-Path $backup $name } else { $backup }
+        if ((Get-Item -LiteralPath $path -Force).Attributes -band [IO.FileAttributes]::ReparsePoint) { throw '捷徑備份含連結，不自動處理。' }
+    }
+    if ((Get-SyncIndexHash -Path (Join-Path $backup 'shortcut.original.lnk')) -ne $Record.ShortcutHash -or
+        (Get-SyncIndexHash -Path (Join-Path $backup 'shortcut.index.before')) -ne $Record.IndexHash) { throw '捷徑備份雜湊不符，保留現場。' }
+}
+
+function Get-SyncShortcutIndexEntries {
+    param([string]$Worktree)
+    return Get-GitText -Worktree $Worktree -GitArguments @('ls-files', '--stage', '-v', '-z')
+}
+
+function Assert-SyncShortcutReplacement {
+    param([string]$Worktree, $Record)
+    $old = 'config/Excel/套用參數.bat.lnk'
+    $new = 'config/Excel/套用參數.bat'
+    $source = Get-GitText -Worktree $Worktree -GitArguments @('ls-tree', $Record.Before, '--', $old)
+    if ($source -notmatch '^100644 blob ([a-f0-9]+)\s' -or
+        (Get-GitText -Worktree $Worktree -GitArguments @('ls-tree', $Record.Target, '--', $old))) {
+        throw '目標未明確移除已追蹤的舊參數捷徑，不自動處理。'
+    }
+    if ((Get-GitText -Worktree $Worktree -GitArguments @('ls-tree', $Record.Before, '--', $new)) -or
+        (Get-GitText -Worktree $Worktree -GitArguments @('ls-tree', $Record.Target, '--', $new)) -notmatch '^100644 blob ') {
+        throw '目標不是以新增相對入口替換舊捷徑，不自動處理。'
+    }
+    $expected = @('@echo off', 'chcp 65001 >nul', 'setlocal',
+        'for %%I in ("%~dp0..\..") do echo Workspace: %%~fI',
+        'call "%~dp0..\..\%~nx0"', 'exit /b %errorlevel%') -join "`n"
+    $actual = Get-GitText -Worktree $Worktree -GitArguments @('show', ($Record.Target + ':' + $new))
+    if ($actual.Replace("`r`n", "`n") -cne $expected) { throw '目標參數入口不是已知的自身工作區BAT，保留捷徑。' }
+    foreach ($sha in @($Record.Before, $Record.Target)) {
+        if ((Get-GitText -Worktree $Worktree -GitArguments @('ls-tree', $sha, '--', '套用參數.bat')) -notmatch '^100644 blob ') {
+            throw '缺少正常追蹤的根目錄參數BAT，不自動處理。'
+        }
+    }
+}
+
+function Save-SyncShortcutRecord {
+    param([string]$Directory, $Record)
+    $json = $Record | ConvertTo-Json -Depth 5
+    $encoding = New-Object Text.UTF8Encoding($false)
+    [IO.File]::WriteAllText((Join-Path $Record.Backup 'shortcut-record.json'), $json, $encoding)
+    $pending = Join-Path $Directory 'shortcut-pending.json'
+    $temporary = $pending + '.' + [guid]::NewGuid().ToString('N')
+    [IO.File]::WriteAllText($temporary, $json, $encoding)
+    if (Test-Path -LiteralPath $pending) { [IO.File]::Replace($temporary, $pending, [NullString]::Value) }
+    else { [IO.File]::Move($temporary, $pending) }
+}
+
+function Complete-SyncShortcutPreparation {
+    param([string]$Worktree, [string]$Directory, $Record)
+    Assert-SyncRecoveryIdle -Worktree $Worktree
+    Assert-SyncShortcutPaths -Worktree $Worktree
+    if ((Get-GitText -Worktree $Worktree -GitArguments @('symbolic-ref', '--short', 'HEAD')) -ne $Record.Branch -or
+        (Get-GitText -Worktree $Worktree -GitArguments @('rev-parse', 'HEAD')) -ne $Record.Before -or
+        (Get-GitText -Worktree $Worktree -GitArguments @('rev-parse', $Record.Ref)) -ne $Record.Target) {
+        throw '捷徑修復的分支、原HEAD或目標已移動，保留現場。'
+    }
+    Assert-SyncShortcutReplacement -Worktree $Worktree -Record $Record
+    if ((Get-GitTextSoft -Worktree $Worktree -GitArguments @('config', '--bool', 'core.sparseCheckout')) -eq 'true') {
+        throw '稀疏簽出不在捷徑修復範圍內。'
+    }
+    $entries = Get-SyncShortcutIndexEntries -Worktree $Worktree
+    if ($entries -cne $Record.OriginalEntries -and $entries -cne $Record.IntermediateEntries -and
+        $entries -cne $Record.ReadyEntries) { throw '捷徑修復後index內容或旗標已變，保留新工作。' }
+    Assert-SyncShortcutBackup -Directory $Directory -Record $Record
+    $old = 'config/Excel/套用參數.bat.lnk'
+    $path = Join-Path $Worktree $old
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw '舊捷徑已被移走，保留現場。' }
+    $hash = Get-SyncIndexHash -Path $path
+    $tracked = Get-GitText -Worktree $Worktree -GitArguments @('rev-parse', ($Record.Before + ':' + $old))
+    if ($hash -ne $Record.ShortcutHash -and
+        (Get-GitText -Worktree $Worktree -GitArguments @('hash-object', '--no-filters', '--', $path)) -ne $tracked) {
+        throw '舊捷徑在備份後有新修改，不覆寫。'
+    }
+    if (Test-Path -LiteralPath (Join-Path $Worktree 'config/Excel/套用參數.bat')) { throw '新參數入口路徑已有本機檔案，不覆寫。' }
+    # Fresh independent index detects even hidden edits outside the one retired file.
+    $previousIndex = $env:GIT_INDEX_FILE
+    try {
+        $env:GIT_INDEX_FILE = Join-Path $Record.Backup ('shortcut-verify-' + [guid]::NewGuid().ToString('N') + '.index')
+        if ((Invoke-GitSoft -Worktree $Worktree -GitArguments @('read-tree', $Record.Before)) -ne 0 -or
+            (Invoke-GitSoft -Worktree $Worktree -GitArguments @('update-index', '--skip-worktree', '--', $old)) -ne 0) { throw '無法建立捷徑獨立驗證index。' }
+        if ((Invoke-GitSoft -Worktree $Worktree -GitArguments @('-c', 'core.fsmonitor=false', '-c', 'core.ignorestat=false',
+                '-c', 'core.safecrlf=false', 'diff', '--exit-code', '--no-ext-diff', '--no-textconv', '--')) -ne 0 -or
+            (Get-GitText -Worktree $Worktree -GitArguments @('ls-files', '--others', '--exclude-standard'))) {
+            throw '舊捷徑之外還有本機修改，不自動處理。'
+        }
+    } finally { $env:GIT_INDEX_FILE = $previousIndex }
+    Assert-SyncRecoveryIdle -Worktree $Worktree
+    if ((Get-SyncShortcutIndexEntries -Worktree $Worktree) -cne $entries -or (Get-SyncIndexHash -Path $path) -ne $hash -or
+        (Get-GitText -Worktree $Worktree -GitArguments @('symbolic-ref', '--short', 'HEAD')) -ne $Record.Branch -or
+        (Get-GitText -Worktree $Worktree -GitArguments @('rev-parse', 'HEAD')) -ne $Record.Before -or
+        (Get-GitText -Worktree $Worktree -GitArguments @('rev-parse', $Record.Ref)) -ne $Record.Target) { throw '核對期間捷徑、index或來源已變，保留現場。' }
+    # Git applies only the last bit-setting option: clear the two flags separately.
+    if ((Invoke-GitSoft -Worktree $Worktree -GitArguments @('update-index', '--no-assume-unchanged', '--', $old)) -ne 0 -or
+        (Invoke-GitSoft -Worktree $Worktree -GitArguments @('update-index', '--no-skip-worktree', '--', $old)) -ne 0 -or
+        (Invoke-GitSoft -Worktree $Worktree -GitArguments @('restore', ('--source=' + $Record.Before), '--worktree', '--', $old)) -ne 0) {
+        throw "捷徑準備未完成，可重跑接續；備份：$($Record.Backup)"
+    }
+    $Record.State = 'ready'
+    Save-SyncShortcutRecord -Directory $Directory -Record $Record
+    Write-Host "[shortcut] 已備份並準備替換舊參數捷徑，繼續正常快轉：$($Record.Backup)" -ForegroundColor Cyan
+}
+
+function Start-SyncShortcutRecovery {
+    param([string]$Worktree, [string]$Directory, [string]$Before, [string]$Target, [string]$Ref, [string]$Branch)
+    if (Test-Path -LiteralPath (Join-Path $Directory 'shortcut-pending.json')) { throw '尚有待接續的捷徑修復，請重跑同步。' }
+    if ($NoShortcutRecovery) { return }
+    $old = 'config/Excel/套用參數.bat.lnk'
+    $flag = @(Get-SyncIndexFlags -Worktree $Worktree | Where-Object { $_.Path -ceq $old -and $_.Skip })
+    if ($flag.Count -ne 1 -or
+        (Get-GitText -Worktree $Worktree -GitArguments @('ls-tree', $Target, '--', $old))) { return }
+    $record = [pscustomobject]@{ Branch = $Branch; Before = $Before; Target = $Target; Ref = $Ref; State = 'prepared';
+        Backup = (Join-Path $Directory ('shortcut-' + [guid]::NewGuid().ToString('N'))); IndexHash = ''; ShortcutHash = '';
+        OriginalEntries = (Get-SyncShortcutIndexEntries -Worktree $Worktree); IntermediateEntries = ''; ReadyEntries = '' }
+    Assert-SyncShortcutReplacement -Worktree $Worktree -Record $record
+    Assert-SyncShortcutPaths -Worktree $Worktree
+    [void][IO.Directory]::CreateDirectory($record.Backup)
+    $index = Get-GitText -Worktree $Worktree -GitArguments @('rev-parse', '--path-format=absolute', '--git-path', 'index')
+    Copy-Item -LiteralPath $index -Destination (Join-Path $record.Backup 'shortcut.index.before')
+    Copy-Item -LiteralPath (Join-Path $Worktree $old) -Destination (Join-Path $record.Backup 'shortcut.original.lnk')
+    $record.IndexHash = Get-SyncIndexHash -Path (Join-Path $record.Backup 'shortcut.index.before')
+    $record.ShortcutHash = Get-SyncIndexHash -Path (Join-Path $record.Backup 'shortcut.original.lnk')
+    $previousIndex = $env:GIT_INDEX_FILE
+    try {
+        $env:GIT_INDEX_FILE = Join-Path $record.Backup 'shortcut.ready.index'
+        Copy-Item -LiteralPath (Join-Path $record.Backup 'shortcut.index.before') -Destination $env:GIT_INDEX_FILE
+        if ((Invoke-GitSoft -Worktree $Worktree -GitArguments @('update-index', '--no-assume-unchanged', '--', $old)) -ne 0) { throw '無法建立捷徑預備index。' }
+        $record.IntermediateEntries = Get-SyncShortcutIndexEntries -Worktree $Worktree
+        if ((Invoke-GitSoft -Worktree $Worktree -GitArguments @('update-index', '--no-skip-worktree', '--', $old)) -ne 0) { throw '無法解除預備index的捷徑隱藏旗標。' }
+        $record.ReadyEntries = Get-SyncShortcutIndexEntries -Worktree $Worktree
+    } finally { $env:GIT_INDEX_FILE = $previousIndex }
+    if ((Get-SyncIndexHash -Path $index) -ne $record.IndexHash) { throw '備份期間index已改變。' }
+    Save-SyncShortcutRecord -Directory $Directory -Record $record
+    Complete-SyncShortcutPreparation -Worktree $Worktree -Directory $Directory -Record $record
+}
+
+function Resume-SyncShortcutRecovery {
+    param([string]$Worktree, [switch]$ReadOnly, [switch]$GuardHeld)
+    $directory = Get-SyncRecoveryDirectory -Worktree $Worktree
+    $pending = Join-Path $directory 'shortcut-pending.json'
+    if (-not (Test-Path -LiteralPath $pending -PathType Leaf)) { return }
+    if ($ReadOnly -or $NoShortcutRecovery) { throw "有待接續的捷徑修復；預檢／停用模式保留現場：$pending" }
+    $guard = $null
+    if (-not $GuardHeld) { $guard = Open-SyncRecoveryGuard -Directory $directory }
+    try {
+        $record = [IO.File]::ReadAllText($pending) | ConvertFrom-Json
+        $backup = [IO.Path]::GetFullPath($record.Backup)
+        if (-not $backup.StartsWith($directory.TrimEnd('\', '/') + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase) -or
+            $record.State -notin @('prepared', 'ready', 'completed') -or
+            $record.Before -notmatch '^[a-f0-9]{40,64}$' -or $record.Target -notmatch '^[a-f0-9]{40,64}$') { throw '捷徑修復紀錄無效，保留現場。' }
+        Assert-SyncRecoveryIdle -Worktree $Worktree
+        Assert-SyncShortcutPaths -Worktree $Worktree
+        Assert-SyncShortcutBackup -Directory $directory -Record $record
+        $head = Get-GitText -Worktree $Worktree -GitArguments @('rev-parse', 'HEAD')
+        if ($head -eq $record.Target) {
+            Assert-SyncShortcutReplacement -Worktree $Worktree -Record $record
+            Assert-CleanWorktree -Worktree $Worktree -ExpectedBranch $record.Branch
+            if (Test-Path -LiteralPath (Join-Path $Worktree 'config/Excel/套用參數.bat.lnk')) { throw '快轉後仍有舊捷徑，保留現場。' }
+            $record.State = 'completed'
+            Save-SyncShortcutRecord -Directory $directory -Record $record
+            Remove-Item -LiteralPath $pending
+            Write-Host "[shortcut] 舊捷徑替換完成，備份保留：$backup" -ForegroundColor Green
+        } else { Complete-SyncShortcutPreparation -Worktree $Worktree -Directory $directory -Record $record }
+    } finally { if ($guard) { $guard.Dispose() } }
+}
+
 function Invoke-SyncFastForward {
     param([string]$Worktree, [string]$Ref)
     $heads = (Get-GitText -Worktree $Worktree -GitArguments @('rev-parse', 'HEAD', $Ref)) -split "\r?\n"
@@ -186,6 +372,14 @@ function Invoke-SyncFastForward {
     $guard = Open-SyncRecoveryGuard -Directory $directory
     try {
         if (Test-Path -LiteralPath (Join-Path $directory 'pending.json')) { throw '另一輪同步留下待修復 index，保留現場。' }
+        # A previous interrupted preparation may already be ready for this same FF.
+        if (Test-Path -LiteralPath (Join-Path $directory 'shortcut-pending.json')) {
+            Resume-SyncShortcutRecovery -Worktree $Worktree -GuardHeld
+            $shortcut = [IO.File]::ReadAllText((Join-Path $directory 'shortcut-pending.json')) | ConvertFrom-Json
+            if ($shortcut.Target -ne $target) { throw '待接續捷徑的快轉目標不同，保留現場。' }
+        } else {
+            Start-SyncShortcutRecovery -Worktree $Worktree -Directory $directory -Before $before -Target $target -Ref $Ref -Branch $branch
+        }
         $backup = Join-Path $directory ([guid]::NewGuid().ToString('N'))
         [void][IO.Directory]::CreateDirectory($backup)
         $index = Get-GitText -Worktree $Worktree -GitArguments @('rev-parse', '--path-format=absolute', '--git-path', 'index')
@@ -207,6 +401,7 @@ function Invoke-SyncFastForward {
         if ($code -eq 0) {
             Assert-CleanWorktree -Worktree $Worktree -ExpectedBranch $branch
             Remove-Item -LiteralPath (Join-Path $directory 'pending.json')
+            Resume-SyncShortcutRecovery -Worktree $Worktree -GuardHeld
             return
         }
         if ($output -notmatch '(?im)\bunable to write new index file\b') {
@@ -218,5 +413,6 @@ function Invoke-SyncFastForward {
         Write-Host "[index] 寫入失敗，修復備份：$backup" -ForegroundColor Cyan
         if ($NoIndexRecovery) { throw "index 寫入失敗，-NoIndexRecovery 已停用修復。備份：$backup" }
         Repair-SyncIndex -Worktree $Worktree -Directory $directory -Record $record
+        Resume-SyncShortcutRecovery -Worktree $Worktree -GuardHeld
     } finally { $guard.Dispose() }
 }
