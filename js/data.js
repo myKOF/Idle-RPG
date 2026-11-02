@@ -168,8 +168,8 @@ var REINCARNATION_MAX = 10;
 var REINCARNATION_RANKS = ['冒險者', '勇者', '大劍師', '破世者', '不朽者', '王者', '大主宰', '神聖尊者', '大聖王', '至高主宰', '位面創世神', '神位1階', '神位2階', '神位3階', '神位4階', '神位5階', '神位6階', '神位7階', '神位8階', '神位9階', '神位終階'];
 var REINCARNATION_EXTRA_MULTIPLIERS = [0, 1.5, 2.5, 3.5, 5, 7, 10, 14, 18, 24, 30, 60, 100, 150, 200, 300, 450, 650, 800, 1200, 2500];
 // 升級經驗基礎增加值：升級所需經驗在括號外再加此值（依轉生次數；轉生 0 次為 0，1~10 次見轉生對照表 參數 c）。
-var REINCARNATION_EXP_BASE_ADD = [0, 500000, 1500000, 3000000, 6000000, 12000000, 24000000, 48000000, 96000000, 192000000, 384000000, 768000000, 1536000000, 3072000000, 6144000000, 12288000000, 24576000000, 49152000000, 98304000000, 196608000000, 393216000000];
-var REINCARNATION_EXP_MULTIPLIERS = [1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 1e11, 1e13, 1e15, 1e17, 1e19, 1e21, 1e23, 1e25, 1e27, 1e29, 1e33];
+var REINCARNATION_EXP_BASE_ADD = [0, 800000, 1500000, 3000000, 6000000, 25000000, 48000000, 80000000, 156000000, 252000000, 584000000, 768000000, 1536000000, 3072000000, 6144000000, 12288000000, 24576000000, 49152000000, 98304000000, 196608000000, 393216000000];
+var REINCARNATION_EXP_MULTIPLIERS = [1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 10^9.5, 1e11, 1e13, 1e15, 1e17, 1e19, 1e21, 1e23, 1e25, 1e27, 1e29, 1e33];
 
 /* ---- 天堂威能（轉生後依轉數開放） ----
    等級上限由 TALENT_MAX_LEVEL 定義；升級消耗金幣＝goldBase × goldGrow^(目標等級-1)（威能表「升級金幣基數／倍率」），效果為 per × 等級。
@@ -368,7 +368,7 @@ var ELITE_GROUP = {
   leaders: 1, minionHp: 1, minionAtk: 1, minionReward: 1,
   skillDmgPct: 100, cdPct: 100, firstCastMax: 3.5, maxZones: 100, summonCap: 10, linkBeam: 1,
   advChance: [6, 20], advHp: 8, advAtk: 3, advReward: 4,
-  sizeElite: 1.15, sizeAdv: 1.25, sizeBoss: 1.5, sizeTower: [3, 4],
+  sizeElite: 1, sizeAdv: 1.1, sizeBoss: 1.3, sizeTower: [3, 4],
   repoMin: 4, repoMax: 8, repoSpeed: 1.6,
   psDmgPct: 25, psTickPct: 20, psAreaPct: 60, psBuffPct: 25, psCtrlPct: 50, psShieldPct: 15, psReviveHpPct: 40, psPassiveGap: 4
 };
@@ -716,7 +716,7 @@ var DERIVED_COEF = {
 };
 /* 升級所需經驗 = 係數 × 等級^次方 + 常數（再乘轉生倍率、加轉生基礎值）。
    參數表「1-成長經驗／升級所需經驗」的 a / b / c。 */
-var XP_LEVEL_COEF = { a: 20, b: 2.5, c: 40 };
+var XP_LEVEL_COEF = { a: 20, b: 2.6, c: 40 };
 /* 等級基礎四維 = 基底 +（等級-1）× 每級增加。參數表「1-成長經驗／等級基礎四維」的 a / b。 */
 var PRIMARY_STAT_GROWTH = { base: 5, perLevel: 2 };
 // 連擊數係數（參數表「2-屬性派生／連擊數」：a＝觸發率 b＝暴擊 c＝攻速 d＝冷卻縮減）：
@@ -1451,10 +1451,10 @@ var GOD_CHAOS_POOL = [
   { name: '混沌噬魂獸', emoji: '👾', attr: 'light', weight: 1, id: 'god_chaos_5', magic: true, runSpeed: 18, atkSpeed: 0.75, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, scale: 2.5, sprite: { idle: 'npc_god_chaos_5_idle', walk: 'npc_god_chaos_5_walk', attack: 'npc_god_chaos_5_attack', die: 'npc_god_chaos_5_die' }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_thunderwall'], rnd: [3, 3] } } },
   { name: '蝕天巨煞', emoji: '👹', magic: false, attr: 'ice', weight: 1, id: 'god_chaos_6', runSpeed: 12, atkSpeed: 1, atkRange: 6, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, scale: 2, sprite: { idle: 'npc_god_chaos_6_idle', walk: 'npc_god_chaos_6_walk', attack: 'npc_god_chaos_6_attack', die: 'npc_god_chaos_6_die' }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_waterprison'], rnd: [3, 3] } } },
   { name: '虛空之眼', emoji: '👁️', magic: true, attr: 'poison', weight: 1, id: 'god_chaos_7', runSpeed: 12, atkSpeed: 1.5, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, scale: 2, sprite: { idle: 'npc_god_chaos_7_idle', walk: 'npc_god_chaos_7_walk', attack: 'npc_god_chaos_7_attack', die: 'npc_god_chaos_7_die' }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_lightningspear'], rnd: [3, 3] } } },
-  { name: '元素狂暴體', emoji: '⚡', magic: false, attr: 'light', weight: 5, id: 'god_chaos_8', runSpeed: 24, atkSpeed: 1, atkRange: 20, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, scale: 2.5, sprite: { idle: 'npc_god_chaos_8_idle', walk: 'npc_god_chaos_8_walk', attack: 'npc_god_chaos_8_attack', die: 'npc_god_chaos_8_die' }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_chainlightning'], rnd: [3, 3] } } },
+  { name: '元素狂暴體', emoji: '⚡', magic: false, attr: 'light', weight: 5, id: 'god_chaos_8', runSpeed: 24, atkSpeed: 1, atkRange: 20, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, scale: 2, sprite: { idle: 'npc_god_chaos_8_idle', walk: 'npc_god_chaos_8_walk', attack: 'npc_god_chaos_8_attack', die: 'npc_god_chaos_8_die' }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_chainlightning'], rnd: [3, 3] } } },
   { name: '混沌使者', emoji: '🔮', magic: true, attr: 'ice', weight: 1, id: 'god_chaos_9', runSpeed: 12, atkSpeed: 1, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, scale: 2, sprite: { idle: 'npc_god_chaos_9_idle', walk: 'npc_god_chaos_9_walk', attack: 'npc_god_chaos_9_attack', die: 'npc_god_chaos_9_die' }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_thunderorb'], rnd: [3, 3] } } },
   { name: '星雲魔獸', emoji: '🌌', magic: false, attr: 'ice', weight: 1, id: 'god_chaos_10', runSpeed: 24, atkSpeed: 0.75, atkRange: 8, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, scale: 2.5, sprite: { idle: 'npc_god_chaos_10_idle', walk: 'npc_god_chaos_10_walk', attack: 'npc_god_chaos_10_attack', die: 'npc_god_chaos_10_die' }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_frostnova'], rnd: [3, 3] } } },
-  { name: '創世餘燼', emoji: '🔥', magic: true, attr: 'light', weight: 1, id: 'god_chaos_11', runSpeed: 20, atkSpeed: 1, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, scale: 3, sprite: { idle: 'npc_god_chaos_11_idle', walk: 'npc_god_chaos_11_walk', attack: 'npc_god_chaos_11_attack', die: 'npc_god_chaos_11_die' }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_thunderwall'], rnd: [3, 3] } } },
+  { name: '創世餘燼', emoji: '🔥', magic: true, attr: 'light', weight: 1, id: 'god_chaos_11', runSpeed: 20, atkSpeed: 1, atkRange: 24, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, scale: 2.5, sprite: { idle: 'npc_god_chaos_11_idle', walk: 'npc_god_chaos_11_walk', attack: 'npc_god_chaos_11_attack', die: 'npc_god_chaos_11_die' }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_thunderwall'], rnd: [3, 3] } } },
   { name: '混沌大天尊', emoji: '☸️', magic: false, attr: 'ice', weight: 1, id: 'god_chaos_12', runSpeed: 20, atkSpeed: 1.5, atkRange: 18, sightRanges: { normal: 50, elite: 50, elite_adv: 50, boss: 50 }, scale: 3, sprite: { idle: 'npc_god_chaos_12_idle', walk: 'npc_god_chaos_12_walk', attack: 'npc_god_chaos_12_attack', die: 'npc_god_chaos_12_die' }, skills: { elite: { rnd: [2, 2] }, elite_adv: { rnd: [3, 3] }, boss: { ex: ['e_blizzard'], rnd: [3, 3] } } }
 ];
 var GOD_SANCTUARY_POOL = [
