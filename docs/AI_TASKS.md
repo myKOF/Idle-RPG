@@ -14050,3 +14050,17 @@ Worker 存活且頁面正常完成載入。
 - 測試指令：node --test --test-reporter=spec tests/npc-facing.test.cjs tests/npc-ground-air.test.cjs tests/npc-complete-actions.test.cjs tests/npc-rank-glow.test.cjs tests/npc-idle-root-motion.test.cjs tests/battle-renderer-pause.test.cjs tests/vfx-editor-cache-versions.test.cjs共27/27；npm.cmd run build為628檔通過；兩倉diff／stat／check及自我Review通過。修正前原manifest的新npc-facing回歸為4項1過3失敗，修正後全過；原朝右素材、尺寸、暫停、攻擊完整播放與死亡朝向斷言維持。
 - 實機：IAB隔離隱藏localhost，以正式Pixi／data／完整renderer控制面板讓兩側各四階級毒蚊群連續接近玩家，8實體皆實際播walk；僅before頁將原metadata.facing=1在HTTP讀取時覆映，其他檔同版。修前0/8朝向玩家、修後8/8，兩次errors／warnings皆0。正式飛行anchorY1.3054與各尺寸保持，body方向符號依原圖實際朝左獨立判斷；前後實拍均從磁碟重開核對，report／QA／PNG及重建結果留本聊天visualizations/npc-chase-facing。不讀原玩家存檔、不改正式產品API或Worker。
 - 修改／唯讀範圍：遊戲修改上述八檔，素材庫僅新增本驗證包；唯讀未改共通規範／Workflow／prompts、NPC.xlsx／CSV／data／來源匯出器、所有PNG與動畫／移動判定／傷害／投射物／Worker協議／存檔／String。作業中使用者另改NPC.xlsx，完整保留且不stage，不納入本項提交。無本項未完成實作，可供Review／使用者正常合併；未合併推送develop／main。已知限制為未做全庫、多瀏覽器及長時間真Worker遊玩；建議正常整合雙庫後重新載入主頁驗收。遊戲Commit為本段所在「[Codex] fix: 修正毒蚊群追擊時背對玩家」，SHA見交付。
+
+## NPC-STATIONARY-IDLES-20261102（Codex，Done）
+- 使用者授權：所有人形／落地雙足待機雙腳固定，不可原地跨步；同時修正圈選樹妖、玄武岩衛、炭焰蜥蜴。
+- Owner：Codex，單一開發者。盤點66款落地角色，65款下肢有變化、腐爛樹人原單幀已固定。
+- 範圍：65款idle PNG、可編輯Mote修正來源與既有素材匯出流程、待機迴歸測試、快取版本、規格與任務紀錄。其餘動作、戰鬥數值與使用者未提交表格保持。
+- 驗收：全幀下肢RGBA完全相同、上半身保有微幅呼吸、循環接點穩定、65款GIF視覺檢查、素材雜湊／匯出／相關測試與build；素材庫先提交，再提交遊戲，不合併不推送。
+- 工具：Mote網頁可開啟但無WebMCP批次編輯能力，本次以既有Mote v3原生格式保存固定下肢／呼吸上身兩圖層，使用Node逐像素處理與驗證。
+- 完成：65款idle已接入，固定下肢RGBA完全相同、上半身1～2像素呼吸；所有431張其他PNG及npc.json與開始時逐檔SHA一致，原timing／anchor／scale亦一致。五個原製作包保留歷史來源，匯出明確選用本修正包，重建不會回復舊步態；無新增戰鬥API。
+- 修改檔案：65張images/sprites/npc/*_idle.png、idle-locks.json、tests/npc-idle-root-motion.test.cjs、tools/npc-sprites/export_supplemental.cjs、js/battle-renderer.js快取常數、index.html／tools/scene-preview.html版號、本文件及LV_upgrade_system.md。素材庫新增codex-authored/npc-stationary-idles-20261102（65原生雙圖層Mote、修改前來源、匯出PNG、可重建author／codec／preview、SHA及QA），並接入五個既有export.cjs。
+- 唯讀檢查未改：AI_RULES.md／AGENTS.md／docs/AI_WORKFLOW.md／prompts/codex.md、js/battle-renderer.js動作選擇／呼吸／載入邏輯、NPC表與js/data.js、其他動作及角色索引；既有使用者NPC.xlsx／NPC.csv／js/data.js未提交變更原樣保留且未stage。
+- 測試指令：node tools/npc-sprites/export_supplemental.cjs --apply／--check／--source-check均通過；node --test tests/npc-idle-root-motion.test.cjs為66/66通過；合併執行該測試與npc-biped-gait／npc-all-new-art／npc-sprites／npc-facing／npc-ground-air／npc-complete-actions／npc-skeleton-replacement／npc-move-attack／npc-death-ui共102項，99過3失敗；npm run build為629檔通過；兩庫diff --check通過。腳部舊序列的65款下肢差異皆已記錄於audit.json；新測試檢查整段下肢RGBA，不能只對齊腳點或改成原地踏步。
+- 既有測試失敗／風險：法師舊測試預期移速6而HEAD表已是10、封魔塔boss1圖像備註為空、舊縮放測試假設哥布林scale省略但HEAD表已有1.5。以唯讀preloader將HEAD NPC.csv與js/data.js在記憶體代入，確認同三項失敗；未改配置或放寬測試。本次只交付素材修正，這三項獨立設定測試待另行整理，無本項待機實作未完成。
+- 實機與視覺：65款五頁GIF／縮圖已產生；Mote匯入樹妖顯示六幀、兩圖層、160ms，原生網頁匯出768×128與遊戲PNG全RGBA差0。IAB隔離測試頁以正式Pixi／data／完整renderer的makeEnemy／requestNpcSheet／playAnim／tickEntityAnimation載入65角色260動作，示範六隻逐幀待機，console錯誤／警告0；不讀玩家存檔。QA含GIF、正式渲染器截圖、測試log、Mote roundtrip與範圍SHA報告，位於素材包qa/；聊天預覽另保存在visualizations/2026/11/02/npc-stationary-idles。
+- Commit：素材庫7bfb104（先提交）；遊戲為本段所在「[Codex] fix: 修正65款落地NPC待機滑步與換腳」，SHA見交付。可供Review及使用者正常合併（需一併更新素材庫），未合併／推送develop或main。建議整合後重新載入遊戲確認新快取版待機；未測全庫其他功能、多瀏覽器及長時間Worker遊玩。

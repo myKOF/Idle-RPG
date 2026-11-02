@@ -1,0 +1,262 @@
+[
+  {
+    "key": "skeleton_warrior_sword",
+    "lockY": 83
+  },
+  {
+    "key": "skeleton_warrior_axe",
+    "lockY": 84
+  },
+  {
+    "key": "skeleton_mage_staff",
+    "lockY": 85
+  },
+  {
+    "key": "skeleton_mage_book",
+    "lockY": 83
+  },
+  {
+    "key": "old_demon",
+    "lockY": 43
+  },
+  {
+    "key": "desert_goblin",
+    "lockY": 86
+  },
+  {
+    "key": "desert_skeleton",
+    "lockY": 84
+  },
+  {
+    "key": "desert_tree_spirit",
+    "lockY": 81
+  },
+  {
+    "key": "desert_lizard_warrior",
+    "lockY": 85
+  },
+  {
+    "key": "desert_orc",
+    "lockY": 83
+  },
+  {
+    "key": "npc_desert_11",
+    "lockY": 85
+  },
+  {
+    "key": "npc_icefield_4",
+    "lockY": 85
+  },
+  {
+    "key": "npc_icefield_5",
+    "lockY": 84
+  },
+  {
+    "key": "npc_icefield_9",
+    "lockY": 91
+  },
+  {
+    "key": "npc_icefield_11",
+    "lockY": 84
+  },
+  {
+    "key": "npc_mist_forest_2",
+    "lockY": 84
+  },
+  {
+    "key": "npc_mist_forest_5",
+    "lockY": 84
+  },
+  {
+    "key": "npc_mist_forest_7",
+    "lockY": 84
+  },
+  {
+    "key": "npc_mist_forest_8",
+    "lockY": 85
+  },
+  {
+    "key": "npc_mist_forest_10",
+    "lockY": 84
+  },
+  {
+    "key": "npc_mist_forest_12",
+    "lockY": 84
+  },
+  {
+    "key": "npc_lava_mountain_2",
+    "lockY": 85
+  },
+  {
+    "key": "npc_lava_mountain_6",
+    "lockY": 85
+  },
+  {
+    "key": "npc_lava_mountain_11",
+    "lockY": 91
+  },
+  {
+    "key": "npc_lava_mountain_12",
+    "lockY": 85
+  },
+  {
+    "key": "npc_thunder_peak_3",
+    "lockY": 85
+  },
+  {
+    "key": "npc_thunder_peak_6",
+    "lockY": 84
+  },
+  {
+    "key": "npc_god_battlefield_2",
+    "lockY": 84
+  },
+  {
+    "key": "npc_god_battlefield_3",
+    "lockY": 85
+  },
+  {
+    "key": "npc_god_battlefield_4",
+    "lockY": 84
+  },
+  {
+    "key": "npc_god_battlefield_5",
+    "lockY": 85
+  },
+  {
+    "key": "npc_god_battlefield_6",
+    "lockY": 84
+  },
+  {
+    "key": "npc_god_battlefield_7",
+    "lockY": 84
+  },
+  {
+    "key": "npc_god_battlefield_9",
+    "lockY": 84
+  },
+  {
+    "key": "npc_god_battlefield_11",
+    "lockY": 84
+  },
+  {
+    "key": "npc_god_chaos_2",
+    "lockY": 84
+  },
+  {
+    "key": "npc_god_chaos_6",
+    "lockY": 85
+  },
+  {
+    "key": "npc_god_chaos_9",
+    "lockY": 84
+  },
+  {
+    "key": "npc_god_chaos_12",
+    "lockY": 83
+  },
+  {
+    "key": "npc_god_sanctuary_3",
+    "lockY": 84
+  },
+  {
+    "key": "npc_god_sanctuary_4",
+    "lockY": 85
+  },
+  {
+    "key": "npc_god_sanctuary_5",
+    "lockY": 85
+  },
+  {
+    "key": "npc_god_sanctuary_7",
+    "lockY": 84
+  },
+  {
+    "key": "npc_god_sanctuary_9",
+    "lockY": 85
+  },
+  {
+    "key": "npc_god_sanctuary_10",
+    "lockY": 84
+  },
+  {
+    "key": "npc_god_sanctuary_12",
+    "lockY": 85
+  },
+  {
+    "key": "bloated_damned",
+    "lockY": 47
+  },
+  {
+    "key": "burning_damned",
+    "lockY": 46
+  },
+  {
+    "key": "burning_damned_blue",
+    "lockY": 46
+  },
+  {
+    "key": "male_damned",
+    "lockY": 47
+  },
+  {
+    "key": "female_damned",
+    "lockY": 48
+  },
+  {
+    "key": "twisted_damned",
+    "lockY": 47
+  },
+  {
+    "key": "desert_wolf",
+    "lockY": 91
+  },
+  {
+    "key": "npc_lava_mountain_3",
+    "lockY": 93
+  },
+  {
+    "key": "npc_lava_mountain_7",
+    "lockY": 91
+  },
+  {
+    "key": "npc_god_battlefield_12",
+    "lockY": 91
+  },
+  {
+    "key": "npc_god_chaos_1",
+    "lockY": 91
+  },
+  {
+    "key": "npc_god_chaos_5",
+    "lockY": 93
+  },
+  {
+    "key": "npc_god_chaos_10",
+    "lockY": 90
+  },
+  {
+    "key": "npc_icefield_1",
+    "lockY": 91
+  },
+  {
+    "key": "npc_icefield_2",
+    "lockY": 91
+  },
+  {
+    "key": "npc_mist_forest_1",
+    "lockY": 91
+  },
+  {
+    "key": "npc_mist_forest_11",
+    "lockY": 91
+  },
+  {
+    "key": "npc_thunder_peak_2",
+    "lockY": 91
+  },
+  {
+    "key": "npc_thunder_peak_5",
+    "lockY": 91
+  }
+]
