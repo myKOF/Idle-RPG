@@ -1,4 +1,17 @@
+## HERO3D-ROLE-MODEL-20261103 — 新人物與右手平整短劍
+
+- Owner：Codex；Done，單一開發者。使用者最後指定只換Role.glb人物與劍造型，所有動作（含跑步）均沿用現有黃金騎士。劍從背部拆至右手、修平凹陷、劍身縮短20%，握點／手腕／動作播放設計保持；黃金騎士完整保留供之後轉生外觀使用，本次不接轉生切換。使用者已確認附件取得授權。
+- 前置：既有內測Hero3D、黃金騎士完整骨架與五動畫可用。允許新模型與Blender製作工具／來源說明、hero3d模型載入與材質／布料適配、index快取、獨立回歸、LV及本段；素材庫保存原Role、可編輯Blend、匯出與製作／驗證記錄。禁止改既有黃金騎士GLB／動作取樣／戰鬥計算／Worker／存檔／配置表／轉生解鎖／其他工作區，不合併不推送。
+- 預檢：fetch後八個目標無外部修改；正式修改前新增目標再預檢。驗收新人物右手握劍、背部無殘劍、平整劍身／0.8長度、全部既有動畫資料與時序保持、素材來源／匯出SHA、相關測試及Build、正式遊戲渲染Console與高清GIF。素材庫先Commit，再遊戲Commit，交使用者預覽／合併。
+
 # AI_TASKS.md
+- 完成11檔：新增role.glb／role.json／ROLE_SOURCE.md、prepare_role.py、export-role.cjs及hero3d-role回歸；修改hero3d模型URL／有無貼圖材質／模型專屬調色與披風適配、index快取、SOURCE提示、LV及本段。原黃金騎士GLB與sunbrand-cloth.json未改，不新增轉生外觀選單。
+- 模型：新外觀配合舊骨架bind pose，25骨、五動畫及原二進位區塊完整保持；連跑步亦逐位元相同，未採附件0.533秒跑步。拆除782個背劍候選頂點／438三角面，焊接UV接縫後補四處邊界；保留附件護手與皮柄，劍身重建平整六面截面，護手至尖0.9245084→0.7396067m（0.8倍），握點及原Sword軌跡保持。人物固定握拳配合舊腕骨，不新增IK／動畫處理。基色1024px，新GLB約4.14MB，四primitive；原黃金騎士SHA ad6645d1不變。
+- 素材庫：由既有library-root解析，新增codex-authored/hero3d-role-20261103保存使用者已授權44MB原Role、完整可編輯Blend、匯出、工具、來源與SHA manifest／QA。Blender4.5.10重開確認25骨／五Action／唯一使用貼圖已packed，無失效暫存貼圖；匯出入口--apply／--check／--source-check均通過，必要素材先提交，素材庫Commit c4b734b。未另使用Mote／imagegen，因本項為使用者指定3D底模之Blender編修。
+- 驗證：node --test tests/hero3d-role.test.cjs tests/hero3d-internal-toggle.test.cjs tests/hero3d-battle-rules.test.cjs tests/battle-renderer-pause.test.cjs tests/vfx-editor-cache-versions.test.cjs共25/25；npm.cmd run build通過；雙庫diff／stat／check與自我Review。新回歸比較完整動畫JSON／骨架／原BIN前綴、黃金騎士SHA、平整劍身／0.8長度／Sword剛性權重及有效索引、蒙皮／材質／載入限制。初次測試將背部修補材質名稱也誤當劍，已修測試篩選，未放寬幾何或動作斷言。
+- 實機與GIF：隔離localhost正式index／Worker／Pixi／Hero3D，不讀寫玩家原網址存檔；確認原待機、跑步、三種出手，另以正式Hero3D檢視倒地。最終遊戲頁errors=0、相關warnings=0。1844×960／79幀／12fps／6.58秒GIF，左為正式遊戲場景，右為相同Hero3D渲染器近看；暫停後逐格取樣，QA僅HTTP加唯讀state入口／放大畫布704及原滾輪鏡頭，暫隱怪物、浮字與主要特效以檢視外觀，未寫入正式API。影片、QA及逐格回讀三姿勢在本聊天visualizations/role-model。最終GIF已從磁碟重開及抽幀目視核對。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、原黃金騎士GLB／cloth與五份meshy動作取樣、battle-renderer／戰鬥／Worker／存檔／配置／String。已知限制：本機硬體headless D3D11錄影遇顯示記憶體不足，最終遊戲頁改SwiftShader完成；不宣稱實體GPU效能已驗收。既有unused-preload瀏覽器提示與Node vendor module警告保留。未跑全庫／長時間及多瀏覽器，本項無未完成實作；可供Review／使用者正常合併，未合併或推送develop／main。先看GIF確認外觀，再依既有程序整合雙庫並重載內測頁。
+
 
 ## REINCARNATION-STAT-NOTICE-20261103 — 轉生確認補齊攻防定值強化
 

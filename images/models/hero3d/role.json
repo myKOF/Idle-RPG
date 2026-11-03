@@ -1,0 +1,37 @@
+{
+  "sourceSha256": "2fb4f1856db958ca6377706966b7d2ecafdf7441e6de41dfb5b74c382643f7bd",
+  "knightSha256": "ad6645d1db9ebfd18240049e36d3db075ca2e3aa27b7f3c1e6e568a2ed435bc4",
+  "outputSha256": "32fe71418b889e5e79b437f0d00abde477e74dce24fed5abc7642262176f1a1b",
+  "blenderVersion": "4.5.10 LTS",
+  "originalAnimationBinaryPreserved": true,
+  "originalRigPreserved": true,
+  "sourceAnimationIgnored": true,
+  "clips": [
+    "Attack1",
+    "Attack2",
+    "CombatIdle",
+    "Death",
+    "Run"
+  ],
+  "removedBackSwordVertices": 782,
+  "removedBackSwordTriangles": 438,
+  "bodyVertices": 29688,
+  "bodyTriangles": 9896,
+  "patchedBackFaces": 4,
+  "bladeBeforeMeters": 0.9245084002614021,
+  "bladeAfterMeters": 0.7396067202091218,
+  "bladeRatio": 0.8,
+  "gripBone": "Sword",
+  "textureSize": [
+    1024,
+    1024
+  ],
+  "provenance": {
+    "source": "User-supplied Role.glb",
+    "authorization": "User explicitly confirmed licensed in chat, 2026-11-03",
+    "workflow": "Blender 4.5.10 LTS; user-designated supplied human base",
+    "motion": "All existing golden knight animations copied unchanged; supplied run ignored",
+    "goldenKnight": "Original preserved; rebirth appearance switch deferred by user"
+  },
+  "library": "codex-authored/hero3d-role-20261103"
+}

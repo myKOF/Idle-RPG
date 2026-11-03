@@ -19,7 +19,7 @@
   'use strict';
 
   var STORE_KEY = 'idle-rpg.hero3d.v1';
-  var MODEL_URL = 'images/models/hero3d/sunbrand-knight.glb?v=20261102-sword90';   // 改了動畫就換版號，避免瀏覽器用到舊快取
+  var MODEL_URL = 'images/models/hero3d/role.glb?v=20261103-role-model-v1';   // 模型換版時更新，避免讀到舊外觀
   var GLTF_URL = 'js/vendor/three/loaders/GLTFLoader.js';
   var CLOTH_URL = 'images/models/hero3d/sunbrand-cloth.json';   // 布料頂點清單（披風、腰前布襠、關節處的藍布）：和 tools/meshy-pipeline/src/fix-grips.mjs 共用
 
@@ -335,6 +335,7 @@
     var THREE = await import('three');
     var gltfMod = await import(absUrl(GLTF_URL));
     var gltf = await new gltfMod.GLTFLoader().loadAsync(absUrl(opts.model || MODEL_URL));
+    var modelStyle = (gltf.asset && gltf.asset.extras) || {};
 
     var size = opts.size || SIZE, span = opts.span || SPAN;      // 預設與遊戲相同；opts 只給驗證時放大看細節用
     var canvas = global.document.createElement('canvas');
@@ -357,21 +358,26 @@
     var pivot = new THREE.Group();     // 面向轉在這一層
     pivot.add(gltf.scene);
     scene.add(pivot);
-    var gradedMap = null, skinnedMesh = null, bodyMaterial = null;
+    var gradedMaps = new Map(), skinnedMesh = null, bodyMaterial = null;
     gltf.scene.traverse(function (o) {
       if (o.isSkinnedMesh || o.isMesh) o.frustumCulled = false;  // 蒙皮網格的包圍盒不隨動畫更新，會被誤剔除
       if (o.isMesh && o.material && o.material.isMeshStandardMaterial) {
         /* 手繪貼圖：金屬度與粗糙度沒有貼圖，標準材質會因為缺環境光偏暗，用 Lambert 保持貼圖原色。
            貼圖先調色（見 gradeTexture），再把同一張當自發光貼圖，讓金屬在暗處也不會死黑。 */
-        if (!gradedMap) gradedMap = gradeTexture(THREE, o.material.map);
+        var gradedMap = o.material.map;
+        if (gradedMap && modelStyle.textureGrade !== false) {
+          if (!gradedMaps.has(gradedMap)) gradedMaps.set(gradedMap, gradeTexture(THREE, gradedMap));
+          gradedMap = gradedMaps.get(gradedMap);
+        }
         o.material = new THREE.MeshLambertMaterial({
-          map: gradedMap, emissiveMap: gradedMap, emissive: new THREE.Color(EMISSIVE), transparent: false
+          map: gradedMap, color: o.material.color, side: o.material.side,
+          emissiveMap: gradedMap, emissive: new THREE.Color(EMISSIVE), transparent: false
         });
         if (o.isSkinnedMesh) { skinnedMesh = o; bodyMaterial = o.material; }
       }
     });
     var cape = null;
-    if (skinnedMesh && opts.cape !== false) {
+    if (skinnedMesh && opts.cape !== false && modelStyle.capeCollision !== false) {
       try { cape = await buildCape(THREE, skinnedMesh, bodyMaterial); }
       catch (err) { global.console.warn('[hero3d] 披風碰撞載入失敗，披風照原本蒙皮畫：', err && err.message ? err.message : err); }
     }
