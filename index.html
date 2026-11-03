@@ -9,14 +9,14 @@
   <link rel="icon" href="images/icon_avatar.png" type="image/png">
   <link rel="preload" as="image" href="images/ui/gem-resonance/hex-backplate.png" fetchpriority="low">
   <link rel="preload" as="image" href="images/ui/heaven-power/dark-gold-seal.png?v=1" fetchpriority="low">
-  <link rel="stylesheet" href="css/style.css?v=1.0.107">
+  <link rel="stylesheet" href="css/style.css?v=1.0.109">
   <link rel="stylesheet" href="css/inventory-offset.css">
-  <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.97">
-  <link rel="stylesheet" href="css/ashen-forge-flat.css?v=1.0.3">
+  <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.100">
+  <link rel="stylesheet" href="css/ashen-forge-flat.css?v=1.0.4">
   <link rel="stylesheet" href="css/battle-hud.css?v=1.0.19">
   <link rel="stylesheet" href="css/runeword.css?v=1.0.9">
   <link rel="stylesheet" href="css/gems.css?v=1.0.25">
-  <link rel="stylesheet" href="css/dialogs.css?v=1.0.4">
+  <link rel="stylesheet" href="css/dialogs.css?v=1.0.5">
   <link rel="stylesheet" href="css/achievements.css?v=1.0.10">
   <link rel="stylesheet" href="css/world-map.css?v=1.0.13">
   <link rel="stylesheet" href="css/divine-forge.css?v=1.0.15">
@@ -86,18 +86,18 @@
       <nav id="tabs" data-str-attr="aria-label:62">
         <div class="rail-hero" aria-hidden="true">
           <img src="images/icon_avatar.png" alt="">
+          <span id="rail-reincarnation" class="rail-reincarnation"></span>
           <span id="rail-level" class="rail-level">Lv.1</span>
-          <span class="rail-xp"><span id="rail-xp-fill"></span></span>
         </div>
         <button class="tab-btn" data-tab="char"><span class="char-tab-icon"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/char.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span><span id="char-reincarnation-alert" class="char-reincarnation-alert" hidden data-str-attr="aria-label:126">!</span></span><span data-str="63"></span></button>
-        <button class="tab-btn active" data-tab="equip"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/equip.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span><span data-str="46"></span></button>
-        <button class="tab-btn" data-tab="skills"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/skills.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span><span data-str="41"></span></button>
-        <button class="tab-btn" data-tab="newforge"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/newforge.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span><span data-str="64"></span></button>
-        <button class="tab-btn" data-tab="gems"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/gems.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span><span data-str="122"></span></button>
-        <button class="tab-btn" data-tab="runes"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/runes.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span><span data-str="150"></span></button>
-        <button class="tab-btn" data-tab="tower"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/tower.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span><span data-str="103"></span></button>
-        <button class="tab-btn" data-tab="talents"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/talents.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span><span data-str="65"></span></button>
-        <button class="tab-btn" data-tab="forge" style="display:none"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/forge.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span><span data-str="66"></span><span id="forge-run-ind" class="forge-run-ind" style="display:none"></span></button>
+        <button class="tab-btn active" data-tab="equip"><span class="nav-tab-icon"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/equip.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span></span><span data-str="46"></span></button>
+        <button class="tab-btn" data-tab="skills"><span class="nav-tab-icon"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/skills.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span></span><span data-str="41"></span></button>
+        <button class="tab-btn" data-tab="newforge"><span class="nav-tab-icon"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/newforge.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span></span><span data-str="64"></span></button>
+        <button class="tab-btn" data-tab="gems"><span class="nav-tab-icon"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/gems.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span></span><span data-str="122"></span></button>
+        <button class="tab-btn" data-tab="runes"><span class="nav-tab-icon"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/runes.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span></span><span data-str="150"></span></button>
+        <button class="tab-btn" data-tab="tower"><span class="nav-tab-icon"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/tower.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span></span><span data-str="103"></span></button>
+        <button class="tab-btn" data-tab="talents"><span class="nav-tab-icon"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/talents.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span></span><span data-str="65"></span></button>
+        <button class="tab-btn" data-tab="forge" style="display:none"><span class="nav-tab-icon"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/forge.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span></span><span data-str="66"></span><span id="forge-run-ind" class="forge-run-ind" style="display:none"></span></button>
       </nav>
 
       <main>
@@ -1010,17 +1010,17 @@
        已移除（主執行緒零呼叫，只在 Worker 內跑）：
          special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/util.js?v=1.0.4"></script>
-  <script src="js/strings_data.js?v=c1b85e9d"></script>
+  <script src="js/strings_data.js?v=baf8fd61"></script>
   <script src="js/strings.js?v=1.0.1"></script>
   <script src="js/ui-scale.js?v=1.0.1"></script>
-  <script src="js/data.js?v=20261102-integrated-art-boss-xp"></script>
+  <script src="js/data.js?v=20261103-battlefield-unlock-params-merge"></script>
   <script src="js/status.js?v=1.0.44"></script>
   <script src="js/runeword_data.js?v=20261102_merged_ai_latest"></script>
   <script src="js/gem_resonance_data.js?v=1.0.1"></script>
-  <script src="js/achievement_data.js?v=1.0.0"></script>
+  <script src="js/achievement_data.js?v=20261103-battlefield-unlock-params-merge"></script>
   <script src="js/formula.js?v=20261102_merged_ai_latest"></script>
   <script src="js/battle-terrain.js?v=1.0.6"></script>
-  <script src="js/battlefield.js?v=20261103_bfnum_fast"></script>
+  <script src="js/battlefield.js?v=20261103-battlefield-unlock-params-merge"></script>
   <script src="js/game-clock.js?v=1.0.1"></script>
   <script src="js/vfx.js?v=1.0.83"></script>
   <!-- PixiJS（本地 vendor，零建置專案不用 CDN）＋ Canvas 戰鬥渲染器。
@@ -1057,12 +1057,14 @@
   <script src="js/skills2.js?v=20261102_merged_ai_latest"></script>
   <script src="js/elite_data.js?v=1.0.7"></script>
   <script src="js/talents.js?v=1.0.15"></script>
-  <script src="js/player.js?v=1.0.28"></script>
+  <script src="js/player.js?v=20261103-unlock-hints"></script>
+  <script src="js/system-unlocks.js?v=20261103-unlock-hints"></script>
   <script src="js/combat.js?v=20261102_merged_ai_latest"></script>
   <script src="js/tower.js?v=20261101-merge-fd276618"></script>
   <script src="js/save.js?v=1.0.28"></script>
   <script src="js/ui-inventory-skin.js?v=1.0.1"></script>
-  <script src="js/ui.js?v=20261101-forge-equipped"></script>
+  <script src="js/ui.js?v=20261103-reincarnation-stats"></script>
+  <script src="js/ui-unlock-notices.js?v=20261103-unlock-any-action"></script>
   <script src="js/ui-world-map.js?v=1.0.9"></script>
   <script src="js/ui-runeword.js?v=1.0.16"></script>
   <script src="js/ui-achievements.js?v=1.0.0"></script>
@@ -1076,12 +1078,12 @@
        正式遊玩是空殼。必須排在 ui.js（用它的 isInternalVersion）之後、VFX Runtime 建立（main 開機）之前。 -->
   <script src="js/battle-perf.js?v=1.0.3"></script>
   <!-- 模擬 Worker 的協議與橋接。bridge.js 於 DOMContentLoaded 開機 -->
-  <script src="js/worker/protocol.js?v=20261101-forge-equipped"></script>
+  <script src="js/worker/protocol.js?v=20261103-unlock-hints"></script>
   <script src="js/storage.js?v=1.0.1"></script>
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
-  <script src="js/bridge.js?v=20261102-integrated-art-boss-xp"></script>
+  <script src="js/bridge.js?v=20261103-reincarnation-stats"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->

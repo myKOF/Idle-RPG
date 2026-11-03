@@ -1003,10 +1003,6 @@ function handleWorkerUiEvents(events) {
     } else if (event.key === 'forgeUnlocked') {
       requestPanelData('forge', true);
       requestPanelData('header', true);
-      showConfirmDialog(STR(2034), function () {
-        switchTab('forge');
-        UI.dirty.forge = true;
-      }, { title: STR(2035), okText: STR(2036), cancelText: STR(2037) });
     }
   });
 }
@@ -3056,6 +3052,7 @@ function renderHeader() {
   setTextIfChanged($id('pv-level'), levelText);
   setTextIfChanged($id('tp-level'), levelText);
   var reinc = clamp(Math.floor(Number(p.reincarnations) || 0), 0, REINCARNATION_MAX);
+  setTextIfChanged($id('rail-reincarnation'), reinc > 0 ? STR(679, reinc) : '');
   var currentLevel = Math.max(0, Math.floor(Number(p.level) || 0));
   var canReincarnate = canReincarnateAt(currentLevel, reinc);
   var reincarnationAlert = $id('char-reincarnation-alert');
@@ -3091,12 +3088,11 @@ function renderHeader() {
   var isMaxedOut = (p.level >= MAX_LEVEL && reinc >= REINCARNATION_MAX);
   var xpFull = canReincarnate || isMaxedOut;
   var xpWidth = xpFull ? '100%' : (clamp(p.xp / need * 100, 0, 100) + '%');
-  ['xp-fill', 'rail-xp-fill', 'battle-xp-fill'].forEach(function (id) {
+  ['xp-fill', 'battle-xp-fill'].forEach(function (id) {
     var fill = $id(id);
     if (fill) fill.classList.toggle('reincarnate-ready', canReincarnate);
   });
   setStyleIfChanged($id('xp-fill'), 'width', xpWidth);
-  setStyleIfChanged($id('rail-xp-fill'), 'width', xpWidth);
   var xpBar = $id('xp-bar');
   setAttrIfChanged(xpBar, 'data-tt-title', STR(136));
   var xpReadyDesc = reinc >= 10 ? STR(137) : STR(138);
@@ -7659,6 +7655,7 @@ function uiTick() {
   if (UI.tab === 'char') {
     updateCharCoreSummary();
   }
+  if (typeof refreshSystemUnlockHints === 'function') refreshSystemUnlockHints();
   refreshOpenStatTooltip();
 }
 
@@ -10726,7 +10723,7 @@ function showConfirmDialog(message, onConfirm, options) {
 
   if (title) title.textContent = options.title || STR(183);
   modal.className = 'modal-overlay confirm-modal' + (options.dialogClass ? ' ' + options.dialogClass : '');
-  msg.textContent = message || '';
+  msg.textContent = String(message || '').replace(/<br\s*\/?>/gi, '\n');
   if (options.highlightText) {
     var highlightAt = msg.textContent.indexOf(options.highlightText);
     if (highlightAt >= 0) {
@@ -10745,12 +10742,6 @@ function showConfirmDialog(message, onConfirm, options) {
     line.textContent = notice;
     msg.appendChild(line);
   });
-  if (options.title === '轉生成功' && uiReincarnationCount() === 1) {
-    var talentUnlockNotice = document.createElement('div');
-    talentUnlockNotice.className = 'confirm-highlight';
-    talentUnlockNotice.textContent = STR(184);
-    msg.appendChild(talentUnlockNotice);
-  }
   ok.textContent = options.okText || STR(149);
   cancel.textContent = options.cancelText || STR(76);
   ok.className = 'btn' + (options.danger ? ' danger' : '');
@@ -11407,9 +11398,17 @@ function initUI() {
       var nextCount = count + 1;
       var isGodAction = count >= 10;
       var actTitle = isGodAction ? STR(193) : STR(436);
+      // 與公式層的轉生定值強化共用係數；此處只預告額外加成，不當作最終攻防倍率。
+      var flatBonusPct = function (key, turns) {
+        return fmt1(DERIVED_COEF[key + 'FlatMult'] * Math.pow(DERIVED_COEF[key + 'ReincBase'], turns) * 100);
+      };
 
       showConfirmDialog(
-        STR(2146, actTitle, Math.round((reincarnationTotalMultiplier(nextCount) - 1) * 100), actTitle),
+        STR(2146, actTitle, Math.round((reincarnationTotalMultiplier(nextCount) - 1) * 100), actTitle,
+          flatBonusPct('atk', count), flatBonusPct('atk', nextCount),
+          flatBonusPct('matk', count), flatBonusPct('matk', nextCount),
+          flatBonusPct('def', count), flatBonusPct('def', nextCount),
+          flatBonusPct('mdef', count), flatBonusPct('mdef', nextCount)),
         function () {
           sendUiCommand('player.reincarnate', {}, {
             silentResultError: true,  // 下方 .then 自行回報

@@ -1,4 +1,6 @@
-# Worker 協議 v68
+# Worker 協議 v69
+
+v69（2026-11-03 解鎖提示）：新增 `ui.markUnlockSeen({id:string})`（指令95→96），Worker以純共載system-unlocks索引驗證ID與目前正式解鎖條件，只記錄可提示且已開放的項目。`G.uiUnlockSeen={id:true}`隨存檔保存，新局空表、舊存檔由mergeDefaults補空；header新增`systemUnlocks={available:string[],seen:string[]}`，只投影登記的ID。主端不修改G、不另建localStorage進度；各內部頁籤獨立已讀，父圖標彙總尚未讀頁籤。`forgeUnlocked`事件不再帶modal，不顯示開放公告彈窗；轉生前確認與其解鎖預告保持。缺少新header欄位時主端不提示。
 
 v68（2026-11-01 神鑄身上切頁）：`forge.placeItem({itemId})`於太古精鑄／神聖刻印可取目前啟用套裝的`G.equipment`裝備，先驗證解鎖／鎖定／資格／槽位，再原子卸下並移入法陣，更新屬性快取及forge／inv／equip／header面板。裝備神鑄仍只接受背包素材，備用預覽套裝不納入。取消／成功沿用退回背包，失敗沿既有配方消耗；不新增指令、參數或存檔欄位。UI身上來源讀既有inv.equipment完整投影，不依equipView。
 

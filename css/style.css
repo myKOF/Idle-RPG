@@ -386,7 +386,6 @@ body {
 
 .reincarnate-btn.reincarnate-ready,
 #tab-char #xp-fill.reincarnate-ready,
-#rail-xp-fill.reincarnate-ready,
 #battle-canvas-host #battle-action-dock #battle-xp-fill.reincarnate-ready {
   position: relative;
   isolation: isolate;
@@ -406,7 +405,6 @@ body {
 
 .reincarnate-btn.reincarnate-ready::after,
 #tab-char #xp-fill.reincarnate-ready::after,
-#rail-xp-fill.reincarnate-ready::after,
 #battle-canvas-host #battle-action-dock #battle-xp-fill.reincarnate-ready::after {
   content: "";
   position: absolute;
@@ -428,14 +426,16 @@ body {
   animation: reincReadySweep 0.9s linear infinite;
 }
 
-.char-tab-icon {
+.char-tab-icon,
+.nav-tab-icon {
   position: relative;
   display: block;
   flex: 0 0 auto;
   line-height: 0;
 }
 
-#workspace-area #tabs .char-reincarnation-alert:not([hidden]) {
+#workspace-area #tabs .char-reincarnation-alert:not([hidden]),
+#workspace-area #tabs .unlock-nav-pending .nav-tab-icon::after {
   position: absolute;
   right: -5px;
   bottom: -3px;
@@ -452,6 +452,10 @@ body {
   font: 900 16px/1 Arial, sans-serif;
   letter-spacing: 0;
   pointer-events: none;
+}
+
+#workspace-area #tabs .unlock-nav-pending .nav-tab-icon::after {
+  content: '!';
 }
 
 @keyframes reincReadyBgFlow {

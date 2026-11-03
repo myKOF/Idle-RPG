@@ -11,7 +11,7 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-  importScripts('protocol.js?v=20261101-forge-equipped', '../game-clock.js?v=1.0.1', 'shim.js?v=20261018-potential-remove');
+  importScripts('protocol.js?v=20261103-unlock-hints', '../game-clock.js?v=1.0.1', 'shim.js?v=20261018-potential-remove');
 // 離線結算等分批工作亦共用暫停時鐘；訊息與loop仍能回應存檔及PING。
 if (typeof GameClock !== 'undefined') {
   globalThis.setTimeout = GameClock.setTimeout;
@@ -20,10 +20,10 @@ if (typeof GameClock !== 'undefined') {
 /* String 表：資料檔版本由主執行緒（bridge.js）以網址 sv= 傳入，改文字不必動本檔。 */
 var _stringDataVersion = ((typeof self !== 'undefined' && self.location && /[?&]sv=(\w+)/.exec(self.location.search || '')) || [])[1] || '0';
 importScripts(
-  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../data.js?v=20261102-integrated-art-boss-xp', '../runeword_data.js?v=20261102_merged_ai_latest', '../gem_resonance_data.js?v=20261028-develop-merge-a8acfe', '../achievement_data.js?v=20261031-achv-talent-mastery-merge', '../status.js?v=20261028-develop-merge-a8acfe', '../formula.js?v=20261102_merged_ai_latest', '../battle-terrain.js?v=20261030-unlock-god-zone-merge', '../battlefield.js?v=20261103_bfnum_fast', '../stats.js?v=20261028-develop-merge-a8acfe',
+  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../data.js?v=20261103-battlefield-unlock-params-merge', '../runeword_data.js?v=20261102_merged_ai_latest', '../gem_resonance_data.js?v=20261028-develop-merge-a8acfe', '../achievement_data.js?v=20261103-battlefield-unlock-params-merge', '../status.js?v=20261028-develop-merge-a8acfe', '../formula.js?v=20261102_merged_ai_latest', '../battle-terrain.js?v=20261030-unlock-god-zone-merge', '../battlefield.js?v=20261103-battlefield-unlock-params-merge', '../stats.js?v=20261028-develop-merge-a8acfe',
   '../item.js?v=20261101-merge-fd276618', '../gem_resonance.js?v=20261030-unlock-god-zone-merge','../runeword.js?v=20261102_merged_ai_latest',
   '../skills.js?v=20261029-merge-cd5ad556', '../skills2.js?v=20261102_merged_ai_latest', '../elite_data.js?v=20261028-develop-merge-a8acfe', '../talents.js?v=20261031-achv-talent-mastery-merge',
-  '../player.js?v=20261031-achv', '../special_rules.js?v=20261030-unlock-progress',
+  '../player.js?v=20261103-unlock-hints', '../system-unlocks.js?v=20261103-unlock-hints', '../special_rules.js?v=20261030-unlock-progress',
   '../combat.js?v=20261102_merged_ai_latest', '../elite.js?v=20261028-develop-merge-a8acfe', '../elite_boss.js?v=20261023-str-battle', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261028-develop-merge-a8acfe', '../tower.js?v=20261101-merge-fd276618',
   '../factory.js?v=20261031-achv', '../newforge.js?v=20261028-develop-merge-a8acfe', '../forge.js?v=20261101-forge-equipped', '../save.js?v=20261031-achv',
   '../tasks.js?v=20261031-achv', '../achievements.js?v=20261031-achv-talent-mastery-merge'
@@ -339,7 +339,7 @@ function checkForgeUnlockNotice() {
   if (fs.unlockNotified) return;
   fs.unlockNotified = true;
   UI.dirty.header = true;
-  shimPushEvent('notice', { key: 'forgeUnlocked', modal: true });
+  shimPushEvent('notice', { key: 'forgeUnlocked' });
 }
 
 /* ---- 模擬時鐘 ----
@@ -816,6 +816,7 @@ function buildPanel(name, params) {
         viewStats: (typeof getViewStats === 'function') ? playerPanelStats(getViewStats()) : null,
         dps: (typeof currentDps === 'function') ? currentDps() : 0,
         settings: G.settings,
+        systemUnlocks: systemUnlockSnapshot(G),
         autoEquip: !!(G.factory && G.factory.autoEquip),
         equipView: G.equipView, equipActive: G.equipActive
       };
@@ -1641,6 +1642,14 @@ var COMMAND_IMPL = {
   },
 
   /* ---- 設定 ---- */
+  'ui.markUnlockSeen': function (a) {
+    var entry = systemUnlockEntries(G).filter(function (item) { return item.id === a.id; })[0];
+    if (!entry || !entry.notify || !entry.unlocked) throw new Error('Unlock is not available');
+    if (!G.uiUnlockSeen || typeof G.uiUnlockSeen !== 'object' || Array.isArray(G.uiUnlockSeen)) G.uiUnlockSeen = {};
+    G.uiUnlockSeen[entry.id] = true;
+    UI.dirty.header = true;
+    return true;
+  },
   'settings.set': function (a) {
     G.settings = G.settings || {};
     G.settings[a.key] = a.value; // key 已由協議的 enum 白名單擋過

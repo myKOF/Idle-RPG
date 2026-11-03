@@ -1,5 +1,71 @@
 # AI_TASKS.md
 
+## REINCARNATION-STAT-NOTICE-20261103 — 轉生確認補齊攻防定值強化
+
+- Owner：Codex；Done，單一開發者。使用者要求轉生確認窗一併列出物攻、魔攻、物防、魔防等增益，並將使用者既有修改一起Commit。
+- 前置：現有轉生與確認視窗已完成。允許ui.js確認文字參數、String.xlsx原生Excel與CSV／strings_data、index必要快取、確認窗回歸、LV及本段；使用者已完成配置修改亦納入提交。禁止改轉生／戰鬥公式、解鎖條件、存檔、其他工作區與合併推送。
+- 預檢：各目標無外部衝突，index與Claude aca855e3僅同檔不同script行（對方battlefield，本項ui／strings_data）；統一暫存副本換行後三方merge-file退出0、無語意相依。String來源已確認獨占可開啟，沿用Excel原生更新工具，保留使用者原換行。
+- 驗收：四項定值強化百分比從DERIVED_COEF現值讀取，展示目前→下次累計額外加成，明示非最終攻防提升率；取消不送命令、確認送一次，原主屬性／解鎖預告保持。原生Excel正常重開、來源匯出一致、相關回歸／Build／實機Console／diff後Commit；無新素材。
+- 完成：ui.js從既有DERIVED_COEF讀四種攻防定值額外加成，String2146增加八個目前／下次百分比參數及說明，沿用使用者原主屬性次序與br換行。首次轉生物攻／魔攻+120%→+240%、物防／魔防+75%→+150%，數值依使用者最新game_parameters四項轉生底數皆2；第9→10轉及四組不同測試係數亦通過。非整體面板攻防增幅，原始定值為0不會憑空產生定值。
+- 使用者修改一併保留：game_parameters.xlsx／CSV／data四項轉生底數，Achievement.xlsx／CSV／achievement_data將109名稱及說明更新風之痕；String既有版面修改從最新Excel正常匯出。NPC／Runes／Zones／system_unlock四CSV僅原換行差異，Git正規化後無語意變更。未改權威公式算法或其他配置內容。
+- 快取與並行：index更新ui／String／data／achievement_data／bridge，bridge更新Worker入口，sim.worker只更新data／achievement_data匯入版本。該第23行與Claude aca855e3的battlefield快取同一行，依規範提問後使用者明確允許只改資料快取、保留雙方成果供後續合併；沒有代合併Claude內容。另一聊天SYSTEM-UNLOCK-ACTION在獨立區段完成並自行提交a69ff4af，本項未收取其進行中內容。
+- Excel與資料：先獨占存取確認，使用tools/excel-update-sheets.ps1正常儲存及重開兩輪驗證，僅String2146的參數說明與繁中共兩格變更、0繪圖物件保持。唯讀openpyxl比對全部其他格值／樣式、凍結／篩選／合併均保持；未寫入XML。String／game_parameters／Achievement各自正式xlsx_to_csv匯出與正式CSV SHA完全一致。apply_strings --check為2292條同步，build_string_csv --check仍寫死0條；apply_params試跑585一致／0變更／0錨點，--check-anchors擾動539數值後585錨點皆一次命中。
+- 測試指令：node --test --test-reporter=spec tests/confirm-dialog.test.cjs tests/reincarnate-gate.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/achievements.test.cjs tests/apply-params.test.cjs tests/apply-params-anchor-independence.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs，71項70過／1既有失敗。失敗為共鳴預告舊測試固定預期4轉開放、現行system_unlock為6轉；以唯讀preloader載入HEAD原ui.js同測試重現同一失敗，未改解鎖或放寬該斷言。新增攻防／高轉／動態讀係數及既有取消／確認皆通過；npm.cmd run build為636檔通過，diff／stat／check與自我Review通過。
+- 實機：bundled Playwright／headless Edge、隨機私人localhost完整主頁與真Worker，僅記憶體替換header投影為0轉及9轉1000級、攔截確認命令計數，不讀玩家原網址存檔。兩轉數四項加成／無殘留參數、1440×1000與800×700無橫向溢出、取消0次／確認1次、Console error／warning及pageerror皆0；首次及高轉截圖已從磁碟重開目視核對。QA腳本／report／PNG／來源比對／回歸log在本聊天visualizations/reincarnation-stats，服務及瀏覽器已關閉。
+- 修改檔案：ui.js、confirm-dialog回歸、String三檔、index／bridge／sim.worker快取、LV及本段，加使用者game_parameters與Achievement各三檔，共16檔語意修改。唯讀未改AI_RULES／AGENTS／Workflow／prompts、formula.js／player.js轉生算法、String與Excel工具、解鎖權威、存檔／協議、素材匯出器；素材庫狀態乾淨且本項無素材變更，不建立空素材提交。
+- 交付：本項無未完成實作，可供使用者Review及合併，未合併推送develop／main。已知限制為上述既有回歸失敗、未跑全庫與多瀏覽器長時間遊玩；建議重新載入遊戲驗收確認窗。Commit為本段所在「[Codex] fix: 補齊轉生攻防加成說明並保存使用者配置」，SHA見交付。
+
+## SYSTEM-UNLOCK-ACTION-20261103 — 操作後停止當頁解鎖閃爍
+
+- Owner：Codex；Done。使用者要求閃爍持續至玩家自主任意操作為止。以目前正在查看的新開放頁為已讀對象，滑鼠點擊／按下、鍵盤與滾輪皆可停止；未查看的新頁仍提示，切入父功能的同一次事件不提前消除預設頁提示，程式自動事件不算。
+- 允許：ui-unlock-notices.js、index對應快取、system-unlocks回歸、LV及本段。禁止解鎖／Worker協議／存檔格式／表格／其他使用者修改及合併推送。預檢其餘乾淨；Claude aca855e3只改index第1023行battlefield快取，本項只改第1067行ui-unlock-notices快取，候選三方merge-file退出0、不同區段無語意相依，依3.2分段修改。
+- 驗收：閒置不自動消除、進入頁保留提示、可信滑鼠／鍵盤／滾輪操作清當前頁、不清其他未查看頁／程式事件不清；既有點選、失敗重試與存檔行為保持。相關測試／Build／真Worker與Console／diff後Commit。
+- 完成五檔：ui-unlock-notices在捕獲階段接pointerdown／keydown／wheel，click亦處理當前頁；只從正式header取未讀、以既有aria-selected／aria-pressed／active／viewing／is-on判斷當前選中頁；isTrusted=false程式事件略過，不增加計時器或改動既有已讀命令。index只更新本模組快取20261103-unlock-any-action，新增四類操作／程式事件／未看頁保留回歸，LV及本段同步。
+- 驗證：node --test tests/system-unlocks.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs為22/22；npm.cmd run build636檔通過；diff／stat／check及自我Review通過。bundled Playwright／headless Edge三個獨立儲存context，隨機localhost正式index／真Worker以GM設3轉，入神鑄後各等待3.2秒與程式wheel事件，提示仍在；分別在非頁籤標題點擊、鍵盤x、滾輪操作後，裝備頁已讀／閃爍消失，未查看太古頁與父圖標提示保留。三次pageerror／Console error均0；Chrome另有既有dark-gold-seal預載未使用提示（原index已有preload且測試沒進威能），保留原Warning記錄，排除該已知提示後新增Warning0，未更動產品預載。初次QA把此既有預載Warning視為新增而中斷，僅分類記錄後重跑三種全部通過，不降低功能斷言。
+- 交付：QA／report與測試log在本聊天visualizations/unlock-any-action，服務／瀏覽器已關閉，未讀寫原玩家存檔。唯讀未改共通規範／Workflow／Agent、Worker協議／實際解鎖／存檔／String及使用者表格。作業中同副本另一轉生說明任務修改ui.js、index的ui／String版本、LV與AI_TASKS獨立段落，保留且只stage本項hunk；沒有語意相依。無素材庫修改或新素材，無本項未完成內容，可供Review／使用者合併；限制未驗全庫、多瀏覽器長玩，未合併推送。Commit為本段所在「[Codex] fix: 玩家操作後停止當頁解鎖提示」，SHA見交付。
+
+## SYSTEM-UNLOCK-BADGE-20261103 — 驚嘆號沿用角色圖標樣式
+
+- Owner：Codex；Done。使用者指出提示不應被裁在icon內，並指定沿用角色既有紅色驚嘆號外觀。原因為前版pseudo放在overflow:hidden的.af-nav-icon內，較高優先級的圓框裁切規則仍生效。
+- 允許：index各導覽圖標外包wrapper與兩CSS快取、css/style.css共用既有角色徽章樣式、ashen-forge.css移除舊pseudo、LV與本段。禁止改JS／解鎖條件／已讀／存檔／表格與其他使用者修改。五檔fetch後預檢乾淨，style追加預檢乾淨。
+- 驗收：新提示與既有角色徽章相同20px／紅底白框、右下角向外突出、不再被圖標裁切、圖標原裁切保持；重錄GIF、相關測試／Build／Console／diff後獨立Commit，無新素材。
+- 完成五檔：index八個非角色導覽圖標加入nav-tab-icon外wrapper；style.css把wrapper定位及原角色徽章的完整樣式共用到新提示pseudo；ashen-forge.css移除舊圖內pseudo。style快取1.0.109／ashen1.0.100，LV與本段同步。未改角色原有徽章HTML／JS、未改解鎖／已讀／動畫邏輯或使用者表格。
+- 驗證：原system-unlock-hints/verify.cjs重錄並完成全部九項真Worker驗收，額外逐項比較新pseudo與角色徽章的right／bottom／width／height／boxSizing／borderWidth／borderColor／borderRadius／backgroundColor／color／fontSize／fontWeight，全一致：20px、right=-5px、bottom=-3px；原af-nav-icon仍overflow:hidden，新徽章位於其外層。新nav-badge與切頁兩實拍已目視核對，Console error／warning及pageerror皆0。node --test tests/system-unlocks.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs為21/21通過；npm.cmd run build為636檔通過；diff／stat／check及自我Review通過。
+- GIF：本聊天visualizations/system-unlock-hints/system-unlock-hints-v2.gif，真頁72幀／8fps、820×796、約9秒循環，包含父圖標外側徽章與新內頁閃爍，獨立v2檔避免舊預覽快取。QA／report與截圖保留，私人服務／瀏覽器已關閉。無美術素材修改／素材庫變更；唯讀未改共通規範／Workflow／Agent、解鎖JS／Worker／存檔／String與其他表格。無本項未完成內容，可供Review／使用者合併，未合併推送；限制未驗多瀏覽器／長時間遊玩。Commit為本段所在「[Codex] fix: 統一解鎖驚嘆號與角色徽章位置大小」，SHA見交付。使用者原表格及String快取維持未提交。
+
+## SYSTEM-UNLOCK-HINTS-20261103 — 功能列與獨立頁籤解鎖提示
+
+- Owner：Codex；Done，單一開發者。使用者要求解鎖後不彈窗，以功能圖標驚嘆號及內部新開放頁籤高亮閃爍提示，先提供切頁GIF。各頁籤獨立已讀，點選才清除；進入父功能不清除預設頁提示。
+- 前置：正式header／Worker命令與存檔流程、配置解鎖門檻已完成。允許：新增純共載system-unlocks及主端ui-unlock-notices、ui／player／protocol／sim.worker／bridge、CSS／index必要快取、對應測試、WORKER_PROTOCOL／LV／本段。禁止改使用者Excel／CSV／生成資料、數值／解鎖門檻、其他工作區及合併推送。fetch後15檔預檢無外部來源，本副本既有使用者表格與String快取完整保留、只分段stage本項。
+- 實作範圍：神鑄四頁、寶石共鳴、威能各轉頁、裝備方案與高塔新塔別，依正式門檻獨立投影；初始即開放項目不刷提示。已讀存入權威G，Worker只接受目前已解鎖的登記ID，舊存檔缺欄相容，讀檔／重開局不共用已讀。保留轉生前確認及解鎖預告，取消解鎖後的神鑄公告彈窗。
+- 驗收：門檻前後／多頁獨立／預設頁不誤清／點選已讀／讀檔與重開／非法命令及失敗重試、正式UI與真Worker／Console、相關回歸／Build／diff；製作正式切頁閃爍GIF供使用者確認。無獨立素材或新顯示字串。
+- 完成16檔：新增純共載js/system-unlocks.js、主端js/ui-unlock-notices.js與tests/system-unlocks.test.cjs；修改ui／player／protocol／sim.worker／bridge、ashen-forge.css／index、WORKER_PROTOCOL／LV／本段、protocol／confirm-dialog測試，另經追加乾淨預檢後，passive-stat-panel fixture只補載新header依賴，不改原斷言。神鑄四頁、共鳴、威能1～10轉、裝備方案與後兩塔別，共20個登記目標；開局已開放的裝備方案不刷提示，未達門檻頁不提示、預覽鎖頁不可提前已讀。
+- 狀態／協議：v68→69，指令95→96，ui.markUnlockSeen只接受目前可提示且已解鎖的登記ID；header.systemUnlocks提供available／seen，G.uiUnlockSeen記已讀，mergeDefaults使舊存檔缺欄相容，新局空表。主端只讀投影、每個ID各自pending key，未收到成功的header不清提示、失敗可重點。移除forgeUnlocked開放後彈窗／自動切頁及舊轉生成功附加威能解鎖行；轉生前確認／預告保持。index及Worker必要依賴／入口快取20261103-unlock-hints，CSS 1.0.99。
+- 測試：node --test tests/system-unlocks.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/ui-tick-smoke.test.cjs tests/confirm-dialog.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs共56項55過／1既有失敗（轉生預告舊測試固定預期3轉共鳴，正式表為6轉；前項已以HEAD重現）。最終排除confirm-dialog重跑其餘6檔46/46。追加node --test tests/passive-stat-panel.test.cjs tests/base-regen.test.cjs tests/hall-of-radiance.test.cjs tests/game-menu-save.test.cjs tests/game-menu-pause.test.cjs tests/ui-worker-g-dependency.test.cjs共39項28過／11既有失敗（光耀之堂8項、舊被動倍率3項）；唯讀preloader將本項修改的五支遊戲JS改讀HEAD，對兩失敗測試檔重跑，同11項／相同值差異重現。未修改技能、配置或放寬測試。npm.cmd run build為636檔通過，完整diff／stat／check及自我Review通過。
+- 實機：bundled Playwright／headless Edge、隔離隨機localhost正式index／真Worker，以既有GM命令設定2→3→6轉，不讀寫玩家原網址存檔。2轉無解鎖彈窗／神鑄驚嘆號，入頁預設裝備神鑄保持閃爍，點選才消除；3轉太古獨立重新提示且舊裝備頁不閃；真正saveAutoNow／reload保留兩頁已讀；6轉共鳴父圖標／內頁、威能多頁逐一已讀與父提示保留均通過；減少動態為固定高亮。Console error／warning及pageerror皆0。初次QA等待提示class早於forge面板渲染，改等待正式aria-pressed；隨後實拍發現主題!important蓋底色／字色，已提高提示樣式優先度，最終檢查animation=unlockTabPulse／1.4秒、字色與金漸層通過後重錄，不降低驗收。
+- GIF交付：本聊天visualizations/system-unlock-hints/system-unlock-hints.gif，實機72幀×8fps、820×796、約9秒循環，依序顯示2轉圖標提示→切神鑄預設頁閃爍→點選清除→3轉再提示太古→切頁閃爍→點選清除。GIF與兩實拍均已目視核對，QA腳本／report.json及各測試／基線記錄保留，私人服務與瀏覽器已關閉；預覽不屬遊戲獨立素材，素材庫無變更／不建空提交。
+- 唯讀未改：共通規範／Workflow／Agent／prompt、使用者String／Achievement及其他表格與生成資料、既有轉生／神鑄／寶石／威能／塔戰權威條件、save遷移與I/O、其他工作區。只stage本項index增量，使用者String快取及表格修改仍保留未提交。已知限制：未測全庫／多瀏覽器長玩，12項既有測試問題另列；舊存檔已解鎖但無已讀欄的受門檻功能會提示一次，點選後保存。無本項未完成內容，可供Review／使用者合併；未合併推送develop／main。Commit為本段所在「[Codex] feat: 以功能圖標與頁籤提示新解鎖系統」，SHA見交付；建議先看GIF再重載遊戲驗收。
+
+## CONFIRM-LINE-BREAKS-20261103 — String確認說明換行
+
+- Owner：Codex；Done。使用者String2146已填入br但轉生彈窗原樣顯示；原因為showConfirmDialog使用textContent，且樣式未保留文字換行。前置既有共用確認視窗已完成。
+- 允許：js/ui.js確認訊息br轉換、css/dialogs.css換行樣式、index對應快取、tests/confirm-dialog.test.cjs、LV及本段。禁止改使用者Excel／CSV／生成資料、戰鬥／轉生規則／存檔、其他工作區及合併推送。fetch後預檢六檔無外部衝突；本副本使用者未提交String／Achievement／其他表匯出及index String快取完整保留，不納入本項提交。
+- 驗收：br／br斜線／大小寫及既有換行皆顯示換行，其他標籤仍純文字；實際轉生彈窗、取消／確認與既有測試、Build／Console／diff後獨立Commit。無新素材／素材庫修改。
+- 完成六檔：ui.js只將br／BR／br斜線轉為換行，仍使用textContent；dialogs.css設定pre-line，既有高亮／解鎖獨立行與確認回呼保持；index只更新UI／dialogs快取，測試覆蓋三種br與既有換行及非br純文字，LV與本段同步。無新增顯示文字／素材，不編修Excel或使用者生成資料。
+- 驗證：`node --test tests/confirm-dialog.test.cjs tests/string-table.test.cjs tests/ui-tick-smoke.test.cjs`23項22過／1既有失敗（原解鎖預告預期3轉新開放寶石共鳴，但目前正式配置不符合）。使用前項唯讀baseline.cjs將HEAD ui.js代入，`node --require <baseline.cjs> --test --test-name-pattern='轉生預告依正式門檻|確認說明支援String' tests/confirm-dialog.test.cjs`確認原解鎖問題同樣重現、且新增br回歸在舊實作失敗；沒有放寬原斷言。`npm.cmd run build`633檔通過；diff／stat／check及自我Review通過。
+- 正式頁驗證：bundled Playwright／headless Edge隔離隨機localhost，載入正式index／真Worker，記憶體header投影設0轉1000級後點角色與轉生按鈕，使用者目前String2146實際顯示四行、保留解鎖預告；取消正常，非br標籤仍純文字。Console error／warning及pageerror皆0，截圖已目視確認。verify.cjs／report.json／PNG在本聊天visualizations/confirm-line-breaks，私人服務／瀏覽器已關閉，未讀寫玩家原網址存檔。
+- 交付：唯讀未改規範／Workflow／Agent、String表與生成器、轉生／Worker／存檔、使用者所有既有修改；只分段stage本項index兩處快取。素材庫無變更，不建空提交。無本項未完成內容，可供Review／使用者合併；未合併推送。限制為未跑全庫／多瀏覽器，原解鎖預告測試問題留獨立整理。Commit為本段所在「[Codex] fix: 支援確認說明中的換行標記」，SHA見交付；重載主頁即可驗收。
+
+## RAIL-PORTRAIT-20261103 — 頭像轉生數與等級排版
+
+- Owner：Codex；Done，單一開發者。使用者要求移除左上頭像經驗條，等級下移，上方顯示當前轉生數，0轉不顯示。前置：既有header Snapshot與String679可直接沿用。
+- 允許：index.html、js/ui.js頭像投影、css/ashen-forge.css／ashen-forge-flat.css／style.css相關選擇器及快取、LV_upgrade_system.md與本段。禁止：配置表、素材、戰鬥／Worker／存檔規則、其他工作區與合併推送。fetch後七檔衝突預檢均無外部來源。
+- 驗收：正式頁隔離瀏覽器驗0／1／10轉、轉生切換及等級更新，頭像無經驗條、等級固定下移且無溢出；既有UI／String相關測試、Build與diff檢查後Commit，交使用者Review／合併。無新素材，素材庫無需變更。
+- 完成七檔：index頭像加入轉生列並移除經驗條，ui.js沿用header.player.reincarnations與String679顯示「N 轉」，0轉清空文字並保留14px列高；等級固定下移。三CSS移除舊頭像經驗條樣式並加入轉生字樣，index同步三CSS及UI快取，LV與本段同步。角色／戰鬥經驗條及轉生玩法保持。
+- 測試：`node --test tests/ui-tick-smoke.test.cjs tests/ui-worker-panels.test.cjs tests/ui-worker-g-dependency.test.cjs tests/init-ui-smoke.test.cjs tests/string-table.test.cjs`共25項22過／3既有失敗（initUI fixture缺DIVINE_FORGE_MODES、裝備來源斷言仍要求舊gem.socket呼叫、detailAction fixture缺UI）。唯讀fs preloader以HEAD的ui.js取代測試輸入重跑失敗兩檔，同三項重現；未改測試或產品迎合舊fixture。`npm.cmd run build`633檔通過，完整diff／stat／check與自我Review通過。
+- 瀏覽器：bundled Playwright／headless Edge，隨機私人localhost正式index／真Worker／完整UI，隔離新儲存環境；只在記憶體替換header投影為0轉173級→1轉1級→10轉1000級→0轉174級，正式renderHeader全通過。四狀態等級y座標相同、轉生無溢出、頭像經驗DOM為0、角色／戰鬥經驗條仍存在，1440×1000與1000×800截圖目視確認；Console error／warning及pageerror皆0。QA腳本／PNG／report及基線測試紀錄留本聊天visualizations/rail-portrait，不讀寫玩家原網址存檔；QA服務及瀏覽器已關閉。初次QA伺服器首頁判斷路徑分隔符錯誤、版面量測未換算遊戲0.75縮放，僅修正QA後重驗，產品未因此改動。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、String資料及表、header快照來源、相關UI測試；無美術素材變動，素材庫無變更／不建空提交。無本項未完成內容，限制為未測全庫／多瀏覽器長時間遊玩，三項既有fixture問題待獨立整理。遊戲Commit為本段所在「[Codex] fix: 調整頭像轉生數與等級排版」，SHA見交付；可供Review／使用者合併，未合併或推送develop／main，建議重載遊戲驗收。
+
 ## NPC-OUTLINE-1PX-20261103 — 全戰鬥NPC／BOSS黑邊收細至1px
 
 - Owner：Codex；Done，單一開發者。使用者將所有NPC黑色描邊上限由2px改為1px，授權途中採建議方案持續完成及提交。起始ai/codex 7a751116乾淨；素材庫起始乾淨。只處理既有自製／已授權素材，不重畫或引入外部素材。
@@ -14172,3 +14238,8 @@ Worker 存活且頁面正常完成載入。
 - 既有測試失敗／風險：法師舊測試預期移速6而HEAD表已是10、封魔塔boss1圖像備註為空、舊縮放測試假設哥布林scale省略但HEAD表已有1.5。以唯讀preloader將HEAD NPC.csv與js/data.js在記憶體代入，確認同三項失敗；未改配置或放寬測試。本次只交付素材修正，這三項獨立設定測試待另行整理，無本項待機實作未完成。
 - 實機與視覺：65款五頁GIF／縮圖已產生；Mote匯入樹妖顯示六幀、兩圖層、160ms，原生網頁匯出768×128與遊戲PNG全RGBA差0。IAB隔離測試頁以正式Pixi／data／完整renderer的makeEnemy／requestNpcSheet／playAnim／tickEntityAnimation載入65角色260動作，示範六隻逐幀待機，console錯誤／警告0；不讀玩家存檔。QA含GIF、正式渲染器截圖、測試log、Mote roundtrip與範圍SHA報告，位於素材包qa/；聊天預覽另保存在visualizations/2026/11/02/npc-stationary-idles。
 - Commit：素材庫7bfb104（先提交）；遊戲為本段所在「[Codex] fix: 修正65款落地NPC待機滑步與換腳」，SHA見交付。可供Review及使用者正常合併（需一併更新素材庫），未合併／推送develop或main。建議整合後重新載入遊戲確認新快取版待機；未測全庫其他功能、多瀏覽器及長時間Worker遊玩。
+## MERGE-BATTLEFIELD-UNLOCK-PARAMS-20261103 — pending develop merge
+
+- Owner：Codex（整合）；Done。依使用者明確授權處理本次 pending merge：原 HEAD `648f17530abbe8efc2bf1b726edd953400e0e958`、MERGE_HEAD `722fa5289d4e3a4a941ceb574bb4ad91d53bf5aa`、base `98c78fb2cd53d7439e95ba6141ecbc72345199b0`；未操作 index、Commit、推送、同步腳本或其他工作區。
+- 衝突解法：唯一衝突 `js/worker/sim.worker.js` 同時保留 ours 的戰場格數／間距調整與 incoming 的轉生屬性、成就參數、系統解鎖提示及協議變更。主頁與 Worker 的 data／achievement_data／battlefield 統一採新快取 `20261103-battlefield-unlock-params-merge`，`js/bridge.js` 的 Worker 資源版號同步更新，避免任一父版本快取遮蔽合併結果。原始衝突沒有 XLSX，不建立 Excel DATA plan；無素材庫檔案。
+- 驗證：`node --check js/worker/sim.worker.js`、`node --check js/bridge.js` 通過；`node tools/apply_params.cjs --check-anchors` 的 585 個錨點全數通過，dry-run 為一致 585、將變更 0、錨點問題 0。相關 8 檔回歸共 196 項，191 通過、5 項既有失敗：confirm-dialog 的寶石共鳴預告與 incoming 任務紀錄所載同一基線失敗；passive-stat-panel 3 項為專案既載明的大地守護舊倍率期待；policy-keys 的 belt/aoeDmg 來源檔與測試皆完全沿用原 HEAD、非本次合併新增。未弱化斷言或改權威數值；build、完整 merged-result diff check 與最終狀態另於交付結果列明。controller 對 unchanged incoming 檔案的 EOF 機械修正原樣保留。

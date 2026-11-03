@@ -338,9 +338,9 @@ var FIELD_MONSTER_HIT_GROWTH = [{ min: 1, max: 49, rate: 0.5 },
    原本這些係數內嵌在 formula.js 的 monsterStatsFor 算式裡，套用參數表時靠正規式
    錨定「var hp = (…」這種程式碼片段改寫；改成具名欄位後錨點綁的是欄位名。 */
 var FIELD_MONSTER_GROWTH = {
-  hpA: 20, hpB: 16, hpC: 1.06,
-  atkA: 2, atkB: 2, atkC: 1.04,
-  defA: 2, defB: 0.5, defC: 1.045,
+  hpA: 20, hpB: 16, hpC: 1.055,
+  atkA: 2, atkB: 2, atkC: 1.035,
+  defA: 2, defB: 0.5, defC: 1.03,
   goldA: 250, goldC: 1.018,
   xpA: 120, xpC: 1.06,
   aspd: 1
@@ -701,10 +701,10 @@ var PRIMARY_STAT_EFFECTS = {
 // 攻擊 = (base + 定值 + flatMult×定值×reincBase^轉生次數 + 主屬性×係數) × (1 + 對應攻擊%)
 // 防禦 = (base + 定值 + flatMult×定值×reincBase^轉生次數 + 主屬性×係數 + 體質×係數) × (1 + 共用對應攻擊%)
 var DERIVED_COEF = {
-  atkBase: 20, atkFlatMult: 1.2, atkReincBase: 2.5,
-  matkBase: 16, matkFlatMult: 1.2, matkReincBase: 2.5,
-  defBase: 3, defFlatMult: 0.75, defReincBase: 2.4,
-  mdefBase: 2, mdefFlatMult: 0.75, mdefReincBase: 2.4,
+  atkBase: 20, atkFlatMult: 1.2, atkReincBase: 2,
+  matkBase: 16, matkFlatMult: 1.2, matkReincBase: 2,
+  defBase: 3, defFlatMult: 0.75, defReincBase: 2,
+  mdefBase: 2, mdefFlatMult: 0.75, mdefReincBase: 2,
   /* 以下原本是 computeStats 裡的內嵌字面值，套用參數表時靠「錨定程式碼片段」改寫
      （例如錨點 'st.base.mp = '）。那種錨點綁的是程式碼長相，任何一次重構都可能讓它
      0 命中，而套用參數只會安靜地少套幾個值。收進這裡之後錨點改綁欄位名。 */

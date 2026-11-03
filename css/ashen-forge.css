@@ -2337,7 +2337,7 @@ html *::-webkit-scrollbar-corner {
   filter: brightness(1.12) drop-shadow(0 0 3px #d9ac4940);
 }
 
-/* 導覽列頂端的角色縮圖：頭像＋等級＋經驗條（完整資料在「角色」分頁） */
+/* 導覽列頂端的角色縮圖：頭像＋轉生數＋等級（完整資料在「角色」分頁） */
 .rail-hero {
   display: flex;
   flex-direction: column;
@@ -2362,20 +2362,33 @@ html *::-webkit-scrollbar-corner {
   color: #e7c47c;
 }
 
-.rail-xp {
+.rail-reincarnation {
   display: block;
-  width: 56px;
-  height: 4px;
-  overflow: hidden;
-  border-radius: 2px;
-  background: #23262d;
+  min-height: 14px;
+  font-size: 11px;
+  line-height: 14px;
+  color: #cfbd92;
+  white-space: nowrap;
 }
 
-#rail-xp-fill {
-  display: block;
-  width: 0;
-  height: 4px;
-  background: #5fae6a;
+#game-layout #workspace-area .unlock-tab-pending {
+  background: linear-gradient(#765622, #483315) !important;
+  color: #fff0b5 !important;
+  border-color: #e9bd61 !important;
+  animation: unlockTabPulse 1.4s ease-in-out infinite !important;
+  outline: 2px solid #e9bd61;
+  outline-offset: -2px;
+}
+@keyframes unlockTabPulse {
+  0%, 100% { filter: brightness(1); outline-color: #b78a3d; }
+  50% { filter: brightness(1.65); outline-color: #ffe2a0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #game-layout #workspace-area .unlock-tab-pending {
+    animation: none !important;
+    background: #57421b;
+    color: #fff0b5;
+  }
 }
 
 /* ---- 「角色」分頁 ---- */
