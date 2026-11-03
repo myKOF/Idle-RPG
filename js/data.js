@@ -208,108 +208,108 @@ var TALENT_POINT_GOLD_COMPAT = 100000; // 舊存檔剩餘的轉生威能點折�
 var TALENT_IMPLEMENTED_REINCARNATIONS = 10;
 var TALENT_TREES = {
   1: [
-    { id: 't1_str', name: '力量淬鍊', emoji: '💪', stat: 'strPct', per: 2, threat: 2, goldBase: 100000, goldGrow: 1.5, desc: '力量總值額外提高' },
-    { id: 't1_agi', name: '迅捷淬鍊', emoji: '🪽', stat: 'agiPct', per: 2, threat: 2, goldBase: 100000, goldGrow: 1.5, desc: '敏捷總值額外提高' },
-    { id: 't1_int', name: '奧術淬鍊', emoji: '🔮', stat: 'intPct', per: 2, threat: 2, goldBase: 100000, goldGrow: 1.5, desc: '智力總值額外提高' },
-    { id: 't1_vit', name: '鋼骨淬鍊', emoji: '🦴', stat: 'vitPct', per: 2, threat: 2, goldBase: 100000, goldGrow: 1.5, desc: '體質總值額外提高' },
-    { id: 't1_def', name: '物防鍛體', emoji: '🛡️', stat: 'defPct', per: 2, threat: 2, goldBase: 100000, goldGrow: 1.5, desc: '物理防禦總值額外提高' },
-    { id: 't1_mdef', name: '魔防鍛體', emoji: '🔰', stat: 'mdefPct', per: 2, threat: 2, goldBase: 100000, goldGrow: 1.5, desc: '魔法防禦總值額外提高' },
-    { id: 't1_pres', name: '物理抗性', emoji: '🪨', stat: 'pRes', per: 2, threat: 2, goldBase: 100000, goldGrow: 1.5, desc: '物理抗性總值額外提高' },
-    { id: 't1_mres', name: '魔法抗性', emoji: '🌌', stat: 'mRes', per: 2, threat: 2, goldBase: 100000, goldGrow: 1.5, desc: '魔法抗性總值額外提高' }
+    { id: 't1_str', name: '力量淬鍊', emoji: '💪', stat: 'strPct', per: 2, threat: 2, goldBase: 100000, goldGrow: 2, desc: '力量總值額外提高' },
+    { id: 't1_agi', name: '迅捷淬鍊', emoji: '🪽', stat: 'agiPct', per: 2, threat: 2, goldBase: 100000, goldGrow: 2, desc: '敏捷總值額外提高' },
+    { id: 't1_int', name: '奧術淬鍊', emoji: '🔮', stat: 'intPct', per: 2, threat: 2, goldBase: 100000, goldGrow: 2, desc: '智力總值額外提高' },
+    { id: 't1_vit', name: '鋼骨淬鍊', emoji: '🦴', stat: 'vitPct', per: 2, threat: 2, goldBase: 100000, goldGrow: 2, desc: '體質總值額外提高' },
+    { id: 't1_def', name: '物防鍛體', emoji: '🛡️', stat: 'defPct', per: 2, threat: 2, goldBase: 100000, goldGrow: 2, desc: '物理防禦總值額外提高' },
+    { id: 't1_mdef', name: '魔防鍛體', emoji: '🔰', stat: 'mdefPct', per: 2, threat: 2, goldBase: 100000, goldGrow: 2, desc: '魔法防禦總值額外提高' },
+    { id: 't1_pres', name: '物理抗性', emoji: '🪨', stat: 'pRes', per: 2, threat: 2, goldBase: 100000, goldGrow: 2, desc: '物理抗性總值額外提高' },
+    { id: 't1_mres', name: '魔法抗性', emoji: '🌌', stat: 'mRes', per: 2, threat: 2, goldBase: 100000, goldGrow: 2, desc: '魔法抗性總值額外提高' }
   ],
   2: [
-    { id: 't2_crit', name: '致命直覺', emoji: '🎯', stat: 'critRate', per: 5, threat: 3, goldBase: 400000, goldGrow: 1.5, desc: '爆擊率提高' },
-    { id: 't2_critdmg', name: '致命裂痕', emoji: '💥', stat: 'critDmg', per: 50, threat: 4, goldBase: 400000, goldGrow: 1.5, desc: '爆擊傷害提高' },
-    { id: 't2_evasion', name: '幻影步', emoji: '👻', stat: 'evasion', per: 20, threat: 2, goldBase: 400000, goldGrow: 1.5, desc: '閃避率提高' },
-    { id: 't2_hit', name: '洞察弱點', emoji: '👁️', stat: 'hit', per: 20, threat: 2, goldBase: 400000, goldGrow: 1.5, desc: '命中率提高' },
-    { id: 't2_hp', name: '生命洪流', emoji: '❤️', stat: 'hpPct', per: 3, threat: 3, goldBase: 400000, goldGrow: 1.5, desc: '生命總值額外提高' },
-    { id: 't2_shield', name: '護盾脈衝', emoji: '🔵', stat: 'shieldEff', per: 3, threat: 3, goldBase: 400000, goldGrow: 1.5, desc: '護盾總值額外提高' },
-    { id: 't2_normalred', name: '獵人本能', emoji: '🐺', stat: 'normalDmgRed', per: 2, threat: 2, goldBase: 400000, goldGrow: 1.5, desc: '對普通敵人抗性額外提高' },
-    { id: 't2_elitered', name: '鎮壓意志', emoji: '🦁', stat: 'eliteDmgRed', per: 2, threat: 2, goldBase: 400000, goldGrow: 1.5, desc: '對菁英敵人抗性額外提高' }
+    { id: 't2_crit', name: '致命直覺', emoji: '🎯', stat: 'critRate', per: 5, threat: 3, goldBase: 400000, goldGrow: 2, desc: '爆擊率提高' },
+    { id: 't2_critdmg', name: '致命裂痕', emoji: '💥', stat: 'critDmg', per: 50, threat: 4, goldBase: 400000, goldGrow: 2, desc: '爆擊傷害提高' },
+    { id: 't2_evasion', name: '幻影步', emoji: '👻', stat: 'evasion', per: 20, threat: 2, goldBase: 400000, goldGrow: 2, desc: '閃避率提高' },
+    { id: 't2_hit', name: '洞察弱點', emoji: '👁️', stat: 'hit', per: 20, threat: 2, goldBase: 400000, goldGrow: 2, desc: '命中率提高' },
+    { id: 't2_hp', name: '生命洪流', emoji: '❤️', stat: 'hpPct', per: 3, threat: 3, goldBase: 400000, goldGrow: 2, desc: '生命總值額外提高' },
+    { id: 't2_shield', name: '護盾脈衝', emoji: '🔵', stat: 'shieldEff', per: 3, threat: 3, goldBase: 400000, goldGrow: 2, desc: '護盾總值額外提高' },
+    { id: 't2_normalred', name: '獵人本能', emoji: '🐺', stat: 'normalDmgRed', per: 2, threat: 2, goldBase: 400000, goldGrow: 2, desc: '對普通敵人抗性額外提高' },
+    { id: 't2_elitered', name: '鎮壓意志', emoji: '🦁', stat: 'eliteDmgRed', per: 2, threat: 2, goldBase: 400000, goldGrow: 2, desc: '對菁英敵人抗性額外提高' }
   ],
   3: [
-    { id: 't3_normal', name: '清場法則', emoji: '⚔️', stat: 'normalDmg', per: 3, threat: 2, goldBase: 1500000, goldGrow: 1.5, desc: '對普通敵人傷害額外提高' },
-    { id: 't3_elite', name: '破菁法則', emoji: '🗡️', stat: 'eliteDmg', per: 2, threat: 2, goldBase: 1500000, goldGrow: 1.5, desc: '對菁英傷害額外提高' },
-    { id: 't3_boss', name: '弒王法則', emoji: '👑', stat: 'bossDmg', per: 2, threat: 2, goldBase: 1500000, goldGrow: 1.5, desc: '對 BOSS 傷害額外提高' },
-    { id: 't3_allres', name: '全域適應', emoji: '🧿', stat: 'elemRes', per: 2, threat: 3, goldBase: 1500000, goldGrow: 1.5, desc: '全屬性抗性額外提高' },
-    { id: 't3_def', name: '重甲共鳴', emoji: '🛡️', stat: 'defPct', per: 3, threat: 3, goldBase: 1500000, goldGrow: 1.5, desc: '物理防禦總值額外提高' },
-    { id: 't3_mdef', name: '魔鎧共鳴', emoji: '🔰', stat: 'mdefPct', per: 3, threat: 3, goldBase: 1500000, goldGrow: 1.5, desc: '魔法防禦總值額外提高' },
-    { id: 't3_allres2', name: '傷害緩衝', emoji: '🌫️', stat: 'globalDmgRed', per: 2, threat: 3, goldBase: 1500000, goldGrow: 1.5, desc: '全局減傷額外提高' }
+    { id: 't3_normal', name: '清場法則', emoji: '⚔️', stat: 'normalDmg', per: 3, threat: 2, goldBase: 1500000, goldGrow: 2, desc: '對普通敵人傷害額外提高' },
+    { id: 't3_elite', name: '破菁法則', emoji: '🗡️', stat: 'eliteDmg', per: 2, threat: 2, goldBase: 1500000, goldGrow: 2, desc: '對菁英傷害額外提高' },
+    { id: 't3_boss', name: '弒王法則', emoji: '👑', stat: 'bossDmg', per: 2, threat: 2, goldBase: 1500000, goldGrow: 2, desc: '對 BOSS 傷害額外提高' },
+    { id: 't3_allres', name: '全域適應', emoji: '🧿', stat: 'elemRes', per: 2, threat: 3, goldBase: 1500000, goldGrow: 2, desc: '全屬性抗性額外提高' },
+    { id: 't3_def', name: '重甲共鳴', emoji: '🛡️', stat: 'defPct', per: 3, threat: 3, goldBase: 1500000, goldGrow: 2, desc: '物理防禦總值額外提高' },
+    { id: 't3_mdef', name: '魔鎧共鳴', emoji: '🔰', stat: 'mdefPct', per: 3, threat: 3, goldBase: 1500000, goldGrow: 2, desc: '魔法防禦總值額外提高' },
+    { id: 't3_allres2', name: '傷害緩衝', emoji: '🌫️', stat: 'globalDmgRed', per: 2, threat: 3, goldBase: 1500000, goldGrow: 2, desc: '全局減傷額外提高' }
   ],
   4: [
-    { id: 't4_phys', name: '武技昇華', emoji: '⚔️', stat: 'skillPhys', per: 3, threat: 3, goldBase: 6000000, goldGrow: 1.5, desc: '物理類技能效果額外提高' },
-    { id: 't4_magic', name: '法術昇華', emoji: '✨', stat: 'skillMagic', per: 3, threat: 3, goldBase: 6000000, goldGrow: 1.5, desc: '魔法類技能效果額外提高' },
-    { id: 't4_def', name: '守護昇華', emoji: '🛡️', stat: 'skillDef', per: 3, threat: 3, goldBase: 6000000, goldGrow: 1.5, desc: '防禦與治療類技能效果額外提高' },
-    { id: 't4_special', name: '奇策昇華', emoji: '🎲', stat: 'skillSpecial', per: 0.5, threat: 3, goldBase: 6000000, goldGrow: 1.5, desc: '特殊類技能效果額外提高' },
-    { id: 't4_passive', name: '被動昇華', emoji: '🧬', stat: 'skillPassive', per: 3, threat: 3, goldBase: 6000000, goldGrow: 1.5, desc: '被動類技能效果額外提高' },
-    { id: 't4_normalred', name: '獵人壁壘', emoji: '🐺', stat: 'normalDmgRed', per: 2, threat: 3, goldBase: 6000000, goldGrow: 1.5, desc: '對普通敵人抗性額外提高' },
-    { id: 't4_elitered', name: '鎮壓壁壘', emoji: '🦁', stat: 'eliteDmgRed', per: 2, threat: 3, goldBase: 6000000, goldGrow: 1.5, desc: '對菁英敵人抗性額外提高' }
+    { id: 't4_phys', name: '武技昇華', emoji: '⚔️', stat: 'skillPhys', per: 3, threat: 3, goldBase: 6000000, goldGrow: 2, desc: '物理類技能效果額外提高' },
+    { id: 't4_magic', name: '法術昇華', emoji: '✨', stat: 'skillMagic', per: 3, threat: 3, goldBase: 6000000, goldGrow: 2, desc: '魔法類技能效果額外提高' },
+    { id: 't4_def', name: '守護昇華', emoji: '🛡️', stat: 'skillDef', per: 3, threat: 3, goldBase: 6000000, goldGrow: 2, desc: '防禦與治療類技能效果額外提高' },
+    { id: 't4_special', name: '奇策昇華', emoji: '🎲', stat: 'skillSpecial', per: 0.5, threat: 3, goldBase: 6000000, goldGrow: 2, desc: '特殊類技能效果額外提高' },
+    { id: 't4_passive', name: '被動昇華', emoji: '🧬', stat: 'skillPassive', per: 3, threat: 3, goldBase: 6000000, goldGrow: 2, desc: '被動類技能效果額外提高' },
+    { id: 't4_normalred', name: '獵人壁壘', emoji: '🐺', stat: 'normalDmgRed', per: 2, threat: 3, goldBase: 6000000, goldGrow: 2, desc: '對普通敵人抗性額外提高' },
+    { id: 't4_elitered', name: '鎮壓壁壘', emoji: '🦁', stat: 'eliteDmgRed', per: 2, threat: 3, goldBase: 6000000, goldGrow: 2, desc: '對菁英敵人抗性額外提高' }
   ],
   5: [
-    { id: 't5_fire', name: '烈焰共鳴', emoji: '🔥', stat: 'elemFire', per: 4, threat: 4, goldBase: 25000000, goldGrow: 1.5, desc: '攻擊時額外附加' },
-    { id: 't5_ice', name: '寒霜共鳴', emoji: '❄️', stat: 'elemIce', per: 4, threat: 4, goldBase: 25000000, goldGrow: 1.5, desc: '攻擊時額外附加' },
-    { id: 't5_lightning', name: '雷霆共鳴', emoji: '⚡', stat: 'elemLightning', per: 4, threat: 4, goldBase: 25000000, goldGrow: 1.5, desc: '攻擊時額外附加' },
-    { id: 't5_poison', name: '毒脈共鳴', emoji: '☠️', stat: 'elemPoison', per: 4, threat: 4, goldBase: 25000000, goldGrow: 1.5, desc: '攻擊時額外附加' },
-    { id: 't5_light', name: '聖輝共鳴', emoji: '🌟', stat: 'elemLight', per: 4, threat: 4, goldBase: 25000000, goldGrow: 1.5, desc: '攻擊時額外附加' },
-    { id: 't5_dark', name: '暗影共鳴', emoji: '🌑', stat: 'elemDark', per: 4, threat: 4, goldBase: 25000000, goldGrow: 1.5, desc: '攻擊時額外附加' },
-    { id: 't5_earth', name: '磐岩共鳴', emoji: '🪨', stat: 'elemEarth', per: 4, threat: 4, goldBase: 25000000, goldGrow: 1.5, desc: '攻擊時額外附加' },
-    { id: 't5_wind', name: '疾風共鳴', emoji: '💨', stat: 'elemWind', per: 4, threat: 4, goldBase: 25000000, goldGrow: 1.5, desc: '攻擊時額外附加' },
-    { id: 't5_allres', name: '全域壁壘', emoji: '🧿', stat: 'elemRes', per: 3, threat: 4, goldBase: 25000000, goldGrow: 1.5, desc: '全屬性抗性額外提高' },
-    { id: 't5_global', name: '傷害偏折', emoji: '🌀', stat: 'globalDmgRed', per: 2, threat: 4, goldBase: 25000000, goldGrow: 1.5, desc: '全局減傷額外提高' }
+    { id: 't5_fire', name: '烈焰共鳴', emoji: '🔥', stat: 'elemFire', per: 4, threat: 4, goldBase: 25000000, goldGrow: 2, desc: '攻擊時額外附加' },
+    { id: 't5_ice', name: '寒霜共鳴', emoji: '❄️', stat: 'elemIce', per: 4, threat: 4, goldBase: 25000000, goldGrow: 2, desc: '攻擊時額外附加' },
+    { id: 't5_lightning', name: '雷霆共鳴', emoji: '⚡', stat: 'elemLightning', per: 4, threat: 4, goldBase: 25000000, goldGrow: 2, desc: '攻擊時額外附加' },
+    { id: 't5_poison', name: '毒脈共鳴', emoji: '☠️', stat: 'elemPoison', per: 4, threat: 4, goldBase: 25000000, goldGrow: 2, desc: '攻擊時額外附加' },
+    { id: 't5_light', name: '聖輝共鳴', emoji: '🌟', stat: 'elemLight', per: 4, threat: 4, goldBase: 25000000, goldGrow: 2, desc: '攻擊時額外附加' },
+    { id: 't5_dark', name: '暗影共鳴', emoji: '🌑', stat: 'elemDark', per: 4, threat: 4, goldBase: 25000000, goldGrow: 2, desc: '攻擊時額外附加' },
+    { id: 't5_earth', name: '磐岩共鳴', emoji: '🪨', stat: 'elemEarth', per: 4, threat: 4, goldBase: 25000000, goldGrow: 2, desc: '攻擊時額外附加' },
+    { id: 't5_wind', name: '疾風共鳴', emoji: '💨', stat: 'elemWind', per: 4, threat: 4, goldBase: 25000000, goldGrow: 2, desc: '攻擊時額外附加' },
+    { id: 't5_allres', name: '全域壁壘', emoji: '🧿', stat: 'elemRes', per: 3, threat: 4, goldBase: 25000000, goldGrow: 2, desc: '全屬性抗性額外提高' },
+    { id: 't5_global', name: '傷害偏折', emoji: '🌀', stat: 'globalDmgRed', per: 2, threat: 4, goldBase: 25000000, goldGrow: 2, desc: '全局減傷額外提高' }
   ],
   6: [
-    { id: 't6_vsfire', name: '滅焰打擊', emoji: '🔥', stat: 'dmgVsFire', per: 20, threat: 4, goldBase: 100000000, goldGrow: 1.5, desc: '對火屬性敵人傷害提高' },
-    { id: 't6_vsice', name: '碎冰打擊', emoji: '❄️', stat: 'dmgVsIce', per: 20, threat: 4, goldBase: 100000000, goldGrow: 1.5, desc: '對冰屬性敵人傷害提高' },
-    { id: 't6_vslightning', name: '斷雷打擊', emoji: '⚡', stat: 'dmgVsLightning', per: 20, threat: 4, goldBase: 100000000, goldGrow: 1.5, desc: '對電屬性敵人傷害提高' },
-    { id: 't6_vspoison', name: '淨毒打擊', emoji: '☠️', stat: 'dmgVsPoison', per: 20, threat: 4, goldBase: 100000000, goldGrow: 1.5, desc: '對毒屬性敵人傷害提高' },
-    { id: 't6_vsdark', name: '驅暗打擊', emoji: '🌑', stat: 'dmgVsDark', per: 20, threat: 4, goldBase: 100000000, goldGrow: 1.5, desc: '對暗屬性敵人傷害提高' },
-    { id: 't6_vslight', name: '蝕聖打擊', emoji: '🌟', stat: 'dmgVsLight', per: 20, threat: 4, goldBase: 100000000, goldGrow: 1.5, desc: '對聖屬性敵人傷害提高' },
-    { id: 't6_vsearth', name: '裂地打擊', emoji: '🪨', stat: 'dmgVsEarth', per: 20, threat: 4, goldBase: 100000000, goldGrow: 1.5, desc: '對地屬性敵人傷害提高' },
-    { id: 't6_vswind', name: '破風打擊', emoji: '💨', stat: 'dmgVsWind', per: 20, threat: 4, goldBase: 100000000, goldGrow: 1.5, desc: '對風屬性敵人傷害提高' },
-    { id: 't6_boss', name: '弒王進階', emoji: '👑', stat: 'bossDmg', per: 5, threat: 6, goldBase: 100000000, goldGrow: 1.5, desc: '對 BOSS 傷害額外提高' },
-    { id: 't6_bossred', name: '屠龍血鎧', emoji: '🐉', stat: 'bossDmgRed', per: 3, threat: 5, goldBase: 100000000, goldGrow: 1.5, desc: '對 BOSS 敵人抗性額外提高' }
+    { id: 't6_vsfire', name: '滅焰打擊', emoji: '🔥', stat: 'dmgVsFire', per: 20, threat: 4, goldBase: 100000000, goldGrow: 2, desc: '對火屬性敵人傷害提高' },
+    { id: 't6_vsice', name: '碎冰打擊', emoji: '❄️', stat: 'dmgVsIce', per: 20, threat: 4, goldBase: 100000000, goldGrow: 2, desc: '對冰屬性敵人傷害提高' },
+    { id: 't6_vslightning', name: '斷雷打擊', emoji: '⚡', stat: 'dmgVsLightning', per: 20, threat: 4, goldBase: 100000000, goldGrow: 2, desc: '對電屬性敵人傷害提高' },
+    { id: 't6_vspoison', name: '淨毒打擊', emoji: '☠️', stat: 'dmgVsPoison', per: 20, threat: 4, goldBase: 100000000, goldGrow: 2, desc: '對毒屬性敵人傷害提高' },
+    { id: 't6_vsdark', name: '驅暗打擊', emoji: '🌑', stat: 'dmgVsDark', per: 20, threat: 4, goldBase: 100000000, goldGrow: 2, desc: '對暗屬性敵人傷害提高' },
+    { id: 't6_vslight', name: '蝕聖打擊', emoji: '🌟', stat: 'dmgVsLight', per: 20, threat: 4, goldBase: 100000000, goldGrow: 2, desc: '對聖屬性敵人傷害提高' },
+    { id: 't6_vsearth', name: '裂地打擊', emoji: '🪨', stat: 'dmgVsEarth', per: 20, threat: 4, goldBase: 100000000, goldGrow: 2, desc: '對地屬性敵人傷害提高' },
+    { id: 't6_vswind', name: '破風打擊', emoji: '💨', stat: 'dmgVsWind', per: 20, threat: 4, goldBase: 100000000, goldGrow: 2, desc: '對風屬性敵人傷害提高' },
+    { id: 't6_boss', name: '弒王進階', emoji: '👑', stat: 'bossDmg', per: 5, threat: 6, goldBase: 100000000, goldGrow: 2, desc: '對 BOSS 傷害額外提高' },
+    { id: 't6_bossred', name: '屠龍血鎧', emoji: '🐉', stat: 'bossDmgRed', per: 3, threat: 5, goldBase: 100000000, goldGrow: 2, desc: '對 BOSS 敵人抗性額外提高' }
   ],
   7: [
-    { id: 't7_patk', name: '武力賁張', emoji: '🗡️', stat: 'patkPct', per: 5, threat: 8, goldBase: 400000000, goldGrow: 1.5, desc: '物理攻擊總值額外提高' },
-    { id: 't7_matk', name: '奧能賁張', emoji: '🪄', stat: 'matkPct', per: 4, threat: 8, goldBase: 400000000, goldGrow: 1.5, desc: '魔法攻擊總值額外提高' },
-    { id: 't7_allres', name: '萬象壁壘', emoji: '🌈', stat: 'elemRes', per: 3, threat: 4, goldBase: 400000000, goldGrow: 1.5, desc: '全屬性抗性額外提高' },
-    { id: 't7_evasion', name: '無影迷蹤', emoji: '💨', stat: 'evasion', per: 30, threat: 4, goldBase: 400000000, goldGrow: 1.5, desc: '閃避率提高' },
-    { id: 't7_hit', name: '天眼鎖定', emoji: '🎯', stat: 'hit', per: 30, threat: 4, goldBase: 400000000, goldGrow: 1.5, desc: '命中率提高' },
-    { id: 't7_global', name: '絕對偏折', emoji: '🕳️', stat: 'globalDmgRed', per: 4, threat: 5, goldBase: 400000000, goldGrow: 1.5, desc: '全局減傷額外提高' },
-    { id: 't7_totaldmg', name: '破壞本源', emoji: '☄️', stat: 'totalDmgPct', per: 4, threat: 8, goldBase: 400000000, goldGrow: 1.5, desc: '總傷害額外增加' }
+    { id: 't7_patk', name: '武力賁張', emoji: '🗡️', stat: 'patkPct', per: 5, threat: 8, goldBase: 400000000, goldGrow: 2, desc: '物理攻擊總值額外提高' },
+    { id: 't7_matk', name: '奧能賁張', emoji: '🪄', stat: 'matkPct', per: 4, threat: 8, goldBase: 400000000, goldGrow: 2, desc: '魔法攻擊總值額外提高' },
+    { id: 't7_allres', name: '萬象壁壘', emoji: '🌈', stat: 'elemRes', per: 3, threat: 4, goldBase: 400000000, goldGrow: 2, desc: '全屬性抗性額外提高' },
+    { id: 't7_evasion', name: '無影迷蹤', emoji: '💨', stat: 'evasion', per: 30, threat: 4, goldBase: 400000000, goldGrow: 2, desc: '閃避率提高' },
+    { id: 't7_hit', name: '天眼鎖定', emoji: '🎯', stat: 'hit', per: 30, threat: 4, goldBase: 400000000, goldGrow: 2, desc: '命中率提高' },
+    { id: 't7_global', name: '絕對偏折', emoji: '🕳️', stat: 'globalDmgRed', per: 4, threat: 5, goldBase: 400000000, goldGrow: 2, desc: '全局減傷額外提高' },
+    { id: 't7_totaldmg', name: '破壞本源', emoji: '☄️', stat: 'totalDmgPct', per: 4, threat: 8, goldBase: 400000000, goldGrow: 2, desc: '總傷害額外增加' }
   ],
   8: [
-    { id: 't8_rvsfire', name: '禦焰之心', emoji: '🔥', stat: 'resVsFire', per: 4, threat: 7, goldBase: 1500000000, goldGrow: 1.5, desc: '對火屬性敵人抗性額外提高' },
-    { id: 't8_rvsice', name: '禦冰之心', emoji: '❄️', stat: 'resVsIce', per: 4, threat: 7, goldBase: 1500000000, goldGrow: 1.5, desc: '對冰屬性敵人抗性額外提高' },
-    { id: 't8_rvslightning', name: '禦雷之心', emoji: '⚡', stat: 'resVsLightning', per: 4, threat: 7, goldBase: 1500000000, goldGrow: 1.5, desc: '對電屬性敵人抗性額外提高' },
-    { id: 't8_rvspoison', name: '禦毒之心', emoji: '☠️', stat: 'resVsPoison', per: 4, threat: 7, goldBase: 1500000000, goldGrow: 1.5, desc: '對毒屬性敵人抗性額外提高' },
-    { id: 't8_rvsdark', name: '禦暗之心', emoji: '🌑', stat: 'resVsDark', per: 4, threat: 7, goldBase: 1500000000, goldGrow: 1.5, desc: '對暗屬性敵人抗性額外提高' },
-    { id: 't8_rvslight', name: '禦聖之心', emoji: '🌟', stat: 'resVsLight', per: 4, threat: 7, goldBase: 1500000000, goldGrow: 1.5, desc: '對聖屬性敵人抗性額外提高' },
-    { id: 't8_rvsearth', name: '禦地之心', emoji: '🪨', stat: 'resVsEarth', per: 4, threat: 7, goldBase: 1500000000, goldGrow: 1.5, desc: '對地屬性敵人抗性額外提高' },
-    { id: 't8_rvswind', name: '禦風之心', emoji: '💨', stat: 'resVsWind', per: 4, threat: 7, goldBase: 1500000000, goldGrow: 1.5, desc: '對風屬性敵人抗性額外提高' },
-    { id: 't8_boss', name: '弒王極意', emoji: '👑', stat: 'bossDmg', per: 4, threat: 10, goldBase: 1500000000, goldGrow: 1.5, desc: '對 BOSS 傷害額外提高' },
-    { id: 't8_bossred', name: '屠龍聖鎧', emoji: '🐉', stat: 'bossDmgRed', per: 4, threat: 10, goldBase: 1500000000, goldGrow: 1.5, desc: '對 BOSS 敵人抗性額外提高' }
+    { id: 't8_rvsfire', name: '禦焰之心', emoji: '🔥', stat: 'resVsFire', per: 4, threat: 7, goldBase: 1500000000, goldGrow: 2, desc: '對火屬性敵人抗性額外提高' },
+    { id: 't8_rvsice', name: '禦冰之心', emoji: '❄️', stat: 'resVsIce', per: 4, threat: 7, goldBase: 1500000000, goldGrow: 2, desc: '對冰屬性敵人抗性額外提高' },
+    { id: 't8_rvslightning', name: '禦雷之心', emoji: '⚡', stat: 'resVsLightning', per: 4, threat: 7, goldBase: 1500000000, goldGrow: 2, desc: '對電屬性敵人抗性額外提高' },
+    { id: 't8_rvspoison', name: '禦毒之心', emoji: '☠️', stat: 'resVsPoison', per: 4, threat: 7, goldBase: 1500000000, goldGrow: 2, desc: '對毒屬性敵人抗性額外提高' },
+    { id: 't8_rvsdark', name: '禦暗之心', emoji: '🌑', stat: 'resVsDark', per: 4, threat: 7, goldBase: 1500000000, goldGrow: 2, desc: '對暗屬性敵人抗性額外提高' },
+    { id: 't8_rvslight', name: '禦聖之心', emoji: '🌟', stat: 'resVsLight', per: 4, threat: 7, goldBase: 1500000000, goldGrow: 2, desc: '對聖屬性敵人抗性額外提高' },
+    { id: 't8_rvsearth', name: '禦地之心', emoji: '🪨', stat: 'resVsEarth', per: 4, threat: 7, goldBase: 1500000000, goldGrow: 2, desc: '對地屬性敵人抗性額外提高' },
+    { id: 't8_rvswind', name: '禦風之心', emoji: '💨', stat: 'resVsWind', per: 4, threat: 7, goldBase: 1500000000, goldGrow: 2, desc: '對風屬性敵人抗性額外提高' },
+    { id: 't8_boss', name: '弒王極意', emoji: '👑', stat: 'bossDmg', per: 4, threat: 10, goldBase: 1500000000, goldGrow: 2, desc: '對 BOSS 傷害額外提高' },
+    { id: 't8_bossred', name: '屠龍聖鎧', emoji: '🐉', stat: 'bossDmgRed', per: 4, threat: 10, goldBase: 1500000000, goldGrow: 2, desc: '對 BOSS 敵人抗性額外提高' }
   ],
   9: [
-    { id: 't9_fire', name: '烈焰霸體', emoji: '🔥', stat: 'elemFire', per: 8, threat: 10, goldBase: 6000000000, goldGrow: 1.5, desc: '攻擊時額外附加' },
-    { id: 't9_ice', name: '寒霜霸體', emoji: '❄️', stat: 'elemIce', per: 8, threat: 10, goldBase: 6000000000, goldGrow: 1.5, desc: '攻擊時額外附加' },
-    { id: 't9_lightning', name: '雷霆霸體', emoji: '⚡', stat: 'elemLightning', per: 8, threat: 10, goldBase: 6000000000, goldGrow: 1.5, desc: '攻擊時額外附加' },
-    { id: 't9_poison', name: '毒脈霸體', emoji: '☠️', stat: 'elemPoison', per: 8, threat: 10, goldBase: 6000000000, goldGrow: 1.5, desc: '攻擊時額外附加' },
-    { id: 't9_light', name: '聖輝霸體', emoji: '🌟', stat: 'elemLight', per: 8, threat: 10, goldBase: 6000000000, goldGrow: 1.5, desc: '攻擊時額外附加' },
-    { id: 't9_dark', name: '暗影霸體', emoji: '🌑', stat: 'elemDark', per: 8, threat: 10, goldBase: 6000000000, goldGrow: 1.5, desc: '攻擊時額外附加' },
-    { id: 't9_earth', name: '磐岩霸體', emoji: '🪨', stat: 'elemEarth', per: 8, threat: 10, goldBase: 6000000000, goldGrow: 1.5, desc: '攻擊時額外附加' },
-    { id: 't9_wind', name: '疾風霸體', emoji: '💨', stat: 'elemWind', per: 8, threat: 10, goldBase: 6000000000, goldGrow: 1.5, desc: '攻擊時額外附加' },
-    { id: 't9_pres', name: '不壞金身', emoji: '🪨', stat: 'pRes', per: 4, threat: 12, goldBase: 6000000000, goldGrow: 1.5, desc: '物理抗性總值額外提高' },
-    { id: 't9_mres', name: '不滅法身', emoji: '🌌', stat: 'mRes', per: 4, threat: 12, goldBase: 6000000000, goldGrow: 1.5, desc: '魔法抗性總值額外提高' }
+    { id: 't9_fire', name: '烈焰霸體', emoji: '🔥', stat: 'elemFire', per: 8, threat: 10, goldBase: 6000000000, goldGrow: 2, desc: '攻擊時額外附加' },
+    { id: 't9_ice', name: '寒霜霸體', emoji: '❄️', stat: 'elemIce', per: 8, threat: 10, goldBase: 6000000000, goldGrow: 2, desc: '攻擊時額外附加' },
+    { id: 't9_lightning', name: '雷霆霸體', emoji: '⚡', stat: 'elemLightning', per: 8, threat: 10, goldBase: 6000000000, goldGrow: 2, desc: '攻擊時額外附加' },
+    { id: 't9_poison', name: '毒脈霸體', emoji: '☠️', stat: 'elemPoison', per: 8, threat: 10, goldBase: 6000000000, goldGrow: 2, desc: '攻擊時額外附加' },
+    { id: 't9_light', name: '聖輝霸體', emoji: '🌟', stat: 'elemLight', per: 8, threat: 10, goldBase: 6000000000, goldGrow: 2, desc: '攻擊時額外附加' },
+    { id: 't9_dark', name: '暗影霸體', emoji: '🌑', stat: 'elemDark', per: 8, threat: 10, goldBase: 6000000000, goldGrow: 2, desc: '攻擊時額外附加' },
+    { id: 't9_earth', name: '磐岩霸體', emoji: '🪨', stat: 'elemEarth', per: 8, threat: 10, goldBase: 6000000000, goldGrow: 2, desc: '攻擊時額外附加' },
+    { id: 't9_wind', name: '疾風霸體', emoji: '💨', stat: 'elemWind', per: 8, threat: 10, goldBase: 6000000000, goldGrow: 2, desc: '攻擊時額外附加' },
+    { id: 't9_pres', name: '不壞金身', emoji: '🪨', stat: 'pRes', per: 4, threat: 12, goldBase: 6000000000, goldGrow: 2, desc: '物理抗性總值額外提高' },
+    { id: 't9_mres', name: '不滅法身', emoji: '🌌', stat: 'mRes', per: 4, threat: 12, goldBase: 6000000000, goldGrow: 2, desc: '魔法抗性總值額外提高' }
   ],
   10: [
-    { id: 't10_str', name: '力量超昇', emoji: '💪', stat: 'strPct', per: 5, threat: 12, goldBase: 25000000000, goldGrow: 1.5, desc: '力量總值額外提高' },
-    { id: 't10_agi', name: '迅捷超昇', emoji: '🪽', stat: 'agiPct', per: 5, threat: 12, goldBase: 25000000000, goldGrow: 1.5, desc: '敏捷總值額外提高' },
-    { id: 't10_int', name: '奧術超昇', emoji: '🔮', stat: 'intPct', per: 5, threat: 12, goldBase: 25000000000, goldGrow: 1.5, desc: '智力總值額外提高' },
-    { id: 't10_vit', name: '鋼骨超昇', emoji: '🦴', stat: 'vitPct', per: 5, threat: 12, goldBase: 25000000000, goldGrow: 1.5, desc: '體質總值額外提高' },
-    { id: 't10_bossred', name: '屠龍神鎧', emoji: '🐉', stat: 'bossDmgRed', per: 5, threat: 12, goldBase: 25000000000, goldGrow: 1.5, desc: '對 BOSS 敵人抗性額外提高' },
-    { id: 't10_gemeff', name: '寶石共鳴', emoji: '💎', stat: 'gemEff', per: 5, threat: 25, goldBase: 25000000000, goldGrow: 1.5, desc: '寶石鑲嵌效率提高' },
-    { id: 't10_totaldmg', name: '毀滅本源', emoji: '☄️', stat: 'totalDmgPct', per: 10, threat: 35, goldBase: 25000000000, goldGrow: 1.5, desc: '總傷害額外增幅' }
+    { id: 't10_str', name: '力量超昇', emoji: '💪', stat: 'strPct', per: 5, threat: 12, goldBase: 25000000000, goldGrow: 2, desc: '力量總值額外提高' },
+    { id: 't10_agi', name: '迅捷超昇', emoji: '🪽', stat: 'agiPct', per: 5, threat: 12, goldBase: 25000000000, goldGrow: 2, desc: '敏捷總值額外提高' },
+    { id: 't10_int', name: '奧術超昇', emoji: '🔮', stat: 'intPct', per: 5, threat: 12, goldBase: 25000000000, goldGrow: 2, desc: '智力總值額外提高' },
+    { id: 't10_vit', name: '鋼骨超昇', emoji: '🦴', stat: 'vitPct', per: 5, threat: 12, goldBase: 25000000000, goldGrow: 2, desc: '體質總值額外提高' },
+    { id: 't10_bossred', name: '屠龍神鎧', emoji: '🐉', stat: 'bossDmgRed', per: 5, threat: 12, goldBase: 25000000000, goldGrow: 2, desc: '對 BOSS 敵人抗性額外提高' },
+    { id: 't10_gemeff', name: '寶石共鳴', emoji: '💎', stat: 'gemEff', per: 5, threat: 25, goldBase: 25000000000, goldGrow: 2, desc: '寶石鑲嵌效率提高' },
+    { id: 't10_totaldmg', name: '毀滅本源', emoji: '☄️', stat: 'totalDmgPct', per: 10, threat: 35, goldBase: 25000000000, goldGrow: 2, desc: '總傷害額外增幅' }
   ]
 };
 
@@ -1773,7 +1773,7 @@ var ZONE_STAGE_DROP_PROFILES = {  desert: [[1,10,[25,15,0,0,0,0,0,0,0,0,0,0],[4,
   undead_mountains: [[1,49,[40,30,20,0,0,0,0,0,0,0,0,0],[4,0.8,0.3,0,0,0,0,0,0,0],0,0,0],[50,99,[50,40,30,20,0,0,0,0,0,0,0,0],[4,0.8,0.3,0,0,0,0,0,0,0],0,0,0],[100,149,[50,40,30,20,10,0,0,0,0,0,0,0],[10,2,1,0.5,0.1,0,0,0,0,0],0,1,1.5],[150,199,[50,40,30,20,20,8,0,0,0,0,0,0],[12,2,1,0.6,0.2,0,0,0,0,0],0,1,1.5],[200,249,[50,40,30,20,20,10,1,0,0,0,0,0],[12,2,1,0.6,0.3,0,0,0,0,0],0,1.5,2.25],[250,299,[50,40,35,30,25,15,2,0,0,0,0,0],[12,3,1.5,0.8,0.4,0,0,0,0,0],0,1.5,2.25],[300,349,[50,40,35,30,25,20,6,1,0,0,0,0],[15,3,1.5,0.7,0.5,0,0,0,0,0],0,2,3],[350,375,[50,40,35,30,25,20,10,3.5,0,0,0,0],[15,3,1.5,0.8,0.7,0.1,0,0,0,0],0,2.5,3.75],[376,400,[50,40,35,30,25,20,12,8,0,0,0,0],[15,3,1.5,0.8,0.7,0.2,0,0,0,0],0,2.5,3.75]],
   god_battlefield: [[1,49,[40,30,20,0,0,0,0,0,0,0,0,0],[4,0.8,0.3,0,0,0,0,0,0,0],0,0,0],[50,99,[50,40,30,20,0,0,0,0,0,0,0,0],[4,0.8,0.3,0,0,0,0,0,0,0],0,0,0],[100,149,[50,40,30,20,10,0,0,0,0,0,0,0],[10,2,1,0.5,0.1,0,0,0,0,0],0,1,1.5],[150,199,[50,40,30,20,20,8,0,0,0,0,0,0],[12,2,1,0.6,0.2,0,0,0,0,0],0,1,1.5],[200,249,[50,40,30,20,20,10,1,0,0,0,0,0],[12,2,1,0.6,0.3,0,0,0,0,0],0,1.5,2.25],[250,299,[50,40,35,30,25,15,2,0,0,0,0,0],[12,3,1.5,0.8,0.4,0,0,0,0,0],0,1.5,2.25],[300,349,[50,40,35,30,25,20,6,1.5,0,0,0,0],[15,3,1.5,0.7,0.5,0,0,0,0,0],0,2,3],[350,399,[50,40,35,30,25,20,10,4,0,0,0,0],[15,3,1.5,0.8,0.7,0.1,0,0,0,0],0,2.5,3.75],[400,425,[50,40,35,30,25,20,12,10,0.1,0,0,0],[15,3,1.5,0.8,0.7,0.2,0,0,0,0],0,2.5,3.75],[426,500,[50,40,35,30,25,25,20,15,0.5,0,0,0],[15,3,1.5,1,0.8,0.3,0,0,0,0],0,3,4.5]],
   god_chaos: [[1,49,[40,30,20,0,0,0,0,0,0,0,0,0],[4,0.8,0.3,0,0,0,0,0,0,0],0,0,0],[50,99,[50,40,30,20,0,0,0,0,0,0,0,0],[4,0.8,0.3,0,0,0,0,0,0,0],0,0,0],[100,149,[50,40,30,20,10,0,0,0,0,0,0,0],[10,2,1,0.5,0.1,0,0,0,0,0],0,1,1.5],[150,199,[50,40,30,20,20,8,0,0,0,0,0,0],[12,2,1,0.6,0.2,0,0,0,0,0],0,1,1.5],[200,249,[50,40,30,20,20,10,1,0,0,0,0,0],[12,2,1,0.6,0.3,0,0,0,0,0],0,1.5,2.25],[250,299,[50,40,35,30,25,15,2,0,0,0,0,0],[12,3,1.5,0.8,0.4,0,0,0,0,0],0,1.5,2.25],[300,349,[50,40,35,30,25,20,6,1.5,0,0,0,0],[15,3,1.5,0.7,0.5,0,0,0,0,0],0,2,3],[350,399,[50,40,35,30,25,20,10,4,0,0,0,0],[15,3,1.5,0.8,0.7,0.1,0,0,0,0],0,2.5,3.75],[400,425,[50,40,35,30,25,20,12,10,0,0,0.4,0],[15,3,1.5,0.8,0.7,0.25,0,0,0,0],0,3,4.5],[426,500,[50,40,35,30,25,25,20,15,0,0,3,0],[15,3,1.5,1,0.8,0.4,0,0,0,0],0,3,4.5]],
-  god_sanctuary: [[1,49,[40,30,20,0,0,0,0,0,0,0,0,0],[4,0.8,0.3,0,0,0,0,0,0,0],0,0,0],[50,99,[50,40,30,20,0,0,0,0,0,0,0,0],[4,0.8,0.3,0,0,0,0,0,0,0],0,0,0],[100,149,[50,40,30,20,10,0,0,0,0,0,0,0],[10,2,1,0.5,0.1,0,0,0,0,0],0,1,1.5],[150,199,[50,40,30,20,20,8,0,0,0,0,0,0],[12,2,1,0.6,0.2,0,0,0,0,0],0,1,1.5],[200,249,[50,40,30,20,20,10,1,0,0,0,0,0],[12,2,1,0.6,0.3,0,0,0,0,0],0,1.5,2.25],[250,299,[50,40,35,30,25,15,2,0,0,0,0,0],[12,3,1.5,0.8,0.4,0,0,0,0,0],0,1.5,2.25],[300,349,[50,40,35,30,25,20,6,1.5,0,0,0,0],[15,3,1.5,0.7,0.5,0,0,0,0,0],0,2,3],[350,399,[50,40,35,30,25,20,10,4,0,0,0,0],[15,3,1.5,0.8,0.7,0.1,0,0,0,0],0,2.5,3.75],[400,449,[50,40,35,30,25,20,12,10,0,0,0.5,0],[15,3,1.5,0.8,0.7,0.25,0,0,0,0],0,3,4.5],[450,499,[50,40,35,30,25,20,12,15,0,0,3.5,0],[15,3,1.5,1,0.8,0.4,0,0,0,0],0,3,4.5],[500,549,[50,40,35,30,25,25,20,18,0,0,5,0],[15,3,1.5,1,0.8,0.45,0,0,0,0],0,3.5,5.25],[550,575,[50,40,35,30,25,25,25,18,0,0,8,0],[15,3,1.5,1,0.8,0.5,0,0,0,0],0,3.5,5.25],[575,600,[50,40,35,30,25,25,25,20,0,0,15,0],[15,3,1.5,1,0.8,0.6,0,0,0,0],0,4,6]]
+  god_sanctuary: [[1,49,[40,30,20,0,0,0,0,0,0,0,0,0],[4,0.8,0.3,0,0,0,0,0,0,0],0,0,0],[50,99,[50,40,30,20,0,0,0,0,0,0,0,0],[4,0.8,0.3,0,0,0,0,0,0,0],0,0,0],[100,149,[50,40,30,20,10,0,0,0,0,0,0,0],[10,2,1,0.5,0.1,0,0,0,0,0],0,1,1.5],[150,199,[50,40,30,20,20,8,0,0,0,0,0,0],[12,2,1,0.6,0.2,0,0,0,0,0],0,1,1.5],[200,249,[50,40,30,20,20,10,1,0,0,0,0,0],[12,2,1,0.6,0.3,0,0,0,0,0],0,1.5,2.25],[250,299,[50,40,35,30,25,15,2,0,0,0,0,0],[12,3,1.5,0.8,0.4,0,0,0,0,0],0,1.5,2.25],[300,349,[50,40,35,30,25,20,6,1.5,0,0,0,0],[15,3,1.5,0.7,0.5,0,0,0,0,0],0,2,3],[350,399,[50,40,35,30,25,20,10,4,0,0,0,0],[15,3,1.5,0.8,0.7,0.1,0,0,0,0],0,2.5,3.75],[400,449,[50,40,35,30,25,20,12,10,0,0,0.5,0],[15,3,1.5,0.8,0.7,0.25,0,0,0,0],0,3,4.5],[450,499,[50,40,35,30,25,20,12,15,0,0,3.5,0],[15,3,1.5,1,0.8,0.4,0,0,0,0],0,3,4.5],[500,549,[50,40,35,30,25,25,20,18,0,0,5,0],[15,3,1.5,1,0.8,0.45,0,0,0,0],0,3.5,5.25],[550,575,[50,40,35,30,25,25,25,18,0,0,8,0],[15,3,1.5,1,0.8,0.5,0,0,0,0],0,3.5,5.25],[576,600,[50,40,35,30,25,25,25,20,0,0,15,0],[15,3,1.5,1,0.8,0.6,0,0,0,0],0,4,6]]
 };
 var ZONE_STAGE_DROP_TABLE = {};
 Object.keys(ZONE_STAGE_DROP_PROFILES).forEach(function (zoneKey) {
