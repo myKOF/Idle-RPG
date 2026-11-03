@@ -1022,6 +1022,7 @@
                     <div style="display: flex; justify-content: space-between;"><span>🔑 PRNG 隨機種子 (Seed)</span><b id="sumSeed" style="color: var(--text-main);">-</b></div>
                     <div style="display: flex; justify-content: space-between;"><span>⏱️ 模擬遊戲時長 (Hours)</span><b id="sumHours" style="color: var(--text-main);">-</b></div>
                     <div style="display: flex; justify-content: space-between;"><span>📜 使用策略檔案 (Policy)</span><b id="sumPolicy" style="color: var(--text-main);">-</b></div>
+                    <div style="display: flex; justify-content: space-between;"><span>🕒 模擬執行時間 (Elapsed)</span><b id="sumElapsed" style="color: var(--text-main);">-</b></div>
                     <div style="display: flex; justify-content: space-between;"><span>⚡ 模擬加速倍率 (Speedup)</span><b id="sumSpeedup" style="color: var(--text-main);">-</b></div>
                     <div style="display: flex; justify-content: space-between;"><span>🎲 決策執行次數 (Decisions)</span><b id="sumDecisions" style="color: var(--text-main);">-</b></div>
                     <div style="display: flex; justify-content: space-between;"><span>⚠️ 策略失效路徑 (Bad Paths)</span><b id="sumBadPaths" style="color: var(--text-main);">-</b></div>
@@ -1642,6 +1643,13 @@
             document.getElementById('sumSeed').innerText = summary.seed || '-';
             document.getElementById('sumHours').innerText = (summary.gameHours || '-') + ' 小時';
             document.getElementById('sumPolicy').innerText = (summary.policy && summary.policy.file) || '-';
+            /* 實際花的牆鐘時間（performance.elapsedSec），不是遊戲時間。 */
+            const elapsedSec = summary.performance && summary.performance.elapsedSec;
+            document.getElementById('sumElapsed').innerText = (typeof elapsedSec === 'number')
+                ? (elapsedSec >= 3600 ? Math.floor(elapsedSec / 3600) + ' 小時 ' + Math.floor(elapsedSec % 3600 / 60) + ' 分'
+                    : elapsedSec >= 60 ? Math.floor(elapsedSec / 60) + ' 分 ' + Math.round(elapsedSec % 60) + ' 秒'
+                    : elapsedSec.toFixed(1) + ' 秒')
+                : '-';
             document.getElementById('sumSpeedup').innerText = (summary.performance && summary.performance.speedupX) ? (summary.performance.speedupX.toLocaleString() + 'x') : '-';
             document.getElementById('sumDecisions').innerText = summary.decisions ? summary.decisions.toLocaleString() : '-';
             
