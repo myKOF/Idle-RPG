@@ -73,7 +73,7 @@ const ZD = (name) => {
 const ZD_ZONE = ZD('地圖識別碼');
 const ZD_MIN = ZD('最低關卡');
 const ZD_MAX = ZD('最高關卡');
-const ZD_EQUIP = ZD('裝備掉落率（品質R0至R10）');
+const ZD_EQUIP = ZD('裝備掉落率（品質R0至R11）');
 const ZD_GEMS = ZD('寶石掉落率（等級R1至R5）');
 const ZD_BOOK = ZD('技能書掉落率');
 const ZD_ESSENCE = ZD('太古精華掉落率');
@@ -96,7 +96,7 @@ function zoneStageDropContent() {
     const row = [
       dropNumber(r[ZD_MIN], zone + '.最低關卡'),
       dropNumber(r[ZD_MAX], zone + '.最高關卡'),
-      dropRateList(r[ZD_EQUIP], 11, zone + '.裝備掉落率'),
+      dropRateList(r[ZD_EQUIP], 12, zone + '.裝備掉落率'),
       dropRateList(r[ZD_GEMS], 5, zone + '.寶石掉落率'),
       dropNumber(r[ZD_BOOK], zone + '.技能書掉落率'),
       dropNumber(r[ZD_ESSENCE], zone + '.太古精華掉落率'),
@@ -516,10 +516,10 @@ scalar('data', 'FACTORY_BASE_INTERVAL', '7-容量', '生產線處理間隔', 0);
 scalar('data', 'SYNTH_GREAT_BASE', '7-合成', '大成功率', 0);
 
 /* ---- 陣列 / 巢狀陣列重建 ---- */
-// REROLL_ESSENCE_COST = { 6: 9, 7: 14, 8: 20 }
+// 神話／創世／神鑄創世的洗煉精華費用，依名稱接至對應品質編號。
 objField('data', 'REROLL_ESSENCE_COST = {', '6', '7-洗煉', '精華費用', 0, 'REROLL_ESSENCE_COST');
 objField('data', 'REROLL_ESSENCE_COST = {', '7', '7-洗煉', '精華費用', 1, 'REROLL_ESSENCE_COST');
-objField('data', 'REROLL_ESSENCE_COST = {', '8', '7-洗煉', '精華費用', 2, 'REROLL_ESSENCE_COST');
+objField('data', 'REROLL_ESSENCE_COST = {', '9', '7-洗煉', '精華費用', 2, 'REROLL_ESSENCE_COST');
 // FUSE_GOLD_COST：各素材階級的合成金幣。
 {
   const g = Array.from({ length: 9 }, (_, i) => P('8-寶石', '寶石合成金幣', i));
@@ -686,7 +686,7 @@ function levelGrowthContent(cat, name) {
   const minByIdx = [1, 6, 11, 16, 21, 26, 31];
   minByIdx.forEach((min, bi) => {
     const rates = quals.map(q => parseTuple(index['5-高塔裝備掉落'][q + '裝備'][bi]));
-    edits.push({ file: 'data', scopeVar: 'BOSS_DROP_TABLE', re: new RegExp('min: ' + min + ',\\s*rates:\\s*\\[([^\\]]*)\\]'), grp: 1, value: rates.join(', '), label: 'BOSS_DROP min' + min, multiGroup: true });
+    edits.push({ file: 'data', scopeVar: 'BOSS_DROP_TABLE', re: new RegExp('min: ' + min + ',\\s*rates:\\s*\\[([^\\]]*)\\]'), grp: 1, value: rates.concat([0, 0, 0, 0]).join(', '), label: 'BOSS_DROP min' + min, multiGroup: true });
   });
 }
 // 寶石標價
@@ -748,11 +748,11 @@ scalar('formula', 'SKILL_CAST_LOCK', '9-技能', '施放硬直', 0);
 // 參數b：放出後角色多站定幾秒（等 Excel 參數b 填值才生效；填 0 或空白＝不站定，scalarOpt 會跳過）
 scalarOpt('formula', 'SKILL_CAST_HOLD', '9-技能', '施放硬直', 1);
 scalar('formula', 'SKILL_MIN_CAST_INTERVAL', '9-技能', '技能施放最短間隔', 0);
-// ESSENCE_SALVAGE_CHANCE_BY_RARITY = [0.1,0.5,1,2,4,8,20,100,100]
+// 參數a～l依序對應R0～R11的附魔精華拆解機率。
 arrayContent('formula', 'ESSENCE_SALVAGE_CHANCE_BY_RARITY',
-  index['6-分解精華機率']['附魔精華拆解機率'].slice(0, 9).join(', '), 'ESSENCE_SALVAGE_CHANCE_BY_RARITY');
-// ANCIENT_ESSENCE_SALVAGE_CHANCE = { 4: 史詩, 5: 傳說, 6: 神話, 7: 創世, 8: 神鑄 }（普通~獨特不掉，物件無該鍵）
-['4', '5', '6', '7', '8'].forEach(k => {
+  index['6-分解精華機率']['附魔精華拆解機率'].slice(0, 12).join(', '), 'ESSENCE_SALVAGE_CHANCE_BY_RARITY');
+// R4～R11的太古精華拆解機率；普通～獨特不產出基礎精華，太古詞條另行判定。
+['4', '5', '6', '7', '8', '9', '10', '11'].forEach(k => {
   objField('data', 'ANCIENT_ESSENCE_SALVAGE_CHANCE = {', k, '6-分解精華機率', '太古精華拆解機率(依稀有度)', Number(k), '太古拆解機率.' + k);
 });
 // SCORE_WEIGHTS（戰力權重）：2026-07-23 已撥離至 Equipment_Affix 表各詞條列的「戰力權重」欄（config_tables.cjs 管理），

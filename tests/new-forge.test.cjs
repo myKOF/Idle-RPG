@@ -167,7 +167,7 @@ test('品質派發：勾選品質進該爐專屬佇列（總佇列遞減）、�
   const b = c.makeEquipment(10, { rarity: 6, level: 10 });      // 神話未勾 → 保留
   const lk = c.makeEquipment(10, { rarity: 0, level: 10 });     // 上鎖 → 保留
   lk.locked = true;
-  const gf = c.makeEquipment(10, { rarity: 8, level: 10 });     // 神鑄創世 → 保留
+  const gf = c.makeEquipment(10, { rarity: 9, level: 10 });     // 神鑄創世 → 保留
   G.newForge.queue.push(a, b, lk, gf);
   c.newForgeRouteQueue();
   assert.equal(fu.queue.length, 1, '派發進該爐專屬佇列');

@@ -1,8 +1,8 @@
 'use strict';
 if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
-var CHAOS_IDX = 9;
-var CHAOS_GODFORGED_IDX = 10;
-var MAX_RARITY_IDX = 11; // 追加神鑄神話ID，保留既有稀有度編號
+var CHAOS_IDX = 10;
+var CHAOS_GODFORGED_IDX = 11;
+var MAX_RARITY_IDX = 11; // R0～R11 依詞條強度排序
 var REROLL_CHAOS_ESSENCE_COST = 27;
 var REROLL_CHAOS_GODFORGED_ESSENCE_COST = 36;
 var DIVINE_FORGE = {
@@ -47,9 +47,11 @@ var DIVINE_FORGE = {
   refundWeight: 18
 };
 var DIVINE_FORGE_MODES = { equip: 2154, ancient: 2155, gem: 2156, imprint: 2157 };
-function divineForgeBaseRarity(r) { return r === 11 ? 6 : r === 8 ? 7 : r === 10 ? 9 : r; }
-function rarityRank(r) { var def = RARITIES[r]; return def && def.baseRarity !== undefined ? def.baseRarity + 0.5 : r; }
-function divineForgeOutputRarity(r) { return r === 6 ? 11 : r === 7 ? 8 : r === 9 ? 10 : null; }
+function divineForgeBaseRarity(r) { return r === 8 ? 6 : r === 9 ? 7 : r === 11 ? 10 : r; }
+function rarityRank(r) { return r; }
+// 僅用於維持重編前以品質編號計算的費用／附魔係數；排序與篩選一律使用新編號。
+function legacyRarityIndex(r) { return r === 8 ? 11 : r >= 9 ? r - 1 : r; }
+function divineForgeOutputRarity(r) { return r === 6 ? 8 : r === 7 ? 9 : r === 10 ? 11 : null; }
 function divineForgeUnlock(mode) { return DIVINE_FORGE[mode + 'Unlock']; }
 function divineForgeSlotCount(mode) { return mode === 'equip' ? DIVINE_FORGE.equipCount : mode === 'gem' ? DIVINE_FORGE.gemPerType * 2 : DIVINE_FORGE.singleCount; }
 var ANCIENT_FORGE_LIMIT = 2;
@@ -81,7 +83,7 @@ function divineForgeAncientCandidates(it) {
 function divineForgeItemEligible(it, mode) {
   if (!it || it.kind === 'gem') return false;
   var r = divineForgeBaseRarity(it.rarity);
-  if (r !== 6 && r !== 7 && r !== 9) return false;
+  if (r !== 6 && r !== 7 && r !== 10) return false;
   if (mode === 'equip') return !isGodforgedRarity(it.rarity);
   if (mode === 'ancient') return divineForgeAncientCount(it) < ANCIENT_FORGE_LIMIT && (!it.affixes || divineForgeAncientCandidates(it).length > 0);
   return mode === 'imprint';
@@ -101,17 +103,16 @@ function divineForgeRateInfo(f, owned) {
     total: clamp(base + stones * per, 0, 100), cost: mode === 'gem' ? DIVINE_FORGE.gemGold : DIVINE_FORGE[mode + suffix + 'Gold'] };
 }
 
-function isGodforgedRarity(rarity) { return rarity === 8 || rarity === 10 || rarity === 11; }
-function isForgeableEquipmentRarity(rarity) { return rarity === 6 || rarity === 7 || rarity === 9; }
+function isGodforgedRarity(rarity) { return rarity === 8 || rarity === 9 || rarity === 11; }
+function isForgeableEquipmentRarity(rarity) { return rarity === 6 || rarity === 7 || rarity === 10; }
 function forgeBaseRateFor(rarity) { var r = divineForgeBaseRarity(rarity); return DIVINE_FORGE[r === 6 ? 'equipMythicRate' : r === 7 ? 'equipGenesisRate' : 'equipChaosRate']; }
 function forgeGoldCostFor(rarity) { var r = divineForgeBaseRarity(rarity); return DIVINE_FORGE[r === 6 ? 'equipMythicGold' : r === 7 ? 'equipGenesisGold' : 'equipChaosGold']; }
 function forgeDustRateFor() { return DIVINE_FORGE.equipStoneRate; }
 /* ============ 遊戲資料定義 ============ */
 
-/* ---- 稀有度（11 階）----
-   affix: 固定詞條數（上下限相同）｜sockets: 寶石鑲孔數｜enchants: 附魔欄位數｜runeSlots: 符文孔數（js/runeword.js；雙手武器另加 RUNE_SETTINGS.twoHandBonusSlots）
-   godforged（神鑄創世）：僅能由神鑄系統以 6 件創世鑄造獲得，不自然掉落、
-   不可由熔爐合成升階；mult = 創世 × 1.5（詞條數值與洗煉上限同步 1.5 倍）。 */
+/* ---- 稀有度（12 階）----
+   依 game_parameters「表-稀有度」名稱讀取數值；神鑄品質沿用對應基礎品質的外觀與配方家族。
+   編號隨強度遞增；舊存檔由 save.js 的 equipmentRarityVersion 遷移一次。 */
 var RARITIES = [
   { key: 'common', name: '普通', color: '#9aa5b1', mult: 1.0, affix: [1, 1], sockets: 0, enchants: 0, runeSlots: 0, salv: 1.0 },
   { key: 'uncommon', name: '精良', color: '#4ade80', mult: 1.35, affix: [2, 2], sockets: 1, enchants: 1, runeSlots: 0, salv: 1.7 },
@@ -120,17 +121,17 @@ var RARITIES = [
   { key: 'epic', name: '史詩', color: '#c084fc', mult: 3.0, affix: [4, 4], sockets: 2, enchants: 2, runeSlots: 1, salv: 7.5 },
   { key: 'legendary', name: '傳說', color: '#fb923c', mult: 4.0, affix: [5, 5], sockets: 2, enchants: 2, runeSlots: 1, salv: 12 },
   { key: 'mythic', name: '神話', color: '#f87171', mult: 5.2, affix: [6, 6], sockets: 2, enchants: 2, runeSlots: 2, salv: 19 },
-  { key: 'genesis', name: '創世', color: '#b8860b', mult: 6.8, affix: [7, 7], sockets: 3, enchants: 3, runeSlots: 3, salv: 30 },
-  { key: 'godforged', name: '神鑄創世', color: '#f5c542', mult: 10, affix: [8, 8], sockets: 3, enchants: 3, runeSlots: 3, salv: 45 },
+  { key: 'genesis', name: '創世', color: '#b8860b', mult: 7, affix: [7, 7], sockets: 3, enchants: 3, runeSlots: 3, salv: 24.5 },
+  { key: 'mythicGodforged', baseRarity: 6, name: STR(2158), color: '#78bfff', mult: 8, affix: [7, 7], sockets: 3, enchants: 2, runeSlots: 3, salv: 28.5 },
+  { key: 'godforged', name: '神鑄創世', color: '#f5c542', mult: 11, affix: [8, 8], sockets: 3, enchants: 3, runeSlots: 3, salv: 45 },
   { key: 'chaos', name: '混沌', color: '#c084fc', mult: 15.3, affix: [9, 9], sockets: 4, enchants: 3, runeSlots: 4, salv: 67.5 },
-  { key: 'chaosGodforged', name: '神鑄混沌', color: '#ff6bcb', mult: 23, affix: [10, 10], sockets: 4, enchants: 3, runeSlots: 4, salv: 101.25 },
-  { key: 'mythicGodforged', baseRarity: 6, name: STR(2158), color: '#78bfff', mult: 7.8, affix: [7, 7], sockets: 2, enchants: 2, runeSlots: 2, salv: 28.5 }
+  { key: 'chaosGodforged', name: '神鑄混沌', color: '#ff6bcb', mult: 23, affix: [10, 10], sockets: 4, enchants: 3, runeSlots: 4, salv: 101.25 }
 ];
 var PASSIVE_MIN_RARITY = 5; // 傳說級（含）以上附帶傳奇特效
 var MAX_AFFIXES = 10; // 單件裝備詞條數安全硬上限（目前稀有度表最高 10 條）
 var EQUIP_TIER_SIZE = 50; // 裝備等級分段大小：來源等級 1~49 → 1 級裝，之後每 50 級一套（50/100/150…；equipmentTierLevel → formula.js §6）
 var REROLL_ESSENCE_LEVEL_DIVISOR = 50; // 洗煉精華費用的裝備等級除數（參數表「7-洗煉／精華費用」d）
-var REROLL_ESSENCE_COST = { 6: 9, 7: 14, 8: 20, 9: REROLL_CHAOS_ESSENCE_COST, 10: REROLL_CHAOS_GODFORGED_ESSENCE_COST }; // 神話／創世／神鑄與混沌系列洗煉精華費用
+var REROLL_ESSENCE_COST = { 6: 9, 7: 14, 9: 20, 10: REROLL_CHAOS_ESSENCE_COST, 11: REROLL_CHAOS_GODFORGED_ESSENCE_COST }; // 神話／創世／神鑄與混沌系列洗煉精華費用
 
 /* ---- 太古詞條與太古精華 ---- */
 // 太古詞條產生率表（2026-07-23 改版）：裝備產出時依「詞條數量」擲骰決定太古詞條條數，
@@ -150,7 +151,7 @@ var ANCIENT_COUNT_WEIGHTS = {
 var ANCIENT_ESSENCE_BOSS_BASE_RATE = 10;
 var ANCIENT_ESSENCE_BOSS_LEVEL_RATE = 2;
 var ANCIENT_ESSENCE_BOSS_RATE_CAP = 100;
-var ANCIENT_ESSENCE_SALVAGE_CHANCE = { 4: 0.5, 5: 1, 6: 10, 7: 100, 8: 100 };
+var ANCIENT_ESSENCE_SALVAGE_CHANCE = { 4: 0.5, 5: 1, 6: 10, 7: 100, 8: 10, 9: 100, 10: 0, 11: 0 };
 var AFFIX_MAX_VALUE_MULT = 1.2;       // 詞條最大值：一般詞條上限／基準值的倍率
 var ANCIENT_AFFIX_VALUE_MULT = 1.35;  // 太古倍率：太古詞條再乘的倍率
 var ANCIENT_LUCK_WEIGHT_MULT = 0.5;
@@ -657,9 +658,9 @@ var SLOT_BASENAMES = {
   ring: [STR(2292), STR(2293), STR(2294), STR(2295), STR(2296), STR(2297), STR(2298), STR(2299)],
   amulet: [STR(2300), STR(2301), STR(2302), STR(2303), STR(2304), STR(2305)]
 };
-var RARITY_PREFIX = [STR(974), STR(975), STR(976), STR(977), STR(978), STR(979), STR(980), STR(981), STR(982), STR(983), STR(984), STR(2159)];
+var RARITY_PREFIX = [STR(974), STR(975), STR(976), STR(977), STR(978), STR(979), STR(980), STR(981), STR(2159), STR(982), STR(983), STR(984)];
 // 新舊名稱共用同一辨識規則，讀檔與品質提升時先移除既有前綴。
-var RARITY_PREFIX_PATTERN = new RegExp('^(?:' + RARITY_PREFIX.join('|') + '|神鑄混沌的|混沌的|神鑄創世的|粗糙的|堅實的|精工的|奇異的|大師級|傳世的|神鑄的|創世的|普通的|精良的|稀有的|獨特的|史詩的|傳說的|神話的)');
+var RARITY_PREFIX_PATTERN = new RegExp('^(?:' + RARITY_PREFIX.join('|') + '|神鑄混沌的|混沌的|神鑄創世的|神鑄神話的|粗糙的|堅實的|精工的|奇異的|大師級|傳世的|神鑄的|創世的|普通的|精良的|稀有的|獨特的|史詩的|傳說的|神話的)');
 var ACCESSORY_SLOTS = ['ring', 'amulet'];
 
 /* ---- 神鑄系統（Divine Forge）----
@@ -727,7 +728,7 @@ var ASPD_BASE = 0.86;
 var ASPD_MIN = 0.2;
 var ASPD_CAP = 5;
 var BLOCK_DMG_RED_BASE = 30;
-var GODFORGED_IDX = 8;                       // 神鑄創世稀有度索引
+var GODFORGED_IDX = 9;                       // 神鑄創世稀有度索引
 var EQUIP_SET_UNLOCK_LEVELS = [1, 1, 1]; // 第 1/2/3 套裝備的解鎖等級（system_unlock 表；預設全解鎖）
 var EQUIP_SET_UNLOCK_REINCARNATIONS = [0, 0, 0]; // 第 1/2/3 套裝備的最低轉生數（預設全解鎖）
 var FORGE_UNLOCK_LEVEL = 1;               // 神鑄系統解鎖等級（條件一：等級 ≥ 此值）；解鎖後永久保留
@@ -1733,18 +1734,18 @@ function isZoneUnlocked(zoneKey) {
   if (zone.reqZone && zoneClearedStage(zone.reqZone) < (zone.reqStage || zoneMaxStage(zone.reqZone))) return false;
   return true;
 }
-/* 依地圖與關卡區間的掉落配置。每一列為 [min, max, 裝備0~10機率, gem1~5, 附魔書, 太古精華, 魔塵]。
+/* 依地圖與關卡區間的掉落配置。每一列為 [min, max, 裝備0~11機率, gem1~5, 附魔書, 太古精華, 魔塵]。
    以資料表集中管理，新增地圖或調整區間不需要改戰鬥公式。 */
-var ZONE_STAGE_DROP_PROFILES = {  desert: [[1,10,[25,15,10,0,0,0,0,0,0,0,0],[4,0.8,0.3,0,0],0,0,0],[11,49,[35,20,15,5,0,0,0,0,0,0,0],[4,0.8,0.3,0,0],1,0,0],[20,24,[0,0,0,0,2,0,0,0,0,0,0],[0,0,0,0,0],0,0,0],[25,49,[0,0,0,0,1,0,0,0,0,0,0],[0,0,0,0,0],0,0,0],[50,74,[40,30,20,10,1.5,0,0,0,0,0,0],[6,1.1,0.4,0,0],1,0,1],[75,100,[50,40,30,15,2.5,1,0,0,0,0,0],[8,1.4,0.5,0.1,0],2,0,1]],
-  Icefield: [[1,99,[50,40,30,15,5,0.5,0,0,0,0,0],[8,1.4,0.5,0.1,0],1,0,1],[100,124,[50,40,30,15,10,1.5,0.1,0,0,0,0],[10,2,1,0.5,0.1],2,1,1],[125,150,[50,40,30,15,10,3,0.25,0,0,0,0],[12,2,1,0.6,0.1],2,1,1]],
-  mist_forest: [[1,132,[50,40,30,15,5,0.5,0,0,0,0,0],[8,1.4,0.5,0.1,0],1,0,1],[133,166,[50,40,30,15,10,1.5,0.1,0,0,0,0],[10,2,1,0.5,0.1],2,1,1],[167,200,[50,40,30,15,10,3,0.25,0,0,0,0],[12,2,1,0.6,0.1],2,1,1]],
-  lava_mountain: [[1,124,[50,40,30,15,5,1,0,0,0,0,0],[8,1.4,0.5,0.1,0],1,0,1],[125,155,[50,40,30,15,10,1.5,0.1,0,0,0,0],[10,2,1,0.5,0.1],2,1,1],[156,218,[50,40,30,15,10,3,0.25,0,0,0,0],[12,2,1,0.6,0.1],3,2,1],[219,250,[50,40,30,15,10,3,0.35,0.1,0,0,0],[12,2,0.7,0.3,0.2],4,3,1]],
-  swamp: [[1,149,[50,40,30,15,5,1,0,0,0,0,0],[8,1.4,0.5,0.1,0],1,0,1],[150,186,[50,40,30,15,10,1.5,0.1,0,0,0,0],[10,2,1,0.5,0.1],2,1,1],[187,261,[50,40,30,15,10,3,0.25,0,0,0,0],[12,2,1,0.6,0.1],3,2,1],[262,300,[50,40,30,15,10,3,0.35,0.1,0,0,0],[12,2,0.7,0.3,0.2],4,3,1]],
-  thunder_peak: [[1,139,[50,40,30,15,5,1,0,0,0,0,0],[8,1.4,0.5,0.1,0],1,0,1],[140,209,[50,40,30,15,10,1.5,0.1,0,0,0,0],[10,2,1,0.5,0.1],2,1,1],[210,279,[50,40,30,15,10,3,0.2,0,0,0,0],[12,2,1,0.6,0.1],3,2,1],[280,314,[50,40,30,15,10,3,0.25,0.1,0,0,0],[12,2,0.7,0.3,0.2],4,3,1],[315,350,[50,40,30,15,10,3,0.3,0.1,0,0,0],[14,3,1,0.4,0.25],4,3,1]],
-  undead_mountains: [[1,159,[50,40,30,15,5,1,0,0,0,0,0],[8,1.4,0.5,0.1,0],1,0,1],[160,239,[50,40,30,15,10,1.5,0.1,0,0,0,0],[10,2,1,0.5,0.1],2,1,1],[240,319,[50,40,30,15,10,3,0.2,0,0,0,0],[12,2,1,0.6,0.1],3,2,1],[320,359,[50,40,30,15,10,3,0.25,0.1,0,0,0],[12,2,0.7,0.3,0.2],4,3,1],[360,400,[50,40,30,15,10,3,0.3,0.1,0,0,0],[14,3,1,0.4,0.25],4,3,1]],
-  god_battlefield: [[1,112,[53,48,47,10,3,1,0.08,0,0,0,0],[11,1.7,0.6,0.1,0.08],7,3,1],[113,225,[61,51,49,20,6,2,0.16,0,0,0,0],[14,2.4,0.8,0.2,0.16],9,4,1],[226,337,[69,54,51,30,9,3,0.24,0,0,0,0],[17,3.1,1,0.3,0.24],11,5,1],[338,412,[77,57,53,40,12,4,0.32,0,0,0,0],[20,3.8,1.2,0.4,0.32],13,6,1],[413,450,[77,57,53,40,12,4,0.32,2,0,1,0],[20,3.8,1.2,0.4,0.32],13,6,1]],
-  god_chaos: [[1,125,[61,56,55,10,3,1,0.08,0,0,0,0],[11,1.7,0.6,0.1,0.08],7,3,1],[126,250,[69,59,57,20,6,2,0.16,0,0,0,0],[14,2.4,0.8,0.2,0.16],9,4,1],[251,375,[77,62,59,30,9,3,0.24,0,0,0,0],[17,3.1,1,0.3,0.24],11,5,1],[376,392,[85,65,61,40,12,4,0.32,0,0,0,0],[20,3.8,1.2,0.4,0.32],13,6,1],[393,500,[85,65,61,40,12,4,0.32,2,0,1,0],[20,3.8,1.2,0.4,0.32],13,6,1]],
-  god_sanctuary: [[1,150,[69,64,63,10,3,1,0.08,0,0,0,0],[11,1.7,0.6,0.1,0.08],7,3,1],[151,300,[77,67,65,20,6,2,0.16,0,0,0,0],[14,2.4,0.8,0.2,0.16],9,4,1],[301,450,[85,70,67,30,9,3,0.24,0,0,0,0],[17,3.1,1,0.3,0.24],11,5,1],[451,600,[93,73,69,40,12,4,0.32,2,0,1,0],[20,3.8,1.2,0.4,0.32],13,6,1]]
+var ZONE_STAGE_DROP_PROFILES = {  desert: [[1,10,[25,15,10,0,0,0,0,0,0,0,0,0],[4,0.8,0.3,0,0],0,0,0],[11,49,[35,20,15,5,0,0,0,0,0,0,0,0],[4,0.8,0.3,0,0],1,0,0],[20,24,[0,0,0,0,2,0,0,0,0,0,0,0],[0,0,0,0,0],0,0,0],[25,49,[0,0,0,0,1,0,0,0,0,0,0,0],[0,0,0,0,0],0,0,0],[50,74,[40,30,20,10,1.5,0,0,0,0,0,0,0],[6,1.1,0.4,0,0],1,0,1],[75,100,[50,40,30,15,2.5,1,0,0,0,0,0,0],[8,1.4,0.5,0.1,0],2,0,1]],
+  Icefield: [[1,99,[50,40,30,15,5,0.5,0,0,0,0,0,0],[8,1.4,0.5,0.1,0],1,0,1],[100,124,[50,40,30,15,10,1.5,0.1,0,0,0,0,0],[10,2,1,0.5,0.1],2,1,1],[125,150,[50,40,30,15,10,3,0.25,0,0,0,0,0],[12,2,1,0.6,0.1],2,1,1]],
+  mist_forest: [[1,132,[50,40,30,15,5,0.5,0,0,0,0,0,0],[8,1.4,0.5,0.1,0],1,0,1],[133,166,[50,40,30,15,10,1.5,0.1,0,0,0,0,0],[10,2,1,0.5,0.1],2,1,1],[167,200,[50,40,30,15,10,3,0.25,0,0,0,0,0],[12,2,1,0.6,0.1],2,1,1]],
+  lava_mountain: [[1,124,[50,40,30,15,5,1,0,0,0,0,0,0],[8,1.4,0.5,0.1,0],1,0,1],[125,155,[50,40,30,15,10,1.5,0.1,0,0,0,0,0],[10,2,1,0.5,0.1],2,1,1],[156,218,[50,40,30,15,10,3,0.25,0,0,0,0,0],[12,2,1,0.6,0.1],3,2,1],[219,250,[50,40,30,15,10,3,0.35,0.1,0,0,0,0],[12,2,0.7,0.3,0.2],4,3,1]],
+  swamp: [[1,149,[50,40,30,15,5,1,0,0,0,0,0,0],[8,1.4,0.5,0.1,0],1,0,1],[150,186,[50,40,30,15,10,1.5,0.1,0,0,0,0,0],[10,2,1,0.5,0.1],2,1,1],[187,261,[50,40,30,15,10,3,0.25,0,0,0,0,0],[12,2,1,0.6,0.1],3,2,1],[262,300,[50,40,30,15,10,3,0.35,0.1,0,0,0,0],[12,2,0.7,0.3,0.2],4,3,1]],
+  thunder_peak: [[1,139,[50,40,30,15,5,1,0,0,0,0,0,0],[8,1.4,0.5,0.1,0],1,0,1],[140,209,[50,40,30,15,10,1.5,0.1,0,0,0,0,0],[10,2,1,0.5,0.1],2,1,1],[210,279,[50,40,30,15,10,3,0.2,0,0,0,0,0],[12,2,1,0.6,0.1],3,2,1],[280,314,[50,40,30,15,10,3,0.25,0.1,0,0,0,0],[12,2,0.7,0.3,0.2],4,3,1],[315,350,[50,40,30,15,10,3,0.3,0.1,0,0,0,0],[14,3,1,0.4,0.25],4,3,1]],
+  undead_mountains: [[1,159,[50,40,30,15,5,1,0,0,0,0,0,0],[8,1.4,0.5,0.1,0],1,0,1],[160,239,[50,40,30,15,10,1.5,0.1,0,0,0,0,0],[10,2,1,0.5,0.1],2,1,1],[240,319,[50,40,30,15,10,3,0.2,0,0,0,0,0],[12,2,1,0.6,0.1],3,2,1],[320,359,[50,40,30,15,10,3,0.25,0.1,0,0,0,0],[12,2,0.7,0.3,0.2],4,3,1],[360,400,[50,40,30,15,10,3,0.3,0.1,0,0,0,0],[14,3,1,0.4,0.25],4,3,1]],
+  god_battlefield: [[1,112,[53,48,47,10,3,1,0.08,0,0,0,0,0],[11,1.7,0.6,0.1,0.08],7,3,1],[113,225,[61,51,49,20,6,2,0.16,0,0,0,0,0],[14,2.4,0.8,0.2,0.16],9,4,1],[226,337,[69,54,51,30,9,3,0.24,0,0,0,0,0],[17,3.1,1,0.3,0.24],11,5,1],[338,412,[77,57,53,40,12,4,0.32,0,0,0,0,0],[20,3.8,1.2,0.4,0.32],13,6,1],[413,450,[77,57,53,40,12,4,0.32,2,0,0,1,0],[20,3.8,1.2,0.4,0.32],13,6,1]],
+  god_chaos: [[1,125,[61,56,55,10,3,1,0.08,0,0,0,0,0],[11,1.7,0.6,0.1,0.08],7,3,1],[126,250,[69,59,57,20,6,2,0.16,0,0,0,0,0],[14,2.4,0.8,0.2,0.16],9,4,1],[251,375,[77,62,59,30,9,3,0.24,0,0,0,0,0],[17,3.1,1,0.3,0.24],11,5,1],[376,392,[85,65,61,40,12,4,0.32,0,0,0,0,0],[20,3.8,1.2,0.4,0.32],13,6,1],[393,500,[85,65,61,40,12,4,0.32,2,0,0,1,0],[20,3.8,1.2,0.4,0.32],13,6,1]],
+  god_sanctuary: [[1,150,[69,64,63,10,3,1,0.08,0,0,0,0,0],[11,1.7,0.6,0.1,0.08],7,3,1],[151,300,[77,67,65,20,6,2,0.16,0,0,0,0,0],[14,2.4,0.8,0.2,0.16],9,4,1],[301,450,[85,70,67,30,9,3,0.24,0,0,0,0,0],[17,3.1,1,0.3,0.24],11,5,1],[451,600,[93,73,69,40,12,4,0.32,2,0,0,1,0],[20,3.8,1.2,0.4,0.32],13,6,1]]
 };
 var ZONE_STAGE_DROP_TABLE = {};
 Object.keys(ZONE_STAGE_DROP_PROFILES).forEach(function (zoneKey) {
@@ -2125,13 +2126,13 @@ function gemShopPrice(lv) { // 商店標價：查上方 GEM_SHOP_TABLE（刷新�
 /* ---- 高塔物品掉落表 ----
    野外裝備與材料掉落統一由 ZONE_STAGE_DROP_PROFILES／Zone_Stage_Drops.csv 管理。 */
 var BOSS_DROP_TABLE = [    // 高塔 BOSS：依樓層 7 檔（與掉落表加總列逐欄核對：165/232/256/323/538/700/715）
-  { min: 31, rates: [0, 0, 0, 0, 400, 250, 100, 10] },   // 30級含以上（715%）
-  { min: 26, rates: [0, 0, 0, 0, 350, 200, 50, 5] },   // 26~30（700%）
-  { min: 21, rates: [0, 0, 0, 0, 200, 150, 25, 1] },    // 21~25（538%）
-  { min: 16, rates: [0, 0, 0, 150, 150, 100, 10, 0] },  // 16~20（322.5%）
-  { min: 11, rates: [0, 0, 0, 100, 100, 50, 5, 0] },    // 11~15（256%）
-  { min: 6, rates: [0, 0, 100, 100, 20, 10, 2, 0] },    // 6~10（232%）
-  { min: 1, rates: [0, 0, 100, 50, 10, 5, 0, 0] }     // 1~5（165%）
+  { min: 31, rates: [0, 0, 0, 0, 400, 250, 100, 10, 0, 0, 0, 0] },   // 30級含以上（715%）
+  { min: 26, rates: [0, 0, 0, 0, 350, 200, 50, 5, 0, 0, 0, 0] },   // 26~30（700%）
+  { min: 21, rates: [0, 0, 0, 0, 200, 150, 25, 1, 0, 0, 0, 0] },    // 21~25（538%）
+  { min: 16, rates: [0, 0, 0, 150, 150, 100, 10, 0, 0, 0, 0, 0] },  // 16~20（322.5%）
+  { min: 11, rates: [0, 0, 0, 100, 100, 50, 5, 0, 0, 0, 0, 0] },    // 11~15（256%）
+  { min: 6, rates: [0, 0, 100, 100, 20, 10, 2, 0, 0, 0, 0, 0] },    // 6~10（232%）
+  { min: 1, rates: [0, 0, 100, 50, 10, 5, 0, 0, 0, 0, 0, 0] }     // 1~5（165%）
 ];
 /* 掉落表取用/擲骰公式（dropRatesFor、rollDropCount）→ js/formula.js §5
    怪物成長曲線 monsterStatsFor → js/formula.js §4

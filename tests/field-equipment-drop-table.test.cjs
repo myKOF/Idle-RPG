@@ -39,11 +39,11 @@ function readZoneDrops() {
     zone: row[idx['地圖識別碼']],
     min: Number(row[idx['最低關卡']]),
     max: Number(row[idx['最高關卡']]),
-    rates: row[idx['裝備掉落率（品質R0至R10）']].split('|').map(Number)
+    rates: row[idx['裝備掉落率（品質R0至R11）']].split('|').map(Number)
   }));
 }
 
-test('地圖掉落表集中管理 R0～R10 裝備掉落率', () => {
+test('地圖掉落表集中管理 R0～R11 裝備掉落率', () => {
   const context = loadContext();
   const config = readZoneDrops();
   const table = plain(context.ZONE_STAGE_DROP_TABLE);
@@ -52,7 +52,7 @@ test('地圖掉落表集中管理 R0～R10 裝備掉落率', () => {
   assert.equal(config.length, 44);
   assert.deepEqual(Object.keys(table), ['desert', 'Icefield', 'mist_forest', 'lava_mountain', 'swamp', 'thunder_peak', 'undead_mountains', 'god_battlefield', 'god_chaos', 'god_sanctuary']);
   for (const row of config) {
-    assert.equal(row.rates.length, 11, row.zone + ' ' + row.min + ' 應有 R0～R10 共 11 欄');
+    assert.equal(row.rates.length, 12, row.zone + ' ' + row.min + ' 應有 R0～R11 共 12 欄');
     assert.deepEqual(
       table[row.zone].find((item) => item.min === row.min && item.max === row.max).equipmentRates,
       row.rates,
@@ -61,23 +61,23 @@ test('地圖掉落表集中管理 R0～R10 裝備掉落率', () => {
   }
 });
 
-test('地圖／關卡邊界查表與 CSV 一致，混沌 R9 由 Zone_Stage_Drops 控制', () => {
+test('地圖／關卡邊界查表與 CSV 一致，混沌 R10 由 Zone_Stage_Drops 控制', () => {
   const context = loadContext();
   const config = readZoneDrops();
   for (const row of config) {
     const expected = config
       .filter((candidate) => candidate.zone === row.zone && row.min >= candidate.min && row.min <= candidate.max)
-      .reduce((sum, candidate) => sum.map((value, index) => value + candidate.rates[index]), Array(11).fill(0));
+      .reduce((sum, candidate) => sum.map((value, index) => value + candidate.rates[index]), Array(12).fill(0));
     assert.deepEqual(
       plain(context.fieldDropRatesFor(row.min, 1, row.zone)),
       expected,
       row.zone + ' 關卡 ' + row.min + ' 查表錯誤'
     );
   }
-  assert.equal(context.fieldDropRatesFor(412, 1, 'god_battlefield')[9], 0);
-  assert.equal(context.fieldDropRatesFor(413, 1, 'god_battlefield')[9], 1);
-  assert.equal(context.fieldDropRatesFor(393, 1, 'god_chaos')[9], 1);
-  assert.equal(context.fieldDropRatesFor(451, 1, 'god_sanctuary')[9], 1);
+  assert.equal(context.fieldDropRatesFor(412, 1, 'god_battlefield')[10], 0);
+  assert.equal(context.fieldDropRatesFor(413, 1, 'god_battlefield')[10], 1);
+  assert.equal(context.fieldDropRatesFor(393, 1, 'god_chaos')[10], 1);
+  assert.equal(context.fieldDropRatesFor(451, 1, 'god_sanctuary')[10], 1);
 });
 
 test('重疊的地圖／關卡列按裝備、寶石與材料欄位逐欄相加', () => {

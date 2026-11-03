@@ -105,7 +105,7 @@
 // v67：封魔塔自動推進設定與勝利接續下一層，tower 指令6→7。
 // v68：forge.placeItem 可於精鑄／刻印原子移入目前穿戴裝備，同步equip／header。
 // v69：header.systemUnlocks 與 ui.markUnlockSeen；已讀提示隨存檔保存。
-var WORKER_PROTOCOL_VERSION = 69;
+var WORKER_PROTOCOL_VERSION = 70;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -428,7 +428,7 @@ var COMMANDS = {
   'forge.setOperation': { fn:'forgeSetOperation', args:{ mode:'str' }, limit:{ mode:{ enum:['equip','ancient','gem','imprint'] } }, dirty:['forge','inv','gems'] },
   'forge.setStones':    { fn:'forgeSetStones', args:{ count:'int' }, limit:{ count:{ min:0 } }, dirty:['forge'] },
   'forge.start':        { fn:'startForge', args:{}, dirty:['forge','inv','gems','header'] },
-  'forge.setQuality':   { fn:'forgeSetQuality', args:{ rarity:'int' }, limit:{ rarity:{ enum:[6,7,9] } }, dirty:['forge','inv'] },
+  'forge.setQuality':   { fn:'forgeSetQuality', args:{ rarity:'int' }, limit:{ rarity:{ enum:[6,7,10] } }, dirty:['forge','inv'] },
   'forge.autoFill':     { fn:'forgeAutoFill', args:{}, dirty:['forge','inv'] },
   'forge.setAuto':      { fn:'forgeSetAuto', args:{ on:'bool' }, dirty:['forge','inv','header'] },
 

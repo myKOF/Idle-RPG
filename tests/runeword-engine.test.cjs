@@ -104,8 +104,8 @@ test('符文孔放滿：放不下的被拒；孔數隨稀有度（RARITIES.runeS
   const counts = c.RARITIES.map((r, i) => c.runeSlotCountFor({ rarity: i }));
   assert.deepEqual(plain(counts), plain(c.RARITIES.map((r) => r.runeSlots)), '一般裝備的孔數就是稀有度表的 runeSlots');
   assert.ok(Math.max(...counts) <= c.RUNE_SETTINGS.maxSlots);
-  const ordered=Array.from(c.RARITIES,(r,i)=>({rank:c.rarityRank(i),n:counts[i]})).sort((a,b)=>a.rank-b.rank);
-  assert.ok(ordered.every((r,i)=>!i||r.n>=ordered[i-1].n),'稀有度越高孔數不減');
+  const ordered=Array.from(c.RARITIES,(r,i)=>({rank:r.baseRarity === undefined ? i : r.baseRarity + 0.5,n:counts[i]})).sort((a,b)=>a.rank-b.rank);
+  assert.ok(ordered.every((r,i)=>!i||r.n>=ordered[i-1].n),'同家族的品質越高孔數不減（神鑄神話依神話家族）');
 });
 
 test('eraseRune 抹除符文：扣碎片與精華、符文不退還、孔恢復為空、資源不足被擋；分解裝備時鑲著的符文自動取回；寶石鑲孔的操作不碰符文', () => {

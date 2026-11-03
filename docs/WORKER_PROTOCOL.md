@@ -1,4 +1,6 @@
-# Worker 協議 v69
+# Worker 協議 v70
+
+v70（2026-11-03 裝備品質重編）：所有裝備／篩選／排序／拆解門檻改用R0～R11強度順序：普通、精良、稀有、獨特、史詩、傳說、神話、創世、神鑄神話、神鑄創世、混沌、神鑄混沌。`forge.setQuality`只接受`6|7|10`，神鑄產物對應`8|9|11`；神鑄候選投影同步。指令與面板數不變。存檔`equipmentRarityVersion=2`，缺欄先將舊8→9、9→10、10→11、11→8，再補預設和正規化；裝備、法陣結果、熔爐品質陣列／舊actions、拆解設定皆一併轉換，相同引用只轉一次。品質數值欄位及物品ID保持。單件拆解在移出背包前拒絕上鎖裝備，沿用String2163。
 
 v69（2026-11-03 解鎖提示）：新增 `ui.markUnlockSeen({id:string})`（指令95→96），Worker以純共載system-unlocks索引驗證ID與目前正式解鎖條件，只記錄可提示且已開放的項目。`G.uiUnlockSeen={id:true}`隨存檔保存，新局空表、舊存檔由mergeDefaults補空；header新增`systemUnlocks={available:string[],seen:string[]}`，只投影登記的ID。主端不修改G、不另建localStorage進度；各內部頁籤獨立已讀，父圖標彙總尚未讀頁籤。`forgeUnlocked`事件不再帶modal，不顯示開放公告彈窗；轉生前確認與其解鎖預告保持。缺少新header欄位時主端不提示。
 

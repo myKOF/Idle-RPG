@@ -14,23 +14,23 @@ function loadContext() {
   return context;
 }
 
-test('混沌裝備是地圖掉落表中的 R9，不再使用特殊掉落常數', () => {
+test('混沌裝備是地圖掉落表中的 R10，不再使用特殊掉落常數', () => {
   const context = loadContext();
 
-  assert.equal(context.fieldDropRatesFor(412, 1, 'god_battlefield')[9], 0);
-  assert.equal(context.fieldDropRatesFor(413, 1, 'god_battlefield')[9], 1);
-  assert.equal(context.fieldDropRatesFor(393, 1, 'god_chaos')[9], 1);
-  assert.equal(context.fieldDropRatesFor(451, 1, 'god_sanctuary')[9], 1);
+  assert.equal(context.fieldDropRatesFor(412, 1, 'god_battlefield')[10], 0);
+  assert.equal(context.fieldDropRatesFor(413, 1, 'god_battlefield')[10], 1);
+  assert.equal(context.fieldDropRatesFor(393, 1, 'god_chaos')[10], 1);
+  assert.equal(context.fieldDropRatesFor(451, 1, 'god_sanctuary')[10], 1);
   assert.equal(typeof context.CHAOS_FIELD_DROP_PCT, 'undefined');
 });
 
 test('新版混沌神鑄基礎15%、每石5%，至100%不多收',()=>{
  const c=loadContext();
  for(const [n,total,used] of [[0,15,0],[1,20,1],[17,100,17],[99,100,17]]){
-  const info=c.divineForgeRateInfo({operation:'equip',slots:[{rarity:9}],stones:n},100);
+  const info=c.divineForgeRateInfo({operation:'equip',slots:[{rarity:10}],stones:n},100);
   assert.equal(info.total,total);assert.equal(info.stones,used);assert.equal(info.cost,5e8);
  }
- assert.equal(c.isForgeableEquipmentRarity(9),true);assert.equal(c.isGodforgedRarity(10),true);
+ assert.equal(c.isForgeableEquipmentRarity(10),true);assert.equal(c.isGodforgedRarity(11),true);
 });
 
 test('chaos forge parameters are present in the CSV source of truth', () => {

@@ -43,7 +43,7 @@ test('護手洗出命中率原句從本機解析到執行，已有則保留、�
 function replacementFixture(chaosSlot = 'ring2') {
   const c = loadContext();
   vm.runInContext(fs.readFileSync(path.join(root, 'js/ai-key-setting.js'), 'utf8'), c);
-  const chaos = c.makeEquipment(500, { rarity: 9, level: 500, slot: 'ring' });
+  const chaos = c.makeEquipment(500, { rarity: 10, level: 500, slot: 'ring' });
   chaos.affixes = [
     { key: 'matkFlat', roll: 440, ancient: false },
     { key: 'fireDmg', roll: 620, ancient: false },
@@ -56,7 +56,7 @@ function replacementFixture(chaosSlot = 'ring2') {
   c.G.equipmentSets[0][chaosSlot] = chaos;
   c.G.equipmentSets[0][chaosSlot === 'ring' ? 'ring2' : 'ring'] = other;
   c.G.equipView = 1;
-  c.G.equipmentSets[1].ring = c.makeEquipment(500, { rarity: 9, level: 500, slot: 'ring' });
+  c.G.equipmentSets[1].ring = c.makeEquipment(500, { rarity: 10, level: 500, slot: 'ring' });
   const commands = c.AiKeySetting.parseFastPath(replacePrompt);
   assert.deepEqual(Array.from(commands), ['modequip worn:ring:chaos replace 物理攻擊 cdr ancient']);
   return { c, chaos, other, command: commands[0] };
@@ -83,7 +83,7 @@ test('品質無匹配／兩枚混沌／來源缺少或非太古／重名太古�
   for (const scenario of ['missing-item', 'two-items', 'missing-affix', 'normal-affix', 'duplicate-source', 'existing-destination']) {
     const { c, chaos, other, command } = replacementFixture();
     if (scenario === 'missing-item') chaos.rarity = 5;
-    if (scenario === 'two-items') other.rarity = 9;
+    if (scenario === 'two-items') other.rarity = 10;
     if (scenario === 'missing-affix') chaos.affixes[2].key = 'hpFlat';
     if (scenario === 'normal-affix') chaos.affixes[2].ancient = false;
     if (scenario === 'duplicate-source') chaos.affixes[4].ancient = true;

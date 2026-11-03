@@ -47,7 +47,7 @@ test('四種功能轉數與未解鎖指令不可繞過；切換完整退料',()=
   assert.equal(c.forgeSetOperation('gem'),null); assert.ok(c.forgeSetOperation('imprint'));
   c.G.player.reincarnations=5; assert.equal(c.forgeSetOperation('imprint'),null);
 });
-for(const [rarity,output,base,stones,cost] of [[6,11,35,13,2e7],[7,8,25,15,1e8],[9,10,15,17,5e8]]) {
+for(const [rarity,output,base,stones,cost] of [[6,8,35,13,2e7],[7,9,25,15,1e8],[10,11,15,17,5e8]]) {
   test('裝備神鑄品質 '+rarity+'：上限100%、對應產物、金幣與石頭精確扣款',()=>{
     const c=env(); const items=fill(c,rarity); items[0].level=300;
     c.forgeSetStones(999); const info=c.forgeRateInfo();
@@ -61,7 +61,7 @@ for(const [rarity,output,base,stones,cost] of [[6,11,35,13,2e7],[7,8,25,15,1e8],
   });
 }
 test('不接受傳奇、已神鑄、混品質與上鎖；缺料／缺錢不消耗',()=>{
-  const c=env(); for(const r of [5,8,10,11]) assert.ok(c.forgePlaceItem(gear(c,r).id));
+  const c=env(); for(const r of [5,8,9,11]) assert.ok(c.forgePlaceItem(gear(c,r).id));
   const lock=gear(c);lock.locked=true;assert.ok(c.forgePlaceItem(lock.id));
   assert.equal(c.forgePlaceItem(gear(c).id),null);assert.ok(c.forgePlaceItem(gear(c,7).id));
   const before=JSON.stringify(c.G);assert.ok(c.doForge());assert.equal(JSON.stringify(c.G),before);
@@ -82,7 +82,7 @@ test('太古精鑄只改一個非太古位置，滿太古拒絕；神鑄品質�
   for(const rarity of [6,11,7,8,9,10]) {
     const c=env();c.forgeSetOperation('ancient');const it=gear(c,rarity,1);
     const keys=it.affixes.map(a=>a.key);c.forgePlaceItem(it.id);
-    assert.equal(c.forgeRateInfo().base,rarity===6||rarity===11?40:rarity===7||rarity===8?30:20);
+    assert.equal(c.forgeRateInfo().base,rarity===6||rarity===8?40:rarity===7||rarity===9?30:20);
     c.forgeSetStones(999);assert.equal(c.doForge(),null);
     assert.equal(it.affixes.filter(a=>a.ancient).length,2);
     assert.deepEqual(it.affixes.map(a=>a.key),keys);
@@ -168,11 +168,11 @@ test('舊待製作法陣完整退還且遷移冪等，舊專屬特效不再生�
   it.godPassives=[{key:'dragonBlood',roll:10000}];c.normalizeItemValueSources(it);
   assert.equal(it.godPassives,undefined);
 });
-test('刻印額外詞條與普通詞條使用同一評分乘區，品質排序按階序而非追加ID',()=>{
+test('刻印額外詞條與普通詞條使用同一評分乘區，品質排序依新強度階序',()=>{
   const c=env(),it=gear(c),a={key:'atkFlat',roll:500,ancient:false};
   it.affixes=[];it.imprint={kind:'extraAffix',affix:a};const imprinted=c.itemScore(it);
   delete it.imprint;it.affixes=[a];assert.equal(c.itemScore(it),imprinted);
-  assert.ok(c.rarityRank(11)>c.rarityRank(6));assert.ok(c.rarityRank(11)<c.rarityRank(7));
+  assert.ok(c.rarityRank(8)>c.rarityRank(7));assert.ok(c.rarityRank(8)<c.rarityRank(9));
 });
 test('實際migrateSave在補預設值後仍辨識舊神鑄，完整退還一次',()=>{
   const c=env(),it=gear(c);const old=plain(c.G);old.inventory=[];
@@ -193,8 +193,8 @@ test('正式Worker指令與面板：三秒結算與持久化',()=>{
   assert.equal(e.panel('forge').rate.total,100);
   assert.ok(!c.runCommand('forge.start',{}).err);assert.equal(c.G.inventory.length,0);
   e.stepSeconds(2.9);assert.equal(c.G.inventory.length,0);
-  e.stepSeconds(.1);assert.equal(c.G.inventory[0].rarity,11);
+  e.stepSeconds(.1);assert.equal(c.G.inventory[0].rarity,8);
   assert.equal(c.runCommand('forge.setAutoFill',{on:true}).ok,false);
   const loaded=createEngine({seed:8}).boot(JSON.parse(e.saveJson()));
-  assert.equal(loaded.ctx.G.inventory[0].rarity,11);
+  assert.equal(loaded.ctx.G.inventory[0].rarity,8);
 });

@@ -85,6 +85,7 @@ function newGameState() {
     legacySkillRemovalV1: true, // 舊版技能系統移除：清除舊技能／融合技、任務進度索引平移
     powerThreatV1: true, // 威能十級制
 
+    equipmentRarityVersion: 2, // R0～R11 強度排序版本
     savedAt: Date.now(),
     player: {
       level: 1, xp: 0,
@@ -131,7 +132,7 @@ function newGameState() {
       god_sanctuary: { current: 1, best: 1, cleared: 0 }
     },
     factory: {
-      filter: { actions: ['salvage', 'keep', 'keep', 'keep', 'keep', 'keep', 'keep', 'keep', 'keep'], smartSalvage: false },
+      filter: { actions: RARITIES.map(function (r, i) { return i === 0 ? 'salvage' : 'keep'; }), smartSalvage: false },
       autoEquip: true,
       salvage: {},
       synth: { enabled: false, mergeEnabled: true, hybridEnabled: true, minGemLevel: 1, bookChoice: 'any' },

@@ -294,6 +294,7 @@ test('js/gm_exec.js 的 gmRarity 支援中文名與 godforge/chaosGodforged 等�
       { key: 'legendary', name: '傳說', affix: [5, 5], sockets: 2, runeSlots: 2 },
       { key: 'mythic', name: '神話', affix: [6, 6], sockets: 2, runeSlots: 2 },
       { key: 'genesis', name: '創世', affix: [7, 7], sockets: 3, runeSlots: 3 },
+      { key: 'mythicGodforged', name: '神鑄神話', affix: [7, 7], sockets: 2, runeSlots: 2 },
       { key: 'godforged', name: '神鑄創世', affix: [8, 8], sockets: 3, runeSlots: 3 },
       { key: 'chaos', name: '混沌', affix: [9, 9], sockets: 4, runeSlots: 4 },
       { key: 'chaosGodforged', name: '神鑄混沌', affix: [10, 10], sockets: 4, runeSlots: 4 }

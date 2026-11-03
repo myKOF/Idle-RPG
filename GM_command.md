@@ -86,7 +86,7 @@ socketall [寶石等級(1~10)]
 - `socketall 10`：將身上穿戴的 13 件裝備所有寶石插槽填滿 Lv.10 隨機寶石，若有符文插槽亦同步補滿高等符文。
 - `socketall 5`：全身鑲滿 Lv.5 寶石。
 
-品質名稱支援中文（普通、精良、稀有、獨特、史詩、傳說、神話、創世、神鑄創世、混沌、神鑄混沌）及常見別名（`godforge` ➔ 神鑄創世, `chaos` ➔ 混沌, `chaosGodforged`/`godforge_chaos` ➔ 神鑄混沌）。
+品質名稱支援中文（普通、精良、稀有、獨特、史詩、傳說、神話、創世、神鑄神話、神鑄創世、混沌、神鑄混沌）及常見別名（`godforge` ➔ 神鑄創世, `chaos` ➔ 混沌, `chaosGodforged`/`godforge_chaos` ➔ 神鑄混沌）。
 
 ## 3. 貨幣與材料
 
@@ -307,9 +307,10 @@ equip 裝備品質 等級 [部位] [數量] （加裝備 / 品質 key、數字�
 | 5 | `legendary` | 傳說 |
 | 6 | `mythic` | 神話 |
 | 7 | `genesis` | 創世 |
-| 8 | `godforged` | 神鑄創世 |
-| 9 | `chaos` | 混沌 |
-| 10 | `chaosGodforged` | 神鑄混沌 |
+| 8 | `mythicGodforged` | 神鑄神話 |
+| 9 | `godforged` | 神鑄創世 |
+| 10 | `chaos` | 混沌 |
+| 11 | `chaosGodforged` | 神鑄混沌 |
 
 品質填 `any` 時，每件裝備會獨立隨機抽取任一品質。
 
@@ -377,7 +378,7 @@ orb          = 水晶球（副手武器，僅副手）
 - 創世品質 (genesis / 7)：
   equip genesis 100 weapon 3 （發放 3 件 100 級創世品質主武器）
   或：equip 7 100 weapon 3
-- 神鑄創世品質 (godforged / 8)：
+- 神鑄創世品質 (godforged / 9)：
   equip godforged 100 weapon 3 （發放 3 件 100 級神鑄創世品質主武器）
   或：equip 8 100 weapon 3
 ```
@@ -404,7 +405,7 @@ equipset 品質 [等級] [強化等級] [太古數] [wear/inv] （指定品質�
 
 別名：`suit`、`set`、`fullset`、`full_set`、`equip_set`、`gearset`、`gear_set`
 
-- **品質**：可輸入英文 key（如 `common`、`legendary`、`mythic`、`genesis`、`godforged`、`chaos`、`chaosGodforged`）、數字索引（`0`～`10`）、中文名稱（如 `神話`、`創世`、`神鑄創世`）或 `any`（每件隨機品質）。
+- **品質**：可輸入英文 key（如 `common`、`legendary`、`mythic`、`genesis`、`godforged`、`chaos`、`chaosGodforged`）、數字索引（`0`～`11`）、中文名稱（如 `神話`、`創世`、`神鑄創世`）或 `any`（每件隨機品質）。
 - **等級**（可選）：若省略，預設採用玩家當前等級（或關卡等級）。
 - **強化等級**（可選）：整套裝備的強化等級（如 `50`、`100`，預設 `0`）。
 - **太古數**（可選）：每件裝備必帶的太古詞條數量（如 `4`，預設 `0`）。
@@ -709,7 +710,7 @@ set_stage 8 300 （將最高關卡設為太古戰場第 300 階，保持轉生�
 reincarnation 轉生次數 （設定轉生次數 / 目標轉生次數 0~10）
 ```
 
-轉生次數可輸入 `0`～`10`。別名：`reincarnate`、`turn`。此指令只切換轉生次數，不重置等級、經驗或資源；會立即刷新天賦解鎖、技能上限與屬性。高塔戰鬥中不可執行。
+轉生次數可輸入 `0`～`11`。別名：`reincarnate`、`turn`。此指令只切換轉生次數，不重置等級、經驗或資源；會立即刷新天賦解鎖、技能上限與屬性。高塔戰鬥中不可執行。
 
 範例：
 

@@ -65,20 +65,20 @@
       if (RARITIES[i].name === raw || (RARITIES[i].name && RARITIES[i].name.toLowerCase() === key)) return i;
     }
     var aliases = {
-      'godforge': 8,
-      'godforged': 8,
-      '神鑄': 8,
-      '神鑄創世': 8,
+      'godforge': 9,
+      'godforged': 9,
+      '神鑄': 9,
+      '神鑄創世': 9,
       'genesis': 7,
       '創世': 7,
-      'chaos': 9,
-      '混沌': 9,
-      'chaosgodforged': 10,
-      'chaos_godforged': 10,
-      'godforge_chaos': 10,
-      'godforged_chaos': 10,
-      'godforgechaos': 10,
-      '神鑄混沌': 10
+      'chaos': 10,
+      '混沌': 10,
+      'chaosgodforged': 11,
+      'chaos_godforged': 11,
+      'godforge_chaos': 11,
+      'godforged_chaos': 11,
+      'godforgechaos': 11,
+      '神鑄混沌': 11
     };
     if (aliases[key] !== undefined) return aliases[key];
     return null;

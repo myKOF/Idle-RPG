@@ -464,7 +464,7 @@ function makeEquipment(stage, opts) {
     rarity: rarity,
     level: lvl,
     name: RARITY_PREFIX[rarity] + pick(weaponType ? WEAPON_TYPES[weaponType].basenames : SLOT_BASENAMES[slot]),
-    affixes: rollAffixes(affixCount, rarity === 11 ? 6 : rarity, slot, ancientSet, undefined, lvl),
+    affixes: rollAffixes(affixCount, rarity === 8 ? 6 : rarity, slot, ancientSet, undefined, lvl),
     passive: null,
     enchant: null,   // { key, val }
     sockets: [],     // 寶石插槽 [{type, level}|null, ...]

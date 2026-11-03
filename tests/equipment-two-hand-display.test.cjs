@@ -32,7 +32,7 @@ test('雙手武器在副手欄顯示同一把武器，但仍以視覺 duplicate 
       weapon: { icon: 'icon_weapon.png', emoji: '⚔️' },
       weapon2: { icon: 'icon_weapon.png', emoji: '⚔️' }
     },
-    GODFORGED_IDX: 8,
+    GODFORGED_IDX: 9,
     RARITIES: Array.from({ length: 12 }, (_, i) => ({ color: 'rarity-' + i })),
     uiEquipPanelSnapshot: () => ({ equipView: 0, equipActive: 0, sets: [{ weapon: twoHand, weapon2: null }] }),
     uiHeaderPanelSnapshot: () => ({ player: {} }),
@@ -61,7 +61,7 @@ test('雙手武器在副手欄顯示同一把武器，但仍以視覺 duplicate 
   assert.doesNotMatch(html, /slot-weapon2[^>]*twohand-occupied/);
   assert.equal((html.match(/雙手共用/g) || []).length, 1);
   assert.match(html, /slot-weapon2[\s\S]*twohand-shared-tag/);
-  for (const [base, forged] of [[6, 11], [7, 8], [9, 10]]) {
+  for (const [base, forged] of [[6, 8], [7, 9], [10, 11]]) {
     twoHand.rarity = base;
     context.renderEquip();
     const original = equipGrid.innerHTML;

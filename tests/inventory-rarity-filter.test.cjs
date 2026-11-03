@@ -21,7 +21,7 @@ test('背包品質篩選功能介面與邏輯驗證', () => {
   assert.match(html, /value="5"[^>]*>傳說<\/option>/);
   assert.match(html, /value="6"[^>]*>神話<\/option>/);
   assert.match(html, /value="7"[^>]*>創世<\/option>/);
-  assert.match(html, /value="8"[^>]*>神鑄創世<\/option>/);
+  assert.match(html, /value="9"[^>]*>神鑄創世<\/option>/);
 
   // 2. 驗證 js/ui.js 中有讀取篩選下拉選單並過濾裝備顯示的邏輯
   assert.match(ui, /var\s+filterSelect\s*=\s*\$id\('inv-rarity-filter'\);/);

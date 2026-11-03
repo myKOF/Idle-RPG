@@ -32,7 +32,7 @@ function prepare(c, mode, rarity) {
   assert.equal(cmd(c, 'autoFill'), null);
 }
 for (const mode of ['ancient', 'imprint', 'gem']) {
-  for (const [rarity, max, output] of [[6, 13, 11], [7, 15, 8], [9, 17, 10]]) {
+  for (const [rarity, max, output] of [[6, 13, 8], [7, 15, 9], [10, 17, 11]]) {
     test(mode + '投入50顆後切回品質' + rarity + '：顯示／實際／連續偏好同為' + max + '且可立即開始', () => {
       const { e, c } = setup(); prepare(c, mode, rarity);
       assert.equal(e.panel('forge').rate.stones, max);
@@ -64,7 +64,7 @@ test('既有已卡住的50顆選取，直接按開始按目前配方13顆修復�
     assert.equal(c.G.forge.stones, 13); assert.equal(c.G.forge.stonePreference, 13);
     e.stepSeconds(3);
     assert.equal(c.G.player.dust, dust - 13);
-    assert.equal(c.G.inventory.filter(it => it.rarity === 11).length, 1);
+    assert.equal(c.G.inventory.filter(it => it.rarity === 8).length, 1);
   }
 });
 test('配方上限同步不將庫存不足當成減量許可，連續及作業中資源不足仍保護原料', () => {
