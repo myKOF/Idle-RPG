@@ -1,3 +1,15 @@
+## ZONE-GEM-R10-20261104 — 關卡寶石掉落表擴充至R10
+
+- Owner：Codex；Done，單一開發者。使用者要求Zone_Stage_Drops的Excel與CSV寶石掉落欄擴充為R1～R10，保留R1～R5，新增R6～R10全部0。
+- 前置：來源Excel已取得獨占存取，fetch後各目標衝突預檢無外部來源；以目前已儲存Excel為唯一來源，保留使用者既有裝備掉率修改及副表。
+- 允許：Zone_Stage_Drops.xlsx／CSV、apply_params讀表欄名與長度、生成data及主端／Worker必要快取、寶石掉落回歸、LV及本段；禁止無關數值／功能／解鎖／存檔／其他工作區／合併推送。
+- 驗收：Excel原生API只改三組寶石欄並正常重開；逐格驗證原有值與格式保留，正式Excel匯出CSV、十階資料與高階掉落驗證、參數錨點／相關回歸／Build／diff檢查後Commit。後續由使用者自行填高階掉率並正常整合。
+- 完成：主表E及副表E／K共125格（3表頭＋122資料格）原生Excel編修／儲存，暫存及正式來源均正常模式重開；唯讀openpyxl比對所有其他值、型別、公式、有效字型／填色／邊框／對齊／保護／數字格式、欄寬／列高、合併／驗證／條件格式／凍結／篩選／原生表格均保持。Excel儲存會正規化重複樣式ID，按實際格式比較一致，沒有手工改XML。Artifact Tool讀回及渲染主表前段／後段與副表確認十階值及標題可讀。44筆主表正式xlsx_to_csv匯出與Excel逐格相符；原使用者desert 11～49裝備R3=0保留並同步CSV／data。
+- 讀表及快取：apply_params欄名與長度改為R1～R10／10，正式--write僅套用ZONE_STAGE_DROP_PROFILES一項；index的data／bridge、bridge Worker入口與sim.worker的data快取同步20261104-zone-gem-r10。現有formula／combat／save已按陣列長度查表與掉落，不需修改。新增回歸實際呼叫正式rollFieldDrops，驗證R6～R10非零配置逐階入庫、零配置不掉落。
+- 修改10檔：config/Excel/Zone_Stage_Drops.xlsx、config/CSV/Zone_Stage_Drops.csv、tools/apply_params.cjs、js/data.js、index.html、js/bridge.js、js/worker/sim.worker.js、tests/field-gem-drop-table.test.cjs、LV_upgrade_system.md、docs/AI_TASKS.md。唯讀檢查未改：AI_RULES／AGENTS／Workflow／prompts/codex、tools/xlsx_to_csv／excel-update-sheets／config_tables、js/formula／combat／save／item、既有掉落／離線／錨點／快取測試及其他配置。無素材變更，不需素材庫Commit。
+- 驗證指令：`node --test tests/field-gem-drop-table.test.cjs tests/field-equipment-drop-table.test.cjs tests/elite-drop-multiplier.test.cjs tests/offline-rewards.test.cjs tests/apply-params.test.cjs tests/apply-params-anchor-independence.test.cjs tests/vfx-editor-cache-versions.test.cjs`為21/21；`node tools/apply_params.cjs`588一致／0變更／0錨點問題；`node tools/apply_params.cjs --check-anchors`擾動542值、588錨點皆一次命中；`npm.cmd run build`642檔通過。diff／stat／check及自我Review通過。QA／原生編修／唯讀比對及預覽位於本聊天visualizations/zone-gem-r10，未加入倉庫。
+- 交付：本項無未完成內容或已知新增風險；未跑全庫／實機長時間遊玩。可供Review及使用者合併；Commit為本段所在「[Codex] feat: 關卡寶石掉落表擴充至十階」，SHA見交付。未合併或推送develop／main；下一步使用者直接調整來源Excel高階掉率、關閉後執行套用參數並重載遊戲。
+
 ## SYNC-MERGE-20261103-230151 ? develop ??????
 
 - Owner?Codex?Done????????? f8902706cf4d3ec689cf42048eb45ecd6ab75470 ? 490f2a50f4864f56888c9c390ac6fdb043a38bdf ? pending merge??????????????????????????????????? staging??? merge commit?

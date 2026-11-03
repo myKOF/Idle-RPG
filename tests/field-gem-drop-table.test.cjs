@@ -35,21 +35,48 @@ function readZoneDrops() {
     zone: row[idx['地圖識別碼']],
     min: Number(row[idx['最低關卡']]),
     max: Number(row[idx['最高關卡']]),
-    rates: row[idx['寶石掉落率（等級R1至R5）']].split('|').map(Number)
+    rates: row[idx['寶石掉落率（等級R1至R10）']].split('|').map(Number)
   }));
 }
 
-test('地圖／關卡掉落表提供 R1～R5 寶石掉落率', () => {
+test('地圖／關卡掉落表提供 R1～R10 寶石掉落率', () => {
   const context = loadContext();
   const config = readZoneDrops();
   for (const row of config) {
-    assert.equal(row.rates.length, 5);
+    assert.equal(row.rates.length, 10);
     const expected = config
       .filter((candidate) => candidate.zone === row.zone && row.min >= candidate.min && row.min <= candidate.max)
-      .reduce((sum, candidate) => sum.map((value, index) => value + candidate.rates[index]), Array(5).fill(0));
+      .reduce((sum, candidate) => sum.map((value, index) => value + candidate.rates[index]), Array(10).fill(0));
     const cfg = context.zoneStageDropConfigFor(row.zone, row.min);
     assert.deepEqual(JSON.parse(JSON.stringify(cfg.materials.gemRates)), expected, row.zone + ' ' + row.min + ' 寶石率不一致');
   }
+});
+
+test('R6～R10 非零配置依階級掉落，零配置不掉落', () => {
+  const context = loadContext();
+  context.window = context;
+  context.UI = { dirty: {} };
+  for (const file of ['js/util.js', 'js/battlefield.js', 'js/combat.js']) {
+    vm.runInContext(fs.readFileSync(path.join(ROOT, file), 'utf8'), context, { filename: file });
+  }
+  context.G = { stage: { zone: 'test', current: 1 }, player: {} };
+  context.FIELD = { player: {} };
+  context.getStats = () => ({ loot: 0 });
+  context.buffVal = () => 0;
+  context.currentZoneDef = () => ({ rewardMult: 1 });
+  context.rollDropCount = (rate) => Math.floor(rate / 100);
+  context.randomGemType = () => 'ruby';
+  context.gemLabel = (type, level) => type + level;
+  const received = [];
+  context.addGem = (type, level, count) => received.push([type, level, count]);
+  const rates = Array(10).fill(0);
+  context.ZONE_STAGE_DROP_TABLE.test = [{ min: 1, max: 1, equipmentRates: [],
+    materials: { gemRates: rates, bookRate: 0, ancientEssenceRate: 0, dustRate: 0 } }];
+  context.rollFieldDrops({ level: 1 });
+  assert.deepEqual(received, []);
+  rates.fill(100, 5);
+  context.rollFieldDrops({ level: 1 });
+  assert.deepEqual(received, [6, 7, 8, 9, 10].map(level => ['ruby', level, 1]));
 });
 
 test('戰鬥程式不再回讀怪物等級寶石掉落表', () => {

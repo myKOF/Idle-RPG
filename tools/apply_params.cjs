@@ -74,7 +74,7 @@ const ZD_ZONE = ZD('地圖識別碼');
 const ZD_MIN = ZD('最低關卡');
 const ZD_MAX = ZD('最高關卡');
 const ZD_EQUIP = ZD('裝備掉落率（品質R0至R11）');
-const ZD_GEMS = ZD('寶石掉落率（等級R1至R5）');
+const ZD_GEMS = ZD('寶石掉落率（等級R1至R10）');
 const ZD_BOOK = ZD('技能書掉落率');
 const ZD_ESSENCE = ZD('太古精華掉落率');
 const ZD_DUST = ZD('魔塵掉落率');
@@ -97,7 +97,7 @@ function zoneStageDropContent() {
       dropNumber(r[ZD_MIN], zone + '.最低關卡'),
       dropNumber(r[ZD_MAX], zone + '.最高關卡'),
       dropRateList(r[ZD_EQUIP], 12, zone + '.裝備掉落率'),
-      dropRateList(r[ZD_GEMS], 5, zone + '.寶石掉落率'),
+      dropRateList(r[ZD_GEMS], 10, zone + '.寶石掉落率'),
       dropNumber(r[ZD_BOOK], zone + '.技能書掉落率'),
       dropNumber(r[ZD_ESSENCE], zone + '.太古精華掉落率'),
       dropNumber(r[ZD_DUST], zone + '.魔塵掉落率')
