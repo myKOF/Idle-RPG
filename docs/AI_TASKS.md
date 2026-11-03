@@ -1,3 +1,14 @@
+## ENCHANT-BOOK-RETIRE-20261104 — 移除置頂附魔書並停止產出
+
+- Owner：Codex；Done，單一開發者。使用者要求移除置頂材料列附魔書及全部遊戲內產出；追加確認不更動現有存檔，只保證不再掉落。保留舊庫存／存檔欄位，移除野外、離線、高塔發放與舊任務book獎勵入口，不遷移或清除資料。
+- 前置：fetch及目標衝突預檢無外部來源。允許index／ui頂列及獎勵顯示、combat／save／tower／tasks發放段、data／formula退役說明、必要主端及Worker快取、相關回歸、LV／公式／本段；禁止存檔遷移／舊庫存清理、其他材料數值／功能／配置來源、其他工作區及合併推送。Zone Excel與三份VFX為既有獨立修改，不納入本項。
+- 驗收：持有大量舊書及shownRes標記時也無頂列圖示／提示，庫存保持；即使舊掉落配置非0或附魔開關開啟，野外／離線／高塔／任務不發書，其他獎勵保持。回歸／Build／實機及diff後獨立Commit，交使用者整合。
+- 完成：index移除r-books節點，ui移除頂列庫存彙總、tooltip與可見性項；移除高塔獎勵列及敵方提示的附魔書宣告。combat／save／tower刪除實際發書段，tasks的舊book獎勵保留相容分支但不發放。舊books／shownRes及原有存讀邏輯不改，沒有清庫存或新遷移。未改內部GM測試工具或已停用的附魔操作。data／formula只修退役說明；已停用的讀表欄仍作相容保留，不讀它來掉書，未改任何Excel／CSV。主端與Worker對應快取均20261104-retire-enchant-book；協議與資料形狀不變。
+- 修改17檔：index.html、js/{ui,combat,save,tower,tasks,bridge,data,formula}.js、js/worker/sim.worker.js、tests/{enchant-book-retirement,resource-tooltip,elite-drop-multiplier,tower-rewards-ui}.test.cjs、LV_upgrade_system.md、game_formula.md、docs/AI_TASKS.md。唯讀未改AI_RULES／AGENTS／Workflow／prompts、player／item／factory／gm_exec／Worker投影與協議、既有存檔遷移／所有配置來源及其他功能；無新素材或本項素材庫變更。
+- 驗證：`node --test tests/enchant-book-retirement.test.cjs tests/resource-tooltip.test.cjs tests/elite-drop-multiplier.test.cjs tests/offline-rewards.test.cjs tests/task-system.test.cjs tests/tower-rewards-ui.test.cjs tests/ui-tick-smoke.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs`53/53；新回歸驗普通／菁英／BOSS、離線、三塔首通及重複、舊book任務不發書、其他獎勵與舊庫存／未知舊key／shownRes保存。舊測試原要求附魔開關開啟會發書，依使用者新規則更新為兩狀態皆不發書及不顯示獎勵；不放寬其他材料斷言。String寫死0、`npm.cmd run build`644檔通過，diff／stat／check及自我Review完成。
+- 實機：沿前項IAB無後端的本機隔離Edge／Playwright及隨機localhost正式index／真Worker，以既有WorkerBridge.loadSave載入QA狀態。10000本fire及77本未知舊書、shownRes.r-books=true仍無置頂節點／圖示／提示；Header快照庫存完整不變，其他置頂資源正常，Console error／pageerror0。PNG存後磁碟重開目視核對，瀏覽器與服務已關閉；沒有讀寫玩家原網址存檔。QA／JSON／log在本聊天visualizations/enchant-book-retire。
+- 交付：本項無未完成實作或已知新增風險，未跑全庫／長時間實玩；可供Review及使用者整合。Commit為本段所在「[Codex] fix: 移除置頂附魔書並停止掉落與獎勵」，SHA見交付；未合併推送。Zone_Stage_Drops.xlsx及三份cleave VFX原有修改保留未提交，沒有納入本項或擅自還原。下一步重新載入遊戲驗收，現有存檔不需轉換。
+
 ## ANCIENT-FORGE-ESSENCE-20261104 — 太古精鑄改用太古精華與第二條倍率
 
 - Owner：Codex；Done，單一開發者。使用者要求太古精鑄加成功率材料由神性之石改太古精華；同件裝備第2條精鑄達相同成功率的精華消耗倍率可調，預設3。追加最終成功率達50%整筆消耗×2、達75%×4，取最高級距並與第2條倍率相乘，適用兩次精鑄。其餘功能仍用神性之石。Zone_Stage_Drops由使用者已改Excel為來源匯出CSV，讀表表頭改「神性之石掉落率」。

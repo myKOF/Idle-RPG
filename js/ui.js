@@ -3015,14 +3015,6 @@ function renderHeader() {
     ? !!forgeSnapshot.forge.unlocked
     : progressReached(p.level, p.reincarnations, FORGE_UNLOCK_LEVEL, FORGE_UNLOCK_REINCARNATION);
   if (forgeTabBtn) forgeTabBtn.style.display = forgeUnlockedView ? '' : 'none';
-  var bookTotal = 0, bookTip = [];
-  for (var bk in p.books) {
-    bookTotal += p.books[bk];
-    if (p.books[bk]) bookTip.push(ENCHANTS[bk].name + ' x' + p.books[bk]);
-  }
-  setTextIfChanged($id('r-books'), fmt(bookTotal));
-  updateResourceTip('r-books', STR(102), bookTip.join('、') || STR(124));
-
   // shownRes 由模擬層在資源首次取得時更新；渲染只讀快照。
   var shownRes = p.shownRes || {};
   var resVisMap = [
@@ -3030,8 +3022,7 @@ function renderHeader() {
     { id: 'r-dust', val: p.dust || 0 },
     { id: 'r-ancient-essence', val: p.ancientEssence || 0 },
     { id: 'r-soul-origin', val: p.soulOrigin || 0 },
-    { id: 'r-demon-seed', val: p.demonSeed || 0 },
-    { id: 'r-books', val: bookTotal }
+    { id: 'r-demon-seed', val: p.demonSeed || 0 }
   ];
   resVisMap.forEach(function (item) {
     var el = $id(item.id);
@@ -7101,7 +7092,6 @@ function towerRewardRows(fl) {
     { icon: '✨', label: STR(1864), value: fmt(bossStatsFor(fl).xp), note: STR(1865) },
     { icon: '🔮', label: STR(99), value: '×' + fmt(rw.essence) },
     { icon: '💎', label: STR(1866), value: GEM_NAMES[rw.gemLevel] + ' ×2' },
-    ENCHANT_ENABLED ? { icon: '📖', label: STR(102), value: STR(1867) } : null,
     { icon: '💫', label: STR(100), value: fmt1(bossDustRate(fl)) + '%', note: STR(1868) }
   ].filter(Boolean);
   var ancientRate = ancientEssenceDropChanceForBoss(fl);
@@ -9775,7 +9765,7 @@ function showEnemyTooltip(anchorEl) {
     var rewardLines = [];
     rewardLines.push(STR(106, fmt(m.xp)));
     rewardLines.push(STR(650, rw.gemLevel));
-    rewardLines.push(STR(652, rw.essence, (ENCHANT_ENABLED ? STR(651) : '')));
+    rewardLines.push(STR(652, rw.essence, ''));
     if (dustRate > 0) rewardLines.push(STR(653, fmt1(dustRate)));
     if (soulOriginRate > 0) rewardLines.push(STR(654, fmt1(soulOriginRate)));
     if (ancientEssenceRate > 0) rewardLines.push(STR(655, fmt1(ancientEssenceRate)));

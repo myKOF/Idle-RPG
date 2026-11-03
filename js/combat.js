@@ -2692,17 +2692,6 @@ function rollFieldDrops(m) {
     if (typeof rwRollFieldRuneDrops === 'function') {
         rwRollFieldRuneDrops(G.stage.zone, s, lootBonus, rw, eliteDropMult, drops);
     }
-    // 附魔書：基礎率由地圖／關卡掉落表提供（附魔功能關閉時不掉，見 data.js ENCHANT_ENABLED）
-    if (ENCHANT_ENABLED && (s >= 8 || zoneDrop.bookRate !== undefined)) {
-        var bookBaseRate = Number(zoneDrop.bookRate || 0);
-        var bookN = rollDropCount(bookBaseRate * (1 + lootBonus / 100) * rw * eliteDropMult);
-        for (var bi = 0; bi < bookN; bi++) {
-            var bk = pick(Object.keys(ENCHANTS));
-            G.player.books[bk]++;
-            if (window.recordLootMat) window.recordLootMat('book', 1, 'field');
-            drops.push(STR(520, ENCHANTS[bk].name));
-        }
-    }
     // 太古精華：基礎機率由地圖／關卡掉落表提供，不受掉寶率與場景倍率影響。
     var ancientEssenceRate = Number(zoneDrop.ancientEssenceRate || 0) * eliteDropMult;
     if (ancientEssenceRate > 0 && chance(ancientEssenceRate)) {

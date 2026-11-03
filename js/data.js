@@ -1351,8 +1351,9 @@ function vfxEnemyRoles(magic, elem) {
 
 // ---- 附魔 ----
 /* 附魔功能總開關（2026-10-07 起關閉：由符文／符文真言取代，js/runeword.js）。
-   關閉時：不能附魔／取下、附魔不計入屬性與評分、不顯示、不再掉落附魔書；
-   裝備上既有的 it.enchants 與玩家的 books 原樣保留，改回 true 即完整恢復。
+   關閉時：不能附魔／取下、附魔不計入屬性與評分、不顯示。
+   裝備上既有的 it.enchants 與玩家的 books 原樣保留，改回 true 可恢復附魔操作；
+   附魔書已停止自然產出，恢復附魔開關也不會恢復掉落或獎勵發放。
    ENCHANTS 本身仍是元素定義表（BOSS 屬性、抗性名稱等也讀它），不可刪。 */
 var ENCHANT_ENABLED = false;
 var ENCHANTS = {
