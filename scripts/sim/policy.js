@@ -136,6 +136,7 @@ function createPolicy(policy) {
       for (const key of ['monster', 'stage']) add(t[key]);
       for (const tg of policy.targets || []) {
         if (tg && tg.kind === 'ratePerMin') add(tg.counter);
+        if (tg && (tg.kind === 'windowAvg' || tg.kind === 'slopePerMin')) add(tg.path);
       }
       /* 敗因診斷（policy.profile）要在死掉的那一瞬間附近取樣，所以它指到的面板
          必須跟著 1Hz 觀測一起建。漏掉的話 cause 只會在決策點被取樣——

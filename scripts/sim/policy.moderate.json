@@ -328,7 +328,7 @@
       "id": "upgrade-by-rarity-cap",
       "everySec": 60,
       "cmd": "item.upgrade",
-      "why": "依品質分配強化資源：R0/R1 不強化，R2→+6，R3→+11，R4→+17，之後每階 +6；身上最高品質不設上限。低階裝要強到打得動下一段關卡（推不過去就掉不到好裝），但不能把材料砸在遲早換掉的裝備上——換掉時強化等級會一起消失",
+      "why": "依品質分配強化資源：R0/R1 不強化，R2→+6，R3→+11，R4→+17，之後每階 +6；身上最高品質不設上限。低階裝要強到打得動下一段關卡（推不過去就掉不到好裝），但不能把材料砸在遲早換掉的裝備上——換掉時強化等級會一起消失。另外全部位平均強化（見 upgradePriority.even）",
       "upgradePriority": {
         "equippedRarities": "panels.inv.equipmentRarities",
         "equipment": "panels.inv.equipment",
@@ -344,7 +344,37 @@
           41,
           47,
           53
-        ]
+        ],
+        "even": {
+          "stepLow": 1,
+          "highFrom": 20,
+          "stepHigh": 1,
+          "stepHighWithSuccess": 5,
+          "successAffix": "enhanceSuccess",
+          "priority": [
+            [
+              "weapon",
+              "weapon2",
+              "amulet",
+              "ring",
+              "ring2"
+            ],
+            [
+              "gloves",
+              "belt"
+            ],
+            [
+              "helmet",
+              "shoulder",
+              "chest",
+              "wrist",
+              "legs",
+              "boots"
+            ]
+          ],
+          "說明": "平均強化：所有部位先一起到 +1，再一起到 +2……，沒有哪一件能跑到別人前面；資源不夠時依優先序：武器與首飾（主要輸出）→ 手套、腰帶 → 各部位防具。",
+          "依據": "先前每件各自強化到上限，碎片與金幣全灌在表單排前面的幾件（實測胸甲 +17、腿甲 +12，武器與戒指還是 +0）。階梯單位：+20 以內逐級平均（1）；超過 +20 強化會失敗且損失半數材料，身上沒有「強化成功率」詞條就仍以 1 為單位，有的話放寬到 5"
+        }
       }
     },
     {
@@ -1198,7 +1228,7 @@
   "skills": {
     "panel": "panels.skill",
     "gold": "view.gold",
-    "magicChance": 0.5,
+    "magicChance": 0,
     "elemPool": [
       "fire",
       "lightning",
@@ -1343,7 +1373,11 @@
       },
       "依據": "初版判讀：依 js/skills2.js 各選項說明分成 farm(練級)/boss(野外BOSS)/tower(封魔塔)，待設計者審"
     },
-    "說明": "player_strategy.md §4。組合由 seed 決定（全物理或全魔法；魔法取兩個元素系輪流）。生存率不足時末幾格換成生存類群組。超神進化切換三道閘：裝備覆蓋達標、金幣≥費用×2、距上次切換≥6 遊戲小時"
+    "說明": "player_strategy.md §4。組合由 seed 決定（全物理或全魔法；魔法取兩個元素系輪流）。生存率不足時末幾格換成生存類群組。超神進化切換三道閘：裝備覆蓋達標、金幣≥費用×2、距上次切換≥6 遊戲小時",
+    "required": [
+      "knife"
+    ],
+    "required_依據": "使用者指定：技能初始至少要選飛刀（物理系）；其餘任意，初期最好物理系。所以必選飛刀排最前面，組合預設全物理（magicChance 0）"
   },
   "equipSets": {
     "panel": "panels.equipSets",

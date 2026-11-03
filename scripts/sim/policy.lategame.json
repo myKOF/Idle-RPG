@@ -859,7 +859,7 @@
   "skills": {
     "panel": "panels.skill",
     "gold": "view.gold",
-    "magicChance": 0.5,
+    "magicChance": 0,
     "elemPool": [
       "fire",
       "lightning",
@@ -1004,7 +1004,11 @@
       },
       "依據": "初版判讀：依 js/skills2.js 各選項說明分成 farm(練級)/boss(野外BOSS)/tower(封魔塔)，待設計者審"
     },
-    "說明": "player_strategy.md §4。組合由 seed 決定（全物理或全魔法；魔法取兩個元素系輪流）。生存率不足時末幾格換成生存類群組。超神進化切換三道閘：裝備覆蓋達標、金幣≥費用×2、距上次切換≥6 遊戲小時"
+    "說明": "player_strategy.md §4。組合由 seed 決定（全物理或全魔法；魔法取兩個元素系輪流）。生存率不足時末幾格換成生存類群組。超神進化切換三道閘：裝備覆蓋達標、金幣≥費用×2、距上次切換≥6 遊戲小時",
+    "required": [
+      "knife"
+    ],
+    "required_依據": "使用者指定：技能初始至少要選飛刀（物理系）；其餘任意，初期最好物理系。所以必選飛刀排最前面，組合預設全物理（magicChance 0）"
   },
   "equipSets": {
     "panel": "panels.equipSets",

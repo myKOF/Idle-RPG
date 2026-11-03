@@ -772,6 +772,15 @@
             color: #f8fafc;
         }
 
+        /* 這頁不載入遊戲的 css/*.css，但詳情面板的 HTML 來自遊戲的 itemDetailHTML，
+           裡面的圖（標題裝備縮圖、寶石、符文石）靠遊戲樣式限制尺寸；沒帶過來就會以原圖大小（1024px）撐爆面板。
+           數值對齊 css/ashen-forge.css、gems.css、runeword.css。 */
+        #itemDetailPanel img { max-width: 100%; object-fit: contain; }
+        #itemDetailPanel .it-name-icon { width: 28px; height: 28px; vertical-align: middle; margin-right: 8px; }
+        #itemDetailPanel .gem-ico { display: block; flex: 0 0 auto; width: 32px; height: 32px; }
+        #itemDetailPanel .gem-ico.gi-inline { display: inline-block; width: 1.6em; height: 1.6em; vertical-align: -0.5em; }
+        #itemDetailPanel .rune-stone { display: block; flex: 0 0 auto; width: 32px; height: 32px; }
+
         .item-detail-header {
             display: flex;
             align-items: center;
@@ -1013,6 +1022,7 @@
                     <div style="display: flex; justify-content: space-between;"><span>🔑 PRNG 隨機種子 (Seed)</span><b id="sumSeed" style="color: var(--text-main);">-</b></div>
                     <div style="display: flex; justify-content: space-between;"><span>⏱️ 模擬遊戲時長 (Hours)</span><b id="sumHours" style="color: var(--text-main);">-</b></div>
                     <div style="display: flex; justify-content: space-between;"><span>📜 使用策略檔案 (Policy)</span><b id="sumPolicy" style="color: var(--text-main);">-</b></div>
+                    <div style="display: flex; justify-content: space-between;"><span>🕒 模擬執行時間 (Elapsed)</span><b id="sumElapsed" style="color: var(--text-main);">-</b></div>
                     <div style="display: flex; justify-content: space-between;"><span>⚡ 模擬加速倍率 (Speedup)</span><b id="sumSpeedup" style="color: var(--text-main);">-</b></div>
                     <div style="display: flex; justify-content: space-between;"><span>🎲 決策執行次數 (Decisions)</span><b id="sumDecisions" style="color: var(--text-main);">-</b></div>
                     <div style="display: flex; justify-content: space-between;"><span>⚠️ 策略失效路徑 (Bad Paths)</span><b id="sumBadPaths" style="color: var(--text-main);">-</b></div>
@@ -1127,7 +1137,8 @@
                     <option value="total_kills">⚔️ 總殺敵數 (Total Monster Kills)</option>
                     <option value="reincarnation">🌀 轉生次數 (0~10 轉生進程)</option>
                     <option value="tower_floor">🗼 高塔通關樓層 (1~150 層 BOSS)</option>
-                    <option value="stage">🚩 到達關卡數 (Stage Cleared)</option>
+                    <option value="stage">🚩 目前所在關卡 (會隨換圖、轉生歸 1)</option>
+                    <option value="stage_best">🏔️ 歷史最高關卡 (取樣點累計最大值，只升不降)</option>
                     <option value="godforge_count">👑 神鑄裝備件數 (Godforged Count)</option>
                     <option value="rerolls">🎲 裝備洗詞條總次數 (Affix Rerolls)</option>
                     <option value="gem_syntheses">💎 寶石合成總次數 (Gem Syntheses)</option>
@@ -1557,6 +1568,14 @@
                 timeSeries[n].kill_rate = { mean: rate, median: rate, p10: rate, p90: rate };
             }
 
+            /* 歷史最高關卡：CSV 的 stage 是「當下所在關卡」，換圖或轉生會掉回 1，折線呈鋸齒，
+               看不出推進了多少。這裡取到該取樣點為止的最大值（只升不降）。
+               ⚠️ 只看取樣點，取樣間隔內短暫到過的更高關卡不會計入，所以是下限。 */
+            let bestSoFar = 0;
+            timeSeries.forEach(pt => {
+                bestSoFar = Math.max(bestSoFar, pt.stage.mean);
+                pt.stage_best = { mean: bestSoFar, median: bestSoFar, p10: bestSoFar, p90: bestSoFar };
+            });
             currentSimResult = currentSimResult || {};
             currentSimResult.time_series = timeSeries;
             currentSimResult.config = currentSimResult.config || { runs: 1, hours: timeSeries[timeSeries.length - 1].hour, profile: { name: '原生內核實機' } };
@@ -1624,6 +1643,15 @@
             document.getElementById('sumSeed').innerText = summary.seed || '-';
             document.getElementById('sumHours').innerText = (summary.gameHours || '-') + ' 小時';
             document.getElementById('sumPolicy').innerText = (summary.policy && summary.policy.file) || '-';
+            /* 整場模擬從開始到結束實際花的牆鐘時間（finishedAt − startedAt，含開機與收尾），
+               不是遊戲時間；舊資料沒有時間戳時退回 performance.elapsedSec（只算推進的部分）。 */
+            let elapsedSec = (Date.parse(summary.finishedAt) - Date.parse(summary.startedAt)) / 1000;
+            if (!(elapsedSec >= 0)) elapsedSec = summary.performance && summary.performance.elapsedSec;
+            document.getElementById('sumElapsed').innerText = (typeof elapsedSec === 'number')
+                ? (elapsedSec >= 3600 ? Math.floor(elapsedSec / 3600) + ' 小時 ' + Math.floor(elapsedSec % 3600 / 60) + ' 分'
+                    : elapsedSec >= 60 ? Math.floor(elapsedSec / 60) + ' 分 ' + Math.round(elapsedSec % 60) + ' 秒'
+                    : elapsedSec.toFixed(1) + ' 秒')
+                : '-';
             document.getElementById('sumSpeedup').innerText = (summary.performance && summary.performance.speedupX) ? (summary.performance.speedupX.toLocaleString() + 'x') : '-';
             document.getElementById('sumDecisions').innerText = summary.decisions ? summary.decisions.toLocaleString() : '-';
             

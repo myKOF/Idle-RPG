@@ -405,6 +405,43 @@ const SNAP_VIEW_KEYS = ['level', 'stage', 'gold', 'scrap', 'dust', 'essence',
   'hp', 'hpMax', 'mp', 'mpMax', 'xp', 'xpMax'];
 const snapRows = [];
 
+/* 場上存活敵人數的診斷：數量分佈，以及「最近 60 秒最小平方斜率」（隻／分鐘）的分佈。
+   用途是替策略的戰場負載目標（slopePerMin／windowAvg）挑門檻——門檻要看健康狀態下的分佈，
+   不能憑感覺。純診斷，策略看不到，不影響模擬。 */
+const liveSeries = [];
+const FIELD_LOAD_WINDOWS = [60, 180, 300];
+const fieldLoadStats = {
+  n: 0, lives: [], slopes: { 60: [], 180: [], 300: [] },
+  add(live, series) {
+    this.n++;
+    this.lives.push(live);
+    const tNow = series[series.length - 1][0];
+    for (const win of FIELD_LOAD_WINDOWS) {
+      const w = series.filter((x) => x[0] >= tNow - win);
+      if (w.length >= 10 && w[w.length - 1][0] - w[0][0] >= win / 2) {
+        const mt = w.reduce((s, x) => s + x[0], 0) / w.length, mv = w.reduce((s, x) => s + x[1], 0) / w.length;
+        let sxy = 0, sxx = 0;
+        for (const x of w) { sxy += (x[0] - mt) * (x[1] - mv); sxx += (x[0] - mt) * (x[0] - mt); }
+        if (sxx > 0) this.slopes[win].push(sxy / sxx * 60);
+      }
+    }
+  },
+  summary() {
+    const q = (a, p) => { if (!a.length) return null; const s = a.slice().sort((x, y) => x - y); return +s[Math.min(s.length - 1, Math.floor(s.length * p))].toFixed(2); };
+    const frac = (a, th) => a.length ? +(a.filter((x) => x > th).length / a.length).toFixed(3) : null;
+    const slope = {};
+    for (const win of FIELD_LOAD_WINDOWS) {
+      const a = this.slopes[win];
+      slope['w' + win] = { p50: q(a, 0.5), p90: q(a, 0.9), p99: q(a, 0.99), over1: frac(a, 1), over2: frac(a, 2), over3: frac(a, 3), over6: frac(a, 6) };
+    }
+    return {
+      samples: this.n,
+      live: { p50: q(this.lives, 0.5), p90: q(this.lives, 0.9), p99: q(this.lives, 0.99), max: this.lives.length ? Math.max.apply(null, this.lives) : null },
+      slopePerMin: slope
+    };
+  }
+};
+
 let lastKillsTotal = 0;
 let lastHourChecked = 0;
 /* 累計在線秒數。宣告在這裡而不是主迴圈那一段，是因為 snapshot() 要用它做每小時的
@@ -457,7 +494,10 @@ function snapshot() {
     totalDrops: lootStats.dropRolls || 0,
     totalBattles: lootStats.battles || 0,
     totalDeaths: lootStats.deaths || 0,
-    cumGold: lootStats.gold || 0
+    cumGold: lootStats.gold || 0,
+    /* 場上存活敵人數／戰場容量：堆到容量上限＝打怪速度追不上出怪速度。 */
+    fieldLive: engine.ctx.liveFieldEnemies ? engine.ctx.liveFieldEnemies().length : 0,
+    fieldCap: engine.ctx.fieldMaxLiveEnemiesFor ? engine.ctx.fieldMaxLiveEnemiesFor() : 0
   };
   for (const k of SNAP_VIEW_KEYS) row[k] = view[k];
   snapRows.push(row);
@@ -587,6 +627,12 @@ try {
           for (const p of observePanels) oPanels[p] = engine.panel(p, panelParamsFor(p));
           policy.observe({ view: engine.view(), panels: oPanels, gameTimeSec: engine.gameTimeSec() });
           observations++;
+          if (engine.ctx.liveFieldEnemies) {
+            const liveNow = engine.ctx.liveFieldEnemies().length;
+            liveSeries.push([engine.gameTimeSec(), liveNow]);
+            if (liveSeries.length > 3600) liveSeries.shift();
+            fieldLoadStats.add(liveNow, liveSeries);
+          }
         }
       }
       stepsDone += n;
@@ -723,6 +769,8 @@ fs.writeFileSync(path.join(OUT_DIR, 'snapshots.meta.json'), JSON.stringify({
     totalBattles: 'LOOT_STATS.battles（累積）',
     totalDeaths: 'LOOT_STATS.deaths（累積）',
     cumGold: 'LOOT_STATS.gold（累積獲得，非持有）',
+    fieldLive: 'liveFieldEnemies().length（場上存活敵人數）',
+    fieldCap: 'fieldMaxLiveEnemiesFor()（戰場容量）',
     ...Object.fromEntries(SNAP_VIEW_KEYS.map((k) => [k, `buildView().${k}（目前持有，非累積）`]))
   },
   提醒: [
@@ -804,6 +852,7 @@ const summary = {
     const R = engine.ctx.RARITIES || [];
     return R.map((r, i) => ({ index: i, key: r.key, name: r.name }));
   })(),
+  fieldLoad: fieldLoadStats.summary(),
   performance: {
     /* 實際跑掉的步數。啟用班表時它會少於 wallHours × 36000——離線那一段沒有跑 simStep，
        用 totalSteps 會把吞吐量灌水成好幾倍。 */

@@ -1709,3 +1709,15 @@ function buildTalentPlanPanel() {
   }
   return { talents: out, maxLevel: TALENT_MAX_LEVEL };
 }
+
+/* ============ 戰場負載面板（harness 專用） ============
+
+   「打怪速度追不上出怪速度」在遊戲裡的表現是：場上存活的敵人一路堆到容量上限
+   （出怪的間隔不變，但清得比生得慢；場上滿了遊戲就跳過那一波）。這個比值比「每分鐘擊殺數」
+   更貼近玩家看到的狀態——擊殺數的門檻是絕對值，不會隨出怪量與地圖調整；
+   而容量與存活數都由遊戲回答（fieldMaxLiveEnemiesFor、liveFieldEnemies），策略不抄數字。唯讀。 */
+function buildFieldLoadPanel() {
+  if (typeof liveFieldEnemies !== 'function' || typeof fieldMaxLiveEnemiesFor !== 'function') return null;
+  var live = liveFieldEnemies().length, cap = fieldMaxLiveEnemiesFor();
+  return { live: live, cap: cap, ratio: cap > 0 ? live / cap : 0 };
+}
