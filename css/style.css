@@ -2950,8 +2950,9 @@ textarea#save-io {
   margin-left: 0;
 }
 
-.ancient-forged-first { --ancient-forge-color: #4d9aff; }
-.ancient-forged-second { --ancient-forge-color: #3674ec; }
+/* 正常太古 #fb923c 為最深100%；分別混入40%／20%白色，保留文字不透明度。 */
+.ancient-forged-first { --ancient-forge-color: #fdbe8a; }
+.ancient-forged-second { --ancient-forge-color: #fca863; }
 .ancient-forged-first,
 .ancient-forged-second,
 :is(.ancient-forged-first, .ancient-forged-second) :is(.act-btn-tooltip, .ancient-star),

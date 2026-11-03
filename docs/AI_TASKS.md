@@ -14341,3 +14341,10 @@ Worker 存活且頁面正常完成載入。
 - 擴大測試：`node --test tests/{forge-auto-menu,forge-stone-mode-switch,forge-stone-controls,forge-shared-inventory,forge-footer-controls,divine-forge-interaction,two-hand-save-migration,runeword-engine,vfx-editor-cache-versions}.test.cjs`（實際逐一展開檔名）91項84過、7項既有失敗：舊介面靜態期待2、符文候選／暫放UI／計次3、雙手舊存檔補齊期待2。以外部QA攔截讀檔載入HEAD原始內容重跑，同樣91／84／7、失敗名稱逐項相同；未修改權威配置或放寬斷言。
 - 瀏覽器：IAB無可用連線後改隔離localhost正式index＋Edge＋真Worker，身上清單實際點選、100%配方三秒精鑄連續2次均回胸甲，背包另件成功仍在包；正式詳情computed color分別rgb(77,154,255)與rgb(54,116,236)，詞條／星星截圖目視確認。Page／Console error皆0。QA與截圖在本聊天visualizations/ancient-origin-20261104；早期QA誤把on回傳值當退訂函式及重點已選裝備造成取消選取，修正QA後通過，未改產品迎合驗證。
 - 自我Review完成，可供Review／使用者合併，本項無未完成。限制：精鑄失敗仍依既有配方裝備消失；入槽期間仍採既有暫時卸裝流程；舊法陣未記來源只能退包；未執行全庫或多瀏覽器長時間驗證，擴大測試上述7項基線失敗另案處理。Commit為本段所在「[Codex] fix: 調深精鑄藍色並還原穿戴來源」，SHA見交付；未合併／推送。下一步重新載入頁面後驗收。
+
+## ANCIENT-FORGE-ORANGE-20261104 — 精鑄橘色深淺調整
+
+- Owner：Codex；Done，單一開發者。依使用者最新指示，第1次精鑄為淺橘#fdbe8a（正常太古約60%深度）、第2次為較深橘#fca863（約80%），正常太古#fb923c維持最深100%，三者各異。以正常橘與白色混合，文字保持不透明，詞條、提示與星星共用色。
+- 修改檔案：css/style.css兩個來源色、index.html CSS快取1.0.111、docs/DIVINE_FORGE.md、LV_upgrade_system.md與本表；已fetch及逐檔預檢無衝突。唯讀檢查規範／Workflow／prompts、data.js／item.js普通太古來源、原精鑄回歸及外部QA腳本；未改精鑄操作、Worker／存檔／配置或素材。工作途中出現外部config/Excel/Zone_Stage_Drops.xlsx修改，完整保留且不納入本項Commit。無必要素材變更，素材庫無本項Commit。
+- 驗證：`node --test tests/ancient-forge-limit.test.cjs` 10/10通過；IAB無連線後改隔離localhost正式index＋Edge＋真Worker，實際連續精鑄2次保留穿戴、背包另件成功仍在背包；computed color依次rgb(253,190,138)／rgb(252,168,99)／正常rgb(251,146,60)，詞條與其星星顏色相同，正式詳情截圖目視三層橘色。Page／Console error 0。QA與圖在本聊天visualizations/ancient-orange-20261104。`git diff --check`通過；僅CSS／HTML快取及文件修改，未重跑全庫建置與回歸。
+- 自我Review完成，本項無未完成，可供使用者Review／合併。Commit為本段所在「[Codex] fix: 將精鑄詞條改為分層橘色」，SHA見交付；未合併／推送。下一步重載頁面驗收；60%／80%為橘色與白色混合比例，非透明度或裝備數值。
