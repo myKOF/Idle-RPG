@@ -1,0 +1,22 @@
+{
+  "sourceSha256": "7a169dbae8130939e6ed05ef3d1130c8520d80a18c266ded5456fe8988881e58",
+  "approvedRoleSha256": "c03e9b99b9e444e920d4e2ad077f81dffdb12b8928b062677e679663da45fc07",
+  "outputSha256": "dbcbfa643f3ed6911211cf4a6559cd9974697554534c52e3c244c1ef3abf2a4b",
+  "license": "User explicitly confirmed authorized for game use and modification in chat, 2026-11-03",
+  "blenderVersion": "4.5.10 LTS",
+  "clips": [
+    "Attack1",
+    "Attack2",
+    "CombatIdle",
+    "Death",
+    "Run",
+    "Attack4"
+  ],
+  "allSixAnimationsSampleExact": true,
+  "rigAndGripUnchanged": true,
+  "removedBackSwordTriangles": 438,
+  "handVertices": 2807,
+  "handWatertight": true,
+  "usesApprovedWeaponAndHandGeometry": true,
+  "modelBytes": 4656748
+}

@@ -1,3 +1,14 @@
+## HERO3D-REBIRTH-SKIN-20261103 — 1轉Role1外觀
+
+- Owner：Codex；Done。使用者追加Role1.glb作1轉後皮膚、所有動作照舊，並已確認新檔本遊戲及修改授權；0轉Role、1轉及以上Role1，原黃金騎士完整保留。允許role1素材／來源、Blender工具／匯出、Hero3D／renderer、兩頁快取、獨立回歸、LV及本表；相關目標預檢無外部衝突。不改Worker／戰鬥／存檔／轉生門檻／配置與使用者其他模型。
+- 完成：Blender4.5.10將新人體外觀配合既有骨架，移除438個背劍三角面、補背部及固定護腕；直接複用已修好的右手與劍網格／權重，劍身0.8長度不變。全部六段動畫的時間、目標、插值及每個取樣與Role逐位比較一致；不採新檔自帶Running。角色1024px貼圖，僅護手使用舊圖集512px；整理未用緩衝後GLB4.66MB，保持5MB預算。
+- 接線：依Worker header.player.reincarnations自動選皮膚，讀入已轉生存檔首次直接選Role1；當場轉生非同步載好才替換身體／輪廓並釋放舊Pixi貼圖及WebGL資源。保留當前動作實際秒數、速度、朝向、完成旗標、倒地保持及起身反播，舊三招與新第四招、技能池三招保持。過期請求釋放、失敗保留目前人物且不每次快照重試。正式服仍不啟用／下載3D。
+- 修改檔案：新增role1.glb／role1.json／ROLE1_SOURCE.md、prepare_role1.py／export-role1.cjs、hero3d-rebirth-skin.test.cjs；修改hero3d.js、battle-renderer.js、index／scene-preview快取、LV及本段。唯讀未改規範／Workflow／prompts、原Role成品與六動畫、黃金騎士／cloth、Worker／戰鬥／存檔／轉生規則／配置與使用者兩個未追蹤GLB。
+- 測試：node --test tests/hero3d-role.test.cjs tests/hero3d-attack4.test.cjs tests/hero3d-rebirth-skin.test.cjs tests/hero3d-battle-rules.test.cjs tests/hero3d-internal-toggle.test.cjs tests/battle-renderer-pause.test.cjs tests/vfx-editor-cache-versions.test.cjs共34/34；新回歸補權重／索引有效性後6/6通過。npm.cmd run build為639檔通過；兩套素材匯出--source-check通過、原黃金騎士SHA保持ad6645d1。首個作者輸出因護手帶入舊完整人體圖集超5MB，改為僅護手512px後通過，不放寬門檻。
+- 實際瀏覽器：隔離localhost正式index／真Worker／Pixi／Hero3D，以GM改轉生數0→1→2→0→1，模型依序Role1／Role1／Role／Role1、重載後仍Role1。每次切換保留Attack4第1.1秒與速度／朝向，舊／新body對應正確；四招真實隨機及收招接回Run亦通過。另正式Hero3D對attack1～4／walk／idle／die／rise逐項capture／restore狀態完全相等；Page／Console error0，僅既有未用preload提示。QA輔助腳本早期HTML串接失誤只修QA後重跑，未改產品迎合驗證。
+- 外觀QA：三角度原生1400近拍／雙角度1600×860動作GIF及背面確認無劍。BVH手對刀身／護手／皮柄交叉三角面均0、281手部頂點距柄小於1mm。新增正式遊戲場景1600×1000 GIF84幀／30fps，為暫停後確定性播放；僅QA暫時隱藏NPC／殘留特效／暫停遮罩以便看人物，Hero3D畫布900px並使用內建全螢幕／滾輪，不改正式鏡頭或玩家原網址存檔。GIF讀回與PNG已目視確認。QA保存在本聊天visualizations/role1。
+- 素材：codex-authored/hero3d-role1-20261103保存33.3MB授權原檔、貼圖已packed的可編輯Blend、匯出、依賴工具與完整QA／逐檔SHA manifest；依賴已提交素材89d34a3與握持接線190be19a。素材Commit8c2c8e0先於遊戲Commit（本段所在提交，SHA見交付）。本項無未完成；可Review／使用者合併，未合併或推送。已知限制：仍為現有內測3D，未跨瀏覽器長時間效能測試，黃金騎士未新增選擇介面；下一步重載以0／1轉遊戲角色驗收。
+
 > 2026-11-03 使用者最新追加授權：握持修好後接入第四個普攻，普攻四招隨機；前述候選限制由本指示更新，允許role／hero3d／renderer／index／scene-preview快取、製作匯出工具、回歸與LV，舊三招與技能施法保持。正式目標已逐檔預檢無外部衝突。
 
 ## HERO3D-GRIP-FIX-20261103 — 握拳修復與第四普攻接線
@@ -10,7 +21,7 @@
 - 實機：隔離localhost正式index／真Worker／Pixi與Hero3D，100次真實選招抽到全部四招且無相鄰重複，attack4對應Attack4，技能不插斷，收招可回Run。只在HTTP暫存暴露既有函式、暫停後確定性推進。Page／console error0，僅既有未使用preload提示；未改玩家原網址存檔。正式Hero3D雙角度1600×860 GIF84幀30fps、三角度握柄近拍，QA在本聊天visualizations/grip-fix。
 - 修改檔案：role.glb／role.json／ROLE_SOURCE.md、hero3d.js、battle-renderer.js、index、scene-preview、sculpt_grip.py／mirror_attack.py／export-role.cjs、兩個既有測試及新增hero3d-attack4測試、LV與本段。唯讀未改：AI_RULES／AGENTS／Workflow／prompts、原黃金騎士／cloth、原五段動畫、戰鬥／Worker／存檔／配置與使用者新增GLB。
 - 素材庫：codex-authored/hero3d-grip-attack4-20261103保存已授權原Attack4、修握基底／完整六動作Blend、匯出、作者工具與QA共25檔及manifest；原Role來源仍在既有c4b734b包。素材先Commit，再遊戲Commit，SHA見交付。可供Review及使用者合併，未合併／推送。已知限制：尚未跨瀏覽器或長時間效能測試；模型仍原低多邊形風格，細節可依新近拍繼續調整。本項無未完成。
-- 後續追加（2026-11-03）：使用者提供Role1.glb作1轉起皮膚、所有動作照舊；新素材授權正在確認。此為後續獨立接線，保留本項修握與第四普攻成果。
+- 後續追加（2026-11-03）：使用者提供Role1.glb作1轉起皮膚、所有動作照舊；新素材已確認授權，後續接線完成見HERO3D-REBIRTH-SKIN-20261103；保留本項修握與第四普攻成果。
 
 ## HERO3D-ATTACK4-MIRROR-20261103 — 左手動作鏡像右手揮劍候選
 

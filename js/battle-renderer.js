@@ -2192,9 +2192,55 @@ var BattleRenderer = (function () {
      只換主角「身體怎麼畫」：站位、鏡頭、陰影、特效、血條全沿用 2D 那一套。
      Hero3D.enabled() 在正式版恆為 false，這裡直接回傳、不下載 three.js 與模型。
      載入失敗就關掉開關退回 2D，不讓戰鬥畫面壞掉。 */
+  var hero3dWantedSkin = 0, hero3dSkinRequest = 0, hero3dLoadingSkin = null, hero3dFailedSkin = null;
+  function syncHero3dAppearance(count) {
+    if (typeof Hero3D === 'undefined' || !Hero3D.enabled()) return null;
+    var wanted = Number(count) >= 1 ? 1 : 0;
+    if (wanted !== hero3dWantedSkin) {
+      hero3dWantedSkin = wanted; hero3dSkinRequest++;
+      hero3dFailedSkin = null; hero3dLoadingSkin = null;
+    }
+    if (!S.hero3d || S.hero3d.skinIndex === wanted || hero3dLoadingSkin === wanted || hero3dFailedSkin === wanted) return null;
+    var request = ++hero3dSkinRequest;
+    hero3dLoadingSkin = wanted;
+    return Hero3D.create({ reincarnations: wanted }).then(function (ctrl) {
+      if (request !== hero3dSkinRequest || S.failed || !S.hero3d) {
+        ctrl.dispose(); Hero3D.instance = S.hero3d; return;
+      }
+      var previous = S.hero3d, state = previous.captureState(), p = S.player;
+      S.hero3d = ctrl;
+      if (p && p.body && p.body.hero3d) {
+        var oldBody = p.body, name = p.curAnim || p.baseAnim || 'idle';
+        var body = makeHero3dBody();
+        body.position.copyFrom(oldBody.position);
+        body.tint = oldBody.tint; body.alpha = oldBody.alpha; body.visible = oldBody.visible;
+        p.bodyWrap.addChildAt(body, p.bodyWrap.getChildIndex(oldBody));
+        p.body = body;
+        if (p.outline) p.outline.destroy();
+        p.outline = makeOutlineSprite('player', body);
+        p.curAnim = ''; playHero3dAnim(p, name, p.baseAnim);
+        body.animationSpeed = oldBody.animationSpeed;
+        var oldTexture = oldBody.texture, oldOutlineTexture = oldBody.hero3dOutlineTex;
+        oldBody.onComplete = null;
+        oldBody.destroy();
+        oldOutlineTexture.destroy(true); oldTexture.destroy(true);
+      }
+      ctrl.restoreState(state);
+      previous.dispose();
+    }).catch(function (err) {
+      if (request === hero3dSkinRequest) {
+        hero3dFailedSkin = wanted;
+        console.warn('[battle-renderer] 轉生外觀載入失敗，保留目前人物：', err);
+      }
+    }).finally(function () {
+      if (request === hero3dSkinRequest) hero3dLoadingSkin = null;
+    });
+  }
   function loadHero3d() {
     if (typeof Hero3D === 'undefined' || !Hero3D.enabled()) return null;
-    return Hero3D.create().then(function (ctrl) {
+    var header = typeof peekUiPanelData === 'function' ? peekUiPanelData('header') : null;
+    hero3dWantedSkin = header && header.player && Number(header.player.reincarnations) >= 1 ? 1 : 0;
+    return Hero3D.create({ reincarnations: hero3dWantedSkin }).then(function (ctrl) {
       S.hero3d = ctrl;
     }).catch(function (err) {
       console.warn('[battle-renderer] 3D 主角載入失敗，退回 2D 序列幀：', err);
@@ -8124,6 +8170,7 @@ var BattleRenderer = (function () {
     });
     WorkerBridge.on(MSG_OUT.PANEL, function (msg) {
       if (msg && msg.name === 'battle') syncBattle(msg.data);
+      if (msg && msg.name === 'header' && msg.data && msg.data.player) syncHero3dAppearance(msg.data.player.reincarnations);
     });
     /* 分頁切到背景：rAF 停擺，這時候還活著的特效會整批凍在畫面上，
        回到前景時就是一堆殘留的小圖示與圈點。乾脆直接清掉（與 DOM 版
@@ -8455,6 +8502,8 @@ var BattleRenderer = (function () {
       flushPendingFloats();
       /* 開機時 battle 面板可能已經在手上（bridge 比渲染器先跑），先同步一次 */
       if (typeof peekUiPanelData === 'function') {
+        var header = peekUiPanelData('header');
+        if (header && header.player) syncHero3dAppearance(header.player.reincarnations);
         var panel = peekUiPanelData('battle');
         if (panel) syncBattle(panel);
       }

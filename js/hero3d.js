@@ -20,6 +20,8 @@
 
   var STORE_KEY = 'idle-rpg.hero3d.v1';
   var MODEL_URL = 'images/models/hero3d/role.glb?v=20261103-grip-attack4-v1';   // 模型換版時更新，避免讀到舊外觀
+  var REBIRTH_MODEL_URL = 'images/models/hero3d/role1.glb?v=20261103-role1-v1';
+  function modelForReincarnations(count) { return Number(count) >= 1 ? REBIRTH_MODEL_URL : MODEL_URL; }
   var GLTF_URL = 'js/vendor/three/loaders/GLTFLoader.js';
   var CLOTH_URL = 'images/models/hero3d/sunbrand-cloth.json';   // 布料頂點清單（披風、腰前布襠、關節處的藍布）：和 tools/meshy-pipeline/src/fix-grips.mjs 共用
 
@@ -335,7 +337,7 @@
     opts = opts || {};
     var THREE = await import('three');
     var gltfMod = await import(absUrl(GLTF_URL));
-    var gltf = await new gltfMod.GLTFLoader().loadAsync(absUrl(opts.model || MODEL_URL));
+    var gltf = await new gltfMod.GLTFLoader().loadAsync(absUrl(opts.model || modelForReincarnations(opts.reincarnations)));
     var modelStyle = (gltf.asset && gltf.asset.extras) || {};
 
     var size = opts.size || SIZE, span = opts.span || SPAN;      // 預設與遊戲相同；opts 只給驗證時放大看細節用
@@ -393,6 +395,8 @@
     gltf.animations.forEach(function (c) { actions[c.name] = mixer.clipAction(c); });
 
     var ctrl = {
+      modelUrl: opts.model || modelForReincarnations(opts.reincarnations),
+      skinIndex: Number(opts.reincarnations) >= 1 ? 1 : 0,
       canvas: canvas,
       size: size,
       /* 腳底在畫布裡的縱向位置（0＝上緣、1＝下緣）：正交鏡頭下，高度 h 的點離中心 (h − TARGET_Y)·cos(仰角) 公尺 */
@@ -437,6 +441,22 @@
       finishedFired = false;
       ctrl.clip = cfg.clip;
       return true;
+    };
+    /* 外觀切換時沿用動作的實際秒數，包含倒地保持及反播起身。 */
+    ctrl.captureState = function () {
+      return { cfg: currentCfg, time: current ? current.time : 0, paused: current ? current.paused : false,
+        finished: finishedFired, speed: ctrl.speed, yaw: ctrl.yaw, yawTarget: ctrl.yawTarget };
+    };
+    ctrl.restoreState = function (state) {
+      if (state.cfg && ctrl.play(state.cfg, 0)) {
+        current.time = Math.min(current.getClip().duration, Math.max(0, state.time));
+        current.paused = state.paused;
+        finishedFired = state.finished;
+        mixer.update(0);
+      }
+      ctrl.speed = state.speed;
+      ctrl.yaw = state.yaw; ctrl.yawTarget = state.yawTarget;
+      ctrl.update(0);
     };
     ctrl.duration = function (clip) {
       var a = actions[clip || ctrl.clip];
@@ -584,6 +604,7 @@
     create: create,
     makeBody: makeBody,
     CLIP_FOR: CLIP_FOR,
+    modelForReincarnations: modelForReincarnations,
     /* 畫布像素 → 螢幕像素的縮放，使 1.8 公尺高的角色約等於 2D 騎士的畫面高度（約 100px） */
     displayScale: function (ctrl) { return 100 / 1.8 / ctrl.pxPerMeter; }
   };
