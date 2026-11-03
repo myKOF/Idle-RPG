@@ -2950,8 +2950,8 @@ textarea#save-io {
   margin-left: 0;
 }
 
-.ancient-forged-first { --ancient-forge-color: #7dd3fc; }
-.ancient-forged-second { --ancient-forge-color: #3b82f6; }
+.ancient-forged-first { --ancient-forge-color: #4d9aff; }
+.ancient-forged-second { --ancient-forge-color: #3674ec; }
 .ancient-forged-first,
 .ancient-forged-second,
 :is(.ancient-forged-first, .ancient-forged-second) :is(.act-btn-tooltip, .ancient-star),
