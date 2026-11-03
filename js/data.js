@@ -338,9 +338,9 @@ var FIELD_MONSTER_HIT_GROWTH = [{ min: 1, max: 49, rate: 0.5 },
    原本這些係數內嵌在 formula.js 的 monsterStatsFor 算式裡，套用參數表時靠正規式
    錨定「var hp = (…」這種程式碼片段改寫；改成具名欄位後錨點綁的是欄位名。 */
 var FIELD_MONSTER_GROWTH = {
-  hpA: 20, hpB: 16, hpC: 1.06,
-  atkA: 2, atkB: 2, atkC: 1.04,
-  defA: 2, defB: 0.5, defC: 1.045,
+  hpA: 20, hpB: 16, hpC: 1.055,
+  atkA: 2, atkB: 2, atkC: 1.035,
+  defA: 2, defB: 0.5, defC: 1.03,
   goldA: 250, goldC: 1.018,
   xpA: 120, xpC: 1.06,
   aspd: 1
