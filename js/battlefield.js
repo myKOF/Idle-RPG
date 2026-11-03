@@ -33,9 +33,13 @@ function bfRows() { return Math.max(1, Number(typeof BF_ROWS !== 'undefined' ? B
 function bfCellCount() { return bfCols() * bfRows(); }
 
 /* ---- 座標常數（→ js/data.js，可由參數表調整）---- */
+/* 每幀被呼叫數十萬次（bfUnit／bfMeleeRange…），CPU 取樣佔 10%：
+   全域物件只解析一次，且值本來就是正數時直接回傳，不走 Number()／isFinite()。
+   語意與舊版相同——self 優先、其次 globalThis（兩者在 Worker／頁面／模擬 vm 都是同一個物件）。 */
+var BF_GLOBAL = (typeof self !== 'undefined' && self) ? self : (typeof globalThis !== 'undefined' ? globalThis : null);
 function bfNum(name, fallback) {
-  var v = (typeof self !== 'undefined' && self && self[name] !== undefined) ? self[name]
-    : (typeof globalThis !== 'undefined' && globalThis[name] !== undefined) ? globalThis[name] : undefined;
+  var v = BF_GLOBAL ? BF_GLOBAL[name] : undefined;
+  if (typeof v === 'number' && v > 0 && v !== Infinity) return v;
   v = Number(v);
   return isFinite(v) && v > 0 ? v : fallback;
 }
