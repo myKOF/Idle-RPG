@@ -1643,8 +1643,10 @@
             document.getElementById('sumSeed').innerText = summary.seed || '-';
             document.getElementById('sumHours').innerText = (summary.gameHours || '-') + ' 小時';
             document.getElementById('sumPolicy').innerText = (summary.policy && summary.policy.file) || '-';
-            /* 實際花的牆鐘時間（performance.elapsedSec），不是遊戲時間。 */
-            const elapsedSec = summary.performance && summary.performance.elapsedSec;
+            /* 整場模擬從開始到結束實際花的牆鐘時間（finishedAt − startedAt，含開機與收尾），
+               不是遊戲時間；舊資料沒有時間戳時退回 performance.elapsedSec（只算推進的部分）。 */
+            let elapsedSec = (Date.parse(summary.finishedAt) - Date.parse(summary.startedAt)) / 1000;
+            if (!(elapsedSec >= 0)) elapsedSec = summary.performance && summary.performance.elapsedSec;
             document.getElementById('sumElapsed').innerText = (typeof elapsedSec === 'number')
                 ? (elapsedSec >= 3600 ? Math.floor(elapsedSec / 3600) + ' 小時 ' + Math.floor(elapsedSec % 3600 / 60) + ' 分'
                     : elapsedSec >= 60 ? Math.floor(elapsedSec / 60) + ' 分 ' + Math.round(elapsedSec % 60) + ' 秒'
