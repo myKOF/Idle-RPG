@@ -141,7 +141,14 @@ test('實際轉生按鈕換算提高50%與250%及解鎖預告，確認才送一�
   vm.runInContext(ui.slice(start, end), c);
   const click = () => elements.get('btn-reincarnate').listeners.click();
   click();
-  assert.match(elements.get('confirm-message').textContent, /力量、敏捷、體質、智力提高50%/);
+  const firstMessage = elements.get('confirm-message').textContent;
+  for (const stat of ['生命', '法力', '力量', '敏捷', '體質', '智力']) assert.ok(firstMessage.includes(stat));
+  assert.match(firstMessage, /提高\s*50%/);
+  assert.match(firstMessage, /物攻定值額外加成：\+120% → \+240%/);
+  assert.match(firstMessage, /魔攻定值額外加成：\+120% → \+240%/);
+  assert.match(firstMessage, /物防定值額外加成：\+75% → \+150%/);
+  assert.match(firstMessage, /魔防定值額外加成：\+75% → \+150%/);
+  assert.match(firstMessage, /非最終攻防提升率/);
   assert.doesNotMatch(elements.get('confirm-message').textContent, /×|\*\s*3\.5/);
   assert.equal(elements.get('confirm-message').children[0].textContent, '解鎖【天堂威能】系統');
   assert.equal(commands.length, 0);
@@ -157,13 +164,40 @@ test('實際轉生按鈕換算提高50%與250%及解鎖預告，確認才送一�
   assert.equal(elements.get('confirm-message').children[0].textContent, '解鎖【神鑄】系統');
   header.player.reincarnations = 2;
   click();
-  assert.match(elements.get('confirm-message').textContent, /提高250%/);
+  assert.match(elements.get('confirm-message').textContent, /提高\s*250%/);
   assert.equal(elements.get('confirm-message').children[0].textContent, '解鎖【太古精鑄】系統');
   header.player.level = 999;
   elements.get('confirm-cancel').onclick();
   click();
   assert.equal(elements.get('confirm-modal').style.display, 'none');
   assert.equal(commands.length, 1);
+});
+
+test('轉生攻防預告逐項讀現行公式係數，高轉數仍顯示完整數值', () => {
+  const { context: c, elements } = loadGameContext();
+  const header = { player: { level: 1000, reincarnations: 9 } };
+  c.uiHeaderPanelSnapshot = () => header;
+  c.blog = () => {};
+  const ui = fs.readFileSync(path.resolve(__dirname, '..', 'js/ui.js'), 'utf8');
+  const start = ui.lastIndexOf("  var reincBtn = $id('btn-reincarnate');");
+  vm.runInContext(ui.slice(start, ui.indexOf('  // 技能：學習/升級/裝載/融合', start)), c);
+  elements.get('btn-reincarnate').listeners.click();
+  assert.match(elements.get('confirm-message').textContent, /物攻定值額外加成：\+61440% → \+122880%/);
+  assert.match(elements.get('confirm-message').textContent, /物防定值額外加成：\+38400% → \+76800%/);
+
+  header.player.reincarnations = 0;
+  Object.assign(c.DERIVED_COEF, {
+    atkFlatMult: 0.5, atkReincBase: 3,
+    matkFlatMult: 0.6, matkReincBase: 4,
+    defFlatMult: 0.7, defReincBase: 5,
+    mdefFlatMult: 0.8, mdefReincBase: 6
+  });
+  elements.get('btn-reincarnate').listeners.click();
+  const message = elements.get('confirm-message').textContent;
+  assert.match(message, /物攻定值額外加成：\+50% → \+150%/);
+  assert.match(message, /魔攻定值額外加成：\+60% → \+240%/);
+  assert.match(message, /物防定值額外加成：\+70% → \+350%/);
+  assert.match(message, /魔防定值額外加成：\+80% → \+480%/);
 });
 
 test('shared confirm modal shows message and runs callback only on confirm', () => {

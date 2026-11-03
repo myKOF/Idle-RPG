@@ -113,7 +113,7 @@ var ACHIEVEMENTS = [
   { id: 106, name: '冰皇領域', icon: 'ach_106', desc: '習得技能：冰霜新星-冰皇領域10級', type: 'skillUlt', param: 'frostnova:iceKingDomain', count: 10 },
   { id: 107, name: '暴風萬刃', icon: 'ach_107', desc: '習得技能：風刃-暴風萬刃10級', type: 'skillUlt', param: 'windblade:stormMyriad', count: 10 },
   { id: 108, name: '嵐之山', icon: 'ach_108', desc: '習得技能：風刃-嵐之山10級', type: 'skillUlt', param: 'windblade:stormMountain', count: 10 },
-  { id: 109, name: '天穹崩裂', icon: 'ach_109', desc: '習得技能：風刃-天穹崩裂10級', type: 'skillUlt', param: 'windblade:skyCollapse', count: 10 },
+  { id: 109, name: '風之痕', icon: 'ach_109', desc: '習得技能：風刃-風之痕10級', type: 'skillUlt', param: 'windblade:skyCollapse', count: 10 },
   { id: 110, name: '萬象風劫', icon: 'ach_110', desc: '習得技能：真空斬-萬象風劫10級', type: 'skillUlt', param: 'vacuumslash:vacuumOmen', count: 10 },
   { id: 111, name: '虛空滅界', icon: 'ach_111', desc: '習得技能：真空斬-虛空滅界10級', type: 'skillUlt', param: 'vacuumslash:voidAnnihilation', count: 10 },
   { id: 112, name: '時空崩解', icon: 'ach_112', desc: '習得技能：真空斬-時空崩解10級', type: 'skillUlt', param: 'vacuumslash:spacetimeCollapse', count: 10 },

@@ -701,10 +701,10 @@ var PRIMARY_STAT_EFFECTS = {
 // 攻擊 = (base + 定值 + flatMult×定值×reincBase^轉生次數 + 主屬性×係數) × (1 + 對應攻擊%)
 // 防禦 = (base + 定值 + flatMult×定值×reincBase^轉生次數 + 主屬性×係數 + 體質×係數) × (1 + 共用對應攻擊%)
 var DERIVED_COEF = {
-  atkBase: 20, atkFlatMult: 1.2, atkReincBase: 2.5,
-  matkBase: 16, matkFlatMult: 1.2, matkReincBase: 2.5,
-  defBase: 3, defFlatMult: 0.75, defReincBase: 2.4,
-  mdefBase: 2, mdefFlatMult: 0.75, mdefReincBase: 2.4,
+  atkBase: 20, atkFlatMult: 1.2, atkReincBase: 2,
+  matkBase: 16, matkFlatMult: 1.2, matkReincBase: 2,
+  defBase: 3, defFlatMult: 0.75, defReincBase: 2,
+  mdefBase: 2, mdefFlatMult: 0.75, mdefReincBase: 2,
   /* 以下原本是 computeStats 裡的內嵌字面值，套用參數表時靠「錨定程式碼片段」改寫
      （例如錨點 'st.base.mp = '）。那種錨點綁的是程式碼長相，任何一次重構都可能讓它
      0 命中，而套用參數只會安靜地少套幾個值。收進這裡之後錨點改綁欄位名。 */

@@ -1,5 +1,20 @@
 # AI_TASKS.md
 
+## REINCARNATION-STAT-NOTICE-20261103 — 轉生確認補齊攻防定值強化
+
+- Owner：Codex；Done，單一開發者。使用者要求轉生確認窗一併列出物攻、魔攻、物防、魔防等增益，並將使用者既有修改一起Commit。
+- 前置：現有轉生與確認視窗已完成。允許ui.js確認文字參數、String.xlsx原生Excel與CSV／strings_data、index必要快取、確認窗回歸、LV及本段；使用者已完成配置修改亦納入提交。禁止改轉生／戰鬥公式、解鎖條件、存檔、其他工作區與合併推送。
+- 預檢：各目標無外部衝突，index與Claude aca855e3僅同檔不同script行（對方battlefield，本項ui／strings_data）；統一暫存副本換行後三方merge-file退出0、無語意相依。String來源已確認獨占可開啟，沿用Excel原生更新工具，保留使用者原換行。
+- 驗收：四項定值強化百分比從DERIVED_COEF現值讀取，展示目前→下次累計額外加成，明示非最終攻防提升率；取消不送命令、確認送一次，原主屬性／解鎖預告保持。原生Excel正常重開、來源匯出一致、相關回歸／Build／實機Console／diff後Commit；無新素材。
+- 完成：ui.js從既有DERIVED_COEF讀四種攻防定值額外加成，String2146增加八個目前／下次百分比參數及說明，沿用使用者原主屬性次序與br換行。首次轉生物攻／魔攻+120%→+240%、物防／魔防+75%→+150%，數值依使用者最新game_parameters四項轉生底數皆2；第9→10轉及四組不同測試係數亦通過。非整體面板攻防增幅，原始定值為0不會憑空產生定值。
+- 使用者修改一併保留：game_parameters.xlsx／CSV／data四項轉生底數，Achievement.xlsx／CSV／achievement_data將109名稱及說明更新風之痕；String既有版面修改從最新Excel正常匯出。NPC／Runes／Zones／system_unlock四CSV僅原換行差異，Git正規化後無語意變更。未改權威公式算法或其他配置內容。
+- 快取與並行：index更新ui／String／data／achievement_data／bridge，bridge更新Worker入口，sim.worker只更新data／achievement_data匯入版本。該第23行與Claude aca855e3的battlefield快取同一行，依規範提問後使用者明確允許只改資料快取、保留雙方成果供後續合併；沒有代合併Claude內容。另一聊天SYSTEM-UNLOCK-ACTION在獨立區段完成並自行提交a69ff4af，本項未收取其進行中內容。
+- Excel與資料：先獨占存取確認，使用tools/excel-update-sheets.ps1正常儲存及重開兩輪驗證，僅String2146的參數說明與繁中共兩格變更、0繪圖物件保持。唯讀openpyxl比對全部其他格值／樣式、凍結／篩選／合併均保持；未寫入XML。String／game_parameters／Achievement各自正式xlsx_to_csv匯出與正式CSV SHA完全一致。apply_strings --check為2292條同步，build_string_csv --check仍寫死0條；apply_params試跑585一致／0變更／0錨點，--check-anchors擾動539數值後585錨點皆一次命中。
+- 測試指令：node --test --test-reporter=spec tests/confirm-dialog.test.cjs tests/reincarnate-gate.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/achievements.test.cjs tests/apply-params.test.cjs tests/apply-params-anchor-independence.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs，71項70過／1既有失敗。失敗為共鳴預告舊測試固定預期4轉開放、現行system_unlock為6轉；以唯讀preloader載入HEAD原ui.js同測試重現同一失敗，未改解鎖或放寬該斷言。新增攻防／高轉／動態讀係數及既有取消／確認皆通過；npm.cmd run build為636檔通過，diff／stat／check與自我Review通過。
+- 實機：bundled Playwright／headless Edge、隨機私人localhost完整主頁與真Worker，僅記憶體替換header投影為0轉及9轉1000級、攔截確認命令計數，不讀玩家原網址存檔。兩轉數四項加成／無殘留參數、1440×1000與800×700無橫向溢出、取消0次／確認1次、Console error／warning及pageerror皆0；首次及高轉截圖已從磁碟重開目視核對。QA腳本／report／PNG／來源比對／回歸log在本聊天visualizations/reincarnation-stats，服務及瀏覽器已關閉。
+- 修改檔案：ui.js、confirm-dialog回歸、String三檔、index／bridge／sim.worker快取、LV及本段，加使用者game_parameters與Achievement各三檔，共16檔語意修改。唯讀未改AI_RULES／AGENTS／Workflow／prompts、formula.js／player.js轉生算法、String與Excel工具、解鎖權威、存檔／協議、素材匯出器；素材庫狀態乾淨且本項無素材變更，不建立空素材提交。
+- 交付：本項無未完成實作，可供使用者Review及合併，未合併推送develop／main。已知限制為上述既有回歸失敗、未跑全庫與多瀏覽器長時間遊玩；建議重新載入遊戲驗收確認窗。Commit為本段所在「[Codex] fix: 補齊轉生攻防加成說明並保存使用者配置」，SHA見交付。
+
 ## SYSTEM-UNLOCK-ACTION-20261103 — 操作後停止當頁解鎖閃爍
 
 - Owner：Codex；Done。使用者要求閃爍持續至玩家自主任意操作為止。以目前正在查看的新開放頁為已讀對象，滑鼠點擊／按下、鍵盤與滾輪皆可停止；未查看的新頁仍提示，切入父功能的同一次事件不提前消除預設頁提示，程式自動事件不算。
