@@ -19,7 +19,7 @@
   'use strict';
 
   var STORE_KEY = 'idle-rpg.hero3d.v1';
-  var MODEL_URL = 'images/models/hero3d/role.glb?v=20261103-role-model-v1';   // 模型換版時更新，避免讀到舊外觀
+  var MODEL_URL = 'images/models/hero3d/role.glb?v=20261103-grip-attack4-v1';   // 模型換版時更新，避免讀到舊外觀
   var GLTF_URL = 'js/vendor/three/loaders/GLTFLoader.js';
   var CLOTH_URL = 'images/models/hero3d/sunbrand-cloth.json';   // 布料頂點清單（披風、腰前布襠、關節處的藍布）：和 tools/meshy-pipeline/src/fix-grips.mjs 共用
 
@@ -37,6 +37,7 @@
     attack1: { clip: 'Attack1', loop: false, start: 0.10, hit: 0.78, end: 1.40 },   // 小跳躍→轉一圈→斜砍（Meshy 動作庫 Sword Judgment），見 fix-grips.mjs 的 CFG.Attack1.retarget
     attack2: { clip: 'Attack2', loop: false, start: 0.10, hit: 0.50, end: 1.65 },   // end：收招已平順回到 start 的姿勢（見 tools/meshy-pipeline/src/fix-grips.mjs 的 CFG.Attack2.recover）
     attack3: { clip: 'Attack2', loop: false, start: 1.72, hit: 2.34, end: 3.11 },   // 右上往左下斜砍再反著揮回（Meshy 動作 Double Combo Attack），與 attack2 放在同一條 Attack2 時間軸（1.74 秒起），見 fix-grips.mjs 的 CFG.Attack2.meshy
+    attack4: { clip: 'Attack4', loop: false, start: 0.00, hit: 1.07, end: 2.3666 },   // 使用者提供的左手動作全身鏡像成右手揮劍；完整起手與收招，刃口在出手段朝前
     cast:    { clip: 'Attack2', loop: false, start: 0.10, hit: 0.50, end: 0.95 },
     die:     { clip: 'Death', loop: false, hold: true },
     rise:    { clip: 'Death', loop: false, reverse: true }

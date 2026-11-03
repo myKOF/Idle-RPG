@@ -22,7 +22,8 @@ function array(g, index) {
 const knight = glb('sunbrand-knight.glb'), role = glb('role.glb');
 
 test('新人物沿用黃金騎士所有動作、骨架、握劍與手腕資料，跑步也不替換', () => {
-  assert.deepEqual(role.json.animations, knight.json.animations);
+  assert.deepEqual(role.json.animations.slice(0, 5), knight.json.animations);
+  assert.equal(role.json.animations[5].name, 'Attack4');
   assert.deepEqual(role.json.nodes, knight.json.nodes);
   assert.deepEqual(role.json.skins, knight.json.skins);
   assert.ok(role.bin.subarray(0, knight.bin.length).equals(knight.bin), '原始動畫與inverse bind二進位資料必須完全保留');
@@ -40,9 +41,10 @@ test('新劍劍身筆直平整、長度為附件劍身80%，全部剛性綁在�
   const ys = local.map(p => p[1]);
   const length = (Math.max(...ys) - Math.min(...ys)) / 100;
   assert.ok(Math.abs(length / .9245084002614021 - .8) < 1e-6);
+  const grip = g.asset.extras.gripFrame;
   for (const p of local) {
-    assert.ok(Math.abs(p[2] - .5) <= .351, '平整劍面厚度不得出現凹陷');
-    assert.ok(Math.abs(p[0] - 5.3) <= 2.601, '劍身中心線保持筆直');
+    assert.ok(Math.abs(p[2] - grip.bladeRootInSword[2]) <= .351, '平整劍面厚度不得出現凹陷');
+    assert.ok(Math.abs(p[0] - grip.bladeRootInSword[0]) <= 2.601, '劍身中心線保持筆直');
   }
   for (const p of g.meshes[0].primitives.filter(p => g.materials[p.material].name === 'Role sword flat steel' ||
       array(role, p.attributes.JOINTS_0).every(j => j[0] === sword))) {
@@ -67,6 +69,9 @@ test('所有新網格索引、權重、貼圖與材質有效，人體不混入Sw
       if (!joints.every(j => j[0] === sword)) assert.ok(joints.every((j, i) => j.every((v, k) => v !== sword || weights[i][k] === 0)));
     }
   }
-  assert.deepEqual(g.asset.extras, { appearance: 'role', capeCollision: false, textureGrade: false });
+  assert.equal(g.asset.extras.appearance, 'role');
+  assert.equal(g.asset.extras.capeCollision, false);
+  assert.equal(g.asset.extras.textureGrade, false);
+  assert.equal(g.asset.extras.gripFrame.type, 'closed-diagonal-palm-grip');
   assert.match(fs.readFileSync(path.join(root, 'js/hero3d.js'), 'utf8'), /MODEL_URL = 'images\/models\/hero3d\/role\.glb\?v=/);
 });

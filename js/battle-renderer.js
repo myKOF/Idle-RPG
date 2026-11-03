@@ -2292,12 +2292,13 @@ var BattleRenderer = (function () {
   }
   /* 施法動作把「釋放」那一幀對到硬直結束時，播放速度的上下限（fps）：硬直很短或很長時不要快成一閃、慢成停格 */
   var CAST_FPS_MIN = 12, CAST_FPS_MAX = 60;
-  /* 3D 主角的普攻動作（GLB 只有 Attack1／Attack2 兩個）、施法把劍揮到的時刻對到技能釋放時刻時最多加速幾倍 */
+  /* 3D 主角的四個普攻動作（第三招取 Attack2 後半，第四招獨立 Attack4）、施法把劍揮到的時刻對到技能釋放時刻時最多加速幾倍 */
   var REVIVE_TEXT_RED = '#ff5a5a', REVIVE_TEXT_YELLOW = '#ffd43b';   // 倒地／復活文字顏色
-  var HERO3D_ATTACKS = ['attack1', 'attack2', 'attack3'];
+  var HERO3D_ATTACKS = ['attack1', 'attack2', 'attack3', 'attack4'];
+  var HERO3D_CASTS = ['attack1', 'attack2', 'attack3'];   // 第四招只加入普攻，技能沿用原有三招
   var HERO3D_CAST_SPEED_MAX = 4;
   var HERO3D_CAST_MAX_MS = 300;   // 3D 施法動作最長播多久（使用者 2026-10-31：約 0.3 秒）：施法是插進移動裡的，角色在這段時間站定，播完立刻繼續跑。要與模擬層站定時間（SKILL_CAST_LOCK＋SKILL_CAST_HOLD）一致
-  var HERO3D_ACTIONS = { attack1: 1, attack2: 1, attack3: 1, cast: 1 };   // 出手動作（普攻、技能）：一律播完，不被移動打斷
+  var HERO3D_ACTIONS = { attack1: 1, attack2: 1, attack3: 1, attack4: 1, cast: 1 };   // 出手動作（普攻、技能）：一律播完，不被移動打斷
   /* 3D 起身：天地共生用復活倒數的進度（riseStart＝0），正常死亡用起身時間的進度；
      progress（0..1）走到哪，就把死亡動作倒著播到哪 */
   var HERO3D_RISE_START = 0;
@@ -2322,15 +2323,15 @@ var BattleRenderer = (function () {
     if (melee) {
       /* 隨機混著出，但不連續兩下同一招：純隨機會連抽同一段，看起來像卡住重播；
          只輪流又太規律（使用者 2026-09-22 要兩段普攻與特殊攻擊隨機混合）。 */
-      var attacks = (p.body && p.body.hero3d) ? HERO3D_ATTACKS : playerAttackAnimNames(sheet);   // 3D 三個普攻動作（雙手劈／斜劈／平砍），不連續兩下同一招
+      var attacks = (p.body && p.body.hero3d) ? HERO3D_ATTACKS : playerAttackAnimNames(sheet);   // 3D 四個普攻動作，不連續兩下同一招
       var pool = attacks.length > 1
         ? attacks.filter(function (n) { return n !== p.lastAttack; }) : attacks;
       name = pool[Math.floor(Math.random() * pool.length)] || attacks[0];
       p.lastAttack = name;
     } else if (p.body && p.body.hero3d) {
       /* 3D 技能動作：與普攻一樣在三個攻擊動作之間隨機挑（使用者 2026-10-29），不連續兩下同一招 */
-      var castPool = HERO3D_ATTACKS.filter(function (n) { return n !== p.lastAttack; });
-      name = castPool[Math.floor(Math.random() * castPool.length)] || HERO3D_ATTACKS[0];
+      var castPool = HERO3D_CASTS.filter(function (n) { return n !== p.lastAttack; });
+      name = castPool[Math.floor(Math.random() * castPool.length)] || HERO3D_CASTS[0];
       p.lastAttack = name;
     } else {
       name = (sheet && sheet.anims && sheet.anims.cast) ? 'cast' : 'attack2';

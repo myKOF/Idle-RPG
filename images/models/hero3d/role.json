@@ -1,7 +1,7 @@
 {
   "sourceSha256": "2fb4f1856db958ca6377706966b7d2ecafdf7441e6de41dfb5b74c382643f7bd",
   "knightSha256": "ad6645d1db9ebfd18240049e36d3db075ca2e3aa27b7f3c1e6e568a2ed435bc4",
-  "outputSha256": "32fe71418b889e5e79b437f0d00abde477e74dce24fed5abc7642262176f1a1b",
+  "outputSha256": "c03e9b99b9e444e920d4e2ad077f81dffdb12b8928b062677e679663da45fc07",
   "blenderVersion": "4.5.10 LTS",
   "originalAnimationBinaryPreserved": true,
   "originalRigPreserved": true,
@@ -11,7 +11,8 @@
     "Attack2",
     "CombatIdle",
     "Death",
-    "Run"
+    "Run",
+    "Attack4"
   ],
   "removedBackSwordVertices": 782,
   "removedBackSwordTriangles": 438,
@@ -30,8 +31,28 @@
     "source": "User-supplied Role.glb",
     "authorization": "User explicitly confirmed licensed in chat, 2026-11-03",
     "workflow": "Blender 4.5.10 LTS; user-designated supplied human base",
-    "motion": "All existing golden knight animations copied unchanged; supplied run ignored",
-    "goldenKnight": "Original preserved; rebirth appearance switch deferred by user"
+    "motion": "Original five animations unchanged; append whole-body mirrored Attack4, right hand with leading blade edge; old three attacks/skill playback unchanged",
+    "goldenKnight": "Original preserved; rebirth appearance switch deferred by user",
+    "attack4": "User-supplied Attack4.glb; user explicitly confirmed licensed in chat, 2026-11-03"
   },
-  "library": "codex-authored/hero3d-role-20261103"
+  "library": "codex-authored/hero3d-grip-attack4-20261103",
+  "gripRepair": {
+    "handVertices": 2807,
+    "handTriangles": 5622,
+    "watertight": true,
+    "shaftDiameterMeters": 0.028,
+    "contactReport": "qa/contact-report.json",
+    "originalFiveAnimationBytesUnchanged": true
+  },
+  "attack4": {
+    "sourceSha256": "5b81e538fabb69e9e026406d249a8c7fa3bbe0649097c25a965bff4b40e00836",
+    "sourceClip": "Shield_Push_Left",
+    "mirroredAxis": "X",
+    "duration": 2.366666793823242,
+    "fps": 30,
+    "frames": 72,
+    "bladeFacesForwardDuringSwing": true,
+    "normalAttackPool": 4,
+    "noConsecutiveRepeat": true
+  }
 }

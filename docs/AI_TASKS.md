@@ -1,3 +1,28 @@
+> 2026-11-03 使用者最新追加授權：握持修好後接入第四個普攻，普攻四招隨機；前述候選限制由本指示更新，允許role／hero3d／renderer／index／scene-preview快取、製作匯出工具、回歸與LV，舊三招與技能施法保持。正式目標已逐檔預檢無外部衝突。
+
+## HERO3D-GRIP-FIX-20261103 — 握拳修復與第四普攻接線
+
+- Owner：Codex；Done。使用者確認候選手部未握住劍，要求修好；最新追加授權接入第四普攻，取代前輪候選隔離限制。範圍為role與來源、Hero3D／renderer、兩頁快取、作者工具／回歸、LV及本任務表。禁止修改傷害／Worker／存檔／配置、原黃金騎士及使用者兩個未追蹤模型；相關目標衝突預檢均乾淨。
+- 修復：Blender4.5.10重建右掌、拇指及四指的封閉握柄網格（2807頂點／5622三角面），刪除原折疊手部；28mm程序皮柄、自然斜握點、護腕固定前臂／腕部漸變權重。劍身形狀及0.8長度保持，背劍仍無。原五動畫JSON與二進位、25骨架及inverse bind逐位元保持。
+- 動作：Attack4由已授權Shield_Push_Left全身X鏡像／左右交換，72幀30fps共2.366667秒，命中參考1.07秒；出手刃口迎前，起收招漸變握腕補正。普攻四招隨機、不連續同招；技能仍原三招、第四招不被移動／技能插斷。原三招、跑步、待機及倒地起身播放規則保持。
+- 幾何／動畫驗證：BVH手對刀身／護手／皮柄交叉三角面皆0；281個手部頂點距柄小於1mm（最小0.355mm），三角度原生1400近拍目視。Three獨立讀回鏡像四肢誤差0.000208度、劍面朝前分量5.15e-7／刃口對齊0.9999994、腳底差1.35e-7m；固定握點與完整72幀方向通過。新GLB4.49MB，未放寬5MB預算。早期重複全身權重緩衝超限已改為只更新原護腕權重；測試偽隨機改seeded LCG避免偏置，產品選招未為測試改動。
+- 測試：node --test tests/hero3d-role.test.cjs tests/hero3d-attack4.test.cjs tests/hero3d-battle-rules.test.cjs tests/hero3d-internal-toggle.test.cjs tests/battle-renderer-pause.test.cjs tests/vfx-editor-cache-versions.test.cjs為28/28；npm.cmd run build為638檔通過。素材匯出--source-check逐檔SHA與原黃金騎士SHA核對通過。
+- 實機：隔離localhost正式index／真Worker／Pixi與Hero3D，100次真實選招抽到全部四招且無相鄰重複，attack4對應Attack4，技能不插斷，收招可回Run。只在HTTP暫存暴露既有函式、暫停後確定性推進。Page／console error0，僅既有未使用preload提示；未改玩家原網址存檔。正式Hero3D雙角度1600×860 GIF84幀30fps、三角度握柄近拍，QA在本聊天visualizations/grip-fix。
+- 修改檔案：role.glb／role.json／ROLE_SOURCE.md、hero3d.js、battle-renderer.js、index、scene-preview、sculpt_grip.py／mirror_attack.py／export-role.cjs、兩個既有測試及新增hero3d-attack4測試、LV與本段。唯讀未改：AI_RULES／AGENTS／Workflow／prompts、原黃金騎士／cloth、原五段動畫、戰鬥／Worker／存檔／配置與使用者新增GLB。
+- 素材庫：codex-authored/hero3d-grip-attack4-20261103保存已授權原Attack4、修握基底／完整六動作Blend、匯出、作者工具與QA共25檔及manifest；原Role來源仍在既有c4b734b包。素材先Commit，再遊戲Commit，SHA見交付。可供Review及使用者合併，未合併／推送。已知限制：尚未跨瀏覽器或長時間效能測試；模型仍原低多邊形風格，細節可依新近拍繼續調整。本項無未完成。
+- 後續追加（2026-11-03）：使用者提供Role1.glb作1轉起皮膚、所有動作照舊；新素材授權正在確認。此為後續獨立接線，保留本項修握與第四普攻成果。
+
+## HERO3D-ATTACK4-MIRROR-20261103 — 左手動作鏡像右手揮劍候選
+
+- Owner：Codex；Review（候選與GIF已完成），單一開發者。使用者提供已授權Attack4.glb，指定左右鏡像成右手揮劍，揮擊刀刃迎向前方敵人，背後劍刪掉，先給GIF預覽。只製作候選，不接遊戲隨機攻擊、不改既有五動作。
+- 前置：現用role.glb與原握劍骨架；來源Shield_Push_Left，2.366667秒。允許本任務紀錄及獨立素材庫候選包（原檔、Blender腳本／可編輯來源、候選GLB、驗證），GIF／QA在本聊天visualizations/attack4-mirror。禁止改role／黃金騎士正式GLB、hero3d／renderer、配置／戰鬥／Worker／存檔／其他工作區。原工作區兩個使用者未追蹤GLB完整保留、不提交。
+- 預檢：任務表無外部衝突；無正式程式修改。驗收全身左右鏡像／骨架重新瞄準、右手／劍握點固定、刀刃方向及劍面迎擊比、背部無新增劍、原動作／網格未改，Blender重開／候選讀回／正式Hero3D渲染及GIF。預覽後等使用者決定是否接入，不合併不推送。
+- 完成：Blender4.5.10製作只追加Attack4的獨立候選GLB與可編輯Blend；原五動畫／骨架／網格／材質／BIN前綴逐位不變，背劍仍移除。整段X反射並交換左右，依來源腳底高度補償腿長；原Sword握點及局部旋轉固定，手與劍一起校正刃口。出手0.25～1.5秒刃口迎+Z前方，起手漸入／收招漸退，避免強制整段朝前造成半圈翻掌。
+- 驗證：獨立Three.js讀回verify.mjs，鏡像四肢誤差0.000208度、揮擊劍面朝前分量5.15e-7／刃口投影對齊0.9999994、腳底高度誤差1.35e-7m；原片與候選長2.366667秒，首尾差皆約1.1709度，沒有新增半圈翻掌，原網格／動作及固定握點檢查通過。初次自行加的首尾小於1度門檻不符來源本身1.17度，改為與來源直接比較、不改產品動畫迎合門檻。node --test tests/hero3d-role.test.cjs為3/3；npm.cmd run build為637檔通過，diff --check通過。
+- 預覽：正式Hero3D渲染器以候選model opts播放，雙角度1600×860 GIF、84幀／30fps約2.8秒，含72來源幀與12停留幀；地板／青色敵人前方箭頭僅診斷，不寫正式遊戲。Console error／warning皆0，GIF讀回抽四時刻、背面實拍已目視確認。預覽與QA在本聊天visualizations/attack4-mirror；素材庫新增codex-authored/hero3d-attack4-mirror-20261103保存授權原檔／Blend／作者與獨立驗證／候選GLB／GIF及11檔SHA manifest，讀回皆一致。
+- 交付：本輪只有任務表修改；素材庫候選包新增、11檔已保存驗證；唯讀未改規範／Workflow／prompts、role與黃金騎士正式GLB／source／動畫、hero3d／battle-renderer／配置／戰鬥／Worker／存檔及使用者兩個新模型。Commit：無，依先GIF預覽保留候選；未合併推送。已知限制／未完成接線：未加入普攻池、未裁切出手／命中時點、未驗正式敵人命中與長時間效能；候選預覽本身已完成，可供外觀Review，待後續指示再接遊戲，不能把本預覽當作正式普攻已上線。
+
+
 ## HERO3D-ROLE-MODEL-20261103 — 新人物與右手平整短劍
 
 - Owner：Codex；Done，單一開發者。使用者最後指定只換Role.glb人物與劍造型，所有動作（含跑步）均沿用現有黃金騎士。劍從背部拆至右手、修平凹陷、劍身縮短20%，握點／手腕／動作播放設計保持；黃金騎士完整保留供之後轉生外觀使用，本次不接轉生切換。使用者已確認附件取得授權。
