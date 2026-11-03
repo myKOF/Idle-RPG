@@ -2371,6 +2371,46 @@ html *::-webkit-scrollbar-corner {
   white-space: nowrap;
 }
 
+/* 新開放功能：父圖標保留驚嘆號，直到所有新頁籤各自被點選。 */
+#tabs .unlock-nav-pending .af-nav-icon { position: relative; overflow: visible; }
+#tabs .unlock-nav-pending .af-nav-icon::after {
+  content: '!';
+  position: absolute;
+  right: -3px;
+  bottom: -2px;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #fff4d4;
+  border-radius: 50%;
+  background: #d83227;
+  color: #fff;
+  font: 900 14px/1 sans-serif;
+  pointer-events: none;
+}
+
+#game-layout #workspace-area .unlock-tab-pending {
+  background: linear-gradient(#765622, #483315) !important;
+  color: #fff0b5 !important;
+  border-color: #e9bd61 !important;
+  animation: unlockTabPulse 1.4s ease-in-out infinite !important;
+  outline: 2px solid #e9bd61;
+  outline-offset: -2px;
+}
+@keyframes unlockTabPulse {
+  0%, 100% { filter: brightness(1); outline-color: #b78a3d; }
+  50% { filter: brightness(1.65); outline-color: #ffe2a0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #game-layout #workspace-area .unlock-tab-pending {
+    animation: none !important;
+    background: #57421b;
+    color: #fff0b5;
+  }
+}
+
 /* ---- 「角色」分頁 ---- */
 #tab-char .char-hero {
   display: flex;

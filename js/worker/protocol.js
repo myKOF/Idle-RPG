@@ -104,7 +104,8 @@
 // v66：背包格投影新增 ancientForgeCount／ancientForgeOrders，精鑄上限與星星來源分色。
 // v67：封魔塔自動推進設定與勝利接續下一層，tower 指令6→7。
 // v68：forge.placeItem 可於精鑄／刻印原子移入目前穿戴裝備，同步equip／header。
-var WORKER_PROTOCOL_VERSION = 68;
+// v69：header.systemUnlocks 與 ui.markUnlockSeen；已讀提示隨存檔保存。
+var WORKER_PROTOCOL_VERSION = 69;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -468,6 +469,7 @@ var COMMANDS = {
      任意 key/value 等於開一個可以寫進任何狀態的後門，改為白名單。 */
   'settings.set':          { fn: null,               args: { key: 'str', value: 'bool' },
                              limit: { key: { enum: ['compareEq'] } },                             dirty: ['header', 'inv', 'equip'] },
+  'ui.markUnlockSeen':     { fn: null,               args: { id: 'str' },                          dirty: ['header'] },
 
   /* -- 存檔 --
      v2 修正：這三條原本宣告直接呼叫 manualSave / createManualSaveToFolderV2 / restartGame，

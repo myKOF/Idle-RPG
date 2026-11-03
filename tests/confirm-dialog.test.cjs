@@ -199,7 +199,7 @@ test('確認說明支援String的br與原生換行，其他標籤仍以文字顯
   assert.match(css, /\.confirm-message\s*\{[^}]*white-space:\s*pre-line/);
 });
 
-test('首次轉生成功彈窗依 Worker header Snapshot 顯示天賦解鎖提示', () => {
+test('轉生完成不再向共用彈窗追加威能解鎖提示', () => {
   const { context, elements } = loadGameContext();
   context.UI_WORKER_STATE.panels.header = {
     player: { reincarnations: 1 }
@@ -208,6 +208,16 @@ test('首次轉生成功彈窗依 Worker header Snapshot 顯示天賦解鎖提�
   context.showConfirmDialog('轉生成功', () => {}, { title: '轉生成功' });
 
   const message = elements.get('confirm-message');
-  assert.equal(message.children.length, 1);
-  assert.equal(message.children[0].textContent, '已解鎖威能系統！');
+  assert.equal(message.children.length, 0);
+  assert.equal(message.textContent, '轉生成功');
+});
+
+test('神鑄解鎖事件只更新功能狀態，不彈窗或自動切頁', () => {
+  const { context, elements } = loadGameContext();
+  const requests = [];
+  context.requestPanelData = (key) => requests.push(key);
+  context.showConfirmDialog = () => assert.fail('解鎖後不可彈窗');
+  context.switchTab = () => assert.fail('解鎖後不可自動切頁');
+  context.handleWorkerUiEvents([{ kind: 'notice', key: 'forgeUnlocked', modal: true }]);
+  assert.deepEqual(requests, ['forge', 'header']);
 });

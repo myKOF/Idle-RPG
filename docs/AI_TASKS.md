@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## SYSTEM-UNLOCK-HINTS-20261103 — 功能列與獨立頁籤解鎖提示
+
+- Owner：Codex；Done，單一開發者。使用者要求解鎖後不彈窗，以功能圖標驚嘆號及內部新開放頁籤高亮閃爍提示，先提供切頁GIF。各頁籤獨立已讀，點選才清除；進入父功能不清除預設頁提示。
+- 前置：正式header／Worker命令與存檔流程、配置解鎖門檻已完成。允許：新增純共載system-unlocks及主端ui-unlock-notices、ui／player／protocol／sim.worker／bridge、CSS／index必要快取、對應測試、WORKER_PROTOCOL／LV／本段。禁止改使用者Excel／CSV／生成資料、數值／解鎖門檻、其他工作區及合併推送。fetch後15檔預檢無外部來源，本副本既有使用者表格與String快取完整保留、只分段stage本項。
+- 實作範圍：神鑄四頁、寶石共鳴、威能各轉頁、裝備方案與高塔新塔別，依正式門檻獨立投影；初始即開放項目不刷提示。已讀存入權威G，Worker只接受目前已解鎖的登記ID，舊存檔缺欄相容，讀檔／重開局不共用已讀。保留轉生前確認及解鎖預告，取消解鎖後的神鑄公告彈窗。
+- 驗收：門檻前後／多頁獨立／預設頁不誤清／點選已讀／讀檔與重開／非法命令及失敗重試、正式UI與真Worker／Console、相關回歸／Build／diff；製作正式切頁閃爍GIF供使用者確認。無獨立素材或新顯示字串。
+- 完成16檔：新增純共載js/system-unlocks.js、主端js/ui-unlock-notices.js與tests/system-unlocks.test.cjs；修改ui／player／protocol／sim.worker／bridge、ashen-forge.css／index、WORKER_PROTOCOL／LV／本段、protocol／confirm-dialog測試，另經追加乾淨預檢後，passive-stat-panel fixture只補載新header依賴，不改原斷言。神鑄四頁、共鳴、威能1～10轉、裝備方案與後兩塔別，共20個登記目標；開局已開放的裝備方案不刷提示，未達門檻頁不提示、預覽鎖頁不可提前已讀。
+- 狀態／協議：v68→69，指令95→96，ui.markUnlockSeen只接受目前可提示且已解鎖的登記ID；header.systemUnlocks提供available／seen，G.uiUnlockSeen記已讀，mergeDefaults使舊存檔缺欄相容，新局空表。主端只讀投影、每個ID各自pending key，未收到成功的header不清提示、失敗可重點。移除forgeUnlocked開放後彈窗／自動切頁及舊轉生成功附加威能解鎖行；轉生前確認／預告保持。index及Worker必要依賴／入口快取20261103-unlock-hints，CSS 1.0.99。
+- 測試：node --test tests/system-unlocks.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/ui-tick-smoke.test.cjs tests/confirm-dialog.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs共56項55過／1既有失敗（轉生預告舊測試固定預期3轉共鳴，正式表為6轉；前項已以HEAD重現）。最終排除confirm-dialog重跑其餘6檔46/46。追加node --test tests/passive-stat-panel.test.cjs tests/base-regen.test.cjs tests/hall-of-radiance.test.cjs tests/game-menu-save.test.cjs tests/game-menu-pause.test.cjs tests/ui-worker-g-dependency.test.cjs共39項28過／11既有失敗（光耀之堂8項、舊被動倍率3項）；唯讀preloader將本項修改的五支遊戲JS改讀HEAD，對兩失敗測試檔重跑，同11項／相同值差異重現。未修改技能、配置或放寬測試。npm.cmd run build為636檔通過，完整diff／stat／check及自我Review通過。
+- 實機：bundled Playwright／headless Edge、隔離隨機localhost正式index／真Worker，以既有GM命令設定2→3→6轉，不讀寫玩家原網址存檔。2轉無解鎖彈窗／神鑄驚嘆號，入頁預設裝備神鑄保持閃爍，點選才消除；3轉太古獨立重新提示且舊裝備頁不閃；真正saveAutoNow／reload保留兩頁已讀；6轉共鳴父圖標／內頁、威能多頁逐一已讀與父提示保留均通過；減少動態為固定高亮。Console error／warning及pageerror皆0。初次QA等待提示class早於forge面板渲染，改等待正式aria-pressed；隨後實拍發現主題!important蓋底色／字色，已提高提示樣式優先度，最終檢查animation=unlockTabPulse／1.4秒、字色與金漸層通過後重錄，不降低驗收。
+- GIF交付：本聊天visualizations/system-unlock-hints/system-unlock-hints.gif，實機72幀×8fps、820×796、約9秒循環，依序顯示2轉圖標提示→切神鑄預設頁閃爍→點選清除→3轉再提示太古→切頁閃爍→點選清除。GIF與兩實拍均已目視核對，QA腳本／report.json及各測試／基線記錄保留，私人服務與瀏覽器已關閉；預覽不屬遊戲獨立素材，素材庫無變更／不建空提交。
+- 唯讀未改：共通規範／Workflow／Agent／prompt、使用者String／Achievement及其他表格與生成資料、既有轉生／神鑄／寶石／威能／塔戰權威條件、save遷移與I/O、其他工作區。只stage本項index增量，使用者String快取及表格修改仍保留未提交。已知限制：未測全庫／多瀏覽器長玩，12項既有測試問題另列；舊存檔已解鎖但無已讀欄的受門檻功能會提示一次，點選後保存。無本項未完成內容，可供Review／使用者合併；未合併推送develop／main。Commit為本段所在「[Codex] feat: 以功能圖標與頁籤提示新解鎖系統」，SHA見交付；建議先看GIF再重載遊戲驗收。
+
 ## CONFIRM-LINE-BREAKS-20261103 — String確認說明換行
 
 - Owner：Codex；Done。使用者String2146已填入br但轉生彈窗原樣顯示；原因為showConfirmDialog使用textContent，且樣式未保留文字換行。前置既有共用確認視窗已完成。

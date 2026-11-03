@@ -165,6 +165,7 @@ function newGameState() {
     forge: { version: 2, operation: 'equip', slots: [null, null, null, null, null, null],
       stones: 0, stonePreference: 0, quality: 6, auto: false, result: null, log: [], unlockNotified: false, unlocked: false },
     settings: { compareEq: true },
+    uiUnlockSeen: {}, // 功能／頁籤解鎖提示已讀；隨存檔與新局各自保存
     firstRunAt: Date.now()
   };
 }

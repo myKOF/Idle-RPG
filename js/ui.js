@@ -1003,10 +1003,6 @@ function handleWorkerUiEvents(events) {
     } else if (event.key === 'forgeUnlocked') {
       requestPanelData('forge', true);
       requestPanelData('header', true);
-      showConfirmDialog(STR(2034), function () {
-        switchTab('forge');
-        UI.dirty.forge = true;
-      }, { title: STR(2035), okText: STR(2036), cancelText: STR(2037) });
     }
   });
 }
@@ -7659,6 +7655,7 @@ function uiTick() {
   if (UI.tab === 'char') {
     updateCharCoreSummary();
   }
+  if (typeof refreshSystemUnlockHints === 'function') refreshSystemUnlockHints();
   refreshOpenStatTooltip();
 }
 
@@ -10745,12 +10742,6 @@ function showConfirmDialog(message, onConfirm, options) {
     line.textContent = notice;
     msg.appendChild(line);
   });
-  if (options.title === '轉生成功' && uiReincarnationCount() === 1) {
-    var talentUnlockNotice = document.createElement('div');
-    talentUnlockNotice.className = 'confirm-highlight';
-    talentUnlockNotice.textContent = STR(184);
-    msg.appendChild(talentUnlockNotice);
-  }
   ok.textContent = options.okText || STR(149);
   cancel.textContent = options.cancelText || STR(76);
   ok.className = 'btn' + (options.danger ? ' danger' : '');
