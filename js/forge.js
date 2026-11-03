@@ -1,6 +1,6 @@
 'use strict';
 if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
-/* 四功能神鑄。素材入槽時移出庫存；神性之石只預選，執行時才扣除。 */
+/* 四功能神鑄。素材入槽時移出庫存；成功率材料只預選，執行時才依功能扣除。 */
 function forgeMigrateState(data, scanSeen) {
   var f = data.forge;
   if (f && f.version === 2) {
@@ -82,7 +82,7 @@ function forgeRateInfo() {
   // 空法陣仍可依所選品質預設石頭數，不需先放入裝備。
   var view = f.operation === 'equip' && !forgeItemCount()
     ? Object.assign({}, f, { slots: [{ rarity: f.quality }] }) : f;
-  return divineForgeRateInfo(view, G.player.dust);
+  return divineForgeRateInfo(view, divineForgeMaterialOwned(f.operation, G.player));
 }
 function forgeCapRecipeStones(info) {
   if (!info) return;
@@ -127,6 +127,7 @@ function forgePlaceItem(id) {
   var slot = f.slots.indexOf(null);
   if (slot < 0 || slot >= divineForgeSlotCount(f.operation)) return STR(1247);
   if (equippedSlot !== null) {
+    if (f.operation === 'ancient') f.equipmentOrigin = { itemId: it.id, setIndex: G.equipActive || 0, slot: equippedSlot };
     G.equipment[equippedSlot] = null;
     f.slots[slot] = it;
     markStatsDirty();
@@ -160,6 +161,26 @@ function forgeReturnItem(it) {
   G.inventory.push(it);
   UI.dirty.inv = true;
 }
+// 來源只記錄太古精鑄的穿戴素材；背包與舊存檔缺少來源時沿用退回背包。
+function forgeReturnAncientItem(it, origin) {
+  var eq = origin && origin.itemId === it.id && Number.isInteger(origin.setIndex) &&
+    Array.isArray(G.equipmentSets) && G.equipmentSets[origin.setIndex];
+  if (!eq || equipSlotsForItem(it).indexOf(origin.slot) < 0) { forgeReturnItem(it); return; }
+  // 作業期間可能已換裝；被擠下的裝備完整退包，不走滿背包自動分解。
+  var partner = null;
+  if (origin.slot === 'weapon' && isTwoHandItem(it) && eq.weapon2 &&
+      !(asuraDualWieldOn() && isTwoHandItem(eq.weapon2))) partner = 'weapon2';
+  if (origin.slot === 'weapon2' && isTwoHandItem(eq.weapon) &&
+      !(isTwoHandItem(it) && asuraDualWieldOn())) partner = 'weapon';
+  if (partner) { forgeReturnItem(eq[partner]); eq[partner] = null; }
+  var order = it.legendaryEquipOrder;
+  var replaced = equipItem(it, origin.slot, eq);
+  if (order > 0) it.legendaryEquipOrder = order;
+  if (replaced) forgeReturnItem(replaced);
+  forgeNoteRarity(it);
+  markStatsDirty();
+  UI.dirty.inv = UI.dirty.equip = UI.dirty.header = true;
+}
 function forgeRemoveItem(index) {
   var f = forgeState();
   if (f.crafting) return STR(2209);
@@ -168,7 +189,9 @@ function forgeRemoveItem(index) {
   if (!it) return null;
   f.slots[index] = null;
   if (it.kind === 'gem') addGem(it.type, it.level, 1);
+  else if (f.operation === 'ancient') forgeReturnAncientItem(it, f.equipmentOrigin);
   else forgeReturnItem(it);
+  if (f.equipmentOrigin && f.equipmentOrigin.itemId === it.id) delete f.equipmentOrigin;
   forgeDustCount();
   UI.dirty.forge = true;
   return null;
@@ -278,7 +301,7 @@ function forgeValidate() {
     if (Object.keys(counts).length !== 2 || Object.keys(counts).some(function (t) { return counts[t] !== DIVINE_FORGE.gemPerType; })) return STR(2166, GEM_FORGE_MAX_LEVEL, DIVINE_FORGE.gemPerType);
   } else if (items.some(function (it) { return it.locked || !divineForgeItemEligible(it, mode) || (mode === 'equip' && it.rarity !== items[0].rarity); })) return STR(2164);
   var info = forgeRateInfo();
-  if (!info || f.stones !== info.stones || (G.player.dust || 0) < info.stones) return STR(2168);
+  if (!info || f.stones !== info.stones || divineForgeMaterialOwned(mode, G.player) < info.materialCost) return STR(2309, divineForgeMaterialName(mode));
   if (G.player.gold < info.cost) return STR(1267, fmt(info.cost), fmt(G.player.gold));
   return null;
 }
@@ -300,11 +323,13 @@ function doForge() {
   if (f.crafting) return STR(2209);
   var error = forgeValidate();
   if (error) return error;
-  var mode = f.operation, items = f.slots.filter(Boolean), counts = {}, info = forgeRateInfo();
+  var mode = f.operation, items = f.slots.filter(Boolean), counts = {}, info = forgeRateInfo(), origin = f.equipmentOrigin;
   if (mode === 'gem') items.forEach(function (g) { counts[g.type] = (counts[g.type] || 0) + 1; });
   G.player.gold -= info.cost;
-  G.player.dust = (G.player.dust || 0) - info.stones;
+  var materialKey = divineForgeMaterialKey(mode);
+  G.player[materialKey] = (G.player[materialKey] || 0) - info.materialCost;
   f.slots = [null, null, null, null, null, null];
+  delete f.equipmentOrigin;
   f.stones = 0; f.result = null;
   var success = chance(info.total), message;
   if (success) {
@@ -331,7 +356,8 @@ function doForge() {
         if (typeof achAddStat === 'function') achAddStat('ancientCast', 1);
         if (item.imprint && item.imprint.affix === a) item.imprint.kind = 'extraAncient';
       } else forgeApplyImprint(item, info.stones);
-      forgeReturnItem(item);
+      if (mode === 'ancient') forgeReturnAncientItem(item, origin);
+      else forgeReturnItem(item);
       f.result = { name: item.name, rarity: item.rarity, slot: item.slot, level: item.level };
       message = STR(2169, item.name);
       if (mode === 'imprint' && item.imprint) {

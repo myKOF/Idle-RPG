@@ -3015,14 +3015,6 @@ function renderHeader() {
     ? !!forgeSnapshot.forge.unlocked
     : progressReached(p.level, p.reincarnations, FORGE_UNLOCK_LEVEL, FORGE_UNLOCK_REINCARNATION);
   if (forgeTabBtn) forgeTabBtn.style.display = forgeUnlockedView ? '' : 'none';
-  var bookTotal = 0, bookTip = [];
-  for (var bk in p.books) {
-    bookTotal += p.books[bk];
-    if (p.books[bk]) bookTip.push(ENCHANTS[bk].name + ' x' + p.books[bk]);
-  }
-  setTextIfChanged($id('r-books'), fmt(bookTotal));
-  updateResourceTip('r-books', STR(102), bookTip.join('、') || STR(124));
-
   // shownRes 由模擬層在資源首次取得時更新；渲染只讀快照。
   var shownRes = p.shownRes || {};
   var resVisMap = [
@@ -3030,8 +3022,7 @@ function renderHeader() {
     { id: 'r-dust', val: p.dust || 0 },
     { id: 'r-ancient-essence', val: p.ancientEssence || 0 },
     { id: 'r-soul-origin', val: p.soulOrigin || 0 },
-    { id: 'r-demon-seed', val: p.demonSeed || 0 },
-    { id: 'r-books', val: bookTotal }
+    { id: 'r-demon-seed', val: p.demonSeed || 0 }
   ];
   resVisMap.forEach(function (item) {
     var el = $id(item.id);
@@ -6826,7 +6817,7 @@ function bindNewForgeEvents() {
   });
 }
 
-/* ---- 四功能神鑄：六個外圈素材格與中央神性之石 ---- */
+/* ---- 四功能神鑄：六個外圈素材格與中央成功率材料 ---- */
 var FORGE_SLOT_POS = [
   { x: 50, y: 24 }, { x: 72.5, y: 37 }, { x: 72.5, y: 63 },
   { x: 50, y: 76 }, { x: 27.5, y: 63 }, { x: 27.5, y: 37 }
@@ -6850,14 +6841,17 @@ function forgeStonePickerRate(f, owned) {
     ? Object.assign({}, f, { stones:count }) : f, owned);
 }
 function updateForgeStonePicker(f, player, pending) {
-  var rate = forgeStonePickerRate(f, player.dust);
+  var owned = divineForgeMaterialOwned(f.operation, player);
+  var rate = forgeStonePickerRate(f, owned);
   setTextIfChanged($id('forge-rate'), rate ? STR(2173, fmt1(rate.total)) : STR(2176));
-  setTextIfChanged($id('forge-dust-own'), STR(2174, fmt(player.dust || 0)));
-  setTextIfChanged($id('forge-stone-value'), rate ? rate.stones : 0);
+  setTextIfChanged($id('forge-dust-own'), STR(2310, divineForgeMaterialName(f.operation), fmt(owned)));
+  setTextIfChanged($id('forge-stone-value'), rate ? rate.materialCost : 0);
   var center = $id('forge-stone-center');
-  if (center) setTextIfChanged(center.lastElementChild, rate ? rate.stones : 0);
+  if (center) setTextIfChanged(center.lastElementChild, rate ? rate.materialCost : 0);
   $id('forge-stone-minus').disabled = pending || !rate || rate.stones <= 0;
-  $id('forge-stone-plus').disabled = pending || !rate || rate.stones >= Math.min(rate.maxStones, player.dust || 0);
+  $id('forge-stone-plus').disabled = pending || !rate || rate.stones >= rate.affordableStones;
+  $id('forge-stone-minus').setAttribute('aria-label', STR(2312, divineForgeMaterialName(f.operation)));
+  $id('forge-stone-plus').setAttribute('aria-label', STR(2313, divineForgeMaterialName(f.operation)));
 }
 function finishForgeStoneHold(cancel) {
   var hold = UI.forgeStoneHold;
@@ -6869,7 +6863,7 @@ function finishForgeStoneHold(cancel) {
   hold.count = null;
   if (btn.hasPointerCapture && btn.hasPointerCapture(pointerId)) btn.releasePointerCapture(pointerId);
   var f = forgeViewState(uiForgePanelSnapshot()), player = (uiHeaderPanelSnapshot() || {}).player;
-  var rate = f && player && forgeViewRate(f, player.dust);
+  var rate = f && player && forgeViewRate(f, divineForgeMaterialOwned(f.operation, player));
   if (!cancel && count !== null && rate && !f.crafting && !isUiCommandPending(nodePendingKey('forge')) && count !== rate.stones) {
     hold.submittedCount = count;
     hold.send(count);
@@ -6884,13 +6878,13 @@ function bindForgeStoneControls(send) {
       if (event.detail && suppressClick) { event.preventDefault(); return; }
       if (btn.disabled || isUiCommandPending(nodePendingKey('forge'))) return;
       var f = forgeViewState(uiForgePanelSnapshot()), player = (uiHeaderPanelSnapshot() || {}).player;
-      var rate = f && player && forgeViewRate(f, player.dust);
-      if (rate && !f.crafting) send(Math.max(0, Math.min(rate.stones + delta, rate.maxStones, player.dust || 0)));
+      var rate = f && player && forgeViewRate(f, divineForgeMaterialOwned(f.operation, player));
+      if (rate && !f.crafting) send(Math.max(0, Math.min(rate.stones + delta, rate.affordableStones)));
     });
     btn.addEventListener('pointerdown', function (event) {
       if (event.button !== 0 || btn.disabled || hold.pointerId !== null || isUiCommandPending(nodePendingKey('forge'))) return;
       var f = forgeViewState(uiForgePanelSnapshot()), player = (uiHeaderPanelSnapshot() || {}).player;
-      var rate = f && player && forgeViewRate(f, player.dust);
+      var rate = f && player && forgeViewRate(f, divineForgeMaterialOwned(f.operation, player));
       if (!rate || f.crafting) return;
       suppressClick = false;
       hold.pointerId = event.pointerId;
@@ -6904,14 +6898,15 @@ function bindForgeStoneControls(send) {
           finishForgeStoneHold(true);
           return;
         }
-        var info = forgeViewRate(current, p.dust);
+        var owned = divineForgeMaterialOwned(current.operation, p);
+        var info = forgeViewRate(current, owned);
         if (!info) { finishForgeStoneHold(true); return; }
         suppressClick = true;
         var steps = 1 + Math.floor(Math.max(0, stageHoldNow() - startedAt - 500) / 50);
-        hold.count = Math.max(0, Math.min(startCount + delta * steps, info.maxStones, p.dust || 0));
+        hold.count = Math.max(0, Math.min(startCount + delta * steps, info.affordableStones));
         // 長按先顯示選定數量，放開才送最終值，避免每秒二十次 Worker 往返互相鎖住。
         updateForgeStonePicker(current, p, false);
-        if (hold.count === 0 || hold.count === Math.min(info.maxStones, p.dust || 0)) return;
+        if (hold.count === 0 || hold.count === info.affordableStones) return;
         hold.timer = setTimeout(repeat, Math.max(0, startedAt + 500 + steps * 50 - stageHoldNow()));
       }
       hold.timer = setTimeout(repeat, 500);
@@ -6970,9 +6965,14 @@ function renderForge() {
     keys.push('slot:' + i);
     htmls.push('<button type="button" class="' + cls + '"' + attrs + (pending || !active ? ' disabled' : '') + '>' + content + '</button>');
   }
-  var rate = forgeStonePickerRate(f, player.dust);
+  var rate = forgeStonePickerRate(f, divineForgeMaterialOwned(mode, player));
   keys.push('stones');
-  htmls.push('<button type="button" class="forge-stone' + (rate && rate.stones ? ' lit' : '') + '" id="forge-stone-center" data-tip="' + esc(STR(2239)) + '" aria-label="' + esc(STR(2187)) + '" aria-expanded="' + !!UI.forgeStoneOpen + '" aria-controls="forge-stone-popover"' + (pending || !rate ? ' disabled' : '') + '><span class="forge-material-icon" aria-hidden="true">💫</span><span>' + (rate ? rate.stones : 0) + '</span></button>');
+  var materialName = divineForgeMaterialName(mode);
+  var materialIcon = mode === 'ancient' ? '<img class="res-icon" src="images/icon_ancient_essence.png" alt="">' : '💫';
+  var materialTip = STR(2311, materialName);
+  if (mode === 'ancient') materialTip += '<br>' + STR(2194, DIVINE_FORGE.ancientSecondEssenceMult,
+    DIVINE_FORGE.ancientEssenceThreshold1, DIVINE_FORGE.ancientEssenceMult1, DIVINE_FORGE.ancientEssenceThreshold2, DIVINE_FORGE.ancientEssenceMult2);
+  htmls.push('<button type="button" class="forge-stone' + (rate && rate.stones ? ' lit' : '') + '" id="forge-stone-center" data-tip="' + esc(materialTip) + '" aria-label="' + esc(materialName) + '" aria-expanded="' + !!UI.forgeStoneOpen + '" aria-controls="forge-stone-popover"' + (pending || !rate ? ' disabled' : '') + '><span class="forge-material-icon" aria-hidden="true">' + materialIcon + '</span><span>' + (rate ? rate.materialCost : 0) + '</span></button>');
   syncItemGridCells(hex, keys, htmls);
   var progress = snap.craftProgress, stage = $id('forge-stage');
   var animationKey = f.crafting ? String(f.crafting.startedAt) : '';
@@ -7092,7 +7092,6 @@ function towerRewardRows(fl) {
     { icon: '✨', label: STR(1864), value: fmt(bossStatsFor(fl).xp), note: STR(1865) },
     { icon: '🔮', label: STR(99), value: '×' + fmt(rw.essence) },
     { icon: '💎', label: STR(1866), value: GEM_NAMES[rw.gemLevel] + ' ×2' },
-    ENCHANT_ENABLED ? { icon: '📖', label: STR(102), value: STR(1867) } : null,
     { icon: '💫', label: STR(100), value: fmt1(bossDustRate(fl)) + '%', note: STR(1868) }
   ].filter(Boolean);
   var ancientRate = ancientEssenceDropChanceForBoss(fl);
@@ -7978,7 +7977,7 @@ function forgeViewItemCount(forge) {
 
 function forgeViewMode(forge) { return forge && forge.operation; }
 function forgeViewDustCount(forge, player) {
-  var info = divineForgeRateInfo(forge, player && player.dust);
+  var info = divineForgeRateInfo(forge, divineForgeMaterialOwned(forge && forge.operation, player));
   return info ? info.stones : 0;
 }
 
@@ -7997,7 +7996,7 @@ function forgeViewTotalGems(gemsSnapshot) {
   return total;
 }
 
-function forgeViewRateInfo(forge, player) { return divineForgeRateInfo(forge, player && player.dust); }
+function forgeViewRateInfo(forge, player) { return divineForgeRateInfo(forge, divineForgeMaterialOwned(forge && forge.operation, player)); }
 
 function newForgeViewFurnace(snapshot, furnaceId) {
   var furnaces = snapshot && snapshot.newForge && snapshot.newForge.furnaces;
@@ -9766,7 +9765,7 @@ function showEnemyTooltip(anchorEl) {
     var rewardLines = [];
     rewardLines.push(STR(106, fmt(m.xp)));
     rewardLines.push(STR(650, rw.gemLevel));
-    rewardLines.push(STR(652, rw.essence, (ENCHANT_ENABLED ? STR(651) : '')));
+    rewardLines.push(STR(652, rw.essence, ''));
     if (dustRate > 0) rewardLines.push(STR(653, fmt1(dustRate)));
     if (soulOriginRate > 0) rewardLines.push(STR(654, fmt1(soulOriginRate)));
     if (ancientEssenceRate > 0) rewardLines.push(STR(655, fmt1(ancientEssenceRate)));
@@ -12891,7 +12890,7 @@ function initUI() {
     });
     $id('forge-go').addEventListener('click', function () {
       var f = forgeViewState(uiForgePanelSnapshot()), p = uiHeaderPanelSnapshot().player;
-      var info = f && forgeViewRate(f, p.dust);
+      var info = f && forgeViewRate(f, divineForgeMaterialOwned(f.operation, p));
       if (info && (p.gold || 0) < info.cost) { showFloatingText(this, STR(91), '#fca5a5'); return; }
       forgeCommand('forge.start');
     });

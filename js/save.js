@@ -1265,8 +1265,6 @@ function applyOfflineProgress(options) {
   var zoneDrop = fieldMaterialConfigFor(G.stage.zone, stage);
   var rates = fieldDropRatesFor(stage, m.level, G.stage.zone);
   var gemRates = Array.isArray(zoneDrop.gemRates) ? zoneDrop.gemRates : [];
-  var bookBaseRate = Number(zoneDrop.bookRate || 0);
-  var bookRate = bookBaseRate * (1 + lootBonus / 100) * rw * eliteMult;
   var essenceRate = Number(zoneDrop.ancientEssenceRate || 0) * eliteMult;
   var dustRate = Number(zoneDrop.dustRate || 0) * eliteMult;
 
@@ -1303,14 +1301,6 @@ function applyOfflineProgress(options) {
         if (!gemType) continue;
         addGem(gemType, glv + 1, 1);
         sum.gems[glv + 1] = (sum.gems[glv + 1] || 0) + 1;
-      }
-    }
-    // 附魔書（階段 8+；附魔功能關閉時不掉）
-    if (ENCHANT_ENABLED && (stage >= 8 || zoneDrop.bookRate !== undefined)) {
-      var bookN = rollDropCount(bookRate);
-      for (var bi = 0; bi < bookN; bi++) {
-        G.player.books[pick(Object.keys(ENCHANTS))]++;
-        sum.books++;
       }
     }
     // 太古精華（250 級以上敵人）

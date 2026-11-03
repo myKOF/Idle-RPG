@@ -1,3 +1,41 @@
+## ENCHANT-BOOK-RETIRE-20261104 — 移除置頂附魔書並停止產出
+
+- Owner：Codex；Done，單一開發者。使用者要求移除置頂材料列附魔書及全部遊戲內產出；追加確認不更動現有存檔，只保證不再掉落。保留舊庫存／存檔欄位，移除野外、離線、高塔發放與舊任務book獎勵入口，不遷移或清除資料。
+- 前置：fetch及目標衝突預檢無外部來源。允許index／ui頂列及獎勵顯示、combat／save／tower／tasks發放段、data／formula退役說明、必要主端及Worker快取、相關回歸、LV／公式／本段；禁止存檔遷移／舊庫存清理、其他材料數值／功能／配置來源、其他工作區及合併推送。Zone Excel與三份VFX為既有獨立修改，不納入本項。
+- 驗收：持有大量舊書及shownRes標記時也無頂列圖示／提示，庫存保持；即使舊掉落配置非0或附魔開關開啟，野外／離線／高塔／任務不發書，其他獎勵保持。回歸／Build／實機及diff後獨立Commit，交使用者整合。
+- 完成：index移除r-books節點，ui移除頂列庫存彙總、tooltip與可見性項；移除高塔獎勵列及敵方提示的附魔書宣告。combat／save／tower刪除實際發書段，tasks的舊book獎勵保留相容分支但不發放。舊books／shownRes及原有存讀邏輯不改，沒有清庫存或新遷移。未改內部GM測試工具或已停用的附魔操作。data／formula只修退役說明；已停用的讀表欄仍作相容保留，不讀它來掉書，未改任何Excel／CSV。主端與Worker對應快取均20261104-retire-enchant-book；協議與資料形狀不變。
+- 修改17檔：index.html、js/{ui,combat,save,tower,tasks,bridge,data,formula}.js、js/worker/sim.worker.js、tests/{enchant-book-retirement,resource-tooltip,elite-drop-multiplier,tower-rewards-ui}.test.cjs、LV_upgrade_system.md、game_formula.md、docs/AI_TASKS.md。唯讀未改AI_RULES／AGENTS／Workflow／prompts、player／item／factory／gm_exec／Worker投影與協議、既有存檔遷移／所有配置來源及其他功能；無新素材或本項素材庫變更。
+- 驗證：`node --test tests/enchant-book-retirement.test.cjs tests/resource-tooltip.test.cjs tests/elite-drop-multiplier.test.cjs tests/offline-rewards.test.cjs tests/task-system.test.cjs tests/tower-rewards-ui.test.cjs tests/ui-tick-smoke.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs`53/53；新回歸驗普通／菁英／BOSS、離線、三塔首通及重複、舊book任務不發書、其他獎勵與舊庫存／未知舊key／shownRes保存。舊測試原要求附魔開關開啟會發書，依使用者新規則更新為兩狀態皆不發書及不顯示獎勵；不放寬其他材料斷言。String寫死0、`npm.cmd run build`644檔通過，diff／stat／check及自我Review完成。
+- 實機：沿前項IAB無後端的本機隔離Edge／Playwright及隨機localhost正式index／真Worker，以既有WorkerBridge.loadSave載入QA狀態。10000本fire及77本未知舊書、shownRes.r-books=true仍無置頂節點／圖示／提示；Header快照庫存完整不變，其他置頂資源正常，Console error／pageerror0。PNG存後磁碟重開目視核對，瀏覽器與服務已關閉；沒有讀寫玩家原網址存檔。QA／JSON／log在本聊天visualizations/enchant-book-retire。
+- 交付：本項無未完成實作或已知新增風險，未跑全庫／長時間實玩；可供Review及使用者整合。Commit為本段所在「[Codex] fix: 移除置頂附魔書並停止掉落與獎勵」，SHA見交付；未合併推送。Zone_Stage_Drops.xlsx及三份cleave VFX原有修改保留未提交，沒有納入本項或擅自還原。下一步重新載入遊戲驗收，現有存檔不需轉換。
+
+## ANCIENT-FORGE-ESSENCE-20261104 — 太古精鑄改用太古精華與第二條倍率
+
+- Owner：Codex；Done，單一開發者。使用者要求太古精鑄加成功率材料由神性之石改太古精華；同件裝備第2條精鑄達相同成功率的精華消耗倍率可調，預設3。追加最終成功率達50%整筆消耗×2、達75%×4，取最高級距並與第2條倍率相乘，適用兩次精鑄。其餘功能仍用神性之石。Zone_Stage_Drops由使用者已改Excel為來源匯出CSV，讀表表頭改「神性之石掉落率」。
+- 前置：fetch後目標無外部衝突；String及game_parameters已確認獨占可開啟。允許神鑄共用公式／主端與Worker執行／UI／相關回歸、必要快取、String及game_parameters原生Excel與CSV／生成資料、Zone_Stage_Drops使用者來源與CSV、LV／公式／本段；禁止無關數值／解鎖／存檔格式／其他工作區／合併推送。
+- 驗收：第一條及第二條庫存上限／成功率／實際扣款與失敗消耗、庫存不足拒絕／執行中資源變動／切模式／存讀／其他三功能、UI圖示／持有量／長按／文字一致、Excel正常重開與逐格保留、來源匯出一致、錨點／回歸／Build／畫面及diff後Commit。後續使用者Review及整合。
+- 完成：data共用純函式依功能選ancientEssence／dust，計算實際材料費用＝ceil(成功率增量份數×次數倍率×最終成功率級距倍率)，二分搜尋可負擔份數，UI長按／中央數字／持有量／提示／ARIA與Worker權威扣款一致。原stones／指令count保存成功率份數，畫面顯示實際數量；新增rate.materialCost及affordableStones，協議71→72、主端／Worker相關快取20261104-ancient-essence-cost。執行前及三秒到期皆驗完整費用，失敗亦扣選定材料；金幣、裝備失敗規則、最多兩條、裝備還原及其他功能保持。神話75%第一條140／第二條420；50%分別20／60。0投入仍可按基礎成功率鑄造，沿用原本選填規則。
+- 配置：game_parameters「計算表」新增366～370五列（第2條倍率3、門檻50／倍率2、門檻75／倍率4），game_parameters投影頁新增對應公式，保留原先部分手動覆寫格及所有既有公式，不把雙頁當相同值強行覆蓋。五項新增值為數值型別；其餘內容按穩定編號逐格及實際樣式比對保持。String新增2309～2313共用材料提示並更新118／2190／2194／2197與替代參數，新增／變更文字仍由表讀取；只在新設定列／變更說明格換行適高。Excel原生API暫存儲存及正式來源正常重開，沒有手工改XML。
+- 使用者Zone來源：SHA256 397BCA40D93E9603144BB1F15CB34804AF97A57B8A4B79F3FE3842608318B9D0保持，77筆新分段與裝備／寶石／材料值全部正常匯出，沒有回放舊44筆。CSV表頭改神性之石掉落率、apply_params讀取新名，仍使用dust庫存／存檔鍵維持相容；同步data。既有掉落測試明確更新為來源77筆及新邊界值，沒有放寬斷言。來源永恆神殿550～575及575～600在575重疊，依既有重疊列相加規則運作，本項保留使用者來源、不擅改區間。
+- 測試：`node --test tests/ancient-forge-material.test.cjs tests/divine-forge.test.cjs tests/forge-stone-controls.test.cjs tests/forge-stone-mode-switch.test.cjs tests/forge-duration.test.cjs tests/forge-failure.test.cjs tests/forge-item-origin.test.cjs tests/forge-equipped-inventory.test.cjs tests/divine-forge-interaction.test.cjs tests/worker-protocol.test.cjs tests/field-gem-drop-table.test.cjs tests/field-equipment-drop-table.test.cjs tests/stage-rework.test.cjs tests/apply-params.test.cjs tests/apply-params-anchor-independence.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs`共127/127。涵蓋三品質第一／第二條49／50／74／75／100%、自然太古不算精鑄次數、門檻不能超支、失敗／存讀／延遲扣款保護、動態倍率與非法配置、其他三模式及UI長按。divine-forge既有Worker測試補暫停普通戰鬥以隔離背包掉落，沒有改產品迎合fixture。文字最終微調後另跑String／精鑄／協議34/34。
+- 工具驗證：apply_params593一致／0變更／0錨點問題（原588＋5），--check-anchors擾動547值後593錨點皆一次命中；String2300條同步／寫死0條；Build643檔通過。三份CSV與Excel主表逐格一致（String2301列、game_parameters341列、Zone78列）。原生重開、公式投影／既有覆寫、格式／欄寬／合併／凍結及資料比對、Artifact讀回與新設定／說明預覽通過。QA／log／原生腳本／來源副本在本聊天visualizations/ancient-forge-essence，不入倉庫。
+- 實機：IAB無後端，改bundled Playwright／隔離隨機localhost正式index與真Worker，以記憶體QA存檔透過既有WorkerBridge.loadSave載入；沒有讀玩家原網址存檔。確認75%第一條顯示140／第二條420，加一次至76%為432，切刻印恢復神性之石；提示包含3／50／2／75／4、無殘留參數，800px畫面documentWidth800，Console error及pageerror0。三張PNG已存後從磁碟目視核對，既有漂浮動畫用強制點擊略過穩定性等待；未改正式動畫或操作程式。瀏覽器與服務均關閉。
+- 全庫限制：已執行`node --test --test-concurrency=6 --test-timeout=60000 "tests/*.test.cjs"`，產生674通過／55失敗後，六個同步／長模擬測項持續停滯，Node timeout無法中斷同步阻塞，確認本次runner PID後停止其行程樹。停滯檔為equip-no-duplicate、sim-bag-cache、sim-dead-stock、sim-policy-smoke、sync-auto-conflicts、sync-feature-worktrees；未完成全庫、未逐項建立55失敗基線，不宣稱全綠。相關127項均獨立重跑通過；未驗多瀏覽器／長時間實玩。
+- 修改27檔：LV_upgrade_system.md、config/CSV/{String,Zone_Stage_Drops,game_parameters}.csv、config/Excel/{String,Zone_Stage_Drops,game_parameters}.xlsx、docs/{AI_TASKS,WORKER_PROTOCOL}.md、game_formula.md、index.html、js/{bridge,data,forge,strings_data,ui}.js、js/worker/{protocol,sim.worker}.js、tests/{ancient-forge-material,divine-forge,field-equipment-drop-table,forge-duration,forge-stone-controls,forge-stone-mode-switch,stage-rework,worker-protocol}.test.cjs、tools/apply_params.cjs。唯讀未改規範／AGENTS／Workflow／prompts、formula／combat／save／item／tower／factory／newforge、CSV匯出與Excel／String工具及其他配置；無新素材，復用既有精華圖示，無本項素材庫Commit。
+- 交付：自我Review與diff／stat／check完成，本項無未完成實作，可供Review及使用者整合；Commit為本段所在「[Codex] feat: 太古精鑄改用精華並加入分級消耗倍率」，SHA見交付。未合併或推送。工作期間出現三份獨立VFX預設修改（proj-cleave-ring-tricolor、slash-cleave-ring-blue、slash-cleave-ring-warm-09-hit），皆保留且不納入本項提交；未擅改素材庫或他人內容。下一步使用者在game_parameters「6-新版神鑄」調整五項設定、儲存關閉Excel後套用參數並重載遊戲；另可確認來源575重疊是否有意。
+
+## ZONE-GEM-R10-20261104 — 關卡寶石掉落表擴充至R10
+
+- Owner：Codex；Done，單一開發者。使用者要求Zone_Stage_Drops的Excel與CSV寶石掉落欄擴充為R1～R10，保留R1～R5，新增R6～R10全部0。
+- 前置：來源Excel已取得獨占存取，fetch後各目標衝突預檢無外部來源；以目前已儲存Excel為唯一來源，保留使用者既有裝備掉率修改及副表。
+- 允許：Zone_Stage_Drops.xlsx／CSV、apply_params讀表欄名與長度、生成data及主端／Worker必要快取、寶石掉落回歸、LV及本段；禁止無關數值／功能／解鎖／存檔／其他工作區／合併推送。
+- 驗收：Excel原生API只改三組寶石欄並正常重開；逐格驗證原有值與格式保留，正式Excel匯出CSV、十階資料與高階掉落驗證、參數錨點／相關回歸／Build／diff檢查後Commit。後續由使用者自行填高階掉率並正常整合。
+- 完成：主表E及副表E／K共125格（3表頭＋122資料格）原生Excel編修／儲存，暫存及正式來源均正常模式重開；唯讀openpyxl比對所有其他值、型別、公式、有效字型／填色／邊框／對齊／保護／數字格式、欄寬／列高、合併／驗證／條件格式／凍結／篩選／原生表格均保持。Excel儲存會正規化重複樣式ID，按實際格式比較一致，沒有手工改XML。Artifact Tool讀回及渲染主表前段／後段與副表確認十階值及標題可讀。44筆主表正式xlsx_to_csv匯出與Excel逐格相符；原使用者desert 11～49裝備R3=0保留並同步CSV／data。
+- 讀表及快取：apply_params欄名與長度改為R1～R10／10，正式--write僅套用ZONE_STAGE_DROP_PROFILES一項；index的data／bridge、bridge Worker入口與sim.worker的data快取同步20261104-zone-gem-r10。現有formula／combat／save已按陣列長度查表與掉落，不需修改。新增回歸實際呼叫正式rollFieldDrops，驗證R6～R10非零配置逐階入庫、零配置不掉落。
+- 修改10檔：config/Excel/Zone_Stage_Drops.xlsx、config/CSV/Zone_Stage_Drops.csv、tools/apply_params.cjs、js/data.js、index.html、js/bridge.js、js/worker/sim.worker.js、tests/field-gem-drop-table.test.cjs、LV_upgrade_system.md、docs/AI_TASKS.md。唯讀檢查未改：AI_RULES／AGENTS／Workflow／prompts/codex、tools/xlsx_to_csv／excel-update-sheets／config_tables、js/formula／combat／save／item、既有掉落／離線／錨點／快取測試及其他配置。無素材變更，不需素材庫Commit。
+- 驗證指令：`node --test tests/field-gem-drop-table.test.cjs tests/field-equipment-drop-table.test.cjs tests/elite-drop-multiplier.test.cjs tests/offline-rewards.test.cjs tests/apply-params.test.cjs tests/apply-params-anchor-independence.test.cjs tests/vfx-editor-cache-versions.test.cjs`為21/21；`node tools/apply_params.cjs`588一致／0變更／0錨點問題；`node tools/apply_params.cjs --check-anchors`擾動542值、588錨點皆一次命中；`npm.cmd run build`642檔通過。diff／stat／check及自我Review通過。QA／原生編修／唯讀比對及預覽位於本聊天visualizations/zone-gem-r10，未加入倉庫。
+- 交付：本項無未完成內容或已知新增風險；未跑全庫／實機長時間遊玩。可供Review及使用者合併；Commit為本段所在「[Codex] feat: 關卡寶石掉落表擴充至十階」，SHA見交付。未合併或推送develop／main；下一步使用者直接調整來源Excel高階掉率、關閉後執行套用參數並重載遊戲。
+
 ## SYNC-MERGE-20261103-230151 ? develop ??????
 
 - Owner?Codex?Done????????? f8902706cf4d3ec689cf42048eb45ecd6ab75470 ? 490f2a50f4864f56888c9c390ac6fdb043a38bdf ? pending merge??????????????????????????????????? staging??? merge commit?
@@ -14331,3 +14369,20 @@ Worker 存活且頁面正常完成載入。
 - Owner：Codex（整合）；Done。依使用者明確授權處理本次 pending merge：原 HEAD `648f17530abbe8efc2bf1b726edd953400e0e958`、MERGE_HEAD `722fa5289d4e3a4a941ceb574bb4ad91d53bf5aa`、base `98c78fb2cd53d7439e95ba6141ecbc72345199b0`；未操作 index、Commit、推送、同步腳本或其他工作區。
 - 衝突解法：唯一衝突 `js/worker/sim.worker.js` 同時保留 ours 的戰場格數／間距調整與 incoming 的轉生屬性、成就參數、系統解鎖提示及協議變更。主頁與 Worker 的 data／achievement_data／battlefield 統一採新快取 `20261103-battlefield-unlock-params-merge`，`js/bridge.js` 的 Worker 資源版號同步更新，避免任一父版本快取遮蔽合併結果。原始衝突沒有 XLSX，不建立 Excel DATA plan；無素材庫檔案。
 - 驗證：`node --check js/worker/sim.worker.js`、`node --check js/bridge.js` 通過；`node tools/apply_params.cjs --check-anchors` 的 585 個錨點全數通過，dry-run 為一致 585、將變更 0、錨點問題 0。相關 8 檔回歸共 196 項，191 通過、5 項既有失敗：confirm-dialog 的寶石共鳴預告與 incoming 任務紀錄所載同一基線失敗；passive-stat-panel 3 項為專案既載明的大地守護舊倍率期待；policy-keys 的 belt/aoeDmg 來源檔與測試皆完全沿用原 HEAD、非本次合併新增。未弱化斷言或改權威數值；build、完整 merged-result diff check 與最終狀態另於交付結果列明。controller 對 unchanged incoming 檔案的 EOF 機械修正原樣保留。
+
+## ANCIENT-FORGE-ORIGIN-20261104 — 精鑄藍色與穿戴來源還原
+
+- Owner：Codex；Done，單一開發者。使用者要求第一／第二次太古精鑄調深藍色，精鑄成功後身上裝備保持穿戴、背包裝備仍回背包。已fetch及逐檔衝突預檢，無外部修改來源。
+- 完成：第1條藍色#4d9aff、第2條深藍#3674ec，詞條、提示與星星共用色。太古精鑄穿戴入槽記錄equipmentOrigin，成功／取消還原原套原欄；背包仍退背包，換套／存讀不串套。作業間若換裝，替代及主副手衝突裝備完整退包，滿背包亦不分解；重算屬性、保留精鑄次序、鑲嵌及傳奇穿戴順序，結算只執行一次。Worker協議71及主端／Worker／CSS快取同步。
+- 修改檔案：js/forge.js、css/style.css、index.html、js/bridge.js、js/worker/{sim.worker,protocol}.js、tests/{forge-item-origin,forge-equipped-inventory,worker-protocol}.test.cjs、docs/{DIVINE_FORGE,WORKER_PROTOCOL,AI_TASKS}.md、LV_upgrade_system.md。唯讀未改：規範／Workflow／prompts、save.js、player.js、data.js、item.js、ui.js、原神鑄及符文／雙手遷移測試、Excel／CSV與全部素材。無必要素材變更，素材庫無本項Commit。
+- 測試指令：`node --test tests/forge-item-origin.test.cjs tests/forge-equipped-inventory.test.cjs tests/ancient-forge-limit.test.cjs tests/forge-failure.test.cjs tests/forge-duration.test.cjs tests/worker-protocol.test.cjs`共44/44通過；`npm.cmd run build`共642檔通過；`git diff --check`通過。新增12項來源回歸驗證成功／取消／三秒進度／存讀換套／滿包換裝／雙手互斥／驗證失敗／舊資料及唯一持有。
+- 擴大測試：`node --test tests/{forge-auto-menu,forge-stone-mode-switch,forge-stone-controls,forge-shared-inventory,forge-footer-controls,divine-forge-interaction,two-hand-save-migration,runeword-engine,vfx-editor-cache-versions}.test.cjs`（實際逐一展開檔名）91項84過、7項既有失敗：舊介面靜態期待2、符文候選／暫放UI／計次3、雙手舊存檔補齊期待2。以外部QA攔截讀檔載入HEAD原始內容重跑，同樣91／84／7、失敗名稱逐項相同；未修改權威配置或放寬斷言。
+- 瀏覽器：IAB無可用連線後改隔離localhost正式index＋Edge＋真Worker，身上清單實際點選、100%配方三秒精鑄連續2次均回胸甲，背包另件成功仍在包；正式詳情computed color分別rgb(77,154,255)與rgb(54,116,236)，詞條／星星截圖目視確認。Page／Console error皆0。QA與截圖在本聊天visualizations/ancient-origin-20261104；早期QA誤把on回傳值當退訂函式及重點已選裝備造成取消選取，修正QA後通過，未改產品迎合驗證。
+- 自我Review完成，可供Review／使用者合併，本項無未完成。限制：精鑄失敗仍依既有配方裝備消失；入槽期間仍採既有暫時卸裝流程；舊法陣未記來源只能退包；未執行全庫或多瀏覽器長時間驗證，擴大測試上述7項基線失敗另案處理。Commit為本段所在「[Codex] fix: 調深精鑄藍色並還原穿戴來源」，SHA見交付；未合併／推送。下一步重新載入頁面後驗收。
+
+## ANCIENT-FORGE-ORANGE-20261104 — 精鑄橘色深淺調整
+
+- Owner：Codex；Done，單一開發者。依使用者最新指示，第1次精鑄為淺橘#fdbe8a（正常太古約60%深度）、第2次為較深橘#fca863（約80%），正常太古#fb923c維持最深100%，三者各異。以正常橘與白色混合，文字保持不透明，詞條、提示與星星共用色。
+- 修改檔案：css/style.css兩個來源色、index.html CSS快取1.0.111、docs/DIVINE_FORGE.md、LV_upgrade_system.md與本表；已fetch及逐檔預檢無衝突。唯讀檢查規範／Workflow／prompts、data.js／item.js普通太古來源、原精鑄回歸及外部QA腳本；未改精鑄操作、Worker／存檔／配置或素材。工作途中出現外部config/Excel/Zone_Stage_Drops.xlsx修改，完整保留且不納入本項Commit。無必要素材變更，素材庫無本項Commit。
+- 驗證：`node --test tests/ancient-forge-limit.test.cjs` 10/10通過；IAB無連線後改隔離localhost正式index＋Edge＋真Worker，實際連續精鑄2次保留穿戴、背包另件成功仍在背包；computed color依次rgb(253,190,138)／rgb(252,168,99)／正常rgb(251,146,60)，詞條與其星星顏色相同，正式詳情截圖目視三層橘色。Page／Console error 0。QA與圖在本聊天visualizations/ancient-orange-20261104。`git diff --check`通過；僅CSS／HTML快取及文件修改，未重跑全庫建置與回歸。
+- 自我Review完成，本項無未完成，可供使用者Review／合併。Commit為本段所在「[Codex] fix: 將精鑄詞條改為分層橘色」，SHA見交付；未合併／推送。下一步重載頁面驗收；60%／80%為橘色與白色混合比例，非透明度或裝備數值。

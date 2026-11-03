@@ -29,7 +29,7 @@ function occurrences(c, id) {
 }
 
 for (const mode of ['ancient','imprint']) {
-  test(mode + ' 身上裝備原子入槽，備用套裝不動，卸料只回背包一份', () => {
+  test(mode + ' 身上裝備原子入槽，備用套裝不動，精鑄卸料還原穿戴、刻印退包', () => {
     const {e,c,it} = setup(mode);
     const spare = c.makeEquipment(250,{rarity:7,slot:'chest'});
     c.G.equipmentSets[1].chest = spare;
@@ -43,8 +43,9 @@ for (const mode of ['ancient','imprint']) {
     assert.equal(cmd(c,'placeItem',{itemId:it.id}), c.STR(1243));
     assert.equal(occurrences(c,it.id), 1);
     cmd(c,'unloadAll');
-    assert.equal(c.G.inventory.filter(x=>x.id===it.id).length,1);
-    assert.equal(c.G.equipment.chest,null);
+    assert.equal(c.G.inventory.filter(x=>x.id===it.id).length,mode==='ancient'?0:1);
+    assert.equal(c.G.equipment.chest,mode==='ancient'?it:null);
+    assert.equal(c.G.forge.equipmentOrigin,undefined);
     assert.equal(occurrences(c,it.id),1);
   });
   for (const success of [true,false]) test(mode + ' 穿戴來源存讀後三秒結算，成功／失敗沿用原配方 ' + success, () => {
@@ -62,10 +63,12 @@ for (const mode of ['ancient','imprint']) {
     assert.equal(d.forgeItemCount(),0);
     assert.equal(occurrences(d,it.id),success?1:0);
     if(success) {
-      const out = d.G.inventory.find(x=>x.id===it.id);
+      const out = mode==='ancient' ? d.G.equipment.chest : d.G.inventory.find(x=>x.id===it.id);
+      assert.equal(out.id,it.id);
       if(mode==='ancient') assert.equal(d.divineForgeAncientCount(out),1);
       else assert.ok(out.imprint);
     }
+    assert.equal(d.G.forge.equipmentOrigin,undefined);
     const gold = d.G.player.gold;
     loaded.stepSeconds(3);
     assert.equal(d.G.player.gold,gold,'不能重複結算');

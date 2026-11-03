@@ -1806,7 +1806,7 @@ function demonSeedDropChanceForBoss(floor) {
 /* ---- 高塔通關獎勵 ----
    金幣 = 200 × 樓層（首通 ×2）
    寶石等級 = 1 + ⌊樓層/4⌋（上限 5，隨機種類 ×2 顆）
-   附魔精華 = 3 + 樓層（另附魔書 ×2）
+   附魔精華依樓層計算；附魔書已停止發放。
    裝備戰利品等級 = 4 + 樓層×5，經 makeEquipment 取裝備套級（equipmentTierLevel，依 BOSS 掉落表擲骰） */
 /* 高塔通關獎勵：金幣 = 每層金幣 × 樓層（首殺加倍）；寶石階級 = 1 + ⌊樓層 ÷ 每階層數⌋；精華 = 基底 + 樓層。 */
 var TOWER_REWARD = { goldPerFloor: 200, gemFloorsPerLevel: 4, essenceBase: 3, itemLevelBase: 4, itemLevelPerFloor: 5 };

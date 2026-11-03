@@ -105,7 +105,9 @@
 // v67：封魔塔自動推進設定與勝利接續下一層，tower 指令6→7。
 // v68：forge.placeItem 可於精鑄／刻印原子移入目前穿戴裝備，同步equip／header。
 // v69：header.systemUnlocks 與 ui.markUnlockSeen；已讀提示隨存檔保存。
-var WORKER_PROTOCOL_VERSION = 70;
+// v71：太古精鑄新增可選 equipmentOrigin，成功／取消還原原套原欄，指令數不變。
+// v72：神鑄rate新增materialCost／affordableStones；太古精鑄依次數與成功率級距消耗太古精華。
+var WORKER_PROTOCOL_VERSION = 72;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {

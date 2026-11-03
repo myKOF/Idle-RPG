@@ -9,7 +9,7 @@
   <link rel="icon" href="images/icon_avatar.png" type="image/png">
   <link rel="preload" as="image" href="images/ui/gem-resonance/hex-backplate.png" fetchpriority="low">
   <link rel="preload" as="image" href="images/ui/heaven-power/dark-gold-seal.png?v=1" fetchpriority="low">
-  <link rel="stylesheet" href="css/style.css?v=1.0.109">
+  <link rel="stylesheet" href="css/style.css?v=1.0.111">
   <link rel="stylesheet" href="css/inventory-offset.css">
   <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.100">
   <link rel="stylesheet" href="css/ashen-forge-flat.css?v=1.0.4">
@@ -72,8 +72,6 @@
       <span class="res" data-str-attr="data-tt-title:13;data-tt-desc:56"><img src="images/icon_ancient_essence.png" class="res-icon" alt="Ancient Essence"> <b id="r-ancient-essence">0</b></span>
       <span class="res" data-str-attr="data-tt-title:101;data-tt-desc:57"><span class="res-emoji" aria-hidden="true">🧿</span> <b id="r-soul-origin">0</b></span>
       <span class="res" data-str-attr="data-tt-title:120;data-tt-desc:58"><span class="res-emoji" aria-hidden="true">🌱</span> <b id="r-demon-seed">0</b></span>
-      <span class="res" data-str-attr="data-tt-title:102;data-tt-desc:60"><img src="images/icon_books.png" class="res-icon" alt="Books"> <b
-          id="r-books">0</b></span>
     </div>
   </header>
 
@@ -1014,15 +1012,15 @@
        已移除（主執行緒零呼叫，只在 Worker 內跑）：
          special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/util.js?v=1.0.4"></script>
-  <script src="js/strings_data.js?v=bacc35a2"></script>
+  <script src="js/strings_data.js?v=7cf998e5"></script>
   <script src="js/strings.js?v=1.0.1"></script>
   <script src="js/ui-scale.js?v=1.0.1"></script>
-  <script src="js/data.js?v=20261103-equipment-rarity-v3"></script>
+  <script src="js/data.js?v=20261104-retire-enchant-book"></script>
   <script src="js/status.js?v=1.0.44"></script>
   <script src="js/runeword_data.js?v=20261102_merged_ai_latest"></script>
   <script src="js/gem_resonance_data.js?v=1.0.1"></script>
   <script src="js/achievement_data.js?v=20261103-equipment-rarity-v3"></script>
-  <script src="js/formula.js?v=20261103-equipment-rarity-v3"></script>
+  <script src="js/formula.js?v=20261104-retire-enchant-book"></script>
   <script src="js/battle-terrain.js?v=1.0.6"></script>
   <script src="js/battlefield.js?v=20261103-battlefield-unlock-params-merge"></script>
   <script src="js/game-clock.js?v=1.0.1"></script>
@@ -1063,11 +1061,11 @@
   <script src="js/talents.js?v=1.0.15"></script>
   <script src="js/player.js?v=20261103-equipment-rarity-v3"></script>
   <script src="js/system-unlocks.js?v=20261103-unlock-hints"></script>
-  <script src="js/combat.js?v=20261102_merged_ai_latest"></script>
-  <script src="js/tower.js?v=20261101-merge-fd276618"></script>
-  <script src="js/save.js?v=20261103-equipment-rarity-v3"></script>
+  <script src="js/combat.js?v=20261104-retire-enchant-book"></script>
+  <script src="js/tower.js?v=20261104-retire-enchant-book"></script>
+  <script src="js/save.js?v=20261104-retire-enchant-book"></script>
   <script src="js/ui-inventory-skin.js?v=1.0.1"></script>
-  <script src="js/ui.js?v=20261103-equipment-rarity-v3"></script>
+  <script src="js/ui.js?v=20261104-retire-enchant-book"></script>
   <script src="js/ui-unlock-notices.js?v=20261103-unlock-any-action"></script>
   <script src="js/ui-world-map.js?v=1.0.9"></script>
   <script src="js/ui-runeword.js?v=1.0.16"></script>
@@ -1082,12 +1080,12 @@
        正式遊玩是空殼。必須排在 ui.js（用它的 isInternalVersion）之後、VFX Runtime 建立（main 開機）之前。 -->
   <script src="js/battle-perf.js?v=1.0.3"></script>
   <!-- 模擬 Worker 的協議與橋接。bridge.js 於 DOMContentLoaded 開機 -->
-  <script src="js/worker/protocol.js?v=20261103-equipment-rarity-v3"></script>
+  <script src="js/worker/protocol.js?v=20261104-ancient-essence-cost"></script>
   <script src="js/storage.js?v=1.0.1"></script>
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
-  <script src="js/bridge.js?v=20261103-equipment-rarity-v3"></script>
+  <script src="js/bridge.js?v=20261104-retire-enchant-book"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->

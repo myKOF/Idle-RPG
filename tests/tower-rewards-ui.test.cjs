@@ -98,10 +98,11 @@ test('同層多個真言完整列出，停用／非整數門檻不顯示，原�
   assert.doesNotMatch(c.towerDetailHTML(36, 35), /twx-word-unlocks/);
 });
 
-test('附魔功能開啟時仍有附魔書獎勵，關閉時不以符文說明替代', () => {
+test('附魔開關兩種狀態均不再顯示附魔書獎勵，其他材料仍顯示', () => {
   const c = uiContext();
   c.ENCHANT_ENABLED = true;
-  assert.ok(c.towerRewardRows(35).some(r => r.label === '附魔書'));
+  assert.ok(!c.towerRewardRows(35).some(r => r.label === '附魔書'));
+  assert.ok(c.towerRewardRows(35).some(r => r.label === '附魔精華'));
   c.ENCHANT_ENABLED = false;
   assert.ok(c.towerRewardRows(35).every(r => r.label !== '附魔書' && r.label !== '符文'));
 });

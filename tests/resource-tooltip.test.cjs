@@ -7,7 +7,7 @@ const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
 
-test('金幣與材料提示使用完整數值，寶石與附魔書提示維持原格式', () => {
+test('金幣與材料提示使用完整數值，頂列不再顯示附魔書', () => {
   const context = { console, Math };
   vm.createContext(context);
   vm.runInContext(readExpanded(path.join(root, 'js/util.js')), context);
@@ -17,7 +17,9 @@ test('金幣與材料提示使用完整數值，寶石與附魔書提示維持�
   assert.match(ui, /updateResourceTip\('r-gold',[\s\S]*fmtFull\(p\.gold\)/);
   assert.match(ui, /updateResourceTip\('r-ancient-essence',[\s\S]*fmtFull\(p\.ancientEssence/);
   assert.doesNotMatch(ui, /updateResourceTip\('r-gems'/);
-  assert.match(ui, /updateResourceTip\('r-books', '附魔書', bookTip/);
+  assert.doesNotMatch(ui, /updateResourceTip\('r-books'/);
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  assert.doesNotMatch(html.slice(html.indexOf('<header id="topbar">'), html.indexOf('</header>')), /r-books|icon_books|data-tt-title:102/);
   assert.match(ui, /refreshOpenResourceTooltip\(\);/);
   assert.match(ui, /UI\.tooltipAnchor = anchorEl/);
   assert.match(ui, /anchorEl\.classList\.contains\('res'\)/);

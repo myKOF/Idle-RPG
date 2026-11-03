@@ -48,8 +48,8 @@ test('地圖掉落表集中管理 R0～R11 裝備掉落率', () => {
   const config = readZoneDrops();
   const table = plain(context.ZONE_STAGE_DROP_TABLE);
 
-  // origin/develop 的掉落表新增了兩個地圖／關卡區間；目前 CSV 資料列為 44 列。
-  assert.equal(config.length, 44);
+  // 使用者2026-11-04更新來源Excel後，CSV共有77筆關卡區間。
+  assert.equal(config.length, 77);
   assert.deepEqual(Object.keys(table), ['desert', 'Icefield', 'mist_forest', 'lava_mountain', 'swamp', 'thunder_peak', 'undead_mountains', 'god_battlefield', 'god_chaos', 'god_sanctuary']);
   for (const row of config) {
     assert.equal(row.rates.length, 12, row.zone + ' ' + row.min + ' 應有 R0～R11 共 12 欄');
@@ -75,9 +75,10 @@ test('地圖／關卡邊界查表與 CSV 一致，混沌 R10 由 Zone_Stage_Drop
     );
   }
   assert.equal(context.fieldDropRatesFor(412, 1, 'god_battlefield')[10], 0);
-  assert.equal(context.fieldDropRatesFor(413, 1, 'god_battlefield')[10], 1);
-  assert.equal(context.fieldDropRatesFor(393, 1, 'god_chaos')[10], 1);
-  assert.equal(context.fieldDropRatesFor(451, 1, 'god_sanctuary')[10], 1);
+  assert.equal(context.fieldDropRatesFor(413, 1, 'god_battlefield')[10], 0);
+  assert.equal(context.fieldDropRatesFor(425, 1, 'god_chaos')[10], 0.4);
+  assert.equal(context.fieldDropRatesFor(426, 1, 'god_chaos')[10], 3);
+  assert.equal(context.fieldDropRatesFor(451, 1, 'god_sanctuary')[10], 3.5);
 });
 
 test('重疊的地圖／關卡列按裝備、寶石與材料欄位逐欄相加', () => {

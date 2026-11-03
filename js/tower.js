@@ -431,12 +431,6 @@ function endTowerFight(win, reason) {
       window.recordLootGem(gt2, rw.gemLevel, 1, 'tower');
     }
     if (gt1) result.rewards.push('💎 ' + gemLabel(gt1, rw.gemLevel) + '、' + gemLabel(gt2, rw.gemLevel));
-    if (ENCHANT_ENABLED) {
-      var bk = pick(Object.keys(ENCHANTS));
-      G.player.books[bk] += 2;
-      if (window.recordLootMat) window.recordLootMat('book', 2, 'tower');
-      result.rewards.push(STR(1842, ENCHANTS[bk].name));
-    }
     G.player.essence += rw.essence;
     if (window.recordLootMat) window.recordLootMat('essence', rw.essence, 'tower');
     result.rewards.push(STR(1843, rw.essence));

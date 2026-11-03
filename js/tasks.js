@@ -183,13 +183,7 @@ function taskGrantReward(def) {
       if (typeof RUNE_BY_ID !== 'undefined' && RUNE_BY_ID[runeKey] && typeof addRune === 'function') addRune(runeKey, qty);
       break;
     }
-    case 'book': {
-      var key = String(def.rewardParam || '');
-      if (typeof ENCHANTS !== 'undefined' && ENCHANTS[key]) {
-        p.books[key] = (p.books[key] || 0) + qty;
-      }
-      break;
-    }
+    case 'book': break; // 舊配置相容：附魔書已停止產出，不更動既有庫存。
     case 'equip': {
       // param = 品質|等級|太古數（等級 0 = 依當前關卡；太古空白 = 自然擲骰）
       var parts = String(def.rewardParam || '0').split('|');
