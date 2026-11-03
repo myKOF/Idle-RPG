@@ -181,6 +181,54 @@ test('強化：上限表沒列到的品質視為不強化，不能變成無限�
     'R3 沒列在表上應視為不強化；只有最高品質 R5 該被強化——忘了填表不該變成資源黑洞');
 });
 
+const EVEN = {
+  stepLow: 1, highFrom: 20, stepHigh: 1, stepHighWithSuccess: 5, successAffix: 'enhanceSuccess',
+  priority: [['weapon', 'amulet'], ['gloves', 'belt'], ['helmet', 'chest']]
+};
+function evenUpgrade(equipment) {
+  const rarities = {};
+  for (const k of Object.keys(equipment)) rarities[k] = 5;          // 全是最高品質：不受上限表影響，單看平均機制
+  const p = makePolicy([{
+    id: 'up', cmd: 'item.upgrade',
+    upgradePriority: { equippedRarities: 'panels.inv.equipmentRarities', equipment: 'panels.inv.equipment', capByRarity: [], even: EVEN }
+  }]);
+  const cmds = p.decide({ gameTimeSec: 100, panels: { inv: invPanel({ items: [], scores: {}, rarities, equipment }) } });
+  return cmds.filter((c) => c.name === 'item.upgrade').map((c) => c.args.itemId);
+}
+const eq = (o) => { const r = {}; for (const [k, lv] of Object.entries(o)) r[k] = { id: k, upgrade: lv, affixes: [] }; return r; };
+
+test('平均強化：只強化等級低於本輪目標的部位，沒有誰能跑到別人前面', () => {
+  /* 胸甲已經 +17，武器 +0：本輪目標是 +1，只有等級最低的那幾件該動。 */
+  const ids = evenUpgrade(eq({ weapon: 0, amulet: 0, gloves: 0, belt: 0, helmet: 0, chest: 17 }));
+  assert.ok(!ids.includes('chest'), '胸甲 +17 遠高於本輪目標，不該再強化');
+  assert.equal(ids.length, 5);
+});
+
+test('平均強化：資源不夠時依序是 武器與首飾 → 手套腰帶 → 防具', () => {
+  const ids = evenUpgrade(eq({ chest: 0, helmet: 0, belt: 0, gloves: 0, amulet: 0, weapon: 0 }));
+  assert.equal(ids.length, 6);
+  const rank = (s) => (['weapon', 'amulet'].includes(s) ? 0 : ['gloves', 'belt'].includes(s) ? 1 : 2);
+  const ranks = ids.map(rank);
+  assert.deepEqual(ranks, ranks.slice().sort((a, b) => a - b), '送出順序必須依優先組');
+});
+
+test('平均強化：整體到齊才進下一級（全 +1 之後才輪到 +2）', () => {
+  assert.deepEqual(evenUpgrade(eq({ weapon: 1, amulet: 1, gloves: 1, belt: 1, helmet: 1, chest: 1 })).length, 6, '全員 +1 → 全員都要去 +2');
+  assert.deepEqual(evenUpgrade(eq({ weapon: 2, amulet: 1, gloves: 2, belt: 2, helmet: 2, chest: 2 })), ['amulet'], '只剩一件落後，只動它');
+});
+
+test('平均強化：+20 以上沒有強化成功率詞條，仍以 1 為單位', () => {
+  const ids = evenUpgrade(eq({ weapon: 20, amulet: 20, gloves: 21, belt: 22, helmet: 22, chest: 22 }));
+  assert.deepEqual(ids.sort(), ['amulet', 'weapon'], '目標是 +21，只有 +20 的兩件該動');
+});
+
+test('平均強化：+20 以上有強化成功率詞條，放寬到 5 為單位', () => {
+  const e = eq({ weapon: 20, amulet: 20, gloves: 22, belt: 22, helmet: 22, chest: 22 });
+  e.amulet.affixes = [{ key: 'enhanceSuccess' }];
+  const ids = evenUpgrade(e);
+  assert.equal(ids.length, 6, '目標拉到 +25：全員都低於它，都要強化');
+});
+
 test('鑲寶石：只鑲手上真的有的種類，且不超過庫存', () => {
   const rule = {
     id: 'sock', cmd: 'gem.socket',

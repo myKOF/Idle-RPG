@@ -342,10 +342,11 @@ test('動態退關的間隔必須不短於速率目標的取樣視窗', () => {
       const every = (typeof g.targetRetreat.everySec === 'number') ? g.targetRetreat.everySec : 300;
       for (const id of g.requireTargets || []) {
         const t = declared[id];
-        if (!t || t.kind !== 'ratePerMin') continue;
+        if (!t || ['ratePerMin', 'windowAvg', 'slopePerMin'].indexOf(t.kind) < 0) continue;
         const win = (typeof t.windowSec === 'number') ? t.windowSec : 300;
-        assert.ok(every >= win,
-          `${f} 規則 ${rule.id}：退關間隔 ${every}s 短於目標「${id}」的視窗 ${win}s——` +
+        const every2 = (typeof t.retreatEverySec === 'number') ? t.retreatEverySec : every;
+        assert.ok(every2 >= win,
+          `${f} 規則 ${rule.id}：退關間隔 ${every2}s 短於目標「${id}」的視窗 ${win}s——` +
           '會連續退關直到視窗換血完畢');
       }
     }

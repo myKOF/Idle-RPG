@@ -623,3 +623,129 @@ test('速率目標的計數器面板會自動列進觀測面板', () => {
   const p = gatePolicy();
   assert.ok(p.observePanels.indexOf('battle') >= 0, `observePanels 應含 battle，實際為 ${JSON.stringify(p.observePanels)}`);
 });
+
+/* ============ 戰場負載（出怪速度追過擊殺速度）============
+
+   場上存活敵人堆到容量上限＝打怪速度追不上出怪速度。看的是「持續堆在高位」，
+   所以是視窗平均而不是單一瞬間的值。 */
+
+function loadPolicy(atMost) {
+  return createPolicy({
+    name: 'load-test',
+    decideEveryGameSec: 60,
+    needPanels: ['battle', 'inv', 'fieldLoad'],
+    targets: [{ id: 'fieldLoad', kind: 'windowAvg', path: 'panels.fieldLoad.ratio', windowSec: 300, atMost: atMost }],
+    rules: [{
+      id: 'gate', cmd: 'stage.setAutoAdvance',
+      stageGate: {
+        stage: 'view.stage', equippedRarities: 'panels.inv.equipmentRarities', argKey: 'on',
+        checkpoints: [{ minRarity: 0, coverage: 0 }],
+        retreatCmd: 'stage.go', requireTargets: ['fieldLoad'],
+        targetRetreat: { step: 5, everySec: 300, minStage: 1 }
+      }
+    }]
+  });
+}
+function lst(sec, ratio, stage) {
+  return { gameTimeSec: sec, view: { stage: stage === undefined ? 150 : stage },
+    panels: { fieldLoad: { ratio: ratio }, inv: { equipmentRarities: { weapon: 5 } }, battle: {} } };
+}
+
+test('戰場負載：視窗平均超過上限就關閉自動推關並退關', () => {
+  const p = loadPolicy(0.6);
+  for (let t = 10; t <= 300; t += 10) p.observe(lst(t, 0.9));
+  const cmds = p.decide(lst(300, 0.9));
+  assert.equal(autoOn(cmds), false, '場上一直堆在九成滿，不該再往前推');
+  assert.equal(retreatOf(cmds).length, 1, '要退回去打得動的關卡');
+});
+
+test('戰場負載：偶爾一瞬間滿不算，平均低於上限就放行', () => {
+  const p = loadPolicy(0.6);
+  for (let t = 10; t <= 300; t += 10) p.observe(lst(t, t % 100 === 0 ? 1.0 : 0.3));
+  const cmds = p.decide(lst(300, 0.3));
+  assert.equal(autoOn(cmds), true);
+  assert.equal(retreatOf(cmds).length, 0);
+});
+
+test('戰場負載：視窗沒攢夠不下判斷（unknown 不算沒達標）', () => {
+  const p = loadPolicy(0.6);
+  p.observe(lst(10, 1.0)); p.observe(lst(20, 1.0));
+  assert.equal(autoOn(p.decide(lst(20, 1.0))), true);
+});
+
+test('戰場負載：面板會自動列進觀測面板', () => {
+  assert.ok(loadPolicy(0.6).observePanels.indexOf('fieldLoad') >= 0);
+});
+
+/* ============ 戰場負載：趨勢＋極限值 ============
+
+   使用者的規則：場上敵人 1 分鐘內由 5 隻長到 10 隻，照這勢頭必然掛不住，要往後退；
+   5 分鐘才從 5 長到 10 表示還撐得住。另外設一個極限（約 40~50 隻），超過一律往後退。 */
+
+function trendPolicy() {
+  return createPolicy({
+    name: 'trend-test',
+    decideEveryGameSec: 60,
+    needPanels: ['battle', 'inv', 'fieldLoad'],
+    targets: [
+      { id: 'fieldTrend', kind: 'slopePerMin', path: 'panels.fieldLoad.live', windowSec: 60, atMost: 2, retreatEverySec: 60 },
+      { id: 'fieldCap', kind: 'windowAvg', path: 'panels.fieldLoad.live', windowSec: 60, atMost: 45, retreatEverySec: 60 }
+    ],
+    rules: [{
+      id: 'gate', cmd: 'stage.setAutoAdvance',
+      stageGate: {
+        stage: 'view.stage', equippedRarities: 'panels.inv.equipmentRarities', argKey: 'on',
+        checkpoints: [{ minRarity: 0, coverage: 0 }],
+        retreatCmd: 'stage.go', requireTargets: ['fieldTrend', 'fieldCap'],
+        targetRetreat: { step: 5, everySec: 300, minStage: 1 }
+      }
+    }]
+  });
+}
+function liveAt(sec, live) {
+  return { gameTimeSec: sec, view: { stage: 150 },
+    panels: { fieldLoad: { live: live }, inv: { equipmentRarities: { weapon: 5 } }, battle: {} } };
+}
+/* 從 from 隻到 to 隻，在 seconds 秒內等速增加，每 5 秒觀測一次。 */
+function ramp(p, t0, seconds, from, to) {
+  for (let s = 5; s <= seconds; s += 5) p.observe(liveAt(t0 + s, from + (to - from) * s / seconds));
+  return t0 + seconds;
+}
+
+test('戰場趨勢：1 分鐘內由 5 隻長到 10 隻（每分鐘 +5）→ 關自動推關並退關', () => {
+  const p = trendPolicy();
+  const t = ramp(p, 0, 60, 5, 10);
+  const cmds = p.decide(liveAt(t, 10));
+  assert.equal(autoOn(cmds), false);
+  assert.equal(retreatOf(cmds).length, 1);
+});
+
+test('戰場趨勢：5 分鐘才由 5 隻長到 10 隻（每分鐘 +1）→ 還撐得住，放行', () => {
+  const p = trendPolicy();
+  const t = ramp(p, 0, 300, 5, 10);
+  const cmds = p.decide(liveAt(t, 10));
+  assert.equal(autoOn(cmds), true);
+  assert.equal(retreatOf(cmds).length, 0);
+});
+
+test('戰場極限：不管趨勢，場上平均超過極限值就退關', () => {
+  const p = trendPolicy();
+  const t = ramp(p, 0, 60, 60, 60);                 // 平的，但已經堆到 60 隻
+  const cmds = p.decide(liveAt(t, 60));
+  assert.equal(autoOn(cmds), false);
+  assert.equal(retreatOf(cmds).length, 1);
+});
+
+test('戰場趨勢：下降或持平不退（清得比生得快）', () => {
+  const p = trendPolicy();
+  const t = ramp(p, 0, 60, 30, 20);
+  assert.equal(autoOn(p.decide(liveAt(t, 20))), true);
+});
+
+test('戰場趨勢：目標自訂的退關間隔生效（60 秒一次，而不是共用的 300 秒）', () => {
+  const p = trendPolicy();
+  let t = ramp(p, 0, 60, 5, 10);
+  assert.equal(retreatOf(p.decide(liveAt(t, 10))).length, 1);
+  t = ramp(p, t, 60, 10, 20);
+  assert.equal(retreatOf(p.decide(liveAt(t, 20))).length, 1, '過了 60 秒、仍在惡化，應再退一次');
+});

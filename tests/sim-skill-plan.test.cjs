@@ -69,6 +69,20 @@ test('組合：同 seed 必得同組合，且整組同一類別', () => {
   assert.ok(eq.includes('sg:fireball'), '備用成員：主力還沒學的時候，已學會的同類別群組要先補上');
 });
 
+test('必選群組（飛刀）：不管哪個 seed、哪一類組合，都排在裝配欄最前面', () => {
+  const G = () => ({
+    thrust: group('phys', null, SEVEN(1)), cleave: group('phys', null, SEVEN(1)), knife: group('phys', null, SEVEN(1)),
+    fireball: group('magic', 'fire', SEVEN(1)), chainlightning: group('magic', 'lightning', SEVEN(1))
+  });
+  for (const mode of ['phys', 'magic']) {
+    for (let seed = 1; seed <= 12; seed++) {
+      const cmds = policy({ mode, required: ['knife'] }).decide(state(G(), { seed, size: 3 }));
+      const eq = names(cmds, 'skill.equipLoadout');
+      assert.equal(eq[0], 'sg:knife', `${mode} seed ${seed}：飛刀必須是第一個，實際 ${eq.join(',')}`);
+    }
+  }
+});
+
 test('群組連第 1 階都有等級門檻：還沒開放的不挑，改挑現在學得起的', () => {
   const groups = {
     thrust: group('phys', null, SEVEN(1)),

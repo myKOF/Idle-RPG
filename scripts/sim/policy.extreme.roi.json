@@ -19,7 +19,8 @@
     "taskGoal",
     "equipSets",
     "gemRules",
-    "talentPlan"
+    "talentPlan",
+    "fieldLoad"
   ],
   "panelParams": {
     "inv": {
@@ -299,7 +300,9 @@
         ],
         "retreatCmd": "stage.go",
         "requireTargets": [
-          "killRate"
+          "killRate",
+          "fieldTrend",
+          "fieldCap"
         ],
         "targetRetreat": {
           "step": 5,
@@ -1524,6 +1527,26 @@
       "atLeast": 60,
       "affixKey": "cdr",
       "說明": "冷卻縮減。上限是遊戲的 STAT_CAPS.cdr=60，所以目標直接訂在上限——真人的說法是「後期冷卻需常態在 60% 上限值」。來源有兩條：專注附魔（focus，util 類別，鞋子與項鍊）與 cdr 詞條（minR 4，頭盔／腰帶／手套／戒指／項鍊）"
+    },
+    {
+      "id": "fieldTrend",
+      "kind": "slopePerMin",
+      "path": "panels.fieldLoad.live",
+      "windowSec": 300,
+      "atMost": 3,
+      "retreatEverySec": 300,
+      "說明": "場上存活敵人數的趨勢（隻／分鐘）。1 分鐘內由 5 隻長到 10 隻（+5）照勢頭必然掛不住，要往後退；5 分鐘才長 5 隻（+1）還撐得住。",
+      "依據": "場上敵人是一波一波出現的，1 分鐘視窗的斜率在健康狀態下就有 45% 超過 3/分（p90＝18），無法分辨。實測 extreme 3 小時、10,800 個 1 秒取樣：5 分鐘視窗斜率 p50＝0.05、p90＝2.3、超過 3 的只有 5.9%，超過 6 的 0%——只有「持續 5 分鐘一路堆高」才會越線。使用者的例子（5 分鐘長 5 隻＝+1/分 可接受）落在門檻以下"
+    },
+    {
+      "id": "fieldCap",
+      "kind": "windowAvg",
+      "path": "panels.fieldLoad.live",
+      "windowSec": 120,
+      "atMost": 50,
+      "retreatEverySec": 120,
+      "說明": "場上存活敵人數的極限值（1 分鐘平均）。超過就一律往後退，不管趨勢。",
+      "依據": "使用者指定 40~50 隻。實測健康狀態場上敵人 p50＝20、p90＝39、p99＝57、最多 75；2 分鐘平均超過 50 屬於罕見尖峰以外的持續過載"
     }
   ],
   "profile": {
@@ -1615,7 +1638,7 @@
   "skills": {
     "panel": "panels.skill",
     "gold": "view.gold",
-    "magicChance": 0.5,
+    "magicChance": 0,
     "elemPool": [
       "fire",
       "lightning",
@@ -1760,7 +1783,11 @@
       },
       "依據": "初版判讀：依 js/skills2.js 各選項說明分成 farm(練級)/boss(野外BOSS)/tower(封魔塔)，待設計者審"
     },
-    "說明": "player_strategy.md §4。組合由 seed 決定（全物理或全魔法；魔法取兩個元素系輪流）。生存率不足時末幾格換成生存類群組。超神進化切換三道閘：裝備覆蓋達標、金幣≥費用×2、距上次切換≥6 遊戲小時"
+    "說明": "player_strategy.md §4。組合由 seed 決定（全物理或全魔法；魔法取兩個元素系輪流）。生存率不足時末幾格換成生存類群組。超神進化切換三道閘：裝備覆蓋達標、金幣≥費用×2、距上次切換≥6 遊戲小時",
+    "required": [
+      "knife"
+    ],
+    "required_依據": "使用者指定：技能初始至少要選飛刀（物理系）；其餘任意，初期最好物理系。所以必選飛刀排最前面，組合預設全物理（magicChance 0）"
   },
   "equipSets": {
     "panel": "panels.equipSets",

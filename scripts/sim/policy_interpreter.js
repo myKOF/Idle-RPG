@@ -732,14 +732,15 @@ function sampleRates(state, policy, memo) {
 
   for (var i = 0; i < list.length; i++) {
     var t = list[i];
-    if (!t || t.kind !== 'ratePerMin' || !t.id) continue;
+    if (!t || (t.kind !== 'ratePerMin' && t.kind !== 'windowAvg' && t.kind !== 'slopePerMin') || !t.id) continue;
     /* 計數器的「桶」是遊戲第一次發生該事件才建的（例如 lootStats.sources.field 要等第一次
        野外擊殺），所以開局第一拍讀不到是正常的，不能算失效路徑。
        但欄位被改名時會永遠讀不到——所以寬限 counterGraceSec（預設 120 遊戲秒）之後
        仍然讀不到，才交給 pathVal 記成失效。 */
-    var raw = peekPath(state, t.counter);
+    var srcPath = (t.kind === 'windowAvg' || t.kind === 'slopePerMin') ? t.path : t.counter;
+    var raw = peekPath(state, srcPath);
     if (raw === undefined && now >= (typeof t.counterGraceSec === 'number' ? t.counterGraceSec : 120)) {
-      raw = pathVal(state, t.counter);
+      raw = pathVal(state, srcPath);
     }
     if (raw === null || raw === undefined) continue;   // 這一拍沒送這個面板，跳過不記
     var v = Number(raw);
@@ -755,7 +756,7 @@ function sampleRates(state, policy, memo) {
 
     /* 計數器倒退＝被歸零（遊戲的統計「清理」會重建 LOOT_STATS）。
        不處理的話差分變負數，速率會憑空變成 0 以下，閘門就被一個假訊號關上。 */
-    if (last && v < last.v) { r.pts = pts = []; last = null; }
+    if (t.kind === 'ratePerMin' && last && v < last.v) { r.pts = pts = []; last = null; }
 
     /* 取樣中斷過就重新起算。
 
@@ -772,8 +773,16 @@ function sampleRates(state, policy, memo) {
     /* 只留視窗內的點，外加一個剛好在視窗起點之前的點當基準。
        pts[0] 是基準，pts[1] 一旦也出了視窗才丟得掉 pts[0]。 */
     var win = windowSecOf(t);
-    while (pts.length > 2 && (now - pts[1].t) >= win) pts.shift();
+    /* 平均值不需要「視窗起點之前的基準點」，點一出視窗就丟。 */
+    if (t.kind === 'windowAvg' || t.kind === 'slopePerMin') { while (pts.length > 1 && (now - pts[0].t) > win) pts.shift(); }
+    else while (pts.length > 2 && (now - pts[1].t) >= win) pts.shift();
   }
+}
+
+function policyTargetById(policy, id) {
+  var list = policy.targets || [];
+  for (var i = 0; i < list.length; i++) if (list[i] && list[i].id === id) return list[i];
+  return null;
 }
 
 function windowSecOf(t) {
@@ -842,6 +851,43 @@ function evalTargets(state, policy, memo) {
         }
       }
       value = acN;
+    } else if (t.kind === 'windowAvg') {
+      /* 某個即時值在最近一段視窗內的平均。用途是「戰場存活敵人數／容量」這種會上下跳的量：
+         單一瞬間的值有雜訊（剛清完一波與剛出一波差很多），要看的是持續堆在高位。
+         視窗沒攢到 minSpanSec（預設一半）就回 null＝unknown，不下判斷。 */
+      var wr = memo.rates && memo.rates[t.id];
+      var wp = wr && wr.pts;
+      if (wp && wp.length >= 2) {
+        var wspan = wp[wp.length - 1].t - wp[0].t;
+        var wmin = (typeof t.minSpanSec === 'number') ? t.minSpanSec : windowSecOf(t) / 2;
+        if (wspan >= wmin) {
+          var wsum = 0;
+          for (var wi = 0; wi < wp.length; wi++) wsum += wp[wi].v;
+          value = wsum / wp.length;
+        }
+      }
+    } else if (t.kind === 'slopePerMin') {
+      /* 某個即時值在視窗內的趨勢（最小平方法斜率，單位：每分鐘變化多少）。
+
+         為什麼不是「視窗尾減視窗頭」：兩端各只有一個點，一波怪剛好在視窗頭或尾出現就會
+         把斜率拉歪；最小平方法用視窗內全部的點，單一尖峰影響有限。
+         為什麼要看趨勢而不只看高低：場上敵人從 5 隻 1 分鐘內長到 10 隻，照這個勢頭必然掛不住，
+         不必等它堆到上限才反應；但 5 分鐘才從 5 長到 10 是緩慢爬升，還撐得住。
+         視窗沒攢到 minSpanSec（預設一半）就回 null＝unknown。 */
+      var sr = memo.rates && memo.rates[t.id];
+      var sp = sr && sr.pts;
+      if (sp && sp.length >= 3) {
+        var sspan = sp[sp.length - 1].t - sp[0].t;
+        var smin = (typeof t.minSpanSec === 'number') ? t.minSpanSec : windowSecOf(t) / 2;
+        if (sspan >= smin) {
+          var mt = 0, mv = 0, si;
+          for (si = 0; si < sp.length; si++) { mt += sp[si].t; mv += sp[si].v; }
+          mt /= sp.length; mv /= sp.length;
+          var sxy = 0, sxx = 0;
+          for (si = 0; si < sp.length; si++) { sxy += (sp[si].t - mt) * (sp[si].v - mv); sxx += (sp[si].t - mt) * (sp[si].t - mt); }
+          value = sxx > 0 ? (sxy / sxx) * 60 : 0;
+        }
+      }
     } else if (t.kind === 'ratePerMin') {
       /* 取樣點由 sampleRates 累積，這裡只做差分。
          視窗還沒攢夠就回 null（＝unknown）：資料不足時不要下判斷，
@@ -1084,8 +1130,21 @@ function buildSkillComposition(P, cfg, seed) {
       return (la - lb) || (a < b ? -1 : 1);
     });
   }
+  /* 必選群組（cfg.required）：不管組合是哪一類，都要排在最前面——欄位有限時它先拿到位置。
+     例：飛刀是物理系，初期上手最順，所以一律先裝；其餘依組合隨機。
+     面板上不存在或是被動群組的名字直接略過（不會因為改名而讓整份組合壞掉）。 */
+  var required = [];
+  var reqList = cfg.required || [];
+  for (var rqi = 0; rqi < reqList.length; rqi++) {
+    var rg = P.groups[reqList[rqi]];
+    if (rg && !rg.passive && required.indexOf(reqList[rqi]) < 0) required.push(reqList[rqi]);
+  }
+  function withRequired(list) {
+    var rest = list.filter(function (id) { return required.indexOf(id) < 0; });
+    return required.concat(rest);
+  }
   if (mode === 'phys') {
-    return { mode: 'phys', elems: [], comp: seededShuffle(phys, rng), fallback: [] };
+    return { mode: 'phys', elems: [], comp: withRequired(seededShuffle(phys, rng)), fallback: [] };
   }
   var pool = [];
   var wanted = cfg.elemPool || Object.keys(byElem).sort();
@@ -1103,7 +1162,8 @@ function buildSkillComposition(P, cfg, seed) {
   for (var ek in byElem) for (var ri2 = 0; ri2 < byElem[ek].length; ri2++) {
     if (comp.indexOf(byElem[ek][ri2]) < 0) rest.push(byElem[ek][ri2]);
   }
-  return { mode: 'magic', elems: elems, comp: comp, fallback: byOpenLevel(rest) };
+  /* 魔法組合裡的必選群組是物理系：排最前面，其餘照元素輪流。 */
+  return { mode: 'magic', elems: elems, comp: withRequired(comp), fallback: byOpenLevel(withRequired(rest).filter(function (id) { return required.indexOf(id) < 0; })) };
 }
 
 /* 每個決策點更新技能情境：組合只在第一次看得到技能面板時決定一次，之後不變。 */
@@ -2531,6 +2591,17 @@ function decide(state, policy, memo) {
           if (!memo.gate) memo.gate = {};
           var gm = memo.gate[r.id] || (memo.gate[r.id] = {});
           var cool = (typeof rtc.everySec === 'number') ? rtc.everySec : 300;
+          /* 目標可以自己指定退關間隔（retreatEverySec）：趨勢型目標的視窗只有一分鐘，
+             不必像擊殺速率那樣等 5 分鐘換血才能再退。多個目標同時擋住時取最長的，保守。 */
+          var blockCool = null;
+          for (var bq = 0; bq < reqs.length; bq++) {
+            var bd = state.ctx && state.ctx.deficit && state.ctx.deficit[reqs[bq]];
+            if (!bd || bd.unknown || bd.met) continue;
+            var bt = policyTargetById(policy, reqs[bq]);
+            var bc = (bt && typeof bt.retreatEverySec === 'number') ? bt.retreatEverySec : cool;
+            if (blockCool === null || bc > blockCool) blockCool = bc;
+          }
+          if (blockCool !== null) cool = blockCool;
           var floorStage = Math.max(1, Number(rtc.minStage) || 1);
           /* 動態地板：不得退出當前的裝等分段。
 
@@ -3146,6 +3217,8 @@ function decide(state, policy, memo) {
         var rv = Number(uRarities[rk]);
         if (rv > maxRarity) maxRarity = rv;
       }
+      /* 先挑出「這一輪有資格被強化」的部位：有裝備，而且（是身上最高品質，或還沒到該品質的上限）。 */
+      var uEligible = [];
       for (var sk in uRarities) {
         var eqItem = uEquip[sk];
         if (!eqItem || !eqItem.id) continue;
@@ -3156,9 +3229,60 @@ function decide(state, policy, memo) {
           var cap = (typeof capTable[slotRarity] === 'number') ? capTable[slotRarity] : 0;
           if ((eqItem.upgrade || 0) >= cap) continue;
         }
+        uEligible.push({ slot: sk, item: eqItem, lv: eqItem.upgrade || 0 });
+      }
+
+      /* ---- 平均強化（uCfg.even）----
+
+         先前是每個部位各自一路強化到上限：身上最高品質的部位不設上限，於是碎片與金幣全灌在
+         表單排在前面的那幾件（實測胸甲 +17、腿甲 +12，武器與戒指還是 +0），而武器與首飾才是
+         輸出的來源。強化等級換裝時歸零，集中在少數幾件也等於押寶它們不會被換掉。
+
+         改成「階梯」：所有有資格的部位先一起到 +1，再一起到 +2……；每一輪只有「等級低於本輪目標」
+         的部位可以被強化，所以沒有哪一件能跑到別人前面。資源不夠時，由優先序決定誰先拿到：
+         武器與首飾（主要輸出）→ 手套、腰帶 → 各部位防具。
+
+         階梯的單位（step）：一般是 1（最平均）；超過 highFrom（預設 20）之後強化會失敗、失敗損失半數材料，
+         身上沒有「強化成功率」詞條時仍以 1 為單位（逐件逐級確認，不一次拉高目標把材料押在失敗上），
+         有的話可以放寬到 stepHighWithSuccess。 */
+      var ev = uCfg.even;
+      if (ev && uEligible.length) {
+        var evFloor = Infinity;
+        for (var ei = 0; ei < uEligible.length; ei++) if (uEligible[ei].lv < evFloor) evFloor = uEligible[ei].lv;
+        var hasSucc = false;
+        if (ev.successAffix) {
+          for (var sek in uEquip) {
+            var sit = uEquip[sek];
+            if (!sit || !sit.affixes) continue;
+            for (var sai = 0; sai < sit.affixes.length; sai++) {
+              if (sit.affixes[sai] && sit.affixes[sai].key === ev.successAffix) { hasSucc = true; break; }
+            }
+            if (hasSucc) break;
+          }
+        }
+        var evHigh = (typeof ev.highFrom === 'number') ? ev.highFrom : 20;
+        var evStep = (evFloor >= evHigh)
+          ? (hasSucc ? (Number(ev.stepHighWithSuccess) || 1) : (Number(ev.stepHigh) || 1))
+          : (Number(ev.stepLow) || 1);
+        var evTarget = (Math.floor(evFloor / evStep) + 1) * evStep;
+        var evGroups = ev.priority || [];
+        var evRank = function (slot) {
+          for (var gi2 = 0; gi2 < evGroups.length; gi2++) if (evGroups[gi2].indexOf(slot) >= 0) return gi2;
+          return evGroups.length;
+        };
+        uEligible = uEligible.filter(function (e) { return e.lv < evTarget; });
+        /* 同一組內先強化等級低的，再照部位名排序——決定論，不依賴物件鍵順序。 */
+        uEligible.sort(function (a, c) {
+          var d = evRank(a.slot) - evRank(c.slot);
+          if (d) return d;
+          if (a.lv !== c.lv) return a.lv - c.lv;
+          return a.slot < c.slot ? -1 : (a.slot > c.slot ? 1 : 0);
+        });
+      }
+      for (var ui2 = 0; ui2 < uEligible.length; ui2++) {
         var uArgs = {};
         for (var ak in baseArgs) uArgs[ak] = baseArgs[ak];
-        uArgs[uCfg.argKey || 'itemId'] = eqItem.id;
+        uArgs[uCfg.argKey || 'itemId'] = uEligible[ui2].item.id;
         out.push({ name: r.cmd, args: uArgs, ruleId: r.id });
       }
     } else if (r.equipByPower) {
