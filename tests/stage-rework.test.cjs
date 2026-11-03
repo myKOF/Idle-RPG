@@ -78,21 +78,20 @@ test('地圖表承接場景專屬倍率與所有地圖的分段掉落資料', ()
   assert.match(zones.find((line) => line.includes(',desert,')), /,0\.8,0\.8,1,1,1,/);
   assert.match(zones.find((line) => line.includes(',undead_mountains,')), /,20,50,10,1\.8,2\.25,/);
   assert.match(zones.find((line) => line.includes(',god_sanctuary,')), /,500,8000,100,2\.5,24,/);
-  // 十圖版 Zone_Stage_Drops.csv 包含 44 列資料，另加標題列。
-  assert.equal(drops.length, 45);
-  assert.ok(drops.some((line) => line.startsWith('god_sanctuary,451,600,')));
+  // 使用者2026-11-04來源表包含77筆關卡掉落，另加標題列。
+  assert.equal(drops.length, 78);
+  assert.ok(drops.some((line) => line.startsWith('god_sanctuary,575,600,')));
 });
 
 test('掉落配置依地圖與關卡區間查表，且支援材料欄位', () => {
   const c = load(['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/status.js', 'js/formula.js']);
   const early = c.zoneStageDropConfigFor('undead_mountains', 100);
   const late = c.zoneStageDropConfigFor('undead_mountains', 330);
-  // 亡靈山脈的新版分段為 1~159 與 320~359；數值由集中掉落表決定。
-  assert.equal(early.max, 159);
-  assert.equal(late.min, 320);
-  assert.equal(late.materials.bookRate, 4);
-  /* 2026-08-11（使用者確認）：神話（R6）掉落率 0.3 → 0.25。 */
-  assert.equal(c.fieldDropRatesFor(330, 330, 'undead_mountains')[6], 0.25);
+  // 使用者2026-11-04來源表分段及數值，按最新Excel明確釘住。
+  assert.equal(early.max, 149);
+  assert.equal(late.min, 300);
+  assert.equal(late.materials.bookRate, 0);
+  assert.equal(c.fieldDropRatesFor(330, 330, 'undead_mountains')[6], 6);
 });
 
 /* 打贏地圖最後一關時 best 會被 maxStage 夾住，光看 best 分不出「打贏最後一關」與

@@ -1,6 +1,6 @@
 'use strict';
 if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
-/* 四功能神鑄。素材入槽時移出庫存；神性之石只預選，執行時才扣除。 */
+/* 四功能神鑄。素材入槽時移出庫存；成功率材料只預選，執行時才依功能扣除。 */
 function forgeMigrateState(data, scanSeen) {
   var f = data.forge;
   if (f && f.version === 2) {
@@ -82,7 +82,7 @@ function forgeRateInfo() {
   // 空法陣仍可依所選品質預設石頭數，不需先放入裝備。
   var view = f.operation === 'equip' && !forgeItemCount()
     ? Object.assign({}, f, { slots: [{ rarity: f.quality }] }) : f;
-  return divineForgeRateInfo(view, G.player.dust);
+  return divineForgeRateInfo(view, divineForgeMaterialOwned(f.operation, G.player));
 }
 function forgeCapRecipeStones(info) {
   if (!info) return;
@@ -301,7 +301,7 @@ function forgeValidate() {
     if (Object.keys(counts).length !== 2 || Object.keys(counts).some(function (t) { return counts[t] !== DIVINE_FORGE.gemPerType; })) return STR(2166, GEM_FORGE_MAX_LEVEL, DIVINE_FORGE.gemPerType);
   } else if (items.some(function (it) { return it.locked || !divineForgeItemEligible(it, mode) || (mode === 'equip' && it.rarity !== items[0].rarity); })) return STR(2164);
   var info = forgeRateInfo();
-  if (!info || f.stones !== info.stones || (G.player.dust || 0) < info.stones) return STR(2168);
+  if (!info || f.stones !== info.stones || divineForgeMaterialOwned(mode, G.player) < info.materialCost) return STR(2309, divineForgeMaterialName(mode));
   if (G.player.gold < info.cost) return STR(1267, fmt(info.cost), fmt(G.player.gold));
   return null;
 }
@@ -326,7 +326,8 @@ function doForge() {
   var mode = f.operation, items = f.slots.filter(Boolean), counts = {}, info = forgeRateInfo(), origin = f.equipmentOrigin;
   if (mode === 'gem') items.forEach(function (g) { counts[g.type] = (counts[g.type] || 0) + 1; });
   G.player.gold -= info.cost;
-  G.player.dust = (G.player.dust || 0) - info.stones;
+  var materialKey = divineForgeMaterialKey(mode);
+  G.player[materialKey] = (G.player[materialKey] || 0) - info.materialCost;
   f.slots = [null, null, null, null, null, null];
   delete f.equipmentOrigin;
   f.stones = 0; f.result = null;

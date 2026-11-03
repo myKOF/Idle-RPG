@@ -18,7 +18,7 @@ function source(name) {
 }
 function setup(stones = 7, owned = 1000) {
   const c = createEngine({ seed:1031 }).boot(null).ctx;
-  c.G.player.reincarnations = 5; c.G.player.dust = owned;
+  c.G.player.reincarnations = 5; c.G.player.dust = 9000; c.G.player.ancientEssence = owned;
   c.forgeSetOperation('ancient');
   const item = c.makeEquipment(100, { rarity:6 });
   c.G.inventory.push(item); c.forgePlaceItem(item.id); c.forgeSetStones(stones);
@@ -60,7 +60,7 @@ test('短按只增減一次，499ms仍未啟動連續調整', () => {
 });
 test('500ms開始、之後每秒20次；放開只送最終值，尾隨click不重加', () => {
   const s = setup(); s.down(); s.advance(500); assert.equal(s.nodes['forge-stone-value'].textContent, '8');
-  s.advance(1000); assert.equal(s.nodes['forge-stone-value'].textContent, '28');
+  s.advance(1000); assert.equal(s.nodes['forge-stone-value'].textContent, '56');
   assert.equal(s.c.G.forge.stones, 7); assert.deepEqual(s.sent, []);
   s.up(); assert.deepEqual(s.sent, [28]); s.advance(1000); assert.equal(s.c.G.forge.stones, 28); assert.equal(s.timers.size, 0);
   s.down('minus'); s.advance(500); s.advance(1000); assert.equal(s.nodes['forge-stone-value'].textContent, '7');
@@ -69,23 +69,23 @@ test('500ms開始、之後每秒20次；放開只送最終值，尾隨click不�
 test('預覽成功率隨數量更新，顯示只有持有量與總成功率', () => {
   const s = setup(); s.down(); s.advance(500);
   assert.equal(s.nodes['forge-rate'].textContent, '成功率 48%');
-  assert.equal(s.nodes['forge-dust-own'].textContent, '神性之石：持有 1.00K');
+  assert.equal(s.nodes['forge-dust-own'].textContent, '太古精華：持有 1.00K');
   assert.equal(s.nodes['forge-stone-center'].lastElementChild.textContent, '8');
 });
 test('放開後等待Worker回覆期間維持最後數量，回覆後恢復權威顯示', () => {
   const s = setup(); s.down(); s.advance(650);
   s.c.UI.forgeStoneHold.send = count => { s.sent.push(count); s.setPending(true); };
   s.up(); s.c.updateForgeStonePicker(s.c.G.forge,s.c.G.player,true);
-  assert.equal(s.nodes['forge-stone-value'].textContent,'11');
+  assert.equal(s.nodes['forge-stone-value'].textContent,'22');
   assert.equal(s.c.G.forge.stones,7);
   s.c.forgeSetStones(11); s.setPending(false); s.c.updateForgeStonePicker(s.c.G.forge,s.c.G.player,false);
-  assert.equal(s.nodes['forge-stone-value'].textContent,'11');
+  assert.equal(s.nodes['forge-stone-value'].textContent,'22');
   assert.equal(s.c.UI.forgeStoneHold.submittedCount,null);
 });
 test('長按受庫存、投入上限與零限制，到邊界不再排Timer', () => {
-  for (const [start, owned, key, target] of [[7,9,'plus',9],[59,1000,'plus',60],[2,1000,'minus',0]]) {
+  for (const [start, owned, key, target, cost] of [[7,9,'plus',9,9],[59,1000,'plus',60,240],[2,1000,'minus',0,0]]) {
     const s = setup(start,owned); s.down(key); s.advance(3000);
-    assert.equal(Number(s.nodes['forge-stone-value'].textContent),target); assert.equal(s.timers.size,0);
+    assert.equal(Number(s.nodes['forge-stone-value'].textContent),cost); assert.equal(s.timers.size,0);
     s.up(key); assert.equal(s.c.G.forge.stones,target); assert.deepEqual(s.sent,[target]);
   }
 });
@@ -93,6 +93,16 @@ test('放開、觸控取消、失焦、隱藏及關閉提示停止並提交已�
   for (const stop of [s=>s.doc.emit('pointerup'),s=>s.doc.emit('pointercancel'),s=>s.win.emit('blur'),s=>{s.doc.hidden=true;s.doc.emit('visibilitychange');},s=>s.c.closeForgeStonePicker()]) {
     const s = setup(); s.down(); s.advance(650); stop(s); s.advance(2000);
     assert.deepEqual(s.sent,[11]); assert.equal(s.timers.size,0); assert.equal(s.c.UI.forgeStoneHold.pointerId,null);
+  }
+});
+test('第2條精鑄顯示實際精華，跨50與75%門檻時長按不超支', () => {
+  for (const [own,start,cost,target] of [[59,9,27,9],[419,34,204,34],[420,34,420,35]]) {
+    const s=setup(start,own);s.c.G.forge.slots[0].ancientForgeCount=1;
+    s.c.updateForgeStonePicker(s.c.G.forge,s.c.G.player,false);
+    s.down();s.advance(500);s.up();
+    assert.equal(s.c.G.forge.stones,target);
+    assert.equal(Number(s.nodes['forge-stone-value'].textContent),cost);
+    assert.ok(s.c.forgeRateInfo().materialCost<=own);
   }
 });
 test('處理中、鑄造中與非主鍵不啟動；其他指標放開不打斷；鍵盤點擊保留', () => {

@@ -5,6 +5,7 @@ const { createEngine } = require('../scripts/sim/engine.js');
 function setup() {
   const e = createEngine({ seed: 1029 }).boot(null), c = e.ctx;
   c.G.player.reincarnations = 5; c.G.player.gold = 1e12; c.G.player.dust = 1000;
+  c.G.player.ancientEssence = 1000;
   c.setCombatPaused(true);
   return { e, c };
 }

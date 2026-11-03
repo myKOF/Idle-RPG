@@ -77,7 +77,7 @@ const ZD_EQUIP = ZD('裝備掉落率（品質R0至R11）');
 const ZD_GEMS = ZD('寶石掉落率（等級R1至R10）');
 const ZD_BOOK = ZD('技能書掉落率');
 const ZD_ESSENCE = ZD('太古精華掉落率');
-const ZD_DUST = ZD('魔塵掉落率');
+const ZD_DIVINE_STONE = ZD('神性之石掉落率');
 function dropNumber(raw, label) {
   const n = Number(String(raw).trim());
   if (!Number.isFinite(n)) throw new Error('Zone_Stage_Drops.csv 數值無法解析：' + label + ' / ' + raw);
@@ -100,7 +100,7 @@ function zoneStageDropContent() {
       dropRateList(r[ZD_GEMS], 10, zone + '.寶石掉落率'),
       dropNumber(r[ZD_BOOK], zone + '.技能書掉落率'),
       dropNumber(r[ZD_ESSENCE], zone + '.太古精華掉落率'),
-      dropNumber(r[ZD_DUST], zone + '.魔塵掉落率')
+      dropNumber(r[ZD_DIVINE_STONE], zone + '.神性之石掉落率')
     ];
     (grouped[zone] || (grouped[zone] = [])).push(row);
   });
@@ -399,6 +399,11 @@ scalar('data', 'REINCARNATION_MAX', '1-成長經驗', '可轉生等級 / 最高�
   if (!Number.isInteger(equipment) || equipment < 1 || equipment > 6) throw Error('裝備神鑄素材件數必須為1～6整數');
   if (!Number.isInteger(gems) || gems < 1 || gems > 3) throw Error('神級寶石每類顆數必須為1～3整數');
   if (number('精鑄刻印素材件數') !== 1) throw Error('精鑄刻印素材件數必須為1');
+  if (!(number('太古精鑄第二條精華消耗倍率') >= 1)) throw Error('太古精鑄第二條精華消耗倍率必須大於或等於1');
+  const threshold1 = number('太古精鑄精華加倍成功率門檻'), threshold2 = number('太古精鑄精華四倍成功率門檻');
+  if (!(threshold1 < threshold2 && threshold2 <= 100)) throw Error('太古精鑄成功率門檻必須為遞增且不超過100');
+  const mult1 = number('太古精鑄第一門檻精華消耗倍率'), mult2 = number('太古精鑄第二門檻精華消耗倍率');
+  if (!(mult1 >= 1 && mult2 >= mult1)) throw Error('太古精鑄門檻消耗倍率必須大於或等於1且不遞減');
   const min = number('裝備神鑄失敗最少損失'), max = number('裝備神鑄失敗最多損失');
   if (!Number.isInteger(min) || !Number.isInteger(max) || min > max || max > equipment) throw Error('裝備神鑄失敗損失必須為整數，且最少≤最多≤素材件數');
   for (const name of ['裝備神鑄每石成功率','精鑄寶石刻印每石成功率']) if (!(number(name) > 0)) throw Error('每石成功率必須大於0：' + name);
@@ -416,6 +421,11 @@ objFieldML('data', 'DIVINE_FORGE = {', 'singleChaosRate', '6-新版神鑄', '精
 objFieldML('data', 'DIVINE_FORGE = {', 'gemRate', '6-新版神鑄', '神級寶石成功率', 0, '神鑄.gemRate');
 objFieldML('data', 'DIVINE_FORGE = {', 'equipStoneRate', '6-新版神鑄', '裝備神鑄每石成功率', 0, '神鑄.equipStoneRate');
 objFieldML('data', 'DIVINE_FORGE = {', 'singleStoneRate', '6-新版神鑄', '精鑄寶石刻印每石成功率', 0, '神鑄.singleStoneRate');
+objFieldML('data', 'DIVINE_FORGE = {', 'ancientSecondEssenceMult', '6-新版神鑄', '太古精鑄第二條精華消耗倍率', 0, '神鑄.ancientSecondEssenceMult');
+objFieldML('data', 'DIVINE_FORGE = {', 'ancientEssenceThreshold1', '6-新版神鑄', '太古精鑄精華加倍成功率門檻', 0, '神鑄.ancientEssenceThreshold1');
+objFieldML('data', 'DIVINE_FORGE = {', 'ancientEssenceMult1', '6-新版神鑄', '太古精鑄第一門檻精華消耗倍率', 0, '神鑄.ancientEssenceMult1');
+objFieldML('data', 'DIVINE_FORGE = {', 'ancientEssenceThreshold2', '6-新版神鑄', '太古精鑄精華四倍成功率門檻', 0, '神鑄.ancientEssenceThreshold2');
+objFieldML('data', 'DIVINE_FORGE = {', 'ancientEssenceMult2', '6-新版神鑄', '太古精鑄第二門檻精華消耗倍率', 0, '神鑄.ancientEssenceMult2');
 objFieldML('data', 'DIVINE_FORGE = {', 'equipMythicGold', '6-新版神鑄', '裝備神鑄神話金幣', 0, '神鑄.equipMythicGold');
 objFieldML('data', 'DIVINE_FORGE = {', 'equipGenesisGold', '6-新版神鑄', '裝備神鑄創世金幣', 0, '神鑄.equipGenesisGold');
 objFieldML('data', 'DIVINE_FORGE = {', 'equipChaosGold', '6-新版神鑄', '裝備神鑄混沌金幣', 0, '神鑄.equipChaosGold');

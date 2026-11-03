@@ -1,7 +1,7 @@
 'use strict';
 const test=require('node:test'), assert=require('node:assert/strict');
 const {loadRuneEnv}=require('./helpers/runeword-env.cjs');
-function setup(){const c=loadRuneEnv();c.G.player.reincarnations=5;c.G.player.gold=1e12;c.G.player.dust=100;return c;}
+function setup(){const c=loadRuneEnv();c.G.player.reincarnations=5;c.G.player.gold=1e12;c.G.player.dust=100;c.G.player.ancientEssence=1000;return c;}
 function gear(c){const it=c.makeEquipment(100,{rarity:6});c.G.inventory.push(it);return it;}
 
 test('新版操作即時結算，不留計時、自動補料或重複結算',()=>{

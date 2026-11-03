@@ -1,4 +1,6 @@
-# Worker 協議 v71
+# Worker 協議 v72
+
+v72（2026-11-04 精鑄材料）：`forge.rate`新增`materialCost`（實際消耗材料數）及`affordableStones`（目前庫存可負擔的最大成功率增量份數）。`forge.stones`／`forge.setStones.count`仍為成功率增量份數；中央與加減面板顯示`materialCost`，成功率依份數計算。太古精鑄由`ancientEssence`扣款，第2條精鑄與最終成功率級距倍率相乘並向上取整；其餘模式仍扣`dust`。所有費用／門檻由game_parameters管理，先驗證完整材料，三秒到期再驗證及一次扣款；不足拒絕，保留原料。指令數與存檔欄位不變。
 
 v71（2026-11-04 精鑄穿戴來源）：`forge`存檔與既有完整面板投影新增可選`equipmentOrigin={itemId:string,setIndex:int,slot:string}`，僅太古精鑄從目前穿戴裝備入槽時寫入。成功或取消還原原套原欄（含存讀及作業中換套），被替換／主副手衝突的裝備完整退包；背包素材或缺少來源的舊存檔仍回背包，不推測來源。結算／退料清除來源，失敗沿既有配方消耗。精鑄期間仍維持既有卸裝入槽流程；神聖刻印行為不變。指令、參數、面板數不變。
 

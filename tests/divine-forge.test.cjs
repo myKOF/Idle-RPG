@@ -24,7 +24,7 @@ test('game_parameters可調費用並拒絕超出七格介面與結算規則的�
 });
 function env(reinc=5) {
   const c=loadRuneEnv(); c.G.player.reincarnations=reinc;
-  c.G.player.gold=1e12; c.G.player.dust=1000;
+  c.G.player.gold=1e12; c.G.player.dust=1000; c.G.player.ancientEssence=1000;
   return c;
 }
 function gear(c,r=6,ancient=0) {
@@ -110,9 +110,10 @@ test('神級寶石失敗六顆皆消失；精鑄與刻印失敗裝備消失，�
   const c=env();c.chance=()=>false;
   for(const mode of ['ancient','imprint']){
     c.forgeSetOperation(mode);const it=gear(c);c.forgePlaceItem(it.id);c.forgeSetStones(1);
-    const g=c.G.player.gold,d=c.G.player.dust,cost=c.forgeRateInfo().cost;
+    const g=c.G.player.gold,d=c.G.player.dust,a=c.G.player.ancientEssence,cost=c.forgeRateInfo().cost;
     assert.equal(c.doForge(),null);assert.ok(!c.G.inventory.includes(it));
-    assert.equal(c.G.player.gold,g-cost);assert.equal(c.G.player.dust,d-1);
+    assert.equal(c.G.player.gold,g-cost);assert.equal(c.G.player.dust,d-(mode==='ancient'?0:1));
+    assert.equal(c.G.player.ancientEssence,a-(mode==='ancient'?1:0));
   }
   c.forgeSetOperation('gem');
   const types=Object.keys(c.GEM_TYPES).filter(c.isGemEnabled).slice(0,2);
@@ -186,6 +187,7 @@ test('實際migrateSave在補預設值後仍辨識舊神鑄，完整退還一次
 });
 test('正式Worker指令與面板：三秒結算與持久化',()=>{
   const e=createEngine({seed:8}).boot(null),c=e.ctx;
+  c.setCombatPaused(true);
   c.G.player.reincarnations=5;c.G.player.gold=1e12;c.G.player.dust=100;
   for(let i=0;i<6;i++){const it=c.makeEquipment(100,{rarity:6});c.G.inventory.push(it);assert.equal(c.runCommand('forge.placeItem',{itemId:it.id}).result,null);}
   c.runCommand('forge.setStones',{count:13});
