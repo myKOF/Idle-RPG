@@ -426,14 +426,16 @@ body {
   animation: reincReadySweep 0.9s linear infinite;
 }
 
-.char-tab-icon {
+.char-tab-icon,
+.nav-tab-icon {
   position: relative;
   display: block;
   flex: 0 0 auto;
   line-height: 0;
 }
 
-#workspace-area #tabs .char-reincarnation-alert:not([hidden]) {
+#workspace-area #tabs .char-reincarnation-alert:not([hidden]),
+#workspace-area #tabs .unlock-nav-pending .nav-tab-icon::after {
   position: absolute;
   right: -5px;
   bottom: -3px;
@@ -450,6 +452,10 @@ body {
   font: 900 16px/1 Arial, sans-serif;
   letter-spacing: 0;
   pointer-events: none;
+}
+
+#workspace-area #tabs .unlock-nav-pending .nav-tab-icon::after {
+  content: '!';
 }
 
 @keyframes reincReadyBgFlow {

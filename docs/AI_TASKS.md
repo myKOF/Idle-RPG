@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## SYSTEM-UNLOCK-BADGE-20261103 — 驚嘆號沿用角色圖標樣式
+
+- Owner：Codex；Done。使用者指出提示不應被裁在icon內，並指定沿用角色既有紅色驚嘆號外觀。原因為前版pseudo放在overflow:hidden的.af-nav-icon內，較高優先級的圓框裁切規則仍生效。
+- 允許：index各導覽圖標外包wrapper與兩CSS快取、css/style.css共用既有角色徽章樣式、ashen-forge.css移除舊pseudo、LV與本段。禁止改JS／解鎖條件／已讀／存檔／表格與其他使用者修改。五檔fetch後預檢乾淨，style追加預檢乾淨。
+- 驗收：新提示與既有角色徽章相同20px／紅底白框、右下角向外突出、不再被圖標裁切、圖標原裁切保持；重錄GIF、相關測試／Build／Console／diff後獨立Commit，無新素材。
+- 完成五檔：index八個非角色導覽圖標加入nav-tab-icon外wrapper；style.css把wrapper定位及原角色徽章的完整樣式共用到新提示pseudo；ashen-forge.css移除舊圖內pseudo。style快取1.0.109／ashen1.0.100，LV與本段同步。未改角色原有徽章HTML／JS、未改解鎖／已讀／動畫邏輯或使用者表格。
+- 驗證：原system-unlock-hints/verify.cjs重錄並完成全部九項真Worker驗收，額外逐項比較新pseudo與角色徽章的right／bottom／width／height／boxSizing／borderWidth／borderColor／borderRadius／backgroundColor／color／fontSize／fontWeight，全一致：20px、right=-5px、bottom=-3px；原af-nav-icon仍overflow:hidden，新徽章位於其外層。新nav-badge與切頁兩實拍已目視核對，Console error／warning及pageerror皆0。node --test tests/system-unlocks.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs為21/21通過；npm.cmd run build為636檔通過；diff／stat／check及自我Review通過。
+- GIF：本聊天visualizations/system-unlock-hints/system-unlock-hints-v2.gif，真頁72幀／8fps、820×796、約9秒循環，包含父圖標外側徽章與新內頁閃爍，獨立v2檔避免舊預覽快取。QA／report與截圖保留，私人服務／瀏覽器已關閉。無美術素材修改／素材庫變更；唯讀未改共通規範／Workflow／Agent、解鎖JS／Worker／存檔／String與其他表格。無本項未完成內容，可供Review／使用者合併，未合併推送；限制未驗多瀏覽器／長時間遊玩。Commit為本段所在「[Codex] fix: 統一解鎖驚嘆號與角色徽章位置大小」，SHA見交付。使用者原表格及String快取維持未提交。
+
 ## SYSTEM-UNLOCK-HINTS-20261103 — 功能列與獨立頁籤解鎖提示
 
 - Owner：Codex；Done，單一開發者。使用者要求解鎖後不彈窗，以功能圖標驚嘆號及內部新開放頁籤高亮閃爍提示，先提供切頁GIF。各頁籤獨立已讀，點選才清除；進入父功能不清除預設頁提示。

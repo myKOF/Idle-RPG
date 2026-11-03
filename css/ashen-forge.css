@@ -2371,26 +2371,6 @@ html *::-webkit-scrollbar-corner {
   white-space: nowrap;
 }
 
-/* 新開放功能：父圖標保留驚嘆號，直到所有新頁籤各自被點選。 */
-#tabs .unlock-nav-pending .af-nav-icon { position: relative; overflow: visible; }
-#tabs .unlock-nav-pending .af-nav-icon::after {
-  content: '!';
-  position: absolute;
-  right: -3px;
-  bottom: -2px;
-  z-index: 3;
-  display: grid;
-  place-items: center;
-  width: 18px;
-  height: 18px;
-  border: 2px solid #fff4d4;
-  border-radius: 50%;
-  background: #d83227;
-  color: #fff;
-  font: 900 14px/1 sans-serif;
-  pointer-events: none;
-}
-
 #game-layout #workspace-area .unlock-tab-pending {
   background: linear-gradient(#765622, #483315) !important;
   color: #fff0b5 !important;
