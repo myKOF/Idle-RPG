@@ -1136,7 +1136,8 @@
                     <option value="total_kills">⚔️ 總殺敵數 (Total Monster Kills)</option>
                     <option value="reincarnation">🌀 轉生次數 (0~10 轉生進程)</option>
                     <option value="tower_floor">🗼 高塔通關樓層 (1~150 層 BOSS)</option>
-                    <option value="stage">🚩 到達關卡數 (Stage Cleared)</option>
+                    <option value="stage">🚩 目前所在關卡 (會隨換圖、轉生歸 1)</option>
+                    <option value="stage_best">🏔️ 歷史最高關卡 (取樣點累計最大值，只升不降)</option>
                     <option value="godforge_count">👑 神鑄裝備件數 (Godforged Count)</option>
                     <option value="rerolls">🎲 裝備洗詞條總次數 (Affix Rerolls)</option>
                     <option value="gem_syntheses">💎 寶石合成總次數 (Gem Syntheses)</option>
@@ -1566,6 +1567,14 @@
                 timeSeries[n].kill_rate = { mean: rate, median: rate, p10: rate, p90: rate };
             }
 
+            /* 歷史最高關卡：CSV 的 stage 是「當下所在關卡」，換圖或轉生會掉回 1，折線呈鋸齒，
+               看不出推進了多少。這裡取到該取樣點為止的最大值（只升不降）。
+               ⚠️ 只看取樣點，取樣間隔內短暫到過的更高關卡不會計入，所以是下限。 */
+            let bestSoFar = 0;
+            timeSeries.forEach(pt => {
+                bestSoFar = Math.max(bestSoFar, pt.stage.mean);
+                pt.stage_best = { mean: bestSoFar, median: bestSoFar, p10: bestSoFar, p90: bestSoFar };
+            });
             currentSimResult = currentSimResult || {};
             currentSimResult.time_series = timeSeries;
             currentSimResult.config = currentSimResult.config || { runs: 1, hours: timeSeries[timeSeries.length - 1].hour, profile: { name: '原生內核實機' } };
