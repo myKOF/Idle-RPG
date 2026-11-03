@@ -772,6 +772,15 @@
             color: #f8fafc;
         }
 
+        /* 這頁不載入遊戲的 css/*.css，但詳情面板的 HTML 來自遊戲的 itemDetailHTML，
+           裡面的圖（標題裝備縮圖、寶石、符文石）靠遊戲樣式限制尺寸；沒帶過來就會以原圖大小（1024px）撐爆面板。
+           數值對齊 css/ashen-forge.css、gems.css、runeword.css。 */
+        #itemDetailPanel img { max-width: 100%; object-fit: contain; }
+        #itemDetailPanel .it-name-icon { width: 28px; height: 28px; vertical-align: middle; margin-right: 8px; }
+        #itemDetailPanel .gem-ico { display: block; flex: 0 0 auto; width: 32px; height: 32px; }
+        #itemDetailPanel .gem-ico.gi-inline { display: inline-block; width: 1.6em; height: 1.6em; vertical-align: -0.5em; }
+        #itemDetailPanel .rune-stone { display: block; flex: 0 0 auto; width: 32px; height: 32px; }
+
         .item-detail-header {
             display: flex;
             align-items: center;
