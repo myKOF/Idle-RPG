@@ -1,3 +1,5 @@
+> 2026-11-03：本黃金騎士模型完整保留，內測預設人物改用 `role.glb`，沿用本模型全部既有動畫。新人物授權／製作與匯出見 [ROLE_SOURCE.md](ROLE_SOURCE.md)。未新增轉生外觀切換。
+
 # 3D 主角模型：黃金騎士（Sunbrand Knight）
 
 - 檔案：`sunbrand-knight.glb`（約 700 KB）：4903 個三角面（Meshy 原模型 4911 個，拿掉 8 個錯綁的尖刺三角面，見下方「動作修正」）、25 根骨骼、一張 1024×1024 貼圖、五個動畫（`CombatIdle`、`Run`、`Attack1`、`Attack2`、`Death`，24 fps）。

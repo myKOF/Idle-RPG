@@ -19,7 +19,9 @@
   'use strict';
 
   var STORE_KEY = 'idle-rpg.hero3d.v1';
-  var MODEL_URL = 'images/models/hero3d/sunbrand-knight.glb?v=20261102-sword90';   // 改了動畫就換版號，避免瀏覽器用到舊快取
+  var MODEL_URL = 'images/models/hero3d/role.glb?v=20261103-forward-grip-v1';   // 模型換版時更新，避免讀到舊外觀
+  var REBIRTH_MODEL_URL = 'images/models/hero3d/role1.glb?v=20261103-role1-forward-grip-v1';
+  function modelForReincarnations(count) { return Number(count) >= 1 ? REBIRTH_MODEL_URL : MODEL_URL; }
   var GLTF_URL = 'js/vendor/three/loaders/GLTFLoader.js';
   var CLOTH_URL = 'images/models/hero3d/sunbrand-cloth.json';   // 布料頂點清單（披風、腰前布襠、關節處的藍布）：和 tools/meshy-pipeline/src/fix-grips.mjs 共用
 
@@ -37,6 +39,7 @@
     attack1: { clip: 'Attack1', loop: false, start: 0.10, hit: 0.78, end: 1.40 },   // 小跳躍→轉一圈→斜砍（Meshy 動作庫 Sword Judgment），見 fix-grips.mjs 的 CFG.Attack1.retarget
     attack2: { clip: 'Attack2', loop: false, start: 0.10, hit: 0.50, end: 1.65 },   // end：收招已平順回到 start 的姿勢（見 tools/meshy-pipeline/src/fix-grips.mjs 的 CFG.Attack2.recover）
     attack3: { clip: 'Attack2', loop: false, start: 1.72, hit: 2.34, end: 3.11 },   // 右上往左下斜砍再反著揮回（Meshy 動作 Double Combo Attack），與 attack2 放在同一條 Attack2 時間軸（1.74 秒起），見 fix-grips.mjs 的 CFG.Attack2.meshy
+    attack4: { clip: 'Attack4', loop: false, start: 0.00, hit: 1.07, end: 2.3666 },   // 使用者提供的左手動作全身鏡像成右手揮劍；完整起手與收招，刃口在出手段朝前
     cast:    { clip: 'Attack2', loop: false, start: 0.10, hit: 0.50, end: 0.95 },
     die:     { clip: 'Death', loop: false, hold: true },
     rise:    { clip: 'Death', loop: false, reverse: true }
@@ -334,7 +337,8 @@
     opts = opts || {};
     var THREE = await import('three');
     var gltfMod = await import(absUrl(GLTF_URL));
-    var gltf = await new gltfMod.GLTFLoader().loadAsync(absUrl(opts.model || MODEL_URL));
+    var gltf = await new gltfMod.GLTFLoader().loadAsync(absUrl(opts.model || modelForReincarnations(opts.reincarnations)));
+    var modelStyle = (gltf.asset && gltf.asset.extras) || {};
 
     var size = opts.size || SIZE, span = opts.span || SPAN;      // 預設與遊戲相同；opts 只給驗證時放大看細節用
     var canvas = global.document.createElement('canvas');
@@ -357,21 +361,26 @@
     var pivot = new THREE.Group();     // 面向轉在這一層
     pivot.add(gltf.scene);
     scene.add(pivot);
-    var gradedMap = null, skinnedMesh = null, bodyMaterial = null;
+    var gradedMaps = new Map(), skinnedMesh = null, bodyMaterial = null;
     gltf.scene.traverse(function (o) {
       if (o.isSkinnedMesh || o.isMesh) o.frustumCulled = false;  // 蒙皮網格的包圍盒不隨動畫更新，會被誤剔除
       if (o.isMesh && o.material && o.material.isMeshStandardMaterial) {
         /* 手繪貼圖：金屬度與粗糙度沒有貼圖，標準材質會因為缺環境光偏暗，用 Lambert 保持貼圖原色。
            貼圖先調色（見 gradeTexture），再把同一張當自發光貼圖，讓金屬在暗處也不會死黑。 */
-        if (!gradedMap) gradedMap = gradeTexture(THREE, o.material.map);
+        var gradedMap = o.material.map;
+        if (gradedMap && modelStyle.textureGrade !== false) {
+          if (!gradedMaps.has(gradedMap)) gradedMaps.set(gradedMap, gradeTexture(THREE, gradedMap));
+          gradedMap = gradedMaps.get(gradedMap);
+        }
         o.material = new THREE.MeshLambertMaterial({
-          map: gradedMap, emissiveMap: gradedMap, emissive: new THREE.Color(EMISSIVE), transparent: false
+          map: gradedMap, color: o.material.color, side: o.material.side,
+          emissiveMap: gradedMap, emissive: new THREE.Color(EMISSIVE), transparent: false
         });
         if (o.isSkinnedMesh) { skinnedMesh = o; bodyMaterial = o.material; }
       }
     });
     var cape = null;
-    if (skinnedMesh && opts.cape !== false) {
+    if (skinnedMesh && opts.cape !== false && modelStyle.capeCollision !== false) {
       try { cape = await buildCape(THREE, skinnedMesh, bodyMaterial); }
       catch (err) { global.console.warn('[hero3d] 披風碰撞載入失敗，披風照原本蒙皮畫：', err && err.message ? err.message : err); }
     }
@@ -386,6 +395,8 @@
     gltf.animations.forEach(function (c) { actions[c.name] = mixer.clipAction(c); });
 
     var ctrl = {
+      modelUrl: opts.model || modelForReincarnations(opts.reincarnations),
+      skinIndex: Number(opts.reincarnations) >= 1 ? 1 : 0,
       canvas: canvas,
       size: size,
       /* 腳底在畫布裡的縱向位置（0＝上緣、1＝下緣）：正交鏡頭下，高度 h 的點離中心 (h − TARGET_Y)·cos(仰角) 公尺 */
@@ -430,6 +441,22 @@
       finishedFired = false;
       ctrl.clip = cfg.clip;
       return true;
+    };
+    /* 外觀切換時沿用動作的實際秒數，包含倒地保持及反播起身。 */
+    ctrl.captureState = function () {
+      return { cfg: currentCfg, time: current ? current.time : 0, paused: current ? current.paused : false,
+        finished: finishedFired, speed: ctrl.speed, yaw: ctrl.yaw, yawTarget: ctrl.yawTarget };
+    };
+    ctrl.restoreState = function (state) {
+      if (state.cfg && ctrl.play(state.cfg, 0)) {
+        current.time = Math.min(current.getClip().duration, Math.max(0, state.time));
+        current.paused = state.paused;
+        finishedFired = state.finished;
+        mixer.update(0);
+      }
+      ctrl.speed = state.speed;
+      ctrl.yaw = state.yaw; ctrl.yawTarget = state.yawTarget;
+      ctrl.update(0);
     };
     ctrl.duration = function (clip) {
       var a = actions[clip || ctrl.clip];
@@ -577,6 +604,7 @@
     create: create,
     makeBody: makeBody,
     CLIP_FOR: CLIP_FOR,
+    modelForReincarnations: modelForReincarnations,
     /* 畫布像素 → 螢幕像素的縮放，使 1.8 公尺高的角色約等於 2D 騎士的畫面高度（約 100px） */
     displayScale: function (ctrl) { return 100 / 1.8 / ctrl.pxPerMeter; }
   };

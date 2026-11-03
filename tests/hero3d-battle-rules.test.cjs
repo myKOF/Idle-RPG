@@ -18,8 +18,8 @@ test('攻擊動作只播有用的一段：start／hit／end，不整段照播', 
   assert.match(hero3d, /currentCfg\.end && !currentCfg\.reverse && current\.time >= currentCfg\.end\) fireFinished\(\)/);
 });
 
-test('3D 普攻三個動作（雙手劈／斜劈／平砍）混著出，不連續兩下同一招', () => {
-  assert.match(renderer, /var HERO3D_ATTACKS = \['attack1', 'attack2', 'attack3'\]/);
+test('3D 普攻四個動作混著出，不連續兩下同一招', () => {
+  assert.match(renderer, /var HERO3D_ATTACKS = \['attack1', 'attack2', 'attack3', 'attack4'\]/);
   assert.match(renderer, /\(p\.body && p\.body\.hero3d\) \? HERO3D_ATTACKS : playerAttackAnimNames\(sheet\)/);
 });
 
@@ -37,7 +37,8 @@ test('3D 出手動作一律播完：目標剛死、角色開始移動也不切�
 });
 
 test('3D 技能動作與普攻一樣在三個攻擊動作間隨機（不連續兩下同一招），施法中不被普攻蓋掉', () => {
-  assert.match(renderer, /var castPool = HERO3D_ATTACKS\.filter\(function \(n\) \{ return n !== p\.lastAttack; \}\);/);
+  assert.match(renderer, /var HERO3D_CASTS = \['attack1', 'attack2', 'attack3'\]/);
+  assert.match(renderer, /var castPool = HERO3D_CASTS\.filter\(function \(n\) \{ return n !== p\.lastAttack; \}\);/);
   assert.match(renderer, /p\.actionKind = melee \? 'melee' : 'cast';/);
   assert.match(renderer, /p\.actionKind === 'cast' && HERO3D_ACTIONS\[p\.curAnim\]/);
 });
