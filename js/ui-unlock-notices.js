@@ -26,7 +26,28 @@ function markSystemUnlockSeen(id) {
     .finally(function () { delete SYSTEM_UNLOCK_PENDING[id]; });
 }
 
+function markVisibleSystemUnlocksSeen(event) {
+  if (event.isTrusted === false) return;
+  var header = uiHeaderPanelSnapshot(), snapshot = header && header.systemUnlocks;
+  if (!snapshot) return;
+  systemUnlockEntries().forEach(function (entry) {
+    if (entry.tab !== UI.tab || snapshot.available.indexOf(entry.id) < 0 || snapshot.seen.indexOf(entry.id) >= 0) return;
+    var button = document.querySelector(entry.selector);
+    if (!button) return;
+    var selected = button.getAttribute('aria-selected') === 'true' || button.getAttribute('aria-pressed') === 'true' ||
+      button.classList.contains('active') || button.classList.contains('viewing') || button.classList.contains('is-on');
+    if (selected) markSystemUnlockSeen(entry.id);
+  });
+}
+
+// 捕獲階段仍是操作前的頁面；開啟父功能的那次操作不會把新頁直接標成已讀。
+['pointerdown', 'keydown', 'wheel'].forEach(function (kind) {
+  document.addEventListener(kind, markVisibleSystemUnlocksSeen, { capture: true, passive: true });
+});
+
 document.addEventListener('click', function (event) {
+  if (event.isTrusted === false) return;
+  markVisibleSystemUnlocksSeen(event);
   if (!event.target || !event.target.closest) return;
   var header = uiHeaderPanelSnapshot(), snapshot = header && header.systemUnlocks;
   if (!snapshot) return;

@@ -80,11 +80,12 @@ test('主端只清除實際點選的可用頁，父圖標彙總所有未讀頁�
   const c = context(), buttons = new Map(), listeners = {}, requests = [];
   function button() {
     const names = new Set();
-    return { disabled: false, names, classList: { toggle(name, on) { on ? names.add(name) : names.delete(name); } }, getAttribute() { return null; } };
+    return { disabled: false, names, classList: { contains(name) { return names.has(name); }, toggle(name, on) { on ? names.add(name) : names.delete(name); } }, getAttribute() { return null; } };
   }
   c.systemUnlockEntries().forEach(entry => buttons.set(entry.selector, button()));
   const nav = button(); nav.getAttribute = () => 'forge';
   c.document = {
+    querySelector: selector => buttons.get(selector) || null,
     querySelectorAll: selector => selector === '#tabs .tab-btn' ? [nav] : buttons.has(selector) ? [buttons.get(selector)] : [],
     addEventListener: (kind, fn) => { listeners[kind] = fn; }
   };
@@ -116,4 +117,32 @@ test('主端只清除實際點選的可用頁，父圖標彙總所有未讀頁�
   assert.ok(!nav.names.has('unlock-nav-pending'));
   c.uiHeaderPanelSnapshot = () => null;
   assert.doesNotThrow(() => c.refreshSystemUnlockHints());
+});
+
+test('閃爍沒有時限；自主任意操作只清當前已查看頁，程式事件不算', async () => {
+  for (const kind of ['pointerdown', 'click', 'keydown', 'wheel']) {
+    const c = context(), listeners = {}, requests = [];
+    const active = { getAttribute: name => name === 'aria-pressed' ? 'true' : null, classList: { contains: () => false } };
+    const inactive = { getAttribute: () => null, classList: { contains: () => false } };
+    const header = { systemUnlocks: { available: ['forge.equip', 'forge.ancient'], seen: [] } };
+    c.document = {
+      querySelector: selector => selector === '#forge-mode-equip' ? active : inactive,
+      querySelectorAll: () => [],
+      addEventListener: (name, fn) => { listeners[name] = fn; }
+    };
+    c.uiHeaderPanelSnapshot = () => header;
+    c.sendUiCommand = (name, args) => { requests.push(args.id); return Promise.resolve(true); };
+    vm.runInContext(read('js/ui-unlock-notices.js'), c);
+    const event = { type: kind, isTrusted: true, target: { closest: () => null } };
+    c.UI.tab = 'char';
+    listeners[kind](event);
+    c.UI.tab = 'forge';
+    for (let i = 0; i < 100; i++) c.refreshSystemUnlockHints();
+    assert.deepEqual(requests, [], kind + ': 進入父功能或持續刷新不清預設頁');
+    listeners[kind]({ ...event, isTrusted: false });
+    assert.deepEqual(requests, [], kind + ': 程式事件不清');
+    listeners[kind](event);
+    await new Promise(resolve => setImmediate(resolve));
+    assert.deepEqual(requests, ['forge.equip'], kind + ': 只清當頁，太古提示保留');
+  }
 });

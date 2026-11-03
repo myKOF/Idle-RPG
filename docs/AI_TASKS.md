@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## SYSTEM-UNLOCK-ACTION-20261103 — 操作後停止當頁解鎖閃爍
+
+- Owner：Codex；Done。使用者要求閃爍持續至玩家自主任意操作為止。以目前正在查看的新開放頁為已讀對象，滑鼠點擊／按下、鍵盤與滾輪皆可停止；未查看的新頁仍提示，切入父功能的同一次事件不提前消除預設頁提示，程式自動事件不算。
+- 允許：ui-unlock-notices.js、index對應快取、system-unlocks回歸、LV及本段。禁止解鎖／Worker協議／存檔格式／表格／其他使用者修改及合併推送。預檢其餘乾淨；Claude aca855e3只改index第1023行battlefield快取，本項只改第1067行ui-unlock-notices快取，候選三方merge-file退出0、不同區段無語意相依，依3.2分段修改。
+- 驗收：閒置不自動消除、進入頁保留提示、可信滑鼠／鍵盤／滾輪操作清當前頁、不清其他未查看頁／程式事件不清；既有點選、失敗重試與存檔行為保持。相關測試／Build／真Worker與Console／diff後Commit。
+- 完成五檔：ui-unlock-notices在捕獲階段接pointerdown／keydown／wheel，click亦處理當前頁；只從正式header取未讀、以既有aria-selected／aria-pressed／active／viewing／is-on判斷當前選中頁；isTrusted=false程式事件略過，不增加計時器或改動既有已讀命令。index只更新本模組快取20261103-unlock-any-action，新增四類操作／程式事件／未看頁保留回歸，LV及本段同步。
+- 驗證：node --test tests/system-unlocks.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs為22/22；npm.cmd run build636檔通過；diff／stat／check及自我Review通過。bundled Playwright／headless Edge三個獨立儲存context，隨機localhost正式index／真Worker以GM設3轉，入神鑄後各等待3.2秒與程式wheel事件，提示仍在；分別在非頁籤標題點擊、鍵盤x、滾輪操作後，裝備頁已讀／閃爍消失，未查看太古頁與父圖標提示保留。三次pageerror／Console error均0；Chrome另有既有dark-gold-seal預載未使用提示（原index已有preload且測試沒進威能），保留原Warning記錄，排除該已知提示後新增Warning0，未更動產品預載。初次QA把此既有預載Warning視為新增而中斷，僅分類記錄後重跑三種全部通過，不降低功能斷言。
+- 交付：QA／report與測試log在本聊天visualizations/unlock-any-action，服務／瀏覽器已關閉，未讀寫原玩家存檔。唯讀未改共通規範／Workflow／Agent、Worker協議／實際解鎖／存檔／String及使用者表格。作業中同副本另一轉生說明任務修改ui.js、index的ui／String版本、LV與AI_TASKS獨立段落，保留且只stage本項hunk；沒有語意相依。無素材庫修改或新素材，無本項未完成內容，可供Review／使用者合併；限制未驗全庫、多瀏覽器長玩，未合併推送。Commit為本段所在「[Codex] fix: 玩家操作後停止當頁解鎖提示」，SHA見交付。
+
 ## SYSTEM-UNLOCK-BADGE-20261103 — 驚嘆號沿用角色圖標樣式
 
 - Owner：Codex；Done。使用者指出提示不應被裁在icon內，並指定沿用角色既有紅色驚嘆號外觀。原因為前版pseudo放在overflow:hidden的.af-nav-icon內，較高優先級的圓框裁切規則仍生效。
