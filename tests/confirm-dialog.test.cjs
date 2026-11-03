@@ -188,6 +188,17 @@ test('shared confirm modal shows message and runs callback only on confirm', () 
   assert.equal(confirmed, 1);
 });
 
+test('確認說明支援String的br與原生換行，其他標籤仍以文字顯示', () => {
+  const { context, elements } = loadGameContext();
+  context.showConfirmDialog('第一行<br>第二行<BR />第三行<br/>第四行\n<b>純文字</b>', () => {});
+  const message = elements.get('confirm-message');
+  assert.equal(message.textContent, '第一行\n第二行\n第三行\n第四行\n<b>純文字</b>');
+  assert.equal(message.innerHTML, '');
+  assert.equal(message.children.length, 0);
+  const css = fs.readFileSync(path.resolve(__dirname, '..', 'css/dialogs.css'), 'utf8');
+  assert.match(css, /\.confirm-message\s*\{[^}]*white-space:\s*pre-line/);
+});
+
 test('首次轉生成功彈窗依 Worker header Snapshot 顯示天賦解鎖提示', () => {
   const { context, elements } = loadGameContext();
   context.UI_WORKER_STATE.panels.header = {

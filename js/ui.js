@@ -10726,7 +10726,7 @@ function showConfirmDialog(message, onConfirm, options) {
 
   if (title) title.textContent = options.title || STR(183);
   modal.className = 'modal-overlay confirm-modal' + (options.dialogClass ? ' ' + options.dialogClass : '');
-  msg.textContent = message || '';
+  msg.textContent = String(message || '').replace(/<br\s*\/?>/gi, '\n');
   if (options.highlightText) {
     var highlightAt = msg.textContent.indexOf(options.highlightText);
     if (highlightAt >= 0) {

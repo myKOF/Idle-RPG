@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## CONFIRM-LINE-BREAKS-20261103 — String確認說明換行
+
+- Owner：Codex；Done。使用者String2146已填入br但轉生彈窗原樣顯示；原因為showConfirmDialog使用textContent，且樣式未保留文字換行。前置既有共用確認視窗已完成。
+- 允許：js/ui.js確認訊息br轉換、css/dialogs.css換行樣式、index對應快取、tests/confirm-dialog.test.cjs、LV及本段。禁止改使用者Excel／CSV／生成資料、戰鬥／轉生規則／存檔、其他工作區及合併推送。fetch後預檢六檔無外部衝突；本副本使用者未提交String／Achievement／其他表匯出及index String快取完整保留，不納入本項提交。
+- 驗收：br／br斜線／大小寫及既有換行皆顯示換行，其他標籤仍純文字；實際轉生彈窗、取消／確認與既有測試、Build／Console／diff後獨立Commit。無新素材／素材庫修改。
+- 完成六檔：ui.js只將br／BR／br斜線轉為換行，仍使用textContent；dialogs.css設定pre-line，既有高亮／解鎖獨立行與確認回呼保持；index只更新UI／dialogs快取，測試覆蓋三種br與既有換行及非br純文字，LV與本段同步。無新增顯示文字／素材，不編修Excel或使用者生成資料。
+- 驗證：`node --test tests/confirm-dialog.test.cjs tests/string-table.test.cjs tests/ui-tick-smoke.test.cjs`23項22過／1既有失敗（原解鎖預告預期3轉新開放寶石共鳴，但目前正式配置不符合）。使用前項唯讀baseline.cjs將HEAD ui.js代入，`node --require <baseline.cjs> --test --test-name-pattern='轉生預告依正式門檻|確認說明支援String' tests/confirm-dialog.test.cjs`確認原解鎖問題同樣重現、且新增br回歸在舊實作失敗；沒有放寬原斷言。`npm.cmd run build`633檔通過；diff／stat／check及自我Review通過。
+- 正式頁驗證：bundled Playwright／headless Edge隔離隨機localhost，載入正式index／真Worker，記憶體header投影設0轉1000級後點角色與轉生按鈕，使用者目前String2146實際顯示四行、保留解鎖預告；取消正常，非br標籤仍純文字。Console error／warning及pageerror皆0，截圖已目視確認。verify.cjs／report.json／PNG在本聊天visualizations/confirm-line-breaks，私人服務／瀏覽器已關閉，未讀寫玩家原網址存檔。
+- 交付：唯讀未改規範／Workflow／Agent、String表與生成器、轉生／Worker／存檔、使用者所有既有修改；只分段stage本項index兩處快取。素材庫無變更，不建空提交。無本項未完成內容，可供Review／使用者合併；未合併推送。限制為未跑全庫／多瀏覽器，原解鎖預告測試問題留獨立整理。Commit為本段所在「[Codex] fix: 支援確認說明中的換行標記」，SHA見交付；重載主頁即可驗收。
+
 ## RAIL-PORTRAIT-20261103 — 頭像轉生數與等級排版
 
 - Owner：Codex；Done，單一開發者。使用者要求移除左上頭像經驗條，等級下移，上方顯示當前轉生數，0轉不顯示。前置：既有header Snapshot與String679可直接沿用。
