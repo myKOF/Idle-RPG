@@ -3605,7 +3605,7 @@ function decide(state, policy, memo) {
         } else if (pan.placed >= pan.slotsNeeded) {
           if (pan.rate && pan.rate.cost <= gold * ratio) out.push({name:'forge.start',args:{},ruleId:r.id});
         } else {
-          var rarities = (cfg.rarities || [9,7,6]).slice().sort(function (a,b) {return b-a;});
+          var rarities = (cfg.rarities || [10,7,6]).slice().sort(function (a,b) {return b-a;});
           for (var fi=0; fi<rarities.length; fi++) {
             var candidate = pan.equip && pan.equip[rarities[fi]];
             if (!candidate || candidate.count < pan.slotsNeeded || candidate.cost > gold*ratio) continue;

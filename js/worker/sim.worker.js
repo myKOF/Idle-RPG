@@ -11,7 +11,7 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-  importScripts('protocol.js?v=20261103-unlock-hints', '../game-clock.js?v=1.0.1', 'shim.js?v=20261018-potential-remove');
+  importScripts('protocol.js?v=20261103-equipment-rarity-v3', '../game-clock.js?v=1.0.1', 'shim.js?v=20261018-potential-remove');
 // 離線結算等分批工作亦共用暫停時鐘；訊息與loop仍能回應存檔及PING。
 if (typeof GameClock !== 'undefined') {
   globalThis.setTimeout = GameClock.setTimeout;
@@ -20,17 +20,17 @@ if (typeof GameClock !== 'undefined') {
 /* String 表：資料檔版本由主執行緒（bridge.js）以網址 sv= 傳入，改文字不必動本檔。 */
 var _stringDataVersion = ((typeof self !== 'undefined' && self.location && /[?&]sv=(\w+)/.exec(self.location.search || '')) || [])[1] || '0';
 importScripts(
-  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../data.js?v=20261103-battlefield-unlock-params-merge', '../runeword_data.js?v=20261102_merged_ai_latest', '../gem_resonance_data.js?v=20261028-develop-merge-a8acfe', '../achievement_data.js?v=20261103-battlefield-unlock-params-merge', '../status.js?v=20261028-develop-merge-a8acfe', '../formula.js?v=20261102_merged_ai_latest', '../battle-terrain.js?v=20261030-unlock-god-zone-merge', '../battlefield.js?v=20261103-battlefield-unlock-params-merge', '../stats.js?v=20261028-develop-merge-a8acfe',
-  '../item.js?v=20261101-merge-fd276618', '../gem_resonance.js?v=20261030-unlock-god-zone-merge','../runeword.js?v=20261102_merged_ai_latest',
+  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../data.js?v=20261103-equipment-rarity-v3', '../runeword_data.js?v=20261102_merged_ai_latest', '../gem_resonance_data.js?v=20261028-develop-merge-a8acfe', '../achievement_data.js?v=20261103-equipment-rarity-v3', '../status.js?v=20261028-develop-merge-a8acfe', '../formula.js?v=20261103-equipment-rarity-v3', '../battle-terrain.js?v=20261030-unlock-god-zone-merge', '../battlefield.js?v=20261103-battlefield-unlock-params-merge', '../stats.js?v=20261028-develop-merge-a8acfe',
+  '../item.js?v=20261103-equipment-rarity-v3', '../gem_resonance.js?v=20261030-unlock-god-zone-merge','../runeword.js?v=20261102_merged_ai_latest',
   '../skills.js?v=20261029-merge-cd5ad556', '../skills2.js?v=20261102_merged_ai_latest', '../elite_data.js?v=20261028-develop-merge-a8acfe', '../talents.js?v=20261031-achv-talent-mastery-merge',
-  '../player.js?v=20261103-unlock-hints', '../system-unlocks.js?v=20261103-unlock-hints', '../special_rules.js?v=20261030-unlock-progress',
+  '../player.js?v=20261103-equipment-rarity-v3', '../system-unlocks.js?v=20261103-unlock-hints', '../special_rules.js?v=20261030-unlock-progress',
   '../combat.js?v=20261102_merged_ai_latest', '../elite.js?v=20261028-develop-merge-a8acfe', '../elite_boss.js?v=20261023-str-battle', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261028-develop-merge-a8acfe', '../tower.js?v=20261101-merge-fd276618',
-  '../factory.js?v=20261031-achv', '../newforge.js?v=20261028-develop-merge-a8acfe', '../forge.js?v=20261101-forge-equipped', '../save.js?v=20261031-achv',
-  '../tasks.js?v=20261031-achv', '../achievements.js?v=20261031-achv-talent-mastery-merge'
+  '../factory.js?v=20261103-equipment-rarity-v3', '../newforge.js?v=20261028-develop-merge-a8acfe', '../forge.js?v=20261103-equipment-rarity-v3', '../save.js?v=20261103-equipment-rarity-v3',
+  '../tasks.js?v=20261031-achv', '../achievements.js?v=20261103-equipment-rarity-v3'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
    它自己會擋非本機 hostname；Worker 的 location 是本檔的 URL，判定結果與主執行緒一致。 */
-importScripts('../gm_exec.js?v=20261102-test-map-exit');
+importScripts('../gm_exec.js?v=20261103-equipment-rarity-v3');
 
 /* ---- 決定論測試模式（只在本機、只在網址帶 ?seed=N 時啟用）----
    存在的唯一理由：讓瀏覽器實機跑出來的結果，能和 headless 模擬器
@@ -646,7 +646,7 @@ function buildForgePanel(params) {
     out.equip = {};
     out.placed = f.slots.filter(Boolean).length;
     out.dustOwned = G.player.dust || 0;
-    [6, 7, 9].forEach(function (r) {
+    [6, 7, 10].forEach(function (r) {
       var items = G.inventory.filter(function (it) { return it && !it.locked && it.rarity === r; });
       items.sort(function (a, b) { return b.level - a.level; });
       var keep = Math.max(DIVINE_FORGE.equipCount, Math.floor(Number(params.keepPerRarity) || 8));
@@ -1327,6 +1327,7 @@ var COMMAND_IMPL = {
     var it = mustResolve(a.itemId);
     var idx = G.inventory.indexOf(it);
     if (idx < 0) return { err: STR(1173) };
+    if (it.locked) throw new Error(STR(2163));
     G.inventory.splice(idx, 1);
     var res = doSalvage(it);
     UI.dirty.inv = true;

@@ -139,12 +139,12 @@ test('stats／passives／legend／fx／procs 只用已實作的詞彙', () => {
 
 test('RUNE_SETTINGS／RARITIES.runeSlots：孔數表對得上稀有度、單調不減、不超過上限；合成／掉落常數合理', () => {
   const s = c.RUNE_SETTINGS;
-  const slots = Array.from(c.RARITIES, (r,i)=>({slots:r.runeSlots,rank:c.rarityRank(i)})).sort((a,b)=>a.rank-b.rank).map(r=>r.slots);
+  const slots = Array.from(c.RARITIES, (r,i)=>({slots:r.runeSlots,rank:r.baseRarity === undefined ? i : r.baseRarity + 0.5})).sort((a,b)=>a.rank-b.rank).map(r=>r.slots);
   assert.ok(!('slotsByRarity' in s), '各稀有度的孔數只有一個來源：game_parameters 的參數g → RARITIES.runeSlots');
   assert.equal(s.maxSlots, 5, '設計上限：配方最長 5 顆');
   slots.forEach((n, i) => {
     assert.ok(Number.isInteger(n) && n >= 0 && n <= s.maxSlots, `稀有度 ${i} 的孔數 ${n} 不合法`);
-    if (i) assert.ok(n >= slots[i - 1], '稀有度越高孔數不減');
+    if (i) assert.ok(n >= slots[i - 1], '同家族的品質越高孔數不減（神鑄神話依神話家族）');
   });
   assert.ok(Number.isInteger(s.twoHandBonusSlots) && s.twoHandBonusSlots >= 0, 'twoHandBonusSlots');
   assert.ok(slots[slots.length - 1] + s.twoHandBonusSlots <= s.maxSlots, '雙手加成不得超過上限');

@@ -25,7 +25,7 @@ test('品質切換完整退回原料且預設神話，石頭可在空法陣預�
   cmd(c,'setStones',{count:999});assert.equal(c.G.forge.stones,13);assert.equal(c.G.forge.stonePreference,13);
   cmd(c,'autoFill');cmd(c,'setQuality',{rarity:7});
   assert.equal(c.forgeItemCount(),0);assert.equal(c.G.inventory.length,6);assert.equal(c.G.forge.quality,7);
-  assert.equal(c.runCommand('forge.setQuality',{rarity:8}).ok,false);
+  assert.equal(c.runCommand('forge.setQuality',{rarity:9}).ok,false);
   c.G.player.dust=2;cmd(c,'setStones',{count:99});assert.equal(c.G.forge.stones,2);
   cmd(c,'setStones',{count:0});assert.equal(c.G.forge.stonePreference,0);
 });
@@ -35,7 +35,7 @@ test('3秒內不扣款不擲骰；重入／換模式／卸料／增減石頭均�
   cmd(c,'start');assert.equal(e.panel('forge').craftProgress.durationMs,3000);
   for(const [name,args] of [['start',{}],['autoFill',{}],['unloadAll',{}],['setStones',{count:1}],['setQuality',{rarity:7}],['setOperation',{mode:'gem'}],['removeItem',{slotIndex:0}]]) assert.ok(cmd(c,name,args));
   e.stepSeconds(2.9);assert.equal(rolls,0);assert.equal(c.G.player.gold,gold);assert.equal(c.G.player.dust,dust);
-  e.stepSeconds(.1);assert.equal(rolls,1);assert.equal(c.G.inventory[0].rarity,11);
+  e.stepSeconds(.1);assert.equal(rolls,1);assert.equal(c.G.inventory[0].rarity,8);
   assert.equal(c.G.player.gold,gold-2e7);assert.equal(c.G.player.dust,dust-13);
   e.stepSeconds(3);assert.equal(rolls,1);
 });
@@ -44,7 +44,7 @@ test('連續自動沿用石頭數，六件一輪直到不足，結果與停機�
   cmd(c,'setAuto',{on:true});assert.equal(c.G.forge.auto,true);assert.equal(c.forgeItemCount(),6);
   e.stepSeconds(3);assert.equal(c.G.forge.stones,13);assert.ok(c.G.forge.crafting);
   e.stepSeconds(3);assert.equal(c.G.forge.auto,false);assert.equal(c.G.forge.crafting,undefined);
-  assert.equal(c.G.inventory.filter(it=>it.rarity===11).length,2);assert.equal(c.G.player.dust,974);
+  assert.equal(c.G.inventory.filter(it=>it.rarity===8).length,2);assert.equal(c.G.player.dust,974);
   assert.equal(c.G.player.gold,gold-4e7);assert.match(c.G.forge.log[0].msg,/不足/);
   for(let i=0;i<15;i++)c.forgeLog(String(i));assert.equal(c.G.forge.log.length,10);
 });
@@ -52,7 +52,7 @@ test('取消連續自動讓目前作業完成一次，下一輪不補料',()=>{
   const {e,c}=setup(12);cmd(c,'setStones',{count:13});cmd(c,'setAuto',{on:true});
   e.stepSeconds(1);cmd(c,'setAuto',{on:false});e.stepSeconds(2);
   assert.equal(c.G.forge.crafting,undefined);assert.equal(c.G.inventory.filter(it=>it.rarity===6).length,6);
-  assert.equal(c.G.inventory.filter(it=>it.rarity===11).length,1);
+  assert.equal(c.G.inventory.filter(it=>it.rarity===8).length,1);
 });
 test('自動失敗退料仍可補足下一輪，不足時保留剩餘裝備並停止',()=>{
   const {e,c}=setup(9);c.chance=()=>false;c.ri=(a)=>a;
@@ -67,7 +67,7 @@ test('缺錢或沿用石頭不足便停止，不靜默降石頭數或消耗下�
     if(kind==='gold')c.G.player.gold=2e7;else c.G.player.dust=13;
     cmd(c,'setAuto',{on:true});e.stepSeconds(3);
     assert.equal(c.G.forge.auto,false);assert.equal(c.G.forge.crafting,undefined);
-    assert.equal(c.G.inventory.filter(it=>it.rarity===11).length,1);
+    assert.equal(c.G.inventory.filter(it=>it.rarity===8).length,1);
     assert.equal(c.forgeItemCount(),6);
     assert.match(c.G.forge.log[0].msg,/已停止/);
   }
@@ -82,7 +82,7 @@ test('讀檔保留作業與偏好，過期作業僅結算一次並從當下啟�
   const saved=JSON.parse(e.saveJson());const loaded=createEngine({seed:1029}).boot(saved),d=loaded.ctx;
   assert.equal(d.G.forge.stonePreference,13);assert.ok(d.G.forge.crafting);
   const overdue=saved.forge.crafting.startedAt+3600000;d.Date.now=()=>overdue;
-  d.forgeTick(d.Date.now());assert.equal(d.G.inventory.filter(it=>it.rarity===11).length,1);
+  d.forgeTick(d.Date.now());assert.equal(d.G.inventory.filter(it=>it.rarity===8).length,1);
   assert.equal(d.G.forge.crafting.startedAt,d.Date.now());assert.equal(d.forgeItemCount(),6);
 });
 test('正式Worker菜單暫停保留鑄造剩餘時間及投影，恢復後結算',()=>{
@@ -92,5 +92,5 @@ test('正式Worker菜單暫停保留鑄造剩餘時間及投影，恢復後結�
   assert.equal(e.panel('forge').craftProgress.elapsedMs,1000);
   assert.equal(e.panel('forge').craftProgress.paused,true);
   c.setMenuPaused(false);c.forgeTick(now+1999);assert.equal(c.G.inventory.length,0);
-  c.forgeTick(now+2000);assert.equal(c.G.inventory[0].rarity,11);
+  c.forgeTick(now+2000);assert.equal(c.G.inventory[0].rarity,8);
 });

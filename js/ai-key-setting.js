@@ -420,6 +420,7 @@
   }
 
   var FAST_RARITY_MAP = {
+    '神鑄神話': 'mythicGodforged', '神鑄神話裝備': 'mythicGodforged', 'mythicgodforged': 'mythicGodforged',
     '神鑄混沌': 'chaosGodforged', '神鑄混沌裝備': 'chaosGodforged', 'chaosgodforged': 'chaosGodforged',
     '混沌': 'chaos', '混沌裝備': 'chaos', 'chaos': 'chaos',
     '神鑄創世': 'godforged', '神鑄創世裝備': 'godforged', '神鑄': 'godforged', 'godforged': 'godforged',

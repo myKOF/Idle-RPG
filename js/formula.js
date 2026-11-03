@@ -1767,7 +1767,7 @@ function ancientEssenceDropChanceForBoss(floor) {
     ANCIENT_ESSENCE_BOSS_BASE_RATE + (floor - 40) * ANCIENT_ESSENCE_BOSS_LEVEL_RATE);
 }
 function ancientEssenceSalvageChanceForRarity(rarity) {
-  return ANCIENT_ESSENCE_SALVAGE_CHANCE[rarity === 11 ? 6 : rarity] || 0;
+  return ANCIENT_ESSENCE_SALVAGE_CHANCE[rarity] || 0;
 }
 
 // 高塔挑戰金幣消耗 = round(a × 樓層^b)，a/b 依樓層分層（TOWER_CHALLENGE_COST_TIERS → data.js）
@@ -2093,7 +2093,7 @@ function enchantValueFor(item, bookKey, gemLevel) {
     return v;
   }
   // 抗性 / 功能類：百分比，隨稀有度與寶石成長，設定上限
-  var val = Math.round((ENCHANT_DEF.base + item.rarity * ENCHANT_DEF.perRarity +
+  var val = Math.round((ENCHANT_DEF.base + legacyRarityIndex(item.rarity) * ENCHANT_DEF.perRarity +
     (gemLevel || 0) * ENCHANT_DEF.perGemLevel) * 10) / 10;
   return Math.min(val, ENCHANT_DEF.cap);
 }
@@ -2125,7 +2125,7 @@ function enchantGemLvFromValue(it, bookKey, val) {
     if (!(pow > 0)) return 0;
     return (v / pow - 1) / 0.15;
   }
-  return (v - 8 - (Number(it.rarity) || 0) * 4) / 3;
+  return (v - 8 - legacyRarityIndex(Number(it.rarity) || 0) * 4) / 3;
 }
 // 舊存檔的附魔：val → gemLv（冪等）
 function ensureEnchantSource(it, en) {
@@ -2200,7 +2200,7 @@ function itemScore(it) {
    附魔精華 = rollDropCount(稀有度基礎機率 × (1 + 精粹透鏡加成總合/100))
    鑲嵌寶石會在分解前取回，但分解本身不產出寶石。 */
 var ANCIENT_AFFIX_SALVAGE_CHANCE = 50;
-var ESSENCE_SALVAGE_CHANCE_BY_RARITY = [5, 7.5, 10, 15, 20, 25, 30, 100, 100];
+var ESSENCE_SALVAGE_CHANCE_BY_RARITY = [5, 7.5, 10, 15, 20, 25, 30, 100, 100, 100, 100, 100];
 function essenceSalvageChanceForRarity(rarity) {
   var idx = clamp(Math.floor(Number(rarity) || 0), 0, ESSENCE_SALVAGE_CHANCE_BY_RARITY.length - 1);
   return ESSENCE_SALVAGE_CHANCE_BY_RARITY[idx];
@@ -2264,11 +2264,12 @@ function upgradeSuccessChance(it) {
    REROLL_ESSENCE_COST 的逐稀有度表，表上沒有的稀有度退回 1 + 稀有度。 */
 var REROLL_COST_GOLD = { coef: 40, base: 1.7, perLevel: 0.15 };
 function rerollCost(it) {
-  var baseEssence = REROLL_ESSENCE_COST[it.rarity === 11 ? 6 : it.rarity];
-  if (baseEssence === undefined) baseEssence = 1 + it.rarity;
+  var costTier = it.rarity === 8 ? 6 : legacyRarityIndex(it.rarity);
+  var baseEssence = REROLL_ESSENCE_COST[it.rarity === 8 ? 6 : it.rarity];
+  if (baseEssence === undefined) baseEssence = 1 + costTier;
   var essence = Math.floor(baseEssence * it.level / REROLL_ESSENCE_LEVEL_DIVISOR);
   return {
-    gold: Math.round(REROLL_COST_GOLD.coef * Math.pow(REROLL_COST_GOLD.base, it.rarity === 11 ? 6 : it.rarity) * (1 + it.level * REROLL_COST_GOLD.perLevel)),
+    gold: Math.round(REROLL_COST_GOLD.coef * Math.pow(REROLL_COST_GOLD.base, costTier) * (1 + it.level * REROLL_COST_GOLD.perLevel)),
     essence: essence
   };
 }

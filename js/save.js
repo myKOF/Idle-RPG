@@ -277,7 +277,39 @@ function loadGame() {
 }
 
 // 以預設狀態為底，深補缺漏欄位（存檔向前相容）
+/* ONE-TIME MIGRATION：重編品質前先轉換所有裝備與品質設定，必須早於補預設／裝備正規化。
+   用物件身分去重，同一件裝備可能同時由 equipment 與 equipmentSets 引用。 */
+function migrateEquipmentRarityOrder(data) {
+  if (data.equipmentRarityVersion === 2) return;
+  var ids = [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 8];
+  var visited = new Set();
+  function remap(r) { return Number.isInteger(r) && r >= 0 && r < ids.length ? ids[r] : r; }
+  function indexed(values, fallback) {
+    var out = RARITIES.map(function () { return fallback; });
+    values.forEach(function (v, i) { if (i < ids.length) out[ids[i]] = v; });
+    return out;
+  }
+  function visit(obj) {
+    if (!obj || typeof obj !== 'object' || visited.has(obj)) return;
+    visited.add(obj);
+    if (obj.kind !== 'gem' && obj.rarity !== undefined) obj.rarity = remap(obj.rarity);
+    if (obj.maxRarity !== undefined) obj.maxRarity = obj.maxRarity === 11 ? 11 : remap(obj.maxRarity);
+    if (Array.isArray(obj.qualities)) obj.qualities = indexed(obj.qualities, false);
+    if (Array.isArray(obj.actions) && obj.actions.every(function (a) { return a === 'keep' || a === 'salvage' || a === 'synth'; })) {
+      obj.actions = indexed(obj.actions, 'keep');
+    }
+    Object.keys(obj).forEach(function (key) { visit(obj[key]); });
+  }
+  visit(data);
+  var f = data.forge;
+  if (f) {
+    f.quality = remap(f.quality);
+    if (Number.isInteger(f.seenRarity)) f.seenRarity = divineForgeBaseRarity(remap(f.seenRarity));
+  }
+  data.equipmentRarityVersion = 2;
+}
 function migrateSave(data) {
+  migrateEquipmentRarityOrder(data);
   // 技能熟練度遷移旗標（2026-07-30 改制）：需在 mergeDefaults 前判斷（merge 會補 skillMastery 預設）。
   var hadSkillPointBudget = !!(data.player && data.player.skillPointBudget !== undefined);
   var hadSkillMastery = !!(data.player && data.player.skillMastery && typeof data.player.skillMastery === 'object');

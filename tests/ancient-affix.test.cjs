@@ -146,7 +146,10 @@ test('太古精華掉落改由地圖／關卡掉落表提供，拆解機率維�
   assert.equal(context.ancientEssenceSalvageChanceForRarity(5), 1);
   assert.equal(context.ancientEssenceSalvageChanceForRarity(6), 10);
   assert.equal(context.ancientEssenceSalvageChanceForRarity(7), 100);
-  assert.equal(context.ancientEssenceSalvageChanceForRarity(8), 100);
+  assert.equal(context.ancientEssenceSalvageChanceForRarity(8), 10); // 神鑄神話沿用神話
+  assert.equal(context.ancientEssenceSalvageChanceForRarity(9), 100); // 神鑄創世保持原機率
+  assert.equal(context.ancientEssenceSalvageChanceForRarity(10), 0);
+  assert.equal(context.ancientEssenceSalvageChanceForRarity(11), 0);
 });
 
 test('太古精華萃取器使用目前拆解機率的倍率加成，太古詞條另逐條獨立判定', () => {

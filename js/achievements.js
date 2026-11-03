@@ -38,10 +38,9 @@ function achNoteRune(id) {
 }
 
 /* ---- 現況讀取輔助 ---- */
-// 品質換算：神鑄神話（baseRarity）以神話計，其餘用品質編號本身
+// 品質門檻依新R0～R11強度編號比較；baseRarity只用於神鑄家族與外觀。
 function achRank(it) {
-  var r = RARITIES[Math.floor(Number(it && it.rarity) || 0)];
-  return r && r.baseRarity !== undefined ? r.baseRarity : Math.floor(Number(it && it.rarity) || 0);
+  return Math.floor(Number(it && it.rarity) || 0);
 }
 function achEquipSets() { return Array.isArray(G.equipmentSets) && G.equipmentSets.length ? G.equipmentSets : [G.equipment]; }
 // 擁有的所有裝備（三套穿戴＋背包）

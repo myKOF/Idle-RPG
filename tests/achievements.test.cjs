@@ -86,7 +86,7 @@ test('newGameState：achv 預設；migrateSave 補齊壞掉的 achv', () => {
 });
 
 /* ---- 3. 進度 ---- */
-test('achProgress：品質穿滿以品質換算，神鑄神話以神話計', () => {
+test('achProgress：品質穿滿按新強度順序，R8神鑄神話可滿足R7創世門檻', () => {
   const c = loadContext();
   const eq = c.G.equipment;
   c.SLOT_LIST.forEach((slot) => {
@@ -98,10 +98,10 @@ test('achProgress：品質穿滿以品質換算，神鑄神話以神話計', () 
   assert.equal(c.achProgress(def(c, 5)).prog, 13, '神話 13 格');
   assert.equal(c.achProgress(def(c, 6)).prog, 0, '創世 0 格');
   const head = eq[c.SLOT_LIST.find((s) => s !== 'weapon' && s !== 'weapon2')];
-  head.rarity = 11;   // 神鑄神話：以神話計
+  head.rarity = 8;   // 神鑄神話：強度高於創世
   assert.equal(c.achProgress(def(c, 5)).prog, 13);
-  assert.equal(c.achProgress(def(c, 6)).prog, 0);
-  head.rarity = 10;   // 神鑄混沌
+  assert.equal(c.achProgress(def(c, 6)).prog, 1);
+  head.rarity = 11;   // 神鑄混沌
   assert.equal(c.achProgress(def(c, 7)).prog, 1);
 });
 
@@ -113,7 +113,7 @@ test('achProgress：強化、寶石、神鑄裝備、雙傳奇', () => {
   assert.equal(c.achProgress(def(c, 12)).prog, 60);
   assert.equal(c.achProgress(def(c, 13)).prog, 60);
   assert.equal(c.achProgress(def(c, 23)).prog, 0);
-  c.G.inventory.push(c.makeEquipment(1, { rarity: 8 }));
+  c.G.inventory.push(c.makeEquipment(1, { rarity: 9 }));
   assert.equal(c.achProgress(def(c, 23)).prog, 1);
   it.passive = { key: Object.keys(c.PASSIVE_POOL)[0] };
   it.imprint = { kind: 'legendary', passive: { key: Object.keys(c.PASSIVE_POOL)[1] } };

@@ -5041,11 +5041,11 @@ function syncItemGridCells(box, keys, htmls) {
 // 只映射顯示外觀，裝備本身的品質、名稱與數值仍使用原始 rarity。
 function itemRarityEffectClass(it) {
   var rarity = divineForgeBaseRarity(it.rarity);
-  return rarity === 6 ? ' eff-mythic' : rarity === 7 ? ' eff-genesis' : rarity === 9 ? ' eff-chaos' : '';
+  return rarity === 6 ? ' eff-mythic' : rarity === 7 ? ' eff-genesis' : rarity === 10 ? ' eff-chaos' : '';
 }
 function itemDetailClass(it) {
   var rarity = it && divineForgeBaseRarity(it.rarity);
-  return rarity === 6 ? ' mythic-detail' : rarity === 7 ? ' genesis-detail' : rarity === 9 ? ' chaos-detail' : '';
+  return rarity === 6 ? ' mythic-detail' : rarity === 7 ? ' genesis-detail' : rarity === 10 ? ' chaos-detail' : '';
 }
 
 function twoHandSharedBadgeHTML(detail) {

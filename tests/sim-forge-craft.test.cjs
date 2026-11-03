@@ -18,9 +18,9 @@ test('策略以最高等級載體及五件墊料，三秒後產出神鑄神話�
  assert.equal(placed.length,6);assert.equal(c.G.inventory.find(it=>it.id===placed[0].args.itemId).level,300);
  assert.ok(cmds.some(x=>x.name==='forge.setStones'&&x.args.count===13));
  cmds.forEach(cmd=>{const result=c.runCommand(cmd.name,cmd.args);assert.equal(result.ok,true);assert.ok(result.result===null||typeof result.result==='number');});
- assert.equal(c.G.inventory.some(it=>it.rarity===11),false);assert.deepEqual(decide(e),[]);
+ assert.equal(c.G.inventory.some(it=>it.rarity===8),false);assert.deepEqual(decide(e),[]);
  e.stepSeconds(3);
- const made=c.G.inventory.find(it=>it.rarity===11);assert.ok(made);assert.equal(made.level,300);
+ const made=c.G.inventory.find(it=>it.rarity===8);assert.ok(made);assert.equal(made.level,300);
 });
 test('低轉數／金幣不足／上鎖不足六件不產生消耗指令',()=>{
  for(const variant of ['reinc','gold','lock']){

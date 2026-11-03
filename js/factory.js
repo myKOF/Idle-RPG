@@ -357,8 +357,8 @@ function tryHybridSynthesis() {
   // 大成功：稀有度 +1（機率公式 synthGreatChanceNow → formula.js §7）
   // 上限鎖定創世：神鑄創世僅能由神鑄系統產出
   var great = chance(synthGreatChanceNow());
-  if (great && it.rarity < GODFORGED_IDX - 1) {
-    it.rarity++;
+  if (great && !isGodforgedRarity(it.rarity) && it.rarity < 7) {
+    it.rarity = Math.min(7, it.rarity + 1);
     ensureSockets(it); // 稀有度提升 → 插槽數同步增加
     normalizeTwoHandItemCounts(it); // 雙手武器：詞條數同步補至新稀有度基準 +1（非雙手為 no-op）
     it.name = RARITY_PREFIX[it.rarity] + it.name.replace(RARITY_PREFIX_PATTERN, '');
@@ -413,8 +413,8 @@ function tryRarityMerge() {
     var r = f.synthBuffer[i].rarity;
     (byRarity[r] = byRarity[r] || []).push(i);
   }
-  // 上限鎖定創世（GODFORGED_IDX - 1）：神鑄創世僅能由神鑄系統產出
-  for (var rr = 0; rr < GODFORGED_IDX - 1; rr++) {
+  // 上限鎖定創世：跳過所有神鑄品質，不以相鄰神鑄編號推導上限。
+  for (var rr = 0; rr < 7; rr++) {
     var idxs = byRarity[rr];
     if (idxs && idxs.length >= 3) {
       var mats = [];
@@ -422,7 +422,7 @@ function tryRarityMerge() {
       for (var j = 2; j >= 0; j--) mats.push(f.synthBuffer.splice(idxs[j], 1)[0]);
       var avgLv = Math.max(1, Math.round((mats[0].level + mats[1].level + mats[2].level) / 3));
       var great = chance(synthGreatChanceNow());
-      var newRarity = clamp(rr + 1 + (great ? 1 : 0), 0, GODFORGED_IDX - 1);
+      var newRarity = clamp(rr + 1 + (great ? 1 : 0), 0, 7);
       var it = makeEquipment(avgLv, { rarity: newRarity, level: avgLv });
       // 重骰模組
       var rerollChance = partBonus('synth', 'rerollModule');

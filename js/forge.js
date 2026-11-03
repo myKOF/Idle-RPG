@@ -6,7 +6,7 @@ function forgeMigrateState(data, scanSeen) {
   if (f && f.version === 2) {
     if (f.unlocked === undefined) f.unlocked = !!f.unlockNotified;
     if (!DIVINE_FORGE_MODES[f.operation]) f.operation = 'equip';
-    if ([6, 7, 9].indexOf(f.quality) < 0) f.quality = 6;
+    if ([6, 7, 10].indexOf(f.quality) < 0) f.quality = 6;
     if (!Number.isInteger(f.stonePreference) || f.stonePreference < 0) f.stonePreference = Math.max(0, Math.floor(Number(f.stones) || 0));
     f.auto = f.operation === 'equip' && f.auto === true;
     if (scanSeen && !Number.isInteger(f.seenRarity)) { var seen = forgeScanSeenRarity(data); if (seen > 6) f.seenRarity = seen; } // 預設 6 不寫入，存檔維持原樣
@@ -31,16 +31,18 @@ function forgeMigrateState(data, scanSeen) {
    舊存檔沒有這個欄位時，依目前背包、穿戴與法陣內的裝備補算。 */
 function forgeScanSeenRarity(data) {
   var best = 6;
-  function note(it) { if (it && it.kind !== 'gem' && it.rarity > best) best = it.rarity; }
+  function note(it) { if (it && it.kind !== 'gem') best = Math.max(best, divineForgeBaseRarity(it.rarity)); }
   (data.inventory || []).forEach(note);
   Object.keys(data.equipment || {}).forEach(function (slot) { note(data.equipment[slot]); });
+  (data.equipmentSets || []).forEach(function (set) { Object.keys(set || {}).forEach(function (slot) { note(set[slot]); }); });
   ((data.forge && data.forge.slots) || []).forEach(note);
   return best;
 }
 function forgeNoteRarity(it) {
   if (!it || it.kind === 'gem' || !G || !G.forge) return;
   var f = forgeState();
-  if (it.rarity > (f.seenRarity || 6)) { f.seenRarity = it.rarity; UI.dirty.forge = true; }
+  var base = divineForgeBaseRarity(it.rarity);
+  if (base > (f.seenRarity || 6)) { f.seenRarity = base; UI.dirty.forge = true; }
 }
 function forgeState() { return forgeMigrateState(G); }
 function forgeUnlocked() {
@@ -183,7 +185,7 @@ function forgeUnloadAll() {
 function forgeSetQuality(rarity) {
   var f = forgeState();
   if (f.crafting) return STR(2209);
-  if ([6, 7, 9].indexOf(rarity) < 0) return STR(2164);
+  if ([6, 7, 10].indexOf(rarity) < 0) return STR(2164);
   if (rarity !== f.quality) {
     forgeUnloadAll();
     f.quality = rarity;
@@ -248,7 +250,7 @@ function forgeApplyImprint(it, stones) {
     if (candidates.length) imprint.index = pick(candidates);
     else imprint.inactive = true;
   } else if (kind === 'extraAffix' || kind === 'extraAncient') {
-    imprint.affix = rollAffixes(1, it.rarity === 11 ? 6 : it.rarity, it.slot, kind === 'extraAncient' ? { 0: true } : {}, undefined, it.level)[0];
+    imprint.affix = rollAffixes(1, it.rarity === 8 ? 6 : it.rarity, it.slot, kind === 'extraAncient' ? { 0: true } : {}, undefined, it.level)[0];
     if (!imprint.affix) imprint.inactive = true;
   } else if (kind === 'legendary') {
     var keys = passiveKeysForItem(it).filter(function (key) { return !it.passive || key !== it.passive.key; });

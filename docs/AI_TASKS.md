@@ -1,3 +1,12 @@
+## SYNC-MERGE-20261103-230151 ? develop ??????
+
+- Owner?Codex?Done????????? f8902706cf4d3ec689cf42048eb45ecd6ab75470 ? 490f2a50f4864f56888c9c390ac6fdb043a38bdf ? pending merge??????????????????????????????????? staging??? merge commit?
+- ?????base 0c9513cb?ours ????????????theirs ?? EQUIPMENT-RARITY-ORDER ?????????? ours ?? theirs ?????????????????????????????? incoming ? EOF ????????????????????????????? Git trust???????????????
+- ???node tools/apply_params.cjs?588 ?????0?????0?node tools/apply_params.cjs --check-anchors???542???588?????node tools/string-table/build_string_csv.cjs --check?????0?npm.cmd run build?641????
+- ???node --test ?????????AI??????Hero3D???????renderer?????????????GM??????17?105?????????XLSX???NPC?tooltip???????????????????11?86??83??3???NPC-SPRITE-4?NPC-SPRITE-5?????????????HEAD?MERGE_HEAD??Git????????????12?9??3?????????????????
+- ?? git diff HEAD --check ???HEAD?MERGE_HEAD???SHA????Excel?????????????config?incoming?????????????Excel????????????Excel???JS??????incoming???ours?hero3d?renderer???????????JS?????????????????????
+- ??????????????????NPC????????????????????????????????UU????????Commit??????????
+
 ## HERO3D-FORWARD-GRIP-20261103 — 右手正握方向修正
 
 - Owner：Codex；Done。使用者指出前輪握姿仍是反握，要求正握。Role／Role1手掌與握持位置、Blender來源／匯出工具、來源說明／量測、模型快取、回歸、LV及本段為授權範圍；相關目標衝突預檢無外部來源。全程單一開發者，無新外部素材／授權詢問。
@@ -59,6 +68,25 @@
 - 實機與GIF：隔離localhost正式index／Worker／Pixi／Hero3D，不讀寫玩家原網址存檔；確認原待機、跑步、三種出手，另以正式Hero3D檢視倒地。最終遊戲頁errors=0、相關warnings=0。1844×960／79幀／12fps／6.58秒GIF，左為正式遊戲場景，右為相同Hero3D渲染器近看；暫停後逐格取樣，QA僅HTTP加唯讀state入口／放大畫布704及原滾輪鏡頭，暫隱怪物、浮字與主要特效以檢視外觀，未寫入正式API。影片、QA及逐格回讀三姿勢在本聊天visualizations/role-model。最終GIF已從磁碟重開及抽幀目視核對。
 - 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、原黃金騎士GLB／cloth與五份meshy動作取樣、battle-renderer／戰鬥／Worker／存檔／配置／String。已知限制：本機硬體headless D3D11錄影遇顯示記憶體不足，最終遊戲頁改SwiftShader完成；不宣稱實體GPU效能已驗收。既有unused-preload瀏覽器提示與Node vendor module警告保留。未跑全庫／長時間及多瀏覽器，本項無未完成實作；可供Review／使用者正常合併，未合併或推送develop／main。先看GIF確認外觀，再依既有程序整合雙庫並重載內測頁。
 
+
+## EQUIPMENT-RARITY-ORDER-20261103 — 裝備 R0～R11 統一與掉落／操作完整性
+
+- Owner：Codex；Done，單一開發者。依使用者最新表與已儲存Excel列序，R7創世、R8神鑄神話、R9神鑄創世、R10混沌、R11神鑄混沌，倍率依序7／8／11／15.3／23，取代最初R7神鑄神話的定義。
+- 前置：現有新版神鑄與配置表流程完成；fetch及目標衝突預檢無外部來源，三本來源表取得獨占存取。Zone_Stage_Drops.xlsx已有本副本儲存變動但逐格與HEAD相同，保留現檔作來源。
+- 允許：裝備資料／公式／生成／存檔遷移／神鑄／熔爐／UI／快捷品質解析、必要Worker協議及快取、Zone_Stage_Drops／game_parameters／Task／Achievement／String原生Excel及其CSV與生成資料、相關測試、LV／協議／參數說明及本段。禁止：無關數值／解鎖／美術素材、其他工作區、合併或推送develop／main。
+- 驗收：原掉率按名稱保持並增加R8=0，全部12品質生成／篩選／拆解／洗煉／裝備操作與神鑄配方、舊存檔各容器和品質設定一次性遷移、Excel原生正常重開／資料一致、參數錨點與全庫測試／Build／正式UI驗證及diff檢查後Commit。Excel獨占確認後依最新訊息補齊三筆尚未儲存的倍率；保留使用者其他欄位修改。
+- 後續接手：使用者Review與正常整合；不自行合併推送。
+- 完成接線：RARITIES與名稱前綴按最新12階重排；主端／Worker／GM／快捷文字解析、神鑄配方與候選、熔爐保護與保留中的合成上限同步。成就含以上門檻也依新強度編號（R8神鑄神話可滿足R7創世）；外觀與神鑄配方家族仍分開使用baseRarity。背包補R8、拆解下拉補全部品質，Worker單件拆解先檢查鎖定；歷史神鑄神話「的」前綴亦能正確更新。費用與既有功能附魔係數維持重編前語意，不以換ID額外漲價。
+- 存檔：equipmentRarityVersion=2在mergeDefaults／fixLoadedItem前轉換；舊8→9、9→10、10→11、11→8。全部裝備容器、三套裝備／共用引用、神鑄槽／結果、品質門檻與熔爐V1/V2/V3設定均覆蓋；同一引用只做一次、JSON往返冪等，ID／鎖定／詞條來源／鑲嵌保持。重新開局直接帶新版旗標，協議69→70、96指令不變。快取統一20261103-equipment-rarity-v3，String保留生成器hash。
+- Excel／CSV：四本以Excel原生API更新並正常重開；Zone_Stage_Drops原「關卡掉落」及使用者副表「工作表1」都補12品質，副表原有內容與品質對照保留／校正，44筆原掉率按品質移位後逐項相同，材料／寶石／區間不改。game_parameters僅指定三倍率、品質備註及拆解機率12欄接線，Achievement改混沌／神鑄混沌門檻，String新增2306～2308及修正兩提示。8個變更數字另經原生API確認數值型別；最後唯讀副本正常重開四本六頁，公式錯誤0／Shapes0，來源SHA保持，未手工改XML。沒有新增美術素材，素材庫無變更。
+- 使用者追加來源：作業途中又儲存傳說符文1孔、創世拆解係數24.5、神鑄神話寶石3孔／符文3孔；以新已儲存Excel重新匯出及套用，沒有回放舊計畫覆蓋。Excel浮點原文2.2999999999999998與CSV2.3按完全相同IEEE數值驗證，文字／識別欄仍逐值檢查。另一組NPC.xlsx／NPC.csv及data十個NPC_POOL是使用者進行中的獨立修改，保持磁碟內容並排除提交；以唯讀owned-data候選（只將NPC_POOL回填HEAD）驗本項，未還原或改寫使用者工作檔。
+- 相關驗證：25檔270項、264通過／6項原版同樣失敗；新增equipment-rarity-order 17項全過，另最終成就／String／協議51/51。六項為原封魔塔解鎖期待、神鑄測試未暫停普通掉落造成背包數斷言、舊雙手符文孔期待，以及三項假設傳說至少2孔的符文候選／HTML／累計鑲嵌fixture（使用者最終表為1孔）。以HEAD程式及HEAD測試的唯讀載入重現同六項（85項79過），未弱化斷言或修改權威配置配合舊測試。apply_params dry-run588一致／變更0／錨點問題0，擾動542數值後588錨點全命中；String掃描寫死0，build與diff檢查另見最終交付。
+- 實機：IAB無可連線後端，改bundled Playwright／隔離headless Edge＋隨機localhost正式index與真Worker；12品質逐一篩選各只對應正確ID、上鎖R8拆解拒絕且保留、批次R8以下後僅留R9/R10/R11，神鑄頁三配方名稱與6／7／10正確。最終Console error／warning與pageerror皆0，三張正式頁截圖已目視檢查；沒有讀寫玩家原網址存檔。QA／原生Excel計畫與SHA／全庫與相關log保留本聊天visualizations，未放入遊戲倉庫。
+- 同檔並行：遠端origin/ai/codex於作業中前進至f8902706（角色外觀五提交），只與index／LV／AI_TASKS同檔；對方為hero3d／renderer快取及文件前置說明，本項為裝備／Worker／String快取與獨立紀錄，不改同值或公式。三檔正規化換行後git merge-file三方試跑全退出0，沒有裝備語意依賴；未擅自整合遠端、切換工作區或推送。
+- 全庫：原始`node --test --test-reporter=spec "tests/*.test.cjs"`的長模擬未結束，停止後改逐檔獨立Node行程、外部每檔60秒上限，原版526檔與本項候選527檔都執行；HEAD來源與HEAD測試透過唯讀載入比對，不改工作區。最後各檔結果彙整：原版4604過／648失敗，本項4622過／647失敗，新增17項回歸全過，沒有新增失敗名稱；原火鏈4d有隨機失敗，HEAD獨立第13次亦重現相同斷言，未改產品或放寬測試。兩版同十檔超時：equip-no-duplicate、sim-bag-cache、sim-dead-stock、sim-evaluator、sim-policy-smoke、sync-auto-conflicts、sync-feature-worktrees、sync-index-recovery、sync-shortcut-recovery、vfx-preset-coverage；以上不算通過。最初只隔離NPC JS造成兩個NPC來源一致性假失敗，補同一唯讀候選的HEAD NPC Excel／CSV後單檔重驗消除；原始log與末輪結果分開保存，未重寫失敗紀錄。
+- 最終驗證／限制：`node tools/apply_params.cjs`、`node tools/apply_params.cjs --check-anchors`、`node tools/string-table/build_string_csv.cjs --check`、`npm.cmd run build`（637檔）及diff／stat／check、自我Review通過。全庫仍有上述既有失敗與10檔未完成長驗證，不宣稱全綠；未驗多瀏覽器／長時間真Worker遊玩。唯讀檢查未改共通規範／AGENTS／Workflow／prompts/codex、config_tables／xlsx_to_csv／原生Excel更新器、newforge／runeword／combat／tasks／tower／stats及相關配置來源。沒有本項未完成實作，可供Review與使用者正常合併；建議重新載入驗收並另行整理既有回歸、使用者NPC工作。不合併推送develop／main。Commit為本段所在「[Codex] feat: 統一十二階裝備強度掉落與操作」，SHA見交付。
+
+- 修改檔案清單（61）：GM_command.md、LV_upgrade_system.md、ONE_TIME_MIGRATIONS.md、config/CSV/Achievement.csv、config/CSV/String.csv、config/CSV/Zone_Stage_Drops.csv、config/CSV/game_parameters.csv、config/Excel/Achievement.xlsx、config/Excel/String.xlsx、config/Excel/Zone_Stage_Drops.xlsx、config/Excel/game_parameters.xlsx、docs/AI_TASKS.md、docs/WORKER_PROTOCOL.md、game_formula.md、index.html、js/achievement_data.js、js/achievements.js、js/ai-key-setting.js、js/bridge.js、js/factory.js、js/forge.js、js/formula.js、js/gm_exec.js、js/item.js、js/player.js、js/save.js、js/strings_data.js、js/ui.js、js/worker/protocol.js、js/worker/sim.worker.js、scripts/sim/policy.default.json、scripts/sim/policy.extreme.json、scripts/sim/policy.extreme.roi.json、scripts/sim/policy.heavy.json、scripts/sim/policy.light.json、scripts/sim/policy.moderate.json、scripts/sim/policy_interpreter.js、tests/achievements.test.cjs、tests/ai-key-setting.test.cjs、tests/ancient-affix.test.cjs、tests/chaos-equipment.test.cjs、tests/config-runes-table.test.cjs、tests/divine-forge-interaction.test.cjs、tests/divine-forge.test.cjs、tests/equipment-quality-name.test.cjs、tests/equipment-tooltip-compare.test.cjs、tests/equipment-two-hand-display.test.cjs、tests/field-equipment-drop-table.test.cjs、tests/forge-stone-mode-switch.test.cjs、tests/gm-modequip.test.cjs、tests/inventory-rarity-filter.test.cjs、tests/new-forge.test.cjs、tests/reroll-cost.test.cjs、tests/runeword-data.test.cjs、tests/runeword-engine.test.cjs、tests/sim-forge-craft.test.cjs、tests/worker-protocol.test.cjs、tools/apply_params.cjs、tools/參數表使用說明.md、tests/equipment-rarity-order.test.cjs、js/data.js。
 
 ## REINCARNATION-STAT-NOTICE-20261103 — 轉生確認補齊攻防定值強化
 
