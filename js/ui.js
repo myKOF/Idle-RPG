@@ -3056,6 +3056,7 @@ function renderHeader() {
   setTextIfChanged($id('pv-level'), levelText);
   setTextIfChanged($id('tp-level'), levelText);
   var reinc = clamp(Math.floor(Number(p.reincarnations) || 0), 0, REINCARNATION_MAX);
+  setTextIfChanged($id('rail-reincarnation'), reinc > 0 ? STR(679, reinc) : '');
   var currentLevel = Math.max(0, Math.floor(Number(p.level) || 0));
   var canReincarnate = canReincarnateAt(currentLevel, reinc);
   var reincarnationAlert = $id('char-reincarnation-alert');
@@ -3091,12 +3092,11 @@ function renderHeader() {
   var isMaxedOut = (p.level >= MAX_LEVEL && reinc >= REINCARNATION_MAX);
   var xpFull = canReincarnate || isMaxedOut;
   var xpWidth = xpFull ? '100%' : (clamp(p.xp / need * 100, 0, 100) + '%');
-  ['xp-fill', 'rail-xp-fill', 'battle-xp-fill'].forEach(function (id) {
+  ['xp-fill', 'battle-xp-fill'].forEach(function (id) {
     var fill = $id(id);
     if (fill) fill.classList.toggle('reincarnate-ready', canReincarnate);
   });
   setStyleIfChanged($id('xp-fill'), 'width', xpWidth);
-  setStyleIfChanged($id('rail-xp-fill'), 'width', xpWidth);
   var xpBar = $id('xp-bar');
   setAttrIfChanged(xpBar, 'data-tt-title', STR(136));
   var xpReadyDesc = reinc >= 10 ? STR(137) : STR(138);

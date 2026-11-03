@@ -386,7 +386,6 @@ body {
 
 .reincarnate-btn.reincarnate-ready,
 #tab-char #xp-fill.reincarnate-ready,
-#rail-xp-fill.reincarnate-ready,
 #battle-canvas-host #battle-action-dock #battle-xp-fill.reincarnate-ready {
   position: relative;
   isolation: isolate;
@@ -406,7 +405,6 @@ body {
 
 .reincarnate-btn.reincarnate-ready::after,
 #tab-char #xp-fill.reincarnate-ready::after,
-#rail-xp-fill.reincarnate-ready::after,
 #battle-canvas-host #battle-action-dock #battle-xp-fill.reincarnate-ready::after {
   content: "";
   position: absolute;

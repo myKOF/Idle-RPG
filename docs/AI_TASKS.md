@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## RAIL-PORTRAIT-20261103 — 頭像轉生數與等級排版
+
+- Owner：Codex；Done，單一開發者。使用者要求移除左上頭像經驗條，等級下移，上方顯示當前轉生數，0轉不顯示。前置：既有header Snapshot與String679可直接沿用。
+- 允許：index.html、js/ui.js頭像投影、css/ashen-forge.css／ashen-forge-flat.css／style.css相關選擇器及快取、LV_upgrade_system.md與本段。禁止：配置表、素材、戰鬥／Worker／存檔規則、其他工作區與合併推送。fetch後七檔衝突預檢均無外部來源。
+- 驗收：正式頁隔離瀏覽器驗0／1／10轉、轉生切換及等級更新，頭像無經驗條、等級固定下移且無溢出；既有UI／String相關測試、Build與diff檢查後Commit，交使用者Review／合併。無新素材，素材庫無需變更。
+- 完成七檔：index頭像加入轉生列並移除經驗條，ui.js沿用header.player.reincarnations與String679顯示「N 轉」，0轉清空文字並保留14px列高；等級固定下移。三CSS移除舊頭像經驗條樣式並加入轉生字樣，index同步三CSS及UI快取，LV與本段同步。角色／戰鬥經驗條及轉生玩法保持。
+- 測試：`node --test tests/ui-tick-smoke.test.cjs tests/ui-worker-panels.test.cjs tests/ui-worker-g-dependency.test.cjs tests/init-ui-smoke.test.cjs tests/string-table.test.cjs`共25項22過／3既有失敗（initUI fixture缺DIVINE_FORGE_MODES、裝備來源斷言仍要求舊gem.socket呼叫、detailAction fixture缺UI）。唯讀fs preloader以HEAD的ui.js取代測試輸入重跑失敗兩檔，同三項重現；未改測試或產品迎合舊fixture。`npm.cmd run build`633檔通過，完整diff／stat／check與自我Review通過。
+- 瀏覽器：bundled Playwright／headless Edge，隨機私人localhost正式index／真Worker／完整UI，隔離新儲存環境；只在記憶體替換header投影為0轉173級→1轉1級→10轉1000級→0轉174級，正式renderHeader全通過。四狀態等級y座標相同、轉生無溢出、頭像經驗DOM為0、角色／戰鬥經驗條仍存在，1440×1000與1000×800截圖目視確認；Console error／warning及pageerror皆0。QA腳本／PNG／report及基線測試紀錄留本聊天visualizations/rail-portrait，不讀寫玩家原網址存檔；QA服務及瀏覽器已關閉。初次QA伺服器首頁判斷路徑分隔符錯誤、版面量測未換算遊戲0.75縮放，僅修正QA後重驗，產品未因此改動。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、String資料及表、header快照來源、相關UI測試；無美術素材變動，素材庫無變更／不建空提交。無本項未完成內容，限制為未測全庫／多瀏覽器長時間遊玩，三項既有fixture問題待獨立整理。遊戲Commit為本段所在「[Codex] fix: 調整頭像轉生數與等級排版」，SHA見交付；可供Review／使用者合併，未合併或推送develop／main，建議重載遊戲驗收。
+
 ## NPC-OUTLINE-1PX-20261103 — 全戰鬥NPC／BOSS黑邊收細至1px
 
 - Owner：Codex；Done，單一開發者。使用者將所有NPC黑色描邊上限由2px改為1px，授權途中採建議方案持續完成及提交。起始ai/codex 7a751116乾淨；素材庫起始乾淨。只處理既有自製／已授權素材，不重畫或引入外部素材。
