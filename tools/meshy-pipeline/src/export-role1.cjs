@@ -6,7 +6,7 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const { resolveLibraryRoot } = require('../../vfx/vfx-library-root.cjs');
 const project = path.resolve(__dirname, '../../..');
-const library = path.join(resolveLibraryRoot().root, 'codex-authored/hero3d-role1-20261103');
+const library = path.join(resolveLibraryRoot().root, 'codex-authored/hero3d-forward-grip-20261103/role1');
 const manifest = JSON.parse(fs.readFileSync(path.join(library, 'manifest.json'), 'utf8'));
 // Git may check text out with CRLF on Windows. Binary assets stay byte-exact;
 // text manifests hash their LF representation on both sides of the export.

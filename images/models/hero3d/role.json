@@ -1,7 +1,7 @@
 {
   "sourceSha256": "2fb4f1856db958ca6377706966b7d2ecafdf7441e6de41dfb5b74c382643f7bd",
   "knightSha256": "ad6645d1db9ebfd18240049e36d3db075ca2e3aa27b7f3c1e6e568a2ed435bc4",
-  "outputSha256": "c03e9b99b9e444e920d4e2ad077f81dffdb12b8928b062677e679663da45fc07",
+  "outputSha256": "0ebd2dd1af1503f7236375bd5e146e84c02a01f2ac10823d2eb32a94dd27b7ad",
   "blenderVersion": "4.5.10 LTS",
   "originalAnimationBinaryPreserved": true,
   "originalRigPreserved": true,
@@ -35,7 +35,7 @@
     "goldenKnight": "Original preserved; rebirth appearance switch deferred by user",
     "attack4": "User-supplied Attack4.glb; user explicitly confirmed licensed in chat, 2026-11-03"
   },
-  "library": "codex-authored/hero3d-grip-attack4-20261103",
+  "library": "codex-authored/hero3d-forward-grip-20261103/role",
   "gripRepair": {
     "handVertices": 2807,
     "handTriangles": 5622,
@@ -54,5 +54,25 @@
     "bladeFacesForwardDuringSwing": true,
     "normalAttackPool": 4,
     "noConsecutiveRepeat": true
+  },
+  "forwardGripRepair": {
+    "inputSha256": "c03e9b99b9e444e920d4e2ad077f81dffdb12b8928b062677e679663da45fc07",
+    "outputSha256": "0ebd2dd1af1503f7236375bd5e146e84c02a01f2ac10823d2eb32a94dd27b7ad",
+    "forwardGripVersion": 1,
+    "handedness": "right",
+    "orientation": "forward",
+    "allSixAnimationBytesUnchanged": true,
+    "rigUnchanged": true,
+    "bladeOrientationUnchanged": true,
+    "bladeLengthUnchanged": true,
+    "gripTranslationMeters": [
+      -0.011641442775726318,
+      -0.0021382570266723633,
+      -0.04029756784439087
+    ],
+    "handVertices": 2807,
+    "handTriangles": 5622,
+    "handWatertight": true,
+    "blenderVersion": "4.5.10 LTS"
   }
 }

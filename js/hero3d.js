@@ -19,8 +19,8 @@
   'use strict';
 
   var STORE_KEY = 'idle-rpg.hero3d.v1';
-  var MODEL_URL = 'images/models/hero3d/role.glb?v=20261103-grip-attack4-v1';   // 模型換版時更新，避免讀到舊外觀
-  var REBIRTH_MODEL_URL = 'images/models/hero3d/role1.glb?v=20261103-role1-v1';
+  var MODEL_URL = 'images/models/hero3d/role.glb?v=20261103-forward-grip-v1';   // 模型換版時更新，避免讀到舊外觀
+  var REBIRTH_MODEL_URL = 'images/models/hero3d/role1.glb?v=20261103-role1-forward-grip-v1';
   function modelForReincarnations(count) { return Number(count) >= 1 ? REBIRTH_MODEL_URL : MODEL_URL; }
   var GLTF_URL = 'js/vendor/three/loaders/GLTFLoader.js';
   var CLOTH_URL = 'images/models/hero3d/sunbrand-cloth.json';   // 布料頂點清單（披風、腰前布襠、關節處的藍布）：和 tools/meshy-pipeline/src/fix-grips.mjs 共用

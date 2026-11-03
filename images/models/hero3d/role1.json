@@ -1,7 +1,7 @@
 {
   "sourceSha256": "7a169dbae8130939e6ed05ef3d1130c8520d80a18c266ded5456fe8988881e58",
-  "approvedRoleSha256": "c03e9b99b9e444e920d4e2ad077f81dffdb12b8928b062677e679663da45fc07",
-  "outputSha256": "dbcbfa643f3ed6911211cf4a6559cd9974697554534c52e3c244c1ef3abf2a4b",
+  "approvedRoleSha256": "0ebd2dd1af1503f7236375bd5e146e84c02a01f2ac10823d2eb32a94dd27b7ad",
+  "outputSha256": "54f104457683618ee328edd05749476dffd11bc093e7dbeb92619f59a55b1222",
   "license": "User explicitly confirmed authorized for game use and modification in chat, 2026-11-03",
   "blenderVersion": "4.5.10 LTS",
   "clips": [
@@ -18,5 +18,26 @@
   "handVertices": 2807,
   "handWatertight": true,
   "usesApprovedWeaponAndHandGeometry": true,
-  "modelBytes": 4656748
+  "modelBytes": 4656748,
+  "forwardGripRepair": {
+    "inputSha256": "dbcbfa643f3ed6911211cf4a6559cd9974697554534c52e3c244c1ef3abf2a4b",
+    "outputSha256": "54f104457683618ee328edd05749476dffd11bc093e7dbeb92619f59a55b1222",
+    "forwardGripVersion": 1,
+    "handedness": "right",
+    "orientation": "forward",
+    "allSixAnimationBytesUnchanged": true,
+    "rigUnchanged": true,
+    "bladeOrientationUnchanged": true,
+    "bladeLengthUnchanged": true,
+    "gripTranslationMeters": [
+      -0.011641442775726318,
+      -0.0021382570266723633,
+      -0.04029756784439087
+    ],
+    "handVertices": 2807,
+    "handTriangles": 5622,
+    "handWatertight": true,
+    "blenderVersion": "4.5.10 LTS"
+  },
+  "library": "codex-authored/hero3d-forward-grip-20261103/role1"
 }

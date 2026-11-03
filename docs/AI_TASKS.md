@@ -1,3 +1,14 @@
+## HERO3D-FORWARD-GRIP-20261103 — 右手正握方向修正
+
+- Owner：Codex；Done。使用者指出前輪握姿仍是反握，要求正握。Role／Role1手掌與握持位置、Blender來源／匯出工具、來源說明／量測、模型快取、回歸、LV及本段為授權範圍；相關目標衝突預檢無外部來源。全程單一開發者，無新外部素材／授權詢問。
+- 原因與修復：比對原始Role1右手指骨及舊手部實際網格，發現掌面與拇指側的手性不符合右手。Blender以腕部縱向平面修復掌面／指形，反轉面順序並重算法線，現在為右手正握：護手／劍身在拇指食指側，柄尾在小指側。柄與整劍隨新掌面平移約4.2cm貼合（delta[-.0116414,-.0021383,-.0402976]m），刀刃方向、劍身形狀及0.8長度保持。兩人物手部幾何／權重一致，全部六段動畫與骨架／inverse bind逐位保持。
+- 獨立驗收：新hero3d-forward-grip回歸讀實際掌面、拇指／劍身網格，驗右手手性（fingerForward cross palmNormal＝thumbSide）及拇指食指側出刃，舊形狀量測為負、新形狀為正；不只讀orientation標籤。兩皮膚全72幀劍柄在掌內固定，第四招動畫SHA仍0a51a3c4，揮擊刀刃迎前通過。BVH手與刀身／護手／皮柄交叉三角面均0，283個手頂點距柄小於1mm（最小.344mm）；封閉網格、朝外法線及三角度原生1400近拍通過。
+- 修改：role.glb／role.json／ROLE_SOURCE.md、role1.glb／role1.json／ROLE1_SOURCE.md、forward_grip.py、export-role.cjs／export-role1.cjs、hero3d.js兩個模型URL、index對應快取、新forward-grip回歸、LV及本段。scene-preview未載hero3d且renderer未改，僅檢查原快取相符。唯讀未改AI_RULES／AGENTS／Workflow／prompts、黃金騎士／cloth、既有六動畫／骨架、sculpt_grip.py／prepare_role1.py／mirror_attack.py、renderer選招與轉生切換、Worker／戰鬥／存檔／配置、兩個使用者未追蹤GLB。
+- 測試：node --test tests/hero3d-forward-grip.test.cjs tests/hero3d-role.test.cjs tests/hero3d-attack4.test.cjs tests/hero3d-rebirth-skin.test.cjs tests/hero3d-battle-rules.test.cjs tests/hero3d-internal-toggle.test.cjs tests/battle-renderer-pause.test.cjs tests/vfx-editor-cache-versions.test.cjs為36/36；npm.cmd run build為640檔通過。兩套匯出--source-check逐檔SHA、原黃金騎士SHA及diff --check通過。四招隨機、技能三招與0／1轉切換回歸保持。
+- 預覽：隔離localhost正式index／真Worker／Pixi／Hero3D，Role1正握、同步近拍iframe，1600×1000 GIF84幀30fps約2.8秒。暫停逐格錄製，QA僅暴露既有讀取／場景重繪函式、900px畫布、內建全螢幕／滾輪及暫隱NPC／殘留特效／遮罩；不改正式鏡頭或玩家原存檔。初版QA只app.render造成場景離屏貼圖停在舊幀，已補呼叫正式renderPerspectiveScene後重錄；讀回確認遊戲人物與同步近拍皆有逐幀變化（不是只有近拍動），Page error0。GIF與PNG已目視核對，QA在本聊天visualizations/forward-grip。
+- 素材庫：新codex-authored/hero3d-forward-grip-20261103內role／role1保存兩份可編輯Blend／成品、作者工具與QA，兩manifest合計31檔SHA。重開各Blend均6動作、使用貼圖全部packed；歷史89d34a3／8c2c8e0包作為輸入保留。新來源製程明確要求從未修正的歷史輸入反射，已有forwardGripVersion時禁止重複修正。
+- 交付：素材Commita920e56先於遊戲Commit（本段所在「[Codex] fix: 修正兩套人物的右手正握方向」，SHA見交付），可供Review／使用者合併；未合併或推送。本項無未完成；已知限制仍為既有內測3D、未多瀏覽器長時間效能測試。下一步重載並以新近拍／GIF驗收正握。
+
 ## HERO3D-REBIRTH-SKIN-20261103 — 1轉Role1外觀
 
 - Owner：Codex；Done。使用者追加Role1.glb作1轉後皮膚、所有動作照舊，並已確認新檔本遊戲及修改授權；0轉Role、1轉及以上Role1，原黃金騎士完整保留。允許role1素材／來源、Blender工具／匯出、Hero3D／renderer、兩頁快取、獨立回歸、LV及本表；相關目標預檢無外部衝突。不改Worker／戰鬥／存檔／轉生門檻／配置與使用者其他模型。
