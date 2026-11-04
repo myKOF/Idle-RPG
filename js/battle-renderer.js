@@ -2394,7 +2394,7 @@ var BattleRenderer = (function () {
       else k3d = Math.max(leadMs > 0 ? p.body.hitMs / leadMs : 0, p.body.naturalMs / HERO3D_CAST_MAX_MS);
       if (k3d > 0) p.body.animationSpeed *= Math.max(1, Math.min(melee ? 8 : HERO3D_CAST_SPEED_MAX, k3d));
       p.actionAt = nowMs();
-      return;   // 3D 不做出手前送（lunge）：角色站定播完動作，再多的位移都是滑步
+      return p.body.hitDelayMs;   // 回傳「劍砍到」那一幀還要多久，普攻命中音用；3D 不做出手前送（lunge）：角色站定播完動作，再多的位移都是滑步
     }
     if (meta && p.body && duration > 0) {
       /* 以實際會播的幀數算（多方向素材從 first 開始播，不是整條 frames） */
@@ -6697,7 +6697,10 @@ var BattleRenderer = (function () {
           screenToGroundY((tEnt ? tEnt.root.y : tp.y) - S.player.root.y), false);
       }
       /* dur＝這一次普攻的實際攻速週期：整段揮擊要在下一次普攻前播完 */
-      playerAttackAnim('melee', firstTarget, (contactFx && firstTarget) ? spec.dur : 0);
+      var hitDelay = playerAttackAnim('melee', firstTarget, (contactFx && firstTarget) ? spec.dur : 0);
+      /* 普攻命中音：在砍到敵人那一幀播（沒有動作可對時間，例如施法動作佔著，就立刻播）；
+         一次主普攻只播一聲，高攻速的限流在 Sfx 內處理。 */
+      if (contactFx && firstTarget && typeof Sfx !== 'undefined') Sfx.playGroup('basicHit', hitDelay > 0 ? hitDelay : 0);
     }
 
     if (presetHandled) return;

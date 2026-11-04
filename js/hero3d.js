@@ -671,6 +671,8 @@
     Object.defineProperty(sp, 'naturalMs', { get: function () { return ctrl.spanSec() * 1000; } });
     /* 劍揮到的時刻：原速下距離開始播多少毫秒（施法要讓它對上技能釋放的時刻） */
     Object.defineProperty(sp, 'hitMs', { get: function () { return ctrl.hitSec() * 1000; } });
+    /* 劍揮到的時刻（距離現在多少毫秒）：原速的 hitMs 除以目前的播放倍率，加速後的普攻也對得上砍到的那一幀 */
+    Object.defineProperty(sp, 'hitDelayMs', { get: function () { return ctrl.hitSec() * 1000 / (ctrl.speed > 0 ? ctrl.speed : 1); } });
 
     ctrl.onFinished = function () {
       if (typeof sp.onComplete === 'function') sp.onComplete();

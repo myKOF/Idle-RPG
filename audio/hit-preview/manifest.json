@@ -1,0 +1,17 @@
+{
+  "hit-slash-a": {
+    "bytes": 18566,
+    "seconds": 0.21,
+    "sha256": "65287fd1eb0a4a74a83f6c08e9485ede77aceba19a4f7a50b5d0119383f96641"
+  },
+  "hit-slash-b": {
+    "bytes": 27386,
+    "seconds": 0.31,
+    "sha256": "091c1c07964040c2a69b0d514ff19d3c6954a3944daeaf93079f93a70a7a07c8"
+  },
+  "hit-sword": {
+    "bytes": 88244,
+    "seconds": 1,
+    "sha256": "6d4ff27055dabaa05930b42fae4b95158fe6172bd2a52e4929e4cfacab2c18fb"
+  }
+}
