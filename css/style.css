@@ -5415,6 +5415,32 @@ textarea:disabled,
   box-shadow: none;
 }
 
+/* 任務完成、可以領獎時：整條高亮閃爍提示（ashen-forge-flat 會覆寫 #quest-bar 的邊框與陰影，
+   所以選擇器多帶 .quest-ready 提高優先序）。 */
+#quest-bar.quest-ready {
+  animation: questReadyPulse 1.1s ease-in-out infinite;
+}
+#quest-bar.quest-ready .quest-dot {
+  animation: questReadyDot 1.1s ease-in-out infinite;
+}
+@keyframes questReadyPulse {
+  0%, 100% {
+    border-color: rgba(86, 211, 79, 0.55);
+    background: rgba(18, 26, 18, 0.92);
+    box-shadow: 0 0 4px rgba(86, 211, 79, 0.25);
+  }
+  50% {
+    border-color: #8dff80;
+    background: rgba(40, 78, 36, 0.96);
+    box-shadow: 0 0 18px rgba(86, 211, 79, 0.85), inset 0 0 10px rgba(141, 255, 128, 0.35);
+  }
+}
+@keyframes questReadyDot {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.5); }
+}
+/* 每秒約一次的柔和閃爍，是領獎提示的主要訊號，不套用 reduced-motion 關閉。 */
+
 .quest-name {
   color: var(--warn);
   font-weight: bold;
