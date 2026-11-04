@@ -1079,7 +1079,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   if (dCfg.isPlayer && out.absorbed > 0 && typeof sgValgrOnShieldLost === 'function') sgValgrOnShieldLost(out.absorbed);
   // 所有普通／技能命中共用一次汲取；同一擊的物理與附加元素不重複計次。
   if (aCfg.isPlayer && defenderWasAlive && typeof playerDrainOnDamage === 'function') {
-    playerDrainOnDamage(defender, out.dmg, attacker);
+    playerDrainOnDamage(defender, out.dmg, attacker, undefined, aCfg.drainChance);
   }
   // 新版技能【血飲術】反噬：玩家攻擊端的敵方受傷事件通知（js/skills2.js，未啟用時零成本）
   if (aCfg.isPlayer && out.dmg > 0 && typeof skills2OnEnemyDamaged === 'function') {

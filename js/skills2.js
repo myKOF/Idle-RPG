@@ -2236,6 +2236,8 @@ function sgAtkCfg(pEnt, st, dmgVal, target, bonusTotalPct, gid, elemOverride) {
     dmgVsElem: st.dmgVsElem,
     isPlayer: true, isSkill: true
   };
+  /* 擊中回復觸發系數（配置表 Skills2「擊中回復觸發系數」）：吸血／吸魔各擲一次的觸發機率%，未設＝必定觸發 */
+  if (g && typeof g.drainPct === 'number') aCfg.drainChance = g.drainPct;
   /* 屬性歸屬：預設吃群組層的 elem；elemOverride 給「某一段傷害改為別的屬性」用
      （逐風者的真空斬、旋風劍舞的旋風＝物理群組打出風系段）。傷害類型仍由群組決定，
      因此物理群組的風系段依舊走物攻與物穿，只有屬性標籤與抗性選型改變。 */

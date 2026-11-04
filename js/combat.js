@@ -1304,7 +1304,7 @@ function statusTickVfxFlush() {
 
 /* 傷害事件的屬性汲取。DoT 同幀合併扣血時帶入實際跳數，O(1) 回復，
    不新增 Timer／浮字；技能自帶治療仍由技能自行處理。 */
-function playerDrainOnDamage(target, damage, player, hits) {
+function playerDrainOnDamage(target, damage, player, hits, triggerPct) {
     if (!(damage > 0) || !target || target._sgPreview) return;
     player = player || (typeof sgCurrentPlayerEnt === 'function' ? sgCurrentPlayerEnt() : null);
     if (!player || !(player.hp > 0) || player === target || player._sgPreview) return;
@@ -1315,8 +1315,10 @@ function playerDrainOnDamage(target, damage, player, hits) {
     if (!(hpVal > 0 || mpVal > 0)) return;
     var count = hits === undefined ? 1 : Math.max(0, Math.floor(Number(hits) || 0));
     if (!(count > 0)) return;
-    if (hpVal > 0) healPlayer(player, lifestealHealAmount(hpVal) * count, st, { noShield: true });
-    if (mpVal > 0) gainPlayerMana(player, manaStealAmount(mpVal) * count, st);
+    /* 技能的擊中回復觸發系數：吸血與吸魔各擲一次（未帶系數＝必定觸發，普攻與持續傷害走這條） */
+    var gated = typeof triggerPct === 'number' && triggerPct < 100;
+    if (hpVal > 0 && (!gated || chance(triggerPct))) healPlayer(player, lifestealHealAmount(hpVal) * count, st, { noShield: true });
+    if (mpVal > 0 && (!gated || chance(triggerPct))) gainPlayerMana(player, manaStealAmount(mpVal) * count, st);
 }
 
 /* 玩家持續傷害的輸出加成（2026-10-25）：玩家施放的 DoT 在每一跳結算時吃爆擊率／爆擊傷害、
