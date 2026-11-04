@@ -1,13 +1,14 @@
 # UI音效（2026-11-04使用者核准範圍）
 
-本次只接入兩份已核准的自製WAV，保留試聽版音色與音量；其餘候選等待指示。初版試聽檔與原始製作說明在audio/ui-preview；本文件記錄後續接入授權，優先於試聽時的「尚未核准」歷史狀態。
+已接入三份核准的自製WAV：原觸碰、選定的C3點擊、原成功音，保留各試聽版音色與音量；新觸碰候選仍待選擇。試聽檔與製作說明在audio/ui-preview；本文件記錄後續接入授權，優先於試聽時的歷史狀態。
 
 | 使用音檔 | 播放時機 |
 | --- | --- |
 | audio/ui-preview/01-hover.wav | 所有可操作的UI（執行功能、開啟介面、選取／裝配等），有tips亦播放；包含熔爐升級／零件／紀錄詳情、背包裝備選取、寶石／符文操作、詞條／孔位選取、label開關與說明!／?／i。只有純查看而無操作功能的tips靜音；停用控制項也靜音。鍵盤焦點、觸控碰觸共用相同篩選。 |
+| audio/ui-preview/short-options-v4/C3.wav | 使用者選定的「厚實短咚」，0.085秒；在同一可操作目標的真實click事件播放，涵蓋滑鼠、觸控完成點擊、原生鍵盤啟動。不以pointerdown冒充點擊，取消碰觸不播C3；純tips、停用／右鍵／程式合成click及背景靜音。 |
 | audio/ui-preview/05-success.wav | 玩家操作裝備強化且Worker回覆ok；洗煉詞條且Worker回覆成功null。只進入洗煉模式、選詞條不播成功音。 |
 
-點擊02-click、洗煉專用03-reroll、神鑄04-divine-forge、失敗06-failure與合輯皆未載入；神鑄結果、其他養成、任務、戰鬥與自動強化也不播放成功音。神鑄UI本身的觸碰反應仍使用核准的觸碰音。
+原點擊02-click、洗煉專用03-reroll、神鑄04-divine-forge、失敗06-failure與合輯皆未載入；神鑄結果、其他養成、任務、戰鬥與自動強化也不播放成功音。神鑄UI本身的觸碰／點擊使用核准音色；新H6～H10只有試聽檔，尚未替換現行hover。
 
 js/ui-sound.js只在主執行緒處理DOM事件與播放；js/ui.js的detailAction於確認無結果錯誤後傳遞成功結果。模擬、權威數值、存檔與Worker協議不變，不加聲音設定／玩家文字。事件委派涵蓋動態建立的節點；停在同格的圖示／文字、靜止游標底下重繪、捲動、拖曳不重複觸發。觸碰音有80ms節流，每種聲音最多一個播放來源，背景停止並丟棄尚未播出的聲音；音訊失敗不阻止原操作。
 
@@ -15,4 +16,4 @@ js/ui-sound.js只在主執行緒處理DOM事件與播放；js/ui.js的detailActi
 
 瀏覽器限制：首次實際點擊／碰觸或按鍵後才建立及解鎖AudioContext。第一次互動前的純滑鼠懸停可能無聲；解鎖後正常播放。不排隊補播過期聲音，初次音檔尚在載入時可能略過該次觸碰。
 
-來源及保存：本輪沒有改音檔或製作新素材。原素材庫Commit4cfb1cc、遊戲試聽Commit3e697e1b，製作工具tools/audio/ui-preview.cjs可重產。01-hover SHA256為411211856bdcc43ec4c1d534f29720eac208278872aa1fc71eb8e27dcd3b453c，05-success為4821e4b49aad96afc57c3c9a9508dc7835c938b7d82a119fcc04e66cc9cd1a14；主端URL帶相同雜湊前綴避免舊快取。
+來源及保存：原素材庫Commit4cfb1cc、遊戲試聽Commit3e697e1b，製作工具tools/audio/ui-preview.cjs可重產。01-hover SHA256為411211856bdcc43ec4c1d534f29720eac208278872aa1fc71eb8e27dcd3b453c，05-success為4821e4b49aad96afc57c3c9a9508dc7835c938b7d82a119fcc04e66cc9cd1a14。C3沿用素材庫84214a9／遊戲e793b75e原檔，SHA256 a6fdb4f3674d327ed01fc1cd632f3be8788bda00cca8bcd10d34a531c0904551；主端URL均帶相同雜湊前綴避免舊快取。

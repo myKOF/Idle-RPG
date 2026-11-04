@@ -1,8 +1,9 @@
 'use strict';
-/* 僅接入使用者核准的觸碰與成功WAV；不參與模擬／存檔，也不合成其他音色。 */
+/* 僅接入使用者核准的觸碰、C3點擊與成功WAV；不參與模擬／存檔。 */
 var UISound = (function () {
   var ASSETS = {
     hover: 'audio/ui-preview/01-hover.wav?v=411211856bdc',
+    click: 'audio/ui-preview/short-options-v4/C3.wav?v=a6fdb4f3674d',
     success: 'audio/ui-preview/05-success.wav?v=4821e4b49aad'
   };
   // 操作能力決定是否播放：有tips的按鈕／選取項目仍播，純tips不列入操作目標。
@@ -69,18 +70,19 @@ var UISound = (function () {
       }
       if (context.state === 'suspended') Promise.resolve(context.resume()).catch(function () {});
       load('hover');
+      load('click');
       load('success');
     } catch (_) { /* 沒有音訊裝置時仍可正常使用UI。 */ }
   }
   function play(kind) {
     if (!ASSETS[kind] || !context || document.hidden) return;
     var at = now(), epoch = generation;
-    if (at - (lastPlayed[kind] === undefined ? -Infinity : lastPlayed[kind]) < (kind === 'hover' ? 80 : 120)) return;
+    if (at - (lastPlayed[kind] === undefined ? -Infinity : lastPlayed[kind]) < (kind === 'success' ? 120 : 80)) return;
     lastPlayed[kind] = at;
     // 冷載入只等待這一次短期互動，切頁或背景返回不補播過期聲音。
     load(kind).then(function (buffer) {
       if (!buffer || document.hidden || generation !== epoch || context.state !== 'running' ||
-          now() - at > (kind === 'hover' ? 180 : 900)) return;
+          now() - at > (kind === 'success' ? 900 : 180)) return;
       try {
         if (sources[kind]) sources[kind].stop();
         var source = context.createBufferSource();
@@ -143,6 +145,11 @@ var UISound = (function () {
     keyboardFocus = true;
     unlock(event);
   }
+  function click(event) {
+    if (!event.isTrusted || event.button > 0 || document.hidden || !target(event.target)) return;
+    unlock(event);
+    play('click');
+  }
   function commandResult(name, result) {
     var value = result && Object.prototype.hasOwnProperty.call(result, 'result') ? result.result : result;
     if ((name === 'item.upgrade' && value === 'ok') || (name === 'item.rerollAffix' && value === null)) play('success');
@@ -152,6 +159,7 @@ var UISound = (function () {
     initialized = true;
     document.addEventListener('pointerover', hover, true);
     document.addEventListener('pointerdown', pointerDown, true);
+    document.addEventListener('click', click, true);
     document.addEventListener('keydown', keyDown, true);
     document.addEventListener('focusin', focus, true);
     document.addEventListener('visibilitychange', function () {

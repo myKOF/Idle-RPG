@@ -14539,6 +14539,18 @@ Worker 存活且頁面正常完成載入。
 - 既有驗證：`node --test tests/ui-sound.test.cjs`10/10、`npm.cmd run build`652檔及兩庫diff／stat／check／自我Review通過；rg確認index／js未引用新候選。唯讀未改規範／Workflow／prompts、先前全部WAV及產生器、ui-sound／UI／index／LV／Worker／save／玩法與配置。沒有新功能／字串／接線，不做瀏覽器操作；外部11項CSV／Excel／data／skills2修改完整保留、不套用或提交。
 - 雙庫交付：素材庫codex-authored/ui-short-options-20261104-v4的15檔先Commit `84214a9`，後遊戲Commit（本段所在「[Codex] feat: 製作觸碰與點擊各五款清晰短音」，SHA見聊天交付）。本輪無未完成或已知素材技術問題，可Review／保存候選；尚未接入，未合併推送。下一步使用者以H1～H5及C1～C5選擇或提供音色回饋。
 
+## UI-SOUND-C3-HOVER5-20261104 — 接入C3與再製五款觸碰候選
+
+- Owner：Codex；Done，單一開發者。使用者選定點擊C3並要求觸碰再做5款；接入既有C3原檔，H6～H10只供試聽，現行hover及success保持。允許ui-sound／index快取／聲音回歸、UI_SOUND／LV／本段、tools/audio/ui-hover-options.cjs與hover-options-v5候選／說明／manifest、素材庫保存；禁止改其他聲音、玩法／Worker／配置／存檔、合併推送。
+- 協作：fetch後index／LV有Claude未整合提交，分別為其他腳本／CSS／String快取＋Sfx升級音載入，以及LV第16行寶石規則。我方只升ui-sound快取及檔尾音效段，無同值／同事件／狀態語意相依；共同祖先1cfc7bf3的三方merge-file，LV exit0，index exit1（我方既有ui.js版本與Claude相鄰版本差異）。最初未先檢視dry-run回傳即套候選快取，已坦承並撤回該行、修正本段錯載；使用者明確同意「只改音效快取這一行」後才重套v5。不收取／改寫Claude內容、不合併推送。其他目標預檢乾淨；本副本11項外部配置／data／skills2修改保留。
+- 完成15檔：ui-sound新增C3白名單URL／按需預解碼、真click事件委派與獨立80ms節流／180ms過期保護，沿用可操作目標及背景／音源管理；指標按下／取消本身不播C3，原hover及success保持。index只改核准快取行，同步原回歸、UI_SOUND／LV及本段。新ui-hover-options產生器與v5的5單音／1合輯／README／manifest：H6輕巧滴答47ms、H7柔亮撥音58ms、H8氣墊短噗52ms、H9微脆斷奏45ms、H10上揚短啵60ms；全為自製程序合成、無外部錄音／取樣／參考，候選未接入。
+- 測試：`node tools/audio/ui-hover-options.cjs --apply`／`--check`、`node --check tools/audio/ui-hover-options.cjs`通過，兩庫6WAV／來源／README／manifest SHA一致；獨立bundled Python wave＋NumPy驗PCM／置中／首尾／無削波／時長、合輯5.824秒逐段PCM完全相同，5款同類交叉相關最高0.396、RMS -24.29～-20dBFS，聽感待選。`node tools/audio/ui-short-options.cjs --check`含C3的上一輪12音檔保持；C3 SHA仍a6fdb4f3674d327ed01fc1cd632f3be8788bda00cca8bcd10d34a531c0904551。
+- `node --test tests/ui-sound.test.cjs tests/equip-reroll-ui.test.cjs tests/upgrade-animation.test.cjs tests/ui-tick-smoke.test.cjs tests/vfx-editor-cache-versions.test.cjs`28/28通過，聲音11項含C3的真click、鍵盤原生click、被動tips／停用／合成／右鍵／背景拒播、取消按下不誤播及只預載3份核准檔案；`npm.cmd run build`652檔、String寫死0及diff／stat／check、自我Review通過。npm版本更新notice為環境提示，未更新套件。
+- 實機：IAB無連線後隔離隨機localhost＋Edge headless＋真Worker／AudioContext，只下載01-hover／C3／05-success，時長0.18／0.085／1.15秒。重驗23類hover、熔爐開關／升級／卸下／開列表／裝配與紀錄詳情；label轉發input仍只播一次C3，原生空白鍵與真觸控啟動各播一次C3，材料純tips點擊不播。實際裝備強化／洗煉成功仍各播success一次，零資源拒絕不播成功音；最後hover23／click13／success2，Console error／warning及pageerror0。QA第一次Enter未開既有日誌，改用原生Space完成鍵盤click驗證，沒有修改原操作程式或宣稱修正Enter行為；瀏覽器／服務關閉，玩家原網址存檔未讀寫。QA為本聊天visualizations/ui-sound-c3-qa.mjs／json及ui-hover-v5-qa.py。
+- 保存：新候選素材庫codex-authored/ui-hover-options-20261104-v5共9檔先Commit `d01e230`；C3沿用既有素材84214a9。共享素材庫與同副本另有UI-SOUND-SILENT-KEYBOARD-20261104進行中候選及獨立任務段，完整保留、不納入本項；只分段更新／stage本段。唯讀未改規範／Workflow／prompts、其他AI分支、ui.js／原操作／player／Worker／協議／save、既有所有WAV及產生器、配置／String來源，11項外部CSV／Excel／data／skills2亦保留未提交。
+- 交付：本項無未完成或已知新增缺陷，可Review／使用者合併，遊戲Commit為本段所在「[Codex] feat: 接入C3點擊音並新增五款觸碰候選」，SHA見聊天交付；H6～H10只供選擇，未跑全庫／多瀏覽器／行動真機長時間測試，未合併推送。下一步重載驗收C3並選新觸碰音。
+- 驗收：C3只播在有效可操作UI的真實點擊／原生鍵盤啟動，不在hover／純tips／停用／右鍵／背景誤播，不改成功音；新5個短觸碰差異清楚、音量可辨識、附合輯與單音，未接入。PCM／SHA／雙庫、回歸／Build／真瀏覽器Console與diff後Commit，交使用者選新觸碰音並重載C3驗收。
+
 ## UI-SOUND-SILENT-KEYBOARD-20261104 — 五款無聲鍵盤風格短按鈕音
 
 - Owner：Codex；Done（試聽候選），單一開發者。使用者要求5款短促、類似無聲鍵盤的按鈕聲；僅新增隔離候選K1～K5及合輯，不改正在進行的C3／H6～H10工作。
