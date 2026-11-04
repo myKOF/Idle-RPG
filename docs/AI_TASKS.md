@@ -14520,3 +14520,12 @@ Worker 存活且頁面正常完成載入。
 - 驗證：`node tools/audio/ui-paper-wood.cjs --apply`／`--check`通過，兩庫3份WAV／來源／說明／manifest雜湊一致且可確定性重產；`node --check tools/audio/ui-paper-wood.cjs`通過。獨立bundled Python wave＋NumPy讀回驗規格、起尾零點、置中、無削波及SHA，紙聲peak -26.93／RMS -41.60dBFS，木聲peak -19.17／RMS -35.22dBFS；木聲峰值比原點擊低9.96dB、3500Hz以上能量僅0.0125%。數值不能代替聽感核准，音色仍交使用者試聽；QA為本聊天visualizations/paper-wood-qa.py。
 - 既有保持：`node tools/audio/ui-preview.cjs --check`原7份WAV／來源與素材庫一致；`node --test tests/ui-sound.test.cjs`10/10通過；`npm.cmd run build`652檔通過。rg確認index／js沒有新候選引用，未做瀏覽器操作或替換使用中音檔，不新增設定／玩家字串／LV功能。唯讀未改規範／Workflow／prompts、原產生器／原素材、ui-sound／ui／index／Worker／save／玩法與全部配置來源；9項外部CSV／Excel／data／skills2修改保留未提交。
 - 雙庫交付：素材庫codex-authored/ui-paper-wood-preview-20261104的6檔先Commit `4c5cfb4`，後遊戲Commit（本段所在「[Codex] feat: 製作紙張摩擦與輕木質音效試聽版」，SHA見聊天交付）；兩庫diff／stat／check與自我Review通過。無本輪未完成或已知素材技術問題，可Review／保存候選，音色與接入仍待使用者確認；未合併推送。下一步試聽紙聲／木聲後決定調整或替換。
+
+## UI-SOUND-LOUDER-20261104 — 放大紙張／木質與縮短紙聲
+
+- Owner：Codex；Done（試聽候選），單一開發者。使用者回報兩聲太小、木質尤其小，要求都放大及紙聲再短一點；本輪續作試聽，不改遊戲。允許原紙木產生器、paper-wood-v3候選／說明／manifest、本段與對應素材庫；v2及首版保留。前置：工作區原有外部CSV／Excel／data／skills2修改保留，目標逐檔衝突預檢無外部來源，不改UI／音效接線／設定／Worker／配置／其他聲音，不合併推送。
+- 驗收：紙聲0.19→0.16秒並提高約10dB，木質音色／時長保持、提高約12dB；獨立新路徑避免重播舊快取。PCM／峰值／首尾淡化／重產與兩庫SHA、既有聲音回歸／Build，提交素材及遊戲後提供試聽，下一步由使用者確認。
+- 完成7檔：更新tools/audio/ui-paper-wood.cjs輸出v3，新增audio/ui-preview/paper-wood-v3/{README.md,manifest.json,paper-hover.wav,wood-click.wav,comparison.wav}及本段；紙聲包絡等比縮短30ms、峰值由0.045→0.14，木聲僅等比4倍放大、時長仍0.17秒，不新增金屬高頻。合輯3.81秒，紙3次→木3次；首版與v2檔案保持，皆為既有原創程序合成，無外部素材。
+- 驗證：`node tools/audio/ui-paper-wood.cjs --apply`／`--check`與`node --check tools/audio/ui-paper-wood.cjs`通過；兩庫3份WAV、來源／README／manifest SHA一致，48kHz／16-bit／立體聲、首尾零點／置中／無削波。獨立bundled Python wave＋NumPy驗v2／v3各檔hash、紙聲0.16秒、木聲波形＝舊版4倍（量化誤差≤3LSB），紙聲peak -17.08／RMS -32.99dBFS、木聲peak -7.13／RMS -23.18dBFS；紙聲峰值增9.85dB、木聲RMS增12.04dB。QA為本聊天visualizations/paper-wood-v3-qa.py；聽感仍待使用者確認，不以量測宣稱核准。
+- `node --test tests/ui-sound.test.cjs`10/10、`npm.cmd run build`652檔及兩庫diff／stat／check／自我Review通過。唯讀未改規範／Workflow、原音檔／v2、ui-sound／ui／index／LV／Worker／save／所有玩法及配置，無新字串或遊戲功能，不做瀏覽器驗證；11項外部CSV／Excel（含Zone_Stage_Drops）／data／skills2修改保留未提交，沒有套用參數。
+- 雙庫：先保存素材庫codex-authored/ui-paper-wood-preview-20261104-v3的6檔並Commit `a4c6dfc`，再遊戲Commit（本段所在「[Codex] feat: 放大紙木音效並縮短紙張碰觸聲」，SHA見聊天交付）。無本輪未完成或已知素材技術問題，可Review／保存候選，尚未接入；未合併推送。下一步試聽新版音量與紙聲長度。

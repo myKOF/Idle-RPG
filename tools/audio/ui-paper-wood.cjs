@@ -5,8 +5,8 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const { resolveLibraryRoot, REPO_ROOT } = require('../vfx/vfx-library-root.cjs');
 const RATE = 48000;
-const GAME_REL = 'audio/ui-preview/paper-wood-v2';
-const LIBRARY_REL = 'codex-authored/ui-paper-wood-preview-20261104';
+const GAME_REL = 'audio/ui-preview/paper-wood-v3';
+const LIBRARY_REL = 'codex-authored/ui-paper-wood-preview-20261104-v3';
 const hash = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
 const TAU = Math.PI * 2;
 
@@ -32,10 +32,10 @@ function soften(samples, peak) {
   return samples.map(sample => sample * peak / maximum);
 }
 function paper() {
-  const samples = new Float64Array(Math.round(0.19 * RATE));
+  const samples = new Float64Array(Math.round(0.16 * RATE));
   const random = noise(202611041), upper = lowpass(3100), lower = lowpass(580), smooth = lowpass(3700);
   for (let i = 0; i < samples.length; i++) {
-    const t = i / RATE;
+    const t = i / RATE * (0.19 / 0.16);
     const band = upper(random());
     const fibers = band - lower(band);
     // 不均勻的短摩擦包絡，保留纖維顆粒；沒有音調、鈴聲或長尾回音。
@@ -45,7 +45,7 @@ function paper() {
     const grain = 0.78 + 0.14 * Math.sin(TAU * 43 * t) + 0.08 * Math.sin(TAU * 117 * t);
     samples[i] = smooth(fibers * swipes * grain);
   }
-  return soften(samples, 0.045);
+  return soften(samples, 0.14);
 }
 function wood() {
   const samples = new Float64Array(Math.round(0.17 * RATE));
@@ -60,7 +60,7 @@ function wood() {
     const envelope = Math.min(1, t / 0.0018);
     samples[i] = body((knock + 0.55 * contact) * envelope);
   }
-  return soften(samples, 0.11);
+  return soften(samples, 0.44);
 }
 function wav(samples) {
   const bytes = Buffer.alloc(44 + samples.length * 4);
@@ -110,7 +110,7 @@ function main() {
   for (const [file, sha] of Object.entries(originals)) {
     if (hash(fs.readFileSync(path.join(REPO_ROOT, 'audio/ui-preview', file))) !== sha) throw new Error('Original changed: ' + file);
   }
-  const manifest = { version: 2, status: 'preview-only-awaiting-user-review', sampleRate: RATE, channels: 2, bits: 16,
+  const manifest = { version: 3, status: 'preview-only-awaiting-user-review', sampleRate: RATE, channels: 2, bits: 16,
     origin: 'Original procedural filtered-noise paper friction and damped wooden impact; no external recordings, references or sample libraries.',
     source: 'tools/audio/ui-paper-wood.cjs', sourceSha256: hash(fs.readFileSync(__filename)), libraryRelativePath: LIBRARY_REL,
     unchangedOriginals: originals, timeline,
