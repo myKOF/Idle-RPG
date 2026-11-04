@@ -2589,6 +2589,26 @@ function reviveFieldEnemy(m) {
     UI.dirty.battle = true;
 }
 
+/* 玩家升級的震懾：全屏小怪直接擊殺、菁英生命 -80%（剩下目前生命的 20%，至少 1 點，不會直接死）、
+   BOSS 不受影響。擊殺走統一清算 onFieldDeaths（經驗、掉落、擊殺統計與正常擊殺相同）；
+   settlePlayerXp 可能正在某隻怪的擊殺結算裡被呼叫，那隻怪 _rewarded 已設，不會重複結算。 */
+var LEVELUP_ELITE_HP_LOSS = 0.8;
+function levelUpFieldPurge() {
+    var enemies = fieldEnemyList().slice();   // 含還在進場的敵人：全屏都算
+    var killed = false;
+    for (var i = 0; i < enemies.length; i++) {
+        var m = enemies[i];
+        if (!m || !(m.hp > 0) || m.isBoss) continue;
+        if (m.elite) {
+            m.hp = Math.max(1, m.hp * (1 - LEVELUP_ELITE_HP_LOSS));
+        } else {
+            m.hp = 0;
+            killed = true;
+        }
+    }
+    if (killed) onFieldDeaths();
+}
+
 function onFieldDeaths() {
     var enemies = fieldEnemyList().slice();
     for (var i = 0; i < enemies.length; i++) {

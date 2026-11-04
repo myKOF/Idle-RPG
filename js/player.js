@@ -231,6 +231,8 @@ function settlePlayerXp(options) {
       blog(STR(374, p.level, reward), 'good');
     }
     if (options.silent !== true && typeof emitPlayerLevelUp === 'function') emitPlayerLevelUp(p.level);
+    // 升級震懾：全屏小怪死亡、菁英 -80% 生命、BOSS 不受影響（js/combat.js）
+    if (options.silent !== true && typeof levelUpFieldPurge === 'function') levelUpFieldPurge();
     // 升級回滿血藍
     if (typeof getStats === 'function') {
       var st = getStats();
