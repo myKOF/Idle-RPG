@@ -14585,3 +14585,13 @@ Worker 存活且頁面正常完成載入。
 - `node tools/audio/ui-silent-keyboard.cjs --check`前輪候選保持，`node --test tests/ui-sound.test.cjs`13/13、`npm.cmd run build`653檔通過。rg確認index／js未引用新候選，兩庫diff／stat／check及自我Review通過。唯讀未改規範／Workflow／prompts、既有音檔／產生器、ui-sound／ui-achievements／UI_SOUND／index／tests／LV、Worker／save／玩法／全部配置；其他進行中成就音效及外部配置修改保留。本輪無新系統／字串，無需LV／String變更，未做瀏覽器或全庫測試。
 - 協作事故已修正：素材庫一般Commit遇到同時stage的成就音效4檔而誤帶入；在HEAD未前進時用獨立index重建只含本任務9檔的提交、以舊SHA比較原子更新分支，沒有改他方檔案或暫存狀態。原混合c4cedd3已由正確提交8b1a2dd替代；其後本輪遊戲提交亦使用獨立index保留其他任務暫存。
 - 雙庫：素材庫codex-authored/ui-low-drum-20261105-v1先Commit `8b1a2dd`，再遊戲Commit（本段所在「[Codex] feat: 製作五款極短低沉鼓敲擊聲」，SHA見聊天交付）。本輪製作無未完成／已知素材技術缺陷，可Review／保存候選，尚未接入、不合併推送；下一步使用者試聽以D1～D5選擇或提供回饋。
+
+## UI-SOUND-CLICK-H10-20261105 — 點擊音改用H10
+
+- Owner：Codex；Done，單一開發者。使用者指定H10用於點擊，取代前次C3；沿用既有H10原檔及音量，不改hover／強化洗煉成功／成就音或操作分類。允許js/ui-sound.js、index僅音效快取一行、既有tests/ui-sound.test.cjs及ui-achievement-sound.test.cjs、docs/UI_SOUND.md／LV現行音效句與本段；禁止改素材、其他腳本／UI／Worker／配置／存檔、合併推送。後續由使用者重載驗收。
+- 前置：規範／Workflow／任務／Codex指示已讀，ai/codex、fetch及目標預檢完成。ui-sound／測試／UI_SOUND乾淨；index沿用本聊天既有明確授權「只改音效快取這一行」，不動Claude相鄰ui.js版本或其它快取；LV改自有音效句，與Claude第16行寶石新增不同區段、無語意相依，實際完整LV候選與ai/claude三方merge-file exit0。共享AI_TASKS只動本段並分段stage，保留鼓聲播放修復任務。既有13項外部配置／data／skills2修改保持。
+- 素材：H10為既有自製上揚短啵60ms，SHA256 338a16bc9ce91a90b3b081e25e93306b5830eefa05fbba780c85d8f9f94b9f37；素材庫d01e230／遊戲0eebd1ed已保存，本輪無新增或修改素材，不建立素材空Commit。ui-hover-options --check確認兩庫來源／說明／manifest／6WAV一致。
+- 完成7檔：ui-sound只換click的WAV路徑及SHA快取，index只升ui-sound到20261105-ui-click-h10-v1；原聲音測試切換核准檔案／H10hash／C3禁載斷言，成就聲音測試同步音效新快取並保留成就UI原版本，UI_SOUND及LV改現行點擊音說明、本段交接。其餘播放流程、原音檔及生成器、所有未核准候選完全保持。
+- 驗證：`node tools/audio/ui-hover-options.cjs --check`通過；`node --test tests/ui-sound.test.cjs tests/ui-achievement-sound.test.cjs tests/achievements.test.cjs tests/ui-tick-smoke.test.cjs tests/vfx-editor-cache-versions.test.cjs`32/32通過，包含真click／鍵盤啟動播H10、純tips／停用／右鍵／合成／背景靜音、hover／成功／成就保持及只預載4份核准WAV。`npm.cmd run build`653檔、diff／stat／check及自我Review通過。小範圍原檔URL切換，本輪未重做瀏覽器／全庫測試，不宣稱實機聽感驗收；音訊手勢解鎖與背景略過限制保持。
+- 交付：本項無未完成或已知新增缺陷，可Review／使用者合併，遊戲Commit為本段所在「[Codex] feat: 點擊音改用H10」，SHA見聊天交付；素材無變更沿用d01e230。唯讀未改規範／Workflow／prompts、ui.js／ui-achievements／Worker／protocol／player／save／所有配置／字串與音檔；13項外部配置修改及鼓聲播放修復任務完整保留、不套用或提交。下一步使用者重載遊戲驗收H10點擊，未合併推送。
+- 驗收：有效真實click改播放H10、取消碰觸／被動tips／停用／合成／右鍵／背景仍不播；hover及兩類成功通知保持，C3不再預載。更新原回歸及版本檢查，執行相關聲音／成就／UI／快取測試、Build及diff後只提交本項7檔。

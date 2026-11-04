@@ -49,7 +49,7 @@ test('no autoplay or unapproved fetch; first real gesture loads exactly the four
   await settle(); assert.equal(s.created(), 0); assert.deepEqual(s.requests, []);
   s.fire('pointerdown'); await settle();
   assert.equal(s.created(), 1); assert.equal(s.played.length, 0);
-  assert.deepEqual(s.requests.map(url => url.split('?')[0]), ['audio/ui-preview/01-hover.wav', 'audio/ui-preview/short-options-v4/C3.wav', 'audio/ui-preview/05-success.wav', 'audio/achievements/mixkit-game-level-completed-2059.wav']);
+  assert.deepEqual(s.requests.map(url => url.split('?')[0]), ['audio/ui-preview/01-hover.wav', 'audio/ui-preview/hover-options-v5/H10.wav', 'audio/ui-preview/05-success.wav', 'audio/achievements/mixkit-game-level-completed-2059.wav']);
   s.fire('keydown'); await settle(); assert.equal(s.created(), 1); assert.equal(s.requests.length, 4);
 });
 
@@ -77,13 +77,13 @@ test('late achievement decoding and unavailable audio never block the notificati
   s.c.UISound.achievementUnlocked(); await settle(); assert.equal(s.played.length, 1);
 });
 
-test('C3 plays on real activation only, with passive tips, disabled, synthetic, secondary and background clicks silent', async () => {
+test('H10 plays on real activation only, with passive tips, disabled, synthetic, secondary and background clicks silent', async () => {
   const s = mount(); s.fire('pointerdown'); await settle();
-  assert.equal(s.played.length, 0, 'pressing without completing a click must not play C3');
+  assert.equal(s.played.length, 0, 'pressing without completing a click must not play H10');
   for (const kind of ['button', '[data-nf-partinstall-key]', '.item-cell[data-id]', '[data-reroll-pick]']) {
     s.advance(200); s.fire('click', { target: s.node('span', s.node(kind, s.node('[data-tip]'))), button: 0 }); await settle();
   }
-  assert.equal(s.played.length, 4); assert.ok(s.played.every(url => url.includes('/C3.wav')));
+  assert.equal(s.played.length, 4); assert.ok(s.played.every(url => url.includes('/H10.wav')));
   const disabled = s.node('button'); disabled.disabled = true;
   for (const values of [{ target: s.node('[data-tip]') }, { target: disabled }, { isTrusted: false }, { button: 1 }, { button: 2 }]) {
     s.advance(200); s.fire('click', values); await settle();
@@ -240,9 +240,9 @@ test('runtime loads only approved immutable originals and the versioned sound mo
     assert.ok(source.includes(name + '?v=' + digest.slice(0, 12)));
   }
   for (const name of ['02-click.wav', '03-reroll.wav', '04-divine-forge.wav', '06-failure.wav', '00-all-preview.wav']) assert.ok(!source.includes(name));
-  const c3 = fs.readFileSync(path.join(root, 'audio/ui-preview/short-options-v4/C3.wav'));
-  const c3Hash = crypto.createHash('sha256').update(c3).digest('hex');
-  assert.equal(c3Hash, 'a6fdb4f3674d327ed01fc1cd632f3be8788bda00cca8bcd10d34a531c0904551');
-  assert.ok(source.includes('C3.wav?v=' + c3Hash.slice(0, 12)));
-  for (const id of ['C1', 'C2', 'C4', 'C5', 'H6', 'H7', 'H8', 'H9', 'H10']) assert.ok(!source.includes(id + '.wav'));
+  const h10 = fs.readFileSync(path.join(root, 'audio/ui-preview/hover-options-v5/H10.wav'));
+  const h10Hash = crypto.createHash('sha256').update(h10).digest('hex');
+  assert.equal(h10Hash, '338a16bc9ce91a90b3b081e25e93306b5830eefa05fbba780c85d8f9f94b9f37');
+  assert.ok(source.includes('H10.wav?v=' + h10Hash.slice(0, 12)));
+  for (const id of ['C1', 'C2', 'C3', 'C4', 'C5', 'H6', 'H7', 'H8', 'H9']) assert.ok(!source.includes(id + '.wav'));
 });

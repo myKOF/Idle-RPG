@@ -3,7 +3,7 @@
 var UISound = (function () {
   var ASSETS = {
     hover: 'audio/ui-preview/01-hover.wav?v=411211856bdc',
-    click: 'audio/ui-preview/short-options-v4/C3.wav?v=a6fdb4f3674d',
+    click: 'audio/ui-preview/hover-options-v5/H10.wav?v=338a16bc9ce9',
     success: 'audio/ui-preview/05-success.wav?v=4821e4b49aad',
     achievement: 'audio/achievements/mixkit-game-level-completed-2059.wav?v=8da83b49ceb5'
   };
