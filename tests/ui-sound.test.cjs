@@ -29,11 +29,11 @@ function mount(options = {}) {
     UI: {}
   };
   vm.createContext(c); vm.runInContext(source, c);
-  function node(kind = 'button', parent = null) {
-    const n = { kind, parent, closest(selectors) {
+  function node(kind = 'button', parent = null, aliases = []) {
+    const n = { kind, parent, aliases, id: [kind, ...aliases].find(s => s.startsWith('#'))?.slice(1), closest(selectors) {
       if (selectors.startsWith('[hidden]')) return null;
       for (let current = this; current; current = current.parent) {
-        if (selectors.split(', ').includes(current.kind)) return current;
+        if (selectors.split(', ').some(s => s === current.kind || current.aliases.includes(s))) return current;
       }
       return null;
     } };
@@ -92,6 +92,66 @@ test('H10 plays on real activation only, with passive tips, disabled, synthetic,
   s.advance(200); s.fire('keydown', { key: 'Enter' }); s.fire('click', { detail: 0, button: 0 }); await settle();
   assert.equal(s.played.length, 5, 'native keyboard activation delivers one trusted click');
   s.c.document.hidden = true; s.fire('click', { button: 0 }); await settle(); assert.equal(s.played.length, 5);
+});
+
+test('nine requested hover scopes apply equally to pointer, keyboard and touch while H10 clicks stay functional', async () => {
+  const s = mount(); s.fire('pointerdown'); await settle();
+  s.c.uiForgePanelSnapshot = () => ({ occupied: 0 });
+  s.c.forgeViewState = snap => snap;
+  s.c.forgeViewItemCount = forge => forge.occupied;
+  const cases = [];
+  const add = (scope, allowed, markers) => markers.forEach(marker => cases.push({ scope, allowed, marker }));
+  add('tabs', true, ['char', 'equip', 'skills', 'newforge', 'gems', 'runes', 'tower', 'talents', 'forge'].map(tab => '[data-tab="' + tab + '"]'));
+  add('tab-equip', true, ['upgrade', 'toggle-reroll', 'reroll-affix', 'toggle-socket', 'toggle-rune', 'engrave-rune'].map(act => '[data-act="' + act + '"]'));
+  add('tab-equip', false, ['[data-act="equip"]', '[data-act="unequip"]', '.item-cell[data-id]', '.eq-slot', '[data-reroll-pick]', '[data-socket-pick]', '[data-gem-socket]', '[data-rune-socket]', '[data-rune-erase]', '[data-eqset]', '#inv-sort', '#inv-filter-btn', '.pg-help']);
+  add('tab-skills', true, ['[data-skill2-learn]', '[data-skill2-max]', '[data-skill2-downgrade]', '[data-skill2-delete]']);
+  add('tab-skills', false, ['[data-sgb-group]', '[data-sgb-filter]', '[data-sgb-tier]', '[data-sgb-ult]', '[data-skill-equip]', '[data-skill-unequip]', '[data-skill2-ultpick]', '[data-skill2-ultswitch]', '[data-sg-max-group]', '#skill-unlock-toggle']);
+  add('tab-newforge', true, ['#nf-add-btn', '[data-nf-partupgrade]', '[data-nf-partinstall-key]', '[data-nf-partun]', '[data-nf-partsopen]', '#btn-newforge-log-detail', '.pg-help']);
+  add('tab-gems', true, ['#fuse-btn', '#fuse-all-btn']);
+  add('tab-gems', false, ['[data-gem-pick]', '[data-gem-lv]', '[data-gem-filter]', '[data-gem-tool-btn]', '[data-shop-buy]', '[data-gres-upgrade]', '[data-gres-hole]', '#gem-owned-only', '.pg-help']);
+  add('tab-runes', false, ['[data-rune-pick]', '[data-rune-act]', '[data-rune-tier]', '[data-rune-tool-btn]', '[data-word-goto]', '#rune-ready-only', '.pg-help']);
+  add('tab-tower', true, ['[data-tower-floor]']);
+  add('tab-tower', false, ['[data-tower-pick]', '[data-tower-tier]', '[data-tower-auto]', '#tower-flee', '#btn-boss-tip', '.pg-help']);
+  add('tower-result-modal', false, ['#btn-tower-result-boss-tip', '#tower-result-close']);
+  add('tower-canvas-hud', false, ['#tch-flee']);
+  add('tab-talents', false, ['[data-talent-select]', '[data-talent-turn]', '#talent-upgrade', '.pg-help']);
+  add('tab-forge', true, ['#forge-go', '#forge-unload', '#forge-auto']);
+  add('tab-forge', false, ['#forge-mode-equip', '#forge-mode-ancient', '#forge-mode-gem', '#forge-mode-imprint', '[data-forge-quality]', '#forge-equipped-tab', '#forge-stone-plus', '#forge-stone-minus', '[data-forge-slot]', '[data-forge-gem]', '.item-cell[data-id]', '#inv-sort', '.pg-help', '[data-act="upgrade"]']);
+  for (const { scope, allowed, marker } of cases) {
+    const anchor = s.node('button', s.node('#' + scope), [marker]), child = s.node('span', anchor);
+    for (const event of ['pointerover', 'focusin', 'pointerdown']) {
+      s.advance(200); const before = s.played.length;
+      if (event === 'focusin') s.fire('keydown');
+      s.fire(event, { target: child, pointerType: event === 'pointerdown' ? 'touch' : 'mouse' }); await settle();
+      assert.equal(s.played.length - before, Number(allowed), scope + ':' + marker + ':' + event);
+      if (allowed) assert.ok(s.played.at(-1).includes('01-hover.wav'));
+    }
+    s.advance(200); const beforeClick = s.played.length; s.fire('click', { target: child, button: 0 }); await settle();
+    assert.equal(s.played.length, beforeClick + 1, 'H10 remains audible: ' + scope + ':' + marker);
+    assert.ok(s.played.at(-1).includes('/H10.wav'));
+  }
+});
+
+test('hover rules follow relocated inventory and current forge fill/unload function; switch labels normalize to controls', async () => {
+  const s = mount(); s.fire('pointerdown'); await settle();
+  let occupied = 0;
+  s.c.uiForgePanelSnapshot = () => ({ occupied }); s.c.forgeViewState = snap => snap; s.c.forgeViewItemCount = forge => forge.occupied;
+  const forge = s.node('#tab-forge'), fill = s.node('button', forge, ['#forge-unload']);
+  s.fire('pointerover', { target: fill }); await settle(); assert.equal(s.played.length, 1);
+  occupied = 1; s.advance(200); s.fire('pointerover', { target: fill }); await settle(); assert.equal(s.played.length, 1);
+  s.fire('click', { target: fill, button: 0 }); await settle(); assert.equal(s.played.length, 2, 'unload still has H10');
+  occupied = 0; s.advance(200); s.fire('pointerover', { target: fill }); await settle(); assert.equal(s.played.length, 3);
+  const inventory = s.node('#inv-section-box', s.node('#tab-equip'));
+  const item = s.node('.item-cell[data-id]', inventory), child = s.node('span', item);
+  for (const scope of ['tab-equip', 'tab-forge']) {
+    inventory.parent = s.node('#' + scope); s.advance(200); s.fire('pointerover', { target: child }); await settle(); assert.equal(s.played.length, 3, scope);
+  }
+  const label = s.node('label', forge); label.tagName = 'LABEL';
+  label.control = s.node('input:not([type="hidden"])', label, ['#forge-auto']);
+  s.advance(200); s.fire('pointerover', { target: s.node('span', label) }); await settle(); assert.equal(s.played.length, 4);
+  s.advance(200); s.fire('pointerover', { target: label.control, relatedTarget: label }); await settle(); assert.equal(s.played.length, 4);
+  label.control.disabled = true; s.advance(200); s.fire('pointerover', { target: label }); await settle(); assert.equal(s.played.length, 4);
+  label.control.disabled = false; label.parent = s.node('#tab-runes'); s.advance(200); s.fire('pointerdown', { target: label, pointerType: 'touch' }); await settle(); assert.equal(s.played.length, 4);
 });
 
 test('delegation keeps ordinary controls and help icons audible; child movement and stationary repaint stay silent', async () => {

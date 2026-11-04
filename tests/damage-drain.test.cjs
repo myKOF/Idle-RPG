@@ -12,6 +12,8 @@ function setup() {
     vm.runInContext(fs.readFileSync('js/' + f + '.js', 'utf8'), c, { filename: f });
   }
   c.G = { player: { skills2: { levels: {} }, loadout: [] }, stage: { current: 1 } };
+  // Isolate per-trigger amounts from table-balanced proc probability; probability boundaries are covered by skill-drain-chance.test.cjs.
+  c.SKILLS2.cleave.drainPct = 100;
   c.GT = 0; c.Math.random = () => 0.5;
   const st = { hp: 100000, mp: 100000, hpRegen: 0, mpRegen: 50, lifesteal: 1, manaSteal: 100,
     atk: 100, matk: 100, level: 1, aspd: 1, hit: 100, critRate: 0, critDmg: 150,

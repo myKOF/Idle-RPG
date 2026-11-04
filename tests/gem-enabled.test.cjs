@@ -25,7 +25,7 @@ function game() {
 test('Excel匯出的開放欄與數值逐種同步，停用品仍保留定義', () => {
   const c = game();
   c.GEM_TYPES.ruby.enabled = true;
-  const rows = fs.readFileSync(path.join(ROOT, 'config/CSV/Gems.csv'), 'utf8').replace(/^\uFEFF/, '').trim().split(/\r?\n/).map(r => r.split(','));
+  const rows = require('../tools/config_tables.cjs').csvParse(fs.readFileSync(path.join(ROOT, 'config/CSV/Gems.csv'), 'utf8'));
   const header = rows.shift();
   assert.equal(rows.length, Object.keys(c.GEM_TYPES).length);
   assert.ok(header.includes('開放'));

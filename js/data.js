@@ -142,16 +142,16 @@ function forgeDustRateFor() { return DIVINE_FORGE.equipStoneRate; }
    編號隨強度遞增；舊存檔由 save.js 的 equipmentRarityVersion 遷移一次。 */
 var RARITIES = [
   { key: 'common', name: '普通', color: '#9aa5b1', mult: 1.0, affix: [1, 1], sockets: 0, enchants: 0, runeSlots: 0, salv: 1.0 },
-  { key: 'uncommon', name: '精良', color: '#4ade80', mult: 1.35, affix: [2, 2], sockets: 1, enchants: 1, runeSlots: 0, salv: 1.7 },
-  { key: 'rare', name: '稀有', color: '#38bdf8', mult: 1.75, affix: [2, 2], sockets: 1, enchants: 1, runeSlots: 0, salv: 2.8 },
-  { key: 'unique', name: '獨特', color: '#ffd700', mult: 2.3, affix: [3, 3], sockets: 1, enchants: 1, runeSlots: 0, salv: 4.5 },
-  { key: 'epic', name: '史詩', color: '#c084fc', mult: 3.0, affix: [4, 4], sockets: 2, enchants: 2, runeSlots: 1, salv: 7.5 },
-  { key: 'legendary', name: '傳說', color: '#fb923c', mult: 4.0, affix: [5, 5], sockets: 2, enchants: 2, runeSlots: 1, salv: 12 },
-  { key: 'mythic', name: '神話', color: '#f87171', mult: 5.2, affix: [6, 6], sockets: 2, enchants: 2, runeSlots: 2, salv: 19 },
-  { key: 'genesis', name: '創世', color: '#b8860b', mult: 7, affix: [7, 7], sockets: 3, enchants: 3, runeSlots: 3, salv: 24.5 },
-  { key: 'mythicGodforged', baseRarity: 6, name: STR(2158), color: '#78bfff', mult: 8, affix: [7, 7], sockets: 3, enchants: 2, runeSlots: 3, salv: 28.5 },
-  { key: 'godforged', name: '神鑄創世', color: '#f5c542', mult: 11, affix: [8, 8], sockets: 3, enchants: 3, runeSlots: 3, salv: 45 },
-  { key: 'chaos', name: '混沌', color: '#c084fc', mult: 15.3, affix: [9, 9], sockets: 4, enchants: 3, runeSlots: 4, salv: 67.5 },
+  { key: 'uncommon', name: '精良', color: '#4ade80', mult: 1.5, affix: [2, 2], sockets: 1, enchants: 1, runeSlots: 0, salv: 1.7 },
+  { key: 'rare', name: '稀有', color: '#38bdf8', mult: 2, affix: [2, 2], sockets: 1, enchants: 1, runeSlots: 0, salv: 2.8 },
+  { key: 'unique', name: '獨特', color: '#ffd700', mult: 2.8, affix: [3, 3], sockets: 1, enchants: 1, runeSlots: 0, salv: 4.5 },
+  { key: 'epic', name: '史詩', color: '#c084fc', mult: 4, affix: [4, 4], sockets: 2, enchants: 2, runeSlots: 1, salv: 7.5 },
+  { key: 'legendary', name: '傳說', color: '#fb923c', mult: 5, affix: [5, 5], sockets: 2, enchants: 2, runeSlots: 1, salv: 12 },
+  { key: 'mythic', name: '神話', color: '#f87171', mult: 6.5, affix: [6, 6], sockets: 2, enchants: 2, runeSlots: 2, salv: 19 },
+  { key: 'genesis', name: '創世', color: '#b8860b', mult: 8, affix: [7, 7], sockets: 3, enchants: 3, runeSlots: 3, salv: 24.5 },
+  { key: 'mythicGodforged', baseRarity: 6, name: STR(2158), color: '#78bfff', mult: 9.5, affix: [7, 7], sockets: 3, enchants: 2, runeSlots: 3, salv: 28.5 },
+  { key: 'godforged', name: '神鑄創世', color: '#f5c542', mult: 12, affix: [8, 8], sockets: 3, enchants: 3, runeSlots: 3, salv: 45 },
+  { key: 'chaos', name: '混沌', color: '#c084fc', mult: 16, affix: [9, 9], sockets: 4, enchants: 3, runeSlots: 4, salv: 67.5 },
   { key: 'chaosGodforged', name: '神鑄混沌', color: '#ff6bcb', mult: 23, affix: [10, 10], sockets: 4, enchants: 3, runeSlots: 4, salv: 101.25 }
 ];
 var PASSIVE_MIN_RARITY = 5; // 傳說級（含）以上附帶傳奇特效
