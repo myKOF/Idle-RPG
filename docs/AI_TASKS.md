@@ -14562,6 +14562,18 @@ Worker 存活且頁面正常完成載入。
 - `node --test tests/ui-sound.test.cjs`11/11、`npm.cmd run build`652檔通過；兩庫diff／stat／check及自我Review通過。rg確認index／js沒有新候選引用，不接入或改遊戲、不做瀏覽器操作；未新增系統／設定／玩家字串，無LV／String變更。唯讀未改AI_RULES／AGENTS／Workflow／prompts、既有音檔及產生器、UI_SOUND／ui-sound／index／tests／LV、Worker／save／玩法與所有配置；現有C3／H6～H10及其他未提交修改保留，不一併提交。
 - 雙庫交付：素材庫codex-authored/ui-silent-keyboard-20261104-v1的9檔先Commit `b378009`，再遊戲Commit（本段所在「[Codex] feat: 製作五款無聲鍵盤風格按鈕音」，SHA見聊天交付）。本輪製作無未完成或已知素材技術缺陷；音色待試聽選擇、接入另行指示，可Review／保存候選；未合併推送。下一步使用者以K1～K5提供選擇或回饋。
 
+## ACHIEVEMENT-SOUND-20261104 — 成就達成播放使用者指定音效
+
+- Owner：Codex；Done，單一開發者。使用者指定本機mixkit-game-level-completed-2059.wav用於成就達成。前置：共通規範／Workflow／任務／Codex指示已讀，ai/codex且fetch完成；既有11項外部配置／data／skills2修改保留，工作中另有外部Gems.xlsx及獨立低鼓音候選任務，均不納入本項。
+- 範圍：js/ui-sound.js、js/ui-achievements.js及index相應快取，tests/ui-sound.test.cjs及新tests/ui-achievement-sound.test.cjs、audio/achievements、tools/audio/import-achievement-sound.cjs、docs/UI_SOUND.md、本段及LV音效說明、素材庫third-party/mixkit/achievement-completed-2059。禁止更動成就條件／Worker／協議／存檔／配置／其它音色、合併推送。
+- 授權：使用者明確指示使用本檔；已核對Mixkit官方Game列表的Game level completed項目id2059及Sound Effects Free License（https://mixkit.co/license/modal/sfxFree/），允許整合商業／非商業遊戲，不得獨立或隨來源素材包再散布。第三方原檔非Codex自製，不改音色／音量／格式，保留來源／授權及SHA紀錄於雙庫。
+- 協作預檢：ui-sound／ui-achievements／測試／工具／素材及UI_SOUND乾淨。Claude在index的其他腳本／CSS／String快取與Sfx載入，以及LV第16行寶石規則有未整合提交；新增ui-achievements快取行與LV檔尾新增段，以共同祖先分別只套本項新增差異後與ai/claude的merge-file exit0，無語意相依。既有ui-sound快取一行沿用本聊天使用者「同意，只改音效快取這一行」的授權；原相鄰ui.js分支版本差異不收取或改寫，本輪未合併分支或聲稱整檔衝突消除。共享AI_TASKS只動本段，保留低鼓音任務獨立段並只stage本項。
+- 完成12檔：ui-sound新增成就原檔SHA版號、首次手勢預載及獨立通知播放；ui-achievements於nextToast的有效提示append後呼叫音效，佇列／達成判定原樣保留。index只升兩支已修改腳本快取；新增匯入工具、成就WAV／README／manifest及UI音效／LV／任務說明與聲音回歸。44100Hz／16-bit／立體聲原檔3.5422449秒、peak -0.80／RMS -19.50dBFS、無削波非靜音；SHA256 8da83b49ceb580493ba7c7081ec3d176fe069d4505474b604f6fb08b339bd32a與使用者檔／雙庫均一致。未改既有hover／C3／成功音或任何候選。
+- 驗證：`node tools/audio/import-achievement-sound.cjs --apply --source <使用者指定音檔>`／`--check`、`node --check tools/audio/import-achievement-sound.cjs`及獨立Node PCM規格／峰值／RMS／SHA通過；`node --test tests/ui-sound.test.cjs tests/ui-achievement-sound.test.cjs tests/achievements.test.cjs tests/ui-tick-smoke.test.cjs tests/vfx-editor-cache-versions.test.cjs`32/32通過，成就UI測試補強真實清單render後3/3重驗通過。`npm.cmd run build`653檔、String寫死0、diff／stat／check及自我Review通過，無配置套用或套件更新。
+- 實機：已讀browser skill並嘗試IAB，無後端連線，改隔離隨機localhost＋Edge headless＋真Worker／AudioContext。實際Worker同次達成9／10成就，各隨「小有所成」／「聲名遠播」提示播放一次，兩次間隔約4.41秒、不截斷原檔；只下載4份核准WAV，開頁無自動音訊，開啟／重繪／篩選成就、未知id及再讀全部已達成存檔均不多播。Console error／warning／pageerror0；瀏覽器／服務已關閉，原玩家網址存檔未讀寫。QA在本聊天visualizations/achievement-sound-qa.mjs／json。
+- 雙庫：素材4檔先獨立Commit `d18ec5f`（[Codex] feat: 保存指定成就達成音效與來源授權）。共享索引曾短暫被低鼓音聊天的c4cedd3收取，對方已自行分離為8b1a2dd並保留本項4檔待提交；我方再以--only限定4檔建立d18ec5f，核對各提交範圍、當前素材庫乾淨及兩庫SHA一致，未修改他人檔案。遊戲只提交本項12檔，Commit為本段所在「[Codex] feat: 成就達成播放指定音效」，SHA見聊天交付；其它任務及12項外部配置修改保留。
+- 交付：無本項未完成或已知新增缺陷，可Review／使用者合併；唯讀未改規範／Workflow／prompts、js/ui.js／bridge／achievement_data／achievements／Worker／protocol／player／save／所有配置與其它音檔。未跑全庫／多瀏覽器或行動真機長時測試；瀏覽器手勢解鎖前、背景及過期聲音沿用略過，不補播。下一步使用者重新整理遊戲後驗收成就達成音效，未合併推送。
+- 驗收：接既有成就notice→toast佇列，在提示實際顯示時播放一次，多成就依既有順序播放；讀檔已有成就／清單重繪／未知id不播。未解鎖音訊／背景不排隊補播聲音，失敗不影響通知；單元／成就回歸、Build、PCM／SHA及隔離瀏覽器驗證後雙庫先素材後遊戲Commit。接手：使用者重載驗收；無其它任務依賴。
 ## UI-SOUND-LOW-DRUM-20261105 — 五款極短低沉鼓敲擊音
 
 - Owner：Codex；Done（試聽候選），單一開發者。使用者要求再做5款極短促低沉鼓敲擊聲，製作D1～D5獨立候選及各兩次合輯，供試聽；不接入遊戲。前置：已讀規範／Workflow／任務，ai/codex，fetch及目標預檢無外部衝突。

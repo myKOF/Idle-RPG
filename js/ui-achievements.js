@@ -99,6 +99,8 @@ var AchievementUI = (function () {
     node.innerHTML = iconHtml(def, 'achv-toast-img') + '<div><div class="achv-toast-head">' + esc(STR(2235)) +
       '</div><div class="achv-toast-name">' + esc(def.name) + '</div></div>';
     host.appendChild(node);
+    // 隨佇列中實際顯示的達成提示播放，不在清單重繪或讀檔時播放。
+    if (typeof UISound !== 'undefined') UISound.achievementUnlocked();
     setTimeout(function () {
       node.classList.add('out');
       setTimeout(function () { if (node.parentNode) node.parentNode.removeChild(node); nextToast(); }, 400);

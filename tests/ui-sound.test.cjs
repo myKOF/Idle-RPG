@@ -43,14 +43,38 @@ function mount(options = {}) {
     fire(name, values = {}) { handlers[name]({ isTrusted: true, pointerType: 'mouse', buttons: 0, clientX: clock, clientY: 10, target: node(), ...values }); } };
 }
 
-test('no autoplay or unapproved fetch; first real gesture loads exactly the three approved WAVs', async () => {
+test('no autoplay or unapproved fetch; first real gesture loads exactly the four approved WAVs', async () => {
   const s = mount();
   s.fire('pointerover'); s.fire('pointerdown', { isTrusted: false });
   await settle(); assert.equal(s.created(), 0); assert.deepEqual(s.requests, []);
   s.fire('pointerdown'); await settle();
   assert.equal(s.created(), 1); assert.equal(s.played.length, 0);
-  assert.deepEqual(s.requests.map(url => url.split('?')[0]), ['audio/ui-preview/01-hover.wav', 'audio/ui-preview/short-options-v4/C3.wav', 'audio/ui-preview/05-success.wav']);
-  s.fire('keydown'); await settle(); assert.equal(s.created(), 1); assert.equal(s.requests.length, 3);
+  assert.deepEqual(s.requests.map(url => url.split('?')[0]), ['audio/ui-preview/01-hover.wav', 'audio/ui-preview/short-options-v4/C3.wav', 'audio/ui-preview/05-success.wav', 'audio/achievements/mixkit-game-level-completed-2059.wav']);
+  s.fire('keydown'); await settle(); assert.equal(s.created(), 1); assert.equal(s.requests.length, 4);
+});
+
+test('achievement sound skips locked and hidden notifications, never replays them, and stops in background', async () => {
+  const s = mount();
+  s.c.UISound.achievementUnlocked(); await settle(); assert.equal(s.created(), 0);
+  s.fire('pointerdown'); await settle(); assert.equal(s.played.length, 0);
+  s.c.UISound.achievementUnlocked(); await settle(); assert.equal(s.played.length, 1);
+  assert.ok(s.played[0].includes('mixkit-game-level-completed-2059.wav'));
+  s.c.document.hidden = true; s.fire('visibilitychange'); assert.ok(s.voices[0].stopped);
+  s.advance(4000); s.c.UISound.achievementUnlocked(); await settle(); assert.equal(s.played.length, 1);
+  s.c.document.hidden = false; s.fire('visibilitychange'); s.fire('keydown'); await settle(); assert.equal(s.played.length, 1);
+  s.c.UISound.achievementUnlocked(); await settle(); assert.equal(s.played.length, 2);
+});
+
+test('late achievement decoding and unavailable audio never block the notification or replay stale sound', async () => {
+  for (const options of [{ unsupported: true }, { fail: true }]) {
+    const s = mount(options); s.fire('pointerdown'); assert.doesNotThrow(() => s.c.UISound.achievementUnlocked());
+    await settle(); assert.equal(s.played.length, 0);
+  }
+  const s = mount(); let release;
+  s.c.fetch = url => new Promise(resolve => { if (url.includes('mixkit')) release = () => resolve({ ok: true, arrayBuffer: async () => ({ url }) }); });
+  s.fire('pointerdown'); await settle(); s.c.UISound.achievementUnlocked(); s.advance(1000); release();
+  await settle(); assert.equal(s.played.length, 0);
+  s.c.UISound.achievementUnlocked(); await settle(); assert.equal(s.played.length, 1);
 });
 
 test('C3 plays on real activation only, with passive tips, disabled, synthetic, secondary and background clicks silent', async () => {

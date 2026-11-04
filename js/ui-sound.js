@@ -1,10 +1,11 @@
 'use strict';
-/* 僅接入使用者核准的觸碰、C3點擊與成功WAV；不參與模擬／存檔。 */
+/* 使用者核准的UI及成就音效；不參與模擬／存檔。 */
 var UISound = (function () {
   var ASSETS = {
     hover: 'audio/ui-preview/01-hover.wav?v=411211856bdc',
     click: 'audio/ui-preview/short-options-v4/C3.wav?v=a6fdb4f3674d',
-    success: 'audio/ui-preview/05-success.wav?v=4821e4b49aad'
+    success: 'audio/ui-preview/05-success.wav?v=4821e4b49aad',
+    achievement: 'audio/achievements/mixkit-game-level-completed-2059.wav?v=8da83b49ceb5'
   };
   // 操作能力決定是否播放：有tips的按鈕／選取項目仍播，純tips不列入操作目標。
   var HELP_TARGETS = '.pg-help, .forge-info-btn, #btn-enemy-tip, #btn-boss-tip, #btn-tower-result-boss-tip';
@@ -72,17 +73,19 @@ var UISound = (function () {
       load('hover');
       load('click');
       load('success');
+      load('achievement');
     } catch (_) { /* 沒有音訊裝置時仍可正常使用UI。 */ }
   }
   function play(kind) {
     if (!ASSETS[kind] || !context || document.hidden) return;
     var at = now(), epoch = generation;
-    if (at - (lastPlayed[kind] === undefined ? -Infinity : lastPlayed[kind]) < (kind === 'success' ? 120 : 80)) return;
+    var notification = kind === 'success' || kind === 'achievement';
+    if (at - (lastPlayed[kind] === undefined ? -Infinity : lastPlayed[kind]) < (notification ? 120 : 80)) return;
     lastPlayed[kind] = at;
     // 冷載入只等待這一次短期互動，切頁或背景返回不補播過期聲音。
     load(kind).then(function (buffer) {
       if (!buffer || document.hidden || generation !== epoch || context.state !== 'running' ||
-          now() - at > (kind === 'success' ? 900 : 180)) return;
+          now() - at > (notification ? 900 : 180)) return;
       try {
         if (sources[kind]) sources[kind].stop();
         var source = context.createBufferSource();
@@ -168,5 +171,5 @@ var UISound = (function () {
     window.addEventListener('pagehide', stopAll);
   }
   init();
-  return { commandResult: commandResult };
+  return { commandResult: commandResult, achievementUnlocked: function () { play('achievement'); } };
 })();
