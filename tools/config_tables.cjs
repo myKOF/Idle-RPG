@@ -902,6 +902,8 @@ const TASK_GLOSSARY_ROWS = [
   ['runeSocketCount＝累計鑲入符文的次數（成功才計；拆下再鑲會再計一次）。目標參數留空。'],
   ['composeCount＝累計寶石合成次數（「全部合成」一次合 N 組計 N）。目標參數留空。'],
   ['socketCount＝身上目前同時鑲嵌的寶石數（拔下即減，重複拔裝不累加）。目標參數留空。'],
+  ['skillEquipCount＝目前技能欄已裝配且可用的技能數（卸下即減，重複裝卸不累加）。目標參數留空。'],
+  ['skillUpgradeCount＝累計成功升級技能次數（各階學習及終極進化學習／升級皆計；失敗、降級及切換終極選項不計；降級不扣次數）。舊存檔以目前已投入技能點數作為最低累計。目標參數留空。'],
   ['forgeParts＝所有熔爐目前已裝配的零件總數（卸下即減）。目標參數留空。'],
   ['forgePartLevel＝目前等級最高的熔爐零件是幾級（任一種零件達 N 級即可；零件等級是全域的，卸下不影響）。目標參數留空。'],
   ['ancientCount＝身上裝備的太古詞條（帶✡星）總數。目標參數留空。'],
@@ -943,7 +945,7 @@ const TASK_GLOSSARY_ROWS = [
 /* ---- Task ← TASKS（js/data.js）主線任務表（2026-08-05 任務系統） ----
    目標類型：equipSlots（參數=最低品質|最低等級）/ upgradeCount / rerollCount /
    enchantCount / composeCount / socketCount / forgeParts / forgePartLevel /
-   ancientCount / maxHp / stageClear（參數=地圖識別碼）/ towerFloor。
+   skillEquipCount / skillUpgradeCount / ancientCount / maxHp / stageClear（參數=地圖識別碼）/ towerFloor。
    獎勵類型：gold / scrap / essence / skillXp / gem（參數=寶石等級）/
    book（參數=附魔書id）/ equip（參數=品質|等級|太古數；等級 0=依當前關卡、太古空白=自然擲骰）。
    「備註」欄為純說明欄，不寫回 JS（同 Skills 表的「完整描述」欄）。

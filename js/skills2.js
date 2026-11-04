@@ -1415,8 +1415,23 @@ function skills2PointView() {
   return { total: total, spent: spent, available: Math.max(0, total - spent) };
 }
 
+/* 任務用成功升級累計。舊存檔沒有歷史計數，以現有投資（扣除免費第一階）為最低值；
+   只讀查詢不建存檔欄位。降級前保留累計，之後降級／重選不會扣除已完成次數。 */
+function skills2UpgradeCount() {
+  var count = Math.floor(Number(G.player.skills2 && G.player.skills2.upgradeCount) || 0);
+  return Math.max(isFinite(count) ? count : 0, skills2PointView().spent);
+}
+function skills2RecordUpgrade() {
+  var count = skills2UpgradeCount();
+  if (!G.player.skills2) G.player.skills2 = { levels: {} };
+  G.player.skills2.upgradeCount = count + 1;
+}
+
 /* 必須在驗證完成、實際減少投資之前呼叫；不另發退款，等級減少即釋出點數。 */
 function skills2PreservePointCredit() {
+  var upgrades = skills2UpgradeCount();
+  if (!G.player.skills2) G.player.skills2 = { levels: {} };
+  G.player.skills2.upgradeCount = upgrades;
   var points = skills2PointView();
   if (points.spent > points.total) {
     if (!G.player.skills2) G.player.skills2 = { levels: {} };
@@ -1447,6 +1462,7 @@ function skills2UltPick(group, optIdx) {
   var cost = skills2UltCost(group, optIdx, 0);
   if (skills2PointView().available < 1) return STR(2134);
   if ((G.player.gold || 0) < cost) return STR(91);
+  skills2RecordUpgrade();
   G.player.gold -= cost;
   sgUltStore()[group] = { pick: optIdx, lv: 1 };
   /* 修羅亂舞會改變屬性聚合（副手雙手武器是否生效、雙手詞條加成幾%），
@@ -1494,6 +1510,7 @@ function skills2UltLearn(group) {
   var cost = skills2UltCost(group, cur.idx, cur.lv);
   if (skills2PointView().available < 1) return STR(2134);
   if ((G.player.gold || 0) < cost) return STR(91);
+  skills2RecordUpgrade();
   G.player.gold -= cost;
   sgUltStore()[group] = { pick: cur.idx, lv: cur.lv + 1 };
   /* 修羅亂舞會改變屬性聚合（副手雙手武器是否生效、雙手詞條加成幾%），
@@ -1538,6 +1555,7 @@ function skills2Learn(group, tier) {
   var cost = skills2UpgradeCost(group, tier, lvs[tier]);
   if (skills2PointView().available < 1) return STR(2134);
   if ((G.player.gold || 0) < cost) return STR(91);
+  skills2RecordUpgrade();
   G.player.gold -= cost;
   lvs = skills2StoredLevels(group);
   lvs[tier]++;

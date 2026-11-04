@@ -7,12 +7,14 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
 
    進度來源分兩類：
    - 累計次數：讀 G.factory.stats 既有統計（upgraded / enchanted），洗煉與合成
-     兩個新計數（rerolled / gemComposed）由 item.js 對應成功點遞增。
+     兩個新計數（rerolled / gemComposed）由 item.js 對應成功點遞增；
+     技能升級由 skills2UpgradeCount 讀成功累計，技能裝配檢查目前技能欄。
    - 狀態檢查：每次讀取時依 G 現況計算（身上品質、鑲嵌數、太古數、關卡、高塔層數、
      零件等級、生命上限），拔下再裝不會重複計數——這正是設計文檔對鑲嵌任務
      的要求。
 
-   存檔欄位只有 G.taskState = { idx }：idx 為下一個可領取的任務索引（0 起）。
+   任務領取存檔為 G.taskState = { idx }：idx 為下一個可領取的任務索引（0 起）；
+   技能升級歷史另外存於 G.player.skills2.upgradeCount（舊存檔缺省時回推現有投資）。
    idx 之前的任務一律視為已領取；任務嚴格循序，僅 idx 那一筆可領。 */
 
 function taskState() {
@@ -111,6 +113,14 @@ function taskProgressFor(def) {
     case 'enchantCount': return Math.floor(Number(stats.enchanted) || 0);   // 附魔功能已關閉（data.js ENCHANT_ENABLED），此類型不再被任何任務使用
     case 'runeSocketCount': return Math.floor(Number(stats.runeSocketed) || 0);   // 累計鑲入符文次數（socketRune 計）
     case 'composeCount': return Math.floor(Number(stats.gemComposed) || 0);
+    case 'skillEquipCount': {
+      var equipped = 0;
+      if (typeof SKILLS2 !== 'undefined' && typeof skills2Equipped === 'function') {
+        for (var gid in SKILLS2) if (skills2Equipped(gid)) equipped++;
+      }
+      return equipped;
+    }
+    case 'skillUpgradeCount': return (typeof skills2UpgradeCount === 'function') ? skills2UpgradeCount() : 0;
     case 'socketCount': return taskCountSocketedGems();
     case 'forgeParts': return taskCountForgeParts();
     case 'forgePartLevel': return taskMaxForgePartLevel();

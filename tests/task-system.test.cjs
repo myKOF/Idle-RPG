@@ -23,6 +23,7 @@ const contextFiles = [
   'js/status.js', 'js/formula.js',
   'js/item.js',
   'js/skills.js',
+  'js/skills2.js',
   'js/player.js',
   'js/factory.js',
   'js/newforge.js',
@@ -124,28 +125,23 @@ test('taskClaim：未達成拒絕；達成發獎、idx 前進、日誌', () => {
   assert.equal(c.UI.dirty.task, true);
 });
 
-/* 最後一個任務的內容由 Task.xlsx 決定（會隨企劃增列而變），所以斷言一律從
-   TASKS[last] 反推，不寫死順序與獎勵數字；只固定「型別是 stageClear＋獎勵是 equip」
-   這個前提，前提若被改掉會由 assert 訊息直接指出來。 */
+/* 最後一個任務內容由 Task.xlsx 決定；新版尾項為永恆神殿通關及寶石獎勵。 */
 test('taskClaim：最後一個任務領完後 quick view 回 idx -1', () => {
   const c = loadContext();
   const last = c.TASKS[c.TASKS.length - 1];
   assert.equal(last.type, 'stageClear', '本測試假設最後一個任務是 stageClear');
-  assert.equal(last.rewardType, 'equip', '本測試假設最後一個任務獎勵是 equip');
+  assert.equal(last.rewardType, 'gem', '新版最後一個任務獎勵是寶石');
   c.G.taskState.idx = c.TASKS.length - 1;
   c.G.stage.zone = last.param;
   c.G.zoneProgress[last.param].cleared = last.count;
-  const invBefore = c.G.inventory.length;
+  const gemsBefore = JSON.parse(JSON.stringify(c.G.player.gems));
   const r = c.taskClaim();
   assert.equal(r.claimed, last.order);
   assert.equal(r.next, null);
-  // 獎勵：equip 參數＝品質|等級|太古數，直接入包
-  const [rarity, level, ancient] = String(last.rewardParam).split('|').map(Number);
-  assert.equal(c.G.inventory.length, invBefore + last.rewardQty);
-  const it = c.G.inventory[c.G.inventory.length - 1];
-  assert.equal(it.rarity, rarity);
-  assert.equal(it.level, level);
-  assert.equal(c.getItemAncientCount(it), ancient);
+  const level = Number(last.rewardParam);
+  const added = Object.keys(c.GEM_TYPES).reduce((n, type) =>
+    n + (c.G.player.gems[type][level] || 0) - (gemsBefore[type][level] || 0), 0);
+  assert.equal(added, last.rewardQty);
   assert.equal(c.taskQuickView().idx, -1);
   // 已領完後再領應拒絕
   assert.ok(c.taskClaim().err);
