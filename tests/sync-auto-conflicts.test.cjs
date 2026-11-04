@@ -58,6 +58,10 @@ const files=mode==='escape'?['../outside.txt']:['state.txt'];
 if(mode==='deleted')files.push('obsolete anim [1].json','obsolete anim 2.json');
 if(mode==='deleted-worktree'){fs.unlinkSync(path.join(repo,'untouched.txt'));files.push('untouched.txt');}
 if(mode==='missing-report')files.push('never-tracked.json');
+if(mode==='ignored-report'){
+ fs.mkdirSync(path.join(repo,'logs'),{recursive:true});fs.writeFileSync(path.join(repo,'logs','unapproved.json'),'{}\n');
+ files.push('logs/unapproved.json');
+}
 if(fs.existsSync(path.join(repo,'.agents','AGENTS.md'))){
  if(!prompt.includes('git diff HEAD --check'))process.exit(9);
  // The controller must fix protected instruction files before the model starts.
@@ -145,10 +149,12 @@ if(phase===1){
  fs.writeFileSync(path.join(repo,'tools','excel-update-sheets.ps1'),"throw 'UNTRUSTED updater executed'\n");
  fs.writeFileSync(path.join(path.dirname(arg('--output-last-message')),'native-excel','excel-update-sheets.ps1'),"throw 'UNTRUSTED audit copy executed'\n");
  output.status='needs_excel';output.tests=[];output.excel_updates=[{workbook:'config/Excel/String.xlsx',data_file:dir+'/plan.json'}];
+ output.files.push(dir+'/plan.json');
 }else{
  if(!prompt.includes('SECOND AND FINAL PASS')||!prompt.includes('normal_open'))throw Error('Missing native receipt');
  cp.execFileSync(process.execPath,[SOURCE_EXPORTER],{env:{...process.env,PARAMS_XLSX:path.join(repo,'config/Excel/String.xlsx'),PARAMS_CSV_OUT:path.join(repo,'config/CSV/String.csv'),PARAMS_SHEET:'String'},stdio:'pipe'});
  if(!fs.readFileSync(path.join(repo,'config/CSV/String.csv'),'utf8').includes('native merged'))throw Error('Workbook was not natively updated');
+ if(process.env.SYNC_FAKE_MODE==='excel-both-reports')output.files.push(prompt.match(/ONLY under (logs\/sync-excel-plans\/[^/]+)\//)[1].replace(/\//g,'\\')+'\\plan.json');
  if(process.env.SYNC_FAKE_MODE==='repeat_excel')output.status='needs_excel';
 }
 fs.writeFileSync(arg('--output-last-message'),JSON.stringify(output));
@@ -156,8 +162,22 @@ fs.writeFileSync(arg('--output-last-message'),JSON.stringify(output));
  fs.writeFileSync(path.join(f.root,'fake-codex.cjs'),fake);return f;
 }
 const hasExcel=windows&&fs.existsSync(path.join(process.env.ProgramFiles||'C:/Program Files','Microsoft Office','Root','Office16','EXCEL.EXE'));
-test('Real native Excel handoff uses two sandboxed phases and a trusted updater snapshot',{skip:!hasExcel},()=>{
- const f=excelFixture();try{const r=f.run('excel');assert.equal(r.status,0,f.log(r));assert.equal(fs.readFileSync(path.join(f.root,'excel-calls.txt'),'utf8'),'2');assert.equal(f.pending(),false);assert.equal(git(f.repo,'status','--porcelain'),'');assert.match(fs.readFileSync(path.join(f.repo,'config','CSV','String.csv'),'utf8'),/native merged/);assert.match(f.log(r),/Excel/);}finally{f.clean();}
+for(const mode of ['excel','excel-both-reports'])test(`Real native Excel handoff excludes approved recovery plans reported in ${mode==='excel'?'planning':'both phases'} and uses a trusted updater snapshot`,{skip:!hasExcel},()=>{
+ const f=excelFixture();try{
+  const r=f.run(mode);assert.equal(r.status,0,f.log(r));assert.equal(fs.readFileSync(path.join(f.root,'excel-calls.txt'),'utf8'),'2');assert.equal(f.pending(),false);assert.equal(git(f.repo,'status','--porcelain'),'');assert.match(fs.readFileSync(path.join(f.repo,'config','CSV','String.csv'),'utf8'),/native merged/);assert.match(f.log(r),/Excel/);
+  const plans=path.join(f.repo,'logs','sync-excel-plans');const runs=fs.readdirSync(plans);assert.equal(runs.length,1);
+  assert.ok(fs.existsSync(path.join(plans,runs[0],'plan.json')),'recovery data remains available');
+  assert.equal(git(f.repo,'ls-files','--','logs/sync-excel-plans'),'','plans must never be committed');
+  assert.equal(f.remoteHead(),git(f.repo,'rev-parse','HEAD'));
+ }finally{f.clean();}
+});
+
+test('An unapproved ignored JSON report still blocks staging and push',{skip:!windows},()=>{
+ const f=fixture();try{
+  const r=f.run('ignored-report');assert.notEqual(r.status,0);assert.match(f.log(r),/Could not stage reported file: logs\/unapproved.json/);
+  assert.equal(f.pending(),true);assert.equal(f.remoteHead(),f.initialRemote);assert.equal(git(f.repo,'rev-parse','HEAD'),f.original);
+  assert.ok(fs.existsSync(path.join(f.repo,'logs','unapproved.json')));
+ }finally{f.clean();}
 });
 test('Excel second pass cannot request an unbounded retry or commit an incomplete result',{skip:!hasExcel},()=>{
  const f=excelFixture();try{const r=f.run('repeat_excel');assert.notEqual(r.status,0);assert.equal(fs.readFileSync(path.join(f.root,'excel-calls.txt'),'utf8'),'2');assert.equal(f.pending(),true);assert.equal(f.remoteHead(),f.initialRemote);assert.match(f.log(r),/Automatic resolution stopped/);}finally{f.clean();}

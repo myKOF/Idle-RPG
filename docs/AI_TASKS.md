@@ -1,3 +1,13 @@
+## SYNC-EXCEL-PLAN-STAGING-20261105 — Excel復原計畫不納入提交
+
+- Owner：Codex；Done，單一開發者。使用者以1授權完成本輪衝突與必要同步修復；原merge已由b206ec67／e4375e4d完成。已定位原控制器停止原因：第一輪needs_excel的files含ignored JSON計畫，第二輪雖排除，控制器仍串接第一輪清單而git add失敗。
+- 允許：resolve-sync-conflicts.ps1在原生handoff驗證成功後，僅從兩輪提交清單排除該次已核准excel_updates.data_file；原JSON及收據保留。必要既有端對端測試與本段；禁止忽略任意logs／JSON／未知路徑、強制加入ignored檔、改Excel／資料／CLI安全或一般staging防護。預檢無外部佔用。
+- 驗收：真本機Git遠端及原生Excel兩階段測試重現第一輪誤報計畫並修復、兩輪皆誤報亦可完成、計畫仍在磁碟但不在Git歷史、未核准ignored路徑仍阻止提交與push；既有路徑／刪除／第二輪重試／安全解析檢查保持，完成後正常同步各來源及三固定工作區。
+
+- 完成：控制器僅在原生handoff成功後，以驗證過的requests.data_file排除兩輪合併清單中的同一計畫檔，正規化斜線及Windows大小寫比較，其他路徑仍走原Stage-ReportedFiles。三檔修改為控制器／既有端對端測試／本段，無遊戲行為或Excel重新儲存。
+- 驗證：先以新增真Excel回歸在原碼重現Could not stage reported file: logs/sync-excel-plans/.../plan.json（0/1）；修復後node --test --test-reporter=tap --test-name-pattern="Real native Excel|unapproved ignored|Excel second pass|PowerShell scripts parse|Reported deletion|Missing reported|Resolver escape|Independent build failure" tests/sync-auto-conflicts.test.cjs，10/10通過、無略過（174秒）。兩輪誤報包含Windows反斜線；計畫持續存在而ls-files不含它，正式Excel／CSV正常合併及push。未知ignored JSON、遺失路徑／越界、既有刪除、第二輪無限重試、獨立Build失敗皆維持正確阻擋，原生可信updater防護保持。完整前後TAP在logs/merge-20261105-resume。git diff --check通過。
+- 唯讀未改：規範／Workflow／Agent文件、sync主流程／Excel updater／handoff、所有Excel／CSV／遊戲功能；原UI音效及資料回歸的10項來源既有失敗記在前一任務，沒有降低斷言。本修復無未完成項目；未跑整套同步測試，只執行上述與修復直接相關10項，正常實際同步結果見最終報告。
+
 ## SYNC-MERGE-20261105-001615 - develop integration completed
 
 - Owner: Codex; Done. Authorized integration only: HEAD edd568772873a329bad57dd5c1bab2e61ca6897e + MERGE_HEAD cea2c7f8f31bdf4ec1bd053f915b44703bd38f09; common base 1cfc7bf3d08328f9fce9ab659576d76c663ebf42. No delegation, staging, commit, push or Git metadata writes.

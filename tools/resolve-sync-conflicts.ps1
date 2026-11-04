@@ -266,6 +266,12 @@ Return all files from this pass PLUS those already changed during planning; excl
     [IO.File]::WriteAllText((Join-Path $runDirectory 'validation-prompt.txt'), $validationPrompt, $utf8)
     $result = Invoke-SyncModelPhase -ModelPrompt $validationPrompt
     $reportedFiles += @($result.files) + @($receipts | ForEach-Object { $_.workbook })
+    # Either model phase may report the recovery JSON it created. The native
+    # handoff already validated these exact data files; preserve them on disk,
+    # but exclude them from the combined staging list. Other ignored reports
+    # still go through normal path and staging checks.
+    $excelPlanFiles = @($requests | ForEach-Object { ([string]$_.data_file).Replace('\', '/') })
+    $reportedFiles = @($reportedFiles | Where-Object { $excelPlanFiles -notcontains ([string]$_).Replace('\', '/') })
     $reportedAssets += @($result.asset_files)
 } elseif ($excelContext.Books.Count -and $result.status -eq 'resolved') {
     throw 'Excel conflicts require the native controller handoff before resolved can be accepted.'
