@@ -14510,3 +14510,13 @@ Worker 存活且頁面正常完成載入。
 - 實機：IAB無連線，沿用隔離隨機localhost＋Edge headless＋真Worker／AudioContext，23類動態元件中可操作的有音、僅外觀與tips的靜音。依截圖以3轉／高金幣／T9零件配置正式熔爐：開關label、添加熔爐、升級金幣鈕、已裝零件、空格開列表、非button裝配chip、紀錄詳情均實際hover發聲；點擊成功切換運轉、零件T9→T10、卸下→開列表→裝回、開詳細紀錄。熔爐圖及工坊左側零件說明不播；正式可選裝備hover有完整tips亦播，裝備強化／洗煉成功各播一次，零資源Worker拒絕仍不播成功音。只下載2份原WAV，Console error／warning、pageerror皆0。QA為本聊天visualizations/ui-sound-functional-qa.mjs／json；初次QA按Esc未關掉既有紀錄彈窗，改用正式X並驗hidden後完成，未改產品迎合測試。瀏覽器與服務已關閉，玩家原網址存檔未讀寫。
 - 協作：收尾Claude新增String快取c6078654，仍與本項ui-sound行不同區段；以最新未提交index重跑三方exit0，String快取／Sfx載入／我方v3皆保留，無相同事件或狀態語意相依。工作途中本副本出現外部config/Excel/Zones.xlsx修改，保留、不套用／提交。唯讀未改規範／Workflow／prompts、ui.js／熔爐／技能／寶石／符文事件來源、player／bridge／Worker／save／所有配置與String資料、原音檔及素材庫；無必要新素材或素材庫Commit，原素材4cfb1cc保持。
 - 交付：授權範圍無未完成或已知新增缺陷，可Review及供使用者合併；Commit為本段所在「[Codex] fix: 依操作能力播放UI觸碰音並保留純tips靜音」，SHA見聊天交付。未跑全庫／多瀏覽器／行動真機，首次有效手勢與冷載入略過限制保持；未合併推送。下一步重載驗收截圖紅框與純tips。
+
+## UI-SOUND-PAPER-WOOD-20261104 — 紙張摩擦與輕木質音試聽
+
+- Owner：Codex；Done（試聽候選），單一開發者。使用者要求觸碰改輕微紙張摩擦、點擊改較輕的木質觸碰。沿用先試聽的音色製作流程，新增隔離v2候選，不覆寫已接入的hover或接入尚未核准的click；其他音效／功能等指示。
+- 前置：規範／Workflow／任務已讀、fetch及目標預檢無外部衝突；現有9項外部配置／data／skills2修改保留，不套用或提交。允許tools/audio/ui-paper-wood.cjs、audio/ui-preview/paper-wood-v2的WAV／來源說明／manifest、本段與對應素材庫保存；禁止改原WAV／原產生器、UI接線／快取／設定／Worker／配置與存檔、其他音效或合併推送。
+- 驗收：原創程序合成兩音與重複試聽合輯，紙聲輕短無旋律、木聲移除金屬鈴音並降低音量；保存可重產來源與兩庫SHA、驗PCM／非靜音／削波／首尾／原音保持／Build及既有聲音回歸。後續交使用者聽感確認，候選保存不代表已核准。
+- 完成7檔：新增tools/audio/ui-paper-wood.cjs、audio/ui-preview/paper-wood-v2/{README.md,manifest.json,paper-hover.wav,wood-click.wav,comparison.wav}及本段。紙聲0.19秒以受限頻寬噪音、不均勻摩擦包絡／纖維顆粒製作，沒有音調；木聲0.17秒以低中頻接觸噪音／短共鳴快速阻尼製作，不用舊晶體鈴音。兩聲置中、左右相同，48kHz／16-bit立體聲；合輯3.9秒為紙聲3次→木聲3次，保留相對音量。全部自製、沒有外部素材／錄音／取樣庫或參考音檔。
+- 驗證：`node tools/audio/ui-paper-wood.cjs --apply`／`--check`通過，兩庫3份WAV／來源／說明／manifest雜湊一致且可確定性重產；`node --check tools/audio/ui-paper-wood.cjs`通過。獨立bundled Python wave＋NumPy讀回驗規格、起尾零點、置中、無削波及SHA，紙聲peak -26.93／RMS -41.60dBFS，木聲peak -19.17／RMS -35.22dBFS；木聲峰值比原點擊低9.96dB、3500Hz以上能量僅0.0125%。數值不能代替聽感核准，音色仍交使用者試聽；QA為本聊天visualizations/paper-wood-qa.py。
+- 既有保持：`node tools/audio/ui-preview.cjs --check`原7份WAV／來源與素材庫一致；`node --test tests/ui-sound.test.cjs`10/10通過；`npm.cmd run build`652檔通過。rg確認index／js沒有新候選引用，未做瀏覽器操作或替換使用中音檔，不新增設定／玩家字串／LV功能。唯讀未改規範／Workflow／prompts、原產生器／原素材、ui-sound／ui／index／Worker／save／玩法與全部配置來源；9項外部CSV／Excel／data／skills2修改保留未提交。
+- 雙庫交付：素材庫codex-authored/ui-paper-wood-preview-20261104的6檔先Commit `4c5cfb4`，後遊戲Commit（本段所在「[Codex] feat: 製作紙張摩擦與輕木質音效試聽版」，SHA見聊天交付）；兩庫diff／stat／check與自我Review通過。無本輪未完成或已知素材技術問題，可Review／保存候選，音色與接入仍待使用者確認；未合併推送。下一步試聽紙聲／木聲後決定調整或替換。
