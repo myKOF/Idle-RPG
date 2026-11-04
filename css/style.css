@@ -6229,6 +6229,17 @@ textarea:disabled,
 }
 
 /* ?�浮?�示載入裝�??��??��??�適?�寬度�??�除?��??�景?��?�?*/
+/* 裝備比較提示：裝備名稱不換行，卡片依名稱撐寬（名稱右側留給「現有」與鎖頭） */
+.equip-compare-container .equip-detail-card {
+  flex: 0 0 auto;
+  width: max-content;
+  max-width: none;
+}
+.equip-compare-container .it-name {
+  white-space: nowrap;
+  padding-right: 76px !important;
+}
+
 #sk-tooltip:has(.equip-detail-card) {
   max-width: none !important;
   padding: 6px !important;
