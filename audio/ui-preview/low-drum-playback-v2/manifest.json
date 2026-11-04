@@ -1,0 +1,195 @@
+{
+  "version": 2,
+  "status": "preview-only",
+  "source": "audio/ui-preview/low-drum-v1",
+  "generator": "tools/audio/ui-low-drum-playback.cjs",
+  "generatorSha256": "22ea96547c6cb80a22a72513660b03678a21ef387ab5dcea5e389fa800fbee4d",
+  "libraryRelativePath": "codex-authored/ui-low-drum-playback-20261105-v2",
+  "sampleRate": 48000,
+  "bits": 16,
+  "channels": 2,
+  "files": [
+    {
+      "id": "D1",
+      "name": "短底鼓",
+      "file": "D1-single.wav",
+      "seconds": 1.2,
+      "hitSeconds": 0.045,
+      "hitTimes": [
+        0.15
+      ],
+      "originalSha256": "8e6b8d684a9876a96f57b12f403210acf7f045dbcec8c84cca2c1bc9ae53ffd6",
+      "sha256": "ed515584a9bb5216145f7c043b45d5da698436951a9dcd3e9bc33d6d9d22c9c1"
+    },
+    {
+      "id": "D1",
+      "name": "短底鼓",
+      "file": "D1-preview.wav",
+      "seconds": 3,
+      "hitSeconds": 0.045,
+      "hitTimes": [
+        0.2,
+        0.85,
+        1.5,
+        2.15
+      ],
+      "originalSha256": "8e6b8d684a9876a96f57b12f403210acf7f045dbcec8c84cca2c1bc9ae53ffd6",
+      "sha256": "32a9ac24d8a02b527d1b89b33d54fa2db408f639f2aefb11e7d7ca624565ee4f"
+    },
+    {
+      "id": "D2",
+      "name": "悶手鼓",
+      "file": "D2-single.wav",
+      "seconds": 1.2,
+      "hitSeconds": 0.038,
+      "hitTimes": [
+        0.15
+      ],
+      "originalSha256": "3eb145804e3f1821a83318e4ccfe477117d4d875c68dd772d843b89e60da4bd9",
+      "sha256": "15af711b1d02dcb4c34d0f0ecfa4679c1e6574f3a75c212a4088d8dbd1cea07c"
+    },
+    {
+      "id": "D2",
+      "name": "悶手鼓",
+      "file": "D2-preview.wav",
+      "seconds": 3,
+      "hitSeconds": 0.038,
+      "hitTimes": [
+        0.2,
+        0.85,
+        1.5,
+        2.15
+      ],
+      "originalSha256": "3eb145804e3f1821a83318e4ccfe477117d4d875c68dd772d843b89e60da4bd9",
+      "sha256": "21a5865c4777fc822b1dbc43ed3795ce2fac8abed7d44c5a04591f8539d17695"
+    },
+    {
+      "id": "D3",
+      "name": "低音通鼓",
+      "file": "D3-single.wav",
+      "seconds": 1.2,
+      "hitSeconds": 0.05,
+      "hitTimes": [
+        0.15
+      ],
+      "originalSha256": "1df1cf04ce1f2b9a9d03c97509cb385f035ec5002e6d2401f8ea652bba369e53",
+      "sha256": "f1c260884c1b896c1073a8efba2299ffeb51f76f528a2f805e6ccc9961b7f27c"
+    },
+    {
+      "id": "D3",
+      "name": "低音通鼓",
+      "file": "D3-preview.wav",
+      "seconds": 3,
+      "hitSeconds": 0.05,
+      "hitTimes": [
+        0.2,
+        0.85,
+        1.5,
+        2.15
+      ],
+      "originalSha256": "1df1cf04ce1f2b9a9d03c97509cb385f035ec5002e6d2401f8ea652bba369e53",
+      "sha256": "ef50f7536ab52a16c5e6a2c2f450fe580490cc810f1602b246b742d8baebe747"
+    },
+    {
+      "id": "D4",
+      "name": "厚實重咚",
+      "file": "D4-single.wav",
+      "seconds": 1.2,
+      "hitSeconds": 0.055,
+      "hitTimes": [
+        0.15
+      ],
+      "originalSha256": "73103f8063aab60120e4365f282ec715a3f82b99e6b25640517b52a460a638d3",
+      "sha256": "85cc85b92fbf211e676d0b43825befbd349c002193e1570a632bfc2d00f31805"
+    },
+    {
+      "id": "D4",
+      "name": "厚實重咚",
+      "file": "D4-preview.wav",
+      "seconds": 3,
+      "hitSeconds": 0.055,
+      "hitTimes": [
+        0.2,
+        0.85,
+        1.5,
+        2.15
+      ],
+      "originalSha256": "73103f8063aab60120e4365f282ec715a3f82b99e6b25640517b52a460a638d3",
+      "sha256": "d216d30d83e6aafe6289957ac9d3fd94f23eba75624438dc373e87dca1bb70e9"
+    },
+    {
+      "id": "D5",
+      "name": "極短乾鼓",
+      "file": "D5-single.wav",
+      "seconds": 1.2,
+      "hitSeconds": 0.032,
+      "hitTimes": [
+        0.15
+      ],
+      "originalSha256": "9bda75302430f47375df35c725787c7e84db939058e3217452815f01ce531cbd",
+      "sha256": "20ead71b581ebda5ee0e0bca89cd0cbacce52b04105b53601d83c3966bf894a3"
+    },
+    {
+      "id": "D5",
+      "name": "極短乾鼓",
+      "file": "D5-preview.wav",
+      "seconds": 3,
+      "hitSeconds": 0.032,
+      "hitTimes": [
+        0.2,
+        0.85,
+        1.5,
+        2.15
+      ],
+      "originalSha256": "9bda75302430f47375df35c725787c7e84db939058e3217452815f01ce531cbd",
+      "sha256": "a76cfb03bea95230ad489b7e54c505a83eb7800a71fc237a224bb2217dd2f16d"
+    },
+    {
+      "file": "comparison.wav",
+      "seconds": 10.5,
+      "hits": [
+        {
+          "id": "D1",
+          "at": 0.3
+        },
+        {
+          "id": "D1",
+          "at": 1
+        },
+        {
+          "id": "D2",
+          "at": 2.3
+        },
+        {
+          "id": "D2",
+          "at": 3
+        },
+        {
+          "id": "D3",
+          "at": 4.3
+        },
+        {
+          "id": "D3",
+          "at": 5
+        },
+        {
+          "id": "D4",
+          "at": 6.3
+        },
+        {
+          "id": "D4",
+          "at": 7
+        },
+        {
+          "id": "D5",
+          "at": 8.3
+        },
+        {
+          "id": "D5",
+          "at": 9
+        }
+      ],
+      "sha256": "e8384603101cc0ef1a845d3c4e94e2569f49d7bdec08a6c0d50d152986f4ff24"
+    }
+  ]
+}

@@ -14595,3 +14595,15 @@ Worker 存活且頁面正常完成載入。
 - 驗證：`node tools/audio/ui-hover-options.cjs --check`通過；`node --test tests/ui-sound.test.cjs tests/ui-achievement-sound.test.cjs tests/achievements.test.cjs tests/ui-tick-smoke.test.cjs tests/vfx-editor-cache-versions.test.cjs`32/32通過，包含真click／鍵盤啟動播H10、純tips／停用／右鍵／合成／背景靜音、hover／成功／成就保持及只預載4份核准WAV。`npm.cmd run build`653檔、diff／stat／check及自我Review通過。小範圍原檔URL切換，本輪未重做瀏覽器／全庫測試，不宣稱實機聽感驗收；音訊手勢解鎖與背景略過限制保持。
 - 交付：本項無未完成或已知新增缺陷，可Review／使用者合併，遊戲Commit為本段所在「[Codex] feat: 點擊音改用H10」，SHA見聊天交付；素材無變更沿用d01e230。唯讀未改規範／Workflow／prompts、ui.js／ui-achievements／Worker／protocol／player／save／所有配置／字串與音檔；13項外部配置修改及鼓聲播放修復任務完整保留、不套用或提交。下一步使用者重載遊戲驗收H10點擊，未合併推送。
 - 驗收：有效真實click改播放H10、取消碰觸／被動tips／停用／合成／右鍵／背景仍不播；hover及兩類成功通知保持，C3不再預載。更新原回歸及版本檢查，執行相關聲音／成就／UI／快取測試、Build及diff後只提交本項7檔。
+
+## UI-SOUND-DRUM-PLAYBACK-FIX-20261105 — 修復鼓聲試聽顯示0秒與無法使用
+
+- Owner：Codex；Done（修正試聽交付）。使用者回報上一輪5單音顯示0秒且無效；原檔僅32～55ms，本輪保留鼓聲PCM，新增1.2秒單擊容器與每款3秒四次重複試聽及合輯，不改遊戲。允許tools/audio/ui-low-drum-playback.cjs、audio/ui-preview/low-drum-playback-v2、本段與對應素材庫；禁止改v1／其他音色／UI／配置／Worker／存檔／LV與String、合併推送。
+- 前置：共通規範／Workflow已讀，ai/codex，fetch及目標預檢乾淨，既有12項外部配置修改保留。驗收：檔案時長≥1秒、原短鼓PCM逐樣本保留、首尾靜音、單擊／重複／合輯正確；確定性重產／雙庫SHA及Build，實際瀏覽器HTMLAudio播放到ended與WebAudio非靜音驗證；內建瀏覽器Node REPL因kernel assets路徑錯誤不可用，改本機隔離Edge headless。先素材Commit再遊戲Commit，後續使用者在聊天播放器重新試聽。
+
+- 完成15檔：新產生器、本段與v2目錄11WAV／README／manifest。5份single各1.2秒於0.15秒敲擊1次，5份preview各3秒於0.2／0.85／1.5／2.15秒敲擊，合輯10.5秒依D1～D5各2次。來源v1／音量／音色逐樣本保留，僅補靜音及重複容器，未改原檔。
+- 驗證：`node tools/audio/ui-low-drum-playback.cjs --apply`／`--check`及`node --check tools/audio/ui-low-drum-playback.cjs`通過，雙庫11WAV／README／manifest／來源SHA一致且可確定性重產；獨立Node讀回每檔PCM規格、時長、首尾0.1秒靜音、單擊及四次原PCM逐樣本一致。`npm.cmd run build`653檔及兩庫diff／stat／check、自我Review通過，沒有修改遊戲程式、不重跑無關功能測試。
+- 實播：隔離隨機localhost＋Edge headless，11個HTMLAudio皆duration精確為1.2／3／10.5秒，currentTime到結尾且ended=true／media error0；每個MediaElementSource→Analyser捕捉到實際非零輸出峰值0.59999，Console error／warning及pageerror皆0。瀏覽器與服務均已關閉、未讀寫玩家存檔。初版QA跨來源頁少CORS、後續串流少Content-Length導致測試失敗；補QA伺服器正確回應與先設crossOrigin後設src後通過，沒有修改PCM或弱化時長／輸出斷言。QA及完整report在本聊天visualizations/drum-playback-fix。
+- 限制：已驗標準瀏覽器實際輸出，不能直接驗證聊天內建播放器的顯示／音響聽感；前次僅驗原PCM而未把短檔播放相容性驗好，本次交付3秒預覽並附1.2秒單擊檔讓使用者重試。不新增系統／字串，不改LV／String／UI接線／既有候選；唯讀檢查原產生器與v1／規範／Workflow／任務／package及Build工具，外部配置與成就音效續作變更保留、不提交。無新素材技術缺陷或未完成製作，可Review／保存修正版；聊天試聽待使用者驗收，未合併推送。
+
+- 雙庫交付：素材庫codex-authored/ui-low-drum-playback-20261105-v2先Commit `12e5afb`，再遊戲Commit（本段所在「[Codex] fix: 修復低鼓短音效的試聽交付」，SHA見聊天交付）。後續以D1～D5的3秒四次版重試，或使用single單擊版；所有遊戲／他人工作保留，未接線或合併推送。
