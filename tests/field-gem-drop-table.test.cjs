@@ -66,6 +66,7 @@ test('R6～R10 非零配置依階級掉落，零配置不掉落', () => {
   context.currentZoneDef = () => ({ rewardMult: 1 });
   context.rollDropCount = (rate) => Math.floor(rate / 100);
   context.randomGemType = () => 'ruby';
+  context.randomGemTypeForLevel = () => 'ruby';
   context.gemLabel = (type, level) => type + level;
   const received = [];
   context.addGem = (type, level, count) => received.push([type, level, count]);

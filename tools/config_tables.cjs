@@ -638,14 +638,15 @@ SCHEMAS.NPC = {
 SCHEMAS.Gems = {
   name: 'Gems', jsFile: 'data', sheet: 'Gems', vars: ['GEM_TYPES'],
   // 1~10 階的能力值逐階直接寫在表上（values[0]＝1 階 … values[9]＝10 階）；不再有「基礎值／線性」公式。
-  header: ['id', '名稱', 'icon圖號', '屬性桶', '屬性名稱', '百分比', '1級', '2級', '3級', '4級', '5級', '6級', '7級', '8級', '9級', '10級', '開放'],
+  header: ['id', '名稱', 'icon圖號', '屬性桶', '屬性名稱', '百分比', '1級', '2級', '3級', '4級', '5級', '6級', '7級', '8級', '9級', '10級', '開放', '掉落等級'],
   extract(src) {
     const GEM_TYPES = evalLiteral(extractLiteral(src, 'GEM_TYPES').literal);
     return Object.keys(GEM_TYPES).map(id => {
       const g = GEM_TYPES[id];
       const vals = [];
       for (let i = 0; i < 10; i++) vals.push(numStr(g.values[i]));
-      return [id, g.name, g.emoji, g.stat, g.statName, boolCell(!!g.pct)].concat(vals, [g.enabled === false ? '0' : '1']);
+      const dl = (g.dropLevels || []).map(d => '{' + d[0] + '~' + d[1] + ',' + numStr(d[2]) + '}').join('|');
+      return [id, g.name, g.emoji, g.stat, g.statName, boolCell(!!g.pct)].concat(vals, [g.enabled === false ? '0' : '1', dl]);
     });
   },
   rebuild(dataRows, header) {
@@ -658,6 +659,18 @@ SCHEMAS.Gems = {
       for (let lv = 1; lv <= 10; lv++) values.push(toNum(get(r, lv + '級')));
       const o = { name: get(r, '名稱'), emoji: get(r, 'icon圖號'), stat: get(r, '屬性桶'),
         statName: get(r, '屬性名稱'), pct: toBool(get(r, '百分比')), values: values, enabled: open !== '0' };
+      /* 掉落等級：{怪物等級下限~上限,權重}|… ；空白＝所有等級都可掉（權重 1）。
+         野外掉落時以擊殺怪物的等級查表，權重只決定「這次掉的寶石是哪一種」（item.js randomGemTypeForLevel）。 */
+      const dlRaw = header.indexOf('掉落等級') >= 0 ? get(r, '掉落等級').trim() : '';
+      if (dlRaw !== '') {
+        o.dropLevels = dlRaw.split('|').map(seg => {
+          const m = /^\{\s*(\d+)\s*~\s*(\d+)\s*,\s*(\d+(?:\.\d+)?)\s*\}$/.exec(seg.trim());
+          if (!m) throw new Error('Gems ' + id + '：掉落等級格式應為 {1~20,0.1}|{21~100,0.2}，錯誤片段「' + seg + '」');
+          const lo = Number(m[1]), hi = Number(m[2]);
+          if (lo < 1 || hi < lo) throw new Error('Gems ' + id + '：掉落等級範圍需 1 ≤ 下限 ≤ 上限：「' + seg + '」');
+          return [lo, hi, Number(m[3])];
+        });
+      }
       return '  ' + id + ': ' + jsLit(o);
     });
     return { GEM_TYPES: 'var GEM_TYPES = {\n' + entries.join(',\n') + '\n};' };

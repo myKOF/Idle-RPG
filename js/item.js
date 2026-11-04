@@ -16,6 +16,33 @@ function addGem(type, lv, n) {
   UI.dirty.header = true; UI.dirty.gems = true;
 }
 function randomGemType() { return pick(Object.keys(GEM_TYPES).filter(isGemEnabled)) || null; }
+/* 野外掉落用：依擊殺怪物的等級，按 GEM_TYPES[].dropLevels（配置表 Gems「掉落等級」）當權重挑一種寶石。
+   沒填掉落等級的寶石＝任何怪物等級權重 1；全部權重為 0（該等級沒有任何寶石可掉）回傳 null。
+   總掉落次數仍由 Zone_Stage_Drops 決定，這裡只決定種類。 */
+function gemDropWeight(type, monsterLevel) {
+  var def = GEM_TYPES[type];
+  if (!def || !isGemEnabled(type)) return 0;
+  var rows = def.dropLevels;
+  if (!Array.isArray(rows) || !rows.length) return 1;
+  var w = 0;
+  for (var i = 0; i < rows.length; i++) {
+    if (monsterLevel >= rows[i][0] && monsterLevel <= rows[i][1]) w += Number(rows[i][2]) || 0;
+  }
+  return w;
+}
+function randomGemTypeForLevel(monsterLevel) {
+  var lv = Math.max(1, Math.floor(Number(monsterLevel) || 1));
+  var keys = Object.keys(GEM_TYPES), weights = [], total = 0, i;
+  for (i = 0; i < keys.length; i++) { var w = gemDropWeight(keys[i], lv); weights.push(w); total += w; }
+  if (total <= 0) return null;
+  var roll = Math.random() * total;
+  for (i = 0; i < keys.length; i++) {
+    roll -= weights[i];
+    if (weights[i] > 0 && roll < 0) return keys[i];
+  }
+  for (i = keys.length - 1; i >= 0; i--) if (weights[i] > 0) return keys[i];
+  return null;
+}
 function totalGemsOfLevel(lv) {
   var sum = 0;
   for (var t in GEM_TYPES) if (isGemEnabled(t)) sum += gemCount(t, lv);

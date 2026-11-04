@@ -2681,7 +2681,7 @@ function rollFieldDrops(m) {
         var gemN = rollDropCount(gemRates[glv] * (1 + lootBonus / 100) * rw * eliteDropMult);
         for (var gi = 0; gi < gemN; gi++) {
             var lv = glv + 1;
-            var gtype = randomGemType();
+            var gtype = randomGemTypeForLevel(m.level - (Number(m._powerLevelBonus) || 0));
             if (!gtype) continue;
             addGem(gtype, lv, 1);
             if (window.recordLootGem) window.recordLootGem(gtype, lv, 1, 'field');
