@@ -2,7 +2,7 @@
 /* 自動產生，請勿手改。來源：config/Excel/String.xlsx（Excel 是唯一來源）。
    重新產生：node tools/string-table/apply_strings.cjs（套用參數.bat 會自動執行）。
    每列＝[繁體中文, 簡體中文, 英文]；後面的空欄已省略。讀取請用 js/strings.js 的 STR()。 */
-var STRING_DATA_VERSION = '00d07b4e';
+var STRING_DATA_VERSION = 'facd89eb';
 var STRING_DATA = {
   "1": ["冰霜"],
   "2": ["毒霧"],
@@ -742,7 +742,7 @@ var STRING_DATA = {
   "739": ["點擊前往技能頁裝備技能"],
   "740": ["<span class=\"bss-nomp-tag\">無魔</span>"],
   "741": ["無魔"],
-  "742": ["角色達到 Lv.{0} 或 1 轉解鎖全部技能格"],
+  "742": ["角色達到 Lv.{0} 解鎖全部技能格"],
   "743": ["冷卻中無法使用"],
   "744": ["解鎖【{0}】技能"],
   "745": ["技能操作失敗"],

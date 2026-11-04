@@ -753,7 +753,7 @@
 739,技能,文字/提示｜ui.js:3930 battleSkillSlotMarkup、ui.js:3972 syncBattleSkillSlot,,點擊前往技能頁裝備技能,,
 740,技能,界面文字(含標記)｜ui.js:3946 battleSkillSlotMarkup,"<span class=""bss-nomp-tag"">…</span>=套用樣式 bss-nomp-tag","<span class=""bss-nomp-tag"">無魔</span>",,
 741,技能,文字｜ui.js:4041 syncBattleSkillSlot,,無魔,,
-742,技能,文字｜ui.js:4080 renderBattleSkillBar、ui.js:9058 renderSkills,{0}=代入參數：reqLv（等級）,角色達到 Lv.{0} 或 1 轉解鎖全部技能格,,
+742,技能,文字｜ui.js:4080 renderBattleSkillBar、ui.js:9058 renderSkills,{0}=代入參數：reqLv（等級）,角色達到 Lv.{0} 解鎖全部技能格,,
 743,技能,飄字｜ui.js:6301 detailAction,,冷卻中無法使用,,
 744,技能,文字｜ui.js:7435 stat,{0}=代入參數：esc(name)（文字(已轉義)）,解鎖【{0}】技能,,
 745,技能,指令失敗提示｜ui.js:8832 runSkill2UiAction、ui.js:8837 runSkill2UiAction、ui.js:8903 runSkillUiAction…等4處,,技能操作失敗,,
