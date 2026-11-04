@@ -638,14 +638,15 @@ SCHEMAS.NPC = {
 SCHEMAS.Gems = {
   name: 'Gems', jsFile: 'data', sheet: 'Gems', vars: ['GEM_TYPES'],
   // 1~10 階的能力值逐階直接寫在表上（values[0]＝1 階 … values[9]＝10 階）；不再有「基礎值／線性」公式。
-  header: ['id', '名稱', 'icon圖號', '屬性桶', '屬性名稱', '百分比', '1級', '2級', '3級', '4級', '5級', '6級', '7級', '8級', '9級', '10級', '開放'],
+  header: ['id', '名稱', 'icon圖號', '屬性桶', '屬性名稱', '百分比', '1級', '2級', '3級', '4級', '5級', '6級', '7級', '8級', '9級', '10級', '開放', '掉落等級'],
   extract(src) {
     const GEM_TYPES = evalLiteral(extractLiteral(src, 'GEM_TYPES').literal);
     return Object.keys(GEM_TYPES).map(id => {
       const g = GEM_TYPES[id];
       const vals = [];
       for (let i = 0; i < 10; i++) vals.push(numStr(g.values[i]));
-      return [id, g.name, g.emoji, g.stat, g.statName, boolCell(!!g.pct)].concat(vals, [g.enabled === false ? '0' : '1']);
+      const dl = (g.dropLevels || []).map(d => '{' + d[0] + '~' + d[1] + ',' + numStr(d[2]) + '}').join('|');
+      return [id, g.name, g.emoji, g.stat, g.statName, boolCell(!!g.pct)].concat(vals, [g.enabled === false ? '0' : '1', dl]);
     });
   },
   rebuild(dataRows, header) {
@@ -658,6 +659,18 @@ SCHEMAS.Gems = {
       for (let lv = 1; lv <= 10; lv++) values.push(toNum(get(r, lv + '級')));
       const o = { name: get(r, '名稱'), emoji: get(r, 'icon圖號'), stat: get(r, '屬性桶'),
         statName: get(r, '屬性名稱'), pct: toBool(get(r, '百分比')), values: values, enabled: open !== '0' };
+      /* 掉落等級：{怪物等級下限~上限,權重}|… ；空白＝所有等級都可掉（權重 1）。
+         野外掉落時以擊殺怪物的等級查表，權重只決定「這次掉的寶石是哪一種」（item.js randomGemTypeForLevel）。 */
+      const dlRaw = header.indexOf('掉落等級') >= 0 ? get(r, '掉落等級').trim() : '';
+      if (dlRaw !== '') {
+        o.dropLevels = dlRaw.split('|').map(seg => {
+          const m = /^\{\s*(\d+)\s*~\s*(\d+)\s*,\s*(\d+(?:\.\d+)?)\s*\}$/.exec(seg.trim());
+          if (!m) throw new Error('Gems ' + id + '：掉落等級格式應為 {1~20,0.1}|{21~100,0.2}，錯誤片段「' + seg + '」');
+          const lo = Number(m[1]), hi = Number(m[2]);
+          if (lo < 1 || hi < lo) throw new Error('Gems ' + id + '：掉落等級範圍需 1 ≤ 下限 ≤ 上限：「' + seg + '」');
+          return [lo, hi, Number(m[3])];
+        });
+      }
       return '  ' + id + ': ' + jsLit(o);
     });
     return { GEM_TYPES: 'var GEM_TYPES = {\n' + entries.join(',\n') + '\n};' };
@@ -1151,6 +1164,10 @@ const SKILLS2_GLOSSARY_ROWS = [
   ['傷害屬性：fire/ice/lightning/poison/light/dark/earth，本體傷害整段歸屬該屬性（吃元素抗性與屬性傷害提升）；留白＝無屬性；'],
   ['兩欄都只需填在階數=1 那一列（整個群組共用）；'],
   [''],
+  ['擊中回復觸發系數'],
+  ['擊中回復觸發系數：此技能命中時，吸血與吸魔「各擲一次」的觸發機率；留白＝100%（命中必定觸發）。例：50%＝命中時 50% 觸發吸血、另外 50% 觸發吸魔；'],
+  ['只需填在階數=1 那一列（整個群組共用）；只影響該技能的直接命中，普通攻擊與持續傷害（DoT）維持必定觸發；'],
+  [''],
   ['冷卻時間 / 施法消耗'],
   ['冷卻時間：整個群組共用（同群組是同一個技能）；只需填在階數=1 那一列，其餘列僅供對照；'],
   ['施法消耗：階數=1 那一列＝群組的施法消耗（主動技能施放時扣的魔）；'],
@@ -1443,7 +1460,7 @@ SCHEMAS.Skills2 = {
     '效果參數(JSON)', '升級金幣基數', '升級金幣倍率', '效果說明模板']
     .concat(SKILL_VFX_COLUMNS.map(c => c[0])).concat(['超神ID'])
     .concat(skills2Geometry.columns).concat(['作用方式與距離用途（唯讀說明）']).concat(skills2Vfx.columns.map(c=>c[0])).concat([skills2Vfx.noteColumn])
-    .concat(SKILLS2_STATUS_COLUMNS.map(c => c[0])).concat(['類別']),
+    .concat(SKILLS2_STATUS_COLUMNS.map(c => c[0])).concat(['類別', '擊中回復觸發系數']),
   extract(src) {
     const SKILLS2 = evalLiteral(extractLiteral(src, 'SKILLS2').literal);
     const notes = skills2TierNoteMap();
@@ -1459,7 +1476,7 @@ SCHEMAS.Skills2 = {
           skills2UnlockCell(t.unlock), t.name,
           skills2OtherFx(t.fx || {}), numStr(t.goldBase || 0), numStr(t.goldGrow || 1), t.desc || '']
           .concat(vfxCells(t.vfx, SKILL_VFX_COLUMNS)).concat(['']).concat(skills2GeometryCells(gid,String(i+1),t,g.range)).concat(vfxCells(t.triggerVfx,skills2Vfx.columns)).concat([skills2Vfx.note(gid,String(i+1))])
-          .concat(SKILLS2_STATUS_COLUMNS.map(c => skills2StatusCell(t.status && t.status[c[1]]))).concat(['']));
+          .concat(SKILLS2_STATUS_COLUMNS.map(c => skills2StatusCell(t.status && t.status[c[1]]))).concat(['', i === 0 && g.drainPct !== undefined ? numStr(g.drainPct) + '%' : '']));
       });
       // 超神進化三選一：階數固定接在各階之後（SKILLS2_ULT_ROW_BASE + 選項索引）
       (g.ult || []).forEach((o, i) => {
@@ -1470,7 +1487,7 @@ SCHEMAS.Skills2 = {
           skills2UnlockCell(o.unlock), o.name,
           skills2OtherFx(o.fx || {}), numStr(o.goldBase || 0), numStr(o.goldGrow || 1), o.desc || '']
           .concat(vfxCells(o.vfx, SKILL_VFX_COLUMNS)).concat([o.id || '']).concat(skills2GeometryCells(gid,o.id,o)).concat(vfxCells(o.triggerVfx,skills2Vfx.columns)).concat([skills2Vfx.note(gid,o.id)])
-          .concat(SKILLS2_STATUS_COLUMNS.map(c => skills2StatusCell(o.status && o.status[c[1]]))).concat(['']));
+          .concat(SKILLS2_STATUS_COLUMNS.map(c => skills2StatusCell(o.status && o.status[c[1]]))).concat(['', '']));
       });
     });
     let enemyDefs = {};
@@ -1536,6 +1553,14 @@ SCHEMAS.Skills2 = {
         }
         groups[gid].cd = toNum(get(r, '冷卻時間'));
         groups[gid].cost = toNum(get(r, '施法消耗'));
+        /* 擊中回復觸發系數：此技能命中時，吸血、吸魔「各自」擲一次的觸發機率（%）；留白＝100%（必定觸發）。
+           只讀階數=1 那一列（群組共用）；可寫 50 或 50%。 */
+        const drainRaw = header.indexOf('擊中回復觸發系數') >= 0 ? get(r, '擊中回復觸發系數').trim().replace(/[%％]$/, '').trim() : '';
+        if (drainRaw !== '') {
+          const dv = Number(drainRaw);
+          if (!Number.isFinite(dv) || dv < 0 || dv > 100) throw new Error('Skills2 群組「' + gid + '」的「擊中回復觸發系數」必須是 0～100 的百分比（例：50%），目前是「' + get(r, '擊中回復觸發系數') + '」');
+          groups[gid].drainPct = dv;
+        }
       }
       const fxRaw = get(r, '效果參數(JSON)').trim();
       let fx;

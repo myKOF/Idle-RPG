@@ -101,6 +101,7 @@ test('270級單一菁英在 958.4% 掉寶率下，一級寶石單次最多結算
   context.pushConveyor = () => {};
   context.addGem = () => {};
   context.randomGemType = () => 'ruby';
+  context.randomGemTypeForLevel = () => 'ruby';
   context.gemLabel = () => '一級紅寶石';
   context.trimFactoryParts = () => {};
 

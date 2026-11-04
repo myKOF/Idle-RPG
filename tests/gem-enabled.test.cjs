@@ -55,11 +55,11 @@ test('CSV schema往返保留開放，舊表缺欄相容且非法旗標拒絕', (
   vm.runInNewContext(rebuilt, out);
   assert.equal(out.GEM_TYPES.ruby.enabled, false);
   assert.equal(out.GEM_TYPES.sapphire.enabled, true);
-  const oldHeader = c.schema.header.filter(h => h !== '開放');
-  const legacy = c.schema.rebuild([rows[0].slice(0, -1)], oldHeader).GEM_TYPES;
+  const oldHeader = c.schema.header.filter(h => h !== '開放' && h !== '掉落等級');
+  const legacy = c.schema.rebuild([rows[0].slice(0, -2)], oldHeader).GEM_TYPES;
   vm.runInNewContext(legacy, out);
   assert.equal(out.GEM_TYPES.ruby.enabled, true);
-  rows[0][rows[0].length - 1] = '2';
+  rows[0][rows[0].length - 2] = '2';
   assert.throws(() => c.schema.rebuild(rows, c.schema.header), /開放只能填/);
 });
 

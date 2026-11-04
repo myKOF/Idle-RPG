@@ -824,7 +824,7 @@
 810,技能,文字｜ui.js:9704 renderSkillBrowser,,沒有技能,,
 811,技能,文字｜ui.js:9762 battleSkillGroupTooltipHTML,{0}=代入參數：(group.tiers.length + 1)（數量）；{1}=代入參數：pick.def.name（名稱）；{2}=代入參數：pick.lv（等級）,第{0}階【終極進化】（{1}）Lv.{2},,
 812,技能,文字｜ui.js:9767 battleSkillGroupTooltipHTML,{0}=代入參數：(i + 1)；{1}=代入參數：group.tiers[i].name（名稱）；{2}=代入參數：lvs[i],第{0}階【{1}】Lv.{2},,
-813,技能,界面文字(含標記)｜ui.js:9772 battleSkillGroupTooltipHTML,"{0}=代入參數：skillIconHTML(gid,group.emoji)；{1}=代入參數：esc(group.name)（文字(已轉義)）；{2}=代入參數：totals.total；{3}=代入參數：totals.max；<span class=""dim-text"">…</span>=套用樣式 dim-text","{0} {1} <span class=""dim-text"">總 Lv.{2} / {3}</span>",,
+813,技能,界面文字(含標記)｜ui.js:9772 battleSkillGroupTooltipHTML,"{1}=代入參數：esc(group.name)（文字(已轉義)）；{2}=代入參數：totals.total；{3}=代入參數：totals.max；{4}=代入參數：消耗法力標記（<span class=""skt-mp"">🔵 N MP</span>，被動技能為空）；<span class=""dim-text"">…</span>=套用樣式 dim-text；<span class=""skt-title"">…</span>=名稱靠左容器","<span class=""skt-title"">{1}{4}</span><span class=""dim-text"">總 Lv.{2} / {3}</span>",,
 814,技能,文字｜ui.js:9774 battleSkillGroupTooltipHTML,,尚未學習此技能,,
 815,技能,文字｜ui.js:9775 battleSkillGroupTooltipHTML、ui.js:9847 showSkillTooltip,,點擊開啟升級面板,,
 816,技能,名稱｜ui.js:9803 showSkillTooltip,,終極進化,,
@@ -2299,3 +2299,4 @@
 2306,裝備,批次拆解品質門檻,,神鑄神話及以下品質,,
 2307,裝備,批次拆解品質門檻,,神鑄創世及以下品質,,
 2308,裝備,批次拆解品質門檻,,神鑄混沌及以下品質,,
+2314,戰鬥,升級特效大字：玩家升級時從頭頂冒出的金黃色描邊文字（js/battle-renderer.js spawnLevelUpText）；不受戰鬥數字開關影響,,等級提升,,

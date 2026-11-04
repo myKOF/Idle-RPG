@@ -34,21 +34,26 @@ test('Task.xlsx、CSV與遊戲37筆定義逐欄一致，任務順序連續且型
   const source=fs.readFileSync(path.join(root,'js/tasks.js'),'utf8');
   for(const t of c.TASKS) assert.ok(source.includes("case '"+t.type+"'"),t.type);
 });
-test('裝配任務檢查現況、忽略無效及重複技能，達成只領一次100000金幣', () => {
+test('裝配任務：預設已裝飛刀不算完成，需再自行裝配 1 個，達成只領一次100000金幣', () => {
   const {e,c,p} = setup();
   p.gold = 1000;
   const goal = select(c, 'skillEquipCount');
-  assert.equal(goal.order, 5); assert.equal(goal.count, 1); assert.equal(goal.rewardQty, 100000);
+  assert.equal(goal.order, 5); assert.equal(goal.count, 2); assert.equal(goal.rewardQty, 100000);
+  assert.deepEqual(Array.from(p.loadout), ['sg:knife'], '新角色預設裝上飛刀');
+  assert.equal(c.taskProgressFor(goal), 1);
   assert.equal(c.taskQuickView().ready, false);
   assert.ok(c.taskClaim().err);
-  assert.equal(c.equipSkillToLoadout('sg:knife'), null);
-  assert.equal(c.taskProgressFor(goal), 1);
-  p.loadout.push('sg:knife', 'sg:missing', null, 'old-skill');
-  assert.equal(c.taskProgressFor(goal), 1);
+  p.loadout.push('sg:missing', null, 'old-skill');
+  assert.equal(c.taskProgressFor(goal), 1, '無效及舊技能不計');
   p.loadout = ['sg:knife'];
+  assert.ok(c.equipSkillToLoadout('sg:knife'), '重複裝配被拒');
+  assert.equal(c.taskProgressFor(goal), 1);
   c.unequipSkillFromLoadout('sg:knife');
   assert.equal(c.taskProgressFor(goal), 0);
+  assert.equal(c.equipSkillToLoadout('sg:knife'), null);
+  assert.equal(c.taskProgressFor(goal), 1);
   assert.equal(c.equipSkillToLoadout('sg:counter'), null);
+  assert.equal(c.taskProgressFor(goal), 2);
   assert.equal(e.panel('task').tasks[4].ready, true);
   assert.equal(e.cmd('task.claim').result.claimed, 5);
   assert.equal(p.gold, 101000);

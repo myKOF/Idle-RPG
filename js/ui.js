@@ -976,6 +976,16 @@ function handleWorkerUiEvents(events) {
       }
       return;
     }
+    /* 升級（協議 EVENT_KINDS.LEVELUP）：音效＋Canvas 特效＋「等級提升」大字。
+       與傷害數字開關無關，不走特效佇列（一則一次性的提示，排隊反而會被洪峰擠掉）。 */
+    if (event.kind === 'levelup') {
+      if (typeof uiRenderingSuspended === 'function' && uiRenderingSuspended()) return;
+      if (typeof Sfx !== 'undefined') Sfx.play('levelUp');
+      if (typeof BattleRenderer !== 'undefined' && typeof BattleRenderer.onLevelUp === 'function') {
+        BattleRenderer.onLevelUp(event);
+      }
+      return;
+    }
     if (event.kind === 'loot') {
       // Battle statistics are authoritative Worker state projected by
       // panel('battle'). Replaying recorder calls here would double-count.
@@ -9335,7 +9345,10 @@ function battleSkillGroupTooltipHTML(gid, levels, skillsSnapshot) {
       break;
     }
   }
-  var html = '<div class="skt-name">' + STR(813, skillIconHTML(gid, group.emoji), esc(group.name), totals.total, totals.max) + '</div>';
+  /* 戰鬥區快捷列的提示：不放技能小圖標；名稱靠左、名稱旁顯示消耗法力（被動技能沒有施法消耗，不顯示） */
+  var mpMark = (typeof skills2IsPassive === 'function' && skills2IsPassive(gid)) ? '' :
+    '<span class="skt-mp">🔵 ' + skills2ManaCost(gid, lvs, sgUiUltRaw(skillsSnapshot), sgUiUnlockProgress(skillsSnapshot)) + ' MP</span>';
+  var html = '<div class="skt-name">' + STR(813, '', esc(group.name), totals.total, totals.max, mpMark) + '</div>';
   html += '<div class="skt-desc">' + (heading ? '<b>' + esc(heading) + '</b><br>' + description : STR(814)) + '</div>';
   return html + '<div class="skt-hint">' + STR(815) + '</div>' + (pick ? skillTowerUnlockHintHTML(pick.def, skillsSnapshot) : '');
 }

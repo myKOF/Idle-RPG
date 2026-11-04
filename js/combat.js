@@ -1304,7 +1304,7 @@ function statusTickVfxFlush() {
 
 /* 傷害事件的屬性汲取。DoT 同幀合併扣血時帶入實際跳數，O(1) 回復，
    不新增 Timer／浮字；技能自帶治療仍由技能自行處理。 */
-function playerDrainOnDamage(target, damage, player, hits) {
+function playerDrainOnDamage(target, damage, player, hits, triggerPct) {
     if (!(damage > 0) || !target || target._sgPreview) return;
     player = player || (typeof sgCurrentPlayerEnt === 'function' ? sgCurrentPlayerEnt() : null);
     if (!player || !(player.hp > 0) || player === target || player._sgPreview) return;
@@ -1315,8 +1315,10 @@ function playerDrainOnDamage(target, damage, player, hits) {
     if (!(hpVal > 0 || mpVal > 0)) return;
     var count = hits === undefined ? 1 : Math.max(0, Math.floor(Number(hits) || 0));
     if (!(count > 0)) return;
-    if (hpVal > 0) healPlayer(player, lifestealHealAmount(hpVal) * count, st, { noShield: true });
-    if (mpVal > 0) gainPlayerMana(player, manaStealAmount(mpVal) * count, st);
+    /* 技能的擊中回復觸發系數：吸血與吸魔各擲一次（未帶系數＝必定觸發，普攻與持續傷害走這條） */
+    var gated = typeof triggerPct === 'number' && triggerPct < 100;
+    if (hpVal > 0 && (!gated || chance(triggerPct))) healPlayer(player, lifestealHealAmount(hpVal) * count, st, { noShield: true });
+    if (mpVal > 0 && (!gated || chance(triggerPct))) gainPlayerMana(player, manaStealAmount(mpVal) * count, st);
 }
 
 /* 玩家持續傷害的輸出加成（2026-10-25）：玩家施放的 DoT 在每一跳結算時吃爆擊率／爆擊傷害、
@@ -2589,6 +2591,26 @@ function reviveFieldEnemy(m) {
     UI.dirty.battle = true;
 }
 
+/* 玩家升級的震懾：全屏小怪直接擊殺、菁英生命 -80%（剩下目前生命的 20%，至少 1 點，不會直接死）、
+   BOSS 不受影響。擊殺走統一清算 onFieldDeaths（經驗、掉落、擊殺統計與正常擊殺相同）；
+   settlePlayerXp 可能正在某隻怪的擊殺結算裡被呼叫，那隻怪 _rewarded 已設，不會重複結算。 */
+var LEVELUP_ELITE_HP_LOSS = 0.8;
+function levelUpFieldPurge() {
+    var enemies = fieldEnemyList().slice();   // 含還在進場的敵人：全屏都算
+    var killed = false;
+    for (var i = 0; i < enemies.length; i++) {
+        var m = enemies[i];
+        if (!m || !(m.hp > 0) || m.isBoss) continue;
+        if (m.elite) {
+            m.hp = Math.max(1, m.hp * (1 - LEVELUP_ELITE_HP_LOSS));
+        } else {
+            m.hp = 0;
+            killed = true;
+        }
+    }
+    if (killed) onFieldDeaths();
+}
+
 function onFieldDeaths() {
     var enemies = fieldEnemyList().slice();
     for (var i = 0; i < enemies.length; i++) {
@@ -2681,7 +2703,7 @@ function rollFieldDrops(m) {
         var gemN = rollDropCount(gemRates[glv] * (1 + lootBonus / 100) * rw * eliteDropMult);
         for (var gi = 0; gi < gemN; gi++) {
             var lv = glv + 1;
-            var gtype = randomGemType();
+            var gtype = randomGemTypeForLevel(m.level - (Number(m._powerLevelBonus) || 0));
             if (!gtype) continue;
             addGem(gtype, lv, 1);
             if (window.recordLootGem) window.recordLootGem(gtype, lv, 1, 'field');

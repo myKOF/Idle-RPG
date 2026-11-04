@@ -254,7 +254,12 @@ var EVENT_KINDS = {
      lockMs  施放硬直毫秒數（這段期間角色站定，結束時技能才真的放出去、特效才出現）。
              顯示層用它把施法動作的「釋放」那一幀對到特效出現的那一刻；0＝特效同時出現。
      走低延遲的 visual 訊息（與 VFX 同一條），否則施法姿勢會比特效晚一個 tick。 */
-  ACT: 'act'
+  ACT: 'act',
+  /* { level }  玩家升級（目前等級，連升多級只送一則、帶最終等級）。
+     顯示層（js/ui.js → BattleRenderer.onLevelUp、Sfx）據此播放升級音效、聚光／氣旋特效與「等級提升」大字。
+     與傷害數字開關無關：關閉戰鬥數字也照常顯示。補進度（快轉）期間與 act／vfx／float 同樣靜默。
+     走低延遲的 visual 訊息，音效與特效才不會比升級晚一個 tick。 */
+  LEVELUP: 'levelup'
 };
 
 /* ---- 存檔落地種類（PERSIST.kind）---- */

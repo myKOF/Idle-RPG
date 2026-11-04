@@ -82,7 +82,7 @@ function shimSetBackground(hidden) {
 function shimIsUrgentVisualEvent(kind, data) {
   if (_shimBackground) return false;
   /* act（v36 角色動作）與 vfx 同一條：施法姿勢比特效晚一個 tick 就對不上了 */
-  if (kind === 'vfx' || kind === 'act') return true;
+  if (kind === 'vfx' || kind === 'act' || kind === 'levelup') return true;
   return kind === 'float' && /(?:^|\s)skill-cast(?:\s|$)/.test(String(data && data.cls || ''));
 }
 
@@ -149,7 +149,7 @@ function shimSilentDropped() { return _shimSilentDropped; }
 function shimPushEvent(kind, data) {
   data = data || {};
   data.kind = kind;
-  if (_shimCatchupSilent && (kind === 'vfx' || kind === 'act' || kind === 'float')) { _shimSilentDropped++; return; }
+  if (_shimCatchupSilent && (kind === 'vfx' || kind === 'act' || kind === 'float' || kind === 'levelup')) { _shimSilentDropped++; return; }
   if (shimIsUrgentVisualEvent(kind, data)) {
     var sustain = shimIsSustainVisualEvent(data);
     var birth = sustain && shimIsSustainBirth(data);
@@ -326,6 +326,11 @@ function emitPlayerAct(act, floatSel, targetEnt, lockSec) {
     target: (targetEnt && typeof enemyEventFloatTarget === 'function') ? enemyEventFloatTarget(targetEnt, floatSel) : null,
     lockMs: lockSec > 0 ? Math.round(lockSec * 1000) : 0
   });
+}
+
+/* ---- 玩家升級（協議 EVENT_KINDS.LEVELUP）---- */
+function emitPlayerLevelUp(level) {
+  shimPushEvent('levelup', { level: Math.max(1, Math.floor(Number(level)) || 1) });
 }
 
 /* ---- 其餘 ui.js 函式替身 ----

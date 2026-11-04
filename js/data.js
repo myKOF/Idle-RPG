@@ -2455,7 +2455,7 @@ var TASKS = [
   { order: 2, name: '將全身的裝備替換成精良品質', type: 'equipSlots', param: '1|0', count: 13, rewardType: 'gold', rewardQty: 100000, rewardLabel: '金幣+100000' },
   { order: 3, name: '強化裝備10次', type: 'upgradeCount', count: 10, rewardType: 'scrap', rewardQty: 200, rewardLabel: '裝備碎片+200' },
   { order: 4, name: '洗煉裝備2次', type: 'rerollCount', count: 2, rewardType: 'essence', rewardQty: 20, rewardLabel: '附魔精華+20' },
-  { order: 5, name: '裝配任意1個技能', type: 'skillEquipCount', count: 1, rewardType: 'gold', rewardQty: 100000, rewardLabel: '金幣+100000' },
+  { order: 5, name: '裝配任意2個技能', type: 'skillEquipCount', count: 2, rewardType: 'gold', rewardQty: 100000, rewardLabel: '金幣+100000' },
   { order: 6, name: '挑戰荒漠第20關成功', type: 'stageClear', param: 'desert', count: 20, rewardType: 'equip', rewardParam: '2|2', rewardQty: 1, rewardLabel: '任意稀有1級裝備×2' },
   { order: 7, name: '將全身的裝備替換成稀有品質', type: 'equipSlots', param: '2|0', count: 13, rewardType: 'scrap', rewardQty: 500, rewardLabel: '裝備碎片+500' },
   { order: 8, name: '強化裝備20次', type: 'upgradeCount', count: 20, rewardType: 'scrap', rewardQty: 500, rewardLabel: '裝備碎片+500' },
