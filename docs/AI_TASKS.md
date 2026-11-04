@@ -14598,6 +14598,16 @@ Worker 存活且頁面正常完成載入。
 - 協作事故已修正：素材庫一般Commit遇到同時stage的成就音效4檔而誤帶入；在HEAD未前進時用獨立index重建只含本任務9檔的提交、以舊SHA比較原子更新分支，沒有改他方檔案或暫存狀態。原混合c4cedd3已由正確提交8b1a2dd替代；其後本輪遊戲提交亦使用獨立index保留其他任務暫存。
 - 雙庫：素材庫codex-authored/ui-low-drum-20261105-v1先Commit `8b1a2dd`，再遊戲Commit（本段所在「[Codex] feat: 製作五款極短低沉鼓敲擊聲」，SHA見聊天交付）。本輪製作無未完成／已知素材技術缺陷，可Review／保存候選，尚未接入、不合併推送；下一步使用者試聽以D1～D5選擇或提供回饋。
 
+## UI-SOUND-HOVER-SCOPE-20261105 — 依九項清單限制觸碰音
+
+- Owner：Codex；Done，單一開發者。使用者要求功能列表全保留；裝備只強化／洗煉／寶石／符文；技能只升級／一鍵滿級／降級／重置；熔爐保持；寶石只合成／全部合成；符文／威能全關；封魔塔只挑戰；神鑄只自動放入／四種開始操作／連續自動。只調hover／鍵盤焦點／觸控碰觸篩選，H10真click、強化洗煉成功及成就聲音保持。
+- 前置／範圍：已讀規範／Workflow／任務／Codex指示，ai/codex且fetch、預檢完成；允許js/ui-sound.js、index僅該腳本快取、既有tests/ui-sound.test.cjs／ui-achievement-sound.test.cjs、docs/UI_SOUND.md、本段、LV現行音效說明，共7檔；禁止其他UI／玩法／配置／Worker／存檔／音檔、合併推送。外部game_parameters.xlsx修改保留。develop雖有未納入merge記錄，ui-sound／兩測試／UI_SOUND內容與本分支一致；index其他版本、LV寶石與其他AI_TASKS段均不收取，本項分段修改並作三方乾跑，既有相鄰ui.js分歧沿用本聊天音效快取單行授權。
+- 完成7檔：ui-sound新增獨立hoverTarget及各頁主功能白名單，滑鼠／鍵盤／觸控共用；功能列表與熔爐維持，其餘未指定區域保持。封魔塔專屬結果窗／Canvas HUD也依僅挑戰規則靜音；共用背包依目前DOM父頁、神鑄自動放入／卸下依既有面板快照判定。index只升音效快取20261105-ui-hover-scope-v1；擴充原回歸範圍及既有成就快取斷言，UI_SOUND新增九項表、LV同步現行聲音規則及本段。WAV／音量、H10click與成功／成就接線完全保持，素材庫沒有本項變更、不建立空Commit。
+- 測試：`node --test tests/ui-sound.test.cjs tests/ui-achievement-sound.test.cjs tests/equip-reroll-ui.test.cjs tests/upgrade-animation.test.cjs tests/ui-tick-smoke.test.cjs tests/vfx-editor-cache-versions.test.cjs`35/35通過；新增約百項標記正反例各驗pointer／focus／touch，並驗H10仍有click、共享背包搬移、神鑄共用按鈕占位狀態、label轉發與停用。`npm.cmd run build`653檔、`node tools/string-table/build_string_csv.cjs --check`寫死0，以及diff／stat／check、自我Review通過。未動配置來源／數值或套用參數。
+- 實機：使用browser skill嘗試IAB無後端，改隔離隨機localhost＋Edge headless＋真Worker／AudioContext，暫停測試存檔戰鬥以穩定介面。主介面完成52例，QA在神鑄期待可見排序鈕而中斷；神鑄原本隱藏該鈕，後以獨立9例確認不可觸碰及完整自動放入→全部卸下→自動放入循環，兩段去重56例符合預期。涵蓋九個功能入口、裝備主功能／詞條及物品選取、技能四動作、熔爐不變、寶石兩合成、符文／塔／威能、神鑄模式／品質／搬移背包／開始／label；原生焦點及觸控同白名單，靜音觸碰的裝備選取／卸下真click仍播H10。只載4份核准音檔，最後兩段Console error／warning及pageerror均0。QA在本聊天visualizations/hover-scope-qa.mjs、hover-scope-main-qa.json、hover-scope-forge-qa.mjs／json、hover-scope-verified.json；瀏覽器及服務均關閉，玩家原網址存檔未讀寫。
+- 協作／交付：上述runtime／兩測試／UI_SOUND／本段／LV各以HEAD基線、工作候選及develop現況merge-file試跑exit0，僅分段修改、不引入develop的其他功能或改相鄰ui.js版本。唯讀未改規範／Workflow／prompts、js/ui.js／ui-achievements／bridge／Worker／協議／player／save／所有配置與素材；外部修改持續變動，提交前為config/CSV/Gems.csv、Skills2.csv、game_parameters.csv、config/Excel/Gems.xlsx、Skills2.xlsx、game_parameters.xlsx及js/data.js，共7檔完整保留未提交。遊戲Commit為本段所在「[Codex] feat: 依頁籤白名單調整觸碰音效」，SHA見聊天交付；無本項未完成或已知新增缺陷，可Review／使用者合併，未合併推送。未跑全庫／多瀏覽器及行動真機長時測試；音訊首次手勢／背景略過限制保持。下一步使用者重載遊戲驗收九項範圍。
+- 實作／驗收：依真實DOM所在頁籤判定，避免共用背包搬到神鑄仍套裝備規則；label正規化後保留連續自動開關，神鑄共用自動放入／卸下按鈕依快照功能區分。裝備只保留主功能按鈕（含洗煉及符文確認），材料／孔位／詞條／裝備／篩選選取不播；技能以升級／滿級／降級／重置動作標記判斷，進化選取／切換與GM MAX不播。測試九類正反例、子圖示、鍵盤與觸控、共用背包／切換、停用及H10保持；隔離瀏覽器／Build／diff後Commit。既有音檔不變，無素材新Commit；後續使用者重載驗收。
+
 ## UI-SOUND-CLICK-H10-20261105 — 點擊音改用H10
 
 - Owner：Codex；Done，單一開發者。使用者指定H10用於點擊，取代前次C3；沿用既有H10原檔及音量，不改hover／強化洗煉成功／成就音或操作分類。允許js/ui-sound.js、index僅音效快取一行、既有tests/ui-sound.test.cjs及ui-achievement-sound.test.cjs、docs/UI_SOUND.md／LV現行音效句與本段；禁止改素材、其他腳本／UI／Worker／配置／存檔、合併推送。後續由使用者重載驗收。

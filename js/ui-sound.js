@@ -29,6 +29,15 @@ var UISound = (function () {
     '[data-talent-select]', '[data-talent-turn]', '[data-tower-pick]', '[data-tower-tier]',
     '[data-load-save]', '[data-del-save]', '[data-quest-claim]'
   ].join(', ');
+  // 觸碰與點擊分開篩選：此白名單只限制hover／鍵盤焦點／觸控碰觸。
+  var HOVER_RULES = {
+    'tab-equip': '[data-act="upgrade"], [data-act="toggle-reroll"], [data-act="reroll-affix"], [data-act="toggle-socket"], [data-act="toggle-rune"], [data-act="engrave-rune"]',
+    'tab-skills': '[data-skill2-learn], [data-skill2-max], [data-skill2-downgrade], [data-skill2-delete]',
+    'tab-gems': '#fuse-btn, #fuse-all-btn',
+    'tab-tower': '[data-tower-floor]',
+    'tab-forge': '#forge-unload, #forge-go, #forge-auto'
+  };
+  var HOVER_SCOPES = '#tabs, #tab-equip, #tab-skills, #tab-newforge, #tab-gems, #tab-runes, #tab-tower, #tab-talents, #tab-forge, #tower-result-modal, #tower-canvas-hud';
   var context = null, initialized = false, generation = 0;
   var buffers = {}, loading = {}, sources = {}, lastPlayed = {};
   var pointerX = null, pointerY = null, focusTarget = null, focusAt = -Infinity;
@@ -115,6 +124,22 @@ var UISound = (function () {
     }
     return anchor;
   }
+  function hoverTarget(node) {
+    var anchor = target(node);
+    if (!anchor) return null;
+    var scope = anchor.closest(HOVER_SCOPES);
+    // 未指定的區域與熔爐沿用現況；功能列表不受目的頁籤限制。
+    if (!scope || scope.id === 'tabs' || scope.id === 'tab-newforge') return anchor;
+    var allowed = HOVER_RULES[scope.id];
+    if (!allowed || anchor.closest(allowed) !== anchor) return null;
+    if (anchor.id === 'forge-unload') {
+      // 此按鈕有材料時改成「全部卸下」，只在實際執行自動放入時播觸碰音。
+      if (typeof uiForgePanelSnapshot !== 'function' || typeof forgeViewState !== 'function' || typeof forgeViewItemCount !== 'function') return null;
+      var forge = forgeViewState(uiForgePanelSnapshot());
+      if (!forge || forgeViewItemCount(forge)) return null;
+    }
+    return anchor;
+  }
   function hover(event) {
     if (!event.isTrusted || event.pointerType === 'touch' || event.buttons || document.hidden) return;
     var samePosition = event.clientX === pointerX && event.clientY === pointerY;
@@ -123,14 +148,14 @@ var UISound = (function () {
     if (typeof UI !== 'undefined' && event.target && event.target.closest &&
         ((UI.panelScrolling && event.target.closest('#workspace-area main')) ||
          (UI.inventoryScrolling && event.target.closest('#inventory-grid')))) return;
-    var anchor = target(event.target);
-    if (!anchor || anchor === target(event.relatedTarget) || (focusTarget === anchor && now() - focusAt < 120)) return;
+    var anchor = hoverTarget(event.target);
+    if (!anchor || anchor === hoverTarget(event.relatedTarget) || (focusTarget === anchor && now() - focusAt < 120)) return;
     play('hover');
   }
   function focus(event) {
     if (!event.isTrusted || document.hidden) return;
-    var anchor = target(event.target);
-    if (!anchor || anchor === target(event.relatedTarget)) return;
+    var anchor = hoverTarget(event.target);
+    if (!anchor || anchor === hoverTarget(event.relatedTarget)) return;
     // 滑鼠點擊造成的focus不另播；鍵盤導覽仍有觸碰回饋。
     if (!keyboardFocus) return;
     focusTarget = anchor; focusAt = now();
@@ -141,7 +166,7 @@ var UISound = (function () {
     if (!event.isTrusted) return;
     keyboardFocus = false;
     unlock(event);
-    if (event.pointerType === 'touch' && target(event.target)) play('hover');
+    if (event.pointerType === 'touch' && hoverTarget(event.target)) play('hover');
   }
   function keyDown(event) {
     if (!event.isTrusted) return;
