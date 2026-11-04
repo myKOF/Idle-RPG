@@ -2,7 +2,7 @@
 /* 自動產生，請勿手改。來源：config/Excel/String.xlsx（Excel 是唯一來源）。
    重新產生：node tools/string-table/apply_strings.cjs（套用參數.bat 會自動執行）。
    每列＝[繁體中文, 簡體中文, 英文]；後面的空欄已省略。讀取請用 js/strings.js 的 STR()。 */
-var STRING_DATA_VERSION = '233142b7';
+var STRING_DATA_VERSION = 'b7e4f605';
 var STRING_DATA = {
   "1": ["冰霜"],
   "2": ["毒霧"],
@@ -2305,5 +2305,6 @@ var STRING_DATA = {
   "2312": ["減少{0}"],
   "2313": ["增加{0}"],
   "2314": ["等級提升"],
-  "2315": ["寶石不足"]
+  "2315": ["寶石不足"],
+  "2316": ["擁有：{0} 個"]
 };

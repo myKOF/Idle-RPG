@@ -3993,7 +3993,7 @@ html *::-webkit-scrollbar-corner {
   align-items: center;
   justify-content: center;
   gap: 22px;
-  padding: 26px 12px 18px;
+  padding: 26px 12px 46px;   /* 下方留給每組寶石的「擁有：N 個」，字不壓到邊框 */
   border: 1px solid #23262d;
   border-radius: 8px;
   background: radial-gradient(ellipse at center, #2a1a14 0%, #0e0f12 72%);
@@ -4002,6 +4002,24 @@ html *::-webkit-scrollbar-corner {
 #tab-gems .gx-recipe-in {
   display: flex;
   gap: 8px;
+}
+
+/* 一組寶石＋下方的持有數量；數量絕對定位，不影響寶石與箭頭的垂直對齊 */
+#tab-gems .gx-recipe-col {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+#tab-gems .gx-recipe-own {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-top: 8px;
+  transform: translateX(-50%);
+  font-size: 12px;
+  color: #b9b2a4;
+  white-space: nowrap;
 }
 
 #tab-gems .gx-socket {
