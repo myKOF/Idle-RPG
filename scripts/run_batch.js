@@ -20,7 +20,7 @@
      --hours=N          每次模擬的遊戲小時數（預設 1）
      --seeds=N          用 N 個seed（1..N）；也可寫 --seeds=7,11,13 指定
      --policy=a,b       策略檔，逗號分隔可多個（預設 policy.default.json）
-     --concurrency=N    同時執行數（預設 CPU 核心數 - 1）
+     --concurrency=N    同時執行數（預設 CPU 核心數 - 2）
      --out=dir          輸出目錄（預設 sim_batch）
 */
 
@@ -41,7 +41,11 @@ const HOURS = Number(arg('hours', 1));
    不轉送的話旗標會被安靜吃掉，使用者以為跑的是全程在線，實際上跑的是班表。 */
 const IGNORE_SCHEDULE = process.argv.includes('--ignore-schedule');
 const OUT_DIR = path.resolve(ROOT, String(arg('out', 'sim_batch')));
-const CONCURRENCY = Math.max(1, Number(arg('concurrency', Math.max(1, os.cpus().length - 1))));
+/* 預設同時數＝核心數 − 2，留兩顆給系統與前景程式。
+   以前是核心數 − 1：6 核同時跑 5 個全速的行程，整機 CPU 頂到 100%。縮時模擬現在每場要跑好幾十分鐘
+   （遊戲邏輯變重，縮時倍率從約 100x 掉到約 35x），滿載的時間長了，電腦就會卡。
+   要榨乾 CPU 就明確傳 --concurrency。 */
+const CONCURRENCY = Math.max(1, Number(arg('concurrency', Math.max(1, os.cpus().length - 2))));
 
 /* seedBase：批次的起始 seed，往上連號取 N 個。
    ⚠️ 沒有這個參數時本檔是寫死從 1 開始數的，於是同樣張數的批次每次跑出來
@@ -103,6 +107,9 @@ function runJob(job) {
     if (IGNORE_SCHEDULE) childArgs.push('--ignore-schedule');
     const child = spawn(process.execPath, childArgs, { cwd: ROOT, stdio: ['ignore', 'ignore', 'pipe'] });
     liveChildren.add(child);
+    /* 降成「低於標準」優先權：前景程式（瀏覽器、編輯器）永遠先拿到 CPU，
+       模擬只吃剩下的——總吞吐量幾乎不變，但電腦不會被拖到卡頓。失敗（權限）就維持原樣。 */
+    try { os.setPriority(child.pid, os.constants.priority.PRIORITY_BELOW_NORMAL); } catch (e) { /* 不影響模擬 */ }
 
     let stderr = '';
     child.stderr.on('data', (d) => { stderr += d.toString(); });

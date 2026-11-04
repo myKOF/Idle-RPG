@@ -646,7 +646,7 @@
 643,戰鬥,界面文字(含標記)｜ui.js:10098 npcRangeMoveTipLines,{0}=代入參數：fmt1(m.runSpeed / perM)（數字(1位小數)）；<br>=換行,👟 移動速度：{0} 米/秒<br>,,
 644,戰鬥,文字｜ui.js:10148 showEnemyTooltip,,封魔塔 BOSS,,
 645,戰鬥,文字｜ui.js:10148 showEnemyTooltip,,敵人情報,,
-646,戰鬥,界面文字(含標記)｜ui.js:10180 showEnemyTooltip,{0}=代入參數：(m.magic ? '🔮 魔法攻擊力：' : '⚔️ 物理攻擊力：')；{1}=代入參數：fmt(m.atk)（數字(縮寫)）；{2}=代入參數：fmt1(m.aspd)（數字(1位小數)）；{3}=代入參數：npcRangeMoveTipLines(m)；{4}=代入參數：fmt(m.def)（數字(縮寫)）；{5}=代入參數：fmt(m.mdef || m.def * 0.75)（數字(縮寫)）；{6}=代入參數：fmt(m.maxHp)（數字(縮寫)）；{7}=代入參數：(m.hit || 100)；{8}=代入參數：(m.dodge || 0)；{9}=代入參數：(m.ctrlRes || 0)；<br>=換行,{0}{1}<br>⚡ 攻擊速度：{2} 次/秒<br>{3}🛡️ 物理防禦：{4}<br>🔮 魔法防禦：{5}<br>❤️ 最大生命：{6}<br>🎯 命中率：{7}%<br>🌀 閃避率：{8}%<br>🧠 控制抵抗：{9}%,,
+646,戰鬥,界面文字(含標記)｜ui.js:10180 showEnemyTooltip,{0}=代入參數：(m.magic ? '🔮 魔法攻擊力：' : '⚔️ 物理攻擊力：')；{1}=代入參數：fmt(m.maxHp)（數字(縮寫)）；{2}=代入參數：fmt(m.atk)（數字(縮寫)）；{3}=代入參數：fmt(m.def)（數字(縮寫)）；{4}=代入參數：fmt(m.mdef || m.def * 0.75)（數字(縮寫)）；{5}=代入參數：fmt1(m.aspd)（數字(1位小數)）；{6}=代入參數：(m.hit || 100)；{7}=代入參數：(m.dodge || 0)；<br>=換行,❤️ 生命值：{1}<br>{0}{2}<br>🛡️ 物理防禦：{3}<br>🔮 魔法防禦：{4}<br>⚡ 攻擊速度：{5} 次/秒<br>🎯 命中率：{6}%<br>🌀 閃避率：{7}%,,
 647,戰鬥,文字｜ui.js:10183 showEnemyTooltip,,🔮 魔法攻擊力：,,
 648,戰鬥,文字｜ui.js:10183 showEnemyTooltip,,⚔️ 物理攻擊力：,,
 649,戰鬥,界面文字(含標記)｜ui.js:10198 showEnemyTooltip,"{0}=代入參數：ELEM_INFO[mElem].emoji；{1}=代入參數：fmt(mElemAtk)（數字(縮寫)）；{2}=代入參數：ELEM_INFO[mElem].name（名稱）；{3}=代入參數：ELEM_INFO[mElem].name（名稱）；<br>=換行；<span style=""color:var(--dim)"">…</span>=變色(var(--dim))","<br>✨ 特殊技·元素審判：每次攻擊額外造成 {0} {1} {2}元素傷害<span style=""color:var(--dim)"">（先比照魔法傷害吃魔防／魔抗，再受你的「{3}抗性」減免；蓄力重擊／狂暴倍率同樣生效）</span>",,

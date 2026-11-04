@@ -9658,14 +9658,6 @@ function showItemTooltip(it, anchorEl, opts) {
 }
 /* 敵人提示的「攻擊距離／移動速度」兩行（NPC 表欄位；座標單位 ÷ 10＝米）。
    沒有這兩項的敵人（高塔 BOSS、表格留白）不顯示，避免出現一個不是實際生效的數字。 */
-function npcRangeMoveTipLines(m) {
-  var perM = (typeof BF_SYSTEM_UNITS_PER_METER === 'number' && BF_SYSTEM_UNITS_PER_METER > 0) ? BF_SYSTEM_UNITS_PER_METER : 10;
-  var out = '';
-  if (m && m.atkRange > 0) out += STR(642, fmt1(m.atkRange / perM));
-  if (m && m.runSpeed > 0) out += STR(643, fmt1(m.runSpeed / perM));
-  return out;
-}
-
 function showEnemyTooltip(anchorEl) {
   var tip = $id('sk-tooltip');
   if (!tip || !anchorEl) return;
@@ -9744,15 +9736,9 @@ function showEnemyTooltip(anchorEl) {
     }
   }
 
-  var dropTip = '<div class="skt-name" style="margin-bottom:6px; display:flex; align-items:center; justify-content:space-between;"><span>【' + title + '】</span>' + (elemBadgeHtml ? '<div style="display:flex; align-items:center;">' + elemBadgeHtml + '</div>' : '') + '</div><div class="skt-desc" style="text-align:left;">' + STR(646, (m.magic ? STR(647) : STR(648)), fmt(m.atk), fmt1(m.aspd), npcRangeMoveTipLines(m), fmt(m.def), fmt(m.mdef || m.def * 0.75), fmt(m.maxHp), (m.hit || 100), (m.dodge || 0), (m.ctrlRes || 0));
+  var dropTip = '<div class="skt-name" style="margin-bottom:6px; display:flex; align-items:center; justify-content:space-between;"><span>【' + title + '】</span>' + (elemBadgeHtml ? '<div style="display:flex; align-items:center;">' + elemBadgeHtml + '</div>' : '') + '</div><div class="skt-desc" style="text-align:left;">' + STR(646, (m.magic ? STR(647) : STR(648)), fmt(m.maxHp), fmt(m.atk), fmt(m.def), fmt(m.mdef || m.def * 0.75), fmt1(m.aspd), (m.hit || 100), (m.dodge || 0));
 
-  // BOSS 特殊技·元素審判：元素 BOSS 每次攻擊都額外附帶一段元素傷害。
-  // 該段傷害先比照魔法傷害吃魔防／魔抗，最後再受玩家對應「屬性抗性」影響。
-  var mElem = m.elem || null;
-  var mElemAtk = (mElem && m.elemAtk && m.elemAtk[mElem]) ? m.elemAtk[mElem] : 0;
-  if (mElemAtk > 0 && ELEM_INFO[mElem]) {
-    dropTip += STR(649, ELEM_INFO[mElem].emoji, fmt(mElemAtk), ELEM_INFO[mElem].name, ELEM_INFO[mElem].name);
-  }
+  // 敵人屬性只列七項（生命值、攻擊力、物理防禦、魔法防禦、攻速、命中率、閃避率）；距離、移速、控制抵抗、元素審判說明不顯示。
   dropTip += '</div>';
 
   if (isBossTip) {
