@@ -1,0 +1,189 @@
+{
+  "version": 4,
+  "status": "preview-only-awaiting-user-selection",
+  "sampleRate": 48000,
+  "channels": 2,
+  "bits": 16,
+  "origin": "Original procedural UI transients, filtered noise and damped oscillators. No external recordings, references or sample libraries.",
+  "source": "tools/audio/ui-short-options.cjs",
+  "sourceSha256": "39e19fba453724c5deabe22d16bf023c5c9a3f77404a72ca3ac470c2e4c05ca1",
+  "libraryRelativePath": "codex-authored/ui-short-options-20261104-v4",
+  "timelines": {
+    "hover": [
+      {
+        "id": "H1",
+        "firstAtSeconds": 0.35,
+        "secondAtSeconds": 0.645
+      },
+      {
+        "id": "H2",
+        "firstAtSeconds": 1.45,
+        "secondAtSeconds": 1.755
+      },
+      {
+        "id": "H3",
+        "firstAtSeconds": 2.57,
+        "secondAtSeconds": 2.86
+      },
+      {
+        "id": "H4",
+        "firstAtSeconds": 3.66,
+        "secondAtSeconds": 3.96
+      },
+      {
+        "id": "H5",
+        "firstAtSeconds": 4.77,
+        "secondAtSeconds": 5.08
+      }
+    ],
+    "click": [
+      {
+        "id": "C1",
+        "firstAtSeconds": 0.35,
+        "secondAtSeconds": 0.67
+      },
+      {
+        "id": "C2",
+        "firstAtSeconds": 1.5,
+        "secondAtSeconds": 1.805
+      },
+      {
+        "id": "C3",
+        "firstAtSeconds": 2.62,
+        "secondAtSeconds": 2.945
+      },
+      {
+        "id": "C4",
+        "firstAtSeconds": 3.78,
+        "secondAtSeconds": 4.095
+      },
+      {
+        "id": "C5",
+        "firstAtSeconds": 4.92,
+        "secondAtSeconds": 5.255
+      }
+    ]
+  },
+  "files": [
+    {
+      "id": "H1",
+      "name": "乾淨短嗒",
+      "group": "hover",
+      "file": "H1.wav",
+      "sha256": "efb441435fc3fa6bc0a9fa68ed5698864bcfeb5f481af925dcfc4a3f2c0c5e6b",
+      "seconds": 0.055,
+      "peakDbFS": -6.02,
+      "rmsDbFS": -22.05
+    },
+    {
+      "id": "H2",
+      "name": "柔和短啵",
+      "group": "hover",
+      "file": "H2.wav",
+      "sha256": "4dbf72e5e3671229967502d84aac04d9031ac38af6e5d1ef2a1cc541acf8b487",
+      "seconds": 0.065,
+      "peakDbFS": -8.55,
+      "rmsDbFS": -20
+    },
+    {
+      "id": "H3",
+      "name": "俐落輕刷",
+      "group": "hover",
+      "file": "H3.wav",
+      "sha256": "f4ec2d711b485f934027e469b091c652380811b49827a3fd2f6c950723b0e6fe",
+      "seconds": 0.05,
+      "peakDbFS": -6.47,
+      "rmsDbFS": -20
+    },
+    {
+      "id": "H4",
+      "name": "清亮短音",
+      "group": "hover",
+      "file": "H4.wav",
+      "sha256": "1da43e6243198db9c93cb734f4ff00a0ad699ca9709fa2e33978ce6afd56cfeb",
+      "seconds": 0.06,
+      "peakDbFS": -7.81,
+      "rmsDbFS": -20
+    },
+    {
+      "id": "H5",
+      "name": "清脆卡榫",
+      "group": "hover",
+      "file": "H5.wav",
+      "sha256": "4c7f1f9ee6c281167703689c8351ee816fe7f2234e52d3adbaa64621cc597bb0",
+      "seconds": 0.07,
+      "peakDbFS": -6.02,
+      "rmsDbFS": -22.56
+    },
+    {
+      "id": "C1",
+      "name": "實體按鍵",
+      "group": "click",
+      "file": "C1.wav",
+      "sha256": "3ddf99421c6b159043017d0fe474c712b028776d74106a22ef9d6d26883f6215",
+      "seconds": 0.08,
+      "peakDbFS": -3.1,
+      "rmsDbFS": -20
+    },
+    {
+      "id": "C2",
+      "name": "清脆啪嗒",
+      "group": "click",
+      "file": "C2.wav",
+      "sha256": "b92f596725f85b118fa985d9f12140a2fdf5334a44720125d8c2dbbdc8fb1c24",
+      "seconds": 0.065,
+      "peakDbFS": -3.1,
+      "rmsDbFS": -19.93
+    },
+    {
+      "id": "C3",
+      "name": "厚實短咚",
+      "group": "click",
+      "file": "C3.wav",
+      "sha256": "a6fdb4f3674d327ed01fc1cd632f3be8788bda00cca8bcd10d34a531c0904551",
+      "seconds": 0.085,
+      "peakDbFS": -3.1,
+      "rmsDbFS": -18.09
+    },
+    {
+      "id": "C4",
+      "name": "俐落電子",
+      "group": "click",
+      "file": "C4.wav",
+      "sha256": "4de80a62ad30c81212f8bc2b9f309a926f4ba82c1274c8bac1b0b6fc26ffe7b4",
+      "seconds": 0.075,
+      "peakDbFS": -3.73,
+      "rmsDbFS": -16.48
+    },
+    {
+      "id": "C5",
+      "name": "雙段確認",
+      "group": "click",
+      "file": "C5.wav",
+      "sha256": "859572747bbb008d85ac11d21f35ac5ac0c2a9ef2816d23ce3df9e2897f21ed3",
+      "seconds": 0.095,
+      "peakDbFS": -3.1,
+      "rmsDbFS": -20.21
+    },
+    {
+      "id": "hover-sampler",
+      "name": "觸碰H1到H5各兩次",
+      "group": "sampler",
+      "file": "hover-sampler.wav",
+      "sha256": "a3451a10f0c55578b635b879a883124293081fea91e7f6afe73a8839443d4804",
+      "seconds": 5.9,
+      "peakDbFS": -6.02,
+      "rmsDbFS": -30.75
+    },
+    {
+      "id": "click-sampler",
+      "name": "點擊C1到C5各兩次",
+      "group": "sampler",
+      "file": "click-sampler.wav",
+      "sha256": "fb4b4887de8dfbb8c6a2d25027f1ee002380c2b642344e38e406d0a762a2f04b",
+      "seconds": 6.1,
+      "peakDbFS": -3.1,
+      "rmsDbFS": -27.54
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "origin": "User-supplied third-party Mixkit sound effect; not Codex-authored",
+  "title": "Game level completed",
+  "itemId": 2059,
+  "sourceUrl": "https://mixkit.co/free-sound-effects/game/",
+  "license": "Mixkit Sound Effects Free License",
+  "licenseUrl": "https://mixkit.co/license/modal/sfxFree/",
+  "licenseCheckedOn": "2026-11-05",
+  "permissions": "Commercial and non-commercial game end-product integration",
+  "restrictions": "No standalone, stock, template/tool or source-asset redistribution; no ownership claims or rights-management registration",
+  "userInstruction": "Use the supplied sound for achievement completion",
+  "modification": "None; original file copied byte-for-byte, original volume",
+  "usage": "AchievementUI nextToast after validated achievementUnlocked notice",
+  "file": "mixkit-game-level-completed-2059.wav",
+  "sha256": "8da83b49ceb580493ba7c7081ec3d176fe069d4505474b604f6fb08b339bd32a",
+  "bytes": 624896,
+  "format": {
+    "codec": "PCM",
+    "bits": 16,
+    "channels": 2,
+    "sampleRate": 44100,
+    "frames": 156213,
+    "seconds": 3.5422448979591836
+  },
+  "libraryRelativePath": "third-party/mixkit/achievement-completed-2059",
+  "gameRelativePath": "audio/achievements/mixkit-game-level-completed-2059.wav"
+}

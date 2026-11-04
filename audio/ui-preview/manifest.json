@@ -1,0 +1,111 @@
+{
+  "version": 1,
+  "status": "preview-only-awaiting-user-review",
+  "sampleRate": 48000,
+  "channels": 2,
+  "bits": 16,
+  "origin": "Original procedural synthesis by Codex; no external recordings, references, sample libraries or generated third-party audio.",
+  "libraryRelativePath": "codex-authored/ui-sound-preview-20261104",
+  "source": "tools/audio/ui-preview.cjs",
+  "sourceSha256": "cdad8ec1af38f47fdd1eca043d82b8ef96f8db9858bf8d0671cf46da80bd8930",
+  "timeline": [
+    {
+      "id": "01-hover",
+      "atSeconds": 0.35
+    },
+    {
+      "id": "01-hover",
+      "atSeconds": 0.98
+    },
+    {
+      "id": "01-hover",
+      "atSeconds": 1.61
+    },
+    {
+      "id": "02-click",
+      "atSeconds": 2.24
+    },
+    {
+      "id": "02-click",
+      "atSeconds": 2.93
+    },
+    {
+      "id": "02-click",
+      "atSeconds": 3.62
+    },
+    {
+      "id": "03-reroll",
+      "atSeconds": 4.31
+    },
+    {
+      "id": "04-divine-forge",
+      "atSeconds": 5.86
+    },
+    {
+      "id": "05-success",
+      "atSeconds": 8.16
+    },
+    {
+      "id": "06-failure",
+      "atSeconds": 9.76
+    }
+  ],
+  "files": [
+    {
+      "file": "01-hover.wav",
+      "name": "觸碰／懸停",
+      "sha256": "411211856bdcc43ec4c1d534f29720eac208278872aa1fc71eb8e27dcd3b453c",
+      "seconds": 0.18,
+      "peakDbFS": -18.81,
+      "rmsDbFS": -35.02
+    },
+    {
+      "file": "02-click.wav",
+      "name": "點擊／確認",
+      "sha256": "c24a71c51bd241e59f8545b5c47fa3bd0dab6213fa84a619b17e27f6b4223608",
+      "seconds": 0.24,
+      "peakDbFS": -9.21,
+      "rmsDbFS": -26.54
+    },
+    {
+      "file": "03-reroll.wav",
+      "name": "洗煉",
+      "sha256": "809150b2597bf1abece8f01216edd36d868cf67b8f718db682119bc75a32c2d5",
+      "seconds": 1.1000208333333332,
+      "peakDbFS": -11.19,
+      "rmsDbFS": -25.69
+    },
+    {
+      "file": "04-divine-forge.wav",
+      "name": "神鑄",
+      "sha256": "94a2921ccdc5ddde3bdaf1819c720234e55ef220198480eac68e841963d60f62",
+      "seconds": 1.85,
+      "peakDbFS": -5.08,
+      "rmsDbFS": -23.76
+    },
+    {
+      "file": "05-success.wav",
+      "name": "成功",
+      "sha256": "4821e4b49aad96afc57c3c9a9508dc7835c938b7d82a119fcc04e66cc9cd1a14",
+      "seconds": 1.15,
+      "peakDbFS": -9.44,
+      "rmsDbFS": -25.42
+    },
+    {
+      "file": "06-failure.wav",
+      "name": "失敗／無法執行",
+      "sha256": "7cbaee6fe32973ec747da9df9cc7b15b3d2cf1e064e5b3af49682580f2662d75",
+      "seconds": 0.65,
+      "peakDbFS": -12.18,
+      "rmsDbFS": -26.82
+    },
+    {
+      "file": "00-all-preview.wav",
+      "name": "依序試聽合輯",
+      "sha256": "7902a448bc2dceeaa271673a0bad007a2d969d3e4e563587e42a661a745190c2",
+      "seconds": 10.860020833333333,
+      "peakDbFS": -5.08,
+      "rmsDbFS": -28.01
+    }
+  ]
+}

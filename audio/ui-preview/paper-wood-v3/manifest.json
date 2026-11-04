@@ -1,0 +1,67 @@
+{
+  "version": 3,
+  "status": "preview-only-awaiting-user-review",
+  "sampleRate": 48000,
+  "channels": 2,
+  "bits": 16,
+  "origin": "Original procedural filtered-noise paper friction and damped wooden impact; no external recordings, references or sample libraries.",
+  "source": "tools/audio/ui-paper-wood.cjs",
+  "sourceSha256": "5d363edd73394eb0cca5c0a7cb3d61bc9c18424dd83f1f9fb1d35e00c5aa653d",
+  "libraryRelativePath": "codex-authored/ui-paper-wood-preview-20261104-v3",
+  "unchangedOriginals": {
+    "01-hover.wav": "411211856bdcc43ec4c1d534f29720eac208278872aa1fc71eb8e27dcd3b453c",
+    "02-click.wav": "c24a71c51bd241e59f8545b5c47fa3bd0dab6213fa84a619b17e27f6b4223608"
+  },
+  "timeline": [
+    {
+      "file": "paper-hover.wav",
+      "atSeconds": 0.3
+    },
+    {
+      "file": "paper-hover.wav",
+      "atSeconds": 0.88
+    },
+    {
+      "file": "paper-hover.wav",
+      "atSeconds": 1.46
+    },
+    {
+      "file": "wood-click.wav",
+      "atSeconds": 2.04
+    },
+    {
+      "file": "wood-click.wav",
+      "atSeconds": 2.63
+    },
+    {
+      "file": "wood-click.wav",
+      "atSeconds": 3.22
+    }
+  ],
+  "files": [
+    {
+      "file": "paper-hover.wav",
+      "name": "輕微紙張摩擦觸碰",
+      "sha256": "edbda6c2e695904c32d75d4621017d1105a4201e9bb4d0967bb702e562d6a1a9",
+      "seconds": 0.16,
+      "peakDbFS": -17.08,
+      "rmsDbFS": -32.99
+    },
+    {
+      "file": "wood-click.wav",
+      "name": "較輕木質觸碰點擊",
+      "sha256": "74fe2950e06c98907e77039ee07cdd75a5f34367dff8562fb6bccb0c0dedc5c3",
+      "seconds": 0.17,
+      "peakDbFS": -7.13,
+      "rmsDbFS": -23.18
+    },
+    {
+      "file": "comparison.wav",
+      "name": "紙張三次→木質三次",
+      "sha256": "3b029e70ab747c6dfc3b3adeb5094d21ffb6d928c0480186642ec127864962a6",
+      "seconds": 3.81,
+      "peakDbFS": -7.13,
+      "rmsDbFS": -31.51
+    }
+  ]
+}

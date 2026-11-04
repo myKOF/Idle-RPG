@@ -1611,16 +1611,16 @@ var ZONE_ENEMY_TABLES = {
 var ZONE_LIST = ["desert","Icefield","mist_forest","lava_mountain","swamp","thunder_peak","undead_mountains","god_battlefield","god_chaos","god_sanctuary"];
 var REALMS = { human: { name: STR(211), emoji: '🌍', zones: ['desert', 'Icefield', 'mist_forest', 'lava_mountain', 'swamp', 'thunder_peak', 'undead_mountains'] }, god: { name: STR(212), emoji: '✨', zones: ['god_battlefield', 'god_chaos', 'god_sanctuary'] } };
 var ZONES = {
-  desert: { pool: DESERT_POOL, enemyTable: ZONE_ENEMY_TABLES.desert, name: "荒漠", emoji: "🏜️", realm: "human", maxStage: 100, hpMult: 0.6, atkMult: 0.6, defMult: 0.7, aspdMult: 1, rewardMult: 1 },
-  Icefield: { pool: ICEFIELD_POOL, enemyTable: ZONE_ENEMY_TABLES.Icefield, name: "冰原", emoji: "🧊", realm: "human", maxStage: 150, reqZone: "desert", reqStage: 100, hpMult: 2.5, atkMult: 3, defMult: 1.6, aspdMult: 1.4, rewardMult: 1.2 },
-  mist_forest: { pool: MIST_FOREST_POOL, enemyTable: ZONE_ENEMY_TABLES.mist_forest, name: "迷霧森林", emoji: "🌲", realm: "human", maxStage: 200, reqZone: "Icefield", reqStage: 150, hpMult: 4, atkMult: 4.5, defMult: 2, aspdMult: 1.45, rewardMult: 1.3 },
+  desert: { pool: DESERT_POOL, enemyTable: ZONE_ENEMY_TABLES.desert, name: "荒漠", emoji: "🏜️", realm: "human", maxStage: 100, hpMult: 0.4, atkMult: 0.5, defMult: 0.4, aspdMult: 1, rewardMult: 1 },
+  Icefield: { pool: ICEFIELD_POOL, enemyTable: ZONE_ENEMY_TABLES.Icefield, name: "冰原", emoji: "🧊", realm: "human", maxStage: 150, reqZone: "desert", reqStage: 100, hpMult: 1.8, atkMult: 2, defMult: 1, aspdMult: 1.25, rewardMult: 1.2 },
+  mist_forest: { pool: MIST_FOREST_POOL, enemyTable: ZONE_ENEMY_TABLES.mist_forest, name: "迷霧森林", emoji: "🌲", realm: "human", maxStage: 200, reqZone: "Icefield", reqStage: 150, hpMult: 3.6, atkMult: 4, defMult: 1.8, aspdMult: 1.45, rewardMult: 1.3 },
   lava_mountain: { pool: LAVA_MOUNTAIN_POOL, enemyTable: ZONE_ENEMY_TABLES.lava_mountain, name: "熔岩山", emoji: "🌋", realm: "human", maxStage: 250, reqZone: "mist_forest", reqStage: 200, hpMult: 5.5, atkMult: 7, defMult: 2.6, aspdMult: 1.5, rewardMult: 1.4 },
-  swamp: { pool: SWAMP_POOL, enemyTable: ZONE_ENEMY_TABLES.swamp, name: "月影沼澤", emoji: "🌙", realm: "human", maxStage: 300, reqZone: "lava_mountain", reqStage: 250, hpMult: 7, atkMult: 10, defMult: 3.2, aspdMult: 1.6, rewardMult: 1.5 },
+  swamp: { pool: SWAMP_POOL, enemyTable: ZONE_ENEMY_TABLES.swamp, name: "月影沼澤", emoji: "🌙", realm: "human", maxStage: 300, reqZone: "lava_mountain", reqStage: 250, hpMult: 8, atkMult: 10, defMult: 3.2, aspdMult: 1.6, rewardMult: 1.5 },
   thunder_peak: { pool: THUNDER_PEAK_POOL, enemyTable: ZONE_ENEMY_TABLES.thunder_peak, name: "落雷峰", emoji: "🌩️", realm: "human", maxStage: 350, reqZone: "swamp", reqStage: 300, hpMult: 12, atkMult: 24, defMult: 6, aspdMult: 1.7, rewardMult: 1.85 },
-  undead_mountains: { pool: UNDEAD_MOUNTAINS_POOL, enemyTable: ZONE_ENEMY_TABLES.undead_mountains, name: "亡靈山脈", emoji: "⛰️", realm: "human", maxStage: 400, reqZone: "thunder_peak", reqStage: 350, hpMult: 20, atkMult: 50, defMult: 10, aspdMult: 1.8, rewardMult: 2.25 },
-  god_battlefield: { pool: GOD_BATTLEFIELD_POOL, enemyTable: ZONE_ENEMY_TABLES.god_battlefield, name: "太古戰場", emoji: "⚔️", realm: "god", maxStage: 450, reqZone: "undead_mountains", reqStage: 400, hpMult: 50, atkMult: 200, defMult: 25, aspdMult: 2, rewardMult: 4 },
-  god_chaos: { pool: GOD_CHAOS_POOL, enemyTable: ZONE_ENEMY_TABLES.god_chaos, name: "混沌界", emoji: "🌀", realm: "god", maxStage: 500, reqZone: "god_battlefield", reqStage: 450, hpMult: 150, atkMult: 1000, defMult: 50, aspdMult: 2.2, rewardMult: 10 },
-  god_sanctuary: { pool: GOD_SANCTUARY_POOL, enemyTable: ZONE_ENEMY_TABLES.god_sanctuary, name: "永恒神殿", emoji: "✨", realm: "god", maxStage: 600, reqZone: "god_chaos", reqStage: 500, hpMult: 500, atkMult: 8000, defMult: 100, aspdMult: 2.5, rewardMult: 24 }
+  undead_mountains: { pool: UNDEAD_MOUNTAINS_POOL, enemyTable: ZONE_ENEMY_TABLES.undead_mountains, name: "亡靈山脈", emoji: "⛰️", realm: "human", maxStage: 400, reqZone: "thunder_peak", reqStage: 350, hpMult: 25, atkMult: 50, defMult: 10, aspdMult: 1.8, rewardMult: 2.25 },
+  god_battlefield: { pool: GOD_BATTLEFIELD_POOL, enemyTable: ZONE_ENEMY_TABLES.god_battlefield, name: "太古戰場", emoji: "⚔️", realm: "god", maxStage: 450, reqZone: "undead_mountains", reqStage: 400, hpMult: 50, atkMult: 150, defMult: 25, aspdMult: 2, rewardMult: 4 },
+  god_chaos: { pool: GOD_CHAOS_POOL, enemyTable: ZONE_ENEMY_TABLES.god_chaos, name: "混沌界", emoji: "🌀", realm: "god", maxStage: 500, reqZone: "god_battlefield", reqStage: 450, hpMult: 150, atkMult: 500, defMult: 50, aspdMult: 2, rewardMult: 8 },
+  god_sanctuary: { pool: GOD_SANCTUARY_POOL, enemyTable: ZONE_ENEMY_TABLES.god_sanctuary, name: "永恒神殿", emoji: "✨", realm: "god", maxStage: 600, reqZone: "god_chaos", reqStage: 500, hpMult: 500, atkMult: 2000, defMult: 100, aspdMult: 2, rewardMult: 16 }
 };
 /* 各地圖的出怪設定（Zones 表右側六欄，由 tools/config_tables.cjs 重建整個物件）。
    欄位都是依關卡區間挑列：
@@ -1764,7 +1764,7 @@ function isZoneUnlocked(zoneKey) {
 }
 /* 依地圖與關卡區間的掉落配置。每一列為 [min, max, 裝備0~11機率, gem1~10, 附魔書, 太古精華, 神性之石]。
    以資料表集中管理，新增地圖或調整區間不需要改戰鬥公式。 */
-var ZONE_STAGE_DROP_PROFILES = {  desert: [[1,10,[25,15,0,0,0,0,0,0,0,0,0,0],[4,0.8,0.3,0,0,0,0,0,0,0],0,0,0],[11,29,[35,20,0,0,0,0,0,0,0,0,0,0],[4,0.8,0.3,0,0,0,0,0,0,0],0,0,0],[30,49,[40,30,10,0,0,0,0,0,0,0,0,0],[4,0.8,0.3,0,0,0,0,0,0,0],0,0,0],[50,75,[40,30,20,5,0,0,0,0,0,0,0,0],[6,1.1,0.4,0,0,0,0,0,0,0],0,0,0],[76,100,[40,30,20,10,0,0,0,0,0,0,0,0],[8,1.4,0.5,0.1,0,0,0,0,0,0],0,0,0]],
+var ZONE_STAGE_DROP_PROFILES = {  desert: [[1,10,[25,15,0,0,0,0,0,0,0,0,0,0],[4,0.8,0.3,0,0,0,0,0,0,0],0,0,0],[11,29,[35,20,10,0,0,0,0,0,0,0,0,0],[4,0.8,0.3,0,0,0,0,0,0,0],0,0,0],[30,49,[40,30,25,5,0,0,0,0,0,0,0,0],[4,0.8,0.3,0,0,0,0,0,0,0],0,0,0],[50,75,[40,30,20,10,0,0,0,0,0,0,0,0],[6,1.1,0.4,0,0,0,0,0,0,0],0,0,0],[76,100,[40,35,30,20,0,0,0,0,0,0,0,0],[8,1.4,0.5,0.1,0,0,0,0,0,0],0,0,0]],
   Icefield: [[1,49,[40,30,20,10,0,0,0,0,0,0,0,0],[4,0.8,0.3,0,0,0,0,0,0,0],0,0,0],[50,99,[40,30,20,10,0,0,0,0,0,0,0,0],[4,0.8,0.3,0,0,0,0,0,0,0],0,0,0],[100,125,[40,30,20,10,4,0,0,0,0,0,0,0],[10,2,1,0.5,0.1,0,0,0,0,0],0,1,1.5],[126,150,[40,30,20,15,10,0,0,0,0,0,0,0],[12,2,1,0.6,0.1,0,0,0,0,0],0,1,1.5]],
   mist_forest: [[1,49,[40,30,20,0,0,0,0,0,0,0,0,0],[4,0.8,0.3,0,0,0,0,0,0,0],0,0,0],[50,99,[40,30,20,10,0,0,0,0,0,0,0,0],[4,0.8,0.3,0,0,0,0,0,0,0],0,0,0],[100,149,[40,30,20,15,10,0,0,0,0,0,0,0],[10,2,1,0.5,0.1,0,0,0,0,0],0,1,1.5],[150,175,[40,30,20,18,12,4,0,0,0,0,0,0],[12,2,1,0.6,0.2,0,0,0,0,0],0,1,1.5],[176,200,[40,30,20,20,15,10,0,0,0,0,0,0],[12,2,1,0.6,0.3,0,0,0,0,0],0,1.5,2.25]],
   lava_mountain: [[1,49,[40,30,20,0,0,0,0,0,0,0,0,0],[4,0.8,0.3,0,0,0,0,0,0,0],0,0,0],[50,99,[50,40,30,20,0,0,0,0,0,0,0,0],[4,0.8,0.3,0,0,0,0,0,0,0],0,0,0],[100,149,[50,40,30,20,10,0,0,0,0,0,0,0],[10,2,1,0.5,0.1,0,0,0,0,0],0,1,1.5],[150,199,[50,40,30,20,20,8,0,0,0,0,0,0],[12,2,1,0.6,0.2,0,0,0,0,0],0,1,1.5],[200,225,[50,40,30,20,20,10,0.2,0,0,0,0,0],[12,2,1,0.6,0.3,0,0,0,0,0],0,1.5,2.25],[226,250,[50,40,35,30,25,15,1,0,0,0,0,0],[12,2,1,0.6,0.4,0,0,0,0,0],0,2,3]],
@@ -2010,8 +2010,8 @@ var GEM_TYPES = {
   amethyst: { name: '紫水晶', emoji: '🟣', stat: 'critRate', statName: '暴擊率%', pct: true, values: [1, 1.6, 2.4, 3.6, 5, 10, 20, 40, 80, 160], enabled: true },
   garnet: { name: '石榴石', emoji: '🟠', stat: 'critDmg', statName: '暴擊傷害%', pct: true, values: [5, 10, 20, 32, 40, 80, 160, 320, 640, 1280], enabled: true },
   opal: { name: '蛋白石', emoji: '🩵', stat: 'aspd', statName: '攻擊速度%', pct: true, values: [1, 1.8, 3, 5, 8, 16, 32, 64, 128, 256], enabled: true },
-  onyx: { name: '黑曜石', emoji: '⚫', stat: 'lifesteal', statName: '吸血', pct: false, values: [1, 1.8, 3, 5, 8, 16, 32, 64, 128, 256], enabled: true },
-  manastone: { name: '魔晶石', emoji: '🟪', stat: 'manaSteal', statName: '吸魔', pct: false, values: [0.5, 1, 1.5, 2, 2.5, 5, 10, 20, 40, 80], enabled: true },
+  onyx: { name: '黑曜石', emoji: '⚫', stat: 'lifesteal', statName: '吸血', pct: false, values: [3, 4, 5, 8, 15, 30, 60, 120, 320, 640], enabled: true },
+  manastone: { name: '魔晶石', emoji: '🟪', stat: 'manaSteal', statName: '吸魔', pct: false, values: [1, 2, 3, 4, 5, 10, 20, 40, 80, 160], enabled: true },
   moonstone: { name: '月光石', emoji: '🌙', stat: 'evasion', statName: '閃避率%', pct: true, values: [1, 1.8, 2.8, 3.8, 5, 10, 20, 40, 80, 160], enabled: true },
   catseye: { name: '貓眼石', emoji: '👁️', stat: 'hit', statName: '命中率%', pct: true, values: [1.2, 2, 3.2, 4.5, 6.5, 13, 26, 52, 104, 208], enabled: true },
   sunstone: { name: '太陽石', emoji: '☀️', stat: 'luck', statName: '幸運值', pct: false, values: [1.5, 3.6, 6.3, 9.6, 13.5, 27, 54, 108, 216, 432], enabled: true },

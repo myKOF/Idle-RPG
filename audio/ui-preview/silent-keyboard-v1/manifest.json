@@ -1,0 +1,94 @@
+{
+  "version": 1,
+  "status": "preview-only-awaiting-user-selection",
+  "sampleRate": 48000,
+  "channels": 2,
+  "bits": 16,
+  "origin": "Original procedural muted keyboard-inspired transients: seeded filtered noise and rapidly damped oscillators; no external recordings, reference files or sample libraries.",
+  "source": "tools/audio/ui-silent-keyboard.cjs",
+  "sourceSha256": "89bae267eaa5cad00dfd0322167688519a59801273d3ba126ec57166a965eeed",
+  "libraryRelativePath": "codex-authored/ui-silent-keyboard-20261104-v1",
+  "timeline": [
+    {
+      "id": "K1",
+      "firstAtSeconds": 0.35,
+      "secondAtSeconds": 0.645
+    },
+    {
+      "id": "K2",
+      "firstAtSeconds": 1.35,
+      "secondAtSeconds": 1.655
+    },
+    {
+      "id": "K3",
+      "firstAtSeconds": 2.37,
+      "secondAtSeconds": 2.658
+    },
+    {
+      "id": "K4",
+      "firstAtSeconds": 3.356,
+      "secondAtSeconds": 3.666
+    },
+    {
+      "id": "K5",
+      "firstAtSeconds": 4.386,
+      "secondAtSeconds": 4.688
+    }
+  ],
+  "files": [
+    {
+      "id": "K1",
+      "name": "矽膠輕嗒",
+      "file": "K1.wav",
+      "sha256": "4d7ab62a23f9e4dc29cb2955db10380a6dd19aefc68e46479086f9af40cfe1c6",
+      "seconds": 0.055,
+      "peakDbFS": -7.54,
+      "rmsDbFS": -25.48
+    },
+    {
+      "id": "K2",
+      "name": "低沉悶嗒",
+      "file": "K2.wav",
+      "sha256": "a817febb6f4dd8f989dbc48b0534e9c974ef4861675f509af0988b38e08ebae6",
+      "seconds": 0.065,
+      "peakDbFS": -7.54,
+      "rmsDbFS": -23.23
+    },
+    {
+      "id": "K3",
+      "name": "薄膜輕按",
+      "file": "K3.wav",
+      "sha256": "ed73367e6a8dcc6286aa0c55e174a9977f70e247e515df49bd63164664671898",
+      "seconds": 0.048,
+      "peakDbFS": -7.54,
+      "rmsDbFS": -23.79
+    },
+    {
+      "id": "K4",
+      "name": "軟墊短噗",
+      "file": "K4.wav",
+      "sha256": "47149bc9d5362bd68c0f1674b536115a30ee375634337c760b3605184d489151",
+      "seconds": 0.07,
+      "peakDbFS": -7.54,
+      "rmsDbFS": -23.03
+    },
+    {
+      "id": "K5",
+      "name": "靜音短鍵",
+      "file": "K5.wav",
+      "sha256": "4f5e8a6c4e2f063ec882ab1a64cfdd974fac2cb307aebf2528a055824e686986",
+      "seconds": 0.062,
+      "peakDbFS": -7.54,
+      "rmsDbFS": -26.59
+    },
+    {
+      "id": "comparison",
+      "name": "K1到K5各兩次",
+      "file": "comparison.wav",
+      "sha256": "90a1d21bede811076367886f8cb590a5021665f8728ab8fe060ec6947b58aaf5",
+      "seconds": 5.4,
+      "peakDbFS": -7.54,
+      "rmsDbFS": -33.71
+    }
+  ]
+}

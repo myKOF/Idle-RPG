@@ -1,3 +1,18 @@
+## SYNC-MERGE-20261105-001615 - develop integration completed
+
+- Owner: Codex; Done. Authorized integration only: HEAD edd568772873a329bad57dd5c1bab2e61ca6897e + MERGE_HEAD cea2c7f8f31bdf4ec1bd053f915b44703bd38f09; common base 1cfc7bf3d08328f9fce9ab659576d76c663ebf42. No delegation, staging, commit, push or Git metadata writes.
+- Excel handoff completed by trusted native updater: both workbooks reopened normally with corrupt_load=0. SHA256 Gems=76FACB29C1429D62FF927B77594594AFDF818EB269CE13B32A2DAD61AB22D6A4; Skills2=79AB7CBD9C4E339CA93197E4B7083C83F3EFA02CE89566F77407640A7004C686. This pass only read XLSX bytes; actual cells match approved JSON data plans after padding absent trailing empty cells.
+- Resolution: preserve Gems drop-level schema and incoming lifesteal/mana-steal balance; preserve Skills2 first-tier knife bounce parameters/runtime and drain-chance hook alongside incoming independent JSON/balance/mana edits. Rebuilt matching CSV from actual XLSX via existing readXlsxRows/csvStringify exports; node tools/config_tables.cjs --apply Skills2 --write and --apply Gems --write preserve authoritative Excel data. Gems JS already matched. Original planning index resolution retains UI sound plus skill-tip changes.
+- Cache: new 20261105-sync-balance-drain-v1 for data.js / skills2.js in index and Worker imports, Worker asset version and index bridge.js. No editor imports these two scripts; no Preset or protocol changes.
+- Regression command: node --test --test-concurrency=2 tests/ui-sound.test.cjs tests/ui-achievement-sound.test.cjs tests/skills2-mana-cost.test.cjs tests/skills2-geometry.test.cjs tests/skills2-flight-speed.test.cjs tests/skill-drain-chance.test.cjs tests/damage-drain.test.cjs tests/drain-flat-value.test.cjs tests/knife-flight.test.cjs tests/skill2-knife-range.test.cjs tests/gem-drop-level.test.cjs tests/gem-enabled.test.cjs tests/gem-mana.test.cjs tests/field-gem-drop-table.test.cjs tests/field-equipment-drop-table.test.cjs tests/skills2-vfx-schema.test.cjs tests/skills2-vfx-usage.test.cjs tests/vfx-editor-cache-versions.test.cjs -> 103 tests, 95 pass, 8 existing failures.
+- Baseline verification: node -e read-only fs.readFileSync overlay using git show HEAD:path and MERGE_HEAD:path for js/config/tools, requiring damage-drain, drain-flat-value, skills2-flight-speed, skills2-geometry and skills2-mana-cost tests. Original HEAD: 25/32 pass, 7 fail; incoming: 24/32 pass, same 8 failures as merged. Failures: DOT drain expectation; old affix and onyx values; flight-speed JSON damage expectation and immediate-hit assertion; chain-lightning speed expectation; two thrust mana tests. No assertions changed and no integration regression found.
+- Validation: npm.cmd run build -> 657 files pass; node tools/config_tables.cjs --apply Skills2 and --apply Gems -> zero semantic changes. Inline node assertions passed for approved plan cells, first-tier knife bounce, drain runtime hook, balanced thrust mana and matching main/Worker cache versions. git diff HEAD --check passes complete merged result. Native Excel validation satisfied externally. No full-suite/browser run.
+- Checks: source/base/ours/theirs inspected read-only; conflict precheck ran (other worktree ownership errors not bypassed; known pending conflicts explicitly authorized). No additional asset changes required. Existing incoming assets remain intact. Ignored recovery plans retained, temporary validation logs removed. HEAD/MERGE_HEAD unchanged, index remains unmerged for controller staging. Commit: controller pending; ready for controller merge after staging. Known limitations: 8 pre-existing test failures above, no new merge-specific defect found.
+
+- 2026-11-05外層接續：使用者再次輸入1，授權完成已驗證的合併與正常同步。前段不得stage／commit僅為前輪CLI隔離任務限制；本輪先備份9份工作檔與原index／父提交至logs/merge-20261105-resume，再獨立核對Gems882格、Skills2共14946格，依表頭與原列三方確認雙方變更無競爭值、無遺漏；原生正常開啟收據SHA逐位匹配現有Excel，本輪不重存或重寫工作簿。來源計畫與實際內容、Excel與CSV均一致。
+- 本輪重驗：原18檔另加worker-protocol／worker-shim，共20檔127項119過／8既有失敗；完整指令及TAP、兩側基線與失敗名稱比對保存在logs/merge-20261105-resume。以唯讀fs覆映原HEAD與incoming的JS／config／tools重跑原五支相關測試，分別25/32、24/32；八項全在incoming重現、七項也在HEAD重現，沒有改斷言或新增失敗。Skills2／Gems apply試跑語意變更0，apply_params595一致／0變更／0錨點；String2301條同步。
+- 音效驗證：八支既有audio工具的--check全數通過，涵蓋原創UI／紙木／短音／觸碰／鍵盤／低鼓及播放容器、指定Mixkit成就音效；來源／授權紀錄及雙庫SHA保留，不重製或改音量。待提交音檔與incoming逐位保持。既有LV功能紀錄完整；最終Build與後續Claude最新提示／全部來源同步結果見接續紀錄及交付。
+
 ## HERO3D-PBR-20261104 — 恢復人物材質與反射
 
 - Owner：Codex；Done，單一開發者。使用者確認開始修復角色灰暗問題，恢復授權原檔的法線／金屬粗糙度貼圖、PBR材質與環境反射並做同視角對照；涵蓋Role／Role1／Role2／Role3。已有來源授權不重複詢問，無新第三方素材。
@@ -14468,3 +14483,142 @@ Worker 存活且頁面正常完成載入。
 - 整合範圍：`90d25dd3` + `f426f06c`。原生 Excel updater 已合併並正常重開 `config/Excel/String.xlsx`；依實際工作簿重新產生 `config/CSV/String.csv` 與 `js/strings_data.js`（2300 條，版本 `9b6cb5d5`）。保留敵人七項提示資料與新品牌字串，`index.html` 的合併 UI 快取版號為 `20261104-header-brand-enemy-tip-7stats`。
 - 驗證：`node tools/string-table/apply_strings.cjs --check` 通過（2300 條）；`node tools/string-table/build_string_csv.cjs --check` 通過（寫死 0／未登記 0）；相關字串、標頭資源、附魔書退役、UI tick、Role2／Role3／PBR 與快取測試 50/50 通過；`npm.cmd run build` 通過。
 - 已知風險：Node 載入 Three.js 時仍有既有 `MODULE_TYPELESS_PACKAGE_JSON` 效能警告，測試無失敗；未操作 Git index、未提交。
+
+## UI-SOUND-PREVIEW-20261104 — UI互動音效試聽（尚未接入）
+
+- Owner：Codex；Done（僅試聽候選），單一開發者。使用者原要求UI觸碰／點擊／洗煉／神鑄音效，後續明確改為「做好先給我聽，先別接入」，本輪只交付自製音效候選與試聽。
+- 前置：已讀規範／Workflow／任務與prompts；工作區乾淨，fetch及目標預檢無外部衝突。允許tools/audio/ui-preview.cjs、audio/ui-preview候選／來源說明／manifest、本段及對應Effects-Materials保存；禁止改index／UI／Worker／String／設定／存檔／LV功能及任何執行時接線，不合併推送。
+- 驗收：原創程序合成觸碰、點擊、洗煉、神鑄、成功與失敗六種WAV及合輯；保留可重產來源、來源／授權說明、SHA，驗證PCM格式／非靜音／峰值／首尾淡化／兩庫一致及Build，提供聊天播放器。後續由使用者試聽決定調整與接入；本輪不代表音色核准。
+- 完成：新增tools/audio/ui-preview.cjs及audio/ui-preview/{README.md,manifest.json,7份WAV}，共11個遊戲檔（含本表）；48kHz／16-bit／立體聲。觸碰0.18秒、點擊0.24秒、洗煉約1.1秒、神鑄1.85秒、成功1.15秒、失敗0.65秒，合輯約10.86秒；觸碰／點擊各三次，其餘各一次。完全自製程序合成，沒有引用外部錄音、取樣、音色庫或參考音檔。
+- 驗證：`node tools/audio/ui-preview.cjs --apply`及`node tools/audio/ui-preview.cjs --check`通過，固定種子重產的7份PCM與素材庫／專案逐檔SHA相同，來源及說明鏡像一致；WAV標頭／長度／非靜音／無削波／首尾零點檢查通過，單音峰值-18.81～-5.08dBFS。`npm.cmd run build`650檔通過，兩庫diff／stat／check與自我Review通過。沒有遊戲接線，未做瀏覽器或聽感驗收，聽感交使用者試聽，不宣稱主觀音色核准。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、index.html、js/ui.js／forge.js／bridge.js／Worker／main／recorder、String.xlsx／CSV／strings_data、LV及其他遊戲功能；以rg確認index與js沒有候選檔名或產生工具引用。無玩家文字與Excel修改，不新增聲音設定、事件或存檔欄位。
+- 雙庫交付：Effects-Materials的codex-authored/ui-sound-preview-20261104保存母檔、來源、manifest及說明，素材Commit `4cfb1cc`先於遊戲Commit（本段所在「[Codex] feat: 製作UI互動音效試聽候選」，SHA見聊天交付）。無本輪未完成內容或已知素材技術問題；遊戲接入明確留待使用者聽後另行授權，不應隨本輪自動執行。可Review／保存候選，音色仍待確認；未合併推送。
+
+## UI-SOUND-APPROVED-20261104 — 接入核准的觸碰與成功音
+
+- Owner：Codex；Done，單一開發者。使用者已核准01-hover供所有觸碰有反應的UI使用，05-success供強化成功與洗煉使用；其他聲音／功能等待指示。
+- 前置：試聽候選3e697e1b及素材庫4cfb1cc；fetch與逐檔預檢無外部來源。允許js/ui-sound.js、ui.js必要成功結果接點、index必要載入／快取、tests/ui-sound.test.cjs、docs/UI_SOUND.md、LV及本段。禁止接入點擊／神鑄／失敗／03-reroll、添加聲音設定或其他功能、改音色／數值／Worker／配置／存檔、合併推送。
+- 驗收：按鈕／分頁／裝備／技能／寶石／符文／材料與屬性tips／世界地圖／卡片等響應UI共用事件委派，動態UI可用、同格子元素不重播、背景／重繪／連續移動受控；成功結果才播，強化失敗／不足與洗煉拒絕不播。瀏覽器首次手勢解鎖、音訊不可用不破壞UI；回歸／Build／實機Console及diff後Commit。後續交使用者重載驗收；原自製WAV保持SHA，無新素材。
+- 完成7檔：新增js/ui-sound.js、tests/ui-sound.test.cjs、docs/UI_SOUND.md，修改ui.js的detailAction成功回覆後一個接點、index載入及兩份主端快取、LV與本段。共用pointerover／鍵盤焦點／觸控委派；包含僅顯示tips的UI及可見控制項的aria-hidden裝飾圖示。每種類最多一個音源，觸碰80ms節流，隱藏停止、過期略過；只讀取01-hover及05-success原檔，音色／音量保持。成功音只認item.upgrade＝ok或item.rerollAffix＝null；進模式／選詞條／失敗／不足／其他指令不播成功音，未接點擊、03-reroll、神鑄、失敗或合輯。
+- 回歸：`node --test tests/ui-sound.test.cjs tests/equip-reroll-ui.test.cjs tests/upgrade-animation.test.cjs tests/inventory-command-pending.test.cjs tests/ui-tick-smoke.test.cjs tests/vfx-editor-cache-versions.test.cjs`26/26通過；新增8項驗真實手勢前不建context、只載兩音檔、動態／圖示／同格／靜止重繪／節流／捲動／拖曳／背景、鍵盤及觸控、結果白名單、無裝置／下載失敗／過期，以及正式detailAction等Worker結果才發聲。`node tools/string-table/build_string_csv.cjs --check`寫死0條；`node tools/audio/ui-preview.cjs --check`全部7檔與來源／素材庫SHA一致，無新素材／素材庫變更或本項素材Commit（沿用4cfb1cc）。
+- 額外初始化測試：`node --test tests/init-ui-smoke.test.cjs`2項1過1失敗，缺DIVINE_FORGE_MODES。以外部require讀檔攔截載入HEAD原始ui.js重跑，失敗名稱及錯誤完全相同（該函式行號因本次新增一行不同），屬基線fixture缺資料，不修改神鑄或弱化測試。
+- 實機：IAB無可用連線，改隔離隨機localhost＋Edge headless＋真Worker／AudioContext，13類動態元件（含原生控制、tips、裝備、技能、寶石／符文／威能／塔層／存檔卡片、裝飾圖示）逐一滑過均啟動原觸碰buffer，靜止後沒有連播；正式裝備按鈕實際強化成功／洗煉各啟動一次1.15秒成功buffer。僅下載兩個WAV，兩buffer時長0.18／1.15秒；零資源的真Worker洗煉拒絕不播成功音，Console error／warning與pageerror均0。使用獨立瀏覽器context及seed，未讀寫玩家原網址存檔，服務／瀏覽器均關閉。QA腳本／報告在本聊天visualizations的ui-sound-qa.mjs／json；初版QA誤以GM gold 0可清空，改用既有loadSave載入零資源隔離狀態後正確驗收，未修改產品迎合QA。
+- 唯讀未改：規範／Workflow／prompts、item／factory／formula／player／forge／bridge／Worker／protocol／save、所有配置與String／CSV／strings_data、原WAV／產生器及素材庫；檢查CSS的hover及現有tooltip／裝備事件／聲音來源以確認涵蓋與回傳語意。限制：瀏覽器需先有有效真人手勢才發聲，冷載入過慢略過過期觸碰；未跑全庫、其他瀏覽器／行動真機與長時間音訊壓力，現有初始化基線測試上述1項失敗另案處理。
+- 交付：`npm.cmd run build`652檔通過，自我Review及diff／stat／check通過。授權範圍無未完成、無已知新增缺陷，可供Review／使用者合併；Commit為本段所在「[Codex] feat: 接入核准的UI觸碰與強化洗煉成功音效」，SHA見聊天交付。未合併推送develop／main；下一步重載遊戲，先點擊或按鍵解鎖音訊，再驗收互動與強化／洗煉。
+
+## UI-SOUND-TIPS-20261104 — tips靜音與介面說明例外
+
+- Owner：Codex；Done，單一開發者。使用者要求出現tips者不播觸碰音，包含裝備／熔爐／寶石等道具與材料；介面說明用驚嘆號可播。允許ui-sound目標過濾、index對應快取、原聲音回歸、UI_SOUND／LV與本段；禁止改成功音、其他音效／設定、音檔、玩法／Worker／配置／存檔、合併推送。
+- 前置：工作區乾淨，fetch及6檔衝突預檢無外部來源；沿用f29ebba0。驗收：generic tooltip及無data-tip但由JS顯示的道具卡均靜音，原生button道具也不能繞過，子元素／鍵盤／觸控同規則；介面!／?／i說明保留音，無tips的操作UI保留音。成功結果白名單／節流／背景保護不變，測試／Build／實機Console及diff後Commit，交使用者重載驗收。
+- 完成6檔：js/ui-sound.js新增說明圖示優先例外及tips／道具靜音過濾，index只升該腳本快取20261104-ui-sound-tips-v2；更新tests/ui-sound.test.cjs、docs/UI_SOUND.md、LV及本段。data-tip／data-tt／原生title、裝備／技能等JS提示卡與button造型寶石／符文一律靜音，子節點及上層button不可繞過；pg-help／forge-info-btn與敵人／BOSS!按鈕保留音。成功播放函式、ui.js接點及兩份WAV逐字保持。
+- 驗證：`node --test tests/ui-sound.test.cjs tests/equip-reroll-ui.test.cjs tests/upgrade-animation.test.cjs tests/ui-tick-smoke.test.cjs tests/vfx-editor-cache-versions.test.cjs`26/26通過；調整動態目標回歸並新增23類tips的hover／鍵盤／觸控及巢狀button靜音、說明圖示優先例外驗證，原成功／拒絕／音訊失敗／背景／快取回歸保持。`npm.cmd run build`652檔通過；`node tools/string-table/build_string_csv.cjs --check`寫死0，diff／stat／check與自我Review通過。
+- 實機：IAB無連線，隔離隨機localhost＋Edge headless＋真Worker／AudioContext驗20類動態節點，12類一般tips／道具靜音、8類操作／說明仍播；正式裝備格hover可見完整tips且觸碰計數不增，實際按鈕強化成功／洗煉成功各播一次，Worker資源不足仍靜音；只下載原2份WAV，Console error／warning及pageerror均0。QA在本聊天visualizations/ui-sound-tips-qa.mjs／json。初版測試用forge-info-btn繼承absolute樣式而擋其他測試格，僅修QA排版後通過，未改產品或放寬檢查；服務及瀏覽器已關閉，玩家原網址存檔未讀寫。
+- 唯讀未改：規範／Workflow／prompts、ui.js／item／factory／formula／player／forge／bridge／Worker／protocol／save、現有tips本身、String／配置／CSV／strings_data、全部音檔／合成來源及素材庫。無新素材或本項素材庫Commit，沿用4cfb1cc；未跑全庫／多瀏覽器／行動真機，瀏覽器首個有效手勢與冷載入略過機制仍適用。本項無未完成或已知新增風險，可Review／供使用者合併；Commit為本段所在「[Codex] fix: 將一般道具tips觸碰音靜音並保留說明圖示」，SHA見聊天交付，未合併推送。下一步重載後驗收tips與說明圖示。
+
+## UI-SOUND-FUNCTIONAL-20261104 — 操作元件優先於tips
+
+- Owner：Codex；Done，單一開發者。使用者明確修訂：凡能執行功能／開啟介面／選取的UI都要觸碰音，有tips亦同；只有純查看且不可操作的tips靜音。截圖紅框熔爐升級、紀錄詳情及零件操作必須涵蓋，說明!／?／i與既有成功音保持。
+- 允許ui-sound目標識別、index對應快取、原聲音回歸、UI_SOUND／LV與本段；禁止改tips功能、ui.js／玩法／Worker／配置／存檔、音色／其他音效或設定、合併推送。前置9f4727e1；預檢index與Claude未提交升級音效載入重疊同檔，但僅其1053行新增sfx載入、我方1068行ui-sound版號，事件／音檔／狀態皆獨立。以共同祖先1cfc7bf3、Claude現況及候選v3三方merge-file試跑exit0，兩方載入均保留；不改／收取對方工作。其餘目標無外部來源。
+- 驗收：以原生／ARIA控制項與實際委派action標記辨識，不能用有tips作為排除；支援非button零件晶片、詞條／孔位選取及label開關，純tips／未綁操作的外觀卡片靜音。停用控制不誤播，子節點／鍵盤／觸控一致；回歸、Build、截圖對應熔爐實機與Console／diff後Commit，後續使用者重載驗收。
+- 完成6檔：ui-sound移除tips黑名單與僅樣式的卡片白名單，使用原生／ARIA／實際action標記；查到操作目標就發聲，不論自身／父層有tips。原生disabled／aria-disabled靜音，label與其有效control共用目標，避免移到開關內部重播。index僅升ui-sound的v3；同步原回歸、UI_SOUND、LV及本段。未接新音效，既有hover／success檔及成功回覆入口、節流與背景保護保持。
+- 測試：`node --test tests/ui-sound.test.cjs tests/equip-reroll-ui.test.cjs tests/upgrade-animation.test.cjs tests/part-upgrade.test.cjs tests/ui-tick-smoke.test.cjs tests/vfx-editor-cache-versions.test.cjs`32/32通過；聲音10項含15類有tips操作目標的hover／鍵盤／觸控45次播放、13類純tips靜音、原生／ARIA停用、label內外共用、動態子節點、成功／拒絕及音訊失敗保護。`npm.cmd run build`652檔通過；String寫死0，diff／stat／check及自我Review通過。
+- 實機：IAB無連線，沿用隔離隨機localhost＋Edge headless＋真Worker／AudioContext，23類動態元件中可操作的有音、僅外觀與tips的靜音。依截圖以3轉／高金幣／T9零件配置正式熔爐：開關label、添加熔爐、升級金幣鈕、已裝零件、空格開列表、非button裝配chip、紀錄詳情均實際hover發聲；點擊成功切換運轉、零件T9→T10、卸下→開列表→裝回、開詳細紀錄。熔爐圖及工坊左側零件說明不播；正式可選裝備hover有完整tips亦播，裝備強化／洗煉成功各播一次，零資源Worker拒絕仍不播成功音。只下載2份原WAV，Console error／warning、pageerror皆0。QA為本聊天visualizations/ui-sound-functional-qa.mjs／json；初次QA按Esc未關掉既有紀錄彈窗，改用正式X並驗hidden後完成，未改產品迎合測試。瀏覽器與服務已關閉，玩家原網址存檔未讀寫。
+- 協作：收尾Claude新增String快取c6078654，仍與本項ui-sound行不同區段；以最新未提交index重跑三方exit0，String快取／Sfx載入／我方v3皆保留，無相同事件或狀態語意相依。工作途中本副本出現外部config/Excel/Zones.xlsx修改，保留、不套用／提交。唯讀未改規範／Workflow／prompts、ui.js／熔爐／技能／寶石／符文事件來源、player／bridge／Worker／save／所有配置與String資料、原音檔及素材庫；無必要新素材或素材庫Commit，原素材4cfb1cc保持。
+- 交付：授權範圍無未完成或已知新增缺陷，可Review及供使用者合併；Commit為本段所在「[Codex] fix: 依操作能力播放UI觸碰音並保留純tips靜音」，SHA見聊天交付。未跑全庫／多瀏覽器／行動真機，首次有效手勢與冷載入略過限制保持；未合併推送。下一步重載驗收截圖紅框與純tips。
+
+## UI-SOUND-PAPER-WOOD-20261104 — 紙張摩擦與輕木質音試聽
+
+- Owner：Codex；Done（試聽候選），單一開發者。使用者要求觸碰改輕微紙張摩擦、點擊改較輕的木質觸碰。沿用先試聽的音色製作流程，新增隔離v2候選，不覆寫已接入的hover或接入尚未核准的click；其他音效／功能等指示。
+- 前置：規範／Workflow／任務已讀、fetch及目標預檢無外部衝突；現有9項外部配置／data／skills2修改保留，不套用或提交。允許tools/audio/ui-paper-wood.cjs、audio/ui-preview/paper-wood-v2的WAV／來源說明／manifest、本段與對應素材庫保存；禁止改原WAV／原產生器、UI接線／快取／設定／Worker／配置與存檔、其他音效或合併推送。
+- 驗收：原創程序合成兩音與重複試聽合輯，紙聲輕短無旋律、木聲移除金屬鈴音並降低音量；保存可重產來源與兩庫SHA、驗PCM／非靜音／削波／首尾／原音保持／Build及既有聲音回歸。後續交使用者聽感確認，候選保存不代表已核准。
+- 完成7檔：新增tools/audio/ui-paper-wood.cjs、audio/ui-preview/paper-wood-v2/{README.md,manifest.json,paper-hover.wav,wood-click.wav,comparison.wav}及本段。紙聲0.19秒以受限頻寬噪音、不均勻摩擦包絡／纖維顆粒製作，沒有音調；木聲0.17秒以低中頻接觸噪音／短共鳴快速阻尼製作，不用舊晶體鈴音。兩聲置中、左右相同，48kHz／16-bit立體聲；合輯3.9秒為紙聲3次→木聲3次，保留相對音量。全部自製、沒有外部素材／錄音／取樣庫或參考音檔。
+- 驗證：`node tools/audio/ui-paper-wood.cjs --apply`／`--check`通過，兩庫3份WAV／來源／說明／manifest雜湊一致且可確定性重產；`node --check tools/audio/ui-paper-wood.cjs`通過。獨立bundled Python wave＋NumPy讀回驗規格、起尾零點、置中、無削波及SHA，紙聲peak -26.93／RMS -41.60dBFS，木聲peak -19.17／RMS -35.22dBFS；木聲峰值比原點擊低9.96dB、3500Hz以上能量僅0.0125%。數值不能代替聽感核准，音色仍交使用者試聽；QA為本聊天visualizations/paper-wood-qa.py。
+- 既有保持：`node tools/audio/ui-preview.cjs --check`原7份WAV／來源與素材庫一致；`node --test tests/ui-sound.test.cjs`10/10通過；`npm.cmd run build`652檔通過。rg確認index／js沒有新候選引用，未做瀏覽器操作或替換使用中音檔，不新增設定／玩家字串／LV功能。唯讀未改規範／Workflow／prompts、原產生器／原素材、ui-sound／ui／index／Worker／save／玩法與全部配置來源；9項外部CSV／Excel／data／skills2修改保留未提交。
+- 雙庫交付：素材庫codex-authored/ui-paper-wood-preview-20261104的6檔先Commit `4c5cfb4`，後遊戲Commit（本段所在「[Codex] feat: 製作紙張摩擦與輕木質音效試聽版」，SHA見聊天交付）；兩庫diff／stat／check與自我Review通過。無本輪未完成或已知素材技術問題，可Review／保存候選，音色與接入仍待使用者確認；未合併推送。下一步試聽紙聲／木聲後決定調整或替換。
+
+## UI-SOUND-LOUDER-20261104 — 放大紙張／木質與縮短紙聲
+
+- Owner：Codex；Done（試聽候選），單一開發者。使用者回報兩聲太小、木質尤其小，要求都放大及紙聲再短一點；本輪續作試聽，不改遊戲。允許原紙木產生器、paper-wood-v3候選／說明／manifest、本段與對應素材庫；v2及首版保留。前置：工作區原有外部CSV／Excel／data／skills2修改保留，目標逐檔衝突預檢無外部來源，不改UI／音效接線／設定／Worker／配置／其他聲音，不合併推送。
+- 驗收：紙聲0.19→0.16秒並提高約10dB，木質音色／時長保持、提高約12dB；獨立新路徑避免重播舊快取。PCM／峰值／首尾淡化／重產與兩庫SHA、既有聲音回歸／Build，提交素材及遊戲後提供試聽，下一步由使用者確認。
+- 完成7檔：更新tools/audio/ui-paper-wood.cjs輸出v3，新增audio/ui-preview/paper-wood-v3/{README.md,manifest.json,paper-hover.wav,wood-click.wav,comparison.wav}及本段；紙聲包絡等比縮短30ms、峰值由0.045→0.14，木聲僅等比4倍放大、時長仍0.17秒，不新增金屬高頻。合輯3.81秒，紙3次→木3次；首版與v2檔案保持，皆為既有原創程序合成，無外部素材。
+- 驗證：`node tools/audio/ui-paper-wood.cjs --apply`／`--check`與`node --check tools/audio/ui-paper-wood.cjs`通過；兩庫3份WAV、來源／README／manifest SHA一致，48kHz／16-bit／立體聲、首尾零點／置中／無削波。獨立bundled Python wave＋NumPy驗v2／v3各檔hash、紙聲0.16秒、木聲波形＝舊版4倍（量化誤差≤3LSB），紙聲peak -17.08／RMS -32.99dBFS、木聲peak -7.13／RMS -23.18dBFS；紙聲峰值增9.85dB、木聲RMS增12.04dB。QA為本聊天visualizations/paper-wood-v3-qa.py；聽感仍待使用者確認，不以量測宣稱核准。
+- `node --test tests/ui-sound.test.cjs`10/10、`npm.cmd run build`652檔及兩庫diff／stat／check／自我Review通過。唯讀未改規範／Workflow、原音檔／v2、ui-sound／ui／index／LV／Worker／save／所有玩法及配置，無新字串或遊戲功能，不做瀏覽器驗證；11項外部CSV／Excel（含Zone_Stage_Drops）／data／skills2修改保留未提交，沒有套用參數。
+- 雙庫：先保存素材庫codex-authored/ui-paper-wood-preview-20261104-v3的6檔並Commit `a4c6dfc`，再遊戲Commit（本段所在「[Codex] feat: 放大紙木音效並縮短紙張碰觸聲」，SHA見聊天交付）。無本輪未完成或已知素材技術問題，可Review／保存候選，尚未接入；未合併推送。下一步試聽新版音量與紙聲長度。
+
+## UI-SOUND-TEN-OPTIONS-20261104 — 清晰短促觸碰與點擊各五款
+
+- Owner：Codex；Done（試聽候選），單一開發者。使用者不滿紙／木方案，要求不限材質、清晰短促，觸碰及點擊各5款試聽。允許tools/audio/ui-short-options.cjs、audio/ui-preview/short-options-v4的10單音／2分類合輯／說明／manifest、本段及對應素材庫。禁止改既有候選或UI／快取／玩法／Worker／設定／配置／存檔，不接入遊戲、合併推送。
+- 前置：已讀規範／Workflow／任務，fetch及目標／新目錄預檢無外部來源；現有11項外部CSV／Excel／data／skills2修改保留。驗收：10款皆為原創且有可辨識差異、短於0.11秒，合理且接近的分類音量、無長尾；各合輯依1→5每款2次，附單音／名稱／時間點，檢查PCM／非靜音／首尾／無削波／相似度／雙庫SHA及Build、既有聲音回歸。交使用者試聽選擇，不以數值代替音色核准。
+- 完成16檔：新產生器、v4目錄10單音／2合輯／README／manifest及本段。H1乾淨短嗒55ms、H2柔和短啵65ms、H3俐落輕刷50ms、H4清亮短音60ms、H5清脆卡榫70ms；C1實體按鍵80ms、C2清脆啪嗒65ms、C3厚實短咚85ms、C4俐落電子75ms、C5雙段確認95ms。不同起音／濾波／音高／雙瞬態設計，名稱為設計意圖；原創固定種子噪音與阻尼振盪器，無外部錄音／音色庫／參考素材。48kHz／16-bit立體聲置中；分類合輯5.9／6.1秒，依編號各兩次，含間隔及時間點，單音未經二次音量處理。
+- 驗證：`node tools/audio/ui-short-options.cjs --apply`／`--check`及`node --check tools/audio/ui-short-options.cjs`通過，兩庫12WAV與來源／說明／manifest SHA一致、可確定性重產；獨立bundled Python wave＋NumPy驗10單音時長、PCM／置中／起尾零點／非靜音／無削波、兩合輯逐段PCM與單音完全一致。H類RMS -22.56～-20dBFS、峰值最高-6.02；C類RMS -20.21～-16.48、峰值最高-3.10，分類內RMS差皆<4dB。20組同類交叉相關最高0.710，不是相同波形只換音量；數值不代替聽感或代表使用者核准。QA為本聊天visualizations/ui-short-options-qa.py。
+- 既有驗證：`node --test tests/ui-sound.test.cjs`10/10、`npm.cmd run build`652檔及兩庫diff／stat／check／自我Review通過；rg確認index／js未引用新候選。唯讀未改規範／Workflow／prompts、先前全部WAV及產生器、ui-sound／UI／index／LV／Worker／save／玩法與配置。沒有新功能／字串／接線，不做瀏覽器操作；外部11項CSV／Excel／data／skills2修改完整保留、不套用或提交。
+- 雙庫交付：素材庫codex-authored/ui-short-options-20261104-v4的15檔先Commit `84214a9`，後遊戲Commit（本段所在「[Codex] feat: 製作觸碰與點擊各五款清晰短音」，SHA見聊天交付）。本輪無未完成或已知素材技術問題，可Review／保存候選；尚未接入，未合併推送。下一步使用者以H1～H5及C1～C5選擇或提供音色回饋。
+
+## UI-SOUND-C3-HOVER5-20261104 — 接入C3與再製五款觸碰候選
+
+- Owner：Codex；Done，單一開發者。使用者選定點擊C3並要求觸碰再做5款；接入既有C3原檔，H6～H10只供試聽，現行hover及success保持。允許ui-sound／index快取／聲音回歸、UI_SOUND／LV／本段、tools/audio/ui-hover-options.cjs與hover-options-v5候選／說明／manifest、素材庫保存；禁止改其他聲音、玩法／Worker／配置／存檔、合併推送。
+- 協作：fetch後index／LV有Claude未整合提交，分別為其他腳本／CSS／String快取＋Sfx升級音載入，以及LV第16行寶石規則。我方只升ui-sound快取及檔尾音效段，無同值／同事件／狀態語意相依；共同祖先1cfc7bf3的三方merge-file，LV exit0，index exit1（我方既有ui.js版本與Claude相鄰版本差異）。最初未先檢視dry-run回傳即套候選快取，已坦承並撤回該行、修正本段錯載；使用者明確同意「只改音效快取這一行」後才重套v5。不收取／改寫Claude內容、不合併推送。其他目標預檢乾淨；本副本11項外部配置／data／skills2修改保留。
+- 完成15檔：ui-sound新增C3白名單URL／按需預解碼、真click事件委派與獨立80ms節流／180ms過期保護，沿用可操作目標及背景／音源管理；指標按下／取消本身不播C3，原hover及success保持。index只改核准快取行，同步原回歸、UI_SOUND／LV及本段。新ui-hover-options產生器與v5的5單音／1合輯／README／manifest：H6輕巧滴答47ms、H7柔亮撥音58ms、H8氣墊短噗52ms、H9微脆斷奏45ms、H10上揚短啵60ms；全為自製程序合成、無外部錄音／取樣／參考，候選未接入。
+- 測試：`node tools/audio/ui-hover-options.cjs --apply`／`--check`、`node --check tools/audio/ui-hover-options.cjs`通過，兩庫6WAV／來源／README／manifest SHA一致；獨立bundled Python wave＋NumPy驗PCM／置中／首尾／無削波／時長、合輯5.824秒逐段PCM完全相同，5款同類交叉相關最高0.396、RMS -24.29～-20dBFS，聽感待選。`node tools/audio/ui-short-options.cjs --check`含C3的上一輪12音檔保持；C3 SHA仍a6fdb4f3674d327ed01fc1cd632f3be8788bda00cca8bcd10d34a531c0904551。
+- `node --test tests/ui-sound.test.cjs tests/equip-reroll-ui.test.cjs tests/upgrade-animation.test.cjs tests/ui-tick-smoke.test.cjs tests/vfx-editor-cache-versions.test.cjs`28/28通過，聲音11項含C3的真click、鍵盤原生click、被動tips／停用／合成／右鍵／背景拒播、取消按下不誤播及只預載3份核准檔案；`npm.cmd run build`652檔、String寫死0及diff／stat／check、自我Review通過。npm版本更新notice為環境提示，未更新套件。
+- 實機：IAB無連線後隔離隨機localhost＋Edge headless＋真Worker／AudioContext，只下載01-hover／C3／05-success，時長0.18／0.085／1.15秒。重驗23類hover、熔爐開關／升級／卸下／開列表／裝配與紀錄詳情；label轉發input仍只播一次C3，原生空白鍵與真觸控啟動各播一次C3，材料純tips點擊不播。實際裝備強化／洗煉成功仍各播success一次，零資源拒絕不播成功音；最後hover23／click13／success2，Console error／warning及pageerror0。QA第一次Enter未開既有日誌，改用原生Space完成鍵盤click驗證，沒有修改原操作程式或宣稱修正Enter行為；瀏覽器／服務關閉，玩家原網址存檔未讀寫。QA為本聊天visualizations/ui-sound-c3-qa.mjs／json及ui-hover-v5-qa.py。
+- 保存：新候選素材庫codex-authored/ui-hover-options-20261104-v5共9檔先Commit `d01e230`；C3沿用既有素材84214a9。共享素材庫與同副本另有UI-SOUND-SILENT-KEYBOARD-20261104進行中候選及獨立任務段，完整保留、不納入本項；只分段更新／stage本段。唯讀未改規範／Workflow／prompts、其他AI分支、ui.js／原操作／player／Worker／協議／save、既有所有WAV及產生器、配置／String來源，11項外部CSV／Excel／data／skills2亦保留未提交。
+- 交付：本項無未完成或已知新增缺陷，可Review／使用者合併，遊戲Commit為本段所在「[Codex] feat: 接入C3點擊音並新增五款觸碰候選」，SHA見聊天交付；H6～H10只供選擇，未跑全庫／多瀏覽器／行動真機長時間測試，未合併推送。下一步重載驗收C3並選新觸碰音。
+- 驗收：C3只播在有效可操作UI的真實點擊／原生鍵盤啟動，不在hover／純tips／停用／右鍵／背景誤播，不改成功音；新5個短觸碰差異清楚、音量可辨識、附合輯與單音，未接入。PCM／SHA／雙庫、回歸／Build／真瀏覽器Console與diff後Commit，交使用者選新觸碰音並重載C3驗收。
+
+## UI-SOUND-SILENT-KEYBOARD-20261104 — 五款無聲鍵盤風格短按鈕音
+
+- Owner：Codex；Done（試聽候選），單一開發者。使用者要求5款短促、類似無聲鍵盤的按鈕聲；僅新增隔離候選K1～K5及合輯，不改正在進行的C3／H6～H10工作。
+- 前置：規範／Workflow／任務及prompts/codex已讀，ai/codex；fetch及新產生器／目錄／本文件預檢無外部衝突。現有未提交修改保留，只附加本段；允許tools/audio/ui-silent-keyboard.cjs、audio/ui-preview/silent-keyboard-v1、素材庫對應新目錄與本段。禁止改UI接線／既有音效／配置／玩法／Worker／存檔／LV、合併推送。
+- 驗收：5款原創程序合成，短於0.1秒、快速收尾、低中頻柔和悶觸感，無尖銳金屬／長殘響；附各兩次合輯及單檔，保留可辨識播放音量。驗PCM／首尾／非靜音／無削波／重產及雙庫SHA、Build；必要素材先Commit再遊戲，只提交本任務，後續由使用者試聽選擇。
+
+- 完成10檔：新產生器、silent-keyboard-v1內5單音／comparison.wav／README／manifest及本段。K1矽膠輕嗒55ms、K2低沉悶嗒65ms、K3薄膜輕按48ms、K4軟墊短噗70ms、K5靜音短鍵62ms；固定種子限頻噪音及快速阻尼共鳴，全為自製，無外部錄音或參考音檔。48kHz／16-bit立體聲置中；合輯5.4秒，依K1～K5各兩次、保留單檔音量。
+- 驗證：`node tools/audio/ui-silent-keyboard.cjs --apply`／`--check`、`node --check tools/audio/ui-silent-keyboard.cjs`通過，兩庫6WAV／來源／README／manifest SHA一致，可確定性重產。獨立Node PCM讀回驗規格／非靜音／雙聲道一致／起尾零點／無削波，合輯10片段逐樣本等於單檔；同類兩兩零延遲相關最高0.329，非同波形換音量。峰值皆-7.54dBFS，RMS -26.59～-23.03dBFS；數值不代替使用者聽感核准。
+- `node --test tests/ui-sound.test.cjs`11/11、`npm.cmd run build`652檔通過；兩庫diff／stat／check及自我Review通過。rg確認index／js沒有新候選引用，不接入或改遊戲、不做瀏覽器操作；未新增系統／設定／玩家字串，無LV／String變更。唯讀未改AI_RULES／AGENTS／Workflow／prompts、既有音檔及產生器、UI_SOUND／ui-sound／index／tests／LV、Worker／save／玩法與所有配置；現有C3／H6～H10及其他未提交修改保留，不一併提交。
+- 雙庫交付：素材庫codex-authored/ui-silent-keyboard-20261104-v1的9檔先Commit `b378009`，再遊戲Commit（本段所在「[Codex] feat: 製作五款無聲鍵盤風格按鈕音」，SHA見聊天交付）。本輪製作無未完成或已知素材技術缺陷；音色待試聽選擇、接入另行指示，可Review／保存候選；未合併推送。下一步使用者以K1～K5提供選擇或回饋。
+
+## ACHIEVEMENT-SOUND-20261104 — 成就達成播放使用者指定音效
+
+- Owner：Codex；Done，單一開發者。使用者指定本機mixkit-game-level-completed-2059.wav用於成就達成。前置：共通規範／Workflow／任務／Codex指示已讀，ai/codex且fetch完成；既有11項外部配置／data／skills2修改保留，工作中另有外部Gems.xlsx及獨立低鼓音候選任務，均不納入本項。
+- 範圍：js/ui-sound.js、js/ui-achievements.js及index相應快取，tests/ui-sound.test.cjs及新tests/ui-achievement-sound.test.cjs、audio/achievements、tools/audio/import-achievement-sound.cjs、docs/UI_SOUND.md、本段及LV音效說明、素材庫third-party/mixkit/achievement-completed-2059。禁止更動成就條件／Worker／協議／存檔／配置／其它音色、合併推送。
+- 授權：使用者明確指示使用本檔；已核對Mixkit官方Game列表的Game level completed項目id2059及Sound Effects Free License（https://mixkit.co/license/modal/sfxFree/），允許整合商業／非商業遊戲，不得獨立或隨來源素材包再散布。第三方原檔非Codex自製，不改音色／音量／格式，保留來源／授權及SHA紀錄於雙庫。
+- 協作預檢：ui-sound／ui-achievements／測試／工具／素材及UI_SOUND乾淨。Claude在index的其他腳本／CSS／String快取與Sfx載入，以及LV第16行寶石規則有未整合提交；新增ui-achievements快取行與LV檔尾新增段，以共同祖先分別只套本項新增差異後與ai/claude的merge-file exit0，無語意相依。既有ui-sound快取一行沿用本聊天使用者「同意，只改音效快取這一行」的授權；原相鄰ui.js分支版本差異不收取或改寫，本輪未合併分支或聲稱整檔衝突消除。共享AI_TASKS只動本段，保留低鼓音任務獨立段並只stage本項。
+- 完成12檔：ui-sound新增成就原檔SHA版號、首次手勢預載及獨立通知播放；ui-achievements於nextToast的有效提示append後呼叫音效，佇列／達成判定原樣保留。index只升兩支已修改腳本快取；新增匯入工具、成就WAV／README／manifest及UI音效／LV／任務說明與聲音回歸。44100Hz／16-bit／立體聲原檔3.5422449秒、peak -0.80／RMS -19.50dBFS、無削波非靜音；SHA256 8da83b49ceb580493ba7c7081ec3d176fe069d4505474b604f6fb08b339bd32a與使用者檔／雙庫均一致。未改既有hover／C3／成功音或任何候選。
+- 驗證：`node tools/audio/import-achievement-sound.cjs --apply --source <使用者指定音檔>`／`--check`、`node --check tools/audio/import-achievement-sound.cjs`及獨立Node PCM規格／峰值／RMS／SHA通過；`node --test tests/ui-sound.test.cjs tests/ui-achievement-sound.test.cjs tests/achievements.test.cjs tests/ui-tick-smoke.test.cjs tests/vfx-editor-cache-versions.test.cjs`32/32通過，成就UI測試補強真實清單render後3/3重驗通過。`npm.cmd run build`653檔、String寫死0、diff／stat／check及自我Review通過，無配置套用或套件更新。
+- 實機：已讀browser skill並嘗試IAB，無後端連線，改隔離隨機localhost＋Edge headless＋真Worker／AudioContext。實際Worker同次達成9／10成就，各隨「小有所成」／「聲名遠播」提示播放一次，兩次間隔約4.41秒、不截斷原檔；只下載4份核准WAV，開頁無自動音訊，開啟／重繪／篩選成就、未知id及再讀全部已達成存檔均不多播。Console error／warning／pageerror0；瀏覽器／服務已關閉，原玩家網址存檔未讀寫。QA在本聊天visualizations/achievement-sound-qa.mjs／json。
+- 雙庫：素材4檔先獨立Commit `d18ec5f`（[Codex] feat: 保存指定成就達成音效與來源授權）。共享索引曾短暫被低鼓音聊天的c4cedd3收取，對方已自行分離為8b1a2dd並保留本項4檔待提交；我方再以--only限定4檔建立d18ec5f，核對各提交範圍、當前素材庫乾淨及兩庫SHA一致，未修改他人檔案。遊戲只提交本項12檔，Commit為本段所在「[Codex] feat: 成就達成播放指定音效」，SHA見聊天交付；其它任務及12項外部配置修改保留。
+- 交付：無本項未完成或已知新增缺陷，可Review／使用者合併；唯讀未改規範／Workflow／prompts、js/ui.js／bridge／achievement_data／achievements／Worker／protocol／player／save／所有配置與其它音檔。未跑全庫／多瀏覽器或行動真機長時測試；瀏覽器手勢解鎖前、背景及過期聲音沿用略過，不補播。下一步使用者重新整理遊戲後驗收成就達成音效，未合併推送。
+- 驗收：接既有成就notice→toast佇列，在提示實際顯示時播放一次，多成就依既有順序播放；讀檔已有成就／清單重繪／未知id不播。未解鎖音訊／背景不排隊補播聲音，失敗不影響通知；單元／成就回歸、Build、PCM／SHA及隔離瀏覽器驗證後雙庫先素材後遊戲Commit。接手：使用者重載驗收；無其它任務依賴。
+## UI-SOUND-LOW-DRUM-20261105 — 五款極短低沉鼓敲擊音
+
+- Owner：Codex；Done（試聽候選），單一開發者。使用者要求再做5款極短促低沉鼓敲擊聲，製作D1～D5獨立候選及各兩次合輯，供試聽；不接入遊戲。前置：已讀規範／Workflow／任務，ai/codex，fetch及目標預檢無外部衝突。
+- 允許tools/audio/ui-low-drum.cjs、audio/ui-preview/low-drum-v1、本段及素材庫codex-authored/ui-low-drum-20261105-v1。禁止改其他音檔／UI／快取／LV／String／配置／玩法／Worker／存檔／其他進行中任務，不合併推送。所有既有未提交修改保留，只分段stage本段。
+- 驗收：5款32～55ms原創程序鼓音、低頻鼓體及極短敲擊起音、快速阻尼無混響；附單音與D1～D5各兩次合輯，驗PCM／首尾／無削波／非靜音／合輯逐樣本一致、確定性重產及雙庫SHA、Build。先素材Commit再遊戲Commit；後續使用者試聽選擇，無其他任務依賴。
+
+- 完成10檔：新ui-low-drum產生器、low-drum-v1目錄5單音／comparison.wav／README／manifest、本段。D1短底鼓45ms、D2悶手鼓38ms、D3低音通鼓50ms、D4厚實重咚55ms、D5極短乾鼓32ms。全自製限頻噪音／快速下沉振盪器／非整數比鼓膜共鳴，沒有外部素材／參考檔／取樣庫。48kHz／16-bit立體聲置中；合輯5.24秒、依D1～D5各兩次。
+- 驗證：`node tools/audio/ui-low-drum.cjs --apply`／`--check`、`node --check tools/audio/ui-low-drum.cjs`通過；兩庫6WAV／來源／README／manifest逐檔SHA一致且可確定性重產。獨立Node WAV／FFT讀回驗規格／非靜音／無削波／首尾零點／左右一致，10合輯片段逐樣本等於單檔；頻譜最大峰70～105Hz、500Hz以下能量98.63～99.80%。峰值-4.44dBFS，RMS -17.42～-16.14dBFS。量測不代替使用者聽感選擇。
+- `node tools/audio/ui-silent-keyboard.cjs --check`前輪候選保持，`node --test tests/ui-sound.test.cjs`13/13、`npm.cmd run build`653檔通過。rg確認index／js未引用新候選，兩庫diff／stat／check及自我Review通過。唯讀未改規範／Workflow／prompts、既有音檔／產生器、ui-sound／ui-achievements／UI_SOUND／index／tests／LV、Worker／save／玩法／全部配置；其他進行中成就音效及外部配置修改保留。本輪無新系統／字串，無需LV／String變更，未做瀏覽器或全庫測試。
+- 協作事故已修正：素材庫一般Commit遇到同時stage的成就音效4檔而誤帶入；在HEAD未前進時用獨立index重建只含本任務9檔的提交、以舊SHA比較原子更新分支，沒有改他方檔案或暫存狀態。原混合c4cedd3已由正確提交8b1a2dd替代；其後本輪遊戲提交亦使用獨立index保留其他任務暫存。
+- 雙庫：素材庫codex-authored/ui-low-drum-20261105-v1先Commit `8b1a2dd`，再遊戲Commit（本段所在「[Codex] feat: 製作五款極短低沉鼓敲擊聲」，SHA見聊天交付）。本輪製作無未完成／已知素材技術缺陷，可Review／保存候選，尚未接入、不合併推送；下一步使用者試聽以D1～D5選擇或提供回饋。
+
+## UI-SOUND-CLICK-H10-20261105 — 點擊音改用H10
+
+- Owner：Codex；Done，單一開發者。使用者指定H10用於點擊，取代前次C3；沿用既有H10原檔及音量，不改hover／強化洗煉成功／成就音或操作分類。允許js/ui-sound.js、index僅音效快取一行、既有tests/ui-sound.test.cjs及ui-achievement-sound.test.cjs、docs/UI_SOUND.md／LV現行音效句與本段；禁止改素材、其他腳本／UI／Worker／配置／存檔、合併推送。後續由使用者重載驗收。
+- 前置：規範／Workflow／任務／Codex指示已讀，ai/codex、fetch及目標預檢完成。ui-sound／測試／UI_SOUND乾淨；index沿用本聊天既有明確授權「只改音效快取這一行」，不動Claude相鄰ui.js版本或其它快取；LV改自有音效句，與Claude第16行寶石新增不同區段、無語意相依，實際完整LV候選與ai/claude三方merge-file exit0。共享AI_TASKS只動本段並分段stage，保留鼓聲播放修復任務。既有13項外部配置／data／skills2修改保持。
+- 素材：H10為既有自製上揚短啵60ms，SHA256 338a16bc9ce91a90b3b081e25e93306b5830eefa05fbba780c85d8f9f94b9f37；素材庫d01e230／遊戲0eebd1ed已保存，本輪無新增或修改素材，不建立素材空Commit。ui-hover-options --check確認兩庫來源／說明／manifest／6WAV一致。
+- 完成7檔：ui-sound只換click的WAV路徑及SHA快取，index只升ui-sound到20261105-ui-click-h10-v1；原聲音測試切換核准檔案／H10hash／C3禁載斷言，成就聲音測試同步音效新快取並保留成就UI原版本，UI_SOUND及LV改現行點擊音說明、本段交接。其餘播放流程、原音檔及生成器、所有未核准候選完全保持。
+- 驗證：`node tools/audio/ui-hover-options.cjs --check`通過；`node --test tests/ui-sound.test.cjs tests/ui-achievement-sound.test.cjs tests/achievements.test.cjs tests/ui-tick-smoke.test.cjs tests/vfx-editor-cache-versions.test.cjs`32/32通過，包含真click／鍵盤啟動播H10、純tips／停用／右鍵／合成／背景靜音、hover／成功／成就保持及只預載4份核准WAV。`npm.cmd run build`653檔、diff／stat／check及自我Review通過。小範圍原檔URL切換，本輪未重做瀏覽器／全庫測試，不宣稱實機聽感驗收；音訊手勢解鎖與背景略過限制保持。
+- 交付：本項無未完成或已知新增缺陷，可Review／使用者合併，遊戲Commit為本段所在「[Codex] feat: 點擊音改用H10」，SHA見聊天交付；素材無變更沿用d01e230。唯讀未改規範／Workflow／prompts、ui.js／ui-achievements／Worker／protocol／player／save／所有配置／字串與音檔；13項外部配置修改及鼓聲播放修復任務完整保留、不套用或提交。下一步使用者重載遊戲驗收H10點擊，未合併推送。
+- 驗收：有效真實click改播放H10、取消碰觸／被動tips／停用／合成／右鍵／背景仍不播；hover及兩類成功通知保持，C3不再預載。更新原回歸及版本檢查，執行相關聲音／成就／UI／快取測試、Build及diff後只提交本項7檔。
+
+## UI-SOUND-DRUM-PLAYBACK-FIX-20261105 — 修復鼓聲試聽顯示0秒與無法使用
+
+- Owner：Codex；Done（修正試聽交付）。使用者回報上一輪5單音顯示0秒且無效；原檔僅32～55ms，本輪保留鼓聲PCM，新增1.2秒單擊容器與每款3秒四次重複試聽及合輯，不改遊戲。允許tools/audio/ui-low-drum-playback.cjs、audio/ui-preview/low-drum-playback-v2、本段與對應素材庫；禁止改v1／其他音色／UI／配置／Worker／存檔／LV與String、合併推送。
+- 前置：共通規範／Workflow已讀，ai/codex，fetch及目標預檢乾淨，既有12項外部配置修改保留。驗收：檔案時長≥1秒、原短鼓PCM逐樣本保留、首尾靜音、單擊／重複／合輯正確；確定性重產／雙庫SHA及Build，實際瀏覽器HTMLAudio播放到ended與WebAudio非靜音驗證；內建瀏覽器Node REPL因kernel assets路徑錯誤不可用，改本機隔離Edge headless。先素材Commit再遊戲Commit，後續使用者在聊天播放器重新試聽。
+
+- 完成15檔：新產生器、本段與v2目錄11WAV／README／manifest。5份single各1.2秒於0.15秒敲擊1次，5份preview各3秒於0.2／0.85／1.5／2.15秒敲擊，合輯10.5秒依D1～D5各2次。來源v1／音量／音色逐樣本保留，僅補靜音及重複容器，未改原檔。
+- 驗證：`node tools/audio/ui-low-drum-playback.cjs --apply`／`--check`及`node --check tools/audio/ui-low-drum-playback.cjs`通過，雙庫11WAV／README／manifest／來源SHA一致且可確定性重產；獨立Node讀回每檔PCM規格、時長、首尾0.1秒靜音、單擊及四次原PCM逐樣本一致。`npm.cmd run build`653檔及兩庫diff／stat／check、自我Review通過，沒有修改遊戲程式、不重跑無關功能測試。
+- 實播：隔離隨機localhost＋Edge headless，11個HTMLAudio皆duration精確為1.2／3／10.5秒，currentTime到結尾且ended=true／media error0；每個MediaElementSource→Analyser捕捉到實際非零輸出峰值0.59999，Console error／warning及pageerror皆0。瀏覽器與服務均已關閉、未讀寫玩家存檔。初版QA跨來源頁少CORS、後續串流少Content-Length導致測試失敗；補QA伺服器正確回應與先設crossOrigin後設src後通過，沒有修改PCM或弱化時長／輸出斷言。QA及完整report在本聊天visualizations/drum-playback-fix。
+- 限制：已驗標準瀏覽器實際輸出，不能直接驗證聊天內建播放器的顯示／音響聽感；前次僅驗原PCM而未把短檔播放相容性驗好，本次交付3秒預覽並附1.2秒單擊檔讓使用者重試。不新增系統／字串，不改LV／String／UI接線／既有候選；唯讀檢查原產生器與v1／規範／Workflow／任務／package及Build工具，外部配置與成就音效續作變更保留、不提交。無新素材技術缺陷或未完成製作，可Review／保存修正版；聊天試聽待使用者驗收，未合併推送。
+
+- 雙庫交付：素材庫codex-authored/ui-low-drum-playback-20261105-v2先Commit `12e5afb`，再遊戲Commit（本段所在「[Codex] fix: 修復低鼓短音效的試聽交付」，SHA見聊天交付）。後續以D1～D5的3秒四次版重試，或使用single單擊版；所有遊戲／他人工作保留，未接線或合併推送。

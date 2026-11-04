@@ -6344,6 +6344,7 @@ function detailAction(act, actBtn) {
       }
       return;
     }
+    if (typeof UISound !== 'undefined') UISound.commandResult(commandName, result);
     if (act === 'equip') {
       UI.sel = { source: 'equip-slot', slot: args.slotKey || it.slot };
       rememberEquipmentSelection();

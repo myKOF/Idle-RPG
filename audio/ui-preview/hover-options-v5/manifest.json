@@ -1,0 +1,102 @@
+{
+  "version": 5,
+  "status": "preview-only-awaiting-user-selection",
+  "sampleRate": 48000,
+  "channels": 2,
+  "bits": 16,
+  "origin": "Original procedural UI transients, filtered noise and damped oscillators. No external recordings, references or sample libraries.",
+  "source": "tools/audio/ui-hover-options.cjs",
+  "sourceSha256": "d919e659bae19c08a83bc0a2ad3e4f35463620d091de618b1bfae0824bcd129c",
+  "libraryRelativePath": "codex-authored/ui-hover-options-20261104-v5",
+  "timelines": {
+    "hover": [
+      {
+        "id": "H6",
+        "firstAtSeconds": 0.35,
+        "secondAtSeconds": 0.637
+      },
+      {
+        "id": "H7",
+        "firstAtSeconds": 1.434,
+        "secondAtSeconds": 1.732
+      },
+      {
+        "id": "H8",
+        "firstAtSeconds": 2.54,
+        "secondAtSeconds": 2.832
+      },
+      {
+        "id": "H9",
+        "firstAtSeconds": 3.634,
+        "secondAtSeconds": 3.919
+      },
+      {
+        "id": "H10",
+        "firstAtSeconds": 4.714,
+        "secondAtSeconds": 5.014
+      }
+    ]
+  },
+  "files": [
+    {
+      "id": "H6",
+      "name": "輕巧滴答",
+      "group": "hover",
+      "file": "H6.wav",
+      "sha256": "c95aa89dcfe5f705951f620ac0d9147604711a81e0aabb9ad230bced0ec1b27f",
+      "seconds": 0.047,
+      "peakDbFS": -6.81,
+      "rmsDbFS": -20
+    },
+    {
+      "id": "H7",
+      "name": "柔亮撥音",
+      "group": "hover",
+      "file": "H7.wav",
+      "sha256": "2c5a4ee6978e218abcef37e25353ab7f42e7d7b55aed4a43432bdaa7cf11aec2",
+      "seconds": 0.058,
+      "peakDbFS": -7.54,
+      "rmsDbFS": -20
+    },
+    {
+      "id": "H8",
+      "name": "氣墊短噗",
+      "group": "hover",
+      "file": "H8.wav",
+      "sha256": "49989d8ee39a5d7aa8a64158a2d4667a00502137182c7455e602dfabc7b60fd1",
+      "seconds": 0.052,
+      "peakDbFS": -6.02,
+      "rmsDbFS": -24.29
+    },
+    {
+      "id": "H9",
+      "name": "微脆斷奏",
+      "group": "hover",
+      "file": "H9.wav",
+      "sha256": "6b8f0b1d7143af34863ff87c158978b15ccc6e0be861439893db14226a1e6f54",
+      "seconds": 0.045,
+      "peakDbFS": -6.02,
+      "rmsDbFS": -20.79
+    },
+    {
+      "id": "H10",
+      "name": "上揚短啵",
+      "group": "hover",
+      "file": "H10.wav",
+      "sha256": "338a16bc9ce91a90b3b081e25e93306b5830eefa05fbba780c85d8f9f94b9f37",
+      "seconds": 0.06,
+      "peakDbFS": -10.06,
+      "rmsDbFS": -20
+    },
+    {
+      "id": "hover-sampler",
+      "name": "觸碰H6到H10各兩次",
+      "group": "sampler",
+      "file": "hover-sampler.wav",
+      "sha256": "2a071c01c7bc4373ece4e7266812cf2740687e6d29787e4aa5945db298573507",
+      "seconds": 5.824,
+      "peakDbFS": -6.02,
+      "rmsDbFS": -31.18
+    }
+  ]
+}
