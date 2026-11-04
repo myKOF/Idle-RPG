@@ -976,6 +976,16 @@ function handleWorkerUiEvents(events) {
       }
       return;
     }
+    /* 升級（協議 EVENT_KINDS.LEVELUP）：音效＋Canvas 特效＋「等級提升」大字。
+       與傷害數字開關無關，不走特效佇列（一則一次性的提示，排隊反而會被洪峰擠掉）。 */
+    if (event.kind === 'levelup') {
+      if (typeof uiRenderingSuspended === 'function' && uiRenderingSuspended()) return;
+      if (typeof Sfx !== 'undefined') Sfx.play('levelUp');
+      if (typeof BattleRenderer !== 'undefined' && typeof BattleRenderer.onLevelUp === 'function') {
+        BattleRenderer.onLevelUp(event);
+      }
+      return;
+    }
     if (event.kind === 'loot') {
       // Battle statistics are authoritative Worker state projected by
       // panel('battle'). Replaying recorder calls here would double-count.

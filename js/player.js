@@ -230,6 +230,7 @@ function settlePlayerXp(options) {
     if (options.silent !== true && typeof blog === 'function') {
       blog(STR(374, p.level, reward), 'good');
     }
+    if (options.silent !== true && typeof emitPlayerLevelUp === 'function') emitPlayerLevelUp(p.level);
     // 升級回滿血藍
     if (typeof getStats === 'function') {
       var st = getStats();
