@@ -9345,7 +9345,10 @@ function battleSkillGroupTooltipHTML(gid, levels, skillsSnapshot) {
       break;
     }
   }
-  var html = '<div class="skt-name">' + STR(813, skillIconHTML(gid, group.emoji), esc(group.name), totals.total, totals.max) + '</div>';
+  /* 戰鬥區快捷列的提示：不放技能小圖標；名稱靠左、名稱旁顯示消耗法力（被動技能沒有施法消耗，不顯示） */
+  var mpMark = (typeof skills2IsPassive === 'function' && skills2IsPassive(gid)) ? '' :
+    '<span class="skt-mp">🔵 ' + skills2ManaCost(gid, lvs, sgUiUltRaw(skillsSnapshot), sgUiUnlockProgress(skillsSnapshot)) + ' MP</span>';
+  var html = '<div class="skt-name">' + STR(813, '', esc(group.name), totals.total, totals.max, mpMark) + '</div>';
   html += '<div class="skt-desc">' + (heading ? '<b>' + esc(heading) + '</b><br>' + description : STR(814)) + '</div>';
   return html + '<div class="skt-hint">' + STR(815) + '</div>' + (pick ? skillTowerUnlockHintHTML(pick.def, skillsSnapshot) : '');
 }

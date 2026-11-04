@@ -4698,6 +4698,20 @@ textarea:disabled,
   gap: 12px;
 }
 
+.skt-title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.skt-mp {
+  color: var(--info);
+  font-size: 12.5px;
+  font-weight: normal;
+  white-space: nowrap;
+}
+
 .skt-remain {
   font-size: 13px;
   font-weight: 900;

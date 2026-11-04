@@ -2,7 +2,7 @@
 /* 自動產生，請勿手改。來源：config/Excel/String.xlsx（Excel 是唯一來源）。
    重新產生：node tools/string-table/apply_strings.cjs（套用參數.bat 會自動執行）。
    每列＝[繁體中文, 簡體中文, 英文]；後面的空欄已省略。讀取請用 js/strings.js 的 STR()。 */
-var STRING_DATA_VERSION = 'c6078654';
+var STRING_DATA_VERSION = '00d07b4e';
 var STRING_DATA = {
   "1": ["冰霜"],
   "2": ["毒霧"],
@@ -812,7 +812,7 @@ var STRING_DATA = {
   "810": ["沒有技能"],
   "811": ["第{0}階【終極進化】（{1}）Lv.{2}"],
   "812": ["第{0}階【{1}】Lv.{2}"],
-  "813": ["{0} {1} <span class=\"dim-text\">總 Lv.{2} / {3}</span>"],
+  "813": ["<span class=\"skt-title\">{1}{4}</span><span class=\"dim-text\">總 Lv.{2} / {3}</span>"],
   "814": ["尚未學習此技能"],
   "815": ["點擊開啟升級面板"],
   "816": ["終極進化"],
