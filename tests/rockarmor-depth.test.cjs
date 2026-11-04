@@ -79,8 +79,11 @@ test('近側石碑走角色輪廓前的專用後端，遠側維持後方；續�
  }
 });
 
-test('玩家輪廓仍保留穿透功能，只有岩甲近側容器放在輪廓之後',()=>{
+test('玩家輪廓仍保留穿透功能；岩甲近側容器在 airPlayer（空中物後方時補畫的本體）之後，才不會被本體蓋回後面',()=>{
  const s=fs.readFileSync(path.join(__dirname,'../js/battle-renderer.js'),'utf8');
- assert.ok(s.indexOf('world.addChild(outlineLayer);')<s.indexOf('world.addChild(actorFront);'));
- assert.match(s,/actorFrontContainer: S\.layers\.actorFront/);assert.match(s,/S\.layers\.outline\.addChild\(sp\)/);
+ assert.doesNotMatch(s,/world\.addChild\(actorFront\)/,'world 內的容器一律在 airPlayer 之下');
+ const player=s.indexOf('cameraStage.addChild(airPlayer);'),front=s.indexOf('cameraStage.addChild(actorFront);'),air=s.indexOf('cameraStage.addChild(airFx);');
+ assert.ok(player>0&&player<front&&front<air,'airBack < airPlayer < actorFront < airFx');
+ assert.match(s,/actorFrontContainer: S\.layers\.actorFront/);assert.match(s,/projectActorFrontTransform: projectBillboardTransform/);
+ assert.match(s,/S\.layers\.outline\.addChild\(sp\)/);
 });

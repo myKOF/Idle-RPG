@@ -10,6 +10,7 @@
 裝備養成,裝備方案 第2套,1/0,第 2 套裝備方案的解鎖條件（預設開局即開放）。對應程式 EQUIP_SET_UNLOCK_LEVELS[1] / EQUIP_SET_UNLOCK_REINCARNATIONS[1]。
 裝備養成,裝備方案 第3套,1/0,第 3 套裝備方案的解鎖條件（預設開局即開放）。對應程式 EQUIP_SET_UNLOCK_LEVELS[2] / EQUIP_SET_UNLOCK_REINCARNATIONS[2]。
 寶石,寶石共鳴,1/6,等級與轉生次數須同時滿足才開放寶石共鳴；未解鎖前無法查看共鳴頁，滑鼠移到「共鳴」頁籤會以提示顯示解鎖條件。對應程式 GEM_RESONANCE_UNLOCK_LEVEL / GEM_RESONANCE_UNLOCK_REINCARNATION。
+裝備養成,符文系統,200/0,等級與轉生次數須同時滿足，裝備詳情的「符文」功能按鈕（符文鑲嵌／刻印頁）才開放；只寫等級時，轉生過（≥1 轉）視為已越過。對應程式 RUNE_UNLOCK_LEVEL / RUNE_UNLOCK_REINCARNATION。
 角色成長,技能裝載欄 第3格,100/0,技能裝載欄第 3 格的解鎖條件（前 2 格開局即有）。等級與轉生次數須同時滿足；只寫等級時，轉生過（≥1 轉）視為已越過。對應程式 LOADOUT_SLOT_UNLOCKS。
 角色成長,技能裝載欄 第4格,200/0,技能裝載欄第 4 格的解鎖條件（前 2 格開局即有）。等級與轉生次數須同時滿足；只寫等級時，轉生過（≥1 轉）視為已越過。對應程式 LOADOUT_SLOT_UNLOCKS。
 角色成長,技能裝載欄 第5格,300/0,技能裝載欄第 5 格的解鎖條件（前 2 格開局即有）。等級與轉生次數須同時滿足；只寫等級時，轉生過（≥1 轉）視為已越過。對應程式 LOADOUT_SLOT_UNLOCKS。

@@ -2552,7 +2552,7 @@ var VFXRuntime = (function () {
           fxBackend: VFXPixiBackend.createBackend({ container: opts.fxContainer, depthSort: true,
             depthParent: opts.fxDepthContainer, projectTransform: opts.projectSceneTransform }),
           actorFrontBackend: opts.actorFrontContainer ? VFXPixiBackend.createBackend({container:opts.actorFrontContainer,
-            depthSort:true,projectTransform:opts.projectSceneTransform}) : null,
+            depthSort:true,projectTransform:opts.projectActorFrontTransform || opts.projectSceneTransform}) : null,
           // 場域與狀態特效按畫面 Y 與角色交錯；固定留在 presetZone 會全部蓋到角色後面。
           zoneBackend: VFXPixiBackend.createBackend({ container: opts.zoneContainer, depthSort: true,
             depthParent: opts.fxDepthContainer, projectTransform: opts.projectSceneTransform }),

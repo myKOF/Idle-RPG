@@ -2076,6 +2076,8 @@ var GEM_COMPOSE_TOP_INPUT_COUNT = 6;
 var FUSE_GOLD_COST = [0, 100, 300, 900, 2700, 8100, 24300, 72900, 218700, 656100]; // 金幣費用，依素材等級
 
 var GEM_RESONANCE_UNLOCK_LEVEL = 1;           // 寶石共鳴解鎖等級（system_unlock 表；與轉生次數須同時滿足）
+var RUNE_UNLOCK_LEVEL = 200;                  // 符文系統解鎖等級（system_unlock 表；裝備詳情符文按鈕，與轉生次數須同時滿足）
+var RUNE_UNLOCK_REINCARNATION = 0;            // 符文系統解鎖所需轉生次數（system_unlock 表）
 var GEM_RESONANCE_UNLOCK_REINCARNATION = 6;   // 寶石共鳴解鎖所需轉生次數（system_unlock 表）
 
 /* ---- 寶石商店 ----
