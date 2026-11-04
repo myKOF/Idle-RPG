@@ -14490,3 +14490,12 @@ Worker 存活且頁面正常完成載入。
 - 實機：IAB無可用連線，改隔離隨機localhost＋Edge headless＋真Worker／AudioContext，13類動態元件（含原生控制、tips、裝備、技能、寶石／符文／威能／塔層／存檔卡片、裝飾圖示）逐一滑過均啟動原觸碰buffer，靜止後沒有連播；正式裝備按鈕實際強化成功／洗煉各啟動一次1.15秒成功buffer。僅下載兩個WAV，兩buffer時長0.18／1.15秒；零資源的真Worker洗煉拒絕不播成功音，Console error／warning與pageerror均0。使用獨立瀏覽器context及seed，未讀寫玩家原網址存檔，服務／瀏覽器均關閉。QA腳本／報告在本聊天visualizations的ui-sound-qa.mjs／json；初版QA誤以GM gold 0可清空，改用既有loadSave載入零資源隔離狀態後正確驗收，未修改產品迎合QA。
 - 唯讀未改：規範／Workflow／prompts、item／factory／formula／player／forge／bridge／Worker／protocol／save、所有配置與String／CSV／strings_data、原WAV／產生器及素材庫；檢查CSS的hover及現有tooltip／裝備事件／聲音來源以確認涵蓋與回傳語意。限制：瀏覽器需先有有效真人手勢才發聲，冷載入過慢略過過期觸碰；未跑全庫、其他瀏覽器／行動真機與長時間音訊壓力，現有初始化基線測試上述1項失敗另案處理。
 - 交付：`npm.cmd run build`652檔通過，自我Review及diff／stat／check通過。授權範圍無未完成、無已知新增缺陷，可供Review／使用者合併；Commit為本段所在「[Codex] feat: 接入核准的UI觸碰與強化洗煉成功音效」，SHA見聊天交付。未合併推送develop／main；下一步重載遊戲，先點擊或按鍵解鎖音訊，再驗收互動與強化／洗煉。
+
+## UI-SOUND-TIPS-20261104 — tips靜音與介面說明例外
+
+- Owner：Codex；Done，單一開發者。使用者要求出現tips者不播觸碰音，包含裝備／熔爐／寶石等道具與材料；介面說明用驚嘆號可播。允許ui-sound目標過濾、index對應快取、原聲音回歸、UI_SOUND／LV與本段；禁止改成功音、其他音效／設定、音檔、玩法／Worker／配置／存檔、合併推送。
+- 前置：工作區乾淨，fetch及6檔衝突預檢無外部來源；沿用f29ebba0。驗收：generic tooltip及無data-tip但由JS顯示的道具卡均靜音，原生button道具也不能繞過，子元素／鍵盤／觸控同規則；介面!／?／i說明保留音，無tips的操作UI保留音。成功結果白名單／節流／背景保護不變，測試／Build／實機Console及diff後Commit，交使用者重載驗收。
+- 完成6檔：js/ui-sound.js新增說明圖示優先例外及tips／道具靜音過濾，index只升該腳本快取20261104-ui-sound-tips-v2；更新tests/ui-sound.test.cjs、docs/UI_SOUND.md、LV及本段。data-tip／data-tt／原生title、裝備／技能等JS提示卡與button造型寶石／符文一律靜音，子節點及上層button不可繞過；pg-help／forge-info-btn與敵人／BOSS!按鈕保留音。成功播放函式、ui.js接點及兩份WAV逐字保持。
+- 驗證：`node --test tests/ui-sound.test.cjs tests/equip-reroll-ui.test.cjs tests/upgrade-animation.test.cjs tests/ui-tick-smoke.test.cjs tests/vfx-editor-cache-versions.test.cjs`26/26通過；調整動態目標回歸並新增23類tips的hover／鍵盤／觸控及巢狀button靜音、說明圖示優先例外驗證，原成功／拒絕／音訊失敗／背景／快取回歸保持。`npm.cmd run build`652檔通過；`node tools/string-table/build_string_csv.cjs --check`寫死0，diff／stat／check與自我Review通過。
+- 實機：IAB無連線，隔離隨機localhost＋Edge headless＋真Worker／AudioContext驗20類動態節點，12類一般tips／道具靜音、8類操作／說明仍播；正式裝備格hover可見完整tips且觸碰計數不增，實際按鈕強化成功／洗煉成功各播一次，Worker資源不足仍靜音；只下載原2份WAV，Console error／warning及pageerror均0。QA在本聊天visualizations/ui-sound-tips-qa.mjs／json。初版測試用forge-info-btn繼承absolute樣式而擋其他測試格，僅修QA排版後通過，未改產品或放寬檢查；服務及瀏覽器已關閉，玩家原網址存檔未讀寫。
+- 唯讀未改：規範／Workflow／prompts、ui.js／item／factory／formula／player／forge／bridge／Worker／protocol／save、現有tips本身、String／配置／CSV／strings_data、全部音檔／合成來源及素材庫。無新素材或本項素材庫Commit，沿用4cfb1cc；未跑全庫／多瀏覽器／行動真機，瀏覽器首個有效手勢與冷載入略過機制仍適用。本項無未完成或已知新增風險，可Review／供使用者合併；Commit為本段所在「[Codex] fix: 將一般道具tips觸碰音靜音並保留說明圖示」，SHA見聊天交付，未合併推送。下一步重載後驗收tips與說明圖示。

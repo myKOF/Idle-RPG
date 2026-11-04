@@ -5,7 +5,17 @@ var UISound = (function () {
     hover: 'audio/ui-preview/01-hover.wav?v=411211856bdc',
     success: 'audio/ui-preview/05-success.wav?v=4821e4b49aad'
   };
-  // 原生控制項、現有懸停提示與CSS響應卡片。委派至document，涵蓋重繪／彈窗的新節點。
+  // 說明圖示是tips靜音的唯一例外；先判例外，再擋tips，最後辨識操作UI。
+  var HELP_TARGETS = '.pg-help, .forge-info-btn, #btn-enemy-tip, #btn-boss-tip, #btn-tower-result-boss-tip';
+  var SILENT_TIPS = [
+    '[data-tip]', '[data-tt-title]', '[data-tt-desc]', '[title]:not([title=""])',
+    '[data-sk]', '[data-buff-tip]', '[data-enemy-buff-tip]', '[data-talent-tip]',
+    '.item-cell', '.eq-slot.filled', '.forge-slot.filled', '.act-btn-tooltip',
+    '.gem-inventory-cell', '.gem-chip', '.socket.filled', '.loadout-slot.filled', '.gconv-slot.filled',
+    '.gres-gem', '.gres-hole', '.equip-material-icon', '.sgb-item', '.gx-item', '.gx-chip',
+    '.rx-card', '.rx-use', '.talent-icon', '.battle-buff-badge'
+  ].join(', ');
+  // 委派至document，涵蓋重繪／彈窗的新節點。
   var TARGETS = [
     'button', 'a[href]', 'input:not([type="hidden"])', 'select', 'textarea', 'summary',
     '[role="button"]', '[role="tab"]', '[role="checkbox"]', '[role="switch"]',
@@ -95,6 +105,10 @@ var UISound = (function () {
     if (!node || typeof node.closest !== 'function') return null;
     // aria-hidden常用於按鈕內的裝飾圖示，不能把可見的父控制項一併靜音。
     if (node.closest('[hidden], [inert]')) return null;
+    var help = node.closest(HELP_TARGETS);
+    if (help) return help;
+    // 包含原生button造型的寶石／符文及tips內部圖示，不讓上層控制項繞過靜音。
+    if (node.closest(SILENT_TIPS)) return null;
     return node.closest(TARGETS);
   }
   function hover(event) {

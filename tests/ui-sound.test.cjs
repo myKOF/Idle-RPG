@@ -53,22 +53,41 @@ test('no autoplay or unapproved fetch; first real gesture loads exactly the two 
   s.fire('keydown'); await settle(); assert.equal(s.created(), 1); assert.equal(s.requests.length, 2);
 });
 
-test('delegation handles dynamic controls, tips and cards; child movement and stationary repaint stay silent', async () => {
+test('delegation keeps ordinary controls and help icons audible; child movement and stationary repaint stay silent', async () => {
   const s = mount(); s.fire('pointerdown'); await settle();
-  for (const kind of ['button', '[data-tip]', '[data-tt-title]', '.item-cell', '.eq-slot.filled', '[data-sk]', '.gx-item', '.rx-card', '.tlx-tier', '.tower-floor', '.save-row']) {
+  for (const kind of ['button', '.tab-btn', '.pg-help', '.forge-info-btn', '#btn-enemy-tip', '#btn-boss-tip', '#btn-tower-result-boss-tip', '.tlx-tier', '.tower-floor', '.save-row']) {
     s.advance(100); const anchor = s.node(kind), child = s.node('span', anchor);
     s.fire('pointerover', { target: child }); await settle();
     const count = s.played.length;
     s.advance(100); s.fire('pointerover', { target: anchor, relatedTarget: child }); await settle(); assert.equal(s.played.length, count);
     s.fire('pointerover', { target: s.node(kind) }); await settle(); assert.equal(s.played.length, count);
   }
-  assert.equal(s.played.length, 11);
+  assert.equal(s.played.length, 10);
   const anchor = s.node('button'), icon = s.node('span', anchor), closest = icon.closest;
   icon.closest = function (selectors) { return selectors.includes('[aria-hidden="true"]') ? this : closest.call(this, selectors); };
   s.advance(100); s.fire('pointerover', { target: icon }); await settle();
-  assert.equal(s.played.length, 12, 'decorative aria-hidden icon must retain its visible button hover');
+  assert.equal(s.played.length, 11, 'decorative aria-hidden icon must retain its visible button hover');
   assert.ok(s.played.every(url => url.includes('01-hover')));
   assert.ok(s.voices.slice(0, -1).every(voice => voice.stopped));
+});
+
+test('all ordinary tips and item cards stay silent for hover, keyboard and touch, including nested native buttons', async () => {
+  const s = mount(); s.fire('keydown'); await settle();
+  for (const kind of ['[data-tip]', '[data-tt-title]', '[data-tt-desc]', '[title]:not([title=""])',
+    '.item-cell', '.eq-slot.filled', '.forge-slot.filled', '.act-btn-tooltip', '[data-sk]', '[data-buff-tip]',
+    '.gem-inventory-cell', '.gem-chip', '.socket.filled', '.gres-gem', '.gres-hole', '.equip-material-icon',
+    '.sgb-item', '.gx-item', '.gx-chip', '.rx-card', '.rx-use', '.talent-icon', '.battle-buff-badge']) {
+    const card = s.node(kind), child = s.node('button', card), icon = s.node('span', child);
+    s.advance(200); s.fire('pointerover', { target: icon });
+    s.fire('keydown'); s.fire('focusin', { target: child });
+    s.fire('pointerdown', { target: child, pointerType: 'touch' });
+    await settle(); assert.equal(s.played.length, 0, kind);
+  }
+  for (const kind of ['.pg-help', '.forge-info-btn', '#btn-enemy-tip']) {
+    const help = s.node(kind, s.node('[data-tip]'));
+    s.advance(200); s.fire('pointerover', { target: s.node('span', help) }); await settle();
+  }
+  assert.equal(s.played.length, 3, 'interface explanation icons take precedence over tip silence');
 });
 
 test('background, scroll, drag, static content and rapid movement do not create sound storms', async () => {
