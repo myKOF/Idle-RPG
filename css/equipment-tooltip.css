@@ -1,0 +1,18 @@
+/* 裝備tips與比較共用：名稱和強化值同列，完整標題決定卡片寬度。 */
+#sk-tooltip .equip-detail-card {
+  flex: 0 0 auto !important;
+  width: min-content !important;
+  max-width: none !important;
+}
+
+#sk-tooltip .equip-detail-card .it-name {
+  white-space: nowrap;
+  padding-right: 76px !important;
+}
+
+/* 窄畫面保留完整標題，超出視窗時可在提示內水平捲動。 */
+#sk-tooltip:has(> .equip-detail-card),
+#sk-tooltip:has(> .equip-compare-container) {
+  max-width: calc(100vw - 16px) !important;
+  overflow-x: auto;
+}

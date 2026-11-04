@@ -40,6 +40,18 @@
 - 預覽：全六段動作與三角度原生1400握劍近拍目視通過；第四招雙角度1600×860／84幀30fps GIF，以及正式遊戲1600×1000／84幀30fps GIF附同步握劍近拍。遊戲錄製採暫停確定性播放、正式renderPerspectiveScene／Pixi更新，僅QA調大畫布與內建檢視鏡頭並暫隱NPC／殘留特效／暫停遮罩；GIF磁碟讀回確認主角及近拍均逐幀變化。初次高解析冷啟動逾時，改先標準解析載入再錄製；沒有改正式鏡頭／動畫迎合QA。QA在本聊天visualizations/role2-20261104並已保存素材庫。
 - 素材：設定素材庫codex-authored/hero3d-role2-20261104保存授權原檔、可編輯Blend、成品、製作／匯出工具及QA，manifest共36檔SHA；重開Blend確認6動作、使用的2張貼圖皆packed。素材Commit `4cb3e16`先於遊戲Commit（本段所在「[Codex] feat: 接入2轉人物並修復背劍與手腿網格」，SHA見交付）。無未完成項目或已知新增缺陷；仍為既有內測3D，未跑全庫／跨瀏覽器長時間效能。可供Review與使用者合併，未合併或推送develop／main；下一步重載以2轉角色及GIF驗收。
 
+## EQUIP-TIPS-UPGRADE-NOWRAP-20261105 — 裝備名稱與強化值固定同列
+
+- Owner：Codex；Done，單一開發者。使用者要求所有裝備tips及裝備比較的強化值接在名稱後、不許換行。前置：共通規範／Workflow／任務／prompts已讀，ai/codex並fetch；既有game_parameters.xlsx編輯保留。
+- 允許新增css/equipment-tooltip.css、index新增該樣式載入、LV提示說明與本段；禁止改裝備資料／數值／名稱／字串／玩法／Worker／存檔／配置及其他AI工作，不合併推送。共用樣式覆蓋單卡與比較固定寬度，標題不換行並保留右側控制空間。
+- 預檢：保留develop原比較CSS；本項新增後載樣式，index新增獨立行，LV及任務新增獨立區段。三檔候選以HEAD為base與develop三方merge-file皆exit0才寫入，無共同數值／協議修改。
+- 驗收：單件與雙卡、全品質、長名稱、+10／+40、鎖頭／現有標記、窄螢幕；相關裝備回歸／Build／真瀏覽器排版及Console／diff後獨立[Codex] Commit。無新素材；後續使用者重新整理驗收及決定合併。
+
+- 完成4檔：css/equipment-tooltip.css、index.html、LV_upgrade_system.md及本段。卡片用min-content並保留原280px最小寬，標題white-space:nowrap／右距76px，實際強化span維持名稱後；min-content只依不可折標題撐寬，避免被長說明整段撐大。窄畫面限制tips外框至視窗內，超長完整標題可水平捲動。新增樣式帶獨立快取，不改原CSS或JS／字串與存檔。
+- 驗證：node --test tests/item-detail-html.test.cjs tests/equipment-tooltip-compare.test.cjs tests/equipment-quality-name.test.cjs tests/tooltip-modal-close.test.cjs tests/upgrade-animation.test.cjs tests/vfx-editor-cache-versions.test.cjs共33項32過1既有失敗。tooltip-modal-close以字串擷取不存在的closeSkillModal函式而得到空字串；核對test及ui.js逐位等於HEAD，直接編譯執行HEAD原測試重現同名同斷言失敗，未改斷言或擴修。
+- npm.cmd run build通過653檔；git diff／stat／check及自我Review通過。IAB無backend，改bundled Playwright＋隔離headless Edge隨機localhost，以正式itemDetailHTML及index全部CSS驗12品質×單卡／雙卡×1400／800／360px共72組／108個標題。測前移除新CSS重現+10換行，套用後名稱與+10／+40垂直區間重疊且數字在鎖頭／現有標記左邊、卡片內，全頁不水平溢出；Console error／warning及pageerror皆0。PNG存後目視核對，QA與report在聊天visualizations/equip-nowrap，服務及瀏覽器已關閉，未接觸玩家存檔。
+- 唯讀檢查未改：規範／Workflow／prompts、js/item.js及ui.js共用標題／tips全部呼叫點、原CSS／全部配置及上述6份測試；既有game_parameters.xlsx編輯完整保留不提交。無新素材／素材庫變更，無本項未完成或已知新增缺陷；未跑全庫／真實玩家長玩／多瀏覽器。可Review及使用者合併，未合併推送；Commit為本段所在「[Codex] fix: 裝備提示強化值固定緊接名稱不換行」，SHA見聊天交付。下一步使用者重新整理驗收。
+
 ## ENCHANT-BOOK-RETIRE-20261104 — 移除置頂附魔書並停止產出
 
 - Owner：Codex；Done，單一開發者。使用者要求移除置頂材料列附魔書及全部遊戲內產出；追加確認不更動現有存檔，只保證不再掉落。保留舊庫存／存檔欄位，移除野外、離線、高塔發放與舊任務book獎勵入口，不遷移或清除資料。
