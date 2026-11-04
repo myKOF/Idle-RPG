@@ -267,8 +267,8 @@ test('清除快取與更換金鑰均生效；儲存被封鎖時只用當頁記�
 
 test('常用預設只填入可本機解析的內容，按Enter才執行；清除按鈕不送Worker', async () => {
   const env = setup();
-  assert.equal(env.buttons.length, 5);
-  for (const button of env.buttons.slice(0, 4)) {
+  assert.equal(env.buttons.length, 6);
+  for (const button of env.buttons.slice(0, 5)) {
     const before = env.sent.length;
     button.listeners.click();
     assert.equal(env.sent.length, before);
@@ -279,7 +279,7 @@ test('常用預設只填入可本機解析的內容，按Enter才執行；清除
   assert.equal(env.calls.length, 0);
   env.ai.rememberNaturalCommand(prompt, ['gold 1']);
   const before = env.sent.length;
-  env.buttons[4].listeners.click();
+  env.buttons[5].listeners.click();
   assert.equal(env.sent.length, before);
   assert.equal(env.ai.getCachedNaturalCommand(prompt), null);
 });
