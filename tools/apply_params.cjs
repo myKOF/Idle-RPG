@@ -379,6 +379,7 @@ scalar('data', 'REINCARNATION_MAX', '1-成長經驗', '可轉生等級 / 最高�
   });
   bind('天堂威能', 'TALENT_UNLOCK_LEVEL', 'TALENT_UNLOCK_REINCARNATION');
   bind('寶石共鳴', 'GEM_RESONANCE_UNLOCK_LEVEL', 'GEM_RESONANCE_UNLOCK_REINCARNATION');
+  bind('符文系統', 'RUNE_UNLOCK_LEVEL', 'RUNE_UNLOCK_REINCARNATION');
   const sets = ['裝備方案 第1套', '裝備方案 第2套', '裝備方案 第3套'].map(systemUnlock);
   [['EQUIP_SET_UNLOCK_LEVELS', 'level'], ['EQUIP_SET_UNLOCK_REINCARNATIONS', 'reinc']].forEach(([varName, key]) => {
     edits.push({
