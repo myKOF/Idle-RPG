@@ -13,6 +13,8 @@
 - 本輪重驗：原18檔另加worker-protocol／worker-shim，共20檔127項119過／8既有失敗；完整指令及TAP、兩側基線與失敗名稱比對保存在logs/merge-20261105-resume。以唯讀fs覆映原HEAD與incoming的JS／config／tools重跑原五支相關測試，分別25/32、24/32；八項全在incoming重現、七項也在HEAD重現，沒有改斷言或新增失敗。Skills2／Gems apply試跑語意變更0，apply_params595一致／0變更／0錨點；String2301條同步。
 - 音效驗證：八支既有audio工具的--check全數通過，涵蓋原創UI／紙木／短音／觸碰／鍵盤／低鼓及播放容器、指定Mixkit成就音效；來源／授權紀錄及雙庫SHA保留，不重製或改音量。待提交音檔與incoming逐位保持。既有LV功能紀錄完整；最終Build與後續Claude最新提示／全部來源同步結果見接續紀錄及交付。
 
+- 後續整合：b206ec67完成原合併後，再納入Claude最新bbc78d88（技能格提示取消1轉敘述）。String來源Excel／CSV／strings_data逐位等於bbc78d88、2302列來源與CSV逐格相同，apply_strings --check2301條／facd89eb同步，兩側UI音效及資料／Worker新快取保持。八檔提示／文字／音效補驗51項49過／2原始cea2c7f8重現失敗（GM舊解鎖門檻與thrust耗魔2500對舊3000預期），未更動斷言；原127項的8失敗及本51項的2失敗均有逐名基線記錄。最終npm.cmd run build657檔通過，本輪未跑全庫／瀏覽器長玩。原合併尚未完成Git動作由本輪外層完成，main及原父提交保持。
+
 ## HERO3D-PBR-20261104 — 恢復人物材質與反射
 
 - Owner：Codex；Done，單一開發者。使用者確認開始修復角色灰暗問題，恢復授權原檔的法線／金屬粗糙度貼圖、PBR材質與環境反射並做同視角對照；涵蓋Role／Role1／Role2／Role3。已有來源授權不重複詢問，無新第三方素材。
