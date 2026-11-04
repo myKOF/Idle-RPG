@@ -14561,3 +14561,15 @@ Worker 存活且頁面正常完成載入。
 - 驗證：`node tools/audio/ui-silent-keyboard.cjs --apply`／`--check`、`node --check tools/audio/ui-silent-keyboard.cjs`通過，兩庫6WAV／來源／README／manifest SHA一致，可確定性重產。獨立Node PCM讀回驗規格／非靜音／雙聲道一致／起尾零點／無削波，合輯10片段逐樣本等於單檔；同類兩兩零延遲相關最高0.329，非同波形換音量。峰值皆-7.54dBFS，RMS -26.59～-23.03dBFS；數值不代替使用者聽感核准。
 - `node --test tests/ui-sound.test.cjs`11/11、`npm.cmd run build`652檔通過；兩庫diff／stat／check及自我Review通過。rg確認index／js沒有新候選引用，不接入或改遊戲、不做瀏覽器操作；未新增系統／設定／玩家字串，無LV／String變更。唯讀未改AI_RULES／AGENTS／Workflow／prompts、既有音檔及產生器、UI_SOUND／ui-sound／index／tests／LV、Worker／save／玩法與所有配置；現有C3／H6～H10及其他未提交修改保留，不一併提交。
 - 雙庫交付：素材庫codex-authored/ui-silent-keyboard-20261104-v1的9檔先Commit `b378009`，再遊戲Commit（本段所在「[Codex] feat: 製作五款無聲鍵盤風格按鈕音」，SHA見聊天交付）。本輪製作無未完成或已知素材技術缺陷；音色待試聽選擇、接入另行指示，可Review／保存候選；未合併推送。下一步使用者以K1～K5提供選擇或回饋。
+
+## UI-SOUND-LOW-DRUM-20261105 — 五款極短低沉鼓敲擊音
+
+- Owner：Codex；Done（試聽候選），單一開發者。使用者要求再做5款極短促低沉鼓敲擊聲，製作D1～D5獨立候選及各兩次合輯，供試聽；不接入遊戲。前置：已讀規範／Workflow／任務，ai/codex，fetch及目標預檢無外部衝突。
+- 允許tools/audio/ui-low-drum.cjs、audio/ui-preview/low-drum-v1、本段及素材庫codex-authored/ui-low-drum-20261105-v1。禁止改其他音檔／UI／快取／LV／String／配置／玩法／Worker／存檔／其他進行中任務，不合併推送。所有既有未提交修改保留，只分段stage本段。
+- 驗收：5款32～55ms原創程序鼓音、低頻鼓體及極短敲擊起音、快速阻尼無混響；附單音與D1～D5各兩次合輯，驗PCM／首尾／無削波／非靜音／合輯逐樣本一致、確定性重產及雙庫SHA、Build。先素材Commit再遊戲Commit；後續使用者試聽選擇，無其他任務依賴。
+
+- 完成10檔：新ui-low-drum產生器、low-drum-v1目錄5單音／comparison.wav／README／manifest、本段。D1短底鼓45ms、D2悶手鼓38ms、D3低音通鼓50ms、D4厚實重咚55ms、D5極短乾鼓32ms。全自製限頻噪音／快速下沉振盪器／非整數比鼓膜共鳴，沒有外部素材／參考檔／取樣庫。48kHz／16-bit立體聲置中；合輯5.24秒、依D1～D5各兩次。
+- 驗證：`node tools/audio/ui-low-drum.cjs --apply`／`--check`、`node --check tools/audio/ui-low-drum.cjs`通過；兩庫6WAV／來源／README／manifest逐檔SHA一致且可確定性重產。獨立Node WAV／FFT讀回驗規格／非靜音／無削波／首尾零點／左右一致，10合輯片段逐樣本等於單檔；頻譜最大峰70～105Hz、500Hz以下能量98.63～99.80%。峰值-4.44dBFS，RMS -17.42～-16.14dBFS。量測不代替使用者聽感選擇。
+- `node tools/audio/ui-silent-keyboard.cjs --check`前輪候選保持，`node --test tests/ui-sound.test.cjs`13/13、`npm.cmd run build`653檔通過。rg確認index／js未引用新候選，兩庫diff／stat／check及自我Review通過。唯讀未改規範／Workflow／prompts、既有音檔／產生器、ui-sound／ui-achievements／UI_SOUND／index／tests／LV、Worker／save／玩法／全部配置；其他進行中成就音效及外部配置修改保留。本輪無新系統／字串，無需LV／String變更，未做瀏覽器或全庫測試。
+- 協作事故已修正：素材庫一般Commit遇到同時stage的成就音效4檔而誤帶入；在HEAD未前進時用獨立index重建只含本任務9檔的提交、以舊SHA比較原子更新分支，沒有改他方檔案或暫存狀態。原混合c4cedd3已由正確提交8b1a2dd替代；其後本輪遊戲提交亦使用獨立index保留其他任務暫存。
+- 雙庫：素材庫codex-authored/ui-low-drum-20261105-v1先Commit `8b1a2dd`，再遊戲Commit（本段所在「[Codex] feat: 製作五款極短低沉鼓敲擊聲」，SHA見聊天交付）。本輪製作無未完成／已知素材技術缺陷，可Review／保存候選，尚未接入、不合併推送；下一步使用者試聽以D1～D5選擇或提供回饋。

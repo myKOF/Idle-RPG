@@ -1,0 +1,94 @@
+{
+  "version": 1,
+  "status": "preview-only-awaiting-user-selection",
+  "sampleRate": 48000,
+  "channels": 2,
+  "bits": 16,
+  "origin": "Original procedural ultra-short low drum hits: seeded filtered noise and rapidly damped oscillators; no external recordings, reference files or sample libraries.",
+  "source": "tools/audio/ui-low-drum.cjs",
+  "sourceSha256": "5be2f4ad2012ef9c4a4d5a5b5f96629e14ccb7ed9108c35603771f62c0e3a35b",
+  "libraryRelativePath": "codex-authored/ui-low-drum-20261105-v1",
+  "timeline": [
+    {
+      "id": "D1",
+      "firstAtSeconds": 0.35,
+      "secondAtSeconds": 0.635
+    },
+    {
+      "id": "D2",
+      "firstAtSeconds": 1.33,
+      "secondAtSeconds": 1.608
+    },
+    {
+      "id": "D3",
+      "firstAtSeconds": 2.296,
+      "secondAtSeconds": 2.586
+    },
+    {
+      "id": "D4",
+      "firstAtSeconds": 3.286,
+      "secondAtSeconds": 3.581
+    },
+    {
+      "id": "D5",
+      "firstAtSeconds": 4.286,
+      "secondAtSeconds": 4.558
+    }
+  ],
+  "files": [
+    {
+      "id": "D1",
+      "name": "短底鼓",
+      "file": "D1.wav",
+      "sha256": "8e6b8d684a9876a96f57b12f403210acf7f045dbcec8c84cca2c1bc9ae53ffd6",
+      "seconds": 0.045,
+      "peakDbFS": -4.44,
+      "rmsDbFS": -16.14
+    },
+    {
+      "id": "D2",
+      "name": "悶手鼓",
+      "file": "D2.wav",
+      "sha256": "3eb145804e3f1821a83318e4ccfe477117d4d875c68dd772d843b89e60da4bd9",
+      "seconds": 0.038,
+      "peakDbFS": -4.44,
+      "rmsDbFS": -17.42
+    },
+    {
+      "id": "D3",
+      "name": "低音通鼓",
+      "file": "D3.wav",
+      "sha256": "1df1cf04ce1f2b9a9d03c97509cb385f035ec5002e6d2401f8ea652bba369e53",
+      "seconds": 0.05,
+      "peakDbFS": -4.44,
+      "rmsDbFS": -16.9
+    },
+    {
+      "id": "D4",
+      "name": "厚實重咚",
+      "file": "D4.wav",
+      "sha256": "73103f8063aab60120e4365f282ec715a3f82b99e6b25640517b52a460a638d3",
+      "seconds": 0.055,
+      "peakDbFS": -4.44,
+      "rmsDbFS": -16.39
+    },
+    {
+      "id": "D5",
+      "name": "極短乾鼓",
+      "file": "D5.wav",
+      "sha256": "9bda75302430f47375df35c725787c7e84db939058e3217452815f01ce531cbd",
+      "seconds": 0.032,
+      "peakDbFS": -4.44,
+      "rmsDbFS": -16.84
+    },
+    {
+      "id": "comparison",
+      "name": "D1到D5各兩次",
+      "file": "comparison.wav",
+      "sha256": "852c45eeed884a96eeb012e069a1da60b3752227e0be4f1be7174148d320564d",
+      "seconds": 5.24,
+      "peakDbFS": -4.44,
+      "rmsDbFS": -27.43
+    }
+  ]
+}
