@@ -1,0 +1,98 @@
+{
+  "version": 1,
+  "appearances": {
+    "role": {
+      "bindings": [
+        {
+          "primitives": [
+            0
+          ],
+          "normal": "role-normal.png",
+          "metallicRoughness": "role-metallic-roughness.png",
+          "metalness": 1,
+          "roughness": 1,
+          "normalScale": 1
+        },
+        {
+          "primitives": [
+            3
+          ],
+          "metalness": 0.7,
+          "roughness": 0.4
+        }
+      ]
+    },
+    "role1": {
+      "bindings": [
+        {
+          "primitives": [
+            0
+          ],
+          "normal": "role1-normal.png",
+          "metallicRoughness": "role1-metallic-roughness.png",
+          "metalness": 1,
+          "roughness": 1,
+          "normalScale": 1
+        },
+        {
+          "primitives": [
+            3
+          ],
+          "metalness": 0.7,
+          "roughness": 0.4
+        }
+      ]
+    },
+    "role2": {
+      "bindings": [
+        {
+          "primitives": [
+            0,
+            1
+          ],
+          "normal": "role2-normal.png",
+          "metallicRoughness": "role2-metallic-roughness.png",
+          "metalness": 1.0,
+          "roughness": 1.0,
+          "normalScale": 1
+        },
+        {
+          "primitives": [
+            3
+          ],
+          "metalness": 0.7,
+          "roughness": 0.4
+        }
+      ]
+    },
+    "role3": {
+      "bindings": [
+        {
+          "primitives": [
+            0,
+            1
+          ],
+          "normal": "role3-normal.png",
+          "metallicRoughness": "role3-metallic-roughness.png",
+          "metalness": 1,
+          "roughness": 1,
+          "normalScale": 1
+        },
+        {
+          "primitives": [
+            3
+          ],
+          "metalness": 0.7,
+          "roughness": 0.4
+        },
+        {
+          "primitives": [
+            5
+          ],
+          "metalness": 0.65,
+          "roughness": 0.45
+        }
+      ]
+    }
+  }
+}

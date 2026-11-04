@@ -50,7 +50,7 @@
 
   /* 離屏畫布與鏡頭。畫布 SIZE 像素涵蓋 SPAN 公尺（揮劍、倒地躺平時劍會伸出去，留夠邊）。
      鏡頭仰角 ELEV_DEG：2D 場景的地面縱向壓縮 0.5＝sin(30°)，用同一個仰角 3D 角色的透視才與地面一致。 */
-  var SIZE = 352;
+  var SIZE = 512;
   var SPAN = 4.4;
   var ELEV_DEG = 30;
   var TARGET_Y = 1.0;            // 鏡頭對準的高度（公尺）
@@ -58,6 +58,77 @@
   var FADE_SEC = 0.12;           // 動作之間的交叉淡入
 
   var EMISSIVE = 0x2a2418;       // 自發光底色（乘上貼圖）：暗處的金屬不死黑，又不蓋掉光照的明暗
+  var PBR_URL = 'images/models/hero3d/pbr/materials.json?v=20261104-pbr-v1';
+  var pbrConfigPromise = null;
+
+  /* 貼圖旁載：保留已核准GLB的幾何／動畫與來源SHA。只對配置指定的primitive
+     還原原始材質，手部固定UV與舊劍護手不能誤套新人物的整張法線。 */
+  async function restorePbrMaterials(THREE, gltf, appearance) {
+    if (!/^role[123]?$/.test(appearance || '')) return false;
+    if (!pbrConfigPromise) {
+      pbrConfigPromise = global.fetch(absUrl(PBR_URL)).then(function (res) {
+        if (!res.ok) throw new Error('PBR config HTTP ' + res.status);
+        return res.json();
+      }).catch(function (err) { pbrConfigPromise = null; throw err; });
+    }
+    var config = (await pbrConfigPromise).appearances[appearance];
+    if (!config) throw new Error('Missing PBR appearance: ' + appearance);
+    var loader = new THREE.TextureLoader(), pending = new Map(), textures = new Map();
+    config.bindings.forEach(function (binding) {
+      ['normal', 'metallicRoughness'].forEach(function (key) {
+        var file = binding[key];
+        if (!file || pending.has(file)) return;
+        pending.set(file, loader.loadAsync(new URL(file + '?v=20261104-pbr-v1', absUrl(PBR_URL)).href).then(function (tex) {
+          tex.flipY = false; tex.colorSpace = THREE.NoColorSpace; tex.anisotropy = 4;
+          textures.set(file, tex); return tex;
+        }));
+      });
+    });
+    // Wait for every request before rollback, including a late successful map.
+    var results = await Promise.allSettled(Array.from(pending.values()));
+    var failure = results.find(function (result) { return result.status === 'rejected'; });
+    if (failure) { textures.forEach(function (tex) { tex.dispose(); }); throw failure.reason; }
+    gltf.scene.traverse(function (mesh) {
+      if (!mesh.isMesh || !mesh.material || !mesh.material.isMeshStandardMaterial) return;
+      var association = gltf.parser.associations.get(mesh);
+      var binding = association && config.bindings.find(function (item) { return item.primitives.indexOf(association.primitives) >= 0; });
+      if (!binding) return;
+      // Materials can be shared by body and sculpted hand. Clone per primitive.
+      mesh.material = mesh.material.clone();
+      mesh.material.metalness = binding.metalness;
+      mesh.material.roughness = binding.roughness;
+      if (binding.normal) {
+        mesh.material.normalMap = textures.get(binding.normal);
+        mesh.material.normalScale.set(binding.normalScale, binding.normalScale);
+        mesh.material.metalnessMap = mesh.material.roughnessMap = textures.get(binding.metallicRoughness);
+        if (mesh.material.map) {
+          [mesh.material.normalMap, mesh.material.metalnessMap].forEach(function (tex) {
+            tex.wrapS = mesh.material.map.wrapS; tex.wrapT = mesh.material.map.wrapT;
+          });
+        }
+      }
+      mesh.material.needsUpdate = true;
+    });
+    return true;
+  }
+
+  /* 自製棚光反射：明亮面板＋中性底色經PMREM預濾，沒有外部HDR素材。
+     反射固定在世界座標，盔甲轉身時高光隨表面改變，不把光影烘焙進貼圖。 */
+  function makeStudioEnvironment(THREE, renderer) {
+    var studio = new THREE.Scene();
+    studio.background = new THREE.Color(0x929aa6);
+    var panels = [[-3, 4, 4, 4, 5, 4], [4, 2, 1, 3, 4, 2], [0, 5, -3, 4, 3, 3]];
+    panels.forEach(function (p) {
+      var material = new THREE.MeshBasicMaterial({ color: new THREE.Color().setRGB(p[5], p[5], p[5]), side: THREE.DoubleSide });
+      var panel = new THREE.Mesh(new THREE.PlaneGeometry(p[3], p[4]), material);
+      panel.position.set(p[0], p[1], p[2]); panel.lookAt(0, 1, 0); studio.add(panel);
+    });
+    var pmrem = new THREE.PMREMGenerator(renderer);
+    var target = pmrem.fromScene(studio, 0.025);
+    pmrem.dispose();
+    studio.traverse(function (o) { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
+    return target;
+  }
 
   /* 貼圖調色：Meshy 出的金色偏暗偏灰、銀色邊飾不夠白，縮到遊戲裡的大小（約 100 像素高）就全糊成一片暗黃。
      金色調亮調飽和、銀色拉白、披風的藍略微提亮，讓三種顏色在小圖上分得開。 */
@@ -342,6 +413,9 @@
     var gltfMod = await import(absUrl(GLTF_URL));
     var gltf = await new gltfMod.GLTFLoader().loadAsync(absUrl(opts.model || modelForReincarnations(opts.reincarnations)));
     var modelStyle = (gltf.asset && gltf.asset.extras) || {};
+    var pbr = false;
+    try { pbr = await restorePbrMaterials(THREE, gltf, modelStyle.appearance); }
+    catch (err) { global.console.warn('[hero3d] PBR載入失敗，使用原有材質：', err && err.message ? err.message : err); }
 
     var size = opts.size || SIZE, span = opts.span || SPAN;      // 預設與遊戲相同；opts 只給驗證時放大看細節用
     var canvas = global.document.createElement('canvas');
@@ -349,8 +423,15 @@
     renderer.setPixelRatio(1);
     renderer.setSize(size, size, false);
     renderer.setClearColor(0x000000, 0);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    if (pbr) {
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.15;
+    }
 
     var scene = new THREE.Scene();
+    var environment = pbr ? makeStudioEnvironment(THREE, renderer) : null;
+    if (environment) scene.environment = environment.texture;
     /* 光照：環境光壓低一點、主光加強讓盔甲有明暗，背後再補一盞冷色邊緣光把人物從背景分出來
        （戰鬥畫面特效多、背景雜，只靠環境光整個人會糊成一片）。 */
     scene.add(new THREE.AmbientLight(0xffffff, 1.35));
@@ -367,7 +448,7 @@
     var gradedMaps = new Map(), skinnedMesh = null, bodyMaterial = null;
     gltf.scene.traverse(function (o) {
       if (o.isSkinnedMesh || o.isMesh) o.frustumCulled = false;  // 蒙皮網格的包圍盒不隨動畫更新，會被誤剔除
-      if (o.isMesh && o.material && o.material.isMeshStandardMaterial) {
+      if (o.isMesh && o.material && o.material.isMeshStandardMaterial && !pbr) {
         /* 手繪貼圖：金屬度與粗糙度沒有貼圖，標準材質會因為缺環境光偏暗，用 Lambert 保持貼圖原色。
            貼圖先調色（見 gradeTexture），再把同一張當自發光貼圖，讓金屬在暗處也不會死黑。 */
         var gradedMap = o.material.map;
@@ -510,14 +591,30 @@
     };
     ctrl.capeStats = cape ? cape.stats : null;
     ctrl.cape = cape;
+    var controllerDisposed = false;
     ctrl.dispose = function () {
+      if (controllerDisposed) return;
+      controllerDisposed = true;
       if (cape) cape.dispose();
       mixer.stopAllAction();
-      renderer.dispose();
+      if (environment) environment.dispose();
+      var disposedTextures = new Set(), disposedMaterials = new Set(), disposedGeometries = new Set();
       gltf.scene.traverse(function (o) {
-        if (o.geometry) o.geometry.dispose();
-        if (o.material) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); }
+        if (o.geometry && !disposedGeometries.has(o.geometry)) { disposedGeometries.add(o.geometry); o.geometry.dispose(); }
+        if (o.material && !disposedMaterials.has(o.material)) {
+          disposedMaterials.add(o.material);
+          Object.keys(o.material).forEach(function (key) {
+            var tex = o.material[key];
+            if (tex && tex.isTexture && !disposedTextures.has(tex)) { disposedTextures.add(tex); tex.dispose(); }
+          });
+          o.material.dispose();
+        }
       });
+      // Texture disposal needs the renderer's WebGL property registry alive.
+      renderer.dispose();
+      // Each hero owns its canvas/context; retire its internal renderer caches
+      // as well, so repeated appearance swaps do not accumulate WebGL contexts.
+      renderer.forceContextLoss();
     };
     ctrl.clips = Object.keys(actions);
     ctrl.update(0);

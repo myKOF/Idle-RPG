@@ -1,3 +1,17 @@
+## HERO3D-PBR-20261104 — 恢復人物材質與反射
+
+- Owner：Codex；Done，單一開發者。使用者確認開始修復角色灰暗問題，恢復授權原檔的法線／金屬粗糙度貼圖、PBR材質與環境反射並做同視角對照；涵蓋Role／Role1／Role2／Role3。已有來源授權不重複詢問，無新第三方素材。
+- 前置：工作區乾淨，Role3已提交ba72beca；目標衝突預檢無外部來源。允許hero3d材質／光照與畫布解析度、index快取、新PBR旁載貼圖／配置及Blender來源／匯出工具、相關回歸與LV／本段。禁止改已核准模型幾何／UV／骨架／六動畫／握劍、普攻選招、Worker／戰鬥／存檔／轉生規則、其他功能及合併推送。
+- 驗收：原始GLB及既有成品保持SHA；Blender從授權原檔輸出線性資料貼圖、正確對應身體材質，保留可編輯Blend及來源；動態PBR／環境反射、0～3轉與正握／全部動作正常，正式服不新增下載，材質載入失敗回退與資源釋放。測試／Build／實機／同視角對照及GIF，素材先Commit再遊戲Commit。
+- 完成：Blender4.5.10從四份已保存授權原檔取回8張法線／MR資料貼圖，Non-Color縮為1024px，法線重正規化；旁載materials.json按primitive綁定，MR綠色粗糙度／藍色金屬度、NoColorSpace與flipY=false。原GLB檔案SHA全部保持，因此UV／幾何／骨架／六動畫／劍身與正握也逐位不變。固定UV／頂點色雕手不誤套整張人物法線，原劍護手仍用自己的基色UV及金屬材質。前輪來源包與匯出均不覆寫。
+- 渲染：四套人物保留Standard材質及頂點色，自製三塊棚光面板＋中性底色經PMREM預濾作世界座標反射，不引入HDR或Lightmap；ACES／sRGB輸出與曝光1.15，保留既有方向光及環境光。離屏畫布352→512，遊戲人物尺寸不變；旁載只下載目前外觀，配置共用快取，各控制器自有貼圖。失敗等待所有請求結束、釋放晚到貼圖後整體回退舊Lambert；非本組模型沿用舊渲染。index對應快取20261104-pbr-v1，未修改renderer或scene-preview。
+- 資源修復：原dispose先關renderer，會清掉WebGL屬性登記而使後續貼圖dispose未完整移除GPU貼圖。改為環境、去重幾何／共享貼圖／材質先釋放，再關renderer及獨立context；dispose可重複呼叫。實機四套材質貼圖及環境dispose事件各一次、幾何計數歸0、角色context確實lost；Three計數仍顯示1張內部快取時也由context銷毀回收，沒有將該計數誤報為0。
+- 修改17檔：js/hero3d.js、index.html、LV_upgrade_system.md、docs/AI_TASKS.md；images/models/hero3d/pbr/{README.md,materials.json,role-normal.png,role-metallic-roughness.png,role1-normal.png,role1-metallic-roughness.png,role2-normal.png,role2-metallic-roughness.png,role3-normal.png,role3-metallic-roughness.png}；tools/meshy-pipeline/{blender/restore_pbr.py,src/export-hero-pbr.cjs}；tests/hero3d-pbr.test.cjs。唯讀未改AI_RULES／AGENTS／Workflow／prompts、四套GLB與黃金騎士、先前Blender製作／握劍工具及來源匯出、battle-renderer／scene-preview、Worker／save／player／戰鬥／配置／String與轉生解鎖。
+- 驗證：`node --test --test-concurrency=2 tests/hero3d-pbr.test.cjs tests/hero3d-role3.test.cjs tests/hero3d-role2.test.cjs tests/hero3d-rebirth-skin.test.cjs tests/hero3d-forward-grip.test.cjs tests/hero3d-role.test.cjs tests/hero3d-attack4.test.cjs tests/hero3d-battle-rules.test.cjs tests/hero3d-internal-toggle.test.cjs tests/battle-renderer-pause.test.cjs tests/vfx-editor-cache-versions.test.cjs`54/54；新5項驗實際GLB SHA、貼圖規格／線性方向、共用材質不污染手部、晚到失敗清理／配置重試與dispose順序。`npm.cmd run build`650檔通過，五套export --source-check（Role／Role1／Role2／Role3／PBR）及diff／stat／check、自我Review通過。原生重開四份Blend均6動作、全部3～4張使用貼圖packed、法線Non-Color正確。
+- 實機：隔離隨機localhost正式index／真Worker／Pixi／Hero3D，GM1→2→3→4→2→0→3依序皮膚1／2／3／3／2／0／3；驗各身體實際Standard材質、normal／MR、512畫布與環境反射，雕手無整張法線。切換保持Attack4進度／速度／朝向，100次普攻四招皆可且不連抽，施法不插隊、收招回Run、saveAutoNow後重載仍3轉。正常Page／Console error0，僅既有未用preload提示；另刻意中斷法線請求，正常回退且晚到圖釋放，該案例的ERR_FAILED與PBR警告是預期結果。原玩家網址存檔未讀寫，瀏覽器與服務已關閉。
+- 預覽：四套同視角／同姿勢前後與背面揮擊PNG，正式Hero3D對照GIF1600×860、遊戲場景GIF1600×1000附同步全身放大，皆84幀／30fps。原始PNG與GIF磁碟讀回目視、主角及放大視窗均有逐幀變化；遊戲錄製僅QA調大畫布700px／使用內建鏡頭並暫隱NPC／暫停遮罩及殘留FX，正式預設仍512px。四套人物加權RGB平均顯示亮度皆較舊版增加，金屬高光與布料層次保留。QA在本聊天visualizations/pbr-20261104，必要證據已入素材庫，未把逐幀暫存放入專案。
+- 交付：設定素材庫codex-authored/hero3d-pbr-20261104保存四份可編輯Blend、貼圖／配置、依賴原檔SHA、製作／匯出工具與QA，manifest51檔。素材Commit `bbb014f`先於遊戲（本段所在「[Codex] fix: 恢復人物PBR材質與環境反射」，SHA見交付）。每套新增約3MB貼圖，只載目前外觀；這是恢復材質的容量成本，GLB本體保持原5MB預算。未做跨瀏覽器／行動裝置長時間效能與全庫測試，仍受既有內測3D限制。無未完成項目，可供Review及使用者合併；未合併推送develop／main，下一步重載遊戲驗收亮度。
+
 ## HERO3D-ROLE3-20261104 — 3轉人物、雙劍移除與雙手分離
 
 - Owner：Codex；Done，單一開發者。使用者指定桌面Role3.glb並確認本遊戲使用及修改授權；新增3轉起外觀，移除雙背劍，檢查雙手與腿／腋下黏連並分離，原劍／正握／全部動作照舊。
