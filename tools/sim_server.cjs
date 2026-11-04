@@ -303,6 +303,8 @@ const server = http.createServer((req, res) => {
          而 run_sim.js 全程都在印進度。stderr 保留，錯誤要看得到。 */
       const child = spawn('node', args, { cwd: ROOT, stdio: ['ignore', 'ignore', 'pipe'] });
       currentChild = child;
+      /* 低於標準優先權：模擬再久也不會拖慢前景程式（批次的子行程在 run_batch.js 各自降權）。 */
+      try { require('os').setPriority(child.pid, require('os').constants.priority.PRIORITY_BELOW_NORMAL); } catch (e) { /* 不影響模擬 */ }
       lastPollAt = Date.now();   // 給看門狗一個起點，避免開跑瞬間就被判定沒心跳
 
       child.stderr.on('data', data => { console.error(data.toString()); });
