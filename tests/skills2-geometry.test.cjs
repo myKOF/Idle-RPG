@@ -46,7 +46,7 @@ test('搜敵、傷害、路徑、碰撞用途不能互相覆蓋；未接線拒�
 test('新版匯出往返不遺失230列技能、特效與範圍資料',()=>{
  const source=fs.readFileSync(path.join(__dirname,'../js/skills2.js'),'utf8'),schema=tables.SCHEMAS.Skills2;
  const before=tables.evalLiteral(tables.extractLiteral(source,'SKILLS2').literal);
- const rows=schema.extract(source);const enemyRows=rows.filter(r=>r[r.length-1]==='enemy').length;assert.ok(enemyRows>0);assert.equal(rows.length-enemyRows,230);
+ const rows=schema.extract(source);const classIdx=schema.header.indexOf('類別');const enemyRows=rows.filter(r=>r[classIdx]==='enemy').length;assert.ok(enemyRows>0);assert.equal(rows.length-enemyRows,230);
  const rebuilt=schema.rebuild(rows,schema.header);
  const after=tables.evalLiteral(tables.extractLiteral(rebuilt.SKILLS2,'SKILLS2').literal);
  assert.deepEqual(tables.evalLiteral(tables.extractLiteral(rebuilt.ENEMY_SKILLS2,'ENEMY_SKILLS2').literal),tables.evalLiteral(tables.extractLiteral(source,'ENEMY_SKILLS2').literal));
