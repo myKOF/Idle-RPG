@@ -14529,3 +14529,12 @@ Worker 存活且頁面正常完成載入。
 - 驗證：`node tools/audio/ui-paper-wood.cjs --apply`／`--check`與`node --check tools/audio/ui-paper-wood.cjs`通過；兩庫3份WAV、來源／README／manifest SHA一致，48kHz／16-bit／立體聲、首尾零點／置中／無削波。獨立bundled Python wave＋NumPy驗v2／v3各檔hash、紙聲0.16秒、木聲波形＝舊版4倍（量化誤差≤3LSB），紙聲peak -17.08／RMS -32.99dBFS、木聲peak -7.13／RMS -23.18dBFS；紙聲峰值增9.85dB、木聲RMS增12.04dB。QA為本聊天visualizations/paper-wood-v3-qa.py；聽感仍待使用者確認，不以量測宣稱核准。
 - `node --test tests/ui-sound.test.cjs`10/10、`npm.cmd run build`652檔及兩庫diff／stat／check／自我Review通過。唯讀未改規範／Workflow、原音檔／v2、ui-sound／ui／index／LV／Worker／save／所有玩法及配置，無新字串或遊戲功能，不做瀏覽器驗證；11項外部CSV／Excel（含Zone_Stage_Drops）／data／skills2修改保留未提交，沒有套用參數。
 - 雙庫：先保存素材庫codex-authored/ui-paper-wood-preview-20261104-v3的6檔並Commit `a4c6dfc`，再遊戲Commit（本段所在「[Codex] feat: 放大紙木音效並縮短紙張碰觸聲」，SHA見聊天交付）。無本輪未完成或已知素材技術問題，可Review／保存候選，尚未接入；未合併推送。下一步試聽新版音量與紙聲長度。
+
+## UI-SOUND-TEN-OPTIONS-20261104 — 清晰短促觸碰與點擊各五款
+
+- Owner：Codex；Done（試聽候選），單一開發者。使用者不滿紙／木方案，要求不限材質、清晰短促，觸碰及點擊各5款試聽。允許tools/audio/ui-short-options.cjs、audio/ui-preview/short-options-v4的10單音／2分類合輯／說明／manifest、本段及對應素材庫。禁止改既有候選或UI／快取／玩法／Worker／設定／配置／存檔，不接入遊戲、合併推送。
+- 前置：已讀規範／Workflow／任務，fetch及目標／新目錄預檢無外部來源；現有11項外部CSV／Excel／data／skills2修改保留。驗收：10款皆為原創且有可辨識差異、短於0.11秒，合理且接近的分類音量、無長尾；各合輯依1→5每款2次，附單音／名稱／時間點，檢查PCM／非靜音／首尾／無削波／相似度／雙庫SHA及Build、既有聲音回歸。交使用者試聽選擇，不以數值代替音色核准。
+- 完成16檔：新產生器、v4目錄10單音／2合輯／README／manifest及本段。H1乾淨短嗒55ms、H2柔和短啵65ms、H3俐落輕刷50ms、H4清亮短音60ms、H5清脆卡榫70ms；C1實體按鍵80ms、C2清脆啪嗒65ms、C3厚實短咚85ms、C4俐落電子75ms、C5雙段確認95ms。不同起音／濾波／音高／雙瞬態設計，名稱為設計意圖；原創固定種子噪音與阻尼振盪器，無外部錄音／音色庫／參考素材。48kHz／16-bit立體聲置中；分類合輯5.9／6.1秒，依編號各兩次，含間隔及時間點，單音未經二次音量處理。
+- 驗證：`node tools/audio/ui-short-options.cjs --apply`／`--check`及`node --check tools/audio/ui-short-options.cjs`通過，兩庫12WAV與來源／說明／manifest SHA一致、可確定性重產；獨立bundled Python wave＋NumPy驗10單音時長、PCM／置中／起尾零點／非靜音／無削波、兩合輯逐段PCM與單音完全一致。H類RMS -22.56～-20dBFS、峰值最高-6.02；C類RMS -20.21～-16.48、峰值最高-3.10，分類內RMS差皆<4dB。20組同類交叉相關最高0.710，不是相同波形只換音量；數值不代替聽感或代表使用者核准。QA為本聊天visualizations/ui-short-options-qa.py。
+- 既有驗證：`node --test tests/ui-sound.test.cjs`10/10、`npm.cmd run build`652檔及兩庫diff／stat／check／自我Review通過；rg確認index／js未引用新候選。唯讀未改規範／Workflow／prompts、先前全部WAV及產生器、ui-sound／UI／index／LV／Worker／save／玩法與配置。沒有新功能／字串／接線，不做瀏覽器操作；外部11項CSV／Excel／data／skills2修改完整保留、不套用或提交。
+- 雙庫交付：素材庫codex-authored/ui-short-options-20261104-v4的15檔先Commit `84214a9`，後遊戲Commit（本段所在「[Codex] feat: 製作觸碰與點擊各五款清晰短音」，SHA見聊天交付）。本輪無未完成或已知素材技術問題，可Review／保存候選；尚未接入，未合併推送。下一步使用者以H1～H5及C1～C5選擇或提供音色回饋。
