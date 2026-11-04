@@ -10145,8 +10145,14 @@ function fuseRecipeHTML(type, lv) {
     ins = gemSocketHTML(type, lv, '');
   }
   var out = lv < GEM_FORGE_MAX_LEVEL ? gemSocketHTML(type, lv + 1, ' is-out') : STR(169);
-  return '<span class="gx-recipe-in">' + ins + '</span>' +
-    (lv < GEM_FORGE_MAX_LEVEL ? '<span class="gx-recipe-arrow">' + mid + '</span>' : '') + out;
+  /* 每組寶石下方顯示目前持有數量（輸入階與產出階各一行）；數量取當下的寶石面板快照 */
+  var ownSnap = (typeof resolveGemsPanelSnapshot === 'function') ? resolveGemsPanelSnapshot() : null;
+  function own(level) {
+    return '<span class="gx-recipe-own">' + STR(2316, fmt(ownSnap ? gemsViewCount(ownSnap, type, level) : 0)) + '</span>';
+  }
+  return '<span class="gx-recipe-col"><span class="gx-recipe-in">' + ins + '</span>' + own(lv) + '</span>' +
+    (lv < GEM_FORGE_MAX_LEVEL ? '<span class="gx-recipe-arrow">' + mid + '</span>' : '') +
+    (lv < GEM_FORGE_MAX_LEVEL ? '<span class="gx-recipe-col">' + out + own(lv + 1) + '</span>' : out);
 }
 
 /* 合成頁：種類＝寶石庫目前選的那顆（UI.gemBrowse.sel），階級＝點十階列選的那一階（UI.gemBrowse.fuseLv） */
