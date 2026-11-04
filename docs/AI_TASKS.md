@@ -14468,3 +14468,13 @@ Worker 存活且頁面正常完成載入。
 - 整合範圍：`90d25dd3` + `f426f06c`。原生 Excel updater 已合併並正常重開 `config/Excel/String.xlsx`；依實際工作簿重新產生 `config/CSV/String.csv` 與 `js/strings_data.js`（2300 條，版本 `9b6cb5d5`）。保留敵人七項提示資料與新品牌字串，`index.html` 的合併 UI 快取版號為 `20261104-header-brand-enemy-tip-7stats`。
 - 驗證：`node tools/string-table/apply_strings.cjs --check` 通過（2300 條）；`node tools/string-table/build_string_csv.cjs --check` 通過（寫死 0／未登記 0）；相關字串、標頭資源、附魔書退役、UI tick、Role2／Role3／PBR 與快取測試 50/50 通過；`npm.cmd run build` 通過。
 - 已知風險：Node 載入 Three.js 時仍有既有 `MODULE_TYPELESS_PACKAGE_JSON` 效能警告，測試無失敗；未操作 Git index、未提交。
+
+## UI-SOUND-PREVIEW-20261104 — UI互動音效試聽（尚未接入）
+
+- Owner：Codex；Done（僅試聽候選），單一開發者。使用者原要求UI觸碰／點擊／洗煉／神鑄音效，後續明確改為「做好先給我聽，先別接入」，本輪只交付自製音效候選與試聽。
+- 前置：已讀規範／Workflow／任務與prompts；工作區乾淨，fetch及目標預檢無外部衝突。允許tools/audio/ui-preview.cjs、audio/ui-preview候選／來源說明／manifest、本段及對應Effects-Materials保存；禁止改index／UI／Worker／String／設定／存檔／LV功能及任何執行時接線，不合併推送。
+- 驗收：原創程序合成觸碰、點擊、洗煉、神鑄、成功與失敗六種WAV及合輯；保留可重產來源、來源／授權說明、SHA，驗證PCM格式／非靜音／峰值／首尾淡化／兩庫一致及Build，提供聊天播放器。後續由使用者試聽決定調整與接入；本輪不代表音色核准。
+- 完成：新增tools/audio/ui-preview.cjs及audio/ui-preview/{README.md,manifest.json,7份WAV}，共11個遊戲檔（含本表）；48kHz／16-bit／立體聲。觸碰0.18秒、點擊0.24秒、洗煉約1.1秒、神鑄1.85秒、成功1.15秒、失敗0.65秒，合輯約10.86秒；觸碰／點擊各三次，其餘各一次。完全自製程序合成，沒有引用外部錄音、取樣、音色庫或參考音檔。
+- 驗證：`node tools/audio/ui-preview.cjs --apply`及`node tools/audio/ui-preview.cjs --check`通過，固定種子重產的7份PCM與素材庫／專案逐檔SHA相同，來源及說明鏡像一致；WAV標頭／長度／非靜音／無削波／首尾零點檢查通過，單音峰值-18.81～-5.08dBFS。`npm.cmd run build`650檔通過，兩庫diff／stat／check與自我Review通過。沒有遊戲接線，未做瀏覽器或聽感驗收，聽感交使用者試聽，不宣稱主觀音色核准。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、index.html、js/ui.js／forge.js／bridge.js／Worker／main／recorder、String.xlsx／CSV／strings_data、LV及其他遊戲功能；以rg確認index與js沒有候選檔名或產生工具引用。無玩家文字與Excel修改，不新增聲音設定、事件或存檔欄位。
+- 雙庫交付：Effects-Materials的codex-authored/ui-sound-preview-20261104保存母檔、來源、manifest及說明，素材Commit `4cfb1cc`先於遊戲Commit（本段所在「[Codex] feat: 製作UI互動音效試聽候選」，SHA見聊天交付）。無本輪未完成內容或已知素材技術問題；遊戲接入明確留待使用者聽後另行授權，不應隨本輪自動執行。可Review／保存候選，音色仍待確認；未合併推送。
