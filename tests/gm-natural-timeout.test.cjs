@@ -74,6 +74,32 @@ test('常用白話無Key直接送Worker，完全不建立雲端請求或計時�
   assert.equal(env.timers.size, 0);
 });
 
+test('任務白話與英文不需Key送Worker，預設重置只填文字不自動執行', async () => {
+  const env=setup({key:false});
+  for(const text of ['重置所有任務','完成所有任務','跳到第13個任務','查詢目前任務進度','task reset']){
+    env.type(text);await flush();
+  }
+  assert.deepEqual(env.sent.map(s=>s.line),['task reset','task complete','task goto 13','task status','task reset']);
+  assert.equal(env.calls.length,0);assert.equal(env.timers.size,0);
+  const panel=env.context.document.body.children[0];
+  const reset=panel.children[2].children.find(x=>x.textContent==='重置任務');
+  assert.ok(reset);reset.listeners.click();
+  assert.equal(env.input.value,'重置所有任務');
+  assert.equal(env.sent.length,5);
+});
+
+test('雲端備援說明包含任務操作與序號語意，回傳task指令照常執行', async () => {
+  const env=setup();
+  env.context.respond=async()=>success(['task reset']);
+  env.type('請把任務回到一開始');await flush();
+  assert.equal(env.calls.length,1);
+  const body=JSON.parse(env.calls[0].options.body);
+  const prompt=body.contents[0].parts[0].text;
+  for(const command of ['task reset','task complete','task goto <N>','task status'])assert.ok(prompt.includes(command),command);
+  assert.match(prompt,/前N-1項/);
+  assert.deepEqual(env.sent.map(s=>s.line),['task reset']);
+});
+
 test('無模型快取時直接呼叫快速首選，不等待模型清單；30秒逾時先取消再重試', async () => {
   const env = setup({ cache: false });
   const pending = deferred();

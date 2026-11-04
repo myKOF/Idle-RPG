@@ -1753,9 +1753,25 @@
     if (command === 'task') {
       if (typeof TASKS === 'undefined') return { ok: false, message: '任務表（TASKS）未載入' };
       var tMax = TASKS.length;
-      var tNum = gmNumber(args[0], 0, 100000);
-      if (tNum === null) return { ok: false, message: '格式：task 數字（0=重置全部，N=設置至第N個任務，≥' + tMax + '=全部完成）' };
+      var tAction = String(args[0] || '').toLowerCase();
+      var tNum = null;
+      if (args.length === 1 && tAction === 'reset') tNum = 0;
+      else if (args.length === 1 && (tAction === 'complete' || tAction === 'all')) tNum = tMax;
+      else if (args.length === 2 && tAction === 'goto' && /^\d+$/.test(args[1])) {
+        var tOrder = gmNumber(args[1], 1, tMax);
+        if (tOrder !== null) tNum = tOrder - 1;
+      } else if (args.length === 1 && /^\d+$/.test(args[0])) tNum = gmNumber(args[0], 0, 100000);
+      if (tNum === null && !(args.length === 1 && tAction === 'status')) {
+        return { ok: false, message: '格式：task reset｜task complete｜task goto N（1～' + tMax + '）｜task status；舊task N＝前N項已完成' };
+      }
       if (typeof taskState !== 'function') return { ok: false, message: 'taskState 未載入' };
+      if (tAction === 'status') {
+        var statusIdx = Math.max(0, Math.min(Math.floor(Number(G.taskState && G.taskState.idx) || 0), tMax));
+        var currentTask = TASKS[statusIdx];
+        if (!currentTask) return { ok: true, message: '所有任務已完成（' + tMax + '/' + tMax + '）' };
+        var currentProg = typeof taskProgressFor === 'function' ? taskProgressFor(currentTask) : 0;
+        return { ok: true, message: '目前第 ' + (statusIdx + 1) + ' 個任務：「' + currentTask.name + '」（' + currentProg + '/' + currentTask.count + '），已完成 ' + statusIdx + '/' + tMax };
+      }
       var tSt = taskState();
       if (tNum === 0) {
         tSt.idx = 0;
@@ -1771,7 +1787,7 @@
       if (newIdx >= tMax) {
         return { ok: true, message: '所有任務設為已完成（idx=' + newIdx + '/' + tMax + '）' };
       }
-      return { ok: true, message: '任務設置至第 ' + newIdx + ' 個（前 ' + newIdx + ' 個已完成，目前進行中：「' + TASKS[newIdx].name + '」）' };
+      return { ok: true, message: '任務設置至第 ' + (newIdx + 1) + ' 個（前 ' + newIdx + ' 個已完成，目前進行中：「' + TASKS[newIdx].name + '」）' };
     }
     /* ---- 技能測試指令（2026-08-14 技能檢驗流程規範 → docs/SKILL_TEST_SPEC.md）---- */
     if (command === 'god' || command === 'lockhp') {

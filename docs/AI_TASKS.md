@@ -14386,3 +14386,27 @@ Worker 存活且頁面正常完成載入。
 - 修改檔案：css/style.css兩個來源色、index.html CSS快取1.0.111、docs/DIVINE_FORGE.md、LV_upgrade_system.md與本表；已fetch及逐檔預檢無衝突。唯讀檢查規範／Workflow／prompts、data.js／item.js普通太古來源、原精鑄回歸及外部QA腳本；未改精鑄操作、Worker／存檔／配置或素材。工作途中出現外部config/Excel/Zone_Stage_Drops.xlsx修改，完整保留且不納入本項Commit。無必要素材變更，素材庫無本項Commit。
 - 驗證：`node --test tests/ancient-forge-limit.test.cjs` 10/10通過；IAB無連線後改隔離localhost正式index＋Edge＋真Worker，實際連續精鑄2次保留穿戴、背包另件成功仍在背包；computed color依次rgb(253,190,138)／rgb(252,168,99)／正常rgb(251,146,60)，詞條與其星星顏色相同，正式詳情截圖目視三層橘色。Page／Console error 0。QA與圖在本聊天visualizations/ancient-orange-20261104。`git diff --check`通過；僅CSS／HTML快取及文件修改，未重跑全庫建置與回歸。
 - 自我Review完成，本項無未完成，可供使用者Review／合併。Commit為本段所在「[Codex] fix: 將精鑄詞條改為分層橘色」，SHA見交付；未合併／推送。下一步重載頁面驗收；60%／80%為橘色與白色混合比例，非透明度或裝備數值。
+## TASK-SKILL-TYPES-20261104 — 新版任務表與技能裝配／升級任務
+
+- Owner：Codex；Done，單一開發者。使用者已重排 Task 表，要求補正技能裝配與技能升級兩列並重產 CSV；追加確認一併接上進度、領獎與套用新版任務表。
+- 前置：Task.xlsx 獨占檢查通過，fetch 後目標預檢；Claude 的符文門檻與畫面快取修改須以不同區段及三方試跑確認可保留。Excel 為唯一來源，不改其他任務規劃。
+- 範圍：Task.xlsx／CSV、tasks／skills2 必要成功計數與相容讀取、config_tables 任務說明、生成 TASKS、主端與 Worker 必要快取、相關回歸、LV 及本段。禁止改戰鬥數值、技能升級成本／解鎖、其他配置與其他工作區、合併推送。
+- 驗收：兩列目標數 1／5、金幣獎勵 100000／200000；Excel 資料／格式保留及正常重開、CSV 一致；裝配狀態與成功升級累計、拒絕不計、領獎與存讀回歸、Build／diff 後獨立 Commit。後續交使用者 Review／整合。
+- 完成：Task 第5／13項分別補 skillEquipCount／skillUpgradeCount、目標1／5、gold與100000／200000，兩類型參數均留空；說明頁尾追加規則，其他37項既有規劃保持。Excel→xlsx_to_csv（38列11欄，移除CSV尾端5空列）→config_tables --apply --write Task，僅重建 TASKS，不套用其他表。資料表、CSV與37筆遊戲定義逐欄一致，順序1～37連續；新版尾項R10寶石獎勵實際入庫驗證，既有測試由舊equip尾項改驗新版gem的實際顆數，未放寬領獎規則。
+- 進度：裝配檢查技能欄中目前可用技能，忽略空格／未知／重複，卸下即減。成功升級一般階及終極學習／升級才記player.skills2.upgradeCount；批次共用同一成功入口，拒絕／降級／重置／切換終極不加次，降級前保留歷史。舊存檔缺計數以現有原始投資扣除免費第一階作最低累計，包含暫鎖投資；純查詢不寫存檔，後續存讀保留。無新協議欄位或主端投影，協議版本不變；主端data／skills2／bridge及Worker對應匯入／入口快取同步20261104-task-skills。
+- Excel：來源獨占檢查通過。Artifact匯出候選被保留檢查擋下（表頭字型及說明頁空字串變114），未覆蓋來源；依AI_RULES8.5改Excel原生API在副本只補8格並追加兩行說明，正常儲存／重開驗值後核對來源hash再發布。唯讀比對全部原格值／公式及有效字型、填色、邊框、對齊、保護、數字格式、欄寬、列高、凍結、合併、篩選、驗證與條件格式，非授權差異0；正式來源再以Excel正常模式重開，兩表完整、4格數字均double，驗收後hash不變。Artifact唯讀渲染主表／說明尾段並目視確認可讀，未手工改XML。QA在本聊天visualizations/task-skills，不入倉庫。
+- 修改13檔：config/Excel/Task.xlsx、config/CSV/Task.csv、js/{data,skills2,tasks,bridge}.js、js/worker/sim.worker.js、index.html、tools/config_tables.cjs、tests/{task-system,task-skills}.test.cjs、LV_upgrade_system.md及本表。唯讀未改規範／AGENTS／Workflow／prompts、xlsx_to_csv／Excel更新器／apply_params、skills／player／save／Worker協議、其他配置與戰鬥數值。無素材變更或素材庫Commit。
+- 測試：`node --test tests/task-skills.test.cjs tests/task-system.test.cjs tests/skill2-points.test.cjs tests/skill2-ult-switch.test.cjs tests/vfx-editor-cache-versions.test.cjs`56/56；含表格全量一致、裝配／卸下／領獎、成功／金幣不足／點數不足／批次／終極／降級重置／舊存檔純讀及存讀。`node tools/config_tables.cjs --apply Task`語意變更0；`npm.cmd run build`645檔通過。額外`node --test --test-reporter=tap tests/skill2-ult-evolution.test.cjs`共28失敗，與隔離HEAD完整來源的28項失敗清單相同，無新增失敗；沒有改舊技能數值來迎合測試。未跑全庫或真瀏覽器實玩。
+- 協作／交付：Claude ai/claude的data符文門檻常數（約2076行）、index的ui／vfx-runtime／battle-renderer快取與LV約293行符文門檻，與本項TASKS／data註解、data／skills2／bridge快取、LV檔尾不同區段且無語意相依，實際候選三方merge-file均exit0；未修改apply_params或收取對方工作。自我Review、diff／stat／check通過，可供使用者合併，沒有本項未完成；已領任務仍沿用原idx，重排後按新位置繼續，不擅自重置玩家進度；舊存檔歷史降級次數無法還原，採現有投資下限。Commit為本段所在「[Codex] feat: 補齊技能任務並套用新版任務表」，SHA見交付；未合併推送。下一步重新載入遊戲驗收。
+## GM-TASK-NATURAL-20261104 — 任務GM白話指令與明確序號操作
+
+- Owner：Codex；Done，單一開發者。使用者回報「重置所有任務」自然語言無法辨識，要求加入任務相關GM指令。
+- 前置：既有task數字可執行但白話／雲端說明漏登；fetch後gm／ai／Worker與文件預檢無其他來源，index／LV僅Claude不同快取及符文門檻區段，修改前做三方試跑。允許ai-key-setting／gm／gm_exec、主端／Worker必要快取、任務GM回歸、GM_command／LV／本段；禁止改正式任務規則、配置、獎勵、玩家存檔遷移與其他工作區、合併推送。
+- 內容：本機完整句解析與雲端說明接上重置、全部完成、跳至第N項、查詢；新增task reset／complete／goto N／status，保留task數字既有idx語意，拒絕非法／小數／多餘參數，操作不補發或追回獎勵，不清戰鬥及養成統計。
+- 驗收：無金鑰白話直接送Worker執行，精確序號與尾項、重置／完成／查詢、否定或未知附加條件不部分執行、非法參數不改狀態、外部host拒絕、回歸／Build／diff後Commit。後續使用者重載驗收。
+- 完成：ai-key-setting新增任務完整句規則（請／幫我、所有／全部／主線、進度、重置／歸零、指定任務序號與狀態），多子句仍全部辨識後才執行；同時補雲端備援提示，避免模型不知道task可用或猜錯索引。GM面板新增「重置任務」常用預設，只填文字，Enter才送gm.exec；英文task亦納入直接指令清單。本機常用句不需Key或雲端，未知句保留原備援流程，不新增近似強制操作。
+- 執行器新增task reset／complete（all別名）／goto N／status。goto以1起算且可指定最後一項，舊task N繼續表示前N項已完成，第N+1項進行中，修正舊訊息與文件錯一項。拒絕小數、非法數值、越界goto及多餘參數後才讀寫狀態；status純讀並呈現目前進度。僅改既有taskState.idx，不清強化／技能升級等累計、裝配、所在地或資源，不直接發／回收獎勵；重置後符合條件的項目可以再次領取，屬既有GM測試用途。原本機hostname限制保持，沿既有gm.exec payload與Worker結果，不變更協議。
+- 修改12檔：js/{ai-key-setting,gm,gm_exec,bridge}.js、js/worker/sim.worker.js、index.html、tests/{gm-task,gm-natural-timeout,gm-translation-cache}.test.cjs、GM_command.md、LV_upgrade_system.md及本表。主頁gm／ai-key-setting／bridge與Worker執行器／入口快取同步20261104-gm-tasks。GM文字屬內部診斷工具，不新增玩家顯示字串或改String表。唯讀未改規範／AGENTS／Workflow／prompts、tasks／data／skills2／player／save、任務Excel／CSV、Worker協議及其他GM功能；無素材或素材庫變動。
+- 測試：`node --test tests/gm-task.test.cjs tests/gm-natural-timeout.test.cjs tests/gm-fastpath.test.cjs tests/gm-translation-cache.test.cjs tests/gm-command.test.cjs tests/task-skills.test.cjs tests/task-system.test.cjs tests/vfx-editor-cache-versions.test.cjs`93/93；包含正式Worker命令派送、自然句實際重置、資源與累計保留、存讀、1起序號及末項、舊數字、查詢、非法輸入／外部host、無KeyUI／雲端備援提示與常用預設不自動執行。既有預設測試同步為5個預設＋1個清除鈕，仍逐個按Enter驗派送，未降低斷言。`npm.cmd run build`646檔通過；`node tools/string-table/build_string_csv.cjs --check`寫死0條。未跑全庫或實際瀏覽器。QA／log在本聊天visualizations/gm-task。
+- 協作：Claude未合併index僅ui／vfx-runtime／battle-renderer快取，LV僅約293行符文門檻；本項gm／ai／bridge行及LV檔尾不同區段、無語意相依，候選與共同祖先／ai/claude三方merge-file兩檔均exit0。沒有改或收取Claude內容，未合併推送；完成後交使用者正常整合及重新載入主頁／Worker。
+- 交付：自我Review與diff／stat／check通過，無本項未完成實作或已知新增風險，可供使用者Review及合併。Commit為本段所在「[Codex] fix: 補上任務GM自然語言與進度操作」，SHA見交付；工作區應乾淨，未合併推送。下一步重新載入後輸入「重置所有任務」；實際玩家進度未由本次開發操作修改，驗證使用隔離模擬狀態。
