@@ -14478,3 +14478,15 @@ Worker 存活且頁面正常完成載入。
 - 驗證：`node tools/audio/ui-preview.cjs --apply`及`node tools/audio/ui-preview.cjs --check`通過，固定種子重產的7份PCM與素材庫／專案逐檔SHA相同，來源及說明鏡像一致；WAV標頭／長度／非靜音／無削波／首尾零點檢查通過，單音峰值-18.81～-5.08dBFS。`npm.cmd run build`650檔通過，兩庫diff／stat／check與自我Review通過。沒有遊戲接線，未做瀏覽器或聽感驗收，聽感交使用者試聽，不宣稱主觀音色核准。
 - 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、index.html、js/ui.js／forge.js／bridge.js／Worker／main／recorder、String.xlsx／CSV／strings_data、LV及其他遊戲功能；以rg確認index與js沒有候選檔名或產生工具引用。無玩家文字與Excel修改，不新增聲音設定、事件或存檔欄位。
 - 雙庫交付：Effects-Materials的codex-authored/ui-sound-preview-20261104保存母檔、來源、manifest及說明，素材Commit `4cfb1cc`先於遊戲Commit（本段所在「[Codex] feat: 製作UI互動音效試聽候選」，SHA見聊天交付）。無本輪未完成內容或已知素材技術問題；遊戲接入明確留待使用者聽後另行授權，不應隨本輪自動執行。可Review／保存候選，音色仍待確認；未合併推送。
+
+## UI-SOUND-APPROVED-20261104 — 接入核准的觸碰與成功音
+
+- Owner：Codex；Done，單一開發者。使用者已核准01-hover供所有觸碰有反應的UI使用，05-success供強化成功與洗煉使用；其他聲音／功能等待指示。
+- 前置：試聽候選3e697e1b及素材庫4cfb1cc；fetch與逐檔預檢無外部來源。允許js/ui-sound.js、ui.js必要成功結果接點、index必要載入／快取、tests/ui-sound.test.cjs、docs/UI_SOUND.md、LV及本段。禁止接入點擊／神鑄／失敗／03-reroll、添加聲音設定或其他功能、改音色／數值／Worker／配置／存檔、合併推送。
+- 驗收：按鈕／分頁／裝備／技能／寶石／符文／材料與屬性tips／世界地圖／卡片等響應UI共用事件委派，動態UI可用、同格子元素不重播、背景／重繪／連續移動受控；成功結果才播，強化失敗／不足與洗煉拒絕不播。瀏覽器首次手勢解鎖、音訊不可用不破壞UI；回歸／Build／實機Console及diff後Commit。後續交使用者重載驗收；原自製WAV保持SHA，無新素材。
+- 完成7檔：新增js/ui-sound.js、tests/ui-sound.test.cjs、docs/UI_SOUND.md，修改ui.js的detailAction成功回覆後一個接點、index載入及兩份主端快取、LV與本段。共用pointerover／鍵盤焦點／觸控委派；包含僅顯示tips的UI及可見控制項的aria-hidden裝飾圖示。每種類最多一個音源，觸碰80ms節流，隱藏停止、過期略過；只讀取01-hover及05-success原檔，音色／音量保持。成功音只認item.upgrade＝ok或item.rerollAffix＝null；進模式／選詞條／失敗／不足／其他指令不播成功音，未接點擊、03-reroll、神鑄、失敗或合輯。
+- 回歸：`node --test tests/ui-sound.test.cjs tests/equip-reroll-ui.test.cjs tests/upgrade-animation.test.cjs tests/inventory-command-pending.test.cjs tests/ui-tick-smoke.test.cjs tests/vfx-editor-cache-versions.test.cjs`26/26通過；新增8項驗真實手勢前不建context、只載兩音檔、動態／圖示／同格／靜止重繪／節流／捲動／拖曳／背景、鍵盤及觸控、結果白名單、無裝置／下載失敗／過期，以及正式detailAction等Worker結果才發聲。`node tools/string-table/build_string_csv.cjs --check`寫死0條；`node tools/audio/ui-preview.cjs --check`全部7檔與來源／素材庫SHA一致，無新素材／素材庫變更或本項素材Commit（沿用4cfb1cc）。
+- 額外初始化測試：`node --test tests/init-ui-smoke.test.cjs`2項1過1失敗，缺DIVINE_FORGE_MODES。以外部require讀檔攔截載入HEAD原始ui.js重跑，失敗名稱及錯誤完全相同（該函式行號因本次新增一行不同），屬基線fixture缺資料，不修改神鑄或弱化測試。
+- 實機：IAB無可用連線，改隔離隨機localhost＋Edge headless＋真Worker／AudioContext，13類動態元件（含原生控制、tips、裝備、技能、寶石／符文／威能／塔層／存檔卡片、裝飾圖示）逐一滑過均啟動原觸碰buffer，靜止後沒有連播；正式裝備按鈕實際強化成功／洗煉各啟動一次1.15秒成功buffer。僅下載兩個WAV，兩buffer時長0.18／1.15秒；零資源的真Worker洗煉拒絕不播成功音，Console error／warning與pageerror均0。使用獨立瀏覽器context及seed，未讀寫玩家原網址存檔，服務／瀏覽器均關閉。QA腳本／報告在本聊天visualizations的ui-sound-qa.mjs／json；初版QA誤以GM gold 0可清空，改用既有loadSave載入零資源隔離狀態後正確驗收，未修改產品迎合QA。
+- 唯讀未改：規範／Workflow／prompts、item／factory／formula／player／forge／bridge／Worker／protocol／save、所有配置與String／CSV／strings_data、原WAV／產生器及素材庫；檢查CSS的hover及現有tooltip／裝備事件／聲音來源以確認涵蓋與回傳語意。限制：瀏覽器需先有有效真人手勢才發聲，冷載入過慢略過過期觸碰；未跑全庫、其他瀏覽器／行動真機與長時間音訊壓力，現有初始化基線測試上述1項失敗另案處理。
+- 交付：`npm.cmd run build`652檔通過，自我Review及diff／stat／check通過。授權範圍無未完成、無已知新增缺陷，可供Review／使用者合併；Commit為本段所在「[Codex] feat: 接入核准的UI觸碰與強化洗煉成功音效」，SHA見聊天交付。未合併推送develop／main；下一步重載遊戲，先點擊或按鍵解鎖音訊，再驗收互動與強化／洗煉。
