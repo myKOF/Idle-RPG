@@ -48,10 +48,26 @@ function startGemWorkshop(kind, command, args, details) {
   });
 }
 
+/* 合成材料不足：回傳要在按鈕上方上浮的提示文字，夠了回傳 ''（寶石優先，其次金幣；與裝備強化的材料不足提示同一套 showFloatingText）。 */
+function gemComposeShortage(type, lv) {
+  var gemsSnapshot = typeof resolveGemsPanelSnapshot === 'function' ? resolveGemsPanelSnapshot() : null;
+  var headerSnapshot = typeof uiHeaderPanelSnapshot === 'function' ? uiHeaderPanelSnapshot() : null;
+  if (!gemsSnapshot || !headerSnapshot || !headerSnapshot.player) return '';
+  if (gemsViewCount(gemsSnapshot, type, lv) < gemComposeInputCount(lv)) return STR(2315);
+  if ((headerSnapshot.player.gold || 0) < (FUSE_GOLD_COST[lv] || 0)) return STR(91);
+  return '';
+}
+
 function runGemCompose(all) {
   if (UI.gemComposeFx) return Promise.resolve(null);
   var type = UI.gemBrowse.sel, lv = UI.gemBrowse.fuseLv || 1;
   if (!isGemEnabled(type) || !gemComposeInputCount(lv)) return Promise.resolve(null);
+  var shortage = gemComposeShortage(type, lv);
+  if (shortage) {
+    var btn = $id(all ? 'fuse-all-btn' : 'fuse-btn');
+    if (btn) showFloatingText(btn, shortage, '#fca5a5');
+    return Promise.resolve(null);
+  }
   return startGemWorkshop('compose', all ? 'gem.composeAll' : 'gem.compose', { type: type, level: lv }, {
     type: type, lv: lv, recipe: fuseRecipeHTML(type, lv)
   });

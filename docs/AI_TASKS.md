@@ -1,3 +1,12 @@
+## SYNC-LATEST-CLAUDE-20261105 — 接續本輪完成的介面成果
+
+- Owner：Codex；Done（整合與驗證完成，實際同步結果見交付）。使用者1授權整合全部可同步成果；原合併、BBC提示及控制器修復分別b206ec67／e4375e4d／00a369f9。期間Claude已完成60f106ca寶石合成不足浮字與1de1ae10裝備比較名稱不換行，工作區乾淨且merge-tree／實際三方合併無衝突，納入這兩筆後統一同步。
+- 允許原提交合併、LV功能記錄及本段；String原Excel／CSV／生成資料／版本與兩處UI／CSS／頁面快取保持incoming；不更改內容、數值、存檔或其他進行中任務。驗收既有寶石合成／裝備比較／String／快取／音效回歸、正式來源一致、Build及全來源祖先核對。
+
+- 完成：兩筆Claude原提交全部保留，無衝突；String三檔／CSS／ui-gem-workshop逐位等於1de1ae10，2303列Excel／CSV逐格相同，apply_strings --check2302條／233142b7同步；index保留兩側全部快取與音效載入。LV補充兩項介面行為，合成配方／數值及解鎖保持。未編修Excel、不重存原來源。
+- 驗證：node --test --test-concurrency=2 --test-reporter=tap tests/{gem-workshop,equipment-tooltip-compare,string-table,xlsx-string-escapes,vfx-editor-cache-versions,ui-sound,ui-achievement-sound}.test.cjs（逐檔實際傳參）48/48通過；直接VM執行正式gemComposeShortage／runGemCompose，確認兩者不足時先寶石、單次與全部合成對應按鈕、金幣不足及剛好足額邊界。npm.cmd run build657檔通過，完整diff check無錯。未新增測試或改斷言，本項無未完成實作；未做本輪真瀏覽器長玩，原合併另有10項來源既有失敗及基線核對記在後段，未宣稱全庫全綠。
+- 修改範圍：保留原六檔合併，僅額外補LV及本段；唯讀檢查規範／Workflow／各AI工作區狀態、來源三方／衍生資料／相關回歸與控制器。完成後正常同步素材庫、所有符合條件來源及固定工作區，保留原提交與main；SHA及遠端確認見最新同步報告。
+
 ## SYNC-EXCEL-PLAN-STAGING-20261105 — Excel復原計畫不納入提交
 
 - Owner：Codex；Done，單一開發者。使用者以1授權完成本輪衝突與必要同步修復；原merge已由b206ec67／e4375e4d完成。已定位原控制器停止原因：第一輪needs_excel的files含ignored JSON計畫，第二輪雖排除，控制器仍串接第一輪清單而git add失敗。
