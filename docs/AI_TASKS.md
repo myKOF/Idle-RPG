@@ -1,3 +1,45 @@
+## HERO3D-PBR-20261104 — 恢復人物材質與反射
+
+- Owner：Codex；Done，單一開發者。使用者確認開始修復角色灰暗問題，恢復授權原檔的法線／金屬粗糙度貼圖、PBR材質與環境反射並做同視角對照；涵蓋Role／Role1／Role2／Role3。已有來源授權不重複詢問，無新第三方素材。
+- 前置：工作區乾淨，Role3已提交ba72beca；目標衝突預檢無外部來源。允許hero3d材質／光照與畫布解析度、index快取、新PBR旁載貼圖／配置及Blender來源／匯出工具、相關回歸與LV／本段。禁止改已核准模型幾何／UV／骨架／六動畫／握劍、普攻選招、Worker／戰鬥／存檔／轉生規則、其他功能及合併推送。
+- 驗收：原始GLB及既有成品保持SHA；Blender從授權原檔輸出線性資料貼圖、正確對應身體材質，保留可編輯Blend及來源；動態PBR／環境反射、0～3轉與正握／全部動作正常，正式服不新增下載，材質載入失敗回退與資源釋放。測試／Build／實機／同視角對照及GIF，素材先Commit再遊戲Commit。
+- 完成：Blender4.5.10從四份已保存授權原檔取回8張法線／MR資料貼圖，Non-Color縮為1024px，法線重正規化；旁載materials.json按primitive綁定，MR綠色粗糙度／藍色金屬度、NoColorSpace與flipY=false。原GLB檔案SHA全部保持，因此UV／幾何／骨架／六動畫／劍身與正握也逐位不變。固定UV／頂點色雕手不誤套整張人物法線，原劍護手仍用自己的基色UV及金屬材質。前輪來源包與匯出均不覆寫。
+- 渲染：四套人物保留Standard材質及頂點色，自製三塊棚光面板＋中性底色經PMREM預濾作世界座標反射，不引入HDR或Lightmap；ACES／sRGB輸出與曝光1.15，保留既有方向光及環境光。離屏畫布352→512，遊戲人物尺寸不變；旁載只下載目前外觀，配置共用快取，各控制器自有貼圖。失敗等待所有請求結束、釋放晚到貼圖後整體回退舊Lambert；非本組模型沿用舊渲染。index對應快取20261104-pbr-v1，未修改renderer或scene-preview。
+- 資源修復：原dispose先關renderer，會清掉WebGL屬性登記而使後續貼圖dispose未完整移除GPU貼圖。改為環境、去重幾何／共享貼圖／材質先釋放，再關renderer及獨立context；dispose可重複呼叫。實機四套材質貼圖及環境dispose事件各一次、幾何計數歸0、角色context確實lost；Three計數仍顯示1張內部快取時也由context銷毀回收，沒有將該計數誤報為0。
+- 修改17檔：js/hero3d.js、index.html、LV_upgrade_system.md、docs/AI_TASKS.md；images/models/hero3d/pbr/{README.md,materials.json,role-normal.png,role-metallic-roughness.png,role1-normal.png,role1-metallic-roughness.png,role2-normal.png,role2-metallic-roughness.png,role3-normal.png,role3-metallic-roughness.png}；tools/meshy-pipeline/{blender/restore_pbr.py,src/export-hero-pbr.cjs}；tests/hero3d-pbr.test.cjs。唯讀未改AI_RULES／AGENTS／Workflow／prompts、四套GLB與黃金騎士、先前Blender製作／握劍工具及來源匯出、battle-renderer／scene-preview、Worker／save／player／戰鬥／配置／String與轉生解鎖。
+- 驗證：`node --test --test-concurrency=2 tests/hero3d-pbr.test.cjs tests/hero3d-role3.test.cjs tests/hero3d-role2.test.cjs tests/hero3d-rebirth-skin.test.cjs tests/hero3d-forward-grip.test.cjs tests/hero3d-role.test.cjs tests/hero3d-attack4.test.cjs tests/hero3d-battle-rules.test.cjs tests/hero3d-internal-toggle.test.cjs tests/battle-renderer-pause.test.cjs tests/vfx-editor-cache-versions.test.cjs`54/54；新5項驗實際GLB SHA、貼圖規格／線性方向、共用材質不污染手部、晚到失敗清理／配置重試與dispose順序。`npm.cmd run build`650檔通過，五套export --source-check（Role／Role1／Role2／Role3／PBR）及diff／stat／check、自我Review通過。原生重開四份Blend均6動作、全部3～4張使用貼圖packed、法線Non-Color正確。
+- 實機：隔離隨機localhost正式index／真Worker／Pixi／Hero3D，GM1→2→3→4→2→0→3依序皮膚1／2／3／3／2／0／3；驗各身體實際Standard材質、normal／MR、512畫布與環境反射，雕手無整張法線。切換保持Attack4進度／速度／朝向，100次普攻四招皆可且不連抽，施法不插隊、收招回Run、saveAutoNow後重載仍3轉。正常Page／Console error0，僅既有未用preload提示；另刻意中斷法線請求，正常回退且晚到圖釋放，該案例的ERR_FAILED與PBR警告是預期結果。原玩家網址存檔未讀寫，瀏覽器與服務已關閉。
+- 預覽：四套同視角／同姿勢前後與背面揮擊PNG，正式Hero3D對照GIF1600×860、遊戲場景GIF1600×1000附同步全身放大，皆84幀／30fps。原始PNG與GIF磁碟讀回目視、主角及放大視窗均有逐幀變化；遊戲錄製僅QA調大畫布700px／使用內建鏡頭並暫隱NPC／暫停遮罩及殘留FX，正式預設仍512px。四套人物加權RGB平均顯示亮度皆較舊版增加，金屬高光與布料層次保留。QA在本聊天visualizations/pbr-20261104，必要證據已入素材庫，未把逐幀暫存放入專案。
+- 交付：設定素材庫codex-authored/hero3d-pbr-20261104保存四份可編輯Blend、貼圖／配置、依賴原檔SHA、製作／匯出工具與QA，manifest51檔。素材Commit `bbb014f`先於遊戲（本段所在「[Codex] fix: 恢復人物PBR材質與環境反射」，SHA見交付）。每套新增約3MB貼圖，只載目前外觀；這是恢復材質的容量成本，GLB本體保持原5MB預算。未做跨瀏覽器／行動裝置長時間效能與全庫測試，仍受既有內測3D限制。無未完成項目，可供Review及使用者合併；未合併推送develop／main，下一步重載遊戲驗收亮度。
+
+## HERO3D-ROLE3-20261104 — 3轉人物、雙劍移除與雙手分離
+
+- Owner：Codex；Done，單一開發者。使用者指定桌面Role3.glb並確認本遊戲使用及修改授權；新增3轉起外觀，移除雙背劍，檢查雙手與腿／腋下黏連並分離，原劍／正握／全部動作照舊。
+- 前置：Role2已完成dde65c7e，工作區乾淨；fetch及13檔衝突預檢無外部來源。來源SHA d2c49d1bf12913203cbf082bbbb0b30aece20320a7ab2b5130bcbbee4c65ba67，原檔已有SmartRig骨架／Running，本項只用外觀，仍沿既有六動作及正式骨架。
+- 允許：role3模型／報告／來源說明、專用Blender製作與素材庫來源／匯出、hero3d外觀選擇與必要renderer／兩頁快取、轉生切換及role3回歸、LV與本段。禁止改0～2轉與黃金騎士模型、劍幾何／正握／六動畫、戰鬥／Worker／存檔／配置／解鎖與其他工作區、合併推送。
+- 驗收：背部無雙劍殘片、左右手腿無橋面／交叉權重、獨立補面及動作無拉扯、骨架及六段動畫／原劍逐值一致；0／1／2／3+及當場轉生／存讀／非同步／失敗回復、全部動作與遊戲預覽、相關回歸／Build／Console／diff。保留授權原檔／可編輯Blend／工具／SHA與QA，素材先Commit再遊戲Commit；後續使用者Review及整合。
+- 完成：Blender4.5.10將來源1.7m綁定姿勢對應既有解剖尺度，刪除1274個背劍三角面及2個後方殘片、右手／橋面315面、左手橋面20面及腋下205面；另清除修復區8個細碎孤島（內臂／髖部／鞘尾），避免飄浮碎片。各區獨立補面，最終邊界0，身體8834面，成品4,617,292bytes。沿用原基色1024px、白髮／銀金甲／深藍布，既有右手幾何以銀灰護甲頂點色配合新裝。原來源SmartRig與Running不帶進遊戲，25骨架／inverse bind、六段動畫的時間／插值／目標／每個取樣及原劍／正握幾何／權重皆與Role1逐值相同。
+- 修改11檔：js/hero3d.js新增3轉模型URL與共用選擇，0／1／2／3+；index只更新hero3d快取20261104-role3-v1，renderer泛用切換不需改碼。新增images/models/hero3d/{role3.glb,role3.json,ROLE3_SOURCE.md}、tools/meshy-pipeline/{blender/prepare_role3.py,src/export-role3.cjs}及tests/hero3d-role3.test.cjs；更新轉生切換回歸、LV及本段。無玩家文字／Excel／CSV／Worker／存檔協議改動。
+- 測試：`node --test --test-concurrency=2 tests/hero3d-role3.test.cjs tests/hero3d-role2.test.cjs tests/hero3d-rebirth-skin.test.cjs tests/hero3d-forward-grip.test.cjs tests/hero3d-role.test.cjs tests/hero3d-attack4.test.cjs tests/hero3d-battle-rules.test.cjs tests/hero3d-internal-toggle.test.cjs tests/battle-renderer-pause.test.cjs tests/vfx-editor-cache-versions.test.cjs`49/49；新模型六段各61姿勢共366次CPU蒙皮檢查長三角面，左右手臂無任何腿部權重、無手腿橋面，索引／權重／手套色有效。3轉開局、2→3保留完整動作狀態、4+不重載、交錯淘汰與失敗保持Role2皆通過。
+- 建置與來源：`npm.cmd run build`649檔通過；首次與高解析瀏覽器並行遇系統記憶體不足，10個Node語法子程序啟動失敗，關閉本項確定PID測試行程樹後串行重跑全649檔通過，未修改無關失敗檔。Role／Role1／Role2／Role3 export --source-check皆通過，0～2轉及黃金騎士原素材SHA保持；diff／stat／check與自我Review完成。Blender正常重開確認6動作及2張貼圖均packed；素材庫manifest保存授權原檔、可編輯Blend／NPZ、成品、工具、SHA與QA。
+- 實機：隔離隨機localhost正式index／真Worker／Pixi／Hero3D，GM轉生數1→2→3→4→2→0→3正確載皮膚1／2／3／3／2／0／3；100次普攻四招皆可且不連續重複，Attack4與施法保護、收招回Run保持。最終模型另外獨立驗saveAutoNow完成後關閉頁面、新頁開啟仍header3／skin3／Role3 URL一致，Console error／warning及pageerror0。初次重載QA只等任意Hero3D實例，尚在非同步切換時讀到0；改等header及皮膚一致，另以獨立完整存讀驗證通過，未改產品迎合等待。原玩家網址存檔未讀寫，測試服務與瀏覽器已關閉。
+- 預覽：全六動作37張前後／揮擊／跑步／倒地畫面目視，背劍與細碎殘片已清除。正式遊戲第四招GIF1600×1000、84幀／30fps附同步右手放大，磁碟讀回驗主角及近拍皆逐幀變化；高解析畫布、內建鏡頭與隱藏NPC／暫停遮罩僅QA調整。QA位於本聊天visualizations/role3，必要證據保存素材庫；GIF預覽不額外接入遊戲。
+- 交付：唯讀未改AI_RULES／AGENTS／Workflow／prompts、renderer／scene-preview、Role／Role1／Role2／黃金騎士與原製作／握劍工具、Worker／save／player／戰鬥／配置及其他系統。全部工作單人完成，無同檔外部來源。素材Commit `c552df8`（35個來源／成品／QA檔及manifest）先於遊戲（本段所在「[Codex] feat: 接入3轉人物並修復雙劍與手腿黏連」，SHA見交付）。無本項未完成或已知新增缺陷；未跑全庫／跨瀏覽器長時間效能，仍沿內測3D限制。可供Review及使用者合併，未合併推送develop／main；下一步重載以3轉人物及GIF驗收。
+
+## HERO3D-ROLE2-20261104 — 2轉人物、雙背劍移除與手腿分離
+
+- Owner：Codex；Done，單一開發者。使用者確認桌面Role2.glb為目標且取得遊戲及修改授權，指定2轉模型、刪除背後兩劍、沿用既有右手正握劍及所有動作，合理分離右手與腿部黏連；追加完成後提供任意攻擊清晰GIF。
+- 來源：Role2.glb（SHA73c8e5667ef0dbf4b3394ae01e7f4193b0269d962d5f0f03949791dc81cd504f），靜態單網格，無骨架／動畫，需先在Blender整理拓樸及綁定現有骨架。0轉Role、1轉Role1、2轉起Role2；黃金騎士與前兩外觀保持。
+- 允許：role2素材／Blender製作與來源說明／匯出、Hero3D及renderer轉生外觀選擇、兩頁必要快取、相關回歸、LV及本段。禁止改既有六段動畫／劍身與正握設計、戰鬥／Worker／存檔／轉生條件／配置及其他模型。相關目標衝突預檢無外部來源。
+- 驗收：雙背劍完整刪除並補背部，右手／大腿實際網格斷開且無跨骨骼橋面；正確蒙皮、手與原劍貼合，四招／待機／跑步／死亡／起身沿用原片段，0／1／2轉開局與當場切換、回歸／Build／畫面及GIF、來源SHA與可編輯Blend保存，素材先Commit再遊戲Commit，不合併推送。
+- 完成：Blender4.5.10刪除1284個背劍三角面及兩個柄尾殘片；原右手與腿橋面315面移除，沿用已核准右手正握網格及整把劍的幾何／權重，劍身0.8長度保持。左手與腋下原始黏連一併分離，各區獨立補面、最終邊界0，沒有重新接出手腿橋面。依來源解剖位置建立骨架、骨熱權重及部位限制後配合既有25骨架，沿用原銀甲／藍布及1024px基色，手套頂點色在Lambert轉換中保留；成品4,625,656bytes，小於5MB。六段動畫時間／插值／目標／每個取樣、骨架與inverse bind皆與Role1逐值一致。
+- 接線：Hero3D共用skinForReincarnations判斷0／1／2+，renderer初始及當場切換共用它；保留非同步淘汰、失敗保留舊外觀、動作秒數／速度／朝向／倒地起身。index的hero3d與兩頁renderer快取20261104-role2-v1。未改普攻四招／技能三招、Worker、戰鬥數值、存檔格式、轉生條件或3D內測限制。
+- 修改13檔：LV_upgrade_system.md、docs/AI_TASKS.md、index.html、js/{hero3d,battle-renderer}.js、tools/scene-preview.html、images/models/hero3d/{role2.glb,role2.json,ROLE2_SOURCE.md}、tools/meshy-pipeline/{blender/prepare_role2.py,src/export-role2.cjs}、tests/{hero3d-role2,hero3d-rebirth-skin}.test.cjs。唯讀未改AI_RULES／AGENTS／Workflow／prompts、Role／Role1與黃金騎士、既有製作／握劍／鏡像工具、六動畫、Worker／存檔／配置及其他功能；原模型SHA保持。
+- 測試：`node --test --test-concurrency=2 tests/hero3d-role2.test.cjs tests/hero3d-rebirth-skin.test.cjs tests/hero3d-forward-grip.test.cjs tests/hero3d-role.test.cjs tests/hero3d-attack4.test.cjs tests/hero3d-battle-rules.test.cjs tests/hero3d-internal-toggle.test.cjs tests/battle-renderer-pause.test.cjs tests/vfx-editor-cache-versions.test.cjs`42/42。新回歸檢查原劍／正握逐值保留、完整權重／索引／手套顏色、手腿無橋面，以及實際CPU蒙皮在六段動作各13姿勢均無長三角面；另測2轉請求交錯、失敗保留1轉、3轉不重載及存檔開局。最後快取修正後另跑cache 3/3；`npm.cmd run build`648檔通過。Role／Role1／Role2的export --source-check、diff／stat／check及自我Review通過。
+- 實機：隔離隨機localhost正式index／真Worker／Pixi／Hero3D，100次普攻均在四招內且不連續重複，第四招對應Attack4、施法不打斷、收招回Run。GM轉生數1→2→3→1→0→2，依序皮膚1／2／2／1／0／2，當場保留Attack4第1.1秒、速度／朝向與body控制器；正式saveAutoNow保存後重載仍Role2，Console error／pageerror0，只有既有未用preload提示。未讀寫玩家原網址存檔，瀏覽器與服務均已關閉。
+- 預覽：全六段動作與三角度原生1400握劍近拍目視通過；第四招雙角度1600×860／84幀30fps GIF，以及正式遊戲1600×1000／84幀30fps GIF附同步握劍近拍。遊戲錄製採暫停確定性播放、正式renderPerspectiveScene／Pixi更新，僅QA調大畫布與內建檢視鏡頭並暫隱NPC／殘留特效／暫停遮罩；GIF磁碟讀回確認主角及近拍均逐幀變化。初次高解析冷啟動逾時，改先標準解析載入再錄製；沒有改正式鏡頭／動畫迎合QA。QA在本聊天visualizations/role2-20261104並已保存素材庫。
+- 素材：設定素材庫codex-authored/hero3d-role2-20261104保存授權原檔、可編輯Blend、成品、製作／匯出工具及QA，manifest共36檔SHA；重開Blend確認6動作、使用的2張貼圖皆packed。素材Commit `4cb3e16`先於遊戲Commit（本段所在「[Codex] feat: 接入2轉人物並修復背劍與手腿網格」，SHA見交付）。無未完成項目或已知新增缺陷；仍為既有內測3D，未跑全庫／跨瀏覽器長時間效能。可供Review與使用者合併，未合併或推送develop／main；下一步重載以2轉角色及GIF驗收。
+
 ## ENCHANT-BOOK-RETIRE-20261104 — 移除置頂附魔書並停止產出
 
 - Owner：Codex；Done，單一開發者。使用者要求移除置頂材料列附魔書及全部遊戲內產出；追加確認不更動現有存檔，只保證不再掉落。保留舊庫存／存檔欄位，移除野外、離線、高塔發放與舊任務book獎勵入口，不遷移或清除資料。
@@ -14410,3 +14452,19 @@ Worker 存活且頁面正常完成載入。
 - 測試：`node --test tests/gm-task.test.cjs tests/gm-natural-timeout.test.cjs tests/gm-fastpath.test.cjs tests/gm-translation-cache.test.cjs tests/gm-command.test.cjs tests/task-skills.test.cjs tests/task-system.test.cjs tests/vfx-editor-cache-versions.test.cjs`93/93；包含正式Worker命令派送、自然句實際重置、資源與累計保留、存讀、1起序號及末項、舊數字、查詢、非法輸入／外部host、無KeyUI／雲端備援提示與常用預設不自動執行。既有預設測試同步為5個預設＋1個清除鈕，仍逐個按Enter驗派送，未降低斷言。`npm.cmd run build`646檔通過；`node tools/string-table/build_string_csv.cjs --check`寫死0條。未跑全庫或實際瀏覽器。QA／log在本聊天visualizations/gm-task。
 - 協作：Claude未合併index僅ui／vfx-runtime／battle-renderer快取，LV僅約293行符文門檻；本項gm／ai／bridge行及LV檔尾不同區段、無語意相依，候選與共同祖先／ai/claude三方merge-file兩檔均exit0。沒有改或收取Claude內容，未合併推送；完成後交使用者正常整合及重新載入主頁／Worker。
 - 交付：自我Review與diff／stat／check通過，無本項未完成實作或已知新增風險，可供使用者Review及合併。Commit為本段所在「[Codex] fix: 補上任務GM自然語言與進度操作」，SHA見交付；工作區應乾淨，未合併推送。下一步重新載入後輸入「重置所有任務」；實際玩家進度未由本次開發操作修改，驗證使用隔離模擬狀態。
+## HEADER-BRAND-20261104 — 置頂材料顯示與遊戲改名
+
+- Owner：Codex；Done，單一開發者。使用者要求初始常駐金幣／裝備碎片／附魔精華，神性之石與太古精華依目前持有量大於0顯示；主標改神力之巔、副標無限進化，連同頁面／戰況／歡迎名稱一致。
+- 前置：fetch及逐檔衝突預檢無外部來源，String已確認獨占可存取。允許ui材料列、index初始隱藏與必要快取、String原生Excel及CSV／生成資料、相關回歸、LV與本段。禁止改資源產出／存檔／解鎖條件、其他配置或角色模型進行中內容、合併推送。
+- 驗收：初始3種、兩材料各自取得／耗盡／舊shownRes真值及缺欄、名稱與動態title／Worker字串一致、Excel正常重開及格式內容保留、相關測試／Build／Console／diff後獨立Commit。後續使用者Review及整合；無新素材。
+- 完成8檔：js/ui.js依目前數量顯示dust／ancientEssence，三種基本材料常駐；index四種進階資源初始隱藏避免首畫閃現，ui快取20261104-header-brand；String.xlsx／CSV與strings_data七筆名稱同步（版本fb090d63），包含主副標、完整title、動態title、歡迎與戰況標題。LV及本段同步，新增tests/header-resources.test.cjs。shownRes／Worker／存檔／解鎖規則不變，靈魂本源與魔種保留原首次取得規則。
+- Excel：來源獨占可開啟，依專案規定用excel-update-sheets原生API只寫7格並正常儲存重開；比對發現Excel重新儲存調整7列既有列高，已用原生API還原並再次正常重開正式來源。逐格資料／有效字型／填色／邊框／對齊／保護／數字格式、列高／凍結／合併／篩選／驗證／條件格式皆保留；欄寬僅Excel原生儲存的不足0.05字元量化差。2301列CSV與來源完整一致；Artifact唯讀渲染改名前後確認字串內容，既有窄欄維持、不全表重排。
+- 驗證：`node --test tests/header-resources.test.cjs tests/resource-tooltip.test.cjs tests/enchant-book-retirement.test.cjs tests/ui-tick-smoke.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs`為26/26；`npm.cmd run build`648檔通過；`node tools/string-table/apply_strings.cjs --check`2300條同步，string-table回歸含寫死0條檢查；diff／stat／check及自我Review通過。
+- 實機：bundled Playwright／隔離隨機localhost正式index＋Edge＋真Worker，初始3種、dust單獨／兩種都有／只剩精華／兩種耗盡完整驗收，舊shownRes=true也正確隱藏；新主副標及動態title正確，Console／pageerror0。最終畫面正常揭幕後重拍，僅原index既有dark-gold-seal預載未使用Warning（來源行不變），無本項新增Warning。首次QA截圖早於Loading消失，修正等待方式後目視核對；一次Edge target crash後以SwiftShader重跑通過，未更動產品。原玩家網址存檔未讀寫，瀏覽器及服務已關閉；QA／JSON／PNG在本聊天visualizations/header-brand。
+- 協作／交付：同副本HERO3D-ROLE2仍進行中，index僅不同hero3d script行，LV僅不同角色外觀段、AI_TASKS獨立段；分段三方試跑後只stage本項，其他模型／renderer／測試／工具完整保留。唯讀未改規範／AGENTS／Workflow／prompts、bridge／Worker／player／save、資源產出及其他配置；無素材庫修改或必要新素材，不建空素材Commit。本項無未完成，可供Review及使用者合併；未測全庫／多瀏覽器長玩，未合併推送。Commit為本段所在「[Codex] fix: 調整置頂材料顯示並改名神力之巔」，SHA見交付。下一步重新載入主頁驗收。
+## MERGE-INTEGRATION-20261104-213452 — String／標頭資源／3D 外觀整合
+
+- Owner：Codex；狀態：Done（待控制器 stage／建立 merge commit）。
+- 整合範圍：`90d25dd3` + `f426f06c`。原生 Excel updater 已合併並正常重開 `config/Excel/String.xlsx`；依實際工作簿重新產生 `config/CSV/String.csv` 與 `js/strings_data.js`（2300 條，版本 `9b6cb5d5`）。保留敵人七項提示資料與新品牌字串，`index.html` 的合併 UI 快取版號為 `20261104-header-brand-enemy-tip-7stats`。
+- 驗證：`node tools/string-table/apply_strings.cjs --check` 通過（2300 條）；`node tools/string-table/build_string_csv.cjs --check` 通過（寫死 0／未登記 0）；相關字串、標頭資源、附魔書退役、UI tick、Role2／Role3／PBR 與快取測試 50/50 通過；`npm.cmd run build` 通過。
+- 已知風險：Node 載入 Three.js 時仍有既有 `MODULE_TYPELESS_PACKAGE_JSON` 效能警告，測試無失敗；未操作 Git index、未提交。

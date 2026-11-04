@@ -3015,19 +3015,21 @@ function renderHeader() {
     ? !!forgeSnapshot.forge.unlocked
     : progressReached(p.level, p.reincarnations, FORGE_UNLOCK_LEVEL, FORGE_UNLOCK_REINCARNATION);
   if (forgeTabBtn) forgeTabBtn.style.display = forgeUnlockedView ? '' : 'none';
-  // shownRes 由模擬層在資源首次取得時更新；渲染只讀快照。
+  // 基本材料常駐；神性之石與太古精華依目前數量顯示，其餘沿用首次取得紀錄。
   var shownRes = p.shownRes || {};
   var resVisMap = [
-    { id: 'r-essence', val: p.essence || 0 },
-    { id: 'r-dust', val: p.dust || 0 },
-    { id: 'r-ancient-essence', val: p.ancientEssence || 0 },
-    { id: 'r-soul-origin', val: p.soulOrigin || 0 },
-    { id: 'r-demon-seed', val: p.demonSeed || 0 }
+    { id: 'r-gold', visible: true },
+    { id: 'r-scrap', visible: true },
+    { id: 'r-essence', visible: true },
+    { id: 'r-dust', visible: (p.dust || 0) > 0 },
+    { id: 'r-ancient-essence', visible: (p.ancientEssence || 0) > 0 },
+    { id: 'r-soul-origin', visible: !!shownRes['r-soul-origin'] },
+    { id: 'r-demon-seed', visible: !!shownRes['r-demon-seed'] }
   ];
   resVisMap.forEach(function (item) {
     var el = $id(item.id);
     if (!el || !el.parentNode) return;
-    el.parentNode.style.display = shownRes[item.id] ? '' : 'none';
+    el.parentNode.style.display = item.visible ? '' : 'none';
   });
 
   renderBattleResourceOrbs();

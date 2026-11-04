@@ -1611,7 +1611,7 @@ var ZONE_ENEMY_TABLES = {
 var ZONE_LIST = ["desert","Icefield","mist_forest","lava_mountain","swamp","thunder_peak","undead_mountains","god_battlefield","god_chaos","god_sanctuary"];
 var REALMS = { human: { name: STR(211), emoji: '🌍', zones: ['desert', 'Icefield', 'mist_forest', 'lava_mountain', 'swamp', 'thunder_peak', 'undead_mountains'] }, god: { name: STR(212), emoji: '✨', zones: ['god_battlefield', 'god_chaos', 'god_sanctuary'] } };
 var ZONES = {
-  desert: { pool: DESERT_POOL, enemyTable: ZONE_ENEMY_TABLES.desert, name: "荒漠", emoji: "🏜️", realm: "human", maxStage: 100, hpMult: 0.8, atkMult: 0.8, defMult: 1, aspdMult: 1, rewardMult: 1 },
+  desert: { pool: DESERT_POOL, enemyTable: ZONE_ENEMY_TABLES.desert, name: "荒漠", emoji: "🏜️", realm: "human", maxStage: 100, hpMult: 0.6, atkMult: 0.6, defMult: 0.7, aspdMult: 1, rewardMult: 1 },
   Icefield: { pool: ICEFIELD_POOL, enemyTable: ZONE_ENEMY_TABLES.Icefield, name: "冰原", emoji: "🧊", realm: "human", maxStage: 150, reqZone: "desert", reqStage: 100, hpMult: 2.5, atkMult: 3, defMult: 1.6, aspdMult: 1.4, rewardMult: 1.2 },
   mist_forest: { pool: MIST_FOREST_POOL, enemyTable: ZONE_ENEMY_TABLES.mist_forest, name: "迷霧森林", emoji: "🌲", realm: "human", maxStage: 200, reqZone: "Icefield", reqStage: 150, hpMult: 4, atkMult: 4.5, defMult: 2, aspdMult: 1.45, rewardMult: 1.3 },
   lava_mountain: { pool: LAVA_MOUNTAIN_POOL, enemyTable: ZONE_ENEMY_TABLES.lava_mountain, name: "熔岩山", emoji: "🌋", realm: "human", maxStage: 250, reqZone: "mist_forest", reqStage: 200, hpMult: 5.5, atkMult: 7, defMult: 2.6, aspdMult: 1.5, rewardMult: 1.4 },
