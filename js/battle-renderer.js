@@ -3068,7 +3068,21 @@ var BattleRenderer = (function () {
     }
   }
 
-  function startDeath(ent, realDeath) {
+  /* 擊殺時死亡動畫延後播放：模擬層是瞬間結算，角色才剛舉刀、敵人就倒下會像「還沒砍到就死了」。
+     只延後真正的死亡（realDeath）；換關／切地圖的淡出不延後。延後期間敵人維持原樣，
+     deathPending 擋掉 reconcile 每次重複呼叫。 */
+  var DEATH_ANIM_DELAY_MS = 500;
+  function startDeath(ent, realDeath, noDelay) {
+    if (ent.deathPending) return;
+    if (realDeath && !noDelay && !documentHidden() && DEATH_ANIM_DELAY_MS > 0) {
+      ent.deathPending = true;
+      setTimeout(function () {
+        ent.deathPending = false;
+        if (S.entities[ent.id] !== ent || ent.state === 'dying' || ent.state === 'gone') return;
+        startDeath(ent, true, true);
+      }, DEATH_ANIM_DELAY_MS);
+      return;
+    }
     /* 背景分頁：rAF 停擺、死亡動畫不會播也不會被清，直接移除。
        不這樣做的話，掛機幾小時的垂死實體會無上限累積在記憶體裡。 */
     if (documentHidden()) {
