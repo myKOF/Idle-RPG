@@ -7530,6 +7530,7 @@ var BattleRenderer = (function () {
     var presetZone = new PIXI.Container();
     var presetFx = new PIXI.Container();
     var actorFront = new PIXI.Container();
+    actorFront.sortableChildren = true;
     var airBack = new PIXI.Container();
     airBack.sortableChildren = true;
     var airFx = new PIXI.Container();
@@ -7568,8 +7569,6 @@ var BattleRenderer = (function () {
     world.addChild(entity);
     world.addChild(groundOver); world.addChild(presetFx);
     world.addChild(outlineLayer);
-    // 近側石碑是實體遮擋，必須位於角色與穿透輪廓前方。
-    world.addChild(actorFront);
     /* 場景根＝地板＋world。開了輕微透視（見 PERSPECTIVE_TOP_SCALE）時它不掛在 stage 上，
        每幀先畫進離屏貼圖再由透視網格貼到畫面；沒開就直接掛在 stage 上。由 syncPerspective 決定。 */
     var sceneRoot = new PIXI.Container();
@@ -7591,6 +7590,11 @@ var BattleRenderer = (function () {
        每幀只把位置換到透視後的落點（worldToScreenPoint）。順序仍是 場景 < 浮字 < 玩家 HUD < overlay。 */
     cameraStage.addChild(airBack);
     cameraStage.addChild(airPlayer);
+    /* 近側石碑是實體遮擋，必須在角色之上——包含 airPlayer 補畫的那份本體。
+       原本掛在 world 裡（輪廓層之後），但只要場上有任何「角色後方的空中物」（airBack 非空），
+       airPlayer 就會在鏡頭層把本體重畫一次、蓋過 world 裡所有東西，石碑便整個跑到人物後面。
+       所以改掛在 airPlayer 之後的鏡頭層，座標走 projectBillboardTransform（以腳點定遠近）。 */
+    cameraStage.addChild(actorFront);
     cameraStage.addChild(airFx);
     cameraStage.addChild(enemyAir);
     app.stage.addChild(floatLayer);
@@ -8272,6 +8276,7 @@ var BattleRenderer = (function () {
       fxContainer: S.layers.presetFx,
       fxDepthContainer: S.layers.entity,
       actorFrontContainer: S.layers.actorFront,
+      projectActorFrontTransform: projectBillboardTransform,
       zoneContainer: S.layers.presetZone,
       groundScale: GROUND_Y_SCALE,
       ctx: {
