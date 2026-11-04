@@ -14538,3 +14538,14 @@ Worker 存活且頁面正常完成載入。
 - 驗證：`node tools/audio/ui-short-options.cjs --apply`／`--check`及`node --check tools/audio/ui-short-options.cjs`通過，兩庫12WAV與來源／說明／manifest SHA一致、可確定性重產；獨立bundled Python wave＋NumPy驗10單音時長、PCM／置中／起尾零點／非靜音／無削波、兩合輯逐段PCM與單音完全一致。H類RMS -22.56～-20dBFS、峰值最高-6.02；C類RMS -20.21～-16.48、峰值最高-3.10，分類內RMS差皆<4dB。20組同類交叉相關最高0.710，不是相同波形只換音量；數值不代替聽感或代表使用者核准。QA為本聊天visualizations/ui-short-options-qa.py。
 - 既有驗證：`node --test tests/ui-sound.test.cjs`10/10、`npm.cmd run build`652檔及兩庫diff／stat／check／自我Review通過；rg確認index／js未引用新候選。唯讀未改規範／Workflow／prompts、先前全部WAV及產生器、ui-sound／UI／index／LV／Worker／save／玩法與配置。沒有新功能／字串／接線，不做瀏覽器操作；外部11項CSV／Excel／data／skills2修改完整保留、不套用或提交。
 - 雙庫交付：素材庫codex-authored/ui-short-options-20261104-v4的15檔先Commit `84214a9`，後遊戲Commit（本段所在「[Codex] feat: 製作觸碰與點擊各五款清晰短音」，SHA見聊天交付）。本輪無未完成或已知素材技術問題，可Review／保存候選；尚未接入，未合併推送。下一步使用者以H1～H5及C1～C5選擇或提供音色回饋。
+
+## UI-SOUND-SILENT-KEYBOARD-20261104 — 五款無聲鍵盤風格短按鈕音
+
+- Owner：Codex；Done（試聽候選），單一開發者。使用者要求5款短促、類似無聲鍵盤的按鈕聲；僅新增隔離候選K1～K5及合輯，不改正在進行的C3／H6～H10工作。
+- 前置：規範／Workflow／任務及prompts/codex已讀，ai/codex；fetch及新產生器／目錄／本文件預檢無外部衝突。現有未提交修改保留，只附加本段；允許tools/audio/ui-silent-keyboard.cjs、audio/ui-preview/silent-keyboard-v1、素材庫對應新目錄與本段。禁止改UI接線／既有音效／配置／玩法／Worker／存檔／LV、合併推送。
+- 驗收：5款原創程序合成，短於0.1秒、快速收尾、低中頻柔和悶觸感，無尖銳金屬／長殘響；附各兩次合輯及單檔，保留可辨識播放音量。驗PCM／首尾／非靜音／無削波／重產及雙庫SHA、Build；必要素材先Commit再遊戲，只提交本任務，後續由使用者試聽選擇。
+
+- 完成10檔：新產生器、silent-keyboard-v1內5單音／comparison.wav／README／manifest及本段。K1矽膠輕嗒55ms、K2低沉悶嗒65ms、K3薄膜輕按48ms、K4軟墊短噗70ms、K5靜音短鍵62ms；固定種子限頻噪音及快速阻尼共鳴，全為自製，無外部錄音或參考音檔。48kHz／16-bit立體聲置中；合輯5.4秒，依K1～K5各兩次、保留單檔音量。
+- 驗證：`node tools/audio/ui-silent-keyboard.cjs --apply`／`--check`、`node --check tools/audio/ui-silent-keyboard.cjs`通過，兩庫6WAV／來源／README／manifest SHA一致，可確定性重產。獨立Node PCM讀回驗規格／非靜音／雙聲道一致／起尾零點／無削波，合輯10片段逐樣本等於單檔；同類兩兩零延遲相關最高0.329，非同波形換音量。峰值皆-7.54dBFS，RMS -26.59～-23.03dBFS；數值不代替使用者聽感核准。
+- `node --test tests/ui-sound.test.cjs`11/11、`npm.cmd run build`652檔通過；兩庫diff／stat／check及自我Review通過。rg確認index／js沒有新候選引用，不接入或改遊戲、不做瀏覽器操作；未新增系統／設定／玩家字串，無LV／String變更。唯讀未改AI_RULES／AGENTS／Workflow／prompts、既有音檔及產生器、UI_SOUND／ui-sound／index／tests／LV、Worker／save／玩法與所有配置；現有C3／H6～H10及其他未提交修改保留，不一併提交。
+- 雙庫交付：素材庫codex-authored/ui-silent-keyboard-20261104-v1的9檔先Commit `b378009`，再遊戲Commit（本段所在「[Codex] feat: 製作五款無聲鍵盤風格按鈕音」，SHA見聊天交付）。本輪製作無未完成或已知素材技術缺陷；音色待試聽選擇、接入另行指示，可Review／保存候選；未合併推送。下一步使用者以K1～K5提供選擇或回饋。
