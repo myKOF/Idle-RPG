@@ -2195,7 +2195,7 @@ var BattleRenderer = (function () {
   var hero3dWantedSkin = 0, hero3dSkinRequest = 0, hero3dLoadingSkin = null, hero3dFailedSkin = null;
   function syncHero3dAppearance(count) {
     if (typeof Hero3D === 'undefined' || !Hero3D.enabled()) return null;
-    var wanted = Number(count) >= 1 ? 1 : 0;
+    var wanted = Hero3D.skinForReincarnations(count);
     if (wanted !== hero3dWantedSkin) {
       hero3dWantedSkin = wanted; hero3dSkinRequest++;
       hero3dFailedSkin = null; hero3dLoadingSkin = null;
@@ -2239,7 +2239,7 @@ var BattleRenderer = (function () {
   function loadHero3d() {
     if (typeof Hero3D === 'undefined' || !Hero3D.enabled()) return null;
     var header = typeof peekUiPanelData === 'function' ? peekUiPanelData('header') : null;
-    hero3dWantedSkin = header && header.player && Number(header.player.reincarnations) >= 1 ? 1 : 0;
+    hero3dWantedSkin = Hero3D.skinForReincarnations(header && header.player ? header.player.reincarnations : 0);
     return Hero3D.create({ reincarnations: hero3dWantedSkin }).then(function (ctrl) {
       S.hero3d = ctrl;
     }).catch(function (err) {

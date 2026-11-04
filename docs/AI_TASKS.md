@@ -1,3 +1,17 @@
+## HERO3D-ROLE2-20261104 — 2轉人物、雙背劍移除與手腿分離
+
+- Owner：Codex；Done，單一開發者。使用者確認桌面Role2.glb為目標且取得遊戲及修改授權，指定2轉模型、刪除背後兩劍、沿用既有右手正握劍及所有動作，合理分離右手與腿部黏連；追加完成後提供任意攻擊清晰GIF。
+- 來源：Role2.glb（SHA73c8e5667ef0dbf4b3394ae01e7f4193b0269d962d5f0f03949791dc81cd504f），靜態單網格，無骨架／動畫，需先在Blender整理拓樸及綁定現有骨架。0轉Role、1轉Role1、2轉起Role2；黃金騎士與前兩外觀保持。
+- 允許：role2素材／Blender製作與來源說明／匯出、Hero3D及renderer轉生外觀選擇、兩頁必要快取、相關回歸、LV及本段。禁止改既有六段動畫／劍身與正握設計、戰鬥／Worker／存檔／轉生條件／配置及其他模型。相關目標衝突預檢無外部來源。
+- 驗收：雙背劍完整刪除並補背部，右手／大腿實際網格斷開且無跨骨骼橋面；正確蒙皮、手與原劍貼合，四招／待機／跑步／死亡／起身沿用原片段，0／1／2轉開局與當場切換、回歸／Build／畫面及GIF、來源SHA與可編輯Blend保存，素材先Commit再遊戲Commit，不合併推送。
+- 完成：Blender4.5.10刪除1284個背劍三角面及兩個柄尾殘片；原右手與腿橋面315面移除，沿用已核准右手正握網格及整把劍的幾何／權重，劍身0.8長度保持。左手與腋下原始黏連一併分離，各區獨立補面、最終邊界0，沒有重新接出手腿橋面。依來源解剖位置建立骨架、骨熱權重及部位限制後配合既有25骨架，沿用原銀甲／藍布及1024px基色，手套頂點色在Lambert轉換中保留；成品4,625,656bytes，小於5MB。六段動畫時間／插值／目標／每個取樣、骨架與inverse bind皆與Role1逐值一致。
+- 接線：Hero3D共用skinForReincarnations判斷0／1／2+，renderer初始及當場切換共用它；保留非同步淘汰、失敗保留舊外觀、動作秒數／速度／朝向／倒地起身。index的hero3d與兩頁renderer快取20261104-role2-v1。未改普攻四招／技能三招、Worker、戰鬥數值、存檔格式、轉生條件或3D內測限制。
+- 修改13檔：LV_upgrade_system.md、docs/AI_TASKS.md、index.html、js/{hero3d,battle-renderer}.js、tools/scene-preview.html、images/models/hero3d/{role2.glb,role2.json,ROLE2_SOURCE.md}、tools/meshy-pipeline/{blender/prepare_role2.py,src/export-role2.cjs}、tests/{hero3d-role2,hero3d-rebirth-skin}.test.cjs。唯讀未改AI_RULES／AGENTS／Workflow／prompts、Role／Role1與黃金騎士、既有製作／握劍／鏡像工具、六動畫、Worker／存檔／配置及其他功能；原模型SHA保持。
+- 測試：`node --test --test-concurrency=2 tests/hero3d-role2.test.cjs tests/hero3d-rebirth-skin.test.cjs tests/hero3d-forward-grip.test.cjs tests/hero3d-role.test.cjs tests/hero3d-attack4.test.cjs tests/hero3d-battle-rules.test.cjs tests/hero3d-internal-toggle.test.cjs tests/battle-renderer-pause.test.cjs tests/vfx-editor-cache-versions.test.cjs`42/42。新回歸檢查原劍／正握逐值保留、完整權重／索引／手套顏色、手腿無橋面，以及實際CPU蒙皮在六段動作各13姿勢均無長三角面；另測2轉請求交錯、失敗保留1轉、3轉不重載及存檔開局。最後快取修正後另跑cache 3/3；`npm.cmd run build`648檔通過。Role／Role1／Role2的export --source-check、diff／stat／check及自我Review通過。
+- 實機：隔離隨機localhost正式index／真Worker／Pixi／Hero3D，100次普攻均在四招內且不連續重複，第四招對應Attack4、施法不打斷、收招回Run。GM轉生數1→2→3→1→0→2，依序皮膚1／2／2／1／0／2，當場保留Attack4第1.1秒、速度／朝向與body控制器；正式saveAutoNow保存後重載仍Role2，Console error／pageerror0，只有既有未用preload提示。未讀寫玩家原網址存檔，瀏覽器與服務均已關閉。
+- 預覽：全六段動作與三角度原生1400握劍近拍目視通過；第四招雙角度1600×860／84幀30fps GIF，以及正式遊戲1600×1000／84幀30fps GIF附同步握劍近拍。遊戲錄製採暫停確定性播放、正式renderPerspectiveScene／Pixi更新，僅QA調大畫布與內建檢視鏡頭並暫隱NPC／殘留特效／暫停遮罩；GIF磁碟讀回確認主角及近拍均逐幀變化。初次高解析冷啟動逾時，改先標準解析載入再錄製；沒有改正式鏡頭／動畫迎合QA。QA在本聊天visualizations/role2-20261104並已保存素材庫。
+- 素材：設定素材庫codex-authored/hero3d-role2-20261104保存授權原檔、可編輯Blend、成品、製作／匯出工具及QA，manifest共36檔SHA；重開Blend確認6動作、使用的2張貼圖皆packed。素材Commit `4cb3e16`先於遊戲Commit（本段所在「[Codex] feat: 接入2轉人物並修復背劍與手腿網格」，SHA見交付）。無未完成項目或已知新增缺陷；仍為既有內測3D，未跑全庫／跨瀏覽器長時間效能。可供Review與使用者合併，未合併或推送develop／main；下一步重載以2轉角色及GIF驗收。
+
 ## ENCHANT-BOOK-RETIRE-20261104 — 移除置頂附魔書並停止產出
 
 - Owner：Codex；Done，單一開發者。使用者要求移除置頂材料列附魔書及全部遊戲內產出；追加確認不更動現有存檔，只保證不再掉落。保留舊庫存／存檔欄位，移除野外、離線、高塔發放與舊任務book獎勵入口，不遷移或清除資料。

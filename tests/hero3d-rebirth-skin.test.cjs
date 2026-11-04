@@ -7,16 +7,18 @@ function setup(count=0,enabled=true){
  const body=controller=>({hero3d:controller,position:{copyFrom(){}},texture:{destroy(){this.destroyed=true;}},hero3dOutlineTex:{destroy(){this.destroyed=true;}},animationSpeed:1.2,destroy(){this.destroyed=true;this.texture=null;}});
  const initial=ctrl(count),oldBody=body(initial),children=[oldBody];
  const S={hero3d:initial,failed:false,player:{body:oldBody,curAnim:'attack4',baseAnim:'walk',bodyWrap:{getChildIndex:x=>children.indexOf(x),addChildAt(x,i){children.splice(i,0,x);}},outline:{destroy(){this.destroyed=true;}}}};
- const Hero3D={enabled:()=>enabled,instance:initial,create(opts){return new Promise((resolve,reject)=>pending.push({opts,resolve,reject}));},setEnabled(){throw Error('Skin failure must retain enabled appearance');}};
+ const helpers=vm.createContext({});vm.runInContext(fs.readFileSync(root+'/js/hero3d.js','utf8'),helpers);
+ const Hero3D={skinForReincarnations:helpers.Hero3D.skinForReincarnations,enabled:()=>enabled,instance:initial,create(opts){return new Promise((resolve,reject)=>pending.push({opts,resolve,reject}));},setEnabled(){throw Error('Skin failure must retain enabled appearance');}};
  const c=vm.createContext({S,Hero3D,console:{warn:(...a)=>warnings.push(a)},peekUiPanelData:()=>({player:{reincarnations:count}}),makeHero3dBody:()=>body(S.hero3d),makeOutlineSprite:()=>({}),playHero3dAnim:(p,n)=>{p.curAnim=n;}});
  const start=source.indexOf('  var hero3dWantedSkin ='),end=source.indexOf('  function makeHero3dBody()',start);
  assert.ok(start>=0&&end>start);vm.runInContext(source.slice(start,end),c);
  return{c,S,initial,oldBody,pending,warnings,ctrl,Hero3D};
 }
-test('0轉Role，1轉以上Role1；無效數值保持基礎外觀',()=>{
+test('0轉Role、1轉Role1、2轉以上Role2；無效數值保持基礎外觀',()=>{
  const c=vm.createContext({});vm.runInContext(fs.readFileSync(root+'/js/hero3d.js','utf8'),c);
  for(const n of [0,-1,undefined,NaN])assert.match(c.Hero3D.modelForReincarnations(n),/\/role\.glb\?/);
- for(const n of [1,2,30,'1'])assert.match(c.Hero3D.modelForReincarnations(n),/\/role1\.glb\?/);
+ for(const n of [1,'1'])assert.match(c.Hero3D.modelForReincarnations(n),/\/role1\.glb\?/);
+ for(const n of [2,3,30,'2'])assert.match(c.Hero3D.modelForReincarnations(n),/\/role2\.glb\?/);
 });
 test('當場1轉交換身體及輪廓，保留實際動作秒數、速度與朝向並釋放舊資源',async()=>{
  const h=setup(),texture=h.oldBody.texture,outline=h.oldBody.hero3dOutlineTex;
@@ -40,6 +42,23 @@ test('新皮膚失敗保留原模型，不因每次header快照重複下載；�
 test('讀入已1轉存檔時第一次載入就選新皮膚',async()=>{
  const h=setup(1),p=h.c.loadHero3d();assert.equal(h.pending[0].opts.reincarnations,1);const next=h.ctrl(1);h.pending[0].resolve(next);await p;assert.equal(h.S.hero3d,next);
  assert.match(source,/msg\.name === 'header'.*syncHero3dAppearance\(msg\.data\.player\.reincarnations\)/);
+});
+test('1轉到2轉保持揮擊進度，3轉沿用2轉而不重載',async()=>{
+ const h=setup(1),p=h.c.syncHero3dAppearance(2);assert.equal(h.pending[0].opts.reincarnations,2);
+ const next=h.ctrl(2);h.pending[0].resolve(next);await p;
+ assert.equal(h.S.hero3d,next);assert.equal(next.state,h.initial.state);assert.equal(h.S.player.curAnim,'attack4');
+ assert.equal(h.c.syncHero3dAppearance(3),null);assert.equal(h.pending.length,1);
+});
+test('1轉與2轉請求交錯時只有最新2轉模型接入；2轉載入失敗保留1轉',async()=>{
+ const h=setup(),a=h.c.syncHero3dAppearance(1),b=h.c.syncHero3dAppearance(2),stale=h.ctrl(1),latest=h.ctrl(2);
+ h.pending[0].resolve(stale);await a;assert.equal(stale.disposed,true);assert.equal(h.S.hero3d,h.initial);
+ h.pending[1].resolve(latest);await b;assert.equal(h.S.hero3d,latest);
+ const f=setup(1),p=f.c.syncHero3dAppearance(2);f.pending[0].reject(Error('unavailable'));await p;
+ assert.equal(f.S.hero3d,f.initial);assert.equal(f.c.syncHero3dAppearance(2),null);assert.equal(f.pending.length,1);
+});
+test('已2轉存檔開局直接載Role2',async()=>{
+ const h=setup(2),p=h.c.loadHero3d();assert.equal(h.pending[0].opts.reincarnations,2);
+ const next=h.ctrl(2);h.pending[0].resolve(next);await p;assert.equal(h.S.hero3d,next);
 });
 function glb(name){
  const bytes=fs.readFileSync(root+'/images/models/hero3d/'+name),n=bytes.readUInt32LE(12);

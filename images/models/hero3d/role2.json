@@ -1,0 +1,46 @@
+{
+  "sourceSha256": "73c8e5667ef0dbf4b3394ae01e7f4193b0269d962d5f0f03949791dc81cd504f",
+  "approvedRoleSha256": "54f104457683618ee328edd05749476dffd11bc093e7dbeb92619f59a55b1222",
+  "outputSha256": "262c1f9f78280a09f3e0a3cb57b4896d8a540f709889f0963bd3400c96f0b089",
+  "license": "User confirmed Role2.glb authorized for this game and modification in chat, 2026-11-04",
+  "blenderVersion": "4.5.10 LTS",
+  "sourceUnrigged": true,
+  "removedBackSwordTriangles": 1284,
+  "removedRightHandAndBridgeTriangles": 315,
+  "removedLeftWebTriangles": 20,
+  "removedUnderarmWebTriangles": 206,
+  "removedRearWeaponFragments": [
+    {
+      "vertices": 18,
+      "center": [
+        -0.08366761356592178,
+        1.6726630926132202,
+        -0.15570273995399475
+      ]
+    },
+    {
+      "vertices": 19,
+      "center": [
+        0.08602327108383179,
+        1.673236608505249,
+        -0.15257617831230164
+      ]
+    }
+  ],
+  "cappedFaces": 12,
+  "finalIndependentCaps": 229,
+  "finalBoundaryEdges": 0,
+  "clips": [
+    "Attack1",
+    "Attack2",
+    "CombatIdle",
+    "Death",
+    "Run",
+    "Attack4"
+  ],
+  "allSixAnimationsSampleExact": true,
+  "originalSwordAndForwardGripPreserved": true,
+  "bodyTriangles": 8962,
+  "modelBytes": 4625656,
+  "library": "codex-authored/hero3d-role2-20261104"
+}

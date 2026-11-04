@@ -21,7 +21,9 @@
   var STORE_KEY = 'idle-rpg.hero3d.v1';
   var MODEL_URL = 'images/models/hero3d/role.glb?v=20261103-forward-grip-v1';   // 模型換版時更新，避免讀到舊外觀
   var REBIRTH_MODEL_URL = 'images/models/hero3d/role1.glb?v=20261103-role1-forward-grip-v1';
-  function modelForReincarnations(count) { return Number(count) >= 1 ? REBIRTH_MODEL_URL : MODEL_URL; }
+  var SECOND_REBIRTH_MODEL_URL = 'images/models/hero3d/role2.glb?v=20261104-role2-v1';
+  function skinForReincarnations(count) { return Number(count) >= 2 ? 2 : Number(count) >= 1 ? 1 : 0; }
+  function modelForReincarnations(count) { var skin = skinForReincarnations(count); return skin === 2 ? SECOND_REBIRTH_MODEL_URL : skin === 1 ? REBIRTH_MODEL_URL : MODEL_URL; }
   var GLTF_URL = 'js/vendor/three/loaders/GLTFLoader.js';
   var CLOTH_URL = 'images/models/hero3d/sunbrand-cloth.json';   // 布料頂點清單（披風、腰前布襠、關節處的藍布）：和 tools/meshy-pipeline/src/fix-grips.mjs 共用
 
@@ -373,7 +375,7 @@
           gradedMap = gradedMaps.get(gradedMap);
         }
         o.material = new THREE.MeshLambertMaterial({
-          map: gradedMap, color: o.material.color, side: o.material.side,
+          map: gradedMap, color: o.material.color, side: o.material.side, vertexColors: o.material.vertexColors,
           emissiveMap: gradedMap, emissive: new THREE.Color(EMISSIVE), transparent: false
         });
         if (o.isSkinnedMesh) { skinnedMesh = o; bodyMaterial = o.material; }
@@ -396,7 +398,7 @@
 
     var ctrl = {
       modelUrl: opts.model || modelForReincarnations(opts.reincarnations),
-      skinIndex: Number(opts.reincarnations) >= 1 ? 1 : 0,
+      skinIndex: skinForReincarnations(opts.reincarnations),
       canvas: canvas,
       size: size,
       /* 腳底在畫布裡的縱向位置（0＝上緣、1＝下緣）：正交鏡頭下，高度 h 的點離中心 (h − TARGET_Y)·cos(仰角) 公尺 */
@@ -605,6 +607,7 @@
     makeBody: makeBody,
     CLIP_FOR: CLIP_FOR,
     modelForReincarnations: modelForReincarnations,
+    skinForReincarnations: skinForReincarnations,
     /* 畫布像素 → 螢幕像素的縮放，使 1.8 公尺高的角色約等於 2D 騎士的畫面高度（約 100px） */
     displayScale: function (ctrl) { return 100 / 1.8 / ctrl.pxPerMeter; }
   };
