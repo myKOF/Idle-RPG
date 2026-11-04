@@ -14,11 +14,12 @@ function setup(count=0,enabled=true){
  assert.ok(start>=0&&end>start);vm.runInContext(source.slice(start,end),c);
  return{c,S,initial,oldBody,pending,warnings,ctrl,Hero3D};
 }
-test('0轉Role、1轉Role1、2轉以上Role2；無效數值保持基礎外觀',()=>{
+test('0轉Role、1轉Role1、2轉Role2、3轉以上Role3；無效數值保持基礎外觀',()=>{
  const c=vm.createContext({});vm.runInContext(fs.readFileSync(root+'/js/hero3d.js','utf8'),c);
  for(const n of [0,-1,undefined,NaN])assert.match(c.Hero3D.modelForReincarnations(n),/\/role\.glb\?/);
  for(const n of [1,'1'])assert.match(c.Hero3D.modelForReincarnations(n),/\/role1\.glb\?/);
- for(const n of [2,3,30,'2'])assert.match(c.Hero3D.modelForReincarnations(n),/\/role2\.glb\?/);
+ for(const n of [2,'2'])assert.match(c.Hero3D.modelForReincarnations(n),/\/role2\.glb\?/);
+ for(const n of [3,4,30,'3'])assert.match(c.Hero3D.modelForReincarnations(n),/\/role3\.glb\?/);
 });
 test('當場1轉交換身體及輪廓，保留實際動作秒數、速度與朝向並釋放舊資源',async()=>{
  const h=setup(),texture=h.oldBody.texture,outline=h.oldBody.hero3dOutlineTex;
@@ -43,11 +44,11 @@ test('讀入已1轉存檔時第一次載入就選新皮膚',async()=>{
  const h=setup(1),p=h.c.loadHero3d();assert.equal(h.pending[0].opts.reincarnations,1);const next=h.ctrl(1);h.pending[0].resolve(next);await p;assert.equal(h.S.hero3d,next);
  assert.match(source,/msg\.name === 'header'.*syncHero3dAppearance\(msg\.data\.player\.reincarnations\)/);
 });
-test('1轉到2轉保持揮擊進度，3轉沿用2轉而不重載',async()=>{
+test('1轉到2轉保持揮擊進度，同一2轉不重載',async()=>{
  const h=setup(1),p=h.c.syncHero3dAppearance(2);assert.equal(h.pending[0].opts.reincarnations,2);
  const next=h.ctrl(2);h.pending[0].resolve(next);await p;
  assert.equal(h.S.hero3d,next);assert.equal(next.state,h.initial.state);assert.equal(h.S.player.curAnim,'attack4');
- assert.equal(h.c.syncHero3dAppearance(3),null);assert.equal(h.pending.length,1);
+ assert.equal(h.c.syncHero3dAppearance(2),null);assert.equal(h.pending.length,1);
 });
 test('1轉與2轉請求交錯時只有最新2轉模型接入；2轉載入失敗保留1轉',async()=>{
  const h=setup(),a=h.c.syncHero3dAppearance(1),b=h.c.syncHero3dAppearance(2),stale=h.ctrl(1),latest=h.ctrl(2);
@@ -59,6 +60,30 @@ test('1轉與2轉請求交錯時只有最新2轉模型接入；2轉載入失敗�
 test('已2轉存檔開局直接載Role2',async()=>{
  const h=setup(2),p=h.c.loadHero3d();assert.equal(h.pending[0].opts.reincarnations,2);
  const next=h.ctrl(2);h.pending[0].resolve(next);await p;assert.equal(h.S.hero3d,next);
+});
+
+test('2轉到3轉保留完整動作狀態，4轉沿用Role3而不重載',async()=>{
+ const h=setup(2),p=h.c.syncHero3dAppearance(3);assert.equal(h.pending[0].opts.reincarnations,3);
+ const next=h.ctrl(3);h.pending[0].resolve(next);await p;
+ assert.equal(h.S.hero3d,next);assert.equal(h.S.player.body.hero3d,next);assert.equal(next.state,h.initial.state);
+ assert.equal(h.S.player.curAnim,'attack4');assert.equal(h.initial.disposed,true);
+ assert.equal(h.c.syncHero3dAppearance(4),null);assert.equal(h.pending.length,1);
+});
+
+test('2轉與3轉交錯只接最新3轉；3轉失敗保持Role2且回2轉不重載',async()=>{
+ const h=setup(1),a=h.c.syncHero3dAppearance(2),b=h.c.syncHero3dAppearance(3),old=h.ctrl(2),next=h.ctrl(3);
+ h.pending[0].resolve(old);await a;assert.equal(old.disposed,true);assert.equal(h.S.hero3d,h.initial);
+ h.pending[1].resolve(next);await b;assert.equal(h.S.hero3d,next);
+ const f=setup(2),p=f.c.syncHero3dAppearance(3);f.pending[0].reject(Error('unavailable'));await p;
+ assert.equal(f.S.hero3d,f.initial);assert.equal(f.initial.disposed,false);assert.equal(f.c.syncHero3dAppearance(3),null);
+ assert.equal(f.c.syncHero3dAppearance(2),null);assert.equal(f.pending.length,1);
+});
+
+test('3轉存檔開局直接載Role3；3轉請求過期回2轉不替換現況',async()=>{
+ const h=setup(3),p=h.c.loadHero3d();assert.equal(h.pending[0].opts.reincarnations,3);
+ const next=h.ctrl(3);h.pending[0].resolve(next);await p;assert.equal(h.S.hero3d,next);
+ const f=setup(2),pending=f.c.syncHero3dAppearance(3);f.c.syncHero3dAppearance(2);
+ const stale=f.ctrl(3);f.pending[0].resolve(stale);await pending;assert.equal(stale.disposed,true);assert.equal(f.S.hero3d,f.initial);
 });
 function glb(name){
  const bytes=fs.readFileSync(root+'/images/models/hero3d/'+name),n=bytes.readUInt32LE(12);

@@ -1,3 +1,17 @@
+## HERO3D-ROLE3-20261104 — 3轉人物、雙劍移除與雙手分離
+
+- Owner：Codex；Done，單一開發者。使用者指定桌面Role3.glb並確認本遊戲使用及修改授權；新增3轉起外觀，移除雙背劍，檢查雙手與腿／腋下黏連並分離，原劍／正握／全部動作照舊。
+- 前置：Role2已完成dde65c7e，工作區乾淨；fetch及13檔衝突預檢無外部來源。來源SHA d2c49d1bf12913203cbf082bbbb0b30aece20320a7ab2b5130bcbbee4c65ba67，原檔已有SmartRig骨架／Running，本項只用外觀，仍沿既有六動作及正式骨架。
+- 允許：role3模型／報告／來源說明、專用Blender製作與素材庫來源／匯出、hero3d外觀選擇與必要renderer／兩頁快取、轉生切換及role3回歸、LV與本段。禁止改0～2轉與黃金騎士模型、劍幾何／正握／六動畫、戰鬥／Worker／存檔／配置／解鎖與其他工作區、合併推送。
+- 驗收：背部無雙劍殘片、左右手腿無橋面／交叉權重、獨立補面及動作無拉扯、骨架及六段動畫／原劍逐值一致；0／1／2／3+及當場轉生／存讀／非同步／失敗回復、全部動作與遊戲預覽、相關回歸／Build／Console／diff。保留授權原檔／可編輯Blend／工具／SHA與QA，素材先Commit再遊戲Commit；後續使用者Review及整合。
+- 完成：Blender4.5.10將來源1.7m綁定姿勢對應既有解剖尺度，刪除1274個背劍三角面及2個後方殘片、右手／橋面315面、左手橋面20面及腋下205面；另清除修復區8個細碎孤島（內臂／髖部／鞘尾），避免飄浮碎片。各區獨立補面，最終邊界0，身體8834面，成品4,617,292bytes。沿用原基色1024px、白髮／銀金甲／深藍布，既有右手幾何以銀灰護甲頂點色配合新裝。原來源SmartRig與Running不帶進遊戲，25骨架／inverse bind、六段動畫的時間／插值／目標／每個取樣及原劍／正握幾何／權重皆與Role1逐值相同。
+- 修改11檔：js/hero3d.js新增3轉模型URL與共用選擇，0／1／2／3+；index只更新hero3d快取20261104-role3-v1，renderer泛用切換不需改碼。新增images/models/hero3d/{role3.glb,role3.json,ROLE3_SOURCE.md}、tools/meshy-pipeline/{blender/prepare_role3.py,src/export-role3.cjs}及tests/hero3d-role3.test.cjs；更新轉生切換回歸、LV及本段。無玩家文字／Excel／CSV／Worker／存檔協議改動。
+- 測試：`node --test --test-concurrency=2 tests/hero3d-role3.test.cjs tests/hero3d-role2.test.cjs tests/hero3d-rebirth-skin.test.cjs tests/hero3d-forward-grip.test.cjs tests/hero3d-role.test.cjs tests/hero3d-attack4.test.cjs tests/hero3d-battle-rules.test.cjs tests/hero3d-internal-toggle.test.cjs tests/battle-renderer-pause.test.cjs tests/vfx-editor-cache-versions.test.cjs`49/49；新模型六段各61姿勢共366次CPU蒙皮檢查長三角面，左右手臂無任何腿部權重、無手腿橋面，索引／權重／手套色有效。3轉開局、2→3保留完整動作狀態、4+不重載、交錯淘汰與失敗保持Role2皆通過。
+- 建置與來源：`npm.cmd run build`649檔通過；首次與高解析瀏覽器並行遇系統記憶體不足，10個Node語法子程序啟動失敗，關閉本項確定PID測試行程樹後串行重跑全649檔通過，未修改無關失敗檔。Role／Role1／Role2／Role3 export --source-check皆通過，0～2轉及黃金騎士原素材SHA保持；diff／stat／check與自我Review完成。Blender正常重開確認6動作及2張貼圖均packed；素材庫manifest保存授權原檔、可編輯Blend／NPZ、成品、工具、SHA與QA。
+- 實機：隔離隨機localhost正式index／真Worker／Pixi／Hero3D，GM轉生數1→2→3→4→2→0→3正確載皮膚1／2／3／3／2／0／3；100次普攻四招皆可且不連續重複，Attack4與施法保護、收招回Run保持。最終模型另外獨立驗saveAutoNow完成後關閉頁面、新頁開啟仍header3／skin3／Role3 URL一致，Console error／warning及pageerror0。初次重載QA只等任意Hero3D實例，尚在非同步切換時讀到0；改等header及皮膚一致，另以獨立完整存讀驗證通過，未改產品迎合等待。原玩家網址存檔未讀寫，測試服務與瀏覽器已關閉。
+- 預覽：全六動作37張前後／揮擊／跑步／倒地畫面目視，背劍與細碎殘片已清除。正式遊戲第四招GIF1600×1000、84幀／30fps附同步右手放大，磁碟讀回驗主角及近拍皆逐幀變化；高解析畫布、內建鏡頭與隱藏NPC／暫停遮罩僅QA調整。QA位於本聊天visualizations/role3，必要證據保存素材庫；GIF預覽不額外接入遊戲。
+- 交付：唯讀未改AI_RULES／AGENTS／Workflow／prompts、renderer／scene-preview、Role／Role1／Role2／黃金騎士與原製作／握劍工具、Worker／save／player／戰鬥／配置及其他系統。全部工作單人完成，無同檔外部來源。素材Commit `c552df8`（35個來源／成品／QA檔及manifest）先於遊戲（本段所在「[Codex] feat: 接入3轉人物並修復雙劍與手腿黏連」，SHA見交付）。無本項未完成或已知新增缺陷；未跑全庫／跨瀏覽器長時間效能，仍沿內測3D限制。可供Review及使用者合併，未合併推送develop／main；下一步重載以3轉人物及GIF驗收。
+
 ## HERO3D-ROLE2-20261104 — 2轉人物、雙背劍移除與手腿分離
 
 - Owner：Codex；Done，單一開發者。使用者確認桌面Role2.glb為目標且取得遊戲及修改授權，指定2轉模型、刪除背後兩劍、沿用既有右手正握劍及所有動作，合理分離右手與腿部黏連；追加完成後提供任意攻擊清晰GIF。

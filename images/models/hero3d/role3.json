@@ -1,0 +1,123 @@
+{
+  "sourceSha256": "d2c49d1bf12913203cbf082bbbb0b30aece20320a7ab2b5130bcbbee4c65ba67",
+  "approvedRoleSha256": "54f104457683618ee328edd05749476dffd11bc093e7dbeb92619f59a55b1222",
+  "outputSha256": "663595d1f798df30df1d9630708605c82396c85195abaa9518a82c9275d4e519",
+  "license": "User confirmed Role3.glb authorized for this game and modification in chat, 2026-11-04",
+  "blenderVersion": "4.5.10 LTS",
+  "sourceUnrigged": false,
+  "sourceHeight": 1.7000000476837158,
+  "sourceClips": [
+    "Running"
+  ],
+  "removedBackSwordTriangles": 1274,
+  "removedRightHandAndBridgeTriangles": 315,
+  "removedLeftWebTriangles": 20,
+  "removedUnderarmWebTriangles": 205,
+  "removedRearWeaponFragments": [
+    {
+      "vertices": 18,
+      "center": [
+        -0.08276257663965225,
+        1.6726630926132202,
+        -0.1547817438840866
+      ]
+    },
+    {
+      "vertices": 19,
+      "center": [
+        0.08692830055952072,
+        1.673236608505249,
+        -0.1516551822423935
+      ]
+    }
+  ],
+  "cappedFaces": 15,
+  "removedRepairSlivers": [
+    {
+      "region": "Body",
+      "vertices": 7,
+      "sourceCenter": [
+        -0.2067878395318985,
+        0.9142906665802002,
+        0.06706242263317108
+      ]
+    },
+    {
+      "region": "Body",
+      "vertices": 7,
+      "sourceCenter": [
+        0.08110760152339935,
+        1.5816513299942017,
+        -0.15316107869148254
+      ]
+    },
+    {
+      "region": "Body",
+      "vertices": 7,
+      "sourceCenter": [
+        -0.08189153671264648,
+        1.5803149938583374,
+        -0.15306435525417328
+      ]
+    },
+    {
+      "region": "Body",
+      "vertices": 5,
+      "sourceCenter": [
+        0.1994406282901764,
+        0.8908422589302063,
+        -0.14460882544517517
+      ]
+    },
+    {
+      "region": "Body",
+      "vertices": 4,
+      "sourceCenter": [
+        -0.19778946042060852,
+        0.8884828090667725,
+        -0.1452377736568451
+      ]
+    },
+    {
+      "region": "Body",
+      "vertices": 10,
+      "sourceCenter": [
+        0.20850852131843567,
+        0.9147543907165527,
+        0.06765498965978622
+      ]
+    },
+    {
+      "region": "Right",
+      "vertices": 26,
+      "sourceCenter": [
+        -0.19350409507751465,
+        1.112364411354065,
+        0.03457816690206528
+      ]
+    },
+    {
+      "region": "Left",
+      "vertices": 24,
+      "sourceCenter": [
+        0.19482193887233734,
+        1.1085385084152222,
+        0.03635067865252495
+      ]
+    }
+  ],
+  "finalIndependentCaps": 114,
+  "finalBoundaryEdges": 0,
+  "clips": [
+    "Attack1",
+    "Attack2",
+    "CombatIdle",
+    "Death",
+    "Run",
+    "Attack4"
+  ],
+  "allSixAnimationsSampleExact": true,
+  "originalSwordAndForwardGripPreserved": true,
+  "bodyTriangles": 8834,
+  "modelBytes": 4617292
+}

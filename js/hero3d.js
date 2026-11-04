@@ -22,8 +22,9 @@
   var MODEL_URL = 'images/models/hero3d/role.glb?v=20261103-forward-grip-v1';   // 模型換版時更新，避免讀到舊外觀
   var REBIRTH_MODEL_URL = 'images/models/hero3d/role1.glb?v=20261103-role1-forward-grip-v1';
   var SECOND_REBIRTH_MODEL_URL = 'images/models/hero3d/role2.glb?v=20261104-role2-v1';
-  function skinForReincarnations(count) { return Number(count) >= 2 ? 2 : Number(count) >= 1 ? 1 : 0; }
-  function modelForReincarnations(count) { var skin = skinForReincarnations(count); return skin === 2 ? SECOND_REBIRTH_MODEL_URL : skin === 1 ? REBIRTH_MODEL_URL : MODEL_URL; }
+  var THIRD_REBIRTH_MODEL_URL = 'images/models/hero3d/role3.glb?v=20261104-role3-v1';
+  function skinForReincarnations(count) { return Number(count) >= 3 ? 3 : Number(count) >= 2 ? 2 : Number(count) >= 1 ? 1 : 0; }
+  function modelForReincarnations(count) { var skin = skinForReincarnations(count); return skin === 3 ? THIRD_REBIRTH_MODEL_URL : skin === 2 ? SECOND_REBIRTH_MODEL_URL : skin === 1 ? REBIRTH_MODEL_URL : MODEL_URL; }
   var GLTF_URL = 'js/vendor/three/loaders/GLTFLoader.js';
   var CLOTH_URL = 'images/models/hero3d/sunbrand-cloth.json';   // 布料頂點清單（披風、腰前布襠、關節處的藍布）：和 tools/meshy-pipeline/src/fix-grips.mjs 共用
 
