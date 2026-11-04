@@ -5660,7 +5660,7 @@ function equipSlotsOf(it, kind) {
 function equipRuneUiUnlocked(headerSnapshot) {
   if (headerSnapshot === undefined) headerSnapshot = uiHeaderPanelSnapshot();
   var player = headerSnapshot && headerSnapshot.player;
-  return !!player && progressReached(player.level, player.reincarnations, 300, 0);
+  return !!player && progressReached(player.level, player.reincarnations, 200, 0);
 }
 
 function equipSlotModeFor(it, kind) {

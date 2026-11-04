@@ -301,8 +301,8 @@ test('庫存清單替換後重新同步禁用，pending及換件仍正確',()=>{
   c.click({'socket-pick':'0'});assert.ok(p.gems.buttons.every(b=>b.disabled));
 });
 
-test('裝備符文入口：零轉300級開放，轉生後低等級仍開放；以角色進度判斷',()=>{
-  for(const [level,reincarnations,unlocked] of [[1,0,false],[30,0,false],[299,0,false],[300,0,true],[301,0,true],[1,1,true],[1,2,true]]){
+test('裝備符文入口：零轉200級開放，轉生後低等級仍開放；以角色進度判斷',()=>{
+  for(const [level,reincarnations,unlocked] of [[1,0,false],[30,0,false],[199,0,false],[200,0,true],[201,0,true],[1,1,true],[1,2,true]]){
     const c=mount();Object.assign(c.player,{level,reincarnations});c.it.level=500;c.renderDetail();
     const button=c.elements['equip-action-bar'].innerHTML.match(/<button[^>]*data-act="toggle-rune"[^>]*>/)[0];
     assert.equal(/\sdisabled\b/.test(button),!unlocked,level+'級／'+reincarnations+'轉');
@@ -311,16 +311,16 @@ test('裝備符文入口：零轉300級開放，轉生後低等級仍開放；�
   }
 });
 test('未達符文門檻仍可用寶石；缺少角色快照鎖入口，舊符文草稿不可刻印',()=>{
-  const c=mount();c.player.level=299;c.renderDetail();c.click({act:'toggle-socket'});
+  const c=mount();c.player.level=199;c.renderDetail();c.click({act:'toggle-socket'});
   assert.equal(c.UI.equipMatMode.mode,'socket');
   c.click({act:'toggle-rune'});assert.equal(c.UI.equipMatMode.mode,'socket');
-  c.player.level=300;c.click({act:'toggle-rune'});c.UI.equipMatMode.draft={1:'r01'};
-  c.player.level=299;c.click({act:'engrave-rune'});assert.equal(c.commands.length,0);
+  c.player.level=200;c.click({act:'toggle-rune'});c.UI.equipMatMode.draft={1:'r01'};
+  c.player.level=199;c.click({act:'engrave-rune'});assert.equal(c.commands.length,0);
   c.renderDetail();assert.equal(c.UI.equipMatMode,null);assert.doesNotMatch(c.elements['equip-action-bar'].innerHTML,/engrave-rune/);
   c.uiHeaderPanelSnapshot=()=>null;c.renderDetail();assert.match(c.elements['equip-action-bar'].innerHTML,/data-act="toggle-rune"[^>]* disabled/);
 });
 
-test('角色快照抵達即同步符文入口：初次載入與299升300級，不必重選裝備',()=>{
+test('角色快照抵達即同步符文入口：初次載入與199升200級，不必重選裝備',()=>{
   const c=mount(),callbacks={};
   vm.runInContext(fs.readFileSync(path.join(root,'js/worker/protocol.js'),'utf8'),c);
   c.WorkerBridge={on:(name,fn)=>{callbacks[name]=fn;}};
@@ -328,7 +328,7 @@ test('角色快照抵達即同步符文入口：初次載入與299升300級，�
   c.uiHeaderPanelSnapshot=()=>c.UI_WORKER_STATE.panels.header;
   c.renderDetail();assert.match(c.elements['equip-action-bar'].innerHTML,/data-act="toggle-rune"[^>]* disabled/);
   assert.equal(c.bindWorkerUiState(),true);
-  for(const [level,reincarnations,unlocked] of [[300,0,true],[299,0,false],[300,0,true],[1,1,true],[1,0,false]]){
+  for(const [level,reincarnations,unlocked] of [[200,0,true],[199,0,false],[200,0,true],[1,1,true],[1,0,false]]){
     callbacks[c.MSG_OUT.PANEL]({name:'header',data:{player:{...c.player,level,reincarnations}}});
     const button=c.elements['equip-action-bar'].innerHTML.match(/<button[^>]*data-act="toggle-rune"[^>]*>/)[0];
     assert.equal(/\sdisabled\b/.test(button),!unlocked);
