@@ -55,7 +55,7 @@ test('no autoplay or unapproved fetch; first real gesture loads exactly the two 
 
 test('delegation keeps ordinary controls and help icons audible; child movement and stationary repaint stay silent', async () => {
   const s = mount(); s.fire('pointerdown'); await settle();
-  for (const kind of ['button', '.tab-btn', '.pg-help', '.forge-info-btn', '#btn-enemy-tip', '#btn-boss-tip', '#btn-tower-result-boss-tip', '.tlx-tier', '.tower-floor', '.save-row']) {
+  for (const kind of ['button', '.tab-btn', '.pg-help', '.forge-info-btn', '#btn-enemy-tip', '#btn-boss-tip', '#btn-tower-result-boss-tip', '[data-talent-turn]', '[data-tower-pick]', '[data-load-save]']) {
     s.advance(100); const anchor = s.node(kind), child = s.node('span', anchor);
     s.fire('pointerover', { target: child }); await settle();
     const count = s.played.length;
@@ -71,23 +71,46 @@ test('delegation keeps ordinary controls and help icons audible; child movement 
   assert.ok(s.voices.slice(0, -1).every(voice => voice.stopped));
 });
 
-test('all ordinary tips and item cards stay silent for hover, keyboard and touch, including nested native buttons', async () => {
+test('only passive tips stay silent; an actual action inside tips remains audible for hover, keyboard and touch', async () => {
   const s = mount(); s.fire('keydown'); await settle();
   for (const kind of ['[data-tip]', '[data-tt-title]', '[data-tt-desc]', '[title]:not([title=""])',
-    '.item-cell', '.eq-slot.filled', '.forge-slot.filled', '.act-btn-tooltip', '[data-sk]', '[data-buff-tip]',
-    '.gem-inventory-cell', '.gem-chip', '.socket.filled', '.gres-gem', '.gres-hole', '.equip-material-icon',
-    '.sgb-item', '.gx-item', '.gx-chip', '.rx-card', '.rx-use', '.talent-icon', '.battle-buff-badge']) {
-    const card = s.node(kind), child = s.node('button', card), icon = s.node('span', child);
+    '[data-sk]', '[data-buff-tip]', '[data-enemy-buff-tip]', '[data-talent-tip]',
+    '.nf-fart', '.nf-pu-row', '.equip-material-icon', '.res', '.battle-buff-badge']) {
+    const card = s.node(kind), child = s.node('span', card), icon = s.node('span', child);
     s.advance(200); s.fire('pointerover', { target: icon });
     s.fire('keydown'); s.fire('focusin', { target: child });
     s.fire('pointerdown', { target: child, pointerType: 'touch' });
     await settle(); assert.equal(s.played.length, 0, kind);
   }
-  for (const kind of ['.pg-help', '.forge-info-btn', '#btn-enemy-tip']) {
-    const help = s.node(kind, s.node('[data-tip]'));
-    s.advance(200); s.fire('pointerover', { target: s.node('span', help) }); await settle();
+  const actions = ['button', '.pg-help', '.forge-info-btn', '#btn-enemy-tip', '.item-cell[data-id]',
+    '.eq-slot', '[data-nf-partinstall-key]', '[data-nf-partupgrade]', '[data-nf-partsopen]', '[data-nf-partun]',
+    '[data-nf-unlockslot]', '[data-reroll-pick]', '[data-socket-pick]', '[data-gres-hole]', '[data-rune-pick]'];
+  for (const kind of actions) {
+    const action = s.node(kind, s.node('[data-tip]'));
+    for (const event of ['pointerover', 'focusin', 'pointerdown']) {
+      s.advance(200);
+      if (event === 'focusin') s.fire('keydown');
+      s.fire(event, { target: s.node('span', action), pointerType: event === 'pointerdown' ? 'touch' : 'mouse' });
+      await settle();
+    }
   }
-  assert.equal(s.played.length, 3, 'interface explanation icons take precedence over tip silence');
+  assert.equal(s.played.length, actions.length * 3, 'tips cannot suppress real controls and their descendants');
+});
+
+test('disabled controls and decorative cards stay silent; associated labels share their enabled control', async () => {
+  const s = mount(); s.fire('pointerdown'); await settle();
+  const disabled = s.node('button'); disabled.disabled = true;
+  const ariaDisabled = s.node('[role="button"]'); ariaDisabled.matches = () => true;
+  const label = s.node('label'); label.tagName = 'LABEL';
+  for (const node of [disabled, ariaDisabled, label, s.node('.save-row'), s.node('.nf-pu-row')]) {
+    s.advance(200); s.fire('pointerover', { target: node }); await settle(); assert.equal(s.played.length, 0);
+  }
+  label.control = s.node('input:not([type="hidden"])'); label.control.disabled = true;
+  s.advance(200); s.fire('pointerover', { target: s.node('span', label) }); await settle(); assert.equal(s.played.length, 0);
+  label.control.disabled = false;
+  s.advance(200); s.fire('pointerover', { target: s.node('span', label) }); await settle(); assert.equal(s.played.length, 1);
+  s.advance(200); s.fire('pointerover', { target: label.control, relatedTarget: label }); await settle();
+  assert.equal(s.played.length, 1, 'label track and input share one interaction target');
 });
 
 test('background, scroll, drag, static content and rapid movement do not create sound storms', async () => {

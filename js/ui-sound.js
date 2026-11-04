@@ -5,33 +5,27 @@ var UISound = (function () {
     hover: 'audio/ui-preview/01-hover.wav?v=411211856bdc',
     success: 'audio/ui-preview/05-success.wav?v=4821e4b49aad'
   };
-  // 說明圖示是tips靜音的唯一例外；先判例外，再擋tips，最後辨識操作UI。
+  // 操作能力決定是否播放：有tips的按鈕／選取項目仍播，純tips不列入操作目標。
   var HELP_TARGETS = '.pg-help, .forge-info-btn, #btn-enemy-tip, #btn-boss-tip, #btn-tower-result-boss-tip';
-  var SILENT_TIPS = [
-    '[data-tip]', '[data-tt-title]', '[data-tt-desc]', '[title]:not([title=""])',
-    '[data-sk]', '[data-buff-tip]', '[data-enemy-buff-tip]', '[data-talent-tip]',
-    '.item-cell', '.eq-slot.filled', '.forge-slot.filled', '.act-btn-tooltip',
-    '.gem-inventory-cell', '.gem-chip', '.socket.filled', '.loadout-slot.filled', '.gconv-slot.filled',
-    '.gres-gem', '.gres-hole', '.equip-material-icon', '.sgb-item', '.gx-item', '.gx-chip',
-    '.rx-card', '.rx-use', '.talent-icon', '.battle-buff-badge'
-  ].join(', ');
   // 委派至document，涵蓋重繪／彈窗的新節點。
   var TARGETS = [
-    'button', 'a[href]', 'input:not([type="hidden"])', 'select', 'textarea', 'summary',
+    'button', 'a[href]', 'input:not([type="hidden"])', 'select', 'textarea', 'summary', 'label',
     '[role="button"]', '[role="tab"]', '[role="checkbox"]', '[role="switch"]',
-    '[data-tip]', '[data-tt-title]', '[data-tt-desc]', '[title]:not([title=""])',
-    '[data-sk]', '[data-buff-tip]', '[data-enemy-buff-tip]', '[data-talent-tip]',
-    '.btn', '.tab-btn', '.dropdown', '.input', '.info-btn', '.fs-btn', '.damage-toggle-btn',
-    '.zone-btn', '.item-cell', '.eq-slot.filled', '.forge-slot', '.forge-dust', '.forge-btn',
-    '.forge-info-btn', '#forge-crystal-float', '.gem-inventory-cell', '.gem-chip',
-    '.socket.filled', '.socket-remove', '.loadout-slot.filled', '.gconv-slot.filled', '.gres-hole',
-    '.eqset-tab', '.eqset-rename', '.equip-material-icon', '.it-enchant.removable', '.act-btn-tooltip',
-    '.it-affix-row.is-reroll-pickable .it-affix-text', '.part-expand-chip', '.btn-it-lock', '.btn-it-pool',
-    '.skill-row', '.summary-skill-block', '.battle-skill-slot', '.battle-buff-badge', '.char-core-tile',
-    '.sgb-chip', '.sgb-item', '.sgb-tier-row', '.pg-help', '.gx-chip', '.gx-item', '.gx-tab',
-    '.rx-tab', '.rx-card', '.rx-use', '.tlx-tier', '.talent-icon', '.tower-floor', '.shop-card',
-    '.nf-part-upgrade-card', '.nf-part-upgrade-button', '.nf-qchip', '.nf-pu-row', '.save-row',
-    '.fam-opt', '.realm-btn', '#quest-bar', '#update-banner', '#summary-modal .summary-modal-header'
+    '[onclick]', '[draggable="true"]', '.btn', '.tab-btn', '.eq-slot', '.item-cell[data-id]',
+    '#quest-bar', '#update-banner', '#summary-modal .summary-modal-header',
+    '#skill-loadout .battle-skill-slot.equipped', '.loadout-slot.filled',
+    '[data-act]', '[data-affix-pool-toggle]', '[data-eqset]', '[data-eqset-rename]',
+    '[data-nf-partinstall-key]', '[data-nf-partupgrade]', '[data-nf-partsopen]', '[data-nf-partun]', '[data-nf-unlockslot]',
+    '[data-reroll-pick]', '[data-socket-pick]', '[data-forge-slot]', '[data-forge-gem]',
+    '[data-gem-socket]', '[data-gem-socket-fused]', '[data-socket-remove]', '[data-rune-socket]',
+    '[data-rune-undraft]', '[data-rune-erase]', '[data-enchant-remove]', '[data-shop-buy]', '[data-book-enchant]',
+    '[data-gem-filter]', '[data-gem-lv]', '[data-gem-pick]', '[data-gem-tool-btn]',
+    '[data-gconv-slot]', '[data-gconv-gem]', '[data-gdis-gem]', '[data-gres-hole]', '[data-gres-gem]',
+    '[data-gres-take]', '[data-gres-upgrade]', '[data-rune-pick]', '[data-rune-goto]', '[data-word-goto]',
+    '[data-rune-tier]', '[data-rune-tool-btn]', '[data-rune-act]',
+    '[data-sgb-filter]', '[data-sgb-group]', '[data-sgb-tier]', '[data-sgb-ult]',
+    '[data-talent-select]', '[data-talent-turn]', '[data-tower-pick]', '[data-tower-tier]',
+    '[data-load-save]', '[data-del-save]', '[data-quest-claim]'
   ].join(', ');
   var context = null, initialized = false, generation = 0;
   var buffers = {}, loading = {}, sources = {}, lastPlayed = {};
@@ -105,11 +99,16 @@ var UISound = (function () {
     if (!node || typeof node.closest !== 'function') return null;
     // aria-hidden常用於按鈕內的裝飾圖示，不能把可見的父控制項一併靜音。
     if (node.closest('[hidden], [inert]')) return null;
-    var help = node.closest(HELP_TARGETS);
-    if (help) return help;
-    // 包含原生button造型的寶石／符文及tips內部圖示，不讓上層控制項繞過靜音。
-    if (node.closest(SILENT_TIPS)) return null;
-    return node.closest(TARGETS);
+    var anchor = node.closest(TARGETS + ', ' + HELP_TARGETS);
+    if (!anchor || anchor.disabled === true ||
+        (anchor.matches && anchor.matches(':disabled, [aria-disabled="true"]'))) return null;
+    // 點label的文字／軌道也會操作原生控制項；無控制項或停用時只算展示。
+    if (anchor.tagName === 'LABEL') {
+      if (!anchor.control || anchor.control.disabled ||
+          (anchor.control.matches && anchor.control.matches(':disabled, [aria-disabled="true"]'))) return null;
+      return anchor.control;
+    }
+    return anchor;
   }
   function hover(event) {
     if (!event.isTrusted || event.pointerType === 'touch' || event.buttons || document.hidden) return;
