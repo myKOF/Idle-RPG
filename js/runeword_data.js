@@ -474,7 +474,7 @@ var RUNEWORDS = [
     towerUnlockFloor: 107,
     stats: [['matkPct', 0.525], ['elemDmgFire', 0.375], ['elemDmgIce', 0.375], ['mPen', 0.09]],
     procs: [{ on: 'tick', every: 3, acts: [{ act: 'dmg', pct: 75, elem: 'random', to: 'rand', n: 5 }] }],
-    legend: ['fireballBurst'],
+    legend: ['waterballVolley'],
     flavor: '夜空翻面，群星墜落成雨。' },
   { id: 'rw_chaoslord', name: '混沌之主', tier: 4, runes: ['r26', 'r30', 'r31'], bases: ['jewelry'],
     towerUnlockFloor: 109,
@@ -561,7 +561,7 @@ var RUNEWORDS = [
   { id: 'rw_smith', name: '鐵匠之魂', tier: 4, runes: ['r02', 'r11', 'r23', 'r30'], bases: ['amulet'],
     towerUnlockFloor: 133,
     stats: [['gemEff', 0.65], ['affixCap', 0.435], ['enhanceSuccess', 0.65]],
-    legend: ['waterballTornado'],
+    legend: ['fireballEmber'],
     flavor: '鎚聲不絕，鋼與靈魂同鍛。' }
 ];
 
