@@ -46,6 +46,32 @@
         ok: true,
         message: want ? '效能資訊：已顯示（再輸入一次 Performance_Information 關閉）' : '效能資訊：已隱藏（只留 FPS）'
       };
+    },
+
+    /* intro [名稱|list|stop]：直接播放開頭動畫（js/intro-player.js、時間軸在 js/intro-data.js）。
+       省略名稱＝播第一條時間軸。遊戲照常在底下跑，動畫只是疊在最上層預覽，播完或略過就收掉。 */
+    intro: function (args) {
+      if (typeof IntroPlayer === 'undefined' || typeof INTRO_TIMELINES === 'undefined') {
+        return { ok: false, message: '開頭動畫未載入（js/intro-player.js／js/intro-data.js）' };
+      }
+      var keys = Object.keys(INTRO_TIMELINES);
+      var word = args[0] === undefined ? '' : String(args[0]);
+      var lower = word.toLowerCase();
+      if (lower === 'list') return { ok: true, message: '可播放的開頭動畫：' + (keys.join('、') || '（無）') };
+      if (lower === 'stop') {
+        if (!IntroPlayer.isPlaying()) return { ok: false, message: '目前沒有在播放開頭動畫' };
+        IntroPlayer.abort('gm');
+        return { ok: true, message: '已停止開頭動畫' };
+      }
+      var id = word || keys[0];
+      if (!id || !Object.prototype.hasOwnProperty.call(INTRO_TIMELINES, id)) {
+        return { ok: false, message: '沒有名為「' + id + '」的開頭動畫（可用：' + (keys.join('、') || '無') + '）' };
+      }
+      if (IntroPlayer.isPlaying()) return { ok: false, message: '開頭動畫正在播放中（intro stop 停止）' };
+      if (!IntroPlayer.play(INTRO_TIMELINES[id], { id: id })) {
+        return { ok: false, message: '開頭動畫「' + id + '」播放失敗（時間軸有誤或瀏覽器不支援，詳見 Console）' };
+      }
+      return { ok: true, message: '播放開頭動畫「' + id + '」（點擊畫面或按 Esc／Space／Enter 略過）' };
     }
   };
 
