@@ -1,3 +1,14 @@
+## DIVINE-STONE-ICON-20261105 — 接入核准的透明符文石圖標
+
+- Owner：Codex；Done，單一開發者。使用者核准本聊天image_gen左右鏡像／去背景及外暈預覽並要求接入；核准原圖匯出128px透明PNG，替換神性之石資源列／法陣／統計及相關UI提示、獎勵與日誌圖標。
+- 前置：預覽已確認；ai/codex起始乾淨，規範／Workflow／Agent與當前任務已讀。允許images/icon_divine_stone.png、tools/resource-icons/sync-library.cjs、js/stats.js／ui.js、index僅r-dust與這兩支JS快取、tests/stats-panel.test.cjs、LV與本段；素材庫保存使用者參考／核准生成原圖／透明匯出及來源紀錄。禁止配置／String／Worker／玩法／存檔／其他在製內容，不合併或推送。
+- 預檢：除index皆無外部來源；index與Claude Intro／其他快取不同區段，HEAD基線、本項候選對Claude實際檔案正規化LF後git merge-file exit0，無語意相依，分段修改。既有六份資源原圖／來源／SHA不變，新圖沿既有resource-icons工具匯出與核對。
+- 驗收：alpha／小尺寸可讀性、資源列／神鑄／統計／獎勵提示／離線及日誌引用；相關統計／UI／神鑄測試與Build、diff及素材SHA核對，先素材後遊戲Commit。後續使用者重載檢視與Review／合併。
+- 完成8檔：新增images/icon_divine_stone.png（128×128 RGBA／17871bytes）、既有resource-icons匯出入口增加獨立來源紀錄；stats材料定義、UI集中圖片／文字標記轉換及神鑄／高塔獎勵／敵人tips／離線呈現、index資源列與兩支快取、既有統計圖示斷言及LV／本段。String與Worker仍輸出原資料，僅UI轉換含STR100名稱的舊標記，不替換其他魔法符號；原六份資源來源／SHA保持。
+- 驗證：`node tools/resource-icons/sync-library.cjs --apply`／`--check`七圖SHA通過；`npm.cmd run build`665檔通過、git diff／stat／check與自我Review完成。`node --test tests/header-resources.test.cjs tests/resource-tooltip.test.cjs tests/new-forge-ui.test.cjs tests/forge-equipped-inventory.test.cjs tests/ui-tick-smoke.test.cjs tests/ui-log-routing.test.cjs tests/stats-panel.test.cjs tests/divine-forge.test.cjs tests/vfx-editor-cache-versions.test.cjs`46項44通過／2既有失敗。用HEAD原始stats／ui／統計測試的唯讀preload基線重跑，兩項同名同因：七種刻印2941≠2353；高塔統計舊斷言要求window.recordLootGold。未修改這些既有功能或降低斷言。
+- 畫面QA：隔離隨機localhost／全新Edge context，正式index DOM／全CSS／正式UI及可控快照，確認資源列／神鑄中央／統計／日誌與離線文字轉換圖片皆128px載入，原魔法符號保持且重複轉換冪等；1280及640寬截圖讀回目視。Console error／warning及pageerror皆0。Forge另用固定尺寸fixture主機容納正式面板，未啟動完整Worker／讀寫玩家存檔；首次locator截圖因原漂浮動畫不穩定逾時，改以截圖animations disabled後通過。QA在本聊天visualizations/divine-stone；瀏覽器／Server均關閉。未進行全遊戲長玩或跨瀏覽器驗證。
+- 唯讀未改：規範／AGENTS／Workflow／prompts、原參考與核准生成來源、combat／tower／Worker／bridge／玩法／存檔／配置及String、原六份圖示。素材庫codex-authored/divine-stone-icon-20261105保存使用者參考、核准生成原圖、匯出與工具／提示詞／SHA紀錄，先提交`9cf8d26`；遊戲Commit為本段所在「[Codex] feat: 接入核准的神性之石透明圖標」（SHA見交付）。無本項未完成實作，可供Review及使用者合併；既有兩項測試失敗如上，不宣稱全綠。未合併／推送develop或main，下一步重載遊戲查看圖標。
+
 ## ACHIEVEMENT-PROGRESS-ALIGN-20261105 — 獎杯置中、進度條收邊與篩選頁籤
 
 - Owner：Codex；Done，延續使用者視覺回饋。原獎杯66px畫布的圖案軸心約29px、透明上下留白亦不對稱；以CSS圖層向右下各2px校正，進度條padding／刻度inset由4px減為2px，外框尺寸與完成比例保持。允許css/achievements.css、index僅該CSS快取、LV與本段；禁止改圖片／JS／配置／音效／存檔／其他在製內容，不合併推送。

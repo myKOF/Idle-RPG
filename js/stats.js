@@ -10,7 +10,7 @@ var LOOT_MAT_DEFS = [
   { key: 'scrap',          name: STR(98),     icon: 'images/icon_scrap.png' },
   { key: 'essence',        name: STR(99),     icon: 'images/icon_essence.png' },
   { key: 'ancientEssence', name: STR(13),     icon: 'images/icon_ancient_essence.png' },
-  { key: 'dust',           name: STR(100),         emoji: '💫' },
+  { key: 'dust',           name: STR(100),     icon: 'images/icon_divine_stone.png' },
   { key: 'soulOrigin',     name: STR(101),     emoji: '🧿' },
   { key: 'book',           name: STR(102),       icon: 'images/icon_books.png' },
   { key: 'part',           name: STR(385), emoji: '🔧' }

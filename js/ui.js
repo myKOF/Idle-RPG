@@ -1806,7 +1806,18 @@ function flushDirtyDetailLogs() {
   }
 }
 
+function divineStoneIconHTML() {
+  return '<img src="images/icon_divine_stone.png" class="res-icon" alt="" aria-hidden="true">';
+}
+
+// 只替換神性之石的舊圖示標記，保留String來源、Worker訊息及其他魔法符號。
+function divineStoneTextHTML(text) {
+  if (typeof text !== 'string' || text.indexOf(STR(100)) < 0) return text;
+  return text.replace(/💫/g, divineStoneIconHTML());
+}
+
 function addLog(elId, msg, cls, cap, cat) {
+  msg = divineStoneTextHTML(msg);
   // 戰鬥與高塔 BOSS 共用同一個日誌視窗；保留舊事件 box 名稱的相容轉送。
   if (elId === 'boss-log') elId = 'battle-log';
   if (elId === 'newforge-log') {
@@ -6985,7 +6996,7 @@ function renderForge() {
   var rate = forgeStonePickerRate(f, divineForgeMaterialOwned(mode, player));
   keys.push('stones');
   var materialName = divineForgeMaterialName(mode);
-  var materialIcon = mode === 'ancient' ? '<img class="res-icon" src="images/icon_ancient_essence.png" alt="">' : '💫';
+  var materialIcon = mode === 'ancient' ? '<img class="res-icon" src="images/icon_ancient_essence.png" alt="">' : divineStoneIconHTML();
   var materialTip = STR(2311, materialName);
   if (mode === 'ancient') materialTip += '<br>' + STR(2194, DIVINE_FORGE.ancientSecondEssenceMult,
     DIVINE_FORGE.ancientEssenceThreshold1, DIVINE_FORGE.ancientEssenceMult1, DIVINE_FORGE.ancientEssenceThreshold2, DIVINE_FORGE.ancientEssenceMult2);
@@ -7109,7 +7120,7 @@ function towerRewardRows(fl) {
     { icon: '✨', label: STR(1864), value: fmt(bossStatsFor(fl).xp), note: STR(1865) },
     { icon: '🔮', label: STR(99), value: '×' + fmt(rw.essence) },
     { icon: '💎', label: STR(1866), value: GEM_NAMES[rw.gemLevel] + ' ×2' },
-    { icon: '💫', label: STR(100), value: fmt1(bossDustRate(fl)) + '%', note: STR(1868) }
+    { icon: divineStoneIconHTML(), label: STR(100), value: fmt1(bossDustRate(fl)) + '%', note: STR(1868) }
   ].filter(Boolean);
   var ancientRate = ancientEssenceDropChanceForBoss(fl);
   if (ancientRate > 0) rows.push({ icon: '<img src="images/icon_ancient_essence.png" class="res-icon" alt="">', label: STR(13), value: fmt1(ancientRate) + '%' });
@@ -7279,7 +7290,7 @@ function renderTower() {
       var rh = '<div class="tr-title ' + (r.win ? 'good' : 'bad') + '">' +
         (r.win ? STR(1883, r.floor) : STR(1884, r.floor)) + '</div>';
       if (r.win) {
-        rh += '<div class="tr-sub">' + STR(1885) + '</div>' + r.rewards.map(function (x) { return '<div class="tr-line">' + x + '</div>'; }).join('');
+        rh += '<div class="tr-sub">' + STR(1885) + '</div>' + r.rewards.map(function (x) { return '<div class="tr-line">' + divineStoneTextHTML(x) + '</div>'; }).join('');
       } else {
         rh += '<div class="tr-sub">' + STR(1886, fmt(r.myDps), fmt(r.needDps), r.bossHpPct) + '</div>';
         rh += '<div class="tr-sub">' + STR(1887) + '</div>' + r.analysis.map(function (x) { return '<div class="tr-line">📋 ' + esc(x) + '</div>'; }).join('');
@@ -8239,7 +8250,7 @@ function showOfflineSummary(sum) {
   }
   if (sum.books && ENCHANT_ENABLED) loot.push(STR(2058, fmt(sum.books)));
   if (sum.essence) loot.push('<img src="images/icon_ancient_essence.png" class="res-icon" alt="' + STR(13) + '">' + STR(2059, fmt(sum.essence)));
-  if (sum.dust) loot.push(STR(2060, fmt(sum.dust)));
+  if (sum.dust) loot.push(divineStoneTextHTML(STR(2060, fmt(sum.dust))));
   if (sum.parts) loot.push(STR(2061, fmt(sum.parts)));
   if (sum.scrap) loot.push(STR(2062, fmt(sum.scrap)));
   h += '<div class="offline-sum-title">' + STR(2063) + '</div>';
@@ -9778,7 +9789,7 @@ function showEnemyTooltip(anchorEl) {
     rewardLines.push(STR(106, fmt(m.xp)));
     rewardLines.push(STR(650, rw.gemLevel));
     rewardLines.push(STR(652, rw.essence, ''));
-    if (dustRate > 0) rewardLines.push(STR(653, fmt1(dustRate)));
+    if (dustRate > 0) rewardLines.push(divineStoneTextHTML(STR(653, fmt1(dustRate))));
     if (soulOriginRate > 0) rewardLines.push(STR(654, fmt1(soulOriginRate)));
     if (ancientEssenceRate > 0) rewardLines.push(STR(655, fmt1(ancientEssenceRate)));
 
@@ -9801,7 +9812,7 @@ function showEnemyTooltip(anchorEl) {
     var dustLine = '';
     if (!towerActive) {
       var dustRate = Number(zoneDrop.dustRate || 0);
-      if (dustRate > 0) dustLine = STR(658, fmt1(dustRate));
+      if (dustRate > 0) dustLine = divineStoneTextHTML(STR(658, fmt1(dustRate)));
     }
 
     if (equipStrs.length || dustLine) {
@@ -13260,7 +13271,7 @@ function showTowerResultModal(r, p, b, myDmg, bDmg, options) {
   $id('trm-dmg-stats').innerHTML = dmgStatsHtml;
 
   if (r.win) {
-    $id('trm-rewards').innerHTML = r.rewards.map(function (x) { return '<div style="margin-bottom:4px;">' + x + '</div>'; }).join('');
+    $id('trm-rewards').innerHTML = r.rewards.map(function (x) { return '<div style="margin-bottom:4px;">' + divineStoneTextHTML(x) + '</div>'; }).join('');
   } else {
     $id('trm-rewards').innerHTML = r.analysis.map(function (x) { return '<div style="margin-bottom:4px; color:#ffb366;">📋 ' + esc(x) + '</div>'; }).join('');
   }

@@ -23,6 +23,12 @@ for (const name of names) {
     }
   }
 }
+// 新增神性之石沿用同一匯出入口；保留既有六張來源紀錄與原圖不動。
+const stoneRoot = path.join(sourceRoot, '..', 'divine-stone-icon-20261105');
+const stone = JSON.parse(fs.readFileSync(path.join(stoneRoot, 'source.json'), 'utf8'));
+for (const entry of [stone.reference, stone.approved, stone.icon]) {
+  if (hash(path.join(stoneRoot, entry.file)) !== entry.sha256) throw new Error('神性之石來源SHA256不同：' + entry.file);
+}
 for (const name of names) {
   const icon = record.icons.find(entry => entry.name === name);
   const source = path.join(sourceRoot, 'transparent', 'icon_' + name + '.png');
@@ -30,4 +36,8 @@ for (const name of names) {
   if (mode === '--apply') fs.copyFileSync(source, target);
   if (hash(target) !== icon.sha256) throw new Error(name + '遊戲匯出與素材庫不同');
 }
-console.log('六張貨幣／材料圖示：原圖、透明來源與遊戲匯出SHA256核對通過。');
+const stoneSource = path.join(stoneRoot, stone.icon.file);
+const stoneTarget = path.join(REPO_ROOT, 'images/icon_divine_stone.png');
+if (mode === '--apply') fs.copyFileSync(stoneSource, stoneTarget);
+if (hash(stoneTarget) !== stone.icon.sha256) throw new Error('神性之石遊戲匯出與素材庫不同');
+console.log('七張貨幣／材料圖示：原圖、透明來源與遊戲匯出SHA256核對通過。');
