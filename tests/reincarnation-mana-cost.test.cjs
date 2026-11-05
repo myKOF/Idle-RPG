@@ -19,14 +19,14 @@ function load() {
   return c;
 }
 
-test('0轉維持原耗魔，各轉數與法力使用相同總倍率，讀舊檔即生效', () => {
+test('0轉維持原耗魔，各轉數耗魔使用轉生法力倍率，讀舊檔即生效', () => {
   const c = load();
   const expected = [20, 30, 50, 70, 100, 140, 180, 220, 300, 380, 500,
     1200, 2000, 3000, 4000, 6000, 9000, 13000, 16000, 24000, 50000];
   for (let reinc = 0; reinc <= c.REINCARNATION_MAX; reinc++) {
     c.G.player.reincarnations = reinc;
     assert.equal(c.skills2ManaCost('thrust'), expected[reinc]);
-    assert.equal(c.skills2ManaCost('thrust') / 20, c.reincarnationTotalMultiplier());
+    assert.equal(c.skills2ManaCost('thrust') / 20, c.reincarnationMpMultiplier());
   }
   c.G.player.reincarnations = 0;
   assert.equal(c.skills2ManaCost('thrust'), 20, '換回0轉存檔不保留先前倍率');
@@ -141,7 +141,7 @@ test('技能標頭／反擊完整提示使用UI快照耗魔，轉生確認只加
   c.SKILLS2.counter.tiers[0].cost = 20;
   assert.match(c.sgbMetaText('counter', 0, snapshot), /30/);
   assert.match(c.describeSkill2Group('counter', [1], {}, snapshot.skills2.progress), /🔵30 MP/);
-  const text = c.STR(2146, '轉生', 50, '轉生', 1, 2, 1, 2, 1, 2, 1, 2);
+  const text = c.STR(2146, '轉生', 50, '轉生', 1, 2, 1, 2, 1, 2, 1, 2, 50, 50);
   assert.equal(text.split('技能法力消耗增加').length - 1, 1);
   assert.match(text, /・技能法力消耗增加・<br>/);
   assert.doesNotMatch(text, /技能法力消耗增加[^<・]*(?:%|倍|\d)/);

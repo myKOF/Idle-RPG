@@ -290,7 +290,8 @@ function reincarnate() {
   UI.dirty.skills = true;
   UI.dirty.talents = true;
   UI.dirty.battle = true;
-  blog(STR(377, reincarnationRankName(p.reincarnations), reincarnationTotalMultiplier(), reincarnationExpMultiplier()), 'good');
+  blog(STR(377, reincarnationRankName(p.reincarnations), reincarnationHpMultiplier(), reincarnationExpMultiplier(),
+    reincarnationMpMultiplier(), reincarnationStatMultiplier()), 'good');
   return null;
 }
 

@@ -11441,16 +11441,19 @@ function initUI() {
       var isGodAction = count >= 10;
       var actTitle = isGodAction ? STR(193) : STR(436);
       // 與公式層的轉生定值強化共用係數；此處只預告額外加成，不當作最終攻防倍率。
+      // 生命／法力／四維各自的轉生倍率（轉生對照表 a／b／c），換算成相對未轉生的提高百分比。
+      var reincUpPct = function (multFn) { return Math.round((multFn(nextCount) - 1) * 100); };
       var flatBonusPct = function (key, turns) {
         return fmt1(DERIVED_COEF[key + 'FlatMult'] * Math.pow(DERIVED_COEF[key + 'ReincBase'], turns) * 100);
       };
 
       showConfirmDialog(
-        STR(2146, actTitle, Math.round((reincarnationTotalMultiplier(nextCount) - 1) * 100), actTitle,
+        STR(2146, actTitle, reincUpPct(reincarnationHpMultiplier), actTitle,
           flatBonusPct('atk', count), flatBonusPct('atk', nextCount),
           flatBonusPct('matk', count), flatBonusPct('matk', nextCount),
           flatBonusPct('def', count), flatBonusPct('def', nextCount),
-          flatBonusPct('mdef', count), flatBonusPct('mdef', nextCount)),
+          flatBonusPct('mdef', count), flatBonusPct('mdef', nextCount),
+          reincUpPct(reincarnationMpMultiplier), reincUpPct(reincarnationStatMultiplier)),
         function () {
           sendUiCommand('player.reincarnate', {}, {
             silentResultError: true,  // 下方 .then 自行回報

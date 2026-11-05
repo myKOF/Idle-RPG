@@ -48,14 +48,17 @@ function canReincarnateAt(level, reincarnations) {
   var rc = clamp(Math.floor(Number(reincarnations) || 0), 0, REINCARNATION_MAX);
   return lv >= REINCARNATION_LEVEL && rc < REINCARNATION_MAX;
 }
-function reincarnationExtraMultiplier(count) {
+/* 轉生最終倍率：生命／法力／四維各一張表（參數表「1-轉生對照表」a／b／c 欄）。
+   count 省略時讀 G（Worker）；UI 在主執行緒沒有 G，必須傳快照裡的轉生次數。
+   表格缺值或非正數一律視為 1，不讓壞資料把屬性歸零。 */
+function reincarnationTableMultiplier(table, count) {
   var n = count === undefined ? reincarnationCount() : clamp(Math.floor(Number(count) || 0), 0, REINCARNATION_MAX);
-  return REINCARNATION_EXTRA_MULTIPLIERS[n] || 0;
+  var v = Number(table && table[n]);
+  return (isFinite(v) && v > 0) ? v : 1;
 }
-function reincarnationTotalMultiplier(count) {
-  var n = count === undefined ? reincarnationCount() : clamp(Math.floor(Number(count) || 0), 0, REINCARNATION_MAX);
-  return n === 0 ? 1 : reincarnationExtraMultiplier(n);
-}
+function reincarnationHpMultiplier(count) { return reincarnationTableMultiplier(REINCARNATION_HP_MULTIPLIERS, count); }
+function reincarnationMpMultiplier(count) { return reincarnationTableMultiplier(REINCARNATION_MP_MULTIPLIERS, count); }
+function reincarnationStatMultiplier(count) { return reincarnationTableMultiplier(REINCARNATION_STAT_MULTIPLIERS, count); }
 function reincarnationExpMultiplier(count) {
   var n = clamp(Math.floor(count === undefined ? reincarnationCount() : count), 0, REINCARNATION_MAX);
   if (typeof REINCARNATION_EXP_MULTIPLIERS !== 'undefined' && REINCARNATION_EXP_MULTIPLIERS[n] !== undefined) {
@@ -288,13 +291,16 @@ function computeStats(equipmentOverride) {
 
   /* ---- 派生公式（st.base = 純等級/四維的基礎值，供屬性面板拆解顯示） ---- */
   var lv = p.level;
-  var reincMult = reincarnationTotalMultiplier();
+  // 轉生最終倍率：生命／法力／四維各自一欄（參數表「1-轉生對照表」a／b／c）
+  var reincHpMult = reincarnationHpMultiplier(), reincMpMult = reincarnationMpMultiplier();
+  var reincStatMult = reincarnationStatMultiplier();
   var rawStr = Math.round(A.str), rawAgi = Math.round(A.agi);
   var rawInt = Math.round(A.int), rawVit = Math.round(A.vit);
-  var st = { level: lv, reincarnationMultiplier: reincMult };
-  // 四維主屬性：原始總值完成後，再套用轉生最終倍率。
-  st.str = Math.round(rawStr * reincMult); st.agi = Math.round(rawAgi * reincMult);
-  st.int = Math.round(rawInt * reincMult); st.vit = Math.round(rawVit * reincMult);
+  var st = { level: lv, reincarnationHpMultiplier: reincHpMult, reincarnationMpMultiplier: reincMpMult,
+    reincarnationStatMultiplier: reincStatMult };
+  // 四維主屬性：原始總值完成後，再套用轉生四維倍率。
+  st.str = Math.round(rawStr * reincStatMult); st.agi = Math.round(rawAgi * reincStatMult);
+  st.int = Math.round(rawInt * reincStatMult); st.vit = Math.round(rawVit * reincStatMult);
   // 基礎：生命 = (基底 + (等級-1)×每級 + 體質×vitHp + 定值) × (1 + 生命%) × (1 + 天賦生命%［生命洪流，獨立乘區］)
   st.base = {};
   st.base.hp = DERIVED_COEF.hpBase + (lv - 1) * DERIVED_COEF.hpPerLevel + rawVit * PRIMARY_STAT_EFFECTS.vitHp;
@@ -303,16 +309,16 @@ function computeStats(equipmentOverride) {
        【大地守護】（earthguard T1）＝常駐；
        【金剛不壞】（岩甲術超神）＝只在岩甲護盾存在期間，兩端各自 markStatsDirty 一次。
      兩者相乘而非相加：來源不同層，比照天賦【生命洪流】的獨立乘區。 */
-  st.hp = Math.round(rawHp * reincMult * (1 + (talent.hpPct || 0) / 100) *
+  st.hp = Math.round(rawHp * reincHpMult * (1 + (talent.hpPct || 0) / 100) *
     ((typeof skill2MaxHpFactor === 'function') ? skill2MaxHpFactor() : 1) *
     ((typeof skill2RockMaxHpFactor === 'function') ? skill2RockMaxHpFactor() : 1) *
     // 符文真言的最大生命乘區（正負皆可；負值是代價，如血月、時之沙），下限 0.1
     ((rwAgg && rwAgg.fx.maxHpPct) ? Math.max(0.1, 1 + rwAgg.fx.maxHpPct / 100) : 1));
   st.hpRegen = A.hpRegen + st.str * PRIMARY_STAT_EFFECTS.strHpRegen + st.vit * PRIMARY_STAT_EFFECTS.vitHpRegen; // 額外生命恢復/秒（野外另加 BASE_HP_REGEN 定值基礎回復）
-  // 法力 =（基底 + 原始智力×intMp + 定值）×轉生倍率；法力恢復另依原有公式計算
+  // 法力 =（基底 + 原始智力×intMp + 定值）×轉生法力倍率；法力恢復另依原有公式計算
   st.base.mp = DERIVED_COEF.mpBase + rawInt * PRIMARY_STAT_EFFECTS.intMp;
   var rawMp = st.base.mp + A.mpFlat;
-  st.mp = Math.round(rawMp * reincMult);
+  st.mp = Math.round(rawMp * reincMpMult);
   st.mpRegen = DERIVED_COEF.mpRegenBase + st.int * PRIMARY_STAT_EFFECTS.intMpRegen + st.vit * PRIMARY_STAT_EFFECTS.vitMpRegen + A.mpRegen;
   // 進攻／防禦定值的轉生指數強化：flatMult × 定值 × reincBase^轉生次數（0 轉時 = flatMult×定值）
   var reincN = reincarnationCount();

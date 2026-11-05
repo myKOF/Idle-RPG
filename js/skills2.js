@@ -588,8 +588,9 @@ function skills2Ult(gid) {
 /* 當階消耗不是累加；表格留白／0 代表免費。UI 傳入快照，模擬端省略參數讀 G。 */
 function skills2ManaMultiplier(prog) {
   // 不經 sgUnlockProgress：GM 全解鎖的虛擬進度不能改變真正的轉生耗魔。
-  if (typeof reincarnationTotalMultiplier !== 'function') return 1;
-  return reincarnationTotalMultiplier(prog ? (Number(prog.reinc) || 0) : undefined);
+  // 與法力上限共用「轉生法力倍率」（轉生對照表 b 欄）。
+  if (typeof reincarnationMpMultiplier !== 'function') return 1;
+  return reincarnationMpMultiplier(prog ? (Number(prog.reinc) || 0) : undefined);
 }
 function skills2TierManaCost(gid, tierIdx, ultId, prog) {
   var g = SKILLS2[gid];

@@ -199,7 +199,10 @@ test('遞迴掃描 UI 呼叫的模擬層 G 相依，無未守衛路徑', () => {
     'loadSaveRecord',
     'openSaveFolder',
     'reincarnationRankName',
-    'reincarnationTotalMultiplier',
+    // UI 轉生確認一律傳入 nextCount，不走讀 G 的預設分支。
+    'reincarnationHpMultiplier',
+    'reincarnationMpMultiplier',
+    'reincarnationStatMultiplier',
     'talentSystemUnlocked',
     'talentUnlocked',
     'xpForLevel',
