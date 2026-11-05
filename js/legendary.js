@@ -5,6 +5,8 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
    新版技能（js/skills2.js）的關聯技能改寫由 legendarySkill2Mods 集中提供。 */
 
 var LEGENDARY_RT = null;
+/* 技能冷卻表（pEnt.skillCds）的新版技能鍵前綴，與 js/skills2.js 的 SG_PREFIX 相同；單檔載入時不依賴 skills2。 */
+var LEGENDARY_SKILL_KEY_PREFIX = (typeof SG_PREFIX === 'string') ? SG_PREFIX : 'sg:';
 
 function resetLegendaryRT() {
   var players = [];
@@ -16,8 +18,10 @@ function resetLegendaryRT() {
     berserkStacks: 0,
     berserkUntil: 0,
     queue: [],
-    knives: [],
-    knivesStarted: false,
+    nextKnifeAt: 0,        // 影襲追蹤者：下一次射出飛刀的時刻
+    nextVowAt: 0,          // 天譴之誓：下一次充能的時刻
+    vowChargeGid: '',      // 天譴之誓：已充能、等著下一次施放的技能群組
+    vowBoost: null,        // 天譴之誓：{ gid, until } 這次施放的增傷窗口
     dolls: [],
     dollsStarted: false,
     nextLightAt: 0,
@@ -225,6 +229,19 @@ function legendaryElementDamageUp(st, pEnt) {
       }
     }
   }
+  /* 傳奇【風起雷落】：風系與雷系傷害加成較高者，額外獲得較低者一定比例的加成。
+     傳奇【元素之心】：所有屬性傷害加成額外提高（元素抗性的削減在 js/formula.js 聚合）。 */
+  if (st && legendaryHas(st, 'stormAndThunder')) {
+    var shareFx = legendaryFx('stormAndThunder'), wind = out.wind || 0, bolt = out.lightning || 0;
+    var sharePct = Number(shareFx.shareFromLowerPct) || 0;
+    if (wind >= bolt) out.wind = wind + bolt * sharePct / 100;
+    else out.lightning = bolt + wind * sharePct / 100;
+  }
+  if (st && legendaryHas(st, 'elementHeart')) {
+    var heartUp = Number(legendaryFx('elementHeart').elemDmgUpPct) || 0;
+    var heartKeys = (typeof ELEMENTS !== 'undefined' && ELEMENTS.length) ? ELEMENTS : ['fire', 'ice', 'lightning', 'poison', 'light', 'dark', 'earth', 'wind'];
+    for (var hi = 0; hi < heartKeys.length; hi++) out[heartKeys[hi]] = (out[heartKeys[hi]] || 0) + heartUp;
+  }
   return out;
 }
 
@@ -258,6 +275,20 @@ function legendaryOutgoingDamageMultiplier(attacker, defender, aCfg) {
   if (legendaryHas(st, 'berserkBloodAxe') && rt.berserkUntil > GT) {
     mult *= 1 + rt.berserkStacks * legendaryFx('berserkBloodAxe').onKillBuff.atkPct / 100;
   }
+  // 傳奇【影襲追蹤者】：飛刀技能傷害提高
+  if (aCfg.skillGid === 'knife' && legendaryHas(st, 'shadowTracker')) {
+    mult *= 1 + (Number(legendaryFx('shadowTracker').knifeSkillDmgPct) || 0) / 100;
+  }
+  // 傳奇【雷紋刻印】：帶雷紋刻印的敵人，受到的雷電傷害提高（依這一擊的雷電歸屬比例）
+  if (defender && defender._thunderMarkUntil > GT && legendaryHas(st, 'thunderMark')) {
+    var boltShare = legendaryElemShare(aCfg, 'lightning');
+    if (boltShare > 0) mult *= 1 + (Number(legendaryFx('thunderMark').onLightningSkillHit.vulnPct) || 0) / 100 * boltShare;
+  }
+  // 傳奇【天譴之誓】：充能過的技能這次施放的傷害提高
+  if (rt.vowBoost && aCfg.skillGid && aCfg.skillGid === rt.vowBoost.gid) {
+    if (rt.vowBoost.until > GT && legendaryHas(st, 'heavenlyVow')) mult *= 1 + (Number(legendaryFx('heavenlyVow').nextCastDmgPct) || 0) / 100;
+    else if (rt.vowBoost.until <= GT) rt.vowBoost = null;
+  }
   // 符文真言的條件式增傷（js/runeword.js）：與傳奇特效同一個乘區入口
   if (typeof rwOutgoingMultiplier === 'function') mult *= rwOutgoingMultiplier(attacker, defender, aCfg);
   return mult;
@@ -269,19 +300,31 @@ function legendaryDotDamageMultiplier(ent) {
   return legendaryOutgoingDamageMultiplier(pEnt, ent, { isPlayer: true });
 }
 
-/* 燃燒法則：applyDot 呼叫此函式；非燃燒或未裝備時回傳 null。 */
-function legendaryInstantBurn(ent, dps, dur, name) {
-  if (!ent || !ent.maxHp || name !== '燃燒' || typeof getStats !== 'function') return null;
+/* 傳奇【燃燒法則】：combat.js 的持續傷害結算逐筆呼叫（只處理敵人身上的燃燒）。
+   燃燒傷害提高；每次作用時有機率把剩餘的作用次數立即用盡。回傳 null＝不調整。 */
+function legendaryBurnDot(ent, d, seconds, tickCount, expired) {
+  if (!ent || !ent.maxHp || !d || d.name !== '燃燒' || typeof getStats !== 'function') return null;
   var st = getStats();
   if (!legendaryHas(st, 'burningLaw')) return null;
-  var pEnt = legendaryCurrentPlayer() || {};
-  var burnFx = legendaryFx('burningLaw');
-  var damage = Math.max(1, Math.round(dps * dur * (1 + burnFx.burnDamagePct / 100) *
-    legendaryOutgoingDamageMultiplier(pEnt, ent, { isPlayer: true })));
-  damage = applyEnemyHpDamage(ent, damage);
-  if (typeof trackDps === 'function') trackDps(damage);
-  if (typeof recordRunDamage === 'function') recordRunDamage(STR(1155), damage);
-  return damage;
+  var fx = legendaryFx('burningLaw');
+  var out = { seconds: seconds, tickCount: tickCount, mult: 1 + (Number(fx.burnDamagePct) || 0) / 100 };
+  if (!expired && tickCount > 0 && chance(Number(fx.burnExhaustChance) || 0)) {
+    var remain = Math.max(0, d.until - GT);
+    if (remain > 0) {
+      out.seconds += remain;
+      out.tickCount += d.interval > 0 ? Math.floor(remain / d.interval) : 1;
+      d.until = GT;   // 作用次數用盡：下一幀視為到期，不再有餘額
+      d.acc = 0;
+    }
+  }
+  return out;
+}
+
+/* 一擊裡某個屬性的歸屬比例（0~1）；沒有技能屬性化的攻擊回 0。 */
+function legendaryElemShare(aCfg, elem) {
+  if (!aCfg || typeof skillElemMixOf !== 'function') return 0;
+  var mix = skillElemMixOf(aCfg);
+  return (mix && Number(mix[elem])) || 0;
 }
 
 function legendaryDamageCfg(pEnt, st, powerPct, dmgType, elem) {
@@ -408,15 +451,35 @@ function legendaryOnBasicAttack(pEnt, target, res, floatSel, st) {
   return { dmg: total, killed: killed };
 }
 
-function legendaryOnEnemyKill(pEnt) {
+function legendaryOnEnemyKill(pEnt, monster) {
   if (typeof getStats !== 'function') return;
   var st = getStats();
-  if (!legendaryHas(st, 'berserkBloodAxe')) return;
   var rt = legendaryEnsureRT();
-  var spec = legendaryFx('berserkBloodAxe').onKillBuff;
-  if (rt.berserkUntil <= GT) rt.berserkStacks = 0;
-  rt.berserkStacks = Math.min(spec.maxStacks, rt.berserkStacks + 1);
-  rt.berserkUntil = GT + spec.dur;
+  if (legendaryHas(st, 'berserkBloodAxe')) {
+    var spec = legendaryFx('berserkBloodAxe').onKillBuff;
+    if (rt.berserkUntil <= GT) rt.berserkStacks = 0;
+    rt.berserkStacks = Math.min(spec.maxStacks, rt.berserkStacks + 1);
+    rt.berserkUntil = GT + spec.dur;
+  }
+  /* 傳奇【亡者時間】：範圍內的敵人死亡，物理技能冷卻時間縮短。
+     位置資訊取不到（單檔測試、無戰場座標）時視為在範圍內。 */
+  if (legendaryHas(st, 'deadTime') && pEnt && pEnt.skillCds) {
+    var dead = legendaryFx('deadTime');
+    var inRange = true;
+    if (dead.rangeM > 0 && monster && typeof bfPos === 'function' && typeof bfEntityGap === 'function' &&
+        typeof bfMeterPx === 'function' && bfPos(monster) && bfPos(pEnt)) {
+      inRange = bfEntityGap(pEnt, monster) <= bfMeterPx(dead.rangeM);
+    }
+    if (inRange) {
+      for (var ck in pEnt.skillCds) {
+        if (!(pEnt.skillCds[ck] > 0) || ck.indexOf(LEGENDARY_SKILL_KEY_PREFIX) !== 0) continue;
+        var cdGroup = typeof SKILLS2 !== 'undefined' ? SKILLS2[ck.slice(LEGENDARY_SKILL_KEY_PREFIX.length)] : null;
+        if (!cdGroup || cdGroup.dmgType === 'magic') continue;   // 物理群組＝非魔法群組（js/skills2.js sgIsMagic）
+        pEnt.skillCds[ck] = Math.max(0, pEnt.skillCds[ck] - (Number(dead.physCdrSec) || 0));
+        if (pEnt.skillCds[ck] === 0 && typeof markSkillReady === 'function') markSkillReady(pEnt, ck);
+      }
+    }
+  }
 }
 
 function legendaryApplyLowLifeShield(pEnt, st, floatSel) {
@@ -444,12 +507,13 @@ function legendaryOnPlayerDamaged(attacker, pEnt, hpDamage, blocked, hitResult, 
   var enemies = legendaryActiveEnemies();
   var enemyFloatSel = legendaryEnemyFloatSel(floatSel);
 
-  if (hpDamage > 0 && legendaryHas(st, 'thunderShock')) {
-    var shock = legendaryFx('thunderShock').onHealthLostAoe;
+  // 傳奇【雷霆之震】：受到傷害（含被護盾吸收的）時有機率對攻擊者反射雷電傷害
+  if ((hpDamage > 0 || (hitResult && hitResult.absorbed > 0)) && legendaryHas(st, 'thunderShock') &&
+      attacker && attacker.hp > 0 && attacker.maxHp) {
+    var shock = legendaryFx('thunderShock').onHurtReflect;
     if (chance(shock.chance)) {
-      var shockOut = legendaryDealAoe(pEnt, enemies, shock.powerPct * (enemies.length === 1 ? shock.singleMult : 1),
-        'magic', shock.elem, enemyFloatSel, STR(1159));
-      legendarySettleTriggeredDeaths(shockOut);
+      var shockRes = legendaryDealDamage(pEnt, attacker, shock.powerPct, 'magic', shock.elem, enemyFloatSel, STR(1159));
+      legendarySettleTriggeredDeaths(shockRes);
     }
   }
   if (hpDamage > 0 && legendaryHas(st, 'fireSpiritShield') && attacker && attacker.hp > 0) {
@@ -457,18 +521,6 @@ function legendaryOnPlayerDamaged(attacker, pEnt, hpDamage, blocked, hitResult, 
     attacker._fireSpiritStacks = Math.min(fire.maxStacks, (attacker._fireSpiritStacks || 0) + 1);
     applyDot(attacker, (st.matk || st.atk || 0) * fire.retaliateBurnPct / 100 * attacker._fireSpiritStacks,
       999999, STR(1160));
-  }
-  if (blocked && legendaryHas(st, 'unyieldingGuard') && attacker && attacker.hp > 0) {
-    var guard = legendaryFx('unyieldingGuard').onBlock;
-    if (chance(guard.chance)) {
-      var blockReduction = typeof blockDmgReduction === 'function'
-        ? blockDmgReduction(st.blockDmgRed || 0, st.blockDmgRedCap) : (st.blockDmgRed || 0);
-      var reflectMultiplier = blockReduction / 100 * guard.reflectBlockPct / 100;
-      var reflect = legendaryDealReflectedBasicAttack(
-        pEnt, attacker, reflectMultiplier, enemyFloatSel, STR(1161));
-      legendarySettleTriggeredDeaths(reflect);
-      applyBuff(pEnt, 'legendaryGuardRed', guard.dmgRedPct, guard.dur);
-    }
   }
   if (hitResult && hitResult.thorns > 0 && legendaryHas(st, 'magicRecoil') && attacker && attacker.hp > 0) {
     var recoil = legendaryFx('magicRecoil');
@@ -528,16 +580,6 @@ function legendaryMonsterAttackDoll(mEnt, doll, floatSel, mult, skillName) {
   }
   if (doll.hp <= 0) legendaryExplodeDoll(doll, floatSel);
   return res;
-}
-
-function legendaryEnsureKnives(pEnt, st) {
-  var rt = legendaryEnsureRT();
-  if (rt.knivesStarted || !legendaryHas(st, 'shadowTracker')) return;
-  rt.knivesStarted = true;
-  var spec = legendaryFx('shadowTracker').shadowKnives;
-  for (var i = 0; i < spec.count; i++) {
-    rt.knives.push({ until: GT + spec.dur, nextAt: GT + spec.tickSec });
-  }
 }
 
 function legendaryEnsureDolls(pEnt, st) {
@@ -604,24 +646,89 @@ function legendaryTickQueue(ctx) {
   rt.queue = keep;
 }
 
-function legendaryTickKnives(ctx, pEnt, st) {
+/* 傳奇【影襲追蹤者】：每隔一段時間自動向最近的敵人射出數枚飛刀。
+   飛刀同樣吃「飛刀技能傷害提高」，所以直接把加成乘進傷害倍率。 */
+function legendaryTickAutoKnives(ctx, pEnt, st, dt) {
   var rt = legendaryEnsureRT();
-  var spec = legendaryFx('shadowTracker').shadowKnives;
-  for (var i = 0; i < rt.knives.length; i++) {
-    var knife = rt.knives[i];
-    while (knife.nextAt <= GT && knife.nextAt <= knife.until) {
-      var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
-      if (!enemies.length) break;
-      var target = legendaryNearestEnemy(enemies, pEnt); // 自動攻擊打最近的敵人（原本取陣列第一個）
-      var res = legendaryDealDamage(pEnt, target, spec.powerPct, 'phys', null, ctx.floatSel, STR(1166), ctx);
-      knife.nextAt += spec.tickSec;
-      if (res && res.killed) {
-        for (var j = 0; j < rt.knives.length; j++) rt.knives[j].until += spec.killExtend;
-        if (ctx.onDeaths) ctx.onDeaths();
-      }
+  var spec = legendaryFx('shadowTracker').autoKnives;
+  if (!spec) return;
+  if (typeof skills2AutoCastBlocked === 'function' && skills2AutoCastBlocked(pEnt)) {
+    if (rt.nextKnifeAt > 0) rt.nextKnifeAt += Math.max(0, Number(dt) || 0);
+    return;
+  }
+  if (!rt.nextKnifeAt) rt.nextKnifeAt = GT + spec.sec;
+  if (rt.nextKnifeAt > GT) return;
+  rt.nextKnifeAt = GT + spec.sec;   // 不補發：錯過的節拍直接放掉
+  var power = spec.powerPct * (1 + (Number(legendaryFx('shadowTracker').knifeSkillDmgPct) || 0) / 100);
+  var killed = false;
+  for (var i = 0; i < spec.count; i++) {
+    var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
+    if (!enemies.length) break;
+    var res = legendaryDealDamage(pEnt, legendaryNearestEnemy(enemies, pEnt), power, 'phys', null, ctx.floatSel, STR(1166), ctx);
+    if (res && res.killed) killed = true;
+  }
+  if (killed && ctx.onDeaths) ctx.onDeaths();
+}
+
+/* 傳奇【天譴之誓】：每隔一段時間隨機讓一個冷卻中的技能立即冷卻完畢，並標記它下一次施放增傷。
+   增傷在 legendaryOutgoingDamageMultiplier 套用（窗口從 legendaryOnSkillCast 開始）。 */
+function legendaryTickHeavenlyVow(ctx, pEnt, st, dt) {
+  var rt = legendaryEnsureRT();
+  var spec = legendaryFx('heavenlyVow');
+  if (!(spec.sec > 0)) return;
+  if (typeof skills2AutoCastBlocked === 'function' && skills2AutoCastBlocked(pEnt)) {
+    if (rt.nextVowAt > 0) rt.nextVowAt += Math.max(0, Number(dt) || 0);
+    return;
+  }
+  if (!rt.nextVowAt) rt.nextVowAt = GT + spec.sec;
+  if (rt.nextVowAt > GT) return;
+  rt.nextVowAt = GT + spec.sec;
+  if (!pEnt.skillCds) return;
+  var cooling = [];
+  for (var k in pEnt.skillCds) if (pEnt.skillCds[k] > 0 && k.indexOf(LEGENDARY_SKILL_KEY_PREFIX) === 0) cooling.push(k);
+  if (!cooling.length) return;
+  var key = cooling[Math.floor(Math.random() * cooling.length)];
+  pEnt.skillCds[key] = 0;
+  if (typeof markSkillReady === 'function') markSkillReady(pEnt, key);
+  rt.vowChargeGid = key.slice(LEGENDARY_SKILL_KEY_PREFIX.length);
+}
+
+/* 技能施放時（js/skills2.js castSkill2 非免費施放）：被天譴之誓充能的技能，這次施放開始增傷窗口。 */
+function legendaryOnSkillCast(pEnt, gid) {
+  var rt = legendaryEnsureRT();
+  if (!rt.vowChargeGid || rt.vowChargeGid !== gid) return;
+  rt.vowChargeGid = '';
+  rt.vowBoost = { gid: gid, until: GT + 3 };   // 投射物落地、延遲命中也算同一次施放
+}
+
+/* 傳奇【神落天殞】：隕石（殞石）落地傷害加成（%）；js/skills2.js sgTickMeteors 呼叫。 */
+function legendaryMeteorDamagePct() {
+  if (typeof getStats !== 'function') return 0;
+  var st = getStats();
+  return legendaryHas(st, 'godfallMeteor') ? (Number(legendaryFx('godfallMeteor').meteorDmgPct) || 0) : 0;
+}
+
+/* 傳奇【雷紋刻印】／【冰霜尖刺】：玩家技能命中後的機率觸發（js/formula.js resolveHit 呼叫）。
+   冰爆排進佇列、下一個 tick 才結算：不在 resolveHit 中途遞迴，也不會讓衍生傷害再觸發自己。 */
+function legendaryOnPlayerSkillHit(attacker, defender, aCfg, out) {
+  if (!defender || defender.hp <= 0 || typeof getStats !== 'function') return;
+  var st = getStats();
+  if (legendaryHas(st, 'thunderMark') && legendaryElemShare(aCfg, 'lightning') > 0) {
+    var mark = legendaryFx('thunderMark').onLightningSkillHit;
+    if (chance(mark.chance)) defender._thunderMarkUntil = GT + mark.dur;
+  }
+  if (legendaryHas(st, 'iceSpikeBurst') && legendaryElemShare(aCfg, 'ice') > 0) {
+    var burst = legendaryFx('iceSpikeBurst').onIceSkillHit;
+    if (chance(burst.chance)) {
+      var floatSel = (typeof G !== 'undefined' && G && G.tower && G.tower.active) ? 'tb-float' : 'mv-float';
+      var label = (PASSIVE_POOL.iceSpikeBurst && PASSIVE_POOL.iceSpikeBurst.name) || '';
+      legendaryQueue(GT + 0.1, function (ctx) {
+        if (!defender || defender.hp <= 0) return;
+        var res = legendaryDealDamage(attacker, defender, burst.powerPct, 'magic', burst.elem, floatSel, label, ctx);
+        if (res && res.killed && ctx && typeof ctx.onDeaths === 'function') ctx.onDeaths();
+      });
     }
   }
-  rt.knives = rt.knives.filter(function (knife) { return knife.until > GT; });
 }
 
 function legendaryTickDolls(ctx, pEnt, st) {
@@ -709,13 +816,13 @@ function tickLegendaryEffects(dt, ctx) {
   var st = getStats();
   legendaryTickDeferred(pEnt, st, dt, ctx.floatSel === 'tb-float' ? 'tp-float' : 'pv-float');
   if (pEnt.hp <= 0) return { playerKilled: true };
-  legendaryEnsureKnives(pEnt, st);
   legendaryEnsureDolls(pEnt, st);
   legendaryTickAutomaticSkills(ctx, pEnt, st, dt);
   legendaryTickFireSpirit(pEnt, st, dt);
   legendaryTickLightShield(pEnt, st);
   legendaryTickQueue(ctx);
-  if (legendaryHas(st, 'shadowTracker')) legendaryTickKnives(ctx, pEnt, st);
+  if (legendaryHas(st, 'shadowTracker')) legendaryTickAutoKnives(ctx, pEnt, st, dt);
+  if (legendaryHas(st, 'heavenlyVow')) legendaryTickHeavenlyVow(ctx, pEnt, st, dt);
   if (legendaryHas(st, 'ghostLamp')) legendaryTickDolls(ctx, pEnt, st);
   legendaryApplyLowLifeShield(pEnt, st, ctx.floatSel === 'tb-float' ? 'tp-float' : 'pv-float');
   if (typeof rwTick === 'function') rwTick(dt, ctx); // 符文真言：週期觸發、生命祭獻（js/runeword.js）

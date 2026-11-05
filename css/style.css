@@ -582,11 +582,11 @@ body {
   position: absolute;
   /* PNG含透明留白，外擴補回原字形描邊的可見範圍，佔位仍由原字形決定。 */
   inset: -2px;
-  background: var(--ancient-star-image, url('../images/ui/ancient-star-gold.png')) center / contain no-repeat;
-  /* 只擴張圖案alpha一個CSS像素，深金輪廓墊在原圖下方，保留金屬切面。 */
-  --ancient-star-outline: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='outline' x='-50%25' y='-50%25' width='200%25' height='200%25' color-interpolation-filters='sRGB'%3E%3CfeMorphology in='SourceAlpha' operator='dilate' radius='1' result='expanded'/%3E%3CfeComposite in='expanded' in2='SourceAlpha' operator='out' result='ring'/%3E%3CfeFlood flood-color='%236b3f16'/%3E%3CfeComposite in2='ring' operator='in' result='stroke'/%3E%3CfeMerge%3E%3CfeMergeNode in='stroke'/%3E%3CfeMergeNode in='SourceGraphic'/%3E%3C/feMerge%3E%3C/filter%3E%3C/svg%3E#outline");
-  filter: var(--ancient-star-tone, brightness(1)) var(--ancient-star-outline)
-    drop-shadow(0 0 1px #fff4ae) drop-shadow(0 0 3px #ffd84a) drop-shadow(0 0 6px rgba(255, 187, 35, 0.9));
+  /* 1px深金描邊與三層黃色外暈已由 tools/ancient-stars/bake-glow.cjs 烘進 *-glow.png（256px＝原圖四周各留64px光暈）。
+     ⚠️ 不要改回 CSS filter：SVG描邊＋drop-shadow 每次重繪都在CPU重算，背包上百顆星星會拖慢整個介面。
+     scale(2) 抵銷留白，星星本體仍是原本大小；transform 不參與排版。 */
+  background: var(--ancient-star-image, url('../images/ui/ancient-star-gold-glow.png')) center / contain no-repeat;
+  transform: scale(2);
   pointer-events: none;
 }
 
@@ -2978,13 +2978,12 @@ textarea#save-io {
 }
 .ancient-forged-first .ancient-star,
 .ancient-star.ancient-forged-first {
-  --ancient-star-image: url('../images/ui/ancient-star-light-blue.png');
-  /* sRGB白色亮面映射到防禦文字藍 #7fdcf5，保留原圖明暗與透明度。 */
-  --ancient-star-tone: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='tone' color-interpolation-filters='sRGB'%3E%3CfeColorMatrix type='matrix' values='0.498039 0 0 0 0 0 0.862745 0 0 0 0 0 0.960784 0 0 0 0 0 1 0'/%3E%3C/filter%3E%3C/svg%3E#tone");
+  /* 已烘焙：sRGB白色亮面映射到防禦文字藍 #7fdcf5（bake-glow.cjs 的 tone），保留原圖明暗與透明度。 */
+  --ancient-star-image: url('../images/ui/ancient-star-light-blue-glow.png');
 }
 .ancient-forged-second .ancient-star,
 .ancient-star.ancient-forged-second {
-  --ancient-star-image: url('../images/ui/ancient-star-blue.png');
+  --ancient-star-image: url('../images/ui/ancient-star-blue-glow.png');
 }
 
 /* 超�??��??��??�?�相?��??�平?��?幅�??��??��?多出?��??��?中�??��?後�?顆�?*/

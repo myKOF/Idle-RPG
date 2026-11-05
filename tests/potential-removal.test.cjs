@@ -128,7 +128,8 @@ test('Skills主表與生成入口已刪除；現行三份相關Excel、CSV與程
   assert.ok(params.slice(1).every(row => Number.isInteger(Number(row[0])) && Number(row[0]) > 0), '刪列後保留有效、穩定的參數編號');
   assert.equal(params.some(row => row[3] === '技能點總預算'), false);
   assert.equal(params.some(row => row[2] === '9-技能' && ['升級費用', '等級上限'].includes(row[3])), false);
-  assert.ok(params.filter(row => row[2] === '1-轉生對照表').every(row => Number(row[10]) === 0));
+  // 轉生對照表 a~f 已全數使用（生命／法力／四維／經驗倍率／經驗基礎／階級，2026-11-05），g 以後必須仍是空欄（舊潛力點不得回來）。
+  assert.ok(params.filter(row => row[2] === '1-轉生對照表').every(row => row.slice(12).every(v => Number(v) === 0)));
 });
 
 test('技能與威能頁、說明、載入鏈與配套工具沒有潛力入口或已移除模組引用', () => {

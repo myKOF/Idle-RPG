@@ -78,7 +78,7 @@ function reincarnationRowName(rows, n) {
 
 // 轉生對照表的升級經驗倍率寫成 10^11 這種形式（與 tools/apply_params.cjs 同解析規則）
 function parsePowerNotation(raw) {
-  const m = /^(\d+(?:\.\d+)?)\^(\d+)$/.exec(String(raw).trim());
+  const m = /^(\d+(?:\.\d+)?)\^(\d+(?:\.\d+)?)$/.exec(String(raw).trim());
   return m ? Math.pow(Number(m[1]), Number(m[2])) : Number(raw);
 }
 
@@ -104,24 +104,42 @@ test('轉生設定與參數表「1-轉生對照表」一致（支援 20 轉）',
   const context = loadFormulaContext();
   const P = paramTable();
 
-  assert.equal(context.REINCARNATION_MAX, 20);
+  // 最高轉生次數由參數表「可轉生等級 / 最高轉生」b 欄決定；對照表本身固定寫到 20 轉。
+  assert.equal(context.REINCARNATION_MAX, Number(P('1-成長經驗', '可轉生等級 / 最高轉生', 1)));
   assert.equal(context.REINCARNATION_RANKS.length, 21);
-  assert.equal(context.reincarnationTotalMultiplier(0), 1);
+  assert.equal(context.reincarnationHpMultiplier(0), 1);
+  assert.equal(context.reincarnationMpMultiplier(0), 1);
+  assert.equal(context.reincarnationStatMultiplier(0), 1);
   assert.equal(context.reincarnationExpMultiplier(0), 1);
 
-  for (let n = 1; n <= 20; n++) {
+  // a=生命最終倍率 b=法力最終倍率 c=四維最終倍率 d=升級經驗倍率 e=升級經驗基礎增加值 f=階級名稱
+  const tables = [
+    ['REINCARNATION_HP_MULTIPLIERS', 'reincarnationHpMultiplier', 0, '生命倍率'],
+    ['REINCARNATION_MP_MULTIPLIERS', 'reincarnationMpMultiplier', 1, '法力倍率'],
+    ['REINCARNATION_STAT_MULTIPLIERS', 'reincarnationStatMultiplier', 2, '四維倍率']
+  ];
+  for (let n = 0; n <= 20; n++) {
     const row = reincarnationRowName(P.reincarnationNames, n);
-    // a=生命與四維最終倍率、b=升級經驗倍率、d=階級名稱
-    assert.equal(context.reincarnationTotalMultiplier(n), Number(P('1-轉生對照表', row, 0)),
-      row + ' 的生命四維倍率與參數表不符');
+    for (const [arr, fn, col, label] of tables) {
+      const want = Number(P('1-轉生對照表', row, col));
+      assert.equal(context[arr][n], want, row + ' 的' + label + '與參數表不符');
+      // 超過最高轉生次數的列只存在表裡，函式會夾到 REINCARNATION_MAX
+      if (n <= context.REINCARNATION_MAX) assert.equal(context[fn](n), want, row + ' 的 ' + fn + ' 不符');
+    }
     /* 經驗倍率大到 1e33，Math.pow(10,23) 與程式裡的字面值 1e23 會差 1 ULP，
-       所以用相對誤差比較，不比位元。 */
-    const expMul = parsePowerNotation(P('1-轉生對照表', row, 1));
-    const gotExpMul = context.reincarnationExpMultiplier(n);
+       所以用相對誤差比較，不比位元。10^9.5 這種小數次方也必須是真正的次方（不可變成 JS XOR）。 */
+    const expMul = parsePowerNotation(P('1-轉生對照表', row, 3));
+    const gotExpMul = context.REINCARNATION_EXP_MULTIPLIERS[n];
     assert.ok(Math.abs(gotExpMul - expMul) <= Math.abs(expMul) * 1e-12,
       row + ' 的升級經驗倍率與參數表不符：' + gotExpMul + ' vs ' + expMul);
-    assert.equal(context.reincarnationRankName(n), P('1-轉生對照表', row, 3),
-      row + ' 的階級名稱與參數表不符');
+    if (n > 0) assert.equal(context.REINCARNATION_EXP_BASE_ADD[n], Number(P('1-轉生對照表', row, 4)),
+      row + ' 的升級經驗基礎增加值與參數表不符');
+    assert.equal(context.REINCARNATION_RANKS[n], P('1-轉生對照表', row, 5), row + ' 的階級名稱與參數表不符');
+  }
+  // 經驗倍率必須逐轉遞增（擋下 10^9.5 被當成 XOR 而掉到 3 這類錯誤）
+  for (let n = 1; n <= 20; n++) {
+    assert.ok(context.REINCARNATION_EXP_MULTIPLIERS[n] > context.REINCARNATION_EXP_MULTIPLIERS[n - 1],
+      '轉生 ' + n + ' 次的升級經驗倍率沒有比上一轉大');
   }
   assert.equal(context.reincarnationRankName(0), '冒險者');
 });

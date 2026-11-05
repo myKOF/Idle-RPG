@@ -48,14 +48,17 @@ function canReincarnateAt(level, reincarnations) {
   var rc = clamp(Math.floor(Number(reincarnations) || 0), 0, REINCARNATION_MAX);
   return lv >= REINCARNATION_LEVEL && rc < REINCARNATION_MAX;
 }
-function reincarnationExtraMultiplier(count) {
+/* 轉生最終倍率：生命／法力／四維各一張表（參數表「1-轉生對照表」a／b／c 欄）。
+   count 省略時讀 G（Worker）；UI 在主執行緒沒有 G，必須傳快照裡的轉生次數。
+   表格缺值或非正數一律視為 1，不讓壞資料把屬性歸零。 */
+function reincarnationTableMultiplier(table, count) {
   var n = count === undefined ? reincarnationCount() : clamp(Math.floor(Number(count) || 0), 0, REINCARNATION_MAX);
-  return REINCARNATION_EXTRA_MULTIPLIERS[n] || 0;
+  var v = Number(table && table[n]);
+  return (isFinite(v) && v > 0) ? v : 1;
 }
-function reincarnationTotalMultiplier(count) {
-  var n = count === undefined ? reincarnationCount() : clamp(Math.floor(Number(count) || 0), 0, REINCARNATION_MAX);
-  return n === 0 ? 1 : reincarnationExtraMultiplier(n);
-}
+function reincarnationHpMultiplier(count) { return reincarnationTableMultiplier(REINCARNATION_HP_MULTIPLIERS, count); }
+function reincarnationMpMultiplier(count) { return reincarnationTableMultiplier(REINCARNATION_MP_MULTIPLIERS, count); }
+function reincarnationStatMultiplier(count) { return reincarnationTableMultiplier(REINCARNATION_STAT_MULTIPLIERS, count); }
 function reincarnationExpMultiplier(count) {
   var n = clamp(Math.floor(count === undefined ? reincarnationCount() : count), 0, REINCARNATION_MAX);
   if (typeof REINCARNATION_EXP_MULTIPLIERS !== 'undefined' && REINCARNATION_EXP_MULTIPLIERS[n] !== undefined) {
@@ -213,7 +216,10 @@ function computeStats(equipmentOverride) {
       var pd = PASSIVE_POOL[passive.key];
       if (pd && pd.fx && pd.fx.xpBonus) A.xpBonus += passives[passive.key];
       if (pd && pd.fx && pd.fx.goldBonus) A.goldBonus += passives[passive.key];
-      if (pd && pd.legendary) legendaryEffects[passive.key] = true;
+      // 符文真言專屬傳奇（js/data.js RUNEWORD_ONLY_LEGENDARY）：舊裝備上殘留的同名詞條不生效，只認符文真言借用
+      if (pd && pd.legendary && !(typeof RUNEWORD_ONLY_LEGENDARY !== 'undefined' && RUNEWORD_ONLY_LEGENDARY[passive.key])) {
+        legendaryEffects[passive.key] = true;
+      }
     });
     itemEnchants(it).forEach(function (en) {
       var ek = en.key, ev = enchantValue(it, en);   // 由附魔當下的寶石等級當場算出（§6）
@@ -288,13 +294,16 @@ function computeStats(equipmentOverride) {
 
   /* ---- 派生公式（st.base = 純等級/四維的基礎值，供屬性面板拆解顯示） ---- */
   var lv = p.level;
-  var reincMult = reincarnationTotalMultiplier();
+  // 轉生最終倍率：生命／法力／四維各自一欄（參數表「1-轉生對照表」a／b／c）
+  var reincHpMult = reincarnationHpMultiplier(), reincMpMult = reincarnationMpMultiplier();
+  var reincStatMult = reincarnationStatMultiplier();
   var rawStr = Math.round(A.str), rawAgi = Math.round(A.agi);
   var rawInt = Math.round(A.int), rawVit = Math.round(A.vit);
-  var st = { level: lv, reincarnationMultiplier: reincMult };
-  // 四維主屬性：原始總值完成後，再套用轉生最終倍率。
-  st.str = Math.round(rawStr * reincMult); st.agi = Math.round(rawAgi * reincMult);
-  st.int = Math.round(rawInt * reincMult); st.vit = Math.round(rawVit * reincMult);
+  var st = { level: lv, reincarnationHpMultiplier: reincHpMult, reincarnationMpMultiplier: reincMpMult,
+    reincarnationStatMultiplier: reincStatMult };
+  // 四維主屬性：原始總值完成後，再套用轉生四維倍率。
+  st.str = Math.round(rawStr * reincStatMult); st.agi = Math.round(rawAgi * reincStatMult);
+  st.int = Math.round(rawInt * reincStatMult); st.vit = Math.round(rawVit * reincStatMult);
   // 基礎：生命 = (基底 + (等級-1)×每級 + 體質×vitHp + 定值) × (1 + 生命%) × (1 + 天賦生命%［生命洪流，獨立乘區］)
   st.base = {};
   st.base.hp = DERIVED_COEF.hpBase + (lv - 1) * DERIVED_COEF.hpPerLevel + rawVit * PRIMARY_STAT_EFFECTS.vitHp;
@@ -303,16 +312,16 @@ function computeStats(equipmentOverride) {
        【大地守護】（earthguard T1）＝常駐；
        【金剛不壞】（岩甲術超神）＝只在岩甲護盾存在期間，兩端各自 markStatsDirty 一次。
      兩者相乘而非相加：來源不同層，比照天賦【生命洪流】的獨立乘區。 */
-  st.hp = Math.round(rawHp * reincMult * (1 + (talent.hpPct || 0) / 100) *
+  st.hp = Math.round(rawHp * reincHpMult * (1 + (talent.hpPct || 0) / 100) *
     ((typeof skill2MaxHpFactor === 'function') ? skill2MaxHpFactor() : 1) *
     ((typeof skill2RockMaxHpFactor === 'function') ? skill2RockMaxHpFactor() : 1) *
     // 符文真言的最大生命乘區（正負皆可；負值是代價，如血月、時之沙），下限 0.1
     ((rwAgg && rwAgg.fx.maxHpPct) ? Math.max(0.1, 1 + rwAgg.fx.maxHpPct / 100) : 1));
   st.hpRegen = A.hpRegen + st.str * PRIMARY_STAT_EFFECTS.strHpRegen + st.vit * PRIMARY_STAT_EFFECTS.vitHpRegen; // 額外生命恢復/秒（野外另加 BASE_HP_REGEN 定值基礎回復）
-  // 法力 =（基底 + 原始智力×intMp + 定值）×轉生倍率；法力恢復另依原有公式計算
+  // 法力 =（基底 + 原始智力×intMp + 定值）×轉生法力倍率；法力恢復另依原有公式計算
   st.base.mp = DERIVED_COEF.mpBase + rawInt * PRIMARY_STAT_EFFECTS.intMp;
   var rawMp = st.base.mp + A.mpFlat;
-  st.mp = Math.round(rawMp * reincMult);
+  st.mp = Math.round(rawMp * reincMpMult);
   st.mpRegen = DERIVED_COEF.mpRegenBase + st.int * PRIMARY_STAT_EFFECTS.intMpRegen + st.vit * PRIMARY_STAT_EFFECTS.vitMpRegen + A.mpRegen;
   // 進攻／防禦定值的轉生指數強化：flatMult × 定值 × reincBase^轉生次數（0 轉時 = flatMult×定值）
   var reincN = reincarnationCount();
@@ -417,6 +426,17 @@ function computeStats(equipmentOverride) {
   // 符文真言：被動併入 passives、借用的傳奇特效併入 legendaryEffects，其餘機制掛在 st.rw
   st.rw = rwAgg ? rwFinishAggregate(rwAgg, passives, legendaryEffects) : { words: [], fx: {}, procs: [] };
   st.legendaryEffectMults = legendaryEffectMults;
+  /* 符文真言借用的傳奇特效中，直接改屬性的兩個（其餘由 js/legendary.js 在戰鬥期讀取）：
+     傳奇【不屈護衛】格擋減傷額外加成（不受上限，由 resolveHit 加在上限之後）、
+     傳奇【元素之心】所有元素抗性乘以倍率。 */
+  st.blockDmgRedExtra = (legendaryEffects.unyieldingGuard && PASSIVE_POOL.unyieldingGuard && PASSIVE_POOL.unyieldingGuard.fx)
+    ? (Number(PASSIVE_POOL.unyieldingGuard.fx.blockDmgRedExtra) || 0) : 0;
+  if (legendaryEffects.elementHeart && PASSIVE_POOL.elementHeart && PASSIVE_POOL.elementHeart.fx) {
+    var heartMult = Number(PASSIVE_POOL.elementHeart.fx.elemResMult);
+    if (heartMult >= 0 && isFinite(heartMult)) {
+      ELEMENTS.forEach(function (eh) { st.resist[eh] = Math.max(0, Number(st.resist[eh]) || 0) * heartMult; });
+    }
+  }
   st.talent = talent;
   // 5/9 轉元素天賦：攻擊時附加「當次傷害 × 天賦%」的元素傷害（結算於 resolveHit 元素附加段）；
   var talentElemMap = talentElemBucket(talent, 'elem');
@@ -987,7 +1007,8 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   // 格擋（機率減傷）：機率與減傷上限共用 STAT_CAPS，0 代表不設上限。
   var blockChance = capValue(dCfg.blockRate || 0, STAT_CAPS.blockRate);
   if (blockChance > 0 && chance(blockChance)) {
-    dmg *= 1 - blockDmgReduction(dCfg.blockDmgRed || 0, dCfg.blockDmgRedCap) / 100;
+    // 傳奇【不屈護衛】的額外格擋減傷加在上限之後（可突破上限）
+    dmg *= 1 - Math.min(100, blockDmgReduction(dCfg.blockDmgRed || 0, dCfg.blockDmgRedCap) + (dCfg.blockDmgRedExtra || 0)) / 100;
     out.blocked = true;
   }
   // 神鑄特效【聖佑】：受到的所有傷害按比例降低（上限見特效設定）
@@ -1084,6 +1105,10 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   // 新版技能【血飲術】反噬：玩家攻擊端的敵方受傷事件通知（js/skills2.js，未啟用時零成本）
   if (aCfg.isPlayer && out.dmg > 0 && typeof skills2OnEnemyDamaged === 'function') {
     skills2OnEnemyDamaged(defender, out.dmg);
+  }
+  // 傳奇【雷紋刻印】／【冰霜尖刺】：玩家技能命中後的機率觸發（js/legendary.js；未生效時零成本）
+  if (aCfg.isPlayer && aCfg.isSkill && !out.miss && out.dmg > 0 && typeof legendaryOnPlayerSkillHit === 'function') {
+    legendaryOnPlayerSkillHit(attacker, defender, aCfg, out);
   }
   // 反震（防守方被動）= 防守方最大生命 × 反震%
   if (dCfg.thornsPct && !out.killed) {

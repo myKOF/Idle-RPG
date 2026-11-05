@@ -6,6 +6,10 @@
     <title>放置型 RPG 蒙地卡羅數值模擬驗證工具 (高塔與天賦技能對齊版)</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="js/util.js"></script>
+    <!-- 顯示文字一律走 String 表（STR）。少了這兩支，util.js 的後備 STR 會把所有文字
+         顯示成 [#編號]——屬性面板、裝備部位名、裝備等級全部變成編號。順序與 index.html 相同。 -->
+    <script src="js/strings_data.js"></script>
+    <script src="js/strings.js"></script>
     <script src="js/data.js"></script>
     <script src="js/formula.js"></script>
     <script src="js/battlefield.js"></script>
@@ -2424,7 +2428,36 @@
     function batchSeedLabel(row) {
         const rc = Number(row.reincarnations) || 0;
         const rcPart = rc > 0 ? `${rc} 轉・` : '';
-        return `seed ${row.seed}｜${rcPart}Lv.${row.level}・關卡 ${row.stage}・物攻 ${Number(row.atk || 0).toLocaleString()}`;
+        return `seed ${row.seed}｜${rcPart}Lv.${row.level}・${batchStageText(row)}・物攻 ${Number(row.atk || 0).toLocaleString()}`;
+    }
+
+    /* 關卡是**所在場景內**的編號，每張地圖都從第 1 關數起——只寫「關卡 29」
+       分不出是荒漠還是冰原。場景名稱查遊戲的 ZONES（js/data.js，由 Zones 表產生），不在這裡寫死。
+       stage 是這張圖的最高關，stageCurrent 是結束時人站在哪一關；兩者差很多就是被退關卡住了。 */
+    function batchZoneName(zone) {
+        const z = (typeof ZONES !== 'undefined' && ZONES) ? ZONES[zone] : null;
+        return z ? `${z.emoji || ''}${z.name}` : String(zone);
+    }
+    function batchStageText(row) {
+        if (!row.zone) return `關卡 ${row.stage}`;   // 舊批次且讀不到存檔：維持原樣
+        const cur = Number(row.stageCurrent);
+        const curPart = (Number.isFinite(cur) && cur !== Number(row.stage)) ? `（目前 ${cur}）` : '';
+        return `${batchZoneName(row.zone)} ${row.stage}${curPart}`;
+    }
+
+    /* 舊批次的 batch_summary.json 沒有 zone／stageCurrent，從各 seed 的 save_final.json 補
+       （存檔的 stage 物件本來就有 zone 與 current）。讀不到就留空，標籤退回只顯示關卡。 */
+    async function backfillBatchZones(outDir, rows) {
+        await Promise.all(rows.map(async (r) => {
+            if (r.zone && r.stageCurrent != null) return;
+            try {
+                const res = await fetch('./' + outDir + '/' + r.dir + '/save_final.json?t=' + Date.now());
+                if (!res.ok) return;
+                const st = ((await res.json()) || {}).stage || {};
+                if (!r.zone && st.zone) r.zone = st.zone;
+                if (r.stageCurrent == null && st.current != null) r.stageCurrent = st.current;
+            } catch (e) { /* 缺檔就算了 */ }
+        }));
     }
 
     function renderBatchSeedPicker(outDir, rows, pickDir) {
@@ -2483,6 +2516,7 @@
             const pick = ranked[Math.floor((ranked.length - 1) / 2)];
 
             const outDir = b.outDir || 'sim_batch';
+            await backfillBatchZones(outDir, rows);
             const base = outDir + '/' + pick.dir;
             await loadNativeCsvSnapshotsToApp('./' + base);
             /* 一定要排在 loadNativeCsvSnapshotsToApp 之後：它內部會先用 CSV／存檔
@@ -2499,10 +2533,14 @@
                 const pickRc = Number(pick.reincarnations) || 0;
                 let html = `<div style="font-weight:700;color:var(--accent-emerald);margin-bottom:6px;">`
                     + `🎲 批次 ${rows.length} 個 seed × ${hours} 小時（圖表顯示<b>中位 seed ${pick.seed}</b>：`
-                    + `${pickRc > 0 ? pickRc + ' 轉／' : ''}Lv.${pick.level}／關卡 ${pick.stage}，以下為跨 seed 散佈）</div>`
+                    + `${pickRc > 0 ? pickRc + ' 轉／' : ''}Lv.${pick.level}／${batchStageText(pick)}，以下為跨 seed 散佈）</div>`
                     + '<table style="width:100%;font-size:12px;border-collapse:collapse;">'
                     + '<tr style="color:#94a3b8;"><td>指標</td><td style="text-align:right;">最小</td>'
                     + '<td style="text-align:right;">中位數</td><td style="text-align:right;">最大</td></tr>';
+                /* 關卡是場景內編號：所有 seed 停在同一張圖才能比，跨圖的最小／中位／最大沒有意義 */
+                const zoneSet = [...new Set(rows.filter((r) => r.policy === pick.policy).map((r) => r.zone).filter(Boolean))];
+                if (zoneSet.length === 1) label.stage = `關卡（${batchZoneName(zoneSet[0])}）`;
+                else if (zoneSet.length > 1) label.stage = '關卡（⚠️ 各 seed 場景不同，不可直接比）';
                 for (const k of Object.keys(label)) {
                     const v = sp[k];
                     if (!v) continue;

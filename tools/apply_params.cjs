@@ -536,18 +536,21 @@ objField('data', 'REROLL_ESSENCE_COST = {', '9', '7-洗煉', '精華費用', 2, 
   const g = Array.from({ length: 9 }, (_, i) => P('8-寶石', '寶石合成金幣', i));
   arrayContent('data', 'FUSE_GOLD_COST', '0, ' + g.join(', '), 'FUSE_GOLD_COST');
 }
+/* 「10^次方」寫法轉成 JS 數字字面值。次方可為小數（例 10^9.5）。
+   ⚠️ 不可把原字串照抄進 JS：`10^9.5` 在 JS 是位元 XOR，結果是 3 而不是 10 的 9.5 次方。
+   所以無法解析的格子一律中止，不再回傳原字串。 */
 function parseExpMultiplier(raw) {
   const str = String(raw).trim();
-  const m = str.match(/^10\^(\d+)$/);
+  const m = str.match(/^10\s*\^\s*(\d+(?:\.\d+)?)$/);
   if (m) {
-    const exp = parseInt(m[1], 10);
+    const exp = Number(m[1]);
     if (exp === 0) return '1';
+    if (!Number.isInteger(exp)) return String(Math.pow(10, exp));
     if (exp <= 9) return String(Math.pow(10, exp));
     return '1e' + exp;
   }
-  const n = Number(str);
-  if (!isNaN(n)) return String(n);
-  return str;
+  if (str !== '' && NUMBER_LITERAL.test(str)) return String(Number(str));
+  throw new Error('轉生對照表 升級經驗倍率無法解析：「' + str + '」（應為數字或 10^次方，例 10^9.5）');
 }
 function getReincarnationCell(n, paramIdx) {
   const table = index['1-轉生對照表'];
@@ -563,32 +566,41 @@ function getReincarnationCell(n, paramIdx) {
   if (foundKey) return P('1-轉生對照表', foundKey, paramIdx);
   throw new Error('CSV 缺少列：1-轉生對照表 / 轉生 ' + n + ' 次');
 }
-// REINCARNATION_EXTRA_MULTIPLIERS = [0, 10, 20, ...]（索引0固定0；1~20 取 CSV 轉生對照表 param a）
-{
+/* 轉生對照表欄位（2026-11-05 起生命／法力／四維分開填）：
+   a=生命最終倍率 b=法力最終倍率 c=四維最終倍率 d=升級經驗倍率 e=升級經驗基礎增加值 f=階級名稱 */
+const REINC_COL = { hp: 0, mp: 1, stat: 2, expMult: 3, expAdd: 4, rank: 5 };
+// REINCARNATION_HP／MP／STAT_MULTIPLIERS = [1, 1.5, ...]（0~20 轉，索引＝轉生次數）
+[['REINCARNATION_HP_MULTIPLIERS', REINC_COL.hp, '生命'],
+ ['REINCARNATION_MP_MULTIPLIERS', REINC_COL.mp, '法力'],
+ ['REINCARNATION_STAT_MULTIPLIERS', REINC_COL.stat, '四維']].forEach(([varName, col, label]) => {
   const g = [];
-  for (let n = 1; n <= 20; n++) {
-    const val = Number(getReincarnationCell(n, 0));
+  for (let n = 0; n <= 20; n++) {
+    const raw = String(getReincarnationCell(n, col)).trim();
+    const val = Number(raw);
+    if (!NUMBER_LITERAL.test(raw) || !(val > 0)) {
+      throw new Error('轉生對照表 轉生 ' + n + ' 次 ' + label + '最終倍率須為正數，目前為「' + raw + '」');
+    }
     g.push(Number.isInteger(val) ? val : parseFloat(val.toFixed(6)));
   }
-  arrayContent('data', 'REINCARNATION_EXTRA_MULTIPLIERS', '0, ' + g.join(', '), 'REINCARNATION_EXTRA_MULTIPLIERS');
-}
-// REINCARNATION_EXP_BASE_ADD = [0, 100000, 300000, ...]（索引0固定0；1~20 取 CSV 轉生對照表 param c＝升級經驗基礎增加值）
+  arrayContent('data', varName, g.join(', '), varName);
+});
+// REINCARNATION_EXP_BASE_ADD = [0, 100000, 300000, ...]（索引0固定0；1~20 取 e 欄＝升級經驗基礎增加值）
 {
   const g = [];
-  for (let n = 1; n <= 20; n++) g.push(getReincarnationCell(n, 2));
+  for (let n = 1; n <= 20; n++) g.push(getReincarnationCell(n, REINC_COL.expAdd));
   arrayContent('data', 'REINCARNATION_EXP_BASE_ADD', '0, ' + g.join(', '), 'REINCARNATION_EXP_BASE_ADD');
 }
-// REINCARNATION_RANKS = ['冒險者', '勇者', ...]（0~20 取 CSV 轉生對照表 param d）
+// REINCARNATION_RANKS = ['冒險者', '勇者', ...]（0~20 取 f 欄＝階級名稱）
 {
   const g = [];
-  for (let n = 0; n <= 20; n++) g.push("'" + getReincarnationCell(n, 3) + "'");
+  for (let n = 0; n <= 20; n++) g.push("'" + getReincarnationCell(n, REINC_COL.rank) + "'");
   arrayContent('data', 'REINCARNATION_RANKS', g.join(', '), 'REINCARNATION_RANKS');
 }
-// REINCARNATION_EXP_MULTIPLIERS = [1, 10, 100, ...]（0~20 取 CSV 轉生對照表 param b＝升級經驗倍率）
+// REINCARNATION_EXP_MULTIPLIERS = [1, 10, 100, ...]（0~20 取 d 欄＝升級經驗倍率）
 {
   const g = [];
   for (let n = 0; n <= 20; n++) {
-    const raw = getReincarnationCell(n, 1);
+    const raw = getReincarnationCell(n, REINC_COL.expMult);
     g.push(parseExpMultiplier(raw));
   }
   arrayContent('data', 'REINCARNATION_EXP_MULTIPLIERS', g.join(', '), 'REINCARNATION_EXP_MULTIPLIERS');

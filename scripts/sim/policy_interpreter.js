@@ -2310,7 +2310,17 @@ function decide(state, policy, memo) {
            任何一項出問題都反映在殺敵速度上，不必替每一個原因各補一條規則。 */
         var reqs = gCfg.requireTargets || [];
         var targetBlocked = false;
+        /* 退到底仍擋著的目標，在這張圖內不再擋（見下方 targetRetreat 的 releaseAtFloor）。
+           換圖就作廢：出怪密度是地圖的屬性，新地圖要重新量。 */
+        var gZone = gCfg.zone ? pathVal(state, gCfg.zone) : undefined;
+        var gMemo0 = memo.gate && memo.gate[r.id];
+        var floorReleased = null;
+        if (gMemo0 && gMemo0.floorRelease) {
+          if (gMemo0.floorRelease.zone !== gZone) gMemo0.floorRelease = null;
+          else floorReleased = gMemo0.floorRelease.ids;
+        }
         for (var rq = 0; rq < reqs.length; rq++) {
+          if (floorReleased && floorReleased.indexOf(reqs[rq]) >= 0) continue;
           var dq = state.ctx && state.ctx.deficit && state.ctx.deficit[reqs[rq]];
           /* unknown 不算沒達標。視窗還沒攢滿就退關的話，每次退關都會再觸發一次退關。 */
           if (dq && !dq.unknown && !dq.met) { targetBlocked = true; break; }
@@ -2595,6 +2605,7 @@ function decide(state, policy, memo) {
              不必像擊殺速率那樣等 5 分鐘換血才能再退。多個目標同時擋住時取最長的，保守。 */
           var blockCool = null;
           for (var bq = 0; bq < reqs.length; bq++) {
+            if (floorReleased && floorReleased.indexOf(reqs[bq]) >= 0) continue;
             var bd = state.ctx && state.ctx.deficit && state.ctx.deficit[reqs[bq]];
             if (!bd || bd.unknown || bd.met) continue;
             var bt = policyTargetById(policy, reqs[bq]);
@@ -2632,10 +2643,49 @@ function decide(state, policy, memo) {
              五個 seed 有三個死鎖在關卡 50。理由就是上面那段註解講的——
              它就是一種「已知安全關卡」下限。動機（掉出分段撿到的裝備弱一個量級）
              是對的，但用地板去擋會直接踩進死鎖。 */
-          if (gStage > floorStage && (gm.lastRetreatAt === undefined || now - gm.lastRetreatAt >= cool)) {
+          var coolDone = (gm.lastRetreatAt === undefined || now - gm.lastRetreatAt >= cool);
+          if (gStage > floorStage && coolDone) {
             var to = Math.max(floorStage, gStage - Math.max(1, Number(rtc.step) || 5));
             out.push({ name: gCfg.retreatCmd, args: { delta: to - gStage }, ruleId: r.id });
             gm.lastRetreatAt = now;
+          }
+
+          /* ---- 退到底還擋著：退關證明了它修不好這個目標 ----
+
+             ☠️ 實測 24 小時 × 5 seed（extreme）：3 個 seed 進冰原後被鎖在**冰原第 1 關**
+             10~14 小時，等級、死亡、物攻全部凍結，最後等級 114~146；
+             另外 2 個照常推到冰原 79／100，等級 159／237。
+
+             擋住它們的是 fieldCap（場上平均 ≤ 50）。冰原的小怪每波 1~9 隻、平均約 5.5，
+             **而且不分關卡**（ZONE_ENCOUNTER.Icefield.mobCount 只有一列 1~9999），
+             每 2.6 秒一波——第 1 關和第 80 關一樣擠。再加上遊戲**只有死亡會清場**
+             （js/combat.js 的死亡處理：「切關、換圖都不清」），於是：
+               場上滿 → 退關 → 怪變弱但沒變少 → 場上還是滿 → 退到第 1 關
+               → 第 1 關強到不會死 → 永遠不清場 → 閘門永遠關著
+             卡住的三場每分鐘還殺 19~78 隻（killRate 門檻是 5），角色沒有打不動，
+             是場上的數字量到了一個退關改變不了的東西。
+             沒卡住的兩場每小時死約 30 次，每次死亡清一次場，fieldCap 才量得到低值。
+
+             所以：人已經在退關地板、冷卻也過了（視窗已經換成地板這一關的取樣；
+             冷卻 ≥ 視窗由 tests/policy-keys.test.cjs 守著），而**所有**還沒達標的目標
+             都列在 releaseAtFloor 裡——那這些目標在這張圖內就不再擋推關。
+             只要有一個不在清單裡的目標也沒達標（例如 killRate：在第 1 關都殺不動，
+             那是真的太弱），就不放行，維持原本「待在地板刷」的行為。
+
+             放行之後的安全網仍在：killRate 照常擋、死亡會退 10 關並清場、
+             卡關重試照常攔。這正是那兩個沒卡住的 seed 走的路。 */
+          var relIds = rtc.releaseAtFloor;
+          if (gStage <= floorStage && coolDone && relIds && relIds.length) {
+            var relAny = false, relOnly = true;
+            for (var rr = 0; rr < reqs.length; rr++) {
+              var rd = state.ctx && state.ctx.deficit && state.ctx.deficit[reqs[rr]];
+              if (!rd || rd.unknown || rd.met) continue;
+              relAny = true;
+              if (relIds.indexOf(reqs[rr]) < 0) { relOnly = false; break; }
+            }
+            if (relAny && relOnly) {
+              gm.floorRelease = { zone: gZone, ids: relIds.slice(), at: now, stage: gStage };
+            }
           }
         }
 

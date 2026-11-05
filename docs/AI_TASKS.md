@@ -1,3 +1,21 @@
+## SYNC-20261106 — 保留最新序章、平衡與Claude功能
+
+- Owner：Codex；Done（本地整合與驗證完成，遠端結果見交付），單一整合者。使用者1授權完成develop整合及所有AI同步，來源32f674d4（含0b74478d銀白六翼序章／音效與使用者平衡）及ed34fd3f的八筆Claude提交（模擬器survival-gate／場景資訊、轉生獨立倍率、15種傳奇效果移轉真言與星星效能）。main保持e23b6747，無hold。
+- 本輪原停止為GitHub推送ai/claude回報fatal error in commit_refs_rules，無原pending merge。正常合併無程式／Excel競爭值；任務driver因舊重複標題回報衝突，但標準三方merge-file乾淨，工作檔逐字等於兩側聯集。只改必要衍生資料／快取與本段、LV整合記錄，全部原提交保留；禁止重寫歷史、覆寫進行中工作或發布main。
+- 使用者32f674d4的Skills2原生Excel已提交但CSV仍舊，有12格升級金幣基數差異；依權威來源重產CSV／JS，不重寫Excel。驗收相關Intro／傳奇真言／轉生／模擬政策／配置／Worker／快取回歸，來源SHA、Build及正常推送／全來源祖先確認。
+
+- 完成：標準三方任務紀錄無損聯集，保留32f674d4／ed34fd3f與全部原提交；Skills2的12格升級費用與Zone_Stage_Drops的76格未匯出差異依各自原Excel重產CSV／JS，沒有重存Excel。Equipment_Affix表頭儲存格的CRLF／LF為相同換行文字，沒有改權威內容。七份來源（Skills2／Zones／Zone_Stage_Drops／Equipment_Affix／Runes／String／game_parameters）逐格比對均0實質差異，Excel逐位等於對應原提交。
+- 快取：data／skills2／runeword_data／formula／player／combat／legendary／ui的主頁與Worker匯入、Bridge asset與主頁Bridge統一20261106-ai-integration；String維持生成Hash c2e793f8，VFX編輯器文字資料匯入跟主頁同步，未改編輯器互動／未存編輯保護。apply_params597一致／0變更／0錨點；Skills2／Gems等生成試跑語意變更0。
+- 驗證：node --test --test-concurrency=2 --test-reporter=tap，實際傳入intro-audio、intro-player、gm-intro-command、legendary-runeword-only、legendary-affix、legendary-global、runeword-data、runeword-engine、runeword-all-words、xp-formula、reincarnation-mana-cost、potential-removal、ui-worker-g-dependency、policy-keys、sim-policy-targets、field-gem-drop-table、field-equipment-drop-table、worker-protocol、worker-shim、apply-params、vfx-editor-cache-versions、string-table的.test.cjs共22檔，332項322過／10原有失敗。五支相關檔以fs唯讀覆映git show ed34fd3f的原JS／CSV／Excel／tools／scripts重跑，十項逐名相同；未修改或弱化斷言。初輪編輯器String漏升已修，cache獨立3/3與最終完整套件均通過該項。npm.cmd run build672檔通過、完整diff check通過；未跑全庫／瀏覽器長玩。TAP／來源校驗／基線與原index在logs/merge-20261106。
+- 素材：Intro與原太古星星來源--check通過，三張原烘焙glow由bake-glow --check重建一致。本輪未改圖片，將原Claude18eb4932成品、三張原128px來源與烘焙／PNG依賴工具補存素材庫codex-authored/ancient-star-baked-glow-20261106，獨立重建及所有Git blob／manifest SHA核對通過。工具快照僅LF正規化，PNG原位元組保持；素材Commit b9f0cf0b及99e5f399正常推送，保留既有Intro／資源圖等全部來源。
+- 範圍：除原提交聯集，只改必要兩份CSV／skills2／data衍生資料、核心快取／編輯器文字版本、LV與本段；唯讀檢查規範／Workflow／Agent文件、各AI狀態、原提交、來源與現有測試。已知風險為十項來源既有失敗；無新增合併失敗。本輪原推送ai/claude曾兩次收到GitHub fatal error in commit_refs_rules，唯讀GitHub rulesets與branch rules API均200空清單，未變更遠端規則或強制推送；最後正常同步／遠端結果見交付。
+
+## ANCIENT-STAR-BAKED-GLOW-20261105 — 太古星星光暈改為烘焙，解決卡頓
+
+- Owner：Claude；Done。使用者回報加上星星效果後整個遊戲很卡。原因：每顆星星 `::after` 掛 SVG參照濾鏡（feMorphology描邊、淺藍feColorMatrix）＋三層drop-shadow，Chrome對SVG參照濾鏡走CPU光柵化，每次重繪（hover的brightness過渡、捲動、開詳情、重繪背包）都重算，背包一頁上百顆星星。
+- 修正：新增 `tools/ancient-stars/bake-glow.cjs`（重用 vfx-raster 編解碼）以同參數離線烘出三張 `*-glow.png`；CSS移除全部濾鏡，只換圖＋`transform: scale(2)`。index style 快取版本更新。新舊並排目視一致。
+- 未改：原128px PNG／母圖SHA、js、星數／精鑄順序／排版。
+
 ## DIVINE-STONE-ICON-20261105 — 接入核准的透明符文石圖標
 
 - Owner：Codex；Done，單一開發者。使用者核准本聊天image_gen左右鏡像／去背景及外暈預覽並要求接入；核准原圖匯出128px透明PNG，替換神性之石資源列／法陣／統計及相關UI提示、獎勵與日誌圖標。
@@ -14897,3 +14915,13 @@ Worker 存活且頁面正常完成載入。
 - 衝突解法：保留主線的開場動畫、技能提示計數／耗魔與 Canvas 復原內容，以及 incoming 的升級 Preset、神石圖示、第五角色、成就樣式與 stats 更新。三個重疊快取改用新的合併版本 `20261105-intro-levelup-merge-v1`（style、battle-renderer、ui），避免任一側舊版快取遮蔽另一側修改；其餘自動合入檔案原樣保留。
 - Excel／生成資料／素材：原始衝突不含 XLSX，不建立 Excel DATA plan；無需重生 CSV／JS。incoming 的遊戲素材與來源文件保留，素材庫不需額外交付。
 - 驗證：角色5、LEVELUP、stats、VFX 與 cache 回歸共 178 項，172 通過；6 項失敗逐項與原始 HEAD 基線比對後完全相同（stats 1、既有 VFX 5），未新增 regression。修正 editor 的 strings_data 快取後 CV-1～CV-3 全通過；`npm.cmd run build` 669 檔通過，合併結果無 conflict marker，`git diff HEAD --check` 通過。已知風險：上述6項既有基線失敗仍待原任務處理；index 保持 unmerged 是 controller 尚未依回報檔案 stage 的預期狀態。
+
+## LEGENDARY-RUNEWORD-ONLY-20261105 — 舊版傳奇「重新開放」15 個特效全數改為符文真言專屬
+
+- Owner：Claude；Done。依舊版傳奇試算表（「重新開放」欄＝1 的 15 個，紅字為改版或全新設計）：8 個既有停用特效重新啟用（崩山裂地者、影襲追蹤者、旋風之刺、末日預言者、狂暴血斧、不屈護衛、雷霆之震、燃燒法則），其中影襲追蹤者、不屈護衛、雷霆之震、燃燒法則依紅字改版；新做 7 個（雷紋刻印 `thunderMark`、冰霜尖刺 `iceSpikeBurst`、天譴之誓 `heavenlyVow`、神落天殞 `godfallMeteor`、風起雷落 `stormAndThunder`、元素之心 `elementHeart`、亡者時間 `deadTime`）。
+- 資料流：15 個全部列入 `js/data.js` 的 `RUNEWORD_ONLY_LEGENDARY`：不進裝備傳奇隨機池（`passiveAllowedForItem`），舊裝備殘留的同名詞條不生效（`js/formula.js` 聚合略過）；仍留在 `PASSIVE_POOL` 供符文真言借用。15 組符文真言換借用，每組最多 1 個傳奇（影殺原借 2 個改為 1 個）：影殺←旋風之刺、劍舞者←影襲追蹤者、血月←末日預言者、永凍←崩山裂地者、萬軍←狂暴血斧、不朽之軀←不屈護衛、雷帝←雷霆之震、星門←雷紋刻印、冰川←冰霜尖刺、鐵匠之魂←燃燒法則、星墜←神落天殞、風暴之眼←風起雷落、創世紀←元素之心、滅世←亡者時間、時之沙←天譴之誓。仍借用技能傳奇的 9 組：地裂、血祭、輪迴、武庫、孤狼、混沌之主、屠龍者、虛空行者、神罰（與裝備池重複，之後再議）。
+- 引擎：`js/legendary.js`（自動飛刀、天譴充能、雷紋、冰爆佇列、燃燒、反射、風雷分享、元素之心、亡者時間）；`js/formula.js`（`st.blockDmgRedExtra`、元素抗性 ×0.5、`resolveHit` 技能命中掛勾）；`js/combat.js`（持續傷害迴圈接 `legendaryBurnDot`、擊殺傳入怪物）；`js/skills2.js`（`aCfg.skillGid`、殞石落地加成、施放掛勾）。移除舊 `legendaryInstantBurn` 與舊飛刀機制。
+- Excel：先確認 `Equipment_Affix.xlsx`、`Runes.xlsx` 可獨占，以 `tools/excel-update-sheets.ps1` 原生寫入（Equipment_Affix 改 4 列＋插入 7 列、Runes 改 15 列傳奇欄與備註；正常重開驗證通過、繪圖物件 0），再 `config_tables.cjs --sync/--apply --write` 生成 CSV 與 `js/data.js`／`js/runeword_data.js`。新 id 避開已刪除舊技能詞條名（`frostSpike` 等）。
+- 沿用既有數值（試算表與程式現值不同，且未標紅）：崩山裂地者（+100%／+300%，表為 +50%／+60%）、旋風之刺（20 次普攻，表為 10 次）、狂暴血斧（3%，表為 2%）。試算表未給的數值為暫定：影襲追蹤者飛刀 150% 物理。元素之心的「屬性傷害加成額外 +35%」採加算、抗性 -50% 採 ×0.5。
+- 測試：新增 `tests/legendary-runeword-only.test.cjs`（14 項，含符文真言→`computeStats` 整合）；更新 `legendary-affix`、`legendary-global`、`runeword-data`（取消「23 主技能各 1 組」分配規則）。完整套件（再加 1 項整合測試前）5631 項：4936 通過、693 失敗；原始 HEAD 基線 5618 項、692 失敗，差集僅 `ELITE-ENGINE-4f`（單跑通過，為既有隨機性，基線同檔失敗的是 4d）；無新增 regression。`build_check` 670 檔通過；`build_string_csv.cjs --check` 寫死 0 條。
+- 風險／未驗證：未在瀏覽器實機驗證；亡者時間的 40 米依戰場座標判定，無座標時視為範圍內；天譴之誓增傷窗口取 3 秒。

@@ -308,8 +308,12 @@
           "step": 5,
           "everySec": 300,
           "minStage": 1,
-          "說明": "產出不足就每 300 秒往回退 5 關。everySec 必須 >= killRate 的 windowSec（tests/policy-keys.test.cjs 有哨兵）"
+          "說明": "產出不足就每 300 秒往回退 5 關。everySec 必須 >= killRate 的 windowSec（tests/policy-keys.test.cjs 有哨兵）",
+          "releaseAtFloor": ["fieldTrend", "fieldCap"],
+          "releaseAtFloor_依據": "退到地板（minStage）、冷卻也過了，場上負載仍然超標，就證明退關修不好它——這兩個目標在這張圖內不再擋推關，換圖重新量。冰原的小怪每波 1~9 隻、平均約 5.5 隻且不分關卡（ZONE_ENCOUNTER.Icefield.mobCount 只有一列），而遊戲只有死亡會清場：退關讓怪變弱但不會變少。實測 24h × 5 seed 有 3 個被鎖在冰原第 1 關 10~14 小時（每分鐘仍殺 19~78 隻，killRate 達標），等級凍結在 114~146。killRate 不在清單裡：在地板都殺不動是真的太弱，照舊待著刷"
         },
+        "zone": "panels.battle.stage.zone",
+        "zone_依據": "releaseAtFloor 的放行以地圖為單位：出怪密度是地圖的屬性，換圖就作廢重新量",
         "requireTargets_依據": "極限玩家 dailyActiveHours=24 全程在線，沒有離線收益可領，所以「待在刷得動的關卡」直接決定產出。實測 4 個 seed：中位等級 201→412、擊殺 30K→138K、死亡 73→23",
         "tierPush": {
           "source": "panels.eval.tier",
