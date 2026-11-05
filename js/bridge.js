@@ -16,12 +16,26 @@ var WorkerBridge = (function () {
   /* Worker 與其模擬層不是由 bundler 產生，瀏覽器可能把舊的 Worker
      腳本留在快取裡。每次修改 Worker 啟動／核心邏輯時更新這個鍵，避免
      使用者刷新後仍執行舊版升級公式。 */
-  var WORKER_ASSET_VERSION = '20261105-settings-reincarnation-merge-v1';
+  var WORKER_ASSET_VERSION = '20261105-startup-hold-v2';
   var _menuPaused = false;
+  /* 開機等待：Loading 黑幕期間 Worker 不開始戰鬥，揭幕那一刻才放行。
+     否則 Loading 期間模擬照跑、視覺事件堆在佇列，揭幕後一次播出（特效暴增、FPS 掉到個位數）。
+     與選單暫停是兩個獨立旗標，Worker 只看兩者的聯集；放行由 main.js 在揭幕時呼叫，
+     另有逾時保險，避免任何揭幕路徑漏掉時遊戲永遠停住。 */
+  var _startupHold = true, _startupHoldTimer = 0;
+  var STARTUP_HOLD_MAX_MS = 20000;
+  function effectivePaused() { return _menuPaused || _startupHold; }
   function setMenuPaused(value) {
     _menuPaused = !!value;
-    return post(MSG_IN.MENU_PAUSE, { paused: _menuPaused });
+    return post(MSG_IN.MENU_PAUSE, { paused: effectivePaused() });
   }
+  function releaseStartupHold() {
+    if (_startupHoldTimer) { clearTimeout(_startupHoldTimer); _startupHoldTimer = 0; }
+    if (!_startupHold) return;
+    _startupHold = false;
+    post(MSG_IN.MENU_PAUSE, { paused: effectivePaused() });
+  }
+  _startupHoldTimer = setTimeout(releaseStartupHold, STARTUP_HOLD_MAX_MS);
 
   /* ---- 量測模式（P4 用，預設關閉）----
      網址帶 ?measure=1 時，Worker 與主執行緒兩側都會統計訊息規模與耗時。
@@ -456,7 +470,7 @@ var WorkerBridge = (function () {
     }
     post(MSG_IN.BOOT, {
       save: opts.save || null, now: Date.now(),
-      maxRunId: opts.maxRunId || 1, safeMode: safeMode(), menuPaused: _menuPaused
+      maxRunId: opts.maxRunId || 1, safeMode: safeMode(), menuPaused: effectivePaused()
     });
 
     // 初始狀態也要送：分頁若在隱藏狀態下被載入就不會有 visibilitychange，
@@ -600,7 +614,7 @@ var WorkerBridge = (function () {
   return {
     start: start, stop: stop, send: send, on: on, loadSave: loadSave, handoff: handoff,
     requestPanel: requestPanel, status: status, enabled: enabled, safeMode: safeMode,
-    whenWritesDrained: whenWritesDrained, saveAutoNow: saveAutoNow, setMenuPaused: setMenuPaused
+    whenWritesDrained: whenWritesDrained, saveAutoNow: saveAutoNow, setMenuPaused: setMenuPaused, releaseStartupHold: releaseStartupHold
   };
 })();
 

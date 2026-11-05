@@ -56,6 +56,7 @@ function waitForStartupUi() {
   });
   WorkerBridge.on('workerDead', function () {
     finished = true;
+    WorkerBridge.releaseStartupHold();
     // 讓既有的失效通知與重新載入按鈕可見，不被 Loading 蓋住。
     if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
   });
@@ -101,6 +102,7 @@ function waitForStartupUi() {
             }
             finished = true;
             if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+            WorkerBridge.releaseStartupHold();   // 畫面出來了才開始戰鬥（見 bridge.js 開機等待）
           });
           return;
         }
