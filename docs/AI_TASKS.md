@@ -1,3 +1,13 @@
+## ACHIEVEMENT-PROGRESS-POLISH-20261105 — 成就進度條與獎杯質感
+
+- Owner：Codex；Done，單一開發者。使用者要求改善成就總進度條及旁邊小獎杯；以CSS重做金屬凹槽、香檳金亮面／刻度及獎杯徽章，沿用既有授權trophy.png，不產出獨立美術素材。前置：規範／Workflow／Agent／任務已讀、ai/codex、fetch及預檢完成。
+- 允許css/achievements.css、index僅該CSS快取、LV視覺紀錄及本段；禁止JS／配置／String／成就條件／存檔／音效／其它在製升級Preset與Intro，不合併推送。index與Claude Intro等未合併修改不同區段，以HEAD為base、本項單行候選對Claude實際index正規化LF後merge-file exit0；本副本他項快取／LV／任務段原樣保留、分段stage。
+- 驗收：正式成就DOM／全部CSS及實際AchievementUI.render，0／部分／100%與窄／寬視窗、清單／篩選／降低動態效果，目視與溢出檢查；相關成就回歸、Build及diff後Commit。素材庫無本項新增或修改，不建空Commit；後續使用者重載檢視、Review／合併。
+- 完成4檔：css/achievements.css只改總進度與摘要，42px金屬底章／既有32px獎杯、24px凹槽與十等分刻度、鍍金亮面／末端光及寬度過渡，減少動態效果時停用；index僅achievements.css快取1.0.11、LV新增視覺紀錄、本段。原圖及來源保持，沒有外部參考／新增素材，無需素材庫Commit。
+- 驗證：`node --test tests/achievements.test.cjs tests/ui-achievement-sound.test.cjs tests/ui-tick-smoke.test.cjs tests/vfx-editor-cache-versions.test.cjs`19/19；`npm.cmd run build`665檔通過，`node tools/string-table/build_string_csv.cjs --check`寫死0；diff／stat／check與自我Review通過。唯讀未改規範／Workflow／prompts、ui-achievements／achievement_data／String／原獎杯與其它圖片／相關既有測試；玩法／Worker／存檔／音效及其他在製升級Preset／Intro均保持。
+- 瀏覽器：隔離隨機localhost＋headless Edge，載正式成就DOM、index全部CSS及真正AchievementUI.render／STR／成就表，以可控快照測1280／900／600／390／360px×0／48／115完成共15例，比例誤差<0.3%、頁面無水平溢出／摘要與篩選不重疊；兩種篩選數量及reduced-motion通過，Console error／warning與pageerror0。桌面／手機／總進度截圖存檔再讀回目視。首輪QA缺favicon造成404，補回正式favicon引用後全驗通過，未放寬錯誤斷言。QA／qa-report.json及PNG於本聊天visualizations/achievement-polish，服務與瀏覽器已關閉，未接觸玩家存檔。
+- 交付：可Review及使用者合併，無本項未完成或已知新增缺陷；未跑全遊戲長玩／多瀏覽器，畫面為正式渲染配可控快照驗證。Commit為本段所在「[Codex] feat: 提升成就進度條與獎杯質感」（SHA見聊天）；他項工作完整保留、只分段提交本項4檔，不合併推送。下一步使用者重新整理遊戲檢視成就頁。
+
 ## ANCIENT-STAR-AUTO-OVERLAP-20261105 — 窄裝備格星列自動重疊
 
 - Owner：Codex；Done，單一開發者。使用者要求星星不被裝備外框遮住，格子不足時縮短間距、可重疊。僅將星列改成可壓縮的等分Grid軌道，星星自身仍以max-content維持原18px字形／圖片尺寸；左右預留框邊／光暈空間，窄格軌道縮短形成重疊，寬格保持原間距（>4顆原4px重疊以對稱負邊距保留）。保留三色／1px輪廓／光暈／星數／精鑄順序。
