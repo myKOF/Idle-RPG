@@ -53,6 +53,12 @@ function revealWhenIntroIdle() {
     WorkerBridge.releaseStartupHold();   // 畫面出來了才開始戰鬥（見 bridge.js 開機等待）
   };
   if (typeof IntroPlayer !== 'undefined') {
+    // UI已首畫，讓序章最後的整層淡出直接露出真正HUD。
+    // 不呼叫hideLoadingScreen（那會中止Intro）；戰鬥仍等whenIdle才放行。
+    if (IntroPlayer.isPlaying()) {
+      var veil = document.getElementById('loading-screen');
+      if (veil) { veil.classList.add('is-hidden'); veil.setAttribute('aria-hidden', 'true'); }
+    }
     IntroPlayer.release();   // 標題開場若停在最後一格等載入，現在可以播完收尾了
     IntroPlayer.whenIdle(reveal);
   } else reveal();

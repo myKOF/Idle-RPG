@@ -14871,6 +14871,26 @@ Worker 存活且頁面正常完成載入。
 - 驗證：`node tools/string-table/apply_strings.cjs --check` 通過（2325／e58d793c）；`node tools/string-table/build_string_csv.cjs --check` 通過（寫死顯示文字 0）；`node --test tests/reincarnation-mana-cost.test.cjs tests/string-table.test.cjs tests/ui-sound.test.cjs tests/ui-achievement-sound.test.cjs tests/vfx-editor-cache-versions.test.cjs` 41/41 通過；`npm.cmd run build` 660 檔通過。完整 merged-result 的 conflict marker、`git diff HEAD --check`、HEAD/MERGE_HEAD 與檔案清單於交付前再次核對。
 - 素材庫無變更。已知風險／未完成：無；index 保持 unmerged 是 controller 尚未依回報檔案 stage 的預期狀態，可由 controller 完成 merge commit。
 
+## INTRO-DARK-FANTASY-20261105 — 依黑暗史詩腳本調整序章
+
+- Owner：Codex；Done，單一開發者。使用者指定 docs/dark_fantasy_opening_animation_script.md，改為30秒四幕（6／7／8／9秒）：天界崩壞、天使墜落、荒漠遺骸、聖光覺醒銜接遊戲。前置既有IntroPlayer／首播與重播／載入保護完成，已讀規範／Workflow／任務／Codex指示、fetch及衝突預檢。
+- 允許：intro-data／intro-player／intro-audio、intro.css、main僅揭幕銜接、index僅Intro及main快取、intro回歸、tools/intro與images/intro原創場景／來源紀錄、LV及本段、使用者腳本原文；素材庫保存原圖／提示詞／參考與匯出SHA。禁止玩法／Worker／存檔／配置與String、他人工作區或合併推送。腳本未要求旁白，因此移除舊五句旁白的播放，不改String來源。
+- 衝突：Claude未整合index改style／其他JS快取，LV及AI_TASKS檔首加太古星星說明；本項Intro快取及文件檔尾不同區段、無語意相依，候選對Claude實際檔案merge-file試跑exit0，分段提交。起始12項外部配置／data修改保留。
+- 驗收：四幕時間與畫面、寬窄畫幅、首播／重播／跳過／背景暫停／減少動態、結尾待載入及淡入HUD；程序配樂尊重靜音／音樂與音效音量、無手勢時安靜略過，生命週期完整清理。相關回歸、Build、字串檢查、隔離瀏覽器目視／Console／音訊及雙庫SHA後先素材再遊戲Commit。後續使用者重載設定說明重播驗收及Review／合併。
+
+- 完成：四幕6／7／8／9秒、五張原創繪景（末幕跪姿掌心→起身迎敵），依使用者修訂統一銀白聖甲／白披風／縮小人物及三對巨大六翼；舊地圖／黑甲肖像與五句旁白不再播放，String來源不變。完整橫幅contain適配直式，無逐幀blur或額外Pixi舞台。加入視覺舞台29–30秒淡出與main在UI首畫完成後退黑幕，戰鬥仍於whenIdle才放行；繪景提前decode避免末幕冷入鏡短暫空畫。
+- 聲景：30秒自製程序低音和弦／鼓／鐘／雷鳴風壓／遠方悲鳴／沙塵／聖光／拔劍，沒有外部取樣或實錄交響樂。IntroAudio只於序章啟動，兩條PCM分別依GameSettings音樂／音效音量及全體靜音；無手勢安靜退化，背景／停格／seek／略過停止，恢復依總時鐘offset，結束與中止回收。只訂閱一份設定監聽，取消下載中起播，標題不載音軌。
+- 素材：Mote Studio存取檢查失敗，改內建image_gen原創／修訂；五張最終PNG、既有頭像參考、PROMPTS、SOURCE、五張WebP及原創雙WAV／可編輯程序來源保存在素材庫codex-authored/intro-dark-fantasy-20261105。黑甲／小翅膀廢棄候選不納入。五張WebP共約1.99MB、兩條單聲道24kHz／16-bit各30秒共2.88MB；原圖不裁切、只轉碼。build-score --apply／--check可逐位元重產，sync-library --apply／--check核對雙庫全部來源／匯出SHA。
+- 測試：node --test tests/intro-player.test.cjs tests/intro-audio.test.cjs tests/gm-intro-command.test.cjs tests/scene-startup-ready.test.cjs tests/startup-hold.test.cjs tests/vfx-editor-cache-versions.test.cjs，49/49通過；涵蓋四幕、資產、UI先好才退黑幕、總時鐘／停格／跳過／中止、播放紀錄／重播焦點、靜音／音量／異步取消、PCM時長／首尾零／無削波／非靜音／確定性。npm run build 671檔通過（tools/intro另node --check通過）；build_string_csv --check寫死0；diff／stat／check及自我Review完成。
+- 擴大：loading-screen及vfx-startup-loading共23項、1過／22既有失敗；以未修改HEAD的main唯讀覆映重跑，22項同名同因完全一致（16項fixture缺WorkerBridge.releaseStartupHold、6項缺skyEntryPoint），未弱化斷言／修改相關測試或原功能。整體72項為50過／22基線失敗，不宣稱全庫全過。
+- 瀏覽器：內建IAB無後端，改隨機localhost／隔離Edge＋真Worker及正式主頁。14例通過（含最終不中斷30秒連播）：四幕及近／遠景實際截圖目視、390直式與844橫式完整六翼、29.5秒視覺舞台opacity0.5下可見真正HUD、自然尾段結束移除舞台、Esc略過、reduced-motion無transform；兩條30秒真AudioBuffer及Analyser非零輸出、靜音與兩音量、seek回收皆通過，Console error／warning與pageerror0。初次瞬間seek截圖遇末幕冷解碼空畫，加入提前decode並等合成提交後，最終所有分鏡實際像素可見。QA與最終qa-report及PNG於本聊天visualizations/intro，服務及瀏覽器均已關閉，玩家原網址存檔未讀寫。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts、bridge／Worker／協議／戰鬥／player／save、原角色／場景及其他素材、String來源與全部Excel／CSV及js/data.js。原12項外部配置修改保留且不stage；使用者腳本原文納入交付。Claude中途於AI_TASKS檔尾新增獨立傳奇任務，本段改放既有最後merge紀錄之前，與其檔首／檔尾分離；最新候選三方merge-file exit0，index／LV不同區段亦0。沒有改他人工作區或整合其他功能。
+- 交付：素材庫先Commit `3576175e`（17檔），共享素材庫提交後乾淨，遊戲Commit為本段所在「[Codex] feat: 依腳本重製銀白六翼天使開場動畫」，實際SHA見聊天回報。可供Review與使用者合併，本項無未完成實作；軟體GPU限制另見下方，未跑跨瀏覽器／行動真機／長時間GPU測試，瀏覽器首次無手勢可能靜音，直式採完整橫幅留黑。採分層繪景與鏡頭／粒光的動態漫畫，非角色逐格骨架影片。下一步重新整理本工作區遊戲，設置→說明→重播開頭動畫驗收；未合併推送develop／main。
+
+- 使用者續修：覺醒幕重新收窄胸腰／肩甲／腿甲為修長體型，六翼由張開改為下垂、向前包覆、長羽尖觸沙的蓄勢姿態；最後迎敵才完全展翼。已替換母圖及WebP、更新awakening素材與播放器／CSS快取，來源／精確修訂提示詞及manifest SHA同步雙庫；荒漠遺骸仍於13–21秒，已於聊天補圖。
+- 完整連播：正常GPU的隔離Edge／真Worker無中斷跑完30秒，59份每半秒樣本涵蓋五張繪景，onDone為end、沒有走failsafe；真正HUD可見且戰鬥於結束才放行，Console／Page error及warning0。自然樣本及來源在natural-default-gpu-report.json。另做最終全QA圖像及音訊，報告qa-report.json。
+- 實際平台限制：強制SwiftShader軟體GPU的完整連播，在29秒透明合成開始後會停止出幀，最後由原35秒保險收掉；首版全root淡出時即已出現，改為只淡出視覺stage、把總時鐘／控制留於父層後，該軟體GPU仍可重現。一般GPU完整30秒與逐幕／窄屏／音訊皆通過，不把軟體GPU結果當成功、不以延長保險掩蓋。未改GPU／Renderer／其他工作區；低階或軟體GPU最後淡入的相容性仍是已知限制，交Review跟進。
+
 ## DEVELOP-MERGE-5144253-20261105 — 開場動畫／升級特效／第五角色整合
 
 - Owner：Codex；Done（指定整合者）。整合原始 HEAD `297c923b` 與 MERGE_HEAD `51442531`；唯一原始衝突為 `index.html`，未執行 add、commit、push 或修改 Git metadata。

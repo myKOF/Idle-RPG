@@ -155,6 +155,8 @@ var IntroPlayer = (function () {
       el.alt = '';
       el.draggable = false;
       el.decoding = 'async';
+      // 提前解碼尚未入鏡的繪景，避免交叉淡化第一幀才開始解碼。
+      if (typeof el.decode === 'function') el.decode().catch(function () {});
     } else {
       el = document.createElement('div');
       if (layer.kind === 'text') el.textContent = STR.apply(null, [layer.str].concat(layer.args || []));
@@ -179,6 +181,7 @@ var IntroPlayer = (function () {
 
   function pauseAll(c) {
     c.paused = true;
+    if (c.audio) c.audio.pause();
     c.anims.forEach(function (a) { try { a.pause(); } catch (e) {} });
     clearTimeout(c.failsafe); c.failsafe = 0;
   }
@@ -188,6 +191,7 @@ var IntroPlayer = (function () {
     if (c.hold && c.hold.holding) return;   // 停格等載入中，切回分頁也繼續停著
     c.paused = false;
     c.anims.forEach(function (a) { try { a.play(); } catch (e) {} });
+    if (c.audio && !c.skipping) c.audio.start();
     armFailsafe(c);
   }
 
@@ -234,6 +238,7 @@ var IntroPlayer = (function () {
   function finish(c, reason) {
     if (_cur !== c) return;
     _cur = null;
+    if (c.audio) c.audio.dispose();
     clearTimeout(c.failsafe);
     clearTimeout(c.skipTimer);
     if (c.hold) clearTimeout(c.hold.maxTimer);
@@ -260,7 +265,7 @@ var IntroPlayer = (function () {
       id: opts.id || '', duration: timelineDuration(timeline), anims: [], paused: false, seeking: false,
       skipping: false, failsafe: 0, skipTimer: 0, onDone: opts.onDone || null,
       skippable: timeline.skippable !== false, reduced: reducedMotion(),
-      hold: null
+      hold: null, audio: null
     };
     var holdAt = num(timeline.holdAt, 0);
     if (opts.hold && holdAt > 0 && holdAt < c.duration) {
@@ -268,7 +273,7 @@ var IntroPlayer = (function () {
     }
     try {
       var root = document.createElement('div');
-      root.className = 'intro-player' + (c.reduced ? ' is-reduced' : '');
+      root.className = 'intro-player' + (timeline.cinematic ? ' is-cinematic' : '') + (c.reduced ? ' is-reduced' : '');
       root.id = 'intro-player';
       root.setAttribute('role', 'presentation');
       var stage = document.createElement('div');
@@ -320,6 +325,14 @@ var IntroPlayer = (function () {
       if (btn) { try { btn.focus({ preventScroll: true }); } catch (e) {} }
       c.clock = animate(c, clockEl, [{ opacity: 0 }, { opacity: 0 }], { duration: c.duration, fill: 'forwards' });
       c.clock.onfinish = function () { if (!c.skipping) finish(c, 'end'); };
+      // 視覺舞台與底色一起退去，時鐘和控制留在不透明的父層。
+      // 不淡出root：Chromium可能停掉透明祖先下的零面積時鐘，卡住最後一秒。
+      var revealMs = Math.min(c.duration, Math.max(0, num(timeline.revealDuration, 0)));
+      if (revealMs) animate(c, stage, [{ opacity: 1 }, { opacity: 0 }],
+        { delay: c.duration - revealMs, duration: revealMs, fill: 'both' });
+      if (timeline.audio && typeof IntroAudio !== 'undefined') {
+        c.audio = IntroAudio.create(timeline.audio, function () { return num(c.clock.currentTime, 0); });
+      }
       if (c.hold) {
         var holdEl = document.createElement('span');
         holdEl.className = 'intro-clock';
@@ -328,7 +341,8 @@ var IntroPlayer = (function () {
           .onfinish = function () { reachHold(c); };
       }
       document.addEventListener('visibilitychange', onVisibility);
-      if (document.hidden) pauseAll(c); else armFailsafe(c);
+      if (document.hidden) pauseAll(c);
+      else { armFailsafe(c); if (c.audio) c.audio.start(); }
       return true;
     } catch (e) {
       console.error('[intro] 播放失敗，直接略過', e);
@@ -342,10 +356,13 @@ var IntroPlayer = (function () {
     var c = _cur;
     if (!c || c.skipping || !c.skippable) return;
     c.skipping = true;
+    if (c.audio) c.audio.pause();
     clearTimeout(c.failsafe);
     var done = function () { finish(c, 'skip'); };
     try {
-      var a = c.root.animate([{ opacity: 1 }, { opacity: 0 }], { duration: SKIP_FADE_MS, fill: 'forwards' });
+      // 收尾中略過，沿當下透明度淡出，不先閃回完整畫面。
+      var opacity = typeof getComputedStyle === 'function' ? Number(getComputedStyle(c.root).opacity) : 1;
+      var a = c.root.animate([{ opacity: isFinite(opacity) ? opacity : 1 }, { opacity: 0 }], { duration: SKIP_FADE_MS, fill: 'forwards' });
       a.onfinish = done;
     } catch (e) { done(); return; }
     // 分頁剛好被隱藏時動畫不會走完，用計時器保底

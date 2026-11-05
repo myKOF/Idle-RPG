@@ -66,6 +66,58 @@
   object-fit: cover;
 }
 
+/* 四幕繪景保留完整橫幅；直式裝置採上下留黑，六翼不被cover裁掉。
+   除掌心特寫外不放大人物，沿既有合成器動畫，不逐幀重畫／blur。 */
+.intro-player.is-cinematic { background: transparent; }
+.intro-player.is-cinematic .intro-stage { background: #080705; }
+.intro-image-cinema {
+  object-fit: contain;
+  object-position: 50% 50%;
+}
+.intro-image-awakening { transform-origin: 51% 59%; }
+.intro-infernal-glow {
+  background: radial-gradient(ellipse at 51% 25%, rgba(170, 32, 8, .24), transparent 48%);
+}
+.intro-embers {
+  background:
+    radial-gradient(2px 4px at 32% 30%, #eab77c, transparent),
+    radial-gradient(2px 3px at 57% 49%, #e78a43, transparent),
+    radial-gradient(3px 3px at 65% 60%, #d9a465, transparent),
+    radial-gradient(2px 4px at 46% 22%, #eed8a2, transparent),
+    radial-gradient(2px 3px at 75% 37%, #efb677, transparent),
+    radial-gradient(3px 3px at 25% 68%, #c57739, transparent);
+}
+.intro-feather-trails {
+  background:
+    radial-gradient(2px 40px at 31% 27%, rgba(255, 244, 211, .65), transparent),
+    radial-gradient(2px 55px at 70% 58%, rgba(255, 238, 182, .55), transparent),
+    radial-gradient(2px 25px at 59% 38%, rgba(255, 250, 230, .7), transparent),
+    radial-gradient(1px 35px at 44% 68%, rgba(255, 240, 204, .6), transparent);
+}
+.intro-impact {
+  background: radial-gradient(ellipse at 50% 64%, rgba(237, 218, 169, .9), rgba(170, 137, 86, .45) 15%, transparent 48%);
+}
+.intro-sand-haze {
+  background:
+    radial-gradient(ellipse 70% 15% at 18% 65%, rgba(202, 169, 104, .2), transparent),
+    radial-gradient(ellipse 65% 12% at 82% 48%, rgba(175, 143, 94, .16), transparent);
+}
+.intro-ghost-lights {
+  background:
+    radial-gradient(ellipse 1.2% 3% at 26% 70%, rgba(123, 218, 190, .3), transparent),
+    radial-gradient(ellipse 1% 2.8% at 72% 63%, rgba(139, 206, 180, .28), transparent),
+    radial-gradient(ellipse 1% 2% at 61% 56%, rgba(119, 194, 177, .25), transparent);
+}
+.intro-sacred-light {
+  background: radial-gradient(circle at 51% 59%, rgba(255, 250, 223, .7), rgba(255, 229, 153, .15) 12%, transparent 32%);
+}
+.intro-dawn-rays {
+  background: conic-gradient(from 162deg at 50% 8%, transparent 0deg, rgba(255, 240, 194, .08) 8deg, transparent 16deg, rgba(255, 244, 215, .1) 25deg, transparent 34deg, rgba(255, 236, 185, .07) 44deg, transparent 52deg);
+}
+.intro-cinema-vignette {
+  background: radial-gradient(ellipse at 50% 49%, transparent 38%, rgba(9, 7, 5, .25) 78%, rgba(0, 0, 0, .55));
+}
+
 .intro-shape-stars {
   background:
     radial-gradient(1px 1px at 12% 18%, rgba(255, 255, 255, 0.9), transparent 60%),

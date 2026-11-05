@@ -49,57 +49,61 @@ var INTRO_TIMELINES = {
     ]
   },
 
-  /* 序章：新玩家第一次開機播一次（之後只播 title），設定「說明」頁可重播。28 秒、五個鏡頭：
-       1  0.0–5.2s  黑幕星點與神光：世界之名
-       2  4.4–16.6s 人界地圖推鏡：眾神秩序
-       3 10.6–16.6s 暗紫霧氣從地圖四周侵蝕：魔物甦醒
-       4 16.0–22.2s 主角肖像（遊戲內頭像 icon_avatar.png）與劍光：騎士登場
-       5 21.4–28.0s 標題（同 title 的構圖）＋最後一句旁白；27.2 秒停格等載入
-     旁白文字在 String 表 2414–2418。素材只用遊戲內已在使用的圖（世界地圖、主角頭像）。 */
+  /* 依 docs/dark_fantasy_opening_animation_script.md：30 秒、四幕。
+     原創繪景＋合成器推鏡／沙塵／羽芒，最後一幕由掌心拉遠、起身迎敵。
+     使用者修訂：殘破銀白聖甲、縮小人物、三對巨大六翼；全幅保留羽翼。
+     沒有新增旁白；舊旁白 String 留存但不再播放。29 秒待UI，最後1秒淡入實際HUD。 */
   prologue: {
-    duration: 28000,
-    holdAt: 27200,
+    duration: 30000,
+    holdAt: 29000,
     skipDelay: 1200,
+    cinematic: true,
+    revealDuration: 1000,
+    audio: { music: 'audio/intro/prologue-music.wav?v=1', sfx: 'audio/intro/prologue-sfx.wav?v=1' },
+    scenes: [
+      { id: 'heaven_collapse', at: 0, dur: 6000, camera: 'pan_down_from_sky' },
+      { id: 'angel_fall', at: 6000, dur: 7000, camera: 'fast_tracking_shot_following_meteor' },
+      { id: 'desolate_human_world', at: 13000, dur: 8000, camera: 'slow_dolly_forward' },
+      { id: 'rise_and_quest', at: 21000, dur: 9000, camera: 'push_out_to_gameplay_perspective' }
+    ],
     layers: [
-      // 鏡頭 1
-      { kind: 'shape', cls: 'intro-shape-stars', at: 0, dur: 5200, fadeIn: 800, fadeOut: 800,
-        from: { scale: 1 }, to: { scale: 1.06 } },
-      { kind: 'shape', cls: 'intro-shape-glow', at: 500, dur: 4500, fadeIn: 1400, fadeOut: 800,
-        from: { scale: 0.5 }, to: { scale: 1.1 }, easing: 'ease-out' },
-      { kind: 'text', str: 2414, cls: 'intro-text-caption', place: 'caption', at: 900, dur: 3900, fadeIn: 700, fadeOut: 600,
-        from: { y: 1 }, to: { y: 0 }, easing: 'ease-out' },
-      // 鏡頭 2、3：地圖一路推到霧氣吞沒
-      { kind: 'image', src: 'images/world-map/salvien.png?v=1', cls: 'intro-image-cover',
-        at: 4400, dur: 12200, fadeIn: 1200, fadeOut: 1000,
-        from: { x: 4, y: 2, scale: 1.32 }, to: { x: -2, y: -1, scale: 1.04 }, easing: 'linear' },
-      { kind: 'text', str: 2415, cls: 'intro-text-caption', place: 'caption', at: 5400, dur: 5000, fadeIn: 700, fadeOut: 600,
-        from: { y: 1 }, to: { y: 0 }, easing: 'ease-out' },
-      { kind: 'shape', cls: 'intro-shape-shadow', at: 10600, dur: 6000, fadeIn: 2600, fadeOut: 1000 },
-      { kind: 'shape', cls: 'intro-shape-fog', at: 10600, dur: 6000, fadeIn: 1600, fadeOut: 1000,
-        from: { scale: 2.4 }, to: { scale: 1 }, easing: 'ease-in' },
-      { kind: 'text', str: 2416, cls: 'intro-text-caption', place: 'caption', at: 11400, dur: 4600, fadeIn: 700, fadeOut: 600,
-        from: { y: 1 }, to: { y: 0 }, easing: 'ease-out' },
-      // 鏡頭 4
-      { kind: 'image', src: 'images/icon_avatar.png', cls: 'intro-image-portrait', place: 'center',
-        at: 16000, dur: 6200, fadeIn: 1400, fadeOut: 900,
-        from: { y: 3, scale: 1.16 }, to: { y: 0, scale: 1.02 }, easing: 'ease-out' },
-      { kind: 'shape', cls: 'intro-shape-slash', place: 'center', at: 19300, dur: 800, fadeIn: 80, fadeOut: 520,
-        from: { sx: 0.05, sy: 1, rotate: -26 }, to: { sx: 1.25, sy: 1, rotate: -26 }, easing: 'ease-out' },
-      { kind: 'text', str: 2417, cls: 'intro-text-caption', place: 'caption', at: 16800, dur: 4600, fadeIn: 700, fadeOut: 600,
-        from: { y: 1 }, to: { y: 0 }, easing: 'ease-out' },
-      // 鏡頭 5：標題（與 title 同構圖），停格點之後只剩淡出
-      { kind: 'shape', cls: 'intro-shape-stars', at: 21400, dur: 6600, fadeIn: 1000, fadeOut: 600,
-        from: { scale: 1 }, to: { scale: 1.04 } },
-      { kind: 'shape', cls: 'intro-shape-glow', at: 21800, dur: 6200, fadeIn: 1000, fadeOut: 600,
-        from: { scale: 0.7 }, to: { scale: 1.05 }, easing: 'ease-out' },
-      { kind: 'text', str: 2411, cls: 'intro-text-logo', at: 22200, dur: 5800, fadeIn: 1000, fadeOut: 600,
-        from: { y: -1, scale: 1.08 }, to: { y: -2.5, scale: 1 }, easing: 'ease-out' },
-      { kind: 'shape', cls: 'intro-shape-rule', place: 'center', at: 22800, dur: 5200, fadeIn: 600, fadeOut: 600,
-        from: { y: 4, sx: 0.1, sy: 1 }, to: { y: 4, sx: 1, sy: 1 }, easing: 'ease-out' },
-      { kind: 'text', str: 2412, cls: 'intro-text-logo-sub', at: 23000, dur: 5000, fadeIn: 700, fadeOut: 600,
-        from: { y: 8 }, to: { y: 7 }, easing: 'ease-out' },
-      { kind: 'text', str: 2418, cls: 'intro-text-caption', place: 'caption', at: 24000, dur: 4000, fadeIn: 900, fadeOut: 600,
-        from: { y: -5 }, to: { y: -6 }, easing: 'ease-out' }
+      // 0–6：鏡頭下移，神殿碎裂、裂隙吞噬聖光。
+      { kind: 'image', src: 'images/intro/heaven-collapse.webp?v=1', cls: 'intro-image-cinema',
+        at: 0, dur: 6600, fadeIn: 900, fadeOut: 600,
+        from: { y: -1.5, scale: 1 }, to: { y: 1.5, scale: 1 }, easing: 'linear' },
+      { kind: 'shape', cls: 'intro-infernal-glow', at: 1400, dur: 4800, fadeIn: 1600, fadeOut: 500,
+        from: { scale: 0.65 }, to: { scale: 1.3 } },
+      { kind: 'shape', cls: 'intro-embers', at: 1700, dur: 4400, fadeIn: 700, fadeOut: 600,
+        from: { y: -6, x: -2 }, to: { y: 9, x: 3 }, easing: 'linear' },
+      // 6–13：跟隨負傷六翼天使墜下；羽芒掠過，落地揚塵。
+      { kind: 'image', src: 'images/intro/angel-fall.webp?v=1', cls: 'intro-image-cinema',
+        at: 6000, dur: 7500, fadeIn: 600, fadeOut: 500,
+        from: { y: -2 }, to: { y: 2 }, easing: 'cubic-bezier(.32,.1,.72,1)' },
+      { kind: 'shape', cls: 'intro-feather-trails', at: 6500, dur: 5700, fadeIn: 900, fadeOut: 800,
+        from: { x: -6, y: 12 }, to: { x: 6, y: -18 }, easing: 'ease-in' },
+      { kind: 'shape', cls: 'intro-impact', at: 12200, dur: 1300, fadeIn: 180, fadeOut: 1000,
+        from: { scale: 0.2, y: 15 }, to: { scale: 2.6, y: 0 }, easing: 'ease-out' },
+      // 13–21：平視慢推荒漠，骨骸、廢拱門與幽火。
+      { kind: 'image', src: 'images/intro/desolate-human-world.webp?v=1', cls: 'intro-image-cinema',
+        at: 13000, dur: 8500, fadeIn: 650, fadeOut: 500,
+        from: { scale: 0.94 }, to: { scale: 1 }, easing: 'linear' },
+      { kind: 'shape', cls: 'intro-sand-haze', at: 13000, dur: 8500, fadeIn: 900, fadeOut: 600,
+        from: { x: -9 }, to: { x: 9 }, easing: 'linear' },
+      { kind: 'shape', cls: 'intro-ghost-lights', at: 14200, dur: 6900, fadeIn: 1400, fadeOut: 900,
+        from: { y: 2, scale: 0.96 }, to: { y: -2, scale: 1.02 }, easing: 'linear' },
+      // 21–26：掌心聖光特寫拉遠，顯出殘破銀白聖甲與巨大六翼。
+      { kind: 'image', src: 'images/intro/awakening.webp?v=2', cls: 'intro-image-cinema intro-image-awakening',
+        at: 21000, dur: 5700, fadeIn: 650, fadeOut: 700,
+        from: { y: -6, scale: 2.25 }, to: { y: 0, scale: 1 }, easing: 'ease-out' },
+      { kind: 'shape', cls: 'intro-sacred-light', at: 21300, dur: 5200, fadeIn: 1100, fadeOut: 1000,
+        from: { scale: 0.18 }, to: { scale: 1.1 }, easing: 'ease-out' },
+      // 26–30：拾劍站起，面對幽靈；整層淡出露出已準備好的真正UI。
+      { kind: 'image', src: 'images/intro/rise-and-quest.webp?v=1', cls: 'intro-image-cinema',
+        at: 26000, dur: 4000, fadeIn: 700, fadeOut: 0,
+        from: { scale: 1 }, to: { scale: 0.96 }, easing: 'ease-out' },
+      { kind: 'shape', cls: 'intro-dawn-rays', at: 26400, dur: 3600, fadeIn: 1200, fadeOut: 0,
+        from: { scale: 0.85 }, to: { scale: 1.1 }, easing: 'ease-out' },
+      { kind: 'shape', cls: 'intro-cinema-vignette', at: 0, dur: 30000, fadeIn: 600, fadeOut: 0 }
     ]
   },
 

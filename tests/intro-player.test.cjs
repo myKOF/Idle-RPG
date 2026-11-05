@@ -66,6 +66,7 @@ function makeEnv(opts) {
       resumeStartupHoldTimeout() { bridgeCalls.push('resume'); }
     }
   };
+  if (opts.audio) ctx.IntroAudio = opts.audio;
   vm.createContext(ctx);
   vm.runInContext(read('js/intro-data.js') + '\nthis.INTRO_TIMELINES = INTRO_TIMELINES;', ctx);
   if (opts.prologue) ctx.INTRO_TIMELINES.prologue = opts.prologue;
@@ -325,23 +326,53 @@ test('有停格點的時間軸：停住那一格的圖層都已完全淡入、�
   assert.ok(ctx.INTRO_TIMELINES.title.duration <= 3000, '標題開場載入很快時總長不超過 3 秒');
 });
 
-test('序章：新玩家開機會播、長度合理、用到的圖都在 repo 裡', () => {
+test('序章：新玩家開機會播、四幕30秒、使用正式繪景與聲景', () => {
   const env = makeEnv();
   const tl = env.ctx.INTRO_TIMELINES.prologue;
   assert.ok(tl, '有 prologue');
-  assert.ok(tl.duration >= 20000 && tl.duration <= 35000, '20～35 秒');
+  assert.equal(tl.duration, 30000);
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(tl.scenes.map(s => [s.id, s.at, s.dur]))), [
+    ['heaven_collapse', 0, 6000], ['angel_fall', 6000, 7000],
+    ['desolate_human_world', 13000, 8000], ['rise_and_quest', 21000, 9000]
+  ]);
   assert.ok(tl.skippable !== false, '可略過');
   for (const l of tl.layers.filter((x) => x.kind === 'image')) {
     assert.ok(fs.existsSync(path.join(root, l.src.split('?')[0])), '圖檔存在：' + l.src);
   }
-  const captions = JSON.parse(JSON.stringify(tl.layers.filter((l) => l.place === 'caption').map((l) => l.str)));
-  assert.deepStrictEqual(captions, [2414, 2415, 2416, 2417, 2418], '五句旁白依序出現');
-  // 相鄰旁白不重疊：前一句淡出結束才出下一句
-  const caps = tl.layers.filter((l) => l.place === 'caption');
-  for (let i = 1; i < caps.length; i++) assert.ok(caps[i].at >= caps[i - 1].at + caps[i - 1].dur, '旁白不重疊：' + caps[i].str);
+  assert.equal(tl.layers.filter(l => l.kind === 'image').length, 5);
+  assert.equal(tl.layers.filter(l => l.kind === 'text').length, 0, '腳本沒有旁白，不再播放舊故事');
+  assert.equal(tl.holdAt, 29000, '完整迎敵畫面等UI');
+  assert.equal(tl.revealDuration, 1000, '最後1秒淡入真正HUD');
+  for (const url of Object.values(tl.audio)) assert.ok(fs.existsSync(path.join(root, url.split('?')[0])), url);
+  assert.match(read('css/intro.css'), /\.intro-image-cinema\s*\{\s*object-fit: contain;/, '完整羽翼適配直式畫面');
   assert.equal(env.P.startupBegin({ hasSave: false }), true);
   assert.equal(env.P.state().id, 'prologue', '新玩家播序章');
   assert.equal(env.P._internal.replayTimelineId(), 'prologue', '說明頁重播播序章');
+});
+
+test('序章整層收尾與聲音：暫停／seek／恢復／略過／中止都清理，標題不載聲景', () => {
+  const calls = [];
+  let soundClock;
+  const audio = { create(config, clock) { soundClock = clock; calls.push('create'); return {
+    start() { calls.push('start'); }, pause() { calls.push('pause'); }, dispose() { calls.push('dispose'); }
+  }; } };
+  const env = makeEnv({ audio });
+  env.P.play(env.ctx.INTRO_TIMELINES.prologue, { id: 'prologue' });
+  assert.deepStrictEqual(calls, ['create', 'start']);
+  const rootFade = env.anims.find(a => a.el.className === 'intro-stage');
+  assert.equal(rootFade.timing.delay, 29000); assert.equal(rootFade.timing.duration, 1000);
+  assert.equal(rootFade.timing.fill, 'both', '收尾合成層從開場就準備，不在交接幀才掛入');
+  assert.ok(!env.anims.some(a => a.el === env.playerRoot()), '時鐘與控制的祖先不參與收尾淡出');
+  env.clock().currentTime = 17000; assert.equal(soundClock(), 17000);
+  env.ctx.document.hidden = true; env.docListeners.visibilitychange[0]();
+  env.ctx.document.hidden = false; env.docListeners.visibilitychange[0]();
+  assert.deepStrictEqual(calls.slice(-2), ['pause', 'start']);
+  env.P.seek(22000); assert.equal(calls.at(-1), 'pause');
+  env.docListeners.visibilitychange[0](); assert.equal(calls.at(-1), 'pause', 'seek不自動復播');
+  env.P.skip(); assert.equal(calls.at(-1), 'pause');
+  env.P.abort(); assert.equal(calls.at(-1), 'dispose');
+  calls.length = 0;
+  env.P.play(env.ctx.INTRO_TIMELINES.title, {}); assert.deepStrictEqual(calls, []);
 });
 
 /* ---------- 開機流程接線 ---------- */
@@ -360,6 +391,22 @@ test('接線：存檔確認後、Worker 開機前起播；揭幕等動畫；收�
   const iData = html.indexOf('js/intro-data.js'), iPlayer = html.indexOf('js/intro-player.js'), iBridge = html.indexOf('js/bridge.js');
   assert.ok(iData > 0 && iData < iPlayer && iPlayer < iBridge, '資料 → 播放器 → bridge 的載入順序');
   assert.match(html, /css\/intro\.css\?v=/);
+});
+
+test('UI先就緒：只退載入黑幕，等序章淡出完成才放行戰鬥', () => {
+  const fn = /function revealWhenIntroIdle\(\) \{[\s\S]*?\n\}/.exec(read('js/main.js'))[0];
+  const calls = [];
+  let idle;
+  const ctx = {
+    document: { getElementById(id) { assert.equal(id, 'loading-screen'); return {
+      classList: { add(c) { calls.push(c); } }, setAttribute(k, v) { calls.push([k, v]); }
+    }; } },
+    IntroPlayer: { isPlaying: () => true, release() { calls.push('release'); }, whenIdle(fn) { idle = fn; } },
+    hideLoadingScreen() { calls.push('hide'); }, WorkerBridge: { releaseStartupHold() { calls.push('battle'); } }
+  };
+  vm.runInNewContext(fn + '\nrevealWhenIntroIdle();', ctx);
+  assert.deepStrictEqual(calls, ['is-hidden', ['aria-hidden', 'true'], 'release']);
+  idle(); assert.deepStrictEqual(calls.slice(-2), ['hide', 'battle']);
 });
 
 /* ---------- 播放條件與重播（Task C） ---------- */
