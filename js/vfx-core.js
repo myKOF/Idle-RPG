@@ -47,7 +47,9 @@ var VFXCore = (function () {
      （sub 是為了讓「這一層只在別人死掉時出現」講得出來——用 burst count 1
      再想辦法壓掉自發的那一次，是那種讀者永遠看不懂的寫法）。 */
   var EMISSION_MODES = ['burst', 'rate', 'sub'];
-  var PROCEDURAL_EFFECTS = ['uvScroll', 'waterTornado'];
+  var PROCEDURAL_EFFECTS = ['uvScroll', 'waterTornado', 'celebration'];
+  var celebrationGenerator = typeof VFXCelebration !== 'undefined' ? VFXCelebration :
+    (typeof require === 'function' ? require('./vfx-celebration.js') : null);
   var waterGenerator = typeof VFXWaterTornado !== 'undefined' ? VFXWaterTornado :
     (typeof require === 'function' ? require('./vfx-water-tornado.js') : null);
   /* 序列幀的播放方式。
@@ -650,6 +652,14 @@ var VFXCore = (function () {
   }
 
   function validateProceduralLayer(layer, where, errors) {
+    if (layer.effect === 'celebration') {
+      if (!celebrationGenerator) errors.push(where + ': celebration generator missing');
+      else celebrationGenerator.validate(layer.celebration).forEach(function (e) { errors.push(where + ': ' + e); });
+      if (layer.assetId || layer.sheet || layer.size || layer.scrollSpeed || layer.water || layer.radiusProfile)
+        errors.push(where + ': celebration does not accept texture/size/scroll/water/profile fields');
+      return;
+    }
+    if (layer.celebration !== undefined) errors.push(where + ': celebration settings require celebration effect');
     if (layer.effect === 'waterTornado') {
       var w = layer.water;
       if (w && w.palette !== undefined && ['water', 'fire'].indexOf(w.palette) < 0) errors.push(where + '.water.palette 必須為 water 或 fire');
@@ -765,7 +775,7 @@ var VFXCore = (function () {
       'spread', 'gravity', 'drag', 'radialSpeed', 'orbitalSpeed', 'noise',
       'startScale', 'rotationStart', 'rotationSpeed',
       'alignToVelocity', 'velocityRotationOffset', 'worldSpace', 'subEmitter'],
-    procedural: ['effect', 'size', 'scrollSpeed', 'water', 'radiusProfile']
+    procedural: ['effect', 'size', 'scrollSpeed', 'water', 'radiusProfile', 'celebration']
       .concat(PER_AXIS_SCALE_FIELDS).concat(OFFSET_FIELDS).concat(OUTER_SCALE_FIELDS)
   };
   /* 空物件只收「會被子物件繼承」的欄位：變換（含曲線）、透明度、顏色、時間軸。
@@ -1127,7 +1137,7 @@ var VFXCore = (function () {
     'alphaOverLife', 'tintOverLife', 'scaleOverLife', 'scaleXOverLife', 'scaleYOverLife',
     'rotationOverLife', 'rotationXOverLife', 'rotationYOverLife',
     'offsetXOverLife', 'offsetYOverLife', 'outerScale', 'projection', 'perspective', 'cameraDepth', 'followDirection', 'followStretch',
-    'sheet', 'radiusProfile', 'water'];
+    'sheet', 'radiusProfile', 'water', 'celebration'];
 
   // 每個水平截面的目標半徑／來源半徑；後端只套用 Core 算出的比例。
   function radiusProfileScale(profile, y) {
@@ -1215,6 +1225,7 @@ var VFXCore = (function () {
       assetId: layer.assetId,
       effect: layer.effect,
       water: layer.water,
+      celebration: layer.celebration,
       zIndex: layer.zIndex || 0,
       sortByY: layer.sortByY === true,
       position: layer.position || { x: 0, y: 0 },
@@ -1461,7 +1472,8 @@ var VFXCore = (function () {
         (spec.sheet ? '|' + spec.sheet.columns + 'x' + spec.sheet.rows : '') +
         (spec.profileScales ? '|profile:' + spec.profileScales.join(',') : '') +
         (spec.generated ? '|generated:' + spec.generated : '') + (spec.warpAxis ? '|warp:'+spec.warpAxis : '') +
-        (spec.straightenBend ? '|straighten' : '');
+        (spec.straightenBend ? '|straighten' : '') +
+        (spec.celebration ? '|celebration:' + JSON.stringify(spec.celebration) : '');
     }
     function acquireNode(spec) {
       var key = poolKey(spec);
@@ -1686,7 +1698,7 @@ var VFXCore = (function () {
     function nodeSpecFor(layer) {
       var spec = {
         kind: layer.def.profileScales ? 'profiled' : (layer.def.type === 'procedural' ? 'tiled' : 'sprite'),
-        assetUrl: layer.def.effect === 'waterTornado' ? null : resolver.resolve(layer.def.assetId),
+        assetUrl: layer.def.effect === 'waterTornado' || layer.def.effect === 'celebration' ? null : resolver.resolve(layer.def.assetId),
         blendMode: layer.def.blendMode
       };
       if (layer.def.revealXOverLife !== undefined) spec.kind = 'revealed';
@@ -1703,6 +1715,7 @@ var VFXCore = (function () {
       }
       if (layer.def.profileScales) spec.profileScales = layer.def.profileScales;
       if (layer.def.effect === 'waterTornado') { spec.kind = 'generated'; spec.generated = layer.def.water.part; }
+      if (layer.def.effect === 'celebration') { spec.kind = 'celebration'; spec.celebration = layer.def.celebration; }
       return spec;
     }
 
@@ -1958,6 +1971,7 @@ var VFXCore = (function () {
       t.elevation = effect.elevation || undefined;
       t.width = undefined; t.height = undefined; t.tileX = undefined; t.tileY = undefined;
       t.generated = undefined;
+      t.celebration = undefined;
       /* perspective 給顯示層（要不要抵銷畫面透視），followDirection 給下面的 projectTransform。
          scratchTransform 是共用的，每一層都要寫，不能只在 false 時寫。 */
       t.perspective = d.perspective;
@@ -1968,7 +1982,11 @@ var VFXCore = (function () {
       t.followDirection = d.followDirection;
       projectTransform(effect, d.projection, t);
       setDeformation(effect, layer, t);
-      if (d.effect === 'waterTornado') {
+      if (d.effect === 'celebration') {
+        if (!layer.celebrationSample) layer.celebrationSample = celebrationGenerator.prepare(d.celebration, layer.rng, opts.reducedMotion === true,
+          d.duration === undefined ? effect.preset.duration : d.duration);
+        t.celebration = layer.celebrationSample(elapsed);
+      } else if (d.effect === 'waterTornado') {
         var phaseTime = d.water.palette === 'fire' ? proceduralClock * effect.timeScale : elapsed;
         t.generated = waterGenerator.sample(d.water.part, phaseTime * (d.water.speed === undefined ? 1 : d.water.speed), d.water.density, d.water.palette);
       } else if (d.type === 'procedural') {

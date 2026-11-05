@@ -5,9 +5,9 @@ const hash=text=>crypto.createHash('sha256').update(text).digest('hex');
 function version(root){
  // Runtime 包含大量遊戲事件接線；只有編輯器的「遊戲播放測試」共用它。
  // 該測試的通用行為改變時，必須同步提高這個相容版號；遊戲專用分支不應要求編輯器重啟。
- const runtimePreviewRevision='1';
+ const runtimePreviewRevision='2';
  const files=['js/vendor/pixi.min.js','js/vfx-core.js','js/vfx-pixi-backend.js',
-  'js/vfx-water-tornado.js','js/util.js','tools/vfx/vfx-semantic-vocab.cjs',
+  'js/vfx-water-tornado.js','js/vfx-celebration.js','js/strings.js','js/strings_data.js','js/util.js','tools/vfx/vfx-semantic-vocab.cjs',
   'tools/vfx/editor-server.cjs','tools/vfx/editor-guard.cjs'];
  function walk(dir){if(!fs.existsSync(path.join(root,dir)))return;for(const e of fs.readdirSync(path.join(root,dir),{withFileTypes:true})){const rel=dir+'/'+e.name;if(e.isDirectory())walk(rel);else if(/\.(js|css)$/.test(e.name)||rel==='tools/vfx/editor/index.html')files.push(rel);}}
  walk('tools/vfx/editor');

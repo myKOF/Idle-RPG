@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "level-up",
+  "duration": 3.2,
+  "loop": false,
+  "layers": [
+    {
+      "id": "aura",
+      "type": "procedural",
+      "effect": "celebration",
+      "zIndex": 0,
+      "duration": 2.5,
+      "perspective": false,
+      "cameraDepth": true,
+      "celebration": {
+        "bodyY": -46,
+        "burstAt": 0.6,
+        "colors": {
+          "amber": "#ffb52e",
+          "core": "#ffc933",
+          "flash": "#fff2b8",
+          "gold": "#ffd23f",
+          "ground": "#ffc23a",
+          "ivory": "#fff6c8",
+          "pale": "#ffe27a",
+          "ring": "#ffd24d",
+          "wave": "#fff0a8",
+          "white": "#ffffff"
+        },
+        "gatherCount": 24,
+        "gatherRadius": 105,
+        "gatherRadiusSpread": 70,
+        "gatherReduced": 10,
+        "gatherSec": 0.6,
+        "part": "aura",
+        "sparkCount": 28,
+        "sparkReduced": 12,
+        "sparkSpeed": 150,
+        "sparkSpeedSpread": 150,
+        "trailCount": 6,
+        "trailReduced": 3,
+        "vortexAt": 0.7,
+        "vortexCount": 170,
+        "vortexEnd": -112,
+        "vortexRadius": 56,
+        "vortexReduced": 50,
+        "vortexTop": -122
+      }
+    },
+    {
+      "id": "level-text",
+      "type": "procedural",
+      "effect": "celebration",
+      "zIndex": 1,
+      "delay": 1.35,
+      "duration": 1.85,
+      "perspective": false,
+      "cameraDepth": false,
+      "celebration": {
+        "glowColor": "#ffc21f",
+        "glowMinX": 3.2,
+        "glowScaleY": 1.8,
+        "glowWidthFactor": 0.0234375,
+        "part": "text",
+        "rise": 78,
+        "riseSec": 1.1,
+        "startY": -104,
+        "style": {
+          "dropShadow": {
+            "alpha": 0.75,
+            "angle": 1.5707963267948966,
+            "blur": 6,
+            "color": "#a85a00",
+            "distance": 3
+          },
+          "fill": "#fff6c9",
+          "fontFamily": "\"Microsoft JhengHei\", \"PingFang TC\", sans-serif",
+          "fontSize": 55,
+          "fontWeight": "900",
+          "stroke": {
+            "color": "#ffb300",
+            "join": "round",
+            "width": 2
+          }
+        },
+        "textKey": "2314"
+      }
+    }
+  ]
+}

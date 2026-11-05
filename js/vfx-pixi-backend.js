@@ -433,9 +433,53 @@ var VFXPixiBackend = (function () {
       node.scale.set(w.scaleX,w.scaleY);node.skew.set(0,0);
     }
 
+    var celebrationTextures = Object.create(null);
+    function celebrationTexture(kind) {
+      if (celebrationTextures[kind]) return celebrationTextures[kind];
+      var size = kind === 'ring' ? 128 : kind === 'dot' ? 32 : 64;
+      var canvas = opts.createCanvas ? opts.createCanvas(size, size) : document.createElement('canvas');
+      canvas.width = canvas.height = size;
+      var g = canvas.getContext('2d'), r = size / 2;
+      var grad = g.createRadialGradient(r, r, kind === 'ring' ? r * .85 : kind === 'glow' ? 2 : 0, r, r, r);
+      if (kind === 'glow') {
+        grad.addColorStop(0, 'rgba(255,255,255,0.9)'); grad.addColorStop(.5, 'rgba(255,255,255,0.28)');
+      } else if (kind === 'dot') {
+        grad.addColorStop(0, 'rgba(255,255,255,1)'); grad.addColorStop(.8, 'rgba(255,255,255,1)');
+      } else {
+        grad.addColorStop(0, 'rgba(255,255,255,0)'); grad.addColorStop(.5, 'rgba(255,255,255,1)');
+      }
+      grad.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = grad;
+      if (kind === 'ring') { g.beginPath(); g.arc(r, r, r, 0, Math.PI * 2); g.fill(); }
+      else g.fillRect(0, 0, size, size);
+      return (celebrationTextures[kind] = PixiLib.Texture.from(canvas));
+    }
+    function buildCelebration(s) {
+      var n;
+      if (s.kind === 'group') n = new PixiLib.Container();
+      else if (s.kind === 'text') {
+        if (!opts.resolveText) throw new Error('celebration text requires resolveText');
+        n = new PixiLib.Text({ text: opts.resolveText(s.textKey), style: s.style });
+      } else n = new PixiLib.Sprite(celebrationTexture(s.kind));
+      if (n.anchor) n.anchor.set(.5);
+      if (s.blendMode) n.blendMode = BLEND_MAP[s.blendMode] || 'normal';
+      s.children.forEach(function (c) { n.addChild(buildCelebration(c)); });
+      return n;
+    }
+    function updateCelebration(n, s) {
+      n.x=s.x; n.y=s.y; n.visible=s.visible; n.alpha=s.alpha; n.scale.set(s.scale.x,s.scale.y);
+      if(s.tint!==undefined)n.tint=s.tint;
+      s.children.forEach(function(c,i){updateCelebration(n.children[i],c);});
+      s.children.forEach(function(c,i){if(c.fitText){
+        var labelIndex=s.children.findIndex(function(other){return other.kind==='text';});
+        var width=labelIndex<0?0:n.children[labelIndex].width;
+        n.children[i].scale.set(Math.max(c.fitText.min,width*c.fitText.factor),c.fitText.y);
+      }});
+    }
     function createNode(spec) {
       var node;
-      if (spec.kind === 'deformed') {
+      if (spec.kind === 'celebration') {
+        node = new PixiLib.Container(); node.__celebration = true;
+      } else if (spec.kind === 'deformed') {
         node=createWarpMesh(spec);
       } else if (spec.kind === 'revealed') {
         node=createWarpMesh({reveal:true});node.__reveal=node.__warp;delete node.__warp;
@@ -464,7 +508,7 @@ var VFXPixiBackend = (function () {
       node.blendMode = BLEND_MAP[spec.blendMode] || 'normal';
       node.visible = false;
       container.addChild(node);
-      if (spec.kind === 'generated') return node;
+      if (spec.kind === 'generated' || spec.kind === 'celebration') return node;
       getTexture(spec.assetUrl, function (tex) {
         if (node.destroyed) return;
         if (spec.kind === 'profiled') {
@@ -496,6 +540,10 @@ var VFXPixiBackend = (function () {
       node.visible = true;
       assignDepth(node, t);
       if (node.__generated) bindGenerated(node, t.generated);
+      if (node.__celebration && t.celebration) {
+        if (!node.children.length) node.addChild(buildCelebration(t.celebration));
+        updateCelebration(node.children[0], t.celebration);
+      }
       if (t.frame !== undefined) {
         node.__frameWanted = t.frame;
         var fr = node.__frames;
@@ -543,6 +591,8 @@ var VFXPixiBackend = (function () {
     /* 貼圖是 GPU 資源，只清本地 cache 不夠——Pixi 的全域 Assets 仍持有它們。
        Backend 收攤時把自己載入過的 URL 一併卸載，避免反覆重建 Editor 時累積。 */
     function unloadTextures() {
+      Object.keys(celebrationTextures).forEach(function (key) { celebrationTextures[key].destroy(true); });
+      celebrationTextures = Object.create(null);
       var urls = Object.keys(entries);
       entries = Object.create(null);
       urls.forEach(function (url) { releaseTexture(PixiLib, url); });

@@ -1,4 +1,14 @@
 # VFX_CORE_AND_PRESET_SCHEMA.md
+## 可編輯的慶祝程序圖層（2026-11-05）
+
+`type: procedural, effect: celebration` 使用 `js/vfx-celebration.js` 的決定性純運算，Editor及遊戲共用。`celebration.part`為`aura`或`text`；參數物件在Inspector「程序參數（粒子／文字樣式）」直接編修，並與圖層delay／duration、位置、縮放、透明度及顏色曲線共同生效。無assetId／sheet／size／scrollSpeed／water／radiusProfile。
+
+`aura`將聚光／爆散／錐形螺旋保留為可調的bodyY、phase時間、一般／減量粒子數、拖尾數、半徑／速度與colors；其公式沿用原升級演出，亂數只在prepare取樣。`text`使用通用textKey（由呼叫端resolveText解析，不在Core寫顯示文字）、Pixi style、起點／上飄距離與時間、文字壽命及底光大小／色彩。編輯器與正式遊戲均用String表解析2314；字號55與stroke.width2是level-up.json的製作值。style是渲染資料，不將文字烘焙成圖片。
+
+Pixi後端只依Core回傳的樹更新節點，不自行推進時間；動態glow／dot／ring貼圖沿用原自製Canvas公式，同一backend共用並在destroy釋放。level-up由renderer的螢幕表面跟隨玩家，aura隨cameraDepth縮放、text固定字號，暫停／清場／硬性到期與addFx共用，dispose保證Core及貼圖回收。讀取Preset使用no-store，遊戲重載會套用Editor儲存的最新版本；新增貼圖仍依正常資產匯出流程。
+
+更新本程序模組、Core／backend／Editor時，先下載未儲存編輯內容，再重啟編輯器Server並重新載入。save guard把程序模組與String來源納入版本指紋，舊分頁拒絕覆寫，不自動重載或覆蓋未存工作。
+
 ## 固定紋理逐步顯露（2026-10-22）
 
 一般根sprite可用`revealXOverLife`數值曲線，0到1代表局部貼圖X顯露前緣，允許超出此範圍銜接相鄰段；省略時完全沿用原sprite。`revealRadius`與`revealStartRadius`是以貼圖寬度為單位的圓收半徑（0～1）。可選`revealRoughness`（0～1，預設0，以貼圖寬度為單位）僅在前端收口加入固定細碎內凹，整段顯露後保持完整接縫；不改UV比例、不隨時間抖動。使用2×17（34頂點）網格，UV和位置同步裁切，保留投影／大小／錨點；與radiusProfile、parent、deformation互斥。Runtime可用內部`revealProgress`覆寫曲線取樣進度（null解除），不影響sheet年齡。Editor曲線面板可修改顯露曲線。

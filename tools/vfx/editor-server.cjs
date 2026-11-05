@@ -96,7 +96,8 @@ const RESTART_REQUIRED_FILES = [
   path.join(__dirname, 'vfx-library-root.cjs'),
   path.join(__dirname, 'editor', 'preset-id-policy.js'),
   path.join(__dirname, 'editor', 'layout-schema.js'),
-  path.join(__dirname, '..', '..', 'js', 'vfx-core.js')
+  path.join(__dirname, '..', '..', 'js', 'vfx-core.js'),
+  path.join(__dirname, '..', '..', 'js', 'vfx-celebration.js')
 ];
 
 const crypto = require('crypto');
