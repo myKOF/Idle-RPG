@@ -36,6 +36,16 @@ var WorkerBridge = (function () {
     post(MSG_IN.MENU_PAUSE, { paused: effectivePaused() });
   }
   _startupHoldTimer = setTimeout(releaseStartupHold, STARTUP_HOLD_MAX_MS);
+  /* 開頭動畫播放中暫停逾時保險（js/intro-player.js）：動畫比 20 秒長時，
+     不能讓戰鬥在動畫後面先開打。動畫結束再重新計時一整段，交回原本的保險。 */
+  function suspendStartupHoldTimeout() {
+    if (_startupHoldTimer) { clearTimeout(_startupHoldTimer); _startupHoldTimer = 0; }
+  }
+  function resumeStartupHoldTimeout() {
+    if (!_startupHold) return;
+    if (_startupHoldTimer) clearTimeout(_startupHoldTimer);
+    _startupHoldTimer = setTimeout(releaseStartupHold, STARTUP_HOLD_MAX_MS);
+  }
 
   /* ---- 量測模式（P4 用，預設關閉）----
      網址帶 ?measure=1 時，Worker 與主執行緒兩側都會統計訊息規模與耗時。
@@ -614,7 +624,8 @@ var WorkerBridge = (function () {
   return {
     start: start, stop: stop, send: send, on: on, loadSave: loadSave, handoff: handoff,
     requestPanel: requestPanel, status: status, enabled: enabled, safeMode: safeMode,
-    whenWritesDrained: whenWritesDrained, saveAutoNow: saveAutoNow, setMenuPaused: setMenuPaused, releaseStartupHold: releaseStartupHold
+    whenWritesDrained: whenWritesDrained, saveAutoNow: saveAutoNow, setMenuPaused: setMenuPaused, releaseStartupHold: releaseStartupHold,
+    suspendStartupHoldTimeout: suspendStartupHoldTimeout, resumeStartupHoldTimeout: resumeStartupHoldTimeout
   };
 })();
 
@@ -633,6 +644,11 @@ var WorkerBridge = (function () {
        才開機；其餘情況直接放行（見 js/save_origin.js）。存檔覆蓋不可逆，不該由時間戳自己決定。 */
     SaveStorage.readBootSave(function (save, info) {
       SaveOrigin.gate(save, info, function (approved) {
+        /* 開頭動畫在這裡起播：確認視窗已經關掉（動畫不會蓋住它），Worker 開機與 initUI 跟動畫重疊進行。 */
+        if (typeof IntroPlayer !== 'undefined') {
+          try { IntroPlayer.startupBegin({ hasSave: !!approved }); }
+          catch (e) { console.error('[intro] 起播失敗', e); }
+        }
         WorkerBridge.start({ save: approved, maxRunId: SaveStorage.maxRunId() });
       });
     });

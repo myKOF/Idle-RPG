@@ -44,6 +44,18 @@ function checkForUpdates() {
     .catch(function(e){});
 }
 
+/* 揭幕要兩件事都完成：UI 首畫（waitForStartupUi）與開頭動畫（js/intro-player.js）。
+   UI 先好就等動畫播完或被略過；沒有動畫時 whenIdle 立刻回呼，與原本流程相同。
+   等待期間戰鬥仍被開機等待擋著，揭幕瞬間不會一次播出堆積的特效。 */
+function revealWhenIntroIdle() {
+  var reveal = function () {
+    if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+    WorkerBridge.releaseStartupHold();   // 畫面出來了才開始戰鬥（見 bridge.js 開機等待）
+  };
+  if (typeof IntroPlayer !== 'undefined') IntroPlayer.whenIdle(reveal);
+  else reveal();
+}
+
 /* initUI 只建立介面；存檔、面板與 Canvas 都仍可能在非同步載入。
    等目前分頁的資料齊全並完成首次渲染，才讓 Loading 露出遊戲。 */
 function waitForStartupUi() {
@@ -101,8 +113,7 @@ function waitForStartupUi() {
               return;
             }
             finished = true;
-            if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
-            WorkerBridge.releaseStartupHold();   // 畫面出來了才開始戰鬥（見 bridge.js 開機等待）
+            revealWhenIntroIdle();
           });
           return;
         }
