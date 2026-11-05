@@ -353,6 +353,28 @@ test('動態退關的間隔必須不短於速率目標的取樣視窗', () => {
   }
 });
 
+test('releaseAtFloor 只能放行 requireTargets 裡宣告過的目標，而且要有 zone', () => {
+  /* 拼錯的 id 不會報錯，只會讓放行永遠不成立——閘門照舊鎖在地板，與修之前一模一樣。
+     沒有 zone 的話放行永遠不會作廢：在一張圖量到的「退關沒用」會被帶到下一張圖。 */
+  for (const f of POLICY_FILES) {
+    const p = loadPolicy(f);
+    const declared = targetsOf(p);
+    for (const rule of p.rules) {
+      const g = rule.stageGate;
+      const rel = g && g.targetRetreat && g.targetRetreat.releaseAtFloor;
+      if (!rel) continue;
+      assert.ok(Array.isArray(rel) && rel.length, `${f} 規則 ${rule.id}：releaseAtFloor 必須是非空陣列`);
+      assert.ok(typeof g.zone === 'string' && g.zone,
+        `${f} 規則 ${rule.id}：用了 releaseAtFloor 就要設 stageGate.zone，否則放行不會隨換圖作廢`);
+      for (const id of rel) {
+        assert.ok(declared[id], `${f} 規則 ${rule.id}：releaseAtFloor 的「${id}」不是宣告過的目標`);
+        assert.ok((g.requireTargets || []).indexOf(id) >= 0,
+          `${f} 規則 ${rule.id}：releaseAtFloor 的「${id}」不在 requireTargets 裡，放行它沒有意義`);
+      }
+    }
+  }
+});
+
 test('速率目標的計數器路徑在遊戲的面板裡真的取得到', () => {
   /* 這是本檔要擋的那一類失真的速率版：路徑寫錯只會讓取樣安靜地跳過，
      速率永遠是 unknown，閘門永遠不觸發——報表上完全看不出來。

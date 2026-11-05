@@ -749,3 +749,112 @@ test('戰場趨勢：目標自訂的退關間隔生效（60 秒一次，而不�
   t = ramp(p, t, 60, 10, 20);
   assert.equal(retreatOf(p.decide(liveAt(t, 20))).length, 1, '過了 60 秒、仍在惡化，應再退一次');
 });
+
+/* ============ 退到地板仍擋著的目標：在這張圖內放行 ============
+
+   冰原的出怪密度不分關卡，而遊戲只有死亡會清場：退關讓怪變弱但不會變少。
+   fieldCap 於是在第 1 關仍然超標，閘門永久關閉——24h × 5 seed 有 3 個被鎖在
+   冰原第 1 關 10~14 小時。releaseAtFloor 讓「退到底也修不好」的目標在這張圖內不再擋。 */
+
+function floorPolicy() {
+  return createPolicy({
+    name: 'floor-release-test',
+    decideEveryGameSec: 60,
+    needPanels: ['battle', 'inv', 'fieldLoad'],
+    targets: [
+      { id: 'killRate', kind: 'ratePerMin', counter: 'panels.battle.lootStats.sources.field.kills', windowSec: 60, atLeast: 5 },
+      { id: 'fieldCap', kind: 'windowAvg', path: 'panels.fieldLoad.live', windowSec: 60, atMost: 50, retreatEverySec: 60 }
+    ],
+    rules: [{
+      id: 'gate', cmd: 'stage.setAutoAdvance',
+      stageGate: {
+        stage: 'view.stage', zone: 'panels.battle.stage.zone',
+        equippedRarities: 'panels.inv.equipmentRarities', argKey: 'on',
+        checkpoints: [{ minRarity: 0, coverage: 0 }],
+        retreatCmd: 'stage.go', requireTargets: ['killRate', 'fieldCap'],
+        targetRetreat: { step: 5, everySec: 60, minStage: 1, releaseAtFloor: ['fieldCap'] }
+      }
+    }]
+  });
+}
+function fst(sec, kills, live, stage, zone) {
+  return {
+    gameTimeSec: sec,
+    view: { stage: stage },
+    panels: {
+      battle: { lootStats: { sources: { field: { kills: kills } } }, stage: { zone: zone || 'Icefield' } },
+      fieldLoad: { live: live },
+      inv: { equipmentRarities: { weapon: 5 } }
+    }
+  };
+}
+/* 每 5 秒觀測一次：擊殺以 perMin 累積、場上固定 live 隻。回傳 { t, kills } 讓下一段接著餵。 */
+function floorFeed(p, at, seconds, perMin, live, stage, zone) {
+  let kills = at.kills;
+  for (let s = 5; s <= seconds; s += 5) {
+    kills += perMin / 12;
+    p.observe(fst(at.t + s, kills, live, stage, zone));
+  }
+  return { t: at.t + seconds, kills };
+}
+const decideAt = (p, at, live, stage, zone) => p.decide(fst(at.t, at.kills, live, stage, zone));
+
+test('退到地板：只剩場上負載沒達標 → 這張圖內放行，自動推關重新打開', () => {
+  const p = floorPolicy();
+  let at = floorFeed(p, { t: 0, kills: 0 }, 60, 20, 100, 1);   // 第 1 關，殺得動（20/分），但場上滿
+  const first = decideAt(p, at, 100, 1);
+  assert.equal(autoOn(first), false, '放行從下一拍才生效，這一拍照舊關著');
+  assert.equal(retreatOf(first).length, 0, '已在地板，不會再退');
+
+  at = floorFeed(p, at, 60, 20, 100, 1);
+  const next = decideAt(p, at, 100, 1);
+  assert.equal(autoOn(next), true, '退關修不好的目標不該永久鎖住閘門');
+  assert.equal(retreatOf(next).length, 0);
+});
+
+test('退到地板：殺敵速率也沒達標 → 那是真的太弱，不放行', () => {
+  const p = floorPolicy();
+  let at = floorFeed(p, { t: 0, kills: 0 }, 60, 1, 100, 1);    // 每分鐘 1 隻
+  decideAt(p, at, 100, 1);
+  at = floorFeed(p, at, 60, 1, 100, 1);
+  assert.equal(autoOn(decideAt(p, at, 100, 1)), false, 'killRate 不在 releaseAtFloor 裡，必須照舊擋');
+});
+
+test('退到地板放行之後，換圖就作廢、重新量', () => {
+  const p = floorPolicy();
+  let at = floorFeed(p, { t: 0, kills: 0 }, 60, 20, 100, 1);
+  decideAt(p, at, 100, 1);
+  at = floorFeed(p, at, 60, 20, 100, 1);
+  assert.equal(autoOn(decideAt(p, at, 100, 1)), true, '前提：冰原已放行');
+
+  at = floorFeed(p, at, 60, 20, 100, 30, 'mist_forest');
+  const cmds = decideAt(p, at, 100, 30, 'mist_forest');
+  assert.equal(autoOn(cmds), false, '新地圖的密度要重新量，不能沿用上一張圖的放行');
+  assert.equal(retreatOf(cmds).length, 1, '不在地板就照常退關');
+});
+
+test('還沒退到地板：場上負載超標就照常退關，不放行', () => {
+  const p = floorPolicy();
+  let at = floorFeed(p, { t: 0, kills: 0 }, 60, 20, 100, 40);
+  const cmds = decideAt(p, at, 100, 40);
+  assert.equal(autoOn(cmds), false);
+  assert.deepEqual(retreatOf(cmds).map((c) => c.args), [{ delta: -5 }]);
+  at = floorFeed(p, at, 60, 20, 100, 35);
+  assert.equal(autoOn(decideAt(p, at, 100, 35)), false, '退關途中不得提早放行');
+});
+
+test('剛退到地板、冷卻還沒過：視窗裡還是上一關的取樣，不放行', () => {
+  const p = floorPolicy();
+  let at = floorFeed(p, { t: 0, kills: 0 }, 60, 20, 100, 6);
+  assert.deepEqual(retreatOf(decideAt(p, at, 100, 6)).map((c) => c.args), [{ delta: -5 }], '6 → 1');
+
+  at = floorFeed(p, at, 30, 20, 100, 1);                       // 到地板才 30 秒（冷卻 60）
+  decideAt(p, at, 100, 1);
+  at = floorFeed(p, at, 5, 20, 100, 1);
+  assert.equal(autoOn(decideAt(p, at, 100, 1)), false, '冷卻沒過不得放行');
+
+  at = floorFeed(p, at, 60, 20, 100, 1);                       // 冷卻過了：這一拍記下放行
+  decideAt(p, at, 100, 1);
+  at = floorFeed(p, at, 5, 20, 100, 1);
+  assert.equal(autoOn(decideAt(p, at, 100, 1)), true);
+});
