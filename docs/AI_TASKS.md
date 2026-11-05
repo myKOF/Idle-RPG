@@ -1,3 +1,16 @@
+## ANCIENT-STARS-20261105 — 太古星星透明素材替換
+
+- Owner：Codex；Done，使用者指定圖2作裝備太古星星，128×128去背並製作太古精鑄淺藍／深藍兩版，單一開發者。來源為本次使用者提供並指定使用的star3.jpg，內建image_gen去背／變色，Pillow僅裁透明邊界及縮圖。RPG Mote Studio本次無法存取。
+- 允許：三張images/ui/ancient-star-*.png、css/style.css對應星星規則、index僅CSS快取、tools/ancient-stars匯出、docs/assets來源記錄、LV及本段；素材庫相對codex-authored/ancient-stars-20261105保存來源／母圖／128px成品／提示詞／SHA。禁止其他功能、配置、數值、存檔、他人未提交內容、合併或推送。
+- 前置預檢：CSS／LV／素材／文件無外部來源。index與Claude62f3c2bb同檔不同區段：對方只改data.js快取第1050行，本項只改style.css第12行；merge-tree HEAD ai/claude乾淨，無語意相依，分段修改。原工作區參數／data／String及Role4在製內容保留。
+- 驗收：三圖128px RGBA、透明邊界／內部金屬不缺漏；正式UI驗證1／4／7顆、精鑄兩條與提示詞標記，沿用星數／重疊／ARIA，窄格依寬度縮放確保七顆不裁切。素材庫／遊戲SHA、既有太古／精鑄／快取回歸、Build與diff檢查，先素材Commit再遊戲Commit。後續使用者Review／合併。
+
+- 完成：一般太古金色、精鑄第一條淺藍／第二條深藍，均128×128 RGBA，分別24355／23617／23880 bytes，最外圈alpha=0且中心>240。CSS共用於裝備格／詞條／刻印標記；徽章最大寬度依格子約束、圖案等比contain，避免7顆裁切。原JS文字符號留作語意內容並以font-size:0隱去字形，不修改星數邏輯或文字來源。index CSS 1.0.116。
+- 驗證：`node tools/ancient-stars/export-source.cjs --check`與`node --check tools/ancient-stars/export-source.cjs`通過；`node --test tests/item-ancient-count-location.test.cjs tests/ancient-affix.test.cjs tests/ancient-forge-limit.test.cjs tests/forge-equipped-inventory.test.cjs tests/vfx-editor-cache-versions.test.cjs`34項33過，唯一失敗ancient-affix:142為掉率3對舊預期6。唯讀fs覆映`git show HEAD:js/data.js`重跑同一測試，仍相同失敗，沒有修改斷言／數值。Build與diff最終結果見交付。
+- 瀏覽器：以正式loadRuneEnv＋ancientStarBadgeHTML＋itemDetailHTML輸出隔離QA，載入正式CSS／PNG，目視金／淺藍／深藍與1／4／7顆，computed背景URL、16px詞條／18px徽章、-4px重疊及ARIA均正確；86px格的七顆徽章82px、完整在格內。首次整頁使用Python HTTP啟動時Worker的skills.js載入失敗，因此不宣稱全遊戲啟動／Console驗收通過；本項用正式函式獨立渲染驗證，未進行長玩。
+- 修改：css/style.css、index.html、LV_upgrade_system.md、本段、docs/assets/ANCIENT_STARS_SOURCE.md、tools/ancient-stars/export-source.cjs與三PNG。唯讀未改：規範／Workflow／prompts、js/ui.js／item.js／forge.js、太古與精鑄回歸／測試helper、素材Root解析器；所有既有配置／data／String未提交修改保持。其他聊天期間完成b9540c55，原Role4任務及其提交保留。
+- 素材庫原圖／三透明母圖／三成品與提示詞／七檔SHA均保存並與遊戲一致，素材Commit `d4c683c`先於遊戲Commit（本段所在「[Codex] feat: 替換太古星星與精鑄雙藍圖示」，SHA見交付）。最終`npm.cmd run build`660檔通過、`git diff --check`通過。無本項未完成實作，可供Review與使用者合併；未合併或推送。已知限制：上述既有測試失敗、整頁啟動未驗收。下一步重載遊戲檢視新圖。
+
 ## HERO3D-ROLE4-20261105 — 4轉人物、頭部校正與新劍
 
 - Owner：Codex；In Progress，單一開發者。使用者提供Role4.glb與劍參考圖，明確表示有授權並要求依圖復刻新劍；分離雙手腿黏連、頭部轉正、刪背劍、新劍右手正握、全部舊動作保持，接入4轉起外觀。原0～3轉及黃金騎士保留。
