@@ -26,7 +26,7 @@ test('Task.xlsx、CSV與遊戲38筆定義逐欄一致，任務順序連續且型
     .filter(row=>row.some(value=>String(value).trim()!==''));
   const normalize=rows=>rows.map(row=>Array.from({length:11},(_,i)=>String(row[i]??'')));
   assert.deepEqual(normalize(csv),normalize(excel));
-  assert.equal(csv.length,38);
+  assert.equal(csv.length,39);
   const {c}=setup();
   const data=SCHEMAS.Task.extract(fs.readFileSync(path.join(root,'js/data.js'),'utf8'));
   assert.deepEqual(data,csv.slice(1).map(row=>row.slice(0,9)));
