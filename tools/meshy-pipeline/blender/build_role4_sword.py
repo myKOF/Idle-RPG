@@ -136,13 +136,35 @@ def reference_inlay():
         for x in range(20,96):
             r,g,b,a=pixels[y,x]
             if r>.16 and r>g*1.45 and r>b*1.35 and inside(trace([(x+.5,y+.5)])[0],blade_inner):cells.append((x,y))
+    # Keep the licensed ornament, but normalize its width and brightness along
+    # the blade. The source photo compressed the upper vine into a thin line.
+    samples=np.array([(*trace([(x+.5,y+.5)])[0],pixels[y,x,0])for x,y in cells])
+    rows=np.linspace(float(samples[:,1].min()),float(samples[:,1].max()),40)
+    widths=[];centers=[];means=[]
+    for y in rows:
+        near=samples[np.abs(samples[:,1]-y)<.024]
+        if not len(near):near=samples[np.argsort(np.abs(samples[:,1]-y))[:5]]
+        lo,hi=float(near[:,0].min()),float(near[:,0].max())
+        widths.append(max((hi-lo)/2,.002));centers.append((lo+hi)/2);means.append(float(near[:,2].mean()))
+    y_min,y_max=float(rows[0]),float(rows[-1]);global_red=float(samples[:,2].mean())
+    profile=sorted((y,abs(x))for x,y in blade_inner[:11])
+    profile_y=np.array([p[0]for p in profile]);profile_x=np.array([p[1]for p in profile])
+    cell_set=set(cells)
+    def corner_key(point,cell):
+        x,y=point
+        neighbors=cell_set.intersection({(x-1,y-1),(x,y-1),(x-1,y),(x,y)})
+        if len(neighbors)==2:
+            a,b=list(neighbors)
+            if abs(a[0]-b[0])==1 and abs(a[1]-b[1])==1:return(point,cell)
+        return point
     for side in [-1,1]:
         vertices=[];faces=[];lookup={}
         for x,y in cells:
             face=[]
             for point in [(x,y),(x+1,y),(x+1,y+1),(x,y+1)]:
-                if point not in lookup:lookup[point]=len(vertices);vertices.append(xyz(*trace([point])[0],side*.0052))
-                face.append(lookup[point])
+                key=corner_key(point,(x,y))
+                if key not in lookup:lookup[key]=len(vertices);vertices.append(xyz(*trace([point])[0],side*.0052))
+                face.append(lookup[key])
             faces.append(face)
         obj=mesh_object('Reference red vine relief '+str(side),vertices,faces,[inlay_material])
         bm=bmesh.new();bm.from_mesh(obj.data)
@@ -165,10 +187,20 @@ def reference_inlay():
         bm.to_mesh(obj.data);bm.free()
         attr=obj.data.color_attributes.new(name='Reference crimson shading',type='FLOAT_COLOR',domain='POINT')
         for vertex,item in zip(obj.data.vertices,attr.data):
+            old_x,old_y=vertex.co.x,vertex.co.z
             pixel=origin+cross*(vertex.co.x/pixel_m)+axis*((vertex.co.z-guard_y)/pixel_m)
             x=min(iw-1,max(0,int(pixel.x)));y=min(ih-1,max(0,int(pixel.y)))
-            r,g,b=pixels[y,x,:3];rgb=(r,min(g,r*.30),min(b,r*.32))
+            r,g,b=pixels[y,x,:3]
+            gain=global_red/max(float(np.interp(old_y,rows,means)),.01)
+            r=float(np.clip(r*gain,0,1));rgb=(r,min(g*gain,r*.30),min(b*gain,r*.32))
             item.color=tuple(float(v/12.92 if v<=.04045 else((v+.055)/1.055)**2.4)for v in rgb)+(1,)
+            center=float(np.interp(old_y,rows,centers));half_width=float(np.interp(old_y,rows,widths))
+            core_width=float(np.interp(old_y,profile_y,profile_x))
+            # A constant fraction of the available dark core, tapered only at
+            # the ends of the ornament rather than becoming dense at the root.
+            end_fade=min(1,max(.25,(old_y-y_min)/.015),max(.25,(y_max-old_y)/.015))
+            normalized=math.tanh((old_x-center)/half_width)/math.tanh(1.35)
+            vertex.co.x=normalized*core_width*.83*end_fade
         solid=obj.modifiers.new('Solid crimson inlay','SOLIDIFY');solid.thickness=.00035;solid.offset=0
         bpy.context.view_layer.objects.active=obj;bpy.ops.object.modifier_apply(modifier=solid.name)
 color_node=inlay_material.node_tree.nodes.new('ShaderNodeVertexColor');color_node.layer_name='Reference crimson shading'
@@ -189,7 +221,20 @@ def smooth_polygon(poly, steps=4):
             p=.5*((2*p1)+(-p0+p2)*t+(2*p0-5*p1+4*p2-p3)*t*t+(-p0+3*p1-3*p2+p3)*t*t*t)
             result.append(tuple(p))
     return result
-guard=smooth_polygon(guard)
+def mirror_guard(poly):
+    """Clip to the left silhouette, then mirror exactly around grip X=0."""
+    left=[]
+    for i,p in enumerate(poly):
+        previous=poly[i-1];inside=p[0]<=0;was_inside=previous[0]<=0
+        if inside!=was_inside:
+            t=-previous[0]/(p[0]-previous[0])
+            left.append((0,previous[1]+t*(p[1]-previous[1])))
+        if inside:left.append(p)
+    start=next(i for i,p in enumerate(left)if abs(p[0])<1e-8 and left[(i+1)%len(left)][0]<-1e-8)
+    left=left[start:]+left[:start]
+    assert abs(left[0][0])<1e-8 and abs(left[-1][0])<1e-8
+    return left+[(-x,y)for x,y in reversed(left[1:-1])]
+guard=smooth_polygon(mirror_guard(guard))
 guard_inner = [tuple(center+(Vector(p)-center)*.91) for p in guard]
 guard_obj=beveled_polygon('Swept hooked quillons with silver rim and warm recess',guard,guard_inner,.007,.0034,bronze)
 
@@ -222,7 +267,16 @@ def bake_guard_detail():
     scene=bpy.context.scene;scene.camera=camera;scene.render.engine='CYCLES';scene.cycles.samples=1;scene.cycles.use_denoising=False;scene.render.resolution_x=512;scene.render.resolution_y=512;scene.render.resolution_percentage=100
     scene.world=bpy.data.worlds.new('Temporary dark bake background');scene.world.color=(.005,.005,.005);scene.render.image_settings.file_format='PNG';scene.view_settings.view_transform='Standard';scene.view_settings.look='None';scene.view_settings.exposure=0;scene.view_settings.gamma=1
     scene.render.filepath=str(out/'guard-detail.png');bpy.ops.render.render(write_still=True)
-    baked=bpy.data.images.load(str(out/'guard-detail.png'),check_existing=False);baked.pack()
+    baked=bpy.data.images.load(str(out/'guard-detail.png'),check_existing=False)
+    bw,bh=baked.size;rgba=np.empty(bw*bh*4,dtype=np.float32);baked.pixels.foreach_get(rgba);rgba=rgba.reshape(bh,bw,4)
+    rgba[:,bw//2:]=rgba[:,:bw//2][:,::-1]
+    # The ruby is the only red feature on the guard. Neutralize the old baked
+    # ruby underneath it, so no red fringe appears even at an oblique angle.
+    r,g,b=rgba[:,:,0],rgba[:,:,1],rgba[:,:,2]
+    red_pixels=(r>g*1.4)&(r>b*1.35)&(r>.025)
+    value=.2126*r+.7152*g+.0722*b
+    for channel in range(3):rgba[:,:,channel][red_pixels]=value[red_pixels]
+    baked.pixels.foreach_set(rgba.reshape(-1));baked.filepath_raw=str(out/'guard-detail.png');baked.file_format='PNG';baked.save();baked.pack()
     material_guard=material('Rebuilt guard with licensed high resolution ornament', (1,1,1),.82,.34)
     texture=material_guard.node_tree.nodes.new('ShaderNodeTexImage');texture.image=baked;material_guard.node_tree.links.new(texture.outputs['Color'],material_guard.node_tree.nodes.get('Principled BSDF').inputs['Base Color'])
     guard_obj.data.materials[0]=material_guard
@@ -232,14 +286,14 @@ def bake_guard_detail():
     for obj in parts:obj.hide_render=False
 bake_guard_detail()
 
-gem = [(-.0105,.132),(.0105,.132),(.012,.105),(0,.098),(-.012,.105)]
+gem = [(-.014,.138),(.014,.138),(.016,.100),(0,.090),(-.016,.100)]
 gc = sum((Vector(p) for p in gem), Vector((0, 0))) / len(gem)
 bezel = [tuple(gc+(Vector(p)-gc)*1.20) for p in gem]
 bezeled = [tuple(gc+(Vector(p)-gc)*.94) for p in gem]
-beveled_polygon('Silver ruby bezel', bezel, bezeled, .009, .0065, dark)
+beveled_polygon('Silver ruby bezel', bezel, bezeled, .0105, .008, dark)
 for side in [-1,1]:
     n = len(gem)
-    vertices = [xyz(x,y,side*.0092) for x,y in gem] + [xyz(gc.x+.001,gc.y,side*.015)]
+    vertices = [xyz(x,y,side*.0108) for x,y in gem] + [xyz(gc.x,gc.y,side*.017)]
     faces = [(i,(i+1)%n,n) for i in range(n)] + [tuple(reversed(range(n)))]
     mesh_object('Faceted ruby guard jewel '+str(side), vertices, faces, [red_light,red,red_dark], [0,1,2,1,0,2])
 
@@ -268,6 +322,8 @@ bpy.ops.mesh.primitive_uv_sphere_add(segments=12,ring_count=6,radius=1,location=
 obj=bpy.context.object;obj.name='Faceted domed silver pommel';obj.scale=(.021,.021,.016);obj.data.materials.append(silver);parts.append(obj)
 
 # Keep the editable part construction and export one compact, applied mesh.
+for image in bpy.data.images:
+    if image.packed_file:image.filepath='//'+Path(image.name).stem+'.png'
 for obj in parts:obj.select_set(False)
 bpy.ops.wm.save_as_mainfile(filepath=str(out/'role4-sword.blend'))
 bpy.ops.object.select_all(action='DESELECT')
@@ -286,6 +342,8 @@ report={'reference':'User-authorized codex-clipboard-c400eec7-e636-4887-ac31-ac3
     'pommelEndFromGripMeters':-.136,'triangles':sum(len(p.vertices)-2 for p in obj.data.polygons),'vertices':len(obj.data.vertices),
     'license':'User explicitly states reference is licensed and requests exact replication; unseen reverse face uses matching symmetric detailing',
     'detailSource':'New geometric outline and red inlay rebuilt from the authorized reference; fine guard color baked in Blender from authorized Role4 material',
-    'stage':'First independent sword candidate for user shape review; not yet installed in the game or Role4 character'}
+    'revision':2,'guardMirrorAxis':'X=0','guardTextureMirrored':True,'oldGuardRedPigmentNeutralized':True,
+    'inlayDistribution':'Blade-width normalized with local brightness balancing',
+    'stage':'Second independent sword candidate after user symmetry, ruby coverage and ornament distribution feedback; not yet installed in the game or Role4 character'}
 (out/'sword-report.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8')
 print(json.dumps(report))
