@@ -118,6 +118,74 @@
   background: radial-gradient(ellipse at 50% 49%, transparent 38%, rgba(9, 7, 5, .25) 78%, rgba(0, 0, 0, .55));
 }
 
+/* 第二版：16:9畫框內的分件關節／裝飾，同一座標在橫直螢幕都保留完整六翼。 */
+.intro-motion-art {
+  position: absolute; left: 50%; top: 50%; translate: -50% -50%;
+  width: min(100vw, calc(100vh * 1672 / 941)); aspect-ratio: 1672 / 941;
+  container-type: size; pointer-events: none;
+}
+.intro-rig-mesh, .intro-rig-still {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+}
+.intro-rig-still { object-fit: contain; }
+.intro-motion-particle { position: absolute; transform-origin: center; }
+.intro-debris {
+  background: linear-gradient(120deg, #e8cc88, #67503b 66%, #302b27);
+  clip-path: polygon(8% 0, 89% 13%, 100% 62%, 34% 100%, 0 58%);
+}
+.intro-void-dust { border-radius: 50%; background: #6d377d; box-shadow: 0 0 5px #5e3091; }
+.intro-ash { background: #b9864c; clip-path: polygon(0 0,100% 20%,60% 100%,25% 70%); }
+.intro-burning-feather {
+  background: linear-gradient(120deg, #fff6d6 0 32%, #d6b782 55%, #f09a36 85%, transparent);
+  border-radius: 100% 0 90% 10%; box-shadow: 0 0 4px #ffb85c;
+}
+.intro-sand-grain { background: #b99d71; border-radius: 50%; }
+.intro-dark-rift {
+  position: absolute; left: 46%; top: 7%; width: 12%; height: 41%;
+  clip-path: polygon(42% 0,67% 13%,55% 27%,90% 37%,57% 52%,75% 63%,43% 100%,20% 75%,39% 56%,7% 37%,35% 24%);
+  background: linear-gradient(90deg,#61305e,#0d0714 34%,#030104 65%,#51234d);
+  transform-origin: 50% 35%;
+}
+.intro-rift-lightning {
+  position: absolute; width: 7%; height: 32%; opacity: 0;
+  background: #d6c4ef;
+  clip-path: polygon(45% 0,63% 0,40% 35%,70% 30%,31% 100%,42% 48%,15% 53%);
+}
+.intro-banner-pole { position: absolute; width: .14%; background: linear-gradient(90deg,#271d17,#c5a568,#31281e); }
+.intro-banner { position: absolute; transform-origin: 0 0; }
+.intro-banner-strip {
+  position: absolute; left: 0; transform-origin: 0 0;
+  background: linear-gradient(95deg,#b69d62,#f3e0a0 43%,#b29a62 75%,#79643f);
+  clip-path: polygon(0 0,100% 8%,88% 56%,98% 100%,62% 88%,22% 100%,0 90%);
+}
+.intro-banner.is-rag .intro-banner-strip { background: linear-gradient(95deg,#4e3326,#8d6548 43%,#573c2d 75%,#231b15); }
+.intro-banner-fire { position: absolute; inset: 0; background: radial-gradient(ellipse at 60% 70%,#ffda88,rgba(217,80,17,.55) 28%,transparent 66%); }
+.intro-cloud-rush {
+  position: absolute; width: 35%; height: 1.4%;
+  background: linear-gradient(90deg,transparent,rgba(229,216,185,.6),transparent);
+  border-radius: 50%; opacity: 0;
+}
+.intro-moving-wisp {
+  position: absolute; width: 1.2%; height: 4%; transform-origin: 50% 100%;
+  border-radius: 80% 20% 60% 40%;
+  background: radial-gradient(ellipse at 50% 70%,#d5efe0,rgba(101,192,165,.6) 30%,transparent 70%);
+}
+.intro-dry-grass {
+  position: absolute; width: 2%; height: 5%; transform-origin: 50% 100%;
+  background: #61513a; clip-path: polygon(45% 100%,0 10%,41% 76%,32% 0,53% 70%,90% 12%,60% 100%);
+}
+.intro-wind-bone { position: absolute; width: 2.2%; height: .35%; border-radius: 50%; background: #b1a184; transform-origin: 40% 100%; }
+.intro-approaching-wraith {
+  position: absolute; width: 5%; height: 18%; transform-origin: 50% 100%;
+  background: radial-gradient(ellipse at 50% 14%,rgba(175,202,196,.65),transparent 18%),linear-gradient(115deg,rgba(60,76,76,.5),rgba(136,169,166,.2),transparent);
+  clip-path: polygon(42% 0,66% 5%,70% 26%,100% 55%,68% 41%,80% 100%,40% 84%,4% 100%,30% 42%,0 57%,30% 24%);
+}
+.intro-v2-caption {
+  bottom: max(66px, 7vh); z-index: 2; width: min(90vw, 1040px);
+  font-size: clamp(15px, 2vw, 24px); line-height: 1.65; letter-spacing: .06em;
+}
+.intro-player.is-reduced .intro-motion-art * { will-change: auto; }
+
 .intro-shape-stars {
   background:
     radial-gradient(1px 1px at 12% 18%, rgba(255, 255, 255, 0.9), transparent 60%),

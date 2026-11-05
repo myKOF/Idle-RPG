@@ -84,7 +84,8 @@ var IntroPlayer = (function () {
     if (!(timelineDuration(tl) > 0)) errs.push('總長必須大於 0');
     tl.layers.forEach(function (l, i) {
       var tag = '圖層 ' + i + '：';
-      if (l.kind !== 'text' && l.kind !== 'image' && l.kind !== 'shape') errs.push(tag + '未知的 kind ' + l.kind);
+      if (l.kind !== 'text' && l.kind !== 'image' && l.kind !== 'shape' && l.kind !== 'motion') errs.push(tag + '未知的 kind ' + l.kind);
+      if (l.kind === 'motion' && typeof IntroMotion === 'undefined') errs.push(tag + '未載入IntroMotion');
       if (!(num(l.at, -1) >= 0)) errs.push(tag + 'at 必須 ≥ 0');
       if (!(num(l.dur, 0) > 0)) errs.push(tag + 'dur 必須 > 0');
       if (l.kind === 'text' && !(l.str > 0)) errs.push(tag + 'text 需要 String 表編號 str');
@@ -179,8 +180,28 @@ var IntroPlayer = (function () {
     if (document.hidden) pauseAll(_cur); else resumeAll(_cur);
   }
 
+  function stopMotion(c) {
+    if (c.motionFrame && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(c.motionFrame);
+    c.motionFrame = 0;
+  }
+  function paintMotion(c, force) {
+    var t = num(c.clock && c.clock.currentTime, 0);
+    c.motion.forEach(function (scene) { scene.render(t, force); });
+  }
+  function startMotion(c) {
+    if (!c.motion.length || c.motionFrame || typeof requestAnimationFrame !== 'function') return;
+    var frame = function () {
+      c.motionFrame = 0;
+      if (_cur !== c || c.paused || c.skipping) return;
+      paintMotion(c, false);
+      c.motionFrame = requestAnimationFrame(frame);
+    };
+    c.motionFrame = requestAnimationFrame(frame);
+  }
+
   function pauseAll(c) {
     c.paused = true;
+    stopMotion(c);
     if (c.audio) c.audio.pause();
     c.anims.forEach(function (a) { try { a.pause(); } catch (e) {} });
     clearTimeout(c.failsafe); c.failsafe = 0;
@@ -191,6 +212,7 @@ var IntroPlayer = (function () {
     if (c.hold && c.hold.holding) return;   // 停格等載入中，切回分頁也繼續停著
     c.paused = false;
     c.anims.forEach(function (a) { try { a.play(); } catch (e) {} });
+    startMotion(c);
     if (c.audio && !c.skipping) c.audio.start();
     armFailsafe(c);
   }
@@ -238,6 +260,9 @@ var IntroPlayer = (function () {
   function finish(c, reason) {
     if (_cur !== c) return;
     _cur = null;
+    stopMotion(c);
+    c.motion.forEach(function (scene) { if (scene.dispose) scene.dispose(); });
+    c.motion = [];
     if (c.audio) c.audio.dispose();
     clearTimeout(c.failsafe);
     clearTimeout(c.skipTimer);
@@ -265,7 +290,7 @@ var IntroPlayer = (function () {
       id: opts.id || '', duration: timelineDuration(timeline), anims: [], paused: false, seeking: false,
       skipping: false, failsafe: 0, skipTimer: 0, onDone: opts.onDone || null,
       skippable: timeline.skippable !== false, reduced: reducedMotion(),
-      hold: null, audio: null
+      hold: null, audio: null, motion: [], motionFrame: 0
     };
     var holdAt = num(timeline.holdAt, 0);
     if (opts.hold && holdAt > 0 && holdAt < c.duration) {
@@ -296,6 +321,10 @@ var IntroPlayer = (function () {
         var motion = c.reduced ? null : motionKeyframes(layer);
         if (motion) {
           animate(c, el, motion, { delay: timing.delay, duration: timing.duration, fill: 'both', easing: layer.easing || 'ease-in-out' });
+        }
+        if (layer.kind === 'motion') {
+          var scene = IntroMotion.build(layer, el, function (child, frames, options) { return animate(c, child, frames, options); }, c.reduced);
+          if (scene && scene.render) c.motion.push(scene);
         }
       });
 
@@ -342,7 +371,7 @@ var IntroPlayer = (function () {
       }
       document.addEventListener('visibilitychange', onVisibility);
       if (document.hidden) pauseAll(c);
-      else { armFailsafe(c); if (c.audio) c.audio.start(); }
+      else { armFailsafe(c); startMotion(c); if (c.audio) c.audio.start(); }
       return true;
     } catch (e) {
       console.error('[intro] 播放失敗，直接略過', e);
@@ -356,6 +385,7 @@ var IntroPlayer = (function () {
     var c = _cur;
     if (!c || c.skipping || !c.skippable) return;
     c.skipping = true;
+    stopMotion(c);
     if (c.audio) c.audio.pause();
     clearTimeout(c.failsafe);
     var done = function () { finish(c, 'skip'); };
@@ -387,6 +417,7 @@ var IntroPlayer = (function () {
     pauseAll(c);
     c.seeking = true;
     c.anims.forEach(function (a) { try { a.currentTime = ms; } catch (e) {} });
+    paintMotion(c, true);
     return true;
   }
 

@@ -14889,6 +14889,18 @@ Worker 存活且頁面正常完成載入。
 - 驗證：`node tools/string-table/apply_strings.cjs --check` 通過（2325／e58d793c）；`node tools/string-table/build_string_csv.cjs --check` 通過（寫死顯示文字 0）；`node --test tests/reincarnation-mana-cost.test.cjs tests/string-table.test.cjs tests/ui-sound.test.cjs tests/ui-achievement-sound.test.cjs tests/vfx-editor-cache-versions.test.cjs` 41/41 通過；`npm.cmd run build` 660 檔通過。完整 merged-result 的 conflict marker、`git diff HEAD --check`、HEAD/MERGE_HEAD 與檔案清單於交付前再次核對。
 - 素材庫無變更。已知風險／未完成：無；index 保持 unmerged 是 controller 尚未依回報檔案 stage 的預期狀態，可由 controller 完成 merge commit。
 
+## INTRO-DARK-FANTASY-V2-20261106 — 第二版字幕與局部動態改造
+
+- Owner：Codex；Done，單一開發者。依使用者指定docs/dark_fantasy_opening_animation_script_v2.md維持30秒6／7／8／9四幕，完成裂隙／碎塊／焚旗／落羽／掙扎／荒漠風物／撐地起身與展翼迎敵。依使用者最新指示，四句旁白只作文字字幕，沒有語音合成或人聲。延續已核准銀白殘甲、修長小人物、巨大六翼、覺醒垂翼包覆，第三幕完整呈現荒漠骨骸與殘破遺跡。
+- 前置：第一版及整合完成，ai/codex起始只有使用者v2腳本未追蹤。已讀規範／Workflow／Agent與任務、fetch及逐檔預檢。index與Claude進行中GM／Bridge快取相鄰，候選三方試跑衝突；使用者已明確授權只修改本分支Intro／String快取與新模組載入，保留兩邊程式，後續整合統一該區塊。不修改Claude工作區或代為整合其程式。
+- 修改檔案：js/intro-data.js、intro-player.js、新intro-motion.js；css/intro.css、index.html的Intro／String載入；config/Excel/String.xlsx及CSV／js/strings_data.js、tools/vfx/editor/index.html的String快取；tests/intro-player.test.cjs及新intro-motion.test.cjs、新tools/intro/sync-v2.cjs、images/intro-v2的七張WebP／來源／提示詞／清單；LV_upgrade_system.md、VFX介面轉場登記、本段與使用者v2腳本原文。未改玩法、Worker、協議、存檔、其他配置、既有v1圖片與雙軌音訊；沒有新增語音模組。
+- 實作：以自製v1原畫經image_gen生成三張乾淨背景及墜落／覺醒／雙手撐地／站立四張透明人物，共七張1672×941原創PNG及WebP。僅參考自有原畫，未引入第三方素材；RPG Mote Studio本次仍無法存取。人物為連續2D網格變形，六翼各自擺動、身軀痙攣、頭手顫動、披風與支撐起身；不切碎人物圖，避免關節裂縫。環境用原創CSS程序形狀與WAAPI。共用IntroPlayer總時鐘與單一rAF，畫布上限1280px／約30fps；背景、seek、停格、略過、正常結束與中止完整暫停／回收，減少動態改為完整靜態人物。
+- 字幕：String2414–2417按v2原文與分鏡時序顯示，沒有speechSynthesis／人聲路徑；沿用自製配樂與非人聲聲景。String.xlsx先確認未占用，再由原生Excel工具修改四列的模組／用途／繁中共12格，正常關閉重開逐格驗證2406列×7欄、Shapes 0；CSV僅該四列改動。apply_strings產生2405條、版號d6645c91，主頁與VFX編輯器快取一致。
+- 測試：`node --test tests/intro-player.test.cjs tests/intro-motion.test.cjs tests/intro-audio.test.cjs tests/gm-intro.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-preset-usage.test.cjs` 80/80通過，包含網格無翻面、六翼姿態變化、rAF暫停／seek／skip／dispose、原雙軌及啟動流程回歸。`node tools/string-table/build_string_csv.cjs --check` 寫死文字0；`node tools/string-table/apply_strings.cjs --check` 同步；`node --check tools/intro/sync-v2.cjs` 與`npm.cmd run build` 674檔通過。
+- 實測：IAB兩次無可用backend，改隔離Edge正常GPU／乾淨儲存空間。11項瀏覽器檢查通過：七時間點逐幕截圖、連續網格像素變化、390×844無橫向溢出、正式重播完整30秒自然以end收尾並顯露遊戲、減少動態及Esc清理；人聲呼叫0、Console錯誤／警告0。畫面已目視檢查六翼、垂翼、雙手撐地與屍骨荒漠。記錄在本機visualizations/2026/11/05/01a1ac3e-b5d4-7212-8c3f-2a85a6e6ec88/intro-v2/qa-report.json及同目錄截圖。
+- 來源／提交：`node tools/intro/sync-v2.cjs --archive`／`--apply`／`--check`與舊`node tools/intro/sync-library.cjs --check`通過，七張母圖、參考、提示詞、網格／時間軸原始碼及匯出雙庫SHA一致。素材庫先Commit `a25b063f`（23檔）且乾淨；遊戲Commit為本段所在「[Codex] feat: 完成無人聲六翼序章第二版動態與字幕」，實際SHA見聊天交付。
+- 檢查但未修改：AI_RULES.md、AGENTS.md、docs/AI_WORKFLOW.md、prompts/codex.md、js/intro-audio.js、js/main.js、js/bridge.js、tests/intro-audio.test.cjs、tests/gm-intro.test.cjs、既有v1圖片／音軌與同步工具。限制：2D網格及分姿態轉場，非3D逐格骨架影片；未跑跨瀏覽器／行動真機。首次無手勢時配樂可能依瀏覽器規則靜音，直式維持完整橫幅留黑。未完成實作：無。可供Review／使用者整合，index相鄰GM／Bridge快取仍須按既有授權於整合時保留雙方；未合併或推送develop／main。下一步重載遊戲，設置→說明→重播開頭動畫驗收。
+
 ## INTRO-DARK-FANTASY-20261105 — 依黑暗史詩腳本調整序章
 
 - Owner：Codex；Done，單一開發者。使用者指定 docs/dark_fantasy_opening_animation_script.md，改為30秒四幕（6／7／8／9秒）：天界崩壞、天使墜落、荒漠遺骸、聖光覺醒銜接遊戲。前置既有IntroPlayer／首播與重播／載入保護完成，已讀規範／Workflow／任務／Codex指示、fetch及衝突預檢。
