@@ -624,6 +624,15 @@ function passiveLine(it, p) {
   return '【' + d.name + '】' + desc;
 }
 
+/* 裝備上殘留、實際不生效的傳奇特效後綴（AI_RULES 8.3：顯示與計算一致）：
+   舊版停用（js/data.js LEGACY_LEGENDARY_DISABLED，閘門在 legendary.js legendaryHas）、
+   符文真言專屬（RUNEWORD_ONLY_LEGENDARY，formula.js 聚合時略過裝備自身的同名詞條）。生效的特效回傳 ''。 */
+function passiveInactiveNote(key) {
+  if (typeof LEGACY_LEGENDARY_DISABLED !== 'undefined' && LEGACY_LEGENDARY_DISABLED[key]) return STR(2419);
+  if (typeof RUNEWORD_ONLY_LEGENDARY !== 'undefined' && RUNEWORD_ONLY_LEGENDARY[key]) return STR(2420);
+  return '';
+}
+
 // it：附魔數值需要裝備等級與稀有度才能算（enchantValue → js/formula.js §6）
 function enchantLine(it, en) {
   var e = ENCHANTS[en.key];
@@ -888,7 +897,10 @@ function itemDetailHTML(it, cmp, opts) {
     h += '<div class="it-passive" style="color: #f87171; text-decoration: line-through;">' + esc(passiveLine(cmp, cmp.passive)) + '</div>';
   }
   if (it.passive) {
-    if (equippedPassiveRepeated(it, opts.equipment, opts.asuraOn)) {
+    var inactiveNote = passiveInactiveNote(it.passive.key);
+    if (inactiveNote) {
+      h += '<div class="it-passive it-passive-inactive" style="color: #6b7280">' + esc(passiveLine(it, it.passive) + inactiveNote) + '</div>';
+    } else if (equippedPassiveRepeated(it, opts.equipment, opts.asuraOn)) {
       h += '<div class="it-passive it-passive-repeated" style="color: #6b7280">' + esc(passiveLine(it, it.passive) + STR(2145)) + '</div>';
     } else if (!cmp) {
       h += '<div class="it-passive">' + esc(passiveLine(it, it.passive)) + '</div>';
@@ -907,7 +919,12 @@ function itemDetailHTML(it, cmp, opts) {
       var ipForgedClass = ip.affix.ancient ? ancientForgeAffixClass(ip.affix.ancientForgeOrder) : '';
       h += '<div class="it-imprint' + ipForgedClass + '" style="color:#60a5fa">' + (ipForgedClass ? '<span class="ancient-star">✡</span> ' : '') + esc(def.name) + ' +' + (def.pct ? pctStr(value) : fmt(value)) + '</div>';
     }
-    if (ip.passive) h += '<div class="it-imprint" style="color:#60a5fa">' + esc(passiveLine(it, ip.passive)) + '</div>';
+    if (ip.passive) {
+      var ipInactiveNote = passiveInactiveNote(ip.passive.key);
+      h += ipInactiveNote
+        ? '<div class="it-imprint it-passive-inactive" style="color: #6b7280">' + esc(passiveLine(it, ip.passive) + ipInactiveNote) + '</div>'
+        : '<div class="it-imprint" style="color:#60a5fa">' + esc(passiveLine(it, ip.passive)) + '</div>';
+    }
   }
 
   // 附魔與寶石區塊可移至裝備頁右側；懸停提示仍保留完整效果。

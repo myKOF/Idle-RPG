@@ -1273,7 +1273,7 @@ spawn off                      收尾
 - 說明（遊戲內）：當你對敵人造成暈眩或緩速效果時，該效果持續時間 +100%，且對處於該狀態的敵人造成的傷害提高 300%。
 - 前置：`runeword rw_permafrost`，依 W63 做出符文真言並穿上
 - 步驟與預期：永凍本身普攻 15% 暈眩 1.5 秒 → 實際暈眩 3 秒；對暈眩或緩速中的敵人傷害 +300%（浮字約 ×4）
-- 邊界：只延長玩家施加的暈眩／緩速；BOSS 控制免疫照規則；`legend mountainSunderer weapon force` 放在裝備上：不生效（與穿上符文真言時比對），裝備詳情仍照常顯示該行說明（見第 5 節 K1）
+- 邊界：只延長玩家施加的暈眩／緩速；BOSS 控制免疫照規則；`legend mountainSunderer weapon force` 放在裝備上：不生效（與穿上符文真言時比對），裝備詳情該行顯示灰字並加「(僅符文真言生效)」（見第 5 節 K1）
 - 回歸風險：閘門在 `js/formula.js` 聚合（略過裝備上的專屬鍵）與 `js/runeword.js` `rwFinishAggregate`（真言借用寫回）
 - 生效位置：`js/legendary.js`（`controlDurationMult`、`controlledTargetDamagePct`、`mountainSunderer`）
 
@@ -1283,7 +1283,7 @@ spawn off                      收尾
 - 說明（遊戲內）：每隔 12 秒自動向敵人射出 3 枚飛刀，每枚造成 150% 物理傷害；飛刀技能傷害 +25%。
 - 前置：`runeword rw_bladedancer`，依 W57 做出符文真言並穿上
 - 步驟與預期：不需要任何技能：每 12 秒自動對最近的敵人射出 3 枚飛刀，各 150%×1.25 物理傷害（來源「影襲追蹤者」）；飛刀技能傷害另 +25%
-- 邊界：倒地、天地共生復甦期間暫停計時；錯過的節拍不補發；`legend shadowTracker weapon force` 放在裝備上：不生效（與穿上符文真言時比對），裝備詳情仍照常顯示該行說明（見第 5 節 K1）
+- 邊界：倒地、天地共生復甦期間暫停計時；錯過的節拍不補發；`legend shadowTracker weapon force` 放在裝備上：不生效（與穿上符文真言時比對），裝備詳情該行顯示灰字並加「(僅符文真言生效)」（見第 5 節 K1）
 - 回歸風險：閘門在 `js/formula.js` 聚合（略過裝備上的專屬鍵）與 `js/runeword.js` `rwFinishAggregate`（真言借用寫回）
 - 生效位置：`js/legendary.js`（`autoKnives`、`knifeSkillDmgPct`、`shadowTracker`）
 
@@ -1293,7 +1293,7 @@ spawn off                      收尾
 - 說明（遊戲內）：裝備兩把單手匕首時攻速額外提高 50%；每使用 20 次普攻後打出 3 連擊，每擊造成 120% 物理傷害。
 - 前置：`runeword rw_assassin`，依 W35 做出符文真言並穿上
 - 步驟與預期：主手與副手都是單手匕首：攻速 ×1.5；每 20 次普攻後打出 3 連擊，各 120% 物理
-- 邊界：副手不是匕首時兩個效果都不生效（影殺本身只要求匕首主手）；計數在戰鬥重置時歸零；`legend whirlwindStab weapon force` 放在裝備上：不生效（與穿上符文真言時比對），裝備詳情仍照常顯示該行說明（見第 5 節 K1）
+- 邊界：副手不是匕首時兩個效果都不生效（影殺本身只要求匕首主手）；計數在戰鬥重置時歸零；`legend whirlwindStab weapon force` 放在裝備上：不生效（與穿上符文真言時比對），裝備詳情該行顯示灰字並加「(僅符文真言生效)」（見第 5 節 K1）
 - 回歸風險：閘門在 `js/formula.js` 聚合（略過裝備上的專屬鍵）與 `js/runeword.js` `rwFinishAggregate`（真言借用寫回）
 - 生效位置：`js/legendary.js`（`dualDaggerAspdPct`、`basicAttackThreshold`、`flurryHits`、`flurryPowerPct`、`whirlwindStab`）
 
@@ -1303,7 +1303,7 @@ spawn off                      收尾
 - 說明（遊戲內）：沒有生命護盾時傷害提高 50%；生命值每降低 10%，傷害再提高 10%。
 - 前置：`runeword rw_bloodmoon`，依 W48 做出符文真言並穿上
 - 步驟與預期：沒有生命護盾時傷害 +50%；生命每少 10% 再 +10%（50% 血量時 ×1.5×1.5）
-- 邊界：有護盾時只剩生命段；血月本身會讓最大生命 -30%、每秒 -2%，測試時注意；`legend doomProphet weapon force` 放在裝備上：不生效（與穿上符文真言時比對），裝備詳情仍照常顯示該行說明（見第 5 節 K1）
+- 邊界：有護盾時只剩生命段；血月本身會讓最大生命 -30%、每秒 -2%，測試時注意；`legend doomProphet weapon force` 放在裝備上：不生效（與穿上符文真言時比對），裝備詳情該行顯示灰字並加「(僅符文真言生效)」（見第 5 節 K1）
 - 回歸風險：閘門在 `js/formula.js` 聚合（略過裝備上的專屬鍵）與 `js/runeword.js` `rwFinishAggregate`（真言借用寫回）
 - 生效位置：`js/legendary.js`（`noShieldDamagePct`、`missingHpStepPct`、`damagePerStepPct`、`doomProphet`）
 
@@ -1313,7 +1313,7 @@ spawn off                      收尾
 - 說明（遊戲內）：擊殺敵人時獲得「狂暴」：攻速與攻擊提高 3%，持續 6 秒，最多疊加 20 層。
 - 前置：`runeword rw_legion`，依 W56 做出符文真言並穿上
 - 步驟與預期：用真實血量；每擊殺 1 隻疊 1 層「狂暴」：攻速與攻擊各 +3%、6 秒，最多 20 層
-- 邊界：6 秒內沒有擊殺就整串歸零；高塔沒有擊殺事件＝無效；`legend berserkBloodAxe weapon force` 放在裝備上：不生效（與穿上符文真言時比對），裝備詳情仍照常顯示該行說明（見第 5 節 K1）
+- 邊界：6 秒內沒有擊殺就整串歸零；高塔沒有擊殺事件＝無效；`legend berserkBloodAxe weapon force` 放在裝備上：不生效（與穿上符文真言時比對），裝備詳情該行顯示灰字並加「(僅符文真言生效)」（見第 5 節 K1）
 - 回歸風險：閘門在 `js/formula.js` 聚合（略過裝備上的專屬鍵）與 `js/runeword.js` `rwFinishAggregate`（真言借用寫回）
 - 生效位置：`js/legendary.js`（`onKillBuff`、`berserkBloodAxe`）
 
@@ -1323,7 +1323,7 @@ spawn off                      收尾
 - 說明（遊戲內）：格擋減傷率額外 +5%，且可突破格擋減傷率的上限。
 - 前置：`runeword rw_immortalbody`，依 W55 做出符文真言並穿上
 - 步驟與預期：`statset block 100` 與 `statset blockred` 拉到格擋減傷上限；受擊時減傷比上限再多 5%
-- 邊界：加在上限之後（`resolveHit`），不被上限夾回；`legend unyieldingGuard weapon force` 放在裝備上：不生效（與穿上符文真言時比對），裝備詳情仍照常顯示該行說明（見第 5 節 K1）
+- 邊界：加在上限之後（`resolveHit`），不被上限夾回；`legend unyieldingGuard weapon force` 放在裝備上：不生效（與穿上符文真言時比對），裝備詳情該行顯示灰字並加「(僅符文真言生效)」（見第 5 節 K1）
 - 回歸風險：閘門在 `js/formula.js` 聚合（略過裝備上的專屬鍵）與 `js/runeword.js` `rwFinishAggregate`（真言借用寫回）
 - 生效位置：`js/formula.js`（`blockDmgRedExtra`、`unyieldingGuard`）；`js/combat.js`（`blockDmgRedExtra`）
 
@@ -1333,7 +1333,7 @@ spawn off                      收尾
 - 說明（遊戲內）：受到傷害時有 20% 機率對攻擊你的敵人反射 200% 雷電傷害。
 - 前置：`runeword rw_thunderemperor`，依 W50 做出符文真言並穿上
 - 步驟與預期：`elite 1 all 3 1000000`；受到傷害（含被護盾吸收）約 20% 對攻擊者反射 200% 雷電傷害（來源「雷霆之震」）
-- 邊界：攻擊者已死亡時不反射；反射擊殺要正確結算掉落；`legend thunderShock weapon force` 放在裝備上：不生效（與穿上符文真言時比對），裝備詳情仍照常顯示該行說明（見第 5 節 K1）
+- 邊界：攻擊者已死亡時不反射；反射擊殺要正確結算掉落；`legend thunderShock weapon force` 放在裝備上：不生效（與穿上符文真言時比對），裝備詳情該行顯示灰字並加「(僅符文真言生效)」（見第 5 節 K1）
 - 回歸風險：閘門在 `js/formula.js` 聚合（略過裝備上的專屬鍵）與 `js/runeword.js` `rwFinishAggregate`（真言借用寫回）
 - 生效位置：`js/legendary.js`（`onHurtReflect`、`thunderShock`）
 
@@ -1343,7 +1343,7 @@ spawn off                      收尾
 - 說明（遊戲內）：燃燒持續傷害每次作用時有 25% 機率將剩餘的作用次數立即用盡，且燃燒傷害提高 30%。
 - 前置：`runeword rw_smith`，依 W65 做出符文真言並穿上
 - 步驟與預期：需要燃燒來源（火球術第 2 階）；燃燒每跳 +30%，且每跳約 25% 把剩餘次數一次結算完（大數字一跳後狀態消失）
-- 邊界：只處理敵人身上名稱為「燃燒」的持續傷害（程式以狀態名稱字面值比對）；`legend burningLaw weapon force` 放在裝備上：不生效（與穿上符文真言時比對），裝備詳情仍照常顯示該行說明（見第 5 節 K1）
+- 邊界：只處理敵人身上名稱為「燃燒」的持續傷害（程式以狀態名稱字面值比對）；`legend burningLaw weapon force` 放在裝備上：不生效（與穿上符文真言時比對），裝備詳情該行顯示灰字並加「(僅符文真言生效)」（見第 5 節 K1）
 - 回歸風險：閘門在 `js/formula.js` 聚合（略過裝備上的專屬鍵）與 `js/runeword.js` `rwFinishAggregate`（真言借用寫回）
 - 生效位置：`js/legendary.js`（`burnExhaustChance`、`burnDamagePct`、`burningLaw`）
 
@@ -1353,7 +1353,7 @@ spawn off                      收尾
 - 說明（遊戲內）：雷電技能命中時有 10% 機率留下雷紋刻印，使敵人受到的雷電傷害提高 35%，持續 6 秒。
 - 前置：`runeword rw_stargate`，依 W61 做出符文真言並穿上
 - 步驟與預期：雷屬性**技能**命中約 10% 讓敵人帶雷紋刻印 6 秒：受到的雷電傷害 +35%（依該擊的雷電比例）
-- 邊界：普攻不觸發；非雷電傷害不加成；`legend thunderMark weapon force` 放在裝備上：不生效（與穿上符文真言時比對），裝備詳情仍照常顯示該行說明（見第 5 節 K1）
+- 邊界：普攻不觸發；非雷電傷害不加成；`legend thunderMark weapon force` 放在裝備上：不生效（與穿上符文真言時比對），裝備詳情該行顯示灰字並加「(僅符文真言生效)」（見第 5 節 K1）
 - 回歸風險：閘門在 `js/formula.js` 聚合（略過裝備上的專屬鍵）與 `js/runeword.js` `rwFinishAggregate`（真言借用寫回）
 - 生效位置：`js/legendary.js`（`onLightningSkillHit`、`thunderMark`）
 
@@ -1363,7 +1363,7 @@ spawn off                      收尾
 - 說明（遊戲內）：寒冰技能命中時有 10% 機率產生冰爆，對敵人造成 200% 寒冰傷害。
 - 前置：`runeword rw_glacier`，依 W64 做出符文真言並穿上
 - 步驟與預期：寒冰屬性技能命中約 10% 產生冰爆，造成 200% 寒冰傷害（下一 tick 結算）
-- 邊界：冰爆不再觸發冰爆（不遞迴）；目標已死時取消；`legend iceSpikeBurst weapon force` 放在裝備上：不生效（與穿上符文真言時比對），裝備詳情仍照常顯示該行說明（見第 5 節 K1）
+- 邊界：冰爆不再觸發冰爆（不遞迴）；目標已死時取消；`legend iceSpikeBurst weapon force` 放在裝備上：不生效（與穿上符文真言時比對），裝備詳情該行顯示灰字並加「(僅符文真言生效)」（見第 5 節 K1）
 - 回歸風險：閘門在 `js/formula.js` 聚合（略過裝備上的專屬鍵）與 `js/runeword.js` `rwFinishAggregate`（真言借用寫回）
 - 生效位置：`js/legendary.js`（`onIceSkillHit`、`iceSpikeBurst`）
 
@@ -1373,7 +1373,7 @@ spawn off                      收尾
 - 說明（遊戲內）：每 6 秒隨機讓 1 個冷卻中的技能立即冷卻完畢，且該技能下一次施放的傷害提高 50%。
 - 前置：`runeword rw_timeloop`，依 W47 做出符文真言並穿上
 - 步驟與預期：至少裝 2 個冷卻較長的技能；每 6 秒隨機讓 1 個冷卻中的新版技能冷卻歸零，它下一次施放的傷害 +50%（3 秒窗口涵蓋延遲命中）
-- 邊界：沒有技能在冷卻時這次不作用；倒地期間暫停計時；`legend heavenlyVow weapon force` 放在裝備上：不生效（與穿上符文真言時比對），裝備詳情仍照常顯示該行說明（見第 5 節 K1）
+- 邊界：沒有技能在冷卻時這次不作用；倒地期間暫停計時；`legend heavenlyVow weapon force` 放在裝備上：不生效（與穿上符文真言時比對），裝備詳情該行顯示灰字並加「(僅符文真言生效)」（見第 5 節 K1）
 - 回歸風險：閘門在 `js/formula.js` 聚合（略過裝備上的專屬鍵）與 `js/runeword.js` `rwFinishAggregate`（真言借用寫回）
 - 生效位置：`js/legendary.js`（`nextCastDmgPct`、`heavenlyVow`）
 
@@ -1383,7 +1383,7 @@ spawn off                      收尾
 - 說明（遊戲內）：隕石類技能傷害 +25%。
 - 前置：`runeword rw_starfall`，依 W52 做出符文真言並穿上
 - 步驟與預期：`sglv fireball max`（第 7 階隕石術）；隕石落地傷害 +25%
-- 邊界：不含超神【地爆天星】的固定百分比傷害；`legend godfallMeteor weapon force` 放在裝備上：不生效（與穿上符文真言時比對），裝備詳情仍照常顯示該行說明（見第 5 節 K1）
+- 邊界：不含超神【地爆天星】的固定百分比傷害；`legend godfallMeteor weapon force` 放在裝備上：不生效（與穿上符文真言時比對），裝備詳情該行顯示灰字並加「(僅符文真言生效)」（見第 5 節 K1）
 - 回歸風險：閘門在 `js/formula.js` 聚合（略過裝備上的專屬鍵）與 `js/runeword.js` `rwFinishAggregate`（真言借用寫回）
 - 生效位置：`js/legendary.js`（`meteorDmgPct`、`godfallMeteor`）
 
@@ -1393,7 +1393,7 @@ spawn off                      收尾
 - 說明（遊戲內）：風系與雷系傷害加成較高者，可額外獲得較低者 25% 的屬性傷害加成。
 - 前置：`runeword rw_galeeye`，依 W44 做出符文真言並穿上
 - 步驟與預期：屬性面板比較風系與雷系「屬性傷害提升」：較高者額外獲得較低者 25%
-- 邊界：兩者相等時加給風系；較低者不變；`legend stormAndThunder weapon force` 放在裝備上：不生效（與穿上符文真言時比對），裝備詳情仍照常顯示該行說明（見第 5 節 K1）
+- 邊界：兩者相等時加給風系；較低者不變；`legend stormAndThunder weapon force` 放在裝備上：不生效（與穿上符文真言時比對），裝備詳情該行顯示灰字並加「(僅符文真言生效)」（見第 5 節 K1）
 - 回歸風險：閘門在 `js/formula.js` 聚合（略過裝備上的專屬鍵）與 `js/runeword.js` `rwFinishAggregate`（真言借用寫回）
 - 生效位置：`js/legendary.js`（`shareFromLowerPct`、`stormAndThunder`）
 
@@ -1403,7 +1403,7 @@ spawn off                      收尾
 - 說明（遊戲內）：所有元素抗性 -50%，但所有屬性傷害加成額外提高 35%。
 - 前置：`runeword rw_genesis`，依 W59 做出符文真言並穿上
 - 步驟與預期：屬性面板：所有元素抗性 ×0.5；所有屬性傷害提升 +35（加算）
-- 邊界：抗性在 `computeStats` 計算，傷害提升在 `legendaryElementDamageUp`；兩邊都要看；`legend elementHeart weapon force` 放在裝備上：不生效（與穿上符文真言時比對），裝備詳情仍照常顯示該行說明（見第 5 節 K1）
+- 邊界：抗性在 `computeStats` 計算，傷害提升在 `legendaryElementDamageUp`；兩邊都要看；`legend elementHeart weapon force` 放在裝備上：不生效（與穿上符文真言時比對），裝備詳情該行顯示灰字並加「(僅符文真言生效)」（見第 5 節 K1）
 - 回歸風險：閘門在 `js/formula.js` 聚合（略過裝備上的專屬鍵）與 `js/runeword.js` `rwFinishAggregate`（真言借用寫回）
 - 生效位置：`js/formula.js`（`elemResMult`、`elementHeart`）；`js/legendary.js`（`elemDmgUpPct`、`elementHeart`）
 
@@ -1413,7 +1413,7 @@ spawn off                      收尾
 - 說明（遊戲內）：範圍 40 米內的敵人死亡，都會使你的物理技能冷卻時間 -0.05 秒。
 - 前置：`runeword rw_worldend`，依 W60 做出符文真言並穿上
 - 步驟與預期：用真實血量；40 米內每死 1 個敵人，所有冷卻中的**物理**新版技能冷卻 -0.05 秒
-- 邊界：魔法群組（火球、雷系、冰系…）不受影響；40 米外的死亡不算；高塔無擊殺事件；`legend deadTime weapon force` 放在裝備上：不生效（與穿上符文真言時比對），裝備詳情仍照常顯示該行說明（見第 5 節 K1）
+- 邊界：魔法群組（火球、雷系、冰系…）不受影響；40 米外的死亡不算；高塔無擊殺事件；`legend deadTime weapon force` 放在裝備上：不生效（與穿上符文真言時比對），裝備詳情該行顯示灰字並加「(僅符文真言生效)」（見第 5 節 K1）
 - 回歸風險：閘門在 `js/formula.js` 聚合（略過裝備上的專屬鍵）與 `js/runeword.js` `rwFinishAggregate`（真言借用寫回）
 - 生效位置：`js/legendary.js`（`physCdrSec`、`deadTime`）
 
@@ -1425,7 +1425,7 @@ spawn off                      收尾
 - 說明（遊戲內）：身體永久被火焰包覆，每秒損失 1% 最大生命；攻擊你的敵人持續受到 20% 火焰灼燒傷害，最多疊加 10 層。
 - 前置：`equipset legendary 100 0 0 wear` → `legend clear all`；先不加 force 輸入 `legend fireSpiritShield`，應被拒絕
 - 步驟與預期：`legend fireSpiritShield weapon force`：不應每秒損失生命、攻擊者不應被灼燒
-- 邊界：新掉落的裝備不會出現；舊存檔殘留不報錯
+- 邊界：新掉落的裝備不會出現；舊存檔殘留不報錯；`legend fireSpiritShield weapon force` 放在裝備上：不生效，裝備詳情該行顯示灰字並加「(已停用)」（見第 5 節 K1）
 - 回歸風險：閘門在 `js/legendary.js` `legendaryHas`；任何繞過它直接讀 `st.legendaryEffects` 的新程式都會讓停用失效
 - 生效位置：`js/legendary.js`（`selfHpDrainPctPerSec`、`retaliateBurnPct`、`fireSpiritShield`）
 
@@ -1435,7 +1435,7 @@ spawn off                      收尾
 - 說明（遊戲內）：生命值低於 50% 時產生相當於最大生命的光盾；光盾期間受到的傷害降低 35%，持續 5 秒；內建冷卻 20 秒。
 - 前置：`equipset legendary 100 0 0 wear` → `legend clear all`；先不加 force 輸入 `legend magicLightShield`，應被拒絕
 - 步驟與預期：`legend magicLightShield weapon force`：生命低於 50% 時不應產生光盾
-- 邊界：新掉落的裝備不會出現；舊存檔殘留不報錯
+- 邊界：新掉落的裝備不會出現；舊存檔殘留不報錯；`legend magicLightShield weapon force` 放在裝備上：不生效，裝備詳情該行顯示灰字並加「(已停用)」（見第 5 節 K1）
 - 回歸風險：閘門在 `js/legendary.js` `legendaryHas`；任何繞過它直接讀 `st.legendaryEffects` 的新程式都會讓停用失效
 - 生效位置：`js/legendary.js`（`lowHpThresholdPct`、`shieldHpPct`、`magicLightShield`）
 
@@ -1445,7 +1445,7 @@ spawn off                      收尾
 - 說明（遊戲內）：每隔 4 秒自動發射追蹤光彈尋找最近的目標，造成 250% 聖屬性傷害。
 - 前置：`equipset legendary 100 0 0 wear` → `legend clear all`；先不加 force 輸入 `legend lightCollision`，應被拒絕
 - 步驟與預期：`legend lightCollision weapon force`：不應每 4 秒自動發射光彈
-- 邊界：新掉落的裝備不會出現；舊存檔殘留不報錯
+- 邊界：新掉落的裝備不會出現；舊存檔殘留不報錯；`legend lightCollision weapon force` 放在裝備上：不生效，裝備詳情該行顯示灰字並加「(已停用)」（見第 5 節 K1）
 - 回歸風險：閘門在 `js/legendary.js` `legendaryHas`；任何繞過它直接讀 `st.legendaryEffects` 的新程式都會讓停用失效
 - 生效位置：`js/legendary.js`（`autoProjectile`、`lightCollision`）
 
@@ -1455,7 +1455,7 @@ spawn off                      收尾
 - 說明（遊戲內）：召喚 2 個擁有你 20% 生命與攻擊力的鬼娃衝向敵人；敵人優先攻擊鬼娃，鬼娃死亡時對所有敵人造成 300% 暗影傷害。
 - 前置：`equipset legendary 100 0 0 wear` → `legend clear all`；先不加 force 輸入 `legend ghostLamp`，應被拒絕
 - 步驟與預期：`legend ghostLamp weapon force`：不應召喚鬼娃、敵人仍直接攻擊你
-- 邊界：新掉落的裝備不會出現；舊存檔殘留不報錯
+- 邊界：新掉落的裝備不會出現；舊存檔殘留不報錯；`legend ghostLamp weapon force` 放在裝備上：不生效，裝備詳情該行顯示灰字並加「(已停用)」（見第 5 節 K1）
 - 回歸風險：閘門在 `js/legendary.js` `legendaryHas`；任何繞過它直接讀 `st.legendaryEffects` 的新程式都會讓停用失效
 - 生效位置：`js/legendary.js`（`ghostLamp`）
 
@@ -1465,7 +1465,7 @@ spawn off                      收尾
 - 說明（遊戲內）：反震敵人時消耗 10 點魔力，且該次反震傷害提高 100%。
 - 前置：`equipset legendary 100 0 0 wear` → `legend clear all`；先不加 force 輸入 `legend magicRecoil`，應被拒絕
 - 步驟與預期：`legend magicRecoil weapon force`＋有反震：反震時不應扣 10 點法力、反震傷害不翻倍
-- 邊界：新掉落的裝備不會出現；舊存檔殘留不報錯
+- 邊界：新掉落的裝備不會出現；舊存檔殘留不報錯；`legend magicRecoil weapon force` 放在裝備上：不生效，裝備詳情該行顯示灰字並加「(已停用)」（見第 5 節 K1）
 - 回歸風險：閘門在 `js/legendary.js` `legendaryHas`；任何繞過它直接讀 `st.legendaryEffects` 的新程式都會讓停用失效
 - 生效位置：`js/legendary.js`（`thornsManaCost`、`thornsDamagePct`、`magicRecoil`）
 
@@ -2656,7 +2656,7 @@ spawn off                      收尾
 
 | 編號 | 項目 | 說明 |
 | --- | --- | --- |
-| K1 | 停用／專屬特效在舊裝備上的顯示 | `js/item.js` 的裝備詳情只對「同名重覆」加「(重覆)」灰字；停用與符文真言專屬的詞條仍照一般傳奇特效顯示，畫面看不出它不生效（違反 AI_RULES 8.3 的「畫面與實際一致」；2026-11-06 Claude 實機確認）。請截圖記錄，修正另開任務 |
+| K1 | 停用／專屬特效在舊裝備上的顯示（**已修正** 2026-11-06） | 原本 `js/item.js` 的裝備詳情只對「同名重覆」加「(重覆)」灰字，停用與符文真言專屬的詞條照一般傳奇特效顯示，畫面看不出它不生效（違反 AI_RULES 8.3）。已修正：裝備詳情（含神鑄烙印的傳奇特效）對停用的顯示灰字＋「(已停用)」、對符文真言專屬的顯示灰字＋「(僅符文真言生效)」（`passiveInactiveNote`，String 表 2419／2420）。回歸：`legend deadTime weapon force`、`legend ghostLamp weapon force` 後看裝備詳情；一般特效與「(重覆)」顯示不變 |
 | K2 | 特效說明與技能階名稱不一致 | 雙刀亂舞的【狂舞】【不屈之誓】【殺千刀】寫「暴風之舞」，第 7 階實際名稱是【暴風亂舞】；疾風迅雷的 5 個特效寫「疾風斬」（GM 文件也這樣稱呼）；火球術／雷球特效寫「殞石」「雷殞天落」，技能階是「隕石術」「雷隕天落」。只是文字，請列出確認 |
 | K3 | 【雷散落】的「電殛擴散」 | 擴散數值讀第 5 階【靜電】（`lvs[4]`），第 6 階才叫【電殛】；請確認說明要寫哪一階 |
 | K4 | 【燃燒法則】以狀態名稱比對 | `legendaryBurnDot` 以持續傷害名稱字面值「燃燒」判定；若 Status 表改名，特效會靜默失效。測試時確認燃燒狀態名稱仍為「燃燒」 |
