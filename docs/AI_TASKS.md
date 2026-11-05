@@ -1,3 +1,15 @@
+## HERO3D-ROLE4-20261105 — 4轉人物、頭部校正與新劍
+
+- Owner：Codex；In Progress，單一開發者。使用者提供Role4.glb與劍參考圖，明確表示有授權並要求依圖復刻新劍；分離雙手腿黏連、頭部轉正、刪背劍、新劍右手正握、全部舊動作保持，接入4轉起外觀。原0～3轉及黃金騎士保留。
+- 前置：工作區乾淨，HEAD46f0420a；目標衝突預檢無外部來源。來源Role4 SHA3d22a180e843ad253c23b8b555f53ebf742a8df595404df2b8957a05bfc8c9bb，68節點／一骨架及Running；只取人物外觀，沿用既有正式骨架及六段動畫。授權參考圖只作此次Blender劍造型來源，無新第三方素材。
+- 允許：Role4模型／報告／來源與Blender製作／匯出、hero3d外觀選擇及嵌入PBR支援、index快取、轉生切換／角色回歸、LV及本段；素材庫保存原檔／參考圖／可編輯Blend／成品／SHA／QA。禁止改舊模型、六段動作／右手正握方向／普攻選招、Worker／戰鬥／存檔／配置／轉生門檻與其他功能，不合併推送。
+- 驗收：兩掌與腿及腋下獨立封閉、無跨骨骼橋面／腿權重；頭部正前方、背劍完整刪除；依圖新造劍身銀刃／暗脊／紅色嵌飾與護手，實際貼合右手並沿原刃向／手腕邏輯。六段動畫及骨架取樣保持，PBR／0～4轉存讀與切換、回歸／Build／實機與清晰GIF；素材先Commit再遊戲Commit，後續使用者Review。
+- 預覽檢查點：使用者途中追加「劍的模型做好先讓我看一下」，因此本輪先交付獨立劍首版候選，未接人物／遊戲，整體Role4任務仍In Progress。新Blender工具依參考比例建直線雙刃／深色劍脊、紅紋幾何淺浮雕、彎鉤護手、紅寶石、黑色纏柄與銀色柄尾；護手細節在Blender由授權Role4材質烘焙。背面採同樣紋飾；單張參考圖的隱藏細節屬合理補全，尚未宣稱完全復刻驗收完成。
+- 候選規格：約0.942m總長、28mm握柄、握點原點／刃軸+Y／刃口+X／正面+Z，後續沿現有手腕與正握框架；GLB907972bytes、10396個匯出三角面。可編輯Blend保留13部件及packed貼圖；Blender正常重開、mesh.validate及有限座標通過，合併焊接邊界0、仍有4條非流形邊，需於正式整合前清理，不當作已通過完整流形驗收。
+- 預覽驗證：`blender -b --python-exit-code 1 --python tools/meshy-pipeline/blender/build_role4_sword.py -- <輸出> <授權參考PNG> <Role4.glb>`、QA verify-sword.py重開成品與Blend、Python ast.parse通過；原生Three／既有PBR棚光前／後／側／斜視及護手近拍，Console warning／error及pageerror0。800×1055旋轉GIF96幀24fps、磁碟讀回確認旋轉；QA在本聊天visualizations/role4-20261105。沒有改遊戲JS，未執行無關全庫／戰鬥測試或宣稱已驗實機握姿。
+- 本輪修改僅build_role4_sword.py及本段；唯讀檢查規範／AGENTS／Workflow／prompts、hero3d／renderer／舊製作工具／回歸與原模型，未修改LV／index／PBR配置、任何角色成品、Worker／戰鬥／存檔及配置。其他聊天的太古星星docs段與配置／data修改保留、不納入本項；同docs分段處理。
+- 候選保存：設定素材庫codex-authored/hero3d-role4-sword-preview-20261105含授權原檔／參考圖、可編輯Blend／GLB／烘焙、作者工具及QA，21檔SHA manifest已逐檔核對。素材Commit `1fcac01`先於本輪預覽工具Commit（本段所在「[Codex] feat: 製作4轉新劍獨立造型預覽」，SHA見交付）。這是供造型Review的候選保存，未合併推送；尚待劍造型回饋／細節及拓樸修整、Role4雙手分離／頭轉正／刪背劍／右手持新劍／舊六動作及4轉接線驗證。
+
 ## SYNC-MERGE-20261105-014634 - Integration validated
 
 - Owner: Codex; Done (controller staging/commit pending). Only authorized pending merge: HEAD 2e8c191e03c04ad45b8e36f844704a3fdef20f2e + MERGE_HEAD 8ee2bcce0cfeb6331f37c37c0d63f583d90a105f; base cea2c7f8f31bdf4ec1bd053f915b44703bd38f09. No delegation, staging, commits, Git metadata writes or other worktree changes.
