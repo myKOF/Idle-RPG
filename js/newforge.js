@@ -127,12 +127,61 @@ function newForgeConsumeOne(fu) {
 
 /* ---- 拆解：沿用舊分解槽 doSalvage（碎片/金幣/附魔精華/太古精華、鑲嵌寶石取回、
    零件事件），零件加成以該熔爐零件格搭配全域等級計算。 ---- */
-function newForgeSalvage(it, fu) {
-  var res = doSalvage(it, false, function (key) { return newForgePartBonus(fu, key); });
+function newForgeSalvage(it, fu, silent) {
+  var res = doSalvage(it, !!silent, function (key) { return newForgePartBonus(fu, key); });
   var nf = newForgeState();
   if (nf) nf.stats.salvaged++;
   UI.dirty.newforge = true;
   return res;
+}
+
+/* ---- 離線補算：上線時依離線秒數推算各熔爐「應該已經處理的件數」並給予產出 ----
+   離線結算（save.js applyOfflineProgress）是固定費率模型，不會跑 newForgeTick；
+   這裡用同一套規則補上：各爐產能＝離線秒數 × 加速齒輪倍率 ÷ NEW_FORGE_INTERVAL，
+   佇列與傳送帶沿用正常流程（路由→補帶→入爐），逐件走 newForgeSalvage（零件加成、
+   幸運之心等事件照算），日誌靜默，只回傳彙總。產出以玩家資源前後差額計，
+   所以淘金濾網／知識核心等額外來源自動涵蓋。 */
+function newForgeOfflineCatchup(seconds) {
+  var nf = newForgeState();
+  seconds = Number(seconds) || 0;
+  var sum = { salvaged: 0, scrap: 0, gold: 0, essence: 0, ancientEssence: 0 };
+  if (!nf || seconds <= 0 || !nf.furnaces.length) return sum;
+  var pl = G.player;
+  var before = { scrap: pl.scrap, gold: pl.gold, essence: pl.essence || 0, anc: pl.ancientEssence || 0 };
+  // 各爐離線期間的入爐次數（含目前計時器剩餘）；剩餘零頭寫回計時器，維持上線後的節奏
+  var cap = [];
+  for (var i = 0; i < nf.furnaces.length; i++) {
+    var fu = nf.furnaces[i];
+    var work = seconds * newForgeFurnaceSpeed(fu);
+    var timer = Math.max(0, Number(fu.timer) || 0);
+    if (!fu.enabled) { cap.push(0); continue; }
+    if (work < timer) { fu.timer = timer - work; cap.push(0); continue; }
+    var rest = work - timer;
+    cap.push(1 + Math.floor(rest / NEW_FORGE_INTERVAL));
+    fu.timer = NEW_FORGE_INTERVAL - (rest % NEW_FORGE_INTERVAL);
+  }
+  // 反覆「路由→補帶→入爐」直到沒有進展（佇列清空或各爐產能用完）
+  for (var guard = 0; guard < 100000; guard++) {
+    var progress = false, queued = nf.queue.length;
+    newForgeRouteQueue();
+    if (nf.queue.length !== queued) progress = true;
+    for (var j = 0; j < nf.furnaces.length; j++) {
+      var f2 = nf.furnaces[j];
+      if (cap[j] <= 0 || !f2.enabled) continue;
+      newForgeRefillBelt(f2);
+      while (cap[j] > 0 && f2.belt.length) {
+        newForgeSalvage(f2.belt.shift(), f2, true);
+        cap[j]--; sum.salvaged++; progress = true;
+      }
+    }
+    if (!progress) break;
+  }
+  sum.scrap = pl.scrap - before.scrap;
+  sum.gold = pl.gold - before.gold;
+  sum.essence = (pl.essence || 0) - before.essence;
+  sum.ancientEssence = (pl.ancientEssence || 0) - before.anc;
+  UI.dirty.newforge = true;
+  return sum;
 }
 
 /* ---- 帶上裝備退回背包（移除熔爐時呼叫） ---- */

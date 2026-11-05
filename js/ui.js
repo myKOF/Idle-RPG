@@ -8244,6 +8244,12 @@ function showOfflineSummary(sum) {
   if (sum.scrap) loot.push(STR(2062, fmt(sum.scrap)));
   h += '<div class="offline-sum-title">' + STR(2063) + '</div>';
   h += '<div class="offline-sum-loot">' + (loot.length ? loot.join('　') : STR(2064)) + '</div>';
+  if (sum.forge && sum.forge.salvaged > 0) {
+    var fo = sum.forge, forgeOut = [STR(1048, fmt(fo.scrap)), STR(1049, fmt(fo.gold))];
+    if (fo.essence) forgeOut.push(STR(1050, fmt(fo.essence)));
+    if (fo.ancientEssence) forgeOut.push(STR(1046, fmt(fo.ancientEssence)));
+    h += '<div class="offline-sum-row">' + STR(2409, fmt(fo.salvaged), forgeOut.join('、')) + '</div>';
+  }
   body.innerHTML = h;
   overlay.style.display = 'flex';
 }

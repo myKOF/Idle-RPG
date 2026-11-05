@@ -1311,6 +1311,18 @@ function applyOfflineProgress(options) {
 
   function finishOfflineProgress() {
     if (sum.scrap) G.player.scrap += sum.scrap;
+    /* 熔爐離線作業：離線期間熔爐本來會持續分解，上線時依離線秒數補算（見 newforge.js）。
+       放在掉落全數入佇列之後，所以離線掉的裝備也在可處理範圍內。 */
+    if (typeof newForgeOfflineCatchup === 'function') {
+      var forgeSum = newForgeOfflineCatchup(elapsed);
+      if (forgeSum && forgeSum.salvaged > 0) {
+        sum.forge = forgeSum;
+        var forgeOut = [STR(1048, fmt(forgeSum.scrap)), STR(1049, fmt(forgeSum.gold))];
+        if (forgeSum.essence) forgeOut.push(STR(1050, fmt(forgeSum.essence)));
+        if (forgeSum.ancientEssence) forgeOut.push(STR(1046, fmt(forgeSum.ancientEssence)));
+        blog(STR(2409, fmt(forgeSum.salvaged), forgeOut.join('、')), 'good');
+      }
+    }
   UI.dirty.header = true; UI.dirty.factory = true; UI.dirty.gems = true;
 
   var hrs = Math.floor(elapsed / 3600), mins = Math.floor((elapsed % 3600) / 60);
