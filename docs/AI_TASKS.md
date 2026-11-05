@@ -1,3 +1,13 @@
+## ANCIENT-STAR-AUTO-OVERLAP-20261105 — 窄裝備格星列自動重疊
+
+- Owner：Codex；Done，單一開發者。使用者要求星星不被裝備外框遮住，格子不足時縮短間距、可重疊。僅將星列改成可壓縮的等分Grid軌道，星星自身仍以max-content維持原18px字形／圖片尺寸；左右預留框邊／光暈空間，窄格軌道縮短形成重疊，寬格保持原間距（>4顆原4px重疊以對稱負邊距保留）。保留三色／1px輪廓／光暈／星數／精鑄順序。
+- 允許：css/style.css、index僅style快取、LV、docs/assets來源渲染說明及本段，QA於聊天visualizations；禁止JS／PNG／素材／玩法／配置、其他升級Preset／Intro在製內容與合併推送。目標CSS／來源文件無外部來源；index與Claude Intro及本副本升級Preset快取不同區段，merge-tree及共同祖先／實際對方index的LF正規化三方候選merge-file皆0，分段修改與stage。
+- 驗收：正式全CSS／實際itemCellHTML及品質框，在48／58／64／80／120px格、1～7顆、各品質與穿戴／背包／神鑄中確認圖案及描邊不觸左右外框，縮短步距而不縮星星；寬格與原版步距、tips保持。相關回歸／Build／素材SHA及diff後僅提交本項。後續使用者Review／合併。
+- 實機瀏覽器驗證：載入正式全CSS及真正itemCellHTML／itemRarityEffectClass／itemRuneBadgeHTML／badge，原品質圖與神話／創世／混沌三種框；48／58／64／80／120px、1～7顆、穿戴／背包／神鑄共315案例，與修改前CSS對照。星星自身寬高差0px，120px寬格各星x差0px；圖案盒加左右各3px（偽元素2px與描邊1px）的保守範圍，最小離格邊5.671875px，舊版108例未留足4px、修正版0例。58px七顆步距約4.28px，原星尺寸12.65625×18px不縮小；目視三色、描邊及光暈保持，Console error／warning0。
+- QA：本聊天visualizations/star-alignment/narrow-stars.jpg及spacing-matrix.json保留實際窄框預覽與315例數據；初次跨iframe讀取早於子頁完成而回傳0例，已等候實際cell附加後重讀315例，未拿空集合當通過。
+- 驗證：`node --test tests/ancient-forge-limit.test.cjs tests/inventory-ancient-filter-sort.test.cjs tests/vfx-editor-cache-versions.test.cjs`15/15通過；`npm.cmd run build`665檔通過，`node tools/ancient-stars/export-source.cjs --check`原PNG／素材庫SHA一致、`git diff --check`通過。未改PNG／母圖，不建立素材庫空Commit；素材庫另有升級level-up在製內容，原樣保留。
+- 修改5檔：CSS星列規則、index style 1.0.121、LV、來源渲染說明及本段。唯讀未改規範／Workflow／Agent文件、js/ui.js／item.js／精鑄順序、其餘品質CSS、原素材／匯出器、既有回歸／helpers；其他升級Preset／Intro與其index／LV／docs不同區段保持並分段stage。無本項未完成或已知新增風險，未做全遊戲長玩；Commit為本段所在「[Codex] fix: 窄裝備格星星自動重疊避開外框」（SHA見交付），可供Review及使用者合併，未合併推送。下一步重載遊戲檢視窄背包格。
+
 ## ANCIENT-STAR-OUTLINE-GLOW-20261105 — 星星輪廓描邊與加強光暈
 
 - Owner：Codex；Done，單一開發者。依使用者示意加強三色星星的金黃色外光暈，並加沿透明圖案輪廓的1px深金描邊；不新增矩形外框。CSS濾鏡先沿用原淺藍調色，再以SourceAlpha膨脹1px減去原alpha生成輪廓、疊原圖，最後加強黃金外暈，保留金屬圖面／三色／原字形佔位及間距。
