@@ -1,3 +1,12 @@
+## LEVELUP-TEXT-SIZE-20261105 — 升級提示縮小字號及外框
+
+- Owner：Codex；Done，單一開發者。使用者指定人物頭上「等級提升」字號減3、外框2px；spawnLevelUpText字號58→55、描邊11→2，沿用原String2314、顏色／陰影／彈跳與上飄。此特效由LEVELUP事件直接產生，無Preset JSON；不修改光圈與粒子。
+- 前置：既有升級文字完成。允許renderer此兩值、index／scene-preview僅renderer快取、LV與本段；禁止Role5在製內容、配置／素材／玩法／Worker／String及合併推送。預檢renderer／preview乾淨；index與Claude Intro及本副本Role5快取不同區段，候選對Claude實際工作檔三方merge-file exit0，無語意相依，文件僅新增本項並分段stage。
+- 驗收：核對正式Text樣式及原動畫／內容保持，相關升級／鏡頭／快取測試、Build與diff後Commit。後續使用者Review／合併。
+- 驗證：`node --test tests/levelup-purge.test.cjs tests/battle-camera-distance.test.cjs tests/vfx-editor-cache-versions.test.cjs`20/20通過，`node --check js/battle-renderer.js`及git diff／stat／check通過；用正式spawnLevelUpText建立Text、核對fontSize55／stroke.width2與String2314保持。`npm.cmd run build`檢查663檔、僅另一進行中Role5新增且未追蹤的tests/hero3d-role5.test.cjs第93行SyntaxError（Unexpected token ';'）失敗；已確認不屬本項且不修改該檔，不宣稱整體Build通過。未做瀏覽器目視／Console檢查，無本項已知新增風險或未完成實作。
+- 修改5檔：renderer兩個樣式值、index及scene-preview快取、LV與本段；唯讀未改規範／Workflow、原圖、相關既有測試／helper、build工具及Role5在製檔案。素材庫無變動、不建空Commit。index與Claude Intro不同區段三方試跑乾淨，本副本Role5快取／LV／任務段分段排除，不代提交他項。
+- Commit為本段所在「[Codex] fix: 縮小升級文字並調整外框」（SHA見交付）；可供Review及使用者合併，未合併／推送。下一步重載遊戲查看升級文字；整體Build須待Role5任務自行修復其測試語法後重驗。
+
 ## TEST-MAP-CAMERA-WHEEL-20261105 — 測試場景直接使用滾輪縮放鏡頭
 
 - Owner：Codex；Done，單一開發者。使用者要求測試場景也能以滑鼠滾輪調整鏡頭距離。GM test_map暫時不套用鏡頭鎖定，向上拉近、向下拉遠，沿用既有步進／界限／HUD與修飾鍵保護；離場後依原遊戲設定鎖定，不改設定或存檔。進出場景立即resize，使縮放與百分比同步恢復，不等待視窗尺寸改變。

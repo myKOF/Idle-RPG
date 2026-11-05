@@ -2670,8 +2670,8 @@ var BattleRenderer = (function () {
     var label = new PIXI.Text({
       text: STR(2314),
       style: {
-        fontFamily: '"Microsoft JhengHei", "PingFang TC", sans-serif', fontSize: 58, fontWeight: '900',
-        fill: '#fff6c9', stroke: { color: '#ffb300', width: 11, join: 'round' },
+        fontFamily: '"Microsoft JhengHei", "PingFang TC", sans-serif', fontSize: 55, fontWeight: '900',
+        fill: '#fff6c9', stroke: { color: '#ffb300', width: 2, join: 'round' },
         dropShadow: { color: '#a85a00', alpha: 0.75, blur: 6, distance: 3, angle: Math.PI / 2 }
       }
     });
