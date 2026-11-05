@@ -172,7 +172,10 @@ async function main() {
       /* 這一次的輸出子目錄（相對於批次目錄）。讓讀 batch_summary.json 的人
          不必自己重推命名規則——推錯了只會得到「載不到檔案」這種難查的症狀。 */
       dir: path.basename(job.out),
-      level: s.final.level, stage: s.final.stage,
+      /* 關卡是**所在場景內**的編號：zone 不同的兩列，stage 不能直接比。
+         stageCurrent 是結束時人站在哪一關——與 stage（最高關）差很多就是被退關卡住了。 */
+      level: s.final.level, zone: s.final.zone || null, stage: s.final.stage,
+      stageCurrent: (s.final.stageCurrent != null) ? s.final.stageCurrent : null,
       /* ⚠️ 有轉生之後，等級單獨看沒有意義：轉生把等級歸 1，
          3 轉 Lv.417 遠強於 0 轉 Lv.1000。要比強度看關卡與轉生次數。 */
       reincarnations: s.final.reincarnations || 0,
@@ -195,12 +198,13 @@ async function main() {
   for (const r of rows) (byPolicy[r.policy] = byPolicy[r.policy] || []).push(r);
 
   console.log('\n──────── 各次結果 ────────');
-  console.log('策略'.padEnd(22) + 'seed'.padStart(6) + '轉生'.padStart(5) + '等級'.padStart(7) + '關卡'.padStart(7) +
-              '物攻'.padStart(9) + '擊殺'.padStart(9) + '死亡'.padStart(7) + '  存檔雜湊');
+  console.log('策略'.padEnd(22) + 'seed'.padStart(6) + '轉生'.padStart(5) + '等級'.padStart(7) + '場景'.padStart(18) +
+              '關卡(目前)'.padStart(12) + '物攻'.padStart(9) + '擊殺'.padStart(9) + '死亡'.padStart(7) + '  存檔雜湊');
   for (const r of rows) {
+    const cur = (r.stageCurrent != null && r.stageCurrent !== r.stage) ? `(${r.stageCurrent})` : '';
     console.log(r.policy.padEnd(22) + String(r.seed).padStart(6) + String(r.reincarnations).padStart(5) +
-      String(r.level).padStart(7) +
-      String(r.stage).padStart(7) + String(r.atk).padStart(9) + String(r.kills).padStart(9) +
+      String(r.level).padStart(7) + String(r.zone || '-').padStart(18) +
+      (String(r.stage) + cur).padStart(12) + String(r.atk).padStart(9) + String(r.kills).padStart(9) +
       String(r.deaths).padStart(7) + '  ' + r.hash);
   }
 

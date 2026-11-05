@@ -897,7 +897,9 @@ const summary = {
   })(),
   invariantFailures: problems,
   final: (() => { const v = engine.view(); const s = engine.ctx.getStats(); const st = engine.state().stage || {}; return {
-    level: v.level, stage: st.best || v.stage, stageCurrent: st.current || v.stage, gold: v.gold, reincarnations: engine.state().player.reincarnations || 0,
+    /* stage／stageCurrent 是**目前所在場景**的最高關與所在關（每張地圖各自從第 1 關數起），
+       不帶 zone 的話「關卡 29」分不出是荒漠還是冰原。存遊戲的場景鍵，顯示名稱由讀的人查 ZONES。 */
+    level: v.level, zone: st.zone || null, stage: st.best || v.stage, stageCurrent: st.current || v.stage, gold: v.gold, reincarnations: engine.state().player.reincarnations || 0,
     atk: s.atk, matk: s.matk, inventory: (engine.state().inventory || []).length }; })()
 };
 fs.writeFileSync(path.join(OUT_DIR, 'run_summary.json'), JSON.stringify(summary, null, 2));
