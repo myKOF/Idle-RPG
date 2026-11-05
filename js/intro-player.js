@@ -16,6 +16,12 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
      - 任何收掉 Loading 的路徑（Worker 失效、分頁鎖被搶）都會呼叫 abort()，
        讓失效通知與遮罩不被動畫蓋住（index.html 的 hideLoadingScreen）。
 
+   停在標題等載入（holdAt）：開機播放時，時間軸可以指定停格點。播到那裡 UI 還沒準備好，
+     就整個畫面停住、顯示載入圓點，等 main.js 呼叫 release() 才播完收尾；UI 先準備好則
+     不停直接播完。標題開場因此能蓋住整段載入、一路接到遊戲畫面，不會先退回「Loading」。
+     停格超過 HOLD_MAX_MS 自動放行（退回底下的 Loading 繼續等），不讓動畫把開機卡死。
+     GM 指令預覽不停格。
+
    略過：點擊畫面、Esc、Space、Enter，或略過按鈕。
    減少動態偏好：只保留淡入淡出，不位移不縮放。
    分頁隱藏：所有動畫一起暫停，回來從原處繼續。
@@ -27,6 +33,7 @@ var IntroPlayer = (function () {
   var SKIP_STR = 2410;          // String 表：略過按鈕
   var SKIP_FADE_MS = 350;       // 略過時整層淡出的長度
   var FAILSAFE_EXTRA_MS = 5000; // 可見狀態下超過預定長度這麼久還沒結束，就強制收掉
+  var HOLD_MAX_MS = 20000;      // 停格等載入的上限，與 bridge.js 開機等待的逾時同長
   var SKIP_KEYS = { Escape: 1, Esc: 1, ' ': 1, Spacebar: 1, Enter: 1 };
 
   var _cur = null;              // 播放中的狀態；null＝沒在播
@@ -38,8 +45,9 @@ var IntroPlayer = (function () {
 
   function transformOf(p) {
     p = p || {};
+    var s = num(p.scale, 1);
     return 'translate(' + num(p.x, 0) + 'vw, ' + num(p.y, 0) + 'vh) ' +
-      'scale(' + num(p.scale, 1) + ') rotate(' + num(p.rotate, 0) + 'deg)';
+      'scale(' + num(p.sx, s) + ', ' + num(p.sy, s) + ') rotate(' + num(p.rotate, 0) + 'deg)';
   }
 
   /* 圖層的淡入淡出關鍵影格。淡入＋淡出比持續時間長時等比壓縮，避免 offset 倒退。 */
@@ -88,16 +96,21 @@ var IntroPlayer = (function () {
   /* 開機時要播哪一條時間軸。回傳 INTRO_TIMELINES 的鍵，或 null＝不播。
      ctx.hasSave：本次開機是否讀到存檔（Task C 用來判斷新玩家）。
      網址 ?intro=<鍵> 強制播指定時間軸；?intro=0 或 ?intro=off 強制不播。
-     目前沒有預設播放的時間軸（標題開場與序章在後續任務接上），只有網址指定才播。 */
+     預設每次啟動播標題開場 title；決定論測試模式（?seed=，見 bridge.js）不播，
+     那是自動化重現用的開機，多出的固定等待沒有意義。新玩家序章在後續任務接上。 */
+  var DEFAULT_STARTUP_TIMELINE = 'title';
   function chooseStartupTimeline(ctx, search, timelines) {
     timelines = timelines || (typeof INTRO_TIMELINES !== 'undefined' ? INTRO_TIMELINES : {});
-    var m = /[?&]intro=([^&#]*)/.exec(search || '');
+    var has = function (k) { return Object.prototype.hasOwnProperty.call(timelines, k); };
+    search = search || '';
+    var m = /[?&]intro=([^&#]*)/.exec(search);
     if (m) {
       var id = decodeURIComponent(m[1]);
       if (id === '0' || id === 'off') return null;
-      return Object.prototype.hasOwnProperty.call(timelines, id) ? id : null;
+      return has(id) ? id : null;
     }
-    return null;
+    if (/[?&]seed=\d+(&|#|$)/.test(search)) return null;
+    return has(DEFAULT_STARTUP_TIMELINE) ? DEFAULT_STARTUP_TIMELINE : null;
   }
 
   /* ---------- DOM ---------- */
@@ -150,13 +163,38 @@ var IntroPlayer = (function () {
 
   function resumeAll(c) {
     if (c.seeking) return;   // seek() 停住的畫面不因切回分頁而開始走
+    if (c.hold && c.hold.holding) return;   // 停格等載入中，切回分頁也繼續停著
     c.paused = false;
     c.anims.forEach(function (a) { try { a.play(); } catch (e) {} });
     armFailsafe(c);
   }
 
+  /* 播到停格點：還沒被放行就整個停住，等 release()。 */
+  function reachHold(c) {
+    if (_cur !== c || c.skipping || c.hold.released) return;
+    c.hold.holding = true;
+    c.root.className += ' is-holding';
+    pauseAll(c);
+    c.hold.maxTimer = setTimeout(function () {
+      if (_cur === c && c.hold.holding) { console.warn('[intro] 停格等載入超過上限，放行'); release(); }
+    }, HOLD_MAX_MS);
+  }
+
+  /* 放行停格：還沒播到停格點就記下來（到了也不停）；已經停住就接著播完。 */
+  function release() {
+    var c = _cur;
+    if (!c || !c.hold || c.hold.released) return;
+    c.hold.released = true;
+    clearTimeout(c.hold.maxTimer);
+    if (!c.hold.holding) return;
+    c.hold.holding = false;
+    c.root.className = c.root.className.replace(/\s*is-holding/g, '');
+    if (!document.hidden) resumeAll(c);   // 隱藏中就等 visibilitychange 回來再播
+  }
+
   function armFailsafe(c) {
     clearTimeout(c.failsafe);
+    if (c.hold && c.hold.holding) return;
     var t = num(c.clock && c.clock.currentTime, 0);
     var remain = Math.max(0, c.duration - t) + FAILSAFE_EXTRA_MS;
     c.failsafe = setTimeout(function () {
@@ -176,6 +214,7 @@ var IntroPlayer = (function () {
     _cur = null;
     clearTimeout(c.failsafe);
     clearTimeout(c.skipTimer);
+    if (c.hold) clearTimeout(c.hold.maxTimer);
     document.removeEventListener('visibilitychange', onVisibility);
     window.removeEventListener('keydown', onKey, true);
     c.anims.forEach(function (a) { try { a.cancel(); } catch (e) {} });
@@ -186,7 +225,8 @@ var IntroPlayer = (function () {
   }
 
   /* 播放一條時間軸。回傳 true＝開始播；false＝沒播（資料錯、環境不支援、已在播），
-     沒播時 onDone 不會被呼叫，呼叫端照常往下走。 */
+     沒播時 onDone 不會被呼叫，呼叫端照常往下走。
+     opts.hold：時間軸有 holdAt 時在那裡停格等 release()（只有開機播放才用）。 */
   function play(timeline, opts) {
     opts = opts || {};
     if (_cur) return false;
@@ -197,8 +237,13 @@ var IntroPlayer = (function () {
     var c = {
       id: opts.id || '', duration: timelineDuration(timeline), anims: [], paused: false, seeking: false,
       skipping: false, failsafe: 0, skipTimer: 0, onDone: opts.onDone || null,
-      skippable: timeline.skippable !== false, reduced: reducedMotion()
+      skippable: timeline.skippable !== false, reduced: reducedMotion(),
+      hold: null
     };
+    var holdAt = num(timeline.holdAt, 0);
+    if (opts.hold && holdAt > 0 && holdAt < c.duration) {
+      c.hold = { at: holdAt, holding: false, released: false, maxTimer: 0 };
+    }
     try {
       var root = document.createElement('div');
       root.className = 'intro-player' + (c.reduced ? ' is-reduced' : '');
@@ -227,6 +272,15 @@ var IntroPlayer = (function () {
         }
       });
 
+      if (c.hold) {
+        // 停格時顯示的載入圓點（純 CSS，不含文字）；動畫由 CSS 自己循環，不受停格暫停影響
+        var dots = document.createElement('div');
+        dots.className = 'intro-hold-dots';
+        dots.setAttribute('aria-hidden', 'true');
+        for (var d = 0; d < 3; d++) dots.appendChild(document.createElement('span'));
+        root.appendChild(dots);
+      }
+
       if (c.skippable) {
         var btn = document.createElement('button');
         btn.type = 'button';
@@ -244,6 +298,13 @@ var IntroPlayer = (function () {
       if (btn) { try { btn.focus({ preventScroll: true }); } catch (e) {} }
       c.clock = animate(c, clockEl, [{ opacity: 0 }, { opacity: 0 }], { duration: c.duration, fill: 'forwards' });
       c.clock.onfinish = function () { if (!c.skipping) finish(c, 'end'); };
+      if (c.hold) {
+        var holdEl = document.createElement('span');
+        holdEl.className = 'intro-clock';
+        root.appendChild(holdEl);
+        animate(c, holdEl, [{ opacity: 0 }, { opacity: 0 }], { duration: c.hold.at, fill: 'forwards' })
+          .onfinish = function () { reachHold(c); };
+      }
       document.addEventListener('visibilitychange', onVisibility);
       if (document.hidden) pauseAll(c); else armFailsafe(c);
       return true;
@@ -296,7 +357,7 @@ var IntroPlayer = (function () {
     if (!id) return false;
     var bridge = (typeof WorkerBridge !== 'undefined') ? WorkerBridge : null;
     var started = play(INTRO_TIMELINES[id], {
-      id: id,
+      id: id, hold: true,
       onDone: function () { if (bridge && bridge.resumeStartupHoldTimeout) bridge.resumeStartupHoldTimeout(); }
     });
     if (started && bridge && bridge.suspendStartupHoldTimeout) bridge.suspendStartupHoldTimeout();
@@ -308,12 +369,13 @@ var IntroPlayer = (function () {
     if (!c) return { playing: false };
     return {
       playing: true, id: c.id, duration: c.duration, paused: c.paused, skipping: c.skipping,
-      reduced: c.reduced, time: num(c.clock && c.clock.currentTime, 0)
+      reduced: c.reduced, time: num(c.clock && c.clock.currentTime, 0),
+      holding: !!(c.hold && c.hold.holding), released: !!(c.hold && c.hold.released)
     };
   }
 
   return {
-    play: play, skip: skip, abort: abort, whenIdle: whenIdle, seek: seek,
+    play: play, skip: skip, abort: abort, whenIdle: whenIdle, seek: seek, release: release,
     startupBegin: startupBegin, state: state,
     isPlaying: function () { return !!_cur; },
     _internal: {

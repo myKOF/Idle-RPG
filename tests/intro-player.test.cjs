@@ -88,7 +88,8 @@ test('淡入淡出關鍵影格：offset 不倒退，淡入淡出超過持續時�
 
 test('位移關鍵影格：省略欄位取預設值，只有 from 時停在原地', () => {
   const { P } = makeEnv();
-  assert.equal(P._internal.transformOf({ x: 3, scale: 1.2 }), 'translate(3vw, 0vh) scale(1.2) rotate(0deg)');
+  assert.equal(P._internal.transformOf({ x: 3, scale: 1.2 }), 'translate(3vw, 0vh) scale(1.2, 1.2) rotate(0deg)');
+  assert.equal(P._internal.transformOf({ sx: 0.1 }), 'translate(0vw, 0vh) scale(0.1, 1) rotate(0deg)', 'sx／sy 分軸縮放');
   assert.equal(P._internal.motionKeyframes({}), null, '沒有 from/to 就不建位移動畫');
   const m = P._internal.motionKeyframes({ from: { y: 2 } });
   assert.equal(m[0].transform, m[1].transform);
@@ -116,11 +117,16 @@ test('所有內建時間軸都通過檢查，文字圖層的 String 編號都在
   assert.ok(ids.has('2410'), '略過按鈕文字');
 });
 
-test('起播選擇：目前只有網址指定才播，?intro=0 強制不播', () => {
-  const { P } = makeEnv();
+test('起播選擇：預設每次播標題開場，網址可指定或關閉，決定論測試模式不播', () => {
+  const { P, ctx } = makeEnv();
   const pick = P._internal.chooseStartupTimeline;
   const tls = { test: {}, title: {} };
-  assert.equal(pick({ hasSave: false }, '', tls), null, '預設不播（Task B/C 才接上）');
+  assert.equal(pick({ hasSave: false }, '', tls), 'title', '新玩家');
+  assert.equal(pick({ hasSave: true }, '?lang=en', tls), 'title', '舊存檔也播');
+  assert.equal(pick({}, '?seed=42', tls), null, '決定論測試模式不播');
+  assert.equal(pick({}, '?seed=42&intro=title', tls), 'title', '網址指定優先');
+  assert.equal(pick({}, '', { test: {} }), null, '沒有 title 時退回不播');
+  assert.equal(pick({}, '', ctx.INTRO_TIMELINES), 'title', '內建資料有 title');
   assert.equal(pick({}, '?intro=test', tls), 'test');
   assert.equal(pick({}, '?seed=1&intro=title', tls), 'title');
   assert.equal(pick({}, '?intro=0', tls), null);
@@ -217,9 +223,92 @@ test('開機起播：播放中暫停開機等待的逾時，結束時交回', ()
   assert.deepStrictEqual(env.bridgeCalls, ['suspend']);
   env.clock().onfinish();
   assert.deepStrictEqual(env.bridgeCalls, ['suspend', 'resume']);
-  const env2 = makeEnv();
-  assert.equal(env2.P.startupBegin({ hasSave: false }), false, '沒指定時間軸就不播');
+  const env2 = makeEnv({ search: '?intro=0' });
+  assert.equal(env2.P.startupBegin({ hasSave: false }), false, '?intro=0 不播');
   assert.deepStrictEqual(env2.bridgeCalls, [], '沒播就不動開機等待');
+});
+
+/* ---------- 停格等載入（標題開場） ---------- */
+const HOLDING = {
+  holdAt: 1000,
+  layers: [{ kind: 'shape', at: 0, dur: 1500, fadeOut: 500 }]
+};
+const holdClock = (env) => env.anims.find((a) => a.el.className === 'intro-clock' && a.timing.duration === 1000);
+
+test('停格：載入沒好就停在停格點，所有動畫暫停、顯示圓點、不計保險時間；放行後播完', () => {
+  const env = makeEnv();
+  const done = [];
+  env.P.play(HOLDING, { hold: true, onDone: (r) => done.push(r) });
+  assert.ok(env.playerRoot().children.some((c) => c.className === 'intro-hold-dots'), '有載入圓點');
+  holdClock(env).onfinish();
+  assert.equal(env.P.state().holding, true);
+  assert.match(env.playerRoot().className, /is-holding/);
+  assert.ok(env.anims.every((a) => a.state === 'paused'), '停住');
+  assert.ok(env.timers.filter((t) => t.alive).length === 1, '只剩停格上限計時（保險時間不計）');
+  env.ctx.document.hidden = false;
+  env.docListeners.visibilitychange.forEach((fn) => fn());
+  assert.ok(env.anims.every((a) => a.state === 'paused'), '切回分頁也繼續停著');
+  env.P.release();
+  assert.equal(env.P.state().holding, false);
+  assert.doesNotMatch(env.playerRoot().className, /is-holding/);
+  assert.ok(env.anims.every((a) => a.state === 'running'), '放行後接著播');
+  env.clock().onfinish();
+  assert.deepStrictEqual(done, ['end']);
+});
+
+test('停格：停格點之前就放行的話不停，直接播完', () => {
+  const env = makeEnv();
+  env.P.play(HOLDING, { hold: true });
+  env.P.release();
+  holdClock(env).onfinish();
+  assert.equal(env.P.state().holding, false);
+  assert.ok(env.anims.every((a) => a.state === 'running'));
+});
+
+test('停格：超過上限自動放行；GM 預覽（沒有 hold）不停格；停格中仍可略過', () => {
+  const env = makeEnv();
+  env.P.play(HOLDING, { hold: true });
+  holdClock(env).onfinish();
+  const cap = env.timers.find((t) => t.alive);
+  assert.equal(cap.ms, 20000, '與開機等待逾時同長');
+  cap.fn();
+  assert.equal(env.P.state().holding, false);
+  assert.equal(env.P.state().released, true);
+
+  const gm = makeEnv();
+  gm.P.play(HOLDING, {});
+  assert.equal(holdClock(gm), undefined, '沒有停格時鐘');
+  assert.ok(!gm.playerRoot().children.some((c) => c.className === 'intro-hold-dots'), '不顯示圓點');
+
+  const sk = makeEnv();
+  const done = [];
+  sk.P.play(HOLDING, { hold: true, onDone: (r) => done.push(r) });
+  holdClock(sk).onfinish();
+  sk.P.skip();
+  sk.anims.find((a) => a.el === sk.playerRoot()).onfinish();
+  assert.deepStrictEqual(done, ['skip']);
+  assert.ok(sk.timers.every((t) => !t.alive || t.ms !== 20000), '收掉時清掉停格上限計時');
+});
+
+test('開機起播帶停格；揭幕前先放行停格再等播完', () => {
+  const env = makeEnv({ search: '' });
+  assert.equal(env.P.startupBegin({ hasSave: true }), true, '預設播標題');
+  assert.equal(env.P.state().id, 'title');
+  assert.ok(holdClock(env) === undefined && env.anims.some((a) => a.el.className === 'intro-clock' && a.timing.duration === 1900), 'title 的停格點 1.9 秒');
+  const main = read('js/main.js');
+  assert.match(main, /IntroPlayer\.release\(\);[^\n]*\n\s*IntroPlayer\.whenIdle\(reveal\);/, '先放行再等');
+});
+
+test('標題開場：停格點之後只剩淡出，停住的那一格是完整標題', () => {
+  const { ctx } = makeEnv();
+  const tl = ctx.INTRO_TIMELINES.title;
+  assert.ok(tl.holdAt > 0 && tl.holdAt < tl.duration);
+  for (const l of tl.layers) {
+    const fadeOutStart = l.at + l.dur - (l.fadeOut === undefined ? 400 : l.fadeOut);
+    assert.ok(l.at + (l.fadeIn === undefined ? 400 : l.fadeIn) <= tl.holdAt, '停格前已完全淡入：' + (l.cls || l.str));
+    assert.ok(fadeOutStart >= tl.holdAt, '停格後才開始淡出：' + (l.cls || l.str));
+  }
+  assert.ok(tl.duration <= 3000, '載入很快時總長不超過 3 秒');
 });
 
 /* ---------- 開機流程接線 ---------- */

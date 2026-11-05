@@ -86,6 +86,78 @@
   text-shadow: 0 0 18px rgba(255, 210, 120, 0.45), 0 2px 0 #3a2508, 0 0 2px #000;
 }
 
+/* 標題開場（intro-data.js title） */
+.intro-text-logo {
+  font-size: clamp(40px, 9vw, 112px);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  padding-left: 0.14em;   /* 抵銷最後一字的字距，讓字面視覺置中 */
+  color: #f6e2a8;
+  text-shadow:
+    0 0 28px rgba(255, 205, 110, 0.4),
+    0 3px 0 #4a2f0a,
+    0 5px 10px rgba(0, 0, 0, 0.85);
+}
+
+.intro-text-logo-sub {
+  font-size: clamp(16px, 2.6vw, 30px);
+  font-weight: 600;
+  letter-spacing: 0.6em;
+  padding-left: 0.6em;
+  color: #d9c08a;
+  text-shadow: 0 0 12px rgba(255, 200, 110, 0.35), 0 2px 4px rgba(0, 0, 0, 0.9);
+}
+
+.intro-shape-rule {
+  width: min(52vw, 560px);
+  height: 2px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(214, 170, 90, 0.85) 20%,
+    #fff1c8 50%,
+    rgba(214, 170, 90, 0.85) 80%,
+    transparent 100%);
+}
+
+/* ---------- 停格等載入的圓點 ---------- */
+.intro-hold-dots {
+  position: absolute;
+  left: 50%;
+  bottom: max(48px, 14vh);
+  translate: -50% 0;
+  display: flex;
+  gap: 10px;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+.intro-player.is-holding .intro-hold-dots {
+  opacity: 1;
+}
+
+.intro-hold-dots span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #e8cf92;
+  opacity: 0.25;
+  animation: intro-hold-dot 1.2s ease-in-out infinite;
+}
+
+.intro-hold-dots span:nth-child(2) { animation-delay: 0.2s; }
+.intro-hold-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes intro-hold-dot {
+  0%, 100% { opacity: 0.25; }
+  40% { opacity: 1; }
+}
+
+.intro-player.is-reduced .intro-hold-dots span {
+  animation: none;
+  opacity: 0.7;
+}
+
 /* ---------- 略過 ---------- */
 .intro-skip {
   position: absolute;

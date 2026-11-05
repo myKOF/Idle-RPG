@@ -52,8 +52,10 @@ function revealWhenIntroIdle() {
     if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
     WorkerBridge.releaseStartupHold();   // 畫面出來了才開始戰鬥（見 bridge.js 開機等待）
   };
-  if (typeof IntroPlayer !== 'undefined') IntroPlayer.whenIdle(reveal);
-  else reveal();
+  if (typeof IntroPlayer !== 'undefined') {
+    IntroPlayer.release();   // 標題開場若停在最後一格等載入，現在可以播完收尾了
+    IntroPlayer.whenIdle(reveal);
+  } else reveal();
 }
 
 /* initUI 只建立介面；存檔、面板與 Canvas 都仍可能在非同步載入。
