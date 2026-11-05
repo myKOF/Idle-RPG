@@ -140,6 +140,20 @@ var GameMenu = (function () {
     onChange('set-auto-equip', proxy('toggle-autoequip'));
     onChange('set-compare-equip', proxy('toggle-compare'));
   }
+  /* 視窗高度固定為「遊戲設定」頁籤的高度：切到較長的頁籤（存檔）時內容在視窗內捲動，視窗本身不變高。
+     每次開啟與視窗縮放時重新量：先放掉舊高度、切到第一頁籤量，再切回原頁籤。 */
+  function lockSettingsHeight() {
+    var modal = el('settings-modal');
+    var card = modal && typeof modal.querySelector === 'function' ? modal.querySelector('.system-settings-card') : null;
+    if (!card || !visible('settings-modal')) return;
+    var current = null;
+    SETTINGS_TABS.forEach(function (key) { var tab = el('settings-tab-' + key); if (tab && tab.classList.contains('active')) current = key; });
+    card.style.height = '';
+    selectSettingsTab('game');
+    var height = card.offsetHeight;
+    if (height > 0) card.style.height = height + 'px';
+    if (current && current !== 'game') selectSettingsTab(current);
+  }
   function openSettings(tab) {
     if (busy) return;
     pauseGame(true);
@@ -147,6 +161,7 @@ var GameMenu = (function () {
     show('game-menu', false); show('settings-modal', true);
     syncSettingsControls();
     selectSettingsTab(typeof tab === 'string' ? tab : 'game');
+    lockSettingsHeight();
     var button = el('settings-modal-close'); if (button) button.focus();
   }
   function closeSettings() { if (!busy) open(); }
@@ -208,6 +223,7 @@ var GameMenu = (function () {
     var achvModal = el('achv-modal');
     if (achvModal) achvModal.addEventListener('click', function (event) { if (event.target === achvModal) closeAchievements(); });
     bindSettingsControls();
+    if (typeof window !== 'undefined' && window.addEventListener) window.addEventListener('resize', lockSettingsHeight);
     el('game-menu-close').addEventListener('click', close);
     el('settings-modal-close').addEventListener('click', closeSettings);
     ['game-menu', 'settings-modal'].forEach(function (id) {
