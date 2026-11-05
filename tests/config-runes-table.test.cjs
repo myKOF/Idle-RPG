@@ -133,25 +133,42 @@ test('符文檢查：詞條不存在、倍率非正、列順序被改（階與 i
   assert.throws(() => rebuildFrom(mutate((rows, c) => { findRow(rows, '符文', 'r02')[c('名稱')] = findRow(rows, '符文', 'r01')[c('名稱')]; })), /名稱重複/);
 });
 
-test('符文真言檢查：配方（太長／太短／不是符文／重複）、裝備標記、屬性鍵、效果鍵、被動鍵、傳奇特效、事件觸發 JSON 都被擋下', () => {
+/* 符文真言的配方拆成「符文1～符文N」各一格（2026-11-05）：依序填入、其餘清空 */
+function setRecipe(row, c, names) {
+  for (let n = 1; c('符文' + n) >= 0; n++) row[c('符文' + n)] = names[n - 1] || '';
+}
+
+test('符文真言檢查：配方（太長／太短／不是符文／重複／中間空格）、裝備標記、屬性鍵、效果鍵、被動鍵、傳奇特效、事件觸發各格都被擋下', () => {
   const word = (rows) => findRow(rows, '符文真言', 'rw_viperkiss');
-  assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('配方')] = '微光;餘燼;霜痕;風語;巖心;毒牙'; })), /6 顆符文，超過符文孔數上限 5/);
-  assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('配方')] = '微光;餘燼;霜痕;風語;巖心'; })), /超過一般裝備最多 4 孔；只有「適用裝備」全是雙手武器/);
-  assert.doesNotThrow(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('配方')] = '微光;餘燼;霜痕;風語;巖心'; word(rows)[c('適用裝備')] = 'twoHand;staff2h'; })), '5 顆符文只要適用裝備全是雙手武器就合法');
-  assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('配方')] = '微光'; })), /至少要 2 顆/);
-  assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('配方')] = '微光;不存在的符文'; })), /不是符文/);
-  assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('配方')] = findRow(rows, '符文真言', 'rw_firstcry')[c('配方')]; })), /配方與別的符文真言完全相同/);
+  const sixCols = (rows) => { rows[0].push('符文6'); rows.slice(1).forEach((r) => r.push('')); };
+  assert.throws(() => rebuildFrom(mutate((rows, c) => { sixCols(rows); setRecipe(word(rows), (n) => rows[0].indexOf(n), ['微光', '餘燼', '霜痕', '風語', '巖心', '毒牙']); })), /6 顆符文，超過符文孔數上限 5/);
+  assert.throws(() => rebuildFrom(mutate((rows, c) => { setRecipe(word(rows), c, ['微光', '餘燼', '霜痕', '風語', '巖心']); })), /超過一般裝備最多 4 孔；只有「適用裝備」全是雙手武器/);
+  assert.doesNotThrow(() => rebuildFrom(mutate((rows, c) => { setRecipe(word(rows), c, ['微光', '餘燼', '霜痕', '風語', '巖心']); word(rows)[c('適用裝備')] = 'twoHand;staff2h'; })), '5 顆符文只要適用裝備全是雙手武器就合法');
+  assert.throws(() => rebuildFrom(mutate((rows, c) => { setRecipe(word(rows), c, ['微光']); })), /至少要 2 顆/);
+  assert.throws(() => rebuildFrom(mutate((rows, c) => { setRecipe(word(rows), c, ['微光', '不存在的符文']); })), /不是符文/);
+  assert.throws(() => rebuildFrom(mutate((rows, c) => { setRecipe(word(rows), c, ['微光', '', '霜痕']); })), /「符文2」空白但「符文3」有填/);
+  assert.throws(() => rebuildFrom(mutate((rows, c) => { setRecipe(word(rows), c, ['微光', '餘燼']); })), /配方與別的符文真言完全相同/);
   assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('適用裝備')] = 'sword1h;pants'; })), /適用裝備「pants」/);
   assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('適用裝備')] = ''; })), /不可空白/);
-  assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('屬性加成')] = 'noSuchAffix:1'; })), /鍵「noSuchAffix」不存在/);
-  assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('屬性加成')] = 'atkPct=1'; })), /格式錯誤/);
-  assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('靜態效果')] = 'dmgPtc:10'; })), /鍵「dmgPtc」不存在/);
-  assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('被動')] = 'spikes:5'; })), /鍵「spikes」不存在/);
-  assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('傳奇特效')] = 'noSuchLegend'; })), /傳奇特效「noSuchLegend」/);
-  assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('事件觸發(JSON)')] = '[{"on":"hit",'; })), /JSON 解析失敗/);
-  assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('事件觸發(JSON)')] = '[{"on":"sneeze","acts":[{"act":"heal","pctMax":5}]}]'; })), /不是已知觸發/);
-  assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('事件觸發(JSON)')] = '[{"on":"hit","acts":[{"act":"explode"}]}]'; })), /不是已知動作/);
-  assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('事件觸發(JSON)')] = '[{"on":"tick","acts":[{"act":"cleanse"}]}]'; })), /tick 必須有 every/);
+  assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('屬性1詞條')] = 'noSuchAffix'; })), /鍵「noSuchAffix」不存在/);
+  assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('屬性1倍率')] = '1.2x'; })), /「屬性1倍率」必須是數字/);
+  assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('屬性4倍率')] = '1'; })), /「屬性4倍率」有數值但「屬性4詞條」空白/);
+  assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('屬性4詞條')] = 'atkPct'; })), /「屬性4詞條」填了「atkPct」但「屬性4倍率」空白/);
+  assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('效果1')] = 'dmgPtc'; word(rows)[c('效果1數值')] = '10'; })), /鍵「dmgPtc」不存在/);
+  assert.throws(() => rebuildFrom(mutate((rows, c) => { const r = word(rows); r[c('效果1')] = 'dmgPct'; r[c('效果1數值')] = '5'; r[c('效果2')] = 'dmgPct'; r[c('效果2數值')] = '6'; })), /靜態效果「dmgPct」重複/);
+  assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('被動1')] = 'spikes'; word(rows)[c('被動1數值')] = '5'; })), /鍵「spikes」不存在/);
+  assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('傳奇特效1')] = 'noSuchLegend'; })), /傳奇特效「noSuchLegend」/);
+  assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('觸發1時機')] = 'sneeze'; })), /不是已知觸發/);
+  assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('觸發1動作1')] = 'explode'; })), /不是已知動作/);
+  assert.throws(() => rebuildFrom(mutate((rows, c) => { const r = word(rows); r[c('觸發1時機')] = 'tick'; r[c('觸發1機率(%)')] = ''; })), /tick 必須有 every/);
+  assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('觸發1機率(%)')] = '150'; })), /不可超過 100/);
+  assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('觸發1機率(%)')] = '高'; })), /「觸發1機率\(%\)」必須是數字/);
+  assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('觸發1時機')] = ''; })), /「觸發1時機」空白，但同一條還填了其他格/);
+  assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('觸發1動作1')] = ''; })), /有參數但「觸發1動作1」空白/);
+  assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('觸發1動作1參數')] = 'pct:30;secs:4;name:poison'; })), /動作 dot 沒有參數「secs」/);
+  assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('觸發1動作1參數')] = 'pct=30'; })), /格式錯誤/);
+  assert.throws(() => rebuildFrom(mutate((rows, c) => { const r = word(rows); r[c('觸發1動作1')] = 'dmg'; r[c('觸發1動作1參數')] = 'elem:fire'; })), /dmg 缺 pct/);
+  assert.throws(() => rebuildFrom(mutate((rows, c) => { const r = word(rows); r[c('觸發1動作1')] = 'buffRandom'; r[c('觸發1動作1參數')] = 'sec:5;from:atkUp=高'; })), /from 的「atkUp=高」格式錯誤/);
   assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('階／級距')] = '7'; })), /級距.*1~4/);
   assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('名稱')] = findRow(rows, '符文真言', 'rw_firstcry')[c('名稱')]; })), /名稱重複/);
   assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[1] = 'viper'; })), /rw_ 開頭/);
@@ -162,11 +179,14 @@ test('設計表改了就會跟著遊戲走：改 CSV 的合成顆數／倍率／
   const rows = mutate((r, c) => {
     findRow(r, '設定', 'composeCount')[c('設定值')] = '4';
     findRow(r, '符文', 'r10')[c('武器倍率')] = '1.5';
-    findRow(r, '符文真言', 'rw_firstcry')[c('配方')] = '微光;巖心';
-    const nu = word => word;
+    setRecipe(findRow(r, '符文真言', 'rw_firstcry'), c, ['微光', '巖心']);
     const clone = findRow(r, '符文真言', 'rw_stoneskin').slice();
-    clone[1] = 'rw_extra_test'; clone[2] = '測試新語'; clone[c('配方')] = '霜痕;霜痕;霜痕'; clone[c('靜態效果')] = 'dmgPct:5';
-    r.push(clone); nu(clone);
+    clone[1] = 'rw_extra_test'; clone[2] = '測試新語'; setRecipe(clone, c, ['霜痕', '霜痕', '霜痕']);
+    clone[c('效果1')] = 'dmgPct'; clone[c('效果1數值')] = '5';
+    clone[c('觸發1時機')] = 'kill'; clone[c('觸發1冷卻(秒)')] = '3';
+    clone[c('觸發1動作1')] = 'dmg'; clone[c('觸發1動作1參數')] = 'pct:40;elem:fire;to:all';
+    clone[c('觸發1動作2')] = 'buffRandom'; clone[c('觸發1動作2參數')] = 'sec:6;from:atkUp=20,defUp=30';
+    r.push(clone);
   });
   const out = rebuildFrom(rows);
   assert.equal(out.RUNE_SETTINGS.composeCount, 4);
@@ -175,6 +195,10 @@ test('設計表改了就會跟著遊戲走：改 CSV 的合成顆數／倍率／
   const extra = out.RUNEWORDS.find((w) => w.id === 'rw_extra_test');
   assert.deepEqual(extra.runes, ['r03', 'r03', 'r03']);
   assert.deepEqual(extra.fx, { dmgPct: 5 });
+  assert.deepStrictEqual(extra.procs, [{ on: 'kill', cd: 3, acts: [
+    { act: 'dmg', pct: 40, elem: 'fire', to: 'all' },
+    { act: 'buffRandom', sec: 6, from: [{ sid: 'atkUp', val: 20 }, { sid: 'defUp', val: 30 }] }
+  ] }], '事件觸發各格組回引擎讀的 procs：數字轉數字、字串保留、from 拆成 {sid,val}');
   // 寫回的 JS 文字能被載入、並讓引擎讀到新數字
   const header = rows[0];
   const text = schema.rebuild(rows.slice(1), header);
@@ -185,6 +209,35 @@ test('設計表改了就會跟著遊戲走：改 CSV 的合成顆數／倍率／
   vm.runInContext(text.RUNE_SETTINGS + '\n' + text.RUNES + '\n' + text.RUNEWORDS + '\nthis.__s = RUNE_SETTINGS; this.__w = RUNEWORDS.length;', ctx);
   assert.equal(ctx.__s.composeCount, 4);
   assert.equal(ctx.__w, out.RUNEWORDS.length);
+});
+
+test('符文真言一格一個參數：照名稱在表上加欄就能擴充；舊的壓縮欄還在會中止；鍵值欄必須成對', () => {
+  // 加「屬性6詞條／屬性6倍率」與「觸發3…」欄 → 套用時自動讀到
+  const rows = mutate((r) => {
+    r[0].push('屬性6詞條', '屬性6倍率', '觸發3時機', '觸發3每N(秒/次)', '觸發3動作1', '觸發3動作1參數');
+    r.slice(1).forEach((x) => x.push('', '', '', '', '', ''));
+    const w = findRow(r, '符文真言', 'rw_firstcry'), n = r[0].length;
+    w[n - 6] = 'critRate'; w[n - 5] = '0.4'; w[n - 4] = 'tick'; w[n - 3] = '5'; w[n - 2] = 'heal'; w[n - 1] = 'pctMax:3';
+  });
+  const fc = rebuildFrom(rows).RUNEWORDS.find((w) => w.id === 'rw_firstcry');
+  assert.deepEqual(fc.stats[fc.stats.length - 1], ['critRate', 0.4]);
+  assert.deepStrictEqual(fc.procs, [{ on: 'tick', every: 5, acts: [{ act: 'heal', pctMax: 3 }] }]);
+  // 舊欄位（兩套資料並存其中一套會被忽略）→ 中止
+  assert.throws(() => rebuildFrom(mutate((r) => { r[0].push('事件觸發(JSON)'); r.slice(1).forEach((x) => x.push('')); })), /舊的壓縮欄位「事件觸發\(JSON\)」/);
+  // 只有倍率欄、沒有詞條欄 → 中止
+  assert.throws(() => rebuildFrom(mutate((r) => { r[0].push('屬性7倍率'); r.slice(1).forEach((x) => x.push('')); })), /有「屬性7倍率」欄，但缺少成對的「屬性7詞條」欄/);
+  assert.throws(() => rebuildFrom(mutate((r) => { r[0].push('觸發5動作1'); r.slice(1).forEach((x) => x.push('')); })), /有「觸發5動作1」欄，但缺少「觸發5時機」欄/);
+  // 表頭與預設欄數：攤平時不會有任何一組資料塞不下
+  assert.ok(schema.header.includes('符文5') && schema.header.includes('觸發2動作3參數'));
+});
+
+test('動作參數白名單涵蓋引擎所有動作（RW_ACTS），且現有資料的每個參數都在白名單內', () => {
+  const acts = lit(dataSrc, 'RW_ACTS');
+  acts.forEach((a) => assert.ok(cfg.RW_ACT_PARAMS[a], `RW_ACT_PARAMS 缺動作 ${a}`));
+  assert.deepEqual(Object.keys(cfg.RW_ACT_PARAMS).sort(), acts.slice().sort(), '白名單不得多出引擎沒有的動作');
+  lit(dataSrc, 'RUNEWORDS').forEach((w) => (w.procs || []).forEach((p) => p.acts.forEach((a) => {
+    Object.keys(a).filter((k) => k !== 'act').forEach((k) => assert.ok(cfg.RW_ACT_PARAMS[a.act].includes(k), `${w.id} 的 ${a.act}.${k} 不在白名單`));
+  })));
 });
 
 test('備註欄有能力中文名稱說明：符文列＝兩側屬性中文名，符文真言列＝屬性中文名與效果說明，不含英文鍵', () => {

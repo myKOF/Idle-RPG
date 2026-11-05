@@ -1689,17 +1689,90 @@ SCHEMAS.Skills2 = {
                  「防具詞條／倍率」＝鑲在防具（頭肩胸腰手腕腿靴八件）時的屬性；「飾品詞條／倍率」＝鑲在飾品（戒指、項鍊）時的屬性。
                  倍率＝「詞條可能範圍的下限」的幾倍（裝備詳情提示裡「可能出現的詞條 [2828 ~ 4241]」的 2828 就是 1 倍；
                  隨裝備等級、稀有度、強化成長；雙手武器的詞條本身 ×2，符文跟著 ×2）。
-     符文真言    符文組合與其全部能力。配方＝符文名稱（或 id）依序用「;」分隔，最多「符文孔數上限」顆；
+     符文真言    符文組合與其全部能力，和符文列一樣「一格一個參數」（2026-11-05 由壓縮字串拆成獨立欄位）：
+                 配方＝「符文1～符文N」依序各填一顆（名稱或 id），最多「符文孔數上限」顆；
                  適用裝備＝標記或裝備欄位／武器類型，用「;」分隔（多項為「或」）；
-                 屬性加成／被動／靜態效果＝「鍵:數值」用「;」分隔；傳奇特效＝鍵用「;」分隔；
-                 事件觸發＝JSON 陣列（寫法見 js/runeword_data.js 檔頭與 docs/RUNEWORD_DESIGN.md）。
+                 屬性加成＝「屬性N詞條／屬性N倍率」；被動＝「被動N／被動N數值」；傳奇特效＝「傳奇特效N」；
+                 靜態效果＝「效果N／效果N數值」；
+                 事件觸發＝「觸發N時機／機率(%)／每N(秒/次)／血量低於(%)／冷卻(秒)」＋「觸發N動作M／觸發N動作M參數」
+                 （參數＝「鍵:值」用「;」分隔，buffRandom 的 from 寫成 from:sid=值,sid=值）。
+                 欄數不夠時照同樣的名稱往後加欄（例如 屬性6詞條、觸發3時機、觸發1動作4），套用時依表頭自動讀到。
+                 舊的壓縮欄（配方、屬性加成、被動、傳奇特效、靜態效果、事件觸發(JSON)）已移除，表頭若還有就整次中止，避免兩套並存。
    說明文字（裝備詳情、符文頁圖鑑）由資料自動產生，不另設說明欄。
    寫回：rebuild 整塊重建 RUNE_SETTINGS／RUNES／RUNEWORDS 三個字面值（語意無變更時不動檔案）。
    xlsx 不由 --gen 產生（AI_RULES 8.5 禁止手拼 xlsx XML）；初次建立用 tools/excel-create-table.ps1（Excel COM）。 */
 /* 「類型」欄的符文真言列：新名稱「符文真言」，舊名稱「符文之語」仍讀得進來（Excel 還沒改過名時 --sync 不會壞；寫回一律用新名稱）。 */
 const RUNEWORD_KINDS = ['符文真言', '符文之語'];
-const RUNE_TABLE_HEADER = ['類型', 'id', '名稱', '階／級距', '武器詞條', '武器倍率', '防具詞條', '防具倍率', '飾品詞條', '飾品倍率',
-  '配方', '適用裝備', '屬性加成', '被動', '傳奇特效', '靜態效果', '事件觸發(JSON)', '風味文字', '設定值', '備註', '封魔塔解鎖層數'];
+/* 符文真言的拆欄：預設欄數＝目前資料的最大用量（--gen／extract 用；資料超過就報錯，請在表上照名稱加欄）。
+   重建（rebuild）不看這裡，依表頭實際有的「符文N／屬性N詞條／觸發N動作M…」欄位讀取，所以在 Excel 加欄即可擴充。 */
+const RW_TABLE_COLS = { recipe: 5, stats: 5, passives: 1, legend: 2, fx: 6, procs: 2, acts: 3 };
+// 事件觸發每條的條件欄：[表頭後綴, procs 物件的鍵]；輸出順序＝此順序再接 acts
+const RW_PROC_FIELDS = [['機率(%)', 'chance'], ['每N(秒/次)', 'every'], ['血量低於(%)', 'below'], ['冷卻(秒)', 'cd']];
+/* 各動作可填的參數（套用時檢查，打錯鍵會被引擎靜默忽略，所以在表格層擋下）。依 js/runeword.js rwRunActs／rwPickTargets 實際讀取的欄位。 */
+const RW_ACT_PARAMS = {
+  dmg: ['pct', 'elem', 'type', 'to', 'n'], execute: ['hpBelow'], heal: ['pctMax'], shield: ['pctMax', 'sec'], mana: ['pctMax'],
+  buff: ['sid', 'val', 'sec', 'max'], buffRandom: ['sec', 'from'], stun: ['sec', 'to', 'n'], slow: ['sec', 'to', 'n'],
+  dot: ['pct', 'sec', 'name', 'to', 'n', 'type'], cdr: ['sec'], refresh: ['n'], recast: [], castRandom: [], invuln: ['sec'], cleanse: []
+};
+const RW_OLD_PACKED_COLS = ['配方', '屬性加成', '被動', '傳奇特效', '靜態效果', '事件觸發(JSON)'];
+const rwH = {
+  rune: n => '符文' + n,
+  statKey: n => '屬性' + n + '詞條', statVal: n => '屬性' + n + '倍率',
+  passKey: n => '被動' + n, passVal: n => '被動' + n + '數值',
+  legend: n => '傳奇特效' + n,
+  fxKey: n => '效果' + n, fxVal: n => '效果' + n + '數值',
+  procOn: p => '觸發' + p + '時機', procField: (p, suffix) => '觸發' + p + suffix,
+  act: (p, m) => '觸發' + p + '動作' + m, actParam: (p, m) => '觸發' + p + '動作' + m + '參數'
+};
+const rwRange = n => Array.from({ length: n }, (_, i) => i + 1);
+function runewordRecipeHeader() { return rwRange(RW_TABLE_COLS.recipe).map(rwH.rune); }
+function runewordEffectHeader() {
+  const h = [];
+  rwRange(RW_TABLE_COLS.stats).forEach(n => h.push(rwH.statKey(n), rwH.statVal(n)));
+  rwRange(RW_TABLE_COLS.passives).forEach(n => h.push(rwH.passKey(n), rwH.passVal(n)));
+  rwRange(RW_TABLE_COLS.legend).forEach(n => h.push(rwH.legend(n)));
+  rwRange(RW_TABLE_COLS.fx).forEach(n => h.push(rwH.fxKey(n), rwH.fxVal(n)));
+  rwRange(RW_TABLE_COLS.procs).forEach(p => {
+    h.push(rwH.procOn(p));
+    RW_PROC_FIELDS.forEach(f => h.push(rwH.procField(p, f[0])));
+    rwRange(RW_TABLE_COLS.acts).forEach(m => h.push(rwH.act(p, m), rwH.actParam(p, m)));
+  });
+  return h;
+}
+/* 動作參數格：{act:'dmg', pct:60, elem:'fire'} → "pct:60;elem:fire"；buffRandom 的 from → "from:atkUp=25,aspdUp=25" */
+function runewordActParamText(a) {
+  return Object.keys(a).filter(k => k !== 'act').map(k => {
+    const v = a[k];
+    if (k === 'from') return 'from:' + v.map(o => o.sid + '=' + numStr(o.val)).join(',');
+    return k + ':' + (typeof v === 'number' ? numStr(v) : String(v));
+  }).join(';');
+}
+/* 一組符文真言攤平成 { 表頭: 值 }（配方填名稱）。超過預設欄數就報錯（請在表上照名稱加欄後再擴充 RW_TABLE_COLS）。 */
+function runewordCells(w, nameById) {
+  const o = {};
+  const over = (what, n, max) => { if (n > max) throw new Error('符文真言「' + w.name + '」的' + what + '有 ' + n + ' 個，超過表格預設欄數 ' + max + '（RW_TABLE_COLS）'); };
+  over('配方符文', w.runes.length, RW_TABLE_COLS.recipe);
+  w.runes.forEach((id, i) => { o[rwH.rune(i + 1)] = nameById[id] || id; });
+  const stats = w.stats || []; over('屬性加成', stats.length, RW_TABLE_COLS.stats);
+  stats.forEach((s, i) => { o[rwH.statKey(i + 1)] = s[0]; o[rwH.statVal(i + 1)] = numStr(s[1]); });
+  const pas = Object.keys(w.passives || {}); over('被動', pas.length, RW_TABLE_COLS.passives);
+  pas.forEach((k, i) => { o[rwH.passKey(i + 1)] = k; o[rwH.passVal(i + 1)] = numStr(w.passives[k]); });
+  const lg = w.legend || []; over('傳奇特效', lg.length, RW_TABLE_COLS.legend);
+  lg.forEach((k, i) => { o[rwH.legend(i + 1)] = k; });
+  const fx = Object.keys(w.fx || {}); over('靜態效果', fx.length, RW_TABLE_COLS.fx);
+  fx.forEach((k, i) => { o[rwH.fxKey(i + 1)] = k; o[rwH.fxVal(i + 1)] = numStr(w.fx[k]); });
+  const procs = w.procs || []; over('事件觸發', procs.length, RW_TABLE_COLS.procs);
+  procs.forEach((pr, pi) => {
+    const p = pi + 1;
+    o[rwH.procOn(p)] = pr.on;
+    RW_PROC_FIELDS.forEach(f => { if (pr[f[1]] !== undefined) o[rwH.procField(p, f[0])] = numStr(pr[f[1]]); });
+    over('事件觸發第 ' + p + ' 條的動作', (pr.acts || []).length, RW_TABLE_COLS.acts);
+    (pr.acts || []).forEach((a, ai) => { o[rwH.act(p, ai + 1)] = a.act; o[rwH.actParam(p, ai + 1)] = runewordActParamText(a); });
+  });
+  return o;
+}
+const RUNE_TABLE_HEADER = ['類型', 'id', '名稱', '階／級距', '武器詞條', '武器倍率', '防具詞條', '防具倍率', '飾品詞條', '飾品倍率']
+  .concat(runewordRecipeHeader(), ['適用裝備'], runewordEffectHeader(), ['風味文字', '設定值', '備註', '封魔塔解鎖層數']);
 const RUNE_SETTING_NOTES = {
   maxSlots: '符文孔數的硬上限，也是符文真言最多能有幾顆符文。各稀有度的符文孔數不在這張表：在 game_parameters.xlsx「表-稀有度」各列的參數g。',
   twoHandBonusSlots: '雙手武器的符文孔比一般裝備多幾個（加法，不是倍數；0＝一樣多）。只加在本來就有符文孔的稀有度上（孔數 0 的稀有度，雙手武器也沒有符文孔）；最多孔稀有度的孔數加上它不得超過符文孔數上限。',
@@ -1762,22 +1835,25 @@ const RUNE_GLOSSARY_ROWS = [
   ['── 符文真言列 ──'],
   ['封魔塔解鎖層數：非負整數；通關該層 BOSS 即永久解鎖該真言配方與效果資訊（正式版與內測版皆適用）。留白或 0＝不由塔解鎖，仍可自行成功成形解鎖；允許預先填超過目前塔上限的層數。已解鎖不因門檻調高而撤銷。'],
   ['級距：1 普通／2 精良／3 史詩／4 傳說（沿用裝備品質的名稱與顏色）。只影響圖鑑的分組與顏色，不影響數值（強度要自己調屬性加成與效果）。'],
-  ['配方：符文名稱依序用「;」分隔（也可填 id）。至少 2 顆、最多＝符文孔數上限；順序不同就是不同配方，不得與別的符文真言完全相同。成形條件＝依序放進連續的符文孔，且裝備類型符合。'],
+  ['符文真言和符文列一樣「一格一個參數」：鍵（詞條／效果／動作）一欄、數值一欄。欄數不夠就照同樣的名稱往後加欄（例如 屬性6詞條＋屬性6倍率、效果7＋效果7數值、觸發3時機、觸發1動作4＋觸發1動作4參數），套用時依表頭自動讀到；用不到的格子留空。'],
+  ['配方（符文1～符文5）：每格一顆符文，依序從「符文1」連續往右填（名稱或 id 皆可，中間不可空格）。至少 2 顆、最多＝符文孔數上限；順序不同就是不同配方，不得與別的符文真言完全相同。成形條件＝依序放進連續的符文孔，且裝備類型符合。'],
   ['適用裝備：用「;」分隔，多項為「或」。標記：any 任意、armor 八件防具、jewelry 戒指＋項鍊、mainHand 主手與雙手武器、twoHand 雙手武器、oneHand 單手武器、offHand 副手、melee 近戰武器、caster 施法類武器／副手；'],
   ['　　也可填裝備欄位（weapon、helmet、shoulder、chest、belt、gloves、wrist、legs、boots、ring、amulet）或武器類型鍵（sword1h、dagger1h、staff2h、shield、focus… 見 data.js WEAPON_TYPES）。'],
-  ['屬性加成：「詞條鍵:倍率」用「;」分隔，例如 atkPct:1.2;critRate:1。倍率＝「基礎值」（同符文列：詞條可能範圍的下限）的幾倍，與符文不同的是不乘雙手倍率（雙手武器的優勢是 5 孔）；負數＝代價。同一組符文真言穿在多件裝備上時，各件的屬性都計。'],
+  ['屬性加成（屬性N詞條／屬性N倍率）：詞條鍵填在「屬性N詞條」、倍率填在「屬性N倍率」，例如 屬性1詞條＝atkPct、屬性1倍率＝1.2。倍率＝「基礎值」（同符文列：詞條可能範圍的下限）的幾倍，與符文不同的是不乘雙手倍率（雙手武器的優勢是 5 孔）；負數＝代價。同一組符文真言穿在多件裝備上時，各件的屬性都計。'],
   ['　　符文專用的合成屬性：elemDmgAll＝全屬性傷害提升（火冰雷毒聖暗地風八種元素傷害提升各加同樣的值；符文列與真言的屬性加成都能填）。'],
-  ['被動：「鍵:數值」用「;」分隔，鍵限 thorns（反震）、smite（天罰）、undying（不朽）、sunder（破甲）、trueDmg（真傷）、omniDrain（萬象汲取）、soulEater、annihilate、sanctuary、godWrath；並入既有被動。'],
-  ['傳奇特效：借用既有傳奇特效（Equipment_Affix 表傳奇特效池的 id，用「;」分隔），不受該特效原本的武器類型限制，但仍需要配戴對應技能才有感。'],
-  ['靜態效果：「鍵:數值」用「;」分隔，數字固定、不隨稀有度成長。可用鍵：'],
+  ['被動（被動N／被動N數值）：鍵限 thorns（反震）、smite（天罰）、undying（不朽）、sunder（破甲）、trueDmg（真傷）、omniDrain（萬象汲取）、soulEater、annihilate、sanctuary、godWrath；並入既有被動。'],
+  ['傳奇特效（傳奇特效N）：借用既有傳奇特效（Equipment_Affix 表傳奇特效池的 id，一格一個），不受該特效原本的武器類型限制，但仍需要配戴對應技能才有感。'],
+  ['靜態效果（效果N／效果N數值）：效果鍵填「效果N」、數字填「效果N數值」，數字固定、不隨稀有度成長；同一組不可重複同一個鍵。可用鍵：'],
   ['　　dmgPct 造成傷害%、skillDmgPct 技能傷害%、basicDmgPct 普攻傷害%、aspdMult 攻速額外乘算%、cdPct 技能冷卻-%（乘算）、manaCostRedPct 法力消耗-%、maxHitPct 單次受傷上限（最大生命%）、maxHpPct 最大生命%（乘算，負數＝代價）、'],
   ['　　dmgHiHpPct 對高血(>70%)敵人增傷%、dmgLoHpPct 對低血(<30%)敵人增傷%、dmgSoloPct 只有一隻敵人時增傷%、dmgPerFoePct 每多一隻敵人增傷%、dmgSelfFullPct 自身高血增傷%、dmgSelfLowPct 自身低血增傷%、dmgCtrlPct 對被控場敵人增傷%、'],
   ['　　killHealPct 擊殺回血%、killManaPct 擊殺回魔%、runeFindPct 符文掉落率+%、selfDrainPct 每秒損失最大生命%（代價）、splashPct 普攻擴散給其他敵人%、'],
   ['　　reviveHpPct／reviveCdSec／reviveInvulnSec／reviveDmgPct／reviveDmgSec／reviveRefresh 死亡復活（生命%、冷卻秒、無敵秒、之後增傷%與秒數、是否重置技能冷卻）。'],
-  ['事件觸發(JSON)：JSON 陣列，每條 { "on": 觸發, "chance": 機率%, "every": 秒（tick）或次數, "cd": 內建冷卻秒, "below": 生命%（lowhp）, "acts": [動作…] }。'],
-  ['　　觸發 on：hit 普攻命中、crit 普攻暴擊、kill 擊殺、hurt 受傷、block 格擋、cast 施放技能、tick 每 every 秒、lowhp 生命低於 below%。'],
-  ['　　動作 act：dmg {pct, elem?, type?(magic/phys), to?(target/all/rand/attacker), n?}、heal {pctMax}、shield {pctMax, sec}、mana {pctMax}、buff {sid, val, sec, max?}、buffRandom {sec, from:[{sid,val}]}、stun {sec, to?}、slow {sec, to?}、'],
-  ['　　dot {pct, sec, name(poison/burn/bleed/corrode), to?}、cdr {sec}、refresh {n?}、recast、castRandom、invuln {sec}、execute {hpBelow}、cleanse。elem 可填 fire/ice/lightning/poison/light/dark/earth/wind/random。'],
+  ['事件觸發（觸發1、觸發2…各一條）：「觸發N時機」＝什麼時候觸發；「觸發N機率(%)」＝觸發機率（留空＝必定）；「觸發N每N(秒/次)」＝tick 的秒數，或 hit 等事件「每幾次」才觸發；'],
+  ['　　「觸發N血量低於(%)」＝lowhp 的生命門檻；「觸發N冷卻(秒)」＝內建冷卻（留空＝無）。觸發後依序執行「觸發N動作1、動作2、動作3」，每個動作的數值填在右邊的「觸發N動作M參數」。'],
+  ['　　時機：hit 普攻命中、crit 普攻暴擊、kill 擊殺、hurt 受傷、block 格擋、cast 施放技能、tick 每 N 秒（必填每N）、lowhp 生命低於門檻（必填血量低於）。'],
+  ['　　動作參數＝「鍵:值」用「;」分隔，例如 dmg 的參數 pct:60;elem:lightning;to:all（60% 雷傷打全體）。各動作可填的鍵（?＝可省略）：'],
+  ['　　dmg pct, elem?, type?(magic/phys), to?(target/all/rand/attacker), n?、heal pctMax、shield pctMax, sec、mana pctMax、buff sid, val, sec, max?、buffRandom sec, from（寫成 from:atkUp=25,aspdUp=25）、stun／slow sec, to?, n?、'],
+  ['　　dot pct, sec, name(poison/burn/bleed/corrode), to?, n?, type?、cdr sec、refresh n?、invuln sec、execute hpBelow；recast、castRandom、cleanse 不需參數。elem 可填 fire/ice/lightning/poison/light/dark/earth/wind/random。打錯鍵會整次中止。'],
   ['風味文字：圖鑑與詳情顯示的一句話，可留空。符文列＝符文庫詳情裡形容這顆符文的文字；符文真言列＝圖鑑裡那組真言的一句話。效果說明文字由資料自動產生，不需要另外寫。'],
   ['備註：設定列＝該設定的說明；符文列＝兩側屬性的中文名稱與倍率；符文真言列＝屬性中文名稱與倍率，加上被動／靜態效果／事件觸發／借用傳奇特效的中文說明（與遊戲內圖鑑同一份文字）。'],
   ['　　備註是自動產生的參考，不進遊戲、不影響套用；你改了能力之後，備註不會自動更新（請 AI 重新產生），以左邊各欄實際內容為準。']
@@ -1819,7 +1895,13 @@ function annotateRuneRows(rows) {
     const out = r.slice(); out[col] = notes[r[1]]; return out;
   });
 }
-const RUNE_TABLE_WIDTHS = [8, 18, 14, 9, 14, 9, 14, 9, 24, 24, 40, 14, 22, 36, 60, 36, 10, 50];
+const RUNE_TABLE_WIDTHS = RUNE_TABLE_HEADER.map(h => {
+  const fixed = { 類型: 8, id: 18, 名稱: 14, '階／級距': 9, 適用裝備: 18, 風味文字: 36, 設定值: 10, 備註: 50, 封魔塔解鎖層數: 10 };
+  if (fixed[h] !== undefined) return fixed[h];
+  if (/參數$/.test(h)) return 28;
+  if (/^傳奇特效\d+$/.test(h)) return 20;
+  return /詞條$|倍率$|數值$/.test(h) ? 12 : 14;
+});
 
 /* 各稀有度的符文孔數：配置表 game_parameters「表-稀有度」的參數g（apply_params 寫回 data.js 的 RARITIES.runeSlots）。
    Runes 表的檢查（配方長度與孔數）要用到它。套用參數.bat 先把 xlsx 轉成 CSV 再跑這裡，所以讀 CSV 就是 Excel 最新的值；
@@ -1870,15 +1952,126 @@ function runeSettingDefs(rarities) {
   defs.push(['rw_tickCatchUp', '每秒觸發補算上限', s => s.combat.tickCatchUp]);
   return defs;
 }
-function runePairsText(pairs) { return (pairs || []).map(p => p[0] + ':' + numStr(p[1])).join(';'); }
-function runeObjText(obj) { return Object.keys(obj || {}).map(k => k + ':' + numStr(obj[k])).join(';'); }
-function runeParsePairs(text, where, validKeys, label) {
-  return splitList(text).map(part => {
-    const m = /^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*(-?[0-9.]+(?:[eE][-+]?[0-9]+)?)$/.exec(part);
-    if (!m) throw new Error(where + '「' + label + '」格式錯誤：「' + part + '」（應為 鍵:數值，用 ; 分隔）');
-    if (validKeys && !validKeys.has(m[1])) throw new Error(where + '「' + label + '」的鍵「' + m[1] + '」不存在');
-    return [m[1], Number(m[2])];
+const RW_NUM_RE = /^-?(?:[0-9]+\.?[0-9]*|\.[0-9]+)(?:[eE][-+]?[0-9]+)?$/;
+/* 依表頭找出符文真言各組欄位實際有哪些編號（使用者可在 Excel 照名稱加欄）。
+   鍵欄與值欄必須成對；有「觸發N…」卻沒有「觸發N時機」也算錯；舊的壓縮欄還在就中止（避免兩套資料並存、其中一套被靜默忽略）。 */
+function runewordHeaderLayout(header) {
+  const names = header.map(h => String(h).split('\n')[0].trim());
+  const old = RW_OLD_PACKED_COLS.filter(n => names.includes(n));
+  if (old.length) throw new Error('Runes 表還有舊的壓縮欄位「' + old.join('、') + '」：符文真言已改成一格一個參數（符文1～N、屬性N詞條／倍率、效果N／數值、觸發N…），請刪除舊欄位');
+  const nums = re => { const s = new Set(); names.forEach(n => { const m = re.exec(n); if (m) s.add(Number(m[1])); }); return Array.from(s).sort((a, b) => a - b); };
+  const pair = (keyRe, valRe, keyName, valName) => {
+    const keys = nums(keyRe), vals = nums(valRe);
+    vals.forEach(n => { if (keys.indexOf(n) < 0) throw new Error('Runes 表有「' + valName(n) + '」欄，但缺少成對的「' + keyName(n) + '」欄'); });
+    keys.forEach(n => { if (vals.indexOf(n) < 0) throw new Error('Runes 表有「' + keyName(n) + '」欄，但缺少成對的「' + valName(n) + '」欄'); });
+    return keys;
+  };
+  const procs = nums(/^觸發(\d+)時機$/);
+  names.forEach(n => {
+    const m = /^觸發(\d+)\D/.exec(n);
+    if (m && procs.indexOf(Number(m[1])) < 0) throw new Error('Runes 表有「' + n + '」欄，但缺少「' + rwH.procOn(m[1]) + '」欄');
   });
+  const acts = {};
+  procs.forEach(p => { acts[p] = pair(new RegExp('^觸發' + p + '動作(\\d+)$'), new RegExp('^觸發' + p + '動作(\\d+)參數$'), m => rwH.act(p, m), m => rwH.actParam(p, m)); });
+  return {
+    recipe: nums(/^符文(\d+)$/),
+    stats: pair(/^屬性(\d+)詞條$/, /^屬性(\d+)倍率$/, rwH.statKey, rwH.statVal),
+    passives: pair(/^被動(\d+)$/, /^被動(\d+)數值$/, rwH.passKey, rwH.passVal),
+    legend: nums(/^傳奇特效(\d+)$/),
+    fx: pair(/^效果(\d+)$/, /^效果(\d+)數值$/, rwH.fxKey, rwH.fxVal),
+    procs: procs, acts: acts
+  };
+}
+/* 一個動作：動作鍵＋參數格「鍵:值;鍵:值」→ { act, ...參數 }（參數順序照格子裡寫的）。 */
+function runewordParseAct(act, text, where) {
+  const fail = msg => { throw new Error(msg); };
+  const a = { act: act };
+  const allowed = RW_ACT_PARAMS[act] || [];
+  splitList(text).forEach(part => {
+    const m = /^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*(.+)$/.exec(part);
+    if (!m) fail(where + '格式錯誤：「' + part + '」（應為 鍵:值，用 ; 分隔）');
+    const k = m[1], raw = m[2].trim();
+    if (allowed.indexOf(k) < 0) fail(where + '：動作 ' + act + ' 沒有參數「' + k + '」' + (allowed.length ? '（可填 ' + allowed.join('、') + '）' : '（這個動作不需要參數）'));
+    if (a[k] !== undefined) fail(where + '：參數「' + k + '」重複');
+    if (k === 'from') {
+      a.from = raw.split(',').map(x => x.trim()).filter(x => x !== '').map(x => {
+        const mm = /^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(\S+)$/.exec(x);
+        if (!mm || !RW_NUM_RE.test(mm[2])) fail(where + '：from 的「' + x + '」格式錯誤（應為 狀態id=數值，用 , 分隔）');
+        return { sid: mm[1], val: Number(mm[2]) };
+      });
+      if (!a.from.length) fail(where + '：from 至少要一個 狀態id=數值');
+    } else a[k] = RW_NUM_RE.test(raw) ? Number(raw) : raw;
+  });
+  if (act === 'dmg' && !(a.pct > 0)) fail(where + '：dmg 缺 pct');
+  if (act === 'buffRandom' && !a.from) fail(where + '：buffRandom 缺 from');
+  return a;
+}
+/* 讀一列符文真言的拆欄 → { recipe:[名稱或id], stats:[[鍵,倍率]], passives:[[鍵,值]], legend:[id], fx:[[鍵,值]], procs:[...] } */
+function runewordReadCells(get, r, L, w, V) {
+  const fail = msg => { throw new Error(msg); };
+  const cell = name => get(r, name).trim();
+  const num = (name, v) => { if (!RW_NUM_RE.test(v)) fail(w + '：「' + name + '」必須是數字，目前是「' + v + '」'); return Number(v); };
+  const recipe = []; let gap = 0;
+  L.recipe.forEach(n => {
+    const t = cell(rwH.rune(n));
+    if (t === '') { if (!gap) gap = n; return; }
+    if (gap) fail(w + '：配方「' + rwH.rune(gap) + '」空白但「' + rwH.rune(n) + '」有填（配方要從符文1起連續往右填）');
+    recipe.push(t);
+  });
+  const pairs = (nums, keyName, valName, validKeys, label, unique) => {
+    const out = [], seen = new Set();
+    nums.forEach(n => {
+      const k = cell(keyName(n)), v = cell(valName(n));
+      if (k === '' && v === '') return;
+      if (k === '') fail(w + '：「' + valName(n) + '」有數值但「' + keyName(n) + '」空白');
+      if (v === '') fail(w + '：「' + keyName(n) + '」填了「' + k + '」但「' + valName(n) + '」空白');
+      if (validKeys && !validKeys.has(k)) fail(w + '：「' + keyName(n) + '」的' + label + '鍵「' + k + '」不存在');
+      if (unique && seen.has(k)) fail(w + '：' + label + '「' + k + '」重複填了兩次');
+      seen.add(k);
+      out.push([k, num(valName(n), v)]);
+    });
+    return out;
+  };
+  const procs = [];
+  L.procs.forEach(p => {
+    const pw = w + '：事件觸發第 ' + p + ' 條';
+    const on = cell(rwH.procOn(p));
+    const fields = RW_PROC_FIELDS.map(f => [f, cell(rwH.procField(p, f[0]))]);
+    const acts = [];
+    L.acts[p].forEach(m => {
+      const act = cell(rwH.act(p, m)), param = cell(rwH.actParam(p, m));
+      if (act === '' && param === '') return;
+      if (act === '') fail(pw + '：「' + rwH.actParam(p, m) + '」有參數但「' + rwH.act(p, m) + '」空白');
+      if (!V.acts.has(act)) fail(pw + '的動作「' + act + '」不是已知動作（' + Array.from(V.acts).join('／') + '）');
+      acts.push(runewordParseAct(act, param, pw + '「' + rwH.actParam(p, m) + '」'));
+    });
+    if (on === '') {
+      if (acts.length || fields.some(x => x[1] !== '')) fail(pw + '：「' + rwH.procOn(p) + '」空白，但同一條還填了其他格');
+      return;
+    }
+    if (!V.triggers.has(on)) fail(pw + '的時機「' + on + '」不是已知觸發（' + Array.from(V.triggers).join('／') + '）');
+    const o = { on: on };
+    fields.forEach(x => {
+      if (x[1] === '') return;
+      const name = rwH.procField(p, x[0][0]), n = num(name, x[1]);
+      if (!(n > 0)) fail(pw + '：「' + name + '」必須大於 0（不限制就留空）');
+      o[x[0][1]] = n;
+    });
+    if (o.chance > 100) fail(pw + '：「' + rwH.procField(p, '機率(%)') + '」不可超過 100');
+    if (on === 'tick' && !(o.every > 0)) fail(pw + '：tick 必須有 every（填「' + rwH.procField(p, '每N(秒/次)') + '」）');
+    if (on === 'lowhp' && !(o.below > 0)) fail(pw + '：lowhp 必須有 below（填「' + rwH.procField(p, '血量低於(%)') + '」）');
+    if (!acts.length) fail(pw + '：沒有動作（填「' + rwH.act(p, 1) + '」）');
+    o.acts = acts;
+    procs.push(o);
+  });
+  return {
+    recipe: recipe,
+    stats: pairs(L.stats, rwH.statKey, rwH.statVal, V.affix, '屬性加成', false),
+    passives: pairs(L.passives, rwH.passKey, rwH.passVal, V.passiveKeys, '被動', true),
+    legend: L.legend.map(n => cell(rwH.legend(n))).filter(x => x !== ''),
+    fx: pairs(L.fx, rwH.fxKey, rwH.fxVal, V.fxKeys, '靜態效果', true),
+    procs: procs
+  };
 }
 function runeTableVocab() {
   const dataSrc = readUtf8(JS.data), runeSrc = readUtf8(JS.runes);
@@ -1918,12 +2111,10 @@ SCHEMAS.Runes = {
       rows.push(mk('符文', { id: r.id, 名稱: r.name, '階／級距': String(i + 1), 武器詞條: r.w[0], 武器倍率: numStr(r.w[1]), 防具詞條: r.a[0], 防具倍率: numStr(r.a[1]), 飾品詞條: r.j[0], 飾品倍率: numStr(r.j[1]), 風味文字: r.flavor || '' }));
     });
     WORDS.forEach(w => {
-      rows.push(mk('符文真言', {
+      rows.push(mk('符文真言', Object.assign({
         id: w.id, 名稱: w.name, '階／級距': String(w.tier), '封魔塔解鎖層數': numStr(w.towerUnlockFloor || 0),
-        配方: w.runes.map(id => nameById[id] || id).join(';'), 適用裝備: joinList(w.bases),
-        屬性加成: runePairsText(w.stats), 被動: runeObjText(w.passives), 傳奇特效: joinList(w.legend),
-        靜態效果: runeObjText(w.fx), '事件觸發(JSON)': w.procs ? JSON.stringify(w.procs) : '', 風味文字: w.flavor || ''
-      }));
+        適用裝備: joinList(w.bases), 風味文字: w.flavor || ''
+      }, runewordCells(w, nameById))));
     });
     return annotateRuneRows([RUNE_TABLE_HEADER].concat(rows)).slice(1);
   },
@@ -1931,6 +2122,7 @@ SCHEMAS.Runes = {
     const get = rowGetter(header);
     const V = runeTableVocab();
     if (!header.includes('封魔塔解鎖層數')) throw new Error('Runes 表缺少「封魔塔解鎖層數」欄，請先更新 Excel，避免清空塔解鎖設定');
+    const RWC = runewordHeaderLayout(header);
     const rarities = runeTableRarities();
     const fail = msg => { throw new Error(msg); };
     const setRows = [], runeRows = [], wordRows = [];
@@ -2022,7 +2214,8 @@ SCHEMAS.Runes = {
       wordIds.add(it.id); wordNames.add(it.name);
       const tier = Number(get(it.r, '階／級距').trim());
       if (!isInt(tier) || tier < 1 || tier > 4) fail(w + '：「級距」必須是 1~4（1 普通／2 精良／3 史詩／4 傳說）');
-      const recipe = splitList(get(it.r, '配方')).map(t => {
+      const cells = runewordReadCells(get, it.r, RWC, w, V);
+      const recipe = cells.recipe.map(t => {
         if (runeIds.has(t)) return t;
         if (runeNames[t]) return runeNames[t];
         return fail(w + '：配方裡的「' + t + '」不是符文（請填符文名稱或 id）');
@@ -2044,30 +2237,11 @@ SCHEMAS.Runes = {
       const unlockFloor = unlockText === '' ? 0 : Number(unlockText);
       if (!Number.isSafeInteger(unlockFloor) || unlockFloor < 0) fail(w + '：「封魔塔解鎖層數」必須為非負整數，留白／0＝僅自行成形解鎖');
       const o = { id: it.id, name: it.name, tier: tier, runes: recipe, bases: bases, towerUnlockFloor: unlockFloor };
-      const stats = runeParsePairs(get(it.r, '屬性加成'), w, V.affix, '屬性加成');
-      if (stats.length) o.stats = stats;
-      const passives = runeParsePairs(get(it.r, '被動'), w, V.passiveKeys, '被動');
-      if (passives.length) { o.passives = {}; passives.forEach(p => { o.passives[p[0]] = p[1]; }); }
-      const fx = runeParsePairs(get(it.r, '靜態效果'), w, V.fxKeys, '靜態效果');
-      if (fx.length) { o.fx = {}; fx.forEach(p => { o.fx[p[0]] = p[1]; }); }
-      const procsText = get(it.r, '事件觸發(JSON)').trim();
-      if (procsText !== '') {
-        const procs = parseJsonCell(procsText, w + '「事件觸發」');
-        if (!Array.isArray(procs) || !procs.length) fail(w + '：「事件觸發」必須是非空的 JSON 陣列');
-        procs.forEach((p, pi) => {
-          const pw = w + '：事件觸發第 ' + (pi + 1) + ' 條';
-          if (!p || !V.triggers.has(p.on)) fail(pw + '的 on「' + (p && p.on) + '」不是已知觸發（' + Array.from(V.triggers).join('／') + '）');
-          if (p.on === 'tick' && !(p.every > 0)) fail(pw + '：tick 必須有 every（秒）');
-          if (p.on === 'lowhp' && !(p.below > 0)) fail(pw + '：lowhp 必須有 below（%）');
-          if (!Array.isArray(p.acts) || !p.acts.length) fail(pw + '：沒有動作 acts');
-          p.acts.forEach(a => {
-            if (!a || !V.acts.has(a.act)) fail(pw + '的動作「' + (a && a.act) + '」不是已知動作（' + Array.from(V.acts).join('／') + '）');
-            if (a.act === 'dmg' && !(a.pct > 0)) fail(pw + '：dmg 缺 pct');
-          });
-        });
-        o.procs = procs;
-      }
-      const legend = splitList(get(it.r, '傳奇特效'));
+      if (cells.stats.length) o.stats = cells.stats;
+      if (cells.passives.length) { o.passives = {}; cells.passives.forEach(p => { o.passives[p[0]] = p[1]; }); }
+      if (cells.fx.length) { o.fx = {}; cells.fx.forEach(p => { o.fx[p[0]] = p[1]; }); }
+      if (cells.procs.length) o.procs = cells.procs;
+      const legend = cells.legend;
       legend.forEach(k => { if (!(V.passivePool[k] && V.passivePool[k].legendary)) fail(w + '：借用的傳奇特效「' + k + '」不存在於傳奇特效池'); });
       if (legend.length) o.legend = legend;
       const flavor = get(it.r, '風味文字').trim();
@@ -2504,4 +2678,4 @@ else {
 }
 
 }
-module.exports={annotateRuneRows,SCHEMAS,csvParse,csvStringify,readXlsxRows,extractLiteral,evalLiteral,validateVfxTable};
+module.exports={annotateRuneRows,runewordCells,RW_ACT_PARAMS,SCHEMAS,csvParse,csvStringify,readXlsxRows,extractLiteral,evalLiteral,validateVfxTable};
