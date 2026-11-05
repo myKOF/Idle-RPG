@@ -1,3 +1,13 @@
+## TEST-MAP-CAMERA-WHEEL-20261105 — 測試場景直接使用滾輪縮放鏡頭
+
+- Owner：Codex；Done，單一開發者。使用者要求測試場景也能以滑鼠滾輪調整鏡頭距離。GM test_map暫時不套用鏡頭鎖定，向上拉近、向下拉遠，沿用既有步進／界限／HUD與修飾鍵保護；離場後依原遊戲設定鎖定，不改設定或存檔。進出場景立即resize，使縮放與百分比同步恢復，不等待視窗尺寸改變。
+- 前置：既有滾輪與test_map完成。允許js/battle-renderer.js、tests/battle-camera-distance.test.cjs、index.html及tools/scene-preview.html僅renderer快取、LV_upgrade_system.md與本段；禁止配置表／素材／玩法數值／Worker／其他進行中內容及合併推送。保留起始String.csv、game_parameters.csv／xlsx及data.js修改，不納入本項。
+- 預檢：renderer／測試／preview／LV／本紀錄無其他來源；index與Claude設定頁／其他快取不同區段，git merge-tree HEAD ai/claude及包含對方未提交bridge／main快取的候選merge-file皆exit0，無語意相依，僅分段修改renderer快取。
+- 驗收：預設鎖定測試場景仍可雙向縮放、全螢幕與HUD一致、離場恢復鎖定、未鎖定一般場景行為保持；相關鏡頭／測試場景／快取測試與Build、diff檢查後Commit。後續使用者Review／合併。
+- 驗證：`node --test tests/battle-camera-distance.test.cjs tests/gm-test-map.test.cjs tests/vfx-editor-cache-versions.test.cjs`28/28通過（包含真Worker離場回歸）；`npm.cmd run build`661檔通過；git diff／stat／check及自我Review通過。新增測試使用正式場景切換函式，確認未提供設定模組亦可縮放、上下限及控制元件保護。首次擴充測試缺地板貼圖fixture導致2項ReferenceError，已將鏡頭案例隔離地板並重跑全部通過，正式地板邏輯保持。
+- 修改檔案：renderer兩處、鏡頭回歸、index／scene-preview快取、LV及本段共6檔。唯讀檢查未改：AI_RULES／AGENTS／Workflow／prompts/codex、package／build工具、測試場景與快取既有測試及場景helper；配置／Worker／素材／存檔保持。素材庫無變動，不建空Commit。未進行瀏覽器實際操作／Console檢查或全遊戲長玩，無已知新增風險及本項未完成實作。
+- 交付Commit為本段所在「[Codex] fix: 測試場景允許滾輪縮放鏡頭」（SHA見交付）。可供Review及使用者合併；未合併或推送develop／main。下一步重新載入遊戲進入test_map，以滾輪調整距離，返回原地圖確認原鎖定設定。
+
 ## ANCIENT-STAR-DEFENSE-BLUE-20261105 — 淺藍星星對齊防禦文字藍色
 
 - Owner：Codex；Done，單一開發者。使用者要求淺藍再深一些，以截圖「魔法防禦」文字藍色為參考。正式--afx-def為#7fdcf5，第一條精鑄圖片改用sRGB色彩矩陣按該色RGB比例調色，使白色亮面也帶參考藍，保留原金屬明暗／alpha，之後再加原黃色drop-shadow；金／深藍、尺寸／間距／基線保持。
