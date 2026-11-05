@@ -921,7 +921,7 @@
       gameMenuBtn.style.display = 'block';
       gameMenuBtn.addEventListener('click', function () {
         if (typeof GameMenu !== 'undefined' && typeof GameMenu.openSettings === 'function') {
-          GameMenu.openSettings();
+          GameMenu.openSettings('save');   // 金鑰輸入框在「存檔」頁籤
         }
         setTimeout(function () {
           if (input) input.focus();

@@ -87,6 +87,9 @@ var UISound = (function () {
   }
   function play(kind) {
     if (!ASSETS[kind] || !context || document.hidden) return;
+    // 設置→音訊：全體靜音／音效音量（50% ＝ 原音量）。
+    var master = typeof GameSettings !== 'undefined' ? GameSettings.sfxGain() : 1;
+    if (master <= 0) return;
     var at = now(), epoch = generation;
     var notification = kind === 'success' || kind === 'achievement';
     if (at - (lastPlayed[kind] === undefined ? -Infinity : lastPlayed[kind]) < (notification ? 120 : 80)) return;
@@ -99,9 +102,11 @@ var UISound = (function () {
         if (sources[kind]) sources[kind].stop();
         var source = context.createBufferSource();
         source.buffer = buffer;
-        source.connect(context.destination);
+        var gain = context.createGain();
+        gain.gain.value = master;
+        source.connect(gain); gain.connect(context.destination);
         source.onended = function () {
-          source.disconnect();
+          source.disconnect(); gain.disconnect();
           if (sources[kind] === source) delete sources[kind];
         };
         sources[kind] = source;

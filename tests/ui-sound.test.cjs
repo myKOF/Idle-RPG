@@ -16,6 +16,7 @@ function mount(options = {}) {
     constructor() { this.state = 'suspended'; this.destination = {}; created++; }
     resume() { this.state = 'running'; return Promise.resolve(); }
     decodeAudioData(bytes) { return Promise.resolve({ url: bytes.url }); }
+    createGain() { return { gain: { value: 1 }, connect() {}, disconnect() {} }; }
     createBufferSource() {
       const voice = { connect() {}, disconnect() {}, stop() { this.stopped = true; }, start() { played.push(this.buffer.url); } };
       voices.push(voice); return voice;

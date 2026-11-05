@@ -2320,12 +2320,72 @@ html *::-webkit-scrollbar-corner {
 .system-settings-card {
   display: flex;
   flex-direction: column;
-  width: min(960px, 100%);
+  width: min(624px, 100%);   /* 原 960px 的 65% */
   max-height: 90vh;
   padding: 24px;
 }
 .system-settings-heading { flex: 0 0 auto; }
 .system-settings-heading h2 { margin-bottom: 20px; }
+/* 設置視窗頁籤：遊戲設定／音訊／存檔 */
+.settings-tabs {
+  display: flex;
+  gap: 6px;
+  flex: 0 0 auto;
+  margin-bottom: 14px;
+  border-bottom: 1px solid #4a3d2a;
+}
+.settings-tab-btn {
+  min-width: 96px;
+  padding: 9px 16px;
+  margin-bottom: -1px;
+  border: 1px solid #4a3d2a;
+  border-bottom-color: #4a3d2a;
+  border-radius: 6px 6px 0 0;
+  background: #1b1a17;
+  color: #b9a982;
+  font-size: 15px;
+  cursor: pointer;
+}
+.settings-tab-btn:is(:hover, :focus-visible) { background: #2a251b; color: #ead7ad; }
+.settings-tab-btn.active {
+  background: #3b3020;
+  border-color: #d4b374 #d4b374 #3b3020;
+  color: #f4e3b8;
+  font-weight: 600;
+}
+.settings-pane[hidden] { display: none; }
+.settings-opt {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  border: 1px solid #3a3226;
+  border-radius: 6px;
+  background: #1d1c19;
+  cursor: pointer;
+}
+.settings-opt:hover { border-color: #665238; }
+.settings-opt input[type="checkbox"] { flex: 0 0 auto; width: 18px; height: 18px; margin: 2px 0 0; cursor: pointer; accent-color: #d4b374; }
+.settings-opt-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.settings-opt-name { color: #ead7ad; font-size: 15px; }
+.settings-opt-tip { color: var(--dim, #9a8f78); font-size: 12px; line-height: 1.5; }
+.settings-slider {
+  display: grid;
+  grid-template-columns: 96px 1fr 44px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  border: 1px solid #3a3226;
+  border-radius: 6px;
+  background: #1d1c19;
+}
+.settings-slider input[type="range"] { width: 100%; accent-color: #d4b374; cursor: pointer; }
+.settings-slider output { color: #ead7ad; font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; }
+/* 全體靜音勾選後：下方四項灰掉、不可操作 */
+.settings-audio-group.is-disabled { opacity: .4; }
+.settings-audio-group.is-disabled :is(.settings-opt, .settings-slider, input) { cursor: not-allowed; }
 .system-settings-body { overflow: auto; min-height: 0; }
 .system-settings-content > .panel { margin-bottom: 14px; }
 @media (max-width: 600px) {

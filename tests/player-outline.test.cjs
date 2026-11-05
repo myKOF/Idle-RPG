@@ -70,6 +70,7 @@ function makeSprite() {
 function loadSync() {
   const code = extractFunction(renderer, 'rotateOutlinePt') +
     '\nvar _outlinePt = { x: 0, y: 0 };\n' +
+    extractFunction(renderer, 'outlineEnabled') + '\n' +
     extractFunction(renderer, 'syncOutline');
   const outlineTex = { id: 'outline-frame' };
   const bodyTex = { id: 'body-frame' };
