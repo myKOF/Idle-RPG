@@ -18,7 +18,7 @@ function select(c, type) {
   c.G.taskState.idx = idx;
   return c.TASKS[idx];
 }
-test('Task.xlsx、CSV與遊戲37筆定義逐欄一致，任務順序連續且型別均已接線', () => {
+test('Task.xlsx、CSV與遊戲38筆定義逐欄一致，任務順序連續且型別均已接線', () => {
   const root=path.resolve(__dirname,'..');
   const excel=readXlsxRows(path.join(root,'config/Excel/Task.xlsx'))
     .filter(row=>row.some(value=>String(value).trim()!==''));
@@ -30,7 +30,7 @@ test('Task.xlsx、CSV與遊戲37筆定義逐欄一致，任務順序連續且型
   const {c}=setup();
   const data=SCHEMAS.Task.extract(fs.readFileSync(path.join(root,'js/data.js'),'utf8'));
   assert.deepEqual(data,csv.slice(1).map(row=>row.slice(0,9)));
-  assert.deepEqual(Array.from(c.TASKS,t=>t.order),Array.from({length:37},(_,i)=>i+1));
+  assert.deepEqual(Array.from(c.TASKS,t=>t.order),Array.from({length:38},(_,i)=>i+1));
   const source=fs.readFileSync(path.join(root,'js/tasks.js'),'utf8');
   for(const t of c.TASKS) assert.ok(source.includes("case '"+t.type+"'"),t.type);
 });
@@ -38,7 +38,7 @@ test('裝配任務：預設已裝飛刀不算完成，需再自行裝配 1 個�
   const {e,c,p} = setup();
   p.gold = 1000;
   const goal = select(c, 'skillEquipCount');
-  assert.equal(goal.order, 5); assert.equal(goal.count, 2); assert.equal(goal.rewardQty, 100000);
+  assert.equal(goal.order, 5); assert.equal(goal.count, 2); assert.equal(goal.rewardQty, 200000);
   assert.deepEqual(Array.from(p.loadout), ['sg:knife'], '新角色預設裝上飛刀');
   assert.equal(c.taskProgressFor(goal), 1);
   assert.equal(c.taskQuickView().ready, false);
@@ -56,14 +56,14 @@ test('裝配任務：預設已裝飛刀不算完成，需再自行裝配 1 個�
   assert.equal(c.taskProgressFor(goal), 2);
   assert.equal(e.panel('task').tasks[4].ready, true);
   assert.equal(e.cmd('task.claim').result.claimed, 5);
-  assert.equal(p.gold, 101000);
+  assert.equal(p.gold, 201000);
   assert.ok(c.taskClaim().err);
-  assert.equal(p.gold, 101000);
+  assert.equal(p.gold, 201000);
 });
-test('升級任務由單次及一鍵滿級累計，失敗不計，5次領200000金幣', () => {
+test('升級任務由單次及一鍵滿級累計，失敗不計，5次領400000金幣', () => {
   const {e,c,p} = setup(5);
   const goal = select(c, 'skillUpgradeCount');
-  assert.equal(goal.order, 13); assert.equal(goal.count, 5); assert.equal(goal.rewardQty, 200000);
+  assert.equal(goal.order, 14); assert.equal(goal.count, 5); assert.equal(goal.rewardQty, 400000);
   assert.equal(c.taskProgressFor(goal), 0, '免費初始技能不計');
   const before = plain(p.skills2);
   p.gold = 0;
@@ -78,10 +78,10 @@ test('升級任務由單次及一鍵滿級累計，失敗不計，5次領200000�
   assert.equal(c.skills2PointView().spent, 5);
   assert.ok(c.skills2Learn('thrust', 0), '點數不足拒絕');
   assert.equal(c.taskProgressFor(goal), 5);
-  assert.equal(e.panel('task').tasks[12].ready, true);
+  assert.equal(e.panel('task').tasks[13].ready, true);
   const gold = p.gold;
-  assert.equal(e.cmd('task.claim').result.claimed, 13);
-  assert.equal(p.gold, gold + 200000);
+  assert.equal(e.cmd('task.claim').result.claimed, 14);
+  assert.equal(p.gold, gold + 400000);
 });
 test('降級、重置及存讀不扣累計；重升成功增加一次，任務索引保持', () => {
   const {e,c,p} = setup();
@@ -95,7 +95,7 @@ test('降級、重置及存讀不扣累計；重升成功增加一次，任務�
   assert.equal(c.skills2UpgradeCount(),6);
   const reloaded=createEngine({seed:29}).boot(JSON.parse(e.saveJson()));
   assert.equal(reloaded.ctx.skills2UpgradeCount(),6);
-  assert.equal(reloaded.ctx.G.taskState.idx,12);
+  assert.equal(reloaded.ctx.G.taskState.idx,13);
   assert.equal(reloaded.ctx.taskQuickView().ready,true);
 });
 test('舊存檔以實際儲存投資回推，包含暫鎖階與終極，純讀不寫入', () => {
@@ -125,4 +125,15 @@ test('終極首選及升級各計一次；切換與降級不計，失敗不計',
   assert.equal(c.skills2UpgradeCount(),71);
   assert.ok(c.skills2UltLearn('thrust'));
   assert.equal(c.skills2UpgradeCount(),71);
+});
+test('熔爐任務：只要點過精良標籤（勾選或取消皆算）即達成，點其他品質不算', () => {
+  const {e,c} = setup();
+  const goal = select(c, 'forgeFineAuto');
+  assert.equal(goal.order, 12); assert.equal(goal.count, 1);
+  assert.equal(c.taskProgressFor(goal), 0);
+  const fid = c.G.newForge.furnaces[0].id;
+  assert.equal(e.cmd('newforge.setQuality', {furnaceId:fid, rarity:2, on:true}).result, true);
+  assert.equal(c.taskProgressFor(goal), 0, '非精良不算');
+  assert.equal(e.cmd('newforge.setQuality', {furnaceId:fid, rarity:1, on:false}).result, true);
+  assert.equal(c.taskProgressFor(goal), 1);
 });
