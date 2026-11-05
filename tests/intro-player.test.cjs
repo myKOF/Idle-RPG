@@ -33,13 +33,20 @@ function makeEnv(opts) {
     return e;
   }
   const body = el('body');
+  const replayBtn = opts.replayButton ? el('button') : null;
+  if (replayBtn) replayBtn.focus = () => { replayBtn.focused = (replayBtn.focused || 0) + 1; };
   const document = {
     body, hidden: !!opts.hidden,
     createElement: el,
+    getElementById: (id) => (id === 'btn-replay-intro' ? replayBtn : null),
     addEventListener(t, fn) { (docListeners[t] = docListeners[t] || []).push(fn); },
     removeEventListener(t, fn) { docListeners[t] = (docListeners[t] || []).filter((x) => x !== fn); }
   };
+  const store = opts.storage || {};
   const window = {
+    localStorage: opts.storageThrows
+      ? { getItem() { throw new Error('blocked'); }, setItem() { throw new Error('blocked'); } }
+      : { getItem: (k) => (k in store ? store[k] : null), setItem: (k, v) => { store[k] = String(v); } },
     addEventListener(t, fn) { (winListeners[t] = winListeners[t] || []).push(fn); },
     removeEventListener(t, fn) { winListeners[t] = (winListeners[t] || []).filter((x) => x !== fn); },
     matchMedia: () => ({ matches: !!opts.reduced })
@@ -61,10 +68,11 @@ function makeEnv(opts) {
   };
   vm.createContext(ctx);
   vm.runInContext(read('js/intro-data.js') + '\nthis.INTRO_TIMELINES = INTRO_TIMELINES;', ctx);
+  if (opts.prologue) ctx.INTRO_TIMELINES.prologue = opts.prologue;
   vm.runInContext(read('js/intro-player.js') + '\nthis.IntroPlayer = IntroPlayer;', ctx);
   const clock = () => anims.find((a) => a.el.className === 'intro-clock');
   const playerRoot = () => body.children.find((c) => c.className.indexOf('intro-player') === 0);
-  return { ctx, P: ctx.IntroPlayer, body, anims, timers, docListeners, winListeners, bridgeCalls, clock, playerRoot };
+  return { ctx, P: ctx.IntroPlayer, body, anims, timers, docListeners, winListeners, bridgeCalls, clock, playerRoot, store, replayBtn };
 }
 
 const SAMPLE = {
@@ -327,4 +335,84 @@ test('接線：存檔確認後、Worker 開機前起播；揭幕等動畫；收�
   const iData = html.indexOf('js/intro-data.js'), iPlayer = html.indexOf('js/intro-player.js'), iBridge = html.indexOf('js/bridge.js');
   assert.ok(iData > 0 && iData < iPlayer && iPlayer < iBridge, '資料 → 播放器 → bridge 的載入順序');
   assert.match(html, /css\/intro\.css\?v=/);
+});
+
+/* ---------- 播放條件與重播（Task C） ---------- */
+const PROLOGUE = { layers: [{ kind: 'shape', at: 0, dur: 3000 }] };
+
+test('起播選擇：新玩家沒看過序章才播序章，其餘播標題；沒有序章時退回標題', () => {
+  const { P } = makeEnv();
+  const pick = P._internal.chooseStartupTimeline;
+  const tls = { title: {}, prologue: {} };
+  assert.equal(pick({ hasSave: false }, '', tls), 'prologue', '新玩家');
+  assert.equal(pick({ hasSave: false, prologueSeen: true }, '', tls), 'title', '看過就只播標題');
+  assert.equal(pick({ hasSave: true }, '', tls), 'title', '有存檔就不是新玩家');
+  assert.equal(pick({}, '', tls), 'title', '不知道有沒有存檔時不當新玩家');
+  assert.equal(pick({ hasSave: false }, '', { title: {} }), 'title', '序章還沒做時退回標題');
+  assert.equal(pick({ hasSave: false }, '?seed=7', tls), null, '決定論測試模式一律不播');
+  assert.equal(pick({ hasSave: false }, '?intro=title', tls), 'title', '網址指定優先');
+});
+
+test('重播選擇：有序章播序章，否則播標題', () => {
+  const { P } = makeEnv();
+  assert.equal(P._internal.replayTimelineId({ title: {}, prologue: {} }), 'prologue');
+  assert.equal(P._internal.replayTimelineId({ title: {}, test: {} }), 'title');
+  assert.equal(P._internal.replayTimelineId({}), null);
+});
+
+test('看過序章：看完或略過才記錄，中止不記；記錄後下次開機播標題', () => {
+  const env = makeEnv({ prologue: PROLOGUE });
+  const key = env.P._internal.PROLOGUE_SEEN_KEY;
+  assert.equal(env.P.startupBegin({ hasSave: false }), true);
+  assert.equal(env.P.state().id, 'prologue');
+  env.P.abort('veil');
+  assert.equal(env.store[key], undefined, 'Worker 失效等中止不算看過');
+
+  env.P.startupBegin({ hasSave: false });
+  // 同一個環境第二次播放：取最新那條總時鐘（第一條屬於已中止的那次）
+  env.anims.filter((a) => a.el.className === 'intro-clock').pop().onfinish();
+  assert.equal(env.store[key], '1', '看完記錄');
+
+  const again = makeEnv({ prologue: PROLOGUE, storage: { [key]: '1' } });
+  again.P.startupBegin({ hasSave: false });
+  assert.equal(again.P.state().id, 'title', '看過就只播標題');
+
+  const skipped = makeEnv({ prologue: PROLOGUE });
+  skipped.P.startupBegin({ hasSave: false });
+  skipped.P.skip();
+  skipped.anims.find((a) => a.el === skipped.playerRoot()).onfinish();
+  assert.equal(skipped.store[key], '1', '主動略過也算看過');
+});
+
+test('localStorage 被封鎖時照常播放，不丟例外', () => {
+  const env = makeEnv({ prologue: PROLOGUE, storageThrows: true });
+  assert.equal(env.P.startupBegin({ hasSave: false }), true);
+  assert.equal(env.P.state().id, 'prologue', '讀不到紀錄就當沒看過');
+  assert.doesNotThrow(() => env.clock().onfinish());
+});
+
+test('重播按鈕：點擊播放、不停格、不改看過紀錄；播完焦點回到按鈕；播放中再點無效', () => {
+  const env = makeEnv({ replayButton: true });
+  const click = env.replayBtn.listeners.click[0];
+  let stopped = false;
+  click({ stopPropagation() { stopped = true; } });
+  assert.ok(stopped, '點擊不冒泡');
+  assert.equal(env.P.state().id, 'title', '沒有序章時播標題');
+  assert.ok(!env.playerRoot().children.some((c) => c.className === 'intro-hold-dots'), '重播不停格');
+  assert.equal(env.P.replay(), false, '播放中再點無效');
+  env.clock().onfinish();
+  assert.equal(env.replayBtn.focused, 1, '焦點回到按鈕');
+  assert.deepStrictEqual(Object.keys(env.store), [], '不寫看過紀錄');
+
+  const withPrologue = makeEnv({ replayButton: true, prologue: PROLOGUE });
+  withPrologue.replayBtn.listeners.click[0]({});
+  assert.equal(withPrologue.P.state().id, 'prologue');
+});
+
+test('重播按鈕在設定「說明」頁、文字走 String 表', () => {
+  const html = read('index.html');
+  const pane = /<section id="settings-pane-help"[\s\S]*?<\/section>/.exec(html)[0];
+  assert.match(pane, /<button type="button" id="btn-replay-intro"[^>]*data-str="2413"/);
+  const ids = new Set(read('config/CSV/String.csv').split(/\r?\n/).slice(1).map((l) => l.split(',')[0]));
+  assert.ok(ids.has('2413'));
 });

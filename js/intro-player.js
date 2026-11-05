@@ -96,9 +96,15 @@ var IntroPlayer = (function () {
   /* 開機時要播哪一條時間軸。回傳 INTRO_TIMELINES 的鍵，或 null＝不播。
      ctx.hasSave：本次開機是否讀到存檔（Task C 用來判斷新玩家）。
      網址 ?intro=<鍵> 強制播指定時間軸；?intro=0 或 ?intro=off 強制不播。
-     預設每次啟動播標題開場 title；決定論測試模式（?seed=，見 bridge.js）不播，
-     那是自動化重現用的開機，多出的固定等待沒有意義。新玩家序章在後續任務接上。 */
+     新玩家（本次開機沒讀到存檔）且這台裝置沒看過序章 → 序章 prologue（時間軸存在才播）；
+     其餘每次啟動播標題開場 title。決定論測試模式（?seed=，見 bridge.js）不播，
+     那是自動化重現用的開機，多出的固定等待沒有意義。
+     ctx.prologueSeen：這台裝置是否已看完過序章（localStorage，見 PROLOGUE_SEEN_KEY）。 */
   var DEFAULT_STARTUP_TIMELINE = 'title';
+  var PROLOGUE_TIMELINE = 'prologue';
+  /* 「看過序章」記在 localStorage 而不是存檔：不動存檔結構、不需要 Migration。
+     用途只是避免新玩家在第一次自動存檔前重新整理又看一次；換裝置重看一次也合理。 */
+  var PROLOGUE_SEEN_KEY = 'ir_intro_prologue_seen';
   function chooseStartupTimeline(ctx, search, timelines) {
     timelines = timelines || (typeof INTRO_TIMELINES !== 'undefined' ? INTRO_TIMELINES : {});
     var has = function (k) { return Object.prototype.hasOwnProperty.call(timelines, k); };
@@ -110,7 +116,23 @@ var IntroPlayer = (function () {
       return has(id) ? id : null;
     }
     if (/[?&]seed=\d+(&|#|$)/.test(search)) return null;
+    if (ctx && ctx.hasSave === false && !ctx.prologueSeen && has(PROLOGUE_TIMELINE)) return PROLOGUE_TIMELINE;
     return has(DEFAULT_STARTUP_TIMELINE) ? DEFAULT_STARTUP_TIMELINE : null;
+  }
+
+  /* 設定「說明」頁的重播按鈕播哪一條：有序章就播序章，否則播標題開場。 */
+  function replayTimelineId(timelines) {
+    timelines = timelines || (typeof INTRO_TIMELINES !== 'undefined' ? INTRO_TIMELINES : {});
+    var has = function (k) { return Object.prototype.hasOwnProperty.call(timelines, k); };
+    if (has(PROLOGUE_TIMELINE)) return PROLOGUE_TIMELINE;
+    return has(DEFAULT_STARTUP_TIMELINE) ? DEFAULT_STARTUP_TIMELINE : null;
+  }
+
+  function storageGet(key) {
+    try { return window.localStorage.getItem(key); } catch (e) { return null; }
+  }
+  function storageSet(key, value) {
+    try { window.localStorage.setItem(key, value); } catch (e) {}
   }
 
   /* ---------- DOM ---------- */
@@ -353,16 +375,48 @@ var IntroPlayer = (function () {
 
   /* 開機進入點：bridge.js 在存檔來源確認通過、Worker 開機之前呼叫。 */
   function startupBegin(ctx) {
-    var id = chooseStartupTimeline(ctx || {}, (typeof location !== 'undefined' && location.search) || '');
+    ctx = ctx || {};
+    var pick = { hasSave: ctx.hasSave, prologueSeen: storageGet(PROLOGUE_SEEN_KEY) === '1' };
+    var id = chooseStartupTimeline(pick, (typeof location !== 'undefined' && location.search) || '');
     if (!id) return false;
     var bridge = (typeof WorkerBridge !== 'undefined') ? WorkerBridge : null;
     var started = play(INTRO_TIMELINES[id], {
       id: id, hold: true,
-      onDone: function () { if (bridge && bridge.resumeStartupHoldTimeout) bridge.resumeStartupHoldTimeout(); }
+      onDone: function (reason) {
+        // 看完或主動略過才算看過；Worker 失效、分頁鎖被搶等中止不算，下次開機再播
+        if (id === PROLOGUE_TIMELINE && (reason === 'end' || reason === 'skip')) storageSet(PROLOGUE_SEEN_KEY, '1');
+        if (bridge && bridge.resumeStartupHoldTimeout) bridge.resumeStartupHoldTimeout();
+      }
     });
     if (started && bridge && bridge.suspendStartupHoldTimeout) bridge.suspendStartupHoldTimeout();
     return started;
   }
+
+  /* 設定「說明」頁的重播按鈕。設定視窗留在底下不關：選單暫停照舊有效，
+     看完回到原本的說明頁，焦點還給按鈕。不改「看過序章」紀錄。 */
+  function replay() {
+    var id = replayTimelineId();
+    if (!id || _cur) return false;
+    var btn = document.getElementById(REPLAY_BUTTON_ID);
+    return play(INTRO_TIMELINES[id], {
+      id: id,
+      onDone: function () { if (btn) { try { btn.focus({ preventScroll: true }); } catch (e) {} } }
+    });
+  }
+
+  var REPLAY_BUTTON_ID = 'btn-replay-intro';
+  function bindReplayButton() {
+    if (typeof document === 'undefined' || typeof document.getElementById !== 'function') return;
+    var btn = document.getElementById(REPLAY_BUTTON_ID);
+    if (!btn || btn._introBound) return;
+    btn._introBound = true;
+    btn.addEventListener('click', function (e) {
+      // 不讓這次點擊冒泡到剛掛上的舞台，被當成「略過」
+      if (e && e.stopPropagation) e.stopPropagation();
+      replay();
+    });
+  }
+  bindReplayButton();   // 本檔排在 body 最後載入，按鈕已在 DOM 裡
 
   function state() {
     var c = _cur;
@@ -375,13 +429,14 @@ var IntroPlayer = (function () {
   }
 
   return {
-    play: play, skip: skip, abort: abort, whenIdle: whenIdle, seek: seek, release: release,
+    play: play, skip: skip, abort: abort, whenIdle: whenIdle, seek: seek, release: release, replay: replay,
     startupBegin: startupBegin, state: state,
     isPlaying: function () { return !!_cur; },
     _internal: {
       opacityKeyframes: opacityKeyframes, motionKeyframes: motionKeyframes, transformOf: transformOf,
       timelineDuration: timelineDuration, validateTimeline: validateTimeline,
-      chooseStartupTimeline: chooseStartupTimeline
+      chooseStartupTimeline: chooseStartupTimeline, replayTimelineId: replayTimelineId,
+      PROLOGUE_SEEN_KEY: PROLOGUE_SEEN_KEY
     }
   };
 })();
