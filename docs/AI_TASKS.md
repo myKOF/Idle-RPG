@@ -1,3 +1,12 @@
+## ANCIENT-STAR-LIGHT-BLUE-TONE-20261105 — 淺藍星星略微加深
+
+- Owner：Codex；Done。使用者要求淺藍星星稍微加深，僅調整第一條精鑄圖片的CSS色調（亮度92%、飽和度108%），色調濾鏡放在原黃色drop-shadow之前，維持淺／深藍區別及黃色光暈原色；不改字形佔位、尺寸、基線、間距、PNG／透明度／素材庫或任何玩法。
+- 允許：css/style.css、index僅style快取、LV、docs/assets來源渲染說明及本段。預檢CSS／LV／來源記錄無外部來源；index與Claude五筆提交的其他快取及設定區不同區段，merge-tree HEAD ai/claude乾淨，僅更新第12行。禁止合併推送與其他聊天在製內容。
+- 驗收：瀏覽器正式UI確認僅淺藍具有色調濾鏡且黃色光暈保持；原PNG／素材庫SHA、精鑄來源／順序及快取回歸、Build與diff檢查。後續使用者Review／合併。
+- 已驗證：正式CSS／PNG／badge／itemDetailHTML預覽，computed filter僅淺藍為brightness(0.92) saturate(1.08)，金／深藍皆brightness(1)，三色原黃色drop-shadow保持；目視仍有淺／深藍區別。preview保存在本聊天visualizations/star-alignment/light-blue-deeper.jpg。
+- 測試：`node --test tests/ancient-forge-limit.test.cjs tests/vfx-editor-cache-versions.test.cjs`13/13通過。唯讀檢查原規範／Workflow、js/ui.js／item.js及精鑄來源／順序、原素材／匯出規則與既有QA；不修改這些程式或PNG。修改僅CSS、index快取、LV、來源記錄與本段，其他Role4及配置／data／String內容保留；素材無改動，不建立素材庫空Commit。Build最終結果及本項Commit見交付，未合併／推送。
+- 最終：`npm.cmd run build`660檔通過，`node tools/ancient-stars/export-source.cjs --check`原素材SHA一致、`git diff --check`通過。index style為1.0.118；本項提交「[Codex] fix: 略微加深淺藍精鑄星星」（SHA見交付），無本項未完成或已知新增風險，可供Review及使用者合併；未跑全遊戲長玩。下一步重載遊戲檢視色調。
+
 ## ANCIENT-STARS-ALIGN-GLOW-20261105 — 恢復星星原尺寸間距與黃色外光暈
 
 - Owner：Codex；Done，單一開發者。使用者指出上一版裝備星列與tips詞條歪位，要求尺寸／間距與原版一致、金／淺藍／深藍皆有黃色外光暈。依88f22739前CSS恢復原文字佔位／基線與18px星列、-4px重疊，透明字形只作佔位，圖片改以不參與排版的偽元素覆蓋，統一CSS黃色drop-shadow，不修改PNG形狀／色彩／128px尺寸。

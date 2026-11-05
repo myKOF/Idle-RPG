@@ -583,7 +583,7 @@ body {
   /* PNG含透明留白，外擴補回原字形描邊的可見範圍，佔位仍由原字形決定。 */
   inset: -2px;
   background: var(--ancient-star-image, url('../images/ui/ancient-star-gold.png')) center / contain no-repeat;
-  filter: drop-shadow(0 0 1px #fff7a1) drop-shadow(0 0 2px #ffd72e);
+  filter: var(--ancient-star-tone, brightness(1)) drop-shadow(0 0 1px #fff7a1) drop-shadow(0 0 2px #ffd72e);
   pointer-events: none;
 }
 
@@ -2969,6 +2969,7 @@ textarea#save-io {
 .ancient-forged-first .ancient-star,
 .ancient-star.ancient-forged-first {
   --ancient-star-image: url('../images/ui/ancient-star-light-blue.png');
+  --ancient-star-tone: brightness(0.92) saturate(1.08);
 }
 .ancient-forged-second .ancient-star,
 .ancient-star.ancient-forged-second {
