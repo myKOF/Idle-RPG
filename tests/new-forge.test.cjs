@@ -160,6 +160,8 @@ test('離線補算：停用的熔爐不作業、離線秒數為 0 不動作', ()
 test('離線結算接線：save.js 呼叫熔爐補算、離線摘要顯示熔爐彙總', () => {
   const save = readExpanded(path.join(root, 'js/save.js'));
   assert.match(save, /newForgeOfflineCatchup\(elapsed\)/);
+  assert.ok(save.indexOf('newForgeOfflineCatchup(elapsed)') < save.indexOf('function processOfflineKill'),
+    '補算必須在離線掉落入佇列之前，只處理離線前既有的裝備');
   const ui = readExpanded(path.join(root, 'js/ui.js'));
   assert.match(ui, /sum\.forge/);
 });

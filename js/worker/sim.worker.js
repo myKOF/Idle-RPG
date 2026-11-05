@@ -25,7 +25,7 @@ importScripts(
   '../skills.js?v=20261029-merge-cd5ad556', '../skills2.js?v=20261105-settings-reincarnation-merge-v1', '../elite_data.js?v=20261028-develop-merge-a8acfe', '../talents.js?v=20261031-achv-talent-mastery-merge',
   '../player.js?v=20261104-levelup-purge', '../system-unlocks.js?v=20261103-unlock-hints', '../special_rules.js?v=20261030-unlock-progress',
   '../combat.js?v=20261105-drain-chance', '../elite.js?v=20261028-develop-merge-a8acfe', '../elite_boss.js?v=20261023-str-battle', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261028-develop-merge-a8acfe', '../tower.js?v=20261104-retire-enchant-book',
-  '../factory.js?v=20261103-equipment-rarity-v3', '../newforge.js?v=20261105-forge-offline', '../forge.js?v=20261104-ancient-essence-cost', '../save.js?v=20261105-forge-offline',
+  '../factory.js?v=20261103-equipment-rarity-v3', '../newforge.js?v=20261105-forge-offline2', '../forge.js?v=20261104-ancient-essence-cost', '../save.js?v=20261105-forge-offline2',
   '../tasks.js?v=20261105-forge-fine-task', '../achievements.js?v=20261103-equipment-rarity-v3'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
