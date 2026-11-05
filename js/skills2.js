@@ -2242,7 +2242,7 @@ function sgAtkCfg(pEnt, st, dmgVal, target, bonusTotalPct, gid, elemOverride) {
        普攻端（combat.js playerAtkCfg）讀同一支，兩邊必須一致。 */
     totalDmgPct: (st.totalDmgPct || 0) + skills2AllDamageUpPct(pEnt) + (bonusTotalPct || 0),
     dmgVsElem: st.dmgVsElem,
-    isPlayer: true, isSkill: true
+    isPlayer: true, isSkill: true, skillGid: gid   // skillGid：傳奇特效（飛刀增傷、天譴之誓等）用來辨識是哪個技能的命中
   };
   /* 擊中回復觸發系數（配置表 Skills2「擊中回復觸發系數」）：吸血／吸魔各擲一次的觸發機率%，未設＝必定觸發 */
   if (g && typeof g.drainPct === 'number') aCfg.drainChance = g.drainPct;
@@ -2772,6 +2772,8 @@ function castSkill2(pEnt, target, gid, floatSel, opts) {
     if (!pEnt.skillCds) pEnt.skillCds = {};
     pEnt.skillCds[SG_PREFIX + gid] = skills2Cooldown(gid, lvs, pEnt);
     sgArmUltRepeat(gid);
+    // 傳奇【天譴之誓】：被充能的技能這次施放的傷害提高（js/legendary.js）
+    if (typeof legendaryOnSkillCast === 'function') legendaryOnSkillCast(pEnt, gid);
   }
 
   var out = { killed: false, dmg: 0, crit: false };
@@ -4483,6 +4485,8 @@ function sgTickMeteors(ctx) {
       var target = victims[vi];
       if (!target || target.hp <= 0) continue;
       var bonusPct = m.bonusPctFn ? m.bonusPctFn(target) : 0;
+      // 傳奇【神落天殞】：隕石（殞石）落地的傷害提高
+      if (m.variant === 'meteor-impact' && typeof legendaryMeteorDamagePct === 'function') bonusPct += legendaryMeteorDamagePct();
       var res = sgHitOne(m.pEnt, m.st, target, m.dmgVal, m.gid, m.floatSel, m.out, 0, bonusPct, m.elem);
       if (hitVictims && res && !res.miss && !res.invuln) hitVictims.push(target);
       if (res && !res.miss && m.burnSpec) sgApplyBurn(target, m.burnSpec);

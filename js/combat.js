@@ -1176,10 +1176,6 @@ function resolveDotSource(sid) {
    機制才不必改算法；每跳實際傷害＝dps×interval，由 tickStatuses 結算。 */
 function applyDot(ent, dps, dur, name, sid, interval, stackCfg, sourceCtx) {
     if (effectActive(ent, 'invuln')) return; // 無敵：免疫持續傷害
-    if (typeof legendaryInstantBurn === 'function') {
-        var instantBurn = legendaryInstantBurn(ent, dps, dur, name);
-        if (instantBurn !== null) return instantBurn;
-    }
     sid = sid || statusIdByName(name);
     // 未指定間隔就吃狀態表；表上查不到（融合技隨機命名的 DoT）採連續結算，行為與改造前相同
     if (interval === undefined || interval === null) {
@@ -1419,13 +1415,18 @@ function tickStatuses(ent, dt, dotContext) {
             while (elapsed >= d.interval) { seconds += d.interval; elapsed -= d.interval; tickCount++; }
             d.acc = elapsed;
         }
+        var burnMult = 1;   // 傳奇【燃燒法則】：燃燒傷害提高；機率把剩餘作用次數用盡（js/legendary.js）
+        if (seconds > 0 && ent.maxHp && typeof legendaryBurnDot === 'function') {
+            var burnAdj = legendaryBurnDot(ent, d, seconds, tickCount, expired);
+            if (burnAdj) { seconds = burnAdj.seconds; tickCount = burnAdj.tickCount; burnMult = burnAdj.mult; }
+        }
         if (seconds > 0 && d.dps > 0) {
             /* 新版技能超神【惡疫魔沼】（泥沼術，js/skills2.js）：依狀態表的「傷害屬性」欄
                分流的持續傷害乘區（未啟用時恆為 1）。放在這裡而不是 resolveHit，
                是因為本專案的持續傷害是施放當下定版的平坦 dps，不經過 resolveHit。 */
             var dElemMult = (ent.maxHp && typeof skill2DotElemFactor === 'function')
                 ? skill2DotElemFactor(ent, d.sid) : 1;
-            var dDmg = d.dps * seconds * dElemMult;
+            var dDmg = d.dps * seconds * dElemMult * burnMult;
             if (dDmg > 0) {
                 if (dotOffense === undefined) dotOffense = dotOffenseCfg(ent);
                 if (dotOffense) dDmg = dotOffenseDamage(dotOffense, d, dDmg, tickCount);
@@ -1578,7 +1579,7 @@ function playerDefCfg(pEnt) {
     return {
         def: st.def * defMul, mdef: st.mdef * defMul, level: st.level,
         dodge: st.evasion + buffVal(pEnt, 'evasionUp'),
-        blockRate: st.blockRate + buffVal(pEnt, 'blockUp'), blockDmgRed: st.blockDmgRed, blockDmgRedCap: st.blockDmgRedCap,
+        blockRate: st.blockRate + buffVal(pEnt, 'blockUp'), blockDmgRed: st.blockDmgRed, blockDmgRedCap: st.blockDmgRedCap, blockDmgRedExtra: st.blockDmgRedExtra || 0,
         pRes: st.pRes, mRes: st.mRes, resist: st.resist, ctrlRes: st.resist.ctrl,
         // 韌性：控場持續時間縮短（ccFactor）＋ 控場機率與被爆擊機率折減（resistCtrl／resolveHit 暴擊段）
         ccFactor: (1 - st.tenacity / 100) * (1 - st.ccRed / 100),
@@ -2513,7 +2514,7 @@ function onFieldKill(m) {
             applyTargetSwitchDelay(FIELD.player, switchCd);
         }
     }
-    if (typeof legendaryOnEnemyKill === 'function') legendaryOnEnemyKill(FIELD.player);
+    if (typeof legendaryOnEnemyKill === 'function') legendaryOnEnemyKill(FIELD.player, m);
     if (typeof rwOnKill === 'function') rwOnKill(FIELD.player, m);   // 符文真言：擊殺回復與觸發（js/runeword.js）
     m._deathClearCd = FIELD_ENEMY_DEATH_CLEAR_DELAY;
     var st = getStats();

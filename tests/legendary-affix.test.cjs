@@ -111,16 +111,18 @@ test('附檔保留的 13 個效果均不限武器類型；18 個舊技能專屬�
      2026-08-26：第八批 10 個（連鎖閃電 5 ＋ 落雷術 5）；第九批 10 個（雷球 5 ＋ 寒冰箭 5）
      2026-08-28：第十批 10 個（水流彈 5 ＋ 冰霜新星 5）；第十一批 10 個（風刃 5 ＋ 真空斬 5）；
      第十二批 5 個（暴風屏障 5，最後一組） */
-  assert.equal(Object.keys(context.PASSIVE_POOL).length, 144,
-    '既有135個加上9個全局傳奇');
+  assert.equal(Object.keys(context.PASSIVE_POOL).length, 151,
+    '既有135個＋9個全局傳奇＋7個新設計的符文真言專屬傳奇（舊版試算表重新開放）');
 });
 
 test('附檔保留的 13 個傳奇特效皆有執行期路由，戰鬥主流程已接線', () => {
   const engine = fs.readFileSync(path.join(root, 'js/legendary.js'), 'utf8');
   const combat = fs.readFileSync(path.join(root, 'js/combat.js'), 'utf8');
   const tower = fs.readFileSync(path.join(root, 'js/tower.js'), 'utf8');
+  // 【不屈護衛】【元素之心】改直接影響屬性，路由在 js/formula.js 的聚合段
+  const formula = fs.readFileSync(path.join(root, 'js/formula.js'), 'utf8');
   Object.keys(IMPORTED_LEGENDARIES).forEach((id) => {
-    assert.ok(engine.includes("'" + id + "'"), id + ' 缺少傳奇執行期路由');
+    assert.ok(engine.includes("'" + id + "'") || formula.includes(id), id + ' 缺少傳奇執行期路由');
   });
   REMOVED_LEGACY_SKILL_LEGENDARIES.forEach((id) => {
     assert.ok(!engine.includes("'" + id + "'"), id + ' 已刪除，legendary.js 不該留著它的路由');
@@ -130,7 +132,7 @@ test('附檔保留的 13 個傳奇特效皆有執行期路由，戰鬥主流程�
   assert.match(tower, /tickLegendaryEffects\(dt,/);
 });
 
-test('傳奇特效進入全部裝備部位的隨機池', () => {
+test('傳奇特效進入全部裝備部位的隨機池（符文真言專屬的 15 個除外）', () => {
   const context = loadContext(['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js', 'js/item.js']);
   const dagger = { kind: 'equip', slot: 'weapon', weaponType: 'dagger1h' };
   const axe = { kind: 'equip', slot: 'weapon', weaponType: 'axe2h' };
@@ -138,12 +140,12 @@ test('傳奇特效進入全部裝備部位的隨機池', () => {
   const daggerKeys = context.passiveKeysForItem(dagger);
   const axeKeys = context.passiveKeysForItem(axe);
   const chestKeys = context.passiveKeysForItem(chest);
-  assert.ok(daggerKeys.includes('shadowTracker'));
-  assert.ok(daggerKeys.includes('mountainSunderer'));
-  assert.ok(axeKeys.includes('mountainSunderer'));
-  assert.ok(axeKeys.includes('shadowTracker'));
-  assert.ok(chestKeys.includes('shadowTracker'));
-  assert.ok(chestKeys.includes('mountainSunderer'));
+  // 舊版試算表重新開放的 15 個只由符文真言附帶（js/data.js RUNEWORD_ONLY_LEGENDARY），不再進裝備隨機池
+  [daggerKeys, axeKeys, chestKeys].forEach((keys) => {
+    assert.ok(!keys.includes('shadowTracker'));
+    assert.ok(!keys.includes('mountainSunderer'));
+    assert.ok(keys.includes('sunpiercerLance'), '技能傳奇仍在池內');
+  });
   assert.ok(chestKeys.includes('sunder'), '無類型限制的既有效果仍可出現在非武器裝備');
 });
 
@@ -171,35 +173,36 @@ test('控場增傷、低血增傷、無盾增傷與燃燒立即結算依資料�
   assert.equal(context.legendaryOutgoingDamageMultiplier(player, enemy, { isPlayer: true }), 6,
     '有護盾後不再取得無盾增傷，其餘乘區不變');
 
-  const burn = context.legendaryInstantBurn(enemy, 10, 5, '燃燒');
-  assert.equal(burn, 390, '有護盾時的燃燒：50 ×1.3×受控 4×低血 1.5');
-  assert.equal(enemy.hp, 610);
+  // 傳奇【燃燒法則】改為「燃燒傷害 +30%、作用時機率用盡剩餘次數」：由 combat.js 的持續傷害結算呼叫 legendaryBurnDot
+  const dot = { name: '燃燒', until: 5, interval: 1, acc: 0 };
+  context.chance = () => false;
+  const plain = context.legendaryBurnDot(enemy, dot, 1, 1, false);
+  assert.deepEqual({ s: plain.seconds, t: plain.tickCount, m: plain.mult }, { s: 1, t: 1, m: 1.3 });
+  context.chance = () => true;
+  const dump = context.legendaryBurnDot(enemy, dot, 1, 1, false);
+  assert.deepEqual({ s: dump.seconds, t: dump.tickCount }, { s: 6, t: 6 }, '本次 1 秒 + 剩餘 5 秒的作用次數一次結算');
+  assert.equal(dot.until, 0, '用盡後下一幀視為到期');
+  assert.equal(context.legendaryBurnDot(enemy, { name: '中毒', until: 5, interval: 1 }, 1, 1, false), null, '只處理燃燒');
 });
 
-test('不屈護衛以原始普攻最終傷害乘格擋減傷與 500% 反擊', () => {
+test('不屈護衛：格擋減傷額外 +5%，加在上限之後可突破上限', () => {
   const context = loadLegendaryContext();
   context.GT = 0;
-  context.rnd = () => 1;
-  context.chance = (pct) => pct > 0;
-  const player = { hp: 1000, mp: 0, shield: 0, buffs: {}, effects: {} };
-  const enemy = {
-    hp: 100000000, maxHp: 100000000, level: 1, def: 0, mdef: 0, pRes: 0,
-    resist: {}, dodge: 0, effects: {}, buffs: {}, dots: []
-  };
-  const st = {
-    level: 1, hp: 1000, atk: 6000000, matk: 0, hit: 100,
-    critRate: 0, critDmg: 150, pPen: 0, mPen: 0, elemDmgPct: null,
-    elemDmgUp: {}, eliteDmg: 0, bossDmg: 0, normalDmg: 0, totalDmgPct: 0,
-    dmgVsElem: {}, blockDmgRed: 50,
-    legendaryEffects: { unyieldingGuard: true }, passives: {}
-  };
-  context.getStats = () => st;
-
-  context.legendaryOnPlayerDamaged(enemy, player, 0, true,
-    { thorns: 0 }, 'pv-float');
-
-  assert.equal(enemy.hp, 76000000,
-    '6,000,000 普攻 × 80% 格擋減傷 × 500% 應反擊 24,000,000');
+  context.chance = () => true;
+  context.rnd = () => 1;   // 固定浮動，才能比較兩次傷害
+  const mk = () => ({ hp: 1e9, mp: 0, shield: 0, buffs: {}, effects: {}, dots: [] });
+  const attackerCfg = { atk: 1000, dmgType: 'phys', level: 1, critRate: 0, critDmg: 150, hit: 100, pen: 0 };
+  function blockedDamage(extra) {
+    const dCfg = { def: 0, mdef: 0, level: 1, dodge: 0, blockRate: 100, blockDmgRed: 1000, blockDmgRedCap: 60,
+      blockDmgRedExtra: extra, pRes: 0, mRes: 0, resist: {}, isPlayer: true, maxHp: 1e9 };
+    context.getStats = () => ({ hp: 1e9, legendaryEffects: {}, passives: {} });
+    const res = context.resolveHit({ hp: 1 }, mk(), Object.assign({}, attackerCfg), dCfg);
+    assert.equal(res.blocked, true);
+    return res.dmg;
+  }
+  const base = blockedDamage(0), boosted = blockedDamage(5);
+  assert.ok(boosted < base, '額外減傷讓格擋後傷害更低');
+  assert.ok(Math.abs(boosted / base - 35 / 40) < 0.03, '上限 60% 之後再 +5%：承受 35% / 40%');
 });
 
 test('關聯技能都對應新版技能群組（SKILLS2），且不再有觸發技能欄位', () => {

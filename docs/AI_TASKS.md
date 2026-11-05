@@ -14883,3 +14883,13 @@ Worker 存活且頁面正常完成載入。
 - 衝突解法：保留主線的開場動畫、技能提示計數／耗魔與 Canvas 復原內容，以及 incoming 的升級 Preset、神石圖示、第五角色、成就樣式與 stats 更新。三個重疊快取改用新的合併版本 `20261105-intro-levelup-merge-v1`（style、battle-renderer、ui），避免任一側舊版快取遮蔽另一側修改；其餘自動合入檔案原樣保留。
 - Excel／生成資料／素材：原始衝突不含 XLSX，不建立 Excel DATA plan；無需重生 CSV／JS。incoming 的遊戲素材與來源文件保留，素材庫不需額外交付。
 - 驗證：角色5、LEVELUP、stats、VFX 與 cache 回歸共 178 項，172 通過；6 項失敗逐項與原始 HEAD 基線比對後完全相同（stats 1、既有 VFX 5），未新增 regression。修正 editor 的 strings_data 快取後 CV-1～CV-3 全通過；`npm.cmd run build` 669 檔通過，合併結果無 conflict marker，`git diff HEAD --check` 通過。已知風險：上述6項既有基線失敗仍待原任務處理；index 保持 unmerged 是 controller 尚未依回報檔案 stage 的預期狀態。
+
+## LEGENDARY-RUNEWORD-ONLY-20261105 — 舊版傳奇「重新開放」15 個特效全數改為符文真言專屬
+
+- Owner：Claude；Done。依舊版傳奇試算表（「重新開放」欄＝1 的 15 個，紅字為改版或全新設計）：8 個既有停用特效重新啟用（崩山裂地者、影襲追蹤者、旋風之刺、末日預言者、狂暴血斧、不屈護衛、雷霆之震、燃燒法則），其中影襲追蹤者、不屈護衛、雷霆之震、燃燒法則依紅字改版；新做 7 個（雷紋刻印 `thunderMark`、冰霜尖刺 `iceSpikeBurst`、天譴之誓 `heavenlyVow`、神落天殞 `godfallMeteor`、風起雷落 `stormAndThunder`、元素之心 `elementHeart`、亡者時間 `deadTime`）。
+- 資料流：15 個全部列入 `js/data.js` 的 `RUNEWORD_ONLY_LEGENDARY`：不進裝備傳奇隨機池（`passiveAllowedForItem`），舊裝備殘留的同名詞條不生效（`js/formula.js` 聚合略過）；仍留在 `PASSIVE_POOL` 供符文真言借用。15 組符文真言換借用，每組最多 1 個傳奇（影殺原借 2 個改為 1 個）：影殺←旋風之刺、劍舞者←影襲追蹤者、血月←末日預言者、永凍←崩山裂地者、萬軍←狂暴血斧、不朽之軀←不屈護衛、雷帝←雷霆之震、星門←雷紋刻印、冰川←冰霜尖刺、鐵匠之魂←燃燒法則、星墜←神落天殞、風暴之眼←風起雷落、創世紀←元素之心、滅世←亡者時間、時之沙←天譴之誓。仍借用技能傳奇的 9 組：地裂、血祭、輪迴、武庫、孤狼、混沌之主、屠龍者、虛空行者、神罰（與裝備池重複，之後再議）。
+- 引擎：`js/legendary.js`（自動飛刀、天譴充能、雷紋、冰爆佇列、燃燒、反射、風雷分享、元素之心、亡者時間）；`js/formula.js`（`st.blockDmgRedExtra`、元素抗性 ×0.5、`resolveHit` 技能命中掛勾）；`js/combat.js`（持續傷害迴圈接 `legendaryBurnDot`、擊殺傳入怪物）；`js/skills2.js`（`aCfg.skillGid`、殞石落地加成、施放掛勾）。移除舊 `legendaryInstantBurn` 與舊飛刀機制。
+- Excel：先確認 `Equipment_Affix.xlsx`、`Runes.xlsx` 可獨占，以 `tools/excel-update-sheets.ps1` 原生寫入（Equipment_Affix 改 4 列＋插入 7 列、Runes 改 15 列傳奇欄與備註；正常重開驗證通過、繪圖物件 0），再 `config_tables.cjs --sync/--apply --write` 生成 CSV 與 `js/data.js`／`js/runeword_data.js`。新 id 避開已刪除舊技能詞條名（`frostSpike` 等）。
+- 沿用既有數值（試算表與程式現值不同，且未標紅）：崩山裂地者（+100%／+300%，表為 +50%／+60%）、旋風之刺（20 次普攻，表為 10 次）、狂暴血斧（3%，表為 2%）。試算表未給的數值為暫定：影襲追蹤者飛刀 150% 物理。元素之心的「屬性傷害加成額外 +35%」採加算、抗性 -50% 採 ×0.5。
+- 測試：新增 `tests/legendary-runeword-only.test.cjs`（14 項，含符文真言→`computeStats` 整合）；更新 `legendary-affix`、`legendary-global`、`runeword-data`（取消「23 主技能各 1 組」分配規則）。完整套件（再加 1 項整合測試前）5631 項：4936 通過、693 失敗；原始 HEAD 基線 5618 項、692 失敗，差集僅 `ELITE-ENGINE-4f`（單跑通過，為既有隨機性，基線同檔失敗的是 4d）；無新增 regression。`build_check` 670 檔通過；`build_string_csv.cjs --check` 寫死 0 條。
+- 風險／未驗證：未在瀏覽器實機驗證；亡者時間的 40 米依戰場座標判定，無座標時視為範圍內；天譴之誓增傷窗口取 3 秒。

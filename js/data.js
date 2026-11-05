@@ -1007,18 +1007,25 @@ var PASSIVE_POOL = {
   trueDmg: { name: '真傷', desc: '每次攻擊附加 {v}% 攻擊力的真實傷害', base: 6, perR: 0 },
   soulEater: { name: '吸魂', desc: '擊殺敵人時回復 {v}% 最大生命', base: 5, perR: 0 },
   mountainSunderer: { name: '崩山裂地者', desc: '當你對敵人造成暈眩或緩速效果時，該效果持續時間 +100%，且對處於該狀態的敵人造成的傷害提高 300%。', base: 0, perR: 0, legendary: true, fx: { controlDurationMult: 2, controlledTargetDamagePct: 300 } },
-  shadowTracker: { name: '影襲追蹤者', desc: '射出三把飛刀追蹤攻擊敵人，每 1 秒各攻擊 1 次並造成 60% 物理傷害；飛刀存在 4 秒，期間擊殺敵人會使所有飛刀持續時間 +0.5 秒。', base: 0, perR: 0, legendary: true, type: 'phys', fx: { shadowKnives: { count: 3, tickSec: 1, powerPct: 60, dur: 4, killExtend: 0.5 } } },
+  shadowTracker: { name: '影襲追蹤者', desc: '每隔 12 秒自動向敵人射出 3 枚飛刀，每枚造成 150% 物理傷害；飛刀技能傷害 +25%。', base: 0, perR: 0, legendary: true, type: 'phys', fx: { autoKnives: { sec: 12, count: 3, powerPct: 150 }, knifeSkillDmgPct: 25 } },
   whirlwindStab: { name: '旋風之刺', desc: '裝備兩把單手匕首時攻速額外提高 50%；每使用 20 次普攻後打出 3 連擊，每擊造成 120% 物理傷害。', base: 0, perR: 0, legendary: true, type: 'phys', fx: { dualDaggerAspdPct: 50, basicAttackThreshold: 20, flurryHits: 3, flurryPowerPct: 120 } },
   doomProphet: { name: '末日預言者', desc: '沒有生命護盾時傷害提高 50%；生命值每降低 10%，傷害再提高 10%。', base: 0, perR: 0, legendary: true, fx: { noShieldDamagePct: 50, missingHpStepPct: 10, damagePerStepPct: 10 } },
   berserkBloodAxe: { name: '狂暴血斧', desc: '擊殺敵人時獲得「狂暴」：攻速與攻擊提高 3%，持續 6 秒，最多疊加 20 層。', base: 0, perR: 0, legendary: true, fx: { onKillBuff: { atkPct: 3, aspdPct: 3, dur: 6, maxStacks: 20 } } },
-  unyieldingGuard: { name: '不屈護衛', desc: '格擋成功時有 35% 機率，以自身原始普攻最終傷害 × 實際格擋減傷 × 500% 反擊，並使受到的傷害降低 20%，持續 3 秒。', base: 0, perR: 0, legendary: true, fx: { onBlock: { chance: 35, reflectBlockPct: 500, dmgRedPct: 20, dur: 3 } } },
-  thunderShock: { name: '雷霆之震', desc: '受到生命傷害時有 35% 機率對所有敵人造成 50% 雷電傷害；只有一名敵人時傷害翻倍。', base: 0, perR: 0, legendary: true, type: 'lightning', fx: { onHealthLostAoe: { chance: 35, powerPct: 50, elem: 'lightning', singleMult: 2 } } },
-  burningLaw: { name: '燃燒法則', desc: '燃燒持續傷害會一次性全部作用，且傷害提高 30%。', base: 0, perR: 0, legendary: true, type: 'fire', fx: { burnInstant: true, burnDamagePct: 30 } },
+  unyieldingGuard: { name: '不屈護衛', desc: '格擋減傷率額外 +5%，且可突破格擋減傷率的上限。', base: 0, perR: 0, legendary: true, fx: { blockDmgRedExtra: 5 } },
+  thunderShock: { name: '雷霆之震', desc: '受到傷害時有 20% 機率對攻擊你的敵人反射 200% 雷電傷害。', base: 0, perR: 0, legendary: true, type: 'lightning', fx: { onHurtReflect: { chance: 20, powerPct: 200, elem: 'lightning' } } },
+  burningLaw: { name: '燃燒法則', desc: '燃燒持續傷害每次作用時有 25% 機率將剩餘的作用次數立即用盡，且燃燒傷害提高 30%。', base: 0, perR: 0, legendary: true, type: 'fire', fx: { burnExhaustChance: 25, burnDamagePct: 30 } },
   fireSpiritShield: { name: '火靈盾', desc: '身體永久被火焰包覆，每秒損失 1% 最大生命；攻擊你的敵人持續受到 20% 火焰灼燒傷害，最多疊加 10 層。', base: 0, perR: 0, legendary: true, type: 'fire', fx: { selfHpDrainPctPerSec: 1, retaliateBurnPct: 20, maxStacks: 10 } },
   magicLightShield: { name: '魔法光盾', desc: '生命值低於 50% 時產生相當於最大生命的光盾；光盾期間受到的傷害降低 35%，持續 5 秒；內建冷卻 20 秒。', base: 0, perR: 0, legendary: true, type: 'light', fx: { lowHpThresholdPct: 50, shieldHpPct: 100, dmgRedPct: 35, dur: 5, cooldownSec: 20 } },
   lightCollision: { name: '光之碰撞', desc: '每隔 4 秒自動發射追蹤光彈尋找最近的目標，造成 250% 聖屬性傷害。', base: 0, perR: 0, legendary: true, type: 'light', fx: { autoProjectile: { sec: 4, powerPct: 250, elem: 'light' } } },
   ghostLamp: { name: '幽冥神燈', desc: '召喚 2 個擁有你 20% 生命與攻擊力的鬼娃衝向敵人；敵人優先攻擊鬼娃，鬼娃死亡時對所有敵人造成 300% 暗影傷害。', base: 0, perR: 0, legendary: true, type: 'dark', fx: { summons: { count: 2, hpPct: 20, atkPct: 20, explosionPct: 300, elem: 'dark', taunt: true } } },
   magicRecoil: { name: '魔法反震', desc: '反震敵人時消耗 10 點魔力，且該次反震傷害提高 100%。', base: 0, perR: 0, legendary: true, fx: { thornsManaCost: 10, thornsDamagePct: 100 } },
+  thunderMark: { name: '雷紋刻印', desc: '雷電技能命中時有 10% 機率留下雷紋刻印，使敵人受到的雷電傷害提高 35%，持續 6 秒。', base: 0, perR: 0, legendary: true, type: 'lightning', fx: { onLightningSkillHit: { chance: 10, vulnPct: 35, dur: 6 } } },
+  iceSpikeBurst: { name: '冰霜尖刺', desc: '寒冰技能命中時有 10% 機率產生冰爆，對敵人造成 200% 寒冰傷害。', base: 0, perR: 0, legendary: true, type: 'ice', fx: { onIceSkillHit: { chance: 10, powerPct: 200, elem: 'ice' } } },
+  heavenlyVow: { name: '天譴之誓', desc: '每 6 秒隨機讓 1 個冷卻中的技能立即冷卻完畢，且該技能下一次施放的傷害提高 50%。', base: 0, perR: 0, legendary: true, fx: { sec: 6, nextCastDmgPct: 50 } },
+  godfallMeteor: { name: '神落天殞', desc: '隕石類技能傷害 +25%。', base: 0, perR: 0, legendary: true, type: 'fire', fx: { meteorDmgPct: 25 } },
+  stormAndThunder: { name: '風起雷落', desc: '風系與雷系傷害加成較高者，可額外獲得較低者 25% 的屬性傷害加成。', base: 0, perR: 0, legendary: true, type: 'wind', fx: { shareFromLowerPct: 25 } },
+  elementHeart: { name: '元素之心', desc: '所有元素抗性 -50%，但所有屬性傷害加成額外提高 35%。', base: 0, perR: 0, legendary: true, fx: { elemResMult: 0.5, elemDmgUpPct: 35 } },
+  deadTime: { name: '亡者時間', desc: '範圍 40 米內的敵人死亡，都會使你的物理技能冷卻時間 -0.05 秒。', base: 0, perR: 0, legendary: true, type: 'phys', fx: { rangeM: 40, physCdrSec: 0.05 } },
   knifeChain: { name: '連鎖', desc: '每把飛刀有 25% 機率再彈射 2 次。', base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'knife', fx: { knifeBounceProc: { chance: 25, count: 2 } } },
   knifeSplitter: { name: '分裂者', desc: '飛刀殺死敵人時會分裂出 2 把小型飛刀，每把造成 50% 傷害，且可彈射 2 次。', base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'knife', fx: { knifeSplit: { count: 2, pct: 50, bounces: 2 } } },
   knifeExecutioner: { name: '處刑者', desc: '飛刀會優先在生命值最高的目標間彈射，且對其造成的傷害 +30%。', base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'knife', fx: { knifeExecutor: { pct: 30 } } },
@@ -1149,15 +1156,25 @@ var PASSIVE_POOL = {
    已存在於裝備上的詞條原樣保留（資料不動，之後重新設計或解除停用時沿用）。
    生效閘門是 js/legendary.js 的 legendaryHas；重新啟用就把鍵從這裡拿掉。 */
 var LEGACY_LEGENDARY_DISABLED = {
-  mountainSunderer: true, shadowTracker: true, whirlwindStab: true, doomProphet: true,
-  berserkBloodAxe: true, unyieldingGuard: true, thunderShock: true, burningLaw: true,
   fireSpiritShield: true, magicLightShield: true, lightCollision: true, ghostLamp: true,
   magicRecoil: true
 };
 
+/* 符文真言專屬傳奇特效（2026-11-05）：舊版傳奇試算表「重新開放」的 15 個特效，全部只由符文真言附帶
+   （Runes 表「傳奇特效1」借用）。它們仍留在 PASSIVE_POOL（借用與說明都讀那裡），但：
+   - 不再出現在新裝備的傳奇特效隨機池（passiveAllowedForItem）；
+   - 已存在於舊裝備上的同名詞條原樣保留、不生效（js/formula.js 聚合時略過）。
+   這樣符文真言與裝備傳奇特效就不會因為同一個特效而互相不生效。 */
+var RUNEWORD_ONLY_LEGENDARY = {
+  mountainSunderer: true, shadowTracker: true, whirlwindStab: true, doomProphet: true,
+  berserkBloodAxe: true, unyieldingGuard: true, thunderShock: true, burningLaw: true,
+  thunderMark: true, iceSpikeBurst: true, heavenlyVow: true, godfallMeteor: true,
+  stormAndThunder: true, elementHeart: true, deadTime: true
+};
+
 // 傳奇特效皆可出現在全部裝備部位；保留舊表的武器欄只供相容。
 function passiveAllowedForItem(key, item) {
-  return !!PASSIVE_POOL[key] && !LEGACY_LEGENDARY_DISABLED[key];
+  return !!PASSIVE_POOL[key] && !LEGACY_LEGENDARY_DISABLED[key] && !RUNEWORD_ONLY_LEGENDARY[key];
 }
 function passiveKeysForItem(item) {
   var out = [];

@@ -18,10 +18,11 @@ function item(id,key,slot='ring') { return {id,name:id,kind:'equip',slot,rarity:
 function player() { return {hp:1000,mp:0,shield:0,effects:{},buffs:{},dots:[],skillCds:{}}; }
 function stats(keys) { return {hp:1000,mp:1000,legendaryEffects:Object.fromEntries(keys.map(k=>[k,true])),passives:{},elemDmgUp:{}}; }
 
-test('all 144 passives roll on every slot and use fixed base across all qualities and weapon types',()=>{
+test('all 151 passives roll on every slot (runeword-only legendaries excluded from the equipment pool) and use fixed base across all qualities and weapon types',()=>{
  const c=load();
- assert.equal(Object.keys(c.PASSIVE_POOL).length,144);
+ assert.equal(Object.keys(c.PASSIVE_POOL).length,151);
  for(const slot of c.SLOT_LIST) for(const key in c.PASSIVE_POOL) {
+  if(c.RUNEWORD_ONLY_LEGENDARY[key]){ assert.ok(!c.passiveKeysForItem({slot}).includes(key),slot+':'+key+' 符文真言專屬，不進裝備池'); continue; }
   assert.ok(c.passiveKeysForItem({slot}).includes(key),slot+':'+key);
   for(const rarity of [0,5,10]) assert.equal(c.passiveValue({rarity,level:2000,upgrade:40,weaponType:'axe2h'},{key,val:99999}),c.PASSIVE_POOL[key].base);
  }

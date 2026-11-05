@@ -61,21 +61,30 @@ test('符文數分佈：2／3／4 顆各有足夠數量，3 顆不少於 4 顆�
   });
 });
 
-test('傳說級（第 4 級）每組至少帶一個傳奇特效，且 23 個主技能的傳奇特效平均分佈', () => {
+test('傳說級（第 4 級）每組至少帶一個傳奇特效；符文真言專屬的 15 個不重複借用，技能傳奇每個主技能最多被 2 組借用', () => {
   const groups = Object.keys(c.SKILLS2);
   const used = {};
   groups.forEach((g) => { used[g] = []; });
+  const owners = {};
   WORDS.filter((w) => w.tier === 4).forEach((w) => {
     assert.ok((w.legend || []).length >= 1, w.id + '（傳說級）沒有傳奇特效');
-    w.legend.forEach((k) => {
-      const p = c.PASSIVE_POOL[k];
-      assert.ok(p && p.legendary && used[p.relatedSkill], `${w.id} 的傳奇特效 ${k} 不屬於任何主技能`);
-      used[p.relatedSkill].push(w.id);
-    });
   });
+  WORDS.forEach((w) => {
+    (w.legend || []).forEach((k) => {
+      const p = c.PASSIVE_POOL[k];
+      assert.ok(p && p.legendary, w.id + ' 借用不存在的傳奇特效 ' + k);
+      if (c.RUNEWORD_ONLY_LEGENDARY[k]) {
+        assert.ok(!owners[k], k + ' 符文真言專屬，只能被 1 組真言借用：' + owners[k] + '、' + w.id);
+        owners[k] = w.id;
+      } else if (p.relatedSkill && used[p.relatedSkill]) {
+        used[p.relatedSkill].push(w.id);
+      }
+    });
+    assert.ok((w.legend || []).length <= 1, w.id + ' 只帶 1 個傳奇特效');
+  });
+  assert.equal(Object.keys(owners).length, Object.keys(c.RUNEWORD_ONLY_LEGENDARY).length, '15 個專屬特效都有符文真言借用');
   groups.forEach((g) => {
-    assert.ok(used[g].length >= 1, `主技能 ${g} 沒有任何傳說級真言帶它的傳奇特效`);
-    assert.ok(used[g].length <= 2, `主技能 ${g} 被 ${used[g].length} 組傳說級真言使用，不夠平均：` + used[g].join('、'));
+    assert.ok(used[g].length <= 2, `主技能 ${g} 被 ${used[g].length} 組真言借用，不夠平均：` + used[g].join('、'));
   });
 });
 
