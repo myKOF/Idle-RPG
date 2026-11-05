@@ -1,3 +1,12 @@
+## ANCIENT-STAR-DEFENSE-BLUE-20261105 — 淺藍星星對齊防禦文字藍色
+
+- Owner：Codex；Done，單一開發者。使用者要求淺藍再深一些，以截圖「魔法防禦」文字藍色為參考。正式--afx-def為#7fdcf5，第一條精鑄圖片改用sRGB色彩矩陣按該色RGB比例調色，使白色亮面也帶參考藍，保留原金屬明暗／alpha，之後再加原黃色drop-shadow；金／深藍、尺寸／間距／基線保持。
+- 允許：css/style.css、index僅CSS快取、LV、本段、docs/assets來源渲染說明；禁止PNG／母圖、數值、星數、精鑄順序、其他聊天Role4／參數／String／data與合併推送。預檢CSS／文件無外部來源；index與Claude其他快取／設定及本副本Role4快取不同區段，merge-tree與基於共同祖先的merge-file皆乾淨，分段修改。
+- 驗收：正式全CSS／圖片／UI預覽確認淺藍亮面對應#7fdcf5、仍與深藍區分、金色／深藍與原黃色光暈保持；CSS濾鏡實際作用、PNG／素材庫SHA、精鑄回歸／快取／Build及diff驗證，僅提交本項。後續使用者Review／合併。
+- 驗證：`node --test tests/ancient-forge-limit.test.cjs tests/vfx-editor-cache-versions.test.cjs`13/13通過；`npm.cmd run build`661檔通過；`node tools/ancient-stars/export-source.cjs --check`原PNG／母圖／素材庫SHA一致，`git diff --check`通過。正式CSS／UI預覽目視確認新天藍、兩種藍仍可分辨；computed filter僅第一條有SVG矩陣，金／深藍brightness(1)、三色原黃色drop-shadow保持，瀏覽器error／warning 0；截圖為本聊天visualizations/star-alignment/defense-blue.jpg。
+- 修改僅CSS色調、index style 1.0.119、LV、來源說明及本段。唯讀未改規範／Workflow、PNG／素材庫、js/ui.js／item.js／精鑄來源與順序、其他CSS及既有測試／QA。原index的三方試跑曾因CRLF／LF整檔誤報，僅將QA副本正規化LF後內容合併0衝突，未重排正式HTML；Claude設定／其他快取及Role4遊戲快取皆與本項不同區段。其他聊天Role4與配置／data／String在製內容保留並分段stage；素材無變更，不建立素材庫空Commit。
+- 本項無未完成實作或已知新增風險，可供Review及使用者合併；未跑全遊戲長玩、未合併推送。Commit為本段所在「[Codex] fix: 精鑄淺藍星星改用防禦文字藍色」（SHA見交付）。下一步重載遊戲檢視色調。
+
 ## ANCIENT-STAR-LIGHT-BLUE-TONE-20261105 — 淺藍星星略微加深
 
 - Owner：Codex；Done。使用者要求淺藍星星稍微加深，僅調整第一條精鑄圖片的CSS色調（亮度92%、飽和度108%），色調濾鏡放在原黃色drop-shadow之前，維持淺／深藍區別及黃色光暈原色；不改字形佔位、尺寸、基線、間距、PNG／透明度／素材庫或任何玩法。

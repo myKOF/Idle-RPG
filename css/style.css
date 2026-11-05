@@ -2969,7 +2969,8 @@ textarea#save-io {
 .ancient-forged-first .ancient-star,
 .ancient-star.ancient-forged-first {
   --ancient-star-image: url('../images/ui/ancient-star-light-blue.png');
-  --ancient-star-tone: brightness(0.92) saturate(1.08);
+  /* sRGB白色亮面映射到防禦文字藍 #7fdcf5，保留原圖明暗與透明度。 */
+  --ancient-star-tone: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='tone' color-interpolation-filters='sRGB'%3E%3CfeColorMatrix type='matrix' values='0.498039 0 0 0 0 0 0.862745 0 0 0 0 0 0.960784 0 0 0 0 0 1 0'/%3E%3C/filter%3E%3C/svg%3E#tone");
 }
 .ancient-forged-second .ancient-star,
 .ancient-star.ancient-forged-second {

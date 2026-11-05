@@ -9,4 +9,5 @@
 - 遊戲版本：`images/ui/ancient-star-gold.png`（一般）、`images/ui/ancient-star-light-blue.png`（精鑄第一條）、`images/ui/ancient-star-blue.png`（精鑄第二條／深藍）。CSS共用於裝備格及詞條標記，文字顏色沿用既有規則。
 - 2026-11-05排列修正：以原本✡字形佔位維持原字級／基線／星列間距，PNG透過絕對定位偽元素覆蓋。三色共用黃色CSS外光暈（drop-shadow），光暈不占排版空間；PNG及素材庫母圖均不改寫，仍維持128px與原SHA。
 - 2026-11-05淺藍微調：僅第一條精鑄的圖片以CSS `brightness(0.92) saturate(1.08)`略微加深；濾鏡先調圖片再產生原黃色外暈，不影響另外兩色及原排版，PNG／母圖SHA保持。
+- 2026-11-05再調整：依使用者截圖，以正式防禦文字`--afx-def: #7fdcf5`為參考，取代上列微調。第一條精鑄使用內嵌SVG的sRGB色彩矩陣將R／G／B分別乘127／255、220／255、245／255，白色亮面對應參考藍，原明暗與alpha保留；黃色外暈在調色後產生，其他兩色及素材SHA保持。
 - 匯出：`node tools/ancient-stars/export-source.cjs --apply`；驗證：`node tools/ancient-stars/export-source.cjs --check`。素材庫路徑由共用 `vfx-library-root.cjs` 解析，不記錄本機絕對路徑。
