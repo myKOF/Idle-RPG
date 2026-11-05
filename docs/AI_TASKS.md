@@ -1,3 +1,13 @@
+## ANCIENT-STAR-OUTLINE-GLOW-20261105 — 星星輪廓描邊與加強光暈
+
+- Owner：Codex；Done，單一開發者。依使用者示意加強三色星星的金黃色外光暈，並加沿透明圖案輪廓的1px深金描邊；不新增矩形外框。CSS濾鏡先沿用原淺藍調色，再以SourceAlpha膨脹1px減去原alpha生成輪廓、疊原圖，最後加強黃金外暈，保留金屬圖面／三色／原字形佔位及間距。
+- 允許：css/style.css、index僅style快取、LV、本段、docs/assets來源渲染說明；QA在本聊天visualizations。禁止PNG／素材／配置／玩法／星數／精鑄順序，以及其他聊天升級Preset／Intro／Role5在製內容、合併推送。
+- 預檢CSS／LV／來源文件無外部來源；index與Claude未提交Intro／String／GM／bridge／main不同區段，本項只改第12行style版本。merge-tree HEAD ai/claude及對其實際index、共同祖先／候選均正規化LF的merge-file為0，無語意相依，分段stage。
+- 驗收：正式全CSS／PNG／badge及itemDetailHTML目視三色1／4／5／7顆穿戴／背包／神鑄／tips，輪廓確為1px、光暈更強且保留原圖面；與修改前對照位置／尺寸／間距不變，精鑄／快取回歸、Build／diff／素材SHA後僅提交本項。後續使用者Review／合併。
+- 瀏覽器完成：正式全CSS／PNG／loadRuneEnv／badge及itemDetailHTML預覽，目視輪廓清楚、三色與金屬圖面保持、光暈更強，Console error／warning0。對本次修改前CSS逐一比較63個星星、12星列、各21個名稱／數值／詞條列的x／y／寬／高，最大差異全部0px；computed outline確認SourceAlpha、dilate radius=1／out及原圖疊回，三層黃色外暈為1／3／6px，淺藍前置調色保持。QA截圖outline-glow.jpg與outline-metrics.json在本聊天visualizations/star-alignment。
+- 驗證：`node --test tests/ancient-forge-limit.test.cjs tests/vfx-editor-cache-versions.test.cjs`13/13通過；`npm.cmd run build`664檔通過；`node tools/ancient-stars/export-source.cjs --check`原PNG／母圖／素材庫SHA一致、`git diff --check`通過。無需改PNG／母圖／素材庫，未建立空素材Commit。
+- 修改5檔：css/style.css、index style 1.0.120、LV、docs/assets來源記錄及本段。唯讀未改：規範／Workflow／Agent文件、PNG／匯出器、其餘CSS、js/ui.js／item.js／精鑄邏輯、既有測試／helper及素材庫；其他升級Preset／Intro／Role5在製內容保持，文件與index分段stage。無本項未完成或已知新增風險；未進行全遊戲長玩。Commit為本段所在「[Codex] fix: 加強太古星星光暈並加入輪廓描邊」（SHA見交付），可供Review與使用者合併，未合併推送；下一步重載遊戲檢視。
+
 ## LEVELUP-TEXT-SIZE-20261105 — 升級提示縮小字號及外框
 
 - Owner：Codex；Done，單一開發者。使用者指定人物頭上「等級提升」字號減3、外框2px；spawnLevelUpText字號58→55、描邊11→2，沿用原String2314、顏色／陰影／彈跳與上飄。此特效由LEVELUP事件直接產生，無Preset JSON；不修改光圈與粒子。
