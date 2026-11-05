@@ -23,8 +23,9 @@
   var REBIRTH_MODEL_URL = 'images/models/hero3d/role1.glb?v=20261103-role1-forward-grip-v1';
   var SECOND_REBIRTH_MODEL_URL = 'images/models/hero3d/role2.glb?v=20261104-role2-v1';
   var THIRD_REBIRTH_MODEL_URL = 'images/models/hero3d/role3.glb?v=20261104-role3-v1';
-  function skinForReincarnations(count) { return Number(count) >= 3 ? 3 : Number(count) >= 2 ? 2 : Number(count) >= 1 ? 1 : 0; }
-  function modelForReincarnations(count) { var skin = skinForReincarnations(count); return skin === 3 ? THIRD_REBIRTH_MODEL_URL : skin === 2 ? SECOND_REBIRTH_MODEL_URL : skin === 1 ? REBIRTH_MODEL_URL : MODEL_URL; }
+  var FOURTH_REBIRTH_MODEL_URL = 'images/models/hero3d/role4.glb?v=20261105-role4-v1';
+  function skinForReincarnations(count) { return Number(count) >= 4 ? 4 : Number(count) >= 3 ? 3 : Number(count) >= 2 ? 2 : Number(count) >= 1 ? 1 : 0; }
+  function modelForReincarnations(count) { var skin = skinForReincarnations(count); return skin === 4 ? FOURTH_REBIRTH_MODEL_URL : skin === 3 ? THIRD_REBIRTH_MODEL_URL : skin === 2 ? SECOND_REBIRTH_MODEL_URL : skin === 1 ? REBIRTH_MODEL_URL : MODEL_URL; }
   var GLTF_URL = 'js/vendor/three/loaders/GLTFLoader.js';
   var CLOTH_URL = 'images/models/hero3d/sunbrand-cloth.json';   // 布料頂點清單（披風、腰前布襠、關節處的藍布）：和 tools/meshy-pipeline/src/fix-grips.mjs 共用
 
@@ -414,7 +415,7 @@
     var gltf = await new gltfMod.GLTFLoader().loadAsync(absUrl(opts.model || modelForReincarnations(opts.reincarnations)));
     var modelStyle = (gltf.asset && gltf.asset.extras) || {};
     var pbr = false;
-    try { pbr = await restorePbrMaterials(THREE, gltf, modelStyle.appearance); }
+    try { pbr = modelStyle.pbrEmbedded === true || await restorePbrMaterials(THREE, gltf, modelStyle.appearance); }
     catch (err) { global.console.warn('[hero3d] PBR載入失敗，使用原有材質：', err && err.message ? err.message : err); }
 
     var size = opts.size || SIZE, span = opts.span || SPAN;      // 預設與遊戲相同；opts 只給驗證時放大看細節用

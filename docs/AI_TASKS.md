@@ -42,7 +42,7 @@
 
 ## HERO3D-ROLE4-20261105 — 4轉人物、頭部校正與新劍
 
-- Owner：Codex；In Progress，單一開發者。使用者提供Role4.glb與劍參考圖，明確表示有授權並要求依圖復刻新劍；分離雙手腿黏連、頭部轉正、刪背劍、新劍右手正握、全部舊動作保持，接入4轉起外觀。原0～3轉及黃金騎士保留。
+- Owner：Codex；Done，單一開發者。使用者提供Role4.glb與劍參考圖，明確表示有授權並要求依圖復刻新劍；分離雙手腿黏連、頭部轉正、刪背劍、新劍右手正握、全部舊動作保持，接入4轉起外觀。原0～3轉及黃金騎士保留。
 - 前置：工作區乾淨，HEAD46f0420a；目標衝突預檢無外部來源。來源Role4 SHA3d22a180e843ad253c23b8b555f53ebf742a8df595404df2b8957a05bfc8c9bb，68節點／一骨架及Running；只取人物外觀，沿用既有正式骨架及六段動畫。授權參考圖只作此次Blender劍造型來源，無新第三方素材。
 - 允許：Role4模型／報告／來源與Blender製作／匯出、hero3d外觀選擇及嵌入PBR支援、index快取、轉生切換／角色回歸、LV及本段；素材庫保存原檔／參考圖／可編輯Blend／成品／SHA／QA。禁止改舊模型、六段動作／右手正握方向／普攻選招、Worker／戰鬥／存檔／配置／轉生門檻與其他功能，不合併推送。
 - 驗收：兩掌與腿及腋下獨立封閉、無跨骨骼橋面／腿權重；頭部正前方、背劍完整刪除；依圖新造劍身銀刃／暗脊／紅色嵌飾與護手，實際貼合右手並沿原刃向／手腕邏輯。六段動畫及骨架取樣保持，PBR／0～4轉存讀與切換、回歸／Build／實機與清晰GIF；素材先Commit再遊戲Commit，後續使用者Review。
@@ -50,10 +50,20 @@
 - 第二版預覽完成：使用者要求護手左右對稱、中央寶石完整蓋住原紅色貼圖、劍身紋理均勻。Blender工具將左半護手輪廓沿X=0鏡像，烘焙貼圖同步鏡像；紅寶石放大至32×48mm、中心對齊並提高底座，底圖原紅色色素轉為金屬中性色，近斜視也無外露紅邊。紅紋依劍脊可用寬度作平滑非塌縮調整，局部明度均衡，保留原花紋，不更動劍長與握柄。仍維持先看劍的檢查點，不改角色及遊戲接線。原四份配置／data在製修改保留。
 - 第二版驗證：原生重建／重開、mesh.validate及packed貼圖通過；修開紅紋遮罩的對角接點後，匯出923948bytes／10588三角面、焊接邊界0且非流形邊0，已清除首版4條非流形邊。獨立verify-revision.py讀實際Blend驗護手鏡像誤差2.98e-8m、貼圖鏡像誤差0、底圖紅色像素0；18段相對紅紋寬度的變異係數由0.25349降至0.02188。Native Three／既有PBR棚光的正／背／側／斜與近拍、800×1055旋轉GIF96幀24fps及磁碟讀回均通過，正常Console／pageerror0。只改Blender作者工具及本段，沒有遊戲JS變更，不跑無關全庫／戰鬥Build；未宣稱已驗角色持劍。
 - 第二版保存：素材庫codex-authored/hero3d-role4-sword-v2-20261105保存可編輯Blend／成品／烘焙／新回饋圖／工具與QA，21檔SHA逐檔核對，原始授權輸入依賴首版包1fcac01並維持原SHA。素材Commit `305cb39`先於本輪工具提交（本段所在「[Codex] fix: 對稱4轉劍護手並均衡刀身紅紋」，SHA見交付）。首版包不覆寫。此三項修正無未完成；整體Role4人物分離／頭轉正／刪背劍／右手持新劍／動作與4轉接線仍待後續，未合併推送；下一步檢視第二版造型。
+- 接入授權：使用者已接受第二版並指示「可以接入遊戲」，解除先看劍的檢查點；以305cb39成品（SHA9be98b40aee20fde05a3c5af928f64f5c22b0b51961668ce0eeae411c9334ea0）完成Role4人物修復及4轉起接線。此輪保留原有配置／data與太古星星在製修改。index只改hero3d快取，與Claude已提交及未提交的設置／任務／data區塊、同副本CSS快取不同；以共同祖先46f0420a、對方現況作三方merge-file試跑乾淨，無語意相依，採分段編修及提交。
 - 首版候選規格（已由上列第二版取代）：約0.942m總長、28mm握柄、握點原點／刃軸+Y／刃口+X／正面+Z，後續沿現有手腕與正握框架；GLB907972bytes、10396個匯出三角面。可編輯Blend保留13部件及packed貼圖；Blender正常重開、mesh.validate及有限座標通過，合併焊接邊界0，首版4條非流形邊已於第二版清除。
 - 預覽驗證：`blender -b --python-exit-code 1 --python tools/meshy-pipeline/blender/build_role4_sword.py -- <輸出> <授權參考PNG> <Role4.glb>`、QA verify-sword.py重開成品與Blend、Python ast.parse通過；原生Three／既有PBR棚光前／後／側／斜視及護手近拍，Console warning／error及pageerror0。800×1055旋轉GIF96幀24fps、磁碟讀回確認旋轉；QA在本聊天visualizations/role4-20261105。沒有改遊戲JS，未執行無關全庫／戰鬥測試或宣稱已驗實機握姿。
 - 本輪修改僅build_role4_sword.py及本段；唯讀檢查規範／AGENTS／Workflow／prompts、hero3d／renderer／舊製作工具／回歸與原模型，未修改LV／index／PBR配置、任何角色成品、Worker／戰鬥／存檔及配置。其他聊天的太古星星docs段與配置／data修改保留、不納入本項；同docs分段處理。
 - 候選保存：設定素材庫codex-authored/hero3d-role4-sword-preview-20261105含授權原檔／參考圖、可編輯Blend／GLB／烘焙、作者工具及QA，21檔SHA manifest已逐檔核對。素材Commit `1fcac01`先於本輪預覽工具Commit（本段所在「[Codex] feat: 製作4轉新劍獨立造型預覽」，SHA見交付）。這是供造型Review的候選保存，未合併推送；尚待劍造型回饋／細節及拓樸修整、Role4雙手分離／頭轉正／刪背劍／右手持新劍／舊六動作及4轉接線驗證。
+
+- 接入完成（本輪最終結果）：Blender4.5.10修復Role4，背劍810面、右手及橋面208面、左手橋60面與腋下25面刪除，孤立碎片移除，軀幹／雙臂獨立封閉。依原骨架權重辨識手掌，避免紅裙甲誤判手部；短頸改連續軀幹擬合、裙甲權重平滑、每殼層獨立限制骨骼，消除初版拉扯。頭部來源空間-20度並頸部平滑，成品鼻部標記相對Head中立偏角小於4度。右手位置／法線／索引／權重與原核准正握逐位相同，劍剛性綁Sword並沿原握點、刃向／手腕；核准劍11021頂點及全部索引獨立比對，最大位置誤差4.10e-7m。
+- 成品：role4.glb 4858652bytes、整體25898三角面（身體9688／劍10588／手5622），SHA db0fb548c75bbbac6291668b7445883926ed4aafddfff0f9485c8513b82924cc；原骨架與六動畫全部取樣保持。身體基色1024px、Non-Color法線／MR各512px及核准護手512px內嵌，沿既有PBR棚光，無Lightmap或新HDR。原生重開Blend、mesh.validate、六actions與四張packed貼圖通過；獨立殼層拓樸邊界0，實際GLB幾何單邊／奇數邊0。接觸甲片有70條重合幾何邊，強制整體空間焊接會改變殼層並產生47邊界／68非流形邊，未宣稱單一流形雕塑；原生畫面及動畫無手腿橋面。
+- 遊戲：4轉起選Role4、0～3轉保持，5轉同外觀不重載；僅Hero3D新增嵌入PBR識別及index hero3d快取20261105-role4-v1。既有battle-renderer通用切換已可使用，不改renderer／scene-preview及其快取。原黃金騎士、四套GLB與PBR旁載逐檔SHA保持。
+- 最終測試：`node --test --test-concurrency=2 tests/hero3d-pbr.test.cjs tests/hero3d-role4.test.cjs tests/hero3d-role3.test.cjs tests/hero3d-role2.test.cjs tests/hero3d-rebirth-skin.test.cjs tests/hero3d-forward-grip.test.cjs tests/hero3d-role.test.cjs tests/hero3d-attack4.test.cjs tests/hero3d-battle-rules.test.cjs tests/hero3d-internal-toggle.test.cjs tests/battle-renderer-pause.test.cjs tests/vfx-editor-cache-versions.test.cjs`62/62通過，新增實際成品蒙皮／封閉／PBR及4轉競態、失敗回退、存檔開局回歸；未放寬既有斷言。`npm.cmd run build`661檔通過；Role／Role1／Role2／Role3／PBR及新增Role4六套export --source-check全數通過，製作工具ast.parse／匯出node --check、diff --check通過。
+- 實機：隔離隨機localhost正式index＋真Worker／Pixi／Hero3D，GM1→2→3→4→5→2→0→4對應1／2／3／4／4／2／0／4；八次切換Attack4進度1.1秒、速度與朝向狀態完全相同。100次普攻四招均可且不連抽，技能不插隊、收招回Run，saveAutoNow後重載仍4。Role4全部12材質為Standard，身體normal／MR與環境存在；四張材質貼圖及環境dispose各一次、幾何計數歸0、WebGL context lost。正常Page／Console error0，只有既有未用preload提示；未讀寫玩家原網址存檔，所有QA瀏覽器與服務已關閉。
+- 預覽：原生前後與全部動作、1400px三角度正握近拍；正式遊戲GIF1600×1000、84幀／30fps，附同步全身放大並依整段動作取景，劍尖完整。磁碟讀回84幀、主角與放大均移動，無以靜態圖冒充。錄製僅QA暫隱NPC／殘留FX／暫停遮罩、使用內建全屏及鏡頭、畫布700px；正式預設512px保持。QA在本聊天visualizations/role4-game-20261105，必要證據已入素材庫，不將逐幀暫存放進遊戲。
+- 修改11檔：images/models/hero3d/{role4.glb,role4.json,ROLE4_SOURCE.md}、tools/meshy-pipeline/{blender/prepare_role4.py,src/export-role4.cjs}、js/hero3d.js、index.html、tests/{hero3d-role4.test.cjs,hero3d-rebirth-skin.test.cjs}、LV_upgrade_system.md及本段。唯讀未改：規範／AGENTS／Workflow／prompts、舊人物及黃金騎士、核准劍包與舊Blender／匯出工具、PBR配置、battle-renderer／scene-preview、其他角色／戰鬥／快取測試、Worker／save／player／配置／String與轉生門檻。原配置／data及其他聊天太古星星修改均保留並排除提交。
+- 交付：素材庫codex-authored/hero3d-role4-20261105共36檔（manifest列35份來源），依賴首版原始授權包1fcac01及核准第二版305cb39，不覆寫舊包；素材Commit `642fc4c`先於遊戲（本段所在「[Codex] feat: 接入4轉角色與核准紅紋新劍」，SHA見交付）。完整實作已完成，可供Review及使用者合併，未合併或推送develop／main。已知限制為接觸甲片仍有重合邊、未做行動裝置長時間效能／全庫測試及全遊戲長玩；建議下一步重載內測遊戲檢視4轉外觀。上列歷史候選的待接線／待修復事項已於本輪完成。
 
 ## SYNC-MERGE-20261105-014634 - Integration validated
 
