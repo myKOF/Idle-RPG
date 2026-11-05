@@ -1,3 +1,14 @@
+## ANCIENT-STARS-ALIGN-GLOW-20261105 — 恢復星星原尺寸間距與黃色外光暈
+
+- Owner：Codex；Done，單一開發者。使用者指出上一版裝備星列與tips詞條歪位，要求尺寸／間距與原版一致、金／淺藍／深藍皆有黃色外光暈。依88f22739前CSS恢復原文字佔位／基線與18px星列、-4px重疊，透明字形只作佔位，圖片改以不參與排版的偽元素覆蓋，統一CSS黃色drop-shadow，不修改PNG形狀／色彩／128px尺寸。
+- 允許：css/style.css星星規則、index僅style快取、LV、本段及docs/assets來源渲染說明；QA在聊天visualizations。禁止數值／星數／精鑄順序／存檔／配置／其他聊天進行中內容，無合併或推送。
+- 前置：CSS／LV／來源文件預檢乾淨；index與Claude已提交data／game-menu快取及未提交設置／存檔區塊不同區段，本項僅第12行style快取。merge-tree HEAD ai/claude與以對方未提交index為theirs、共同祖先為base的git merge-file皆乾淨，無語意相依。原參數／String／data／Role4劍及docs不同段落保持。
+- 驗收：載入正式index全部CSS順序及正式badge／itemDetailHTML，對照原版1／4／5／7顆、穿戴／背包／神鑄、tips／詳情／洗煉樣式的span與文字基線／間距幾何；三色圖片黃色外暈、像素與透明來源SHA保持；相關回歸、Build及diff驗證後僅提交本項。後續使用者Review／合併。
+- 完成：還原字形佔位／原字級與line-height，移除固定16／18px盒子、vertical-align:-2px及窄格縮放；以透明字形保留原排版，絕對偽元素顯示原PNG，外擴2px補回PNG透明留白及原描邊可見範圍。三色共用1px淺黃＋2px黃色drop-shadow，光暈不參與排版。index style版本1.0.117，LV與來源渲染說明同步；無JS／玩法／顯示文字變更。
+- 實際瀏覽器：正式全CSS順序＋loadRuneEnv／ancientStarBadgeHTML／itemDetailHTML，並排原版與修正版。12組穿戴／背包／神鑄、每組1／4／5／7顆，以及tips／詳情／洗煉標記共63個星星、21個名稱、21個數值、21列與12星列的x／y／寬／高逐一比較，最大差異均0px。三種背景圖片之偽元素computed filter皆同一黃色外暈，頁面PNG實際載入並目視確認。QA／最終preview.jpg及metrics.json在本聊天visualizations/star-alignment；初版QA伺服器Windows斜線判斷導致403已修QA，完整CSS載入後重驗；前後scroll位置造成的暫時比較偏差亦以同輪、相對body座標重驗為0，不改產品迎合QA。
+- 驗證：`node --test tests/item-ancient-count-location.test.cjs tests/ancient-forge-limit.test.cjs tests/equipment-tooltip-compare.test.cjs tests/equip-reroll-ui.test.cjs tests/inventory-ancient-filter-sort.test.cjs tests/vfx-editor-cache-versions.test.cjs`32/32通過；`npm.cmd run build`660檔通過；`node tools/ancient-stars/export-source.cjs --check`三PNG／母圖／素材庫SHA一致；`git diff --check`通過。未新增鏡像測試、不改既有斷言，未進行全遊戲長玩。
+- 修改5檔：css/style.css、index.html、LV_upgrade_system.md、docs/assets/ANCIENT_STARS_SOURCE.md及本段；唯讀未改：規範／Workflow／Agent文件、原版CSS、js/ui.js／item.js／forge.js、正式其餘CSS、相關測試與helpers、匯出工具／PNG／素材庫。PNG與母圖無變更，素材庫無新素材且status乾淨，不建立空Commit。其他聊天完成452cd150及所有既有參數／String／data在製內容保留。Commit為本段所在「[Codex] fix: 恢復太古星星排列並加入黃色光暈」，SHA見交付；可供Review及使用者合併，未合併或推送。無本項未完成實作或已知新增風險；下一步重載遊戲檢視。
+
 ## ANCIENT-STARS-20261105 — 太古星星透明素材替換
 
 - Owner：Codex；Done，使用者指定圖2作裝備太古星星，128×128去背並製作太古精鑄淺藍／深藍兩版，單一開發者。來源為本次使用者提供並指定使用的star3.jpg，內建image_gen去背／變色，Pillow僅裁透明邊界及縮圖。RPG Mote Studio本次無法存取。

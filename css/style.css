@@ -569,13 +569,22 @@ body {
 
 .ancient-star {
   display: inline-block;
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-  vertical-align: -2px;
-  font-size: 0;
-  line-height: 0;
+  position: relative;
+  font-size: 1.22em;
+  line-height: 0.8;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+}
+
+/* 保留原字形的寬度與基線；圖片和光暈只覆蓋，不參與詞條或星列排版。 */
+.ancient-star::after {
+  content: '';
+  position: absolute;
+  /* PNG含透明留白，外擴補回原字形描邊的可見範圍，佔位仍由原字形決定。 */
+  inset: -2px;
   background: var(--ancient-star-image, url('../images/ui/ancient-star-gold.png')) center / contain no-repeat;
+  filter: drop-shadow(0 0 1px #fff7a1) drop-shadow(0 0 2px #ffd72e);
+  pointer-events: none;
 }
 
 /* ==========================================================================
@@ -2930,8 +2939,7 @@ textarea#save-io {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: max-content;
-  max-width: 100%;
+  max-width: none;
   padding: 0;
   overflow: visible;
   white-space: nowrap;
@@ -2940,9 +2948,8 @@ textarea#save-io {
 }
 
 .ancient-star-badge .ancient-star {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 1;
+  font-size: 18px;
+  line-height: 1;
   margin-left: 0;
 }
 
