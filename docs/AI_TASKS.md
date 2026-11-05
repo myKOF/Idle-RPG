@@ -1,3 +1,12 @@
+## ACHIEVEMENT-PROGRESS-ALIGN-20261105 — 獎杯置中、進度條收邊與篩選頁籤
+
+- Owner：Codex；Done，延續使用者視覺回饋。原獎杯66px畫布的圖案軸心約29px、透明上下留白亦不對稱；以CSS圖層向右下各2px校正，進度條padding／刻度inset由4px減為2px，外框尺寸與完成比例保持。允許css/achievements.css、index僅該CSS快取、LV與本段；禁止改圖片／JS／配置／音效／存檔／其他在製內容，不合併推送。
+- 使用者續加：成就全部／已達成／未達成三個篩選改為神鑄裝備品質頁籤風格，沿用afl共用金色變數、半透明深色底座、透明未選／金底細框選中，移除原灰藍／棕色立體按鈕及外暈。範圍不變，不修改神鑄原CSS或篩選邏輯。
+- 前置：同聊天規範／Workflow／Agent已讀、ai/codex、預檢完成；index以本聊天前次成就樣式提交前基線、本項CSS快取候選對Claude實際檔案merge-file exit0（Claude尚未含本聊天先前CSS快取），無語意相依、分段修改stage。驗收：實際成就渲染與全CSS的寬窄視窗、0／部分／全滿比例、2px內距與杯身置中目視，以及三種頁籤選中／hover／鍵盤焦點／篩選；相關回歸／Build／diff後只Commit本項，其他升級Preset工作完整保留。無新增素材、不建立素材庫空Commit；下一步使用者重載檢視。
+- 完成4檔：css/achievements.css修正圖層位置／2px內距及頁籤，index僅CSS快取1.0.12、LV兩則視覺紀錄、本段；成就三種頁籤的底色／字色／邊框色與粗細／圓角／字號／字重／字距／最小尺寸／padding／陰影，直接對正式神鑄品質頁籤computed styles逐欄完全一致（選中與未選中共26項）。鍵盤焦點保留2px金色outline。
+- 驗證：`node --test tests/achievements.test.cjs tests/ui-achievement-sound.test.cjs tests/ui-tick-smoke.test.cjs tests/vfx-editor-cache-versions.test.cjs`19/19，`npm.cmd run build`665檔通過、diff／stat／check與自我Review完成。隔離Edge／隨機localhost載正式DOM／全部CSS／實際AchievementUI及可控快照，5視窗×3完成比例共15例通過、內距2px／圖層+2px核對、3頁籤實際點選及Enter切換／鍵盤outline／篩選數量／reduced-motion皆通過，Console error／warning及pageerror0；桌面／手機／總進度PNG存檔讀回目視。QA／報告在本聊天visualizations/achievement-polish/alignment；瀏覽器／服務關閉，未讀寫玩家存檔。杯子原圖RGBA及軸心僅唯讀分析，未編修圖片。
+- 唯讀未改：規範／Workflow／prompts、神鑄品質頁籤DOM及divine-forge／ashen-forge-flat原樣式、ui-achievements／成就表／既有相關測試／原素材；其他升級Preset在製檔案與相鄰快取原樣保留。無本項未完成或已知新增缺陷；未跑多瀏覽器／全遊戲長玩，無新增素材或素材庫Commit。可供Review與使用者合併，Commit為本段所在「[Codex] fix: 校正成就獎杯與進度間距並統一篩選頁籤」（SHA見交付）；不合併推送，下一步使用者重載檢視。
+
 ## ACHIEVEMENT-PROGRESS-POLISH-20261105 — 成就進度條與獎杯質感
 
 - Owner：Codex；Done，單一開發者。使用者要求改善成就總進度條及旁邊小獎杯；以CSS重做金屬凹槽、香檳金亮面／刻度及獎杯徽章，沿用既有授權trophy.png，不產出獨立美術素材。前置：規範／Workflow／Agent／任務已讀、ai/codex、fetch及預檢完成。

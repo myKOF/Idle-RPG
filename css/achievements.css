@@ -75,7 +75,8 @@
 #achv-summary::before {
   content: ''; position: absolute; left: 0; top: 0; width: 42px; height: 42px;
   box-sizing: border-box; border: 1px solid #b09259; border-radius: 50%;
-  background: url(../images/ui/achievements/trophy.png) center / 32px 32px no-repeat,
+  /* 原圖透明留白不對稱，依杯身軸心與可見範圍校正視覺中心。 */
+  background: url(../images/ui/achievements/trophy.png) calc(50% + 2px) calc(50% + 2px) / 32px 32px no-repeat,
     radial-gradient(ellipse at 50% 18%, #f4da9c24, transparent 64%),
     linear-gradient(145deg, #454036, #1c2025 48%, #30291e);
   box-shadow: inset 0 0 0 2px #11151b, inset 0 0 0 3px #b79a5c48,
@@ -84,14 +85,14 @@
 }
 #achv-modal .achv-total { flex: 0 1 600px; }
 #achv-modal .achv-total-track {
-  position: relative; display: block; box-sizing: border-box; height: 24px; padding: 4px;
+  position: relative; display: block; box-sizing: border-box; height: 24px; padding: 2px;
   border: 1px solid #a58a56; border-radius: 5px; overflow: hidden;
   background: linear-gradient(#080b10, #161b22);
   box-shadow: 0 0 0 1px #080a0e, 0 2px 5px #0008,
     inset 0 1px 0 #ead4a44d, inset 0 -1px 0 #6a512d, inset 0 3px 7px #000b;
 }
 #achv-modal .achv-total-track::after {
-  content: ''; position: absolute; inset: 4px; border-radius: 2px; pointer-events: none;
+  content: ''; position: absolute; inset: 2px; border-radius: 2px; pointer-events: none;
   background: repeating-linear-gradient(90deg, transparent 0, transparent calc(10% - 1px), #080b104d calc(10% - 1px), #080b104d 10%);
   box-shadow: inset 0 1px 0 #fff4d51f;
 }
@@ -111,12 +112,23 @@
 }
 @media (prefers-reduced-motion: reduce) { #achv-modal .achv-total-track i { transition: none; } }
 #achv-modal .achv-top { justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
-#achv-modal .achv-filters button {
-  min-width: 78px; min-height: 42px; border: 2px solid #5a6272; border-radius: 6px; font-size: 17px; font-weight: 700; color: #d8dce4;
-  background: linear-gradient(#4b5262, #2b303c); box-shadow: inset 0 1px 0 #ffffff30, 0 2px 4px #0008;
+#achv-modal .achv-filters {
+  align-items: center; gap: 4px; padding: 4px;
+  background: #0e1013cc; border: 1px solid #23262d; border-radius: 8px;
 }
-#achv-modal .achv-filters button#achv-filter-done { background: linear-gradient(#8a5a40, #4e2f22); border-color: #a9744f; color: #f5dcc6; }
-#achv-modal .achv-filters button.on { border-color: #f1c35a; color: #fff3c8; box-shadow: 0 0 10px #f1c35a99, inset 0 1px 0 #ffffff40; }
+/* 與神鑄裝備品質頁籤共用色票與尺寸，僅作用於成就篩選。 */
+#achv-modal .achv-filters button {
+  min-width: 76px; min-height: 30px; padding: 4px 14px;
+  border: 1px solid transparent; border-radius: 6px; font-size: 13px; font-weight: 700; letter-spacing: 0;
+  color: var(--afl-text-dim); background: transparent; box-shadow: none; text-shadow: none;
+  font-family: inherit;
+}
+#achv-modal .achv-filters button:hover { color: var(--afl-text); }
+#achv-modal .achv-filters button.on {
+  color: var(--afl-gold-text); border-color: var(--afl-gold-line);
+  background: var(--afl-gold-bg); box-shadow: none;
+}
+#achv-modal .achv-filters button:focus-visible { outline: 2px solid var(--afl-gold-line); outline-offset: 2px; }
 #achv-modal #achv-list { flex: 1 1 auto; align-content: start; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 14px; padding: 4px 12px 4px 4px; }
 @media (max-width: 900px) { #achv-modal #achv-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 600px) { #achv-modal #achv-list { grid-template-columns: 1fr; } }
