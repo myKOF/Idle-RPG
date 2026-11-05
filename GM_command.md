@@ -240,6 +240,34 @@ runeword list （列出全部符文真言 id）
 符文取代了附魔的位置（2026-10-07）：符文孔與寶石鑲孔分開；孔數依稀有度，在 `config/Excel/game_parameters.xlsx` 的「表-稀有度」各列（編號 321～331）的「參數g」配置（目前 普通 0、精良／稀有 1、獨特 2、史詩 3、傳說以上 4）；雙手武器在有符文孔的稀有度上多 1 孔（加法），傳說以上的雙手武器有 5 孔。
 配方與數值見 `docs/RUNEWORD_DESIGN.md`；符文與符文真言的資料在配置表 `config/Excel/Runes.xlsx`。
 
+## 4.6 指定裝備的傳奇特效（2026-11-06）
+
+```text
+legend 特效key [部位] [force] （把穿戴中裝備的傳奇特效設為指定 key；部位預設 weapon）
+legend clear [部位|all] （清除該部位的傳奇特效；all＝身上全部部位）
+legend list [技能群組|general|rwonly|disabled] （列出傳奇特效 key；可依 relatedSkill 群組或分類篩選）
+```
+
+別名：`legendary`。部位用 `SLOT_LIST` 的鍵（`weapon`、`weapon2`、`helmet`…`ring`、`ring2`、`amulet`）或中文部位名。
+只改裝備上的 `passive`（存檔只存 key，數值由 `PASSIVE_POOL` 決定），不動詞條、寶石與符文；會寫入存檔。
+
+- **停用**（`LEGACY_LEGENDARY_DISABLED`）與**符文真言專屬**（`RUNEWORD_ONLY_LEGENDARY`）的特效不會出現在裝備上，預設拒絕；
+  加 `force` 才寫入，用來模擬「舊存檔殘留同名詞條」——照規則仍**不生效**（專屬特效只能由符文真言借用，見 `runeword`）。
+- 同一個特效穿在多件裝備上時只有最先穿上的那件生效（`legendaryEquipOrder`），可用來測「同名不生效」。
+
+例如：
+
+```text
+equipset legendary 100 0 0 wear （先穿上整套傳說裝備）
+legend clear all （清掉全身隨機帶的傳奇特效，避免干擾）
+legend knifeChain （主手設為飛刀群組的「連鎖」）
+legend bloodthirst ring2 （第二枚戒指設為「嗜血」）
+legend list knife （只列飛刀群組的 5 個）
+legend deadTime weapon force （模擬舊裝備殘留的符文真言專屬特效，應不生效）
+```
+
+完整測試用例見 `docs/ANTIGRAVITY_LEGENDARY_RUNEWORD_TEST_CASES.md`。
+
 ## 5. 附魔書
 
 > ⚠️ **附魔功能已關閉**（2026-10-07，由符文取代；`js/data.js` 的 `ENCHANT_ENABLED = false`）。`book` 指令仍可發書，但書沒有用處、裝備頁也沒有附魔入口；程式保留，開關改回 `true` 即恢復。
