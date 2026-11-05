@@ -14,12 +14,13 @@ function setup(count=0,enabled=true){
  assert.ok(start>=0&&end>start);vm.runInContext(source.slice(start,end),c);
  return{c,S,initial,oldBody,pending,warnings,ctrl,Hero3D};
 }
-test('0轉Role、1轉Role1、2轉Role2、3轉以上Role3；無效數值保持基礎外觀',()=>{
+test('0轉Role、1轉Role1、2轉Role2、3轉Role3、4轉以上Role4；無效數值保持基礎外觀',()=>{
  const c=vm.createContext({});vm.runInContext(fs.readFileSync(root+'/js/hero3d.js','utf8'),c);
  for(const n of [0,-1,undefined,NaN])assert.match(c.Hero3D.modelForReincarnations(n),/\/role\.glb\?/);
  for(const n of [1,'1'])assert.match(c.Hero3D.modelForReincarnations(n),/\/role1\.glb\?/);
  for(const n of [2,'2'])assert.match(c.Hero3D.modelForReincarnations(n),/\/role2\.glb\?/);
- for(const n of [3,4,30,'3'])assert.match(c.Hero3D.modelForReincarnations(n),/\/role3\.glb\?/);
+ for(const n of [3,'3'])assert.match(c.Hero3D.modelForReincarnations(n),/\/role3\.glb\?/);
+ for(const n of [4,5,30,'4'])assert.match(c.Hero3D.modelForReincarnations(n),/\/role4\.glb\?/);
 });
 test('當場1轉交換身體及輪廓，保留實際動作秒數、速度與朝向並釋放舊資源',async()=>{
  const h=setup(),texture=h.oldBody.texture,outline=h.oldBody.hero3dOutlineTex;
@@ -62,12 +63,12 @@ test('已2轉存檔開局直接載Role2',async()=>{
  const next=h.ctrl(2);h.pending[0].resolve(next);await p;assert.equal(h.S.hero3d,next);
 });
 
-test('2轉到3轉保留完整動作狀態，4轉沿用Role3而不重載',async()=>{
+test('2轉到3轉保留完整動作狀態，同一3轉不重載',async()=>{
  const h=setup(2),p=h.c.syncHero3dAppearance(3);assert.equal(h.pending[0].opts.reincarnations,3);
  const next=h.ctrl(3);h.pending[0].resolve(next);await p;
  assert.equal(h.S.hero3d,next);assert.equal(h.S.player.body.hero3d,next);assert.equal(next.state,h.initial.state);
  assert.equal(h.S.player.curAnim,'attack4');assert.equal(h.initial.disposed,true);
- assert.equal(h.c.syncHero3dAppearance(4),null);assert.equal(h.pending.length,1);
+ assert.equal(h.c.syncHero3dAppearance(3),null);assert.equal(h.pending.length,1);
 });
 
 test('2轉與3轉交錯只接最新3轉；3轉失敗保持Role2且回2轉不重載',async()=>{
@@ -106,4 +107,20 @@ test('Role1六段動畫每個取樣及骨架與0轉完全相同，手與劍幾�
   assert.ok(indices.every(i=>i>=0&&i<count));assert.ok(joints.every(i=>i<b.j.skins[0].joints.length));assert.ok(b.array(p.attributes.POSITION).every(Number.isFinite));
   for(let i=0;i<weights.length;i+=4)assert.ok(Math.abs(weights[i]+weights[i+1]+weights[i+2]+weights[i+3]-1)<1e-5);
  }
+});
+
+test('3轉升4轉保持攻擊進度；5轉沿用Role4而不重載',async()=>{
+ const h=setup(3),p=h.c.syncHero3dAppearance(4);assert.equal(h.pending[0].opts.reincarnations,4);
+ const next=h.ctrl(4);h.pending[0].resolve(next);await p;
+ assert.equal(h.S.hero3d,next);assert.equal(next.state,h.initial.state);assert.equal(h.S.player.body.hero3d,next);assert.equal(h.S.player.curAnim,'attack4');assert.equal(h.initial.disposed,true);
+ assert.equal(h.c.syncHero3dAppearance(5),null);assert.equal(h.pending.length,1);
+});
+test('3／4轉請求競態、4轉載入失敗及已4轉存檔開局',async()=>{
+ const h=setup(2),a=h.c.syncHero3dAppearance(3),b=h.c.syncHero3dAppearance(4),stale=h.ctrl(3),latest=h.ctrl(4);
+ h.pending[0].resolve(stale);await a;assert.equal(stale.disposed,true);assert.equal(h.S.hero3d,h.initial);
+ h.pending[1].resolve(latest);await b;assert.equal(h.S.hero3d,latest);
+ const f=setup(3),p=f.c.syncHero3dAppearance(4);f.pending[0].reject(Error('unavailable'));await p;
+ assert.equal(f.S.hero3d,f.initial);assert.equal(f.initial.disposed,false);assert.equal(f.c.syncHero3dAppearance(4),null);assert.equal(f.pending.length,1);
+ const saved=setup(4),boot=saved.c.loadHero3d();assert.equal(saved.pending[0].opts.reincarnations,4);const next=saved.ctrl(4);saved.pending[0].resolve(next);await boot;assert.equal(saved.S.hero3d,next);
+ const back=setup(3),pending=back.c.syncHero3dAppearance(4);back.c.syncHero3dAppearance(3);const old=back.ctrl(4);back.pending[0].resolve(old);await pending;assert.equal(old.disposed,true);assert.equal(back.S.hero3d,back.initial);
 });

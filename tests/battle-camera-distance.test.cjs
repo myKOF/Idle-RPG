@@ -20,7 +20,7 @@ function load() {
   c.fullscreen = false;
   c.document = {getElementById: id => id === 'ui-shell' ? {classList:{contains: name => name === 'battle-fullscreen' && c.fullscreen}} : null};
   vm.createContext(c);
-  for (const name of ['cameraLocked', 'internalCameraDistancePercent', 'cameraFullscreenMultiplier', 'cameraZoom', 'updateCameraDistanceLabel', 'initCameraWheel', 'setCameraViewport', 'boardMetrics', 'resize', 'perspectiveLayout',
+  for (const name of ['cameraLocked', 'internalCameraDistancePercent', 'cameraFullscreenMultiplier', 'cameraZoom', 'updateCameraDistanceLabel', 'initCameraWheel', 'setTestMapScene', 'setCameraViewport', 'boardMetrics', 'resize', 'perspectiveLayout',
     'perspScreenPoint', 'worldToScreenPoint', 'airScreenPose', 'syncPerspective'])
     vm.runInContext(extractFunction(source, name), c);
   return c;
@@ -105,6 +105,48 @@ test('CAMERA 鏡頭鎖定（預設）時滾輪不縮放也不攔截；取消鎖�
   assert.equal(open.wheel(-100).prevented, 1); assert.equal(open.c.S.cameraDistancePercent, 95);
   open.c.GameSettings.get = () => true;   // 重新勾選鎖定
   open.c.resize(); near(open.c.S.cameraScale, Z);
+});
+
+test('CAMERA 測試場景忽略預設鎖定可雙向縮放，全螢幕共用倍率，離場恢復原設定', () => {
+  const {c, label, wheel} = wheelSetup(true, true);
+  c.S.groundTile = null;   // 本案例只驗鏡頭；地板貼圖不影響切換時立即重算鏡頭
+  assert.equal(wheel(-100).prevented, 0);
+  c.setTestMapScene(true);
+  for (let i = 0; i < 4; i++) assert.equal(wheel(-100).prevented, 1);
+  assert.equal(c.S.cameraDistancePercent, 80);
+  assert.equal(label.textContent, '72%'); near(c.S.cameraScale, Z / .8);
+  near(c.S.app.stage.scale.x, 1); near(c.S.app.stage.scale.y, 1);
+  c.fullscreen = true; c.resize();
+  assert.equal(label.textContent, '52%'); near(c.S.cameraScale, Z * FS / .8);
+  for (let i = 0; i < 4; i++) wheel(100);
+  assert.equal(c.S.cameraDistancePercent, 100);
+  assert.equal(label.textContent, '65%');
+  wheel(-100);
+  c.setTestMapScene(false);
+  assert.equal(c.GameSettings.get('cameraLock'), true, '不得改寫使用者鎖定設定');
+  assert.equal(label.textContent, '65%'); near(c.S.cameraScale, Z * FS);
+  assert.equal(wheel(-100).prevented, 0);
+  c.fullscreen = false; c.resize(); near(c.S.cameraScale, Z);
+  c.GameSettings.get = () => false;
+  c.setTestMapScene(true); wheel(-100);
+  c.setTestMapScene(false);
+  near(c.S.cameraScale, Z / .9);
+  assert.equal(wheel(100).prevented, 1, '原先未鎖定時離場仍可操作');
+});
+
+test('CAMERA 測試場景未提供設定模組仍可縮放，沿用距離界限與輸入保護', () => {
+  const {c, wheel} = wheelSetup(true, true);
+  c.S.groundTile = null;
+  delete c.GameSettings;
+  c.setTestMapScene(true);
+  for (const extra of [{ctrlKey: true}, {metaKey: true}, {defaultPrevented: true},
+    {target: {closest: () => ({})}}]) assert.equal(wheel(-100, extra).prevented, 0);
+  for (let i = 0; i < 80; i++) wheel(-100);
+  assert.equal(c.S.cameraDistancePercent, 50); near(c.S.cameraScale, Z / .5);
+  for (let i = 0; i < 80; i++) wheel(100);
+  assert.equal(c.S.cameraDistancePercent, 200); near(c.S.cameraScale, Z / 2);
+  c.setTestMapScene(false); near(c.S.cameraScale, Z);
+  assert.equal(wheel(-100).prevented, 0);
 });
 
 test('CAMERA 不攔截HUD／控制元件、瀏覽器縮放／橫向捲動及無效事件；未就緒不縮放', () => {

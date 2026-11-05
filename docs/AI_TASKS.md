@@ -1,3 +1,80 @@
+## TEST-MAP-CAMERA-WHEEL-20261105 — 測試場景直接使用滾輪縮放鏡頭
+
+- Owner：Codex；Done，單一開發者。使用者要求測試場景也能以滑鼠滾輪調整鏡頭距離。GM test_map暫時不套用鏡頭鎖定，向上拉近、向下拉遠，沿用既有步進／界限／HUD與修飾鍵保護；離場後依原遊戲設定鎖定，不改設定或存檔。進出場景立即resize，使縮放與百分比同步恢復，不等待視窗尺寸改變。
+- 前置：既有滾輪與test_map完成。允許js/battle-renderer.js、tests/battle-camera-distance.test.cjs、index.html及tools/scene-preview.html僅renderer快取、LV_upgrade_system.md與本段；禁止配置表／素材／玩法數值／Worker／其他進行中內容及合併推送。保留起始String.csv、game_parameters.csv／xlsx及data.js修改，不納入本項。
+- 預檢：renderer／測試／preview／LV／本紀錄無其他來源；index與Claude設定頁／其他快取不同區段，git merge-tree HEAD ai/claude及包含對方未提交bridge／main快取的候選merge-file皆exit0，無語意相依，僅分段修改renderer快取。
+- 驗收：預設鎖定測試場景仍可雙向縮放、全螢幕與HUD一致、離場恢復鎖定、未鎖定一般場景行為保持；相關鏡頭／測試場景／快取測試與Build、diff檢查後Commit。後續使用者Review／合併。
+- 驗證：`node --test tests/battle-camera-distance.test.cjs tests/gm-test-map.test.cjs tests/vfx-editor-cache-versions.test.cjs`28/28通過（包含真Worker離場回歸）；`npm.cmd run build`661檔通過；git diff／stat／check及自我Review通過。新增測試使用正式場景切換函式，確認未提供設定模組亦可縮放、上下限及控制元件保護。首次擴充測試缺地板貼圖fixture導致2項ReferenceError，已將鏡頭案例隔離地板並重跑全部通過，正式地板邏輯保持。
+- 修改檔案：renderer兩處、鏡頭回歸、index／scene-preview快取、LV及本段共6檔。唯讀檢查未改：AI_RULES／AGENTS／Workflow／prompts/codex、package／build工具、測試場景與快取既有測試及場景helper；配置／Worker／素材／存檔保持。素材庫無變動，不建空Commit。未進行瀏覽器實際操作／Console檢查或全遊戲長玩，無已知新增風險及本項未完成實作。
+- 交付Commit為本段所在「[Codex] fix: 測試場景允許滾輪縮放鏡頭」（SHA見交付）。可供Review及使用者合併；未合併或推送develop／main。下一步重新載入遊戲進入test_map，以滾輪調整距離，返回原地圖確認原鎖定設定。
+
+## ANCIENT-STAR-DEFENSE-BLUE-20261105 — 淺藍星星對齊防禦文字藍色
+
+- Owner：Codex；Done，單一開發者。使用者要求淺藍再深一些，以截圖「魔法防禦」文字藍色為參考。正式--afx-def為#7fdcf5，第一條精鑄圖片改用sRGB色彩矩陣按該色RGB比例調色，使白色亮面也帶參考藍，保留原金屬明暗／alpha，之後再加原黃色drop-shadow；金／深藍、尺寸／間距／基線保持。
+- 允許：css/style.css、index僅CSS快取、LV、本段、docs/assets來源渲染說明；禁止PNG／母圖、數值、星數、精鑄順序、其他聊天Role4／參數／String／data與合併推送。預檢CSS／文件無外部來源；index與Claude其他快取／設定及本副本Role4快取不同區段，merge-tree與基於共同祖先的merge-file皆乾淨，分段修改。
+- 驗收：正式全CSS／圖片／UI預覽確認淺藍亮面對應#7fdcf5、仍與深藍區分、金色／深藍與原黃色光暈保持；CSS濾鏡實際作用、PNG／素材庫SHA、精鑄回歸／快取／Build及diff驗證，僅提交本項。後續使用者Review／合併。
+- 驗證：`node --test tests/ancient-forge-limit.test.cjs tests/vfx-editor-cache-versions.test.cjs`13/13通過；`npm.cmd run build`661檔通過；`node tools/ancient-stars/export-source.cjs --check`原PNG／母圖／素材庫SHA一致，`git diff --check`通過。正式CSS／UI預覽目視確認新天藍、兩種藍仍可分辨；computed filter僅第一條有SVG矩陣，金／深藍brightness(1)、三色原黃色drop-shadow保持，瀏覽器error／warning 0；截圖為本聊天visualizations/star-alignment/defense-blue.jpg。
+- 修改僅CSS色調、index style 1.0.119、LV、來源說明及本段。唯讀未改規範／Workflow、PNG／素材庫、js/ui.js／item.js／精鑄來源與順序、其他CSS及既有測試／QA。原index的三方試跑曾因CRLF／LF整檔誤報，僅將QA副本正規化LF後內容合併0衝突，未重排正式HTML；Claude設定／其他快取及Role4遊戲快取皆與本項不同區段。其他聊天Role4與配置／data／String在製內容保留並分段stage；素材無變更，不建立素材庫空Commit。
+- 本項無未完成實作或已知新增風險，可供Review及使用者合併；未跑全遊戲長玩、未合併推送。Commit為本段所在「[Codex] fix: 精鑄淺藍星星改用防禦文字藍色」（SHA見交付）。下一步重載遊戲檢視色調。
+
+## ANCIENT-STAR-LIGHT-BLUE-TONE-20261105 — 淺藍星星略微加深
+
+- Owner：Codex；Done。使用者要求淺藍星星稍微加深，僅調整第一條精鑄圖片的CSS色調（亮度92%、飽和度108%），色調濾鏡放在原黃色drop-shadow之前，維持淺／深藍區別及黃色光暈原色；不改字形佔位、尺寸、基線、間距、PNG／透明度／素材庫或任何玩法。
+- 允許：css/style.css、index僅style快取、LV、docs/assets來源渲染說明及本段。預檢CSS／LV／來源記錄無外部來源；index與Claude五筆提交的其他快取及設定區不同區段，merge-tree HEAD ai/claude乾淨，僅更新第12行。禁止合併推送與其他聊天在製內容。
+- 驗收：瀏覽器正式UI確認僅淺藍具有色調濾鏡且黃色光暈保持；原PNG／素材庫SHA、精鑄來源／順序及快取回歸、Build與diff檢查。後續使用者Review／合併。
+- 已驗證：正式CSS／PNG／badge／itemDetailHTML預覽，computed filter僅淺藍為brightness(0.92) saturate(1.08)，金／深藍皆brightness(1)，三色原黃色drop-shadow保持；目視仍有淺／深藍區別。preview保存在本聊天visualizations/star-alignment/light-blue-deeper.jpg。
+- 測試：`node --test tests/ancient-forge-limit.test.cjs tests/vfx-editor-cache-versions.test.cjs`13/13通過。唯讀檢查原規範／Workflow、js/ui.js／item.js及精鑄來源／順序、原素材／匯出規則與既有QA；不修改這些程式或PNG。修改僅CSS、index快取、LV、來源記錄與本段，其他Role4及配置／data／String內容保留；素材無改動，不建立素材庫空Commit。Build最終結果及本項Commit見交付，未合併／推送。
+- 最終：`npm.cmd run build`660檔通過，`node tools/ancient-stars/export-source.cjs --check`原素材SHA一致、`git diff --check`通過。index style為1.0.118；本項提交「[Codex] fix: 略微加深淺藍精鑄星星」（SHA見交付），無本項未完成或已知新增風險，可供Review及使用者合併；未跑全遊戲長玩。下一步重載遊戲檢視色調。
+
+## ANCIENT-STARS-ALIGN-GLOW-20261105 — 恢復星星原尺寸間距與黃色外光暈
+
+- Owner：Codex；Done，單一開發者。使用者指出上一版裝備星列與tips詞條歪位，要求尺寸／間距與原版一致、金／淺藍／深藍皆有黃色外光暈。依88f22739前CSS恢復原文字佔位／基線與18px星列、-4px重疊，透明字形只作佔位，圖片改以不參與排版的偽元素覆蓋，統一CSS黃色drop-shadow，不修改PNG形狀／色彩／128px尺寸。
+- 允許：css/style.css星星規則、index僅style快取、LV、本段及docs/assets來源渲染說明；QA在聊天visualizations。禁止數值／星數／精鑄順序／存檔／配置／其他聊天進行中內容，無合併或推送。
+- 前置：CSS／LV／來源文件預檢乾淨；index與Claude已提交data／game-menu快取及未提交設置／存檔區塊不同區段，本項僅第12行style快取。merge-tree HEAD ai/claude與以對方未提交index為theirs、共同祖先為base的git merge-file皆乾淨，無語意相依。原參數／String／data／Role4劍及docs不同段落保持。
+- 驗收：載入正式index全部CSS順序及正式badge／itemDetailHTML，對照原版1／4／5／7顆、穿戴／背包／神鑄、tips／詳情／洗煉樣式的span與文字基線／間距幾何；三色圖片黃色外暈、像素與透明來源SHA保持；相關回歸、Build及diff驗證後僅提交本項。後續使用者Review／合併。
+- 完成：還原字形佔位／原字級與line-height，移除固定16／18px盒子、vertical-align:-2px及窄格縮放；以透明字形保留原排版，絕對偽元素顯示原PNG，外擴2px補回PNG透明留白及原描邊可見範圍。三色共用1px淺黃＋2px黃色drop-shadow，光暈不參與排版。index style版本1.0.117，LV與來源渲染說明同步；無JS／玩法／顯示文字變更。
+- 實際瀏覽器：正式全CSS順序＋loadRuneEnv／ancientStarBadgeHTML／itemDetailHTML，並排原版與修正版。12組穿戴／背包／神鑄、每組1／4／5／7顆，以及tips／詳情／洗煉標記共63個星星、21個名稱、21個數值、21列與12星列的x／y／寬／高逐一比較，最大差異均0px。三種背景圖片之偽元素computed filter皆同一黃色外暈，頁面PNG實際載入並目視確認。QA／最終preview.jpg及metrics.json在本聊天visualizations/star-alignment；初版QA伺服器Windows斜線判斷導致403已修QA，完整CSS載入後重驗；前後scroll位置造成的暫時比較偏差亦以同輪、相對body座標重驗為0，不改產品迎合QA。
+- 驗證：`node --test tests/item-ancient-count-location.test.cjs tests/ancient-forge-limit.test.cjs tests/equipment-tooltip-compare.test.cjs tests/equip-reroll-ui.test.cjs tests/inventory-ancient-filter-sort.test.cjs tests/vfx-editor-cache-versions.test.cjs`32/32通過；`npm.cmd run build`660檔通過；`node tools/ancient-stars/export-source.cjs --check`三PNG／母圖／素材庫SHA一致；`git diff --check`通過。未新增鏡像測試、不改既有斷言，未進行全遊戲長玩。
+- 修改5檔：css/style.css、index.html、LV_upgrade_system.md、docs/assets/ANCIENT_STARS_SOURCE.md及本段；唯讀未改：規範／Workflow／Agent文件、原版CSS、js/ui.js／item.js／forge.js、正式其餘CSS、相關測試與helpers、匯出工具／PNG／素材庫。PNG與母圖無變更，素材庫無新素材且status乾淨，不建立空Commit。其他聊天完成452cd150及所有既有參數／String／data在製內容保留。Commit為本段所在「[Codex] fix: 恢復太古星星排列並加入黃色光暈」，SHA見交付；可供Review及使用者合併，未合併或推送。無本項未完成實作或已知新增風險；下一步重載遊戲檢視。
+
+## ANCIENT-STARS-20261105 — 太古星星透明素材替換
+
+- Owner：Codex；Done，使用者指定圖2作裝備太古星星，128×128去背並製作太古精鑄淺藍／深藍兩版，單一開發者。來源為本次使用者提供並指定使用的star3.jpg，內建image_gen去背／變色，Pillow僅裁透明邊界及縮圖。RPG Mote Studio本次無法存取。
+- 允許：三張images/ui/ancient-star-*.png、css/style.css對應星星規則、index僅CSS快取、tools/ancient-stars匯出、docs/assets來源記錄、LV及本段；素材庫相對codex-authored/ancient-stars-20261105保存來源／母圖／128px成品／提示詞／SHA。禁止其他功能、配置、數值、存檔、他人未提交內容、合併或推送。
+- 前置預檢：CSS／LV／素材／文件無外部來源。index與Claude62f3c2bb同檔不同區段：對方只改data.js快取第1050行，本項只改style.css第12行；merge-tree HEAD ai/claude乾淨，無語意相依，分段修改。原工作區參數／data／String及Role4在製內容保留。
+- 驗收：三圖128px RGBA、透明邊界／內部金屬不缺漏；正式UI驗證1／4／7顆、精鑄兩條與提示詞標記，沿用星數／重疊／ARIA，窄格依寬度縮放確保七顆不裁切。素材庫／遊戲SHA、既有太古／精鑄／快取回歸、Build與diff檢查，先素材Commit再遊戲Commit。後續使用者Review／合併。
+
+- 完成：一般太古金色、精鑄第一條淺藍／第二條深藍，均128×128 RGBA，分別24355／23617／23880 bytes，最外圈alpha=0且中心>240。CSS共用於裝備格／詞條／刻印標記；徽章最大寬度依格子約束、圖案等比contain，避免7顆裁切。原JS文字符號留作語意內容並以font-size:0隱去字形，不修改星數邏輯或文字來源。index CSS 1.0.116。
+- 驗證：`node tools/ancient-stars/export-source.cjs --check`與`node --check tools/ancient-stars/export-source.cjs`通過；`node --test tests/item-ancient-count-location.test.cjs tests/ancient-affix.test.cjs tests/ancient-forge-limit.test.cjs tests/forge-equipped-inventory.test.cjs tests/vfx-editor-cache-versions.test.cjs`34項33過，唯一失敗ancient-affix:142為掉率3對舊預期6。唯讀fs覆映`git show HEAD:js/data.js`重跑同一測試，仍相同失敗，沒有修改斷言／數值。Build與diff最終結果見交付。
+- 瀏覽器：以正式loadRuneEnv＋ancientStarBadgeHTML＋itemDetailHTML輸出隔離QA，載入正式CSS／PNG，目視金／淺藍／深藍與1／4／7顆，computed背景URL、16px詞條／18px徽章、-4px重疊及ARIA均正確；86px格的七顆徽章82px、完整在格內。首次整頁使用Python HTTP啟動時Worker的skills.js載入失敗，因此不宣稱全遊戲啟動／Console驗收通過；本項用正式函式獨立渲染驗證，未進行長玩。
+- 修改：css/style.css、index.html、LV_upgrade_system.md、本段、docs/assets/ANCIENT_STARS_SOURCE.md、tools/ancient-stars/export-source.cjs與三PNG。唯讀未改：規範／Workflow／prompts、js/ui.js／item.js／forge.js、太古與精鑄回歸／測試helper、素材Root解析器；所有既有配置／data／String未提交修改保持。其他聊天期間完成b9540c55，原Role4任務及其提交保留。
+- 素材庫原圖／三透明母圖／三成品與提示詞／七檔SHA均保存並與遊戲一致，素材Commit `d4c683c`先於遊戲Commit（本段所在「[Codex] feat: 替換太古星星與精鑄雙藍圖示」，SHA見交付）。最終`npm.cmd run build`660檔通過、`git diff --check`通過。無本項未完成實作，可供Review與使用者合併；未合併或推送。已知限制：上述既有測試失敗、整頁啟動未驗收。下一步重載遊戲檢視新圖。
+
+## HERO3D-ROLE4-20261105 — 4轉人物、頭部校正與新劍
+
+- Owner：Codex；Done，單一開發者。使用者提供Role4.glb與劍參考圖，明確表示有授權並要求依圖復刻新劍；分離雙手腿黏連、頭部轉正、刪背劍、新劍右手正握、全部舊動作保持，接入4轉起外觀。原0～3轉及黃金騎士保留。
+- 前置：工作區乾淨，HEAD46f0420a；目標衝突預檢無外部來源。來源Role4 SHA3d22a180e843ad253c23b8b555f53ebf742a8df595404df2b8957a05bfc8c9bb，68節點／一骨架及Running；只取人物外觀，沿用既有正式骨架及六段動畫。授權參考圖只作此次Blender劍造型來源，無新第三方素材。
+- 允許：Role4模型／報告／來源與Blender製作／匯出、hero3d外觀選擇及嵌入PBR支援、index快取、轉生切換／角色回歸、LV及本段；素材庫保存原檔／參考圖／可編輯Blend／成品／SHA／QA。禁止改舊模型、六段動作／右手正握方向／普攻選招、Worker／戰鬥／存檔／配置／轉生門檻與其他功能，不合併推送。
+- 驗收：兩掌與腿及腋下獨立封閉、無跨骨骼橋面／腿權重；頭部正前方、背劍完整刪除；依圖新造劍身銀刃／暗脊／紅色嵌飾與護手，實際貼合右手並沿原刃向／手腕邏輯。六段動畫及骨架取樣保持，PBR／0～4轉存讀與切換、回歸／Build／實機與清晰GIF；素材先Commit再遊戲Commit，後續使用者Review。
+- 預覽檢查點：使用者途中追加「劍的模型做好先讓我看一下」，因此本輪先交付獨立劍首版候選，未接人物／遊戲，整體Role4任務仍In Progress。新Blender工具依參考比例建直線雙刃／深色劍脊、紅紋幾何淺浮雕、彎鉤護手、紅寶石、黑色纏柄與銀色柄尾；護手細節在Blender由授權Role4材質烘焙。背面採同樣紋飾；單張參考圖的隱藏細節屬合理補全，尚未宣稱完全復刻驗收完成。
+- 第二版預覽完成：使用者要求護手左右對稱、中央寶石完整蓋住原紅色貼圖、劍身紋理均勻。Blender工具將左半護手輪廓沿X=0鏡像，烘焙貼圖同步鏡像；紅寶石放大至32×48mm、中心對齊並提高底座，底圖原紅色色素轉為金屬中性色，近斜視也無外露紅邊。紅紋依劍脊可用寬度作平滑非塌縮調整，局部明度均衡，保留原花紋，不更動劍長與握柄。仍維持先看劍的檢查點，不改角色及遊戲接線。原四份配置／data在製修改保留。
+- 第二版驗證：原生重建／重開、mesh.validate及packed貼圖通過；修開紅紋遮罩的對角接點後，匯出923948bytes／10588三角面、焊接邊界0且非流形邊0，已清除首版4條非流形邊。獨立verify-revision.py讀實際Blend驗護手鏡像誤差2.98e-8m、貼圖鏡像誤差0、底圖紅色像素0；18段相對紅紋寬度的變異係數由0.25349降至0.02188。Native Three／既有PBR棚光的正／背／側／斜與近拍、800×1055旋轉GIF96幀24fps及磁碟讀回均通過，正常Console／pageerror0。只改Blender作者工具及本段，沒有遊戲JS變更，不跑無關全庫／戰鬥Build；未宣稱已驗角色持劍。
+- 第二版保存：素材庫codex-authored/hero3d-role4-sword-v2-20261105保存可編輯Blend／成品／烘焙／新回饋圖／工具與QA，21檔SHA逐檔核對，原始授權輸入依賴首版包1fcac01並維持原SHA。素材Commit `305cb39`先於本輪工具提交（本段所在「[Codex] fix: 對稱4轉劍護手並均衡刀身紅紋」，SHA見交付）。首版包不覆寫。此三項修正無未完成；整體Role4人物分離／頭轉正／刪背劍／右手持新劍／動作與4轉接線仍待後續，未合併推送；下一步檢視第二版造型。
+- 接入授權：使用者已接受第二版並指示「可以接入遊戲」，解除先看劍的檢查點；以305cb39成品（SHA9be98b40aee20fde05a3c5af928f64f5c22b0b51961668ce0eeae411c9334ea0）完成Role4人物修復及4轉起接線。此輪保留原有配置／data與太古星星在製修改。index只改hero3d快取，與Claude已提交及未提交的設置／任務／data區塊、同副本CSS快取不同；以共同祖先46f0420a、對方現況作三方merge-file試跑乾淨，無語意相依，採分段編修及提交。
+- 首版候選規格（已由上列第二版取代）：約0.942m總長、28mm握柄、握點原點／刃軸+Y／刃口+X／正面+Z，後續沿現有手腕與正握框架；GLB907972bytes、10396個匯出三角面。可編輯Blend保留13部件及packed貼圖；Blender正常重開、mesh.validate及有限座標通過，合併焊接邊界0，首版4條非流形邊已於第二版清除。
+- 預覽驗證：`blender -b --python-exit-code 1 --python tools/meshy-pipeline/blender/build_role4_sword.py -- <輸出> <授權參考PNG> <Role4.glb>`、QA verify-sword.py重開成品與Blend、Python ast.parse通過；原生Three／既有PBR棚光前／後／側／斜視及護手近拍，Console warning／error及pageerror0。800×1055旋轉GIF96幀24fps、磁碟讀回確認旋轉；QA在本聊天visualizations/role4-20261105。沒有改遊戲JS，未執行無關全庫／戰鬥測試或宣稱已驗實機握姿。
+- 本輪修改僅build_role4_sword.py及本段；唯讀檢查規範／AGENTS／Workflow／prompts、hero3d／renderer／舊製作工具／回歸與原模型，未修改LV／index／PBR配置、任何角色成品、Worker／戰鬥／存檔及配置。其他聊天的太古星星docs段與配置／data修改保留、不納入本項；同docs分段處理。
+- 候選保存：設定素材庫codex-authored/hero3d-role4-sword-preview-20261105含授權原檔／參考圖、可編輯Blend／GLB／烘焙、作者工具及QA，21檔SHA manifest已逐檔核對。素材Commit `1fcac01`先於本輪預覽工具Commit（本段所在「[Codex] feat: 製作4轉新劍獨立造型預覽」，SHA見交付）。這是供造型Review的候選保存，未合併推送；尚待劍造型回饋／細節及拓樸修整、Role4雙手分離／頭轉正／刪背劍／右手持新劍／舊六動作及4轉接線驗證。
+
+- 接入完成（本輪最終結果）：Blender4.5.10修復Role4，背劍810面、右手及橋面208面、左手橋60面與腋下25面刪除，孤立碎片移除，軀幹／雙臂獨立封閉。依原骨架權重辨識手掌，避免紅裙甲誤判手部；短頸改連續軀幹擬合、裙甲權重平滑、每殼層獨立限制骨骼，消除初版拉扯。頭部來源空間-20度並頸部平滑，成品鼻部標記相對Head中立偏角小於4度。右手位置／法線／索引／權重與原核准正握逐位相同，劍剛性綁Sword並沿原握點、刃向／手腕；核准劍11021頂點及全部索引獨立比對，最大位置誤差4.10e-7m。
+- 成品：role4.glb 4858652bytes、整體25898三角面（身體9688／劍10588／手5622），SHA db0fb548c75bbbac6291668b7445883926ed4aafddfff0f9485c8513b82924cc；原骨架與六動畫全部取樣保持。身體基色1024px、Non-Color法線／MR各512px及核准護手512px內嵌，沿既有PBR棚光，無Lightmap或新HDR。原生重開Blend、mesh.validate、六actions與四張packed貼圖通過；獨立殼層拓樸邊界0，實際GLB幾何單邊／奇數邊0。接觸甲片有70條重合幾何邊，強制整體空間焊接會改變殼層並產生47邊界／68非流形邊，未宣稱單一流形雕塑；原生畫面及動畫無手腿橋面。
+- 遊戲：4轉起選Role4、0～3轉保持，5轉同外觀不重載；僅Hero3D新增嵌入PBR識別及index hero3d快取20261105-role4-v1。既有battle-renderer通用切換已可使用，不改renderer／scene-preview及其快取。原黃金騎士、四套GLB與PBR旁載逐檔SHA保持。
+- 最終測試：`node --test --test-concurrency=2 tests/hero3d-pbr.test.cjs tests/hero3d-role4.test.cjs tests/hero3d-role3.test.cjs tests/hero3d-role2.test.cjs tests/hero3d-rebirth-skin.test.cjs tests/hero3d-forward-grip.test.cjs tests/hero3d-role.test.cjs tests/hero3d-attack4.test.cjs tests/hero3d-battle-rules.test.cjs tests/hero3d-internal-toggle.test.cjs tests/battle-renderer-pause.test.cjs tests/vfx-editor-cache-versions.test.cjs`62/62通過，新增實際成品蒙皮／封閉／PBR及4轉競態、失敗回退、存檔開局回歸；未放寬既有斷言。`npm.cmd run build`661檔通過；Role／Role1／Role2／Role3／PBR及新增Role4六套export --source-check全數通過，製作工具ast.parse／匯出node --check、diff --check通過。
+- 實機：隔離隨機localhost正式index＋真Worker／Pixi／Hero3D，GM1→2→3→4→5→2→0→4對應1／2／3／4／4／2／0／4；八次切換Attack4進度1.1秒、速度與朝向狀態完全相同。100次普攻四招均可且不連抽，技能不插隊、收招回Run，saveAutoNow後重載仍4。Role4全部12材質為Standard，身體normal／MR與環境存在；四張材質貼圖及環境dispose各一次、幾何計數歸0、WebGL context lost。正常Page／Console error0，只有既有未用preload提示；未讀寫玩家原網址存檔，所有QA瀏覽器與服務已關閉。
+- 預覽：原生前後與全部動作、1400px三角度正握近拍；正式遊戲GIF1600×1000、84幀／30fps，附同步全身放大並依整段動作取景，劍尖完整。磁碟讀回84幀、主角與放大均移動，無以靜態圖冒充。錄製僅QA暫隱NPC／殘留FX／暫停遮罩、使用內建全屏及鏡頭、畫布700px；正式預設512px保持。QA在本聊天visualizations/role4-game-20261105，必要證據已入素材庫，不將逐幀暫存放進遊戲。
+- 修改11檔：images/models/hero3d/{role4.glb,role4.json,ROLE4_SOURCE.md}、tools/meshy-pipeline/{blender/prepare_role4.py,src/export-role4.cjs}、js/hero3d.js、index.html、tests/{hero3d-role4.test.cjs,hero3d-rebirth-skin.test.cjs}、LV_upgrade_system.md及本段。唯讀未改：規範／AGENTS／Workflow／prompts、舊人物及黃金騎士、核准劍包與舊Blender／匯出工具、PBR配置、battle-renderer／scene-preview、其他角色／戰鬥／快取測試、Worker／save／player／配置／String與轉生門檻。原配置／data及其他聊天太古星星修改均保留並排除提交。
+- 交付：素材庫codex-authored/hero3d-role4-20261105共36檔（manifest列35份來源），依賴首版原始授權包1fcac01及核准第二版305cb39，不覆寫舊包；素材Commit `642fc4c`先於遊戲（本段所在「[Codex] feat: 接入4轉角色與核准紅紋新劍」，SHA見交付）。完整實作已完成，可供Review及使用者合併，未合併或推送develop／main。已知限制為接觸甲片仍有重合邊、未做行動裝置長時間效能／全庫測試及全遊戲長玩；建議下一步重載內測遊戲檢視4轉外觀。上列歷史候選的待接線／待修復事項已於本輪完成。
+
 ## SYNC-MERGE-20261105-014634 - Integration validated
 
 - Owner: Codex; Done (controller staging/commit pending). Only authorized pending merge: HEAD 2e8c191e03c04ad45b8e36f844704a3fdef20f2e + MERGE_HEAD 8ee2bcce0cfeb6331f37c37c0d63f583d90a105f; base cea2c7f8f31bdf4ec1bd053f915b44703bd38f09. No delegation, staging, commits, Git metadata writes or other worktree changes.

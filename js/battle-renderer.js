@@ -361,6 +361,7 @@ var BattleRenderer = (function () {
   var BATTLE_CAMERA_FULLSCREEN_ZOOM = 90 / 65;
   /* 設置→遊戲設定「鏡頭鎖定」：勾選（預設）＝固定距離；取消後滾輪可調距離（所有玩家，不再限內測）。 */
   function cameraLocked() {
+    if (S.testMap) return false;   // GM 測試場景隨時可用滾輪觀察；離場後沿用原設定
     return typeof GameSettings === 'undefined' || GameSettings.get('cameraLock') !== false;
   }
   function internalCameraDistancePercent() {
@@ -1491,6 +1492,7 @@ var BattleRenderer = (function () {
     on = !!on;
     if (on === !!S.testMap) return;
     S.testMap = on;
+    resize();   // 場景切換會改變有效鏡頭鎖定，立即刷新距離與百分比
     if (S.decor) S.decor.setVisible(!on);
     var g = S.groundTile;
     if (!g || g.destroyed) return;

@@ -369,7 +369,7 @@ var FIELD_MONSTER_GROWTH = {
   hpA: 20, hpB: 16, hpC: 1.055,
   atkA: 2, atkB: 2, atkC: 1.035,
   defA: 2, defB: 0.5, defC: 1.03,
-  goldA: 250, goldC: 1.018,
+  goldA: 350, goldC: 1.017,
   xpA: 120, xpC: 1.06,
   aspd: 1
 };
