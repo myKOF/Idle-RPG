@@ -117,6 +117,55 @@ test('外服 hostname：導入與 tick 行為與本地一致（本地服限定�
   assert.equal(G.newForge.queue.length, 0, '外服 tick 應正常處理佇列');
 });
 
+/* ---- 離線補算：上線時依離線秒數推算應分解件數並給予產出 ---- */
+test('離線補算：產能＝離線秒數÷2 秒，超過產能的留在佇列、產出入帳', () => {
+  const c = loadContext(LOGIC_FILES);
+  const G = freshG(c);
+  const fu = G.newForge.furnaces[0];
+  fu.timer = c.NEW_FORGE_INTERVAL;
+  for (let i = 0; i < 100; i++) c.pushConveyor(c.makeEquipment(10, { rarity: 0, level: 10 }));
+  const scrap0 = G.player.scrap, gold0 = G.player.gold;
+  const sum = c.newForgeOfflineCatchup(60); // 60 秒 ÷ 2 秒 ＝ 30 件
+  assert.equal(sum.salvaged, 30, '60 秒、1 座熔爐、速度 1 倍應分解 30 件');
+  assert.equal(G.newForge.stats.salvaged, 30);
+  assert.equal(G.player.scrap - scrap0, sum.scrap);
+  assert.equal(G.player.gold - gold0, sum.gold);
+  assert.ok(sum.scrap > 0, '分解應有碎片產出');
+  const left = G.newForge.queue.length + fu.queue.length + fu.belt.length;
+  assert.equal(left, 70, '未處理完的裝備仍在佇列／傳送帶');
+});
+
+test('離線補算：佇列比產能少時全數分解；未勾選品質保留入包不計分解', () => {
+  const c = loadContext(LOGIC_FILES);
+  const G = freshG(c);
+  const fu = G.newForge.furnaces[0];
+  for (let i = 0; i < 5; i++) c.pushConveyor(c.makeEquipment(10, { rarity: 0, level: 10 }));
+  for (let i = 0; i < 3; i++) c.pushConveyor(c.makeEquipment(10, { rarity: 3, level: 10 })); // 預設未勾
+  const sum = c.newForgeOfflineCatchup(3600);
+  assert.equal(sum.salvaged, 5);
+  assert.equal(G.newForge.stats.kept, 3);
+  assert.equal(G.newForge.queue.length + fu.queue.length + fu.belt.length, 0);
+});
+
+test('離線補算：停用的熔爐不作業、離線秒數為 0 不動作', () => {
+  const c = loadContext(LOGIC_FILES);
+  const G = freshG(c);
+  G.newForge.furnaces[0].enabled = false;
+  c.pushConveyor(c.makeEquipment(10, { rarity: 0, level: 10 }));
+  assert.equal(c.newForgeOfflineCatchup(3600).salvaged, 0);
+  G.newForge.furnaces[0].enabled = true;
+  assert.equal(c.newForgeOfflineCatchup(0).salvaged, 0);
+});
+
+test('離線結算接線：save.js 呼叫熔爐補算、離線摘要顯示熔爐彙總', () => {
+  const save = readExpanded(path.join(root, 'js/save.js'));
+  assert.match(save, /newForgeOfflineCatchup\(elapsed\)/);
+  assert.ok(save.indexOf('newForgeOfflineCatchup(elapsed)') < save.indexOf('function processOfflineKill'),
+    '補算必須在離線掉落入佇列之前，只處理離線前既有的裝備');
+  const ui = readExpanded(path.join(root, 'js/ui.js'));
+  assert.match(ui, /sum\.forge/);
+});
+
 /* ============ 4. 熔爐結構與品質路由 ============ */
 
 test('預設熔爐：單傳送帶結構、品質勾選預設普通~傳說、零件格 3', () => {

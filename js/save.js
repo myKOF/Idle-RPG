@@ -1274,6 +1274,19 @@ function applyOfflineProgress(options) {
     seconds: elapsed, stage: stage, zoneName: zn.name, zoneEmoji: zn.emoji, kills: kills,
     gold: gold, xp: xp, equips: {}, scrap: 0, gems: {}, books: 0, essence: 0, dust: 0
   };
+  /* 熔爐離線作業：只處理「離線前佇列裡既有、尚未分解」的裝備（見 newforge.js），
+     離線期間才掉的裝備不在範圍內。必須在離線掉落入佇列之前執行，
+     否則新掉的裝備會被一併分解，也會佔住佇列上限。 */
+  if (typeof newForgeOfflineCatchup === 'function') {
+    var forgeSum = newForgeOfflineCatchup(elapsed);
+    if (forgeSum && forgeSum.salvaged > 0) {
+      sum.forge = forgeSum;
+      var forgeOut = [STR(1048, fmt(forgeSum.scrap)), STR(1049, fmt(forgeSum.gold))];
+      if (forgeSum.essence) forgeOut.push(STR(1050, fmt(forgeSum.essence)));
+      if (forgeSum.ancientEssence) forgeOut.push(STR(1046, fmt(forgeSum.ancientEssence)));
+      blog(STR(2409, fmt(forgeSum.salvaged), forgeOut.join('、')), 'good');
+    }
+  }
   var conveyorFull = false;
   function processOfflineKill() {
     // 裝備（各品質獨立擲骰；輸送帶滿載時折算碎片，不丟失）

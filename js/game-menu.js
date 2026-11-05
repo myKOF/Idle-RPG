@@ -47,8 +47,8 @@ var GameMenu = (function () {
   /* ---- 設置視窗：遊戲設定／音訊／存檔 三個頁籤 ----
      自己保存的偏好（輪廓、鏡頭鎖定、音訊）在 GameSettings；其餘四項轉接各自原本的開關（見 js/game-settings.js 開頭），
      所以每次開啟都從來源重新讀一次勾選狀態，不另存一份。 */
-  var SETTINGS_TABS = ['game', 'audio', 'save'];
-  var SETTINGS_PANES = { game: 'settings-pane-game', audio: 'settings-pane-audio', save: 'tab-settings' };
+  var SETTINGS_TABS = ['game', 'audio', 'save', 'help'];
+  var SETTINGS_PANES = { game: 'settings-pane-game', audio: 'settings-pane-audio', save: 'tab-settings', help: 'settings-pane-help' };
   function selectSettingsTab(name, focusTab) {
     if (SETTINGS_TABS.indexOf(name) < 0) name = 'game';
     SETTINGS_TABS.forEach(function (key) {
@@ -140,6 +140,20 @@ var GameMenu = (function () {
     onChange('set-auto-equip', proxy('toggle-autoequip'));
     onChange('set-compare-equip', proxy('toggle-compare'));
   }
+  /* 視窗高度固定為「遊戲設定」頁籤的高度：切到較長的頁籤（存檔）時內容在視窗內捲動，視窗本身不變高。
+     每次開啟與視窗縮放時重新量：先放掉舊高度、切到第一頁籤量，再切回原頁籤。 */
+  function lockSettingsHeight() {
+    var modal = el('settings-modal');
+    var card = modal && typeof modal.querySelector === 'function' ? modal.querySelector('.system-settings-card') : null;
+    if (!card || !visible('settings-modal')) return;
+    var current = null;
+    SETTINGS_TABS.forEach(function (key) { var tab = el('settings-tab-' + key); if (tab && tab.classList.contains('active')) current = key; });
+    card.style.height = '';
+    selectSettingsTab('game');
+    var height = card.offsetHeight;
+    if (height > 0) card.style.height = height + 'px';
+    if (current && current !== 'game') selectSettingsTab(current);
+  }
   function openSettings(tab) {
     if (busy) return;
     pauseGame(true);
@@ -147,6 +161,7 @@ var GameMenu = (function () {
     show('game-menu', false); show('settings-modal', true);
     syncSettingsControls();
     selectSettingsTab(typeof tab === 'string' ? tab : 'game');
+    lockSettingsHeight();
     var button = el('settings-modal-close'); if (button) button.focus();
   }
   function closeSettings() { if (!busy) open(); }
@@ -208,6 +223,7 @@ var GameMenu = (function () {
     var achvModal = el('achv-modal');
     if (achvModal) achvModal.addEventListener('click', function (event) { if (event.target === achvModal) closeAchievements(); });
     bindSettingsControls();
+    if (typeof window !== 'undefined' && window.addEventListener) window.addEventListener('resize', lockSettingsHeight);
     el('game-menu-close').addEventListener('click', close);
     el('settings-modal-close').addEventListener('click', closeSettings);
     ['game-menu', 'settings-modal'].forEach(function (id) {

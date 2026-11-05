@@ -62,11 +62,11 @@ test('goto採1起序號、含最後一項；全部完成不發獎勵；舊數字
   assert.deepEqual(plain(c.G.inventory),inv);
 });
 test('查詢純讀且顯示實際技能升級進度；非法參數與外部host不改狀態', () => {
-  const {c}=setup(); c.G.taskState.idx=12;c.G.player.skills2.upgradeCount=3;
+  const {c}=setup(); c.G.taskState.idx=13;c.G.player.skills2.upgradeCount=3;
   const before=plain(c.G);
-  assert.match(c.executeGMCommand('task status').message,/第 13 個.*3\/5/);
+  assert.match(c.executeGMCommand('task status').message,/第 14 個.*3\/5/);
   assert.deepEqual(plain(c.G),before);
-  for(const line of ['task','task 1.5','task -1','task NaN','task 100001','task goto','task goto 0','task goto 38','task goto 1.5','task goto 1 extra','task reset extra','task complete extra','task status extra','task 0 extra']){
+  for(const line of ['task','task 1.5','task -1','task NaN','task 100001','task goto','task goto 0','task goto 39','task goto 1.5','task goto 1 extra','task reset extra','task complete extra','task status extra','task 0 extra']){
     assert.equal(c.executeGMCommand(line).ok,false,line);
     assert.deepEqual(plain(c.G),before,line);
   }

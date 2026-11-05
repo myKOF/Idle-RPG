@@ -123,6 +123,7 @@ function taskProgressFor(def) {
     case 'skillUpgradeCount': return (typeof skills2UpgradeCount === 'function') ? skills2UpgradeCount() : 0;
     case 'socketCount': return taskCountSocketedGems();
     case 'forgeParts': return taskCountForgeParts();
+    case 'forgeFineAuto': return stats.forgeFineClicked ? 1 : 0;   // 熔爐拆解品質列點過「精良」標籤（newforge.setQuality 記旗標）
     case 'forgePartLevel': return taskMaxForgePartLevel();
     case 'ancientCount': return taskCountAncientAffixes();
     case 'maxHp': return (typeof getStats === 'function') ? Math.floor(getStats().hp || 0) : 0;

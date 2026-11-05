@@ -5920,3 +5920,14 @@ html *::-webkit-scrollbar-corner {
 .skill-tower-hint.is-cleared { color: #999; font-size: 11px; }
 .twx-boss-skillnote { margin-top: 8px; padding: 6px 12px; border-left: 3px solid #b5483b; border-radius: 4px; background: rgba(181, 72, 59, .08); color: #e7b3a8; font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
 .twx-skill-unlocks { margin-top: 10px; padding: 12px 14px; border: 1px solid #89722d; border-radius: 7px; background: rgba(255, 211, 77, .06); color: #ffe066; font-size: 16px; font-weight: 700; line-height: 1.7; overflow-wrap: anywhere; }
+
+/* 設置→說明頁：每個系統一段，左側放導覽列的正式功能圖示 */
+.settings-help .help-intro { margin: 0 0 14px; color: #cfbd92; font-size: 14px; line-height: 1.7; }
+.settings-help .help-section { margin-bottom: 14px; padding: 12px 14px; border: 1px solid #3a3226; border-radius: 6px; background: #1d1c19; }
+.settings-help .help-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.settings-help .help-icon { flex: 0 0 auto; width: 40px; height: 40px; object-fit: contain; }
+.settings-help h3 { margin: 0; color: #ead7ad; font-size: 17px; }
+.settings-help .help-lead { margin: 0 0 8px; color: #b9a982; font-size: 13px; line-height: 1.6; }
+.settings-help ul { margin: 0; padding-left: 18px; }
+.settings-help li { margin-bottom: 6px; color: #cfc4a8; font-size: 13px; line-height: 1.65; }
+.settings-help li b { color: #e8c778; }
