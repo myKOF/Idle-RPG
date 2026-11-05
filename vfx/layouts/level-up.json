@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "level-up",
+  "groups": [
+    {
+      "id": "level-up",
+      "name": "level-up",
+      "layerIds": [
+        "aura",
+        "level-text"
+      ]
+    }
+  ],
+  "order": [
+    "group:level-up"
+  ]
+}

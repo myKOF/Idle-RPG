@@ -24,8 +24,9 @@
   var SECOND_REBIRTH_MODEL_URL = 'images/models/hero3d/role2.glb?v=20261104-role2-v1';
   var THIRD_REBIRTH_MODEL_URL = 'images/models/hero3d/role3.glb?v=20261104-role3-v1';
   var FOURTH_REBIRTH_MODEL_URL = 'images/models/hero3d/role4.glb?v=20261105-role4-v1';
-  function skinForReincarnations(count) { return Number(count) >= 4 ? 4 : Number(count) >= 3 ? 3 : Number(count) >= 2 ? 2 : Number(count) >= 1 ? 1 : 0; }
-  function modelForReincarnations(count) { var skin = skinForReincarnations(count); return skin === 4 ? FOURTH_REBIRTH_MODEL_URL : skin === 3 ? THIRD_REBIRTH_MODEL_URL : skin === 2 ? SECOND_REBIRTH_MODEL_URL : skin === 1 ? REBIRTH_MODEL_URL : MODEL_URL; }
+  var FIFTH_REBIRTH_MODEL_URL = 'images/models/hero3d/role5.glb?v=20261105-role5-v1';
+  function skinForReincarnations(count) { return Number(count) >= 5 ? 5 : Number(count) >= 4 ? 4 : Number(count) >= 3 ? 3 : Number(count) >= 2 ? 2 : Number(count) >= 1 ? 1 : 0; }
+  function modelForReincarnations(count) { var skin = skinForReincarnations(count); return skin === 5 ? FIFTH_REBIRTH_MODEL_URL : skin === 4 ? FOURTH_REBIRTH_MODEL_URL : skin === 3 ? THIRD_REBIRTH_MODEL_URL : skin === 2 ? SECOND_REBIRTH_MODEL_URL : skin === 1 ? REBIRTH_MODEL_URL : MODEL_URL; }
   var GLTF_URL = 'js/vendor/three/loaders/GLTFLoader.js';
   var CLOTH_URL = 'images/models/hero3d/sunbrand-cloth.json';   // 布料頂點清單（披風、腰前布襠、關節處的藍布）：和 tools/meshy-pipeline/src/fix-grips.mjs 共用
 
@@ -111,6 +112,40 @@
       mesh.material.needsUpdate = true;
     });
     return true;
+  }
+
+  // GLTFLoader resolves missing images as null textures. Reject an incomplete
+  // externally textured skin before allocating a renderer, so swaps keep the
+  // previous character instead of showing an untextured body.
+  function validateExternalPbr(gltf) {
+    var missing = [];
+    gltf.scene.traverse(function (o) {
+      if (!o.isMesh || !o.material) return;
+      (Array.isArray(o.material) ? o.material : [o.material]).forEach(function (m) {
+        var link = gltf.parser.associations.get(m);
+        var def = link && gltf.parser.json.materials[link.materials];
+        if (!def) { missing.push('material association'); return; }
+        var p = def.pbrMetallicRoughness || {};
+        if (p.baseColorTexture && !m.map) missing.push('baseColor');
+        if (def.normalTexture && !m.normalMap) missing.push('normal');
+        if (p.metallicRoughnessTexture && (!m.metalnessMap || !m.roughnessMap)) missing.push('metallicRoughness');
+      });
+    });
+    if (!missing.length) return;
+    var textures = new Set(), materials = new Set(), geometries = new Set();
+    gltf.scene.traverse(function (o) {
+      if (o.geometry && !geometries.has(o.geometry)) { geometries.add(o.geometry); o.geometry.dispose(); }
+      (Array.isArray(o.material) ? o.material : o.material ? [o.material] : []).forEach(function (m) {
+        if (materials.has(m)) return;
+        materials.add(m);
+        Object.keys(m).forEach(function (key) {
+          var tex = m[key];
+          if (tex && tex.isTexture && !textures.has(tex)) { textures.add(tex); tex.dispose(); }
+        });
+        m.dispose();
+      });
+    });
+    throw new Error('Incomplete external PBR textures: ' + Array.from(new Set(missing)).join(', '));
   }
 
   /* 自製棚光反射：明亮面板＋中性底色經PMREM預濾，沒有外部HDR素材。
@@ -414,8 +449,9 @@
     var gltfMod = await import(absUrl(GLTF_URL));
     var gltf = await new gltfMod.GLTFLoader().loadAsync(absUrl(opts.model || modelForReincarnations(opts.reincarnations)));
     var modelStyle = (gltf.asset && gltf.asset.extras) || {};
+    if (modelStyle.pbrExternal === true) validateExternalPbr(gltf);
     var pbr = false;
-    try { pbr = modelStyle.pbrEmbedded === true || await restorePbrMaterials(THREE, gltf, modelStyle.appearance); }
+    try { pbr = modelStyle.pbrEmbedded === true || modelStyle.pbrExternal === true || await restorePbrMaterials(THREE, gltf, modelStyle.appearance); }
     catch (err) { global.console.warn('[hero3d] PBR載入失敗，使用原有材質：', err && err.message ? err.message : err); }
 
     var size = opts.size || SIZE, span = opts.span || SPAN;      // 預設與遊戲相同；opts 只給驗證時放大看細節用

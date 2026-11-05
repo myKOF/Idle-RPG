@@ -583,7 +583,10 @@ body {
   /* PNG含透明留白，外擴補回原字形描邊的可見範圍，佔位仍由原字形決定。 */
   inset: -2px;
   background: var(--ancient-star-image, url('../images/ui/ancient-star-gold.png')) center / contain no-repeat;
-  filter: var(--ancient-star-tone, brightness(1)) drop-shadow(0 0 1px #fff7a1) drop-shadow(0 0 2px #ffd72e);
+  /* 只擴張圖案alpha一個CSS像素，深金輪廓墊在原圖下方，保留金屬切面。 */
+  --ancient-star-outline: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='outline' x='-50%25' y='-50%25' width='200%25' height='200%25' color-interpolation-filters='sRGB'%3E%3CfeMorphology in='SourceAlpha' operator='dilate' radius='1' result='expanded'/%3E%3CfeComposite in='expanded' in2='SourceAlpha' operator='out' result='ring'/%3E%3CfeFlood flood-color='%236b3f16'/%3E%3CfeComposite in2='ring' operator='in' result='stroke'/%3E%3CfeMerge%3E%3CfeMergeNode in='stroke'/%3E%3CfeMergeNode in='SourceGraphic'/%3E%3C/feMerge%3E%3C/filter%3E%3C/svg%3E#outline");
+  filter: var(--ancient-star-tone, brightness(1)) var(--ancient-star-outline)
+    drop-shadow(0 0 1px #fff4ae) drop-shadow(0 0 3px #ffd84a) drop-shadow(0 0 6px rgba(255, 187, 35, 0.9));
   pointer-events: none;
 }
 
@@ -2938,10 +2941,13 @@ textarea#save-io {
   top: 1px;
   left: 50%;
   transform: translateX(-50%);
-  display: flex;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
   align-items: center;
   justify-content: center;
-  max-width: none;
+  width: max-content;
+  max-width: calc(100% - 24px);
   padding: 0;
   overflow: visible;
   white-space: nowrap;
@@ -2952,6 +2958,8 @@ textarea#save-io {
 .ancient-star-badge .ancient-star {
   font-size: 18px;
   line-height: 1;
+  width: max-content;
+  justify-self: center;
   margin-left: 0;
 }
 
@@ -2980,8 +2988,11 @@ textarea#save-io {
 }
 
 /* 超�??��??��??�?�相?��??�平?��?幅�??��??��?多出?��??��?中�??��?後�?顆�?*/
-.ancient-star-badge.overlap .ancient-star+.ancient-star {
-  margin-left: -4px;
+.ancient-star-badge.overlap {
+  padding-inline: 2px;
+}
+.ancient-star-badge.overlap .ancient-star {
+  margin-inline: -2px;
 }
 
 .eq-slot .ancient-star-badge {

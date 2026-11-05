@@ -2452,21 +2452,27 @@ var BattleRenderer = (function () {
     playerAttackAnim('cast', ev.target || null, 0, Number(ev.lockMs) || 0);
   }
 
-  /* ============ 升級特效（協議 EVENT_KINDS.LEVELUP） ============
-     時間軸（秒，相對事件發生）：
-       0.00–0.60  聚光：金色光點沿螺旋向身體中心聚集，收縮光環＋核心光球漸亮
-       0.60–1.30  爆散：白金閃光、地面與身體的擴散光環、光點向外四散
-       0.70–2.00  氣旋：一道由腳底竄起的錐形螺旋（底寬頂尖），先長高、再整道升到頭頂收束消失
-       1.35–3.20  大字：「等級提升」從頭頂冒出彈跳放大、上飄、淡出
-     全部畫在 float 層（螢幕空間，不被透視拉歪），每幀跟著玩家位置；
-     與傷害數字開關無關，所以走自己的入口而不是 onFloat。 */
-  var LEVELUP_FX_SEC = 2.0;
-  var LEVELUP_TEXT_DELAY = 1.35;
-  var LEVELUP_TEXT_LIFE = 1.85;
-  function lvClamp01(v) { return v < 0 ? 0 : (v > 1 ? 1 : v); }
-  function lvEaseOut(k) { return 1 - (1 - k) * (1 - k); }
-  function lvEaseInOut(k) { return k * k * (3 - 2 * k); }
-
+  /* 升級演出：唯一定義是可在 VFX Editor 編輯的 level-up Preset。
+     獨立螢幕表面沿用 float 層與 addFx 的暫停／清場生命週期，Core 與 Editor 共用。 */
+  var levelUpPresetPromise = null;
+  function loadLevelUpPreset() {
+    if (levelUpPresetPromise) return levelUpPresetPromise;
+    levelUpPresetPromise = fetch('vfx/presets/level-up.json?v=20261105-preset-v1', { cache: 'no-store' }).then(function (response) {
+      if (!response.ok) throw new Error('level-up preset HTTP ' + response.status);
+      return response.json();
+    }).then(function (preset) {
+      var validation = VFXCore.validatePreset(preset);
+      if (!validation.ok || preset.id !== 'level-up') throw new Error('Invalid level-up preset: ' + validation.errors.join('; '));
+      return fetch('vfx/shipped-assets.json?v=20261105-levelup', { cache: 'no-store' }).then(function (response) {
+        if (!response.ok) throw new Error('level-up asset manifest HTTP ' + response.status);
+        return response.json();
+      }).then(function (index) {
+        S.levelUpResolver = VFXCore.createIndexResolver(index, index.baseUrl || 'images/vfx/assets');
+        return preset;
+      });
+    }).catch(function (err) { levelUpPresetPromise = null; throw err; });
+    return levelUpPresetPromise;
+  }
   function onLevelUp(ev) {
     if (!ev || !S.ready || documentHidden() || !S.layers) return;
     if (!ev._buffered) {
@@ -2475,238 +2481,44 @@ var BattleRenderer = (function () {
       return;
     }
     if (!S.player || S.player.dead) return;
-    spawnLevelUpAura();
-    spawnLevelUpText();
+    var generation = S.levelUpGeneration || 0;
+    loadLevelUpPreset().then(function (preset) {
+      if (!S.ready || !S.player || S.player.dead || documentHidden() || generation !== (S.levelUpGeneration || 0)) return;
+      spawnLevelUpPreset(preset);
+    }).catch(function (err) { console.warn('[battle-renderer] level-up preset unavailable:', err); });
   }
-
   function levelUpAnchor() {
     var p = S.player;
-    if (!p || !p.root) return null;
-    return worldToScreenPoint(p.root.x, p.root.y);   // 腳底
+    return p && p.root ? worldToScreenPoint(p.root.x, p.root.y) : null;
   }
-
-  function spawnLevelUpAura() {
+  function spawnLevelUpPreset(preset) {
     var at = levelUpAnchor();
     if (!at) return;
     var C = new PIXI.Container();
-    C.x = at.x; C.y = at.y;
-    var parts = new PIXI.Container();
-    var gTex = glowTexture(), dTex = dotTexture(), rTex = ringTexture();
-    function mk(tex, tint) {
-      var sp = new PIXI.Sprite(tex);
-      sp.anchor.set(0.5); sp.blendMode = 'add'; sp.tint = tint; sp.visible = false;
-      return sp;
-    }
-    var BODY = -46;
-    var groundGlow = mk(gTex, 0xffc23a);
-    var core = mk(gTex, 0xffc933);
-    var flash = mk(gTex, 0xfff2b8);
-    var gatherRing = mk(rTex, 0xffd24d);
-    var waveGround = mk(rTex, 0xffd24d);
-    var waveGround2 = mk(rTex, 0xfff0a8);
-    var waveBody = mk(rTex, 0xfff0a8);
-    C.addChild(groundGlow, waveGround, waveGround2, core, gatherRing, waveBody, flash, parts);
-
-    var GATHER = REDUCED_MOTION ? 10 : 24, SPARKS = REDUCED_MOTION ? 12 : 28;
-    var gather = [], sparks = [], i;
-    for (i = 0; i < GATHER; i++) {
-      var sp = mk(dTex, i % 3 === 0 ? 0xfff6c8 : 0xffd23f);
-      parts.addChild(sp);
-      gather.push({ sp: sp, a0: Math.random() * Math.PI * 2, r0: 105 + Math.random() * 70,
-        spin: 1.6 + Math.random() * 1.4, size: 0.32 + Math.random() * 0.4,
-        late: Math.random() * 0.18 });
-    }
-    for (i = 0; i < SPARKS; i++) {
-      var sk = mk(dTex, i % 3 === 0 ? 0xffffff : (i % 3 === 1 ? 0xffe27a : 0xffb52e));
-      parts.addChild(sk);
-      var ang = Math.PI * 2 * (i / SPARKS) + (Math.random() - 0.5) * 0.35;
-      sparks.push({ sp: sk, ang: ang, v: 150 + Math.random() * 150, size: 0.3 + Math.random() * 0.45,
-        life: 0.55 + Math.random() * 0.35, lift: 20 + Math.random() * 40 });
-    }
-    /* 氣旋粒子：每顆粒子沿錐面螺旋上升，帶 TRAIL 個落後的拖尾點（同一條解析軌跡在較早時刻的位置） */
-    var VN = REDUCED_MOTION ? 50 : 170, TRAIL = REDUCED_MOTION ? 3 : 6, vort = [];
-    var VCOL = [0xffd23f, 0xffe27a, 0xfff6c8, 0xffb52e, 0xffffff];
-    var vbody = [mk(gTex, 0xffc933), mk(gTex, 0xffe27a)];
-    for (i = 0; i < vbody.length; i++) C.addChild(vbody[i]);
-    for (i = 0; i < VN; i++) {
-      var vp = { h0: Math.random(), spd: 0.55 + Math.random() * 0.7, th0: Math.random() * Math.PI * 2,
-        w: (Math.random() - 0.5) * 3, rs: 0.55 + Math.random() * 0.6, size: 0.35 + Math.random() * 0.55, sp: [] };
-      var tint = VCOL[i % VCOL.length];
-      for (var ki = 0; ki < TRAIL; ki++) { var ts = mk(dTex, tint); parts.addChild(ts); vp.sp.push(ts); }
-      vort.push(vp);
-    }
+    C.x = at.x; C.y = at.y; C.sortableChildren = true;
     S.layers.float.addChild(C);
-
-    var t = 0;
-    var BASE_R = 56, TOP_Y = -122, END_Y = -112;
-    function coneR(h, rb) { return rb * Math.pow(1 - h, 0.9) + 2; }
-    function ring(sp, radius, flatten, alpha) {
-      sp.visible = alpha > 0.01;
-      if (!sp.visible) return;
-      var s = radius / RING_TEX_RADIUS;
-      sp.scale.set(s, s * flatten);
-      sp.alpha = alpha;
-    }
-    addFx({
-      node: C,
-      update: function (dt) {
-        t += dt;
-        if (t >= LEVELUP_FX_SEC + 0.8) return false;
-        var a = levelUpAnchor();
-        if (a) { C.x = a.x; C.y = a.y; }
-        C.scale.set(S.cameraScale || 1);
-        /* ---- 聚光 ---- */
-        var gk = lvClamp01(t / 0.6);
-        for (var gi = 0; gi < gather.length; gi++) {
-          var g = gather[gi];
-          var k = lvClamp01((t - g.late) / (0.6 - g.late));
-          if (k <= 0 || k >= 1) { g.sp.visible = false; continue; }
-          var e = k * k;
-          var r = g.r0 * (1 - e);
-          var ang2 = g.a0 + k * g.spin;
-          g.sp.visible = true;
-          g.sp.x = Math.cos(ang2) * r;
-          g.sp.y = BODY + Math.sin(ang2) * r * 0.62;
-          g.sp.scale.set(g.size * (0.6 + 0.8 * k) * 1.3);
-          g.sp.alpha = Math.min(1, k * 4) * (1 - Math.pow(k, 6));
+    var backend = VFXPixiBackend.createBackend({ PIXI: PIXI, container: C,
+      resolveText: function (key) { return STR(Number(key)); },
+      projectTransform: function (t) {
+        // 原光圈／粒子隨鏡頭縮放，原文字保持螢幕字號；由圖層 cameraDepth 決定。
+        if (t.cameraDepth !== false) {
+          var scale = S.cameraScale || 1;
+          t.x *= scale; t.y *= scale; t.scaleX *= scale; t.scaleY *= scale;
         }
-        gatherRing.y = BODY;
-        ring(gatherRing, 130 - 120 * lvEaseOut(gk), 0.62, t < 0.6 ? (0.25 + 0.7 * gk) : 0);
-        /* 核心光球：聚光期間漸亮，爆散後淡掉 */
-        var coreAlpha = t < 0.6 ? (0.2 + 0.8 * gk) : Math.max(0, 1 - (t - 0.6) / 0.45);
-        core.visible = coreAlpha > 0.01;
-        core.y = BODY;
-        core.scale.set(0.5 + 1.6 * gk + (t > 0.6 ? (t - 0.6) * 2 : 0));
-        core.alpha = coreAlpha;
-        /* ---- 爆散 ---- */
-        var bt = t - 0.6;
-        if (bt > 0 && bt < 0.55) {
-          var fk = bt / 0.55;
-          flash.visible = true; flash.y = BODY;
-          flash.scale.set(2.2 + 4.2 * lvEaseOut(fk));
-          flash.alpha = (1 - fk) * (1 - fk) * 0.95;
-        } else flash.visible = false;
-        if (bt > 0) {
-          var w1 = lvClamp01(bt / 0.7), w2 = lvClamp01((bt - 0.12) / 0.7), w3 = lvClamp01(bt / 0.5);
-          waveGround.y = waveGround2.y = -2;
-          waveBody.y = BODY;
-          ring(waveGround, 12 + 150 * lvEaseOut(w1), 0.34, (1 - w1) * 0.9);
-          ring(waveGround2, 12 + 118 * lvEaseOut(w2), 0.34, w2 > 0 ? (1 - w2) * 0.8 : 0);
-          ring(waveBody, 10 + 100 * lvEaseOut(w3), 0.8, (1 - w3) * 0.75);
-        }
-        for (var si = 0; si < sparks.length; si++) {
-          var s = sparks[si];
-          var sk2 = lvClamp01(bt / s.life);
-          if (bt <= 0 || sk2 >= 1) { s.sp.visible = false; continue; }
-          var dist = s.v * (1 - Math.pow(1 - sk2, 2.2)) * s.life;
-          s.sp.visible = true;
-          s.sp.x = Math.cos(s.ang) * dist;
-          s.sp.y = BODY + Math.sin(s.ang) * dist * 0.7 - s.lift * sk2;
-          s.sp.scale.set(s.size * (1.4 - sk2));
-          s.sp.alpha = 1 - sk2 * sk2;
-        }
-        /* ---- 氣旋（粒子） ---- */
-        var cs = t - 0.7;
-        groundGlow.visible = false;
-        vbody[0].visible = vbody[1].visible = false;
-        for (var vi0 = 0; vi0 < vort.length; vi0++) for (var vk0 = 0; vk0 < TRAIL; vk0++) vort[vi0].sp[vk0].visible = false;
-        if (cs > 0 && cs < 1.35) {
-          var spanAt = function (tt) {
-            var growK = lvEaseOut(lvClamp01(tt / 0.6));
-            var riseK = lvEaseInOut(lvClamp01((tt - 0.55) / 0.75));
-            return { top: TOP_Y * growK, bottom: END_Y * riseK, riseK: riseK,
-              master: lvClamp01(tt / 0.15) * (1 - lvClamp01((riseK - 0.72) / 0.28)),
-              rb: BASE_R * (1 - 0.4 * riseK) };
-          };
-          var sp0 = spanAt(cs);
-          groundGlow.visible = sp0.master > 0.01;
-          groundGlow.y = sp0.bottom;
-          groundGlow.scale.set(2.0 - 0.7 * sp0.riseK, 0.7 - 0.25 * sp0.riseK);
-          groundGlow.alpha = 0.6 * sp0.master;
-          /* 柔光氣團：讓氣旋有體積 */
-          var midY = (sp0.top + sp0.bottom) / 2, spanH = Math.max(10, sp0.bottom - sp0.top);
-          for (var bi = 0; bi < 2; bi++) {
-            var bb = vbody[bi];
-            bb.visible = sp0.master > 0.01;
-            bb.x = 0; bb.y = midY;
-            bb.scale.set((sp0.rb * (bi ? 0.9 : 1.7)) / 32, spanH / 64 * (bi ? 1.1 : 1.3));
-            bb.alpha = sp0.master * (bi ? 0.28 : 0.22);
-          }
-          for (var vi = 0; vi < vort.length; vi++) {
-            var v = vort[vi];
-            var rawHead = v.h0 + v.spd * cs;
-            for (var vk = 0; vk < TRAIL; vk++) {
-              var tt = cs - vk * 0.02;
-              if (tt <= 0) continue;
-              var raw = v.h0 + v.spd * tt;
-              if (Math.floor(raw) !== Math.floor(rawHead)) continue;   // 拖尾不跨越循環邊界
-              var hh = raw - Math.floor(raw);
-              var sp = spanAt(tt);
-              var rad = (sp.rb * Math.pow(1 - hh, 0.75) + 3) * v.rs;
-              var th = v.th0 + (7.5 + v.w) * tt + hh * 3.2;
-              var x = Math.cos(th) * rad;
-              var y = sp.bottom + (sp.top - sp.bottom) * hh + Math.sin(th) * rad * 0.34;
-              var depth = (Math.sin(th) + 1) * 0.5;
-              var env = Math.min(1, hh / 0.08) * (1 - lvClamp01((hh - 0.8) / 0.2));
-              var q = v.sp[vk];
-              q.visible = true;
-              q.x = x; q.y = y;
-              q.scale.set(v.size * (1 - 0.1 * vk) * (1 - hh * 0.45) * (0.8 + 0.5 * depth));
-              q.alpha = sp.master * env * (0.3 + 0.7 * depth) * (1 - vk / TRAIL);
-            }
-          }
-        }
-        return t < LEVELUP_FX_SEC + 0.5;
-      }
-    }, 5, 5000);
-  }
-
-  function spawnLevelUpText() {
-    var at = levelUpAnchor();
-    if (!at) return;
-    var C = new PIXI.Container();
-    var glow = new PIXI.Sprite(glowTexture());
-    glow.anchor.set(0.5); glow.blendMode = 'add'; glow.tint = 0xffc21f;
-    var label = new PIXI.Text({
-      text: STR(2314),
-      style: {
-        fontFamily: '"Microsoft JhengHei", "PingFang TC", sans-serif', fontSize: 58, fontWeight: '900',
-        fill: '#fff6c9', stroke: { color: '#ffb300', width: 11, join: 'round' },
-        dropShadow: { color: '#a85a00', alpha: 0.75, blur: 6, distance: 3, angle: Math.PI / 2 }
+        return t;
       }
     });
-    label.anchor.set(0.5);
-    glow.scale.set(Math.max(3.2, label.width / 64 * 1.5), 1.8);
-    C.addChild(glow, label);
-    C.visible = false;
-    S.layers.float.addChild(C);
-    var t = 0;
-    addFx({
-      node: C,
-      update: function (dt) {
-        t += dt;
-        var k = t - LEVELUP_TEXT_DELAY;
-        if (k < 0) return true;
-        if (k >= LEVELUP_TEXT_LIFE) return false;
-        var p = S.player;
-        if (p && p.root) {
-          var a = worldToScreenPoint(p.root.x, p.root.y);
-          var rise = lvEaseOut(lvClamp01(k / 1.1));
-          C.x = a.x; C.y = a.y - 104 - 78 * rise;
-        }
-        C.visible = true;
-        /* 彈出：0.3 → 1.28 → 1，之後緩慢放大 */
-        var sc;
-        if (k < 0.2) sc = 0.3 + 0.98 * lvEaseOut(k / 0.2);
-        else if (k < 0.38) sc = 1.28 - 0.28 * lvEaseInOut((k - 0.2) / 0.18);
-        else sc = 1 + 0.07 * ((k - 0.38) / LEVELUP_TEXT_LIFE);
-        C.scale.set(sc);
-        var fade = 1 - lvClamp01((k - (LEVELUP_TEXT_LIFE - 0.45)) / 0.45);
-        C.alpha = Math.min(1, k / 0.08) * fade;
-        glow.alpha = 0.55 + 0.25 * Math.sin(k * 9);
-        return true;
-      }
-    }, 6, 6000);
+    var runtime = VFXCore.createRuntime({ backend: backend, reducedMotion: REDUCED_MOTION,
+      resolver: S.levelUpResolver });
+    try { runtime.registerPreset(preset); runtime.play(preset.id, { seed: (Math.random() * 0x100000000) >>> 0 }); }
+    catch (err) { runtime.destroy(); C.destroy({ children: true }); throw err; }
+    addFx({ node: C, dispose: function () { runtime.destroy(); }, update: function (dt) {
+      var anchor = levelUpAnchor();
+      if (!anchor) return false;
+      C.x = anchor.x; C.y = anchor.y;
+      runtime.update(dt);
+      return runtime.stats().activeEffects > 0;
+    } }, 6, Math.max(6000, VFXCore.derivePresetDuration(preset) * 1000 + 1000));
   }
 
   /* ============ reconcile（PANEL battle，約 5Hz） ============ */
@@ -3226,6 +3038,7 @@ var BattleRenderer = (function () {
     return fx;
   }
   function killFx(fx) {
+    if (fx.dispose) { var dispose = fx.dispose; fx.dispose = null; dispose(); }
     var impactGroup = fx.node && fx.node.parent && fx.node.parent.__impactGroup
       ? fx.node.parent : null;
     if (fx.node && fx.node.__airWrapper) {
@@ -3239,6 +3052,7 @@ var BattleRenderer = (function () {
 
   /* 全部清空：分頁切背景、Worker 重啟、暫停解除後的補救都用這支。 */
   function clearAllFx() {
+    S.levelUpGeneration = (S.levelUpGeneration || 0) + 1;
     if (S.pendingVfx) S.pendingVfx.length = 0;
     for (var i = 0; i < S.fx.length; i++) killFx(S.fx[i]);
     S.fx.length = 0;
@@ -8820,6 +8634,9 @@ var BattleRenderer = (function () {
       initCameraWheel();
       initTestMapClick();
       bootVfxRuntime();
+      if (typeof VFXCore !== 'undefined' && typeof VFXCelebration !== 'undefined') {
+        loadLevelUpPreset().catch(function (err) { console.warn('[battle-renderer] level-up preload:', err); });
+      }
       flushPendingFloats();
       /* 開機時 battle 面板可能已經在手上（bridge 比渲染器先跑），先同步一次 */
       if (typeof peekUiPanelData === 'function') {

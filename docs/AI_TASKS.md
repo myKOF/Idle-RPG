@@ -1,3 +1,96 @@
+## DIVINE-STONE-ICON-20261105 — 接入核准的透明符文石圖標
+
+- Owner：Codex；Done，單一開發者。使用者核准本聊天image_gen左右鏡像／去背景及外暈預覽並要求接入；核准原圖匯出128px透明PNG，替換神性之石資源列／法陣／統計及相關UI提示、獎勵與日誌圖標。
+- 前置：預覽已確認；ai/codex起始乾淨，規範／Workflow／Agent與當前任務已讀。允許images/icon_divine_stone.png、tools/resource-icons/sync-library.cjs、js/stats.js／ui.js、index僅r-dust與這兩支JS快取、tests/stats-panel.test.cjs、LV與本段；素材庫保存使用者參考／核准生成原圖／透明匯出及來源紀錄。禁止配置／String／Worker／玩法／存檔／其他在製內容，不合併或推送。
+- 預檢：除index皆無外部來源；index與Claude Intro／其他快取不同區段，HEAD基線、本項候選對Claude實際檔案正規化LF後git merge-file exit0，無語意相依，分段修改。既有六份資源原圖／來源／SHA不變，新圖沿既有resource-icons工具匯出與核對。
+- 驗收：alpha／小尺寸可讀性、資源列／神鑄／統計／獎勵提示／離線及日誌引用；相關統計／UI／神鑄測試與Build、diff及素材SHA核對，先素材後遊戲Commit。後續使用者重載檢視與Review／合併。
+- 完成8檔：新增images/icon_divine_stone.png（128×128 RGBA／17871bytes）、既有resource-icons匯出入口增加獨立來源紀錄；stats材料定義、UI集中圖片／文字標記轉換及神鑄／高塔獎勵／敵人tips／離線呈現、index資源列與兩支快取、既有統計圖示斷言及LV／本段。String與Worker仍輸出原資料，僅UI轉換含STR100名稱的舊標記，不替換其他魔法符號；原六份資源來源／SHA保持。
+- 驗證：`node tools/resource-icons/sync-library.cjs --apply`／`--check`七圖SHA通過；`npm.cmd run build`665檔通過、git diff／stat／check與自我Review完成。`node --test tests/header-resources.test.cjs tests/resource-tooltip.test.cjs tests/new-forge-ui.test.cjs tests/forge-equipped-inventory.test.cjs tests/ui-tick-smoke.test.cjs tests/ui-log-routing.test.cjs tests/stats-panel.test.cjs tests/divine-forge.test.cjs tests/vfx-editor-cache-versions.test.cjs`46項44通過／2既有失敗。用HEAD原始stats／ui／統計測試的唯讀preload基線重跑，兩項同名同因：七種刻印2941≠2353；高塔統計舊斷言要求window.recordLootGold。未修改這些既有功能或降低斷言。
+- 畫面QA：隔離隨機localhost／全新Edge context，正式index DOM／全CSS／正式UI及可控快照，確認資源列／神鑄中央／統計／日誌與離線文字轉換圖片皆128px載入，原魔法符號保持且重複轉換冪等；1280及640寬截圖讀回目視。Console error／warning及pageerror皆0。Forge另用固定尺寸fixture主機容納正式面板，未啟動完整Worker／讀寫玩家存檔；首次locator截圖因原漂浮動畫不穩定逾時，改以截圖animations disabled後通過。QA在本聊天visualizations/divine-stone；瀏覽器／Server均關閉。未進行全遊戲長玩或跨瀏覽器驗證。
+- 唯讀未改：規範／AGENTS／Workflow／prompts、原參考與核准生成來源、combat／tower／Worker／bridge／玩法／存檔／配置及String、原六份圖示。素材庫codex-authored/divine-stone-icon-20261105保存使用者參考、核准生成原圖、匯出與工具／提示詞／SHA紀錄，先提交`9cf8d26`；遊戲Commit為本段所在「[Codex] feat: 接入核准的神性之石透明圖標」（SHA見交付）。無本項未完成實作，可供Review及使用者合併；既有兩項測試失敗如上，不宣稱全綠。未合併／推送develop或main，下一步重載遊戲查看圖標。
+
+## ACHIEVEMENT-PROGRESS-ALIGN-20261105 — 獎杯置中、進度條收邊與篩選頁籤
+
+- Owner：Codex；Done，延續使用者視覺回饋。原獎杯66px畫布的圖案軸心約29px、透明上下留白亦不對稱；以CSS圖層向右下各2px校正，進度條padding／刻度inset由4px減為2px，外框尺寸與完成比例保持。允許css/achievements.css、index僅該CSS快取、LV與本段；禁止改圖片／JS／配置／音效／存檔／其他在製內容，不合併推送。
+- 使用者續加：成就全部／已達成／未達成三個篩選改為神鑄裝備品質頁籤風格，沿用afl共用金色變數、半透明深色底座、透明未選／金底細框選中，移除原灰藍／棕色立體按鈕及外暈。範圍不變，不修改神鑄原CSS或篩選邏輯。
+- 前置：同聊天規範／Workflow／Agent已讀、ai/codex、預檢完成；index以本聊天前次成就樣式提交前基線、本項CSS快取候選對Claude實際檔案merge-file exit0（Claude尚未含本聊天先前CSS快取），無語意相依、分段修改stage。驗收：實際成就渲染與全CSS的寬窄視窗、0／部分／全滿比例、2px內距與杯身置中目視，以及三種頁籤選中／hover／鍵盤焦點／篩選；相關回歸／Build／diff後只Commit本項，其他升級Preset工作完整保留。無新增素材、不建立素材庫空Commit；下一步使用者重載檢視。
+- 完成4檔：css/achievements.css修正圖層位置／2px內距及頁籤，index僅CSS快取1.0.12、LV兩則視覺紀錄、本段；成就三種頁籤的底色／字色／邊框色與粗細／圓角／字號／字重／字距／最小尺寸／padding／陰影，直接對正式神鑄品質頁籤computed styles逐欄完全一致（選中與未選中共26項）。鍵盤焦點保留2px金色outline。
+- 驗證：`node --test tests/achievements.test.cjs tests/ui-achievement-sound.test.cjs tests/ui-tick-smoke.test.cjs tests/vfx-editor-cache-versions.test.cjs`19/19，`npm.cmd run build`665檔通過、diff／stat／check與自我Review完成。隔離Edge／隨機localhost載正式DOM／全部CSS／實際AchievementUI及可控快照，5視窗×3完成比例共15例通過、內距2px／圖層+2px核對、3頁籤實際點選及Enter切換／鍵盤outline／篩選數量／reduced-motion皆通過，Console error／warning及pageerror0；桌面／手機／總進度PNG存檔讀回目視。QA／報告在本聊天visualizations/achievement-polish/alignment；瀏覽器／服務關閉，未讀寫玩家存檔。杯子原圖RGBA及軸心僅唯讀分析，未編修圖片。
+- 唯讀未改：規範／Workflow／prompts、神鑄品質頁籤DOM及divine-forge／ashen-forge-flat原樣式、ui-achievements／成就表／既有相關測試／原素材；其他升級Preset在製檔案與相鄰快取原樣保留。無本項未完成或已知新增缺陷；未跑多瀏覽器／全遊戲長玩，無新增素材或素材庫Commit。可供Review與使用者合併，Commit為本段所在「[Codex] fix: 校正成就獎杯與進度間距並統一篩選頁籤」（SHA見交付）；不合併推送，下一步使用者重載檢視。
+
+## ACHIEVEMENT-PROGRESS-POLISH-20261105 — 成就進度條與獎杯質感
+
+- Owner：Codex；Done，單一開發者。使用者要求改善成就總進度條及旁邊小獎杯；以CSS重做金屬凹槽、香檳金亮面／刻度及獎杯徽章，沿用既有授權trophy.png，不產出獨立美術素材。前置：規範／Workflow／Agent／任務已讀、ai/codex、fetch及預檢完成。
+- 允許css/achievements.css、index僅該CSS快取、LV視覺紀錄及本段；禁止JS／配置／String／成就條件／存檔／音效／其它在製升級Preset與Intro，不合併推送。index與Claude Intro等未合併修改不同區段，以HEAD為base、本項單行候選對Claude實際index正規化LF後merge-file exit0；本副本他項快取／LV／任務段原樣保留、分段stage。
+- 驗收：正式成就DOM／全部CSS及實際AchievementUI.render，0／部分／100%與窄／寬視窗、清單／篩選／降低動態效果，目視與溢出檢查；相關成就回歸、Build及diff後Commit。素材庫無本項新增或修改，不建空Commit；後續使用者重載檢視、Review／合併。
+- 完成4檔：css/achievements.css只改總進度與摘要，42px金屬底章／既有32px獎杯、24px凹槽與十等分刻度、鍍金亮面／末端光及寬度過渡，減少動態效果時停用；index僅achievements.css快取1.0.11、LV新增視覺紀錄、本段。原圖及來源保持，沒有外部參考／新增素材，無需素材庫Commit。
+- 驗證：`node --test tests/achievements.test.cjs tests/ui-achievement-sound.test.cjs tests/ui-tick-smoke.test.cjs tests/vfx-editor-cache-versions.test.cjs`19/19；`npm.cmd run build`665檔通過，`node tools/string-table/build_string_csv.cjs --check`寫死0；diff／stat／check與自我Review通過。唯讀未改規範／Workflow／prompts、ui-achievements／achievement_data／String／原獎杯與其它圖片／相關既有測試；玩法／Worker／存檔／音效及其他在製升級Preset／Intro均保持。
+- 瀏覽器：隔離隨機localhost＋headless Edge，載正式成就DOM、index全部CSS及真正AchievementUI.render／STR／成就表，以可控快照測1280／900／600／390／360px×0／48／115完成共15例，比例誤差<0.3%、頁面無水平溢出／摘要與篩選不重疊；兩種篩選數量及reduced-motion通過，Console error／warning與pageerror0。桌面／手機／總進度截圖存檔再讀回目視。首輪QA缺favicon造成404，補回正式favicon引用後全驗通過，未放寬錯誤斷言。QA／qa-report.json及PNG於本聊天visualizations/achievement-polish，服務與瀏覽器已關閉，未接觸玩家存檔。
+- 交付：可Review及使用者合併，無本項未完成或已知新增缺陷；未跑全遊戲長玩／多瀏覽器，畫面為正式渲染配可控快照驗證。Commit為本段所在「[Codex] feat: 提升成就進度條與獎杯質感」（SHA見聊天）；他項工作完整保留、只分段提交本項4檔，不合併推送。下一步使用者重新整理遊戲檢視成就頁。
+
+## ANCIENT-STAR-AUTO-OVERLAP-20261105 — 窄裝備格星列自動重疊
+
+- Owner：Codex；Done，單一開發者。使用者要求星星不被裝備外框遮住，格子不足時縮短間距、可重疊。僅將星列改成可壓縮的等分Grid軌道，星星自身仍以max-content維持原18px字形／圖片尺寸；左右預留框邊／光暈空間，窄格軌道縮短形成重疊，寬格保持原間距（>4顆原4px重疊以對稱負邊距保留）。保留三色／1px輪廓／光暈／星數／精鑄順序。
+- 允許：css/style.css、index僅style快取、LV、docs/assets來源渲染說明及本段，QA於聊天visualizations；禁止JS／PNG／素材／玩法／配置、其他升級Preset／Intro在製內容與合併推送。目標CSS／來源文件無外部來源；index與Claude Intro及本副本升級Preset快取不同區段，merge-tree及共同祖先／實際對方index的LF正規化三方候選merge-file皆0，分段修改與stage。
+- 驗收：正式全CSS／實際itemCellHTML及品質框，在48／58／64／80／120px格、1～7顆、各品質與穿戴／背包／神鑄中確認圖案及描邊不觸左右外框，縮短步距而不縮星星；寬格與原版步距、tips保持。相關回歸／Build／素材SHA及diff後僅提交本項。後續使用者Review／合併。
+- 實機瀏覽器驗證：載入正式全CSS及真正itemCellHTML／itemRarityEffectClass／itemRuneBadgeHTML／badge，原品質圖與神話／創世／混沌三種框；48／58／64／80／120px、1～7顆、穿戴／背包／神鑄共315案例，與修改前CSS對照。星星自身寬高差0px，120px寬格各星x差0px；圖案盒加左右各3px（偽元素2px與描邊1px）的保守範圍，最小離格邊5.671875px，舊版108例未留足4px、修正版0例。58px七顆步距約4.28px，原星尺寸12.65625×18px不縮小；目視三色、描邊及光暈保持，Console error／warning0。
+- QA：本聊天visualizations/star-alignment/narrow-stars.jpg及spacing-matrix.json保留實際窄框預覽與315例數據；初次跨iframe讀取早於子頁完成而回傳0例，已等候實際cell附加後重讀315例，未拿空集合當通過。
+- 驗證：`node --test tests/ancient-forge-limit.test.cjs tests/inventory-ancient-filter-sort.test.cjs tests/vfx-editor-cache-versions.test.cjs`15/15通過；`npm.cmd run build`665檔通過，`node tools/ancient-stars/export-source.cjs --check`原PNG／素材庫SHA一致、`git diff --check`通過。未改PNG／母圖，不建立素材庫空Commit；素材庫另有升級level-up在製內容，原樣保留。
+- 修改5檔：CSS星列規則、index style 1.0.121、LV、來源渲染說明及本段。唯讀未改規範／Workflow／Agent文件、js/ui.js／item.js／精鑄順序、其餘品質CSS、原素材／匯出器、既有回歸／helpers；其他升級Preset／Intro與其index／LV／docs不同區段保持並分段stage。無本項未完成或已知新增風險，未做全遊戲長玩；Commit為本段所在「[Codex] fix: 窄裝備格星星自動重疊避開外框」（SHA見交付），可供Review及使用者合併，未合併推送。下一步重載遊戲檢視窄背包格。
+
+## ANCIENT-STAR-OUTLINE-GLOW-20261105 — 星星輪廓描邊與加強光暈
+
+- Owner：Codex；Done，單一開發者。依使用者示意加強三色星星的金黃色外光暈，並加沿透明圖案輪廓的1px深金描邊；不新增矩形外框。CSS濾鏡先沿用原淺藍調色，再以SourceAlpha膨脹1px減去原alpha生成輪廓、疊原圖，最後加強黃金外暈，保留金屬圖面／三色／原字形佔位及間距。
+- 允許：css/style.css、index僅style快取、LV、本段、docs/assets來源渲染說明；QA在本聊天visualizations。禁止PNG／素材／配置／玩法／星數／精鑄順序，以及其他聊天升級Preset／Intro／Role5在製內容、合併推送。
+- 預檢CSS／LV／來源文件無外部來源；index與Claude未提交Intro／String／GM／bridge／main不同區段，本項只改第12行style版本。merge-tree HEAD ai/claude及對其實際index、共同祖先／候選均正規化LF的merge-file為0，無語意相依，分段stage。
+- 驗收：正式全CSS／PNG／badge及itemDetailHTML目視三色1／4／5／7顆穿戴／背包／神鑄／tips，輪廓確為1px、光暈更強且保留原圖面；與修改前對照位置／尺寸／間距不變，精鑄／快取回歸、Build／diff／素材SHA後僅提交本項。後續使用者Review／合併。
+- 瀏覽器完成：正式全CSS／PNG／loadRuneEnv／badge及itemDetailHTML預覽，目視輪廓清楚、三色與金屬圖面保持、光暈更強，Console error／warning0。對本次修改前CSS逐一比較63個星星、12星列、各21個名稱／數值／詞條列的x／y／寬／高，最大差異全部0px；computed outline確認SourceAlpha、dilate radius=1／out及原圖疊回，三層黃色外暈為1／3／6px，淺藍前置調色保持。QA截圖outline-glow.jpg與outline-metrics.json在本聊天visualizations/star-alignment。
+- 驗證：`node --test tests/ancient-forge-limit.test.cjs tests/vfx-editor-cache-versions.test.cjs`13/13通過；`npm.cmd run build`664檔通過；`node tools/ancient-stars/export-source.cjs --check`原PNG／母圖／素材庫SHA一致、`git diff --check`通過。無需改PNG／母圖／素材庫，未建立空素材Commit。
+- 修改5檔：css/style.css、index style 1.0.120、LV、docs/assets來源記錄及本段。唯讀未改：規範／Workflow／Agent文件、PNG／匯出器、其餘CSS、js/ui.js／item.js／精鑄邏輯、既有測試／helper及素材庫；其他升級Preset／Intro／Role5在製內容保持，文件與index分段stage。無本項未完成或已知新增風險；未進行全遊戲長玩。Commit為本段所在「[Codex] fix: 加強太古星星光暈並加入輪廓描邊」（SHA見交付），可供Review與使用者合併，未合併推送；下一步重載遊戲檢視。
+
+## LEVELUP-PRESET-20261105 — 升級特效獨立Preset與編輯器接入
+
+- Owner：Codex；Done，單一開發者。使用者要求升級光圈／聚散粒子／螺旋及文字改由獨立level-up.json控制，可在VFX Editor搜尋／預覽／編輯／儲存，保留目前效果、55字號與2px外框。共用純運算程序圖層及Pixi後端，不烘焙文字、沿String2314讀取；遊戲不保留第二套寫死效果。可搜尋level-up／升級特效／LEVELUP；level-text有獨立字號／描邊／顏色欄，aura有粒子數／時序／半徑／速度／配色欄，進階參數仍可直接編輯JSON。
+- 前置：現有升級特效與文字縮小完成。允許js/vfx-celebration.js、Core／Pixi backend、battle-renderer升級入口與必要清理、Editor Inspector／入口與save guard、level-up Preset／layout與製作來源、用法／schema／LV／本紀錄及回歸、必要主頁／scene-preview快取；素材庫保留可編輯來源並先提交。禁止Role5／Intro在製內容、玩法／Worker／存檔／配置及合併推送。
+- 預檢：除index外無外部來源；index與Claude Intro／String／GM／bridge／main不同區段，本項Core／backend／renderer快取與新增程序模組，候選三方merge-file exit0、無語意相依，分段stage。本副本Role5文件／hero快取及模型保持。動態程序貼圖沿用原自製Canvas公式，不引入外部素材。
+- 驗收：舊效果與同種子多時點對照、字號／描邊／String、Editor可搜尋及修改保存重開、遊戲使用修改後Preset、玩家跟隨／鏡頭／暫停／清場／重複升級與資源回收、舊編輯器拒絕覆寫；相關回歸／Build及實際預覽後雙倉庫Commit。編輯器更新須先下載未存工作備份，再重啟Server與重新載入。後續使用者Review／合併。
+- 完成：level-up Preset及單一根群組layout皆canonical；共用celebration程序圖層沿原自製glow／dot／ring紋理公式與運動，後端只套純運算樹。renderer預載／失敗可重試，讀Preset及shipped資產no-store，支援Editor新增的一般素材圖層；保留主角腳點跟隨、aura鏡頭縮放與文字固定字號。addFx.dispose在自然結束、拒收、淘汰／清場及硬到期回收Core／節點／貼圖，非同步等待可由清場generation取消。Editor／Server指紋包含新模組與String來源，過期頁不能覆寫。
+- 專項：`node --test tests/levelup-preset.test.cjs tests/vfx-core.test.cjs tests/vfx-core-hierarchy.test.cjs tests/vfx-water-tornado.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-preset-usage.test.cjs tests/battle-renderer-pause.test.cjs tests/levelup-purge.test.cjs`228/228通過；最後新升級專項8/8再次通過。以405279a2原renderer產生的同種子golden fixture對一般／減量各9時點全部形狀、位置、大小、色彩、透明度雜湊一致。涵蓋字號／外框／String、修改後序列化重載、12次池重用與同時播放、貼圖各釋放一次、鏡頭／移動／清場取消／網路失敗重試／過期版本。首輪3項僅fake Pixi少removeChildren，補齊公開API後通過，未放寬功能斷言。
+- 擴大：`node --test --test-concurrency=2 tests/levelup-preset.test.cjs tests/levelup-purge.test.cjs "tests/vfx-core*.test.cjs" "tests/vfx-editor*.test.cjs" "tests/vfx-preset*.test.cjs" tests/vfx-water-tornado.test.cjs tests/vfx-runtime.test.cjs tests/vfx-duration.test.cjs tests/battle-renderer-pause.test.cjs tests/battle-camera-distance.test.cjs`843項，831通過／11既有失敗／1略過。隔離複製已提交HEAD的1507份來源／資料、排除本項未追蹤Preset及修改，比對確認11項同名同因；基線複製初漏BAT造成額外W9B，補回原BAT後單獨通過。既有失敗：DEF-5毒十字不接受deformation、CAP-2舊粒子scale預期、HISTORY-42既有大Preset記憶體、16b既有aura-earth-reversal非canonical、LAYOUT-1缺既有layout／LAYOUT-3多群組及舊圖層引用、THUNDERFALL／FIELD舊接線預期、CATALOG-3舊多群組、CHAIN舊金色及STARFALL-TAIL舊參數預期。CATALOG-2原假設只有waterTornado不需外部素材，已擴為同樣受完整Core驗證的celebration，仍要求assetId不存在、其他類型完整匯出，並以新專項驗證非法assetId會拒絕。沒有修改其他失敗或權威資料。
+- Build：`npm.cmd run build`665檔通過；`node --check`、git diff／stat／check、自我Review及素材SHA核對通過。瀏覽器：隔離隨機localhost／全新儲存context，用正式Editor搜尋／Inspector把55/2改48/1、儲存並重開保持，正式遊戲入口亦讀到48/1；還原55/2後，獨立正式遊戲再次確認String2314／55／2，Console與Page error皆0。最終Editor用LEVELUP搜尋成功，字號55／外框2及主畫布預覽目視確認，正常Console／Page error0。舊頁改了程序模組後保存回409且磁碟Preset保持，該預期409另記、不當成正常錯誤。
+- QA限制：初期組合QA有測試服務擋首頁403、浮字取樣時序／GPU讀回與清理逾時；未修改正式白名單或降低斷言。最後分開Editor／遊戲驗證，正式入口停止Ticker後按Core確定性取樣、非長玩或FPS驗收；兩份最終QA均exit0，服務與瀏覽器已關閉。目視PNG及Editor／game／測試摘要在本聊天visualizations/level-up。未跑全遊戲、跨GPU／行動裝置或離線縮圖渲染器；後者原有程序圖層預覽限制維持，編輯以正式主畫布為準。
+- 修改：新程序模組、Core／Pixi backend／renderer、Editor Inspector／頁面／runtime-preview、Server相依／save guard、Preset／layout、作者封存工具、8項新回歸／legacy fixture及CATALOG-2、必要index／scene-preview快取、schema／用途／LV與本段。唯讀未改：規範／Workflow、原升級數值／模擬／Worker／協議、String來源Excel／CSV、其他Preset／素材、舊失敗測試斷言及Role5／Intro／星星／成就的其他工作。index與Claude不同區段三方試跑乾淨；同副本其他文件段／CSS改動分段保留。
+- 交付前新增來源：Claude完成c0c3e2f1畫布前景／context還原修正；本項已寫完的renderer升級區、dispose／clear及預載與其reviveCanvas／visibility區不同，對Claude實際檔案的merge-file exit0、沒有互相覆蓋。index初次預檢乾淨後，該新提交另改了同一renderer快取行為20261105-canvas-revive；本項原先已寫為20261105-levelup-preset-v1，試跑時另有已提交星星style 1.0.121對Claude 1.0.120的既有版本衝突。因此此後不再編修index，不代為挑版本或合併；僅提交自己先前完成的快取hunk。後續整合須同時保留兩套程式修改，統一主頁renderer與style快取，再跑快取／畫布回歸。本項可Review，不能宣稱與最新Claude已無衝突或直接乾淨合併。
+- 雙倉庫：`node tools/vfx/authoring/author/level-up.cjs --archive`及`--check`核對4份可編輯Preset／layout／程序來源／legacy fixture與SHA manifest；素材庫先提交`2e89753`，不引入外部素材。遊戲Commit為本段所在「[Codex] feat: 將升級特效接入可編輯Preset」（SHA見交付）。本項無未完成實作，可供Review及使用者合併；未合併或推送develop／main。下一步先下載Editor未存內容，再重啟Server／重載，搜尋level-up／升級特效／LEVELUP，選level-text調字號／外框，儲存後重載遊戲。
+
+## LEVELUP-TEXT-SIZE-20261105 — 升級提示縮小字號及外框
+
+- Owner：Codex；Done，單一開發者。使用者指定人物頭上「等級提升」字號減3、外框2px；spawnLevelUpText字號58→55、描邊11→2，沿用原String2314、顏色／陰影／彈跳與上飄。此特效由LEVELUP事件直接產生，無Preset JSON；不修改光圈與粒子。
+- 前置：既有升級文字完成。允許renderer此兩值、index／scene-preview僅renderer快取、LV與本段；禁止Role5在製內容、配置／素材／玩法／Worker／String及合併推送。預檢renderer／preview乾淨；index與Claude Intro及本副本Role5快取不同區段，候選對Claude實際工作檔三方merge-file exit0，無語意相依，文件僅新增本項並分段stage。
+- 驗收：核對正式Text樣式及原動畫／內容保持，相關升級／鏡頭／快取測試、Build與diff後Commit。後續使用者Review／合併。
+- 驗證：`node --test tests/levelup-purge.test.cjs tests/battle-camera-distance.test.cjs tests/vfx-editor-cache-versions.test.cjs`20/20通過，`node --check js/battle-renderer.js`及git diff／stat／check通過；用正式spawnLevelUpText建立Text、核對fontSize55／stroke.width2與String2314保持。`npm.cmd run build`檢查663檔、僅另一進行中Role5新增且未追蹤的tests/hero3d-role5.test.cjs第93行SyntaxError（Unexpected token ';'）失敗；已確認不屬本項且不修改該檔，不宣稱整體Build通過。未做瀏覽器目視／Console檢查，無本項已知新增風險或未完成實作。
+- 修改5檔：renderer兩個樣式值、index及scene-preview快取、LV與本段；唯讀未改規範／Workflow、原圖、相關既有測試／helper、build工具及Role5在製檔案。素材庫無變動、不建空Commit。index與Claude Intro不同區段三方試跑乾淨，本副本Role5快取／LV／任務段分段排除，不代提交他項。
+- Commit為本段所在「[Codex] fix: 縮小升級文字並調整外框」（SHA見交付）；可供Review及使用者合併，未合併／推送。下一步重載遊戲查看升級文字；整體Build須待Role5任務自行修復其測試語法後重驗。
+
+## HERO3D-ROLE5-20261105 — 5轉人物修復及既有劍動作接入
+
+- Owner：Codex；Done，單一開發者。使用者提供Role5.glb，要求與Role4相同流程：分離雙手／腿與腋下黏連、頭部轉正、刪背劍，右手正握四轉核准新劍，全部既有動作保持，5轉起選Role5。已逐項確認本遊戲使用及修改授權。
+- 前置：起始工作區乾淨、ai/codex HEAD fd7cd4c3；原檔SHA8f9dba13df728c8a87f22e149e5fa44e8d28ec3f7c5125ede08c91c69089f6c5，68節點／一骨架／Running。依賴核准Sword包305cb39及原Role1動作／正握，保留0～4轉與黃金騎士。原始法線／基色／MR均2048px；依使用者對四轉材質落差的回饋，這次保留原圖並改善補面UV，不另改四轉。
+- 範圍：images/models/hero3d/role5.glb／role5.json／ROLE5_SOURCE.md及Role5原始貼圖旁載、tools/meshy-pipeline/blender/prepare_role5.py與src/export-role5.cjs、hero3d五轉選擇／旁載PBR旗標、index僅hero3d快取、相關測試、LV及本段；素材庫保存授權原檔／可編輯Blend／成品／依賴SHA／QA。禁止舊模型／已核准劍／六動畫及正握方向、四招普攻邏輯、Worker／戰鬥／配置／存檔／轉生條件、他人進行中內容及合併推送。
+- 預檢：其餘目標無外部來源；index與Claude未提交Intro CSS／載入遮罩／String、bridge／main快取及Intro載入不同區段，本項僅hero3d快取。以共同祖先fd7cd4c3、Claude現況與本項候選做LF正規化QA副本三方merge-file，exit0，無語意相依，分段編修提交。
+- 驗收：原生前後及各動作確認、鼻部中立朝前、背劍移除、手腿無跨骨骼權重／橋面、右手正握新劍；原六動畫／骨架逐取樣保持、0～5轉與存讀／失敗／競態、實際PBR及資源釋放；回歸／Build／匯出SHA／清晰遊戲GIF。素材先Commit再遊戲Commit，後續使用者Review／合併。
+- 完成：Blender4.5.10刪背劍810面、右手及橋214面、左手橋60面及腋下27面，移除碎片，軀幹／雙臂獨立封閉且無跨手腿權重／橋面。頭部來源空間-20°，頸部平滑，中立鼻部對Head朝向偏角小於4°。右手幾何／法線／索引／權重與原正握逐位相同；原骨架及六段動畫全部取樣保持。新劍剛性綁Sword沿原握點／刃向，核准11021頂點及索引獨立比對，最大位置誤差4.10e-7m。
+- 材質／成品：原始2048px基色／法線／MR三圖原位元組保留，SHA均獨立比對，不縮小、不再壓縮。補面逐三角面由保留甲片轉移UV，背部取對側，保留原PBR材質及細節；密集補面與周邊共用切點，不留T接縫。GLB3742060bytes、28546三角面（身體12336／劍10588／手5622），SHA d83254f239be70ff1cd4f8eab66fc587b1657c05b1536fbbaa9ae8b4d6119c7d；三旁載圖12959358bytes，五轉首次合計約16.7MB，僅下載目前需要外觀。原生重開Blend、mesh.validate、六actions／四張packed貼圖及法線／MR Non-Color通過；實際GLB幾何單邊／奇數邊0，135條重合邊屬接觸甲片。整體強制焊接會改變獨立殼層並呈73邊界／99非流形邊，不宣稱單一流形雕塑或還原原被遮擋圖案。
+- 接線：5轉以上選Role5、0～4轉及黃金騎士SHA保持，6轉不重載；新pbrExternal旗標沿用現有Standard／棚光／曝光，index僅hero3d快取20261105-role5-v1。GLTFLoader在圖片失敗時可能回傳null，故新增只對該旗標的必要基色／法線／MR驗證，缺圖則去重清理新載入資源、在建立renderer前拒絕換模，保留原外觀；不改舊旁載回退、renderer／scene-preview或動作時序。
+- 回歸：`node --test --test-concurrency=2 tests/hero3d-pbr.test.cjs tests/hero3d-role5.test.cjs tests/hero3d-role4.test.cjs tests/hero3d-role3.test.cjs tests/hero3d-role2.test.cjs tests/hero3d-rebirth-skin.test.cjs tests/hero3d-forward-grip.test.cjs tests/hero3d-role.test.cjs tests/hero3d-attack4.test.cjs tests/hero3d-battle-rules.test.cjs tests/hero3d-internal-toggle.test.cjs tests/battle-renderer-pause.test.cjs tests/vfx-editor-cache-versions.test.cjs`72/72；涵蓋六動畫各61姿勢實際CPU蒙皮、手腿分離、補面封邊／原圖尺寸與SHA、新劍／正握、4→5→6及過期／失敗／存檔開局與缺圖清理。未放寬原斷言。`npm.cmd run build`663檔通過；Role／Role1／Role2／Role3／Role4／PBR六套舊匯出及新Role5 --source-check全部通過；ast.parse／node --check與diff --check通過。
+- 實機：隔離隨機localhost正式index＋真Worker／Pixi／Hero3D，在SwiftShader後端GM1→2→3→4→5→6→4→0→5分別選1／2／3／4／5／5／4／0／5，九次切換Attack4進度1.1秒、速度／朝向狀態完全相同。100次普攻四招均有且不連抽，技能不插隊、收招回Run，saveAutoNow後重載仍5。全部12材質Standard、身體normal／MR及環境存在；四張材質貼圖／環境dispose各一次、幾何歸0及context lost，沒有將內部快取計數1誤報為0。刻意中斷Role5基色後create拒絕、原控制器仍可揮劍且context有效；該案例ERR_FAILED與GLTF貼圖錯誤屬預期，正常有效材質無錯。未讀寫玩家原網址存檔，QA瀏覽器／服務已關閉。
+- QA限制如實保留：首輪同時啟動其他QA時Headless Target crashed；預設GPU後端在完成切換後重載曾出現基色載入失敗、Shader invalid與context lost。原因未證實，未宣稱根治GPU相容性；其後完整原斷言在隔離SwiftShader通過，正常Console／Page error0，僅既有未用preload提示。缺圖保護已另以原生GLTF實測，但不代表所有Shader／裝置問題已解決。未做全庫、跨GPU／行動裝置長時間效能或全遊戲長玩；原圖容量、甲片重合與隱藏部分合理補全亦為限制。
+- 預覽：原始PBR前後／側面、修復後全部動作及1400px三角度握劍近拍；正式內建test_map方格場景GIF1600×1000、84幀／30fps，附同步全身放大及整段動作取景，劍尖完整、磁碟讀回確認主角／放大皆動。錄製僅QA暫隱NPC／殘留FX／暫停遮罩、用內建全屏與滾輪、畫布700px；正式預設512px。QA在本聊天visualizations/role5-game-20261105，必要證據已存素材庫，不把逐幀暫存放入遊戲。
+- 修改14檔：images/models/hero3d/{role5.glb,role5.json,ROLE5_SOURCE.md,role5/base.jpg,role5/normal.png,role5/mr.jpg}、tools/meshy-pipeline/{blender/prepare_role5.py,src/export-role5.cjs}、js/hero3d.js、index.html、tests/{hero3d-role5.test.cjs,hero3d-rebirth-skin.test.cjs}、LV_upgrade_system.md及本段。唯讀未改規範／AGENTS／Workflow／prompts、原始Role5與0～4轉／黃金騎士／核准劍、舊製作及匯出工具／PBR配置、battle-renderer／scene-preview、其他既有測試、Worker／save／player／戰鬥／配置／String及轉生門檻；不修改他人Intro內容。
+- 提交協作：期間同副本405279a2完成升級文字樣式，與本項renderer以外的模型接線、hero3d快取及文件段落不同，原成果保留。首次Git提交遇同時索引寫入失敗；確認無index.lock、暫存14檔及shared文件差異僅本項後重試，未刪鎖或回退其他成果。
+- 交付：素材庫codex-authored/hero3d-role5-20261105共48檔（manifest核對47份來源），保留授權原GLB、Blend、原圖／成品／依賴及QA；素材Commit `fda176b`，載入失敗保護QA補充Commit `554cc15`，均先於遊戲（本段所在「[Codex] feat: 接入5轉金甲與原始PBR貼圖」，SHA見交付）。無本項未完成實作，可供Review及使用者合併；未合併或推送develop／main。下一步重載內測遊戲檢視五轉，GPU高壓相容性限制見上段。
+
+
 ## TEST-MAP-CAMERA-WHEEL-20261105 — 測試場景直接使用滾輪縮放鏡頭
 
 - Owner：Codex；Done，單一開發者。使用者要求測試場景也能以滑鼠滾輪調整鏡頭距離。GM test_map暫時不套用鏡頭鎖定，向上拉近、向下拉遠，沿用既有步進／界限／HUD與修飾鍵保護；離場後依原遊戲設定鎖定，不改設定或存檔。進出場景立即resize，使縮放與百分比同步恢復，不等待視窗尺寸改變。
@@ -14777,3 +14870,10 @@ Worker 存活且頁面正常完成載入。
 - 衝突／快取：移除 `index.html`、`js/strings_data.js` 工作檔衝突標記；保留設定頁的 `game-settings.js`、目前 UI sound runtime 與轉生耗魔呼叫。合併後快取使用新版本 `20261105-settings-hover-merge-v1`／`20261105-settings-reincarnation-merge-v1`，同步 index、bridge 的 Worker asset version 與 Worker 的 skills2 import；更新對應音效 cache regression assertion。
 - 驗證：`node tools/string-table/apply_strings.cjs --check` 通過（2325／e58d793c）；`node tools/string-table/build_string_csv.cjs --check` 通過（寫死顯示文字 0）；`node --test tests/reincarnation-mana-cost.test.cjs tests/string-table.test.cjs tests/ui-sound.test.cjs tests/ui-achievement-sound.test.cjs tests/vfx-editor-cache-versions.test.cjs` 41/41 通過；`npm.cmd run build` 660 檔通過。完整 merged-result 的 conflict marker、`git diff HEAD --check`、HEAD/MERGE_HEAD 與檔案清單於交付前再次核對。
 - 素材庫無變更。已知風險／未完成：無；index 保持 unmerged 是 controller 尚未依回報檔案 stage 的預期狀態，可由 controller 完成 merge commit。
+
+## DEVELOP-MERGE-5144253-20261105 — 開場動畫／升級特效／第五角色整合
+
+- Owner：Codex；Done（指定整合者）。整合原始 HEAD `297c923b` 與 MERGE_HEAD `51442531`；唯一原始衝突為 `index.html`，未執行 add、commit、push 或修改 Git metadata。
+- 衝突解法：保留主線的開場動畫、技能提示計數／耗魔與 Canvas 復原內容，以及 incoming 的升級 Preset、神石圖示、第五角色、成就樣式與 stats 更新。三個重疊快取改用新的合併版本 `20261105-intro-levelup-merge-v1`（style、battle-renderer、ui），避免任一側舊版快取遮蔽另一側修改；其餘自動合入檔案原樣保留。
+- Excel／生成資料／素材：原始衝突不含 XLSX，不建立 Excel DATA plan；無需重生 CSV／JS。incoming 的遊戲素材與來源文件保留，素材庫不需額外交付。
+- 驗證：角色5、LEVELUP、stats、VFX 與 cache 回歸共 178 項，172 通過；6 項失敗逐項與原始 HEAD 基線比對後完全相同（stats 1、既有 VFX 5），未新增 regression。修正 editor 的 strings_data 快取後 CV-1～CV-3 全通過；`npm.cmd run build` 669 檔通過，合併結果無 conflict marker，`git diff HEAD --check` 通過。已知風險：上述6項既有基線失敗仍待原任務處理；index 保持 unmerged 是 controller 尚未依回報檔案 stage 的預期狀態。

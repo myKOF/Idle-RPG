@@ -9,7 +9,7 @@
   <link rel="icon" href="images/icon_avatar.png" type="image/png">
   <link rel="preload" as="image" href="images/ui/gem-resonance/hex-backplate.png" fetchpriority="low">
   <link rel="preload" as="image" href="images/ui/heaven-power/dark-gold-seal.png?v=1" fetchpriority="low">
-  <link rel="stylesheet" href="css/style.css?v=1.0.120">
+  <link rel="stylesheet" href="css/style.css?v=20261105-intro-levelup-merge-v1">
   <link rel="stylesheet" href="css/inventory-offset.css">
   <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.103">
   <link rel="stylesheet" href="css/ashen-forge-flat.css?v=1.0.4">
@@ -17,7 +17,7 @@
   <link rel="stylesheet" href="css/runeword.css?v=1.0.9">
   <link rel="stylesheet" href="css/gems.css?v=1.0.25">
   <link rel="stylesheet" href="css/dialogs.css?v=1.0.5">
-  <link rel="stylesheet" href="css/achievements.css?v=1.0.10">
+  <link rel="stylesheet" href="css/achievements.css?v=1.0.12">
   <link rel="stylesheet" href="css/world-map.css?v=1.0.13">
   <link rel="stylesheet" href="css/divine-forge.css?v=1.0.15">
   <link rel="stylesheet" href="css/equipment-chaos.css?v=1.0.6">
@@ -72,7 +72,7 @@
           id="r-scrap">0</b></span>
       <span class="res" data-str-attr="data-tt-title:99;data-tt-desc:54"><img src="images/icon_essence.png" class="res-icon" alt="Essence"> <b
           id="r-essence">0</b></span>
-      <span class="res" style="display:none" data-str-attr="data-tt-title:100;data-tt-desc:55">💫 <b id="r-dust">0</b></span>
+      <span class="res" style="display:none" data-str-attr="data-tt-title:100;data-tt-desc:55"><img src="images/icon_divine_stone.png" class="res-icon" alt="" aria-hidden="true"> <b id="r-dust">0</b></span>
       <span class="res" style="display:none" data-str-attr="data-tt-title:13;data-tt-desc:56"><img src="images/icon_ancient_essence.png" class="res-icon" alt="Ancient Essence"> <b id="r-ancient-essence">0</b></span>
       <span class="res" style="display:none" data-str-attr="data-tt-title:101;data-tt-desc:57"><span class="res-emoji" aria-hidden="true">🧿</span> <b id="r-soul-origin">0</b></span>
       <span class="res" style="display:none" data-str-attr="data-tt-title:120;data-tt-desc:58"><span class="res-emoji" aria-hidden="true">🌱</span> <b id="r-demon-seed">0</b></span>
@@ -1146,13 +1146,14 @@
   <!-- three.js（js/vendor/three/README.md）：只給內測的 3D 主角（js/hero3d.js）用，第一次開 3D 才動態 import。
        GLTFLoader 用裸模組名稱 'three' 匯入，importmap 必須在任何 import() 之前宣告。 -->
   <script type="importmap">{"imports":{"three":"./js/vendor/three/three.module.min.js"}}</script>
-  <script src="js/hero3d.js?v=20261105-role4-v1"></script>
+  <script src="js/hero3d.js?v=20261105-role5-v1"></script>
   <!-- VFX Preset 運行時（docs/vfx/VFX_RUNTIME_ADAPTER.md）：Core 是純運算、
        Backend 是 Pixi 繪圖、Runtime 是「事件 → 角色 → 擺哪裡」的轉接層。
        必須在 battle-renderer 之前載入：它的 init() 會直接組裝這三支。 -->
   <script src="js/vfx-water-tornado.js?v=1.0.4"></script>
-  <script src="js/vfx-core.js?v=20261103-fit-body"></script>
-  <script src="js/vfx-pixi-backend.js?v=20261022-poison-tex-retry-integration"></script>
+  <script src="js/vfx-celebration.js?v=1.0.0"></script>
+  <script src="js/vfx-core.js?v=20261105-celebration-v1"></script>
+  <script src="js/vfx-pixi-backend.js?v=20261105-celebration-v1"></script>
   <script src="js/vfx-runtime.js?v=1.0.246"></script>
   <!-- 高塔的第二個 Pixi 疊層：卡片版面沒有座標，尺寸規則也另立一組（見檔頭）。 -->
   <script src="js/vfx-tower.js?v=1.0.3"></script>
@@ -1164,9 +1165,9 @@
   <!-- 封魔塔魔王祭壇（BOSS 戰專用場景）：沿用 battle-decor 的繪圖工具，battle-renderer 的 init() 會建立它。 -->
   <script src="js/battle-arena.js?v=1.0.8"></script>
   <script src="js/battle-elite.js?v=20261102-black-outlines"></script>
-  <script src="js/battle-renderer.js?v=20261105-canvas-revive"></script>
+  <script src="js/battle-renderer.js?v=20261105-intro-levelup-merge-v1"></script>
   <script src="js/sfx.js?v=1.0.1"></script>
-  <script src="js/stats.js?v=1.0.7"></script>
+  <script src="js/stats.js?v=1.0.8"></script>
   <script src="js/item.js?v=20261103-equipment-rarity-v3"></script>
   <script src="js/gem_resonance.js?v=1.0.10"></script>
   <script src="js/runeword.js?v=20261102_merged_ai_latest"></script>
@@ -1182,7 +1183,7 @@
   <script src="js/save.js?v=20261105-forge-offline2"></script>
   <script src="js/ui-inventory-skin.js?v=1.0.1"></script>
   <script src="js/ui-sound.js?v=20261105-settings-hover-merge-v1"></script>
-  <script src="js/ui.js?v=20261105-skill-tip-counter-mp"></script>
+  <script src="js/ui.js?v=20261105-intro-levelup-merge-v1"></script>
   <script src="js/ui-unlock-notices.js?v=20261103-unlock-any-action"></script>
   <script src="js/ui-world-map.js?v=1.0.9"></script>
   <script src="js/ui-runeword.js?v=1.0.16"></script>

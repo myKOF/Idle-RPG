@@ -10,4 +10,6 @@
 - 2026-11-05排列修正：以原本✡字形佔位維持原字級／基線／星列間距，PNG透過絕對定位偽元素覆蓋。三色共用黃色CSS外光暈（drop-shadow），光暈不占排版空間；PNG及素材庫母圖均不改寫，仍維持128px與原SHA。
 - 2026-11-05淺藍微調：僅第一條精鑄的圖片以CSS `brightness(0.92) saturate(1.08)`略微加深；濾鏡先調圖片再產生原黃色外暈，不影響另外兩色及原排版，PNG／母圖SHA保持。
 - 2026-11-05再調整：依使用者截圖，以正式防禦文字`--afx-def: #7fdcf5`為參考，取代上列微調。第一條精鑄使用內嵌SVG的sRGB色彩矩陣將R／G／B分別乘127／255、220／255、245／255，白色亮面對應參考藍，原明暗與alpha保留；黃色外暈在調色後產生，其他兩色及素材SHA保持。
+- 2026-11-05加強外框光暈：三色共用CSS內嵌SVG濾鏡，SourceAlpha膨脹1個CSS像素、減去原alpha後填深金色，再將原圖疊回，形成沿圖案的1px外描邊；最後套近／中／遠三層金黃色drop-shadow。描邊與光暈均不參與排版，保留原PNG／母圖／SHA及第一條的防禦藍調色。
+- 2026-11-05窄格避框：星列使用可壓縮Grid軌道，max-width為格內寬扣除左右共24px；每顆星星保留max-content及原18px字級，軌道縮短時只增加重疊，不縮圖案。寬格原步距保持，>4顆原重疊以兩側負margin及對稱padding保留，三色／描邊／光暈與PNG／母圖SHA不變。
 - 匯出：`node tools/ancient-stars/export-source.cjs --apply`；驗證：`node tools/ancient-stars/export-source.cjs --check`。素材庫路徑由共用 `vfx-library-root.cjs` 解析，不記錄本機絕對路徑。

@@ -49,7 +49,8 @@ var VFXRuntimePreview = (function () {
       function restart(){
         if(adapter)adapter.destroy();if(root)root.destroy({children:true});
         root=new PIXI.Container();root.position.set(400,240);app.stage.addChild(root);
-        adapter=VFXRuntime.create({core:VFXCore,resolver:resolver,fxBackend:VFXPixiBackend.createBackend({PIXI:PIXI,container:root}),
+        adapter=VFXRuntime.create({core:VFXCore,resolver:resolver,fxBackend:VFXPixiBackend.createBackend({PIXI:PIXI,container:root,
+          resolveText:function(key){return STR(Number(key));}}),
           ctx:{posOf:point,footOf:point,playerPos:function(){return point('pv-float');},chainPoint:point}});
         adapter.registerPresets(sources.concat([preset]));time=0;lastField=0;
         adapter.tryPlay(spec());status.textContent='播放中；位置標記：左側為我方，右側為目標。';

@@ -1102,6 +1102,7 @@
       { key: 'effect', label: 'effect', kind: 'select', options: function () { return VFXCore.PROCEDURAL_EFFECTS; } },
       vec('size', 'size(px)'),
       vec('scrollSpeed', 'scrollSpeed'),
+      json('celebration', '程序參數（粒子／文字樣式）'),
       OUTER_SCALE_FIELD, json('projection', '地面投影（x／y／rotation）')
     ]
   };
@@ -1414,11 +1415,12 @@
     var size = (gizmo.assetSize && layer.assetId && gizmo.assetSize[layer.assetId]) || null;
     // 序列素材的編輯框使用單格尺寸，不能把整張 atlas 當成水柱本體。
     if (layer.effect === 'waterTornado') return { width: 320, height: 320 };
+    if (layer.effect === 'celebration') return layer.celebration.part === 'text' ? { width: 320, height: 180 } : { width: 360, height: 300 };
     if (size && layer.sheet) return { width: size.width / layer.sheet.columns, height: size.height / layer.sheet.rows };
     return size;
   }
 
-  function boundsOf(layer) { return G.baseBounds(layer.effect === 'waterTornado' ? Object.assign({}, layer, { type: 'sprite' }) : layer, sizeOf(layer)); }
+  function boundsOf(layer) { return G.baseBounds(layer.effect === 'waterTornado' || layer.effect === 'celebration' ? Object.assign({}, layer, { type: 'sprite' }) : layer, sizeOf(layer)); }
 
   /* 父子層級：圖層的 position／rotation／scale 所在的座標＝父物件的世界矩陣（基本數值）。
      框、把手與拖曳的數學都在這個座標裡算（見 gizmo-model.js「父子層級的座標空間」）。
@@ -3545,6 +3547,51 @@
   /* 水龍捲是程序生成圖層：沒有序列圖集、平鋪尺寸或 procedural effect 可調 */
   var WATER_TORNADO_HIDDEN_FIELDS = ['sheet', 'size', 'scrollSpeed', 'effect'];
 
+  function renderCelebrationFields(host, targets) {
+    var part = targets[0].celebration.part, title = document.createElement('div');
+    title.className = 'group-title'; title.textContent = part === 'text' ? '升級文字樣式' : '聚光／爆散／螺旋粒子'; host.appendChild(title);
+    var fields = part === 'text' ? [
+      ['textKey', 'String 表編號', 'text'], ['style.fontFamily', '字型', 'text'],
+      ['style.fontSize', '字號', 'number'], ['style.stroke.width', '外框寬度（px）', 'number'],
+      ['style.fill', '文字顏色', 'color'], ['style.stroke.color', '外框顏色', 'color'],
+      ['style.dropShadow.color', '陰影顏色', 'color'], ['style.dropShadow.alpha', '陰影透明度', 'number'],
+      ['style.dropShadow.blur', '陰影模糊', 'number'], ['style.dropShadow.distance', '陰影距離', 'number'],
+      ['startY', '文字起點 Y', 'number'], ['rise', '上飄距離', 'number'], ['riseSec', '上飄時間（秒）', 'number'],
+      ['glowColor', '底光顏色', 'color'], ['glowMinX', '底光最小寬度倍率', 'number'],
+      ['glowWidthFactor', '底光隨字寬比例', 'number'], ['glowScaleY', '底光高度倍率', 'number']
+    ] : [
+      ['bodyY', '身體中心 Y', 'number'], ['gatherSec', '聚光時間（秒）', 'number'],
+      ['burstAt', '爆散起點（秒）', 'number'], ['vortexAt', '螺旋起點（秒）', 'number'],
+      ['gatherCount', '聚光粒子數', 'number'], ['sparkCount', '爆散粒子數', 'number'],
+      ['vortexCount', '螺旋粒子數', 'number'], ['trailCount', '每顆拖尾數', 'number'],
+      ['gatherReduced', '減量聚光粒子數', 'number'], ['sparkReduced', '減量爆散粒子數', 'number'],
+      ['vortexReduced', '減量螺旋粒子數', 'number'], ['trailReduced', '減量每顆拖尾數', 'number'],
+      ['gatherRadius', '聚光半徑', 'number'], ['gatherRadiusSpread', '聚光半徑變化', 'number'],
+      ['sparkSpeed', '爆散速度', 'number'], ['sparkSpeedSpread', '爆散速度變化', 'number'],
+      ['vortexRadius', '螺旋底部半徑', 'number'], ['vortexTop', '螺旋頂部 Y', 'number'], ['vortexEnd', '螺旋終點 Y', 'number']
+    ];
+    if (part === 'aura') Object.keys(targets[0].celebration.colors).forEach(function (key) { fields.push(['colors.' + key, '配色 ' + key, 'color']); });
+    fields.forEach(function (field) {
+      var keys = field[0].split('.');
+      function read(l) { return keys.reduce(function (o, key) { return o && o[key]; }, l.celebration); }
+      var input = document.createElement('input'); input.type = field[2]; input.setAttribute('data-celebration-param', field[0]);
+      if (field[2] === 'number') input.step = /Count|Reduced/.test(field[0]) ? '1' : '0.01';
+      showCommon(input, MX.commonValue(targets, read));
+      input.oninput = function () {
+        if (!input.value) return;
+        var value = field[2] === 'number' ? Number(input.value) : input.value;
+        var candidates = targets.map(function (l) {
+          var next = JSON.parse(JSON.stringify(l.celebration)), parent = keys.slice(0, -1).reduce(function (o, key) { return o[key]; }, next);
+          parent[keys[keys.length - 1]] = value; return next;
+        });
+        if (candidates.some(function (c) { return VFXCelebration.validate(c).length; })) { input.classList.add('err'); return; }
+        input.classList.remove('err'); targets.forEach(function (l, i) { l.celebration = candidates[i]; });
+        var raw = host.querySelector('[data-celebration-json]'); if (raw) raw.value = targets.length === 1 ? JSON.stringify(targets[0].celebration) : '';
+        onPresetChanged();
+      };
+      wireFieldTransaction(input, field[1]); host.appendChild(makeField(field[1], input));
+    });
+  }
   function fieldsOf(layer, list) {
     /* 空物件：Core 會把 assetId、blendMode、anchor、zIndex、sheet 當成不支援的欄位擋下，
        顯示出來只會讓人填了之後存不了檔。清單以 Core 為準，不另抄一份。
@@ -3553,6 +3600,10 @@
     if (layer.type === 'empty') {
       return list.filter(function (f) { return VFXCore.EMPTY_LAYER_FIELDS.indexOf(f.key) >= 0; });
     }
+    if (layer.effect === 'celebration') return list.filter(function (f) {
+      return ['assetId', 'size', 'scrollSpeed', 'projection'].indexOf(f.key) < 0;
+    });
+    list = list.filter(function (f) { return f.key !== 'celebration'; });
     if (layer.effect !== 'waterTornado') return list;
     return list.filter(function (f) { return WATER_TORNADO_HIDDEN_FIELDS.indexOf(f.key) < 0; });
   }
@@ -3864,6 +3915,7 @@
       } else if (f.kind === 'json') {
         control = document.createElement('input');
         control.type = 'text';
+        if (f.key === 'celebration') control.setAttribute('data-celebration-json', 'true');
         var jsonShown = MX.commonValue(targets, function (l) { return l[f.key]; });
         control.value = jsonShown.mixed || jsonShown.value === undefined
           ? '' : JSON.stringify(jsonShown.value);
@@ -4046,6 +4098,9 @@
       host.appendChild(hint);
     }
 
+    if (targets.every(function (l) { return l.effect === 'celebration' && l.celebration.part === targets[0].celebration.part; })) {
+      renderCelebrationFields(host, targets);
+    }
     if (targets.every(function (l) { return l.effect === 'waterTornado'; })) {
       var parts = [];
       targets.forEach(function (l) { if (parts.indexOf(l.water.part) < 0) parts.push(l.water.part); });
@@ -6159,7 +6214,8 @@
     var root = new PIXI.Container();
     state.stageRoot.addChild(root);
     state.effectRoot = root;
-    state.backend = VFXPixiBackend.createBackend({ PIXI: PIXI, container: root });
+    state.backend = VFXPixiBackend.createBackend({ PIXI: PIXI, container: root,
+      resolveText: function (key) { return STR(Number(key)); } });
     state.runtime = VFXCore.createRuntime({
       backend: state.backend,
       resolver: state.resolver
@@ -6592,7 +6648,9 @@
       ['VFXHistory', 'tools/vfx/editor/history.js'],
       ['VFXSemanticVocab', 'tools/vfx/vfx-semantic-vocab.cjs'],
       ['SpineRef', 'tools/vfx/editor/spine-ref.js'],
-      ['VFXWaterTornado', 'js/vfx-water-tornado.js']
+      ['VFXWaterTornado', 'js/vfx-water-tornado.js'],
+      ['VFXCelebration', 'js/vfx-celebration.js'],
+      ['Strings', 'js/strings.js']
     ];
     var missing = need.filter(function (m) {
       return typeof window[m[0]] === 'undefined';
