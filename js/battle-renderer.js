@@ -8429,6 +8429,22 @@ var BattleRenderer = (function () {
     S.app.renderer.resize(w, h);
     layoutScene();
   }
+  /* 回到前景／context 還原後的保險：context 還遺失就要求還原；清掉尺寸快取讓 resize 走完整流程（含場景版面重建），再補畫一幀。 */
+  function reviveCanvas(reason) {
+    if (!S.app || !S.ready || S.failed) return;
+    try {
+      var gl = S.app.renderer && S.app.renderer.gl;
+      if (gl && typeof gl.isContextLost === 'function' && gl.isContextLost()) {
+        var ext = gl.getExtension && gl.getExtension('WEBGL_lose_context');
+        console.warn('[battle-renderer] 回到前景時 WebGL context 仍遺失（' + reason + '），要求還原');
+        if (ext && ext.restoreContext) ext.restoreContext();
+        return;   // 還原完成會再觸發 webglcontextrestored
+      }
+      S.canvasW = 0; S.canvasH = 0;
+      resize();
+      S.app.render();
+    } catch (e) { console.warn('[battle-renderer] 畫布重建失敗', e); }
+  }
   function currentResolution() {
     var forced = resolutionByQuery();
     if (forced) return forced;
@@ -8469,8 +8485,20 @@ var BattleRenderer = (function () {
        handleVisibilityChange 呼叫 vfxSetEnabled(false) 的處置一致）。 */
     document.addEventListener('visibilitychange', function () {
       if (documentHidden()) clearAllFx();
-      else retryVfxRuntimeIfMissing();
+      else { retryVfxRuntimeIfMissing(); setTimeout(function () { reviveCanvas('visible'); }, 150); }
     });
+    /* WebGL 內容遺失（縮小視窗、切走久了、GPU 重置）→ 回來時戰鬥區整片空白（透出後面的白底）。
+       Pixi 自己會在 context 還原時重建資源，但這裡再保險一層：
+       還原後強制走一次完整的尺寸／場景重建並補畫一幀，並把狀態寫進 console 方便回報。 */
+    if (S.app && S.app.canvas) {
+      S.app.canvas.addEventListener('webglcontextlost', function () {
+        console.warn('[battle-renderer] WebGL context 遺失，等待還原');
+      });
+      S.app.canvas.addEventListener('webglcontextrestored', function () {
+        console.warn('[battle-renderer] WebGL context 已還原，重建場景');
+        reviveCanvas('restored');
+      });
+    }
 
     WorkerBridge.on('workerRestarting', function () {
       /* Worker 重啟＝所有舊身分作廢：FIELD_ENEMY_FLOAT_SEQ 是 Worker 內全域，
