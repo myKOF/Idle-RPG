@@ -206,6 +206,17 @@
 - 預檢：fetch後八個目標無外部修改；正式修改前新增目標再預檢。驗收新人物右手握劍、背部無殘劍、平整劍身／0.8長度、全部既有動畫資料與時序保持、素材來源／匯出SHA、相關測試及Build、正式遊戲渲染Console與高清GIF。素材庫先Commit，再遊戲Commit，交使用者預覽／合併。
 
 # AI_TASKS.md
+
+## REINCARNATION-MANA-COST-20261105 — 技能耗魔隨轉生法力同比增加
+
+- Owner：Codex；Done，單一開發者。使用者要求轉生後技能法力消耗以法力增幅同比增加，轉生確認只加「技能法力消耗增加」。前置：共通規範／Workflow／任務／Codex指示已讀、ai/codex、fetch及衝突預檢完成。
+- 允許：js/skills2.js耗魔函式、js/ui.js耗魔快照參數、String.xlsx既有2146列及其CSV／strings_data生成、index及bridge／Worker快取、LV_upgrade_system.md／game_formula.md、本段及新耗魔回歸。禁止改配置技能數值／其他功能／協議／存檔／素材、合併推送。保留本副本外部Skills2配置與生成修改，只提交本項區段。
+- 協作：Claude正在修改設定頁的ui.js／index與String新增列；使用者已明確同意保留雙方內容完成本次文字與快取更新，合併時整合。本項不更改其設定頁區段或新增列；String只改既有轉生2146列，UI只傳耗魔所需真實轉生快照，GM全解鎖不能提高耗魔。
+- 驗收：0轉保持表定耗魔；全部轉數使用reincarnationTotalMultiplier，涵蓋普通／終極／反擊追加／自動施放／UI快照，免費／GM鎖魔維持；舊檔依轉數即時計算，無存檔遷移。原生Excel獨占、正常重開驗證後匯出；針對性回歸、Build、字串／快取檢查、自我Review及Commit。後續使用者驗收／合併。
+- 完成12檔：skills2耗魔共用轉生倍率，所有普通／終極與反擊觸發入口同比增加；UI直接階級／終極／反擊預覽均帶快照，完整群組說明同值。GM技能快照保留解鎖旗標但輸出真實轉生數，避免虛擬進度誤增耗魔。String只改2146的繁中一格、保留既有內容並新增指定短句；來源獨占確認、原生Excel正常重開驗證通過（1格／繪圖物件0保留），唯讀對比HEAD確認只變R439C5；正常匯出CSV與生成strings_data。同步主端／Worker／bridge快取、LV及公式文件，沒有Protocol或存檔變更／新素材。
+- 測試：`node --test tests/reincarnation-mana-cost.test.cjs tests/reincarnate-gate.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs`28/28通過，新7例包含0～20轉、全部群組／階／終極、UI無G、真Worker轉生及存讀、GM快照、反擊／符文乘區／自動排程／實扣與免費追加。`npm.cmd run build`658檔通過；`node tools/string-table/build_string_csv.cjs --check`寫死0、`node tools/string-table/apply_strings.cjs --check`同步。較廣9檔171例127通過44失敗；以唯讀fs overlay還原本次runtime／UI／文字／index、保留當前配置，在同5個既有測試檔重跑144例100通過44失敗，失敗名稱完全相同、無新增。包含既有耗魔／反擊／終極配置期望、UI舊冷卻及快取斷言等，未修改或降低斷言。自我Review／diff／stat／check通過。
+- 實機：隨機localhost＋全新Edge headless上下文、真Worker新測試存檔。角色頁實際點轉生→讀取確認文字（短句一次、無耗魔百分比／倍率）→確認→技能快照1轉；飛刀10→15MP、標頭15MP，Console error／warning／pageerror均0。第一次QA誤在暫停時等待dirty面板而逾時，恢復正常跑tick後功能通過；另一次既有未使用威能預載警告，不修改無關資源，最終重驗無警告。測試腳本／報告／畫面在logs/reincarnation-mana-20261105，瀏覽器與服務已關閉，未讀寫玩家原網址存檔。
+- 協作／交付：ui.js只改耗魔呼叫區，與Claude設定頁不同段，三方merge-file exit0；String只改舊2146列、Claude只新增2317～2338列，LF正規化後三方merge-file exit0、無語意相依。index的strings_data／ui快取同一行已獲本聊天使用者明確授權，分支合併仍須整合雙方版本，不聲稱消除快取衝突。skills2使用分段patch只stage本項runtime，不收外部3行配置生成差異；其餘外部Excel／CSV保留。唯讀未改AI_RULES／AGENTS／Workflow／prompts、formula.js／player.js／skills.js／stats.js／protocol／save／其他配置及素材。Commit為本段所在「[Codex] feat: 技能耗魔隨轉生法力同比增加」，SHA見聊天交付；無本項未完成或已知新增缺陷，可Review及使用者合併，未合併推送。限制：既有44失敗待原任務處理，未做全庫／多瀏覽器與行動真機長測。下一步使用者重載驗收，合併時保留Claude設定頁與本項轉生文字及新版快取。
 - 完成11檔：新增role.glb／role.json／ROLE_SOURCE.md、prepare_role.py、export-role.cjs及hero3d-role回歸；修改hero3d模型URL／有無貼圖材質／模型專屬調色與披風適配、index快取、SOURCE提示、LV及本段。原黃金騎士GLB與sunbrand-cloth.json未改，不新增轉生外觀選單。
 - 模型：新外觀配合舊骨架bind pose，25骨、五動畫及原二進位區塊完整保持；連跑步亦逐位元相同，未採附件0.533秒跑步。拆除782個背劍候選頂點／438三角面，焊接UV接縫後補四處邊界；保留附件護手與皮柄，劍身重建平整六面截面，護手至尖0.9245084→0.7396067m（0.8倍），握點及原Sword軌跡保持。人物固定握拳配合舊腕骨，不新增IK／動畫處理。基色1024px，新GLB約4.14MB，四primitive；原黃金騎士SHA ad6645d1不變。
 - 素材庫：由既有library-root解析，新增codex-authored/hero3d-role-20261103保存使用者已授權44MB原Role、完整可編輯Blend、匯出、工具、來源與SHA manifest／QA。Blender4.5.10重開確認25骨／五Action／唯一使用貼圖已packed，無失效暫存貼圖；匯出入口--apply／--check／--source-check均通過，必要素材先提交，素材庫Commit c4b734b。未另使用Mote／imagegen，因本項為使用者指定3D底模之Blender編修。
@@ -14682,3 +14693,10 @@ Worker 存活且頁面正常完成載入。
 - 限制：已驗標準瀏覽器實際輸出，不能直接驗證聊天內建播放器的顯示／音響聽感；前次僅驗原PCM而未把短檔播放相容性驗好，本次交付3秒預覽並附1.2秒單擊檔讓使用者重試。不新增系統／字串，不改LV／String／UI接線／既有候選；唯讀檢查原產生器與v1／規範／Workflow／任務／package及Build工具，外部配置與成就音效續作變更保留、不提交。無新素材技術缺陷或未完成製作，可Review／保存修正版；聊天試聽待使用者驗收，未合併推送。
 
 - 雙庫交付：素材庫codex-authored/ui-low-drum-playback-20261105-v2先Commit `12e5afb`，再遊戲Commit（本段所在「[Codex] fix: 修復低鼓短音效的試聽交付」，SHA見聊天交付）。後續以D1～D5的3秒四次版重試，或使用single單擊版；所有遊戲／他人工作保留，未接線或合併推送。
+## DEVELOP-MERGE-535D7E8-20261105 — String/設定音效/轉生耗魔整合
+
+- Owner：Codex；Done（指定整合者，第二次原生 Excel handoff 驗證）。保留 HEAD `be67715c` 的設定頁與音效內容，以及 MERGE_HEAD `535d7e84` 的轉生技能耗魔內容；未執行 add、commit、push 或改動 Git metadata。
+- Excel：controller 已以原生 Excel 更新、正常重開並提供 `String.xlsx` SHA256 `DDEA5F07D9D5B3203407578982AE71E47C59B394C18768F0CC0E84CB7B18BE87`（String 工作表 2326 列、7 欄、Shapes 0）。本 pass 未啟動 COM 或改寫 XLSX；以 `PARAMS_XLSX=config/Excel/String.xlsx ... node tools/xlsx_to_csv.cjs` 唯讀匯出 `config/CSV/String.csv`，再執行 `node tools/string-table/apply_strings.cjs` 生成 2325 條、版本 `e58d793c` 的 `js/strings_data.js` 並同步 index。
+- 衝突／快取：移除 `index.html`、`js/strings_data.js` 工作檔衝突標記；保留設定頁的 `game-settings.js`、目前 UI sound runtime 與轉生耗魔呼叫。合併後快取使用新版本 `20261105-settings-hover-merge-v1`／`20261105-settings-reincarnation-merge-v1`，同步 index、bridge 的 Worker asset version 與 Worker 的 skills2 import；更新對應音效 cache regression assertion。
+- 驗證：`node tools/string-table/apply_strings.cjs --check` 通過（2325／e58d793c）；`node tools/string-table/build_string_csv.cjs --check` 通過（寫死顯示文字 0）；`node --test tests/reincarnation-mana-cost.test.cjs tests/string-table.test.cjs tests/ui-sound.test.cjs tests/ui-achievement-sound.test.cjs tests/vfx-editor-cache-versions.test.cjs` 41/41 通過；`npm.cmd run build` 660 檔通過。完整 merged-result 的 conflict marker、`git diff HEAD --check`、HEAD/MERGE_HEAD 與檔案清單於交付前再次核對。
+- 素材庫無變更。已知風險／未完成：無；index 保持 unmerged 是 controller 尚未依回報檔案 stage 的預期狀態，可由 controller 完成 merge commit。

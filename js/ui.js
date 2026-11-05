@@ -8962,7 +8962,7 @@ function sgbMetaText(gid, tierIdx, skillsSnapshot) {
   if (!g) return '';
   var isPassiveGroup = (typeof skills2IsPassive === 'function') && skills2IsPassive(gid);
   if (isPassiveGroup) {
-    var tierMp = (typeof skills2TierTriggerMp === 'function') ? skills2TierTriggerMp(gid, tierIdx) : 0;
+    var tierMp = (typeof skills2TierTriggerMp === 'function') ? skills2TierTriggerMp(gid, tierIdx, sgUiUnlockProgress(skillsSnapshot)) : 0;
     return STR(768, (tierMp > 0 ? '　' + STR(767, tierMp, (tierIdx >= 5 ? STR(769, tierMp) : '')) : ''));
   }
   var lvs = (typeof sgUiLevels === 'function' && skillsSnapshot) ? sgUiLevels(skillsSnapshot, gid) : null;
@@ -8970,7 +8970,7 @@ function sgbMetaText(gid, tierIdx, skillsSnapshot) {
   var cost = (typeof skills2ManaCost === 'function') ? skills2ManaCost(gid, lvs, ultRaw, sgUiUnlockProgress(skillsSnapshot)) : 0;
   if (cost <= 0 && typeof skills2TierManaCost === 'function') {
     var fallbackTier = (typeof tierIdx === 'number' && tierIdx >= 0) ? tierIdx : 0;
-    cost = skills2TierManaCost(gid, fallbackTier);
+    cost = skills2TierManaCost(gid, fallbackTier, null, sgUiUnlockProgress(skillsSnapshot));
   }
   return '🔵 ' + cost + ' MP　⏱️ ' + g.cd + 's';
 }
@@ -9067,7 +9067,7 @@ function sgbUltHTML(gid, lvs, skillsSnapshot, gold, pendingAttrs) {
   h += '<div class="sgb-tier-detail sgb-ult-detail">' +
     '<div class="sgb-ult-name">' + esc(list[f] ? list[f].name : '') +
     (fChosen && (!isPassiveGroup || gid === 'counter')
-      ? '<span class="sgb-ult-mp">🔵 ' + skills2TierManaCost(gid, 0, pick.id) + (gid === 'counter' ? ' ' + STR(788) : ' ' + STR(789)) + '</span>' : '') +
+      ? '<span class="sgb-ult-mp">🔵 ' + skills2TierManaCost(gid, 0, pick.id, sgUiUnlockProgress(skillsSnapshot)) + (gid === 'counter' ? ' ' + STR(788) : ' ' + STR(789)) + '</span>' : '') +
     '</div>' +
     '<div class="sgb-desc">' + describeSkill2Ult(gid, f, fChosen ? pick.lv : 1) + '</div>';
   if (fChosen && unlocked && pick.lv < tierMax) {
@@ -9386,7 +9386,7 @@ function showSkillTooltip(ref, anchorEl) {
       var sgUltH = '<div class="skt-name">' + STR(817, esc(sgUltPick ? sgUltPick.def.name : STR(816)), (sgG.tiers.length + 1), (sgUltPick ? sgUltPick.lv : 0), SG_TIER_MAX_LV) + '</div>';
       sgUltH += '<div class="skt-meta">' + STR(818, esc(sgG.name), SG_TIER_MAX_LV) + '</div>';
       if (sgUltPick) {
-        if (!skills2IsPassive(sgTipGid) || sgTipGid === 'counter') sgUltH += '<div class="skt-meta">🔵 ' + skills2TierManaCost(sgTipGid, 0, sgUltPick.id) + (sgTipGid === 'counter' ? ' ' + STR(788) : ' ' + STR(789)) + '</div>';
+        if (!skills2IsPassive(sgTipGid) || sgTipGid === 'counter') sgUltH += '<div class="skt-meta">🔵 ' + skills2TierManaCost(sgTipGid, 0, sgUltPick.id, sgUiUnlockProgress(skillsSnapshot)) + (sgTipGid === 'counter' ? ' ' + STR(788) : ' ' + STR(789)) + '</div>';
         sgUltH += '<div class="skt-desc">' + describeSkill2Ult(sgTipGid, sgUltPick.idx, sgUltPick.lv) + '</div>';
         if (!sgUltOk) sgUltH += '<div class="skt-lock skill-unlock-hint">' + STR(819) + '</div>';
       } else {
@@ -9407,11 +9407,11 @@ function showSkillTooltip(ref, anchorEl) {
       var sgTier = sgG.tiers[sgTipTier];
       var sgLocked = !sgStageUnlocked(sgTipGid, sgLvs, sgTipTier, skillsSnapshot);
       var sgH = '<div class="skt-name">' + STR(821, skillIconHTML(sgTipGid, sgG.emoji), esc(sgTier.name), (sgTipTier + 1), (sgLvs[sgTipTier] || 0), SG_TIER_MAX_LV) + '</div>';
-      var sgTipMp = (typeof skills2TierTriggerMp === 'function') ? skills2TierTriggerMp(sgTipGid, sgTipTier) : 0;
+      var sgTipMp = (typeof skills2TierTriggerMp === 'function') ? skills2TierTriggerMp(sgTipGid, sgTipTier, sgUiUnlockProgress(skillsSnapshot)) : 0;
       sgH += '<div class="skt-meta">' + esc(sgG.name) + '　' +
         ((typeof skills2IsPassive === 'function' && skills2IsPassive(sgTipGid))
           ? (STR(822, (sgTipMp > 0 ? '　' + STR(767, sgTipMp, (sgTipTier >= 5 ? STR(769, sgTipMp) : '')) : '')))
-          : '🔵 ' + skills2TierManaCost(sgTipGid, sgTipTier) + ' MP　⏱️ ' + sgG.cd + 's') + '</div>';
+          : '🔵 ' + skills2TierManaCost(sgTipGid, sgTipTier, null, sgUiUnlockProgress(skillsSnapshot)) + ' MP　⏱️ ' + sgG.cd + 's') + '</div>';
       sgH += '<div class="skt-desc">' + describeSkill2Tier(sgTipGid, sgTipTier, sgLvs[sgTipTier] || 0) + '</div>';
       if (sgLocked) sgH += '<div class="skt-lock skill-unlock-hint">🔒 ' + esc(sgStageLockReason(sgTipGid, sgTipTier, skillsSnapshot)) + '</div>';
       sgH += '<div class="skt-hint">' + STR(823) + '</div>' + skillTowerUnlockHintHTML(sgTier, skillsSnapshot);
