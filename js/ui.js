@@ -13007,81 +13007,77 @@ function initUI() {
 
   // 熔爐頁設定（舊生產線的篩選/合成節點已移除）
 
-  // 設定分頁：存檔管理
-  $id('btn-save').addEventListener('click', function () {
+  // 設定分頁：存檔管理——只有三個動作：立刻存檔（手動存檔進下方列表）、匯出存檔（彈出路徑視窗）、開啟存檔資料夾（桌面外殼提供）
+  function setSaveMsg(text, tone) {
     var m = $id('save-msg');
-    if (m) m.textContent = STR(2077);
-    ensureSaveFolderV2(function (err, folderRes) {
-      if (err || !folderRes) {
-        var reason = STR(2079, (err || STR(2078)));
-        if (m) m.textContent = reason;
-        blog(reason, 'warn');
-        return;
-      }
-      sendUiCommand('save.toFolder', { label: folderRes.dirName || '' }, {
-        silentResultError: true,  // 下方 .then 自行丟出
-        keys: [nodePendingKey('save-folder')],
-        panels: []
-      }).then(function (result) {
-        var error = uiCommandResultError(result);
-        if (error) throw new Error(error);
-        var rec = result && result.result ? result.result : result;
-        UI.saveNoticeId = rec && rec.id;
-        var text = STR(2080, folderRes.dirName, (rec && rec.fname ? '：' + rec.fname : ''));
-        if (m) m.textContent = text;
-        blog(text, 'good');
-        /* 指令 resolve 只代表 Worker 收下並發出了 persist，檔案還沒寫進磁碟。
-           直接刷新會掃到還沒有新檔案的資料夾，玩家得自己再按一次「重新掃描」。 */
-        WorkerBridge.whenWritesDrained(function (drainErr) {
-          if (drainErr) blog(STR(2081), 'warn');
-          renderSaveList();
-          refreshSaveFolderFilesV2();
-        });
-      }).catch(function (e) {
-        var detail = e && e.message ? e.message : String(e);
-        var text = STR(2082, detail);
-        if (m) m.textContent = text;
-        blog(text, 'bad');
+    if (m) m.textContent = text;
+    if (tone) blog(text, tone);
+  }
+  $id('btn-save').addEventListener('click', function () {
+    setSaveMsg(STR(2343));
+    sendUiCommand('save.manual', { label: '' }, {
+      silentResultError: true,  // 下方 .then 自行丟出
+      keys: [nodePendingKey('save-manual')],
+      panels: []
+    }).then(function (result) {
+      var error = uiCommandResultError(result);
+      if (error) throw new Error(error);
+      var rec = result && result.result ? result.result : result;
+      if (!rec || !rec.id) throw new Error(STR(2352));
+      UI.saveNoticeId = rec.id;
+      setSaveMsg(STR(2344, rec.fname || ''), 'good');
+      /* 指令 resolve 只代表 Worker 收下並發出了 persist，記錄還沒寫進儲存空間；等寫入完成再刷新列表，新存檔才會出現在清單裡。 */
+      WorkerBridge.whenWritesDrained(function (drainErr) {
+        if (drainErr) blog(STR(2081), 'warn');
+        renderSaveList();
       });
+    }).catch(function (e) {
+      setSaveMsg(STR(2345, e && e.message ? e.message : String(e)), 'bad');
     });
   });
-  $id('btn-folder').addEventListener('click', function () {
-    var m = $id('save-msg');
-    if (m) m.textContent = STR(2083);
-    openSaveFolder(function (err, res) {
-      var text = '';
-      if (err) {
-        text = '⚠️ ' + err;
-      } else if (res && res.selected) {
-        text = STR(2084, res.dirName, ((res.files || []).length));
-        refreshSaveFolderFilesV2(res.files || []);
-      }
-      if (text) {
-        if (m) m.textContent = text;
-        blog(text, err ? 'warn' : 'good');
-      }
-      renderSaveList();
-    }, true);
-  });
-  var bannerFolderBtn = $id('btn-folder-banner');
-  if (bannerFolderBtn) bannerFolderBtn.addEventListener('click', function () { $id('btn-folder').click(); });
-  var btnFolderRefresh = $id('btn-folder-refresh');
-  if (btnFolderRefresh) btnFolderRefresh.addEventListener('click', function () {
-    rescanSaveFolderView(true);
-  });
-  window.addEventListener('focus', function () {
-    if (UI.tab === 'settings' || (typeof GameMenu !== 'undefined' && GameMenu.isSettingsOpen())) rescanSaveFolderView(false);
-  });
-  $id('btn-restart').addEventListener('click', function () {
-    var restartAuto = autoSaveMetaV2();
-    showConfirmDialog(STR(2085, (restartAuto.runId || 1)), function () {
-      sendUiCommand('save.restart', {}, {
-        keys: [nodePendingKey('save-restart')]
-      }).catch(function (error) {
-        reportUiCommandFailure(STR(208), error);
+  /* 匯出存檔：把「此刻」的即時存檔寫成檔案。先彈路徑視窗（要在點擊的使用者手勢內）、再存檔取資料，最後才寫檔；
+     瀏覽器沒有檔案存放視窗（非 Chromium）時改用下載。 */
+  function exportSaveFileName() { return 'IC_export_' + saveStamp(Date.now()) + '.json'; }
+  $id('btn-export-save').addEventListener('click', function () {
+    var name = exportSaveFileName();
+    var picker = typeof window.showSaveFilePicker === 'function'
+      ? window.showSaveFilePicker({ suggestedName: name, types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }] })
+      : Promise.resolve(null);
+    picker.then(function (handle) {
+      setSaveMsg(STR(2346));
+      return Promise.resolve(WorkerBridge.saveAutoNow()).then(function () {
+        return new Promise(function (resolve) { idbGetAutoV2(resolve); });
+      }).then(function (raw) {
+        if (!raw) throw new Error(STR(2351));
+        if (handle) {
+          return handle.createWritable().then(function (writer) {
+            return writer.write(raw).then(function () { return writer.close(); });
+          }).then(function () { return handle.name || name; });
+        }
+        var url = URL.createObjectURL(new Blob([raw], { type: 'application/json' }));
+        var link = document.createElement('a');
+        link.href = url; link.download = name;
+        document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
+        return name;
       });
-    }, { title: STR(209), okText: STR(208), danger: true });
+    }).then(function (savedName) {
+      setSaveMsg(STR(2347, savedName), 'good');
+    }).catch(function (e) {
+      if (e && e.name === 'AbortError') { setSaveMsg(STR(2349)); return; }   // 玩家在路徑視窗按了取消
+      setSaveMsg(STR(2348, e && e.message ? e.message : String(e)), 'bad');
+    });
   });
+  /* 開啟存檔資料夾：網頁本身不能開資料總管；桌面外殼提供 window.ApexHost.openSaveFolder() 時才顯示按鈕（資料夾固定、不可自選）。 */
+  var openFolderButton = $id('btn-open-save-folder');
+  if (openFolderButton && window.ApexHost && typeof window.ApexHost.openSaveFolder === 'function') {
+    openFolderButton.hidden = false;
+    openFolderButton.addEventListener('click', function () {
+      Promise.resolve().then(function () { return window.ApexHost.openSaveFolder(); }).catch(function (e) {
+        setSaveMsg(STR(2350, e && e.message ? e.message : String(e)), 'warn');
+      });
+    });
+  }
   // 讀取/刪除本地存檔（每列右側按鈕，需二次確認）
   $id('save-list').addEventListener('click', function (e) {
     var loadBtn = e.target.closest('[data-load-save]');

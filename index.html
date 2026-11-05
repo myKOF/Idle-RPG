@@ -11,7 +11,7 @@
   <link rel="preload" as="image" href="images/ui/heaven-power/dark-gold-seal.png?v=1" fetchpriority="low">
   <link rel="stylesheet" href="css/style.css?v=1.0.115">
   <link rel="stylesheet" href="css/inventory-offset.css">
-  <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.102">
+  <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.103">
   <link rel="stylesheet" href="css/ashen-forge-flat.css?v=1.0.4">
   <link rel="stylesheet" href="css/battle-hud.css?v=1.0.19">
   <link rel="stylesheet" href="css/runeword.css?v=1.0.9">
@@ -763,6 +763,7 @@
         <button type="button" role="tab" id="settings-tab-game" class="settings-tab-btn active" data-settings-tab="game" aria-selected="true" aria-controls="settings-pane-game" data-str="2318"></button>
         <button type="button" role="tab" id="settings-tab-audio" class="settings-tab-btn" data-settings-tab="audio" aria-selected="false" aria-controls="settings-pane-audio" tabindex="-1" data-str="2319"></button>
         <button type="button" role="tab" id="settings-tab-save" class="settings-tab-btn" data-settings-tab="save" aria-selected="false" aria-controls="tab-settings" tabindex="-1" data-str="2320"></button>
+        <button type="button" role="tab" id="settings-tab-help" class="settings-tab-btn" data-settings-tab="help" aria-selected="false" aria-controls="settings-pane-help" tabindex="-1" data-str="2339"></button>
       </div>
       <div class="system-settings-body">
         <section id="settings-pane-game" class="settings-pane" role="tabpanel" aria-labelledby="settings-tab-game">
@@ -808,44 +809,122 @@
           </div>
           <div class="panel">
             <div class="sec-title" data-str="1960"></div>
-            <div id="save-folder-banner"
-              style="display:none; background:rgba(251,191,36,0.12); border:1px solid #f59e0b; border-radius:8px; padding:12px 16px; margin-bottom:12px;">
-              <div style="font-weight:bold; color:#f59e0b; margin-bottom:6px;" data-str="1961"></div>
-              <div style="font-size:13px; color:var(--dim); margin-bottom:10px;" data-str="1962"></div>
-              <button id="btn-folder-banner" class="btn"
-                style="background:linear-gradient(135deg,#f59e0b,#d97706); color:#000; border:none;" data-str="1963"></button>
-            </div>
             <div class="btn-row">
-              <button id="btn-save" class="btn" data-str="1964"></button>
-              <button id="btn-folder" class="btn" data-str="1965"></button>
-              <button id="btn-folder-refresh" class="btn" data-str="1966"></button>
-              <button id="btn-restart" class="btn danger" data-str="1967"></button>
-            </div>
-            <div class="hint" data-str-html="1968"></div>
-            <div id="save-folder-files" class="save-folder-files" hidden>
-              <div class="save-folder-files-title" data-str="1969"></div>
-              <div id="save-folder-files-list"></div>
+              <button id="btn-save" class="btn" type="button" data-str="2340"></button>
+              <button id="btn-export-save" class="btn" type="button" data-str="2341"></button>
+              <button id="btn-open-save-folder" class="btn" type="button" data-str="2342" hidden></button>
             </div>
             <div class="sec-sub" data-str="1970"></div>
             <div id="save-list"></div>
             <div class="node-info" id="save-msg"></div>
           </div>
-          <div class="panel">
-            <div class="sec-title" data-str="1971"></div>
-            <div class="help">
-              <p data-str-html="1972"></p>
-              <p data-str-html="1973"></p>
-              <p data-str-html="1974"></p>
-              <p data-str-html="1975"></p>
-              <p data-str-html="1976"></p>
-              <p data-str-html="1977"></p>
-              <p data-str-html="1978"></p>
-              <p data-str-html="1979"></p>
-              <p data-str-html="1980"></p>
-              <p data-str-html="1981"></p>
-              <p data-str-html="1982"></p>
-            </div>
-          </div>
+        </section>
+        <section id="settings-pane-help" class="settings-pane settings-help" role="tabpanel" aria-labelledby="settings-tab-help" hidden>
+          <p class="help-intro" data-str-html="2353"></p>
+          <section class="help-section">
+            <div class="help-head"><img class="help-icon" src="images/ui/enamel-nav/char.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"><h3 data-str="63"></h3></div>
+            <p class="help-lead" data-str="2354"></p>
+            <ul>
+              <li data-str-html="2355"></li>
+              <li data-str-html="2356"></li>
+            </ul>
+          </section>
+          <section class="help-section">
+            <div class="help-head"><img class="help-icon" src="images/ui/enamel-nav/equip.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"><h3 data-str="46"></h3></div>
+            <p class="help-lead" data-str="2357"></p>
+            <ul>
+              <li data-str-html="2358"></li>
+              <li data-str-html="2359"></li>
+              <li data-str-html="2360"></li>
+              <li data-str-html="2361"></li>
+              <li data-str-html="2362"></li>
+              <li data-str-html="2363"></li>
+              <li data-str-html="2364"></li>
+              <li data-str-html="2365"></li>
+            </ul>
+          </section>
+          <section class="help-section">
+            <div class="help-head"><img class="help-icon" src="images/ui/enamel-nav/skills.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"><h3 data-str="41"></h3></div>
+            <p class="help-lead" data-str="2366"></p>
+            <ul>
+              <li data-str-html="2367"></li>
+              <li data-str-html="2368"></li>
+              <li data-str-html="2369"></li>
+              <li data-str-html="2370"></li>
+            </ul>
+          </section>
+          <section class="help-section">
+            <div class="help-head"><img class="help-icon" src="images/ui/enamel-nav/newforge.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"><h3 data-str="64"></h3></div>
+            <p class="help-lead" data-str="2371"></p>
+            <ul>
+              <li data-str-html="2372"></li>
+              <li data-str-html="2373"></li>
+              <li data-str-html="2374"></li>
+              <li data-str-html="2375"></li>
+              <li data-str-html="2376"></li>
+            </ul>
+          </section>
+          <section class="help-section">
+            <div class="help-head"><img class="help-icon" src="images/ui/enamel-nav/gems.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"><h3 data-str="122"></h3></div>
+            <p class="help-lead" data-str="2377"></p>
+            <ul>
+              <li data-str-html="2378"></li>
+              <li data-str-html="2379"></li>
+              <li data-str-html="2380"></li>
+              <li data-str-html="2381"></li>
+              <li data-str-html="2382"></li>
+            </ul>
+          </section>
+          <section class="help-section">
+            <div class="help-head"><img class="help-icon" src="images/ui/enamel-nav/runes.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"><h3 data-str="150"></h3></div>
+            <p class="help-lead" data-str="2383"></p>
+            <ul>
+              <li data-str-html="2384"></li>
+              <li data-str-html="2385"></li>
+              <li data-str-html="2386"></li>
+            </ul>
+          </section>
+          <section class="help-section">
+            <div class="help-head"><img class="help-icon" src="images/ui/enamel-nav/tower.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"><h3 data-str="103"></h3></div>
+            <p class="help-lead" data-str="2387"></p>
+            <ul>
+              <li data-str-html="2388"></li>
+              <li data-str-html="2389"></li>
+              <li data-str-html="2390"></li>
+              <li data-str-html="2391"></li>
+              <li data-str-html="2392"></li>
+            </ul>
+          </section>
+          <section class="help-section">
+            <div class="help-head"><img class="help-icon" src="images/ui/enamel-nav/talents.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"><h3 data-str="65"></h3></div>
+            <p class="help-lead" data-str="2393"></p>
+            <ul>
+              <li data-str-html="2394"></li>
+              <li data-str-html="2395"></li>
+            </ul>
+          </section>
+          <section class="help-section">
+            <div class="help-head"><img class="help-icon" src="images/ui/enamel-nav/forge.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"><h3 data-str="66"></h3></div>
+            <p class="help-lead" data-str="2396"></p>
+            <ul>
+              <li data-str-html="2397"></li>
+              <li data-str-html="2398"></li>
+              <li data-str-html="2399"></li>
+              <li data-str-html="2400"></li>
+              <li data-str-html="2401"></li>
+            </ul>
+          </section>
+          <section class="help-section">
+            <div class="help-head"><img class="help-icon" src="images/ui/enamel-nav/char.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"><h3 data-str="2403"></h3></div>
+            <p class="help-lead" data-str="2402"></p>
+            <ul>
+              <li data-str-html="2404"></li>
+              <li data-str-html="2405"></li>
+              <li data-str-html="2406"></li>
+              <li data-str-html="2407"></li>
+              <li data-str-html="2408"></li>
+            </ul>
+          </section>
         </section>
       </div>
     </div>
@@ -1043,7 +1122,7 @@
        已移除（主執行緒零呼叫，只在 Worker 內跑）：
          special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/util.js?v=1.0.4"></script>
-  <script src="js/strings_data.js?v=e58d793c"></script>
+  <script src="js/strings_data.js?v=e580dc6a"></script>
   <script src="js/strings.js?v=1.0.1"></script>
   <script src="js/game-settings.js?v=1.0.0"></script>
   <script src="js/ui-scale.js?v=1.0.1"></script>
@@ -1099,7 +1178,7 @@
   <script src="js/save.js?v=20261104-retire-enchant-book"></script>
   <script src="js/ui-inventory-skin.js?v=1.0.1"></script>
   <script src="js/ui-sound.js?v=20261105-settings-hover-merge-v1"></script>
-  <script src="js/ui.js?v=20261105-settings-reincarnation-merge-v1"></script>
+  <script src="js/ui.js?v=20261105-settings-reincarnation-merge-v1-save"></script>
   <script src="js/ui-unlock-notices.js?v=20261103-unlock-any-action"></script>
   <script src="js/ui-world-map.js?v=1.0.9"></script>
   <script src="js/ui-runeword.js?v=1.0.16"></script>
@@ -1128,7 +1207,7 @@
        正式遊玩不包裝任何函式、不攔任何屬性。排在 main 之前，才來得及在
        DOMContentLoaded 就把 ui.js 的渲染函式包起來。用法：網址加 ?lag=1 -->
   <script src="js/lagprobe.js?v=1.0.19"></script>
-  <script src="js/game-menu.js?v=1.0.6"></script>
+  <script src="js/game-menu.js?v=1.0.7"></script>
   <script src="js/ai-key-setting.js?v=20261105-settings-tabs"></script>
   <script src="js/main.js?v=1.0.5"></script>
 </body>

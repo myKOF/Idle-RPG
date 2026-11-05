@@ -115,10 +115,11 @@ test('逾時仍然回呼並帶錯誤，不得讓畫面卡在等待狀態', async
   assert.ok(called.err instanceof Error);
 });
 
-test('接線：存檔完成後的清單刷新走 whenWritesDrained', () => {
+test('接線：立刻存檔完成後的清單刷新走 whenWritesDrained', () => {
   const start = uiSrc.indexOf("$id('btn-save')");
   assert.notEqual(start, -1, '找不到立即存檔按鈕的處理');
-  const handler = uiSrc.slice(start, start + 1600);
-  assert.match(handler, /WorkerBridge\.whenWritesDrained\(function \(drainErr\)[\s\S]*?renderSaveList\(\);[\s\S]*?refreshSaveFolderFilesV2\(\);/,
-    '兩個刷新都必須在寫入落地之後才做，否則掃到的資料夾還沒有新檔案');
+  const handler = uiSrc.slice(start, start + 1800);
+  assert.match(handler, /sendUiCommand\('save\.manual'/, '立刻存檔＝手動存檔，不需要選資料夾');
+  assert.match(handler, /WorkerBridge\.whenWritesDrained\(function \(drainErr\)[\s\S]*?renderSaveList\(\);/,
+    '清單必須在寫入落地之後才刷新，否則新存檔不會出現');
 });

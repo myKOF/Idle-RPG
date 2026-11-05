@@ -47,8 +47,8 @@ var GameMenu = (function () {
   /* ---- 設置視窗：遊戲設定／音訊／存檔 三個頁籤 ----
      自己保存的偏好（輪廓、鏡頭鎖定、音訊）在 GameSettings；其餘四項轉接各自原本的開關（見 js/game-settings.js 開頭），
      所以每次開啟都從來源重新讀一次勾選狀態，不另存一份。 */
-  var SETTINGS_TABS = ['game', 'audio', 'save'];
-  var SETTINGS_PANES = { game: 'settings-pane-game', audio: 'settings-pane-audio', save: 'tab-settings' };
+  var SETTINGS_TABS = ['game', 'audio', 'save', 'help'];
+  var SETTINGS_PANES = { game: 'settings-pane-game', audio: 'settings-pane-audio', save: 'tab-settings', help: 'settings-pane-help' };
   function selectSettingsTab(name, focusTab) {
     if (SETTINGS_TABS.indexOf(name) < 0) name = 'game';
     SETTINGS_TABS.forEach(function (key) {

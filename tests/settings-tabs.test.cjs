@@ -82,7 +82,7 @@ test('Sfx：音量依音效音量縮放、全體靜音不發聲、我方／敵�
 test('index.html：三個頁籤，遊戲設定頁六項與音訊頁五項，預設勾選與題目一致', () => {
   const html = readExpanded(path.join(root, 'index.html'));
   const tabs = [...html.matchAll(/data-settings-tab="(\w+)"/g)].map(m => m[1]);
-  assert.deepEqual(tabs, ['game', 'audio', 'save']);
+  assert.deepEqual(tabs, ['game', 'audio', 'save', 'help']);
   assert.match(html, /<button[^>]*id="settings-tab-game"[^>]*>遊戲設定<\/button>/);
   assert.match(html, /<button[^>]*id="settings-tab-audio"[^>]*>音訊<\/button>/);
   assert.match(html, /<button[^>]*id="settings-tab-save"[^>]*>存檔<\/button>/);
@@ -106,7 +106,7 @@ function loadMenu(initial) {
   const mk = (id, extra) => (nodes[id] = Object.assign({ id, style: {}, classList: { toggle() {}, add() {}, remove() {} }, hidden: false, checked: false, disabled: false, value: '50', textContent: '', tabIndex: 0,
     setAttribute() {}, addEventListener(name, fn) { (listeners[id] = listeners[id] || {})[name] = fn; }, focus() {}, getClientRects: () => [1], querySelectorAll: () => [] }, extra));
   ['game-menu', 'settings-modal', 'game-menu-reload', 'game-menu-exit', 'game-menu-save', 'game-menu-settings', 'game-menu-close', 'settings-modal-close', 'game-menu-status',
-    'settings-tab-game', 'settings-tab-audio', 'settings-tab-save', 'settings-pane-game', 'settings-pane-audio', 'tab-settings',
+    'settings-tab-game', 'settings-tab-audio', 'settings-tab-save', 'settings-tab-help', 'settings-pane-game', 'settings-pane-audio', 'tab-settings', 'settings-pane-help',
     'set-outline', 'set-reduce-fx', 'set-damage-numbers', 'set-camera-lock', 'set-auto-equip', 'set-compare-equip', 'set-mute', 'set-ally-sfx', 'set-enemy-sfx',
     'set-music-volume', 'set-sfx-volume', 'set-music-volume-value', 'set-sfx-volume-value', 'toggle-autoequip', 'toggle-compare'].forEach(id => mk(id));
   const group = mk('settings-audio-group', { classes: new Set(), inputs: [nodes['set-music-volume'], nodes['set-sfx-volume'], nodes['set-ally-sfx'], nodes['set-enemy-sfx']] });
