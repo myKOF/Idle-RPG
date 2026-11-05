@@ -536,18 +536,21 @@ objField('data', 'REROLL_ESSENCE_COST = {', '9', '7-洗煉', '精華費用', 2, 
   const g = Array.from({ length: 9 }, (_, i) => P('8-寶石', '寶石合成金幣', i));
   arrayContent('data', 'FUSE_GOLD_COST', '0, ' + g.join(', '), 'FUSE_GOLD_COST');
 }
+/* 「10^次方」寫法轉成 JS 數字字面值。次方可為小數（例 10^9.5）。
+   ⚠️ 不可把原字串照抄進 JS：`10^9.5` 在 JS 是位元 XOR，結果是 3 而不是 10 的 9.5 次方。
+   所以無法解析的格子一律中止，不再回傳原字串。 */
 function parseExpMultiplier(raw) {
   const str = String(raw).trim();
-  const m = str.match(/^10\^(\d+)$/);
+  const m = str.match(/^10\s*\^\s*(\d+(?:\.\d+)?)$/);
   if (m) {
-    const exp = parseInt(m[1], 10);
+    const exp = Number(m[1]);
     if (exp === 0) return '1';
+    if (!Number.isInteger(exp)) return String(Math.pow(10, exp));
     if (exp <= 9) return String(Math.pow(10, exp));
     return '1e' + exp;
   }
-  const n = Number(str);
-  if (!isNaN(n)) return String(n);
-  return str;
+  if (str !== '' && NUMBER_LITERAL.test(str)) return String(Number(str));
+  throw new Error('轉生對照表 升級經驗倍率無法解析：「' + str + '」（應為數字或 10^次方，例 10^9.5）');
 }
 function getReincarnationCell(n, paramIdx) {
   const table = index['1-轉生對照表'];
