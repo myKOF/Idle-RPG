@@ -586,11 +586,16 @@ function skills2Ult(gid) {
   return sgEffectiveUlt(raw, gid, skills2Levels(gid));
 }
 /* 當階消耗不是累加；表格留白／0 代表免費。UI 傳入快照，模擬端省略參數讀 G。 */
-function skills2TierManaCost(gid, tierIdx, ultId) {
+function skills2ManaMultiplier(prog) {
+  // 不經 sgUnlockProgress：GM 全解鎖的虛擬進度不能改變真正的轉生耗魔。
+  if (typeof reincarnationTotalMultiplier !== 'function') return 1;
+  return reincarnationTotalMultiplier(prog ? (Number(prog.reinc) || 0) : undefined);
+}
+function skills2TierManaCost(gid, tierIdx, ultId, prog) {
   var g = SKILLS2[gid];
   if (!g) return 0;
   var row = ultId ? (g.ult || []).filter(function (u) { return u.id === ultId; })[0] : g.tiers[tierIdx];
-  return Math.max(0, Number(row && row.cost) || 0);
+  return Math.max(0, Number(row && row.cost) || 0) * skills2ManaMultiplier(prog);
 }
 function skills2ManaCost(gid, lvs, ultRaw, prog) {
   var g = SKILLS2[gid];
@@ -600,8 +605,8 @@ function skills2ManaCost(gid, lvs, ultRaw, prog) {
     ultRaw = typeof G !== 'undefined' && G.player && G.player.skills2 ? G.player.skills2.ult : null;
   }
   var u = sgEffectiveUlt(ultRaw, gid, lvs, prog);
-  if (u) return skills2TierManaCost(gid, 0, u.id);
-  for (var i = g.tiers.length - 1; i >= 0; i--) if (lvs[i] > 0) return skills2TierManaCost(gid, i);
+  if (u) return skills2TierManaCost(gid, 0, u.id, prog);
+  for (var i = g.tiers.length - 1; i >= 0; i--) if (lvs[i] > 0) return skills2TierManaCost(gid, i, null, prog);
   return 0;
 }
 /* 施放端的判定入口：這個群組現在生效的終極進化是不是指定的那一個。 */
@@ -1593,6 +1598,8 @@ function skills2PanelView() {
      不送出去的話，UI 會以「沒有進度＝不套門檻」重算，畫面顯示已解鎖、Worker 卻擋著升級。 */
   var isSkillUnlock = !!(typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.skillUnlock);
   var prg = sgUnlockProgress(null);
+  // GM 的解鎖旗標仍放行全部階段，但耗魔必須使用玩家真正的轉生數。
+  if (isSkillUnlock && prg) prg.reinc = reincarnationCount();
   var out = {
     tierMax: SG_TIER_MAX_LV, levels: {}, ult: {}, points: skills2PointView(),
     progress: prg ? { level: prg.level, reinc: prg.reinc, towerHighest: prg.towerHighest, skillUnlock: isSkillUnlock } : (isSkillUnlock ? { level: 999999, reinc: 999999, towerHighest: 999999, skillUnlock: true } : null),
@@ -11777,13 +11784,11 @@ function skills2OnPlayerDamaged(mEnt, pEnt, hpDamage, blocked, res, floatSel) {
 /* 反擊每階都提供升到該階後的基本耗魔；大地守護維持恆時被動，不收觸發費。 */
 var SG_TRIGGER_MP_TIERS = { counter: [1, 1, 1, 1, 1, 1, 1] };
 /* 階段消耗預覽與追加費用共用參數表；基本反擊由 skills2PassiveMinMp 選最高階。 */
-function skills2TierTriggerMp(gid, tierIdx) {
+function skills2TierTriggerMp(gid, tierIdx, prog) {
   var g = SKILLS2[gid];
   var mask = SG_TRIGGER_MP_TIERS[gid];
   if (!g || !mask || !mask[tierIdx]) return 0;
-  var t = g.tiers[tierIdx];
-  var c = t ? Number(t.cost) : 0;
-  return c > 0 ? c : 0;
+  return skills2TierManaCost(gid, tierIdx, null, prog);
 }
 /* 付一階的觸發消耗：付得起就扣魔回 true，付不起回 false（＝該階這一次不觸發）。
    只在「效果確定要發生」的當下呼叫——機率沒中、沒有可打的目標都不該先扣魔。 */
@@ -11808,9 +11813,9 @@ function skills2PassiveMinMp(gid, levels, ultRaw, prog) {
     ultRaw = typeof G !== 'undefined' && G.player && G.player.skills2 ? G.player.skills2.ult : null;
   }
   var u = sgEffectiveUlt(ultRaw, gid, lvs, prog);
-  if (u) return skills2TierManaCost(gid, 0, u.id);
+  if (u) return skills2TierManaCost(gid, 0, u.id, prog);
   for (var i = g.tiers.length - 1; i >= 0; i--) {
-    if (lvs[i] > 0) return skills2TierManaCost(gid, i);
+    if (lvs[i] > 0) return skills2TierManaCost(gid, i, null, prog);
   }
   return 0;
 }
@@ -12943,7 +12948,7 @@ function describeSkill2Group(gid, levels, ultRaw, prog) {
     var lv = lvs[i] || 0;
     var locked = i > 0 && (lvs[i - 1] || 0) < 1;
     var cls = lv > 0 ? 'sg-tier-on' : (locked ? 'sg-tier-locked' : 'sg-tier-off');
-    var tierMp = skills2TierTriggerMp(gid, i); // 被動群組：每階自己的觸發消耗
+    var tierMp = skills2TierTriggerMp(gid, i, prog); // 被動群組：每階自己的觸發消耗
     var head = STR(727, (i + 1), g.tiers[i].name, (lv > 0 ? ' Lv.' + lv : (locked ? STR(95) : STR(726))), (tierMp > 0 ? '　🔵' + tierMp + ' MP' : ''));
     parts.push('<div class="' + cls + '"><b>' + head + '</b>　' + describeSkill2Tier(gid, i, lv) + '</div>');
   }
