@@ -16,7 +16,7 @@ var WorkerBridge = (function () {
   /* Worker 與其模擬層不是由 bundler 產生，瀏覽器可能把舊的 Worker
      腳本留在快取裡。每次修改 Worker 啟動／核心邏輯時更新這個鍵，避免
      使用者刷新後仍執行舊版升級公式。 */
-  var WORKER_ASSET_VERSION = '20261105-startup-hold-v2';
+  var WORKER_ASSET_VERSION = '20261105-rw-smith-legend';
   var _menuPaused = false;
   /* 開機等待：Loading 黑幕期間 Worker 不開始戰鬥，揭幕那一刻才放行。
      否則 Loading 期間模擬照跑、視覺事件堆在佇列，揭幕後一次播出（特效暴增、FPS 掉到個位數）。
@@ -36,6 +36,16 @@ var WorkerBridge = (function () {
     post(MSG_IN.MENU_PAUSE, { paused: effectivePaused() });
   }
   _startupHoldTimer = setTimeout(releaseStartupHold, STARTUP_HOLD_MAX_MS);
+  /* 開頭動畫播放中暫停逾時保險（js/intro-player.js）：動畫比 20 秒長時，
+     不能讓戰鬥在動畫後面先開打。動畫結束再重新計時一整段，交回原本的保險。 */
+  function suspendStartupHoldTimeout() {
+    if (_startupHoldTimer) { clearTimeout(_startupHoldTimer); _startupHoldTimer = 0; }
+  }
+  function resumeStartupHoldTimeout() {
+    if (!_startupHold) return;
+    if (_startupHoldTimer) clearTimeout(_startupHoldTimer);
+    _startupHoldTimer = setTimeout(releaseStartupHold, STARTUP_HOLD_MAX_MS);
+  }
 
   /* ---- 量測模式（P4 用，預設關閉）----
      網址帶 ?measure=1 時，Worker 與主執行緒兩側都會統計訊息規模與耗時。
@@ -614,7 +624,8 @@ var WorkerBridge = (function () {
   return {
     start: start, stop: stop, send: send, on: on, loadSave: loadSave, handoff: handoff,
     requestPanel: requestPanel, status: status, enabled: enabled, safeMode: safeMode,
-    whenWritesDrained: whenWritesDrained, saveAutoNow: saveAutoNow, setMenuPaused: setMenuPaused, releaseStartupHold: releaseStartupHold
+    whenWritesDrained: whenWritesDrained, saveAutoNow: saveAutoNow, setMenuPaused: setMenuPaused, releaseStartupHold: releaseStartupHold,
+    suspendStartupHoldTimeout: suspendStartupHoldTimeout, resumeStartupHoldTimeout: resumeStartupHoldTimeout
   };
 })();
 
@@ -633,6 +644,11 @@ var WorkerBridge = (function () {
        才開機；其餘情況直接放行（見 js/save_origin.js）。存檔覆蓋不可逆，不該由時間戳自己決定。 */
     SaveStorage.readBootSave(function (save, info) {
       SaveOrigin.gate(save, info, function (approved) {
+        /* 開頭動畫在這裡起播：確認視窗已經關掉（動畫不會蓋住它），Worker 開機與 initUI 跟動畫重疊進行。 */
+        if (typeof IntroPlayer !== 'undefined') {
+          try { IntroPlayer.startupBegin({ hasSave: !!approved }); }
+          catch (e) { console.error('[intro] 起播失敗', e); }
+        }
         WorkerBridge.start({ save: approved, maxRunId: SaveStorage.maxRunId() });
       });
     });

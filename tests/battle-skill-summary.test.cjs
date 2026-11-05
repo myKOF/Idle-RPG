@@ -25,3 +25,18 @@ test('不同超神等級加入總等級，未開放超神的群組保留原上�
   // 現有群組皆已開放超神；以未開放的定義 fixture 驗證舊群組上限。
   const gid='earthguard';c.SKILLS2[gid].ult=null;const count=c.SKILLS2[gid].tiers.length;h=c.battleSkillGroupTooltipHTML(gid,Array(count).fill(10),c.snap);assert.match(h,new RegExp('總 Lv\\.'+(count*10)+' / '+count*10));
 });
+test('反擊雖是被動，快捷列與群組提示都顯示每次反擊的法力；其他被動不顯示',()=>{
+  const c=mount();const lvs=Array(7).fill(10);c.snap.skills2.levels.counter=lvs;c.snap.skills2.progress.towerHighest=100;
+  const ultIdx=c.SKILLS2.counter.ult.findIndex(u=>u.id==='holyBody');c.snap.skills2.ult.counter={pick:ultIdx,lv:10};
+  const mp=c.skills2PassiveMinMp('counter',lvs,c.sgUiUltRaw(c.snap),c.sgUiUnlockProgress(c.snap));
+  assert.ok(mp>0);assert.equal(mp,c.skills2TierManaCost('counter',0,'holyBody',c.sgUiUnlockProgress(c.snap)));
+  const mark='<span class="skt-mp">🔵 '+mp+' MP／次反擊</span>';
+  assert.ok(c.battleSkillGroupTooltipHTML('counter',lvs,c.snap).includes(mark));
+  c.showSkillTooltip('sg:counter',{closest:()=>null});assert.ok(c.tip.innerHTML.includes('🔵 '+mp+' MP／次反擊'));
+  // 沒選超神：取最高已學階段那一份
+  delete c.snap.skills2.ult.counter;const lv3=[10,10,3,0,0,0,0];
+  const mp3=c.skills2TierManaCost('counter',2,null,c.sgUiUnlockProgress(c.snap));assert.ok(mp3>0);
+  assert.ok(c.battleSkillGroupTooltipHTML('counter',lv3,c.snap).includes('🔵 '+mp3+' MP／次反擊'));
+  // 沒有觸發費用的被動（大地守護）維持不顯示法力
+  assert.doesNotMatch(c.battleSkillGroupTooltipHTML('earthguard',Array(7).fill(10),c.snap),/skt-mp/);
+});

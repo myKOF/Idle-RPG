@@ -12,7 +12,7 @@ $ErrorActionPreference='Stop'
    三者都在插入欄與逐格比對之前執行，之後 rows 必須是刪完之後的完整目標內容。
    先改暫存副本，正常模式重開逐格驗證、繪圖物件數不變、再存一次重開仍不變，才覆蓋來源；
    來源 hash 在過程中被改動（使用者剛存檔）就停止，不覆蓋。
-   DataPath 的 JSON：{ sheets: [ { name, rows: [[...]], insertColumns?: [{ before, headers: [...], width }], deleteColumns?: [表頭名稱...], deleteRows?: [列號...], deleteRowKeys?: { columns, keys }, replace?: true } ] } #>
+   DataPath 的 JSON：{ sheets: [ { name, rows: [[...]], insertColumns?: [{ before, headers: [...], width }], deleteColumns?: [表頭名稱...], deleteRows?: [列號...], deleteRowKeys?: { columns, keys }, unhideColumns?: true, replace?: true } ] } #>
 $target=[IO.Path]::GetFullPath($WorkbookPath)
 $sourceHash=(Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash
 $tempBook=Join-Path ([IO.Path]::GetTempPath()) ('excel-update-'+[guid]::NewGuid().ToString()+[IO.Path]::GetExtension($target))
@@ -136,6 +136,8 @@ try {
     if($ins.width){$col.ColumnWidth=[double]$ins.width}
    }
   }
+  # unhideColumns（2026-11-05 新增）：取消這張表所有隱藏欄（插入欄沿用右邊欄格式，右邊若是隱藏欄，新欄也會被藏起來）
+  if($sheet.unhideColumns){ $ws.UsedRange.EntireColumn.Hidden=$false }
   foreach($label in @($sheet.clearValidationColumns)){
    if(-not $label){continue}
    $idx=[Array]::IndexOf([object[]]$rows[0],[string]$label)
