@@ -69,6 +69,7 @@ function makeEnv(opts) {
   vm.createContext(ctx);
   vm.runInContext(read('js/intro-data.js') + '\nthis.INTRO_TIMELINES = INTRO_TIMELINES;', ctx);
   if (opts.prologue) ctx.INTRO_TIMELINES.prologue = opts.prologue;
+  if (opts.noPrologue) delete ctx.INTRO_TIMELINES.prologue;   // 模擬序章還沒做好的資料
   vm.runInContext(read('js/intro-player.js') + '\nthis.IntroPlayer = IntroPlayer;', ctx);
   const clock = () => anims.find((a) => a.el.className === 'intro-clock');
   const playerRoot = () => body.children.find((c) => c.className.indexOf('intro-player') === 0);
@@ -307,16 +308,40 @@ test('開機起播帶停格；揭幕前先放行停格再等播完', () => {
   assert.match(main, /IntroPlayer\.release\(\);[^\n]*\n\s*IntroPlayer\.whenIdle\(reveal\);/, '先放行再等');
 });
 
-test('標題開場：停格點之後只剩淡出，停住的那一格是完整標題', () => {
+test('有停格點的時間軸：停住那一格的圖層都已完全淡入、停格後才開始淡出', () => {
   const { ctx } = makeEnv();
-  const tl = ctx.INTRO_TIMELINES.title;
-  assert.ok(tl.holdAt > 0 && tl.holdAt < tl.duration);
-  for (const l of tl.layers) {
-    const fadeOutStart = l.at + l.dur - (l.fadeOut === undefined ? 400 : l.fadeOut);
-    assert.ok(l.at + (l.fadeIn === undefined ? 400 : l.fadeIn) <= tl.holdAt, '停格前已完全淡入：' + (l.cls || l.str));
-    assert.ok(fadeOutStart >= tl.holdAt, '停格後才開始淡出：' + (l.cls || l.str));
+  const withHold = Object.entries(ctx.INTRO_TIMELINES).filter(([, tl]) => tl.holdAt);
+  assert.ok(withHold.length >= 2, 'title 與 prologue 都有停格點');
+  for (const [key, tl] of withHold) {
+    assert.ok(tl.holdAt > 0 && tl.holdAt < tl.duration, key);
+    // 停格點時還在畫面上的圖層（較早結束的鏡頭不受限）
+    for (const l of tl.layers.filter((x) => x.at + x.dur > tl.holdAt)) {
+      const name = key + ' ' + (l.cls || l.str);
+      const fadeOutStart = l.at + l.dur - (l.fadeOut === undefined ? 400 : l.fadeOut);
+      assert.ok(l.at + (l.fadeIn === undefined ? 400 : l.fadeIn) <= tl.holdAt, '停格前已完全淡入：' + name);
+      assert.ok(fadeOutStart >= tl.holdAt, '停格後才開始淡出：' + name);
+    }
   }
-  assert.ok(tl.duration <= 3000, '載入很快時總長不超過 3 秒');
+  assert.ok(ctx.INTRO_TIMELINES.title.duration <= 3000, '標題開場載入很快時總長不超過 3 秒');
+});
+
+test('序章：新玩家開機會播、長度合理、用到的圖都在 repo 裡', () => {
+  const env = makeEnv();
+  const tl = env.ctx.INTRO_TIMELINES.prologue;
+  assert.ok(tl, '有 prologue');
+  assert.ok(tl.duration >= 20000 && tl.duration <= 35000, '20～35 秒');
+  assert.ok(tl.skippable !== false, '可略過');
+  for (const l of tl.layers.filter((x) => x.kind === 'image')) {
+    assert.ok(fs.existsSync(path.join(root, l.src.split('?')[0])), '圖檔存在：' + l.src);
+  }
+  const captions = JSON.parse(JSON.stringify(tl.layers.filter((l) => l.place === 'caption').map((l) => l.str)));
+  assert.deepStrictEqual(captions, [2414, 2415, 2416, 2417, 2418], '五句旁白依序出現');
+  // 相鄰旁白不重疊：前一句淡出結束才出下一句
+  const caps = tl.layers.filter((l) => l.place === 'caption');
+  for (let i = 1; i < caps.length; i++) assert.ok(caps[i].at >= caps[i - 1].at + caps[i - 1].dur, '旁白不重疊：' + caps[i].str);
+  assert.equal(env.P.startupBegin({ hasSave: false }), true);
+  assert.equal(env.P.state().id, 'prologue', '新玩家播序章');
+  assert.equal(env.P._internal.replayTimelineId(), 'prologue', '說明頁重播播序章');
 });
 
 /* ---------- 開機流程接線 ---------- */
@@ -392,7 +417,7 @@ test('localStorage 被封鎖時照常播放，不丟例外', () => {
 });
 
 test('重播按鈕：點擊播放、不停格、不改看過紀錄；播完焦點回到按鈕；播放中再點無效', () => {
-  const env = makeEnv({ replayButton: true });
+  const env = makeEnv({ replayButton: true, noPrologue: true });
   const click = env.replayBtn.listeners.click[0];
   let stopped = false;
   click({ stopPropagation() { stopped = true; } });
@@ -404,7 +429,7 @@ test('重播按鈕：點擊播放、不停格、不改看過紀錄；播完焦�
   assert.equal(env.replayBtn.focused, 1, '焦點回到按鈕');
   assert.deepStrictEqual(Object.keys(env.store), [], '不寫看過紀錄');
 
-  const withPrologue = makeEnv({ replayButton: true, prologue: PROLOGUE });
+  const withPrologue = makeEnv({ replayButton: true });
   withPrologue.replayBtn.listeners.click[0]({});
   assert.equal(withPrologue.P.state().id, 'prologue');
 });

@@ -179,7 +179,7 @@ test('實際首通更新最高層、技能快照及屬性快取，已保留的�
   assert.equal(c.skills2Ult('thrust').lv, 3);
 });
 
-test('各選項UI獨立鎖定；Tips末行橘色與通關灰色小字，三選一不誤啟用', () => {
+test('各選項UI獨立鎖定；Tips末行橘色、通關後Tips不再提示（面板保留灰色小字），三選一不誤啟用', () => {
   const c = uiContext(), low = snap(c, 30);
   c.UI.sgBrowse.focus = 'ult'; c.UI.sgBrowse.ultFocus = 1;
   const h = c.sgbUltHTML('thrust', Array(7).fill(10), low, 1e12, '');
@@ -188,8 +188,13 @@ test('各選項UI獨立鎖定；Tips末行橘色與通關灰色小字，三選�
   assert.doesNotMatch(h, /data-skill2-ultpick=/);
   const locked = c.skill2UltOptionTooltipHTML('thrust', 1, low);
   assert.ok(locked.endsWith('<div class="skill-tower-hint">需通關封魔塔第60層解鎖</div>'));
+  // 已通行：懸停提示不再顯示解鎖條件；升級面板詳細區（不帶 lockedOnly）仍顯示灰色「已通行」。
   const clear = c.skill2UltOptionTooltipHTML('thrust', 1, snap(c, 60));
-  assert.ok(clear.endsWith('<div class="skill-tower-hint is-cleared">已通行封魔塔第60層</div>'));
+  assert.doesNotMatch(clear, /skill-tower-hint/);
+  const opt = c.SKILLS2.thrust.ult[1];
+  assert.equal(c.skillTowerUnlockHintHTML(opt, snap(c, 60)), '<div class="skill-tower-hint is-cleared">已通行封魔塔第60層</div>');
+  assert.equal(c.skillTowerUnlockHintHTML(opt, snap(c, 60), true), '');
+  assert.equal(c.skillTowerUnlockHintHTML(opt, low, true), '<div class="skill-tower-hint">需通關封魔塔第60層解鎖</div>');
   assert.equal(c.skillTowerUnlockHintHTML({ unlock: { reinc: 0, lv: 1 } }, low), '');
   const css = fs.readFileSync(path.join(root, 'css/ashen-forge.css'), 'utf8');
   assert.match(css, /\.skill-tower-hint \{[^}]*color: #ffab54;[^}]*font-size: 13px/);

@@ -8770,11 +8770,14 @@ function sgUiUltUnlocked(gid, lvs, skillsSnapshot, idx) {
   if (pick) return sgUltOptionUnlockedBy(gid, pick.idx, lvs, prg);
   return (sgUltDefs(gid) || []).some(function (opt, i) { return sgUltOptionUnlockedBy(gid, i, lvs, prg); });
 }
-function skillTowerUnlockHintHTML(row, skillsSnapshot) {
+/* lockedOnly：懸停提示用——門檻已達成（已通行或 GM 解鎖）就不顯示，只在還沒解鎖時提示條件；
+   升級面板的詳細區不傳，維持顯示「已通行第 N 層」。 */
+function skillTowerUnlockHintHTML(row, skillsSnapshot, lockedOnly) {
   var floor = row && row.unlock && Number(row.unlock.tower);
   if (!(floor > 0)) return '';
   var prg = sgUiUnlockProgress(skillsSnapshot);
   var isSkillUnlock = !!((prg && prg.skillUnlock) || (typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.skillUnlock));
+  if (lockedOnly && (isSkillUnlock || (!!prg && Number(prg.towerHighest) >= floor))) return '';
   if (isSkillUnlock) {
     return '<div class="skill-tower-hint is-cleared">' + STR(1898, floor) + '</div>';
   }
@@ -9334,7 +9337,7 @@ function skill2UltOptionTooltipHTML(gid, idx, skillsSnapshot) {
     '<div class="skt-desc">' + describeSkill2Ult(gid, idx, lv) + '</div>' +
     (!sgUiUltUnlocked(gid, lvs, skillsSnapshot, idx) ? '<div class="skt-lock">🔒 ' +
       esc(sgUltUnlockedBy(gid, lvs) ? STR(761, sgUnlockText(opt.unlock)) : STR(763, SKILLS2[gid].tiers.length)) + '</div>' : '') +
-    skillTowerUnlockHintHTML(opt, skillsSnapshot);
+    skillTowerUnlockHintHTML(opt, skillsSnapshot, true);
 }
 
 /* ---- 技能懸停提示 ---- */
@@ -9356,12 +9359,20 @@ function battleSkillGroupTooltipHTML(gid, levels, skillsSnapshot) {
       break;
     }
   }
-  /* 戰鬥區快捷列的提示：不放技能小圖標；名稱靠左、名稱旁顯示消耗法力（被動技能沒有施法消耗，不顯示） */
-  var mpMark = (typeof skills2IsPassive === 'function' && skills2IsPassive(gid)) ? '' :
-    '<span class="skt-mp">🔵 ' + skills2ManaCost(gid, lvs, sgUiUltRaw(skillsSnapshot), sgUiUnlockProgress(skillsSnapshot)) + ' MP</span>';
+  /* 戰鬥區快捷列的提示：不放技能小圖標；名稱靠左、名稱旁顯示消耗法力。
+     被動技能沒有施法消耗、不顯示；唯一例外是反擊——每次反擊要付一次法力，
+     顯示的是基本反擊實際扣的那一份（超神優先、否則最高已學階段，與 sgCounterPayMp 同源）。 */
+  var mpMark = '';
+  if (typeof skills2IsPassive === 'function' && skills2IsPassive(gid)) {
+    var passiveMp = (typeof skills2PassiveMinMp === 'function')
+      ? skills2PassiveMinMp(gid, lvs, sgUiUltRaw(skillsSnapshot), sgUiUnlockProgress(skillsSnapshot)) : 0;
+    if (passiveMp > 0) mpMark = '<span class="skt-mp">🔵 ' + passiveMp + ' ' + STR(788) + '</span>';
+  } else {
+    mpMark = '<span class="skt-mp">🔵 ' + skills2ManaCost(gid, lvs, sgUiUltRaw(skillsSnapshot), sgUiUnlockProgress(skillsSnapshot)) + ' MP</span>';
+  }
   var html = '<div class="skt-name">' + STR(813, '', esc(group.name), totals.total, totals.max, mpMark) + '</div>';
   html += '<div class="skt-desc">' + (heading ? '<b>' + esc(heading) + '</b><br>' + description : STR(814)) + '</div>';
-  return html + '<div class="skt-hint">' + STR(815) + '</div>' + (pick ? skillTowerUnlockHintHTML(pick.def, skillsSnapshot) : '');
+  return html + '<div class="skt-hint">' + STR(815) + '</div>' + (pick ? skillTowerUnlockHintHTML(pick.def, skillsSnapshot, true) : '');
 }
 
 function showSkillTooltip(ref, anchorEl) {
@@ -9399,13 +9410,13 @@ function showSkillTooltip(ref, anchorEl) {
         var sgUltList = sgUltDefs(sgTipGid) || [];
         var sgUltParts = [];
         for (var sgUi = 0; sgUi < sgUltList.length; sgUi++) {
-          sgUltParts.push('<div><b>' + esc(sgUltList[sgUi].name) + '</b>　' + describeSkill2Ult(sgTipGid, sgUi, 1) + skillTowerUnlockHintHTML(sgUltList[sgUi], skillsSnapshot) + '</div>');
+          sgUltParts.push('<div><b>' + esc(sgUltList[sgUi].name) + '</b>　' + describeSkill2Ult(sgTipGid, sgUi, 1) + skillTowerUnlockHintHTML(sgUltList[sgUi], skillsSnapshot, true) + '</div>');
         }
         sgUltH += '<div class="skt-desc sg-tier-list">' + sgUltParts.join('') + '</div>';
         if (!sgUltOk) sgUltH += '<div class="skt-lock skill-unlock-hint">🔒 ' + esc(sgStageLockReason(sgTipGid, sgTipTier, skillsSnapshot)) + '</div>';
       }
       sgUltH += '<div class="skt-hint">' + STR(820) + '</div>';
-      if (sgUltPick) sgUltH += skillTowerUnlockHintHTML(sgUltPick.def, skillsSnapshot);
+      if (sgUltPick) sgUltH += skillTowerUnlockHintHTML(sgUltPick.def, skillsSnapshot, true);
       showSkillTooltipHTML(tip, sgUltH, anchorEl);
       return;
     }
@@ -9420,18 +9431,21 @@ function showSkillTooltip(ref, anchorEl) {
           : '🔵 ' + skills2TierManaCost(sgTipGid, sgTipTier, null, sgUiUnlockProgress(skillsSnapshot)) + ' MP　⏱️ ' + sgG.cd + 's') + '</div>';
       sgH += '<div class="skt-desc">' + describeSkill2Tier(sgTipGid, sgTipTier, sgLvs[sgTipTier] || 0) + '</div>';
       if (sgLocked) sgH += '<div class="skt-lock skill-unlock-hint">🔒 ' + esc(sgStageLockReason(sgTipGid, sgTipTier, skillsSnapshot)) + '</div>';
-      sgH += '<div class="skt-hint">' + STR(823) + '</div>' + skillTowerUnlockHintHTML(sgTier, skillsSnapshot);
+      sgH += '<div class="skt-hint">' + STR(823) + '</div>' + skillTowerUnlockHintHTML(sgTier, skillsSnapshot, true);
       showSkillTooltipHTML(tip, sgH, anchorEl);
       return;
     }
     var sgH = '<div class="skt-name">' + STR(824, skillIconHTML(sgTipGid, sgG.emoji), esc(sgG.name), sgbTotals(sgTipGid, sgLvs, skillsSnapshot).total) + '</div>';
+    // 反擊雖是被動，每次反擊要付法力：與戰鬥技能列提示同源顯示「N MP／次反擊」。
+    var sgGroupPassiveMp = (typeof skills2PassiveMinMp === 'function')
+      ? skills2PassiveMinMp(sgTipGid, sgLvs, sgUiUltRaw(skillsSnapshot), sgUiUnlockProgress(skillsSnapshot)) : 0;
     sgH += '<div class="skt-meta">' +
       ((typeof skills2IsPassive === 'function' && skills2IsPassive(sgTipGid))
-        ? STR(825) : '🔵 ' + skills2ManaCost(sgTipGid, sgLvs, sgUiUltRaw(skillsSnapshot), sgUiUnlockProgress(skillsSnapshot)) + ' MP　⏱️ ' + sgG.cd + 's') + '</div>';
+        ? STR(825) + (sgGroupPassiveMp > 0 ? '　🔵 ' + sgGroupPassiveMp + ' ' + STR(788) : '') : '🔵 ' + skills2ManaCost(sgTipGid, sgLvs, sgUiUltRaw(skillsSnapshot), sgUiUnlockProgress(skillsSnapshot)) + ' MP　⏱️ ' + sgG.cd + 's') + '</div>';
     sgH += '<div class="skt-desc sg-tier-list">' + describeSkill2Group(sgTipGid, sgLvs, sgUiUltRaw(skillsSnapshot), sgUiUnlockProgress(skillsSnapshot)) + '</div>';
     sgH += '<div class="skt-hint">' + STR(815) + '</div>';
     var groupPick = sgUiUltPick(skillsSnapshot, sgTipGid);
-    if (groupPick) sgH += skillTowerUnlockHintHTML(groupPick.def, skillsSnapshot);
+    if (groupPick) sgH += skillTowerUnlockHintHTML(groupPick.def, skillsSnapshot, true);
     showSkillTooltipHTML(tip, sgH, anchorEl);
     return;
   }

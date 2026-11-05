@@ -51,6 +51,16 @@
   white-space: nowrap;
 }
 
+/* 下方旁白區：可換行，寬度跟著視窗收 */
+.intro-place-caption {
+  left: 50%;
+  bottom: max(64px, 15vh);
+  translate: -50% 0;
+  width: min(88vw, 960px);
+  text-align: center;
+  white-space: normal;
+}
+
 /* ---------- 圖層外觀 ---------- */
 .intro-image-cover {
   object-fit: cover;
@@ -117,6 +127,59 @@
     #fff1c8 50%,
     rgba(214, 170, 90, 0.85) 80%,
     transparent 100%);
+}
+
+/* 序章（intro-data.js prologue） */
+.intro-text-caption {
+  /* 疊在地圖等細節多的畫面上時，靠一圈柔和暗底撐住可讀性（靜態背景，不做 blur） */
+  padding: 10px 28px;
+  background: radial-gradient(ellipse 72% 100% at 50% 50%, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.55) 55%, transparent 85%);
+  font-size: clamp(16px, 2.3vw, 26px);
+  line-height: 1.6;
+  letter-spacing: 0.08em;
+  color: #efe3c4;
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.95), 0 2px 4px rgba(0, 0, 0, 0.95), 0 0 24px rgba(0, 0, 0, 0.7);
+}
+
+/* 地圖整體壓暗（霧氣侵蝕時） */
+.intro-shape-shadow {
+  background: rgba(12, 2, 22, 0.55);
+}
+
+/* 暗紫霧氣：中間透明、四周濃，從放大狀態縮回來＝由外往內吞噬 */
+.intro-shape-fog {
+  background:
+    radial-gradient(ellipse 60% 55% at 50% 50%,
+      transparent 0%,
+      transparent 30%,
+      rgba(40, 10, 60, 0.55) 52%,
+      rgba(18, 2, 28, 0.88) 70%,
+      rgba(6, 0, 12, 0.98) 88%),
+    radial-gradient(circle at 22% 78%, rgba(120, 30, 90, 0.25), transparent 35%),
+    radial-gradient(circle at 80% 20%, rgba(80, 20, 120, 0.25), transparent 40%);
+}
+
+/* 主角肖像：方形、四周以遮罩淡進黑底 */
+.intro-image-portrait {
+  width: min(76vh, 86vw);
+  height: min(76vh, 86vw);
+  object-fit: cover;
+  -webkit-mask-image: radial-gradient(circle at 50% 45%, #000 42%, transparent 70%);
+  mask-image: radial-gradient(circle at 50% 45%, #000 42%, transparent 70%);
+}
+
+/* 劍光：一道斜向細亮線，由中心往兩側拉開 */
+.intro-shape-slash {
+  width: min(80vw, 1100px);
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255, 220, 150, 0.6) 15%,
+    #fffaf0 50%,
+    rgba(255, 220, 150, 0.6) 85%,
+    transparent 100%);
+  box-shadow: 0 0 14px 2px rgba(255, 230, 170, 0.75);
 }
 
 /* ---------- 停格等載入的圓點 ---------- */

@@ -18,7 +18,7 @@
      str       kind=text：String 表編號；args＝STR 的參數陣列（選填）
      src       kind=image：圖片路徑（含 ?v=）
      cls       額外的 CSS class（外觀寫在 css/intro.css）
-     place     'full'（滿版，image／shape 預設）| 'center'（置中，text 預設）
+     place     'full'（滿版，image／shape 預設）| 'center'（置中，text 預設）| 'caption'（下方旁白區，可換行）
      at, dur   出現時間與持續時間（毫秒）
      fadeIn, fadeOut  淡入／淡出長度（毫秒，預設 400；0＝硬切）
      from, to  { x, y, scale, sx, sy, rotate }：x／y 單位為 vw／vh，rotate 單位為度；
@@ -46,6 +46,60 @@ var INTRO_TIMELINES = {
         from: { y: 4, sx: 0.1, sy: 1 }, to: { y: 4, sx: 1, sy: 1 }, easing: 'ease-out' },
       { kind: 'text', str: 2412, cls: 'intro-text-logo-sub', at: 800, dur: 1800, fadeIn: 600, fadeOut: 500,
         from: { y: 8 }, to: { y: 7 }, easing: 'ease-out' }
+    ]
+  },
+
+  /* 序章：新玩家第一次開機播一次（之後只播 title），設定「說明」頁可重播。28 秒、五個鏡頭：
+       1  0.0–5.2s  黑幕星點與神光：世界之名
+       2  4.4–16.6s 人界地圖推鏡：眾神秩序
+       3 10.6–16.6s 暗紫霧氣從地圖四周侵蝕：魔物甦醒
+       4 16.0–22.2s 主角肖像（遊戲內頭像 icon_avatar.png）與劍光：騎士登場
+       5 21.4–28.0s 標題（同 title 的構圖）＋最後一句旁白；27.2 秒停格等載入
+     旁白文字在 String 表 2414–2418。素材只用遊戲內已在使用的圖（世界地圖、主角頭像）。 */
+  prologue: {
+    duration: 28000,
+    holdAt: 27200,
+    skipDelay: 1200,
+    layers: [
+      // 鏡頭 1
+      { kind: 'shape', cls: 'intro-shape-stars', at: 0, dur: 5200, fadeIn: 800, fadeOut: 800,
+        from: { scale: 1 }, to: { scale: 1.06 } },
+      { kind: 'shape', cls: 'intro-shape-glow', at: 500, dur: 4500, fadeIn: 1400, fadeOut: 800,
+        from: { scale: 0.5 }, to: { scale: 1.1 }, easing: 'ease-out' },
+      { kind: 'text', str: 2414, cls: 'intro-text-caption', place: 'caption', at: 900, dur: 3900, fadeIn: 700, fadeOut: 600,
+        from: { y: 1 }, to: { y: 0 }, easing: 'ease-out' },
+      // 鏡頭 2、3：地圖一路推到霧氣吞沒
+      { kind: 'image', src: 'images/world-map/salvien.png?v=1', cls: 'intro-image-cover',
+        at: 4400, dur: 12200, fadeIn: 1200, fadeOut: 1000,
+        from: { x: 4, y: 2, scale: 1.32 }, to: { x: -2, y: -1, scale: 1.04 }, easing: 'linear' },
+      { kind: 'text', str: 2415, cls: 'intro-text-caption', place: 'caption', at: 5400, dur: 5000, fadeIn: 700, fadeOut: 600,
+        from: { y: 1 }, to: { y: 0 }, easing: 'ease-out' },
+      { kind: 'shape', cls: 'intro-shape-shadow', at: 10600, dur: 6000, fadeIn: 2600, fadeOut: 1000 },
+      { kind: 'shape', cls: 'intro-shape-fog', at: 10600, dur: 6000, fadeIn: 1600, fadeOut: 1000,
+        from: { scale: 2.4 }, to: { scale: 1 }, easing: 'ease-in' },
+      { kind: 'text', str: 2416, cls: 'intro-text-caption', place: 'caption', at: 11400, dur: 4600, fadeIn: 700, fadeOut: 600,
+        from: { y: 1 }, to: { y: 0 }, easing: 'ease-out' },
+      // 鏡頭 4
+      { kind: 'image', src: 'images/icon_avatar.png', cls: 'intro-image-portrait', place: 'center',
+        at: 16000, dur: 6200, fadeIn: 1400, fadeOut: 900,
+        from: { y: 3, scale: 1.16 }, to: { y: 0, scale: 1.02 }, easing: 'ease-out' },
+      { kind: 'shape', cls: 'intro-shape-slash', place: 'center', at: 19300, dur: 800, fadeIn: 80, fadeOut: 520,
+        from: { sx: 0.05, sy: 1, rotate: -26 }, to: { sx: 1.25, sy: 1, rotate: -26 }, easing: 'ease-out' },
+      { kind: 'text', str: 2417, cls: 'intro-text-caption', place: 'caption', at: 16800, dur: 4600, fadeIn: 700, fadeOut: 600,
+        from: { y: 1 }, to: { y: 0 }, easing: 'ease-out' },
+      // 鏡頭 5：標題（與 title 同構圖），停格點之後只剩淡出
+      { kind: 'shape', cls: 'intro-shape-stars', at: 21400, dur: 6600, fadeIn: 1000, fadeOut: 600,
+        from: { scale: 1 }, to: { scale: 1.04 } },
+      { kind: 'shape', cls: 'intro-shape-glow', at: 21800, dur: 6200, fadeIn: 1000, fadeOut: 600,
+        from: { scale: 0.7 }, to: { scale: 1.05 }, easing: 'ease-out' },
+      { kind: 'text', str: 2411, cls: 'intro-text-logo', at: 22200, dur: 5800, fadeIn: 1000, fadeOut: 600,
+        from: { y: -1, scale: 1.08 }, to: { y: -2.5, scale: 1 }, easing: 'ease-out' },
+      { kind: 'shape', cls: 'intro-shape-rule', place: 'center', at: 22800, dur: 5200, fadeIn: 600, fadeOut: 600,
+        from: { y: 4, sx: 0.1, sy: 1 }, to: { y: 4, sx: 1, sy: 1 }, easing: 'ease-out' },
+      { kind: 'text', str: 2412, cls: 'intro-text-logo-sub', at: 23000, dur: 5000, fadeIn: 700, fadeOut: 600,
+        from: { y: 8 }, to: { y: 7 }, easing: 'ease-out' },
+      { kind: 'text', str: 2418, cls: 'intro-text-caption', place: 'caption', at: 24000, dur: 4000, fadeIn: 900, fadeOut: 600,
+        from: { y: -5 }, to: { y: -6 }, easing: 'ease-out' }
     ]
   },
 
