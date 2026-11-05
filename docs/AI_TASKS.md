@@ -1,3 +1,9 @@
+## ANCIENT-STAR-BAKED-GLOW-20261105 — 太古星星光暈改為烘焙，解決卡頓
+
+- Owner：Claude；Done。使用者回報加上星星效果後整個遊戲很卡。原因：每顆星星 `::after` 掛 SVG參照濾鏡（feMorphology描邊、淺藍feColorMatrix）＋三層drop-shadow，Chrome對SVG參照濾鏡走CPU光柵化，每次重繪（hover的brightness過渡、捲動、開詳情、重繪背包）都重算，背包一頁上百顆星星。
+- 修正：新增 `tools/ancient-stars/bake-glow.cjs`（重用 vfx-raster 編解碼）以同參數離線烘出三張 `*-glow.png`；CSS移除全部濾鏡，只換圖＋`transform: scale(2)`。index style 快取版本更新。新舊並排目視一致。
+- 未改：原128px PNG／母圖SHA、js、星數／精鑄順序／排版。
+
 ## DIVINE-STONE-ICON-20261105 — 接入核准的透明符文石圖標
 
 - Owner：Codex；Done，單一開發者。使用者核准本聊天image_gen左右鏡像／去背景及外暈預覽並要求接入；核准原圖匯出128px透明PNG，替換神性之石資源列／法陣／統計及相關UI提示、獎勵與日誌圖標。
