@@ -44,12 +44,109 @@ var GameMenu = (function () {
     pauseGame(false);
     if (previousFocus && typeof previousFocus.focus === 'function' && previousFocus.isConnected !== false) previousFocus.focus();
   }
-  function openSettings() {
+  /* ---- 設置視窗：遊戲設定／音訊／存檔 三個頁籤 ----
+     自己保存的偏好（輪廓、鏡頭鎖定、音訊）在 GameSettings；其餘四項轉接各自原本的開關（見 js/game-settings.js 開頭），
+     所以每次開啟都從來源重新讀一次勾選狀態，不另存一份。 */
+  var SETTINGS_TABS = ['game', 'audio', 'save'];
+  var SETTINGS_PANES = { game: 'settings-pane-game', audio: 'settings-pane-audio', save: 'tab-settings' };
+  function selectSettingsTab(name, focusTab) {
+    if (SETTINGS_TABS.indexOf(name) < 0) name = 'game';
+    SETTINGS_TABS.forEach(function (key) {
+      var tab = el('settings-tab-' + key), pane = el(SETTINGS_PANES[key]), on = key === name;
+      if (tab) {
+        tab.classList.toggle('active', on);
+        tab.setAttribute('aria-selected', on ? 'true' : 'false');
+        tab.tabIndex = on ? 0 : -1;
+        if (on && focusTab) tab.focus();
+      }
+      if (pane) pane.hidden = !on;
+    });
+    if (name === 'save' && typeof refreshSettingsPanel === 'function') refreshSettingsPanel();   // 存檔列表只在看得到時才讀
+  }
+  function checkbox(id) { return el(id); }
+  function syncSettingsControls() {
+    var gs = typeof GameSettings !== 'undefined' ? GameSettings : null;
+    function put(id, value) { var node = checkbox(id); if (node) node.checked = !!value; }
+    if (gs) {
+      put('set-outline', gs.get('outline'));
+      put('set-camera-lock', gs.get('cameraLock'));
+      put('set-mute', gs.get('mute'));
+      put('set-ally-sfx', gs.get('allyAttackSfx'));
+      put('set-enemy-sfx', gs.get('enemyAttackSfx'));
+      [['set-music-volume', 'musicVolume'], ['set-sfx-volume', 'sfxVolume']].forEach(function (pair) {
+        var slider = el(pair[0]), value = gs.get(pair[1]);
+        if (slider) slider.value = value;
+        var out = el(pair[0] + '-value'); if (out) out.textContent = value + '%';
+      });
+    }
+    // 轉接項：讀原本開關的目前狀態
+    if (typeof setPerfModeEnabled === 'function' && typeof isPerfModeEnabled === 'function') put('set-reduce-fx', isPerfModeEnabled());
+    if (typeof isDamageNumbersEnabled === 'function') put('set-damage-numbers', isDamageNumbersEnabled());
+    var autoEquip = el('toggle-autoequip'), compare = el('toggle-compare');
+    if (autoEquip) put('set-auto-equip', autoEquip.checked);
+    if (compare) put('set-compare-equip', compare.checked);
+    syncAudioGroupState();
+  }
+  function syncAudioGroupState() {
+    var muted = !!(el('set-mute') && el('set-mute').checked);
+    var group = el('settings-audio-group');
+    if (!group) return;
+    group.classList.toggle('is-disabled', muted);
+    group.setAttribute('aria-disabled', muted ? 'true' : 'false');
+    Array.prototype.forEach.call(group.querySelectorAll('input'), function (input) { input.disabled = muted; });
+  }
+  function bindSettingsControls() {
+    var gs = typeof GameSettings !== 'undefined' ? GameSettings : null;
+    SETTINGS_TABS.forEach(function (key, index) {
+      var tab = el('settings-tab-' + key);
+      if (!tab) return;
+      tab.addEventListener('click', function () { selectSettingsTab(key); });
+      tab.addEventListener('keydown', function (event) {   // 左右鍵在頁籤間移動（WAI-ARIA tablist）
+        var step = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
+        if (!step) return;
+        event.preventDefault();
+        selectSettingsTab(SETTINGS_TABS[(index + step + SETTINGS_TABS.length) % SETTINGS_TABS.length], true);
+      });
+    });
+    function onChange(id, handler) { var node = el(id); if (node) node.addEventListener('change', function () { handler(this); }); }
+    function proxy(sourceId) {   // 轉接到裝備頁原本的核取方塊：改它的 checked 再觸發它的 change，沿用既有的指令與回報
+      return function (box) {
+        var source = el(sourceId);
+        if (!source) return;
+        source.checked = box.checked;
+        source.dispatchEvent(new Event('change', { bubbles: true }));
+      };
+    }
+    if (gs) {
+      onChange('set-outline', function (box) { gs.set('outline', box.checked); });
+      onChange('set-camera-lock', function (box) {
+        gs.set('cameraLock', box.checked);
+        if (typeof BattleRenderer !== 'undefined' && BattleRenderer.setCameraLocked) BattleRenderer.setCameraLocked();
+      });
+      onChange('set-mute', function (box) { gs.set('mute', box.checked); syncAudioGroupState(); });
+      onChange('set-ally-sfx', function (box) { gs.set('allyAttackSfx', box.checked); });
+      onChange('set-enemy-sfx', function (box) { gs.set('enemyAttackSfx', box.checked); });
+      [['set-music-volume', 'musicVolume'], ['set-sfx-volume', 'sfxVolume']].forEach(function (pair) {
+        var slider = el(pair[0]);
+        if (!slider) return;
+        slider.addEventListener('input', function () {
+          gs.set(pair[1], slider.value);
+          var out = el(pair[0] + '-value'); if (out) out.textContent = gs.get(pair[1]) + '%';
+        });
+      });
+    }
+    onChange('set-reduce-fx', function (box) { if (typeof setPerfModeEnabled === 'function') setPerfModeEnabled(box.checked, true); });
+    onChange('set-damage-numbers', function (box) { if (typeof setDamageNumbersEnabled === 'function') setDamageNumbersEnabled(box.checked, true); });
+    onChange('set-auto-equip', proxy('toggle-autoequip'));
+    onChange('set-compare-equip', proxy('toggle-compare'));
+  }
+  function openSettings(tab) {
     if (busy) return;
     pauseGame(true);
     if (!visible('game-menu') && !visible('settings-modal')) previousFocus = document.activeElement;
     show('game-menu', false); show('settings-modal', true);
-    if (typeof refreshSettingsPanel === 'function') refreshSettingsPanel();
+    syncSettingsControls();
+    selectSettingsTab(typeof tab === 'string' ? tab : 'game');
     var button = el('settings-modal-close'); if (button) button.focus();
   }
   function closeSettings() { if (!busy) open(); }
@@ -110,6 +207,7 @@ var GameMenu = (function () {
     if (achvClose) achvClose.addEventListener('click', closeAchievements);
     var achvModal = el('achv-modal');
     if (achvModal) achvModal.addEventListener('click', function (event) { if (event.target === achvModal) closeAchievements(); });
+    bindSettingsControls();
     el('game-menu-close').addEventListener('click', close);
     el('settings-modal-close').addEventListener('click', closeSettings);
     ['game-menu', 'settings-modal'].forEach(function (id) {

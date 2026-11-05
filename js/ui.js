@@ -1931,6 +1931,10 @@ try {
   UI_PERF_MODE = localStorage.getItem('setting_perf_mode') === '1';
 } catch (e) {}
 
+function isPerfModeEnabled() {
+  return UI_PERF_MODE;
+}
+
 function updatePerfToggleButton() {
   var btn = $id('btn-toggle-perf');
   if (!btn) return;

@@ -359,9 +359,17 @@ var BattleRenderer = (function () {
   var BATTLE_CAMERA_DISTANCE_PERCENT = 90;
   /* 全螢幕只拉近場景：正常戰鬥鏡頭距離 90%、全螢幕 65%，倍率 = 90 ÷ 65；不隨參數表距離改變。 */
   var BATTLE_CAMERA_FULLSCREEN_ZOOM = 90 / 65;
+  /* 設置→遊戲設定「鏡頭鎖定」：勾選（預設）＝固定距離；取消後滾輪可調距離（所有玩家，不再限內測）。 */
+  function cameraLocked() {
+    return typeof GameSettings === 'undefined' || GameSettings.get('cameraLock') !== false;
+  }
   function internalCameraDistancePercent() {
-    return typeof isInternalVersion === 'function' && isInternalVersion() ?
-      (S.cameraDistancePercent || 100) : 100;
+    return cameraLocked() ? 100 : (S.cameraDistancePercent || 100);
+  }
+  function setCameraLocked() {
+    if (cameraLocked()) S.cameraDistancePercent = 100;   // 重新鎖定＝回到預設距離
+    updateCameraDistanceLabel();
+    if (S.app && typeof resize === 'function') resize();
   }
   function cameraZoom() {
     var distance = Number(BATTLE_CAMERA_DISTANCE_PERCENT);
@@ -382,13 +390,12 @@ var BattleRenderer = (function () {
       internalCameraDistancePercent() / 100 / cameraFullscreenMultiplier()) + '%';
   }
   function initCameraWheel() {
-    if (S.cameraWheelBound || !S.host || typeof isInternalVersion !== 'function' || !isInternalVersion()) return;
+    if (S.cameraWheelBound || !S.host) return;
     var label = document.getElementById('battle-camera-distance');
-    if (!label) return;
     updateCameraDistanceLabel();
-    label.hidden = false;
+    if (label && typeof isInternalVersion === 'function' && isInternalVersion()) label.hidden = false;   // 距離數字只給內測看
     S.host.addEventListener('wheel', function (e) {
-      if (!S.ready || S.failed || !isInternalVersion() || e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey ||
+      if (!S.ready || S.failed || cameraLocked() || e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey ||
         !isFinite(e.deltaY) || !e.deltaY || Math.abs(e.deltaX || 0) > Math.abs(e.deltaY)) return;
       // HUD與互動控制保留自己的操作；只縮放戰場，並阻止事件觸發外層背包展開。
       if (e.target && e.target.closest && e.target.closest('button, a, input, select, textarea, [contenteditable], #battle-hud, #quest-bar, #tower-canvas-hud')) return;
@@ -1024,9 +1031,14 @@ var BattleRenderer = (function () {
     pt.x = x * c - pt.y * s;
     pt.y = x * s + pt.y * c;
   }
+  /* 設置→遊戲設定「人物輪廓邊框」：關閉時所有輪廓精靈隱藏、也不再逐幀對齊；重新勾選後下一次同步就會顯示。 */
+  function outlineEnabled() {
+    return typeof GameSettings === 'undefined' || GameSettings.get('outline') !== false;
+  }
   function syncOutline(ent) {
     var sp = ent ? ent.outline : null;
     if (!sp || sp.destroyed) return;
+    if (!outlineEnabled()) { sp.visible = false; return; }
     var body = ent.body, wrap = ent.bodyWrap, root = ent.root;
     if (!body || body.destroyed || !wrap || !root || root.destroyed) { sp.visible = false; return; }
     var sheet = S.sheets[ent.sheetName];
@@ -6700,7 +6712,7 @@ var BattleRenderer = (function () {
       var hitDelay = playerAttackAnim('melee', firstTarget, (contactFx && firstTarget) ? spec.dur : 0);
       /* 普攻命中音：在砍到敵人那一幀播（沒有動作可對時間，例如施法動作佔著，就立刻播）；
          一次主普攻只播一聲，高攻速的限流在 Sfx 內處理。 */
-      if (contactFx && firstTarget && typeof Sfx !== 'undefined') Sfx.playGroup('basicHit', hitDelay > 0 ? hitDelay : 0);
+      if (contactFx && firstTarget && typeof Sfx !== 'undefined') Sfx.playGroup('basicHit', hitDelay > 0 ? hitDelay : 0, 'ally');
     }
 
     if (presetHandled) return;
@@ -8892,6 +8904,7 @@ var BattleRenderer = (function () {
     clearDamageFloats: clearDamageFloats,
     clearAllFloats: clearAllFloats,
     setPerfMode: setPerfMode,
+    setCameraLocked: setCameraLocked,
     /* 測試／除錯用：取 Pixi Application（headless 驗證時手動推 ticker、抽畫面）
        與內部狀態快照。正式流程不得依賴。 */
     _app: function () { return S.app; },

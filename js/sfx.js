@@ -59,13 +59,15 @@ var Sfx = (function () {
     var def = SFX_FILES[name];
     var c = context();
     if (!def || !c) return false;
+    var master = (typeof GameSettings !== 'undefined') ? GameSettings.sfxGain() : 1;   // 設置→音訊：全體靜音／音效音量
+    if (master <= 0) return false;
     try {
       if (c.state === 'suspended') c.resume();
       var buf = buffers[name];
       if (!buf) { load(name); return false; }
       var src = c.createBufferSource(), gain = c.createGain();
       src.buffer = buf;
-      gain.gain.value = def.volume == null ? 1 : def.volume;
+      gain.gain.value = (def.volume == null ? 1 : def.volume) * master;
       src.connect(gain); gain.connect(c.destination);
       if (onEnd) src.onended = onEnd;
       src.start(0);
@@ -75,9 +77,16 @@ var Sfx = (function () {
 
   var groupState = {};   // 群組名 → { last: 上次發聲時間, voices: 還在播的數量, lastName: 上次挑到的音 }
   function nowMs() { return (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now(); }
-  function fireGroup(group) {
+  /* side：'ally'／'enemy'＝這個聲音是誰的攻擊，對應設置→音訊的「我方／敵方攻擊音效」；不填就不受這兩個開關管。 */
+  function sideAllowed(side) {
+    if (typeof GameSettings === 'undefined') return true;
+    if (side === 'ally') return GameSettings.get('allyAttackSfx');
+    if (side === 'enemy') return GameSettings.get('enemyAttackSfx');
+    return true;
+  }
+  function fireGroup(group, side) {
     var def = SFX_GROUPS[group];
-    if (!def || (typeof document !== 'undefined' && document.hidden)) return false;
+    if (!def || (typeof document !== 'undefined' && document.hidden) || !sideAllowed(side)) return false;
     var st = groupState[group] || (groupState[group] = { last: -1e9, voices: 0, lastName: null });
     var t = nowMs();
     if (t - st.last < def.minGapMs || st.voices >= def.maxVoices) return false;
@@ -92,10 +101,10 @@ var Sfx = (function () {
     return true;
   }
   /* 播放群組裡的隨機一個音；delayMs＝多久之後才播（動作的「砍到」那一幀）。限流在真正要播的那一刻才判斷。 */
-  function playGroup(group, delayMs) {
+  function playGroup(group, delayMs, side) {
     var d = Math.max(0, Math.min(2000, Number(delayMs) || 0));
-    if (d < 1) return fireGroup(group);
-    setTimeout(function () { fireGroup(group); }, d);
+    if (d < 1) return fireGroup(group, side);
+    setTimeout(function () { fireGroup(group, side); }, d);
     return true;
   }
 

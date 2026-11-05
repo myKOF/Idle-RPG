@@ -20,15 +20,16 @@ function load() {
   c.fullscreen = false;
   c.document = {getElementById: id => id === 'ui-shell' ? {classList:{contains: name => name === 'battle-fullscreen' && c.fullscreen}} : null};
   vm.createContext(c);
-  for (const name of ['internalCameraDistancePercent', 'cameraFullscreenMultiplier', 'cameraZoom', 'updateCameraDistanceLabel', 'initCameraWheel', 'setCameraViewport', 'boardMetrics', 'resize', 'perspectiveLayout',
+  for (const name of ['cameraLocked', 'internalCameraDistancePercent', 'cameraFullscreenMultiplier', 'cameraZoom', 'updateCameraDistanceLabel', 'initCameraWheel', 'setCameraViewport', 'boardMetrics', 'resize', 'perspectiveLayout',
     'perspScreenPoint', 'worldToScreenPoint', 'airScreenPose', 'syncPerspective'])
     vm.runInContext(extractFunction(source, name), c);
   return c;
 }
 const near = (a,b) => assert.ok(Math.abs(a-b)<1e-8, `${a} != ${b}`);
 
-function wheelSetup(internal = true) {
+function wheelSetup(internal = true, locked = false) {
   const c = load(), listeners = [];
+  c.GameSettings = {get: key => key === 'cameraLock' ? locked : undefined};   // 設置→遊戲設定「鏡頭鎖定」：預設 true；測試預設解鎖
   const label = {hidden: true, textContent: ''};
   const getElement = c.document.getElementById;
   c.document.getElementById = id => id === 'battle-camera-distance' ? label : getElement(id);
@@ -80,19 +81,30 @@ test('CAMERA 全屏百分比：正常戰鬥預設90%、全螢幕預設65%，同�
   assert.equal(label.textContent, '52%'); near(c.S.cameraScale, baseline * FS / .8);
 });
 
-test('CAMERA 內測距離限制50～200%，到界仍阻止外層捲動，正式版不顯示／不綁定／不套用', () => {
+test('CAMERA 內測距離限制50～200%，到界仍阻止外層捲動，鎖定時不套用（所有玩家一致，內測才顯示距離）', () => {
   const {c, label, wheel} = wheelSetup();
   for (let i = 0; i < 80; i++) wheel(-100);
   assert.equal(c.S.cameraDistancePercent, 50); assert.equal(label.textContent, '45%');
   assert.equal(wheel(-100).prevented, 1);
   for (let i = 0; i < 80; i++) wheel(100);
   assert.equal(c.S.cameraDistancePercent, 200); assert.equal(label.textContent, '180%');
-  const publicVersion = wheelSetup(false);
-  assert.equal(publicVersion.label.hidden, true); assert.equal(publicVersion.listeners.length, 0);
+  const publicVersion = wheelSetup(false, true);
+  assert.equal(publicVersion.label.hidden, true); assert.equal(publicVersion.listeners.length, 1);
   assert.equal(publicVersion.wheel(-100).prevented, 0);
   publicVersion.c.S.cameraDistancePercent = 50;
   publicVersion.c.resize(); near(publicVersion.c.S.cameraScale, Z);
   publicVersion.c.fullscreen = true; publicVersion.c.resize(); near(publicVersion.c.S.cameraScale, 100 / 65);
+});
+
+test('CAMERA 鏡頭鎖定（預設）時滾輪不縮放也不攔截；取消鎖定後一般玩家也能用，重新鎖定回到預設距離', () => {
+  const locked = wheelSetup(false, true);
+  const e = locked.wheel(-100); assert.equal(e.prevented, 0); assert.equal(e.stopped, 0);
+  assert.equal(locked.c.S.cameraDistancePercent, 100);
+  const open = wheelSetup(false, false);
+  assert.equal(open.label.hidden, true, '距離數字仍只給內測');
+  assert.equal(open.wheel(-100).prevented, 1); assert.equal(open.c.S.cameraDistancePercent, 95);
+  open.c.GameSettings.get = () => true;   // 重新勾選鎖定
+  open.c.resize(); near(open.c.S.cameraScale, Z);
 });
 
 test('CAMERA 不攔截HUD／控制元件、瀏覽器縮放／橫向捲動及無效事件；未就緒不縮放', () => {

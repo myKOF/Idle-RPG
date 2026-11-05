@@ -84,7 +84,7 @@ test('菜單與設置共用暫停，返回菜單不恢復，完全關閉才恢�
 test('主側欄移除設定，設定區位於獨立dialog內，菜單四項順序固定', () => {
   const html = readExpanded(path.join(root, 'index.html'));
   assert.doesNotMatch(html.match(/<nav id="tabs"[\s\S]*?<\/nav>/)[0], /data-tab="settings"/);
-  assert.match(html, /id="settings-modal"[\s\S]*?role="dialog"[\s\S]*?id="tab-settings" class="system-settings-content"/);
+  assert.match(html, /id="settings-modal"[\s\S]*?role="dialog"[\s\S]*?id="tab-settings" class="system-settings-content settings-pane"/);
   const menu = html.match(/id="game-menu"[\s\S]*?id="game-menu-status"/)[0];
   const order = [...menu.matchAll(/id="game-menu-(reload|exit|save|settings)"/g)].map(m => m[1]);
   assert.deepEqual(order, ['reload', 'exit', 'save', 'settings']);
