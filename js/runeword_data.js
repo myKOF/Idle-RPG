@@ -326,10 +326,12 @@ var RUNEWORDS = [
     stats: [['matkPct', 0.65], ['mpFlat', 0.65], ['cdr', 0.435]],
     procs: [{ on: 'cast', chance: 20, acts: [{ act: 'cdr', sec: 0.75 }] }],
     flavor: '咒語落下之後，還在空氣裡迴盪。' },
-  { id: 'rw_smith', name: '鐵匠之魂', tier: 2, runes: ['r12', 'r11', 'r14'], bases: ['amulet'],
+  { id: 'rw_tidecall', name: '潮汐', tier: 2, runes: ['r08', 'r12', 'r14'], bases: ['jewelry'],
     towerUnlockFloor: 59,
-    stats: [['gemEff', 0.65], ['affixCap', 0.435], ['enhanceSuccess', 0.65]],
-    flavor: '鎚聲不絕，鋼與靈魂同鍛。' },
+    stats: [['mpRegen', 0.65], ['hpRegen', 0.65], ['matkPct', 0.435]],
+    fx: { killManaPct: 1, manaCostRedPct: 7.5 },
+    procs: [{ on: 'tick', every: 8, acts: [{ act: 'heal', pctMax: 2 }, { act: 'mana', pctMax: 3 }] }],
+    flavor: '潮來潮去，每一次都帶走疲憊、留下力量。' },
 
   /* ===== 第三級　史詩 ===== */
   { id: 'rw_apocalypse', name: '天啟', tier: 3, runes: ['r10', 'r11', 'r21', 'r23'], bases: ['mainHand'],
@@ -556,13 +558,11 @@ var RUNEWORDS = [
     procs: [{ on: 'crit', chance: 25, acts: [{ act: 'dmg', pct: 100, elem: 'ice', to: 'target' }] }],
     legend: ['icearrowDeepFreeze'],
     flavor: '冰川緩慢，但它走過的地方什麼都不剩。' },
-  { id: 'rw_tidecall', name: '潮汐', tier: 4, runes: ['r08', 'r12', 'r30'], bases: ['jewelry'],
+  { id: 'rw_smith', name: '鐵匠之魂', tier: 4, runes: ['r02', 'r11', 'r23', 'r30'], bases: ['amulet'],
     towerUnlockFloor: 133,
-    stats: [['mpRegen', 0.75], ['hpRegen', 0.75], ['matkPct', 0.45], ['cdr', 0.45]],
-    fx: { killManaPct: 2, manaCostRedPct: 12.5 },
-    procs: [{ on: 'tick', every: 6, acts: [{ act: 'heal', pctMax: 3 }, { act: 'mana', pctMax: 5 }] }],
+    stats: [['gemEff', 0.65], ['affixCap', 0.435], ['enhanceSuccess', 0.65]],
     legend: ['waterballTornado'],
-    flavor: '潮來潮去，每一次都帶走疲憊、留下力量。' }
+    flavor: '鎚聲不絕，鋼與靈魂同鍛。' }
 ];
 
 var RUNEWORD_BY_ID = (function () {
