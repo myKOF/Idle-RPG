@@ -6,6 +6,10 @@
     <title>放置型 RPG 蒙地卡羅數值模擬驗證工具 (高塔與天賦技能對齊版)</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="js/util.js"></script>
+    <!-- 顯示文字一律走 String 表（STR）。少了這兩支，util.js 的後備 STR 會把所有文字
+         顯示成 [#編號]——屬性面板、裝備部位名、裝備等級全部變成編號。順序與 index.html 相同。 -->
+    <script src="js/strings_data.js"></script>
+    <script src="js/strings.js"></script>
     <script src="js/data.js"></script>
     <script src="js/formula.js"></script>
     <script src="js/battlefield.js"></script>
