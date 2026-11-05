@@ -7,6 +7,25 @@
 - 修改5檔：renderer兩個樣式值、index及scene-preview快取、LV與本段；唯讀未改規範／Workflow、原圖、相關既有測試／helper、build工具及Role5在製檔案。素材庫無變動、不建空Commit。index與Claude Intro不同區段三方試跑乾淨，本副本Role5快取／LV／任務段分段排除，不代提交他項。
 - Commit為本段所在「[Codex] fix: 縮小升級文字並調整外框」（SHA見交付）；可供Review及使用者合併，未合併／推送。下一步重載遊戲查看升級文字；整體Build須待Role5任務自行修復其測試語法後重驗。
 
+## HERO3D-ROLE5-20261105 — 5轉人物修復及既有劍動作接入
+
+- Owner：Codex；Done，單一開發者。使用者提供Role5.glb，要求與Role4相同流程：分離雙手／腿與腋下黏連、頭部轉正、刪背劍，右手正握四轉核准新劍，全部既有動作保持，5轉起選Role5。已逐項確認本遊戲使用及修改授權。
+- 前置：起始工作區乾淨、ai/codex HEAD fd7cd4c3；原檔SHA8f9dba13df728c8a87f22e149e5fa44e8d28ec3f7c5125ede08c91c69089f6c5，68節點／一骨架／Running。依賴核准Sword包305cb39及原Role1動作／正握，保留0～4轉與黃金騎士。原始法線／基色／MR均2048px；依使用者對四轉材質落差的回饋，這次保留原圖並改善補面UV，不另改四轉。
+- 範圍：images/models/hero3d/role5.glb／role5.json／ROLE5_SOURCE.md及Role5原始貼圖旁載、tools/meshy-pipeline/blender/prepare_role5.py與src/export-role5.cjs、hero3d五轉選擇／旁載PBR旗標、index僅hero3d快取、相關測試、LV及本段；素材庫保存授權原檔／可編輯Blend／成品／依賴SHA／QA。禁止舊模型／已核准劍／六動畫及正握方向、四招普攻邏輯、Worker／戰鬥／配置／存檔／轉生條件、他人進行中內容及合併推送。
+- 預檢：其餘目標無外部來源；index與Claude未提交Intro CSS／載入遮罩／String、bridge／main快取及Intro載入不同區段，本項僅hero3d快取。以共同祖先fd7cd4c3、Claude現況與本項候選做LF正規化QA副本三方merge-file，exit0，無語意相依，分段編修提交。
+- 驗收：原生前後及各動作確認、鼻部中立朝前、背劍移除、手腿無跨骨骼權重／橋面、右手正握新劍；原六動畫／骨架逐取樣保持、0～5轉與存讀／失敗／競態、實際PBR及資源釋放；回歸／Build／匯出SHA／清晰遊戲GIF。素材先Commit再遊戲Commit，後續使用者Review／合併。
+- 完成：Blender4.5.10刪背劍810面、右手及橋214面、左手橋60面及腋下27面，移除碎片，軀幹／雙臂獨立封閉且無跨手腿權重／橋面。頭部來源空間-20°，頸部平滑，中立鼻部對Head朝向偏角小於4°。右手幾何／法線／索引／權重與原正握逐位相同；原骨架及六段動畫全部取樣保持。新劍剛性綁Sword沿原握點／刃向，核准11021頂點及索引獨立比對，最大位置誤差4.10e-7m。
+- 材質／成品：原始2048px基色／法線／MR三圖原位元組保留，SHA均獨立比對，不縮小、不再壓縮。補面逐三角面由保留甲片轉移UV，背部取對側，保留原PBR材質及細節；密集補面與周邊共用切點，不留T接縫。GLB3742060bytes、28546三角面（身體12336／劍10588／手5622），SHA d83254f239be70ff1cd4f8eab66fc587b1657c05b1536fbbaa9ae8b4d6119c7d；三旁載圖12959358bytes，五轉首次合計約16.7MB，僅下載目前需要外觀。原生重開Blend、mesh.validate、六actions／四張packed貼圖及法線／MR Non-Color通過；實際GLB幾何單邊／奇數邊0，135條重合邊屬接觸甲片。整體強制焊接會改變獨立殼層並呈73邊界／99非流形邊，不宣稱單一流形雕塑或還原原被遮擋圖案。
+- 接線：5轉以上選Role5、0～4轉及黃金騎士SHA保持，6轉不重載；新pbrExternal旗標沿用現有Standard／棚光／曝光，index僅hero3d快取20261105-role5-v1。GLTFLoader在圖片失敗時可能回傳null，故新增只對該旗標的必要基色／法線／MR驗證，缺圖則去重清理新載入資源、在建立renderer前拒絕換模，保留原外觀；不改舊旁載回退、renderer／scene-preview或動作時序。
+- 回歸：`node --test --test-concurrency=2 tests/hero3d-pbr.test.cjs tests/hero3d-role5.test.cjs tests/hero3d-role4.test.cjs tests/hero3d-role3.test.cjs tests/hero3d-role2.test.cjs tests/hero3d-rebirth-skin.test.cjs tests/hero3d-forward-grip.test.cjs tests/hero3d-role.test.cjs tests/hero3d-attack4.test.cjs tests/hero3d-battle-rules.test.cjs tests/hero3d-internal-toggle.test.cjs tests/battle-renderer-pause.test.cjs tests/vfx-editor-cache-versions.test.cjs`72/72；涵蓋六動畫各61姿勢實際CPU蒙皮、手腿分離、補面封邊／原圖尺寸與SHA、新劍／正握、4→5→6及過期／失敗／存檔開局與缺圖清理。未放寬原斷言。`npm.cmd run build`663檔通過；Role／Role1／Role2／Role3／Role4／PBR六套舊匯出及新Role5 --source-check全部通過；ast.parse／node --check與diff --check通過。
+- 實機：隔離隨機localhost正式index＋真Worker／Pixi／Hero3D，在SwiftShader後端GM1→2→3→4→5→6→4→0→5分別選1／2／3／4／5／5／4／0／5，九次切換Attack4進度1.1秒、速度／朝向狀態完全相同。100次普攻四招均有且不連抽，技能不插隊、收招回Run，saveAutoNow後重載仍5。全部12材質Standard、身體normal／MR及環境存在；四張材質貼圖／環境dispose各一次、幾何歸0及context lost，沒有將內部快取計數1誤報為0。刻意中斷Role5基色後create拒絕、原控制器仍可揮劍且context有效；該案例ERR_FAILED與GLTF貼圖錯誤屬預期，正常有效材質無錯。未讀寫玩家原網址存檔，QA瀏覽器／服務已關閉。
+- QA限制如實保留：首輪同時啟動其他QA時Headless Target crashed；預設GPU後端在完成切換後重載曾出現基色載入失敗、Shader invalid與context lost。原因未證實，未宣稱根治GPU相容性；其後完整原斷言在隔離SwiftShader通過，正常Console／Page error0，僅既有未用preload提示。缺圖保護已另以原生GLTF實測，但不代表所有Shader／裝置問題已解決。未做全庫、跨GPU／行動裝置長時間效能或全遊戲長玩；原圖容量、甲片重合與隱藏部分合理補全亦為限制。
+- 預覽：原始PBR前後／側面、修復後全部動作及1400px三角度握劍近拍；正式內建test_map方格場景GIF1600×1000、84幀／30fps，附同步全身放大及整段動作取景，劍尖完整、磁碟讀回確認主角／放大皆動。錄製僅QA暫隱NPC／殘留FX／暫停遮罩、用內建全屏與滾輪、畫布700px；正式預設512px。QA在本聊天visualizations/role5-game-20261105，必要證據已存素材庫，不把逐幀暫存放入遊戲。
+- 修改14檔：images/models/hero3d/{role5.glb,role5.json,ROLE5_SOURCE.md,role5/base.jpg,role5/normal.png,role5/mr.jpg}、tools/meshy-pipeline/{blender/prepare_role5.py,src/export-role5.cjs}、js/hero3d.js、index.html、tests/{hero3d-role5.test.cjs,hero3d-rebirth-skin.test.cjs}、LV_upgrade_system.md及本段。唯讀未改規範／AGENTS／Workflow／prompts、原始Role5與0～4轉／黃金騎士／核准劍、舊製作及匯出工具／PBR配置、battle-renderer／scene-preview、其他既有測試、Worker／save／player／戰鬥／配置／String及轉生門檻；不修改他人Intro內容。
+- 提交協作：期間同副本405279a2完成升級文字樣式，與本項renderer以外的模型接線、hero3d快取及文件段落不同，原成果保留。首次Git提交遇同時索引寫入失敗；確認無index.lock、暫存14檔及shared文件差異僅本項後重試，未刪鎖或回退其他成果。
+- 交付：素材庫codex-authored/hero3d-role5-20261105共48檔（manifest核對47份來源），保留授權原GLB、Blend、原圖／成品／依賴及QA；素材Commit `fda176b`，載入失敗保護QA補充Commit `554cc15`，均先於遊戲（本段所在「[Codex] feat: 接入5轉金甲與原始PBR貼圖」，SHA見交付）。無本項未完成實作，可供Review及使用者合併；未合併或推送develop／main。下一步重載內測遊戲檢視五轉，GPU高壓相容性限制見上段。
+
+
 ## TEST-MAP-CAMERA-WHEEL-20261105 — 測試場景直接使用滾輪縮放鏡頭
 
 - Owner：Codex；Done，單一開發者。使用者要求測試場景也能以滑鼠滾輪調整鏡頭距離。GM test_map暫時不套用鏡頭鎖定，向上拉近、向下拉遠，沿用既有步進／界限／HUD與修飾鍵保護；離場後依原遊戲設定鎖定，不改設定或存檔。進出場景立即resize，使縮放與百分比同步恢復，不等待視窗尺寸改變。
