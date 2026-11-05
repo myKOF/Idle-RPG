@@ -2249,8 +2249,10 @@ textarea#save-io {
      光暈改成靜態值，脈動只留 opacity；will-change 讓它獨立成一層，
      重繪就不會波及底下的戰鬥畫面。 */
   text-shadow: 0 0 8px rgba(253, 224, 71, 0.55);
-  animation: textPulse 2.5s infinite ease-in-out;
-  will-change: opacity;
+  /* 2026-11-05：連 opacity 脈動也拿掉。橫幅一出現就是一個永遠在動的全寬圖層疊在戰鬥 Canvas 上，
+     使用者多次回報「更新提示一出現就卡、特效爆炸」；靜態橫幅沒有任何功能損失，
+     contain 讓它的版面／重繪不波及底下的戰鬥區。 */
+  contain: layout style;
 }
 
 #update-banner:hover {

@@ -9,7 +9,7 @@
   <link rel="icon" href="images/icon_avatar.png" type="image/png">
   <link rel="preload" as="image" href="images/ui/gem-resonance/hex-backplate.png" fetchpriority="low">
   <link rel="preload" as="image" href="images/ui/heaven-power/dark-gold-seal.png?v=1" fetchpriority="low">
-  <link rel="stylesheet" href="css/style.css?v=1.0.119">
+  <link rel="stylesheet" href="css/style.css?v=1.0.120">
   <link rel="stylesheet" href="css/inventory-offset.css">
   <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.103">
   <link rel="stylesheet" href="css/ashen-forge-flat.css?v=1.0.4">
@@ -22,7 +22,7 @@
   <link rel="stylesheet" href="css/divine-forge.css?v=1.0.15">
   <link rel="stylesheet" href="css/equipment-chaos.css?v=1.0.6">
   <link rel="stylesheet" href="css/equipment-tooltip.css?v=20261105-upgrade-nowrap-v1">
-  <link rel="stylesheet" href="css/intro.css?v=1.0.1">
+  <link rel="stylesheet" href="css/intro.css?v=1.0.2">
 </head>
 
 <body>
@@ -824,6 +824,7 @@
         </section>
         <section id="settings-pane-help" class="settings-pane settings-help" role="tabpanel" aria-labelledby="settings-tab-help" hidden>
           <p class="help-intro" data-str-html="2353"></p>
+          <div class="help-replay"><button type="button" id="btn-replay-intro" class="help-replay-btn" data-str="2413"></button></div>
           <section class="help-section">
             <div class="help-head"><img class="help-icon" src="images/ui/enamel-nav/char.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"><h3 data-str="63"></h3></div>
             <p class="help-lead" data-str="2354"></p>
@@ -1125,7 +1126,7 @@
        已移除（主執行緒零呼叫，只在 Worker 內跑）：
          special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/util.js?v=1.0.4"></script>
-  <script src="js/strings_data.js?v=e7affeb2"></script>
+  <script src="js/strings_data.js?v=dcde27a8"></script>
   <script src="js/strings.js?v=1.0.1"></script>
   <script src="js/game-settings.js?v=1.0.0"></script>
   <script src="js/ui-scale.js?v=1.0.1"></script>
@@ -1202,7 +1203,7 @@
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
   <script src="js/intro-data.js?v=1.0.1"></script>
-  <script src="js/intro-player.js?v=1.0.1"></script>
+  <script src="js/intro-player.js?v=1.0.2"></script>
   <script src="js/bridge.js?v=20261105-intro-player-v1"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
