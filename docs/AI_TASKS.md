@@ -14877,3 +14877,13 @@ Worker 存活且頁面正常完成載入。
 - 衝突解法：保留主線的開場動畫、技能提示計數／耗魔與 Canvas 復原內容，以及 incoming 的升級 Preset、神石圖示、第五角色、成就樣式與 stats 更新。三個重疊快取改用新的合併版本 `20261105-intro-levelup-merge-v1`（style、battle-renderer、ui），避免任一側舊版快取遮蔽另一側修改；其餘自動合入檔案原樣保留。
 - Excel／生成資料／素材：原始衝突不含 XLSX，不建立 Excel DATA plan；無需重生 CSV／JS。incoming 的遊戲素材與來源文件保留，素材庫不需額外交付。
 - 驗證：角色5、LEVELUP、stats、VFX 與 cache 回歸共 178 項，172 通過；6 項失敗逐項與原始 HEAD 基線比對後完全相同（stats 1、既有 VFX 5），未新增 regression。修正 editor 的 strings_data 快取後 CV-1～CV-3 全通過；`npm.cmd run build` 669 檔通過，合併結果無 conflict marker，`git diff HEAD --check` 通過。已知風險：上述6項既有基線失敗仍待原任務處理；index 保持 unmerged 是 controller 尚未依回報檔案 stage 的預期狀態。
+
+## ANCIENT-STAR-SIMPLE-TEXT-20261105 — tips與詳情還原簡易星號
+
+- Owner：Codex；Done，單一開發者。使用者要求裝備tips／詳情詞條改回原本簡易星星，裝備欄圖片保持。僅在既有equipment-tooltip.css對equip-detail-card／detail-pane恢復文字字形及原橘色輕光暈，停用其::after圖片；詞條／精鑄既有文字分色保持。裝備／背包／神鑄badge的三色PNG、1px輪廓、強光暈及窄格重疊不改。
+- 允許：css/equipment-tooltip.css、index僅其快取、LV、docs/assets來源渲染說明及本段；禁止style.css／JS／PNG／素材／玩法／星數／配置、其他整合及Intro在製內容、合併推送。已讀規範／Workflow／任務，tips專用CSS預檢乾淨；develop整合包含本分支既有星星成果及獨立更新橫幅，選用專用CSS避開共同style快取行，各候選對develop實際檔案三方試跑見驗證。
+- 驗收：正式CSS／itemDetailHTML確認詳情、單卡／比較tips、洗煉及刻印均為簡易✡，不再顯示PNG；badge圖／filter／尺寸／間距逐項保持。相關tips／精鑄／洗煉／快取回歸、Build、素材SHA及diff後僅提交本項。後續使用者Review／合併。
+- 完成：僅專用CSS新增兩組局部規則，詞條字形fill恢復currentColor、輕文字陰影，::after content為none；不改共用style.css或任何JS／星列規則。index僅equipment-tooltip版本升20261105-simple-ancient-stars-v1，全局style與其他整合快取保持；候選五檔對develop實際檔案、HEAD基線的正規化LF merge-file皆exit0，開始修改前本副本已由外層同步至5facf4f3，無自行整合操作。
+- 瀏覽器：正式全CSS／PNG與itemDetailHTML、實際洗煉reroll.active／selIdx，確認詳情4、單卡4、比較8、刻印1、洗煉4顆共21個簡易詞條星號皆文字fill可見且圖片content none；51個穿戴／背包／神鑄badge星星仍PNG可見、文字fill透明、字級18px，三色／描邊／光暈／重疊保持。Console error／warning0；QA截圖simple-text-stars.jpg及simple-text-results.json保存在本聊天visualizations/star-alignment。初次讀computed style的camelCase vendor alias為空，已改getPropertyValue完整確認，不以空值當通過。
+- 驗證：`node --test tests/ancient-forge-limit.test.cjs tests/equipment-tooltip-compare.test.cjs tests/equip-reroll-ui.test.cjs tests/vfx-editor-cache-versions.test.cjs`28/28通過；`npm.cmd run build`669檔通過，`node tools/ancient-stars/export-source.cjs --check`原素材SHA一致、`git diff --check`通過。素材／PNG皆未修改，不建素材庫空Commit；無新增顯示文字／String需求。
+- 修改5檔：css/equipment-tooltip.css、index.html、LV_upgrade_system.md、docs/assets/ANCIENT_STARS_SOURCE.md及本段。唯讀未改規範／Workflow／Agent、原版CSS、style.css／其他CSS、js/item.js／ui.js／精鑄邏輯、原PNG／素材庫／匯出器與既有測試／helpers；無本項未完成或已知新增風險，未做全遊戲長玩。Commit為本段所在「[Codex] fix: 裝備tips與詳情恢復簡易星號」（SHA見交付），可供Review及使用者合併，未合併推送；下一步重載遊戲檢視。

@@ -13,3 +13,5 @@
 - 2026-11-05加強外框光暈：三色共用CSS內嵌SVG濾鏡，SourceAlpha膨脹1個CSS像素、減去原alpha後填深金色，再將原圖疊回，形成沿圖案的1px外描邊；最後套近／中／遠三層金黃色drop-shadow。描邊與光暈均不參與排版，保留原PNG／母圖／SHA及第一條的防禦藍調色。
 - 2026-11-05窄格避框：星列使用可壓縮Grid軌道，max-width為格內寬扣除左右共24px；每顆星星保留max-content及原18px字級，軌道縮短時只增加重疊，不縮圖案。寬格原步距保持，>4顆原重疊以兩側負margin及對稱padding保留，三色／描邊／光暈與PNG／母圖SHA不變。
 - 匯出：`node tools/ancient-stars/export-source.cjs --apply`；驗證：`node tools/ancient-stars/export-source.cjs --check`。素材庫路徑由共用 `vfx-library-root.cjs` 解析，不記錄本機絕對路徑。
+
+- 2026-11-05詞條分流：equipment-tooltip.css令equip-detail-card與detail-pane的星星恢復簡易✡字形及輕文字光暈，停用圖片偽元素；badge仍沿用三色PNG／調色／1px輪廓／強光暈與窄格重疊，原素材SHA保持。
