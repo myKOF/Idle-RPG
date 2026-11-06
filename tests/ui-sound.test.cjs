@@ -95,7 +95,7 @@ test('H10 plays on real activation only, with passive tips, disabled, synthetic,
   s.c.document.hidden = true; s.fire('click', { button: 0 }); await settle(); assert.equal(s.played.length, 5);
 });
 
-test('nine requested hover scopes apply equally to pointer, keyboard and touch while H10 clicks stay functional', async () => {
+test('only explicitly approved controls play hover sound for pointer, keyboard and touch while H10 clicks stay functional', async () => {
   const s = mount(); s.fire('pointerdown'); await settle();
   s.c.uiForgePanelSnapshot = () => ({ occupied: 0 });
   s.c.forgeViewState = snap => snap;
@@ -118,8 +118,13 @@ test('nine requested hover scopes apply equally to pointer, keyboard and touch w
   add('tab-talents', false, ['[data-talent-select]', '[data-talent-turn]', '#talent-upgrade', '.pg-help']);
   add('tab-forge', true, ['#forge-go', '#forge-unload', '#forge-auto']);
   add('tab-forge', false, ['#forge-mode-equip', '#forge-mode-ancient', '#forge-mode-gem', '#forge-mode-imprint', '[data-forge-quality]', '#forge-equipped-tab', '#forge-stone-plus', '#forge-stone-minus', '[data-forge-slot]', '[data-forge-gem]', '.item-cell[data-id]', '#inv-sort', '.pg-help', '[data-act="upgrade"]']);
+  add('tab-char', false, ['#btn-reincarnate', '.pg-help']);
+  add('settings-modal', false, ['#settings-modal-close', '#settings-tab-audio', '[data-load-save]']);
+  add('world-map-modal', false, ['#world-map-close']);
+  add('workspace-area', false, ['#btn-enemy-tip', '[data-act="upgrade"]']);
+  add(null, false, ['#quest-bar', '#update-banner', '[data-tower-floor]']);
   for (const { scope, allowed, marker } of cases) {
-    const anchor = s.node('button', s.node('#' + scope), [marker]), child = s.node('span', anchor);
+    const anchor = s.node('button', scope ? s.node('#' + scope) : null, [marker]), child = s.node('span', anchor);
     for (const event of ['pointerover', 'focusin', 'pointerdown']) {
       s.advance(200); const before = s.played.length;
       if (event === 'focusin') s.fire('keydown');
@@ -155,40 +160,41 @@ test('hover rules follow relocated inventory and current forge fill/unload funct
   label.control.disabled = false; label.parent = s.node('#tab-runes'); s.advance(200); s.fire('pointerdown', { target: label, pointerType: 'touch' }); await settle(); assert.equal(s.played.length, 4);
 });
 
-test('delegation keeps ordinary controls and help icons audible; child movement and stationary repaint stay silent', async () => {
+test('delegation keeps furnace controls audible; child movement and stationary repaint stay silent', async () => {
   const s = mount(); s.fire('pointerdown'); await settle();
-  for (const kind of ['button', '.tab-btn', '.pg-help', '.forge-info-btn', '#btn-enemy-tip', '#btn-boss-tip', '#btn-tower-result-boss-tip', '[data-talent-turn]', '[data-tower-pick]', '[data-load-save]']) {
-    s.advance(100); const anchor = s.node(kind), child = s.node('span', anchor);
+  const furnace = s.node('#tab-newforge');
+  const controls = ['button', '.pg-help', '[data-nf-partinstall-key]', '[data-nf-partupgrade]', '[data-nf-partsopen]', '[data-nf-partun]', '[data-nf-unlockslot]'];
+  for (const kind of controls) {
+    s.advance(100); const anchor = s.node(kind, furnace), child = s.node('span', anchor);
     s.fire('pointerover', { target: child }); await settle();
     const count = s.played.length;
     s.advance(100); s.fire('pointerover', { target: anchor, relatedTarget: child }); await settle(); assert.equal(s.played.length, count);
-    s.fire('pointerover', { target: s.node(kind) }); await settle(); assert.equal(s.played.length, count);
+    s.fire('pointerover', { target: s.node(kind, furnace) }); await settle(); assert.equal(s.played.length, count);
   }
-  assert.equal(s.played.length, 10);
-  const anchor = s.node('button'), icon = s.node('span', anchor), closest = icon.closest;
+  assert.equal(s.played.length, controls.length);
+  const anchor = s.node('button', furnace), icon = s.node('span', anchor), closest = icon.closest;
   icon.closest = function (selectors) { return selectors.includes('[aria-hidden="true"]') ? this : closest.call(this, selectors); };
   s.advance(100); s.fire('pointerover', { target: icon }); await settle();
-  assert.equal(s.played.length, 11, 'decorative aria-hidden icon must retain its visible button hover');
+  assert.equal(s.played.length, controls.length + 1, 'decorative aria-hidden icon must retain its visible button hover');
   assert.ok(s.played.every(url => url.includes('01-hover')));
   assert.ok(s.voices.slice(0, -1).every(voice => voice.stopped));
 });
 
-test('only passive tips stay silent; an actual action inside tips remains audible for hover, keyboard and touch', async () => {
+test('passive tips in an approved scope stay silent and actionable tips retain their hover sound', async () => {
   const s = mount(); s.fire('keydown'); await settle();
+  const furnace = s.node('#tab-newforge');
   for (const kind of ['[data-tip]', '[data-tt-title]', '[data-tt-desc]', '[title]:not([title=""])',
     '[data-sk]', '[data-buff-tip]', '[data-enemy-buff-tip]', '[data-talent-tip]',
     '.nf-fart', '.nf-pu-row', '.equip-material-icon', '.res', '.battle-buff-badge']) {
-    const card = s.node(kind), child = s.node('span', card), icon = s.node('span', child);
+    const card = s.node(kind, furnace), child = s.node('span', card), icon = s.node('span', child);
     s.advance(200); s.fire('pointerover', { target: icon });
     s.fire('keydown'); s.fire('focusin', { target: child });
     s.fire('pointerdown', { target: child, pointerType: 'touch' });
     await settle(); assert.equal(s.played.length, 0, kind);
   }
-  const actions = ['button', '.pg-help', '.forge-info-btn', '#btn-enemy-tip', '.item-cell[data-id]',
-    '.eq-slot', '[data-nf-partinstall-key]', '[data-nf-partupgrade]', '[data-nf-partsopen]', '[data-nf-partun]',
-    '[data-nf-unlockslot]', '[data-reroll-pick]', '[data-socket-pick]', '[data-gres-hole]', '[data-rune-pick]'];
+  const actions = ['button', '.pg-help', '[data-nf-partinstall-key]', '[data-nf-partupgrade]'];
   for (const kind of actions) {
-    const action = s.node(kind, s.node('[data-tip]'));
+    const action = s.node(kind, s.node('[data-tip]', furnace));
     for (const event of ['pointerover', 'focusin', 'pointerdown']) {
       s.advance(200);
       if (event === 'focusin') s.fire('keydown');
@@ -201,13 +207,14 @@ test('only passive tips stay silent; an actual action inside tips remains audibl
 
 test('disabled controls and decorative cards stay silent; associated labels share their enabled control', async () => {
   const s = mount(); s.fire('pointerdown'); await settle();
-  const disabled = s.node('button'); disabled.disabled = true;
-  const ariaDisabled = s.node('[role="button"]'); ariaDisabled.matches = () => true;
-  const label = s.node('label'); label.tagName = 'LABEL';
-  for (const node of [disabled, ariaDisabled, label, s.node('.save-row'), s.node('.nf-pu-row')]) {
+  const furnace = s.node('#tab-newforge');
+  const disabled = s.node('button', furnace); disabled.disabled = true;
+  const ariaDisabled = s.node('[role="button"]', furnace); ariaDisabled.matches = () => true;
+  const label = s.node('label', furnace); label.tagName = 'LABEL';
+  for (const node of [disabled, ariaDisabled, label, s.node('.save-row', furnace), s.node('.nf-pu-row', furnace)]) {
     s.advance(200); s.fire('pointerover', { target: node }); await settle(); assert.equal(s.played.length, 0);
   }
-  label.control = s.node('input:not([type="hidden"])'); label.control.disabled = true;
+  label.control = s.node('input:not([type="hidden"])', label); label.control.disabled = true;
   s.advance(200); s.fire('pointerover', { target: s.node('span', label) }); await settle(); assert.equal(s.played.length, 0);
   label.control.disabled = false;
   s.advance(200); s.fire('pointerover', { target: s.node('span', label) }); await settle(); assert.equal(s.played.length, 1);
@@ -216,23 +223,26 @@ test('disabled controls and decorative cards stay silent; associated labels shar
 });
 
 test('background, scroll, drag, static content and rapid movement do not create sound storms', async () => {
-  const options = {}, s = mount(options); s.fire('pointerdown'); await settle();
-  s.fire('pointerover'); await settle(); assert.equal(s.played.length, 1);
-  s.advance(10); s.fire('pointerover'); await settle(); assert.equal(s.played.length, 1);
-  for (const values of [{ buttons: 1 }, { isTrusted: false }, { target: s.node('p') }]) {
-    s.advance(100); s.fire('pointerover', values);
+  const s = mount(); s.fire('pointerdown'); await settle();
+  const furnace = s.node('#tab-newforge', s.node('#workspace-area main'));
+  const button = s.node('button', furnace);
+  s.fire('pointerover', { target: button }); await settle(); assert.equal(s.played.length, 1);
+  s.advance(10); s.fire('pointerover', { target: s.node('button', furnace) }); await settle(); assert.equal(s.played.length, 1);
+  for (const values of [{ buttons: 1 }, { isTrusted: false }, { target: s.node('p', furnace) }]) {
+    s.advance(100); s.fire('pointerover', { target: button, ...values });
   }
   s.c.UI.panelScrolling = true; s.advance(100);
-  s.fire('pointerover', { target: s.node('button', s.node('#workspace-area main')) });
+  s.fire('pointerover', { target: button });
+  s.c.UI.panelScrolling = false;
   s.c.UI.inventoryScrolling = true; s.advance(100);
-  s.fire('pointerover', { target: s.node('.item-cell', s.node('#inventory-grid')) });
+  s.fire('pointerover', { target: s.node('button', s.node('#inventory-grid', furnace)) });
   await settle(); assert.equal(s.played.length, 1);
   s.c.document.hidden = true; s.fire('visibilitychange'); assert.ok(s.voices[0].stopped);
   s.c.UISound.commandResult('item.upgrade', 'ok'); await settle(); assert.equal(s.played.length, 1);
 });
 
 test('keyboard focus and touch use the hover sample without adding a click sound', async () => {
-  const s = mount(), anchor = s.node('button'); s.fire('keydown'); await settle();
+  const s = mount(), anchor = s.node('button', s.node('#tabs')); s.fire('keydown'); await settle();
   s.fire('focusin', { target: anchor }); await settle(); assert.equal(s.played.length, 1);
   s.advance(150); s.fire('pointerdown', { target: anchor }); s.fire('focusin', { target: anchor });
   await settle(); assert.equal(s.played.length, 1);
@@ -260,11 +270,13 @@ test('unsupported audio, load failure and late decoding never block UI or replay
     const s = mount(options); s.fire('pointerdown'); s.c.UISound.commandResult('item.upgrade', 'ok'); await settle(); assert.equal(s.played.length, 0);
   }
   const s = mount();
+  const anchor = s.node('button', s.node('#tabs'));
   let resolveFetch;
   s.c.fetch = url => new Promise(resolve => { if (url.includes('01-hover')) resolveFetch = resolve; });
-  s.fire('pointerdown'); await settle(); s.fire('pointerover'); s.advance(300);
+  s.fire('pointerdown'); await settle(); s.fire('pointerover', { target: anchor }); s.advance(300);
   resolveFetch({ ok: true, arrayBuffer: async () => ({ url: 'late-hover' }) });
   await settle(); assert.equal(s.played.length, 0);
+  s.fire('pointerover', { target: anchor }); await settle(); assert.equal(s.played.length, 1);
 });
 
 test('detailAction waits for accepted Worker results; rejection, missing resources and missing affix never sound', async () => {

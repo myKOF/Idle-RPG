@@ -37,7 +37,7 @@ var UISound = (function () {
     'tab-tower': '[data-tower-floor]',
     'tab-forge': '#forge-unload, #forge-go, #forge-auto'
   };
-  var HOVER_SCOPES = '#tabs, #tab-equip, #tab-skills, #tab-newforge, #tab-gems, #tab-runes, #tab-tower, #tab-talents, #tab-forge, #tower-result-modal, #tower-canvas-hud';
+  var HOVER_SCOPES = '#tabs, #tab-newforge, #' + Object.keys(HOVER_RULES).join(', #');
   var context = null, initialized = false, generation = 0;
   var buffers = {}, loading = {}, sources = {}, lastPlayed = {};
   var pointerX = null, pointerY = null, focusTarget = null, focusAt = -Infinity;
@@ -133,10 +133,10 @@ var UISound = (function () {
     var anchor = target(node);
     if (!anchor) return null;
     var scope = anchor.closest(HOVER_SCOPES);
-    // 未指定的區域與熔爐沿用現況；功能列表不受目的頁籤限制。
-    if (!scope || scope.id === 'tabs' || scope.id === 'tab-newforge') return anchor;
-    var allowed = HOVER_RULES[scope.id];
-    if (!allowed || anchor.closest(allowed) !== anchor) return null;
+    // 只保留明確指定的區域；功能列表與熔爐保留原有可操作目標。
+    if (!scope) return null;
+    if (scope.id === 'tabs' || scope.id === 'tab-newforge') return anchor;
+    if (anchor.closest(HOVER_RULES[scope.id]) !== anchor) return null;
     if (anchor.id === 'forge-unload') {
       // 此按鈕有材料時改成「全部卸下」，只在實際執行自動放入時播觸碰音。
       if (typeof uiForgePanelSnapshot !== 'function' || typeof forgeViewState !== 'function' || typeof forgeViewItemCount !== 'function') return null;

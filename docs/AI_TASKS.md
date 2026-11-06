@@ -14963,3 +14963,11 @@ Worker 存活且頁面正常完成載入。
 - Owner：Codex。使用者以「1」接續同步，合併377fa4ad與34a0847f。裝備tips與詳情使用簡易星號，裝備格保留主線的烘焙PNG。
 - 依雙方提交合併四個衝突檔，保留序章樣式快取與兩側任務紀錄，並接上incoming的提示樣式快取。素材沿用已整合的來源與匯出。
 - 驗證：太古精鑄、裝備比較tips、洗煉、快取、序章動態／聲景與符文真言相關回歸52/52通過。npm.cmd run build檢查678檔通過。Edge以正式CSS驗證詳情及tips的6個文字星號，以及三種256px裝備格烘焙圖的載入與computed styles。原圖與烘焙圖SHA核對通過。序章匯出器在本次驗證明確指定effects-materials，七張素材、提示詞與動畫來源SHA一致。git diff HEAD --check通過。
+
+## UI-SOUND-HOVER-OPT-IN-20261106 — 僅保留指定操作的觸碰音效
+
+- Codex 已完成。以使用者 2026-11-05 逐項指定的頁籤操作為保留清單，移除未列區域的預設觸碰音。滑鼠、鍵盤焦點與觸控共用清單。H10 點擊、強化與洗煉成功音、成就音沿用既有觸發。
+- 既有 UI 音效與頁籤清單已整合，fetch 與目標衝突預檢通過。修改 js/ui-sound.js、index.html 音效快取、兩份既有音效測試、docs/UI_SOUND.md、LV_upgrade_system.md 與本段。唯讀核對規範、js/ui.js、ui-achievements.js、ui-world-map.js、ui-gem-resonance.js 與 sfx.js 的觸發入口。音檔及素材庫沒有變更。
+- `node --test tests/ui-sound.test.cjs tests/ui-achievement-sound.test.cjs tests/achievements.test.cjs tests/equip-reroll-ui.test.cjs tests/upgrade-animation.test.cjs tests/ui-tick-smoke.test.cjs tests/vfx-editor-cache-versions.test.cjs` 47/47 通過。 `npm.cmd run build` 檢查 678 檔通過，`node tools/string-table/build_string_csv.cjs --check` 寫死文字 0，`git diff --check` 通過。
+- 正式頁面以隔離 Edge、實際 Worker 與 AudioContext 驗證 19 個滑鼠案例，涵蓋功能列表、熔爐、裝備與寶石保留項目，以及設定、角色、戰鬥、世界地圖等靜音項目。設定頁真實鍵盤焦點與觸控靜音，世界地圖點擊與設定觸控點擊播放 H10。Console error／warning 為 0。內建瀏覽器無連線，行動真機與全庫測試未執行。
+- 交付為本段所在提交，可供 Review 與使用者合併。下一步於整合後重新載入遊戲驗收。
