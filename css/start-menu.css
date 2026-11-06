@@ -1,3 +1,20 @@
+@font-face {
+  font-family: "Start Menu Cinzel";
+  src: url("../fonts/start-menu/cinzel-bold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F;
+}
+
+@font-face {
+  font-family: "Start Menu Noto Serif TC";
+  src: url("../fonts/start-menu/noto-serif-tc-bold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
 .start-menu-pending { background: #080a0e; }
 .start-menu-pending :is(#topbar, #game-layout) { visibility: hidden; }
 
@@ -7,6 +24,20 @@
   justify-content: flex-start;
   padding: 12px !important;
   background: radial-gradient(ellipse at 50% 32%, #262a30, #080a0e 75%) !important;
+}
+#start-menu .start-menu-title-lockup {
+  position: absolute;
+  z-index: 1;
+  top: 4.5%;
+  left: 4.75%;
+  width: min(40%, 630px);
+  height: auto;
+  max-height: max(0px, calc(85dvh - 270px));
+  object-fit: contain;
+  object-position: left top;
+  scale: .85;
+  transform-origin: top left;
+  pointer-events: none;
 }
 #start-menu .start-menu-controls {
   z-index: 1;
@@ -27,18 +58,16 @@
   border: 0;
   background: transparent;
   color: #f5e7cf;
-  font-family: "Noto Serif TC", "Songti TC", "PMingLiU", Georgia, serif;
-  font-size: 18px !important;
-  font-weight: 600;
+  font-family: "Start Menu Cinzel", "Start Menu Noto Serif TC", "Noto Serif TC", "Songti TC", "PMingLiU", Georgia, serif;
+  font-size: 19px !important;
+  font-weight: 700;
   letter-spacing: 0.05em;
   line-height: 1.25;
   text-shadow: 0 1px 2px #29170e, 0 2px 5px #2b1b10, 0 0 7px #28170ed9;
 }
 #start-menu button:focus-visible {
   outline: none;
-  text-decoration: underline;
-  text-decoration-color: #dfbe83;
-  text-underline-offset: 4px;
+  text-shadow: 0 1px 2px #29170e, 0 2px 5px #2b1b10, 0 0 7px #dfbe83;
 }
 #start-menu button:disabled { opacity: .5; cursor: default; }
 #start-menu-status { color: var(--dialog-gold); margin: 12px 0 0; text-align: center; text-shadow: 0 1px 3px #000; }
@@ -47,7 +76,6 @@
 @media (hover: hover) {
   #start-menu button:hover:not(:disabled) {
     color: #fff2d8;
-    text-decoration: none;
   }
   #start-menu button:hover:not(:disabled)::before {
     content: "";
@@ -66,9 +94,41 @@
 
 @media (pointer: coarse) {
   #start-menu .system-menu-actions button { min-height: 44px !important; }
+  #start-menu .start-menu-title-lockup { max-height: max(0px, calc(85dvh - 340px)); }
+}
+
+@media (min-width: 601px) and (min-height: 501px) {
+  #start-menu .start-menu-controls {
+    margin-inline-start: max(-38px, -2.5vw);
+    margin-block-end: min(58px, 8.4vh);
+  }
 }
 
 @media (max-width: 600px), (max-height: 500px) {
   /* 小視窗原本使用較薄的外框內距，按當時的按鈕欄寬縮至八成。 */
   #start-menu .start-menu-controls { width: min(100%, calc(min(332px, 100vw - 68px) * 0.8 + 8px)); }
+}
+
+@media (max-width: 600px) {
+  #start-menu .start-menu-title-lockup {
+    left: 50%;
+    translate: -50%;
+    transform-origin: top center;
+    width: min(90%, 420px);
+    max-height: max(0px, calc(94dvh - 340px));
+    object-position: center top;
+  }
+}
+
+@media (min-width: 501px) and (max-height: 500px) {
+  #start-menu .start-menu-title-lockup {
+    top: 6.5%;
+    right: 5%;
+    left: auto;
+    translate: none;
+    transform-origin: top right;
+    width: min(43%, 410px, calc(96vw - 298px));
+    max-height: 84dvh;
+    object-position: right top;
+  }
 }

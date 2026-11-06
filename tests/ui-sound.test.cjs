@@ -10,10 +10,13 @@ const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
 const settle = async () => { for (let i = 0; i < 15; i++) await Promise.resolve(); };
 
 function mount(options = {}) {
-  const handlers = {}, requests = [], played = [], voices = [];
+  const handlers = {}, requests = [], played = [], voices = [], music = [];
+  const preferences = { mute: false, sfxVolume: 50, musicVolume: 50 };
+  const listeners = [];
+  let allowed = !options.blockAutoplay;
   let clock = 1000, created = 0;
   class AudioContext {
-    constructor() { this.state = 'suspended'; this.destination = {}; created++; }
+    constructor() { this.state = options.allowContextAutoplay ? 'running' : 'suspended'; this.destination = {}; created++; }
     resume() { this.state = 'running'; return Promise.resolve(); }
     decodeAudioData(bytes) { return Promise.resolve({ url: bytes.url }); }
     createGain() { return { gain: { value: 1 }, connect() {}, disconnect() {} }; }
@@ -22,15 +25,35 @@ function mount(options = {}) {
       voices.push(voice); return voice;
     }
   }
+  class Audio {
+    constructor(src) { Object.assign(this, { src, paused: true, currentTime: 0, attempts: 0 }); music.push(this); }
+    play() {
+      this.attempts++;
+      if (!allowed) return Promise.reject(new Error('Autoplay denied'));
+      this.paused = false;
+      return Promise.resolve();
+    }
+    pause() { this.paused = true; }
+  }
   const c = {
     performance: { now: () => clock },
     document: { hidden: false, addEventListener: (name, fn) => { handlers[name] = fn; } },
-    window: { AudioContext: options.unsupported ? undefined : AudioContext, addEventListener: (name, fn) => { handlers[name] = fn; } },
+    window: { Audio, AudioContext: options.unsupported ? undefined : AudioContext, addEventListener: (name, fn) => { handlers[name] = fn; } },
+    GameSettings: {
+      get: key => preferences[key],
+      subscribe: fn => listeners.push(fn),
+      sfxGain: () => preferences.mute ? 0 : preferences.sfxVolume / 50
+    },
     fetch: async url => { requests.push(url); if (options.fail) throw new Error('unavailable'); return { ok: true, arrayBuffer: async () => ({ url }) }; }
   };
   vm.createContext(c); vm.runInContext(source, c);
   function node(kind = 'button', parent = null, aliases = []) {
-    const n = { kind, parent, aliases, id: [kind, ...aliases].find(s => s.startsWith('#'))?.slice(1), closest(selectors) {
+    const n = { kind, parent, aliases, id: [kind, ...aliases].find(s => s.startsWith('#'))?.slice(1),
+      contains(other) {
+        for (; other; other = other.parent) if (other === this) return true;
+        return false;
+      },
+      closest(selectors) {
       if (selectors.startsWith('[hidden]')) return null;
       for (let current = this; current; current = current.parent) {
         if (selectors.split(', ').some(s => s === current.kind || current.aliases.includes(s))) return current;
@@ -39,7 +62,9 @@ function mount(options = {}) {
     } };
     return n;
   }
-  return { c, requests, played, voices, node, advance: ms => { clock += ms; }, created: () => created,
+  return { c, requests, played, voices, music, node, advance: ms => { clock += ms; }, created: () => created,
+    allowMusic: () => { allowed = true; },
+    setPreference(name, value) { preferences[name] = value; listeners.forEach(fn => fn(name, value)); },
     fire(name, values = {}) { handlers[name]?.({ isTrusted: true, pointerType: 'mouse', buttons: 0, clientX: clock, clientY: 10, target: node(), ...values }); } };
 }
 
@@ -115,6 +140,109 @@ test('pointer entry, keyboard focus and touch press stay silent across the forme
   const target = s.node('button', s.node('#tabs'));
   s.fire('click', { target, button: 0, pointerType: 'touch' }); await settle();
   assert.deepEqual(s.played.map(url => url.split('?')[0]), ['audio/ui-preview/hover-options-v5/H10.wav']);
+});
+
+test('moon glow plays only on a real mouse entry into an enabled start menu button', async () => {
+  const s = mount();
+  const button = s.node('button', null, ['#start-menu .system-menu-actions button']);
+  const child = s.node('span', button);
+  s.c.UISound.setStartMenuVisible(true);
+  s.fire('pointerdown'); await settle();
+  s.fire('pointerover', { target: child }); await settle();
+  assert.equal(s.played.length, 1);
+  assert.ok(s.played[0].includes('hover-10-moon-glow.wav'));
+  for (const fields of [
+    { target: child, relatedTarget: button }, { target: button, pointerType: 'touch' },
+    { target: button, isTrusted: false }, { target: s.node('button') }, { target: button, buttons: 1 }
+  ]) {
+    s.advance(200); s.fire('pointerover', fields); await settle();
+  }
+  button.disabled = true;
+  s.advance(200); s.fire('pointerover', { target: button }); await settle();
+  button.disabled = false;
+  s.c.UISound.setStartMenuVisible(false);
+  assert.equal(s.voices[0].stopped, true);
+  s.advance(200); s.fire('pointerover', { target: button }); await settle();
+  assert.equal(s.played.length, 1);
+});
+
+test('loading prebuffers menu audio and the first hover can play as soon as autoplay is allowed', async () => {
+  const s = mount({ allowContextAutoplay: true });
+  const button = s.node('button', null, ['#start-menu .system-menu-actions button']);
+  s.c.UISound.preloadStartMenuAudio(); await settle();
+  const [track] = s.music;
+  assert.match(track.src, /tutti-impact\.mp3/);
+  assert.equal(track.preload, 'auto');
+  assert.equal(track.attempts, 0);
+  assert.equal(s.requests.length, 1);
+  assert.match(s.requests[0], /moon-glow/);
+  s.c.UISound.achievementUnlocked(); await settle();
+  assert.deepEqual(s.played, []);
+
+  s.c.UISound.setStartMenuVisible(true);
+  s.c.UISound.setStartScreenActive(true);
+  s.fire('pointerover', { target: button }); await settle();
+  assert.equal(track.paused, false);
+  assert.deepEqual(s.played, s.requests);
+});
+
+test('an outstanding hover decode expires when the start menu is hidden and reopened', async () => {
+  const s = mount();
+  const fetch = s.c.fetch;
+  let release;
+  s.c.fetch = url => url.includes('moon-glow')
+    ? new Promise(resolve => { release = () => resolve({ ok: true, arrayBuffer: async () => ({ url }) }); })
+    : fetch(url);
+  s.c.UISound.setStartMenuVisible(true);
+  s.fire('pointerdown'); await settle();
+  const button = s.node('button', null, ['#start-menu .system-menu-actions button']);
+  s.fire('pointerover', { target: button });
+  s.c.UISound.setStartMenuVisible(false);
+  s.c.UISound.setStartMenuVisible(true);
+  release(); await settle();
+  assert.deepEqual(s.played, []);
+});
+
+test('start menu music loops, retries autoplay after a gesture, and follows volume, mute and visibility', async () => {
+  const s = mount({ blockAutoplay: true });
+  assert.equal(s.music.length, 0);
+  s.c.UISound.preloadStartMenuAudio();
+  s.c.UISound.setStartMenuVisible(true);
+  s.c.UISound.setStartScreenActive(true); await settle();
+  const [track] = s.music;
+  assert.match(track.src, /tutti-impact\.mp3/);
+  assert.equal(track.loop, true);
+  assert.equal(track.attempts, 1);
+  assert.equal(track.paused, true);
+  s.allowMusic();
+  s.fire('pointerup', { pointerType: 'touch' }); await settle();
+  assert.equal(track.attempts, 2);
+  assert.equal(track.paused, false);
+  assert.equal(track.volume, .5);
+  s.setPreference('musicVolume', 18);
+  assert.equal(track.volume, .18);
+  s.setPreference('mute', true);
+  assert.equal(track.paused, true);
+  s.setPreference('mute', false);
+  assert.equal(track.paused, false);
+  track.currentTime = 15;
+  s.c.UISound.setStartMenuVisible(false);
+  assert.equal(track.paused, false);
+  s.c.UISound.setStartMenuVisible(true);
+  assert.equal(track.paused, false);
+  assert.equal(track.currentTime, 15);
+  s.c.document.hidden = true; s.fire('visibilitychange');
+  assert.equal(track.paused, true);
+  s.c.document.hidden = false; s.fire('visibilitychange');
+  assert.equal(track.paused, false);
+  s.fire('pagehide');
+  assert.equal(track.paused, true);
+  s.fire('pageshow');
+  assert.equal(track.paused, false);
+  s.c.UISound.setStartScreenActive(false);
+  s.fire('keydown');
+  assert.equal(track.paused, true);
+  assert.equal(s.music.length, 1);
 });
 
 test('clicks on enabled label descendants play H10 while unassociated or disabled labels stay silent', async () => {
@@ -197,5 +325,9 @@ test('runtime loads only approved immutable originals and the versioned sound mo
   const h10Hash = crypto.createHash('sha256').update(h10).digest('hex');
   assert.equal(h10Hash, '338a16bc9ce91a90b3b081e25e93306b5830eefa05fbba780c85d8f9f94b9f37');
   assert.ok(source.includes('H10.wav?v=' + h10Hash.slice(0, 12)));
+  for (const rel of ['audio/ui-preview/hover-10-moon-glow.wav', 'audio/start-menu/tutti-impact.mp3']) {
+    const hash = crypto.createHash('sha256').update(fs.readFileSync(path.join(root, rel))).digest('hex');
+    assert.ok(source.includes(rel + '?v=' + hash.slice(0, 12)));
+  }
   for (const id of ['C1', 'C2', 'C3', 'C4', 'C5', 'H6', 'H7', 'H8', 'H9']) assert.ok(!source.includes(id + '.wav'));
 });

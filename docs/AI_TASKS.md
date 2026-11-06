@@ -1,3 +1,11 @@
+## STARTUP-LOADING-20261106 — 以 Loading 取代自動開場
+
+- Owner：Codex，Done。沿用既有黑底 Loading，待自動存檔檢查與選單背景準備完成後顯示開始選單。移除短標題和首次序章的自動播放入口及舊網址參數，保留設定及 GM 手動播放。
+- 前置為現行開始選單與 Loading。範圍為 js/start-menu.js、js/intro-player.js、js/intro-data.js、js/bridge.js、首頁快取、開始選單及序章回歸、LV 與本段。素材、字串表、存檔與 Worker 協議由既有流程管理。驗收新舊玩家、背景載入失敗與直接接續存檔。接手為使用者驗收及整合。
+- 16 份相關 `node --test` 共 155/155 通過，涵蓋 Loading、開始選單、序章與 GM、存檔、首畫、分頁鎖、音訊、快取及 Worker。`npm.cmd run build` 檢查 684 檔，字串寫死 0、diff 檢查通過。
+- 內建瀏覽器未連線，改用隔離 Edge 驗證。1440×780 桌面及 390×844 窄視窗刻意延遲背景，確認先顯示 Loading，準備完成直接進入選單，期間未掛載開場舞台。測試設定重播／略過、新遊戲、自動存檔與重新載入後繼續，使用實際 Worker 和 IndexedDB。Console error／warning 0，未做行動真機驗證。
+- 唯讀核對 main、storage、分頁鎖及背景程式。衝突預檢通過，首頁與文件內的字體／標誌試版分段保留。本段所在提交可供整合。
+
 ## SYNC-20261106-START-MENU-FINAL — 整合開始選單樣式並恢復同步
 
 - Owner：Codex。使用者以 1 授權接續本輪整合。原 develop f8e33e7c 已保留 Antigravity、Claude 技能音效及先前 Codex 成果，本輪納入 524aabd4 暖色文字與游標亮帶。只調整本段及合併所需文件，保留所有來源提交。
@@ -73,6 +81,13 @@
 - 修改 `css/achievements.css`、`index.html`、`LV_upgrade_system.md` 與本段。唯讀核對成就渲染、開始選單和篩選入口。首頁成就標記與快取對 Claude 實際工作檔三方試跑 exit 0，其技能音效區段獨立。
 - Edge 實測 320–1440px 共 11 種寬度。1024px 與 1440px 皆四欄，抽驗卡片約為原尺寸的 74% 與 90%，含換行說明的卡片。核對獎杯下緣、總進度條、三種篩選、捲動與關閉，並啟動遊戲 Worker 驗證單卡進度。Console 無錯誤或警告。
 - `node --test tests/start-menu.test.cjs tests/achievements.test.cjs tests/ui-achievement-sound.test.cjs tests/vfx-editor-cache-versions.test.cjs` 24/24 通過，`npm.cmd run build` 檢查 681 檔。可交使用者合併並重新載入驗收。
+
+## ACHIEVEMENT-CORNER-ICON-ALIGN-20261106 — 成就關閉按鈕與圖示對齊
+
+- Codex，完成。關閉按鈕左移 10px、下移 8px。獎杯及總進度條跟隨首欄位置與卡片縮放，對齊圖示可見左緣。
+- 修改 `css/achievements.css`、`index.html` 成就樣式快取、`LV_upgrade_system.md` 及本段。唯讀核對成就渲染、關閉接線、共用視窗樣式和圖片透明範圍。與開始選單字型在首頁及文件分段，三方試跑通過，分開提交。
+- Edge 驗證 320–1440px 共 11 種寬度，截圖尺寸下獎杯與總進度條右移約 30px，與首欄圖示的可見左緣相差約 1px。角飾非透明區與關閉按鈕無重疊，三種篩選及關閉通過，Console 無錯誤或警告。
+- `node --test tests/achievements.test.cjs tests/ui-achievement-sound.test.cjs tests/start-menu.test.cjs tests/vfx-editor-cache-versions.test.cjs` 24/24 通過，`npm.cmd run build` 檢查 684 檔。可交使用者合併並重新載入驗收。
 
 ## ACHIEVEMENT-PROGRESS-ALIGN-20261105 — 獎杯置中、進度條收邊與篩選頁籤
 
@@ -15010,6 +15025,11 @@ Worker 存活且頁面正常完成載入。
 - `npm.cmd run build`、`node --check tools/intro/sync-start-menu.cjs`、`node tools/string-table/build_string_csv.cjs --check` 與雙庫 SHA 檢查通過。以 `node --test` 跑 intro-motion、intro-player、intro-audio、vfx-preset-usage、vfx-editor-cache-versions 五檔，同時進行中的選單改動有 65/66 通過，CV-1 為該任務新版 String 在主頁和編輯器的快取版本不一致。素材庫先提交 `dc50f766`，遊戲提交見交付。
 - 接手：選單 Agent 依 `images/start-menu/SOURCE.md` 接入。背景可供 Review 與整合。未在行動真機或完整啟動流程驗證，正式序章接選單須待選單任務完成接入。
 
+## UI-HOVER-MOON-GLOW-20261106 — 保存月暈懸停音效
+
+- Owner：Codex，Done。依使用者選定的第 10 個試聽音，將月暈 WAV 原樣保存至 audio/ui-preview/hover-10-moon-glow.wav。範圍為音檔、本段及素材庫的母檔與合成來源。用途為素材存檔，播放接線留待使用者指定。
+- 素材為原創合成，44.1 kHz、16-bit 單聲道，約 106 毫秒。Node 重產、Windows WAV 載入及試聽／母檔／專案副本 SHA-256 一致性驗證通過。npm.cmd run build 檢查 684 檔通過。唯讀核對 UI 音效文件、現有音效程式及首頁引用。素材庫先提交 8f727aa7，本段所在提交可供整合。
+
 ## UI-SOUND-HOVER-OPT-IN-20261106 — 僅保留指定操作的觸碰音效
 
 - Codex 已完成。以使用者 2026-11-05 逐項指定的頁籤操作為保留清單，移除未列區域的預設觸碰音。滑鼠、鍵盤焦點與觸控共用清單。H10 點擊、強化與洗煉成功音、成就音沿用既有觸發。
@@ -15046,6 +15066,37 @@ Worker 存活且頁面正常完成載入。
 - 修改開始選單專用 CSS、首頁快取、解鎖總表和本段。唯讀核對選單接線、共用彈窗樣式和背景。首頁與 Claude 技能音效提交分屬樣式和腳本引用，針對本次差異的三方試跑通過，兩組變更都保留。
 - Edge 實際頁面驗證桌面滑鼠、鍵盤、停用項、難度返回、設定開關，以及 320px 寬的模擬觸控，Console error／warning 0。七份相關 `node --test` 共 73/73 通過，`npm.cmd run build` 檢查 681 檔，字串及 diff 檢查通過。交付為本段所在提交，可供整合。
 
+## START-MENU-POSITION-20261106 — 開始選單對齊紅框位置
+
+- Owner：Codex，Done。依參考圖將桌面選單向左上移，移除文字下劃線，鍵盤焦點改為淡金光暈。窄視窗沿用左下位置。修改專用 CSS、首頁樣式快取、解鎖總表與本段，唯讀核對選單接線和背景掛載。首頁與文件的同期背景動效改動各自分段提交。
+- Edge 桌面重現參考圖尺寸，文字欄實測左移 38px、上移 58px（畫面縮放前），七項文字都落在紅框內。320×660 與 568×260 觸控模擬確認原定位、難度返回及無下劃線，桌面鍵盤和游標亮帶通過，Console error／warning 0。七份相關 `node --test` 共 73/73 通過，建置、字串與 diff 檢查通過。交付為本段所在提交，可供整合。
+
+## START-MENU-FONT-PREVIEW-20261106 — 開始選單古典襯線體
+
+- Owner：Codex，Done。依使用者的三層字體示意，將第二層套用至開始選單與難度選項。繁中採 Noto Serif TC，拉丁字母採 Cinzel，均用 19px、700 字重，由本機 WOFF2 載入。
+- 修改選單 CSS、首頁樣式快取、解鎖總表、本段及 `fonts/start-menu/` 內字型、授權與 SHA-256 來源說明。唯讀核對選單 DOM、String 表與素材規範。
+- Edge 桌面及窄視窗以瀏覽器實際字型資訊確認繁中選項、難度與拉丁測試樣本均使用預期字型。遮斷外部請求後可顯示本機字型，Console error／warning 0。字型、授權與來源先歸檔於素材庫 `92dd25f1`，兩庫的 WOFF2 SHA-256 一致，遊戲交付為本段所在提交，可供整合。
+
+## START-MENU-TITLE-PREVIEW-20261106 — 神力之巔／無限征途標誌
+
+- Owner：Codex，Done。參考使用者給的金屬字面、古銅副標及冷藍邊光，以內建 ImageGen 重繪「神力之巔」和「無限征途」。中央使用紅寶石護手、直槽與直刃雙鋒。RPG Mote Studio 可連線，本稿的高細節透明繪景使用 ImageGen。
+- 修改開始選單 HTML／CSS、透明 WebP 與來源提示詞、String.xlsx／CSV／JS、主頁及 VFX 編輯器快取、品牌回歸、解鎖總表與本段。唯讀核對選單及背景程式。更新四筆原品牌 String，原生 Excel 重開及資料驗證通過。頁首、副標開場、頁籤、歡迎文字及標誌替代文字沿用同一表。
+- Edge 實際頁面確認 1536×695、390×660、568×260 下標誌可見且與選項分離，設定開關正常，Console error／warning 0。桌面及直式截圖已核對。修正頁首資源回歸的定位以接受既有 inert 屬性，保留原資源斷言。八份相關測試 70/70、建置 684 檔、字串同步及 diff 檢查通過。
+- 第二版整體等比縮至 85%。1536×695 桌面實測約左移 19px、上移 10px。390×660 直式維持上方置中，568×260 橫式保持在選單右上，三種視窗皆無重疊或 Console error／warning。以 ImageGen 低光稿與原稿合成透明 WebP，半透明藍光區取樣亮度約減少 44%。保留金屬高光、暗色陰影與直刃。12 份相關 `node --test` 共 95/95 通過，建置 684 檔、字串與 diff 檢查通過。
+- 依使用者指示保留標誌與開始選單字型。兩張來源 PNG 及透明 WebP 先歸檔於素材庫 `92dd25f1`，兩庫的遊戲用 WebP SHA-256 一致。素材 SHA 和提示詞見 `images/start-menu/TITLE_SOURCE.md`。遊戲交付為本段所在提交，可供整合。
+
+## START-MENU-AUDIO-20261106 — 開始選單配樂與月暈懸停音
+
+- Owner：Codex，Done。開始選單顯示時循環播放 Tutti Impact，滑鼠移入可用的選單及難度選項時播放月暈音。沿用音樂、音效音量和全體靜音。依瀏覽器規則支援首次玩家操作後起播。離開選單時暫停配樂，返回時接續播放。
+- 修改選單生命週期、共用音訊模組、首頁快取、音訊說明、配樂與來源、解鎖總表、本段及兩份音訊回歸。唯讀核對設定頁、背景、開場與既有月暈素材。配樂原檔與遊戲檔 SHA-256 一致，素材庫先提交 `86fff4c8`。遊戲交付為本段所在提交，可供整合。
+- Edge 實測 MP3 解碼、首次操作、循環、滑鼠與觸控、停用按鈕、難度、設定開關、音量／靜音、進入遊戲及離開選單，Console error／warning 0。11 份相關 `node --test` 共 95/95 通過，`npm.cmd run build`、字串與 diff 檢查通過。
+
+## START-MENU-AUDIO-STARTUP-20261107 — 開始畫面音訊預載與跨面板續播
+
+- Owner：Codex，Done。Loading 時預載循環配樂並解碼月暈音。配樂隨開始畫面啟動，在設定、成就與載入存檔面板間連續播放，成功進入遊戲才停止。月暈音沿用可用選單按鈕的滑鼠移入判定，瀏覽器限制自動播放時由首次有效操作解鎖。
+- 修改開始選單、UI 音訊、首頁快取、三份回歸測試、音效說明、解鎖總表及本段。唯讀核對音檔、設定面板與開機入口。沿用已歸檔素材，素材庫無變更。遊戲交付為本段所在提交，可供整合。
+- Edge 以真實 MP3／WAV 驗證兩檔在選單揭幕前請求、月暈音提前解碼。允許自動播放時配樂於揭幕後約 2ms 起播，首次滑入即播放月暈音。強制限制自動播放時，首次真實點擊後起播及解鎖懸停音。實測設定／成就續播、曲尾回到曲首、靜音與進入遊戲停止，Console error／warning 0。12 份相關 `node --test` 共 96/96、`npm.cmd run build`、字串與 diff 檢查通過。
+
 ## START-MENU-DUST-GUSTS-20261106 — 開始選單的地表陣風與遠山戰火
 
 - Owner：Codex，Done。依使用者回饋將固定位置的循環風沙改成不定時、不同位置掠過地表的陣風，並沿截圖圈出的三段遠山火線製作火光。陣風前緣向右移動，粒子分批抬升後各自消散。火線以底圖暖色遮罩保留山脊，疊加獨立起伏的反射光、火尖及少量火星，最遠一段保持較暗。
@@ -15054,3 +15105,18 @@ Worker 存活且頁面正常完成載入。
 - 兩分鐘確定性時間取樣含 51 批陣風，間隔約 1.05–5.00 秒、實際起砂時間約 0.70–3.17 秒，確認每批起砂橫跨一段地表，粒子全數向右且生命結束後不回到起點。Edge 正式頁面略過測試開頭動畫進入選單，取樣 1,193 幀，三段火線各自變亮／變暗，開設定及切換減少動態會停播，Console error／warning 0。預覽含原比例山稜近看與全景。
 - `node --test` 以 start-menu、intro-player、intro-motion、vfx-preset-usage、vfx-editor-cache-versions 五檔共 67/67 通過；`npm.cmd run build` 檢查 681 檔，String 寫死 0，雙庫 SHA 與提交 diff 檢查通過。未做行動真機，原窄版中央裁切可能讓右側火線超出視野。
 - 背景程式、index 背景快取、LV、介面特效、素材交接與本段分開提交。與同副本成就修改共用 index、LV 和本檔，區段獨立並以三方試跑驗證。唯讀核對選單掛載、原底圖、素材同步工具及回歸。兩張 WebP 的位元組保持原樣，素材庫的背景程式快照與說明先提交 `5153c07d`。遊戲提交見交付，可供整合。
+
+## START-MENU-REDUCED-MOTION-20261106 — 減少動態時保留荒原背景動效
+
+- Owner：Codex，Done。Windows 用戶端動畫查詢回傳關閉。Edge 模擬減少動態時，舊版正式選單的畫布在約一秒內完全靜止；以同樣 1920×869 構圖和使用者截圖比對，旗布、火線、橋與鬼火區域的各色平均差均小於 0.4/255，確認截圖與停格狀態吻合。
+- 減少動態改為以 65% 速度播放，旗布擺幅及風沙不透明度同步降至 65%。Edge 正式頁面修正前約一秒新增 0 幀，修正後新增 32 幀，旗布、火線及地表像素均變化。一般模式、設定畫面暫停／返回、模擬分頁隱藏／恢復和即時切換偏好均通過，Console error／warning 0。驗證使用隔離 Edge 模擬偏好，沒有修改 Windows 設定或接管使用者的瀏覽器。
+- 修改背景程式、首頁該檔快取、專用回歸、LV、特效、素材來源說明及清單與本段。唯讀核對原有掛載、可見性控制、樣式與系統規範。同副本並行的開始選單位置修改分屬不同段落，三方試跑乾淨並分段提交。
+- `node --test` 跑 start-menu-background、start-menu、intro-player、intro-motion、vfx-preset-usage 與 vfx-editor-cache-versions 共 68/68 通過。新增測試確認減少動態仍連續播放、切換至一般速度、暫停不跳時和卸載。Build 684 檔、字串寫死 0、diff 與雙庫 SHA 通過。素材庫程式快照提交 `c41eac03`，遊戲提交見交付，待整合後重載。未做跨瀏覽器或行動真機驗證。
+
+## START-MENU-WEATHER-20261106 — 荒原雲霧、風沙與旗布節奏
+
+- Owner：Codex，Done。依使用者紅框在左上增加獨立循環的雲帶，保留建物和旗桿遮罩。中央拱門內各層雲霧速度增加 25%，中段霧不透明度增加 30%、速度增加 20%。風沙出現頻率增加 30%，每道沙霧會旋轉、展寬並沿不同曲線推進，沙粒以不同行進速度和上下曲率逐漸散開。旗布擺幅、波動節奏與變化時間取自連續的隨機陣風。
+- 範圍為背景程式、首頁該檔快取、素材來源與程式快照／SHA、LV、介面特效及本段。既有字體試版分屬同檔其他段落，最後分段提交。驗收正式選單各區域連續移動、擴散、播放生命週期與雙庫一致性。後續交使用者驗收及整合。
+- 檢查舊版與新版真實繪圖座標，拱門內各層速率比 1.25，中段 12.5 → 15 px/s、不透明度 0.29 → 0.377，風沙排程率比 1.30。固定種子驗證沙霧及沙粒後期的散布均比初期寬，粒子向右行進；兩分鐘取樣旗布陣風強度約 0.31–1.31、變化區間長度約 1.53–6.08 秒，六片旗布強風取樣 172,800 個三角形皆正向。
+- Edge 正式選單的 1920×869 畫幅讀回左上、拱門、中段、旗布、地表五區畫素，皆連續變化。減少動態仍播放，設定打開時暫停、返回後恢復，Console error／warning 0。以 `node --test` 跑 start-menu-background、start-menu、intro-player、intro-motion、vfx-preset-usage 與 vfx-editor-cache-versions 共 68/68 通過。Build 684 檔、字串寫死 0、diff 與雙庫 SHA 通過。
+- 唯讀核對原場景、背景掛載和遮罩、CSS 與規範。兩張圖像位元組與素材提示詞保持原樣。素材庫程式快照提交 `70c8befd`，遊戲提交見交付。可供驗收及整合，未做行動真機或跨瀏覽器驗證。

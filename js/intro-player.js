@@ -2,15 +2,11 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
 /* =============================================================================
    intro-player.js — 開頭動畫播放器（時間軸資料見 js/intro-data.js）
    -----------------------------------------------------------------------------
-   一層疊在 Loading 黑幕上方的 DOM 舞台。圖層用 Web Animations 播放，只動
-   transform 與 opacity，由合成器執行。
-
-   js/start-menu.js 讀完存檔後呼叫 startupBegin() 選擇開場，whenIdle() 回呼顯示
-   開始選單。玩家選好本局後才啟動 Worker。hideLoadingScreen() 會中止仍在播放的演出，
-   讓分頁鎖等通知可見。
+   設定重播與 GM 預覽使用的 DOM 舞台。圖層用 Web Animations 播放，由合成器處理
+   transform 與 opacity。hideLoadingScreen() 會中止手動播放的演出，讓分頁鎖等通知可見。
 
    時間軸可指定 holdAt 等待呼叫端 release()；超過 HOLD_MAX_MS 自動放行。
-   開始選單在起播後直接放行，讓演出按原時長播完。GM 指令預覽與設定重播不停格。
+   GM 指令預覽與設定重播不停格。
 
    略過：點擊畫面、Esc、Space、Enter，或略過按鈕。
    減少動態偏好：只保留淡入淡出，不位移不縮放。
@@ -23,7 +19,7 @@ var IntroPlayer = (function () {
   var SKIP_STR = 2410;          // String 表：略過按鈕
   var SKIP_FADE_MS = 350;       // 略過時整層淡出的長度
   var FAILSAFE_EXTRA_MS = 5000; // 可見狀態下超過預定長度這麼久還沒結束，就強制收掉
-  var HOLD_MAX_MS = 20000;      // 停格等載入的上限，與 bridge.js 開機等待的逾時同長
+  var HOLD_MAX_MS = 20000;      // 停格的上限
   var SKIP_KEYS = { Escape: 1, Esc: 1, ' ': 1, Spacebar: 1, Enter: 1 };
 
   var _cur = null;              // 播放中的狀態；null＝沒在播
@@ -84,46 +80,15 @@ var IntroPlayer = (function () {
     return errs;
   }
 
-  /* 開機時要播哪一條時間軸。回傳 INTRO_TIMELINES 的鍵，或 null＝不播。
-     ctx.hasSave：本次開機是否讀到存檔（Task C 用來判斷新玩家）。
-     網址 ?intro=<鍵> 強制播指定時間軸；?intro=0 或 ?intro=off 強制不播。
-     新玩家（本次開機沒讀到存檔）且這台裝置沒看過序章 → 序章 prologue（時間軸存在才播）；
-     其餘每次啟動播標題開場 title。決定論測試模式（?seed=，見 bridge.js）不播，
-     那是自動化重現用的開機，多出的固定等待沒有意義。
-     ctx.prologueSeen：這台裝置是否已看完過序章（localStorage，見 PROLOGUE_SEEN_KEY）。 */
-  var DEFAULT_STARTUP_TIMELINE = 'title';
+  var TITLE_TIMELINE = 'title';
   var PROLOGUE_TIMELINE = 'prologue';
-  /* 「看過序章」記在 localStorage 而不是存檔：不動存檔結構、不需要 Migration。
-     用途只是避免新玩家在第一次自動存檔前重新整理又看一次；換裝置重看一次也合理。 */
-  var PROLOGUE_SEEN_KEY = 'ir_intro_prologue_seen';
-  function chooseStartupTimeline(ctx, search, timelines) {
-    timelines = timelines || (typeof INTRO_TIMELINES !== 'undefined' ? INTRO_TIMELINES : {});
-    var has = function (k) { return Object.prototype.hasOwnProperty.call(timelines, k); };
-    search = search || '';
-    var m = /[?&]intro=([^&#]*)/.exec(search);
-    if (m) {
-      var id = decodeURIComponent(m[1]);
-      if (id === '0' || id === 'off') return null;
-      return has(id) ? id : null;
-    }
-    if (/[?&]seed=\d+(&|#|$)/.test(search)) return null;
-    if (ctx && ctx.hasSave === false && !ctx.prologueSeen && has(PROLOGUE_TIMELINE)) return PROLOGUE_TIMELINE;
-    return has(DEFAULT_STARTUP_TIMELINE) ? DEFAULT_STARTUP_TIMELINE : null;
-  }
 
   /* 設定「說明」頁的重播按鈕播哪一條：有序章就播序章，否則播標題開場。 */
   function replayTimelineId(timelines) {
     timelines = timelines || (typeof INTRO_TIMELINES !== 'undefined' ? INTRO_TIMELINES : {});
     var has = function (k) { return Object.prototype.hasOwnProperty.call(timelines, k); };
     if (has(PROLOGUE_TIMELINE)) return PROLOGUE_TIMELINE;
-    return has(DEFAULT_STARTUP_TIMELINE) ? DEFAULT_STARTUP_TIMELINE : null;
-  }
-
-  function storageGet(key) {
-    try { return window.localStorage.getItem(key); } catch (e) { return null; }
-  }
-  function storageSet(key, value) {
-    try { window.localStorage.setItem(key, value); } catch (e) {}
+    return has(TITLE_TIMELINE) ? TITLE_TIMELINE : null;
   }
 
   /* ---------- DOM ---------- */
@@ -268,7 +233,7 @@ var IntroPlayer = (function () {
 
   /* 播放一條時間軸。回傳 true＝開始播；false＝沒播（資料錯、環境不支援、已在播），
      沒播時 onDone 不會被呼叫，呼叫端照常往下走。
-     opts.hold：時間軸有 holdAt 時在那裡停格等 release()（只有開機播放才用）。 */
+     opts.hold：時間軸有 holdAt 時在那裡停格等 release()。 */
   function play(timeline, opts) {
     opts = opts || {};
     if (_cur) return false;
@@ -411,27 +376,8 @@ var IntroPlayer = (function () {
     return true;
   }
 
-  /* 開始選單讀完存檔後、Worker 開機前呼叫。 */
-  function startupBegin(ctx) {
-    ctx = ctx || {};
-    var pick = { hasSave: ctx.hasSave, prologueSeen: storageGet(PROLOGUE_SEEN_KEY) === '1' };
-    var id = chooseStartupTimeline(pick, (typeof location !== 'undefined' && location.search) || '');
-    if (!id) return false;
-    var bridge = (typeof WorkerBridge !== 'undefined') ? WorkerBridge : null;
-    var started = play(INTRO_TIMELINES[id], {
-      id: id, hold: true,
-      onDone: function (reason) {
-        // 看完或主動略過才算看過；Worker 失效、分頁鎖被搶等中止不算，下次開機再播
-        if (id === PROLOGUE_TIMELINE && (reason === 'end' || reason === 'skip')) storageSet(PROLOGUE_SEEN_KEY, '1');
-        if (bridge && bridge.resumeStartupHoldTimeout) bridge.resumeStartupHoldTimeout();
-      }
-    });
-    if (started && bridge && bridge.suspendStartupHoldTimeout) bridge.suspendStartupHoldTimeout();
-    return started;
-  }
-
   /* 設定「說明」頁的重播按鈕。設定視窗留在底下不關：選單暫停照舊有效，
-     看完回到原本的說明頁，焦點還給按鈕。不改「看過序章」紀錄。 */
+     看完回到原本的說明頁，焦點還給按鈕。 */
   function replay() {
     var id = replayTimelineId();
     if (!id || _cur) return false;
@@ -468,13 +414,12 @@ var IntroPlayer = (function () {
 
   return {
     play: play, skip: skip, abort: abort, whenIdle: whenIdle, seek: seek, release: release, replay: replay,
-    startupBegin: startupBegin, state: state,
+    state: state,
     isPlaying: function () { return !!_cur; },
     _internal: {
       opacityKeyframes: opacityKeyframes, motionKeyframes: motionKeyframes, transformOf: transformOf,
       timelineDuration: timelineDuration, validateTimeline: validateTimeline,
-      chooseStartupTimeline: chooseStartupTimeline, replayTimelineId: replayTimelineId,
-      PROLOGUE_SEEN_KEY: PROLOGUE_SEEN_KEY
+      replayTimelineId: replayTimelineId
     }
   };
 })();

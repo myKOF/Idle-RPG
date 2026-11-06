@@ -42,29 +42,21 @@ function makeEnv(opts) {
     addEventListener(t, fn) { (docListeners[t] = docListeners[t] || []).push(fn); },
     removeEventListener(t, fn) { docListeners[t] = (docListeners[t] || []).filter((x) => x !== fn); }
   };
-  const store = opts.storage || {};
+  const store = {};
   const window = {
-    localStorage: opts.storageThrows
-      ? { getItem() { throw new Error('blocked'); }, setItem() { throw new Error('blocked'); } }
-      : { getItem: (k) => (k in store ? store[k] : null), setItem: (k, v) => { store[k] = String(v); } },
+    localStorage: { getItem: (k) => (k in store ? store[k] : null), setItem: (k, v) => { store[k] = String(v); } },
     addEventListener(t, fn) { (winListeners[t] = winListeners[t] || []).push(fn); },
     removeEventListener(t, fn) { winListeners[t] = (winListeners[t] || []).filter((x) => x !== fn); },
     matchMedia: () => ({ matches: !!opts.reduced })
   };
   function Element() {}
   Element.prototype.animate = function () {};
-  const bridgeCalls = [];
   const ctx = {
     console: { error() {}, warn() {}, log() {} },
     document, window, Element,
-    location: { search: opts.search || '' },
     STR: (id) => '#' + id,
     setTimeout(fn, ms) { timers.push({ fn, ms, alive: true }); return timers.length; },
-    clearTimeout(id) { if (id && timers[id - 1]) timers[id - 1].alive = false; },
-    WorkerBridge: {
-      suspendStartupHoldTimeout() { bridgeCalls.push('suspend'); },
-      resumeStartupHoldTimeout() { bridgeCalls.push('resume'); }
-    }
+    clearTimeout(id) { if (id && timers[id - 1]) timers[id - 1].alive = false; }
   };
   if (opts.audio) ctx.IntroAudio = opts.audio;
   if (opts.frames) {
@@ -75,12 +67,11 @@ function makeEnv(opts) {
   vm.runInContext(read('js/intro-data.js') + '\nthis.INTRO_TIMELINES = INTRO_TIMELINES;', ctx);
   vm.runInContext(read('js/intro-motion.js'), ctx);
   if (opts.motion) ctx.IntroMotion = opts.motion;
-  if (opts.prologue) ctx.INTRO_TIMELINES.prologue = opts.prologue;
   if (opts.noPrologue) delete ctx.INTRO_TIMELINES.prologue;   // 模擬序章還沒做好的資料
   vm.runInContext(read('js/intro-player.js') + '\nthis.IntroPlayer = IntroPlayer;', ctx);
   const clock = () => anims.find((a) => a.el.className === 'intro-clock');
   const playerRoot = () => body.children.find((c) => c.className.indexOf('intro-player') === 0);
-  return { ctx, P: ctx.IntroPlayer, body, anims, timers, docListeners, winListeners, bridgeCalls, clock, playerRoot, store, replayBtn };
+  return { ctx, P: ctx.IntroPlayer, body, anims, timers, docListeners, winListeners, clock, playerRoot, store, replayBtn };
 }
 
 const SAMPLE = {
@@ -162,24 +153,6 @@ test('所有內建時間軸都通過檢查，文字圖層的 String 編號都在
     tl.layers.filter((l) => l.kind === 'text').forEach((l) => assert.ok(ids.has(String(l.str)), key + ' 缺 String ' + l.str));
   }
   assert.ok(ids.has('2410'), '略過按鈕文字');
-});
-
-test('起播選擇：預設每次播標題開場，網址可指定或關閉，決定論測試模式不播', () => {
-  const { P, ctx } = makeEnv();
-  const pick = P._internal.chooseStartupTimeline;
-  const tls = { test: {}, title: {} };
-  assert.equal(pick({ hasSave: false }, '', tls), 'title', '新玩家');
-  assert.equal(pick({ hasSave: true }, '?lang=en', tls), 'title', '舊存檔也播');
-  assert.equal(pick({}, '?seed=42', tls), null, '決定論測試模式不播');
-  assert.equal(pick({}, '?seed=42&intro=title', tls), 'title', '網址指定優先');
-  assert.equal(pick({}, '', { test: {} }), null, '沒有 title 時退回不播');
-  assert.equal(pick({}, '', ctx.INTRO_TIMELINES), 'title', '內建資料有 title');
-  assert.equal(pick({}, '?intro=test', tls), 'test');
-  assert.equal(pick({}, '?seed=1&intro=title', tls), 'title');
-  assert.equal(pick({}, '?intro=0', tls), null);
-  assert.equal(pick({}, '?intro=off', tls), null);
-  assert.equal(pick({}, '?intro=nope', tls), null, '不存在的鍵不播');
-  assert.equal(pick({}, '?intro=toString', tls), null, '原型鍵不算');
 });
 
 /* ---------- 播放流程 ---------- */
@@ -264,17 +237,6 @@ test('保險：可見狀態下超過預定長度仍未結束就強制收掉', ()
   assert.deepStrictEqual(done, ['failsafe']);
 });
 
-test('開機起播：播放中暫停開機等待的逾時，結束時交回', () => {
-  const env = makeEnv({ search: '?intro=test' });
-  assert.equal(env.P.startupBegin({ hasSave: true }), true);
-  assert.deepStrictEqual(env.bridgeCalls, ['suspend']);
-  env.clock().onfinish();
-  assert.deepStrictEqual(env.bridgeCalls, ['suspend', 'resume']);
-  const env2 = makeEnv({ search: '?intro=0' });
-  assert.equal(env2.P.startupBegin({ hasSave: false }), false, '?intro=0 不播');
-  assert.deepStrictEqual(env2.bridgeCalls, [], '沒播就不動開機等待');
-});
-
 /* ---------- 停格等載入（標題開場） ---------- */
 const HOLDING = {
   holdAt: 1000,
@@ -337,15 +299,6 @@ test('停格：超過上限自動放行；GM 預覽（沒有 hold）不停格；
   assert.ok(sk.timers.every((t) => !t.alive || t.ms !== 20000), '收掉時清掉停格上限計時');
 });
 
-test('開機起播帶停格；揭幕前先放行停格再等播完', () => {
-  const env = makeEnv({ search: '' });
-  assert.equal(env.P.startupBegin({ hasSave: true }), true, '預設播標題');
-  assert.equal(env.P.state().id, 'title');
-  assert.ok(holdClock(env) === undefined && env.anims.some((a) => a.el.className === 'intro-clock' && a.timing.duration === 1900), 'title 的停格點 1.9 秒');
-  const menu = read('js/start-menu.js');
-  assert.match(menu, /IntroPlayer\.release\(\);[^\n]*\n\s*IntroPlayer\.whenIdle\(reveal\);/, '先放行再等');
-});
-
 test('有停格點的時間軸：停住那一格的圖層都已完全淡入、停格後才開始淡出', () => {
   const { ctx } = makeEnv();
   const withHold = Object.entries(ctx.INTRO_TIMELINES).filter(([, tl]) => tl.holdAt);
@@ -363,7 +316,7 @@ test('有停格點的時間軸：停住那一格的圖層都已完全淡入、�
   assert.ok(ctx.INTRO_TIMELINES.title.duration <= 3000, '標題開場載入很快時總長不超過 3 秒');
 });
 
-test('序章：新玩家開機會播、四幕30秒、使用正式繪景與聲景', () => {
+test('序章：四幕30秒、使用正式繪景與聲景', () => {
   const env = makeEnv();
   const tl = env.ctx.INTRO_TIMELINES.prologue;
   assert.ok(tl, '有 prologue');
@@ -385,9 +338,6 @@ test('序章：新玩家開機會播、四幕30秒、使用正式繪景與聲景
   for (const url of Object.values(tl.audio).filter(v => typeof v === 'string')) assert.ok(fs.existsSync(path.join(root, url.split('?')[0])), url);
   for (const l of tl.layers.filter(l => l.kind === 'motion' && l.src)) assert.ok(fs.existsSync(path.join(root, l.src.split('?')[0])), l.src);
   assert.match(read('css/intro.css'), /\.intro-image-cinema\s*\{\s*object-fit: contain;/, '完整羽翼適配直式畫面');
-  assert.equal(env.P.startupBegin({ hasSave: false }), true);
-  assert.equal(env.P.state().id, 'prologue', '新玩家播序章');
-  assert.equal(env.P._internal.replayTimelineId(), 'prologue', '說明頁重播播序章');
 });
 
 test('序章整層收尾與聲音：暫停／seek／恢復／略過／中止都清理，標題不載聲景', () => {
@@ -415,76 +365,20 @@ test('序章整層收尾與聲音：暫停／seek／恢復／略過／中止都�
   env.P.play(env.ctx.INTRO_TIMELINES.title, {}); assert.deepStrictEqual(calls, []);
 });
 
-/* ---------- 開機流程接線 ---------- */
-test('接線：動畫播完才揭開開始選單；收掉 Loading 會中止動畫', () => {
-  const bridge = read('js/bridge.js');
-  const main = read('js/main.js');
-  const menu = read('js/start-menu.js');
+test('收掉 Loading 時會中止正在手動播放的序章', () => {
   const html = read('index.html');
-  assert.match(menu, /IntroPlayer\.startupBegin\(\{ hasSave: !!save \}\)/);
-  assert.match(bridge, /suspendStartupHoldTimeout: suspendStartupHoldTimeout, resumeStartupHoldTimeout: resumeStartupHoldTimeout/);
-  const resume = /function resumeStartupHoldTimeout\(\) \{[\s\S]*?\n  \}/.exec(bridge)[0];
-  assert.match(resume, /if \(!_startupHold \|\| !_started\) return;/, '開始選單等待期間與已放行後均不計時');
-  assert.match(menu, /IntroPlayer\.whenIdle\(reveal\)/, '揭幕等動畫');
-  assert.match(main, /finished = true;\s*revealGame\(\);/);
   assert.match(html, /IntroPlayer\.isPlaying\(\)\) IntroPlayer\.abort\('veil'\)/, 'hideLoadingScreen 收掉動畫');
   const iData = html.indexOf('js/intro-data.js'), iPlayer = html.indexOf('js/intro-player.js'), iBridge = html.indexOf('js/bridge.js');
   assert.ok(iData > 0 && iData < iPlayer && iPlayer < iBridge, '資料 → 播放器 → bridge 的載入順序');
   assert.match(html, /css\/intro\.css\?v=/);
 });
 
-/* ---------- 播放條件與重播（Task C） ---------- */
-const PROLOGUE = { layers: [{ kind: 'shape', at: 0, dur: 3000 }] };
-
-test('起播選擇：新玩家沒看過序章才播序章，其餘播標題；沒有序章時退回標題', () => {
-  const { P } = makeEnv();
-  const pick = P._internal.chooseStartupTimeline;
-  const tls = { title: {}, prologue: {} };
-  assert.equal(pick({ hasSave: false }, '', tls), 'prologue', '新玩家');
-  assert.equal(pick({ hasSave: false, prologueSeen: true }, '', tls), 'title', '看過就只播標題');
-  assert.equal(pick({ hasSave: true }, '', tls), 'title', '有存檔就不是新玩家');
-  assert.equal(pick({}, '', tls), 'title', '不知道有沒有存檔時不當新玩家');
-  assert.equal(pick({ hasSave: false }, '', { title: {} }), 'title', '序章還沒做時退回標題');
-  assert.equal(pick({ hasSave: false }, '?seed=7', tls), null, '決定論測試模式一律不播');
-  assert.equal(pick({ hasSave: false }, '?intro=title', tls), 'title', '網址指定優先');
-});
-
+/* ---------- 手動重播 ---------- */
 test('重播選擇：有序章播序章，否則播標題', () => {
   const { P } = makeEnv();
   assert.equal(P._internal.replayTimelineId({ title: {}, prologue: {} }), 'prologue');
   assert.equal(P._internal.replayTimelineId({ title: {}, test: {} }), 'title');
   assert.equal(P._internal.replayTimelineId({}), null);
-});
-
-test('看過序章：看完或略過才記錄，中止不記；記錄後下次開機播標題', () => {
-  const env = makeEnv({ prologue: PROLOGUE });
-  const key = env.P._internal.PROLOGUE_SEEN_KEY;
-  assert.equal(env.P.startupBegin({ hasSave: false }), true);
-  assert.equal(env.P.state().id, 'prologue');
-  env.P.abort('veil');
-  assert.equal(env.store[key], undefined, 'Worker 失效等中止不算看過');
-
-  env.P.startupBegin({ hasSave: false });
-  // 同一個環境第二次播放：取最新那條總時鐘（第一條屬於已中止的那次）
-  env.anims.filter((a) => a.el.className === 'intro-clock').pop().onfinish();
-  assert.equal(env.store[key], '1', '看完記錄');
-
-  const again = makeEnv({ prologue: PROLOGUE, storage: { [key]: '1' } });
-  again.P.startupBegin({ hasSave: false });
-  assert.equal(again.P.state().id, 'title', '看過就只播標題');
-
-  const skipped = makeEnv({ prologue: PROLOGUE });
-  skipped.P.startupBegin({ hasSave: false });
-  skipped.P.skip();
-  skipped.anims.find((a) => a.el === skipped.playerRoot()).onfinish();
-  assert.equal(skipped.store[key], '1', '主動略過也算看過');
-});
-
-test('localStorage 被封鎖時照常播放，不丟例外', () => {
-  const env = makeEnv({ prologue: PROLOGUE, storageThrows: true });
-  assert.equal(env.P.startupBegin({ hasSave: false }), true);
-  assert.equal(env.P.state().id, 'prologue', '讀不到紀錄就當沒看過');
-  assert.doesNotThrow(() => env.clock().onfinish());
 });
 
 test('重播按鈕：點擊播放、不停格、不改看過紀錄；播完焦點回到按鈕；播放中再點無效', () => {
