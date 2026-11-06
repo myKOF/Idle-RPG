@@ -14971,3 +14971,11 @@ Worker 存活且頁面正常完成載入。
 - `node --test tests/ui-sound.test.cjs tests/ui-achievement-sound.test.cjs tests/achievements.test.cjs tests/equip-reroll-ui.test.cjs tests/upgrade-animation.test.cjs tests/ui-tick-smoke.test.cjs tests/vfx-editor-cache-versions.test.cjs` 47/47 通過。 `npm.cmd run build` 檢查 678 檔通過，`node tools/string-table/build_string_csv.cjs --check` 寫死文字 0，`git diff --check` 通過。
 - 正式頁面以隔離 Edge、實際 Worker 與 AudioContext 驗證 19 個滑鼠案例，涵蓋功能列表、熔爐、裝備與寶石保留項目，以及設定、角色、戰鬥、世界地圖等靜音項目。設定頁真實鍵盤焦點與觸控靜音，世界地圖點擊與設定觸控點擊播放 H10。Console error／warning 為 0。內建瀏覽器無連線，行動真機與全庫測試未執行。
 - 交付為本段所在提交，可供 Review 與使用者合併。下一步於整合後重新載入遊戲驗收。
+
+## UI-SOUND-HOVER-REMOVE-20261106 — 移除全部觸碰音效
+
+- Codex 已完成。使用者釐清日後只按新指示指定位置接入，本項取代前段保留清單。移除全遊戲 UI 的觸碰音載入、清單及播放接線，涵蓋滑鼠懸停、鍵盤焦點及觸控按下。原音檔保存在試聽素材中。
+- 修改 js/ui-sound.js、index.html 音效快取、tests/ui-sound.test.cjs、tests/ui-achievement-sound.test.cjs、docs/UI_SOUND.md、LV_upgrade_system.md 與本段。唯讀核對其他音效與指標事件入口、試聽素材說明、規範及工作流程。fetch 和衝突預檢通過。
+- `node --test tests/ui-sound.test.cjs tests/ui-achievement-sound.test.cjs tests/achievements.test.cjs tests/equip-reroll-ui.test.cjs tests/upgrade-animation.test.cjs tests/ui-tick-smoke.test.cjs tests/vfx-editor-cache-versions.test.cjs` 42/42 通過，涵蓋 H10 真實啟動、強化／洗煉成功與成就音。`npm.cmd run build` 檢查 678 檔，`node tools/string-table/build_string_csv.cjs --check` 確認寫死文字為 0，`git diff --check` 通過。
+- 隔離 Edge 載入正式頁面、Worker 與 AudioContext，23 個滑鼠案例及原本可發聲導覽按鈕的鍵盤焦點、觸控按下與取消均靜音。UI 模組只載入 H10、成功及成就三份音檔，觸碰音播放 0 次，真實點擊及兩種通知音成功播放。Console error／warning 為 0。瀏覽器驗證範圍為 Edge 桌面和模擬觸控。
+- 交付為本段所在提交，可供使用者整合，整合後重新載入即可驗收。

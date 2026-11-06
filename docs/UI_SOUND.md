@@ -1,36 +1,17 @@
-# UI音效（2026-11-04使用者核准範圍）
+# UI 音效
 
-已接入三份核准的自製WAV（原觸碰、2026-11-05選定的H10點擊、原成功音）與一份使用者指定的第三方成就音效，皆保留原音色與音量；觸碰觸發範圍依下表。試聽檔與製作說明在audio/ui-preview；本文件記錄後續接入授權，優先於試聽時的歷史狀態。
+2026-11-06 起，所有介面的滑鼠懸停、鍵盤焦點及觸控按下都不播放觸碰音。日後依使用者新指示逐一接入指定位置。試聽素材保存在 `audio/ui-preview`。
 
 | 使用音檔 | 播放時機 |
 | --- | --- |
-| audio/ui-preview/01-hover.wav | 僅在下方清單指定的操作上播放。滑鼠、鍵盤焦點與觸控套用相同限制，純提示與停用控制項靜音。 |
 | audio/ui-preview/hover-options-v5/H10.wav | 使用者選定的「上揚短啵」，0.06秒，取代C3作點擊音；在同一可操作目標的真實click事件播放，涵蓋滑鼠、觸控完成點擊、原生鍵盤啟動。不以pointerdown冒充點擊，取消碰觸不播點擊音；純tips、停用／右鍵／程式合成click及背景靜音。 |
 | audio/ui-preview/05-success.wav | 玩家操作裝備強化且Worker回覆ok；洗煉詞條且Worker回覆成功null。只進入洗煉模式、選詞條不播成功音。 |
 | audio/achievements/mixkit-game-level-completed-2059.wav | 成就Worker notice經AchievementUI驗證id後，隨達成提示實際顯示時播放一次；沿用既有提示佇列，間隔4秒，不截短約3.542秒的原檔。清單重繪、開啟成就頁及讀檔既有成就不播放。 |
 
-原點擊02-click、C3、洗煉專用03-reroll、神鑄04-divine-forge、失敗06-failure與合輯皆未載入；神鑄結果、其他養成、任務、戰鬥與自動強化也不播放成功音。神鑄UI的觸碰依白名單、點擊沿用核准H10；H6～H9仍只供試聽，H10用於點擊，沒有替換現行hover。
+UI 音效模組只載入上表三份音檔。`js/ui-sound.js` 在主執行緒委派點擊事件，涵蓋動態建立的控制項。`js/ui.js` 的 `detailAction` 在確認 Worker 結果成功後交由音效模組播放。
 
-js/ui-sound.js只在主執行緒處理DOM事件與播放；js/ui.js的detailAction於確認無結果錯誤後傳遞成功結果。模擬、權威數值、存檔與Worker協議不變，不加聲音設定／玩家文字。事件委派涵蓋動態建立的節點；停在同格的圖示／文字、靜止游標底下重繪、捲動、拖曳不重複觸發。觸碰音有80ms節流，每種聲音最多一個播放來源，背景停止並丟棄尚未播出的聲音；音訊失敗不阻止原操作。
-
-2026-11-06 起，觸碰音只在使用者於 2026-11-05 逐項指定的操作上播放。滑鼠懸停、鍵盤焦點與觸控碰觸共用清單，H10 點擊仍適用於所有既有可操作目標。
-
-| 區域 | 有觸碰音的操作 |
-| --- | --- |
-| 功能列表 | 全部可用功能按鈕。 |
-| 裝備 | 強化、洗煉（進入／執行）、寶石、符文（含刻印確認）主功能按鈕；裝備格、背包、詞條／孔位／材料選取、篩選、裝配／卸下及說明圖示皆靜音。 |
-| 技能 | 升級、一鍵滿級、降級、重置；技能／階段／超神選取、進化／切換、裝配／卸下與GM MAX靜音。 |
-| 熔爐 | 維持原有可操作UI判定，包含升級／零件／開關／詳情／說明。 |
-| 寶石 | 合成、全部合成按鈕；寶石庫、階級、工具切換、商店／共鳴及說明靜音。 |
-| 符文 | 全部靜音。 |
-| 封魔塔 | 挑戰按鈕；自動挑戰、層數／區間選取、撤退、說明及專屬結果視窗靜音。 |
-| 威能 | 全部靜音。 |
-| 神鑄 | 自動放入（按鈕目前為全部卸下時靜音）、開始鑄造／精鑄／寶石融合／神聖刻印共用開始按鈕、連續自動開關；模式／品質／裝備／材料選取、增減材料與說明靜音。 |
-
-依控制項目前所在的 DOM 頁籤套用規則，背包搬到神鑄後立即使用神鑄規則。label 圖示、文字及原生開關共用判定。角色頁內容、戰鬥區、設定、世界地圖與其他未列區域的觸碰一律靜音。
-
-瀏覽器限制：首次實際點擊／碰觸或按鍵後才建立及解鎖AudioContext。第一次互動前的純滑鼠懸停可能無聲；解鎖後正常播放。不排隊補播過期聲音，初次音檔尚在載入時可能略過該次觸碰。
+首次真實按下或按鍵後，瀏覽器才建立及解鎖 AudioContext。點擊音以 80 ms 節流，每種音效最多一個播放來源。切至背景會停止播放並丟棄待播聲音，音訊失敗時仍可操作介面。
 
 來源及保存：原素材庫Commit4cfb1cc、遊戲試聽Commit3e697e1b，製作工具tools/audio/ui-preview.cjs可重產。01-hover SHA256為411211856bdcc43ec4c1d534f29720eac208278872aa1fc71eb8e27dcd3b453c，05-success為4821e4b49aad96afc57c3c9a9508dc7835c938b7d82a119fcc04e66cc9cd1a14。H10沿用素材庫d01e230／遊戲0eebd1ed原檔，SHA256 338a16bc9ce91a90b3b081e25e93306b5830eefa05fbba780c85d8f9f94b9f37，tools/audio/ui-hover-options.cjs可重產；主端URL均帶相同雜湊前綴避免舊快取。C3仍保留在原候選目錄，不再預載。
 
-成就音效為使用者提供的Mixkit「Game level completed」（項目2059），非Codex自製。2026-11-05核對[官方來源](https://mixkit.co/free-sound-effects/game/)及[Sound Effects Free License](https://mixkit.co/license/modal/sfxFree/)可整合遊戲成品，保留第三方權利與禁止素材再散布限制。原檔44100Hz／16-bit立體聲、SHA256 8da83b49ceb580493ba7c7081ec3d176fe069d4505474b604f6fb08b339bd32a；未轉碼或調整音量。tools/audio/import-achievement-sound.cjs保存到素材庫third-party/mixkit/achievement-completed-2059後原樣匯出，雙庫附README／manifest。首次真實手勢預載4份核准音檔；成就音同樣遵守背景停止、短期過期與失敗略過，不在稍後解鎖音訊時補播。
+成就音效為使用者提供的 Mixkit「Game level completed」（項目 2059）。原檔為 44100 Hz、16-bit 立體聲，SHA256 為 8da83b49ceb580493ba7c7081ec3d176fe069d4505474b604f6fb08b339bd32a。`tools/audio/import-achievement-sound.cjs` 保存至素材庫 `third-party/mixkit/achievement-completed-2059`，並原樣匯出，兩庫附 README 與 manifest。2026-11-05 核對授權可整合遊戲成品，須保留第三方權利及素材散布限制。[官方來源](https://mixkit.co/free-sound-effects/game/) · [Sound Effects Free License](https://mixkit.co/license/modal/sfxFree/)
