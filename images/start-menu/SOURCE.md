@@ -4,13 +4,17 @@
 
 - `battlefield.webp` 是 1672 × 941 的暗色無字繪景。保留岩壁、拱門、遺骸、武器及旗桿，另將旗布和鬼火移出底圖以便獨立播放。
 - `cloth-atlas.webp` 是 1774 × 887 的透明圖集。上半為破旗，下半為窄布條，場景以旗桿為錨點做連續的網格變形。
-- 兩張 WebP 保留母圖尺寸及透明資料，Pillow WebP method 6，品質依序 90、87。色調、雲、鬼火與風沙由場景程式合成。
+- 兩張 WebP 保留母圖尺寸及透明資料，Pillow WebP method 6，品質依序 90、87。色調、雲、鬼火、貼地風沙與遠山戰火由場景程式合成。
 
 以 `node tools/intro/sync-start-menu.cjs --archive` 保存背景動畫來源及 SHA；`--apply` 將素材庫的匯出檔同步到本目錄；`--check` 核對來源、動畫程式與遊戲匯出。
 
+## 陣風與遠山戰火
+
+風沙在不同景深與位置形成寬幅陣風，陣風間隔、起砂位置、強度、持續時間與粒子壽命均有變化。每批粒子在掠過地表後消散。右上三段火線取底圖暖色做局部遮罩，分別疊上反射光暈、火尖與少量火星。最遠處降低亮度以保留山脊遮擋的距離感。
+
 ## 接入開始選單
 
-由選單載入 `<script src="js/start-menu-background.js?v=1.0.0"></script>`，並在選單背景的定位容器呼叫：
+由選單載入 `<script src="js/start-menu-background.js?v=1.0.1"></script>`，並在選單背景的定位容器呼叫：
 
 ```js
 const backdrop = StartMenuBackground.mount(document.getElementById('start-menu'));

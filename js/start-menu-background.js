@@ -22,17 +22,13 @@ var StartMenuBackground = (function () {
     [65, 538, 64], [1085, 654, 37], [1583, 643, 68],
     [1008, 753, 22], [1187, 702, 21], [1164, 773, 17], [1190, 772, 15]
   ];
-  // 每個風沙源貼齊地面、盔甲或遺骸。景深決定速度、抬升及顆粒大小。
-  const DUST_SOURCES = [
-    [94, 531, 90, 25, .65], [155, 760, 143, 25, 1.2],
-    [369, 690, 92, 38, 1], [546, 786, 115, 24, 1.15],
-    [681, 860, 112, 24, 1.32], [232, 915, 148, 17, 1.5],
-    [666, 571, 118, 19, .54], [835, 631, 140, 20, .69],
-    [822, 817, 115, 20, 1.22], [1037, 759, 92, 22, 1],
-    [1176, 715, 86, 24, .9], [1311, 796, 109, 25, 1.2],
-    [1512, 861, 126, 27, 1.3], [1464, 587, 89, 24, .62],
-    [1079, 914, 142, 19, 1.52], [45, 861, 100, 29, 1.4]
+  // 火源對齊底圖山稜的明亮裂隙。最遠一帶在岩脊後方，只露出較弱的火光。
+  const FIRE_RIDGES = [
+    { strength: .82, points: [[1249, 284, 24], [1269, 318, 22], [1281, 313, 24], [1300, 308, 25], [1314, 301, 19]] },
+    { strength: .94, points: [[1411, 364, 22], [1434, 357, 22], [1457, 351, 24], [1470, 345, 24], [1507, 336, 24]] },
+    { strength: .59, points: [[1566, 282, 18], [1582, 284, 20], [1599, 277, 17], [1622, 297, 19]] }
   ];
+  const SAND_SHADES = ['#a9845b', '#c6a478', '#e0b780', '#f4d4a2', '#74604d'];
 
   const ease = t => t * t * (3 - 2 * t);
   const clamp = t => Math.max(0, Math.min(1, t));
@@ -264,57 +260,155 @@ var StartMenuBackground = (function () {
     }
   }
 
-  function makeDust() {
-    const random = randomStream(9154);
-    const grains = [], trails = [];
-    for (const [source, [x, y, spread, rise, depth]] of DUST_SOURCES.entries()) {
-      for (let i = 0; i < 102; i++) {
-        grains.push({
-          x: x + (random() - .5) * spread, y: y + (random() - .5) * rise,
-          depth, speed: depth * (36 + 110 * random()), life: .47 + random() * 1.48,
-          phase: random() * 9, loft: depth * (1 + random() * 14),
-          size: depth * (.26 + random() * random() * 1.35), source
-        });
-      }
-      for (let i = 0; i < 4; i++) {
-        trails.push({
-          x: x + (random() - .5) * spread, y: y + (random() - .5) * rise,
-          depth, speed: depth * (31 + 37 * random()), life: 2.9 + 2.4 * random(),
-          phase: random() * 7, loft: depth * (1.9 + random() * 7), source
-        });
+  function fireLight(image, x, y, radius) {
+    const size = radius * 2;
+    const light = canvas(size, size);
+    const sample = light.getContext('2d', { willReadFrequently: true });
+    sample.drawImage(image, x - radius, y - radius, size, size, 0, 0, size, size);
+    let pixels;
+    try {
+      pixels = sample.getImageData(0, 0, size, size);
+    } catch (error) {
+      if (error.name === 'SecurityError') return null;
+      throw error;
+    }
+    for (let row = 0; row < size; row++) {
+      for (let col = 0; col < size; col++) {
+        const i = (row * size + col) * 4;
+        const [red, green, blue] = [pixels.data[i], pixels.data[i + 1], pixels.data[i + 2]];
+        const heat = clamp((red - green - 24) / 59) * clamp((red - blue - 40) / 76);
+        const falloff = ease(clamp(1 - Math.hypot(col - radius, row - radius) / radius));
+        // 以原畫暖色明暗做遮罩，保留火線前的山石和裂紋。
+        pixels.data[i] = 255;
+        pixels.data[i + 1] = Math.min(198, green + 58);
+        pixels.data[i + 2] = blue + 24;
+        pixels.data[i + 3] = Math.round(255 * heat * falloff);
       }
     }
-    return { grains, trails };
+    sample.putImageData(pixels, 0, 0);
+    return light;
   }
 
-  function gustAt(time, index) {
-    return .36 + .64 * Math.pow(.5 + .5 * Math.sin(time * 1.14 - index * .46), 1.7);
+  function makeFires(image) {
+    const random = randomStream(7265);
+    return FIRE_RIDGES.flatMap(({ strength, points }) => points.map(([x, y, radius]) => {
+      const halo = canvas(radius * 4, radius * 4);
+      const ctx = halo.getContext('2d');
+      const center = radius * 2;
+      ctx.translate(center, center);
+      ctx.scale(1.28, .85);
+      const glow = ctx.createRadialGradient(0, -radius * .38, 0, 0, -radius * .38, radius * 1.43);
+      glow.addColorStop(0, 'rgba(216,86,39,.33)');
+      glow.addColorStop(.44, 'rgba(184,69,33,.16)');
+      glow.addColorStop(1, 'rgba(137,59,37,0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(-center, -center, center * 2, center * 2);
+      return {
+        x, y, radius, strength, halo, detail: fireLight(image, x, y, radius),
+        phase: random() * TAU, rate: .9 + random() * 2.4,
+        sparks: Array.from({ length: 3 }, () => ({
+          phase: random() * 5, life: .78 + random() * 1.38,
+          drift: 3 + random() * 15, rise: 4 + random() * 20, size: .35 + random() * .8
+        }))
+      };
+    }));
+  }
+
+  function drawFires(ctx, fires, time) {
+    for (const fire of fires) {
+      const { x, y, radius, strength, halo, detail, phase, rate, sparks } = fire;
+      const roll = ease(.5 + .5 * Math.sin(time * rate + phase));
+      const flicker = .5 + .29 * Math.sin(time * (rate * 3.3 + 2.1) - phase)
+        + .21 * Math.sin(time * (rate * 5.2 + 1.3) + phase);
+      ctx.globalAlpha = strength * (.19 + .68 * roll + .13 * flicker);
+      ctx.drawImage(halo, x - radius * 2, y - radius * 2);
+      ctx.globalAlpha = strength * (.16 + .44 * roll + .40 * flicker);
+      if (detail) ctx.drawImage(detail, x - radius, y - radius);
+
+      const tongue = strength * (1 + 4.8 * roll * flicker);
+      const bend = Math.sin(time * rate * 3 + phase) * 1.3;
+      ctx.fillStyle = '#ffba7b';
+      ctx.globalAlpha = strength * flicker * roll * .57;
+      ctx.beginPath();
+      ctx.moveTo(x - .9, y + .5);
+      ctx.quadraticCurveTo(x - 1.2, y - tongue * .52, x + bend + .5, y - tongue);
+      ctx.quadraticCurveTo(x + 1.9, y - tongue * .38, x + 1, y + .5);
+      ctx.fill();
+      for (const spark of sparks) {
+        const age = mod(time + spark.phase, spark.life) / spark.life;
+        const lift = Math.sin(Math.PI * age);
+        ctx.globalAlpha = strength * lift * lift * (.22 + .32 * flicker);
+        const emberX = x + spark.drift * age + Math.sin(age * 5 + phase) * age * 2;
+        const emberY = y - spark.rise * age;
+        ctx.fillRect(emberX, emberY, spark.size * 1.3, spark.size);
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function makeDustGust(start) {
+    const random = Math.random;
+    const near = random(), depth = .58 + near * .89;
+    const x = -135 + random() * (WIDTH - 135), y = 535 + near * 362;
+    const release = .65 + random() * 2.95, strength = .31 + random() * .69;
+    const sweep = depth * (120 + random() * 235);
+    const span = depth * (185 + random() * 195), slope = (random() - .5) * 37;
+    const push = .74 + strength * .64;
+
+    // 陣風前緣沿地表前進，沙粒沿一段寬的風帶掀起，各自散去。
+    function liftOff() {
+      const along = (random() + random()) / 2;
+      return {
+        x: x + along * sweep + (random() - .5) * span,
+        y: y + along * slope + (random() - .5) * (22 + strength * 21) * depth,
+        born: start + along * release
+      };
+    }
+
+    const grains = Array.from({ length: Math.round(156 + strength * 243) }, () => ({
+      ...liftOff(), speed: depth * push * (35 + random() * 111), life: .54 + random() * 1.57,
+      loft: depth * (2 + random() * 13), phase: random() * TAU, size: depth * (.25 + random() * random() * 1.35)
+    }));
+    const trails = Array.from({ length: Math.round(6 + strength * 12) }, () => ({
+      ...liftOff(), speed: depth * push * (38 + random() * 48), life: 1.7 + random() * 2.9,
+      loft: depth * (2 + random() * 8), breadth: .66 + random() * .68, pale: random() > .46
+    }));
+    return { depth, strength, grains, trails, end: start + release + 4.6 };
   }
 
   function drawDust(ctx, textures, dust, time) {
-    const wind = DUST_SOURCES.map((_, index) => gustAt(time, index));
-    for (const trail of dust.trails) {
-      const age = mod(time + trail.phase, trail.life);
-      const progress = age / trail.life;
-      const x = trail.x + age * trail.speed;
-      const y = trail.y - trail.loft * Math.sin(progress * Math.PI);
-      const width = (40 + 196 * progress) * trail.depth;
-      const height = (6 + 18 * progress) * trail.depth;
-      ctx.globalAlpha = Math.sin(progress * Math.PI) * wind[trail.source] * .73;
-      ctx.drawImage(trail.source % 2 ? textures.haze : textures.sand, x - width * .15, y - height * .78, width, height);
+    if (time >= dust.next) {
+      // 只排入當下的陣風，慢幀後不補播已錯過的沙塵。
+      dust.gusts.push(makeDustGust(Math.max(dust.next, time - .9)));
+      dust.next = time + 1.02 + Math.pow(Math.random(), 1.6) * 4.2;
     }
-    ctx.globalAlpha = 1;
-    const shades = ['#a9845b', '#c6a478', '#e0b780', '#f4d4a2', '#74604d'];
-    for (let i = 0; i < dust.grains.length; i++) {
-      const grain = dust.grains[i];
-      const age = mod(time + grain.phase, grain.life);
-      const progress = age / grain.life;
-      const hop = 4 * progress * (1 - progress);
-      const x = grain.x + grain.speed * age * (.76 + progress * .33);
-      const y = grain.y - grain.loft * hop + Math.sin(age * 12 + grain.phase) * hop * 1.4;
-      ctx.globalAlpha = Math.min(1, progress * 7) * (1 - progress) * (.22 + wind[grain.source] * .62);
-      ctx.fillStyle = shades[i % shades.length];
-      ctx.fillRect(x, y, grain.size * (1.15 + grain.speed * .015), grain.size * .76);
+    dust.gusts = dust.gusts.filter(gust => time < gust.end);
+    for (const { depth, strength, trails } of dust.gusts) {
+      for (const trail of trails) {
+        const progress = (time - trail.born) / trail.life;
+        if (progress <= 0 || progress >= 1) continue;
+        const fade = Math.sin(progress * Math.PI);
+        const x = trail.x + (time - trail.born) * trail.speed;
+        const y = trail.y - trail.loft * fade;
+        const width = (46 + 206 * progress) * depth * trail.breadth;
+        const height = (5 + 18 * progress) * depth;
+        ctx.globalAlpha = fade * (.34 + strength * .46);
+        ctx.drawImage(trail.pale ? textures.sand : textures.haze, x - width * .15, y - height * .78, width, height);
+      }
+    }
+    for (const { strength, grains } of dust.gusts) {
+      for (let i = 0; i < grains.length; i++) {
+        const grain = grains[i];
+        const age = time - grain.born;
+        const progress = age / grain.life;
+        if (progress <= 0 || progress >= 1) continue;
+        const hop = 4 * progress * (1 - progress);
+        const x = grain.x + grain.speed * age * (.78 + progress * .32);
+        const y = grain.y - grain.loft * hop + Math.sin(age * 12 + grain.phase) * hop * 1.4;
+        ctx.globalAlpha = Math.min(1, progress * 7) * (1 - progress) * (.24 + strength * .62);
+        ctx.fillStyle = SAND_SHADES[i % SAND_SHADES.length];
+        ctx.fillRect(x, y, grain.size * (1.15 + grain.speed * .015), grain.size * .76);
+      }
     }
     ctx.globalAlpha = 1;
   }
@@ -345,14 +439,15 @@ var StartMenuBackground = (function () {
 
     const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
     const atmosphere = ctx && makeAtmosphere();
-    const dust = ctx && makeDust();
     let disposed = false, inView = false, frame = null, previous = null;
-    let sprites, time = 5.6, lastPaint = -Infinity;
+    let sprites, fires, time = 5.6, lastPaint = -Infinity;
+    const dust = { gusts: [], next: time - .9 };
 
     function draw() {
       if (!ctx || !inView) return;
       ctx.setTransform(surface.width / WIDTH, 0, 0, surface.height / HEIGHT, 0, 0);
       ctx.clearRect(0, 0, WIDTH, HEIGHT);
+      if (fires) drawFires(ctx, fires, time);
       drawClouds(ctx, atmosphere, time);
       if (sprites) drawCloth(ctx, sprites, time);
       drawWisps(ctx, atmosphere.spirit, time);
@@ -412,9 +507,15 @@ var StartMenuBackground = (function () {
       draw();
       return true;
     }, () => false) : Promise.resolve(false);
+    const stillReady = still.decode().then(() => {
+      if (disposed) return false;
+      if (ctx) fires = makeFires(still);
+      draw();
+      return true;
+    }, () => false);
 
     return {
-      ready: Promise.all([still.decode().then(() => true, () => false), atlasReady])
+      ready: Promise.all([stillReady, atlasReady])
         .then(results => !disposed && results.every(Boolean)),
       destroy() {
         if (disposed) return;
@@ -426,6 +527,8 @@ var StartMenuBackground = (function () {
         motion.removeEventListener('change', syncPlayback);
         surface.width = surface.height = 0;
         sprites = null;
+        fires = null;
+        dust.gusts.length = 0;
         root.remove();
       }
     };
